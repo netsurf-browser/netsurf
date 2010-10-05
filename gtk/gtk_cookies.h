@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,26 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "content/urldb.h"
-#include "desktop/browser.h"
+/** \file
+ * Cookies (interface).
+ */
 
-void global_history_add(const char *url)
-{
-	const struct url_data *data;
+#ifndef __NSGTK_COOKIES_H__
+#define __NSGTK_COOKIES_H__
 
-	data = urldb_get_url_data(url);
-	if (!data)
-		return;
+#include <gtk/gtk.h>
 
+extern GtkWindow *wndCookies;
 
-}
+void nsgtk_cookies_init(void);
+void nsgtk_cookies_destroy(void);
 
-void global_history_add_recent(const char *url)
-{
-}
-
-char **global_history_get_recent(int *count)
-{
-    return NULL;
-}
-
+#endif /* __NSGTK_COOKIES_H__ */

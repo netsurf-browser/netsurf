@@ -18,45 +18,56 @@
 
 #include "desktop/tree.h"
 
-void tree_initialise_redraw(struct tree *tree)
-{
-}
+const char tree_directory_icon_name[] = "directory.png";
+const char tree_content_icon_name[] = "content.png";
 
-void tree_redraw_area(struct tree *tree, int x, int y, int width, int height)
-{
-}
 
-void tree_draw_line(int x, int y, int width, int height)
-{
-}
 
-void tree_draw_node_element(struct tree *tree, struct node_element *element)
-{
-}
 
-void tree_draw_node_expansion(struct tree *tree, struct node *node)
+/**
+ * Translates a content_type to the name of a respective icon
+ *
+ * \param content_type	content type
+ * \param buffer	buffer for the icon name
+ */
+void tree_icon_name_from_content_type(char *buffer, content_type type)
 {
+	// TODO: design/acquire icons
+	switch (type) {
+		case CONTENT_HTML:
+		case CONTENT_TEXTPLAIN:
+		case CONTENT_CSS:
+#if defined(WITH_MNG) || defined(WITH_PNG)
+		case CONTENT_PNG:
+#endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+		case CONTENT_MNG:
+#endif
+#ifdef WITH_JPEG
+		case CONTENT_JPEG:
+#endif
+#ifdef WITH_GIF
+		case CONTENT_GIF:
+#endif
+#ifdef WITH_BMP
+		case CONTENT_BMP:
+		case CONTENT_ICO:
+#endif
+#ifdef WITH_SPRITE
+		case CONTENT_SPRITE:
+#endif
+#ifdef WITH_DRAW
+		case CONTENT_DRAW:
+#endif
+#ifdef WITH_ARTWORKS
+		case CONTENT_ARTWORKS:
+#endif
+#ifdef WITH_NS_SVG
+		case CONTENT_SVG:
+#endif
+		default:
+			sprintf(buffer, tree_content_icon_name);
+			break;
+	}
 }
-
-void tree_recalculate_node_element(struct node_element *element)
-{
-}
-
-void tree_update_URL_node(struct node *node, const char *url,
-	const struct url_data *data)
-{
-}
-
-void tree_resized(struct tree *tree)
-{
-}
-
-void tree_set_node_sprite_folder(struct node *node)
-{
-}
-
-void tree_set_node_sprite(struct node *node, const char *sprite,
-	const char *expanded)
-{
-}
-

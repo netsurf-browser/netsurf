@@ -63,7 +63,6 @@ extern "C" {
 #include "beos/beos_options.h"
 //#include "beos/beos_completion.h"
 #include "beos/beos_throbber.h"
-//#include "beos/beos_history.h"
 #include "beos/beos_window.h"
 //#include "beos/beos_schedule.h"
 //#include "beos/beos_download.h"

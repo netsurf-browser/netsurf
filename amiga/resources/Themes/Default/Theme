@@ -37,12 +37,8 @@ theme_closetab_g:closetab_g.png
 theme_addtab:
 theme_addtab_s:
 theme_addtab_g:
-theme_list_folder_closed:
-theme_list_folder_open:
-theme_list_bookmark:
-theme_list_cookie:
-theme_list_history:
-theme_list_sslcert:
+theme_list_folder:directory.png
+theme_list_content:content.png
 theme_throbber:Throbber
 theme_throbber_frames:9
 theme_throbber_delay:100

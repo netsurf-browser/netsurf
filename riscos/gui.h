@@ -64,7 +64,6 @@ extern bool gui_redraw_debug;
 extern osspriteop_area *gui_sprites;
 extern bool dialog_folder_add, dialog_entry_add, hotlist_insert;
 extern bool print_active, print_text_black;
-extern struct tree *hotlist_tree, *global_history_tree, *cookies_tree;
 
 typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_SCROLL, GUI_DRAG_STATUS_RESIZE,
@@ -136,10 +135,6 @@ bool ro_gui_download_prequit(void);
 /* in 401login.c */
 void ro_gui_401login_init(void);
 
-/* in sslcert.c */
-void ro_gui_cert_init(void);
-void ro_gui_cert_open(struct tree *tree, struct node *node);
-
 /* in window.c */
 void ro_gui_window_quit(void);
 /* void ro_gui_window_close_all(void); */
@@ -161,7 +156,10 @@ void ro_gui_window_process_reformats(void);
 void ro_gui_window_default_options(struct browser_window *bw);
 void ro_gui_window_redraw_all(void);
 void ro_gui_window_prepare_navigate_all(void);
-browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons);
+browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
+		wimp_icon_flags type);
+browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
+		wimp_icon_flags type);
 bool ro_gui_shift_pressed(void);
 bool ro_gui_ctrl_pressed(void);
 bool ro_gui_alt_pressed(void);
@@ -177,13 +175,6 @@ void ro_gui_history_init(void);
 void ro_gui_history_open(struct browser_window *bw, struct history *history,
 		bool pointer);
 void ro_gui_history_mouse_at(wimp_pointer *pointer);
-
-/* in hotlist.c */
-void ro_gui_hotlist_initialise(void);
-void ro_gui_hotlist_save(void);
-void ro_gui_hotlist_prepare_folder_dialog(struct node *node);
-void ro_gui_hotlist_prepare_entry_dialog(struct node *node);
-bool ro_gui_hotlist_dialog_apply(wimp_w w);
 
 /* in filetype.c */
 int ro_content_filetype(struct hlcache_handle *c);

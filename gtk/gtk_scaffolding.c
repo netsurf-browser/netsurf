@@ -34,6 +34,7 @@
 #include "css/utils.h"
 #include "desktop/browser.h"
 #include "desktop/history_core.h"
+#include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
@@ -49,6 +50,8 @@
 #include "desktop/searchweb.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "desktop/tree.h"
+#include "gtk/gtk_cookies.h"
 #include "gtk/gtk_completion.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/dialogs/gtk_about.h"
@@ -57,6 +60,7 @@
 #include "gtk/gtk_download.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/gtk_history.h"
+#include "gtk/gtk_hotlist.h"
 #include "gtk/gtk_menu.h"
 #include "gtk/gtk_plotters.h"
 #include "gtk/gtk_print.h"
@@ -66,6 +70,7 @@
 #include "gtk/gtk_theme.h"
 #include "gtk/gtk_throbber.h"
 #include "gtk/gtk_toolbar.h"
+#include "gtk/gtk_treeview.h"
 #include "gtk/gtk_window.h"
 #include "gtk/options.h"
 #include "gtk/sexy_icon_entry.h"
@@ -217,7 +222,7 @@ void nsgtk_window_close(struct gtk_scaffolding *g)
 	if ((g->history_window) && (g->history_window->window)) {
 		gtk_widget_destroy(GTK_WIDGET(g->history_window->window));
 	}
-
+	
 	if (--open_windows == 0)
 		netsurf_quit = true;
 
@@ -1263,17 +1268,34 @@ MULTIHANDLER(globalhistory)
 {
 	gtk_widget_show(GTK_WIDGET(wndHistory));
 	gdk_window_raise(GTK_WIDGET(wndHistory)->window);
-
+	
 	return TRUE;
 }
 
 MULTIHANDLER(addbookmarks)
 {
+	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	
+	if (bw == NULL || bw->current_content == NULL ||
+			content_get_url(bw->current_content) == NULL)
+		return TRUE;
+	hotlist_add_page(content_get_url(bw->current_content));
 	return TRUE;
 }
 
 MULTIHANDLER(showbookmarks)
 {
+	gtk_widget_show(GTK_WIDGET(wndHotlist));
+	gdk_window_raise(GTK_WIDGET(wndHotlist)->window);
+	
+	return TRUE;
+}
+
+MULTIHANDLER(showcookies)
+{
+	gtk_widget_show(GTK_WIDGET(wndCookies));
+	gdk_window_raise(GTK_WIDGET(wndCookies)->window);
+	
 	return TRUE;
 }
 
@@ -1393,6 +1415,7 @@ gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 
 	return TRUE;
 }
+
 
 #define GET_WIDGET(x) glade_xml_get_widget(g->xml, (x))
 
@@ -1582,6 +1605,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	gtk_scrolled_window_add_with_viewport(g->history_window->scrolled,
 			GTK_WIDGET(g->history_window->drawing_area));
 	gtk_widget_show(GTK_WIDGET(g->history_window->drawing_area));
+	
 
 	/* set up URL bar completion */
 	g->url_bar_completion = gtk_entry_completion_new();
@@ -1613,7 +1637,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			nsgtk_history_button_press_event, g->history_window);
 	CONNECT(g->history_window->window, "delete_event",
 			gtk_widget_hide_on_delete, NULL);
-
+	
 	g_signal_connect_after(g->notebook, "page-added",
 			G_CALLBACK(nsgtk_window_tabs_num_changed), g);
 	g_signal_connect_after(g->notebook, "page-removed",
@@ -2408,6 +2432,7 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	ITEM_MAIN(GLOBALHISTORY, nav, globalhistory);
 	ITEM_MAIN(ADDBOOKMARKS, nav, addbookmarks);
 	ITEM_MAIN(SHOWBOOKMARKS, nav, showbookmarks);
+	ITEM_MAIN(SHOWCOOKIES, nav, showcookies);
 	ITEM_MAIN(OPENLOCATION, nav, openlocation);
 	ITEM_MAIN(CONTENTS, help, contents);
 	ITEM_MAIN(INFO, help, info);
@@ -2437,8 +2462,6 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	SENSITIVITY(CONTENTS);
 	SENSITIVITY(DRAWFILE);
 	SENSITIVITY(POSTSCRIPT);
-	SENSITIVITY(ADDBOOKMARKS);
-	SENSITIVITY(SHOWBOOKMARKS);
 	SENSITIVITY(NEXTTAB);
 	SENSITIVITY(PREVTAB);
 	SENSITIVITY(CLOSETAB);

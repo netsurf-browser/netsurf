@@ -23,8 +23,10 @@
 #include <intuition/classusr.h>
 #include "desktop/browser.h"
 #include <dos/dos.h>
+#include <devices/inputevent.h>
 #include "desktop/gui.h"
 #include "amiga/plotters.h"
+#include "amiga/menu.h"
 
 enum
 {
@@ -56,11 +58,7 @@ enum
 	GID_PASS,
 	GID_LOGIN,
 	GID_CANCEL,
-	GID_TREEBROWSER,
 	GID_OPEN,
-	GID_LEFT,
-	GID_UP,
-	GID_DOWN,
 	GID_NEWF,
 	GID_NEWB,
 	GID_DEL,
@@ -98,6 +96,11 @@ struct gui_window_2 {
 	ULONG oldv;
 	bool redraw_scroll;
 	bool new_content;
+	char *menulab[AMI_MENU_AREXX_MAX + 1];
+	char menukey[AMI_MENU_AREXX_MAX + 1];
+	UBYTE *menutype;
+	struct NewMenu *menu;
+	ULONG hotlist_items;
 	char *svbuffer;
 	char *status;
 	char *wintitle;
@@ -127,6 +130,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_quit_netsurf(void);
 void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
+int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
 struct gui_window_2 *ami_window_at_pointer(void);
 

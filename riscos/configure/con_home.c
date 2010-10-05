@@ -22,6 +22,7 @@
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
+#include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -42,16 +43,13 @@ static bool ro_gui_options_home_ok(wimp_w w);
 
 bool ro_gui_options_home_initialise(wimp_w w)
 {
-	int suggestions;
-
 	/* set the current values */
 	ro_gui_set_icon_string(w, HOME_URL_FIELD,
 			option_homepage_url ? option_homepage_url : "", true);
 	ro_gui_set_icon_selected_state(w, HOME_OPEN_STARTUP,
 			option_open_browser_at_startup);
-	global_history_get_recent(&suggestions);
 	ro_gui_set_icon_shaded_state(w,
-			HOME_URL_GRIGHT, (suggestions <= 0));
+			HOME_URL_GRIGHT, !ro_gui_url_suggest_prepare_menu());
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_menu_gright(w, HOME_URL_FIELD,

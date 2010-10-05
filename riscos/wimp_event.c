@@ -1,5 +1,6 @@
 /*
  * Copyright 2005 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -95,6 +96,14 @@ struct event_window {
 	void (*close_window)(wimp_w w);
 	void (*redraw_window)(wimp_draw *redraw);
 	void (*menu_selection)(wimp_w w, wimp_i i);
+	wimp_menu *window_menu;
+	bool window_menu_auto;
+	void (*window_menu_prepare)(wimp_w w, wimp_menu *m);
+	bool (*window_menu_selection)(wimp_w w, wimp_menu *m,
+			wimp_selection *s, menu_action action);
+	void (*window_menu_close)(wimp_w w, wimp_menu *m);
+	void (*window_menu_warning)(wimp_w w, wimp_menu *m,
+			wimp_selection *s, menu_action action);
 	const char *help_prefix;
 	void *user_data;
 	struct icon_event *first;
@@ -345,14 +354,27 @@ void *ro_gui_wimp_event_get_user_data(wimp_w w)
 /**
  * Handles a menu selection event.
  *
+ * (At present, this is tied to being called from menus.c and relies on that
+ * module decoding the menu into an action code.  If menus.c loses its
+ * menu handling in the future, such decoding might need to move here.)
+ *
+ * The order of execution is:
+ *
+ * 1. Try to match the menu to a pop-up menu.  If successful, handle it as
+ *    this.
+ * 2. Try to match the menu to a window menu.  If successful, pass control to
+ *    the menu's registered _select handler.
+ * 3. Return event as unhandled.
+ *
  * \param w		the window to owning the menu
  * \param i		the icon owning the menu
  * \param menu		the menu that has been selected
  * \param selection	the selection information
- * \return true if the event was handled, false otherwise
+ * \param action	the menu action info from menus.c
+ * \return		true if the event was handled, false otherwise
  */
 bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
-		wimp_selection *selection)
+		wimp_selection *selection, menu_action action)
 {
 	struct event_window *window;
 	struct icon_event *event;
@@ -367,11 +389,28 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	if (!window)
 		return false;
 
+	/* Start by looking for an icon event that matches.  If there isn't one,
+	 * then check to see if there is a window menu and associated
+	 * selection handler available instead.
+	 */
+
 	for (event = window->first; event; event = event->next)
 		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
 			break;
-	if (!event)
-		return false;
+	if (!event) {
+		if ((window->window_menu) && (window->window_menu == menu)
+				&& (window->window_menu_selection)) {
+			window->window_menu_selection(w, menu,
+					selection, action);
+
+			/* Prepare the menu pending a possible Adjust click. */
+			if (window->window_menu_prepare)
+				window->window_menu_prepare(w, menu);
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 	menu_entry = &menu->entries[selection->items[0]];
 	for (i = 1; selection->items[i] != -1; i++)
@@ -433,10 +472,12 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
  *
  * The order of execution is:
  *
- *  1. Any registered mouse_click routine (see ro_gui_wimp_register_mouse_click())
- *  2. If the current icon is not registered with a type then it is assumed that no
+ *  1. If a menu click, and the window has an automatic window menu, this is
+ *     processed immediately.
+ *  2. Any registered mouse_click routine (see ro_gui_wimp_register_mouse_click())
+ *  3. If the current icon is not registered with a type then it is assumed that no
  *     action is necessary, and the click is deemed to have been handled.
- *  3. If the registered mouse_click routine returned false, or there was no registered
+ *  4. If the registered mouse_click routine returned false, or there was no registered
  *     routine then the automated action for the registered icon type is performed
  *
  * \param pointer	the current pointer state
@@ -458,7 +499,13 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 	if (!window)
 		return false;
 
-	/* registered routines take priority */
+	/* Menu clicks take priority if there is an auto menu defined. */
+	if ((window->window_menu) && (window->window_menu_auto)) {
+		ro_gui_wimp_event_process_window_menu_click(pointer);
+		return true;
+	}
+
+	/* registered routines take next priority */
 	if ((window->mouse_click) && (window->mouse_click(pointer)))
 		return true;
 
@@ -919,6 +966,32 @@ bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw)
 
 
 /**
+ * Process a Menu click in a window, by checking for a registered window
+ * menu and opening it if one is found.
+ *
+ * \param  *p		The pointer block from the mouse click event.
+ * \return		true if the click was actioned; else false.
+ */
+
+bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer)
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_find_window(pointer->w);
+	if ((window) && (window->window_menu)
+			&& (pointer->buttons == wimp_CLICK_MENU)) {
+		if (window->window_menu_prepare)
+			window->window_menu_prepare(window->w,
+					window->window_menu);
+
+		ro_gui_menu_create(window->window_menu,
+				pointer->pos.x, pointer->pos.y, window->w);
+		return true;
+	}
+	return false;
+}
+
+/**
  * Register a numeric field to be automatically handled
  */
 bool ro_gui_wimp_event_register_numeric_field(wimp_w w, wimp_i i,
@@ -1168,9 +1241,39 @@ bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
 	return true;
 }
 
+/**
+ * Register a set of functions to be called to handle a window menu.
+ *
+ * \param
+ */
+
+bool ro_gui_wimp_event_register_window_menu(wimp_w w, wimp_menu *m,
+		void (*callback_prepare)(wimp_w w, wimp_menu *m),
+		bool (*callback_selection)(wimp_w w, wimp_menu *m,
+				wimp_selection *s, menu_action action),
+		void (*callback_close)(wimp_w w, wimp_menu *m),
+		void (*callback_warning)(wimp_w w, wimp_menu *m,
+				wimp_selection *s, menu_action action),
+		bool menu_auto)
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->window_menu = m;
+	window->window_menu_prepare = callback_prepare;
+	window->window_menu_selection = callback_selection;
+	window->window_menu_close = callback_close;
+	window->window_menu_warning = callback_warning;
+	window->window_menu_auto = menu_auto;
+	return true;
+}
+
 
 /**
- * Finds the event data associated with a given window handle, or creates a new one.
+ * Finds the event data associated with a given window handle, or creates a
+ *  new one.
  *
  * \param w	the window to find data for
  */
@@ -1273,12 +1376,88 @@ struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i,
 	return event;
 }
 
-/**
- * Handle menus being closed
+/* Handle sumbenu warnings.  This is called from ro_gui_menu_warning(), and
+ * returns to that function to have the submenu opened correctly.
+ *
+ * \param w		the window to owning the menu
+ * \param i		the icon owning the menu
+ * \param menu		the menu that has been selected
+ * \param selection	the selection information
+ * \param action	the menu action info from menus.c
+ * \return		true if the event was handled, false otherwise
  */
-void ro_gui_wimp_event_menus_closed(void)
+
+bool ro_gui_wimp_event_submenu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_selection *selection, menu_action action)
 {
-  	ro_gui_wimp_event_register_submenu(0);
+	struct event_window *window;
+	struct icon_event *event;
+
+	ro_gui_wimp_event_register_submenu(0);
+
+	/* Process the event for any window menus.  Find the window data, then
+	 * try and match to an icon event.  If we can, then there isn't anything
+	 * to do.
+	 */
+
+	window = ro_gui_wimp_event_find_window(w);
+	if (!window)
+		return false;
+
+	for (event = window->first; event; event = event->next)
+		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
+			break;
+	if (event)
+		return false;
+
+	/* If the warning is for a window menu, then pass the event on to it. */
+
+	if ((window->window_menu) && (window->window_menu == menu)) {
+		if (window->window_menu_warning) {
+			window->window_menu_warning(w, menu, selection, action);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Handle menus being closed.  This is called from ro_gui_menu_closed(), in
+ * every scenario when one of our own menus is open.
+ *
+ * \param w		the window to owning the menu
+ * \param i		the icon owning the menu
+ * \param menu		the menu that has been selected
+ */
+
+void ro_gui_wimp_event_menus_closed(wimp_w w, wimp_i i, wimp_menu *menu)
+{
+	struct event_window *window;
+	struct icon_event *event;
+
+	ro_gui_wimp_event_register_submenu(0);
+
+	/* Process the event for any window menus.  Find the window data, then
+	 * try and match to an icon event.  If we can, then there isn't anything
+	 * to do.
+	 */
+
+	window = ro_gui_wimp_event_find_window(w);
+	if (!window)
+		return;
+
+	for (event = window->first; event; event = event->next)
+		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
+			break;
+	if (event)
+		return;
+
+	/* If the close is for a window menu, then pass the event on to it. */
+
+	if ((window->window_menu) && (window->window_menu == menu) &&
+			(window->window_menu_close))
+		window->window_menu_close(w, menu);
 }
 
 /**

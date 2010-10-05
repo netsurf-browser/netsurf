@@ -73,6 +73,7 @@ typedef enum {
 	GLOBALHISTORY_BUTTON,
 	ADDBOOKMARKS_BUTTON,
 	SHOWBOOKMARKS_BUTTON,
+ 	SHOWCOOKIES_BUTTON,
 	OPENLOCATION_BUTTON,
 	NEXTTAB_BUTTON,
 	PREVTAB_BUTTON,
@@ -209,6 +210,7 @@ MULTIPROTO(localhistory);
 MULTIPROTO(globalhistory);
 MULTIPROTO(addbookmarks);
 MULTIPROTO(showbookmarks);
+MULTIPROTO(showcookies);
 MULTIPROTO(openlocation);
 
 /* tabs menu */

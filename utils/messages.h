@@ -40,4 +40,16 @@ struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx);
 const char *messages_get_ctx(const char *key, struct hash_table *ctx);
 const char *messages_get(const char *key);
 
+/**
+ * Formatted message from a key in the global message hash.
+ *
+ * \param  key  key of message
+ * \param ... message parameters
+ * \return buffer containing formatted message text or NULL if memory
+ *         is unavailable. The caller owns the returned buffer and is
+ *         responsible for freeing it.
+ */
+
+char *messages_get_buff(const char *key, ...);
+
 #endif

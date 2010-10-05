@@ -155,6 +155,20 @@ typedef enum {
 } menu_action;
 
 
+/* Menu entry structures for use when defining menus. */
+
+struct ns_menu_entry {
+	const char *text;		/**< menu text (from messages) */
+	menu_action action;		/**< associated action */
+	wimp_w *sub_window;		/**< sub-window if any */
+};
+
+struct ns_menu {
+	const char *title;
+	struct ns_menu_entry entries[];
+};
+
+
 void ro_gui_menu_init(void);
 void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w);
 bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
@@ -170,5 +184,11 @@ void ro_gui_menu_init_structure(wimp_menu *menu, int entries);
 void ro_gui_prepare_navigate(struct gui_window *gui);
 const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,
 		const char *translated);
+
+wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu);
+void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
+		bool shaded);
+void ro_gui_menu_set_entry_ticked(wimp_menu *menu, menu_action action,
+		bool ticked);
 
 #endif

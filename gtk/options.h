@@ -34,6 +34,7 @@ extern int option_history_age;
 extern bool option_hover_urls;
 extern bool option_focus_new;
 extern bool option_new_blank;
+extern char *option_hotlist_path;
 extern bool option_source_tab;
 extern int option_current_theme;
 
@@ -51,6 +52,7 @@ int option_history_age = 0; \
 bool option_hover_urls = false; \
 bool option_focus_new = false; \
 bool option_new_blank = false; \
+char *option_hotlist_path = NULL; \
 bool option_source_tab = false;\
 int option_current_theme = 0;
 
@@ -68,6 +70,7 @@ int option_current_theme = 0;
 { "hover_urls",		OPTION_BOOL,	&option_hover_urls}, \
 { "focus_new",		OPTION_BOOL,	&option_focus_new}, \
 { "new_blank",		OPTION_BOOL,	&option_new_blank}, \
+{ "hotlist_path",	OPTION_STRING,  &option_hotlist_path}, \
 { "source_tab",		OPTION_BOOL,	&option_source_tab},\
 { "current_theme",	OPTION_INTEGER,	&option_current_theme}
 

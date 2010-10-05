@@ -1,5 +1,6 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2006 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,26 +17,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "content/urldb.h"
-#include "desktop/browser.h"
+/** \file
+ * SSL certificate viewer (interface).
+ */
 
-void global_history_add(const char *url)
-{
-	const struct url_data *data;
+#ifndef _NETSURF_RISCOS_SSLCERT_H_
+#define _NETSURF_RISCOS_SSLCERT_H_
 
-	data = urldb_get_url_data(url);
-	if (!data)
-		return;
+void ro_gui_cert_preinitialise(void);
+void ro_gui_cert_postinitialise(void);
+void ro_gui_cert_open(struct tree *tree, struct node *node);
 
-
-}
-
-void global_history_add_recent(const char *url)
-{
-}
-
-char **global_history_get_recent(int *count)
-{
-    return NULL;
-}
+#endif
 

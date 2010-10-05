@@ -46,6 +46,7 @@
 #include "desktop/download.h"
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
+#include "desktop/hotlist.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"

@@ -39,11 +39,14 @@
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
 #include "riscos/save.h"
+#include "riscos/sslcert.h"
 #include "riscos/theme.h"
 #include "riscos/url_complete.h"
+#include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
@@ -106,18 +109,6 @@ void ro_gui_dialog_init(void)
 	/* 401 login window */
 	ro_gui_401login_init();
 
-	/* certificate verification window */
-	ro_gui_cert_init();
-
-	/* hotlist window */
-	ro_gui_hotlist_initialise();
-
-	/* global history window */
-	ro_gui_global_history_initialise();
-
-	/* cookies window */
-	ro_gui_cookies_initialise();
-
 	/* theme installation */
 	dialog_theme_install = ro_gui_dialog_create("theme_inst");
 	ro_gui_wimp_event_register_cancel(dialog_theme_install,
@@ -149,24 +140,6 @@ void ro_gui_dialog_init(void)
 	/* object info */
 	dialog_objinfo = ro_gui_dialog_create("objectinfo");
 	ro_gui_wimp_event_set_help_prefix(dialog_objinfo, "HelpObjInfo");
-
-	/* hotlist folder editing */
-	dialog_folder = ro_gui_dialog_create("new_folder");
-	ro_gui_wimp_event_register_text_field(dialog_folder, ICON_FOLDER_NAME);
-	ro_gui_wimp_event_register_cancel(dialog_folder, ICON_FOLDER_CANCEL);
-	ro_gui_wimp_event_register_ok(dialog_folder, ICON_FOLDER_OK,
-			ro_gui_hotlist_dialog_apply);
-	ro_gui_wimp_event_set_help_prefix(dialog_folder, "HelpHotFolder");
-
-	/* hotlist entry editing */
-	dialog_entry = ro_gui_dialog_create("new_entry");
-	ro_gui_wimp_event_register_text_field(dialog_entry, ICON_ENTRY_NAME);
-	ro_gui_wimp_event_register_menu_gright(dialog_entry, ICON_ENTRY_URL,
-			ICON_ENTRY_RECENT, url_suggest_menu);
-	ro_gui_wimp_event_register_cancel(dialog_entry, ICON_ENTRY_CANCEL);
-	ro_gui_wimp_event_register_ok(dialog_entry, ICON_ENTRY_OK,
-			ro_gui_hotlist_dialog_apply);
-	ro_gui_wimp_event_set_help_prefix(dialog_entry, "HelpHotEntry");
 
 	/* save as */
 	dialog_saveas = ro_gui_saveas_create("saveas");
@@ -204,6 +177,22 @@ void ro_gui_dialog_init(void)
 	ro_gui_wimp_event_register_ok(dialog_zoom, ICON_ZOOM_OK,
 			ro_gui_dialog_zoom_apply);
 	ro_gui_wimp_event_set_help_prefix(dialog_zoom, "HelpScaleView");
+
+	/* Treeview initialisation has moved to the end, to allow any
+	 * associated dialogues to be set up first.
+	 */
+
+	/* certificate verification window */
+	ro_gui_cert_preinitialise();
+
+	/* hotlist window */
+	ro_gui_hotlist_preinitialise();
+
+	/* global history window */
+	ro_gui_global_history_preinitialise();
+
+	/* cookies window */
+	ro_gui_cookies_preinitialise();
 }
 
 
@@ -638,15 +627,25 @@ void ro_gui_dialog_add_persistent(wimp_w parent, wimp_w w) {
  */
 
 void ro_gui_dialog_close_persistent(wimp_w parent) {
-	int i;
+	int	i;
+	wimp_w	w;
 
-	/*	Check our mappings
-	*/
+	/* Check our mappings.
+	 *
+	 * The window handle is copied into w before proceeding, as
+	 * ro_gui_dialog_close() will NULL persistent_dialog[i].dialog as
+	 * part of the closing process.  This would mean that the subsequent
+	 * event dispatch would fail.  (These events are logged to allow
+	 * side effects to be investigated -- this code hasn't worked before).
+	 */
 	for (i = 0; i < MAX_PERSISTENT; i++) {
 		if (persistent_dialog[i].parent == parent &&
 				persistent_dialog[i].dialog != NULL) {
-			ro_gui_dialog_close(persistent_dialog[i].dialog);
-			ro_gui_wimp_event_close_window(persistent_dialog[i].dialog);
+			w = persistent_dialog[i].dialog;
+			ro_gui_dialog_close(w);
+			if (ro_gui_wimp_event_close_window(w))
+				LOG(("Persistent dialog close event: 0x%x",
+						(unsigned) w));
 			persistent_dialog[i].parent = NULL;
 			persistent_dialog[i].dialog = NULL;
 		}
@@ -710,7 +709,6 @@ bool ro_gui_dialog_openurl_apply(wimp_w w) {
 	res = url_normalize(url, &url2);
 	if (res == URL_FUNC_OK) {
 		browser_window_create(url2, 0, 0, true, false);
-		global_history_add_recent(url2);
 		free(url2);
 		return true;
 	}
@@ -724,10 +722,8 @@ bool ro_gui_dialog_openurl_apply(wimp_w w) {
 
 void ro_gui_dialog_prepare_open_url(void)
 {
-	int suggestions;
 	ro_gui_set_icon_string(dialog_openurl, ICON_OPENURL_URL, "", true);
-	global_history_get_recent(&suggestions);
 	ro_gui_set_icon_shaded_state(dialog_openurl,
-			ICON_OPENURL_MENU, (suggestions <= 0));
+			ICON_OPENURL_MENU, !ro_gui_url_suggest_prepare_menu());
 	ro_gui_wimp_event_memorise(dialog_openurl);
 }

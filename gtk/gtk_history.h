@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net> 
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,22 +24,7 @@
 
 extern GtkWindow *wndHistory;
 
-
-struct history_model {
-	GtkListStore *history_list;
-	GtkTreeModel *history_filter;
-		GtkTreeModel *site_filter;
-			GtkTreeModel *site_sort;
-			GtkTreeView *site_treeview;
-			GtkTreeSelection *site_selection;
-	GtkListStore *domain_list;	
-		GtkTreeModel *domain_filter;
-			GHashTable *domain_hash;
-			GtkTreeModel *domain_sort;
-			GtkTreeView *domain_treeview;
-			GtkTreeSelection *domain_selection;
-};
-
 bool nsgtk_history_init(void);
+void nsgtk_history_destroy(void);
 
 #endif /* __NSGTK_HISTORY_H__ */

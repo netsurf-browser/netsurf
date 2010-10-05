@@ -1,6 +1,5 @@
 /*
- * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
+ * Copyright 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,20 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __NSBEOS_HISTORY_H__
-#define __NSBEOS_HISTORY_H__
+#ifndef AMIGA_SSLCERT_H
+#define AMIGA_SSLCERT_H
+#include "desktop/sslcert.h"
 
-#include <View.h>
-#include <Window.h>
-
-extern BWindow *wndHistory;
-
-void nsbeos_history_init(void);
-void nsbeos_history_update(void);
-#warning XXX
-#if 0 /* GTK */
-void nsbeos_history_row_activated(GtkTreeView *, GtkTreePath *,
-				GtkTreeViewColumn *, gpointer);
+void ami_ssl_free(struct treeview_window *twin);
 #endif
-
-#endif /* __NSGTK_HISTORY_H__ */

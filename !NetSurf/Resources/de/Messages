@@ -189,6 +189,8 @@ ResetUsage:Statistik zurücksetzen
 New:Neu
 Expand:Expandieren
 Collapse:Zusammenfalten
+Tree:Tree
+TreeExport:Export...
 
 # New hotlist entry menu
 #
@@ -200,6 +202,7 @@ Link:Eintrag
 All:Alles
 Folders:Verzeichnisse
 Links:Einträge
+Domains:Domains
 
 # Other menus
 #
@@ -373,6 +376,13 @@ DateYesterday:Gestern
 Date1Week:vorige Woche
 Date2Week:vor 2 Wochen
 Date3Week:vor 3 Wochen
+Sunday:Sunday
+Monday:Monday
+Tuesday:Tuesday
+Wednesday:Wednesday
+Thursday:Thursday
+Friday:Friday
+Saturday:Saturday
 
 
 # Download user interface tokens

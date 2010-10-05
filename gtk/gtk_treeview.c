@@ -1,5 +1,6 @@
 /*
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net> 
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -20,101 +21,107 @@
  * Generic tree handling (implementation).
  */
 
+#include <assert.h>
+#include <gdk/gdkkeysyms.h>
+#include <gtk/gtk.h>
+#include <stdio.h>
 
 #include "desktop/tree.h"
+#include "desktop/tree_url_node.h"
+#include "desktop/plotters.h"
+#include "gtk/gtk_gui.h"
+#include "gtk/gtk_plotters.h"
+#include "gtk/gtk_treeview.h"
+#include "utils/log.h"
+#include "utils/utils.h"
 
+struct nsgtk_treeview {
+	GtkWindow *window;
+	GtkScrolledWindow *scrolled;
+	GtkDrawingArea *drawing_area;
+	int mouse_pressed_x;
+	int mouse_pressed_y;
+	browser_mouse_state mouse_state;
+	struct tree *tree;
+};
 
-/**
- * Sets the origin variables to the correct values for a specified tree
- *
- * \param tree  the tree to set the origin for
- */
-void tree_initialise_redraw(struct tree *tree) {
+const char tree_directory_icon_name[] = "directory.png";
+const char tree_content_icon_name[] = "content.png";
+
+static void nsgtk_tree_redraw_request(int x, int y, int width, int height,
+		void *data);
+static void nsgtk_tree_resized(struct tree *tree, int width, int height, void *data);
+static void nsgtk_tree_scroll_visible(int y, int height, void *data);
+static void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data);
+
+static const struct treeview_table nsgtk_tree_callbacks = {
+	.redraw_request = nsgtk_tree_redraw_request,
+	.resized = nsgtk_tree_resized,
+	.scroll_visible = nsgtk_tree_scroll_visible,
+	.get_window_dimensions = nsgtk_tree_get_window_dimensions
+};
+
+struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
+		GtkWindow *window, GtkScrolledWindow *scrolled,
+ 		GtkDrawingArea *drawing_area)
+{
+	struct nsgtk_treeview *tv;	
+	
+	tv = malloc(sizeof(struct nsgtk_treeview));
+	if (tv == NULL) {
+		LOG(("malloc failed"));
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+	
+	tv->window = window;
+	tv->scrolled = scrolled;
+	tv->drawing_area = drawing_area;
+	tv->tree = tree_create(flags, &nsgtk_tree_callbacks, tv);
+	tv->mouse_state = 0;
+	
+	gtk_widget_modify_bg(GTK_WIDGET(drawing_area), GTK_STATE_NORMAL,
+			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
+	
+#define CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+	
+	CONNECT(drawing_area, "expose_event",
+			nsgtk_tree_window_expose_event,
+  			tv->tree);
+	CONNECT(drawing_area, "button_press_event",
+			nsgtk_tree_window_button_press_event,
+			tv);
+	CONNECT(drawing_area, "button_release_event",
+			nsgtk_tree_window_button_release_event,
+  			tv);
+	CONNECT(drawing_area, "motion_notify_event",
+			nsgtk_tree_window_motion_notify_event,
+  			tv);
+	CONNECT(drawing_area, "key_press_event",
+			nsgtk_tree_window_keypress_event,
+  			tv);
+	return tv;
 }
 
-
-/**
- * Informs the current window manager that an area requires updating.
- *
- * \param tree	  the tree that is requesting a redraw
- * \param x	  the x co-ordinate of the redraw area
- * \param y	  the y co-ordinate of the redraw area
- * \param width	  the width of the redraw area
- * \param height  the height of the redraw area
- */
-void tree_redraw_area(struct tree *tree, int x, int y, int width, int height) {
+void nsgtk_treeview_destroy(struct nsgtk_treeview *tv)
+{
+	tree_delete(tv->tree);
+	gtk_widget_destroy(GTK_WIDGET(tv->window));
+	free(tv);
 }
 
-
-/**
- * Draws a line.
- *
- * \param x	 the x co-ordinate
- * \param x	 the y co-ordinate
- * \param x	 the width of the line
- * \param x	 the height of the line
- */
-void tree_draw_line(int x, int y, int width, int height) {
+struct tree *nsgtk_treeview_get_tree(struct nsgtk_treeview *tv)
+{
+	return tv->tree;
 }
 
-
-/**
- * Draws an element, including any expansion icons
- *
- * \param tree	   the tree to draw an element for
- * \param element  the element to draw
- */
-void tree_draw_node_element(struct tree *tree, struct node_element *element) {
-}
-
-
-/**
- * Draws an elements expansion icon
- *
- * \param tree	   the tree to draw the expansion for
- * \param element  the element to draw the expansion for
- */
-void tree_draw_node_expansion(struct tree *tree, struct node *node) {
-}
-
-
-/**
- * Recalculates the dimensions of a node element.
- *
- * \param element  the element to recalculate
- */
-void tree_recalculate_node_element(struct node_element *element) {
-}
-
-/**
- * Sets a node element as having a specific sprite.
- *
- * \param node      the node to update
- * \param sprite    the sprite to use
- * \param selected  the expanded sprite name to use
- */
-void tree_set_node_sprite(struct node *node, const char *sprite,
-                const char *expanded) {
-
-}
-
-/**
- * Sets a node element as having a folder sprite
- *
- * \param node  the node to update
- */
-void tree_set_node_sprite_folder(struct node *node) {
-
-}
-
-/**
- * Updates the node details for a URL node.
- * The internal node dimensions are not updated.
- *
- * \param node  the node to update
- */
-void tree_update_URL_node(struct node *node, const char *url,
-		const struct url_data *data) {
+void nsgtk_tree_redraw_request(int x, int y, int width, int height, void *data)
+{
+	struct nsgtk_treeview *tw = data;
+	
+	gtk_widget_queue_draw_area(GTK_WIDGET(tw->drawing_area),
+			x, y, width, height);
 }
 
 
@@ -123,5 +130,413 @@ void tree_update_URL_node(struct node *node, const char *url,
  *
  * \param tree  the tree to update the owner of
  */
-void tree_resized(struct tree *tree) {
+void nsgtk_tree_resized(struct tree *tree, int width, int height, void *data)
+{
+	struct nsgtk_treeview *tw = data;
+	
+	gtk_widget_set_size_request(GTK_WIDGET(tw->drawing_area),
+			width, height);
+	return;	
 }
+
+/**
+ * Translates a content_type to the name of a respective icon
+ *
+ * \param content_type	content type
+ * \param buffer	buffer for the icon name
+ */
+void tree_icon_name_from_content_type(char *buffer, content_type type)
+{
+	// TODO: design/acquire icons
+	switch (type) {
+		case CONTENT_HTML:
+		case CONTENT_TEXTPLAIN:
+		case CONTENT_CSS:
+#if defined(WITH_MNG) || defined(WITH_PNG)
+		case CONTENT_PNG:
+#endif
+#ifdef WITH_MNG
+		case CONTENT_JNG:
+		case CONTENT_MNG:
+#endif
+#ifdef WITH_JPEG
+		case CONTENT_JPEG:
+#endif
+#ifdef WITH_GIF
+		case CONTENT_GIF:
+#endif
+#ifdef WITH_BMP
+		case CONTENT_BMP:
+		case CONTENT_ICO:
+#endif
+#ifdef WITH_SPRITE
+		case CONTENT_SPRITE:
+#endif
+#ifdef WITH_DRAW
+		case CONTENT_DRAW:
+#endif
+#ifdef WITH_ARTWORKS
+		case CONTENT_ARTWORKS:
+#endif
+#ifdef WITH_NS_SVG
+		case CONTENT_SVG:
+#endif
+		default:
+			sprintf(buffer, tree_content_icon_name);
+			break;
+	}
+}
+
+/**
+ * Scrolls the tree to make an element visible
+ *
+ * \param y		Y coordinate of the element
+ * \param height	height of the element
+ * \param data		user data assigned to the tree on tree creation
+ */
+void nsgtk_tree_scroll_visible(int y, int height, void *data)
+{
+	int y0, y1;
+	gdouble page;
+	struct nsgtk_treeview *tw = data;
+	GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment(tw->scrolled);
+
+	assert(vadj);
+	
+	g_object_get(vadj, "page-size", &page, NULL);
+	
+	y0 = (int)(gtk_adjustment_get_value(vadj));
+	y1 = y0 + page;
+	
+	if ((y >= y0) && (y + height <= y1))
+		return;
+	if (y + height > y1)
+		y0 = y0 + (y + height - y1); 
+	if (y < y0)
+		y0 = y;
+	gtk_adjustment_set_value(vadj, y0);
+}
+
+
+/**
+ * Retrieves the dimensions of the window with the tree
+ *
+ * \param data		user data assigned to the tree on tree creation
+ * \param width		will be updated to window width if not NULL
+ * \param height	will be updated to window height if not NULL
+ */
+void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data)
+{
+	struct nsgtk_treeview *tw = data;
+	GtkAdjustment *vadj;
+	GtkAdjustment *hadj;
+	gdouble page;
+	
+	if (width != NULL) {
+		hadj = gtk_scrolled_window_get_hadjustment(tw->scrolled);
+		g_object_get(hadj, "page-size", &page, NULL);
+		*width = page;
+	}
+	
+	if (height != NULL) {
+		vadj = gtk_scrolled_window_get_vadjustment(tw->scrolled);
+		g_object_get(vadj, "page-size", &page, NULL);
+		*height = page;
+	}
+}
+
+/* signal handler functions for a tree window */
+gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
+		GdkEventExpose *event, gpointer g)
+{
+	struct tree *tree = (struct tree *) g;
+	int x, y, width, height;
+	
+	x = event->area.x;
+	y = event->area.y;
+	width = event->area.width;
+	height = event->area.height;
+	
+	current_widget = widget;
+	current_drawable = widget->window;
+	current_gc = gdk_gc_new(current_drawable);
+#ifdef CAIRO_VERSION
+	current_cr = gdk_cairo_create(current_drawable);
+#endif
+	plot = nsgtk_plotters;
+	nsgtk_plot_set_scale(1.0);current_widget = widget;
+	current_drawable = widget->window;
+	current_gc = gdk_gc_new(current_drawable);
+#ifdef CAIRO_VERSION
+	current_cr = gdk_cairo_create(current_drawable);
+#endif
+	plot = nsgtk_plotters;
+	nsgtk_plot_set_scale(1.0);
+	
+	tree_set_redraw(tree, true);
+	tree_draw(tree, 0, 0, x, y, width, height);
+	
+	current_widget = NULL;
+	g_object_unref(current_gc);
+#ifdef CAIRO_VERSION
+	cairo_destroy(current_cr);
+#endif
+	
+	return FALSE;
+}
+
+void nsgtk_tree_window_hide(GtkWidget *widget, gpointer g)
+{
+	struct nsgtk_treeview *tw = g;
+	struct tree *tree = tw->tree;
+	
+	if (tree != NULL)
+		tree_set_redraw(tree, false);
+}
+
+gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
+		GdkEventButton *event, gpointer g)
+{	
+	struct nsgtk_treeview *tw = g;
+	struct tree *tree = tw->tree;
+	
+	gtk_widget_grab_focus(GTK_WIDGET(tw->drawing_area));
+	
+	
+	tw->mouse_pressed_x = event->x;
+	tw->mouse_pressed_y = event->y;
+
+	if (event->type == GDK_2BUTTON_PRESS)
+		tw->mouse_state = BROWSER_MOUSE_DOUBLE_CLICK;
+	
+	switch (event->button) {
+		case 1: tw->mouse_state |= BROWSER_MOUSE_PRESS_1; break;
+		case 3: tw->mouse_state |= BROWSER_MOUSE_PRESS_2; break;
+	}
+	/* Handle the modifiers too */
+	if (event->state & GDK_SHIFT_MASK)
+		tw->mouse_state |= BROWSER_MOUSE_MOD_1;
+	if (event->state & GDK_CONTROL_MASK)
+		tw->mouse_state |= BROWSER_MOUSE_MOD_2;
+	if (event->state & GDK_MOD1_MASK)
+		tw->mouse_state |= BROWSER_MOUSE_MOD_3;	
+	
+	tree_mouse_action(tree, tw->mouse_state, event->x, event->y);
+	
+	return TRUE;
+}
+
+gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
+		GdkEventButton *event, gpointer g)
+{
+	bool shift = event->state & GDK_SHIFT_MASK;
+	bool ctrl = event->state & GDK_CONTROL_MASK;
+	bool alt = event->state & GDK_MOD1_MASK;
+	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
+	struct tree *tree = tw->tree;
+
+	/* We consider only button 1 clicks as double clicks.
+	* If the mouse state is PRESS then we are waiting for a release to emit
+	* a click event, otherwise just reset the state to nothing*/
+	if (tw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
+		
+		if (tw->mouse_state & BROWSER_MOUSE_PRESS_1)
+			tw->mouse_state ^= BROWSER_MOUSE_PRESS_1;
+		else if (tw->mouse_state & BROWSER_MOUSE_PRESS_2)
+			tw->mouse_state ^= (BROWSER_MOUSE_PRESS_2 |
+					BROWSER_MOUSE_DOUBLE_CLICK);
+		
+	} else if (tw->mouse_state & BROWSER_MOUSE_PRESS_1)
+		tw->mouse_state ^=
+				(BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
+	else if (tw->mouse_state & BROWSER_MOUSE_PRESS_2)
+		tw->mouse_state ^= (BROWSER_MOUSE_PRESS_2 |
+				BROWSER_MOUSE_CLICK_2);
+	
+		/* Handle modifiers being removed */
+		if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
+			tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
+		if (tw->mouse_state & BROWSER_MOUSE_MOD_2 && !ctrl)
+			tw->mouse_state ^= BROWSER_MOUSE_MOD_2;
+		if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
+			tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
+
+	
+		if (tw->mouse_state &
+				  (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2
+				  | BROWSER_MOUSE_DOUBLE_CLICK))
+			tree_mouse_action(tree, tw->mouse_state,
+					event->x, event->y);
+		else
+			tree_drag_end(tree, tw->mouse_state,
+					tw->mouse_pressed_x,
+					tw->mouse_pressed_y,
+     					event->x, event->y);
+	
+		
+		tw->mouse_state = 0;
+
+				
+		return TRUE;	
+}
+
+gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
+		GdkEventButton *event, gpointer g)
+{
+	bool shift = event->state & GDK_SHIFT_MASK;
+	bool ctrl = event->state & GDK_CONTROL_MASK;
+	bool alt = event->state & GDK_MOD1_MASK;
+	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
+	struct tree *tree = tw->tree;
+	
+	
+	/* Handle modifiers being removed */
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_2 && !ctrl)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_2;
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
+	
+	if (tw->mouse_state & BROWSER_MOUSE_PRESS_1) {
+		/* Start button 1 drag */
+		tree_mouse_action(tree, BROWSER_MOUSE_DRAG_1,
+				  tw->mouse_pressed_x, tw->mouse_pressed_y);
+		/* Replace PRESS with HOLDING and declare drag in progress */
+		tw->mouse_state ^= (BROWSER_MOUSE_PRESS_1 |
+				BROWSER_MOUSE_HOLDING_1);
+		tw->mouse_state |= BROWSER_MOUSE_DRAG_ON;
+		return TRUE;
+	}
+	else if (tw->mouse_state & BROWSER_MOUSE_PRESS_2){
+		/* Start button 2s drag */
+		tree_mouse_action(tree, BROWSER_MOUSE_DRAG_2,
+				  tw->mouse_pressed_x, tw->mouse_pressed_y);
+		/* Replace PRESS with HOLDING and declare drag in progress */
+		tw->mouse_state ^= (BROWSER_MOUSE_PRESS_2 |
+				BROWSER_MOUSE_HOLDING_2);
+		tw->mouse_state |= BROWSER_MOUSE_DRAG_ON;
+		return TRUE;
+	}
+	
+	if (tw->mouse_state & (BROWSER_MOUSE_HOLDING_1 |
+			BROWSER_MOUSE_HOLDING_2))
+		tree_mouse_action(tree, tw->mouse_state, event->x,
+				event->y);
+	
+	return TRUE;
+}
+
+
+gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
+		gpointer g)
+{
+	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
+	struct tree *tree = tw->tree;
+	uint32_t nskey;
+	double value;
+	GtkAdjustment *vscroll;
+	GtkAdjustment *hscroll;
+	GtkAdjustment *scroll = NULL;
+	gdouble hpage, vpage;
+	bool edited;
+	
+	nskey = gtk_gui_gdkkey_to_nskey(event);
+	
+			
+	vscroll = gtk_scrolled_window_get_vadjustment(tw->scrolled);
+	hscroll =  gtk_scrolled_window_get_hadjustment(tw->scrolled);
+	g_object_get(vscroll, "page-size", &vpage, NULL);
+	g_object_get(hscroll, "page-size", &hpage, NULL);
+	
+	
+	edited = tree_is_edited(tree);
+
+	switch (event->keyval) {
+		case GDK_Home:
+		case GDK_KP_Home:
+			if (edited)
+				break;
+			scroll = vscroll;
+			value = scroll->lower;
+			break;
+
+		case GDK_End:
+		case GDK_KP_End:
+			if (edited)
+				break;			
+			scroll = vscroll;
+			value = scroll->upper - vpage;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Left:
+		case GDK_KP_Left:
+			if (edited)
+				break;			
+			scroll = hscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->step_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Up:
+		case GDK_KP_Up:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->step_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Right:
+		case GDK_KP_Right:
+			if (edited)
+				break;
+			scroll = hscroll;
+			value = gtk_adjustment_get_value(scroll) +
+						scroll->step_increment;
+			if (value > scroll->upper - hpage)
+				value = scroll->upper - hpage;
+			break;
+
+		case GDK_Down:
+		case GDK_KP_Down:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) +
+						scroll->step_increment;
+			if (value > scroll->upper - vpage)
+				value = scroll->upper - vpage;
+			break;
+
+		case GDK_Page_Up:
+		case GDK_KP_Page_Up:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->page_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Page_Down:
+		case GDK_KP_Page_Down:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) +
+						scroll->page_increment;
+			if (value > scroll->upper - vpage)
+				value = scroll->upper - vpage;
+			break;			
+		default:
+			tree_keypress(tree, nskey);
+			return TRUE;
+	}	
+	
+	if (scroll != NULL)
+		gtk_adjustment_set_value(scroll, value);
+	
+	tree_keypress(tree, nskey);
+	
+	return TRUE;
+}	

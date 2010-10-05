@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,9 +19,10 @@
 #ifndef AMIGA_HOTLIST_H
 #define AMIGA_HOTLIST_H
 #include "desktop/tree.h"
+#include "amiga/tree.h"
 
-void ami_hotlist_init(struct tree **hotlist);
-void ami_hotlist_add(struct node *node, struct hlcache_handle *c);
+void ami_hotlist_initialise(const char *hotlist_file);
+void ami_hotlist_free(const char *hotlist_file);
 
-struct tree *hotlist;
+struct treeview_window *hotlist_window;
 #endif

@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -44,174 +45,243 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-static bool ro_gui_cookies_click(wimp_pointer *pointer);
-static struct node *ro_gui_cookies_find(const char *url);
+static void ro_gui_cookies_menu_prepare(wimp_w window, wimp_menu *menu);
+static bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+static void ro_gui_cookies_menu_warning(wimp_w window, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
 
-/* The history window, toolbar and plot origins */
-static wimp_w cookies_window;
-struct tree *cookies_tree;
-static bool cookies_init;
+/* The RISC OS cookie window, toolbar and treeview data. */
+
+static struct ro_cookies_window {
+	wimp_w		window;
+	struct toolbar	*toolbar;
+	ro_treeview	*tv;
+	wimp_menu	*menu;
+} cookies_window;
 
 /**
- * Initialise cookies tree
+ * Pre-Initialise the cookies tree.  This is called for things that
+ * need to be done at the gui_init() stage, such as loading templates.
  */
-void ro_gui_cookies_initialise(void)
+
+void ro_gui_cookies_preinitialise(void)
 {
-	/* create our window */
-	cookies_window = ro_gui_dialog_create("tree");
-	ro_gui_set_window_title(cookies_window,
+	/* Create our window. */
+
+	cookies_window.window = ro_gui_dialog_create("tree");
+	ro_gui_set_window_title(cookies_window.window,
 			messages_get("Cookies"));
-	ro_gui_wimp_event_register_redraw_window(cookies_window,
-			ro_gui_tree_redraw);
-	ro_gui_wimp_event_register_open_window(cookies_window,
-			ro_gui_tree_open);
-	ro_gui_wimp_event_register_mouse_click(cookies_window,
-			ro_gui_cookies_click);
+}
 
-	/* Create an empty tree */
-	cookies_tree = calloc(sizeof(struct tree), 1);
-	if (!cookies_tree) {
-		warn_user("NoMemory", 0);
-		return;
-	}
-	cookies_tree->root = tree_create_folder_node(NULL, "Root");
-	if (!cookies_tree->root) {
-		warn_user("NoMemory", 0);
-		free(cookies_tree);
-		cookies_tree = NULL;
-		return;
-	}
-	cookies_tree->root->expanded = true;
-	cookies_tree->handle = (int)cookies_window;
-	cookies_tree->movable = false;
-	cookies_tree->no_drag = true;
-	ro_gui_wimp_event_set_user_data(cookies_window,
-			cookies_tree);
-	ro_gui_wimp_event_register_keypress(cookies_window,
-			ro_gui_tree_keypress);
+/**
+ * Initialise cookies tree, at the gui_init2() stage.
+ */
 
-	/* Create our toolbar */
-	cookies_tree->toolbar = ro_gui_theme_create_toolbar(NULL,
+void ro_gui_cookies_postinitialise(void)
+{
+	/* Create our toolbar. */
+
+	cookies_window.toolbar = ro_gui_theme_create_toolbar(NULL,
 			THEME_COOKIES_TOOLBAR);
-	if (cookies_tree->toolbar)
-		ro_gui_theme_attach_toolbar(cookies_tree->toolbar,
-				cookies_window);
+	if (cookies_window.toolbar)
+		ro_gui_theme_attach_toolbar(cookies_window.toolbar,
+				cookies_window.window);
 
-	cookies_init = true;
-	urldb_iterate_cookies(cookies_update);
-	cookies_init = false;
-	tree_initialise(cookies_tree);
-}
+	/* Create the treeview with the window and toolbar. */
 
-
-/**
- * Respond to a mouse click
- *
- * \param pointer  the pointer state
- * \return true to indicate click handled
- */
-bool ro_gui_cookies_click(wimp_pointer *pointer)
-{
-	ro_gui_tree_click(pointer, cookies_tree);
-	if (pointer->buttons == wimp_CLICK_MENU)
-		ro_gui_menu_create(cookies_menu, pointer->pos.x,
-				pointer->pos.y, pointer->w);
-	else
-		ro_gui_menu_prepare_action(pointer->w, TREE_SELECTION, false);
-	return true;
-}
-
-
-/**
- * Perform cookie addition
- *
- * \param data Cookie data for a domain, or NULL
- * \return true (for urldb_iterate_entries)
- */
-bool cookies_update(const char *domain, const struct cookie_data *data)
-{
-	struct node *parent;
-	struct node *node = NULL;
-	struct node *child;
-	struct node *add;
-	const struct cookie_data *cookie = NULL;
-	bool expanded;
-
-	assert(domain);
-
-	/* check if we're a domain, and add get the first cookie */
-	if (data)
-		for (cookie = data; cookie->prev; cookie = cookie->prev);
-
-	if (!cookies_init) {
-		node = ro_gui_cookies_find(domain);
-		if (node) {
-			/* mark as deleted so we don't remove the cookies */
-			expanded = node->expanded;
-			for (child = node->child; child; child = child->next)
-				child->deleted = true;
-			if (node->child)
-				tree_delete_node(cookies_tree, node->child,
-						true);
-			/* deleting will have contracted our node */
-			node->expanded = expanded;
-		}
-		if (!data) {
-			if (!node)
-				return true;
-			tree_delete_node(cookies_tree, node, false);
-			tree_handle_node_changed(cookies_tree,
-					cookies_tree->root, true, false);
-			return true;
-		}
+	cookies_window.tv = ro_treeview_create(cookies_window.window,
+			cookies_window.toolbar, cookies_get_tree_flags());
+	if (cookies_window.tv == NULL) {
+		LOG(("Failed to allocate treeview"));
+		return;
 	}
 
-	if (!node) {
-		for (parent = cookies_tree->root->child; parent;
-				parent = parent->next) {
-			if (strcmp(domain, parent->data.text) == 0)
-				break;
+	/* Initialise the cookies into the tree. */
+
+	cookies_initialise(ro_treeview_get_tree(cookies_window.tv));
+
+
+	/* Build the cookies window menu. */
+
+	static const struct ns_menu cookies_definition = {
+		"Cookies", {
+			{ "Cookies", NO_ACTION, 0 },
+			{ "Cookies.Expand", TREE_EXPAND_ALL, 0 },
+			{ "Cookies.Expand.All", TREE_EXPAND_ALL, 0 },
+			{ "Cookies.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
+			{ "Cookies.Expand.Links", TREE_EXPAND_LINKS, 0 },
+			{ "Cookies.Collapse", TREE_COLLAPSE_ALL, 0 },
+			{ "Cookies.Collapse.All", TREE_COLLAPSE_ALL, 0 },
+			{ "Cookies.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
+			{ "Cookies.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
+			{ "Cookies.Toolbars", NO_ACTION, 0 },
+			{ "_Cookies.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
+			{ "Cookies.Toolbars.EditToolbar",TOOLBAR_EDIT, 0 },
+			{ "Selection", TREE_SELECTION, 0 },
+			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
+			{ "SelectAll", TREE_SELECT_ALL, 0 },
+			{ "Clear", TREE_CLEAR_SELECTION, 0 },
+			{NULL, 0, 0}
 		}
-		if (!parent) {
-			node = tree_create_folder_node(cookies_tree->root,
-					domain);
-		} else {
-			node = parent;
-		}
+	};
+	cookies_window.menu = ro_gui_menu_define_menu(&cookies_definition);
+
+	ro_gui_wimp_event_register_window_menu(cookies_window.window,
+			cookies_window.menu, ro_gui_cookies_menu_prepare,
+			ro_gui_cookies_menu_select, NULL,
+			ro_gui_cookies_menu_warning, false);
+}
+
+/**
+ * \TODO - Open the cookies window.
+ *
+ */
+
+void ro_gui_cookies_open(void)
+{
+	tree_set_redraw(ro_treeview_get_tree(cookies_window.tv), true);
+
+	if (!ro_gui_dialog_open_top(cookies_window.window,
+			cookies_window.toolbar, 600, 800)) {
+		ro_treeview_set_origin(cookies_window.tv, 0,
+				-(ro_gui_theme_toolbar_height(
+				cookies_window.toolbar)));
 	}
-	if (!node)
+}
+
+/**
+ * Prepare the cookies menu for opening
+ *
+ * \param  window		The window owning the menu.
+ * \param  *menu		The menu about to be opened.
+ */
+
+void ro_gui_cookies_menu_prepare(wimp_w window, wimp_menu *menu)
+{
+	bool selection;
+
+	selection = ro_treeview_has_selection(cookies_window.tv);
+
+	ro_gui_menu_set_entry_shaded(cookies_window.menu, TREE_SELECTION,
+			!selection);
+	ro_gui_menu_set_entry_shaded(cookies_window.menu, TREE_CLEAR_SELECTION,
+			!selection);
+
+	ro_gui_menu_set_entry_shaded(cookies_window.menu, TOOLBAR_BUTTONS,
+			(cookies_window.toolbar == NULL ||
+			cookies_window.toolbar->editor));
+	ro_gui_menu_set_entry_ticked(cookies_window.menu, TOOLBAR_BUTTONS,
+			(cookies_window.toolbar != NULL &&
+			(cookies_window.toolbar->display_buttons ||
+			(cookies_window.toolbar->editor))));
+
+	ro_gui_menu_set_entry_shaded(cookies_window.menu, TOOLBAR_EDIT,
+			cookies_window.toolbar == NULL);
+	ro_gui_menu_set_entry_ticked(cookies_window.menu, TOOLBAR_EDIT,
+			(cookies_window.toolbar != NULL &&
+			cookies_window.toolbar->editor));
+}
+
+/**
+ * Handle submenu warnings for the cookies menu
+ *
+ * \param  window		The window owning the menu.
+ * \param  *menu		The menu to which the warning applies.
+ * \param  *selection		The wimp menu selection data.
+ * \param  action		The selected menu action.
+ */
+
+void ro_gui_cookies_menu_warning(wimp_w window, wimp_menu *menu,
+		wimp_selection *selection, menu_action action)
+{
+	/* Do nothing */
+}
+
+/**
+ * Handle selections from the cookies menu
+ *
+ * \param  window		The window owning the menu.
+ * \param  *menu		The menu from which the selection was made.
+ * \param  *selection		The wimp menu selection data.
+ * \param  action		The selected menu action.
+ * \return			true if action accepted; else false.
+ */
+
+bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
+		wimp_selection *selection, menu_action action)
+{
+	switch (action) {
+	case TREE_EXPAND_ALL:
+		cookies_expand_all();
 		return true;
-	node->editable = false;
+	case TREE_EXPAND_FOLDERS:
+		cookies_expand_domains();
+		return true;
+	case TREE_EXPAND_LINKS:
+		cookies_expand_cookies();
+		return true;
+	case TREE_COLLAPSE_ALL:
+		cookies_collapse_all();
+		return true;
+	case TREE_COLLAPSE_FOLDERS:
+		cookies_collapse_domains();
+		return true;
+	case TREE_COLLAPSE_LINKS:
+		cookies_collapse_cookies();
+		return true;
+	case TREE_SELECTION_DELETE:
+		cookies_delete_selected();
+		return true;
+	case TREE_SELECT_ALL:
+		cookies_select_all();
+		return true;
+	case TREE_CLEAR_SELECTION:
+		cookies_clear_selection();
+		return true;
+	default:
+		return false;
+	}
 
-	for (; cookie; cookie = cookie->next) {
-		add = tree_create_cookie_node(node, cookie);
-		if (add && !cookies_init)
-			tree_handle_node_changed(cookies_tree, add,
-					true, false);
-	}
-	if (!cookies_init) {
-		tree_handle_node_changed(cookies_tree, node,
-				true, false);
-		tree_redraw_area(cookies_tree,
-				node->box.x - NODE_INSTEP,
-				0, NODE_INSTEP, 16384);
-	}
-	return true;
+	return false;
 }
 
 /**
- * Find an entry in the cookie tree
- *
- * \param url The URL to find
- * \return Pointer to node, or NULL if not found
+ * Update the theme details of the cookies window.
  */
-struct node *ro_gui_cookies_find(const char *url)
-{
-	struct node *node;
 
-	for (node = cookies_tree->root->child; node; node = node->next) {
-		if (!strcmp(url, node->data.text))
-			return node;
-	}
-	return NULL;
+void ro_gui_cookies_update_theme(void)
+{
+	ro_treeview_update_theme(cookies_window.tv);
 }
+
+/**
+ * Check if a particular window handle is the cookies window
+ *
+ * \param window  the window in question
+ * \return  true if this window is the cookies
+ */
+
+bool ro_gui_cookies_check_window(wimp_w window)
+{
+/* SF	if (cookies_window.w == window)
+		return true;
+	else*/
+		return false;
+}
+
+/**
+ * Check if a particular menu handle is the cookies menu
+ *
+ * \param  *menu		The menu in question.
+ * \return			true if this menu is the cookies menu
+ */
+
+bool ro_gui_cookies_check_menu(wimp_menu *menu)
+{
+	if (cookies_window.menu == menu)
+		return true;
+	else
+		return false;
+}
+

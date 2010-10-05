@@ -19,11 +19,12 @@
 #ifndef AMIGA_HISTORY_H
 #define AMIGA_HISTORY_H
 #include "desktop/tree.h"
+#include "desktop/history_global_core.h"
 
 #define GLOBAL_HISTORY_RECENT_URLS 16
 
 void ami_global_history_initialise(void);
 void ami_global_history_free(void);
 
-struct tree *global_history_tree;
+struct treeview_window *global_history_window;
 #endif

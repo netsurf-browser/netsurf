@@ -28,7 +28,10 @@
 #include "oslib/taskmanager.h"
 #include "oslib/wimp.h"
 #include "desktop/tree.h"
+#include "riscos/cookies.h"
+#include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/hotlist.h"
 #include "riscos/help.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
@@ -100,7 +103,7 @@ void ro_gui_interactive_help_request(wimp_message *message)
 	os_error *error;
 	const char *auto_text;
 	int i;
-	
+
 	/* check we aren't turned off */
 	if (!option_interactive_help)
 		return;
@@ -124,18 +127,17 @@ void ro_gui_interactive_help_request(wimp_message *message)
 		sprintf(message_token, "%s%i", auto_text, (int)icon);
 	else if (window == wimp_ICON_BAR)
 		sprintf(message_token, "HelpIconbar");
-	else if ((hotlist_tree) && (window == (wimp_w)hotlist_tree->handle)) {
-		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
+	else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
+		i = ro_treeview_get_help(message_data);
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpHotlist%i", i);
-	} else if ((global_history_tree) &&
-			(window == (wimp_w)global_history_tree->handle)) {
-		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
+	} else if (ro_gui_global_history_check_window(
+			message->data.data_xfer.w)) {
+		i = ro_treeview_get_help(message_data);
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpGHistory%i", i);
-	} else if ((cookies_tree) &&
-			(window == (wimp_w)cookies_tree->handle)) {
-		i = ro_gui_tree_help(message_data->pos.x, message_data->pos.y);
+	} else if (ro_gui_cookies_check_window(message->data.data_xfer.w)) {
+		i = ro_treeview_get_help(message_data);
 		sprintf(message_token,
 				(i >= 0) ? "HelpTree%i" :"HelpCookies%i", i);
 	} else if (ro_gui_window_lookup(window) != NULL)
@@ -173,11 +175,11 @@ void ro_gui_interactive_help_request(wimp_message *message)
 		sprintf(message_token, "HelpIconMenu");
 	else if (current_menu == browser_menu)
 		sprintf(message_token, "HelpBrowserMenu");
-	else if (current_menu == hotlist_menu)
+	else if (ro_gui_hotlist_check_menu(current_menu))
 		sprintf(message_token, "HelpHotlistMenu");
-	else if (current_menu == global_history_menu)
+	else if (ro_gui_global_history_check_menu(current_menu))
 		sprintf(message_token, "HelpGHistoryMenu");
-	else if (current_menu == cookies_menu)
+	else if (ro_gui_cookies_check_menu(current_menu))
 		sprintf(message_token, "HelpCookiesMenu");
 	else
 		return;
@@ -323,7 +325,7 @@ void ro_gui_interactive_help_start(void)
 	char *help_start;
 	wimp_t task = 0;
 	os_error *error;
-	
+
 	/* don't launch a second copy of anything */
 	if (ro_gui_interactive_help_available())
 		return;

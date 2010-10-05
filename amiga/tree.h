@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -22,15 +22,10 @@
 #include <exec/types.h>
 #include <intuition/classusr.h>
 #include "amiga/gui.h"
+#include "desktop/tree.h"
+#include "desktop/sslcert.h"
 
-struct treeview_window {
-	struct nsObject *node;
-	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
-	struct tree *tree;
-	struct List *listbrowser_list;
-};
+struct treeview_window;
 
 enum
 {
@@ -40,15 +35,15 @@ enum
 	AMI_TREE_SSLCERT
 };
 
-enum
-{
-	AMI_MOVE_UP,
-	AMI_MOVE_DOWN,
-	AMI_MOVE_OUT
-};
+struct treeview_window *ami_tree_create(uint8 flags,
+			struct sslcert_session_data *ssl_data);
+void ami_tree_destroy(struct treeview_window *twin);
+struct tree *ami_tree_get_tree(struct treeview_window *twin);
 
-void ami_open_tree(struct tree *tree,int type);
+void ami_tree_open(struct treeview_window *twin,int type);
 void ami_tree_close(struct treeview_window *twin);
 BOOL ami_tree_event(struct treeview_window *twin);
-void ami_recreate_listbrowser(struct treeview_window *twin);
+
+extern const struct treeview_table ami_tree_callbacks;
+
 #endif

@@ -89,9 +89,9 @@ void nsgtk_set_colour(colour c)
 			      g / 255.0, b / 255.0, 1.0);
 }
 
-/** Plot a caret.  
+/** Plot a caret.
  *
- * @note It is assumed that the plotters have been set up. 
+ * @note It is assumed that the plotters have been set up.
  */
 void nsgtk_plot_caret(int x, int y, int h)
 {
@@ -234,8 +234,12 @@ static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *
 	else
 		cairo_set_line_width(current_cr, style->stroke_width);
 
-	cairo_move_to(current_cr, x0 + 0.5, y0 + 0.5);
-	cairo_line_to(current_cr, x1 + 0.5, y1 + 0.5);
+	/* core expects horizontal and vertical lines to be on pixels, not
+	 * between pixels */
+	cairo_move_to(current_cr, (x0 == x1) ? x0 + 0.5 : x0,
+			(y0 == y1) ? y0 + 0.5 : y0);
+	cairo_line_to(current_cr, (x0 == x1) ? x1 + 0.5 : x1,
+			(y0 == y1) ? y1 + 0.5 : y1);
 	cairo_stroke(current_cr);
 
 	return true;
@@ -304,7 +308,7 @@ static bool nsgtk_plot_polygon(const int *p, unsigned int n, const plot_style_t 
 
 
 
-static bool nsgtk_plot_text(int x, int y, const char *text, size_t length, 
+static bool nsgtk_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	return nsfont_paint(x, y, text, length, fstyle);

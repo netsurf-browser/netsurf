@@ -1,5 +1,6 @@
 /*
  * Copyright 2004 Richard Wilson <not_ginger_matt@users.sourceforge.net>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -26,157 +27,167 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct url_data;
-struct cookie_data;
+#include "desktop/browser.h"
+#include "image/bitmap.h"
+
+struct hlcache_handle;
+
+/* Tree flags */
+enum tree_flags {
+	TREE_NO_FLAGS = 0,
+	TREE_NO_DRAGS = 1,
+	TREE_NO_FURNITURE = 2,
+	TREE_SINGLE_SELECT = 4,
+	TREE_NO_SELECT = 8,
+	TREE_MOVABLE = 16,
+	TREE_DELETE_EMPTY_DIRS = 32, /**< if the last child of a
+				      * directory is deleted the
+				      * directory will be deleted
+				      * too.
+				      */
+};
+
+/** A "flag" value to indicate the element data contains title
+ * text. This value should be the first node_element in every
+ * node. All other values should be different than this one. The term
+ * flag is misused as it is actually a value used by the API consumer
+ * to indicate teh type of data a node element contains.
+ */
+#define TREE_ELEMENT_TITLE	0x00
+
+/* these should be defined in front end code */
+extern const char tree_directory_icon_name[];
+extern const char tree_content_icon_name[];
+
+struct tree;
+struct node;
+struct node_element;
 
 typedef enum {
-	TREE_ELEMENT_URL,
-	TREE_ELEMENT_ADDED,
-	TREE_ELEMENT_LAST_VISIT,
-	TREE_ELEMENT_VISITS,
-	TREE_ELEMENT_VISITED,
-	TREE_ELEMENT_THUMBNAIL,
-	TREE_ELEMENT_TITLE,
-	TREE_ELEMENT_NAME,
-	TREE_ELEMENT_VALUE,
-	TREE_ELEMENT_COMMENT,
-	TREE_ELEMENT_DOMAIN,
-	TREE_ELEMENT_PATH,
-	TREE_ELEMENT_EXPIRES,
-	TREE_ELEMENT_LAST_USED,
-	TREE_ELEMENT_SECURE,
-	TREE_ELEMENT_VERSION,
-	TREE_ELEMENT_PERSISTENT,
-	TREE_ELEMENT_SSL
-} node_element_data;
-
-#define NODE_INSTEP 40
-
-struct node_sprite;
-struct toolbar;
-
-typedef enum {
-  	NODE_ELEMENT_TEXT,		/* <-- Text only */
-  	NODE_ELEMENT_TEXT_PLUS_SPRITE,	/* <-- Text and sprite */
-  	NODE_ELEMENT_THUMBNAIL,		/* <-- Bitmap only */
+	NODE_ELEMENT_TEXT,		/**< Text only */
+	NODE_ELEMENT_TEXT_PLUS_ICON,	/**< Text and icon */
+	NODE_ELEMENT_BITMAP		/**< Bitmap only */
 } node_element_type;
 
+typedef enum {
+	NODE_DELETE_ELEMENT_TXT, /**< The text of an element of the
+				  * node is being deleted */
+ 	NODE_DELETE_ELEMENT_IMG, /**< The bitmap or icon of a node is
+				  * being deleted */
+ 	NODE_LAUNCH, /**< The node has been launched */
+	NODE_ELEMENT_EDIT_FINISHING, /**< New text has to be accepted
+				      * or rejected.  */
+  	NODE_ELEMENT_EDIT_FINISHED /**< Editing of a node_element has
+				    * been finished. */
+} node_msg;
 
-struct node_element_box {
-	int x;				/* <-- X offset from origin */
-	int y;				/* <-- Y offset from origin */
-	int width;			/* <-- Element width */
-	int height;			/* <-- Element height */
+typedef enum {
+	NODE_CALLBACK_HANDLED,
+	NODE_CALLBACK_NOT_HANDLED,
+	NODE_CALLBACK_REJECT, /**< reject new text for node element
+			       * and leave editing mode. */
+	NODE_CALLBACK_CONTINUE /**< don't leave editig mode. */
+} node_callback_resp;
+
+/** Internal node message. */
+struct node_msg_data {
+	node_msg msg; /**< The type of message. */
+	unsigned int flag; /**< message flags. */
+	struct node *node; /**< tree node messsage concerns. */
+	union {
+		char *text; /**< textural data. */
+		void *bitmap; /**< bitmap data. */
+	} data; /**< The message data. */
 };
 
-
-struct node_element {
-  	struct node *parent;		/* <-- Parent node */
-  	node_element_type type;		/* <-- Element type */
-	struct node_element_box box;	/* <-- Element bounding box */
-	const char *text;		/* <-- Text for the element */
-	struct node_sprite *sprite;	/* <-- Sprite for the element */
-	struct node_element *next;	/* <-- Next node element */
-	node_element_data data;		/* <-- Data being represented */
+/** callbacks to perform necessary operations on treeview. */
+struct treeview_table {
+	void (*redraw_request)(int x, int y, int width, int height,
+			       void *data); /**< request a redraw. */
+	void (*resized)(struct tree *tree, int width, int height,
+			void *data); /**< resize treeview area. */
+	void (*scroll_visible)(int y, int height, void *data); /**< scroll visible treeview area. */
+	void (*get_window_dimensions)(int *width, int *height, void *data); /**< get dimensions of window */
 };
 
-
-struct node {
-  	bool selected;			/* <-- Whether the node is selected */
-  	bool expanded;			/* <-- Whether the node is expanded */
-  	bool folder;			/* <-- Whether the node is a folder */
-  	bool editable;			/* <-- Whether the node is editable */
-	bool retain_in_memory;		/* <-- Whether the node remains in memory after deletion */
-	bool deleted;			/* <-- Whether the node is currently deleted */
-	bool processing;		/* <-- Internal flag used when moving */
-	struct node_element_box box;	/* <-- Bounding box of all elements */
-	struct node_element data;	/* <-- Data to display */
-	struct node *parent;		/* <-- Parent entry (NULL for root) */
-	struct node *child;		/* <-- First child */
-	struct node *last_child;	/* <-- Last child */
-  	struct node *previous;		/* <-- Previous child of the parent */
-	struct node *next;		/* <-- Next child of the parent */
-
-};
-
-struct tree {
-	unsigned int handle;		/* <-- User assigned handle */
-	int offset_x;			/* <-- User assigned tree x offset */
-	int offset_y;			/* <-- User assigned tree y offset */
-	struct node *root;		/* <-- Tree root element */
-	int width;			/* <-- Tree width */
-	int height;			/* <-- Tree height */
-	int window_width;		/* <-- Tree window width */
-	int window_height;		/* <-- Tree window height */
-	bool no_drag;			/* <-- Tree items can't be dragged out */
-	bool no_vscroll;		/* <-- Tree has a vertical scroll only when needed */
-	bool no_furniture;		/* <-- Tree does not have connecting lines */
-	bool single_selection;		/* <-- There can only be one item selected */
-	int edit_handle;		/* <-- Handle for editing information */
-	uintptr_t textarea_handle;	/* <-- Handle for UTF-8 textarea */
-	bool movable;			/* <-- Whether nodes can be moved */
-	struct node_element *editing;	/* <-- Node element being edited */
-	struct node *temp_selection;	/* <-- Temporarily selected node */
-	struct toolbar *toolbar;	/* <-- Tree toolbar */
-};
-
+/**
+ * Informs the client about any events requiring his action
+ *
+ * \param user_data	the user data which was passed at tree creation
+ * \param msg_data	structure containing all the message information
+ * \return		the appropriate node_callback_resp response
+ */
+typedef node_callback_resp (*tree_node_user_callback)(void *user_data,
+		struct node_msg_data *msg_data);
 
 /* Non-platform specific code */
-void tree_initialise(struct tree *tree);
-void tree_initialise_nodes(struct tree *tree, struct node *root);
-void tree_handle_node_changed(struct tree *tree, struct node *node,
-		bool recalculate_sizes, bool expansion);
-void tree_handle_node_element_changed(struct tree *tree,
-		struct node_element *element);
-void tree_recalculate_node(struct tree *tree, struct node *node, bool recalculate_sizes);
-void tree_recalculate_node_positions(struct tree *tree, struct node *root);
-struct node *tree_get_node_at(struct node *root, int x, int y, bool *furniture);
-struct node_element *tree_get_node_element_at(struct node *node, int x, int y,
-		bool *furniture);
-struct node_element *tree_find_element(struct node *node, node_element_data data);
-void tree_move_selected_nodes(struct tree *tree, struct node *destination,
+
+/* Functions for creating/deleting tree primitives and for tree structure
+   manipulation */
+struct tree *tree_create(unsigned int flags,
+		const struct treeview_table *callbacks,
+  		void *client_data);
+struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
+		const char *title, bool editable, bool retain_in_memory,
+  		bool deleted);
+struct node *tree_create_leaf_node(struct tree *tree, struct node *parent, 
+		const char *title, bool editable, bool retain_in_memory,
+  		bool deleted);
+struct node_element *tree_create_node_element(struct node *parent,
+		node_element_type type, unsigned int flag, bool editable);
+void tree_link_node(struct tree *tree, struct node *link, struct node *node,
 		bool before);
-bool tree_has_selection(struct node *node);
-void tree_draw(struct tree *tree, int clip_x, int clip_y, int clip_width,
-		int clip_height);
-void tree_link_node(struct node *link, struct node *node, bool before);
-void tree_delink_node(struct node *node);
-struct node *tree_create_folder_node(struct node *parent, const char *title);
-struct node *tree_create_leaf_node(struct node *parent, const char *title);
-struct node *tree_create_URL_node(struct node *parent,
-		const char *url, const struct url_data *data,
-		const char *title);
-struct node *tree_create_URL_node_shared(struct node *parent,
-		const char *url, const struct url_data *data);
-struct node *tree_create_cookie_node(struct node *parent,
-		const struct cookie_data *data);
-void tree_set_node_sprite(struct node *node, const char *sprite,
-		const char *expanded);
-void tree_set_node_expanded(struct tree *tree, struct node *node, bool expanded);
-void tree_set_node_selected(struct tree *tree, struct node *node,
-		bool selected);
-void tree_handle_selection_area(struct tree *tree, int x, int y, int width,
-		int height, bool invert);
-void tree_delete_selected_nodes(struct tree *tree, struct node *node);
+void tree_delink_node(struct tree *tree, struct node *node);
+void tree_delete(struct tree *tree);
 void tree_delete_node(struct tree *tree, struct node *node, bool siblings);
-void tree_recalculate_size(struct tree *tree);
-bool tree_handle_expansion(struct tree *tree, struct node *node, bool expanded,
+
+/* setters and getters for properties and data */
+void tree_set_node_icon(struct tree *tree, struct node *node,
+		struct hlcache_handle *icon);
+void tree_set_node_expanded(struct tree *tree, struct node *node, bool expanded,
 		bool folder, bool leaf);
+void tree_set_node_selected(struct tree *tree, struct node *node, bool all,
+		bool selected);
+void tree_set_node_sort_function(struct tree *tree, struct node *node,
+		int (*sort) (struct node *, struct node *));
+void tree_set_node_user_callback(struct node *node,
+		tree_node_user_callback callback, void *data);
+void tree_set_redraw(struct tree *tree, bool redraw);
+bool tree_get_redraw(struct tree *tree);
+bool tree_node_has_selection(struct node *node);
+bool tree_node_is_deleted(struct node *node);
+bool tree_node_is_folder(struct node *node);
+void tree_update_node_element(struct tree *tree, struct node_element *element,
+		const char *text, void *bitmap);
+bool tree_update_element_text(struct tree *tree, struct node_element *element, char *text);
+const char *tree_node_element_get_text(struct node_element *element);
+struct node *tree_get_root(struct tree *tree);
+bool tree_is_edited(struct tree *tree);
+
+
+/* functions for traversing the tree */
+struct node *tree_node_get_child(struct node *node);
+struct node *tree_node_get_next(struct node *node);
+
+void tree_draw(struct tree *tree, int x, int y,
+		int clip_x, int clip_y, int clip_width, int clip_height);
+
+struct node_element *tree_node_find_element(struct node *node,
+		unsigned int flag, struct node_element *after);
+void tree_delete_selected_nodes(struct tree *tree, struct node *node);
 struct node *tree_get_selected_node(struct node *node);
 struct node *tree_get_link_details(struct tree *tree, int x, int y,
 		bool *before);
+void tree_launch_selected(struct tree *tree);
 
-
-/* Platform specific code */
-void tree_initialise_redraw(struct tree *tree);
-void tree_redraw_area(struct tree *tree, int x, int y, int width, int height);
-void tree_draw_line(int x, int y, int width, int height);
-void tree_draw_node_element(struct tree *tree, struct node_element *element);
-void tree_draw_node_expansion(struct tree *tree, struct node *node);
-void tree_recalculate_node_element(struct node_element *element);
-void tree_update_URL_node(struct node *node, const char *url,
-		const struct url_data *data);
-void tree_resized(struct tree *tree);
-void tree_set_node_sprite_folder(struct node *node);
-
+bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse,
+		int x, int y);
+void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
+		int x1, int y1);
+bool tree_keypress(struct tree *tree, uint32_t key);
+		
+int tree_alphabetical_sort(struct node *, struct node *);		
+void tree_start_edit(struct tree *tree, struct node_element *element);
+struct hlcache_handle *tree_load_icon(const char *name);
+		
 #endif

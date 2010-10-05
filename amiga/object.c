@@ -48,12 +48,22 @@ struct nsObject *AddObject(struct MinList *objlist,ULONG otype)
 	return(dtzo);
 }
 
-void DelObject(struct nsObject *dtzo)
+void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 {
 	Remove((struct Node *)dtzo);
-	if(dtzo->objstruct) FreeVec(dtzo->objstruct);
+	if(dtzo->objstruct && free_obj) FreeVec(dtzo->objstruct);
 	FreeVec(dtzo);
 	dtzo = NULL;
+}
+
+void DelObject(struct nsObject *dtzo)
+{
+	DelObjectInternal(dtzo, TRUE);
+}
+
+void DelObjectNoFree(struct nsObject *dtzo)
+{
+	DelObjectInternal(dtzo, FALSE);
 }
 
 void FreeObjList(struct MinList *objlist)

@@ -245,13 +245,11 @@ static bool urldb_iterate_partial_path(const struct path_data *parent,
 static bool urldb_iterate_entries_host(struct search_node *parent,
 		bool (*url_callback)(const char *url, 
 		const struct url_data *data),
-		bool (*cookie_callback)(const char *domain, 
-		const struct cookie_data *data));
+		bool (*cookie_callback)(const struct cookie_data *data));
 static bool urldb_iterate_entries_path(const struct path_data *parent,
 		bool (*url_callback)(const char *url, 
 		const struct url_data *data),
-		bool (*cookie_callback)(const char *domain, 
-		const struct cookie_data *data));
+		bool (*cookie_callback)(const struct cookie_data *data));
 
 /* Insertion */
 static struct host_part *urldb_add_host_node(const char *part,
@@ -1390,8 +1388,7 @@ void urldb_iterate_entries(bool (*callback)(const char *url,
  *
  * \param callback Function to callback for each entry
  */
-void urldb_iterate_cookies(bool (*callback)(const char *domain, 
-		const struct cookie_data *data))
+void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *data))
 {
 	int i;
 
@@ -1415,8 +1412,7 @@ void urldb_iterate_cookies(bool (*callback)(const char *domain,
 bool urldb_iterate_entries_host(struct search_node *parent,
 		bool (*url_callback)(const char *url,
 				const struct url_data *data),
-		bool (*cookie_callback)(const char *domain,
-				const struct cookie_data *data))
+		bool (*cookie_callback)(const struct cookie_data *data))
 {
 	if (parent == &empty)
 		return true;
@@ -1452,11 +1448,11 @@ bool urldb_iterate_entries_host(struct search_node *parent,
 bool urldb_iterate_entries_path(const struct path_data *parent,
 		bool (*url_callback)(const char *url,
 				const struct url_data *data),
-		bool (*cookie_callback)(const char *domain,
-				const struct cookie_data *data))
+		bool (*cookie_callback)(const struct cookie_data *data))
 {
 	const struct path_data *p = parent;
-
+	const struct cookie_data *c;
+	
 	do {
 		if (p->children != NULL) {
 			/* Drill down into children */
@@ -1478,11 +1474,10 @@ bool urldb_iterate_entries_path(const struct path_data *parent,
 						(const struct url_data *) u))
 					return false;
 			} else {
-				if (p->cookies && !cookie_callback(
-						p->cookies->domain,
-						(const struct cookie_data *) 
-							p->cookies))
-					return false;
+				c = (const struct cookie_data *)p->cookies;
+				for (; c != NULL; c = c->next)
+					if (!cookie_callback(c))
+						return false;
 			}
 
 			/* Now, find next node to process. */
@@ -2447,9 +2442,7 @@ char *urldb_get_cookie(const char *url)
 	url_func_result res;
 	int i;
 
-	assert(url);
-
-//	LOG(("%s", url));
+	assert(url != NULL);
 
 	urldb_add_url(url);
 
@@ -2529,13 +2522,10 @@ char *urldb_get_cookie(const char *url)
 					version = c->version;
 
 				c->last_used = now;
-				cookies_update(c->domain, 
-						(struct cookie_data *)c);
+				cookies_schedule_update((struct cookie_data *)c);
 			}
 		}
 	}
-
-//	LOG(("%s", ret));
 
 	/* Now consider cookies whose paths prefix-match ours */
 	for (p = p->parent; p; p = p->parent) {
@@ -2546,7 +2536,6 @@ char *urldb_get_cookie(const char *url)
 				continue;
 
 			for (c = q->cookies; c; c = c->next) {
-//				LOG(("%p: %s=%s", c, c->name, c->value));
 				if (c->expires != 1 && c->expires < now)
 					/* cookie has expired => ignore */
 					continue;
@@ -2565,8 +2554,7 @@ char *urldb_get_cookie(const char *url)
 					version = c->version;
 
 				c->last_used = now;
-				cookies_update(c->domain,
-						(struct cookie_data *)c);
+				cookies_schedule_update((struct cookie_data *)c);
 			}
 		}
 
@@ -2606,12 +2594,10 @@ char *urldb_get_cookie(const char *url)
 				version = c->version;
 
 			c->last_used = now;
-			cookies_update(c->domain, (struct cookie_data *)c);
+			cookies_schedule_update((struct cookie_data *)c);
 		}
 
 	}
-
-//	LOG(("%s", ret));
 
 	/* Finally consider domain cookies for hosts which domain match ours */
 	for (h = (const struct host_part *)p; h && h != &db_root;
@@ -2638,11 +2624,9 @@ char *urldb_get_cookie(const char *url)
 				version = c->version;
 
 			c->last_used = now;
-			cookies_update(c->domain, (struct cookie_data *)c);
+			cookies_schedule_update((struct cookie_data *)c);
 		}
 	}
-
-//	LOG(("%s", ret));
 
 	if (count == 0) {
 		/* No cookies found */
@@ -2711,8 +2695,6 @@ bool urldb_set_cookie(const char *header, const char *url,
 	url_func_result res;
 
 	assert(url && header);
-
-//	LOG(("'%s' : '%s'", url, header));
 
 	/* strip fragment */
 	urlt = strdup(url);
@@ -2928,7 +2910,7 @@ bool urldb_set_cookie(const char *header, const char *url,
 		/* Now insert into database */
 		if (!urldb_insert_cookie(c, scheme, urlt))
 			goto error;
-		cookies_update(c->domain, (struct cookie_data *)c);
+		cookies_schedule_update((struct cookie_data *)c);
 	} while (cur < end);
 
 	free(host);
@@ -3378,6 +3360,8 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 				d->prev->next = d->next;
 			else
 				p->cookies = d->next;
+			
+			cookies_remove((struct cookie_data *)d);
 			urldb_free_cookie(d);
 			urldb_free_cookie(c);
 		} else {
@@ -3392,8 +3376,11 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 				c->prev->next = c;
 			else
 				p->cookies = c;
+			
+			cookies_remove((struct cookie_data *)d);
 			urldb_free_cookie(d);
-//			LOG(("%p: %s=%s", c, c->name, c->value));
+			
+			cookies_schedule_update((struct cookie_data *)c);
 		}
 	} else {
 		c->prev = p->cookies_end;
@@ -3403,7 +3390,6 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 		else
 			p->cookies = c;
 		p->cookies_end = c;
-//		LOG(("%p: %s=%s", c, c->name, c->value));
 	}
 
 	return true;
@@ -3771,9 +3757,7 @@ void urldb_delete_cookie_paths(const char *domain, const char *path,
 				else
 					p->cookies_end = c->prev;
 
-				if (p->cookies == NULL)
-					cookies_update(domain, NULL);
-
+				cookies_remove((struct cookie_data *)c);
 				urldb_free_cookie(c);
 
 				return;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2005 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -31,6 +32,7 @@
 #include <string.h>
 #include "oslib/os.h"
 #include "oslib/wimp.h"
+#include "riscos/menus.h"
 
 #define IS_WIMP_KEY (1u<<31)
 
@@ -45,12 +47,14 @@ bool ro_gui_wimp_event_set_user_data(wimp_w w, void *user);
 void *ro_gui_wimp_event_get_user_data(wimp_w w);
 
 bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
-		wimp_selection *selection);
+		wimp_selection *selection, menu_action action);
 bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer);
 bool ro_gui_wimp_event_keypress(wimp_key *key);
 bool ro_gui_wimp_event_open_window(wimp_open *open);
 bool ro_gui_wimp_event_close_window(wimp_w w);
 bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw);
+
+bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer);
 
 bool ro_gui_wimp_event_register_numeric_field(wimp_w w, wimp_i i, wimp_i up,
 		wimp_i down, int min, int max, int stepping,
@@ -78,8 +82,18 @@ bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 		void (*callback)(wimp_draw *redraw));
 bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
 		void (*callback)(wimp_w w, wimp_i i));
+bool ro_gui_wimp_event_register_window_menu(wimp_w w, wimp_menu *m,
+		void (*callback_prepare)(wimp_w w, wimp_menu *m),
+		bool (*callback_selection)(wimp_w w, wimp_menu *m,
+				wimp_selection *s, menu_action action),
+		void (*callback_close)(wimp_w w, wimp_menu *m),
+		void (*callback_warning)(wimp_w w, wimp_menu *m,
+				wimp_selection *s, menu_action action),
+		bool menu_auto);
 
-void ro_gui_wimp_event_menus_closed(void);
+bool ro_gui_wimp_event_submenu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+void ro_gui_wimp_event_menus_closed(wimp_w w, wimp_i i, wimp_menu *menu);
 void ro_gui_wimp_event_register_submenu(wimp_w w);
 
 #endif

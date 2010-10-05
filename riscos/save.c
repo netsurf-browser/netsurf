@@ -37,6 +37,8 @@
 #include "oslib/wimpspriteop.h"
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "desktop/hotlist.h"
+#include "desktop/history_global_core.h"
 #include "desktop/netsurf.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
@@ -630,9 +632,9 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 				while (!dest_ok && (box = box_at_point(box,
 						pos.x, pos.y, &box_x, &box_y,
 						&h))) {
-					if (box->style && 
+					if (box->style &&
 							css_computed_visibility(
-								box->style) == 
+								box->style) ==
 							CSS_VISIBILITY_HIDDEN)
 						continue;
 
@@ -897,8 +899,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 					LINK_TEXT, path);
 
 		case GUI_SAVE_HOTLIST_EXPORT_HTML:
-			if (!options_save_tree(hotlist_tree, path,
-					"NetSurf hotlist"))
+			if (!hotlist_export(path))
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
@@ -906,8 +907,7 @@ bool ro_gui_save_content(hlcache_handle *h, char *path, bool force_overwrite)
 						error->errnum, error->errmess));
 			break;
 		case GUI_SAVE_HISTORY_EXPORT_HTML:
-			if (!options_save_tree(global_history_tree, path,
-					"NetSurf history"))
+			if (!history_global_export(path))
 				return false;
 			error = xosfile_set_type(path, 0xfaf);
 			if (error)
@@ -1346,7 +1346,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	}
 
 	/* leafname */
-	if (url && url_nice(url, &nice, option_strip_extensions) == 
+	if (url && url_nice(url, &nice, option_strip_extensions) ==
 			URL_FUNC_OK) {
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')

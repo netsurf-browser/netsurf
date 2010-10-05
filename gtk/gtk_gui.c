@@ -49,20 +49,25 @@
 #include "desktop/browser.h"
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
+#include "desktop/history_global_core.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/searchweb.h"
+#include "desktop/sslcert.h"
 #include "desktop/textinput.h"
-#include "gtk/gtk_gui.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_completion.h"
+#include "gtk/gtk_cookies.h"
+#include "gtk/gtk_download.h"
+#include "gtk/gtk_filetype.h"
+#include "gtk/gtk_gui.h"
+#include "gtk/gtk_history.h"
+#include "gtk/gtk_hotlist.h"
+#include "gtk/gtk_throbber.h"
+#include "gtk/gtk_treeview.h"
 #include "gtk/gtk_window.h"
 #include "gtk/options.h"
-#include "gtk/gtk_throbber.h"
-#include "gtk/gtk_history.h"
-#include "gtk/gtk_filetype.h"
-#include "gtk/gtk_download.h"
 #include "gtk/gtk_schedule.h"
 
 #include "render/box.h"
@@ -101,7 +106,9 @@ static struct browser_window *select_menu_bw;
 static struct form_control *select_menu_control;
 
 static void nsgtk_ssl_accept(GtkButton *w, gpointer data);
-static void nsgtk_ssl_reject(GtkButton *w, gpointer data);
+static void nsgtk_ssl_reject(GtkWidget *w, gpointer data);
+static gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event,
+		gpointer data);
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data);
 #ifdef WITH_PDF_EXPORT
@@ -377,6 +384,24 @@ static void check_options(char **respath)
         	LOG(("Using '%s' as download directory", hdir));
         	option_downloads_directory = hdir;
 	}
+	
+	if (!option_tree_icons_dir) {
+		sfindresourcedef(respath, buf, "icons/", "~/.netsurf/");
+		LOG(("Using '%s' as Tree icons dir", buf));
+		option_tree_icons_dir = strdup(buf);
+	}
+	if (!option_tree_icons_dir)
+		die("Failed initialising tree icons option");
+	
+	
+	if (!option_hotlist_path) {
+		sfindresourcedef(respath, buf, "Hotlist", "~/.netsurf/");
+		LOG(("Using '%s' as Hotlist file", buf));
+		option_hotlist_path = strdup(buf);		
+	}
+	if (!option_hotlist_path)
+		die("Failed initialising hotlist option");	
+	
 
 	sfindresourcedef(respath, buf, "Print", "~/.netsurf/");
 	LOG(("Using '%s' as Print Settings file", buf));
@@ -482,6 +507,10 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	if (nsgtk_download_init() == false)
 		die("Unable to initialise download window.\n");
+
+	nsgtk_cookies_init();
+	nsgtk_hotlist_init();
+	sslcert_init();
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;
@@ -642,11 +671,16 @@ void gui_quit(void)
 	nsgtk_download_destroy();
 	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_file);
+	nsgtk_cookies_destroy();
+	nsgtk_history_destroy();
+	nsgtk_hotlist_destroy();
+	sslcert_cleanup();
 	free(default_stylesheet_url);
 	free(quirks_stylesheet_url);
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);
+	free(option_tree_icons_dir);
 	free(print_options_file_location);
 	free(search_engines_file_location);
 	free(search_default_ico_location);
@@ -744,73 +778,88 @@ void die(const char * const error)
 }
 
 
-void hotlist_visited(hlcache_handle *content)
-{
-}
-
 void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw)
-{
+{	
+	static struct nsgtk_treeview *ssl_window;	
+	struct sslcert_session_data *data;
 	GladeXML *x = glade_xml_new(glade_ssl_file_location, NULL, NULL);
-	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndSSLProblem"));
 	GtkButton *accept, *reject;
-	void **session = calloc(sizeof(void *), 5);
+	void **session = calloc(sizeof(void *), 3);
+	GtkWindow *window;
+	GtkScrolledWindow *scrolled;
+	GtkDrawingArea *drawing_area;
 
-	session[0] = strdup(url);
-	session[1] = cb;
-	session[2] = cbpw;
-	session[3] = x;
-	session[4] = wnd;
+	data = sslcert_create_session_data(num, url, cb, cbpw);
+		
+	window = GTK_WINDOW(
+			glade_xml_get_widget(x,"wndSSLProblem"));
+	scrolled = GTK_SCROLLED_WINDOW(
+			glade_xml_get_widget(x,"SSLScrolled"));
+	drawing_area = GTK_DRAWING_AREA(
+			glade_xml_get_widget(x,"SSLDrawingArea"));
 
+
+	ssl_window = nsgtk_treeview_create(sslcert_get_tree_flags(),
+			window, scrolled, drawing_area);
+	
+	if (ssl_window == NULL)
+		return;
+	
+	sslcert_load_tree(nsgtk_treeview_get_tree(ssl_window), certs, data);
+	
 	accept = GTK_BUTTON(glade_xml_get_widget(x, "sslaccept"));
-	reject = GTK_BUTTON(glade_xml_get_widget(x, "sslreject"));
+	reject = GTK_BUTTON(glade_xml_get_widget(x, "sslreject"));	
 
-	g_signal_connect(G_OBJECT(accept), "clicked",
-			G_CALLBACK(nsgtk_ssl_accept), (gpointer)session);
-	g_signal_connect(G_OBJECT(reject), "clicked",
-			G_CALLBACK(nsgtk_ssl_reject), (gpointer)session);
-
-	gtk_widget_show(GTK_WIDGET(wnd));
+	session[0] = x;
+	session[1] = ssl_window;
+	session[2] = data;
+	
+#define CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
+	
+	CONNECT(accept, "clicked", nsgtk_ssl_accept, session);
+	CONNECT(reject, "clicked", nsgtk_ssl_reject, session);
+ 	CONNECT(window, "delete_event", G_CALLBACK(nsgtk_ssl_delete_event),
+			(gpointer)session);
+	
+	gtk_widget_show(GTK_WIDGET(window));	
 }
-
 
 void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 {
 	void **session = data;
-	char *url = session[0];
-	nserror (*cb)(bool proceed, void *pw) = session[1];
-	void *cbpw = session[2];
-	GladeXML *x = session[3];
-	GtkWindow *wnd = session[4];
+	GladeXML *x = session[0];
+	struct nsgtk_treeview *wnd = session[1];
+	struct sslcert_session_data *ssl_data = session[2];
 
-  	urldb_set_cert_permissions(url, true);
-
-	cb(true, cbpw);
-
-	gtk_widget_destroy(GTK_WIDGET(wnd));
+	sslcert_accept(ssl_data);
+  		
+	nsgtk_treeview_destroy(wnd);
 	g_object_unref(G_OBJECT(x));
-	free(url);
 	free(session);
 }
 
-
-void nsgtk_ssl_reject(GtkButton *w, gpointer data)
+void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
 {
 	void **session = data;
-	nserror (*cb)(bool proceed, void *pw) = session[1];
-	void *cbpw = session[2];
-	GladeXML *x = session[3];
-	GtkWindow *wnd = session[4];
+	GladeXML *x = session[0];
+	struct nsgtk_treeview *wnd = session[1];
+	struct sslcert_session_data *ssl_data = session[2];
 
-	cb(false, cbpw);
-
-	gtk_widget_destroy(GTK_WIDGET(wnd));
+	sslcert_reject(ssl_data);
+	
+	nsgtk_treeview_destroy(wnd);
 	g_object_unref(G_OBJECT(x));
-	free(session[0]);
 	free(session);
 }
 
+gboolean nsgtk_ssl_delete_event(GtkWidget *w, GdkEvent  *event, gpointer data)
+{
+	nsgtk_ssl_reject(w, data);
+	return FALSE;
+}
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 		char **result)
@@ -881,12 +930,6 @@ char *url_to_path(const char *url)
 	}
 
 	return respath;
-}
-
-
-bool cookies_update(const char *domain, const struct cookie_data *data)
-{
-	return true;
 }
 
 #ifdef WITH_PDF_EXPORT

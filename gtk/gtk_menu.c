@@ -397,6 +397,7 @@ static struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group,
 		free(ret);
 		return NULL;
 	}
+
 	IMAGE_ITEM(nav, back, gtkBack, ret, group);
 	IMAGE_ITEM(nav, forward, gtkForward, ret, group);
 	IMAGE_ITEM(nav, home, gtkHome, ret, group);
@@ -406,6 +407,8 @@ static struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group,
 	ADD_SEP(nav, ret);
 	IMAGE_ITEM(nav, addbookmarks, gtkAddBookMarks, ret, group);
 	IMAGE_ITEM(nav, showbookmarks, gtkShowBookMarks, ret, group);
+	ADD_SEP(nav, ret);
+	IMAGE_ITEM(nav, showcookies, gtkShowCookies, ret, group);
 	ADD_SEP(nav, ret);
 	IMAGE_ITEM(nav, openlocation, gtkOpenLocation, ret, group);
 

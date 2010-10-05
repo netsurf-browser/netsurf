@@ -189,6 +189,8 @@ ResetUsage:Reset statistics
 New:New
 Expand:Expand
 Collapse:Collapse
+Tree:Tree
+TreeExport:Export...
 
 # New hotlist entry menu
 #
@@ -200,6 +202,7 @@ Link:Address
 All:All
 Folders:Directories
 Links:Addresses
+Domains:Domains
 
 # Other menus
 #
@@ -332,6 +335,7 @@ TreeNewFolder:New directory
 TreeLaunch:Visit URL
 TreeDelete:Delete
 
+
 # Tree export
 #
 TreeHotlist:NetSurf hotlist
@@ -374,6 +378,13 @@ DateYesterday:Yesterday
 Date1Week:Last week
 Date2Week:2 weeks ago
 Date3Week:3 weeks ago
+Sunday:Sunday
+Monday:Monday
+Tuesday:Tuesday
+Wednesday:Wednesday
+Thursday:Thursday
+Friday:Friday
+Saturday:Saturday
 
 
 # Download user interface tokens
@@ -534,6 +545,8 @@ gtkGlobalHistoryAccel:<ctrl><shift>h
 gtkAddBookMarks:_Add to Bookmarks…
 gtkShowBookMarks:_Show Bookmarks…
 gtkShowBookMarksAccel:F6
+gtkShowCookies:Show _Cookies…
+gtkShowCookiesAccel:F9
 gtkOpenLocation:_Open Location…
 gtkOpenLocationAccel:<ctrl>l
 
@@ -607,15 +620,15 @@ Cancel:Cancel
 #
 SSLCerts:SSL certificates
 SSLError:NetSurf failed to verify the authenticity of an SSL certificate. Please verify the details presented below.
-Subject:Subject
-Issuer:Issuer
-Version:Version
-ValidFrom:Valid from
-ValidTo:Valid until
-Type:Type
-Serial:Serial
-Accept:Accept
-Reject:Reject
+SSL_Certificate_Subject:Subject: %s
+SSL_Certificate_Issuer:Issuer: %s
+SSL_Certificate_Version:Version: %ld
+SSL_Certificate_ValidFrom:Valid from: %s
+SSL_Certificate_ValidTo:Valid until: %s
+SSL_Certificate_Type:Type: %i
+SSL_Certificate_Serial:Serial: %ld
+SSL_Certificate_Accept:Accept
+SSL_Certificate_Reject:Reject
 
 
 # Content
@@ -723,7 +736,7 @@ Resolvers:No domain name servers are configured, so only browsing local files wi
 NoDiscSpace:Not enough space available on disc.
 Template:A window template is missing from the Templates file. Please reinstall NetSurf.
 HotlistSaveError:The hotlist was unable to be correctly saved.
-HotlistLoadError:The hotlist was unable to be correctly loaded.
+TreeLoadError:The tree was unable to be correctly loaded.
 NoDirError:%s is not a directory
 NoPathError:To save, drag the icon to a directory display
 NoNameError:Please enter a name

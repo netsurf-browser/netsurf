@@ -38,8 +38,11 @@
 #include "oslib/wimpspriteop.h"
 #include "content/content.h"
 #include "desktop/gui.h"
+#include "riscos/cookies.h"
 #include "riscos/dialog.h"
+#include "riscos/global_history.h"
 #include "riscos/gui.h"
+#include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
 #include "riscos/theme.h"
@@ -585,9 +588,9 @@ bool ro_gui_theme_apply(struct theme_descriptor *descriptor)
 
 	/* apply the theme to all the current windows */
 	ro_gui_window_update_theme();
-	ro_gui_tree_update_theme(hotlist_tree);
-	ro_gui_tree_update_theme(global_history_tree);
-	ro_gui_tree_update_theme(cookies_tree);
+	ro_gui_cookies_update_theme();
+	ro_gui_global_history_update_theme();
+	ro_gui_hotlist_update_theme();
 	ro_gui_theme_close(theme_previous, false);
 	return true;
 }
@@ -944,14 +947,16 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
 	 				ro_gui_toolbar_click);
 	 		break;
-		case THEME_HOTLIST_TOOLBAR:
-		case THEME_HOTLIST_EDIT_TOOLBAR:
-		case THEME_HISTORY_TOOLBAR:
-	  	case THEME_HISTORY_EDIT_TOOLBAR:
-		case THEME_COOKIES_TOOLBAR:
-	  	case THEME_COOKIES_EDIT_TOOLBAR:
-			ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
-					ro_gui_tree_toolbar_click);
+	 	case THEME_HOTLIST_TOOLBAR:
+	 	case THEME_HOTLIST_EDIT_TOOLBAR:
+	 	case THEME_HISTORY_TOOLBAR:
+	 	case THEME_HISTORY_EDIT_TOOLBAR:
+	 	case THEME_COOKIES_TOOLBAR:
+	 	case THEME_COOKIES_EDIT_TOOLBAR:
+	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
+	 				ro_gui_treeview_toolbar_click);
+	 		break;
+		default:
 			break;
 	}
 
@@ -1322,6 +1327,7 @@ bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width)
 				xwimp_force_redraw(toolbar->parent_handle,
 					0, -16384, 16384, 16384);
 		}
+
 	}
 
 	/*	Reformat the buttons starting with the throbber

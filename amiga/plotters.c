@@ -91,7 +91,7 @@ void ami_cairo_set_colour(cairo_t *cr,colour c)
 void ami_cairo_set_solid(cairo_t *cr)
 {
 	double dashes = 0;
-	
+
 	cairo_set_dash(glob->cr, &dashes, 0, 0);
 }
 
@@ -240,7 +240,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
                         glob->rp.LinePtrn = PATT_DASH;
                         break;
                 }
-		
+
 		SetRPAttrs(&glob->rp,
 			   RPTAG_APenColor,
 			   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
@@ -272,7 +272,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
                         break;
                 }
 
-                if (style->stroke_width == 0) 
+                if (style->stroke_width == 0)
                         cairo_set_line_width(glob->cr, 1);
                 else
                         cairo_set_line_width(glob->cr, style->stroke_width);
@@ -337,13 +337,17 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		break;
 	}
 
-	if (style->stroke_width == 0) 
+	if (style->stroke_width == 0)
 		cairo_set_line_width(glob->cr, 1);
 	else
 		cairo_set_line_width(glob->cr, style->stroke_width);
 
-	cairo_move_to(glob->cr, x0 + 0.5, y0 + 0.5);
-	cairo_line_to(glob->cr, x1 + 0.5, y1 + 0.5);
+	/* core expects horizontal and vertical lines to be on pixels, not
+	 * between pixels */
+	cairo_move_to(current_cr, (x0 == x1) ? x0 + 0.5 : x0,
+			(y0 == y1) ? y0 + 0.5 : y0);
+	cairo_line_to(current_cr, (x0 == x1) ? x1 + 0.5 : x1,
+			(y0 == y1) ? y1 + 0.5 : y1);
 	cairo_stroke(glob->cr);
 #endif
 	return true;
@@ -426,7 +430,7 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 	return true;
 }
 
-bool ami_text(int x, int y, const char *text, size_t length, 
+bool ami_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
 	#ifdef AMI_PLOTTER_DEBUG
@@ -459,7 +463,7 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 			   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
 			   TAG_DONE);
 
-		DrawEllipse(&glob->rp,x,y,radius,radius); 
+		DrawEllipse(&glob->rp,x,y,radius,radius);
 	}
 #else
 	if (style->fill_type != PLOT_OP_TYPE_NONE) {

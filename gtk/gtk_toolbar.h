@@ -74,6 +74,7 @@ TOOLPROTO(localhistory);
 TOOLPROTO(globalhistory);
 TOOLPROTO(addbookmarks);
 TOOLPROTO(showbookmarks);
+TOOLPROTO(showcookies);
 TOOLPROTO(openlocation);
 TOOLPROTO(nexttab);
 TOOLPROTO(prevtab);

@@ -121,7 +121,7 @@ void ami_theme_throbber_setup(void)
 	char throbberfile[1024];
 	Object *dto;
 
-	ami_get_theme_filename(throbberfile,"theme_throbber");
+	ami_get_theme_filename(throbberfile,"theme_throbber",false);
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
 	if(throbber_update_interval == 0) throbber_update_interval = 100;
@@ -170,15 +170,20 @@ void ami_theme_throbber_free(void)
 	p96FreeBitMap(throbber);
 }
 
-void ami_get_theme_filename(char *filename, char *themestring)
+void ami_get_theme_filename(char *filename, char *themestring, bool protocol)
 {
+	if(protocol)
+		strcpy(filename,"file:///");
+	else
+		strcpy(filename,"");
+
 	if(messages_get(themestring)[0] == '*')
 	{
-		strncpy(filename, messages_get(themestring) + 1, 100);
+		strncat(filename,messages_get(themestring)+1,100);
 	}
 	else
 	{
-		strcpy(filename, option_theme);
+		strcat(filename, option_theme);
 		AddPart(filename, messages_get(themestring), 100);
 	}
 }
@@ -273,7 +278,7 @@ void ami_init_mouse_pointers(void)
 
 		if(option_truecolour_mouse_pointers)
 		{
-			ami_get_theme_filename(&ptrfname,ptrs32[i]);
+			ami_get_theme_filename(&ptrfname,ptrs32[i], false);
 			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
 			{
 				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))
@@ -325,7 +330,7 @@ void ami_init_mouse_pointers(void)
 
 		if(!mouseptrobj[i])
 		{
-			ami_get_theme_filename(ptrfname,ptrs[i]);
+			ami_get_theme_filename(ptrfname,ptrs[i], false);
 			if(ptrfile = Open(ptrfname,MODE_OLDFILE))
 			{
 				int mx,my;

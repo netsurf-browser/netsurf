@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2009 Paul Blokus <paul_pl@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,8 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/browser.h"
+/** \file
+ * GTK hotlist (interface).
+ */
 
-void hotlist_visited(struct hlcache_handle *content)
-{
-}
+#ifndef __NSGTK_HOTLIST_H__
+#define __NSGTK_HOTLIST_H__
+
+#include <gtk/gtk.h>
+
+extern GtkWindow *wndHotlist;
+
+void nsgtk_hotlist_init(void);
+void nsgtk_hotlist_destroy(void);
+
+#endif /* __NSGTK_HOTLIST_H__ */

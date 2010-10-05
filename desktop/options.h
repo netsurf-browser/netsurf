@@ -85,6 +85,7 @@ extern int option_toolbar_status_width;
 extern int option_scale;
 extern bool option_incremental_reflow;
 extern unsigned int option_min_reflow_period;
+extern char *option_tree_icons_dir;
 extern bool option_core_select_menu;
 
 extern int option_margin_top;
@@ -113,9 +114,5 @@ extern bool option_suppress_curl_debug;
 void options_read(const char *path);
 void options_write(const char *path);
 void options_dump(void);
-
-struct tree *options_load_tree(const char *filename);
-bool options_save_tree(struct tree *tree, const char *filename,
-		const char *page_title);
 
 #endif

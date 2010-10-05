@@ -48,6 +48,7 @@ struct nsObject
 struct MinList *NewObjList(void);
 struct nsObject *AddObject(struct MinList *objlist,ULONG otype);
 void DelObject(struct nsObject *dtzo);
+void DelObjectNoFree(struct nsObject *dtzo);
 void FreeObjList(struct MinList *objlist);
 
 #endif

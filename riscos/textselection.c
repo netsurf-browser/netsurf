@@ -183,7 +183,8 @@ void ro_gui_selection_drag_end(struct gui_window *g, wimp_dragged *drag)
 
 	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
 		browser_window_mouse_drag_end(g->bw,
-				ro_gui_mouse_click_state(pointer.buttons),
+				ro_gui_mouse_click_state(pointer.buttons,
+				wimp_BUTTON_CLICK_DRAG),
 				pos.x, pos.y);
 }
 
@@ -542,8 +543,8 @@ void ro_gui_selection_dragging(wimp_message *message)
 	int box_x = 0;
 	int box_y = 0;
 
-	/* with autoscrolling, we will probably need to remember the 
-	 * gui_window and override the drag->w window handle which 
+	/* with autoscrolling, we will probably need to remember the
+	 * gui_window and override the drag->w window handle which
 	 * could be any window on the desktop */
 	g = ro_gui_window_lookup(drag->w);
 
@@ -566,14 +567,14 @@ void ro_gui_selection_dragging(wimp_message *message)
 			html_get_box_tree(h)) {
 		struct box *box = html_get_box_tree(h);
 
-		while ((box = box_at_point(box, pos.x, pos.y, 
+		while ((box = box_at_point(box, pos.x, pos.y,
 				&box_x, &box_y, &h))) {
-			if (box->style && 
-					css_computed_visibility(box->style) == 
+			if (box->style &&
+					css_computed_visibility(box->style) ==
 					CSS_VISIBILITY_HIDDEN)
 				continue;
 
-			if (box->gadget && 
+			if (box->gadget &&
 					box->gadget->type == GADGET_TEXTAREA) {
 				textarea = box;
 				gadget_box_x = box_x;
@@ -594,10 +595,10 @@ void ro_gui_selection_dragging(wimp_message *message)
 			gui_window_set_pointer(g, GUI_POINTER_CARET);
 
 		text_box = textarea_get_position(textarea, pos.x - gadget_box_x,
-					pos.y - gadget_box_y, 
+					pos.y - gadget_box_y,
 					&char_offset, &pixel_offset);
 
-		caret_set_position(&ghost_caret, bw, text_box, 
+		caret_set_position(&ghost_caret, bw, text_box,
 				char_offset, pixel_offset);
 
 		drag_claimed = true;
@@ -613,16 +614,16 @@ void ro_gui_selection_dragging(wimp_message *message)
 		wimp_full_message_drag_claim claim;
 		os_error *error;
 
-		claim.size = 
+		claim.size =
 			offsetof(wimp_full_message_drag_claim, file_types) + 8;
 		claim.your_ref = drag->my_ref;
 		claim.action = message_DRAG_CLAIM;
-		claim.flags = wimp_DRAG_CLAIM_POINTER_CHANGED | 
+		claim.flags = wimp_DRAG_CLAIM_POINTER_CHANGED |
 				wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX;
 		claim.file_types[0] = osfile_TYPE_TEXT;
 		claim.file_types[1] = ~0;
 
-		error = xwimp_send_message(wimp_USER_MESSAGE, 
+		error = xwimp_send_message(wimp_USER_MESSAGE,
 				(wimp_message *) &claim, drag->sender);
 		if (error) {
 			LOG(("xwimp_send_message: 0x%x: %s",

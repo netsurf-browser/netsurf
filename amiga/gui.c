@@ -143,6 +143,8 @@ BOOL screen_closed = FALSE;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 
+const char tree_directory_icon_name[100];
+const char tree_content_icon_name[100];
 extern colour scroll_widget_fg_colour;
 extern colour scroll_widget_bg_colour;
 extern colour scroll_widget_arrow_colour;
@@ -324,9 +326,6 @@ void ami_set_options(void)
 	if((!option_url_file) || (option_url_file[0] == '\0'))
 		option_url_file = (char *)strdup("PROGDIR:Resources/URLs");
 
-	if((!option_recent_file) || (option_recent_file[0] == '\0'))
-		option_recent_file = (char *)strdup("PROGDIR:Resources/Recent");
-
 /*
 	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
 		option_cookie_jar = (char *)strdup("PROGDIR:Resources/CookieJar");
@@ -453,7 +452,6 @@ void gui_init(int argc, char** argv)
 
 	plot=amiplot;
 
-	ami_init_menulabs();
 	if(option_context_menu) ami_context_menu_init();
 
 	schedule_list = NewObjList();
@@ -462,15 +460,6 @@ void gui_init(int argc, char** argv)
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
-	if(lock = Lock(option_hotlist_file,SHARED_LOCK))
-	{
-		UnLock(lock);
-		hotlist = options_load_tree(option_hotlist_file);
-	}
-
-	if(!hotlist) ami_hotlist_init(&hotlist);
-	ami_global_history_initialise();
-	ami_cookies_initialise();
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();
@@ -566,6 +555,18 @@ static void gui_init2(int argc, char** argv)
 	};
 
 	notalreadyrunning = ami_arexx_init();
+
+	/* Treeview init code ends up calling a font function which needs this */
+	browserglob.scale = 1.0;
+	glob = &browserglob;
+	/**/
+
+	ami_get_theme_filename(&tree_directory_icon_name,"theme_list_folder",true);
+	ami_get_theme_filename(&tree_content_icon_name,"theme_list_content",true);
+	ami_hotlist_initialise(option_hotlist_file);
+	ami_cookies_initialise();
+	ami_global_history_initialise();
+	sslcert_init();
 
 	search_web_provider_details(option_search_provider);
 
@@ -1331,7 +1332,7 @@ void ami_handle_msg(void)
 							case 'h':
 								if((option_kiosk_mode == false) &&
 									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
-									ami_open_tree(hotlist,AMI_TREE_HOTLIST);
+									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 							break;
 
 /* The following aren't available from the menu at the moment */
@@ -2002,11 +2003,10 @@ void gui_quit(void)
 
 	urldb_save(option_url_file);
 	urldb_save_cookies(option_cookie_file);
-	options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
-	void ami_global_history_save();
-
+	ami_hotlist_free(option_hotlist_file);
 	ami_cookies_free();
 	ami_global_history_free();
+	sslcert_cleanup();
 
 	hubbub_finalise(ns_realloc,NULL);
 
@@ -2033,7 +2033,10 @@ void gui_quit(void)
 	FreeVec(nsscreentitle);
 
 	if(option_context_menu) ami_context_menu_free();
-	ami_free_menulabs();
+
+/* fixme: need newmenu struct propd to this function - should this be freed here?
+	ami_free_menulabs(menu);
+*/
 
 	ami_mouse_pointers_free();
 	ami_clipboard_free();
@@ -2187,7 +2190,6 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {
-	struct NewMenu *menu;
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
 	struct Node *node;
@@ -2357,7 +2359,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			{
 				ULONG addtabclosegadget = TAG_IGNORE;
 
-				menu = ami_create_menu(bw->browser_window_type);
+				ami_create_menu(bw->browser_window_type, gwin->shared);
 
 				NewList(&gwin->shared->tab_list);
 				gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
@@ -2389,28 +2391,28 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				gwin->shared->helphints[GID_ADDTAB] =
 					remove_escape_chars(messages_get("HelpAddTab"), true);
 
-				ami_get_theme_filename(nav_west,"theme_nav_west");
-				ami_get_theme_filename(nav_west_s,"theme_nav_west_s");
-				ami_get_theme_filename(nav_west_g,"theme_nav_west_g");
-				ami_get_theme_filename(nav_east,"theme_nav_east");
-				ami_get_theme_filename(nav_east_s,"theme_nav_east_s");
-				ami_get_theme_filename(nav_east_g,"theme_nav_east_g");
-				ami_get_theme_filename(stop,"theme_stop");
-				ami_get_theme_filename(stop_s,"theme_stop_s");
-				ami_get_theme_filename(stop_g,"theme_stop_g");
-				ami_get_theme_filename(reload,"theme_reload");
-				ami_get_theme_filename(reload_s,"theme_reload_s");
-				ami_get_theme_filename(reload_g,"theme_reload_g");
-				ami_get_theme_filename(home,"theme_home");
-				ami_get_theme_filename(home_s,"theme_home_s");
-				ami_get_theme_filename(home_g,"theme_home_g");
-				ami_get_theme_filename(closetab,"theme_closetab");
-				ami_get_theme_filename(closetab_s,"theme_closetab_s");
-				ami_get_theme_filename(closetab_g,"theme_closetab_g");
-				ami_get_theme_filename(addtab,"theme_addtab");
-				ami_get_theme_filename(addtab_s,"theme_addtab_s");
-				ami_get_theme_filename(addtab_g,"theme_addtab_g");
-				ami_get_theme_filename(tabthrobber,"theme_tab_loading");
+				ami_get_theme_filename(nav_west,"theme_nav_west",false);
+				ami_get_theme_filename(nav_west_s,"theme_nav_west_s",false);
+				ami_get_theme_filename(nav_west_g,"theme_nav_west_g",false);
+				ami_get_theme_filename(nav_east,"theme_nav_east",false);
+				ami_get_theme_filename(nav_east_s,"theme_nav_east_s",false);
+				ami_get_theme_filename(nav_east_g,"theme_nav_east_g",false);
+				ami_get_theme_filename(stop,"theme_stop",false);
+				ami_get_theme_filename(stop_s,"theme_stop_s",false);
+				ami_get_theme_filename(stop_g,"theme_stop_g",false);
+				ami_get_theme_filename(reload,"theme_reload",false);
+				ami_get_theme_filename(reload_s,"theme_reload_s",false);
+				ami_get_theme_filename(reload_g,"theme_reload_g",false);
+				ami_get_theme_filename(home,"theme_home",false);
+				ami_get_theme_filename(home_s,"theme_home_s",false);
+				ami_get_theme_filename(home_g,"theme_home_g",false);
+				ami_get_theme_filename(closetab,"theme_closetab",false);
+				ami_get_theme_filename(closetab_s,"theme_closetab_s",false);
+				ami_get_theme_filename(closetab_g,"theme_closetab_g",false);
+				ami_get_theme_filename(addtab,"theme_addtab",false);
+				ami_get_theme_filename(addtab_s,"theme_addtab_s",false);
+				ami_get_theme_filename(addtab_g,"theme_addtab_g",false);
+				ami_get_theme_filename(tabthrobber,"theme_tab_loading",false);
 
 				gwin->shared->objects[GID_ADDTAB_BM] = BitMapObject,
 							BITMAP_SourceFile, addtab,
@@ -2482,7 +2484,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_ACTIVEWINDOW | IDCMP_INTUITICKS |
 								IDCMP_EXTENDEDMOUSE | IDCMP_GADGETDOWN,
-					WINDOW_NewMenu,menu,
+					WINDOW_NewMenu, gwin->shared->menu,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
@@ -2934,6 +2936,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 
+	ami_free_menulabs(g->shared);
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
 	FreeVec(g->shared->svbuffer);

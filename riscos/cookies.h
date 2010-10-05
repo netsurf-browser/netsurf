@@ -1,5 +1,6 @@
 /*
  * Copyright 2006 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,6 +24,13 @@
 #ifndef _NETSURF_RISCOS_COOKIES_H_
 #define _NETSURF_RISCOS_COOKIES_H_
 
-void ro_gui_cookies_initialise(void);
+void ro_gui_cookies_preinitialise(void);
+void ro_gui_cookies_postinitialise(void);
+bool ro_gui_cookies_check_window(wimp_w window);
+bool ro_gui_cookies_check_menu(wimp_menu *menu);
+
+void ro_gui_cookies_open(void);
+void ro_gui_cookies_update_theme(void);
 
 #endif
+

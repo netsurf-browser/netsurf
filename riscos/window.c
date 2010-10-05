@@ -5,6 +5,7 @@
  * Copyright 2004 Andrew Timmins <atimmins@blueyonder.co.uk>
  * Copyright 2005 Richard Wilson <info@tinct.net>
  * Copyright 2005 Adrian Lees <adrianl@users.sourceforge.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -150,7 +151,6 @@ static bool ro_gui_window_keypress(wimp_key *key);
 static void ro_gui_window_launch_url(struct gui_window *g, const char *url);
 static void ro_gui_window_clone_options(struct browser_window *new_bw,
 		struct browser_window *old_bw);
-static browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons);
 static bool ro_gui_window_import_text(struct gui_window *g,
 		const char *filename, bool toolbar);
 
@@ -398,7 +398,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	state.next = wimp_TOP;
 	if (bw->parent) {
 		top = browser_window_owner(bw);
-		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state), 
+		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
 				top->window->window,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_XORIGIN_SHIFT |
@@ -1110,7 +1110,7 @@ void gui_window_stop_throbber(struct gui_window *g)
  * set favicon
  */
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
-{	
+{
 }
 
 /**
@@ -1688,7 +1688,6 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url)
 	if (res == URL_FUNC_OK) {
 		gui_window_set_url(g, url_norm);
 		browser_window_go(g->bw, url_norm, 0, true);
-		global_history_add_recent(url_norm);
 		free(url_norm);
 	}
 }
@@ -2124,7 +2123,8 @@ void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer)
 
 	if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 		browser_window_mouse_track(g->bw,
-				ro_gui_mouse_drag_state(pointer->buttons),
+				ro_gui_mouse_drag_state(pointer->buttons,
+						wimp_BUTTON_CLICK_DRAG),
 				pos.x, pos.y);
 }
 
@@ -2321,7 +2321,8 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 	} else {
 		if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 			browser_window_mouse_click(g->bw,
-					ro_gui_mouse_click_state(pointer->buttons),
+					ro_gui_mouse_click_state(pointer->buttons,
+					wimp_BUTTON_CLICK_DRAG),
 					pos.x, pos.y);
 	}
 	return true;
@@ -3088,17 +3089,35 @@ void ro_gui_window_prepare_navigate_all(void) {
 /**
  * Returns the state of the mouse buttons and modifiers keys for a
  * click/release action, suitable for passing to the OS-independent
- * browser window code
+ * browser window/ treeview/ etc code.
+ *
+ * \param  buttons		Wimp button state.
+ * \param  type			Wimp work-area/icon type for decoding.
+ * \return			NetSurf core button state.
  */
 
-browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons)
+browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
+		wimp_icon_flags type)
 {
 	browser_mouse_state state = 0;
 
-	if (buttons & (wimp_CLICK_SELECT))
-		state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1;
-	if (buttons & (wimp_CLICK_ADJUST))
-		state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
+	switch (type) {
+	case wimp_BUTTON_CLICK_DRAG:
+		if (buttons & (wimp_CLICK_SELECT))
+			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1;
+		if (buttons & (wimp_CLICK_ADJUST))
+			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
+		break;
+	case wimp_BUTTON_DOUBLE_CLICK_DRAG:
+		if (buttons & (wimp_SINGLE_SELECT))
+			state |= BROWSER_MOUSE_CLICK_1;
+		if (buttons & (wimp_SINGLE_ADJUST))
+			state |= BROWSER_MOUSE_CLICK_2;
+		if (buttons & (wimp_DOUBLE_SELECT))
+			state |= BROWSER_MOUSE_CLICK_1 |
+					BROWSER_MOUSE_DOUBLE_CLICK;
+		break;
+	}
 
 	if (buttons & (wimp_DRAG_SELECT)) {
 		state |= BROWSER_MOUSE_DRAG_1;
@@ -3111,30 +3130,46 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons)
 
 	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
 	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
+	if (ro_gui_alt_pressed())   state |= BROWSER_MOUSE_MOD_3;
 
 	return state;
 }
 
-
 /**
  * Returns the state of the mouse buttons and modifiers keys whilst
- * dragging, for passing to the OS-independent browser window code
+ * dragging, for passing to the OS-independent browser window/ treeview/
+ * etc code
+ *
+ * \param  buttons		Wimp button state.
+ * \param  type			Wimp work-area/icon type for decoding.
+ * \return			NetSurf core button state.
  */
 
-browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons)
+browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
+		wimp_icon_flags type)
 {
 	browser_mouse_state state = 0;
 
+	switch (type) {
+	case wimp_BUTTON_CLICK_DRAG:
+	case wimp_BUTTON_DOUBLE_CLICK_DRAG:
+		if (buttons & (wimp_CLICK_SELECT))
+			state |= BROWSER_MOUSE_HOLDING_1;
+		if (buttons & (wimp_CLICK_ADJUST))
+			state |= BROWSER_MOUSE_HOLDING_2;
 
-	if (buttons & (wimp_CLICK_SELECT)) state |= BROWSER_MOUSE_HOLDING_1;
-	if (buttons & (wimp_CLICK_ADJUST)) state |= BROWSER_MOUSE_HOLDING_2;
+		if (!(buttons & (wimp_CLICK_SELECT) ||
+				buttons & (wimp_CLICK_ADJUST)))
+			mouse_drag = false;
+		break;
+	}
 
-	if (!(buttons & (wimp_CLICK_SELECT) || buttons & (wimp_CLICK_ADJUST)))
-		mouse_drag = false;
-	if (mouse_drag) state |= BROWSER_MOUSE_DRAG_ON;
+	if (mouse_drag)
+		state |= BROWSER_MOUSE_DRAG_ON;
 
 	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
 	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
+	if (ro_gui_alt_pressed())   state |= BROWSER_MOUSE_MOD_3;
 
 	return state;
 }
@@ -3216,7 +3251,8 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 
 	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
 		browser_window_mouse_drag_end(g->bw,
-				ro_gui_mouse_click_state(pointer.buttons),
+				ro_gui_mouse_click_state(pointer.buttons,
+				wimp_BUTTON_CLICK_DRAG),
 				pos.x, pos.y);
 }
 

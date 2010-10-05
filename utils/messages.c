@@ -30,6 +30,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <zlib.h>
+#include <stdarg.h>
+
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -157,6 +159,35 @@ const char *messages_get_ctx(const char *key, struct hash_table *ctx)
 
 	return r ? r : key;
 }
+
+/* exported interface documented in messages.h */
+char *messages_get_buff(const char *key, ...)
+{
+	const char *msg_fmt;
+	char *buff = NULL; /* formatted buffer to return */
+	int buff_len = 0;
+	va_list ap;
+
+	msg_fmt = messages_get_ctx(key, messages_hash);
+
+	va_start(ap, key);
+	buff_len = vsnprintf(buff, buff_len, msg_fmt, ap);
+	va_end(ap);
+
+	buff = malloc(buff_len + 1);
+
+	if (buff == NULL) {
+		LOG(("malloc failed"));
+		warn_user("NoMemory", 0);		
+	} else {
+		va_start(ap, key);
+		vsnprintf(buff, buff_len + 1, msg_fmt, ap);
+		va_end(ap);
+	}
+
+	return buff;
+}
+
 
 /**
  * Fast lookup of a message by key from the standard Messages hash.

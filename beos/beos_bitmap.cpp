@@ -312,6 +312,16 @@ void bitmap_set_suspendable(void *vbitmap, void *private_word,
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 }
 
+int bitmap_get_width(void *vbitmap){
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
+	return bitmap->primary->Bounds().Width() + 1;
+}
+
+int bitmap_get_height(void *vbitmap){
+	struct bitmap *bitmap = (struct bitmap *)vbitmap;
+	return bitmap->primary->Bounds().Height() + 1;
+}
+
 static BBitmap *
 nsbeos_bitmap_generate_pretile(BBitmap *primary, int repeat_x, int repeat_y)
 {

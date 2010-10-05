@@ -19,12 +19,14 @@
 #ifndef AMIGA_MENU_H
 #define AMIGA_MENU_H
 #include <exec/types.h>
-#include "amiga/gui.h"
 #include <intuition/intuition.h>
+#include <libraries/gadtools.h>
+#include "content/hlcache.h"
 
 /* Number of hotlist items, menu structure needs to be changed in ami_create_menu()
  * if this value is changed. */
-#define AMI_HOTLIST_ITEMS 40
+#define AMI_HOTLIST_ITEMS 60
+//gwin->hotlist_items
 
 /* Maximum number of menu items - first value is number of static items
  * (ie. everything not intially defined as NM_IGNORE) */
@@ -61,11 +63,12 @@
 #define AMI_MENU_CLEAR FULLMENUNUM(1,5,0)
 #define AMI_MENU_FIND FULLMENUNUM(2,0,0)
 
-char *menulab[AMI_MENU_AREXX_MAX+1];
+struct gui_window;
+struct gui_window_2;
 
-struct NewMenu *ami_create_menu(ULONG type);
-void ami_init_menulabs(void);
-void ami_free_menulabs(void);
+void ami_free_menulabs(struct gui_window_2 *gwin);
+struct NewMenu *ami_create_menu(ULONG type, struct gui_window_2 *gwin);
+void ami_menu_refresh(struct gui_window_2 *gwin);
 void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item);
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c);
 #endif

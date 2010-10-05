@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,9 +16,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/browser.h"
-#include "content/hlcache.h"
+/** \file
+ * URL Suggestion Menu (interface).
+ */
 
-void hotlist_visited(hlcache_handle *content)
-{
-}
+#ifndef _NETSURF_RISCOS_URL_SUGGEST_H_
+#define _NETSURF_RISCOS_URL_SUGGEST_H_
+
+#include "oslib/wimp.h"
+
+#define URL_SUGGEST_MAX_URLS 16
+
+bool ro_gui_url_suggest_init(wimp_menu *menu);
+bool ro_gui_url_suggest_prepare_menu(void);
+
+#endif
+

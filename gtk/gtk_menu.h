@@ -78,6 +78,7 @@ struct nsgtk_nav_menu {
 	GtkImageMenuItem	*globalhistory_menuitem;
 	GtkImageMenuItem	*addbookmarks_menuitem;
 	GtkImageMenuItem	*showbookmarks_menuitem;
+	GtkImageMenuItem	*showcookies_menuitem;
 	GtkImageMenuItem	*openlocation_menuitem;
 };
 

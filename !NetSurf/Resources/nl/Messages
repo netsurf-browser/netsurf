@@ -189,6 +189,8 @@ ResetUsage:Statistiek op nul zetten
 New:Nieuw
 Expand:Uitklappen
 Collapse:Inklappen
+Tree:Tree
+TreeExport:Export...
 
 # New hotlist entry menu
 #
@@ -200,6 +202,7 @@ Link:Adres
 All:Alles
 Folders:Mappen
 Links:Adressen
+Domains:Domains
 
 # Other menus
 #
@@ -373,6 +376,13 @@ DateYesterday:gisteren
 Date1Week:vorige week
 Date2Week:2 weken geleden
 Date3Week:3 weken geleden
+Sunday:Sunday
+Monday:Monday
+Tuesday:Tuesday
+Wednesday:Wednesday
+Thursday:Thursday
+Friday:Friday
+Saturday:Saturday
 
 
 # Download user interface tokens

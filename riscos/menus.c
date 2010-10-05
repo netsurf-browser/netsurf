@@ -34,9 +34,12 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "desktop/cookies.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+#include "desktop/history_global_core.h"
 #include "desktop/history_core.h"
+#include "desktop/hotlist.h"
 #include "desktop/netsurf.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
@@ -49,12 +52,14 @@
 #include "riscos/gui.h"
 #include "riscos/global_history.h"
 #include "riscos/help.h"
+#include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
 #include "riscos/save.h"
 #include "riscos/tinct.h"
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
+#include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
@@ -62,18 +67,6 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
-
-
-struct ns_menu_entry {
-	const char *text;		/**< menu text (from messages) */
-	menu_action action;		/**< associated action */
-	wimp_w *sub_window;		/**< sub-window if any */
-};
-
-struct ns_menu {
-	const char *title;
-	struct ns_menu_entry entries[];
-};
 
 struct menu_definition_entry {
 	menu_action action;			/**< menu action */
@@ -91,7 +84,6 @@ struct menu_definition {
 };
 
 
-static wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu);
 static void ro_gui_menu_define_menu_add(struct menu_definition *definition,
 		const struct ns_menu *menu, int depth,
 		wimp_menu_entry *parent_entry,
@@ -101,15 +93,11 @@ static struct menu_definition_entry *ro_gui_menu_find_entry(wimp_menu *menu,
 		menu_action action);
 static menu_action ro_gui_menu_find_action(wimp_menu *menu,
 		wimp_menu_entry *menu_entry);
-static void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
-		bool shaded);
-static void ro_gui_menu_set_entry_ticked(wimp_menu *menu, menu_action action,
-		bool ticked);
 static void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
 		struct browser_window **bw, hlcache_handle **h,
-		struct toolbar **toolbar, struct tree **tree);
+		struct toolbar **toolbar,
+		bool *is_cookies, bool *is_hotlist, bool *is_global_history);
 static int ro_gui_menu_get_checksum(void);
-static bool ro_gui_menu_prepare_url_suggest(void);
 static void ro_gui_menu_prepare_pageinfo(struct gui_window *g);
 static void ro_gui_menu_prepare_objectinfo(hlcache_handle *object,
 		const char *href);
@@ -143,12 +131,12 @@ static wimp_i current_menu_icon;
 /** The height of the iconbar menu */
 int iconbar_menu_height = 5 * 44;
 /** The available menus */
-wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *global_history_menu, *cookies_menu,
-	*image_quality_menu, *browser_toolbar_menu,
-	*tree_toolbar_menu, *proxy_type_menu, *languages_menu;
-/** URL suggestion menu */
-static wimp_MENU(GLOBAL_HISTORY_RECENT_URLS) url_suggest;
-wimp_menu *url_suggest_menu = (wimp_menu *)&url_suggest;
+wimp_menu *iconbar_menu, *browser_menu, *image_quality_menu,
+		*browser_toolbar_menu, *tree_toolbar_menu,
+		*proxy_type_menu, *languages_menu;
+
+static wimp_MENU(URL_SUGGEST_MAX_URLS) url_suggest_menu_block;
+wimp_menu *url_suggest_menu = (wimp_menu *) &url_suggest_menu_block;
 
 /* the values given in PRM 3-157 for how to check menus/windows are
  * incorrect so we use a hack of checking if the sub-menu has bit 0
@@ -277,94 +265,6 @@ void ro_gui_menu_init(void)
 	};
 	browser_menu = ro_gui_menu_define_menu(&browser_definition);
 
-	/* hotlist menu */
-	static wimp_w one = (wimp_w) 1;
-	static const struct ns_menu hotlist_definition = {
-		"Hotlist", {
-			{ "Hotlist", NO_ACTION, 0 },
-			{ "Hotlist.New", NO_ACTION, 0 },
-			{ "Hotlist.New.Folder", TREE_NEW_FOLDER, &dialog_folder },
-			{ "Hotlist.New.Link", TREE_NEW_LINK, &dialog_entry },
-			{ "_Hotlist.Export", HOTLIST_EXPORT, &dialog_saveas },
-			{ "Hotlist.Expand", TREE_EXPAND_ALL, 0 },
-			{ "Hotlist.Expand.All", TREE_EXPAND_ALL, 0 },
-			{ "Hotlist.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
-			{ "Hotlist.Expand.Links", TREE_EXPAND_LINKS, 0 },
-			{ "Hotlist.Collapse", TREE_COLLAPSE_ALL, 0 },
-			{ "Hotlist.Collapse.All", TREE_COLLAPSE_ALL, 0 },
-			{ "Hotlist.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
-			{ "Hotlist.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
-			{ "Hotlist.Toolbars", NO_ACTION, 0 },
-			{ "_Hotlist.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "Hotlist.Toolbars.EditToolbar", TOOLBAR_EDIT, 0 },
-			{ "Selection", TREE_SELECTION, 0 },
-			/* We want a window, but it changes depending upon 
-			 * context. Therefore, ensure that the structure is
-			 * created so that we can dynamically modify the 
-			 * actual item presented. We do this by creating a
-			 * fake wimp_w with the value 1, which indicates a 
-			 * window handle as opposed to a submenu. */
-			{ "Selection.Edit", TREE_SELECTION_EDIT, &one },
-			{ "Selection.Launch", TREE_SELECTION_LAUNCH, 0 },
-			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
-			{ "SelectAll", TREE_SELECT_ALL, 0 },
-			{ "Clear", TREE_CLEAR_SELECTION, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	hotlist_menu = ro_gui_menu_define_menu(&hotlist_definition);
-
-	/* history menu */
-	static const struct ns_menu global_history_definition = {
-		"History", {
-			{ "History", NO_ACTION, 0 },
-			{ "_History.Export", HISTORY_EXPORT, &dialog_saveas },
-			{ "History.Expand", TREE_EXPAND_ALL, 0 },
-			{ "History.Expand.All", TREE_EXPAND_ALL, 0 },
-			{ "History.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
-			{ "History.Expand.Links", TREE_EXPAND_LINKS, 0 },
-			{ "History.Collapse", TREE_COLLAPSE_ALL, 0 },
-			{ "History.Collapse.All", TREE_COLLAPSE_ALL, 0 },
-			{ "History.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
-			{ "History.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
-			{ "History.Toolbars", NO_ACTION, 0 },
-			{ "_History.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "History.Toolbars.EditToolbar",TOOLBAR_EDIT, 0 },
-			{ "Selection", TREE_SELECTION, 0 },
-			{ "Selection.Launch", TREE_SELECTION_LAUNCH, 0 },
-			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
-			{ "SelectAll", TREE_SELECT_ALL, 0 },
-			{ "Clear", TREE_CLEAR_SELECTION, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	global_history_menu = ro_gui_menu_define_menu(
-			&global_history_definition);
-
-	/* history menu */
-	static const struct ns_menu cookies_definition = {
-		"Cookies", {
-			{ "Cookies", NO_ACTION, 0 },
-			{ "Cookies.Expand", TREE_EXPAND_ALL, 0 },
-			{ "Cookies.Expand.All", TREE_EXPAND_ALL, 0 },
-			{ "Cookies.Expand.Folders", TREE_EXPAND_FOLDERS, 0 },
-			{ "Cookies.Expand.Links", TREE_EXPAND_LINKS, 0 },
-			{ "Cookies.Collapse", TREE_COLLAPSE_ALL, 0 },
-			{ "Cookies.Collapse.All", TREE_COLLAPSE_ALL, 0 },
-			{ "Cookies.Collapse.Folders", TREE_COLLAPSE_FOLDERS, 0 },
-			{ "Cookies.Collapse.Links", TREE_COLLAPSE_LINKS, 0 },
-			{ "Cookies.Toolbars", NO_ACTION, 0 },
-			{ "_Cookies.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "Cookies.Toolbars.EditToolbar",TOOLBAR_EDIT, 0 },
-			{ "Selection", TREE_SELECTION, 0 },
-			{ "Selection.Delete", TREE_SELECTION_DELETE, 0 },
-			{ "SelectAll", TREE_SELECT_ALL, 0 },
-			{ "Clear", TREE_CLEAR_SELECTION, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	cookies_menu = ro_gui_menu_define_menu(&cookies_definition);
-
 	/* image quality menu */
 	static const struct ns_menu images_definition = {
 		"Display", {
@@ -415,9 +315,7 @@ void ro_gui_menu_init(void)
 	proxy_type_menu = ro_gui_menu_define_menu(&proxy_type_definition);
 
 	/* special case menus */
-	url_suggest_menu->title_data.indirected_text.text =
-			(char *) messages_get("URLSuggest");
-	ro_gui_menu_init_structure(url_suggest_menu, GLOBAL_HISTORY_RECENT_URLS);
+	ro_gui_url_suggest_init(url_suggest_menu);
 
 	/* Note: This table *must* be kept in sync with the LangNames file */
 	static const struct ns_menu lang_definition = {
@@ -540,7 +438,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 
 	/* prepare the menu state */
 	if (menu == url_suggest_menu) {
-		if (!ro_gui_menu_prepare_url_suggest())
+		if (!ro_gui_url_suggest_prepare_menu())
 			return;
 	} else if (menu == recent_search_menu) {
 	  	if (!ro_gui_search_prepare_menu())
@@ -618,8 +516,8 @@ void ro_gui_menu_closed(bool cleanup)
 	struct browser_window *bw;
 	hlcache_handle *h;
 	struct toolbar *t;
-	struct tree *tree;
 	os_error *error;
+	bool is_cookies, is_hotlist, is_global_history;
 
 	if (current_menu) {
 
@@ -630,15 +528,16 @@ void ro_gui_menu_closed(bool cleanup)
 			warn_user("MenuError", error->errmess);
 		}
 		ro_gui_menu_get_window_details(current_menu_window,
-				&g, &bw, &h, &t, &tree);
-		current_menu = NULL;
+				&g, &bw, &h, &t,
+				&is_cookies, &is_hotlist,
+				&is_global_history);
 
 		if (cleanup) {
-		  	ro_gui_wimp_event_menus_closed();
-
-			if (tree)
-				ro_gui_tree_menu_closed(tree);
+		  	ro_gui_wimp_event_menus_closed(current_menu_window,
+		  			current_menu_icon, current_menu);
 		}
+
+		current_menu = NULL;
 	}
 
 	current_menu_window = NULL;
@@ -668,15 +567,16 @@ void ro_gui_menu_objects_moved(void)
  */
 void ro_gui_menu_selection(wimp_selection *selection)
 {
-	int i, j;
-	wimp_menu_entry *menu_entry;
-	menu_action action;
-	wimp_pointer pointer;
-	struct gui_window *g = NULL;
-	wimp_menu *menu;
-	os_error *error;
-	int previous_menu_icon = current_menu_icon;
-	char *url;
+	int			i, j;
+	bool			needs_prepare;
+	wimp_menu_entry		*menu_entry;
+	menu_action		action;
+	wimp_pointer		pointer;
+	struct gui_window	*g = NULL;
+	wimp_menu		*menu;
+	os_error		*error;
+	int			previous_menu_icon = current_menu_icon;
+	char			*url;
 
 	/* if we are using gui_multitask then menu selection events
 	 * may be delivered after the menu has been closed. As such,
@@ -686,41 +586,58 @@ void ro_gui_menu_selection(wimp_selection *selection)
 
 	assert(current_menu_window);
 
-	/* get the menu entry and associated action */
+	/* get the menu entry and associated action and definition */
 	menu_entry = &current_menu->entries[selection->items[0]];
 	for (i = 1; selection->items[i] != -1; i++)
 		menu_entry = &menu_entry->sub_menu->
 				entries[selection->items[i]];
 	action = ro_gui_menu_find_action(current_menu, menu_entry);
 
-	/* perform menu action */
-	if (action != NO_ACTION)
-		ro_gui_menu_handle_action(current_menu_window, action, false);
+	/* Deal with the menu action.  We first pass it to Wimp_Event to
+	 * handle any automatic menus.  If this doesn't recognise the details,
+	 * it is passed on to the code in menus.c.
+	 */
 
-	/* perform non-automated actions */
-	if (current_menu == url_suggest_menu) {
-		g = ro_gui_toolbar_lookup(current_menu_window);
-		if (g) {
-		  	url = url_suggest_menu->entries[selection->items[0]].
-					data.indirected_text.text;
-			gui_window_set_url(g, url);
-			browser_window_go(g->bw, url, 0, true);
-			global_history_add_recent(url);
-		}
-	} else if (current_menu == gui_form_select_menu) {
-		g = ro_gui_window_lookup(current_menu_window);
-		assert(g);
+	needs_prepare = false;
 
-		if (selection->items[0] >= 0) {
-			form_select_process_selection(g->bw->current_content,
-					gui_form_select_control,
-					selection->items[0]);
+	if (!ro_gui_wimp_event_menu_selection(current_menu_window,
+			current_menu_icon, current_menu, selection, action)) {
+
+		/* perform menu action */
+		if (action != NO_ACTION)
+			ro_gui_menu_handle_action(current_menu_window,
+					 action, false);
+
+		/* perform non-automated actions */
+		if (current_menu == url_suggest_menu) {
+			g = ro_gui_toolbar_lookup(current_menu_window);
+			if (g) {
+				url = url_suggest_menu->entries[selection->items[0]].
+						data.indirected_text.text;
+				gui_window_set_url(g, url);
+				browser_window_go(g->bw, url, 0, true);
+			}
+		} else if (current_menu == gui_form_select_menu) {
+			g = ro_gui_window_lookup(current_menu_window);
+			assert(g);
+
+			if (selection->items[0] >= 0) {
+				form_select_process_selection(g->bw->current_content,
+						gui_form_select_control,
+						selection->items[0]);
+			}
 		}
+
+		/* allow automatic menus to have their data updated */
+//		ro_gui_wimp_event_menu_selection(current_menu_window,
+//				current_menu_icon, current_menu, selection);
+
+		/* Menus not handled by ro_gui_wimp_event_menu_selection()
+		 * will need to be re-prepared before an adjust reopening.
+		 */
+
+		needs_prepare = true;
 	}
-
-	/* allow automatic menus to have their data updated */
-	ro_gui_wimp_event_menu_selection(current_menu_window, current_menu_icon,
-			current_menu, selection);
 
 	/* re-open the menu for Adjust clicks */
 	error = xwimp_get_pointer_info(&pointer);
@@ -738,24 +655,26 @@ void ro_gui_menu_selection(wimp_selection *selection)
 	}
 
 	/* re-prepare all the visible entries */
-	i = 0;
-	menu = current_menu;
-	do {
-		j = 0;
+	if (needs_prepare) {
+		i = 0;
+		menu = current_menu;
 		do {
-			action = ro_gui_menu_find_action(current_menu,
-					&menu->entries[j]);
-			if (action != NO_ACTION)
-				ro_gui_menu_prepare_action(current_menu_window,
-						action, false);
-		} while (!(menu->entries[j++].menu_flags & wimp_MENU_LAST));
-		j = selection->items[i++];
-		if (j != -1) {
-			menu = menu->entries[j].sub_menu;
-			if ((!menu) || (menu == wimp_NO_SUB_MENU))
-				break;
-		}
-	} while (j != -1);
+			j = 0;
+			do {
+				action = ro_gui_menu_find_action(current_menu,
+						&menu->entries[j]);
+				if (action != NO_ACTION)
+					ro_gui_menu_prepare_action(current_menu_window,
+							action, false);
+			} while (!(menu->entries[j++].menu_flags & wimp_MENU_LAST));
+			j = selection->items[i++];
+			if (j != -1) {
+				menu = menu->entries[j].sub_menu;
+				if ((!menu) || (menu == wimp_NO_SUB_MENU))
+					break;
+			}
+		} while (j != -1);
+	}
 
 	if (current_menu == gui_form_select_menu) {
 		assert(g); /* Keep scan-build happy */
@@ -788,28 +707,42 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 	for (i = 1; warning->selection.items[i] != -1; i++)
 		menu_entry = &menu_entry->sub_menu->
 				entries[warning->selection.items[i]];
+	action = ro_gui_menu_find_action(current_menu, menu_entry);
 
-	if (IS_MENU(menu_entry->sub_menu)) {
-		ro_gui_wimp_event_register_submenu((wimp_w)0);
-		sub_menu = menu_entry->sub_menu;
-		i = 0;
-		do {
-			action = ro_gui_menu_find_action(current_menu,
-					&sub_menu->entries[i]);
+	/* We only process the menu in the old way if the wimp_event module
+	 * hasn't processed it for us.
+	 */
+
+	if (!ro_gui_wimp_event_submenu_warning(current_menu_window,
+			current_menu_icon, current_menu, &(warning->selection),
+			action)) {
+		if (IS_MENU(menu_entry->sub_menu)) {
+			ro_gui_wimp_event_register_submenu((wimp_w)0);
+			sub_menu = menu_entry->sub_menu;
+			i = 0;
+			do {
+				action = ro_gui_menu_find_action(current_menu,
+						&sub_menu->entries[i]);
+				if (action != NO_ACTION)
+					ro_gui_menu_prepare_action(current_menu_window,
+							action, false);
+			} while (!(sub_menu->entries[i++].menu_flags &
+					wimp_MENU_LAST));
+		} else {
+			ro_gui_wimp_event_register_submenu((wimp_w)menu_entry->sub_menu);
+			action = ro_gui_menu_find_action(current_menu, menu_entry);
 			if (action != NO_ACTION)
 				ro_gui_menu_prepare_action(current_menu_window,
-						action, false);
-		} while (!(sub_menu->entries[i++].menu_flags & wimp_MENU_LAST));
-	} else {
-		ro_gui_wimp_event_register_submenu((wimp_w)menu_entry->sub_menu);
-		action = ro_gui_menu_find_action(current_menu, menu_entry);
-		if (action != NO_ACTION)
-			ro_gui_menu_prepare_action(current_menu_window,
-					action, true);
-		/* remove the close icon */
+						action, true);
+		}
+	}
+
+	/* If this is a dialogue box, remove the close and back icons. */
+
+	if (!(IS_MENU(menu_entry->sub_menu)))
 		ro_gui_wimp_update_window_furniture((wimp_w)menu_entry->sub_menu,
 				wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_BACK_ICON, 0);
-	}
+
 
 	/* open the sub-menu */
 	error = xwimp_create_sub_menu(menu_entry->sub_menu,
@@ -829,52 +762,34 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
  */
 void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar)
 {
+//	struct treeview_window *treeview_window;
 
 	assert(toolbar);
 
 	toolbar->reformat_buttons = true;
 	ro_gui_theme_process_toolbar(toolbar, -1);
 	if (toolbar->type == THEME_BROWSER_TOOLBAR) {
-		gui_window_update_extent(ro_gui_window_lookup(current_menu_window));
-	} else if (toolbar->type == THEME_HOTLIST_TOOLBAR) {
-		tree_resized(hotlist_tree);
-		xwimp_force_redraw((wimp_w)hotlist_tree->handle,
-				0,-16384, 16384, 16384);
-	} else if (toolbar->type == THEME_HISTORY_TOOLBAR) {
-		tree_resized(global_history_tree);
-		xwimp_force_redraw((wimp_w)global_history_tree->handle,
-				0,-16384, 16384, 16384);
-	} else if (toolbar->type == THEME_COOKIES_TOOLBAR) {
-		tree_resized(cookies_tree);
-		xwimp_force_redraw((wimp_w)cookies_tree->handle,
-				0,-16384, 16384, 16384);
+		gui_window_update_extent(ro_gui_window_lookup(
+				current_menu_window));
+//	} else if (toolbar->type == THEME_HOTLIST_TOOLBAR) {
+//		treeview_window = ro_gui_hotlist_get();
+//		/* TODO: FIX THIS */
+//		/* tree_resized(treeview_window->tree); */
+//		xwimp_force_redraw(treeview_window->window,
+//				0,-16384, 16384, 16384);
+//	} else if (toolbar->type == THEME_HISTORY_TOOLBAR) {
+//		treeview_window = ro_gui_global_history_get();
+//		/* TODO: FIX THIS */
+//		/* tree_resized(treeview_window->tree); */
+//		xwimp_force_redraw(treeview_window->window,
+//				0,-16384, 16384, 16384);
+//	} else if (toolbar->type == THEME_COOKIES_TOOLBAR) {
+//		treeview_window = ro_gui_cookies_get();
+//		/* TODO: FIX THIS */
+//		/* tree_resized(treeview_window->tree); */
+//		xwimp_force_redraw(treeview_window->window,
+//				0,-16384, 16384, 16384);
 	}
-}
-
-
-/**
- * Builds the URL suggestion menu
- */
-bool ro_gui_menu_prepare_url_suggest(void) {
-	char **suggest_text;
-	int suggestions;
-	int i;
-
-	suggest_text = global_history_get_recent(&suggestions);
-	if (suggestions < 1)
-		return false;
-
-	for (i = 0; i < suggestions; i++) {
-		url_suggest_menu->entries[i].menu_flags = 0;
-		url_suggest_menu->entries[i].data.indirected_text.text =
-				suggest_text[i];
-		url_suggest_menu->entries[i].data.indirected_text.size =
-				strlen(suggest_text[i]) + 1;
-	}
-
-	url_suggest_menu->entries[0].menu_flags |= wimp_MENU_TITLE_INDIRECTED;
-	url_suggest_menu->entries[suggestions - 1].menu_flags |= wimp_MENU_LAST;
-	return true;
 }
 
 
@@ -885,8 +800,6 @@ bool ro_gui_menu_prepare_url_suggest(void) {
  */
 void ro_gui_prepare_navigate(struct gui_window *gui)
 {
-	int suggestions;
-
 	ro_gui_menu_prepare_action(gui->window, HOTLIST_SHOW, false);
 	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_STOP, false);
 	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_RELOAD_ALL,
@@ -902,9 +815,9 @@ void ro_gui_prepare_navigate(struct gui_window *gui)
 	ro_gui_menu_prepare_action(gui->window, BROWSER_FIND_TEXT, false);
 
 	if (gui->toolbar) {
-		global_history_get_recent(&suggestions);
 		ro_gui_set_icon_shaded_state(gui->toolbar->toolbar_handle,
-				ICON_TOOLBAR_SUGGEST, (suggestions <= 0));
+				ICON_TOOLBAR_SUGGEST,
+				!ro_gui_url_suggest_prepare_menu());
 	}
 }
 
@@ -1122,8 +1035,10 @@ void gui_create_form_select_menu(struct browser_window *bw,
 /**
  * Creates a wimp_menu and adds it to the list to handle actions for.
  *
- * \param menu  the data to create the menu with
- * \return the menu created, or NULL on failure
+ * \param  *menu		The data to create the menu with
+ * \param  *callbacks		A callback table for the menu (NULL if to be
+ *				handled in the 'old-fashined way' by menus.c).
+ * \return			The menu created, or NULL on failure
  */
 wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu)
 {
@@ -1475,13 +1390,12 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 	struct browser_window *bw = NULL;
 	hlcache_handle *h = NULL;
 	struct toolbar *t = NULL;
-	struct tree *tree;
-	struct node *node;
 	os_error *error;
 	char url[80];
-	const struct url_data *data;
+	bool is_cookies, is_hotlist, is_global_history;
 
-	ro_gui_menu_get_window_details(owner, &g, &bw, &h, &t, &tree);
+	ro_gui_menu_get_window_details(owner, &g, &bw, &h, &t,
+			&is_cookies, &is_hotlist, &is_global_history);
 
 	switch (action) {
 
@@ -1515,42 +1429,26 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 						windows_at_pointer);
 			return true;
 		case HISTORY_SHOW_GLOBAL:
-			ro_gui_tree_show(global_history_tree);
+			ro_gui_global_history_open();
 			return true;
 
 		/* hotlist actions */
 		case HOTLIST_ADD_URL:
-			if ((!hotlist_tree) || (!h) || (!content_get_url(h)))
+			if (h == NULL || content_get_url(h) == NULL)
 				return false;
-			data = urldb_get_url_data(content_get_url(h));
-			if (data) {
-				node = tree_create_URL_node(hotlist_tree->root,
-						content_get_url(h),
-						data, data->title);
-				if (node) {
-					tree_redraw_area(hotlist_tree,
-							node->box.x - NODE_INSTEP, 0,
-							NODE_INSTEP, 16384);
-					tree_handle_node_changed(hotlist_tree,
-							node, false, true);
-					ro_gui_tree_scroll_visible(hotlist_tree,
-							&node->data);
-					ro_gui_hotlist_save();
-				}
-			}
+			hotlist_add_page(content_get_url(h));
 			return true;
 		case HOTLIST_SHOW:
-			ro_gui_tree_show(hotlist_tree);
+			ro_gui_hotlist_open();
 			return true;
 
 		/* cookies actions */
 		case COOKIES_SHOW:
-			ro_gui_tree_show(cookies_tree);
+			ro_gui_cookies_open();
 			return true;
 
 		case COOKIES_DELETE:
-			if (cookies_tree->root->child)
-				tree_delete_node(cookies_tree, cookies_tree->root->child, true);
+			cookies_delete_all();
 			return true;
 
 		/* page actions */
@@ -1635,8 +1533,6 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			if (!h)
 				return false;
 			/* Fall through */
-		case HOTLIST_EXPORT:
-		case HISTORY_EXPORT:
 			ro_gui_menu_prepare_action(owner, action, true);
 			ro_gui_dialog_open_persistent(owner, dialog_saveas,
 					windows_at_pointer);
@@ -1788,61 +1684,6 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 			ro_gui_save_options();
 			return true;
 
-		/* tree actions */
-		case TREE_NEW_FOLDER:
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent((wimp_w)tree->handle,
-					dialog_folder, windows_at_pointer);
-			return true;
-		case TREE_NEW_LINK:
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent((wimp_w)tree->handle,
-					dialog_entry, windows_at_pointer);
-			return true;
-		case TREE_EXPAND_ALL:
-		case TREE_EXPAND_FOLDERS:
-		case TREE_EXPAND_LINKS:
-			tree_handle_expansion(tree, tree->root, true,
-					(action != TREE_EXPAND_LINKS),
-					(action != TREE_EXPAND_FOLDERS));
-			return true;
-		case TREE_COLLAPSE_ALL:
-		case TREE_COLLAPSE_FOLDERS:
-		case TREE_COLLAPSE_LINKS:
-			tree_handle_expansion(tree, tree->root, false,
-					(action != TREE_COLLAPSE_LINKS),
-					(action != TREE_COLLAPSE_FOLDERS));
-			return true;
-		case TREE_SELECTION_EDIT:
-			return true;
-		case TREE_SELECTION_LAUNCH:
-			ro_gui_tree_launch_selected(tree);
-			return true;
-		case TREE_SELECTION_DELETE:
-			ro_gui_tree_stop_edit(tree);
-			tree_delete_selected_nodes(tree, tree->root);
-			if (tree == hotlist_tree)
-				ro_gui_hotlist_save();
-			ro_gui_menu_prepare_action(owner, TREE_CLEAR_SELECTION, true);
-			ro_gui_menu_prepare_action(owner, TREE_SELECTION, true);
-			return true;
-		case TREE_SELECT_ALL:
-			ro_gui_tree_stop_edit(tree);
-			if (tree->root->child) {
-				tree->temp_selection = NULL;
-				tree_set_node_selected(tree, tree->root, true);
-			}
-			ro_gui_menu_prepare_action(owner, TREE_CLEAR_SELECTION, true);
-			ro_gui_menu_prepare_action(owner, TREE_SELECTION, true);
-			return true;
-		case TREE_CLEAR_SELECTION:
-			tree->temp_selection = NULL;
-			ro_gui_tree_stop_edit(tree);
-			tree_set_node_selected(tree, tree->root, false);
-			ro_gui_menu_prepare_action(owner, TREE_CLEAR_SELECTION, true);
-			ro_gui_menu_prepare_action(owner, TREE_SELECTION, true);
-			return true;
-
 		/* toolbar actions */
 		case TOOLBAR_BUTTONS:
 			assert(t);
@@ -1895,21 +1736,20 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		bool windows)
 {
-	struct menu_definition_entry *entry;
 	struct gui_window *g;
 	struct browser_window *bw;
 	hlcache_handle *h;
 	struct toolbar *t;
-	struct tree *tree;
-	struct node *node;
 	bool result = false;
 	int checksum = 0;
 	os_error *error;
 	char *parent;
 	url_func_result res;
 	bool compare;
+	bool is_cookies, is_hotlist, is_global_history;
 
-	ro_gui_menu_get_window_details(owner, &g, &bw, &h, &t, &tree);
+	ro_gui_menu_get_window_details(owner, &g, &bw, &h, &t,
+			&is_cookies, &is_hotlist, &is_global_history);
 	if (current_menu_open)
 		checksum = ro_gui_menu_get_checksum();
 	if (!h) {
@@ -1935,35 +1775,11 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 				!(h || history_back_available(bw->history) ||
 				history_forward_available(bw->history))));
 			break;
-		case HISTORY_SHOW_GLOBAL:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!global_history_tree);
-			break;
 
 		/* hotlist actions */
 		case HOTLIST_ADD_URL:
 			ro_gui_menu_set_entry_shaded(current_menu, action,
-				(!h || !hotlist_tree));
-			break;
-		case HOTLIST_SHOW:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!hotlist_tree);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_BOOKMARK,
-						!hotlist_tree);
-			break;
-
-		/* cookies actions */
-		case COOKIES_SHOW:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!cookies_tree);
-			break;
-		case COOKIES_DELETE:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!(cookies_tree && cookies_tree->root->child));
+					h == NULL);
 			break;
 
 		/* page actions */
@@ -2003,7 +1819,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 		/* object actions */
 		case BROWSER_OBJECT:
 			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!current_menu_object && !current_menu_url);
+					!current_menu_object &&
+					!current_menu_url);
 			break;
 
 		case BROWSER_OBJECT_LINK:
@@ -2013,7 +1830,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 
 		case BROWSER_OBJECT_INFO:
 			if (windows && current_menu_object)
-				ro_gui_menu_prepare_objectinfo(current_menu_object,
+				ro_gui_menu_prepare_objectinfo(
+						current_menu_object,
 						current_menu_url);
 			/* Fall through */
 		case BROWSER_OBJECT_RELOAD:
@@ -2024,7 +1842,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 
 		case BROWSER_OBJECT_PRINT:
 			/* not yet implemented */
-			ro_gui_menu_set_entry_shaded(current_menu, action, true);
+			ro_gui_menu_set_entry_shaded(current_menu, action,
+					true);
 			break;
 
 		/* save actions (browser, hotlist, history) */
@@ -2032,7 +1851,8 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			ro_gui_menu_set_entry_shaded(current_menu,
 					action, !current_menu_object);
 			if (windows && current_menu_object)
-				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG, current_menu_object,
+				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG,
+						current_menu_object,
 						NULL, NULL, NULL);
 			break;
 		case BROWSER_OBJECT_EXPORT:
@@ -2047,41 +1867,41 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			if (h) {
 				switch (content_get_type(h)) {
 /* \todo - this classification should prob be done in content_() */
-					/* bitmap types (Sprite export possible) */
+				/* bitmap types (Sprite export possible) */
 #ifdef WITH_JPEG
-					case CONTENT_JPEG:
+				case CONTENT_JPEG:
 #endif
 #ifdef WITH_MNG
-					case CONTENT_JNG:
-					case CONTENT_MNG:
+				case CONTENT_JNG:
+				case CONTENT_MNG:
 #endif
 #ifdef WITH_GIF
-					case CONTENT_GIF:
+				case CONTENT_GIF:
 #endif
 #ifdef WITH_BMP
-					case CONTENT_BMP:
-					case CONTENT_ICO:
+				case CONTENT_BMP:
+				case CONTENT_ICO:
 #endif
 #if defined(WITH_MNG) || defined(WITH_PNG)
-					case CONTENT_PNG:
+				case CONTENT_PNG:
 #endif
 #ifdef WITH_SPRITE
-					case CONTENT_SPRITE:
+				case CONTENT_SPRITE:
 #endif
-						exp_sprite = true;
-						break;
+					exp_sprite = true;
+					break;
 
-					/* vector types (Draw export possible) */
+				/* vector types (Draw export possible) */
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-					case CONTENT_SVG:
+				case CONTENT_SVG:
 #endif
 #ifdef WITH_DRAW
-					case CONTENT_DRAW:
+				case CONTENT_DRAW:
 #endif
-						exp_draw = true;
-						break;
+					exp_draw = true;
+					break;
 
-					default: break;
+				default: break;
 				}
 			}
 
@@ -2229,16 +2049,6 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 						content_get_url(h),
 						content_get_title(h));
 			break;
-		case HOTLIST_EXPORT:
-			if ((tree) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
-						NULL, NULL, NULL, NULL);
-			break;
-		case HISTORY_EXPORT:
-			if ((tree) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_HISTORY_EXPORT_HTML,
-						NULL, NULL, NULL, NULL);
-			break;
 
 		/* navigation actions */
 		case BROWSER_NAVIGATE_BACK:
@@ -2379,82 +2189,7 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
 			break;
 
 		/* tree actions */
-		case TREE_NEW_FOLDER:
-			ro_gui_hotlist_prepare_folder_dialog(NULL);
-			break;
-		case TREE_NEW_LINK:
-			ro_gui_hotlist_prepare_entry_dialog(NULL);
-			break;
-		case TREE_EXPAND_ALL:
-		case TREE_EXPAND_FOLDERS:
-		case TREE_EXPAND_LINKS:
-		case TREE_COLLAPSE_ALL:
-		case TREE_COLLAPSE_FOLDERS:
-		case TREE_COLLAPSE_LINKS:
-			if ((tree) && (tree->root)) {
-				ro_gui_menu_set_entry_shaded(current_menu,
-						action, !tree->root->child);
-
-				if ((t) && (!t->editor) && (t->type != 
-						THEME_BROWSER_TOOLBAR)) {
-					ro_gui_set_icon_shaded_state(
-							t->toolbar_handle,
-							ICON_TOOLBAR_EXPAND, 
-							!tree->root->child);
-					ro_gui_set_icon_shaded_state(
-							t->toolbar_handle,
-							ICON_TOOLBAR_OPEN, 
-							!tree->root->child);
-				}
-			}
-			break;
 		case TREE_SELECTION:
-			if ((!tree) || (!tree->root))
-				break;
-			if (tree->root->child)
-				result = tree_has_selection(tree->root->child);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			if ((t) && (!t->editor) &&
-					(t->type != THEME_BROWSER_TOOLBAR)) {
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_DELETE, !result);
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_LAUNCH, !result);
-			}
-			break;
-		case TREE_SELECTION_EDIT:
-			node = tree_get_selected_node(tree->root);
-			entry = ro_gui_menu_find_entry(current_menu, action);
-			if ((!node) || (!entry))
-				break;
-			if (node->folder) {
-				entry->menu_entry->sub_menu =
-						(wimp_menu *)dialog_folder;
-				if (windows)
-					ro_gui_hotlist_prepare_folder_dialog(node);
-			} else {
-				entry->menu_entry->sub_menu =
-						(wimp_menu *)dialog_entry;
-				if (windows)
-					ro_gui_hotlist_prepare_entry_dialog(node);
-			}
-			break;
-		case TREE_SELECTION_LAUNCH:
-		case TREE_SELECTION_DELETE:
-		case TREE_CLEAR_SELECTION:
-			if ((!tree) || (!tree->root))
-				break;
-			if (tree->root->child)
-				result = tree_has_selection(tree->root->child);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			break;
-		case TREE_SELECT_ALL:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!tree->root->child);
 			break;
 
 		/* toolbar actions */
@@ -2509,31 +2244,35 @@ void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
  */
 void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
 		struct browser_window **bw, hlcache_handle **h,
-		struct toolbar **toolbar, struct tree **tree)
+		struct toolbar **toolbar,
+		bool *is_cookies, bool *is_hotlist, bool *is_global_history)
 {
+	*is_cookies = false;
+	*is_hotlist = false;
+	*is_global_history = false;
+
 	*g = ro_gui_window_lookup(w);
+
 	if (*g) {
 		*bw = (*g)->bw;
 		*toolbar = (*g)->toolbar;
 		if (*bw)
 			*h = (*bw)->current_content;
-		*tree = NULL;
 	} else {
 		*bw = NULL;
 		*h = NULL;
-		if ((hotlist_tree) && (w == (wimp_w)hotlist_tree->handle))
-			*tree = hotlist_tree;
-		else if ((global_history_tree) &&
-				(w == (wimp_w)global_history_tree->handle))
-			*tree = global_history_tree;
-		else if ((cookies_tree) && (w == (wimp_w)cookies_tree->handle))
-			*tree = cookies_tree;
-		else
-			*tree = NULL;
-		if (*tree)
-			*toolbar = (*tree)->toolbar;
-		else
+		if (ro_gui_hotlist_check_window(w)) {
+			*is_hotlist = true;
+//			*toolbar = treeview_window->toolbar;
+		} else if (ro_gui_global_history_check_window(w)) {
+			*is_global_history = true;
+//			*toolbar = treeview_window->toolbar;
+		} else if (ro_gui_cookies_check_window(w)) {
+			*is_cookies = true;
+//			*toolbar = treeview_window->toolbar;
+		} else {
 			*toolbar = NULL;
+		}
 	}
 }
 
@@ -2594,6 +2333,7 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 	struct menu_definition_entry *entry;
 	char *translated;
 	utf8_convert_ret err;
+
 
 	/* read current alphabet */
 	error = xosbyte1(osbyte_ALPHABET_NUMBER, 127, 0, &alphabet);

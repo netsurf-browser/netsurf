@@ -27,7 +27,7 @@
 ULONG throbber_width, throbber_height;
 
 void ami_theme_init(void);
-void ami_get_theme_filename(char *filename, char *themestring);
+void ami_get_theme_filename(char *filename, char *themestring, bool protocol);
 
 void ami_theme_throbber_setup(void);
 void ami_theme_throbber_free(void);

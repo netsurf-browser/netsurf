@@ -1,5 +1,6 @@
 /*
  * Copyright 2005 Richard Wilson <info@tinct.net>
+ * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,10 +24,13 @@
 #ifndef _NETSURF_RISCOS_GLOBALHISTORY_H_
 #define _NETSURF_RISCOS_GLOBALHISTORY_H_
 
-#define GLOBAL_HISTORY_RECENT_URLS 16
-
-void ro_gui_global_history_initialise(void);
+void ro_gui_global_history_preinitialise(void);
+void ro_gui_global_history_postinitialise(void);
+void ro_gui_global_history_open(void);
 void ro_gui_global_history_save(void);
-
+void ro_gui_global_history_update_theme(void);
+bool ro_gui_global_history_check_window(wimp_w window);
+bool ro_gui_global_history_check_menu(wimp_menu *menu);
 
 #endif
+

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,13 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/tree.h"
-#include <proto/listbrowser.h>
 #include <proto/window.h>
 #include <proto/layout.h>
+#include <proto/space.h>
+#include <proto/label.h>
+#include <proto/scroller.h>
 #include <classes/window.h>
-#include <gadgets/listbrowser.h>
+#include <gadgets/space.h>
+#include <images/label.h>
 #include <gadgets/layout.h>
+#include <gadgets/scroller.h>
 #include <reaction/reaction_macros.h>
 #include "amiga/gui.h"
 #include "content/urldb.h"
@@ -36,222 +39,395 @@
 #include "utils/messages.h"
 #include <proto/bitmap.h>
 #include <images/bitmap.h>
+#include <proto/graphics.h>
+#include <intuition/icclass.h>
+#include <proto/asl.h>
+#include <proto/utility.h>
+#include <libraries/gadtools.h>
+#include <proto/dos.h>
+#include "amiga/utf8.h"
+#include "desktop/cookies.h"
+#include "desktop/history_global_core.h"
+#include "desktop/hotlist.h"
+#include "amiga/sslcert.h"
+#include "utils/utils.h"
 
-struct Node *selectednode;
-struct node *selectednode2;
+#define AMI_TREE_MENU_ITEMS 19
 
-void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen);
-bool ami_tree_launch_node(struct tree *tree, struct node *node);
-void free_browserlist(struct List *list);
-void ami_move_node(struct treeview_window *twin,int move);
-void ami_new_bookmark(struct treeview_window *twin);
-void ami_recreate_listbrowser(struct treeview_window *twin);
+struct treeview_window {
+	struct Window *win;
+	Object *objects[OID_LAST];
+	struct Gadget *gadgets[GID_LAST];
+	struct nsObject *node;
+	ULONG pad[5];
+	int type;
+	struct NewMenu *menu;
+	char *menu_name[AMI_TREE_MENU_ITEMS];
+	struct tree *tree;
+	struct Hook scrollerhook;
+	uint32 key_state;
+	uint32 mouse_state;
+	int drag_x;
+	int drag_y;
+	struct timeval lastclick;
+	int max_width;
+	int max_height;
+	struct gui_globals globals;
+	struct sslcert_session_data *ssl_data;
+};
 
-void tree_initialise_redraw(struct tree *tree)
-{
-}
+void ami_tree_draw(struct treeview_window *twin);
+static void ami_tree_redraw_request(int x, int y, int width, int height,
+		void *data);
+static void ami_tree_resized(struct tree *tree, int width,
+		int height, void *data);
+static void ami_tree_scroll_visible(int y, int height, void *data);
+static void ami_tree_get_window_dimensions(int *width, int *height, void *data);
 
-void tree_redraw_area(struct tree *tree, int x, int y, int width, int height)
-{
-}
+const struct treeview_table ami_tree_callbacks = {
+	.redraw_request = ami_tree_redraw_request,
+	.resized = ami_tree_resized,
+	.scroll_visible = ami_tree_scroll_visible,
+	.get_window_dimensions = ami_tree_get_window_dimensions
+};
 
-void tree_draw_line(int x, int y, int width, int height)
-{
-}
-
-void tree_draw_node_element(struct tree *tree, struct node_element *element)
-{
-	return;
-#if 0
-/* add element to listbrowser list */
-
-	struct Node *lbnode;
-	struct treeview_window *twin = tree->handle;
-	struct node *tempnode;
-	int generation=1;
-	BOOL edit = FALSE;
-
-	tempnode = element->parent;
-	edit = tempnode->editable;
-
-	while(tempnode)
-	{
-		tempnode = tempnode->parent;
-		generation++;
-	}
-
-	switch (element->type) {
-		case NODE_ELEMENT_TEXT_PLUS_SPRITE:
-		case NODE_ELEMENT_TEXT:
-        		if (lbnode = AllocListBrowserNode(3,
-//				LBNA_UserData,nodetime,
-			LBNA_Generation,1,
-	            LBNA_Column, 0,
-				LBNCA_CopyText,TRUE,
- 	               LBNCA_Text, element->text,
-				LBNCA_Editable,edit,
- 	           LBNA_Column, 1,
-				LBNCA_CopyText,TRUE,
- 	               LBNCA_Text, "",
- 	           LBNA_Column, 2,
-				LBNCA_CopyText,TRUE,
- 	               LBNCA_Text, "",
- 	           TAG_DONE))
-	  	      {
- 		           AddTail(twin->listbrowser_list, lbnode);
- 		       }
-		break;
-	}
-#endif
-}
-
-void tree_draw_node_expansion(struct tree *tree, struct node *node)
-{
-	DebugPrintF("tree_draw_node_expansion\n");
-}
-
-void tree_recalculate_node_element(struct node_element *element)
-{
-}
-
-void tree_update_URL_node(struct node *node, const char *url,
-	const struct url_data *data)
-{
-	struct node_element *element;
-	char buffer[256];
-
-	assert(node);
-
-	element = tree_find_element(node, TREE_ELEMENT_URL);
-
-	if (!element)
-		return;
-	if (data) {
-		/* node is linked, update */
-		assert(!node->editable);
-		if (!data->title)
-			urldb_set_url_title(url, url);
-
-		if (!data->title)
-			return;
-
-		node->data.text = data->title;
-	} else {
-		/* node is not linked, find data */
-		assert(node->editable);
-		data = urldb_get_url_data(element->text);
-		if (!data)
-			return;
-	}
-
-/* not implemented yet
-	if (element) {
-		sprintf(buffer, "small_%.3x", ro_content_filetype_from_type(data->type));
-		if (ro_gui_wimp_sprite_exists(buffer))
-			tree_set_node_sprite(node, buffer, buffer);
-		else
-			tree_set_node_sprite(node, "small_xxx", "small_xxx");
-	}
-*/
-
-	element = tree_find_element(node, TREE_ELEMENT_LAST_VISIT);
-	if (element) {
-		snprintf(buffer, 256, (char *)messages_get("TreeLast"),
-				(data->last_visit > 0) ?
-					ctime((time_t *)&data->last_visit) :
-					(char *)messages_get("TreeUnknown"));
-		if (data->last_visit > 0)
-			buffer[strlen(buffer) - 1] = '\0';
-		free((void *)element->text);
-		element->text = (char *)strdup(buffer);
-	}
-
-	element = tree_find_element(node, TREE_ELEMENT_VISITS);
-	if (element) {
-		snprintf(buffer, 256, (char *)messages_get("TreeVisits"),
-				data->visits);
-		free((void *)element->text);
-		element->text = (char *)strdup(buffer);
-	}
-}
-
-void tree_resized(struct tree *tree)
-{
-}
-
-void tree_set_node_sprite_folder(struct node *node)
-{
-}
-
-void tree_set_node_sprite(struct node *node, const char *sprite,
-	const char *expanded)
-{
-}
-
-void ami_open_tree(struct tree *tree,int type)
+struct treeview_window *ami_tree_create(uint8 flags,
+			struct sslcert_session_data *ssl_data)
 {
 	struct treeview_window *twin;
+
+	twin = AllocVec(sizeof(struct treeview_window),
+					MEMF_PRIVATE | MEMF_CLEAR);
+
+	if(!twin)
+	{
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	twin->ssl_data = ssl_data;
+
+	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
+	return twin;
+}
+
+void ami_tree_destroy(struct treeview_window *twin)
+{
+	tree_delete(twin->tree);
+	FreeVec(twin);
+}
+
+struct tree *ami_tree_get_tree(struct treeview_window *twin)
+{
+	return twin->tree;
+}
+
+void ami_tree_resized(struct tree *tree, int width, int height, void *data)
+{
+	struct treeview_window *twin = data;
+	struct IBox *bbox;
+
+	twin->max_height = height;
+	twin->max_width = width;
+
+	if(twin->win)
+	{
+		GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+		RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
+			SCROLLER_Total, height,
+			SCROLLER_Visible, bbox->Height,
+			TAG_DONE);
+
+		RefreshSetGadgetAttrs((APTR)twin->objects[OID_HSCROLL], twin->win, NULL,
+			SCROLLER_Total, width,
+			SCROLLER_Visible, bbox->Width,
+			TAG_DONE);
+	}
+}
+
+/**
+ * Retrieves the dimensions of the window with the tree
+ *
+ * \param data	user data assigned to the tree on tree creation
+ * \param width	will be updated to window width if not NULL
+ * \param height	will be updated to window height if not NULL
+ */
+void ami_tree_get_window_dimensions(int *width, int *height, void *data)
+{
+	struct treeview_window *twin = data;
+	struct IBox *bbox;
+
+	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+	if(width) *width = bbox->Width;
+	if(height) *height = bbox->Height;
+}
+
+/**
+ * Translates a content_type to the name of a respective icon
+ *
+ * \param content_type	content type
+ * \param buffer	buffer for the icon name
+ */
+void tree_icon_name_from_content_type(char *buffer, content_type type)
+{
+	// TODO: design/acquire icons
+	switch (type) {
+	case CONTENT_HTML:
+	case CONTENT_TEXTPLAIN:
+	case CONTENT_CSS:
+#if defined(WITH_MNG) || defined(WITH_PNG)
+	case CONTENT_PNG:
+#endif
+#ifdef WITH_MNG
+	case CONTENT_JNG:
+	case CONTENT_MNG:
+#endif
+#ifdef WITH_JPEG
+	case CONTENT_JPEG:
+#endif
+#ifdef WITH_GIF
+	case CONTENT_GIF:
+#endif
+#ifdef WITH_BMP
+	case CONTENT_BMP:
+	case CONTENT_ICO:
+#endif
+#ifdef WITH_NSSPRITE
+	case CONTENT_SPRITE:
+#endif
+#ifdef WITH_NS_SVG
+	case CONTENT_SVG:
+#endif
+	default:
+		ami_get_theme_filename(buffer,"theme_list_content",true);
+	break;
+	}
+}
+
+/**
+ * Scrolls the tree to make an element visible
+ *
+ * \param y	Y coordinate of the element
+ * \param height	height of the element
+ * \param data	user data assigned to the tree on tree creation
+ */
+void ami_tree_scroll_visible(int y, int height, void *data)
+{
+	ULONG sy, scrollset;
+	struct IBox *bbox;
+	struct treeview_window *twin = data;
+
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&sy);
+	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+
+	if((y > sy) && ((y + height) < (sy + bbox->Height))) return;
+
+	if((y <= sy) || (height > bbox->Height)) scrollset = (ULONG)y;
+		else scrollset = sy + (y + height) - (sy + bbox->Height);
+
+	RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
+			SCROLLER_Top, scrollset,
+			TAG_DONE);
+
+	ami_tree_draw(twin);
+}
+
+void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
+{
+	int x, y;
+
+	if(!twin) return;
+	if(sx<0) sx=0;
+	if(sy<0) sy=0;
+
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
+
+	RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
+			SCROLLER_Top, y + sy,
+			TAG_DONE);
+
+	RefreshSetGadgetAttrs((APTR)twin->objects[OID_HSCROLL], twin->win, NULL,
+			SCROLLER_Top, x + sx,
+			TAG_DONE);
+
+	ami_tree_draw(twin);
+}
+
+
+void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
+{
+	ULONG gid,x,y;
+	struct treeview_window *twin = hook->h_Data;
+	struct IntuiWheelData *wheel;
+
+	switch(msg->Class)
+	{
+		case IDCMP_IDCMPUPDATE:
+			gid = GetTagData( GA_ID, 0, msg->IAddress ); 
+
+			switch( gid ) 
+			{ 
+ 				case OID_HSCROLL: 
+ 				case OID_VSCROLL:
+					ami_tree_draw(twin);
+ 				break; 
+			} 
+		break;
+
+		case IDCMP_EXTENDEDMOUSE:
+			if(msg->Code == IMSGCODE_INTUIWHEELDATA)
+			{
+				wheel = (struct IntuiWheelData *)msg->IAddress;
+
+				ami_tree_scroll(twin, (wheel->WheelX * 20), (wheel->WheelY * 20));
+			}
+		break;
+	}
+} 
+
+void ami_tree_menu(struct treeview_window *twin)
+{
+	if(twin->menu) return;
+
+	if(twin->menu = AllocVec(sizeof(struct NewMenu) * AMI_TREE_MENU_ITEMS, MEMF_CLEAR))
+	{
+		twin->menu[0].nm_Type = NM_TITLE;
+		twin->menu_name[0] = ami_utf8_easy((char *)messages_get("Tree"));
+		twin->menu[0].nm_Label = twin->menu_name[0];
+
+		twin->menu[1].nm_Type = NM_ITEM;
+		twin->menu_name[1] = ami_utf8_easy((char *)messages_get("TreeExport"));
+		twin->menu[1].nm_Label = twin->menu_name[1];
+		if(twin->type == AMI_TREE_COOKIES)
+			twin->menu[1].nm_Flags = NM_ITEMDISABLED;
+		twin->menu[1].nm_CommKey = "S";
+
+		twin->menu[2].nm_Type = NM_ITEM;
+		twin->menu[2].nm_Label = NM_BARLABEL;
+
+		twin->menu[3].nm_Type = NM_ITEM;
+		twin->menu_name[3] = ami_utf8_easy((char *)messages_get("Expand"));
+		twin->menu[3].nm_Label = twin->menu_name[3];
+
+		twin->menu[4].nm_Type = NM_SUB;
+		twin->menu_name[4] = ami_utf8_easy((char *)messages_get("All"));
+		twin->menu[4].nm_Label = twin->menu_name[4];
+		twin->menu[4].nm_CommKey = "+";
+
+		if(twin->type == AMI_TREE_COOKIES)
+		{
+			twin->menu_name[5] = ami_utf8_easy((char *)messages_get("Domains"));
+			twin->menu_name[6] = ami_utf8_easy((char *)messages_get("Cookies"));
+		}
+		else
+		{
+			twin->menu_name[5] = ami_utf8_easy((char *)messages_get("Folders"));
+			twin->menu_name[6] = ami_utf8_easy((char *)messages_get("Links"));
+		}
+
+		twin->menu[5].nm_Type = NM_SUB;
+		twin->menu[5].nm_Label = twin->menu_name[5]; // tree-specific title
+
+		twin->menu[6].nm_Type = NM_SUB;
+		twin->menu[6].nm_Label = twin->menu_name[6]; // tree-specific title
+
+		twin->menu[7].nm_Type = NM_ITEM;
+		twin->menu_name[7] = ami_utf8_easy((char *)messages_get("Collapse"));
+		twin->menu[7].nm_Label = twin->menu_name[7];
+
+		twin->menu[8].nm_Type = NM_SUB;
+		twin->menu[8].nm_Label = twin->menu_name[4];
+		twin->menu[8].nm_CommKey = "-";
+
+		twin->menu[9].nm_Type = NM_SUB;
+		twin->menu[9].nm_Label = twin->menu_name[5]; // tree-specific title
+
+		twin->menu[10].nm_Type = NM_SUB;
+		twin->menu[10].nm_Label = twin->menu_name[6]; // tree-specific title
+
+		twin->menu[11].nm_Type = NM_ITEM;
+		twin->menu[11].nm_Label = NM_BARLABEL;
+
+		twin->menu[12].nm_Type = NM_ITEM;
+		twin->menu_name[12] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+		twin->menu[12].nm_Label = twin->menu_name[12];
+		twin->menu[12].nm_CommKey = "K";
+
+		twin->menu[13].nm_Type = NM_TITLE;
+		twin->menu_name[13] = ami_utf8_easy((char *)messages_get("Edit"));
+		twin->menu[13].nm_Label = twin->menu_name[13];
+
+		twin->menu[14].nm_Type = NM_ITEM;
+		twin->menu_name[14] = ami_utf8_easy((char *)messages_get("TreeDelete"));
+		twin->menu[14].nm_Label = twin->menu_name[14];
+		twin->menu[14].nm_CommKey = "D";
+
+		twin->menu[15].nm_Type = NM_ITEM;
+		twin->menu[15].nm_Label = NM_BARLABEL;
+
+		twin->menu[16].nm_Type = NM_ITEM;
+		twin->menu_name[16] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+		twin->menu[16].nm_Label = twin->menu_name[16];
+		twin->menu[16].nm_CommKey = "A";
+
+		twin->menu[17].nm_Type = NM_ITEM;
+		twin->menu_name[17] = ami_utf8_easy((char *)messages_get("ClearNS"));
+		twin->menu[17].nm_Label = twin->menu_name[17];
+		twin->menu[17].nm_CommKey = "Z";
+
+		twin->menu[18].nm_Type = NM_END;
+	}
+}
+
+void ami_tree_open(struct treeview_window *twin,int type)
+{
 	BOOL msel = TRUE,nothl = TRUE,launchdisable=FALSE;
 	static WORD gen=0;
 	char *wintitle;
 	char folderclosed[100],folderopen[100],item[100];
 
-	if(tree->handle)
+	if(twin->win)
 	{
-		twin = (struct treeview_window *)tree->handle;
 		WindowToFront(twin->win);
 		ActivateWindow(twin->win);
 		return;
 	}
 
-	twin = AllocVec(sizeof(struct treeview_window),MEMF_PRIVATE | MEMF_CLEAR);
-	twin->listbrowser_list = AllocVec(sizeof(struct List),MEMF_PRIVATE | MEMF_CLEAR);
+	twin->type = type;
 
-	static struct ColumnInfo columninfo[] =
-	{
-    	{ 80,"Name", CIF_DRAGGABLE | CIF_SORTABLE},
-    	{ 20,"URL", CIF_DRAGGABLE },
-//    	{ 5,"Visits", CIF_DRAGGABLE },
-    	{ -1, (STRPTR)~0, -1 }
-	};
-
-	if(tree->single_selection) msel = FALSE;
-
-	ami_get_theme_filename(&folderclosed,"theme_list_folder_closed");
-	ami_get_theme_filename(&folderopen,"theme_list_folder_open");
-
-	switch(type)
+	switch(twin->type)
 	{
 		case AMI_TREE_HOTLIST:
 			nothl = FALSE;
 			wintitle = (char *)messages_get("Hotlist");
-			ami_get_theme_filename(&item,"theme_list_bookmark");
 		break;
 		case AMI_TREE_COOKIES:
 			nothl = TRUE;
 			launchdisable=TRUE;
 			wintitle = (char *)messages_get("Cookies");
-			ami_get_theme_filename(&item,"theme_list_cookie");
 		break;
 		case AMI_TREE_HISTORY:
 			nothl = TRUE;
 			wintitle = (char *)messages_get("GlobalHistory");
-			ami_get_theme_filename(&item,"theme_list_history");
 		break;
 		case AMI_TREE_SSLCERT:
 			nothl = TRUE;
 			wintitle = (char *)messages_get("SSLCerts");
-			ami_get_theme_filename(&item,"theme_list_sslcert");
 		break;
 	}
 
-	NewList(twin->listbrowser_list);
+	twin->scrollerhook.h_Entry = (void *)ami_tree_scroller_hook;
+	twin->scrollerhook.h_Data = twin;
 
-	tree->handle = (void *)twin;
-	twin->tree = tree;
-	ami_add_elements(twin,twin->tree->root,&gen);
+	ami_init_layers(&twin->globals, scrn->Width, scrn->Height);
+	ami_tree_menu(twin);
 
-	twin->objects[OID_MAIN] = WindowObject,
+	if(type == AMI_TREE_SSLCERT)
+	{
+		twin->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
            	WA_Title,wintitle,
            	WA_Activate, TRUE,
@@ -259,43 +435,77 @@ void ami_open_tree(struct tree *tree,int type)
            	WA_DragBar, TRUE,
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
+			WA_Height, scrn->Height / 2,
 			WA_CustomScreen,scrn,
+			WA_ReportMouse,TRUE,
+           	WA_IDCMP,IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+					IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
+					IDCMP_EXTENDEDMOUSE,
+			WINDOW_HorizProp,1,
+			WINDOW_VertProp,1,
+			WINDOW_IDCMPHook,&twin->scrollerhook,
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,twin,
-			WINDOW_IconifyGadget, TRUE,
+			/* WINDOW_NewMenu, twin->menu,   -> No menu for SSL Cert */
+			WINDOW_IconifyGadget, FALSE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, twin->gadgets[GID_TREEBROWSER] = ListBrowserObject,
-					GA_ID, GID_TREEBROWSER,
-					GA_RelVerify, TRUE,
-					GA_ReadOnly,FALSE,
-					LISTBROWSER_ColumnInfo, &columninfo,
-//					LISTBROWSER_ColumnTitles, TRUE,
-					LISTBROWSER_Hierarchical,TRUE,
-					LISTBROWSER_Editable,TRUE,
-//	LISTBROWSER_TitleClickable,TRUE,
-					LISTBROWSER_AutoFit, TRUE,
-					LISTBROWSER_HorizontalProp, TRUE,
-					LISTBROWSER_Labels, twin->listbrowser_list,
-//					LISTBROWSER_MultiSelect,msel,
-					LISTBROWSER_ShowSelected,TRUE,
-					LISTBROWSER_ShowImage,BitMapObject,
-						BITMAP_SourceFile,folderclosed,
-						BITMAP_Screen,scrn,
-						BITMAP_Masking,TRUE,
-						BitMapEnd,
-					LISTBROWSER_HideImage,BitMapObject,
-						BITMAP_SourceFile,folderopen,
-						BITMAP_Screen,scrn,
-						BITMAP_Masking,TRUE,
-						BitMapEnd,
-					LISTBROWSER_LeafImage,BitMapObject,
-						BITMAP_SourceFile,item,
-						BITMAP_Screen,scrn,
-						BITMAP_Masking,TRUE,
-						BitMapEnd,
-        			ListBrowserEnd,
-				CHILD_NominalSize,TRUE,
+				LAYOUT_AddImage, LabelObject,
+					LABEL_Text, messages_get("SSLError"),
+				LabelEnd,
+				LAYOUT_AddChild, twin->gadgets[GID_BROWSER] = SpaceObject,
+					GA_ID, GID_BROWSER,
+					SPACE_Transparent,TRUE,
+					SPACE_BevelStyle, BVS_DISPLAY,
+       			SpaceEnd,
+				LAYOUT_AddChild, HGroupObject,
+					LAYOUT_AddChild, twin->gadgets[GID_OPEN] = ButtonObject,
+						GA_ID,GID_OPEN,
+						GA_Text,messages_get("Accept"),
+						GA_RelVerify,TRUE,
+					ButtonEnd,
+					LAYOUT_AddChild, twin->gadgets[GID_CANCEL] = ButtonObject,
+						GA_ID,GID_CANCEL,
+						GA_Text,messages_get("Reject"),
+						GA_RelVerify,TRUE,
+					ButtonEnd,
+				EndGroup,
+				CHILD_WeightedHeight,0,
+			EndGroup,
+		EndWindow;
+	}
+	else
+	{
+		twin->objects[OID_MAIN] = WindowObject,
+      	    WA_ScreenTitle,nsscreentitle,
+           	WA_Title,wintitle,
+           	WA_Activate, TRUE,
+           	WA_DepthGadget, TRUE,
+           	WA_DragBar, TRUE,
+           	WA_CloseGadget, TRUE,
+           	WA_SizeGadget, TRUE,
+			WA_Height, scrn->Height / 2,
+			WA_CustomScreen,scrn,
+			WA_ReportMouse,TRUE,
+           	WA_IDCMP,IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+					IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
+					IDCMP_EXTENDEDMOUSE,
+			WINDOW_HorizProp,1,
+			WINDOW_VertProp,1,
+			WINDOW_IDCMPHook,&twin->scrollerhook,
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
+			WINDOW_SharedPort,sport,
+			WINDOW_UserData,twin,
+			WINDOW_NewMenu, twin->menu,
+			WINDOW_IconifyGadget, FALSE,
+			WINDOW_Position, WPOS_CENTERSCREEN,
+			WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, twin->gadgets[GID_BROWSER] = SpaceObject,
+					GA_ID, GID_BROWSER,
+					SPACE_Transparent,TRUE,
+					SPACE_BevelStyle, BVS_DISPLAY,
+       			SpaceEnd,
 				LAYOUT_AddChild, HGroupObject,
 					LAYOUT_AddChild, twin->gadgets[GID_OPEN] = ButtonObject,
 						GA_ID,GID_OPEN,
@@ -315,24 +525,6 @@ void ami_open_tree(struct tree *tree,int type)
 						GA_RelVerify,TRUE,
 						GA_Disabled,nothl,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_LEFT] = ButtonObject,
-						GA_ID,GID_LEFT,
-						BUTTON_AutoButton,BAG_LFARROW,
-						GA_RelVerify,TRUE,
-						GA_Disabled,nothl, //(!tree->movable),
-					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_UP] = ButtonObject,
-						GA_ID,GID_UP,
-						BUTTON_AutoButton,BAG_UPARROW,
-						GA_RelVerify,TRUE,
-						GA_Disabled,nothl, //(!tree->movable),
-					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_DOWN] = ButtonObject,
-						GA_ID,GID_DOWN,
-						BUTTON_AutoButton,BAG_DNARROW,
-						GA_RelVerify,TRUE,
-						GA_Disabled,nothl, //(!tree->movable),
-					ButtonEnd,
 					LAYOUT_AddChild, twin->gadgets[GID_DEL] = ButtonObject,
 						GA_ID,GID_DEL,
 						GA_Text,messages_get("TreeDelete"),
@@ -342,161 +534,89 @@ void ami_open_tree(struct tree *tree,int type)
 				CHILD_WeightedHeight,0,
 			EndGroup,
 		EndWindow;
+	}
 
 	twin->win = (struct Window *)RA_OpenWindow(twin->objects[OID_MAIN]);
 
+	GetAttr(WINDOW_HorizObject, twin->objects[OID_MAIN],
+				(ULONG *)&twin->objects[OID_HSCROLL]);
+	GetAttr(WINDOW_VertObject, twin->objects[OID_MAIN],
+				(ULONG *)&twin->objects[OID_VSCROLL]);
+
+	RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL],	twin->win,	NULL,
+		GA_ID,OID_VSCROLL,
+		ICA_TARGET,ICTARGET_IDCMP,
+		TAG_DONE);
+
+	RefreshSetGadgetAttrs((APTR)twin->objects[OID_HSCROLL], twin->win, NULL,
+		GA_ID,OID_HSCROLL,
+		ICA_TARGET,ICTARGET_IDCMP,
+		TAG_DONE);
+
 	twin->node = AddObject(window_list,AMINS_TVWINDOW);
 	twin->node->objstruct = twin;
-}
 
-/**
- * Launches a node using all known methods.
- *
- * \param node  the node to launch
- * \return whether the node could be launched
- */
-bool ami_tree_launch_node(struct tree *tree, struct node *node)
-{
-	struct node_element *element;
-
-	assert(node);
-
-	element = tree_find_element(node, TREE_ELEMENT_URL);
-	if (element) {
-		browser_window_create(element->text, NULL, 0, true, false);
-		return true;
-	}
-
-/* not implemented yet
-	element = tree_find_element(node, TREE_ELEMENT_SSL);
-	if (element) {
-		ro_gui_cert_open(tree, node);
-		return true;
-	}
-*/
-
-	return false;
+	ami_tree_resized(twin->tree, twin->max_width, twin->max_height, twin);
+	tree_set_redraw(twin->tree, true);
+	ami_tree_draw(twin);
 }
 
 void ami_tree_close(struct treeview_window *twin)
 {
-	twin->tree->handle = 0;
+	int i;
+
+	tree_set_redraw(twin->tree, false);
+	twin->win = NULL;
 	DisposeObject(twin->objects[OID_MAIN]);
-	FreeListBrowserList(twin->listbrowser_list);
-	FreeVec(twin->listbrowser_list);
-	//free_browserlist(twin->listbrowser_list);
-	DelObject(twin->node);
-}
+	DelObjectNoFree(twin->node);
+	ami_free_layers(&twin->globals);
 
-void free_browserlist(struct List *list)
-{
-    struct Node *node, *nextnode;
-
-	if(IsListEmpty(list)) return;
-
-    node = GetHead(list);
-
-	do
-    {
-    	nextnode = GetSucc(node);
-//		FreeVec(node->ln_Name);
-        FreeListBrowserNode(node);
-    } while(node = nextnode);
-}
-
-void ami_add_elements(struct treeview_window *twin,struct node *root,WORD *gen)
-{
-	struct Node *lbnode;
-	struct tree *tree = twin->tree;
-	struct node *tempnode;
-	int generation=1;
-	BOOL edit = FALSE;
-	struct node_element *element=NULL,*element2=NULL,*element3=NULL;
-	struct node *node;
-	ULONG flags = 0;
-	STRPTR text1 = "",text2 = "",text3 = "";
-
-	*gen = *gen + 1;
-	for (node = root; node; node = node->next)
+	for(i=0;i<AMI_TREE_MENU_ITEMS;i++)
 	{
-		element = tree_find_element(node, TREE_ELEMENT_NAME);
-		if(!element) element = tree_find_element(node, TREE_ELEMENT_TITLE);
-		if(!element) element = tree_find_element(node, TREE_ELEMENT_SSL);
-		if(element && element->text)
-		{
-			text1 = (char *)element->text;
-		}
-
-/* Really, the second column needs axing - relevant data should appear in an
-area below the listview when items are selected */
-
-		element2 = tree_find_element(node, TREE_ELEMENT_URL);
-		if(!element2) element2 = tree_find_element(node, TREE_ELEMENT_VALUE);
-		if(!element2) element2 = tree_find_element(node, TREE_ELEMENT_COMMENT);
-
-		if(element2 && element2->text)
-		{
-			text2 = (char *)element2->text;
-		}
-		else
-		{
-			text2 = "";
-		}
-
-//		element = tree_find_element(node, TREE_ELEMENT_VISITS);
-
-		flags = 0;
-		/*if(node->expanded) */ flags = LBFLG_SHOWCHILDREN;
-		if(node->folder) flags |= LBFLG_HASCHILDREN;
-		if(!node->parent) flags |= LBFLG_HIDDEN;
-
-		switch (element->type) {
-			case NODE_ELEMENT_TEXT_PLUS_SPRITE:
-			case NODE_ELEMENT_TEXT:
-    	    		if (lbnode = AllocListBrowserNode(3,
-					LBNA_UserData,node,
-					LBNA_Generation,*gen - 1,
-					LBNA_Selected,node->selected,
-					LBNA_Flags,flags,
-	            	LBNA_Column, 0,
-						LBNCA_CopyText,TRUE,
-						LBNCA_MaxChars,256,
-	 	               	LBNCA_Text, text1,
-						LBNCA_Editable,node->editable,
- 	    	       	LBNA_Column, 1,
-						LBNCA_CopyText,TRUE,
-						LBNCA_MaxChars,256,
- 	            	   	LBNCA_Text, text2,
-						LBNCA_Editable,FALSE,
- 		           	TAG_DONE))
-					{
-						AddTail(twin->listbrowser_list, lbnode);
-						if(node == selectednode2) selectednode = lbnode;
- 		       		}
-			break;
-		}
-
-		if (node->child)
-		{
-			ami_add_elements(twin,node->child,gen);
-		}
+		if(twin->menu_name[i] && (twin->menu_name[i] != NM_BARLABEL)) ami_utf8_free(twin->menu_name[i]);
 	}
-	*gen = *gen - 1;
+	FreeVec(twin->menu);
+	twin->menu = NULL;
+	if(twin->type == AMI_TREE_SSLCERT) ami_ssl_free(twin);
+}
+
+void ami_tree_update_quals(struct treeview_window *twin)
+{
+	uint32 quals = 0;
+
+	GetAttr(WINDOW_Qualifier, twin->objects[OID_MAIN], (uint32 *)&quals);
+
+	twin->key_state = 0;
+
+	if((quals & IEQUALIFIER_LSHIFT) || (quals & IEQUALIFIER_RSHIFT)) 
+	{
+		twin->key_state |= BROWSER_MOUSE_MOD_1;
+	}
+
+	if(quals & IEQUALIFIER_CONTROL) 
+	{
+		twin->key_state |= BROWSER_MOUSE_MOD_2;
+	}
+
+	if((quals & IEQUALIFIER_LALT) || (quals & IEQUALIFIER_RALT)) 
+	{
+		twin->key_state |= BROWSER_MOUSE_MOD_3;
+	}
 }
 
 BOOL ami_tree_event(struct treeview_window *twin)
 {
 	/* return TRUE if window destroyed */
-	ULONG class,result,relevent = 0;
-	ULONG column;
+	ULONG class,result,storage = 0;
 	uint16 code;
 	struct MenuItem *item;
-	struct node *treenode;
-	struct Node *lbnode;
-	struct node_element *element;
-	char *text;
-//	ULONG editcols[] = {TREE_ELEMENT_TITLE,TREE_ELEMENT_URL};
-	static WORD gen=0;
+	ULONG menunum=0,itemnum=0,subnum=0;
+	int xs, ys, x, y;
+	struct IBox *bbox;
+	struct timeval curtime;
+	struct InputEvent *ie;
+	int nskey;
+	char fname[1024];
 
 	while((result = RA_HandleInput(twin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 	{
@@ -505,126 +625,386 @@ BOOL ami_tree_event(struct treeview_window *twin)
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{
-					case GID_TREEBROWSER:
-						GetAttrs(twin->gadgets[GID_TREEBROWSER],
-							LISTBROWSER_RelEvent,&relevent,
-							TAG_DONE);
-
-							switch(relevent)
+					case GID_OPEN:
+						if(twin->type == AMI_TREE_SSLCERT)
 						{
-							case LBRE_DOUBLECLICK:
-								GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-								GetListBrowserNodeAttrs(lbnode,
-									LBNA_UserData,(ULONG *)&treenode,
-									TAG_DONE);
-								ami_tree_launch_node(twin->tree,treenode);
-							break;
-
-							case LBRE_EDIT:
-								GetAttrs(twin->gadgets[GID_TREEBROWSER],
-									LISTBROWSER_SelectedNode,(ULONG *)&lbnode,
-//									LISTBROWSER_RelColumn,(ULONG *)&column,
-									TAG_DONE);
-
-								GetListBrowserNodeAttrs(lbnode,
-									LBNA_UserData,(ULONG *)&treenode,
-									TAG_DONE);
-
-								element = tree_find_element(treenode,TREE_ELEMENT_TITLE);
-								GetListBrowserNodeAttrs(lbnode,
-									LBNA_Column,column,
-									LBNCA_Text,(ULONG *)&text,
-									TAG_DONE);
-								element->text = (char *)strdup(text);
-								tree_handle_node_element_changed(twin->tree, element);
-							break;
-
-							case LBRE_HIDECHILDREN:
-								GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-								GetListBrowserNodeAttrs(lbnode,
-									LBNA_UserData,(ULONG *)&treenode,
-									TAG_DONE);
-								tree_set_node_expanded(twin->tree, treenode, false);
-							break;
-
-							case LBRE_SHOWCHILDREN:
-								GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-								GetListBrowserNodeAttrs(lbnode,
-									LBNA_UserData,(ULONG *)&treenode,
-									TAG_DONE);
-								tree_set_node_expanded(twin->tree, treenode, true);
-							break;
+							sslcert_accept(twin->ssl_data);
+							ami_tree_close(twin);
+							return TRUE;
 						}
+						else tree_launch_selected(twin->tree);
 					break;
 
-					case GID_OPEN:
-						GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-						GetListBrowserNodeAttrs(lbnode,
-							LBNA_UserData,(ULONG *)&treenode,
-							TAG_DONE);
-						ami_tree_launch_node(twin->tree,treenode);
+					case GID_CANCEL:
+						sslcert_reject(twin->ssl_data);
+						ami_tree_close(twin);
+						return TRUE;
 					break;
 
 					case GID_NEWF:
-						GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-						if(lbnode)
-						{
-							GetListBrowserNodeAttrs(lbnode,
-								LBNA_UserData,(ULONG *)&treenode,
-								TAG_DONE);
-						}
-						else
-						{
-							treenode = twin->tree->root;
-						}
-
-						tree_create_folder_node(treenode,(char *)messages_get("TreeNewFolder"));
-
-						ami_recreate_listbrowser(twin);
+						hotlist_add_folder();
 					break;
 
 					case GID_NEWB:
-						ami_new_bookmark(twin);
-					break;
-
-					case GID_UP:
-						ami_move_node(twin,AMI_MOVE_UP);
-					break;
-
-					case GID_DOWN:
-						ami_move_node(twin,AMI_MOVE_DOWN);
-					break;
-
-					case GID_LEFT:
-						ami_move_node(twin,AMI_MOVE_OUT);
+						hotlist_add_entry();
 					break;
 
 					case GID_DEL:
-						GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-						GetListBrowserNodeAttrs(lbnode,
-							LBNA_UserData,(ULONG *)&treenode,
-							TAG_DONE);
-						tree_delete_node(twin->tree, treenode, false);
-/* We are recreating the list from scratch as there is no obvious easy way
-   to delete children from a listbrowser list */
-						ami_recreate_listbrowser(twin);
+						switch(twin->type)
+						{
+							case AMI_TREE_HISTORY:
+								history_global_delete_selected();
+							break;
+							case AMI_TREE_COOKIES:
+								cookies_delete_selected();
+							break;
+							case AMI_TREE_HOTLIST:
+								hotlist_delete_selected();
+							break;
+						}
 					break;
 				}
 			break;
 
-/* no menus yet, copied in as will probably need it later
+			case WMHI_MOUSEMOVE:
+				GetAttr(SPACE_AreaBox, twin->gadgets[GID_BROWSER], (ULONG *)&bbox);
+
+				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
+				x = twin->win->MouseX - bbox->Left + xs;
+
+				GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&ys);
+				y = twin->win->MouseY - bbox->Top + ys;
+
+				if((x >= xs) && (y >= ys) && (x < bbox->Width + xs) &&
+					(y < bbox->Height + ys))
+				{
+					ami_tree_update_quals(twin);
+
+					if(twin->mouse_state & BROWSER_MOUSE_PRESS_1)
+					{
+						tree_mouse_action(twin->tree,
+							BROWSER_MOUSE_DRAG_1 | twin->key_state, x, y);
+						twin->mouse_state = BROWSER_MOUSE_HOLDING_1 |
+											BROWSER_MOUSE_DRAG_ON;
+						if(twin->drag_x == 0) twin->drag_x = x;
+						if(twin->drag_y == 0) twin->drag_y = y;
+
+					}
+					else if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
+					{
+						tree_mouse_action(twin->tree,
+							BROWSER_MOUSE_DRAG_2 | twin->key_state, x, y);
+						twin->mouse_state = BROWSER_MOUSE_HOLDING_2 |
+											BROWSER_MOUSE_DRAG_ON;
+						if(twin->drag_x == 0) twin->drag_x = x;
+						if(twin->drag_y == 0) twin->drag_y = y;
+					}
+					else
+					{
+						tree_mouse_action(twin->tree,
+							twin->mouse_state | twin->key_state, x, y);
+					}
+				}
+				twin->lastclick.tv_sec = 0;
+				twin->lastclick.tv_usec = 0;
+			break;
+
+			case WMHI_MOUSEBUTTONS:
+				GetAttr(SPACE_AreaBox, twin->gadgets[GID_BROWSER], (ULONG *)&bbox);	
+				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
+				x = twin->win->MouseX - bbox->Left + xs;
+				GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&ys);
+				y = twin->win->MouseY - bbox->Top + ys;
+
+				ami_tree_update_quals(twin);
+
+				if((x >= xs) && (y >= ys) && (x < bbox->Width + xs) &&
+					(y < bbox->Height + ys))
+				{
+					switch(code)
+					{
+						case SELECTDOWN:
+							twin->mouse_state = BROWSER_MOUSE_PRESS_1;
+						break;
+						case MIDDLEDOWN:
+							twin->mouse_state = BROWSER_MOUSE_PRESS_2;
+						break;
+					}
+					tree_mouse_action(twin->tree,
+							twin->mouse_state | twin->key_state, x, y);
+				}
+
+				if(x < xs) x = xs;
+				if(y < ys) y = ys;
+				if(x >= bbox->Width + xs) x = bbox->Width + xs - 1;
+				if(y >= bbox->Height + ys) y = bbox->Height + ys - 1;
+
+				switch(code)
+				{
+					case SELECTUP:
+						if(twin->mouse_state & BROWSER_MOUSE_PRESS_1)
+						{
+							CurrentTime(&curtime.tv_sec,&curtime.tv_usec);
+
+							twin->mouse_state = BROWSER_MOUSE_CLICK_1;
+
+							if(twin->lastclick.tv_sec)
+							{
+								if(DoubleClick(twin->lastclick.tv_sec,
+											twin->lastclick.tv_usec,
+											curtime.tv_sec, curtime.tv_usec))
+									twin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+							}
+							tree_mouse_action(twin->tree,
+								twin->mouse_state | twin->key_state, x, y);
+
+							if(twin->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK)
+							{
+								twin->lastclick.tv_sec = 0;
+								twin->lastclick.tv_usec = 0;
+							}
+							else
+							{
+								twin->lastclick.tv_sec = curtime.tv_sec;
+								twin->lastclick.tv_usec = curtime.tv_usec;
+							}
+						}
+						else
+						{
+							tree_drag_end(twin->tree, twin->mouse_state,
+								twin->drag_x, twin->drag_y, x, y);
+						}
+						twin->mouse_state=0;
+						twin->drag_x = 0;
+						twin->drag_y = 0;
+					break;
+					case MIDDLEUP:
+						if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
+						{
+							tree_mouse_action(twin->tree,
+								BROWSER_MOUSE_CLICK_2 | twin->key_state, x, y);
+						}
+						else
+						{
+							tree_drag_end(twin->tree, twin->mouse_state,
+								twin->drag_x, twin->drag_y, x, y);
+						}
+						twin->mouse_state=0;
+						twin->drag_x = 0;
+						twin->drag_y = 0;
+					break;
+				}
+			break;
+
+			case WMHI_RAWKEY:
+				storage = result & WMHI_GADGETMASK;
+
+				GetAttr(WINDOW_InputEvent,twin->objects[OID_MAIN],(ULONG *)&ie);
+				nskey = ami_key_to_nskey(storage, ie);
+				tree_keypress(twin->tree, nskey);
+			break;
+
 			case WMHI_MENUPICK:
-				item = ItemAddress(gwin->win->MenuStrip,code);
+				item = ItemAddress(twin->win->MenuStrip,code);
 				while (code != MENUNULL)
 				{
-					ami_menupick(code,gwin);
+					menunum = MENUNUM(code);
+					itemnum = ITEMNUM(code);
+					subnum = SUBNUM(code);
+
+					switch(menunum)
+					{
+						case 0: // tree
+							switch(itemnum)
+							{
+								case 0: // export
+									if(AslRequestTags(savereq,
+										ASLFR_TitleText,messages_get("NetSurf"),
+										ASLFR_Screen,scrn,
+										ASLFR_InitialFile,"tree_export.html",
+										TAG_DONE))
+									{
+										strlcpy(&fname,savereq->fr_Drawer,1024);
+										AddPart(fname,savereq->fr_File,1024);
+										ami_update_pointer(twin->win,GUI_POINTER_WAIT);
+										if(twin->type == AMI_TREE_HISTORY)
+											history_global_export(fname);
+										else if(twin->type == AMI_TREE_HOTLIST)
+											hotlist_export(fname);
+										ami_update_pointer(twin->win,GUI_POINTER_DEFAULT);
+									}
+								break;
+
+								case 2: // expand
+									switch(subnum)
+									{
+										case 0: // all
+											switch(twin->type)
+											{
+												case AMI_TREE_HISTORY:
+													history_global_expand_all();
+												break;
+												case AMI_TREE_COOKIES:
+													cookies_expand_all();
+												break;
+												case AMI_TREE_HOTLIST:
+													hotlist_expand_all();
+												break;
+											}
+										break;
+
+										case 1: // lev 1
+											switch(twin->type)
+											{
+												case AMI_TREE_HISTORY:
+													history_global_expand_directories();
+												break;
+												case AMI_TREE_COOKIES:
+													cookies_expand_domains();
+												break;
+												case AMI_TREE_HOTLIST:
+													hotlist_expand_directories();
+												break;
+											}
+										break;
+
+										case 2: // lev 2
+											switch(twin->type)
+											{
+												case AMI_TREE_HISTORY:
+													history_global_expand_addresses();
+												break;
+												case AMI_TREE_COOKIES:
+													cookies_expand_cookies();
+												break;
+												case AMI_TREE_HOTLIST:
+													hotlist_expand_addresses();
+												break;
+											}
+										break;
+									}
+								break;
+
+								case 3: // collapse
+									switch(subnum)
+									{
+										case 0: // all
+											switch(twin->type)
+											{
+												case AMI_TREE_HISTORY:
+													history_global_collapse_all();
+												break;
+												case AMI_TREE_COOKIES:
+													cookies_collapse_all();
+												break;
+												case AMI_TREE_HOTLIST:
+													hotlist_collapse_all();
+												break;
+											}
+										break;
+
+										case 1: // lev 1
+											switch(twin->type)
+											{
+												case AMI_TREE_HISTORY:
+													history_global_collapse_directories();
+												break;
+												case AMI_TREE_COOKIES:
+													cookies_collapse_domains();
+												break;
+												case AMI_TREE_HOTLIST:
+													hotlist_collapse_directories();
+												break;
+											}
+										break;
+
+										case 2: // lev 2
+											switch(twin->type)
+											{
+												case AMI_TREE_HISTORY:
+													history_global_collapse_addresses();
+												break;
+												case AMI_TREE_COOKIES:
+													cookies_collapse_cookies();
+												break;
+												case AMI_TREE_HOTLIST:
+													hotlist_collapse_addresses();
+												break;
+											}
+										break;
+									}
+								break;
+
+								case 5: // close
+									ami_tree_close(twin);
+									return TRUE;
+								break;
+							}
+						break;
+
+						case 1: // edit
+							switch(itemnum)
+							{
+								case 0: // delete
+									switch(twin->type)
+									{
+										case AMI_TREE_HISTORY:
+											history_global_delete_selected();
+										break;
+										case AMI_TREE_COOKIES:
+											cookies_delete_selected();
+										break;
+										case AMI_TREE_HOTLIST:
+											hotlist_delete_selected();
+										break;
+									}
+								break;
+
+								case 2: // select all
+									switch(twin->type)
+									{
+										case AMI_TREE_HISTORY:
+											history_global_select_all();
+										break;
+										case AMI_TREE_COOKIES:
+											cookies_select_all();
+										break;
+										case AMI_TREE_HOTLIST:
+											hotlist_select_all();
+										break;
+									}
+								break;
+
+								case 3: // clear
+									switch(twin->type)
+									{
+										case AMI_TREE_HISTORY:
+											history_global_clear_selection();
+										break;
+										case AMI_TREE_COOKIES:
+											cookies_clear_selection();
+										break;
+										case AMI_TREE_HOTLIST:
+											hotlist_clear_selection();
+										break;
+									}
+								break;
+							}
+						break;
+					}
+
 					if(win_destroyed) break;
 					code = item->NextSelect;
 				}
 			break;
-*/
+
+			case WMHI_NEWSIZE:
+				ami_tree_draw(twin);
+			break;
 
 			case WMHI_CLOSEWINDOW:
+				if(twin->type == AMI_TREE_SSLCERT)
+					sslcert_reject(twin->ssl_data);
 				ami_tree_close(twin);
 				return TRUE;
 			break;
@@ -633,103 +1013,44 @@ BOOL ami_tree_event(struct treeview_window *twin)
 	return FALSE;
 }
 
-void ami_move_node(struct treeview_window *twin,int move)
+void ami_tree_draw(struct treeview_window *twin)
 {
-	struct Node *lbnode = NULL;
-	struct node *treenode,*moveto;
-	bool before;
+	struct IBox *bbox;
+	int x, y;
 
-	GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
+	if(!twin) return;
 
-	if(!lbnode) return;
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
+	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
 
-	GetListBrowserNodeAttrs(lbnode,
-			LBNA_UserData,(ULONG *)&treenode,
-// for multiselects?				LBNA_Selected,(BOOL *)&sel,
-			TAG_DONE);
-
-	selectednode2 = treenode;
-
-	tree_set_node_selected(twin->tree,twin->tree->root,false);
-	tree_set_node_selected(twin->tree,treenode,true);
-
-	switch(move)
-	{
-		case AMI_MOVE_UP:
-			moveto = treenode->previous;
-			before = true;
-		break;
-
-		case AMI_MOVE_DOWN:
-			moveto = treenode->next;
-			before = false;
-		break;
-
-		case AMI_MOVE_OUT:
-			moveto = treenode->parent->previous;
-			before = false;
-		break;
-	}
-
-	if(!moveto) return;
-
-	tree_delink_node(treenode);
-	//tree_move_selected_nodes(twin->tree,moveto,before);
-	tree_link_node(moveto,treenode,before);
-	ami_recreate_listbrowser(twin);
-	selectednode2 = NULL;
+	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
 }
 
-void ami_new_bookmark(struct treeview_window *twin)
+void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 {
-	const struct url_data *data;
-	struct Node *lbnode;
-	struct node *treenode;
-	char *url,*title;
+	struct treeview_window *twin = data;
+	struct IBox *bbox;
+	int pos_x, pos_y;
 
-	GetAttr(LISTBROWSER_SelectedNode,twin->gadgets[GID_TREEBROWSER],(ULONG *)&lbnode);
-	if(lbnode)
-	{
-		GetListBrowserNodeAttrs(lbnode,
-			LBNA_UserData,(ULONG *)&treenode,
-			TAG_DONE);
-	}
-	else
-	{
-		treenode = twin->tree->root;
-	}
+	if(!twin->win) return;
+//	if(tree_get_redraw(twin->tree) == false) return;
 
-	url = (char *)strdup("http://www.netsurf-browser.org");
+	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
+	glob = &twin->globals;
 
-	data = urldb_get_url_data(url);
-	if (!data)
-	{
-		urldb_add_url(url);
-		urldb_set_url_persistence(url,true);
-		data = urldb_get_url_data(url);
-	}
+	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
+	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
 
-	if (data)
-	{
-		title = data->title;
-		tree_create_URL_node(treenode,url,data,title);
-		ami_recreate_listbrowser(twin);
-	}
-}
+	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
+	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
 
-void ami_recreate_listbrowser(struct treeview_window *twin)
-{
-	static WORD gen=0;
+	tree_draw(twin->tree, -pos_x, -pos_y, x, y, width, height);
 
-	SetGadgetAttrs(twin->gadgets[GID_TREEBROWSER],twin->win,NULL,
-					LISTBROWSER_Labels,~0,
-					TAG_DONE);
+	BltBitMapRastPort(twin->globals.bm, x - pos_x, y - pos_y, twin->win->RPort,
+		bbox->Left + x - pos_x, bbox->Top + y - pos_y, width, height, 0x0C0);
 
-	FreeListBrowserList(twin->listbrowser_list);
-	ami_add_elements(twin,twin->tree->root,&gen);
-
-	RefreshSetGadgetAttrs(twin->gadgets[GID_TREEBROWSER],twin->win,NULL,
-							LISTBROWSER_Labels,twin->listbrowser_list,
-							LISTBROWSER_SelectedNode,selectednode,
-							TAG_DONE);
+	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
+	glob = &browserglob;
 }

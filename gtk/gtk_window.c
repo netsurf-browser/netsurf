@@ -606,7 +606,7 @@ gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 }
 
 gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
-					gpointer data)
+		gpointer data)
 {
 	struct gui_window *g = data;
 	uint32_t nskey = gtk_gui_gdkkey_to_nskey(event);

@@ -447,6 +447,7 @@ struct nsgtk_theme *nsgtk_theme_load(GtkIconSize s)
 	SET_BUTTON_IMAGE(cachetheme, GLOBALHISTORY, theme)
 	SET_BUTTON_IMAGE(cachetheme, ADDBOOKMARKS, theme)
 	SET_BUTTON_IMAGE(cachetheme, SHOWBOOKMARKS, theme)
+	SET_BUTTON_IMAGE(cachetheme, SHOWCOOKIES, theme)
 	SET_BUTTON_IMAGE(cachetheme, OPENLOCATION, theme)
 	SET_BUTTON_IMAGE(cachetheme, NEXTTAB, theme)
 	SET_BUTTON_IMAGE(cachetheme, PREVTAB, theme)
@@ -571,6 +572,7 @@ void nsgtk_theme_prepare(void)
 	CACHE_IMAGE(GLOBALHISTORY, globalhistory, path);
 	CACHE_IMAGE(ADDBOOKMARKS, addbookmarks, path);
 	CACHE_IMAGE(SHOWBOOKMARKS, showbookmarks, path);
+	CACHE_IMAGE(SHOWCOOKIES, showcookies, path);
 	CACHE_IMAGE(OPENLOCATION, openlocation, path);
 	CACHE_IMAGE(NEXTTAB, nexttab, path);
 	CACHE_IMAGE(PREVTAB, prevtab, path);

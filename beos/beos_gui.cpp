@@ -74,7 +74,6 @@ extern "C" {
 #include "beos/beos_window.h"
 #include "beos/options.h"
 #include "beos/beos_throbber.h"
-#include "beos/beos_history.h"
 #include "beos/beos_filetype.h"
 //#include "beos/beos_download.h"
 #include "beos/beos_schedule.h"
@@ -641,7 +640,6 @@ void gui_init(int argc, char** argv)
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
-	nsbeos_history_init();
 	//nsbeos_download_initialise();
 
 	if (!replicated)
@@ -1057,11 +1055,6 @@ void die(const char * const error)
 		debugger("die");
 #endif
 	exit(EXIT_FAILURE);
-}
-
-
-void hotlist_visited(hlcache_handle *content)
-{
 }
 
 void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 

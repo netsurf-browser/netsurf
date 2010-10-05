@@ -55,20 +55,26 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "desktop/cookies.h"
 #include "desktop/gui.h"
+#include "desktop/history_global_core.h"
+#include "desktop/hotlist.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
 #include "desktop/tree.h"
+#include "desktop/tree_url_node.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/html.h"
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
+#include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/help.h"
+#include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/options.h"
@@ -78,6 +84,7 @@
 #include "riscos/print.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
+#include "riscos/sslcert.h"
 #include "riscos/textselection.h"
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
@@ -184,7 +191,7 @@ static struct {
 } prev_sigs;
 
 /** Accepted wimp user messages. */
-static ns_wimp_message_list task_messages = { 
+static ns_wimp_message_list task_messages = {
 	message_HELP_REQUEST,
 	{
 		message_DATA_SAVE,
@@ -347,6 +354,8 @@ static void gui_init(int argc, char** argv)
 		option_theme_path = strdup("NetSurf:Themes");
 	if (!option_theme_save)
 		option_theme_save = strdup(CHOICES_PREFIX "Themes");
+	if (!option_tree_icons_dir)
+		option_tree_icons_dir = strdup("NetSurf:Resources.Icons");
 
 	if (!option_theme || ! option_toolbar_browser ||
 			!option_toolbar_hotlist || !option_toolbar_history ||
@@ -355,7 +364,7 @@ static void gui_init(int argc, char** argv)
 			!option_url_save || !option_hotlist_path ||
 			!option_hotlist_save || !option_recent_path ||
 			!option_recent_save || !option_theme_path ||
-			!option_theme_save)
+			!option_theme_save || !option_tree_icons_dir)
 		die("Failed initialising string options");
 
 	/* Create our choices directories */
@@ -394,7 +403,7 @@ static void gui_init(int argc, char** argv)
 	default_stylesheet_url = strdup("file:///NetSurf:/Resources/CSS");
 	quirks_stylesheet_url = strdup("file:///NetSurf:/Resources/Quirks");
 	adblock_stylesheet_url = strdup("file:///NetSurf:/Resources/AdBlock");
-	if (!default_stylesheet_url || !quirks_stylesheet_url || 
+	if (!default_stylesheet_url || !quirks_stylesheet_url ||
 			!adblock_stylesheet_url)
 		die("Failed initialising string constants.");
 
@@ -478,9 +487,6 @@ static void gui_init(int argc, char** argv)
 
 	/* Done with the templates file */
 	wimp_close_template();
-
-	/* Initialise tree views (must be after UI sprites are loaded) */
-	ro_gui_tree_initialise();
 
 	/* Create Iconbar icon */
 	ro_gui_icon_bar_create();
@@ -670,6 +676,21 @@ static void gui_init2(int argc, char** argv)
 	char *url = 0;
 	bool open_window = option_open_browser_at_startup;
 
+	/* Complete initialisation of the treeview modules. */
+
+	/* certificate verification window */
+	ro_gui_cert_postinitialise();
+
+	/* hotlist window */
+	ro_gui_hotlist_postinitialise();
+
+	/* global history window */
+	ro_gui_global_history_postinitialise();
+
+	/* cookies window */
+	ro_gui_cookies_postinitialise();
+
+
 	/* parse command-line arguments */
 	if (argc == 2) {
 		LOG(("parameters: '%s'", argv[1]));
@@ -781,8 +802,9 @@ void gui_quit(void)
 	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_save);
 	ro_gui_window_quit();
-	ro_gui_global_history_save();
-	ro_gui_hotlist_save();
+	history_global_cleanup();
+	cookies_cleanup();
+	hotlist_cleanup(option_hotlist_save);
 	ro_gui_saveas_quit();
 	rufl_quit();
 	free(gui_sprites);
@@ -1109,6 +1131,9 @@ void ro_gui_null_reason_code(void)
 //			break;
 
 		default:
+			if (ro_gui_hotlist_check_window(gui_track_wimp_w))
+				ro_treeview_mouse_at(gui_track_wimp_w,
+						&pointer);
 			if (gui_track_wimp_w == history_window)
 				ro_gui_history_mouse_at(&pointer);
 			if (gui_track_wimp_w == dialog_url_complete)
@@ -1203,8 +1228,10 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 		default:
 			gui_track_wimp_w = entering->w;
 			gui_track_gui_window = ro_gui_window_lookup(entering->w);
-			gui_track = gui_track_gui_window || gui_track_wimp_w == history_window ||
-					gui_track_wimp_w == dialog_url_complete;
+			gui_track = gui_track_gui_window ||
+					gui_track_wimp_w == history_window ||
+					gui_track_wimp_w == dialog_url_complete ||
+					ro_gui_hotlist_check_window(gui_track_wimp_w);
 			break;
 	}
 }
@@ -1275,11 +1302,11 @@ void ro_gui_drag_end(wimp_dragged *drag)
 			break;
 
 		case GUI_DRAG_TREE_SELECT:
-			ro_gui_tree_selection_drag_end(drag);
+//			ro_gui_tree_selection_drag_end(drag);
 			break;
 
 		case GUI_DRAG_TREE_MOVE:
-			ro_gui_tree_move_drag_end(drag);
+//			ro_gui_tree_move_drag_end(drag);
 			break;
 
 		case GUI_DRAG_TOOLBAR_CONFIG:
@@ -1485,12 +1512,7 @@ void ro_msg_dataload(wimp_message *message)
 	char *url = 0;
 	char *title = NULL;
 	struct gui_window *g;
-	struct node *node;
-	struct node *link;
 	os_error *error;
-	int x, y;
-	bool before;
-	const struct url_data *data;
 
 	g = ro_gui_window_lookup(message->data.data_xfer.w);
 	if (g) {
@@ -1551,28 +1573,9 @@ void ro_msg_dataload(wimp_message *message)
 
 	if (g) {
 		browser_window_go(g->bw, url, 0, true);
-	} else if ((hotlist_tree) && ((wimp_w)hotlist_tree->handle ==
-			message->data.data_xfer.w)) {
-		data = urldb_get_url_data(url);
-		if (!data) {
-			urldb_add_url(url);
-			urldb_set_url_persistence(url, true);
-			data = urldb_get_url_data(url);
-		}
-		if (data) {
-			ro_gui_tree_get_tree_coordinates(hotlist_tree,
-					message->data.data_xfer.pos.x,
-					message->data.data_xfer.pos.y,
-					&x, &y);
-			link = tree_get_link_details(hotlist_tree, x, y, &before);
-			node = tree_create_URL_node(NULL, url, data, title);
-			tree_link_node(link, node, before);
-			tree_handle_node_changed(hotlist_tree, node, false, true);
-			tree_redraw_area(hotlist_tree, node->box.x - NODE_INSTEP, 0,
-					NODE_INSTEP, 16384);
-			if ((!title) && (!data->title))
-				ro_gui_tree_start_edit(hotlist_tree, &node->data, NULL);
-		}
+//	} else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
+//		/* Drop URL into hotlist */
+//		ro_gui_hotlist_url_drop(message, url);
 	} else {
 		browser_window_create(url, 0, 0, true, false);
 	}

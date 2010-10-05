@@ -25,8 +25,42 @@
 
 #include <stdbool.h>
 
+#include "desktop/tree.h"
+
 struct cookie_data;
 
-bool cookies_update(const char *domain, const struct cookie_data *data);
+bool cookies_initialise(struct tree *tree);
+unsigned int cookies_get_tree_flags(void);
+
+/**
+ * Perform cookie updates and addition. The update is only scheduled here.
+ * The actual update is performed in the callback function.
+ *
+ * \param data Data of cookie being updated.
+ * \return true (for urldb_iterate_entries)
+ */
+bool cookies_schedule_update(const struct cookie_data *data);
+
+/**
+ * Remove a cookie from the active set.
+ * The cookie is to be removed from the active set and no futher
+ * references made to the cookie data.
+ *
+ * \param data Data of cookie being removed.
+ */
+void cookies_remove(const struct cookie_data *data);
+
+void cookies_cleanup(void);
+
+void cookies_delete_selected(void);
+void cookies_delete_all(void);
+void cookies_select_all(void);
+void cookies_clear_selection(void);
+void cookies_expand_all(void);
+void cookies_expand_domains(void);
+void cookies_expand_cookies(void);
+void cookies_collapse_all(void);
+void cookies_collapse_domains(void);
+void cookies_collapse_cookies(void);
 
 #endif

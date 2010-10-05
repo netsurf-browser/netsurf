@@ -41,6 +41,11 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/clipboard.h"
 #include "amiga/gui_options.h"
+#include "desktop/tree_url_node.h"
+#include <classes/window.h>
+#include <proto/intuition.h>
+#include "desktop/hotlist.h"
+#include <proto/gadtools.h>
 #include "amiga/print.h"
 #include "amiga/download.h"
 
@@ -61,226 +66,221 @@ const char * const versvn;
 const char * const verdate;
 static struct Hook aslhookfunc;
 
-void ami_menu_scan(struct tree *tree,struct NewMenu *menu);
-void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu);
-void ami_menu_arexx_scan(struct NewMenu *menu);
+ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin);
+void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
+		ULONG *item, bool count, struct gui_window_2 *gwin);
+void ami_menu_arexx_scan(struct gui_window_2 *gwin);
 static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,struct AnchorPathOld *ap);
 
 
-void ami_free_menulabs(void)
+void ami_free_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
-	for(i=0;i<=AMI_MENU_MAX;i++)
+	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
 	{
-		if(menulab[i] && (menulab[i] != NM_BARLABEL)) ami_utf8_free(menulab[i]);
+		if(gwin->menulab[i] && (gwin->menulab[i] != NM_BARLABEL))
+				ami_utf8_free(gwin->menulab[i]);
+
+		gwin->menulab[i] = NULL;
+		gwin->menukey[i] = 0;
 	}
 
-	for(i=AMI_MENU_MAX+1;i<=AMI_MENU_AREXX_MAX;i++)
-	{
-		if(menulab[i] && (menulab[i] != NM_BARLABEL)) free(menulab[i]);
-	}
+	FreeVec(gwin->menutype);
+	FreeVec(gwin->menu);
+
+	gwin->menutype = NULL;
+	gwin->menu = NULL;
 }
 
-void ami_init_menulabs(void)
+void ami_init_menulabs(struct gui_window_2 *gwin)
 {
-	menulab[0] = ami_utf8_easy((char *)messages_get("Project"));
-	menulab[1] = ami_utf8_easy((char *)messages_get("NewWindowNS"));
-	menulab[2] = ami_utf8_easy((char *)messages_get("NewTab"));
-	menulab[3] = NM_BARLABEL;
-	menulab[4] = ami_utf8_easy((char *)messages_get("OpenFile"));
-	menulab[5] = ami_utf8_easy((char *)messages_get("SaveAsNS"));
-	menulab[6] = ami_utf8_easy((char *)messages_get("Source"));
-	menulab[7] = ami_utf8_easy((char *)messages_get("TextNS"));
-	menulab[8] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
-	menulab[9] = ami_utf8_easy((char *)messages_get("PDFNS"));
-	menulab[10] = ami_utf8_easy((char *)messages_get("IFF"));
-	menulab[11] = NM_BARLABEL;
-	menulab[12] = ami_utf8_easy((char *)messages_get("CloseTab"));
-	menulab[13] = ami_utf8_easy((char *)messages_get("CloseWindow"));
-	menulab[14] = NM_BARLABEL;
-	menulab[15] = ami_utf8_easy((char *)messages_get("PrintNS"));
-	menulab[16] = NM_BARLABEL;
-	menulab[17] = ami_utf8_easy((char *)messages_get("About"));
-	menulab[18] = ami_utf8_easy((char *)messages_get("Quit"));
-	menulab[19] = ami_utf8_easy((char *)messages_get("Edit"));
-	menulab[20] = ami_utf8_easy((char *)messages_get("CutNS"));
-	menulab[21] = ami_utf8_easy((char *)messages_get("CopyNS"));
-	menulab[22] = ami_utf8_easy((char *)messages_get("PasteNS"));
-	menulab[23] = NM_BARLABEL;
-	menulab[24] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
-	menulab[25] = ami_utf8_easy((char *)messages_get("ClearNS"));
-	menulab[26] = ami_utf8_easy((char *)messages_get("Browser"));
-	menulab[27] = ami_utf8_easy((char *)messages_get("FindTextNS"));
-	menulab[28] = NM_BARLABEL;
-	menulab[29] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
-	menulab[30] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
-	menulab[31] = NM_BARLABEL;
-	menulab[32] = ami_utf8_easy((char *)messages_get("ShowCookies"));
-	menulab[33] = NM_BARLABEL;
-	menulab[34] = ami_utf8_easy((char *)messages_get("ScaleNS"));
-	menulab[35] = ami_utf8_easy((char *)messages_get("ScaleDec"));
-	menulab[36] = ami_utf8_easy((char *)messages_get("ScaleNorm"));
-	menulab[37] = ami_utf8_easy((char *)messages_get("ScaleInc"));
-	menulab[38] = ami_utf8_easy((char *)messages_get("Redraw"));
-	menulab[39] = ami_utf8_easy((char *)messages_get("Hotlist"));
-	menulab[40] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	menulab[41] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	menulab[42] = NM_BARLABEL;
+	int i;
 
-	menulab[AMI_MENU_HOTLIST_MAX] = ami_utf8_easy((char *)messages_get("Settings"));
-	menulab[AMI_MENU_HOTLIST_MAX+1] = ami_utf8_easy((char *)messages_get("SettingsEdit"));
-	menulab[AMI_MENU_HOTLIST_MAX+2] = NM_BARLABEL;
-	menulab[AMI_MENU_HOTLIST_MAX+3] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
-	menulab[AMI_MENU_HOTLIST_MAX+4] = ami_utf8_easy((char *)messages_get("SettingsSave"));
-	menulab[AMI_MENU_HOTLIST_MAX+5] = ami_utf8_easy((char *)messages_get("ARexx"));
-	menulab[AMI_MENU_HOTLIST_MAX+6] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
-	menulab[AMI_MENU_HOTLIST_MAX+7] = NM_BARLABEL;
+	gwin->menutype = AllocVec(AMI_MENU_AREXX_MAX + 1, MEMF_PRIVATE | MEMF_CLEAR);
+
+	for(i=0;i <= AMI_MENU_AREXX_MAX;i++)
+	{
+		gwin->menutype[i] = NM_IGNORE;
+		gwin->menulab[i] = NULL;
+	}
+
+	gwin->menutype[0] = NM_TITLE;
+	gwin->menulab[0] = ami_utf8_easy((char *)messages_get("Project"));
+	gwin->menutype[1] = NM_ITEM;
+	gwin->menulab[1] = ami_utf8_easy((char *)messages_get("NewWindowNS"));
+	gwin->menukey[1] = 'N';
+	gwin->menutype[2] = NM_ITEM;
+	gwin->menulab[2] = ami_utf8_easy((char *)messages_get("NewTab"));
+	gwin->menukey[1] = 'T';
+	gwin->menutype[3] = NM_ITEM;
+	gwin->menulab[3] = NM_BARLABEL;
+	gwin->menutype[4] = NM_ITEM;
+	gwin->menulab[4] = ami_utf8_easy((char *)messages_get("OpenFile"));
+	gwin->menukey[4] = 'O';
+	gwin->menutype[5] = NM_ITEM;
+	gwin->menulab[5] = ami_utf8_easy((char *)messages_get("SaveAsNS"));
+	gwin->menukey[5] = 'S';
+	gwin->menutype[6] = NM_SUB;
+	gwin->menulab[6] = ami_utf8_easy((char *)messages_get("Source"));
+	gwin->menutype[7] = NM_SUB;
+	gwin->menulab[7] = ami_utf8_easy((char *)messages_get("TextNS"));
+	gwin->menutype[8] = NM_SUB;
+	gwin->menulab[8] = ami_utf8_easy((char *)messages_get("SaveCompNS"));
+	gwin->menutype[9] = NM_SUB;
+	gwin->menulab[9] = ami_utf8_easy((char *)messages_get("PDFNS"));
+	gwin->menutype[10] = NM_SUB;
+	gwin->menulab[10] = ami_utf8_easy((char *)messages_get("IFF"));
+	gwin->menutype[11] = NM_ITEM;
+	gwin->menulab[11] = NM_BARLABEL;
+	gwin->menutype[12] = NM_ITEM;
+	gwin->menulab[12] = ami_utf8_easy((char *)messages_get("CloseTab"));
+	gwin->menukey[12] = 'K';
+	gwin->menutype[13] = NM_ITEM;
+	gwin->menulab[13] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+	gwin->menutype[14] = NM_ITEM;
+	gwin->menulab[14] = NM_BARLABEL;
+	gwin->menutype[15] = NM_ITEM;
+	gwin->menulab[15] = ami_utf8_easy((char *)messages_get("PrintNS"));
+	gwin->menukey[15] = 'P';
+	gwin->menutype[16] = NM_ITEM;
+	gwin->menulab[16] = NM_BARLABEL;
+	gwin->menutype[17] = NM_ITEM;
+	gwin->menulab[17] = ami_utf8_easy((char *)messages_get("About"));
+	gwin->menukey[17] = '?';
+	gwin->menutype[18] = NM_ITEM;
+	gwin->menulab[18] = ami_utf8_easy((char *)messages_get("Quit"));
+	gwin->menukey[18] = 'Q';
+	gwin->menutype[19] = NM_TITLE;
+	gwin->menulab[19] = ami_utf8_easy((char *)messages_get("Edit"));
+	gwin->menutype[20] = NM_ITEM;
+	gwin->menulab[20] = ami_utf8_easy((char *)messages_get("CutNS"));
+	gwin->menukey[20] = 'X';
+	gwin->menutype[21] = NM_ITEM;
+	gwin->menulab[21] = ami_utf8_easy((char *)messages_get("CopyNS"));
+	gwin->menukey[21] = 'C';
+	gwin->menutype[22] = NM_ITEM;
+	gwin->menulab[22] = ami_utf8_easy((char *)messages_get("PasteNS"));
+	gwin->menukey[22] = 'V';
+	gwin->menutype[23] = NM_ITEM;
+	gwin->menulab[23] = NM_BARLABEL;
+	gwin->menutype[24] = NM_ITEM;
+	gwin->menulab[24] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+	gwin->menukey[24] = 'A';
+	gwin->menutype[25] = NM_ITEM;
+	gwin->menulab[25] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	gwin->menukey[25] = 'Z';
+	gwin->menutype[26] = NM_TITLE;
+	gwin->menulab[26] = ami_utf8_easy((char *)messages_get("Browser"));
+	gwin->menutype[27] = NM_ITEM;
+	gwin->menulab[27] = ami_utf8_easy((char *)messages_get("FindTextNS"));
+	gwin->menukey[27] = 'F';
+	gwin->menutype[28] = NM_ITEM;
+	gwin->menulab[28] = NM_BARLABEL;
+	gwin->menutype[29] = NM_ITEM;
+	gwin->menulab[29] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
+	gwin->menutype[30] = NM_ITEM;
+	gwin->menulab[30] = ami_utf8_easy((char *)messages_get("HistGlobalNS"));
+	gwin->menutype[31] = NM_ITEM;
+	gwin->menulab[31] = NM_BARLABEL;
+	gwin->menutype[32] = NM_ITEM;
+	gwin->menulab[32] = ami_utf8_easy((char *)messages_get("ShowCookies"));
+	gwin->menutype[33] = NM_ITEM;
+	gwin->menulab[33] = NM_BARLABEL;
+	gwin->menutype[34] = NM_ITEM;
+	gwin->menulab[34] = ami_utf8_easy((char *)messages_get("ScaleNS"));
+	gwin->menutype[35] = NM_SUB;
+	gwin->menulab[35] = ami_utf8_easy((char *)messages_get("ScaleDec"));
+	gwin->menukey[35] = '-';
+	gwin->menutype[36] = NM_SUB;
+	gwin->menulab[36] = ami_utf8_easy((char *)messages_get("ScaleNorm"));
+	gwin->menukey[36] = '=';
+	gwin->menutype[37] = NM_SUB;
+	gwin->menulab[37] = ami_utf8_easy((char *)messages_get("ScaleInc"));
+	gwin->menukey[37] = '+';
+	gwin->menutype[38] = NM_ITEM;
+	gwin->menulab[38] = ami_utf8_easy((char *)messages_get("Redraw"));
+	gwin->menutype[39] = NM_TITLE;
+	gwin->menulab[39] = ami_utf8_easy((char *)messages_get("Hotlist"));
+	gwin->menukey[39] = 'H';
+	gwin->menutype[40] = NM_ITEM;
+	gwin->menulab[40] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	gwin->menutype[41] = NM_ITEM;
+	gwin->menulab[41] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	gwin->menutype[42] = NM_ITEM;
+	gwin->menulab[42] = NM_BARLABEL;
+
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 1] = NM_TITLE;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 1] = ami_utf8_easy((char *)messages_get("Settings"));
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 2] = NM_ITEM;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 2] = ami_utf8_easy((char *)messages_get("SettingsEdit"));
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 3] = NM_ITEM;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 3] = NM_BARLABEL;
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 4] = NM_ITEM;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 4] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 5] = NM_ITEM;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 5] = ami_utf8_easy((char *)messages_get("SettingsSave"));
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 6] = NM_TITLE;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 6] = ami_utf8_easy((char *)messages_get("ARexx"));
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 7] = NM_ITEM;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 7] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
+	gwin->menutype[AMI_MENU_HOTLIST_MAX + 8] = NM_ITEM;
+	gwin->menulab[AMI_MENU_HOTLIST_MAX + 8] = NM_BARLABEL;
+
+	gwin->menutype[AMI_MENU_AREXX_MAX] = NM_END;
 }
 
-struct NewMenu *ami_create_menu(ULONG type)
+void ami_menu_refresh(struct gui_window_2 *gwin)
+{
+	SetAttrs(gwin->objects[OID_MAIN],
+			WINDOW_NewMenu, NULL,
+			TAG_DONE);
+
+	ami_free_menulabs(gwin);
+	ami_create_menu(BROWSER_WINDOW_NORMAL, gwin);
+
+	SetAttrs(gwin->objects[OID_MAIN],
+			WINDOW_NewMenu, gwin->menu,
+			TAG_DONE);
+
+	schedule(6000,(void *)ami_menu_refresh,gwin);
+}
+
+struct NewMenu *ami_create_menu(ULONG type, struct gui_window_2 *gwin)
 {
 	int i;
 	ULONG menuflags = 0;
-	STATIC struct NewMenu menu[] = {
-			  	{NM_TITLE,0,0,0,0,0,}, // project
-			  	{ NM_ITEM,0,"N",0,0,0,}, // new window
-			  	{ NM_ITEM,0,"T",0,0,0,}, // new tab
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"O",0,0,0,}, // open local file
-			  	{ NM_ITEM,0,0,0,0,0,}, // save
-			  	{  NM_SUB,0,"S",0,0,0,}, // save as source
-			  	{  NM_SUB,0,0,0,0,0,}, // save as text
-			  	{  NM_SUB,0,0,0,0,0,}, // save as complete
-			  	{  NM_SUB,0,0,0,0,0,}, // save as pdf
-			  	{  NM_SUB,0,0,0,0,0,}, // save as iff
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"K",0,0,0,}, // close tab
-			  	{ NM_ITEM,0,0,0,0,0,}, // close window
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"P",0,0,0,}, // print
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"?",0,0,0,}, // about
-			  	{ NM_ITEM,0,"Q",0,0,0,}, // quit
-			  	{NM_TITLE,0,0,0,0,0,}, // edit
-			  	{ NM_ITEM,0,"X",0,0,0,}, // cut
-			  	{ NM_ITEM,0,"C",0,0,0,}, // copy
-			  	{ NM_ITEM,0,"V",0,0,0,}, // paste
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,"A",0,0,0,}, // select all
-			  	{ NM_ITEM,0,"Z",0,0,0,}, // clear selection
-			  	{NM_TITLE,0,0,0,0,0,}, // browser
-			  	{ NM_ITEM,0,"F",0,0,0,}, // find in page
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,0,0,0,0,}, // local history
-			  	{ NM_ITEM,0,0,0,0,0,}, // global history
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,0,0,0,0,}, // cookies
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-			  	{ NM_ITEM,0,0,0,0,0,}, // scale
-			  	{  NM_SUB,0,"-",0,0,0,}, // decrease
-			  	{  NM_SUB,0,"=",0,0,0,}, // normal
-			  	{  NM_SUB,0,"+",0,0,0,}, // increase
-			  	{ NM_ITEM,0,0,0,0,0,}, // redraw
-				{NM_TITLE,0,0,0,0,0,}, // hotlist
-				{ NM_ITEM,0,0,0,0,0,}, // add to hotlist
-			  	{ NM_ITEM,0,"H",0,0,0,}, // show hotlist (treeview)
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** hotlist entry **
-				{NM_TITLE,0,0,0,0,0,}, // settings
-			  	{ NM_ITEM,0,0,0,0,0,}, // edit prefs
-			  	{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-				{ NM_ITEM,0,0,0,0,0,}, // snapshot window
-				{ NM_ITEM,0,0,0,0,0,}, // save settings
-				{NM_TITLE,0,0,0,0,0,}, // arexx
-				{ NM_ITEM,0,0,0,0,0,}, // execute arexx
-				{ NM_ITEM,NM_BARLABEL,0,0,0,0,},
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-				{ NM_IGNORE,0,0,0,0,0,}, // ** arexx entry **
-			  	{  NM_END,0,0,0,0,0,},
-			 };
+
+	ami_init_menulabs(gwin);
+	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
 
 	if(type != BROWSER_WINDOW_NORMAL)
 	{
 		menuflags = NM_ITEMDISABLED;
 	}
 
-	for(i=0;i<=AMI_MENU_MAX;i++)
+	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
 	{
-		menu[i].nm_Label = menulab[i];
+		gwin->menu[i].nm_Type = gwin->menutype[i];
+		gwin->menu[i].nm_Label = gwin->menulab[i];
+		if(gwin->menukey[i]) gwin->menu[i].nm_CommKey = &gwin->menukey[i];
+		gwin->menu[i].nm_Flags = 0;
 	}
 
-	menu[1].nm_Flags = menuflags;
-	menu[2].nm_Flags = menuflags;
-	menu[12].nm_Flags = menuflags;
-	menu[13].nm_Flags = menuflags;
+	gwin->menu[1].nm_Flags = menuflags;
+	gwin->menu[2].nm_Flags = menuflags;
+	gwin->menu[12].nm_Flags = menuflags;
+	gwin->menu[13].nm_Flags = menuflags;
 
 #ifndef WITH_PDF_EXPORT
-	menu[9].nm_Flags = NM_ITEMDISABLED;
+	gwin->menu[9].nm_Flags = NM_ITEMDISABLED;
 #endif
+
+	ami_menu_scan(ami_tree_get_tree(hotlist_window), false, gwin);
+	ami_menu_arexx_scan(gwin);
 
 	if(!menualreadyinit)
 	{
-		ami_menu_scan(hotlist,menu);
-		ami_menu_arexx_scan(&menu);
-
 		aslhookfunc.h_Entry = (void *)&ami_asl_mime_hook;
 		aslhookfunc.h_SubEntry = NULL;
 		aslhookfunc.h_Data = NULL;
@@ -288,10 +288,16 @@ struct NewMenu *ami_create_menu(ULONG type)
 		menualreadyinit = TRUE;
 	}
 
-	return(menu);
+/*	Set up scheduler to refresh the hotlist menu
+	Disabled as it causes everything to slow down to a halt after
+	several iterations
+	schedule(6000,(void *)ami_menu_refresh,gwin);
+*/
+
+	return(gwin->menu);
 }
 
-void ami_menu_arexx_scan(struct NewMenu *menu)
+void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 {
 	int item = AMI_MENU_AREXX;
 	BPTR lock = 0;
@@ -323,23 +329,20 @@ void ami_menu_arexx_scan(struct NewMenu *menu)
 					for(ead = (struct ExAllData *)buffer; ead; ead = ead->ed_Next)
 					{
 						if(item >= AMI_MENU_AREXX_MAX) continue;
-						if(!strcasecmp(ead->ed_Name, option_arexx_startup)) continue;
-						if(!strcasecmp(ead->ed_Name, option_arexx_shutdown)) continue;
-
 						if(EAD_IS_FILE(ead))
 						{
-							menu[item].nm_Type = NM_ITEM;
+							gwin->menu[item].nm_Type = NM_ITEM;
 							if(ead->ed_Comment[0] != '\0')
 							{
-								menulab[item] = (char *)strdup(ead->ed_Comment);
+								gwin->menulab[item] = (char *)strdup(ead->ed_Comment);
 							}
 							else
 							{
-								menulab[item] = (char *)strdup(ead->ed_Name);
+								gwin->menulab[item] = (char *)strdup(ead->ed_Name);
 							}
 
-							menu[item].nm_Label = menulab[item];
-							menu[item].nm_UserData = (char *)strdup(ead->ed_Name);
+							gwin->menu[item].nm_Label = gwin->menulab[item];
+							gwin->menu[item].nm_UserData = (char *)strdup(ead->ed_Name);
 
 							item++;
 						}
@@ -351,31 +354,37 @@ void ami_menu_arexx_scan(struct NewMenu *menu)
 		}
 		UnLock(lock);
 	}
+
+	gwin->menu[item].nm_Type = NM_END;
+	gwin->menu[item].nm_Label = NULL;
 }
 
-void ami_menu_scan(struct tree *tree,struct NewMenu *menu)
+ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin)
 {
-	struct node *root = tree->root->child;
-	struct node_element *element=NULL;
+	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
+	struct node_element *element;
 	static WORD gen = 0;
 	static ULONG item;
 
 	item = AMI_MENU_HOTLIST;
 
-	for (node = root; node; node = node->next)
+	for (node = root; node; node = tree_node_get_next(node))
 	{
-		element = tree_find_element(node, TREE_ELEMENT_NAME);
-		if(!element) element = tree_find_element(node, TREE_ELEMENT_TITLE);
-		if(element && (strcmp(element->text,"Menu")==0))
+		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
+		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
+		if(element && (strcmp(tree_node_element_get_text(element),"Menu")==0))
 		{
 			// found menu
-			ami_menu_scan_2(tree,node->child,&gen,&item,menu);
+			ami_menu_scan_2(tree,tree_node_get_child(node),&gen,&item,count,gwin);
 		}
 	}
+
+	return(item - AMI_MENU_HOTLIST);
 }
 
-void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,struct NewMenu *menu)
+void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,
+		ULONG *item, bool count, struct gui_window_2 *gwin)
 {
 	struct node *tempnode;
 	struct node_element *element=NULL;
@@ -383,38 +392,39 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,ULONG *item,s
 
 	*gen = *gen + 1;
 
-	for (node = root; node; node = node->next)
+	for (node = root; node; node = tree_node_get_next(node))
 	{
-		element = tree_find_element(node, TREE_ELEMENT_TITLE);
-
 		if((*gen > 0) && (*gen < 3))
 		{
-			if(*item >= AMI_MENU_HOTLIST_MAX) return;
+//			if(*item >= AMI_MENU_HOTLIST_MAX) return;
 
-			if(*gen == 1) menu[*item].nm_Type = NM_ITEM;
-			if(*gen == 2) menu[*item].nm_Type = NM_SUB;
-
-			if(strcmp(element->text,"--"))
+			if(!count)
 			{
-				menulab[*item] = ami_utf8_easy((char *)element->text);
-			}
-			else
-			{
-				menulab[*item] = NM_BARLABEL;
-			}
+				if(*gen == 1) gwin->menu[*item].nm_Type = NM_ITEM;
+				if(*gen == 2) gwin->menu[*item].nm_Type = NM_SUB;
 
-			menu[*item].nm_Label = menulab[*item];
+				if(strcmp(tree_url_node_get_title(node),"--"))
+				{
+					gwin->menulab[*item] = ami_utf8_easy((char *)tree_url_node_get_title(node));
+				}
+				else
+				{
+					gwin->menulab[*item] = NM_BARLABEL;
+				}
 
-			element = tree_find_element(node, TREE_ELEMENT_URL);
-			if(element && element->text) menu[*item].nm_UserData = (void *)element->text;
-			if(node->folder && (!node->child)) menu[*item].nm_Flags = NM_ITEMDISABLED;
+				gwin->menu[*item].nm_Label = gwin->menulab[*item];
+
+				gwin->menu[*item].nm_UserData = (void *)tree_url_node_get_url(node);
+				if(tree_node_is_folder(node) && (!tree_node_get_child(node)))
+						gwin->menu[*item].nm_Flags = NM_ITEMDISABLED;
+			}
 
 			*item = *item + 1;
 		}
 
-		if (node->child)
+		if (tree_node_get_child(node))
 		{
-			ami_menu_scan_2(tree,node->child,gen,item,menu);
+			ami_menu_scan_2(tree,tree_node_get_child(node),gen,item,count,gwin);
 		}
 	}
 
@@ -698,11 +708,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				break;
 
 				case 3: // global history
-					ami_open_tree(global_history_tree,AMI_TREE_HISTORY);
+					ami_tree_open(global_history_window,AMI_TREE_HISTORY);
 				break;
 
 				case 5: // cookies tree
-					ami_open_tree(cookies_tree,AMI_TREE_COOKIES);
+					ami_tree_open(cookies_window,AMI_TREE_COOKIES);
 				break;
 
 				case 7: // size
@@ -736,12 +746,18 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // add
-					ami_hotlist_add(hotlist->root,gwin->bw->current_content);
-					options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
+					if (bw == NULL ||
+							bw->current_content
+							== NULL ||
+							content_get_url(bw->current_content)
+							== NULL)
+						break;
+					hotlist_add_page(content_get_url(gwin->bw->
+							current_content));
 				break;
 
 				case 1: // show
-					ami_open_tree(hotlist,AMI_TREE_HOTLIST);
+					ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 				break;
 
 				default: // bookmarks
