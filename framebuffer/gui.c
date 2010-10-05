@@ -940,7 +940,7 @@ create_toolbar(struct gui_window *gw,
 	fbtk_widget_t *widget;
 
 	int xpos; /* The position of the next widget. */
-	int xlhs; /* extent of the left hand side widgets */
+	int xlhs = 0; /* extent of the left hand side widgets */
 	int xdir = 1; /* the direction of movement + or - 1 */
 	const char *itmtype; /* type of the next item */
 
@@ -1117,13 +1117,16 @@ create_toolbar(struct gui_window *gw,
 			break;
 
 		default:
+			widget = NULL;
 			xdir = 0;
 			LOG(("Unknown element %c in toolbar layout", *itmtype));
 		        break;
 
 		}
 
-		xpos += (xdir * (fbtk_get_width(widget) + padding));
+		if (widget != NULL) {
+			xpos += (xdir * (fbtk_get_width(widget) + padding));
+		}
 
 		LOG(("xpos is %d",xpos));
 
