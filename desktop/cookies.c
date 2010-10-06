@@ -70,6 +70,8 @@ static struct node *cookies_find(struct node *node, const char *title)
 	struct node *search;
 	struct node_element *element;
 
+	assert(node !=NULL);
+
 	for (search = tree_node_get_child(node); search;
 	     search = tree_node_get_next(search)) {
 		element = tree_node_find_element(search, TREE_ELEMENT_TITLE,
@@ -408,7 +410,8 @@ bool cookies_schedule_update(const struct cookie_data *data)
 	assert(data != NULL);
 	assert(user_delete == false);
 
-	schedule(100, cookies_schedule_callback, (void *)data);
+	if (cookies_tree_root != NULL)
+		schedule(100, cookies_schedule_callback, (void *)data);
 
 	return true;
 }
@@ -419,7 +422,8 @@ void cookies_remove(const struct cookie_data *data)
 {
 	assert(data != NULL);
 
-	schedule_remove(cookies_schedule_callback, (void *)data);
+	if (cookies_tree_root != NULL)
+		schedule_remove(cookies_schedule_callback, (void *)data);
 }
 
 
