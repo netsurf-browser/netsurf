@@ -6,7 +6,8 @@ list resources/Themes/~(.svn) LFORMAT="makedir ram:netsurf/resources/Themes/%n" 
 list resources/Themes/~(.svn) LFORMAT="copy %f%n/~(.svn) ram:netsurf/resources/Themes/%n/" dirs >>t:nslinks
 execute t:nslinks
 delete t:nslinks
-delete ram:netsurf/resources/hotlist
+copy !NetSurf/Resources/Icons/#?.png ram:netsurf/resources/themes/default
+delete ram:netsurf/resources/#?hotlist#?
 delete ram:netsurf/resources/cookies
 delete ram:netsurf/resources/urls
 delete ram:netsurf/resources/options
