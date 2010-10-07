@@ -30,7 +30,7 @@
 
 /* Maximum number of menu items - first value is number of static items
  * (ie. everything not intially defined as NM_IGNORE) */
-#define AMI_MENU_MAX 51 + AMI_HOTLIST_ITEMS
+#define AMI_MENU_MAX 52 + AMI_HOTLIST_ITEMS
 
 /* Where the hotlist entries start */
 #define AMI_MENU_HOTLIST 43

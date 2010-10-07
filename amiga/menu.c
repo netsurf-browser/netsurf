@@ -112,7 +112,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menukey[1] = 'N';
 	gwin->menutype[2] = NM_ITEM;
 	gwin->menulab[2] = ami_utf8_easy((char *)messages_get("NewTab"));
-	gwin->menukey[1] = 'T';
+	gwin->menukey[2] = 'T';
 	gwin->menutype[3] = NM_ITEM;
 	gwin->menulab[3] = NM_BARLABEL;
 	gwin->menutype[4] = NM_ITEM;
@@ -120,9 +120,9 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menukey[4] = 'O';
 	gwin->menutype[5] = NM_ITEM;
 	gwin->menulab[5] = ami_utf8_easy((char *)messages_get("SaveAsNS"));
-	gwin->menukey[5] = 'S';
 	gwin->menutype[6] = NM_SUB;
 	gwin->menulab[6] = ami_utf8_easy((char *)messages_get("Source"));
+	gwin->menukey[6] = 'S';
 	gwin->menutype[7] = NM_SUB;
 	gwin->menulab[7] = ami_utf8_easy((char *)messages_get("TextNS"));
 	gwin->menutype[8] = NM_SUB;
@@ -205,8 +205,10 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menukey[39] = 'H';
 	gwin->menutype[40] = NM_ITEM;
 	gwin->menulab[40] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	gwin->menukey[40] = 'B';
 	gwin->menutype[41] = NM_ITEM;
 	gwin->menulab[41] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	gwin->menukey[41] = 'H';
 	gwin->menutype[42] = NM_ITEM;
 	gwin->menulab[42] = NM_BARLABEL;
 
@@ -224,6 +226,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menulab[AMI_MENU_HOTLIST_MAX + 6] = ami_utf8_easy((char *)messages_get("ARexx"));
 	gwin->menutype[AMI_MENU_HOTLIST_MAX + 7] = NM_ITEM;
 	gwin->menulab[AMI_MENU_HOTLIST_MAX + 7] = ami_utf8_easy((char *)messages_get("ARexxExecute"));
+	gwin->menukey[AMI_MENU_HOTLIST_MAX + 7] = 'E';
 	gwin->menutype[AMI_MENU_HOTLIST_MAX + 8] = NM_ITEM;
 	gwin->menulab[AMI_MENU_HOTLIST_MAX + 8] = NM_BARLABEL;
 
