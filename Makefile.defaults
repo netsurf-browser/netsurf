@@ -232,9 +232,9 @@ ifeq ($(TARGET),framebuffer)
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized
 
-  # Framebuffer frontend.
-  # Valid values are: linux, sdl, vnc, able
-  NETSURF_FB_FRONTEND := linux
+  # Framebuffer default surface provider.
+  # Valid values are: x, sdl, linux, vnc, able, 
+  NETSURF_FB_FRONTEND := sdl
 
   # Use libharu to enable PDF export and GTK printing support.
   # Valid options: YES, NO
@@ -248,12 +248,25 @@ ifeq ($(TARGET),framebuffer)
   # Valid options: internal, freetype
   NETSURF_FB_FONTLIB := internal
 
+  # freetype compiled in font locations 
+  NETSURF_FB_FONT_SANS_SERIF := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf
+  NETSURF_FB_FONT_SANS_SERIF_BOLD := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-Bold.ttf
+  NETSURF_FB_FONT_SANS_SERIF_ITALIC := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-Oblique.ttf
+  NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-BoldOblique.ttf
+  NETSURF_FB_FONT_SERIF := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif.ttf
+  NETSURF_FB_FONT_SERIF_BOLD := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSerif-Bold.ttf
+  NETSURF_FB_FONT_MONOSPACE := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono.ttf
+  NETSURF_FB_FONT_MONOSPACE_BOLD := /usr/share/fonts/truetype/ttf-dejavu/DejaVuSansMono-Bold.ttf
+  NETSURF_FB_FONT_CURSIVE := /usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS.ttf
+  NETSURF_FB_FONT_FANTASY := /usr/share/fonts/truetype/msttcorefonts/Impact.ttf
+
   # Framebuffer frontends may have differing root paths for resources
   # As such, these specify the resource path and config path.
   NETSURF_FB_RESPATH_linux := $(PREFIX)/share/netsurf/
   NETSURF_FB_RESPATH_able := (tftpboot)/
   NETSURF_FB_RESPATH_dummy := ./
   NETSURF_FB_RESPATH_sdl := $(PREFIX)/share/netsurf/
+  NETSURF_FB_RESPATH_x := $(PREFIX)/share/netsurf/
   NETSURF_FB_RESPATH_vnc := $(PREFIX)/share/netsurf/
 
   NETSURF_FRAMEBUFFER_RESOURCES = $(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))

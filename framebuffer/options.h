@@ -21,24 +21,42 @@
 
 #include "desktop/options.h"
 
+/* surface options */
+
 extern int option_fb_depth;
 extern int option_fb_refresh;
 extern char *option_fb_device;
 extern char *option_fb_input_devpath;
 extern char *option_fb_input_glob;
+
+/* toolkit options */
+
 extern int option_fb_furniture_size; /* toolkit furniture size */
 extern int option_fb_toolbar_size; /* toolbar furniture size */
 extern char *option_fb_toolbar_layout; /* toolbar layout */
 extern bool option_fb_osk; /* enable on screen keyboard */
 
-extern bool option_fb_font_monochrome; /* render font monochrome */
+/* font options */
+
+/* render font monochrome */
+extern bool option_fb_font_monochrome; 
+/** size of font glyph cache in kilobytes. */
+extern int option_fb_font_cachesize; 
+
 extern char *option_fb_face_sans_serif; /* default sans face */
 extern char *option_fb_face_sans_serif_bold; /* bold sans face */
 extern char *option_fb_face_sans_serif_italic; /* bold sans face */
 extern char *option_fb_face_sans_serif_italic_bold; /* bold sans face */
-extern char *option_fb_face_monospace; /* monospace face */
+
 extern char *option_fb_face_serif; /* serif face */
 extern char *option_fb_face_serif_bold; /* bold serif face */
+
+extern char *option_fb_face_monospace; /* monospace face */
+extern char *option_fb_face_monospace_bold; /* bold monospace face */
+
+extern char *option_fb_face_cursive; /* cursive face */
+extern char *option_fb_face_fantasy; /* fantasy face */
+
 
 #define EXTRA_OPTION_DEFINE				\
 	int option_fb_depth = 32;			\
@@ -51,13 +69,17 @@ extern char *option_fb_face_serif_bold; /* bold serif face */
 	char *option_fb_toolbar_layout;			\
 	bool option_fb_osk = false;			\
 	bool option_fb_font_monochrome = false;		\
+	int option_fb_font_cachesize = 2048;		\
 	char *option_fb_face_sans_serif;		\
 	char *option_fb_face_sans_serif_bold;		\
 	char *option_fb_face_sans_serif_italic;		\
 	char *option_fb_face_sans_serif_italic_bold;	\
-	char *option_fb_face_monospace;			\
 	char *option_fb_face_serif;			\
-	char *option_fb_face_serif_bold;
+	char *option_fb_face_serif_bold;		\
+	char *option_fb_face_monospace;			\
+	char *option_fb_face_monospace_bold;		\
+	char *option_fb_face_cursive;			\
+	char *option_fb_face_fantasy;			
 
 #define EXTRA_OPTION_TABLE                                              \
     { "fb_depth", OPTION_INTEGER, &option_fb_depth },			\
@@ -70,13 +92,17 @@ extern char *option_fb_face_serif_bold; /* bold serif face */
     { "fb_toolbar_layout", OPTION_STRING, &option_fb_toolbar_layout },	\
     { "fb_osk", OPTION_BOOL, &option_fb_osk },				\
     { "fb_font_monochrome", OPTION_BOOL, &option_fb_font_monochrome },  \
+    { "fb_font_cachesize", OPTION_INTEGER, &option_fb_font_cachesize }, \
     { "fb_face_sans_serif", OPTION_STRING, &option_fb_face_sans_serif }, \
     { "fb_face_sans_serif_bold", OPTION_STRING, &option_fb_face_sans_serif_bold }, \
     { "fb_face_sans_serif_italic", OPTION_STRING, &option_fb_face_sans_serif_italic }, \
     { "fb_face_sans_serif_italic_bold", OPTION_STRING, &option_fb_face_sans_serif_italic_bold }, \
-    { "fb_face_monospace", OPTION_STRING, &option_fb_face_monospace },  \
     { "fb_face_serif", OPTION_STRING, &option_fb_face_serif },          \
-    { "fb_serif_bold", OPTION_STRING, &option_fb_face_serif_bold }
+    { "fb_serif_bold", OPTION_STRING, &option_fb_face_serif_bold },	\
+    { "fb_face_monospace", OPTION_STRING, &option_fb_face_monospace },  \
+    { "fb_face_monospace_bold", OPTION_STRING, &option_fb_face_monospace_bold }, \
+    { "fb_face_cursive", OPTION_STRING, &option_fb_face_cursive },  \
+    { "fb_face_fantasy", OPTION_STRING, &option_fb_face_fantasy }
 
 #endif
 

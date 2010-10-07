@@ -79,26 +79,46 @@
   The font glyphs are, by default, rendered as 256 level transparency
   which gives excellent visual results even on small font sizes.
 
-  The default font is the Vera trutype font set. The default path they
-  are sourced from is /usr/share/fonts/truetype/ttf-bitstream-vera/ . 
+  The default font is the DejaVu trutype font set. The default path they
+  are sourced from is /usr/share/fonts/truetype/ttf-dejavu/ . 
+
+  The compiled in default paths may be altered by setting values in
+  the user configuration makefile Makefile.config. These values must
+  be set to teh absolute path of the relevant font file including its
+  .ttf extension. The variables are:
+
+  NETSURF_FB_FONT_SANS_SERIF
+  NETSURF_FB_FONT_SANS_SERIF_BOLD
+  NETSURF_FB_FONT_SANS_SERIF_ITALIC
+  NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD
+  NETSURF_FB_FONT_SERIF
+  NETSURF_FB_FONT_SERIF_BOLD
+  NETSURF_FB_FONT_MONOSPACE
+  NETSURF_FB_FONT_MONOSPACE_BOLD
+  NETSURF_FB_FONT_CURSIVE
+  NETSURF_FB_FONT_FANTASY
+  
   The font selection may be changed by placing truetype font files
   in the resources path. The resource files will be the generic names
-  sans_serif.ttf, sans_serif_bold.ttf etc. The selection may also be
-  overridden by setting options.
+  sans_serif.ttf, sans_serif_bold.ttf etc. 
 
   The font system is configured at runtime by several options. The
   fb_font_monochrome option causes the renderer to use monochrome
   glyph rendering which is faster to plot but slower to render and
-  much less visually appealing. The remaining seven options control
-  the files to be used for font faces.
+  much less visually appealing. 
+
+  The remaining seven options control the files to be used for font faces.
 
   fb_face_sans_serif - The sans serif face
   fb_face_sans_serif_bold - The bold sans serif face
   fb_face_sans_serif_italic - The italic sans serif face
   fb_face_sans_serif_italic_bold - The bold italic sans serif face.
-  fb_face_monospace - The monospaced font
   fb_face_serif - The serif font
   fb_serif_bold - The bold serif font
+  fb_face_monospace - The monospaced font
+  fb_face_monospace_bold - The bold monospaced font
+  fb_face_cursive - The cursive font
+  fb_face_fantasy - The fantasy font
 
   Old Freetype
 --------------

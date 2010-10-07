@@ -34,7 +34,10 @@
 #include "framebuffer/options.h"
 #include "framebuffer/findfile.h"
 
-#define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
+/* glyph cache minimum size */
+#define CACHE_MIN_SIZE (100 * 1024)
+
+#define BOLD_WEIGHT 700
 
 static FT_Library library; 
 static FTC_Manager ft_cmanager;
@@ -50,18 +53,23 @@ typedef struct fb_faceid_s {
         int cidx; /* character map index for unicode */
 } fb_faceid_t;
 
+
+enum fb_face_e {
+	FB_FACE_SANS_SERIF = 0,
+	FB_FACE_SANS_SERIF_BOLD = 1,
+	FB_FACE_SANS_SERIF_ITALIC = 2,
+	FB_FACE_SANS_SERIF_ITALIC_BOLD = 3,
+	FB_FACE_SERIF = 4,
+	FB_FACE_SERIF_BOLD = 5,
+	FB_FACE_MONOSPACE = 6,
+	FB_FACE_MONOSPACE_BOLD = 7,
+	FB_FACE_CURSIVE = 8,
+	FB_FACE_FANTASY = 9,
+};
+
 /* defines for accesing the faces */
 #define FB_FACE_DEFAULT 0
-
-#define FB_FACE_SANS_SERIF 0
-#define FB_FACE_SANS_SERIF_BOLD 1
-#define FB_FACE_SANS_SERIF_ITALIC 2
-#define FB_FACE_SANS_SERIF_ITALIC_BOLD 3
-#define FB_FACE_MONOSPACE 4
-#define FB_FACE_SERIF 5
-#define FB_FACE_SERIF_BOLD 6
-
-#define FB_FACE_COUNT 7
+#define FB_FACE_COUNT 10
 
 static fb_faceid_t *fb_faces[FB_FACE_COUNT];
 
@@ -124,7 +132,7 @@ fb_new_face(const char *option, const char *resname, const char *fontfile)
         if (error) {
                 LOG(("Could not find font face %s (code %d)\n", fontfile, error));
                 free(newf);
-                newf = fb_faces[FB_FACE_DEFAULT]; /* use default */
+                newf = NULL;
         }
 
         return newf;
@@ -136,6 +144,7 @@ bool fb_font_init(void)
         FT_Error error;
         FT_ULong max_cache_size;
         FT_UInt max_faces = 6;
+	fb_faceid_t *fb_face;
 
         /* freetype library initialise */
         error = FT_Init_FreeType( &library ); 
@@ -144,7 +153,12 @@ bool fb_font_init(void)
                 return false;
         }
 
-        max_cache_size = 2 * 1024 *1024; /* 2MB should be enough */
+        /* set the Glyph cache size up */
+        max_cache_size = option_fb_font_cachesize * 1024; 
+
+	if (max_cache_size < CACHE_MIN_SIZE) {
+		max_cache_size = CACHE_MIN_SIZE;
+	}
 
         /* cache manager initialise */
         error = FTC_Manager_New(library, 
@@ -164,47 +178,122 @@ bool fb_font_init(void)
 
         error = FTC_ImageCache_New(ft_cmanager, &ft_image_cache);
 
-        fb_faces[FB_FACE_SANS_SERIF] = NULL;
-        fb_faces[FB_FACE_SANS_SERIF] = 
-                fb_new_face(option_fb_face_sans_serif,
-                            "sans_serif.ttf",
-                            DEJAVU_PATH"DejaVuSans.ttf");
-        if (fb_faces[FB_FACE_SANS_SERIF] == NULL) {
-                LOG(("Could not find default font (code %d)\n", error));
-                FTC_Manager_Done(ft_cmanager );
+	/* need to obtain the generic font faces */
+
+	/* Start with the sans serif font */
+	fb_face = fb_new_face(option_fb_face_sans_serif,
+			      "sans_serif.ttf",
+			      NETSURF_FB_FONT_SANS_SERIF);
+	if (fb_face == NULL) {
+		/* The sans serif font is the default and must be found. */
+                LOG(("Could not find the default font\n"));
+                FTC_Manager_Done(ft_cmanager);
                 FT_Done_FreeType(library);
                 return false;
-        }
+        } else {
+		fb_faces[FB_FACE_SANS_SERIF] = fb_face;
+	}
 
-        fb_faces[FB_FACE_SANS_SERIF_BOLD] = 
-                fb_new_face(option_fb_face_sans_serif_bold,
+	/* Bold sans serif face */
+	fb_face = fb_new_face(option_fb_face_sans_serif_bold,
                             "sans_serif_bold.ttf",
-                            DEJAVU_PATH"DejaVuSans-Bold.ttf");
+                            NETSURF_FB_FONT_SANS_SERIF_BOLD);
+	if (fb_face == NULL) {
+		/* seperate bold face unavailabe use the normal weight version */
+		fb_faces[FB_FACE_SANS_SERIF_BOLD] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_SANS_SERIF_BOLD] = fb_face;
+	}
 
-        fb_faces[FB_FACE_SANS_SERIF_ITALIC] = 
-                fb_new_face(option_fb_face_sans_serif_italic,
-                            "sans_serif_italic.ttf",
-                            DEJAVU_PATH"DejaVuSans-Oblique.ttf");
+	/* Italic sans serif face */
+	fb_face = fb_new_face(option_fb_face_sans_serif_italic,
+			      "sans_serif_italic.ttf",
+			      NETSURF_FB_FONT_SANS_SERIF_ITALIC);
+	if (fb_face == NULL) {
+		/* seperate italic face unavailabe use the normal weight version */
+		fb_faces[FB_FACE_SANS_SERIF_ITALIC] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_SANS_SERIF_ITALIC] = fb_face;
+	}
 
-        fb_faces[FB_FACE_SANS_SERIF_ITALIC_BOLD] = 
-                fb_new_face(option_fb_face_sans_serif_italic_bold, 
-                            "sans_serif_italic_bold.ttf",
-                            DEJAVU_PATH"DejaVuSans-BoldOblique.ttf");
+	/* Bold italic sans serif face */
+	fb_face = fb_new_face(option_fb_face_sans_serif_italic_bold, 
+			      "sans_serif_italic_bold.ttf",
+			      NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD);
+	if (fb_face == NULL) {
+		/* seperate italic face unavailabe use the normal weight version */
+		fb_faces[FB_FACE_SANS_SERIF_ITALIC_BOLD] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_SANS_SERIF_ITALIC_BOLD] = fb_face;
+	}
 
-        fb_faces[FB_FACE_MONOSPACE] = 
-                fb_new_face(option_fb_face_monospace,
-                            "monospace.ttf",
-                            DEJAVU_PATH"DejaVuSansMono.ttf");
-
-        fb_faces[FB_FACE_SERIF] = 
-                fb_new_face(option_fb_face_serif,
+	/* serif face */
+	fb_face = fb_new_face(option_fb_face_serif,
                             "serif.ttf",
-                            DEJAVU_PATH"DejaVuSerif.ttf");
+			      NETSURF_FB_FONT_SERIF);
+	if (fb_face == NULL) {
+		/* serif face unavailabe use the default */
+		fb_faces[FB_FACE_SERIF] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_SERIF] = fb_face;
+	}
 
-        fb_faces[FB_FACE_SERIF_BOLD] = 
-                fb_new_face(option_fb_face_serif_bold,
-                            "serif_bold.ttf",
-                            DEJAVU_PATH"DejaVuSerif-Bold.ttf");
+	/* bold serif face*/
+	fb_face = fb_new_face(option_fb_face_serif_bold,
+			      "serif_bold.ttf",
+			      NETSURF_FB_FONT_SERIF_BOLD);
+	if (fb_face == NULL) {
+		/* bold serif face unavailabe use the normal weight */
+		fb_faces[FB_FACE_SERIF_BOLD] = fb_faces[FB_FACE_SERIF];
+	} else {
+		fb_faces[FB_FACE_SERIF_BOLD] = fb_face;
+	}
+
+
+	/* monospace face */
+	fb_face = fb_new_face(option_fb_face_monospace,
+			      "monospace.ttf",
+			      NETSURF_FB_FONT_MONOSPACE);
+	if (fb_face == NULL) {
+		/* serif face unavailabe use the default */
+		fb_faces[FB_FACE_MONOSPACE] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_MONOSPACE] = fb_face;
+	}
+
+	/* bold monospace face*/
+	fb_face = fb_new_face(option_fb_face_monospace_bold,
+			      "monospace_bold.ttf",
+			      NETSURF_FB_FONT_MONOSPACE_BOLD);
+	if (fb_face == NULL) {
+		/* bold serif face unavailabe use the normal weight */
+		fb_faces[FB_FACE_MONOSPACE_BOLD] = fb_faces[FB_FACE_MONOSPACE];
+	} else {
+		fb_faces[FB_FACE_MONOSPACE_BOLD] = fb_face;
+	}
+
+	/* cursive face */
+	fb_face = fb_new_face(option_fb_face_cursive,
+			      "cursive.ttf",
+			      NETSURF_FB_FONT_CURSIVE);
+	if (fb_face == NULL) {
+		/* cursive face unavailabe use the default */
+		fb_faces[FB_FACE_CURSIVE] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_CURSIVE] = fb_face;
+	}
+
+	/* fantasy face */
+	fb_face = fb_new_face(option_fb_face_fantasy,
+			      "fantasy.ttf",
+			      NETSURF_FB_FONT_FANTASY);
+	if (fb_face == NULL) {
+		/* fantasy face unavailabe use the default */
+		fb_faces[FB_FACE_FANTASY] = fb_faces[FB_FACE_SANS_SERIF];
+	} else {
+		fb_faces[FB_FACE_FANTASY] = fb_face;
+	}
+
         
         /* set the default render mode */
         if (option_fb_font_monochrome == true)
@@ -227,37 +316,46 @@ static void fb_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
         int selected_face = FB_FACE_DEFAULT;
 
 	switch (fstyle->family) {
-                /*
-	case PLOT_FONT_FAMILY_CURSIVE:
-		break;
-	case PLOT_FONT_FAMILY_FANTASY:
-		break;
-                */
+                                
 	case PLOT_FONT_FAMILY_SERIF:
-		if (fstyle->weight >= 700)
+		if (fstyle->weight >= BOLD_WEIGHT) {
                         selected_face = FB_FACE_SERIF_BOLD;
-		else
+		} else {
                         selected_face = FB_FACE_SERIF;
-                
+                }
 		break;
 
 	case PLOT_FONT_FAMILY_MONOSPACE:
-                selected_face = FB_FACE_MONOSPACE;
+		if (fstyle->weight >= BOLD_WEIGHT) {
+			selected_face = FB_FACE_MONOSPACE_BOLD;
+		} else {
+			selected_face = FB_FACE_MONOSPACE;
+                }
+		break;
+
+	case PLOT_FONT_FAMILY_CURSIVE:
+                selected_face = FB_FACE_CURSIVE;
+		break;
+
+	case PLOT_FONT_FAMILY_FANTASY:
+                selected_face = FB_FACE_FANTASY;
 		break;
 
 	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
 		if ((fstyle->flags & FONTF_ITALIC) || 
-				(fstyle->flags & FONTF_OBLIQUE)) {
-			if (fstyle->weight >= 700)
+		    (fstyle->flags & FONTF_OBLIQUE)) {
+			if (fstyle->weight >= BOLD_WEIGHT) {
                                 selected_face = FB_FACE_SANS_SERIF_ITALIC_BOLD;
-			else
+			} else {
                                 selected_face = FB_FACE_SANS_SERIF_ITALIC;
+			}
 		} else {
-			if (fstyle->weight >= 700)
+			if (fstyle->weight >= BOLD_WEIGHT) {
                                 selected_face = FB_FACE_SANS_SERIF_BOLD;
-                        else
+                        } else {
                                 selected_face = FB_FACE_SANS_SERIF;
+			}
                 }
 	}
 
