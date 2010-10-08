@@ -17,6 +17,7 @@
  */
 
 #include "desktop/tree.h"
+#include "desktop/tree_url_node.h"
 
 const char tree_directory_icon_name[] = "directory.png";
 const char tree_content_icon_name[] = "content.png";
