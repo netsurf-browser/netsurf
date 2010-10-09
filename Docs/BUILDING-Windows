@@ -80,6 +80,18 @@
 
   For other OS the apropriate packages and environment must be installed.
 
+  pkg-config
+------------
+
+  A pkg-config wrapper script is required to make things easier
+
+cat > /usr/i586-mingw32msvc/bin/pkg-config <<EOF
+#!/bin/bash
+export PKG_CONFIG_LIBDIR=/usr/i586-mingw32msvc/lib/pkgconfig
+/usr/bin/pkg-config $*
+EOF
+
+
   Base libraries
 ----------------
 
@@ -109,71 +121,53 @@
 
   regex:
 
-      $ wget http://downloads.sourceforge.net/project/mingw/User%20Contributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz?use_mirror=ignum
+      $ wget http://downloads.sourceforge.net/project/mingw/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz
       $ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
+      $ cd mingw-libgnurx-2.5.1
       $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
       $ make
       $ sudo make install
 
   openssl:
 
-      $ wget http://www.openssl.org/source/openssl-0.9.8l.tar.gz
-      $ tar -zxf openssl-0.9.8l.tar.gz
-      $ cd openssl-0.9.8l
-
---- openssl-0.9.8l/Configure	2009-11-05 12:07:06.000000000 +0000
-+++ openssl-0.9.8l-work/Configure	2010-01-25 12:35:13.000000000 +0000
-@@ -1059,7 +1059,7 @@
- 
- my $IsMK1MF=scalar grep /^$target$/,@MK1MF_Builds;
- 
--$IsMK1MF=1 if ($target eq "mingw" && $^O ne "cygwin" && !is_msys());
-+#$IsMK1MF=1 if ($target eq "mingw" && $^O ne "cygwin" && !is_msys());
- 
- $no_shared = 0 if ($fipsdso && !$IsMK1MF);
- 
---- openssl-0.9.8l/e_os2.h	2005-12-18 18:57:07.000000000 +0000
-+++ openssl-0.9.8l-work/e_os2.h	2010-01-25 12:42:48.000000000 +0000
-@@ -264,7 +264,7 @@
- # define OPENSSL_IMPLEMENT_GLOBAL(type,name)			     \
- 	extern type _hide_##name;				     \
- 	type *_shadow_##name(void) { return &_hide_##name; }	     \
--	static type _hide_##name
-+	type _hide_##name
- # define OPENSSL_DECLARE_GLOBAL(type,name) type *_shadow_##name(void)
- # define OPENSSL_GLOBAL_REF(name) (*(_shadow_##name()))
- #else
-
-      $ ./Configure no-shared --prefix=/usr/i586-mingw32msvc/ mingw
-      $ make CC=i586-mingw32msvc-gcc RANLIB=i586-mingw32msvc-ranlib
+      $ wget http://www.openssl.org/source/openssl-1.0.0a.tar.gz
+      $ tar -zxf openssl-1.0.0a.tar.gz
+      $ cd openssl-1.0.0a
+      $ PATH=/usr/i586-mingw32msvc/bin/:$PATH ./Configure no-shared disable-capieng --prefix=/usr/i586-mingw32msvc/ mingw
+      $ PATH=/usr/i586-mingw32msvc/bin/:$PATH make CC=i586-mingw32msvc-gcc RANLIB=i586-mingw32msvc-ranlib
+      $ sudo make install
 
   libxml:
 
       $ apt-get source libxml2
-      $ cd libxml2-2.6.32.dfsg/
-      $ ./configure --prefix=/usr/i586-mingw32msvc/ --disable-shared --host=i586-mingw32msvc
+      $ cd libxml2-2.7.6.dfsg
+      $ ./configure --prefix=/usr/i586-mingw32msvc/ --disable-shared --without-python --host=i586-mingw32msvc
       $ make
       $ sudo make install
 
   libcurl:
 
-      $ LDFLAGS=-mwindows ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared --disable-ldap
+      $ wget -q http://curl.haxx.se/download/curl-7.21.1.tar.gz
+      $ tar -zxf curl-7.21.1.tar.gz
+      $ cd curl-7.21.1
+      $ LDFLAGS=-mwindows ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared --disable-ldap --without-random
       $ make
       $ sudo make install
 
   libpng:
 
-      $ wget "http://downloads.sourceforge.net/project/libpng/01-libpng-master/1.4.0/libpng-1.4.0.tar.gz?use_mirror=garr"
-      $ tar -zxf libpng-1.4.0.tar.gz
-      $ cd libpng-1.4.0
+      $ wget http://download.sourceforge.net/libpng/libpng-1.4.4.tar.gz
+      $ tar -zxf libpng-1.4.4.tar.gz
+      $ cd libpng-1.4.4
+      $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
       $ make
       $ sudo make install
 
   libjpeg:
 
-      $ wget http://www.ijg.org/files/jpegsrc.v8.tar.gz
-      $ tar -zxf jpegsrc.v8.tar.gz
-      $ cd jpeg-8
+      $ wget http://www.ijg.org/files/jpegsrc.v8b.tar.gz
+      $ tar -zxf jpegsrc.v8b.tar.gz
+      $ cd jpeg-8b
       $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
       $ make
       $ sudo make install

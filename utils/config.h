@@ -56,6 +56,7 @@ char *strchrnul(const char *s, int c);
 #define HAVE_REALPATH
 #if (defined(_WIN32))
 #undef HAVE_REALPATH
+char *realpath(const char *path, char *resolved_path);
 #endif
 
 #define HAVE_MKDIR

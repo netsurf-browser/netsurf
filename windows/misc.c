@@ -41,11 +41,6 @@ void die(const char *error)
 	exit(1);
 }
 
-bool cookies_update(const char *domain, const struct cookie_data *data)
-{ 
-    return true; 
-}
-
 /**
  * Return the filename part of a full path
  *

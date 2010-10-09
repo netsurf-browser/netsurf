@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "utils/config.h"
 #include "utils/findresource.h"
 
 #define MAX_RESPATH 128 /* maximum number of elements in the resource vector */

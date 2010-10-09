@@ -58,6 +58,7 @@
 #include "windows/plot.h"
 #include "windows/prefs.h"
 #include "windows/resourceid.h"
+#include "windows/schedule.h"
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
