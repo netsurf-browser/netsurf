@@ -679,10 +679,22 @@ static void nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 
 	BeginPaint(hwnd, &ps);
 
-	if ((gw->bw != NULL) && (gw->bw->current_content != NULL)) {
+	if ((gw != NULL) && 
+	    (gw->bw != NULL) && 
+	    (gw->bw->current_content != NULL)) {
 		/* set globals for the plotters */
 		current_hwnd = gw->drawingarea;
 		current_gui = gw;
+
+		LOG(("x %f, y %f, w %d, h %d, left %d, top %d, right %d, bottom %d",
+		     -gw->scrollx / gw->bw->scale,
+		     -gw->scrolly / gw->bw->scale,
+		     gw->width, 
+		     gw->height,
+		     ps.rcPaint.left,
+		     ps.rcPaint.top,
+		     ps.rcPaint.right,
+		     ps.rcPaint.bottom));
 
 		content_redraw(gw->bw->current_content, 
 			       -gw->scrollx / gw->bw->scale,
@@ -695,6 +707,7 @@ static void nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 			       ps.rcPaint.bottom,
 			       gw->bw->scale, 
 			       0xFFFFFF);
+		LOG(("complete"));
 	}
 
 	EndPaint(hwnd, &ps);
@@ -1435,13 +1448,13 @@ static void create_local_windows_classes(void) {
 /**
  * creation of status bar
  */
-static void nsws_window_statusbar_create(struct gui_window *w)
+static HWND nsws_window_statusbar_create(struct gui_window *w)
 {
 	HWND hwnd = CreateWindowEx(0, STATUSCLASSNAME, NULL, WS_CHILD |
 				   WS_VISIBLE, 0, 0, 0, 0, w->main,
 				   (HMENU) NSWS_ID_STATUSBAR, hinstance, NULL);
 	SendMessage(hwnd, SB_SETTEXT, 0, (LPARAM)"NetSurf");
-	w->statusbar = hwnd;
+	return hwnd;
 }
 
 
@@ -1468,30 +1481,32 @@ static HWND nsws_window_create(struct gui_window *gw)
 	LOG(("creating window for hInstance %p", hinstance));
 	hwnd = CreateWindowEx(0,
 			      windowclassname_main,
-			    "NetSurf Browser",
-			    WS_OVERLAPPEDWINDOW |
-			    WS_CLIPCHILDREN | WS_CLIPSIBLINGS | CS_DBLCLKS,
-			    CW_USEDEFAULT,
-			    CW_USEDEFAULT,
-			    gw->width,
-			    gw->height,
-			    NULL,
-			    gw->mainmenu,
-			    hinstance,
-			    NULL);
+			      "NetSurf Browser",
+			      WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | CS_DBLCLKS,
+			      CW_USEDEFAULT,
+			      CW_USEDEFAULT,
+			      gw->width,
+			      gw->height,
+			      NULL,
+			      gw->mainmenu,
+			      hinstance,
+			      NULL);
 
 	if ((option_window_width >= 100) &&
 	    (option_window_height >= 100) &&
 	    (option_window_x >= 0) &&
-	    (option_window_y >= 0))
-		SetWindowPos(hwnd, HWND_TOPMOST, option_window_x,
-			     option_window_y, option_window_width,
-			     option_window_height, SWP_SHOWWINDOW);
+	    (option_window_y >= 0)) {
+		SetWindowPos(hwnd, HWND_TOPMOST, 
+			     option_window_x, option_window_y, 
+			     option_window_width, option_window_height, 
+			     SWP_SHOWWINDOW);
+	}
 
 	nsws_window_set_accels(gw);
 	nsws_window_set_ico(gw);
+
 	gw->toolbar = nsws_window_toolbar_create(gw, hwnd);
-	nsws_window_statusbar_create(gw);
+	gw->statusbar = nsws_window_statusbar_create(gw);
 
 	return hwnd;
 }
