@@ -490,3 +490,18 @@ int uname(struct utsname *buf) {
 	return 0;
 }
 #endif
+
+#ifndef HAVE_REALPATH
+char *realpath(const char *path, char *resolved_path)
+{
+	char *ret;
+	if (resolved_path == NULL) {
+		ret=strdup(path);
+	} else {
+		ret = resolved_path;
+		strcpy(resolved_path, path);
+	}
+	return ret;
+}
+
+#endif
