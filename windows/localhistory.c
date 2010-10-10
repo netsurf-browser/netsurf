@@ -73,7 +73,6 @@ void nsws_localhistory_init(struct gui_window *w)
 	localhistory.height = 0;
 	current_gui = NULL;
 	current_hwnd = NULL;
-	doublebuffering = false;
 	if ((bw != NULL) && (bw->history != NULL))
 		history_size(bw->history, &(localhistory.width),
 				&(localhistory.height));

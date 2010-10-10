@@ -48,9 +48,7 @@
 
 HWND current_hwnd;
 struct gui_window *current_gui;
-bool doublebuffering;
 bool thumbnail = false;
-HDC bufferdc;
 static float nsws_plot_scale = 1.0;
 static RECT localhistory_clip;
 
@@ -82,7 +80,7 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
 	LOG(("ligne from %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1,
-			thumbnail));
+	     thumbnail));
 #endif
 	RECT *clipr = gui_window_clip_rect(current_gui);
 	if (clipr == NULL)
@@ -92,7 +90,7 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		return false;
 	}
 
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		DeleteObject(clipregion);
 		return false;
@@ -100,23 +98,23 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	COLORREF col = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	/* windows 0x00bbggrr */
 	DWORD penstyle = PS_GEOMETRIC | ((style->stroke_type ==
-			PLOT_OP_TYPE_DOT) ? PS_DOT :
-			(style->stroke_type == PLOT_OP_TYPE_DASH) ? PS_DASH:
-			0);
+					  PLOT_OP_TYPE_DOT) ? PS_DOT :
+					 (style->stroke_type == PLOT_OP_TYPE_DASH) ? PS_DASH:
+					 0);
 	LOGBRUSH lb = {BS_SOLID, col, 0};
 	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HGDIOBJ bak = SelectObject(hdc, (HGDIOBJ) pen);
 	if (bak == NULL) {
 		DeleteObject(pen);
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -133,50 +131,51 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	
 	SelectClipRgn(hdc, NULL);
 /*	ValidateRect(current_hwnd, &r);
-*/	
+ */	
 	pen = SelectObject(hdc, bak);
 	DeleteObject(pen);
 	DeleteObject(clipregion);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
 static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t 
-		*style)
+		      *style)
 {
 	x1++;
 	y1++;
-	x0 = MAX(x0, 0);
+/*	x0 = MAX(x0, 0);
 	y0 = MAX(y0, 0);
 	if (!((current_gui == NULL) || (thumbnail))) {
-		x1 = MIN(x1, gui_window_width(current_gui));
-		y1 = MIN(y1, gui_window_height(current_gui));
+	x1 = MIN(x1, gui_window_width(current_gui));
+	y1 = MIN(y1, gui_window_height(current_gui));
 	}
-	
+*/	
 #if NSWS_PLOT_DEBUG	
 	LOG(("rectangle from %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1,
-			thumbnail));
+	     thumbnail));
 #endif
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;
 	}
-	RECT *clipr = gui_window_clip_rect(current_gui);
+/*	RECT *clipr = gui_window_clip_rect(current_gui);
 	if (clipr == NULL)
 		clipr = &localhistory_clip;
 	HRGN clipregion = CreateRectRgnIndirect(clipr);
 	if (clipregion == NULL) {
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
-	}
+		}
+*/
 	COLORREF pencol = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	DWORD penstyle = PS_GEOMETRIC | 
-			(style->stroke_type == PLOT_OP_TYPE_DOT ? PS_DOT :
-			(style->stroke_type == PLOT_OP_TYPE_DASH ? PS_DASH :
-			(style->stroke_type == PLOT_OP_TYPE_NONE ? PS_NULL : 
-			0)));
+		(style->stroke_type == PLOT_OP_TYPE_DOT ? PS_DOT :
+		 (style->stroke_type == PLOT_OP_TYPE_DASH ? PS_DASH :
+		  (style->stroke_type == PLOT_OP_TYPE_NONE ? PS_NULL : 
+		   0)));
 	LOGBRUSH lb = {BS_SOLID, pencol, 0};
 	LOGBRUSH lb1 = {BS_SOLID, style->fill_colour, 0};
 	if (style->fill_type == PLOT_OP_TYPE_NONE)
@@ -184,36 +183,36 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t
 	
 	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
 	if (pen == NULL) {
-		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+//		DeleteObject(clipregion);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HGDIOBJ penbak = SelectObject(hdc, (HGDIOBJ) pen);
 	if (penbak == NULL) {
-		DeleteObject(clipregion);
+//		DeleteObject(clipregion);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brush = CreateBrushIndirect(&lb1);
 	if (brush  == NULL) {
-		DeleteObject(clipregion);
+//		DeleteObject(clipregion);
 		SelectObject(hdc, penbak);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HGDIOBJ brushbak = SelectObject(hdc, (HGDIOBJ) brush);
 	if (brushbak == NULL) {
-		DeleteObject(clipregion);
+//		DeleteObject(clipregion);
 		SelectObject(hdc, penbak);
 		DeleteObject(pen);
 		DeleteObject(brush);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -222,20 +221,20 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t
 	r.right = x1;
 	r.bottom = y1;
 
-	SelectClipRgn(hdc, clipregion);
+	//SelectClipRgn(hdc, clipregion);
 	
 	Rectangle(hdc, x0, y0, x1, y1);
 
-	SelectClipRgn(hdc, NULL);
+	//SelectClipRgn(hdc, NULL);
 /*	ValidateRect(current_hwnd, &r);
-*/	
+ */	
 	pen = SelectObject(hdc, penbak);
 	brush = SelectObject(hdc, brushbak);
-	DeleteObject(clipregion);
+//	DeleteObject(clipregion);
 	DeleteObject(pen);
 	DeleteObject(brush);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
@@ -247,7 +246,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 #endif
 	POINT points[n];
 	unsigned int i;
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;
 	}
@@ -256,8 +255,8 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 		clipr = &localhistory_clip;
 	HRGN clipregion = CreateRectRgnIndirect(clipr);
 	if (clipregion == NULL) {
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	COLORREF pencol = (DWORD)(style->fill_colour & 0x00FFFFFF);
@@ -265,16 +264,15 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 	HPEN pen = CreatePen(PS_GEOMETRIC | PS_NULL, 1, pencol);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HPEN penbak = SelectObject(hdc, pen);
 	if (penbak == NULL) {
 		DeleteObject(clipregion);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brush = CreateSolidBrush(brushcol);
@@ -282,8 +280,8 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 		DeleteObject(clipregion);
 		SelectObject(hdc, penbak);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brushbak = SelectObject(hdc, brush);
@@ -292,8 +290,8 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 		SelectObject(hdc, penbak);
 		DeleteObject(pen);
 		DeleteObject(brush);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	SetPolyFillMode(hdc, WINDING);
@@ -318,22 +316,22 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 	DeleteObject(clipregion);
 	DeleteObject(pen);
 	DeleteObject(brush);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 #if NSWS_PLOT_DEBUG
-		printf("\n");
+	printf("\n");
 #endif
 	return true;
 }
 
 
 static bool text(int x, int y, const char *text, size_t length, 
-		const plot_font_style_t *style)
+		 const plot_font_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
 	LOG(("words %s at %d,%d thumbnail %d", text, x, y, thumbnail));
 #endif
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;
 	}
@@ -342,16 +340,15 @@ static bool text(int x, int y, const char *text, size_t length,
 		clipr = &localhistory_clip;
 	HRGN clipregion = CreateRectRgnIndirect(clipr);
 	if (clipregion == NULL) {
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 			
 	HFONT fontbak, font = get_font(style);
 	if (font == NULL) {
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	int wlen;
@@ -385,13 +382,13 @@ static bool text(int x, int y, const char *text, size_t length,
 
 	SelectClipRgn(hdc, NULL);
 /*	ValidateRect(current_hwnd, &r);
-*/
+ */
 	free(wstring);
 	font = SelectObject(hdc, fontbak);
 	DeleteObject(clipregion);
 	DeleteObject(font);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
@@ -400,7 +397,7 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 #if NSWS_PLOT_DEBUG
 	LOG(("disc at %d,%d radius %d thumbnail %d", x, y, radius, thumbnail));
 #endif
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;
 	}
@@ -409,26 +406,26 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 		clipr = &localhistory_clip;
 	HRGN clipregion = CreateRectRgnIndirect(clipr);
 	if (clipregion == NULL) {
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 			
 	COLORREF col = (DWORD)((style->fill_colour | style->stroke_colour)
-			& 0x00FFFFFF);
+			       & 0x00FFFFFF);
 	HPEN pen = CreatePen(PS_GEOMETRIC | PS_SOLID, 1, col);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HGDIOBJ penbak = SelectObject(hdc, (HGDIOBJ) pen);
 	if (penbak == NULL) {
 		DeleteObject(clipregion);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brush = CreateSolidBrush(col);
@@ -436,8 +433,8 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 		DeleteObject(clipregion);
 		SelectObject(hdc, penbak);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HGDIOBJ brushbak = SelectObject(hdc, (HGDIOBJ) brush);
@@ -446,8 +443,8 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 		SelectObject(hdc, penbak);
 		DeleteObject(pen);
 		DeleteObject(brush);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -460,32 +457,32 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 	
 	if (style->fill_type == PLOT_OP_TYPE_NONE)
 		Arc(hdc, x - radius, y - radius, x + radius, y + radius,
-				x - radius, y - radius,
-				x - radius, y - radius);
+		    x - radius, y - radius,
+		    x - radius, y - radius);
 	else
 		Ellipse(hdc, x - radius, y - radius, x + radius, y + radius);
 
 	SelectClipRgn(hdc, NULL);
 /*	ValidateRect(current_hwnd, &r);
-*/
+ */
 	pen = SelectObject(hdc, penbak);
 	brush = SelectObject(hdc, brushbak);
 	DeleteObject(clipregion);
 	DeleteObject(pen);
 	DeleteObject(brush);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
 static bool arc(int x, int y, int radius, int angle1, int angle2,
-	    		const plot_style_t *style)
+		const plot_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
 	LOG(("arc centre %d,%d radius %d from %d to %d", x, y, radius,
-			angle1, angle2));
+	     angle1, angle2));
 #endif
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;
 	}
@@ -494,24 +491,24 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 		clipr = &localhistory_clip;
 	HRGN clipregion = CreateRectRgnIndirect(clipr);
 	if (clipregion == NULL) {
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	COLORREF col = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	HPEN pen = CreatePen(PS_GEOMETRIC | PS_SOLID, 1, col);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HGDIOBJ penbak = SelectObject(hdc, (HGDIOBJ) pen);
 	if (penbak == NULL) {
 		DeleteObject(clipregion);
 		DeleteObject(pen);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -576,32 +573,32 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 	SelectClipRgn(hdc, clipregion);
 	
 	Arc(hdc, x - radius, y - radius, x + radius, y + radius,
-				x + (int)(a1 * radius), y + (int)(b1 * radius),
-				x + (int)(a2 * radius), y + (int)(b2 * radius));
+	    x + (int)(a1 * radius), y + (int)(b1 * radius),
+	    x + (int)(a2 * radius), y + (int)(b2 * radius));
 	
 	SelectClipRgn(hdc, NULL);
 /*	ValidateRect(current_hwnd, &r);
-*/
+ */
 	pen = SelectObject(hdc, penbak);
 	DeleteObject(clipregion);
 	DeleteObject(pen);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
 
 static bool bitmap(int x, int y, int width, int height,
-			struct bitmap *bitmap, colour bg,
-			bitmap_flags_t flags)
+		   struct bitmap *bitmap, colour bg,
+		   bitmap_flags_t flags)
 {
 #if NSWS_PLOT_DEBUG
 	LOG(("%p bitmap %d,%d width %d height %d", current_hwnd, x, y, width,
-			height));
+	     height));
 #endif
 	if (bitmap == NULL)
 		return false;
-	HDC hdc = doublebuffering ? bufferdc : GetDC(current_hwnd);
+	HDC hdc = GetDC(current_hwnd);
 	if (hdc == NULL) {
 		return false;
 	}
@@ -610,15 +607,14 @@ static bool bitmap(int x, int y, int width, int height,
 		cliprect = &localhistory_clip;
 	HRGN clipregion = CreateRectRgnIndirect(cliprect);
 	if (clipregion == NULL) {
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HDC Memhdc = CreateCompatibleDC(hdc);
 	if (Memhdc == NULL) {
 		DeleteObject(clipregion);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	BITMAPINFOHEADER bmih;
@@ -637,8 +633,8 @@ static bool bitmap(int x, int y, int width, int height,
 	
 	if ((flags & BITMAPF_REPEAT_X) || (flags & BITMAPF_REPEAT_Y)) {
 		struct bitmap *prebitmap = bitmap_pretile(bitmap,
-				cliprect->right - x,
-				cliprect->bottom - y, flags);
+							  cliprect->right - x,
+							  cliprect->bottom - y, flags);
 		if (prebitmap == NULL)
 			return false;
 		if (modifying) {
@@ -650,29 +646,29 @@ static bool bitmap(int x, int y, int width, int height,
 	}
 	BITMAP MemBM;
 	BITMAPINFO *bmi = (BITMAPINFO *) malloc(sizeof(BITMAPINFOHEADER) + 
-			(bitmap->width * bitmap->height * 4));
+						(bitmap->width * bitmap->height * 4));
 	if (bmi == NULL) {
 		DeleteObject(clipregion);
 		DeleteDC(Memhdc);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBITMAP MemBMh = CreateCompatibleBitmap(
-			hdc, bitmap->width, bitmap->height);
+		hdc, bitmap->width, bitmap->height);
 	if (MemBMh == NULL){
 		DeleteObject(clipregion);
 		free(bmi);
 		DeleteDC(Memhdc);
-		if (!doublebuffering)
-			ReleaseDC(current_hwnd, hdc);
+
+		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 
 	/* save 'background' data for alpha channel work */
 	SelectObject(Memhdc, MemBMh);
 	BitBlt(Memhdc, 0, 0, bitmap->width, bitmap->height, hdc, x, y,
-			SRCCOPY);
+	       SRCCOPY);
 	GetObject(MemBMh, sizeof(BITMAP), &MemBM);
 	
 	bmih.biSize = sizeof(bmih);
@@ -689,77 +685,77 @@ static bool bitmap(int x, int y, int width, int height,
 	bmi->bmiHeader = bmih;
 	
 	GetDIBits(hdc, MemBMh, 0, bitmap->height, bmi->bmiColors, bmi,
-			DIB_RGB_COLORS);
+		  DIB_RGB_COLORS);
 	
 	/* then load 'foreground' bits from bitmap->pixdata */
 	
 	width4 = bitmap->width * 4;
 	for (v = 0, vv = 0, vi = (bitmap->height - 1) * width4; 
-			v < bitmap->height; 
-			v++, vv += bitmap->width, vi -= width4) {
+	     v < bitmap->height; 
+	     v++, vv += bitmap->width, vi -= width4) {
 		for (h = 0, hh = 0; h < bitmap->width; h++, hh += 4) {
 			alpha = bitmap->pixdata[vi + hh + 3];
 /* multiplication of alpha value; subject to profiling could be optional */
 			if (alpha == 0xFF) {
 				bmi->bmiColors[vv + h].rgbBlue =
-						bitmap->pixdata[vi + hh + 2];
+					bitmap->pixdata[vi + hh + 2];
 				bmi->bmiColors[vv + h].rgbGreen =
-						bitmap->pixdata[vi + hh + 1];
+					bitmap->pixdata[vi + hh + 1];
 				bmi->bmiColors[vv + h].rgbRed = 
-						bitmap->pixdata[vi + hh];
+					bitmap->pixdata[vi + hh];
 			} else if (alpha > 0) {
 				transparency = 0x100 - alpha;
 				bmi->bmiColors[vv + h].rgbBlue =
-						(bmi->bmiColors[vv + h].rgbBlue
-						* transparency + 
-						(bitmap->pixdata[vi + hh + 2]) *
-						alpha) >> 8;
+					(bmi->bmiColors[vv + h].rgbBlue
+					 * transparency + 
+					 (bitmap->pixdata[vi + hh + 2]) *
+					 alpha) >> 8;
 				bmi->bmiColors[vv + h].rgbGreen =
-						(bmi->bmiColors[vv + h].
-						rgbGreen
-						* transparency +
-						(bitmap->pixdata[vi + hh + 1]) *
-						alpha) >> 8;
+					(bmi->bmiColors[vv + h].
+					 rgbGreen
+					 * transparency +
+					 (bitmap->pixdata[vi + hh + 1]) *
+					 alpha) >> 8;
 				bmi->bmiColors[vv + h].rgbRed =
-						(bmi->bmiColors[vv + h].rgbRed
-						* transparency +
-						bitmap->pixdata[vi + hh]
-						* alpha) >> 8;
+					(bmi->bmiColors[vv + h].rgbRed
+					 * transparency +
+					 bitmap->pixdata[vi + hh]
+					 * alpha) >> 8;
 			}
 /* alternative simple 2/3 stage alpha value handling */
 /*			if (bitmap->pixdata[vi + hh + 3] > 0xAA) {
-				bmi->bmiColors[vv + h].rgbBlue = 
-						bitmap->pixdata[vi + hh + 2];
-				bmi->bmiColors[vv + h].rgbGreen =
-						bitmap->pixdata[vi + hh + 1];
-				bmi->bmiColors[vv + h].rgbRed =
-						bitmap->pixdata[vi + hh];
+			bmi->bmiColors[vv + h].rgbBlue = 
+			bitmap->pixdata[vi + hh + 2];
+			bmi->bmiColors[vv + h].rgbGreen =
+			bitmap->pixdata[vi + hh + 1];
+			bmi->bmiColors[vv + h].rgbRed =
+			bitmap->pixdata[vi + hh];
 			} else if (bitmap->pixdata[vi + hh + 3] > 0x70){
-				bmi->bmiColors[vv + h].rgbBlue = 
-				(bmi->bmiColors[vv + h].rgbBlue +
-				bitmap->pixdata[vi + hh + 2]) / 2;
-				bmi->bmiColors[vv + h].rgbRed = 
-				(bmi->bmiColors[vv + h].rgbRed +
-				bitmap->pixdata[vi + hh]) / 2;
-				bmi->bmiColors[vv + h].rgbGreen = 
-				(bmi->bmiColors[vv + h].rgbGreen +
-				bitmap->pixdata[vi + hh + 1]) / 2;
+			bmi->bmiColors[vv + h].rgbBlue = 
+			(bmi->bmiColors[vv + h].rgbBlue +
+			bitmap->pixdata[vi + hh + 2]) / 2;
+			bmi->bmiColors[vv + h].rgbRed = 
+			(bmi->bmiColors[vv + h].rgbRed +
+			bitmap->pixdata[vi + hh]) / 2;
+			bmi->bmiColors[vv + h].rgbGreen = 
+			(bmi->bmiColors[vv + h].rgbGreen +
+			bitmap->pixdata[vi + hh + 1]) / 2;
 			} else if (bitmap->pixdata[vi + hh + 3] > 0x30){
-				bmi->bmiColors[vv + h].rgbBlue = 
-				(bmi->bmiColors[vv + h].rgbBlue * 3 +
-				bitmap->pixdata[vi + hh + 2]) / 4;
-				bmi->bmiColors[vv + h].rgbRed = 
-				(bmi->bmiColors[vv + h].rgbRed * 3 +
-				bitmap->pixdata[vi + hh]) / 4;
-				bmi->bmiColors[vv + h].rgbGreen = 
-				(bmi->bmiColors[vv + h].rgbGreen * 3 +
-				bitmap->pixdata[vi + hh + 1]) / 4;
+			bmi->bmiColors[vv + h].rgbBlue = 
+			(bmi->bmiColors[vv + h].rgbBlue * 3 +
+			bitmap->pixdata[vi + hh + 2]) / 4;
+			bmi->bmiColors[vv + h].rgbRed = 
+			(bmi->bmiColors[vv + h].rgbRed * 3 +
+			bitmap->pixdata[vi + hh]) / 4;
+			bmi->bmiColors[vv + h].rgbGreen = 
+			(bmi->bmiColors[vv + h].rgbGreen * 3 +
+			bitmap->pixdata[vi + hh + 1]) / 4;
 			} 
 */		}
 	}
 	SetDIBitsToDevice(hdc, x, y, bitmap->width, bitmap->height,
-			0, 0, 0, bitmap->height, (const void *) bmi->bmiColors,
-			bmi, DIB_RGB_COLORS);
+			  0, 0, 0, bitmap->height, (const void *) bmi->bmiColors,
+			  bmi, DIB_RGB_COLORS);
 	
 	r.left = x;
 	r.top = y;
@@ -771,13 +767,13 @@ static bool bitmap(int x, int y, int width, int height,
 	}
 	
 /*	ValidateRect(current_hwnd, &r);
-*/	free(bmi);
+ */	free(bmi);
 /*	SelectClipRgn(hdc, NULL);
-*/	DeleteObject(clipregion);
+ */	DeleteObject(clipregion);
 	DeleteObject(MemBMh);
 	DeleteDC(Memhdc);
-	if (!doublebuffering)
-		ReleaseDC(current_hwnd, hdc);
+
+	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 

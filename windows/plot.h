@@ -21,8 +21,6 @@
  
 extern HWND current_hwnd;
 extern struct gui_window *current_gui;
-extern HDC bufferdc;
-extern bool doublebuffering;
 extern bool thumbnail;
 
 void nsws_plot_set_scale(float s);

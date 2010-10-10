@@ -72,7 +72,7 @@ S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # S_WINDOWS are sources purely for the windows build
 S_WINDOWS := about.c bitmap.c download.c filetype.c findfile.c font.c	\
 	gui.c localhistory.c login.c misc.c plot.c prefs.c schedule.c	\
-	thumbnail.c tree.c
+	thumbnail.c tree.c windbg.c
 S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 
 
 # S_BEOS are sources purely for the BeOS build

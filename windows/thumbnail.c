@@ -41,7 +41,7 @@ thumbnail_create(hlcache_handle *content,
 	BITMAPINFOHEADER bmih;
 
 	LOG(("creating thumbnail %p for url %s content %p", bitmap, url, content));
-
+	return false;
 	bmi = malloc(sizeof(BITMAPINFOHEADER) + (bitmap->width * bitmap->height * 4));
 	if (bmi == NULL) {
 		return false;
@@ -59,7 +59,7 @@ thumbnail_create(hlcache_handle *content,
 	bmih.biClrUsed = 0;
 	bmih.biClrImportant = 0;
 	bmi->bmiHeader = bmih;
-	
+/*	
 	doublebuffering = true;
 
 	if (bufferdc != NULL)
@@ -85,9 +85,9 @@ thumbnail_create(hlcache_handle *content,
 	content_redraw(content, 0, 0, width, height, 0, 0,
 			width, height, 1.0, 0xFFFFFF);
 	thumbnail = false;
-	
+*/	
 /*	scale bufferbm to minibm */
-
+/*
 	minidc = CreateCompatibleDC(hdc);
 	if (minidc == NULL) {
 		doublebuffering = false;
@@ -123,9 +123,9 @@ thumbnail_create(hlcache_handle *content,
 		return false;
 	}
 	SelectObject(minidc, minibm2);
-	
+*/	
 /*	save data from minibm bmi */
-	GetDIBits(minidc, minibm, 0, 1 - bitmap->height,
+/*	GetDIBits(minidc, minibm, 0, 1 - bitmap->height,
 			bmi->bmiColors, bmi, DIB_RGB_COLORS);
 
 	pixdata = (uint8_t *)(bitmap->pixdata);
@@ -147,4 +147,5 @@ thumbnail_create(hlcache_handle *content,
 			
 	doublebuffering = false;
 	return true;
+*/
 }
