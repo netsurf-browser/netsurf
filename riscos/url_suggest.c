@@ -111,12 +111,7 @@ bool ro_gui_url_suggest_prepare_menu(void)
 			list = next;
 		}
 
-		/* If i hasn't reached 0, then something went wrong -- get
-		 * out now!
-		 */
-
-		if (i > 0)
-			return false;
+		assert(i == 0);
 
 		suggest_menu->entries[0].menu_flags |=
 				wimp_MENU_TITLE_INDIRECTED;
@@ -146,7 +141,7 @@ bool url_suggest_callback(const char *url, const struct url_data *data)
 
 	/* Ignore unvisited URLs, and those that don't apply to HTML or Text. */
 
-	if (data->visits <= 0 ||(data->type != CONTENT_HTML &&
+	if (data->visits <= 0 || (data->type != CONTENT_HTML &&
 			data->type != CONTENT_TEXTPLAIN))
 		return true;
 
