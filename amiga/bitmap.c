@@ -130,21 +130,17 @@ void bitmap_destroy(void *bitmap)
 
 bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
-	BPTR fh = 0;
+	int err = 0;
 	Object *dto = NULL;
 
 	if(dto = ami_datatype_object_from_bitmap(bitmap))
 	{
-		if(fh = Open(path,MODE_NEWFILE))
-		{
-			DoDTMethod(dto,NULL,NULL,DTM_WRITE,NULL,fh,DTWM_IFF,NULL);
-			Close(fh);
-		}
-
+		err = SaveDTObjectA(dto, NULL, NULL, path, DTWM_IFF, FALSE, NULL);
 		DisposeDTObject(dto);
 	}
 
-	return true;
+	if(err == 0) return false;
+		else return true;
 }
 
 
