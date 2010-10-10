@@ -344,9 +344,9 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	/* core expects horizontal and vertical lines to be on pixels, not
 	 * between pixels */
-	cairo_move_to(current_cr, (x0 == x1) ? x0 + 0.5 : x0,
+	cairo_move_to(glob->cr, (x0 == x1) ? x0 + 0.5 : x0,
 			(y0 == y1) ? y0 + 0.5 : y0);
-	cairo_line_to(current_cr, (x0 == x1) ? x1 + 0.5 : x1,
+	cairo_line_to(glob->cr, (x0 == x1) ? x1 + 0.5 : x1,
 			(y0 == y1) ? y1 + 0.5 : y1);
 	cairo_stroke(glob->cr);
 #endif
