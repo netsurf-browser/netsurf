@@ -148,13 +148,10 @@ struct tree {
 /**
  * Creates and initialises a new tree.
  *
- * \param flags		 flag word for flags to create the new tree with
- * \param redraw_request function to be called each time the tree wants to
- *			 be redrawn
- * \param client_data	 data to be passed to start_redraw and end_redraw
- * \param root		 gets updated to point at the root of the tree,
- *			 if not NULL
- * \return		 the newly created tree, or NULL on memory exhaustion
+ * \param flags		Flag word for flags to create the new tree with
+ * \param callbacks	Callback functions to support the tree in the frontend.
+ * \param client_data	Data to be passed to start_redraw and end_redraw
+ * \return		The newly created tree, or NULL on memory exhaustion
  */
 struct tree *tree_create(unsigned int flags,
 		const struct treeview_table *callbacks, void *client_data)
@@ -260,7 +257,7 @@ static void tree_recalculate_node_element(struct tree *tree,
  * \param node  the node to calculate the height of
  * \return the total height of the node and children
  */
-static int tree_get_node_height(struct node *node) 
+static int tree_get_node_height(struct node *node)
 {
 	int y1;
 
@@ -276,7 +273,7 @@ static int tree_get_node_height(struct node *node)
 	}
 	node = node->child;
 
-	while ((node->next != NULL) || 
+	while ((node->next != NULL) ||
 	       ((node->child != NULL) && (node->expanded))) {
 		for (; node->next != NULL; node = node->next);
 
@@ -323,7 +320,7 @@ static int tree_get_node_width(struct node *node)
  * \param tree	the tree to which 'root' belongs
  * \param root  the root node to update from
  */
-static void tree_recalculate_node_positions(struct tree *tree, 
+static void tree_recalculate_node_positions(struct tree *tree,
 		struct node *root)
 {
 	struct node *parent;
@@ -543,7 +540,7 @@ struct node_element *tree_create_node_element(struct node *parent,
 	struct node_element *element;
 
 	element = calloc(sizeof(struct node_element), 1);
-	if (element == NULL) 
+	if (element == NULL)
 		return NULL;
 
 	element->parent = parent;
@@ -631,12 +628,13 @@ static void tree_recalculate_size(struct tree *tree)
 static void tree_handle_node_changed(struct tree *tree, struct node *node,
 		bool recalculate_sizes, bool expansion)
 {
-	int width, height, tree_height;
+	int node_width, node_height, tree_width, tree_height;
 
 	assert(node != NULL);
 
-	width = node->box.width;
-	height = node->box.height;
+	node_width = node->box.width;
+	node_height = node->box.height;
+	tree_width = tree->width;
 	tree_height = tree->height;
 
 	if ((recalculate_sizes) || (expansion)) {
@@ -644,24 +642,26 @@ static void tree_handle_node_changed(struct tree *tree, struct node *node,
 	}
 
 	if (tree != NULL) {
-		if ((node->box.height != height) || (expansion)) {
+		if ((node->box.height != node_height) || (expansion)) {
 			tree_recalculate_node_positions(tree, tree->root);
 			tree_recalculate_size(tree);
-			tree_height = (tree_height > tree->height) ?
-				tree_height : tree->height;
+			if (tree->width > tree_width)
+				tree_width = tree->width;
+			if (tree->height > tree_height)
+				tree_height = tree->height;
 			if (tree->redraw) {
 				tree->callbacks->redraw_request(0, node->box.y,
-						tree->width,
+						tree_width,
 						tree_height - node->box.y,
 						tree->client_data);
 			}
 		} else {
-			width = (width > node->box.width) ?
-				width : node->box.width;
+			if (node->box.width > node_width)
+				node_width = node->box.width;
 			if (tree->redraw)
 				tree->callbacks->redraw_request(node->box.x,
 						node->box.y,
-						width, node->box.height,
+						node_width, node->box.height,
 						tree->client_data);
 			if (recalculate_sizes) {
 				tree_recalculate_size(tree);
@@ -782,7 +782,7 @@ static void tree_handle_node_element_changed(struct tree *tree,
 			if (tree->redraw) {
 				tree->callbacks->redraw_request(element->box.x,
 						element->box.y,
-						width, 
+						width,
 						element->box.height,
 						tree->client_data);
 			}
@@ -1495,7 +1495,7 @@ static void tree_draw_node_expansion(struct tree *tree, struct node *node,
  * \param tree_x	X coordinate of the tree
  * \param tree_y	Y coordinate of the tree
  */
-static void tree_draw_node_element(struct tree *tree, 
+static void tree_draw_node_element(struct tree *tree,
 		struct node_element *element, int tree_x, int tree_y)
 {
 
@@ -1589,8 +1589,8 @@ static void tree_draw_node_element(struct tree *tree,
  */
 static void tree_draw_node(struct tree *tree, struct node *node,
 		int tree_x, int tree_y,
-		int clip_x, int clip_y, 
-		int clip_width, int clip_height) 
+		int clip_x, int clip_y,
+		int clip_width, int clip_height)
 {
 	struct node_element *element;
 	struct node *parent;
@@ -1874,7 +1874,7 @@ static struct node_element *tree_get_node_element_at(struct node *node,
  * \param furniture  whether the returned area was in an elements furniture
  * \return the node at the specified position, or NULL for none
  */
-static struct node *tree_get_node_at(struct node *root, int x, int y, 
+static struct node *tree_get_node_at(struct node *root, int x, int y,
 		bool *furniture)
 {
 	struct node_element *result;
@@ -2179,7 +2179,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
  * \param height  the height of the selection rectangle
  * \param invert  whether to invert the selected state
  */
-static void tree_handle_selection_area_node(struct tree *tree, 
+static void tree_handle_selection_area_node(struct tree *tree,
 		struct node *node, int y, int height, bool invert)
 {
 	struct node_element *element;
@@ -2302,7 +2302,7 @@ static void tree_selected_to_processing(struct node *node)
  *		  inside of folders)
  * \return        the node moved
  */
-static struct node *tree_move_processing_node(struct tree *tree, 
+static struct node *tree_move_processing_node(struct tree *tree,
 		struct node *node, struct node *link, bool before, bool first)
 {
 	struct node *result;
@@ -2339,7 +2339,7 @@ static struct node *tree_move_processing_node(struct tree *tree,
  * \param before       whether to link siblings before or after the supplied
  *		       node
  */
-static void tree_move_selected_nodes(struct tree *tree, 
+static void tree_move_selected_nodes(struct tree *tree,
 		struct node *destination, bool before)
 {
 	struct node *link;
