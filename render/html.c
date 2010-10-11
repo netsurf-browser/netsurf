@@ -2220,13 +2220,15 @@ hlcache_handle *html_get_favicon(hlcache_handle *h)
  * \param y        Updated to global y coord iff id found
  * \return  true iff id found
  */
-bool html_get_id_offset(hlcache_handle *h, char *frag_id, int *x, int *y)
+bool html_get_id_offset(hlcache_handle *h, const char *frag_id, int *x, int *y)
 {
 	struct box *pos;
-	struct box *layout = html_get_box_tree(h);
+	struct box *layout;
 
 	if (content_get_type(h) != CONTENT_HTML)
 		return false;
+
+	layout = html_get_box_tree(h);
 
 	if ((pos = box_find_by_id(layout, frag_id)) != 0) {
 		box_coords(pos, x, y);
