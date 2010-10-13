@@ -498,6 +498,8 @@ ifeq ($(TARGET),windows)
 	-lparserutils -lssl -lcrypto -lregex -liconv -lcss -lwapcaplet \
 	-lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
   CFLAGS += -U__STRICT_ANSI__ -mwin32
+  # only windows versions after 2000 are supported
+  CFLAGS += '-DWINVER=0x0500'
   WSCFLAGS := -std=c99 \
 	$(WARNFLAGS) -I. -I/${MINGW_INSTALL_ENV}/include \
 	-DCURL_STATICLIB \

@@ -728,7 +728,7 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 	    (gw->bw != NULL) &&
 	    (gw->bw->current_content != NULL)) {
 		/* set globals for the plotters */
-		current_hwnd = gw->drawingarea;
+		current_hwnd = hwnd;
 		current_gui = gw;
 
 		content_redraw(gw->bw->current_content,

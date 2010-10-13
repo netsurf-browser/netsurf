@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <string.h>
+#include <windows.h>
 
 #include "image/bitmap.h"
 #include "windows/bitmap.h"
@@ -38,19 +39,49 @@
 void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
+	BITMAPV5HEADER *pbmi;
+	BITMAP *windib;
+	uint8_t *pixdata;
+
 	LOG(("width %d, height %d, state %u",width,height,state));
-	bitmap = calloc(1 , sizeof(struct bitmap));
-	if (bitmap) {
-		bitmap->pixdata = calloc(width * height, 4);
-		if (bitmap->pixdata != NULL) {
-			bitmap->width = width;
-			bitmap->height = height;
-			bitmap->opaque = false;
-		} else {
-			free(bitmap);
-			bitmap=NULL;
-		}
+
+	pbmi = calloc(1, sizeof(BITMAPV5HEADER));
+	if (pbmi == NULL) {
+		return NULL;
 	}
+	pbmi->bV5Size = sizeof(BITMAPV5HEADER); 
+	pbmi->bV5Width = width; 
+	pbmi->bV5Height = -height; 
+	pbmi->bV5Planes = 1; 
+	pbmi->bV5BitCount = 32;
+	pbmi->bV5Compression = BI_BITFIELDS;
+
+	pbmi->bV5RedMask = 0xff; /* red mask */
+	pbmi->bV5GreenMask = 0xff00; /* green mask */
+	pbmi->bV5BlueMask = 0xff0000; /* blue mask */
+	pbmi->bV5AlphaMask = 0xff000000; /* alpha mask */
+
+	windib = CreateDIBSection(NULL, (BITMAPINFO *)pbmi, DIB_RGB_COLORS, &pixdata, NULL, 0);
+
+
+	if (windib == NULL) {
+		free(pbmi);
+		return NULL;
+	}
+
+	bitmap = calloc(1 , sizeof(struct bitmap));
+	if (bitmap == NULL) {
+		DeleteObject(windib);
+		free(pbmi);
+		return NULL;
+	}
+
+	bitmap->width = width;
+	bitmap->height = height;
+	bitmap->windib = windib;
+	bitmap->pbmi = pbmi;
+	bitmap->pixdata = pixdata;
+	bitmap->opaque = false;
 
 	LOG(("bitmap %p", bitmap));
 
@@ -114,8 +145,9 @@ void bitmap_destroy(void *bitmap)
 		LOG(("NULL bitmap!"));
 		return;
 	}
-	
-	free(bm->pixdata);
+
+	DeleteObject(bm->windib);
+	free(bm->pbmi);
 	free(bm);
 }
 

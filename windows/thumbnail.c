@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <windows.h>
+
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "utils/log.h"
