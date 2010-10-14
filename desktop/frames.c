@@ -124,7 +124,8 @@ void browser_window_recalculate_iframes(struct browser_window *bw) {
 	int bw_width, bw_height;
 	int index;
 
-	assert(bw);
+	assert(bw != NULL);
+	assert(bw->window != NULL);
 
 	/* update window dimensions */
 	gui_window_get_dimensions(bw->window, &bw_width, &bw_height, false);
@@ -137,9 +138,15 @@ void browser_window_recalculate_iframes(struct browser_window *bw) {
 
 	for (index = 0; index < bw->iframe_count; index++) {
 		window = &(bw->iframes[index]);
-		box_bounds(window->box, &rect);
-		gui_window_position_frame(window->window, rect.x0, rect.y0,
-				rect.x1, rect.y1);
+		
+		if ((window != NULL) && (window->box != NULL)) {
+			box_bounds(window->box, &rect);
+			gui_window_position_frame(window->window, 
+						  rect.x0, rect.y0,
+						  rect.x1, rect.y1);
+		} else {
+			LOG(("Bad IFrame window=%p, box=%p",window,window->box));
+		}
 	}
 }
 
