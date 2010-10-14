@@ -848,7 +848,7 @@ windows_plot_bitmap(int x, int y,
 			if ((*(bitmap->pixdata + 3) & 0xff) == 0) {
 				return true;
 			}
-			return plot_block(*(COLORREF *)bitmap->pixdata, x, y, x + width, y + height);
+			return plot_block((*(COLORREF *)bitmap->pixdata) & 0xffffff, x, y, x + width, y + height);
 
 		} else {
 			return plot_bitmap(bitmap, x, y, width, height);
@@ -859,7 +859,7 @@ windows_plot_bitmap(int x, int y,
 	 * of the area.  Can only be done when image is fully opaque. */
 	if ((bitmap->width == 1) && (bitmap->height == 1)) {
 		if ((*(COLORREF *)bitmap->pixdata & 0xff000000) != 0) {
-			return plot_block(*(COLORREF *)bitmap->pixdata, 
+			return plot_block((*(COLORREF *)bitmap->pixdata) & 0xffffff, 
 					  plot_clip.left, 
 					  plot_clip.top, 
 					  plot_clip.right, 
@@ -874,7 +874,7 @@ windows_plot_bitmap(int x, int y,
 		if (bitmap->opaque) {
 			/** TODO: Currently using top left pixel. Maybe centre
 			 *        pixel or average value would be better. */
-			return plot_block(*(COLORREF *)bitmap->pixdata, 
+			return plot_block((*(COLORREF *)bitmap->pixdata) & 0xffffff, 
 					  plot_clip.left, 
 					  plot_clip.top, 
 					  plot_clip.right, 
