@@ -71,8 +71,7 @@ void nsws_localhistory_init(struct gui_window *w)
 	
 	localhistory.width = 0;
 	localhistory.height = 0;
-	current_gui = NULL;
-	current_hwnd = NULL;
+
 	if ((bw != NULL) && (bw->history != NULL))
 		history_size(bw->history, &(localhistory.width),
 				&(localhistory.height));
@@ -118,7 +117,7 @@ void nsws_localhistory_init(struct gui_window *w)
 	LOG(("gui_window %p width %d height %d hwnd %p", w,
 			localhistory.guiwidth, localhistory.guiheight,
 			localhistory.hwnd));
-	current_hwnd = localhistory.hwnd;
+
 	ShowWindow(localhistory.hwnd, SW_SHOWNORMAL);
 	UpdateWindow(localhistory.hwnd);
 	gui_window_set_localhistory(w, &localhistory);
@@ -142,23 +141,24 @@ LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 	}
 	if (match)
 		bw = gui_window_browser_window(w);
+
 	switch(msg) {
 	case WM_CREATE:
 		nsws_localhistory_scroll_check(w);
 		break;
+
 	case WM_SIZE:
 		localhistory.guiheight = HIWORD(lparam);
 		localhistory.guiwidth = LOWORD(lparam);
 		nsws_localhistory_scroll_check(w);
-		current_gui = NULL;
-		current_hwnd = hwnd;
+/*		current_hwnd = hwnd;
 		plot.rectangle(0, 0, localhistory.guiwidth,
 				localhistory.guiheight, plot_style_fill_white);
-		break;
-	case WM_MOVE: {
+*/		break;
+
+/*	case WM_MOVE: {
 		RECT r, rmain;
 		if (w != NULL) {
-			current_gui = w;
 			current_hwnd = gui_window_main_window(w);
 			GetWindowRect(hwnd, &r);
 			GetWindowRect(current_hwnd, &rmain);
@@ -169,24 +169,24 @@ LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 					MIN(rmain.bottom - r.bottom, 0),
 					gui_window_width(w) - 
 					MIN(rmain.right - r.right, 0));
-			current_gui = NULL;
 			current_hwnd = hwnd;
 			return DefWindowProc(hwnd, msg, wparam, lparam);
 		}
 	}
-	case WM_LBUTTONUP: {
+*/	case WM_LBUTTONUP: {
 		int x,y;
 		x = GET_X_LPARAM(lparam);
 		y = GET_Y_LPARAM(lparam);
 		if (bw == NULL)
 			break;
-		current_hwnd = gui_window_main_window(w);
-		current_gui = w;
-		if ((bw != NULL) && (history_click(bw, bw->history, x, y, false)))
+
+		if ((bw != NULL) && 
+		    (history_click(bw, 
+				   bw->history, 
+				   localhistory.hscroll + x, 
+				   localhistory.vscroll + y, 
+				   false))) {
 			DestroyWindow(hwnd);
-		else {
-			current_hwnd = hwnd;
-			current_gui = NULL;
 		}
 	}
 	case WM_MOUSEMOVE: {
@@ -234,26 +234,14 @@ LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 			default:
 				break;
 		}
-		si.nPos = MIN(si.nPos, localhistory.width);
+		si.nPos = MIN(si.nPos, localhistory.height);
 		si.nPos = MAX(si.nPos, 0);
 		si.fMask = SIF_POS;
 		SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
 		GetScrollInfo(hwnd, SB_VERT, &si);
 		if (si.nPos != mem) {
-			current_gui = NULL;
-			current_hwnd = hwnd;
 			localhistory.vscroll += si.nPos - mem;
-			plot.rectangle(0, 0, localhistory.guiwidth,
-					localhistory.guiheight,
-					plot_style_fill_white);
-			history_redraw_rectangle(bw->history,
-					localhistory.hscroll,
-					localhistory.vscroll,
-					localhistory.guiwidth +
-					localhistory.hscroll,
-					localhistory.guiheight
-					+ localhistory.vscroll,
-					0, 0);
+			ScrollWindowEx(hwnd, 0, -(si.nPos - mem), NULL, NULL, NULL, NULL, SW_ERASE | SW_INVALIDATE);
 		}
 		break;
 	}
@@ -287,43 +275,37 @@ LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 			default:
 				break;
 		}
-		si.nPos = MIN(si.nPos, localhistory.height);
+		si.nPos = MIN(si.nPos, localhistory.width);
 		si.nPos = MAX(si.nPos, 0);
 		si.fMask = SIF_POS;
 		SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
 		GetScrollInfo(hwnd, SB_HORZ, &si);
 		if (si.nPos != mem) {
-			current_gui = NULL;
-			current_hwnd = hwnd;
 			localhistory.hscroll += si.nPos - mem;
-			if (bw == NULL)
-				break;
-			plot.rectangle(0, 0, localhistory.guiwidth,
-					localhistory.guiheight,
-					plot_style_fill_white);
-			history_redraw_rectangle(bw->history,
-					localhistory.hscroll,
-					localhistory.vscroll,
-					localhistory.guiwidth +
-					localhistory.hscroll,
-					localhistory.guiheight
-					+ localhistory.vscroll,
-					0, 0);
+			ScrollWindowEx(hwnd, -(si.nPos - mem), 0, NULL, NULL, NULL, NULL, SW_ERASE | SW_INVALIDATE);
 		}
 		break;
 	}	
 	case WM_PAINT: {
-		current_gui = NULL;
-		current_hwnd = hwnd;
 		PAINTSTRUCT ps;
-		BeginPaint(hwnd, &ps);
-		if (bw != NULL)
+		HDC hdc, tmp_hdc;
+		hdc = BeginPaint(hwnd, &ps);
+		if (bw != NULL) {
+			/* set global HDC for the plotters */
+			tmp_hdc = plot_hdc;
+			plot_hdc = hdc;
+			
 			history_redraw_rectangle(bw->history,
-				localhistory.hscroll,
-				localhistory.vscroll,
-				localhistory.hscroll + localhistory.guiwidth,
-				localhistory.vscroll + localhistory.guiheight,
-				0, 0);
+				localhistory.hscroll + ps.rcPaint.left,
+				localhistory.vscroll + ps.rcPaint.top,	
+				localhistory.hscroll + (ps.rcPaint.right - ps.rcPaint.left),
+				localhistory.vscroll + (ps.rcPaint.bottom - ps.rcPaint.top),
+				ps.rcPaint.left, 
+				ps.rcPaint.top);
+
+			plot_hdc = tmp_hdc;
+
+		}
 		EndPaint(hwnd, &ps);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 		break;
@@ -332,10 +314,12 @@ LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		nsws_localhistory_clear(w);
 		DestroyWindow(hwnd);
 		break;
+
 	case WM_DESTROY:
 		nsws_localhistory_clear(w);
 		PostQuitMessage(0);
 		break;
+
 	default:
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}

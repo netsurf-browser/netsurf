@@ -63,6 +63,8 @@ struct browser_mouse {
 extern struct gui_window *window_list;
 extern char *options_file_location;
 
+extern HWND font_hwnd;
+
 HWND gui_window_main_window(struct gui_window *);
 HWND gui_window_toolbar(struct gui_window *);
 HWND gui_window_urlbar(struct gui_window *);
@@ -73,7 +75,6 @@ void gui_window_set_localhistory(struct gui_window *,
 		struct nsws_localhistory *);
 
 RECT *gui_window_redraw_rect(struct gui_window *);
-RECT *gui_window_clip_rect(struct gui_window *w);
 
 int gui_window_voffset(struct gui_window *);
 int gui_window_width(struct gui_window *);

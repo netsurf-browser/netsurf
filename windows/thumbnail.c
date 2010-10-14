@@ -21,6 +21,7 @@
 #include "content/urldb.h"
 #include "desktop/browser.h"
 #include "utils/log.h"
+#include "image/bitmap.h"
 
 #include "windows/bitmap.h"
 #include "windows/gui.h"
@@ -33,121 +34,54 @@ thumbnail_create(hlcache_handle *content,
 		 struct bitmap *bitmap,
 		 const char *url)
 {
-	int width = content_get_width(content);
-	int height = content_get_height(content);
-	int i;
-	uint8_t *pixdata;
-	HDC hdc, minidc;
-	HBITMAP bufferbm, minibm, minibm2;
-	BITMAPINFO *bmi; 
-	BITMAPINFOHEADER bmih;
+	int width;
+	int height;
+	HDC hdc, bufferdc, minidc;
 
-	LOG(("creating thumbnail %p for url %s content %p", bitmap, url, content));
-	return false;
-	bmi = malloc(sizeof(BITMAPINFOHEADER) + (bitmap->width * bitmap->height * 4));
-	if (bmi == NULL) {
+	struct bitmap *fsbitmap;
+
+	width = min(content_get_width(content), 800);
+	height = min(content_get_height(content), 600);
+
+	LOG(("bitmap %p for url %s content %p width %d, height %d", 
+	     bitmap, url, content, width, height));
+
+	/* create two memory device contexts to put the bitmaps in */
+	bufferdc = CreateCompatibleDC(NULL);
+	if ((bufferdc == NULL)) {
 		return false;
 	}
 
-	bmih.biSize = sizeof(bmih);
-	bmih.biWidth = bitmap->width;
-	bmih.biHeight = - bitmap->height;
-	bmih.biPlanes = 1;
-	bmih.biBitCount = 32;
-	bmih.biCompression = BI_RGB;
-	bmih.biSizeImage = 4 * bitmap->height * bitmap->width;
-	bmih.biXPelsPerMeter = 3600; /* 100 dpi */
-	bmih.biYPelsPerMeter = 3600;
-	bmih.biClrUsed = 0;
-	bmih.biClrImportant = 0;
-	bmi->bmiHeader = bmih;
-/*	
-	doublebuffering = true;
-
-	if (bufferdc != NULL)
+	minidc = CreateCompatibleDC(NULL);
+	if ((minidc == NULL)) {
 		DeleteDC(bufferdc);
-	hdc = GetDC(current_hwnd);
-	
-	bufferdc = CreateCompatibleDC(hdc);
-	if ((bufferdc == NULL) || (bmi == NULL)) {
-		doublebuffering = false;
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 
-	bufferbm = CreateCompatibleBitmap(hdc, width, height);
-	if (bufferbm == NULL) {
-		doublebuffering = false;
-		ReleaseDC(current_hwnd, hdc);
-		free(bmi);
-		return false;
-	}
-	SelectObject(bufferdc, bufferbm);
-	thumbnail = true;
+	/* create a full size bitmap and plot into it */
+	fsbitmap = bitmap_create(width, height,	BITMAP_NEW | BITMAP_CLEAR_MEMORY | BITMAP_OPAQUE | BITMAP_PERSISTENT);
+
+	SelectObject(bufferdc, fsbitmap->windib);
+
+	hdc = plot_hdc;
+	plot_hdc = bufferdc;
 	content_redraw(content, 0, 0, width, height, 0, 0,
 			width, height, 1.0, 0xFFFFFF);
-	thumbnail = false;
-*/	
-/*	scale bufferbm to minibm */
-/*
-	minidc = CreateCompatibleDC(hdc);
-	if (minidc == NULL) {
-		doublebuffering = false;
-		DeleteObject(bufferbm);
-		ReleaseDC(current_hwnd, hdc);
-		free(bmi);
-		return false;
-	}
+	plot_hdc = hdc;
 	
-	minibm = CreateCompatibleBitmap(hdc, bitmap->width, bitmap->height);
-	if (minibm == NULL) {
-		doublebuffering = false;
-		DeleteObject(bufferbm);
-		DeleteDC(minidc);
-		ReleaseDC(current_hwnd, hdc);
-		free(bmi);
-		return false;
-	}
-	ReleaseDC(current_hwnd, hdc);
-	
-	SelectObject(minidc, minibm);
-	
-	StretchBlt(minidc, 0, 0, bitmap->width, bitmap->height, bufferdc, 0, 0,
-			width, height, SRCCOPY);
-	minibm2 = CreateCompatibleBitmap(minidc, bitmap->width, 
-			bitmap->height);
-	if (minibm2 == NULL) {
-		doublebuffering = false;
-		DeleteObject(bufferbm);
-		DeleteObject(minibm);
-		DeleteDC(minidc);
-		free(bmi);
-		return false;
-	}
-	SelectObject(minidc, minibm2);
-*/	
-/*	save data from minibm bmi */
-/*	GetDIBits(minidc, minibm, 0, 1 - bitmap->height,
-			bmi->bmiColors, bmi, DIB_RGB_COLORS);
+	/* scale bitmap bufferbm into minibm */
+	SelectObject(minidc, bitmap->windib);
 
-	pixdata = (uint8_t *)(bitmap->pixdata);
-	for (i = 0; i < bitmap->width * bitmap->height; i++) {
-		pixdata[4 * i] = bmi->bmiColors[i].rgbRed;
-		pixdata[4 * i + 1] = bmi->bmiColors[i].rgbGreen;
-		pixdata[4 * i + 2] = bmi->bmiColors[i].rgbBlue;
-		pixdata[4 * i + 3] = 0xFF;
-	}
-	doublebuffering = false;
-		   
-	DeleteObject(bufferbm);
-	DeleteObject(minibm);
-	DeleteObject(minibm2);
+	bitmap->opaque = true;
+
+	StretchBlt(minidc, 0, 0, bitmap->width, bitmap->height, bufferdc, 0, 0, width, height, SRCCOPY);
+	
+	DeleteDC(bufferdc);
 	DeleteDC(minidc);
-	free(bmi);
+	bitmap_destroy(fsbitmap);
+
 	if (url)
 		urldb_set_thumbnail(url, bitmap);
 			
-	doublebuffering = false;
 	return true;
-*/
 }

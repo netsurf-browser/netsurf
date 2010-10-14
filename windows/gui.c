@@ -70,6 +70,7 @@ char *options_file_location;
 struct gui_window *input_window = NULL;
 struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
+HWND font_hwnd;
 
 FARPROC urlproc;
 WNDPROC	toolproc;
@@ -119,7 +120,6 @@ struct gui_window {
 
 	RECT *fullscreen; /**< memorize non-fullscreen area */
 	RECT redraw; /**< Area needing redraw. */
-	RECT clip; /**< current clip rectangle */
 	int requestscrollx, requestscrolly; /**< scolling requested. */
 	struct gui_window *next, *prev; /**< global linked list */
 };
@@ -159,11 +159,12 @@ void gui_poll(bool active)
 {
 	MSG Msg;
 	if (PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE) != 0) {
-		if (!((current_gui == NULL) ||
+/*		if (!((current_gui == NULL) ||
 		      (TranslateAccelerator(current_gui->main,
 					    current_gui->acceltable, &Msg)))) {
 			TranslateMessage(&Msg);
-		}
+			}
+*/
 		DispatchMessage(&Msg);
 	}
 
@@ -721,15 +722,16 @@ static LRESULT
 nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 {
 	PAINTSTRUCT ps;
+	HDC hdc, tmp_hdc;
 
-	BeginPaint(hwnd, &ps);
+	hdc = BeginPaint(hwnd, &ps);
 
 	if ((gw != NULL) &&
 	    (gw->bw != NULL) &&
 	    (gw->bw->current_content != NULL)) {
-		/* set globals for the plotters */
-		current_hwnd = hwnd;
-		current_gui = gw;
+		/* set global HDC for the plotters */
+		tmp_hdc = hdc;
+		plot_hdc = hdc;
 
 		content_redraw(gw->bw->current_content,
 			       -gw->scrollx / gw->bw->scale,
@@ -743,6 +745,7 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 			       gw->bw->scale,
 			       0xFFFFFF);
 
+		plot_hdc = tmp_hdc;
 	}
 
 	EndPaint(hwnd, &ps);
@@ -1422,8 +1425,6 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 	}
 
-	current_gui = gw;
-
 	switch(msg) {
 
 /*
@@ -1640,7 +1641,7 @@ gui_create_browser_window(struct browser_window *bw,
 		/* set the gui window associated with this toolbar */
 		SetProp(gw->drawingarea, TEXT("GuiWnd"), (HANDLE)gw);
 
-
+		font_hwnd = gw->drawingarea;
 		input_window = gw;
 		open_windows++;
 		ShowWindow(gw->main, SW_SHOWNORMAL);
@@ -1778,13 +1779,6 @@ RECT *gui_window_redraw_rect(struct gui_window *w)
 	if (w == NULL)
 		return NULL;
 	return &(w->redraw);
-}
-
-RECT *gui_window_clip_rect(struct gui_window *w)
-{
-	if (w == NULL)
-		return NULL;
-	return &(w->clip);
 }
 
 int gui_window_width(struct gui_window *w)

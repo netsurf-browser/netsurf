@@ -19,9 +19,7 @@
 #include <windows.h>
 #include "desktop/gui.h"
  
-extern HWND current_hwnd;
-extern struct gui_window *current_gui;
-extern bool thumbnail;
+extern HDC plot_hdc;
 
 void nsws_plot_set_scale(float s);
 float nsws_plot_get_scale(void);

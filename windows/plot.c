@@ -44,37 +44,20 @@
 #endif
 
 /* set NSWS_PLOT_DEBUG to 0 for no debugging, 1 for debugging */
-#define NSWS_PLOT_DEBUG 0
+#define NSWS_PLOT_DEBUG 1
 
-HWND current_hwnd;
-struct gui_window *current_gui;
-bool thumbnail = false;
+HDC plot_hdc;
+
 static float nsws_plot_scale = 1.0;
-static RECT localhistory_clip;
 
-
-static RECT plot_clip;
+static RECT plot_clip; /* currently set clipping rectangle */
 
 static bool clip(int x0, int y0, int x1, int y1)
 {
 
 #if NSWS_PLOT_DEBUG
-	LOG(("clip %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1, thumbnail));
+	LOG(("clip %d,%d to %d,%d", x0, y0, x1, y1));
 #endif
-	RECT *clip = gui_window_clip_rect(current_gui);
-	if (clip == NULL)
-		clip = &localhistory_clip;
-	x0 = MAX(x0, 0);
-	y0 = MAX(y0, 0);
-	if (!((current_gui == NULL) || (thumbnail))) {
-		x1 = MIN(x1, gui_window_width(current_gui));
-		y1 = MIN(y1, gui_window_height(current_gui));
-	}
-	clip->left = x0;
-	clip->top = y0 ;
-	clip->right = x1;
-	clip->bottom = y1;
-
 
 	plot_clip.left = x0;
 	plot_clip.top = y0;
@@ -87,22 +70,20 @@ static bool clip(int x0, int y0, int x1, int y1)
 static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
-	LOG(("ligne from %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1,
-	     thumbnail));
+	LOG(("from %d,%d to %d,%d", x0, y0, x1, y1));
 #endif
-	RECT *clipr = gui_window_clip_rect(current_gui);
-	if (clipr == NULL)
-		clipr = &localhistory_clip;
-	HRGN clipregion = CreateRectRgnIndirect(clipr);
+
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
+		return false;
+	}
+
+	HRGN clipregion = CreateRectRgnIndirect(&plot_clip);
 	if (clipregion == NULL) {
 		return false;
 	}
 
-	HDC hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
-		DeleteObject(clipregion);
-		return false;
-	}
 	COLORREF col = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	/* windows 0x00bbggrr */
 	DWORD penstyle = PS_GEOMETRIC | ((style->stroke_type ==
@@ -113,16 +94,12 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HGDIOBJ bak = SelectObject(hdc, (HGDIOBJ) pen);
+	HGDIOBJ bak = SelectObject(plot_hdc, (HGDIOBJ) pen);
 	if (bak == NULL) {
 		DeleteObject(pen);
 		DeleteObject(clipregion);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -131,35 +108,41 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	r.right = x1;
 	r.bottom = y1;
 
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
-	MoveToEx(hdc, x0, y0, (LPPOINT) NULL);
+	MoveToEx(plot_hdc, x0, y0, (LPPOINT) NULL);
 
-	LineTo(hdc, x1, y1);
+	LineTo(plot_hdc, x1, y1);
 
-	SelectClipRgn(hdc, NULL);
-/*	ValidateRect(current_hwnd, &r);
- */
-	pen = SelectObject(hdc, bak);
+	SelectClipRgn(plot_hdc, NULL);
+	pen = SelectObject(plot_hdc, bak);
+
 	DeleteObject(pen);
 	DeleteObject(clipregion);
 
-	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
 static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-	x1++;
-	y1++;
 #if NSWS_PLOT_DEBUG
-	LOG(("rectangle from %d,%d to %d,%d thumbnail %d", x0, y0, x1, y1,
-	     thumbnail));
+	LOG(("rectangle from %d,%d to %d,%d", x0, y0, x1, y1));
 #endif
-	HDC hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
+
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
 		return false;
 	}
+
+	HRGN clipregion = CreateRectRgnIndirect(&plot_clip);
+	if (clipregion == NULL) {
+		return false;
+	}
+
+	x1++;
+	y1++;
+
 	COLORREF pencol = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	DWORD penstyle = PS_GEOMETRIC |
 		(style->stroke_type == PLOT_OP_TYPE_DOT ? PS_DOT :
@@ -173,42 +156,38 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	HPEN pen = ExtCreatePen(penstyle, style->stroke_width, &lb, 0, NULL);
 	if (pen == NULL) {
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HGDIOBJ penbak = SelectObject(hdc, (HGDIOBJ) pen);
+	HGDIOBJ penbak = SelectObject(plot_hdc, (HGDIOBJ) pen);
 	if (penbak == NULL) {
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brush = CreateBrushIndirect(&lb1);
 	if (brush  == NULL) {
-		SelectObject(hdc, penbak);
+		SelectObject(plot_hdc, penbak);
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HGDIOBJ brushbak = SelectObject(hdc, (HGDIOBJ) brush);
+	HGDIOBJ brushbak = SelectObject(plot_hdc, (HGDIOBJ) brush);
 	if (brushbak == NULL) {
-		SelectObject(hdc, penbak);
+		SelectObject(plot_hdc, penbak);
 		DeleteObject(pen);
 		DeleteObject(brush);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 
-	Rectangle(hdc, x0, y0, x1, y1);
+	SelectClipRgn(plot_hdc, clipregion);
 
-	pen = SelectObject(hdc, penbak);
-	brush = SelectObject(hdc, brushbak);
+	Rectangle(plot_hdc, x0, y0, x1, y1);
+
+	pen = SelectObject(plot_hdc, penbak);
+	brush = SelectObject(plot_hdc, brushbak);
+	SelectClipRgn(plot_hdc, NULL);
 	DeleteObject(pen);
 	DeleteObject(brush);
+	DeleteObject(clipregion);
 
-	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
@@ -216,59 +195,51 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
-	LOG(("polygon %d points thumbnail %d", n, thumbnail));
+	LOG(("polygon %d points", n));
 #endif
+
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
+		return false;
+	}
+
 	POINT points[n];
 	unsigned int i;
-	HDC hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
-		return false;
-	}
-	RECT *clipr = gui_window_clip_rect(current_gui);
-	if (clipr == NULL)
-		clipr = &localhistory_clip;
-	HRGN clipregion = CreateRectRgnIndirect(clipr);
+	HRGN clipregion = CreateRectRgnIndirect(&plot_clip);
 	if (clipregion == NULL) {
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
+
 	COLORREF pencol = (DWORD)(style->fill_colour & 0x00FFFFFF);
 	COLORREF brushcol = (DWORD)(style->fill_colour & 0x00FFFFFF);
 	HPEN pen = CreatePen(PS_GEOMETRIC | PS_NULL, 1, pencol);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HPEN penbak = SelectObject(hdc, pen);
+	HPEN penbak = SelectObject(plot_hdc, pen);
 	if (penbak == NULL) {
 		DeleteObject(clipregion);
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brush = CreateSolidBrush(brushcol);
 	if (brush == NULL) {
 		DeleteObject(clipregion);
-		SelectObject(hdc, penbak);
+		SelectObject(plot_hdc, penbak);
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HBRUSH brushbak = SelectObject(hdc, brush);
+	HBRUSH brushbak = SelectObject(plot_hdc, brush);
 	if (brushbak == NULL) {
 		DeleteObject(clipregion);
-		SelectObject(hdc, penbak);
+		SelectObject(plot_hdc, penbak);
 		DeleteObject(pen);
 		DeleteObject(brush);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	SetPolyFillMode(hdc, WINDING);
+	SetPolyFillMode(plot_hdc, WINDING);
 	for (i = 0; i < n; i++) {
 		points[i].x = (long) p[2 * i];
 		points[i].y = (long) p[2 * i + 1];
@@ -278,20 +249,19 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 #endif
 	}
 
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
 	if (n >= 2)
-		Polygon(hdc, points, n);
+		Polygon(plot_hdc, points, n);
 
-	SelectClipRgn(hdc, NULL);
+	SelectClipRgn(plot_hdc, NULL);
 
-	pen = SelectObject(hdc, penbak);
-	brush = SelectObject(hdc, brushbak);
+	pen = SelectObject(plot_hdc, penbak);
+	brush = SelectObject(plot_hdc, brushbak);
 	DeleteObject(clipregion);
 	DeleteObject(pen);
 	DeleteObject(brush);
 
-	ReleaseDC(current_hwnd, hdc);
 #if NSWS_PLOT_DEBUG
 	printf("\n");
 #endif
@@ -303,48 +273,45 @@ static bool text(int x, int y, const char *text, size_t length,
 		 const plot_font_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
-	LOG(("words %s at %d,%d thumbnail %d", text, x, y, thumbnail));
+	LOG(("words %s at %d,%d", text, x, y));
 #endif
-	HDC hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
+
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
 		return false;
 	}
-	RECT *clipr = gui_window_clip_rect(current_gui);
-	if (clipr == NULL)
-		clipr = &localhistory_clip;
-	HRGN clipregion = CreateRectRgnIndirect(clipr);
+
+	HRGN clipregion = CreateRectRgnIndirect(&plot_clip);
 	if (clipregion == NULL) {
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 
 	HFONT fontbak, font = get_font(style);
 	if (font == NULL) {
 		DeleteObject(clipregion);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	int wlen;
 	SIZE s;
 	LPWSTR wstring;
 	RECT r;
-	fontbak = (HFONT) SelectObject(hdc, font);
-	GetTextExtentPoint(hdc, text, length, &s);
+	fontbak = (HFONT) SelectObject(plot_hdc, font);
+	GetTextExtentPoint(plot_hdc, text, length, &s);
 
 	r.left = x;
 	r.top = y  - (3 * s.cy) / 4;
 	r.right = x + s.cx;
 	r.bottom = y + s.cy / 4;
 
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
-	SetTextAlign(hdc, TA_BASELINE | TA_LEFT);
+	SetTextAlign(plot_hdc, TA_BASELINE | TA_LEFT);
 	if ((style->background & 0xFF000000) != 0x01000000)
 		/* 100% alpha */
-		SetBkColor(hdc, (DWORD) (style->background & 0x00FFFFFF));
-	SetBkMode(hdc, TRANSPARENT);
-	SetTextColor(hdc, (DWORD) (style->foreground & 0x00FFFFFF));
+		SetBkColor(plot_hdc, (DWORD) (style->background & 0x00FFFFFF));
+	SetBkMode(plot_hdc, TRANSPARENT);
+	SetTextColor(plot_hdc, (DWORD) (style->foreground & 0x00FFFFFF));
 
 	wlen = MultiByteToWideChar(CP_UTF8, 0, text, length, NULL, 0);
 	wstring = malloc(2 * (wlen + 1));
@@ -352,36 +319,31 @@ static bool text(int x, int y, const char *text, size_t length,
 		return false;
 	}
 	MultiByteToWideChar(CP_UTF8, 0, text, length, wstring, wlen);
-	TextOutW(hdc, x, y, wstring, wlen);
+	TextOutW(plot_hdc, x, y, wstring, wlen);
 
-	SelectClipRgn(hdc, NULL);
-/*	ValidateRect(current_hwnd, &r);
- */
+	SelectClipRgn(plot_hdc, NULL);
 	free(wstring);
-	font = SelectObject(hdc, fontbak);
+	font = SelectObject(plot_hdc, fontbak);
 	DeleteObject(clipregion);
 	DeleteObject(font);
 
-	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
 static bool disc(int x, int y, int radius, const plot_style_t *style)
 {
 #if NSWS_PLOT_DEBUG
-	LOG(("disc at %d,%d radius %d thumbnail %d", x, y, radius, thumbnail));
+	LOG(("disc at %d,%d radius %d", x, y, radius));
 #endif
-	HDC hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
+
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
 		return false;
 	}
-	RECT *clipr = gui_window_clip_rect(current_gui);
-	if (clipr == NULL)
-		clipr = &localhistory_clip;
-	HRGN clipregion = CreateRectRgnIndirect(clipr);
-	if (clipregion == NULL) {
 
-		ReleaseDC(current_hwnd, hdc);
+	HRGN clipregion = CreateRectRgnIndirect(&plot_clip);
+	if (clipregion == NULL) {
 		return false;
 	}
 
@@ -390,35 +352,27 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 	HPEN pen = CreatePen(PS_GEOMETRIC | PS_SOLID, 1, col);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HGDIOBJ penbak = SelectObject(hdc, (HGDIOBJ) pen);
+	HGDIOBJ penbak = SelectObject(plot_hdc, (HGDIOBJ) pen);
 	if (penbak == NULL) {
 		DeleteObject(clipregion);
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	HBRUSH brush = CreateSolidBrush(col);
 	if (brush == NULL) {
 		DeleteObject(clipregion);
-		SelectObject(hdc, penbak);
+		SelectObject(plot_hdc, penbak);
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HGDIOBJ brushbak = SelectObject(hdc, (HGDIOBJ) brush);
+	HGDIOBJ brushbak = SelectObject(plot_hdc, (HGDIOBJ) brush);
 	if (brushbak == NULL) {
 		DeleteObject(clipregion);
-		SelectObject(hdc, penbak);
+		SelectObject(plot_hdc, penbak);
 		DeleteObject(pen);
 		DeleteObject(brush);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -427,25 +381,22 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 	r.right = x + radius;
 	r.bottom = y + radius;
 
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
 	if (style->fill_type == PLOT_OP_TYPE_NONE)
-		Arc(hdc, x - radius, y - radius, x + radius, y + radius,
+		Arc(plot_hdc, x - radius, y - radius, x + radius, y + radius,
 		    x - radius, y - radius,
 		    x - radius, y - radius);
 	else
-		Ellipse(hdc, x - radius, y - radius, x + radius, y + radius);
+		Ellipse(plot_hdc, x - radius, y - radius, x + radius, y + radius);
 
-	SelectClipRgn(hdc, NULL);
-/*	ValidateRect(current_hwnd, &r);
- */
-	pen = SelectObject(hdc, penbak);
-	brush = SelectObject(hdc, brushbak);
+	SelectClipRgn(plot_hdc, NULL);
+	pen = SelectObject(plot_hdc, penbak);
+	brush = SelectObject(plot_hdc, brushbak);
 	DeleteObject(clipregion);
 	DeleteObject(pen);
 	DeleteObject(brush);
 
-	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
@@ -456,33 +407,28 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 	LOG(("arc centre %d,%d radius %d from %d to %d", x, y, radius,
 	     angle1, angle2));
 #endif
-	HDC hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
-		return false;
-	}
-	RECT *clipr = gui_window_clip_rect(current_gui);
-	if (clipr == NULL)
-		clipr = &localhistory_clip;
-	HRGN clipregion = CreateRectRgnIndirect(clipr);
-	if (clipregion == NULL) {
 
-		ReleaseDC(current_hwnd, hdc);
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
 		return false;
 	}
+
+	HRGN clipregion = CreateRectRgnIndirect(&plot_clip);
+	if (clipregion == NULL) {
+		return false;
+	}
+
 	COLORREF col = (DWORD)(style->stroke_colour & 0x00FFFFFF);
 	HPEN pen = CreatePen(PS_GEOMETRIC | PS_SOLID, 1, col);
 	if (pen == NULL) {
 		DeleteObject(clipregion);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
-	HGDIOBJ penbak = SelectObject(hdc, (HGDIOBJ) pen);
+	HGDIOBJ penbak = SelectObject(plot_hdc, (HGDIOBJ) pen);
 	if (penbak == NULL) {
 		DeleteObject(clipregion);
 		DeleteObject(pen);
-
-		ReleaseDC(current_hwnd, hdc);
 		return false;
 	}
 	RECT r;
@@ -544,27 +490,23 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 	r.right = x + radius;
 	r.bottom = y + radius;
 
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
-	Arc(hdc, x - radius, y - radius, x + radius, y + radius,
+	Arc(plot_hdc, x - radius, y - radius, x + radius, y + radius,
 	    x + (int)(a1 * radius), y + (int)(b1 * radius),
 	    x + (int)(a2 * radius), y + (int)(b2 * radius));
 
-	SelectClipRgn(hdc, NULL);
-/*	ValidateRect(current_hwnd, &r);
- */
-	pen = SelectObject(hdc, penbak);
+	SelectClipRgn(plot_hdc, NULL);
+	pen = SelectObject(plot_hdc, penbak);
 	DeleteObject(clipregion);
 	DeleteObject(pen);
 
-	ReleaseDC(current_hwnd, hdc);
 	return true;
 }
 
 static bool
 plot_block(COLORREF col, int x, int y, int width, int height)
 {
-	HDC hdc;
 	HRGN clipregion;
 	HGDIOBJ original = NULL;
 
@@ -577,32 +519,32 @@ plot_block(COLORREF col, int x, int y, int width, int height)
 		return true;	
 	}	
 
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
+		return false;
+	}
+
 	clipregion = CreateRectRgnIndirect(&plot_clip);
 	if (clipregion == NULL) {
 		return false;
 	}
 
-	hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
-		DeleteObject(clipregion);
-		return false;
-	}
-
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
 	/* Saving the original pen object */
-	original = SelectObject(hdc,GetStockObject(DC_PEN)); 
+	original = SelectObject(plot_hdc,GetStockObject(DC_PEN)); 
 
-	SelectObject(hdc, GetStockObject(DC_PEN));
-	SelectObject(hdc, GetStockObject(DC_BRUSH));
-	SetDCPenColor(hdc, col);
-	SetDCBrushColor(hdc, col);
-	Rectangle(hdc,x,y,width,height);
+	SelectObject(plot_hdc, GetStockObject(DC_PEN));
+	SelectObject(plot_hdc, GetStockObject(DC_BRUSH));
+	SetDCPenColor(plot_hdc, col);
+	SetDCBrushColor(plot_hdc, col);
+	Rectangle(plot_hdc, x, y, width, height);
 
-	SelectObject(hdc,original); /* Restoring the original pen object */
+	SelectObject(plot_hdc,original); /* Restoring the original pen object */
 
 	DeleteObject(clipregion);
-	ReleaseDC(current_hwnd, hdc);
+
 	return true;
 
 }
@@ -614,6 +556,22 @@ plot_alpha_bitmap(HDC hdc,
 		  int x, int y, 
 		  int width, int height)
 {
+#ifdef WINDOWS_GDI_ALPHA_WORKED
+	BLENDFUNCTION blnd = {  AC_SRC_OVER, 0, 0xff, AC_SRC_ALPHA };
+	HDC bmihdc;
+	bool bltres;
+	bmihdc = CreateCompatibleDC(hdc);
+	SelectObject(bmihdc, bitmap->windib);
+	bltres = AlphaBlend(hdc, 
+			    x, y, 
+			    width, height,
+			    bmihdc,
+			    0, 0, 
+			    bitmap->width, bitmap->height,
+			    blnd);
+	DeleteDC(bmihdc);
+	return bltres;
+#else
 	HDC Memhdc;
 	BITMAPINFOHEADER bmih;
 	int v, vv, vi, h, hh, width4, transparency;
@@ -627,8 +585,6 @@ plot_alpha_bitmap(HDC hdc,
 	LOG(("%p bitmap %d,%d width %d height %d", bitmap, x, y, width, height));
 	LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
 #endif
-
-	assert(bitmap != NULL);
 
 	Memhdc = CreateCompatibleDC(hdc);
 	if (Memhdc == NULL) {
@@ -731,6 +687,7 @@ plot_alpha_bitmap(HDC hdc,
 	DeleteObject(MemBMh);
 	DeleteDC(Memhdc);
 	return true;
+#endif
 }
 
 
@@ -738,7 +695,6 @@ static bool
 plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 {
 	int bltres;
-	HDC hdc;
 	HRGN clipregion;
 
 	/* Bail early if we can */
@@ -750,25 +706,25 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 		return true;	
 	}	
 
+	/* ensure the plot HDC is set */
+	if (plot_hdc == NULL) {
+		LOG(("HDC not set on call to plotters"));
+		return false;
+	}
+
 	clipregion = CreateRectRgnIndirect(&plot_clip);
 	if (clipregion == NULL) {
 		return false;
 	}
 
-	hdc = GetDC(current_hwnd);
-	if (hdc == NULL) {
-		DeleteObject(clipregion);
-		return false;
-	}
-
-	SelectClipRgn(hdc, clipregion);
+	SelectClipRgn(plot_hdc, clipregion);
 
 	if (bitmap->opaque) {
 		/* opaque bitmap */
 		if ((bitmap->width == width) && 
 		    (bitmap->height == height)) {
 			/* unscaled */
-			bltres = SetDIBitsToDevice(hdc,
+			bltres = SetDIBitsToDevice(plot_hdc,
 						   x, y,
 						   width, height,
 						   0, 0,
@@ -779,8 +735,8 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 						   DIB_RGB_COLORS);
 		} else {
 			/* scaled */
-			SetStretchBltMode(hdc, COLORONCOLOR);
-			bltres = StretchDIBits(hdc, 
+			SetStretchBltMode(plot_hdc, COLORONCOLOR);
+			bltres = StretchDIBits(plot_hdc, 
 					       x, y, 
 					       width, height,
 					       0, 0, 
@@ -794,28 +750,13 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 		}
 	} else {
 		/* Bitmap with alpha.*/
-#ifdef WINDOWS_GDI_ALPHA_WORKED
-		BLENDFUNCTION blnd = {  AC_SRC_OVER, 0, 0xff, AC_SRC_ALPHA };
-		HDC bmihdc;
-		bmihdc = CreateCompatibleDC(hdc);
-		SelectObject(bmihdc, bitmap->windib);
-		bltres = AlphaBlend(hdc, 
-			   x, y, 
-			   width, height,
-			   bmihdc,
-			   0, 0, 
-			   bitmap->width, bitmap->height,
-			blnd);
-		DeleteDC(bmihdc);
-#else
-		bltres = plot_alpha_bitmap(hdc, bitmap, x, y, width, height);
-		LOG(("bltres = %d", bltres));
-#endif
-
+		bltres = plot_alpha_bitmap(plot_hdc, bitmap, x, y, width, height);
 	}
 
+	/* LOG(("bltres = %d", bltres)); */
+
 	DeleteObject(clipregion);
-	ReleaseDC(current_hwnd, hdc);
+
 	return true;
 
 }
@@ -831,6 +772,13 @@ windows_plot_bitmap(int x, int y,
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	/* Bail early if we can */
+
+	LOG(("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height));
+
+	if (bitmap == NULL) {
+		LOG(("Passed null bitmap!"));
+		return true;
+	}
 
 	/* check if nothing to plot */
 	if (width == 0 || height == 0)
