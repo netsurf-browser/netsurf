@@ -44,16 +44,18 @@
 bool webp_convert(struct content *c)
 {
 	union content_msg_data msg_data;
-	const char *data;
+	const uint8 *data;
+	unsigned char *imagebuf = NULL;
+	uint32 *imagebufptr = NULL;
 	unsigned long size;
 	uint8 *Y = NULL, *U = NULL, *V = NULL;
-	uint32 width = 0, height = 0;
-	uint32 x = 0, y = 0, offset = 0;
+	int width = 0, height = 0;
+	long x = 0, y = 0, offset = 0;
 	uint8 r, g, b, a;
 	char title[100];
 	WebPResult res = webp_success;
 
-	data = content__get_source_data(c, &size);
+	data = (uint8 *)content__get_source_data(c, &size);
 
 	res = WebPDecode(data, size, &Y, &U, &V, &width, &height);
 	if (res != webp_success) {
@@ -70,7 +72,7 @@ bool webp_convert(struct content *c)
 		if(Y) free(Y);
 		return false;
 	}
-	unsigned char* imagebuf = bitmap_get_buffer(c->bitmap);
+	imagebuf = bitmap_get_buffer(c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -79,24 +81,24 @@ bool webp_convert(struct content *c)
 	}
 	unsigned int row_width = bitmap_get_rowstride(c->bitmap) / 4;
 
-	YUV420toRGBA(Y, U, V, row_width, width, height, imagebuf);
+	YUV420toRGBA(Y, U, V, row_width, width, height, (uint32 *)imagebuf);
 
 	if(Y) free(Y);
 
-	/* Data is RGBA on both big- and little-endian platforms,
-	 * so reverse the byte order. */
+	/* Decoded data is RGBA on both big- and little-endian platforms,
+	 * so ensure correct byte order. */
 
 	for (y = 0; y < height; y++) {
 		for (x = 0; x < width; x++) {
 			offset = 4 * (y * width + x);
-			r = imagebuf[offset+3];
-			g = imagebuf[offset+2];
-			b = imagebuf[offset+1];
-			a = imagebuf[offset];
-			imagebuf[offset] = r;
-			imagebuf[offset+1] = g;
-			imagebuf[offset+2] = b;
-			imagebuf[offset+3] = a;
+			imagebufptr = imagebuf + offset;
+
+			a = imagebuf[offset+3];
+			b = imagebuf[offset+2];
+			g = imagebuf[offset+1];
+			r = imagebuf[offset];
+
+			*imagebufptr = r << 24 | g << 16 | b << 8 | a;
 		}
 	}
 
@@ -109,6 +111,7 @@ bool webp_convert(struct content *c)
 	bitmap_modified(c->bitmap);
 	c->status = CONTENT_STATUS_DONE;
 
+	content_set_status(c, "");
 	return true;
 }
 
