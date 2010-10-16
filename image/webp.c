@@ -50,7 +50,7 @@ bool webp_convert(struct content *c)
 	unsigned long size;
 	uint8 *Y = NULL, *U = NULL, *V = NULL;
 	int width = 0, height = 0;
-	long x = 0, y = 0, offset = 0;
+	uint32 offset = 0;
 	uint8 r, g, b, a;
 	char title[100];
 	WebPResult res = webp_success;
@@ -88,18 +88,16 @@ bool webp_convert(struct content *c)
 	/* Decoded data is RGBA on both big- and little-endian platforms,
 	 * so ensure correct byte order. */
 
-	for (y = 0; y < height; y++) {
-		for (x = 0; x < width; x++) {
-			offset = 4 * (y * width + x);
-			imagebufptr = imagebuf + offset;
+	size = width * height * 4;
 
-			a = imagebuf[offset+3];
-			b = imagebuf[offset+2];
-			g = imagebuf[offset+1];
-			r = imagebuf[offset];
+	for (offset = 0; offset < size; offset += 4) {
+		a = imagebuf[offset+3];
+		b = imagebuf[offset+2];
+		g = imagebuf[offset+1];
+		r = imagebuf[offset];
 
-			*imagebufptr = r << 24 | g << 16 | b << 8 | a;
-		}
+		imagebufptr = imagebuf + offset;
+		*imagebufptr = r << 24 | g << 16 | b << 8 | a;
 	}
 
 	c->width = width;
