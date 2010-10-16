@@ -90,6 +90,9 @@ struct icon_entry icon_table[] = {
 #ifdef WITH_NS_SVG
 	{CONTENT_SVG, NULL},
 #endif
+#ifdef WITH_WEBP
+	{CONTENT_WEBP, NULL},
+#endif
  	{CONTENT_UNKNOWN, NULL},
 
 	/* this serves as a sentinel */
