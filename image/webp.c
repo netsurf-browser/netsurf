@@ -48,6 +48,8 @@ bool webp_convert(struct content *c)
 	unsigned long size;
 	uint8 *Y = NULL, *U = NULL, *V = NULL;
 	uint32 width = 0, height = 0;
+	uint32 x = 0, y = 0, offset = 0;
+	uint8 r, g, b, a;
 	char title[100];
 	WebPResult res = webp_success;
 
@@ -81,8 +83,22 @@ bool webp_convert(struct content *c)
 
 	if(Y) free(Y);
 
-	/* I think we may need to reverse the byte order here, as it is fixed
-	 * to RGBA on both big- and little-endian platforms. */
+	/* Data is RGBA on both big- and little-endian platforms,
+	 * so reverse the byte order. */
+
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+			offset = 4 * (y * width + x);
+			r = imagebuf[offset+3];
+			g = imagebuf[offset+2];
+			b = imagebuf[offset+1];
+			a = imagebuf[offset];
+			imagebuf[offset] = r;
+			imagebuf[offset+1] = g;
+			imagebuf[offset+2] = b;
+			imagebuf[offset+3] = a;
+		}
+	}
 
 	c->width = width;
 	c->height = height;

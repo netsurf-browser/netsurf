@@ -442,6 +442,7 @@ ifeq ($(TARGET),gtk)
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
   NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
   NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+  NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
 
   # add a line similar to below for each optional pkg-configed lib here
   $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG))
@@ -450,6 +451,9 @@ ifeq ($(TARGET),gtk)
   $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
+
+  # no pkg-config for this library
+  $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \
