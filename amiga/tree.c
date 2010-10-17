@@ -200,6 +200,9 @@ void tree_icon_name_from_content_type(char *buffer, content_type type)
 #ifdef WITH_NS_SVG
 	case CONTENT_SVG:
 #endif
+#ifdef WITH_WEBP
+	case CONTENT_WEBP:
+#endif
 	default:
 		ami_get_theme_filename(buffer,"theme_list_content",true);
 	break;
@@ -1045,6 +1048,8 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 
 	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
 	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
+
+	ami_clg(0xffffffff);
 
 	tree_draw(twin->tree, -pos_x, -pos_y, x, y, width, height);
 
