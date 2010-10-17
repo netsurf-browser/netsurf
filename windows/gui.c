@@ -72,9 +72,6 @@ struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
 HWND font_hwnd;
 
-FARPROC urlproc;
-WNDPROC	toolproc;
-
 static char default_page[] = "http://www.netsurf-browser.org/welcome/";
 static HICON hIcon, hIconS;
 static int open_windows = 0;
@@ -134,16 +131,7 @@ static struct nsws_pointers nsws_pointer;
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
 
-typedef enum {
-	NSWS_ID_TOOLBAR = 1111,
-	NSWS_ID_URLBAR,
-	NSWS_ID_THROBBER,
-	NSWS_ID_DRAWINGAREA,
-	NSWS_ID_STATUSBAR,
-	NSWS_ID_LAUNCH_URL,
-} nsws_constants ;
-
-LRESULT CALLBACK nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+LRESULT CALLBACK nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -165,49 +153,12 @@ void gui_poll(bool active)
 			TranslateMessage(&Msg);
 			}
 */
+			TranslateMessage(&Msg);
 		DispatchMessage(&Msg);
 	}
 
 	schedule_run();
 
-}
-
-
-
-/**
- * callback for url bar events
- */
-LRESULT CALLBACK
-nsws_window_url_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-{
-	DWORD i, ii;
-	SendMessage(hwnd, EM_GETSEL, (WPARAM)&i, (LPARAM)&ii);
-
-	if (msg == WM_PAINT) {
-		SendMessage(hwnd, EM_SETSEL, (WPARAM)0, (LPARAM)-1);
-		SendMessage(hwnd, EM_SETSEL, (WPARAM)i, (LPARAM)ii);
-	}
-	return CallWindowProc((WNDPROC) urlproc, hwnd, msg, wparam, lparam);
-}
-
-/* calculate the dimensions of the url bar relative to the parent toolbar */
-static void
-urlbar_dimensions(HWND hWndParent, 
-		  int toolbuttonsize, 
-		  int buttonc, 
-		  int *x, 
-		  int *y, 
-		  int *width, 
-		  int *height)
-{
-	RECT rc;
-	const int cy_edit = 24;
-
-	GetClientRect(hWndParent, &rc);
-	*x = (toolbuttonsize + 2) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
-	*y = (((rc.bottom - rc.top) + 1) - cy_edit) >> 1;
-	*width = ((rc.right - rc.left) + 1) - *x - (NSWS_THROBBER_WIDTH>>1) - NSWS_THROBBER_WIDTH;
-	*height = cy_edit;
 }
 
 /* obtain gui window structure from windows window handle */
@@ -233,6 +184,7 @@ nsws_get_gui_window(HWND hwnd)
 		while (gw != NULL) {
 			if ((gw->main == hwnd) ||
 			    (gw->drawingarea == hwnd) || 
+			    (gw->urlbar == hwnd) || 
 			    (gw->toolbar == hwnd)) {
 				break;
 			}
@@ -243,6 +195,128 @@ nsws_get_gui_window(HWND hwnd)
 	return gw;
 }
 
+
+/**
+ * callback for url bar events
+ */
+LRESULT CALLBACK
+nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+	struct gui_window *gw;
+	WNDPROC urlproc;
+
+	gw = nsws_get_gui_window(hwnd);
+
+	LOG(("%s, hwnd %p, gw %p, wparam %d, lparam %ld", 
+	     msg_num_to_name(msg), hwnd, gw, wparam, lparam));
+
+	/* override messages */
+	switch (msg) {
+	case WM_CHAR:
+		if (wparam == 13) {
+			SendMessage(gw->main, WM_COMMAND, NSWS_ID_LAUNCH_URL, 0);
+			return 0;
+		}
+		break;
+
+	}
+
+        /* remove properties if window is being destroyed */
+	if (msg == WM_NCDESTROY) {
+		RemoveProp(hwnd, TEXT("GuiWnd"));
+		urlproc = (WNDPROC)RemoveProp(hwnd, TEXT("OrigMsgProc"));
+	} else {
+		urlproc = (WNDPROC)GetProp(hwnd, TEXT("OrigMsgProc"));
+	}
+
+	if (urlproc == NULL) {
+		/* the original toolbar procedure is not available */
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+	} 
+
+	/* chain to the next handler */
+	return CallWindowProc(urlproc, hwnd, msg, wparam, lparam);
+}
+
+/* calculate the dimensions of the url bar relative to the parent toolbar */
+static void
+urlbar_dimensions(HWND hWndParent, 
+		  int toolbuttonsize, 
+		  int buttonc, 
+		  int *x, 
+		  int *y, 
+		  int *width, 
+		  int *height)
+{
+	RECT rc;
+	const int cy_edit = 24;
+
+	GetClientRect(hWndParent, &rc);
+	*x = (toolbuttonsize + 2) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
+	*y = (((rc.bottom - rc.top) + 1) - cy_edit) >> 1;
+	*width = ((rc.right - rc.left) + 1) - *x - (NSWS_THROBBER_WIDTH>>1) - NSWS_THROBBER_WIDTH;
+	*height = cy_edit;
+}
+
+
+static LRESULT
+nsws_window_toolbar_command(struct gui_window *gw, 
+		    int notification_code, 
+		    int identifier, 
+		    HWND ctrl_window)
+{
+	LOG(("notification_code %d identifier %d ctrl_window %p",
+	     notification_code, identifier,  ctrl_window));
+
+	switch(identifier) {
+
+	case NSWS_ID_URLBAR:
+		switch (notification_code) {
+		case EN_CHANGE:
+			LOG(("EN_CHANGE"));
+			break;
+
+		case EN_ERRSPACE:
+			LOG(("EN_ERRSPACE"));
+			break;
+
+		case EN_HSCROLL:
+			LOG(("EN_HSCROLL"));
+			break;
+
+		case EN_KILLFOCUS:
+			LOG(("EN_KILLFOCUS"));
+			break;
+
+		case EN_MAXTEXT:
+			LOG(("EN_MAXTEXT"));
+			break;
+
+		case EN_SETFOCUS:
+			LOG(("EN_SETFOCUS"));
+			break;
+
+		case EN_UPDATE:
+			LOG(("EN_UPDATE"));
+			break;
+
+		case EN_VSCROLL:
+			LOG(("EN_VSCROLL"));
+			break;
+
+		default:
+			LOG(("Unknown notification_code"));
+			break;
+		}
+		break;
+
+	default:
+		return 1; /* unhandled */
+
+	}
+	return 0; /* control message handled */
+}
+
 /**
  * callback for toolbar events
  */
@@ -251,9 +325,14 @@ nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
 	int urlx, urly, urlwidth, urlheight;
+	WNDPROC toolproc;
 
-	if (msg == WM_SIZE) {
-		gw = nsws_get_gui_window(hwnd);
+	gw = nsws_get_gui_window(hwnd);
+
+	LOG(("%s, hwnd %p, gw %p", msg_num_to_name(msg), hwnd, gw));
+
+	switch (msg) {
+	case WM_SIZE:
 
 		urlbar_dimensions(hwnd, 
 				  gw->toolbuttonsize, 
@@ -272,11 +351,33 @@ nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 				   NSWS_THROBBER_WIDTH, NSWS_THROBBER_WIDTH,
 				   true);
 		}
+		break;
 
+	case WM_COMMAND:
+		if (nsws_window_toolbar_command(gw, 
+						HIWORD(wparam), 
+						LOWORD(wparam), 
+						(HWND)lparam) == 0)
+			return 0;
+		break;
 	}
 
+        /* remove properties if window is being destroyed */
+	if (msg == WM_NCDESTROY) {
+		RemoveProp(hwnd, TEXT("GuiWnd"));
+		toolproc = (WNDPROC)RemoveProp(hwnd, TEXT("OrigMsgProc"));
+	} else {
+		toolproc = (WNDPROC)GetProp(hwnd, TEXT("OrigMsgProc"));
+	}
+
+	if (toolproc == NULL) {
+		/* the original toolbar procedure is not available */
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+	} 
+	
 	/* chain to the next handler */
 	return CallWindowProc(toolproc, hwnd, msg, wparam, lparam);
+	
 }
 
 /**
@@ -459,7 +560,8 @@ static void nsws_window_set_ico(struct gui_window *w)
 /**
  * creation of throbber
  */
-static void nsws_window_throbber_create(struct gui_window *w)
+static HWND 
+nsws_window_throbber_create(struct gui_window *w)
 {
 	HWND hwnd;
 	char avi[PATH_MAX];
@@ -484,7 +586,7 @@ static void nsws_window_throbber_create(struct gui_window *w)
 	else
 		Animate_Seek(hwnd, 0);
 	ShowWindow(hwnd, SW_SHOWNORMAL);
-	w->throbber = hwnd;
+	return hwnd;
 }
 
 static HIMAGELIST
@@ -503,8 +605,59 @@ nsws_set_imagelist(HWND hwnd, UINT msg, int resid, int bsize, int bcnt)
 	return hImageList;
 }
 
+/** create a urlbar and message handler 
+ *
+ * Create an Edit control for enerting urls
+ */
 static HWND
-nsws_window_toolbar_create(struct gui_window *gw)
+nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
+{
+	int urlx, urly, urlwidth, urlheight;
+	HWND hwnd;
+	WNDPROC	urlproc;
+
+	urlbar_dimensions(hwndparent, 
+			  gw->toolbuttonsize, 
+			  gw->toolbuttonc, 
+			  &urlx, &urly, &urlwidth, &urlheight);
+
+	/* Create the edit control */
+	hwnd = CreateWindowEx(0L, 
+			      TEXT("Edit"), 
+			      NULL,
+			      WS_CHILD | WS_BORDER | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL,
+			      urlx,
+			      urly,
+			      urlwidth,
+			      urlheight,
+			      hwndparent,
+			      (HMENU)NSWS_ID_URLBAR,
+			      hinstance, 
+			      0);
+
+	if (hwnd == NULL) {
+		return NULL;
+	}
+
+	/* set the gui window associated with this control */
+	SetProp(hwnd, TEXT("GuiWnd"), (HANDLE)gw);
+
+	/* subclass the message handler */
+	urlproc = (WNDPROC)SetWindowLongPtr(hwnd, 
+					    GWLP_WNDPROC, 
+					    (LONG_PTR)nsws_window_urlbar_callback);
+
+	/* save the real handler  */
+	SetProp(hwnd, TEXT("OrigMsgProc"), (HANDLE)urlproc);
+
+	LOG(("Created url bar hwnd %p", hwnd));
+	
+	return hwnd;
+}
+
+/* create a toolbar add controls and message handler */
+static HWND
+nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 {
 	HWND hWndToolbar;
 	/* Toolbar buttons */
@@ -515,9 +668,9 @@ nsws_window_toolbar_create(struct gui_window *gw)
 		{3, NSWS_ID_NAV_RELOAD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
 		{4, NSWS_ID_NAV_STOP, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
 	};
-	HWND hWndParent = gw->main;
+	WNDPROC	toolproc;
 
-	/* Create the toolbar child window. */
+	/* Create the toolbar window and subclass its message handler. */
 	hWndToolbar = CreateWindowEx(0, TOOLBARCLASSNAME, "Toolbar",
 				     WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT,
 				     0, 0, 0, 0,
@@ -526,6 +679,19 @@ nsws_window_toolbar_create(struct gui_window *gw)
 	if (!hWndToolbar) {
 		return NULL;
 	}
+
+	/* set the gui window associated with this toolbar */
+	SetProp(hWndToolbar, TEXT("GuiWnd"), (HANDLE)gw);
+
+	/* subclass the message handler */
+	toolproc = (WNDPROC)SetWindowLongPtr(hWndToolbar, 
+					     GWLP_WNDPROC, 
+					     (LONG_PTR)nsws_window_toolbar_callback);
+
+	/* save the real handler  */
+	SetProp(hWndToolbar, TEXT("OrigMsgProc"), (HANDLE)toolproc);
+
+
 
 	/* remember how many buttons are being created */
 	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
@@ -543,36 +709,10 @@ nsws_window_toolbar_create(struct gui_window *gw)
 	SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
 	SendMessage(hWndToolbar, TB_ADDBUTTONS, (WPARAM)gw->toolbuttonc, (LPARAM)&tbButtons);
 
+	gw->urlbar = nsws_window_urlbar_create(gw, hWndToolbar);
 
-	int urlx, urly, urlwidth, urlheight;
-	urlbar_dimensions(hWndToolbar, gw->toolbuttonsize, gw->toolbuttonc, &urlx, &urly, &urlwidth, &urlheight);
+	gw->throbber = nsws_window_throbber_create(gw);
 
-	// Create the edit control child window.
-	gw->urlbar = CreateWindowEx(0L, "Edit", NULL,
-				    WS_CHILD | WS_BORDER | WS_VISIBLE | ES_LEFT
-				    | ES_AUTOVSCROLL | ES_MULTILINE,
-				    urlx,
-				    urly,
-				    urlwidth,
-				    urlheight,
-				    hWndToolbar,
-				    (HMENU)NSWS_ID_URLBAR,
-				    hinstance, 0 );
-
-	if (!gw->urlbar) {
-		DestroyWindow(hWndToolbar);
-		return NULL;
-	}
-
-	nsws_window_throbber_create(gw);
-
-	/* set the gui window associated with this toolbar */
-	SetProp(hWndToolbar, TEXT("GuiWnd"), (HANDLE)gw);
-
-	/* subclass the message handler */
-	toolproc = (WNDPROC)SetWindowLongPtr(hWndToolbar, GWLP_WNDPROC, (LONG_PTR)nsws_window_toolbar_callback);
-
-	/* Return the completed toolbar */
 	return hWndToolbar;
 }
 
@@ -1119,12 +1259,15 @@ nsws_window_resize(struct gui_window *w,
 	return 0;
 }
 
+
 static LRESULT
 nsws_window_command(struct gui_window *gw, 
 		    int notification_code, 
 		    int identifier, 
 		    HWND ctrl_window)
 {
+	LOG(("notification_code %x identifier %x ctrl_window %p",
+	     notification_code, identifier,  ctrl_window));
 
 	switch(identifier) {
 
@@ -1133,10 +1276,9 @@ nsws_window_command(struct gui_window *gw,
 		struct gui_window *w;
 		w = window_list;
 		while (w != NULL) {
-			browser_window_destroy(w->bw);
+			PostMessage(w->main, WM_CLOSE, 0, 0);
 			w = w->next;
 		}
-		netsurf_quit = true;
 		break;
 	}
 
@@ -1397,11 +1539,10 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_URLBAR:
-		break;
 
 	default:
-		break;
+		return 1; /* unhandled */
+
 	}
 	return 0; /* control message handled */
 }
@@ -1412,8 +1553,6 @@ nsws_window_command(struct gui_window *gw,
 LRESULT CALLBACK 
 nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	bool match = false;
-	bool historyactive = false;
 	struct gui_window *gw;
 
 	gw = nsws_get_gui_window(hwnd);
@@ -1450,27 +1589,28 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	case WM_ENTERMENULOOP:
 		nsws_update_edit(w);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
+*/
 
 	case WM_CONTEXTMENU:
-		if (!nsws_ctx_menu(w, hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)))
-			return DefWindowProc(hwnd, msg, wparam, lparam);
-
-
+		if (nsws_ctx_menu(gw, hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)))
+			return 0;
 		break;
 
-*/		
-
 	case WM_COMMAND:
-		return nsws_window_command(gw, HIWORD(wparam), LOWORD(wparam), (HWND)lparam);
+		if (nsws_window_command(gw, HIWORD(wparam), LOWORD(wparam), (HWND)lparam) == 0)
+			return 0;
+		break;
+			
 
 	case WM_SIZE:
 		return nsws_window_resize(gw, hwnd, wparam, lparam);
 
-	case WM_CLOSE:
+	case WM_NCDESTROY:
+		RemoveProp(hwnd, TEXT("GuiWnd"));
+		browser_window_destroy(gw->bw);
 		if (--open_windows <= 0) {
 			netsurf_quit = true;
 		}
-		browser_window_destroy(gw->bw);
 		break;
 
 	}
@@ -1627,7 +1767,7 @@ gui_create_browser_window(struct browser_window *bw,
 	switch(bw->browser_window_type) {
 	case BROWSER_WINDOW_NORMAL:
 		gw->main = nsws_window_create(gw);
-		gw->toolbar = nsws_window_toolbar_create(gw);
+		gw->toolbar = nsws_window_toolbar_create(gw, gw->main);
 		gw->statusbar = nsws_window_statusbar_create(gw);
 		gw->drawingarea = CreateWindow(windowclassname_drawable,
 					       NULL,
@@ -1840,8 +1980,6 @@ void gui_window_destroy(struct gui_window *w)
 		w->next->prev = w->prev;
 
 	DestroyAcceleratorTable(w->acceltable);
-
-	DestroyWindow(w->main);
 
 	free(w);
 	w = NULL;
@@ -2388,13 +2526,16 @@ static void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX], sbuf[PATH_MAX];
 	int len;
+	hubbub_error he;
+	struct browser_window *bw;
+	const char *addr = NETSURF_HOMEPAGE;
 
 	LOG(("argc %d, argv %p", argc, argv));
 
 	nsws_find_resource(buf, "Aliases", "./windows/res/Aliases");
 	LOG(("Using '%s' as Aliases file", buf));
 
-	hubbub_error he = hubbub_initialise(buf, ns_realloc, NULL);
+	he = hubbub_initialise(buf, ns_realloc, NULL);
 	LOG(("hubbub init %d", he));
 	if (he != HUBBUB_OK)
 		die("Unable to initialise HTML parsing library.\n");
@@ -2419,13 +2560,6 @@ static void gui_init(int argc, char** argv)
 
 	option_target_blank = false;
 
-}
-
-static void gui_init2(int argc, char** argv)
-{
-	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE;
-
 	nsws_window_init_pointers();
 	LOG(("argc %d, argv %p", argc, argv));
 
@@ -2439,6 +2573,7 @@ static void gui_init2(int argc, char** argv)
 
 	LOG(("calling browser_window_create"));
 	bw = browser_window_create(addr, 0, 0, true, false);
+
 }
 
 void gui_stdout(void)
@@ -2458,7 +2593,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	char **argv = NULL;
 	int argc = 0, argctemp = 0;
 	size_t len;
-	LPWSTR * argvw;
+	LPWSTR *argvw;
 	char options[PATH_MAX];
 	char messages[PATH_MAX];
 
@@ -2499,8 +2634,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	netsurf_init(&argc, &argv, options, messages);
 
 	gui_init(argc, argv);
-
-	gui_init2(argc, argv);
 
 	netsurf_main_loop();
 

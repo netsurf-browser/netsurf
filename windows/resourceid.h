@@ -28,6 +28,14 @@
 #define NSWS_ID_TOOLBAR_BITMAP                  107
 #define NSWS_ID_TOOLBAR_GREY_BITMAP             108
 #define NSWS_ID_TOOLBAR_HOT_BITMAP              109
+
+#define NSWS_ID_TOOLBAR                         1111
+#define NSWS_ID_URLBAR                          1112
+#define NSWS_ID_THROBBER                        1113
+#define NSWS_ID_DRAWINGAREA                     1114
+#define NSWS_ID_STATUSBAR                       1115
+#define NSWS_ID_LAUNCH_URL                      1116
+
 #define NSWS_ID_ABOUT_DIALOG                    11111
 #define NSWS_ID_ABOUT_CONTENT                   11112
 #define NSWS_ID_PREFS_DIALOG                    11113

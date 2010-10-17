@@ -44,7 +44,7 @@
 #endif
 
 /* set NSWS_PLOT_DEBUG to 0 for no debugging, 1 for debugging */
-#define NSWS_PLOT_DEBUG 1
+#define NSWS_PLOT_DEBUG 0
 
 HDC plot_hdc;
 
