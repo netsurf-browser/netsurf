@@ -2438,6 +2438,7 @@ bool tree_keypress(struct tree *tree, uint32_t key)
 			tree_stop_edit(tree, false);
 			return true;
 		case KEY_NL:
+		case KEY_CR:
 			tree_stop_edit(tree, true);
 			return true;
 		default:
