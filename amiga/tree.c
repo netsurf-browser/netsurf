@@ -242,8 +242,6 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 	int x, y;
 
 	if(!twin) return;
-	if(sx<0) sx=0;
-	if(sy<0) sy=0;
 
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
@@ -677,6 +675,27 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 				GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&ys);
 				y = twin->win->MouseY - bbox->Top + ys;
+
+				if(twin->mouse_state & BROWSER_MOUSE_DRAG_ON)
+				{
+					int drag_x_move = 0, drag_y_move = 0;
+
+					/* TODO: Show drag icons on TREE_MOVE_DRAG start.
+					 * Until then, the below line does nothing. */
+					ami_drag_icon_move();
+
+					if(twin->win->MouseX < bbox->Left)
+						drag_x_move = twin->win->MouseX - bbox->Left;
+					if(twin->win->MouseX > (bbox->Left + bbox->Width))
+						drag_x_move = twin->win->MouseX - (bbox->Left + bbox->Width);
+					if(twin->win->MouseY < bbox->Top)
+						drag_y_move = twin->win->MouseY - bbox->Top;
+					if(twin->win->MouseY > (bbox->Top + bbox->Height))
+						drag_y_move = twin->win->MouseY - (bbox->Top + bbox->Height);
+
+					if(drag_x_move || drag_y_move)
+						ami_tree_scroll(twin, drag_x_move, drag_y_move);
+				}
 
 				if((x >= xs) && (y >= ys) && (x < bbox->Width + xs) &&
 					(y < bbox->Height + ys))

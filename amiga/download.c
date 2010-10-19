@@ -56,11 +56,9 @@
 
 #include <reaction/reaction_macros.h>
 
+struct Window *drag_icon = NULL;
 ULONG drag_icon_width;
 ULONG drag_icon_height;
-
-struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, ULONG *y);
-void ami_drag_icon_close(struct Window *win);
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
@@ -360,7 +358,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		break;
 	}
 
-	drag_icon = ami_drag_icon_show(g, filetype, &drag_icon_width, &drag_icon_height);
+	ami_drag_icon_show(g->shared->win, filetype);
 
 	drag_save_data = c;
 	drag_save_gui = g;
@@ -369,7 +367,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
-	drag_icon = ami_drag_icon_show(g, "ascii", &drag_icon_width, &drag_icon_height);
+	ami_drag_icon_show(g->shared->win, "ascii");
 
 	drag_save_data = s;
 	drag_save = GUI_SAVE_TEXT_SELECTION;
@@ -382,7 +380,7 @@ void ami_drag_save(struct Window *win)
 	char *source_data;
 	ULONG source_size;
 
-	if(drag_icon) ami_drag_icon_close(drag_icon);
+	if(drag_icon) ami_drag_icon_close();
 
 	if(strcmp(option_use_pubscreen,"Workbench") == 0)
 	{
@@ -493,9 +491,8 @@ void ami_drag_save(struct Window *win)
 	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 }
 
-struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, ULONG *y)
+void ami_drag_icon_show(struct Window *win, char *type)
 {
-	struct Window *win;
 	struct DiskObject *dobj = NULL;
 	ULONG *icondata1;
 	ULONG width, height;
@@ -505,12 +502,12 @@ struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, UL
 
 	if(option_drag_save_icons == false)
 	{
-		gui_window_set_pointer(g, AMI_GUI_POINTER_DRAG);
-		return NULL;
+		ami_update_pointer(win, AMI_GUI_POINTER_DRAG);
+		return;
 	}
 	else
 	{
-		gui_window_set_pointer(g, GUI_POINTER_DEFAULT);
+		ami_update_pointer(win, GUI_POINTER_DEFAULT);
 	}
 
 	if(type == "drawer") deftype = WBDRAWER;
@@ -524,10 +521,10 @@ struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, UL
                   ICONCTRLA_GetHeight,&height,
                   TAG_DONE);
 
-	*x = width;
-	*y = height;
+	drag_icon_width = width;
+	drag_icon_height = height;
 
-	win = OpenWindowTags(NULL,
+	drag_icon = OpenWindowTags(NULL,
 				WA_Left, scrn->MouseX - (width/2),
 				WA_Top, scrn->MouseY - (height/2),
 				WA_Width, width,
@@ -542,27 +539,24 @@ struct Window *ami_drag_icon_show(struct gui_window *g, char *type, ULONG *x, UL
 
 /* probably need layouticon and drawinfo stuff too */
 
-	DrawIconState(win->RPort, dobj, NULL, 0, 0, IDS_NORMAL,
+	DrawIconState(drag_icon->RPort, dobj, NULL, 0, 0, IDS_NORMAL,
 		ICONDRAWA_Frameless, TRUE,
 		ICONDRAWA_Borderless, TRUE,
-//		ICONDRAWA_Transparency, 128,
 		TAG_DONE);
-
-	return win;
 }
 
-void ami_drag_icon_move(struct Window *win)
+void ami_drag_icon_move(void)
 {
-	if(win == NULL) return;
+	if(drag_icon == NULL) return;
 
-	ChangeWindowBox(win, scrn->MouseX - (drag_icon_width / 2),
+	ChangeWindowBox(drag_icon, scrn->MouseX - (drag_icon_width / 2),
 		scrn->MouseY - (drag_icon_height / 2),
 		drag_icon_width, drag_icon_height);
 }
 
-void ami_drag_icon_close(struct Window *win)
+void ami_drag_icon_close(void)
 {
-	if(win) CloseWindow(win);
+	if(drag_icon) CloseWindow(drag_icon);
 	drag_icon = NULL;
 }
 

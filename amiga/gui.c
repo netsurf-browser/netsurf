@@ -1012,9 +1012,6 @@ void ami_handle_msg(void)
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
-					if(drag_icon)
-						ami_drag_icon_move(drag_icon);
-
 					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 							(ULONG *)&bbox);
 
@@ -1029,6 +1026,32 @@ void ami_handle_msg(void)
 
 					width=bbox->Width;
 					height=bbox->Height;
+
+					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
+					{
+						int drag_x_move = 0, drag_y_move = 0;
+
+						ami_drag_icon_move();
+
+						if(gwin->win->MouseX < bbox->Left)
+							drag_x_move = gwin->win->MouseX - bbox->Left;
+						if(gwin->win->MouseX > (bbox->Left + bbox->Width))
+							drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
+						if(gwin->win->MouseY < bbox->Top)
+							drag_y_move = gwin->win->MouseY - bbox->Top;
+						if(gwin->win->MouseY > (bbox->Top + bbox->Height))
+							drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
+
+						if(drag_x_move || drag_y_move)
+						{
+							gui_window_get_scroll(gwin->bw->window,
+								&gwin->bw->window->scrollx, &gwin->bw->window->scrolly);
+
+							gui_window_set_scroll(gwin->bw->window,
+								gwin->bw->window->scrollx + drag_x_move,
+								gwin->bw->window->scrolly + drag_y_move);
+						}
+					}
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
