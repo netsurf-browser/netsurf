@@ -25,6 +25,7 @@
 
 #include <gtk/gtk.h>
 
+void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus);
 gboolean nsgtk_widget_has_focus(GtkWidget *widget);
 gboolean nsgtk_widget_get_visible(GtkWidget *widget);
 gboolean nsgtk_widget_get_realized(GtkWidget *widget);

@@ -22,6 +22,18 @@
 
 #include "gtk/gtk_compat.h"
 
+void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus)
+{
+  #if GTK_CHECK_VERSION(2,22,0)
+	gtk_widget_set_can_focus(widget, can_focus);
+  #else
+	if (can_focus == TRUE)
+		GTK_WIDGET_SET_FLAGS(widget, GTK_CAN_FOCUS);
+	else
+		GTK_WIDGET_UNSET_FLAGS(widget, GTK_CAN_FOCUS);
+  #endif
+}
+
 gboolean nsgtk_widget_has_focus(GtkWidget *widget)
 {
   #if GTK_CHECK_VERSION(2,20,0)

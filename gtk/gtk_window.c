@@ -27,6 +27,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
+#include "gtk/gtk_compat.h"
 #include "gtk/gtk_gui.h"
 #include "gtk/options.h"
 #include "gtk/gtk_scaffolding.h"
@@ -302,7 +303,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				GDK_KEY_PRESS_MASK |
 				GDK_KEY_RELEASE_MASK |
 				GDK_SCROLL_MASK);
-	GTK_WIDGET_SET_FLAGS(GTK_WIDGET(g->layout), GTK_CAN_FOCUS);
+	nsgtk_widget_set_can_focus(GTK_WIDGET(g->layout), TRUE);
 
 	/* set the default background colour of the drawing area to white. */
 	gtk_widget_modify_bg(GTK_WIDGET(g->layout), GTK_STATE_NORMAL,
