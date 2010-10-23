@@ -51,7 +51,7 @@
 #include "utils/utf8.h"
 
 
-#define CHUNK 20480
+#define CHUNK 32768 /* Must be a power of 2 */
 #define MARGIN 4
 
 
@@ -73,6 +73,8 @@ static parserutils_error textplain_charset_hack(const uint8_t *data, size_t len,
 		uint16_t *mibenum, uint32_t *source);
 static bool textplain_drain_input(struct content *c, 
 		parserutils_inputstream *stream, parserutils_error terminator);
+static bool textplain_copy_utf8_data(struct content *c,
+		const uint8_t *buf, size_t len);
 static int textplain_coord_from_offset(const char *text, size_t offset,
 	size_t length);
 static float textplain_line_height(void);
@@ -165,40 +167,86 @@ bool textplain_drain_input(struct content *c, parserutils_inputstream *stream,
 {
 	static const uint8_t *u_fffd = (const uint8_t *) "\xef\xbf\xfd";
 	const uint8_t *ch;
-	size_t chlen, outlen;
+	size_t chlen, offset = 0;
 
-	/** \todo Optimise: stop invoking memcpy for each character */
-	while (parserutils_inputstream_peek(stream, 0, &ch, &chlen) != 
+	while (parserutils_inputstream_peek(stream, offset, &ch, &chlen) != 
 			terminator) {
-
 		/* Replace all instances of NUL with U+FFFD */
 		if (chlen == 1 && *ch == 0) {
-			ch = u_fffd;
-			outlen = 3;
-		} else {
-			outlen = chlen;
-		}
+			if (offset > 0) {
+				/* Obtain pointer to start of input data */
+				parserutils_inputstream_peek(stream, 0, 
+						&ch, &chlen);
+				/* Copy from it up to the start of the NUL */
+				if (textplain_copy_utf8_data(c, ch, 
+						offset) == false)
+					return false;
+			}
 
-		if (c->data.textplain.utf8_data_size + outlen >= 
-				c->data.textplain.utf8_data_allocated) {
-			size_t allocated = CHUNK +
-					c->data.textplain.utf8_data_allocated;
-			char *utf8_data = talloc_realloc(c,
-					c->data.textplain.utf8_data,
-					char, allocated);
-			if (utf8_data == NULL)
+			/* Emit U+FFFD */
+			if (textplain_copy_utf8_data(c, u_fffd, 3) == false)
 				return false;
 
-			c->data.textplain.utf8_data = utf8_data;
-			c->data.textplain.utf8_data_allocated = allocated;
+			/* Advance inputstream past the NUL we just read */
+			parserutils_inputstream_advance(stream, offset + 1);
+			/* Reset the read offset */
+			offset = 0;
+		} else {
+			/* Accumulate input */
+			offset += chlen;
+
+			if (offset > CHUNK) {
+				/* Obtain pointer to start of input data */
+				parserutils_inputstream_peek(stream, 0, 
+						&ch, &chlen);
+
+				/* Emit the data we've read */
+				if (textplain_copy_utf8_data(c, ch, 
+						offset) == false)
+					return false;
+
+				/* Advance the inputstream */
+				parserutils_inputstream_advance(stream, offset);
+				/* Reset the read offset */
+				offset = 0;
+			}
 		}
-
-		memcpy(c->data.textplain.utf8_data + 
-				c->data.textplain.utf8_data_size, ch, outlen);
-		c->data.textplain.utf8_data_size += outlen;
-
-		parserutils_inputstream_advance(stream, chlen);
 	}
+
+	if (offset > 0) {
+		/* Obtain pointer to start of input data */
+		parserutils_inputstream_peek(stream, 0, &ch, &chlen);	
+		/* Emit any data remaining */
+		if (textplain_copy_utf8_data(c, ch, offset) == false)
+			return false;
+
+		/* Advance the inputstream past the data we've read */
+		parserutils_inputstream_advance(stream, offset);
+	}
+
+	return true;
+}
+
+bool textplain_copy_utf8_data(struct content *c, const uint8_t *buf, size_t len)
+{
+	if (c->data.textplain.utf8_data_size + len >= 
+			c->data.textplain.utf8_data_allocated) {
+		/* Compute next multiple of chunk above the required space */
+		size_t allocated = (c->data.textplain.utf8_data_size + len + 
+				CHUNK - 1) & ~(CHUNK - 1);
+		char *utf8_data = talloc_realloc(c,
+				c->data.textplain.utf8_data,
+				char, allocated);
+		if (utf8_data == NULL)
+			return false;
+
+		c->data.textplain.utf8_data = utf8_data;
+		c->data.textplain.utf8_data_allocated = allocated;
+	}
+
+	memcpy(c->data.textplain.utf8_data + 
+			c->data.textplain.utf8_data_size, buf, len);
+	c->data.textplain.utf8_data_size += len;
 
 	return true;
 }
