@@ -146,10 +146,6 @@ ifeq ($(TARGET),gtk)
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := AUTO
 
-  # Enable NetSurf's use of libwebp/libvpx for displaying WebPs
-  # Valid options: YES, NO
-  NETSURF_USE_WEBP := YES
-
   # Configuration overrides for Mac OS X
   ifeq ($(HOST),macosx)
     NETSURF_USE_LIBICONV_PLUG := NO
