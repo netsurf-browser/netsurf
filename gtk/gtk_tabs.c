@@ -37,7 +37,7 @@ static void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
 static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 		GtkWidget *close_button);
 
-static void nsgtk_tab_page_changed(GtkNotebook *notebook, GtkNotebookPage *page,
+static void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 		gint page_num);
 
 void nsgtk_tab_options_changed(GtkWidget *tabs)
@@ -183,7 +183,7 @@ void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 	gtk_widget_set_size_request(close_button, w + 4, h + 4);
 }
 
-void nsgtk_tab_page_changed(GtkNotebook *notebook, GtkNotebookPage *page,
+void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 		gint page_num)
 {
 	GtkWidget *window = gtk_notebook_get_nth_page(notebook, page_num);
