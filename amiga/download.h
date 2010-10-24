@@ -50,7 +50,7 @@ void ami_download_window_abort(struct gui_download_window *dw);
 BOOL ami_download_window_event(struct gui_download_window *dw);
 void ami_drag_save(struct Window *win);
 void ami_drag_icon_show(struct Window *win, char *type);
-void ami_drag_icon_close(void);
+void ami_drag_icon_close(struct Window *win);
 void ami_drag_icon_move(void);
 void ami_free_download_list(struct List *dllist);
 void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type);

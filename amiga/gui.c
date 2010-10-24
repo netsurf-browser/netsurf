@@ -1027,7 +1027,9 @@ void ami_handle_msg(void)
 					width=bbox->Width;
 					height=bbox->Height;
 
-					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
+					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON &&
+						((gwin->bw->drag_type == DRAGGING_SELECTION) ||
+						ami_autoscroll == TRUE))
 					{
 						int drag_x_move = 0, drag_y_move = 0;
 

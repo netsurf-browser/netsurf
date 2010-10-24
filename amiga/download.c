@@ -369,6 +369,7 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
 	ami_drag_icon_show(g->shared->win, "ascii");
 
+	ami_autoscroll = TRUE;
 	drag_save_data = s;
 	drag_save = GUI_SAVE_TEXT_SELECTION;
 }
@@ -380,7 +381,8 @@ void ami_drag_save(struct Window *win)
 	char *source_data;
 	ULONG source_size;
 
-	if(drag_icon) ami_drag_icon_close();
+	if(drag_icon) ami_drag_icon_close(NULL);
+	ami_autoscroll = FALSE;
 
 	if(strcmp(option_use_pubscreen,"Workbench") == 0)
 	{
@@ -554,9 +556,16 @@ void ami_drag_icon_move(void)
 		drag_icon_width, drag_icon_height);
 }
 
-void ami_drag_icon_close(void)
+/**
+ * Close the drag icon (invisible) window if it is open
+ *
+ * \param win pointer to window to clear drag pointer
+ */
+
+void ami_drag_icon_close(struct Window *win)
 {
 	if(drag_icon) CloseWindow(drag_icon);
+	if(win) ami_update_pointer(win, GUI_POINTER_DEFAULT);
 	drag_icon = NULL;
 }
 

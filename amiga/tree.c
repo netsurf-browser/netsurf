@@ -50,6 +50,8 @@
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
 #include "amiga/sslcert.h"
+#include "amiga/download.h" /* drag icon stuff */
+#include "amiga/theme.h" /* pointers */
 #include "utils/utils.h"
 
 #define AMI_TREE_MENU_ITEMS 19
@@ -793,6 +795,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						}
 						else
 						{
+							ami_drag_icon_close(twin->win);
 							tree_drag_end(twin->tree, twin->mouse_state,
 								twin->drag_x, twin->drag_y, x, y);
 						}
@@ -808,6 +811,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						}
 						else
 						{
+							ami_drag_icon_close(twin->win);
 							tree_drag_end(twin->tree, twin->mouse_state,
 								twin->drag_x, twin->drag_y, x, y);
 						}
