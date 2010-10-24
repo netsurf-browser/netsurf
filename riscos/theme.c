@@ -949,12 +949,18 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 	 		break;
 	 	case THEME_HOTLIST_TOOLBAR:
 	 	case THEME_HOTLIST_EDIT_TOOLBAR:
+	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
+	 				ro_gui_hotlist_toolbar_click);
+	 		break;
 	 	case THEME_HISTORY_TOOLBAR:
 	 	case THEME_HISTORY_EDIT_TOOLBAR:
+	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
+	 				ro_gui_global_history_toolbar_click);
+	 		break;
 	 	case THEME_COOKIES_TOOLBAR:
 	 	case THEME_COOKIES_EDIT_TOOLBAR:
 	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
-	 				ro_gui_treeview_toolbar_click);
+	 				ro_gui_cookies_toolbar_click);
 	 		break;
 		default:
 			break;

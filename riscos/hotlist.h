@@ -31,6 +31,7 @@ void ro_gui_hotlist_save(void);
 void ro_gui_hotlist_update_theme(void);
 bool ro_gui_hotlist_check_window(wimp_w window);
 bool ro_gui_hotlist_check_menu(wimp_menu *menu);
+bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer);
 
 #endif
 

@@ -150,6 +150,53 @@ void ro_gui_cookies_open(void)
 	}
 }
 
+
+/**
+ * Handle Mouse Click events on the toolbar.
+ *
+ * \param  *pointer		Pointer to the Mouse Click Event block.
+ * \return			Return true if click handled; else false.
+ */
+
+bool ro_gui_cookies_toolbar_click(wimp_pointer *pointer)
+{
+	switch (pointer->i) {
+	case ICON_TOOLBAR_DELETE:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			cookies_delete_selected();
+			return true;
+		}
+		break;
+	case ICON_TOOLBAR_EXPAND:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			cookies_expand_cookies();
+			return true;
+		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+			cookies_collapse_cookies();
+			return true;
+		}
+		break;
+	case ICON_TOOLBAR_OPEN:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			cookies_expand_domains();
+			return true;
+		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+			cookies_collapse_domains();
+			return true;
+		}
+		break;
+	}
+
+	/* \todo -- We assume that the owning module will have attached a window menu
+	 * to our parent window.  If it hasn't, this call will quietly fail.
+	 */
+
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return ro_gui_wimp_event_process_window_menu_click(pointer);
+
+	return false;
+}
+
 /**
  * Prepare the cookies menu for opening
  *

@@ -172,8 +172,6 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 	ro_gui_wimp_event_register_keypress(tv->w, ro_treeview_keypress);
 	ro_gui_wimp_event_set_user_data(tv->w, tv);
 
-	/* \todo Register wimp events to handle the supplied toolbar? */
-
 	return tv;
 }
 
@@ -915,41 +913,6 @@ static bool ro_treeview_keypress(wimp_key *key)
 	return false;
 }
 
-/** Respond to a mouse click on a treeview toolbar.
- *
- * \param  pointer		Pointer to the MouseClick Event block.
- * \return			true if the event was handled; else false.
- */
-
-bool ro_gui_treeview_toolbar_click(wimp_pointer *pointer)
-{
-	struct toolbar	*tb;
-	ro_treeview	*tv;
-
-	tb = (struct toolbar *) ro_gui_wimp_event_get_user_data(pointer->w);
-	if (tb == NULL) {
-		LOG(("NULL toolbar block for window: 0x%x",
-				(unsigned int) pointer->w));
-		return false;
-	}
-
-	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(tb->parent_handle);
-	if (tv == NULL) {
-		LOG(("NULL treeview block for parent window: 0x%x",
-				(unsigned int) tb->parent_handle));
-		return false;
-	}
-
-	/* \todo -- Handle menu clicks here... */
-
-	/* \todo -- Deal with the editor here... */
-
-	switch (pointer->i) {
-
-	}
-
-	return true;
-}
 
 /**
  * Update a treeview to use a new theme.

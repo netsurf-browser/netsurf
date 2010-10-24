@@ -159,6 +159,59 @@ void ro_gui_global_history_open(void)
 }
 
 /**
+ * Handle Mouse Click events on the toolbar.
+ *
+ * \param  *pointer		Pointer to the Mouse Click Event block.
+ * \return			Return true if click handled; else false.
+ */
+
+bool ro_gui_global_history_toolbar_click(wimp_pointer *pointer)
+{
+	switch (pointer->i) {
+	case ICON_TOOLBAR_DELETE:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			history_global_delete_selected();
+			return true;
+		}
+		break;
+	case ICON_TOOLBAR_EXPAND:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			history_global_expand_addresses();
+			return true;
+		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+			history_global_collapse_addresses();
+			return true;
+		}
+		break;
+	case ICON_TOOLBAR_OPEN:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			history_global_expand_directories();
+			return true;
+		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
+			history_global_collapse_directories();
+			return true;
+		}
+		break;
+	case ICON_TOOLBAR_LAUNCH:
+		if (pointer->buttons == wimp_CLICK_SELECT) {
+			history_global_launch_selected();
+			return true;
+		}
+		break;
+	}
+
+	/* \todo -- We assume that the owning module will have attached a window menu
+	 * to our parent window.  If it hasn't, this call will quietly fail.
+	 */
+
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return ro_gui_wimp_event_process_window_menu_click(pointer);
+
+	return true;
+}
+
+
+/**
  * Prepare the global history menu for opening
  *
  * \param  window		The window owning the menu.
