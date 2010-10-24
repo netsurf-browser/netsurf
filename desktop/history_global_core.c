@@ -299,11 +299,6 @@ bool history_global_initialise(struct tree *tree)
 	global_history_initialised = false;
 	tree_set_node_expanded(global_history_tree, global_history_tree_root,
 			       false, true, true);
-	first = tree_node_get_child(global_history_tree_root);
-	if (first != NULL)
-		tree_set_node_expanded(global_history_tree, first,
-				       true, false, false);
-
 	return true;
 }
 
