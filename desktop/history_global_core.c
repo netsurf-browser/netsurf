@@ -280,8 +280,6 @@ static bool history_global_initialise_nodes(void)
  */
 bool history_global_initialise(struct tree *tree)
 {
-	struct node *first;
-
 	folder_icon = tree_load_icon(tree_directory_icon_name);
 	tree_url_node_init();
 
