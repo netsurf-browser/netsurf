@@ -301,6 +301,7 @@ void ro_gui_menu_init(void)
 	};
 	tree_toolbar_menu = ro_gui_menu_define_menu(&tree_toolbar_definition);
 
+
 	/* proxy menu */
 	static const struct ns_menu proxy_type_definition = {
 		"ProxyType", {
@@ -375,8 +376,15 @@ void ro_gui_menu_init(void)
 
 /**
  * Display a menu.
+ *
+ * \param *menu			Pointer to the menu to be displayed.
+ * \param x			The x position.
+ * \param y			The y position.
+ * \param w			The window that the menu belongs to.
+ * \param prepare		true if the menu is to be prepared; otherwise
+ *				false (mainly for use by wimp_event module).
  */
-void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
+void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w, bool prepare)
 {
 	struct gui_window *g;
 	os_error *error;
@@ -442,7 +450,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 	} else if (menu == recent_search_menu) {
 	  	if (!ro_gui_search_prepare_menu())
 	  		return;
-	} else {
+	} else if (prepare) {
 		i = 0;
 		do {
 			action = ro_gui_menu_find_action(menu,
@@ -499,7 +507,7 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 	ro_gui_menu_create(menu,
 			state.visible.x0 + icon_state.icon.extent.x1 + 64,
 			state.visible.y1 + icon_state.icon.extent.y1 -
-			state.yscroll, w);
+			state.yscroll, w, true);
 	current_menu_icon = i;
 }
 
@@ -679,7 +687,7 @@ void ro_gui_menu_selection(wimp_selection *selection)
 		assert(g); /* Keep scan-build happy */
 		gui_create_form_select_menu(g->bw, gui_form_select_control);
 	} else
-		ro_gui_menu_create(current_menu, 0, 0, current_menu_window);
+		ro_gui_menu_create(current_menu, 0, 0, current_menu_window, true);
 
 	current_menu_icon = previous_menu_icon;
 }
@@ -989,7 +997,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 	gui_form_select_control = control;
 	ro_gui_menu_create(gui_form_select_menu,
-			pointer.pos.x, pointer.pos.y, bw->window->window);
+			pointer.pos.x, pointer.pos.y, bw->window->window, true);
 }
 
 

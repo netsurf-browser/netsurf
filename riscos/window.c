@@ -593,7 +593,7 @@ void gui_window_update_box(struct gui_window *g,
 	y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 * g->bw->scale);
 	x1 = ceilf((data->redraw.x + data->redraw.width) * 2 * g->bw->scale) + 1;
 	y1 = -floorf(data->redraw.y * 2 * g->bw->scale) + 1;
-	use_buffer = 
+	use_buffer =
 		(g->option.buffer_everything || g->option.buffer_animations);
 
 	/* try to optimise buffered redraws */
@@ -1398,7 +1398,7 @@ bool gui_window_frame_resize_start(struct gui_window *g)
  * \param  g  gui_window containing the content
  * \param  c  the content to save
  */
-void gui_window_save_link(struct gui_window *g, const char *url, 
+void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title)
 {
 	ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL, url, title);
@@ -2148,7 +2148,7 @@ bool ro_gui_toolbar_click(wimp_pointer *pointer)
 	/*	Handle Menu clicks */
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_menu_create(browser_toolbar_menu, pointer->pos.x,
-				pointer->pos.y, g->window);
+				pointer->pos.y, g->window, true);
 		return true;
 	}
 
@@ -2317,7 +2317,7 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 		gui_window_place_caret(g, -100, -100, 0);
 
 	if (pointer->buttons == wimp_CLICK_MENU) {
-		ro_gui_menu_create(browser_menu, pointer->pos.x, pointer->pos.y, pointer->w);
+		ro_gui_menu_create(browser_menu, pointer->pos.x, pointer->pos.y, pointer->w, true);
 	} else {
 		if (ro_gui_window_to_window_pos(g, pointer->pos.x, pointer->pos.y, &pos))
 			browser_window_mouse_click(g->bw,

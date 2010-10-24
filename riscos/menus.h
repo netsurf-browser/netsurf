@@ -170,7 +170,7 @@ struct ns_menu {
 
 
 void ro_gui_menu_init(void);
-void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w);
+void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w, bool prepare);
 bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		bool windows_at_pointer);
 void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,

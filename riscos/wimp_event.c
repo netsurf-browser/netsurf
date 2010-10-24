@@ -985,7 +985,8 @@ bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer)
 					window->window_menu);
 
 		ro_gui_menu_create(window->window_menu,
-				pointer->pos.x, pointer->pos.y, window->w);
+				pointer->pos.x, pointer->pos.y,
+				window->w, false);
 		return true;
 	}
 	return false;

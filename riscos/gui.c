@@ -987,9 +987,9 @@ void gui_poll(bool active)
 	gui_last_poll = clock();
 	ro_gui_handle_event(event, &block);
 
-	/* Only run scheduled callbacks on a null poll 
-	 * We cannot do this in the null event handler, as that may be called 
-	 * from gui_multitask(). Scheduled callbacks must only be run from the 
+	/* Only run scheduled callbacks on a null poll
+	 * We cannot do this in the null event handler, as that may be called
+	 * from gui_multitask(). Scheduled callbacks must only be run from the
 	 * top-level.
 	 */
 	if (event == wimp_NULL_REASON_CODE)
@@ -1248,7 +1248,8 @@ bool ro_gui_icon_bar_click(wimp_pointer *pointer)
 
 	if (pointer->buttons == wimp_CLICK_MENU) {
 		ro_gui_menu_create(iconbar_menu, pointer->pos.x,
-				   96 + iconbar_menu_height, wimp_ICON_BAR);
+				   96 + iconbar_menu_height, wimp_ICON_BAR,
+				   true);
 
 	} else if (pointer->buttons == wimp_CLICK_SELECT) {
 		if (option_homepage_url && option_homepage_url[0]) {
@@ -2070,7 +2071,7 @@ char *path_to_url(const char *path)
 
 	/* create a unix path from teh cananocal risc os one */
 	unix_path = __unixify(canonical_path, __RISCOSIFY_NO_REVERSE_SUFFIX, NULL, 0, 0);
-	
+
 	if (unix_path == NULL) {
 		LOG(("__unixify failed: %s", canonical_path));
 		free(canonical_path);
@@ -2092,7 +2093,7 @@ char *path_to_url(const char *path)
 	} else {
 		snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, unix_path);
 	}
-	free(unix_path); 
+	free(unix_path);
 
 	/* We don't want '/' to be escaped.  */
 	url_err = url_escape(url, FILE_SCHEME_PREFIX_LEN, false, "/", &escurl);

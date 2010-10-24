@@ -24,6 +24,8 @@
 #ifndef _NETSURF_RISCOS_GLOBALHISTORY_H_
 #define _NETSURF_RISCOS_GLOBALHISTORY_H_
 
+#include "riscos/menus.h"
+
 void ro_gui_global_history_preinitialise(void);
 void ro_gui_global_history_postinitialise(void);
 void ro_gui_global_history_open(void);
@@ -32,6 +34,12 @@ void ro_gui_global_history_update_theme(bool full_update);
 bool ro_gui_global_history_check_window(wimp_w window);
 bool ro_gui_global_history_check_menu(wimp_menu *menu);
 bool ro_gui_global_history_toolbar_click(wimp_pointer *pointer);
+
+void ro_gui_global_history_menu_prepare(wimp_w window, wimp_menu *menu);
+bool ro_gui_global_history_menu_select(wimp_w window, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+void ro_gui_global_history_menu_warning(wimp_w window, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
 
 #endif
 

@@ -951,16 +951,31 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor,
 	 	case THEME_HOTLIST_EDIT_TOOLBAR:
 	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
 	 				ro_gui_hotlist_toolbar_click);
+			ro_gui_wimp_event_register_window_menu(toolbar->toolbar_handle,
+					tree_toolbar_menu,
+					ro_gui_hotlist_menu_prepare,
+					ro_gui_hotlist_menu_select, NULL,
+					ro_gui_hotlist_menu_warning, false);
 	 		break;
 	 	case THEME_HISTORY_TOOLBAR:
 	 	case THEME_HISTORY_EDIT_TOOLBAR:
 	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
 	 				ro_gui_global_history_toolbar_click);
+			ro_gui_wimp_event_register_window_menu(toolbar->toolbar_handle,
+					tree_toolbar_menu,
+					ro_gui_global_history_menu_prepare,
+					ro_gui_global_history_menu_select, NULL,
+					ro_gui_global_history_menu_warning, false);
 	 		break;
 	 	case THEME_COOKIES_TOOLBAR:
 	 	case THEME_COOKIES_EDIT_TOOLBAR:
 	 		ro_gui_wimp_event_register_mouse_click(toolbar->toolbar_handle,
 	 				ro_gui_cookies_toolbar_click);
+			ro_gui_wimp_event_register_window_menu(toolbar->toolbar_handle,
+					tree_toolbar_menu,
+					ro_gui_cookies_menu_prepare,
+					ro_gui_cookies_menu_select, NULL,
+					ro_gui_cookies_menu_warning, false);
 	 		break;
 		default:
 			break;

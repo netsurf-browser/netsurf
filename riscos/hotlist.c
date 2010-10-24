@@ -48,12 +48,6 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
-static void ro_gui_hotlist_menu_prepare(wimp_w window, wimp_menu *menu);
-static bool ro_gui_hotlist_menu_select(wimp_w window, wimp_menu *menu,
-		wimp_selection *selection, menu_action action);
-static void ro_gui_hotlist_menu_warning(wimp_w window, wimp_menu *menu,
-		wimp_selection *selection, menu_action action);
-
 /* The RISC OS hotlist window, toolbar and treeview data. */
 
 static struct ro_hotlist {
@@ -181,6 +175,9 @@ void ro_gui_hotlist_open(void)
 
 bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer)
 {
+	if (pointer->buttons == wimp_CLICK_MENU)
+		return ro_gui_wimp_event_process_window_menu_click(pointer);
+
 	if (hotlist_window.toolbar->editor != NULL) {
 		ro_gui_theme_toolbar_editor_click(hotlist_window.toolbar,
 				pointer);
@@ -226,14 +223,6 @@ bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer)
 		break;
 	}
 
-
-	/* \todo -- We assume that the owning module will have attached a window menu
-	 * to our parent window.  If it hasn't, this call will quietly fail.
-	 */
-
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return ro_gui_wimp_event_process_window_menu_click(pointer);
-
 	return true;
 }
 
@@ -249,30 +238,36 @@ void ro_gui_hotlist_menu_prepare(wimp_w window, wimp_menu *menu)
 {
 	bool selection;
 
-	selection = ro_treeview_has_selection(hotlist_window.tv);
+	if (menu != hotlist_window.menu && menu != tree_toolbar_menu)
+		return;
 
-	ro_gui_menu_set_entry_shaded(hotlist_window.menu, TREE_SELECTION,
-			!selection);
-	ro_gui_menu_set_entry_shaded(hotlist_window.menu, TREE_CLEAR_SELECTION,
-			!selection);
+	if (menu == hotlist_window.menu) {
+		selection = ro_treeview_has_selection(hotlist_window.tv);
 
-	ro_gui_menu_set_entry_shaded(hotlist_window.menu, TOOLBAR_BUTTONS,
+		ro_gui_menu_set_entry_shaded(hotlist_window.menu,
+				TREE_SELECTION, !selection);
+		ro_gui_menu_set_entry_shaded(hotlist_window.menu,
+				TREE_CLEAR_SELECTION, !selection);
+
+		ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
+				NULL, NULL, NULL, NULL);
+	}
+
+	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_BUTTONS,
 			(hotlist_window.toolbar == NULL ||
 			hotlist_window.toolbar->editor != NULL));
-	ro_gui_menu_set_entry_ticked(hotlist_window.menu, TOOLBAR_BUTTONS,
+	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_BUTTONS,
 			(hotlist_window.toolbar != NULL &&
 			(hotlist_window.toolbar->display_buttons ||
 			(hotlist_window.toolbar->editor != NULL))));
 
-	ro_gui_menu_set_entry_shaded(hotlist_window.menu, TOOLBAR_EDIT,
+	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_EDIT,
 			hotlist_window.toolbar == NULL);
-	ro_gui_menu_set_entry_ticked(hotlist_window.menu, TOOLBAR_EDIT,
+	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_EDIT,
 			(hotlist_window.toolbar != NULL &&
 			hotlist_window.toolbar->editor != NULL));
-
-	ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
-			NULL, NULL, NULL, NULL);
 }
+
 
 /**
  * Handle submenu warnings for the hotlist menu
