@@ -43,21 +43,35 @@ struct IFFHandle *iffh = NULL;
 
 bool ami_add_to_clipboard(const char *text, size_t length, bool space);
 
-void ami_clipboard_init(void)
+struct IFFHandle *ami_clipboard_init_internal(int unit)
 {
-	if(iffh = AllocIFF())
+	struct IFFHandle *iffhandle = NULL;
+
+	if(iffhandle = AllocIFF())
 	{
-		if(iffh->iff_Stream = (ULONG)OpenClipboard(0))
+		if(iffhandle->iff_Stream = (ULONG)OpenClipboard(unit))
 		{
-			InitIFFasClip(iffh);
+			InitIFFasClip(iffhandle);
 		}
 	}
+
+	return iffhandle;
+}
+
+void ami_clipboard_init(void)
+{
+	iffh = ami_clipboard_init_internal(0);
+}
+
+void ami_clipboard_free_internal(struct IFFHandle *iffhandle)
+{
+	if(iffhandle->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffhandle->iff_Stream);
+	if(iffhandle) FreeIFF(iffhandle);
 }
 
 void ami_clipboard_free(void)
 {
-	if(iffh->iff_Stream) CloseClipboard((struct ClipboardHandle *)iffh->iff_Stream);
-	if(iffh) FreeIFF(iffh);
+	ami_clipboard_free_internal(iffh);
 }
 
 void gui_start_selection(struct gui_window *g)
@@ -263,6 +277,7 @@ void ami_drag_selection(struct selection *s)
 	struct box *text_box;
 	ULONG x;
 	ULONG y;
+	struct IFFHandle *old_iffh = iffh;
 	struct gui_window_2 *gwin = ami_window_at_pointer();
 
 	if(!gwin)
@@ -276,11 +291,16 @@ void ami_drag_selection(struct selection *s)
 
 	if(text_box = ami_text_box_at_point(gwin, &x, &y))
 	{
+		iffh = ami_clipboard_init_internal(1);
+
 		if(gui_copy_to_clipboard(s))
 		{
 			browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
 			browser_window_key_press(gwin->bw, KEY_PASTE);
 		}
+
+		ami_clipboard_free_internal(iffh);
+		iffh = old_iffh;
 	}
 	else
 	{
