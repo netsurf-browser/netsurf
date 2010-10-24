@@ -160,6 +160,12 @@ void ro_gui_cookies_open(void)
 
 bool ro_gui_cookies_toolbar_click(wimp_pointer *pointer)
 {
+	if (cookies_window.toolbar->editor != NULL) {
+		ro_gui_theme_toolbar_editor_click(cookies_window.toolbar,
+				pointer);
+		return true;
+	}
+
 	switch (pointer->i) {
 	case ICON_TOOLBAR_DELETE:
 		if (pointer->buttons == wimp_CLICK_SELECT) {
@@ -286,6 +292,14 @@ bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
 	case TREE_CLEAR_SELECTION:
 		cookies_clear_selection();
 		return true;
+	case TOOLBAR_BUTTONS:
+		cookies_window.toolbar->display_buttons =
+				!cookies_window.toolbar->display_buttons;
+		ro_gui_theme_refresh_toolbar(cookies_window.toolbar);
+		return true;
+	case TOOLBAR_EDIT:
+		ro_gui_theme_toggle_edit(cookies_window.toolbar);
+		return true;
 	default:
 		return false;
 	}
@@ -295,11 +309,17 @@ bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
 
 /**
  * Update the theme details of the cookies window.
+ *
+ * \param full_update		true to force a full theme change; false to
+ *				refresh the toolbar size.
  */
 
-void ro_gui_cookies_update_theme(void)
+void ro_gui_cookies_update_theme(bool full_update)
 {
-	ro_treeview_update_theme(cookies_window.tv);
+	if (full_update)
+		ro_treeview_update_theme(cookies_window.tv);
+	else
+		ro_treeview_update_toolbar(cookies_window.tv);
 }
 
 /**
@@ -311,9 +331,9 @@ void ro_gui_cookies_update_theme(void)
 
 bool ro_gui_cookies_check_window(wimp_w window)
 {
-/* SF	if (cookies_window.w == window)
+	if (cookies_window.window == window)
 		return true;
-	else*/
+	else
 		return false;
 }
 

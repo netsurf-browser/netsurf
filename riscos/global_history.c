@@ -167,6 +167,12 @@ void ro_gui_global_history_open(void)
 
 bool ro_gui_global_history_toolbar_click(wimp_pointer *pointer)
 {
+	if (global_history_window.toolbar->editor != NULL) {
+		ro_gui_theme_toolbar_editor_click(global_history_window.toolbar,
+				pointer);
+		return true;
+	}
+
 	switch (pointer->i) {
 	case ICON_TOOLBAR_DELETE:
 		if (pointer->buttons == wimp_CLICK_SELECT) {
@@ -311,6 +317,14 @@ bool ro_gui_global_history_menu_select(wimp_w window, wimp_menu *menu,
 	case TREE_CLEAR_SELECTION:
 		history_global_clear_selection();
 		return true;
+	case TOOLBAR_BUTTONS:
+		global_history_window.toolbar->display_buttons =
+				!global_history_window.toolbar->display_buttons;
+		ro_gui_theme_refresh_toolbar(global_history_window.toolbar);
+		return true;
+	case TOOLBAR_EDIT:
+		ro_gui_theme_toggle_edit(global_history_window.toolbar);
+		return true;
 	default:
 		return false;
 	}
@@ -320,11 +334,17 @@ bool ro_gui_global_history_menu_select(wimp_w window, wimp_menu *menu,
 
 /**
  * Update the theme details of the global history window.
+ *
+ * \param full_update		true to force a full theme change; false to
+ *				refresh the toolbar size.
  */
 
-void ro_gui_global_history_update_theme(void)
+void ro_gui_global_history_update_theme(bool full_update)
 {
-	ro_treeview_update_theme(global_history_window.tv);
+	if (full_update)
+		ro_treeview_update_theme(global_history_window.tv);
+	else
+		ro_treeview_update_toolbar(global_history_window.tv);
 }
 
 /**
@@ -336,9 +356,9 @@ void ro_gui_global_history_update_theme(void)
 
 bool ro_gui_global_history_check_window(wimp_w window)
 {
-/*	if (global_history_window.w == window)
+	if (global_history_window.window == window)
 		return true;
-	else*/
+	else
 		return false;
 }
 

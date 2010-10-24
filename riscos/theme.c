@@ -588,9 +588,9 @@ bool ro_gui_theme_apply(struct theme_descriptor *descriptor)
 
 	/* apply the theme to all the current windows */
 	ro_gui_window_update_theme();
-	ro_gui_cookies_update_theme();
-	ro_gui_global_history_update_theme();
-	ro_gui_hotlist_update_theme();
+	ro_gui_cookies_update_theme(true);
+	ro_gui_global_history_update_theme(true);
+	ro_gui_hotlist_update_theme(true);
 	ro_gui_theme_close(theme_previous, false);
 	return true;
 }
@@ -1596,6 +1596,30 @@ void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar)
 	}
 	ro_gui_theme_destroy_toolbar_icon(toolbar->suggest);
 	free(toolbar);
+}
+
+
+/**
+ * Refresh a toolbar after it has been updated
+ *
+ * \param toolbar  the toolbar to update
+ */
+void ro_gui_theme_refresh_toolbar(struct toolbar *toolbar)
+{
+	assert(toolbar);
+
+	toolbar->reformat_buttons = true;
+	ro_gui_theme_process_toolbar(toolbar, -1);
+	if (toolbar->type == THEME_BROWSER_TOOLBAR) {
+		gui_window_update_extent(ro_gui_window_lookup(
+				current_menu_window));
+	} else if (toolbar->type == THEME_HOTLIST_TOOLBAR) {
+		ro_gui_hotlist_update_theme(false);
+	} else if (toolbar->type == THEME_HISTORY_TOOLBAR) {
+		ro_gui_global_history_update_theme(false);
+	} else if (toolbar->type == THEME_COOKIES_TOOLBAR) {
+		ro_gui_cookies_update_theme(false);
+	}
 }
 
 

@@ -28,7 +28,7 @@ void ro_gui_hotlist_preinitialise(void);
 void ro_gui_hotlist_postinitialise(void);
 void ro_gui_hotlist_open(void);
 void ro_gui_hotlist_save(void);
-void ro_gui_hotlist_update_theme(void);
+void ro_gui_hotlist_update_theme(bool full_update);
 bool ro_gui_hotlist_check_window(wimp_w window);
 bool ro_gui_hotlist_check_menu(wimp_menu *menu);
 bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer);

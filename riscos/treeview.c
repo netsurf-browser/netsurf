@@ -933,14 +933,25 @@ void ro_treeview_update_theme(ro_treeview *tv)
 		/* \todo -- Check for toolbar editing here. */
 
 		ro_gui_theme_attach_toolbar(tv->tb, tv->w);
-		ro_treeview_set_origin(tv, 0,
-				-(ro_gui_theme_toolbar_height(tv->tb)));
-
-		xwimp_force_redraw(tv->w, 0, tv->extent.y, tv->extent.x, 0);
+		ro_treeview_update_toolbar(tv);
 	}
 }
 
 
+/**
+ * Change the size of a treeview's toolbar and redraw the window.
+ *
+ * \param *tv			The treeview to update.
+ */
+
+void ro_treeview_update_toolbar(ro_treeview *tv)
+{
+		ro_treeview_set_origin(tv, 0,
+				-(ro_gui_theme_toolbar_height(tv->tb)));
+
+		xwimp_force_redraw(tv->w, 0, tv->extent.y, tv->extent.x, 0);
+
+}
 
 #if 0
 	if ((tree) && (tree->toolbar)) {

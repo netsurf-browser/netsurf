@@ -181,7 +181,11 @@ void ro_gui_hotlist_open(void)
 
 bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer)
 {
-	LOG(("Entering hotlist toolbar handler: b=%d, i=%d", pointer->buttons, pointer->i));
+	if (hotlist_window.toolbar->editor != NULL) {
+		ro_gui_theme_toolbar_editor_click(hotlist_window.toolbar,
+				pointer);
+		return true;
+	}
 
 	switch (pointer->i) {
 	case ICON_TOOLBAR_DELETE:
@@ -254,17 +258,17 @@ void ro_gui_hotlist_menu_prepare(wimp_w window, wimp_menu *menu)
 
 	ro_gui_menu_set_entry_shaded(hotlist_window.menu, TOOLBAR_BUTTONS,
 			(hotlist_window.toolbar == NULL ||
-			hotlist_window.toolbar->editor));
+			hotlist_window.toolbar->editor != NULL));
 	ro_gui_menu_set_entry_ticked(hotlist_window.menu, TOOLBAR_BUTTONS,
 			(hotlist_window.toolbar != NULL &&
 			(hotlist_window.toolbar->display_buttons ||
-			hotlist_window.toolbar->editor)));
+			(hotlist_window.toolbar->editor != NULL))));
 
 	ro_gui_menu_set_entry_shaded(hotlist_window.menu, TOOLBAR_EDIT,
 			hotlist_window.toolbar == NULL);
 	ro_gui_menu_set_entry_ticked(hotlist_window.menu, TOOLBAR_EDIT,
 			(hotlist_window.toolbar != NULL &&
-			hotlist_window.toolbar->editor));
+			hotlist_window.toolbar->editor != NULL));
 
 	ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
 			NULL, NULL, NULL, NULL);
@@ -341,6 +345,14 @@ bool ro_gui_hotlist_menu_select(wimp_w window, wimp_menu *menu,
 	case TREE_CLEAR_SELECTION:
 		hotlist_clear_selection();
 		return true;
+	case TOOLBAR_BUTTONS:
+		hotlist_window.toolbar->display_buttons =
+				!hotlist_window.toolbar->display_buttons;
+		ro_gui_theme_refresh_toolbar(hotlist_window.toolbar);
+		return true;
+	case TOOLBAR_EDIT:
+		ro_gui_theme_toggle_edit(hotlist_window.toolbar);
+		return true;
 	default:
 		return false;
 	}
@@ -350,11 +362,17 @@ bool ro_gui_hotlist_menu_select(wimp_w window, wimp_menu *menu,
 
 /**
  * Update the theme details of the hotlist window.
+ *
+ * \param full_update		true to force a full theme change; false to
+ *				refresh the toolbar size.
  */
 
-void ro_gui_hotlist_update_theme(void)
+void ro_gui_hotlist_update_theme(bool full_update)
 {
-	ro_treeview_update_theme(hotlist_window.tv);
+	if (full_update)
+		ro_treeview_update_theme(hotlist_window.tv);
+	else
+		ro_treeview_update_toolbar(hotlist_window.tv);
 }
 
 /**

@@ -101,7 +101,6 @@ static int ro_gui_menu_get_checksum(void);
 static void ro_gui_menu_prepare_pageinfo(struct gui_window *g);
 static void ro_gui_menu_prepare_objectinfo(hlcache_handle *object,
 		const char *href);
-static void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar);
 static bool ro_gui_menu_translate(struct menu_definition *menu);
 
 
@@ -756,44 +755,6 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 
 
 /**
- * Refresh a toolbar after it has been updated
- *
- * \param toolbar  the toolbar to update
- */
-void ro_gui_menu_refresh_toolbar(struct toolbar *toolbar)
-{
-//	struct treeview_window *treeview_window;
-
-	assert(toolbar);
-
-	toolbar->reformat_buttons = true;
-	ro_gui_theme_process_toolbar(toolbar, -1);
-	if (toolbar->type == THEME_BROWSER_TOOLBAR) {
-		gui_window_update_extent(ro_gui_window_lookup(
-				current_menu_window));
-//	} else if (toolbar->type == THEME_HOTLIST_TOOLBAR) {
-//		treeview_window = ro_gui_hotlist_get();
-//		/* TODO: FIX THIS */
-//		/* tree_resized(treeview_window->tree); */
-//		xwimp_force_redraw(treeview_window->window,
-//				0,-16384, 16384, 16384);
-//	} else if (toolbar->type == THEME_HISTORY_TOOLBAR) {
-//		treeview_window = ro_gui_global_history_get();
-//		/* TODO: FIX THIS */
-//		/* tree_resized(treeview_window->tree); */
-//		xwimp_force_redraw(treeview_window->window,
-//				0,-16384, 16384, 16384);
-//	} else if (toolbar->type == THEME_COOKIES_TOOLBAR) {
-//		treeview_window = ro_gui_cookies_get();
-//		/* TODO: FIX THIS */
-//		/* tree_resized(treeview_window->tree); */
-//		xwimp_force_redraw(treeview_window->window,
-//				0,-16384, 16384, 16384);
-	}
-}
-
-
-/**
  * Update navigate menu status and toolbar icons.
  *
  * /param gui  the gui_window to update
@@ -896,7 +857,7 @@ void ro_gui_menu_prepare_objectinfo(hlcache_handle *object, const char *href)
 	mime = content_get_mime_type(object);
 	if (mime == NULL)
 		mime = "-";
-		
+
 	if (href)
 		target = href;
 
@@ -1688,19 +1649,19 @@ bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
 		case TOOLBAR_BUTTONS:
 			assert(t);
 			t->display_buttons = !t->display_buttons;
-			ro_gui_menu_refresh_toolbar(t);
+			ro_gui_theme_refresh_toolbar(t);
 			return true;
 		case TOOLBAR_ADDRESS_BAR:
 			assert(t);
 			t->display_url = !t->display_url;
-			ro_gui_menu_refresh_toolbar(t);
+			ro_gui_theme_refresh_toolbar(t);
 			if (t->display_url)
 				ro_gui_set_caret_first(t->toolbar_handle);
 			return true;
 		case TOOLBAR_THROBBER:
 			assert(t);
 			t->display_throbber = !t->display_throbber;
-			ro_gui_menu_refresh_toolbar(t);
+			ro_gui_theme_refresh_toolbar(t);
 			return true;
 		case TOOLBAR_EDIT:
 			assert(t);

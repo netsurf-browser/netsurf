@@ -163,6 +163,7 @@ bool ro_gui_theme_update_toolbar(struct theme_descriptor *descriptor, struct too
 bool ro_gui_theme_attach_toolbar(struct toolbar *toolbar, wimp_w parent);
 bool ro_gui_theme_process_toolbar(struct toolbar *toolbar, int width);
 void ro_gui_theme_destroy_toolbar(struct toolbar *toolbar);
+void ro_gui_theme_refresh_toolbar(struct toolbar *toolbar);
 
 void ro_gui_theme_toggle_edit(struct toolbar *toolbar);
 void ro_gui_theme_toolbar_editor_sync(struct toolbar *toolbar);
