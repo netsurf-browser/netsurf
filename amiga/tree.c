@@ -248,12 +248,18 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
 
+	x += sx;
+	y += sy;
+
+	if(y < 0) y = 0;
+	if(x < 0) x = 0;
+
 	RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
-			SCROLLER_Top, y + sy,
+			SCROLLER_Top, y,
 			TAG_DONE);
 
 	RefreshSetGadgetAttrs((APTR)twin->objects[OID_HSCROLL], twin->win, NULL,
-			SCROLLER_Top, x + sx,
+			SCROLLER_Top, x,
 			TAG_DONE);
 
 	ami_tree_draw(twin);
