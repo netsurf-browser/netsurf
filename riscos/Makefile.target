@@ -1,0 +1,61 @@
+# RISC OS Target makefile 
+
+# ----------------------------------------------------------------------------
+# RISC OS target setup
+# ----------------------------------------------------------------------------
+
+  ifeq ($(HOST),riscos)
+    LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
+    LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
+  else
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcares libcurl openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss)
+  endif
+
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
+  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,Drawfile rendering))
+  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,Sprite rendering))
+  $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
+  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol))
+  $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile export))
+  ifeq ($(HOST),riscos)
+    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
+    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
+    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
+  else
+    NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+    NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+    NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
+  endif
+
+  TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
+		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
+
+  RESOURCES = $(TPD_RISCOS)
+
+  CFLAGS += -I. $(WARNFLAGS) -Driscos				\
+		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
+		-mpoke-function-name -fno-strict-aliasing
+
+  CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include			\
+		-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
+		-I$(GCCSDK_INSTALL_ENV)/include/libmng
+  ifeq ($(HOST),riscos)
+    CFLAGS += -I<OSLib$$Dir> -mthrowback
+  endif
+  ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
+  LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl
+  ifeq ($(HOST),riscos)
+    LDFLAGS += -LOSLib: -lOSLib32
+  else
+    LDFLAGS += -lOSLib32
+    ifeq ($(SUBTARGET),-elf)
+      # Go for static builds & AIF binary at the moment:
+      CFLAGS += -static
+      LDFLAGS += -static
+      EXEEXT := ,ff8
+    endif
+  endif

@@ -191,21 +191,6 @@ endif
 
 OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
 
-# ----------------------------------------------------------------------------
-# General flag setup
-# ----------------------------------------------------------------------------
-
-# Set up the WARNFLAGS here so that they can be overridden in the Makefile.config
-WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
-	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs
-ifneq ($(GCCVER),2)
-  WARNFLAGS += -Wno-unused-parameter 
-endif
-
-# Pull in the configuration
-include Makefile.defaults
 
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
 # 2: Parameters to add to CFLAGS
@@ -271,6 +256,22 @@ define pkg_config_find_and_add
   endif
 endef
 
+# ----------------------------------------------------------------------------
+# General flag setup
+# ----------------------------------------------------------------------------
+
+# Set up the WARNFLAGS here so that they can be overridden in the Makefile.config
+WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
+	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
+	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+	-Wnested-externs
+ifneq ($(GCCVER),2)
+  WARNFLAGS += -Wno-unused-parameter 
+endif
+
+# Pull in the configuration
+include Makefile.defaults
+
 $(eval $(call feature_enabled,JPEG,-DWITH_JPEG,-ljpeg,JPEG (libjpeg)))
 $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,JNG/MNG/PNG (libmng)))
 
@@ -284,337 +285,10 @@ CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
 CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 
 # ----------------------------------------------------------------------------
-# RISC OS target setup
+# Target specific setup
 # ----------------------------------------------------------------------------
 
-ifeq ($(TARGET),riscos)
-  ifeq ($(HOST),riscos)
-    LDFLAGS += -Xlinker -symbols=$(OBJROOT)/sym -lxml2 -lz -lm -lcurl -lcares
-    LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
-  else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcares libcurl openssl)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss)
-  endif
-
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
-  $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,Drawfile rendering))
-  $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,Sprite rendering))
-  $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
-  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol))
-  $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile export))
-  ifeq ($(HOST),riscos)
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-  else
-    NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-    NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-    NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-  endif
-
-  TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
-		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
-
-  RESOURCES = $(TPD_RISCOS)
-
-  CFLAGS += -I. $(WARNFLAGS) -Driscos				\
-		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
-		-mpoke-function-name -fno-strict-aliasing
-
-  CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include			\
-		-I$(GCCSDK_INSTALL_ENV)/include/libxml2		\
-		-I$(GCCSDK_INSTALL_ENV)/include/libmng
-  ifeq ($(HOST),riscos)
-    CFLAGS += -I<OSLib$$Dir> -mthrowback
-  endif
-  ASFLAGS += -xassembler-with-cpp -I. -I$(GCCSDK_INSTALL_ENV)/include
-  LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -lrufl
-  ifeq ($(HOST),riscos)
-    LDFLAGS += -LOSLib: -lOSLib32
-  else
-    LDFLAGS += -lOSLib32
-    ifeq ($(SUBTARGET),-elf)
-      # Go for static builds & AIF binary at the moment:
-      CFLAGS += -static
-      LDFLAGS += -static
-      EXEEXT := ,ff8
-    endif
-  endif
-endif
-
-# ----------------------------------------------------------------------------
-# BeOS target setup
-# ----------------------------------------------------------------------------
-
-ifeq ($(TARGET),beos)
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-
-  LDFLAGS += -L/boot/home/config/lib
-  # for Haiku
-  LDFLAGS += -L/boot/common/lib
-  # some people do *not* have libm...
-  LDFLAGS += -lxml2 -lcurl -liconv
-  LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
-
-  CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
-		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
-		-Drestrict="" -Wno-multichar 
-  # DEBUG
-  CFLAGS += -g -O0
-  # -DDEBUG=1
-
-  BEOS_BERES := beres
-  BEOS_RC := rc
-  BEOS_XRES := xres
-  BEOS_SETVER := setversion
-  BEOS_MIMESET := mimeset
-  VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
-  VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
-  VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
-  RSRC_BEOS = $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.rdef,%.rsrc,$(RDEF_BEOS))))
-  RESOURCES = $(RSRC_BEOS)
-  ifeq ($(HOST),beos)
-    CFLAGS += -I/boot/home/config/include		\
-		-I/boot/home/config/include/libxml2	\
-		-I/boot/home/config/include/libmng	\
-		-I/boot/home/config/include/hubbub	\
-		-I/boot/home/config/include/libcss	\
-		-I/boot/home/config/include/parserutils
-    ifneq ($(wildcard /boot/develop/lib/*/libzeta.so),)
-      LDFLAGS += -lzeta
-    endif
-    ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
-      # Haiku
-      CFLAGS += -I/boot/common/include		\
-		-I/boot/common/include/libxml2	\
-		-I/boot/common/include/libmng	\
-		-I/boot/common/include/hubbub	\
-		-I/boot/common/include/libcss	\
-		-I/boot/common/include/parserutils
-      NETLDFLAGS := -lnetwork
-    else
-      ifneq ($(wildcard /boot/develop/lib/*/libbind.so),)
-        # BONE
-        NETLDFLAGS := -lsocket -lbind
-      else
-        # net_server, will probably never work
-        NETLDFLAGS := -lnet
-      endif
-    endif
-  else
-    # cross: Haiku ?
-    NETLDFLAGS := -lnetwork
-  endif
-  LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
-
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
-  ifeq ($(HOST),beos)
-    CFLAGS += -I$(PREFIX)/include
-    LDFLAGS += -L$(PREFIX)/lib
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-  else
-    NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-    NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-    NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-    $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-    $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-    $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-  endif
-endif
-
-# ----------------------------------------------------------------------------
-# GTK flag setup (using pkg-config)
-# ----------------------------------------------------------------------------
-
-ifeq ($(TARGET),gtk)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub libcss)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
-
-  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
-  NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
-  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
-
-  # add a line similar to below for each optional pkg-configed lib here
-  $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG))
-  $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-
-  # no pkg-config for this library
-  $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
-
-  GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
-		-DGTK_DISABLE_DEPRECATED \
-		-D_BSD_SOURCE \
-		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L \
-		-D_NETBSD_SOURCE \
-		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
-		$(WARNFLAGS) -I. -g \
-		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl) \
-		$(shell $(PKG_CONFIG) --cflags openssl) \
-		$(shell xml2-config --cflags)
-
-  GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
-
-  CFLAGS += $(GTKCFLAGS)
-  LDFLAGS += $(GTKLDFLAGS)
-
-  # ---------------------------------------------------------------------------
-  # Windows flag setup
-  # ---------------------------------------------------------------------------
-
-  ifeq ($(HOST),Windows_NT)
-    CFLAGS += -U__STRICT_ANSI__
-  endif
-endif
-
-# ----------------------------------------------------------------------------
-# Windows target setup
-# ----------------------------------------------------------------------------
-ifeq ($(TARGET),windows)
-  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
-  $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
-
-  LDFLAGS += -L${MINGW_INSTALL_ENV}/lib $(shell $(PKG_CONFIG) --libs zlib \
-	libxml-2.0 libcurl libhubbub libparserutils libcss libwapcaplet) \
-	-lparserutils -lssl -lcrypto -lregex -liconv -lcss -lwapcaplet \
-	-lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
-  CFLAGS += -U__STRICT_ANSI__ -mwin32
-  # only windows versions after 2000 are supported
-  CFLAGS += '-DWINVER=0x0500'
-  WSCFLAGS := -std=c99 \
-	$(WARNFLAGS) -I. -I/${MINGW_INSTALL_ENV}/include \
-	-DCURL_STATICLIB \
-	$(shell $(PKG_CONFIG) --cflags libcurl libhubbub zlib libparserutils \
-	libxml-2.0) -g
-  CFLAGS += $(WSCFLAGS)
-  LDFLAGS += $(WSCFLAGS)
-endif
-
-# ----------------------------------------------------------------------------
-# Amiga target setup
-# ----------------------------------------------------------------------------
-
-ifeq ($(TARGET),amiga)
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
-  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-
-    $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,Sprite (librosprite)))
-    $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-    $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-    $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-    $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
-    $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
-    $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
-
-  CFLAGS += -D__USE_INLINE__ -std=c99 -I . -I /SDK/local/common/include/libpng12 -Dnsamiga
-  LDFLAGS += -lxml2 -lcurl -lpthread -lregex -lauto
-  LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet -liconv
-
-  ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
-    CFLAGS += -DNS_AMIGA_CAIRO -I /SDK/local/common/include/cairo
-    LDFLAGS += -use-dynld -ldl -lcairo -lpixman-1 -lfreetype -lfontconfig -lpng -lexpat
-    SUBTARGET := -cairo
-  endif
-endif
-
-# ----------------------------------------------------------------------------
-# Framebuffer target setup
-# ----------------------------------------------------------------------------
-
-ifeq ($(TARGET),framebuffer)
-
-  $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-
-  ifeq ($(NETSURF_FB_FONTLIB),freetype)
-    CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
-    LDFLAGS += $(shell freetype-config --libs)
-  endif
-
-  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
-  NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-
-  CFLAGS += -Dnsframebuffer 
-
-  #resource path
-  CFLAGS += '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))"'
-
-  # compile time font locations
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF="$(NETSURF_FB_FONT_SANS_SERIF)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_BOLD="$(NETSURF_FB_FONT_SANS_SERIF_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_ITALIC="$(NETSURF_FB_FONT_SANS_SERIF_ITALIC)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD="$(NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SERIF="$(NETSURF_FB_FONT_SERIF)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SERIF_BOLD="$(NETSURF_FB_FONT_SERIF_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE="$(NETSURF_FB_FONT_MONOSPACE)"'
-  CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE_BOLD="$(NETSURF_FB_FONT_MONOSPACE_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_CURSIVE="$(NETSURF_FB_FONT_CURSIVE)"'
-  CFLAGS += '-DNETSURF_FB_FONT_FANTASY="$(NETSURF_FB_FONT_FANTASY)"'
-
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-
-  CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
-		-D_BSD_SOURCE \
-		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L \
-		$(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl) \
-		$(shell xml2-config --cflags)
-
-  ifeq ($(HOST),mint)
-    # freemint does not support pkg-config for libcurl
-    CFLAGS += $(shell curl-config --cflags)
-  else
-    CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl)
-  endif
-
-  LDFLAGS += -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
-
-  ifeq ($(HOST),mint)
-    LDFLAGS += $(shell curl-config --libs)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub openssl libcss)
-    # xml-config returns -lsocket which is not needed and does not exist on all systems. 
-    # because of that - hardcoded reference to libxml-2.0 here.
-    LDFLAGS += -L/usr/lib/ -lxml2 -lz -liconv 
-    LDFLAGS += -lm
-  else
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
-  endif
-  
-endif
+include $(TARGET)/Makefile.target
 
 # ----------------------------------------------------------------------------
 # General make rules
