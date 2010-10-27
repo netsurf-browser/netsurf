@@ -360,7 +360,7 @@ node_callback_resp tree_url_node_callback(void *user_data,
 	struct node_element *element;
 	url_func_result res;
 	const char *text;
-	char *norm_text, *escaped_text;
+	char *norm_text;
 	const struct url_data *data;
 
 	/** @todo memory leaks on non-shared folder deletion. */
@@ -400,11 +400,7 @@ node_callback_resp tree_url_node_callback(void *user_data,
 		text = msg_data->data.text;
 
 		if (msg_data->flag == TREE_ELEMENT_URL) {
-			res = url_escape(text, 0, false, NULL,
-					 &escaped_text);
-			if (res == URL_FUNC_OK)
-				res = url_normalize(escaped_text,
-						    &norm_text);
+			res = url_normalize(text, &norm_text);
 			if (res != URL_FUNC_OK) {
 				if (res == URL_FUNC_FAILED) {
 					warn_user("NoURLError", 0);
