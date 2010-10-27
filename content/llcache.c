@@ -210,6 +210,18 @@ static nserror llcache_fetch_auth(llcache_object *object,
 static nserror llcache_fetch_cert_error(llcache_object *object,
 		const struct ssl_cert_info *certs, size_t num);
 
+/* Destroy headers */
+static inline void llcache_destroy_headers(llcache_object *object)
+{
+	while (object->num_headers > 0) {
+		object->num_headers--;
+
+		free(object->headers[object->num_headers].name);
+		free(object->headers[object->num_headers].value);
+	}
+	free(object->headers);
+	object->headers = NULL;
+}
 
 /* Invalidate cache control data */
 static inline void llcache_invalidate_cache_control_data(llcache_object *object)
@@ -2163,6 +2175,28 @@ nserror llcache_fetch_process_header(llcache_object *object, const char *data,
 	if (error != NSERROR_OK)
 		return error;
 
+	/* The headers for multiple HTTP responses may be delivered to us if
+	 * the fetch layer receives a 401 response for which it has 
+	 * authentication credentials. This will result in a silent re-request
+	 * after which we'll receive the actual response headers for the
+	 * object we want to fetch (assuming that the credentials were correct
+	 * of course)
+	 *
+	 * Therefore, if the header is an HTTP response start marker, then we 
+	 * must discard any headers we've read so far, reset the cache data 
+	 * that we might have computed, and start again.
+	 */
+	if (strncmp(name, "HTTP/", SLEN("HTTP/")) == 0 && value[0] == '\0') {
+		time_t req_time = object->cache.req_time;
+
+		llcache_invalidate_cache_control_data(object);
+
+		/* Restore request time, so we compute object's age correctly */
+		object->cache.req_time = req_time;
+
+		llcache_destroy_headers(object);
+	}
+
 	/* Append header data to the object's headers array */
 	temp = realloc(object->headers, (object->num_headers + 1) * 
 			sizeof(llcache_header));
@@ -2231,14 +2265,7 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	llcache_invalidate_cache_control_data(object);
 
 	/* Destroy headers */
-	while (object->num_headers > 0) {
-		object->num_headers--;
-
-		free(object->headers[object->num_headers].name);
-		free(object->headers[object->num_headers].value);
-	}
-	free(object->headers);
-	object->headers = NULL;
+	llcache_destroy_headers(object);
 
 	/* If there was no realm, then default to the URL */
 	/** \todo If there was no WWW-Authenticate header, use response body */
