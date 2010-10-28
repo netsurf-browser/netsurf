@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.6 Development (Revision 10683)
+# Italian messages for NetSurf 2.6/3.0 Development (Revision 10868)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 7.08.2010
+# 27.10.2010
 # =========================================================================
 #
 # Description
@@ -191,8 +191,8 @@ ResetUsage:Resetta statistiche
 New:Nuovo
 Expand:Espandi
 Collapse:Raggruppa
-Tree:Tree
-TreeExport:Export...
+Tree:Albero
+TreeExport:Esporta...
 
 # New hotlist entry menu
 #
@@ -204,7 +204,7 @@ Link:Indirizzo
 All:Tutte
 Folders:Cartelle
 Links:Indirizzi
-Domains:Domains
+Domains:Domini
 
 # Other menus
 #
@@ -313,16 +313,16 @@ SelectFile:Seleziona file...
 # Tree URL text
 #
 TreeAdded:Aggiunto: %s
-TreeLast:Ultimi visitati: %s
-TreeVisited:Visitati: %s
-TreeVisits:Navigati: %i
-TreeUnknown:Sconosciuto
+TreeLast:Ultima visita: %s
+TreeVisited:Visitato: %s
+TreeVisits:Navigato/i: %i
+TreeUnknown:Sconosciuta
 TreeValue:Valore: %s
 TreeComment:Commento: %s
 TreeDomain:Dominio: %s%s
 TreePath:Percorso: %s%s
-TreeExpires:Scomparsi: %s
-TreeLastUsed:Ultimi usati: %s
+TreeExpires:Scadenza: %s
+TreeLastUsed:Ultimo utilizzo: %s
 TreeSecure:Solo host sicuri: %s
 TreeVersion:Versione: %s
 TreePersistent:Persistenza: %s
@@ -335,7 +335,7 @@ TreeUnused:Inutilizzato
 TreeImport:URL importati
 TreeNewFolder:Nuova cartella
 TreeLaunch:Visita URL
-TreeDelete:Cancella
+TreeDelete:Elimina
 
 # Tree export
 #
@@ -378,13 +378,13 @@ DateYesterday:Ieri
 Date1Week:Ultima settimana
 Date2Week:2 settimane fa
 Date3Week:3 settimane fa
-Sunday:Sunday
-Monday:Monday
-Tuesday:Tuesday
-Wednesday:Wednesday
-Thursday:Thursday
-Friday:Friday
-Saturday:Saturday
+Sunday:Domenica
+Monday:Lunedi
+Tuesday:Martedi
+Wednesday:Mercoledi
+Thursday:Giovedi
+Friday:Venerdi
+Saturday:Sabato
 
 
 # Download user interface tokens
@@ -719,12 +719,12 @@ FileError:Il file è inesistente:
 PrintError:Si è verificato un errore durante la stampa:
 EncNotRec:Tipo di codifica sconosciuta.
 FileOpenError:impossibile aprire il file '%s'
-DirectoryError:La directory '%s' già esistente
+DirectoryError:La directory '%s' è già esistente
 
 # Specific errors - displayed in a dialog box
 #
 NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
-FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà ora chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
+FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
 FontError:Impossibile aprire il font "Homerton.Medium" (%s).
 Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
 NoDiscSpace:Spazio insufficiente nel disco.
@@ -732,7 +732,7 @@ Template:Una finestra di template risulta mancante. Per favore reinstalla NetSur
 HotlistSaveError:Non è stato possibile salvare correttamente i segnalibri.
 HotlistLoadError:Non è stato possibile caricare correttamente i segnalibri.
 NoDirError:%s non è una directory
-NoPathError:Per salvare, trascinare l'icona in una directory di visualizzazione.
+NoPathError:Per salvare, trascina l'icona in una directory di visualizzazione.
 NoNameError:Inserisci un nome
 NoURLError:Inserisci un URL
 URIError:NetSurf non è stato in grado di processare questo file URI a causa di un errore di sintassi.
@@ -768,7 +768,7 @@ ProgressU:%s
 Loading:Apertura della pagina in corso...
 RecPercent:Ricevuti %s (%u%%)
 Received:Ricevuti %s
-Converting:Convertiti %lu byte
+Converting:Conversione %lu byte
 Complete:Pagina completata (%gs)
 Redirecting:Redirezione in corso...
 Processing:Elaborazione del documento in corso...
@@ -828,7 +828,7 @@ HTTP415:Tipo di media non supportato
 HTTP416:Estensione richiesta non soddisfabile
 HTTP417:Previsione fallita
 HTTP500:Errore interno del server
-HTTP501:Non implementato
+HTTP501:Non implementata
 HTTP502:Gateway errato
 HTTP503:Servizio non disponibile
 HTTP504:TimeOut Gateway
@@ -991,25 +991,25 @@ HelpBrowserMenu3-5:\Simpedisci a NetSurf di continuare a caricare questa pagina.
 HelpBrowserMenu4:\Rimposta le opzioni di visualizzazione locale.
 HelpBrowserMenu4-0:\Rscala la pagina, questo agirà sia sul testo che sulle immagini.
 HelpBrowserMenu4-1:\Rimposta le opzioni relative alle immagini locali.
-#HelpBrowserMen43-1-0:\Stoggle the display of foreground images.
-HelpBrowserMenu4-1-1:\Stoggle the display of background images.
-HelpBrowserMenu4-1-2:\Stoggle the display of animations.|MIf turned off, the first frame is displayed.
+#HelpBrowserMen43-1-0:\Salterna la visualizzazione delle immagini in primo piano.
+HelpBrowserMenu4-1-1:\Salterna la visualizzazione delle immagini di sfondo.
+HelpBrowserMenu4-1-2:\Salterna la visualizzazione delle animazioni.|MSe disattivato verrà visualizzato solo il primo frame.
 HelpBrowserMenu4-2:\Rcontrolla la visualizzazione delle barre strumenti di NetSurf.
-HelpBrowserMenu4-2-0:\Stoggle the display of the toolbar buttons.|MURL bar uses the remaining space.
-HelpBrowserMenu4-2-1:\Stoggle the display of the address (URL) bar.
-HelpBrowserMenu4-2-2:\Stoggle the display of the throbber.|MURL bar uses the remaining space.
-HelpBrowserMenu4-2-3:\Stoggle the display of the status bar.|MHorizontal scroll bar uses the remaining width.
-HelpBrowserMenu4-2-4:\Stoggle toolbar edit mode.
-HelpBrowserMenu4-3:\Scontrol the manner in which the display is rendered.
-HelpBrowserMenu4-3-0:\Stoggle whether animations are not displayed until all calculations are complete.
-HelpBrowserMenu4-3-1:\Stoggle whether everything is not displayed until all calculations are complete.
-HelpBrowserMenu4-4:\Smake your local display options the default options for NetSurf.
-HelpBrowserMenu4-5:\Rcontrol the default \w positioning.
-HelpBrowserMenu4-5-0:\S make the current \w position the default.
-HelpBrowserMenu4-5-1:\S toggle whether subsequent windows are staggered down the screen.
-HelpBrowserMenu4-5-2:\S toggle whether child windows copy the size and position of their parent.|MWhen off, all new windows open in the default position.
-HelpBrowserMenu4-5-3:\S return to the default \w positioning.
-HelpBrowserMenu5:\Raccess NetSurf's built in utilities.|MUtilities are tools such as the hotlist, history tree and various setup options.
+HelpBrowserMenu4-2-0:\Salterna la visualizzazione dei pulsanti della barra strumenti.|MLa barra URL coprirà lo spazio eccedente.
+HelpBrowserMenu4-2-1:\Salterna la visualizzazione della barra indirizzi (URL).
+HelpBrowserMenu4-2-2:\Salterna la visualizzazione del throbber.|MLa barra URL coprirà lo spazio eccedente.
+HelpBrowserMenu4-2-3:\Salterna la visualizzazione della barra di stato.|MLa barra di scrolling orizzontale coprirà la larghezza eccedente.
+HelpBrowserMenu4-2-4:\Salterna la modalità di modifica della barra strumenti.
+HelpBrowserMenu4-3:\Scontrolla il modo in cui è resa l'esposizione.
+HelpBrowserMenu4-3-0:\Simposta la non visualizzazione delle animazioni fino al completamento dei calcoli.
+HelpBrowserMenu4-3-1:\Simposta la non visualizzazione di tutto fino al completamento dei calcoli.
+HelpBrowserMenu4-4:\Simposta come predefinite le tue impostazioni di visualizzazione.
+HelpBrowserMenu4-5:\Rimposta il posizionamento \w predefinito.
+HelpBrowserMenu4-5-0:\S imposta come predefinita \w la posizione corrente.
+HelpBrowserMenu4-5-1:\S imposta se le finestre successive sono sfalsate in basso allo schermo.
+HelpBrowserMenu4-5-2:\S alterna se le finestre figlie dovranno copiare la dimensione ed il posizionamento di quelle genitrici.|MSe disattivato tutte le finestre verranno aperte nel posizionamento predefinito.
+HelpBrowserMenu4-5-3:\S ritorna al posizionamento \w predefinito.
+HelpBrowserMenu5:\Raccesso a NetSurf attraverso le utilità.|MLe utilità sono strumenti simili ai segnalibri, gli alberi della cronologia ed altre opzioni di configurazione.
 HelpBrowserMenu5-0:\Rgestisci i segnalibri.
 HelpBrowserMenu5-0-0:\Saggiungi la pagina corrente ai segnalibri
 HelpBrowserMenu5-0-1:\Sapri il gestore dei segnalibri \w.
@@ -1018,17 +1018,17 @@ HelpBrowserMenu5-1-0:\Sapri la cronologia locale
 HelpBrowserMenu5-1-1:\Sapri la cronologia globale
 HelpBrowserMenu5-2:\Rgestisci i tuoi cookie
 HelpBrowserMenu5-2-0:\Sapri il gestore dei cookie \w.
-HelpBrowserMenu6:\Rmostra la documentazione di aiuto disponibile
-HelpBrowserMenu6-0:\Sopen the documentation contents page in a new \w.
-HelpBrowserMenu6-1:\Sopen the user guide in a new \w.
-HelpBrowserMenu6-2:\Sopen the user information page in a new \w.
-HelpBrowserMenu6-3:\Sopen the NetSurf about page in a new \w.
+HelpBrowserMenu6:\Rmostra la documentazione disponibile
+HelpBrowserMenu6-0:\Sapri i contenuti della documentazione in una nuova \w.
+HelpBrowserMenu6-1:\Sapri la guida in linea in una nuova \w.
+HelpBrowserMenu6-2:\Sapri la pagina delle informazioni utente in una nuova \w.
+HelpBrowserMenu6-3:\Sapri la finestra delle informazioni di NetSurf in una nuova \w.
 HelpBrowserMenu6-4:\Savvia la guida in linea
 
-HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
+HelpBrowser-1:Clicca \s sul link per procedere.|MClicca \a in un link per aprirlo in una nuova \w.|MShift+\s clicca sul link per scaricarne i contenuti.|MShift+\a clicca per salvare l'indirizzo del link.
 
-HelpIconbar:\TNetSurf icon.|M\Sopen a new browser \w.|M\Aopen the hotlist management \w.
-HelpHistory:Use this \w to navigate around the local history tree.|M\Son a thumbnail to return to that page.
+HelpIconbar:\TIcona di NetSurf.|M\Sapri una nuova finestra \w.|M\Aapri il gestore dei segnalibri \w.
+HelpHistory:Usa questo \w per navigare all'interno dell'albero della cronologia locale.|M\Ssulla miniatura per tornare a quella pagina.
 
 HelpPrint:Usa questa funzione \w per stampare la pagina.
 
