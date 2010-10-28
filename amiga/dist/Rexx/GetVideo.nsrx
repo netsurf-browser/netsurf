@@ -20,4 +20,10 @@
 
 options results
 geturl
-address REXX 'rexx:getvideo.rexx' result 'save "ram:"'
+
+if open('getvideo','rexx:agetvideo.rexx','R') then do
+  close('getvideo')
+  address REXX 'rexx:getvideo.rexx' result 'ask "ram:"'
+end
+else
+  address command 'requestchoice >NIL: "NetSurf" "GetVideo.rexx must be installed in REXX: for this script to function.*n*nIt can be downloaded from Aminet:comm/www/getvideo.lha" "OK"'
