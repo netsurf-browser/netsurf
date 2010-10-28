@@ -127,8 +127,9 @@ void hlcache_finalise(void)
 
 	/* Clean up retrieval contexts */
 	if (hlcache_retrieval_ctx_ring != NULL) {
+		ctx = hlcache_retrieval_ctx_ring;
+
 		do {
-			ctx = hlcache_retrieval_ctx_ring;
 			next = ctx->r_next;
 
 			if (ctx->llcache != NULL)
