@@ -382,6 +382,9 @@ void ami_set_options(void)
 	if((!option_theme) || (option_theme[0] == '\0'))
 		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");
 
+	if((!option_tree_icons_dir) || (option_tree_icons_dir[0] == '\0'))
+		option_tree_icons_dir = (char *)strdup("ENV:Sys");
+
 	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
 		option_arexx_dir = (char *)strdup("Rexx");
 
