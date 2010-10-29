@@ -59,3 +59,40 @@
       EXEEXT := ,ff8
     endif
   endif
+
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# S_RISCOS are sources purely for the RISC OS build
+S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c	\
+	cookies.c configure.c debugwin.c dialog.c download.c draw.c	\
+	filetype.c font.c global_history.c gui.c help.c history.c	\
+	hotlist.c image.c menus.c message.c palettes.c plotters.c	\
+	plugin.c print.c query.c save.c save_draw.c save_pdf.c		\
+	schedule.c search.c searchweb.c sprite.c sslcert.c		\
+	textarea.c textselection.c theme.c theme_install.c thumbnail.c	\
+	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
+	url_suggest.c wimp.c wimp_event.c window.c gui/progress_bar.c	\
+	gui/status_bar.c						\
+	$(addprefix configure/,con_cache.c con_connect.c con_content.c	\
+	con_fonts.c con_home.c con_image.c con_inter.c con_language.c	\
+	con_memory.c con_secure.c con_theme.c)
+S_RISCOS := $(addprefix riscos/,$(S_RISCOS))
+TPL_RISCOS := de en fr nl # TODO: It'd be nice to auto-detect these
+TPL_RISCOS := $(addprefix riscos/templates/,$(TPL_RISCOS))
+
+
+# complete source file list
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_RISCOS)
+EXETARGET := !NetSurf/!RunImage$(EXEEXT)
+
+!NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
+	$(VQ)echo " MAKERUN: $@"
+	$(Q)$(MAKERUN) $(EXETARGET) $< $@
+POSTEXES += !NetSurf/!Run$(RUNEXT)
+
+clean-run:
+	$(VQ)echo "   CLEAN: !NetSurf/!Run$(RUNEXT)"
+	$(Q) $(RM) !NetSurf/!Run$(RUNEXT)
+CLEANS += clean-run

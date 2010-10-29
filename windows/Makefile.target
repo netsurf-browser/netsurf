@@ -28,3 +28,25 @@
   CFLAGS += $(WSCFLAGS)
   LDFLAGS += $(WSCFLAGS)
 
+# ----------------------------------------------------------------------------
+# built-in resource setup
+# ----------------------------------------------------------------------------
+
+$(OBJROOT)/windows_resource.o: windows/res/resource.rc
+	$(VQ)echo " WINDRES: compiling windows resources"
+	${Q}$(MINGW_PREFIX)windres $< -O coff -o $@
+
+S_RESOURCES := windows_resource.o
+
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# S_WINDOWS are sources purely for the windows build
+S_WINDOWS := about.c bitmap.c download.c filetype.c findfile.c font.c	\
+	gui.c localhistory.c login.c misc.c plot.c prefs.c schedule.c	\
+	thumbnail.c tree.c windbg.c
+S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 
+
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_WINDOWS) $(S_RESOURCES)
+EXETARGET := NetSurf.exe

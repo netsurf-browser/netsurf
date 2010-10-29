@@ -79,3 +79,26 @@
     $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
   endif
 
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# S_BEOS are sources purely for the BeOS build
+S_BEOS := beos_about.cpp beos_bitmap.cpp beos_fetch_rsrc.cpp		\
+	beos_filetype.cpp beos_font.cpp beos_gui.cpp beos_login.cpp	\
+	beos_options.cpp beos_plotters.cpp beos_save_complete.cpp	\
+	beos_scaffolding.cpp beos_search.cpp beos_schedule.cpp		\
+	beos_thumbnail.cpp beos_treeview.cpp beos_throbber.cpp		\
+	beos_window.cpp
+S_BEOS := $(addprefix beos/,$(S_BEOS))
+RDEF_BEOS := beos_res.rdef
+RDEF_BEOS := $(addprefix beos/,$(RDEF_BEOS))
+RDEP_BEOS := adblock.css beosdefault.css default.css ca-bundle.txt	\
+	messages
+RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
+	$(wildcard beos/res/throbber/throbber*.png)
+
+
+# complete source file list
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_BEOS)
+EXETARGET := NetSurf

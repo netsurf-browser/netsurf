@@ -52,3 +52,21 @@
     CFLAGS += -U__STRICT_ANSI__
   endif
 
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# S_GTK are sources purely for the GTK build
+S_GTK := font_pango.c gtk_bitmap.c gtk_gui.c gtk_schedule.c		\
+	gtk_thumbnail.c gtk_plotters.c gtk_treeview.c gtk_scaffolding.c	\
+	gtk_completion.c gtk_login.c gtk_throbber.c gtk_selection.c	\
+	gtk_history.c gtk_window.c gtk_filetype.c gtk_download.c	\
+	gtk_menu.c gtk_print.c gtk_save.c gtk_search.c gtk_tabs.c	\
+	gtk_theme.c gtk_toolbar.c sexy_icon_entry.c gtk_compat.c	\
+	gtk_cookies.c gtk_hotlist.c					\
+	$(addprefix dialogs/,gtk_options.c gtk_about.c gtk_source.c)
+S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
+# code in utils/container.ch is non-universal it seems
+
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK)
+EXETARGET := nsgtk

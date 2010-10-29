@@ -189,7 +189,11 @@ else
   endif
 endif
 
+# Target paths
+
 OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
+DEPROOT := $(OBJROOT)/deps
+TOOLROOT := $(OBJROOT)/tools
 
 
 # 1: Feature name (ie, NETSURF_USE_BMP -> BMP)
@@ -284,11 +288,6 @@ LDFLAGS += -lz
 CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
 CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 
-# ----------------------------------------------------------------------------
-# Target specific setup
-# ----------------------------------------------------------------------------
-
-include $(TARGET)/Makefile.target
 
 # ----------------------------------------------------------------------------
 # General make rules
@@ -299,13 +298,11 @@ $(OBJROOT)/created:
 	$(Q)$(MKDIR) $(OBJROOT)
 	$(Q)$(TOUCH) $(OBJROOT)/created
 
-DEPROOT := $(OBJROOT)/deps
 $(DEPROOT)/created: $(OBJROOT)/created
 	$(VQ)echo "   MKDIR: $(DEPROOT)"
 	$(Q)$(MKDIR) $(DEPROOT)
 	$(Q)$(TOUCH) $(DEPROOT)/created
 
-TOOLROOT := $(OBJROOT)/tools
 $(TOOLROOT)/created: $(OBJROOT)/created
 	$(VQ)echo "   MKDIR: $(TOOLROOT)"
 	$(Q)$(MKDIR) $(TOOLROOT)
@@ -315,8 +312,25 @@ CLEANS := clean-target
 
 POSTEXES :=
 
-include Makefile.resources
+# ----------------------------------------------------------------------------
+# General source file setup
+# ----------------------------------------------------------------------------
+
 include Makefile.sources
+
+# ----------------------------------------------------------------------------
+# Target specific setup
+# ----------------------------------------------------------------------------
+
+include $(TARGET)/Makefile.target
+
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+ifeq ($(SOURCES),)
+$(error Unable to build NetSurf, could not determine set of sources to build)
+endif
 
 OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.s,%.o,$(SOURCES)))))))
 

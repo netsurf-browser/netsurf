@@ -3,67 +3,151 @@
 # ----------------------------------------------------------------------------
 
 
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
+$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
 
-  $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
+ifeq ($(NETSURF_FB_FONTLIB),freetype)
+  CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
+  LDFLAGS += $(shell freetype-config --libs)
+endif
 
-  ifeq ($(NETSURF_FB_FONTLIB),freetype)
-    CFLAGS += -DFB_USE_FREETYPE $(shell freetype-config --cflags)
-    LDFLAGS += $(shell freetype-config --libs)
-  endif
+# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
+NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
 
-  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
-  NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+CFLAGS += -Dnsframebuffer 
 
-  CFLAGS += -Dnsframebuffer 
+#resource path
+CFLAGS += '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))"'
 
-  #resource path
-  CFLAGS += '-DNETSURF_FB_RESPATH="$(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))"'
+# compile time font locations
+CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF="$(NETSURF_FB_FONT_SANS_SERIF)"'
+CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_BOLD="$(NETSURF_FB_FONT_SANS_SERIF_BOLD)"'
+CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_ITALIC="$(NETSURF_FB_FONT_SANS_SERIF_ITALIC)"'
+CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD="$(NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD)"'
+CFLAGS += '-DNETSURF_FB_FONT_SERIF="$(NETSURF_FB_FONT_SERIF)"'
+CFLAGS += '-DNETSURF_FB_FONT_SERIF_BOLD="$(NETSURF_FB_FONT_SERIF_BOLD)"'
+CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE="$(NETSURF_FB_FONT_MONOSPACE)"'
+CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE_BOLD="$(NETSURF_FB_FONT_MONOSPACE_BOLD)"'
+CFLAGS += '-DNETSURF_FB_FONT_CURSIVE="$(NETSURF_FB_FONT_CURSIVE)"'
+CFLAGS += '-DNETSURF_FB_FONT_FANTASY="$(NETSURF_FB_FONT_FANTASY)"'
 
-  # compile time font locations
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF="$(NETSURF_FB_FONT_SANS_SERIF)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_BOLD="$(NETSURF_FB_FONT_SANS_SERIF_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_ITALIC="$(NETSURF_FB_FONT_SANS_SERIF_ITALIC)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD="$(NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SERIF="$(NETSURF_FB_FONT_SERIF)"'
-  CFLAGS += '-DNETSURF_FB_FONT_SERIF_BOLD="$(NETSURF_FB_FONT_SERIF_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE="$(NETSURF_FB_FONT_MONOSPACE)"'
-  CFLAGS += '-DNETSURF_FB_FONT_MONOSPACE_BOLD="$(NETSURF_FB_FONT_MONOSPACE_BOLD)"'
-  CFLAGS += '-DNETSURF_FB_FONT_CURSIVE="$(NETSURF_FB_FONT_CURSIVE)"'
-  CFLAGS += '-DNETSURF_FB_FONT_FANTASY="$(NETSURF_FB_FONT_FANTASY)"'
+$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
 
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) 	\
+	  -D_BSD_SOURCE \
+	  -D_XOPEN_SOURCE=600 \
+	  -D_POSIX_C_SOURCE=200112L \
+	  $(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl) \
+	  $(shell xml2-config --cflags)
 
-  CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) \
-		-D_BSD_SOURCE \
-		-D_XOPEN_SOURCE=600 \
-		-D_POSIX_C_SOURCE=200112L \
-		$(shell $(PKG_CONFIG) --cflags libnsfb libhubbub libcss openssl) \
-		$(shell xml2-config --cflags)
+LDFLAGS += -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
 
-  ifeq ($(HOST),mint)
+ifeq ($(HOST),mint)
     # freemint does not support pkg-config for libcurl
     CFLAGS += $(shell curl-config --cflags)
-  else
-    CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl)
-  endif
 
-  LDFLAGS += -Wl,--whole-archive $(shell $(PKG_CONFIG) --libs libnsfb) -Wl,--no-whole-archive 
-
-  ifeq ($(HOST),mint)
     LDFLAGS += $(shell curl-config --libs)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub openssl libcss)
-    # xml-config returns -lsocket which is not needed and does not exist on all systems. 
-    # because of that - hardcoded reference to libxml-2.0 here.
+    # xml-config returns -lsocket which is not needed and does not
+    # exist on all systems.  because of that - hardcoded reference to
+    # libxml-2.0 here.
     LDFLAGS += -L/usr/lib/ -lxml2 -lz -liconv 
     LDFLAGS += -lm
-  else
+else
+    CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl)
+
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
-  endif
+endif
+
+
+# ----------------------------------------------------------------------------
+# built-in resource setup
+# ----------------------------------------------------------------------------
+
+# We make convert_image depend on fb_bitmap.h so that if we change
+# that header, we get new images built just in case.
+$(TOOLROOT)/convert_image: $(TOOLROOT)/created framebuffer/convert_image.c framebuffer/bitmap.h
+	$(VQ)echo " HOST CC: $@"
+	$(Q)$(HOST_CC) -o $@ framebuffer/convert_image.c -lpng
+
+FB_IMAGE_left_arrow := framebuffer/res/icons/back.png
+FB_IMAGE_right_arrow := framebuffer/res/icons/forward.png
+FB_IMAGE_reload := framebuffer/res/icons/reload.png
+FB_IMAGE_stop_image := framebuffer/res/icons/stop.png
+FB_IMAGE_history_image := framebuffer/res/icons/history.png
+
+FB_IMAGE_left_arrow_g := framebuffer/res/icons/back_g.png
+FB_IMAGE_right_arrow_g := framebuffer/res/icons/forward_g.png
+FB_IMAGE_reload_g := framebuffer/res/icons/reload_g.png
+FB_IMAGE_stop_image_g := framebuffer/res/icons/stop_g.png
+FB_IMAGE_history_image_g := framebuffer/res/icons/history_g.png
+
+FB_IMAGE_scrolll := framebuffer/res/icons/scrolll.png
+FB_IMAGE_scrollr := framebuffer/res/icons/scrollr.png
+FB_IMAGE_scrollu := framebuffer/res/icons/scrollu.png
+FB_IMAGE_scrolld := framebuffer/res/icons/scrolld.png
+
+
+FB_IMAGE_pointer_image := framebuffer/res/pointers/default.png
+FB_IMAGE_hand_image := framebuffer/res/pointers/point.png
+FB_IMAGE_caret_image := framebuffer/res/pointers/caret.png
+FB_IMAGE_menu_image := framebuffer/res/pointers/menu.png
+FB_IMAGE_progress_image := framebuffer/res/pointers/progress.png
+
+FB_IMAGE_throbber0 := framebuffer/res/throbber/throbber0.png
+FB_IMAGE_throbber1 := framebuffer/res/throbber/throbber1.png
+FB_IMAGE_throbber2 := framebuffer/res/throbber/throbber2.png
+FB_IMAGE_throbber3 := framebuffer/res/throbber/throbber3.png
+FB_IMAGE_throbber4 := framebuffer/res/throbber/throbber4.png
+FB_IMAGE_throbber5 := framebuffer/res/throbber/throbber5.png
+FB_IMAGE_throbber6 := framebuffer/res/throbber/throbber6.png
+FB_IMAGE_throbber7 := framebuffer/res/throbber/throbber7.png
+FB_IMAGE_throbber8 := framebuffer/res/throbber/throbber8.png
+
+# 1: input file
+# 2: output file
+# 3: bitmap name
+define convert_image
+
+S_IMAGES += $(2)
+
+$(2): $(1) $(TOOLROOT)/convert_image
+	$(Q)$(TOOLROOT)/convert_image $(1) $(2) $(3)
+
+endef
+
+S_IMAGES :=
+
+$(eval $(foreach V,$(filter FB_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst FB_IMAGE_%,%,$(V)).c,$(patsubst FB_IMAGE_%,%,$(V)))))
+
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# S_FRAMEBUFFER are sources purely for the framebuffer build
+S_FRAMEBUFFER := gui.c framebuffer.c tree.c save.c schedule.c		\
+	thumbnail.c misc.c bitmap.c filetype.c login.c findfile.c	\
+	localhistory.c
+
+S_FRAMEBUFFER_FBTK := fbtk.c event.c fill.c bitmap.c user.c window.c 	\
+	text.c scroll.c osk.c 
+
+S_FRAMEBUFFER += font_$(NETSURF_FB_FONTLIB).c
+
+ifeq ($(NETSURF_FB_FONTLIB),internal)
+S_FRAMEBUFFER += nsfont_regular.c nsfont_italic.c nsfont_bold.c		\
+	nsfont_italic_bold.c 
+endif
+
+S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER)) $(addprefix framebuffer/fbtk/,$(S_FRAMEBUFFER_FBTK))
+
+# complete source file list
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_FRAMEBUFFER) $(S_IMAGES)
+EXETARGET := nsfb$(SUBTARGET)
