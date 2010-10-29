@@ -265,6 +265,19 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 	ami_tree_draw(twin);
 }
 
+void ami_tree_drag_icon_show(struct treeview_window *twin)
+{
+	if(tree_node_is_folder(
+		tree_get_selected_node(
+			tree_get_root(twin->tree))))
+	{
+		ami_drag_icon_show(twin->win, "drawer");
+	}
+	else
+	{
+		ami_drag_icon_show(twin->win, "html");
+	}
+}
 
 void ami_tree_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
@@ -688,8 +701,6 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				{
 					int drag_x_move = 0, drag_y_move = 0;
 
-					/* TODO: Show drag icons on TREE_MOVE_DRAG start.
-					 * Until then, the below line does nothing. */
 					ami_drag_icon_move();
 
 					if(twin->win->MouseX < bbox->Left)
@@ -718,7 +729,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											BROWSER_MOUSE_DRAG_ON;
 						if(twin->drag_x == 0) twin->drag_x = x;
 						if(twin->drag_y == 0) twin->drag_y = y;
-
+						if(tree_drag_status(twin->tree) == TREE_MOVE_DRAG)
+							ami_tree_drag_icon_show(twin);
 					}
 					else if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
 					{
@@ -728,6 +740,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											BROWSER_MOUSE_DRAG_ON;
 						if(twin->drag_x == 0) twin->drag_x = x;
 						if(twin->drag_y == 0) twin->drag_y = y;
+						if(tree_drag_status(twin->tree) == TREE_MOVE_DRAG)
+							ami_tree_drag_icon_show(twin);
 					}
 					else
 					{

@@ -512,7 +512,7 @@ void ami_drag_icon_show(struct Window *win, char *type)
 		ami_update_pointer(win, GUI_POINTER_DEFAULT);
 	}
 
-	if(type == "drawer") deftype = WBDRAWER;
+	if(!strcmp(type, "drawer")) deftype = WBDRAWER;
 
 	dobj = GetIconTags(NULL, ICONGETA_GetDefaultName, type,
 					    ICONGETA_GetDefaultType, deftype,

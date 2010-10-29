@@ -64,6 +64,12 @@ struct node;
 struct node_element;
 
 typedef enum {
+	TREE_NO_DRAG = 0,
+	TREE_SELECT_DRAG,
+	TREE_MOVE_DRAG
+} tree_drag_type;
+
+typedef enum {
 	NODE_ELEMENT_TEXT,		/**< Text only */
 	NODE_ELEMENT_TEXT_PLUS_ICON,	/**< Text and icon */
 	NODE_ELEMENT_BITMAP		/**< Bitmap only */
@@ -163,7 +169,7 @@ bool tree_update_element_text(struct tree *tree, struct node_element *element, c
 const char *tree_node_element_get_text(struct node_element *element);
 struct node *tree_get_root(struct tree *tree);
 bool tree_is_edited(struct tree *tree);
-
+tree_drag_type tree_drag_status(struct tree *tree);
 
 /* functions for traversing the tree */
 struct node *tree_node_get_child(struct node *node);

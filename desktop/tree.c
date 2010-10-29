@@ -40,13 +40,6 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
-typedef enum {
-	TREE_NO_DRAG = 0,
-	TREE_SELECT_DRAG,
-	TREE_MOVE_DRAG
-} tree_drag_type;
-
-
 #define MAXIMUM_URL_LENGTH 1024
 
 #define TREE_ICON_SIZE 16
@@ -1427,6 +1420,18 @@ struct node *tree_get_root(struct tree *tree)
 bool tree_is_edited(struct tree *tree)
 {
 	return tree->editing == NULL ? false : true;
+}
+
+
+/**
+ * Get the drag state of a tree
+ *
+ * \param tree  the tree to get the state of
+ * \return	drag type (defined in desktop/tree.h)
+ */
+tree_drag_type tree_drag_status(struct tree *tree)
+{
+	return tree->drag;
 }
 
 
