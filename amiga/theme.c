@@ -33,7 +33,7 @@
 #include <intuition/pointerclass.h>
 #include <workbench/icon.h>
 
-#include "amiga/download.h"
+#include "amiga/drag.h"
 #include "amiga/options.h"
 #include "amiga/theme.h"
 #include "utils/messages.h"

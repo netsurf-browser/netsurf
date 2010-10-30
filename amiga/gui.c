@@ -27,6 +27,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "image/ico.h"
 #include "render/form.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
@@ -40,6 +41,7 @@
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
 #include "amiga/download.h"
+#include "amiga/drag.h"
 #include "amiga/fetch_mailto.h"
 #include "amiga/font.h"
 #include "amiga/gui.h"
@@ -72,7 +74,6 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/keymap.h>
-#include <proto/layers.h>
 #include <proto/locale.h>
 #include <proto/Picasso96API.h>
 #include <proto/timer.h>
@@ -3886,41 +3887,4 @@ struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 		}
 	}
 	return text_box;
-}
-
-struct gui_window_2 *ami_find_gwin_by_id(struct Window *win)
-{
-	struct nsObject *node, *nnode;
-	struct gui_window_2 *gwin;
-
-	if(!IsMinListEmpty(window_list))
-	{
-		node = (struct nsObject *)GetHead((struct List *)window_list);
-
-		do
-		{
-			nnode=(struct nsObject *)GetSucc((struct Node *)node);
-
-			if(node->Type == AMINS_WINDOW) // or frame?
-			{
-				gwin = node->objstruct;
-				if(win == gwin->win) return gwin;
-			}
-		} while(node = nnode);
-	}
-	return NULL;
-}
-
-struct gui_window_2 *ami_window_at_pointer(void)
-{
-	struct Layer *layer;
-
-	LockLayerInfo(&scrn->LayerInfo);
-
-	layer = WhichLayer(&scrn->LayerInfo, scrn->MouseX, scrn->MouseY);
-
-	UnlockLayerInfo(&scrn->LayerInfo);
-
-	if(layer) return ami_find_gwin_by_id(layer->Window);
-	else return NULL;
 }

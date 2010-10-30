@@ -17,7 +17,6 @@
  */
 
 #include "assert.h"
-#include "image/bitmap.h"
 #include "amiga/bitmap.h"
 #include <proto/exec.h>
 #include <proto/picasso96api.h>

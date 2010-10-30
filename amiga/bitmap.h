@@ -18,6 +18,8 @@
 
 #ifndef AMIGA_BITMAP_H
 #define AMIGA_BITMAP_H
+#include "image/bitmap.h"
+
 #include <exec/types.h>
 #include <proto/graphics.h>
 #include <intuition/classusr.h>

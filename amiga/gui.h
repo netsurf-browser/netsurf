@@ -132,7 +132,6 @@ void ami_do_redraw(struct gui_window_2 *g);
 STRPTR ami_locale_langs(void);
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
-struct gui_window_2 *ami_window_at_pointer(void);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;

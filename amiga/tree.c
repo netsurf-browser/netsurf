@@ -50,7 +50,7 @@
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
 #include "amiga/sslcert.h"
-#include "amiga/download.h" /* drag icon stuff */
+#include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "utils/utils.h"
 

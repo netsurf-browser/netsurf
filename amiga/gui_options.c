@@ -27,6 +27,7 @@
 #include <intuition/classusr.h>
 
 #include "amiga/object.h"
+#include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "utils/messages.h"

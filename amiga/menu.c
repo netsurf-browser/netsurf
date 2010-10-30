@@ -41,6 +41,7 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/clipboard.h"
 #include "amiga/gui_options.h"
+#include "amiga/theme.h"
 #include "desktop/tree_url_node.h"
 #include <classes/window.h>
 #include <proto/intuition.h>

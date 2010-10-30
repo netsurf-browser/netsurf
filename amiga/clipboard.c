@@ -28,6 +28,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
+#include "amiga/drag.h"
 
 #include <proto/iffparse.h>
 #include <proto/intuition.h>
