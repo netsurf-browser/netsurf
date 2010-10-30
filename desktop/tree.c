@@ -2167,6 +2167,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 
 		if (tree->flags & TREE_MOVABLE)
 			tree->drag = TREE_MOVE_DRAG;
+		else tree->drag = TREE_UNKNOWN_DRAG;
 
 		return true;
 	}
@@ -2411,6 +2412,7 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 
 	switch (tree->drag) {
 	case TREE_NO_DRAG:
+	case TREE_UNKNOWN_DRAG:
 		break;
 	case TREE_SELECT_DRAG:
 		tree_handle_selection_area(tree, y0, y1 - y0,

@@ -66,7 +66,8 @@ struct node_element;
 typedef enum {
 	TREE_NO_DRAG = 0,
 	TREE_SELECT_DRAG,
-	TREE_MOVE_DRAG
+	TREE_MOVE_DRAG,
+	TREE_UNKNOWN_DRAG	/** < A drag the tree itself won't handle */
 } tree_drag_type;
 
 typedef enum {
