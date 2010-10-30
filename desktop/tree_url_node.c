@@ -93,6 +93,9 @@ struct icon_entry icon_table[] = {
 #ifdef WITH_WEBP
 	{CONTENT_WEBP, NULL},
 #endif
+#ifdef WITH_AMIGA_ICON
+	{CONTENT_AMIGA_ICON, NULL},
+#endif
  	{CONTENT_UNKNOWN, NULL},
 
 	/* this serves as a sentinel */

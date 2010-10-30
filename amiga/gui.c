@@ -144,8 +144,8 @@ BOOL screen_closed = FALSE;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 
-const char tree_directory_icon_name[100];
-const char tree_content_icon_name[100];
+const char tree_directory_icon_name[] = "def_drawer.info";
+const char tree_content_icon_name[] = "def_project.info";
 extern colour scroll_widget_fg_colour;
 extern colour scroll_widget_bg_colour;
 extern colour scroll_widget_arrow_colour;
@@ -565,8 +565,6 @@ static void gui_init2(int argc, char** argv)
 	glob = &browserglob;
 	/**/
 
-	ami_get_theme_filename(&tree_directory_icon_name,"theme_list_folder",true);
-	ami_get_theme_filename(&tree_content_icon_name,"theme_list_content",true);
 	ami_hotlist_initialise(option_hotlist_file);
 	ami_cookies_initialise();
 	ami_global_history_initialise();

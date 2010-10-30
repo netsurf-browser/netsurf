@@ -71,6 +71,9 @@ typedef enum {
 #ifdef WITH_WEBP
 	CONTENT_WEBP,
 #endif
+#ifdef WITH_AMIGA_ICON
+	CONTENT_AMIGA_ICON,
+#endif
 	/* these must be the last two */
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /**< content-type not received yet */

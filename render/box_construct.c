@@ -84,6 +84,9 @@ static const content_type image_types[] = {
 #ifdef WITH_WEBP
 	CONTENT_WEBP,
 #endif
+#ifdef WITH_AMIGA_ICON
+	CONTENT_AMIGA_ICON,
+#endif
 	CONTENT_UNKNOWN };
 
 /* the strings are not important, since we just compare the pointers */

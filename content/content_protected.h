@@ -78,6 +78,9 @@
 #ifdef WITH_WEBP
 #include "image/webp.h"
 #endif
+#ifdef WITH_AMIGA_ICON
+#include "amiga/icon.h"
+#endif
 
 
 struct bitmap;
@@ -152,6 +155,9 @@ struct content {
 #endif
 #ifdef WITH_WEBP
                 struct content_webp_data webp;
+#endif
+#ifdef WITH_AMIGA_ICON
+                struct content_amiga_icon_data amiga_icon;
 #endif
 	} data;
 

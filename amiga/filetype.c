@@ -41,20 +41,33 @@ const char *fetch_filetype(const char *unix_path)
 	struct DataType *dtn;
 	BOOL found = FALSE;
 
-	/* First try getting a tooltype "MIMETYPE" and use that as the MIME type.  Will fail over
-		to default icons if the file doesn't have a real icon. */
+	/* First, check if we appear to have an icon.
+	   We'll just do a filename check here for quickness, although the
+	   first word ought to be checked against WB_DISKMAGIC really. */
 
-	if(dobj = GetIconTags(unix_path,ICONGETA_FailIfUnavailable,FALSE,
-						TAG_DONE))
+	if(strncmp(unix_path + strlen(unix_path) - 5, ".info", 5) == 0)
 	{
-		ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
-		if(ttype)
-		{
-			strcpy(mimetype,ttype);
-			found = TRUE;
-		}
+		strcpy(mimetype,"image/x-amiga-icon");
+		found = TRUE;
+	}
 
-		FreeDiskObject(dobj);
+	/* Secondly try getting a tooltype "MIMETYPE" and use that as the MIME type.
+	    Will fail over to default icons if the file doesn't have a real icon. */
+
+	if(!found)
+	{
+		if(dobj = GetIconTags(unix_path,ICONGETA_FailIfUnavailable,FALSE,
+						TAG_DONE))
+		{
+			ttype = FindToolType(dobj->do_ToolTypes, "MIMETYPE");
+			if(ttype)
+			{
+				strcpy(mimetype,ttype);
+				found = TRUE;
+			}
+
+			FreeDiskObject(dobj);
+		}
 	}
 
 	/* If that didn't work, have a go at guessing it using datatypes.library.  This isn't
@@ -189,6 +202,11 @@ const char *ami_content_type_to_file_type(content_type type)
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 		case CONTENT_SVG:
 			return "svg";
+		break;
+#endif
+#ifdef WITH_WEBP
+		case CONTENT_WEBP:
+			return "webp";
 		break;
 #endif
 		default:

@@ -52,6 +52,7 @@
 #include "amiga/sslcert.h"
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
+#include "amiga/filetype.h"
 #include "utils/utils.h"
 
 #define AMI_TREE_MENU_ITEMS 19
@@ -174,41 +175,8 @@ void ami_tree_get_window_dimensions(int *width, int *height, void *data)
  */
 void tree_icon_name_from_content_type(char *buffer, content_type type)
 {
-	// TODO: design/acquire icons
-	switch (type) {
-	case CONTENT_HTML:
-	case CONTENT_TEXTPLAIN:
-	case CONTENT_CSS:
-#if defined(WITH_MNG) || defined(WITH_PNG)
-	case CONTENT_PNG:
-#endif
-#ifdef WITH_MNG
-	case CONTENT_JNG:
-	case CONTENT_MNG:
-#endif
-#ifdef WITH_JPEG
-	case CONTENT_JPEG:
-#endif
-#ifdef WITH_GIF
-	case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-	case CONTENT_BMP:
-	case CONTENT_ICO:
-#endif
-#ifdef WITH_NSSPRITE
-	case CONTENT_SPRITE:
-#endif
-#ifdef WITH_NS_SVG
-	case CONTENT_SVG:
-#endif
-#ifdef WITH_WEBP
-	case CONTENT_WEBP:
-#endif
-	default:
-		ami_get_theme_filename(buffer,"theme_list_content",true);
-	break;
-	}
+	const char *ftype = ami_content_type_to_file_type(type);
+	sprintf(buffer, "def_%s.info", ftype);
 }
 
 /**

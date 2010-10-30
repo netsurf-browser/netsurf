@@ -1163,6 +1163,9 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 #ifdef WITH_WEBP
 			content_get_type(box->object) == CONTENT_WEBP ||
 #endif
+#ifdef WITH_AMIGA_ICON
+			content_get_type(box->object) == CONTENT_AMIGA_ICON ||
+#endif
 #if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
 			content_get_type(box->object) == CONTENT_SPRITE ||
 #endif

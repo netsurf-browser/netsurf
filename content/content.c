@@ -80,6 +80,9 @@
 #ifdef WITH_WEBP
 #include "image/webp.h"
 #endif
+#ifdef WITH_AMIGA_ICON
+#include "amiga/icon.h"
+#endif
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -158,6 +161,9 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_WEBP
 	{"image/webp", CONTENT_WEBP},
+#endif
+#ifdef WITH_AMIGA_ICON
+	{"image/x-amiga-icon", CONTENT_AMIGA_ICON},
 #endif
 #ifdef WITH_ARTWORKS
 	{"image/x-artworks", CONTENT_ARTWORKS},
@@ -239,6 +245,9 @@ const char * const content_type_name[] = {
 #endif
 #ifdef WITH_WEBP
 	"WEBP",
+#endif
+#ifdef WITH_AMIGA_ICON
+	"AMIGA_ICON",
 #endif
 	"OTHER",
 	"UNKNOWN"
@@ -373,6 +382,11 @@ static const struct handler_entry handler_map[] = {
 	{0, 0, webp_convert,
 		0, webp_destroy, 0, 0, 0, webp_redraw, 0, 
 		0, 0, webp_clone, false},
+#endif
+#ifdef WITH_WEBP
+	{0, 0, amiga_icon_convert,
+		0, amiga_icon_destroy, 0, 0, 0, amiga_icon_redraw, 0, 
+		0, 0, amiga_icon_clone, false},
 #endif
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };
