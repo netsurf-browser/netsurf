@@ -37,8 +37,6 @@ theme_closetab_g:closetab_g.png
 theme_addtab:
 theme_addtab_s:
 theme_addtab_g:
-theme_list_folder:directory.png
-theme_list_content:content.png
 theme_throbber:Throbber
 theme_throbber_frames:9
 theme_throbber_delay:100

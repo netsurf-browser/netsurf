@@ -24,8 +24,6 @@ theme_closetab_g:*TBImages:list_cancel
 theme_addtab:*TBImages:list_add
 theme_addtab_s:*TBImages:list_add
 theme_addtab_g:*TBImages:list_add
-theme_list_folder:*TBImages:list_drawer
-theme_list_content:*TBImages:list_abstract
 theme_throbber:Throbber
 theme_throbber_frames:13
 theme_throbber_delay:100
