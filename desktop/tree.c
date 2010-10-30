@@ -2165,7 +2165,8 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 			tree_handle_node_element_changed(tree, &node->data);
 		}
 
-		tree->drag = TREE_MOVE_DRAG;
+		if (tree->flags & TREE_MOVABLE)
+			tree->drag = TREE_MOVE_DRAG;
 
 		return true;
 	}
