@@ -267,6 +267,13 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 
 void ami_tree_drag_icon_show(struct treeview_window *twin)
 {
+	if((tree_drag_status(twin->tree) == TREE_NO_DRAG) ||
+		(tree_drag_status(twin->tree) == TREE_SELECT_DRAG))
+		return;
+
+	if((twin->type == AMI_TREE_COOKIES) ||
+		(twin->type == AMI_TREE_SSLCERT)) return; /* No permissable drag operations */
+
 	if(tree_node_is_folder(
 		tree_get_selected_node(
 			tree_get_root(twin->tree))))
@@ -276,6 +283,41 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	else
 	{
 		ami_drag_icon_show(twin->win, "html");
+	}
+}
+
+void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
+{
+	struct gui_window_2 *gwin;
+	struct node *selected_node;
+	BOOL drag;
+
+	if(drag = ami_drag_in_progress()) ami_drag_icon_close(twin->win);
+
+	if(drag && (gwin = ami_window_at_pointer()))
+	{
+		selected_node = tree_get_selected_node(tree_get_root(twin->tree));
+
+		if(tree_node_is_folder(selected_node))
+		{
+			DisplayBeep(scrn);
+		}
+		else
+		{
+			browser_window_go(gwin->bw, tree_url_node_get_url(selected_node),
+				NULL, true);
+		}
+		tree_drag_end(twin->tree, twin->mouse_state,
+			twin->drag_x, twin->drag_y,
+			twin->drag_x, twin->drag_y); /* Keep the tree happy */
+	}
+	else
+	{
+		if(tree_drag_status(twin->tree) == TREE_UNKNOWN_DRAG)
+			DisplayBeep(scrn);
+
+		tree_drag_end(twin->tree, twin->mouse_state,
+			twin->drag_x, twin->drag_y, x, y);
 	}
 }
 
@@ -729,8 +771,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											BROWSER_MOUSE_DRAG_ON;
 						if(twin->drag_x == 0) twin->drag_x = x;
 						if(twin->drag_y == 0) twin->drag_y = y;
-						if(tree_drag_status(twin->tree) == TREE_MOVE_DRAG)
-							ami_tree_drag_icon_show(twin);
+						ami_tree_drag_icon_show(twin);
 					}
 					else if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
 					{
@@ -740,8 +781,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											BROWSER_MOUSE_DRAG_ON;
 						if(twin->drag_x == 0) twin->drag_x = x;
 						if(twin->drag_y == 0) twin->drag_y = y;
-						if(tree_drag_status(twin->tree) == TREE_MOVE_DRAG)
-							ami_tree_drag_icon_show(twin);
+						ami_tree_drag_icon_show(twin);
 					}
 					else
 					{
@@ -813,12 +853,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 								twin->lastclick.tv_usec = curtime.tv_usec;
 							}
 						}
-						else
-						{
-							ami_drag_icon_close(twin->win);
-							tree_drag_end(twin->tree, twin->mouse_state,
-								twin->drag_x, twin->drag_y, x, y);
-						}
+						else ami_tree_drag_end(twin, x, y);
+
 						twin->mouse_state=0;
 						twin->drag_x = 0;
 						twin->drag_y = 0;
@@ -829,12 +865,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							tree_mouse_action(twin->tree,
 								BROWSER_MOUSE_CLICK_2 | twin->key_state, x, y);
 						}
-						else
-						{
-							ami_drag_icon_close(twin->win);
-							tree_drag_end(twin->tree, twin->mouse_state,
-								twin->drag_x, twin->drag_y, x, y);
-						}
+						else ami_tree_drag_end(twin, x, y);
+
 						twin->mouse_state=0;
 						twin->drag_x = 0;
 						twin->drag_y = 0;

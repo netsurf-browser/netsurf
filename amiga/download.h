@@ -52,6 +52,7 @@ void ami_drag_save(struct Window *win);
 void ami_drag_icon_show(struct Window *win, char *type);
 void ami_drag_icon_close(struct Window *win);
 void ami_drag_icon_move(void);
+BOOL ami_drag_in_progress(void);
 void ami_free_download_list(struct List *dllist);
 void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type);
 

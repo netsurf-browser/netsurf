@@ -59,6 +59,7 @@
 struct Window *drag_icon = NULL;
 ULONG drag_icon_width;
 ULONG drag_icon_height;
+BOOL drag_in_progress = FALSE;
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
@@ -381,7 +382,7 @@ void ami_drag_save(struct Window *win)
 	char *source_data;
 	ULONG source_size;
 
-	if(drag_icon) ami_drag_icon_close(NULL);
+	ami_drag_icon_close(NULL);
 	ami_autoscroll = FALSE;
 
 	if(strcmp(option_use_pubscreen,"Workbench") == 0)
@@ -502,6 +503,8 @@ void ami_drag_icon_show(struct Window *win, char *type)
 	int err = 0;
 	int deftype = WBPROJECT;
 
+	drag_in_progress = TRUE;
+
 	if(option_drag_save_icons == false)
 	{
 		ami_update_pointer(win, AMI_GUI_POINTER_DRAG);
@@ -567,6 +570,12 @@ void ami_drag_icon_close(struct Window *win)
 	if(drag_icon) CloseWindow(drag_icon);
 	if(win) ami_update_pointer(win, GUI_POINTER_DEFAULT);
 	drag_icon = NULL;
+	drag_in_progress = FALSE;
+}
+
+BOOL ami_drag_in_progress(void)
+{
+	return drag_in_progress;
 }
 
 void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type)
