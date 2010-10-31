@@ -6,20 +6,21 @@
 @{b}NetSurf@{ub} Amiga-specific documentation
 http://www.netsurf-browser.org
 
-@{"Change Log          " link ChangeLog/Main}
+@{" Change Log           " link ChangeLog/Main}
 
-@{"Licence             " link COPYING/Main}
-@{"Command line options" link CLI}
-@{"Options file        " link Options}
-@{"Fonts               " link Fonts}
-@{"ARexx port          " link ARexx}
-@{"OpenURL/URL Prefs   " link OpenURL}
-@{"Hotlist menu        " link Hotlist}
-@{"Local MIME types    " link MIMETypes}
+@{" Licence              " link COPYING/Main}
+@{" Command line options " link CLI}
+@{" Options file         " link Options}
+@{" Fonts                " link Fonts}
+@{" ARexx port           " link ARexx}
+@{" OpenURL/URL Prefs    " link OpenURL}
+@{" Hotlist menu         " link Hotlist}
+@{" Local MIME types     " link MIMETypes}
+@{" Keyboard controls    " link Keyboard}
 
-@{"Optimising for speed" link Speed}
+@{" Optimising for speed " link Speed}
 
-@{"Credits             " link Contact}
+@{" Credits              " link Contact}
 @endnode
 
 @node cli "Command line options"
@@ -75,7 +76,8 @@ AISS - theme using Mason's AISS images for buttons, and the def_pointers package
 
 The file "Theme" in the theme directory contains the files used for that theme.  See @{"Default Theme file" link Resources/Themes/Default/Theme/Main} for more details.
 
-Theme directories should be copied and renamed if themes are modified, as update installation of NetSurf will overwrite any changes.  AmigaOS NetSurf themes are not compatible with NetSurf for other platforms.
+Theme directories should be copied and renamed if themes are modified, as update installation of NetSurf will overwrite any changes.
+AmigaOS NetSurf themes are not compatible with NetSurf for other platforms.
 @endnode
 
 @node arexx "ARexx port"
@@ -204,6 +206,32 @@ The Installer script will set the MIMETYPE tooltype on basic relevant default fi
 * If the file does not have an icon, check:
 1. The file type is showing in DefIcons Prefs editor
 2. The icon ENVARC:Sys/def_<filetype> contains the MIMETYPE tooltype.
+@endnode
+
+@node Keyboard Controls "Keyboard"
+This is a list of keyboard shortcuts used on NetSurf
+
+- RAmiga-R or F5           (reload the current page)
+- PageUp/Down or Home/End  (scroll the page)
+- RAmiga-U                 (activate the URL bar)
+- Alt+Left/Right           (keyboard navigation of tabs)
+
+Keyboard shortcuts used on NetSurf GUI
+
+- RAmiga-T (open a new tab)
+- RAmiga-O (open a local file)
+- RAmiga-P (print a page)
+- RAmiga-? (about NetSurf)
+- RAmiga-Q (quit NetSurf)
+- RAmiga-X (cut)
+- RAmiga-C (copy)
+- RAmiga-V (paste)
+- RAmiga-Z (clear selection)
+- RAmiga-F (find a string/text)
+- RAmiga-- (decrease font)
+- RAmiga-= (normal font)
+- RAmiga-+ (increase font)
+
 @endnode
 
 @node Speed "Optimising for speed"
