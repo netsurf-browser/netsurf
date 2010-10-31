@@ -383,7 +383,7 @@ static const struct handler_entry handler_map[] = {
 		0, webp_destroy, 0, 0, 0, webp_redraw, 0, 
 		0, 0, webp_clone, false},
 #endif
-#ifdef WITH_WEBP
+#ifdef WITH_AMIGA_ICON
 	{0, 0, amiga_icon_convert,
 		0, amiga_icon_destroy, 0, 0, 0, amiga_icon_redraw, 0, 
 		0, 0, amiga_icon_clone, false},
