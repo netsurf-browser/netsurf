@@ -45,5 +45,4 @@ struct gui_download_window {
 void ami_download_window_abort(struct gui_download_window *dw);
 BOOL ami_download_window_event(struct gui_download_window *dw);
 void ami_free_download_list(struct List *dllist);
-void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type);
 #endif

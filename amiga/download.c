@@ -27,10 +27,10 @@
 #include <proto/icon.h>
 #include <proto/application.h>
 
-#include <graphics/blitattr.h>
 #include <workbench/icon.h>
 
 #include "amiga/download.h"
+#include "amiga/icon.h"
 #include "amiga/object.h"
 #include "amiga/options.h"
 #include "amiga/bitmap.h"
@@ -324,85 +324,4 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 		FreeVec(linkname);
 		ami_update_pointer(g->shared->win,GUI_POINTER_DEFAULT);
 	}
-}
-
-void ami_superimpose_favicon(STRPTR path, struct hlcache_handle *icon, STRPTR type)
-{
-	struct DiskObject *dobj = NULL;
-	struct BitMap *bm = NULL;
-	ULONG *icondata1, *icondata2;
-	ULONG width, height;
-	long format = 0;
-	int err = 0;
-
-	if(!type)
-	{
-		dobj = GetIconTags(NULL,
-						ICONGETA_GetDefaultType, WBDRAWER,
-					    TAG_DONE);
-	}
-	else
-	{
-		dobj = GetIconTags(NULL, ICONGETA_GetDefaultName, type,
-					    ICONGETA_GetDefaultType, WBPROJECT,
-					    TAG_DONE);
-	}
-
-	err = IconControl(dobj,
-                  ICONCTRLA_GetImageDataFormat,&format,
-                  ICONCTRLA_GetImageData1,&icondata1,
-                  ICONCTRLA_GetImageData2,&icondata2,
-                  ICONCTRLA_GetWidth,&width,
-                  ICONCTRLA_GetHeight,&height,
-                  TAG_DONE);
-
-	/* Check icon is direct mapped (truecolour).
-	 * Quite a bit more code is needed for palette mapped and planar icons,
-	 * and OS4 default icons should all be truecolour anyway. */
-	if(format == IDFMT_DIRECTMAPPED)
-	{
-		if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
-		{
-			nsico_set_bitmap_from_size(icon, 16, 16);
-		}
-
-		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
-		{
-			bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16, NULL);
-		}
-
-		if(bm)
-		{
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, width - 16,
-						BLITA_DestY, height - 16,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, icondata1,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_ARGB32,
-						BLITA_DestBytesPerRow, width * 4,
-						BLITA_UseSrcAlpha, TRUE,
-						TAG_DONE);
-
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, width - 16,
-						BLITA_DestY, height - 16,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, icondata2,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_ARGB32,
-						BLITA_DestBytesPerRow, width * 4,
-						BLITA_UseSrcAlpha, TRUE,
-						TAG_DONE);
-		}
-	}
-
-	PutIconTags(path, dobj,
-			ICONPUTA_NotifyWorkbench, TRUE, TAG_DONE);
 }

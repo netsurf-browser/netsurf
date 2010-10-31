@@ -110,6 +110,7 @@ char *path_to_url(const char *path)
 		DevNameFromLock(lock, newpath, sizeof newpath, DN_FULLPATH);
 		UnLock(lock);
 	}
+	else strncpy(newpath, path, sizeof newpath);
 
 	r = malloc(strlen(newpath) + SLEN("file:///") + 1);
 

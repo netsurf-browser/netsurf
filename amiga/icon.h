@@ -27,8 +27,7 @@
 #ifdef WITH_AMIGA_ICON
 
 #include <stdbool.h>
-
-struct content;
+#include "content/hlcache.h"
 
 struct content_amiga_icon_data {
 /* empty */
@@ -44,4 +43,5 @@ bool amiga_icon_clone(const struct content *old, struct content *new_content);
 
 #endif /* WITH_AMIGA_ICON */
 
+void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type);
 #endif
