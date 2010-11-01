@@ -1,6 +1,6 @@
 # Italian messages for NetSurf 2.6/3.0 Development (Revision 10868)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 27.10.2010
+# 31.10.2010
 # =========================================================================
 #
 # Description
@@ -768,7 +768,7 @@ ProgressU:%s
 Loading:Apertura della pagina in corso...
 RecPercent:Ricevuti %s (%u%%)
 Received:Ricevuti %s
-Converting:Conversione %lu byte
+Converting:Conversione di %lu byte
 Complete:Pagina completata (%gs)
 Redirecting:Redirezione in corso...
 Processing:Elaborazione del documento in corso...
@@ -1028,14 +1028,14 @@ HelpBrowserMenu6-4:\Savvia la guida in linea
 HelpBrowser-1:Clicca \s sul link per procedere.|MClicca \a in un link per aprirlo in una nuova \w.|MShift+\s clicca sul link per scaricarne i contenuti.|MShift+\a clicca per salvare l'indirizzo del link.
 
 HelpIconbar:\TIcona di NetSurf.|M\Sapri una nuova finestra \w.|M\Aapri il gestore dei segnalibri \w.
-HelpHistory:Usa questo \w per navigare all'interno dell'albero della cronologia locale.|M\Ssulla miniatura per tornare a quella pagina.
+HelpHistory:Usa questa \w per navigare all'interno dell'albero della cronologia locale.|M\Ssulla miniatura per tornare a quella pagina.
 
 HelpPrint:Usa questa funzione \w per stampare la pagina.
 
-HelpSaveAs0:Drag SELECT this icon to the directory in which you want to save the file.
-HelpSaveAs1:This is the filename under which this document will be saved.
-HelpSaveAs2:\Ssave the file with the current filename.|MIf a full path is not set, you must drag the icon to a directory.
-HelpSaveAs3:\Sclose this \w without saving.
+HelpSaveAs0:SELEZIONA e sposta questa icona nella directory nella quale si desidera salvare il file.
+HelpSaveAs1:Questo è il nome del file con il quale il documento verrà salvato.
+HelpSaveAs2:\Ssalva il file usando il suo nome corrente.|MNel caso il percorso completo non sia impostato sposta l'icona nella directory.
+HelpSaveAs3:\Schiudi questa \w senza salvare.
 
 HelpScaleView:Use this \w to change the scale the page is displayed at.
 HelpScaleView1:Enter the scale you wish the page to be displayed at.
@@ -1366,7 +1366,7 @@ CacheNative:Versioni cache native
 ScaleQuality:Massima qualità di visualizzazione
 Animations:Animazioni
 AnimSpeedLimit:Limita velocità a
-AnimSpeedFrames:secondi tra frame
+AnimSpeedFrames:fotogrammi al secondo
 AnimDisable:Disattiva animazioni
 
 None:Nessuna
