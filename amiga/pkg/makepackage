@@ -21,6 +21,5 @@ copy amiga/pkg/fitr ram:NetSurf/
 makedir ram:NetSurf/Rexx
 copy amiga/dist/Rexx/~(.svn) ram:NetSurf/Rexx/ COM
 makedir ram:NetSurf/SObjs
-copy sobjs:libjpeg.so.8 sobjs:libhubbub.so.0 sobjs:libhpdf-2.2.0.so.0.0 sobjs:libmng.so.1 sobjs:liblcms.so sobjs:libxml2.so sobjs:libparserutils.so.0 sobjs:libnsgif.so.0 sobjs:libnsbmp.so.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libcurl.so sobjs:libsvgtiny.so.0 sobjs:libz.so.1.2.5 sobjs:libiconv.so sobjs:libvpx.so.0.9.2 ram:NetSurf/SObjs clone
-;sobjs:libssl-0.9.8.so sobjs:libexpat.so sobjs:libpng14.so.14
-;sobjs:libgcc.so sobjs:libc.so sobjs:libpthread.so
+copy sobjs:libjpeg.so.8 sobjs:libhubbub.so.0 sobjs:libmng.so.1 sobjs:liblcms.so sobjs:libxml2.so sobjs:libparserutils.so.0 sobjs:libnsgif.so.0 sobjs:libnsbmp.so.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libcurl.so sobjs:libsvgtiny.so.0 sobjs:libz.so.1.2.5 sobjs:libiconv.so ram:NetSurf/SObjs clone
+;sobjs:libhpdf-2.2.0.so.0.0 
