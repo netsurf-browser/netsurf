@@ -1743,7 +1743,7 @@ void html_reformat(struct content *c, int width, int height)
 /**
  * Redraw a box.
  *
- * \param  c	content containing the box, of type CONTENT_HTML
+ * \param  h	content containing the box, of type CONTENT_HTML
  * \param  box  box to redraw
  */
 
