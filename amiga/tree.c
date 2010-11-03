@@ -279,7 +279,7 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 	{
 		selected_node = tree_get_selected_node(tree_get_root(twin->tree));
 
-		if(tree_node_is_folder(selected_node))
+		if((selected_node == NULL) || (tree_node_is_folder(selected_node)))
 		{
 			DisplayBeep(scrn);
 		}
