@@ -49,6 +49,7 @@
 #include "desktop/cookies.h"
 #include "desktop/history_global_core.h"
 #include "desktop/hotlist.h"
+#include "desktop/tree_url_node.h"
 #include "amiga/sslcert.h"
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
@@ -235,6 +236,11 @@ void ami_tree_scroll(struct treeview_window *twin, int sx, int sy)
 
 void ami_tree_drag_icon_show(struct treeview_window *twin)
 {
+	const char *type = "project";
+	const char *url;
+	struct url_data *data;
+	struct node *node = NULL;
+
 	if((tree_drag_status(twin->tree) == TREE_NO_DRAG) ||
 		(tree_drag_status(twin->tree) == TREE_SELECT_DRAG))
 		return;
@@ -242,15 +248,22 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	if((twin->type == AMI_TREE_COOKIES) ||
 		(twin->type == AMI_TREE_SSLCERT)) return; /* No permissable drag operations */
 
-	if(tree_node_is_folder(
-		tree_get_selected_node(
-			tree_get_root(twin->tree))))
+	node = tree_get_selected_node(tree_get_root(twin->tree));
+
+	if(node && tree_node_is_folder(node))
 	{
 		ami_drag_icon_show(twin->win, "drawer");
 	}
 	else
 	{
-		ami_drag_icon_show(twin->win, "html");
+		if(node && (url = tree_url_node_get_url(node)))
+		{
+			if(data = urldb_get_url_data(url))
+			{
+				type = ami_content_type_to_file_type(data->type);
+			}
+		}
+		ami_drag_icon_show(twin->win, type);
 	}
 }
 
