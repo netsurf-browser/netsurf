@@ -108,7 +108,8 @@ struct browser_window {
 	unsigned int drag_resize_up : 1;
 	unsigned int drag_resize_down : 1;
 
-	/** Scroll capturing all mouse events */
+	/** Scroll capturing all mouse events, updated to any active HTML
+	 *  scrollbar, or NULL when no scrollbar drags active */
 	struct scroll *scroll;
 
 	/** Current fetch is download */
