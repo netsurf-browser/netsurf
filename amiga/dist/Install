@@ -449,7 +449,7 @@
 		(p_linksobj "libz.so.1.2.5" "libz.so")
 		(p_linksobj "libz.so.1.2.5" "libz.so.1")
 		(p_linksobj "libz.so.1.2.5" "libz.so.1.2")
-;		(p_linksobj "libvpx.so.0.9.5" "libvpx.so.0")
+		(p_linksobj "libvpx.so.0.9.5" "libvpx.so.0")
 ;		(p_linksobj "libpng14.so.14" "libpng.so")
 	)
 )
