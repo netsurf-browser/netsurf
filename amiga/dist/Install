@@ -441,7 +441,7 @@
 		(foreach "SObjs" "#?"
 			(complete #complete)
 			(p_copysobj @each-name)
-			(set #complete (+ #complete 3))
+			(set #complete (+ #complete 2))
 		)
 
 		(working "Creating Shared Objects Links")
