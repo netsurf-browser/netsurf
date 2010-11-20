@@ -113,7 +113,7 @@ static fbtk_widget_t *osk;
 static int
 osk_close(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	fbtk_set_mapping(osk, false);

@@ -771,7 +771,7 @@ fb_leftarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_window *bw = gw->bw;
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	if (history_back_available(bw->history))
@@ -789,7 +789,7 @@ fb_rightarrow_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_window *bw = gw->bw;
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	if (history_forward_available(bw->history))
@@ -806,7 +806,7 @@ fb_reload_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct browser_window *bw = cbi->context;
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	browser_window_reload(bw, true);
@@ -819,7 +819,7 @@ fb_stop_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct browser_window *bw = cbi->context;
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	browser_window_stop(bw);
@@ -830,7 +830,7 @@ static int
 fb_osk_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	map_osk();
@@ -842,7 +842,7 @@ fb_osk_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 static int
 fb_close_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	netsurf_quit = true;
@@ -896,7 +896,7 @@ fb_localhistory_btn_clik(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_window *gw = cbi->context;
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	fb_localhistory_map(gw->localhistory);

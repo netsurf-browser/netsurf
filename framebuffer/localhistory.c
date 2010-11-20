@@ -88,7 +88,7 @@ localhistory_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_localhistory *glh = cbi->context;
 
-	if (cbi->event->type != NSFB_EVENT_KEY_DOWN)
+	if (cbi->event->type != NSFB_EVENT_KEY_UP)
 		return 0;
 
 	history_click(glh->bw, glh->bw->history, cbi->x, cbi->y, false);
