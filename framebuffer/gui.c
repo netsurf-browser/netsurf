@@ -1245,6 +1245,8 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 	/* browser widget */
 	create_browser_widget(gw, toolbar_height, option_fb_furniture_size);
 
+	/* Give browser_window's user widget input focus */
+	fbtk_set_focus(gw->browser);
 }
 
 

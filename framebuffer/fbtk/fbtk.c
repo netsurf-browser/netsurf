@@ -685,6 +685,18 @@ fbtk_post_callback(fbtk_widget_t *widget, fbtk_callback_type cbt, ...)
 	return ret;
 }
 
+/* exported function docuemnted in fbtk.h */
+void
+fbtk_set_focus(fbtk_widget_t *widget)
+{
+	fbtk_widget_t *root;
+
+	/* ensure we have the root widget */
+	root = fbtk_get_root_widget(widget);
+
+	root->u.root.input = widget;
+}
+
 
 
 /* exported function docuemnted in fbtk.h */

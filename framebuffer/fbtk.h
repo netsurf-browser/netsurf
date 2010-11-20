@@ -400,6 +400,13 @@ void fbtk_writable_text(fbtk_widget_t *widget, fbtk_enter_t enter, void *pw);
 void fbtk_set_text(fbtk_widget_t *widget, const char *text);
 
 
+/** Give widget input focus.
+ *
+ * @param widget Widget to be given input focus.
+ */
+void fbtk_set_focus(fbtk_widget_t *widget);
+
+
 
 
 /** enable the on screen keyboard for input */

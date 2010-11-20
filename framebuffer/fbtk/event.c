@@ -52,8 +52,10 @@ fbtk_input(fbtk_widget_t *root, nsfb_event_t *event)
 
 	/* obtain widget with input focus */
 	input = root->u.root.input;
-	if (input == NULL)
+	if (input == NULL) {
+		LOG(("No widget has input focus."));
 		return; /* no widget with input */
+	}
 
 	fbtk_post_callback(input, FBTK_CBT_INPUT, event);
 }
