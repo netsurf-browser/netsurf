@@ -111,6 +111,7 @@
 	(if (= #same 0) ;if #sobj is newer than that pointed to by #sobj_link
 		(
 			(if (exists (#sobj2))
+				(transcript "Deleting " #sobj2)
 				(delete #sobj2 (optional "force")) ;prevent dodgy recursive links
 			)
 			(set #linkcmd (cat "makelink " #sobj2 " SObjs:" #sobj " soft"))
@@ -344,9 +345,11 @@
 		)
 
 		(select #themename
-			(set #theme "PROGDIR:Resources/Themes/Default")
-			(set #theme "PROGDIR:Resources/Themes/AISS")
+			(set #themeshort "Default")
+			(set #themeshort "AISS")
 		)
+
+		(set #theme (tackon "PROGDIR:Resources/Themes/" #themeshort))
 	)
 )
 
@@ -458,7 +461,13 @@
 
 (if #theme
 	(
-		(set #theme-icon (tackon @default-dest (tackon #theme "NetSurf.info")))
+		(set #theme-icon
+			(tackon @default-dest
+				(tackon "Resources"
+					(tackon #themeshort "NetSurf.info")
+				)
+			)
+		)
 		(set #icon-exists (exists #theme-icon))
 
 		(if #icon-exists
