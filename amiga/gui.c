@@ -2047,23 +2047,13 @@ void gui_quit(void)
 
 	ami_close_fonts();
 
-	if(!locked_screen) /* set if we are using somebody else's screen */
-	{
-		while(!CloseScreen(scrn));
-	}
-	else
-	{
-	/* have a go at closing the public screen, apparently this is OK to do */
-		CloseScreen(scrn);
-	}
+	/* Have a go at closing the public screen, apparently this is OK to do
+	 even if it isn't our screen (ie. locked_screen != NULL) */
+	CloseScreen(scrn);
 
 	FreeVec(nsscreentitle);
 
 	if(option_context_menu) ami_context_menu_free();
-
-/* fixme: need newmenu struct propd to this function - should this be freed here?
-	ami_free_menulabs(menu);
-*/
 
 	ami_mouse_pointers_free();
 	ami_clipboard_free();
