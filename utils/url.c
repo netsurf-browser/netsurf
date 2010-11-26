@@ -77,39 +77,29 @@ void url_init(void)
 
 
 /**
- * Check whether a host is an IP address
+ * Check whether a host string is an IPv4 dotted quad address of the
+ * format XXX.XXX.XXX.XXX
  *
- * \param  host    a hostname terminated by '\0' or '/'
+ * @todo This *should* be implemented with inet_pton but that requires
+ * implementing compatability glue for several operating systems.
+ *
+ * \param  host a hostname terminated by '\0' or '/'
  * \return true if the hostname is an IP address, false otherwise
  */
 bool url_host_is_ip_address(const char *host) {
-  	int b;
-  	bool n;
+	unsigned int b1, b2, b3, b4;
+	unsigned char c;
 
-	assert(host);
+	if (strspn(host, "0123456789.") < strlen(host)) 
+		return false;
 
-	/* an IP address is of the format XXX.XXX.XXX.XXX, ie totally
-	 * numeric with 3 full stops between the numbers */
-	b = 0; // number of breaks
-	n = false; // number present
-	do {
-		if (*host == '.') {
-		  	if (!n)
-		  		return false;
-			b++;
-			n = false;
-		} else if ((*host == '\0') || (*host == '/')) {
-		  	if (!n)
-		  		return false;
-		  	/* todo: check the values are in 0-255 range */
-		  	return (b == 3);
-		} else if (*host < '0' || *host > '9') {
-		  	return false;
-                } else {
-                	n = true;
-                }
-                host++;
-        } while (1);
+	if (sscanf(host, "%3u.%3u.%3u.%3u%c", &b1, &b2, &b3, &b4, &c) != 4)
+		return false;
+
+	if ((b1 > 255) || (b2 > 255) || (b3 > 255) || (b4 > 255))
+		return false;
+
+	return true;
 }
 
 /**
