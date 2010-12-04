@@ -42,8 +42,6 @@
 
 extern "C" {
 
-#include <hubbub/hubbub.h>
-
 #include "content/content.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
@@ -630,13 +628,6 @@ void gui_init(int argc, char** argv)
 #endif
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
-	find_resource(buf, "Aliases", "./beos/res/Aliases");
-	LOG(("Using '%s' as aliases file", buf));
-	if(hubbub_initialise(buf,myrealloc,NULL) != HUBBUB_OK)
-	{
-		die(messages_get("NoMemory"));
-	}
-
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
@@ -773,7 +764,6 @@ void gui_quit(void)
 	CALLED();
 	urldb_save_cookies(option_cookie_jar);
 	urldb_save(option_url_file);
-	hubbub_finalise(myrealloc,NULL);
 	//options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
 
 	free(default_stylesheet_url);

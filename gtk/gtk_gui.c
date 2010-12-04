@@ -37,7 +37,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
-#include <hubbub/hubbub.h>
 #include <glib.h>
 #include <glib/gi18n.h>
 
@@ -432,15 +431,6 @@ static void gui_init(int argc, char** argv, char **respath)
 	/* check user options */
 	check_options(respath);
 
-	/* Character encoding mapping file *must* be available */
-	resource_filename = findresource(respath, "Aliases");
-	if (resource_filename == NULL) 
-		die("Unable to locate file for character encoding mapping\n");
-	LOG(("Using '%s' as Aliases file", resource_filename));
-	if (hubbub_initialise(resource_filename, ns_realloc, NULL) != HUBBUB_OK)
-		die("Unable to initialise HTML parsing library.\n");
-	free(resource_filename);
-
 	/* Obtain resources path location. 
 	 *
 	 * Uses the directory the languages file was found in,
@@ -686,8 +676,6 @@ void gui_quit(void)
 	free(search_default_ico_location);
 	free(toolbar_indices_file_location);
 	gtk_fetch_filetype_fin();
-	/* We don't care if this fails as we're about to die, anyway */
-	hubbub_finalise(ns_realloc, NULL);
 }
 
 

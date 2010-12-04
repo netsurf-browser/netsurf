@@ -33,7 +33,6 @@
 #include <features.h>
 #include <unixlib/local.h>
 #include <curl/curl.h>
-#include <hubbub/hubbub.h>
 #include "oslib/font.h"
 #include "oslib/help.h"
 #include "oslib/hourglass.h"
@@ -316,10 +315,6 @@ static void gui_init(int argc, char** argv)
 #endif
 			ro_plot_patterned_lines = false;
 	}
-
-	if (hubbub_initialise("NetSurf:Resources.Aliases", ns_realloc, NULL) !=
-			HUBBUB_OK)
-		die("Failed to initialise HTML parsing library.");
 
 	/* Set defaults for absent option strings */
 	if (!option_theme)
@@ -812,8 +807,6 @@ void gui_quit(void)
  	free(default_stylesheet_url);
 	free(quirks_stylesheet_url);
 	free(adblock_stylesheet_url);
-	/* We don't care if this fails */
-	hubbub_finalise(ns_realloc, NULL);
 	xhourglass_off();
 }
 

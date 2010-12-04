@@ -27,8 +27,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <hubbub/hubbub.h>
-
 #include <libnsfb.h>
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
@@ -445,11 +443,6 @@ gui_init(int argc, char** argv)
 	char buf[PATH_MAX];
 	nsfb_t *nsfb;
 
-	fb_find_resource(buf, "Aliases", "./framebuffer/res/Aliases");
-	LOG(("Using '%s' as Aliases file", buf));
-	if (hubbub_initialise(buf, ns_realloc, NULL) != HUBBUB_OK)
-		die("Unable to initialise HTML parsing library.\n");
-
 	option_core_select_menu = true;
 
 	/* set up stylesheet urls */
@@ -572,9 +565,6 @@ gui_quit(void)
 	urldb_save_cookies(option_cookie_jar);
 
 	framebuffer_finalise();
-
-	/* We don't care if this fails as we're about to exit, anyway */
-	hubbub_finalise(ns_realloc, NULL);
 }
 
 /* called back when click in browser window */

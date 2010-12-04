@@ -119,9 +119,6 @@
 #include <math.h>
 #include <string.h>
 
-/* C link libraries */
-#include <hubbub/hubbub.h>
-
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -440,11 +437,6 @@ void gui_init(int argc, char** argv)
 	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
 	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
-
-	if(hubbub_initialise("PROGDIR:Resources/Aliases", ns_realloc, NULL) != HUBBUB_OK)
-	{
-		die(messages_get("NoMemory"));
-	}
 
 	nscss_screen_dpi = INTTOFIX(72);
 	scroll_widget_fg_colour = 0x00aaaaaa;
@@ -2034,8 +2026,6 @@ void gui_quit(void)
 	ami_cookies_free();
 	ami_global_history_free();
 	sslcert_cleanup();
-
-	hubbub_finalise(ns_realloc,NULL);
 
 	if(IApplication && ami_appid)
 		UnregisterApplication(ami_appid, NULL);

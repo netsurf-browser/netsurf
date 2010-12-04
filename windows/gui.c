@@ -30,8 +30,6 @@
 #define _WIN32_IE (0x0501)
 #include <commctrl.h>
 
-#include <hubbub/hubbub.h>
-
 #include "content/urldb.h"
 #include "content/fetch.h"
 #include "css/utils.h"
@@ -2518,27 +2516,16 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 void gui_quit(void)
 {
 	LOG(("gui_quit"));
-
-	hubbub_finalise(ns_realloc, NULL);
 }
 
 static void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX], sbuf[PATH_MAX];
 	int len;
-	hubbub_error he;
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
 
 	LOG(("argc %d, argv %p", argc, argv));
-
-	nsws_find_resource(buf, "Aliases", "./windows/res/Aliases");
-	LOG(("Using '%s' as Aliases file", buf));
-
-	he = hubbub_initialise(buf, ns_realloc, NULL);
-	LOG(("hubbub init %d", he));
-	if (he != HUBBUB_OK)
-		die("Unable to initialise HTML parsing library.\n");
 
 	/* set up stylesheet urls */
 	getcwd(sbuf, PATH_MAX);

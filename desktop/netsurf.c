@@ -49,16 +49,6 @@
 bool netsurf_quit = false;
 bool verbose_log = false;
 
-static void *netsurf_lwc_alloc(void *ptr, size_t len, void *pw)
-{
-	if (len == 0) {
-		free(ptr);
-		return NULL;
-	}
-
-	return realloc(ptr, len);
-}
-
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
 	LOG(("%.*s", (int) lwc_string_length(str), lwc_string_data(str)));
@@ -152,8 +142,6 @@ nserror netsurf_init(int *pargc,
 	options_read(options);
 
 	messages_load(messages);
-
-	lwc_initialise(netsurf_lwc_alloc, NULL, 0);
 
 	url_init();
 
