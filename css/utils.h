@@ -28,14 +28,16 @@ extern css_fixed nscss_screen_dpi;
 /**
  * Convert a CSS color to a NetSurf colour primitive
  * 
+ * ARGB -> (1-A)BGR
+ *
  * \param color  The CSS color to convert
  * \return Corresponding NetSurf colour primitive
  */
 #define nscss_color_to_ns(color) \
-		(((color) & 0xff000000) >> 24) | \
-		(((color) & 0xff0000) >> 8) | \
-		(((color) & 0xff00) << 8) | \
-		(((color) & 0xff) << 24)
+		(0xff000000 - ((color) & 0xff000000)) | \
+		(((color) & 0xff0000) >> 16) | \
+		((color) & 0xff00) | \
+		(((color) & 0xff) << 16)
 
 css_fixed nscss_len2pt(css_fixed length, css_unit unit);
 css_fixed nscss_len2px(css_fixed length, css_unit unit, 
