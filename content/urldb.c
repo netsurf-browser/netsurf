@@ -791,12 +791,13 @@ bool urldb_add_url(const char *url)
 		host++;
 
 	/* get port and remove from host */
-	colon = strrchr(host, ':');
-	if (!colon) {
-		port = 0;
-	} else {
-		*colon = '\0';
-		port = atoi(colon + 1);
+	port = 0;
+	if (host[strlen(host)] != ']') {
+		colon = strrchr(host, ':');
+		if (colon) {
+			*colon = '\0';
+			port = atoi(colon + 1);
+		}
 	}
 
 	/* Get host entry */
