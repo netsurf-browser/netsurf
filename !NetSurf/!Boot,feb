@@ -14,7 +14,7 @@
 | variable, which is set by the !Run file prior to calling this file.
 
 | Set up NetSurf$Dir
-Set NetSurf$Dir <Obey$Dir>
+If (("<NetSurf$Dir>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Dir <Obey$Dir>
 
 | Filetype -> Type name mappings
 |
@@ -36,11 +36,11 @@ Set File$Type_FAF HTML
 | Application system variables
 |
 | See http://www.iyonix.com/32bit/help.shtml for more details.
-Set NetSurf$Help <NetSurf$Dir>.Docs.docs_en
-Set NetSurf$Web "http://www.netsurf-browser.org/"
-Set NetSurf$Title "NetSurf"
-Set NetSurf$Publisher "The NetSurf Developers"
-Set NetSurf$Description "Web browser"
+If (("<NetSurf$Help>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Help <NetSurf$Dir>.Docs.docs_en
+If (("<NetSurf$Web>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Web "http://www.netsurf-browser.org/"
+If (("<NetSurf$Title>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Title "NetSurf"
+If (("<NetSurf$Publisher>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Publisher "The NetSurf Developers"
+If (("<NetSurf$Description>" = "") OR ("<NetSurf$ForceVars>" = "1")) Then Set NetSurf$Description "Web browser"
 
 | NetSurf Sprites
 |
