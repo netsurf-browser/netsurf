@@ -31,6 +31,7 @@
 #include <strings.h>
 #include <regex.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include "curl/curl.h"
 #include "utils/log.h"
 #include "utils/url.h"
@@ -77,29 +78,31 @@ void url_init(void)
 
 
 /**
- * Check whether a host string is an IPv4 dotted quad address of the
- * format XXX.XXX.XXX.XXX
+ * Check whether a host string is an IP address.  It should support and
+ * detect IPv4 addresses (all of dotted-quad or subsets, decimal or
+ * hexadecimal notations) and IPv6 addresses (including those containing
+ * embedded IPv4 addresses.)
  *
- * @todo This *should* be implemented with inet_pton but that requires
- * implementing compatability glue for several operating systems.
- *
- * \param  host a hostname terminated by '\0' or '/'
+ * \param  host a hostname terminated by '\0'
  * \return true if the hostname is an IP address, false otherwise
  */
-bool url_host_is_ip_address(const char *host) {
-	unsigned int b1, b2, b3, b4;
-	unsigned char c;
-
-	if (strspn(host, "0123456789.") < strlen(host)) 
+bool url_host_is_ip_address(const char *host)
+{
+	struct in_addr ipv4;
+#ifndef NO_IPV6
+	struct in6_addr ipv6;
+#endif
+	if (strspn(host, "0123456789abcdefABCDEF[].:") < strlen(host))
 		return false;
 
-	if (sscanf(host, "%3u.%3u.%3u.%3u%c", &b1, &b2, &b3, &b4, &c) != 4)
-		return false;
+	if (inet_aton(host, &ipv4) != 0)
+		return true;
+#ifndef NO_IPV6
+	if (inet_pton(AF_INET6, host, &ipv6) == 1)
+		return true;
+#endif
 
-	if ((b1 > 255) || (b2 > 255) || (b3 > 255) || (b4 > 255))
-		return false;
-
-	return true;
+	return false;
 }
 
 /**
