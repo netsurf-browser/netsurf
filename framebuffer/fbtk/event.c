@@ -134,6 +134,16 @@ fbtk_warp_pointer(fbtk_widget_t *widget, int x, int y, bool relative)
 		cloc.y0 = y;
 	}
 
+	/* ensure cursor location lies within the root widget */
+	if (cloc.x0 < root->x)
+		cloc.x0 = root->x;
+	if (cloc.x0 > (root->x + root->width))
+		cloc.x0 = (root->x + root->width);
+	if (cloc.y0 < root->y)
+		cloc.y0 = root->y;
+	if (cloc.y0 > (root->y + root->height))
+		cloc.y0 = (root->y + root->height);
+
 	if (root->u.root.grabbed == NULL) {
 		/* update the pointer cursor */
 		nsfb_cursor_loc_set(root->u.root.fb, &cloc);
