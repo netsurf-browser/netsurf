@@ -89,20 +89,65 @@ void url_init(void)
 bool url_host_is_ip_address(const char *host)
 {
 	struct in_addr ipv4;
+	size_t z = strlen(host);
+	const char *sane_host;
+	const char *slash;
 #ifndef NO_IPV6
 	struct in6_addr ipv6;
+	char ipv6_addr[64];
 #endif
-	if (strspn(host, "0123456789abcdefABCDEF[].:") < strlen(host))
-		return false;
+	/* FIXME TODO: Some parts of urldb.c (and perhaps other parts of
+	 * NetSurf) make confusions between hosts and "prefixes", we can
+	 * sometimes be erroneously passed more than just a host.  Sometimes
+	 * we may be passed trailing slashes, or even whole path segments.
+	 * A specific criminal in this class is urldb_iterate_partial, which
+	 * takes a prefix to search for, but passes that prefix to functions
+	 * that expect only hosts.
+	 *
+	 * For the time being, we will accept such calls; we check if there
+	 * is a / in the host parameter, and if there is, we take a copy and
+	 * replace the / with a \0.  This is not a permanent solution; we
+	 * should search through NetSurf and find all the callers that are
+	 * in error and fix them.  When doing this task, it might be wise
+	 * to replace the hideousness below with code that doesn't have to do
+	 * this, and add assert(strchr(host, '/') == NULL); somewhere.
+	 * -- rjek - 2010-11-04
+	 */
 
-	if (inet_aton(host, &ipv4) != 0)
-		return true;
+	slash = index(host, '/');
+	if (slash == NULL) {
+		sane_host = host;
+	} else {
+		char *c = strdup(host);
+		c[slash - host] = '\0';
+		sane_host = c;
+		LOG(("WARNING: called with non-host '%s'",
+		     host));
+	}
+
+	if (strspn(sane_host, "0123456789abcdefABCDEF[].:") < z)
+		goto out_false;
+
+	if (inet_aton(sane_host, &ipv4) != 0)
+		goto out_true;
 #ifndef NO_IPV6
-	if (inet_pton(AF_INET6, host, &ipv6) == 1)
-		return true;
+	if (sane_host[0] != '[' || sane_host[z] != ']')
+		goto out_false;
+
+	strncpy(ipv6_addr, sane_host + 1, sizeof(ipv6_addr));
+	ipv6_addr[z - 1] = '\0';
+
+	if (inet_pton(AF_INET6, ipv6_addr, &ipv6) == 1)
+		goto out_true;
 #endif
 
+out_false:
+	if (slash != NULL) free((void *)sane_host);
 	return false;
+
+out_true:
+	if (slash != NULL) free((void *)sane_host);
+	return true;
 }
 
 /**
@@ -513,7 +558,14 @@ url_func_result url_host(const char *url, char **result)
 		}
 		host_start = strchr(components.authority, '@');
 		host_start = host_start ? host_start + 1 : components.authority;
-		host_end = strchr(host_start, ':');
+
+		/* skip over an IPv6 address if there is one */
+		if (host_start[0] == '[') {
+			host_end = strchr(host_start, ']') + 1;
+		} else {
+			host_end = strchr(host_start, ':');
+		}
+
 		if (!host_end)
 			host_end = components.authority +
 					strlen(components.authority);
