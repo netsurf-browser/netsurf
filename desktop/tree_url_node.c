@@ -547,8 +547,8 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	/* Make this URL persistent */
 	urldb_set_url_persistence(url, true);
 
-	if (data->title == NULL)
-		urldb_set_url_title(url, title);
+	/* Force the title in the hotlist */
+	urldb_set_url_title(url, title);
 
 	entry = tree_create_URL_node(tree, directory, url, title,
 				     callback, callback_data);
