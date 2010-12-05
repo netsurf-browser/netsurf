@@ -792,7 +792,7 @@ bool urldb_add_url(const char *url)
 
 	/* get port and remove from host */
 	port = 0;
-	if (host[strlen(host)] != ']') {
+	if (host[strlen(host) - 1] != ']') {
 		colon = strrchr(host, ':');
 		if (colon) {
 			*colon = '\0';
