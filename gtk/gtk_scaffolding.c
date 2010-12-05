@@ -476,13 +476,13 @@ MULTIHANDLER(savepage)
 			messages_get("gtkcompleteSave"), g->window,
 			GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER,
 			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_APPLY, GTK_RESPONSE_ACCEPT,
+			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 			NULL);
 	DIR *d;
 	char *path;
 	url_func_result res;
 	GtkFileFilter *filter = gtk_file_filter_new();
-	gtk_file_filter_set_name(filter, "directory");
+	gtk_file_filter_set_name(filter, "Directories");
 	gtk_file_filter_add_custom(filter, GTK_FILE_FILTER_FILENAME,
 			nsgtk_filter_directory, NULL, NULL);
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
@@ -505,16 +505,21 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(fc),
 			TRUE);
 
-	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT)
+	if (gtk_dialog_run(GTK_DIALOG(fc)) != GTK_RESPONSE_ACCEPT) {
+		gtk_widget_destroy(fc);
 		return TRUE;
+	}
+
 	path = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
 	d = opendir(path);
 	if (d == NULL) {
-		printf("d NULL\n");
+ 		LOG(("Unable to open directory %s for complete save: %s", path,
+		     strerror(errno)));
 		if (errno == ENOTDIR)
 			warn_user("NoDirError", path);
 		else
 			warn_user("gtkFileError", path);
+		gtk_widget_destroy(fc);
 		g_free(path);
 		return TRUE;
 	}
