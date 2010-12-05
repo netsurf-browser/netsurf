@@ -111,6 +111,7 @@ nserror nscss_create_css_data(struct content_css_data *c,
 			url, NULL, quirks, false,
 			ns_realloc, NULL, 
 			nscss_resolve_url, NULL,
+			NULL, NULL,
 			&c->sheet);
 	if (error != CSS_OK) {
 		return NSERROR_NOMEM;
@@ -442,6 +443,7 @@ css_error nscss_import_complete(struct content_css_data *c,
 					NULL, "", NULL, false, false,
 					ns_realloc, NULL, 
 					nscss_resolve_url, NULL,
+					NULL, NULL,
 					&blank_import);
 			if (error != CSS_OK) {
 				return error;

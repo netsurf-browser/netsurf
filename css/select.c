@@ -136,7 +136,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 
 	error = css_stylesheet_create(CSS_LEVEL_DEFAULT, charset, url, NULL,
 			allow_quirks, true, alloc, pw, nscss_resolve_url, 
-			NULL, &sheet);
+			NULL, NULL, NULL, &sheet);
 	if (error != CSS_OK) {
 		LOG(("Failed creating sheet: %d", error));
 		return NULL;
