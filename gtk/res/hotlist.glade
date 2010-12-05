@@ -1,13 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed Jul 29 03:02:21 2009 -->
+<?xml version="1.0" encoding="UTF-8"?>
 <glade-interface>
+  <!-- interface-requires gtk+ 2.6 -->
+  <!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkWindow" id="wndHotlist">
-    <property name="title" translatable="yes">NetSurf Hotlist</property>
-    <property name="window_position">GTK_WIN_POS_CENTER</property>
+    <property name="title" translatable="yes">Bookmarks</property>
+    <property name="window_position">mouse</property>
     <property name="default_width">600</property>
     <property name="default_height">500</property>
-    <property name="type_hint">GDK_WINDOW_TYPE_HINT_UTILITY</property>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -29,7 +28,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Export</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="E" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="E" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -37,7 +36,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">New _folder</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="M" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="M" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -45,7 +44,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">New _entry</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="N" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="N" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                   </widget>
@@ -73,7 +72,7 @@
                         <property name="tooltip" translatable="yes">Deletes selected nodes</property>
                         <property name="label" translatable="yes">_Delete</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="Delete" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                        <accelerator key="Delete" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -81,7 +80,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Select all</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="A" modifiers="GDK_MOD1_MASK" signal="activate"/>
+                        <accelerator key="A" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                     <child>
@@ -89,7 +88,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Clear selection</property>
                         <property name="use_underline">True</property>
-                        <accelerator key="U" modifiers="GDK_MOD1_MASK" signal="activate"/>
+                        <accelerator key="U" signal="activate" modifiers="GDK_MOD1_MASK"/>
                       </widget>
                     </child>
                   </widget>
@@ -185,18 +184,19 @@
           </widget>
           <packing>
             <property name="expand">False</property>
+            <property name="position">0</property>
           </packing>
         </child>
         <child>
           <widget class="GtkScrolledWindow" id="hotlistScrolled">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-            <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+            <property name="hscrollbar_policy">automatic</property>
+            <property name="vscrollbar_policy">automatic</property>
             <child>
               <widget class="GtkViewport" id="hotlistViewport">
                 <property name="visible">True</property>
-                <property name="resize_mode">GTK_RESIZE_QUEUE</property>
+                <property name="resize_mode">queue</property>
                 <child>
                   <widget class="GtkDrawingArea" id="hotlistDrawingArea">
                     <property name="visible">True</property>

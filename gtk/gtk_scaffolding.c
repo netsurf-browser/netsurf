@@ -1292,6 +1292,7 @@ MULTIHANDLER(showbookmarks)
 {
 	gtk_widget_show(GTK_WIDGET(wndHotlist));
 	gdk_window_raise(GTK_WIDGET(wndHotlist)->window);
+	gtk_window_set_focus(wndHotlist, NULL);
 	
 	return TRUE;
 }
