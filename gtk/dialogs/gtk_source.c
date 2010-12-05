@@ -178,8 +178,8 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	thiswindow->sourcewindow = wndSource;
 	thiswindow->bw = bw;
 
-	char title[strlen(thiswindow->url) + SLEN("Source of ") + 1];
-	sprintf(title, "Source of %s", thiswindow->url);
+	char title[strlen(thiswindow->url) + SLEN("Source of  - NetSurf") + 1];
+	sprintf(title, "Source of %s - NetSurf", thiswindow->url);
 
 	thiswindow->next = nsgtk_source_list;
 	thiswindow->prev = NULL;

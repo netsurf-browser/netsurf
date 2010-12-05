@@ -3,7 +3,7 @@
   <!-- interface-requires gtk+ 2.6 -->
   <!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkWindow" id="wndHotlist">
-    <property name="title" translatable="yes">Bookmarks</property>
+    <property name="title" translatable="yes">Bookmarks - NetSurf</property>
     <property name="window_position">mouse</property>
     <property name="default_width">600</property>
     <property name="default_height">500</property>
