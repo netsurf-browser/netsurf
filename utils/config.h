@@ -91,6 +91,10 @@ char *realpath(const char *path, char *resolved_path);
     #if defined(__HAIKU__)
         /*not yet: #define WITH_MMAP*/
     #endif
+    #if defined(__BEOS__)
+    	/* Not even BONE has it. */
+    	#define NO_IPV6 1
+    #endif
 #else
     /* We're likely to have a working mmap() */
     #define WITH_MMAP

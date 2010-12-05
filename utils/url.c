@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "curl/curl.h"
+#include "utils/config.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
