@@ -134,13 +134,14 @@ plot_style_t *plot_style_stroke_lightwbasec = &plot_style_stroke_lightwbasec_sta
 static plot_style_t plot_style_stroke_history_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
 	.stroke_colour = 0x333333,
+	.stroke_width = 2,
 };
 plot_style_t *plot_style_stroke_history = &plot_style_stroke_history_static;
 
 /* Generic font style */
 static const plot_font_style_t plot_style_font_static = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 10 * FONT_SIZE_SCALE,
+	.size = 8 * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xffffff,

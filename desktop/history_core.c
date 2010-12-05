@@ -616,14 +616,14 @@ bool history_redraw_entry(struct history *history,
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
-	colour c = entry == history->current ? 0x0000ff : 0x333333;
+	colour c = entry == history->current ? 0xff0000 : 0x333333;
 	int tailsize = 5;
 	int xoffset = x - x0;
 	int yoffset = y - y0;
         plot_style_t pstyle_history_rect = { 
             .stroke_type = PLOT_OP_TYPE_SOLID,
             .stroke_colour = c,
-            .stroke_width = entry == history->current ? 2 : 1,
+            .stroke_width = entry == history->current ? 3 : 1,
         };
 	plot_font_style_t fstyle = *plot_style_font;
 
@@ -649,6 +649,7 @@ bool history_redraw_entry(struct history *history,
 
 	fstyle.background = 0xffffff;
 	fstyle.foreground = c;
+	fstyle.weight = entry == history->current ? 900 : 400;
 
 	if (!plot.text(entry->x + xoffset, entry->y + HEIGHT + 12 + yoffset,
 			entry->page.title, char_offset, &fstyle))
