@@ -33,7 +33,6 @@ Section
   IfFileExists "$INSTDIR\res\*.*" +2
     CreateDirectory "$INSTDIR\res"
   SetOutPath $INSTDIR\res
-  File ../windows/res/Aliases
   File ../windows/res/default.css
   File ../windows/res/quirks.css
   File ../windows/res/messages

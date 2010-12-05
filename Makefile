@@ -551,7 +551,6 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	@cp -RL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/Aliases $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/docs $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/themes $(DESTDIR)$(NETSURF_GTK_RESOURCES)
@@ -583,7 +582,6 @@ install-beos: NetSurf
 	@cp -vRL beos/res/adblock.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL beos/res/ca-bundle.txt $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL beos/res/default.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-	@cp -vRL beos/res/Aliases $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL beos/res/beosdefault.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 #	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
@@ -594,7 +592,7 @@ install-framebuffer: $(EXETARGET)
 	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_BIN)
 	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
 	@cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
-	@for F in Aliases default.css messages; do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
+	@for F in default.css messages; do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
 
 install: all-program install-$(TARGET)
 
