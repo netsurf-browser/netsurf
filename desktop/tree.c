@@ -1467,8 +1467,8 @@ struct node *tree_node_get_next(struct node *node)
  * \param tree_x	X coordinate of the tree
  * \param tree_y	Y coordinate of the tree
  */
-static void tree_draw_node_expansion(struct tree *tree, struct node *node,
-		int tree_x, int tree_y)
+static void tree_draw_node_expansion_toggle(struct tree *tree,
+		struct node *node, int tree_x, int tree_y)
 {
 	int x, y;
 
@@ -1531,7 +1531,7 @@ static void tree_draw_node_element(struct tree *tree,
 		     CONTENT_STATUS_DONE)) {
 			content_redraw(icon , x, y + 2,
 				       TREE_ICON_SIZE, TREE_ICON_SIZE,
-				       x, y, x + TREE_ICON_SIZE,
+				       x, y + 2, x + TREE_ICON_SIZE,
 				       y + 2 + TREE_ICON_SIZE, 1, 0);
 		}
 
@@ -1610,22 +1610,23 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 	y_max = clip_y + clip_height;
 
 	if ((node->parent->next != NULL) &&
-	    (node->parent->next->box.y < clip_y))
+			(node->parent->next->box.y < clip_y))
 		return;
 
 	for (; node != NULL; node = node->next) {
-		if (node->box.y > y_max) return;
+		if (node->box.y > y_max)
+			return;
 		if ((node->next != NULL) &&
-		    (!(tree->flags & TREE_NO_FURNITURE))) {
+				(!(tree->flags & TREE_NO_FURNITURE))) {
 			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
 			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
 			y1 = y0 + node->next->box.y - node->box.y;
 			plot.line(x0, y0, x1, y1, plot_style_stroke_darkwbasec);
 		}
 		if ((node->box.x < x_max) && (node->box.y < y_max) &&
-		    (node->box.x + node->box.width
-		     + NODE_INSTEP >= clip_x) &&
-		    (node->box.y + node->box.height >= clip_y)) {
+				(node->box.x + node->box.width + NODE_INSTEP >=
+				clip_x) &&
+				(node->box.y + node->box.height >= clip_y)) {
 			if (!(tree->flags & TREE_NO_FURNITURE)) {
 				if ((node->expanded) && (node->child != NULL)) {
 					x0 = x1 = tree_x + node->box.x +
@@ -1639,39 +1640,42 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 				}
 				parent = node->parent;
 				if ((parent != NULL) &&
-				    (parent != tree->root) &&
-				    (parent->child == node)) {
+						(parent != tree->root) &&
+						(parent->child == node)) {
 					x0 = x1 = tree_x + parent->box.x +
-						(NODE_INSTEP / 2);
+							(NODE_INSTEP / 2);
 					y0 = tree_y + parent->data.box.y +
-						parent->data.box.height;
+							parent->data.box.height;
 					y1 = y0 + (TREE_LINE_HEIGHT / 2);
 					plot.line(x0, y0, x1, y1,
-						  plot_style_stroke_darkwbasec);
+						plot_style_stroke_darkwbasec);
 				}
 				x0 = tree_x + node->box.x - (NODE_INSTEP / 2);
 				x1 = x0 + (NODE_INSTEP / 2) - 2;
 				y0 = y1 = tree_y + node->data.box.y +
-					node->data.box.height -
-					(TREE_LINE_HEIGHT / 2);
+						node->data.box.height -
+						(TREE_LINE_HEIGHT / 2);
 				plot.line(x0, y0, x1, y1,
-					  plot_style_stroke_darkwbasec);
-				tree_draw_node_expansion(tree, node,
-							 tree_x, tree_y);
+						plot_style_stroke_darkwbasec);
+				tree_draw_node_expansion_toggle(tree, node,
+						tree_x, tree_y);
 			}
-			if (node->expanded)
+			if (node->expanded) {
 				for (element = &node->data; element != NULL;
-				     element = element->next)
+						element = element->next) {
 					tree_draw_node_element(tree, element,
-							       tree_x, tree_y);
-			else
+							tree_x, tree_y);
+				}
+			} else {
 				tree_draw_node_element(tree, &node->data,
-						       tree_x, tree_y);
+						tree_x, tree_y);
+			}
 		}
-		if ((node->child != NULL) && (node->expanded))
+		if ((node->child != NULL) && (node->expanded)) {
 			tree_draw_node(tree, node->child, tree_x, tree_y,
-				       clip_x, clip_y,
-				       clip_width, clip_height);
+					clip_x, clip_y,
+					clip_width, clip_height);
+		}
 	}
 }
 
