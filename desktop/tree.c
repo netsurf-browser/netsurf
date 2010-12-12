@@ -44,7 +44,7 @@
 
 #define TREE_ICON_SIZE 17
 #define NODE_INSTEP 20
-#define TREE_LINE_HEIGHT 20
+#define TREE_LINE_HEIGHT 50
 
 static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
@@ -1488,7 +1488,7 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
 
 	if ((node->child != NULL) || (node->data.next != NULL)) {
 		x = tree_x + node->box.x - (NODE_INSTEP / 2) - 4;
-		y = tree_y + node->box.y - (TREE_LINE_HEIGHT / 2) + 16;
+		y = tree_y + node->box.y + (TREE_LINE_HEIGHT - 9) / 2;
 		plot.rectangle(x, y, x + 9, y + 9, plot_style_fill_white);
 		plot.rectangle(x , y, x + 8, y + 8,
 			       &plot_style_stroke_tree_furniture);
