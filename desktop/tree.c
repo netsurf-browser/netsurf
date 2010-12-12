@@ -51,7 +51,7 @@ static plot_font_style_t plot_fstyle = {
 	.size = 10 * FONT_SIZE_SCALE, /* 10pt. */
 	.weight = 400,
 	.flags = FONTF_NONE,
-	.background = 0xFFFFFF, /* white */
+	.background = 0xFFCCBB, /* white */
 	.foreground = 0x000000  /* black */
 };
 
@@ -67,13 +67,13 @@ static plot_font_style_t plot_fstyle_selected = {
 /** plot style for treeview backgrounds. */
 static plot_style_t plot_style_fill_tree_background = {
 	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = 0xFFFFFF,
+	.fill_colour = 0xFFCCBB,
 };
 
 /** plot style for treeview lines. */
 static plot_style_t plot_style_stroke_tree_furniture = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x999999,
+	.stroke_colour = 0x7C635B,
 };
 
 struct node;
