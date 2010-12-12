@@ -342,7 +342,7 @@ NSBaseView::NSBaseView(BMessage *archive)
 
 NSBaseView::~NSBaseView()
 {
-	warn_user ("~NSBaseView()", NULL);
+	//warn_user ("~NSBaseView()", NULL);
 }
 
 
@@ -508,7 +508,7 @@ NSBaseView::Instantiate(BMessage *archive)
 
 	replicant_done_sem = create_sem(0, "NS Replicant created");
 	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
-		"NetSurf Main Thread", B_NORMAL_PRIORITY, &info);
+		"NetSurf Main Thread", B_NORMAL_PRIORITY, info);
 	if (nsMainThread < B_OK) {
 		delete_sem(replicant_done_sem);
 		delete info;
@@ -1617,8 +1617,6 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->window = NULL;
 	g->menu_bar = NULL;
 	g->window = NULL;
-
-printf ("repli: %p\n", replicant_view);
 
 	if (replicated && !replicant_view) {
 		warn_user("Error: No subwindow allowed when replicated.", NULL);
