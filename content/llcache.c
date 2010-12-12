@@ -1311,10 +1311,36 @@ nserror llcache_object_notify_users(llcache_object *object)
 		llcache_handle *handle = &user->handle;
 		const llcache_fetch_state objstate = object->fetch.state;
 
-		/* Save identity of next user in case client destroys 
-		 * the user underneath us */
+		/* Flag that this user is the current iteration target
+		 * in case the client attempts to destroy it underneath us */
 		user->iterator_target = true;
-		next_user = user->next;
+
+		/* A note on the computation of next_user:
+		 * 
+		 * Within this loop, we may make a number of calls to 
+		 * client code. Our contract with clients is that they
+		 * can do whatever they like from within their callback
+		 * handlers. This is so that we limit the pain of
+		 * reentrancy to this module alone.
+		 *
+		 * One of the things a client can do from within its
+		 * callback handler is to remove users from this object's
+		 * user list. In the common case, the user they attempt
+		 * to remove is the current iteration target, and we
+		 * already protect against that causing problems here.
+		 * However, no such protection exists if the client 
+		 * attempts to remove other users from this object's
+		 * user list.
+		 *
+		 * Therefore, we cannot compute next_user up-front
+		 * and expect it to remain valid across calls to
+		 * client code (as the identity of the next user
+		 * in the list may change underneath us). Instead,
+		 * we must compute next_user at the point where we
+		 * are about to cause another iteration of this loop
+		 * (i.e. at the very end, and also at the points where
+		 * continue is used)
+		 */
 
 #ifdef LLCACHE_TRACE
 		if (handle->state != objstate) {
@@ -1349,6 +1375,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 			}
 
 			if (user->queued_for_delete) {
+				next_user = user->next;
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1383,6 +1410,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 			}
 
 			if (user->queued_for_delete) {
+				next_user = user->next;
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1403,6 +1431,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 			}
 
 			if (user->queued_for_delete) {
+				next_user = user->next;
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1410,6 +1439,8 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 		/* No longer the target of an iterator */
 		user->iterator_target = false;
+
+		next_user = user->next;
 	}
 
 	return NSERROR_OK;
