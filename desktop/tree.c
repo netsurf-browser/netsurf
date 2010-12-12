@@ -1520,6 +1520,7 @@ static void tree_draw_node_element(struct tree *tree,
 	bool selected = false;
 	hlcache_handle *icon;
 	plot_font_style_t *fstyle;
+	const int icon_inset = (TREE_LINE_HEIGHT - TREE_ICON_SIZE) / 2;
 
 	assert(tree != NULL);
 	assert(element != NULL);
@@ -1535,15 +1536,14 @@ static void tree_draw_node_element(struct tree *tree,
 	switch (element->type) {
 	case NODE_ELEMENT_TEXT_PLUS_ICON:
 		icon = element->bitmap;
-		if (icon != NULL &&
-		    (content_get_status(icon) ==
-		     CONTENT_STATUS_READY ||
-		     content_get_status(icon) ==
-		     CONTENT_STATUS_DONE)) {
-			content_redraw(icon , x, y + 2,
-				       TREE_ICON_SIZE, TREE_ICON_SIZE,
-				       x, y + 2, x + TREE_ICON_SIZE,
-				       y + 2 + TREE_ICON_SIZE, 1, 0);
+		if (icon != NULL && (content_get_status(icon) ==
+				CONTENT_STATUS_READY ||
+				content_get_status(icon) ==
+				CONTENT_STATUS_DONE)) {
+			content_redraw(icon , x, y + icon_inset,
+					TREE_ICON_SIZE, TREE_ICON_SIZE,
+					x, y + icon_inset, x + TREE_ICON_SIZE,
+					y + icon_inset + TREE_ICON_SIZE, 1, 0);
 		}
 
 		x += NODE_INSTEP;
