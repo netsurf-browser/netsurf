@@ -49,20 +49,20 @@
 
 static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 10240,
+	.size = 10 * FONT_SIZE_SCALE, /* 10pt. */
 	.weight = 400,
 	.flags = FONTF_NONE,
-	.background = 0xFFFFFF,
-	.foreground = 0x000000
+	.background = 0xFFFFFF, /* white */
+	.foreground = 0x000000  /* black */
 };
 
 static plot_font_style_t plot_fstyle_selected = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 10240,
+	.size = 10 * FONT_SIZE_SCALE, /* 10pt. */
 	.weight = 400,
 	.flags = FONTF_NONE,
- 	.background = 0x000000,
-	.foreground = 0xEEEEEE
+ 	.background = 0x000000, /* black */
+	.foreground = 0xEEEEEE  /* nearly white */
 };
 
 struct node;
