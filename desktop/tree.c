@@ -64,6 +64,18 @@ static plot_font_style_t plot_fstyle_selected = {
 	.foreground = 0xEEEEEE  /* nearly white */
 };
 
+/** plot style for treeview backgrounds. */
+static plot_style_t plot_style_fill_tree_background = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = 0xFFFFFF,
+};
+
+/** plot style for treeview lines. */
+static plot_style_t plot_style_stroke_tree_furniture = {
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = 0x999999,
+};
+
 struct node;
 struct tree;
 
@@ -1479,12 +1491,12 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
 		y = tree_y + node->box.y - (TREE_LINE_HEIGHT / 2) + 16;
 		plot.rectangle(x, y, x + 9, y + 9, plot_style_fill_white);
 		plot.rectangle(x , y, x + 8, y + 8,
-			       plot_style_stroke_darkwbasec);
+			       &plot_style_stroke_tree_furniture);
 		plot.line(x + 2, y + 4, x + 7, y + 4,
-			  plot_style_stroke_darkwbasec);
+			  &plot_style_stroke_tree_furniture);
 		if (!node->expanded)
 			plot.line(x + 4, y + 2, x + 4, y + 7,
-				  plot_style_stroke_darkwbasec);
+				  &plot_style_stroke_tree_furniture);
 
 	}
 
@@ -1568,7 +1580,7 @@ static void tree_draw_node_element(struct tree *tree,
 		if (!(tree->flags & TREE_NO_FURNITURE))
 			plot.rectangle(x, y, x + element->box.width - 1,
 				       y + element->box.height - 3,
-				       plot_style_stroke_darkwbasec);
+				       &plot_style_stroke_tree_furniture);
 
 		break;
 	}
@@ -1617,7 +1629,8 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
 			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
 			y1 = y0 + node->next->box.y - node->box.y;
-			plot.line(x0, y0, x1, y1, plot_style_stroke_darkwbasec);
+			plot.line(x0, y0, x1, y1,
+					&plot_style_stroke_tree_furniture);
 		}
 		if ((node->box.x < x_max) && (node->box.y < y_max) &&
 				(node->box.x + node->box.width + NODE_INSTEP >=
@@ -1631,7 +1644,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 						+ node->data.box.height;
 					y1 = y0 + (TREE_LINE_HEIGHT / 2);
 					plot.line(x0, y0, x1, y1,
-						  plot_style_stroke_darkwbasec);
+						  &plot_style_stroke_tree_furniture);
 
 				}
 				parent = node->parent;
@@ -1644,7 +1657,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 							parent->data.box.height;
 					y1 = y0 + (TREE_LINE_HEIGHT / 2);
 					plot.line(x0, y0, x1, y1,
-						plot_style_stroke_darkwbasec);
+						&plot_style_stroke_tree_furniture);
 				}
 				x0 = tree_x + node->box.x - (NODE_INSTEP / 2);
 				x1 = x0 + (NODE_INSTEP / 2) - 2;
@@ -1652,7 +1665,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 						node->data.box.height -
 						(TREE_LINE_HEIGHT / 2);
 				plot.line(x0, y0, x1, y1,
-						plot_style_stroke_darkwbasec);
+						&plot_style_stroke_tree_furniture);
 				tree_draw_node_expansion_toggle(tree, node,
 						tree_x, tree_y);
 			}
@@ -1703,7 +1716,7 @@ void tree_draw(struct tree *tree, int x, int y,
 	absolute_y = y + clip_y;
 	plot.rectangle(absolute_x, absolute_y,
 		       absolute_x + clip_width, absolute_y + clip_height,
-		       plot_style_fill_white);
+		       &plot_style_fill_tree_background);
 	plot.clip(absolute_x, absolute_y,
 		  absolute_x + clip_width, absolute_y + clip_height);
 	tree_draw_node(tree, tree->root->child, x, y, clip_x,
