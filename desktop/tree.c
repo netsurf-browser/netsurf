@@ -44,7 +44,7 @@
 
 #define TREE_ICON_SIZE 16
 #define NODE_INSTEP 20
-#define TREE_TEXT_HEIGHT 20
+#define TREE_LINE_HEIGHT 20
 #define FURNITURE_COLOUR 0x888888
 
 static plot_font_style_t plot_fstyle = {
@@ -221,7 +221,7 @@ static void tree_recalculate_node_element(struct tree *tree,
 		}
 
 		element->box.width += 8;
-		element->box.height = TREE_TEXT_HEIGHT;
+		element->box.height = TREE_LINE_HEIGHT;
 
 		if (element->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 			element->box.width += NODE_INSTEP;
@@ -341,7 +341,7 @@ static void tree_recalculate_node_positions(struct tree *tree,
 		} else {
 			node->box.x = tree->flags & TREE_NO_FURNITURE
 				? -NODE_INSTEP + 4 : 0;
-			node->box.y = -20;
+			node->box.y = -TREE_LINE_HEIGHT;
 		}
 
 		if (!node->expanded) {
@@ -1477,7 +1477,7 @@ static void tree_draw_node_expansion(struct tree *tree, struct node *node,
 
 	if ((node->child != NULL) || (node->data.next != NULL)) {
 		x = tree_x + node->box.x - (NODE_INSTEP / 2) - 4;
-		y = tree_y + node->box.y - (TREE_TEXT_HEIGHT / 2) + 16;
+		y = tree_y + node->box.y - (TREE_LINE_HEIGHT / 2) + 16;
 		plot.rectangle(x, y, x + 9, y + 9, plot_style_fill_white);
 		plot.rectangle(x , y, x + 8, y + 8,
 			       plot_style_stroke_darkwbasec);
@@ -1558,7 +1558,7 @@ static void tree_draw_node_element(struct tree *tree,
 				       plot_style_fill_white);
 		}
 
-		plot.text(x + 4, y + TREE_TEXT_HEIGHT * 0.75,
+		plot.text(x + 4, y + TREE_LINE_HEIGHT * 0.75,
 			  element->text, strlen(element->text),
 			  fstyle);
 		break;
@@ -1618,7 +1618,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 		if ((node->next != NULL) &&
 		    (!(tree->flags & TREE_NO_FURNITURE))) {
 			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
-			y0 = tree_y + node->box.y + (20 / 2);
+			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
 			y1 = y0 + node->next->box.y - node->box.y;
 			plot.line(x0, y0, x1, y1, plot_style_stroke_darkwbasec);
 		}
@@ -1632,7 +1632,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 						(NODE_INSTEP / 2);
 					y0 = tree_y + node->data.box.y
 						+ node->data.box.height;
-					y1 = y0 + (20 / 2);
+					y1 = y0 + (TREE_LINE_HEIGHT / 2);
 					plot.line(x0, y0, x1, y1,
 						  plot_style_stroke_darkwbasec);
 
@@ -1645,7 +1645,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 						(NODE_INSTEP / 2);
 					y0 = tree_y + parent->data.box.y +
 						parent->data.box.height;
-					y1 = y0 + (20 / 2);
+					y1 = y0 + (TREE_LINE_HEIGHT / 2);
 					plot.line(x0, y0, x1, y1,
 						  plot_style_stroke_darkwbasec);
 				}
@@ -1653,7 +1653,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 				x1 = x0 + (NODE_INSTEP / 2) - 2;
 				y0 = y1 = tree_y + node->data.box.y +
 					node->data.box.height -
-					(20 / 2);
+					(TREE_LINE_HEIGHT / 2);
 				plot.line(x0, y0, x1, y1,
 					  plot_style_stroke_darkwbasec);
 				tree_draw_node_expansion(tree, node,
@@ -1854,7 +1854,7 @@ static struct node_element *tree_get_node_element_at(struct node *node,
 			    (node->data.box.x - NODE_INSTEP + 4 < x)
 			    && (node->data.box.y + 4 < y) &&
 			    (node->data.box.x > x) &&
-			    (node->data.box.y + 20 > y)) {
+			    (node->data.box.y + TREE_LINE_HEIGHT > y)) {
 				*furniture = true;
 				return &node->data;
 			}
@@ -2032,8 +2032,6 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	/* cancel edit */
 	if (tree->editing != NULL)
  		tree_stop_edit(tree, false);
-
-
 
 	/* no item either means cancel selection on (select) click or a drag */
 	if (element == NULL) {
