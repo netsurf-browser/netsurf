@@ -42,7 +42,7 @@
 
 #define MAXIMUM_URL_LENGTH 1024
 
-#define TREE_ICON_SIZE 16
+#define TREE_ICON_SIZE 17
 #define NODE_INSTEP 20
 #define TREE_LINE_HEIGHT 20
 #define FURNITURE_COLOUR 0x888888
@@ -1529,10 +1529,10 @@ static void tree_draw_node_element(struct tree *tree,
 		     CONTENT_STATUS_READY ||
 		     content_get_status(icon) ==
 		     CONTENT_STATUS_DONE)) {
-			content_redraw(icon , x, y + 3,
+			content_redraw(icon , x, y + 2,
 				       TREE_ICON_SIZE, TREE_ICON_SIZE,
 				       x, y, x + TREE_ICON_SIZE,
-				       y + TREE_ICON_SIZE, 1, 0);
+				       y + 2 + TREE_ICON_SIZE, 1, 0);
 		}
 
 		x += NODE_INSTEP;
