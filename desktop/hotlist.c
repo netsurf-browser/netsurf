@@ -179,8 +179,6 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path)
 		}
 	}
 
-
-
 	return true;
 }
 

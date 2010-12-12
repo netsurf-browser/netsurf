@@ -51,7 +51,7 @@ static plot_font_style_t plot_fstyle = {
 	.size = 10 * FONT_SIZE_SCALE, /* 10pt. */
 	.weight = 400,
 	.flags = FONTF_NONE,
-	.background = 0xFFCCBB, /* white */
+	.background = 0xFFCCBB, /* light blue */
 	.foreground = 0x000000  /* black */
 };
 
@@ -1471,7 +1471,7 @@ struct node *tree_node_get_next(struct node *node)
 
 
 /**
- * Draws an elements expansion icon
+ * Draws an element's expansion icon
  *
  * \param tree	   the tree to draw the expansion for
  * \param element  the element to draw the expansion for
@@ -1619,13 +1619,18 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 
 	if ((node->parent->next != NULL) &&
 			(node->parent->next->box.y < clip_y))
+		/* Node, and its siblings are above clip region */
 		return;
 
 	for (; node != NULL; node = node->next) {
+		/* Draw node and all its siblings */
 		if (node->box.y > y_max)
+			/* Node is below clip region */
 			return;
 		if ((node->next != NULL) &&
 				(!(tree->flags & TREE_NO_FURNITURE))) {
+			/* There are more nodes after this
+			 * Display furniture */
 			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
 			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
 			y1 = y0 + node->next->box.y - node->box.y;
@@ -1636,21 +1641,14 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 				(node->box.x + node->box.width + NODE_INSTEP >=
 				clip_x) &&
 				(node->box.y + node->box.height >= clip_y)) {
+			/* Node is inside clip region */
 			if (!(tree->flags & TREE_NO_FURNITURE)) {
-				if ((node->expanded) && (node->child != NULL)) {
-					x0 = x1 = tree_x + node->box.x +
-						(NODE_INSTEP / 2);
-					y0 = tree_y + node->data.box.y
-						+ node->data.box.height;
-					y1 = y0 + (TREE_LINE_HEIGHT / 2);
-					plot.line(x0, y0, x1, y1,
-						  &plot_style_stroke_tree_furniture);
-
-				}
+				/* Display furniture */
 				parent = node->parent;
 				if ((parent != NULL) &&
 						(parent != tree->root) &&
 						(parent->child == node)) {
+					/* Node is first child */
 					x0 = x1 = tree_x + parent->box.x +
 							(NODE_INSTEP / 2);
 					y0 = tree_y + parent->data.box.y +
@@ -1659,6 +1657,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 					plot.line(x0, y0, x1, y1,
 						&plot_style_stroke_tree_furniture);
 				}
+				/* Line from expansion toggle to icon */
 				x0 = tree_x + node->box.x - (NODE_INSTEP / 2);
 				x1 = x0 + (NODE_INSTEP / 2) - 2;
 				y0 = y1 = tree_y + node->data.box.y +
@@ -1672,15 +1671,18 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 			if (node->expanded) {
 				for (element = &node->data; element != NULL;
 						element = element->next) {
+					/* Draw each element of expanded node */
 					tree_draw_node_element(tree, element,
 							tree_x, tree_y);
 				}
 			} else {
+				/* Draw main title element of node */
 				tree_draw_node_element(tree, &node->data,
 						tree_x, tree_y);
 			}
 		}
 		if ((node->child != NULL) && (node->expanded)) {
+			/* Draw an expanded node's children */
 			tree_draw_node(tree, node->child, tree_x, tree_y,
 					clip_x, clip_y,
 					clip_width, clip_height);
