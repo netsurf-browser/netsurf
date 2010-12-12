@@ -45,7 +45,6 @@
 #define TREE_ICON_SIZE 17
 #define NODE_INSTEP 20
 #define TREE_LINE_HEIGHT 20
-#define FURNITURE_COLOUR 0x888888
 
 static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
@@ -1816,16 +1815,16 @@ struct node *tree_get_selected_node(struct node *node)
  * \param node	     the root node to check from
  * \param x	     the x co-ordinate
  * \param y	     the y co-ordinate
- * \param furniture  whether the returned area was in an elements furniture
+ * \param expansion_toggle  whether the coordinate was in an expansion toggle
  * \return the node at the specified position, or NULL for none
  */
 static struct node_element *tree_get_node_element_at(struct node *node,
-		int x, int y, bool *furniture)
+		int x, int y, bool *expansion_toggle)
 {
 	struct node_element *element;
 	int x0, x1, y0, y1;
 
-	*furniture = false;
+	*expansion_toggle = false;
 	for (; node != NULL; node = node->next) {
 		if (node->box.y > y) return NULL;
 		if ((node->box.x - NODE_INSTEP < x) && (node->box.y < y) &&
@@ -1859,13 +1858,17 @@ static struct node_element *tree_get_node_element_at(struct node *node,
 			    && (node->data.box.y + 4 < y) &&
 			    (node->data.box.x > x) &&
 			    (node->data.box.y + TREE_LINE_HEIGHT > y)) {
-				*furniture = true;
+				/* Node either has node children, or node
+				 * has more than one element.
+				 * Coordinate is over node expansion toggle area
+				 */
+				*expansion_toggle = true;
 				return &node->data;
 			}
 		}
 
 		element = tree_get_node_element_at(node->child, x, y,
-						   furniture);
+				expansion_toggle);
 		if ((node->child != NULL) && (node->expanded) &&
 		    (element != NULL))
 			return element;
@@ -1880,15 +1883,15 @@ static struct node_element *tree_get_node_element_at(struct node *node,
  * \param root	     the root node to check from
  * \param x	     the x co-ordinate
  * \param y	     the y co-ordinate
- * \param furniture  whether the returned area was in an elements furniture
+ * \param expansion_toggle  whether the coordinate was in an expansion toggle
  * \return the node at the specified position, or NULL for none
  */
 static struct node *tree_get_node_at(struct node *root, int x, int y,
-		bool *furniture)
+		bool *expansion_toggle)
 {
 	struct node_element *result;
 
-	if ((result = tree_get_node_element_at(root, x, y, furniture)))
+	if ((result = tree_get_node_element_at(root, x, y, expansion_toggle)))
 		return result->parent;
 	return NULL;
 }
@@ -1907,15 +1910,16 @@ struct node *tree_get_link_details(struct tree *tree, int x, int y,
 		bool *before)
 {
 	struct node *node = NULL;
-	bool furniture;
+	bool expansion_toggle;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
 	*before = false;
 	if (tree->root->child != NULL)
-		node = tree_get_node_at(tree->root->child, x, y, &furniture);
-	if ((node == NULL) || (furniture))
+		node = tree_get_node_at(tree->root->child, x, y,
+				&expansion_toggle);
+	if ((node == NULL) || (expansion_toggle))
 		return tree->root;
 
 	if (y < (node->box.y + (node->box.height / 2))) {
@@ -1976,7 +1980,7 @@ void tree_launch_selected(struct tree *tree)
 bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 		int y)
 {
-	bool furniture;
+	bool expansion_toggle;
 	struct node *node;
 	struct node *last;
 	struct node_element *element;
@@ -1988,7 +1992,8 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	if (tree->root->child == NULL)
 		return true;
 
-	element = tree_get_node_element_at(tree->root->child, x, y, &furniture);
+	element = tree_get_node_element_at(tree->root->child, x, y,
+			&expansion_toggle);
 
 	/* pass in-textarea mouse action and drags which started in it
 	   to the textarea */
@@ -2060,11 +2065,11 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 
 	node = element->parent;
 
-	/* click on furniture or double click on folder toggles node expansion
-	 */
-	if (((furniture) && (mouse & (BROWSER_MOUSE_CLICK_1 |
+	/* A click on expansion toggle or double click on folder toggles node
+	 * expansion */
+	if (((expansion_toggle) && (mouse & (BROWSER_MOUSE_CLICK_1 |
 				      BROWSER_MOUSE_CLICK_2))) ||
-	    ((!furniture) && (node->child != NULL) &&
+	    ((!expansion_toggle) && (node->child != NULL) &&
 	     (mouse & BROWSER_MOUSE_DOUBLE_CLICK))) {
 
 		/* clear any selection */
@@ -2100,8 +2105,8 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 		return true;
 	}
 
-	/* no use for any other furniture click */
-	if (furniture)
+	/* no use for any other expansion toggle click */
+	if (expansion_toggle)
 		return true;
 
 	/* single/double ctrl+click or alt+click starts editing */
