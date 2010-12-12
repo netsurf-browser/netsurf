@@ -104,6 +104,9 @@ char *realpath(const char *path, char *resolved_path);
 	#define WITH_THEME_INSTALL
 #endif
 
+#if defined(__amigaos4__)
+	#define NO_IPV6
+#endif
 
 /* Configuration sanity checks: */
 #if defined(WITH_NS_SVG) && defined(WITH_RSVG)
