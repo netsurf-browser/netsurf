@@ -1552,9 +1552,6 @@ static void tree_draw_node_element(struct tree *tree,
 				       plot_style_fill_black);
 		} else {
 			fstyle = &plot_fstyle;
-			plot.rectangle(x, y,	x + width,
-				       y + element->box.height,
-				       plot_style_fill_white);
 		}
 
 		plot.text(x + 4, y + TREE_LINE_HEIGHT * 0.75,
