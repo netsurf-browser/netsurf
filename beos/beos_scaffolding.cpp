@@ -161,6 +161,9 @@ static void nsbeos_window_update_back_forward(struct beos_scaffolding *);
 static void nsbeos_throb(void *);
 static int32 nsbeos_replicant_main_thread(void *_arg);
 
+// in beos_gui.cpp
+extern int main(int argc, char** argv);
+
 #warning XXX
 #if 0 /* GTK */
 static gboolean nsbeos_window_url_activate_event(beosWidget *, gpointer);
@@ -339,6 +342,7 @@ NSBaseView::NSBaseView(BMessage *archive)
 
 NSBaseView::~NSBaseView()
 {
+	warn_user ("~NSBaseView()", NULL);
 }
 
 
@@ -500,7 +504,7 @@ NSBaseView::Instantiate(BMessage *archive)
 	//TODO:FIXME: fix replicants
 	// netsurf_init() needs different args now...
 	//netsurf_init(2, info->args);
-	return NULL;
+	//return NULL;
 
 	replicant_done_sem = create_sem(0, "NS Replicant created");
 	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
@@ -512,7 +516,7 @@ NSBaseView::Instantiate(BMessage *archive)
 		return NULL;
 	}
 	resume_thread(nsMainThread);
-	//while (acquire_sem(replicant_done_sem) == EINTR);
+	while (acquire_sem(replicant_done_sem) == EINTR);
 	delete_sem(replicant_done_sem);
 
 	return view;
@@ -603,10 +607,12 @@ NSBrowserWindow::QuitRequested(void)
 int32 nsbeos_replicant_main_thread(void *_arg)
 {
 	struct replicant_thread_info *info = (struct replicant_thread_info *)_arg;
-	netsurf_main_loop();
-	netsurf_exit();
+	int32 ret;
+	ret = main(2, info->args);
+	//netsurf_main_loop();
+	//netsurf_exit();
 	delete info;
-	return 0;
+	return ret;
 }
 
 
@@ -1612,6 +1618,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->menu_bar = NULL;
 	g->window = NULL;
 
+printf ("repli: %p\n", replicant_view);
 
 	if (replicated && !replicant_view) {
 		warn_user("Error: No subwindow allowed when replicated.", NULL);
