@@ -151,7 +151,6 @@ struct replicant_thread_info {
 };
 
 
-
 static int open_windows = 0;		/**< current number of open browsers */
 static struct beos_scaffolding *current_model; /**< current window for model dialogue use */
 static NSBaseView *replicant_view = NULL; /**< if not NULL, the replicant View we are running NetSurf for */
@@ -343,6 +342,9 @@ NSBaseView::NSBaseView(BMessage *archive)
 NSBaseView::~NSBaseView()
 {
 	//warn_user ("~NSBaseView()", NULL);
+	BMessage *message = new BMessage(B_QUIT_REQUESTED);
+	nsbeos_pipe_message_top(message, NULL, fScaffolding);
+	while (acquire_sem(replicant_done_sem) == EINTR);
 }
 
 
@@ -517,7 +519,6 @@ NSBaseView::Instantiate(BMessage *archive)
 	}
 	resume_thread(nsMainThread);
 	while (acquire_sem(replicant_done_sem) == EINTR);
-	delete_sem(replicant_done_sem);
 
 	return view;
 }
@@ -612,6 +613,8 @@ int32 nsbeos_replicant_main_thread(void *_arg)
 	//netsurf_main_loop();
 	//netsurf_exit();
 	delete info;
+	//release
+	delete_sem(replicant_done_sem);
 	return ret;
 }
 
@@ -625,8 +628,10 @@ static void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffold
 	if (--open_windows == 0)
 		netsurf_quit = true;
 
-	window->Lock();
-	window->Quit();
+	if (window) {
+		window->Lock();
+		window->Quit();
+	}
 
 	if (!g->being_destroyed) {
 		g->being_destroyed = 1;
