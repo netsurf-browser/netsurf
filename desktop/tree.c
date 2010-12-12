@@ -28,6 +28,7 @@
 #include <string.h>
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "css/utils.h"
 #include "desktop/browser.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
@@ -42,13 +43,16 @@
 
 #define MAXIMUM_URL_LENGTH 1024
 
+#define TREE_TEXT_SIZE_PT 11
 #define TREE_ICON_SIZE 17
 #define NODE_INSTEP 20
-#define TREE_LINE_HEIGHT 50
+#define TREE_LINE_HEIGHT 20
+
+static int tree_text_size_px;
 
 static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 10 * FONT_SIZE_SCALE, /* 10pt. */
+	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xFFCCBB, /* light blue */
@@ -57,7 +61,7 @@ static plot_font_style_t plot_fstyle = {
 
 static plot_font_style_t plot_fstyle_selected = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 10 * FONT_SIZE_SCALE, /* 10pt. */
+	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
  	.background = 0x000000, /* black */
@@ -1566,9 +1570,11 @@ static void tree_draw_node_element(struct tree *tree,
 			fstyle = &plot_fstyle;
 		}
 
-		plot.text(x + 4, y + TREE_LINE_HEIGHT * 0.75,
-			  element->text, strlen(element->text),
-			  fstyle);
+		plot.text(x + 4, y +
+				((TREE_LINE_HEIGHT * 2 + tree_text_size_px)
+				+ 2) / 4,
+				element->text, strlen(element->text),
+				fstyle);
 		break;
 	case NODE_ELEMENT_BITMAP:
 		bitmap = element->bitmap;
@@ -1713,6 +1719,10 @@ void tree_draw(struct tree *tree, int x, int y,
 
 	/* don't draw empty trees or trees with redraw flag set to false */
 	if (tree->root->child == NULL || !tree->redraw) return;
+
+	tree_text_size_px =
+			(TREE_TEXT_SIZE_PT * FIXTOINT(nscss_screen_dpi) + 36) /
+			72;
 
 	absolute_x = x + clip_x;
 	absolute_y = y + clip_y;
