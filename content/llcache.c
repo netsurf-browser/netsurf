@@ -564,13 +564,10 @@ nserror llcache_object_user_destroy(llcache_object_user *user)
 #ifdef LLCACHE_TRACE
 	LOG(("Destroyed user %p", user));
 #endif
-
-	/* We can't assert that user->next/prev are NULL here
-	 * as llcache_object_remove_user can not invalidate
-	 * them. However, we are only ever called as the result
-	 * of the client releasing a handle, so the precondition 
-	 * holds. */
-
+	
+	assert(user->next == NULL);
+	assert(user->prev == NULL);
+	
 	free(user);
 
 	return NSERROR_OK;
