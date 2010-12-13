@@ -377,12 +377,10 @@ nserror llcache_handle_release(llcache_handle *handle)
 	error = llcache_object_remove_user(object, user);
 	if (error == NSERROR_OK) {
 		/* Can't delete user object if it's the target of an iterator */
-		if (user->iterator_target) {
+		if (user->iterator_target)
 			user->queued_for_delete = true;
-		} else {
-			user->next = user->prev = NULL;
+		else
 			error = llcache_object_user_destroy(user);
-		}
 	}
 
 	return error; 
@@ -1195,11 +1193,11 @@ nserror llcache_object_remove_user(llcache_object *object,
 
 	if (user->next != NULL)
 		user->next->prev = user->prev;
-
-	/* Do not invalidate user's prev/next pointers here
-	 * We rely on them remaining valid if it's currently
-	 * the target of an iterator */	
-
+	
+#ifndef NDEBUG
+	user->next = user->prev = NULL;
+#endif
+	
 #ifdef LLCACHE_TRACE
 	LOG(("Removing user %p from %p", user, object));
 #endif
@@ -1377,7 +1375,6 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
-				user->next = user->prev = NULL;
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1413,7 +1410,6 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
-				user->next = user->prev = NULL;
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1435,7 +1431,6 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
-				user->next = user->prev = NULL;
 				llcache_object_user_destroy(user);
 				continue;
 			}
