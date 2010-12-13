@@ -1193,11 +1193,11 @@ nserror llcache_object_remove_user(llcache_object *object,
 
 	if (user->next != NULL)
 		user->next->prev = user->prev;
-	
-#ifndef NDEBUG
-	user->next = user->prev = NULL;
-#endif
-	
+
+	/* Do not invalidate user's prev/next pointers here
+	 * We rely on them remaining valid if it's currently
+	 * the target of an iterator */	
+
 #ifdef LLCACHE_TRACE
 	LOG(("Removing user %p from %p", user, object));
 #endif
