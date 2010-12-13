@@ -1194,9 +1194,7 @@ nserror llcache_object_remove_user(llcache_object *object,
 	if (user->next != NULL)
 		user->next->prev = user->prev;
 	
-#ifndef NDEBUG
 	user->next = user->prev = NULL;
-#endif
 	
 #ifdef LLCACHE_TRACE
 	LOG(("Removing user %p from %p", user, object));
