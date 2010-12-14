@@ -103,7 +103,7 @@ struct icon_entry icon_table[] = {
 };
 
 
-void tree_url_node_init(void)
+void tree_url_node_init(const char *folder_icon_name)
 {
 	struct icon_entry *entry;
 	char icon_name[MAX_ICON_NAME_LEN];
@@ -112,7 +112,7 @@ void tree_url_node_init(void)
 		return;
 	initialised = true;
 
-	folder_icon = tree_load_icon(tree_directory_icon_name);
+	folder_icon = tree_load_icon(folder_icon_name);
 
 	entry = icon_table;
 	do {

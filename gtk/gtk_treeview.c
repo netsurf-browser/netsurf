@@ -48,62 +48,6 @@ struct nsgtk_treeview {
 const char tree_directory_icon_name[] = "directory.png";
 const char tree_content_icon_name[] = "content.png";
 
-static void nsgtk_tree_redraw_request(int x, int y, int width, int height,
-		void *data);
-static void nsgtk_tree_resized(struct tree *tree, int width, int height, void *data);
-static void nsgtk_tree_scroll_visible(int y, int height, void *data);
-static void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data);
-
-static const struct treeview_table nsgtk_tree_callbacks = {
-	.redraw_request = nsgtk_tree_redraw_request,
-	.resized = nsgtk_tree_resized,
-	.scroll_visible = nsgtk_tree_scroll_visible,
-	.get_window_dimensions = nsgtk_tree_get_window_dimensions
-};
-
-struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
-		GtkWindow *window, GtkScrolledWindow *scrolled,
- 		GtkDrawingArea *drawing_area)
-{
-	struct nsgtk_treeview *tv;	
-	
-	tv = malloc(sizeof(struct nsgtk_treeview));
-	if (tv == NULL) {
-		LOG(("malloc failed"));
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-	
-	tv->window = window;
-	tv->scrolled = scrolled;
-	tv->drawing_area = drawing_area;
-	tv->tree = tree_create(flags, &nsgtk_tree_callbacks, tv);
-	tv->mouse_state = 0;
-	
-	gtk_widget_modify_bg(GTK_WIDGET(drawing_area), GTK_STATE_NORMAL,
-			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
-	
-#define CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	
-	CONNECT(drawing_area, "expose_event",
-			nsgtk_tree_window_expose_event,
-  			tv->tree);
-	CONNECT(drawing_area, "button_press_event",
-			nsgtk_tree_window_button_press_event,
-			tv);
-	CONNECT(drawing_area, "button_release_event",
-			nsgtk_tree_window_button_release_event,
-  			tv);
-	CONNECT(drawing_area, "motion_notify_event",
-			nsgtk_tree_window_motion_notify_event,
-  			tv);
-	CONNECT(drawing_area, "key_press_event",
-			nsgtk_tree_window_keypress_event,
-  			tv);
-	return tv;
-}
-
 void nsgtk_treeview_destroy(struct nsgtk_treeview *tv)
 {
 	tree_delete(tv->tree);
@@ -116,7 +60,7 @@ struct tree *nsgtk_treeview_get_tree(struct nsgtk_treeview *tv)
 	return tv->tree;
 }
 
-void nsgtk_tree_redraw_request(int x, int y, int width, int height, void *data)
+static void nsgtk_tree_redraw_request(int x, int y, int width, int height, void *data)
 {
 	struct nsgtk_treeview *tw = data;
 	
@@ -130,7 +74,7 @@ void nsgtk_tree_redraw_request(int x, int y, int width, int height, void *data)
  *
  * \param tree  the tree to update the owner of
  */
-void nsgtk_tree_resized(struct tree *tree, int width, int height, void *data)
+static void nsgtk_tree_resized(struct tree *tree, int width, int height, void *data)
 {
 	struct nsgtk_treeview *tw = data;
 	
@@ -194,7 +138,7 @@ void tree_icon_name_from_content_type(char *buffer, content_type type)
  * \param height	height of the element
  * \param data		user data assigned to the tree on tree creation
  */
-void nsgtk_tree_scroll_visible(int y, int height, void *data)
+static void nsgtk_tree_scroll_visible(int y, int height, void *data)
 {
 	int y0, y1;
 	gdouble page;
@@ -225,7 +169,7 @@ void nsgtk_tree_scroll_visible(int y, int height, void *data)
  * \param width		will be updated to window width if not NULL
  * \param height	will be updated to window height if not NULL
  */
-void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data)
+static void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data)
 {
 	struct nsgtk_treeview *tw = data;
 	GtkAdjustment *vadj;
@@ -540,3 +484,53 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	
 	return TRUE;
 }	
+
+static const struct treeview_table nsgtk_tree_callbacks = {
+	.redraw_request = nsgtk_tree_redraw_request,
+	.resized = nsgtk_tree_resized,
+	.scroll_visible = nsgtk_tree_scroll_visible,
+	.get_window_dimensions = nsgtk_tree_get_window_dimensions
+};
+
+struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
+		GtkWindow *window, GtkScrolledWindow *scrolled,
+ 		GtkDrawingArea *drawing_area)
+{
+	struct nsgtk_treeview *tv;	
+	
+	tv = malloc(sizeof(struct nsgtk_treeview));
+	if (tv == NULL) {
+		LOG(("malloc failed"));
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+	
+	tv->window = window;
+	tv->scrolled = scrolled;
+	tv->drawing_area = drawing_area;
+	tv->tree = tree_create(flags, &nsgtk_tree_callbacks, tv);
+	tv->mouse_state = 0;
+	
+	gtk_widget_modify_bg(GTK_WIDGET(drawing_area), GTK_STATE_NORMAL,
+			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
+	
+#define CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+	
+	CONNECT(drawing_area, "expose_event",
+			nsgtk_tree_window_expose_event,
+  			tv->tree);
+	CONNECT(drawing_area, "button_press_event",
+			nsgtk_tree_window_button_press_event,
+			tv);
+	CONNECT(drawing_area, "button_release_event",
+			nsgtk_tree_window_button_release_event,
+  			tv);
+	CONNECT(drawing_area, "motion_notify_event",
+			nsgtk_tree_window_motion_notify_event,
+  			tv);
+	CONNECT(drawing_area, "key_press_event",
+			nsgtk_tree_window_keypress_event,
+  			tv);
+	return tv;
+}

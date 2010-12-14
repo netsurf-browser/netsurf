@@ -25,6 +25,10 @@
 #include "desktop/tree.h"
 #include "desktop/sslcert.h"
 
+/* defined in front end code */
+extern const char tree_directory_icon_name[];
+extern const char tree_content_icon_name[];
+
 struct treeview_window;
 
 enum

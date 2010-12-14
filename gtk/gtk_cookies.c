@@ -118,7 +118,9 @@ void nsgtk_cookies_init(void)
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
 	CONNECT(window, "hide", nsgtk_tree_window_hide, cookies_window);
 	
-	cookies_initialise(nsgtk_treeview_get_tree(cookies_window));
+	cookies_initialise(nsgtk_treeview_get_tree(cookies_window),
+			   tree_directory_icon_name,
+			   tree_content_icon_name);
 		
 	nsgtk_cookies_init_menu();
 }

@@ -99,7 +99,8 @@ void ro_gui_global_history_postinitialise(void)
 	/* Initialise the global history into the tree. */
 
 	history_global_initialise(
-			ro_treeview_get_tree(global_history_window.tv));
+		ro_treeview_get_tree(global_history_window.tv),
+		tree_directory_icon_name);
 
 	/* Build the global history window menu. */
 

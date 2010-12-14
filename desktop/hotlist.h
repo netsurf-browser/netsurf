@@ -30,7 +30,15 @@
 
 #include "desktop/tree.h"
 
-bool hotlist_initialise(struct tree *tree, const char *hotlist_path);
+/**
+ * Initialise the hotlist from a frontend.
+ *
+ * \param tree The tree object which holds the hotlist.
+ * \param hotlist_path The file path to initialise the hotlist entries from.
+ * \param folder_icon_name The name to use for folder icons.
+ */
+bool hotlist_initialise(struct tree *tree, const char *hotlist_path, const char* folder_icon_name);
+
 unsigned int hotlist_get_tree_flags(void);
 void hotlist_cleanup(const char *hotlist_path);
 

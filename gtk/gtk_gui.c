@@ -500,7 +500,7 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	nsgtk_cookies_init();
 	nsgtk_hotlist_init();
-	sslcert_init();
+	sslcert_init(tree_content_icon_name);
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
                 addr = option_homepage_url;

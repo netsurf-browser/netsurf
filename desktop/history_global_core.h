@@ -24,7 +24,7 @@
 
 #include "desktop/tree.h"
 
-bool history_global_initialise(struct tree *tree);
+bool history_global_initialise(struct tree *tree, const char* folder_icon_name);
 unsigned int history_global_get_tree_flags(void);
 void history_global_cleanup(void);
 

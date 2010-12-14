@@ -132,7 +132,8 @@ void nsgtk_hotlist_init()
 	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
 	
 	hotlist_initialise(nsgtk_treeview_get_tree(hotlist_window),
-			option_hotlist_path);
+			   option_hotlist_path, 
+			   tree_directory_icon_name);
 		
 	nsgtk_hotlist_init_menu();
 }

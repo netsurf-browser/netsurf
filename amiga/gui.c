@@ -560,7 +560,7 @@ static void gui_init2(int argc, char** argv)
 	ami_hotlist_initialise(option_hotlist_file);
 	ami_cookies_initialise();
 	ami_global_history_initialise();
-	sslcert_init();
+	sslcert_init(tree_content_icon_name);
 
 	search_web_provider_details(option_search_provider);
 

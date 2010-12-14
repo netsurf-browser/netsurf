@@ -28,7 +28,8 @@ void ami_global_history_initialise(void)
 
 	if(!global_history_window) return;
 
-	history_global_initialise(ami_tree_get_tree(global_history_window));
+	history_global_initialise(ami_tree_get_tree(global_history_window),
+				  tree_directory_icon_name);
 }
 
 void ami_global_history_free()

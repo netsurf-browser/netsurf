@@ -59,9 +59,9 @@ struct sslcert_session_data {
 static hlcache_handle *sslcert_icon;
 
 /** Initialise ssl certificate window. */
-void sslcert_init(void)
+void sslcert_init(const char* icon_name)
 {
-	sslcert_icon = tree_load_icon(tree_content_icon_name);
+	sslcert_icon = tree_load_icon(icon_name);
 }
 
 

@@ -371,14 +371,14 @@ static void cookies_schedule_callback(void *scheduled_data)
  * \param end_redraw	callback function called after every redraw
  * \return true on success, false on memory exhaustion
  */
-bool cookies_initialise(struct tree *tree)
+bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const char* cookie_icon_name)
 {
 
 	if (tree == NULL)
 		return false;
 
-	folder_icon = tree_load_icon(tree_directory_icon_name);
-	cookie_icon = tree_load_icon(tree_content_icon_name);
+	folder_icon = tree_load_icon(folder_icon_name);
+	cookie_icon = tree_load_icon(cookie_icon_name);
 
 	/* Create an empty tree */
 	cookies_tree = tree;

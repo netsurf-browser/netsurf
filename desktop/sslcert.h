@@ -26,7 +26,7 @@
 
 struct sslcert_session_data;
 
-void sslcert_init(void);
+void sslcert_init(const char* icon_name);
 unsigned int sslcert_get_tree_flags(void);
 void sslcert_cleanup(void);
 

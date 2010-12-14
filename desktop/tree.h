@@ -55,10 +55,6 @@ enum tree_flags {
  */
 #define TREE_ELEMENT_TITLE	0x00
 
-/* these should be defined in front end code */
-extern const char tree_directory_icon_name[];
-extern const char tree_content_icon_name[];
-
 struct tree;
 struct node;
 struct node_element;

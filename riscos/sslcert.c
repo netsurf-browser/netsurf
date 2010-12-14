@@ -95,7 +95,7 @@ void ro_gui_cert_postinitialise(void)
 {
 	/* Initialise the SSL module. */
 
-	sslcert_init();
+	sslcert_init(tree_content_icon_name);
 }
 
 /**

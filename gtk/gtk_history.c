@@ -128,7 +128,8 @@ bool nsgtk_history_init(void)
 	CONNECT(window, "hide", nsgtk_tree_window_hide, global_history_window);
 	
 	history_global_initialise(
-			nsgtk_treeview_get_tree(global_history_window));
+		nsgtk_treeview_get_tree(global_history_window),
+		tree_directory_icon_name);
 	
 	nsgtk_history_init_menu();
 

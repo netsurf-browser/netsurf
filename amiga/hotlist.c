@@ -28,7 +28,8 @@ void ami_hotlist_initialise(const char *hotlist_file)
 	if(!hotlist_window) return;
 
 	hotlist_initialise(ami_tree_get_tree(hotlist_window),
-			hotlist_file);
+			   hotlist_file,
+			   tree_directory_icon_name);
 }
 
 void ami_hotlist_free(const char *hotlist_file)

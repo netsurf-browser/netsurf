@@ -278,10 +278,10 @@ static bool history_global_initialise_nodes(void)
  * \param end_redraw	callback function called after every redraw
  * \return true on success, false on memory exhaustion
  */
-bool history_global_initialise(struct tree *tree)
+bool history_global_initialise(struct tree *tree, const char* folder_icon_name)
 {
-	folder_icon = tree_load_icon(tree_directory_icon_name);
-	tree_url_node_init();
+	folder_icon = tree_load_icon(folder_icon_name);
+	tree_url_node_init(folder_icon_name);
 
 	if (tree == NULL)
 		return false;

@@ -93,7 +93,9 @@ void ro_gui_cookies_postinitialise(void)
 
 	/* Initialise the cookies into the tree. */
 
-	cookies_initialise(ro_treeview_get_tree(cookies_window.tv));
+	cookies_initialise(ro_treeview_get_tree(cookies_window.tv),
+			   tree_directory_icon_name,
+			   tree_content_icon_name);
 
 
 	/* Build the cookies window menu. */

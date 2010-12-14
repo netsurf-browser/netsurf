@@ -27,7 +27,9 @@ void ami_cookies_initialise(void)
 
 	if(!cookies_window) return;
 
-	cookies_initialise(ami_tree_get_tree(cookies_window));
+	cookies_initialise(ami_tree_get_tree(cookies_window),
+			   tree_directory_icon_name,
+			   tree_content_icon_name);
 }
 
 void ami_cookies_free()

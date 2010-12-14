@@ -111,8 +111,8 @@ static node_callback_resp hotlist_node_callback(void *user_data,
 	return NODE_CALLBACK_NOT_HANDLED;
 }
 
-
-bool hotlist_initialise(struct tree *tree, const char *hotlist_path)
+/* exported interface documented in hotlist.h */
+bool hotlist_initialise(struct tree *tree, const char *hotlist_path, const char* folder_icon_name)
 {
 	struct node *node;
 	const struct url_data *url_data;
@@ -123,9 +123,9 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path)
 
 	creating_node = false;
 
-	folder_icon = tree_load_icon(tree_directory_icon_name);
+	folder_icon = tree_load_icon(folder_icon_name);
 
-	tree_url_node_init();
+	tree_url_node_init(folder_icon_name);
 
 	if (tree == NULL)
 		return false;
