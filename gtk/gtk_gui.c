@@ -93,9 +93,12 @@ char *glade_warning_file_location;
 char *glade_login_file_location;
 char *glade_ssl_file_location;
 char *glade_toolbar_file_location;
-char *glade_downloads_file_location;
-char *glade_history_file_location;
 char *glade_options_file_location;
+
+static char *glade_downloads_file_location;
+static char *glade_history_file_location;
+static char *glade_hotlist_file_location;
+static char *glade_cookies_file_location;
 
 static GtkWindow *nsgtk_warning_window;
 GtkWidget *widWarning;
@@ -323,6 +326,8 @@ nsgtk_init_glade(char **respath)
 	glade_downloads_file_location = nsgtk_new_glade(respath, "downloads", NULL);
 	glade_history_file_location = nsgtk_new_glade(respath, "history", NULL);
 	glade_options_file_location = nsgtk_new_glade(respath, "options", NULL);
+	glade_hotlist_file_location = nsgtk_new_glade(respath, "hotlist", NULL);
+	glade_cookies_file_location = nsgtk_new_glade(respath, "cookies", NULL);
 
 	glade_warning_file_location = nsgtk_new_glade(respath, "warning", &gladeWarning);
 	nsgtk_warning_window = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
@@ -492,14 +497,18 @@ static void gui_init(int argc, char** argv, char **respath)
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
-	if (nsgtk_history_init() == false)
+	if (nsgtk_history_init(glade_history_file_location) == false)
 		die("Unable to initialise history window.\n");
 
-	if (nsgtk_download_init() == false)
+	if (nsgtk_download_init(glade_downloads_file_location) == false)
 		die("Unable to initialise download window.\n");
 
-	nsgtk_cookies_init();
-	nsgtk_hotlist_init();
+	if (nsgtk_cookies_init(glade_cookies_file_location) == false)
+		die("Unable to initialise cookies window.\n");
+
+	if (nsgtk_hotlist_init(glade_hotlist_file_location) == false)
+		die("Unable to initialise hotlist window.\n");
+
 	sslcert_init(tree_content_icon_name);
 
         if (option_homepage_url != NULL && option_homepage_url[0] != '\0')

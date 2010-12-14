@@ -86,14 +86,15 @@ GtkWindow *wndCookies;
 /**
  * Creates the window for the cookies tree.
  */
-void nsgtk_cookies_init(void)
+bool nsgtk_cookies_init(const char *glade_file_location)
 {
-	gchar *glade_location = g_strconcat(res_dir_location, GLADE_NAME, NULL);
-	gladeFile = glade_xml_new(glade_location, NULL, NULL);
-	g_free(glade_location);
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
+
+	gladeFile = glade_xml_new(glade_file_location, NULL, NULL);
+	if (gladeFile == NULL)
+		return false;
 	
 	glade_xml_signal_autoconnect(gladeFile);
 	
@@ -110,7 +111,7 @@ void nsgtk_cookies_init(void)
 			scrolled, drawing_area);
 	
 	if (cookies_window == NULL)
-		return;
+		return false;
 	
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
@@ -123,6 +124,8 @@ void nsgtk_cookies_init(void)
 			   tree_content_icon_name);
 		
 	nsgtk_cookies_init_menu();
+
+	return true;
 }
 
 /**

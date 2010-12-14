@@ -84,11 +84,11 @@ static gboolean nsgtk_download_handle_error (GError *error);
 
 	
 
-bool nsgtk_download_init()
+bool nsgtk_download_init(const char *glade_file_location)
 {
 	GladeXML *gladeFile;
 
-	gladeFile = glade_xml_new(glade_downloads_file_location, NULL, NULL);
+	gladeFile = glade_xml_new(glade_file_location, NULL, NULL);
 	if (gladeFile == NULL)
 		return false;
 

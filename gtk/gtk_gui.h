@@ -37,8 +37,6 @@ extern char *glade_warning_file_location;
 extern char *glade_login_file_location;
 extern char *glade_ssl_file_location;
 extern char *glade_toolbar_file_location;
-extern char *glade_downloads_file_location;
-extern char *glade_history_file_location;
 extern char *glade_options_file_location;
 
 extern char *languages_file_location;

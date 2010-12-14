@@ -27,7 +27,12 @@
 
 extern GtkWindow *wndHotlist;
 
-void nsgtk_hotlist_init(void);
+/**
+ * Initialise the gtk specific hotlist (bookmarks) display.
+ *
+ * \param glade_hotlist_file_location the path to the glade file for the hotlist
+ */
+bool nsgtk_hotlist_init(const char *glade_hotlist_file_location);
 void nsgtk_hotlist_destroy(void);
 
 #endif /* __NSGTK_HOTLIST_H__ */

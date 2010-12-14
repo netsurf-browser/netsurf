@@ -89,16 +89,14 @@ static GladeXML *gladeFile;
 GtkWindow *wndHistory;
 
 
-/**
- * Creates the window for the global history tree.
- */
-bool nsgtk_history_init(void)
+/* exported interface, documented in gtk_history.h */
+bool nsgtk_history_init(const char *glade_file_location)
 {
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
 	
-	gladeFile = glade_xml_new(glade_history_file_location, NULL, NULL);
+	gladeFile = glade_xml_new(glade_file_location, NULL, NULL);
 	if (gladeFile == NULL)
 		return false;
 

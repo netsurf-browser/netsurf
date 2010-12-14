@@ -24,7 +24,17 @@
 
 extern GtkWindow *wndHistory;
 
-bool nsgtk_history_init(void);
+/**
+ * Creates the window for the global history tree.
+ *
+ * \param glade_file_location The glade file to use for the window.
+ * \return true on success false on faliure.
+ */
+bool nsgtk_history_init(const char *glade_file_location);
+
+/**
+ * Free global resources associated with the gtk history window.
+ */
 void nsgtk_history_destroy(void);
 
 #endif /* __NSGTK_HISTORY_H__ */

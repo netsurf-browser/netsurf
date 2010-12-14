@@ -72,7 +72,7 @@ struct gui_download_window {
 
 typedef	void (*nsgtk_download_selection_action)(struct gui_download_window *dl);
 
-bool nsgtk_download_init(void);
+bool nsgtk_download_init(const char *glade_file_location);
 void nsgtk_download_destroy (void);
 bool nsgtk_check_for_downloads(GtkWindow *parent);
 void nsgtk_download_show(GtkWindow *parent);

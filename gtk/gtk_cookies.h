@@ -27,7 +27,8 @@
 
 extern GtkWindow *wndCookies;
 
-void nsgtk_cookies_init(void);
+bool nsgtk_cookies_init(const char *glade_file_location);
+
 void nsgtk_cookies_destroy(void);
 
 #endif /* __NSGTK_COOKIES_H__ */
