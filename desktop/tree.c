@@ -152,6 +152,11 @@ struct tree {
 					   callbacks */
 };
 
+struct rect {
+	int x0; int y0; /* Top left coordinate */
+	int x1; int y1; /* Bottom right coordinate */
+};
+
 
 /**
  * Creates and initialises a new tree.
@@ -479,6 +484,7 @@ struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 	node->data.editable = editable;
 	node->sort = NULL;
 	node->user_callback = NULL;
+	node->previous = NULL;
 
 	tree_recalculate_node_sizes(tree, node, true);
 	if (parent != NULL)
@@ -525,6 +531,7 @@ struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 	node->data.editable = editable;
 	node->sort = NULL;
 	node->user_callback = NULL;
+	node->previous = NULL;
 
 	tree_recalculate_node_sizes(tree, node, true);
 	if (parent != NULL)
@@ -1510,13 +1517,15 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
 /**
  * Draws an element, including any expansion icons
  *
- * \param tree	   the tree to draw an element for
- * \param element  the element to draw
- * \param tree_x	X coordinate of the tree
- * \param tree_y	Y coordinate of the tree
+ * \param tree		the tree to draw an element for
+ * \param element	the element to draw
+ * \param tree_x	X coordinate to draw the tree at (wrt plot origin)
+ * \param tree_y	Y coordinate to draw the tree at (wrt plot origin)
+ * \param clip		clipping rectangle (wrt plot origin)
  */
 static void tree_draw_node_element(struct tree *tree,
-		struct node_element *element, int tree_x, int tree_y)
+		struct node_element *element, int tree_x, int tree_y,
+		struct rect clip)
 {
 
 	struct bitmap *bitmap = NULL;
@@ -1544,10 +1553,23 @@ static void tree_draw_node_element(struct tree *tree,
 				CONTENT_STATUS_READY ||
 				content_get_status(icon) ==
 				CONTENT_STATUS_DONE)) {
+			struct rect c;
+			/* Clip to image area */
+			c.x0 = x;
+			c.y0 = y + icon_inset;
+			c.x1 = x + TREE_ICON_SIZE;
+			c.y1 = y + icon_inset + TREE_ICON_SIZE;
+			if (c.x0 < clip.x0) c.x0 = clip.x0;
+			if (c.y0 < clip.y0) c.y0 = clip.y0;
+			if (c.x1 > clip.x1) c.x1 = clip.x1;
+			if (c.y1 > clip.y1) c.y1 = clip.y1;
+			plot.clip(c.x0, c.y0, c.x1, c.y1);
 			content_redraw(icon , x, y + icon_inset,
 					TREE_ICON_SIZE, TREE_ICON_SIZE,
-					x, y + icon_inset, x + TREE_ICON_SIZE,
-					y + icon_inset + TREE_ICON_SIZE, 1, 0);
+					c.x0, c.y0, c.x1, c.y1, 1, 0);
+
+			/* Restore previous clipping area */
+			plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
 		}
 
 		x += NODE_INSTEP;
@@ -1599,99 +1621,136 @@ static void tree_draw_node_element(struct tree *tree,
  *
  * \param tree		the tree to draw
  * \param node		the node to draw children and siblings of
- * \param tree_x	X coordinate of the tree
- * \param tree_y	Y coordinate of the tree
- * \param clip_x	the minimum x of the clipping rectangle
- * \param clip_y	the minimum y of the clipping rectangle
- * \param clip_width	the width of the clipping rectangle
- * \param clip_height	the height of the clipping rectangle
+ * \param tree_x	X coordinate to draw the tree at (wrt plot origin)
+ * \param tree_y	Y coordinate to draw the tree at (wrt plot origin)
+ * \param clip		clipping rectangle (wrt plot origin)
  */
 static void tree_draw_node(struct tree *tree, struct node *node,
-		int tree_x, int tree_y,
-		int clip_x, int clip_y,
-		int clip_width, int clip_height)
+		int tree_x, int tree_y, struct rect clip)
 {
 	struct node_element *element;
 	struct node *parent;
-	int x_max, y_max;
 	int x0, y0, x1, y1;
+	struct rect node_extents;
 
 	assert(tree != NULL);
 	assert(node != NULL);
 
+	/* Find node's extents, including children's area */
+	node_extents.x0 = tree_x + node->box.x - NODE_INSTEP;
+	node_extents.y0 = tree_y + node->box.y;
+	node_extents.x1 = tree_x + node->box.x + node->box.width + NODE_INSTEP;
+	if (node->next != NULL)
+		node_extents.y1 = tree_y + node->next->box.y;
+	else
+		node_extents.y1 = tree_y + node->box.y + node->box.height;
 
-	x_max = clip_x + clip_width + NODE_INSTEP;
-	y_max = clip_y + clip_height;
-
-	if ((node->parent->next != NULL) &&
-			(node->parent->next->box.y < clip_y))
-		/* Node, and its siblings are above clip region */
+	/* Nothing to draw, if node is outside clip region */
+	if ((node_extents.x1 < clip.x0) && (node_extents.y1 < clip.y0) &&
+			(node_extents.x0 > clip.x1) &&
+			(node_extents.y0 > clip.y1)) {
 		return;
+	}
 
-	for (; node != NULL; node = node->next) {
-		/* Draw node and all its siblings */
-		if (node->box.y > y_max)
-			/* Node is below clip region */
-			return;
-		if ((node->next != NULL) &&
-				(!(tree->flags & TREE_NO_FURNITURE))) {
-			/* There are more nodes after this
-			 * Display furniture */
-			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
-			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
-			y1 = y0 + node->next->box.y - node->box.y;
+	/* Intersect clip region with node's extents */
+	if (clip.x0 < node_extents.x0) clip.x0 = node_extents.x0;
+	if (clip.y0 < node_extents.y0) clip.y0 = node_extents.y0;
+	if (clip.x1 > node_extents.x1) clip.x1 = node_extents.x1;
+	if (clip.y1 > node_extents.y1) clip.y1 = node_extents.y1;
+
+	/* Set up the clipping area */
+	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+
+	if ((node->previous != NULL) &&
+			(!(tree->flags & TREE_NO_FURNITURE))) {
+		/* There is a node above this
+		 * Display furniture; line connecting up to previous */
+		x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
+		y0 = tree_y + node->previous->box.y;
+		y1 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
+		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
+	}
+	if ((node->next != NULL) &&
+			(!(tree->flags & TREE_NO_FURNITURE))) {
+		/* There is a node below this
+		 * Display furniture; line connecting down to next */
+		x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
+		y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
+		y1 = tree_y + node->next->box.y;
+		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
+	}
+
+	/* Node is inside clip region */
+	if (!(tree->flags & TREE_NO_FURNITURE)) {
+		/* Display furniture */
+		parent = node->parent;
+		if ((parent != NULL) && (parent != tree->root) &&
+				(parent->child == node)) {
+			/* Node is first child */
+			x0 = x1 = tree_x + parent->box.x + (NODE_INSTEP / 2);
+			y0 = tree_y + parent->data.box.y +
+					parent->data.box.height;
+			y1 = y0 + (TREE_LINE_HEIGHT / 2);
 			plot.line(x0, y0, x1, y1,
 					&plot_style_stroke_tree_furniture);
 		}
-		if ((node->box.x < x_max) && (node->box.y < y_max) &&
-				(node->box.x + node->box.width + NODE_INSTEP >=
-				clip_x) &&
-				(node->box.y + node->box.height >= clip_y)) {
-			/* Node is inside clip region */
-			if (!(tree->flags & TREE_NO_FURNITURE)) {
-				/* Display furniture */
-				parent = node->parent;
-				if ((parent != NULL) &&
-						(parent != tree->root) &&
-						(parent->child == node)) {
-					/* Node is first child */
-					x0 = x1 = tree_x + parent->box.x +
-							(NODE_INSTEP / 2);
-					y0 = tree_y + parent->data.box.y +
-							parent->data.box.height;
-					y1 = y0 + (TREE_LINE_HEIGHT / 2);
-					plot.line(x0, y0, x1, y1,
-						&plot_style_stroke_tree_furniture);
-				}
-				/* Line from expansion toggle to icon */
-				x0 = tree_x + node->box.x - (NODE_INSTEP / 2);
-				x1 = x0 + (NODE_INSTEP / 2) - 2;
-				y0 = y1 = tree_y + node->data.box.y +
-						node->data.box.height -
-						(TREE_LINE_HEIGHT / 2);
-				plot.line(x0, y0, x1, y1,
-						&plot_style_stroke_tree_furniture);
-				tree_draw_node_expansion_toggle(tree, node,
-						tree_x, tree_y);
-			}
-			if (node->expanded) {
-				for (element = &node->data; element != NULL;
-						element = element->next) {
-					/* Draw each element of expanded node */
-					tree_draw_node_element(tree, element,
-							tree_x, tree_y);
-				}
-			} else {
-				/* Draw main title element of node */
-				tree_draw_node_element(tree, &node->data,
-						tree_x, tree_y);
-			}
+		/* Line from expansion toggle to icon */
+		x0 = tree_x + node->box.x - (NODE_INSTEP / 2);
+		x1 = x0 + (NODE_INSTEP / 2) - 2;
+		y0 = y1 = tree_y + node->data.box.y + node->data.box.height -
+				(TREE_LINE_HEIGHT / 2);
+		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
+		tree_draw_node_expansion_toggle(tree, node, tree_x, tree_y);
+	}
+	if (node->expanded) {
+		for (element = &node->data; element != NULL;
+				element = element->next) {
+			/* Draw each element of expanded node */
+			tree_draw_node_element(tree, element, tree_x, tree_y,
+					clip);
 		}
-		if ((node->child != NULL) && (node->expanded)) {
-			/* Draw an expanded node's children */
-			tree_draw_node(tree, node->child, tree_x, tree_y,
-					clip_x, clip_y,
-					clip_width, clip_height);
+	} else {
+		/* Draw main title element of node */
+		tree_draw_node_element(tree, &node->data, tree_x, tree_y, clip);
+	}
+}
+
+
+/**
+ * Redraws a node's descendants.
+ *
+ * \param tree		the tree to draw
+ * \param node		the node to draw children and siblings of
+ * \param tree_x	X coordinate to draw the tree at (wrt plot origin)
+ * \param tree_y	Y coordinate to draw the tree at (wrt plot origin)
+ * \param clip		clipping rectangle (wrt plot origin)
+ */
+static void tree_draw_tree(struct tree *tree, struct node *node,
+		int tree_x, int tree_y, struct rect clip)
+{
+	struct node *child;
+
+	assert(tree != NULL);
+	assert(node != NULL);
+
+	for (child = node->child; child != NULL; child = child->next) {
+		/* Draw children that are inside the clip region */
+
+		if (child->next != NULL &&
+				(child->next->box.y + tree_y < clip.y0))
+			/* Child is above clip region */
+			continue;
+		if (child->box.y + tree_y > clip.y1)
+			/* Child is below clip region
+			 * further siblings will be too */
+			return;
+
+		/* Draw current child */
+		tree_draw_node(tree, child, tree_x, tree_y, clip);
+		/* And its children */
+		if ((child->child != NULL) && (child->expanded)) {
+			/* Child has children and they are visible */
+			tree_draw_tree(tree, child, tree_x, tree_y, clip);
 		}
 	}
 }
@@ -1701,46 +1760,46 @@ static void tree_draw_node(struct tree *tree, struct node *node,
  * Redraws a tree.
  *
  * \param tree		the tree to draw
- * \param x		X coordinate to draw the tree at
- * \param y		Y coordinate to draw the tree at
- * \param clip_x	the minimum x of the clipping rectangle relative to
- * 			the tree origin
- * \param clip_y	the minimum y of the clipping rectangle relative to
- * 			the tree origin
- * \param clip_width	the width of the clipping rectangle
- * \param clip_height	the height of the clipping rectangle
+ * \param x		X coordinate to draw the tree at (wrt plot origin)
+ * \param y		Y coordinate to draw the tree at (wrt plot origin)
+ * \param clip_x	minimum x of the clipping rectangle (wrt tree origin)
+ * \param clip_y	minimum y of the clipping rectangle (wrt tree origin)
+ * \param clip_width	width of the clipping rectangle
+ * \param clip_height	height of the clipping rectangle
  */
 void tree_draw(struct tree *tree, int x, int y,
 	       int clip_x, int clip_y, int clip_width, int clip_height)
 {
-	int absolute_x, absolute_y;
+	struct rect clip;
+
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
 	/* don't draw empty trees or trees with redraw flag set to false */
-	if (tree->root->child == NULL || !tree->redraw) return;
+	if (tree->root->child == NULL || !tree->redraw)
+		return;
 
 	tree_text_size_px =
 			(TREE_TEXT_SIZE_PT * FIXTOINT(nscss_screen_dpi) + 36) /
 			72;
 
-	absolute_x = x + clip_x;
-	absolute_y = y + clip_y;
-	plot.rectangle(absolute_x, absolute_y,
-		       absolute_x + clip_width, absolute_y + clip_height,
+	clip.x0 = x + clip_x;
+	clip.y0 = y + clip_y;
+	clip.x1 = clip.x0 + clip_width;
+	clip.y1 = clip.y0 + clip_height;
+
+	plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
 		       &plot_style_fill_tree_background);
-	plot.clip(absolute_x, absolute_y,
-		  absolute_x + clip_width, absolute_y + clip_height);
-	tree_draw_node(tree, tree->root->child, x, y, clip_x,
-		       clip_y, clip_width, clip_height);
+	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+	tree_draw_tree(tree, tree->root, x, y, clip);
+
  	if (tree->editing != NULL) {
 		x = x + tree->editing->box.x;
 		y = y + tree->editing->box.y;
 		if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 			x += NODE_INSTEP;
-		textarea_redraw(tree->textarea, x, y, absolute_x, absolute_y,
- 				absolute_x + clip_width,
- 				absolute_y + clip_height);
+		textarea_redraw(tree->textarea, x, y,
+				clip.x0, clip.y0, clip.x1, clip.y1);
  	}
 }
 
