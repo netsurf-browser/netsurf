@@ -94,7 +94,8 @@ static bool iconise_used[64];
 static int iconise_next = 0;
 
 /** Whether a pressed mouse button has become a drag */
-static bool mouse_drag;
+static bool mouse_drag_select;
+static bool mouse_drag_adjust;
 
 /** List of all browser windows. */
 static struct gui_window *window_list = 0;
@@ -3110,22 +3111,22 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		break;
 	case wimp_BUTTON_DOUBLE_CLICK_DRAG:
 		if (buttons & (wimp_SINGLE_SELECT))
-			state |= BROWSER_MOUSE_CLICK_1;
+			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1;
 		if (buttons & (wimp_SINGLE_ADJUST))
-			state |= BROWSER_MOUSE_CLICK_2;
+			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
 		if (buttons & (wimp_DOUBLE_SELECT))
-			state |= BROWSER_MOUSE_CLICK_1 |
+			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1 |
 					BROWSER_MOUSE_DOUBLE_CLICK;
 		break;
 	}
 
 	if (buttons & (wimp_DRAG_SELECT)) {
 		state |= BROWSER_MOUSE_DRAG_1;
-		mouse_drag = true;
+		mouse_drag_select = true;
 	}
 	if (buttons & (wimp_DRAG_ADJUST)) {
 		state |= BROWSER_MOUSE_DRAG_2;
-		mouse_drag = true;
+		mouse_drag_adjust = true;
 	}
 
 	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
@@ -3152,20 +3153,25 @@ browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 
 	switch (type) {
 	case wimp_BUTTON_CLICK_DRAG:
-	case wimp_BUTTON_DOUBLE_CLICK_DRAG:
 		if (buttons & (wimp_CLICK_SELECT))
 			state |= BROWSER_MOUSE_HOLDING_1;
 		if (buttons & (wimp_CLICK_ADJUST))
 			state |= BROWSER_MOUSE_HOLDING_2;
-
-		if (!(buttons & (wimp_CLICK_SELECT) ||
-				buttons & (wimp_CLICK_ADJUST)))
-			mouse_drag = false;
 		break;
 	}
 
-	if (mouse_drag)
-		state |= BROWSER_MOUSE_DRAG_ON;
+	if (!(buttons & (wimp_CLICK_SELECT) || buttons & (wimp_CLICK_ADJUST))) {
+		mouse_drag_select = false;
+		mouse_drag_adjust = false;
+	}
+
+	/* Set drag on and record which button the drag is happening with */
+	if (mouse_drag_select) {
+		state |= BROWSER_MOUSE_DRAG_ON | BROWSER_MOUSE_HOLDING_1;
+	}
+	if (mouse_drag_adjust) {
+		state |= BROWSER_MOUSE_DRAG_ON | BROWSER_MOUSE_HOLDING_2;
+	}
 
 	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
 	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
