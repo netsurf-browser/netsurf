@@ -1552,7 +1552,9 @@ static void tree_draw_node_element(struct tree *tree,
 		if (icon != NULL && (content_get_status(icon) ==
 				CONTENT_STATUS_READY ||
 				content_get_status(icon) ==
-				CONTENT_STATUS_DONE)) {
+				CONTENT_STATUS_DONE) &&
+				x + TREE_ICON_SIZE > clip.x0 &&
+				x < clip.x1) {
 			struct rect c;
 			/* Clip to image area */
 			c.x0 = x;
@@ -1563,13 +1565,17 @@ static void tree_draw_node_element(struct tree *tree,
 			if (c.y0 < clip.y0) c.y0 = clip.y0;
 			if (c.x1 > clip.x1) c.x1 = clip.x1;
 			if (c.y1 > clip.y1) c.y1 = clip.y1;
-			plot.clip(c.x0, c.y0, c.x1, c.y1);
-			content_redraw(icon , x, y + icon_inset,
-					TREE_ICON_SIZE, TREE_ICON_SIZE,
-					c.x0, c.y0, c.x1, c.y1, 1, 0);
 
-			/* Restore previous clipping area */
-			plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+			if (c.x1 > c.x0 && c.y1 > c.y0) {
+				/* Valid clip rectangles only */
+				plot.clip(c.x0, c.y0, c.x1, c.y1);
+				content_redraw(icon , x, y + icon_inset,
+						TREE_ICON_SIZE, TREE_ICON_SIZE,
+						c.x0, c.y0, c.x1, c.y1, 1, 0);
+
+				/* Restore previous clipping area */
+				plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+			}
 		}
 
 		x += NODE_INSTEP;
@@ -1577,7 +1583,7 @@ static void tree_draw_node_element(struct tree *tree,
 
 		/* fall through */
 	case NODE_ELEMENT_TEXT:
-		if (element->text == NULL)
+		if (element->text == NULL || clip.x1 < x)
 			break;
 
 		if (element == tree->editing)
@@ -1657,6 +1663,11 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 	if (clip.y0 < node_extents.y0) clip.y0 = node_extents.y0;
 	if (clip.x1 > node_extents.x1) clip.x1 = node_extents.x1;
 	if (clip.y1 > node_extents.y1) clip.y1 = node_extents.y1;
+
+	if (clip.x0 >= clip.x1 || clip.y0 >= clip.y1) {
+		/* Invalid clip rectangle */
+		return;
+	}
 
 	/* Set up the clipping area */
 	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
