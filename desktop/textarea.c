@@ -34,9 +34,9 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-#define MARGIN_LEFT 2
-#define MARGIN_RIGHT 2
-#define CARET_COLOR 0x000000
+#define MARGIN_LEFT 4
+#define MARGIN_RIGHT 4
+#define CARET_COLOR 0x0000FF
 /* background color for readonly textarea */
 #define READONLY_BG 0xD9D9D9
 #define BACKGROUND_COL 0xFFFFFF
@@ -408,6 +408,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	int index;
 	int x, y;
 	int x0, y0, x1, y1;
+	int vertical_offset;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -416,6 +417,14 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 
 	if (caret != -1 && (unsigned)caret > c_len)
 		caret = c_len;
+
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		/* Multiline textarea */
+		vertical_offset = 0;
+	} else {
+		/* Single line text area; text is vertically centered */
+		vertical_offset = (ta->vis_height - ta->line_height + 1) / 2;
+	}
 
 	/* Delete the old caret */
 	if (ta->caret_pos.char_off != -1) {
@@ -447,8 +456,8 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 		/* set the caret coordinate beyond the redraw rectangle */
 		ta->caret_x = x - 2;
 
-		ta->redraw_request(ta->data, x - 1, y - 1, x + 1,
-				y + ta->line_height + 1);
+		ta->redraw_request(ta->data, x - 1, y + vertical_offset, x + 1,
+				y + ta->line_height + vertical_offset);
 	}
 
 	/* check if the caret has to be drawn at all */
@@ -500,9 +509,9 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 					ta->vis_height);
 		else {
 			x0 = max(x - 1, MARGIN_LEFT);
-			y0 = max(y - 1, 0);
+			y0 = max(y + vertical_offset, 0);
 			x1 = min(x + 1, ta->vis_width - MARGIN_RIGHT);
-			y1 = min(y + ta->line_height + 1, ta->vis_height);
+			y1 = min(y + ta->line_height + vertical_offset, ta->vis_height);
 			ta->redraw_request(ta->data, x0, y0, x1, y1);
 		}
 	}
@@ -722,7 +731,7 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 		int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 {
 	int line0, line1, line;
-	int chars, offset;
+	int chars, offset, vertical_offset;
 	unsigned int c_pos, c_len, b_start, b_end, line_len;
 	char *line_text;
 	int x0, x1, y0, y1;
@@ -788,6 +797,14 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 				ta->lines[line0].b_start - 1);
 	else
 		c_pos = 0;
+
+	if (ta->flags & TEXTAREA_MULTILINE) {
+		/* Multiline textarea */
+		vertical_offset = 0;
+	} else {
+		/* Single line text area; text is vertically centered */
+		vertical_offset = (ta->vis_height - ta->line_height + 1) / 2;
+	}
 
 	for (line = line0; (line <= line1) &&
 			(y + line * ta->line_height <= y1 + ta->scroll_y);
@@ -856,11 +873,11 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 					b_end, &x1);
 			x1 += x0;
 			plot.rectangle(x0 - ta->scroll_x, y +
-				       line * ta->line_height
-				       + 1 - ta->scroll_y,
+				       line * ta->line_height +
+				       1 - ta->scroll_y + vertical_offset,
 				       x1 - ta->scroll_x,
 				       y + (line + 1) * ta->line_height -
-				       1 - ta->scroll_y,
+				       1 - ta->scroll_y + vertical_offset,
 				       &pstyle_fill_selection);
 
 		}
@@ -873,15 +890,17 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 			   	(ta->flags & TEXTAREA_READONLY) ?
 					READONLY_BG : BACKGROUND_COL,
 
-		plot.text(x + MARGIN_LEFT - ta->scroll_x, y0 - ta->scroll_y,
+		plot.text(x + MARGIN_LEFT - ta->scroll_x,
+				y0 - ta->scroll_y + vertical_offset,
 			  	ta->text + ta->lines[line].b_start,
 			   	ta->lines[line].b_length,
 				&ta->fstyle);
 	}
 
-
 	if (x + ta->caret_x >= clip_x0 && x + ta->caret_x <= clip_x1) {
-		if (y + ta->caret_y >= clip_y0 && y + ta->caret_y <= clip_y1)
+		int caret_height = ta->line_height - 1;
+		y += ta->caret_y + vertical_offset;
+		if (y + caret_height >= clip_y0 && y <= clip_y1)
 			plot.line(x + ta->caret_x, y + ta->caret_y,
 				  	x + ta->caret_x,
 					y + ta->caret_y + ta->line_height,
