@@ -637,8 +637,6 @@ static nserror llcache_send_event_to_users(llcache_object *object,
 
 		error = user->handle->cb(user->handle, event,
 					user->handle->pw);
-		if (error != NSERROR_OK)
-			break;
 
 		next_user = user->next;
 
@@ -648,6 +646,9 @@ static nserror llcache_send_event_to_users(llcache_object *object,
 			llcache_object_remove_user(object, user);
 			llcache_object_user_destroy(user);
 		}
+
+		if (error != NSERROR_OK)
+			break;
 
 		user = next_user;
 	}
@@ -1443,16 +1444,19 @@ nserror llcache_object_notify_users(llcache_object *object)
 			event.type = LLCACHE_EVENT_HAD_HEADERS;
 
 			error = handle->cb(handle, &event, handle->pw);
-			if (error != NSERROR_OK) {
-				user->iterator_target = false;
-				return error;
-			}
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
 				llcache_object_remove_user(object, user);
 				llcache_object_user_destroy(user);
+
+				if (error != NSERROR_OK)
+					return error;
+
 				continue;
+			} else if (error != NSERROR_OK) {
+				user->iterator_target = false;
+				return error;
 			}
 		}
 
@@ -1479,16 +1483,18 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			/* Emit event */
 			error = handle->cb(handle, &event, handle->pw);
-			if (error != NSERROR_OK) {
-				user->iterator_target = false;
-				return error;
-			}
-
 			if (user->queued_for_delete) {
 				next_user = user->next;
 				llcache_object_remove_user(object, user);
 				llcache_object_user_destroy(user);
+
+				if (error != NSERROR_OK)
+					return error;
+
 				continue;
+			} else if (error != NSERROR_OK) {
+				user->iterator_target = false;
+				return error;
 			}
 		}
 
@@ -1501,16 +1507,18 @@ nserror llcache_object_notify_users(llcache_object *object)
 			event.type = LLCACHE_EVENT_DONE;
 
 			error = handle->cb(handle, &event, handle->pw);
-			if (error != NSERROR_OK) {
-				user->iterator_target = false;
-				return error;
-			}
-
 			if (user->queued_for_delete) {
 				next_user = user->next;
 				llcache_object_remove_user(object, user);
 				llcache_object_user_destroy(user);
+
+				if (error != NSERROR_OK)
+					return error;
+
 				continue;
+			} else if (error != NSERROR_OK) {
+				user->iterator_target = false;
+				return error;
 			}
 		}
 
