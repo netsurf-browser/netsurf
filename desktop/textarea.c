@@ -897,10 +897,16 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 				&ta->fstyle);
 	}
 
-	if (x + ta->caret_x >= clip_x0 && x + ta->caret_x <= clip_x1) {
+	if ((ta->selection_end == -1 ||
+			ta->selection_start == ta->selection_end) &&
+			x + ta->caret_x >= clip_x0 &&
+			x + ta->caret_x <= clip_x1) {
+		/* There is no selection and caret is in horizontal
+		 * clip range. */
 		int caret_height = ta->line_height - 1;
 		y += ta->caret_y + vertical_offset;
 		if (y + caret_height >= clip_y0 && y <= clip_y1)
+			/* Caret in vertical clip range; plot */
 			plot.line(x + ta->caret_x, y + ta->caret_y,
 				  	x + ta->caret_x,
 					y + ta->caret_y + ta->line_height,
