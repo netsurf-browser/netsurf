@@ -62,8 +62,7 @@ struct llcache_handle {
 
 /** Low-level cache object user record */
 typedef struct llcache_object_user {
-	/* Must be first in struct */
-	llcache_handle handle;		/**< Handle data for client */
+	llcache_handle *handle;		/**< Handle data for client */
 
 	bool iterator_target;		/**< This is the an iterator target */
 	bool queued_for_delete;		/**< This user is queued for deletion */
@@ -171,7 +170,9 @@ static nserror llcache_object_add_user(llcache_object *object,
 		llcache_object_user *user);
 static nserror llcache_object_remove_user(llcache_object *object, 
 		llcache_object_user *user);
-
+static llcache_object_user *llcache_object_find_user(
+		const llcache_handle *handle);
+				    
 static nserror llcache_object_add_to_list(llcache_object *object,
 		llcache_object **list);
 static nserror llcache_object_remove_from_list(llcache_object *object,
@@ -258,6 +259,9 @@ void llcache_finalise(void)
 		for (user = object->users; user != NULL; user = next_user) {
 			next_user = user->next;
 
+			if (user->handle != NULL)
+				free(user->handle);
+
 			free(user);
 		}
 
@@ -275,6 +279,9 @@ void llcache_finalise(void)
 
 		for (user = object->users; user != NULL; user = next_user) {
 			next_user = user->next;
+
+			if (user->handle != NULL)
+			       free(user->handle);
 
 			free(user);
 		}
@@ -351,7 +358,7 @@ nserror llcache_handle_retrieve(const char *url, uint32_t flags,
 	/* Add user to object */
 	llcache_object_add_user(object, user);
 
-	*result = &user->handle;
+	*result = user->handle;
 
 	return NSERROR_OK;
 }
@@ -371,18 +378,22 @@ nserror llcache_handle_release(llcache_handle *handle)
 {
 	nserror error = NSERROR_OK;
 	llcache_object *object = handle->object;
-	llcache_object_user *user = (llcache_object_user *) handle;
+	llcache_object_user *user = llcache_object_find_user(handle);
 
-	/* Remove the user from the object and destroy it */
-	error = llcache_object_remove_user(object, user);
-	if (error == NSERROR_OK) {
-		/* Can't delete user object if it's the target of an iterator */
-		if (user->iterator_target)
-			user->queued_for_delete = true;
-		else
+	assert(user != NULL);
+
+	if (user->iterator_target) {
+		/* Can't remove / delete user object if it's 
+		 * the target of an iterator */
+		user->queued_for_delete = true;
+	} else {
+		/* Remove the user from the object and destroy it */
+		error = llcache_object_remove_user(object, user);
+		if (error == NSERROR_OK) {
 			error = llcache_object_user_destroy(user);
+		}
 	}
-
+	
 	return error; 
 }
 
@@ -395,8 +406,8 @@ nserror llcache_handle_clone(llcache_handle *handle, llcache_handle **result)
 	error = llcache_object_user_new(handle->cb, handle->pw, &newuser);
 	if (error == NSERROR_OK) {
 		llcache_object_add_user(handle->object, newuser);
-		newuser->handle.state = handle->state;
-		*result = &newuser->handle;
+		newuser->handle->state = handle->state;
+		*result = newuser->handle;
 	}
 	
 	return error;
@@ -405,7 +416,7 @@ nserror llcache_handle_clone(llcache_handle *handle, llcache_handle **result)
 /* See llcache.h for documentation */
 nserror llcache_handle_abort(llcache_handle *handle)
 {
-	llcache_object_user *user = (llcache_object_user *) handle;
+	llcache_object_user *user = llcache_object_find_user(handle);
 	llcache_object *object = handle->object, *newobject;
 	nserror error = NSERROR_OK;
 	bool all_alone = true;
@@ -421,9 +432,29 @@ nserror llcache_handle_abort(llcache_handle *handle)
 		error = llcache_object_snapshot(object, &newobject);
 		if (error != NSERROR_OK)
 			return error;
+
 		/* Move across to the new object */
-		llcache_object_remove_user(object, user);
-		llcache_object_add_user(newobject, user);
+		if (user->iterator_target) {
+			/* User is current iterator target, clone it */
+			llcache_object_user *newuser = 
+					calloc(1, sizeof(llcache_object_user));
+			if (newuser == NULL) {
+				llcache_object_destroy(newobject);
+				return NSERROR_NOMEM;
+			}
+
+			/* Move handle across to clone */
+			newuser->handle = user->handle;
+			user->handle = NULL;
+
+			/* Mark user as needing deletion */
+			user->queued_for_delete = true;
+
+			llcache_object_add_user(newobject, newuser);
+		} else {
+			llcache_object_remove_user(object, user);
+			llcache_object_add_user(newobject, user);
+		}
 		
 		/* Add new object to uncached list */
 		llcache_object_add_to_list(newobject, 
@@ -450,7 +481,7 @@ nserror llcache_handle_abort(llcache_handle *handle)
 /* See llcache.h for documentation */
 nserror llcache_handle_force_stream(llcache_handle *handle)
 {
-	llcache_object_user *user = (llcache_object_user *) handle;
+	llcache_object_user *user = llcache_object_find_user(handle);
 	llcache_object *object = handle->object;
 
 	/* Cannot stream if there are multiple users */
@@ -535,15 +566,26 @@ bool llcache_handle_references_same_object(const llcache_handle *a,
 nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 		llcache_object_user **user)
 {
-	llcache_object_user *u = calloc(1, sizeof(llcache_object_user));
-	if (u == NULL)
+	llcache_handle *h;
+	llcache_object_user *u;
+
+	h = calloc(1, sizeof(llcache_handle));
+	if (h == NULL)
 		return NSERROR_NOMEM;
 
-	u->handle.cb = cb;
-	u->handle.pw = pw;
+	u = calloc(1, sizeof(llcache_object_user));
+	if (u == NULL) {
+		free(h);
+		return NSERROR_NOMEM;
+	}
+
+	h->cb = cb;
+	h->pw = pw;
+
+	u->handle = h;
 
 #ifdef LLCACHE_TRACE
-	LOG(("Created user %p (%p, %p)", u, (void *) cb, pw));
+	LOG(("Created user %p (%p, %p, %p)", u, h, (void *) cb, pw));
 #endif
 
 	*user = u;
@@ -568,12 +610,16 @@ nserror llcache_object_user_destroy(llcache_object_user *user)
 	assert(user->next == NULL);
 	assert(user->prev == NULL);
 	
+	if (user->handle != NULL)
+		free(user->handle);
+
 	free(user);
 
 	return NSERROR_OK;
 }
 
-/** Iterate the users of an object, calling their callbacks.
+/**
+ * Iterate the users of an object, calling their callbacks.
  *
  * \param object	The object to iterate
  * \param event		The event to pass to the callback.
@@ -587,14 +633,25 @@ static nserror llcache_send_event_to_users(llcache_object *object,
 	
 	user = object->users;
 	while (user != NULL) {
-		next_user = user->next;
-		error = user->handle.cb(&user->handle, event,
-					user->handle.pw);
+		user->iterator_target = true;
+
+		error = user->handle->cb(user->handle, event,
+					user->handle->pw);
 		if (error != NSERROR_OK)
 			break;
+
+		next_user = user->next;
+
+		user->iterator_target = false;
+
+		if (user->queued_for_delete) {
+			llcache_object_remove_user(object, user);
+			llcache_object_user_destroy(user);
+		}
+
 		user = next_user;
 	}
-	
+       
 	return error;
 }
 
@@ -1156,7 +1213,7 @@ nserror llcache_object_add_user(llcache_object *object,
 	assert(user->next == NULL);
 	assert(user->prev == NULL);
 
-	user->handle.object = object;
+	user->handle->object = object;
 
 	user->prev = NULL;
 	user->next = object->users;
@@ -1183,7 +1240,7 @@ nserror llcache_object_remove_user(llcache_object *object,
 		llcache_object_user *user)
 {
 	assert(object->users != NULL);
-	assert(user->handle.object == object);
+	assert(user->handle->object == object);
 	assert((user->prev != NULL) || (object->users == user));
 	
 	if (user == object->users)
@@ -1201,6 +1258,26 @@ nserror llcache_object_remove_user(llcache_object *object,
 #endif
 
 	return NSERROR_OK;
+}
+
+/**
+ * Find a user of a low-level cache object
+ *
+ * \param handle  External cache handle to search for
+ * \return Pointer to corresponding user, or NULL if not found
+ */
+llcache_object_user *llcache_object_find_user(const llcache_handle *handle)
+{
+	llcache_object_user *user;
+
+	assert(handle->object != NULL);
+
+	for (user = handle->object->users; user != NULL; user = user->next) {
+		if (user->handle == handle)
+			break;
+	}
+
+	return user;
 }
 
 /**
@@ -1305,7 +1382,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 	for (user = object->users; user != NULL; user = next_user) {
 		/* Emit necessary events to bring the user up-to-date */
-		llcache_handle *handle = &user->handle;
+		llcache_handle *handle = user->handle;
 		const llcache_fetch_state objstate = object->fetch.state;
 
 		/* Flag that this user is the current iteration target
@@ -1373,6 +1450,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
+				llcache_object_remove_user(object, user);
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1408,6 +1486,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
+				llcache_object_remove_user(object, user);
 				llcache_object_user_destroy(user);
 				continue;
 			}
@@ -1429,6 +1508,7 @@ nserror llcache_object_notify_users(llcache_object *object)
 
 			if (user->queued_for_delete) {
 				next_user = user->next;
+				llcache_object_remove_user(object, user);
 				llcache_object_user_destroy(user);
 				continue;
 			}
