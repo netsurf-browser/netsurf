@@ -2086,6 +2086,11 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	struct node_element *element;
 	struct node_msg_data msg_data;
 
+	bool double_click_1 = mouse & BROWSER_MOUSE_DOUBLE_CLICK &&
+			mouse & BROWSER_MOUSE_CLICK_1;
+	bool double_click_2 = mouse & BROWSER_MOUSE_DOUBLE_CLICK &&
+			mouse & BROWSER_MOUSE_CLICK_2;
+
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
@@ -2170,9 +2175,9 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	/* A click on expansion toggle or double click on folder toggles node
 	 * expansion */
 	if (((expansion_toggle) && (mouse & (BROWSER_MOUSE_CLICK_1 |
-				      BROWSER_MOUSE_CLICK_2))) ||
-	    ((!expansion_toggle) && (node->child != NULL) &&
-	     (mouse & BROWSER_MOUSE_DOUBLE_CLICK))) {
+			BROWSER_MOUSE_CLICK_2))) ||
+			(((!expansion_toggle) && (node->child != NULL)) &&
+			(double_click_1 || double_click_2))) {
 
 		/* clear any selection */
 		tree_set_node_selected(tree, tree->root->child, true, false);
@@ -2215,8 +2220,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	if ((element->editable) && (!tree->editing) &&
 	    ((element->type == NODE_ELEMENT_TEXT) ||
 	     (element->type == NODE_ELEMENT_TEXT_PLUS_ICON)) &&
-	    (mouse & (BROWSER_MOUSE_CLICK_1 |
-		      BROWSER_MOUSE_DOUBLE_CLICK)) &&
+	    (mouse & BROWSER_MOUSE_CLICK_1 || double_click_1) &&
 	    (mouse & BROWSER_MOUSE_MOD_2 ||
 	     mouse & BROWSER_MOUSE_MOD_3)) {
 		tree_set_node_selected(tree, tree->root->child, true, false);
@@ -2225,7 +2229,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 	}
 
 	/* double click launches the leaf */
-	if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
+	if (double_click_1 || double_click_2) {
 		if (node->user_callback == NULL)
 			return false;
 		msg_data.msg = NODE_LAUNCH;
