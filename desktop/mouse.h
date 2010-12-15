@@ -63,4 +63,6 @@ typedef enum {
 					 * (eg. Alt) */
 } browser_mouse_state;
 
+void browser_mouse_state_dump(browser_mouse_state mouse);
+
 #endif
