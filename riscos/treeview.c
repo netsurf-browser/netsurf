@@ -759,7 +759,9 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 			tv->drag = true;
 		}
 
-		if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_MOD_2))
+		if ((mouse & BROWSER_MOUSE_CLICK_1) &&
+				(mouse & (BROWSER_MOUSE_MOD_2 |
+				BROWSER_MOUSE_MOD_3)))
 			xwimp_set_caret_position(tv->w, -1, -100, -100, 32, -1);
 	}
 
