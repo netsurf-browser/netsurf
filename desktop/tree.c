@@ -1661,28 +1661,28 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 	/* Set up the clipping area */
 	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
 
-	if ((node->previous != NULL) &&
-			(!(tree->flags & TREE_NO_FURNITURE))) {
-		/* There is a node above this
-		 * Display furniture; line connecting up to previous */
-		x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
-		y0 = tree_y + node->previous->box.y;
-		y1 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
-		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
-	}
-	if ((node->next != NULL) &&
-			(!(tree->flags & TREE_NO_FURNITURE))) {
-		/* There is a node below this
-		 * Display furniture; line connecting down to next */
-		x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
-		y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
-		y1 = tree_y + node->next->box.y;
-		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
-	}
-
-	/* Node is inside clip region */
+	/* Draw node's furniture */
 	if (!(tree->flags & TREE_NO_FURNITURE)) {
 		/* Display furniture */
+		if (node->previous != NULL) {
+			/* There is a node above this
+			 * Display furniture; line connecting up to previous */
+			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
+			y0 = tree_y + node->previous->box.y;
+			y1 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
+			plot.line(x0, y0, x1, y1,
+					&plot_style_stroke_tree_furniture);
+		}
+		if (node->next != NULL) {
+			/* There is a node below this
+			 * Display furniture; line connecting down to next */
+			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
+			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
+			y1 = tree_y + node->next->box.y;
+			plot.line(x0, y0, x1, y1,
+					&plot_style_stroke_tree_furniture);
+		}
+
 		parent = node->parent;
 		if ((parent != NULL) && (parent != tree->root) &&
 				(parent->child == node)) {
@@ -1700,8 +1700,12 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 		y0 = y1 = tree_y + node->data.box.y + node->data.box.height -
 				(TREE_LINE_HEIGHT / 2);
 		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
+
 		tree_draw_node_expansion_toggle(tree, node, tree_x, tree_y);
 	}
+
+	/* Draw node's element(s)
+	 * NOTE: node's children are handled later in tree_draw_tree() */
 	if (node->expanded) {
 		for (element = &node->data; element != NULL;
 				element = element->next) {
