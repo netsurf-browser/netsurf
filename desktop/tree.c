@@ -2107,9 +2107,9 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 		y1 = tree->editing->box.y + tree->editing->box.height;
 
 		if (tree->textarea_drag_start &&
-		    (mouse & (BROWSER_MOUSE_HOLDING_1 |
-			      BROWSER_MOUSE_HOLDING_2))) {
-
+				(mouse & (BROWSER_MOUSE_HOLDING_1 |
+				BROWSER_MOUSE_HOLDING_2))) {
+			/* Track the drag path */
 			textarea_mouse_action(tree->textarea, mouse,
 					      x - x0, y - y0);
 			return true;
@@ -2118,12 +2118,15 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 
 
 		if ((x >= x0) && (x < x1) && (y >= y0) && (y < y1)) {
-
+			/* Inside the textarea */
 			if (mouse & (BROWSER_MOUSE_DRAG_1 |
-				     BROWSER_MOUSE_DRAG_2))
+				     BROWSER_MOUSE_DRAG_2)) {
+				/* Drag starting */
 				tree->textarea_drag_start = true;
-			else
+			} else {
+				/* Other action */
 				tree->textarea_drag_start = false;
+			}
 			textarea_mouse_action(tree->textarea, mouse,
 					      x - x0, y - y0);
 			return true;
@@ -2133,9 +2136,8 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 
 	tree->textarea_drag_start = false;
 
-	/* we are not interested in the drag path or in mouse presses, return */
-	if (mouse & (BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_HOLDING_2 |
-		     BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2))
+	/* we are not interested in the drag path, return */
+	if (mouse & (BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_HOLDING_2))
 		return true;
 
 	/* cancel edit */
