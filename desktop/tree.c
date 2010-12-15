@@ -1798,14 +1798,18 @@ void tree_draw(struct tree *tree, int x, int y,
 			(TREE_TEXT_SIZE_PT * FIXTOINT(nscss_screen_dpi) + 36) /
 			72;
 
+	/* Set up clip rectangle */
 	clip.x0 = x + clip_x;
 	clip.y0 = y + clip_y;
 	clip.x1 = clip.x0 + clip_width;
 	clip.y1 = clip.y0 + clip_height;
+	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
 
+	/* Flat fill extents of clipping area */
 	plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
 		       &plot_style_fill_tree_background);
-	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+
+	/* Draw the tree */
 	tree_draw_tree(tree, tree->root, x, y, clip);
 
  	if (tree->editing != NULL) {
