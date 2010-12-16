@@ -3089,7 +3089,7 @@ void ro_gui_window_prepare_navigate_all(void) {
 
 /**
  * Returns the state of the mouse buttons and modifiers keys for a
- * click/release action, suitable for passing to the OS-independent
+ * mouse action, suitable for passing to the OS-independent
  * browser window/ treeview/ etc code.
  *
  * \param  buttons		Wimp button state.
@@ -3100,38 +3100,53 @@ void ro_gui_window_prepare_navigate_all(void) {
 browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		wimp_icon_flags type)
 {
-	browser_mouse_state state = 0;
+	browser_mouse_state state = 0; /* Blank state with nothing set */
 
 	switch (type) {
-	case wimp_BUTTON_CLICK_DRAG:
-		if (buttons & (wimp_CLICK_SELECT))
+	case wimp_BUTTON_CLICK_DRAG:		/* Used for browser window */
+		/* Handle single clicks. */
+
+		/* We fire core PRESS and CLICK events together for "action on
+		 * press" behaviour. */
+		if (buttons & (wimp_CLICK_SELECT)) /* Select click */
 			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1;
-		if (buttons & (wimp_CLICK_ADJUST))
+		if (buttons & (wimp_CLICK_ADJUST)) /* Adjust click */
 			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
 		break;
-	case wimp_BUTTON_DOUBLE_CLICK_DRAG:
-		if (buttons & (wimp_SINGLE_SELECT))
+	case wimp_BUTTON_DOUBLE_CLICK_DRAG:	/* Used for treeview window */
+		/* Handle single and double clicks. */
+
+		/* Single clicks: Fire PRESS and CLICK events together
+		 * for "action on press" behaviour. */
+		if (buttons & (wimp_SINGLE_SELECT)) /* Select single click */
 			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1;
-		if (buttons & (wimp_SINGLE_ADJUST))
+		if (buttons & (wimp_SINGLE_ADJUST)) /* Adjust single click */
 			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2;
-		if (buttons & (wimp_DOUBLE_SELECT))
+
+		/* Double clicks: Fire PRESS, CLICK, and DOUBLE_CLICK
+		 * events together for "action on 2nd press" behaviour. */
+		if (buttons & (wimp_DOUBLE_SELECT)) /* Select double click */
 			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1 |
 					BROWSER_MOUSE_DOUBLE_CLICK;
-		if (buttons & (wimp_DOUBLE_ADJUST))
+		if (buttons & (wimp_DOUBLE_ADJUST)) /* Adjust double click */
 			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2 |
 					BROWSER_MOUSE_DOUBLE_CLICK;
 		break;
 	}
 
+	/* Check if a drag has started */
 	if (buttons & (wimp_DRAG_SELECT)) {
+		/* A drag was _started_ with Select; Fire DRAG_1. */
 		state |= BROWSER_MOUSE_DRAG_1;
 		mouse_drag_select = true;
 	}
 	if (buttons & (wimp_DRAG_ADJUST)) {
+		/* A drag was _started_ with Adjust; Fire DRAG_2. */
 		state |= BROWSER_MOUSE_DRAG_2;
 		mouse_drag_adjust = true;
 	}
 
+	/* Set modifier key state */
 	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
 	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
 	if (ro_gui_alt_pressed())   state |= BROWSER_MOUSE_MOD_3;
@@ -3152,7 +3167,7 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 		wimp_icon_flags type)
 {
-	browser_mouse_state state = 0;
+	browser_mouse_state state = 0; /* Blank state with nothing set */
 
 	switch (type) {
 	case wimp_BUTTON_CLICK_DRAG:
@@ -3163,12 +3178,14 @@ browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 		break;
 	}
 
+	/* If mouse buttons aren't held, turn off drags */
 	if (!(buttons & (wimp_CLICK_SELECT) || buttons & (wimp_CLICK_ADJUST))) {
 		mouse_drag_select = false;
 		mouse_drag_adjust = false;
 	}
 
-	/* Set drag on and record which button the drag is happening with */
+	/* If there's a drag happening, set DRAG_ON and record which button
+	 * the drag is happening with, i.e. HOLDING_1 or HOLDING_2 */
 	if (mouse_drag_select) {
 		state |= BROWSER_MOUSE_DRAG_ON | BROWSER_MOUSE_HOLDING_1;
 	}
@@ -3176,6 +3193,7 @@ browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 		state |= BROWSER_MOUSE_DRAG_ON | BROWSER_MOUSE_HOLDING_2;
 	}
 
+	/* Set modifier key state */
 	if (ro_gui_shift_pressed()) state |= BROWSER_MOUSE_MOD_1;
 	if (ro_gui_ctrl_pressed())  state |= BROWSER_MOUSE_MOD_2;
 	if (ro_gui_alt_pressed())   state |= BROWSER_MOUSE_MOD_3;
