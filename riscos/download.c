@@ -100,6 +100,8 @@ struct gui_download_window {
 	struct timeval start_time;	/**< Time download started. */
 	struct timeval last_time;	/**< Time status was last updated. */
 	unsigned int last_received;	/**< Value of received at last_time. */
+	float average_rate;		/**< Moving average download rate. */
+	unsigned int average_points;	/**< Number of points in the average. */
 
 	bool send_dataload;	/**< Should send DataLoad message when finished */
 	wimp_message save_message;	/**< Copy of wimp DataSaveAck message */
@@ -245,6 +247,8 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	dw->last_time = dw->start_time;
 	dw->last_received = 0;
 	dw->file_type = 0;
+	dw->average_rate = 0;
+	dw->average_points = 0;
 
 	/* Get scheme from URL */
 	res = url_scheme(url, &scheme);
@@ -429,7 +433,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 
-nserror gui_download_window_data(struct gui_download_window *dw, 
+nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
 	while (true) {
@@ -437,7 +441,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 		int unwritten;
 		os_error *error;
 
-		error = xosgbpb_writew(dw->file, (const byte *) data, size, 
+		error = xosgbpb_writew(dw->file, (const byte *) data, size,
 				&unwritten);
 		if (error) {
 			LOG(("xosgbpb_writew: 0x%x: %s",
@@ -534,12 +538,21 @@ void ro_gui_download_update_status(struct gui_download_window *dw)
 	if (dw->ctx) {
 		rate = (dw->received - dw->last_received) / dt;
 		received = human_friendly_bytesize(dw->received);
-		speed = human_friendly_bytesize(rate);
+		/* A simple 'modified moving average' download rate calculation
+		 * to smooth out rate fluctuations: chosen for simplicity.
+		 */
+		dw->average_points++;
+		dw->average_rate =
+				((dw->average_points - 1) *
+				dw->average_rate + rate) /
+				dw->average_points;
+		speed = human_friendly_bytesize(dw->average_rate);
 		if (dw->total_size) {
 			float f;
 
-			if (rate) {
-				left = (dw->total_size - dw->received) / rate;
+			if (dw->average_rate > 0) {
+				left = (dw->total_size - dw->received) /
+						dw->average_rate;
 				sprintf(time, "%u:%.2u", left / 60, left % 60);
 			}
 
@@ -1295,7 +1308,7 @@ bool ro_gui_download_save(struct gui_download_window *dw,
 		}
 
 		if (error) {
-			if (dw->ctx) 
+			if (dw->ctx)
 				download_context_abort(dw->ctx);
 			gui_download_window_error(dw, error->errmess);
 		}
