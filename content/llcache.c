@@ -1241,7 +1241,7 @@ nserror llcache_object_remove_user(llcache_object *object,
 		llcache_object_user *user)
 {
 	assert(object->users != NULL);
-	assert(user->handle->object == object);
+	assert(user->handle == NULL || user->handle->object == object);
 	assert((user->prev != NULL) || (object->users == user));
 	
 	if (user == object->users)
