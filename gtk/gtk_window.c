@@ -517,6 +517,11 @@ gboolean nsgtk_window_button_press_event(GtkWidget *widget,
 	if (event->state & GDK_CONTROL_MASK)
 		g->mouse.state |= BROWSER_MOUSE_MOD_2;
 
+	/* Record where we pressed, for use when determining whether to start
+	 * a drag in motion notify events. */
+	g->last_x = event->x;
+	g->last_y = event->y;
+
 	browser_window_mouse_click(g->bw, g->mouse.state, g->mouse.pressed_x,
 			g->mouse.pressed_y);
 
