@@ -25,6 +25,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
@@ -41,6 +42,7 @@ struct nsgtk_treeview {
 	GtkDrawingArea *drawing_area;
 	int mouse_pressed_x;
 	int mouse_pressed_y;
+	int last_x, last_y;
 	browser_mouse_state mouse_state;
 	struct tree *tree;
 };
@@ -263,8 +265,13 @@ gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
 	if (event->state & GDK_CONTROL_MASK)
 		tw->mouse_state |= BROWSER_MOUSE_MOD_2;
 	if (event->state & GDK_MOD1_MASK)
-		tw->mouse_state |= BROWSER_MOUSE_MOD_3;	
-	
+		tw->mouse_state |= BROWSER_MOUSE_MOD_3;
+
+	/* Record where we pressed, for use when determining whether to start
+	 * a drag in motion notify events. */
+	tw->last_x = event->x;
+	tw->last_y = event->y;
+
 	tree_mouse_action(tree, tw->mouse_state, event->x, event->y);
 	
 	return TRUE;
@@ -334,8 +341,19 @@ gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
 	bool alt = event->state & GDK_MOD1_MASK;
 	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
 	struct tree *tree = tw->tree;
-	
-	
+
+	if ((abs(event->x - tw->last_x) < 5) &&
+			(abs(event->y - tw->last_y) < 5)) {
+		/* Mouse hasn't moved far enough from press coordinate for this
+		 * to be considered a drag. */
+		return FALSE;
+	} else {
+		/* This is a drag, ensure it's always treated as such, even if
+		 * we drag back over the press location */
+		tw->last_x = INT_MIN;
+		tw->last_y = INT_MIN;
+	}
+
 	/* Handle modifiers being removed */
 	if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
 		tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
