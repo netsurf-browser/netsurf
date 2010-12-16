@@ -241,6 +241,29 @@
 	)
 )
 
+(procedure p_copylib #lib
+	(if (<> #AutoInstall 1)
+		(
+			(copylib
+				(prompt "Copying " #lib "...")
+				(help @copylib-help)
+				(source (tackon "Libs/" #lib))
+				(dest "Libs:")
+				(optional "nofail" "force")
+				(confirm "expert")
+			)
+		)
+		;else
+		(
+			(run "CopyStore Libs/" #lib " Libs:")
+		)
+	)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Script execution starts here ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (if (= @app-name "NetSurfAutoInstall") (set #AutoInstall 1))
 (set @app-name "NetSurf")
 
@@ -436,6 +459,15 @@
 )
 
 (set #complete 40)
+(working "Copying Libraries")
+
+(foreach "Libs" "#?"
+	(complete #complete)
+	(p_copylib @each-name)
+	(set #complete (+ #complete 2))
+)
+
+(set #complete 60)
 
 (if (= #cairo-version 1)
 	(
