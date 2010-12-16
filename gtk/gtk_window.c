@@ -19,6 +19,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include <limits.h>
 #include "content/hlcache.h"
 #include "gtk/gtk_window.h"
 #include "desktop/browser.h"
@@ -442,9 +443,19 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 	struct gui_window *g = data;
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
-	if ((abs(event->x - g->last_x) < 5) && (abs(event->y - g->last_y) < 5))
-		/* necessary for touch screens */
+
+	if ((abs(event->x - g->last_x) < 5) &&
+			(abs(event->y - g->last_y) < 5)) {
+		/* Mouse hasn't moved far enough from press coordinate for this
+		 * to be considered a drag. */
 		return FALSE;
+	} else {
+		/* This is a drag, ensure it's always treated as such, even if
+		 * we drag back over the press location */
+		g->last_x = INT_MIN;
+		g->last_y = INT_MIN;
+	}
+
 	if (g->mouse.state & BROWSER_MOUSE_PRESS_1){
 		/* Start button 1 drag */
 		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
@@ -471,9 +482,6 @@ gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 
 	browser_window_mouse_track(g->bw, g->mouse.state,
 			event->x / g->bw->scale, event->y / g->bw->scale);
-
-	g->last_x = event->x;
-	g->last_y = event->y;
 
 	return TRUE;
 }
