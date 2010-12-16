@@ -840,11 +840,34 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						twin->drag_x = 0;
 						twin->drag_y = 0;
 					break;
+
 					case MIDDLEUP:
 						if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
 						{
+							CurrentTime(&curtime.tv_sec,&curtime.tv_usec);
+
+							twin->mouse_state = BROWSER_MOUSE_CLICK_2;
+
+							if(twin->lastclick.tv_sec)
+							{
+								if(DoubleClick(twin->lastclick.tv_sec,
+											twin->lastclick.tv_usec,
+											curtime.tv_sec, curtime.tv_usec))
+									twin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+							}
 							tree_mouse_action(twin->tree,
-								BROWSER_MOUSE_CLICK_2 | twin->key_state, x, y);
+								twin->mouse_state | twin->key_state, x, y);
+
+							if(twin->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK)
+							{
+								twin->lastclick.tv_sec = 0;
+								twin->lastclick.tv_usec = 0;
+							}
+							else
+							{
+								twin->lastclick.tv_sec = curtime.tv_sec;
+								twin->lastclick.tv_usec = curtime.tv_usec;
+							}
 						}
 						else ami_tree_drag_end(twin, x, y);
 

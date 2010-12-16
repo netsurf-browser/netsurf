@@ -863,6 +863,7 @@ void ami_handle_msg(void)
 	struct Node *tabnode;
 	int i, nskey;
 	struct browser_window *closedbw;
+	struct timeval curtime;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1138,22 +1139,71 @@ void ami_handle_msg(void)
 						case SELECTUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 							{
-								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_1 | gwin->key_state,x,y);
+								CurrentTime(&curtime.tv_sec, &curtime.tv_usec);
+
+								gwin->mouse_state = BROWSER_MOUSE_CLICK_1;
+
+								if(gwin->lastclick.tv_sec)
+								{
+									if(DoubleClick(gwin->lastclick.tv_sec,
+												gwin->lastclick.tv_usec,
+												curtime.tv_sec, curtime.tv_usec))
+										gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+								}
+
+								browser_window_mouse_click(gwin->bw,
+									gwin->mouse_state | gwin->key_state,x,y);
+
+								if(gwin->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK)
+								{
+									gwin->lastclick.tv_sec = 0;
+									gwin->lastclick.tv_usec = 0;
+								}
+								else
+								{
+									gwin->lastclick.tv_sec = curtime.tv_sec;
+									gwin->lastclick.tv_usec = curtime.tv_usec;
+								}
 							}
 							else
 							{
-								browser_window_mouse_drag_end(gwin->bw,0,x,y);
+								browser_window_mouse_drag_end(gwin->bw, 0, x, y);
 							}
 							gwin->mouse_state=0;
 						break;
+
 						case MIDDLEUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_2)
 							{
-								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_CLICK_2 | gwin->key_state,x,y);
+								CurrentTime(&curtime.tv_sec, &curtime.tv_usec);
+
+								gwin->mouse_state = BROWSER_MOUSE_CLICK_2;
+
+								if(gwin->lastclick.tv_sec)
+								{
+									if(DoubleClick(gwin->lastclick.tv_sec,
+												gwin->lastclick.tv_usec,
+												curtime.tv_sec, curtime.tv_usec))
+										gwin->mouse_state |= BROWSER_MOUSE_DOUBLE_CLICK;
+								}
+
+								browser_window_mouse_click(gwin->bw,
+									gwin->mouse_state | gwin->key_state,x,y);
+
+								if(gwin->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK)
+								{
+									gwin->lastclick.tv_sec = 0;
+									gwin->lastclick.tv_usec = 0;
+								}
+								else
+								{
+									gwin->lastclick.tv_sec = curtime.tv_sec;
+									gwin->lastclick.tv_usec = curtime.tv_usec;
+								}
 							}
 							else
 							{
-								browser_window_mouse_drag_end(gwin->bw,0,x,y);
+								browser_window_mouse_drag_end(gwin->bw, 0, x, y);
 							}
 							gwin->mouse_state=0;
 						break;
