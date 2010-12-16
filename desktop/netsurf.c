@@ -176,16 +176,16 @@ void netsurf_exit(void)
 {
 	LOG(("Closing GUI"));
 	gui_quit();
+	LOG(("Finalising high-level cache"));
+	hlcache_finalise();
+	LOG(("Finalising low-level cache"));
+	llcache_finalise();
 	LOG(("Closing fetches"));
 	fetch_quit();
 	LOG(("Closing utf8"));
 	utf8_finalise();
 	LOG(("Destroying URLdb"));
 	urldb_destroy();
-	LOG(("Finalising high-level cache"));
-	hlcache_finalise();
-	LOG(("Finalising low-level cache"));
-	llcache_finalise();
 	LOG(("Remaining lwc strings:"));
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 	LOG(("Exited successfully"));
