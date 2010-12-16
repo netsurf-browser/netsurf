@@ -3117,6 +3117,9 @@ browser_mouse_state ro_gui_mouse_click_state(wimp_mouse_state buttons,
 		if (buttons & (wimp_DOUBLE_SELECT))
 			state |= BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1 |
 					BROWSER_MOUSE_DOUBLE_CLICK;
+		if (buttons & (wimp_DOUBLE_ADJUST))
+			state |= BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2 |
+					BROWSER_MOUSE_DOUBLE_CLICK;
 		break;
 	}
 
