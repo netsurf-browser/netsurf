@@ -285,9 +285,11 @@ gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
 	if (tw->mouse_state & BROWSER_MOUSE_DOUBLE_CLICK) {
 		
 		if (tw->mouse_state & BROWSER_MOUSE_PRESS_1)
-			tw->mouse_state ^= BROWSER_MOUSE_PRESS_1;
+			tw->mouse_state ^= BROWSER_MOUSE_PRESS_1 |
+					BROWSER_MOUSE_CLICK_1;
 		else if (tw->mouse_state & BROWSER_MOUSE_PRESS_2)
 			tw->mouse_state ^= (BROWSER_MOUSE_PRESS_2 |
+					BROWSER_MOUSE_CLICK_2 |
 					BROWSER_MOUSE_DOUBLE_CLICK);
 		
 	} else if (tw->mouse_state & BROWSER_MOUSE_PRESS_1)
