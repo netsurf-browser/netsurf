@@ -3169,15 +3169,6 @@ browser_mouse_state ro_gui_mouse_drag_state(wimp_mouse_state buttons,
 {
 	browser_mouse_state state = 0; /* Blank state with nothing set */
 
-	switch (type) {
-	case wimp_BUTTON_CLICK_DRAG:
-		if (buttons & (wimp_CLICK_SELECT))
-			state |= BROWSER_MOUSE_HOLDING_1;
-		if (buttons & (wimp_CLICK_ADJUST))
-			state |= BROWSER_MOUSE_HOLDING_2;
-		break;
-	}
-
 	/* If mouse buttons aren't held, turn off drags */
 	if (!(buttons & (wimp_CLICK_SELECT) || buttons & (wimp_CLICK_ADJUST))) {
 		mouse_drag_select = false;
