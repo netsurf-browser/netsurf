@@ -764,11 +764,6 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						if(twin->drag_y == 0) twin->drag_y = y;
 						ami_tree_drag_icon_show(twin);
 					}
-					else
-					{
-						tree_mouse_action(twin->tree,
-							twin->mouse_state | twin->key_state, x, y);
-					}
 				}
 				twin->lastclick.tv_sec = 0;
 				twin->lastclick.tv_usec = 0;
@@ -795,8 +790,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							twin->mouse_state = BROWSER_MOUSE_PRESS_2;
 						break;
 					}
-					tree_mouse_action(twin->tree,
-							twin->mouse_state | twin->key_state, x, y);
+//**
 				}
 
 				if(x < xs) x = xs;
@@ -874,6 +868,12 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						twin->mouse_state=0;
 						twin->drag_x = 0;
 						twin->drag_y = 0;
+					break;
+
+					case SELECTDOWN:
+					case MIDDLEDOWN:
+						tree_mouse_action(twin->tree,
+							twin->mouse_state | twin->key_state, x, y);
 					break;
 				}
 			break;
