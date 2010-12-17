@@ -791,12 +791,22 @@ void ro_treeview_mouse_at(wimp_w w, wimp_pointer *pointer)
 	int			xpos, ypos;
 	browser_mouse_state	mouse;
 
+	if (pointer->buttons & (wimp_CLICK_MENU))
+		return;
+
 	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(pointer->w);
 	if (tv == NULL) {
 		LOG(("NULL treeview block for window: 0x%x",
 				(unsigned int) pointer->w));
 		return;
 	}
+
+	if (!tv->drag)
+		return;
+
+	/* We know now that it's not a Menu click and the treeview thinks
+	 * that a drag is in progress.
+	 */
 
 	state.w = tv->w;
 	error = xwimp_get_window_state(&state);
@@ -818,21 +828,15 @@ void ro_treeview_mouse_at(wimp_w w, wimp_pointer *pointer)
 
 	/* Start to process the mouse click. */
 
-	mouse = 0;
+	mouse = ro_gui_mouse_drag_state(pointer->buttons,
+			wimp_BUTTON_DOUBLE_CLICK_DRAG);
 
-	if (!(pointer->buttons & (wimp_CLICK_MENU))) {
-		mouse = ro_gui_mouse_drag_state(pointer->buttons,
-				wimp_BUTTON_DOUBLE_CLICK_DRAG);
-		if (mouse != 0)
-			tree_mouse_action(tv->tree, mouse, xpos, ypos);
+	tree_mouse_action(tv->tree, mouse, xpos, ypos);
 
-		/* Check if drag ended and tell core */
-		if (tv->drag && !(mouse & BROWSER_MOUSE_DRAG_ON)) {
-			tree_drag_end(tv->tree, mouse, tv->drag_start.x,
-					tv->drag_start.y, xpos, ypos);
-			tv->drag = false;
-		}
-
+	if (!(mouse & BROWSER_MOUSE_DRAG_ON)) {
+		tree_drag_end(tv->tree, mouse, tv->drag_start.x,
+				tv->drag_start.y, xpos, ypos);
+		tv->drag = false;
 	}
 }
 
