@@ -1612,9 +1612,7 @@ static void tree_draw_node_element(struct tree *tree,
 			fstyle = &plot_fstyle;
 		}
 
-		plot.text(x + 4, y +
-				((TREE_LINE_HEIGHT * 2 + tree_text_size_px)
-				+ 2) / 4,
+		plot.text(x + 4, y + (TREE_LINE_HEIGHT * 3 + 2) / 4,
 				element->text, strlen(element->text),
 				fstyle);
 		break;
