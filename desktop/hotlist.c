@@ -64,10 +64,14 @@ static node_callback_resp hotlist_node_callback(void *user_data,
 	const char *text;
 	char *norm_text;
 	bool is_folder = tree_node_is_folder(node);
+	bool cancelled = false;
 
 	switch (msg_data->msg) {
+	case NODE_ELEMENT_EDIT_CANCELLED:
+		cancelled = true;
+		/* fall through */
 	case NODE_ELEMENT_EDIT_FINISHED:
-		if (creating_node && 
+		if (creating_node && !cancelled &&
 		    (is_folder == false) &&
 		    (msg_data->flag == TREE_ELEMENT_TITLE)) {
 			tree_url_node_edit_url(hotlist_tree, node);

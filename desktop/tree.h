@@ -78,6 +78,7 @@ typedef enum {
  	NODE_DELETE_ELEMENT_IMG, /**< The bitmap or icon of a node is
 				  * being deleted */
  	NODE_LAUNCH, /**< The node has been launched */
+	NODE_ELEMENT_EDIT_CANCELLED, /**< Editing opperation cancelled.  */
 	NODE_ELEMENT_EDIT_FINISHING, /**< New text has to be accepted
 				      * or rejected.  */
   	NODE_ELEMENT_EDIT_FINISHED /**< Editing of a node_element has

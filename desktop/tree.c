@@ -879,7 +879,8 @@ static void tree_stop_edit(struct tree *tree, bool keep_changes)
 
 	tree_recalculate_size(tree);
 	if (element->parent->user_callback != NULL) {
-		msg_data.msg = NODE_ELEMENT_EDIT_FINISHED;
+		msg_data.msg = keep_changes ? NODE_ELEMENT_EDIT_FINISHED :
+				NODE_ELEMENT_EDIT_CANCELLED;
 		msg_data.flag = element->flag;
 		msg_data.node = element->parent;
 		element->parent->user_callback(element->parent->callback_data,
