@@ -46,9 +46,9 @@
 #define TREE_TEXT_SIZE_PT 11
 #define TREE_ICON_SIZE 17
 #define NODE_INSTEP 20
-#define TREE_LINE_HEIGHT 20
 
 static int tree_text_size_px;
+static int TREE_LINE_HEIGHT;
 
 static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
@@ -205,6 +205,19 @@ struct tree *tree_create(unsigned int flags,
 	tree->drag = TREE_NO_DRAG;
 	tree->callbacks = callbacks;
 	tree->client_data = client_data;
+
+	/* Set text height in pixels */
+	tree_text_size_px =
+			(TREE_TEXT_SIZE_PT * FIXTOINT(nscss_screen_dpi) + 36) /
+			72;
+	/* Set line height appropriate for this text height in pixels
+         * Using 4/3 text height */
+	TREE_LINE_HEIGHT = (tree_text_size_px * 8 + 3) / 6;
+
+	/* But if that's too small for the icons, base the line height on
+	 * the icon height. */
+	if (TREE_LINE_HEIGHT < TREE_ICON_SIZE + 2)
+		TREE_LINE_HEIGHT = TREE_ICON_SIZE + 2;
 
 	return tree;
 }
@@ -1794,10 +1807,6 @@ void tree_draw(struct tree *tree, int x, int y,
 	/* don't draw empty trees or trees with redraw flag set to false */
 	if (tree->root->child == NULL || !tree->redraw)
 		return;
-
-	tree_text_size_px =
-			(TREE_TEXT_SIZE_PT * FIXTOINT(nscss_screen_dpi) + 36) /
-			72;
 
 	/* Set up clip rectangle */
 	clip.x0 = x + clip_x;
