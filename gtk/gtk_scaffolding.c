@@ -1502,10 +1502,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	g->preferences_dialog = NULL;
 
-        nscss_screen_dpi = FLTTOFIX(gdk_screen_get_resolution(
-			gtk_widget_get_screen(GTK_WIDGET(g->window))));
-        LOG(("Set CSS DPI to %f", FIXTOFLT(nscss_screen_dpi)));
-
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
 	 */

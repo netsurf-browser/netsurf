@@ -55,6 +55,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/sslcert.h"
 #include "desktop/textinput.h"
+#include "css/utils.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_completion.h"
 #include "gtk/gtk_cookies.h"
@@ -496,6 +497,15 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
+
+	/* The tree view system needs to know the screen's DPI, so we
+	 * find that out here, rather than when we create a first browser
+	 * window.
+	 */
+
+	nscss_screen_dpi = FLTTOFIX(gdk_screen_get_resolution(
+					    gdk_screen_get_default()));
+	LOG(("Set CSS DPI to %f", FIXTOFLT(nscss_screen_dpi)));
 
 	if (nsgtk_history_init(glade_history_file_location) == false)
 		die("Unable to initialise history window.\n");
