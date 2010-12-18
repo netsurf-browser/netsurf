@@ -20,6 +20,8 @@
 #define AMIGA_DRAG_H
 #include "amiga/gui.h"
 
+#define AMI_DRAG_THRESHOLD 10
+
 int drag_save;
 void *drag_save_data;
 struct gui_window *drag_save_gui;

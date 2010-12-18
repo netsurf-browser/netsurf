@@ -483,9 +483,9 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WA_Height, scrn->Height / 2,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
-           	WA_IDCMP,IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+           	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 					IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-					IDCMP_EXTENDEDMOUSE,
+					IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&twin->scrollerhook,
@@ -533,9 +533,9 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WA_Height, scrn->Height / 2,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
-           	WA_IDCMP,IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+           	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 					IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-					IDCMP_EXTENDEDMOUSE,
+					IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY | IDCMP_INTUITICKS,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&twin->scrollerhook,
@@ -662,6 +662,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 	struct InputEvent *ie;
 	int nskey;
 	char fname[1024];
+	static int drag_x_move = 0, drag_y_move = 0;
 
 	while((result = RA_HandleInput(twin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 	{
@@ -712,6 +713,9 @@ BOOL ami_tree_event(struct treeview_window *twin)
 			break;
 
 			case WMHI_MOUSEMOVE:
+				drag_x_move = 0;
+				drag_y_move = 0;
+
 				GetAttr(SPACE_AreaBox, twin->gadgets[GID_BROWSER], (ULONG *)&bbox);
 
 				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
@@ -722,21 +726,20 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 				if(twin->mouse_state & BROWSER_MOUSE_DRAG_ON)
 				{
-					int drag_x_move = 0, drag_y_move = 0;
-
 					ami_drag_icon_move();
 
-					if(twin->win->MouseX < bbox->Left)
+					if((twin->win->MouseX < bbox->Left) &&
+						((twin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
 						drag_x_move = twin->win->MouseX - bbox->Left;
-					if(twin->win->MouseX > (bbox->Left + bbox->Width))
+					if((twin->win->MouseX > (bbox->Left + bbox->Width)) &&
+						((twin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
 						drag_x_move = twin->win->MouseX - (bbox->Left + bbox->Width);
-					if(twin->win->MouseY < bbox->Top)
+					if((twin->win->MouseY < bbox->Top) &&
+						((twin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
 						drag_y_move = twin->win->MouseY - bbox->Top;
-					if(twin->win->MouseY > (bbox->Top + bbox->Height))
+					if((twin->win->MouseY > (bbox->Top + bbox->Height)) &&
+						((twin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
 						drag_y_move = twin->win->MouseY - (bbox->Top + bbox->Height);
-
-					if(drag_x_move || drag_y_move)
-						ami_tree_scroll(twin, drag_x_move, drag_y_move);
 				}
 
 				if((x >= xs) && (y >= ys) && (x < bbox->Width + xs) &&
@@ -790,7 +793,6 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							twin->mouse_state = BROWSER_MOUSE_PRESS_2;
 						break;
 					}
-//**
 				}
 
 				if(x < xs) x = xs;
@@ -1092,6 +1094,10 @@ BOOL ami_tree_event(struct treeview_window *twin)
 			break;
 		}
 	}
+
+	if(drag_x_move || drag_y_move)
+		ami_tree_scroll(twin, drag_x_move, drag_y_move);
+
 	return FALSE;
 }
 

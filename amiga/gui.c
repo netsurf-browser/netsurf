@@ -864,6 +864,7 @@ void ami_handle_msg(void)
 	int i, nskey;
 	struct browser_window *closedbw;
 	struct timeval curtime;
+	static int drag_x_move = 0, drag_y_move = 0;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1007,6 +1008,9 @@ void ami_handle_msg(void)
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
+					drag_x_move = 0;
+					drag_y_move = 0;
+
 					GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 							(ULONG *)&bbox);
 
@@ -1026,28 +1030,20 @@ void ami_handle_msg(void)
 						((gwin->bw->drag_type == DRAGGING_SELECTION) ||
 						ami_autoscroll == TRUE))
 					{
-						int drag_x_move = 0, drag_y_move = 0;
-
 						ami_drag_icon_move();
 
-						if(gwin->win->MouseX < bbox->Left)
+						if((gwin->win->MouseX < bbox->Left) &&
+							((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
 							drag_x_move = gwin->win->MouseX - bbox->Left;
-						if(gwin->win->MouseX > (bbox->Left + bbox->Width))
+						if((gwin->win->MouseX > (bbox->Left + bbox->Width)) &&
+							((gwin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
 							drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
-						if(gwin->win->MouseY < bbox->Top)
+						if((gwin->win->MouseY < bbox->Top) &&
+							((gwin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
 							drag_y_move = gwin->win->MouseY - bbox->Top;
-						if(gwin->win->MouseY > (bbox->Top + bbox->Height))
+						if((gwin->win->MouseY > (bbox->Top + bbox->Height)) &&
+							((gwin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
 							drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
-
-						if(drag_x_move || drag_y_move)
-						{
-							gui_window_get_scroll(gwin->bw->window,
-								&gwin->bw->window->scrollx, &gwin->bw->window->scrolly);
-
-							gui_window_set_scroll(gwin->bw->window,
-								gwin->bw->window->scrollx + drag_x_move,
-								gwin->bw->window->scrolly + drag_y_move);
-						}
 					}
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
@@ -1605,6 +1601,16 @@ void ami_handle_msg(void)
 
 				win_destroyed = false;
 				return;
+			}
+
+			if(drag_x_move || drag_y_move)
+			{
+				gui_window_get_scroll(gwin->bw->window,
+					&gwin->bw->window->scrollx, &gwin->bw->window->scrolly);
+
+				gui_window_set_scroll(gwin->bw->window,
+					gwin->bw->window->scrollx + drag_x_move,
+					gwin->bw->window->scrolly + drag_y_move);
 			}
 
 //	ReplyMsg((struct Message *)message);
