@@ -1802,10 +1802,6 @@ void tree_draw(struct tree *tree, int x, int y,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
-	/* don't draw empty trees or trees with redraw flag set to false */
-	if (tree->root->child == NULL || !tree->redraw)
-		return;
-
 	/* Set up clip rectangle */
 	clip.x0 = x + clip_x;
 	clip.y0 = y + clip_y;
@@ -1816,6 +1812,10 @@ void tree_draw(struct tree *tree, int x, int y,
 	/* Flat fill extents of clipping area */
 	plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
 		       &plot_style_fill_tree_background);
+
+	/* don't draw empty trees or trees with redraw flag set to false */
+	if (tree->root->child == NULL || !tree->redraw)
+		return;
 
 	/* Draw the tree */
 	tree_draw_tree(tree, tree->root, x, y, clip);
