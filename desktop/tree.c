@@ -30,6 +30,7 @@
 #include "content/hlcache.h"
 #include "css/utils.h"
 #include "desktop/browser.h"
+#include "desktop/knockout.h"
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
@@ -1802,6 +1803,10 @@ void tree_draw(struct tree *tree, int x, int y,
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
+	/* Start knockout rendering if it's available for this plotter */
+	if (plot.option_knockout)
+		knockout_plot_start(&plot);
+
 	/* Set up clip rectangle */
 	clip.x0 = x + clip_x;
 	clip.y0 = y + clip_y;
@@ -1828,6 +1833,10 @@ void tree_draw(struct tree *tree, int x, int y,
 		textarea_redraw(tree->textarea, x, y,
 				clip.x0, clip.y0, clip.x1, clip.y1);
  	}
+
+	/* Rendering complete */
+	if (plot.option_knockout)
+		knockout_plot_end();
 }
 
 
