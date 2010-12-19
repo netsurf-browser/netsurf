@@ -63,7 +63,7 @@ void gui_401login_open(const char *url, const char *realm,
 
 	url_host(url, &host);
 	lw->host = host;
-	lw->url = url;
+	lw->url = (char *)url;
 	lw->realm = (char *)realm;
 	lw->cb = cb;
 	lw->cbpw = cbpw;

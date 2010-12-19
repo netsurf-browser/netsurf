@@ -23,7 +23,5 @@
 
 struct gui_login_window;
 
-void ami_401login_close(struct gui_login_window *lw);
-void ami_401login_login(struct gui_login_window *lw);
 BOOL ami_401login_event(struct gui_login_window *lw);
 #endif
