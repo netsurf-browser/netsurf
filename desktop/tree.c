@@ -2136,6 +2136,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 				     BROWSER_MOUSE_DRAG_2)) {
 				/* Drag starting */
 				tree->textarea_drag_start = true;
+				tree->drag = TREE_TEXTAREA_DRAG;
 			} else {
 				/* Other action */
 				tree->textarea_drag_start = false;
@@ -2533,6 +2534,7 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 
 	switch (tree->drag) {
 	case TREE_NO_DRAG:
+	case TREE_TEXTAREA_DRAG:
 	case TREE_UNKNOWN_DRAG:
 		break;
 	case TREE_SELECT_DRAG:

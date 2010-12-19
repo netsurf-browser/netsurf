@@ -63,6 +63,7 @@ typedef enum {
 	TREE_NO_DRAG = 0,
 	TREE_SELECT_DRAG,
 	TREE_MOVE_DRAG,
+	TREE_TEXTAREA_DRAG,	/** < A drag that is passed to a textarea */
 	TREE_UNKNOWN_DRAG	/** < A drag the tree itself won't handle */
 } tree_drag_type;
 
@@ -134,7 +135,7 @@ struct tree *tree_create(unsigned int flags,
 struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
   		bool deleted);
-struct node *tree_create_leaf_node(struct tree *tree, struct node *parent, 
+struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
   		bool deleted);
 struct node_element *tree_create_node_element(struct node *parent,
@@ -189,9 +190,9 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse,
 void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
 		int x1, int y1);
 bool tree_keypress(struct tree *tree, uint32_t key);
-		
-int tree_alphabetical_sort(struct node *, struct node *);		
+
+int tree_alphabetical_sort(struct node *, struct node *);
 void tree_start_edit(struct tree *tree, struct node_element *element);
 struct hlcache_handle *tree_load_icon(const char *name);
-		
+
 #endif
