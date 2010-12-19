@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -58,6 +58,8 @@
 #include "utils/utils.h"
 
 #define AMI_TREE_MENU_ITEMS 21
+#define AMI_TREE_MENU_DELETE FULLMENUNUM(1,0,0)
+#define AMI_TREE_MENU_CLEAR FULLMENUNUM(1,3,0)
 
 struct treeview_window {
 	struct Window *win;
@@ -434,6 +436,50 @@ void ami_tree_menu(struct treeview_window *twin)
 	}
 }
 
+void ami_tree_update_buttons(struct treeview_window *twin)
+{
+	BOOL launch_disable = FALSE;
+
+	if(twin->type == AMI_TREE_SSLCERT) return;
+
+	if(tree_node_has_selection(tree_get_root(twin->tree)))
+	{
+		struct node *selected_node =
+			tree_get_selected_node(tree_get_root(twin->tree));
+
+		OnMenu(twin->win, AMI_TREE_MENU_DELETE);
+		OnMenu(twin->win, AMI_TREE_MENU_CLEAR);
+
+		RefreshSetGadgetAttrs((struct Gadget *)twin->gadgets[GID_DEL],
+			twin->win, NULL,
+			GA_Disabled, FALSE,
+			TAG_DONE);
+
+		if((selected_node && (tree_node_is_folder(selected_node) == true)))
+			launch_disable = TRUE;
+	}
+	else
+	{
+		OffMenu(twin->win, AMI_TREE_MENU_DELETE);
+		OffMenu(twin->win, AMI_TREE_MENU_CLEAR);
+
+		RefreshSetGadgetAttrs((struct Gadget *)twin->gadgets[GID_DEL],
+			twin->win, NULL,
+			GA_Disabled, TRUE,
+			TAG_DONE);
+
+		launch_disable = TRUE;
+	}
+
+	if(twin->type != AMI_TREE_COOKIES)
+	{
+		RefreshSetGadgetAttrs((struct Gadget *)twin->gadgets[GID_OPEN],
+			twin->win, NULL,
+			GA_Disabled, launch_disable,
+			TAG_DONE);
+	}
+}
+
 void ami_tree_open(struct treeview_window *twin,int type)
 {
 	BOOL msel = TRUE,nothl = TRUE,launchdisable=FALSE;
@@ -638,6 +684,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	twin->node = AddObject(window_list,AMINS_TVWINDOW);
 	twin->node->objstruct = twin;
 
+	ami_tree_update_buttons(twin);
 	ami_tree_resized(twin->tree, twin->max_width, twin->max_height, twin);
 	tree_set_redraw(twin->tree, true);
 	ami_tree_draw(twin);
@@ -915,6 +962,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							twin->mouse_state | twin->key_state, x, y);
 					break;
 				}
+				ami_tree_update_buttons(twin);
 			break;
 
 			case WMHI_RAWKEY:
@@ -1103,6 +1151,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											hotlist_delete_selected();
 										break;
 									}
+									ami_tree_update_buttons(twin);
 								break;
 
 								case 2: // select all
@@ -1118,6 +1167,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											hotlist_select_all();
 										break;
 									}
+									ami_tree_update_buttons(twin);
 								break;
 
 								case 3: // clear
@@ -1133,6 +1183,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 											hotlist_clear_selection();
 										break;
 									}
+									ami_tree_update_buttons(twin);
 								break;
 							}
 						break;
