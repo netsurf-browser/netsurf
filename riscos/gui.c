@@ -1124,7 +1124,9 @@ void ro_gui_null_reason_code(void)
 //			break;
 
 		default:
-			if (ro_gui_hotlist_check_window(gui_track_wimp_w))
+			if (ro_gui_global_history_check_window(gui_track_wimp_w) ||
+					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
+					ro_gui_cookies_check_window(gui_track_wimp_w))
 				ro_treeview_mouse_at(gui_track_wimp_w,
 						&pointer);
 			if (gui_track_wimp_w == history_window)
@@ -1224,7 +1226,9 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 			gui_track = gui_track_gui_window ||
 					gui_track_wimp_w == history_window ||
 					gui_track_wimp_w == dialog_url_complete ||
-					ro_gui_hotlist_check_window(gui_track_wimp_w);
+					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
+					ro_gui_global_history_check_window(gui_track_wimp_w) ||
+					ro_gui_cookies_check_window(gui_track_wimp_w);
 			break;
 	}
 }
