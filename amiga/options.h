@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -51,6 +51,18 @@ extern bool option_close_no_quit;
 extern bool option_hide_docky_icon;
 extern char *option_font_unicode;
 extern bool option_drag_save_icons;
+extern int option_hotlist_window_xpos;
+extern int option_hotlist_window_ypos;
+extern int option_hotlist_window_xsize;
+extern int option_hotlist_window_ysize;
+extern int option_history_window_xpos;
+extern int option_history_window_ypos;
+extern int option_history_window_xsize;
+extern int option_history_window_ysize;
+extern int option_cookies_window_xpos;
+extern int option_cookies_window_ypos;
+extern int option_cookies_window_xsize;
+extern int option_cookies_window_ysize;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -84,6 +96,18 @@ bool option_close_no_quit = false; \
 bool option_hide_docky_icon = false; \
 char *option_font_unicode = 0; \
 bool option_drag_save_icons = true; \
+int option_hotlist_window_xpos = 0; \
+int option_hotlist_window_ypos = 0; \
+int option_hotlist_window_xsize = 0; \
+int option_hotlist_window_ysize = 0; \
+int option_history_window_xpos = 0; \
+int option_history_window_ypos = 0; \
+int option_history_window_xsize = 0; \
+int option_history_window_ysize = 0; \
+int option_cookies_window_xpos = 0; \
+int option_cookies_window_ypos = 0; \
+int option_cookies_window_xsize = 0; \
+int option_cookies_window_ysize = 0; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -116,5 +140,17 @@ bool option_drag_save_icons = true; \
 { "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, \
 { "hide_docky_icon",	OPTION_BOOL,	&option_hide_docky_icon}, \
 { "font_unicode",		OPTION_STRING,	&option_font_unicode }, \
-{ "drag_save_icons",	OPTION_BOOL,	&option_drag_save_icons},
+{ "drag_save_icons",	OPTION_BOOL,	&option_drag_save_icons}, \
+{ "hotlist_window_xpos",	OPTION_INTEGER,	&option_hotlist_window_xpos}, \
+{ "hotlist_window_ypos",	OPTION_INTEGER,	&option_hotlist_window_ypos}, \
+{ "hotlist_window_xsize",	OPTION_INTEGER,	&option_hotlist_window_xsize}, \
+{ "hotlist_window_ysize",	OPTION_INTEGER,	&option_hotlist_window_ysize}, \
+{ "history_window_xpos",	OPTION_INTEGER,	&option_history_window_xpos}, \
+{ "history_window_ypos",	OPTION_INTEGER,	&option_history_window_ypos}, \
+{ "history_window_xsize",	OPTION_INTEGER,	&option_history_window_xsize}, \
+{ "history_window_ysize",	OPTION_INTEGER,	&option_history_window_ysize}, \
+{ "cookies_window_xpos",	OPTION_INTEGER,	&option_cookies_window_xpos}, \
+{ "cookies_window_ypos",	OPTION_INTEGER,	&option_cookies_window_ypos}, \
+{ "cookies_window_xsize",	OPTION_INTEGER,	&option_cookies_window_xsize}, \
+{ "cookies_window_ysize",	OPTION_INTEGER,	&option_cookies_window_ysize},
 #endif

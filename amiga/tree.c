@@ -54,16 +54,16 @@
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
+#include "amiga/options.h"
 #include "utils/utils.h"
 
-#define AMI_TREE_MENU_ITEMS 19
+#define AMI_TREE_MENU_ITEMS 21
 
 struct treeview_window {
 	struct Window *win;
 	Object *objects[OID_LAST];
 	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
-	ULONG pad[5];
 	int type;
 	struct NewMenu *menu;
 	char *menu_name[AMI_TREE_MENU_ITEMS];
@@ -397,33 +397,40 @@ void ami_tree_menu(struct treeview_window *twin)
 		twin->menu[11].nm_Label = NM_BARLABEL;
 
 		twin->menu[12].nm_Type = NM_ITEM;
-		twin->menu_name[12] = ami_utf8_easy((char *)messages_get("CloseWindow"));
+		twin->menu_name[12] = ami_utf8_easy((char *)messages_get("SnapshotWindow"));
 		twin->menu[12].nm_Label = twin->menu_name[12];
-		twin->menu[12].nm_CommKey = "K";
 
-		twin->menu[13].nm_Type = NM_TITLE;
-		twin->menu_name[13] = ami_utf8_easy((char *)messages_get("Edit"));
-		twin->menu[13].nm_Label = twin->menu_name[13];
+		twin->menu[13].nm_Type = NM_ITEM;
+		twin->menu[13].nm_Label = NM_BARLABEL;
 
 		twin->menu[14].nm_Type = NM_ITEM;
-		twin->menu_name[14] = ami_utf8_easy((char *)messages_get("TreeDelete"));
+		twin->menu_name[14] = ami_utf8_easy((char *)messages_get("CloseWindow"));
 		twin->menu[14].nm_Label = twin->menu_name[14];
-		twin->menu[14].nm_CommKey = "D";
+		twin->menu[14].nm_CommKey = "K";
 
-		twin->menu[15].nm_Type = NM_ITEM;
-		twin->menu[15].nm_Label = NM_BARLABEL;
+		twin->menu[15].nm_Type = NM_TITLE;
+		twin->menu_name[15] = ami_utf8_easy((char *)messages_get("Edit"));
+		twin->menu[15].nm_Label = twin->menu_name[15];
 
 		twin->menu[16].nm_Type = NM_ITEM;
-		twin->menu_name[16] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+		twin->menu_name[16] = ami_utf8_easy((char *)messages_get("TreeDelete"));
 		twin->menu[16].nm_Label = twin->menu_name[16];
-		twin->menu[16].nm_CommKey = "A";
+		twin->menu[16].nm_CommKey = "D";
 
 		twin->menu[17].nm_Type = NM_ITEM;
-		twin->menu_name[17] = ami_utf8_easy((char *)messages_get("ClearNS"));
-		twin->menu[17].nm_Label = twin->menu_name[17];
-		twin->menu[17].nm_CommKey = "Z";
+		twin->menu[17].nm_Label = NM_BARLABEL;
 
-		twin->menu[18].nm_Type = NM_END;
+		twin->menu[18].nm_Type = NM_ITEM;
+		twin->menu_name[18] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
+		twin->menu[18].nm_Label = twin->menu_name[18];
+		twin->menu[18].nm_CommKey = "A";
+
+		twin->menu[19].nm_Type = NM_ITEM;
+		twin->menu_name[19] = ami_utf8_easy((char *)messages_get("ClearNS"));
+		twin->menu[19].nm_Label = twin->menu_name[19];
+		twin->menu[19].nm_CommKey = "Z";
+
+		twin->menu[20].nm_Type = NM_END;
 	}
 }
 
@@ -522,6 +529,33 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	}
 	else
 	{
+		ULONG width = scrn->Width / 2;
+		ULONG height = scrn->Height / 2;
+		ULONG top = (scrn->Height / 2) - (height / 2);
+		ULONG left = (scrn->Width / 2) - (width / 2);
+
+		if((type == AMI_TREE_HOTLIST) && (option_hotlist_window_xsize > 0))
+		{
+			top = option_hotlist_window_ypos;
+			left = option_hotlist_window_xpos;
+			width = option_hotlist_window_xsize;
+			height = option_hotlist_window_ysize;
+		}
+		else if((type == AMI_TREE_HISTORY) && (option_history_window_xsize > 0))
+		{
+			top = option_history_window_ypos;
+			left = option_history_window_xpos;
+			width = option_history_window_xsize;
+			height = option_history_window_ysize;
+		}
+		else if((type == AMI_TREE_COOKIES) && (option_cookies_window_xsize > 0))
+		{
+			top = option_cookies_window_ypos;
+			left = option_cookies_window_xpos;
+			width = option_cookies_window_xsize;
+			height = option_cookies_window_ysize;
+		}
+
 		twin->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
            	WA_Title,wintitle,
@@ -530,7 +564,10 @@ void ami_tree_open(struct treeview_window *twin,int type)
            	WA_DragBar, TRUE,
            	WA_CloseGadget, TRUE,
            	WA_SizeGadget, TRUE,
-			WA_Height, scrn->Height / 2,
+			WA_Top, top,
+			WA_Left, left,
+			WA_Width, width,
+			WA_Height, height,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
            	WA_IDCMP, IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
@@ -544,7 +581,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WINDOW_UserData,twin,
 			WINDOW_NewMenu, twin->menu,
 			WINDOW_IconifyGadget, FALSE,
-			WINDOW_Position, WPOS_CENTERSCREEN,
+//			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
 				LAYOUT_AddChild, twin->gadgets[GID_BROWSER] = SpaceObject,
 					GA_ID, GID_BROWSER,
@@ -1019,7 +1056,31 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									}
 								break;
 
-								case 5: // close
+								case 5: // snapshot
+									switch(twin->type)
+									{
+										case AMI_TREE_HISTORY:
+											option_history_window_ypos = twin->win->TopEdge;
+											option_history_window_xpos = twin->win->LeftEdge;
+											option_history_window_xsize = twin->win->Width;
+											option_history_window_ysize = twin->win->Height;
+										break;
+										case AMI_TREE_COOKIES:
+											option_cookies_window_ypos = twin->win->TopEdge;
+											option_cookies_window_xpos = twin->win->LeftEdge;
+											option_cookies_window_xsize = twin->win->Width;
+											option_cookies_window_ysize = twin->win->Height;
+										break;
+										case AMI_TREE_HOTLIST:
+											option_hotlist_window_ypos = twin->win->TopEdge;
+											option_hotlist_window_xpos = twin->win->LeftEdge;
+											option_hotlist_window_xsize = twin->win->Width;
+											option_hotlist_window_ysize = twin->win->Height;
+										break;
+									}
+								break;
+
+								case 7: // close
 									ami_tree_close(twin);
 									return TRUE;
 								break;
