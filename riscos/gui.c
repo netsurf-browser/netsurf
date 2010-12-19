@@ -1127,8 +1127,7 @@ void ro_gui_null_reason_code(void)
 			if (ro_gui_global_history_check_window(gui_track_wimp_w) ||
 					ro_gui_hotlist_check_window(gui_track_wimp_w) ||
 					ro_gui_cookies_check_window(gui_track_wimp_w))
-				ro_treeview_mouse_at(gui_track_wimp_w,
-						&pointer);
+				ro_treeview_mouse_at(&pointer);
 			if (gui_track_wimp_w == history_window)
 				ro_gui_history_mouse_at(&pointer);
 			if (gui_track_wimp_w == dialog_url_complete)

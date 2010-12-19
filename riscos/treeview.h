@@ -49,7 +49,7 @@ wimp_w ro_treeview_get_window(ro_treeview *tv);
 bool ro_treeview_has_selection(ro_treeview *tv);
 
 void ro_treeview_set_origin(ro_treeview *tv, int x, int y);
-void ro_treeview_mouse_at(wimp_w w, wimp_pointer *pointer);
+void ro_treeview_mouse_at(wimp_pointer *pointer);
 void ro_treeview_drag_end(wimp_dragged *drag);
 void ro_treeview_update_theme(ro_treeview *tv);
 void ro_treeview_update_toolbar(ro_treeview *tv);

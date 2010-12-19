@@ -801,11 +801,10 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 /**
  * Track the mouse under Null Polls from the wimp, to support dragging.
  *
- * \param  w			Window handle currently under the mouse.
  * \param  *pointer		Pointer to a Wimp Pointer block.
  */
 
-void ro_treeview_mouse_at(wimp_w w, wimp_pointer *pointer)
+void ro_treeview_mouse_at(wimp_pointer *pointer)
 {
 	os_error		*error;
 	ro_treeview		*tv;
