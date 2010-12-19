@@ -21,18 +21,7 @@
 
 #include <stdbool.h>
 
-#include "utils/errors.h"
-
-struct gui_login_window {
-	struct nsObject *node;
-	struct Window *win;
-	Object *objects[GID_LAST];
-	nserror (*cb)(bool proceed, void *pw);
-	void *cbpw;
-	char *url;
-	char *realm;
-	char *host;
-};
+struct gui_login_window;
 
 void ami_401login_close(struct gui_login_window *lw);
 void ami_401login_login(struct gui_login_window *lw);

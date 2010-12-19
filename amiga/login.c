@@ -26,6 +26,8 @@
 #include "utils/url.h"
 #include "content/urldb.h"
 #include "utils/messages.h"
+#include "utils/errors.h"
+#include <assert.h>
 
 #include <proto/window.h>
 #include <proto/layout.h>
@@ -39,9 +41,23 @@
 #include <images/label.h>
 #include <reaction/reaction_macros.h>
 
+struct gui_login_window {
+	struct nsObject *node;
+	struct Window *win;
+	Object *objects[GID_LAST];
+	nserror (*cb)(bool proceed, void *pw);
+	void *cbpw;
+	char *url;
+	char *realm;
+	char *host;
+	char uname[256];
+	char pwd[256];
+};
+
 void gui_401login_open(const char *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
+	const char *auth;
 	struct gui_login_window *lw = AllocVec(sizeof(struct gui_login_window),MEMF_PRIVATE | MEMF_CLEAR);
 	char *host;
 
@@ -51,6 +67,26 @@ void gui_401login_open(const char *url, const char *realm,
 	lw->realm = (char *)realm;
 	lw->cb = cb;
 	lw->cbpw = cbpw;
+
+	auth = urldb_get_auth_details(lw->url, realm);
+
+	if (auth == NULL) {
+		lw->uname[0] = '\0';
+		lw->pwd[0] = '\0';
+	} else {
+		const char *pwd;
+		size_t pwd_len;
+
+		pwd = strchr(auth, ':');
+		assert(pwd && pwd < auth + sizeof(lw->uname));
+		memcpy(lw->uname, auth, pwd - auth);
+		lw->uname[pwd - auth] = '\0';
+		++pwd;
+		pwd_len = strlen(pwd);
+		assert(pwd_len < sizeof(lw->pwd));
+		memcpy(lw->pwd, pwd, pwd_len);
+		lw->pwd[pwd_len] = '\0';
+	}
 
 	lw->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
@@ -86,6 +122,7 @@ void gui_401login_open(const char *url, const char *realm,
 				LAYOUT_AddChild, lw->objects[GID_USER] = StringObject,
 					GA_ID,GID_USER,
 					GA_TabCycle,TRUE,
+					STRINGA_TextVal, lw->uname,
 				StringEnd,
 				CHILD_Label, LabelObject,
 					LABEL_Text,messages_get("Username"),
@@ -95,6 +132,7 @@ void gui_401login_open(const char *url, const char *realm,
 					GA_ID,GID_PASS,
 					STRINGA_HookType,SHK_PASSWORD,
 					GA_TabCycle,TRUE,
+					STRINGA_TextVal, lw->pwd,
 				StringEnd,
 				CHILD_Label, LabelObject,
 					LABEL_Text,messages_get("Password"),
