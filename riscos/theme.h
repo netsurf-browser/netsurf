@@ -174,10 +174,10 @@ int ro_gui_theme_height_change(struct toolbar *toolbar);
 
 struct toolbar_icon *ro_gui_theme_toolbar_get_icon(struct toolbar *toolbar, int x, int y);
 
-#define ro_gui_theme_toolbar_height(toolbar) toolbar->height + \
+#define ro_gui_theme_toolbar_height(toolbar) (toolbar->height + \
 		(toolbar->editor ? toolbar->editor->height : 0) > toolbar->max_height ? \
 		toolbar->max_height : toolbar->height + \
-		(toolbar->editor ? toolbar->editor->height : 0)
-#define ro_gui_theme_toolbar_full_height(toolbar) toolbar->height + \
-		(toolbar->editor ? toolbar->editor->height : 0)
+		(toolbar->editor ? toolbar->editor->height : 0))
+#define ro_gui_theme_toolbar_full_height(toolbar) (toolbar->height + \
+		(toolbar->editor ? toolbar->editor->height : 0))
 #endif
