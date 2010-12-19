@@ -1295,12 +1295,8 @@ void ro_gui_drag_end(wimp_dragged *drag)
 		case GUI_DRAG_STATUS_RESIZE:
 			break;
 
-		case GUI_DRAG_TREE_SELECT:
-//			ro_gui_tree_selection_drag_end(drag);
-			break;
-
-		case GUI_DRAG_TREE_MOVE:
-//			ro_gui_tree_move_drag_end(drag);
+		case GUI_DRAG_TREEVIEW:
+			ro_treeview_drag_end(drag);
 			break;
 
 		case GUI_DRAG_TOOLBAR_CONFIG:

@@ -86,7 +86,7 @@ struct ro_treeview
 		int x;		/*< X coordinate of drag start             */
 		int y;		/*< Y coordinate of drag start             */
 	} drag_start;
-	bool drag;		/*< True if there's a drag going on        */
+	tree_drag_type drag;	/*< The current drag type for the tree     */
 };
 
 static void ro_treeview_redraw_request(int x, int y, int width, int height,
@@ -102,6 +102,8 @@ static void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv,
 		osbool more);
 static void ro_treeview_open(wimp_open *open);
 static bool ro_treeview_mouse_click(wimp_pointer *pointer);
+static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
+		wimp_window_state *state);
 static bool ro_treeview_keypress(wimp_key *key);
 
 static void ro_treeview_set_window_extent(ro_treeview *tv,
@@ -162,7 +164,7 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 
 	/* Set that there is no drag opperation at the moment */
 
-	tv->drag = false;
+	tv->drag = TREE_NO_DRAG;
 
 	/* Register wimp events to handle the supplied window. */
 
@@ -363,6 +365,13 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 					-redraw->clip.y1)/2,
 					(redraw->clip.x1 - redraw->clip.x0)/2,
 					(redraw->clip.y1 - redraw->clip.y0)/2);
+
+			/* Put the graphcis window back how the Wimp set it. */
+
+			plot.clip((redraw->clip.x0 - ro_plot_origin_x)/2,
+					(ro_plot_origin_y - redraw->clip.y1)/2,
+					(redraw->clip.x1 - ro_plot_origin_x)/2,
+					(ro_plot_origin_y - redraw->clip.y0)/2);
 	 	}
 
 		error = xwimp_get_rectangle(redraw, &more);
@@ -488,7 +497,7 @@ void ro_treeview_get_window_dimensions(int *width, int *height,
 		state.w = tv->w;
 		error = xwimp_get_window_state(&state);
 		if (error) {
-			LOG(("xwimp_get_window_info_header_only: 0x%x: %s",
+			LOG(("xwimp_get_window_state: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			return;
@@ -752,19 +761,31 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 		mouse = ro_gui_mouse_click_state(pointer->buttons,
 				wimp_BUTTON_DOUBLE_CLICK_DRAG);
 
-		/* Record drag start */
-		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
-			tv->drag_start.x = xpos;
-			tv->drag_start.y = ypos;
-			tv->drag = true;
-		}
+		/* Give the window input focus on Select-clicks.  This wouldn't
+		 * be necessary if the core used the RISC OS caret.
+		 */
 
 		if (mouse & BROWSER_MOUSE_CLICK_1)
 			xwimp_set_caret_position(tv->w, -1, -100, -100, 32, -1);
 	}
 
-	if (mouse != 0)
+	if (mouse != 0) {
 		tree_mouse_action(tv->tree, mouse, xpos, ypos);
+
+		tv->drag = tree_drag_status(tv->tree);
+		if (tv->drag != TREE_NO_DRAG) {
+			tv->drag_start.x = xpos;
+			tv->drag_start.y = ypos;
+		}
+
+		/* If it's a visible drag, start the RO side of the visible
+		 * effects.
+		 */
+
+		if (tv->drag == TREE_SELECT_DRAG ||
+				tv->drag == TREE_MOVE_DRAG)
+			ro_treeview_drag_start(tv, pointer, &state);
+	}
 
 	/* We assume that the owning module will have attached a window menu
 	 * to our parent window.  If it hasn't, this call will quietly fail.
@@ -775,6 +796,7 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 
 	return true;
 }
+
 
 /**
  * Track the mouse under Null Polls from the wimp, to support dragging.
@@ -801,7 +823,7 @@ void ro_treeview_mouse_at(wimp_w w, wimp_pointer *pointer)
 		return;
 	}
 
-	if (!tv->drag)
+	if (tv->drag == TREE_NO_DRAG)
 		return;
 
 	/* We know now that it's not a Menu click and the treeview thinks
@@ -836,9 +858,115 @@ void ro_treeview_mouse_at(wimp_w w, wimp_pointer *pointer)
 	if (!(mouse & BROWSER_MOUSE_DRAG_ON)) {
 		tree_drag_end(tv->tree, mouse, tv->drag_start.x,
 				tv->drag_start.y, xpos, ypos);
-		tv->drag = false;
+		tv->drag = TREE_NO_DRAG;
 	}
 }
+
+
+/**
+ * Start a RISC OS drag event to reflect on screen what is happening
+ * during the core tree drag.
+ *
+ * \param *tv		The RO treeview to which the drag is attached.
+ * \param *pointer	The RO pointer event data block starting the drag.
+ * \param *state	The RO window state block for the treeview window.
+ */
+
+static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
+		wimp_window_state *state)
+{
+	os_error		*error;
+	wimp_drag		drag;
+	wimp_auto_scroll_info	auto_scroll;
+
+	drag.w = tv->w;
+	drag.bbox.x0 = state->visible.x0;
+	drag.bbox.y0 = state->visible.y0;
+	drag.bbox.x1 = state->visible.x1;
+	drag.bbox.y1 = state->visible.y1 -
+	ro_gui_theme_toolbar_height(tv->tb);
+
+	switch (tv->drag) {
+	case TREE_SELECT_DRAG:
+		drag.type = wimp_DRAG_USER_RUBBER;
+
+		drag.initial.x0 = pointer->pos.x;
+		drag.initial.y0 = pointer->pos.y;
+		drag.initial.x1 = pointer->pos.x;
+		drag.initial.y1 = pointer->pos.y;
+		break;
+
+	case TREE_MOVE_DRAG:
+		drag.type = wimp_DRAG_USER_FIXED;
+
+		drag.initial.x0 = pointer->pos.x - 4;
+		drag.initial.y0 = pointer->pos.y - 48;
+		drag.initial.x1 = pointer->pos.x + 48;
+		drag.initial.y1 = pointer->pos.y + 4;
+		break;
+
+	default:
+		/* No other drag types are supported. */
+		break;
+	}
+
+	error = xwimp_drag_box_with_flags(&drag,
+			wimp_DRAG_BOX_KEEP_IN_LINE | wimp_DRAG_BOX_CLIP);
+	if (error) {
+		LOG(("xwimp_drag_box: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	} else {
+		auto_scroll.w = tv->w;
+		auto_scroll.pause_zone_sizes.x0 = 80;
+		auto_scroll.pause_zone_sizes.y0 = 80;
+		auto_scroll.pause_zone_sizes.x1 = 80;
+		auto_scroll.pause_zone_sizes.y1 = 80 +
+				ro_gui_theme_toolbar_height(tv->tb);
+		auto_scroll.pause_duration = 0;
+		auto_scroll.state_change = (void *) 1;
+
+		error = xwimp_auto_scroll(wimp_AUTO_SCROLL_ENABLE_VERTICAL,
+				&auto_scroll, NULL);
+		if (error) {
+			LOG(("xwimp_auto_scroll: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
+
+		gui_current_drag_type = GUI_DRAG_TREEVIEW;
+	}
+}
+
+
+/**
+ * Process RISC OS User Drag Box events which relate to us: in effect, drags
+ * started by ro_treeview_drag_start().
+ *
+ * \param *drag			Pointer to the User Drag Box Event block.
+ */
+
+void ro_treeview_drag_end(wimp_dragged *drag)
+{
+	os_error		*error;
+
+	error = xwimp_drag_box((wimp_drag *) -1);
+	if (error) {
+		LOG(("xwimp_drag_box: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	error = xwimp_auto_scroll(0, NULL, NULL);
+	if (error) {
+		LOG(("xwimp_auto_scroll: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+
+	gui_current_drag_type = GUI_DRAG_NONE;
+}
+
 
 /**
  * Pass RISC OS keypress events on to the treeview widget.
