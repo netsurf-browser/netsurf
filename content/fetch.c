@@ -34,6 +34,8 @@
 #include <strings.h>
 #include <time.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "content/fetch.h"
 #include "content/fetchers/fetch_curl.h"
@@ -78,6 +80,7 @@ struct fetch {
 	bool verifiable;	/**< Transaction is verifiable */
 	void *p;		/**< Private data for callback. */
 	char *host;		/**< Host part of URL. */
+        lwc_string *lwc_host;	/**< Host part of URL, interned */
 	long http_code;		/**< HTTP response code, or 0. */
 	scheme_fetcher *ops;	/**< Fetcher operations for this fetch,
 				     NULL if not set. */
@@ -271,7 +274,11 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->fetcher_handle = NULL;
 	fetch->ops = NULL;
 	fetch->fetch_is_active = false;
-
+        fetch->lwc_host = NULL;
+        
+        if (lwc_intern_string(host, strlen(host), &fetch->lwc_host) != lwc_error_ok)
+                goto failed;
+        
 	if (referer != NULL) {
 		fetch->referer = strdup(referer);
 		if (fetch->referer == NULL)
@@ -338,6 +345,8 @@ failed:
 	free(scheme);
 	free(fetch->url);
 	free(fetch->referer);
+        if (fetch->lwc_host != NULL)
+                lwc_string_unref(fetch->lwc_host);
 	free(fetch);
 
 	return NULL;
@@ -415,8 +424,8 @@ bool fetch_choose_and_dispatch(void)
 		 * fetch ring
 		 */
 		int countbyhost;
-		RING_COUNTBYHOST(struct fetch, fetch_ring, countbyhost,
-				queueitem->host);
+		RING_COUNTBYLWCHOST(struct fetch, fetch_ring, countbyhost,
+				queueitem->lwc_host);
 		if (countbyhost < option_max_fetchers_per_host) {
 			/* We can dispatch this item in theory */
 			return fetch_dispatch_job(queueitem);
@@ -477,7 +486,9 @@ void fetch_free(struct fetch *f)
 	free(f->host);
 	if (f->referer)
 		free(f->referer);
-	free(f);
+	if (f->lwc_host != NULL)
+                lwc_string_unref(f->lwc_host);
+        free(f);
 }
 
 
