@@ -193,7 +193,7 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 	{
 		if(text)
 		{
-			if(!ami_add_to_clipboard(text, length, false)) return false;
+			if(!ami_add_to_clipboard(text, length, space)) return false;
 		}
 
 		PopChunk(iffh);
