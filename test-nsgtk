@@ -22,4 +22,4 @@ ulimit -c unlimited
 
 NETSURFRES=`dirname $0`/gtk/res/
 export NETSURFRES
-exec `dirname $0`/nsgtk -v "$@" 2>&1 | tee $LOG
+exec $GDB `dirname $0`/nsgtk -v "$@" 2>&1 | tee $LOG
