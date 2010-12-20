@@ -244,7 +244,8 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	struct node *node = NULL;
 
 	if((tree_drag_status(twin->tree) == TREE_NO_DRAG) ||
-		(tree_drag_status(twin->tree) == TREE_SELECT_DRAG))
+		(tree_drag_status(twin->tree) == TREE_SELECT_DRAG) ||
+		(tree_drag_status(twin->tree) == TREE_TEXTAREA_DRAG))
 		return;
 
 	if((twin->type == AMI_TREE_COOKIES) ||
