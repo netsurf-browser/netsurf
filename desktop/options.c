@@ -187,12 +187,17 @@ bool option_target_blank = true;
 /** Whether second mouse button opens in new tab */
 bool option_button_2_tab = true;
 
+/* Interface colours */
+colour option_gui_colour_bg_1 = 0xFFCCBB; /** Background          (bbggrr) */
+colour option_gui_colour_fg_1 = 0x000000; /** Foreground          (bbggrr) */
+colour option_gui_colour_fg_2 = 0xFFFBF8; /** Foreground selected (bbggrr) */
+
 EXTRA_OPTION_DEFINE
 
 
 struct {
 	const char *key;
-	enum { OPTION_BOOL, OPTION_INTEGER, OPTION_STRING } type;
+	enum { OPTION_BOOL, OPTION_INTEGER, OPTION_STRING, OPTION_COLOUR } type;
 	void *p;
 } option_table[] = {
 	{ "http_proxy",		OPTION_BOOL,	&option_http_proxy },
@@ -266,6 +271,11 @@ struct {
  				OPTION_BOOL,	&option_enable_PDF_compression},
  	{ "enable_PDF_password",
  				OPTION_BOOL,	&option_enable_PDF_password},
+	/* Interface colours */
+	{ "gui_colour_bg_1",	OPTION_COLOUR,	&option_gui_colour_bg_1},
+	{ "gui_colour_fg_1",	OPTION_COLOUR,	&option_gui_colour_fg_1},
+	{ "gui_colour_fg_2",	OPTION_COLOUR,	&option_gui_colour_fg_2},
+
 	EXTRA_OPTION_TABLE
 };
 
@@ -285,6 +295,7 @@ void options_read(const char *path)
 {
 	char s[100];
 	FILE *fp;
+	colour rgbcolour; /* RRGGBB */
 
 	fp = fopen(path, "r");
 	if (!fp) {
@@ -318,6 +329,17 @@ void options_read(const char *path)
 				case OPTION_INTEGER:
 					*((int *) option_table[i].p) =
 							atoi(value);
+					break;
+
+				case OPTION_COLOUR:
+					sscanf(value, "%x", &rgbcolour);
+					*((colour *) option_table[i].p) =
+							((0x000000FF &
+							rgbcolour) << 16) |
+							((0x0000FF00 &
+							rgbcolour) << 0) |
+							((0x00FF0000 &
+							rgbcolour) >> 16);
 					break;
 
 				case OPTION_STRING:
@@ -358,6 +380,7 @@ void options_write(const char *path)
 {
 	unsigned int i;
 	FILE *fp;
+	colour rgbcolour; /* RRGGBB */
 
 	fp = fopen(path, "w");
 	if (!fp) {
@@ -377,6 +400,16 @@ void options_write(const char *path)
 				fprintf(fp, "%i", *((int *) option_table[i].p));
 				break;
 
+			case OPTION_COLOUR:
+				rgbcolour = ((0x000000FF & *((colour *)
+						option_table[i].p)) << 16) |
+						((0x0000FF00 & *((colour *)
+						option_table[i].p)) << 0) |
+						((0x00FF0000 & *((colour *)
+						option_table[i].p)) >> 16);
+				fprintf(fp, "%06x", rgbcolour);
+				break;
+
 			case OPTION_STRING:
 				if (*((char **) option_table[i].p))
 					fprintf(fp, "%s", *((char **) option_table[i].p));
@@ -394,6 +427,7 @@ void options_write(const char *path)
 void options_dump(void)
 {
 	unsigned int i;
+	colour rgbcolour;
 
 	for (i = 0; i != option_table_entries; i++) {
 		fprintf(stderr, "%s:", option_table[i].key);
@@ -407,6 +441,16 @@ void options_dump(void)
 			case OPTION_INTEGER:
 				fprintf(stderr, "%i",
 					*((int *) option_table[i].p));
+				break;
+
+			case OPTION_COLOUR:
+				rgbcolour = ((0x000000FF | *((colour *)
+						option_table[i].p)) << 16) &
+						((0x0000FF00 | *((colour *)
+						option_table[i].p)) << 0) &
+						((0x00FF0000 | *((colour *)
+						option_table[i].p)) >> 16);
+				fprintf(stderr, "%x", rgbcolour);
 				break;
 
 			case OPTION_STRING:

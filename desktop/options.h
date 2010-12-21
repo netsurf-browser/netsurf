@@ -36,6 +36,7 @@
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
 #include <stdbool.h>
+#include "desktop/plot_style.h"
 
 struct tree;
 
@@ -109,6 +110,11 @@ extern int option_max_fetchers;
 extern int option_max_fetchers_per_host;
 extern int option_max_cached_fetch_handles;
 extern bool option_suppress_curl_debug;
+
+/* Interface colours */
+extern colour option_gui_colour_bg_1;
+extern colour option_gui_colour_fg_1;
+extern colour option_gui_colour_fg_2;
 
 
 void options_read(const char *path);
