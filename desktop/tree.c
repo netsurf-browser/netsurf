@@ -55,30 +55,34 @@ static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
 	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
 	.weight = 400,
-	.flags = FONTF_NONE,
-	.background = 0xFFCCBB, /* light blue */
-	.foreground = 0x000000  /* black */
+	.flags = FONTF_NONE
 };
 
 static plot_font_style_t plot_fstyle_selected = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
 	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
 	.weight = 400,
-	.flags = FONTF_NONE,
- 	.background = 0x000000, /* black */
-	.foreground = 0xEEEEEE  /* nearly white */
+	.flags = FONTF_NONE
 };
 
 /** plot style for treeview backgrounds. */
 static plot_style_t plot_style_fill_tree_background = {
-	.fill_type = PLOT_OP_TYPE_SOLID,
-	.fill_colour = 0xFFCCBB,
+	.fill_type = PLOT_OP_TYPE_SOLID
 };
 
-/** plot style for treeview lines. */
+/** plot style for treeview backgrounds. */
+static plot_style_t plot_style_fill_tree_selected = {
+	.fill_type = PLOT_OP_TYPE_SOLID
+};
+
+/** plot style for treeview furniture lines. */
 static plot_style_t plot_style_stroke_tree_furniture = {
-	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x7C635B,
+	.stroke_type = PLOT_OP_TYPE_SOLID
+};
+
+/** plot style for treeview furniture fills. */
+static plot_style_t plot_style_fill_tree_furniture = {
+	.fill_type = PLOT_OP_TYPE_SOLID
 };
 
 struct node;
@@ -160,6 +164,34 @@ struct rect {
 
 
 /**
+ * Set up colours for plot styles used in tree redraw.
+ */
+static void tree_setup_colours(void)
+{
+	/* Background colour */
+	plot_style_fill_tree_background.fill_colour = option_gui_colour_bg_1;
+
+	/* Selection background colour */
+	plot_style_fill_tree_selected.fill_colour = option_gui_colour_fg_1;
+
+	/* Furniture line colour */
+	plot_style_stroke_tree_furniture.stroke_colour = blend_colour(
+			option_gui_colour_bg_1, option_gui_colour_fg_1);
+
+	/* Furniture fill colour */
+	plot_style_fill_tree_furniture.fill_colour = option_gui_colour_fg_2;
+
+	/* Text colour */
+	plot_fstyle.foreground = option_gui_colour_fg_1;
+	plot_fstyle.background = option_gui_colour_bg_1;
+
+	/* Selected text colour */
+	plot_fstyle_selected.foreground = option_gui_colour_fg_2;
+	plot_fstyle_selected.background = option_gui_colour_fg_1;
+}
+
+
+/**
  * Creates and initialises a new tree.
  *
  * \param flags		Flag word for flags to create the new tree with
@@ -219,6 +251,8 @@ struct tree *tree_create(unsigned int flags,
 	 * the icon height. */
 	if (TREE_LINE_HEIGHT < TREE_ICON_SIZE + 2)
 		TREE_LINE_HEIGHT = TREE_ICON_SIZE + 2;
+
+	tree_setup_colours();
 
 	return tree;
 }
@@ -1515,7 +1549,8 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
 	if ((node->child != NULL) || (node->data.next != NULL)) {
 		x = tree_x + node->box.x - (NODE_INSTEP / 2) - 4;
 		y = tree_y + node->box.y + (TREE_LINE_HEIGHT - 9) / 2;
-		plot.rectangle(x, y, x + 9, y + 9, plot_style_fill_white);
+		plot.rectangle(x, y, x + 9, y + 9,
+				&plot_style_fill_tree_furniture);
 		plot.rectangle(x , y, x + 8, y + 8,
 			       &plot_style_stroke_tree_furniture);
 		plot.line(x + 2, y + 4, x + 7, y + 4,
@@ -1608,7 +1643,7 @@ static void tree_draw_node_element(struct tree *tree,
 			fstyle = &plot_fstyle_selected;
 			plot.rectangle(x, y, x + width,
 				       y + element->box.height,
-				       plot_style_fill_black);
+				       &plot_style_fill_tree_selected);
 		} else {
 			fstyle = &plot_fstyle;
 		}
