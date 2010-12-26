@@ -30,6 +30,8 @@ void warn_user(const char *warning, const char *detail)
 {
 	char *utf8warning = ami_utf8_easy(messages_get(warning));
 
+	LOG(("%s %s", warning, detail));
+
 	if(!utf8warning) utf8warning = warning;
 
 	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_WARNING,
