@@ -22,16 +22,19 @@
 #include <string.h>
 
 #include "desktop/cookies.h"
+#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"
 
 void warn_user(const char *warning, const char *detail)
 {
+	LOG(("%s %s", warning, detail));
 }
 
 void die(const char *error)
 {
+	LOG(("%s", error));
 	exit(1);
 }
 
