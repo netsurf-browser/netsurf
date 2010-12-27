@@ -106,9 +106,9 @@ const char *fetch_filetype(const char *unix_path)
 		return (const char *)type_buf;
 	}
 
-	/* If filetype is text and the file has an extension, try to map the
-	 * extension to a filetype via the MimeMap file. */
-	if (file_type == osfile_TYPE_TEXT) {
+	/* If filetype is text or data, and the file has an extension, try to
+	 * map the extension to a filetype via the MimeMap file. */
+	if (file_type == osfile_TYPE_TEXT || file_type == osfile_TYPE_DATA) {
 		slash = strrchr(path, '/');
 		if (slash) {
 			error = xmimemaptranslate_extension_to_filetype(
