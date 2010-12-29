@@ -104,7 +104,7 @@ char *realpath(const char *path, char *resolved_path);
 	#define WITH_THEME_INSTALL
 #endif
 
-#if defined(__amigaos4__)
+#if defined(__amigaos4__) || defined(__AMIGA__)
 	#define NO_IPV6
 #endif
 
