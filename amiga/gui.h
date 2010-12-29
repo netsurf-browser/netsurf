@@ -144,6 +144,6 @@ struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;
 struct gui_globals browserglob;
-uint32 ami_appid;
+uint32_t ami_appid;
 BOOL ami_autoscroll;
 #endif

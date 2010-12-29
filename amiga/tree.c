@@ -71,8 +71,8 @@ struct treeview_window {
 	char *menu_name[AMI_TREE_MENU_ITEMS];
 	struct tree *tree;
 	struct Hook scrollerhook;
-	uint32 key_state;
-	uint32 mouse_state;
+	uint32_t key_state;
+	uint32_t mouse_state;
 	int drag_x;
 	int drag_y;
 	struct timeval lastclick;
@@ -97,7 +97,7 @@ const struct treeview_table ami_tree_callbacks = {
 	.get_window_dimensions = ami_tree_get_window_dimensions
 };
 
-struct treeview_window *ami_tree_create(uint8 flags,
+struct treeview_window *ami_tree_create(uint8_t flags,
 			struct sslcert_session_data *ssl_data)
 {
 	struct treeview_window *twin;
@@ -712,9 +712,9 @@ void ami_tree_close(struct treeview_window *twin)
 
 void ami_tree_update_quals(struct treeview_window *twin)
 {
-	uint32 quals = 0;
+	uint32_t quals = 0;
 
-	GetAttr(WINDOW_Qualifier, twin->objects[OID_MAIN], (uint32 *)&quals);
+	GetAttr(WINDOW_Qualifier, twin->objects[OID_MAIN], (uint32_t *)&quals);
 
 	twin->key_state = 0;
 
@@ -738,7 +738,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 {
 	/* return TRUE if window destroyed */
 	ULONG class,result,storage = 0;
-	uint16 code;
+	uint16_t code;
 	struct MenuItem *item;
 	ULONG menunum=0,itemnum=0,subnum=0;
 	int xs, ys, x, y;
@@ -994,7 +994,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 										ASLFR_InitialFile,"tree_export.html",
 										TAG_DONE))
 									{
-										strlcpy(&fname,savereq->fr_Drawer,1024);
+										strlcpy(fname,savereq->fr_Drawer,1024);
 										AddPart(fname,savereq->fr_File,1024);
 										ami_update_pointer(twin->win,GUI_POINTER_WAIT);
 										if(twin->type == AMI_TREE_HISTORY)
