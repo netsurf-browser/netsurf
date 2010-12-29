@@ -1854,20 +1854,21 @@ void tree_draw(struct tree *tree, int x, int y,
 		       &plot_style_fill_tree_background);
 
 	/* don't draw empty trees or trees with redraw flag set to false */
-	if (tree->root->child == NULL || !tree->redraw)
-		return;
+	if (tree->root->child != NULL && tree->redraw) {
 
-	/* Draw the tree */
-	tree_draw_tree(tree, tree->root, x, y, clip);
+		/* Draw the tree */
+		tree_draw_tree(tree, tree->root, x, y, clip);
 
- 	if (tree->editing != NULL) {
-		x = x + tree->editing->box.x;
-		y = y + tree->editing->box.y;
-		if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
-			x += NODE_INSTEP;
-		textarea_redraw(tree->textarea, x, y,
-				clip.x0, clip.y0, clip.x1, clip.y1);
- 	}
+		/* Draw textarea, if present */
+ 		if (tree->editing != NULL) {
+			x = x + tree->editing->box.x;
+			y = y + tree->editing->box.y;
+			if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
+				x += NODE_INSTEP;
+			textarea_redraw(tree->textarea, x, y,
+					clip.x0, clip.y0, clip.x1, clip.y1);
+ 		}
+	}
 
 	/* Rendering complete */
 	if (plot.option_knockout)
