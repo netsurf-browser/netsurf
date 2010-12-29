@@ -119,11 +119,6 @@ STRIP=strip
 
 # Override this only if the host compiler is called something different
 HOST_CC := gcc
-ifeq ($(TARGET),amiga)
-  ifneq ($(HOST),amiga)
-    CC := ppc-amigaos-gcc
-  endif
-endif
 
 ifeq ($(TARGET),riscos)
   ifeq ($(HOST),riscos)
@@ -183,8 +178,20 @@ else
         PKG_CONFIG := $(MINGW_INSTALL_ENV)/bin/pkg-config
       endif
     else
-      # Building for GTK, Amiga, Framebuffer
-      PKG_CONFIG := pkg-config
+      ifeq ($(TARGET),amiga)
+        ifneq ($(HOST),amiga)
+          # TODO: better defaults
+          GCCSDK_INSTALL_ENV ?= /home/jmb/netsurf/env/m68k-amigaos/env
+          GCCSDK_INSTALL_CROSSBIN ?= /home/jmb/netsurf/env/m68k-amigaos/cross/bin
+
+          CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+
+          PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config
+        endif
+      else
+        # Building for GTK, Framebuffer
+        PKG_CONFIG := pkg-config
+      endif
     endif
   endif
 endif
