@@ -1240,6 +1240,8 @@ nserror llcache_object_add_user(llcache_object *object,
 nserror llcache_object_remove_user(llcache_object *object, 
 		llcache_object_user *user)
 {
+	assert(user != NULL);
+	assert(object != NULL);
 	assert(object->users != NULL);
 	assert(user->handle == NULL || user->handle->object == object);
 	assert((user->prev != NULL) || (object->users == user));
