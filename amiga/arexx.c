@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include "arexx.h"
 #include <reaction/reaction_macros.h>
 #include <string.h>

@@ -32,6 +32,8 @@
 #include <gadgets/layout.h>
 #include <gadgets/listbrowser.h>
 
+#include "amiga/os3support.h"
+
 #include "stringview.h"
 #include "urlhistory.h"
 

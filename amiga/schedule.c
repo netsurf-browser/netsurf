@@ -17,6 +17,7 @@
  */
 
 #include "desktop/browser.h"
+#include "amiga/os3support.h"
 #include "amiga/object.h"
 #include "amiga/schedule.h"
 #include <proto/exec.h>

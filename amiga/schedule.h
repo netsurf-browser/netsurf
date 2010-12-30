@@ -21,6 +21,8 @@
 #include <exec/lists.h>
 #include <proto/timer.h>
 
+#include "amiga/os3support.h"
+
 struct MinList *schedule_list;
 struct TimeRequest *tioreq;
 struct MsgPort *msgport;

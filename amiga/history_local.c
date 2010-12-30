@@ -27,6 +27,7 @@
 #include <string.h>
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"
+#include "amiga/os3support.h"
 #include "amiga/object.h"
 #include "amiga/gui.h"
 #include "utils/log.h"

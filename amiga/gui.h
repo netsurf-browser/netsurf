@@ -25,6 +25,7 @@
 #include <dos/dos.h>
 #include <devices/inputevent.h>
 #include "desktop/gui.h"
+#include "amiga/os3support.h"
 #include "amiga/plotters.h"
 #include "amiga/menu.h"
 

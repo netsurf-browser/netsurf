@@ -22,7 +22,9 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "proto/exec.h"
+#include <proto/exec.h>
+
+#include "amiga/os3support.h"
 
 #include "urlhistory.h"
 

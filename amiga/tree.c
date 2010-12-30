@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <proto/window.h>
 #include <proto/layout.h>
 #include <proto/space.h>
@@ -994,7 +996,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 										ASLFR_InitialFile,"tree_export.html",
 										TAG_DONE))
 									{
-										strlcpy(&fname,savereq->fr_Drawer,1024);
+										strlcpy(fname,savereq->fr_Drawer,1024);
 										AddPart(fname,savereq->fr_File,1024);
 										ami_update_pointer(twin->win,GUI_POINTER_WAIT);
 										if(twin->type == AMI_TREE_HISTORY)

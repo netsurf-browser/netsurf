@@ -1,0 +1,57 @@
+/*
+ * Copyright 2010 John-Mark Bell <jmb@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** \file
+ * Minimal compatibility header for AmigaOS 3
+ */
+
+#ifndef AMIGA_OS3SUPPORT_H_
+#define AMIGA_OS3SUPPORT_H_
+
+#ifndef __amigaos4__
+
+#include <stdint.h>
+
+/* Include prototypes for amigalib */
+#include <clib/alib_protos.h>
+
+#ifndef EXEC_MEMORY_H
+#include <exec/memory.h>
+#endif
+
+/* Define extra memory type flags */
+#define MEMF_PRIVATE	MEMF_ANY
+#define MEMF_SHARED	MEMF_ANY
+
+/* Integral type definitions */
+typedef int8_t int8;
+typedef uint8_t uint8;
+typedef int16_t int16;
+typedef uint16_t uint16;
+typedef int32_t int32;
+typedef uint32_t uint32;
+
+/* TimeVal */
+struct TimeVal {
+	uint32 Seconds;
+	uint32 Microseconds;
+};
+
+#endif
+
+#endif

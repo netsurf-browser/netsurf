@@ -17,6 +17,7 @@
  */
 
 #include "desktop/401login.h"
+#include "amiga/os3support.h"
 #include "amiga/gui.h"
 #include "amiga/object.h"
 #include "amiga/login.h"

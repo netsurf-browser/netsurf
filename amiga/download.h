@@ -18,6 +18,9 @@
 
 #ifndef AMIGA_DOWNLOAD_H
 #define AMIGA_DOWNLOAD_H
+
+#include "amiga/os3support.h"
+
 #include "amiga/gui.h"
 
 struct download_context;

@@ -17,6 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include <exec/semaphores.h>
 #include <intuition/classes.h>
 #include <intuition/classusr.h>

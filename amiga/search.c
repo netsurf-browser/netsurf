@@ -35,6 +35,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "amiga/os3support.h"
 #include "amiga/search.h"
 #include "amiga/object.h"
 #include <proto/intuition.h>
