@@ -17,14 +17,19 @@
  */
 
 #include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-#include "desktop/cookies.h"
-#include <proto/dos.h>
-#include "utils/messages.h"
 #include <stdlib.h>
-#include "utils/utils.h"
+#include <string.h>
+
+#include <sys/types.h>
+
+#include <proto/dos.h>
+
+#include "amiga/utf8.h"
+#include "desktop/cookies.h"
+#include "utils/log.h"
+#include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/utils.h"
 
 void warn_user(const char *warning, const char *detail)
 {
@@ -32,14 +37,12 @@ void warn_user(const char *warning, const char *detail)
 
 	LOG(("%s %s", warning, detail));
 
-	if(!utf8warning) utf8warning = warning;
-
 	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_WARNING,
 							TDR_TitleString,messages_get("NetSurf"),
 							TDR_GadgetString,messages_get("OK"),
 //							TDR_CharSet,106,
 							TDR_FormatString,"%s\n%s",
-							TDR_Arg1,utf8warning,
+							TDR_Arg1,utf8warning != NULL ? utf8warning : warning,
 							TDR_Arg2,detail,
 							TAG_DONE);
 
