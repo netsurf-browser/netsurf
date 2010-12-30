@@ -42,9 +42,9 @@ else
   CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libcares libcurl openssl)
   CFLAGS += $(shell $(PKG_CONFIG) --cflags tre libhubbub libcss)
 
-  LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
   LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcares libcurl openssl)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs tre libhubbub libcss)
+  LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib -liconv
 
   EXETARGET := NetSurf
 endif
