@@ -180,6 +180,7 @@ else
     else
       ifeq ($(TARGET),amiga)
         ifneq ($(HOST),amiga)
+          # TODO: We'll eventually need ppc-unknown-amigaos4, too -- how?
           GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-unknown-amigaos/env
           GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-unknown-amigaos/cross/bin
 
