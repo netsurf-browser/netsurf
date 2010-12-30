@@ -180,9 +180,8 @@ else
     else
       ifeq ($(TARGET),amiga)
         ifneq ($(HOST),amiga)
-          # TODO: better defaults
-          GCCSDK_INSTALL_ENV ?= /home/jmb/netsurf/env/m68k-amigaos/env
-          GCCSDK_INSTALL_CROSSBIN ?= /home/jmb/netsurf/env/m68k-amigaos/cross/bin
+          GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-unknown-amigaos/env
+          GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-unknown-amigaos/cross/bin
 
           CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
 
