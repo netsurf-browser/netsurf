@@ -134,8 +134,22 @@ ifeq ($(TARGET),riscos)
   else
     # Cross-build for RO (either using GCCSDK 3.4.6 - AOF,
     # either using GCCSDK 4 - ELF)
-    GCCSDK_INSTALL_ENV ?= /home/riscos/env
-    GCCSDK_INSTALL_CROSSBIN ?= /home/riscos/cross/bin
+    ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+      ifneq ($(realpath /opt/netsurf/arm-unknown-riscos/env),)
+        GCCSDK_INSTALL_ENV := /opt/netsurf/arm-unknown-riscos/env
+      else
+        GCCSDK_INSTALL_ENV := /home/riscos/env
+      endif
+    endif
+
+    ifeq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+      ifneq ($(realpath /opt/netsurf/arm-unknown-riscos/cross/bin),)
+        GCCSDK_INSTALL_CROSSBIN := /opt/netsurf/arm-unknown-riscos/cross/bin
+      else
+        GCCSDK_INSTALL_CROSSBIN := /home/riscos/cross/bin
+      endif
+    endif
+
     CCRES := $(GCCSDK_INSTALL_CROSSBIN)/ccres
     TPLEXT := ,fec
     MAKERUN := $(GCCSDK_INSTALL_CROSSBIN)/makerun
