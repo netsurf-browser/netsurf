@@ -103,12 +103,15 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
+void box_construct_after(xmlNode *n, struct content *content,
+		struct box *box, const css_computed_style *style);
 bool box_construct_text(xmlNode *n, struct content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
 static css_computed_style * box_get_style(struct content *c,
-		const css_computed_style *parent_style, xmlNode *n);
+		const css_computed_style *parent_style, xmlNode *n,
+		enum css_pseudo_element pseudo_element);
 static void box_text_transform(char *s, unsigned int len,
 		enum css_text_transform_e tt);
 #define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
@@ -305,16 +308,17 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	 */
 	parent->strip_leading_newline = 0;
 
-	style = box_get_style(content, parent_style, n);
+	style = box_get_style(content, parent_style, n,
+			CSS_PSEUDO_ELEMENT_NONE);
 	if (!style)
 		return false;
 
 	/* extract title attribute, if present */
 	if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
 		char *title1 = squash_whitespace((char *) title0);
-	
+
 		xmlFree(title0);
-	
+
 		if (!title1)
 			return false;
 
@@ -581,17 +585,101 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	}
 
 	/* fetch any background image for this box */
-	if (css_computed_background_image(style, &bgimage_uri) == 
-				CSS_BACKGROUND_IMAGE_IMAGE && 
+	if (css_computed_background_image(style, &bgimage_uri) ==
+				CSS_BACKGROUND_IMAGE_IMAGE &&
 				bgimage_uri != NULL) {
-		if (!html_fetch_object(content, 
+		if (!html_fetch_object(content,
 				lwc_string_data(bgimage_uri),
 				box, image_types, content->available_width,
 				1000, true))
 			return false;
 	}
 
+	/* handle the :after pseudo element */
+
+	/* TODO: Replace with true implementation.
+	 * Currently we only implement enough of this to support the
+	 * 'clearfix' hack, which is in widespread use and the layout
+	 * of many sites depend on. As such, only bother if box is a
+	 * block for now. */
+	if (box->type == BOX_BLOCK) {
+		box_construct_after(n, content, box, style);
+	}
+
 	return true;
+}
+
+
+/**
+ * Construct the box required for an :after pseudo element.
+ *
+ * \param  n		 XML node of type XML_ELEMENT_NODE
+ * \param  content	 content of type CONTENT_HTML that is being processed
+ * \param  box		 box which may have an :after s
+ * \param  style	 box's style
+ *
+ * TODO:
+ * This is currently incomplete. It just does enough to support the clearfix
+ * hack. ( http://www.positioniseverything.net/easyclearing.html )
+ *
+ * To determine if an element has a pseudo element, we select for it and test to
+ * see if the returned style's content property is set to normal.
+ *
+ * We don't actually support generated content yet.
+ */
+
+void box_construct_after(xmlNode *n, struct content *content,
+		struct box *box, const css_computed_style *style)
+{
+	struct box *after = 0;
+	css_computed_style *after_style = 0;
+	const css_computed_content_item *c_item;
+
+	after_style = box_get_style(content, style, n,
+			CSS_PSEUDO_ELEMENT_AFTER);
+	if (!after_style)
+		return;
+
+	/* create box for this element */
+	if (css_computed_content(after_style, &c_item) != CSS_CONTENT_NORMAL &&
+			css_computed_display(after_style, n->parent == NULL) ==
+			CSS_DISPLAY_BLOCK) {
+		/* :after exists */
+		after = box_create(after_style, true, NULL, NULL, NULL, NULL,
+				content);
+		if (!after) {
+			css_computed_style_destroy(after_style);
+			return;
+		}
+
+		/* set box type from computed display */
+		if ((css_computed_position(after_style) ==
+				CSS_POSITION_ABSOLUTE ||
+				css_computed_position(after_style) ==
+				CSS_POSITION_FIXED) &&
+				(css_computed_display_static(after_style) ==
+				CSS_DISPLAY_INLINE ||
+			 	css_computed_display_static(after_style) ==
+				CSS_DISPLAY_INLINE_BLOCK ||
+			 	css_computed_display_static(after_style) ==
+				CSS_DISPLAY_INLINE_TABLE)) {
+			/* Special case for absolute positioning: make
+			 * absolute inlines into inline block so that
+			 * the boxes are constructed in an inline
+			 * container as if they were not absolutely
+			 * positioned. Layout expects and handles
+			 * this. */
+			after->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
+		} else {
+			/* Normal mapping */
+			after->type = box_map[css_computed_display(
+					after_style, n->parent == NULL)];
+		}
+
+		box_add_child(box, after);
+	} else {
+		css_computed_style_destroy(after_style);
+	}
 }
 
 
@@ -823,14 +911,15 @@ bool box_construct_text(xmlNode *n, struct content *content,
 /**
  * Get the style for an element.
  *
- * \param  c		 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree, or NULL for root
- * \param  n		 node in xml tree
+ * \param  c		   content of type CONTENT_HTML that is being processed
+ * \param  parent_style    style at this point in xml tree, or NULL for root
+ * \param  n		   node in xml tree
+ * \param  pseudo_element  type of (pseudo) element to select for
  * \return  the new style, or NULL on memory exhaustion
  */
 css_computed_style *box_get_style(struct content *c,
 		const css_computed_style *parent_style,
-		xmlNode *n)
+		xmlNode *n, enum css_pseudo_element pseudo_element)
 {
 	char *s;
 	css_stylesheet *inline_style = NULL;
@@ -838,7 +927,8 @@ css_computed_style *box_get_style(struct content *c,
 	css_computed_style *style;
 
 	/* Firstly, construct inline stylesheet, if any */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) &&
+			pseudo_element == CSS_PSEUDO_ELEMENT_NONE) {
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
 				c->data.html.encoding, content__get_url(c), 
@@ -852,7 +942,7 @@ css_computed_style *box_get_style(struct content *c,
 	}
 
 	/* Select partial style for element */
-	partial = nscss_get_style(c, n, CSS_PSEUDO_ELEMENT_NONE, 
+	partial = nscss_get_style(c, n, pseudo_element, 
 				  CSS_MEDIA_SCREEN, inline_style,
 				  box_style_alloc, NULL);
 
