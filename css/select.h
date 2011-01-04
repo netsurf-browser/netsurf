@@ -36,9 +36,6 @@ css_computed_style *nscss_get_style(struct content *html, xmlNode *n,
 		const css_stylesheet *inline_style,
 		css_allocator_fn alloc, void *pw);
 
-css_computed_style *nscss_get_initial_style(struct content *html,
-		css_allocator_fn, void *pw);
-
 css_computed_style *nscss_get_blank_style(struct content *html,
 		const css_computed_style *parent,
 		css_allocator_fn alloc, void *pw);

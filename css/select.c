@@ -80,6 +80,9 @@ static bool parse_dimension(const char *data, bool strict,
 static bool parse_number(const char *data, bool non_negative, bool real,
 		css_fixed *value, size_t *consumed);
 
+static css_computed_style *nscss_get_initial_style(struct content *html,
+		css_allocator_fn, void *pw);
+
 static bool isWhitespace(char c);
 static bool isHex(char c);
 static uint8_t charToHex(char c);
