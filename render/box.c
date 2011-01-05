@@ -95,18 +95,23 @@ free_box_style(struct box *b)
 /**
  * Create a box tree node.
  *
- * \param  style     style for the box (not copied)
- * \param  href      href for the box (not copied), or 0
- * \param  target    target for the box (not copied), or 0
- * \param  title     title for the box (not copied), or 0
- * \param  id        id for the box (not copied), or 0
- * \param  context   context for allocations
+ * \param  styles       selection results for the box, or NULL
+ * \param  style        computed style for the box (not copied), or 0
+ * \param  style_owned  whether style is owned by this box
+ * \param  href         href for the box (not copied), or 0
+ * \param  target       target for the box (not copied), or 0
+ * \param  title        title for the box (not copied), or 0
+ * \param  id           id for the box (not copied), or 0
+ * \param  context      context for allocations
  * \return  allocated and initialised box, or 0 on memory exhaustion
+ *
+ * styles is always owned by the box, if it is set.
+ * style is only owned by the box in the case of implied boxes.
  */
 
-struct box * box_create(css_computed_style *style, bool style_owned,
-		char *href, const char *target, char *title, char *id,
-		void *context)
+struct box * box_create(css_select_results *styles, css_computed_style *style,
+		bool style_owned, char *href, const char *target, char *title,
+		char *id, void *context)
 {
 	unsigned int i;
 	struct box *box;
@@ -120,6 +125,7 @@ struct box * box_create(css_computed_style *style, bool style_owned,
 		talloc_set_destructor(box, free_box_style);
 	
 	box->type = BOX_INLINE;
+	box->styles = styles;
 	box->style = style;
 	box->x = box->y = 0;
 	box->width = UNKNOWN_WIDTH;
@@ -278,6 +284,8 @@ void box_free_box(struct box *box)
 			scroll_destroy(box->scroll_x);
 		if (box->scroll_y != NULL)
 			scroll_destroy(box->scroll_y);
+		if (box->styles != NULL)
+			css_select_results_destroy(box->styles);
 	}
 
 	talloc_free(box);
@@ -1402,3 +1410,4 @@ bool box_hscrollbar_present(const struct box * const box)
 			box->padding[LEFT] + box->width + box->padding[RIGHT] +
 			box->border[RIGHT].width < box->descendant_x1;
 }
+

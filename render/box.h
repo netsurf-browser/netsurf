@@ -133,7 +133,13 @@ struct box {
 	/** Type of box. */
 	box_type type;
 
-	/** Style for this box. 0 for INLINE_CONTAINER and FLOAT_*. */
+	/** Computed styles for elements and their pseudo elements.  NULL on
+	 *  non-element boxes. */
+	css_select_results *styles;
+
+	/** Style for this box. 0 for INLINE_CONTAINER and FLOAT_*. Pointer into
+	 *  a box's 'styles' select results, except for implied boxes, where it
+	 *  is a pointer to an owned computed style. */
 	css_computed_style *style;
 
 	/** Coordinate of left padding edge relative to parent box, or relative
@@ -295,8 +301,8 @@ extern const char *TARGET_BLANK;
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
 void *box_style_alloc(void *ptr, size_t len, void *pw);
-struct box * box_create(css_computed_style *style, bool style_owned,
-		char *href, const char *target, char *title,
+struct box * box_create(css_select_results *styles, css_computed_style *style,
+		bool style_owned, char *href, const char *target, char *title,
 		char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);

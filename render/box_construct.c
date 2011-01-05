@@ -104,14 +104,13 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
 void box_construct_after(xmlNode *n, struct content *content,
-		struct box *box, const css_computed_style *style);
+		struct box *box, const css_computed_style *after_style);
 bool box_construct_text(xmlNode *n, struct content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
-static css_computed_style * box_get_style(struct content *c,
-		const css_computed_style *parent_style, xmlNode *n,
-		enum css_pseudo_element pseudo_element);
+static css_select_results * box_get_style(struct content *c,
+		const css_computed_style *parent_style, xmlNode *n);
 static void box_text_transform(char *s, unsigned int len,
 		enum css_text_transform_e tt);
 #define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
@@ -289,7 +288,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	struct box *box = 0;
 	struct box *inline_container_c;
 	struct box *inline_end;
-	css_computed_style *style = 0;
+	css_select_results *styles = NULL;
 	struct element_entry *element;
 	xmlChar *title0;
 	xmlNode *c;
@@ -308,9 +307,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	 */
 	parent->strip_leading_newline = 0;
 
-	style = box_get_style(content, parent_style, n,
-			CSS_PSEUDO_ELEMENT_NONE);
-	if (!style)
+	styles = box_get_style(content, parent_style, n);
+	if (!styles)
 		return false;
 
 	/* extract title attribute, if present */
@@ -335,17 +333,19 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		return false;
 
 	/* create box for this element */
-	box = box_create(style, true, href, target, title, id, content);
+	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
+			href, target, title, id, content);
 	if (!box)
 		return false;
 	/* set box type from computed display */
-	if ((css_computed_position(style) == CSS_POSITION_ABSOLUTE ||
-			css_computed_position(style) == CSS_POSITION_FIXED) &&
-			(css_computed_display_static(style) == 
+	if ((css_computed_position(box->style) == CSS_POSITION_ABSOLUTE ||
+			css_computed_position(box->style) ==
+					CSS_POSITION_FIXED) &&
+			(css_computed_display_static(box->style) == 
 					CSS_DISPLAY_INLINE ||
-			 css_computed_display_static(style) == 
+			 css_computed_display_static(box->style) == 
 					CSS_DISPLAY_INLINE_BLOCK ||
-			 css_computed_display_static(style) == 
+			 css_computed_display_static(box->style) == 
 					CSS_DISPLAY_INLINE_TABLE)) {
 		/* Special case for absolute positioning: make absolute inlines
 		 * into inline block so that the boxes are constructed in an 
@@ -354,7 +354,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		box->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
 	} else {
 		/* Normal mapping */
-		box->type = box_map[css_computed_display(style, 
+		box->type = box_map[css_computed_display(box->style, 
 				n->parent == NULL)];
 	}
 
@@ -374,7 +374,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	if (box->type == BOX_NONE || css_computed_display(box->style, 
 			n->parent == NULL) == CSS_DISPLAY_NONE) {
 		/* Free style and invalidate box's style pointer */
-		css_computed_style_destroy(style);
+		css_select_results_destroy(styles);
+		box->styles = NULL;
 		box->style = NULL;
 
 		/* If this box has an associated gadget, invalidate the
@@ -396,10 +397,11 @@ bool box_construct_element(xmlNode *n, struct content *content,
 			(box->type == BOX_INLINE ||
 			box->type == BOX_BR ||
 			box->type == BOX_INLINE_BLOCK ||
-			css_computed_float(style) == CSS_FLOAT_LEFT ||
-			css_computed_float(style) == CSS_FLOAT_RIGHT)) {
+			css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+			css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
 		/* this is the first inline in a block: make a container */
-		*inline_container = box_create(0, false, 0, 0, 0, 0, content);
+		*inline_container = box_create(NULL, 0, false, 0, 0, 0, 0,
+				content);
 		if (!*inline_container)
 			return false;
 
@@ -414,13 +416,13 @@ bool box_construct_element(xmlNode *n, struct content *content,
 
 		if (convert_children && n->children) {
 			for (c = n->children; c; c = c->next)
-				if (!convert_xml_to_box(c, content, style,
+				if (!convert_xml_to_box(c, content, box->style,
 						parent, inline_container,
 						href, target, title))
 					return false;
 
-			inline_end = box_create(style, false, href, target, title, id,
-					content);
+			inline_end = box_create(NULL, box->style, false, href,
+					target, title, id, content);
 			if (!inline_end)
 				return false;
 
@@ -441,25 +443,26 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		inline_container_c = 0;
 
 		for (c = n->children; convert_children && c; c = c->next)
-			if (!convert_xml_to_box(c, content, style, box,
+			if (!convert_xml_to_box(c, content, box->style, box,
 					&inline_container_c,
 					href, target, title))
 				return false;
 	} else {
 		/* list item: compute marker, then treat as non-inline box */
-		if (css_computed_display(style, n->parent == NULL) == 
+		if (css_computed_display(box->style, n->parent == NULL) == 
 				CSS_DISPLAY_LIST_ITEM) {
 			lwc_string *image_uri;
 			struct box *marker;
 
-			marker = box_create(style, false, 0, 0, title, 0, content);
+			marker = box_create(NULL, box->style, false, 0, 0,
+					title, 0, content);
 			if (!marker)
 				return false;
 
 			marker->type = BOX_BLOCK;
 
 			/** \todo marker content (list-style-type) */
-			switch (css_computed_list_style_type(style)) {
+			switch (css_computed_list_style_type(box->style)) {
 			case CSS_LIST_STYLE_TYPE_DISC:
 				/* 2022 BULLET */
 				marker->text = (char *) "\342\200\242";
@@ -521,13 +524,13 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				break;
 			}
 
-			if (css_computed_list_style_image(style, &image_uri) ==
+			if (css_computed_list_style_image(box->style,
+					&image_uri) ==
 					CSS_LIST_STYLE_IMAGE_URI && 
 					image_uri != NULL) {
 				if (!html_fetch_object(content,
 						lwc_string_data(image_uri),
-						marker,
-						image_types,
+						marker, image_types,
 						content->available_width,
 						1000, false))
 					return false;
@@ -539,13 +542,15 @@ bool box_construct_element(xmlNode *n, struct content *content,
 
 		/* float: insert a float box between the parent and
 		 * current node. Note: new parent will be the float */
-		if (css_computed_float(style) == CSS_FLOAT_LEFT ||
-				css_computed_float(style) == CSS_FLOAT_RIGHT) {
-			parent = box_create(0, false, href, target, title, 0, content);
+		if (css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+				css_computed_float(box->style) ==
+				CSS_FLOAT_RIGHT) {
+			parent = box_create(NULL, 0, false, href, target, title,
+					0, content);
 			if (!parent)
 				return false;
 
-			if (css_computed_float(style) == CSS_FLOAT_LEFT)
+			if (css_computed_float(box->style) == CSS_FLOAT_LEFT)
 				parent->type = BOX_FLOAT_LEFT;
 			else
 				parent->type = BOX_FLOAT_RIGHT;
@@ -559,12 +564,12 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		inline_container_c = 0;
 
 		for (c = n->children; convert_children && c; c = c->next)
-			if (!convert_xml_to_box(c, content, style, box,
+			if (!convert_xml_to_box(c, content, box->style, box,
 					&inline_container_c,
 					href, target, title))
 				return false;
 
-		if (css_computed_float(style) == CSS_FLOAT_NONE)
+		if (css_computed_float(box->style) == CSS_FLOAT_NONE)
 			/* new inline container unless this is a float */
 			*inline_container = 0;
 	}
@@ -585,7 +590,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	}
 
 	/* fetch any background image for this box */
-	if (css_computed_background_image(style, &bgimage_uri) ==
+	if (css_computed_background_image(box->style, &bgimage_uri) ==
 				CSS_BACKGROUND_IMAGE_IMAGE &&
 				bgimage_uri != NULL) {
 		if (!html_fetch_object(content,
@@ -603,7 +608,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	 * of many sites depend on. As such, only bother if box is a
 	 * block for now. */
 	if (box->type == BOX_BLOCK) {
-		box_construct_after(n, content, box, style);
+		box_construct_after(n, content, box,
+				box->styles->styles[CSS_PSEUDO_ELEMENT_AFTER]);
 	}
 
 	return true;
@@ -613,10 +619,10 @@ bool box_construct_element(xmlNode *n, struct content *content,
 /**
  * Construct the box required for an :after pseudo element.
  *
- * \param  n		 XML node of type XML_ELEMENT_NODE
- * \param  content	 content of type CONTENT_HTML that is being processed
- * \param  box		 box which may have an :after s
- * \param  style	 box's style
+ * \param  n		XML node of type XML_ELEMENT_NODE
+ * \param  content	content of type CONTENT_HTML that is being processed
+ * \param  box		box which may have an :after s
+ * \param  after_style	complete computed style for after pseudo element
  *
  * TODO:
  * This is currently incomplete. It just does enough to support the clearfix
@@ -629,26 +635,27 @@ bool box_construct_element(xmlNode *n, struct content *content,
  */
 
 void box_construct_after(xmlNode *n, struct content *content,
-		struct box *box, const css_computed_style *style)
+		struct box *box, const css_computed_style *after_style)
 {
 	struct box *after = 0;
-	css_computed_style *after_style = 0;
 	const css_computed_content_item *c_item;
 
-	after_style = box_get_style(content, style, n,
-			CSS_PSEUDO_ELEMENT_AFTER);
-	if (!after_style)
+	if (after_style == NULL ||
+			css_computed_content(after_style, &c_item) ==
+			CSS_CONTENT_NORMAL) {
+		/* No pseudo element */
 		return;
+	}
 
 	/* create box for this element */
-	if (css_computed_content(after_style, &c_item) != CSS_CONTENT_NORMAL &&
-			css_computed_display(after_style, n->parent == NULL) ==
+	if (css_computed_display(after_style, n->parent == NULL) ==
 			CSS_DISPLAY_BLOCK) {
-		/* :after exists */
-		after = box_create(after_style, true, NULL, NULL, NULL, NULL,
-				content);
-		if (!after) {
-			css_computed_style_destroy(after_style);
+		/* currently only support block level after elements */
+
+		/** \todo Not wise to drop const from the computed style */ 
+		after = box_create(NULL, (css_computed_style *)after_style,
+				false, NULL, NULL, NULL, NULL, content);
+		if (after == NULL) {
 			return;
 		}
 
@@ -677,8 +684,6 @@ void box_construct_after(xmlNode *n, struct content *content,
 		}
 
 		box_add_child(box, after);
-	} else {
-		css_computed_style_destroy(after_style);
 	}
 }
 
@@ -743,7 +748,8 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 		if (!*inline_container) {
 			/* this is the first inline node: make a container */
-			*inline_container = box_create(0, false, 0, 0, 0, 0, content);
+			*inline_container = box_create(NULL, 0, false, 0, 0, 0,
+					0, content);
 			if (!*inline_container) {
 				free(text);
 				return false;
@@ -755,8 +761,8 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		}
 
 		/** \todo Dropping const here is not clever */ 
-		box = box_create((css_computed_style *) parent_style, false,
-				href, target, title, 0, content);
+		box = box_create(NULL, (css_computed_style *) parent_style,
+				false, href, target, title, 0, content);
 		if (!box) {
 			free(text);
 			return false;
@@ -856,8 +862,8 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			current[len] = 0;
 
 			if (!*inline_container) {
-				*inline_container = box_create(0, false, 0, 0, 0, 0,
-						content);
+				*inline_container = box_create(NULL, 0, false,
+						0, 0, 0, 0, content);
 				if (!*inline_container) {
 					free(text);
 					return false;
@@ -870,8 +876,9 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			}
 
 			/** \todo Dropping const isn't clever */
-			box = box_create((css_computed_style *) parent_style, false,
-					href, target, title, 0, content);
+			box = box_create(NULL,
+					(css_computed_style *) parent_style,
+					false, href, target, title, 0, content);
 			if (!box) {
 				free(text);
 				return false;
@@ -914,17 +921,15 @@ bool box_construct_text(xmlNode *n, struct content *content,
  * \param  c		   content of type CONTENT_HTML that is being processed
  * \param  parent_style    style at this point in xml tree, or NULL for root
  * \param  n		   node in xml tree
- * \param  pseudo_element  type of (pseudo) element to select for
  * \return  the new style, or NULL on memory exhaustion
  */
-css_computed_style *box_get_style(struct content *c,
-		const css_computed_style *parent_style,
-		xmlNode *n, enum css_pseudo_element pseudo_element)
+css_select_results *box_get_style(struct content *c,
+		const css_computed_style *parent_style, xmlNode *n)
 {
 	char *s;
+	int pseudo_element;
 	css_stylesheet *inline_style = NULL;
-	css_computed_style *partial;
-	css_computed_style *style;
+	css_select_results *styles;
 
 	/* Firstly, construct inline stylesheet, if any */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) &&
@@ -942,16 +947,15 @@ css_computed_style *box_get_style(struct content *c,
 	}
 
 	/* Select partial style for element */
-	partial = nscss_get_style(c, n, pseudo_element, 
-				  CSS_MEDIA_SCREEN, inline_style,
-				  box_style_alloc, NULL);
+	styles = nscss_get_style(c, n, CSS_MEDIA_SCREEN, inline_style,
+			box_style_alloc, NULL);
 
 	/* No longer need inline style */
 	if (inline_style != NULL)
 		css_stylesheet_destroy(inline_style);
 
 	/* Failed selecting partial style -- bail out */
-	if (partial == NULL)
+	if (styles == NULL || styles->styles[CSS_PSEUDO_ELEMENT_NONE] == NULL)
 		return NULL;
 
 	/* If there's a parent style, compose with partial to obtain 
@@ -959,20 +963,43 @@ css_computed_style *box_get_style(struct content *c,
 	if (parent_style != NULL) {
 		css_error error;
 
-		error = css_computed_style_compose(parent_style, partial, 
-				nscss_compute_font_size, NULL, partial);
+		/* Complete the computed style, by composing with the parent
+		 * element's style */
+		error = css_computed_style_compose(parent_style,
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
+				nscss_compute_font_size, NULL,
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE]);
 		if (error != CSS_OK) {
-			css_computed_style_destroy(partial);
+			css_select_results_destroy(styles);
 			return NULL;
 		}
-
-		style = partial;
-	} else {
-		/* No parent style, so partial must be fully computed */
-		style = partial;
 	}
 
-	return style;
+	for (pseudo_element = CSS_PSEUDO_ELEMENT_NONE + 1;
+			pseudo_element < CSS_PSEUDO_ELEMENT_COUNT;
+			pseudo_element++) {
+		css_error error;
+
+		if (styles->styles[pseudo_element] == NULL)
+			/* There were no rules concerning this pseudo element */
+			continue;
+
+		/* Complete the pseudo element's computed style, by composing
+		 * with the base element's style */
+		error = css_computed_style_compose(
+				styles->styles[CSS_PSEUDO_ELEMENT_NONE],
+				styles->styles[pseudo_element],
+				nscss_compute_font_size, NULL,
+				styles->styles[pseudo_element]);
+		if (error != CSS_OK) {
+			/* TODO: perhaps this shouldn't be quite so
+			 * catastrophic? */
+			css_select_results_destroy(styles);
+			return NULL;
+		}
+	}
+
+	return styles;
 }
 
 
@@ -1832,14 +1859,15 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		if (!box_button(n, content, box, 0))
 			goto no_memory;
 
-		inline_container = box_create(0, false, 0, 0, 0, 0, content);
+		inline_container = box_create(NULL, 0, false, 0, 0, 0, 0,
+				content);
 		if (!inline_container)
 			goto no_memory;
 
 		inline_container->type = BOX_INLINE_CONTAINER;
 
-		inline_box = box_create(box->style, false, 0, 0, box->title, 0,
-				content);
+		inline_box = box_create(NULL, box->style, false, 0, 0,
+				box->title, 0, content);
 		if (!inline_box)
 			goto no_memory;
 
@@ -1924,11 +1952,12 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 
 	box->type = BOX_INLINE_BLOCK;
 
-	inline_container = box_create(0, false, 0, 0, 0, 0, content);
+	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content);
 	if (!inline_container)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(box->style, false, 0, 0, box->title, 0, content);
+	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
+			content);
 	if (!inline_box)
 		return false;
 	inline_box->type = BOX_TEXT;
@@ -2023,11 +2052,12 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	box->gadget = gadget;
 	gadget->box = box;
 
-	inline_container = box_create(0, false, 0, 0, 0, 0, content);
+	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content);
 	if (!inline_container)
 		goto no_memory;
 	inline_container->type = BOX_INLINE_CONTAINER;
-	inline_box = box_create(box->style, false, 0, 0, box->title, 0, content);
+	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
+			content);
 	if (!inline_box)
 		goto no_memory;
 	inline_box->type = BOX_TEXT;
@@ -2146,7 +2176,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		return false;
 	box->gadget->box = box;
 
-	inline_container = box_create(0, false, 0, 0, box->title, 0, content);
+	inline_container = box_create(NULL, 0, false, 0, 0, box->title, 0,
+			content);
 	if (!inline_container)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
@@ -2198,8 +2229,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		inline_box = box_create(box->style, false, 0, 0, box->title, 0,
-				content);
+		inline_box = box_create(NULL, box->style, false, 0, 0,
+				box->title, 0, content);
 		if (!inline_box) {
 			xmlFree(string);
 			xmlBufferFree(buf);
@@ -2216,7 +2247,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			break;
 
 		/* BOX_BR */
-		br_box = box_create(box->style, false, 0, 0, box->title, 0, content);
+		br_box = box_create(NULL, box->style, false, 0, 0, box->title,
+				0, content);
 		if (!br_box) {
 			xmlFree(string);
 			xmlBufferFree(buf);

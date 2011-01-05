@@ -167,36 +167,30 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
  *
  * \param html            HTML document
  * \param n               Element to select for
- * \param pseudo_element  Pseudo element to select for, instead
  * \param media           Permitted media types
  * \param inline_style    Inline style associated with element, or NULL
  * \param alloc           Memory allocation function
  * \param pw              Private word for allocator
- * \return Pointer to partial computed style, or NULL on failure
+ * \return Pointer to selection results (containing partial computed styles),
+ *         or NULL on failure
  */
-css_computed_style *nscss_get_style(struct content *html, xmlNode *n,
-		uint32_t pseudo_element, uint64_t media,
-		const css_stylesheet *inline_style,
+css_select_results *nscss_get_style(struct content *html, xmlNode *n,
+		uint64_t media, const css_stylesheet *inline_style,
 		css_allocator_fn alloc, void *pw)
 {
-	css_computed_style *style;
+	css_select_results *styles;
 	css_error error;
 
 	assert(html->type == CONTENT_HTML);
 
-	error = css_computed_style_create(alloc, pw, &style);
-	if (error != CSS_OK)
-		return NULL;
-
-	error = css_select_style(html->data.html.select_ctx, n,
-			pseudo_element, media, inline_style, style,
-			&selection_handler, html);
+	error = css_select_style(html->data.html.select_ctx, n, media,
+			inline_style, &selection_handler, html, &styles);
 	if (error != CSS_OK) {
-		css_computed_style_destroy(style);
+		css_select_results_destroy(styles);
 		return NULL;
 	}
 
-	return style;
+	return styles;
 }
 
 /**
