@@ -163,7 +163,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 }
 
 /**
- * Get a style for an element
+ * Get a style selection results (partial computed styles) for an element
  *
  * \param html            HTML document
  * \param n               Element to select for
@@ -186,7 +186,6 @@ css_select_results *nscss_get_style(struct content *html, xmlNode *n,
 	error = css_select_style(html->data.html.select_ctx, n, media,
 			inline_style, &selection_handler, html, &styles);
 	if (error != CSS_OK) {
-		css_select_results_destroy(styles);
 		return NULL;
 	}
 
