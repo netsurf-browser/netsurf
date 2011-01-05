@@ -955,7 +955,7 @@ css_select_results *box_get_style(struct content *c,
 		css_stylesheet_destroy(inline_style);
 
 	/* Failed selecting partial style -- bail out */
-	if (styles == NULL || styles->styles[CSS_PSEUDO_ELEMENT_NONE] == NULL)
+	if (styles == NULL)
 		return NULL;
 
 	/* If there's a parent style, compose with partial to obtain 
