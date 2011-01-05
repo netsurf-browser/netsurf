@@ -1695,6 +1695,17 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	struct content_html_iframe *iframe;
 	int i;
 
+	if (box->style && css_computed_display(box->style, 
+			n->parent == NULL) == CSS_DISPLAY_NONE)
+		return true;
+
+	if (box->style && css_computed_visibility(box->style) ==
+			CSS_VISIBILITY_HIDDEN)
+		/* Don't create iframe discriptors for invisible iframes
+		 * TODO: handle hidden iframes at browser_window generation
+		 * time instead? */
+		return true;
+
 	/* get frame URL */
 	if (!(s = (char *) xmlGetProp(n,
 			(const xmlChar *) "src")))
