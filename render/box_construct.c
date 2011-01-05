@@ -932,8 +932,7 @@ css_select_results *box_get_style(struct content *c,
 	css_select_results *styles;
 
 	/* Firstly, construct inline stylesheet, if any */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style")) &&
-			pseudo_element == CSS_PSEUDO_ELEMENT_NONE) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
 				c->data.html.encoding, content__get_url(c), 
