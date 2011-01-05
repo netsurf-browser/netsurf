@@ -35,6 +35,10 @@
 #ifndef ABS
 #define ABS(x) (((x)>0)?(x):(-(x)))
 #endif
+#ifdef __MINT__ /* avoid using GCCs builtin min/max functions */
+#undef min
+#undef max
+#endif
 #ifndef min
 #define min(x,y) (((x)<(y))?(x):(y))
 #endif
@@ -50,6 +54,10 @@
 
 #if defined(__HAIKU__) || defined(__BEOS__)
 #define strtof(s,p) ((float)(strtod((s),(p))))
+#endif
+
+#if !defined(ceilf) && defined(__MINT__)
+#define ceilf(x) (float)ceil((double)x)
 #endif
 
 /**

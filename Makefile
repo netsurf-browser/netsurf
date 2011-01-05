@@ -82,7 +82,7 @@ else
       endif
       ifeq ($(HOST),mint)
         ifeq ($(TARGET),)
-          TARGET := framebuffer
+          TARGET := atari
         endif
       endif
       
@@ -102,7 +102,9 @@ ifneq ($(TARGET),riscos)
       ifneq ($(TARGET),amiga)
         ifneq ($(TARGET),framebuffer)
           ifneq ($(TARGET),windows)
-            $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer" or "windows")
+            ifneq ($(TARGET),atari)
+              $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer", "windows" or "atari")
+            endif
           endif
         endif
       endif
@@ -203,7 +205,7 @@ else
           PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config
         endif
       else
-        # Building for GTK, Framebuffer
+        # Building for GTK, Framebuffer, Atari
         PKG_CONFIG := pkg-config
       endif
     endif

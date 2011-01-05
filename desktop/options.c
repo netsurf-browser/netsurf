@@ -47,6 +47,8 @@
 #include "amiga/options.h"
 #elif defined(nsframebuffer)
 #include "framebuffer/options.h"
+#elif defined(nsatari)
+#include "atari/options.h"
 #else
 #define EXTRA_OPTION_DEFINE
 #define EXTRA_OPTION_TABLE

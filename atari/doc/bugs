@@ -1,0 +1,5 @@
+BUGS
+
+ - On native Ataris there is an Problem with Redraw & Mouse Cursor 
+ - Visiting pages that contain frames: undefined behavior
+ 
