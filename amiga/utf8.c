@@ -24,18 +24,6 @@
 #include <proto/diskfont.h>
 #include <diskfont/diskfonttag.h>
 
-utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
-	char **result)
-{
-	LONG charset;
-	char *encname;
-
-	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
-
-	return utf8_to_enc(string,encname,len,result);
-}
-
 void ami_utf8_free(char *ptr)
 {
 	if(ptr) free(ptr);
@@ -72,11 +60,31 @@ char *ami_to_utf8_easy(char *string)
 utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	char **result)
 {
+	const char *encname = "ISO-8859-1";
+
+#ifdef __amigaos4__
 	LONG charset;
-	char *encname;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
 	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+#endif
 	
 	return utf8_from_enc(string,encname,len,result);
 }
+
+utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
+	char **result)
+{
+	const char *encname = "ISO-8859-1";
+
+#ifdef __amigaos4__
+	LONG charset;
+
+	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
+	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+#endif
+
+	return utf8_to_enc(string,encname,len,result);
+}
+
+
