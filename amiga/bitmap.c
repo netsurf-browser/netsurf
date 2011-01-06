@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
+
 #include "assert.h"
 #include "amiga/bitmap.h"
 #include <proto/exec.h>
