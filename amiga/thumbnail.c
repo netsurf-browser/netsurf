@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "amiga/os3support.h"
 #include "desktop/browser.h"
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
@@ -24,6 +25,7 @@
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
 #endif
+#include <graphics/gfxbase.h>
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/options.h"
@@ -49,7 +51,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		content_get_width(content), 1.0, 0xFFFFFF);
 	current_redraw_browser = NULL;
 
-	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
 		uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride;
 		if(option_scale_quality) flags |= COMPFLAG_SrcFilter;

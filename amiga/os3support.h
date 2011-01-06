@@ -52,6 +52,25 @@ struct TimeVal {
 	uint32 Microseconds;
 };
 
+/* Compositing */
+#define COMPFLAG_IgnoreDestAlpha 0
+#define COMPFLAG_SrcAlphaOverride 0
+#define COMPFLAG_SrcFilter 0
+
+#define COMPOSITE_Src 0
+
+#define COMPTAG_ScaleX 0
+#define COMPTAG_ScaleY 0
+#define COMPTAG_DestX 0
+#define COMPTAG_DestY 0
+#define COMPTAG_DestWidth 0
+#define COMPTAG_DestHeight 0
+#define COMPTAG_OffsetX 0
+#define COMPTAG_OffsetY 0
+
+#define CompositeTags(a, ...) ((void) (a))
+#define COMP_FLOAT_TO_FIX(f) (f)
+
 #endif
 
 #endif
