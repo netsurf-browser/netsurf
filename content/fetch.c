@@ -51,7 +51,7 @@
 #include "utils/ring.h"
 
 /* Define this to turn on verbose fetch logging */
-#define DEBUG_FETCH_VERBOSE
+#undef DEBUG_FETCH_VERBOSE
 
 bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
 
