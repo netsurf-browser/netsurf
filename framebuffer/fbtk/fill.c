@@ -19,7 +19,7 @@
  */
 
 #include <stdbool.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include <libnsfb.h>
 #include <libnsfb_plot.h>

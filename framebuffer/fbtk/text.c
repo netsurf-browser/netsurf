@@ -19,7 +19,7 @@
  */
 
 #include <stdbool.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <libnsfb.h>
