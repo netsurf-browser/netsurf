@@ -21,7 +21,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon        ))
 
-  CFLAGS += -D__USE_INLINE__ -I /SDK/local/common/include/libpng12
+  CFLAGS += -D__USE_INLINE__ -D__USE_BASETYPE__ -I /SDK/local/common/include/libpng12
   LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -lregex -lauto
   LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet -liconv
 
