@@ -20,8 +20,10 @@
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
 #include <intuition/intuition.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
+#endif
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
 #include "amiga/options.h"

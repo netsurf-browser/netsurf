@@ -19,7 +19,9 @@
 #include "amiga/context_menu.h"
 #include "render/box.h"
 #include "render/form.h"
+#ifdef __amigaos4__
 #include <proto/popupmenu.h>
+#endif
 #include <proto/intuition.h>
 #include "amiga/utf8.h"
 #include "utils/utf8.h"

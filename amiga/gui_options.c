@@ -21,7 +21,9 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#ifdef __amigaos4__
 #include <proto/application.h>
+#endif
 #include <libraries/gadtools.h>
 #include <exec/types.h>
 #include <intuition/classusr.h>

@@ -29,7 +29,9 @@
 
 #include <gadgets/clicktab.h>
 #include <gadgets/space.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#endif
 #include <intuition/pointerclass.h>
 #include <workbench/icon.h>
 

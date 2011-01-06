@@ -26,7 +26,9 @@
 #include <proto/icon.h>
 #include <proto/layers.h>
 
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#endif
 #include <workbench/icon.h>
 
 #include "amiga/download.h"

@@ -20,14 +20,16 @@
 #include "amiga/bitmap.h"
 #include <proto/exec.h>
 #include <proto/Picasso96API.h>
+#ifdef __amigaos4__
+#include <graphics/blitattr.h>
 #include <graphics/composite.h>
+#endif
 #include "amiga/options.h"
 #include <proto/datatypes.h>
 #include <datatypes/pictureclass.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include "utils/messages.h"
-#include <graphics/blitattr.h>
 
 /**
  * Create a bitmap.

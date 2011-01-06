@@ -31,7 +31,9 @@
 #include <diskfont/oterrors.h>
 #include <proto/Picasso96API.h>
 #include <proto/exec.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#endif
 #include "amiga/options.h"
 #include <proto/utility.h>
 #include "utils/utils.h"

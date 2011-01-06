@@ -25,7 +25,9 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 #include <proto/icon.h>
+#ifdef __amigaos4__
 #include <proto/application.h>
+#endif
 
 #include <workbench/icon.h>
 

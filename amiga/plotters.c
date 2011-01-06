@@ -25,8 +25,10 @@
 #include <graphics/gfxmacros.h>
 #include "amiga/utf8.h"
 #include "amiga/options.h"
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
+#endif
 #include "utils/log.h"
 #include <math.h>
 #include <assert.h>

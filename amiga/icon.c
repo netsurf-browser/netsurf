@@ -31,7 +31,9 @@
 #include <proto/icon.h>
 
 #include <datatypes/pictureclass.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
+#endif
 #include <workbench/icon.h>
 
 #include "amiga/bitmap.h"

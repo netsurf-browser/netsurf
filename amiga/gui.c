@@ -66,7 +66,9 @@
 #include "amiga/stringview/urlhistory.h"
 
 /* AmigaOS libraries */
+#ifdef __amigaos4__
 #include <proto/application.h>
+#endif
 #include <proto/asl.h>
 #include <proto/datatypes.h>
 #include <proto/dos.h>

@@ -22,7 +22,9 @@
 #include <proto/asl.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
+#ifdef __amigaos4__
 #include <dos/anchorpath.h>
+#endif
 #include <libraries/gadtools.h>
 
 #include "amiga/menu.h"
