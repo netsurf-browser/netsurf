@@ -19,7 +19,7 @@
 #include "assert.h"
 #include "amiga/bitmap.h"
 #include <proto/exec.h>
-#include <proto/picasso96api.h>
+#include <proto/Picasso96API.h>
 #include <graphics/composite.h>
 #include "amiga/options.h"
 #include <proto/datatypes.h>
