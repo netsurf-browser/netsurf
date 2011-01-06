@@ -202,7 +202,6 @@ bool amiga_icon_clone(const struct content *old, struct content *new_content)
 
 	return true;
 }
-#endif /* WITH_AMIGA_ICON */
 
 ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
 		ULONG trans, ULONG pals1, struct ColorRegister *pal1, int alpha)
@@ -329,3 +328,10 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 			ICONPUTA_NotifyWorkbench, TRUE, TAG_DONE);
 }
 
+#else
+
+void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
+{
+}
+
+#endif /* WITH_AMIGA_ICON */

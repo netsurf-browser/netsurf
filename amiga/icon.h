@@ -43,5 +43,7 @@ bool amiga_icon_clone(const struct content *old, struct content *new_content);
 
 #endif /* WITH_AMIGA_ICON */
 
+struct hlcache_handle;
+
 void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type);
 #endif
