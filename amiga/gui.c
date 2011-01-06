@@ -85,10 +85,12 @@
 /* Other OS includes */
 #include <datatypes/textclass.h>
 #include <devices/inputevent.h>
+#ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #include <libraries/application.h>
-#include <libraries/gadtools.h>
 #include <libraries/keymap.h>
+#endif
+#include <libraries/gadtools.h>
 #include <intuition/icclass.h>
 #include <graphics/rpattr.h>
 #include <workbench/workbench.h>
@@ -99,12 +101,16 @@
 #include <proto/button.h>
 #include <proto/clicktab.h>
 #include <proto/layout.h>
+#ifdef __amigaos4__
 #include <proto/popupmenu.h>
+#endif
 #include <proto/space.h>
 #include <proto/string.h>
 #include <proto/window.h>
 
+#ifdef __amigaos4__
 #include <classes/popupmenu.h>
+#endif
 #include <classes/window.h>
 #include <gadgets/button.h>
 #include <gadgets/clicktab.h>
