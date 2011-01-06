@@ -928,6 +928,7 @@ css_select_results *box_get_style(struct content *c,
 {
 	char *s;
 	int pseudo_element;
+	css_error error;
 	css_stylesheet *inline_style = NULL;
 	css_select_results *styles;
 
@@ -960,7 +961,6 @@ css_select_results *box_get_style(struct content *c,
 	/* If there's a parent style, compose with partial to obtain 
 	 * complete computed style for element */
 	if (parent_style != NULL) {
-		css_error error;
 
 		/* Complete the computed style, by composing with the parent
 		 * element's style */
@@ -977,7 +977,12 @@ css_select_results *box_get_style(struct content *c,
 	for (pseudo_element = CSS_PSEUDO_ELEMENT_NONE + 1;
 			pseudo_element < CSS_PSEUDO_ELEMENT_COUNT;
 			pseudo_element++) {
-		css_error error;
+
+		if (pseudo_element == CSS_PSEUDO_ELEMENT_FIRST_LETTER ||
+				pseudo_element == CSS_PSEUDO_ELEMENT_FIRST_LINE)
+			/* TODO: Handle first-line and first-letter pseudo
+			 *       element computed style completion */
+			continue;
 
 		if (styles->styles[pseudo_element] == NULL)
 			/* There were no rules concerning this pseudo element */
