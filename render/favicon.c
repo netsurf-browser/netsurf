@@ -166,7 +166,9 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 	url = favicon_get_icon_ref(c, html);
 	if (url == NULL)
 		return false;
-
+        
+        LOG(("WOOP WOOP, SUMMON DA POLICE.  FAVICON URL IS %s", url));
+        
 	error = hlcache_handle_retrieve(url, LLCACHE_RETRIEVE_NO_ERROR_PAGES, 
 			content__get_url(c), NULL, favicon_callback, c, NULL, 
 			permitted_types, &c->data.html.favicon);	
@@ -188,7 +190,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		const hlcache_event *event, void *pw)
 {
 	struct content *c = pw;
-	bool consider_redraw = false;
+	bool consider_done = false;
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
@@ -202,7 +204,7 @@ nserror favicon_callback(hlcache_handle *icon,
 			hlcache_handle_release(icon);
 			c->data.html.favicon = NULL;
 			c->active -= 1;
-			consider_redraw = true;
+			consider_done = true;
 
 			content_add_error(c, "NotFavIco", 0);
 
@@ -215,7 +217,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		break;
 	case CONTENT_MSG_DONE:
 		c->active -= 1;
-		consider_redraw = true;
+		consider_done = true;
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -227,7 +229,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		content_add_error(c, "?", 0);
 		
 		c->active -= 1;
-		consider_redraw = true;
+		consider_done = true;
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -245,12 +247,14 @@ nserror favicon_callback(hlcache_handle *icon,
 		assert(0);
 	}
 
-	if (consider_redraw && (c->active == 0)) {
+	if (consider_done && (c->active == 0)) {
 		/* all objects have arrived */
 		content__reformat(c, c->available_width, c->height);
 		html_set_status(c, "");
 		content_set_done(c);
-	}
+	} else if (c->active == 0) {
+                content__reformat(c, c->available_width, c->height);
+        }
 	
 	return NSERROR_OK;
 }
