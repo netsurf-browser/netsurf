@@ -581,6 +581,11 @@ nserror browser_window_callback(hlcache_handle *c,
 	case CONTENT_MSG_REFRESH:
 		bw->refresh_interval = event->data.delay * 100;
 		break;
+		
+	case CONTENT_MSG_FAVICON_REFRESH:
+		/* Cause the GUI to update */
+		gui_window_set_icon(bw->window, html_get_favicon(bw->current_content));
+		break;
 
 	default:
 		assert(0);

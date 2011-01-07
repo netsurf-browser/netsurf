@@ -166,9 +166,9 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 	url = favicon_get_icon_ref(c, html);
 	if (url == NULL)
 		return false;
-        
-        LOG(("WOOP WOOP, SUMMON DA POLICE.  FAVICON URL IS %s", url));
-        
+	
+	LOG(("WOOP WOOP, SUMMON DA POLICE.  FAVICON URL IS %s", url));
+	
 	error = hlcache_handle_retrieve(url, LLCACHE_RETRIEVE_NO_ERROR_PAGES, 
 			content__get_url(c), NULL, favicon_callback, c, NULL, 
 			permitted_types, &c->data.html.favicon);	
@@ -190,7 +190,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		const hlcache_event *event, void *pw)
 {
 	struct content *c = pw;
-	bool consider_done = false;
+	bool consider_done = false, consider_redraw = false;
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
@@ -241,20 +241,27 @@ nserror favicon_callback(hlcache_handle *icon,
 	case CONTENT_MSG_REFRESH:
 		/* Fall through */
 	case CONTENT_MSG_REFORMAT:
+		consider_redraw = true;
 		break;
 
 	default:
 		assert(0);
 	}
 
+	if (consider_redraw && (c->data.html.favicon != NULL) && (content_get_type(c->data.html.favicon) == CONTENT_GIF)) {
+		union content_msg_data msg_data;
+		/* This is needed in order to cause animated GIFs to update their bitmap */
+		content_redraw(c->data.html.favicon, 0, 0, -1, -1, 0, 0, 0, 0, 1.0, 0);
+		content_broadcast(c, CONTENT_MSG_FAVICON_REFRESH, msg_data);
+	}
+	
 	if (consider_done && (c->active == 0)) {
 		/* all objects have arrived */
 		content__reformat(c, c->available_width, c->height);
 		html_set_status(c, "");
 		content_set_done(c);
-	} else if (c->active == 0) {
-                content__reformat(c, c->available_width, c->height);
-        }
+	}
+	
 	
 	return NSERROR_OK;
 }

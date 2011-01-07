@@ -63,7 +63,8 @@ typedef enum {
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
-	CONTENT_MSG_DOWNLOAD   /**< download, not for display */
+	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
+	CONTENT_MSG_FAVICON_REFRESH, /**< favicon has been refreshed (eg. new animation frame) */
 } content_msg;
 
 /** Extra data for some content_msg messages. */
