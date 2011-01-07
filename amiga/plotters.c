@@ -23,6 +23,7 @@
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
 #include <graphics/gfxmacros.h>
+#include <graphics/gfxbase.h>
 #include "amiga/utf8.h"
 #include "amiga/options.h"
 #ifdef __amigaos4__
@@ -549,7 +550,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	LOG(("[ami_plotter] ami_bitmap() got native bitmap"));
 	#endif
 
-	if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
 		uint32 comptype = COMPOSITE_Src;
 		if(!bitmap->opaque) 
@@ -699,7 +700,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 	for (xf = -bfbm->offsetx; xf < bfmsg->Bounds.MaxX; xf += bfbm->width) {
 		for (yf = -bfbm->offsety; yf < bfmsg->Bounds.MaxY; yf += bfbm->height) {
 
-			if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+			if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 			{
 				CompositeTags(COMPOSITE_Src_Over_Dest,bfbm->bm,rp->BitMap,
 					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,

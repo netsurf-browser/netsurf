@@ -27,6 +27,7 @@
 #include <libraries/gadtools.h>
 #include <exec/types.h>
 #include <intuition/classusr.h>
+#include <graphics/gfxbase.h>
 
 #include "amiga/object.h"
 #include "amiga/font.h"
@@ -426,7 +427,7 @@ void ami_gui_opts_open(void)
 		animspeeddisabled = TRUE;
 	}
 
-	if(GfxBase->lib_Version < 53)
+	if(GfxBase->LibNode.lib_Version < 53)
 	{
 		scaledisabled = TRUE;
 		scaleselected = FALSE;

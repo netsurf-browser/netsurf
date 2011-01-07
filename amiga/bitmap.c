@@ -26,6 +26,7 @@
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
 #endif
+#include <graphics/gfxbase.h>
 #include "amiga/options.h"
 #include <proto/datatypes.h>
 #include <datatypes/pictureclass.h>
@@ -359,7 +360,7 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 		scaledbm = p96AllocBitMap(width, height, 32, BMF_DISPLAYABLE,
 									friendbm, AMI_BITMAP_FORMAT);
 
-		if(GfxBase->lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+		if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 		{
 			uint32 comptype = COMPOSITE_Src;
 			uint32 flags = 0;
