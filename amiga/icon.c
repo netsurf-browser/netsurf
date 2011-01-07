@@ -247,6 +247,8 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 
 }
 
+#endif /* WITH_AMIGA_ICON */
+
 void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
 {
 	struct DiskObject *dobj = NULL;
@@ -327,11 +329,3 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 	PutIconTags(path, dobj,
 			ICONPUTA_NotifyWorkbench, TRUE, TAG_DONE);
 }
-
-#else
-
-void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
-{
-}
-
-#endif /* WITH_AMIGA_ICON */
