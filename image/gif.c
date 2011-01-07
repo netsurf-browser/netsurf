@@ -160,6 +160,8 @@ bool nsgif_redraw(struct content *c, int x, int y,
 		if (nsgif_get_frame(c) != GIF_OK)
 			return false;
 	c->bitmap = c->data.gif.gif->frame_image;
+	if ((width == -1) && (height == -1))
+		return true;
 	return plot.bitmap(x, y, width, height,	c->bitmap,
 			background_colour, BITMAPF_NONE);
 }
