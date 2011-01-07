@@ -423,17 +423,23 @@ MULTIHANDLER(newwindow)
 MULTIHANDLER(newtab)
 {
 	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
-	const char *url = gtk_entry_get_text(GTK_ENTRY(g->url_bar));
 
 	if (option_new_blank) {
-		browser_window_create(0, bw, NULL, false, true);
+		browser_window_create(NULL, bw, NULL, false, true);
 		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
 		gtk_widget_modify_bg(window, GTK_STATE_NORMAL, &((GdkColor)
 				{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}));
-	}
-
-	else
+	} else {
+                const char *url = option_homepage_url;
+                
+                if ((url != NULL) && (url[0] == '\0'))
+                        url = NULL;
+                
+                if (url == NULL)
+                        url = NETSURF_HOMEPAGE;
+                
 		browser_window_create(url, bw, NULL, false, true);
+        }
 
 	return TRUE;
 }
