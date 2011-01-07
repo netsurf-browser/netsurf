@@ -1839,28 +1839,27 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 {
 	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	struct bitmap *icon_bitmap;
-	GtkImage *iconImage;
+	GtkImage *iconImage = NULL;
 
-	if (icon == NULL)
-		return;
 	if (g->top_level != _g)
 		return;
 
 #ifdef WITH_BMP
-	if (content_get_type(icon) == CONTENT_ICO)
+	if (icon != NULL && content_get_type(icon) == CONTENT_ICO)
 		nsico_set_bitmap_from_size(icon, 16, 16);
 #endif
 
-	icon_bitmap = content_get_bitmap(icon);
-	if (icon_bitmap == NULL)
-		return;
-
-	GdkPixbuf *pb = gtk_bitmap_get_primary(icon_bitmap);
-	if (pb != NULL && gdk_pixbuf_get_width(pb) > 0 && 
+	icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+	
+	if (icon_bitmap != NULL) {
+		GdkPixbuf *pb = gtk_bitmap_get_primary(icon_bitmap);
+		if (pb != NULL && gdk_pixbuf_get_width(pb) > 0 && 
 			gdk_pixbuf_get_height(pb) > 0) {
-		pb = gdk_pixbuf_scale_simple(pb, 16, 16, GDK_INTERP_HYPER);
-		iconImage = GTK_IMAGE(gtk_image_new_from_pixbuf(pb));
-	} else {
+			pb = gdk_pixbuf_scale_simple(pb, 16, 16, GDK_INTERP_HYPER);
+			iconImage = GTK_IMAGE(gtk_image_new_from_pixbuf(pb));
+		}
+	}
+	if (iconImage == NULL) {
 		/** \todo Does pb need cleaning up? */
 		char imagepath[strlen(res_dir_location) + 
 				SLEN("favicon.png") + 1];
