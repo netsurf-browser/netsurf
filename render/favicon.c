@@ -10,7 +10,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -166,8 +166,6 @@ bool favicon_get_icon(struct content *c, xmlNode *html)
 	url = favicon_get_icon_ref(c, html);
 	if (url == NULL)
 		return false;
-	
-	LOG(("WOOP WOOP, SUMMON DA POLICE.  FAVICON URL IS %s", url));
 	
 	error = hlcache_handle_retrieve(url, LLCACHE_RETRIEVE_NO_ERROR_PAGES, 
 			content__get_url(c), NULL, favicon_callback, c, NULL, 
