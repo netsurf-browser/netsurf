@@ -10,7 +10,7 @@
  *
  * NetSurf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -188,6 +188,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		const hlcache_event *event, void *pw)
 {
 	struct content *c = pw;
+	bool consider_redraw = false;
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
@@ -201,6 +202,7 @@ nserror favicon_callback(hlcache_handle *icon,
 			hlcache_handle_release(icon);
 			c->data.html.favicon = NULL;
 			c->active -= 1;
+			consider_redraw = true;
 
 			content_add_error(c, "NotFavIco", 0);
 
@@ -213,6 +215,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		break;
 	case CONTENT_MSG_DONE:
 		c->active -= 1;
+		consider_redraw = true;
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -224,6 +227,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		content_add_error(c, "?", 0);
 		
 		c->active -= 1;
+		consider_redraw = true;
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -241,7 +245,7 @@ nserror favicon_callback(hlcache_handle *icon,
 		assert(0);
 	}
 
-	if (c->active == 0) {
+	if (consider_redraw && (c->active == 0)) {
 		/* all objects have arrived */
 		content__reformat(c, c->available_width, c->height);
 		html_set_status(c, "");
