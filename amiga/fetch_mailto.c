@@ -20,8 +20,11 @@
  * Fetching of data from a file (implementation).
  */
 
+#include "amiga/os3support.h"
+
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/utility.h>
