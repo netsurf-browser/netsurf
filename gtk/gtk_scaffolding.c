@@ -1837,6 +1837,8 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 
 	if (icon == NULL)
 		return;
+	if (g->top_level != _g)
+		return;
 
 #ifdef WITH_BMP
 	if (content_get_type(icon) == CONTENT_ICO)
