@@ -106,8 +106,10 @@ bool amiga_icon_convert(struct content *c)
 
 	/* Check icon is direct mapped (truecolour) or palette-mapped colour.
 	   We need additional code to handle planar icons */
-	if((format != IDFMT_DIRECTMAPPED) && (format==IDFMT_PALETTEMAPPED))
+	if((format != IDFMT_DIRECTMAPPED) && (format==IDFMT_PALETTEMAPPED)) {
+		if(dobj) FreeDiskObject(dobj);
 		return false;
+	}
 
 	c->bitmap = bitmap_create(width, height, BITMAP_NEW);
 	if (!c->bitmap) {
@@ -162,6 +164,9 @@ bool amiga_icon_convert(struct content *c)
 
 	if(dobj) FreeDiskObject(dobj);
 
+	if(format==IDFMT_PALETTEMAPPED)
+		FreeVec(imagebufptr);
+
 	return true;
 }
 
@@ -202,6 +207,8 @@ bool amiga_icon_clone(const struct content *old, struct content *new_content)
 
 	return true;
 }
+
+#endif /* WITH_AMIGA_ICON */
 
 ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
 		ULONG trans, ULONG pals1, struct ColorRegister *pal1, int alpha)
@@ -247,8 +254,6 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 
 }
 
-#endif /* WITH_AMIGA_ICON */
-
 void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
 {
 	struct DiskObject *dobj = NULL;
@@ -257,6 +262,10 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 	ULONG width, height;
 	long format = 0;
 	int err = 0;
+	ULONG trans1, pals1;
+	ULONG trans2, pals2;
+	struct ColorRegister *pal1;
+	struct ColorRegister *pal2;
 
 	if(!type)
 	{
@@ -271,6 +280,8 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 					    TAG_DONE);
 	}
 
+	if(dobj == NULL) return;
+
 	err = IconControl(dobj,
                   ICONCTRLA_GetImageDataFormat,&format,
                   ICONCTRLA_GetImageData1,&icondata1,
@@ -279,10 +290,31 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
                   ICONCTRLA_GetHeight,&height,
                   TAG_DONE);
 
-	/* Check icon is direct mapped (truecolour).
-	 * Quite a bit more code is needed for palette mapped and planar icons,
-	 * and OS4 default icons should all be truecolour anyway. */
-	if(format == IDFMT_DIRECTMAPPED)
+	/* If we have a palette-mapped icon, convert it to a 32-bit one */
+	if(format == IDFMT_PALETTEMAPPED)
+	{
+		IconControl(dobj, ICONCTRLA_GetTransparentColor1, &trans1,
+		            ICONCTRLA_GetPalette1, &pal1,
+	    	        ICONCTRLA_GetPaletteSize1, &pals1,
+					ICONCTRLA_GetTransparentColor2, &trans2,
+		            ICONCTRLA_GetPalette2, &pal2,
+	    	        ICONCTRLA_GetPaletteSize2, &pals2,
+    	    	    TAG_DONE);
+
+		icondata1 = amiga_icon_convertcolouricon32((UBYTE *)icondata1,
+						width, height, trans1, pals1, pal1, 0xff);
+
+		icondata2 = amiga_icon_convertcolouricon32((UBYTE *)icondata2,
+						width, height, trans2, pals2, pal2, 0xff);
+
+		err = IconControl(dobj,
+                  ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
+                  ICONCTRLA_SetImageData1, icondata1,
+                  ICONCTRLA_SetImageData2, icondata2,
+                  TAG_DONE);
+	}
+
+	if((format == IDFMT_DIRECTMAPPED) || (format == IDFMT_PALETTEMAPPED))
 	{
 		if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
 		{
@@ -328,4 +360,14 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 
 	PutIconTags(path, dobj,
 			ICONPUTA_NotifyWorkbench, TRUE, TAG_DONE);
+
+	FreeDiskObject(dobj);
+
+	if(format == IDFMT_PALETTEMAPPED)
+	{
+		/* Free the 32-bit data we created */
+		FreeVec(icondata1);
+		FreeVec(icondata2);
+	}
+
 }
