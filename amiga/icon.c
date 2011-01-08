@@ -36,6 +36,7 @@
 #endif
 #include <workbench/icon.h>
 
+#include "amiga/os3support.h"
 #include "amiga/bitmap.h"
 #include "amiga/icon.h"
 #include "desktop/plotters.h"
