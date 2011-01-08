@@ -3445,6 +3445,12 @@ bool layout_table(struct box *table, int available_width,
 		}
 	}
 
+	/* Top and bottom margins of 'auto' are set to 0.  CSS2.1 10.6.3 */
+	if (table->margin[TOP] == AUTO)
+		table->margin[TOP] = 0;
+	if (table->margin[BOTTOM] == AUTO)
+		table->margin[BOTTOM] = 0;
+
 	free(col);
 	free(excess_y);
 	free(row_span);
