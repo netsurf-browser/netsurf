@@ -36,7 +36,6 @@
 #include "utils/config.h"
 #include "utils/filename.h"
 #include "utils/log.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 
 #define FULL_WORD (unsigned int)0xffffffffu
