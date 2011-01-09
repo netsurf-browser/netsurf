@@ -286,8 +286,6 @@ bool nspng_convert(struct content *c)
 
 	c->size += (c->width * c->height * 4);
 
-	assert(c->data.png.bitmap != NULL);
-
 	c->bitmap = c->data.png.bitmap;
 	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 	bitmap_modified(c->bitmap);
