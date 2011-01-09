@@ -2315,8 +2315,15 @@ bool layout_line(struct box *first, int *width, int *y,
 
 				place_float_below(b, *width, cx, fy, cont);
 				fy = b->y;
-				if (d->style && css_computed_clear(d->style) !=
-							CSS_CLEAR_NONE) {
+				if (d->style && (
+						(css_computed_clear(d->style) ==
+						CSS_CLEAR_LEFT && left != 0) ||
+						(css_computed_clear(d->style) ==
+						CSS_CLEAR_RIGHT &&
+						right != 0) ||
+						(css_computed_clear(d->style) ==
+						CSS_CLEAR_BOTH &&
+						(left != 0 || right != 0)))) {
 					/* to be cleared below existing
 					 * floats */
 					if (b->type == BOX_FLOAT_LEFT)
