@@ -114,7 +114,16 @@ struct plotter_table {
 			struct bitmap *bitmap, colour bg,
 			bitmap_flags_t flags);
 
-	/* text */
+	/**
+	 * Text.
+	 *
+	 * \param  x       x coordinate
+	 * \param  y       y coordinate
+	 * \param  text    UTF-8 string to plot
+	 * \param  length  length of string, in bytes
+	 * \param  fstyle  plot style for this text
+	 * \return  true on success, false on error and error reported
+	 */
 	bool (*text)(int x, int y, const char *text, size_t length,
 			const plot_font_style_t *fstyle);
 
