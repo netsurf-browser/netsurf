@@ -123,9 +123,8 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	pango_layout_set_font_description(layout, desc);
 	pango_layout_set_text(layout, string, length);
 
-	pango_layout_xy_to_index(layout, x * PANGO_SCALE, 0, &index, 0);
-	if (pango_layout_xy_to_index(layout, x * PANGO_SCALE,
-		0, &index, 0) == 0)
+	if (pango_layout_xy_to_index(layout, x * PANGO_SCALE, 
+			0, &index, 0) == FALSE)
 		index = length;
 
 	pango_layout_index_to_pos(layout, index, &pos);
@@ -166,8 +165,6 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	PangoContext *context;
 	PangoLayout *layout;
 	PangoLayoutLine *line;
-	PangoLayoutIter *iter;
-	PangoRectangle rect;
 
 	desc = nsfont_style_to_description(fstyle);
 	context = gdk_pango_context_get();
@@ -175,23 +172,39 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	pango_layout_set_font_description(layout, desc);
 	pango_layout_set_text(layout, string, length);
 
+	/* Limit width of layout to the available width */
 	pango_layout_set_width(layout, x * PANGO_SCALE);
-	pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
-	pango_layout_set_single_paragraph_mode(layout, true);
-	line = pango_layout_get_line(layout, 1);
-	if (line)
-		index = line->start_index - 1;
 
-	iter = pango_layout_get_iter(layout);
-	pango_layout_iter_get_line_extents(iter, NULL, &rect);
-	pango_layout_iter_free(iter);
+	/* Request word wrapping */
+	pango_layout_set_wrap(layout, PANGO_WRAP_WORD);
+
+	/* Prevent pango treating linebreak characters as line breaks */
+	pango_layout_set_single_paragraph_mode(layout, TRUE);
+
+	/* Obtain the second line of the layout (if there is one) */
+	line = pango_layout_get_line(layout, 1);
+	if (line != NULL) {
+		/* Pango split the text. The line's start_index indicates the 
+		 * start of the character after the line break. */
+		index = line->start_index;
+
+		/* We must ensure that the split character is a space so that
+		 * we meet the API postcondition. Therefore, scan backwards
+		 * through the string and stop when we hit the start of 
+		 * the string or find a space. */
+		while (index > 0) {
+			if (string[--index] == ' ')
+				break;
+		}
+	}
 
 	g_object_unref(layout);
 	g_object_unref(context);
 	pango_font_description_free(desc);
 
 	*char_offset = index;
-	*actual_x = PANGO_PIXELS(rect.width);
+	/* Obtain the pixel offset of the split character */
+	nsfont_width(fstyle, string, index, actual_x);
 
 	return true;
 }
