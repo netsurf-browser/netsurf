@@ -480,7 +480,13 @@ bool layout_block_context(struct box *block, int viewport_height,
 			/* Skip children, because they are done in the new
 			 * block context */
 			goto advance_to_next_box;
-	        }
+	        } else if (box->type == BOX_BLOCK) {
+			/* This block doesn't establish a new block formatting
+			 * context */
+			cy += max_pos_margin - max_neg_margin;
+			box->y += max_pos_margin - max_neg_margin;
+			max_pos_margin = max_neg_margin = 0;
+		}
 
 		LOG(("box %p, cx %i, cy %i", box, cx, cy));
 
