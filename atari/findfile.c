@@ -57,6 +57,59 @@ char *url_to_path(const char *url)
 	return path;
 }
 
+
+#ifdef PLAIN_TOS
+#undef realpath
+#undef access
+#define access(f,m) (0)
+#define PATH_SEP '/'
+char * realpath(const char * path, char * rpath)
+{
+	size_t l;
+	size_t i;
+	char old;
+	char new = PATH_SEP;
+
+	if( rpath == NULL ){
+		return( NULL );
+	}
+
+	if( PATH_SEP == '/') {
+		/* replace '\' with / */
+		old = 0x2F; /* / */
+	} else {
+		/* replace '/' with \ */
+		old = '/';
+	}
+
+	if( path[0] == 0x2F || path[0] == '/' ){
+		strcpy(rpath, "U:");
+		strcat(rpath, path);
+	}
+	else if( path[0] == '.') {
+		char cwd[PATH_MAX];
+		getcwd((char*)&cwd, PATH_MAX);
+		strcpy(rpath, (char*)&cwd);
+		if( (path[1] == '/' || path[1] == 0x27 ) ) {
+			strcat(rpath, &path[1]);
+		} else {
+			strcat(rpath, "/");
+			strcat(rpath, path);
+		}
+	} else {
+		strcpy(rpath, path);
+	}
+	/* convert path seperator to configured value: */
+	l = strlen(rpath);
+	for( i = 0; i<l-1; i++){
+		if( rpath[i] == old ){
+			rpath[i] = new;
+		}
+	}
+	return( rpath );	
+}
+#endif
+
 /**
  * Locate a shared resource file by searching known places in order.
  *
@@ -134,6 +187,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 
 	return buf;
 }
+
 
 
 /*
