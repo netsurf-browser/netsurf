@@ -104,6 +104,8 @@ cp $src"\!NetSurf/Resources/CSS,f79" $dst"res/quirks.css" -rL
 cp $src"\!NetSurf/Resources/SearchEngines" $dst"res/search" -rL
 cp $src"\!NetSurf/Resources/ca-bundle" $dst"res/cabundle" -rL
 cp $src"\!NetSurf/Resources/en/Messages" $dst"res/messages" -rL
+cp $src"\!NetSurf/Resources/Icons/content.png" $dst"res/icons/content.png" -rL
+cp $src"\!NetSurf/Resources/Icons/directory.png" $dst"res/icons/dir.png" -rL
 
 #remove uneeded files: 
 rm $dst"res/netsurf.rsm"
@@ -121,6 +123,7 @@ then
 	cp $font_src"DejaVuSansMono-Bold.ttf" $dst"res/fonts/monob.ttf"
 	cp $font_src"DejaVuSansMono-Oblique.ttf" $dst"res/fonts/cursive.ttf"
 	cp $font_src"DejaVuSerif.ttf" $dst"res/fonts/s.ttf"
+	cp $font_src"DejaVuSerif-Bold.ttf" $dst"res/fonts/sb.ttf"
 	cp $font_src"DejaVuSerifCondensed-Bold.ttf" $dst"res/fonts/fantasy.ttf"
 fi
 
