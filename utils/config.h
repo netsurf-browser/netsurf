@@ -24,7 +24,7 @@
 
 /* Try to detect which features the target OS supports */
 
-#if (defined(_GNU_SOURCE))
+#if (defined(_GNU_SOURCE) && !defined(__APPLE__))
 #define HAVE_STRNDUP
 #else
 #undef HAVE_STRNDUP
@@ -40,7 +40,7 @@ char *strcasestr(const char *haystack, const char *needle);
 
 /* For some reason, UnixLib defines this unconditionally. 
  * Assume we're using UnixLib if building for RISC OS. */
-#if (defined(_GNU_SOURCE) || defined(riscos))
+#if ((defined(_GNU_SOURCE) && !defined(__APPLE__)) || defined(riscos))
 #define HAVE_STRCHRNUL
 #else
 #undef HAVE_STRCHRNUL
