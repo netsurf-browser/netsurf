@@ -90,18 +90,24 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 
 	plot.clip(0, 0, frame.size.width, frame.size.height);
 
-	content_redraw(browser->current_content,
-			       0,
-			       0,
-			       NSWidth( frame ),
-			       NSHeight( frame ),
-			       NSMinX( dirtyRect ),
-			       NSMinY( dirtyRect ),
-			       NSMaxX( dirtyRect ),
-			       NSMaxY( dirtyRect ),
-			       browser->scale,
-			       0xFFFFFF);
 	
+	const NSRect *rects = NULL;
+	NSInteger count = 0;
+	[self getRectsBeingDrawn: &rects count: &count];
+	
+	for (NSInteger i = 0; i < count; i++) {
+		content_redraw(browser->current_content,
+					   0,
+					   0,
+					   NSWidth( frame ),
+					   NSHeight( frame ),
+					   NSMinX( rects[i] ),
+					   NSMinY( rects[i] ),
+					   NSMaxX( rects[i] ),
+					   NSMaxY( rects[i] ),
+					   browser->scale,
+					   0xFFFFFF);
+	}
 
 	NSRect caretRect = cocoa_get_caret_rect( self );
 	if (hasCaret && caretVisible && [self needsToDrawRect: caretRect]) {
