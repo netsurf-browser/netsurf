@@ -176,8 +176,9 @@ int main(void)
 	assert(urldb_add_url("http://www2.2checkout.com/"));
 	assert(urldb_get_url("http://www2.2checkout.com/"));
 
-//	assert(urldb_add_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg"));
-//	assert(urldb_get_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg"));
+	/* Numeric subdomains */
+	assert(urldb_add_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg"));
+	assert(urldb_get_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg"));
 
 	/* Valid path */
 	assert(urldb_set_cookie("name=value;Path=/\r\n", "http://www.google.com/", NULL));
