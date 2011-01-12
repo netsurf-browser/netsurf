@@ -19,18 +19,23 @@
 #import <Cocoa/Cocoa.h>
 
 #import "utils/utf8.h"
-#define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
 utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 										char **result)
 {
-	UNIMPL();
-	return -1;
+	NSCParameterAssert( NULL != result );
+
+	char *newString = malloc( len + 1 );
+	if (NULL == newString) return UTF8_CONVERT_NOMEM;
+	memcpy( newString, string, len );
+	newString[len] = 0;
+	*result = newString;
+	return UTF8_CONVERT_OK;
 }
 
 utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 										  char **result)
 {
-	UNIMPL();
-	return -1;
+	/* same function, local encoding = UTF-8 */
+	return utf8_to_local_encoding( string, len, result );
 }
