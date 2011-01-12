@@ -99,9 +99,17 @@ char *url_to_path(const char *url)
  *
  * URLdb should have a cookies update event + handler registration
  */
-bool cookies_update(const char *domain, const struct cookie_data *data)
+bool cookies_schedule_update(const struct cookie_data *data)
 {
 	return true;
+}
+
+/* desktop/cookies.h -- used by urldb 
+ *
+ * URLdb should have a cookies removal handler registration
+ */
+void cookies_remove(const struct cookie_data *data)
+{
 }
 
 /* image/bitmap.h -- used by urldb 
@@ -113,31 +121,12 @@ void bitmap_destroy(void *bitmap)
 {
 }
 
-/* desktop/tree.h -- used by options.c 
+/* content/fetchers/fetch_file.h -- used by fetcher core
  *
- * Why on earth is tree loading and saving in options.c?
+ * Simpler to stub this than haul in all the file fetcher's dependencies
  */
-void tree_initialise(struct tree *tree)
+void fetch_file_register(void)
 {
-}
-
-/* desktop/tree.h */
-struct node *tree_create_folder_node(struct node *parent, const char *title)
-{
-	return NULL;
-}
-
-/* desktop/tree.h */
-struct node *tree_create_URL_node(struct node *parent, const char *url,
-		const struct url_data *data, const char *title)
-{
-	return NULL;
-}
-
-/* desktop/tree.h */
-struct node_element *tree_find_element(struct node *node, node_element_data d)
-{
-	return NULL;
 }
 
 /******************************************************************************

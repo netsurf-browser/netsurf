@@ -46,9 +46,13 @@
 int option_expire_url = 0;
 bool verbose_log = true;
 
-bool cookies_update(const char *domain, const struct cookie_data *data)
+bool cookies_schedule_update(const struct cookie_data *data)
 {
 	return true;
+}
+
+void cookies_remove(const struct cookie_data *data)
+{
 }
 
 void die(const char *error)
@@ -171,6 +175,9 @@ int main(void)
 	/* 1535120 */
 	assert(urldb_add_url("http://www2.2checkout.com/"));
 	assert(urldb_get_url("http://www2.2checkout.com/"));
+
+//	assert(urldb_add_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg"));
+//	assert(urldb_get_url("http://2.bp.blogspot.com/_448y6kVhntg/TSekubcLJ7I/AAAAAAAAHJE/yZTsV5xT5t4/s1600/covers.jpg"));
 
 	/* Valid path */
 	assert(urldb_set_cookie("name=value;Path=/\r\n", "http://www.google.com/", NULL));
