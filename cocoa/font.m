@@ -84,6 +84,9 @@ static bool nsfont_split(const plot_font_style_t *style,
 	while ((string[*char_offset] != ' ') && (*char_offset > 0))
 		(*char_offset)--;
 	
+	nsfont_position_in_string(style, string, *char_offset + 1, x, char_offset,
+							  actual_x);
+
 	return true;
 }
 
