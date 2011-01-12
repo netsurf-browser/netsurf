@@ -78,24 +78,11 @@
 		260F205812D620E800D9B07F /* useragent.c in Sources */ = {isa = PBXBuildFile; fileRef = 260F200112D620E800D9B07F /* useragent.c */; };
 		260F205912D620E800D9B07F /* utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = 260F200312D620E800D9B07F /* utf8.c */; };
 		260F205A12D620E800D9B07F /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 260F200512D620E800D9B07F /* utils.c */; };
-		260F20AF12D6228C00D9B07F /* libssl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20AE12D6228C00D9B07F /* libssl.dylib */; };
-		260F20B112D6229900D9B07F /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20B012D6229900D9B07F /* libxml2.dylib */; };
-		260F20B512D622AA00D9B07F /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20B412D622AA00D9B07F /* libcurl.dylib */; };
-		260F20B912D622C600D9B07F /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20B812D622C600D9B07F /* libcrypto.dylib */; };
-		260F20BD12D622F500D9B07F /* libnsbmp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20BC12D622F500D9B07F /* libnsbmp.a */; };
-		260F20BF12D622F500D9B07F /* libnsgif.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20BE12D622F500D9B07F /* libnsgif.a */; };
-		260F20C612D6230B00D9B07F /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20C512D6230B00D9B07F /* libz.dylib */; };
-		260F20CB12D6231E00D9B07F /* libhubbub.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20CA12D6231E00D9B07F /* libhubbub.a */; };
-		260F20CD12D6232D00D9B07F /* libcss.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20CC12D6232D00D9B07F /* libcss.a */; };
-		260F20D212D6235200D9B07F /* libparserutils.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20D112D6235200D9B07F /* libparserutils.a */; };
-		260F20D712D6237E00D9B07F /* libwapcaplet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20D612D6237E00D9B07F /* libwapcaplet.a */; };
-		260F20DB12D623D000D9B07F /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 260F20DA12D623D000D9B07F /* libiconv.dylib */; };
 		26121DA912D700B800E10F91 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26121DA812D700B800E10F91 /* MainMenu.xib */; };
 		26121DD912D703F400E10F91 /* NetSurfApp.m in Sources */ = {isa = PBXBuildFile; fileRef = 26121DD812D703F400E10F91 /* NetSurfApp.m */; };
 		26121E3F12D70A1A00E10F91 /* BrowserWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 26121E3E12D70A1A00E10F91 /* BrowserWindow.m */; };
 		26121EAC12D70E0A00E10F91 /* Browser.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26121EAB12D70E0A00E10F91 /* Browser.xib */; };
 		26121EFD12D7132100E10F91 /* BrowserView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26121EFC12D7132100E10F91 /* BrowserView.m */; };
-		2612205612D7247900E10F91 /* libjpeg.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2612205512D7247900E10F91 /* libjpeg.dylib */; };
 		2612265A12D7ACB500E10F91 /* default.css in Resources */ = {isa = PBXBuildFile; fileRef = 2612265712D7ACB500E10F91 /* default.css */; };
 		2612265C12D7ACB500E10F91 /* quirks.css in Resources */ = {isa = PBXBuildFile; fileRef = 2612265912D7ACB500E10F91 /* quirks.css */; };
 		2612266D12D7AD6800E10F91 /* adblock.css in Resources */ = {isa = PBXBuildFile; fileRef = 2612265D12D7AD6800E10F91 /* adblock.css */; };
@@ -122,7 +109,6 @@
 		265F320612D66C200048B600 /* utf8.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F320512D66C200048B600 /* utf8.m */; };
 		265F321412D66CD90048B600 /* utils.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F321312D66CD90048B600 /* utils.m */; };
 		265F321F12D66D510048B600 /* font.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F321E12D66D510048B600 /* font.m */; };
-		2671AA2112D8D32300B8A46A /* libpng.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2671AA2012D8D32300B8A46A /* libpng.dylib */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -275,18 +261,6 @@
 		260F200512D620E800D9B07F /* utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = utils.c; sourceTree = "<group>"; };
 		260F200612D620E800D9B07F /* utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
 		260F200712D620E800D9B07F /* utsname.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utsname.h; sourceTree = "<group>"; };
-		260F20AE12D6228C00D9B07F /* libssl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libssl.dylib; path = usr/lib/libssl.dylib; sourceTree = SDKROOT; };
-		260F20B012D6229900D9B07F /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
-		260F20B412D622AA00D9B07F /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = usr/lib/libcurl.dylib; sourceTree = SDKROOT; };
-		260F20B812D622C600D9B07F /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
-		260F20BC12D622F500D9B07F /* libnsbmp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnsbmp.a; path = /usr/local/lib/libnsbmp.a; sourceTree = "<absolute>"; };
-		260F20BE12D622F500D9B07F /* libnsgif.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libnsgif.a; path = /usr/local/lib/libnsgif.a; sourceTree = "<absolute>"; };
-		260F20C512D6230B00D9B07F /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
-		260F20CA12D6231E00D9B07F /* libhubbub.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libhubbub.a; path = /usr/local/lib/libhubbub.a; sourceTree = "<absolute>"; };
-		260F20CC12D6232D00D9B07F /* libcss.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcss.a; path = /usr/local/lib/libcss.a; sourceTree = "<absolute>"; };
-		260F20D112D6235200D9B07F /* libparserutils.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libparserutils.a; path = /usr/local/lib/libparserutils.a; sourceTree = "<absolute>"; };
-		260F20D612D6237E00D9B07F /* libwapcaplet.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libwapcaplet.a; path = /usr/local/lib/libwapcaplet.a; sourceTree = "<absolute>"; };
-		260F20DA12D623D000D9B07F /* libiconv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.dylib; path = usr/lib/libiconv.dylib; sourceTree = SDKROOT; };
 		260FC03112D85ACE00079C00 /* bitmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bitmap.h; sourceTree = "<group>"; };
 		26121DA812D700B800E10F91 /* MainMenu.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		26121DD712D703F400E10F91 /* NetSurfApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetSurfApp.h; sourceTree = "<group>"; };
@@ -296,7 +270,6 @@
 		26121EAB12D70E0A00E10F91 /* Browser.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = Browser.xib; sourceTree = "<group>"; };
 		26121EFB12D7132100E10F91 /* BrowserView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserView.h; sourceTree = "<group>"; };
 		26121EFC12D7132100E10F91 /* BrowserView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserView.m; sourceTree = "<group>"; };
-		2612205512D7247900E10F91 /* libjpeg.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libjpeg.dylib; path = usr/local/lib/libjpeg.dylib; sourceTree = SDKROOT; };
 		261223B712D77F9C00E10F91 /* font.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = font.h; sourceTree = "<group>"; };
 		261223CB12D7805300E10F91 /* plotter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = plotter.h; sourceTree = "<group>"; };
 		2612265712D7ACB500E10F91 /* default.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = default.css; sourceTree = "<group>"; };
@@ -307,6 +280,11 @@
 		2612269412D7AEA800E10F91 /* en */ = {isa = PBXFileReference; lastKnownFileType = text; name = en; path = en.lproj/Messages; sourceTree = "<group>"; };
 		2612269512D7AEB500E10F91 /* it */ = {isa = PBXFileReference; lastKnownFileType = text; name = it; path = it.lproj/Messages; sourceTree = "<group>"; };
 		2612269612D7AEBE00E10F91 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text; name = fr; path = fr.lproj/Messages; sourceTree = "<group>"; };
+		262711B212DDDCB800B2FA62 /* debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = debug.xcconfig; sourceTree = "<group>"; };
+		262711B412DDDCB800B2FA62 /* local.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = local.xcconfig; sourceTree = "<group>"; };
+		262711BE12DDDD1500B2FA62 /* release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = release.xcconfig; sourceTree = "<group>"; };
+		262711C212DDDDC300B2FA62 /* NetSurf.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = NetSurf.xcconfig; sourceTree = "<group>"; };
+		262711D412DDDEEE00B2FA62 /* common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = common.xcconfig; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
 		265F30AB12D6637E0048B600 /* Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Prefix.pch; sourceTree = "<group>"; };
 		265F311912D663F50048B600 /* gui.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = gui.m; sourceTree = "<group>"; };
@@ -342,7 +320,6 @@
 		265F320512D66C200048B600 /* utf8.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utf8.m; sourceTree = "<group>"; };
 		265F321312D66CD90048B600 /* utils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utils.m; sourceTree = "<group>"; };
 		265F321E12D66D510048B600 /* font.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = font.m; sourceTree = "<group>"; };
-		2671AA2012D8D32300B8A46A /* libpng.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng.dylib; path = usr/X11/lib/libpng.3.dylib; sourceTree = SDKROOT; };
 		8D1107320486CEB800E47090 /* NetSurf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetSurf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -352,20 +329,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-				260F20AF12D6228C00D9B07F /* libssl.dylib in Frameworks */,
-				260F20B112D6229900D9B07F /* libxml2.dylib in Frameworks */,
-				260F20B512D622AA00D9B07F /* libcurl.dylib in Frameworks */,
-				260F20B912D622C600D9B07F /* libcrypto.dylib in Frameworks */,
-				260F20BD12D622F500D9B07F /* libnsbmp.a in Frameworks */,
-				260F20BF12D622F500D9B07F /* libnsgif.a in Frameworks */,
-				260F20C612D6230B00D9B07F /* libz.dylib in Frameworks */,
-				260F20CB12D6231E00D9B07F /* libhubbub.a in Frameworks */,
-				260F20CD12D6232D00D9B07F /* libcss.a in Frameworks */,
-				260F20D212D6235200D9B07F /* libparserutils.a in Frameworks */,
-				260F20D712D6237E00D9B07F /* libwapcaplet.a in Frameworks */,
-				260F20DB12D623D000D9B07F /* libiconv.dylib in Frameworks */,
-				2612205612D7247900E10F91 /* libjpeg.dylib in Frameworks */,
-				2671AA2112D8D32300B8A46A /* libpng.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -591,6 +554,19 @@
 			path = ../utils;
 			sourceTree = SOURCE_ROOT;
 		};
+		262711B112DDDCB800B2FA62 /* Build Configurations */ = {
+			isa = PBXGroup;
+			children = (
+				262711C212DDDDC300B2FA62 /* NetSurf.xcconfig */,
+				262711BE12DDDD1500B2FA62 /* release.xcconfig */,
+				262711B212DDDCB800B2FA62 /* debug.xcconfig */,
+				262711B412DDDCB800B2FA62 /* local.xcconfig */,
+				262711D412DDDEEE00B2FA62 /* common.xcconfig */,
+			);
+			name = "Build Configurations";
+			path = config;
+			sourceTree = "<group>";
+		};
 		265F303F12D6637E0048B600 /* cocoa */ = {
 			isa = PBXGroup;
 			children = (
@@ -675,6 +651,7 @@
 				265F31C912D66A890048B600 /* image */,
 				260F1FE212D620E800D9B07F /* utils */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
+				262711B112DDDCB800B2FA62 /* Build Configurations */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
 			name = Untitled;
@@ -683,21 +660,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2671AA2012D8D32300B8A46A /* libpng.dylib */,
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
-				260F20AE12D6228C00D9B07F /* libssl.dylib */,
-				260F20B012D6229900D9B07F /* libxml2.dylib */,
-				260F20B412D622AA00D9B07F /* libcurl.dylib */,
-				260F20B812D622C600D9B07F /* libcrypto.dylib */,
-				260F20BC12D622F500D9B07F /* libnsbmp.a */,
-				260F20BE12D622F500D9B07F /* libnsgif.a */,
-				260F20C512D6230B00D9B07F /* libz.dylib */,
-				260F20CA12D6231E00D9B07F /* libhubbub.a */,
-				260F20CC12D6232D00D9B07F /* libcss.a */,
-				260F20D112D6235200D9B07F /* libparserutils.a */,
-				260F20D612D6237E00D9B07F /* libwapcaplet.a */,
-				260F20DA12D623D000D9B07F /* libiconv.dylib */,
-				2612205512D7247900E10F91 /* libjpeg.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -728,6 +691,9 @@
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "NetSurf" */;
 			compatibilityVersion = "Xcode 3.0";
 			developmentRegion = English;
@@ -892,95 +858,29 @@
 /* Begin XCBuildConfiguration section */
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262711C212DDDDC300B2FA62 /* NetSurf.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Prefix.pch;
-				INFOPLIST_FILE = "res/NetSurf-Info.plist";
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SDKROOT)/usr/X11/lib\"",
-				);
-				OTHER_CFLAGS = (
-					"-DWITH_GIF",
-					"-DWITH_BMP",
-					"-DWITH_PNG",
-					"-DWITH_JPEG",
-				);
-				PRODUCT_NAME = NetSurf;
 			};
 			name = Debug;
 		};
 		C01FCF4C08A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262711C212DDDDC300B2FA62 /* NetSurf.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_MODEL_TUNING = G5;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = Prefix.pch;
-				INFOPLIST_FILE = "res/NetSurf-Info.plist";
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SDKROOT)/usr/X11/lib\"",
-				);
-				OTHER_CFLAGS = (
-					"-DWITH_GIF",
-					"-DWITH_BMP",
-					"-DWITH_PNG",
-					"-DWITH_JPEG",
-				);
-				PRODUCT_NAME = NetSurf;
 			};
 			name = Release;
 		};
 		C01FCF4F08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262711B212DDDCB800B2FA62 /* debug.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ONLY_ACTIVE_ARCH_PRE_XCODE_3_1)";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = "";
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					/usr/X11/include,
-					/usr/include/libxml2/,
-					/usr/local/include/,
-					"${SRCROOT}/../",
-				);
-				ONLY_ACTIVE_ARCH_PRE_XCODE_3_1 = "$(NATIVE_ARCH_ACTUAL)";
-				OTHER_LDFLAGS = "";
-				PREBINDING = NO;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
 			};
 			name = Debug;
 		};
 		C01FCF5008A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262711BE12DDDD1500B2FA62 /* release.xcconfig */;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_64_BIT_PRE_XCODE_3_1 = "x86_64 i386 ppc";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_VERSION = "";
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = (
-					/usr/X11/include,
-					/usr/include/libxml2/,
-					/usr/local/include/,
-					"${SRCROOT}/../",
-				);
-				OTHER_LDFLAGS = "";
-				PREBINDING = NO;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
 			};
 			name = Release;
 		};
