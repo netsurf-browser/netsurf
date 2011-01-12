@@ -246,12 +246,14 @@ nserror favicon_callback(hlcache_handle *icon,
 		assert(0);
 	}
 
+#ifdef WITH_GIF
 	if (consider_redraw && (c->data.html.favicon != NULL) && (content_get_type(c->data.html.favicon) == CONTENT_GIF)) {
 		union content_msg_data msg_data;
 		/* This is needed in order to cause animated GIFs to update their bitmap */
 		content_redraw(c->data.html.favicon, 0, 0, -1, -1, 0, 0, 0, 0, 1.0, 0);
 		content_broadcast(c, CONTENT_MSG_FAVICON_REFRESH, msg_data);
 	}
+#endif
 	
 	if (consider_done && (c->active == 0)) {
 		/* all objects have arrived */
