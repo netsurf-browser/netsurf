@@ -28,7 +28,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <regex.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -91,7 +90,7 @@ void url_init(void)
 bool url_host_is_ip_address(const char *host)
 {
 	struct in_addr ipv4;
-	size_t z = strlen(host);
+	size_t host_len = strlen(host);
 	const char *sane_host;
 	const char *slash;
 #ifndef NO_IPV6
@@ -116,28 +115,46 @@ bool url_host_is_ip_address(const char *host)
 	 * -- rjek - 2010-11-04
 	 */
 
-	slash = index(host, '/');
+	slash = strchr(host, '/');
 	if (slash == NULL) {
 		sane_host = host;
 	} else {
 		char *c = strdup(host);
 		c[slash - host] = '\0';
 		sane_host = c;
-		LOG(("WARNING: called with non-host '%s'",
-		     host));
+		host_len = slash - host - 1;
+		LOG(("WARNING: called with non-host '%s'", host));
 	}
 
-	if (strspn(sane_host, "0123456789abcdefABCDEF[].:") < z)
+	if (strspn(sane_host, "0123456789abcdefABCDEF[].:") < host_len)
 		goto out_false;
 
-	if (inet_aton(sane_host, &ipv4) != 0)
-		goto out_true;
+	if (inet_aton(sane_host, &ipv4) != 0) {
+		/* This can only be a sane IPv4 address if it contains 3 dots.
+		 * Helpfully, inet_aton is happy to treat "a", "a.b", "a.b.c",
+		 * and "a.b.c.d" as valid IPv4 address strings where we only
+		 * support the full, dotted-quad, form.
+		 */
+		int num_dots = 0;
+		size_t index;
+
+		for (index = 0; index < host_len; index++) {
+			if (sane_host[index] == '.')
+				num_dots++;
+		}
+
+		if (num_dots == 3)
+			goto out_true;
+		else
+			goto out_false;
+	}
+
 #ifndef NO_IPV6
-	if (sane_host[0] != '[' || sane_host[z] != ']')
+	if (sane_host[0] != '[' || sane_host[host_len] != ']')
 		goto out_false;
 
 	strncpy(ipv6_addr, sane_host + 1, sizeof(ipv6_addr));
-	ipv6_addr[z - 1] = '\0';
+	ipv6_addr[sizeof(ipv6_addr) - 1] = '\0';
 
 	if (inet_pton(AF_INET6, ipv6_addr, &ipv6) == 1)
 		goto out_true;
