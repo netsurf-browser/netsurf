@@ -24,6 +24,7 @@
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
 #import "desktop/browser.h"
+#import "desktop/options.h"
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -60,6 +61,9 @@ struct browser_window;
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 											 struct browser_window *clone, bool new_tab)
 {
+	if (clone != NULL) bw->scale = clone->scale;
+	else bw->scale = (float) option_scale / 100;
+	
 	return (struct gui_window *)[[BrowserWindow alloc] initWithBrowser: bw];
 }
 

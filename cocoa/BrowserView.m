@@ -87,15 +87,14 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	if (NULL == browser->current_content) return;
 	
 	NSRect frame = [self bounds];
-
-	plot.clip(0, 0, frame.size.width, frame.size.height);
-
 	
 	const NSRect *rects = NULL;
 	NSInteger count = 0;
 	[self getRectsBeingDrawn: &rects count: &count];
 	
 	for (NSInteger i = 0; i < count; i++) {
+		plot.clip( NSMinX( rects[i] ), NSMinY( rects[i]), NSMaxX( rects[i] ), NSMaxY( rects[i] ) );
+
 		content_redraw(browser->current_content,
 					   0,
 					   0,
