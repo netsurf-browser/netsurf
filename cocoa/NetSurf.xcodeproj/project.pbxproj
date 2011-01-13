@@ -87,6 +87,7 @@
 		2612265C12D7ACB500E10F91 /* quirks.css in Resources */ = {isa = PBXBuildFile; fileRef = 2612265912D7ACB500E10F91 /* quirks.css */; };
 		2612266D12D7AD6800E10F91 /* adblock.css in Resources */ = {isa = PBXBuildFile; fileRef = 2612265D12D7AD6800E10F91 /* adblock.css */; };
 		2612269112D7AE4100E10F91 /* Messages in Resources */ = {isa = PBXBuildFile; fileRef = 2612268F12D7AE4100E10F91 /* Messages */; };
+		2622F1D712DCD84600CD5A62 /* TreeView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2622F1D612DCD84600CD5A62 /* TreeView.m */; };
 		265F311A12D663F50048B600 /* gui.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F311912D663F50048B600 /* gui.m */; };
 		265F314812D666660048B600 /* plotter.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F314712D666660048B600 /* plotter.m */; };
 		265F315212D667060048B600 /* history.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F315112D667060048B600 /* history.m */; };
@@ -110,6 +111,7 @@
 		265F321412D66CD90048B600 /* utils.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F321312D66CD90048B600 /* utils.m */; };
 		265F321F12D66D510048B600 /* font.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F321E12D66D510048B600 /* font.m */; };
 		26AFE63F12DDEB0A005AD082 /* NetSurf.icns in Resources */ = {isa = PBXBuildFile; fileRef = 26AFE63E12DDEB0A005AD082 /* NetSurf.icns */; };
+		26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFE8E312DF4200005AD082 /* ScrollableView.m */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -281,6 +283,8 @@
 		2612269412D7AEA800E10F91 /* en */ = {isa = PBXFileReference; lastKnownFileType = text; name = en; path = en.lproj/Messages; sourceTree = "<group>"; };
 		2612269512D7AEB500E10F91 /* it */ = {isa = PBXFileReference; lastKnownFileType = text; name = it; path = it.lproj/Messages; sourceTree = "<group>"; };
 		2612269612D7AEBE00E10F91 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text; name = fr; path = fr.lproj/Messages; sourceTree = "<group>"; };
+		2622F1D512DCD84600CD5A62 /* TreeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TreeView.h; sourceTree = "<group>"; };
+		2622F1D612DCD84600CD5A62 /* TreeView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TreeView.m; sourceTree = "<group>"; };
 		262711B212DDDCB800B2FA62 /* debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = debug.xcconfig; sourceTree = "<group>"; };
 		262711B412DDDCB800B2FA62 /* local.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = local.xcconfig; sourceTree = "<group>"; };
 		262711BE12DDDD1500B2FA62 /* release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = release.xcconfig; sourceTree = "<group>"; };
@@ -322,6 +326,8 @@
 		265F321312D66CD90048B600 /* utils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utils.m; sourceTree = "<group>"; };
 		265F321E12D66D510048B600 /* font.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = font.m; sourceTree = "<group>"; };
 		26AFE63E12DDEB0A005AD082 /* NetSurf.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = NetSurf.icns; sourceTree = "<group>"; };
+		26AFE8E212DF4200005AD082 /* ScrollableView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScrollableView.h; sourceTree = "<group>"; };
+		26AFE8E312DF4200005AD082 /* ScrollableView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScrollableView.m; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* NetSurf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetSurf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -595,6 +601,10 @@
 				26121E3E12D70A1A00E10F91 /* BrowserWindow.m */,
 				26121EFB12D7132100E10F91 /* BrowserView.h */,
 				26121EFC12D7132100E10F91 /* BrowserView.m */,
+				2622F1D512DCD84600CD5A62 /* TreeView.h */,
+				2622F1D612DCD84600CD5A62 /* TreeView.m */,
+				26AFE8E212DF4200005AD082 /* ScrollableView.h */,
+				26AFE8E312DF4200005AD082 /* ScrollableView.m */,
 			);
 			name = cocoa;
 			sourceTree = "<group>";
@@ -839,6 +849,8 @@
 				26121DD912D703F400E10F91 /* NetSurfApp.m in Sources */,
 				26121E3F12D70A1A00E10F91 /* BrowserWindow.m in Sources */,
 				26121EFD12D7132100E10F91 /* BrowserView.m in Sources */,
+				2622F1D712DCD84600CD5A62 /* TreeView.m in Sources */,
+				26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
