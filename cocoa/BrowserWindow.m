@@ -50,4 +50,9 @@
 	[view setBrowser: browser];
 }
 
+- (void)windowWillClose:(NSNotification *)notification;
+{
+	if (NULL != browser) browser_window_destroy( browser );
+}
+
 @end
