@@ -249,7 +249,7 @@ void gui_window_save_link(struct gui_window *g, const char *url,
 
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
-	UNIMPL();
+	gui_window_redraw_window( g );
 }
 
 

@@ -43,7 +43,6 @@
 - (void) run;
 {
 	[self finishLaunching];
-	browser_window_create( "http://netsurf-browser.org/", NULL, NULL, true, false );
 	netsurf_main_loop();
 }
 

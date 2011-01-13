@@ -22,6 +22,7 @@
 #import "desktop/history_core.h"
 #import "desktop/plotters.h"
 #import "desktop/textinput.h"
+#import "desktop/options.h"
 
 @implementation BrowserView
 
@@ -244,6 +245,20 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	browser_window_reformat( browser, [self bounds].size.width, [self bounds].size.height );
 }
 
+- (void) zoomIn: (id) sender;
+{
+	browser_window_set_scale( browser, browser->scale * 1.1, true );
+}
+
+- (void) zoomOut: (id) sender;
+{
+	browser_window_set_scale( browser, browser->scale * 0.9, true );
+}
+
+- (void) zoomImageToActualSize: (id) sender;
+{
+	browser_window_set_scale( browser, (float)option_scale / 100.0, true );
+}
 
 - (IBAction) goBack: (id) sender;
 {
