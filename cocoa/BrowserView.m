@@ -135,17 +135,26 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	return result;
 }
 
+- (NSPoint) convertMousePoint: (NSEvent *)event;
+{
+	NSPoint location = [self convertPoint: [event locationInWindow] fromView: nil];
+	if (NULL != browser) {
+		location.x /= browser->scale;
+		location.y /= browser->scale;
+	}
+	return location;
+}
+
 - (void) mouseDown: (NSEvent *)theEvent;
 {
-	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
-	dragStart = location;
+	dragStart = [self convertMousePoint: theEvent];
 
-	browser_window_mouse_click( browser, BROWSER_MOUSE_PRESS_1 | cocoa_mouse_flags_for_event( theEvent ), location.x, location.y );
+	browser_window_mouse_click( browser, BROWSER_MOUSE_PRESS_1 | cocoa_mouse_flags_for_event( theEvent ), dragStart.x, dragStart.y );
 }
 
 - (void) mouseUp: (NSEvent *)theEvent;
 {
-	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+	NSPoint location = [self convertMousePoint: theEvent];
 
 	browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
 	
@@ -164,7 +173,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) mouseDragged: (NSEvent *)theEvent;
 {
-	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+	NSPoint location = [self convertMousePoint: theEvent];
 
 	if (!isDragging) {
 		const CGFloat distance = squared( dragStart.x - location.x ) + squared( dragStart.y - location.y );
@@ -180,7 +189,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) mouseMoved: (NSEvent *)theEvent;
 {
-	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+	NSPoint location = [self convertMousePoint: theEvent];
 
 	browser_window_mouse_track( browser, cocoa_mouse_flags_for_event( theEvent ), location.x, location.y );
 }
