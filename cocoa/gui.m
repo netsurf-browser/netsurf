@@ -252,33 +252,6 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 	gui_window_redraw_window( g );
 }
 
-
-struct gui_download_window *gui_download_window_create(download_context *ctx,
-													   struct gui_window *parent)
-{
-	UNIMPL();
-	return NULL;
-}
-
-nserror gui_download_window_data(struct gui_download_window *dw, 
-								 const char *data, unsigned int size)
-{
-	UNIMPL();
-	return 0;
-}
-
-void gui_download_window_error(struct gui_download_window *dw,
-							   const char *error_msg)
-{
-	UNIMPL();
-}
-
-void gui_download_window_done(struct gui_download_window *dw)
-{
-	UNIMPL();
-}
-
-
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 						  struct gui_window *g)
 {
@@ -337,8 +310,6 @@ void gui_launch_url(const char *url)
 {
 	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: url]]];
 }
-
-
 
 struct ssl_cert_info;
 

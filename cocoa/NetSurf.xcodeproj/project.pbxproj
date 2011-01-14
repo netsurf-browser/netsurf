@@ -113,6 +113,8 @@
 		26AFE63F12DDEB0A005AD082 /* NetSurf.icns in Resources */ = {isa = PBXBuildFile; fileRef = 26AFE63E12DDEB0A005AD082 /* NetSurf.icns */; };
 		26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFE8E312DF4200005AD082 /* ScrollableView.m */; };
 		26AFE97C12DF514C005AD082 /* NetSurfAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */; };
+		26AFEAEB12E04253005AD082 /* DownloadWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFEAEA12E04253005AD082 /* DownloadWindowController.m */; };
+		26AFEAF112E042F9005AD082 /* DownloadWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26AFEAF012E042F9005AD082 /* DownloadWindow.xib */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -331,6 +333,9 @@
 		26AFE8E312DF4200005AD082 /* ScrollableView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScrollableView.m; sourceTree = "<group>"; };
 		26AFE97A12DF514C005AD082 /* NetSurfAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetSurfAppDelegate.h; sourceTree = "<group>"; };
 		26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NetSurfAppDelegate.m; sourceTree = "<group>"; };
+		26AFEAE912E04253005AD082 /* DownloadWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DownloadWindowController.h; sourceTree = "<group>"; };
+		26AFEAEA12E04253005AD082 /* DownloadWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DownloadWindowController.m; sourceTree = "<group>"; };
+		26AFEAF012E042F9005AD082 /* DownloadWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DownloadWindow.xib; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* NetSurf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetSurf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -610,6 +615,8 @@
 				26AFE8E312DF4200005AD082 /* ScrollableView.m */,
 				26AFE97A12DF514C005AD082 /* NetSurfAppDelegate.h */,
 				26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */,
+				26AFEAE912E04253005AD082 /* DownloadWindowController.h */,
+				26AFEAEA12E04253005AD082 /* DownloadWindowController.m */,
 			);
 			name = cocoa;
 			sourceTree = "<group>";
@@ -625,6 +632,7 @@
 				265F30A712D6637E0048B600 /* NetSurf-Info.plist */,
 				26121DA812D700B800E10F91 /* MainMenu.xib */,
 				26121EAB12D70E0A00E10F91 /* Browser.xib */,
+				26AFEAF012E042F9005AD082 /* DownloadWindow.xib */,
 			);
 			path = res;
 			sourceTree = "<group>";
@@ -748,6 +756,7 @@
 				2612266D12D7AD6800E10F91 /* adblock.css in Resources */,
 				2612269112D7AE4100E10F91 /* Messages in Resources */,
 				26AFE63F12DDEB0A005AD082 /* NetSurf.icns in Resources */,
+				26AFEAF112E042F9005AD082 /* DownloadWindow.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -857,6 +866,7 @@
 				2622F1D712DCD84600CD5A62 /* TreeView.m in Sources */,
 				26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */,
 				26AFE97C12DF514C005AD082 /* NetSurfAppDelegate.m in Sources */,
+				26AFEAEB12E04253005AD082 /* DownloadWindowController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
