@@ -115,6 +115,7 @@
 		26AFE97C12DF514C005AD082 /* NetSurfAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */; };
 		26AFEAEB12E04253005AD082 /* DownloadWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFEAEA12E04253005AD082 /* DownloadWindowController.m */; };
 		26AFEAF112E042F9005AD082 /* DownloadWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26AFEAF012E042F9005AD082 /* DownloadWindow.xib */; };
+		26AFED0412E09916005AD082 /* selection.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFED0312E09916005AD082 /* selection.m */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -336,6 +337,7 @@
 		26AFEAE912E04253005AD082 /* DownloadWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DownloadWindowController.h; sourceTree = "<group>"; };
 		26AFEAEA12E04253005AD082 /* DownloadWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DownloadWindowController.m; sourceTree = "<group>"; };
 		26AFEAF012E042F9005AD082 /* DownloadWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DownloadWindow.xib; sourceTree = "<group>"; };
+		26AFED0312E09916005AD082 /* selection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = selection.m; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* NetSurf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetSurf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -617,6 +619,7 @@
 				26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */,
 				26AFEAE912E04253005AD082 /* DownloadWindowController.h */,
 				26AFEAEA12E04253005AD082 /* DownloadWindowController.m */,
+				26AFED0312E09916005AD082 /* selection.m */,
 			);
 			name = cocoa;
 			sourceTree = "<group>";
@@ -867,6 +870,7 @@
 				26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */,
 				26AFE97C12DF514C005AD082 /* NetSurfAppDelegate.m in Sources */,
 				26AFEAEB12E04253005AD082 /* DownloadWindowController.m in Sources */,
+				26AFED0412E09916005AD082 /* selection.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

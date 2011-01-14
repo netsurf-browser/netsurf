@@ -25,6 +25,8 @@
 #import "desktop/netsurf.h"
 #import "desktop/browser.h"
 #import "desktop/options.h"
+#import "desktop/textinput.h"
+#import "desktop/selection.h"
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -259,43 +261,6 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 {
-}
-
-void gui_start_selection(struct gui_window *g)
-{
-}
-
-void gui_clear_selection(struct gui_window *g)
-{
-}
-
-
-void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
-{
-	UNIMPL();
-}
-
-bool gui_empty_clipboard(void)
-{
-	return false;
-}
-
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
-{
-	UNIMPL();
-	return false;
-}
-
-bool gui_commit_clipboard(void)
-{
-	UNIMPL();
-	return false;
-}
-
-bool gui_copy_to_clipboard(struct selection *s)
-{
-	UNIMPL();
-	return false;
 }
 
 

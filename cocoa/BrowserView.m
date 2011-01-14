@@ -23,6 +23,7 @@
 #import "desktop/plotters.h"
 #import "desktop/textinput.h"
 #import "desktop/options.h"
+#import "desktop/selection.h"
 
 @implementation BrowserView
 
@@ -275,6 +276,26 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	browser_window_key_press( browser, KEY_NL );
 }
 
+- (void) selectAll: (id)sender;
+{
+	browser_window_key_press( browser, KEY_SELECT_ALL );
+}
+
+- (void) copy: (id) sender;
+{
+	browser_window_key_press( browser, KEY_COPY_SELECTION );
+}
+
+- (void) cut: (id) sender;
+{
+	browser_window_key_press( browser, KEY_CUT_SELECTION );
+}
+
+- (void) paste: (id) sender;
+{
+	browser_window_key_press( browser, KEY_PASTE );
+}
+
 - (void) setFrame: (NSRect)frameRect;
 {
 	[super setFrame: frameRect];
@@ -337,6 +358,26 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	
 	return YES;
 }
+
+- (BOOL) validateUserInterfaceItem: (id) item;
+{
+	SEL action = [item action];
+	
+	if (action == @selector(copy:)) {
+		return selection_defined( browser->sel );
+	}
+		
+	if (action == @selector(cut:)) {
+		return selection_defined( browser->sel ) && browser->caret_callback != NULL;
+	}
+	
+	if (action == @selector(paste:)) {
+		return browser->paste_callback != NULL;
+	}
+	
+	return YES;
+}
+
 - (BOOL) acceptsFirstResponder;
 {
 	return YES;
