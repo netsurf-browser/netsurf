@@ -153,7 +153,9 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 		isDragging = NO;
 		browser_window_mouse_drag_end( browser, modifierFlags, location.x, location.y );
 	} else {
-		browser_window_mouse_click( browser, BROWSER_MOUSE_CLICK_1 | modifierFlags, location.x, location.y );
+		modifierFlags |= BROWSER_MOUSE_CLICK_1;
+		if ([theEvent clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
+		browser_window_mouse_click( browser, modifierFlags, location.x, location.y );
 	}
 }
 
