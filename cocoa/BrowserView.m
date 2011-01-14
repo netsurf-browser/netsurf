@@ -122,28 +122,64 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	return YES;
 }
 
+static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
+{
+	browser_mouse_state result = 0;
+	
+	NSUInteger flags = [evt modifierFlags];
+	
+	if (flags & NSShiftKeyMask) result |= BROWSER_MOUSE_MOD_1;
+	if (flags & NSAlternateKeyMask) result |= BROWSER_MOUSE_MOD_2;
+	
+	return result;
+}
+
 - (void) mouseDown: (NSEvent *)theEvent;
 {
 	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+	dragStart = location;
 
-	browser_window_mouse_click( browser, BROWSER_MOUSE_PRESS_1, location.x, location.y );
+	browser_window_mouse_click( browser, BROWSER_MOUSE_PRESS_1 | cocoa_mouse_flags_for_event( theEvent ), location.x, location.y );
 }
 
 - (void) mouseUp: (NSEvent *)theEvent;
 {
 	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+
+	browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
 	
-	browser_window_mouse_click( browser, BROWSER_MOUSE_CLICK_1, location.x, location.y );
+	if (isDragging) {
+		isDragging = NO;
+		browser_window_mouse_drag_end( browser, modifierFlags, location.x, location.y );
+	} else {
+		browser_window_mouse_click( browser, BROWSER_MOUSE_CLICK_1 | modifierFlags, location.x, location.y );
+	}
 }
+
+#define squared(x) ((x)*(x))
+#define MinDragDistance (5.0)
 
 - (void) mouseDragged: (NSEvent *)theEvent;
 {
+	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+
+	if (!isDragging) {
+		const CGFloat distance = squared( dragStart.x - location.x ) + squared( dragStart.y - location.y );
+		if (distance >= squared( MinDragDistance)) isDragging = YES;
+	}
+	
+	if (isDragging) {
+		browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
+		browser_window_mouse_click( browser, BROWSER_MOUSE_DRAG_1 | modifierFlags, location.x, location.y );
+		browser_window_mouse_track( browser, BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON | modifierFlags, location.x, location.y );
+	}
 }
 
 - (void) mouseMoved: (NSEvent *)theEvent;
 {
 	NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
-	browser_window_mouse_click( browser, 0, location.x, location.y );
+
+	browser_window_mouse_track( browser, cocoa_mouse_flags_for_event( theEvent ), location.x, location.y );
 }
 
 - (void) keyDown: (NSEvent *)theEvent;

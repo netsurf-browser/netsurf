@@ -29,6 +29,9 @@
 	BOOL caretVisible;
 	BOOL hasCaret;
 	NSTimer *caretTimer;
+	
+	BOOL isDragging;
+	NSPoint dragStart;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
