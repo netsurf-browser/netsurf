@@ -335,7 +335,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 void gui_launch_url(const char *url)
 {
-	UNIMPL();
+	[[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: [NSString stringWithUTF8String: url]]];
 }
 
 
