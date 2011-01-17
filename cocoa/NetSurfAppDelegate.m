@@ -29,11 +29,21 @@
 
 @implementation NetSurfAppDelegate
 
+NSString * const kHomepageURL = @"HomepageURL";
+
 @synthesize historyWindow;
+
++ (void) initialize;
+{
+	[[NSUserDefaults standardUserDefaults] registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
+															  @"http://netsurf-browser.org/welcome/", kHomepageURL,
+															  nil]];
+}
 
 - (void) newDocument: (id) sender;
 {
-	browser_window_create( "http://netsurf-browser.org/", NULL, NULL, true, false );
+	NSString *homepageURL = [[NSUserDefaults standardUserDefaults] objectForKey: kHomepageURL];
+	browser_window_create( [homepageURL UTF8String], NULL, NULL, true, false );
 }
 
 - (void) openDocument: (id) sender;
