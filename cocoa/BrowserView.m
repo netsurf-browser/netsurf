@@ -25,6 +25,8 @@
 #import "desktop/options.h"
 #import "desktop/selection.h"
 
+#import "cocoa/font.h"
+
 @implementation BrowserView
 
 @synthesize browser;
@@ -38,8 +40,8 @@ static const NSTimeInterval CaretBlinkTime = 0.8;
 static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
 	NSRect caretRect = {
-		.origin = view->caretPoint,
-		.size = NSMakeSize( CaretWidth, view->caretHeight )
+		.origin = NSMakePoint( view->caretPoint.x * view->browser->scale, view->caretPoint.y * view->browser->scale ),
+		.size = NSMakeSize( CaretWidth, view->caretHeight * view->browser->scale )
 	};
 	
 	return caretRect;
@@ -87,6 +89,8 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
 
 	if (NULL == browser->current_content) return;
+	
+	cocoa_set_font_scale_factor( browser->scale );
 	
 	NSRect frame = [self bounds];
 	

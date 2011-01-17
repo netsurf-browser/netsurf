@@ -86,7 +86,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-	NSRect rect = NSMakeRect( x0, y0, x1 - x0, y1 - y0 );
+	const NSRect rect = NSMakeRect( x0, y0, x1 - x0, y1 - y0 );
 	[[(BrowserWindow *)g view] setNeedsDisplayInRect: rect];
 }
 
@@ -98,9 +98,12 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 						   const union content_msg_data *data)
 {
-	gui_window_redraw( g, data->redraw.x, data->redraw.y, 
-					  data->redraw.x + data->redraw.width, 
-					  data->redraw.y + data->redraw.height );
+	const CGFloat scale = [(BrowserWindow *)g browser]->scale;
+	const NSRect rect = NSMakeRect( data->redraw.object_x * scale,  
+								    data->redraw.object_y * scale, 
+								    data->redraw.object_width * scale, 
+								    data->redraw.object_height * scale );
+	[[(BrowserWindow *)g view] setNeedsDisplayInRect: rect];
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
@@ -136,6 +139,11 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	NSCParameterAssert( width != NULL && height != NULL );
 	
 	NSRect frame = [[(BrowserWindow *)g view] frame];
+	if (scaled) {
+		const CGFloat scale = [(BrowserWindow *)g browser]->scale;
+		frame.size.width /= scale;
+		frame.size.height /= scale;
+	}
 	*width = NSWidth( frame );
 	*height = NSHeight( frame );
 }

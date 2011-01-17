@@ -159,9 +159,19 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *bytes, size_t 
 	return layout;
 }
 
+static CGFloat cocoa_font_scale_factor = 1.0;
+
+void cocoa_set_font_scale_factor( float newFactor )
+{
+	cocoa_font_scale_factor = newFactor;
+}
+
 void cocoa_draw_string( int x, int y, const char *bytes, size_t length, const plot_font_style_t *style )
 {
-	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, style );
+	plot_font_style_t scaledStyle = *style;
+	scaledStyle.size *= cocoa_font_scale_factor;
+	
+	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, &scaledStyle );
 	
 	if ([cocoa_text_storage length] > 0) {
 		NSFont *font = [cocoa_text_storage attribute: NSFontAttributeName atIndex: 0 effectiveRange: NULL];
