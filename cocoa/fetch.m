@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2011 Sven Weidauer <sven.weidauer@gmail.com>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,42 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include "content/fetch.h"
-#include "utils/log.h"
-#include "utils/utils.h"
+#import <Cocoa/Cocoa.h>
 
-/**
- * filetype -- determine the MIME type of a local file
- */
+#import "utils/log.h"
 
 const char *fetch_filetype(const char *unix_path)
 {
-	int l;
-	LOG(("unix path %s", unix_path));
-	l = strlen(unix_path);
-	if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
-		return "text/css";
-	if (2 < l && strcasecmp(unix_path + l - 3, "jpg") == 0)
-		return "image/jpeg";
-	if (3 < l && strcasecmp(unix_path + l - 4, "jpeg") == 0)
-		return "image/jpeg";
-	if (2 < l && strcasecmp(unix_path + l - 3, "gif") == 0)
-		return "image/gif";
-	if (2 < l && strcasecmp(unix_path + l - 3, "png") == 0)
-		return "image/png";
-	if (2 < l && strcasecmp(unix_path + l - 3, "jng") == 0)
-		return "image/jng";
-	if (2 < l && strcasecmp(unix_path + l - 3, "svg") == 0)
-		return "image/svg";
-	if (2 < l && strcasecmp(unix_path + l - 3, "bmp") == 0)
-		return "image/x-ms-bmp";
-	return "text/html";
+	NSString *uti = [[NSWorkspace sharedWorkspace] typeOfFile: [NSString stringWithUTF8String: unix_path] 
+														error: NULL];
+
+	NSString *mimeType = nil;
+	if (nil != uti) {
+		mimeType = (NSString *)UTTypeCopyPreferredTagWithClass( (CFStringRef)uti, kUTTagClassMIMEType );
+	}
+
+	const char *result = "text/html";
+	if (nil != mimeType) {
+		result = [mimeType UTF8String];
+		[mimeType release];
+	}
+
+	LOG(( "\tMIME type for '%s' is '%s'", unix_path, result ));
+	
+	return result;
 }
 
 
 char *fetch_mimetype(const char *ro_path)
 {
-	return strdup("text/plain");
+	return strdup( fetch_filetype( ro_path ) );
 }
