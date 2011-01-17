@@ -105,8 +105,20 @@ static NSString *cocoa_font_family_name( plot_font_generic_family_t family )
 
 static NSFont *cocoa_font_get_nsfont( const plot_font_style_t *style )
 {
-	return [NSFont fontWithName: cocoa_font_family_name( style->family ) 
+	NSFont *font = [NSFont fontWithName: cocoa_font_family_name( style->family ) 
 						   size: (CGFloat)style->size / FONT_SIZE_SCALE];
+	
+	NSFontTraitMask traits = 0;
+	if (style->flags & FONTF_ITALIC || style->flags & FONTF_OBLIQUE) traits |= NSItalicFontMask;
+	if (style->flags & FONTF_SMALLCAPS) traits |= NSSmallCapsFontMask;
+	if (style->weight > 400) traits |= NSBoldFontMask;
+	
+	if (0 != traits) {
+		NSFontManager *fm = [NSFontManager sharedFontManager];
+		font = [fm convertFont: font toHaveTrait: traits];
+	}
+	
+	return font;
 }
 
 NSDictionary *cocoa_font_attributes( const plot_font_style_t *style )
