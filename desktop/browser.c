@@ -994,14 +994,9 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	/* Destruction order is important: we must ensure that the frontend 
 	 * destroys any window(s) associated with this browser window before 
 	 * we attempt any destructive cleanup. 
-	 *
-	 * Additionally, we must destroy any selection and history before
-	 * releasing the handle to any content objects this window is using.
 	 */
 
 	gui_window_destroy(bw->window);
-	selection_destroy(bw->sel);
-	history_destroy(bw->history);
 
 	if (bw->loading_content != NULL) {
 		hlcache_handle_release(bw->loading_content);
@@ -1017,6 +1012,10 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		hlcache_handle_release(bw->current_content);
 		bw->current_content = NULL;
 	}
+
+	/* These simply free memory, so are safe here */
+	selection_destroy(bw->sel);
+	history_destroy(bw->history);
 
 	free(bw->name);
 	free(bw->frag_id);
