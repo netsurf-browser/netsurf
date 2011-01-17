@@ -27,6 +27,7 @@
 #import "desktop/options.h"
 #import "desktop/textinput.h"
 #import "desktop/selection.h"
+#import "utils/utils.h"
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -306,13 +307,40 @@ static char *gui_get_resource_url( NSString *name, NSString *type )
 	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
 }
 
+static NSString *cocoa_get_preferences_path()
+{
+	NSArray *paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, YES );
+	NSCAssert( [paths count] >= 1, @"Where is the application support directory?" );
+	
+	NSString *netsurfPath = [[paths objectAtIndex: 0] stringByAppendingPathComponent: @"NetSurf"];
+	
+	NSFileManager *fm = [NSFileManager defaultManager];
+	BOOL isDirectory = NO;
+	BOOL exists = [fm fileExistsAtPath: netsurfPath isDirectory: &isDirectory];
+	
+	if (!exists) {
+		exists = [fm createDirectoryAtPath: netsurfPath attributes: nil];
+		isDirectory = YES;
+	}
+	if (!(exists && isDirectory)) {
+		die( "Cannot create netsurf preferences directory" );
+	}
+	
+	return netsurfPath;
+}
+
+static const char *cocoa_get_options_file()
+{
+	NSString *prefPath = [cocoa_get_preferences_path() stringByAppendingPathComponent: @"options"];
+	return [prefPath UTF8String];
+}
+
 int main( int argc, char **argv )
 {
-	char options[PATH_MAX];
-
 	gui_pool = [[NSAutoreleasePool alloc] init];
 	
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"messages" ofType: nil] UTF8String];
+	const char * const options = cocoa_get_options_file();
 	default_stylesheet_url = gui_get_resource_url( @"default", @"css" );
 	quirks_stylesheet_url = gui_get_resource_url( @"quirks", @"css" );
 	adblock_stylesheet_url = gui_get_resource_url( @"adblock", @"css" );
