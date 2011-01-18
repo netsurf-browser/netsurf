@@ -35,7 +35,10 @@
 	
 	NSWindow *win = [self window];
 	[win setAcceptsMouseMovedEvents: YES];
-	[win makeKeyAndOrderFront: self];
+	
+	if (browser->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		[win makeKeyAndOrderFront: self];
+	}
 	
 	return self;
 }
@@ -52,7 +55,9 @@
 
 - (void)windowWillClose:(NSNotification *)notification;
 {
-	if (NULL != browser) browser_window_destroy( browser );
+	if (NULL != browser && browser->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		browser_window_destroy( browser );
+	}
 }
 
 @end
