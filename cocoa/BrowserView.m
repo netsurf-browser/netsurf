@@ -317,17 +317,17 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	browser_window_reformat( browser, [self bounds].size.width, [self bounds].size.height );
 }
 
-- (void) zoomIn: (id) sender;
+- (IBAction) zoomIn: (id) sender;
 {
 	browser_window_set_scale( browser, browser->scale * 1.1, true );
 }
 
-- (void) zoomOut: (id) sender;
+- (IBAction) zoomOut: (id) sender;
 {
 	browser_window_set_scale( browser, browser->scale * 0.9, true );
 }
 
-- (void) zoomImageToActualSize: (id) sender;
+- (IBAction) zoomOriginal: (id) sender;
 {
 	browser_window_set_scale( browser, (float)option_scale / 100.0, true );
 }
@@ -355,6 +355,11 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	browser_window_reload( browser, true );
 }
 
+- (IBAction) stopLoading: (id) sender;
+{
+	browser_window_stop( browser );
+}
+
 - (BOOL) validateToolbarItem: (NSToolbarItem *)theItem;
 {
 	SEL action = [theItem action];
@@ -374,6 +379,15 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	return YES;
 }
 
+static inline bool compare_float( float a, float b )
+{
+	const float epsilon = 0.00001;
+	
+	if (a == b) return true;
+	
+	return fabs( (a - b) / b ) <= epsilon;
+}
+
 - (BOOL) validateUserInterfaceItem: (id) item;
 {
 	SEL action = [item action];
@@ -388,6 +402,14 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	
 	if (action == @selector(paste:)) {
 		return browser->paste_callback != NULL;
+	}
+	
+	if (action == @selector( stopLoading: )) {
+		return browser->loading_content != NULL;
+	}
+	
+	if (action == @selector( zoomOriginal: )) {
+		return !compare_float( browser->scale, (float)option_scale / 100.0 );
 	}
 	
 	return YES;

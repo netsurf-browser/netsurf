@@ -46,5 +46,10 @@
 - (IBAction) goForward: (id) sender;
 - (IBAction) showHistory: (id) sender;
 - (IBAction) reloadPage: (id) sender;
+- (IBAction) stopLoading: (id) sender;
+
+- (IBAction) zoomIn: (id) sender;
+- (IBAction) zoomOut: (id) sender;
+- (IBAction) zoomOriginal: (id) sender;
 
 @end
