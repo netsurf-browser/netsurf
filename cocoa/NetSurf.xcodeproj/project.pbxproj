@@ -90,7 +90,6 @@
 		2622F1D712DCD84600CD5A62 /* TreeView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2622F1D612DCD84600CD5A62 /* TreeView.m */; };
 		265F311A12D663F50048B600 /* gui.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F311912D663F50048B600 /* gui.m */; };
 		265F314812D666660048B600 /* plotter.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F314712D666660048B600 /* plotter.m */; };
-		265F315212D667060048B600 /* history.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F315112D667060048B600 /* history.m */; };
 		265F316212D667E10048B600 /* schedule.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F316112D667E10048B600 /* schedule.m */; };
 		265F316712D668130048B600 /* thumbnail.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F316612D668130048B600 /* thumbnail.m */; };
 		265F317012D668790048B600 /* fetch.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F316F12D668790048B600 /* fetch.m */; };
@@ -298,7 +297,6 @@
 		265F30AB12D6637E0048B600 /* Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Prefix.pch; sourceTree = "<group>"; };
 		265F311912D663F50048B600 /* gui.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = gui.m; sourceTree = "<group>"; };
 		265F314712D666660048B600 /* plotter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = plotter.m; sourceTree = "<group>"; };
-		265F315112D667060048B600 /* history.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = history.m; sourceTree = "<group>"; };
 		265F316112D667E10048B600 /* schedule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = schedule.m; sourceTree = "<group>"; };
 		265F316612D668130048B600 /* thumbnail.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = thumbnail.m; sourceTree = "<group>"; };
 		265F316F12D668790048B600 /* fetch.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = fetch.m; sourceTree = "<group>"; };
@@ -593,7 +591,6 @@
 				265F311912D663F50048B600 /* gui.m */,
 				261223CB12D7805300E10F91 /* plotter.h */,
 				265F314712D666660048B600 /* plotter.m */,
-				265F315112D667060048B600 /* history.m */,
 				265F316112D667E10048B600 /* schedule.m */,
 				265F316612D668130048B600 /* thumbnail.m */,
 				265F316F12D668790048B600 /* fetch.m */,
@@ -843,7 +840,6 @@
 				260F205A12D620E800D9B07F /* utils.c in Sources */,
 				265F311A12D663F50048B600 /* gui.m in Sources */,
 				265F314812D666660048B600 /* plotter.m in Sources */,
-				265F315212D667060048B600 /* history.m in Sources */,
 				265F316212D667E10048B600 /* schedule.m in Sources */,
 				265F316712D668130048B600 /* thumbnail.m in Sources */,
 				265F317012D668790048B600 /* fetch.m in Sources */,
