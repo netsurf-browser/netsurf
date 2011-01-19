@@ -345,6 +345,45 @@ ifeq ($(TARGET),atari)
 
 endif
 
+# ----------------------------------------------------------------------------
+# Cocoa-specific options
+# ----------------------------------------------------------------------------
+ifeq ($(TARGET),cocoa)
+
+  # Force using glibc internal iconv implementation instead of external libiconv
+  # Valid options: YES, NO
+  NETSURF_USE_LIBICONV_PLUG := NO
+
+  # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_ROSPRITE := NO
+
+  # Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+  # Valid options: YES, NO
+  NETSURF_USE_WEBP := NO
+
+  # Enable NetSurf's use of librsvg in conjunction with Cairo to display SVGs
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_RSVG := AUTO
+
+  # Enable NetSurf's use of libsvgtiny for displaying SVGs
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_NSSVG := YES
+  
+  NETSURF_USE_MNG := NO
+
+  NETSURF_ATARI_USE_FREETYPE := YES
+
+  # Optimisation levels
+  CFLAGS += -O2 -Wuninitialized
+
+  WARNFLAGS = -W -Wundef -Wpointer-arith \
+		-Wcast-align -Wwrite-strings -Wstrict-prototypes \
+		-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
+		-Wnested-externs -Wl,-t
+
+endif
+
 # Include any local configuration
 -include Makefile.config
 

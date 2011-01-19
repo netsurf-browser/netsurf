@@ -76,6 +76,9 @@ else
     else
       ifeq ($(HOST),Darwin)
         HOST := macosx
+        ifeq ($(TARGET),)
+          TARGET := cocoa
+        endif
       endif  
       ifeq ($(HOST),FreeMiNT)
         HOST := mint
@@ -103,7 +106,9 @@ ifneq ($(TARGET),riscos)
         ifneq ($(TARGET),framebuffer)
           ifneq ($(TARGET),windows)
             ifneq ($(TARGET),atari)
-              $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer", "windows" or "atari")
+              ifneq ($(TARGET),cocoa)
+                $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer", "windows", "atari" or "cocoa")
+              endif
             endif
           endif
         endif
@@ -355,7 +360,7 @@ ifeq ($(SOURCES),)
 $(error Unable to build NetSurf, could not determine set of sources to build)
 endif
 
-OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.s,%.o,$(SOURCES)))))))
+OBJECTS := $(sort $(addprefix $(OBJROOT)/,$(subst /,_,$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.m,%.o,$(patsubst %.s,%.o,$(SOURCES))))))))
 
 $(EXETARGET): $(OBJECTS) $(RESOURCES)
 	$(VQ)echo "    LINK: $(EXETARGET)"
@@ -528,6 +533,9 @@ $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
 $(eval $(foreach SOURCE,$(filter %.cpp,$(SOURCES)), \
 	$(call dependency_generate_c,$(SOURCE),$(subst /,_,$(SOURCE:.cpp=.d)),$(subst /,_,$(SOURCE:.cpp=.o)))))
 
+$(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
+	$(call dependency_generate_c,$(SOURCE),$(subst /,_,$(SOURCE:.m=.d)),$(subst /,_,$(SOURCE:.m=.o)))))
+
 # Cannot currently generate dep files for S files because they're objasm
 # when we move to gas format, we will be able to.
 
@@ -545,6 +553,9 @@ $(eval $(foreach SOURCE,$(filter %.c,$(SOURCES)), \
 
 $(eval $(foreach SOURCE,$(filter %.cpp,$(SOURCES)), \
 	$(call compile_target_cpp,$(SOURCE),$(subst /,_,$(SOURCE:.cpp=.o)),$(subst /,_,$(SOURCE:.cpp=.d)))))
+
+$(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
+	$(call compile_target_c,$(SOURCE),$(subst /,_,$(SOURCE:.m=.o)),$(subst /,_,$(SOURCE:.m=.d)))))
 
 $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 	$(call compile_target_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.o)),$(subst /,_,$(SOURCE:.s=.d)))))
