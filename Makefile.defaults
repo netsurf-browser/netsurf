@@ -377,11 +377,6 @@ ifeq ($(TARGET),cocoa)
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized
 
-  WARNFLAGS = -W -Wundef -Wpointer-arith \
-		-Wcast-align -Wwrite-strings -Wstrict-prototypes \
-		-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-		-Wnested-externs -Wl,-t
-
 endif
 
 # Include any local configuration
