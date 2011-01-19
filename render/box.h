@@ -141,6 +141,8 @@ struct box {
 	 *  a box's 'styles' select results, except for implied boxes, where it
 	 *  is a pointer to an owned computed style. */
 	css_computed_style *style;
+	/** Whether the style is owned by this box. */
+	bool style_owned;
 
 	/** Coordinate of left padding edge relative to parent box, or relative
 	 * to ancestor that contains this box in float_children for FLOAT_. */
