@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "NetSurfApp.h"
+#import "NetsurfApp.h"
 
 #import "desktop/gui.h"
 #include "content/urldb.h"
