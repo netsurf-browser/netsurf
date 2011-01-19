@@ -24,7 +24,9 @@
   CFLAGS += -D_DARWIN_C_SOURCE
 
   CFLAGS += -I/opt/local/include
-  CFLAGS += -I/opt/local/include/libxml2
+  CFLAGS += -I/usr/include/libxml2
+  CFLAGS += -Icocoa/PSMTabBarControl 
+  CFLAGS += -include cocoa/Prefix.pch 
 
   VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
   VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
@@ -33,7 +35,7 @@
     CFLAGS += 
   else
   endif
-  LDFLAGS += -Wl,-framework,Cocoa $(NETLDFLAGS)
+  LDFLAGS += -Wl,-framework,Cocoa -Wl,-framework,Carbon $(NETLDFLAGS)
 
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
   ifeq ($(HOST),macosx)
@@ -58,7 +60,8 @@
 # S_COCOA are sources purely for the Mac OS X build
 S_COCOA := \
 	BrowserView.m \
-	BrowserWindow.m \
+	BrowserViewController.m \
+	BrowserWindowController.m \
 	DownloadWindowController.m \
 	NetSurfAppDelegate.m \
 	NetsurfApp.m \
@@ -77,8 +80,24 @@ S_COCOA := \
 	utf8.m \
 	utils.m
 
+S_TABBAR := \
+	NSBezierPath_AMShading.m	\
+	NSString_AITruncation.m		\
+	PSMOverflowPopUpButton.m	\
+	PSMProgressIndicator.m		\
+	PSMRolloverButton.m			\
+	PSMTabBarCell.m				\
+	PSMTabBarControl.m			\
+	PSMTabBarController.m		\
+	PSMTabDragAssistant.m		\
+	PSMTabDragView.m			\
+	PSMTabDragWindow.m			\
+	PSMTabDragWindowController.m \
+	PSMUnifiedTabStyle.m
+
 S_COCOA := $(addprefix cocoa/,$(S_COCOA))
+S_TABBAR := $(addprefix cocoa/PSMTabBarControl/,$(S_TABBAR))
 
 # complete source file list
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA)
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA) $(S_TABBAR)
 EXETARGET := NetSurf

@@ -80,7 +80,6 @@
 		260F205A12D620E800D9B07F /* utils.c in Sources */ = {isa = PBXBuildFile; fileRef = 260F200512D620E800D9B07F /* utils.c */; };
 		26121DA912D700B800E10F91 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26121DA812D700B800E10F91 /* MainMenu.xib */; };
 		26121DD912D703F400E10F91 /* NetSurfApp.m in Sources */ = {isa = PBXBuildFile; fileRef = 26121DD812D703F400E10F91 /* NetSurfApp.m */; };
-		26121E3F12D70A1A00E10F91 /* BrowserWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 26121E3E12D70A1A00E10F91 /* BrowserWindow.m */; };
 		26121EAC12D70E0A00E10F91 /* Browser.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26121EAB12D70E0A00E10F91 /* Browser.xib */; };
 		26121EFD12D7132100E10F91 /* BrowserView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26121EFC12D7132100E10F91 /* BrowserView.m */; };
 		2612265A12D7ACB500E10F91 /* default.css in Resources */ = {isa = PBXBuildFile; fileRef = 2612265712D7ACB500E10F91 /* default.css */; };
@@ -115,6 +114,32 @@
 		26AFEAEB12E04253005AD082 /* DownloadWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFEAEA12E04253005AD082 /* DownloadWindowController.m */; };
 		26AFEAF112E042F9005AD082 /* DownloadWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26AFEAF012E042F9005AD082 /* DownloadWindow.xib */; };
 		26AFED0412E09916005AD082 /* selection.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFED0312E09916005AD082 /* selection.m */; };
+		26CDCED412E702D8004FC66B /* NSBezierPath_AMShading.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEB412E702D8004FC66B /* NSBezierPath_AMShading.m */; };
+		26CDCED512E702D8004FC66B /* NSString_AITruncation.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEB612E702D8004FC66B /* NSString_AITruncation.m */; };
+		26CDCED912E702D8004FC66B /* PSMOverflowPopUpButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEBE12E702D8004FC66B /* PSMOverflowPopUpButton.m */; };
+		26CDCEDA12E702D8004FC66B /* PSMProgressIndicator.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEC012E702D8004FC66B /* PSMProgressIndicator.m */; };
+		26CDCEDB12E702D8004FC66B /* PSMRolloverButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEC212E702D8004FC66B /* PSMRolloverButton.m */; };
+		26CDCEDC12E702D8004FC66B /* PSMTabBarCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEC412E702D8004FC66B /* PSMTabBarCell.m */; };
+		26CDCEDD12E702D8004FC66B /* PSMTabBarControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEC612E702D8004FC66B /* PSMTabBarControl.m */; };
+		26CDCEDE12E702D8004FC66B /* PSMTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCEC812E702D8004FC66B /* PSMTabBarController.m */; };
+		26CDCEDF12E702D8004FC66B /* PSMTabDragAssistant.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCECA12E702D8004FC66B /* PSMTabDragAssistant.m */; };
+		26CDCEE012E702D8004FC66B /* PSMTabDragView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCECC12E702D8004FC66B /* PSMTabDragView.m */; };
+		26CDCEE112E702D8004FC66B /* PSMTabDragWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCECE12E702D8004FC66B /* PSMTabDragWindow.m */; };
+		26CDCEE212E702D8004FC66B /* PSMTabDragWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCED012E702D8004FC66B /* PSMTabDragWindowController.m */; };
+		26CDCEE312E702D8004FC66B /* PSMUnifiedTabStyle.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDCED312E702D8004FC66B /* PSMUnifiedTabStyle.m */; };
+		26CDCF0012E70438004FC66B /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26CDCEFF12E70438004FC66B /* Carbon.framework */; };
+		26CDCFE512E706FF004FC66B /* AquaTabClose_Front.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFDC12E706FE004FC66B /* AquaTabClose_Front.png */; };
+		26CDCFE612E706FF004FC66B /* AquaTabClose_Front_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFDD12E706FF004FC66B /* AquaTabClose_Front_Pressed.png */; };
+		26CDCFE712E706FF004FC66B /* AquaTabClose_Front_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFDE12E706FF004FC66B /* AquaTabClose_Front_Rollover.png */; };
+		26CDCFE812E706FF004FC66B /* AquaTabCloseDirty_Front.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFDF12E706FF004FC66B /* AquaTabCloseDirty_Front.png */; };
+		26CDCFE912E706FF004FC66B /* AquaTabCloseDirty_Front_Pressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFE012E706FF004FC66B /* AquaTabCloseDirty_Front_Pressed.png */; };
+		26CDCFEA12E706FF004FC66B /* AquaTabCloseDirty_Front_Rollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFE112E706FF004FC66B /* AquaTabCloseDirty_Front_Rollover.png */; };
+		26CDCFEB12E706FF004FC66B /* AquaTabNew.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFE212E706FF004FC66B /* AquaTabNew.png */; };
+		26CDCFEC12E706FF004FC66B /* AquaTabNewPressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFE312E706FF004FC66B /* AquaTabNewPressed.png */; };
+		26CDCFED12E706FF004FC66B /* AquaTabNewRollover.png in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFE412E706FF004FC66B /* AquaTabNewRollover.png */; };
+		26CDCFF312E70AD1004FC66B /* BrowserWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 26CDCFF212E70AD1004FC66B /* BrowserWindow.xib */; };
+		26CDD00312E70F56004FC66B /* BrowserWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDD00212E70F56004FC66B /* BrowserWindowController.m */; };
+		26CDD0F612E726E0004FC66B /* BrowserViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDD0F512E726E0004FC66B /* BrowserViewController.m */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -271,8 +296,6 @@
 		26121DA812D700B800E10F91 /* MainMenu.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		26121DD712D703F400E10F91 /* NetSurfApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetSurfApp.h; sourceTree = "<group>"; };
 		26121DD812D703F400E10F91 /* NetSurfApp.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NetSurfApp.m; sourceTree = "<group>"; };
-		26121E3D12D70A1A00E10F91 /* BrowserWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserWindow.h; sourceTree = "<group>"; };
-		26121E3E12D70A1A00E10F91 /* BrowserWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserWindow.m; sourceTree = "<group>"; };
 		26121EAB12D70E0A00E10F91 /* Browser.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = Browser.xib; sourceTree = "<group>"; };
 		26121EFB12D7132100E10F91 /* BrowserView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserView.h; sourceTree = "<group>"; };
 		26121EFC12D7132100E10F91 /* BrowserView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserView.m; sourceTree = "<group>"; };
@@ -336,6 +359,48 @@
 		26AFEAEA12E04253005AD082 /* DownloadWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DownloadWindowController.m; sourceTree = "<group>"; };
 		26AFEAF012E042F9005AD082 /* DownloadWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DownloadWindow.xib; sourceTree = "<group>"; };
 		26AFED0312E09916005AD082 /* selection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = selection.m; sourceTree = "<group>"; };
+		26CDCEB312E702D8004FC66B /* NSBezierPath_AMShading.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSBezierPath_AMShading.h; sourceTree = "<group>"; };
+		26CDCEB412E702D8004FC66B /* NSBezierPath_AMShading.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSBezierPath_AMShading.m; sourceTree = "<group>"; };
+		26CDCEB512E702D8004FC66B /* NSString_AITruncation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_AITruncation.h; sourceTree = "<group>"; };
+		26CDCEB612E702D8004FC66B /* NSString_AITruncation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSString_AITruncation.m; sourceTree = "<group>"; };
+		26CDCEBD12E702D8004FC66B /* PSMOverflowPopUpButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMOverflowPopUpButton.h; sourceTree = "<group>"; };
+		26CDCEBE12E702D8004FC66B /* PSMOverflowPopUpButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMOverflowPopUpButton.m; sourceTree = "<group>"; };
+		26CDCEBF12E702D8004FC66B /* PSMProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMProgressIndicator.h; sourceTree = "<group>"; };
+		26CDCEC012E702D8004FC66B /* PSMProgressIndicator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMProgressIndicator.m; sourceTree = "<group>"; };
+		26CDCEC112E702D8004FC66B /* PSMRolloverButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMRolloverButton.h; sourceTree = "<group>"; };
+		26CDCEC212E702D8004FC66B /* PSMRolloverButton.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMRolloverButton.m; sourceTree = "<group>"; };
+		26CDCEC312E702D8004FC66B /* PSMTabBarCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabBarCell.h; sourceTree = "<group>"; };
+		26CDCEC412E702D8004FC66B /* PSMTabBarCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabBarCell.m; sourceTree = "<group>"; };
+		26CDCEC512E702D8004FC66B /* PSMTabBarControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabBarControl.h; sourceTree = "<group>"; };
+		26CDCEC612E702D8004FC66B /* PSMTabBarControl.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabBarControl.m; sourceTree = "<group>"; };
+		26CDCEC712E702D8004FC66B /* PSMTabBarController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabBarController.h; sourceTree = "<group>"; };
+		26CDCEC812E702D8004FC66B /* PSMTabBarController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabBarController.m; sourceTree = "<group>"; };
+		26CDCEC912E702D8004FC66B /* PSMTabDragAssistant.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragAssistant.h; sourceTree = "<group>"; };
+		26CDCECA12E702D8004FC66B /* PSMTabDragAssistant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragAssistant.m; sourceTree = "<group>"; };
+		26CDCECB12E702D8004FC66B /* PSMTabDragView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragView.h; sourceTree = "<group>"; };
+		26CDCECC12E702D8004FC66B /* PSMTabDragView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragView.m; sourceTree = "<group>"; };
+		26CDCECD12E702D8004FC66B /* PSMTabDragWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragWindow.h; sourceTree = "<group>"; };
+		26CDCECE12E702D8004FC66B /* PSMTabDragWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragWindow.m; sourceTree = "<group>"; };
+		26CDCECF12E702D8004FC66B /* PSMTabDragWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabDragWindowController.h; sourceTree = "<group>"; };
+		26CDCED012E702D8004FC66B /* PSMTabDragWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMTabDragWindowController.m; sourceTree = "<group>"; };
+		26CDCED112E702D8004FC66B /* PSMTabStyle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMTabStyle.h; sourceTree = "<group>"; };
+		26CDCED212E702D8004FC66B /* PSMUnifiedTabStyle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSMUnifiedTabStyle.h; sourceTree = "<group>"; };
+		26CDCED312E702D8004FC66B /* PSMUnifiedTabStyle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSMUnifiedTabStyle.m; sourceTree = "<group>"; };
+		26CDCEFF12E70438004FC66B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		26CDCFDC12E706FE004FC66B /* AquaTabClose_Front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabClose_Front.png; sourceTree = "<group>"; };
+		26CDCFDD12E706FF004FC66B /* AquaTabClose_Front_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabClose_Front_Pressed.png; sourceTree = "<group>"; };
+		26CDCFDE12E706FF004FC66B /* AquaTabClose_Front_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabClose_Front_Rollover.png; sourceTree = "<group>"; };
+		26CDCFDF12E706FF004FC66B /* AquaTabCloseDirty_Front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabCloseDirty_Front.png; sourceTree = "<group>"; };
+		26CDCFE012E706FF004FC66B /* AquaTabCloseDirty_Front_Pressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabCloseDirty_Front_Pressed.png; sourceTree = "<group>"; };
+		26CDCFE112E706FF004FC66B /* AquaTabCloseDirty_Front_Rollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabCloseDirty_Front_Rollover.png; sourceTree = "<group>"; };
+		26CDCFE212E706FF004FC66B /* AquaTabNew.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabNew.png; sourceTree = "<group>"; };
+		26CDCFE312E706FF004FC66B /* AquaTabNewPressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabNewPressed.png; sourceTree = "<group>"; };
+		26CDCFE412E706FF004FC66B /* AquaTabNewRollover.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AquaTabNewRollover.png; sourceTree = "<group>"; };
+		26CDCFF212E70AD1004FC66B /* BrowserWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BrowserWindow.xib; sourceTree = "<group>"; };
+		26CDD00112E70F56004FC66B /* BrowserWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserWindowController.h; sourceTree = "<group>"; };
+		26CDD00212E70F56004FC66B /* BrowserWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserWindowController.m; sourceTree = "<group>"; };
+		26CDD0F412E726E0004FC66B /* BrowserViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserViewController.h; sourceTree = "<group>"; };
+		26CDD0F512E726E0004FC66B /* BrowserViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserViewController.m; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* NetSurf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetSurf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -345,6 +410,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+				26CDCF0012E70438004FC66B /* Carbon.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -583,45 +649,22 @@
 			path = config;
 			sourceTree = "<group>";
 		};
-		265F303F12D6637E0048B600 /* cocoa */ = {
+		265F303F12D6637E0048B600 /* Cocoa Frontend */ = {
 			isa = PBXGroup;
 			children = (
-				265F310F12D663C20048B600 /* res */,
+				26CDD26512E74402004FC66B /* Browser */,
+				26CDD26712E74453004FC66B /* Download */,
+				26CDD26612E7441E004FC66B /* Views */,
+				26CDD26812E74461004FC66B /* NSApplication */,
+				26CDD26912E7446E004FC66B /* Platform Interface */,
+				265F310F12D663C20048B600 /* Resources */,
+				26CDCEB212E702D8004FC66B /* PSMTabBarControl */,
 				265F30AB12D6637E0048B600 /* Prefix.pch */,
-				265F311912D663F50048B600 /* gui.m */,
-				261223CB12D7805300E10F91 /* plotter.h */,
-				265F314712D666660048B600 /* plotter.m */,
-				265F316112D667E10048B600 /* schedule.m */,
-				265F316612D668130048B600 /* thumbnail.m */,
-				265F316F12D668790048B600 /* fetch.m */,
-				265F319012D668DB0048B600 /* url.m */,
-				265F31C412D66A0D0048B600 /* save.m */,
-				260FC03112D85ACE00079C00 /* bitmap.h */,
-				265F31EB12D66B190048B600 /* bitmap.m */,
-				265F320512D66C200048B600 /* utf8.m */,
-				265F321312D66CD90048B600 /* utils.m */,
-				261223B712D77F9C00E10F91 /* font.h */,
-				265F321E12D66D510048B600 /* font.m */,
-				26121DD712D703F400E10F91 /* NetSurfApp.h */,
-				26121DD812D703F400E10F91 /* NetSurfApp.m */,
-				26121E3D12D70A1A00E10F91 /* BrowserWindow.h */,
-				26121E3E12D70A1A00E10F91 /* BrowserWindow.m */,
-				26121EFB12D7132100E10F91 /* BrowserView.h */,
-				26121EFC12D7132100E10F91 /* BrowserView.m */,
-				2622F1D512DCD84600CD5A62 /* TreeView.h */,
-				2622F1D612DCD84600CD5A62 /* TreeView.m */,
-				26AFE8E212DF4200005AD082 /* ScrollableView.h */,
-				26AFE8E312DF4200005AD082 /* ScrollableView.m */,
-				26AFE97A12DF514C005AD082 /* NetSurfAppDelegate.h */,
-				26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */,
-				26AFEAE912E04253005AD082 /* DownloadWindowController.h */,
-				26AFEAEA12E04253005AD082 /* DownloadWindowController.m */,
-				26AFED0312E09916005AD082 /* selection.m */,
 			);
-			name = cocoa;
+			name = "Cocoa Frontend";
 			sourceTree = "<group>";
 		};
-		265F310F12D663C20048B600 /* res */ = {
+		265F310F12D663C20048B600 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				26AFE63E12DDEB0A005AD082 /* NetSurf.icns */,
@@ -633,7 +676,9 @@
 				26121DA812D700B800E10F91 /* MainMenu.xib */,
 				26121EAB12D70E0A00E10F91 /* Browser.xib */,
 				26AFEAF012E042F9005AD082 /* DownloadWindow.xib */,
+				26CDCFF212E70AD1004FC66B /* BrowserWindow.xib */,
 			);
+			name = Resources;
 			path = res;
 			sourceTree = "<group>";
 		};
@@ -666,18 +711,143 @@
 			path = ../image;
 			sourceTree = SOURCE_ROOT;
 		};
-		29B97314FDCFA39411CA2CEA /* Untitled */ = {
+		26CDCEB212E702D8004FC66B /* PSMTabBarControl */ = {
 			isa = PBXGroup;
 			children = (
-				265F303F12D6637E0048B600 /* cocoa */,
+				26CDCFDB12E706FE004FC66B /* Images */,
+				26CDCEB312E702D8004FC66B /* NSBezierPath_AMShading.h */,
+				26CDCEB412E702D8004FC66B /* NSBezierPath_AMShading.m */,
+				26CDCEB512E702D8004FC66B /* NSString_AITruncation.h */,
+				26CDCEB612E702D8004FC66B /* NSString_AITruncation.m */,
+				26CDCEBD12E702D8004FC66B /* PSMOverflowPopUpButton.h */,
+				26CDCEBE12E702D8004FC66B /* PSMOverflowPopUpButton.m */,
+				26CDCEBF12E702D8004FC66B /* PSMProgressIndicator.h */,
+				26CDCEC012E702D8004FC66B /* PSMProgressIndicator.m */,
+				26CDCEC112E702D8004FC66B /* PSMRolloverButton.h */,
+				26CDCEC212E702D8004FC66B /* PSMRolloverButton.m */,
+				26CDCEC312E702D8004FC66B /* PSMTabBarCell.h */,
+				26CDCEC412E702D8004FC66B /* PSMTabBarCell.m */,
+				26CDCEC512E702D8004FC66B /* PSMTabBarControl.h */,
+				26CDCEC612E702D8004FC66B /* PSMTabBarControl.m */,
+				26CDCEC712E702D8004FC66B /* PSMTabBarController.h */,
+				26CDCEC812E702D8004FC66B /* PSMTabBarController.m */,
+				26CDCEC912E702D8004FC66B /* PSMTabDragAssistant.h */,
+				26CDCECA12E702D8004FC66B /* PSMTabDragAssistant.m */,
+				26CDCECB12E702D8004FC66B /* PSMTabDragView.h */,
+				26CDCECC12E702D8004FC66B /* PSMTabDragView.m */,
+				26CDCECD12E702D8004FC66B /* PSMTabDragWindow.h */,
+				26CDCECE12E702D8004FC66B /* PSMTabDragWindow.m */,
+				26CDCECF12E702D8004FC66B /* PSMTabDragWindowController.h */,
+				26CDCED012E702D8004FC66B /* PSMTabDragWindowController.m */,
+				26CDCED112E702D8004FC66B /* PSMTabStyle.h */,
+				26CDCED212E702D8004FC66B /* PSMUnifiedTabStyle.h */,
+				26CDCED312E702D8004FC66B /* PSMUnifiedTabStyle.m */,
+			);
+			path = PSMTabBarControl;
+			sourceTree = "<group>";
+		};
+		26CDCFDB12E706FE004FC66B /* Images */ = {
+			isa = PBXGroup;
+			children = (
+				26CDCFDC12E706FE004FC66B /* AquaTabClose_Front.png */,
+				26CDCFDD12E706FF004FC66B /* AquaTabClose_Front_Pressed.png */,
+				26CDCFDE12E706FF004FC66B /* AquaTabClose_Front_Rollover.png */,
+				26CDCFDF12E706FF004FC66B /* AquaTabCloseDirty_Front.png */,
+				26CDCFE012E706FF004FC66B /* AquaTabCloseDirty_Front_Pressed.png */,
+				26CDCFE112E706FF004FC66B /* AquaTabCloseDirty_Front_Rollover.png */,
+				26CDCFE212E706FF004FC66B /* AquaTabNew.png */,
+				26CDCFE312E706FF004FC66B /* AquaTabNewPressed.png */,
+				26CDCFE412E706FF004FC66B /* AquaTabNewRollover.png */,
+			);
+			path = Images;
+			sourceTree = "<group>";
+		};
+		26CDD23E12E743A3004FC66B /* NetSurf */ = {
+			isa = PBXGroup;
+			children = (
 				260F1F6212D620E800D9B07F /* content */,
 				260F1F7812D620E800D9B07F /* css */,
 				260F1F8312D620E800D9B07F /* desktop */,
 				260F1FC612D620E800D9B07F /* render */,
 				265F31C912D66A890048B600 /* image */,
 				260F1FE212D620E800D9B07F /* utils */,
-				29B97323FDCFA39411CA2CEA /* Frameworks */,
+			);
+			name = NetSurf;
+			sourceTree = "<group>";
+		};
+		26CDD26512E74402004FC66B /* Browser */ = {
+			isa = PBXGroup;
+			children = (
+				26121EFB12D7132100E10F91 /* BrowserView.h */,
+				26121EFC12D7132100E10F91 /* BrowserView.m */,
+				26CDD00112E70F56004FC66B /* BrowserWindowController.h */,
+				26CDD00212E70F56004FC66B /* BrowserWindowController.m */,
+				26CDD0F412E726E0004FC66B /* BrowserViewController.h */,
+				26CDD0F512E726E0004FC66B /* BrowserViewController.m */,
+			);
+			name = Browser;
+			sourceTree = "<group>";
+		};
+		26CDD26612E7441E004FC66B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				26AFE8E212DF4200005AD082 /* ScrollableView.h */,
+				26AFE8E312DF4200005AD082 /* ScrollableView.m */,
+				2622F1D512DCD84600CD5A62 /* TreeView.h */,
+				2622F1D612DCD84600CD5A62 /* TreeView.m */,
+			);
+			name = Views;
+			sourceTree = "<group>";
+		};
+		26CDD26712E74453004FC66B /* Download */ = {
+			isa = PBXGroup;
+			children = (
+				26AFEAE912E04253005AD082 /* DownloadWindowController.h */,
+				26AFEAEA12E04253005AD082 /* DownloadWindowController.m */,
+			);
+			name = Download;
+			sourceTree = "<group>";
+		};
+		26CDD26812E74461004FC66B /* NSApplication */ = {
+			isa = PBXGroup;
+			children = (
+				26121DD712D703F400E10F91 /* NetSurfApp.h */,
+				26121DD812D703F400E10F91 /* NetSurfApp.m */,
+				26AFE97A12DF514C005AD082 /* NetSurfAppDelegate.h */,
+				26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */,
+			);
+			name = NSApplication;
+			sourceTree = "<group>";
+		};
+		26CDD26912E7446E004FC66B /* Platform Interface */ = {
+			isa = PBXGroup;
+			children = (
+				265F311912D663F50048B600 /* gui.m */,
+				261223CB12D7805300E10F91 /* plotter.h */,
+				265F314712D666660048B600 /* plotter.m */,
+				265F316112D667E10048B600 /* schedule.m */,
+				265F316612D668130048B600 /* thumbnail.m */,
+				265F316F12D668790048B600 /* fetch.m */,
+				265F319012D668DB0048B600 /* url.m */,
+				265F31C412D66A0D0048B600 /* save.m */,
+				260FC03112D85ACE00079C00 /* bitmap.h */,
+				265F31EB12D66B190048B600 /* bitmap.m */,
+				265F320512D66C200048B600 /* utf8.m */,
+				265F321312D66CD90048B600 /* utils.m */,
+				261223B712D77F9C00E10F91 /* font.h */,
+				265F321E12D66D510048B600 /* font.m */,
+				26AFED0312E09916005AD082 /* selection.m */,
+			);
+			name = "Platform Interface";
+			sourceTree = "<group>";
+		};
+		29B97314FDCFA39411CA2CEA /* Untitled */ = {
+			isa = PBXGroup;
+			children = (
+				265F303F12D6637E0048B600 /* Cocoa Frontend */,
+				26CDD23E12E743A3004FC66B /* NetSurf */,
 				262711B112DDDCB800B2FA62 /* Build Configurations */,
+				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
 			name = Untitled;
@@ -686,6 +856,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				26CDCEFF12E70438004FC66B /* Carbon.framework */,
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
 			);
 			name = Frameworks;
@@ -757,6 +928,16 @@
 				2612269112D7AE4100E10F91 /* Messages in Resources */,
 				26AFE63F12DDEB0A005AD082 /* NetSurf.icns in Resources */,
 				26AFEAF112E042F9005AD082 /* DownloadWindow.xib in Resources */,
+				26CDCFE512E706FF004FC66B /* AquaTabClose_Front.png in Resources */,
+				26CDCFE612E706FF004FC66B /* AquaTabClose_Front_Pressed.png in Resources */,
+				26CDCFE712E706FF004FC66B /* AquaTabClose_Front_Rollover.png in Resources */,
+				26CDCFE812E706FF004FC66B /* AquaTabCloseDirty_Front.png in Resources */,
+				26CDCFE912E706FF004FC66B /* AquaTabCloseDirty_Front_Pressed.png in Resources */,
+				26CDCFEA12E706FF004FC66B /* AquaTabCloseDirty_Front_Rollover.png in Resources */,
+				26CDCFEB12E706FF004FC66B /* AquaTabNew.png in Resources */,
+				26CDCFEC12E706FF004FC66B /* AquaTabNewPressed.png in Resources */,
+				26CDCFED12E706FF004FC66B /* AquaTabNewRollover.png in Resources */,
+				26CDCFF312E70AD1004FC66B /* BrowserWindow.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -860,13 +1041,27 @@
 				265F321412D66CD90048B600 /* utils.m in Sources */,
 				265F321F12D66D510048B600 /* font.m in Sources */,
 				26121DD912D703F400E10F91 /* NetSurfApp.m in Sources */,
-				26121E3F12D70A1A00E10F91 /* BrowserWindow.m in Sources */,
 				26121EFD12D7132100E10F91 /* BrowserView.m in Sources */,
 				2622F1D712DCD84600CD5A62 /* TreeView.m in Sources */,
 				26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */,
 				26AFE97C12DF514C005AD082 /* NetSurfAppDelegate.m in Sources */,
 				26AFEAEB12E04253005AD082 /* DownloadWindowController.m in Sources */,
 				26AFED0412E09916005AD082 /* selection.m in Sources */,
+				26CDCED412E702D8004FC66B /* NSBezierPath_AMShading.m in Sources */,
+				26CDCED512E702D8004FC66B /* NSString_AITruncation.m in Sources */,
+				26CDCED912E702D8004FC66B /* PSMOverflowPopUpButton.m in Sources */,
+				26CDCEDA12E702D8004FC66B /* PSMProgressIndicator.m in Sources */,
+				26CDCEDB12E702D8004FC66B /* PSMRolloverButton.m in Sources */,
+				26CDCEDC12E702D8004FC66B /* PSMTabBarCell.m in Sources */,
+				26CDCEDD12E702D8004FC66B /* PSMTabBarControl.m in Sources */,
+				26CDCEDE12E702D8004FC66B /* PSMTabBarController.m in Sources */,
+				26CDCEDF12E702D8004FC66B /* PSMTabDragAssistant.m in Sources */,
+				26CDCEE012E702D8004FC66B /* PSMTabDragView.m in Sources */,
+				26CDCEE112E702D8004FC66B /* PSMTabDragWindow.m in Sources */,
+				26CDCEE212E702D8004FC66B /* PSMTabDragWindowController.m in Sources */,
+				26CDCEE312E702D8004FC66B /* PSMUnifiedTabStyle.m in Sources */,
+				26CDD00312E70F56004FC66B /* BrowserWindowController.m in Sources */,
+				26CDD0F612E726E0004FC66B /* BrowserViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

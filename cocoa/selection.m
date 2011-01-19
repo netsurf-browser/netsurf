@@ -18,7 +18,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "BrowserWindow.h"
+#import "cocoa/BrowserViewController.h"
 
 #import "desktop/selection.h"
 
@@ -41,7 +41,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	NSString *string = [pb stringForType: NSStringPboardType];
 	if (string) {
 		const char *text = [string UTF8String];
-		browser_window_paste_text( [(BrowserWindow *)g browser], text, strlen(text), true );
+		browser_window_paste_text( [(BrowserViewController *)g browser], text, strlen(text), true );
 	}
 }
 

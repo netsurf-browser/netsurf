@@ -30,9 +30,8 @@
 @implementation BrowserView
 
 @synthesize browser;
-@synthesize spinning;
-@synthesize status;
 @synthesize caretTimer;
+@synthesize resizing = isResizing;
 
 static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
@@ -311,113 +310,20 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	browser_window_key_press( browser, KEY_PASTE );
 }
 
-- (void) setFrame: (NSRect)frameRect;
-{
-	[super setFrame: frameRect];
-	browser_window_reformat( browser, [self bounds].size.width, [self bounds].size.height );
-}
-
-- (IBAction) zoomIn: (id) sender;
-{
-	browser_window_set_scale( browser, browser->scale * 1.1, true );
-}
-
-- (IBAction) zoomOut: (id) sender;
-{
-	browser_window_set_scale( browser, browser->scale * 0.9, true );
-}
-
-- (IBAction) zoomOriginal: (id) sender;
-{
-	browser_window_set_scale( browser, (float)option_scale / 100.0, true );
-}
-
-- (IBAction) goBack: (id) sender;
-{
-	if (browser && history_back_available( browser->history )) {
-		history_back(browser, browser->history);
-	}
-}
-
-- (IBAction) goForward: (id) sender;
-{
-	if (browser && history_forward_available( browser->history )) {
-		history_forward(browser, browser->history);
-	}
-}
-
-- (IBAction) showHistory: (id) sender;
-{
-}
-
-- (IBAction) reloadPage: (id) sender;
-{
-	browser_window_reload( browser, true );
-}
-
-- (IBAction) stopLoading: (id) sender;
-{
-	browser_window_stop( browser );
-}
-
-- (BOOL) validateToolbarItem: (NSToolbarItem *)theItem;
-{
-	SEL action = [theItem action];
-	
-	if (action == @selector( goBack: )) {
-		return browser != NULL && history_back_available( browser->history );
-	} 
-	
-	if (action == @selector( goForward: )) {
-		return browser != NULL && history_forward_available( browser->history );
-	}
-	
-	if (action == @selector( reloadPage: )) {
-		return browser_window_reload_available( browser );
-	}
-	
-	return YES;
-}
-
-static inline bool compare_float( float a, float b )
-{
-	const float epsilon = 0.00001;
-	
-	if (a == b) return true;
-	
-	return fabs( (a - b) / b ) <= epsilon;
-}
-
-- (BOOL) validateUserInterfaceItem: (id) item;
-{
-	SEL action = [item action];
-	
-	if (action == @selector(copy:)) {
-		return selection_defined( browser->sel );
-	}
-		
-	if (action == @selector(cut:)) {
-		return selection_defined( browser->sel ) && browser->caret_callback != NULL;
-	}
-	
-	if (action == @selector(paste:)) {
-		return browser->paste_callback != NULL;
-	}
-	
-	if (action == @selector( stopLoading: )) {
-		return browser->loading_content != NULL;
-	}
-	
-	if (action == @selector( zoomOriginal: )) {
-		return !compare_float( browser->scale, (float)option_scale / 100.0 );
-	}
-	
-	return YES;
-}
 
 - (BOOL) acceptsFirstResponder;
 {
 	return YES;
+}
+
+- (void) adjustFrame;
+{
+	if (!isResizing) {
+		NSSize frameSize = [[self superview] frame].size;
+		browser_window_reformat( browser, frameSize.width, frameSize.height );
+	}
+	
+	[super adjustFrame];
 }
 
 @end

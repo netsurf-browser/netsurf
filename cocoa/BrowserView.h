@@ -18,11 +18,10 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "ScrollableView.h"
 
-@interface BrowserView : NSView {
+@interface BrowserView : ScrollableView {
 	struct browser_window *browser;
-	BOOL spinning;
-	NSString *status;
 	
 	NSPoint caretPoint;
 	CGFloat caretHeight;
@@ -32,24 +31,15 @@
 	
 	BOOL isDragging;
 	NSPoint dragStart;
+	
+	BOOL isResizing;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
-@property (readwrite, assign, nonatomic) BOOL spinning;
-@property (readwrite, copy, nonatomic) NSString *status;
 @property (readwrite, retain, nonatomic) NSTimer *caretTimer;
+@property (readwrite, assign, nonatomic, getter=isResizing) BOOL resizing;
 
 - (void) removeCaret;
 - (void) addCaretAt: (NSPoint) point height: (CGFloat) height;
-
-- (IBAction) goBack: (id) sender;
-- (IBAction) goForward: (id) sender;
-- (IBAction) showHistory: (id) sender;
-- (IBAction) reloadPage: (id) sender;
-- (IBAction) stopLoading: (id) sender;
-
-- (IBAction) zoomIn: (id) sender;
-- (IBAction) zoomOut: (id) sender;
-- (IBAction) zoomOriginal: (id) sender;
 
 @end

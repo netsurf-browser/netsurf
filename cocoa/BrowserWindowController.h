@@ -18,22 +18,22 @@
 
 #import <Cocoa/Cocoa.h>
 
-struct browser_window;
+@class PSMTabBarControl;
+@class BrowserViewController;
 
-@class BrowserView;
-
-@interface BrowserWindow : NSWindowController {
-	struct browser_window *browser;
-	NSString *url;
-	BrowserView *view;
+@interface BrowserWindowController : NSWindowController {
+	PSMTabBarControl *tabBar;
+	NSTabView *tabView;
+	BrowserViewController *activeBrowser;
 }
 
-@property (readwrite, assign, nonatomic) struct browser_window *browser;
-@property (readwrite, copy, nonatomic) NSString *url;
-@property (readwrite, retain, nonatomic) IBOutlet BrowserView *view;
+@property (readwrite, retain, nonatomic) IBOutlet PSMTabBarControl *tabBar;
+@property (readwrite, retain, nonatomic) IBOutlet NSTabView *tabView;
+@property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;
 
-- initWithBrowser: (struct browser_window *) bw;
+- (IBAction) newTab: (id) sender;
 
-- (IBAction) navigate: (id) sender;
+- (void) addTab: (BrowserViewController *)browser;
+- (void) removeTab: (BrowserViewController *)browser;
 
 @end

@@ -26,4 +26,6 @@
 
 @property (readwrite, assign, nonatomic) NSSize minimumSize;
 
+- (void) adjustFrame;
+
 @end

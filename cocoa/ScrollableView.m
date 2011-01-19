@@ -20,7 +20,6 @@
 
 @interface ScrollableView ()
 
-- (void) adjustFrame;
 - (void) frameChangeNotification: (NSNotification *) note;
 
 @end

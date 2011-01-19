@@ -18,8 +18,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "BrowserWindow.h"
 #import "BrowserView.h"
+#import "BrowserViewController.h"
+#import "BrowserWindowController.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
@@ -64,54 +65,70 @@ struct browser_window;
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 											 struct browser_window *clone, bool new_tab)
 {
-	if (clone != NULL) bw->scale = clone->scale;
-	else bw->scale = (float) option_scale / 100;
+	BrowserWindowController *window = nil;
+
+	if (clone != NULL) {
+		bw->scale = clone->scale;
+		window = [(BrowserViewController *)(clone->window) windowController];
+	} else {
+		bw->scale = (float) option_scale / 100;	
+	}
+
+	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];
+
+	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		if (!new_tab || nil == window) {
+			window = [[[BrowserWindowController alloc] init] autorelease];
+			[[window window] makeKeyAndOrderFront: nil];
+		}
+		[window addTab: result];
+	}
 	
-	return (struct gui_window *)[[BrowserWindow alloc] initWithBrowser: bw];
+	return (struct gui_window *)result;
 }
 
 struct browser_window *gui_window_get_browser_window(struct gui_window *g)
 {
-	return [(BrowserWindow *)g browser];
+	return [(BrowserViewController *)g browser];
 }
 
 void gui_window_destroy(struct gui_window *g)
 {
-	[(BrowserWindow *)g release];
+	[(BrowserViewController *)g release];
 }
 
 void gui_window_set_title(struct gui_window *g, const char *title)
 {
-	[[(BrowserWindow *)g window] setTitle: [NSString stringWithUTF8String: title]];
+	[(BrowserViewController *)g setTitle: [NSString stringWithUTF8String: title]];
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	const NSRect rect = NSMakeRect( x0, y0, x1 - x0, y1 - y0 );
-	[[(BrowserWindow *)g view] setNeedsDisplayInRect: rect];
+	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
 }
 
 void gui_window_redraw_window(struct gui_window *g)
 {
-	[[(BrowserWindow *)g view] setNeedsDisplay: YES];
+	[[(BrowserViewController *)g browserView] setNeedsDisplay: YES];
 }
 
 void gui_window_update_box(struct gui_window *g,
 						   const union content_msg_data *data)
 {
-	const CGFloat scale = [(BrowserWindow *)g browser]->scale;
+	const CGFloat scale = [(BrowserViewController *)g browser]->scale;
 	const NSRect rect = NSMakeRect( data->redraw.object_x * scale,  
 								    data->redraw.object_y * scale, 
 								    data->redraw.object_width * scale, 
 								    data->redraw.object_height * scale );
-	[[(BrowserWindow *)g view] setNeedsDisplayInRect: rect];
+	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
 	NSCParameterAssert( g != NULL && sx != NULL && sy != NULL );
 	
-	NSRect visible = [[(BrowserWindow *)g view] visibleRect];
+	NSRect visible = [[(BrowserViewController *)g browserView] visibleRect];
 	*sx = NSMinX( visible );
 	*sy = NSMinY( visible );
 	return true;
@@ -119,7 +136,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-	[[(BrowserWindow *)g view] scrollPoint: NSMakePoint( sx, sy )];
+	[[(BrowserViewController *)g browserView] scrollPoint: NSMakePoint( sx, sy )];
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
@@ -139,9 +156,9 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 {
 	NSCParameterAssert( width != NULL && height != NULL );
 	
-	NSRect frame = [[(BrowserWindow *)g view] frame];
+	NSRect frame = [[[(BrowserViewController *)g browserView] superview] frame];
 	if (scaled) {
-		const CGFloat scale = [(BrowserWindow *)g browser]->scale;
+		const CGFloat scale = [(BrowserViewController *)g browser]->scale;
 		frame.size.width /= scale;
 		frame.size.height /= scale;
 	}
@@ -151,17 +168,20 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 
 void gui_window_update_extent(struct gui_window *g)
 {
-	BrowserWindow * const window = (BrowserWindow *)g;
+	BrowserViewController * const window = (BrowserViewController *)g;
+	
+	[[window browserView] setResizing: YES];
 	struct browser_window *browser = [window browser];
 	int width = content_get_width( browser->current_content ) * browser->scale;
 	int height = content_get_height( browser->current_content ) * browser->scale;
 
-	[[window view] setFrameSize: NSMakeSize( width, height )];
+	[[window browserView] setMinimumSize: NSMakeSize( width, height )];
+	[[window browserView] setResizing: NO];
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
 {
-	[[(BrowserWindow *)g view] setStatus: [NSString stringWithUTF8String: text]];
+	[(BrowserViewController *)g setStatus: [NSString stringWithUTF8String: text]];
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
@@ -198,17 +218,17 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 void gui_window_set_url(struct gui_window *g, const char *url)
 {
-	[(BrowserWindow *)g setUrl: [NSString stringWithUTF8String: url]];
+	[(BrowserViewController *)g setUrl: [NSString stringWithUTF8String: url]];
 }
 
 void gui_window_start_throbber(struct gui_window *g)
 {
-	[[(BrowserWindow *)g view] setSpinning: YES];
+	[(BrowserViewController *)g setSpinning: YES];
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
-	[[(BrowserWindow *)g view] setSpinning: NO];
+	[(BrowserViewController *)g setSpinning: NO];
 }
 
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
@@ -223,12 +243,12 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
-	[[(BrowserWindow *)g view] addCaretAt: NSMakePoint( x, y ) height: height];
+	[[(BrowserViewController *)g browserView] addCaretAt: NSMakePoint( x, y ) height: height];
 }
 
 void gui_window_remove_caret(struct gui_window *g)
 {
-	[[(BrowserWindow *)g view] removeCaret];
+	[[(BrowserViewController *)g browserView] removeCaret];
 }
 
 void gui_window_new_content(struct gui_window *g)
