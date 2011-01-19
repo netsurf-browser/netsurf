@@ -20,12 +20,11 @@
 
 #include "desktop/plotters.h"
 #import "desktop/plot_style.h"
+#import "utils/log.h"
 
 #import "cocoa/font.h"
 #import "cocoa/plotter.h"
 #import "cocoa/bitmap.h"
-
-#define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
 static void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle);
 static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_style_t *pstyle);
@@ -174,7 +173,69 @@ static bool plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyl
 static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 			 colour c, const float transform[6])
 {
-	UNIMPL();
+	if (n == 0) return true;
+	
+	if (*p != PLOTTER_PATH_MOVE) {
+		LOG(("Path does not start with move"));
+		return false;
+	}
+	
+	NSBezierPath *path = [NSBezierPath bezierPath];
+
+#define NEXT_POINT() NSMakePoint( *p++, *p++ )
+	
+	while (n--) {
+		switch ((int)*p++) {
+			case PLOTTER_PATH_MOVE:
+				[path moveToPoint: NEXT_POINT()];
+				break;
+				
+			case PLOTTER_PATH_LINE:
+				[path lineToPoint: NEXT_POINT()];
+				break;
+				
+			case PLOTTER_PATH_BEZIER: {
+				const NSPoint cp1 = NEXT_POINT();
+				const NSPoint cp2 = NEXT_POINT();
+				const NSPoint ep = NEXT_POINT();
+				[path curveToPoint: ep controlPoint1: cp1 controlPoint2: cp2];
+				break;
+			}
+				
+			case PLOTTER_PATH_CLOSE:
+				[path closePath];
+				break;
+				
+			default:
+				LOG(("Invalid path"));
+				return false;
+		}
+	}
+	
+#undef NEXT_POINT
+	
+	[path setLineWidth: width];
+
+	CGContextRef context = [[NSGraphicsContext currentContext] graphicsPort];
+	CGContextSaveGState( context );
+	
+	CGContextClipToRect( context, NSRectToCGRect( cocoa_plot_clip_rect ) );
+	
+	CGContextConcatCTM( context, CGAffineTransformMake( transform[0], transform[1], transform[2], 
+													    transform[3], transform[4], transform[5] ) );
+	
+	if (fill != NS_TRANSPARENT) {
+		[cocoa_convert_colour( fill ) setFill];
+		[path fill];
+	}
+
+	if (c != NS_TRANSPARENT) {
+		[cocoa_convert_colour( c ) set];
+		[path stroke];
+	}
+	
+	CGContextRestoreGState( context );
+
 	return true;
 }
 
