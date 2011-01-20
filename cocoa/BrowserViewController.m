@@ -38,6 +38,17 @@
 @synthesize status;
 @synthesize spinning;
 
+- (void) dealloc;
+{
+	[self setUrl: nil];
+	[self setBrowserView: nil];
+	[self setWindowController: nil];
+	[self setTitle: nil];
+	[self setStatus: nil];
+	
+	[super dealloc];
+}
+
 - initWithBrowser: (struct browser_window *) bw;
 {
 	if ((self = [super initWithNibName: @"Browser" bundle: nil]) == nil) return nil;

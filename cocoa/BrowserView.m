@@ -36,6 +36,21 @@
 static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
 
+- (void) dealloc;
+{
+	[self setCaretTimer: nil];
+	[super dealloc];
+}
+
+- (void) setCaretTimer: (NSTimer *)newTimer;
+{
+	if (newTimer != caretTimer) {
+		[caretTimer invalidate];
+		[caretTimer release];
+		caretTimer = [newTimer retain];
+	}
+}
+
 static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
 	NSRect caretRect = {
@@ -51,7 +66,6 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	hasCaret = NO;
 	[self setNeedsDisplayInRect: cocoa_get_caret_rect( self )];
 
-	[caretTimer invalidate];
 	[self setCaretTimer: nil];
 }
 

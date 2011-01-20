@@ -37,6 +37,14 @@
 	return self;
 }
 
+- (void) dealloc;
+{
+	[self setTabBar: nil];
+	[self setTabView: nil];
+	
+	[super dealloc];
+}
+
 - (void) awakeFromNib;
 {
 	[tabBar setShowAddTabButton: YES];
