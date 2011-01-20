@@ -94,13 +94,15 @@ void hlcache_finalise(void)
 	uint32_t num_contents, prev_contents;
 	hlcache_entry *entry;
 	hlcache_retrieval_ctx *ctx, *next;
-
+        
 	/* Obtain initial count of contents remaining */
 	for (num_contents = 0, entry = hlcache_content_list; 
 			entry != NULL; entry = entry->next) {
 		num_contents++;
 	}
 
+	LOG(("%d contents to before cache drain", num_contents));
+	
 	/* Drain cache */
 	do {
 		prev_contents = num_contents;
@@ -118,8 +120,8 @@ void hlcache_finalise(void)
 		hlcache_handle entry_handle = { entry, NULL, NULL };
 
 		if (entry->content != NULL) {
-			LOG(("  %p : %s", entry, 
-					content_get_url(&entry_handle)));
+			LOG(("	%p : %s (%d users)", entry, 
+			     content_get_url(&entry_handle), content_count_users(entry->content)));
 		} else {
 			LOG(("  %p", entry));
 		}
