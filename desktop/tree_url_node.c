@@ -111,7 +111,7 @@ void tree_url_node_init(const char *folder_icon_name)
 	
 	tun_users++;
 	
-	if (initialised || option_tree_icons_dir == NULL)
+	if (initialised)
 		return;
 	initialised = true;
 

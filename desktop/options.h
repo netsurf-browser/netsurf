@@ -38,8 +38,6 @@
 #include <stdbool.h>
 #include "desktop/plot_style.h"
 
-struct tree;
-
 enum { OPTION_HTTP_PROXY_AUTH_NONE = 0, OPTION_HTTP_PROXY_AUTH_BASIC = 1,
 		OPTION_HTTP_PROXY_AUTH_NTLM = 2 };
 
@@ -86,7 +84,6 @@ extern int option_toolbar_status_width;
 extern int option_scale;
 extern bool option_incremental_reflow;
 extern unsigned int option_min_reflow_period;
-extern char *option_tree_icons_dir;
 extern bool option_core_select_menu;
 
 extern int option_margin_top;

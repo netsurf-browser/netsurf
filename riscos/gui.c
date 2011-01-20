@@ -349,8 +349,8 @@ static void gui_init(int argc, char** argv)
 		option_theme_path = strdup("NetSurf:Themes");
 	if (!option_theme_save)
 		option_theme_save = strdup(CHOICES_PREFIX "Themes");
-	if (!option_tree_icons_dir)
-		option_tree_icons_dir = strdup("NetSurf:Resources.Icons");
+	
+	tree_set_icon_dir(strdup("NetSurf:Resources.Icons"));
 
 	if (!option_theme || ! option_toolbar_browser ||
 			!option_toolbar_hotlist || !option_toolbar_history ||
@@ -359,7 +359,7 @@ static void gui_init(int argc, char** argv)
 			!option_url_save || !option_hotlist_path ||
 			!option_hotlist_save || !option_recent_path ||
 			!option_recent_save || !option_theme_path ||
-			!option_theme_save || !option_tree_icons_dir)
+			!option_theme_save)
 		die("Failed initialising string options");
 
 	/* Create our choices directories */

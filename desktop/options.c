@@ -141,7 +141,6 @@ unsigned int option_min_reflow_period = 100; /* time in cs */
 #else
 unsigned int option_min_reflow_period = 25; /* time in cs */
 #endif
-char *option_tree_icons_dir = NULL;
 bool option_core_select_menu = false;
 /** top margin of exported page*/
 int option_margin_top = DEFAULT_MARGIN_TOP_MM;
@@ -249,7 +248,6 @@ struct {
 	{ "scale",		OPTION_INTEGER,	&option_scale },
 	{ "incremental_reflow",	OPTION_BOOL,	&option_incremental_reflow },
 	{ "min_reflow_period",	OPTION_INTEGER,	&option_min_reflow_period },
-	{ "tree_icons_dir",	OPTION_STRING,  &option_tree_icons_dir },
  	{ "core_select_menu",	OPTION_BOOL,	&option_core_select_menu },
 	/* Fetcher options */
 	{ "max_fetchers",	OPTION_INTEGER,	&option_max_fetchers },

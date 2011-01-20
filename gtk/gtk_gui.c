@@ -55,6 +55,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/sslcert.h"
 #include "desktop/textinput.h"
+#include "desktop/tree.h"
 #include "css/utils.h"
 #include "gtk/dialogs/gtk_options.h"
 #include "gtk/gtk_completion.h"
@@ -390,15 +391,10 @@ static void check_options(char **respath)
         	option_downloads_directory = hdir;
 	}
 	
-	if (!option_tree_icons_dir) {
-		sfindresourcedef(respath, buf, "icons/", "~/.netsurf/");
-		LOG(("Using '%s' as Tree icons dir", buf));
-		option_tree_icons_dir = strdup(buf);
-	}
-	if (!option_tree_icons_dir)
-		die("Failed initialising tree icons option");
-	
-	
+	sfindresourcedef(respath, buf, "icons/", "~/.netsurf/");
+	LOG(("Using '%s' as Tree icons dir", buf));
+	tree_set_icon_dir(strdup(buf));
+
 	if (!option_hotlist_path) {
 		sfindresourcedef(respath, buf, "Hotlist", "~/.netsurf/");
 		LOG(("Using '%s' as Hotlist file", buf));
@@ -689,7 +685,6 @@ void gui_quit(void)
 	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);
-	free(option_tree_icons_dir);
 	free(print_options_file_location);
 	free(search_engines_file_location);
 	free(search_default_ico_location);

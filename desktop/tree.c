@@ -51,6 +51,8 @@
 static int tree_text_size_px;
 static int TREE_LINE_HEIGHT;
 
+static char *tree_icons_dir = NULL;
+
 static plot_font_style_t plot_fstyle = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
 	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
@@ -162,6 +164,11 @@ struct rect {
 	int x1; int y1; /* Bottom right coordinate */
 };
 
+void tree_set_icon_dir(char *icon_dir)
+{
+	LOG(("Tree icon directory set to %s", icon_dir));
+	tree_icons_dir = icon_dir;
+}
 
 /**
  * Set up colours for plot styles used in tree redraw.
@@ -244,7 +251,7 @@ struct tree *tree_create(unsigned int flags,
 			(TREE_TEXT_SIZE_PT * FIXTOINT(nscss_screen_dpi) + 36) /
 			72;
 	/* Set line height appropriate for this text height in pixels
-         * Using 4/3 text height */
+	 * Using 4/3 text height */
 	TREE_LINE_HEIGHT = (tree_text_size_px * 8 + 3) / 6;
 
 	/* But if that's too small for the icons, base the line height on
@@ -315,7 +322,7 @@ static void tree_recalculate_node_element(struct tree *tree,
 /**
  * Calculates the height of a node including any children
  *
- * \param node  the node to calculate the height of
+ * \param node	the node to calculate the height of
  * \return the total height of the node and children
  */
 static int tree_get_node_height(struct node *node)
@@ -349,7 +356,7 @@ static int tree_get_node_height(struct node *node)
 /**
  * Calculates the width of a node including any children
  *
- * \param node  the node to calculate the height of
+ * \param node	the node to calculate the height of
  * \return the total width of the node and children
  */
 static int tree_get_node_width(struct node *node)
@@ -379,7 +386,7 @@ static int tree_get_node_width(struct node *node)
  * Recalculates the position of a node, its siblings and children.
  *
  * \param tree	the tree to which 'root' belongs
- * \param root  the root node to update from
+ * \param root	the root node to update from
  */
 static void tree_recalculate_node_positions(struct tree *tree,
 		struct node *root)
@@ -506,7 +513,7 @@ static void tree_recalculate_node_sizes(struct tree *tree, struct node *node,
  * \param editable	    if true, the node title will be editable
  * \param retain_in_memory  if true, the node will stay in memory after deletion
  * \param deleted	    if true, the node is created with the deleted flag
- * \return                  the newly created node.
+ * \return		    the newly created node.
  */
 struct node *tree_create_folder_node(struct tree *tree, struct node *parent,
 		const char *title, bool editable, bool retain_in_memory,
@@ -593,9 +600,9 @@ struct node *tree_create_leaf_node(struct tree *tree, struct node *parent,
  * Creates an empty text node element and links it to a node.
  *
  * \param parent  the parent node
- * \param type    the required element type
+ * \param type	  the required element type
  * \param flag	  user assigned flag used for searches
- * \return        the newly created element.
+ * \return	  the newly created element.
  */
 struct node_element *tree_create_node_element(struct node *parent,
 		node_element_type type, unsigned int flag, bool editable)
@@ -661,7 +668,7 @@ static void tree_sort_insert(struct node *parent, struct node *node)
 /**
  * Recalculates the size of a tree.
  *
- * \param tree  the tree to recalculate
+ * \param tree	the tree to recalculate
  */
 static void tree_recalculate_size(struct tree *tree)
 {
@@ -739,7 +746,7 @@ static void tree_handle_node_changed(struct tree *tree, struct node *node,
  *
  * \param tree	  the tree in which the link takes place, may be NULL
  * \param link	  the node to link before/as a child (folders)
- * 		  or before/after (link)
+ *		  or before/after (link)
  * \param node	  the node to link
  * \param before  whether to link siblings before or after the supplied node
  */
@@ -941,7 +948,7 @@ static void tree_stop_edit(struct tree *tree, bool keep_changes)
  * Delinks a node from the tree structures.
  *
  * \param tree	the tree in which the delink takes place, may be NULL
- * \param node  the node to delink
+ * \param node	the node to delink
  */
 void tree_delink_node(struct tree *tree, struct node *node)
 {
@@ -1014,7 +1021,7 @@ static void tree_delete_node_internal(struct tree *tree, struct node *node,
 		tree_delete_node_internal(tree, child, true);
 
 	if (!node->retain_in_memory) {
-	  	node->retain_in_memory = true;
+		node->retain_in_memory = true;
 		for (e = &node->data; e != NULL; e = f) {
 			if (e->text != NULL) {
 				response = NODE_CALLBACK_NOT_HANDLED;
@@ -1118,7 +1125,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings)
  *
  * \param tree		The tree to which node belongs, may be NULL
  * \param node		The node for which the icon is set
- * \param icon	  	the image to use
+ * \param icon		the image to use
  */
 void tree_set_node_icon(struct tree *tree, struct node *node,
 		hlcache_handle *icon)
@@ -1256,7 +1263,7 @@ void tree_set_node_selected(struct tree *tree, struct node *node, bool all,
 /**
  * Sets the sort function for a node
  *
- * \param tree  the tree to which 'node' belongs, may be NULL
+ * \param tree	the tree to which 'node' belongs, may be NULL
  * \param node	the node to be inserted
  * \param sort	pointer to the sorting function
  */
@@ -1291,9 +1298,9 @@ void tree_set_node_sort_function(struct tree *tree, struct node *node,
 /**
  * Sets the delete callback for a node.
  *
- * \param node      the node for which the callback is set
+ * \param node	    the node for which the callback is set
  * \param callback  the callback functions to be set
- * \param data      user data to be passed to callback
+ * \param data	    user data to be passed to callback
  */
 void tree_set_node_user_callback(struct node *node,
 		tree_node_user_callback callback, void *data)
@@ -1307,7 +1314,7 @@ void tree_set_node_user_callback(struct node *node,
  * Sets the redraw property to the given value. If redraw is true, the tree will
  * be redrawn on layout/appearance changes.
  *
- * \param tree    the tree for which the property is set
+ * \param tree	  the tree for which the property is set
  * \param redraw  the value to set
  */
 void tree_set_redraw(struct tree *tree, bool redraw)
@@ -1323,7 +1330,7 @@ void tree_set_redraw(struct tree *tree, bool redraw)
 /**
  * Checks whether a node, its siblings or any children are selected.
  *
- * \param node  the root node to check from
+ * \param node	the root node to check from
  * \return	whether 'node', its siblings or any children are selected.
  */
 bool tree_node_has_selection(struct node *node)
@@ -1342,8 +1349,8 @@ bool tree_node_has_selection(struct node *node)
 /**
  * Returns the current value of the nodes deleted property.
  *
- * \param node  the node to be checked
- * \return      the current value of the nodes deleted property
+ * \param node	the node to be checked
+ * \return	the current value of the nodes deleted property
  */
 bool tree_node_is_deleted(struct node *node)
 {
@@ -1354,8 +1361,8 @@ bool tree_node_is_deleted(struct node *node)
 /**
  * Returns true if the node is a folder
  *
- * \param node  the node to be checked
- * \return      true if the node is a folder, false otherwise
+ * \param node	the node to be checked
+ * \return	true if the node is a folder, false otherwise
  */
 bool tree_node_is_folder(struct node *node)
 {
@@ -1368,8 +1375,8 @@ bool tree_node_is_folder(struct node *node)
  *
  * \param element The node element to update.
  * \param text The text to update the element with. The ownership of
- *             this string is taken by this function and must not be
- *             referred to after the function exits.
+ *	       this string is taken by this function and must not be
+ *	       referred to after the function exits.
  */
 bool tree_update_element_text(struct tree *tree,
 		struct node_element *element, char *text)
@@ -1399,9 +1406,9 @@ bool tree_update_element_text(struct tree *tree,
 /**
  * Updates the content of a node_element.
  *
- * \param tree      the tree owning element, may be NULL
+ * \param tree	    the tree owning element, may be NULL
  * \param element   the element to be updated
- * \param text      new text to be set, may be NULL
+ * \param text	    new text to be set, may be NULL
  * \param bitmap    new bitmap to be set, may be NULL
  */
 void tree_update_node_element(struct tree *tree, struct node_element *element,
@@ -1473,7 +1480,7 @@ const char *tree_node_element_get_text(struct node_element *element)
 /**
  * Get the root node of a tree
  *
- * \param tree  the tree to get the root of
+ * \param tree	the tree to get the root of
  * \return	the root of the tree
  */
 struct node *tree_get_root(struct tree *tree)
@@ -1485,7 +1492,7 @@ struct node *tree_get_root(struct tree *tree)
 /**
  * Returns whether the current tree is being edited at this time
  *
- * \param tree  the tree to be checked
+ * \param tree	the tree to be checked
  * \return	true if the tree is currently being edited
  */
 bool tree_is_edited(struct tree *tree)
@@ -1497,7 +1504,7 @@ bool tree_is_edited(struct tree *tree)
 /**
  * Get the drag state of a tree
  *
- * \param tree  the tree to get the state of
+ * \param tree	the tree to get the state of
  * \return	drag type (defined in desktop/tree.h)
  */
 tree_drag_type tree_drag_status(struct tree *tree)
@@ -1860,14 +1867,14 @@ void tree_draw(struct tree *tree, int x, int y,
 		tree_draw_tree(tree, tree->root, x, y, clip);
 
 		/* Draw textarea, if present */
- 		if (tree->editing != NULL) {
+		if (tree->editing != NULL) {
 			x = x + tree->editing->box.x;
 			y = y + tree->editing->box.y;
 			if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 				x += NODE_INSTEP;
 			textarea_redraw(tree->textarea, x, y,
 					clip.x0, clip.y0, clip.x1, clip.y1);
- 		}
+		}
 	}
 
 	/* Rendering complete */
@@ -1879,11 +1886,11 @@ void tree_draw(struct tree *tree, int x, int y,
 /**
  * Finds a node element from a node with a specific user_type
  *
- * \param node  the node to examine
- * \param flag  user assinged flag used is searches
+ * \param node	the node to examine
+ * \param flag	user assinged flag used is searches
  * \param after if this is not NULL the search will start after the given
  *		node_element
- * \return      the corresponding element
+ * \return	the corresponding element
  */
 struct node_element *tree_node_find_element(struct node *node,
 		unsigned int flag, struct node_element *after)
@@ -1907,8 +1914,8 @@ struct node_element *tree_node_find_element(struct node *node,
 /**
  * Deletes all selected nodes from the tree.
  *
- * \param tree  the tree to delete from
- * \param node  the node to delete
+ * \param tree	the tree to delete from
+ * \param node	the node to delete
  */
 void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 {
@@ -1934,8 +1941,8 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 /**
  * Returns the selected node, or NULL if multiple nodes are selected.
  *
- * \param node  the node to search sibling and children
- * \return      the selected node, or NULL if multiple nodes are selected
+ * \param node	the node to search sibling and children
+ * \return	the selected node, or NULL if multiple nodes are selected
  */
 struct node *tree_get_selected_node(struct node *node)
 {
@@ -2057,7 +2064,7 @@ static struct node *tree_get_node_at(struct node *root, int x, int y,
  * \param x	  the x co-ordinate
  * \param y	  the y co-ordinate
  * \param before  set to whether the node should be linked before on exit
- * \return        the node to link with
+ * \return	  the node to link with
  */
 struct node *tree_get_link_details(struct tree *tree, int x, int y,
 		bool *before)
@@ -2089,8 +2096,8 @@ struct node *tree_get_link_details(struct tree *tree, int x, int y,
 /**
  * Launches all the selected nodes of the tree
  *
- * \param tree  the tree for which all nodes will be launched
- * \param node  the node which will be checked together with its children
+ * \param tree	the tree for which all nodes will be launched
+ * \param node	the node which will be checked together with its children
  */
 static void tree_launch_selected_internal(struct tree *tree, struct node *node)
 {
@@ -2112,7 +2119,7 @@ static void tree_launch_selected_internal(struct tree *tree, struct node *node)
 /**
  * Launches all the selected nodes of the tree
  *
- * \param tree  the tree for which all nodes will be launched
+ * \param tree	the tree for which all nodes will be launched
  */
 void tree_launch_selected(struct tree *tree)
 {
@@ -2124,8 +2131,8 @@ void tree_launch_selected(struct tree *tree)
 /**
  * Handles a mouse action for a tree
  *
- * \param tree   the tree to handle a click for
- * \param mouse  the mouse state
+ * \param tree	 the tree to handle a click for
+ * \param mouse	 the mouse state
  * \param x	 X coordinate of mouse action
  * \param y	 Y coordinate of mouse action
  * \return	 whether the click was handled
@@ -2201,15 +2208,15 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 
 	/* cancel edit */
 	if (tree->editing != NULL)
- 		tree_stop_edit(tree, false);
+		tree_stop_edit(tree, false);
 
 	/* no item either means cancel selection on (select) click or a drag */
 	if (element == NULL) {
 		if (tree->flags & TREE_SINGLE_SELECT) {
 			tree_set_node_selected(tree, tree->root->child, true,
 					       false);
-	  		return true;
-	  	}
+			return true;
+		}
 		if (mouse & (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_DRAG_1))
 			tree_set_node_selected(tree, tree->root->child, true,
 					       false);
@@ -2467,14 +2474,14 @@ static void tree_selected_to_processing(struct node *node)
 /**
  * Moves the first node in a tree with the processing flag set.
  *
- * \param tree    the tree in which the move takes place
+ * \param tree	  the tree in which the move takes place
  * \param node	  the node to move siblings/children of
  * \param link	  the node to link before/as a child (folders) or before/after
  *		  (link)
  * \param before  whether to link siblings before or after the supplied node
- * \param first   whether to always link after the supplied node (ie not
+ * \param first	  whether to always link after the supplied node (ie not
  *		  inside of folders)
- * \return        the node moved
+ * \return	  the node moved
  */
 static struct node *tree_move_processing_node(struct tree *tree,
 		struct node *node, struct node *link, bool before, bool first)
@@ -2483,21 +2490,21 @@ static struct node *tree_move_processing_node(struct tree *tree,
 
 	bool folder = link->folder;
 	for (; node != NULL; node = node->next) {
-	  	if (node->processing) {
-	  		node->processing = false;
-	  	  	tree_delink_node(tree, node);
-	  	  	if (!first)
-	  	  		link->folder = false;
-	  	  	tree_link_node(tree, link, node, before);
-	  	  	if (!first)
-	  	  		link->folder = folder;
-	  		return node;
-	  	}
+		if (node->processing) {
+			node->processing = false;
+			tree_delink_node(tree, node);
+			if (!first)
+				link->folder = false;
+			tree_link_node(tree, link, node, before);
+			if (!first)
+				link->folder = folder;
+			return node;
+		}
 		if (node->child != NULL) {
-		  	result = tree_move_processing_node(tree, node->child,
+			result = tree_move_processing_node(tree, node->child,
 							   link, before, first);
 			if (result != NULL)
-		  		return result;
+				return result;
 		}
 	}
 	return NULL;
@@ -2509,7 +2516,7 @@ static struct node *tree_move_processing_node(struct tree *tree,
  *
  * \param tree	       the tree to process
  * \param destination  the node to link before/as a child (folders)
- * 		       or before/after (link)
+ *		       or before/after (link)
  * \param before       whether to link siblings before or after the supplied
  *		       node
  */
@@ -2603,7 +2610,7 @@ void tree_drag_end(struct tree *tree, browser_mouse_state mouse, int x0, int y0,
  *
  * \param tree	The tree which got the keypress
  * \param key	The ucs4 character codepoint
- * \return     	true if the keypress is dealt with, false otherwise.
+ * \return	true if the keypress is dealt with, false otherwise.
  */
 bool tree_keypress(struct tree *tree, uint32_t key)
 {
@@ -2725,7 +2732,7 @@ static nserror tree_icon_callback(hlcache_handle *handle,
  * copied by each user.
  *
  * \param name	the name of the loaded icon, if it's not a full path the icon is
- *		looked for in the directory specified by option_tree_icons_dir
+ *		looked for in the directory specified by tree_icons_dir
  * \return the icon in form of a content or NULL on failure
  */
 hlcache_handle *tree_load_icon(const char *name)
@@ -2743,11 +2750,11 @@ hlcache_handle *tree_load_icon(const char *name)
 	} else {
 		char *native_path;
 
-		if (option_tree_icons_dir == NULL)
+		if (tree_icons_dir == NULL)
 			return NULL;
 
 		/* path + separator + leafname + '\0' */
-		len = strlen(option_tree_icons_dir) + 1 + strlen(name) + 1;
+		len = strlen(tree_icons_dir) + 1 + strlen(name) + 1;
 		native_path = malloc(len);
 		if (native_path == NULL) {
 			LOG(("malloc failed"));
@@ -2756,8 +2763,8 @@ hlcache_handle *tree_load_icon(const char *name)
 		}
 
 		/* Build native path */
-		memcpy(native_path, option_tree_icons_dir,
-		       strlen(option_tree_icons_dir) + 1);
+		memcpy(native_path, tree_icons_dir,
+		       strlen(tree_icons_dir) + 1);
 		path_add_part(native_path, len, name);
 
 		/* Convert native path to URL */

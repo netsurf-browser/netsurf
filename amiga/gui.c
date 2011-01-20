@@ -27,6 +27,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "desktop/tree.h"
 #include "image/ico.h"
 #include "render/form.h"
 #include "utils/messages.h"
@@ -388,8 +389,7 @@ void ami_set_options(void)
 	if((!option_theme) || (option_theme[0] == '\0'))
 		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");
 
-	if((!option_tree_icons_dir) || (option_tree_icons_dir[0] == '\0'))
-		option_tree_icons_dir = (char *)strdup("ENV:Sys");
+	tree_set_icon_dir(strdup("ENV:Sys"));
 
 	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
 		option_arexx_dir = (char *)strdup("Rexx");
