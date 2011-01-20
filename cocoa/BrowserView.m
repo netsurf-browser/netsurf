@@ -100,8 +100,9 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 
 - (void)drawRect:(NSRect)dirtyRect; 
 {
-
 	if (NULL == browser->current_content) return;
+	
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	cocoa_set_font_scale_factor( browser->scale );
 	
@@ -133,6 +134,7 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 		[NSBezierPath fillRect: caretRect];
 	}
 	
+	[pool release];
 }
 
 - (BOOL) isFlipped;
