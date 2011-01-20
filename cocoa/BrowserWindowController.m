@@ -48,6 +48,8 @@
 - (void) awakeFromNib;
 {
 	[tabBar setShowAddTabButton: YES];
+	[tabBar setTearOffStyle: PSMTabBarTearOffMiniwindow];
+	[tabBar setCanCloseOnlyTab: YES];
 	
 	NSButton *b = [tabBar addTabButton];
 	[b setTarget: self];
@@ -79,6 +81,13 @@
 	}
 }
 
+- (void) windowWillClose: (NSNotification *)notification;
+{
+	for (NSTabViewItem *tab in [tabView tabViewItems]) {
+		[tabView removeTabViewItem: tab];
+	}
+}
+
 extern NSString * const kHomepageURL;
 - (IBAction) newTab: (id) sender;
 {
@@ -99,6 +108,32 @@ extern NSString * const kHomepageURL;
 - (void) tabView: (NSTabView *)tabView didSelectTabViewItem: (NSTabViewItem *)tabViewItem;
 {
 	[self setActiveBrowser: [tabViewItem identifier]];
+}
+
+- (BOOL)tabView:(NSTabView*)aTabView shouldDragTabViewItem:(NSTabViewItem *)tabViewItem fromTabBar:(PSMTabBarControl *)tabBarControl
+{
+    return YES;
+}
+
+- (BOOL)tabView:(NSTabView*)aTabView shouldDropTabViewItem:(NSTabViewItem *)tabViewItem inTabBar:(PSMTabBarControl *)tabBarControl
+{
+	[[tabViewItem identifier] setWindowController: self];
+	return YES;
+}
+
+- (PSMTabBarControl *)tabView:(NSTabView *)aTabView newTabBarForDraggedTabViewItem:(NSTabViewItem *)tabViewItem atPoint:(NSPoint)point;
+{
+	BrowserWindowController *newWindow = [[[BrowserWindowController alloc] init] autorelease];
+	[[tabViewItem identifier] setWindowController: newWindow];
+	[[newWindow window] setFrameOrigin: point];
+	return newWindow->tabBar;
+}
+
+- (void) tabView: (NSTabView *)aTabView didCloseTabViewItem: (NSTabViewItem *)tabViewItem;
+{
+	[tabViewItem unbind: @"label"];
+	browser_window_destroy( [[tabViewItem identifier] browser] );
+	[self setActiveBrowser: nil];
 }
 
 @end
