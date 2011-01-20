@@ -132,8 +132,12 @@ extern NSString * const kHomepageURL;
 - (void) tabView: (NSTabView *)aTabView didCloseTabViewItem: (NSTabViewItem *)tabViewItem;
 {
 	[tabViewItem unbind: @"label"];
+	
+	if (activeBrowser == [tabViewItem identifier]) {
+		[self setActiveBrowser: nil];
+	}
+	
 	browser_window_destroy( [[tabViewItem identifier] browser] );
-	[self setActiveBrowser: nil];
 }
 
 @end
