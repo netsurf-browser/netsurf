@@ -359,7 +359,7 @@ int main( int argc, char **argv )
 {
 	gui_pool = [[NSAutoreleasePool alloc] init];
 	
-	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"messages" ofType: nil] UTF8String];
+	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
 	default_stylesheet_url = gui_get_resource_url( @"default", @"css" );
 	quirks_stylesheet_url = gui_get_resource_url( @"quirks", @"css" );
