@@ -40,6 +40,7 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
@@ -176,6 +177,8 @@ void netsurf_exit(void)
 {
 	LOG(("Closing GUI"));
 	gui_quit();
+	LOG(("Closing search and related resources"));
+	search_web_cleanup();
 	LOG(("Finalising high-level cache"));
 	hlcache_finalise();
 	LOG(("Finalising low-level cache"));

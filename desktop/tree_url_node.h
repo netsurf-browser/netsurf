@@ -28,6 +28,7 @@
 #include "desktop/tree.h"
 
 void tree_url_node_init(const char *folder_icon_name);
+void tree_url_node_cleanup(void);
 struct node *tree_create_URL_node(struct tree *tree,
 		struct node *parent, const char *url, const char *title,
     		tree_node_user_callback, void *callback_data);

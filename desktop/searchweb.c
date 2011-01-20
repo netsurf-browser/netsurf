@@ -268,6 +268,17 @@ hlcache_handle *search_web_ico(void)
 }
 
 /**
+ * Cleans up any remaining resources during shutdown.
+ */
+void search_web_cleanup(void)
+{
+	if (search_ico != NULL) {
+		hlcache_handle_release(search_ico);
+		search_ico = NULL;
+	}
+}
+
+/**
  * callback function to cache ico then notify front when successful
  * else retry default from local file system
  */

@@ -78,6 +78,7 @@ unsigned int sslcert_get_tree_flags(void)
 
 void sslcert_cleanup(void)
 {
+	hlcache_handle_release(sslcert_icon);
 	return;
 }
 

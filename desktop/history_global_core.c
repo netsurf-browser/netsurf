@@ -317,6 +317,8 @@ unsigned int history_global_get_tree_flags(void)
  */
 void history_global_cleanup(void)
 {
+	hlcache_handle_release(folder_icon);
+	tree_url_node_cleanup();
 }
 
 

@@ -75,4 +75,6 @@ void search_web_retrieve_ico(bool localdefault);
 
 struct hlcache_handle *search_web_ico(void);
 
+void search_web_cleanup(void);
+
 #endif

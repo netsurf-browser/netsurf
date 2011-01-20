@@ -102,12 +102,15 @@ struct icon_entry icon_table[] = {
 	{CONTENT_HTML, NULL}
 };
 
+static uint32_t tun_users = 0;
 
 void tree_url_node_init(const char *folder_icon_name)
 {
 	struct icon_entry *entry;
 	char icon_name[MAX_ICON_NAME_LEN];
-
+	
+	tun_users++;
+	
 	if (initialised || option_tree_icons_dir == NULL)
 		return;
 	initialised = true;
@@ -122,9 +125,30 @@ void tree_url_node_init(const char *folder_icon_name)
 
 		++entry;
 	} while (entry->type != CONTENT_HTML);
-
 }
 
+
+void tree_url_node_cleanup()
+{
+	struct icon_entry *entry;
+	
+	tun_users--;
+	
+	if (tun_users > 0)
+		return;
+	
+	if (!initialised)
+		return;
+	initialised = false;
+	
+	hlcache_handle_release(folder_icon);
+	
+	entry = icon_table;
+	do {
+		hlcache_handle_release(entry->icon);
+		++entry;
+	} while (entry->type != CONTENT_HTML);
+}
 
 /**
  * Creates a tree entry for a URL, and links it into the tree

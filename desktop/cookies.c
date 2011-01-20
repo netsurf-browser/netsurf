@@ -432,6 +432,8 @@ void cookies_remove(const struct cookie_data *data)
  */
 void cookies_cleanup(void)
 {
+	hlcache_handle_release(folder_icon);
+	hlcache_handle_release(cookie_icon);
 }
 
 /* Actions to be connected to front end specific toolbars */
