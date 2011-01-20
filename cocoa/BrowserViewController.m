@@ -36,7 +36,7 @@
 @synthesize windowController;
 @synthesize title;
 @synthesize status;
-@synthesize spinning;
+@synthesize isProcessing;
 
 - (void) dealloc;
 {

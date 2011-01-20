@@ -223,12 +223,12 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 
 void gui_window_start_throbber(struct gui_window *g)
 {
-	[(BrowserViewController *)g setSpinning: YES];
+	[(BrowserViewController *)g setIsProcessing: YES];
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
-	[(BrowserViewController *)g setSpinning: NO];
+	[(BrowserViewController *)g setIsProcessing: NO];
 }
 
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)

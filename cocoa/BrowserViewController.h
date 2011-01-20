@@ -30,7 +30,7 @@ struct browser_window;
 	BrowserWindowController *windowController;
 	NSString *title;
 	NSString *status;
-	BOOL spinning;
+	BOOL isProcessing;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
@@ -39,7 +39,7 @@ struct browser_window;
 @property (readwrite, retain, nonatomic) BrowserWindowController *windowController;
 @property (readwrite, copy, nonatomic) NSString *title;
 @property (readwrite, copy, nonatomic) NSString *status;
-@property (readwrite, assign, nonatomic) BOOL spinning;
+@property (readwrite, assign, nonatomic) BOOL isProcessing;
 
 - initWithBrowser: (struct browser_window *) bw;
 

@@ -12,7 +12,6 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="1"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -326,7 +325,7 @@
 				<string key="NSWindowContentMaxSize">{1.79769e+308, 1.79769e+308}</string>
 				<string key="NSWindowContentMinSize">{273, 43}</string>
 				<object class="NSView" key="NSWindowView" id="1006">
-					<reference key="NSNextResponder"/>
+					<nil key="NSNextResponder"/>
 					<int key="NSvFlags">256</int>
 					<object class="NSMutableArray" key="NSSubviews">
 						<bool key="EncodedWithXMLCoder">YES</bool>
@@ -394,7 +393,6 @@
 						</object>
 					</object>
 					<string key="NSFrameSize">{774, 554}</string>
-					<reference key="NSSuperview"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1680, 1028}}</string>
 				<string key="NSMinSize">{273, 104}</string>
@@ -408,8 +406,9 @@
 					<string>URL</string>
 					<string>url</string>
 					<string>status</string>
-					<string>spinning</string>
+					<string>processing</string>
 					<string>title</string>
+					<string>isProcessing</string>
 				</object>
 				<string key="NSObjectClassName">BrowserViewController</string>
 				<bool key="NSEditable">YES</bool>
@@ -549,22 +548,6 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBBindingConnection" key="connection">
-						<string key="label">animate: selection.spinning</string>
-						<reference key="source" ref="528651909"/>
-						<reference key="destination" ref="177599630"/>
-						<object class="NSNibBindingConnector" key="connector">
-							<reference key="NSSource" ref="528651909"/>
-							<reference key="NSDestination" ref="177599630"/>
-							<string key="NSLabel">animate: selection.spinning</string>
-							<string key="NSBinding">animate</string>
-							<string key="NSKeyPath">selection.spinning</string>
-							<int key="NSNibBindingConnectorVersion">2</int>
-						</object>
-					</object>
-					<int key="connectionID">66</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBBindingConnection" key="connection">
 						<string key="label">title: selection.title</string>
 						<reference key="source" ref="1005"/>
 						<reference key="destination" ref="177599630"/>
@@ -586,6 +569,22 @@
 						<reference key="destination" ref="1001"/>
 					</object>
 					<int key="connectionID">68</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBBindingConnection" key="connection">
+						<string key="label">animate: selection.isProcessing</string>
+						<reference key="source" ref="528651909"/>
+						<reference key="destination" ref="177599630"/>
+						<object class="NSNibBindingConnector" key="connector">
+							<reference key="NSSource" ref="528651909"/>
+							<reference key="NSDestination" ref="177599630"/>
+							<string key="NSLabel">animate: selection.isProcessing</string>
+							<string key="NSBinding">animate</string>
+							<string key="NSKeyPath">selection.isProcessing</string>
+							<int key="NSNibBindingConnectorVersion">2</int>
+						</object>
+					</object>
+					<int key="connectionID">69</int>
 				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
@@ -844,7 +843,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">68</int>
+			<int key="maxID">69</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
