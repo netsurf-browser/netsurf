@@ -35,7 +35,7 @@
 #include "atari/gui.h"
 #include "atari/treeview.h"
 
-const char tree_directory_icon_name[] = "directory.png";
+const char tree_directory_icon_name[] = "dir.png";
 const char tree_content_icon_name[] = "content.png";
 
 static void atari_treeview_request_redraw(int x,int y,int w,int h,void *pw);
