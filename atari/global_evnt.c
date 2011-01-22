@@ -50,6 +50,7 @@ extern OBJECT * 	h_gem_menu;
 extern int mouse_click_time[3];
 extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
+extern bool verbose_log;
 
 /* Zero based resource tree ids: */
 #define T_ABOUT 0
@@ -223,6 +224,13 @@ static void __CDECL menu_bookmarks(WINDOW *win, int item, int title, void *data)
 	hotlist_open();
 }
 
+static void __CDECL menu_vlog(WINDOW *win, int item, int title, void *data)
+{
+	LOG(("%s", __FUNCTION__));
+	verbose_log = !verbose_log;
+	MenuIcheck(NULL, MAINMENU_M_VLOG, (verbose_log) ? 1 : 0 );
+}
+
 static void __CDECL menu_help_content(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
@@ -253,6 +261,7 @@ static struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_UTIL, MAINMENU_M_ADD_BOOKMARK, "HotlistAdd", menu_add_bookmark, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_BOOKMARKS, "HotlistShow", menu_bookmarks, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_CHOICES, "Choices", menu_choices, {0,0,0}, NULL},
+	{T_UTIL, MAINMENU_M_VLOG, "Verbose Log", menu_vlog, {0,0,0}, NULL},
 	{T_HELP, MAINMENU_M_HELP_CONTENT, "Help", menu_help_content, {0,0,0}, NULL},
 	{T_HELP, -1, "", NULL,{0,0,0}, NULL }
 };
