@@ -1,5 +1,6 @@
 /*
  * Copyright 2008 Daniel Silverstone <dsilvers@netsurf-browser.org>
+ * Copyright 2011 Ole Loots <ole@monochrom.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,6 +20,7 @@
 #ifndef NS_ATARI_FINDFILE_H
 #define NS_ATARI_FINDFILE_H
 
+char * gdos_realpath(const char * path, char * rpath);
 extern char *atari_find_resource(char *buf, const char *filename, const char *def);
 
 #endif /* NETSURF_ATARI_FINDFILE_H */
