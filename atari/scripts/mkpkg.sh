@@ -93,6 +93,9 @@ fi
 set -o verbose
 rm $dst -r
 mkdir $dst
+mkdir $dst"res"
+mkdir $dst"res/icons"
+mkdir $dst"res/fonts"
 cp $src"ns.prg" $dst
 chmod +x $dst"ns.prg"
 strip $dst"ns.prg"
@@ -114,7 +117,6 @@ rm $dst"res/netsurf.rsh"
 
 if [ "$inc_short_fonts" = "1" ]
 then 
-	mkdir $dst"res/fonts"
 	cp $font_src"DejaVuSans.ttf" $dst"res/fonts/ss.ttf"
 	cp $font_src"DejaVuSans-Bold.ttf" $dst"res/fonts/ssb.ttf"
 	cp $font_src"DejaVuSans-Oblique.ttf" $dst"res/fonts/ssi.ttf"
@@ -125,13 +127,6 @@ then
 	cp $font_src"DejaVuSerif.ttf" $dst"res/fonts/s.ttf"
 	cp $font_src"DejaVuSerif-Bold.ttf" $dst"res/fonts/sb.ttf"
 	cp $font_src"DejaVuSerifCondensed-Bold.ttf" $dst"res/fonts/fantasy.ttf"
-fi
-
-#rename long filenames for short mode:
-if [ "$shortfs" = "1" ] 
-then
-	mv $dst"res/SearchEngines" $dst"res/Search"
-	mv $dst"res/ca-bundle" $dst"res/ca"
 fi
 
 #create an simple startup script: 
@@ -146,7 +141,7 @@ fi
 echo "
 atari_screen_driver:vdi
 atari_font_driver:freetype
-homepage_url:file:///./
+homepage_url:file:///./res/blank
 http_proxy:0
 http_proxy_host:
 http_proxy_port:8123
