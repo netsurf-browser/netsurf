@@ -72,7 +72,7 @@
 #include "atari/plot.h"
 #include "atari/clipboard.h"
 
-#define TODO() printf("%s Unimplemented!\n", __FUNCTION__)
+#define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -99,6 +99,7 @@ int cfg_height;
 const char * cfg_homepage_url;
 
 extern GEM_PLOTTER plotter;
+extern unsigned short gdosversion;
 
 void gui_multitask(void)
 {
@@ -144,7 +145,9 @@ void gui_poll(bool active)
 	short winloc[4];
 	int timeout = 50; /* timeout in milliseconds */
 	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON ;
-	timeout = schedule_run();
+	/* right now, schedule is only used for the spinner, */
+	/* spinner code must be reviewed, so disable schedule for now */
+	/* timeout = schedule_run(); */
 	if ( active )
 		timeout = 1;
 
@@ -185,7 +188,7 @@ void gui_poll(bool active)
 		global_track_mouse_state();
 	last_multi_task = clock()*1000 / CLOCKS_PER_SEC;
 	struct gui_window * g;
-	for( g = window_list; g; g=g->next ) {
+	for( g = window_list; g != NULL; g=g->next ) {
 		if( browser_redraw_required( g ) )
 			browser_redraw( g );
 	}
@@ -339,7 +342,11 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 	if (gw == NULL)
 		return;
-	WindSetStr( gw->root->handle, WF_NAME, (char *)title );
+	char tmp[80];
+	/* TODO: query AES for max. title length */
+	strncpy((char*)&tmp, title, 80);
+	tmp[79]=0;
+	WindSetStr( gw->root->handle, WF_NAME, (char *)&tmp );
 }
 
 /**
@@ -347,7 +354,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
  */
 void gui_window_set_status(struct gui_window *w, const char *text)
 {
-	if (w == NULL)
+	if (w == NULL || text == NULL )
 		return;
 	sb_set_text( w , (char*)text );
 }
@@ -565,7 +572,10 @@ void gui_window_set_url(struct gui_window *w, const char *url)
 static void throbber_advance( void * data )
 {
 	LGRECT work;
+	return;
 	struct gui_window * gw = (struct gui_window *)data;
+	if( gw->root->toolbar == NULL )
+		return;
 	if( gw->root->toolbar->throbber.running == false )
 		return;
 	mt_CompGetLGrect(&app, gw->root->toolbar->throbber.comp,
@@ -581,6 +591,7 @@ static void throbber_advance( void * data )
 void gui_window_start_throbber(struct gui_window *w)
 {
 	LGRECT work;
+	return;
 	if (w == NULL)
 		return;
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
@@ -595,6 +606,7 @@ void gui_window_start_throbber(struct gui_window *w)
 void gui_window_stop_throbber(struct gui_window *w)
 {
 	LGRECT work;
+	return;
 	if (w == NULL)
 		return;
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
@@ -979,15 +991,14 @@ process_cmdline(int argc, char** argv)
 		cfg_width = option_window_width;
 		cfg_height = option_window_height;
 	} else {
-		cfg_width = 800;
-		cfg_height = 600;
+		cfg_width = 600;
+		cfg_height = 360;
 	}
 
 	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
 		cfg_homepage_url = option_homepage_url;
 	else
 		cfg_homepage_url = NETSURF_HOMEPAGE;
-
 
 	while((opt = getopt(argc, argv, "w:h:")) != -1) {
 		switch (opt) {
@@ -1010,7 +1021,6 @@ process_cmdline(int argc, char** argv)
 	if (optind < argc) {
 		cfg_homepage_url = argv[optind];
 	}
-
 	return true;
 }
 
@@ -1031,11 +1041,11 @@ static void gui_init(int argc, char** argv)
 	OBJECT * cursors;
 
 	atari_find_resource(buf, "netsurf.rsc", "./res/netsurf.rsc");
-	LOG(("Load %s ", (char*)&buf));
+	LOG(("%s ", (char*)&buf));
 	h_gem_rsrc = RsrcXload( (char*) &buf );
+
 	if( !h_gem_rsrc )
 		die("Uable to open GEM Resource file!");
-
 	rsc_trindex = RsrcGhdr(h_gem_rsrc)->trindex;
 	rsc_ntree   = RsrcGhdr(h_gem_rsrc)->ntree;
 
@@ -1090,7 +1100,9 @@ static void gui_init2(int argc, char** argv)
 	const char *addr = NETSURF_HOMEPAGE;
 	MenuBar( h_gem_menu , 1 );
 	bind_global_events();
-	menu_register( _AESapid, (char*)"  NetSurf ");
+	if( gdosversion > TOS4VER ) {
+		menu_register( _AESapid, (char*)"  NetSurf ");
+	}
 }
 
 
@@ -1110,9 +1122,9 @@ int main(int argc, char** argv)
 	ApplInit();
 
 	graf_mouse(BUSY_BEE, NULL);
-
-	atari_find_resource(messages, "messages", "./res/messages");
-	atari_find_resource(options, "Choices", "./Choices");
+	init_os_info();
+	atari_find_resource(messages, "messages", "res/messages");
+	atari_find_resource(options, "Choices", "Choices");
 	options_file_location = strdup(options);
 
 	netsurf_init(&argc, &argv, options, messages);
@@ -1124,7 +1136,6 @@ int main(int argc, char** argv)
 	netsurf_exit();
 	LOG(("ApplExit"));
 	ApplExit();
-
 	return 0;
 }
 
