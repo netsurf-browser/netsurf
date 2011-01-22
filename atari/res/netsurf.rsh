@@ -35,7 +35,8 @@
 #define MAINMENU_M_ADD_BOOKMARK 53  /* STRING in tree MAINMENU */
 #define MAINMENU_M_BOOKMARKS 54  /* STRING in tree MAINMENU */
 #define MAINMENU_M_CHOICES 56  /* STRING in tree MAINMENU */
-#define MAINMENU_M_HELP_CONTENT 58  /* STRING in tree MAINMENU */
+#define MAINMENU_M_VLOG 57  /* STRING in tree MAINMENU */
+#define MAINMENU_M_HELP_CONTENT 59  /* STRING in tree MAINMENU */
 
 #define TOOLBAR 1  /* form/dial */
 #define TOOLBAR_BT_BACK 2  /* CICON in tree TOOLBAR */
@@ -95,3 +96,13 @@
 #define TOOLBAR_HOTLIST_CREATE_FOLDER 1  /* BUTTON in tree TOOLBAR_HOTLIST */
 #define TOOLBAR_HOTLIST_ADD 2  /* BUTTON in tree TOOLBAR_HOTLIST */
 #define TOOLBAR_HOTLIST_DELETE 3  /* BUTTON in tree TOOLBAR_HOTLIST */
+
+#define SEARCH 10  /* form/dial */
+#define SEARCH_TB_SRCH 1  /* FTEXT in tree SEARCH */
+#define SEARCH_CB_CASESENSE 2  /* BOX in tree SEARCH */
+#define SEARCH_CB_CASESENSE_00 3  /* BOX in tree SEARCH */
+#define SEARCH_LBL_SHOWALL 4  /* STRING in tree SEARCH */
+#define SEARCH_BT_SRCHBACK 5  /* BUTTON in tree SEARCH */
+#define SEARCH_BT_SRCHNEXT 6  /* BUTTON in tree SEARCH */
+#define SEARCH_LBL_CASESENSE 7  /* STRING in tree SEARCH */
+#define SEARCH_BT_SEARCH 8  /* BUTTON in tree SEARCH */
