@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <mint/osbind.h>
+#include <mint/cookie.h>
 #include <windom.h>
 
 #include "desktop/cookies.h"
@@ -34,6 +36,35 @@
 #include "atari/misc.h"
 
 extern void * h_gem_rsrc;
+unsigned short gdosversion;
+
+void init_os_info(void)
+{
+	gdosversion = Sversion();
+}
+
+int tos_getcookie(long tag, long * value)
+{
+	COOKIE * cptr;
+	long oldsp;
+
+	if( gdosversion > TOS4VER ){
+		return( Getcookie(tag, value) );
+	}
+
+	cptr = (COOKIE*)Setexc(0x0168, -1L);
+	if(cptr != NULL) {
+		do {
+			if( cptr->c == tag ){
+				if(cptr->v != NULL ){
+					*value = cptr->v;
+					return( C_FOUND );
+				}
+			}
+		} while( (cptr++)->c != 0L );
+	}
+	return( C_NOTFOUND );
+}
 
 void warn_user(const char *warning, const char *detail)
 {
@@ -47,6 +78,7 @@ void warn_user(const char *warning, const char *detail)
 void die(const char *error)
 {
 	printf("%s\n", error);
+	sleep( 3 );
 	exit(1);
 }
 

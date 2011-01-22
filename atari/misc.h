@@ -19,6 +19,13 @@
 #ifndef NS_ATARI_MISC_H
 #define NS_ATARI_MISC_H
 
+typedef struct {
+	long c;
+	long v;
+} COOKIE;
+
+#define TOS4VER 0x03000 /* this is assumed to be the last single tasking OS */
+
 #define SBUF8_TO_LBUF8(sbuf,lbuf)\
 	lbuf[0] = (long)sbuf[0];\
 	lbuf[1] = (long)sbuf[1];\
@@ -29,10 +36,13 @@
 	lbuf[6] = (long)sbuf[6];\
 	lbuf[7] = (long)sbuf[7];
 
+
 struct gui_window * find_root_gui_window( WINDOW * win );
 struct gui_window * find_cmp_window( COMPONENT * c );
 OBJECT *get_tree( int idx );
 char *get_rsc_string( int idx );
 void gem_set_cursor( MFORM_EX * cursor );
 void dbg_grect( char * str, GRECT * r );
+void init_os_info(void);
+int tos_getcookie( long tag, long * value );
 #endif
