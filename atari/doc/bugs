@@ -1,5 +1,7 @@
-BUGS
+KNOWN BUGS
 
- - On native Ataris there is an Problem with Redraw & Mouse Cursor 
+ - On classic TOS systems (aka !FreeMiNT) the palette is reset
+   when a new window is opened. This means: when opening a new window,
+   the colors aren't correct! 
  - Visiting pages that contain frames: undefined behavior
  

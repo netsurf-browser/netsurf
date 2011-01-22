@@ -5,7 +5,7 @@ TODO's (no priority order)
  - Optimize drawing of bitmaps on Low-Memory machines
  - Optimize Clipping for Plotters ( use OS clipping instead of own clipping )
  - Restore the Palette when Windows get's the Focus
- - Make drawing of tiled bitmaps optional
+ - Make drawing of tiled bitmaps optional ( they are slooow )
  - Implement TreeView 
  - Implement TreeView Hotlits
  - Implement TreeView History
@@ -29,5 +29,10 @@ TODO's (no priority order)
    ( at best, implement callback for this...)
  - Yahoo.de / .com etc. still crashes - this is probably not an Atari-Version
    fault, but applies to all other netsurf versions. 
+ - Have browser_window specific cursor, window specifc cursor 
+ - At some places I query for gdos version and use v_gtext when running 
+   classic TOS. This is maybe not really correct, altough the v_ftext work
+   on the newer OS (MiNT) it doesn't mean I'm using it correct. 
+ - When minimized (not iconyfied) NetSurf doesn't recognize that.
 
  

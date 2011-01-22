@@ -1,14 +1,13 @@
-Known bugs & Missing Features:
-------------------------------
+Missing Features:
+-----------------
 
+- Also look at BUGS file!
+- No networking with classic TOS.
 - Frames are not implemented - if you hit an page with frames, you are advised to close the window and open a 
   new one. 
 - Many of the Menu items are not working yet.
 - No Bookmarks & No History
 - No Download Manager 
-- The browser window can only be resized after a page has been loaded. 
-- removing the selection from the URL bar just works with backspace key, 
-  del doesn't work.  
 
 Things to test:
 ---------------
