@@ -42,7 +42,11 @@ static int pixel_position( FONT_PLOTTER self, const plot_font_style_t *fstyle,co
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle );
 
 static bool init = false;
-static int vdih; 
+static int vdih;
+
+extern struct s_vdi_sysinfo vdi_sysinfo;
+extern unsigned short gdosversion;
+
 int ctor_font_plotter_vdi( FONT_PLOTTER self )
 {
 	self->dtor = dtor;
@@ -202,14 +206,22 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 			 pass it as arg, to reduce netsurf dependency */
 		pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
 	}
-	vst_effects( self->vdi_handle, fx );
-	vst_alignment(vdih, 0, 4, &cw, &ch );
-	vst_height( self->vdi_handle, pxsize ,&cw, &ch, &cellw, &cellh);
-	vswr_mode( self->vdi_handle, MD_TRANS );
-	vst_color( self->vdi_handle, RGB_TO_VDI(fstyle->foreground) );
 	x += CURFB(self->plotter).x;
 	y += CURFB(self->plotter).y;
-	v_ftext( self->vdi_handle, x, y, (char*)&textcpy );
+	vst_effects( self->vdi_handle, fx );
+	vst_alignment(vdih, 0, 4, &cw, &ch );
+	vst_height( self->vdi_handle, pxsize, &cw, &ch, &cellw, &cellh);
+	vswr_mode( self->vdi_handle, MD_TRANS );
+	if( vdi_sysinfo.scr_bpp >= 4 ){
+		vst_color( self->vdi_handle, RGB_TO_VDI(fstyle->foreground) );		
+	} else {
+		vst_color( self->vdi_handle, BLACK );
+	}
+	if( gdosversion > 0x03000 ){
+		v_ftext( self->vdi_handle, x, y, (char*)&textcpy );
+	} else {
+		v_gtext( self->vdi_handle, x, y, (char*)&textcpy );
+	}
 	free( lstr );
 	return( 0 );
 }

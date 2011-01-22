@@ -124,8 +124,9 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 		DUMMY_PRIV(self)->bufops = C2P;
 		self->bpp_virt = 8;
 	}
-	if( FIRSTFB(self).w > vdi_sysinfo.scr_w || FIRSTFB(self).h > vdi_sysinfo.scr_h )
+	if( FIRSTFB(self).w > vdi_sysinfo.scr_w || FIRSTFB(self).h > vdi_sysinfo.scr_h ){
 		return( 0-ERR_BUFFERSIZE_EXCEEDS_SCREEN );
+	}
 
 	FIRSTFB(self).size = calc_chunked_buffer_size( FIRSTFB(self).w, FIRSTFB(self).h, FIRSTFB(self).w, self->bpp_virt );
 	/* offscreen: FIRSTFB(self).mem = malloc( FIRSTFB(self).size ); */
@@ -280,6 +281,7 @@ static void * lock( GEM_PLOTTER self )
 	self->flags |= PLOT_FLAG_LOCKED;
 	wind_update(BEG_UPDATE);
 	wind_update(BEG_MCTRL);
+	graf_mouse(M_OFF, NULL);
 	return( NULL );
 }
 
@@ -289,6 +291,7 @@ static int unlock( GEM_PLOTTER self )
 	self->flags &=  ~PLOT_FLAG_LOCKED;
 	wind_update(END_MCTRL);
 	wind_update(END_UPDATE);
+	graf_mouse(M_ON, NULL);
 	return( 1 );
 }
 
@@ -502,7 +505,10 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 	NSLT2VDI(lt, pstyle)
 	vsl_type( self->vdi_handle, lt );
 	vsl_width( self->vdi_handle, (short)sw );
-	vsl_color( self->vdi_handle, RGB_TO_VDI(pstyle->stroke_colour) );
+	if( vdi_sysinfo.scr_bpp > 4)
+		vsl_color( self->vdi_handle, RGB_TO_VDI(pstyle->stroke_colour) );
+	else
+		vsl_color( self->vdi_handle, BLACK );
 	v_pline(self->vdi_handle, 2, (short *)&pxy );
 	/* plotter_vdi_clip( self, 0); */
    return ( 1 );
@@ -533,7 +539,10 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 	if( !rc_intersect( &rclip, &r ) ) {
 		return( 1 );
 	}
-	vsf_color( self->vdi_handle, RGB_TO_VDI(pstyle->fill_colour) );
+	if( vdi_sysinfo.scr_bpp > 4)
+		vsf_color( self->vdi_handle, RGB_TO_VDI(pstyle->fill_colour) );
+	else
+		vsf_color( self->vdi_handle, WHITE );
 	vsf_perimeter( self->vdi_handle, 0);
 	vsf_interior( self->vdi_handle, FIS_SOLID );
 

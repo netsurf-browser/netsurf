@@ -34,7 +34,11 @@
 #include "atari/plot/plotter_vdi.h"
 #include "atari/plot/font_vdi.h"
 #include "atari/plot/font_freetype.h"
+#include "atari/gui.h"
 #include "utils/log.h"
+#include "atari/misc.h"
+
+extern unsigned short gdosversion;
 
 
 unsigned char rgb_web_pal[216][3] = {
@@ -141,7 +145,7 @@ struct s_vdi_sysinfo * read_vdi_sysinfo( short vdih, struct s_vdi_sysinfo * info
 	memset( info, 0, sizeof(struct s_vdi_sysinfo) );
 
 	info->vdi_handle = vdih;
-	if ( Getcookie(C_EdDI, &cookie_EdDI) == C_NOTFOUND ) {
+	if ( tos_getcookie(C_EdDI, &cookie_EdDI) == C_NOTFOUND ) {
 		info->EdDiVersion = 0;
 	} else {
 		info->EdDiVersion = EdDI_version( (void *)cookie_EdDI );
@@ -187,7 +191,7 @@ struct s_vdi_sysinfo * read_vdi_sysinfo( short vdih, struct s_vdi_sysinfo * info
 			info->pixelsize=8;
 			break;
 		default:
-			info->pixelsize=0;
+			info->pixelsize=1;
 			break;
 
 	}
