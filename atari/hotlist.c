@@ -47,20 +47,6 @@ static struct atari_hotlist {
 	bool open;
 } hl;
 
-static const struct {
-	const char *url;
-	const char *msg_key;
-} default_entries[] = {
-	{ "http://www.netsurf-browser.org/", "HotlistHomepage" },
-	{ "http://www.netsurf-browser.org/downloads/riscos/testbuilds", "HotlistTestBuild" },
-	{ "http://www.netsurf-browser.org/documentation", "HotlistDocumentation" },
-	{ "http://sourceforge.net/tracker/?atid=464312&group_id=51719",
-			"HotlistBugTracker" },
-	{ "http://sourceforge.net/tracker/?atid=464315&group_id=51719",
-			"HotlistFeatureRequest" }
-};
-#define ENTRIES_COUNT (sizeof(default_entries) / sizeof(default_entries[0]))
-
 
 static void evnt_hl_toolbar( WINDOW *win, short buff[8]) {
 	int obj = buff[4];	/* Selected object */
@@ -93,7 +79,7 @@ void hotlist_init(void)
 	char hlfilepath[PATH_MAX];
 
 	atari_find_resource( 
-		(char*)&hlfilepath, "hotlist", "./res/Hotlist"
+		(char*)&hlfilepath, "hotlist", "res/Hotlist"
 	);
 
 	if( hl.window == NULL ){
@@ -125,7 +111,7 @@ void hotlist_init(void)
 				atari_treeview_get_tree(hl.tv),
 				/* TODO: use option_hotlist_file or slt*/
 				(char*)&hlfilepath,
-				hlfilepath
+				"dir.png"
 		);	
 	} else {
 
