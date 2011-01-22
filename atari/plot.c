@@ -52,7 +52,7 @@ Returns value < 0 to indicate an error
 
 int atari_plotter_init( char* drvrname, char * fdrvrname )
 {
-	GRECT loc_pos={0,0,420,420};
+	GRECT loc_pos={0,0,360,400};
 	int err=0;
 	struct s_driver_table_entry * drvinfo;
 	int flags = 0;
@@ -68,7 +68,6 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 		dump_plot_drivers();
 		dump_font_drivers();
 	}
-
 	drvinfo = get_screen_driver_entry( drvrname );
 
 	LOG(("using plotters: %s, %s", drvrname, fdrvrname));
