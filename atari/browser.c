@@ -833,6 +833,7 @@ void browser_redraw( struct gui_window * gw )
 	plotter->resize(plotter, bwrect.g_w, bwrect.g_h);
 	plotter->move(plotter, bwrect.g_x, bwrect.g_y );
 	plotter->clip( plotter, 0, 0, bwrect.g_w, bwrect.g_h );
+	plotter->lock(plotter);
 
 	if( b->scroll.required == true && b->bw->current_content != NULL) {
 		browser_process_scroll( gw, bwrect );
@@ -845,8 +846,8 @@ void browser_redraw( struct gui_window * gw )
 			BBOX cliporg;
 			todo[0] = bwrect.g_x;
 			todo[1] = bwrect.g_y;
-			todo[2] = todo[0] + bwrect.g_w;
-			todo[3] = todo[1] + bwrect.g_h;
+			todo[2] = todo[0] + bwrect.g_w-1;
+			todo[3] = todo[1] + bwrect.g_h-1;
 			vs_clip(plotter->vdi_handle, 1, (short*)&todo[0]);
 
 			area.g_x = b->redraw.area.x0; 
@@ -901,6 +902,7 @@ void browser_redraw( struct gui_window * gw )
 		vs_clip(plotter->vdi_handle, 0, (short*)&todo[0]);
 		b->caret.redraw = false;
 	}
+	plotter->unlock(plotter);
 	/* TODO: if we use offscreen bitmap, trigger content redraw here */
 }
 
