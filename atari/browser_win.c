@@ -106,6 +106,7 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	gw->root = malloc( sizeof(struct s_gui_win_root) );
 	if( gw->root == NULL )
 		return( -1 );
+	memset( gw->root, 0, sizeof(struct s_gui_win_root) );
 	gw->root->handle = WindCreate( flags,40, 40, app.w, app.h );
 	gw->root->cmproot = mt_CompCreate(&app, CLT_VERTICAL, 1, 1);
 	WindSetPtr( gw->root->handle, WF_COMPONENT, gw->root->cmproot, NULL);
@@ -217,6 +218,9 @@ void window_open( struct gui_window * gw)
 	plotter->move( plotter, br.g_x, br.g_y );
 	plotter->resize( plotter, br.g_w, br.g_h );
 	gw->browser->attached = true;
+	if( gw->root->statusbar != NULL ){
+		gw->root->statusbar->attached = true;
+	}
 	snd_rdw( gw->root->handle );
 }
 
