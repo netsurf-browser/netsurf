@@ -208,6 +208,8 @@ else
         PKG_CONFIG := $(MINGW_INSTALL_ENV)/bin/pkg-config
       else
         # Building on Windows
+        CC := gcc
+        PKG_CONFIG :=
       endif
     else
       ifeq ($(TARGET),amiga)
