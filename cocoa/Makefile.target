@@ -29,8 +29,14 @@
 
   CFLAGS += -I/usr/X11/include
   CFLAGS += -I/usr/include/libxml2
-  CFLAGS += -Icocoa/PSMTabBarControl 
-  CFLAGS += -include cocoa/Prefix.pch 
+  CFLAGS += -Icocoa/PSMTabBarControl
+  CFLAGS += -include cocoa/Prefix.pch
+
+ifneq ($(wildcard /opt/local*),)
+  # libjpeg is there when installed from MacPort.
+  LDFLAGS += -L/opt/local/lib
+  CFLAGS += -I/opt/local/include
+endif
 
   VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
   VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
