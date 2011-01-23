@@ -76,7 +76,19 @@
   To build and install these libraries, simply enter each of their directories
   and run:
   
+      $ make
       $ sudo make install
+
+  This command builds the libraries only for the active architecture. To build
+  universal binaries use those commands:
+
+      $ make UNIVERSAL="i386 x86_64 ppc ppc64"
+      $ sudo make install
+
+  If you are building NetSurf for using it on only one computer this is not 
+  necessary, but if you want to distribute your binary you should build universal
+  binaries.  You can also leave some of the platform names out, if you don't 
+  require them.
 
   | Note: We advise enabling ivonv() support in libparserutils, which vastly
   |       increases the number of supported character sets.  To do this,
