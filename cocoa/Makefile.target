@@ -6,6 +6,7 @@
   $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
 
   LDFLAGS += -L/opt/local/lib
+  LDFLAGS += -L/usr/X11/lib
   LDFLAGS += -lm -lxml2 -lcurl -liconv
   LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet
 
@@ -23,7 +24,14 @@
   # for timerisset()
   CFLAGS += -D_DARWIN_C_SOURCE
 
+  MACOSX_VERSION := 10.5
+  SDK_FLAGS := -isysroot /Developer/SDKs/MacOSX$(MACOSX_VERSION).sdk -mmacosx-version-min=$(MACOSX_VERSION) 
+  CFLAGS +=  $(SDK_FLAGS)
+  LDFLAGS +=  $(SDK_FLAGS)
+  CXXFLAGS +=  $(SDK_FLAGS)
+
   CFLAGS += -I/opt/local/include
+  CFLAGS += -I/usr/X11/include
   CFLAGS += -I/usr/include/libxml2
   CFLAGS += -Icocoa/PSMTabBarControl 
   CFLAGS += -include cocoa/Prefix.pch 
@@ -52,6 +60,7 @@
     $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
     $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
   endif
+
 
 # ----------------------------------------------------------------------------
 # Source file setup
@@ -101,3 +110,56 @@ S_TABBAR := $(addprefix cocoa/PSMTabBarControl/,$(S_TABBAR))
 # complete source file list
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA) $(S_TABBAR)
 EXETARGET := NetSurf
+
+S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib
+S_NIBS := $(S_XIBS:.xib=.nib)
+
+S_XIBS := $(addprefix cocoa/res/,$(S_XIBS))
+S_NIBS := $(addprefix $(OBJROOT)/,$(S_NIBS))
+
+R_RESOURCES := default.css adblock.css quirks.css NetSurf.icns \
+	de.lproj en.lproj fr.lproj it.lproj nl.lproj
+	
+R_RESOURCES := $(addprefix cocoa/res/,$(R_RESOURCES))
+
+TABBAR_RESOURCES := AquaTabClose_Front_Pressed.png \
+	AquaTabClose_Front_Rollover.png \
+	AquaTabClose_Front.png \
+	AquaTabCloseDirty_Front_Pressed.png \
+	AquaTabCloseDirty_Front_Rollover.png \
+	AquaTabCloseDirty_Front.png \
+	AquaTabNew.png \
+	AquaTabNewPressed.png \
+	AquaTabNewRollover.png
+
+
+R_RESOURCES += $(addprefix cocoa/PSMTabBarControl/Images/,$(TABBAR_RESOURCES))
+
+$(OBJROOT)/MainMenu.nib: cocoa/res/MainMenu.xib $(OBJROOT)/created 
+	ibtool $< --compile $@
+
+$(OBJROOT)/Browser.nib: cocoa/res/Browser.xib $(OBJROOT)/created 
+	ibtool $< --compile $@
+
+$(OBJROOT)/BrowserWindow.nib: cocoa/res/BrowserWindow.xib $(OBJROOT)/created 
+	ibtool $< --compile $@
+
+$(OBJROOT)/DownloadWindow.nib: cocoa/res/DownloadWindow.xib $(OBJROOT)/created 
+	ibtool $< --compile $@
+
+
+NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) $(S_NIBS) NetSurf.app/Contents/Info.plist
+	mkdir -p NetSurf.app/Contents/MacOS
+	cp NetSurf NetSurf.app/Contents/MacOS
+	mkdir -p NetSurf.app/Contents/Resources
+	cp -pLR $(R_RESOURCES) NetSurf.app/Contents/Resources
+	cp -pLR $(S_NIBS) NetSurf.app/Contents/Resources
+	echo 'APPL????' > NetSurf.app/Contents/PkgInfo
+	
+NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.target
+	mkdir -p NetSurf.app/Contents
+	sed -e 's/$${EXECUTABLE_NAME}/$(EXETARGET)/' \
+	    -e 's/$${PRODUCT_NAME.*}/$(EXETARGET)/' \
+	    -e 's/$${MACOSX_DEPLOYMENT_TARGET}/$(MACOSX_VERSION)/' \
+	   < cocoa/res/NetSurf-Info.plist > NetSurf.app/Contents/Info.plist
+	
