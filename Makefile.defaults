@@ -372,8 +372,6 @@ ifeq ($(TARGET),cocoa)
   
   NETSURF_USE_MNG := NO
 
-  NETSURF_ATARI_USE_FREETYPE := YES
-
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized
 
