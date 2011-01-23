@@ -26,7 +26,7 @@
   # only windows versions after 2000 are supported
   CFLAGS += '-DWINVER=0x0500'
   WSCFLAGS := -std=c99 \
-	$(WARNFLAGS) -I. -I/${MINGW_INSTALL_ENV}/include \
+	$(WARNFLAGS) -I. -I${MINGW_INSTALL_ENV}/include/ \
 	-DCURL_STATICLIB -g
   CFLAGS += $(WSCFLAGS)
   LDFLAGS += $(WSCFLAGS)
