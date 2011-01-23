@@ -19,6 +19,7 @@
 #import "DownloadWindowController.h"
 
 #import "desktop/download.h"
+#import "desktop/gui.h"
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 

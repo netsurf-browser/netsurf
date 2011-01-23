@@ -1002,7 +1002,7 @@
     if (animate) {
         NSMutableArray *targetFrames = [NSMutableArray arrayWithCapacity:[_cells count]];
         
-        for (NSInteger i = 0; i < [_cells count]; i++) {
+        for (NSUInteger i = 0; i < [_cells count]; i++) {
             currentCell = [_cells objectAtIndex:i];
             
             //we're going from NSRect -> NSValue -> NSRect -> NSValue here - oh well
@@ -1024,7 +1024,7 @@
 		[self _animateCells:_animationTimer];
 
     } else {
-        for (NSInteger i = 0; i < [_cells count]; i++) {
+        for (NSUInteger i = 0; i < [_cells count]; i++) {
             currentCell = [_cells objectAtIndex:i];
             [currentCell setFrame:[_controller cellFrameAtIndex:i]];
             
@@ -1048,7 +1048,7 @@
 	
     if ((cellCount > 0) && [animation isAnimating]) {
 		//compare our target position with the current position and move towards the target
-		for (NSInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
+		for (NSUInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
 			currentCell = [_cells objectAtIndex:i];
 			NSRect cellFrame = [currentCell frame], targetFrame = [[targetFrames objectAtIndex:i] rectValue];
 			CGFloat sizeChange;
@@ -1084,7 +1084,7 @@
     } else { 
 		//put all the cells where they should be in their final position
 		if (cellCount > 0) {
-			for (NSInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
+			for (NSUInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
 				PSMTabBarCell *currentCell = [_cells objectAtIndex:i];
 				NSRect cellFrame = [currentCell frame], targetFrame = [[targetFrames objectAtIndex:i] rectValue];
 				
@@ -2026,10 +2026,10 @@
 
 - (NSInteger)numberOfVisibleTabs
 {
-    NSInteger i, cellCount = 0;
+    NSInteger cellCount = 0;
 	PSMTabBarCell *nextCell;
 	
-    for (i = 0; i < [_cells count]; i++) {
+    for (NSUInteger i = 0; i < [_cells count]; i++) {
 		nextCell = [_cells objectAtIndex:i];
 		
 		if ([nextCell isInOverflowMenu]) {

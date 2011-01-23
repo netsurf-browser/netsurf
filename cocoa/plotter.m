@@ -159,7 +159,7 @@ static bool plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyl
 	
 	NSBezierPath *path = [NSBezierPath bezierPath];
 	[path moveToPoint: NSMakePoint( p[0], p[1] )];
-	for (int i = 1; i < n; i++) {
+	for (unsigned i = 1; i < n; i++) {
 		[path lineToPoint: NSMakePoint( p[2*i], p[2*i+1] )];
 	}
 	[path closePath];

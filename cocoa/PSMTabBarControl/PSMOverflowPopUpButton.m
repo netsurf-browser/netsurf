@@ -16,7 +16,7 @@
 
 - (id)initWithFrame:(NSRect)frameRect pullsDown:(BOOL)flag
 {
-    if (self = [super initWithFrame:frameRect pullsDown:YES]) {
+    if ((self = [super initWithFrame:frameRect pullsDown:YES]) != nil) {
         [self setBezelStyle:NSRegularSquareBezelStyle];
         [self setBordered:NO];
         [self setTitle:@""];

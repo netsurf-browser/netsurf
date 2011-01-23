@@ -19,6 +19,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "utils/log.h"
+#import "content/fetch.h"
 
 const char *fetch_filetype(const char *unix_path)
 {

@@ -121,7 +121,7 @@ static NSFont *cocoa_font_get_nsfont( const plot_font_style_t *style )
 	return font;
 }
 
-NSDictionary *cocoa_font_attributes( const plot_font_style_t *style )
+static NSDictionary *cocoa_font_attributes( const plot_font_style_t *style )
 {
 	return [NSDictionary dictionaryWithObjectsAndKeys: 
 			cocoa_font_get_nsfont( style ), NSFontAttributeName, 
