@@ -161,5 +161,6 @@ NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.tar
 	sed -e 's/$${EXECUTABLE_NAME}/$(EXETARGET)/' \
 	    -e 's/$${PRODUCT_NAME.*}/$(EXETARGET)/' \
 	    -e 's/$${MACOSX_DEPLOYMENT_TARGET}/$(MACOSX_VERSION)/' \
+	    -e 's/$${NETSURF_VERSION}/$(VERSION_FULL)/' \
+		-e 's/$${NETSURF_SHORT_VERSION}/$(VERSION_MAJ).$(VERSION_MIN)/' \
 	   < cocoa/res/NetSurf-Info.plist > NetSurf.app/Contents/Info.plist
-	
