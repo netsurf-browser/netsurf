@@ -88,7 +88,16 @@ else
           TARGET := atari
         endif
       endif
-      
+      ifeq ($(findstring MINGW,$(HOST)),MINGW)
+        # MSYS' uname reports the likes of "MINGW32_NT-6.0"
+        HOST := windows
+      endif
+      ifeq ($(HOST),windows)
+        ifeq ($(TARGET),)
+          TARGET := windows
+        endif
+      endif
+
       # Default target is GTK backend
       ifeq ($(TARGET),)
         TARGET := gtk
@@ -197,6 +206,8 @@ else
         # mingw cross-compile
         CC := $(MINGW_PREFIX)gcc
         PKG_CONFIG := $(MINGW_INSTALL_ENV)/bin/pkg-config
+      else
+        # Building on Windows
       endif
     else
       ifeq ($(TARGET),amiga)
