@@ -2,6 +2,7 @@
 # Mac OS X target setup
 # ----------------------------------------------------------------------------
 
+  POSTEXES += NetSurf.app
 
   $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
 
@@ -25,10 +26,11 @@
   CFLAGS += -D_DARWIN_C_SOURCE
 
   MACOSX_VERSION := 10.5
-  SDK_FLAGS := -isysroot /Developer/SDKs/MacOSX$(MACOSX_VERSION).sdk -mmacosx-version-min=$(MACOSX_VERSION) 
-  CFLAGS +=  $(SDK_FLAGS)
-  LDFLAGS +=  $(SDK_FLAGS)
-  CXXFLAGS +=  $(SDK_FLAGS)
+  SDK_PATH := /Developer/SDKs/MacOSX$(MACOSX_VERSION).sdk
+  SDK_FLAGS := --sysroot=$(SDK_PATH) -mmacosx-version-min=$(MACOSX_VERSION) 
+  CFLAGS :=  $(SDK_FLAGS) $(CFLAGS)
+  LDFLAGS :=  $(SDK_FLAGS) -Wl,-syslibroot,$(SDK_PATH) $(LDFLAGS)
+  CXXFLAGS :=  $(SDK_FLAGS) $(CXXFLAGS)
 
   CFLAGS += -I/opt/local/include
   CFLAGS += -I/usr/X11/include
@@ -61,6 +63,13 @@
     $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
   endif
 
+
+  ifneq ($(UNIVERSAL),)
+    UNIVERSAL_FLAGS := $(foreach arch,$(UNIVERSAL),-arch $(arch) )
+    CFLAGS += $(UNIVERSAL_FLAGS)
+  	LDFLAGS += $(UNIVERSAL_FLAGS)
+	CXXFLAGS += $(UNIVERSAL_FLAGS)
+  endif
 
 # ----------------------------------------------------------------------------
 # Source file setup
