@@ -84,6 +84,12 @@
 	browser_window_set_scale( browser, (float)option_scale / 100.0, true );
 }
 
+- (IBAction) backForwardSelected: (id) sender;
+{
+	if ([sender selectedSegment] == 0) [self goBack: sender];
+	else [self goForward: sender];
+}
+
 - (IBAction) goBack: (id) sender;
 {
 	if (browser && history_back_available( browser->history )) {
@@ -106,25 +112,6 @@
 - (IBAction) stopLoading: (id) sender;
 {
 	browser_window_stop( browser );
-}
-
-- (BOOL) validateToolbarItem: (NSToolbarItem *)theItem;
-{
-	SEL action = [theItem action];
-	
-	if (action == @selector( goBack: )) {
-		return browser != NULL && history_back_available( browser->history );
-	} 
-	
-	if (action == @selector( goForward: )) {
-		return browser != NULL && history_forward_available( browser->history );
-	}
-	
-	if (action == @selector( reloadPage: )) {
-		return browser_window_reload_available( browser );
-	}
-	
-	return YES;
 }
 
 static inline bool compare_float( float a, float b )

@@ -18,27 +18,12 @@
 
 #import <Cocoa/Cocoa.h>
 
-@class PSMTabBarControl;
-@class BrowserViewController;
-@class URLFieldCell;
 
-@interface BrowserWindowController : NSWindowController {
-	PSMTabBarControl *tabBar;
-	NSTabView *tabView;
-	URLFieldCell *urlField;
-
-	BrowserViewController *activeBrowser;
+@interface URLFieldCell : NSTextFieldCell {
+	NSButtonCell *refreshCell;
 }
 
-@property (readwrite, retain, nonatomic) IBOutlet PSMTabBarControl *tabBar;
-@property (readwrite, retain, nonatomic) IBOutlet NSTabView *tabView;
-@property (readwrite, retain, nonatomic) IBOutlet URLFieldCell *urlField;
-
-@property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;
-
-- (IBAction) newTab: (id) sender;
-
-- (void) addTab: (BrowserViewController *)browser;
-- (void) removeTab: (BrowserViewController *)browser;
+@property (readwrite, assign, nonatomic) SEL refreshAction;
+@property (readwrite, assign, nonatomic) id refreshTarget;
 
 @end

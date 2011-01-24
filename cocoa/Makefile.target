@@ -71,6 +71,7 @@ S_COCOA := \
 	NetSurfAppDelegate.m \
 	NetsurfApp.m \
 	ScrollableView.m \
+	URLFieldCell.m \
 	TreeView.m \
 	bitmap.m \
 	fetch.m \

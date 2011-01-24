@@ -21,6 +21,7 @@
 #import "BrowserViewController.h"
 #import "PSMTabBarControl.h"
 #import "PSMRolloverButton.h"
+#import "URLFieldCell.h"
 
 #import "desktop/browser.h"
 
@@ -28,6 +29,8 @@
 
 @synthesize tabBar;
 @synthesize tabView;
+@synthesize urlField;
+
 @synthesize activeBrowser;
 
 - (id) init;
@@ -41,6 +44,7 @@
 {
 	[self setTabBar: nil];
 	[self setTabView: nil];
+	[self setUrlField: nil];
 	
 	[super dealloc];
 }
@@ -56,6 +60,8 @@
 	[b setAction: @selector(newTab:)];
 	
 	[[self window] setAcceptsMouseMovedEvents: YES];
+	
+	[urlField setRefreshAction: @selector(reloadPage:)];
 }
 
 - (void) addTab: (BrowserViewController *)browser;
