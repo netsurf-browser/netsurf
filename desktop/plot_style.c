@@ -133,7 +133,7 @@ plot_style_t *plot_style_stroke_lightwbasec = &plot_style_stroke_lightwbasec_sta
 /** stroke style for history core. */
 static plot_style_t plot_style_stroke_history_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,
-	.stroke_colour = 0x333333,
+	.stroke_colour = HISTORY_COLOUR_LINES,
 	.stroke_width = 2,
 };
 plot_style_t *plot_style_stroke_history = &plot_style_stroke_history_static;

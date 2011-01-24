@@ -616,7 +616,7 @@ bool history_redraw_entry(struct history *history,
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
-	colour c = entry == history->current ? 0xff0000 : 0x333333;
+	colour c = entry == history->current ? HISTORY_COLOUR_SELECTED : HISTORY_COLOUR_FOREGROUND;
 	int tailsize = 5;
 	int xoffset = x - x0;
 	int yoffset = y - y0;
@@ -647,7 +647,7 @@ bool history_redraw_entry(struct history *history,
 			&char_offset, &actual_x))
 		return false;
 
-	fstyle.background = 0xffffff;
+	fstyle.background = HISTORY_COLOUR_BACKGROUND;
 	fstyle.foreground = c;
 	fstyle.weight = entry == history->current ? 900 : 400;
 

@@ -156,4 +156,20 @@ extern plot_style_t *plot_style_stroke_lightwbasec;
 /* Default font style */
 extern plot_font_style_t const * const plot_style_font;
 
+#ifndef HISTORY_COLOUR_SELECTED
+#define HISTORY_COLOUR_SELECTED 0xFF0000
+#endif
+
+#ifndef HISTORY_COLOUR_FOREGROUND
+#define HISTORY_COLOUR_FOREGROUND 0x333333
+#endif
+
+#ifndef HISTORY_COLOUR_BACKGROUND
+#define HISTORY_COLOUR_BACKGROUND 0xFFFFFF
+#endif
+
+#ifndef HISTORY_COLOUR_LINES
+#define HISTORY_COLOUR_LINES HISTORY_COLOUR_FOREGROUND
+#endif
+
 #endif
