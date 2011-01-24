@@ -5,3 +5,6 @@
 #endif
 
 #undef offsetof
+
+#define HISTORY_COLOUR_BACKGROUND 0x000000
+#define HISTORY_COLOUR_FOREGROUND 0xFFFFFF

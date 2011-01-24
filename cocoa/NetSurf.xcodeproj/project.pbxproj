@@ -141,6 +141,7 @@
 		26CDD00312E70F56004FC66B /* BrowserWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDD00212E70F56004FC66B /* BrowserWindowController.m */; };
 		26CDD0F612E726E0004FC66B /* BrowserViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26CDD0F512E726E0004FC66B /* BrowserViewController.m */; };
 		26EC3B6A12ED62C0000A960C /* URLFieldCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 26EC3B6912ED62C0000A960C /* URLFieldCell.m */; };
+		26EC3C4412ED8202000A960C /* HistoryView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26EC3C4312ED8202000A960C /* HistoryView.m */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -404,6 +405,8 @@
 		26CDD0F512E726E0004FC66B /* BrowserViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserViewController.m; sourceTree = "<group>"; };
 		26EC3B6812ED62C0000A960C /* URLFieldCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = URLFieldCell.h; sourceTree = "<group>"; };
 		26EC3B6912ED62C0000A960C /* URLFieldCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = URLFieldCell.m; sourceTree = "<group>"; };
+		26EC3C4212ED8202000A960C /* HistoryView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HistoryView.h; sourceTree = "<group>"; };
+		26EC3C4312ED8202000A960C /* HistoryView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HistoryView.m; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* NetSurf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NetSurf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -800,6 +803,8 @@
 				2622F1D612DCD84600CD5A62 /* TreeView.m */,
 				26EC3B6812ED62C0000A960C /* URLFieldCell.h */,
 				26EC3B6912ED62C0000A960C /* URLFieldCell.m */,
+				26EC3C4212ED8202000A960C /* HistoryView.h */,
+				26EC3C4312ED8202000A960C /* HistoryView.m */,
 			);
 			name = Views;
 			sourceTree = "<group>";
@@ -1068,6 +1073,7 @@
 				26CDD00312E70F56004FC66B /* BrowserWindowController.m in Sources */,
 				26CDD0F612E726E0004FC66B /* BrowserViewController.m in Sources */,
 				26EC3B6A12ED62C0000A960C /* URLFieldCell.m in Sources */,
+				26EC3C4412ED8202000A960C /* HistoryView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

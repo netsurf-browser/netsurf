@@ -17,6 +17,7 @@
  */
 
 #import "BrowserView.h"
+#import "HistoryView.h"
 
 #import "desktop/browser.h"
 #import "desktop/history_core.h"
@@ -26,6 +27,11 @@
 #import "desktop/selection.h"
 
 #import "cocoa/font.h"
+
+@interface BrowserView () <HistoryViewDelegate>
+
+@end
+
 
 @implementation BrowserView
 
@@ -39,6 +45,8 @@ static const NSTimeInterval CaretBlinkTime = 0.8;
 - (void) dealloc;
 {
 	[self setCaretTimer: nil];
+	[history release];
+	
 	[super dealloc];
 }
 
@@ -173,6 +181,11 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) mouseUp: (NSEvent *)theEvent;
 {
+	if (historyVisible) {
+		[self toggleHistory];
+		return;
+	}
+	
 	NSPoint location = [self convertMousePoint: theEvent];
 
 	browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
@@ -326,6 +339,28 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	browser_window_key_press( browser, KEY_PASTE );
 }
 
+- (void) toggleHistory;
+{
+	if (!historyVisible) {
+		if (nil  == history) {
+			history = [[HistoryView alloc] initWithBrowser: browser];
+			[history setDelegate: self];
+		}
+		[self addSubview: history];
+
+		historyVisible = YES;
+	} else {
+		[history removeFromSuperview];
+		historyVisible = NO;
+	}
+}
+
+
+- (void) historyViewDidSelectItem: (HistoryView *) history;
+{
+	[history removeFromSuperview];
+	historyVisible = NO;
+}
 
 - (BOOL) acceptsFirstResponder;
 {

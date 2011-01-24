@@ -18,34 +18,24 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "ScrollableView.h"
 @class HistoryView;
 
-@interface BrowserView : ScrollableView {
-	struct browser_window *browser;
-	
-	NSPoint caretPoint;
-	CGFloat caretHeight;
-	BOOL caretVisible;
-	BOOL hasCaret;
-	NSTimer *caretTimer;
-	
-	BOOL isDragging;
-	NSPoint dragStart;
-	
-	BOOL isResizing;
+@protocol HistoryViewDelegate
 
-	HistoryView *history;
-	BOOL historyVisible;
+- (void) historyViewDidSelectItem: (HistoryView *) history;
+
+@end
+
+
+@interface HistoryView : NSView {
+	struct browser_window *browser;
+	id <HistoryViewDelegate> delegate;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
-@property (readwrite, retain, nonatomic) NSTimer *caretTimer;
-@property (readwrite, assign, nonatomic, getter=isResizing) BOOL resizing;
+@property (readwrite, assign, nonatomic) id <HistoryViewDelegate> delegate;
 
-- (void) removeCaret;
-- (void) addCaretAt: (NSPoint) point height: (CGFloat) height;
-
-- (void) toggleHistory;
+- (id) initWithBrowser: (struct browser_window *)bw;
+- (void) updateHistory;
 
 @end

@@ -47,6 +47,8 @@ struct browser_window;
 
 - (IBAction) backForwardSelected: (id) sender;
 
+- (IBAction) showHistory: (id) sender;
+
 - (IBAction) goBack: (id) sender;
 - (IBAction) goForward: (id) sender;
 - (IBAction) reloadPage: (id) sender;

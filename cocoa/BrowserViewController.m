@@ -151,4 +151,9 @@ static inline bool compare_float( float a, float b )
 }
 
 
+- (IBAction) showHistory: (id) sender;
+{
+	[browserView toggleHistory];
+}
+
 @end

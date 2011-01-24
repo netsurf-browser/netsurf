@@ -73,6 +73,7 @@ S_COCOA := \
 	ScrollableView.m \
 	URLFieldCell.m \
 	TreeView.m \
+	HistoryView.m \
 	bitmap.m \
 	fetch.m \
 	font.m \
