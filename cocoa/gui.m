@@ -21,6 +21,7 @@
 #import "BrowserView.h"
 #import "BrowserViewController.h"
 #import "BrowserWindowController.h"
+#import "FormSelectMenu.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"
@@ -199,6 +200,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 			break;
 			
 		case GUI_POINTER_POINT:
+		case GUI_POINTER_MENU:
 			[[NSCursor pointingHandCursor] set];
 			break;
 			
@@ -298,9 +300,10 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 void gui_create_form_select_menu(struct browser_window *bw,
 								 struct form_control *control)
 {
-	UNIMPL();
+	FormSelectMenu  *menu = [[FormSelectMenu alloc] initWithControl: control forWindow: bw];
+	[menu runInView: [(BrowserViewController *)bw->window browserView]];
+	[menu release];
 }
-
 
 void gui_launch_url(const char *url)
 {

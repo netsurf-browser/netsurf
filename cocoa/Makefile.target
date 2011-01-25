@@ -74,6 +74,7 @@ S_COCOA := \
 	URLFieldCell.m \
 	TreeView.m \
 	HistoryView.m \
+	FormSelectMenu.m \
 	bitmap.m \
 	fetch.m \
 	font.m \
