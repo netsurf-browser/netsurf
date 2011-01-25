@@ -254,6 +254,7 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
+	[[(BrowserViewController *)g browserView] setHistoryVisible: NO];
 }
 
 bool gui_window_scroll_start(struct gui_window *g)

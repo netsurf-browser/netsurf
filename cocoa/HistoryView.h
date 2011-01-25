@@ -20,22 +20,16 @@
 
 @class HistoryView;
 
-@protocol HistoryViewDelegate
-
-- (void) historyViewDidSelectItem: (HistoryView *) history;
-
-@end
-
-
 @interface HistoryView : NSView {
 	struct browser_window *browser;
-	id <HistoryViewDelegate> delegate;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
-@property (readwrite, assign, nonatomic) id <HistoryViewDelegate> delegate;
 
 - (id) initWithBrowser: (struct browser_window *)bw;
 - (void) updateHistory;
+
+- (void) fadeIntoView: (NSView *) superView;
+- (void) fadeOut;
 
 @end

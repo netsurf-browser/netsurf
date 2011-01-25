@@ -33,7 +33,6 @@ static NSRect cocoa_history_rect( struct browser_window *bw )
 @implementation HistoryView
 
 @synthesize browser;
-@synthesize delegate;
 
 - (id)initWithBrowser: (struct browser_window *)bw;
 {
@@ -48,30 +47,42 @@ static NSRect cocoa_history_rect( struct browser_window *bw )
 - (void) updateHistory;
 {
 	[self setFrameSize: cocoa_history_rect( browser ).size];
+
+	NSView *superView = [self superview];
+	if (nil != superView) {
+		NSRect visibleRect = [superView visibleRect];
+		NSRect rect = [self frame];
+		NSRect frame = [superView frame];
+		
+		rect.origin.x = visibleRect.origin.x + (NSWidth( visibleRect ) - NSWidth( rect )) / 2.0;
+		rect.origin.x = MAX( rect.origin.x, frame.origin.x );
+		
+		rect.origin.y = visibleRect.origin.y + (NSHeight( visibleRect ) - NSHeight( rect )) / 2.0;
+		rect.origin.y = MAX( rect.origin.y, frame.origin.y );
+		
+		[self setFrameOrigin: rect.origin];
+	}
 	
 	[self setNeedsDisplay: YES];
 }
 
-- (void) recenter;
+- (void) fadeIntoView: (NSView *) superView;
 {
-	NSView *superView = [self superview];
-	NSRect visibleRect = [superView visibleRect];
-	NSRect rect = [self frame];
-	NSRect frame = [superView frame];
-	
-	rect.origin.x = visibleRect.origin.x + (NSWidth( visibleRect ) - NSWidth( rect )) / 2.0;
-	rect.origin.x = MAX( rect.origin.x, frame.origin.x );
-	
-	rect.origin.y = visibleRect.origin.y + (NSHeight( visibleRect ) - NSHeight( rect )) / 2.0;
-	rect.origin.y = MAX( rect.origin.y, frame.origin.y );
-	
-	[self setFrameOrigin: rect.origin];
+	[self setAlphaValue: 0];
+	[superView addSubview: self];
+	[[self animator] setAlphaValue: 1.0];
+}
+
+- (void) fadeOut;
+{
+	[[self animator] setAlphaValue: 0.0];
+	[self performSelector: @selector(removeFromSuperview) withObject: nil 
+			   afterDelay: [[NSAnimationContext currentContext] duration]];
 }
 
 - (void) viewDidMoveToSuperview;
 {
 	[self updateHistory];
-	[self recenter];
 }
 
 - (void) drawRect: (NSRect)rect;
@@ -95,9 +106,7 @@ static NSRect cocoa_history_rect( struct browser_window *bw )
 {
 	const NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
 	const bool newWindow = [theEvent modifierFlags] & NSCommandKeyMask;
-	if (history_click( browser, browser->history, location.x, location.y, newWindow )) {
-		[delegate historyViewDidSelectItem: self];
-	}
+	history_click( browser, browser->history, location.x, location.y, newWindow );
 }
 
 - (BOOL) isFlipped;

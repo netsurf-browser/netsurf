@@ -28,10 +28,6 @@
 
 #import "cocoa/font.h"
 
-@interface BrowserView () <HistoryViewDelegate>
-
-@end
-
 
 @implementation BrowserView
 
@@ -182,7 +178,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 - (void) mouseUp: (NSEvent *)theEvent;
 {
 	if (historyVisible) {
-		[self toggleHistory];
+		[self setHistoryVisible: NO];
 		return;
 	}
 	
@@ -339,29 +335,6 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	browser_window_key_press( browser, KEY_PASTE );
 }
 
-- (void) toggleHistory;
-{
-	if (!historyVisible) {
-		if (nil  == history) {
-			history = [[HistoryView alloc] initWithBrowser: browser];
-			[history setDelegate: self];
-		}
-		[self addSubview: history];
-
-		historyVisible = YES;
-	} else {
-		[history removeFromSuperview];
-		historyVisible = NO;
-	}
-}
-
-
-- (void) historyViewDidSelectItem: (HistoryView *) history;
-{
-	[history removeFromSuperview];
-	historyVisible = NO;
-}
-
 - (BOOL) acceptsFirstResponder;
 {
 	return YES;
@@ -375,6 +348,24 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	}
 	
 	[super adjustFrame];
+}
+
+- (BOOL) isHistoryVisible;
+{
+	return historyVisible;
+}
+
+- (void) setHistoryVisible: (BOOL) newVisible;
+{
+	if (newVisible == historyVisible) return;
+	historyVisible = newVisible;
+	
+	if (historyVisible) {
+		if (nil  == history) history = [[HistoryView alloc] initWithBrowser: browser];
+		[history fadeIntoView: self];
+	} else {
+		[history fadeOut];
+	}
 }
 
 @end
