@@ -24,35 +24,52 @@
 @property (readonly, retain, nonatomic) NSButtonCell *refreshCell;
 
 - (NSRect) buttonFrame: (NSRect) cellFrame;
+- (NSRect) urlFrame: (NSRect) cellFrame;
+- (NSRect) iconFrame: (NSRect) cellFrame;
 
 @end
 
 
 @implementation URLFieldCell
 
+@synthesize favicon;
+
+- (void) setFavicon: (NSImage *)newIcon;
+{
+	if (favicon != newIcon) {
+		[favicon release];
+		favicon = [newIcon retain];
+		[[self controlView] setNeedsDisplay: YES];
+	}
+}
+
 #define BUTTON_SIZE 32
 #define PADDING 2
 
 - (void) drawInteriorWithFrame: (NSRect)cellFrame inView: (NSView *)controlView;
 {
-	[super drawInteriorWithFrame: cellFrame inView: controlView];
-	const NSRect buttonRect = [self buttonFrame: cellFrame];
-	[[self refreshCell] drawInteriorWithFrame: buttonRect inView: controlView];
+	[favicon drawInRect: [self iconFrame: cellFrame] fromRect: NSZeroRect 
+			  operation: NSCompositeSourceOver fraction: 1.0];
+
+	[super drawInteriorWithFrame: [self urlFrame: cellFrame] inView: controlView];
+
+	[[self refreshCell] drawInteriorWithFrame: [self buttonFrame: cellFrame] 
+									   inView: controlView];
 }
 
 - (void) selectWithFrame: (NSRect)aRect inView: (NSView *)controlView editor: (NSText *)textObj 
 				delegate: (id)anObject start: (NSInteger)selStart length: (NSInteger)selLength;
 {
-	aRect.size.width -= BUTTON_SIZE + PADDING;
-	[super selectWithFrame: aRect inView: controlView editor: textObj 
+	const NSRect textFrame = [self urlFrame: aRect];
+	[super selectWithFrame: textFrame inView: controlView editor: textObj 
 				  delegate: anObject start: selStart length: selLength];
 }
 
 - (void) editWithFrame: (NSRect)aRect inView: (NSView *)controlView editor: (NSText *)textObj 
 			  delegate: (id)anObject event: (NSEvent *)theEvent;
 {
-	aRect.size.width -= BUTTON_SIZE + PADDING;
-	[super editWithFrame: aRect inView: controlView editor: textObj 
+	const NSRect textFrame = [self urlFrame: aRect];
+	[super editWithFrame: textFrame inView: controlView editor: textObj 
 				delegate: anObject event: theEvent];
 }
 
@@ -82,6 +99,26 @@
 	buttonRect.origin.x = NSMaxX( cellFrame ) - BUTTON_SIZE;
 	buttonRect.size.width = BUTTON_SIZE;
 	return buttonRect;
+}
+
+- (NSRect) urlFrame: (NSRect) cellFrame;
+{
+	NSRect textFrame = cellFrame;
+	textFrame.origin.x += cellFrame.size.height;
+	textFrame.size.width -= cellFrame.size.height + BUTTON_SIZE + PADDING;
+	return textFrame;
+}
+
+- (NSRect) iconFrame: (NSRect)cellFrame;
+{
+	NSRect iconFrame = {
+		.origin = {
+			.x = cellFrame.origin.x + PADDING,
+			.y = cellFrame.origin.y,
+		},
+		.size = NSMakeSize(  NSHeight( cellFrame ), NSHeight( cellFrame ) )
+	};
+	return NSInsetRect( iconFrame, 2 * PADDING, 2 * PADDING );
 }
 
 - (NSButtonCell *) refreshCell;

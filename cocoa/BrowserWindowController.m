@@ -32,6 +32,7 @@
 @synthesize urlField;
 
 @synthesize activeBrowser;
+@synthesize activeBrowserController;
 
 - (id) init;
 {
@@ -62,6 +63,7 @@
 	[[self window] setAcceptsMouseMovedEvents: YES];
 	
 	[urlField setRefreshAction: @selector(reloadPage:)];
+	[urlField bind: @"favicon" toObject: activeBrowserController withKeyPath: @"selection.favicon"  options: nil];
 }
 
 - (void) addTab: (BrowserViewController *)browser;

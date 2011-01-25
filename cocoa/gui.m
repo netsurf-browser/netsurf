@@ -32,6 +32,8 @@
 #import "desktop/401login.h"
 #import "utils/utils.h"
 
+#import "image/ico.h"
+
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 char *quirks_stylesheet_url;
@@ -236,7 +238,18 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
-	// ignore
+	NSBitmapImageRep *bmp = icon != NULL ? (NSBitmapImageRep *)content_get_bitmap( icon ) : NULL;
+
+	NSImage *image = nil;
+	if (bmp != nil) {
+		image = [[NSImage alloc] initWithSize: NSMakeSize( 32, 32 )];
+		[image addRepresentation: bmp];
+	} else {
+		image = [[NSApp applicationIconImage] retain];
+	}
+	
+	[(BrowserViewController *)g setFavicon: image];
+	[image release];
 }
 
 void gui_window_set_search_ico(hlcache_handle *ico)

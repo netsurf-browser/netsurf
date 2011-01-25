@@ -21,9 +21,11 @@
 
 @interface URLFieldCell : NSTextFieldCell {
 	NSButtonCell *refreshCell;
+	NSImage *favicon;
 }
 
 @property (readwrite, assign, nonatomic) SEL refreshAction;
 @property (readwrite, assign, nonatomic) id refreshTarget;
+@property (readwrite, retain, nonatomic) NSImage *favicon;
 
 @end

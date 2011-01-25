@@ -37,6 +37,7 @@
 @synthesize title;
 @synthesize status;
 @synthesize isProcessing;
+@synthesize favicon;
 
 - (void) dealloc;
 {

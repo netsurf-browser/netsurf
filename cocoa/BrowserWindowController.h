@@ -26,6 +26,7 @@
 	PSMTabBarControl *tabBar;
 	NSTabView *tabView;
 	URLFieldCell *urlField;
+	NSObjectController *activeBrowserController;
 
 	BrowserViewController *activeBrowser;
 }
@@ -33,6 +34,7 @@
 @property (readwrite, retain, nonatomic) IBOutlet PSMTabBarControl *tabBar;
 @property (readwrite, retain, nonatomic) IBOutlet NSTabView *tabView;
 @property (readwrite, retain, nonatomic) IBOutlet URLFieldCell *urlField;
+@property (readwrite, retain, nonatomic) IBOutlet NSObjectController *activeBrowserController;
 
 @property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;
 

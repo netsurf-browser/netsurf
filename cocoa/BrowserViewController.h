@@ -31,6 +31,7 @@ struct browser_window;
 	NSString *title;
 	NSString *status;
 	BOOL isProcessing;
+	NSImage *favicon;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
@@ -40,6 +41,7 @@ struct browser_window;
 @property (readwrite, copy, nonatomic) NSString *title;
 @property (readwrite, copy, nonatomic) NSString *status;
 @property (readwrite, assign, nonatomic) BOOL isProcessing;
+@property (readwrite, copy, nonatomic) NSImage *favicon;
 
 - initWithBrowser: (struct browser_window *) bw;
 
