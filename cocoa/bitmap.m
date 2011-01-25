@@ -95,7 +95,7 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
 
 bool bitmap_test_opaque(void *bitmap)
 {
-	NSCParameterAssert( bitmap_get_bpp( bitmap ) == BITS_PER_PIXEL );
+	NSCParameterAssert( bitmap_get_bpp( bitmap ) == BYTES_PER_PIXEL );
 	
 	unsigned char *buf = bitmap_get_buffer( bitmap );
 	
@@ -133,7 +133,7 @@ size_t bitmap_get_bpp(void *bitmap)
 {
 	NSCParameterAssert( NULL != bitmap );
 	NSBitmapImageRep *bmp = (NSBitmapImageRep *)bitmap;
-	return [bmp bitsPerPixel];
+	return [bmp bitsPerPixel] / 8;
 }
 
 bool bitmap_save(void *bitmap, const char *path, unsigned flags)

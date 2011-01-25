@@ -30,7 +30,7 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 	CGColorSpaceRef cspace = CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB );
 	CGContextRef bitmapContext = CGBitmapContextCreate( bitmap_get_buffer( bitmap ), 
 													   bitmap_get_width( bitmap ), bitmap_get_height( bitmap ), 
-													   bitmap_get_bpp( bitmap ) / 4, 
+													   bitmap_get_bpp( bitmap ) * 8 / 4, 
 													   bitmap_get_rowstride( bitmap ), 
 													   cspace, kCGImageAlphaNoneSkipLast );
 	CGColorSpaceRelease( cspace );
