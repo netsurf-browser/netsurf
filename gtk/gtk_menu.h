@@ -133,21 +133,26 @@ struct nsgtk_debugging_submenu {
 };
 
 
-struct nsgtk_menu {
+struct nsgtk_menu_bar {
+	GtkMenuBar		*menu_bar;
 	struct nsgtk_file_menu	*file;
-	struct nsgtk_file_menu	*rclick_file;
 	struct nsgtk_edit_menu	*edit;
-	struct nsgtk_edit_menu	*rclick_edit;
 	struct nsgtk_view_menu	*view;
-	struct nsgtk_view_menu	*rclick_view;
 	struct nsgtk_nav_menu	*nav;
-	struct nsgtk_nav_menu	*rclick_nav;
 	struct nsgtk_tabs_menu	*tabs;
-	struct nsgtk_tabs_menu	*rclick_tabs;
 	struct nsgtk_help_menu	*help;
-	struct nsgtk_help_menu	*rclick_help;
 };
 
-struct nsgtk_menu *nsgtk_menu_create(GladeXML *xml, GtkWindow *window);
+struct nsgtk_menu_rclick {
+	struct nsgtk_file_menu	*file;
+	struct nsgtk_edit_menu	*edit;
+	struct nsgtk_view_menu	*view;
+	struct nsgtk_nav_menu	*nav;
+	struct nsgtk_tabs_menu	*tabs;
+	struct nsgtk_help_menu	*help;
+};
+
+struct nsgtk_menu_bar *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window);
+struct nsgtk_menu_rclick *nsgtk_menu_rclick_create(GtkWindow *window);
 
 #endif
