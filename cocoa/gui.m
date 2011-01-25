@@ -238,6 +238,11 @@ void gui_window_stop_throbber(struct gui_window *g)
 
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
+#ifdef WITH_BMP
+	if (icon != NULL && content_get_type( icon ) == CONTENT_ICO)
+		nsico_set_bitmap_from_size( icon, 16, 16 );
+#endif
+
 	NSBitmapImageRep *bmp = icon != NULL ? (NSBitmapImageRep *)content_get_bitmap( icon ) : NULL;
 
 	NSImage *image = nil;
