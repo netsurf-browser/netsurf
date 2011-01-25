@@ -33,6 +33,7 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *string, size_t
 													 const plot_font_style_t *style );
 static NSTextStorage *cocoa_text_storage = nil;
 static NSTextContainer *cocoa_text_container = nil;
+static CGFloat cocoa_font_scale_factor = 1.0;
 
 static bool nsfont_width(const plot_font_style_t *style,
 						 const char *string, size_t length,
@@ -50,21 +51,21 @@ static bool nsfont_position_in_string(const plot_font_style_t *style,
 									  int x, size_t *char_offset, int *actual_x)
 {
 	NSLayoutManager *layout = cocoa_prepare_layout_manager( string, length, style );
+	CGFloat fraction = 0.0;
 	NSUInteger glyphIndex = [layout glyphIndexForPoint: NSMakePoint( x, 0 ) 
 									   inTextContainer: cocoa_text_container 
-						fractionOfDistanceThroughGlyph: NULL];
+						fractionOfDistanceThroughGlyph: &fraction];
+	if (fraction > 0) ++glyphIndex;
 	NSUInteger chars = [layout characterIndexForGlyphAtIndex: glyphIndex];
-
+	
 	size_t offset = 0;
-	while (chars > 0) {
+	while (chars-- > 0) {
 		uint8_t ch = ((uint8_t *)string)[offset];
 		
 		if (0xC2 <= ch && ch <= 0xDF) offset += 2;
 		else if (0xE0 <= ch && ch <= 0xEF) offset += 3;
 		else if (0xF0 <= ch && ch <= 0xF4) offset += 4;
 		else offset++;
-		
-		--chars;
 	}
 	
 	*char_offset = offset;
@@ -84,7 +85,7 @@ static bool nsfont_split(const plot_font_style_t *style,
 	while ((string[*char_offset] != ' ') && (*char_offset > 0))
 		(*char_offset)--;
 	
-	nsfont_position_in_string(style, string, *char_offset + 1, x, char_offset,
+	nsfont_position_in_string(style, string, *char_offset, x, char_offset,
 							  actual_x);
 
 	return true;
@@ -106,7 +107,7 @@ static NSString *cocoa_font_family_name( plot_font_generic_family_t family )
 static NSFont *cocoa_font_get_nsfont( const plot_font_style_t *style )
 {
 	NSFont *font = [NSFont fontWithName: cocoa_font_family_name( style->family ) 
-						   size: (CGFloat)style->size / FONT_SIZE_SCALE];
+						   size: cocoa_font_scale_factor * (CGFloat)style->size / FONT_SIZE_SCALE];
 	
 	NSFontTraitMask traits = 0;
 	if (style->flags & FONTF_ITALIC || style->flags & FONTF_OBLIQUE) traits |= NSItalicFontMask;
@@ -171,8 +172,6 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *bytes, size_t 
 	return layout;
 }
 
-static CGFloat cocoa_font_scale_factor = 1.0;
-
 void cocoa_set_font_scale_factor( float newFactor )
 {
 	cocoa_font_scale_factor = newFactor;
@@ -180,10 +179,7 @@ void cocoa_set_font_scale_factor( float newFactor )
 
 void cocoa_draw_string( int x, int y, const char *bytes, size_t length, const plot_font_style_t *style )
 {
-	plot_font_style_t scaledStyle = *style;
-	scaledStyle.size *= cocoa_font_scale_factor;
-	
-	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, &scaledStyle );
+	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, style );
 	
 	if ([cocoa_text_storage length] > 0) {
 		NSFont *font = [cocoa_text_storage attribute: NSFontAttributeName atIndex: 0 effectiveRange: NULL];
