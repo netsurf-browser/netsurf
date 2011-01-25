@@ -32,18 +32,6 @@ void warn_user(const char *warning, const char *detail)
 	NSRunAlertPanel( @"Warning", @"Warning %s: %s", @"OK", nil, nil, warning, detail );
 }
 
-query_id query_user(const char *query, const char *detail,
-					const query_callback *cb, void *pw, const char *yes, const char *no)
-{
-	UNIMPL();
-	return 0;
-}
-
-void query_close(query_id qid)
-{
-	UNIMPL();
-}
-
 void PDF_Password(char **owner_pass, char **user_pass, char *path)
 {
 	UNIMPL();

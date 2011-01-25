@@ -22,7 +22,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
 char *url_to_path(const char *url)
 {
@@ -32,6 +31,6 @@ char *url_to_path(const char *url)
 
 char *path_to_url(const char *path)
 {
-	UNIMPL();
-	return NULL;
+	return strdup( [[[NSURL fileURLWithPath: [NSString stringWithUTF8String: path]] 
+					 absoluteString] UTF8String] );
 }

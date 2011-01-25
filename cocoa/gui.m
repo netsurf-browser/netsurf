@@ -345,7 +345,7 @@ static char *gui_get_resource_url( NSString *name, NSString *type )
 	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
 }
 
-static NSString *cocoa_get_preferences_path()
+static NSString *cocoa_get_preferences_path( void )
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, YES );
 	NSCAssert( [paths count] >= 1, @"Where is the application support directory?" );
@@ -367,7 +367,7 @@ static NSString *cocoa_get_preferences_path()
 	return netsurfPath;
 }
 
-static const char *cocoa_get_options_file()
+static const char *cocoa_get_options_file( void )
 {
 	NSString *prefPath = [cocoa_get_preferences_path() stringByAppendingPathComponent: @"options"];
 	return [prefPath UTF8String];

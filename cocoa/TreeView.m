@@ -22,7 +22,6 @@
 #import "desktop/plotters.h"
 #import "desktop/history_global_core.h"
 
-#define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
 @implementation TreeView
 

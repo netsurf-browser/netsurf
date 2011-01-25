@@ -21,8 +21,6 @@
 #import "desktop/download.h"
 #import "desktop/gui.h"
 
-#define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
-
 @interface DownloadWindowController ()
 
 @property (readwrite, retain, nonatomic) NSFileHandle *outputFile;
