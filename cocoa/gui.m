@@ -252,9 +252,10 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 		image = [[NSImage alloc] initWithSize: NSMakeSize( 32, 32 )];
 		[image addRepresentation: bmp];
 	} else {
-		image = [[NSApp applicationIconImage] retain];
+		image = [[NSImage imageNamed: @"NetSurf"] copy];
 	}
-	
+	[image setFlipped: YES];
+
 	[(BrowserViewController *)g setFavicon: image];
 	[image release];
 }

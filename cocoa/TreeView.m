@@ -44,7 +44,7 @@ static const struct treeview_table cocoa_tree_callbacks = {
 	treeHandle = tree_create( history_global_get_tree_flags(), &cocoa_tree_callbacks, self );
 	if (NULL == treeHandle) {
 		[self release];
-		self = nil;
+		return nil;
 	}
 	history_global_initialise( treeHandle, "" );
     return self;

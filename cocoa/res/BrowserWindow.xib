@@ -12,7 +12,6 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="73"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -82,6 +81,7 @@
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{8, 14}, {30, 25}}</string>
 									<reference key="NSSuperview"/>
+									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSButtonCell" key="NSCell" id="296571644">
 										<int key="NSCellFlags">67239424</int>
@@ -128,6 +128,7 @@
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{5, 14}, {71, 25}}</string>
 									<reference key="NSSuperview"/>
+									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSSegmentedCell" key="NSCell" id="845979064">
 										<int key="NSCellFlags">67239424</int>
@@ -190,6 +191,7 @@
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{0, 14}, {96, 22}}</string>
 									<reference key="NSSuperview"/>
+									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSTextFieldCell" key="NSCell" id="1053649244">
 										<int key="NSCellFlags">-1804468671</int>
@@ -371,6 +373,7 @@
 							<int key="NSvFlags">266</int>
 							<string key="NSFrame">{{0, 532}, {774, 22}}</string>
 							<reference key="NSSuperview" ref="1006"/>
+							<reference key="NSWindow"/>
 							<string key="NSClassName">PSMTabBarControl</string>
 						</object>
 						<object class="NSTextField" id="795357547">
@@ -378,6 +381,7 @@
 							<int key="NSvFlags">290</int>
 							<string key="NSFrame">{{25, 3}, {732, 14}}</string>
 							<reference key="NSSuperview" ref="1006"/>
+							<reference key="NSWindow"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="717772067">
 								<int key="NSCellFlags">68288064</int>
@@ -412,6 +416,7 @@
 							<object class="NSPSMatrix" key="NSDrawMatrix"/>
 							<string key="NSFrame">{{4, 2}, {16, 16}}</string>
 							<reference key="NSSuperview" ref="1006"/>
+							<reference key="NSWindow"/>
 							<int key="NSpiFlags">28938</int>
 							<double key="NSMaxValue">100</double>
 						</object>
@@ -420,6 +425,7 @@
 							<int key="NSvFlags">18</int>
 							<string key="NSFrame">{{0, 20}, {774, 512}}</string>
 							<reference key="NSSuperview" ref="1006"/>
+							<reference key="NSWindow"/>
 							<object class="NSMutableArray" key="NSTabViewItems">
 								<bool key="EncodedWithXMLCoder">YES</bool>
 							</object>
@@ -431,6 +437,7 @@
 					</object>
 					<string key="NSFrameSize">{774, 554}</string>
 					<reference key="NSSuperview"/>
+					<reference key="NSWindow"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1680, 1028}}</string>
 				<string key="NSMinSize">{273, 97}</string>
@@ -616,14 +623,6 @@
 						<reference key="destination" ref="685547192"/>
 					</object>
 					<int key="connectionID">74</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
-						<string key="label">showHistory:</string>
-						<reference key="source" ref="1003"/>
-						<reference key="destination" ref="229385913"/>
-					</object>
-					<int key="connectionID">78</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBBindingConnection" key="connection">
@@ -917,7 +916,7 @@
 					<object class="NSAffineTransform">
 						<bytes key="NSTransformStruct">P4AAAL+AAABDiwAAxAVAAA</bytes>
 					</object>
-					<string>{{355, 703}, {616, 169}}</string>
+					<string>{{355, 872}, {616, 0}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
