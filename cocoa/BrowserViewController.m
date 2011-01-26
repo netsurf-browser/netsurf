@@ -96,6 +96,7 @@
 - (IBAction) goBack: (id) sender;
 {
 	if (browser && history_back_available( browser->history )) {
+		navigatedUsingBackForwards = YES;
 		history_back(browser, browser->history);
 		[self updateBackForward];
 	}
@@ -104,6 +105,7 @@
 - (IBAction) goForward: (id) sender;
 {
 	if (browser && history_forward_available( browser->history )) {
+		navigatedUsingBackForwards = YES;
 		history_forward(browser, browser->history);
 		[self updateBackForward];
 	}
@@ -164,7 +166,8 @@ static inline bool compare_float( float a, float b )
 
 - (void) contentUpdated;
 {
-	[browserView setHistoryVisible: NO];
+	if (!navigatedUsingBackForwards) [browserView setHistoryVisible: NO];
+	navigatedUsingBackForwards = NO;
 }
 
 @end
