@@ -24,6 +24,7 @@
 #import "URLFieldCell.h"
 
 #import "desktop/browser.h"
+#import "desktop/options.h"
 
 @implementation BrowserWindowController
 
@@ -105,12 +106,9 @@
 	}
 }
 
-extern NSString * const kHomepageURL;
 - (IBAction) newTab: (id) sender;
 {
-	NSString *homepageURL = [[NSUserDefaults standardUserDefaults] objectForKey: kHomepageURL];
-	struct browser_window *clone = [[[tabView selectedTabViewItem] identifier] browser];
-	browser_window_create( [homepageURL UTF8String], clone, NULL, false, true );
+	browser_window_create( option_homepage_url, [activeBrowser browser], NULL, false, true );
 }
 
 - (IBAction) closeCurrentTab: (id) sender;

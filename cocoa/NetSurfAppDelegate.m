@@ -19,6 +19,7 @@
 #import "NetSurfAppDelegate.h"
 
 #import "desktop/browser.h"
+#import "desktop/options.h"
 
 @interface NetSurfAppDelegate ()
 
@@ -29,21 +30,12 @@
 
 @implementation NetSurfAppDelegate
 
-NSString * const kHomepageURL = @"HomepageURL";
 
 @synthesize historyWindow;
 
-+ (void) initialize;
-{
-	[[NSUserDefaults standardUserDefaults] registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
-															  @"http://netsurf-browser.org/welcome/", kHomepageURL,
-															  nil]];
-}
-
 - (void) newDocument: (id) sender;
 {
-	NSString *homepageURL = [[NSUserDefaults standardUserDefaults] objectForKey: kHomepageURL];
-	browser_window_create( [homepageURL UTF8String], NULL, NULL, true, false );
+	browser_window_create( option_homepage_url, NULL, NULL, true, false );
 }
 
 - (void) openDocument: (id) sender;

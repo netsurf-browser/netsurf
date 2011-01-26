@@ -18,6 +18,8 @@
 
 #import "NetsurfApp.h"
 
+#import "cocoa/gui.h"
+
 #import "desktop/gui.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
@@ -36,14 +38,55 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#import "css/utils.h"
 
+#ifndef NETSURF_HOMEPAGE
+#define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"
+#endif
 
 @implementation NetSurfApp
+
+- (void) loadOptions;
+{
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+	[defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
+								 cocoa_get_user_path( @"Cookies" ), kCookiesFileOption,
+								 cocoa_get_user_path( @"URLs" ), kURLsFileOption,
+								 cocoa_get_user_path( @"Hotlist" ), kHotlistFileOption,
+								 [NSString stringWithUTF8String: NETSURF_HOMEPAGE], kHomepageURLOption,
+								 nil]];
+	
+	
+	if (NULL == option_cookie_file) {
+		option_cookie_file = strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] );
+	}
+	
+	if (NULL == option_cookie_jar) {
+		option_cookie_jar = strdup( option_cookie_file );
+	}
+	
+	if (NULL == option_homepage_url) {
+		option_homepage_url = strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] );
+	}
+
+	nscss_screen_dpi = FLTTOFIX( 72.0 * [[NSScreen mainScreen] userSpaceScaleFactor] );
+
+	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
+	urldb_load_cookies( option_cookie_file );
+}
+
+- (void) saveOptions;
+{
+	urldb_save_cookies( option_cookie_file );
+	urldb_save( [[[NSUserDefaults standardUserDefaults] objectForKey: kURLsFileOption] UTF8String] );
+}
 
 - (void) run;
 {
 	[self finishLaunching];
+	[self loadOptions];
 	netsurf_main_loop();
+	[self saveOptions];
 }
 
 -(void) terminate: (id)sender;

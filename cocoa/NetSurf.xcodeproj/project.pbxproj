@@ -322,6 +322,7 @@
 		262711BE12DDDD1500B2FA62 /* release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = release.xcconfig; sourceTree = "<group>"; };
 		262711C212DDDDC300B2FA62 /* NetSurf.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = NetSurf.xcconfig; sourceTree = "<group>"; };
 		262711D412DDDEEE00B2FA62 /* common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = common.xcconfig; sourceTree = "<group>"; };
+		264C344112F0987E00D11246 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
 		265F30AB12D6637E0048B600 /* Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Prefix.pch; sourceTree = "<group>"; };
 		265F311912D663F50048B600 /* gui.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = gui.m; sourceTree = "<group>"; };
@@ -846,6 +847,7 @@
 		26CDD26912E7446E004FC66B /* Platform Interface */ = {
 			isa = PBXGroup;
 			children = (
+				264C344112F0987E00D11246 /* gui.h */,
 				265F311912D663F50048B600 /* gui.m */,
 				261223CB12D7805300E10F91 /* plotter.h */,
 				265F314712D666660048B600 /* plotter.m */,

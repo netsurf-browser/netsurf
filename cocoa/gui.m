@@ -18,6 +18,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "cocoa/gui.h"
+
 #import "BrowserView.h"
 #import "BrowserViewController.h"
 #import "BrowserWindowController.h"
@@ -31,12 +33,16 @@
 #import "desktop/selection.h"
 #import "desktop/401login.h"
 #import "utils/utils.h"
-
 #import "image/ico.h"
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 char *quirks_stylesheet_url;
+
+NSString * const kCookiesFileOption = @"CookiesFile";
+NSString * const kURLsFileOption = @"URLsFile";
+NSString * const kHotlistFileOption = @"Hotlist";
+NSString * const kHomepageURLOption = @"HomepageURL";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
@@ -375,10 +381,21 @@ static NSString *cocoa_get_preferences_path( void )
 	return netsurfPath;
 }
 
+NSString *cocoa_get_user_path( NSString *fileName ) 
+{
+	return [cocoa_get_preferences_path() stringByAppendingPathComponent: fileName];
+}
+
+NSString * const kClassicOptionsFile = @"ClassicOptionsFile";
+
 static const char *cocoa_get_options_file( void )
 {
-	NSString *prefPath = [cocoa_get_preferences_path() stringByAppendingPathComponent: @"options"];
-	return [prefPath UTF8String];
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+	[defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
+								 cocoa_get_user_path( @"Options" ), kClassicOptionsFile,
+								 nil]];
+	
+	return [[defaults objectForKey: kClassicOptionsFile] UTF8String];
 }
 
 int main( int argc, char **argv )
@@ -404,7 +421,7 @@ int main( int argc, char **argv )
 	[mainNib instantiateNibWithOwner:NSApp topLevelObjects:nil];
 	[mainNib release];
 	
-    [NSApp performSelectorOnMainThread:@selector(run) withObject:nil waitUntilDone:YES];
+    [NSApp run];
 	
 	netsurf_exit();
 	
