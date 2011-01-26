@@ -7,17 +7,9 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "PSMTabBarControl.h"
 
 
 @interface PSMProgressIndicator : NSProgressIndicator {
-
 }
-
-@end
-
-@interface PSMTabBarControl (LayoutPlease)
-
-- (void)update;
 
 @end

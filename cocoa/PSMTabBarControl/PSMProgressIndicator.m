@@ -7,21 +7,34 @@
 //
 
 #import "PSMProgressIndicator.h"
+#import "PSMTabBarControl.h"
+
+@interface PSMTabBarControl (PSMProgressIndicatorExtensions)
+
+- (void)update;
+
+@end
 
 @implementation PSMProgressIndicator
 
-// overrides to make tab bar control re-layout things if status changes
-- (void)setHidden:(BOOL)flag
+- (id) initWithFrame: (NSRect)frameRect;
 {
-    [super setHidden:flag];
-    [(PSMTabBarControl *)[self superview] update];
+	if ((self = [super initWithFrame: frameRect]) == nil) return nil;
+	[self setControlSize: NSSmallControlSize];
+	return self;
 }
 
-- (void)stopAnimation:(id)sender
-{
+// overrides to make tab bar control re-layout things if status changes
+- (void)setHidden:(BOOL)flag {
+	[super setHidden:flag];
+	[(PSMTabBarControl *)[self superview] update];
+}
+
+- (void)stopAnimation:(id)sender {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self
-											 selector:@selector(startAnimation:)
-											   object:nil];
+	 selector:@selector(startAnimation:)
+	 object:nil];
 	[super stopAnimation:sender];
 }
+
 @end

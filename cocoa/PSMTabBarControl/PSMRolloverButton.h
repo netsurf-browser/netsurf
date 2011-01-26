@@ -8,11 +8,10 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface PSMRolloverButton : NSButton
-{
-    NSImage             *_rolloverImage;
-    NSImage             *_usualImage;
-    NSTrackingRectTag   _myTrackingRectTag;
+@interface PSMRolloverButton : NSButton {
+	NSImage									*_rolloverImage;
+	NSImage									*_usualImage;
+	NSTrackingRectTag							_myTrackingRectTag;
 }
 
 // the regular image

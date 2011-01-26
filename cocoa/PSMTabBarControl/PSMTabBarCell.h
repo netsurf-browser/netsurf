@@ -8,37 +8,36 @@
 
 #import <Cocoa/Cocoa.h>
 #import "PSMTabBarControl.h"
+#import "PSMProgressIndicator.h"
 
-@class PSMTabBarControl;
-@class PSMProgressIndicator;
 
 @interface PSMTabBarCell : NSActionCell {
-    // sizing
-    NSRect              _frame;
-    NSSize              _stringSize;
-    NSInteger                 _currentStep;
-    BOOL                _isPlaceholder;
-    
-    // state
-    NSInteger                 _tabState;
-    NSTrackingRectTag   _closeButtonTrackingTag;    // left side tracking, if dragging
-    NSTrackingRectTag   _cellTrackingTag;           // right side tracking, if dragging
-    BOOL                _closeButtonOver;
-    BOOL                _closeButtonPressed;
-    PSMProgressIndicator *_indicator;
-    BOOL                _isInOverflowMenu;
-    BOOL                _hasCloseButton;
-    BOOL                _isCloseButtonSuppressed;
-    BOOL                _hasIcon;
-	BOOL				_hasLargeImage;
-    NSInteger                 _count;
-	NSColor				*_countColor;
-    BOOL                _isEdited;
+	// sizing
+	NSRect									_frame;
+	NSSize									_stringSize;
+	NSInteger								_currentStep;
+	BOOL									_isPlaceholder;
+
+	// state
+	NSInteger								_tabState;
+	NSTrackingRectTag						_closeButtonTrackingTag;				// left side tracking, if dragging
+	NSTrackingRectTag						_cellTrackingTag;							// right side tracking, if dragging
+	BOOL									_closeButtonOver;
+	BOOL									_closeButtonPressed;
+	PSMProgressIndicator					*_indicator;
+	BOOL									_isInOverflowMenu;
+	BOOL									_hasCloseButton;
+	BOOL									_isCloseButtonSuppressed;
+	BOOL									_hasIcon;
+	BOOL									_hasLargeImage;
+	NSInteger								_count;
+	NSColor								*_countColor;
+	BOOL									_isEdited;
 }
 
 // creation/destruction
 - (id)initWithControlView:(PSMTabBarControl *)controlView;
-- (id)initPlaceholderWithFrame:(NSRect)frame expanded:(BOOL)value inControlView:(PSMTabBarControl *)controlView;
+- (id)initPlaceholderWithFrame:(NSRect) frame expanded:(BOOL) value inControlView:(PSMTabBarControl *)controlView;
 - (void)dealloc;
 
 // accessors
@@ -89,7 +88,7 @@
 - (CGFloat)desiredWidthOfCell;
 
 // drawing
-- (void)drawWithFrame:(NSRect)cellFrame inView:(NSView *)controlView;
+- (void)drawWithFrame:(NSRect) cellFrame inView:(NSView *)controlView;
 
 // tracking the mouse
 - (void)mouseEntered:(NSEvent *)theEvent;

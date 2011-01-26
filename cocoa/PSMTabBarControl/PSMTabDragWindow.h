@@ -11,7 +11,7 @@
 @class PSMTabDragView;
 
 @interface PSMTabDragWindow : NSWindow {
-	PSMTabDragView *_dragView;
+	PSMTabDragView					*_dragView;
 }
 + (PSMTabDragWindow *)dragWindowWithImage:(NSImage *)image styleMask:(NSUInteger)styleMask;
 

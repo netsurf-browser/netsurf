@@ -7,7 +7,7 @@
 //
 
 /*
- This class is a sigleton that manages the details of a tab drag and drop.  The details were beginning to overwhelm me when keeping all of this in the control and cells :-)
+   This class is a sigleton that manages the details of a tab drag and drop.  The details were beginning to overwhelm me when keeping all of this in the control and cells :-)
  */
 
 #import <Cocoa/Cocoa.h>
@@ -18,25 +18,26 @@
 @class PSMTabBarCell, PSMTabDragWindowController;
 
 @interface PSMTabDragAssistant : NSObject {
-    PSMTabBarControl            *_sourceTabBar;
-    PSMTabBarControl            *_destinationTabBar;
-    NSMutableSet                *_participatingTabBars;
-    PSMTabBarCell               *_draggedCell;
-    NSInteger                         _draggedCellIndex;   // for snap back
-    BOOL                        _isDragging;
-	
+	PSMTabBarControl					*_sourceTabBar;
+	PSMTabBarControl					*_destinationTabBar;
+	NSMutableSet						*_participatingTabBars;
+	PSMTabBarCell						*_draggedCell;
+	NSInteger							_draggedCellIndex;					// for snap back
+	BOOL								_isDragging;
+
 	// Support for dragging into new windows
-	PSMTabDragWindowController	*_draggedTab, *_draggedView;
-	NSSize						_dragWindowOffset;
-	NSTimer						*_fadeTimer;
-	BOOL						_centersDragWindows;
-	PSMTabBarTearOffStyle		_currentTearOffStyle;
-	
-    // Animation
-    NSTimer                     *_animationTimer;
-    NSMutableArray              *_sineCurveWidths;
-    NSPoint                     _currentMouseLoc;
-    PSMTabBarCell               *_targetCell;
+	PSMTabDragWindowController		*_draggedTab;
+	PSMTabDragWindowController		*_draggedView;
+	NSSize								_dragWindowOffset;
+	NSTimer							*_fadeTimer;
+	BOOL								_centersDragWindows;
+	PSMTabBarTearOffStyle			_currentTearOffStyle;
+
+	// Animation
+	NSTimer							*_animationTimer;
+	NSMutableArray					*_sineCurveWidths;
+	NSPoint							_currentMouseLoc;
+	PSMTabBarCell						*_targetCell;
 }
 
 // Creation/destruction
@@ -64,7 +65,7 @@
 - (void)draggingUpdatedInTabBar:(PSMTabBarControl *)control atPoint:(NSPoint)mouseLoc;
 - (void)draggingExitedTabBar:(PSMTabBarControl *)control;
 - (void)performDragOperation;
-- (void)draggedImageEndedAt:(NSPoint)aPoint operation:(NSDragOperation)operation;
+- (void)draggedImageEndedAt:(NSPoint) aPoint operation:(NSDragOperation)operation;
 - (void)finishDrag;
 
 - (void)draggingBeganAt:(NSPoint)aPoint;
@@ -86,14 +87,14 @@
 - (id<PSMTabStyle>)style;
 - (NSMutableArray *)cells;
 - (void)setControlView:(id)view;
-- (id)cellForPoint:(NSPoint)point cellFrame:(NSRectPointer)outFrame;
+- (id)cellForPoint:(NSPoint) point cellFrame:(NSRectPointer)outFrame;
 - (PSMTabBarCell *)lastVisibleTab;
 - (NSInteger)numberOfVisibleTabs;
 
 @end
 
 void CGContextCopyWindowCaptureContentsToRect(void *grafport, CGRect rect, NSInteger cid, NSInteger wid, NSInteger zero);
-OSStatus CGSSetWindowTransform(NSInteger cid, NSInteger wid, CGAffineTransform transform); 
+OSStatus CGSSetWindowTransform(NSInteger cid, NSInteger wid, CGAffineTransform transform);
 
 @interface NSApplication (CoreGraphicsUndocumented)
 - (NSInteger)contextID;

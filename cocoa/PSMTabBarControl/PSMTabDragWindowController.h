@@ -15,15 +15,15 @@
 @class PSMTabDragView;
 
 @interface PSMTabDragWindowController : NSWindowController {
-	PSMTabBarTearOffStyle _tearOffStyle;
-	PSMTabDragView *_view;
-	NSAnimation *_animation;
-	NSTimer *_timer;
-	
-	BOOL _showingAlternate;
-	NSRect _originalWindowFrame;
+	PSMTabBarTearOffStyle				_tearOffStyle;
+	PSMTabDragView						*_view;
+	NSAnimation							*_animation;
+	NSTimer								*_timer;
+
+	BOOL									_showingAlternate;
+	NSRect									_originalWindowFrame;
 }
-- (id)initWithImage:(NSImage *)image styleMask:(NSUInteger)styleMask tearOffStyle:(PSMTabBarTearOffStyle)tearOffStyle;
+- (id)initWithImage:(NSImage *)image styleMask:(NSUInteger) styleMask tearOffStyle:(PSMTabBarTearOffStyle)tearOffStyle;
 
 - (NSImage *)image;
 - (NSImage *)alternateImage;

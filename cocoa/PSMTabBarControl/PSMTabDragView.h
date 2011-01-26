@@ -9,8 +9,9 @@
 #import <Cocoa/Cocoa.h>
 
 @interface PSMTabDragView : NSView {
-	NSImage *_image, *_alternateImage;
-	CGFloat _alpha;
+	NSImage					*_image;
+	NSImage					*_alternateImage;
+	CGFloat					_alpha;
 }
 - (void)setFadeValue:(CGFloat)value;
 - (NSImage *)image;

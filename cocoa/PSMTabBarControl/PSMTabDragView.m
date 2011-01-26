@@ -12,14 +12,13 @@
 @implementation PSMTabDragView
 
 - (id)initWithFrame:(NSRect)frame {
-    if ( (self = [super initWithFrame:frame]) ) {
+	if((self = [super initWithFrame:frame])) {
 		_alpha = 1.0;
-    }
-    return self;
+	}
+	return self;
 }
 
-- (void)dealloc
-{
+- (void)dealloc {
 	[_image release];
 	[_alternateImage release];
 	[super dealloc];
@@ -32,35 +31,30 @@
 	NSRect srcRect;
 	srcRect.origin = NSZeroPoint;
 	srcRect.size = [_image size];
-	
+
 	[_image drawInRect:[self bounds] fromRect:srcRect operation:NSCompositeSourceOver fraction:primaryAlpha];
 	srcRect.size = [_alternateImage size];
 	[_alternateImage drawInRect:[self bounds] fromRect:srcRect operation:NSCompositeSourceOver fraction:alternateAlpha];
 }
 
-- (void)setFadeValue:(CGFloat)value
-{
+- (void)setFadeValue:(CGFloat)value {
 	_alpha = value;
 }
 
-- (NSImage *)image
-{
+- (NSImage *)image {
 	return _image;
 }
 
-- (void)setImage:(NSImage *)image
-{
+- (void)setImage:(NSImage *)image {
 	[_image release];
 	_image = [image retain];
 }
 
-- (NSImage *)alternateImage
-{
+- (NSImage *)alternateImage {
 	return _alternateImage;
 }
 
-- (void)setAlternateImage:(NSImage *)image
-{
+- (void)setAlternateImage:(NSImage *)image {
 	[_alternateImage release];
 	_alternateImage = [image retain];
 }

@@ -11,23 +11,21 @@
 
 @implementation NSString (AITruncation)
 
-+ (id)ellipsis
-{
++ (id)ellipsis {
 	return [NSString stringWithUTF8String:"\xE2\x80\xA6"];
 }
 
-- (NSString *)stringWithEllipsisByTruncatingToLength:(NSUInteger)length
-{
+- (NSString *)stringWithEllipsisByTruncatingToLength:(NSUInteger)length {
 	NSString *returnString;
-	
-	if (length < [self length]) {
+
+	if(length < [self length]) {
 		//Truncate and append the ellipsis
-		returnString = [[self substringToIndex:length-1] stringByAppendingString:[NSString ellipsis]];
+		returnString = [[self substringToIndex:length - 1] stringByAppendingString:[NSString ellipsis]];
 	} else {
 		//We don't need to truncate, so don't append an ellipsis
 		returnString = [[self copy] autorelease];
 	}
-	
+
 	return returnString;
 }
 

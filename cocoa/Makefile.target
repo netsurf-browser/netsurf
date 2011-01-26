@@ -130,7 +130,10 @@ TABBAR_RESOURCES := AquaTabClose_Front_Pressed.png \
 	AquaTabCloseDirty_Front.png \
 	AquaTabNew.png \
 	AquaTabNewPressed.png \
-	AquaTabNewRollover.png
+	AquaTabNewRollover.png \
+	overflowImage.png \
+	overflowImagePressed.png \
+	pi.png
 
 R_RESOURCES += $(addprefix cocoa/PSMTabBarControl/Images/,$(TABBAR_RESOURCES))
 

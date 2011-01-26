@@ -108,6 +108,9 @@
 		265F320612D66C200048B600 /* utf8.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F320512D66C200048B600 /* utf8.m */; };
 		265F321412D66CD90048B600 /* utils.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F321312D66CD90048B600 /* utils.m */; };
 		265F321F12D66D510048B600 /* font.m in Sources */ = {isa = PBXBuildFile; fileRef = 265F321E12D66D510048B600 /* font.m */; };
+		26ABD61F12F02EB900407161 /* overflowImage.png in Resources */ = {isa = PBXBuildFile; fileRef = 26ABD61C12F02EB900407161 /* overflowImage.png */; };
+		26ABD62012F02EB900407161 /* overflowImagePressed.png in Resources */ = {isa = PBXBuildFile; fileRef = 26ABD61D12F02EB900407161 /* overflowImagePressed.png */; };
+		26ABD62112F02EB900407161 /* pi.png in Resources */ = {isa = PBXBuildFile; fileRef = 26ABD61E12F02EB900407161 /* pi.png */; };
 		26AFE63F12DDEB0A005AD082 /* NetSurf.icns in Resources */ = {isa = PBXBuildFile; fileRef = 26AFE63E12DDEB0A005AD082 /* NetSurf.icns */; };
 		26AFE8E412DF4200005AD082 /* ScrollableView.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFE8E312DF4200005AD082 /* ScrollableView.m */; };
 		26AFE97C12DF514C005AD082 /* NetSurfAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26AFE97B12DF514C005AD082 /* NetSurfAppDelegate.m */; };
@@ -353,6 +356,9 @@
 		265F320512D66C200048B600 /* utf8.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utf8.m; sourceTree = "<group>"; };
 		265F321312D66CD90048B600 /* utils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utils.m; sourceTree = "<group>"; };
 		265F321E12D66D510048B600 /* font.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = font.m; sourceTree = "<group>"; };
+		26ABD61C12F02EB900407161 /* overflowImage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImage.png; sourceTree = "<group>"; };
+		26ABD61D12F02EB900407161 /* overflowImagePressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImagePressed.png; sourceTree = "<group>"; };
+		26ABD61E12F02EB900407161 /* pi.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pi.png; sourceTree = "<group>"; };
 		26AFE63E12DDEB0A005AD082 /* NetSurf.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = NetSurf.icns; sourceTree = "<group>"; };
 		26AFE8E212DF4200005AD082 /* ScrollableView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ScrollableView.h; sourceTree = "<group>"; };
 		26AFE8E312DF4200005AD082 /* ScrollableView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ScrollableView.m; sourceTree = "<group>"; };
@@ -758,6 +764,9 @@
 		26CDCFDB12E706FE004FC66B /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				26ABD61C12F02EB900407161 /* overflowImage.png */,
+				26ABD61D12F02EB900407161 /* overflowImagePressed.png */,
+				26ABD61E12F02EB900407161 /* pi.png */,
 				26CDCFDC12E706FE004FC66B /* AquaTabClose_Front.png */,
 				26CDCFDD12E706FF004FC66B /* AquaTabClose_Front_Pressed.png */,
 				26CDCFDE12E706FF004FC66B /* AquaTabClose_Front_Rollover.png */,
@@ -953,6 +962,9 @@
 				26CDCFEC12E706FF004FC66B /* AquaTabNewPressed.png in Resources */,
 				26CDCFED12E706FF004FC66B /* AquaTabNewRollover.png in Resources */,
 				26CDCFF312E70AD1004FC66B /* BrowserWindow.xib in Resources */,
+				26ABD61F12F02EB900407161 /* overflowImage.png in Resources */,
+				26ABD62012F02EB900407161 /* overflowImagePressed.png in Resources */,
+				26ABD62112F02EB900407161 /* pi.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
