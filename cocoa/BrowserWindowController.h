@@ -44,6 +44,7 @@
 @property (readwrite, assign, nonatomic) BOOL canGoForward;
 
 - (IBAction) newTab: (id) sender;
+- (IBAction) closeCurrentTab: (id) sender;
 
 - (void) addTab: (BrowserViewController *)browser;
 - (void) removeTab: (BrowserViewController *)browser;

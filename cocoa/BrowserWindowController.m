@@ -113,6 +113,11 @@ extern NSString * const kHomepageURL;
 	browser_window_create( [homepageURL UTF8String], clone, NULL, false, true );
 }
 
+- (IBAction) closeCurrentTab: (id) sender;
+{
+	[self removeTab: activeBrowser];
+}
+
 - (void) setActiveBrowser: (BrowserViewController *)newBrowser;
 {
 	activeBrowser = newBrowser;
