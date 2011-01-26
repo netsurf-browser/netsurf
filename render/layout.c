@@ -621,6 +621,9 @@ bool layout_block_context(struct box *block, int viewport_height,
 		margin_box = box;
 	}
 
+	/* Account for bottom margin of last contained block */
+	cy += max_pos_margin - max_neg_margin;
+
 	/* Increase height to contain any floats inside (CSS 2.1 10.6.7). */
 	for (box = block->float_children; box; box = box->next_float) {
 		y = box->y + box->height + box->padding[BOTTOM] +
