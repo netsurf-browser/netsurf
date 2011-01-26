@@ -30,6 +30,7 @@
 @synthesize tabBar;
 @synthesize tabView;
 @synthesize urlField;
+@synthesize navigationControl;
 
 @synthesize activeBrowser;
 @synthesize activeBrowserController;
@@ -46,6 +47,7 @@
 	[self setTabBar: nil];
 	[self setTabView: nil];
 	[self setUrlField: nil];
+	[self setNavigationControl: nil];
 	
 	[super dealloc];
 }
@@ -64,6 +66,13 @@
 	
 	[urlField setRefreshAction: @selector(reloadPage:)];
 	[urlField bind: @"favicon" toObject: activeBrowserController withKeyPath: @"selection.favicon"  options: nil];
+	
+	[self bind: @"canGoBack" 
+	  toObject: activeBrowserController withKeyPath: @"selection.canGoBack" 
+	   options: nil];
+	[self bind: @"canGoForward" 
+	  toObject: activeBrowserController withKeyPath: @"selection.canGoForward" 
+	   options: nil];
 }
 
 - (void) addTab: (BrowserViewController *)browser;
@@ -108,6 +117,26 @@ extern NSString * const kHomepageURL;
 {
 	activeBrowser = newBrowser;
 	[self setNextResponder: activeBrowser];
+}
+
+- (void) setCanGoBack: (BOOL)can;
+{
+	[navigationControl setEnabled: can forSegment: 0];
+}
+
+- (BOOL) canGoBack;
+{
+	return [navigationControl isEnabledForSegment: 0];
+}
+
+- (void) setCanGoForward: (BOOL)can;
+{
+	[navigationControl setEnabled: can forSegment: 1];
+}
+
+- (BOOL) canGoForward;
+{
+	return [navigationControl isEnabledForSegment: 1];
 }
 
 #pragma mark -

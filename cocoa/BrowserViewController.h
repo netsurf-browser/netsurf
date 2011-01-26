@@ -32,6 +32,8 @@ struct browser_window;
 	NSString *status;
 	BOOL isProcessing;
 	NSImage *favicon;
+	BOOL canGoBack;
+	BOOL canGoForward;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
@@ -42,8 +44,13 @@ struct browser_window;
 @property (readwrite, copy, nonatomic) NSString *status;
 @property (readwrite, assign, nonatomic) BOOL isProcessing;
 @property (readwrite, copy, nonatomic) NSImage *favicon;
+@property (readwrite, assign, nonatomic) BOOL canGoBack;
+@property (readwrite, assign, nonatomic) BOOL canGoForward;
 
 - initWithBrowser: (struct browser_window *) bw;
+
+- (void) contentUpdated;
+- (void) updateBackForward;
 
 - (IBAction) navigate: (id) sender;
 

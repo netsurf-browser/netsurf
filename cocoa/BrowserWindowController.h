@@ -27,7 +27,8 @@
 	NSTabView *tabView;
 	URLFieldCell *urlField;
 	NSObjectController *activeBrowserController;
-
+	NSSegmentedControl *navigationControl;
+	
 	BrowserViewController *activeBrowser;
 }
 
@@ -35,8 +36,12 @@
 @property (readwrite, retain, nonatomic) IBOutlet NSTabView *tabView;
 @property (readwrite, retain, nonatomic) IBOutlet URLFieldCell *urlField;
 @property (readwrite, retain, nonatomic) IBOutlet NSObjectController *activeBrowserController;
+@property (readwrite, retain, nonatomic) IBOutlet NSSegmentedControl *navigationControl;
 
 @property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;
+
+@property (readwrite, assign, nonatomic) BOOL canGoBack;
+@property (readwrite, assign, nonatomic) BOOL canGoForward;
 
 - (IBAction) newTab: (id) sender;
 

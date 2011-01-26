@@ -229,11 +229,13 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 void gui_window_start_throbber(struct gui_window *g)
 {
 	[(BrowserViewController *)g setIsProcessing: YES];
+	[(BrowserViewController *)g updateBackForward];
 }
 
 void gui_window_stop_throbber(struct gui_window *g)
 {
 	[(BrowserViewController *)g setIsProcessing: NO];
+	[(BrowserViewController *)g updateBackForward];
 }
 
 void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
@@ -274,7 +276,7 @@ void gui_window_remove_caret(struct gui_window *g)
 
 void gui_window_new_content(struct gui_window *g)
 {
-	[[(BrowserViewController *)g browserView] setHistoryVisible: NO];
+	[(BrowserViewController *)g contentUpdated];
 }
 
 bool gui_window_scroll_start(struct gui_window *g)

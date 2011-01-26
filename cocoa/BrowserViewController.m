@@ -38,6 +38,8 @@
 @synthesize status;
 @synthesize isProcessing;
 @synthesize favicon;
+@synthesize canGoBack;
+@synthesize canGoForward;
 
 - (void) dealloc;
 {
@@ -95,6 +97,7 @@
 {
 	if (browser && history_back_available( browser->history )) {
 		history_back(browser, browser->history);
+		[self updateBackForward];
 	}
 }
 
@@ -102,6 +105,7 @@
 {
 	if (browser && history_forward_available( browser->history )) {
 		history_forward(browser, browser->history);
+		[self updateBackForward];
 	}
 }
 
@@ -151,5 +155,16 @@ static inline bool compare_float( float a, float b )
 	return YES;
 }
 
+
+- (void) updateBackForward;
+{
+	[self setCanGoBack: browser != NULL && history_back_available( browser->history )];
+	[self setCanGoForward: browser != NULL && history_forward_available( browser->history )];
+}
+
+- (void) contentUpdated;
+{
+	[browserView setHistoryVisible: NO];
+}
 
 @end

@@ -12,7 +12,7 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="1"/>
+			<integer value="73"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -78,9 +78,10 @@
 								<string key="NSToolbarItemPaletteLabel">History</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSButton" key="NSToolbarItemView" id="229385913">
-									<nil key="NSNextResponder"/>
+									<reference key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{8, 14}, {30, 25}}</string>
+									<reference key="NSSuperview"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSButtonCell" key="NSCell" id="296571644">
 										<int key="NSCellFlags">67239424</int>
@@ -123,9 +124,10 @@
 								<string key="NSToolbarItemPaletteLabel">Back/Forward</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSSegmentedControl" key="NSToolbarItemView" id="692457026">
-									<nil key="NSNextResponder"/>
+									<reference key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{5, 14}, {71, 25}}</string>
+									<reference key="NSSuperview"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSSegmentedCell" key="NSCell" id="845979064">
 										<int key="NSCellFlags">67239424</int>
@@ -184,9 +186,10 @@
 								<string key="NSToolbarItemPaletteLabel">URL</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSTextField" key="NSToolbarItemView" id="77748234">
-									<nil key="NSNextResponder"/>
+									<reference key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{0, 14}, {96, 22}}</string>
+									<reference key="NSSuperview"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSTextFieldCell" key="NSCell" id="1053649244">
 										<int key="NSCellFlags">-1804468671</int>
@@ -646,6 +649,14 @@
 					</object>
 					<int key="connectionID">80</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">navigationControl</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="692457026"/>
+					</object>
+					<int key="connectionID">81</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -906,7 +917,7 @@
 					<object class="NSAffineTransform">
 						<bytes key="NSTransformStruct">P4AAAL+AAABDiwAAxAVAAA</bytes>
 					</object>
-					<string>{{422, 872}, {616, 0}}</string>
+					<string>{{355, 703}, {616, 169}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -939,7 +950,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">80</int>
+			<int key="maxID">81</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -964,7 +975,6 @@
 							<string>goForward:</string>
 							<string>navigate:</string>
 							<string>reloadPage:</string>
-							<string>showHistory:</string>
 							<string>stopLoading:</string>
 							<string>zoomIn:</string>
 							<string>zoomOriginal:</string>
@@ -972,7 +982,6 @@
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
-							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -993,7 +1002,6 @@
 							<string>goForward:</string>
 							<string>navigate:</string>
 							<string>reloadPage:</string>
-							<string>showHistory:</string>
 							<string>stopLoading:</string>
 							<string>zoomIn:</string>
 							<string>zoomOriginal:</string>
@@ -1019,10 +1027,6 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">reloadPage:</string>
-								<string key="candidateClassName">id</string>
-							</object>
-							<object class="IBActionInfo">
-								<string key="name">showHistory:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
@@ -1078,6 +1082,7 @@
 						<object class="NSArray" key="dict.sortedKeys">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>activeBrowserController</string>
+							<string>navigationControl</string>
 							<string>tabBar</string>
 							<string>tabView</string>
 							<string>urlField</string>
@@ -1085,6 +1090,7 @@
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>NSObjectController</string>
+							<string>NSSegmentedControl</string>
 							<string>PSMTabBarControl</string>
 							<string>NSTabView</string>
 							<string>URLFieldCell</string>
@@ -1095,6 +1101,7 @@
 						<object class="NSArray" key="dict.sortedKeys">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>activeBrowserController</string>
+							<string>navigationControl</string>
 							<string>tabBar</string>
 							<string>tabView</string>
 							<string>urlField</string>
@@ -1104,6 +1111,10 @@
 							<object class="IBToOneOutletInfo">
 								<string key="name">activeBrowserController</string>
 								<string key="candidateClassName">NSObjectController</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">navigationControl</string>
+								<string key="candidateClassName">NSSegmentedControl</string>
 							</object>
 							<object class="IBToOneOutletInfo">
 								<string key="name">tabBar</string>
@@ -1143,13 +1154,6 @@
 					<object class="IBClassDescriptionSource" key="sourceIdentifier" id="395663776">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">PSMTabBarControl/PSMTabBarControl.h</string>
-					</object>
-				</object>
-				<object class="IBPartialClassDescription">
-					<string key="className">PSMTabBarControl</string>
-					<object class="IBClassDescriptionSource" key="sourceIdentifier">
-						<string key="majorKey">IBProjectSource</string>
-						<string key="minorKey">PSMTabBarControl/PSMProgressIndicator.h</string>
 					</object>
 				</object>
 				<object class="IBPartialClassDescription">
