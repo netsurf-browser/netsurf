@@ -29,6 +29,8 @@
 
 static void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle);
 static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_style_t *pstyle);
+static void inline cocoa_center_pixel( bool x, bool y );
+
 static NSRect cocoa_plot_clip_rect;
 
 #define colour_red_component( c )		(((c) >>  0) & 0xFF)
@@ -73,11 +75,24 @@ static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_sty
 
 static bool plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
+	if (pstyle->stroke_type == PLOT_OP_TYPE_NONE) return true;
+	
+	[NSGraphicsContext saveGraphicsState];
+	[NSBezierPath clipRect: cocoa_plot_clip_rect];
+	
 	NSBezierPath *path = [NSBezierPath bezierPath];
 	[path moveToPoint: cocoa_point( x0, y0 )];
 	[path lineToPoint: cocoa_point( x1, y1 )];
+	cocoa_plot_path_set_stroke_pattern( path, pstyle );
 	
-	cocoa_plot_render_path( path, pstyle );
+	const bool horizontal = y0 == y1;
+	const bool vertical = x0 == x1;
+	cocoa_center_pixel( !horizontal, !vertical );
+	
+	[cocoa_convert_colour( pstyle->stroke_colour ) set];
+	[path stroke];
+	
+	[NSGraphicsContext restoreGraphicsState];
 	
 	return true;
 }
@@ -111,13 +126,6 @@ static bool plot_clip(int x0, int y0, int x1, int y1)
 	return true;
 }
 
-static void cocoa_center_pixel(void) 
-{
-	NSAffineTransform *transform = [NSAffineTransform transform];
-	[transform translateXBy: 0.5 * cocoa_scale_factor yBy: 0.5 * cocoa_scale_factor];
-	[transform concat];
-}
-
 void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle) 
 {
 	[NSGraphicsContext saveGraphicsState];
@@ -129,7 +137,7 @@ void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle)
 	}
 	
 	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
-		cocoa_center_pixel();
+		cocoa_center_pixel( true, true );
 		
 		cocoa_plot_path_set_stroke_pattern(path,pstyle);
 		
@@ -240,7 +248,7 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 	}
 
 	if (c != NS_TRANSPARENT) {
-		cocoa_center_pixel();
+		cocoa_center_pixel( true, true );
 		[cocoa_convert_colour( c ) set];
 		[path stroke];
 	}
@@ -298,11 +306,19 @@ struct plotter_table plot = {
 
 CGFloat cocoa_scale_factor;
 static const CGFloat points_per_inch = 72.0;
+static CGFloat cocoa_half_pixel;
 
 void cocoa_update_scale_factor( void )
 {
 	const CGFloat scale = [[NSScreen mainScreen] userSpaceScaleFactor];
 	cocoa_scale_factor = scale == 1.0 ? 1.0 : 1.0 / scale;
+	cocoa_half_pixel = 0.5 * cocoa_scale_factor;
 	nscss_screen_dpi = FLTTOFIX( points_per_inch * scale );
 }
 
+static inline void cocoa_center_pixel( bool x, bool y ) 
+{
+	NSAffineTransform *transform = [NSAffineTransform transform];
+	[transform translateXBy: x ? cocoa_half_pixel : 0.0 yBy: y ? cocoa_half_pixel : 0.0];
+	[transform concat];
+}
