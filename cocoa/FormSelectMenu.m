@@ -81,8 +81,12 @@
 	struct rect r;
 	box_bounds( control->box, &r );
 	
-	[cell performClickWithFrame: NSMakeRect( r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0 )
-						 inView: view];
+	
+	const NSRect rect = NSMakeRect( browser->scale * r.x0, browser->scale * r.y0, 
+								   browser->scale * (r.x1 - r.x0), browser->scale * (r.y1 - r.y0) );
+								   
+	[cell attachPopUpWithFrame: rect inView: view];
+	[cell performClickWithFrame: rect inView: view];
 }
 
 - (void) itemSelected: (id) sender;
