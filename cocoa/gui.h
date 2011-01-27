@@ -18,9 +18,10 @@
 
 #import <Cocoa/Cocoa.h>
 
-NSString *cocoa_get_user_path( NSString *fileName );
-
 extern NSString * const kCookiesFileOption;
 extern NSString * const kURLsFileOption;
 extern NSString * const kHotlistFileOption;
 extern NSString * const kHomepageURLOption;
+extern NSString * const kOptionsFileOption;
+
+void cocoa_autorelease( void );

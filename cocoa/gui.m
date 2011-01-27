@@ -43,6 +43,7 @@ NSString * const kCookiesFileOption = @"CookiesFile";
 NSString * const kURLsFileOption = @"URLsFile";
 NSString * const kHotlistFileOption = @"Hotlist";
 NSString * const kHomepageURLOption = @"HomepageURL";
+NSString * const kOptionsFileOption = @"ClassicOptionsFile";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
@@ -51,11 +52,9 @@ void gui_multitask(void)
 	// nothing to do
 }
 
-static NSAutoreleasePool *gui_pool = nil;
 void gui_poll(bool active)
 {
-	[gui_pool release];
-	gui_pool = [[NSAutoreleasePool alloc] init];
+	cocoa_autorelease();
 	
 	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: active ? nil : [NSDate distantFuture]
 										   inMode: NSDefaultRunLoopMode dequeue: YES];
@@ -351,80 +350,5 @@ void gui_401login_open(const char *url, const char *realm,
 					   nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	cb( false, cbpw );
-}
-
-static char *gui_get_resource_url( NSString *name, NSString *type )
-{
-	NSString *path = [[NSBundle mainBundle] pathForResource: name ofType: type];
-	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
-}
-
-static NSString *cocoa_get_preferences_path( void )
-{
-	NSArray *paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, YES );
-	NSCAssert( [paths count] >= 1, @"Where is the application support directory?" );
-	
-	NSString *netsurfPath = [[paths objectAtIndex: 0] stringByAppendingPathComponent: @"NetSurf"];
-	
-	NSFileManager *fm = [NSFileManager defaultManager];
-	BOOL isDirectory = NO;
-	BOOL exists = [fm fileExistsAtPath: netsurfPath isDirectory: &isDirectory];
-	
-	if (!exists) {
-		exists = [fm createDirectoryAtPath: netsurfPath attributes: nil];
-		isDirectory = YES;
-	}
-	if (!(exists && isDirectory)) {
-		die( "Cannot create netsurf preferences directory" );
-	}
-	
-	return netsurfPath;
-}
-
-NSString *cocoa_get_user_path( NSString *fileName ) 
-{
-	return [cocoa_get_preferences_path() stringByAppendingPathComponent: fileName];
-}
-
-NSString * const kClassicOptionsFile = @"ClassicOptionsFile";
-
-static const char *cocoa_get_options_file( void )
-{
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-	[defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
-								 cocoa_get_user_path( @"Options" ), kClassicOptionsFile,
-								 nil]];
-	
-	return [[defaults objectForKey: kClassicOptionsFile] UTF8String];
-}
-
-int main( int argc, char **argv )
-{
-	gui_pool = [[NSAutoreleasePool alloc] init];
-	
-	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
-	const char * const options = cocoa_get_options_file();
-	default_stylesheet_url = gui_get_resource_url( @"default", @"css" );
-	quirks_stylesheet_url = gui_get_resource_url( @"quirks", @"css" );
-	adblock_stylesheet_url = gui_get_resource_url( @"adblock", @"css" );
-	
-	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options, messages);
-
-	NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-	Class principalClass =  NSClassFromString([infoDictionary objectForKey:@"NSPrincipalClass"]);
-	NSCAssert([principalClass respondsToSelector:@selector(sharedApplication)], @"Principal class must implement sharedApplication.");
-	[principalClass sharedApplication];
-	
-	NSString *mainNibName = [infoDictionary objectForKey:@"NSMainNibFile"];
-	NSNib *mainNib = [[NSNib alloc] initWithNibNamed:mainNibName bundle:[NSBundle mainBundle]];
-	[mainNib instantiateNibWithOwner:NSApp topLevelObjects:nil];
-	[mainNib release];
-	
-    [NSApp run];
-	
-	netsurf_exit();
-	
-	return 0;
 }
 
