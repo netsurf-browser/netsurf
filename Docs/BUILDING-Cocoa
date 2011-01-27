@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for Cocoa NetSurf                           13 January 2011
+  Build Instructions for Cocoa NetSurf                         13 January 2011
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the Cocoa version of NetSurf
@@ -8,24 +8,28 @@
   Cocoa NetSurf has been tested on Mac OS X 10.6 on Intel and on Mac OS X 10.5
   on ppc.
 
+
   Building and executing NetSurf
 ================================
 
-  After installing the dependencies NetSurf can be built in Xcode using the provided
-  project file "NetSurf.xcodeproj". This builds a version using only the minimal set
-  of dependencies (LibParserUtils, LibWapcaplet, Hubbub, LibCSS) and libraries provided
-  by Mac OS X.
+  After installing the dependencies NetSurf can be built in Xcode using the
+  provided project file "NetSurf.xcodeproj".  This builds a version using only
+  the minimal set of dependencies (LibParserUtils, LibWapcaplet, Hubbub,
+  LibCSS) and libraries provided by Mac OS X.
 
-  To build a more complete version a local configuration file has to be created. To
-  do this open a Terminal and change to the "cocoa/config" folder and run this command:
-     
+  To build a more complete version a local configuration file has to be
+  created.  To do this open a Terminal and change to the "cocoa/config"
+  folder and run this command:
+
      $ sh detect.sh --with-jpeg=<prefix for libjpeg> --with-mng=<prefix for libmng>
 
-  You can leave out the options for the JPEG and MNG libraries if you don't have them
-  installed.
+  You can leave out the options for the JPEG and MNG libraries if you don't
+  have them installed.
 
-  This script uses the "pkg-config" program to find the required libraries and generates
-  the file "local.xcconfig". After that NetSurf can be built using Xcode.
+  This script uses the "pkg-config" program to find the required libraries
+  and generates the file "local.xcconfig".  After that NetSurf can be built
+  using Xcode.
+
 
   Obtaining NetSurf's build dependencies
 ========================================
@@ -75,7 +79,7 @@
 
   To build and install these libraries, simply enter each of their directories
   and run:
-  
+
       $ make
       $ sudo make install
 
@@ -86,9 +90,9 @@
       $ sudo make install
 
   If you are building NetSurf for using it on only one computer this is not 
-  necessary, but if you want to distribute your binary you should build universal
-  binaries.  You can also leave some of the platform names out, if you don't 
-  require them.
+  necessary, but if you want to distribute your binary you should build
+  universal binaries.  You can also leave some of the platform names out, if
+  you don't require them.
 
   | Note: We advise enabling ivonv() support in libparserutils, which vastly
   |       increases the number of supported character sets.  To do this,
@@ -98,4 +102,3 @@
   |           CFLAGS += -DWITH_ICONV_FILTER
   |
   |       For more information, consult the libparserutils README file.
-
