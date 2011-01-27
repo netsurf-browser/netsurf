@@ -62,8 +62,11 @@ static bool nsfont_position_in_string(const plot_font_style_t *style,
 	NSUInteger glyphIndex = cocoa_glyph_for_location( layout, x );
 	NSUInteger chars = [layout characterIndexForGlyphAtIndex: glyphIndex];
 	
-	*char_offset = cocoa_bytes_for_characters( string, chars );
-	*actual_x = [layout locationForGlyphAtIndex: glyphIndex].x;
+	if (chars >= [cocoa_text_storage length]) *char_offset = length;
+	else *char_offset = cocoa_bytes_for_characters( string, chars );
+	
+	*actual_x = NSMaxX( [layout boundingRectForGlyphRange: NSMakeRange( glyphIndex - 1, 1 ) 
+										  inTextContainer: cocoa_text_container] );
 	
 	return true;
 }
@@ -78,7 +81,7 @@ static bool nsfont_split(const plot_font_style_t *style,
 	NSUInteger glyphIndex = cocoa_glyph_for_location( layout, x );
 	NSUInteger chars = [layout characterIndexForGlyphAtIndex: glyphIndex];
 	
-	if (chars == [cocoa_text_storage length] - 1) {
+	if (chars >= [cocoa_text_storage length]) {
 		*char_offset = length;
 		*actual_x = cocoa_layout_width( layout );
 		return true;
