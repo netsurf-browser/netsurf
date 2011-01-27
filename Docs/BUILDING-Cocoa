@@ -94,7 +94,7 @@
   universal binaries.  You can also leave some of the platform names out, if
   you don't require them.
 
-  | Note: We advise enabling ivonv() support in libparserutils, which vastly
+  | Note: We advise enabling iconv() support in libparserutils, which vastly
   |       increases the number of supported character sets.  To do this,
   |       create a file called Makefile.config.override in the libparserutils
   |       directory, containing the following line:
