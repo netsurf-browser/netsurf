@@ -19,6 +19,7 @@
 #import <Cocoa/Cocoa.h>
 
 #import "cocoa/gui.h"
+#import "cocoa/plotter.h"
 
 #import "BrowserView.h"
 #import "BrowserViewController.h"
@@ -113,7 +114,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
-	const NSRect rect = NSMakeRect( x0, y0, x1 - x0, y1 - y0 );
+	const NSRect rect = cocoa_rect( x0, y0, x1, y1 );
 	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
 }
 
@@ -125,11 +126,9 @@ void gui_window_redraw_window(struct gui_window *g)
 void gui_window_update_box(struct gui_window *g,
 						   const union content_msg_data *data)
 {
-	const CGFloat scale = [(BrowserViewController *)g browser]->scale;
-	const NSRect rect = NSMakeRect( data->redraw.object_x * scale,  
-								    data->redraw.object_y * scale, 
-								    data->redraw.object_width * scale, 
-								    data->redraw.object_height * scale );
+	const NSRect rect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
+											 data->redraw.object_x, data->redraw.object_y, 
+											 data->redraw.object_width, data->redraw.object_height );
 	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
 }
 
@@ -138,14 +137,14 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 	NSCParameterAssert( g != NULL && sx != NULL && sy != NULL );
 	
 	NSRect visible = [[(BrowserViewController *)g browserView] visibleRect];
-	*sx = NSMinX( visible );
-	*sy = NSMinY( visible );
+	*sx = cocoa_pt_to_px( NSMinX( visible ) );
+	*sy = cocoa_pt_to_px( NSMinY( visible ) );
 	return true;
 }
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-	[[(BrowserViewController *)g browserView] scrollPoint: NSMakePoint( sx, sy )];
+	[[(BrowserViewController *)g browserView] scrollPoint: cocoa_point( sx, sy )];
 }
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
@@ -171,20 +170,20 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		frame.size.width /= scale;
 		frame.size.height /= scale;
 	}
-	*width = NSWidth( frame );
-	*height = NSHeight( frame );
+	*width = cocoa_pt_to_px( NSWidth( frame ) );
+	*height = cocoa_pt_to_px( NSHeight( frame ) );
 }
 
 void gui_window_update_extent(struct gui_window *g)
 {
 	BrowserViewController * const window = (BrowserViewController *)g;
+
+	struct browser_window *browser = [window browser];
+	int width = content_get_width( browser->current_content );
+	int height = content_get_height( browser->current_content );
 	
 	[[window browserView] setResizing: YES];
-	struct browser_window *browser = [window browser];
-	int width = content_get_width( browser->current_content ) * browser->scale;
-	int height = content_get_height( browser->current_content ) * browser->scale;
-
-	[[window browserView] setMinimumSize: NSMakeSize( width, height )];
+	[[window browserView] setMinimumSize: cocoa_scaled_size( browser->scale, width, height )];
 	[[window browserView] setResizing: NO];
 }
 
@@ -272,7 +271,8 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
-	[[(BrowserViewController *)g browserView] addCaretAt: NSMakePoint( x, y ) height: height];
+	[[(BrowserViewController *)g browserView] addCaretAt: cocoa_point( x, y ) 
+												  height: cocoa_px_to_pt( height )];
 }
 
 void gui_window_remove_caret(struct gui_window *g)

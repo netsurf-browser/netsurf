@@ -19,7 +19,7 @@
 #ifndef COCOA_FONT_H
 #define COCOA_FONT_H
 
-void cocoa_draw_string( int x, int y, const char *bytes, size_t length, const plot_font_style_t *style );
+void cocoa_draw_string( CGFloat x, CGFloat y, const char *bytes, size_t length, const plot_font_style_t *style );
 void cocoa_set_font_scale_factor( float newFactor );
 
 #endif

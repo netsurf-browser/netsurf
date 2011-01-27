@@ -28,6 +28,7 @@
 
 #import "font.h"
 #import "plotter.h"
+#import "cocoa/plotter.h"
 
 static NSLayoutManager *cocoa_prepare_layout_manager( const char *string, size_t length, 
 													 const plot_font_style_t *style );
@@ -65,8 +66,8 @@ static bool nsfont_position_in_string(const plot_font_style_t *style,
 	if (chars >= [cocoa_text_storage length]) *char_offset = length;
 	else *char_offset = cocoa_bytes_for_characters( string, chars );
 	
-	*actual_x = NSMaxX( [layout boundingRectForGlyphRange: NSMakeRange( glyphIndex - 1, 1 ) 
-										  inTextContainer: cocoa_text_container] );
+	*actual_x = cocoa_pt_to_px( NSMaxX( [layout boundingRectForGlyphRange: NSMakeRange( glyphIndex - 1, 1 ) 
+										  inTextContainer: cocoa_text_container] ) );
 	
 	return true;
 }
@@ -114,7 +115,7 @@ void cocoa_set_font_scale_factor( float newFactor )
 	cocoa_font_scale_factor = newFactor;
 }
 
-void cocoa_draw_string( int x, int y, const char *bytes, size_t length, const plot_font_style_t *style )
+void cocoa_draw_string( CGFloat x, CGFloat y, const char *bytes, size_t length, const plot_font_style_t *style )
 {
 	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, style );
 	
@@ -134,19 +135,19 @@ static inline CGFloat cocoa_layout_width( NSLayoutManager *layout )
 {
 	if (layout == nil) return 0.0;
 	
-	return NSWidth( [layout usedRectForTextContainer: cocoa_text_container] );
+	return cocoa_pt_to_px( NSWidth( [layout usedRectForTextContainer: cocoa_text_container] ) );
 }
 
 static inline CGFloat cocoa_layout_width_chars( NSLayoutManager *layout, size_t characters )
 {
 	NSUInteger glyphIndex = [layout glyphIndexForCharacterAtIndex: characters];
-	return [layout locationForGlyphAtIndex: glyphIndex].x;
+	return cocoa_pt_to_px( [layout locationForGlyphAtIndex: glyphIndex].x );
 }
 
 static inline NSUInteger cocoa_glyph_for_location( NSLayoutManager *layout, CGFloat x )
 {
 	CGFloat fraction = 0.0;
-	NSUInteger glyphIndex = [layout glyphIndexForPoint: NSMakePoint( x, 0 ) 
+	NSUInteger glyphIndex = [layout glyphIndexForPoint: NSMakePoint( cocoa_px_to_pt( x ), 0 ) 
 									   inTextContainer: cocoa_text_container 
 						fractionOfDistanceThroughGlyph: &fraction];
 	if (fraction > 0) ++glyphIndex;

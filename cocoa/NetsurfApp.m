@@ -19,6 +19,7 @@
 #import "NetsurfApp.h"
 
 #import "cocoa/gui.h"
+#import "cocoa/plotter.h"
 
 #import "desktop/gui.h"
 #include "content/urldb.h"
@@ -71,10 +72,10 @@ static NSString *cocoa_get_user_path( NSString *fileName ) ;
 		option_homepage_url = strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] );
 	}
 
-	nscss_screen_dpi = FLTTOFIX( 72.0 * [[NSScreen mainScreen] userSpaceScaleFactor] );
-
 	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
 	urldb_load_cookies( option_cookie_file );
+	
+	cocoa_update_scale_factor();
 }
 
 - (void) saveOptions;

@@ -27,7 +27,7 @@
 #import "desktop/selection.h"
 
 #import "cocoa/font.h"
-
+#import "cocoa/plotter.h"
 
 @implementation BrowserView
 
@@ -122,12 +122,12 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 		content_redraw(browser->current_content,
 					   0,
 					   0,
-					   NSWidth( frame ),
-					   NSHeight( frame ),
-					   NSMinX( rects[i] ),
-					   NSMinY( rects[i] ),
-					   NSMaxX( rects[i] ),
-					   NSMaxY( rects[i] ),
+					   cocoa_pt_to_px( NSWidth( frame ) ),
+					   cocoa_pt_to_px( NSHeight( frame ) ),
+					   cocoa_pt_to_px( NSMinX( rects[i] ) ),
+					   cocoa_pt_to_px( NSMinY( rects[i] ) ),
+					   cocoa_pt_to_px( NSMaxX( rects[i] ) ),
+					   cocoa_pt_to_px( NSMaxY( rects[i] ) ),
 					   browser->scale,
 					   0xFFFFFF);
 	}
@@ -165,6 +165,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 		location.x /= browser->scale;
 		location.y /= browser->scale;
 	}
+	location.x = cocoa_pt_to_px( location.x );
+	location.y = cocoa_pt_to_px( location.y );
 	return location;
 }
 
@@ -344,7 +346,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 {
 	if (!isResizing) {
 		NSSize frameSize = [[self superview] frame].size;
-		browser_window_reformat( browser, frameSize.width, frameSize.height );
+		browser_window_reformat( browser, cocoa_pt_to_px( frameSize.width ), cocoa_pt_to_px( frameSize.height ) );
 	}
 	
 	[super adjustFrame];

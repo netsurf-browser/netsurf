@@ -25,6 +25,7 @@
 #import "cocoa/font.h"
 #import "cocoa/plotter.h"
 #import "cocoa/bitmap.h"
+#import "css/utils.h"
 
 static void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle);
 static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_style_t *pstyle);
@@ -67,14 +68,14 @@ static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_sty
 			break;
 	}
 
-	[path setLineWidth: pstyle->stroke_width];
+	[path setLineWidth: cocoa_px_to_pt( pstyle->stroke_width )];
 }
 
 static bool plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
 	NSBezierPath *path = [NSBezierPath bezierPath];
-	[path moveToPoint: NSMakePoint( x0, y0 )];
-	[path lineToPoint: NSMakePoint( x1, y1 )];
+	[path moveToPoint: cocoa_point( x0, y0 )];
+	[path lineToPoint: cocoa_point( x1, y1 )];
 	
 	cocoa_plot_render_path( path, pstyle );
 	
@@ -83,8 +84,8 @@ static bool plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle
 
 static bool plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
 {
-	NSBezierPath *path = [NSBezierPath bezierPathWithRect: NSMakeRect( x0, y0, x1-x0, y1-y0 )];
-	
+	NSRect rect = cocoa_rect( x0, y0, x1, y1 );
+	NSBezierPath *path = [NSBezierPath bezierPathWithRect: rect];
 	cocoa_plot_render_path( path, pstyle );
 	
 	return true;
@@ -96,7 +97,7 @@ static bool plot_text(int x, int y, const char *text, size_t length,
 	[NSGraphicsContext saveGraphicsState];
 	[NSBezierPath clipRect: cocoa_plot_clip_rect];
 	
-	cocoa_draw_string( x, y, text, length, fstyle );
+	cocoa_draw_string( cocoa_px_to_pt( x ), cocoa_px_to_pt( y ), text, length, fstyle );
 	
 	[NSGraphicsContext restoreGraphicsState];
 	
@@ -106,8 +107,15 @@ static bool plot_text(int x, int y, const char *text, size_t length,
 
 static bool plot_clip(int x0, int y0, int x1, int y1)
 {
-	cocoa_plot_clip_rect = NSMakeRect( x0, y0, abs(x1-x0), abs(y1-y0) );
+	cocoa_plot_clip_rect = cocoa_rect( x0, y0, x1, y1 );
 	return true;
+}
+
+static void cocoa_center_pixel(void) 
+{
+	NSAffineTransform *transform = [NSAffineTransform transform];
+	[transform translateXBy: 0.5 * cocoa_scale_factor yBy: 0.5 * cocoa_scale_factor];
+	[transform concat];
 }
 
 void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle) 
@@ -121,6 +129,8 @@ void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle)
 	}
 	
 	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
+		cocoa_center_pixel();
+		
 		cocoa_plot_path_set_stroke_pattern(path,pstyle);
 		
 		[cocoa_convert_colour( pstyle->stroke_colour ) set];
@@ -158,9 +168,9 @@ static bool plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyl
 	if (n <= 1) return true;
 	
 	NSBezierPath *path = [NSBezierPath bezierPath];
-	[path moveToPoint: NSMakePoint( p[0], p[1] )];
+	[path moveToPoint: cocoa_point( p[0], p[1] )];
 	for (unsigned i = 1; i < n; i++) {
-		[path lineToPoint: NSMakePoint( p[2*i], p[2*i+1] )];
+		[path lineToPoint: cocoa_point( p[2*i], p[2*i+1] )];
 	}
 	[path closePath];
 	
@@ -230,6 +240,7 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 	}
 
 	if (c != NS_TRANSPARENT) {
+		cocoa_center_pixel();
 		[cocoa_convert_colour( c ) set];
 		[path stroke];
 	}
@@ -254,7 +265,8 @@ static bool plot_bitmap(int x, int y, int width, int height,
 
 	CGImageRef img = cocoa_get_cgimage( bitmap );
 
-	CGRect rect = CGRectMake( x, y, width, height );
+	CGRect rect = NSRectToCGRect( cocoa_rect_wh( x, y, width, height ) );
+	
 	if (tileX || tileY) {
 		CGContextDrawTiledImage( context, rect, img );
 	} else {
@@ -282,3 +294,15 @@ struct plotter_table plot = {
 
 	.option_knockout = true
 };
+
+
+CGFloat cocoa_scale_factor;
+static const CGFloat points_per_inch = 72.0;
+
+void cocoa_update_scale_factor( void )
+{
+	const CGFloat scale = [[NSScreen mainScreen] userSpaceScaleFactor];
+	cocoa_scale_factor = scale == 1.0 ? 1.0 : 1.0 / scale;
+	nscss_screen_dpi = FLTTOFIX( points_per_inch * scale );
+}
+
