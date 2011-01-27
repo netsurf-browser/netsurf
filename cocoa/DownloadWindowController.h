@@ -30,6 +30,9 @@
 	NSFileHandle *outputFile;
 	NSMutableData *savedData;
 	NSDate *startDate;
+	
+	BOOL canClose;
+	BOOL shouldClose;
 }
 
 @property (readwrite, copy, nonatomic) NSURL *URL;

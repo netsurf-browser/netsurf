@@ -33,8 +33,13 @@
 - (BOOL) receivedData: (NSData *)data;
 
 - (void) showError: (NSString *)error;
+- (void) downloadDone;
+- (void) removeIfPossible;
 
 @end
+
+static void cocoa_unregister_download( DownloadWindowController *download );
+static void cocoa_register_download( DownloadWindowController *download );
 
 
 @implementation DownloadWindowController
@@ -69,10 +74,12 @@
 - (void) abort;
 {
 	download_context_abort( context );
+	[self removeIfPossible];
 }
 
 - (void) askForSave;
 {
+	canClose = NO;
 	[[NSSavePanel savePanel] beginSheetForDirectory: nil 
 											   file: [[url path] lastPathComponent]
 									 modalForWindow: [self window] 
@@ -83,6 +90,8 @@
 
 - (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 {
+	canClose = YES;
+
 	if (returnCode == NSCancelButton) {
 		[self abort];
 		return;
@@ -108,6 +117,8 @@
 		[outputFile writeData: savedData];
 		[self setSavedData: nil];
 	}
+
+	[self removeIfPossible];
 }
 
 - (BOOL) receivedData: (NSData *)data;
@@ -126,6 +137,7 @@
 
 - (void) showError: (NSString *)error;
 {
+	canClose = NO;
 	NSAlert *alert = [NSAlert alertWithMessageText: @"Error" defaultButton: @"OK" 
 								   alternateButton: nil otherButton: nil 
 						 informativeTextWithFormat: @"%@", error];
@@ -138,6 +150,18 @@
 - (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 {
 	[self abort];
+}
+
+- (void) removeIfPossible;
+{
+	if (canClose && shouldClose) {
+		cocoa_unregister_download( self );
+	}
+}
+- (void) downloadDone;
+{
+	shouldClose = YES;
+	[self removeIfPossible];
 }
 
 #pragma mark -
@@ -157,18 +181,34 @@
 	return [NSSet setWithObjects: @"totalSize", @"receivedSize", nil];
 }
 
+#ifndef NSAppKitVersionNumber10_5
+#define NSAppKitVersionNumber10_5 949
+#endif 
+
 static NSString *cocoa_file_size_string( float size )
 {
-    if (size < 1023) return [NSString stringWithFormat:@"%1.0f bytes",size];
-
-    size /= 1024;
-    if (size < 1023) return [NSString stringWithFormat:@"%1.1f KiB", size];
+	static unsigned factor = 0;
+	if (factor == 0) {
+		if (floor( NSAppKitVersionNumber ) > NSAppKitVersionNumber10_5) factor = 1000;
+		else factor = 1024;
+	}
+	
+	if (size == 0) return @"nothing";
+	if (size <= 1.0) return @"1 byte";
+	
+    if (size < factor - 1) return [NSString stringWithFormat:@"%1.0f bytes",size];
+	
+    size /= factor;
+    if (size < factor - 1) return [NSString stringWithFormat:@"%1.1f KB", size];
     
-	size /= 1024;
-    if (size < 1023) return [NSString stringWithFormat:@"%1.1f MiB", size];
+	size /= factor;
+    if (size < factor - 1) return [NSString stringWithFormat:@"%1.1f MB", size];
 
-    size /= 1024;
-    return [NSString stringWithFormat:@"%1.1f GiB", size];
+    size /= factor;
+	if (size < factor - 1) return [NSString stringWithFormat:@"%1.1f GB", size];
+	
+	size /= factor;
+	return [NSString stringWithFormat:@"%1.1f TB", size];
 }
 
 - (NSString *) statusText;
@@ -181,8 +221,13 @@ static NSString *cocoa_file_size_string( float size )
 		speedString = [NSString stringWithFormat: @" (%@/s)", cocoa_file_size_string( speed )];
 	}
 	
-	return [NSString stringWithFormat: @"%@ of %@%@", cocoa_file_size_string( receivedSize ), 
-			cocoa_file_size_string( totalSize ), speedString];
+	NSString *totalSizeString = @"";
+	if (totalSize != 0) {
+		totalSizeString = [NSString stringWithFormat: @" of %@", cocoa_file_size_string( totalSize )];
+	}
+	
+	return [NSString stringWithFormat: @"%@%@%@", cocoa_file_size_string( receivedSize ), 
+			totalSizeString, speedString];
 }
 
 + (NSSet *) keyPathsForValuesAffectingFileName;
@@ -197,12 +242,17 @@ static NSString *cocoa_file_size_string( float size )
 
 + (NSSet *) keyPathsForValuesAffectingIcon;
 {
-	return [NSSet setWithObject: @"saveURL"];
+	return [NSSet setWithObjects: @"mimeType", @"URL", nil];
 }
 
 - (NSImage *) icon;
 {
-	return saveURL != nil ? [[NSWorkspace sharedWorkspace] iconForFile: [saveURL path]] : nil;
+	NSString *type = [(NSString *)UTTypeCreatePreferredIdentifierForTag( kUTTagClassMIMEType, (CFStringRef)mimeType, NULL ) autorelease];
+	if ([type hasPrefix: @"dyn."] || [type isEqualToString: (NSString *)kUTTypeData]) {
+		NSString *pathExt = [[url path] pathExtension];
+		type = [(NSString *)UTTypeCreatePreferredIdentifierForTag( kUTTagClassFilenameExtension, (CFStringRef)pathExt, NULL ) autorelease];
+	}
+	return [[NSWorkspace sharedWorkspace] iconForFileType: type];
 }
 
 
@@ -213,7 +263,9 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 													   struct gui_window *parent)
 {
 	DownloadWindowController * const window = [[DownloadWindowController alloc] initWithContext: ctx];
+	cocoa_register_download( window );
 	[window askForSave];
+	[window release];
 	
 	return (struct gui_download_window *)window;
 }
@@ -235,7 +287,24 @@ void gui_download_window_error(struct gui_download_window *dw,
 void gui_download_window_done(struct gui_download_window *dw)
 {
 	DownloadWindowController * const window = (DownloadWindowController *)dw;
-	[window release];
+	[window downloadDone];
 }
 
 @end
+
+#pragma mark -
+static NSMutableSet *cocoa_all_downloads = nil;
+
+static void cocoa_register_download( DownloadWindowController *download )
+{
+	if (cocoa_all_downloads == nil) {
+		cocoa_all_downloads = [[NSMutableSet alloc] init];
+	}
+	[cocoa_all_downloads addObject: download];
+}
+
+static void cocoa_unregister_download( DownloadWindowController *download )
+{
+	[cocoa_all_downloads removeObject: download];
+}
+
