@@ -38,6 +38,15 @@
 + (void)reformatTimerFired: (NSTimer *) timer;
 - (void) reformat;
 
+- (void) popUpContextMenuForEvent: (NSEvent *) event;
+
+- (IBAction) cmOpenURLInTab: (id) sender;
+- (IBAction) cmOpenURLInWindow: (id) sender;
+- (IBAction) cmDownloadURL: (id) sender;
+
+- (IBAction) cmLinkCopy: (id) sender;
+- (IBAction) cmImageCopy: (id) sender;
+
 @end
 
 @implementation BrowserView
@@ -185,9 +194,19 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) mouseDown: (NSEvent *)theEvent;
 {
+	if ([theEvent modifierFlags] & NSControlKeyMask) {
+		[self popUpContextMenuForEvent: theEvent];
+		return;
+	}
+	
 	dragStart = [self convertMousePoint: theEvent];
 
 	browser_window_mouse_click( browser, BROWSER_MOUSE_PRESS_1 | cocoa_mouse_flags_for_event( theEvent ), dragStart.x, dragStart.y );
+}
+
+- (void) rightMouseDown: (NSEvent *)theEvent;
+{
+	[self popUpContextMenuForEvent: theEvent];
 }
 
 - (void) mouseUp: (NSEvent *)theEvent;
@@ -450,6 +469,82 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 											  userInfo: nil repeats: YES];
 	[[NSRunLoop currentRunLoop] addTimer: timer forMode: NSRunLoopCommonModes];
 	[timer release];
+}
+
+- (void) popUpContextMenuForEvent: (NSEvent *) event;
+{
+	if (content_get_type( browser->current_content ) != CONTENT_HTML) return;
+
+	NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
+	NSPoint point = [self convertMousePoint: event];
+	
+	struct box *box = NULL;
+	if ((box = box = box_object_at_point( browser->current_content, point.x, point.y )) != NULL) {
+		NSString *imageURL = [NSString stringWithUTF8String: content_get_url( box->object )];
+		
+		[[popupMenu addItemWithTitle: @"Open image in new tab" action: @selector(cmOpenURLInTab:) 
+					   keyEquivalent: @""] setRepresentedObject: imageURL];
+		[[popupMenu addItemWithTitle: @"Open image in new window" action: @selector(cmOpenURLInWindow:) 
+					   keyEquivalent: @""] setRepresentedObject: imageURL];
+		[[popupMenu addItemWithTitle: @"Save image as" action: @selector(cmDownloadURL:) 
+					   keyEquivalent: @""] setRepresentedObject: imageURL];
+		[[popupMenu addItemWithTitle: @"Copy image" action: @selector(cmImageCopy:) 
+					   keyEquivalent: @""] setRepresentedObject: (id)content_get_bitmap( box->object )];
+		
+		[popupMenu addItem: [NSMenuItem separatorItem]];
+	}
+	
+	if ((box = box_href_at_point( browser->current_content, point.x, point.y )) != NULL) {
+		NSString *target = [NSString stringWithUTF8String: box->href];
+		
+		[[popupMenu addItemWithTitle: @"Open link in new tab" action: @selector(cmOpenURLInTab:) 
+					   keyEquivalent: @""] setRepresentedObject: target];
+		[[popupMenu addItemWithTitle: @"Open link in new window" action: @selector(cmOpenURLInWindow:) 
+					   keyEquivalent: @""] setRepresentedObject: target];
+		[[popupMenu addItemWithTitle: @"Save link target" action: @selector(cmDownloadURL:) 
+					   keyEquivalent: @""] setRepresentedObject: target];
+		[[popupMenu addItemWithTitle: @"Copy link" action: @selector(cmLinkCopy:) 
+					   keyEquivalent: @""] setRepresentedObject: target];
+		
+		[popupMenu addItem: [NSMenuItem separatorItem]];
+	}
+	
+	[popupMenu addItemWithTitle: @"Back" action: @selector(goBack:) keyEquivalent: @""];
+	[popupMenu addItemWithTitle: @"Reload" action: @selector(reloadPage:) keyEquivalent: @""];
+	[popupMenu addItemWithTitle: @"Forward" action: @selector(goForward:) keyEquivalent: @""];
+	
+	[NSMenu popUpContextMenu: popupMenu withEvent: event forView: self];
+	
+	[popupMenu release];
+}
+
+- (IBAction) cmOpenURLInTab: (id) sender;
+{
+	browser_window_create( [[sender representedObject] UTF8String], browser, NULL, true, true );
+}
+
+- (IBAction) cmOpenURLInWindow: (id) sender;
+{
+	browser_window_create( [[sender representedObject] UTF8String], browser, NULL, true, false );
+}
+
+- (IBAction) cmDownloadURL: (id) sender;
+{
+	browser_window_download( browser, [[sender representedObject] UTF8String], NULL );
+}
+
+- (IBAction) cmImageCopy: (id) sender;
+{
+	NSPasteboard *pb = [NSPasteboard generalPasteboard];
+	[pb declareTypes: [NSArray arrayWithObject: NSTIFFPboardType] owner: nil];
+	[pb setData: [[sender representedObject] TIFFRepresentation] forType: NSTIFFPboardType];
+}
+
+- (IBAction) cmLinkCopy: (id) sender;
+{
+	NSPasteboard *pb = [NSPasteboard generalPasteboard];
+	[pb declareTypes: [NSArray arrayWithObject: NSStringPboardType] owner: nil];
+	[pb setString: [sender representedObject] forType: NSStringPboardType];
 }
 
 @end

@@ -154,6 +154,14 @@ static inline bool compare_float( float a, float b )
 		return !compare_float( browser->scale, (float)option_scale / 100.0 );
 	}
 	
+	if (action == @selector( goBack: )) {
+		return canGoBack;
+	}
+	
+	if (action == @selector( goForward: )) {
+		return canGoForward;
+	}
+	
 	return YES;
 }
 
