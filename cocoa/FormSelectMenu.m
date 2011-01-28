@@ -19,7 +19,7 @@
 #import "FormSelectMenu.h"
 
 #import "render/form.h"
-#import "render/box.h"
+#import "cocoa/coordinates.h"
 
 @interface FormSelectMenu ()
 
@@ -78,12 +78,7 @@
 	cell = [[NSPopUpButtonCell alloc] initTextCell: @"" pullsDown: YES];
 	[cell setMenu: menu];
 	
-	struct rect r;
-	box_bounds( control->box, &r );
-	
-	
-	const NSRect rect = NSMakeRect( browser->scale * r.x0, browser->scale * r.y0, 
-								   browser->scale * (r.x1 - r.x0), browser->scale * (r.y1 - r.y0) );
+	const NSRect rect = cocoa_rect_for_box( browser, control->box );
 								   
 	[cell attachPopUpWithFrame: rect inView: view];
 	[cell performClickWithFrame: rect inView: view];

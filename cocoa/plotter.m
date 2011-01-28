@@ -119,6 +119,10 @@ static bool plot_text(int x, int y, const char *text, size_t length,
 	return true;
 }
 
+void cocoa_set_clip( NSRect rect )
+{
+	cocoa_plot_clip_rect = rect;
+}
 
 static bool plot_clip(int x0, int y0, int x1, int y1)
 {

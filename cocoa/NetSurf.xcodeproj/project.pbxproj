@@ -322,6 +322,7 @@
 		262711BE12DDDD1500B2FA62 /* release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = release.xcconfig; sourceTree = "<group>"; };
 		262711C212DDDDC300B2FA62 /* NetSurf.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = NetSurf.xcconfig; sourceTree = "<group>"; };
 		262711D412DDDEEE00B2FA62 /* common.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = common.xcconfig; sourceTree = "<group>"; };
+		2639E20512F2ADEE00699678 /* coordinates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = coordinates.h; sourceTree = "<group>"; };
 		264C344112F0987E00D11246 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
 		265F30AB12D6637E0048B600 /* Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Prefix.pch; sourceTree = "<group>"; };
@@ -863,6 +864,7 @@
 				261223B712D77F9C00E10F91 /* font.h */,
 				265F321E12D66D510048B600 /* font.m */,
 				26AFED0312E09916005AD082 /* selection.m */,
+				2639E20512F2ADEE00699678 /* coordinates.h */,
 			);
 			name = "Platform Interface";
 			sourceTree = "<group>";

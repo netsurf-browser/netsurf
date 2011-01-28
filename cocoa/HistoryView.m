@@ -22,12 +22,14 @@
 #import "desktop/history_core.h"
 #import "desktop/plotters.h"
 #import "cocoa/font.h"
+#import "cocoa/coordinates.h"
+#import "cocoa/plotter.h"
 
 static NSRect cocoa_history_rect( struct browser_window *bw )
 {
 	int width, height;
 	history_size( bw->history, &width, &height );
-	return NSMakeRect( 0, 0, width + 10, height + 10 );
+	return cocoa_rect( 0, 0, width + 10, height + 10 );
 }
 
 @implementation HistoryView
@@ -98,7 +100,8 @@ static NSRect cocoa_history_rect( struct browser_window *bw )
 	[path stroke];
 
 	cocoa_set_font_scale_factor( 1.0 );
-	plot.clip( NSMinX( rect ), NSMinY( rect ), NSMaxX( rect ), NSMaxY( rect ) );
+	cocoa_set_clip( rect );
+	
 	history_redraw( browser->history );
 }
 
@@ -106,7 +109,9 @@ static NSRect cocoa_history_rect( struct browser_window *bw )
 {
 	const NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
 	const bool newWindow = [theEvent modifierFlags] & NSCommandKeyMask;
-	history_click( browser, browser->history, location.x, location.y, newWindow );
+	history_click( browser, browser->history, 
+				   cocoa_pt_to_px( location.x ), cocoa_pt_to_px( location.y ), 
+				   newWindow );
 }
 
 - (BOOL) isFlipped;
