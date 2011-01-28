@@ -149,7 +149,7 @@ static inline NSUInteger cocoa_glyph_for_location( NSLayoutManager *layout, CGFl
 	NSUInteger glyphIndex = [layout glyphIndexForPoint: NSMakePoint( cocoa_px_to_pt( x ), 0 ) 
 									   inTextContainer: cocoa_text_container 
 						fractionOfDistanceThroughGlyph: &fraction];
-	if (fraction > 0) ++glyphIndex;
+	if (fraction >= 1.0) ++glyphIndex;
 	return glyphIndex;
 }
 
@@ -171,9 +171,11 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *bytes, size_t 
 													 const plot_font_style_t *style )
 {
 	if (NULL == bytes || 0 == length) return nil;
-	
+
+	NSString *string = [[[NSString alloc] initWithBytes: bytes length:length encoding:NSUTF8StringEncoding] autorelease];
+	if (string == nil) return nil;
+
 	static NSLayoutManager *layout = nil;
-	
 	if (nil == layout) {
 		cocoa_text_container = [[NSTextContainer alloc] initWithContainerSize: NSMakeSize( CGFLOAT_MAX, CGFLOAT_MAX )];
 		[cocoa_text_container setLineFragmentPadding: 0];
@@ -181,9 +183,6 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *bytes, size_t 
 		layout = [[NSLayoutManager alloc] init];
 		[layout addTextContainer: cocoa_text_container];
 	}
-	
-	
-	NSString *string = [[[NSString alloc] initWithBytes: bytes length:length encoding:NSUTF8StringEncoding] autorelease];
 	
 	static NSString *oldString = 0;
 	static plot_font_style_t oldStyle = { 0 };
@@ -203,13 +202,12 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *bytes, size_t 
 		[attributes release];
 		attributes = [cocoa_font_attributes( style ) retain];
 	}
-	
+
 	[cocoa_text_storage release];
 	cocoa_text_storage = [[NSTextStorage alloc] initWithString: string attributes: attributes];
 	[cocoa_text_storage addLayoutManager: layout];
 
 	[layout ensureLayoutForTextContainer: cocoa_text_container];
-	
 	
 	return layout;
 }
