@@ -118,14 +118,13 @@ void cocoa_set_font_scale_factor( float newFactor )
 void cocoa_draw_string( CGFloat x, CGFloat y, const char *bytes, size_t length, const plot_font_style_t *style )
 {
 	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, style );
+	if (layout == nil) return;
 	
-	if ([cocoa_text_storage length] > 0) {
-		NSFont *font = [cocoa_text_storage attribute: NSFontAttributeName atIndex: 0 effectiveRange: NULL];
-		CGFloat baseline = [layout defaultBaselineOffsetForFont: font];
-		
-		NSRange glyphRange = [layout glyphRangeForTextContainer: cocoa_text_container];
-		[layout drawGlyphsForGlyphRange: glyphRange atPoint: NSMakePoint( x, y - baseline )];
-	}
+	NSFont *font = [cocoa_text_storage attribute: NSFontAttributeName atIndex: 0 effectiveRange: NULL];
+	CGFloat baseline = [layout defaultLineHeightForFont: font] * 3.0 / 4.0;
+	
+	NSRange glyphRange = [layout glyphRangeForTextContainer: cocoa_text_container];
+	[layout drawGlyphsForGlyphRange: glyphRange atPoint: NSMakePoint( x, y - baseline )];
 }
 
 
