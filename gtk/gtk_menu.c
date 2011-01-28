@@ -79,6 +79,15 @@ static bool nsgtk_menu_add_image_item(GtkMenu *menu,
 		}							\
 	} while(0) 
 
+#define ADD_NAMED_SEP(q, r, s)						\
+	do {								\
+		s->r##_separator = gtk_separator_menu_item_new();	\
+		if ((s->r##_separator != NULL) && (s->q##_menu != NULL)) { \
+			gtk_menu_shell_append(GTK_MENU_SHELL(s->q##_menu), s->r##_separator); \
+			gtk_widget_show(s->r##_separator);		\
+		}							\
+	} while(0) 
+
 #define ADD_SEP(q, r)							\
 	do {								\
 		GtkWidget *w = gtk_separator_menu_item_new();		\
@@ -262,7 +271,7 @@ static struct nsgtk_debugging_submenu *nsgtk_menu_debugging_submenu(
  * \param group The gtk 'global' accelerator reference
  * \param parent The parent menu to attach to or NULL
  */
-static struct nsgtk_file_menu *nsgtk_menu_file_menu(GtkAccelGroup *group)
+static struct nsgtk_file_menu *nsgtk_menu_file_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_file_menu *fmenu;
 
@@ -301,7 +310,7 @@ static struct nsgtk_file_menu *nsgtk_menu_file_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-static struct nsgtk_edit_menu *nsgtk_menu_edit_menu(GtkAccelGroup *group)
+static struct nsgtk_edit_menu *nsgtk_menu_edit_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_edit_menu *ret = malloc(sizeof(struct nsgtk_edit_menu));
 	if (ret == NULL) {
@@ -333,7 +342,7 @@ static struct nsgtk_edit_menu *nsgtk_menu_edit_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-static struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group)
+static struct nsgtk_view_menu *nsgtk_menu_view_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_view_menu *ret = malloc(sizeof(struct nsgtk_view_menu));
 	if (ret == NULL) {
@@ -375,7 +384,7 @@ static struct nsgtk_view_menu *nsgtk_menu_view_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-static struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group)
+static struct nsgtk_nav_menu *nsgtk_menu_nav_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_nav_menu *ret = malloc(sizeof(struct nsgtk_nav_menu));
 	if (ret == NULL) {
@@ -412,7 +421,7 @@ static struct nsgtk_nav_menu *nsgtk_menu_nav_menu(GtkAccelGroup *group)
 * \param group the 'global' in a gtk sense accelerator reference
 */
 
-static struct nsgtk_help_menu *nsgtk_menu_help_menu(GtkAccelGroup *group)
+static struct nsgtk_help_menu *nsgtk_menu_help_submenu(GtkAccelGroup *group)
 {
 	struct nsgtk_help_menu *ret = malloc(sizeof(struct nsgtk_help_menu));
 	if (ret == NULL) {
@@ -440,36 +449,36 @@ static struct nsgtk_help_menu *nsgtk_menu_help_menu(GtkAccelGroup *group)
  *
  * Generate the main menu structure and attach it to a menubar widget.
  */
-struct nsgtk_menu_bar *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window)
+struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window)
 {
 	GtkAccelGroup *group;
-	struct nsgtk_menu_bar *nmenu;
+	struct nsgtk_bar_submenu *nmenu;
 
-	nmenu = malloc(sizeof(struct nsgtk_menu_bar));
+	nmenu = malloc(sizeof(struct nsgtk_bar_submenu));
 	if (nmenu == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		return NULL;
 	}
 
-	nmenu->menu_bar = GTK_MENU_BAR(menubar);
+	nmenu->bar_menu = GTK_MENU_BAR(menubar);
 
 	group = gtk_accel_group_new();
 	gtk_window_add_accel_group(window, group);
 
-	nmenu->file = nsgtk_menu_file_menu(group);
-	ATTACH_PARENT(menubar, gtkFile, nmenu->file->file, group);
+	nmenu->file_submenu = nsgtk_menu_file_submenu(group);
+	ATTACH_PARENT(menubar, gtkFile, nmenu->file_submenu->file, group);
 
-	nmenu->edit = nsgtk_menu_edit_menu(group);
-	ATTACH_PARENT(menubar, gtkEdit, nmenu->edit->edit, group);
+	nmenu->edit_submenu = nsgtk_menu_edit_submenu(group);
+	ATTACH_PARENT(menubar, gtkEdit, nmenu->edit_submenu->edit, group);
 
-	nmenu->view = nsgtk_menu_view_menu(group);
-	ATTACH_PARENT(menubar, gtkView, nmenu->view->view, group);
+	nmenu->view_submenu = nsgtk_menu_view_submenu(group);
+	ATTACH_PARENT(menubar, gtkView, nmenu->view_submenu->view, group);
 
-	nmenu->nav = nsgtk_menu_nav_menu(group);
-	ATTACH_PARENT(menubar, gtkNavigate, nmenu->nav->nav, group);
+	nmenu->nav_submenu = nsgtk_menu_nav_submenu(group);
+	ATTACH_PARENT(menubar, gtkNavigate, nmenu->nav_submenu->nav, group);
 
-	nmenu->help = nsgtk_menu_help_menu(group);
-	ATTACH_PARENT(menubar, gtkHelp, nmenu->help->help, group);
+	nmenu->help_submenu = nsgtk_menu_help_submenu(group);
+	ATTACH_PARENT(menubar, gtkHelp, nmenu->help_submenu->help, group);
 
 	return nmenu;
 }
@@ -478,12 +487,12 @@ struct nsgtk_menu_bar *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *w
  * Generate right click menu menu.
  *
  */
-struct nsgtk_menu_rclick *nsgtk_menu_rclick_create(GtkWindow *window)
+struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkWindow *window)
 {
 	GtkAccelGroup *group;
-	struct nsgtk_menu_rclick *nmenu;
+	struct nsgtk_popup_submenu *nmenu;
 
-	nmenu = malloc(sizeof(struct nsgtk_menu_rclick));
+	nmenu = malloc(sizeof(struct nsgtk_popup_submenu));
 	if (nmenu == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		return NULL;
@@ -492,11 +501,43 @@ struct nsgtk_menu_rclick *nsgtk_menu_rclick_create(GtkWindow *window)
 	group = gtk_accel_group_new();
 	gtk_window_add_accel_group(window, group);
 
-	nmenu->file = nsgtk_menu_file_menu(group);
-	nmenu->edit = nsgtk_menu_edit_menu(group);
-	nmenu->view = nsgtk_menu_view_menu(group);
-	nmenu->nav = nsgtk_menu_nav_menu(group);
-	nmenu->help = nsgtk_menu_help_menu(group);
+	nmenu->popup_menu = GTK_MENU(gtk_menu_new());
+	
+	IMAGE_ITEM(popup, file, gtkFile, nmenu, group);
+	SET_SUBMENU(file, nmenu);
+
+	IMAGE_ITEM(popup, edit, gtkEdit, nmenu, group);
+	SET_SUBMENU(edit, nmenu);
+
+	IMAGE_ITEM(popup, view, gtkView, nmenu, group);
+	SET_SUBMENU(view, nmenu);
+
+	IMAGE_ITEM(popup, nav, gtkNavigate, nmenu, group);
+	SET_SUBMENU(nav, nmenu);
+
+	IMAGE_ITEM(popup, help, gtkHelp, nmenu, group);
+	SET_SUBMENU(help, nmenu);
+
+	ADD_NAMED_SEP(popup, first, nmenu);
+
+	IMAGE_ITEM(popup, opentab, gtkOpentab, nmenu, group);
+	IMAGE_ITEM(popup, openwin, gtkOpenwin, nmenu, group);
+	IMAGE_ITEM(popup, savelink, gtkSavelink, nmenu, group);
+
+	ADD_NAMED_SEP(popup, second, nmenu);
+
+	IMAGE_ITEM(popup, back, gtkBack, nmenu, group);
+	IMAGE_ITEM(popup, forward, gtkForward, nmenu, group);
+
+	ADD_NAMED_SEP(popup, third, nmenu);
+
+	IMAGE_ITEM(popup, stop, gtkStop, nmenu, group);
+	IMAGE_ITEM(popup, reload, gtkReload, nmenu, group);
+	IMAGE_ITEM(popup, cut, gtkCut, nmenu, group);
+	IMAGE_ITEM(popup, copy, gtkCopy, nmenu, group);
+	IMAGE_ITEM(popup, paste, gtkPaste, nmenu, group);
+	IMAGE_ITEM(popup, customize, gtkCustomize, nmenu, group);
+
 
 	return nmenu;
 }

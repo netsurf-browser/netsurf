@@ -133,26 +133,63 @@ struct nsgtk_debugging_submenu {
 };
 
 
-struct nsgtk_menu_bar {
-	GtkMenuBar		*menu_bar;
-	struct nsgtk_file_menu	*file;
-	struct nsgtk_edit_menu	*edit;
-	struct nsgtk_view_menu	*view;
-	struct nsgtk_nav_menu	*nav;
-	struct nsgtk_tabs_menu	*tabs;
-	struct nsgtk_help_menu	*help;
+struct nsgtk_bar_submenu {
+	GtkMenuBar		*bar_menu;
+	struct nsgtk_file_menu	*file_submenu;
+	struct nsgtk_edit_menu	*edit_submenu;
+	struct nsgtk_view_menu	*view_submenu;
+	struct nsgtk_nav_menu	*nav_submenu;
+	struct nsgtk_tabs_menu	*tabs_submenu;
+	struct nsgtk_help_menu	*help_submenu;
 };
 
-struct nsgtk_menu_rclick {
-	struct nsgtk_file_menu	*file;
-	struct nsgtk_edit_menu	*edit;
-	struct nsgtk_view_menu	*view;
-	struct nsgtk_nav_menu	*nav;
-	struct nsgtk_tabs_menu	*tabs;
-	struct nsgtk_help_menu	*help;
+struct nsgtk_popup_submenu {
+	GtkMenu	*popup_menu;
+
+	GtkImageMenuItem *file_menuitem;
+	struct nsgtk_file_menu *file_submenu;
+
+	GtkImageMenuItem *edit_menuitem;
+	struct nsgtk_edit_menu *edit_submenu;
+
+	GtkImageMenuItem *view_menuitem;
+	struct nsgtk_view_menu *view_submenu;
+
+	GtkImageMenuItem *nav_menuitem;
+	struct nsgtk_nav_menu *nav_submenu;
+
+	GtkImageMenuItem *tabs_menuitem;
+	struct nsgtk_tabs_menu *tabs_submenu;
+
+	GtkImageMenuItem *help_menuitem;
+	struct nsgtk_help_menu *help_submenu;
+
+	GtkWidget *first_separator;
+
+	GtkImageMenuItem *opentab_menuitem;
+	GtkImageMenuItem *openwin_menuitem;
+	GtkImageMenuItem *savelink_menuitem;
+
+	GtkWidget *second_separator;
+
+	/* navigation entries */
+	GtkImageMenuItem *back_menuitem;
+	GtkImageMenuItem *forward_menuitem;
+
+	GtkWidget *third_separator;
+
+	/* view entries */
+	GtkImageMenuItem *stop_menuitem;
+	GtkImageMenuItem *reload_menuitem;
+
+	GtkImageMenuItem *cut_menuitem;
+	GtkImageMenuItem *copy_menuitem;
+	GtkImageMenuItem *paste_menuitem;
+	GtkImageMenuItem *customize_menuitem;
+
 };
 
-struct nsgtk_menu_bar *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window);
-struct nsgtk_menu_rclick *nsgtk_menu_rclick_create(GtkWindow *window);
+struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window);
+struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkWindow *window);
 
 #endif
