@@ -108,6 +108,7 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
+	current_redraw_browser = browser;
 	cocoa_set_font_scale_factor( browser->scale );
 	
 	NSRect frame = [self bounds];
@@ -131,6 +132,7 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 					   browser->scale,
 					   0xFFFFFF);
 	}
+	current_redraw_browser = NULL;
 
 	NSRect caretRect = cocoa_get_caret_rect( self );
 	if (hasCaret && caretVisible && [self needsToDrawRect: caretRect]) {
@@ -204,15 +206,18 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 - (void) mouseDragged: (NSEvent *)theEvent;
 {
 	NSPoint location = [self convertMousePoint: theEvent];
+	browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
 
 	if (!isDragging) {
 		const CGFloat distance = squared( dragStart.x - location.x ) + squared( dragStart.y - location.y );
-		if (distance >= squared( MinDragDistance)) isDragging = YES;
+
+		if (distance >= squared( MinDragDistance)) {
+			isDragging = YES;	
+			browser_window_mouse_click( browser, BROWSER_MOUSE_DRAG_1 | modifierFlags, dragStart.x, dragStart.y );
+		}
 	}
 	
 	if (isDragging) {
-		browser_mouse_state modifierFlags = cocoa_mouse_flags_for_event( theEvent );
-		browser_window_mouse_click( browser, BROWSER_MOUSE_DRAG_1 | modifierFlags, location.x, location.y );
 		browser_window_mouse_track( browser, BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON | modifierFlags, location.x, location.y );
 	}
 }
@@ -254,7 +259,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) moveDown: (id)sender;
 {
-	browser_window_key_press( browser, KEY_DOWN );
+	if (browser_window_key_press( browser, KEY_DOWN )) return;
 }
 
 - (void) deleteBackward: (id)sender;
