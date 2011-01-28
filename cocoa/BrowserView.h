@@ -33,19 +33,17 @@
 	BOOL isDragging;
 	NSPoint dragStart;
 	
-	BOOL isResizing;
-
 	HistoryView *history;
 	BOOL historyVisible;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
 @property (readwrite, retain, nonatomic) NSTimer *caretTimer;
-@property (readwrite, assign, nonatomic, getter=isResizing) BOOL resizing;
 @property (readwrite, assign, nonatomic, getter=isHistoryVisible) BOOL historyVisible;
 
 - (void) removeCaret;
 - (void) addCaretAt: (NSPoint) point height: (CGFloat) height;
 
+- (void) reformat;
 
 @end

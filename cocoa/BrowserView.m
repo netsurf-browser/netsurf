@@ -41,7 +41,6 @@
 
 @synthesize browser;
 @synthesize caretTimer;
-@synthesize resizing = isResizing;
 
 static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
@@ -377,11 +376,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) adjustFrame;
 {
-	if (!isResizing) {
-		NSSize frameSize = [[self superview] frame].size;
-		browser_window_reformat( browser, cocoa_pt_to_px( frameSize.width ), cocoa_pt_to_px( frameSize.height ) );
-	}
-	
+	browser->reformat_pending = true;
+	browser_reformat_pending = true;
 	[super adjustFrame];
 }
 
@@ -420,6 +416,14 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 - (CGFloat) pageScroll;
 {
 	return NSHeight( [[self superview] frame] ) - [[self enclosingScrollView] pageScroll];
+}
+
+- (void) reformat;
+{
+	if (!browser->reformat_pending) return;
+	
+	NSRect size = [[self superview] frame];
+	browser_window_reformat( browser, cocoa_pt_to_px( NSWidth( size ) ), cocoa_pt_to_px( NSHeight( size ) ) );
 }
 
 @end

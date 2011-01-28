@@ -46,6 +46,8 @@ NSString * const kHotlistFileOption = @"Hotlist";
 NSString * const kHomepageURLOption = @"HomepageURL";
 NSString * const kOptionsFileOption = @"ClassicOptionsFile";
 
+static NSMutableSet *cocoa_all_browser_views = nil;
+
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
 void gui_multitask(void)
@@ -60,9 +62,15 @@ void gui_poll(bool active)
 	NSEvent *event = [NSApp nextEventMatchingMask: NSAnyEventMask untilDate: active ? nil : [NSDate distantFuture]
 										   inMode: NSDefaultRunLoopMode dequeue: YES];
 	
-	if (nil != event) [NSApp sendEvent: event];
+	if (nil != event) {
+		[NSApp sendEvent: event];
+		[NSApp updateWindows];	
+	}
 	
-	[NSApp updateWindows];
+	if (browser_reformat_pending) {
+		[cocoa_all_browser_views makeObjectsPerformSelector: @selector( reformat )];
+		browser_reformat_pending = false;
+	}
 }
 
 void gui_quit(void)
@@ -86,13 +94,22 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];
 
-	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+	if (bw->parent == NULL) {
 		if (!new_tab || nil == window) {
 			window = [[[BrowserWindowController alloc] init] autorelease];
 			[[window window] makeKeyAndOrderFront: nil];
 		}
 		[window addTab: result];
+	} else {
+		BrowserViewController *parent = (BrowserViewController *)bw->parent->window;
+		NSCParameterAssert( parent != nil );
+		[[parent browserView] addSubview: [result view]];
 	}
+	
+	if (cocoa_all_browser_views == nil) {
+		cocoa_all_browser_views = [[NSMutableSet alloc] init];
+	}
+	[cocoa_all_browser_views addObject: [result browserView]];
 	
 	return (struct gui_window *)result;
 }
@@ -104,7 +121,11 @@ struct browser_window *gui_window_get_browser_window(struct gui_window *g)
 
 void gui_window_destroy(struct gui_window *g)
 {
-	[(BrowserViewController *)g release];
+	BrowserViewController *vc = (BrowserViewController *)g;
+
+	if ([vc browser]->parent != NULL) [[vc view] removeFromSuperview];
+	[cocoa_all_browser_views removeObject: [vc browserView]];
+	[vc release];
 }
 
 void gui_window_set_title(struct gui_window *g, const char *title)
@@ -156,7 +177,8 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 void gui_window_position_frame(struct gui_window *g, int x0, int y0,
 							   int x1, int y1)
 {
-	UNIMPL();
+	const NSRect rect = cocoa_rect( x0, y0, x1, y1 );
+	[[(BrowserViewController *)g view] setFrame: rect];
 }
 
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
@@ -182,9 +204,7 @@ void gui_window_update_extent(struct gui_window *g)
 	int width = content_get_width( browser->current_content );
 	int height = content_get_height( browser->current_content );
 	
-	[[window browserView] setResizing: YES];
 	[[window browserView] setMinimumSize: cocoa_scaled_size( browser->scale, width, height )];
-	[[window browserView] setResizing: NO];
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
@@ -298,8 +318,7 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 
 bool gui_window_frame_resize_start(struct gui_window *g)
 {
-	UNIMPL();
-	return false;
+	return true;
 }
 
 void gui_window_save_link(struct gui_window *g, const char *url, 
