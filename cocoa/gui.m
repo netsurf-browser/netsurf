@@ -46,8 +46,6 @@ NSString * const kHotlistFileOption = @"Hotlist";
 NSString * const kHomepageURLOption = @"HomepageURL";
 NSString * const kOptionsFileOption = @"ClassicOptionsFile";
 
-static NSMutableSet *cocoa_all_browser_views = nil;
-
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
 void gui_multitask(void)
@@ -65,11 +63,6 @@ void gui_poll(bool active)
 	if (nil != event) {
 		[NSApp sendEvent: event];
 		[NSApp updateWindows];	
-	}
-	
-	if (browser_reformat_pending) {
-		[cocoa_all_browser_views makeObjectsPerformSelector: @selector( reformat )];
-		browser_reformat_pending = false;
 	}
 }
 
@@ -106,11 +99,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		[[parent browserView] addSubview: [result view]];
 	}
 	
-	if (cocoa_all_browser_views == nil) {
-		cocoa_all_browser_views = [[NSMutableSet alloc] init];
-	}
-	[cocoa_all_browser_views addObject: [result browserView]];
-	
 	return (struct gui_window *)result;
 }
 
@@ -124,7 +112,6 @@ void gui_window_destroy(struct gui_window *g)
 	BrowserViewController *vc = (BrowserViewController *)g;
 
 	if ([vc browser]->parent != NULL) [[vc view] removeFromSuperview];
-	[cocoa_all_browser_views removeObject: [vc browserView]];
 	[vc release];
 }
 
