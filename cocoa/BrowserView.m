@@ -29,6 +29,14 @@
 #import "cocoa/font.h"
 #import "cocoa/plotter.h"
 
+@interface BrowserView ()
+
+- (void) scrollHorizontal: (CGFloat) amount;
+- (void) scrollVertical: (CGFloat) amount;
+- (CGFloat) pageScroll;
+
+@end
+
 @implementation BrowserView
 
 @synthesize browser;
@@ -244,22 +252,26 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) moveLeft: (id)sender;
 {
-	browser_window_key_press( browser, KEY_LEFT );
+	if (browser_window_key_press( browser, KEY_LEFT )) return;
+	[self scrollHorizontal: -[[self enclosingScrollView] horizontalLineScroll]];
 }
 
 - (void) moveRight: (id)sender;
 {
-	browser_window_key_press( browser, KEY_RIGHT );
+	if (browser_window_key_press( browser, KEY_RIGHT )) return;
+	[self scrollHorizontal: [[self enclosingScrollView] horizontalLineScroll]];
 }
 
 - (void) moveUp: (id)sender;
 {
-	browser_window_key_press( browser, KEY_UP );
+	if (browser_window_key_press( browser, KEY_UP )) return;
+	[self scrollVertical: -[[self enclosingScrollView] lineScroll]];
 }
 
 - (void) moveDown: (id)sender;
 {
 	if (browser_window_key_press( browser, KEY_DOWN )) return;
+	[self scrollVertical: [[self enclosingScrollView] lineScroll]];
 }
 
 - (void) deleteBackward: (id)sender;
@@ -279,12 +291,14 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) scrollPageUp: (id)sender;
 {
-	browser_window_key_press( browser, KEY_PAGE_UP );
+	if (browser_window_key_press( browser, KEY_PAGE_UP )) return;
+	[self scrollVertical: -[self pageScroll]];
 }
 
 - (void) scrollPageDown: (id)sender;
 {
-	browser_window_key_press( browser, KEY_PAGE_DOWN );
+	if (browser_window_key_press( browser, KEY_PAGE_DOWN )) return;
+	[self scrollVertical: [self pageScroll]];
 }
 
 - (void) insertTab: (id)sender;
@@ -309,12 +323,26 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) moveToBeginningOfDocument: (id)sender;
 {
-	browser_window_key_press( browser, KEY_TEXT_START );
+	if (browser_window_key_press( browser, KEY_TEXT_START )) return;
+}
+
+- (void) scrollToBeginningOfDocument: (id) sender;
+{
+	NSPoint origin = [self visibleRect].origin;
+	origin.y = 0;
+	[self scrollPoint: origin];
 }
 
 - (void) moveToEndOfDocument: (id)sender;
 {
 	browser_window_key_press( browser, KEY_TEXT_END );
+}
+
+- (void) scrollToEndOfDocument: (id) sender;
+{
+	NSPoint origin = [self visibleRect].origin;
+	origin.y = NSHeight( [self frame] );
+	[self scrollPoint: origin];
 }
 
 - (void) insertNewline: (id)sender;
@@ -373,6 +401,25 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	} else {
 		[history fadeOut];
 	}
+}
+
+- (void) scrollHorizontal: (CGFloat) amount;
+{
+	NSPoint currentPoint = [self visibleRect].origin;
+	currentPoint.x += amount;
+	[self scrollPoint: currentPoint];
+}
+
+- (void) scrollVertical: (CGFloat) amount;
+{
+	NSPoint currentPoint = [self visibleRect].origin;
+	currentPoint.y += amount;
+	[self scrollPoint: currentPoint];
+}
+
+- (CGFloat) pageScroll;
+{
+	return NSHeight( [[self superview] frame] ) - [[self enclosingScrollView] pageScroll];
 }
 
 @end
