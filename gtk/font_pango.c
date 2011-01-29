@@ -26,10 +26,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include <gtk/gtk.h>
+
 #include "css/css.h"
 #include "css/utils.h"
 #include "gtk/font_pango.h"
-#include "gtk/gtk_plotters.h"
+#include "gtk/plotters.h"
 #include "render/font.h"
 #include "utils/utils.h"
 #include "utils/log.h"

@@ -22,11 +22,11 @@
  * or write to the Free Software Foundation, Inc.,
  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-#include "gtk/sexy_icon_entry.h"
 #include <string.h>
 #include <gtk/gtk.h>
-#include "gtk/gtk_compat.h"
+
+#include "gtk/sexy_icon_entry.h"
+#include "gtk/compat.h"
 
 #define ICON_MARGIN 2
 #define MAX_ICONS 2
