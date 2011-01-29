@@ -1070,11 +1070,10 @@ void box_text_transform(char *s, unsigned int len, enum css_text_transform_e tt)
 
 bool box_body(BOX_SPECIAL_PARAMS)
 {
-	enum css_background_color_e type;
 	css_color color;
 
-	type = css_computed_background_color(box->style, &color);
-	if (type == CSS_BACKGROUND_COLOR_TRANSPARENT)
+	css_computed_background_color(box->style, &color);
+	if (nscss_color_is_transparent(color))
 		content->data.html.background_colour = NS_TRANSPARENT;
 	else
 		content->data.html.background_colour = nscss_color_to_ns(color);

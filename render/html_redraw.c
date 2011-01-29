@@ -190,6 +190,70 @@ bool html_redraw(struct content *c, int x, int y,
 
 }
 
+/**
+ * Determine if a box has a background that needs drawing
+ *
+ * \param box  Box to consider
+ * \return True if box has a background, false otherwise.
+ */
+static bool html_redraw_box_has_background(struct box *box)
+{
+	if (box->background != NULL)
+		return true;
+
+	if (box->style != NULL) {
+		css_color colour;
+
+		css_computed_background_color(box->style, &colour);
+
+		if (nscss_color_is_transparent(colour) == false)
+			return true;
+	}
+
+	return false;
+}
+
+/**
+ * Find the background box for a box
+ *
+ * \param box  Box to find background box for
+ * \return Pointer to background box, or NULL if there is none
+ */
+static struct box *html_redraw_find_bg_box(struct box *box)
+{
+	/* Thanks to backwards compatibility, CSS defines the following:
+	 *
+	 * + If the box is for the root element and it has a background,
+	 *   use that (and then process the body box with no special case)
+	 * + If the box is for the root element and it has no background,
+	 *   then use the background (if any) from the body element as if
+	 *   it were specified on the root. Then, when the box for the body
+	 *   element is processed, ignore the background.
+	 * + For any other box, just use its own styling.
+	 */
+	if (box->parent == NULL) {
+		/* Root box */
+		if (html_redraw_box_has_background(box))
+			return box;
+
+		/* No background on root box: consider body box, if any */
+		if (box->children != NULL) {
+			if (html_redraw_box_has_background(box->children))
+				return box->children;
+		}
+	} else if (box->parent != NULL && box->parent->parent == NULL) {
+		/* Body box: only render background if root has its own */
+		if (html_redraw_box_has_background(box) &&
+				html_redraw_box_has_background(box->parent))
+			return box;
+	} else {
+		/* Any other box */
+		if (html_redraw_box_has_background(box))
+			return box;
+	}
+
+	return NULL;
+}
 
 /**
  * Recursively draw a box.
@@ -216,7 +280,6 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	struct rect r;
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
-	css_color bgcol = 0;
 	bool has_x_scroll, has_y_scroll;
 
 	if (html_redraw_printing && box->printed)
@@ -371,71 +434,16 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	/* background colour and image for block level content and replaced
 	 * inlines */
 
-	/* Thanks to backwards compatibility, CSS defines the following:
-	 *
-	 * + If the box is for the root element and it has a background,
-	 *   use that (and then process the body box with no special case)
-	 * + If the box is for the root element and it has no background,
-	 *   then use the background (if any) from the body element as if
-	 *   it were specified on the root. Then, when the box for the body
-	 *   element is processed, ignore the background.
-	 * + For any other box, just use its own styling.
-	 */
-	if (!box->parent) {
-		/* Root box */
-		if (box->style && (css_computed_background_color(box->style,
-				&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
-				box->background)) {
-			/* With its own background */
-			bg_box = box;
-		} else if (!box->style ||
-				(css_computed_background_color(box->style,
-				&bgcol) == CSS_BACKGROUND_COLOR_TRANSPARENT &&
-				!box->background)) {
-			/* Without its own background */
-			if (box->children && box->children->style &&
-					(css_computed_background_color(
-					box->children->style, 
-					&bgcol) != 
-					CSS_BACKGROUND_COLOR_TRANSPARENT ||
-					box->children->background)) {
-				/* But body has one, so use that */
-				bg_box = box->children;
-			}
-		}
-	} else if (box->parent && !box->parent->parent) {
-		/* Body box */
-		if (box->style && (css_computed_background_color(box->style, 
-				&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
-				box->background)) {
-			/* With a background */
-			if (box->parent->style &&
-				(css_computed_background_color(
-					box->parent->style, &bgcol) !=
-					CSS_BACKGROUND_COLOR_TRANSPARENT ||
-					box->parent->background)) {
-				/* Root has own background; process normally */
-				bg_box = box;
-			}
-		}
-	} else {
-		/* Any other box */
-		bg_box = box;
-	}
+	bg_box = html_redraw_find_bg_box(box);
 
 	/* bg_box == NULL implies that this box should not have
 	* its background rendered. Otherwise filter out linebreaks,
 	* optimize away non-differing inlines, only plot background
-	* for BOX_TEXT it's in an inline and ensure the bg_box
-	* has something worth rendering */
-	if (bg_box && bg_box->style &&
-			bg_box->type != BOX_BR &&
+	* for BOX_TEXT it's in an inline */
+	if (bg_box && bg_box->type != BOX_BR &&
 			bg_box->type != BOX_TEXT &&
 			bg_box->type != BOX_INLINE_END &&
-			(bg_box->type != BOX_INLINE || bg_box->object) &&
-			(css_computed_background_color(bg_box->style, 
-			&bgcol) != CSS_BACKGROUND_COLOR_TRANSPARENT ||
-			bg_box->background)) {
+			(bg_box->type != BOX_INLINE || bg_box->object)) {
 		/* find intersection of clip box and border edge */
 		struct rect p;
 		p.x0 = x - border_left < r.x0 ? r.x0 : x - border_left;
@@ -490,9 +498,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 
 	/* backgrounds and borders for non-replaced inlines */
 	if (box->style && box->type == BOX_INLINE && box->inline_end &&
-			(css_computed_background_color(box->style, &bgcol) != 
-			CSS_BACKGROUND_COLOR_TRANSPARENT ||
-			box->background || border_top || border_right ||
+			(html_redraw_box_has_background(box) ||
+			border_top || border_right ||
 			border_bottom || border_left)) {
 		/* inline backgrounds and borders span other boxes and may
 		 * wrap onto separate lines */
@@ -1086,8 +1093,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		colour col = 0;
 		side = sides[i]; /* plot order */
 
-		if (box->border[side].width == 0 || box->border[side].color ==
-				CSS_BORDER_COLOR_TRANSPARENT)
+		if (box->border[side].width == 0 || 
+				nscss_color_is_transparent(box->border[side].c))
 			continue;
 
 		switch (side) {
@@ -1100,8 +1107,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[4] = p[2];	z[5] = p[3];
 			z[6] = p[0];	z[7] = p[1];
 
-			if (box->border[TOP].color !=
-					CSS_BORDER_COLOR_TRANSPARENT &&
+			if (nscss_color_is_transparent(box->border[TOP].c) == 
+					false &&
 					box->border[TOP].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang top corner fully,
@@ -1109,8 +1116,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				z[5] -= top;
 				square_end_1 = true;
 			}
-			if (box->border[BOTTOM].color !=
-					CSS_BORDER_COLOR_TRANSPARENT &&
+			if (nscss_color_is_transparent(box->border[BOTTOM].c) ==
+					false &&
 					box->border[BOTTOM].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang bottom corner fully,
@@ -1136,8 +1143,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 			z[4] = p[4];	z[5] = p[5];
 			z[6] = p[6];	z[7] = p[7];
 
-			if (box->border[TOP].color !=
-					CSS_BORDER_COLOR_TRANSPARENT &&
+			if (nscss_color_is_transparent(box->border[TOP].c) ==
+					false &&
 					box->border[TOP].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang top corner fully,
@@ -1145,8 +1152,8 @@ bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 				z[3] -= top;
 				square_end_1 = true;
 			}
-			if (box->border[BOTTOM].color !=
-					CSS_BORDER_COLOR_TRANSPARENT &&
+			if (nscss_color_is_transparent(box->border[BOTTOM].c) ==
+					false &&
 					box->border[BOTTOM].style !=
 					CSS_BORDER_STYLE_DOUBLE) {
 				/* make border overhang bottom corner fully,
@@ -1307,8 +1314,8 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 	/* Left */
 	square_end_1 = (top == 0);
 	square_end_2 = (bottom == 0);
-	if (left != 0 && first && box->border[LEFT].color !=
-			CSS_BORDER_COLOR_TRANSPARENT) {
+	if (left != 0 && first && nscss_color_is_transparent(
+			box->border[LEFT].c) == false) {
 		col = nscss_color_to_ns(box->border[LEFT].c);
 
 		z[0] = p[0];	z[1] = p[7];
@@ -1316,8 +1323,7 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 		z[4] = p[2];	z[5] = p[3];
 		z[6] = p[0];	z[7] = p[1];
 
-		if (box->border[TOP].color !=
-				CSS_BORDER_COLOR_TRANSPARENT &&
+		if (nscss_color_is_transparent(box->border[TOP].c) == false &&
 				box->border[TOP].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang top corner fully,
@@ -1325,8 +1331,9 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 			z[5] -= top;
 			square_end_1 = true;
 		}
-		if (box->border[BOTTOM].color !=
-				CSS_BORDER_COLOR_TRANSPARENT &&
+
+		if (nscss_color_is_transparent(box->border[BOTTOM].c) == 
+				false &&
 				box->border[BOTTOM].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang bottom corner fully,
@@ -1344,8 +1351,8 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 	/* Right */
 	square_end_1 = (top == 0);
 	square_end_2 = (bottom == 0);
-	if (right != 0 && last && box->border[RIGHT].color !=
-			CSS_BORDER_COLOR_TRANSPARENT) {
+	if (right != 0 && last && nscss_color_is_transparent(
+			box->border[RIGHT].c) == false) {
 		col = nscss_color_to_ns(box->border[RIGHT].c);
 
 		z[0] = p[6];	z[1] = p[1];
@@ -1353,8 +1360,7 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 		z[4] = p[4];	z[5] = p[5];
 		z[6] = p[6];	z[7] = p[7];
 
-		if (box->border[TOP].color !=
-				CSS_BORDER_COLOR_TRANSPARENT &&
+		if (nscss_color_is_transparent(box->border[TOP].c) == false &&
 				box->border[TOP].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang top corner fully,
@@ -1362,8 +1368,9 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 			z[3] -= top;
 			square_end_1 = true;
 		}
-		if (box->border[BOTTOM].color !=
-				CSS_BORDER_COLOR_TRANSPARENT &&
+
+		if (nscss_color_is_transparent(box->border[BOTTOM].c) == 
+				false &&
 				box->border[BOTTOM].style !=
 				CSS_BORDER_STYLE_DOUBLE) {
 			/* make border overhang bottom corner fully,
@@ -1381,8 +1388,8 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 	/* Top */
 	square_end_1 = (left == 0);
 	square_end_2 = (right == 0);
-	if (top != 0 && box->border[TOP].color !=
-			CSS_BORDER_COLOR_TRANSPARENT) {
+	if (top != 0 && nscss_color_is_transparent(
+			box->border[TOP].c) == false) {
 		col = nscss_color_to_ns(box->border[TOP].c);
 
 		z[0] = p[2];	z[1] = p[3];
@@ -1399,6 +1406,7 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 			z[2] += left;
 			square_end_1 = true;
 		}
+
 		if (last && box->border[TOP].style ==
 				CSS_BORDER_STYLE_SOLID &&
 				box->border[TOP].c ==
@@ -1418,8 +1426,8 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 	/* Bottom */
 	square_end_1 = (left == 0);
 	square_end_2 = (right == 0);
-	if (bottom != 0 && box->border[BOTTOM].color !=
-			CSS_BORDER_COLOR_TRANSPARENT) {
+	if (bottom != 0 && nscss_color_is_transparent(
+			box->border[BOTTOM].c) == false) {
 		col = nscss_color_to_ns(box->border[BOTTOM].c);
 
 		z[0] = p[4];	z[1] = p[5];
@@ -1436,6 +1444,7 @@ bool html_redraw_inline_borders(struct box *box, struct rect b,
 			z[4] += left;
 			square_end_1 = true;
 		}
+
 		if (last && box->border[BOTTOM].style ==
 				CSS_BORDER_STYLE_SOLID &&
 				box->border[BOTTOM].c ==
@@ -2135,18 +2144,20 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if (clip_box->background != NULL)
 				bmp = content_get_bitmap(clip_box->background);
 
+			css_computed_background_color(clip_box->style, &bgcol);
+
 			/* <td> attributes override <tr> */
 			if ((clip.x0 >= clip.x1) || (clip.y0 >= clip.y1) ||
-					(css_computed_background_color(
-						clip_box->style, &bgcol) !=
-					CSS_BACKGROUND_COLOR_TRANSPARENT) ||
+					(nscss_color_is_transparent(bgcol) ==
+						false) ||
 					(bmp != NULL && bitmap_get_opaque(bmp)))
 				continue;
 		}
 
 		/* plot the background colour */
-		if (css_computed_background_color(background->style, &bgcol) != 
-				CSS_BACKGROUND_COLOR_TRANSPARENT) {
+		css_computed_background_color(background->style, &bgcol);
+
+		if (nscss_color_is_transparent(bgcol) == false) {
 			*background_colour = nscss_color_to_ns(bgcol);
 			pstyle_fill_bg.fill_colour = *background_colour;
 			if (plot_colour)
@@ -2287,8 +2298,9 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 	}
 
 	/* plot the background colour */
-	if (css_computed_background_color(box->style, &bgcol) != 
-			CSS_BACKGROUND_COLOR_TRANSPARENT) {
+	css_computed_background_color(box->style, &bgcol);
+
+	if (nscss_color_is_transparent(bgcol) == false) {
 		*background_colour = nscss_color_to_ns(bgcol);
 		pstyle_fill_bg.fill_colour = *background_colour;
 

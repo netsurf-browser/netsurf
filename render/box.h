@@ -123,7 +123,6 @@ enum box_side { TOP, RIGHT, BOTTOM, LEFT };
  */
 struct box_border {
 	enum css_border_style_e style;	/**< border-style */
-	enum css_border_color_e color;	/**< border-color type */
 	css_color c;			/**< border-color value */
 	int width;			/**< border-width (pixels) */
 };

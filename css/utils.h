@@ -39,6 +39,15 @@ extern css_fixed nscss_screen_dpi;
 		((color) & 0xff00) | \
 		(((color) & 0xff) << 16)
 
+/**
+ * Determine if a CSS color primitive is transparent
+ *
+ * \param color  The CSS color to consider
+ * \return True if the color is transparent, false otherwise
+ */
+#define nscss_color_is_transparent(color) \
+		(((color) >> 24) == 0)
+
 css_fixed nscss_len2pt(css_fixed length, css_unit unit);
 css_fixed nscss_len2px(css_fixed length, css_unit unit, 
 		const css_computed_style *style);

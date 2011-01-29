@@ -63,9 +63,6 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	/* background-color */
 	val = css_computed_background_color(style, &color);
 	switch (val) {
-	case CSS_BACKGROUND_COLOR_TRANSPARENT:
-		fprintf(stream, "background-color: transparent ");
-		break;
 	case CSS_BACKGROUND_COLOR_COLOR:
 		fprintf(stream, "background-color: #%08x ", color);
 		break;
@@ -140,12 +137,6 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	/* border-top-color */
 	val = css_computed_border_top_color(style, &color);
 	switch (val) {
-	case CSS_BORDER_COLOR_INITIAL:
-		fprintf(stream, "border-top-color: initial ");
-		break;
-	case CSS_BORDER_COLOR_TRANSPARENT:
-		fprintf(stream, "border-top-color: transparent ");
-		break;
 	case CSS_BORDER_COLOR_COLOR:
 		fprintf(stream, "border-top-color: #%08x ", color);
 		break;
@@ -156,12 +147,6 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	/* border-right-color */
 	val = css_computed_border_right_color(style, &color);
 	switch (val) {
-	case CSS_BORDER_COLOR_INITIAL:
-		fprintf(stream, "border-right-color: initial ");
-		break;
-	case CSS_BORDER_COLOR_TRANSPARENT:
-		fprintf(stream, "border-right-color: transparent ");
-		break;
 	case CSS_BORDER_COLOR_COLOR:
 		fprintf(stream, "border-right-color: #%08x ", color);
 		break;
@@ -172,12 +157,6 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	/* border-bottom-color */
 	val = css_computed_border_bottom_color(style, &color);
 	switch (val) {
-	case CSS_BORDER_COLOR_INITIAL:
-		fprintf(stream, "border-bottom-color: initial ");
-		break;
-	case CSS_BORDER_COLOR_TRANSPARENT:
-		fprintf(stream, "border-bottom-color: transparent ");
-		break;
 	case CSS_BORDER_COLOR_COLOR:
 		fprintf(stream, "border-bottom-color: #%08x ", color);
 		break;
@@ -188,12 +167,6 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 	/* border-left-color */
 	val = css_computed_border_left_color(style, &color);
 	switch (val) {
-	case CSS_BORDER_COLOR_INITIAL:
-		fprintf(stream, "border-left-color: initial ");
-		break;
-	case CSS_BORDER_COLOR_TRANSPARENT:
-		fprintf(stream, "border-left-color: transparent ");
-		break;
 	case CSS_BORDER_COLOR_COLOR:
 		fprintf(stream, "border-left-color: #%08x ", color);
 		break;

@@ -1571,8 +1571,6 @@ void layout_find_dimensions(int available_width, int viewport_height,
 		/* Table cell borders are populated in table.c */
 		if (border && box->type != BOX_TABLE_CELL) {
 			enum css_border_style_e bstyle = CSS_BORDER_STYLE_NONE;
-			enum css_border_color_e bcolor =
-					CSS_BORDER_COLOR_TRANSPARENT;
 			css_color color = 0;
 			css_fixed value = 0;
 			css_unit unit = CSS_UNIT_PX;
@@ -1582,35 +1580,30 @@ void layout_find_dimensions(int available_width, int viewport_height,
 				css_computed_border_top_width(style, &value,
 						&unit);
 				bstyle = css_computed_border_top_style(style);
-				bcolor = css_computed_border_top_color(style,
-						&color);
+				css_computed_border_top_color(style, &color);
 				break;
 			case RIGHT:
 				css_computed_border_right_width(style, &value,
 						&unit);
 				bstyle = css_computed_border_right_style(style);
-				bcolor = css_computed_border_right_color(style,
-						&color);
+				css_computed_border_right_color(style, &color);
 				break;
 			case BOTTOM:
 				css_computed_border_bottom_width(style, &value,
 						&unit);
 				bstyle = css_computed_border_bottom_style(
 						style);
-				bcolor = css_computed_border_bottom_color(style,
-						&color);
+				css_computed_border_bottom_color(style, &color);
 				break;
 			case LEFT:
 				css_computed_border_left_width(style, &value,
 						&unit);
 				bstyle = css_computed_border_left_style(style);
-				bcolor = css_computed_border_left_color(style,
-						&color);
+				css_computed_border_left_color(style, &color);
 				break;
 			}
 
 			border[i].style = bstyle;
-			border[i].color = bcolor;
 			border[i].c = color;
 
 			if (bstyle == CSS_BORDER_STYLE_HIDDEN ||

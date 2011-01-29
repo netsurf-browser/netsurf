@@ -244,8 +244,7 @@ void table_used_border_for_cell(struct box *cell)
 		/* Left border */
 		cell->border[LEFT].style = 
 				css_computed_border_left_style(cell->style);
-		cell->border[LEFT].color = 
-				css_computed_border_left_color(cell->style,
+		css_computed_border_left_color(cell->style,
 				&cell->border[LEFT].c);
 		css_computed_border_left_width(cell->style, &width, &unit);
 		cell->border[LEFT].width = 
@@ -254,8 +253,7 @@ void table_used_border_for_cell(struct box *cell)
 		/* Top border */
 		cell->border[TOP].style = 
 				css_computed_border_top_style(cell->style);
-		cell->border[TOP].color = 
-				css_computed_border_top_color(cell->style,
+		css_computed_border_top_color(cell->style,
 				&cell->border[TOP].c);
 		css_computed_border_top_width(cell->style, &width, &unit);
 		cell->border[TOP].width = 
@@ -264,8 +262,7 @@ void table_used_border_for_cell(struct box *cell)
 		/* Right border */
 		cell->border[RIGHT].style = 
 				css_computed_border_right_style(cell->style);
-		cell->border[RIGHT].color = 
-				css_computed_border_right_color(cell->style,
+		css_computed_border_right_color(cell->style,
 				&cell->border[RIGHT].c);
 		css_computed_border_right_width(cell->style, &width, &unit);
 		cell->border[RIGHT].width = 
@@ -274,8 +271,7 @@ void table_used_border_for_cell(struct box *cell)
 		/* Bottom border */
 		cell->border[BOTTOM].style = 
 				css_computed_border_bottom_style(cell->style);
-		cell->border[BOTTOM].color = 
-				css_computed_border_bottom_color(cell->style,
+		css_computed_border_bottom_color(cell->style,
 				&cell->border[BOTTOM].c);
 		css_computed_border_bottom_width(cell->style, &width, &unit);
 		cell->border[BOTTOM].width = 
@@ -423,7 +419,6 @@ void table_used_left_border_for_cell(struct box *cell)
 
 	/* a now contains the used left border for the cell */
 	cell->border[LEFT].style = a.style;
-	cell->border[LEFT].color = a.color;
 	cell->border[LEFT].c = a.c;
 	cell->border[LEFT].width = 
 			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
@@ -443,7 +438,7 @@ void table_used_top_border_for_cell(struct box *cell)
 
 	/* Initialise to computed top border for cell */
 	a.style = css_computed_border_top_style(cell->style);
-	a.color = css_computed_border_top_color(cell->style, &a.c);
+	css_computed_border_top_color(cell->style, &a.c);
 	css_computed_border_top_width(cell->style, &a.width, &a.unit);
 	a.width = nscss_len2px(a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
@@ -451,7 +446,7 @@ void table_used_top_border_for_cell(struct box *cell)
 
 	/* Top border of row */
 	b.style = css_computed_border_top_style(row->style);
-	b.color = css_computed_border_top_color(row->style, &b.c);
+	css_computed_border_top_color(row->style, &b.c);
 	css_computed_border_top_width(row->style, &b.width, &b.unit);
 	b.width = nscss_len2px(b.width, b.unit, row->style);
 	b.unit = CSS_UNIT_PX;
@@ -516,7 +511,6 @@ void table_used_top_border_for_cell(struct box *cell)
 
 	/* a now contains the used top border for the cell */
 	cell->border[TOP].style = a.style;
-	cell->border[TOP].color = a.color;
 	cell->border[TOP].c = a.c;
 	cell->border[TOP].width = 
 			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
@@ -536,7 +530,7 @@ void table_used_right_border_for_cell(struct box *cell)
 
 	/* Initialise to computed right border for cell */
 	a.style = css_computed_border_right_style(cell->style);
-	a.color = css_computed_border_right_color(cell->style, &a.c);
+	css_computed_border_right_color(cell->style, &a.c);
 	css_computed_border_right_width(cell->style, &a.width, &a.unit);
 	a.width = nscss_len2px(a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
@@ -608,7 +602,6 @@ void table_used_right_border_for_cell(struct box *cell)
 
 	/* a now contains the used right border for the cell */
 	cell->border[RIGHT].style = a.style;
-	cell->border[RIGHT].color = a.color;
 	cell->border[RIGHT].c = a.c;
 	cell->border[RIGHT].width = 
 			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
@@ -628,7 +621,7 @@ void table_used_bottom_border_for_cell(struct box *cell)
 
 	/* Initialise to computed bottom border for cell */
 	a.style = css_computed_border_bottom_style(cell->style);
-	a.color = css_computed_border_bottom_color(cell->style, &a.c);
+	css_computed_border_bottom_color(cell->style, &a.c);
 	css_computed_border_bottom_width(cell->style, &a.width, &a.unit);
 	a.width = nscss_len2px(a.width, a.unit, cell->style);
 	a.unit = CSS_UNIT_PX;
@@ -694,7 +687,6 @@ void table_used_bottom_border_for_cell(struct box *cell)
 
 	/* a now contains the used bottom border for the cell */
 	cell->border[BOTTOM].style = a.style;
-	cell->border[BOTTOM].color = a.color;
 	cell->border[BOTTOM].c = a.c;
 	cell->border[BOTTOM].width = 
 			FIXTOINT(nscss_len2px(a.width, a.unit, cell->style));
