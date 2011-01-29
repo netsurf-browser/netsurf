@@ -20,6 +20,7 @@
 
 #import "desktop/download.h"
 #import "desktop/gui.h"
+#import "cocoa/gui.h"
 
 @interface DownloadWindowController ()
 
@@ -29,6 +30,7 @@
 
 - (void)savePanelDidEnd:(NSSavePanel *)sheet returnCode:(int)returnCode contextInfo:(void *)contextInfo;
 - (void)alertDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
+- (void)askCancelDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
 
 - (BOOL) receivedData: (NSData *)data;
 
@@ -164,6 +166,33 @@ static void cocoa_register_download( DownloadWindowController *download );
 	[self removeIfPossible];
 }
 
+- (BOOL) windowShouldClose: (id)sender;
+{
+	if ([[NSUserDefaults standardUserDefaults] boolForKey: kAlwaysCancelDownload]) return YES;
+	
+	NSAlert *ask = [NSAlert alertWithMessageText: @"Cancel download?" defaultButton: @"Yes" 
+								 alternateButton: @"No" otherButton: nil 
+					   informativeTextWithFormat: @"Should the download of '%@' really be cancelled?", [self fileName]];
+	[ask setShowsSuppressionButton: YES];
+	[ask beginSheetModalForWindow: [self window] modalDelegate: self 
+				   didEndSelector: @selector(askCancelDidEnd:returnCode:contextInfo:) contextInfo: NULL];
+	return NO;
+}
+
+- (void) windowWillClose: (NSNotification *)notification;
+{
+	[self abort];
+}
+
+- (void)askCancelDidEnd:(NSAlert *)alert returnCode:(NSInteger)returnCode contextInfo:(void *)contextInfo;
+{
+	if (returnCode == NSOKButton) {
+		[[NSUserDefaults standardUserDefaults] setBool: [[alert suppressionButton] state] == NSOnState 
+												forKey: kAlwaysCancelDownload];
+		[self close];
+	}
+}
+
 #pragma mark -
 #pragma mark Properties
 
@@ -211,23 +240,46 @@ static NSString *cocoa_file_size_string( float size )
 	return [NSString stringWithFormat:@"%1.1f TB", size];
 }
 
+static NSString *cocoa_time_string( unsigned seconds )
+{
+	if (seconds <= 10) return @"less than 10 seconds";
+	
+	if (seconds < 60) return [NSString stringWithFormat: @"%u seconds", seconds];
+	
+	unsigned minutes = seconds / 60;
+	seconds = seconds % 60;
+	
+	if (minutes < 60) return [NSString stringWithFormat: @"%u:%02u minutes", minutes, seconds];
+	
+	unsigned hours = minutes / 60;
+	minutes = minutes % 60;
+	
+	return [NSString stringWithFormat: @"%2:%02u hours", hours, minutes];
+}
+
 - (NSString *) statusText;
 {
 	NSString *speedString = @"";
 	
-	float elapsedTime = [[NSDate date] timeIntervalSinceDate: startDate];
+	float speed = 0.0;
+	NSTimeInterval elapsedTime = [[NSDate date] timeIntervalSinceDate: startDate];
 	if (elapsedTime >= 0.1) {
-		float speed = (float)receivedSize / elapsedTime;
+		speed = (float)receivedSize / elapsedTime;
 		speedString = [NSString stringWithFormat: @" (%@/s)", cocoa_file_size_string( speed )];
 	}
 	
+	NSString *timeRemainingString = @"";
 	NSString *totalSizeString = @"";
 	if (totalSize != 0) {
+		if (speed > 0.0) {
+			float timeRemaining = (float)(totalSize - receivedSize) / speed;
+			timeRemainingString = [NSString stringWithFormat: @": %@", cocoa_time_string( timeRemaining )];
+		}
 		totalSizeString = [NSString stringWithFormat: @" of %@", cocoa_file_size_string( totalSize )];
 	}
 	
-	return [NSString stringWithFormat: @"%@%@%@", cocoa_file_size_string( receivedSize ), 
-			totalSizeString, speedString];
+	return [NSString stringWithFormat: @"%@%@%@%@", cocoa_file_size_string( receivedSize ), 
+			totalSizeString, speedString, timeRemainingString];
 }
 
 + (NSSet *) keyPathsForValuesAffectingFileName;

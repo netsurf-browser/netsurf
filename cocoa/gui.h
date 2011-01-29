@@ -23,5 +23,6 @@ extern NSString * const kURLsFileOption;
 extern NSString * const kHotlistFileOption;
 extern NSString * const kHomepageURLOption;
 extern NSString * const kOptionsFileOption;
+extern NSString * const kAlwaysCancelDownload;
 
 void cocoa_autorelease( void );
