@@ -99,6 +99,7 @@ nserror nscss_create_css_data(struct content_css_data *c,
 		const char *url, const char *charset, bool quirks)
 {
 	css_error error;
+	css_stylesheet_params params;
 
 	c->import_count = 0;
 	c->imports = NULL;
@@ -107,12 +108,20 @@ nserror nscss_create_css_data(struct content_css_data *c,
 	else
 		c->charset = NULL;
 
-	error = css_stylesheet_create(CSS_LEVEL_21, charset,
-			url, NULL, quirks, false,
-			ns_realloc, NULL, 
-			nscss_resolve_url, NULL,
-			NULL, NULL,
-			&c->sheet);
+	params.level = CSS_LEVEL_DEFAULT;
+	params.charset = charset;
+	params.url = url;
+	params.title = NULL;
+	params.allow_quirks = quirks;
+	params.inline_style = false;
+	params.resolve = nscss_resolve_url;
+	params.resolve_pw = NULL;
+	params.import = NULL;
+	params.import_pw = NULL;
+	params.color = NULL;
+	params.color_pw = NULL;
+
+	error = css_stylesheet_create(&params, ns_realloc, NULL, &c->sheet);
 	if (error != CSS_OK) {
 		return NSERROR_NOMEM;
 	}
@@ -439,11 +448,23 @@ css_error nscss_import_complete(struct content_css_data *c,
 
 		/* Create a blank sheet if needed. */
 		if (blank_import == NULL) {
-			error = css_stylesheet_create(CSS_LEVEL_DEFAULT,
-					NULL, "", NULL, false, false,
+			css_stylesheet_params params;
+
+			params.level = CSS_LEVEL_DEFAULT;
+			params.charset = NULL;
+			params.url = "";
+			params.title = NULL;
+			params.allow_quirks = false;
+			params.inline_style = false;
+			params.resolve = nscss_resolve_url;
+			params.resolve_pw = NULL;
+			params.import = NULL;
+			params.import_pw = NULL;
+			params.color = NULL;
+			params.color_pw = NULL;
+
+			error = css_stylesheet_create(&params,
 					ns_realloc, NULL, 
-					nscss_resolve_url, NULL,
-					NULL, NULL,
 					&blank_import);
 			if (error != CSS_OK) {
 				return error;

@@ -134,12 +134,24 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 		const char *charset, const char *url, bool allow_quirks,
 		css_allocator_fn alloc, void *pw)
 {
+	css_stylesheet_params params;
 	css_stylesheet *sheet;
 	css_error error;
 
-	error = css_stylesheet_create(CSS_LEVEL_DEFAULT, charset, url, NULL,
-			allow_quirks, true, alloc, pw, nscss_resolve_url, 
-			NULL, NULL, NULL, &sheet);
+	params.level = CSS_LEVEL_DEFAULT;
+	params.charset = charset;
+	params.url = url;
+	params.title = NULL;
+	params.allow_quirks = allow_quirks;
+	params.inline_style = true;
+	params.resolve = nscss_resolve_url;
+	params.resolve_pw = NULL;
+	params.import = NULL;
+	params.import_pw = NULL;
+	params.color = NULL;
+	params.color_pw = NULL;
+
+	error = css_stylesheet_create(&params, alloc, pw, &sheet);
 	if (error != CSS_OK) {
 		LOG(("Failed creating sheet: %d", error));
 		return NULL;
