@@ -190,6 +190,11 @@ int main(void)
 	assert(urldb_set_cookie("name=value\r\n", "http://www.example.org/foo/bar/baz/bat.html", NULL));
 	assert(urldb_get_cookie("http://www.example.org/foo/bar/baz/quux.htm"));
 
+	/* Defaulted path with no non-leaf path segments */
+	assert(urldb_set_cookie("name=value\r\n", "http://no-non-leaf.example.org/index.html", NULL));
+	assert(urldb_get_cookie("http://no-non-leaf.example.org/page2.html"));
+	assert(urldb_get_cookie("http://no-non-leaf.example.org/"));
+
 	/* Valid path (includes leafname) */
 	assert(urldb_set_cookie("name=value;Version=1;Path=/index.cgi\r\n", "http://example.org/index.cgi", NULL));
 	assert(urldb_get_cookie("http://example.org/index.cgi"));

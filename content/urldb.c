@@ -2954,7 +2954,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	assert(url && cookie && *cookie);
 
 	c = calloc(1, sizeof(struct cookie_internal_data));
-	if (!c)
+	if (c == NULL)
 		return NULL;
 
 	c->expires = -1;
@@ -3140,7 +3140,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 	}
 
 	/* Now fix-up default values */
-	if (!c->domain) {
+	if (c->domain == NULL) {
 		res = url_host(url, &c->domain);
 		if (res != URL_FUNC_OK) {
 			urldb_free_cookie(c);
@@ -3148,7 +3148,7 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 		}
 	}
 
-	if (!c->path) {
+	if (c->path == NULL) {
 		char *path;
 		char *slash;
 
@@ -3160,7 +3160,11 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 
 		/* Strip leafname and trailing slash (4.3.1) */
 		slash = strrchr(path, '/');
-		if (slash) {
+		if (slash != NULL) {
+			/* Special case: retain first slash in path */
+			if (slash == path)
+				slash++;
+
 			slash = strndup(path, slash - path);
 			if (slash == NULL) {
 				free(path);
