@@ -1209,6 +1209,20 @@ void nscss_dump_computed_style(FILE *stream, const css_computed_style *style)
 		break;
 	}
 
+	/* opacity */
+	val = css_computed_opacity(style, &len1);
+	switch (val) {
+	case CSS_OPACITY_SET:
+		fprintf(stream, "opacity: ");
+
+		dump_css_fixed(stream, len1);
+
+		fprintf(stream, " ");
+		break;
+	default:
+		break;
+	}
+
 	/* outline-color */
 	val = css_computed_outline_color(style, &color);
 	switch (val) {
