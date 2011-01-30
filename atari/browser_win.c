@@ -209,6 +209,7 @@ void window_open( struct gui_window * gw)
 {
 	LGRECT br;
 	WindOpen(gw->root->handle, 20, 20, app.w/2, app.h/2 );
+	WindSetStr( gw->root->handle, WF_NAME, (char *)"" );
 	/* apply focus to the root frame: */
 	long lfbuff[8] = { CM_GETFOCUS };
 	mt_CompEvntExec( gl_appvar, gw->browser->comp, lfbuff );
@@ -281,6 +282,19 @@ static void window_redraw_controls(struct gui_window *gw, uint32_t flags)
 	mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &rect);	
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
+}
+
+void window_set_stauts( struct gui_window * gw , char * text )
+{
+	if( gw->root == NULL )
+		return;
+
+	CMP_STATUSBAR sb = gw->root->statusbar;
+
+	if( sb == NULL || gw->browser->attached == false )
+		return;
+
+	sb_set_text( sb, text );
 }
 
 /* set focus to an arbitary element */

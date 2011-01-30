@@ -53,6 +53,7 @@ void window_set_scroll_info(struct gui_window *gw, int content_h, int content_w)
 bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t, void * element);
 bool window_url_widget_has_focus( struct gui_window * gw );
 void window_set_url( struct gui_window * gw, const char * text);
+void window_set_stauts( struct gui_window * gw , char * text );
 void window_center(struct gui_window * gw);
 //void window_set_icon(struct gui_window * gw, void * data, bool is_rsc );
 
