@@ -43,13 +43,14 @@
 #include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plotter.h"
+#include "atari/osspec.h"
 
 extern short vdih;
-extern unsigned short gdosversion;
 
 static
 void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 {
+	size_t i;
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
 	assert(gw != NULL);
 	CMP_STATUSBAR sb = gw->root->statusbar;
@@ -74,7 +75,8 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 	vsl_type( vdih, 1);
 	vsl_width( vdih, 1 );
 	vst_color(vdih, BLACK);
-	vst_point( vdih, 9, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
+	//vst_point( vdih, 9, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
+	vst_height( vdih, atari_sysinfo.medium_sfont_pxh, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );	
 	vst_alignment(vdih, 0, 5, &d, &d );
 	vst_effects( vdih, 0 );
 	pxyclip[0] = lclip.g_x;
@@ -104,8 +106,31 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 	pxy[2] = work.g_x + work.g_w;
 	pxy[3] = work.g_y + work.g_h-1;
 	v_bar( vdih, pxy );
-	vswr_mode( vdih, MD_TRANS );
-	v_gtext( vdih, work.g_x + 2, work.g_y + 5, (char*)&sb->text );
+
+	if( sb->textlen > 0 ) {
+		short curx;
+		short vqw[4];
+		char t[2];
+		short cw = 0;
+		t[1]=0;
+		if( atari_sysinfo.sfont_monospaced ) {
+			vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+			cw = vqw[0];
+		}
+		vswr_mode( vdih, MD_TRANS );
+		for( curx = work.g_x + 2, i=0 ; (curx < lclip.g_x + lclip.g_w) && i < sb->textlen; i++ ){
+			if( curx >= lclip.g_x ) {
+				t[0] = sb->text[i];
+				v_gtext( vdih, curx, work.g_y + 5, (char*)&t );
+				if( !atari_sysinfo.sfont_monospaced ) {
+					vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+					curx += vqw[0];
+				} else {
+					curx += cw;
+				}
+			}
+		}	
+	}
 	vswr_mode( vdih, MD_REPLACE );
 
 	pxy[0] = work.g_x + work.g_w - MOVER_WH;
@@ -159,7 +184,7 @@ CMP_STATUSBAR sb_create( struct gui_window * gw )
 	mt_CompDataAttach( &app, s->comp, CDT_OWNER, gw );
 	mt_CompEvntAttach( &app, s->comp, WM_REDRAW, evnt_sb_redraw );
 	mt_CompEvntAttach( &app, s->comp, WM_XBUTTON, evnt_sb_click );
-	strncpy( (char*)&s->text, "  ", 80 );
+	sb_set_text( s, (char*)"" );
 	return( s );
 }
 
@@ -174,22 +199,20 @@ void sb_destroy( CMP_STATUSBAR s )
 	}
 }
 
-void sb_set_text( struct gui_window * gw , char * text )
+void sb_set_text( CMP_STATUSBAR sb , char * text )
 {
-	assert( gw->root != NULL);
-	if( gw->root == NULL )
-		return;
-	CMP_STATUSBAR sb = gw->root->statusbar;
 	LGRECT work;
-
-	if( sb == NULL || gw->browser->attached == false )
-		return;
-
-	strncpy( (char*)&sb->text, text, 79 );
-	sb->text[79]=0;
+	assert( sb != NULL );
+	assert( sb->comp != NULL );
+	strncpy( (char*)&sb->text, text, STATUSBAR_MAX_SLEN );
+	sb->text[STATUSBAR_MAX_SLEN]=0;
+	sb->textlen = strlen( (char*)&sb->text );
 	if( sb->attached ){
-		mt_CompGetLGrect(&app, sb->comp, WF_WORKXYWH, &work);
-		ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-			work.g_x, work.g_y, work.g_w, work.g_h );
+		struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, sb->comp, CDT_OWNER);
+		if( gw != NULL ){
+			mt_CompGetLGrect(&app, sb->comp, WF_WORKXYWH, &work);
+			ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
+						work.g_x, work.g_y, work.g_w, work.g_h );
+		}
 	}
 }

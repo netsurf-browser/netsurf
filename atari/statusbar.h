@@ -21,5 +21,5 @@
 
 CMP_STATUSBAR sb_create( struct gui_window * gw );
 void sb_destroy( CMP_STATUSBAR s );
-void sb_set_text( struct gui_window * gw, char * text );
+void sb_set_text( CMP_STATUSBAR sb , char * text );
 #endif
