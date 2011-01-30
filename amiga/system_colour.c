@@ -30,6 +30,7 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <intuition/screens.h>
+#include <datatypes/pictureclass.h>
 
 struct gui_system_colour_ctx {
 	const char *name;
@@ -326,18 +327,21 @@ css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 
 css_color ami_css_colour_from_pen(struct Screen *screen, UWORD pen)
 {
-	css_color colour = 0x00000000;
+	css_color css_colour = 0x00000000;
+	ULONG colour[3];
 	struct DrawInfo *drinfo = GetScreenDrawInfo(screen);
 
 	if(drinfo == NULL) return 0x00000000;
 
-	/* Get the colour of the pen being used for "pen", and force it opaque */
+	/* Get the colour of the pen being used for "pen" */
 	GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);
-	colour |= 0xff000000;
 
-	// printf("Pen %ld\n Palette entry %ld\n Colour %lx\n", pen, drinfo->dri_Pens[pen], colour);
+	/* convert it to a css_color */
+	css_colour = (0xff << 24) |
+				((colour[0] & 0xff000000) >> 8) |
+				((colour[1] & 0xff000000) >> 16) |
+				((colour[2] & 0xff000000) >> 24);
 
 	FreeScreenDrawInfo(screen, drinfo);
-
-	return colour;
+	return css_colour;
 }
