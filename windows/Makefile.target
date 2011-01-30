@@ -48,7 +48,7 @@ S_RESOURCES := windows_resource.o
 # S_WINDOWS are sources purely for the windows build
 S_WINDOWS := about.c bitmap.c download.c filetype.c findfile.c font.c	\
 	gui.c localhistory.c login.c misc.c plot.c prefs.c schedule.c	\
-	thumbnail.c tree.c windbg.c
+	thumbnail.c tree.c windbg.c system_colour.c
 S_WINDOWS := $(addprefix windows/,$(S_WINDOWS)) 
 
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_WINDOWS) $(S_RESOURCES)

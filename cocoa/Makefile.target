@@ -16,7 +16,7 @@
 
   # shut up zconf.h and zlib.h
   #CFLAGS += -D_LARGEFILE64_SOURCE=1
-  
+
   # for timerisset()
   CFLAGS += -D_DARWIN_C_SOURCE
 
@@ -54,7 +54,7 @@ endif
   ifneq ($(UNIVERSAL),)
     UNIVERSAL_FLAGS := $(foreach arch,$(UNIVERSAL),-arch $(arch) )
     CFLAGS += $(UNIVERSAL_FLAGS)
-  	LDFLAGS += $(UNIVERSAL_FLAGS)
+	LDFLAGS += $(UNIVERSAL_FLAGS)
 	CXXFLAGS += $(UNIVERSAL_FLAGS)
   endif
 
@@ -86,7 +86,8 @@ S_COCOA := \
 	thumbnail.m \
 	url.m \
 	utf8.m \
-	utils.m
+	utils.m \
+	system_colour.m
 
 S_TABBAR := \
 	NSBezierPath_AMShading.m	\
@@ -121,7 +122,7 @@ R_RESOURCES := $(addprefix cocoa/res/,$(R_RESOURCES))
 
 LANGUAGES := de en fr it nl
 LOCALIZED_RESOURCES := Messages
-	
+
 TABBAR_RESOURCES := AquaTabClose_Front_Pressed.png \
 	AquaTabClose_Front_Rollover.png \
 	AquaTabClose_Front.png \
@@ -167,7 +168,7 @@ NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) $(S_NIBS) NetSurf.app/
 	cp -pLR $(R_RESOURCES) NetSurf.app/Contents/Resources
 	cp -pLR $(S_NIBS) NetSurf.app/Contents/Resources
 	echo 'APPL????' > NetSurf.app/Contents/PkgInfo
-	
+
 NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.target
 	mkdir -p NetSurf.app/Contents
 	sed -e 's/$${EXECUTABLE_NAME}/$(EXETARGET)/' \

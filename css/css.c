@@ -118,7 +118,7 @@ nserror nscss_create_css_data(struct content_css_data *c,
 	params.resolve_pw = NULL;
 	params.import = NULL;
 	params.import_pw = NULL;
-	params.color = NULL;
+	params.color = gui_system_colour;
 	params.color_pw = NULL;
 
 	error = css_stylesheet_create(&params, ns_realloc, NULL, &c->sheet);
@@ -460,7 +460,7 @@ css_error nscss_import_complete(struct content_css_data *c,
 			params.resolve_pw = NULL;
 			params.import = NULL;
 			params.import_pw = NULL;
-			params.color = NULL;
+			params.color = gui_system_colour;
 			params.color_pw = NULL;
 
 			error = css_stylesheet_create(&params,

@@ -26,6 +26,7 @@
 #include "css/internal.h"
 #include "css/select.h"
 #include "css/utils.h"
+#include "desktop/gui.h"
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/url.h"
@@ -148,7 +149,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	params.resolve_pw = NULL;
 	params.import = NULL;
 	params.import_pw = NULL;
-	params.color = NULL;
+	params.color = gui_system_colour;
 	params.color_pw = NULL;
 
 	error = css_stylesheet_create(&params, alloc, pw, &sheet);

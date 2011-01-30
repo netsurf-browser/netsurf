@@ -56,6 +56,10 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
                GUI_POINTER_PROGRESS } gui_pointer_shape;
 
 #include <stdbool.h>
+
+#include <libwapcaplet/libwapcaplet.h>
+#include <libcss/libcss.h>
+
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -140,5 +144,14 @@ struct ssl_cert_info;
 void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw);
+
+/** css callback to obtain named system colours from a frontend. */
+css_error gui_system_colour(void *pw, lwc_string *name, css_color *color);
+
+/** Obtain a named system colour from a frontend. */
+colour gui_system_colour_char(char *name);
+
+bool gui_system_colour_init(void);
+void gui_system_colour_finalize(void);
 
 #endif

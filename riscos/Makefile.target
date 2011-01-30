@@ -73,8 +73,8 @@ S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c	\
 	schedule.c search.c searchweb.c sprite.c sslcert.c		\
 	textarea.c textselection.c theme.c theme_install.c thumbnail.c	\
 	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
-	url_suggest.c wimp.c wimp_event.c window.c gui/progress_bar.c	\
-	gui/status_bar.c						\
+	url_suggest.c wimp.c wimp_event.c window.c system_colour.c 	\
+	gui/progress_bar.c gui/status_bar.c 				\
 	$(addprefix configure/,con_cache.c con_connect.c con_content.c	\
 	con_fonts.c con_home.c con_image.c con_inter.c con_language.c	\
 	con_memory.c con_secure.c con_theme.c)

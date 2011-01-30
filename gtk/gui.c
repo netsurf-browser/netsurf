@@ -598,7 +598,6 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
-
 	return 0;
 }
 

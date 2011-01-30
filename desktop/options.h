@@ -113,6 +113,35 @@ extern colour option_gui_colour_bg_1;
 extern colour option_gui_colour_fg_1;
 extern colour option_gui_colour_fg_2;
 
+extern colour option_sys_colour_ActiveBorder;
+extern colour option_sys_colour_ActiveCaption;
+extern colour option_sys_colour_AppWorkspace;
+extern colour option_sys_colour_Background;
+extern colour option_sys_colour_ButtonFace;
+extern colour option_sys_colour_ButtonHighlight;
+extern colour option_sys_colour_ButtonShadow;
+extern colour option_sys_colour_ButtonText;
+extern colour option_sys_colour_CaptionText;
+extern colour option_sys_colour_GrayText;
+extern colour option_sys_colour_Highlight;
+extern colour option_sys_colour_HighlightText;
+extern colour option_sys_colour_InactiveBorder;
+extern colour option_sys_colour_InactiveCaption;
+extern colour option_sys_colour_InactiveCaptionText;
+extern colour option_sys_colour_InfoBackground;
+extern colour option_sys_colour_InfoText;
+extern colour option_sys_colour_Menu;
+extern colour option_sys_colour_MenuText;
+extern colour option_sys_colour_Scrollbar;
+extern colour option_sys_colour_ThreeDDarkShadow;
+extern colour option_sys_colour_ThreeDFace;
+extern colour option_sys_colour_ThreeDHighlight;
+extern colour option_sys_colour_ThreeDLightShadow;
+extern colour option_sys_colour_ThreeDShadow;
+extern colour option_sys_colour_Window;
+extern colour option_sys_colour_WindowFrame;
+extern colour option_sys_colour_WindowText;
+
 
 void options_read(const char *path);
 void options_write(const char *path);

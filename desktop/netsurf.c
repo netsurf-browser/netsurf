@@ -152,6 +152,9 @@ nserror netsurf_init(int *pargc,
 
 	llcache_initialise(netsurf_llcache_query_handler, NULL);
 
+	/* Initialize system colours */
+	gui_system_colour_init();
+
 	return NSERROR_OK;
 }
 
@@ -177,20 +180,31 @@ void netsurf_exit(void)
 {
 	LOG(("Closing GUI"));
 	gui_quit();
+
 	LOG(("Closing search and related resources"));
 	search_web_cleanup();
+
 	LOG(("Finalising high-level cache"));
 	hlcache_finalise();
+
 	LOG(("Finalising low-level cache"));
 	llcache_finalise();
+
 	LOG(("Closing fetches"));
 	fetch_quit();
+
 	LOG(("Closing utf8"));
 	utf8_finalise();
+
 	LOG(("Destroying URLdb"));
 	urldb_destroy();
+
+	LOG(("Destroying System colours"));
+	gui_system_colour_finalize();
+
 	LOG(("Remaining lwc strings:"));
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
+
 	LOG(("Exited successfully"));
 }
 

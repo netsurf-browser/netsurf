@@ -193,6 +193,37 @@ colour option_gui_colour_bg_1 = 0xFFCCBB; /** Background          (bbggrr) */
 colour option_gui_colour_fg_1 = 0x000000; /** Foreground          (bbggrr) */
 colour option_gui_colour_fg_2 = 0xFFFBF8; /** Foreground selected (bbggrr) */
 
+/* system colours */
+colour option_sys_colour_ActiveBorder = 0x00000000;
+colour option_sys_colour_ActiveCaption = 0x00000000;
+colour option_sys_colour_AppWorkspace = 0x00000000;
+colour option_sys_colour_Background = 0x00000000;
+colour option_sys_colour_ButtonFace = 0x00000000;
+colour option_sys_colour_ButtonHighlight = 0x00000000;
+colour option_sys_colour_ButtonShadow = 0x00000000;
+colour option_sys_colour_ButtonText = 0x00000000;
+colour option_sys_colour_CaptionText = 0x0000000;
+colour option_sys_colour_GrayText = 0x00000000;
+colour option_sys_colour_Highlight = 0x00000000;
+colour option_sys_colour_HighlightText = 0x00000000;
+colour option_sys_colour_InactiveBorder = 0x00000000;
+colour option_sys_colour_InactiveCaption = 0x00000000;
+colour option_sys_colour_InactiveCaptionText = 0x00000000;
+colour option_sys_colour_InfoBackground = 0x00000000;
+colour option_sys_colour_InfoText = 0x00000000;
+colour option_sys_colour_Menu = 0x00000000;
+colour option_sys_colour_MenuText = 0x0000000;
+colour option_sys_colour_Scrollbar = 0x0000000;
+colour option_sys_colour_ThreeDDarkShadow = 0x000000;
+colour option_sys_colour_ThreeDFace = 0x000000;
+colour option_sys_colour_ThreeDHighlight = 0x000000;
+colour option_sys_colour_ThreeDLightShadow = 0x000000;
+colour option_sys_colour_ThreeDShadow = 0x000000;
+colour option_sys_colour_Window = 0x000000;
+colour option_sys_colour_WindowFrame = 0x000000;
+colour option_sys_colour_WindowText = 0x000000;
+
+
 EXTRA_OPTION_DEFINE
 
 
@@ -275,6 +306,36 @@ struct {
 	{ "gui_colour_bg_1",	OPTION_COLOUR,	&option_gui_colour_bg_1},
 	{ "gui_colour_fg_1",	OPTION_COLOUR,	&option_gui_colour_fg_1},
 	{ "gui_colour_fg_2",	OPTION_COLOUR,	&option_gui_colour_fg_2},
+
+	/* System colours */
+	{ "sys_colour_ActiveBorder",OPTION_COLOUR,&option_sys_colour_ActiveBorder },
+	{ "sys_colour_ActiveCaption",OPTION_COLOUR,&option_sys_colour_ActiveCaption },
+	{ "sys_colour_AppWorkspace",OPTION_COLOUR,&option_sys_colour_AppWorkspace },
+	{ "sys_colour_Background",OPTION_COLOUR,&option_sys_colour_Background },
+	{ "sys_colour_ButtonFace",OPTION_COLOUR,&option_sys_colour_ButtonFace },
+	{ "sys_colour_ButtonHighlight",OPTION_COLOUR,&option_sys_colour_ButtonHighlight },
+	{ "sys_colour_ButtonShadow",OPTION_COLOUR,&option_sys_colour_ButtonShadow },
+	{ "sys_colour_ButtonText",OPTION_COLOUR,&option_sys_colour_ButtonText },
+	{ "sys_colour_CaptionText",OPTION_COLOUR,&option_sys_colour_CaptionText },
+	{ "sys_colour_GrayText",OPTION_COLOUR,&option_sys_colour_GrayText },
+	{ "sys_colour_Highlight",OPTION_COLOUR,&option_sys_colour_Highlight },
+	{ "sys_colour_HighlightText",OPTION_COLOUR,&option_sys_colour_HighlightText },
+	{ "sys_colour_InactiveBorder",OPTION_COLOUR,&option_sys_colour_InactiveBorder },
+	{ "sys_colour_InactiveCaption",OPTION_COLOUR,&option_sys_colour_InactiveCaption },
+	{ "sys_colour_InactiveCaptionText",OPTION_COLOUR,&option_sys_colour_InactiveCaptionText },
+	{ "sys_colour_InfoBackground",OPTION_COLOUR,&option_sys_colour_InfoBackground },
+	{ "sys_colour_InfoText",OPTION_COLOUR,&option_sys_colour_InfoText },
+	{ "sys_colour_Menu",OPTION_COLOUR,&option_sys_colour_Menu },
+	{ "sys_colour_MenuText",OPTION_COLOUR,&option_sys_colour_MenuText },
+	{ "sys_colour_Scrollbar",OPTION_COLOUR,&option_sys_colour_Scrollbar },
+	{ "sys_colour_ThreeDDarkShadow",OPTION_COLOUR,&option_sys_colour_ThreeDDarkShadow },
+	{ "sys_colour_ThreeDFace",OPTION_COLOUR,&option_sys_colour_ThreeDFace },
+	{ "sys_colour_ThreeDHighlight",OPTION_COLOUR,&option_sys_colour_ThreeDHighlight },
+	{ "sys_colour_ThreeDLightShadow",OPTION_COLOUR,&option_sys_colour_ThreeDLightShadow },
+	{ "sys_colour_ThreeDShadow",OPTION_COLOUR,&option_sys_colour_ThreeDShadow },
+	{ "sys_colour_Window",OPTION_COLOUR,&option_sys_colour_Window },
+	{ "sys_colour_WindowFrame",OPTION_COLOUR,&option_sys_colour_WindowFrame },
+	{ "sys_colour_WindowText",OPTION_COLOUR,&option_sys_colour_WindowText },
 
 	EXTRA_OPTION_TABLE
 };
