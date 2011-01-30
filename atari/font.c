@@ -93,7 +93,7 @@ int atari_to_ucs4(unsigned char atari)
 static bool atari_font_position_in_string(const plot_font_style_t * fstyle,const char *string, 
 						size_t length,int x, size_t *char_offset, int *actual_x )
 {
-	fplotter->pixel_position(fplotter, fstyle, string, length, x, char_offset, actual_x );
+	fplotter->pixel_pos(fplotter, fstyle, string, length, x, char_offset, actual_x );
 	return( true );
 }
 
