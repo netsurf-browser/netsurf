@@ -43,6 +43,7 @@
 #include "atari/global_evnt.h"
 #include "atari/browser_win.h"
 #include "atari/res/netsurf.rsh"
+#include "atari/search.h"
 
 extern const char * cfg_homepage_url;
 extern struct gui_window *input_window;
@@ -140,6 +141,8 @@ static void __CDECL menu_paste(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_find(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	if( input_window != NULL )
+		open_browser_search( input_window );
 }
 
 static void __CDECL menu_choices(WINDOW *win, int item, int title, void *data)
@@ -766,4 +769,3 @@ void snd_redraw( short x, short y, short w, short h)
 	}
 	return;
 }
-
