@@ -188,14 +188,15 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 {
 	LGRECT work, clip;
 	short pxy[10];
-	short i,d;
-	short mchars, width, cs;
+	short i;
+	short d;
+	short mchars;
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
 	assert( gw != NULL );
 	assert( gw->browser != NULL );
 	assert( gw->root != NULL );
 	assert( gw->browser->bw != NULL );
-	short start = gw->root->toolbar->url.scrollx;
+	CMP_TOOLBAR tb = gw->root->toolbar;
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
@@ -207,11 +208,7 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	pxy[3] = clip.g_h + clip.g_y;
 	vs_clip( vdih, 1, (short*)&pxy );
 
-	width = work.g_w-6; /* subtract 6px -> 3px padding around text on each side */
-	cs = gw->root->toolbar->url.char_size;
-	mchars = (width / cs);
-	char textcpy[mchars+3];
-	memset(&textcpy, 0, mchars + 3 );
+	mchars = (work.g_w-6 / tb->url.char_size); /* subtract 6px -> 3px padding around text on each side */
 
 	vswr_mode( vdih, MD_REPLACE);
 	vsf_perimeter( vdih, 0 );
@@ -256,31 +253,46 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	pxy[3] = work.g_y + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2)  + URLBOX_HEIGHT ;
 	vsf_color( vdih, WHITE);
 	v_bar( vdih, pxy );
-	if( strlen(gw->root->toolbar->url.text) > 0 )
-		strncpy( (char*)&textcpy, (char*)&gw->root->toolbar->url.text[start], mchars );
-	else 
-		strcpy(  (char*)&textcpy, " " );
-	
-	v_gtext( vdih, work.g_x + 3, work.g_y + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2) + 2, (char*)&textcpy );
+	if( gw->root->toolbar->url.used  > 1 ) {
+		short curx;
+		short vqw[4];
+		char t[2];
+		short cw = 0;
+
+		t[1]=0;
+		if( atari_sysinfo.sfont_monospaced ) {
+			vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+			cw = vqw[0];
+		}
+		for( curx = work.g_x + 3, i=tb->url.scrollx ; (curx < clip.g_x + clip.g_w) && i < MIN(tb->url.used-1, mchars); i++ ){
+			t[0] = tb->url.text[i];
+			v_gtext( vdih, curx, work.g_y + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2) + 2, (char*)&t );
+			if( !atari_sysinfo.sfont_monospaced ) {
+				vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+				curx += vqw[0];
+			} else {
+				curx += cw;
+			}
+		}
+	}
 	
 	if( window_url_widget_has_focus( gw ) ) {
 		/* draw caret: */
-		pxy[0] = 3 + work.g_x + ((gw->root->toolbar->url.caret_pos - gw->root->toolbar->url.scrollx) * cs);
+		pxy[0] = 3 + work.g_x + ((tb->url.caret_pos - tb->url.scrollx) * tb->url.char_size);
 		pxy[1] = pxy[1] + 1;
-		pxy[2] = 3 + work.g_x + ((gw->root->toolbar->url.caret_pos - gw->root->toolbar->url.scrollx) * cs);
+		pxy[2] = 3 + work.g_x + ((tb->url.caret_pos - tb->url.scrollx) * tb->url.char_size);
 		pxy[3] = pxy[3] - 1 ;
 		v_pline( vdih, 2, pxy );
 		/* draw selection: */
-		if( gw->root->toolbar->url.selection_len != 0 ) {
+		if( tb->url.selection_len != 0 ) {
 			vswr_mode( vdih, MD_XOR);
 			vsl_color( vdih, BLACK);
-			pxy[0] = 3 + work.g_x + ((gw->root->toolbar->url.caret_pos - gw->root->toolbar->url.scrollx) * cs);
-			pxy[2] = pxy[0] + ( gw->root->toolbar->url.selection_len * cs);
+			pxy[0] = 3 + work.g_x + ((tb->url.caret_pos - tb->url.scrollx) * tb->url.char_size);
+			pxy[2] = pxy[0] + ( gw->root->toolbar->url.selection_len * tb->url.char_size);
 			v_bar( vdih, pxy );
 			vswr_mode( vdih, MD_REPLACE );
 		}
 	}
-	
 	vs_clip( vdih, 0, (short*)&pxy );
 }
 
@@ -636,7 +648,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 			ret = true;
 		}
 	}
-	else if( (code == NK_DEL) && tb->url.text[tb->url.caret_pos] != 0) {
+	else if( (code == NK_DEL) ) {
 		if( tb->url.selection_len != 0 ) {
 				if( tb->url.selection_len < 0 ) {
 					strcpy(
@@ -652,11 +664,13 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 				}
 				tb->url.used = strlen( tb->url.text ) + 1;
 		} else  {
-			strcpy(
-				&tb->url.text[tb->url.caret_pos+tb->url.selection_len], 
-				&tb->url.text[tb->url.caret_pos+1]
-			);
-			tb->url.used--;
+			if( tb->url.caret_pos < tb->url.used -1) {
+				strcpy(
+					&tb->url.text[tb->url.caret_pos+tb->url.selection_len], 
+					&tb->url.text[tb->url.caret_pos+1]
+				);
+				tb->url.used--;
+			}
 		}
 		tb->url.selection_len = 0;
 	}
@@ -670,7 +684,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 					strcpy(&tb->url.text[tb->url.caret_pos], &tb->url.text[tb->url.caret_pos+tb->url.selection_len]);
 				}
 				tb->url.used = strlen( tb->url.text ) + 1;
-			} else  {
+		} else  {
 			tb->url.text[tb->url.caret_pos-1] = 0;
 			tb->url.used--;
 			strcat(tb->url.text, &tb->url.text[tb->url.caret_pos]);
