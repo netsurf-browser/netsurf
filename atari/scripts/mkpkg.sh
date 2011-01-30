@@ -99,6 +99,7 @@ mkdir $dst"res/fonts"
 cp $src"ns.prg" $dst
 chmod +x $dst"ns.prg"
 strip $dst"ns.prg"
+stack -S 1000k $dst"ns.prg"
 
 cp $src"atari/res/" $dst -rL
 cp $src"\!NetSurf/Resources/AdBlock,f79" $dst"res/adblock.css" -rL
@@ -172,7 +173,7 @@ cookie_file:./res/Cookies
 cookie_jar:./res/Cookies
 search_url_bar:0
 search_provider:0
-url_suggestion:1
+url_suggestion:0
 window_x:0
 window_y:0
 window_width:0
@@ -181,7 +182,7 @@ window_screen_width:0
 window_screen_height:0
 scale:100
 incremental_reflow:1
-min_reflow_period:25
+min_reflow_period:200
 tree_icons_dir:./res/icons
 core_select_menu:1
 max_fetchers:16
