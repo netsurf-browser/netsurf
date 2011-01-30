@@ -4,4 +4,5 @@ KNOWN BUGS
    when a new window is opened. This means: when opening a new window,
    the colors aren't correct! 
  - Visiting pages that contain frames: undefined behavior
+ - Double Redraws when used with classic TOS Systems. 
  
