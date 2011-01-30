@@ -178,7 +178,9 @@ struct s_toolbar
 struct s_statusbar
 {
 	COMPONENT * comp;
-	char text[255];
+	char text[STATUSBAR_MAX_SLEN+1];
+	size_t textlen;
+	bool attached;
 };
 
 struct s_caret

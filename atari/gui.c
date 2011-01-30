@@ -71,6 +71,7 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/plot.h"
 #include "atari/clipboard.h"
+#include "atari/osspec.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 
@@ -356,7 +357,7 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 {
 	if (w == NULL || text == NULL )
 		return;
-	sb_set_text( w , (char*)text );
+	window_set_stauts( w , (char*)text );
 }
 
 void gui_window_redraw(struct gui_window *gw, int x0, int y0, int x1, int y1)
@@ -436,6 +437,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int y1)
 {
 	LOG(("%s:(%p, %d, %d, %d, %d)", __func__, w, x0, y0, x1, y1));
+	gui_window_set_scroll(w,x0,y0);
 }
 
 void gui_window_position_frame(struct gui_window *gw, int x0, int y0, int x1, int y1)
@@ -1100,7 +1102,7 @@ static void gui_init2(int argc, char** argv)
 	const char *addr = NETSURF_HOMEPAGE;
 	MenuBar( h_gem_menu , 1 );
 	bind_global_events();
-	if( gdosversion > TOS4VER ) {
+	if( atari_sysinfo.gdosversion > TOS4VER ) {
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
 }
