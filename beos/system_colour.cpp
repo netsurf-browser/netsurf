@@ -21,15 +21,27 @@
  *
  */
 
+#define __STDBOOL_H__	1
+#include <assert.h>
+#include <ctype.h>
+#include <stdbool.h>
+
+#include <InterfaceDefs.h>
+
+extern "C" {
+
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "desktop/plot_style.h"
+
+}
 
 struct gui_system_colour_ctx {
 	const char *name;
 	int length;
-	css_color colour;
+	css_color css_colour;
 	colour *option_colour;
 	lwc_string *lwcstr;
 };
@@ -232,7 +244,7 @@ bool gui_system_colour_init(void)
 	/* pull in options if set (ie not transparent) */
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
 		if (*(colour_list[ccount].option_colour) != 0) {
-			colour_list[ccount].colour = *(colour_list[ccount].option_colour);
+			colour_list[ccount].css_colour = *(colour_list[ccount].option_colour);
 		}
 	}
 
@@ -259,14 +271,14 @@ colour gui_system_colour_char(char *name)
 		if (strncasecmp(name, 
 				colour_list[ccount].name, 
 				colour_list[ccount].length) == 0) {
-			ret = colour_list[ccount].colour;
+			ret = colour_list[ccount].css_colour;
 			break;
 		}
 	}
 	return ret;
 }
 
-css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
+css_error gui_system_colour(void *pw, lwc_string *name, css_color *css_colour)
 {
 	unsigned int ccount;
 	bool match;
@@ -275,7 +287,7 @@ css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 		if (lwc_string_caseless_isequal(name, 
 				colour_list[ccount].lwcstr,
 				&match) == lwc_error_ok && match) {
-			*colour = colour_list[ccount].colour;
+			*css_colour = colour_list[ccount].css_colour;
 			return CSS_OK;
 		}
 	}	
