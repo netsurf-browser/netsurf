@@ -21,16 +21,22 @@
  *
  */
 
+#include "amiga/gui.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+
+#include <proto/graphics.h>
+#include <proto/intuition.h>
+#include <intuition/screens.h>
 
 struct gui_system_colour_ctx {
 	const char *name;
 	int length;
 	css_color colour;
 	colour *option_colour;
+	UWORD amiga_pen;
 	lwc_string *lwcstr;
 };
 
@@ -40,162 +46,189 @@ static struct gui_system_colour_ctx colour_list[] = {
 		SLEN("ActiveBorder"), 
 		0xff000000, 
 		&option_sys_colour_ActiveBorder, 
+		FILLPEN,
 		NULL 
 	}, { 
 		"ActiveCaption", 
 		SLEN("ActiveCaption"), 
 		0xffdddddd, 
 		&option_sys_colour_ActiveCaption, 
+		FILLPEN,
 		NULL 
 	}, { 
 		"AppWorkspace", 
 		SLEN("AppWorkspace"), 
 		0xffeeeeee, 
 		&option_sys_colour_AppWorkspace, 
+		BACKGROUNDPEN,
 		NULL 
 	}, { 
 		"Background", 
 		SLEN("Background"), 
 		0xff0000aa, 
 		&option_sys_colour_Background, 
+		BACKGROUNDPEN,
 		NULL 
 	}, {
 		"ButtonFace", 
 		SLEN("ButtonFace"), 
 		0xffaaaaaa, 
 		&option_sys_colour_ButtonFace, 
+		FOREGROUNDPEN,
 		NULL 
 	}, {
 		"ButtonHighlight", 
 		SLEN("ButtonHighlight"), 
 		0xffdddddd, 
 		&option_sys_colour_ButtonHighlight, 
+		FORESHINEPEN,
 		NULL
 	}, {
 		"ButtonShadow", 
 		SLEN("ButtonShadow"), 
 		0xffbbbbbb, 
 		&option_sys_colour_ButtonShadow, 
+		FORESHADOWPEN,
 		NULL 
 	}, {
 		"ButtonText", 
 		SLEN("ButtonText"), 
 		0xff000000, 
 		&option_sys_colour_ButtonText, 
+		TEXTPEN,
 		NULL 
 	}, {
 		"CaptionText", 
 		SLEN("CaptionText"), 
 		0xff000000, 
 		&option_sys_colour_CaptionText, 
+		FILLTEXTPEN,
 		NULL 
 	}, {
 		"GrayText", 
 		SLEN("GrayText"), 
 		0xffcccccc, 
 		&option_sys_colour_GrayText, 
+		DISABLEDTEXTPEN,
 		NULL 
 	}, {
 		"Highlight", 
 		SLEN("Highlight"), 
 		0xff0000ee, 
 		&option_sys_colour_Highlight, 
+		SELECTPEN,
 		NULL 
 	}, {
 		"HighlightText", 
 		SLEN("HighlightText"), 
 		0xff000000, 
 		&option_sys_colour_HighlightText, 
+		SELECTTEXTPEN,
 		NULL 
 	}, {
 		"InactiveBorder", 
 		SLEN("InactiveBorder"), 
 		0xffffffff, 
 		&option_sys_colour_InactiveBorder, 
+		INACTIVEFILLPEN,
 		NULL 
 	}, {
 		"InactiveCaption", 
 		SLEN("InactiveCaption"), 
 		0xffffffff, 
 		&option_sys_colour_InactiveCaption, 
+		INACTIVEFILLPEN,
 		NULL 
 	}, {
 		"InactiveCaptionText", 
 		SLEN("InactiveCaptionText"), 
 		0xffcccccc, 
 		&option_sys_colour_InactiveCaptionText, 
+		INACTIVEFILLTEXTPEN,
 		NULL 
 	}, {
 		"InfoBackground", 
 		SLEN("InfoBackground"), 
 		0xffaaaaaa, 
 		&option_sys_colour_InfoBackground, 
+		BACKGROUNDPEN, /* This is wrong, HelpHint backgrounds are pale yellow but doesn't seem to be a DrawInfo pen defined for it. */
 		NULL 
 	}, {
 		"InfoText", 
 		SLEN("InfoText"), 
 		0xff000000, 
 		&option_sys_colour_InfoText, 
+		TEXTPEN,
 		NULL 
 	}, {
 		"Menu", 
 		SLEN("Menu"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Menu, 
+		MENUBACKGROUNDPEN,
 		NULL 
 	}, {
 		"MenuText", 
 		SLEN("MenuText"), 
 		0xff000000, 
 		&option_sys_colour_MenuText, 
+		MENUTEXTPEN,
 		NULL 
 	}, {
 		"Scrollbar", 
 		SLEN("Scrollbar"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Scrollbar, 
+		FOREGROUNDPEN, /* or FILLPEN, see GetGUIAttrs() */
 		NULL 
 	}, {
 		"ThreeDDarkShadow", 
 		SLEN("ThreeDDarkShadow"), 
 		0xff555555, 
 		&option_sys_colour_ThreeDDarkShadow, 
+		FORESHADOWPEN,
 		NULL 
 	}, {
 		"ThreeDFace", 
 		SLEN("ThreeDFace"), 
 		0xffdddddd, 
 		&option_sys_colour_ThreeDFace, 
+		FOREGROUNDPEN,
 		NULL 
 	}, {
 		"ThreeDHighlight", 
 		SLEN("ThreeDHighlight"), 
 		0xffaaaaaa, 
 		&option_sys_colour_ThreeDHighlight, 
+		FORESHINEPEN,
 		NULL 
 	}, {
 		"ThreeDLightShadow", 
 		SLEN("ThreeDLightShadow"), 
 		0xff999999, 
 		&option_sys_colour_ThreeDLightShadow, 
+		HALFSHINEPEN,
 		NULL 
 	}, {
 		"ThreeDShadow", 
 		SLEN("ThreeDShadow"), 
 		0xff777777, 
 		&option_sys_colour_ThreeDShadow, 
+		HALFSHADOWPEN,
 		NULL 
 	}, {
 		"Window", 
 		SLEN("Window"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Window, 
+		BACKGROUNDPEN,
 		NULL 
 	}, {
 		"WindowFrame", 
 		SLEN("WindowFrame"), 
 		0xff000000, 
 		&option_sys_colour_WindowFrame, 
+		INACTIVEFILLPEN,
 		NULL 
 	}, {
 		
@@ -203,6 +236,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 		SLEN("WindowText"), 
 		0xff000000, 
 		&option_sys_colour_WindowText, 
+		INACTIVEFILLTEXTPEN,
 		NULL 
 	},
 
@@ -212,6 +246,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 
 static struct gui_system_colour_ctx *gui_system_colour_pw = NULL;
 
+css_color ami_css_colour_from_pen(struct Screen *screen, UWORD pen);
 
 bool gui_system_colour_init(void)
 {
@@ -234,6 +269,10 @@ bool gui_system_colour_init(void)
 		if (*(colour_list[ccount].option_colour) != 0) {
 			colour_list[ccount].colour = *(colour_list[ccount].option_colour);
 		}
+		else if(scrn) {
+			colour_list[ccount].colour =
+				ami_css_colour_from_pen(scrn, colour_list[ccount].amiga_pen);
+		}
 	}
 
 	gui_system_colour_pw = colour_list;
@@ -248,6 +287,8 @@ void gui_system_colour_finalize(void)
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
 		lwc_string_unref(colour_list[ccount].lwcstr);
 	}
+
+	gui_system_colour_pw = NULL;
 }
 
 colour gui_system_colour_char(char *name)
@@ -281,4 +322,22 @@ css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 	}	
 
 	return CSS_INVALID;
+}
+
+css_color ami_css_colour_from_pen(struct Screen *screen, UWORD pen)
+{
+	css_color colour = 0x00000000;
+	struct DrawInfo *drinfo = GetScreenDrawInfo(screen);
+
+	if(drinfo == NULL) return 0x00000000;
+
+	/* Get the colour of the pen being used for "pen", and force it opaque */
+	GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);
+	colour |= 0xff000000;
+
+	// printf("Pen %ld\n Palette entry %ld\n Colour %lx\n", pen, drinfo->dri_Pens[pen], colour);
+
+	FreeScreenDrawInfo(screen, drinfo);
+
+	return colour;
 }

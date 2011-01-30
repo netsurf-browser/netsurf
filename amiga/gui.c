@@ -536,6 +536,9 @@ void ami_openscreen(void)
 		}
 	}
 	dri = GetScreenDrawInfo(scrn);
+
+	gui_system_colour_finalize();
+	gui_system_colour_init();
 }
 
 void ami_openscreenfirst(void)
