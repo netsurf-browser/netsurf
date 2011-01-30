@@ -155,6 +155,7 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 		case B_PASTE:
 		case B_SELECT_ALL:
 		//case B_MOUSE_WHEEL_CHANGED:
+		case B_UI_SETTINGS_CHANGED:
 		// NetPositive messages
 		case B_NETPOSITIVE_OPEN_URL:
 		case B_NETPOSITIVE_BACK:
@@ -886,6 +887,9 @@ void nsbeos_dispatch_event(BMessage *message)
 				nsbeos_window_moved_event(view, gui, message);
 			break;
 		case B_MOUSE_WHEEL_CHANGED:
+			break;
+		case B_UI_SETTINGS_CHANGED:
+			nsbeos_update_system_ui_colors();
 			break;
 		case 'nsLO': // login
 		{

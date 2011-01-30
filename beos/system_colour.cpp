@@ -27,6 +27,7 @@
 #include <stdbool.h>
 
 #include <InterfaceDefs.h>
+#include <Screen.h>
 
 extern "C" {
 
@@ -38,12 +39,45 @@ extern "C" {
 
 }
 
+#include "beos/beos_gui.h"
+
+
+#if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)
+/* more ui_colors, R5 only had a few defined... */
+#define B_PANEL_TEXT_COLOR ((color_which)10)
+#define B_DOCUMENT_BACKGROUND_COLOR ((color_which)11)
+#define B_DOCUMENT_TEXT_COLOR ((color_which)12)
+#define B_CONTROL_BACKGROUND_COLOR ((color_which)13)
+#define B_CONTROL_TEXT_COLOR ((color_which)14)
+#define B_CONTROL_BORDER_COLOR ((color_which)15)
+#define B_CONTROL_HIGHLIGHT_COLOR ((color_which)16)
+#define B_NAVIGATION_BASE_COLOR ((color_which)4)
+#define B_NAVIGATION_PULSE_COLOR ((color_which)17)
+#define B_SHINE_COLOR ((color_which)18)
+#define B_SHADOW_COLOR ((color_which)19)
+#define B_MENU_SELECTED_BORDER_COLOR ((color_which)9)
+#define B_TOOLTIP_BACKGROUND_COLOR ((color_which)20)
+#define B_TOOLTIP_TEXT_COLOR ((color_which)21)
+#define B_SUCCESS_COLOR ((color_which)100)
+#define B_FAILURE_COLOR ((color_which)101)
+#define B_MENU_SELECTED_BACKGROUND_COLOR B_MENU_SELECTION_BACKGROUND_COLOR
+#define B_RANDOM_COLOR ((color_which)0x80000000)
+#define B_MICHELANGELO_FAVORITE_COLOR ((color_which)0x80000001)
+#define B_DSANDLER_FAVORITE_SKY_COLOR ((color_which)0x80000002)
+#define B_DSANDLER_FAVORITE_INK_COLOR ((color_which)0x80000003)
+#define B_DSANDLER_FAVORITE_SHOES_COLOR ((color_which)0x80000004)
+#define B_DAVE_BROWN_FAVORITE_COLOR ((color_which)0x80000005)
+#endif
+#define NOCOL ((color_which)0)
+
+
 struct gui_system_colour_ctx {
 	const char *name;
 	int length;
 	css_color css_colour;
 	colour *option_colour;
 	lwc_string *lwcstr;
+	color_which ui;
 };
 
 static struct gui_system_colour_ctx colour_list[] = { 
@@ -52,170 +86,198 @@ static struct gui_system_colour_ctx colour_list[] = {
 		SLEN("ActiveBorder"), 
 		0xff000000, 
 		&option_sys_colour_ActiveBorder, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, { 
 		"ActiveCaption", 
 		SLEN("ActiveCaption"), 
 		0xffdddddd, 
 		&option_sys_colour_ActiveCaption, 
-		NULL 
+		NULL, 
+		B_WINDOW_TAB_COLOR
 	}, { 
 		"AppWorkspace", 
 		SLEN("AppWorkspace"), 
 		0xffeeeeee, 
 		&option_sys_colour_AppWorkspace, 
-		NULL 
+		NULL, 
+		B_PANEL_BACKGROUND_COLOR
 	}, { 
 		"Background", 
 		SLEN("Background"), 
 		0xff0000aa, 
 		&option_sys_colour_Background, 
-		NULL 
+		NULL, 
+		B_DESKTOP_COLOR
 	}, {
 		"ButtonFace", 
 		SLEN("ButtonFace"), 
 		0xffaaaaaa, 
 		&option_sys_colour_ButtonFace, 
-		NULL 
+		NULL, 
+		B_CONTROL_BACKGROUND_COLOR
 	}, {
 		"ButtonHighlight", 
 		SLEN("ButtonHighlight"), 
 		0xffdddddd, 
 		&option_sys_colour_ButtonHighlight, 
-		NULL
+		NULL, 
+		B_CONTROL_HIGHLIGHT_COLOR
 	}, {
 		"ButtonShadow", 
 		SLEN("ButtonShadow"), 
 		0xffbbbbbb, 
 		&option_sys_colour_ButtonShadow, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"ButtonText", 
 		SLEN("ButtonText"), 
 		0xff000000, 
 		&option_sys_colour_ButtonText, 
-		NULL 
+		NULL, 
+		B_CONTROL_TEXT_COLOR
 	}, {
 		"CaptionText", 
 		SLEN("CaptionText"), 
 		0xff000000, 
 		&option_sys_colour_CaptionText, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"GrayText", 
 		SLEN("GrayText"), 
 		0xffcccccc, 
 		&option_sys_colour_GrayText, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"Highlight", 
 		SLEN("Highlight"), 
 		0xff0000ee, 
 		&option_sys_colour_Highlight, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"HighlightText", 
 		SLEN("HighlightText"), 
 		0xff000000, 
 		&option_sys_colour_HighlightText, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"InactiveBorder", 
 		SLEN("InactiveBorder"), 
 		0xffffffff, 
 		&option_sys_colour_InactiveBorder, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"InactiveCaption", 
 		SLEN("InactiveCaption"), 
 		0xffffffff, 
 		&option_sys_colour_InactiveCaption, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"InactiveCaptionText", 
 		SLEN("InactiveCaptionText"), 
 		0xffcccccc, 
 		&option_sys_colour_InactiveCaptionText, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"InfoBackground", 
 		SLEN("InfoBackground"), 
 		0xffaaaaaa, 
 		&option_sys_colour_InfoBackground, 
-		NULL 
+		NULL, 
+		B_TOOLTIP_BACKGROUND_COLOR
 	}, {
 		"InfoText", 
 		SLEN("InfoText"), 
 		0xff000000, 
 		&option_sys_colour_InfoText, 
-		NULL 
+		NULL, 
+		B_TOOLTIP_TEXT_COLOR
 	}, {
 		"Menu", 
 		SLEN("Menu"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Menu, 
-		NULL 
+		NULL, 
+		B_MENU_BACKGROUND_COLOR
 	}, {
 		"MenuText", 
 		SLEN("MenuText"), 
 		0xff000000, 
 		&option_sys_colour_MenuText, 
-		NULL 
+		NULL, 
+		B_MENU_ITEM_TEXT_COLOR
 	}, {
 		"Scrollbar", 
 		SLEN("Scrollbar"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Scrollbar, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"ThreeDDarkShadow", 
 		SLEN("ThreeDDarkShadow"), 
 		0xff555555, 
 		&option_sys_colour_ThreeDDarkShadow, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"ThreeDFace", 
 		SLEN("ThreeDFace"), 
 		0xffdddddd, 
 		&option_sys_colour_ThreeDFace, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"ThreeDHighlight", 
 		SLEN("ThreeDHighlight"), 
 		0xffaaaaaa, 
 		&option_sys_colour_ThreeDHighlight, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"ThreeDLightShadow", 
 		SLEN("ThreeDLightShadow"), 
 		0xff999999, 
 		&option_sys_colour_ThreeDLightShadow, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"ThreeDShadow", 
 		SLEN("ThreeDShadow"), 
 		0xff777777, 
 		&option_sys_colour_ThreeDShadow, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		"Window", 
 		SLEN("Window"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Window, 
-		NULL 
+		NULL, 
+		B_DOCUMENT_BACKGROUND_COLOR
 	}, {
 		"WindowFrame", 
 		SLEN("WindowFrame"), 
 		0xff000000, 
 		&option_sys_colour_WindowFrame, 
-		NULL 
+		NULL, 
+		NOCOL
 	}, {
 		
 		"WindowText", 
 		SLEN("WindowText"), 
 		0xff000000, 
 		&option_sys_colour_WindowText, 
-		NULL 
+		NULL, 
+		B_DOCUMENT_TEXT_COLOR
 	},
 
 };
@@ -247,6 +309,8 @@ bool gui_system_colour_init(void)
 			colour_list[ccount].css_colour = *(colour_list[ccount].option_colour);
 		}
 	}
+
+	nsbeos_update_system_ui_colors();
 
 	gui_system_colour_pw = colour_list;
 	
@@ -294,3 +358,27 @@ css_error gui_system_colour(void *pw, lwc_string *name, css_color *css_colour)
 
 	return CSS_INVALID;
 }
+
+void nsbeos_update_system_ui_colors(void)
+{
+	unsigned int ccount;
+
+	for (ccount = 0; ccount < colour_list_len; ccount++) {
+		if (colour_list[ccount].ui == NOCOL)
+			continue;
+		rgb_color c = ui_color(colour_list[ccount].ui);
+		if (colour_list[ccount].ui == B_DESKTOP_COLOR) {
+			BScreen s;
+			c = s.DesktopColor();
+		}
+
+		//printf("uic[%d] = ui_color(%d) %02x %02x %02x %02x\n", ccount,
+		//	colour_list[ccount].ui, c.red, c.green, c.blue, c.alpha);
+
+		colour_list[ccount].css_colour = 0xff000000
+			| ((((uint32_t)c.red << 16) & 0xff0000)
+			| ((c.green << 8) & 0x00ff00)
+			| ((c.blue) & 0x0000ff));
+	}
+}
+

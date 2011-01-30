@@ -21,6 +21,11 @@
 #include <Application.h>
 #include <FilePanel.h>
 #include <Window.h>
+#include <BeBuild.h>
+ 
+#ifndef B_BEOS_VERSION_DANO
+#define B_UI_SETTINGS_CHANGED '_UIC'
+#endif
 
 #define CALLED() fprintf(stderr, "%s()\n", __FUNCTION__);
 
@@ -64,3 +69,4 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *selection);
 image_id nsbeos_find_app_path(char *path);
 
+void nsbeos_update_system_ui_colors(void);

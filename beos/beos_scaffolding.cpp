@@ -87,6 +87,8 @@ struct beos_scaffolding {
 
 	BDragger		*dragger;
 
+	BView			*tool_bar;
+
 	BControl		*back_button;
 	BControl		*forward_button;
 	BControl		*stop_button;
@@ -360,6 +362,7 @@ NSBaseView::MessageReceived(BMessage *message)
 		case B_PASTE:
 		case B_SELECT_ALL:
 		//case B_MOUSE_WHEEL_CHANGED:
+		case B_UI_SETTINGS_CHANGED:
 		// NetPositive messages
 		case B_NETPOSITIVE_OPEN_URL:
 		case B_NETPOSITIVE_BACK:
@@ -551,6 +554,7 @@ NSBaseView::AllAttached()
 
 	SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
+	g->tool_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 
 	g->status_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
@@ -577,11 +581,26 @@ NSBrowserWindow::~NSBrowserWindow()
 
 
 void
+NSBrowserWindow::DispatchMessage(BMessage *message, BHandler *handler)
+{
+	BMessage *msg;
+	switch (message->what) {
+		case B_UI_SETTINGS_CHANGED:
+			msg = new BMessage(*message);
+			nsbeos_pipe_message_top(msg, this, fScaffolding);
+			break;
+	}
+	BWindow::DispatchMessage(message, handler);
+}
+
+
+void
 NSBrowserWindow::MessageReceived(BMessage *message)
 {
 	switch (message->what) {
 		case B_ARGV_RECEIVED:
 		case B_REFS_RECEIVED:
+		case B_UI_SETTINGS_CHANGED:
 			DetachCurrentMessage();
 			nsbeos_pipe_message_top(message, this, fScaffolding);
 			break;
@@ -637,6 +656,34 @@ static void nsbeos_window_destroy_event(NSBrowserWindow *window, nsbeos_scaffold
 		g->being_destroyed = 1;
 		nsbeos_window_destroy_browser(g->top_level);
 	}
+}
+
+
+void nsbeos_scaffolding_update_colors(nsbeos_scaffolding *g)
+{
+	if (!g->top_view->LockLooper())
+		return;
+	rgb_color c = ui_color(B_PANEL_BACKGROUND_COLOR);
+	g->top_view->SetViewColor(c);
+
+	g->tool_bar->SetViewColor(c);
+	g->back_button->SetViewColor(c);
+	g->forward_button->SetViewColor(c);
+	g->stop_button->SetViewColor(c);
+	g->reload_button->SetViewColor(c);
+	g->home_button->SetViewColor(c);
+	g->url_bar->SetViewColor(c);
+	g->throbber->SetViewColor(c);
+	g->scroll_view->SetViewColor(c);
+
+	g->dragger->SetViewColor(c);
+
+	g->status_bar->SetViewColor(c);
+	g->status_bar->SetLowColor(c);
+#if defined(__HAIKU__) || defined(B_DANO_VERSION)
+	g->status_bar->SetHighColor(ui_color(B_PANEL_TEXT_COLOR));
+#endif
+	g->top_view->UnlockLooper();
 }
 
 
@@ -715,6 +762,10 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			}
 			break;
 		}
+		case B_UI_SETTINGS_CHANGED:
+			nsbeos_update_system_ui_colors();
+			nsbeos_scaffolding_update_colors(scaffold);
+			break;
 		case B_NETPOSITIVE_OPEN_URL:
 		{
 			int32 i;
@@ -1976,22 +2027,22 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->dragger->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	g->dragger->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
 
-	// toolbar
+	// tool_bar
 	// the toolbar is also the dragger for now
 	// XXX: try to stuff it in the status bar at the bottom
 	// (BDragger *must* be a parent, sibiling or direct child of NSBaseView!)
 	rect = g->top_view->Bounds();
 	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
 	rect.right = rect.right - DRAGGER_WIDTH;
-	BView *toolbar = new BView(rect, "Toolbar", 
+	g->tool_bar = new BView(rect, "Toolbar", 
 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW);
-	g->top_view->AddChild(toolbar);
-	toolbar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
-	toolbar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
+	g->top_view->AddChild(g->tool_bar);
+	g->tool_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
+	g->tool_bar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
 
 	// buttons
 #warning use BPictureButton
-	rect = toolbar->Bounds();
+	rect = g->tool_bar->Bounds();
 	rect.right = TOOLBAR_HEIGHT;
 	rect.InsetBySelf(5, 5);
 	rect.OffsetBySelf(0, -1);
@@ -2000,40 +2051,40 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	message = new BMessage('back');
 	message->AddPointer("scaffolding", g);
 	g->back_button = new BButton(rect, "back_button", "<", message);
-	toolbar->AddChild(g->back_button);
+	g->tool_bar->AddChild(g->back_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('forw');
 	message->AddPointer("scaffolding", g);
 	g->forward_button = new BButton(rect, "forward_button", ">", message);
-	toolbar->AddChild(g->forward_button);
+	g->tool_bar->AddChild(g->forward_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('stop');
 	message->AddPointer("scaffolding", g);
 	g->stop_button = new BButton(rect, "stop_button", "S", message);
-	toolbar->AddChild(g->stop_button);
+	g->tool_bar->AddChild(g->stop_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('relo');
 	message->AddPointer("scaffolding", g);
 	g->reload_button = new BButton(rect, "reload_button", "R", message);
-	toolbar->AddChild(g->reload_button);
+	g->tool_bar->AddChild(g->reload_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('home');
 	message->AddPointer("scaffolding", g);
 	g->home_button = new BButton(rect, "home_button", "H", message);
-	toolbar->AddChild(g->home_button);
+	g->tool_bar->AddChild(g->home_button);
 	nButtons++;
 
 
 	// url bar
-	rect = toolbar->Bounds();
+	rect = g->tool_bar->Bounds();
 	rect.left += TOOLBAR_HEIGHT * nButtons;
 	rect.right -= TOOLBAR_HEIGHT * 1;
 	rect.InsetBySelf(5, 5);
@@ -2042,17 +2093,17 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	g->url_bar = new BTextControl(rect, "url_bar", "url", "", message, 
 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP);
 	g->url_bar->SetDivider(g->url_bar->StringWidth("url "));
-	toolbar->AddChild(g->url_bar);
+	g->tool_bar->AddChild(g->url_bar);
 
 
 	// throbber
 	rect.Set(0, 0, 24, 24);
-	rect.OffsetTo(toolbar->Bounds().right - 24 - (TOOLBAR_HEIGHT - 24) / 2,
+	rect.OffsetTo(g->tool_bar->Bounds().right - 24 - (TOOLBAR_HEIGHT - 24) / 2,
 		(TOOLBAR_HEIGHT - 24) / 2);
 	g->throbber = new NSThrobber(rect);
-	toolbar->AddChild(g->throbber);
-	g->throbber->SetViewColor(toolbar->ViewColor());
-	g->throbber->SetLowColor(toolbar->ViewColor());
+	g->tool_bar->AddChild(g->throbber);
+	g->throbber->SetViewColor(g->tool_bar->ViewColor());
+	g->throbber->SetLowColor(g->tool_bar->ViewColor());
 	g->throbber->SetDrawingMode(B_OP_ALPHA);
 	g->throbber->SetBlendingMode(B_PIXEL_ALPHA, B_ALPHA_OVERLAY);
 	/* set up the throbber. */

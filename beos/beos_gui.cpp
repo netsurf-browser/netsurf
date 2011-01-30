@@ -485,6 +485,9 @@ void gui_init(int argc, char** argv)
 			return;
 	}
 
+	// ui_color() gives hardcoded values before BApplication is created.
+	nsbeos_update_system_ui_colors();
+
 	fetch_rsrc_register();
 
 	check_homedir();

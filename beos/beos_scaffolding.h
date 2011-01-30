@@ -58,6 +58,7 @@ public:
 		NSBrowserWindow(BRect frame, struct beos_scaffolding *scaf);
 virtual	~NSBrowserWindow();
 
+virtual	void	DispatchMessage(BMessage *message, BHandler *handler);
 virtual void	MessageReceived(BMessage *message);
 virtual bool	QuitRequested(void);
 
