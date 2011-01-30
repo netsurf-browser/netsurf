@@ -684,37 +684,7 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
             r = browser_window_key_press(gw->browser->bw, ucs4 );
 		}
 	}
-	return( r );
-
-
-/*
-	switch ( nkc ) {
-		case NKF_LSH|NK_UP:
-		case NKF_RSH|NK_UP:
-		case NK_M_PGUP:
-			if ( browser_window_key_press(gw->browser->bw, KEY_PAGE_UP) ==false )
-				browser_scroll( gw, WA_UPPAGE, work.g_h, false );
-		break;
-
-		case NKF_RSH|NK_DOWN:
-		case NKF_LSH|NK_DOWN:
-		case NK_M_PGDOWN:
-			if (browser_window_key_press(gw->browser->bw, KEY_PAGE_DOWN) == false)
-				browser_scroll( gw, WA_DNPAGE, work.g_h, false );
-		break;
-
-
-
-		default:
-			if (ascii != 0) {
-				int ucs4 = atari_to_ucs4(ascii);
-            	r = browser_window_key_press(gw->browser->bw, ucs4 );
-			}
-		break;
-	}
-	
-	return( r );
-*/		
+	return( r );	
 }
 
 static void __CDECL browser_evnt_redraw_x( WINDOW * c, short buf[8], void * data)
@@ -731,6 +701,9 @@ bool browser_redraw_required( struct gui_window * gw)
 	int frames = 0;
 	CMP_BROWSER b = gw->browser;
 
+	if( b->bw->current_content == NULL )
+		return ( false );
+
 	{	
 		/* don't do redraws if we have subframes */
 		/* iframes will be an special case and must be handled special... */
@@ -743,7 +716,9 @@ bool browser_redraw_required( struct gui_window * gw)
 			}
 		}
 	}
-	ret = ( (b->redraw.required && frames == 0) || b->scroll.required || b->caret.redraw );
+	ret = ( (b->redraw.required && frames == 0) || 
+			b->scroll.required || 
+			b->caret.redraw );
 	return( ret );
 }
 
