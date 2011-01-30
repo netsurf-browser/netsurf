@@ -17,9 +17,24 @@
  */
 #ifndef _GEM_PLOTTER_API_H_
 #define _GEM_PLOTTER_API_H_
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <math.h>
+#include <assert.h>
+#include <string.h>
 #include <windom.h>
 
-
+#include "desktop/plot_style.h"
+#include "image/bitmap.h"
+#include "atari/bitmap.h"
+#include "atari/osspec.h"
+#include "atari/gui.h"
+#include "atari/font.h"
+#include "atari/options.h"
+#include "atari/findfile.h"
+#include "utils/utf8.h"
+#include "utils/log.h"
 
 #ifndef ceilf
 #define ceilf(x) (float)ceil((double)x)
@@ -56,6 +71,22 @@ static const char * plot_error_codes[] =
 typedef struct s_font_plotter * FONT_PLOTTER;
 typedef struct s_gem_plotter * GEM_PLOTTER;
 typedef struct s_font_plotter * GEM_FONT_PLOTTER; /* for public use ... */
+
+
+/* declaration of font plotter member functions: (_fpmf_ prefix) */
+
+typedef int (*_fpmf_str_width)( FONT_PLOTTER self, const plot_font_style_t *fstyle,
+						const char * str, size_t length, int * width);
+typedef int (*_fpmf_str_split)( FONT_PLOTTER self, const plot_font_style_t *fstyle,
+						const char *string, size_t length,
+						int x, size_t *char_offset, int *actual_x);
+typedef int (*_fpmf_pixel_pos)( FONT_PLOTTER self, const plot_font_style_t *fstyle,
+						const char *string, size_t length,
+						int x, size_t *char_offset, int *actual_x);
+typedef int (*_fpmf_text)( FONT_PLOTTER self, int x, int y, const char *text, 
+													size_t length, const plot_font_style_t *fstyle);
+typedef int (*_fpmf_dtor)( FONT_PLOTTER self );
+
 struct s_font_plotter
 {
 	char * name;
@@ -63,17 +94,12 @@ struct s_font_plotter
 	int vdi_handle;
 	void * priv_data;
 	GEM_PLOTTER plotter;
-	
-	bool (*str_width)(FONT_PLOTTER self, const plot_font_style_t *fstyle,
-						const char * str, size_t length, int * width);
-	bool (*str_split)(FONT_PLOTTER self, const plot_font_style_t *fstyle,
-						const char *string, size_t length,
-						int x, size_t *char_offset, int *actual_x);
-	bool (*pixel_position)(FONT_PLOTTER self, const plot_font_style_t *fstyle,
-						const char *string, size_t length,
-						int x, size_t *char_offset, int *actual_x);
-	void (*text)(FONT_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
-	void (*dtor)(FONT_PLOTTER self );
+
+	_fpmf_str_width str_width;
+	_fpmf_str_split str_split;
+	_fpmf_pixel_pos pixel_pos;
+	_fpmf_text text;
+	_fpmf_dtor dtor;
 };
 
 
@@ -124,6 +150,32 @@ struct s_frame_buf
 	void * mem;
 };
 
+/* declaration of plotter member functions ( _pmf_ prefix )*/
+typedef int (*_pmf_resize)(GEM_PLOTTER self, int w, int h);
+typedef	int (*_pmf_move)(GEM_PLOTTER self, short x, short y );
+typedef	void * (*_pmf_lock)(GEM_PLOTTER self);
+typedef	void * (*_pmf_create_framebuffer)(GEM_PLOTTER self);
+typedef	void * (*_pmf_switch_to_framebuffer)(GEM_PLOTTER self);
+typedef	int (*_pmf_unlock)(GEM_PLOTTER self);
+typedef	int (*_pmf_update_region)(GEM_PLOTTER self, GRECT region);
+typedef	int (*_pmf_update_screen_region)( GEM_PLOTTER self, GRECT region );
+typedef	int (*_pmf_update_screen)(GEM_PLOTTER self);
+typedef	int (*_pmf_put_pixel)(GEM_PLOTTER self, int x, int y, int color );
+typedef	int (*_pmf_copy_rect)(GEM_PLOTTER self, GRECT src, GRECT dst );
+typedef	int (*_pmf_clip)(GEM_PLOTTER self, int x0, int y0, int x1, int y1);
+typedef	int (*_pmf_arc)(GEM_PLOTTER self, int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle);
+typedef	int (*_pmf_disc)(GEM_PLOTTER self, int x, int y, int radius, const plot_style_t * pstyle);
+typedef	int (*_pmf_line)(GEM_PLOTTER self, int x0, int y0, int x1,	int y1, const plot_style_t * pstyle);
+typedef	int (*_pmf_rectangle)(GEM_PLOTTER self, int x0, int y0, int x1, int y1, const plot_style_t * pstyle);
+typedef	int (*_pmf_polygon)(GEM_PLOTTER self, const int *p, unsigned int n,  const plot_style_t * pstyle);
+typedef	int (*_pmf_path)(GEM_PLOTTER self, const float *p, unsigned int n, int fill, float width, int c, const float transform[6]);
+typedef	int (*_pmf_bitmap_resize) ( GEM_PLOTTER self, struct bitmap * bm, int nw, int nh );
+typedef	int (*_pmf_bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
+				unsigned long bg, unsigned long flags );
+typedef	int (*_pmf_text)(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
+typedef	int (*_pmf_dtor)(GEM_PLOTTER self);
+
+
 
 struct s_gem_plotter
 {
@@ -138,8 +190,29 @@ struct s_gem_plotter
 	int cfbi; 			/* current framebuffer index */
 
 	FONT_PLOTTER font_plotter;
-	int (*dtor)(GEM_PLOTTER self);
-	int (*resize)(GEM_PLOTTER self, int w, int h);
+	_pmf_resize resize;
+	_pmf_move move;
+	_pmf_lock lock;
+	_pmf_unlock unlock;
+	_pmf_create_framebuffer create_framebuffer;
+	_pmf_switch_to_framebuffer switch_to_framebuffer;
+	_pmf_update_region update_region;
+	_pmf_update_screen update_screen;
+	_pmf_update_screen_region update_screen_region;
+	_pmf_put_pixel put_pixel;
+	_pmf_copy_rect copy_rect;
+	_pmf_clip clip;
+	_pmf_arc arc;
+	_pmf_disc disc;
+	_pmf_line line;
+	_pmf_rectangle rectangle;
+	_pmf_polygon polygon;
+	_pmf_path path;
+	_pmf_bitmap_resize bitmap_resize;
+	_pmf_bitmap bitmap;
+	_pmf_text text;
+	_pmf_dtor dtor;
+/*
 	int (*move)(GEM_PLOTTER self, short x, short y );
 	void * (*lock)(GEM_PLOTTER self);
 	void * (*create_framebuffer)(GEM_PLOTTER self);
@@ -161,6 +234,8 @@ struct s_gem_plotter
 	int (*bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 					unsigned long bg, unsigned long flags );
 	int (*text)(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
+	int (*dtor)(GEM_PLOTTER self);
+*/
 };
 
 

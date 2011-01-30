@@ -24,15 +24,10 @@
 #include <windom.h>
 #include <Hermes/Hermes.h>
 
-#include "desktop/plot_style.h"
-#include "image/bitmap.h"
-#include "atari/bitmap.h"
 #include "atari/plot/eddi.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
 #include "atari/plot/font_vdi.h"
-#include "atari/bitmap.h"
-#include "utils/log.h"
 
 /* assign vdi line style to dst ( netsurf type ) */ 
 #define NSLT2VDI(dst, src) \
@@ -41,7 +36,7 @@
 			dst = 3;	\
 		break;\
 		case PLOT_OP_TYPE_DASH:\
-			dst = 4;	\
+			dst = 5;	\
 		break;\
 		case PLOT_OP_TYPE_SOLID:\
 		case PLOT_OP_TYPE_NONE:\

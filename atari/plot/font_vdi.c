@@ -15,20 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <windom.h>
 
-#include "desktop/plot_style.h"
-#include "atari/bitmap.h"
+
 #include "atari/plot/plotter.h"
 #include "atari/plot/font_vdi.h"
+
 #include "utils/utf8.h"
 #include "utils/log.h"
+
 
 static char * lstr = NULL;
 
@@ -37,7 +31,7 @@ static int dtor( FONT_PLOTTER self );
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 	const char * str, size_t length, int * width  );
 static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x );
-static int pixel_position( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string, 
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string, 
 						size_t length,int x, size_t *char_offset, int *actual_x );
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle );
 
@@ -45,14 +39,13 @@ static bool init = false;
 static int vdih;
 
 extern struct s_vdi_sysinfo vdi_sysinfo;
-extern unsigned short gdosversion;
 
 int ctor_font_plotter_vdi( FONT_PLOTTER self )
 {
 	self->dtor = dtor;
 	self->str_width = str_width;
 	self->str_split = str_split;
-	self->pixel_position = pixel_position;
+	self->pixel_pos = pixel_pos;
 	self->text = text;
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
 	if( !init ) {
@@ -141,7 +134,7 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	return( 0 );
 }
 
-static int pixel_position( FONT_PLOTTER self, const plot_font_style_t * fstyle,const char *string, 
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const char *string, 
 						size_t length,int x, size_t *char_offset, int *actual_x )
 {
 	short cw, ch, cellw, cellh;
@@ -217,7 +210,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	} else {
 		vst_color( self->vdi_handle, BLACK );
 	}
-	if( gdosversion > 0x03000 ){
+	if( atari_sysinfo.gdosversion > 0x03000 ){
 		v_ftext( self->vdi_handle, x, y, (char*)&textcpy );
 	} else {
 		v_gtext( self->vdi_handle, x, y, (char*)&textcpy );

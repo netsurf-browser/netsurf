@@ -17,27 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <windom.h>
+
 #include <ft2build.h>
 #include FT_CACHE_H
 
-#include "desktop/plot_style.h"
-#include "image/bitmap.h"
-#include "atari/bitmap.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot/font_freetype.h"
-#include "atari/gui.h"
-#include "atari/font.h"
-#include "atari/options.h"
-#include "atari/findfile.h"
-#include "utils/utf8.h"
-#include "utils/log.h"
+
 
 #define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
 
@@ -65,7 +51,7 @@ static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle,
 static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 						const char *string, size_t length,int x, 
 						size_t *char_offset, int *actual_x );
-static int pixel_position( FONT_PLOTTER self, const plot_font_style_t *fstyle,
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 							const char *string, size_t length,int x, 
 							size_t *char_offset, int *actual_x );
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, 
@@ -361,7 +347,7 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 }
 
 
-static int pixel_position( FONT_PLOTTER self, const plot_font_style_t *fstyle,
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int x, size_t *char_offset, int *actual_x)
 {
@@ -490,7 +476,7 @@ int ctor_font_plotter_freetype( FONT_PLOTTER self )
 	self->dtor = dtor;
 	self->str_width = str_width;
 	self->str_split = str_split;
-	self->pixel_position = pixel_position;
+	self->pixel_pos = pixel_pos;
 	self->text = text;
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
 	if( !init ) {

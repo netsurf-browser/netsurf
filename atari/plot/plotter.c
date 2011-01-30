@@ -37,8 +37,7 @@
 #include "atari/gui.h"
 #include "utils/log.h"
 #include "atari/misc.h"
-
-extern unsigned short gdosversion;
+#include "atari/osspec.h"
 
 
 unsigned char rgb_web_pal[216][3] = {
