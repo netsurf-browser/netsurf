@@ -3,7 +3,7 @@ ResourceMaster v3.65
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@1@1@1@1@
-#M 20010100@17741@7728@536@
+#M 20010100@17741@7728@547@
 #T 0@1@MAINMENU@@60@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -95,10 +95,10 @@ ResourceMaster v3.65
 #T 10@2@SEARCH@@9@@
 #O 1@29@TB_SRCH@@
 #O 2@20@CB_CASESENSE@@
-#O 3@20@CB_CASESENSE_00@@
+#O 3@20@CB_SHOWALL@@
 #O 4@28@LBL_SHOWALL@@
-#O 5@26@BT_SRCHBACK@@
-#O 6@26@BT_SRCHNEXT@@
-#O 7@28@LBL_CASESENSE@@
-#O 8@26@BT_SEARCH@@
-#c 13032@
+#O 5@28@LBL_CASESENSE@@
+#O 6@26@BT_SEARCH@@
+#O 7@20@CB_FWD@@
+#O 8@28@LBL_FWD@@
+#c 12914@

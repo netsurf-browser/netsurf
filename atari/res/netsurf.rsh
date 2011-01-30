@@ -100,9 +100,9 @@
 #define SEARCH 10  /* form/dial */
 #define SEARCH_TB_SRCH 1  /* FTEXT in tree SEARCH */
 #define SEARCH_CB_CASESENSE 2  /* BOX in tree SEARCH */
-#define SEARCH_CB_CASESENSE_00 3  /* BOX in tree SEARCH */
+#define SEARCH_CB_SHOWALL 3  /* BOX in tree SEARCH */
 #define SEARCH_LBL_SHOWALL 4  /* STRING in tree SEARCH */
-#define SEARCH_BT_SRCHBACK 5  /* BUTTON in tree SEARCH */
-#define SEARCH_BT_SRCHNEXT 6  /* BUTTON in tree SEARCH */
-#define SEARCH_LBL_CASESENSE 7  /* STRING in tree SEARCH */
-#define SEARCH_BT_SEARCH 8  /* BUTTON in tree SEARCH */
+#define SEARCH_LBL_CASESENSE 5  /* STRING in tree SEARCH */
+#define SEARCH_BT_SEARCH 6  /* BUTTON in tree SEARCH */
+#define SEARCH_CB_FWD 7  /* BOX in tree SEARCH */
+#define SEARCH_LBL_FWD 8  /* STRING in tree SEARCH */
