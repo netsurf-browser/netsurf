@@ -100,7 +100,7 @@ int cfg_height;
 const char * cfg_homepage_url;
 
 extern GEM_PLOTTER plotter;
-extern unsigned short gdosversion;
+
 
 void gui_multitask(void)
 {

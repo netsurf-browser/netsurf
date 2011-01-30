@@ -117,6 +117,7 @@ struct s_gui_input_state {
 #define TOOLBAR_HEIGHT 25
 #define URLBOX_HEIGHT 21
 #define STATUSBAR_HEIGHT 16
+#define STATUSBAR_MAX_SLEN 255
 #define MOVER_WH 16
 #define THROBBER_WIDTH 32
 
