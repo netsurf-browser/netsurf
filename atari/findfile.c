@@ -30,8 +30,9 @@
 #include "atari/findfile.h"
 #include "atari/gui.h"
 #include "atari/misc.h"
+#include "atari/osspec.h"
 
-extern unsigned short gdosversion;
+
 
 static void fix_path(char * path);
 
@@ -56,8 +57,7 @@ char *url_to_path(const char *url)
 	char *path;
 
 	/* return the absolute path including leading / */
-	/* TODO: fix path seperator */
-	if(gdosversion > TOS4VER ) {
+	if( atari_sysinfo.gdosversion > TOS4VER ) {
 		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
 	} else {
 		/* do not include / within ulr_path */
@@ -68,10 +68,10 @@ char *url_to_path(const char *url)
 			if( path[i] == '/' ){
 				path[i] = 0x5C;
 			}
-		} 
+		}
+		LOG(("%s", path));
 	}
 	curl_free(url_path);
-	LOG(("%s", path));
 	return path;
 }
 
@@ -110,7 +110,7 @@ char * gdos_realpath(const char * path, char * rpath)
 	if( rpath == NULL ){
 		return( NULL );
 	}
-	if( gdosversion > TOS4VER ){
+	if( atari_sysinfo.gdosversion > TOS4VER ){
 		return( realpath(path, rpath) );
 	}
 
