@@ -217,10 +217,10 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	vsf_perimeter( vdih, 0 );
 	vsf_interior( vdih , 1 );
 	vsf_color( vdih, LWHITE );
-	vst_arbpt( vdih, 10, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
+	vst_point( vdih, 10, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
 	vst_alignment(vdih, 0, 5, &d, &d );
 	vst_effects( vdih, 0 );
-
+	vst_color( vdih, BLACK );
 	/* gray the whole component: */
 
 	pxy[0] = work.g_x;
@@ -261,7 +261,6 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	else 
 		strcpy(  (char*)&textcpy, " " );
 	
-	vst_color( vdih, BLACK );
 	v_gtext( vdih, work.g_x + 3, work.g_y + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2) + 2, (char*)&textcpy );
 	
 	if( window_url_widget_has_focus( gw ) ) {

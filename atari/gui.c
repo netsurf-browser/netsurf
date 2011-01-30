@@ -1130,7 +1130,7 @@ int main(int argc, char** argv)
 	netsurf_init(&argc, &argv, options, messages);
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
-	browser_window_create(cfg_homepage_url, 0, 0, true, false);
+	//browser_window_create(cfg_homepage_url, 0, 0, true, false);
 	graf_mouse( ARROW , NULL);
 	netsurf_main_loop();
 	netsurf_exit();
