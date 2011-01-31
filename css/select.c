@@ -42,6 +42,8 @@ static css_error named_parent_node(void *pw, void *node,
 		lwc_string *name, void **parent);
 static css_error named_sibling_node(void *pw, void *node,
 		lwc_string *name, void **sibling);
+static css_error named_generic_sibling_node(void *pw, void *node,
+		lwc_string *name, void **sibling);
 static css_error parent_node(void *pw, void *node, void **parent);
 static css_error sibling_node(void *pw, void *node, void **sibling);
 static css_error node_has_name(void *pw, void *node,
@@ -61,12 +63,28 @@ static css_error node_has_attribute_dashmatch(void *pw, void *node,
 static css_error node_has_attribute_includes(void *pw, void *node,
 		lwc_string *name, lwc_string *value,
 		bool *match);
-static css_error node_is_first_child(void *pw, void *node, bool *match);
+static css_error node_has_attribute_prefix(void *pw, void *node,
+		lwc_string *name, lwc_string *value,
+		bool *match);
+static css_error node_has_attribute_suffix(void *pw, void *node,
+		lwc_string *name, lwc_string *value,
+		bool *match);
+static css_error node_has_attribute_substring(void *pw, void *node,
+		lwc_string *name, lwc_string *value,
+		bool *match);
+static css_error node_is_root(void *pw, void *node, bool *match);
+static css_error node_count_siblings(void *pw, void *node,
+		bool same_name, bool after, int32_t *count);
+static css_error node_is_empty(void *pw, void *node, bool *match);
 static css_error node_is_link(void *pw, void *node, bool *match);
 static css_error node_is_visited(void *pw, void *node, bool *match);
 static css_error node_is_hover(void *pw, void *node, bool *match);
 static css_error node_is_active(void *pw, void *node, bool *match);
 static css_error node_is_focus(void *pw, void *node, bool *match);
+static css_error node_is_enabled(void *pw, void *node, bool *match);
+static css_error node_is_disabled(void *pw, void *node, bool *match);
+static css_error node_is_checked(void *pw, void *node, bool *match);
+static css_error node_is_target(void *pw, void *node, bool *match);
 static css_error node_is_lang(void *pw, void *node,
 		lwc_string *lang, bool *match);
 static css_error node_presentational_hint(void *pw, void *node,
@@ -98,6 +116,7 @@ static css_select_handler selection_handler = {
 	named_ancestor_node,
 	named_parent_node,
 	named_sibling_node,
+	named_generic_sibling_node,
 	parent_node,
 	sibling_node,
 	node_has_name,
@@ -107,12 +126,21 @@ static css_select_handler selection_handler = {
 	node_has_attribute_equal,
 	node_has_attribute_dashmatch,
 	node_has_attribute_includes,
-	node_is_first_child,
+	node_has_attribute_prefix,
+	node_has_attribute_suffix,
+	node_has_attribute_substring,
+	node_is_root,
+	node_count_siblings,
+	node_is_empty,
 	node_is_link,
 	node_is_visited,
 	node_is_hover,
 	node_is_active,
 	node_is_focus,
+	node_is_enabled,
+	node_is_disabled,
+	node_is_checked,
+	node_is_target,
 	node_is_lang,
 	node_presentational_hint,
 	ua_default_for_property,
@@ -706,6 +734,41 @@ css_error named_sibling_node(void *pw, void *node,
 }
 
 /**
+ * Callback to find a named generic sibling node.
+ *
+ * \param pw       HTML document
+ * \param node     DOM node
+ * \param name     Node name to search for
+ * \param sibling  Pointer to location to receive ancestor
+ * \return CSS_OK.
+ *
+ * \post \a sibling will contain the result, or NULL if there is no match
+ */
+css_error named_generic_sibling_node(void *pw, void *node,
+		lwc_string *name, void **sibling)
+{
+	xmlNode *n = node;
+	size_t len = lwc_string_length(name);
+	const char *data = lwc_string_data(name);
+
+	*sibling = NULL;
+
+	for (n = n->prev; n != NULL && n->type == XML_ELEMENT_NODE;
+			n = n->prev) {
+		bool match = strlen((const char *) n->name) == len &&
+				strncasecmp((const char *) n->name,
+					data, len) == 0;
+
+		if (match) {
+			*sibling = (void *) n;
+			break;
+		}
+	}
+
+	return CSS_OK;
+}
+
+/**
  * Callback to retrieve the parent of a node.
  *
  * \param pw      HTML document
@@ -1014,6 +1077,8 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 				start = p + 1;
 			}
 		}
+
+		xmlFree(attr);
 	}
 
 	return CSS_OK;
@@ -1062,13 +1127,138 @@ css_error node_has_attribute_includes(void *pw, void *node,
 				start = p + 1;
 			}
 		}
+
+		xmlFree(attr);
 	}
 
 	return CSS_OK;
 }
 
 /**
- * Callback to determine if a node is the first child of its parent.
+ * Callback to determine if a node has an attribute with the given name whose
+ * value has the prefix given.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param name   Name to match
+ * \param value  Value to match
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK on success,
+ *         CSS_NOMEM on memory exhaustion.
+ *
+ * \post \a match will contain true if the node matches and false otherwise.
+ */
+css_error node_has_attribute_prefix(void *pw, void *node,
+		lwc_string *name, lwc_string *value,
+		bool *match)
+{
+	xmlNode *n = node;
+	xmlChar *attr;
+        size_t vlen = lwc_string_length(value);
+
+        *match = false;
+
+	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+	if (attr != NULL) {
+		if (strlen((char *) attr) >= vlen && strncasecmp((char *) attr,
+				lwc_string_data(value), vlen) == 0)
+			*match = true;
+
+		xmlFree(attr);
+	}
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node has an attribute with the given name whose
+ * value has the suffix given.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param name   Name to match
+ * \param value  Value to match
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK on success,
+ *         CSS_NOMEM on memory exhaustion.
+ *
+ * \post \a match will contain true if the node matches and false otherwise.
+ */
+css_error node_has_attribute_suffix(void *pw, void *node,
+		lwc_string *name, lwc_string *value,
+		bool *match)
+{
+	xmlNode *n = node;
+	xmlChar *attr;
+        size_t vlen = lwc_string_length(value);
+
+        *match = false;
+
+	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+	if (attr != NULL) {
+		size_t len = strlen((char *) attr);
+		const char *start = (char *) attr + len - vlen;
+
+		if (len >= vlen && strncasecmp(start, 
+				lwc_string_data(value), vlen) == 0)
+			*match = true;
+
+		xmlFree(attr);
+	}
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node has an attribute with the given name whose
+ * value contains the substring given.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param name   Name to match
+ * \param value  Value to match
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK on success,
+ *         CSS_NOMEM on memory exhaustion.
+ *
+ * \post \a match will contain true if the node matches and false otherwise.
+ */
+css_error node_has_attribute_substring(void *pw, void *node,
+		lwc_string *name, lwc_string *value,
+		bool *match)
+{
+	xmlNode *n = node;
+	xmlChar *attr;
+        size_t vlen = lwc_string_length(value);
+
+        *match = false;
+
+	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+	if (attr != NULL) {
+		const char *vdata = lwc_string_data(value);
+		size_t len = strlen((char *) attr);
+		const char *start = (char *) attr;
+		const char *last_start = start + len - vlen;
+
+		if (len >= vlen) {
+			while (start <= last_start) {
+				if (strncasecmp(start, vdata, vlen) == 0) {
+					*match = true;
+					break;
+				}
+
+				start++;
+			}
+		}
+
+		xmlFree(attr);
+	}
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node is the root node of the document.
  *
  * \param pw     HTML document
  * \param node   DOM node
@@ -1077,11 +1267,69 @@ css_error node_has_attribute_includes(void *pw, void *node,
  *
  * \post \a match will contain true if the node matches and false otherwise.
  */
-css_error node_is_first_child(void *pw, void *node, bool *match)
+css_error node_is_root(void *pw, void *node, bool *match)
 {
 	xmlNode *n = node;
 
-	*match = (n->parent != NULL && n->parent->children == n);
+	*match = (n->parent != NULL);
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to count a node's siblings.
+ *
+ * \param pw         HTML document
+ * \param node       DOM node
+ * \param same_name  Only count siblings with the same name, or all
+ * \param after      Count anteceding instead of preceding siblings
+ * \param count      Pointer to location to receive result
+ * \return CSS_OK.
+ *
+ * \post \a count will contain the number of siblings
+ */
+css_error node_count_siblings(void *pw, void *node, bool same_name,
+		bool after, int32_t *count)
+{
+	xmlNode *n = node;
+	const char *name = (char *) n->name;
+	int32_t cnt = 0;
+
+	do {
+		n = after ? n->next : n->prev;
+
+		if (n != NULL && n->type != XML_ELEMENT_NODE) {
+			if (same_name) {
+				if (strcasecmp(name, (char *) n->name) == 0)
+					cnt++;
+			} else {
+				cnt++;
+			}
+		}
+	} while (n != NULL);
+
+	*count = cnt;
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node is empty.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK.
+ *
+ * \post \a match will contain true if the node is empty and false otherwise.
+ */
+css_error node_is_empty(void *pw, void *node, bool *match)
+{
+	xmlNode *n = node;
+
+	/** \todo This may not be sufficient: all children may be 
+	 * non-content, or empty content nodes. */
+	*match = (n->children == NULL);
 
 	return CSS_OK;
 }
@@ -1221,6 +1469,82 @@ css_error node_is_active(void *pw, void *node, bool *match)
 css_error node_is_focus(void *pw, void *node, bool *match)
 {
 	/** \todo Support focussed nodes */
+
+	*match = false;
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node is enabled.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK.
+ *
+ * \post \a match with contain true if the node is enabled and false otherwise.
+ */
+css_error node_is_enabled(void *pw, void *node, bool *match)
+{
+	/** \todo Support enabled nodes */
+
+	*match = false;
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node is disabled.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK.
+ *
+ * \post \a match with contain true if the node is disabled and false otherwise.
+ */
+css_error node_is_disabled(void *pw, void *node, bool *match)
+{
+	/** \todo Support disabled nodes */
+
+	*match = false;
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node is checked.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK.
+ *
+ * \post \a match with contain true if the node is checked and false otherwise.
+ */
+css_error node_is_checked(void *pw, void *node, bool *match)
+{
+	/** \todo Support checked nodes */
+
+	*match = false;
+
+	return CSS_OK;
+}
+
+/**
+ * Callback to determine if a node is the target of the document URL.
+ *
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param match  Pointer to location to receive result
+ * \return CSS_OK.
+ *
+ * \post \a match with contain true if the node matches and false otherwise.
+ */
+css_error node_is_target(void *pw, void *node, bool *match)
+{
+	/** \todo Support target */
 
 	*match = false;
 
