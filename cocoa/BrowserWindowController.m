@@ -22,9 +22,17 @@
 #import "PSMTabBarControl.h"
 #import "PSMRolloverButton.h"
 #import "URLFieldCell.h"
+#import "cocoa/gui.h"
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
+
+@interface BrowserWindowController ()
+
+- (void) canCloseAlertDidEnd:(NSAlert *)alert returnCode:(int)returnCode contextInfo:(void *)contextInfo;
+
+@end
+
 
 @implementation BrowserWindowController
 
@@ -96,6 +104,30 @@
 		NSTabViewItem *item = [tabView tabViewItemAtIndex: itemIndex];
 		[tabView removeTabViewItem: item];
 		[browser setWindowController: nil];
+	}
+}
+
+- (BOOL) windowShouldClose: (NSWindow *) window;
+{
+	if ([tabView numberOfTabViewItems] <= 1) return YES;
+	if ([[NSUserDefaults standardUserDefaults] boolForKey: kAlwaysCloseMultipleTabs]) return YES;
+	
+	NSAlert *ask = [NSAlert alertWithMessageText: @"Do you really want to close this window?" defaultButton:@"Yes" alternateButton:@"No" otherButton:nil 
+					   informativeTextWithFormat: @"There are %d tabs open, do you want to close them all?", [tabView numberOfTabViewItems]];
+	[ask setShowsSuppressionButton:YES];
+	
+	[ask beginSheetModalForWindow: window modalDelegate:self didEndSelector:@selector(canCloseAlertDidEnd:returnCode:contextInfo:) 
+					  contextInfo: NULL];
+
+	return NO;
+}
+
+- (void) canCloseAlertDidEnd:(NSAlert *)alert returnCode:(int)returnCode contextInfo:(void *)contextInfo;
+{
+	if (returnCode == NSOKButton) {
+		[[NSUserDefaults standardUserDefaults] setBool: [[alert suppressionButton] state] == NSOnState 
+												forKey: kAlwaysCloseMultipleTabs];
+		[[self window] close];
 	}
 }
 

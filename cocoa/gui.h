@@ -24,5 +24,6 @@ extern NSString * const kHotlistFileOption;
 extern NSString * const kHomepageURLOption;
 extern NSString * const kOptionsFileOption;
 extern NSString * const kAlwaysCancelDownload;
+extern NSString * const kAlwaysCloseMultipleTabs;
 
 void cocoa_autorelease( void );

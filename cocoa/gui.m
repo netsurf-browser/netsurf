@@ -46,6 +46,7 @@ NSString * const kHotlistFileOption = @"Hotlist";
 NSString * const kHomepageURLOption = @"HomepageURL";
 NSString * const kOptionsFileOption = @"ClassicOptionsFile";
 NSString * const kAlwaysCancelDownload = @"AlwaysCancelDownload";
+NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
