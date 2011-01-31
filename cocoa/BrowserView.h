@@ -18,7 +18,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "ScrollableView.h"
+#import "cocoa/ScrollableView.h"
 @class HistoryView;
 
 @interface BrowserView : ScrollableView {

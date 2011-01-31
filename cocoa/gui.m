@@ -20,11 +20,10 @@
 
 #import "cocoa/gui.h"
 #import "cocoa/plotter.h"
-
-#import "BrowserView.h"
-#import "BrowserViewController.h"
-#import "BrowserWindowController.h"
-#import "FormSelectMenu.h"
+#import "cocoa/BrowserView.h"
+#import "cocoa/BrowserViewController.h"
+#import "cocoa/BrowserWindowController.h"
+#import "cocoa/FormSelectMenu.h"
 
 #import "desktop/gui.h"
 #import "desktop/netsurf.h"

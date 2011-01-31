@@ -18,8 +18,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "image/bitmap.h"
 #import "cocoa/bitmap.h"
+
+#import "image/bitmap.h"
 
 #define BITS_PER_SAMPLE (8)
 #define SAMPLES_PER_PIXEL (4)

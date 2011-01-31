@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "FormSelectMenu.h"
+#import "cocoa/FormSelectMenu.h"
+#import "cocoa/coordinates.h"
 
 #import "render/form.h"
-#import "cocoa/coordinates.h"
 
 @interface FormSelectMenu ()
 

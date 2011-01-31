@@ -16,14 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "HistoryView.h"
+#import "cocoa/HistoryView.h"
+#import "cocoa/font.h"
+#import "cocoa/coordinates.h"
+#import "cocoa/plotter.h"
 
 #import "desktop/browser.h"
 #import "desktop/history_core.h"
 #import "desktop/plotters.h"
-#import "cocoa/font.h"
-#import "cocoa/coordinates.h"
-#import "cocoa/plotter.h"
 
 static NSRect cocoa_history_rect( struct browser_window *bw )
 {

@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "BrowserWindowController.h"
+#import "cocoa/BrowserWindowController.h"
 
-#import "BrowserViewController.h"
-#import "PSMTabBarControl.h"
-#import "PSMRolloverButton.h"
-#import "URLFieldCell.h"
+#import "cocoa/BrowserViewController.h"
+#import "cocoa/PSMTabBarControl/PSMTabBarControl.h"
+#import "cocoa/PSMTabBarControl/PSMRolloverButton.h"
+#import "cocoa/URLFieldCell.h"
 #import "cocoa/gui.h"
 #import "cocoa/NetsurfApp.h"
 

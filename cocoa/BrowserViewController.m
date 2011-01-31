@@ -17,9 +17,9 @@
  */
 
 
-#import "BrowserViewController.h"
-#import "BrowserView.h"
-#import "BrowserWindowController.h"
+#import "cocoa/BrowserViewController.h"
+#import "cocoa/BrowserView.h"
+#import "cocoa/BrowserWindowController.h"
 
 #import "desktop/browser.h"
 #import "desktop/history_core.h"

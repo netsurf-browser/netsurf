@@ -29,7 +29,6 @@
 
   CFLAGS += -I/usr/X11/include
   CFLAGS += -I/usr/include/libxml2
-  CFLAGS += -Icocoa/PSMTabBarControl
   CFLAGS += -include cocoa/Prefix.pch
 
 ifneq ($(wildcard /opt/local*),)

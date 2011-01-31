@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "NetSurfAppDelegate.h"
+#import "cocoa/NetSurfAppDelegate.h"
 #import "cocoa/SearchWindowController.h"
 #import "cocoa/PreferencesWindowController.h"
 

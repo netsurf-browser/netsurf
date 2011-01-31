@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "TreeView.h"
+#import "cocoa/TreeView.h"
+#import "cocoa/coordinates.h"
 
 #import "desktop/tree.h"
 #import "desktop/plotters.h"
 #import "desktop/history_global_core.h"
-#import "cocoa/coordinates.h"
 
 @implementation TreeView
 

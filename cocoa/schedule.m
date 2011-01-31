@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "desktop/browser.h"
-
 #import <Cocoa/Cocoa.h>
+
+#import "desktop/browser.h"
 
 @interface ScheduledCallback : NSObject {
 	void (*callback)( void *userData );

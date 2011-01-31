@@ -16,11 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import <stdbool.h>
-#import <stdlib.h>
-#import "utils/url.h"
-
 #import <Cocoa/Cocoa.h>
+
+#import "utils/url.h"
 
 
 char *url_to_path(const char *url)

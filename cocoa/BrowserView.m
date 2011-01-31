@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import "BrowserView.h"
-#import "HistoryView.h"
+#import "cocoa/BrowserView.h"
+#import "cocoa/HistoryView.h"
+#import "cocoa/font.h"
+#import "cocoa/plotter.h"
 
 #import "desktop/browser.h"
 #import "desktop/history_core.h"
@@ -25,9 +27,6 @@
 #import "desktop/textinput.h"
 #import "desktop/options.h"
 #import "desktop/selection.h"
-
-#import "cocoa/font.h"
-#import "cocoa/plotter.h"
 
 @interface BrowserView ()
 

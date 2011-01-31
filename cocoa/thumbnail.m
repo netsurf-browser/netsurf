@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import <Cocoa/Cocoa.h>
+
 #import "desktop/browser.h"
 #import "desktop/plotters.h"
 #import "content/urldb.h"
 #import "image/bitmap.h"
-
-#import <Cocoa/Cocoa.h>
 
 /* In platform specific thumbnail.c. */
 bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
