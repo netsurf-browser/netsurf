@@ -38,7 +38,7 @@ ifneq ($(wildcard /opt/local*),)
   CFLAGS += -I/opt/local/include
 endif
 
-  VERSION_FULL := $(shell sed -n '/"/{s/.*"\(.*\)".*/\1/;p;}' desktop/version.c)
+  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
   VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
   VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 
@@ -116,10 +116,6 @@ SOURCES := $(addprefix $(shell pwd)/,$(SOURCES))
 EXETARGET := NetSurf
 
 S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib SearchWindow.xib
-S_NIBS := $(S_XIBS:.xib=.nib)
-
-S_XIBS := $(addprefix cocoa/res/,$(S_XIBS))
-S_NIBS := $(addprefix $(OBJROOT)/,$(S_NIBS))
 
 R_RESOURCES := default.css adblock.css quirks.css NetSurf.icns
 R_RESOURCES := $(addprefix cocoa/res/,$(R_RESOURCES))
@@ -144,41 +140,34 @@ R_RESOURCES += $(addprefix cocoa/PSMTabBarControl/Images/,$(TABBAR_RESOURCES))
 
 define make_lproj 
 R_RESOURCES += $$(OBJROOT)/$(1).lproj
-$$(OBJROOT)/$(1).lproj: $(2) $$(OBJROOT)/created
-	mkdir -p $$@
-	cp -pLR $(2) $$@
+$$(OBJROOT)/$(1).lproj: $(2)
+	$(VQ)echo Bundling language $(1)
+	$(Q)mkdir -p $$@
+	$(Q)cp -pLR $(2) $$@
+endef
+
+define compile_xib
+R_RESOURCES += $$(OBJROOT)/$(1:.xib=.nib)
+$$(OBJROOT)/$(1:.xib=.nib): cocoa/res/$(1) $$(OBJROOT)/created
+	$(VQ)echo Compiling XIB: $$<
+	$(Q)ibtool $$< --compile $$@
 endef
 
 $(foreach lang,$(LANGUAGES),$(eval $(call make_lproj,$(lang),$(addprefix cocoa/res/$(lang).lproj/,$(LOCALIZED_RESOURCES)))))
+$(foreach xib,$(S_XIBS),$(eval $(call compile_xib,$(xib))))
 
-
-$(OBJROOT)/MainMenu.nib: cocoa/res/MainMenu.xib $(OBJROOT)/created 
-	ibtool $< --compile $@
-
-$(OBJROOT)/Browser.nib: cocoa/res/Browser.xib $(OBJROOT)/created 
-	ibtool $< --compile $@
-
-$(OBJROOT)/BrowserWindow.nib: cocoa/res/BrowserWindow.xib $(OBJROOT)/created 
-	ibtool $< --compile $@
-
-$(OBJROOT)/DownloadWindow.nib: cocoa/res/DownloadWindow.xib $(OBJROOT)/created 
-	ibtool $< --compile $@
-
-$(OBJROOT)/SearchWindow.nib: cocoa/res/SearchWindow.xib $(OBJROOT)/created 
-	ibtool $< --compile $@
-
-
-NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) $(S_NIBS) NetSurf.app/Contents/Info.plist
-	mkdir -p NetSurf.app/Contents/MacOS
-	cp NetSurf NetSurf.app/Contents/MacOS
-	mkdir -p NetSurf.app/Contents/Resources
-	cp -pLR $(R_RESOURCES) NetSurf.app/Contents/Resources
-	cp -pLR $(S_NIBS) NetSurf.app/Contents/Resources
-	echo 'APPL????' > NetSurf.app/Contents/PkgInfo
+NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) NetSurf.app/Contents/Info.plist
+	$(VQ)echo Assembling NetSurf.app bundle
+	$(Q)mkdir -p NetSurf.app/Contents/MacOS
+	$(Q)cp NetSurf NetSurf.app/Contents/MacOS
+	$(Q)mkdir -p NetSurf.app/Contents/Resources
+	$(Q)cp -pLR $(R_RESOURCES) NetSurf.app/Contents/Resources
+	$(Q)echo 'APPL????' > NetSurf.app/Contents/PkgInfo
 
 NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.target
-	mkdir -p NetSurf.app/Contents
-	sed -e 's/$${EXECUTABLE_NAME}/$(EXETARGET)/' \
+	$(VQ)echo Generating Info.plist
+	$(Q)mkdir -p NetSurf.app/Contents
+	$(Q)sed -e 's/$${EXECUTABLE_NAME}/$(EXETARGET)/' \
 	    -e 's/$${PRODUCT_NAME.*}/$(EXETARGET)/' \
 	    -e 's/$${MACOSX_DEPLOYMENT_TARGET}/$(MACOSX_VERSION)/' \
 	    -e 's/$${NETSURF_VERSION}/$(VERSION_FULL)/' \
