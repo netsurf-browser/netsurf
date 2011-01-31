@@ -298,7 +298,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 
 - (void)performDragOperation {
 	// move cell
-	NSInteger destinationIndex = [[[self destinationTabBar] cells] indexOfObject:[self targetCell]];
+	NSUInteger destinationIndex = [[[self destinationTabBar] cells] indexOfObject:[self targetCell]];
 
 	//there is the slight possibility of the targetCell now being set properly, so avoid errors
 	if(destinationIndex >= [[[self destinationTabBar] cells] count]) {
@@ -315,7 +315,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 		[[self sourceTabBar] removeTrackingRect:[[self draggedCell] cellTrackingTag]];
 		[[self sourceTabBar] removeTabForCell:[self draggedCell]];
 
-		NSInteger i, insertIndex;
+		NSUInteger i, insertIndex;
 		NSArray *cells = [[self destinationTabBar] cells];
 
 		//find the index of where the dragged cell was just dropped
@@ -350,9 +350,8 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 		NSTabView *tabView = [[self sourceTabBar] tabView];
 		NSTabViewItem *item = [[self draggedCell] representedObject];
 		BOOL reselect = ([tabView selectedTabViewItem] == item);
-		NSInteger index;
 		NSArray *cells = [[self sourceTabBar] cells];
-
+		NSUInteger index;
 		//find the index of where the dragged cell was just dropped
 		for(index = 0; index < [cells count] && [cells objectAtIndex:index] != [self draggedCell]; index++) {
 			;
@@ -767,7 +766,7 @@ static PSMTabDragAssistant *sharedDragAssistant = nil;
 }
 
 - (void)distributePlaceholdersInTabBar:(PSMTabBarControl *)control {
-	NSInteger i, numVisibleTabs = [control numberOfVisibleTabs];
+	NSUInteger i, numVisibleTabs = [control numberOfVisibleTabs];
 	for(i = 0; i < numVisibleTabs; i++) {
 		PSMTabBarCell *pc = [[[PSMTabBarCell alloc] initPlaceholderWithFrame:[[self draggedCell] frame] expanded:NO inControlView:control] autorelease];
 		[[control cells] insertObject:pc atIndex:(2 * i)];

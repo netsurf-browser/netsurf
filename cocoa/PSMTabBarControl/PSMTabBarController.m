@@ -78,9 +78,9 @@
     @returns    The tracking rect of the cell at the requested index.
  */
 
-- (NSRect)cellTrackingRectAtIndex:(NSInteger)index {
+- (NSRect)cellTrackingRectAtIndex:(NSUInteger)index {
 	NSRect rect;
-	if(index > -1 && index < [_cellTrackingRects count]) {
+	if(index < [_cellTrackingRects count]) {
 		rect = [[_cellTrackingRects objectAtIndex:index] rectValue];
 	} else {
 		NSLog(@"cellTrackingRectAtIndex: Invalid index (%ld)", (long)index);
@@ -97,9 +97,9 @@
     @returns    The close button tracking rect of the cell at the requested index.
  */
 
-- (NSRect)closeButtonTrackingRectAtIndex:(NSInteger)index {
+- (NSRect)closeButtonTrackingRectAtIndex:(NSUInteger)index {
 	NSRect rect;
-	if(index > -1 && index < [_closeButtonTrackingRects count]) {
+	if(index < [_closeButtonTrackingRects count]) {
 		rect = [[_closeButtonTrackingRects objectAtIndex:index] rectValue];
 	} else {
 		NSLog(@"closeButtonTrackingRectAtIndex: Invalid index (%ld)", (long)index);
@@ -116,10 +116,10 @@
     @returns    The frame of the cell at the requested index.
  */
 
-- (NSRect)cellFrameAtIndex:(NSInteger)index {
+- (NSRect)cellFrameAtIndex:(NSUInteger)index {
 	NSRect rect;
 
-	if(index > -1 && index < [_cellFrames count]) {
+	if(index < [_cellFrames count]) {
 		rect = [[_cellFrames objectAtIndex:index] rectValue];
 	} else {
 		NSLog(@"cellFrameAtIndex: Invalid index (%ld)", (long)index);
@@ -160,7 +160,7 @@
 	[cell setTabState:PSMTab_SelectedMask];
 
 	if(![cell isInOverflowMenu]) {
-		NSInteger cellIndex = [cells indexOfObject:cell];
+		NSUInteger cellIndex = [cells indexOfObject:cell];
 
 		if(cellIndex > 0) {
 			nextCell = [cells objectAtIndex:cellIndex - 1];
@@ -501,7 +501,7 @@ static NSInteger potentialMinimumForArray(NSArray *array, NSInteger minimum){
  */
 
 - (void)_setupCells:(NSArray *)cells withWidths:(NSArray *)widths {
-	NSInteger i, tabState, cellCount = [cells count];
+	NSUInteger i, tabState, cellCount = [cells count];
 	NSRect cellRect = [_control genericCellRect];
 	PSMTabBarCell *cell;
 	NSTabViewItem *selectedTabViewItem = [[_control tabView] selectedTabViewItem];

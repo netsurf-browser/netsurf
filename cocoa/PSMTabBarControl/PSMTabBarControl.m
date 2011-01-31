@@ -564,7 +564,7 @@
 	// add to collection
 	[_cells addObject:cell];
 	[cell release];
-	if([_cells count] == [tabView numberOfTabViewItems]) {
+	if([_cells count] == (NSUInteger)[tabView numberOfTabViewItems]) {
 		[self update]; // don't update unless all are accounted for!
 	}
 }
@@ -923,7 +923,7 @@
 
 - (void)update:(BOOL)animate {
 	// make sure all of our tabs are accounted for before updating
-	if([[self tabView] numberOfTabViewItems] != [_cells count]) {
+	if((NSUInteger)[[self tabView] numberOfTabViewItems] != [_cells count]) {
 		return;
 	}
 
@@ -952,7 +952,7 @@
 	if(animate) {
 		NSMutableArray *targetFrames = [NSMutableArray arrayWithCapacity:[_cells count]];
 
-		for(NSInteger i = 0; i < [_cells count]; i++) {
+		for(NSUInteger i = 0; i < [_cells count]; i++) {
 			currentCell = [_cells objectAtIndex:i];
 
 			//we're going from NSRect -> NSValue -> NSRect -> NSValue here - oh well
@@ -973,7 +973,7 @@
 		[[NSRunLoop currentRunLoop] addTimer:_animationTimer forMode:NSEventTrackingRunLoopMode];
 		[self _animateCells:_animationTimer];
 	} else {
-		for(NSInteger i = 0; i < [_cells count]; i++) {
+		for(NSUInteger i = 0; i < [_cells count]; i++) {
 			currentCell = [_cells objectAtIndex:i];
 			[currentCell setFrame:[_controller cellFrameAtIndex:i]];
 
@@ -992,11 +992,11 @@
 	NSAnimation *animation = [[timer userInfo] objectAtIndex:1];
 	NSArray *targetFrames = [[timer userInfo] objectAtIndex:0];
 	PSMTabBarCell *currentCell;
-	NSInteger cellCount = [_cells count];
+	NSUInteger cellCount = [_cells count];
 
 	if((cellCount > 0) && [animation isAnimating]) {
 		//compare our target position with the current position and move towards the target
-		for(NSInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
+		for(NSUInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
 			currentCell = [_cells objectAtIndex:i];
 			NSRect cellFrame = [currentCell frame], targetFrame = [[targetFrames objectAtIndex:i] rectValue];
 			CGFloat sizeChange;
@@ -1032,7 +1032,7 @@
 	} else {
 		//put all the cells where they should be in their final position
 		if(cellCount > 0) {
-			for(NSInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
+			for(NSUInteger i = 0; i < [targetFrames count] && i < cellCount; i++) {
 				PSMTabBarCell *currentCell = [_cells objectAtIndex:i];
 				NSRect cellFrame = [currentCell frame], targetFrame = [[targetFrames objectAtIndex:i] rectValue];
 
@@ -1064,7 +1064,7 @@
 		[_animationTimer invalidate];
 		[_animationTimer release]; _animationTimer = nil;
 
-		for(NSInteger i = 0; i < cellCount; i++) {
+		for(NSUInteger i = 0; i < cellCount; i++) {
 			currentCell = [_cells objectAtIndex:i];
 
 			//we've hit the cells that are in overflow, stop setting up tracking rects
@@ -1618,7 +1618,7 @@
 - (void)tabView:(NSTabView *)aTabView didSelectTabViewItem:(NSTabViewItem *)tabViewItem {
 	// here's a weird one - this message is sent before the "tabViewDidChangeNumberOfTabViewItems"
 	// message, thus I can end up updating when there are no cells, if no tabs were (yet) present
-	NSInteger tabIndex = [aTabView indexOfTabViewItem:tabViewItem];
+	NSUInteger tabIndex = [aTabView indexOfTabViewItem:tabViewItem];
 
 	if([_cells count] > 0 && tabIndex < [_cells count]) {
 		PSMTabBarCell *thisCell = [_cells objectAtIndex:tabIndex];
@@ -1930,7 +1930,7 @@
 }
 
 - (NSInteger)numberOfVisibleTabs {
-	NSInteger i, cellCount = 0;
+	NSUInteger i, cellCount = 0;
 	PSMTabBarCell *nextCell;
 
 	for(i = 0; i < [_cells count]; i++) {
