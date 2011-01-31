@@ -658,13 +658,13 @@ css_error named_ancestor_node(void *pw, void *node,
 
 	*ancestor = NULL;
 
-	for (n = n->parent; n != NULL && n->type == XML_ELEMENT_NODE;
-			n = n->parent) {
-		bool match = strlen((const char *) n->name) == len &&
-				strncasecmp((const char *) n->name,
-					data, len) == 0;
+	for (n = n->parent; n != NULL; n = n->parent) {
+		if (n->type != XML_ELEMENT_NODE)
+			continue;
 
-		if (match) {
+		if (strlen((const char *) n->name) == len &&
+				strncasecmp((const char *) n->name,
+					data, len) == 0) {
 			*ancestor = (void *) n;
 			break;
 		}
@@ -693,11 +693,16 @@ css_error named_parent_node(void *pw, void *node,
 
 	*parent = NULL;
 
-	if (n->parent != NULL && n->parent->type == XML_ELEMENT_NODE &&
-			strlen((const char *) n->parent->name) == len &&
-			strncasecmp((const char *) n->parent->name,
+	/* Find parent element */
+	for (n = n->parent; n != NULL; n = n->parent) {
+		if (n->type == XML_ELEMENT_NODE)
+			break;
+	}
+
+	if (n != NULL && strlen((const char *) n->name) == len &&
+			strncasecmp((const char *) n->name,
 				data, len) == 0)
-		*parent = (void *) n->parent;
+		*parent = (void *) n;
 
 	return CSS_OK;
 }
@@ -722,13 +727,16 @@ css_error named_sibling_node(void *pw, void *node,
 
 	*sibling = NULL;
 
-	while (n->prev != NULL && n->prev->type != XML_ELEMENT_NODE)
-		n = n->prev;
+	/* Find sibling element */
+	for (n = n->prev; n != NULL; n = n->prev) {
+		if (n->type == XML_ELEMENT_NODE)
+			break;
+	}
 
-	if (n->prev != NULL && strlen((const char *) n->prev->name) == len &&
-			strncasecmp((const char *) n->prev->name,
+	if (n != NULL && strlen((const char *) n->name) == len &&
+			strncasecmp((const char *) n->name,
 				data, len) == 0)
-		*sibling = (void *) n->prev;
+		*sibling = (void *) n;
 
 	return CSS_OK;
 }
@@ -753,13 +761,13 @@ css_error named_generic_sibling_node(void *pw, void *node,
 
 	*sibling = NULL;
 
-	for (n = n->prev; n != NULL && n->type == XML_ELEMENT_NODE;
-			n = n->prev) {
-		bool match = strlen((const char *) n->name) == len &&
-				strncasecmp((const char *) n->name,
-					data, len) == 0;
+	for (n = n->prev; n != NULL; n = n->prev) {
+		if (n->type != XML_ELEMENT_NODE)
+			continue;
 
-		if (match) {
+		if (strlen((const char *) n->name) == len &&
+				strncasecmp((const char *) n->name,
+					data, len) == 0) {
 			*sibling = (void *) n;
 			break;
 		}
@@ -782,10 +790,13 @@ css_error parent_node(void *pw, void *node, void **parent)
 {
 	xmlNode *n = node;
 
-	if (n->parent != NULL && n->parent->type == XML_ELEMENT_NODE)
-		*parent = (void *) n->parent;
-	else
-		*parent = NULL;
+	/* Find parent element */
+	for (n = n->parent; n != NULL; n = n->parent) {
+		if (n->type == XML_ELEMENT_NODE)
+			break;
+	}
+
+	*parent = (void *) n;
 
 	return CSS_OK;
 }
@@ -804,10 +815,13 @@ css_error sibling_node(void *pw, void *node, void **sibling)
 {
 	xmlNode *n = node;
 
-	while (n->prev != NULL && n->prev->type != XML_ELEMENT_NODE)
-		n = n->prev;
+	/* Find sibling element */
+	for (n = n->prev; n != NULL; n = n->prev) {
+		if (n->type == XML_ELEMENT_NODE)
+			break;
+	}
 
-	*sibling = (void *) n->prev;
+	*sibling = (void *) n;
 
 	return CSS_OK;
 }
@@ -1018,17 +1032,20 @@ css_error node_has_attribute_equal(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlChar *attr;
+	size_t vlen = lwc_string_length(value);
 
 	*match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
-	if (attr != NULL) {
-		*match = strlen((const char *) attr) ==
-					lwc_string_length(value) &&
-				strncasecmp((const char *) attr,
-					lwc_string_data(value),
-					lwc_string_length(value)) == 0;
-		xmlFree(attr);
+	if (vlen != 0) {
+		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		if (attr != NULL) {
+			*match = strlen((const char *) attr) ==
+						lwc_string_length(value) &&
+					strncasecmp((const char *) attr,
+						lwc_string_data(value),
+						lwc_string_length(value)) == 0;
+			xmlFree(attr);
+		}
 	}
 
 	return CSS_OK;
@@ -1054,31 +1071,25 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 {
 	xmlNode *n = node;
 	xmlChar *attr;
-        size_t vlen = lwc_string_length(value);
+	size_t vlen = lwc_string_length(value);
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
-	if (attr != NULL) {
-		const char *p;
-		const char *start = (const char *) attr;
-		const char *end = start + strlen(start);
+	if (vlen != 0) {
+		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		if (attr != NULL) {
+			const char *vdata = lwc_string_data(value);
+			const char *data = (const char *) attr;
+			size_t len = strlen(data);
 
-		for (p = start; p <= end; p++) {
-			if (*p == '-' || *p == '\0') {
-				if ((size_t) (p - start) == vlen &&
-						strncasecmp(start,
-							lwc_string_data(value),
-							vlen) == 0) {
-					*match = true;
-					break;
-				}
+			if (len == vlen && strcasecmp(data, vdata) == 0)
+				*match = true;
+			else if (len > vlen && data[vlen] == '-' &&
+					strncasecmp(data, vdata, vlen) == 0)
+				*match = true;
 
-				start = p + 1;
-			}
+			xmlFree(attr);
 		}
-
-		xmlFree(attr);
 	}
 
 	return CSS_OK;
@@ -1108,27 +1119,29 @@ css_error node_has_attribute_includes(void *pw, void *node,
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
-	if (attr != NULL) {
-		const char *p;
-		const char *start = (const char *) attr;
-		const char *end = start + strlen(start);
+	if (vlen != 0) {
+		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		if (attr != NULL) {
+			const char *p;
+			const char *start = (const char *) attr;
+			const char *end = start + strlen(start);
 
-		for (p = start; p <= end; p++) {
-			if (*p == ' ' || *p == '\0') {
-				if ((size_t) (p - start) == vlen &&
-						strncasecmp(start,
+			for (p = start; p <= end; p++) {
+				if (*p == ' ' || *p == '\0') {
+					if ((size_t) (p - start) == vlen &&
+							strncasecmp(start,
 							lwc_string_data(value),
 							vlen) == 0) {
-					*match = true;
-					break;
+						*match = true;
+						break;
+					}
+
+					start = p + 1;
 				}
-
-				start = p + 1;
 			}
-		}
 
-		xmlFree(attr);
+			xmlFree(attr);
+		}
 	}
 
 	return CSS_OK;
@@ -1158,13 +1171,16 @@ css_error node_has_attribute_prefix(void *pw, void *node,
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
-	if (attr != NULL) {
-		if (strlen((char *) attr) >= vlen && strncasecmp((char *) attr,
-				lwc_string_data(value), vlen) == 0)
-			*match = true;
+	if (vlen != 0) {
+		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		if (attr != NULL) {
+			if (strlen((char *) attr) >= vlen && 
+					strncasecmp((char *) attr,
+					lwc_string_data(value), vlen) == 0)
+				*match = true;
 
-		xmlFree(attr);
+			xmlFree(attr);
+		}
 	}
 
 	return CSS_OK;
@@ -1194,16 +1210,18 @@ css_error node_has_attribute_suffix(void *pw, void *node,
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
-	if (attr != NULL) {
-		size_t len = strlen((char *) attr);
-		const char *start = (char *) attr + len - vlen;
+	if (vlen != 0) {
+		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		if (attr != NULL) {
+			size_t len = strlen((char *) attr);
+			const char *start = (char *) attr + len - vlen;
 
-		if (len >= vlen && strncasecmp(start, 
-				lwc_string_data(value), vlen) == 0)
-			*match = true;
+			if (len >= vlen && strncasecmp(start, 
+					lwc_string_data(value), vlen) == 0)
+				*match = true;
 
-		xmlFree(attr);
+			xmlFree(attr);
+		}
 	}
 
 	return CSS_OK;
@@ -1233,25 +1251,28 @@ css_error node_has_attribute_substring(void *pw, void *node,
 
         *match = false;
 
-	attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
-	if (attr != NULL) {
-		const char *vdata = lwc_string_data(value);
-		size_t len = strlen((char *) attr);
-		const char *start = (char *) attr;
-		const char *last_start = start + len - vlen;
+	if (vlen != 0) {
+		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		if (attr != NULL) {
+			const char *vdata = lwc_string_data(value);
+			size_t len = strlen((char *) attr);
+			const char *start = (char *) attr;
+			const char *last_start = start + len - vlen;
 
-		if (len >= vlen) {
-			while (start <= last_start) {
-				if (strncasecmp(start, vdata, vlen) == 0) {
-					*match = true;
-					break;
+			if (len >= vlen) {
+				while (start <= last_start) {
+					if (strncasecmp(start, vdata, 
+							vlen) == 0) {
+						*match = true;
+						break;
+					}
+
+					start++;
 				}
-
-				start++;
 			}
-		}
 
-		xmlFree(attr);
+			xmlFree(attr);
+		}
 	}
 
 	return CSS_OK;
@@ -1271,7 +1292,7 @@ css_error node_is_root(void *pw, void *node, bool *match)
 {
 	xmlNode *n = node;
 
-	*match = (n->parent != NULL);
+	*match = (n->parent == NULL);
 
 	return CSS_OK;
 }
@@ -1298,7 +1319,7 @@ css_error node_count_siblings(void *pw, void *node, bool same_name,
 	do {
 		n = after ? n->next : n->prev;
 
-		if (n != NULL && n->type != XML_ELEMENT_NODE) {
+		if (n != NULL && n->type == XML_ELEMENT_NODE) {
 			if (same_name) {
 				if (strcasecmp(name, (char *) n->name) == 0)
 					cnt++;
@@ -1327,9 +1348,15 @@ css_error node_is_empty(void *pw, void *node, bool *match)
 {
 	xmlNode *n = node;
 
-	/** \todo This may not be sufficient: all children may be 
-	 * non-content, or empty content nodes. */
-	*match = (n->children == NULL);
+	*match = true;
+
+	for (n = n->children; n != NULL; n = n->next) {
+		if (n->type == XML_ELEMENT_NODE ||
+				n->type == XML_TEXT_NODE) {
+			*match = false;
+			break;
+		}
+	}
 
 	return CSS_OK;
 }
