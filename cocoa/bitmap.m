@@ -31,7 +31,7 @@
 #define ALPHA_OFFSET (3)
 
 static CGImageRef cocoa_prepare_bitmap( void *bitmap );
-static NSMapTable *cocoa_get_bitmap_cache();
+static NSMapTable *cocoa_get_bitmap_cache( void );
 
 int bitmap_get_width(void *bitmap)
 {
@@ -175,7 +175,7 @@ CGImageRef cocoa_get_cgimage( void *bitmap )
 	return result;
 }
 
-static inline NSMapTable *cocoa_get_bitmap_cache()
+static inline NSMapTable *cocoa_get_bitmap_cache( void )
 {
 	static NSMapTable *cache = nil;
 	if (cache == nil) {

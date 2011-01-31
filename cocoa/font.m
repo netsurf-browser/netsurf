@@ -37,7 +37,6 @@ static CGFloat cocoa_layout_width( NSLayoutManager *layout );
 static CGFloat cocoa_layout_width_chars( NSLayoutManager *layout, size_t characters );
 static NSUInteger cocoa_glyph_for_location( NSLayoutManager *layout, CGFloat x );
 static size_t cocoa_bytes_for_characters( const char *string, size_t characters );
-static NSString *cocoa_string_from_utf8_characters( const char *string, size_t characters );
 static NSDictionary *cocoa_font_attributes( const plot_font_style_t *style );
 
 static NSTextStorage *cocoa_text_storage = nil;
@@ -185,7 +184,7 @@ static NSLayoutManager *cocoa_prepare_layout_manager( const char *bytes, size_t 
 	}
 	
 	static NSString *oldString = 0;
-	static plot_font_style_t oldStyle = { 0 };
+	static plot_font_style_t oldStyle = { 0, 0, 0, 0, 0, 0 };
 
 	const bool styleChanged = memcmp( style, &oldStyle, sizeof oldStyle ) != 0;
 	

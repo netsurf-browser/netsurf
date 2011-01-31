@@ -109,6 +109,8 @@ S_TABBAR := $(addprefix cocoa/PSMTabBarControl/,$(S_TABBAR))
 
 # complete source file list
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA) $(S_TABBAR)
+SOURCES := $(addprefix $(shell pwd)/,$(SOURCES))
+
 EXETARGET := NetSurf
 
 S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib

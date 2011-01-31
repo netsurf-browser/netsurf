@@ -42,6 +42,6 @@ const char *nslog_gettime(void)
 
 	timeval_subtract(&tv, &now_tv, &start_tv);
 
-        snprintf(buff, sizeof(buff),"(%ld.%ld)", tv.tv_sec, tv.tv_usec);
+        snprintf(buff, sizeof(buff),"(%ld.%ld)", (long)tv.tv_sec, (long)tv.tv_usec);
         return buff;
 }

@@ -29,7 +29,7 @@
 
 static void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle);
 static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_style_t *pstyle);
-static void inline cocoa_center_pixel( bool x, bool y );
+static inline void cocoa_center_pixel( bool x, bool y );
 
 static NSRect cocoa_plot_clip_rect;
 
@@ -208,13 +208,17 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 	
 	while (n--) {
 		switch ((int)*p++) {
-			case PLOTTER_PATH_MOVE:
-				[path moveToPoint: NEXT_POINT()];
+			case PLOTTER_PATH_MOVE: {
+				const NSPoint pt = NEXT_POINT();
+				[path moveToPoint: pt];
 				break;
+			}
 				
-			case PLOTTER_PATH_LINE:
-				[path lineToPoint: NEXT_POINT()];
+			case PLOTTER_PATH_LINE: {
+				const NSPoint pt = NEXT_POINT();
+				[path lineToPoint: pt];
 				break;
+			}
 				
 			case PLOTTER_PATH_BEZIER: {
 				const NSPoint cp1 = NEXT_POINT();
