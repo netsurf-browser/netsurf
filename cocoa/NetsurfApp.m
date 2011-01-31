@@ -49,6 +49,8 @@ static NSString *cocoa_get_user_path( NSString *fileName ) ;
 
 @implementation NetSurfApp
 
+@synthesize frontTab;
+
 - (void) loadOptions;
 {
 	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];

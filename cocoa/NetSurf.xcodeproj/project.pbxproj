@@ -217,6 +217,11 @@
 		265F320512D66C200048B600 /* utf8.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utf8.m; sourceTree = "<group>"; };
 		265F321312D66CD90048B600 /* utils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = utils.m; sourceTree = "<group>"; };
 		265F321E12D66D510048B600 /* font.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = font.m; sourceTree = "<group>"; };
+		2666DC5B12F6D1770045E8B6 /* SearchWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SearchWindow.xib; sourceTree = "<group>"; };
+		2666DC5D12F6D2E70045E8B6 /* SearchWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SearchWindowController.h; sourceTree = "<group>"; };
+		2666DC5E12F6D2E70045E8B6 /* SearchWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SearchWindowController.m; sourceTree = "<group>"; };
+		2666DD5012F706BC0045E8B6 /* BrowserWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserWindow.h; sourceTree = "<group>"; };
+		2666DD5112F706BC0045E8B6 /* BrowserWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserWindow.m; sourceTree = "<group>"; };
 		26ABD61C12F02EB900407161 /* overflowImage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImage.png; sourceTree = "<group>"; };
 		26ABD61D12F02EB900407161 /* overflowImagePressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImagePressed.png; sourceTree = "<group>"; };
 		26ABD61E12F02EB900407161 /* pi.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pi.png; sourceTree = "<group>"; };
@@ -539,6 +544,7 @@
 				26121EAB12D70E0A00E10F91 /* Browser.xib */,
 				26AFEAF012E042F9005AD082 /* DownloadWindow.xib */,
 				26CDCFF212E70AD1004FC66B /* BrowserWindow.xib */,
+				2666DC5B12F6D1770045E8B6 /* SearchWindow.xib */,
 			);
 			name = Resources;
 			path = res;
@@ -649,6 +655,10 @@
 				26CDD00212E70F56004FC66B /* BrowserWindowController.m */,
 				26CDD0F412E726E0004FC66B /* BrowserViewController.h */,
 				26CDD0F512E726E0004FC66B /* BrowserViewController.m */,
+				2666DC5D12F6D2E70045E8B6 /* SearchWindowController.h */,
+				2666DC5E12F6D2E70045E8B6 /* SearchWindowController.m */,
+				2666DD5012F706BC0045E8B6 /* BrowserWindow.h */,
+				2666DD5112F706BC0045E8B6 /* BrowserWindow.m */,
 			);
 			name = Browser;
 			sourceTree = "<group>";

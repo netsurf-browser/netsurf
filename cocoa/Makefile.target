@@ -67,10 +67,12 @@ S_COCOA := \
 	BrowserView.m \
 	BrowserViewController.m \
 	BrowserWindowController.m \
+	BrowserWindow.m \
 	DownloadWindowController.m \
 	NetSurfAppDelegate.m \
 	NetsurfApp.m \
 	ScrollableView.m \
+	SearchWindowController.m \
 	URLFieldCell.m \
 	TreeView.m \
 	HistoryView.m \
@@ -113,7 +115,7 @@ SOURCES := $(addprefix $(shell pwd)/,$(SOURCES))
 
 EXETARGET := NetSurf
 
-S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib
+S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib SearchWindow.xib
 S_NIBS := $(S_XIBS:.xib=.nib)
 
 S_XIBS := $(addprefix cocoa/res/,$(S_XIBS))
@@ -160,6 +162,9 @@ $(OBJROOT)/BrowserWindow.nib: cocoa/res/BrowserWindow.xib $(OBJROOT)/created
 	ibtool $< --compile $@
 
 $(OBJROOT)/DownloadWindow.nib: cocoa/res/DownloadWindow.xib $(OBJROOT)/created 
+	ibtool $< --compile $@
+
+$(OBJROOT)/SearchWindow.nib: cocoa/res/SearchWindow.xib $(OBJROOT)/created 
 	ibtool $< --compile $@
 
 

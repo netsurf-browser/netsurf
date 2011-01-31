@@ -18,9 +18,12 @@
 
 #import <Cocoa/Cocoa.h>
 
+@class BrowserViewController;
 
 @interface NetSurfApp : NSApplication {
-
+	BrowserViewController *frontTab;
 }
+
+@property (readwrite, assign, nonatomic) BrowserViewController *frontTab;
 
 @end

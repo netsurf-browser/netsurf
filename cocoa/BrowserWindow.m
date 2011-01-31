@@ -16,20 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import <Cocoa/Cocoa.h>
+#import "cocoa/BrowserWindow.h"
+#import "cocoa/BrowserWindowController.h"
 
-@class SearchWindowController;
+@implementation BrowserWindow
 
-@interface NetSurfAppDelegate : NSObject {
-	NSWindow *historyWindow;
-	SearchWindowController *search;
+- (void) performClose: (id) sender;
+{
+	[[self windowController] closeCurrentTab: sender];
 }
-
-@property (readwrite, retain, nonatomic) IBOutlet NSWindow *historyWindow;
-@property (readwrite, retain, nonatomic) SearchWindowController *search;
-
-- (IBAction) showSearchWindow: (id) sender;
-- (IBAction) searchForward: (id) sender;
-- (IBAction) searchBackward: (id) sender;
 
 @end

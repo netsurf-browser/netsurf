@@ -17,6 +17,7 @@
  */
 
 #import "NetSurfAppDelegate.h"
+#import "cocoa/SearchWindowController.h"
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
@@ -30,8 +31,8 @@
 
 @implementation NetSurfAppDelegate
 
-
 @synthesize historyWindow;
+@synthesize search;
 
 - (void) newDocument: (id) sender;
 {
@@ -58,6 +59,37 @@
 - (void) awakeFromNib;
 {
 	[historyWindow setExcludedFromWindowsMenu: YES];
+}
+
+- (IBAction) showSearchWindow: (id) sender;
+{
+	if (search == nil) {
+		[self setSearch: [[[SearchWindowController alloc] init] autorelease]];
+	}
+	[[search window] makeKeyAndOrderFront: self];
+}
+
+- (IBAction) searchForward: (id) sender;
+{
+	[search search: SearchForward];
+}
+
+- (IBAction) searchBackward: (id) sender;
+{
+	[search search: SearchBackward];
+}
+
+- (BOOL) validateMenuItem: (id) item;
+{
+	SEL action = [item action];
+	
+	if (action == @selector( searchForward: )) {
+		return [search canGoForward];
+	} else if (action == @selector( searchBackward: )) {
+		return [search canGoBack];
+	}
+	
+	return YES;
 }
 
 // Application delegate methods

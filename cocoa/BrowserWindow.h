@@ -18,18 +18,9 @@
 
 #import <Cocoa/Cocoa.h>
 
-@class SearchWindowController;
 
-@interface NetSurfAppDelegate : NSObject {
-	NSWindow *historyWindow;
-	SearchWindowController *search;
+@interface BrowserWindow : NSWindow {
+
 }
-
-@property (readwrite, retain, nonatomic) IBOutlet NSWindow *historyWindow;
-@property (readwrite, retain, nonatomic) SearchWindowController *search;
-
-- (IBAction) showSearchWindow: (id) sender;
-- (IBAction) searchForward: (id) sender;
-- (IBAction) searchBackward: (id) sender;
 
 @end

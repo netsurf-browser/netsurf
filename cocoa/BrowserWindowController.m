@@ -23,6 +23,7 @@
 #import "PSMRolloverButton.h"
 #import "URLFieldCell.h"
 #import "cocoa/gui.h"
+#import "cocoa/NetsurfApp.h"
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
@@ -174,12 +175,20 @@
 	return [navigationControl isEnabledForSegment: 1];
 }
 
+- (void)windowDidBecomeMain: (NSNotification *)note;
+{
+	[(NetSurfApp *)NSApp setFrontTab: [[tabView selectedTabViewItem] identifier]];
+}
+
 #pragma mark -
 #pragma mark Tab bar delegate
 
 - (void) tabView: (NSTabView *)tabView didSelectTabViewItem: (NSTabViewItem *)tabViewItem;
 {
 	[self setActiveBrowser: [tabViewItem identifier]];
+	if ([[self window] isMainWindow]) {
+		[(NetSurfApp *)NSApp setFrontTab: [tabViewItem identifier]];
+	}
 }
 
 - (BOOL)tabView:(NSTabView*)aTabView shouldDragTabViewItem:(NSTabViewItem *)tabViewItem fromTabBar:(PSMTabBarControl *)tabBarControl
