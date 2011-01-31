@@ -16,25 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #import <Cocoa/Cocoa.h>
 
-@class SearchWindowController;
-@class PreferencesWindowController;
 
-@interface NetSurfAppDelegate : NSObject {
-	NSWindow *historyWindow;
-	SearchWindowController *search;
-	PreferencesWindowController *preferences;
-}
+@interface PreferencesWindowController : NSWindowController 
 
-@property (readwrite, retain, nonatomic) IBOutlet NSWindow *historyWindow;
-@property (readwrite, retain, nonatomic) SearchWindowController *search;
-@property (readwrite, retain, nonatomic) PreferencesWindowController *preferences;
+@property (readwrite, copy, nonatomic) NSString *homepageURL;
 
-- (IBAction) showSearchWindow: (id) sender;
-- (IBAction) searchForward: (id) sender;
-- (IBAction) searchBackward: (id) sender;
-
-- (IBAction) showPreferences: (id) sender;
+- (IBAction) useCurrentPageAsHomepage: (id) sender;
 
 @end

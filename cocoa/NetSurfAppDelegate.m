@@ -18,6 +18,7 @@
 
 #import "NetSurfAppDelegate.h"
 #import "cocoa/SearchWindowController.h"
+#import "cocoa/PreferencesWindowController.h"
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
@@ -33,6 +34,7 @@
 
 @synthesize historyWindow;
 @synthesize search;
+@synthesize preferences;
 
 - (void) newDocument: (id) sender;
 {
@@ -90,6 +92,14 @@
 	}
 	
 	return YES;
+}
+
+- (IBAction) showPreferences: (id) sender;
+{
+	if (preferences == nil) {
+		[self setPreferences: [[[PreferencesWindowController alloc] init] autorelease]];
+	}
+	[preferences showWindow: sender];
 }
 
 // Application delegate methods

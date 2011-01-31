@@ -12,7 +12,7 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="81"/>
+			<integer value="57"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -1035,6 +1035,14 @@
 					</object>
 					<int key="connectionID">844</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">showPreferences:</string>
+						<reference key="source" ref="1026802243"/>
+						<reference key="destination" ref="609285721"/>
+					</object>
+					<int key="connectionID">845</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -1872,7 +1880,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">844</int>
+			<int key="maxID">845</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -2108,10 +2116,12 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>searchBackward:</string>
 							<string>searchForward:</string>
+							<string>showPreferences:</string>
 							<string>showSearchWindow:</string>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>id</string>
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
@@ -2123,6 +2133,7 @@
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>searchBackward:</string>
 							<string>searchForward:</string>
+							<string>showPreferences:</string>
 							<string>showSearchWindow:</string>
 						</object>
 						<object class="NSMutableArray" key="dict.values">
@@ -2133,6 +2144,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">searchForward:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">showPreferences:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">
