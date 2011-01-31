@@ -111,6 +111,11 @@
 	}
 }
 
+- (IBAction) goHome: (id) sender;
+{
+	browser_window_go( browser, option_homepage_url, NULL, true );
+}
+
 - (IBAction) reloadPage: (id) sender;
 {
 	browser_window_reload( browser, true );
