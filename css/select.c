@@ -1292,7 +1292,8 @@ css_error node_is_root(void *pw, void *node, bool *match)
 {
 	xmlNode *n = node;
 
-	*match = (n->parent == NULL);
+	*match = (n->parent == NULL || 
+			n->parent->type == XML_HTML_DOCUMENT_NODE);
 
 	return CSS_OK;
 }
