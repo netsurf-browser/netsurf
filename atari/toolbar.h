@@ -19,6 +19,11 @@
 #ifndef NS_ATARI_TOOLBAR_H
 #define NS_ATARI_TOOLBAR_H
 
+#define THROBBER_MIN_INDEX 1
+#define THROBBER_MAX_INDEX 12
+#define THROBBER_INACTIVE_INDEX 13
+
+
 CMP_TOOLBAR tb_create( struct gui_window * gw );
 void tb_destroy( CMP_TOOLBAR tb );
 
