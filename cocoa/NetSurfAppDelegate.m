@@ -19,6 +19,7 @@
 #import "cocoa/NetSurfAppDelegate.h"
 #import "cocoa/SearchWindowController.h"
 #import "cocoa/PreferencesWindowController.h"
+#import "cocoa/HistoryWindowController.h"
 
 #import "desktop/browser.h"
 #import "desktop/options.h"
@@ -32,7 +33,7 @@
 
 @implementation NetSurfAppDelegate
 
-@synthesize historyWindow;
+@synthesize history;
 @synthesize search;
 @synthesize preferences;
 
@@ -56,11 +57,6 @@
 {
     NSString *urlAsString = [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
 	browser_window_create( [urlAsString UTF8String], NULL, NULL, true, false );
-}
-
-- (void) awakeFromNib;
-{
-	[historyWindow setExcludedFromWindowsMenu: YES];
 }
 
 - (IBAction) showSearchWindow: (id) sender;
@@ -100,6 +96,14 @@
 		[self setPreferences: [[[PreferencesWindowController alloc] init] autorelease]];
 	}
 	[preferences showWindow: sender];
+}
+
+- (IBAction) showGlobalHistory: (id) sender;
+{
+	if (history == nil) {
+		[self setHistory: [[[HistoryWindowController alloc] init] autorelease]];
+	}
+	[history showWindow: sender];
 }
 
 // Application delegate methods

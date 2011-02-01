@@ -18,25 +18,14 @@
 
 #import <Cocoa/Cocoa.h>
 
-@class SearchWindowController;
-@class PreferencesWindowController;
-@class HistoryWindowController;
+@class Tree;
+@class TreeView;
 
-@interface NetSurfAppDelegate : NSObject {
-	SearchWindowController *search;
-	PreferencesWindowController *preferences;
-	HistoryWindowController *history;
+@interface HistoryWindowController : NSWindowController {
+	Tree *tree;
+	TreeView *view;
 }
 
-@property (readwrite, retain, nonatomic) SearchWindowController *search;
-@property (readwrite, retain, nonatomic) PreferencesWindowController *preferences;
-@property (readwrite, retain, nonatomic) HistoryWindowController *history;
-
-- (IBAction) showSearchWindow: (id) sender;
-- (IBAction) searchForward: (id) sender;
-- (IBAction) searchBackward: (id) sender;
-
-- (IBAction) showPreferences: (id) sender;
-- (IBAction) showGlobalHistory: (id) sender;
+@property (readwrite, retain, nonatomic) IBOutlet TreeView *view;
 
 @end

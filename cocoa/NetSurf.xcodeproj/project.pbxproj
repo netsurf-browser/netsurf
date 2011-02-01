@@ -186,6 +186,9 @@
 		263629CA12F69B120048542C /* system_colour.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = system_colour.m; sourceTree = "<group>"; };
 		263769A912F7EBE2000F45FE /* Tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tree.h; sourceTree = "<group>"; };
 		263769AA12F7EBE2000F45FE /* Tree.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Tree.m; sourceTree = "<group>"; };
+		26376A4112F7FA67000F45FE /* HistoryWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = HistoryWindow.xib; sourceTree = "<group>"; };
+		26376A4312F7FA86000F45FE /* HistoryWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HistoryWindowController.h; sourceTree = "<group>"; };
+		26376A4412F7FA86000F45FE /* HistoryWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HistoryWindowController.m; sourceTree = "<group>"; };
 		2639E20512F2ADEE00699678 /* coordinates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = coordinates.h; sourceTree = "<group>"; };
 		264C344112F0987E00D11246 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
@@ -546,6 +549,8 @@
 				265F30AB12D6637E0048B600 /* Prefix.pch */,
 				2625095112F72AA70090D236 /* PreferencesWindowController.h */,
 				2625095212F72AA70090D236 /* PreferencesWindowController.m */,
+				26376A4312F7FA86000F45FE /* HistoryWindowController.h */,
+				26376A4412F7FA86000F45FE /* HistoryWindowController.m */,
 			);
 			name = "Cocoa Frontend";
 			sourceTree = "<group>";
@@ -565,6 +570,7 @@
 				26CDCFF212E70AD1004FC66B /* BrowserWindow.xib */,
 				2666DC5B12F6D1770045E8B6 /* SearchWindow.xib */,
 				2625095012F72A8F0090D236 /* PreferencesWindow.xib */,
+				26376A4112F7FA67000F45FE /* HistoryWindow.xib */,
 			);
 			name = Resources;
 			path = res;
