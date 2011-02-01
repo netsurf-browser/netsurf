@@ -35,6 +35,7 @@ extern char *option_atari_face_serif; /* serif face */
 extern char *option_atari_face_serif_bold; /* bold serif face */
 extern char *option_atari_face_cursive; 
 extern char *option_atari_face_fantasy;
+extern char *option_downloads_directory;
 
 #define EXTRA_OPTION_DEFINE \
 char * option_atari_screen_driver = (char*)"vdi";\
@@ -51,7 +52,8 @@ char *option_atari_face_monospace_bold; \
 char *option_atari_face_serif;			\
 char *option_atari_face_serif_bold; \
 char *option_atari_face_cursive; \
-char *option_atari_face_fantasy;
+char *option_atari_face_fantasy; \
+char *option_downloads_directory = "./";
 
 #define EXTRA_OPTION_TABLE \
 	{ "atari_screen_driver", OPTION_STRING, &option_atari_screen_driver },\
@@ -68,6 +70,7 @@ char *option_atari_face_fantasy;
 	{ "font_face_serif", OPTION_STRING, &option_atari_face_serif },\
 	{ "font_face_serif_bold", OPTION_STRING, &option_atari_face_serif_bold },\
 	{ "font_face_cursive", OPTION_STRING, &option_atari_face_cursive },\
-	{ "font_face_fantasy", OPTION_STRING, &option_atari_face_fantasy }
+	{ "font_face_fantasy", OPTION_STRING, &option_atari_face_fantasy },\
+	{ "downloads_directory", OPTION_STRING, &option_downloads_directory }
 #endif
 
