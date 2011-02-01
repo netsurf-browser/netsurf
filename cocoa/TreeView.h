@@ -19,13 +19,16 @@
 #import <Cocoa/Cocoa.h>
 
 #import "cocoa/ScrollableView.h"
+@class Tree;
 
 @interface TreeView : ScrollableView {
-	struct tree *treeHandle;
+	Tree *tree;
 	
 	BOOL isDragging;
 	NSPoint dragStart;
 	
 }
+
+@property (readwrite, retain, nonatomic) Tree *tree;
 
 @end

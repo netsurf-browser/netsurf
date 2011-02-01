@@ -17,52 +17,20 @@
  */
 
 #import "cocoa/TreeView.h"
-#import "cocoa/coordinates.h"
+#import "cocoa/Tree.h"
 
-#import "desktop/tree.h"
 #import "desktop/plotters.h"
-#import "desktop/history_global_core.h"
+
+@interface TreeView () <TreeDelegate>
+@end
 
 @implementation TreeView
 
-static void tree_redraw_request( int x, int y, int w, int h, void *data );
-static void tree_resized( struct tree *tree, int w, int h, void *data );
-static void tree_scroll_visible( int y, int height, void *data );
-static void tree_get_window_dimensions( int *width, int *height, void *data );
-
-static const struct treeview_table cocoa_tree_callbacks = {
-	.redraw_request = tree_redraw_request,
-	.resized = tree_resized,
-	.scroll_visible = tree_scroll_visible,
-	.get_window_dimensions = tree_get_window_dimensions
-};
-
-- (id)initWithFrame:(NSRect)frame 
-{
-    if ((self = [super initWithFrame:frame]) == nil) return nil;
-
-	treeHandle = tree_create( history_global_get_tree_flags(), &cocoa_tree_callbacks, self );
-	if (NULL == treeHandle) {
-		[self release];
-		return nil;
-	}
-	history_global_initialise( treeHandle, "" );
-    return self;
-}
-
-- (void) dealloc;
-{
-	tree_delete( treeHandle );
-	
-	[super dealloc];
-}
+@synthesize tree;
 
 - (void)drawRect:(NSRect)dirtyRect 
 {
-	tree_set_redraw( treeHandle, true );
-	tree_draw( treeHandle, 0, 0, 
-			  cocoa_pt_to_px( NSMinX( dirtyRect ) ), cocoa_pt_to_px( NSMinY( dirtyRect ) ), 
-			  cocoa_pt_to_px( NSWidth( dirtyRect ) ), cocoa_pt_to_px( NSHeight( dirtyRect ) ) );
+	[tree drawRect: dirtyRect inView: self];
 }
 
 - (BOOL) isFlipped;
@@ -70,68 +38,86 @@ static const struct treeview_table cocoa_tree_callbacks = {
 	return YES;
 }
 
-- (void) mouseDown: (NSEvent *)theEvent;
+- (void) dealloc;
 {
-	NSPoint point = [self convertPoint: [theEvent locationInWindow] fromView: nil];
-	dragStart = point;
-	
-	tree_mouse_action( treeHandle, BROWSER_MOUSE_PRESS_1, 
-					  cocoa_pt_to_px( point.x ), cocoa_pt_to_px( point.y ) );
+	[self setTree: nil];
+	[super dealloc];
 }
 
-- (void) mouseUp: (NSEvent *)theEvent;
+- (void) setTree: (Tree *)newTree;
 {
-	NSPoint point = [self convertPoint: [theEvent locationInWindow] fromView: nil];
-	if (isDragging) {
-		tree_drag_end( treeHandle, BROWSER_MOUSE_DRAG_1, 
-					  cocoa_pt_to_px( dragStart.x ), cocoa_pt_to_px( dragStart.y ), 
-					  cocoa_pt_to_px( point.x ), cocoa_pt_to_px( point.y ) );
-		isDragging = NO;
-	} else {
-		tree_mouse_action( treeHandle, BROWSER_MOUSE_CLICK_1, 
-						  cocoa_pt_to_px( point.x ), cocoa_pt_to_px( point.y ) );
+	if (tree != newTree) {
+		[tree setRedrawing: NO];
+		[tree setDelegate: nil];
+		[tree release];
+		
+		tree = [newTree retain];
+		[tree setDelegate: self];
+		[tree setRedrawing: YES];
 	}
 }
 
+//MARK: -
+//MARK: Event handlers
+
+- (void)mouseDown: (NSEvent *)event;
+{
+	isDragging = NO;
+	dragStart = [self convertPoint: [event locationInWindow] fromView: nil];
+	[tree mouseAction: BROWSER_MOUSE_PRESS_1 atPoint: dragStart];
+}
 
 #define squared(x) ((x)*(x))
 #define MinDragDistance (5.0)
 
-- (void) mouseDragged: (NSEvent *)theEvent;
+- (void) mouseDragged: (NSEvent *)event;
 {
-	NSPoint point = [self convertPoint: [theEvent locationInWindow] fromView: nil];
+	const NSPoint point = [self convertPoint: [event locationInWindow] fromView: nil];
 	
 	if (!isDragging) {
 		const CGFloat distance = squared( dragStart.x - point.x ) + squared( dragStart.y - point.y );
 		if (distance >= squared( MinDragDistance)) isDragging = YES;
 	}
+}
+
+- (void) mouseUp: (NSEvent *)event;
+{
+	const NSPoint point = [self convertPoint: [event locationInWindow] fromView: nil];
+
+	browser_mouse_state modifierFlags = 0;
 	
 	if (isDragging) {
-		tree_mouse_action( treeHandle, BROWSER_MOUSE_DRAG_1, 
-						  cocoa_pt_to_px( point.x ), cocoa_pt_to_px( point.y ) );
-	}		
+		isDragging = NO;
+		[tree mouseDragEnd: modifierFlags fromPoint: dragStart toPoint: point];
+	} else {
+		modifierFlags |= BROWSER_MOUSE_CLICK_1;
+		if ([event clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
+		[tree mouseAction: modifierFlags atPoint: point];
+	}
 }
 
-static void tree_redraw_request( int x, int y, int w, int h, void *data )
+
+//MARK: -
+//MARK: Tree delegate methods
+
+- (void) tree: (Tree *)t requestedRedrawInRect: (NSRect) rect;
 {
-	[(TreeView *)data setNeedsDisplayInRect: cocoa_rect_wh( x, y, w, h )];
+	[self setNeedsDisplayInRect: rect];
 }
 
-static void tree_resized( struct tree *tree, int w, int h, void *data )
+- (void) tree: (Tree *)t resized: (NSSize) size;
 {
-	[(TreeView *)data setMinimumSize: cocoa_size( w, h )];
+	[self setMinimumSize: size];
 }
 
-static void tree_scroll_visible( int y, int height, void *data )
+- (void) tree: (Tree *)t scrollPoint: (NSPoint) point;
 {
-	[(TreeView *)data scrollPoint: cocoa_point( 0, y )];
+	[self scrollPoint: point];
 }
 
-static void tree_get_window_dimensions( int *width, int *height, void *data )
+- (NSSize) treeWindowSize: (Tree *)t;
 {
-	NSSize size = [(TreeView *)data frame].size;
-	*width = cocoa_pt_to_px( size.width );
-	*height = cocoa_pt_to_px( size.height );
+	return [self frame].size;
 }
 
 @end

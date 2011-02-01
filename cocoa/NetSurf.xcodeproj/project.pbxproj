@@ -184,6 +184,8 @@
 		263629C812F69B120048542C /* NetsurfApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetsurfApp.h; sourceTree = "<group>"; };
 		263629C912F69B120048542C /* NetsurfApp.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NetsurfApp.m; sourceTree = "<group>"; };
 		263629CA12F69B120048542C /* system_colour.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = system_colour.m; sourceTree = "<group>"; };
+		263769A912F7EBE2000F45FE /* Tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tree.h; sourceTree = "<group>"; };
+		263769AA12F7EBE2000F45FE /* Tree.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Tree.m; sourceTree = "<group>"; };
 		2639E20512F2ADEE00699678 /* coordinates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = coordinates.h; sourceTree = "<group>"; };
 		264C344112F0987E00D11246 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
@@ -519,12 +521,24 @@
 			name = Makefiles;
 			sourceTree = "<group>";
 		};
+		263769A812F7EBC3000F45FE /* Tree View */ = {
+			isa = PBXGroup;
+			children = (
+				2622F1D512DCD84600CD5A62 /* TreeView.h */,
+				2622F1D612DCD84600CD5A62 /* TreeView.m */,
+				263769A912F7EBE2000F45FE /* Tree.h */,
+				263769AA12F7EBE2000F45FE /* Tree.m */,
+			);
+			name = "Tree View";
+			sourceTree = "<group>";
+		};
 		265F303F12D6637E0048B600 /* Cocoa Frontend */ = {
 			isa = PBXGroup;
 			children = (
 				26CDD26512E74402004FC66B /* Browser */,
 				26CDD26712E74453004FC66B /* Download */,
 				26CDD26612E7441E004FC66B /* Views */,
+				263769A812F7EBC3000F45FE /* Tree View */,
 				26CDD26812E74461004FC66B /* NSApplication */,
 				26CDD26912E7446E004FC66B /* Platform Interface */,
 				265F310F12D663C20048B600 /* Resources */,
@@ -674,8 +688,6 @@
 			children = (
 				26AFE8E212DF4200005AD082 /* ScrollableView.h */,
 				26AFE8E312DF4200005AD082 /* ScrollableView.m */,
-				2622F1D512DCD84600CD5A62 /* TreeView.h */,
-				2622F1D612DCD84600CD5A62 /* TreeView.m */,
 				26EC3B6812ED62C0000A960C /* URLFieldCell.h */,
 				26EC3B6912ED62C0000A960C /* URLFieldCell.m */,
 				26EC3C4212ED8202000A960C /* HistoryView.h */,

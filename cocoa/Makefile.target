@@ -74,6 +74,7 @@ S_COCOA := \
 	ScrollableView.m \
 	SearchWindowController.m \
 	URLFieldCell.m \
+	Tree.m \
 	TreeView.m \
 	HistoryView.m \
 	FormSelectMenu.m \
