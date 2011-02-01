@@ -78,6 +78,45 @@ static HermesHandle hermes_cnv_h; /* hermes converter instance handle */
 static HermesHandle hermes_res_h;
 int32 * hermes_pal_p;
 
+/*
+static inline void vs_rgbcolor(short vdih, uint32_t cin ) 
+{
+	unsigned short c[4];
+	rgb_to_vdi1000( &cin, &c );	
+	vs_color( vdih, OFFSET_CUST_PAL, &c[0] );
+}
+*/
+
+static inline void vsl_rgbcolor( short vdih, uint32_t cin )
+{
+	if( vdi_sysinfo.scr_bpp > 8 ) {
+		unsigned short c[4];
+		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );	
+		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0] );
+		vsl_color( vdih, OFFSET_CUSTOM_COLOR );
+	} else {
+		if( vdi_sysinfo.scr_bpp >= 4 )
+			vsl_color( vdih, RGB_TO_VDI(cin) );
+		else
+			vsl_color( vdih, BLACK );
+	}
+}
+
+static inline void vsf_rgbcolor( short vdih, uint32_t cin )
+{
+	if( vdi_sysinfo.scr_bpp > 8 ) {
+		unsigned short c[4];
+		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );	
+		vs_color( vdih, OFFSET_CUSTOM_COLOR, &c[0] );
+		vsf_color( vdih, OFFSET_CUSTOM_COLOR );
+	} else {
+		if( vdi_sysinfo.scr_bpp >= 4 )
+			vsf_color( vdih, RGB_TO_VDI(cin) );
+		else
+			vsf_color( vdih, WHITE );
+	}
+}
+
 int ctor_plotter_vdi(GEM_PLOTTER self )
 {
 	int retval = 0;
@@ -130,24 +169,28 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->clip( self, 0, 0, FIRSTFB(self).w, FIRSTFB(self).h );
 	/* store system palette & setup the new (web) palette: */
 	i = 0;
-	for( i=0; i<=255; i++ ) {
-		vq_color(self->vdi_handle, i, 1, (unsigned short*)&sys_pal[i][0] );
-		if( i<OFFSET_WEB_PAL ) {
-			pal[i][0] = sys_pal[i][0];
-		 	pal[i][1] = sys_pal[i][1];
-			pal[i][2] = sys_pal[i][2];
-		} else {
-			if ( i < OFFSET_FONT_PAL ){
-				pal[i][0] = vdi_web_pal[i-OFFSET_WEB_PAL][0];
-				pal[i][1] = vdi_web_pal[i-OFFSET_WEB_PAL][1];
-				pal[i][2] = vdi_web_pal[i-OFFSET_WEB_PAL][2];
+	if( app.nplanes <= 8 ){
+		for( i=0; i<=255; i++ ) {
+			vq_color(self->vdi_handle, i, 1, (unsigned short*)&sys_pal[i][0] );
+			if( i<OFFSET_WEB_PAL ) {
+				pal[i][0] = sys_pal[i][0];
+		 		pal[i][1] = sys_pal[i][1];
+				pal[i][2] = sys_pal[i][2];
+			} else if( app.nplanes >= 8 ) {
+				if ( i < OFFSET_CUST_PAL ){
+					pal[i][0] = vdi_web_pal[i-OFFSET_WEB_PAL][0];
+					pal[i][1] = vdi_web_pal[i-OFFSET_WEB_PAL][1];
+					pal[i][2] = vdi_web_pal[i-OFFSET_WEB_PAL][2];
+				}
+				if( i >= OFFSET_CUST_PAL ) {
+					/* here we could define 22 additional colors... */ 
+					/* rgb_to_vdi1000( &rgb_font_pal[i-OFFSET_FONT_PAL], &pal[i] ); */
+				}
+				vs_color( self->vdi_handle, i, &pal[i][0] );
 			}
-			if( i >= OFFSET_FONT_PAL ) {
-				/* here we could define some additional colors... */ 
-				/* rgb_to_vdi1000( &rgb_font_pal[i-OFFSET_FONT_PAL], &pal[i] ); */
-			}
-			vs_color( self->vdi_handle, i, &pal[i][0] );
 		}
+	} else {
+		/* no need to change the palette - its application specific */
 	}
 
 	unsigned char * col;
@@ -156,7 +199,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	hermes_pal_p = Hermes_PaletteGet(hermes_pal_h);
 	assert(hermes_pal_p);
 
-	for( i = 0; i<OFFSET_FONT_PAL; i++) {
+	for( i = 0; i<OFFSET_CUST_PAL; i++) {
 		col = (unsigned char *)(hermes_pal_p+i);
 		if( i < OFFSET_WEB_PAL ) {
 			col[0] = sys_pal[i][0];
@@ -209,9 +252,11 @@ static int dtor( GEM_PLOTTER self )
 			free( self->fbuf[i].mem );
 	}
 
-	/* restore system palette */
-	for( i=0; i<=255; i++ ) {
-		vs_color( self->vdi_handle, i, &sys_pal[i][0] );
+	if( app.nplanes <= 8 ){
+		/* restore system palette */
+		for( i=0; i<=255; i++ ) {
+			vs_color( self->vdi_handle, i, &sys_pal[i][0] );
+		}
 	}
 
 	/* close Hermes stuff: */
@@ -453,12 +498,12 @@ static int arc(GEM_PLOTTER self,int x, int y, int radius, int angle1, int angle2
 	if( pstyle->fill_type == PLOT_OP_TYPE_NONE )
 		return 1;
 	if( pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
-		vsl_color( self->vdi_handle, RGB_TO_VDI(pstyle->stroke_colour) );
+		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour);
 		vsf_perimeter( self->vdi_handle, 1);
 		vsf_interior( self->vdi_handle, 1 );
 		v_arc( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius, angle1*10, angle2*10 );
 	} else {
-		vsl_color( self->vdi_handle, RGB_TO_VDI(pstyle->fill_colour) );
+		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour);
 		vsl_width( self->vdi_handle, 1 );
 		vsf_perimeter( self->vdi_handle, 1);
 		v_arc( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius, angle1*10, angle2*10 );
@@ -471,12 +516,12 @@ static int disc(GEM_PLOTTER self,int x, int y, int radius, const plot_style_t * 
 {
 	plotter_vdi_clip( self, 1);
 	if( pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
-		vsf_color( self->vdi_handle, RGB_TO_VDI(pstyle->stroke_colour) );
+		vsf_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
 		vsf_perimeter( self->vdi_handle, 1);
 		vsf_interior( self->vdi_handle, 0 );
 		v_circle( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius  );
 	} else {
-		vsf_color( self->vdi_handle, RGB_TO_VDI(pstyle->fill_colour) );
+		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour );
 		vsf_perimeter( self->vdi_handle, 0);
 		vsf_interior( self->vdi_handle, FIS_SOLID );
 		v_circle( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius  );
@@ -484,6 +529,7 @@ static int disc(GEM_PLOTTER self,int x, int y, int radius, const plot_style_t * 
 	plotter_vdi_clip( self, 0);
 	return ( 1 );
 }
+
 
 static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_style_t * pstyle)
 {
@@ -500,10 +546,7 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 	NSLT2VDI(lt, pstyle)
 	vsl_type( self->vdi_handle, lt );
 	vsl_width( self->vdi_handle, (short)sw );
-	if( vdi_sysinfo.scr_bpp > 4)
-		vsl_color( self->vdi_handle, RGB_TO_VDI(pstyle->stroke_colour) );
-	else
-		vsl_color( self->vdi_handle, BLACK );
+	vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
 	v_pline(self->vdi_handle, 2, (short *)&pxy );
 	/* plotter_vdi_clip( self, 0); */
    return ( 1 );
@@ -534,10 +577,7 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 	if( !rc_intersect( &rclip, &r ) ) {
 		return( 1 );
 	}
-	if( vdi_sysinfo.scr_bpp > 4)
-		vsf_color( self->vdi_handle, RGB_TO_VDI(pstyle->fill_colour) );
-	else
-		vsf_color( self->vdi_handle, WHITE );
+	vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour );
 	vsf_perimeter( self->vdi_handle, 0);
 	vsf_interior( self->vdi_handle, FIS_SOLID );
 
@@ -555,7 +595,7 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 
 static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_style_t * pstyle)
 {
-	short pxy[n+2];
+	short pxy[n*2];
 	unsigned int i=0;
 	short d[4];
 	if( vdi_sysinfo.maxpolycoords > 0 )
@@ -574,13 +614,13 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 		pxy[i+1] = (short)CURFB(self).y+p[i+1];
 	}
 	if( pstyle->fill_type == PLOT_OP_TYPE_SOLID){
-		vsf_color( self->vdi_handle, BLACK);
+		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour);
 		v_fillarea(self->vdi_handle, n, (short*)&pxy);
 
 	} else {
 		pxy[n*2]=pxy[0];
 		pxy[n*2+1]=pxy[1];
-		vsl_color( self->vdi_handle, BLACK );
+		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour);
 		v_pline(self->vdi_handle, n+1,  (short *)&pxy );
 	}
 	/* plotter_vdi_clip( self, 0); */

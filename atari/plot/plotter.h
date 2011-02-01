@@ -212,30 +212,6 @@ struct s_gem_plotter
 	_pmf_bitmap bitmap;
 	_pmf_text text;
 	_pmf_dtor dtor;
-/*
-	int (*move)(GEM_PLOTTER self, short x, short y );
-	void * (*lock)(GEM_PLOTTER self);
-	void * (*create_framebuffer)(GEM_PLOTTER self);
-	void * (*switch_to_framebuffer)(GEM_PLOTTER self);
-	int (*unlock)(GEM_PLOTTER self);
-	int (*update_region)(GEM_PLOTTER self, GRECT region);
-	int (*update_screen_region)( GEM_PLOTTER self, GRECT region );
-	int (*update_screen)(GEM_PLOTTER self);
-	int (*put_pixel)(GEM_PLOTTER self, int x, int y, int color );
-	int (*copy_rect)(GEM_PLOTTER self, GRECT src, GRECT dst );
-	int (*clip)(GEM_PLOTTER self, int x0, int y0, int x1, int y1);
-	int (*arc)(GEM_PLOTTER self, int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle);
-	int (*disc)(GEM_PLOTTER self, int x, int y, int radius, const plot_style_t * pstyle);
-	int (*line)(GEM_PLOTTER self, int x0, int y0, int x1,	int y1, const plot_style_t * pstyle);
-	int (*rectangle)(GEM_PLOTTER self, int x0, int y0, int x1, int y1, const plot_style_t * pstyle);
-	int (*polygon)(GEM_PLOTTER self, const int *p, unsigned int n,  const plot_style_t * pstyle);
-	int (*path)(GEM_PLOTTER self, const float *p, unsigned int n, int fill, float width, int c, const float transform[6]);
-	int (*bitmap_resize) ( GEM_PLOTTER self, struct bitmap * bm, int nw, int nh );
-	int (*bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
-					unsigned long bg, unsigned long flags );
-	int (*text)(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
-	int (*dtor)(GEM_PLOTTER self);
-*/
 };
 
 
@@ -361,7 +337,8 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 	p->fbuf[0]
 
 #define OFFSET_WEB_PAL 16
-#define OFFSET_FONT_PAL 232
+#define OFFSET_CUST_PAL 232
+#define OFFSET_CUSTOM_COLOR 255
 #define RGB_TO_VDI(c) rgb_to_666_index( (c&0xFF),(c&0xFF00)>>8,(c&0xFF0000)>>16)+OFFSET_WEB_PAL
 #define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8 
 

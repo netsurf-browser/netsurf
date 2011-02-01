@@ -642,10 +642,9 @@ void dump_font_drivers(void)
 */
 void rgb_to_vdi1000( unsigned char * in, unsigned short * out )
 {
-
-	double r = ((double)in[0]/255); /* prozentsatz red */
-	double g = ((double)in[1]/255);	/* prozentsatz green */
-	double b = ((double)in[2]/255);	/* prozentsatz blue */
+	double r = ((double)in[3]/255); /* prozentsatz red */
+	double g = ((double)in[2]/255);	/* prozentsatz green */
+	double b = ((double)in[1]/255);	/* prozentsatz blue */
 	out[0] = 1000 * r + 0.5;
 	out[1] = 1000 * g + 0.5;
 	out[2] = 1000 * b + 0.5;
