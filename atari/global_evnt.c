@@ -51,7 +51,6 @@ extern OBJECT * 	h_gem_menu;
 extern int mouse_click_time[3];
 extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
-extern bool verbose_log;
 
 /* Zero based resource tree ids: */
 #define T_ABOUT 0
@@ -180,6 +179,14 @@ static void __CDECL menu_savewin(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_debug_render(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	html_redraw_debug = !html_redraw_debug;
+	if( input_window != NULL ) {
+		if ( input_window->browser != NULL && input_window->browser->bw != NULL) {
+			LGRECT rect;
+			browser_get_rect( input_window, BR_CONTENT, &rect );
+			browser_window_reformat(input_window->browser->bw, rect.g_w, rect.g_h );
+		}
+	}
 }
 
 static void __CDECL menu_back(WINDOW *win, int item, int title, void *data)
@@ -353,16 +360,34 @@ browser_mouse_state global_track_evnt_mbutton( WINDOW * win, long buff[8], void 
 	short mbut, mkstat, mx, my;
 	browser_mouse_state retval = 0;
 	graf_mkstate(&mx, &my, &mbut, &mkstat);
+
+	if( (mkstat & K_RSHIFT) || (mkstat & K_LSHIFT) ){
+		retval |= BROWSER_MOUSE_MOD_1;
+	}
+	if( (mkstat & K_CTRL) ){
+		retval |= BROWSER_MOUSE_MOD_2;
+	}
+	if( (mkstat & K_ALT) ){
+		retval |= BROWSER_MOUSE_MOD_3;
+	}		
+
 	for( i = 1; i<2; i++) {
 		if( (mbut & i) ) {
 			if( mouse_hold_start[i-1] == 0 ) {
 				mouse_hold_start[i-1] = clock()*1000 / CLOCKS_PER_SEC;
 				LOG(("Drag %d starts", i));
 				if( i == 1 ) {
-					retval |= BROWSER_MOUSE_DRAG_1;
+					retval |= BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON;
 				}
 				if( i == 2 ) {
-					retval |= BROWSER_MOUSE_DRAG_2;
+					retval |= BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_DRAG_ON;
+				}
+			} else {
+				if( i == 1 ) {
+					retval |= BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+				}
+				if( i == 2 ) {
+					retval |= BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
 				}
 			}
 		} else {
@@ -381,7 +406,7 @@ browser_mouse_state global_track_evnt_mbutton( WINDOW * win, long buff[8], void 
 	return( retval );
 }
 
-
+/* this gets called at end of gui poll */
 void global_track_mouse_state( void ){
 	int i = 0;
 	int nx, ny; 
@@ -389,7 +414,7 @@ void global_track_mouse_state( void ){
 	long hold_time = 0;
 	COMPONENT * cmp;
 	LGRECT cmprect;
-
+	
 	if( !input_window ) {
 		bmstate = 0;
 		return;
@@ -405,6 +430,10 @@ void global_track_mouse_state( void ){
 	mt_CompGetLGrect( &app, cmp, WF_WORKXYWH, &cmprect );	
 	nx = mx - cmprect.g_x;
 	ny = my - cmprect.g_y;
+
+	bmstate &= ~(BROWSER_MOUSE_MOD_1);
+	bmstate &= ~(BROWSER_MOUSE_MOD_2);
+	bmstate &= ~(BROWSER_MOUSE_MOD_3);
 
 	if( !(mbut&1) && !(mbut&2) ) {
 		if(bmstate & BROWSER_MOUSE_DRAG_ON )
@@ -430,18 +459,20 @@ void global_track_mouse_state( void ){
 				/* TODO: not just use the input window browser, find the right one by component! */
 				if( i==1 ) {
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 );
+					LOG(("Drag for %d ended", i));
 					browser_window_mouse_drag_end( input_window->browser->bw,
 						bmstate, nx, ny);
 				}
 				if( i==2 ) {
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 );
+					LOG(("Drag for %d ended", i));
 					browser_window_mouse_drag_end( input_window->browser->bw,
 						bmstate, nx, ny);
 				}
 			}
 		} 
 	}
-
+	browser_mouse_state_dump(bmstate);
 	browser_window_mouse_track(input_window->browser->bw, bmstate, nx, ny );
 }
 
@@ -769,3 +800,4 @@ void snd_redraw( short x, short y, short w, short h)
 	}
 	return;
 }
+
