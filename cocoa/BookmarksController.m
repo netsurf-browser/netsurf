@@ -134,7 +134,9 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) windowDidLoad;
 {
-	hotlist_expand_all(  );
+	hotlist_expand_all();
+	hotlist_collapse_all();
+	
 	[view setTree: tree];
 }
 
