@@ -34,8 +34,6 @@
 
 
 
-static void fix_path(char * path);
-
 char *path_to_url(const char *path)
 {
 	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
@@ -73,82 +71,6 @@ char *url_to_path(const char *url)
 	}
 	curl_free(url_path);
 	return path;
-}
-
-
-
-
-/* convert nonsense getcwd path (returned by mintlib getcwd on plain TOS) */
-static void fix_path(char * path)
-{
-	char npath[PATH_MAX];
-	/* only apply fix to paths that contain /dev/ */
-	if( strlen(path) < 6 ){
-		return;
-	}
-	if( strncmp(path, "/dev/", 5) != 0 ) {
-		return;
-	}
-	strncpy((char*)&npath, path, PATH_MAX);
-	npath[0] = path[5];
-	npath[1] = ':';
-	npath[2] = 0;
-	strcat((char*)&npath, &path[6]);
-	strcpy(path, (char*)&npath);
-}
-
-/* 
- a fixed version of realpath() which returns valid 
- paths for TOS which have no root fs. (/ , U: )
-*/
-char * gdos_realpath(const char * path, char * rpath)
-{
-	size_t l;
-	size_t i;
-	char old;
-	char fsep = 0x5C;
-	if( rpath == NULL ){
-		return( NULL );
-	}
-	if( atari_sysinfo.gdosversion > TOS4VER ){
-		return( realpath(path, rpath) );
-	}
-
-	if( fsep == '/') {
-		/* replace '\' with / */
-		old = 0x5C; /* / */
-	} else {
-		/* replace '/' with \ */
-		old = '/';
-	}
-
-	if( path[0] != '/' && path[0] != 0x5c && path[1] != ':') {
-		/* it is not an absolute path */
-		char cwd[PATH_MAX];
-		getcwd((char*)&cwd, PATH_MAX);
-		fix_path((char*)&cwd);
-		strcpy(rpath, (char*)&cwd);
-		l = strlen(rpath);
-		if(rpath[l-1] != 0x5C && rpath[l-1] != '/') {
-			rpath[l] = fsep;
-			rpath[l+1] = 0;
-		}
-		if( (path[1] == '/' || path[1] == 0x5C ) ) {
-			strcat(rpath, &path[2]);
-		} else {
-			strcat(rpath, path);
-		}
-	} else {
-		strcpy(rpath, path);
-	}
-	/* convert path seperator to configured value: */
-	l = strlen(rpath);
-	for( i = 0; i<l-1; i++){
-		if( rpath[i] == old ){
-			rpath[i] = fsep;
-		}
-	}
-	return( rpath );	
 }
 
 
