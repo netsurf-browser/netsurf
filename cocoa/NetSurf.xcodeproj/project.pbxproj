@@ -191,6 +191,7 @@
 		26376A4412F7FA86000F45FE /* HistoryWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HistoryWindowController.m; sourceTree = "<group>"; };
 		26376A8A12F7FF57000F45FE /* BookmarksController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BookmarksController.h; sourceTree = "<group>"; };
 		26376A8B12F7FF57000F45FE /* BookmarksController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BookmarksController.m; sourceTree = "<group>"; };
+		26376BAC12F820D7000F45FE /* BookmarksWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = BookmarksWindow.xib; sourceTree = "<group>"; };
 		2639E20512F2ADEE00699678 /* coordinates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = coordinates.h; sourceTree = "<group>"; };
 		264C344112F0987E00D11246 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
@@ -583,6 +584,7 @@
 				2666DC5B12F6D1770045E8B6 /* SearchWindow.xib */,
 				2625095012F72A8F0090D236 /* PreferencesWindow.xib */,
 				26376A4112F7FA67000F45FE /* HistoryWindow.xib */,
+				26376BAC12F820D7000F45FE /* BookmarksWindow.xib */,
 			);
 			name = Resources;
 			path = res;

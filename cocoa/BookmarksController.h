@@ -19,17 +19,19 @@
 #import <Cocoa/Cocoa.h>
 
 @class Tree;
+@class TreeView;
 
-@interface BookmarksController : NSObject {
+@interface BookmarksController : NSWindowController {
 	Tree *tree;
+	TreeView *view;
 	NSMapTable *nodeForMenu;
 	NSMenu *defaultMenu;
 }
 
 @property (readwrite, retain, nonatomic) IBOutlet NSMenu *defaultMenu;
+@property (readwrite, retain, nonatomic) IBOutlet TreeView *view;
 
 - (IBAction) openBookmarkURL: (id) sender;
-- (IBAction) showBookmarksWindow: (id) sender;
 - (IBAction) addBookmark: (id) sender;
 
 @end

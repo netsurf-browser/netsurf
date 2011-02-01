@@ -54,6 +54,8 @@
 		tree = [newTree retain];
 		[tree setDelegate: self];
 		[tree setRedrawing: YES];
+		
+		[self setNeedsDisplay: YES];
 	}
 }
 
@@ -95,7 +97,6 @@
 		[tree mouseAction: modifierFlags atPoint: point];
 	}
 }
-
 
 //MARK: -
 //MARK: Tree delegate methods

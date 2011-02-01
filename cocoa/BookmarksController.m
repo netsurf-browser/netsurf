@@ -18,6 +18,7 @@
 
 #import "cocoa/BookmarksController.h"
 #import "cocoa/Tree.h"
+#import "cocoa/TreeView.h"
 #import "cocoa/NetsurfApp.h"
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/gui.h"
@@ -29,6 +30,7 @@
 @implementation BookmarksController
 
 @synthesize defaultMenu;
+@synthesize view;
 
 static const char *cocoa_hotlist_path( void )
 {
@@ -38,7 +40,7 @@ static const char *cocoa_hotlist_path( void )
 
 - init;
 {
-	if ((self = [super init]) == nil) return nil;
+	if ((self = [super initWithWindowNibName: @"BookmarksWindow"]) == nil) return nil;
 	
 	tree = [[Tree alloc] initWithFlags: hotlist_get_tree_flags()];
 	hotlist_initialise( [tree tree], cocoa_hotlist_path(), "" );
@@ -49,9 +51,11 @@ static const char *cocoa_hotlist_path( void )
 
 - (void) dealloc;
 {
+	[self setView: nil];
 	NSFreeMapTable( nodeForMenu );
 	hotlist_cleanup( cocoa_hotlist_path() );
 	[tree release];
+	
 	[super dealloc];
 }
 
@@ -112,11 +116,6 @@ static const char *cocoa_hotlist_path( void )
 	}
 }
 
-- (IBAction) showBookmarksWindow: (id) sender;
-{
-	NSLog( @"TODO: show bookmarks window" );
-}
-
 - (IBAction) addBookmark: (id) sender;
 {
 	NSLog( @"TODO: add bookmark" );
@@ -131,6 +130,12 @@ static const char *cocoa_hotlist_path( void )
 	}
 	
 	return YES;
+}
+
+- (void) windowDidLoad;
+{
+	hotlist_expand_all(  );
+	[view setTree: tree];
 }
 
 

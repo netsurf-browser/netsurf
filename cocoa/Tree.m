@@ -18,6 +18,7 @@
 
 #import "cocoa/Tree.h"
 #import "cocoa/coordinates.h"
+#import "cocoa/font.h"
 
 #import "desktop/tree.h"
 
@@ -115,6 +116,7 @@ static void tree_get_window_dimensions( int *width, int *height, void *data )
 
 - (void) drawRect: (NSRect) rect inView: (NSView *) view;
 {
+	cocoa_set_font_scale_factor( 1.0 );
 	tree_draw( tree, 0, 0, cocoa_pt_to_px( NSMinX( rect ) ), cocoa_pt_to_px( NSMinY( rect )), 
 			  cocoa_pt_to_px( NSWidth( rect ) ), cocoa_pt_to_px( NSHeight( rect ) ) );
 }
