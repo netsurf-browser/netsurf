@@ -63,6 +63,7 @@ endif
 
 # S_COCOA are sources purely for the Mac OS X build
 S_COCOA := \
+	BookmarksController.m \
 	BrowserView.m \
 	BrowserViewController.m \
 	BrowserWindowController.m \

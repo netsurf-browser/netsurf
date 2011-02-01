@@ -189,6 +189,8 @@
 		26376A4112F7FA67000F45FE /* HistoryWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = HistoryWindow.xib; sourceTree = "<group>"; };
 		26376A4312F7FA86000F45FE /* HistoryWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HistoryWindowController.h; sourceTree = "<group>"; };
 		26376A4412F7FA86000F45FE /* HistoryWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HistoryWindowController.m; sourceTree = "<group>"; };
+		26376A8A12F7FF57000F45FE /* BookmarksController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BookmarksController.h; sourceTree = "<group>"; };
+		26376A8B12F7FF57000F45FE /* BookmarksController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BookmarksController.m; sourceTree = "<group>"; };
 		2639E20512F2ADEE00699678 /* coordinates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = coordinates.h; sourceTree = "<group>"; };
 		264C344112F0987E00D11246 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gui.h; sourceTree = "<group>"; };
 		265F30A712D6637E0048B600 /* NetSurf-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "NetSurf-Info.plist"; sourceTree = "<group>"; };
@@ -535,6 +537,15 @@
 			name = "Tree View";
 			sourceTree = "<group>";
 		};
+		26376A8C12F7FF5A000F45FE /* Bookmarks */ = {
+			isa = PBXGroup;
+			children = (
+				26376A8A12F7FF57000F45FE /* BookmarksController.h */,
+				26376A8B12F7FF57000F45FE /* BookmarksController.m */,
+			);
+			name = Bookmarks;
+			sourceTree = "<group>";
+		};
 		265F303F12D6637E0048B600 /* Cocoa Frontend */ = {
 			isa = PBXGroup;
 			children = (
@@ -542,6 +553,7 @@
 				26CDD26712E74453004FC66B /* Download */,
 				26CDD26612E7441E004FC66B /* Views */,
 				263769A812F7EBC3000F45FE /* Tree View */,
+				26376A8C12F7FF5A000F45FE /* Bookmarks */,
 				26CDD26812E74461004FC66B /* NSApplication */,
 				26CDD26912E7446E004FC66B /* Platform Interface */,
 				265F310F12D663C20048B600 /* Resources */,

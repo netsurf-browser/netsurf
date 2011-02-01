@@ -216,6 +216,7 @@
 	
 	if (activeBrowser == [tabViewItem identifier]) {
 		[self setActiveBrowser: nil];
+		[(NetSurfApp *)NSApp setFrontTab: nil];
 	}
 	
 	browser_window_destroy( [[tabViewItem identifier] browser] );
