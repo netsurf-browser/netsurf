@@ -189,7 +189,7 @@ struct nsgtk_popup_submenu {
 
 };
 
-struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window);
-struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkWindow *window);
+struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkAccelGroup *group);
+struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkAccelGroup *group);
 
 #endif

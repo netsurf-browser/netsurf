@@ -449,9 +449,9 @@ static struct nsgtk_help_menu *nsgtk_menu_help_submenu(GtkAccelGroup *group)
  *
  * Generate the main menu structure and attach it to a menubar widget.
  */
-struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow *window)
+struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkAccelGroup *group)
 {
-	GtkAccelGroup *group;
+	;
 	struct nsgtk_bar_submenu *nmenu;
 
 	nmenu = malloc(sizeof(struct nsgtk_bar_submenu));
@@ -461,9 +461,6 @@ struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow
 	}
 
 	nmenu->bar_menu = GTK_MENU_BAR(menubar);
-
-	group = gtk_accel_group_new();
-	gtk_window_add_accel_group(window, group);
 
 	nmenu->file_submenu = nsgtk_menu_file_submenu(group);
 	ATTACH_PARENT(menubar, gtkFile, nmenu->file_submenu->file, group);
@@ -487,9 +484,8 @@ struct nsgtk_bar_submenu *nsgtk_menu_bar_create(GtkMenuShell *menubar, GtkWindow
  * Generate right click menu menu.
  *
  */
-struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkWindow *window)
+struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkAccelGroup *group)
 {
-	GtkAccelGroup *group;
 	struct nsgtk_popup_submenu *nmenu;
 
 	nmenu = malloc(sizeof(struct nsgtk_popup_submenu));
@@ -497,9 +493,6 @@ struct nsgtk_popup_submenu *nsgtk_menu_popup_create(GtkWindow *window)
 		warn_user(messages_get("NoMemory"), 0);
 		return NULL;
 	}
-
-	group = gtk_accel_group_new();
-	gtk_window_add_accel_group(window, group);
 
 	nmenu->popup_menu = GTK_MENU(gtk_menu_new());
 	

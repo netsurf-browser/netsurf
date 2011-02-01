@@ -1563,11 +1563,11 @@ static void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
  * \param g scaffoliding to attach popup menu to.
  * \return true on success or false on error.
  */
-static bool nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g)
+static bool nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup *group)
 {
 	struct nsgtk_popup_submenu *nmenu;
 
-	nmenu = nsgtk_menu_popup_create(g->window);
+	nmenu = nsgtk_menu_popup_create(group);
 
 	if (nmenu == NULL)
 		return false;
@@ -1610,6 +1610,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	struct gtk_scaffolding *g = malloc(sizeof(*g));
 	char *searchname;
 	int i;
+	GtkAccelGroup *group;
 
 	if (g == NULL) {
 		warn_user("NoMemory", 0);
@@ -1677,7 +1678,10 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	nsgtk_toolbar_customization_load(g);
 	nsgtk_toolbar_set_physical(g);
 
-	g->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(glade_xml_get_widget(g->xml, "menubar")), g->window);
+	group = gtk_accel_group_new();
+	gtk_window_add_accel_group(g->window, group);
+
+	g->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(glade_xml_get_widget(g->xml, "menubar")), group);
 
 
 	g->preferences_dialog = NULL;
@@ -1848,7 +1852,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			nsgtk_window_tool_bar_clicked, g);
 
 	/* create popup menu */
-	nsgtk_new_scaffolding_popup(g);
+	nsgtk_new_scaffolding_popup(g, group);
 
 	/* set up the menu signal handlers */
 	nsgtk_scaffolding_toolbar_init(g);
