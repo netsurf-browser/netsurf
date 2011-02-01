@@ -21,10 +21,15 @@
  *
  */
 
+#define WITH_SYSTEM_COLOUR
+#ifdef WITH_SYSTEM_COLOUR
+#include <libwapcaplet/libwapcaplet.h>
+#include <libcss/libcss.h>
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "desktop/plot_style.h"
 
 struct gui_system_colour_ctx {
 	const char *name;
@@ -282,3 +287,4 @@ css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 
 	return CSS_INVALID;
 }
+#endif
