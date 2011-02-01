@@ -106,3 +106,16 @@
 #define SEARCH_BT_SEARCH 6  /* BUTTON in tree SEARCH */
 #define SEARCH_CB_FWD 7  /* BOX in tree SEARCH */
 #define SEARCH_LBL_FWD 8  /* STRING in tree SEARCH */
+
+#define DOWNLOAD 11  /* form/dial */
+/* Width ist 400, code depends on that! If you change it, change it in download.c */
+#define DOWNLOAD_PROGRESS 1  /* BOX in tree DOWNLOAD */
+#define DOWNLOAD_PROGRESS_DONE 2  /* BOX in tree DOWNLOAD */
+#define DOWNLOAD_FILENAME 3  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_BT_ABORT 4  /* BUTTON in tree DOWNLOAD */
+#define DOWNLOAD_BT_PAUSE 5  /* BUTTON in tree DOWNLOAD */
+#define DOWNLOAD_CB_CLOSE_RDY 6  /* BOXCHAR in tree DOWNLOAD */
+#define DOWNLOAD_LBL_CLOSE_RDY 7  /* STRING in tree DOWNLOAD */
+#define DOWNLOAD_LBL_BYTES 8  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_LBL_PERCENT 9  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_LBL_SPEED 10  /* TEXT in tree DOWNLOAD */

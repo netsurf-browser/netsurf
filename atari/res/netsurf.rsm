@@ -1,9 +1,9 @@
 ResourceMaster v3.65   
-#C 11@0@0@0@
+#C 12@0@0@0@
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@1@1@1@1@
-#M 20010100@17741@7728@547@
+#M 20010100@17741@7728@555@
 #T 0@1@MAINMENU@@60@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -78,7 +78,7 @@ ResourceMaster v3.65
 #O 14@27@BT_SCROLL_D@@
 #O 15@20@BOX_V@@
 #O 16@20@MOVER_V@@
-#T 7@2@THROBBER@@9@@
+#T 7@2@THROBBER@@14@@
 #T 8@2@SLIDER@@9@@
 #O 1@27@BT_SCROLL_L@@
 #O 2@20@BOX_H@@
@@ -101,4 +101,15 @@ ResourceMaster v3.65
 #O 6@26@BT_SEARCH@@
 #O 7@20@CB_FWD@@
 #O 8@28@LBL_FWD@@
-#c 12914@
+#T 11@2@DOWNLOAD@@11@@
+#O 1@20@PROGRESS@Width ist 400, code depends on that! If you change it, change it in download.c@
+#O 2@20@PROGRESS_DONE@@
+#O 3@21@FILENAME@@
+#O 4@26@BT_ABORT@@
+#O 5@26@BT_PAUSE@@
+#O 6@27@CB_CLOSE_RDY@@
+#O 7@28@LBL_CLOSE_RDY@@
+#O 8@21@LBL_BYTES@@
+#O 9@21@LBL_PERCENT@@
+#O 10@21@LBL_SPEED@@
+#c 21253@
