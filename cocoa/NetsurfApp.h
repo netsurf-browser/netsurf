@@ -27,3 +27,5 @@
 @property (readwrite, assign, nonatomic) BrowserViewController *frontTab;
 
 @end
+
+NSString *cocoa_get_user_path( NSString *fileName );

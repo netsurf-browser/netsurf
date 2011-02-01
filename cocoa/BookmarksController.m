@@ -20,6 +20,7 @@
 #import "cocoa/Tree.h"
 #import "cocoa/NetsurfApp.h"
 #import "cocoa/BrowserViewController.h"
+#import "cocoa/gui.h"
 
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
@@ -29,12 +30,18 @@
 
 @synthesize defaultMenu;
 
+static const char *cocoa_hotlist_path( void )
+{
+	NSString *path = [[NSUserDefaults standardUserDefaults] stringForKey: kHotlistFileOption];
+	return [path UTF8String];
+}
+
 - init;
 {
 	if ((self = [super init]) == nil) return nil;
 	
 	tree = [[Tree alloc] initWithFlags: hotlist_get_tree_flags()];
-	hotlist_initialise( [tree tree], "/Users/sven/hotlist", "" );
+	hotlist_initialise( [tree tree], cocoa_hotlist_path(), "" );
 	nodeForMenu = NSCreateMapTable( NSNonOwnedPointerMapKeyCallBacks, NSNonOwnedPointerMapValueCallBacks, 0 );
 	
 	return self;
@@ -43,7 +50,7 @@
 - (void) dealloc;
 {
 	NSFreeMapTable( nodeForMenu );
-	hotlist_cleanup( "/Users/sven/hotlist" );
+	hotlist_cleanup( cocoa_hotlist_path() );
 	[tree release];
 	[super dealloc];
 }
@@ -124,6 +131,14 @@
 	}
 	
 	return YES;
+}
+
+
++ (void) initialize;
+{
+	[[NSUserDefaults standardUserDefaults] registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
+															  cocoa_get_user_path( @"Bookmarks.html" ), kHotlistFileOption,
+															  nil]];
 }
 
 @end

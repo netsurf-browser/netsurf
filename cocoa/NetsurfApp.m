@@ -44,7 +44,6 @@
 #define NETSURF_HOMEPAGE "http://www.netsurf-browser.org/welcome/"
 #endif
 
-static NSString *cocoa_get_user_path( NSString *fileName ) ;
 
 @implementation NetSurfApp
 
@@ -56,7 +55,6 @@ static NSString *cocoa_get_user_path( NSString *fileName ) ;
 	[defaults registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys: 
 								 cocoa_get_user_path( @"Cookies" ), kCookiesFileOption,
 								 cocoa_get_user_path( @"URLs" ), kURLsFileOption,
-								 cocoa_get_user_path( @"Hotlist" ), kHotlistFileOption,
 								 [NSString stringWithUTF8String: NETSURF_HOMEPAGE], kHomepageURLOption,
 								 nil]];
 	
@@ -134,7 +132,7 @@ static NSString *cocoa_get_preferences_path( void )
 	return netsurfPath;
 }
 
-static NSString *cocoa_get_user_path( NSString *fileName ) 
+NSString *cocoa_get_user_path( NSString *fileName ) 
 {
 	return [cocoa_get_preferences_path() stringByAppendingPathComponent: fileName];
 }
