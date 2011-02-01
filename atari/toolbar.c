@@ -163,13 +163,24 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	int idx;
 	short pxy[4];
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
-	idx = gw->root->toolbar->throbber.index+1;
+	if( gw->root->toolbar->throbber.running == false ) {
+		idx = THROBBER_INACTIVE_INDEX;	
+	} else {
+		idx = gw->root->toolbar->throbber.index;
+		if( idx > THROBBER_MAX_INDEX || idx < THROBBER_MIN_INDEX ) {
+			idx = THROBBER_MIN_INDEX;
+		}
+	}
+	
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 
 	vsf_interior( vdih , 1 );
-	vsf_color( vdih, LWHITE );
+	if(app.nplanes > 2 )
+		vsf_color( vdih, LWHITE );
+	else 
+		vsf_color( vdih, WHITE );
 	pxy[0] = (short)buff[4];
 	pxy[1] = (short)buff[5];
 	pxy[2] = (short)buff[4] + buff[6]-1;
@@ -264,7 +275,8 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 			vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
 			cw = vqw[0];
 		}
-		for( curx = work.g_x + 3, i=tb->url.scrollx ; (curx < clip.g_x + clip.g_w) && i < MIN(tb->url.used-1, mchars); i++ ){
+		int maxx = (clip.g_x + clip.g_w) - cw;
+		for( curx = work.g_x + 3, i=tb->url.scrollx ; curx < maxx && i < tb->url.used-1; i++ ){
 			t[0] = tb->url.text[i];
 			v_gtext( vdih, curx, work.g_y + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2) + 2, (char*)&t );
 			if( !atari_sysinfo.sfont_monospaced ) {
@@ -423,8 +435,8 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	t->throbber.comp->rect.g_w = 32;
 	t->throbber.comp->bounds.max_height = TOOLBAR_HEIGHT;
 	t->throbber.comp->bounds.max_width = 32;
-	t->throbber.index = 0;
-	t->throbber.max_index = 7;
+	t->throbber.index = THROBBER_MIN_INDEX;
+	t->throbber.max_index = THROBBER_MAX_INDEX;
 	t->throbber.running = false;
 	mt_CompEvntAttach( &app, t->throbber.comp, WM_REDRAW, evnt_throbber_redraw );
 	mt_CompDataAttach( &app, t->throbber.comp, CDT_OWNER, gw );

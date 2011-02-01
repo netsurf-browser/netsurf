@@ -101,15 +101,14 @@ const char * cfg_homepage_url;
 
 extern GEM_PLOTTER plotter;
 
-
 void gui_multitask(void)
 {
 	short winloc[4];
 	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON | MU_TIMER;
-	if( ((clock() * 1000 / CLOCKS_PER_SEC) - last_multi_task ) < 50 || lck_multi == true   ) {
+	if( /*((clock() * 1000 / CLOCKS_PER_SEC) - last_multi_task ) < 50 || */ lck_multi == true   ) {
 		return;
 	}
-	/* 	todo: instead of time, use dumm window message here, 
+	/* 	todo: instead of time, use dummy window message here, 
 		timer takes at least 10ms, WMs take about 1ms!
 	*/
 	evnt.timer = 1;
@@ -148,7 +147,7 @@ void gui_poll(bool active)
 	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON ;
 	/* right now, schedule is only used for the spinner, */
 	/* spinner code must be reviewed, so disable schedule for now */
-	/* timeout = schedule_run(); */
+	timeout = schedule_run(); 
 	if ( active )
 		timeout = 1;
 
@@ -190,8 +189,9 @@ void gui_poll(bool active)
 	last_multi_task = clock()*1000 / CLOCKS_PER_SEC;
 	struct gui_window * g;
 	for( g = window_list; g != NULL; g=g->next ) {
-		if( browser_redraw_required( g ) )
+		if( browser_redraw_required( g ) ){
 			browser_redraw( g );
+		}
 	}
 }
 
@@ -215,7 +215,7 @@ gui_create_browser_window(struct browser_window *bw,
 	switch(bw->browser_window_type) {
 		case BROWSER_WINDOW_NORMAL:
 
-			LOG(("normal browser window: %p\n", gw));
+			LOG(("normal browser window: %p, bw: %p\n", gw, bw));
 			window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR );
 			if( gw->root->handle ) {
 				window_open( gw );
@@ -574,8 +574,9 @@ void gui_window_set_url(struct gui_window *w, const char *url)
 static void throbber_advance( void * data )
 {
 	LGRECT work;
-	return;
 	struct gui_window * gw = (struct gui_window *)data;
+	if( gw->root == NULL )
+		return;
 	if( gw->root->toolbar == NULL )
 		return;
 	if( gw->root->toolbar->throbber.running == false )
@@ -584,23 +585,23 @@ static void throbber_advance( void * data )
 						WF_WORKXYWH, &work);
 	gw->root->toolbar->throbber.index++;
 	if( gw->root->toolbar->throbber.index > gw->root->toolbar->throbber.max_index )
-		gw->root->toolbar->throbber.index = 0;
-	schedule(25, throbber_advance, gw );
+		gw->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
+	/*printf("throb adv: %d\n",gw->root->toolbar->throbber.index );*/
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
+	schedule(40, throbber_advance, gw );
 }
 
 void gui_window_start_throbber(struct gui_window *w)
 {
 	LGRECT work;
-	return;
 	if (w == NULL)
 		return;
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
 						WF_WORKXYWH, &work);
 	w->root->toolbar->throbber.running = true;
-	w->root->toolbar->throbber.index = 0;
-	schedule(25, throbber_advance, w );
+	w->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
+	schedule(40, throbber_advance, w );
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
 }
@@ -608,7 +609,6 @@ void gui_window_start_throbber(struct gui_window *w)
 void gui_window_stop_throbber(struct gui_window *w)
 {
 	LGRECT work;
-	return;
 	if (w == NULL)
 		return;
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
@@ -674,6 +674,7 @@ save_complete_gui_save(const char *path,
 		       content_type type)
 {
 	TODO();
+	LOG(("%s", filename));
 	return false;
 }
 
@@ -684,6 +685,7 @@ save_complete_htmlSaveFileFormat(const char *path,
 				 const char *encoding,
 				 int format)
 {
+	LOG(("%s", filename));
 	TODO();
 	return 0;
 }
@@ -718,6 +720,7 @@ bool gui_window_frame_resize_start(struct gui_window *w)
 void gui_window_save_link(struct gui_window *g, const char *url,
 		const char *title)
 {
+	LOG(("%s -> %s", title, url ));
 	TODO();
 }
 
@@ -733,11 +736,13 @@ void gui_window_set_scale(struct gui_window *w, float scale)
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *w)
 {
+	LOG((""));
 	TODO();
 }
 
 void gui_drag_save_selection(struct selection *s, struct gui_window *w)
 {
+	LOG((""));
 	TODO();
 }
 
@@ -1120,6 +1125,12 @@ int main(int argc, char** argv)
 	char messages[PATH_MAX];
 
 	setbuf(stderr, NULL);
+	setbuf(stdout, NULL);
+#ifdef WITH_DBG_LOGFILE
+	verbose_log = true;
+	freopen("stdout.log", "a+", stdout);
+	freopen("stderr.log", "a+", stderr);
+#endif
 
 	ApplInit();
 
@@ -1132,12 +1143,19 @@ int main(int argc, char** argv)
 	netsurf_init(&argc, &argv, options, messages);
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
-	//browser_window_create(cfg_homepage_url, 0, 0, true, false);
+	browser_window_create(cfg_homepage_url, 0, 0, true, false);
 	graf_mouse( ARROW , NULL);
 	netsurf_main_loop();
 	netsurf_exit();
+	if( options_file_location != NULL ){
+		free( options_file_location );
+	}
 	LOG(("ApplExit"));
 	ApplExit();
+#ifdef WITH_DBG_LOGFILE	
+	fclose(stdout);
+#endif
+
 	return 0;
 }
 
