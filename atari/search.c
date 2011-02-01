@@ -170,7 +170,8 @@ static bool form_changed( WINDOW * w )
 }
 
 
-static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void *unused2) {
+static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void *unused2) 
+{
 
 	ObjcChange( OC_FORM, win, index, ~SELECTED, TRUE);
 	bool fwd;
@@ -197,7 +198,8 @@ static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void
 
 }
 
-static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unused2) {
+static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unused2) 
+{
 
 	short newstate;
 	OBJECT * obj = ObjcTree(OC_FORM, get_search_session(win)->formwind );
@@ -206,7 +208,8 @@ static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unu
 	ObjcChange( OC_FORM, win, index, newstate , TRUE);
 }
 
-static void __CDECL evnt_close( WINDOW *win, short buff[8]) {
+static void __CDECL evnt_close( WINDOW *win, short buff[8]) 
+{
 	/* Free Search Contexts */
 	/* todo: destroy search context, if any */
 	destroy_search_session( get_search_session(win) );
@@ -222,10 +225,9 @@ SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
 	if( tree == NULL ){
 		return( NULL );
 	} 
-	sfs = malloc(sizeof(struct s_search_form_session));
+	sfs = calloc(1, sizeof(struct s_search_form_session));
 	if( sfs == NULL )
 		return( NULL );
-	memset(sfs, 0, sizeof(struct s_search_form_session));
 	title = (char*)messages_get("FindTextNS");
 	if( title == NULL )
 		title = (char*)"Find text ...";
@@ -239,7 +241,6 @@ SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
 	}
 	current = sfs;
 	sfs->bw = gw->browser->bw;
-	/* todo: check if we already have an form for this gw! */
 	sfs->formwind = mt_FormCreate( &app, tree, WAT_FORM,
 								NULL, title, 
 								NULL, true, false);
