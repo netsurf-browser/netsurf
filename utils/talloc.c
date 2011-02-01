@@ -418,7 +418,7 @@ static inline int _talloc_free(void *ptr)
 				struct talloc_chunk *p = talloc_parent_chunk(ptr);
 				if (p) new_parent = TC_PTR_FROM_CHUNK(p);
 			}
-			talloc_steal(new_parent, child);
+			(void) talloc_steal(new_parent, child);
 		}
 	}
 
@@ -563,7 +563,7 @@ int talloc_unlink(const void *context, void *ptr)
 		return -1;
 	}
 
-	talloc_steal(new_parent, ptr);
+	(void) talloc_steal(new_parent, ptr);
 
 	return 0;
 }
@@ -718,7 +718,7 @@ void talloc_free_children(void *ptr)
 				struct talloc_chunk *p = talloc_parent_chunk(ptr);
 				if (p) new_parent = TC_PTR_FROM_CHUNK(p);
 			}
-			talloc_steal(new_parent, child);
+			(void) talloc_steal(new_parent, child);
 		}
 	}
 }
