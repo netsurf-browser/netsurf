@@ -38,4 +38,6 @@ extern NS_ATARI_SYSINFO atari_sysinfo;
 
 void init_os_info(void);
 int tos_getcookie( long tag, long * value );
+void fix_path(char * path);
+char * gdos_realpath(const char * path, char * rpath);
 #endif

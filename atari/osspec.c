@@ -1,5 +1,7 @@
 #include <sys/types.h>
+#include <limits.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,20 +12,7 @@
 #include "atari/osspec.h"
 
 NS_ATARI_SYSINFO atari_sysinfo;
-/*
-short appl_xgetinfo( int16_t type, int16_t *out1, int16_t *out2, 
-					 int16_t *out3, int16_t *out4 )
-{
-	bool has_agi;
-	has_agi = ((app.aes_global[0] == 0x399 && atari_sysinfo.gdosversion == 0x1900) 
-				|| (app.aes_global[0] > 0x400)  
-				|| ( appl_find("?AGI") >= 0));
-	if(has_agi){
-		return( mt_appl_getinfo( type, out1, out2, out3, out4, app.aes_global) );
-	} else {
-		return( 0 );
-	}
-}*/
+
 
 void init_os_info(void)
 {
@@ -63,4 +52,77 @@ int tos_getcookie(long tag, long * value)
 		} while( (cptr++)->c != 0L );
 	}
 	return( C_NOTFOUND );
+}
+
+/* convert nonsense getcwd path (returned by mintlib getcwd on plain TOS) */
+void fix_path(char * path)
+{
+	char npath[PATH_MAX];
+	/* only apply fix to paths that contain /dev/ */
+	if( strlen(path) < 6 ){
+		return;
+	}
+	if( strncmp(path, "/dev/", 5) != 0 ) {
+		return;
+	}
+	strncpy((char*)&npath, path, PATH_MAX);
+	npath[0] = path[5];
+	npath[1] = ':';
+	npath[2] = 0;
+	strcat((char*)&npath, &path[6]);
+	strcpy(path, (char*)&npath);
+}
+
+/* 
+ a fixed version of realpath() which returns valid 
+ paths for TOS which have no root fs. (/ , U: )
+*/
+char * gdos_realpath(const char * path, char * rpath)
+{
+	size_t l;
+	size_t i;
+	char old;
+	char fsep = 0x5C;
+	if( rpath == NULL ){
+		return( NULL );
+	}
+	if( atari_sysinfo.gdosversion > TOS4VER ){
+		return( realpath(path, rpath) );
+	}
+
+	if( fsep == '/') {
+		/* replace '\' with / */
+		old = 0x5C; /* / */
+	} else {
+		/* replace '/' with \ */
+		old = '/';
+	}
+
+	if( path[0] != '/' && path[0] != 0x5c && path[1] != ':') {
+		/* it is not an absolute path */
+		char cwd[PATH_MAX];
+		getcwd((char*)&cwd, PATH_MAX);
+		fix_path((char*)&cwd);
+		strcpy(rpath, (char*)&cwd);
+		l = strlen(rpath);
+		if(rpath[l-1] != 0x5C && rpath[l-1] != '/') {
+			rpath[l] = fsep;
+			rpath[l+1] = 0;
+		}
+		if( (path[1] == '/' || path[1] == 0x5C ) ) {
+			strcat(rpath, &path[2]);
+		} else {
+			strcat(rpath, path);
+		}
+	} else {
+		strcpy(rpath, path);
+	}
+	/* convert path seperator to configured value: */
+	l = strlen(rpath);
+	for( i = 0; i<l-1; i++){
+		if( rpath[i] == old ){
+			rpath[i] = fsep;
+		}
+	}
+	return( rpath );	
 }
