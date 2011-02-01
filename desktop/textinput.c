@@ -177,6 +177,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 
 	struct box *inline_container, *text_box;
 	plot_font_style_t fstyle;
+	size_t char_offset = 0;
 
 	inline_container = textarea->children;
 
@@ -190,7 +191,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 		nsfont.font_position_in_string(&fstyle, text_box->text,
 				text_box->length,
 				(unsigned int)(x - text_box->x),
-				(size_t *) pchar_offset, ppixel_offset);
+				&char_offset, ppixel_offset);
 	} else {
 		/* find the relevant text box */
 		y -= inline_container->y;
@@ -214,7 +215,7 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 					text_box->text,
 					text_box->length,
 					textarea->width,
-					(size_t *) pchar_offset,
+					&char_offset,
 					ppixel_offset);
 		} else {
 			/* in a text box */
@@ -235,10 +236,12 @@ struct box *textarea_get_position(struct box *textarea, int x, int y,
 					text_box->text,
 					text_box->length,
 					(unsigned int)(x - text_box->x),
-					(size_t *) pchar_offset,
+					&char_offset,
 					ppixel_offset);
 		}
 	}
+
+	*pchar_offset = char_offset;
 
 	assert(text_box);
 	return text_box;
