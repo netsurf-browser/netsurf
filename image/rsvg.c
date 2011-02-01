@@ -46,8 +46,8 @@
 #include "utils/messages.h"
 #include "utils/talloc.h"
 
-static inline void rsvg_argb_to_abgr(uint32_t pixels[], int width, int height,
-				size_t rowstride);
+static inline void rsvg_argb_to_abgr(uint8_t *pixels, 
+		int width, int height, size_t rowstride);
 
 bool rsvg_create(struct content *c, const struct http_parameter *params)
 {
@@ -88,30 +88,31 @@ bool rsvg_process_data(struct content *c, const char *data,
 }
 
 /** Convert Cairo's ARGB output to NetSurf's favoured ABGR format.  It converts
- * the data in-place.  Operation is endian-swap and rotate right 8 bits.
+ * the data in-place. 
  *
- * \param pixels	Array of 32-bit values, in the form of ARGB.  This will
+ * \param pixels	Pixel data, in the form of ARGB.  This will
  *			be overwritten with new data in the form of ABGR.
  * \param width		Width of the bitmap
  * \param height	Height of the bitmap
  * \param rowstride	Number of bytes to skip after each row (this
  *			implementation requires this to be a multiple of 4.)
  */
-static inline void rsvg_argb_to_abgr(uint32_t pixels[], int width, int height,
-				size_t rowstride)
+static inline void rsvg_argb_to_abgr(uint8_t *pixels, 
+		int width, int height, size_t rowstride)
 {
-	uint32_t *p = &pixels[0];
+	uint8_t *p = pixels;
 
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
-			uint32_t e = p[x];
-			uint32_t s = (((e & 0xff) << 24) |
-					((e & 0xff00) << 8) |
-					((e & 0xff0000) >> 8) |
-					((e & 0xff000000) >> 24));
-			p[x] = (s >> 8) | (s << 24);
+			/* Swap R and B */
+			const uint8_t r = p[x+3];
+
+			p[x+3] = p[x];
+
+			p[x] = r;
 		}
-		p += (rowstride >> 2);
+
+		p += rowstride;
 	}
 }
 
@@ -166,7 +167,7 @@ bool rsvg_convert(struct content *c)
 	}
 
 	rsvg_handle_render_cairo(d->rsvgh, d->ct);
-	rsvg_argb_to_abgr((uint32_t *)bitmap_get_buffer(d->bitmap),
+	rsvg_argb_to_abgr(bitmap_get_buffer(d->bitmap),
 				c->width, c->height,
 				bitmap_get_rowstride(d->bitmap));
 
