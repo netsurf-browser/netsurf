@@ -221,6 +221,10 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 		case GUI_POINTER_CARET:
 			[[NSCursor IBeamCursor] set];
 			break;
+			
+		case GUI_POINTER_MOVE:
+			[[NSCursor closedHandCursor] set];
+			break;
 
 		default:
 			NSLog( @"Other cursor %d requested", shape );
