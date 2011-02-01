@@ -93,6 +93,7 @@ fi
 set -o verbose
 rm $dst -r
 mkdir $dst
+mkdir $dst"download"
 mkdir $dst"res"
 mkdir $dst"res/icons"
 mkdir $dst"res/fonts"
@@ -202,7 +203,7 @@ enable_PDF_password:0
 render_resample:0
 downloads_clear:0
 request_overwrite:1
-downloads_directory:./
+downloads_directory:./download
 url_file:./res/URLs
 button_type:2
 disable_popups:0
