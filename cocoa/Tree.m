@@ -106,8 +106,8 @@ static void tree_get_window_dimensions( int *width, int *height, void *data )
 	
 	NSSize size = [delegate treeWindowSize: (Tree *)data];
 
-	*width = cocoa_pt_to_px( size.width );
-	*height = cocoa_pt_to_px( size.height );
+	if (width != NULL) *width = cocoa_pt_to_px( size.width );
+	if (height != NULL) *height = cocoa_pt_to_px( size.height );
 }
 
 @end

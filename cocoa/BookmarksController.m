@@ -118,7 +118,11 @@ static const char *cocoa_hotlist_path( void )
 
 - (IBAction) addBookmark: (id) sender;
 {
-	NSLog( @"TODO: add bookmark" );
+	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
+	if (bw && bw->current_content) {
+		const char *url = content_get_url( bw->current_content );
+		hotlist_add_page( url );
+	}
 }
 
 - (BOOL) validateUserInterfaceItem: (id) item;
@@ -146,6 +150,21 @@ static const char *cocoa_hotlist_path( void )
 	[[NSUserDefaults standardUserDefaults] registerDefaults: [NSDictionary dictionaryWithObjectsAndKeys:
 															  cocoa_get_user_path( @"Bookmarks.html" ), kHotlistFileOption,
 															  nil]];
+}
+
+- (IBAction) editSelected: (id) sender;
+{
+	hotlist_edit_selected();
+}
+
+- (IBAction) deleteSelected: (id) sender;
+{
+	hotlist_delete_selected();
+}
+
+- (IBAction) addFolder: (id) sender;
+{
+	hotlist_add_folder();
 }
 
 @end

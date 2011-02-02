@@ -34,4 +34,8 @@
 - (IBAction) openBookmarkURL: (id) sender;
 - (IBAction) addBookmark: (id) sender;
 
+- (IBAction) editSelected: (id) sender;
+- (IBAction) deleteSelected: (id) sender;
+- (IBAction) addFolder: (id) sender;
+
 @end
