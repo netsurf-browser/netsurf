@@ -20,6 +20,7 @@
 #import "cocoa/Tree.h"
 
 #import "desktop/plotters.h"
+#import "desktop/textinput.h"
 
 @interface TreeView () <TreeDelegate>
 @end
@@ -34,6 +35,11 @@
 }
 
 - (BOOL) isFlipped;
+{
+	return YES;
+}
+
+- (BOOL) acceptsFirstResponder;
 {
 	return YES;
 }
@@ -96,6 +102,121 @@
 		if ([event clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
 		[tree mouseAction: modifierFlags atPoint: point];
 	}
+}
+
+//MARK: Keyboard events
+
+- (void) keyDown: (NSEvent *)theEvent;
+{
+	[self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
+}
+
+- (void) insertText: (id)string;
+{
+	for (NSUInteger i = 0, length = [string length]; i < length; i++) {
+		unichar ch = [string characterAtIndex: i];
+		[tree keyPress: ch];
+	}
+}
+
+- (void) moveLeft: (id)sender;
+{
+	[tree keyPress: KEY_LEFT];
+}
+
+- (void) moveRight: (id)sender;
+{
+	[tree keyPress: KEY_RIGHT];
+}
+
+- (void) moveUp: (id)sender;
+{
+	[tree keyPress: KEY_UP];
+}
+
+- (void) moveDown: (id)sender;
+{
+	[tree keyPress: KEY_DOWN];
+}
+
+- (void) deleteBackward: (id)sender;
+{
+	[tree keyPress: KEY_DELETE_LEFT];
+}
+
+- (void) deleteForward: (id)sender;
+{
+	[tree keyPress: KEY_DELETE_RIGHT];
+}
+
+- (void) cancelOperation: (id)sender;
+{
+	[tree keyPress: KEY_ESCAPE];
+}
+
+- (void) scrollPageUp: (id)sender;
+{
+	[tree keyPress: KEY_PAGE_UP];
+}
+
+- (void) scrollPageDown: (id)sender;
+{
+	[tree keyPress: KEY_PAGE_DOWN];
+}
+
+- (void) insertTab: (id)sender;
+{
+	[tree keyPress: KEY_TAB];
+}
+
+- (void) insertBacktab: (id)sender;
+{
+	[tree keyPress: KEY_SHIFT_TAB];
+}
+
+- (void) moveToBeginningOfLine: (id)sender;
+{
+	[tree keyPress: KEY_LINE_START];
+}
+
+- (void) moveToEndOfLine: (id)sender;
+{
+	[tree keyPress: KEY_LINE_END];
+}
+
+- (void) moveToBeginningOfDocument: (id)sender;
+{
+	[tree keyPress: KEY_TEXT_START];
+}
+
+- (void) moveToEndOfDocument: (id)sender;
+{
+	[tree keyPress: KEY_TEXT_END];
+}
+
+- (void) insertNewline: (id)sender;
+{
+	[tree keyPress: KEY_NL];
+}
+
+- (void) selectAll: (id)sender;
+{
+	[tree keyPress: KEY_SELECT_ALL];
+}
+
+- (void) copy: (id) sender;
+{
+	[tree keyPress: KEY_COPY_SELECTION];
+}
+
+- (void) cut: (id) sender;
+{
+	[tree keyPress: KEY_CUT_SELECTION];
+}
+
+- (void) paste: (id) sender;
+{
+	[tree keyPress: KEY_PASTE];
 }
 
 //MARK: -
