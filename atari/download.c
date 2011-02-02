@@ -50,7 +50,13 @@
 
 static void gui_download_window_destroy( struct gui_download_window * gdw );
 
-static void __CDECL evnt_bt_abort_click( WINDOW *win, int index, int unused, void * data)
+static void __CDECL evnt_bt_abort_click
+(
+ 	WINDOW *win, 
+	int index, 
+	int unused, 
+	void * data 
+)
 {
 	struct gui_download_window * dw = (struct gui_download_window *)data;
 	assert( dw != NULL );
@@ -60,7 +66,13 @@ static void __CDECL evnt_bt_abort_click( WINDOW *win, int index, int unused, voi
 	}
 }
 
-static void __CDECL evnt_cbrdy_click( WINDOW *win, int index, int unused, void * data)
+static void __CDECL evnt_cbrdy_click
+( 
+	WINDOW *win, 
+	int index, 
+	int unused, 
+	void * data
+)
 {
 	struct gui_download_window * dw = (struct gui_download_window *)data;
 	assert( dw != NULL );
@@ -106,6 +118,9 @@ static void gui_download_window_destroy( struct gui_download_window * gdw )
 		fclose(gdw->fd);
 		gdw->fd = NULL;
 	}
+	if( gdw->fbuf != NULL ){
+		free( gdw->fbuf );	
+	}
 
 	free( gdw );
 }
@@ -133,9 +148,11 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		return( NULL );
 	gdw->ctx = ctx;
 	gdw->abort = false;
-	gdw->start = clock() / CLOCKS_PER_SEC; 
+	gdw->start = clock() / CLOCKS_PER_SEC;
+	gdw->lastrdw = 0; 
 	gdw->status = NSATARI_DOWNLOAD_WORKING;
 	gdw->parent = parent;
+	gdw->fbufsize = MAX(BUFSIZ, 48000);
 	gdw->size_downloaded = 0;
 	gdw->size_total = download_context_get_total_length(ctx);
 	url = download_context_get_url(ctx);
@@ -179,6 +196,10 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		gui_download_window_destroy(gdw);
 		return( NULL );
 	}
+	gdw->fbuf = malloc( gdw->fbufsize+1 );
+	if( gdw->fbuf != NULL ){
+		setvbuf( gdw->fd, gdw->fbuf, _IOFBF, gdw->fbufsize ); 
+	}
 	gdw->form = mt_FormCreate( &app, tree, WAT_FORM,
 								NULL, (char*)"Download", 
 								NULL, true, true );
@@ -189,8 +210,12 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	}
 
 	tree = ObjcTree(OC_FORM, gdw->form );
-	ObjcAttachFormFunc( gdw->form, DOWNLOAD_BT_ABORT, evnt_bt_abort_click, gdw );
-	ObjcAttachFormFunc( gdw->form, DOWNLOAD_CB_CLOSE_RDY, evnt_cbrdy_click, gdw );
+	ObjcAttachFormFunc( gdw->form, DOWNLOAD_BT_ABORT, 
+		evnt_bt_abort_click, gdw 
+	);
+	ObjcAttachFormFunc( gdw->form, DOWNLOAD_CB_CLOSE_RDY, 
+		evnt_cbrdy_click, gdw 
+	);
 	EvntDataAdd( gdw->form, WM_CLOSED, evnt_close, gdw, EV_TOP);
 	strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
 	ObjcString( tree, DOWNLOAD_FILENAME, (char*)&gdw->lbl_file );
@@ -199,7 +224,9 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	ObjcString( tree, DOWNLOAD_LBL_SPEED, (char*)&gdw->lbl_speed );
 
 	free( filename );
-	LOG(("created download: %s (%d)",gdw->destination, gdw->size_total));
+	LOG(("created download: %s (total size: %d)",
+		gdw->destination, gdw->size_total
+	));
 
 	return gdw;
 }
@@ -208,7 +235,8 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
 	uint32_t p = 0;
-	uint32_t sdiff = clock() / CLOCKS_PER_SEC - dw->start;
+	uint32_t tnow = clock() / CLOCKS_PER_SEC;
+	uint32_t sdiff = tnow - dw->start;
 	float speed;
 	float pf = 0;
 	OBJECT * tree;
@@ -222,34 +250,39 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 	}
 
 	/* save data */
-	fwrite( data , sizeof(unsigned char), size, dw->fd );
+	fwrite( data , size, sizeof(unsigned char),dw->fd );
 	dw->size_downloaded += size;
 
 	/* Update the progress bar... */
-	tree = ObjcTree(OC_FORM, dw->form );
-	if( dw->size_total > 0 ){
-		p = (dw->size_downloaded *100) / dw->size_total;
+	if( tnow - dw->lastrdw > 1 ) {
+		dw->lastrdw = tnow;
+		tree = ObjcTree(OC_FORM, dw->form );
+		if( dw->size_total > 0 ){
+			p = (dw->size_downloaded *100) / dw->size_total;
+		}
+		speed = dw->size_downloaded / sdiff;
+		tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*4, 400 ), 1);
+		if( dw->size_total > 0 ){  
+			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
+				"%lu%s", p, "%" 
+			);
+		} else {
+			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
+				"%s", "?%"
+			);
+		}
+		snprintf( (char*)&dw->lbl_speed, MAX_SLEN_LBL_SPEED, "%s/s", 
+			human_friendly_bytesize(speed)
+		);
+		snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",  
+			human_friendly_bytesize(dw->size_downloaded),
+			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : "?"
+		);
+		ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
+		ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
+		ObjcString( tree, DOWNLOAD_LBL_SPEED, (char*)&dw->lbl_speed );
+		snd_rdw( dw->form );
 	}
-	speed = dw->size_downloaded / sdiff;
-	tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*4, 400 ), 1);
-	if( dw->size_total > 0 ){  
-		snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, "%lu%s", p, "%" );
-	} else {
-		snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, "%s", "?%");
-	}
-	snprintf( (char*)&dw->lbl_speed, MAX_SLEN_LBL_SPEED, "%s /s", 
-		human_friendly_bytesize(speed)
-	);
-	snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",  
-		human_friendly_bytesize(dw->size_downloaded),
-		(dw->size_total > 0) ? human_friendly_bytesize(dw->size_total) : "?"
-	);
-	ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
-	ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
-	ObjcString( tree, DOWNLOAD_LBL_SPEED, (char*)&dw->lbl_speed );
-	
-	/*ObjcDrawParent(OC_FORM | OC_MSG, dw->form, DOWNLOAD, 1, 4);*/
-	snd_rdw( dw->form );
 	return NSERROR_OK;
 }
 

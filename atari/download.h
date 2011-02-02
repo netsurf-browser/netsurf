@@ -46,8 +46,11 @@ struct gui_download_window {
 	char lbl_speed[MAX_SLEN_LBL_SPEED];
 	char lbl_file[MAX_SLEN_LBL_FILE];
 	uint32_t start;
+	uint32_t lastrdw;
 	uint32_t size_total;
 	uint32_t size_downloaded;
+	char * fbuf;
+	size_t fbufsize;
 	bool abort;
 };
 
