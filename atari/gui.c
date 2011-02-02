@@ -589,7 +589,7 @@ static void throbber_advance( void * data )
 	/*printf("throb adv: %d\n",gw->root->toolbar->throbber.index );*/
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
-	schedule(40, throbber_advance, gw );
+	schedule(50, throbber_advance, gw );
 }
 
 void gui_window_start_throbber(struct gui_window *w)
@@ -601,7 +601,7 @@ void gui_window_start_throbber(struct gui_window *w)
 						WF_WORKXYWH, &work);
 	w->root->toolbar->throbber.running = true;
 	w->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
-	schedule(40, throbber_advance, w );
+	schedule(50, throbber_advance, w );
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
 }
