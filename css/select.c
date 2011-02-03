@@ -179,6 +179,8 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	params.import_pw = NULL;
 	params.color = gui_system_colour;
 	params.color_pw = NULL;
+	params.font = NULL;
+	params.font_pw = NULL;
 
 	error = css_stylesheet_create(&params, alloc, pw, &sheet);
 	if (error != CSS_OK) {
