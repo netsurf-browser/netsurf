@@ -2,6 +2,8 @@
 # Windows target setup
 # ----------------------------------------------------------------------------
 
+  LDFLAGS += ${MINGW_INSTALL_ENV}/lib
+
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
   NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
@@ -18,10 +20,13 @@
 		libparserutils libxml-2.0)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libxml-2.0 libcurl \
 		libhubbub libparserutils libcss libwapcaplet)
+  else
+    LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lxml2 -lcurl -lz
   endif
 
-  LDFLAGS += -L${MINGW_INSTALL_ENV}/lib -lparserutils -lssl -lcrypto -lregex \
-	-liconv -lcss -lwapcaplet -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
+  LDFLAGS += -lssl -lcrypto -lregex -liconv \
+	     -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
+
   CFLAGS += -U__STRICT_ANSI__ -mwin32
   # only windows versions after 2000 are supported
   CFLAGS += '-DWINVER=0x0500'
