@@ -2,7 +2,7 @@
 # Windows target setup
 # ----------------------------------------------------------------------------
 
-  LDFLAGS += ${MINGW_INSTALL_ENV}/lib
+  LDFLAGS += -L${MINGW_INSTALL_ENV}/lib
 
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
