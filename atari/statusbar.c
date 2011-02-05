@@ -111,24 +111,26 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 		short curx;
 		short vqw[4];
 		char t[2];
-		short cw = 0;
+		short cw = 8;
 		t[1]=0;
 		if( atari_sysinfo.sfont_monospaced ) {
-			vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+			t[0]='A';
+			int r = vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
 			cw = vqw[0];
 		}
 		vswr_mode( vdih, MD_TRANS );
-		for( curx = work.g_x + 2, i=0 ; (curx < lclip.g_x + lclip.g_w) && i < sb->textlen; i++ ){
-			if( curx >= lclip.g_x ) {
-				t[0] = sb->text[i];
-				v_gtext( vdih, curx, work.g_y + 5, (char*)&t );
-				if( !atari_sysinfo.sfont_monospaced ) {
-					vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
-					curx += vqw[0];
-				} else {
-					curx += cw;
-				}
+		for( curx = work.g_x + 2, i=0 ; (curx+cw < work.g_x+work.g_w ) && i < sb->textlen; i++ ){
+			t[0] = sb->text[i];
+			if( !atari_sysinfo.sfont_monospaced ) {
+				vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+				cw = vqw[0];
 			}
+			if( curx >= lclip.g_x - cw ) {
+				v_gtext( vdih, curx, work.g_y + 5, (char*)&t );
+			}
+			curx += cw;
+			if( curx >= lclip.g_x + lclip.g_w )
+				break;
 		}	
 	}
 	vswr_mode( vdih, MD_REPLACE );
