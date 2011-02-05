@@ -493,7 +493,7 @@ static int copy_rect( GEM_PLOTTER self, GRECT src, GRECT dst )
 
 static int arc(GEM_PLOTTER self,int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle)
 {
-	plotter_vdi_clip( self, 1);
+	//plotter_vdi_clip( self, 1);
 	vswr_mode( self->vdi_handle, MD_REPLACE );
 	if( pstyle->fill_type == PLOT_OP_TYPE_NONE )
 		return 1;
@@ -508,7 +508,7 @@ static int arc(GEM_PLOTTER self,int x, int y, int radius, int angle1, int angle2
 		vsf_perimeter( self->vdi_handle, 1);
 		v_arc( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius, angle1*10, angle2*10 );
 	}
-	plotter_vdi_clip( self, 0);
+	//plotter_vdi_clip( self, 0);
 	return ( 1 );
 }
 
@@ -536,11 +536,13 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 	short pxy[4];
 	short lt;
 	int sw = pstyle->stroke_width;
+
 	pxy[0] = CURFB(self).x + x0;
 	pxy[1] = CURFB(self).y + y0;
 	pxy[2] = CURFB(self).x + x1;
 	pxy[3] = CURFB(self).y + y1;
-	/* plotter_vdi_clip( self, 1); */
+
+	plotter_vdi_clip( self, 1);
 	if( sw == 0)
 		sw = 1;
 	NSLT2VDI(lt, pstyle)
@@ -548,7 +550,7 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 	vsl_width( self->vdi_handle, (short)sw );
 	vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
 	v_pline(self->vdi_handle, 2, (short *)&pxy );
-	/* plotter_vdi_clip( self, 0); */
+	plotter_vdi_clip( self, 0);
    return ( 1 );
 }
 
@@ -557,8 +559,6 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
    short pxy[10];
 
 	GRECT r, rclip, sclip;
-
-	/* plotter_vdi_clip( self, 1); */
 
 	rclip.g_x = self->clipping.x0;
 	rclip.g_y = self->clipping.y0;
@@ -588,8 +588,6 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 
 	vsf_style( self->vdi_handle, 1);
 	v_bar( self->vdi_handle, (short*)&pxy );
-
-	/* plotter_vdi_clip( self, 0); */
 	return ( 1 );
 }
 
@@ -606,7 +604,7 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 		assert( n < vdi_sysinfo.maxintin ); 
 */
 	/* test this:  */
-	/* plotter_vdi_clip( self, 1); */
+	plotter_vdi_clip( self, 1);
 	vsf_interior( self->vdi_handle, FIS_SOLID );
 	vsf_style( self->vdi_handle, 1);
 	for( i = 0; i<n*2; i=i+2 ) {
@@ -623,7 +621,7 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour);
 		v_pline(self->vdi_handle, n+1,  (short *)&pxy );
 	}
-	/* plotter_vdi_clip( self, 0); */
+	plotter_vdi_clip( self, 0); 
 	return ( 1 );
 }
 
