@@ -152,7 +152,7 @@ http_proxy_auth_user:
 http_proxy_auth_pass:
 suppress_curl_debug:1
 font_size:120
-font_min_size:80
+font_min_size:110
 #font_sans:Sans
 #font_serif:Serif
 #font_mono:Monospace
@@ -183,10 +183,10 @@ window_screen_width:0
 window_screen_height:0
 scale:100
 incremental_reflow:1
-min_reflow_period:200
+min_reflow_period:2000
 tree_icons_dir:./res/icons
 core_select_menu:1
-max_fetchers:16
+max_fetchers:8
 max_fetchers_per_host:2
 max_cached_fetch_handles:6
 target_blank:1
@@ -205,11 +205,9 @@ downloads_clear:0
 request_overwrite:1
 downloads_directory:./download
 url_file:./res/URLs
-button_type:2
 disable_popups:0
-disable_plugins:0
 history_age:0
-hover_urls:0
+hover_urls:1
 focus_new:0
 new_blank:0
 hotlist_path:./res/Hotlist

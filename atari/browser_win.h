@@ -74,6 +74,7 @@ void __CDECL evnt_window_resize( WINDOW *win, short buff[8] );
 static void __CDECL evnt_window_move( WINDOW *win, short buff[8] );
 static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8] );
 static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_keybd(WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_mbutton(WINDOW *win, short buff[8], void *data );

@@ -27,6 +27,7 @@
 #include <windom.h>
 #include <assert.h>
 #include <math.h>
+#include <osbind.h>
 
 #include "utils/log.h"
 #include "desktop/gui.h"
@@ -35,7 +36,13 @@
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
-
+#include "desktop/textinput.h"
+#include "content/content.h"
+#include "content/hlcache.h"
+#include "content/urldb.h"
+#include "css/css.h"
+#include "render/box.h"
+#include "render/form.h"
 #include "atari/gui.h"
 #include "atari/browser_win.h"
 #include "atari/browser.h"
@@ -46,6 +53,7 @@
 #include "atari/toolbar.h"
 #include "atari/statusbar.h"
 #include "atari/plot/plotter.h"
+#include "atari/dragdrop.h"
 
 
 bool cfg_rt_resize = false;
@@ -145,6 +153,7 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 		EvntAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, EV_BOT );
 	}
 	EvntAttach( gw->root->handle, WM_FORCE_MOVE, evnt_window_rt_resize );
+	EvntDataAttach( gw->root->handle, AP_DRAGDROP, evnt_window_dd, gw );
 	EvntDataAdd( gw->root->handle, WM_DESTROY,evnt_window_destroy, NULL, EV_TOP );
 	EvntDataAdd( gw->root->handle, WM_ARROWED,evnt_window_arrowed, NULL, EV_TOP );
 	EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, &evnt_data, EV_BOT);
@@ -331,6 +340,125 @@ bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t,
 	}
 	assert( gw->root != NULL );
 	return( ( element == gw->root->focus.element && t == gw->root->focus.type) );
+}
+
+static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) 
+{
+	struct gui_window * gw = (struct gui_window *)data;
+	char file[DD_NAMEMAX];
+	char name[DD_NAMEMAX];
+	char *buff=NULL;
+	int dd_hdl;
+	int dd_msg; /* pipe-handle */
+	long size;
+	char ext[32];
+	short mx,my,bmstat,mkstat;
+	graf_mkstate(&mx, &my, &bmstat, &mkstat);
+
+	if( gw == NULL )
+		return;
+	if( (win->status & WS_ICONIFY))
+		return;
+
+	dd_hdl = ddopen( wbuff[7], DD_OK);
+	if( dd_hdl<0)
+		return;	/* pipe not open */
+	memset( ext, 0, 32);
+	strcpy( ext, "ARGS");
+	dd_msg = ddsexts( dd_hdl, ext);
+	if( dd_msg<0) 
+		goto error;
+	dd_msg = ddrtry( dd_hdl, (char*)&name[0], (char*)&file[0], (char*)&ext[0], &size);
+	if( size+1 >= PATH_MAX )
+		goto error;
+	if( !strncmp( ext, "ARGS", 4) && dd_msg > 0)
+	{
+		ddreply(dd_hdl, DD_OK);
+		buff = (char*)alloca(sizeof(char)*(size+1));
+		if( buff != NULL )
+		{
+			if( Fread(dd_hdl, size, buff ) == size) 
+			{
+				buff[size] = 0;
+			}
+			LOG(("file: %s, ext: %s, size: %d dropped at: %d,%d\n", 
+				(char*)buff, (char*)&ext, 
+				size, mx, my 
+			));
+			{
+				int posx, posy;
+				struct box *box;
+				struct box *file_box = 0;
+				hlcache_handle *h;
+				int box_x, box_y;
+				LGRECT bwrect;
+				struct browser_window * bw = gw->browser->bw;
+				h = bw->current_content;
+				if (!bw->current_content || content_get_type(h) != CONTENT_HTML)
+					return;
+				browser_get_rect( gw, BR_CONTENT, &bwrect );
+				mx = mx - bwrect.g_x;
+				my = my - bwrect.g_y;
+				if( (mx < 0 || mx > bwrect.g_w) || (my < 0 || my > bwrect.g_h) )
+					return;
+				box = html_get_box_tree(h);
+				box_x = box->margin[LEFT];
+				box_y = box->margin[TOP];
+
+				while ((box = box_at_point(box, mx+gw->browser->scroll.current.x, my+gw->browser->scroll.current.y, &box_x, &box_y, &h))) 
+				{
+					if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
+						continue;
+					if (box->gadget) 
+					{
+						switch (box->gadget->type) 
+						{
+							case GADGET_FILE:
+								file_box = box;
+							break;
+							/*
+							TODO: handle these
+							case GADGET_TEXTBOX:
+							case GADGET_TEXTAREA:
+							case GADGET_PASSWORD:
+							text_box = box;
+							break;
+							*/
+							default:
+								break;
+						}
+					}
+				} /* end While */
+				if ( !file_box )
+					return;
+				if (file_box) {
+					utf8_convert_ret ret;
+					char *utf8_fn;
+
+					ret = local_encoding_to_utf8( buff, 0, &utf8_fn);
+					if (ret != UTF8_CONVERT_OK) {
+						/* A bad encoding should never happen */
+						LOG(("utf8_from_local_encoding failed"));
+						assert(ret != UTF8_CONVERT_BADENC);
+						/* Load was for us - just no memory */
+						return;
+					}
+					/* Found: update form input. */
+					free(file_box->gadget->value);
+					file_box->gadget->value = utf8_fn;
+					/* Redraw box. */
+					box_coords(file_box, &posx, &posy);
+					gui_window_redraw(bw->window, 
+						posx - gw->browser->scroll.current.x, 
+						posy - gw->browser->scroll.current.y,
+						posx - gw->browser->scroll.current.x + file_box->width,
+						posy - gw->browser->scroll.current.y + file_box->height);
+				}
+			}
+		}
+	}
+error:	
+	ddclose( dd_hdl);	
 }
 
 /* -------------------------------------------------------------------------- */
