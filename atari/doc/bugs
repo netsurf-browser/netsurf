@@ -5,4 +5,5 @@ KNOWN BUGS
    the colors aren't correct! 
  - Visiting pages that contain frames: undefined behavior
  - Double Redraws when used with classic TOS Systems. 
+ - Browser window can not be moved out of the desktop area, to the right. 
  

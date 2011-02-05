@@ -22,7 +22,6 @@ Things to test:
   and I know that it can cause BUGS.  
 - Have a look at the memory usage... 
 - Copy & Paste ( please don't report unsupported characters, I know it's not perfect)
-  Doing selections with the mouse (Press mouse key and wait until statusbar says "selecting") is not working so well... 
   But you can use CTRL+A to select everything. Try it. 
 
 

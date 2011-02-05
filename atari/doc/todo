@@ -34,5 +34,7 @@ TODO's (no priority order)
    classic TOS. This is maybe not really correct, altough the v_ftext work
    on the newer OS (MiNT) it doesn't mean I'm using it correct. 
  - When minimized (not iconyfied) NetSurf doesn't recognize that.
-
+ - Iconify Code kompletieren ( favicon, icon nach oben schieben - icon name anzeigen)
+ - fix ablend() function within vdi plotter, antialiased text only looks good when rendered 
+   on white / black backgrounds, maybe other colors, but red looks ugly. 
  
