@@ -88,7 +88,7 @@ OBJECT **rsc_trindex;
 short vdih;
 short rsc_ntree;
 static clock_t last_multi_task;
-int mouse_click_time[3];
+int mouse_click_time[3] = { INT_MAX, INT_MAX, INT_MAX };
 int mouse_hold_start[3];
 browser_mouse_state bmstate;
 bool lck_multi = false;
@@ -153,10 +153,10 @@ void gui_poll(bool active)
 
 	if(input_window) {
 		flags |= MU_M1;
-		graf_mkstate( &prev_inp_state.mx, &prev_inp_state.my,
-				&prev_inp_state.mbut, &prev_inp_state.mkstat );
 		wind_get(input_window->root->handle->handle, WF_WORKXYWH, &winloc[0],
 			&winloc[1], &winloc[2], &winloc[3] );
+		graf_mkstate( &prev_inp_state.mx, &prev_inp_state.my,
+				&prev_inp_state.mbut, &prev_inp_state.mkstat );
 		if( prev_inp_state.mx >= winloc[0] && prev_inp_state.mx <= winloc[0] + winloc[2] &&
 				prev_inp_state.my >= winloc[1] && prev_inp_state.my <= winloc[1] + winloc[3] ){
 			evnt.m1_flag = MO_LEAVE;
@@ -173,7 +173,7 @@ void gui_poll(bool active)
 		}
 		/* if we have some state that can't be recognized by evnt_multi, don't block
 			so tracking can take place after timeout: */
-		if( MOUSE_IS_DRAGGING() )
+		if( MOUSE_IS_DRAGGING() ) // MOUSE_EVNT_IN_PROGRESS()
 			timeout = 1;
 	}
 
@@ -184,7 +184,7 @@ void gui_poll(bool active)
 	lck_multi = true;
 	EvntWindom( flags );
 	lck_multi = false;
-	if( MOUSE_IS_DRAGGING() )
+	if( MOUSE_IS_DRAGGING() ) // MOUSE_EVNT_IN_PROGRESS()
 		global_track_mouse_state();
 	last_multi_task = clock()*1000 / CLOCKS_PER_SEC;
 	struct gui_window * g;
@@ -364,9 +364,7 @@ void gui_window_redraw(struct gui_window *gw, int x0, int y0, int x1, int y1)
 {
 	if (gw == NULL)
 		return;
-	int w,h;
-	w = x1 - x0;
-	h = y1 - y0;
+	/* printf("update wind: %d,%d,%d,%d\n",x0, y0, x1, y1); */
 	browser_schedule_redraw( gw, x0, y0, x1, y1 );
 }
 
@@ -385,7 +383,7 @@ void gui_window_update_box(struct gui_window *gw,
 			   const union content_msg_data *data)
 {
 	CMP_BROWSER b;
-	LGRECT cmprect;
+	LGRECT work;
 	if (gw == NULL)
 		return;
 	b = gw->browser;
@@ -395,6 +393,23 @@ void gui_window_update_box(struct gui_window *gw,
 	int y0 = data->redraw.y - b->scroll.current.y;
 	int x1 = x0 + data->redraw.width;
 	int y1 = y0 + data->redraw.height;
+
+	if( y1 < 0 || x1 < 0 )
+		return;
+
+	browser_get_rect( gw, BR_CONTENT, &work);
+	if( x0 > work.g_x + work.g_w )
+		return;
+	if( y0 > work.g_y + work.g_h )
+		return;
+
+	if( x1 > work.g_x + work.g_w  )
+		x1 = work.g_x + work.g_w;
+
+	if( y1 > work.g_y + work.g_h )
+		y1 = work.g_y + work.g_h;
+
+	/* printf("update box: %d,%d,%d,%d\n",x0, y0, x1, y1); */
 
 	browser_schedule_redraw( gw, x0, y0, x1, y1 );
 }
@@ -693,9 +708,8 @@ save_complete_htmlSaveFileFormat(const char *path,
 
 void gui_window_new_content(struct gui_window *w)
 {
-	w->browser->scroll.current.x = 0;
-	w->browser->scroll.current.y = 0;
-	/* update scrollers? */
+	browser_scroll(w, WA_LFLINE, 0, true );
+	browser_scroll(w, WA_UPLINE, 0, true );
 }
 
 bool gui_window_scroll_start(struct gui_window *w)
