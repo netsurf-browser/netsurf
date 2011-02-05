@@ -55,11 +55,11 @@ struct s_menu_item_evnt {
 	Global & Menu event handlers
 */
 
-/* Call this after each call to evnt_multi, to check for states that evnt_multi doesn't: */
+
 void snd_redraw(short x, short y, short w, short h);
 void snd_win_redraw(WINDOW * win, short x, short y, short w, short h);
+/* Call this after each call to evnt_multi, to check for states that evnt_multi doesn't: */
 void global_track_mouse_state( void );
-browser_mouse_state global_track_evnt_mbutton( WINDOW * win, long buff[8], void * data );
 void bind_global_events( void );
 void unbind_global_events( void );
 

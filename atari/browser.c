@@ -46,6 +46,8 @@
 #include "atari/font.h"
 
 extern browser_mouse_state bmstate;
+extern int mouse_click_time[3];
+extern int mouse_hold_start[3];
 extern GEM_PLOTTER plotter;
 extern struct gui_window *input_window;
 
@@ -83,14 +85,14 @@ struct s_browser * browser_create(  struct gui_window * gw,
 		else
 			bw->scale = 1;
 
-		bnew->compwin = mt_WindCreate( &app, VSLIDE|HSLIDE, 40, 40, app.w, app.h);
+		bnew->compwin = mt_WindCreate( &app, VSLIDE|HSLIDE, 1, 1, app.w, app.h);
 		bnew->compwin->w_u = 1;
 		bnew->compwin->h_u = 1;
 		/* needs to be adjusted when content width is known: */
 		bnew->compwin->ypos_max = w; 
 		bnew->compwin->xpos_max = w;
 		mt_WindSlider( &app, bnew->compwin, HSLIDER|VSLIDER);
-		bnew->comp = (COMPONENT*)comp_widget_create( (void*)&app, (WINDOW*)bnew->compwin, 100, 1 ); 
+		bnew->comp = (COMPONENT*)comp_widget_create( (void*)&app, (WINDOW*)bnew->compwin, 1, 1 ); 
 		if( bnew->comp == NULL ) {
 			free(bnew);
 			return(NULL);
@@ -165,11 +167,23 @@ bool browser_attach_frame( struct gui_window * container, struct gui_window * fr
 		lt = CLT_VERTICAL;
 	else 
 		lt = CLT_HORIZONTAL;
-	/* todo: if first frame, destroy compwin, create browser frame with old component interface :/ */
-	mt_CompAttach( &app,  container->browser->comp, frame->browser->comp );
+
+	printf("attaching frame as: %s\n", (lt == CLT_VERTICAL) ? "CLT_VERTICAL" : "CLT_HORIZONTAL" );
+	/* todo: if first frame, remove compwin, or something like that, because it is still occupiying space */
+	container->browser->compwin->h_max = 0;
+	container->browser->compwin->w_max = 0;
+	container->browser->comp->flex = 0;
+	container->browser->comp->size = 300;
+	//container->browser->comp->bounds.max_height = 0;
+	//container->browser->comp->bounds.min_height = 0;
+	//WindClose( container->browser->compwin );
+	
 	container->browser->comp->type = lt;
+	mt_CompAttach( &app,  container->browser->comp, frame->browser->comp );
+	//win_comp_attach(&app, container->browser->compwin, frame->browser->comp);
 	browser_update_rects( container );
-	container->browser->attached = true;
+	frame->browser->attached = true;
+	//container->browser->attached = true;
 	/*browser_update_rects( frame );
 	  LGRECT brect;
 	  browser_get_rect( frame, BR_CONTENT, &brect ); 
@@ -241,15 +255,19 @@ void browser_update_rects(struct gui_window * gw )
 void browser_set_content_size(struct gui_window * gw, int w, int h)
 {
 	CMP_BROWSER b = gw->browser;
-	b->compwin->ypos = 0;
-	b->compwin->xpos = 0;
+	LGRECT work;
+	browser_get_rect( gw, BR_CONTENT, &work );
 	b->compwin->ypos_max = h;
 	b->compwin->xpos_max = w;
-	/* TODO: instead of zeroin, recalculate scroll? */
-	browser_scroll(gw, WA_LFLINE, 0, true );
-	browser_scroll(gw, WA_UPLINE, 0, true );
-	/* force update of scrollbars: */
-	b->scroll.required = true;
+	if( w < work.g_w + b->scroll.current.x || w < work.g_h + b->scroll.current.y ) {
+		/* TODO: instead of zeroin, recalculate scroll */
+		b->compwin->ypos = 0;
+		b->compwin->xpos = 0;
+		browser_scroll(gw, WA_LFLINE, 0, true );
+		browser_scroll(gw, WA_UPLINE, 0, true );
+		/* force update of scrollbars: */
+		b->scroll.required = true;
+	}
 }
 
 static void __CDECL browser_evnt_wdestroy( WINDOW * c, short buff[8], void * data)
@@ -262,7 +280,7 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 {
 	struct s_browser * b = (struct s_browser*)data;
 	struct gui_window * gw = b->bw->window;
-	LOG(("%s: %s (%s)\n", __FUNCTION__ ,gw->browser->bw->name, ( gw->browser->type == BT_FRAME) ? "FRAME" : "NOFRAME"));
+	LOG(("%s: %s (%s)\n", __FUNCTION__ ,gw->browser->bw->name, ( gw->browser->type ==BT_FRAME) ? "FRAME" : "NOFRAME"));
 	
 	assert( b != NULL );
 	assert( gw != NULL );
@@ -272,6 +290,7 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 
 	free( b );
 	gw->browser = NULL;
+	LOG(("evnt_destroy done!"));
 }
 
 
@@ -325,40 +344,83 @@ void __CDECL browser_evnt_slider( WINDOW *win, short buff[8], void * data)
 static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data)
 {
 	long lbuff[8];
-	short mx,my;
-	browser_mouse_state bms;
+	short i;
+	short mbut, mkstat, mx, my;
+	graf_mkstate(&mx, &my, &mbut, &mkstat);
+	uint32_t tnow = clock()*1000 / CLOCKS_PER_SEC;
 	LGRECT cwork;
 	struct gui_window * gw = data;
 	input_window = gw;
 	window_set_focus( gw, BROWSER, (void*)gw->browser );
 	browser_get_rect( gw, BR_CONTENT, &cwork );
-	SBUF8_TO_LBUF8(buff, lbuff)
-	bms = global_track_evnt_mbutton( gw->root->handle, lbuff, data );
-	mx = evnt.mx - cwork.g_x + gw->browser->scroll.current.x;
-	my = evnt.my - cwork.g_y + gw->browser->scroll.current.y;
+	mx = evnt.mx - cwork.g_x; /*+ gw->browser->scroll.current.x*/;
+	my = evnt.my - cwork.g_y; /*+ gw->browser->scroll.current.y*/;
 	LOG(("mevent within %s at %d / %d", gw->browser->bw->name, mx, my ));
-	if( bms & BROWSER_MOUSE_DRAG_1) {
-		browser_window_mouse_track(gw->browser->bw, BROWSER_MOUSE_DRAG_1, mx, my );
-		bmstate |= BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
-		LOG(("drag within %s at %d / %d", gw->browser->bw->name, mx, my ));
+
+	if( (mkstat & K_RSHIFT) || (mkstat & K_LSHIFT) ){
+		bmstate |= BROWSER_MOUSE_MOD_1;
+	} else {
+		bmstate &= ~(BROWSER_MOUSE_MOD_1);
 	}
-	if( bms & BROWSER_MOUSE_DRAG_2) {
-		browser_window_mouse_track(gw->browser->bw, BROWSER_MOUSE_DRAG_2, mx, my );
-		bmstate |= BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
-		LOG(("drag within %s at %d / %d", gw->browser->bw->name, mx, my ));
+	if( (mkstat & K_CTRL) ){
+		bmstate |= BROWSER_MOUSE_MOD_2;
+	} else {
+		bmstate &= ~(BROWSER_MOUSE_MOD_1);
 	}
-	if( bms & BROWSER_MOUSE_CLICK_1) {
-		window_set_focus( gw, BROWSER, (void*)gw->browser );
-		browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,mx,my);
-		browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_1,mx,my);
-		LOG(("Click within %s at %d / %d", gw->browser->bw->name, mx, my ));
-	}
-	if( bms & BROWSER_MOUSE_CLICK_2) {
-		window_set_focus( gw, BROWSER, (void*)gw->browser );
-		browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_2,mx,my);
-		browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_2,mx,my);
-		LOG(("Click within %s at %d / %d", gw->browser->bw->name, mx, my ));
-	}
+	if( (mkstat & K_ALT) ){
+		bmstate |= BROWSER_MOUSE_MOD_3;
+	} else {
+		bmstate &= ~(BROWSER_MOUSE_MOD_2);
+	}	
+	int sx = (mx + gw->browser->scroll.current.x);
+	int sy = (my + gw->browser->scroll.current.y);
+	for( i = 1; i<2; i++) {
+		if( (mbut & i) ) {
+			if( mouse_hold_start[i-1] == 0 ) {
+				mouse_hold_start[i-1] = clock()*1000 / CLOCKS_PER_SEC;
+				LOG(("Drag %d starts", i));
+				if( i == 1 ) {
+					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
+					bmstate |= BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+				}
+				if( i == 2 ) {
+					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_2,sx,sy);
+					bmstate |= BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
+				}				
+			} else {
+				if( i == 1 ) {
+					bmstate |= BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON;
+				}
+				if( i == 2 ) {
+					bmstate |= BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_DRAG_ON;
+				}
+			}
+		} else {
+			/* remember click time, so we can track double clicks: */
+			/* this does not really work, because a normal double click is swallowed by evnt_multi */
+			if( tnow - mouse_click_time[i-1] < 500 ) {
+				/* double click */
+			}
+			mouse_click_time[i-1] = tnow; /* clock in ms */
+			/* check if this event was during an drag op: */
+			if( mouse_hold_start[i-1] < 10 ) {
+				if( i == 1) {
+					LOG(("Click within %s at %d / %d", gw->browser->bw->name, sx, sy ));
+					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
+					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_1,sx,sy);
+					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_CLICK_1);
+				}
+					
+				if( i == 2 ) {
+					LOG(("Click within %s at %d / %d", gw->browser->bw->name, mx, my ));
+					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
+					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_2,sx,sy);
+					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_CLICK_2);
+				}
+			}
+			mouse_hold_start[i-1] = 0;
+		}
+	}	
 }
 
 void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
@@ -744,8 +806,8 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	LGRECT work;
 	CMP_BROWSER b = gw->browser;
 	GRECT area;
+	int clip_x0, clip_x1, clip_y0, clip_y1;
 
-	current_redraw_browser = b->bw;
 	LOG(("%s clip: %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0, 
 		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
 	));
@@ -753,15 +815,43 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	area.g_y = b->redraw.area.y0;
 	area.g_w = b->redraw.area.x1 - b->redraw.area.x0;
 	area.g_h = b->redraw.area.y1 - b->redraw.area.y0;
-	assert( area.g_w > 0 && area.g_h > 0 );
 
-	content_redraw( b->bw->current_content,
-		       xoff-b->scroll.current.x, yoff-b->scroll.current.y,
-		       area.g_w, area.g_h,
-		       b->redraw.area.x0, b->redraw.area.y0,
-		       b->redraw.area.x1, b->redraw.area.y1,
-		       b->bw->scale, 0xFFFFFF);
+	current_redraw_browser = b->bw;
+
+	if(content_get_type(b->bw->current_content) == CONTENT_HTML ) {
+		clip_x0 = b->redraw.area.x0;
+		clip_y0 = b->redraw.area.y0;
+		clip_x1 = b->redraw.area.x1;
+		clip_y1 = b->redraw.area.y1;
+	} else {
+		/* totally different coords, I don't understand why! */
+		clip_x0 = b->redraw.area.x0 + b->scroll.current.x;
+		clip_y0 = b->redraw.area.y0 + b->scroll.current.y;
+		clip_x1 = b->redraw.area.x1 + b->scroll.current.x;
+		clip_y1 = b->redraw.area.y1 + b->scroll.current.y;
+		/* must clear the surface: */
+		plot.clip(  b->redraw.area.x0, b->redraw.area.y0, 
+					b->redraw.area.x1, b->redraw.area.y1
+		);
+		plot.rectangle( b->redraw.area.x0, 
+						b->redraw.area.y0, 
+						b->redraw.area.x1, 
+						b->redraw.area.y1, 
+						plot_style_fill_white
+		);		
+	}
+
+	content_redraw( 
+		b->bw->current_content,
+		-b->scroll.current.x, -b->scroll.current.y,
+		content_get_width( b->bw->current_content), 
+		content_get_height( b->bw->current_content),
+		clip_x0, clip_y0,
+		clip_x1, clip_y1,
+		b->bw->scale, 0xFFFFFF
+	);
 	current_redraw_browser = NULL;
+
 	/* reset redraw area */
 	b->redraw.area.x0 = INT_MAX;
 	b->redraw.area.y0 = INT_MAX;

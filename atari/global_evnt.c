@@ -354,59 +354,9 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 	}
 }
 
-browser_mouse_state global_track_evnt_mbutton( WINDOW * win, long buff[8], void * data )
-{
-	short i;
-	short mbut, mkstat, mx, my;
-	browser_mouse_state retval = 0;
-	graf_mkstate(&mx, &my, &mbut, &mkstat);
-
-	if( (mkstat & K_RSHIFT) || (mkstat & K_LSHIFT) ){
-		retval |= BROWSER_MOUSE_MOD_1;
-	}
-	if( (mkstat & K_CTRL) ){
-		retval |= BROWSER_MOUSE_MOD_2;
-	}
-	if( (mkstat & K_ALT) ){
-		retval |= BROWSER_MOUSE_MOD_3;
-	}		
-
-	for( i = 1; i<2; i++) {
-		if( (mbut & i) ) {
-			if( mouse_hold_start[i-1] == 0 ) {
-				mouse_hold_start[i-1] = clock()*1000 / CLOCKS_PER_SEC;
-				LOG(("Drag %d starts", i));
-				if( i == 1 ) {
-					retval |= BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON;
-				}
-				if( i == 2 ) {
-					retval |= BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_DRAG_ON;
-				}
-			} else {
-				if( i == 1 ) {
-					retval |= BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
-				}
-				if( i == 2 ) {
-					retval |= BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
-				}
-			}
-		} else {
-			/* remember click time, so we can track double clicks: */
-			mouse_click_time[i-1] = clock()*1000 / CLOCKS_PER_SEC; /* clock in ms */
-			/* check if this event was during an drag op: */
-			if( mouse_hold_start[i-1] < 10 ) {
-				if( i == 1)
-					retval |= BROWSER_MOUSE_CLICK_1;
-				if( i == 2 )
-					retval |= BROWSER_MOUSE_CLICK_2;
-			}
-			mouse_hold_start[i-1] = 0;
-		}
-	}
-	return( retval );
-}
-
-/* this gets called at end of gui poll */
+/* 	this gets called at end of gui poll to track the mouse state and 
+	finally checks for released buttons. 
+ */
 void global_track_mouse_state( void ){
 	int i = 0;
 	int nx, ny; 
@@ -417,20 +367,27 @@ void global_track_mouse_state( void ){
 	
 	if( !input_window ) {
 		bmstate = 0;
+		mouse_hold_start[0] = 0;
+		mouse_hold_start[1] = 0;
 		return;
 	}
 	graf_mkstate(&mx, &my, &mbut, &mkstat);
+
+	/* todo: creat function find_browser_window( mx, my ) */
 	cmp = mt_CompFind( &app, input_window->root->cmproot, mx, my );
 	if( cmp == NULL ) {
+		printf("invalid call to mouse track!\n");
 		bmstate = 0;
 		mouse_hold_start[0] = 0;
 		mouse_hold_start[1] = 0;
 		return;
 	}
-	mt_CompGetLGrect( &app, cmp, WF_WORKXYWH, &cmprect );	
-	nx = mx - cmprect.g_x;
-	ny = my - cmprect.g_y;
 
+	browser_get_rect( input_window, BR_CONTENT, &cmprect ); 
+	nx = mx - cmprect.g_x; /*+ input_window->browser->scroll.current.x;*/
+	ny = my - cmprect.g_y; /*+ input_window->browser->scroll.current.x;*/
+	nx = (nx + input_window->browser->scroll.current.x);
+	ny = (ny + input_window->browser->scroll.current.y);
 	bmstate &= ~(BROWSER_MOUSE_MOD_1);
 	bmstate &= ~(BROWSER_MOUSE_MOD_2);
 	bmstate &= ~(BROWSER_MOUSE_MOD_3);
@@ -441,38 +398,29 @@ void global_track_mouse_state( void ){
 	}
 
 	for( i = 1; i<3; i++ ) {
-		if( (mbut & i) ) {
-			/* the mouse is still pressed... 
-				report further dragging ? 
-				BROWSER_MOUSE_PRESS_2 needed ?
-			*/
-			if(i==1)
-					bmstate |= BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_HOLDING_1;
-			if( i==2 )
-					bmstate |= BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_HOLDING_2;
-			LOG(("still dragging %d, time ms: %d", i, (clock()*1000 / CLOCKS_PER_SEC) - mouse_hold_start[i-1] ));
-			browser_window_mouse_track( input_window->browser->bw, bmstate, nx, ny );
-		} else {
+		if( !(mbut & i) ) {
 			if( mouse_hold_start[i-1] > 0 ) {
 				mouse_hold_start[i-1] = 0;
-				LOG(("drag release %d", i));
 				/* TODO: not just use the input window browser, find the right one by component! */
 				if( i==1 ) {
-					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 );
+					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
 					LOG(("Drag for %d ended", i));
-					browser_window_mouse_drag_end( input_window->browser->bw,
-						bmstate, nx, ny);
+					browser_window_mouse_drag_end( 
+						input_window->browser->bw,
+						0, nx, ny
+					);
 				}
 				if( i==2 ) {
-					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 );
+					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 ) ;
 					LOG(("Drag for %d ended", i));
-					browser_window_mouse_drag_end( input_window->browser->bw,
-						bmstate, nx, ny);
+					browser_window_mouse_drag_end( 
+						input_window->browser->bw,
+						0, nx, ny
+					);
 				}
-			}
+			} 
 		} 
 	}
-	browser_mouse_state_dump(bmstate);
 	browser_window_mouse_track(input_window->browser->bw, bmstate, nx, ny );
 }
 
@@ -491,6 +439,7 @@ void __CDECL global_evnt_m1( WINDOW * win, short buff[8], void * data)
 	
 	if( gw->root->toolbar )
 		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
+	/* todo: use get_browser_rect */
 	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &bwbox);
 	mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
 
@@ -525,8 +474,13 @@ void __CDECL global_evnt_m1( WINDOW * win, short buff[8], void * data)
 				*/ 
 				nx = evnt.mx - bwbox.g_x;
 				ny = evnt.my - bwbox.g_y;
-				/*printf("m1 bw: %p, x: %d, y: %d, state: %d\n" , input_window->browser->bw, nx, ny, bmstate);*/
-				browser_window_mouse_track( input_window->browser->bw, 0, nx + gw->browser->scroll.current.x, ny + gw->browser->scroll.current.y );
+				/*LOG(("m1 bw: %p, x: %d, y: %d, state: %d\n" , input_window->browser->bw, nx, ny, bmstate));*/
+				browser_window_mouse_track( 
+					input_window->browser->bw, 
+					bmstate, 
+					nx + gw->browser->scroll.current.x, 
+					ny + gw->browser->scroll.current.y
+				);
 			} 
 		}
 	}
