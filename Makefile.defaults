@@ -336,7 +336,7 @@ ifeq ($(TARGET),atari)
   NETSURF_ATARI_USE_FREETYPE := YES
 
   # Optimisation levels
-  CFLAGS += -m68000 -O2 -Wuninitialized -DNO_IPV6
+  CFLAGS += -m68000 -O2 -Wuninitialized
 
   WARNFLAGS = -W -Wundef -Wpointer-arith \
 		-Wcast-align -Wwrite-strings -Wstrict-prototypes \
