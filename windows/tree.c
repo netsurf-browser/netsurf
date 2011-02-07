@@ -19,10 +19,10 @@
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
 
-/*
+
 const char tree_directory_icon_name[] = "directory.png";
 const char tree_content_icon_name[] = "content.png";
-*/
+
 
 /**
  * Translates a content_type to the name of a respective icon
