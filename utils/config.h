@@ -47,6 +47,22 @@ char *strcasestr(const char *haystack, const char *needle);
 char *strchrnul(const char *s, int c);
 #endif
 
+#define HAVE_INETATON
+#if (defined(_WIN32))
+#undef HAVE_INETATON
+#include <winsock.h>
+#define EAFNOSUPPORT WSAEAFNOSUPPORT
+int inet_aton(const char *cp, struct in_addr *inp);
+#else
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
+
+#define HAVE_INETPTON
+#if (defined(_WIN32))
+#undef HAVE_INETPTON
+int inet_pton(int af, const char *src, void *dst);
+#endif
 
 #define HAVE_UTSNAME
 #if (defined(_WIN32))

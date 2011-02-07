@@ -30,8 +30,7 @@
 #include <string.h>
 #include <regex.h>
 #include <unistd.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
 #include "curl/curl.h"
 #include "utils/config.h"
 #include "utils/log.h"

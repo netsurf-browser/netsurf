@@ -31,6 +31,7 @@
 #include <sys/time.h>
 #include <regex.h>
 #include <time.h>
+
 #include "utils/config.h"
 #define NDEBUG
 #include "utils/log.h"
@@ -531,5 +532,56 @@ char *realpath(const char *path, char *resolved_path)
 	}
 	return ret;
 }
+
+#ifndef HAVE_INETATON
+
+
+int inet_aton(const char *cp, struct in_addr *inp)
+{
+	unsigned int b1, b2, b3, b4;
+	unsigned char c;
+
+	if (strspn(cp, "0123456789.") < strlen(cp)) 
+		return 0;
+
+	if (sscanf(cp, "%3u.%3u.%3u.%3u%c", &b1, &b2, &b3, &b4, &c) != 4)
+		return 0;
+
+	if ((b1 > 255) || (b2 > 255) || (b3 > 255) || (b4 > 255))
+		return 0;
+
+	inp->s_addr = b4 << 24 | b3 << 16 | b2 << 8 | b1;
+
+	return 1;
+}
+
+#endif
+
+#ifndef HAVE_INETPTON
+
+int inet_pton(int af, const char *src, void *dst)
+{
+	int ret;
+
+	if (af == AF_INET) {
+		ret = inet_aton(src, dst);
+	} 
+#if !defined(NO_IPV6)
+	else if (af == AF_INET6) {
+		/* TODO: implement v6 address support */
+		ret = -1;
+		errno = EAFNOSUPPORT; 
+	} 
+#endif
+	else {
+		ret = -1;
+		errno = EAFNOSUPPORT; 
+	}
+
+	return ret;
+}
+
+#endif
+
 
 #endif
