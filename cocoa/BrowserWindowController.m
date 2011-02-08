@@ -67,6 +67,7 @@
 	[tabBar setShowAddTabButton: YES];
 	[tabBar setTearOffStyle: PSMTabBarTearOffMiniwindow];
 	[tabBar setCanCloseOnlyTab: YES];
+	[tabBar setHideForSingleTab: YES];
 	
 	NSButton *b = [tabBar addTabButton];
 	[b setTarget: self];

@@ -12,7 +12,7 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="37"/>
+			<integer value="1"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -140,7 +140,7 @@
 										<reference key="NSControlView" ref="518219892"/>
 										<int key="NSButtonFlags">-2033434369</int>
 										<int key="NSButtonFlags2">99</int>
-										<object class="NSCustomResource" key="NSNormalImage" id="846241428">
+										<object class="NSCustomResource" key="NSNormalImage" id="967303005">
 											<string key="NSClassName">NSImage</string>
 											<string key="NSResourceName">HomeTemplate</string>
 										</object>
@@ -150,7 +150,7 @@
 										<int key="NSPeriodicInterval">75</int>
 									</object>
 								</object>
-								<reference key="NSToolbarItemImage" ref="846241428"/>
+								<reference key="NSToolbarItemImage" ref="967303005"/>
 								<nil key="NSToolbarItemTarget"/>
 								<nil key="NSToolbarItemAction"/>
 								<string key="NSToolbarItemMinSize">{30, 25}</string>
@@ -706,6 +706,14 @@
 					</object>
 					<int key="connectionID">85</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">partnerView</string>
+						<reference key="source" ref="720246950"/>
+						<reference key="destination" ref="477345536"/>
+					</object>
+					<int key="connectionID">86</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -1045,7 +1053,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">85</int>
+			<int key="maxID">86</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
