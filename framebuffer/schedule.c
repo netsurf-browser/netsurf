@@ -125,7 +125,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
 /**
  * Process scheduled callbacks up to current time.
  *
- * @return The number of centiseconds untill the next callback or -1 for never.
+ * @return The number of milliseconds untill the next scheduled event
+ * or -1 for no event.
  */
 int 
 schedule_run(void)
