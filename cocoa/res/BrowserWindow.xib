@@ -12,7 +12,7 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="2"/>
+			<integer value="37"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -140,9 +140,9 @@
 										<reference key="NSControlView" ref="518219892"/>
 										<int key="NSButtonFlags">-2033434369</int>
 										<int key="NSButtonFlags2">99</int>
-										<object class="NSCustomResource" key="NSNormalImage" id="185416320">
+										<object class="NSCustomResource" key="NSNormalImage" id="846241428">
 											<string key="NSClassName">NSImage</string>
-											<string key="NSResourceName">NetSurf</string>
+											<string key="NSResourceName">HomeTemplate</string>
 										</object>
 										<string key="NSAlternateContents"/>
 										<string key="NSKeyEquivalent"/>
@@ -150,7 +150,7 @@
 										<int key="NSPeriodicInterval">75</int>
 									</object>
 								</object>
-								<reference key="NSToolbarItemImage" ref="185416320"/>
+								<reference key="NSToolbarItemImage" ref="846241428"/>
 								<nil key="NSToolbarItemTarget"/>
 								<nil key="NSToolbarItemAction"/>
 								<string key="NSToolbarItemMinSize">{30, 25}</string>
@@ -959,8 +959,10 @@
 					<string>71.IBPluginDependency</string>
 					<string>72.IBPluginDependency</string>
 					<string>72.IBSegmentedControlInspectorSelectedSegmentMetadataKey</string>
+					<string>75.IBAttributePlaceholdersKey</string>
 					<string>75.IBPluginDependency</string>
 					<string>76.IBPluginDependency</string>
+					<string>82.IBAttributePlaceholdersKey</string>
 					<string>82.IBPluginDependency</string>
 					<string>83.IBPluginDependency</string>
 				</object>
@@ -1005,8 +1007,24 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<integer value="0"/>
+					<object class="NSMutableDictionary">
+						<string key="NS.key.0">ToolTip</string>
+						<object class="IBToolTipAttribute" key="NS.object.0">
+							<string key="name">ToolTip</string>
+							<reference key="object" ref="229385913"/>
+							<string key="toolTip">Show local history</string>
+						</object>
+					</object>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
+					<object class="NSMutableDictionary">
+						<string key="NS.key.0">ToolTip</string>
+						<object class="IBToolTipAttribute" key="NS.object.0">
+							<string key="name">ToolTip</string>
+							<reference key="object" ref="518219892"/>
+							<string key="toolTip">Go to your homepage</string>
+						</object>
+					</object>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 				</object>
@@ -1370,23 +1388,23 @@
 			<bool key="EncodedWithXMLCoder">YES</bool>
 			<object class="NSArray" key="dict.sortedKeys">
 				<bool key="EncodedWithXMLCoder">YES</bool>
+				<string>HomeTemplate</string>
 				<string>NSIconViewTemplate</string>
 				<string>NSLeftFacingTriangleTemplate</string>
 				<string>NSMenuCheckmark</string>
 				<string>NSMenuMixedState</string>
 				<string>NSRightFacingTriangleTemplate</string>
 				<string>NSToolbarCustomizeToolbarItemImage</string>
-				<string>NetSurf</string>
 			</object>
 			<object class="NSMutableArray" key="dict.values">
 				<bool key="EncodedWithXMLCoder">YES</bool>
+				<string>{16, 16}</string>
 				<string>{11, 10}</string>
 				<string>{9, 9}</string>
 				<string>{9, 8}</string>
 				<string>{7, 2}</string>
 				<string>{9, 9}</string>
 				<string>{32, 32}</string>
-				<string>{512, 512}</string>
 			</object>
 		</object>
 	</data>

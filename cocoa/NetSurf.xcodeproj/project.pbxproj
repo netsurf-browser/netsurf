@@ -233,6 +233,7 @@
 		2666DC5E12F6D2E70045E8B6 /* SearchWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SearchWindowController.m; sourceTree = "<group>"; };
 		2666DD5012F706BC0045E8B6 /* BrowserWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserWindow.h; sourceTree = "<group>"; };
 		2666DD5112F706BC0045E8B6 /* BrowserWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserWindow.m; sourceTree = "<group>"; };
+		2684028E1301848100850DA2 /* HomeTemplate.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = HomeTemplate.pdf; sourceTree = "<group>"; };
 		26ABD61C12F02EB900407161 /* overflowImage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImage.png; sourceTree = "<group>"; };
 		26ABD61D12F02EB900407161 /* overflowImagePressed.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = overflowImagePressed.png; sourceTree = "<group>"; };
 		26ABD61E12F02EB900407161 /* pi.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pi.png; sourceTree = "<group>"; };
@@ -571,6 +572,7 @@
 		265F310F12D663C20048B600 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				2684028E1301848100850DA2 /* HomeTemplate.pdf */,
 				26AFE63E12DDEB0A005AD082 /* NetSurf.icns */,
 				2612268F12D7AE4100E10F91 /* Messages */,
 				2612265D12D7AD6800E10F91 /* adblock.css */,
