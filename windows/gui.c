@@ -143,20 +143,40 @@ void gui_multitask(void)
 
 void gui_poll(bool active)
 {
-	MSG Msg;
-	if (PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE) != 0) {
-/*		if (!((current_gui == NULL) ||
-		      (TranslateAccelerator(current_gui->main,
-					    current_gui->acceltable, &Msg)))) {
-			TranslateMessage(&Msg);
-			}
-*/
-			TranslateMessage(&Msg);
-		DispatchMessage(&Msg);
+	MSG Msg; /* message from system */
+	BOOL bRet; /* message fetch result */
+	int timeout; /* timeout in miliseconds */
+	UINT timer_id = 0;
+
+	/* run the scheduler and discover how long to wait for the next event */
+	timeout = schedule_run();
+
+	/* if active set timeout so message is not waited for */
+	if (active)
+		timeout = 0;
+
+	if (timeout == 0) {
+		bRet = PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE);
+	} else {
+		if (timeout > 0) {
+			/* set up a timer to ensure we get woken */
+			timer_id = SetTimer(NULL, 0, timeout, NULL);
+		}
+
+		/* wait for a message */
+		bRet = GetMessage(&Msg, NULL, 0, 0);
+
+		/* if a timer was sucessfully created remove it */
+		if (timer_id != 0) {
+			KillTimer(NULL, timer_id);
+		}
 	}
 
-	schedule_run();
 
+	if (bRet > 0) {
+		TranslateMessage(&Msg);
+		DispatchMessage(&Msg);
+	}
 }
 
 /* obtain gui window structure from windows window handle */

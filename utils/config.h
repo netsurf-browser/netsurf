@@ -50,7 +50,7 @@ char *strchrnul(const char *s, int c);
 #define HAVE_INETATON
 #if (defined(_WIN32))
 #undef HAVE_INETATON
-#include <winsock.h>
+#include <winsock2.h>
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
 int inet_aton(const char *cp, struct in_addr *inp);
 #else

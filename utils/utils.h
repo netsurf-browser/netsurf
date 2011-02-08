@@ -91,6 +91,31 @@ typedef struct
 #define nsmkdir(dir, mode) mkdir((dir))
 #endif
 
+#ifndef timeradd
+#define timeradd(a, aa, result)						\
+	do {								\
+		(result)->tv_sec = (a)->tv_sec + (aa)->tv_sec;		\
+		(result)->tv_usec = (a)->tv_usec + (aa)->tv_usec;	\
+		if ((result)->tv_usec >= 1000000) {			\
+			++(result)->tv_sec;				\
+			(result)->tv_usec -= 1000000;			\
+		}							\
+	} while (0)
+#endif
+
+#ifndef timersub
+#define timersub(a, aa, result)						\
+	do {								\
+		(result)->tv_sec = (a)->tv_sec - (aa)->tv_sec;		\
+		(result)->tv_usec = (a)->tv_usec - (aa)->tv_usec;	\
+		if ((result)->tv_usec < 0) {				\
+			--(result)->tv_sec;				\
+			(result)->tv_usec += 1000000;			\
+		}							\
+	} while (0)
+#endif
+
+
 /**
  * Private-word-capable realloc() implementation which
  * behaves as most NS libraries expect in the face of

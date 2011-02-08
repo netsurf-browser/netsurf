@@ -1,6 +1,5 @@
 /*
  * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_WINDOWS_SCHEDULE_H_
-#define _NETSURF_WINDOWS_SCHEDULE_H_
+#ifndef FRAMEBUFFER_SCHEDULE_H
+#define FRAMEBUFFER_SCHEDULE_H
 
+int schedule_run(void);
 void list_schedule(void);
-bool schedule_run(void);
 
 #endif
