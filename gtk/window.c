@@ -43,13 +43,15 @@
 #include "utils/utils.h"
 
 struct gui_window {
-	/* All gui_window objects have an ultimate scaffold */
+	/** The gtk scaffold object containing menu, buttons, url bar, [tabs],
+	 * drawing area, etc that may contain one or more gui_windows.
+	 */
 	nsgtk_scaffolding	*scaffold;
-	/**< the gtk object containing menu, buttons, url bar, [tabs],
-	 * drawing area, etc that may contain 1 -> several gui_windows */
-	struct browser_window	*bw;
-	/**< the 'content' window that is rendered in the gui_window*/
 
+	/** The 'content' window that is rendered in the gui_window */
+	struct browser_window	*bw;
+
+	/** mouse state and events. */
 	struct {
 		struct gui_window *gui;
 		struct box *box;
@@ -58,52 +60,41 @@ struct gui_window {
 		gdouble pressed_y;
 		gboolean waiting;
 		browser_mouse_state state;
-	} mouse;  /**< contains mouse state / events */
+	} mouse;
 
-	int			caretx, carety, careth;
-	/**< storage caret dimension / location for rendering */
-	gui_pointer_shape	current_pointer;
-	/**< storage caret shape for rendering */
-	int			last_x, last_y;
-	/**< storage caret location for rendering */
+	/** caret dimension and location for rendering */
+	int caretx, carety, careth;
 
-	GtkLayout		*layout;  /**< display widget for this page or frame */
-	GtkScrolledWindow	*scrolledwindow;
-			 /**< frames only; top level of gtk structure of gui_window */
-	GtkWidget		*tab; /**< the visible tab */
-	GtkLabel		*status_bar;
-	GtkPaned		*paned;  /**< statusbar/scrollbar paned */
-	gulong			signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
-	/**< to allow disactivation / resume of normal window behaviour */
-	struct gui_window	*next, *prev; /**< list for eventual cleanup */
+	/** caret shape for rendering */
+	gui_pointer_shape current_pointer;
+
+	/** previous event location */
+	int last_x, last_y;
+
+	/** display widget for this page or frame */
+	GtkLayout *layout;
+
+	/** frames only; top level of gtk structure of gui_window */
+	GtkScrolledWindow *scrolledwindow;
+
+	/** handle to the the visible tab */
+	GtkWidget *tab;
+
+	/** statusbar */
+	GtkLabel *status_bar;
+
+	/** scrollbar paned */
+	GtkPaned *paned;
+
+	/** to allow disactivation / resume of normal window behaviour */
+	gulong signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
+
+	/** list for cleanup */
+	struct gui_window *next, *prev;
 };
 
 struct gui_window *window_list = NULL;	/**< first entry in win list*/
 int temp_open_background = -1;
-
-
-static void nsgtk_gui_window_attach_child(struct gui_window *parent,
-					  struct gui_window *child);
-/* Methods which apply only to a gui_window */
-static gboolean nsgtk_window_expose_event(GtkWidget *, GdkEventExpose *,
-					  gpointer);
-static gboolean nsgtk_window_motion_notify_event(GtkWidget *, GdkEventMotion *,
-						gpointer);
-static gboolean nsgtk_window_button_press_event(GtkWidget *, GdkEventButton *,
-						gpointer);
-static gboolean nsgtk_window_button_release_event(GtkWidget *, GdkEventButton *,
-						gpointer);
-static gboolean nsgtk_window_scroll_event(GtkWidget *, GdkEventScroll *,
-						gpointer);
-static gboolean nsgtk_window_keypress_event(GtkWidget *, GdkEventKey *,
-						gpointer);
-static gboolean nsgtk_window_size_allocate_event(GtkWidget *, GtkAllocation *,
-						gpointer);
-
-/* Other useful bits */
-static void nsgtk_redraw_caret(struct gui_window *g);
-
-static GdkCursor *nsgtk_create_menu_cursor(void);
 
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
@@ -146,12 +137,390 @@ float nsgtk_get_scale_for_gui(struct gui_window *g)
 	return g->bw->scale;
 }
 
-/* Create a gui_window */
+/** Attaches the child gui_window (frame) into the parent.
+ *
+ * The window will be resized later.
+ *
+ * \param parent The parent gui window.
+ * \param child The gui window to attach to the parent.
+ */
+static void nsgtk_gui_window_attach_child(struct gui_window *parent,
+					  struct gui_window *child)
+{
+	GtkLayout *parent_layout = parent->layout;
+	GtkWidget *child_widget = GTK_WIDGET(child->scrolledwindow);
+	gtk_layout_put(parent_layout, child_widget, 0, 0);
+}
+
+static gboolean nsgtk_window_expose_event(GtkWidget *widget,
+				   GdkEventExpose *event, gpointer data)
+{
+	struct gui_window *g = data;
+	hlcache_handle *c;
+	float scale = g->bw->scale;
+
+	assert(g);
+	assert(g->bw);
+
+	struct gui_window *z;
+	for (z = window_list; z && z != g; z = z->next)
+		continue;
+	assert(z);
+	assert(GTK_WIDGET(g->layout) == widget);
+
+	c = g->bw->current_content;
+	if (c == NULL)
+		return FALSE;
+
+	/* HTML rendering handles scale itself */
+	if (content_get_type(c) == CONTENT_HTML)
+		scale = 1;
+
+	current_widget = (GtkWidget *)g->layout;
+	current_drawable = g->layout->bin_window;
+	current_gc = gdk_gc_new(current_drawable);
+#ifdef CAIRO_VERSION
+	current_cr = gdk_cairo_create(current_drawable);
+#endif
+
+	plot = nsgtk_plotters;
+	nsgtk_plot_set_scale(g->bw->scale);
+	current_redraw_browser = g->bw;
+
+	plot.clip(event->area.x,
+		  event->area.y,
+		  event->area.x + event->area.width,
+		  event->area.y + event->area.height);
+
+	content_redraw(c, 0, 0,
+		       content_get_width(c) * scale,
+		       content_get_height(c) * scale,
+		       event->area.x,
+		       event->area.y,
+		       event->area.x + event->area.width,
+		       event->area.y + event->area.height,
+		       g->bw->scale, 0xFFFFFF);
+	current_redraw_browser = NULL;
+
+	if (g->careth != 0)
+		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
+
+	current_widget = NULL;
+	g_object_unref(current_gc);
+#ifdef CAIRO_VERSION
+	cairo_destroy(current_cr);
+#endif
+
+	return FALSE;
+}
+
+static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
+					  GdkEventMotion *event, gpointer data)
+{
+	struct gui_window *g = data;
+	bool shift = event->state & GDK_SHIFT_MASK;
+	bool ctrl = event->state & GDK_CONTROL_MASK;
+
+	if ((abs(event->x - g->last_x) < 5) &&
+	    (abs(event->y - g->last_y) < 5)) {
+		/* Mouse hasn't moved far enough from press coordinate for this
+		 * to be considered a drag. */
+		return FALSE;
+	} else {
+		/* This is a drag, ensure it's always treated as such, even if
+		 * we drag back over the press location */
+		g->last_x = INT_MIN;
+		g->last_y = INT_MIN;
+	}
+
+	if (g->mouse.state & BROWSER_MOUSE_PRESS_1) {
+		/* Start button 1 drag */
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
+				g->mouse.pressed_x, g->mouse.pressed_y);
+
+		/* Replace PRESS with HOLDING and declare drag in progress */
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 |
+				BROWSER_MOUSE_HOLDING_1);
+		g->mouse.state |= BROWSER_MOUSE_DRAG_ON;
+	} else if (g->mouse.state & BROWSER_MOUSE_PRESS_2) {
+		/* Start button 2 drag */
+		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_2,
+				g->mouse.pressed_x, g->mouse.pressed_y);
+
+		/* Replace PRESS with HOLDING and declare drag in progress */
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 |
+				BROWSER_MOUSE_HOLDING_2);
+		g->mouse.state |= BROWSER_MOUSE_DRAG_ON;
+	}
+
+	/* Handle modifiers being removed */
+	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
+	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
+
+	browser_window_mouse_track(g->bw, g->mouse.state,
+			event->x / g->bw->scale, event->y / g->bw->scale);
+
+	return TRUE;
+}
+
+static gboolean nsgtk_window_button_press_event(GtkWidget *widget,
+					 GdkEventButton *event, gpointer data)
+{
+	struct gui_window *g = data;
+
+	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
+	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
+			g->scaffold)->window));
+
+	g->mouse.pressed_x = event->x / g->bw->scale;
+	g->mouse.pressed_y = event->y / g->bw->scale;
+
+	switch (event->button) {
+	case 1:	/* Left button, usually. Pass to core as BUTTON 1. */
+		g->mouse.state = BROWSER_MOUSE_PRESS_1;
+		break;
+
+	case 2:	/* Middle button, usually. Pass to core as BUTTON 2 */
+		g->mouse.state = BROWSER_MOUSE_PRESS_2;
+		break;
+
+	case 3:	/* Right button, usually. Action button, context menu. */
+		browser_window_remove_caret(g->bw);
+		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse.pressed_x,
+				g->mouse.pressed_y);
+		return TRUE;
+
+	default:
+		return FALSE;
+	}
+
+	/* Handle the modifiers too */
+	if (event->state & GDK_SHIFT_MASK)
+		g->mouse.state |= BROWSER_MOUSE_MOD_1;
+	if (event->state & GDK_CONTROL_MASK)
+		g->mouse.state |= BROWSER_MOUSE_MOD_2;
+
+	/* Record where we pressed, for use when determining whether to start
+	 * a drag in motion notify events. */
+	g->last_x = event->x;
+	g->last_y = event->y;
+
+	browser_window_mouse_click(g->bw, g->mouse.state, g->mouse.pressed_x,
+			g->mouse.pressed_y);
+
+	return TRUE;
+}
+
+static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
+					 GdkEventButton *event, gpointer data)
+{
+	struct gui_window *g = data;
+	bool shift = event->state & GDK_SHIFT_MASK;
+	bool ctrl = event->state & GDK_CONTROL_MASK;
+
+	/* If the mouse state is PRESS then we are waiting for a release to emit
+	 * a click event, otherwise just reset the state to nothing */
+	if (g->mouse.state & BROWSER_MOUSE_PRESS_1)
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
+	else if (g->mouse.state & BROWSER_MOUSE_PRESS_2)
+		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
+
+	/* Handle modifiers being removed */
+	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
+		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
+	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
+		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
+
+	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2)) {
+		browser_window_mouse_click(g->bw, g->mouse.state, 
+				event->x / g->bw->scale, 
+				event->y / g->bw->scale);
+	} else {
+		browser_window_mouse_drag_end(g->bw, 0, event->x / g->bw->scale,
+				event->y / g->bw->scale);
+	}
+
+	g->mouse.state = 0;
+	return TRUE;
+}
+
+static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
+				GdkEventScroll *event, gpointer data)
+{
+	struct gui_window *g = data;
+	double value;
+	GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
+	GtkAdjustment *scroll;
+	const GtkAllocation *const alloc =
+		&GTK_WIDGET(g->layout)->allocation;
+
+	switch (event->direction) {
+	case GDK_SCROLL_LEFT:
+		scroll = hscroll;
+		value = gtk_adjustment_get_value(scroll) -
+			(scroll->step_increment * 2);
+		if (value < scroll->lower)
+			value = scroll->lower;
+		break;
+
+	case GDK_SCROLL_UP:
+		scroll = vscroll;
+		value = gtk_adjustment_get_value(scroll) -
+			(scroll->step_increment * 2);
+		if (value < scroll->lower)
+			value = scroll->lower;
+		break;
+
+	case GDK_SCROLL_RIGHT:
+		scroll = hscroll;
+		value = gtk_adjustment_get_value(scroll) +
+			(scroll->step_increment * 2);
+		if (value > scroll->upper - alloc->width)
+			value = scroll->upper - alloc->width;
+		break;
+
+	case GDK_SCROLL_DOWN:
+		scroll = vscroll;
+		value = gtk_adjustment_get_value(scroll) +
+			(scroll->step_increment * 2);
+		if (value > scroll->upper - alloc->height)
+			value = scroll->upper - alloc->height;
+		break;
+	default:
+		return TRUE;
+	}
+
+	gtk_adjustment_set_value(scroll, value);
+
+	return TRUE;
+}
+
+static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
+				GdkEventKey *event, gpointer data)
+{
+	struct gui_window *g = data;
+	uint32_t nskey = gtk_gui_gdkkey_to_nskey(event);
+
+	if (browser_window_key_press(g->bw, nskey))
+		return TRUE;
+
+	if ((event->state & 0x7) == 0) {
+		double value;
+		GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
+		GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
+		GtkAdjustment *scroll;
+		const GtkAllocation *const alloc =
+			&GTK_WIDGET(g->layout)->allocation;
+
+		switch (event->keyval) {
+		default:
+			return TRUE;
+
+		case GDK_Home:
+		case GDK_KP_Home:
+			scroll = vscroll;
+			value = scroll->lower;
+			break;
+
+		case GDK_End:
+		case GDK_KP_End:
+			scroll = vscroll;
+			value = scroll->upper - alloc->height;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Left:
+		case GDK_KP_Left:
+			scroll = hscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->step_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Up:
+		case GDK_KP_Up:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->step_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Right:
+		case GDK_KP_Right:
+			scroll = hscroll;
+			value = gtk_adjustment_get_value(scroll) +
+						scroll->step_increment;
+			if (value > scroll->upper - alloc->width)
+				value = scroll->upper - alloc->width;
+			break;
+
+		case GDK_Down:
+		case GDK_KP_Down:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) +
+						scroll->step_increment;
+			if (value > scroll->upper - alloc->height)
+				value = scroll->upper - alloc->height;
+			break;
+
+		case GDK_Page_Up:
+		case GDK_KP_Page_Up:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) -
+						scroll->page_increment;
+			if (value < scroll->lower)
+				value = scroll->lower;
+			break;
+
+		case GDK_Page_Down:
+		case GDK_KP_Page_Down:
+			scroll = vscroll;
+			value = gtk_adjustment_get_value(scroll) +
+						scroll->page_increment;
+			if (value > scroll->upper - alloc->height)
+				value = scroll->upper - alloc->height;
+			break;
+		}
+
+		gtk_adjustment_set_value(scroll, value);
+	}
+
+	return TRUE;
+}
+
+static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
+		GtkAllocation *allocation, gpointer data)
+{
+	struct gui_window *g = data;
+
+	g->bw->reformat_pending = true;
+	browser_reformat_pending = true;
+
+	if (g->paned != NULL) {
+		/* Set status bar / scroll bar proportion according to
+		 * option_toolbar_status_width */
+		/* TODO: Probably want to detect when the user adjusts the
+		 *       status bar width, remember that proportion for the
+		 *       window, and use that here. */
+		gtk_paned_set_position(g->paned, (option_toolbar_status_width *
+				allocation->width) / 10000);
+	}
+
+	return TRUE;
+}
+
+/* Core interface docuemnted in desktop/gui.h to create a gui_window */
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					     struct browser_window *clone,
 					     bool new_tab)
 {
-	struct gui_window *g;		/**< what we're creating to return */
+	struct gui_window *g; /**< what we're creating to return */
 	GtkPolicyType scrollpolicy;
 
 	g = calloc(1, sizeof(*g));
@@ -242,7 +611,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		/* Attach ourselves into our parent at the right point */
 		nsgtk_gui_window_attach_child(bw->parent->window, g);
-	
+
 		gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
 	}
 
@@ -333,16 +702,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return g;
 }
 
-static void nsgtk_gui_window_attach_child(struct gui_window *parent,
-					  struct gui_window *child)
-{
-	/* Attach the child gui_window (frame) into the parent.
-	 * It will be resized later on.
-	 */
-	GtkLayout *parent_layout = parent->layout;
-	GtkWidget *child_widget = GTK_WIDGET(child->scrolledwindow);
-	gtk_layout_put(parent_layout, child_widget, 0, 0);
-}
 
 void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
@@ -352,12 +711,12 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	int width = x1 - x0 + 2, height = y1 - y0 + 2;
 	assert(w);
 	assert(f);
-	
+
 	if (width < 1)
 		width = 1;
 	if (height < 1)
 		height = 1;
-	
+
 	LOG(("%s: %d,%d	 %dx%d", g->bw->name, x0, y0, width, height));
 
 	/* if the window has not changed position or size, do not bother
@@ -377,368 +736,9 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	}
 }
 
-gboolean nsgtk_window_expose_event(GtkWidget *widget,
-				   GdkEventExpose *event, gpointer data)
-{
-	struct gui_window *g = data;
-	hlcache_handle *c;
-	float scale = g->bw->scale;
 
-	assert(g);
-	assert(g->bw);
 
-	struct gui_window *z;
-	for (z = window_list; z && z != g; z = z->next)
-		continue;
-	assert(z);
-	assert(GTK_WIDGET(g->layout) == widget);
 
-	c = g->bw->current_content;
-	if (c == NULL)
-		return FALSE;
-
-	/* HTML rendering handles scale itself */
-	if (content_get_type(c) == CONTENT_HTML)
-		scale = 1;
-
-	current_widget = (GtkWidget *)g->layout;
-	current_drawable = g->layout->bin_window;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
-	current_cr = gdk_cairo_create(current_drawable);
-#endif
-
-	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(g->bw->scale);
-	current_redraw_browser = g->bw;
-
-	plot.clip(event->area.x, 
-		  event->area.y,	
-		  event->area.x + event->area.width, 
-		  event->area.y + event->area.height);
-
-	content_redraw(c, 0, 0,
-		       content_get_width(c) * scale,
-		       content_get_height(c) * scale,
-		       event->area.x,
-		       event->area.y,
-		       event->area.x + event->area.width,
-		       event->area.y + event->area.height,
-		       g->bw->scale, 0xFFFFFF);
-	current_redraw_browser = NULL;
-
-	if (g->careth != 0)
-		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
-
-	current_widget = NULL;
-	g_object_unref(current_gc);
-#ifdef CAIRO_VERSION
-	cairo_destroy(current_cr);
-#endif
-
-	return FALSE;
-}
-
-gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
-					  GdkEventMotion *event, gpointer data)
-{
-	struct gui_window *g = data;
-	bool shift = event->state & GDK_SHIFT_MASK;
-	bool ctrl = event->state & GDK_CONTROL_MASK;
-
-	if ((abs(event->x - g->last_x) < 5) &&
-			(abs(event->y - g->last_y) < 5)) {
-		/* Mouse hasn't moved far enough from press coordinate for this
-		 * to be considered a drag. */
-		return FALSE;
-	} else {
-		/* This is a drag, ensure it's always treated as such, even if
-		 * we drag back over the press location */
-		g->last_x = INT_MIN;
-		g->last_y = INT_MIN;
-	}
-
-	if (g->mouse.state & BROWSER_MOUSE_PRESS_1){
-		/* Start button 1 drag */
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_1,
-				g->mouse.pressed_x, g->mouse.pressed_y);
-		/* Replace PRESS with HOLDING and declare drag in progress */
-		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 |
-				BROWSER_MOUSE_HOLDING_1);
-		g->mouse.state |= BROWSER_MOUSE_DRAG_ON;
-	}
-	else if (g->mouse.state & BROWSER_MOUSE_PRESS_2){
-		/* Start button 2 drag */
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_DRAG_2,
-				g->mouse.pressed_x, g->mouse.pressed_y);
-		/* Replace PRESS with HOLDING and declare drag in progress */
-		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 |
-				BROWSER_MOUSE_HOLDING_2);
-		g->mouse.state |= BROWSER_MOUSE_DRAG_ON;
-	}
-	/* Handle modifiers being removed */
-	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
-		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
-	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
-		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
-
-	browser_window_mouse_track(g->bw, g->mouse.state,
-			event->x / g->bw->scale, event->y / g->bw->scale);
-
-	return TRUE;
-}
-
-gboolean nsgtk_window_button_press_event(GtkWidget *widget,
-					 GdkEventButton *event, gpointer data)
-{
-	struct gui_window *g = data;
-
-	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
-	gtk_widget_hide(GTK_WIDGET(nsgtk_scaffolding_history_window(
-			g->scaffold)->window));
-
-	g->mouse.pressed_x = event->x / g->bw->scale;
-	g->mouse.pressed_y = event->y / g->bw->scale;
-
-	switch (event->button) {
-	case 1:
-		/* Left button, usually.
-		 * Pass to core as BUTTON 1. */
-		g->mouse.state = BROWSER_MOUSE_PRESS_1;
-		break;
-	case 2:
-		/* Middle button, usually.
-		 * Pass to core as BUTTON 2 */
-		g->mouse.state = BROWSER_MOUSE_PRESS_2;
-		break;
-	case 3:
-		/* Right button, usually.
-		 * Front end action button -- context menu. */
-		browser_window_remove_caret(g->bw);
-		nsgtk_scaffolding_popup_menu(g->scaffold, g->mouse.pressed_x,
-				g->mouse.pressed_y);
-		return TRUE;
-	default:
-		return FALSE;
-	}
-	/* Handle the modifiers too */
-	if (event->state & GDK_SHIFT_MASK)
-		g->mouse.state |= BROWSER_MOUSE_MOD_1;
-	if (event->state & GDK_CONTROL_MASK)
-		g->mouse.state |= BROWSER_MOUSE_MOD_2;
-
-	/* Record where we pressed, for use when determining whether to start
-	 * a drag in motion notify events. */
-	g->last_x = event->x;
-	g->last_y = event->y;
-
-	browser_window_mouse_click(g->bw, g->mouse.state, g->mouse.pressed_x,
-			g->mouse.pressed_y);
-
-	return TRUE;
-}
-
-gboolean nsgtk_window_button_release_event(GtkWidget *widget,
-					 GdkEventButton *event, gpointer data)
-{
-	struct gui_window *g = data;
-	bool shift = event->state & GDK_SHIFT_MASK;
-	bool ctrl = event->state & GDK_CONTROL_MASK;
-
-	/* If the mouse state is PRESS then we are waiting for a release to emit
-	 * a click event, otherwise just reset the state to nothing*/
-	if (g->mouse.state & BROWSER_MOUSE_PRESS_1)
-		g->mouse.state ^= (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_CLICK_1);
-	else if (g->mouse.state & BROWSER_MOUSE_PRESS_2)
-		g->mouse.state ^= (BROWSER_MOUSE_PRESS_2 | BROWSER_MOUSE_CLICK_2);
-
-	/* Handle modifiers being removed */
-	if (g->mouse.state & BROWSER_MOUSE_MOD_1 && !shift)
-		g->mouse.state ^= BROWSER_MOUSE_MOD_1;
-	if (g->mouse.state & BROWSER_MOUSE_MOD_2 && !ctrl)
-		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
-
-	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2))
-		browser_window_mouse_click(g->bw, g->mouse.state, event->x / g->bw->scale,
-			event->y / g->bw->scale);
-	else
-		browser_window_mouse_drag_end(g->bw, 0, event->x / g->bw->scale,
-				event->y / g->bw->scale);
-
-	g->mouse.state = 0;
-	return TRUE;
-}
-
-gboolean nsgtk_window_scroll_event(GtkWidget *widget,
-					   GdkEventScroll *event, gpointer data)
-{
-	struct gui_window *g = data;
-	double value;
-	GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
-	GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
-	GtkAdjustment *scroll;
-	const GtkAllocation *const alloc =
-		&GTK_WIDGET(g->layout)->allocation;
-	
-	switch (event->direction) {
-	case GDK_SCROLL_LEFT:
-		scroll = hscroll;
-		value = gtk_adjustment_get_value(scroll) -
-			(scroll->step_increment * 2);
-		if (value < scroll->lower)
-			value = scroll->lower;
-		break;
-		
-	case GDK_SCROLL_UP:
-		scroll = vscroll;
-		value = gtk_adjustment_get_value(scroll) -
-			(scroll->step_increment * 2);
-		if (value < scroll->lower)
-			value = scroll->lower;
-		break;
-		
-	case GDK_SCROLL_RIGHT:
-		scroll = hscroll;
-		value = gtk_adjustment_get_value(scroll) +
-			(scroll->step_increment * 2);
-		if (value > scroll->upper - alloc->width)
-			value = scroll->upper - alloc->width;
-		break;
-		
-	case GDK_SCROLL_DOWN:
-		scroll = vscroll;
-		value = gtk_adjustment_get_value(scroll) +
-			(scroll->step_increment * 2);
-		if (value > scroll->upper - alloc->height)
-			value = scroll->upper - alloc->height;
-		break;
-	default:
-		return TRUE;		
-	}
-	
-	gtk_adjustment_set_value(scroll, value);
-	
-	return TRUE;
-}
-
-gboolean nsgtk_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
-		gpointer data)
-{
-	struct gui_window *g = data;
-	uint32_t nskey = gtk_gui_gdkkey_to_nskey(event);
-	if (browser_window_key_press(g->bw, nskey))
-		return TRUE;
-
-	if ((event->state & 0x7) == 0) {
-		double value;
-		GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
-
-		GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
-
-		GtkAdjustment *scroll;
-
-		const GtkAllocation *const alloc =
-			&GTK_WIDGET(g->layout)->allocation;
-
-		switch (event->keyval) {
-		default:
-			return TRUE;
-
-		case GDK_Home:
-		case GDK_KP_Home:
-			scroll = vscroll;
-			value = scroll->lower;
-			break;
-
-		case GDK_End:
-		case GDK_KP_End:
-			scroll = vscroll;
-			value = scroll->upper - alloc->height;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Left:
-		case GDK_KP_Left:
-			scroll = hscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Up:
-		case GDK_KP_Up:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Right:
-		case GDK_KP_Right:
-			scroll = hscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - alloc->width)
-				value = scroll->upper - alloc->width;
-			break;
-
-		case GDK_Down:
-		case GDK_KP_Down:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - alloc->height)
-				value = scroll->upper - alloc->height;
-			break;
-
-		case GDK_Page_Up:
-		case GDK_KP_Page_Up:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->page_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
-
-		case GDK_Page_Down:
-		case GDK_KP_Page_Down:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->page_increment;
-			if (value > scroll->upper - alloc->height)
-				value = scroll->upper - alloc->height;
-			break;
-		}
-
-		gtk_adjustment_set_value(scroll, value);
-	}
-
-	return TRUE;
-}
-
-gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
-		GtkAllocation *allocation, gpointer data)
-{
-	struct gui_window *g = data;
-
-	g->bw->reformat_pending = true;
-	browser_reformat_pending = true;
-
-	if (g->paned != NULL) {
-		/* Set status bar / scroll bar proportion according to
-		 * option_toolbar_status_width */
-		/* TODO: Probably want to detect when the user adjusts the
-		 *       status bar width, remember that proportion for the
-		 *       window, and use that here. */
-		gtk_paned_set_position(g->paned, (option_toolbar_status_width *
-				allocation->width) / 10000);
-	}
-
-	return TRUE;
-}
 
 
 void nsgtk_reflow_all_windows(void)
@@ -812,7 +812,7 @@ void gui_window_destroy(struct gui_window *g)
 
 }
 
-void nsgtk_redraw_caret(struct gui_window *g)
+static void nsgtk_redraw_caret(struct gui_window *g)
 {
 	if (g->careth == 0)
 		return;
