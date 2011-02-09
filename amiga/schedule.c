@@ -20,6 +20,7 @@
 #include "amiga/os3support.h"
 #include "amiga/object.h"
 #include "amiga/schedule.h"
+
 #include <proto/exec.h>
 
 /**
@@ -63,7 +64,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
-#ifdef AMI_SCHEDULER_USES_TIMER
+
 	if(nscb->treq = AllocVec(sizeof(struct TimeRequest),MEMF_PRIVATE | MEMF_CLEAR))
 	{
 		*nscb->treq = *tioreq;
@@ -72,7 +73,7 @@ void schedule(int t, void (*callback)(void *p), void *p)
     	nscb->treq->Time.Microseconds=nscb->tv.Microseconds; // micro
     	SendIO((struct IORequest *)nscb->treq);
 	}
-#endif
+
 	nscb->callback = callback;
 	nscb->p = p;
 }
@@ -155,16 +156,14 @@ BOOL schedule_run(void)
 
 void ami_remove_timer_event(struct nscallback *nscb)
 {
-#ifdef AMI_SCHEDULER_USES_TIMER
 	if(!nscb) return;
 
 	if(nscb->treq)
 	{
-		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
+//		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
    			AbortIO((struct IORequest *)nscb->treq);
 
 		WaitIO((struct IORequest *)nscb->treq);
 		FreeVec(nscb->treq);
 	}
-#endif
 }

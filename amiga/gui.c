@@ -1662,6 +1662,7 @@ void ami_handle_appmsg(void)
 	{
 		GetAttr(WINDOW_UserData, (Object *)appmsg->am_ID, (ULONG *)&gwin);
 
+/* AppIcons are for iconified windows - we don't have iconify yet.
 		if(appmsg->am_Type == AMTYPE_APPICON)
 		{
 			if(screen_closed)
@@ -1674,7 +1675,9 @@ void ami_handle_appmsg(void)
 			ScreenToFront(scrn);
 			WindowToFront(gwin->win);
 		}
-		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
+		else
+ */
+		if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
 			GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 				(ULONG *)&bbox);
@@ -1699,8 +1702,8 @@ void ami_handle_appmsg(void)
 
 					AddPart(filename,appwinargs->wa_Name,1024);
 
-					if((!gwin->bw->current_content ||
-						content_get_type(gwin->bw->current_content) != CONTENT_HTML) ||
+					if(((gwin->bw->current_content == NULL) ||
+						(content_get_type(gwin->bw->current_content) != CONTENT_HTML)) ||
 						(!((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))))
 					{
 						urlfilename = path_to_url(filename);
@@ -1735,7 +1738,7 @@ void ami_handle_appmsg(void)
 							}
 						}
 
-						if(!file_box && !text_box)
+						if((!file_box) && (!text_box))
 						{
 							urlfilename = path_to_url(filename);
 							browser_window_go(gwin->bw, urlfilename, NULL, true);
@@ -1867,12 +1870,12 @@ void ami_handle_applib(void)
 			case APPLIBMT_CustomMsg:
 			{
 				struct ApplicationCustomMsg *applibcustmsg = applibmsg;
-				STRPTR tempmsg;
-				if(tempmsg = ASPrintf("\"%s\"",applibcustmsg->customMsg))
-				{
-					OpenWorkbenchObjectA(tempmsg, NULL);
-					FreeVec(tempmsg);
-				}
+		//		STRPTR tempmsg;
+		//		if(tempmsg = ASPrintf("\"%s\"",applibcustmsg->customMsg))
+		//		{
+					OpenWorkbenchObjectA(applibcustmsg->customMsg, NULL);
+		//			FreeVec(tempmsg);
+		//		}
 			}
 			break;
 		}
@@ -1894,30 +1897,30 @@ void ami_get_msg(void)
     signal = Wait(signalmask);
 
 	if(signal & winsignal)
-	{
 		ami_handle_msg();
-	}
-	else if(signal & appsig)
-	{
+
+	if(signal & appsig)
 		ami_handle_appmsg();
-	}
-	else if(signal & rxsig)
-	{
+
+	if(signal & rxsig)
 		ami_arexx_handle();
-	}
-	else if(signal & applibsig)
-	{
+
+	if(signal & applibsig)
 		ami_handle_applib();
-	}
-	else if(signal & printsig)
+
+	if(signal & printsig)
 	{
 		while(GetMsg(printmsgport));  //ReplyMsg
 		ami_print_cont();
 	}
-	else if(signal & schedulesig)
+
+	if(signal & schedulesig)
 	{
-		while(GetMsg(msgport));
-		//schedule_run();
+		while(timermsg = GetMsg(msgport))
+		{
+			ReplyMsg(timermsg);
+			schedule_run();
+		}
 	}
 }
 
@@ -1935,16 +1938,11 @@ void gui_multitask(void)
 void gui_poll(bool active)
 {
 	/* However, down here we are waiting for the user to do something or for a
-	   scheduled event to kick in (scheduled events are signalled using
-       timer.device, but NetSurf seems to still be wanting to run code.  We ask
-	   Intuition to send IDCMP_INTUITICKS messages every 1/10s to our active
-	   window to break us out of ami_get_msg to stop NetSurf stalling (the active
-	   variable seems to have no real bearing on reality, but is supposed to
-	   indicate that NetSurf wants control back ASAP, so we poll in that case).
-
+	   scheduled event to kick in (the active variable seems to have no real
+	   bearing on reality, but is supposed to indicate that NetSurf wants
+	   control back ASAP, so we poll in that case).
 	   schedule_run checks every event, really they need to be sorted so only
 	   the first event needs to be run on each signal. */
-
 
 	if(active)
 	{
@@ -1954,7 +1952,6 @@ void gui_poll(bool active)
 	else
 	{
 		ami_get_msg();
-		schedule_run(); // run on intuitick
 	}
 }
 
@@ -2398,7 +2395,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_SmartRefresh,TRUE,
            	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
 				IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_SIZEVERIFY |
-				IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE | IDCMP_INTUITICKS,
+				IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE, // | IDCMP_INTUITICKS,
 //			WINDOW_IconifyGadget, TRUE,
 //			WINDOW_NewMenu,menu,
 			WINDOW_HorizProp,1,
@@ -2556,14 +2553,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 								IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-								IDCMP_ACTIVEWINDOW | IDCMP_INTUITICKS |
-								IDCMP_EXTENDEDMOUSE | IDCMP_GADGETDOWN,
+								IDCMP_ACTIVEWINDOW | // IDCMP_INTUITICKS |
+								IDCMP_EXTENDEDMOUSE,
 					WINDOW_NewMenu, gwin->shared->menu,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
-								IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY |
-								 IDCMP_GADGETDOWN,
+								IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
         		    WINDOW_AppPort, appport,
 					WINDOW_AppWindow,TRUE,
 					WINDOW_SharedPort,sport,
@@ -2746,7 +2742,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					WA_ReportMouse,TRUE,
         		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 							IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-							IDCMP_RAWKEY | IDCMP_INTUITICKS |
+							IDCMP_RAWKEY | // IDCMP_INTUITICKS |
 							IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 							IDCMP_EXTENDEDMOUSE,
 					WINDOW_HorizProp,1,
@@ -3828,6 +3824,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	ULONG gid,x,y;
 	struct gui_window_2 *gwin = hook->h_Data;
 	struct IntuiWheelData *wheel;
+	Object *reqrefresh = NULL;
 
 	gui_window_get_scroll(gwin->bw->window,
 		&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
@@ -3835,7 +3832,14 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	switch(msg->Class)
 	{
 		case IDCMP_IDCMPUPDATE:
-			gid = GetTagData( GA_ID, 0, msg->IAddress ); 
+			gid = GetTagData( GA_ID, 0, msg->IAddress );
+
+/*
+			if(reqrefresh = GetTagData( LAYOUT_RequestRefresh, 0, msg->IAddress ))
+			{
+				printf("LAYOUT_RequestRefresh\n");
+			}
+*/
 
 			switch( gid ) 
 			{
