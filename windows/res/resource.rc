@@ -221,4 +221,5 @@ FONT 8, "MS Sans Serif"
 //
 // Icon resources
 //
-ID                 ICON           "NetSurf32.ico"
+NSWS_ID_NETSURF32_ICON                 ICON           "NetSurf32.ico"
+NSWS_ID_NETSURF16_ICON                 ICON           "NetSurf16.ico"

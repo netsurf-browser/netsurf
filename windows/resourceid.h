@@ -23,6 +23,9 @@
 #define IDC_STATIC (-1)
 #endif
 
+#define NSWS_ID_NETSURF32_ICON  10
+#define NSWS_ID_NETSURF16_ICON  11
+
 #define NSWS_ID_MAINMENU                        101
 #define NSWS_ID_CTXMENU                         103
 #define NSWS_ID_TOOLBAR_BITMAP                  107
