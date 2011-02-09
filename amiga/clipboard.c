@@ -246,7 +246,9 @@ bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 
 		if(text)
 		{
-			if (!ami_add_to_clipboard(text, length, box->space)) return false;
+			bool add_space = box != NULL ? box->space : false;
+
+			if (!ami_add_to_clipboard(text, length, add_space)) return false;
 		}
 
 		PopChunk(iffh);

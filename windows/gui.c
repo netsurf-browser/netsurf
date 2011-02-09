@@ -2488,13 +2488,15 @@ gui_selection_traverse_handler(const char *text,
 			       const char *space_text,
 			       size_t space_length)
 {
-	if (space_text) {
+	bool add_space = box != NULL ? box->space : false;
+
+	if (space_text != NULL && space_length > 0) {
 		if (!gui_add_to_clipboard(space_text, space_length, false)) {
 			return false;
 		}
 	}
 
-	if (!gui_add_to_clipboard(text, length, box->space))
+	if (!gui_add_to_clipboard(text, length, add_space))
 		return false;
 
 	return true;

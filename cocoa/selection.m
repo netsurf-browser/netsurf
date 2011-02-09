@@ -72,9 +72,11 @@ static bool cocoa_clipboard_copy_handler(const char *text, size_t length, struct
 										 void *handle, const char *whitespace_text,
 										 size_t whitespace_length)
 {
+	bool add_space = box != NULL ? box->space : false;
+
 	if (whitespace_text && !gui_add_to_clipboard( whitespace_text, 
 												 whitespace_length, false )) return false;
-	return gui_add_to_clipboard( text, length, box->space );
+	return gui_add_to_clipboard( text, length, add_space );
 }
 
 bool gui_commit_clipboard(void)
