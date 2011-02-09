@@ -16,31 +16,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "amiga/context_menu.h"
-#include "render/box.h"
-#include "render/form.h"
 #ifdef __amigaos4__
 #include <proto/popupmenu.h>
 #endif
 #include <proto/intuition.h>
-#include "amiga/utf8.h"
-#include "utils/utf8.h"
-#include "utils/messages.h"
-#include "amiga/options.h"
-#include "amiga/clipboard.h"
 #include <proto/asl.h>
 #include <proto/dos.h>
-#include <string.h>
-#include "utils/utils.h"
-#include <proto/asl.h>
-#include "desktop/textinput.h"
-#include "desktop/selection.h"
+#include <proto/exec.h>
+
+#include "amiga/context_menu.h"
+#include "amiga/utf8.h"
+#include "amiga/options.h"
+#include "amiga/clipboard.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
+#include "desktop/textinput.h"
+#include "desktop/selection.h"
+#include "render/box.h"
+#include "render/form.h"
+#include "utils/utf8.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
+#include <string.h>
 
 uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
+bool ami_context_menu_copy_selection(const char *text, size_t length, struct box *box,
+	void *handle, const char *whitespace_text, size_t whitespace_length);
 
 char *ctxmenulab[CMID_LAST];
+
+struct ami_context_menu_selection
+{
+	char text[1024];
+	int length;
+};
 
 void ami_context_menu_init(void)
 {
@@ -61,6 +71,7 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_SELPASTE] = ami_utf8_easy((char *)messages_get("PasteNS"));
 	ctxmenulab[CMID_SELALL] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
 	ctxmenulab[CMID_SELCLEAR] = ami_utf8_easy((char *)messages_get("ClearNS"));
+	ctxmenulab[CMID_SELSEARCH] = ami_utf8_easy((char *)messages_get("SearchWeb"));
 
 	ctxmenulab[CMSUB_OBJECT] = ami_utf8_easy((char *)messages_get("Object"));
 	ctxmenulab[CMSUB_URL] = ami_utf8_easy((char *)messages_get("Link"));
@@ -206,6 +217,14 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCLEAR],
 							PMIA_ID,CMID_SELCLEAR,
+							PMIA_Disabled, disabled_noselection,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELSEARCH],
+							PMIA_ID,CMID_SELSEARCH,
 							PMIA_Disabled, disabled_noselection,
 						TAG_DONE),
 					TAG_DONE),
@@ -407,8 +426,47 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			case CMID_SELCLEAR:
 				browser_window_key_press(gwin->bw, KEY_CLEAR_SELECTION);
 			break;
+
+			case CMID_SELSEARCH:
+			{
+				struct ami_context_menu_selection *sel;
+				char *url;
+
+				sel = AllocVec(sizeof(struct ami_context_menu_selection),
+					MEMF_PRIVATE | MEMF_CLEAR);
+
+				if(sel)
+				{
+					selection_traverse(gwin->bw->sel, ami_context_menu_copy_selection,
+						sel);
+					url = search_web_from_term(sel->text);
+					browser_window_go(gwin->bw, url, NULL, true);
+
+					FreeVec(sel);
+				}
+			}
+			break;
 		}
     }
 
     return itemid;
+}
+
+bool ami_context_menu_copy_selection(const char *text, size_t length, struct box *box,
+	void *handle, const char *whitespace_text, size_t whitespace_length)
+{
+	struct ami_context_menu_selection *sel = handle;
+	int len = length;
+
+	if((length + (sel->length)) > (sizeof(sel->text)))
+		len = sizeof(sel->text) - (sel->length);
+
+	if(len <= 0) return false;
+
+	memcpy((sel->text) + (sel->length), text, len);
+	sel->length += len;
+
+	sel->text[sel->length] = '\0';
+
+	return true;
 }
