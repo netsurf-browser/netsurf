@@ -51,6 +51,8 @@
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "desktop/plotters.h"
+
 #include "render/form.h"
 #include "render/html.h"
 #include "render/textplain.h"
@@ -85,6 +87,30 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 static void browser_window_find_target_internal(struct browser_window *bw,
 		const char *target, int depth, struct browser_window *page,
 		int *rdepth, struct browser_window **bw_target);
+
+/* exported interface, documented in browser.h */
+bool browser_window_redraw(struct browser_window *bw, 
+			   int x, int y,
+			   int width, int height,
+			   int clip_x0, int clip_y0, 
+			   int clip_x1, int clip_y1)
+{
+	if (bw == NULL) {
+		LOG(("NULL browser window"));
+		return false;
+	}
+
+	plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+
+	if (bw->current_content == NULL) {
+		return plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
+
+	}
+ 
+	return content_redraw(bw->current_content, x, y, width, height,
+			clip_x0, clip_y0, clip_x1, clip_y1,
+			bw->scale, 0xFFFFFF);	
+}
 
 /**
  * Create and open a new browser window with the given page.

@@ -305,9 +305,6 @@ fb_redraw(fbtk_widget_t *widget,
 	int width;
 	int height;
 
-	if (bw->current_content == NULL)
-		return;
-
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
 	     bwidget->redraw_box.y0,
@@ -329,12 +326,13 @@ fb_redraw(fbtk_widget_t *widget,
 
 	/* redraw bounding box is relative to window */
 	current_redraw_browser = bw;
-	content_redraw(bw->current_content,
+
+	browser_window_redraw(bw,
 		       x - bwidget->scrollx, y - bwidget->scrolly,
 		       width, height,
 		       bwidget->redraw_box.x0, bwidget->redraw_box.y0,
-		       bwidget->redraw_box.x1, bwidget->redraw_box.y1,
-		       bw->scale, 0xFFFFFF);
+		       bwidget->redraw_box.x1, bwidget->redraw_box.y1);
+
 	current_redraw_browser = NULL;
 
 	nsfb_update(fbtk_get_nsfb(widget), &bwidget->redraw_box);

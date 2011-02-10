@@ -880,30 +880,20 @@ static LRESULT
 nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 {
 	PAINTSTRUCT ps;
-	HDC hdc, tmp_hdc;
 
-	hdc = BeginPaint(hwnd, &ps);
+	plot_hdc = BeginPaint(hwnd, &ps);
 
-	if ((gw != NULL) &&
-	    (gw->bw != NULL) &&
-	    (gw->bw->current_content != NULL)) {
-		/* set global HDC for the plotters */
-		tmp_hdc = hdc;
-		plot_hdc = hdc;
+	if (gw != NULL) {
+		browser_window_redraw(gw->bw,
+				      -gw->scrollx / gw->bw->scale,
+				      -gw->scrolly / gw->bw->scale,
+				      gw->width,
+				      gw->height,
+				      ps.rcPaint.left,
+				      ps.rcPaint.top,
+				      ps.rcPaint.right,
+				      ps.rcPaint.bottom);
 
-		content_redraw(gw->bw->current_content,
-			       -gw->scrollx / gw->bw->scale,
-			       -gw->scrolly / gw->bw->scale,
-			       gw->width,
-			       gw->height,
-			       ps.rcPaint.left,
-			       ps.rcPaint.top,
-			       ps.rcPaint.right,
-			       ps.rcPaint.bottom,
-			       gw->bw->scale,
-			       0xFFFFFF);
-
-		plot_hdc = tmp_hdc;
 	}
 
 	EndPaint(hwnd, &ps);
@@ -1683,6 +1673,22 @@ static HWND nsws_window_statusbar_create(struct gui_window *w)
 	return hwnd;
 }
 
+static css_fixed get_window_dpi(HWND hwnd)
+{
+	HDC hdc = GetDC(hwnd);
+	int dpi = GetDeviceCaps(hdc, LOGPIXELSY);
+	css_fixed fix_dpi = INTTOFIX(96);
+
+	if (dpi > 10) {
+		fix_dpi = INTTOFIX(dpi);
+	}
+
+	ReleaseDC(hwnd, hdc);
+
+	LOG(("FIX DPI %x", fix_dpi));
+
+	return fix_dpi;
+}
 
 /**
  * creation of a new full browser window
@@ -1692,7 +1698,7 @@ static HWND nsws_window_create(struct gui_window *gw)
 	HWND hwnd;
 	INITCOMMONCONTROLSEX icc;
 
-	LOG(("nsws_window_create %p", gw));
+	LOG(("GUI window %p", gw));
 
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
@@ -1718,16 +1724,20 @@ static HWND nsws_window_create(struct gui_window *gw)
 			      hinstance,
 			      NULL);
 
-		HDC hdc = GetDC(hwnd);
-		int dpi = GetDeviceCaps(hdc,LOGPIXELSY);
-		if (dpi > 10)
-			nscss_screen_dpi = INTTOFIX(dpi);
-		ReleaseDC(hwnd, hdc);
+	if (hwnd == NULL) {
+		LOG(("Window create failed"));
+		return NULL;
+	}
+
+	nscss_screen_dpi = get_window_dpi(hwnd);
 
 	if ((option_window_width >= 100) &&
 	    (option_window_height >= 100) &&
 	    (option_window_x >= 0) &&
 	    (option_window_y >= 0)) {
+		LOG(("Setting Window position %d,%d %d,%d",
+		     option_window_x, option_window_y,
+		     option_window_width, option_window_height));
 		SetWindowPos(hwnd, HWND_TOPMOST,
 			     option_window_x, option_window_y,
 			     option_window_width, option_window_height,
@@ -1751,10 +1761,13 @@ gui_create_browser_window(struct browser_window *bw,
 {
 	struct gui_window *gw;
 
+	LOG(("Creating gui window for browser window %p", bw));
+
 	gw = calloc(1, sizeof(struct gui_window));
 
-	if (gw == NULL)
+	if (gw == NULL) {
 		return NULL;
+	}
 
 	/* connect gui window to browser window */
 	gw->bw = bw;
@@ -1769,6 +1782,7 @@ gui_create_browser_window(struct browser_window *bw,
 	gw->mouse = malloc(sizeof(struct browser_mouse));
 	if (gw->mouse == NULL) {
 		free(gw);
+		LOG(("Unable to allocate mouse state"));
 		return NULL;
 	}
 	gw->mouse->gui = gw;
@@ -1795,6 +1809,8 @@ gui_create_browser_window(struct browser_window *bw,
 					       NULL,
 					       hinstance,
 					       NULL);
+		LOG(("BROWSER_WINDOW_NORMAL: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
+
 
 		/* set the gui window associated with this toolbar */
 		SetProp(gw->drawingarea, TEXT("GuiWnd"), (HANDLE)gw);
@@ -1803,6 +1819,7 @@ gui_create_browser_window(struct browser_window *bw,
 		input_window = gw;
 		open_windows++;
 		ShowWindow(gw->main, SW_SHOWNORMAL);
+		ShowWindow(gw->drawingarea, SW_SHOWNORMAL);
 
 		break;
 

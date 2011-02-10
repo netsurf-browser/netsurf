@@ -901,15 +901,19 @@ bool content_redraw(hlcache_handle *h, int x, int y,
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-//	LOG(("%p %s", c, c->url));
-	if (c->locked)
+
+	if (c->locked) {
 		/* not safe to attempt redraw */
 		return true;
-	if (handler_map[c->type].redraw)
-		return handler_map[c->type].redraw(c, x, y, width, height,
-				clip_x0, clip_y0, clip_x1, clip_y1, scale,
-				background_colour);
-	return true;
+	}
+
+	if (handler_map[c->type].redraw == NULL) {
+		return true;
+	}
+
+	return handler_map[c->type].redraw(c, x, y, width, height,
+			clip_x0, clip_y0, clip_x1, clip_y1, scale,
+			background_colour);
 }
 
 

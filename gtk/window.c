@@ -156,25 +156,29 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 				   GdkEventExpose *event, gpointer data)
 {
 	struct gui_window *g = data;
-	hlcache_handle *c;
-	float scale = g->bw->scale;
+	struct gui_window *z;
+	int width = 0;
+	int height = 0;
 
 	assert(g);
 	assert(g->bw);
 
-	struct gui_window *z;
 	for (z = window_list; z && z != g; z = z->next)
 		continue;
 	assert(z);
 	assert(GTK_WIDGET(g->layout) == widget);
 
-	c = g->bw->current_content;
-	if (c == NULL)
-		return FALSE;
+	/* set the width and height to use */
+	if (g->bw->current_content != NULL) {
+		width = content_get_width(g->bw->current_content);
+		height = content_get_height(g->bw->current_content);
 
-	/* HTML rendering handles scale itself */
-	if (content_get_type(c) == CONTENT_HTML)
-		scale = 1;
+		if (content_get_type(g->bw->current_content) != CONTENT_HTML) {
+			/* HTML rendering handles scale itself */
+			width *= g->bw->scale;
+			height *= g->bw->scale;
+		}
+	}
 
 	current_widget = (GtkWidget *)g->layout;
 	current_drawable = g->layout->bin_window;
@@ -187,19 +191,11 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
 
-	plot.clip(event->area.x,
-		  event->area.y,
-		  event->area.x + event->area.width,
-		  event->area.y + event->area.height);
-
-	content_redraw(c, 0, 0,
-		       content_get_width(c) * scale,
-		       content_get_height(c) * scale,
-		       event->area.x,
-		       event->area.y,
+	browser_window_redraw(g->bw, 0, 0, width, height,
+		       event->area.x, event->area.y,
 		       event->area.x + event->area.width,
-		       event->area.y + event->area.height,
-		       g->bw->scale, 0xFFFFFF);
+		       event->area.y + event->area.height);
+
 	current_redraw_browser = NULL;
 
 	if (g->careth != 0)
@@ -334,8 +330,8 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 		g->mouse.state ^= BROWSER_MOUSE_MOD_2;
 
 	if (g->mouse.state & (BROWSER_MOUSE_CLICK_1|BROWSER_MOUSE_CLICK_2)) {
-		browser_window_mouse_click(g->bw, g->mouse.state, 
-				event->x / g->bw->scale, 
+		browser_window_mouse_click(g->bw, g->mouse.state,
+				event->x / g->bw->scale,
 				event->y / g->bw->scale);
 	} else {
 		browser_window_mouse_drag_end(g->bw, 0, event->x / g->bw->scale,

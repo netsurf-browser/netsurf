@@ -123,8 +123,6 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 
 - (void)drawRect:(NSRect)dirtyRect; 
 {
-	if (NULL == browser->current_content) return;
-	
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	current_redraw_browser = browser;
@@ -137,19 +135,13 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	[self getRectsBeingDrawn: &rects count: &count];
 	
 	for (NSInteger i = 0; i < count; i++) {
-		plot.clip( NSMinX( rects[i] ), NSMinY( rects[i]), NSMaxX( rects[i] ), NSMaxY( rects[i] ) );
-
-		content_redraw(browser->current_content,
-					   0,
-					   0,
-					   cocoa_pt_to_px( NSWidth( frame ) ),
-					   cocoa_pt_to_px( NSHeight( frame ) ),
-					   cocoa_pt_to_px( NSMinX( rects[i] ) ),
-					   cocoa_pt_to_px( NSMinY( rects[i] ) ),
-					   cocoa_pt_to_px( NSMaxX( rects[i] ) ),
-					   cocoa_pt_to_px( NSMaxY( rects[i] ) ),
-					   browser->scale,
-					   0xFFFFFF);
+		browser_window_redraw(browser, 0, 0,
+				cocoa_pt_to_px( NSWidth( frame ) ),
+				cocoa_pt_to_px( NSHeight( frame ) ),
+				cocoa_pt_to_px( NSMinX( rects[i] ) ),
+				cocoa_pt_to_px( NSMinY( rects[i] ) ),
+				cocoa_pt_to_px( NSMaxX( rects[i] ) ),
+				cocoa_pt_to_px( NSMaxY( rects[i] ) ));
 	}
 	current_redraw_browser = NULL;
 
