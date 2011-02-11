@@ -89,10 +89,8 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 		int *rdepth, struct browser_window **bw_target);
 
 /* exported interface, documented in browser.h */
-bool browser_window_redraw(struct browser_window *bw, 
-			   int x, int y,
-			   int clip_x0, int clip_y0, 
-			   int clip_x1, int clip_y1)
+bool browser_window_redraw(struct browser_window *bw, int x, int y,
+		struct rect clip)
 {
 	int width = 0;
 	int height = 0;
@@ -102,10 +100,11 @@ bool browser_window_redraw(struct browser_window *bw,
 		return false;
 	}
 
-	plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
 
 	if (bw->current_content == NULL) {
-		return plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
+		return plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+				plot_style_fill_white);
 
 	}
 
@@ -115,7 +114,7 @@ bool browser_window_redraw(struct browser_window *bw,
 	}
  
 	return content_redraw(bw->current_content, x, y, width, height,
-			clip_x0, clip_y0, clip_x1, clip_y1,
+			clip.x0, clip.y0, clip.x1, clip.y1,
 			bw->scale, 0xFFFFFF);	
 }
 

@@ -30,6 +30,7 @@
 
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
+#include "desktop/shape.h"
 #include "render/html.h"
 
 struct box;
@@ -256,13 +257,10 @@ bool browser_window_stop_available(struct browser_window *bw);
  *
  * Calls the redraw function for the content, 
  *
- * \param  bw		     The window to redraw
- * \param  x		     coordinate for top-left of redraw
- * \param  y		     coordinate for top-left of redraw
- * \param  clip_x0	     clip rectangle left
- * \param  clip_y0	     clip rectangle top
- * \param  clip_x1	     clip rectangle right
- * \param  clip_y1	     clip rectangle bottom
+ * \param  bw    The window to redraw
+ * \param  x     coordinate for top-left of redraw
+ * \param  y     coordinate for top-left of redraw
+ * \param  clip  clip rectangle coordinates
  * \return true if successful, false otherwise
  *
  * x, y and clip_* are coordinates from the top left of the canvas area.
@@ -271,10 +269,8 @@ bool browser_window_stop_available(struct browser_window *bw);
  * the bottom right corner of the clip rectangle is (clip_x1, clip_y1).
  * Units for x, y and clip_* are pixels.
  */
-bool browser_window_redraw(struct browser_window *bw, 
-			   int x, int y,
-			   int clip_x0, int clip_y0, 
-			   int clip_x1, int clip_y1);
+bool browser_window_redraw(struct browser_window *bw, int x, int y,
+		struct rect clip);
 
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct hlcache_handle *c);

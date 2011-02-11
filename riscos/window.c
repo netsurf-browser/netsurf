@@ -1455,7 +1455,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		return;
 	}
 	while (more) {
-		int clip_x0, clip_y0, clip_x1, clip_y1;
+		struct rect clip;
 
 		/* OS's redraw request coordinates are in screen coordinates,
 		 * with an origin at the bottom left of the screen.
@@ -1468,17 +1468,18 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		/* Convert OS redraw rectangle request coordinates into NetSurf
 		 * coordinates. NetSurf coordinates have origin at top left of
 		 * document and units are in px. */
-		clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2; /* left   */
-		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2; /* top    */
-		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2; /* right  */
-		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2; /* bottom */
+		clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2; /* left   */
+		clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2; /* top    */
+		clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2; /* right  */
+		clip.y1 = (ro_plot_origin_y - redraw->clip.y0) / 2; /* bottom */
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
-		plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
+		plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+				plot_style_fill_white);
 
-		browser_window_redraw(g->bw, 0, 0, clip_x0, clip_y0, clip_x1, clip_y1);
+		browser_window_redraw(g->bw, 0, 0, clip);
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
@@ -1530,7 +1531,7 @@ void ro_gui_window_update_boxes(void) {
 	osbool more;
 	bool use_buffer;
 	wimp_draw update;
-	int clip_x0, clip_y0, clip_x1, clip_y1;
+	struct rect clip;
 	os_error *error;
 	struct update_box *cur;
 	struct gui_window *g;
@@ -1568,17 +1569,18 @@ void ro_gui_window_update_boxes(void) {
 		ro_plot_set_scale(g->bw->scale);
 
 		while (more) {
-			clip_x0 = (update.clip.x0 - ro_plot_origin_x) / 2;
-			clip_y0 = (ro_plot_origin_y - update.clip.y1) / 2;
-			clip_x1 = (update.clip.x1 - ro_plot_origin_x) / 2;
-			clip_y1 = (ro_plot_origin_y - update.clip.y0) / 2;
+			clip.x0 = (update.clip.x0 - ro_plot_origin_x) / 2;
+			clip.y0 = (ro_plot_origin_y - update.clip.y1) / 2;
+			clip.x1 = (update.clip.x1 - ro_plot_origin_x) / 2;
+			clip.y1 = (ro_plot_origin_y - update.clip.y0) / 2;
 
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
 
-			plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
+			plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+					plot_style_fill_white);
 
-			browser_window_redraw(g->bw, 0, 0, clip_x0, clip_y0, clip_x1, clip_y1);
+			browser_window_redraw(g->bw, 0, 0, clip);
 
 			if (use_buffer)
 				ro_gui_buffer_close();

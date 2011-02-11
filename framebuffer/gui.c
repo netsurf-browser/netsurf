@@ -36,6 +36,7 @@
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
+#include "desktop/shape.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/messages.h"
@@ -302,6 +303,7 @@ fb_redraw(fbtk_widget_t *widget,
 {
 	int x;
 	int y;
+	struct rect clip;
 
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
@@ -323,10 +325,14 @@ fb_redraw(fbtk_widget_t *widget,
 	/* redraw bounding box is relative to window */
 	current_redraw_browser = bw;
 
+	clip.x0 = bwidget->redraw_box.x0;
+	clip.y0 = bwidget->redraw_box.y0;
+	clip.x1 = bwidget->redraw_box.x1;
+	clip.y1 = bwidget->redraw_box.y1;
+
 	browser_window_redraw(bw,
 		       x - bwidget->scrollx, y - bwidget->scrolly,
-		       bwidget->redraw_box.x0, bwidget->redraw_box.y0,
-		       bwidget->redraw_box.x1, bwidget->redraw_box.y1);
+		       clip);
 
 	current_redraw_browser = NULL;
 

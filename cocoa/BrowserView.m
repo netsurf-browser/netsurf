@@ -123,8 +123,9 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 
 - (void)drawRect:(NSRect)dirtyRect; 
 {
+	struct rect clip;
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	
+
 	current_redraw_browser = browser;
 	cocoa_set_font_scale_factor( browser->scale );
 	
@@ -135,11 +136,12 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	[self getRectsBeingDrawn: &rects count: &count];
 	
 	for (NSInteger i = 0; i < count; i++) {
-		browser_window_redraw(browser, 0, 0,
-				cocoa_pt_to_px( NSMinX( rects[i] ) ),
-				cocoa_pt_to_px( NSMinY( rects[i] ) ),
-				cocoa_pt_to_px( NSMaxX( rects[i] ) ),
-				cocoa_pt_to_px( NSMaxY( rects[i] ) ));
+		clip.x0 = cocoa_pt_to_px( NSMinX( rects[i] ) );
+		clip.y0 = cocoa_pt_to_px( NSMinY( rects[i] ) );
+		clip.x1 = cocoa_pt_to_px( NSMaxX( rects[i] ) );
+		clip.y1 = cocoa_pt_to_px( NSMaxY( rects[i] ) );
+
+		browser_window_redraw(browser, 0, 0, clip);
 	}
 	current_redraw_browser = NULL;
 

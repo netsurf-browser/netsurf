@@ -879,18 +879,21 @@ nsws_drawable_mouseup(struct gui_window *gw,
 static LRESULT
 nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 {
+	struct rect clip;
 	PAINTSTRUCT ps;
 
 	plot_hdc = BeginPaint(hwnd, &ps);
 
 	if (gw != NULL) {
+		clip.x0 = ps.rcPaint.left;
+		clip.y0 = ps.rcPaint.top;
+		clip.x1 = ps.rcPaint.right;
+		clip.y1 = ps.rcPaint.bottom;
+
 		browser_window_redraw(gw->bw,
 				      -gw->scrollx / gw->bw->scale,
 				      -gw->scrolly / gw->bw->scale,
-				      ps.rcPaint.left,
-				      ps.rcPaint.top,
-				      ps.rcPaint.right,
-				      ps.rcPaint.bottom);
+				      clip);
 
 	}
 

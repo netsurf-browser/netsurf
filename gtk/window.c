@@ -157,6 +157,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 	struct gui_window *z;
+	struct rect clip;
 
 	assert(g);
 	assert(g->bw);
@@ -178,10 +179,12 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
 
-	browser_window_redraw(g->bw, 0, 0,
-		       event->area.x, event->area.y,
-		       event->area.x + event->area.width,
-		       event->area.y + event->area.height);
+	clip.x0 = event->area.x;
+	clip.y0 = event->area.y;
+	clip.x1 = event->area.x + event->area.width;
+	clip.y1 = event->area.y + event->area.height;
+
+	browser_window_redraw(g->bw, 0, 0, clip);
 
 	current_redraw_browser = NULL;
 
