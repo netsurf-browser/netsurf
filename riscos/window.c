@@ -1440,31 +1440,12 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	osbool more;
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(redraw->w);
 	float scale = g->bw->scale;
-	hlcache_handle *h = g->bw->current_content;
 	os_error *error;
-
-	/*	Handle no content quickly
-	*/
-	if (!h) {
-		ro_gui_user_redraw(redraw, true, os_COLOUR_WHITE);
-		return;
-	}
-
-	/* We can't render locked content as it is being in the process of
-	   being transformed.  We won't update anything (i.e. leaving
-	   window area as is) instead of showing random data in case of
-	   buffered redraw.  */
-	if (content_is_locked(h))
-		return;
 
 	plot = ro_plotters;
 	ro_plot_set_scale(scale);
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = g->bw;
-
-	/* HTML rendering handles scale itself */
-	if (content_get_type(h) == CONTENT_HTML)
-		scale = 1;
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
@@ -1495,20 +1476,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
-		/* Set up NetSurf's plotters with current clip rectangle */
-		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
-
-		if (content_get_type(h) != CONTENT_HTML)
-                    plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1,
-                    		plot_style_fill_white);
-
-		/* Redraw the clip rectangle area of the content */
-		content_redraw(h, 0, 0,
-				content_get_width(h) * scale,
-				content_get_height(h) * scale,
-				clip_x0, clip_y0, clip_x1, clip_y1,
-				g->bw->scale,
-				0xFFFFFF);
+		browser_window_redraw(g->bw, 0, 0, clip_x0, clip_y0, clip_x1, clip_y1);
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
@@ -1557,9 +1525,7 @@ void ro_gui_window_remove_update_boxes(struct gui_window *g) {
  * Redraw any pending update boxes.
  */
 void ro_gui_window_update_boxes(void) {
-	hlcache_handle *h;
 	osbool more;
-	bool clear_background = false;
 	bool use_buffer;
 	wimp_draw update;
 	int clip_x0, clip_y0, clip_x1, clip_y1;
@@ -1572,11 +1538,9 @@ void ro_gui_window_update_boxes(void) {
 		g = cur->g;
 		if (!g)
 			continue;
-		h = g->bw->current_content;
+
 		data = &cur->data;
 		use_buffer = cur->use_buffer;
-		if (!h)
-			continue;
 
 		update.w = g->window;
 		update.box.x0 = cur->x0;
@@ -1601,10 +1565,6 @@ void ro_gui_window_update_boxes(void) {
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
 		ro_plot_set_scale(g->bw->scale);
 
-		/* We should clear the background, except for HTML. */
-		if (content_get_type(h) != CONTENT_HTML)
-			clear_background = true;
-
 		while (more) {
 			clip_x0 = (update.clip.x0 - ro_plot_origin_x) / 2;
 			clip_y0 = (ro_plot_origin_y - update.clip.y1) / 2;
@@ -1614,33 +1574,11 @@ void ro_gui_window_update_boxes(void) {
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
 
-			if (clear_background) {
-				error = xcolourtrans_set_gcol(
-						os_COLOUR_WHITE,
-						colourtrans_SET_BG_GCOL,
-						os_ACTION_OVERWRITE, 0,
-						0);
-				if (error) {
-					LOG(("xcolourtrans_set_gcol: "
-							"0x%x: %s",
-							error->errnum,
-							error->errmess));
-					warn_user("MiscError",
-							error->errmess);
-				}
-				os_clg();
-			}
-
-			content_redraw(h, 0, 0,
-					content_get_width(h),
-					content_get_height(h),
-					clip_x0, clip_y0,
-					clip_x1, clip_y1,
-					g->bw->scale,
-					0xFFFFFF);
+			browser_window_redraw(g->bw, 0, 0, clip_x0, clip_y0, clip_x1, clip_y1);
 
 			if (use_buffer)
 				ro_gui_buffer_close();
+
 			error = xwimp_get_rectangle(&update, &more);
 			/* RISC OS 3.7 returns an error here if enough buffer
 			 * was claimed to cause a new dynamic area to be
