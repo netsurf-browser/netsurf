@@ -877,8 +877,8 @@ void content_request_redraw(struct hlcache_handle *h,
  * \param  h		     content
  * \param  x		     coordinate for top-left of redraw
  * \param  y		     coordinate for top-left of redraw
- * \param  width	     available width (not used for HTML redraw)
- * \param  height	     available height (not used for HTML redraw)
+ * \param  width	     render width (not used for HTML redraw)
+ * \param  height	     render height (not used for HTML redraw)
  * \param  clip_x0	     clip rectangle left
  * \param  clip_y0	     clip rectangle top
  * \param  clip_x1	     clip rectangle right
@@ -892,6 +892,17 @@ void content_request_redraw(struct hlcache_handle *h,
  * The top left corner of the clip rectangle is (clip_x0, clip_y0) and
  * the bottom right corner of the clip rectangle is (clip_x1, clip_y1).
  * Units for x, y and clip_* are pixels.
+ *
+ * Content scaling is handled differently for contents with and without
+ * intrinsic dimensions.
+ *
+ * Content without intrinsic dimensions, e.g. HTML:
+ *   The scale value is applied (the content having been reformatted
+ *   appropriately beforehand).  The width and height are not used.
+ *
+ * Content with intrinsic dimensions, e.g. images:
+ *   The scale value is not used.  The content is scaled from its own
+ *   intrinsic dimensions to the passed render width and height.
  */
 
 bool content_redraw(hlcache_handle *h, int x, int y,
