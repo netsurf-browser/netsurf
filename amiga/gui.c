@@ -3096,7 +3096,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
  * \param  y1  bottom-right co-ordinate (in document co-ordinates)
  */
 
-void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0, int x1, int y1)
+void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
+		int x0, int y0, int x1, int y1)
 {
 	ULONG xoffset,yoffset,width=800,height=600;
 	ULONG htemp,vtemp;
@@ -3119,13 +3120,12 @@ void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
-	if(!c) return;
-	if(content_is_locked(c)) return;
+	if(!bw) return;
 
-	current_redraw_browser = g->shared->bw;
+	current_redraw_browser = bw;
 
-	width=bbox->Width / g->shared->bw->scale;
-	height=bbox->Height / g->shared->bw->scale;
+	width=bbox->Width / bw->scale;
+	height=bbox->Height / bw->scale;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
@@ -3149,18 +3149,14 @@ void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0
 	if((x1-x0)+(xoffset+x0-sx)>(width)) x1 = (width-(x0-sx)+x0);
 	if((y1-y0)+(yoffset+y0-sy)>(height)) y1 = (height-(y0-sy)+y0);
 
-	glob->scale = g->shared->bw->scale;
+	glob->scale = bw->scale;
 
-	content_redraw(c,
+	browser_window_redraw(bw,
 		-sx, -sy,
-		width, // - sx,
-		height, // - sy,
-		(x0 - sx) * g->shared->bw->scale,
-		(y0 - sy) * g->shared->bw->scale,
-		(x1 - sx) * g->shared->bw->scale,
-		(y1 - sy) * g->shared->bw->scale,
-		g->shared->bw->scale,
-		0xFFFFFF);
+		(x0 - sx),
+		(y0 - sy),
+		(x1 - sx),
+		(y1 - sy));
 
 	current_redraw_browser = NULL;
 
@@ -3180,13 +3176,13 @@ void ami_do_redraw_limits(struct gui_window *g, hlcache_handle *c,int x0, int y0
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 {
 	ULONG sx,sy;
-	hlcache_handle *c;
+	struct browser_window *bw;
 
 	if(!g) return;
 
-	c = g->shared->bw->current_content;
+	bw = g->shared->bw;
 
-	ami_do_redraw_limits(g,c,x0,y0,x1,y1);
+	ami_do_redraw_limits(g, bw, x0, y0, x1, y1);
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -3209,7 +3205,7 @@ void gui_window_update_box(struct gui_window *g,
 
 	if(!g) return;
 
-	ami_do_redraw_limits(g,g->shared->bw->current_content,
+	ami_do_redraw_limits(g, g->shared->bw,
 			data->redraw.x,data->redraw.y,
 			data->redraw.width+data->redraw.x,
 			data->redraw.height+data->redraw.y);
@@ -3273,14 +3269,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		if(vcurrent>oldv)
 		{
-			ami_do_redraw_limits(g->bw->window, c,
+			ami_do_redraw_limits(g->bw->window, g->bw,
 					hcurrent, (height / g->bw->scale) + oldv,
 					hcurrent + (width / g->bw->scale),
 					vcurrent + (height / g->bw->scale));
 		}
 		else if(vcurrent<oldv)
 		{
-			ami_do_redraw_limits(g->bw->window, c,
+			ami_do_redraw_limits(g->bw->window, g->bw,
 					hcurrent, vcurrent,
 					hcurrent + (width / g->bw->scale),
 					oldv);
@@ -3288,14 +3284,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		if(hcurrent>oldh)
 		{
-			ami_do_redraw_limits(g->bw->window, c,
+			ami_do_redraw_limits(g->bw->window, g->bw,
 					(width / g->bw->scale) + oldh, vcurrent,
 					hcurrent + (width / g->bw->scale),
 					vcurrent + (height / g->bw->scale));
 		}
 		else if(hcurrent<oldh)
 		{
-			ami_do_redraw_limits(g->bw->window, c,
+			ami_do_redraw_limits(g->bw->window, g->bw,
 					hcurrent, vcurrent,
 					oldh, vcurrent+(height / g->bw->scale));
 		}
@@ -3305,15 +3301,11 @@ void ami_do_redraw(struct gui_window_2 *g)
 		ami_clg(0xffffff);
 		glob->scale = g->bw->scale;
 
-		if(content_get_type(c) == CONTENT_HTML)
-		{
-			content_redraw(c, -hcurrent,
-						-vcurrent,
-						width,
-						height,
-						0,0,width,
-						height,
-						g->bw->scale,0xFFFFFF);
+		browser_window_redraw(g->bw, -hcurrent,
+					-vcurrent,
+					0, 0, width,
+					height);
+#if 0
 		}
 		else
 		{
@@ -3324,8 +3316,9 @@ void ami_do_redraw(struct gui_window_2 *g)
 						hcurrent, vcurrent, width + hcurrent /* * g->bw->scale */,
 						height + vcurrent /* * g->bw->scale */,
 						g->bw->scale,0xFFFFFF);
-		}
 
+		}
+#endif
 		ami_clearclipreg(&browserglob);
 		BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
