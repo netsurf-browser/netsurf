@@ -136,8 +136,6 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	
 	for (NSInteger i = 0; i < count; i++) {
 		browser_window_redraw(browser, 0, 0,
-				cocoa_pt_to_px( NSWidth( frame ) ),
-				cocoa_pt_to_px( NSHeight( frame ) ),
 				cocoa_pt_to_px( NSMinX( rects[i] ) ),
 				cocoa_pt_to_px( NSMinY( rects[i] ) ),
 				cocoa_pt_to_px( NSMaxX( rects[i] ) ),

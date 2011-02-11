@@ -302,8 +302,6 @@ fb_redraw(fbtk_widget_t *widget,
 {
 	int x;
 	int y;
-	int width;
-	int height;
 
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
@@ -311,8 +309,6 @@ fb_redraw(fbtk_widget_t *widget,
 	     bwidget->redraw_box.x1,
 	     bwidget->redraw_box.y1));
 
-	height = fbtk_get_height(widget);
-	width = fbtk_get_width(widget);
 	x = fbtk_get_absx(widget);
 	y = fbtk_get_absy(widget);
 
@@ -329,7 +325,6 @@ fb_redraw(fbtk_widget_t *widget,
 
 	browser_window_redraw(bw,
 		       x - bwidget->scrollx, y - bwidget->scrolly,
-		       width, height,
 		       bwidget->redraw_box.x0, bwidget->redraw_box.y0,
 		       bwidget->redraw_box.x1, bwidget->redraw_box.y1);
 

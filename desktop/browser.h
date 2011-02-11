@@ -259,8 +259,6 @@ bool browser_window_stop_available(struct browser_window *bw);
  * \param  bw		     The window to redraw
  * \param  x		     coordinate for top-left of redraw
  * \param  y		     coordinate for top-left of redraw
- * \param  width	     available width (not used for HTML redraw)
- * \param  height	     available height (not used for HTML redraw)
  * \param  clip_x0	     clip rectangle left
  * \param  clip_y0	     clip rectangle top
  * \param  clip_x1	     clip rectangle right
@@ -275,7 +273,6 @@ bool browser_window_stop_available(struct browser_window *bw);
  */
 bool browser_window_redraw(struct browser_window *bw, 
 			   int x, int y,
-			   int width, int height,
 			   int clip_x0, int clip_y0, 
 			   int clip_x1, int clip_y1);
 

@@ -157,8 +157,6 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 	struct gui_window *z;
-	int width = 0;
-	int height = 0;
 
 	assert(g);
 	assert(g->bw);
@@ -168,17 +166,6 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	assert(z);
 	assert(GTK_WIDGET(g->layout) == widget);
 
-	/* set the width and height to use */
-	if (g->bw->current_content != NULL) {
-		width = content_get_width(g->bw->current_content);
-		height = content_get_height(g->bw->current_content);
-
-		if (content_get_type(g->bw->current_content) != CONTENT_HTML) {
-			/* HTML rendering handles scale itself */
-			width *= g->bw->scale;
-			height *= g->bw->scale;
-		}
-	}
 
 	current_widget = (GtkWidget *)g->layout;
 	current_drawable = g->layout->bin_window;
@@ -191,7 +178,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
 
-	browser_window_redraw(g->bw, 0, 0, width, height,
+	browser_window_redraw(g->bw, 0, 0,
 		       event->area.x, event->area.y,
 		       event->area.x + event->area.width,
 		       event->area.y + event->area.height);

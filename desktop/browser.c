@@ -91,10 +91,12 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 /* exported interface, documented in browser.h */
 bool browser_window_redraw(struct browser_window *bw, 
 			   int x, int y,
-			   int width, int height,
 			   int clip_x0, int clip_y0, 
 			   int clip_x1, int clip_y1)
 {
+	int width = 0;
+	int height = 0;
+
 	if (bw == NULL) {
 		LOG(("NULL browser window"));
 		return false;
@@ -105,6 +107,11 @@ bool browser_window_redraw(struct browser_window *bw,
 	if (bw->current_content == NULL) {
 		return plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
 
+	}
+
+	if (content_get_type(bw->current_content) != CONTENT_HTML) {
+		width = content_get_width(bw->current_content) * bw->scale;
+		height = content_get_height(bw->current_content) * bw->scale;
 	}
  
 	return content_redraw(bw->current_content, x, y, width, height,
