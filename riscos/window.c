@@ -1476,6 +1476,8 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
+		plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
+
 		browser_window_redraw(g->bw, 0, 0, clip_x0, clip_y0, clip_x1, clip_y1);
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
@@ -1573,6 +1575,8 @@ void ro_gui_window_update_boxes(void) {
 
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
+
+			plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white);
 
 			browser_window_redraw(g->bw, 0, 0, clip_x0, clip_y0, clip_x1, clip_y1);
 
