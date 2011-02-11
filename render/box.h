@@ -92,6 +92,7 @@
 #include <libxml/HTMLparser.h>
 
 #include "desktop/browser.h"
+#include "desktop/shape.h"
 #include "css/css.h"
 
 struct box;
@@ -109,11 +110,6 @@ typedef enum {
 	BOX_INLINE_BLOCK, BOX_BR, BOX_TEXT,
 	BOX_INLINE_END, BOX_NONE
 } box_type;
-
-struct rect {
-	int x0, y0;
-	int x1, y1;
-};
 
 /* Sides of a box */
 enum box_side { TOP, RIGHT, BOTTOM, LEFT };

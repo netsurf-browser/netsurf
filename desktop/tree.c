@@ -159,11 +159,6 @@ struct tree {
 					   callbacks */
 };
 
-struct rect {
-	int x0; int y0; /* Top left coordinate */
-	int x1; int y1; /* Bottom right coordinate */
-};
-
 void tree_set_icon_dir(char *icon_dir)
 {
 	LOG(("Tree icon directory set to %s", icon_dir));
