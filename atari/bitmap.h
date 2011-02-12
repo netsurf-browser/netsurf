@@ -20,7 +20,8 @@
 #define NS_ATARI_BITMAP_H
 
 #define BITMAP_SHRINK	0
-#define BITMAP_GROW		0x01
+#define BITMAP_GROW		0x1024
+#define BITMAP_MONOGLYPH 0x2048
 
 struct bitmap {
 	int width;
