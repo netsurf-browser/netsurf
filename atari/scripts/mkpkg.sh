@@ -97,6 +97,7 @@ mkdir $dst"download"
 mkdir $dst"res"
 mkdir $dst"res/icons"
 mkdir $dst"res/fonts"
+touch $dst"cookies"
 cp $src"ns.prg" $dst
 chmod +x $dst"ns.prg"
 strip $dst"ns.prg"
@@ -143,6 +144,7 @@ fi
 echo "
 atari_screen_driver:vdi
 atari_font_driver:freetype
+atari_transparency:1
 homepage_url:file:///./res/blank
 http_proxy:0
 http_proxy_host:
@@ -170,48 +172,30 @@ expire_url:28
 #font_default:1
 ca_bundle:./res/cabundle
 ca_path:./res/certs
-cookie_file:./res/Cookies
-cookie_jar:./res/Cookies
-search_url_bar:0
-search_provider:0
-url_suggestion:0
-window_x:0
-window_y:0
-window_width:0
-window_height:0
-window_screen_width:0
-window_screen_height:0
+cookie_file:./res/cookies
+url_file:./res/url.db
+tree_icons_dir:./res/icons
+downloads_directory:./download
+hotlist_path:./res/hotlist
 scale:100
 incremental_reflow:1
 min_reflow_period:2000
-tree_icons_dir:./res/icons
 core_select_menu:1
 max_fetchers:8
 max_fetchers_per_host:2
 max_cached_fetch_handles:6
 target_blank:1
-margin_top:10
-margin_bottom:10
-margin_left:10
-margin_right:10
-export_scale:70
 suppress_images:0
 remove_backgrounds:0
 enable_loosening:1
-enable_PDF_compression:1
-enable_PDF_password:0
 render_resample:0
 downloads_clear:0
-request_overwrite:1
-downloads_directory:./download
-url_file:./res/URLs
-disable_popups:0
 history_age:0
 hover_urls:1
+search_url_bar:1
+search_provider:0
 focus_new:0
 new_blank:0
-hotlist_path:./res/Hotlist
-current_theme:0
 " > $dst"Choices"
 
 cd $dst
