@@ -36,6 +36,7 @@ extern char *option_atari_face_serif_bold; /* bold serif face */
 extern char *option_atari_face_cursive; 
 extern char *option_atari_face_fantasy;
 extern char *option_downloads_directory;
+extern char *option_url_file;
 
 #define EXTRA_OPTION_DEFINE \
 char * option_atari_screen_driver = (char*)"vdi";\
@@ -53,7 +54,8 @@ char *option_atari_face_serif;			\
 char *option_atari_face_serif_bold; \
 char *option_atari_face_cursive; \
 char *option_atari_face_fantasy; \
-char *option_downloads_directory = "./";
+char *option_downloads_directory = (char*)"./"; \
+char *option_url_file = (char*)"url.db";
 
 #define EXTRA_OPTION_TABLE \
 	{ "atari_screen_driver", OPTION_STRING, &option_atari_screen_driver },\
@@ -71,6 +73,7 @@ char *option_downloads_directory = "./";
 	{ "font_face_serif_bold", OPTION_STRING, &option_atari_face_serif_bold },\
 	{ "font_face_cursive", OPTION_STRING, &option_atari_face_cursive },\
 	{ "font_face_fantasy", OPTION_STRING, &option_atari_face_fantasy },\
-	{ "downloads_directory", OPTION_STRING, &option_downloads_directory }
+	{ "downloads_directory", OPTION_STRING, &option_downloads_directory },\
+	{ "url_file", OPTION_STRING, &option_url_file }
 #endif
 

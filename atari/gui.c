@@ -72,6 +72,7 @@
 #include "atari/plot.h"
 #include "atari/clipboard.h"
 #include "atari/osspec.h"
+#include "atari/search.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 
@@ -113,10 +114,10 @@ void gui_multitask(void)
 	*/
 	evnt.timer = 1;
 	if(input_window) {
-		graf_mkstate( &prev_inp_state.mx, &prev_inp_state.my,
-				&prev_inp_state.mbut, &prev_inp_state.mkstat );
 		wind_get(input_window->root->handle->handle, WF_WORKXYWH, &winloc[0],
 			&winloc[1], &winloc[2], &winloc[3] );
+		graf_mkstate( &prev_inp_state.mx, &prev_inp_state.my,
+				&prev_inp_state.mbut, &prev_inp_state.mkstat );
 		flags |= MU_M1;
 		if( prev_inp_state.mx >= winloc[0] && prev_inp_state.mx <= winloc[0] + winloc[2] &&
 				prev_inp_state.my >= winloc[1] && prev_inp_state.my <= winloc[1] + winloc[3] ){
@@ -290,6 +291,8 @@ void gui_window_destroy(struct gui_window *w)
 	LGRECT dbg;
 	struct gui_window * root = browser_find_root( w );
 	browser_get_rect( root, BR_CONTENT, &dbg );
+	printf("destroy browser\n");
+	/* search_destroy(); */
 	switch(w->browser->bw->browser_window_type) {
 		case BROWSER_WINDOW_NORMAL:
 			window_destroy( w );
@@ -364,7 +367,6 @@ void gui_window_redraw(struct gui_window *gw, int x0, int y0, int x1, int y1)
 {
 	if (gw == NULL)
 		return;
-	/* printf("update wind: %d,%d,%d,%d\n",x0, y0, x1, y1); */
 	browser_schedule_redraw( gw, x0, y0, x1, y1 );
 }
 
@@ -382,36 +384,18 @@ void gui_window_redraw_window(struct gui_window *gw)
 void gui_window_update_box(struct gui_window *gw,
 			   const union content_msg_data *data)
 {
-	CMP_BROWSER b;
 	LGRECT work;
+	CMP_BROWSER b;
 	if (gw == NULL)
 		return;
 	b = gw->browser;
-
 	/* the box values are actually floats */
 	int x0 = data->redraw.x - b->scroll.current.x;
 	int y0 = data->redraw.y - b->scroll.current.y;
-	int x1 = x0 + data->redraw.width;
-	int y1 = y0 + data->redraw.height;
-
-	if( y1 < 0 || x1 < 0 )
-		return;
-
-	browser_get_rect( gw, BR_CONTENT, &work);
-	if( x0 > work.g_x + work.g_w )
-		return;
-	if( y0 > work.g_y + work.g_h )
-		return;
-
-	if( x1 > work.g_x + work.g_w  )
-		x1 = work.g_x + work.g_w;
-
-	if( y1 > work.g_y + work.g_h )
-		y1 = work.g_y + work.g_h;
-
-	/* printf("update box: %d,%d,%d,%d\n",x0, y0, x1, y1); */
-
-	browser_schedule_redraw( gw, x0, y0, x1, y1 );
+	int w,h;
+	w = data->redraw.width;
+	h = data->redraw.height;
+ 	browser_schedule_redraw_rect( gw, x0, y0, w,h);
 }
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
@@ -429,7 +413,6 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	    (w->browser->bw == NULL) ||
 	    (w->browser->bw->current_content == NULL))
 		return;
-
 	if( sx != 0 ) {
 		if( sx < 0 ) {
 			browser_scroll(w, WA_LFLINE, abs(sx), true );
@@ -453,6 +436,7 @@ void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int
 {
 	LOG(("%s:(%p, %d, %d, %d, %d)", __func__, w, x0, y0, x1, y1));
 	gui_window_set_scroll(w,x0,y0);
+	browser_schedule_redraw_rect( w, 0, 0, x1-x0,y1-y0);
 }
 
 void gui_window_position_frame(struct gui_window *gw, int x0, int y0, int x1, int y1)
@@ -579,6 +563,7 @@ void gui_window_hide_pointer(struct gui_window *w)
 	TODO();
 }
 
+
 void gui_window_set_url(struct gui_window *w, const char *url)
 {
 	if (w == NULL)
@@ -601,7 +586,6 @@ static void throbber_advance( void * data )
 	gw->root->toolbar->throbber.index++;
 	if( gw->root->toolbar->throbber.index > gw->root->toolbar->throbber.max_index )
 		gw->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
-	/*printf("throb adv: %d\n",gw->root->toolbar->throbber.index );*/
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
 	schedule(50, throbber_advance, gw );
@@ -639,14 +623,22 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 	LGRECT work;
 	if (w == NULL)
 		return;
+	CMP_BROWSER b = w->browser;
 	if( w->browser->caret.current.g_w > 0 ) 
 		gui_window_remove_caret( w );
+	
 	w->browser->caret.requested.g_x = x;
 	w->browser->caret.requested.g_y = y;
 	w->browser->caret.requested.g_w = 2;
 	w->browser->caret.requested.g_h = height;
 	w->browser->caret.redraw = true;
-	browser_schedule_redraw( w, x, y, x+2, y + height );
+	browser_schedule_redraw_rect( 
+		w, 
+		x - b->scroll.current.x, 
+		y - b->scroll.current.y, 
+		w->browser->caret.requested.g_w, 
+		w->browser->caret.requested.g_h 
+	);	
 	return;
 }
 
@@ -659,13 +651,14 @@ gui_window_remove_caret(struct gui_window *w)
 {
 	if (w == NULL)
 		return;
+	CMP_BROWSER b = w->browser;
 	w->browser->caret.requested.g_w = 0;
 	w->browser->caret.redraw = true;
-	browser_schedule_redraw( w,
-		w->browser->caret.current.g_x,
-		w->browser->caret.current.g_y,
-		w->browser->caret.current.g_x + w->browser->caret.current.g_w + 1,
-		w->browser->caret.current.g_y + w->browser->caret.current.g_h + 1 
+	browser_schedule_redraw_rect( w,
+		w->browser->caret.current.g_x - b->scroll.current.x,
+		w->browser->caret.current.g_y - b->scroll.current.y,
+		w->browser->caret.current.g_w,
+		w->browser->caret.current.g_h
 	);
 }
 
@@ -708,8 +701,12 @@ save_complete_htmlSaveFileFormat(const char *path,
 
 void gui_window_new_content(struct gui_window *w)
 {
-	browser_scroll(w, WA_LFLINE, 0, true );
-	browser_scroll(w, WA_UPLINE, 0, true );
+	w->browser->scroll.current.x = 0;
+	w->browser->scroll.current.y = 0;
+	w->browser->scroll.requested.x = 0;
+	w->browser->scroll.requested.y = 0;
+	w->browser->scroll.required = true;
+	gui_window_redraw_window( w );
 }
 
 bool gui_window_scroll_start(struct gui_window *w)
@@ -967,7 +964,7 @@ void gui_quit(void)
 
 	struct gui_window * gw = window_list;
 	struct gui_window * tmp = window_list;
-	
+
 	while( gw ) {
 		tmp = gw->next;
 		if( gw->parent == NULL ) {
@@ -975,12 +972,15 @@ void gui_quit(void)
 		}
 		gw = tmp;
 	}
-	hotlist_destroy();
 	/* send WM_DESTROY to windows purely managed by windom: */
 	while( wglb.first ) {
 		ApplWrite( _AESapid, WM_DESTROY, wglb.first->handle, 0, 0, 0, 0);
 		EvntWindom( MU_MESAG );
 	}
+
+	urldb_save_cookies(option_cookie_file);
+	urldb_save(option_url_file);	
+	hotlist_destroy();
 
 	RsrcXtype( 0, rsc_trindex, rsc_ntree);
 	unbind_global_events();
@@ -1108,6 +1108,16 @@ static void gui_init(int argc, char** argv)
 
 	atari_find_resource(buf, "quirks.css", "./res/quirks.css");
 	quirks_stylesheet_url = path_to_url(buf);
+
+	if( strlen(option_url_file) ){	
+		urldb_load(option_url_file);
+	}
+	if( strlen(option_cookie_file) ){
+		urldb_load_cookies(option_cookie_file);
+		LOG(("Loading cookies from: %s", option_cookie_file ));		
+	}
+
+
 
 	if (process_cmdline(argc,argv) != true)
 		die("unable to process command line.\n");

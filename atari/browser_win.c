@@ -54,6 +54,7 @@
 #include "atari/statusbar.h"
 #include "atari/plot/plotter.h"
 #include "atari/dragdrop.h"
+#include "atari/search.h"
 
 
 bool cfg_rt_resize = false;
@@ -181,6 +182,8 @@ int window_destroy( struct gui_window * gw)
 	
 	/* test this with frames: */
 	/* assert( gw->parent == NULL); */
+
+	search_destroy( gw );
 
 	if( input_window == gw )
 		input_window = NULL;
