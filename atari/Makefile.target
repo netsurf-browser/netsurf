@@ -38,7 +38,7 @@ S_ATARI := gui.c findfile.c filetype.c misc.c bitmap.c schedule.c \
 	download.c thumbnail.c login.c verify_ssl.c treeview.c hotlist.c history.c\
 	search.c font.c \
 	plot.c plot/plotter.c plot/plotter_vdi.c plot/eddi.s \
-	plot/font_vdi.c plot/font_freetype.c \
+	plot/font_vdi.c plot/font_freetype.c plot/font_internal.c \
 	browser_win.c toolbar.c statusbar.c browser.c  \
 	global_evnt.c osspec.c dragdrop.c system_colour.c
 S_ATARI := $(addprefix atari/,$(S_ATARI))
