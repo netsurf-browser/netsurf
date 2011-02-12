@@ -44,6 +44,7 @@
 #include "atari/browser_win.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/search.h"
+#include "atari/options.h"
 
 extern const char * cfg_homepage_url;
 extern struct gui_window *input_window;
@@ -221,6 +222,10 @@ static void __CDECL menu_lhistory(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_ghistory(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	char buf[PATH_MAX];
+	strcpy((char*)&buf, "file://");
+	strncat((char*)&buf, option_url_file, PATH_MAX - (strlen("file://")+1) );
+	browser_window_create((char*)&buf, 0, 0, true, false);
 }
 
 static void __CDECL menu_add_bookmark(WINDOW *win, int item, int title, void *data)
@@ -364,30 +369,40 @@ void global_track_mouse_state( void ){
 	long hold_time = 0;
 	COMPONENT * cmp;
 	LGRECT cmprect;
+	struct gui_window * gw = input_window;
 	
-	if( !input_window ) {
+	if( !gw ) {
 		bmstate = 0;
 		mouse_hold_start[0] = 0;
 		mouse_hold_start[1] = 0;
 		return;
 	}
+
 	graf_mkstate(&mx, &my, &mbut, &mkstat);
 
 	/* todo: creat function find_browser_window( mx, my ) */
-	cmp = mt_CompFind( &app, input_window->root->cmproot, mx, my );
+	cmp = mt_CompFind( &app, gw->root->cmproot, mx, my );
 	if( cmp == NULL ) {
-		printf("invalid call to mouse track!\n");
 		bmstate = 0;
 		mouse_hold_start[0] = 0;
 		mouse_hold_start[1] = 0;
 		return;
 	}
 
-	browser_get_rect( input_window, BR_CONTENT, &cmprect ); 
-	nx = mx - cmprect.g_x; /*+ input_window->browser->scroll.current.x;*/
-	ny = my - cmprect.g_y; /*+ input_window->browser->scroll.current.x;*/
-	nx = (nx + input_window->browser->scroll.current.x);
-	ny = (ny + input_window->browser->scroll.current.y);
+	browser_get_rect( gw, BR_CONTENT, &cmprect ); 
+	nx = mx - cmprect.g_x; 
+	ny = my - cmprect.g_y; 
+	if( nx > cmprect.g_w ){
+		
+	}
+
+	if( ny > cmprect.g_h ){
+		browser_scroll( gw, WA_DNPAGE, 10 + (ny - cmprect.g_h) , false );
+		return;		
+	}	
+
+	nx = (nx + gw->browser->scroll.current.x);
+	ny = (ny + gw->browser->scroll.current.y);
 	bmstate &= ~(BROWSER_MOUSE_MOD_1);
 	bmstate &= ~(BROWSER_MOUSE_MOD_2);
 	bmstate &= ~(BROWSER_MOUSE_MOD_3);
@@ -406,7 +421,7 @@ void global_track_mouse_state( void ){
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
 					LOG(("Drag for %d ended", i));
 					browser_window_mouse_drag_end( 
-						input_window->browser->bw,
+						gw->browser->bw,
 						0, nx, ny
 					);
 				}
@@ -414,14 +429,14 @@ void global_track_mouse_state( void ){
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 ) ;
 					LOG(("Drag for %d ended", i));
 					browser_window_mouse_drag_end( 
-						input_window->browser->bw,
+						gw->browser->bw,
 						0, nx, ny
 					);
 				}
 			} 
 		} 
 	}
-	browser_window_mouse_track(input_window->browser->bw, bmstate, nx, ny );
+	browser_window_mouse_track(gw->browser->bw, bmstate, nx, ny );
 }
 
 
@@ -744,6 +759,7 @@ void unbind_global_events( void )
 	}
 }
 
+/* send redraw to all browser windows */
 void snd_redraw( short x, short y, short w, short h)
 {
 	struct gui_window * gw;
