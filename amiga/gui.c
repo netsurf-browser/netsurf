@@ -3104,6 +3104,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
 	ULONG sx, sy;
+	struct rect clip;
 
 	if(!g) return;
 
@@ -3129,14 +3130,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
-/*	x0 *= g->shared->bw->scale;
-	x1 *= g->shared->bw->scale;
-	y0 *= g->shared->bw->scale;
-	y1 *= g->shared->bw->scale;
-
-	sx *= g->shared->bw->scale;
-	sy *= g->shared->bw->scale;
-*/
 	plot=amiplot;
 	glob = &browserglob;
 
@@ -3151,12 +3144,12 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 
 	glob->scale = bw->scale;
 
-	browser_window_redraw(bw,
-		-sx, -sy,
-		(x0 - sx),
-		(y0 - sy),
-		(x1 - sx),
-		(y1 - sy));
+	clip.x0 = (x0 - sx);
+	clip.y0 = (y0 - sy);
+	clip.x1 = (x1 - sx);
+	clip.y1 = (y1 - sy);
+
+	browser_window_redraw(bw, -sx, -sy, clip);
 
 	current_redraw_browser = NULL;
 
@@ -3298,13 +3291,18 @@ void ami_do_redraw(struct gui_window_2 *g)
 	}
 	else
 	{
+		struct rect clip;
+
+		clip.x0 = 0;
+		clip.y0 = 0;
+		clip.x1 = width;
+		clip.y1 = height;
+
 		ami_clg(0xffffff);
 		glob->scale = g->bw->scale;
 
-		browser_window_redraw(g->bw, -hcurrent,
-					-vcurrent,
-					0, 0, width,
-					height);
+		browser_window_redraw(g->bw, -hcurrent, -vcurrent, clip);
+
 #if 0
 		}
 		else
