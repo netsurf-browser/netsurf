@@ -431,11 +431,6 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	/* in -> BGR */
 	/* out -> ARGB */
 	c = ABGR_TO_RGB(c);
-
-	clip.g_x = self->plotter->clipping.x0;
-	clip.g_y = self->plotter->clipping.y0;
-	clip.g_w = self->plotter->clipping.x1 - self->plotter->clipping.x0;
-	clip.g_h = self->plotter->clipping.y1 - self->plotter->clipping.y0;
 	while (nxtchr < length) {
 		ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
 		nxtchr = utf8_next(text, length, nxtchr);
