@@ -76,13 +76,6 @@ static void __CDECL evnt_cbrdy_click
 {
 	struct gui_download_window * dw = (struct gui_download_window *)data;
 	assert( dw != NULL );
-	ObjcChange( OC_FORM, win, index, ~SELECTED, TRUE);
-	OBJECT * tree = ObjcTree(OC_FORM, win );
-	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & CROSSED) != 0 ) {
-		ObjcChange( OC_FORM, win, index, ~CROSSED, TRUE);
-	} else {
-		ObjcChange( OC_FORM, win, index, CROSSED, TRUE);
-	}
 }
 
 static void __CDECL evnt_close( WINDOW *win, short buff[8], void * data) 
@@ -253,6 +246,8 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 	fwrite( data , size, sizeof(unsigned char),dw->fd );
 	dw->size_downloaded += size;
 
+	gui_multitask();
+
 	/* Update the progress bar... */
 	if( tnow - dw->lastrdw > 1 ) {
 		dw->lastrdw = tnow;
@@ -305,7 +300,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 	OBJECT * tree = ObjcTree(OC_FORM, dw->form );
 	ObjcChange( OC_FORM, dw->form, DOWNLOAD_BT_ABORT, DISABLED, TRUE);
-	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & CROSSED) != 0 ) {
+	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
 		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0); 
 	}
 }
