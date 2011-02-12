@@ -3295,28 +3295,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		clip.x0 = 0;
 		clip.y0 = 0;
-		clip.x1 = width;
-		clip.y1 = height;
+		clip.x1 = width + hcurrent;
+		clip.y1 = height + vcurrent;
 
 		ami_clg(0xffffff);
 		glob->scale = g->bw->scale;
 
 		browser_window_redraw(g->bw, -hcurrent, -vcurrent, clip);
 
-#if 0
-		}
-		else
-		{
-			content_redraw(c, -hcurrent /* * g->bw->scale */,
-						-vcurrent /* * g->bw->scale */,
-						(width / g->bw->scale), //- hcurrent,
-						(height / g->bw->scale), // - vcurrent,
-						hcurrent, vcurrent, width + hcurrent /* * g->bw->scale */,
-						height + vcurrent /* * g->bw->scale */,
-						g->bw->scale,0xFFFFFF);
-
-		}
-#endif
 		ami_clearclipreg(&browserglob);
 		BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
