@@ -17,6 +17,7 @@
 #include "atari/search.h"
 #include "atari/res/netsurf.rsh"
 
+extern struct gui_window * input_window;
 extern void * h_gem_rsrc;
 
 
@@ -121,11 +122,11 @@ static int apply_form( WINDOW * win, struct s_search_form_state * s )
 		goto error;
 	}
 	s->flags = 0;
-	if( (obj[SEARCH_CB_FWD].ob_state & CROSSED) != 0 )
+	if( (obj[SEARCH_CB_FWD].ob_state & SELECTED) != 0 )
 		s->flags = SEARCH_FLAG_FORWARDS;
-	if( (obj[SEARCH_CB_CASESENSE].ob_state & CROSSED) != 0 )
+	if( (obj[SEARCH_CB_CASESENSE].ob_state & SELECTED) != 0 )
 		s->flags |= SEARCH_FLAG_CASE_SENSITIVE;
-	if( (obj[SEARCH_CB_SHOWALL].ob_state & CROSSED) != 0 )
+	if( (obj[SEARCH_CB_SHOWALL].ob_state & SELECTED) != 0 )
 		s->flags |= SEARCH_FLAG_SHOWALL;
 
 	char * cstr = ObjcString( obj, SEARCH_TB_SRCH, NULL );
@@ -147,6 +148,8 @@ static bool form_changed( WINDOW * w )
 	bool check;
 	struct s_search_form_state cur;
 	SEARCH_FORM_SESSION s = get_search_session(w);
+	if( s == NULL )
+		return false;
 	OBJECT * obj = ObjcTree(OC_FORM,  w);
 	assert( s != NULL && obj != NULL );
 	uint32_t flags_old = s->state.flags;
@@ -173,28 +176,28 @@ static bool form_changed( WINDOW * w )
 static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void *unused2) 
 {
 
-	ObjcChange( OC_FORM, win, index, ~SELECTED, TRUE);
 	bool fwd;
 	SEARCH_FORM_SESSION s = get_search_session(win);
 	OBJECT * obj = ObjcTree(OC_FORM, s->formwind );
 	search_flags_t flags = 0;
 
-		if( s->bw->search_context == NULL || form_changed(win) ){
-			if( s->bw->search_context != NULL ) {
-				search_destroy_context(s->bw->search_context);
-				s->bw->search_context = NULL;
-			}
-			apply_form( win, &s->state );
-		} else {
-			/* get search direction manually: */
-			if( (obj[SEARCH_CB_FWD].ob_state & CROSSED) != 0 )
-				s->state.flags |= SEARCH_FLAG_FORWARDS;
-			 else 
-				s->state.flags &= (~SEARCH_FLAG_FORWARDS);
+	ObjcChange( OC_FORM, win, index, ~SELECTED , TRUE);
+	if( s->bw->search_context == NULL || form_changed(win) ){
+		if( s->bw->search_context != NULL ) {
+			search_destroy_context(s->bw->search_context);
+			s->bw->search_context = NULL;
 		}
-		if( search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
-			search_step(s->bw->search_context, s->state.flags,  ObjcString( obj, SEARCH_TB_SRCH, NULL ) ); 
-		}
+		apply_form( win, &s->state );
+	} else {
+		/* get search direction manually: */
+		if( (obj[SEARCH_CB_FWD].ob_state & SELECTED) != 0 )
+			s->state.flags |= SEARCH_FLAG_FORWARDS;
+		 else 
+			s->state.flags &= (~SEARCH_FLAG_FORWARDS);
+	}
+	if( search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
+		search_step(s->bw->search_context, s->state.flags,  ObjcString( obj, SEARCH_TB_SRCH, NULL ) ); 
+	}
 
 }
 
@@ -203,18 +206,28 @@ static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unu
 
 	short newstate;
 	OBJECT * obj = ObjcTree(OC_FORM, get_search_session(win)->formwind );
-	ObjcChange( OC_FORM, win, index, ~SELECTED, TRUE);
-	newstate = (obj[index].ob_state & CROSSED) ? ~CROSSED : CROSSED;
-	ObjcChange( OC_FORM, win, index, newstate , TRUE);
 }
 
 static void __CDECL evnt_close( WINDOW *win, short buff[8]) 
 {
 	/* Free Search Contexts */
-	/* todo: destroy search context, if any */
-	destroy_search_session( get_search_session(win) );
+	SEARCH_FORM_SESSION s = get_search_session(win);
+	if( s != NULL ){ 
+		destroy_search_session( s );
+	}
 	current = NULL;
-	ApplWrite( _AESapid, WM_DESTROY, win->handle, 0,0,0,0); 	
+	ApplWrite( _AESapid, WM_DESTROY, win->handle, 0,0,0,0 ); 	
+}
+
+void search_destroy( struct gui_window * gw )
+{
+	if( current != NULL ){
+		ApplWrite( _AESapid, WM_CLOSED, current->formwind->handle, 0,0,0,0);
+		/* Handle Close event */
+		EvntWindom( MU_MESAG );
+		/* Handle Destroy Event */
+		EvntWindom( MU_MESAG );
+	}
 }
 
 SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
@@ -232,13 +245,7 @@ SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
 	if( title == NULL )
 		title = (char*)"Find text ...";
 
-	if( current != NULL ){
-		ApplWrite( _AESapid, WM_CLOSED, current->formwind->handle, 0,0,0,0);
-		/* Handle Close event */
-		EvntWindom( MU_MESAG );
-		/* Handle Destroy Event */
-		EvntWindom( MU_MESAG );
-	}
+	search_destroy( gw );
 	current = sfs;
 	sfs->bw = gw->browser->bw;
 	sfs->formwind = mt_FormCreate( &app, tree, WAT_FORM,
