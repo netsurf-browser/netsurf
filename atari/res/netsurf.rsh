@@ -99,13 +99,13 @@
 
 #define SEARCH 10  /* form/dial */
 #define SEARCH_TB_SRCH 1  /* FTEXT in tree SEARCH */
-#define SEARCH_CB_CASESENSE 2  /* BOX in tree SEARCH */
-#define SEARCH_CB_SHOWALL 3  /* BOX in tree SEARCH */
-#define SEARCH_LBL_SHOWALL 4  /* STRING in tree SEARCH */
-#define SEARCH_LBL_CASESENSE 5  /* STRING in tree SEARCH */
-#define SEARCH_BT_SEARCH 6  /* BUTTON in tree SEARCH */
-#define SEARCH_CB_FWD 7  /* BOX in tree SEARCH */
-#define SEARCH_LBL_FWD 8  /* STRING in tree SEARCH */
+#define SEARCH_LBL_SHOWALL 2  /* STRING in tree SEARCH */
+#define SEARCH_LBL_CASESENSE 3  /* STRING in tree SEARCH */
+#define SEARCH_BT_SEARCH 4  /* BUTTON in tree SEARCH */
+#define SEARCH_LBL_FWD 5  /* STRING in tree SEARCH */
+#define SEARCH_CB_CASESENSE 6  /* BUTTON in tree SEARCH */
+#define SEARCH_CB_SHOWALL 7  /* BUTTON in tree SEARCH */
+#define SEARCH_CB_FWD 8  /* BUTTON in tree SEARCH */
 
 #define DOWNLOAD 11  /* form/dial */
 /* Width ist 400, code depends on that! If you change it, change it in download.c */
@@ -114,8 +114,10 @@
 #define DOWNLOAD_FILENAME 3  /* TEXT in tree DOWNLOAD */
 #define DOWNLOAD_BT_ABORT 4  /* BUTTON in tree DOWNLOAD */
 #define DOWNLOAD_BT_PAUSE 5  /* BUTTON in tree DOWNLOAD */
-#define DOWNLOAD_CB_CLOSE_RDY 6  /* BOXCHAR in tree DOWNLOAD */
-#define DOWNLOAD_LBL_CLOSE_RDY 7  /* STRING in tree DOWNLOAD */
-#define DOWNLOAD_LBL_BYTES 8  /* TEXT in tree DOWNLOAD */
-#define DOWNLOAD_LBL_PERCENT 9  /* TEXT in tree DOWNLOAD */
-#define DOWNLOAD_LBL_SPEED 10  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_LBL_CLOSE_RDY 6  /* STRING in tree DOWNLOAD */
+#define DOWNLOAD_LBL_BYTES 7  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_LBL_PERCENT 8  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_LBL_SPEED 9  /* TEXT in tree DOWNLOAD */
+#define DOWNLOAD_CB_CLOSE_RDY 10  /* BUTTON in tree DOWNLOAD */
+
+#define ABOUT 12  /* form/dial */
