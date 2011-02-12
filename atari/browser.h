@@ -58,6 +58,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 
 /* update loc / size of the browser widgets: */
 void browser_update_rects(struct gui_window * gw );
+void browser_schedule_redraw_rect(struct gui_window * gw, short x, short y, short w, short h);
 void browser_schedule_redraw(struct gui_window * gw, short x, short y, short w, short h );
 static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8], void * data);
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data);

@@ -260,11 +260,9 @@ void browser_set_content_size(struct gui_window * gw, int w, int h)
 	b->compwin->ypos_max = h;
 	b->compwin->xpos_max = w;
 	if( w < work.g_w + b->scroll.current.x || w < work.g_h + b->scroll.current.y ) {
-		/* TODO: instead of zeroin, recalculate scroll */
-		b->compwin->ypos = 0;
-		b->compwin->xpos = 0;
-		browser_scroll(gw, WA_LFLINE, 0, true );
-		browser_scroll(gw, WA_UPLINE, 0, true );
+		/* let the scroll routine detect invalid scroll values... */
+		browser_scroll(gw, WA_LFLINE, b->scroll.current.x, true );
+		browser_scroll(gw, WA_UPLINE, b->scroll.current.y, true );
 		/* force update of scrollbars: */
 		b->scroll.required = true;
 	}
@@ -432,16 +430,19 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 	int oldy = gw->browser->scroll.current.y;
 	struct s_browser * b = gw->browser;
 	LOG((""));
-	if( gw->browser->bw->current_content == NULL ) {
-		assert( 1 == 0);
+
+	if( b->bw->current_content != NULL ) {
+		browser_get_rect( gw, BR_CONTENT, &work);
+		max_y_scroll = (content_get_height( b->bw->current_content ) - work.g_h );
+		max_x_scroll = (content_get_width( b->bw->current_content ) - work.g_w);
+	} else {
 		return;
 	}
 
-	browser_get_rect( gw, BR_CONTENT, &work);
-	max_y_scroll = (content_get_height( b->bw->current_content ) - work.g_h );
-	max_x_scroll = (content_get_width( b->bw->current_content ) - work.g_w);
+
 
 	switch( mode ) {
+
 		case WA_UPPAGE:
 		case WA_UPLINE: 
 			if( abs == false )
@@ -474,7 +475,7 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 				b->scroll.requested.x = value - b->scroll.current.x;
 		break;
 
-		default: break;			
+		default: break;				
 	}
 
 	if( b->scroll.current.y + b->scroll.requested.y < 0 ) {
@@ -512,6 +513,9 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 	GRECT dst;
 	short h,w;
 	
+	if( gw->browser->bw->current_content == NULL )
+		return;
+
 	h = (short) abs( b->scroll.requested.y );
 	w = (short) abs( b->scroll.requested.x ); 
 
@@ -787,18 +791,57 @@ bool browser_redraw_required( struct gui_window * gw)
 
 /* schedule a redraw of content */
 /* coords are relative to the framebuffer */
+/* the box is modified to fit the current viewport if it doesn't fit in */
+void browser_schedule_redraw_rect(struct gui_window * gw, short x, short y, short w, short h)
+{
+	int diff;
+
+	if( x < 0  ){
+		w += x;
+		x = 0;
+	}
+
+	if( y < 0 ) {
+		h += y;
+		y = 0;	
+	}
+	browser_schedule_redraw( gw, x, y, x+w, y+h );
+}
+
+/* schedule a redraw of content */
+/* coords are relative to the framebuffer */
 void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x1, short y1)
 {
+	assert( gw != NULL );
 	CMP_BROWSER b = gw->browser;
+	LGRECT work;
 	/* TODO: add rectangle to list, instead of summarizing the rect.? */
 	/* otherwise it can result in large areas, altough it isnt needed. ( like 1 px in the upper left, 
 	   and 1px in bottom right corner ) 
 	*/
-	b->redraw.required = true;
-	b->redraw.area.x0 = MIN(b->redraw.area.x0, x0);
-	b->redraw.area.y0 = MIN(b->redraw.area.y0, y0);
-	b->redraw.area.x1 = MAX(b->redraw.area.x1, x1);
-	b->redraw.area.y1 = MAX(b->redraw.area.y1, y1);
+
+	if( y1 < 0 || x1 < 0 )
+		return;
+
+	browser_get_rect( gw, BR_CONTENT, &work);
+	if( x0 > work.g_w )
+		return;
+	if( y0 > work.g_h )
+		return;
+
+	/* special handling of initial call: */
+	if( b->redraw.required == false ) {
+		b->redraw.required = true;		
+		b->redraw.area.x0 = x0;
+		b->redraw.area.y0 = y0;
+		b->redraw.area.x1 = x1;
+		b->redraw.area.y1 = y1;
+	} else {
+		b->redraw.area.x0 = MIN(b->redraw.area.x0, x0);
+		b->redraw.area.y0 = MIN(b->redraw.area.y0, y0);
+		b->redraw.area.x1 = MAX(b->redraw.area.x1, x1);
+		b->redraw.area.y1 = MAX(b->redraw.area.y1, y1);
+	} 
 }
 
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
@@ -808,7 +851,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	GRECT area;
 	int clip_x0, clip_x1, clip_y0, clip_y1;
 
-	LOG(("%s clip: %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0, 
+	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0, 
 		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
 	));
 	area.g_x = b->redraw.area.x0;
@@ -879,7 +922,10 @@ void browser_redraw_caret( struct gui_window * gw, GRECT * area )
 			plot_style_caret );
 		/* restore clip area: */
 		plot_clip( oldclip.x0, oldclip.y0, oldclip.x1,oldclip.y1);
-		b->caret.current = caret;
+		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
+		b->caret.current.g_y = caret.g_y + gw->browser->scroll.current.y;
+		b->caret.current.g_w = caret.g_w;
+		b->caret.current.g_h = caret.g_h;		
 	}
 }
 
@@ -892,6 +938,9 @@ void browser_redraw( struct gui_window * gw )
 	if( b->attached == false ) {
 		return;
 	}
+
+	if( b->bw->current_content == NULL )
+		return;
 
 	browser_get_rect(gw, BR_CONTENT, &bwrect);
 
@@ -933,7 +982,8 @@ void browser_redraw( struct gui_window * gw )
 						todo[3] = todo[3] + todo[1];
 						todo[1] = 0;
 					}
-					if (rc_intersect((GRECT *)&area,(GRECT *)todo)) {
+					
+					if (rc_intersect((GRECT *)&area,(GRECT *)&todo)) {
 						b->redraw.area.x0 = todo[0];
 						b->redraw.area.y0 = todo[1];
 						b->redraw.area.x1 = b->redraw.area.x0 + todo[2];
@@ -989,7 +1039,6 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	 
 	if( b->bw->current_content == NULL )
 		return;
-
 	/* convert redraw coords to framebuffer coords: */
 	lclip.g_x -= work.g_x;
 	lclip.g_y -= work.g_y;
