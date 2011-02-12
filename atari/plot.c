@@ -150,12 +150,31 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	struct bitmap * bm = NULL;
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
-
+	int bmpw,bmph;
+	struct s_clipping clip;
+	
 	if( option_suppress_images != 0 ) {
 		return( true );
 	}
 
-	if(  width != bitmap_get_width(bitmap) || height != bitmap_get_height( bitmap) ) {
+	bmpw = bitmap_get_width(bitmap);	
+	bmph = bitmap_get_height(bitmap);
+
+	if ( repeat_x || repeat_y ) {	
+		plotter_get_clip( plotter, &clip );
+		if( repeat_x && width == 1 && repeat_y && height == 1 ){
+			width = MAX( width, clip.x1 - x );
+			height = MAX( height,  clip.y1 - y );
+		}
+		else if( repeat_x && width == 1 ){
+			width = MAX( width, clip.x1 - x);
+		} 
+		else if( repeat_y && height == 1){
+			height = MAX( height, clip.y1 - y );
+		} 		
+	}
+
+	if(  width != bmpw || height != bmph ) {
 		assert( plotter->bitmap_resize(plotter, bitmap, width, height ) == 0);
 		bm = bitmap->resized;
 	} else {
@@ -170,8 +189,6 @@ static bool plot_bitmap(int x, int y, int width, int height,
 		plotter->bitmap( plotter, bm, x, y, bg, flags );
 	} else {
 		int xf,yf;
-		struct s_clipping clip;
-		plotter_get_clip( plotter, &clip );
 		int xoff = x;
 		int yoff = y;
 		/* for now, repeating just works in the rigth / down direction */
@@ -181,6 +198,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 		if(repeat_y == true )
 			yoff = clip.y0;
 		*/
+		
 		for( xf = xoff; xf < clip.x1; xf += width ) {
 			for( yf = yoff; yf < clip.y1; yf += height ) {
 				plotter->bitmap( plotter, bm, xf, yf, bg, flags );
