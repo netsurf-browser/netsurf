@@ -33,6 +33,7 @@
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
 #include "atari/plot/font_vdi.h"
+#include "atari/plot/font_internal.h"
 #include "atari/plot/font_freetype.h"
 #include "atari/gui.h"
 #include "utils/log.h"
@@ -134,6 +135,7 @@ const struct s_font_driver_table_entry font_driver_table[] =
 {
 	{(char*)"vdi", ctor_font_plotter_vdi, 0},
 	{(char*)"freetype", ctor_font_plotter_freetype, 0},
+	{(char*)"internal", ctor_font_plotter_internal, 0},
 	{(char*)NULL, NULL, 0}
 };
 

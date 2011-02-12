@@ -638,13 +638,14 @@ static inline uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
     int opacity = pixel & 0xFF;
     int transp = 0x100 - opacity;
     uint32_t rb, g;
+	pixel >>= 8;
+	scrpixel >>= 8;
+	rb = ((pixel & 0xFF00FF) * opacity +
+    	(scrpixel & 0xFF00FF) * transp) >> 8;
+    g  = ((pixel & 0x00FF00) * opacity +
+    	(scrpixel & 0x00FF00) * transp) >> 8;
 
-    rb = ((pixel & 0xFF00FF00UL) * opacity +
-          (scrpixel & 0xFF00FF00UL) * transp) >> 8;
-    g  = ((pixel & 0x00FF0000UL) * opacity +
-          (scrpixel & 0x00FF0000UL) * transp) >> 8;
-
-    return (rb & 0xFF00FF00) | (g & 0x00FF0000);
+    return ((rb & 0xFF00FF) | (g & 0xFF00)) << 8; 
 }
 
 static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh )
@@ -666,6 +667,7 @@ static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh 
 	/* allocate the mem for resized bitmap */
 	img->resized = bitmap_create_ex( nw, nh, bpp, nw*bpp, 0, NULL );
 	if( img->resized == NULL ) {
+			printf("W: %d, H: %d, bpp: %d\n", nw, nh, bpp);
 			assert( img->resized );
 			return ( -ERR_NO_MEM );
 	}
@@ -859,6 +861,7 @@ static int convert_bitmap( GEM_PLOTTER self,
 	int y,
 	GRECT * clip,
 	uint32_t bg,
+	uint32_t flags,
 	MFDB *out  )
 {
 	short vpxsize = self->bpp_virt >> 3; /* / 8 */
@@ -878,8 +881,12 @@ static int convert_bitmap( GEM_PLOTTER self,
 	/* rem. if eddi xy is installed, we could directly access the screen! */
 	/* apply transparency to the image: */
 	if( (img->opaque == false) 
-		&& ((self->flags & PLOT_FLAG_TRANS) != 0) 
-		&& (vdi_sysinfo.vdiformat == VDI_FORMAT_PACK )  ) {
+		&& ( (self->flags & PLOT_FLAG_TRANS) != 0) 
+		&& ( 
+			(vdi_sysinfo.vdiformat == VDI_FORMAT_PACK ) 
+			|| 
+			( (flags & BITMAP_MONOGLYPH) != 0) 
+		) ) {
 		uint32_t * imgpixel;
 		uint32_t * screenpixel;
 		int img_x, img_y;	/* points into old bitmap */
@@ -894,12 +901,12 @@ static int convert_bitmap( GEM_PLOTTER self,
 				imgpixel = (uint32_t *)(bm->pixdata + (img_stride * img_y));
 				screenpixel = (uint32_t *)(scrbuf->pixdata + (screen_stride * screen_y));
 				for( img_x = clip->g_x, screen_x = 0; screen_x < clip->g_w; screen_x++, img_x++ ) {	
-					if( (imgpixel[img_x] & 0xFF) != 0xFF ) {
+					if( (imgpixel[img_x] & 0xFF) == 0xFF ) {
+						screenpixel[screen_x] = imgpixel[img_x]; 
+					} else {
 						if( (imgpixel[img_x] & 0x0FF) != 0 ) {
 							screenpixel[screen_x] = ablend( imgpixel[img_x], screenpixel[screen_x]);
-						} 
-					} else {
-						screenpixel[screen_x] = imgpixel[img_x];
+						}
 					}
 				}
 			}
@@ -1020,7 +1027,7 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	pxy[5] = CURFB(self).y + loc.g_y;
 	pxy[6] = CURFB(self).x + loc.g_x + off.g_w-1;
 	pxy[7] = CURFB(self).y + loc.g_y + off.g_h-1;
-	if( convert_bitmap( self, bmp, pxy[4], pxy[5], &off, bg, &src_mf) != 0 ) {
+	if( convert_bitmap( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
 		return( true ); 
 	}
 	vro_cpyfm( self->vdi_handle, S_ONLY, (short*)&pxy, &src_mf,  &scrmf);
