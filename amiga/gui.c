@@ -3149,7 +3149,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	clip.x1 = (x1 - sx);
 	clip.y1 = (y1 - sy);
 
-	if(browser_window_redraw(bw, -sx, -sy, clip))
+	if(browser_window_redraw(bw, -sx, -sy, &clip))
 	{
 		ami_clearclipreg(&browserglob);
 		BltBitMapRastPort(browserglob.bm,
@@ -3300,7 +3300,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		glob->scale = g->bw->scale;
 
-		if(browser_window_redraw(g->bw, -hcurrent, -vcurrent, clip))
+		if(browser_window_redraw(g->bw, -hcurrent, -vcurrent, &clip))
 		{
 			ami_clearclipreg(&browserglob);
 			BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,

@@ -332,7 +332,7 @@ fb_redraw(fbtk_widget_t *widget,
 
 	browser_window_redraw(bw,
 		       x - bwidget->scrollx, y - bwidget->scrolly,
-		       clip);
+		       &clip);
 
 	current_redraw_browser = NULL;
 

@@ -184,7 +184,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
 
-	browser_window_redraw(g->bw, 0, 0, clip);
+	browser_window_redraw(g->bw, 0, 0, &clip);
 
 	current_redraw_browser = NULL;
 

@@ -1482,7 +1482,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
-		browser_window_redraw(g->bw, 0, 0, clip);
+		browser_window_redraw(g->bw, 0, 0, &clip);
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
@@ -1580,7 +1580,7 @@ void ro_gui_window_update_boxes(void) {
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
 
-			browser_window_redraw(g->bw, 0, 0, clip);
+			browser_window_redraw(g->bw, 0, 0, &clip);
 
 			if (use_buffer)
 				ro_gui_buffer_close();
