@@ -109,8 +109,14 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	}
 
 	if (content_get_type(bw->current_content) != CONTENT_HTML) {
+		/* Set render area according to scale */
 		width = content_get_width(bw->current_content) * bw->scale;
 		height = content_get_height(bw->current_content) * bw->scale;
+
+		/* Non-HTML may not fill viewport to extents, so plot white
+		 * background fill */
+		plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+				plot_style_fill_white);
 	}
  
 	return content_redraw(bw->current_content, x, y, width, height,
