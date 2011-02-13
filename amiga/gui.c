@@ -3149,13 +3149,10 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	clip.x1 = (x1 - sx);
 	clip.y1 = (y1 - sy);
 
-	browser_window_redraw(bw, -sx, -sy, clip);
-
-	current_redraw_browser = NULL;
-
-	ami_clearclipreg(&browserglob);
-
-	BltBitMapRastPort(browserglob.bm,
+	if(browser_window_redraw(bw, -sx, -sy, clip))
+	{
+		ami_clearclipreg(&browserglob);
+		BltBitMapRastPort(browserglob.bm,
 						(x0 - sx) * g->shared->bw->scale,
 						(y0 - sy) * g->shared->bw->scale,
 						g->shared->win->RPort,
@@ -3164,6 +3161,9 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 						(x1 - x0) * g->shared->bw->scale,
 						(y1 - y0) * g->shared->bw->scale,
 						0x0C0);
+	}
+
+	current_redraw_browser = NULL;
 }
 
 void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
@@ -3298,14 +3298,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 		clip.x1 = width + hcurrent;
 		clip.y1 = height + vcurrent;
 
-		ami_clg(0xffffff);
 		glob->scale = g->bw->scale;
 
-		browser_window_redraw(g->bw, -hcurrent, -vcurrent, clip);
-
-		ami_clearclipreg(&browserglob);
-		BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
+		if(browser_window_redraw(g->bw, -hcurrent, -vcurrent, clip))
+		{
+			ami_clearclipreg(&browserglob);
+			BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
 								bbox->Width,bbox->Height,0x0C0);
+		}
 	}
 
 	current_redraw_browser = NULL;
