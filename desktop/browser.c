@@ -124,6 +124,20 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 			bw->scale, 0xFFFFFF);	
 }
 
+/* exported interface, documented in browser.h */
+bool browser_window_redraw_ready(struct browser_window *bw)
+{
+	if (bw == NULL) {
+		LOG(("NULL browser window"));
+		return false;
+	} else if (bw->current_content != NULL) {
+		/* Can't render locked contents */
+		return !content_is_locked(bw->current_content);
+	}
+
+	return true;
+}
+
 /**
  * Create and open a new browser window with the given page.
  *

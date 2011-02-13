@@ -1442,6 +1442,12 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	float scale = g->bw->scale;
 	os_error *error;
 
+	/* We can't render locked contents.  If the browser window is not
+	 * ready for redraw, do nothing.  Else, in the case of buffered
+	 * rendering we'll show random data. */
+	if (!browser_window_redraw_ready(g->bw))
+		return;
+
 	plot = ro_plotters;
 	ro_plot_set_scale(scale);
 	ro_gui_current_redraw_gui = g;

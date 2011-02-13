@@ -272,6 +272,14 @@ bool browser_window_stop_available(struct browser_window *bw);
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		struct rect clip);
 
+/**
+ * Check whether browser window is ready for redraw
+ *
+ * \param  bw    The window to redraw
+ * \return true if browser window is ready for redraw
+ */
+bool browser_window_redraw_ready(struct browser_window *bw);
+
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct hlcache_handle *c);
 
