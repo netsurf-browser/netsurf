@@ -180,16 +180,16 @@ bool rsvg_convert(struct content *c)
 	return true;
 }
 
-bool rsvg_redraw(struct content *c, int x, int y, int width, int height,
-			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
-			float scale, colour background_colour)
+bool rsvg_redraw(struct content *c, int x, int y,
+		int width, int height, struct rect *clip,
+		float scale, colour background_colour)
 {
 	plot.bitmap(x, y, width, height, c->bitmap, background_colour, BITMAPF_NONE);
 	return true;
 }
 
-bool rsvg_redraw_tiled(struct content *c, int x, int y, int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+bool rsvg_redraw_tiled(struct content *c, int x, int y,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {

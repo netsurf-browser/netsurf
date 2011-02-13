@@ -537,10 +537,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
  * \param  y		     coordinate for top-left of redraw
  * \param  width	     available width
  * \param  height	     available height
- * \param  clip_x0	     clip rectangle
- * \param  clip_y0	     clip rectangle
- * \param  clip_x1	     clip rectangle
- * \param  clip_y1	     clip rectangle
+ * \param  clip		     clip rectangle
  * \param  scale	     scale for redraw
  * \param  background_colour the background colour
  * \return true if successful, false otherwise
@@ -549,8 +546,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
  */
 
 bool textplain_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	struct browser_window *bw = current_redraw_browser;
@@ -559,17 +555,11 @@ bool textplain_redraw(struct content *c, int x, int y,
 	unsigned long line_count = c->data.textplain.physical_line_count;
 	float line_height = textplain_line_height();
 	float scaled_line_height = line_height * scale;
-	long line0 = clip_y0 / scaled_line_height - 1;
-	long line1 = clip_y1 / scaled_line_height + 1;
+	long line0 = clip->y0 / scaled_line_height - 1;
+	long line1 = clip->y1 / scaled_line_height + 1;
 	struct textplain_line *line = c->data.textplain.physical_line;
-	struct rect clip;
 	size_t length;
 	plot_style_t *plot_style_highlight;
-
-	clip.x0 = clip_x0;
-	clip.y0 = clip_y0;
-	clip.x1 = clip_x1;
-	clip.y1 = clip_y1;
 
 	if (line0 < 0)
 		line0 = 0;
@@ -582,7 +572,8 @@ bool textplain_redraw(struct content *c, int x, int y,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (!plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1, plot_style_fill_white))
+	if (!plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
+			plot_style_fill_white))
 		return false;
 
 	if (!line)
@@ -623,7 +614,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 					line[lineno].start + offset, false,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
-					&clip, line_height, scale, false))
+					clip, line_height, scale, false))
 				return false;
 
 			if (next_offset >= length)

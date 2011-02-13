@@ -66,6 +66,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	float width;
 	float height;
 	int depth;
+	struct rect clip;
 
 	assert(content);
 	assert(bitmap);
@@ -125,11 +126,15 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		content_get_width(content),
 		plot_style_fill_white);
 
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = content_get_width(content);
+	clip.y1 = content_get_width(content);
+
 	/* render the content */
 	content_redraw(content, 0, 0,
 			content_get_width(content), content_get_width(content),
-			0, 0,
-			content_get_width(content), content_get_width(content),
+			&clip,
 			1.0, 0xFFFFFF);
 
 	view->Sync();

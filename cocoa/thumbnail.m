@@ -38,6 +38,12 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 
 	size_t width = MIN( content_get_width( content ), 1024 );
 	size_t height = MIN( content_get_height( content ), 768 );
+
+	struct rect clip;
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = content_get_width( content );
+	clip.y1 = content_get_height( content );
 	
 	CGContextTranslateCTM( bitmapContext, 0, bitmap_get_height( bitmap ) );
 	CGContextScaleCTM( bitmapContext, (CGFloat)bitmap_get_width( bitmap ) / width, -(CGFloat)bitmap_get_height( bitmap ) / height );
@@ -45,7 +51,7 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 	[NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithGraphicsPort: bitmapContext flipped: YES]];
 	
 	content_redraw( content, 0, 0, content_get_width( content ), content_get_height( content ), 
-				   0, 0, content_get_width( content ), content_get_height( content ), 
+				   &clip, 
 				   1.0, 0xFFFFFFFF );
 	
 	[NSGraphicsContext setCurrentContext: nil];

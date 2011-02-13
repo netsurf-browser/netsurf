@@ -245,12 +245,11 @@ void plugin_destroy(struct content *c)
  * \param y            Top of content box
  * \param width        Width of content box
  * \param height       Height of content box
- * \param clip[xy][01] Clipping rectangle
+ * \param clip         Clipping rectangle
  * \param scale        Scale of page (1.0 = 100%)
  */
 bool plugin_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	/* do nothing */

@@ -635,7 +635,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	print_active = true;
 
 	do {
-		int clip_x0, clip_y0, clip_x1, clip_y1;
+		struct rect clip;
 		os_box b;
 		os_hom_trfm t;
 		os_coord p;
@@ -697,14 +697,14 @@ bool print_document(struct gui_window *g, const char *filename)
 		while (more) {
 			LOG(("redrawing area: [(%d, %d), (%d, %d)]",
 					b.x0, b.y0, b.x1, b.y1));
-			clip_x0 = (b.x0 - ro_plot_origin_x) / 2;
-			clip_y0 = (ro_plot_origin_y - b.y1) / 2;
-			clip_x1 = (b.x1 - ro_plot_origin_x) / 2;
-			clip_y1 = (ro_plot_origin_y - b.y0) / 2;
+			clip.x0 = (b.x0 - ro_plot_origin_x) / 2;
+			clip.y0 = (ro_plot_origin_y - b.y1) / 2;
+			clip.x1 = (b.x1 - ro_plot_origin_x) / 2;
+			clip.y1 = (ro_plot_origin_y - b.y0) / 2;
 			if (!content_redraw(h, 0, 0,
 					content_get_width(h),
 					content_get_height(h),
-					clip_x0, clip_y0, clip_x1, clip_y1,
+					&clip,
 					print_scale,
 					0xFFFFFF)) {
 				error_message = "redraw error";
@@ -805,6 +805,7 @@ error:
 const char *print_declare_fonts(hlcache_handle *h)
 {
 	unsigned int i;
+	struct rect clip;
 	const char *error_message = 0;
 	os_error *error;
 
@@ -813,10 +814,13 @@ const char *print_declare_fonts(hlcache_handle *h)
 	print_fonts_count = 0;
 	print_fonts_error = 0;
 
+	clip.x0 = clip.y0 = INT_MIN;
+	clip.x1 = clip.y1 = INT_MAX;
+
 	plot = print_fonts_plotters;
 	if (!content_redraw(h, 0, 0, content_get_width(h),
 			content_get_height(h),
-			INT_MIN, INT_MIN, INT_MAX, INT_MAX, 1, 0xffffff)) {
+			&clip, 1, 0xffffff)) {
 		if (print_fonts_error)
 			return print_fonts_error;
 		return "Declaring fonts failed.";

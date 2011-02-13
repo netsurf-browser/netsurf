@@ -39,9 +39,15 @@ thumbnail_create(hlcache_handle *content,
 	HDC hdc, bufferdc, minidc;
 
 	struct bitmap *fsbitmap;
+	struct rect clip;
 
 	width = min(content_get_width(content), 800);
 	height = min(content_get_height(content), 600);
+
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = width;
+	clip.y1 = height;
 
 	LOG(("bitmap %p for url %s content %p width %d, height %d", 
 	     bitmap, url, content, width, height));
@@ -65,8 +71,7 @@ thumbnail_create(hlcache_handle *content,
 
 	hdc = plot_hdc;
 	plot_hdc = bufferdc;
-	content_redraw(content, 0, 0, width, height, 0, 0,
-			width, height, 1.0, 0xFFFFFF);
+	content_redraw(content, 0, 0, width, height, &clip, 1.0, 0xFFFFFF);
 	plot_hdc = hdc;
 	
 	/* scale bitmap bufferbm into minibm */

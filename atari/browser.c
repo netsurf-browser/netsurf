@@ -849,7 +849,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	LGRECT work;
 	CMP_BROWSER b = gw->browser;
 	GRECT area;
-	int clip_x0, clip_x1, clip_y0, clip_y1;
+	struct rect clip;
 
 	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0, 
 		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
@@ -862,16 +862,16 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	current_redraw_browser = b->bw;
 
 	if(content_get_type(b->bw->current_content) == CONTENT_HTML ) {
-		clip_x0 = b->redraw.area.x0;
-		clip_y0 = b->redraw.area.y0;
-		clip_x1 = b->redraw.area.x1;
-		clip_y1 = b->redraw.area.y1;
+		clip.x0 = b->redraw.area.x0;
+		clip.y0 = b->redraw.area.y0;
+		clip.x1 = b->redraw.area.x1;
+		clip.y1 = b->redraw.area.y1;
 	} else {
 		/* totally different coords, I don't understand why! */
-		clip_x0 = b->redraw.area.x0 + b->scroll.current.x;
-		clip_y0 = b->redraw.area.y0 + b->scroll.current.y;
-		clip_x1 = b->redraw.area.x1 + b->scroll.current.x;
-		clip_y1 = b->redraw.area.y1 + b->scroll.current.y;
+		clip.x0 = b->redraw.area.x0 + b->scroll.current.x;
+		clip.y0 = b->redraw.area.y0 + b->scroll.current.y;
+		clip.x1 = b->redraw.area.x1 + b->scroll.current.x;
+		clip.y1 = b->redraw.area.y1 + b->scroll.current.y;
 		/* must clear the surface: */
 		plot.clip(  b->redraw.area.x0, b->redraw.area.y0, 
 					b->redraw.area.x1, b->redraw.area.y1
@@ -889,8 +889,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 		-b->scroll.current.x, -b->scroll.current.y,
 		content_get_width( b->bw->current_content), 
 		content_get_height( b->bw->current_content),
-		clip_x0, clip_y0,
-		clip_x1, clip_y1,
+		&clip,
 		b->bw->scale, 0xFFFFFF
 	);
 	current_redraw_browser = NULL;

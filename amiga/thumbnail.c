@@ -36,6 +36,12 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	const char *url)
 {
 	struct BitScaleArgs bsa;
+	struct rect clip;
+
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = content_get_width(content);
+	clip.y1 = content_get_width(content);
 
 	bitmap->nativebm = p96AllocBitMap(bitmap->width, bitmap->height, 32,
 							BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
@@ -47,8 +53,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	current_redraw_browser = curbw;
 	plot = amiplot;
 	content_redraw(content, 0, 0, content_get_width(content),
-		content_get_width(content),	0, 0, content_get_width(content),
-		content_get_width(content), 1.0, 0xFFFFFF);
+		content_get_width(content), &clip, 1.0, 0xFFFFFF);
 	current_redraw_browser = NULL;
 
 	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)

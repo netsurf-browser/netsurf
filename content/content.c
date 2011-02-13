@@ -275,12 +275,10 @@ struct handler_entry {
 	void (*mouse_action)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 	bool (*redraw)(struct content *c, int x, int y,
-			int width, int height,
-			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+			int width, int height, struct rect *clip,
 			float scale, colour background_colour);
 	bool (*redraw_tiled)(struct content *c, int x, int y,
-			int width, int height,
-			int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+			int width, int height, struct rect *clip,
 			float scale, colour background_colour,
 			bool repeat_x, bool repeat_y);
 	void (*open)(struct content *c, struct browser_window *bw,
@@ -879,19 +877,16 @@ void content_request_redraw(struct hlcache_handle *h,
  * \param  y		     coordinate for top-left of redraw
  * \param  width	     render width (not used for HTML redraw)
  * \param  height	     render height (not used for HTML redraw)
- * \param  clip_x0	     clip rectangle left
- * \param  clip_y0	     clip rectangle top
- * \param  clip_x1	     clip rectangle right
- * \param  clip_y1	     clip rectangle bottom
+ * \param  clip		     clip rectangle
  * \param  scale	     scale for redraw
  * \param  background_colour the background colour
  * \return true if successful, false otherwise
  *
- * x, y and clip_* are coordinates from the top left of the canvas area.
+ * x, y and clip are coordinates from the top left of the canvas area.
  *
- * The top left corner of the clip rectangle is (clip_x0, clip_y0) and
- * the bottom right corner of the clip rectangle is (clip_x1, clip_y1).
- * Units for x, y and clip_* are pixels.
+ * The top left corner of the clip rectangle is (x0, y0) and
+ * the bottom right corner of the clip rectangle is (x1, y1).
+ * Units for x, y and clip are pixels.
  *
  * Content scaling is handled differently for contents with and without
  * intrinsic dimensions.
@@ -906,8 +901,7 @@ void content_request_redraw(struct hlcache_handle *h,
  */
 
 bool content_redraw(hlcache_handle *h, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -923,8 +917,7 @@ bool content_redraw(hlcache_handle *h, int x, int y,
 	}
 
 	return handler_map[c->type].redraw(c, x, y, width, height,
-			clip_x0, clip_y0, clip_x1, clip_y1, scale,
-			background_colour);
+			clip, scale, background_colour);
 }
 
 
@@ -936,8 +929,7 @@ bool content_redraw(hlcache_handle *h, int x, int y,
  */
 
 bool content_redraw_tiled(hlcache_handle *h, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
@@ -953,8 +945,8 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 		return true;
 	if (handler_map[c->type].redraw_tiled) {
 		return handler_map[c->type].redraw_tiled(c, x, y, width, height,
-				clip_x0, clip_y0, clip_x1, clip_y1, scale,
-				background_colour, repeat_x, repeat_y);
+				clip, scale, background_colour,
+				repeat_x, repeat_y);
 	} else {
 		/* ensure we have a redrawable content */
 		if ((!handler_map[c->type].redraw) || (width == 0) ||
@@ -963,20 +955,19 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 		/* simple optimisation for no repeat (common for backgrounds) */
 		if ((!repeat_x) && (!repeat_y))
 			return handler_map[c->type].redraw(c, x, y, width,
-				height, clip_x0, clip_y0, clip_x1, clip_y1,
-				scale, background_colour);
+				height, clip, scale, background_colour);
 		/* find the redraw boundaries to loop within*/
 		x0 = x;
 		if (repeat_x) {
-			for (; x0 > clip_x0; x0 -= width);
-			x1 = clip_x1;
+			for (; x0 > clip->x0; x0 -= width);
+			x1 = clip->x1;
 		} else {
 			x1 = x + 1;
 		}
 		y0 = y;
 		if (repeat_y) {
-			for (; y0 > clip_y0; y0 -= height);
-			y1 = clip_y1;
+			for (; y0 > clip->y0; y0 -= height);
+			y1 = clip->y1;
 		} else {
 			y1 = y + 1;
 		}
@@ -984,9 +975,7 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 		for (y = y0; y < y1; y += height)
 			for (x = x0; x < x1; x += width)
 				if (!handler_map[c->type].redraw(c, x, y,
-						width, height,
-						clip_x0, clip_y0,
-						clip_x1, clip_y1,
+						width, height, clip,
 						scale, background_colour))
 					return false;
 	}

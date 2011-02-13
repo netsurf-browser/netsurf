@@ -112,8 +112,7 @@ void sprite_destroy(struct content *c)
  */
 
 bool sprite_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	if (plot.flush && !plot.flush())

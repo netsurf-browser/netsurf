@@ -30,6 +30,7 @@
 
 struct bitmap;
 struct content;
+struct rect;
 
 struct content_jpeg_data {
 	int dummy; /* NOT USED but to satisfy Norcroft */
@@ -38,12 +39,10 @@ struct content_jpeg_data {
 bool nsjpeg_convert(struct content *c);
 void nsjpeg_destroy(struct content *c);
 bool nsjpeg_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour);
 bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 bool nsjpeg_clone(const struct content *old, struct content *new_content);

@@ -24,6 +24,7 @@
 #define _NETSURF_RISCOS_ARTWORKS_H_
 
 struct content;
+struct rect;
 
 struct content_artworks_data {
 	int x0, y0, x1, y1;
@@ -41,8 +42,7 @@ struct content_artworks_data {
 bool artworks_convert(struct content *c);
 void artworks_destroy(struct content *c);
 bool artworks_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour);
 bool artworks_clone(const struct content *old, struct content *new_content);
 

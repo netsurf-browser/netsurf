@@ -305,8 +305,7 @@ void nspng_destroy(struct content *c)
 
 
 bool nspng_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	assert(c->bitmap != NULL);
@@ -315,8 +314,8 @@ bool nspng_redraw(struct content *c, int x, int y,
                            background_colour, BITMAPF_NONE);
 }
 
-bool nspng_redraw_tiled(struct content *c, int x, int y, int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+bool nspng_redraw_tiled(struct content *c, int x, int y,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {

@@ -20,6 +20,7 @@
 #include <string.h>
 #include "content/content_protected.h"
 #include "content/hlcache.h"
+#include "desktop/shape.h"
 #include "render/favicon.h"
 #include "render/html.h"
 #include "utils/log.h"
@@ -247,10 +248,17 @@ nserror favicon_callback(hlcache_handle *icon,
 	}
 
 #ifdef WITH_GIF
-	if (consider_redraw && (c->data.html.favicon != NULL) && (content_get_type(c->data.html.favicon) == CONTENT_GIF)) {
+	if (consider_redraw && (c->data.html.favicon != NULL) &&
+			(content_get_type(c->data.html.favicon) ==
+			CONTENT_GIF)) {
 		union content_msg_data msg_data;
-		/* This is needed in order to cause animated GIFs to update their bitmap */
-		content_redraw(c->data.html.favicon, 0, 0, -1, -1, 0, 0, 0, 0, 1.0, 0);
+		struct rect clip;
+		/* This is needed in order to cause animated GIFs to update
+		 * their bitmap */
+		clip.x0 = clip.y0 = 0;
+		clip.x1 = clip.y1 = 0;
+		content_redraw(c->data.html.favicon, 0, 0, -1, -1, &clip,
+				1.0, 0);
 		content_broadcast(c, CONTENT_MSG_FAVICON_REFRESH, msg_data);
 	}
 #endif

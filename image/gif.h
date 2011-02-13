@@ -32,6 +32,7 @@
 
 struct content;
 struct http_parameter;
+struct rect;
 
 struct content_gif_data {
 	struct gif_animation *gif; /**< GIF animation data */
@@ -42,12 +43,10 @@ bool nsgif_create(struct content *c, const struct http_parameter *params);
 bool nsgif_convert(struct content *c);
 void nsgif_destroy(struct content *c);
 bool nsgif_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour);
 bool nsgif_redraw_tiled(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 bool nsgif_clone(const struct content *old, struct content *new_content);

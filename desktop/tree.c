@@ -1623,7 +1623,7 @@ static void tree_draw_node_element(struct tree *tree,
 				plot.clip(c.x0, c.y0, c.x1, c.y1);
 				content_redraw(icon , x, y + icon_inset,
 						TREE_ICON_SIZE, TREE_ICON_SIZE,
-						c.x0, c.y0, c.x1, c.y1, 1, 0);
+						&c, 1, 0);
 
 				/* Restore previous clipping area */
 				plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);

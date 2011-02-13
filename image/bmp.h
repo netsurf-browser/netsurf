@@ -34,6 +34,7 @@
 struct content;
 struct bitmap;
 struct http_parameter;
+struct rect;
 
 struct content_bmp_data {
 	bmp_image *bmp;	/** BMP image data */
@@ -45,12 +46,10 @@ bool nsbmp_create(struct content *c, const struct http_parameter *params);
 bool nsbmp_convert(struct content *c);
 void nsbmp_destroy(struct content *c);
 bool nsbmp_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour);
 bool nsbmp_redraw_tiled(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 bool nsbmp_clone(const struct content *old, struct content *new_content);

@@ -83,6 +83,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 {
 	float scale = 1.0;
 	struct thumbnail_save_area *save_area;
+	struct rect clip;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
 	_kernel_oserror *error;
@@ -130,8 +131,12 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG_GCOL,
 			os_ACTION_OVERWRITE, 0);
 	os_clg();
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = bitmap->width;
+	clip.y1 = bitmap->height;
 	content_redraw(content, 0, 0, bitmap->width, bitmap->height,
-			0, 0, bitmap->width, bitmap->height, scale, 0xFFFFFF);
+			&clip, scale, 0xFFFFFF);
 	thumbnail_restore_output(save_area);
 	rufl_invalidate_cache();
 

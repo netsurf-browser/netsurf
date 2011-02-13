@@ -120,8 +120,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	}
  
 	return content_redraw(bw->current_content, x, y, width, height,
-			clip.x0, clip.y0, clip.x1, clip.y1,
-			bw->scale, 0xFFFFFF);	
+			&clip, bw->scale, 0xFFFFFF);	
 }
 
 /* exported interface, documented in browser.h */

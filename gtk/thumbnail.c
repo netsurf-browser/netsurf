@@ -51,6 +51,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 {
         GdkPixbuf *pixbuf;
 	int cwidth, cheight;
+	struct rect clip;
 	gint width;
 	gint height;
 	gint depth;
@@ -59,6 +60,11 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	assert(content);
 	assert(bitmap);
+
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = content_get_width(content);
+	clip.y1 = content_get_width(content);
 
 	cwidth = min(content_get_width(content), 1024);
 	cheight = min(content_get_height(content), 768);
@@ -100,13 +106,12 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 #endif
 	plot.rectangle(0, 0, cwidth, cwidth, plot_style_fill_white);
 
-	plot.clip(0, 0, content_get_width(content), content_get_width(content));
+	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
 
 	/* render the content */
 	content_redraw(content, 0, 0, content_get_width(content), 
 			content_get_width(content),
-			0, 0, content_get_width(content), 
-			content_get_width(content), 1.0, 0xFFFFFF);
+			&clip, 1.0, 0xFFFFFF);
 
 	/* resample the large plot down to the size of our thumbnail */
 	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,

@@ -32,6 +32,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/plotters.h"
+#include "desktop/shape.h"
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
 #include "riscos/save_draw.h"
@@ -89,6 +90,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 {
 	pencil_code code;
 	char *drawfile_buffer;
+	struct rect clip;
 	size_t drawfile_size;
 	os_error *error;
 
@@ -101,10 +103,13 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	ro_save_draw_width = content_get_width(h);
 	ro_save_draw_height = content_get_height(h);
 
+	clip.x0 = clip.y0 = INT_MIN;
+	clip.x1 = clip.y1 = INT_MAX;
+
 	plot = ro_save_draw_plotters;
 	if (!content_redraw(h, 0, -ro_save_draw_height,
 			ro_save_draw_width, ro_save_draw_height,
-			INT_MIN, INT_MIN, INT_MAX, INT_MAX,
+			&clip,
 			1,
 			0xFFFFFF))
 	{

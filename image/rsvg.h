@@ -34,6 +34,7 @@
 
 struct content;
 struct http_parameter;
+struct rect;
 
 struct content_rsvg_data {
 	RsvgHandle *rsvgh;	/**< Context handle for RSVG renderer */
@@ -47,12 +48,10 @@ bool rsvg_process_data(struct content *c, const char *data, unsigned int size);
 bool rsvg_convert(struct content *c);
 void rsvg_destroy(struct content *c);
 bool rsvg_redraw(struct content *c, int x, int y,
-                int width, int height,
-                int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+                int width, int height, struct rect *clip,
                 float scale, colour background_colour);
 bool rsvg_redraw_tiled(struct content *c, int x, int y,
-                int width, int height,
-                int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+                int width, int height, struct rect *clip,
                 float scale, colour background_colour,
                 bool repeat_x, bool repeat_y);
 bool rsvg_clone(const struct content *old, struct content *new_content);

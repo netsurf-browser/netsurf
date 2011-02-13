@@ -918,6 +918,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	BRect updateRect;
 	hlcache_handle *c;
 	float scale = g->bw->scale;
+	struct rect clip;
 
 	assert(g);
 	assert(g->bw);
@@ -953,13 +954,15 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	plot = nsbeos_plotters;
 	nsbeos_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
+
+	clip.x0 = (int)updateRect.left;
+	clip.y0 = (int)updateRect.top;
+	clip.x1 = (int)updateRect.right + 1;
+	clip.y1 = (int)updateRect.bottom + 1;
 	content_redraw(c, 0, 0,
 			(view->Bounds().Width() + 1) * scale,
 			(view->Bounds().Height() + 1) * scale,
-			(int)updateRect.left,
-			(int)updateRect.top,
-			(int)updateRect.right + 1,
-			(int)updateRect.bottom + 1,
+			&clip,
 			g->bw->scale, 0xFFFFFF);
 	current_redraw_browser = NULL;
 

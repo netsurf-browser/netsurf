@@ -40,6 +40,7 @@ struct content;
 struct llcache_handle;
 struct hlcache_handle;
 struct object_params;
+struct rect;
 
 /** Status of a content */
 typedef enum {
@@ -124,12 +125,10 @@ void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
 void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 bool content_redraw(struct hlcache_handle *h, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour);
 bool content_redraw_tiled(struct hlcache_handle *h, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,

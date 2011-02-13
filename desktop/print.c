@@ -120,32 +120,28 @@ bool print_set_up(hlcache_handle *content,
 bool print_draw_next_page(const struct printer *printer,
 		struct print_settings *settings)
 {
-	int clip_x1, clip_y1;
+	struct rect clip;
 	
 	plot = *(printer->plotter);
 	html_redraw_printing_top_cropped = INT_MAX;
-	
-	clip_x1 = page_content_width * settings->scale;
-	clip_y1 = page_content_height  * settings->scale;
+
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = page_content_width * settings->scale;
+	clip.y1 = page_content_height  * settings->scale;
 	
 	html_redraw_printing = true;
-	html_redraw_printing_border = clip_y1;
+	html_redraw_printing_border = clip.y1;
 	
 	printer->print_next_page();
-	if (!content_redraw(printed_content,
-			0,
-			-done_height,
-			0,0,
-			0,
-			0,
-			clip_x1,
-			clip_y1,
-			settings->scale, 0xffffff))
+	if (!content_redraw(printed_content, 0, -done_height,
+			0, 0,
+			&clip, settings->scale, 0xffffff))
 		return false;
 
 	done_height += page_content_height -
 			(html_redraw_printing_top_cropped != INT_MAX ?
-			clip_y1 - html_redraw_printing_top_cropped : 0) / 
+			clip.y1 - html_redraw_printing_top_cropped : 0) / 
 			settings->scale;
 
 	return true;

@@ -101,10 +101,7 @@ bool html_redraw_debug = false;
  * \param  y		     coordinate for top-left of redraw
  * \param  width	     available width (not used for HTML redraw)
  * \param  height	     available height (not used for HTML redraw)
- * \param  clip_x0	     clip rectangle
- * \param  clip_y0	     clip rectangle
- * \param  clip_x1	     clip rectangle
- * \param  clip_y1	     clip rectangle
+ * \param  clip		     clip rectangle
  * \param  scale	     scale for redraw
  * \param  background_colour the background colour
  * \return true if successful, false otherwise
@@ -113,8 +110,7 @@ bool html_redraw_debug = false;
  */
 
 bool html_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	struct box *box;
@@ -145,26 +141,21 @@ bool html_redraw(struct content *c, int x, int y,
 		/* check if the redraw rectangle is completely inside of the
 		   select menu */
 		select_only = form_clip_inside_select_menu(control, scale,
-				clip_x0, clip_y0, clip_x1, clip_y1);
+				clip->x0, clip->y0, clip->x1, clip->y1);
 	}
 	
 	if (!select_only) {
-		struct rect clip;
-		clip.x0 = clip_x0;
-		clip.y0 = clip_y0;
-		clip.x1 = clip_x1;
-		clip.y1 = clip_y1;
 		/* clear to background colour */
-		result = plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+		result = plot.clip(clip->x0, clip->y0, clip->x1, clip->y1);
 	
 		if (c->data.html.background_colour != NS_TRANSPARENT)
 			pstyle_fill_bg.fill_colour =
 					c->data.html.background_colour;
 	
-		result &= plot.rectangle(clip_x0, clip_y0, clip_x1, clip_y1,
+		result &= plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
 				&pstyle_fill_bg);
 	
-		result &= html_redraw_box(box, x, y, clip,
+		result &= html_redraw_box(box, x, y, *clip,
 				scale, pstyle_fill_bg.fill_colour);
 	}
 
@@ -180,7 +171,7 @@ bool html_redraw(struct content *c, int x, int y,
 				current_redraw_browser->visible_select_menu,
 				x + menu_x, y + menu_y,
     				current_redraw_browser->scale,
-				clip_x0, clip_y0, clip_x1, clip_y1);
+				clip->x0, clip->y0, clip->x1, clip->y1);
 	}
 	
 	if (want_knockout)
@@ -667,7 +658,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 		if (!content_redraw(box->object,
 				x_scrolled + padding_left,
 				y_scrolled + padding_top,
-				width, height, r.x0, r.y0, r.x1, r.y1, scale,
+				width, height, &r, scale,
 				current_background_color))
 			return false;
 
@@ -2191,9 +2182,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 				if (!content_redraw_tiled(
 						background->background, x, y,
 						ceilf(width * scale),
-						ceilf(height * scale),
-						clip.x0, clip.y0,
-						clip.x1, clip.y1,
+						ceilf(height * scale), &clip,
 						scale, *background_colour,
 						repeat_x, repeat_y))
 					return false;
@@ -2334,9 +2323,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 				return false;
 			if (!content_redraw_tiled(box->background, x, y,
 					ceilf(width * scale),
-					ceilf(height * scale),
-					clip.x0, clip.y0,
-					clip.x1, clip.y1,
+					ceilf(height * scale), &clip,
 					scale, *background_colour,
 					repeat_x, repeat_y))
 				return false;

@@ -28,6 +28,7 @@
 struct content;
 struct http_parameter;
 struct svgtiny_diagram;
+struct rect;
 
 struct content_svg_data {
 	struct svgtiny_diagram *diagram;
@@ -39,8 +40,7 @@ bool svg_convert(struct content *c);
 void svg_destroy(struct content *c);
 void svg_reformat(struct content *c, int width, int height);
 bool svg_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour);
 bool svg_clone(const struct content *old, struct content *new_content);
 

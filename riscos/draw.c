@@ -105,8 +105,7 @@ void draw_destroy(struct content *c)
  */
 
 bool draw_redraw(struct content *c, int x, int y,
-		int width, int height,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+		int width, int height, struct rect *clip,
 		float scale, colour background_colour)
 {
 	os_trfm matrix;
