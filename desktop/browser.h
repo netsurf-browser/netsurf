@@ -263,11 +263,14 @@ bool browser_window_stop_available(struct browser_window *bw);
  * \param  clip  clip rectangle coordinates
  * \return true if successful, false otherwise
  *
- * x, y and clip_* are coordinates from the top left of the canvas area.
+ * The clip rectangle is guaranteed to be filled to its extents, so there is
+ * no need to render a solid background first.
  *
- * The top left corner of the clip rectangle is (clip_x0, clip_y0) and
- * the bottom right corner of the clip rectangle is (clip_x1, clip_y1).
- * Units for x, y and clip_* are pixels.
+ * x, y and clip are coordinates from the top left of the canvas area.
+ *
+ * The top left corner of the clip rectangle is (x0, y0) and
+ * the bottom right corner of the clip rectangle is (x1, y1).
+ * Units for x, y and clip are pixels.
  */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		struct rect clip);
