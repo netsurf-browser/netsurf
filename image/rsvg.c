@@ -188,14 +188,6 @@ bool rsvg_redraw(struct content *c, int x, int y,
 	return true;
 }
 
-bool rsvg_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
-{
-	return true;
-}
-
 void rsvg_destroy(struct content *c)
 {
 	struct content_rsvg_data *d = &c->data.rsvg;
