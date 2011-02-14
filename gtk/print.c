@@ -169,7 +169,7 @@ static inline void nsgtk_print_set_dashed(void)
 }
 
 /** Set clipping area for subsequent plot operations. */
-static bool nsgtk_print_plot_clip(struct rect *clip)
+static bool nsgtk_print_plot_clip(const struct rect *clip)
 {
 	LOG(("Clipping. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i",
 			clip->x0, clip->y0, clip->x1, clip->y1));	
