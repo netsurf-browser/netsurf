@@ -1577,7 +1577,7 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
  */
 static void tree_draw_node_element(struct tree *tree,
 		struct node_element *element, int tree_x, int tree_y,
-		struct rect clip)
+		const struct rect *clip)
 {
 
 	struct bitmap *bitmap = NULL;
@@ -1605,28 +1605,28 @@ static void tree_draw_node_element(struct tree *tree,
 				CONTENT_STATUS_READY ||
 				content_get_status(icon) ==
 				CONTENT_STATUS_DONE) &&
-				x + TREE_ICON_SIZE > clip.x0 &&
-				x < clip.x1) {
+				x + TREE_ICON_SIZE > clip->x0 &&
+				x < clip->x1) {
 			struct rect c;
 			/* Clip to image area */
 			c.x0 = x;
 			c.y0 = y + icon_inset;
 			c.x1 = x + TREE_ICON_SIZE;
 			c.y1 = y + icon_inset + TREE_ICON_SIZE;
-			if (c.x0 < clip.x0) c.x0 = clip.x0;
-			if (c.y0 < clip.y0) c.y0 = clip.y0;
-			if (c.x1 > clip.x1) c.x1 = clip.x1;
-			if (c.y1 > clip.y1) c.y1 = clip.y1;
+			if (c.x0 < clip->x0) c.x0 = clip->x0;
+			if (c.y0 < clip->y0) c.y0 = clip->y0;
+			if (c.x1 > clip->x1) c.x1 = clip->x1;
+			if (c.y1 > clip->y1) c.y1 = clip->y1;
 
 			if (c.x1 > c.x0 && c.y1 > c.y0) {
 				/* Valid clip rectangles only */
-				plot.clip(c.x0, c.y0, c.x1, c.y1);
+				plot.clip(&c);
 				content_redraw(icon , x, y + icon_inset,
 						TREE_ICON_SIZE, TREE_ICON_SIZE,
 						&c, 1, 0);
 
 				/* Restore previous clipping area */
-				plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+				plot.clip(clip);
 			}
 		}
 
@@ -1635,7 +1635,7 @@ static void tree_draw_node_element(struct tree *tree,
 
 		/* fall through */
 	case NODE_ELEMENT_TEXT:
-		if (element->text == NULL || clip.x1 < x)
+		if (element->text == NULL || clip->x1 < x)
 			break;
 
 		if (element == tree->editing)
@@ -1720,7 +1720,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 	}
 
 	/* Set up the clipping area */
-	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+	plot.clip(&clip);
 
 	/* Draw node's furniture */
 	if (!(tree->flags & TREE_NO_FURNITURE)) {
@@ -1772,11 +1772,12 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 				element = element->next) {
 			/* Draw each element of expanded node */
 			tree_draw_node_element(tree, element, tree_x, tree_y,
-					clip);
+					&clip);
 		}
 	} else {
 		/* Draw main title element of node */
-		tree_draw_node_element(tree, &node->data, tree_x, tree_y, clip);
+		tree_draw_node_element(tree, &node->data, tree_x, tree_y,
+				&clip);
 	}
 }
 
@@ -1849,7 +1850,7 @@ void tree_draw(struct tree *tree, int x, int y,
 	clip.y0 = y + clip_y;
 	clip.x1 = clip.x0 + clip_width;
 	clip.y1 = clip.y0 + clip_height;
-	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+	plot.clip(&clip);
 
 	/* Flat fill extents of clipping area */
 	plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,

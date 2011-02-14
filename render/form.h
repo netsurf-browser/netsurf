@@ -161,10 +161,9 @@ void form_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 void form_free_select_menu(struct form_control *control);
 bool form_redraw_select_menu(struct form_control *control, int x, int y,
-		float scale,
-  		int clip_x0, int clip_y0, int clip_x1, int clip_y1);
+		float scale, const struct rect *clip);
 bool form_clip_inside_select_menu(struct form_control *control, float scale,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1);
+		const struct rect *clip);
 const char *form_select_mouse_action(struct form_control *control,
 		browser_mouse_state mouse, int x, int y);
 void form_select_mouse_drag_end(struct form_control *control,

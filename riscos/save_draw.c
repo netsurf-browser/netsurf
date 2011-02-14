@@ -44,8 +44,7 @@ static bool ro_save_draw_line(int x0, int y0, int x1, int y1, const plot_style_t
 static bool ro_save_draw_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 		float width, colour c, const float transform[6]);
-static bool ro_save_draw_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+static bool ro_save_draw_clip(const struct rect *clip);
 static bool ro_save_draw_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 static bool ro_save_draw_disc(int x, int y, int radius, const plot_style_t *style);
@@ -347,8 +346,7 @@ bool ro_save_draw_path(const float *p, unsigned int n, colour fill,
 
 
 
-bool ro_save_draw_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+bool ro_save_draw_clip(const struct rect *clip)
 {
 	return true;
 }

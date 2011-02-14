@@ -106,7 +106,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 #endif
 	plot.rectangle(0, 0, cwidth, cwidth, plot_style_fill_white);
 
-	plot.clip(clip.x0, clip.y0, clip.x1, clip.y1);
+	plot.clip(&clip);
 
 	/* render the content */
 	content_redraw(content, 0, 0, content_get_width(content), 

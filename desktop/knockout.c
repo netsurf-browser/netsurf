@@ -88,8 +88,7 @@ static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 static bool knockout_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
 static bool knockout_plot_polygon(const int *p, unsigned int n, const plot_style_t *pstyle);
 static bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *plot_style);
-static bool knockout_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+static bool knockout_plot_clip(const struct rect *clip);
 static bool knockout_plot_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 static bool knockout_plot_disc(int x, int y, int radius, const plot_style_t *pstyle);
@@ -137,12 +136,7 @@ typedef enum {
 
 
 struct knockout_box {
-	struct {
-		int x0;
-		int y0;
-		int x1;
-		int y1;
-	} bbox;
+	struct rect bbox;
 	bool deleted;			/* box has been deleted, ignore */
 	struct knockout_box *child;
 	struct knockout_box *next;
@@ -179,12 +173,7 @@ struct knockout_entry {
 			int y1;
 			plot_style_t plot_style;
 		} fill;
-		struct {
-			int x0;
-			int y0;
-			int x1;
-			int y1;
-		} clip;
+		struct rect clip;
 		struct {
 			int x;
 			int y;
@@ -232,10 +221,7 @@ static struct knockout_box *knockout_list = NULL;
 
 static struct plotter_table real_plot;
 
-static int clip_x0_cur;
-static int clip_y0_cur;
-static int clip_x1_cur;
-static int clip_y1_cur;
+static struct rect clip_cur;
 static int nested_depth = 0;
 
 /**
@@ -339,10 +325,7 @@ bool knockout_plot_flush(void)
 			break;
 		case KNOCKOUT_PLOT_CLIP:
 			success &= plot.clip(
-					knockout_entries[i].data.clip.x0,
-					knockout_entries[i].data.clip.y0,
-					knockout_entries[i].data.clip.x1,
-					knockout_entries[i].data.clip.y1);
+					&knockout_entries[i].data.clip);
 			break;
 		case KNOCKOUT_PLOT_TEXT:
 			success &= plot.text(
@@ -584,10 +567,7 @@ bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		if (parent->child)
 			knockout_plot_bitmap_recursive(parent->child, entry);
 		else {
-			success &= plot.clip(parent->bbox.x0,
-					parent->bbox.y0,
-					parent->bbox.x1,
-					parent->bbox.y1);
+			success &= plot.clip(&parent->bbox);
 			success &= plot.bitmap(entry->data.bitmap.x,
 					entry->data.bitmap.y,
 					entry->data.bitmap.width,
@@ -608,12 +588,12 @@ bool knockout_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t 
 		/* filled draw */
 
 		/* get our bounds */
-		kx0 = (x0 > clip_x0_cur) ? x0 : clip_x0_cur;
-		ky0 = (y0 > clip_y0_cur) ? y0 : clip_y0_cur;
-		kx1 = (x1 < clip_x1_cur) ? x1 : clip_x1_cur;
-		ky1 = (y1 < clip_y1_cur) ? y1 : clip_y1_cur;
-		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur) ||
-		    (ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+		kx0 = (x0 > clip_cur.x0) ? x0 : clip_cur.x0;
+		ky0 = (y0 > clip_cur.y0) ? y0 : clip_cur.y0;
+		kx1 = (x1 < clip_cur.x1) ? x1 : clip_cur.x1;
+		ky1 = (y1 < clip_cur.y1) ? y1 : clip_cur.y1;
+		if ((kx0 > clip_cur.x1) || (kx1 < clip_cur.x0) ||
+		    (ky0 > clip_cur.y1) || (ky1 < clip_cur.y0))
 			return true;
 
 		/* fills both knock out and get knocked out */
@@ -707,25 +687,18 @@ bool knockout_plot_path(const float *p, unsigned int n, colour fill,
 }
 
 
-bool knockout_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+bool knockout_plot_clip(const struct rect *clip)
 {
-	if (clip_x1 < clip_x0 || clip_y0 > clip_y1) {
+	if (clip->x1 < clip->x0 || clip->y0 > clip->y1) {
 		LOG(("bad clip rectangle %i %i %i %i",
-				clip_x0, clip_y0, clip_x1, clip_y1));
+				clip->x0, clip->y0, clip->x1, clip->y1));
 		return false;
 	}
 
 	/* memorise clip for bitmap tiling */
-	clip_x0_cur = clip_x0;
-	clip_y0_cur = clip_y0;
-	clip_x1_cur = clip_x1;
-	clip_y1_cur = clip_y1;
+	clip_cur = *clip;
 
-	knockout_entries[knockout_entry_cur].data.clip.x0 = clip_x0;
-	knockout_entries[knockout_entry_cur].data.clip.y0 = clip_y0;
-	knockout_entries[knockout_entry_cur].data.clip.x1 = clip_x1;
-	knockout_entries[knockout_entry_cur].data.clip.y1 = clip_y1;
+	knockout_entries[knockout_entry_cur].data.clip = *clip;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_CLIP;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();
@@ -783,16 +756,16 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 	int kx0, ky0, kx1, ky1;
 
 	/* get our bounds */
-	kx0 = clip_x0_cur;
-	ky0 = clip_y0_cur;
-	kx1 = clip_x1_cur;
-	ky1 = clip_y1_cur;
+	kx0 = clip_cur.x0;
+	ky0 = clip_cur.y0;
+	kx1 = clip_cur.x1;
+	ky1 = clip_cur.y1;
 	if (!(flags & BITMAPF_REPEAT_X)) {
 		if (x > kx0)
 			kx0 = x;
 		if (x + width < kx1)
 			kx1 = x + width;
-		if ((kx0 > clip_x1_cur) || (kx1 < clip_x0_cur))
+		if ((kx0 > clip_cur.x1) || (kx1 < clip_cur.x0))
 			return true;
 	}
 	if (!(flags & BITMAPF_REPEAT_Y)) {
@@ -800,7 +773,7 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 			ky0 = y;
 		if (y + height < ky1)
 			ky1 = y + height;
-		if ((ky0 > clip_y1_cur) || (ky1 < clip_y0_cur))
+		if ((ky0 > clip_cur.y1) || (ky1 < clip_cur.y0))
 			return true;
 	}
 
@@ -827,7 +800,7 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 	if ((++knockout_entry_cur >= KNOCKOUT_ENTRIES) ||
 			(++knockout_box_cur >= KNOCKOUT_BOXES))
 		knockout_plot_flush();
-	return knockout_plot_clip(clip_x0_cur, clip_y0_cur, clip_x1_cur, clip_y1_cur);
+	return knockout_plot_clip(&clip_cur);
 }
 
 bool knockout_plot_group_start(const char *name)

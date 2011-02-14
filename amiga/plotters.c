@@ -400,7 +400,7 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 }
 
 
-bool ami_clip(int x0, int y0, int x1, int y1)
+bool ami_clip(const struct rect *clip)
 {
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_clip()"));
@@ -412,10 +412,10 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 	{
 		reg = NewRegion();
 
-		glob->rect.MinX = x0;
-		glob->rect.MinY = y0;
-		glob->rect.MaxX = x1-1;
-		glob->rect.MaxY = y1-1;
+		glob->rect.MinX = clip->x0;
+		glob->rect.MinY = clip->y0;
+		glob->rect.MaxX = clip->x1-1;
+		glob->rect.MaxY = clip->y1-1;
 
 		OrRectRegion(reg,&glob->rect);
 
@@ -426,7 +426,8 @@ bool ami_clip(int x0, int y0, int x1, int y1)
 
 #ifdef NS_AMIGA_CAIRO_ALL
 	cairo_reset_clip(glob->cr);
-	cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+	cairo_rectangle(glob->cr, clip->x0, clip->y0,
+			clip->x1 - clip->x0, clip->y1 - clip->y0);
 	cairo_clip(glob->cr);
 #endif
 

@@ -141,12 +141,12 @@ bool html_redraw(struct content *c, int x, int y,
 		/* check if the redraw rectangle is completely inside of the
 		   select menu */
 		select_only = form_clip_inside_select_menu(control, scale,
-				clip->x0, clip->y0, clip->x1, clip->y1);
+				clip);
 	}
 	
 	if (!select_only) {
 		/* clear to background colour */
-		result = plot.clip(clip->x0, clip->y0, clip->x1, clip->y1);
+		result = plot.clip(clip);
 	
 		if (c->data.html.background_colour != NS_TRANSPARENT)
 			pstyle_fill_bg.fill_colour =
@@ -170,8 +170,7 @@ bool html_redraw(struct content *c, int x, int y,
 		result &= form_redraw_select_menu(
 				current_redraw_browser->visible_select_menu,
 				x + menu_x, y + menu_y,
-    				current_redraw_browser->scale,
-				clip->x0, clip->y0, clip->x1, clip->y1);
+    				current_redraw_browser->scale, clip);
 	}
 	
 	if (want_knockout)
@@ -412,7 +411,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			/* not an error */
 			return ((!plot.group_end) || (plot.group_end()));
 		/* clip to it */
-		if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
+		if (!plot.clip(&r))
 			return false;
 	} else {
 		/* clip box unchanged */
@@ -470,7 +469,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 					&current_background_color, bg_box))
 				return false;
 			/* restore previous graphics window */
-			if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
+			if (!plot.clip(&r))
 				return false;
 		}
 	}
@@ -544,7 +543,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 						&current_background_color))
 					return false;
 				/* restore previous graphics window */
-				if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
+				if (!plot.clip(&r))
 					return false;
 				if (!html_redraw_inline_borders(box, b, r,
 						scale, first, false))
@@ -576,7 +575,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 				first, true, &current_background_color))
 			return false;
 		/* restore previous graphics window */
-		if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
+		if (!plot.clip(&r))
 			return false;
 		if (!html_redraw_inline_borders(box, b, r, scale, first, true))
 			return false;
@@ -639,7 +638,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return ((!plot.group_end) || (plot.group_end()));
 		if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 				box->type == BOX_TABLE_CELL || box->object) {
-			if (!plot.clip(r.x0, r.y0, r.x1, r.y1))
+			if (!plot.clip(&r))
 				return false;
 		}
 	}
@@ -734,7 +733,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object)
-		if (!plot.clip(clip.x0, clip.y0, clip.x1, clip.y1))
+		if (!plot.clip(&clip))
 			return false;
 
 	return ((!plot.group_end) || (plot.group_end()));
@@ -875,6 +874,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 
 		/* \todo make search terms visible within selected text */
 		if (highlighted) {
+			struct rect r;
 			unsigned endtxt_idx = end_idx;
 			bool clip_changed = false;
 			bool text_visible = true;
@@ -936,8 +936,11 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				int px1 = min(x + endx, clip->x1);
 
 				if (px0 < px1) {
-					if (!plot.clip(px0, clip->y0, px1,
-							clip->y1))
+					r.x0 = px0;
+					r.y0 = clip->y0;
+					r.x1 = px1;
+					r.y1 = clip->y1;
+					if (!plot.clip(&r))
 						return false;
 					clip_changed = true;
 				} else {
@@ -961,8 +964,11 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 				int px0 = max(x + endx, clip->x0);
 				if (px0 < clip->x1) {
 
-					if (!plot.clip(px0, clip->y0,
-							clip->x1, clip->y1))
+					r.x0 = px0;
+					r.y0 = clip->y0;
+					r.x1 = clip->x1;
+					r.y1 = clip->y1;
+					if (!plot.clip(&r))
 						return false;
 
 					clip_changed = true;
@@ -976,8 +982,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			}
 
 			if (clip_changed &&
-				!plot.clip(clip->x0, clip->y0,
-						clip->x1, clip->y1))
+				!plot.clip(clip))
 				return false;
 		}
 	}
@@ -2172,8 +2177,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			}
 			/* valid clipping rectangles only */
 			if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
-				if (!plot.clip(clip.x0, clip.y0,
-						clip.x1, clip.y1))
+				if (!plot.clip(&clip))
 					return false;
 				if (!content_redraw_tiled(
 						background->background, x, y,
@@ -2314,8 +2318,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		}
 		/* valid clipping rectangles only */
 		if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
-			if (!plot.clip(clip.x0, clip.y0,
-					clip.x1, clip.y1))
+			if (!plot.clip(&clip))
 				return false;
 			if (!content_redraw_tiled(box->background, x, y,
 					ceilf(width * scale),

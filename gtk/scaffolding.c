@@ -1486,6 +1486,7 @@ BUTTONHANDLER(history)
 static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer g)
 {
+	struct rect clip;
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
 	struct browser_window *bw =
 			gui_window_get_browser_window(hw->g->top_level);
@@ -1499,10 +1500,11 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	plot = nsgtk_plotters;
 	nsgtk_plot_set_scale(1.0);
 
-	plot.clip(event->area.x,
-		  event->area.y,
-		  event->area.x + event->area.width,
-		  event->area.y + event->area.height);
+	clip.x0 = event->area.x;
+	clip.y0 = event->area.y;
+	clip.x1 = event->area.x + event->area.width;
+	clip.y1 = event->area.y + event->area.height;
+	plot.clip(&clip);
 
 	history_redraw(bw->history);
 

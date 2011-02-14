@@ -46,7 +46,7 @@ bool ami_clg(colour c);
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style);
-bool ami_clip(int x0, int y0, int x1, int y1);
+bool ami_clip(const struct rect *clip);
 bool ami_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 bool ami_disc(int x, int y, int radius, const plot_style_t *style);

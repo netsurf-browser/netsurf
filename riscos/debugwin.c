@@ -61,11 +61,10 @@ enum align {
 static plot_font_style_t fstyle;
 static plot_style_t style;
 
-static void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1);
+static void debugwin_redraw(const struct rect *clip);
 static void debugwin_get_size(int *width, int *height);
 static bool debugwin_render_cell(int x, int y, int width, int height,
-		const char *text, enum align align, int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+		const char *text, enum align align, const struct rect *clip);
 #endif
 
 
@@ -152,21 +151,21 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw)
 		return;
 	}
 	while (more) {
-		int clip_x0, clip_y0, clip_x1, clip_y1;
+		struct rect clip;
 
 		/* Sep plot origin */
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
 
 		/* Set clip rectangle */
-		clip_x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2; /* left   */
-		clip_y0 = (ro_plot_origin_y - redraw->clip.y1) / 2; /* top    */
-		clip_x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2; /* right  */
-		clip_y1 = (ro_plot_origin_y - redraw->clip.y0) / 2; /* bottom */
-		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+		clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2; /* left   */
+		clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2; /* top    */
+		clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2; /* right  */
+		clip.y1 = (ro_plot_origin_y - redraw->clip.y0) / 2; /* bottom */
+		plot.clip(&clip);
 
 		/* Render the content debug table */
-		debugwin_redraw(clip_x0, clip_y0, clip_x1, clip_y1);
+		debugwin_redraw(&clip);
 
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
@@ -179,7 +178,7 @@ void ro_gui_debugwin_redraw(wimp_draw *redraw)
 }
 
 
-void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+void debugwin_redraw(const struct rect *clip)
 {
 	char s[40];
 	int y, x, w;
@@ -225,38 +224,31 @@ void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 	x = 0;
 	w = w_url;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"url", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"url", DEBUGWIN_CENTRE, clip);
 	x += w + 1;
 	w = w_type;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"type", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"type", DEBUGWIN_CENTRE, clip);
 	x += w + 1;
 	w = w_fresh;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"fresh", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"fresh", DEBUGWIN_CENTRE, clip);
 	x += w + 1;
 	w = w_mime_type;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"mime-type", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"mime-type", DEBUGWIN_CENTRE, clip);
 	x += w + 1;
 	w = w_users;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"users", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"users", DEBUGWIN_CENTRE, clip);
 	x += w + 1;
 	w = w_status;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"status", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"status", DEBUGWIN_CENTRE, clip);
 	x += w + 1;
 	w = w_size;
 	debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-			"size", DEBUGWIN_CENTRE, clip_x0, clip_y0,
-			clip_x1, clip_y1);
+			"size", DEBUGWIN_CENTRE, clip);
 
 	/* Move down to next row */
 	y += DEBUGWIN_TEXT_HEIGHT + 2 * DEBUGWIN_CELL_PADDING + 1;
@@ -273,20 +265,19 @@ void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 		x = 0;
 		w = w_url;
 		debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-				content->url, DEBUGWIN_RIGHT, clip_x0, clip_y0,
-				clip_x1, clip_y1);
+				content->url, DEBUGWIN_RIGHT, clip);
 		/* Create Type cell */
 		x += w + 1;
 		w = w_type;
 		debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
 				content_type_name[content->type], DEBUGWIN_LEFT,
-				clip_x0, clip_y0, clip_x1, clip_y1);
+				clip);
 		/* Create cell for showing wheher content is fresh */
 		x += w + 1;
 		w = w_fresh;
 		debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
 				content->fresh ? "yes" : "no", DEBUGWIN_LEFT,
-				clip_x0, clip_y0, clip_x1, clip_y1);
+				clip);
 		/* Create Mime-type cell */
 		x += w + 1;
 		w = w_mime_type;
@@ -302,15 +293,13 @@ void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 		x += w + 1;
 		w = w_users;
 		debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-				s, DEBUGWIN_RIGHT, clip_x0, clip_y0,
-				clip_x1, clip_y1);
+				s, DEBUGWIN_RIGHT, clip);
 		/* Create Status cell */
 		x += w + 1;
 		w = w_status;
 		debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
 				content_status_name[content->status],
-				DEBUGWIN_LEFT, clip_x0, clip_y0,
-				clip_x1, clip_y1);
+				DEBUGWIN_LEFT, clip);
 		/* Create Size cell */
 		talloc_size = talloc_total_size(content);
 		snprintf(s, sizeof s, "%u+%u= %u", content->size, talloc_size,
@@ -318,8 +307,7 @@ void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 		x += w + 1;
 		w = w_size;
 		debugwin_render_cell(x, y, w, DEBUGWIN_TEXT_HEIGHT,
-				s, DEBUGWIN_RIGHT, clip_x0, clip_y0,
-				clip_x1, clip_y1);
+				s, DEBUGWIN_RIGHT, clip);
 
 		/* Keep running total of size used */
 		size += content->size + talloc_size;
@@ -332,7 +320,7 @@ void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 	/* Show total size */
 	debugwin_render_cell(DEBUGWIN_WINDOW_WIDTH - w_size, y,
 			w_size, DEBUGWIN_TEXT_HEIGHT, s, DEBUGWIN_RIGHT,
-			clip_x0, clip_y0, clip_x1, clip_y1);
+			clip);
 
 	/* Heading cell for total size */
 	fstyle.weight = 900;
@@ -342,7 +330,7 @@ void debugwin_redraw(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
 	debugwin_render_cell(0, y,
 			DEBUGWIN_WINDOW_WIDTH - w_size - 1,
 			DEBUGWIN_TEXT_HEIGHT, "total size:", DEBUGWIN_RIGHT,
-			clip_x0, clip_y0, clip_x1, clip_y1);
+			clip);
 
 //	if (want_knockout)
 //		knockout_plot_end();
@@ -369,24 +357,25 @@ void debugwin_get_size(int *width, int *height)
 
 
 bool debugwin_render_cell(int x, int y, int width, int height,
-		const char *text, enum align align, int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+		const char *text, enum align align, const struct rect *clip)
 {
 	int text_width;
 	size_t length;
+	struct rect r;
 
 	height += 2 * DEBUGWIN_CELL_PADDING;
 
 	/* Return if the rectangle is completely outside the clip rectangle */
-	if (clip_y1 < y || y + height < clip_y0 ||
-			clip_x1 < x || x + width < clip_x0)
+	if (clip->y1 < y || y + height < clip->y0 ||
+			clip->x1 < x || x + width < clip->x0)
 		return true;
 
 	/* Clip to intersection of clip rectangle and cell */
-	if (!plot.clip( (x < clip_x0) ? clip_x0 : x,
-			(y < clip_y0) ? clip_y0 : y,
-			(clip_x1 < x + width)  ? clip_x1 : x + width,
-			(clip_y1 < y + height) ? clip_y1 : y + height))
+	r.x0 = (x < clip->x0) ? clip->x0 : x;
+	r.y0 = (y < clip->y0) ? clip->y0 : y;
+	r.x1 = (clip->x1 < x + width)  ? clip->x1 : x + width;
+	r.y1 = (clip->y1 < y + height) ? clip->y1 : y + height);
+	if (!plot.clip(&r))
 		return false;
 
 	/* Plot cell background */
@@ -425,7 +414,7 @@ bool debugwin_render_cell(int x, int y, int width, int height,
 		return false;
 
 	/* Restore previous clip rectangle */
-	if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
+	if (!plot.clip(clip))
 		return false;
 
 	return true;

@@ -103,8 +103,7 @@ static const char *print_declare_fonts(hlcache_handle *h);
 static bool print_fonts_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
-static bool print_fonts_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+static bool print_fonts_plot_clip(const struct rect *clip);
 static bool print_fonts_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle);
 static bool print_fonts_plot_disc(int x, int y, int radius, const plot_style_t *style);
@@ -872,8 +871,7 @@ bool print_fonts_plot_polygon(const int *p, unsigned int n, const plot_style_t *
 }
 
 
-bool print_fonts_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+bool print_fonts_plot_clip(const struct rect *clip)
 {
 	return true;
 }

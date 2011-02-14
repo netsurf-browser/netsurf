@@ -66,8 +66,7 @@ static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t 
 static bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
-static bool nsbeos_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+static bool nsbeos_plot_clip(const struct clip *rect);
 static bool nsbeos_plot_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 static bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style);
@@ -316,8 +315,7 @@ bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style
 
 
 
-bool nsbeos_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+bool nsbeos_plot_clip(const struct rect *ns_clip)
 {
 	BView *view;
 	//fprintf(stderr, "%s(%d, %d, %d, %d)\n", __FUNCTION__, clip_x0, clip_y0, clip_x1, clip_y1);
@@ -328,7 +326,8 @@ bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 		return false;
 	}
 
-	BRect rect(clip_x0, clip_y0, clip_x1 - 1, clip_y1 - 1);
+	BRect rect(ns_clip->x0, ns_clip->y0, ns_clip->x1 - 1,
+			ns_clip->y1 - 1);
 	BRegion clip(rect);
 	view->ConstrainClippingRegion(NULL);
 	if (view->Bounds() != rect)
@@ -341,15 +340,15 @@ bool nsbeos_plot_clip(int clip_x0, int clip_y0,
 #ifdef CAIRO_VERSION
   	if (option_render_cairo) {
 		cairo_reset_clip(current_cr);
-		cairo_rectangle(current_cr, clip_x0, clip_y0,
-			clip_x1 - clip_x0, clip_y1 - clip_y0);
+		cairo_rectangle(current_cr, clip->x0, clip->y0,
+			clip->x1 - clip->x0, clip->y1 - clip->y0);
 		cairo_clip(current_cr);
 	}
 #endif
-	cliprect.x = clip_x0;
-	cliprect.y = clip_y0;
-	cliprect.width = clip_x1 - clip_x0;
-	cliprect.height = clip_y1 - clip_y0;
+	cliprect.x = clip->x0;
+	cliprect.y = clip->y0;
+	cliprect.width = clip->x1 - clip->x0;
+	cliprect.height = clip->y1 - clip->y0;
 	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
 #endif
 	return true;
@@ -835,6 +834,7 @@ static void test_plotters(void)
 {
 	int x0, y0;
 	int x1, y1;
+	struct rect r;
 
 	x0 = 5;
 	y0 = 5;
@@ -853,10 +853,21 @@ static void test_plotters(void)
 	plot.fill(x0, y0, x1, y1, 0x00ff0000);
 	plot.rectangle(x0+10, y0+10, x1-x0+1, y1-y0+1, 2, 0x00ffff00, true, false);
 	y0+=30; y1+=30;
-	plot.clip(x0 + 2, y0 + 2, x1 - 2, y1 - 2);
+
+	r.x0 = x0 + 2;
+	r.y0 = y0 + 2;
+	r.x1 = x1 - 2;
+	r.y1 = y1 - 2;
+	plot.clip(&r);
+
 	plot.fill(x0, y0, x1, y1, 0x00000000);
 	plot.disc(x1, y1, 8, 0x000000ff, false);
-	plot.clip(0, 0, 300, 300);
+
+	r.x0 = 0;
+	r.y0 = 0;
+	r.x1 = 300;
+	r.y1 = 300;
+	plot.clip(&r);
 
 	y0+=30; y1+=30;
 	

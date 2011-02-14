@@ -331,15 +331,15 @@ framebuffer_plot_path(const float *p,
 }
 
 static bool 
-framebuffer_plot_clip(int x0, int y0, int x1, int y1)
+framebuffer_plot_clip(const struct rect *clip)
 {
-	nsfb_bbox_t clip;
-	clip.x0 = x0;
-	clip.y0 = y0;
-	clip.x1 = x1;
-	clip.y1 = y1;
+	nsfb_bbox_t nsfb_clip;
+	nsfb_clip.x0 = clip->x0;
+	nsfb_clip.y0 = clip->y0;
+	nsfb_clip.x1 = clip->x1;
+	nsfb_clip.y1 = clip->y1;
 
-	return nsfb_plot_set_clip(nsfb, &clip);
+	return nsfb_plot_set_clip(nsfb, &nsfb_clip);
 }
 
 struct plotter_table plot = {

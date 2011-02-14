@@ -41,8 +41,7 @@ static bool ro_plot_draw_path(const draw_path * const path, int width,
 static bool ro_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool ro_plot_path(const float *p, unsigned int n, colour fill, float width,
 		colour c, const float transform[6]);
-static bool ro_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+static bool ro_plot_clip(const struct rect *clip);
 static bool ro_plot_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 static bool ro_plot_disc(int x, int y, int radius, const plot_style_t *style);
@@ -356,16 +355,15 @@ error:
 
 
 
-bool ro_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1)
+bool ro_plot_clip(const struct rect *clip)
 {
 	os_error *error;
 	char buf[12];
 
-	clip_x0 = ro_plot_origin_x + clip_x0 * 2;
-	clip_y0 = ro_plot_origin_y - clip_y0 * 2 - 1;
-	clip_x1 = ro_plot_origin_x + clip_x1 * 2 - 1;
-	clip_y1 = ro_plot_origin_y - clip_y1 * 2;
+	int clip_x0 = ro_plot_origin_x + clip->x0 * 2;
+	int clip_y0 = ro_plot_origin_y - clip->y0 * 2 - 1;
+	int clip_x1 = ro_plot_origin_x + clip->x1 * 2 - 1;
+	int clip_y1 = ro_plot_origin_y - clip->y1 * 2;
 
 	if (clip_x1 < clip_x0 || clip_y0 < clip_y1) {
 		LOG(("bad clip rectangle %i %i %i %i",

@@ -100,7 +100,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		return false;
 	}
 
-	plot.clip(clip->x0, clip->y0, clip->x1, clip->y1);
+	plot.clip(clip);
 
 	if (bw->current_content == NULL) {
 		return plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,

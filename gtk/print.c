@@ -169,17 +169,17 @@ static inline void nsgtk_print_set_dashed(void)
 }
 
 /** Set clipping area for subsequent plot operations. */
-static bool nsgtk_print_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+static bool nsgtk_print_plot_clip(struct rect *clip)
 {
 	LOG(("Clipping. x0: %i ;\t y0: %i ;\t x1: %i ;\t y1: %i",
-			clip_x0,clip_y0,clip_x1,clip_y1));	
+			clip->x0, clip->y0, clip->x1, clip->y1));	
 	
 	/* Normalize cllipping area - to prevent overflows.
 	 * See comment in pdf_plot_fill. */
-	clip_x0 = min(max(clip_x0, 0), settings->page_width);
-	clip_y0 = min(max(clip_y0, 0), settings->page_height);
-	clip_x1 = min(max(clip_x1, 0), settings->page_width);
-	clip_y1 = min(max(clip_y1, 0), settings->page_height);
+	int clip_x0 = min(max(clip->x0, 0), settings->page_width);
+	int clip_y0 = min(max(clip->y0, 0), settings->page_height);
+	int clip_x1 = min(max(clip->x1, 0), settings->page_width);
+	int clip_y1 = min(max(clip->y1, 0), settings->page_height);
 	
 	cairo_reset_clip(gtk_print_current_cr);
 	cairo_rectangle(gtk_print_current_cr, clip_x0, clip_y0,

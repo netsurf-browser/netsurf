@@ -133,17 +133,17 @@ static inline void nsgtk_set_dashed(void)
 }
 
 /** Set clipping area for subsequent plot operations. */
-static bool nsgtk_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+static bool nsgtk_plot_clip(const struct rect *clip)
 {
 	cairo_reset_clip(current_cr);
-	cairo_rectangle(current_cr, clip_x0, clip_y0,
-			clip_x1 - clip_x0, clip_y1 - clip_y0);
+	cairo_rectangle(current_cr, clip->x0, clip->y0,
+			clip->x1 - clip->x0, clip->y1 - clip->y0);
 	cairo_clip(current_cr);
 
-	cliprect.x = clip_x0;
-	cliprect.y = clip_y0;
-	cliprect.width = clip_x1 - clip_x0;
-	cliprect.height = clip_y1 - clip_y0;
+	cliprect.x = clip->x0;
+	cliprect.y = clip->y0;
+	cliprect.width = clip->x1 - clip->x0;
+	cliprect.height = clip->y1 - clip->y0;
 	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
 
 	return true;

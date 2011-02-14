@@ -777,7 +777,7 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 	if (r.y1 > y + ta->vis_height)
 		r.y1 = y + ta->vis_height;
 
-	plot.clip(r.x0, r.y0, r.x1, r.y1);
+	plot.clip(&r);
 	plot.rectangle(r.x0, r.y0, r.x1, r.y1, &plot_style_fill_bg);
 	plot.rectangle(x, y,
 		       x + ta->vis_width - 1, y + ta->vis_height - 1,
@@ -787,7 +787,7 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 		r.x0 = x + MARGIN_LEFT;
 	if (r.x1 > x + ta->vis_width - MARGIN_RIGHT)
 		r.x1 = x + ta->vis_width - MARGIN_RIGHT;
-	plot.clip(r.x0, r.y0, r.x1, r.y1);
+	plot.clip(&r);
 
 	if (line0 > 0)
 		c_pos = utf8_bounded_length(ta->text,

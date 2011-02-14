@@ -468,7 +468,7 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 {
 	os_error *error;
 	osbool more = true;
-	int clip_x0 = 0, clip_y0 = 0, clip_x1 = 0, clip_y1 = 0;
+	struct rect clip;
 	int progress_ymid;
 
 	/* initialise the plotters */
@@ -492,25 +492,25 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 					redraw->box.y0 + pb->icon_y0,
 					tinct_ERROR_DIFFUSE);
 		if (!pb->icon_obscured) {
-		  	clip_x0 = max(redraw->clip.x0,
+		  	clip.x0 = max(redraw->clip.x0,
 		  			redraw->box.x0 + pb->visible.x0) >> 1;
-			clip_y0 = -min(redraw->clip.y1,
+			clip.y0 = -min(redraw->clip.y1,
 		  			redraw->box.y0 + pb->visible.y1) >> 1;
-			clip_x1 = min(redraw->clip.x1,
+			clip.x1 = min(redraw->clip.x1,
 					redraw->box.x0 + pb->visible.x1) >> 1;
-		  	clip_y1 = -max(redraw->clip.y0,
+		  	clip.y1 = -max(redraw->clip.y0,
 					redraw->box.y0 + pb->visible.y0) >> 1;
-		  	if ((clip_x0 < clip_x1) && (clip_y0 < clip_y1)) {
+		  	if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
 				if (progress_icon) {
-			  		plot.clip(clip_x0, clip_y0, clip_x1, clip_y1);
+			  		plot.clip(&clip);
 					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 							progress_icon,
 							redraw->box.x0 - pb->offset,
 							progress_ymid - progress_height,
 							tinct_FILL_HORIZONTALLY);
 				} else {
-				  	plot.rectangle(clip_x0, clip_y0, 
-						       clip_x1, clip_y1,
+				  	plot.rectangle(clip.x0, clip.y0, 
+						       clip.x1, clip.y1,
 						       plot_style_fill_red);
 			  	}
 			}

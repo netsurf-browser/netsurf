@@ -873,9 +873,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 		clip.x1 = b->redraw.area.x1 + b->scroll.current.x;
 		clip.y1 = b->redraw.area.y1 + b->scroll.current.y;
 		/* must clear the surface: */
-		plot.clip(  b->redraw.area.x0, b->redraw.area.y0, 
-					b->redraw.area.x1, b->redraw.area.y1
-		);
+		plot.clip(&clip);
 		plot.rectangle( b->redraw.area.x0, 
 						b->redraw.area.y0, 
 						b->redraw.area.x1, 
@@ -911,16 +909,24 @@ void browser_redraw_caret( struct gui_window * gw, GRECT * area )
 		caret.g_x -= gw->browser->scroll.current.x;
 		caret.g_y -= gw->browser->scroll.current.y;
 		struct s_clipping oldclip;
+		struct rect old_clip;
+		struct rect clip;
+		clip.x0 = caret.g_x - 1;
+		clip.y0 = caret.g_y - 1;
+		clip.x1 = caret.g_x + caret.g_w + 1;
+		clip.y1 = caret.g_y + caret.g_h + 1;
 		plot_get_clip( &oldclip );
 		/* clip to cursor: */
-		plot_clip( caret.g_x-1, caret.g_y -1, 
-			caret.g_x + caret.g_w + 1, caret.g_y + caret.g_h + 1
-		);
+		plot_clip( &clip );
 		plot_rectangle( caret.g_x, caret.g_y, 
 			caret.g_x+caret.g_w, caret.g_y+caret.g_h,
 			plot_style_caret );
 		/* restore clip area: */
-		plot_clip( oldclip.x0, oldclip.y0, oldclip.x1,oldclip.y1);
+		old_clip.x0 = old_clip.x0;
+		old_clip.y0 = old_clip.y0;
+		old_clip.x1 = old_clip.x1;
+		old_clip.y1 = old_clip.y1;
+		plot_clip( &old_clip );
 		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
 		b->caret.current.g_y = caret.g_y + gw->browser->scroll.current.y;
 		b->caret.current.g_w = caret.g_w;

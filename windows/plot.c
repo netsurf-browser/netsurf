@@ -52,17 +52,16 @@ static float nsws_plot_scale = 1.0;
 
 static RECT plot_clip; /* currently set clipping rectangle */
 
-static bool clip(int x0, int y0, int x1, int y1)
+static bool clip(const struct rect *clip)
 {
-
 #if NSWS_PLOT_DEBUG
-	LOG(("clip %d,%d to %d,%d", x0, y0, x1, y1));
+	LOG(("clip %d,%d to %d,%d", clip->x0, clip->y0, clip->x1, clip->y1));
 #endif
 
-	plot_clip.left = x0;
-	plot_clip.top = y0;
-	plot_clip.right = x1 + 1; /* rectangle co-ordinates are exclusive */
-	plot_clip.bottom = y1 + 1; /* rectangle co-ordinates are exclusive */
+	plot_clip.left = clip->x0;
+	plot_clip.top = clip->y0;
+	plot_clip.right = clip->x1 + 1; /* co-ordinates are exclusive */
+	plot_clip.bottom = clip->y1 + 1; /* co-ordinates are exclusive */
 
 	return true;
 }

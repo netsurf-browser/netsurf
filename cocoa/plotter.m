@@ -124,9 +124,9 @@ void cocoa_set_clip( NSRect rect )
 	cocoa_plot_clip_rect = rect;
 }
 
-static bool plot_clip(int x0, int y0, int x1, int y1)
+static bool plot_clip(const struct rect *clip)
 {
-	cocoa_plot_clip_rect = cocoa_rect( x0, y0, x1, y1 );
+	cocoa_plot_clip_rect = cocoa_rect( clip->x0, clip->y0, clip->x1, clip->y1 );
 	return true;
 }
 

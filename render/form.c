@@ -975,7 +975,7 @@ void form_free_select_menu(struct form_control *control)
  * \return		true on success, false otherwise
  */
 bool form_redraw_select_menu(struct form_control *control, int x, int y,
-		float scale, int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+		float scale, const struct rect *clip)
 {
 	struct box *box;
 	struct form_select_menu *menu = control->data.select.menu;
@@ -989,11 +989,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	int i;
 	int scroll;
 	int x_cp, y_cp;
-	struct rect clip;
-	clip.x0 = clip_x0;
-	clip.y0 = clip_y0;
-	clip.x1 = clip_x1;
-	clip.y1 = clip_y1;
+	struct rect r;
 	
 	box = control->box;
 	
@@ -1028,8 +1024,12 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	x1 = x + width - 1;
 	y1 = y + height - 1;
 	scrollbar_x = x1 - scrollbar_width;
-	
-	if (!plot.clip(x0, y0, x1 + 1, y1 + 1))
+
+	r.x0 = x0;
+	r.y0 = y0;
+	r.x1 = x1 + 1;
+	r.y1 = y1 + 1;
+	if (!plot.clip(&r))
 		return false;
 	if (!plot.rectangle(x0, y0, x1, y1 ,plot_style_stroke_darkwbasec))
 		return false;
@@ -1041,7 +1041,11 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	y1 = y1 - SELECT_BORDER_WIDTH;
 	height = height - 2 * SELECT_BORDER_WIDTH;
 
-	if (!plot.clip(x0, y0, x1 + 1, y1 + 1))
+	r.x0 = x0;
+	r.y0 = y0;
+	r.x1 = x1 + 1;
+	r.y1 = y1 + 1;
+	if (!plot.clip(&r))
 		return false;
 	if (!plot.rectangle(x0, y0, x1 + 1, y1 + 1,
 			plot_style_fill_lightwbasec))
@@ -1084,7 +1088,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	if (!scroll_redraw(menu->scroll,
 			x_cp + menu->width - SCROLLBAR_WIDTH,
       			y_cp,
-			&clip, scale))
+			clip, scale))
 		return false;
 	
 	return true;
@@ -1103,7 +1107,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
  * \return		true if inside false otherwise
  */
 bool form_clip_inside_select_menu(struct form_control *control, float scale,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+		const struct rect *clip)
 {
 	struct form_select_menu *menu = control->data.select.menu;
 	int width, height;
@@ -1117,8 +1121,8 @@ bool form_clip_inside_select_menu(struct form_control *control, float scale,
 		height *= scale;
 	}
 	
-	if (clip_x0 >= 0 && clip_x1 <= width &&
-			clip_y0 >= 0 && clip_y1 <= height)
+	if (clip->x0 >= 0 && clip->x1 <= width &&
+			clip->y0 >= 0 && clip->y1 <= height)
 		return true;
 
 	return false;

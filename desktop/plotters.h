@@ -27,6 +27,7 @@
 #include "css/css.h"
 #include "content/content.h"
 #include "desktop/plot_style.h"
+#include "desktop/shape.h"
 
 struct bitmap;
 
@@ -96,7 +97,7 @@ typedef unsigned long bitmap_flags_t;
  */
 struct plotter_table {
 	/* clipping operations */
-	bool (*clip)(int x0, int y0, int x1, int y1);
+	bool (*clip)(const struct rect *clip);
 
         /* shape primatives */
 	bool (*arc)(int x, int y, int radius, int angle1, int angle2, const plot_style_t *pstyle);

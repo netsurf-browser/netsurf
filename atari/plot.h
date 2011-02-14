@@ -22,11 +22,13 @@
 #include "desktop/plotters.h"
 #include "atari/plot/plotter.h"
 
+struct rect;
+
 int atari_plotter_init( char*, char * );
 int atari_plotter_finalise( void );
 
 bool plot_get_clip(struct s_clipping * out);
-bool plot_clip(int x0, int y0, int x1, int y1);
+bool plot_clip(const struct rect *clip);
 bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );
 
 #endif

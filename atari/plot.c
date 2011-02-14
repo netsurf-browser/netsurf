@@ -110,9 +110,9 @@ static bool plot_polygon(const int *p, unsigned int n,
 	return ( true );
 }
 
-bool plot_clip(int x0, int y0, int x1, int y1)
+bool plot_clip(const struct rect *clip)
 {
-	plotter->clip( plotter, x0, y0, x1, y1 );
+	plotter->clip( plotter, clip->x0, clip->y0, clip->x1, clip->y1 );
 	return ( true );
 }
 

@@ -49,8 +49,7 @@
 static bool pdf_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);
 static bool pdf_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle);
 static bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
-static bool pdf_plot_clip(int clip_x0, int clip_y0,
-		int clip_x1, int clip_y1);
+static bool pdf_plot_clip(const struct rect *clip);
 static bool pdf_plot_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 static bool pdf_plot_disc(int x, int y, int radius, const plot_style_t *style);
@@ -267,19 +266,19 @@ bool pdf_plot_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 
 /**here the clip is only queried */
-bool pdf_plot_clip(int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+bool pdf_plot_clip(const struct rect *clip)
 {
 #ifdef PDF_DEBUG
-	LOG(("%d %d %d %d", clip_x0, clip_y0, clip_x1, clip_y1));
+	LOG(("%d %d %d %d", clip->x0, clip->y0, clip->x1, clip->y1));
 #endif
 
 	/*Normalize cllipping area - to prevent overflows.
 	  See comment in pdf_plot_fill.
 	*/
-	last_clip_x0 = min(max(clip_x0, 0), page_width);
-	last_clip_y0 = min(max(clip_y0, 0), page_height);
-	last_clip_x1 = min(max(clip_x1, 0), page_width);
-	last_clip_y1 = min(max(clip_y1, 0), page_height);
+	last_clip_x0 = min(max(clip->x0, 0), page_width);
+	last_clip_y0 = min(max(clip->y0, 0), page_height);
+	last_clip_x1 = min(max(clip->x1, 0), page_width);
+	last_clip_y1 = min(max(clip->y1, 0), page_height);
 
 	clip_update_needed = true;
 

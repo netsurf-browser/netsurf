@@ -628,7 +628,12 @@ bool history_redraw_entry(struct history *history,
 	plot_font_style_t fstyle = *plot_style_font;
 
 	if (clip) {
-		if(!plot.clip(x0 + xoffset, y0 + yoffset, x1 + xoffset, y1 + yoffset))
+		struct rect rect;
+		rect.x0 = x0 + xoffset;
+		rect.y0 = y0 + yoffset;
+		rect.x1 = x1 + xoffset;
+		rect.y1 = y1 + yoffset;
+		if(!plot.clip(&rect))
 			return false;
 	}
 

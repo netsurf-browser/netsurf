@@ -358,6 +358,7 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
 
 		if (tv != NULL && tv->tree != NULL) {
+			struct rect clip;
 			tree_draw(tv->tree, tv->origin.x/2, -(tv->origin.y/2),
 					(redraw->clip.x0
 					-(ro_plot_origin_x+tv->origin.x))/2,
@@ -367,11 +368,11 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 					(redraw->clip.y1 - redraw->clip.y0)/2);
 
 			/* Put the graphcis window back how the Wimp set it. */
-
-			plot.clip((redraw->clip.x0 - ro_plot_origin_x)/2,
-					(ro_plot_origin_y - redraw->clip.y1)/2,
-					(redraw->clip.x1 - ro_plot_origin_x)/2,
-					(ro_plot_origin_y - redraw->clip.y0)/2);
+			clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;
+			clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
+			clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
+			clip.y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
+			plot.clip(&clip);
 	 	}
 
 		error = xwimp_get_rectangle(redraw, &more);
