@@ -722,17 +722,13 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 					x_parent + box->x,
      					y_parent + box->y + box->padding[TOP] +
 					box->height + box->padding[BOTTOM] -
-					SCROLLBAR_WIDTH,
-					clip.x0, clip.y0, clip.x1, clip.y1,
-     					scale);
+					SCROLLBAR_WIDTH, &clip, scale);
 		if (box->scroll_y != NULL)
 			scroll_redraw(box->scroll_y,
 					x_parent + box->x + box->padding[LEFT] +
 					box->width + box->padding[RIGHT] -
 					SCROLLBAR_WIDTH,
-					y_parent + box->y,
-					clip.x0, clip.y0, clip.x1, clip.y1,
-     					scale);
+					y_parent + box->y, &clip, scale);
 	}
 
 

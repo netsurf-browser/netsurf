@@ -989,6 +989,11 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	int i;
 	int scroll;
 	int x_cp, y_cp;
+	struct rect clip;
+	clip.x0 = clip_x0;
+	clip.y0 = clip_y0;
+	clip.x1 = clip_x1;
+	clip.y1 = clip_y1;
 	
 	box = control->box;
 	
@@ -1079,7 +1084,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	if (!scroll_redraw(menu->scroll,
 			x_cp + menu->width - SCROLLBAR_WIDTH,
       			y_cp,
-			clip_x0, clip_y0, clip_x1, clip_y1, scale))
+			&clip, scale))
 		return false;
 	
 	return true;

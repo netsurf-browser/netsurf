@@ -203,8 +203,7 @@ static inline bool scroll_redraw_scrollbar_rectangle(
  * \param scale		scale for the redraw
  * \return		true on succes false otherwise
  */
-bool scroll_redraw(struct scroll *scroll, int x, int y,
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1,
+bool scroll_redraw(struct scroll *scroll, int x, int y, struct rect *clip,
 		float scale)
 {
 	int w = SCROLLBAR_WIDTH;
@@ -247,25 +246,10 @@ bool scroll_redraw(struct scroll *scroll, int x, int y,
 
 	bar_c0 = (scroll->horizontal ? x0 : y0) + w + bar_off;
 
-	if (clip_x0 < x0)
-		clip_x0 = x0;
-
-	if (clip_y0 < y0)
-		clip_y0 = y0;
-
-	if (clip_x1 > x1 + 1)
-		clip_x1 = x1 + 1;
-
-	if (clip_y1 > y1 + 1)
-		clip_y1 = y1 + 1;
-
-	
-	if (clip_x0 > clip_x1 || clip_y0 > clip_y1)
-		/* clipping rectangle is outside the scrollbar area */
+	if (x1 < clip->x0 || y1 < clip->y0 || clip->x1 < x0 || clip->y1 < y0)
+		/* scrollbar is outside the clipping rectangle, nothing to
+		 * render */
 		return true;
-
-	if (!plot.clip(clip_x0, clip_y0, clip_x1, clip_y1))
-		return false;
 
 	
 	if (scroll->horizontal) {
