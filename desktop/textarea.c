@@ -728,7 +728,7 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * \param y1	 bottom Y coordinate of redraw area
  */
 void textarea_redraw(struct text_area *ta, int x, int y, 
-		struct rect *clip)
+		const struct rect *clip)
 {
 	int line0, line1, line;
 	int chars, offset, text_y_offset, text_y_offset_baseline;
