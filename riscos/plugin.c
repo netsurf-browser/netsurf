@@ -249,7 +249,7 @@ void plugin_destroy(struct content *c)
  * \param scale        Scale of page (1.0 = 100%)
  */
 bool plugin_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	/* do nothing */

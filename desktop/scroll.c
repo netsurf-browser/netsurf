@@ -196,15 +196,12 @@ static inline bool scroll_redraw_scrollbar_rectangle(
  * \param scroll	the scroll to be redrawn
  * \param x		the X coordinate to draw the scroll at
  * \param y		the Y coordinate to draw the scroll at
- * \param clip_x0	minimum x of the clipping rectangle
- * \param clip_y0	minimum y of the clipping rectangle
- * \param clip_x1	maximum x of the clipping rectangle
- * \param clip_y1	maximum y of the clipping rectangle
+ * \param clip		the clipping rectangle
  * \param scale		scale for the redraw
  * \return		true on succes false otherwise
  */
-bool scroll_redraw(struct scroll *scroll, int x, int y, struct rect *clip,
-		float scale)
+bool scroll_redraw(struct scroll *scroll, int x, int y, 
+		const struct rect *clip, float scale)
 {
 	int w = SCROLLBAR_WIDTH;
 	int well_length, bar_off, bar_c0, bar_c1;

@@ -43,10 +43,10 @@ bool nsgif_create(struct content *c, const struct http_parameter *params);
 bool nsgif_convert(struct content *c);
 void nsgif_destroy(struct content *c);
 bool nsgif_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool nsgif_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 bool nsgif_clone(const struct content *old, struct content *new_content);

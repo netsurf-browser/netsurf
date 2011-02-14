@@ -59,7 +59,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 void textplain_reformat(struct content *c, int width, int height);
 void textplain_destroy(struct content *c);
 bool textplain_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool textplain_clone(const struct content *old, struct content *new_content);
 

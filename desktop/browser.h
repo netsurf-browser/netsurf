@@ -273,7 +273,7 @@ bool browser_window_stop_available(struct browser_window *bw);
  * Units for x, y and clip are pixels.
  */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
-		struct rect *clip);
+		const struct rect *clip);
 
 /**
  * Check whether browser window is ready for redraw

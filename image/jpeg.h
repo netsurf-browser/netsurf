@@ -39,10 +39,10 @@ struct content_jpeg_data {
 bool nsjpeg_convert(struct content *c);
 void nsjpeg_destroy(struct content *c);
 bool nsjpeg_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 bool nsjpeg_clone(const struct content *old, struct content *new_content);

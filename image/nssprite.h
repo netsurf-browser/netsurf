@@ -38,7 +38,7 @@ struct content_nssprite_data {
 bool nssprite_convert(struct content *c);
 void nssprite_destroy(struct content *c);
 bool nssprite_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool nssprite_clone(const struct content *old, struct content *new_content);
 

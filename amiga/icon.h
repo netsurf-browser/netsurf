@@ -38,7 +38,7 @@ struct content_amiga_icon_data {
 bool amiga_icon_convert(struct content *c);
 void amiga_icon_destroy(struct content *c);
 bool amiga_icon_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool amiga_icon_clone(const struct content *old, struct content *new_content);
 

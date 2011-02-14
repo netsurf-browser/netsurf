@@ -90,7 +90,7 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 
 /* exported interface, documented in browser.h */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
-		struct rect *clip)
+		const struct rect *clip)
 {
 	int width = 0;
 	int height = 0;

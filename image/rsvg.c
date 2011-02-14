@@ -181,7 +181,7 @@ bool rsvg_convert(struct content *c)
 }
 
 bool rsvg_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	plot.bitmap(x, y, width, height, c->bitmap, background_colour, BITMAPF_NONE);

@@ -38,7 +38,7 @@ struct content_draw_data {
 bool draw_convert(struct content *c);
 void draw_destroy(struct content *c);
 bool draw_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool draw_clone(const struct content *old, struct content *new_content);
 

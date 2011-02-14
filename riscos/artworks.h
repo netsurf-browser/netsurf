@@ -42,7 +42,7 @@ struct content_artworks_data {
 bool artworks_convert(struct content *c);
 void artworks_destroy(struct content *c);
 bool artworks_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool artworks_clone(const struct content *old, struct content *new_content);
 

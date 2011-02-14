@@ -117,7 +117,7 @@ bool nsbmp_convert(struct content *c)
 
 
 bool nsbmp_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 
@@ -131,7 +131,7 @@ bool nsbmp_redraw(struct content *c, int x, int y,
 
 
 bool nsbmp_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {

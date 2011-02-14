@@ -152,7 +152,7 @@ void nsgif_invalidate(void *bitmap, void *private_word)
 }
 
 bool nsgif_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	if (c->data.gif.current_frame != c->data.gif.gif->decoded_frame)
@@ -167,7 +167,7 @@ bool nsgif_redraw(struct content *c, int x, int y,
 
 
 bool nsgif_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {

@@ -110,7 +110,7 @@ bool html_redraw_debug = false;
  */
 
 bool html_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	struct box *box;
@@ -841,7 +841,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, bool space, const plot_font_style_t *fstyle,
-		int x, int y, struct rect *clip,
+		int x, int y, const struct rect *clip,
 		int height,
 		float scale,
 		bool excluded)

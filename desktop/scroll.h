@@ -64,8 +64,8 @@ bool scroll_create(bool horizontal, int length,
   		void *client_data, scroll_client_callback client_callback,
     		struct scroll **scroll_pt);
 void scroll_destroy(struct scroll *scroll);
-bool scroll_redraw(struct scroll *scroll, int x, int y, struct rect *clip,
-		float scale);
+bool scroll_redraw(struct scroll *scroll, int x, int y, 
+		const struct rect *clip, float scale);
 		
 void scroll_set(struct scroll *scroll, int scroll_val, bool bar);
 int scroll_get_offset(struct scroll *scroll);

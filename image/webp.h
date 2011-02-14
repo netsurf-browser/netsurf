@@ -38,7 +38,7 @@ struct content_webp_data {
 bool webp_convert(struct content *c);
 void webp_destroy(struct content *c);
 bool webp_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool webp_clone(const struct content *old, struct content *new_content);
 

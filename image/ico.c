@@ -105,7 +105,7 @@ bool nsico_convert(struct content *c)
 }
 
 bool nsico_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
@@ -139,7 +139,7 @@ bool nsico_set_bitmap_from_size(hlcache_handle *h, int width, int height)
 }
 
 bool nsico_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {

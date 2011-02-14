@@ -38,7 +38,7 @@ struct content_sprite_data {
 bool sprite_convert(struct content *c);
 void sprite_destroy(struct content *c);
 bool sprite_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 bool sprite_clone(const struct content *old, struct content *new_content);
 #endif

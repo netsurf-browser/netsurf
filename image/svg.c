@@ -107,7 +107,7 @@ void svg_reformat(struct content *c, int width, int height)
  */
 
 bool svg_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	float transform[6];

@@ -59,7 +59,7 @@ bool plugin_convert(struct content *c, int width, int height);
 void plugin_reformat(struct content *c, int width, int height);
 void plugin_destroy(struct content *c);
 bool plugin_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,

@@ -275,10 +275,10 @@ struct handler_entry {
 	void (*mouse_action)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 	bool (*redraw)(struct content *c, int x, int y,
-			int width, int height, struct rect *clip,
+			int width, int height, const struct rect *clip,
 			float scale, colour background_colour);
 	bool (*redraw_tiled)(struct content *c, int x, int y,
-			int width, int height, struct rect *clip,
+			int width, int height, const struct rect *clip,
 			float scale, colour background_colour,
 			bool repeat_x, bool repeat_y);
 	void (*open)(struct content *c, struct browser_window *bw,
@@ -901,7 +901,7 @@ void content_request_redraw(struct hlcache_handle *h,
  */
 
 bool content_redraw(hlcache_handle *h, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -929,7 +929,7 @@ bool content_redraw(hlcache_handle *h, int x, int y,
  */
 
 bool content_redraw_tiled(hlcache_handle *h, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {

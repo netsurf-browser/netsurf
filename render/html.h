@@ -209,7 +209,7 @@ void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,
-		int width, int height, struct rect *clip,
+		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 
 /* in render/html_interaction.c */
@@ -228,7 +228,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, bool space,
 		const plot_font_style_t *fstyle,
 		int x, int y,
-		struct rect *clip,
+		const struct rect *clip,
 		int height,
 		float scale,
 		bool excluded);
