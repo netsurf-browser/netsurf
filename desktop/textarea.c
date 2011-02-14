@@ -728,25 +728,22 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * \param y1	 bottom Y coordinate of redraw area
  */
 void textarea_redraw(struct text_area *ta, int x, int y, 
-		int clip_x0, int clip_y0, int clip_x1, int clip_y1)
+		struct rect *clip)
 {
 	int line0, line1, line;
 	int chars, offset, text_y_offset, text_y_offset_baseline;
 	unsigned int c_pos, c_len, b_start, b_end, line_len;
 	char *line_text;
-	int x0, x1, y0, y1;
+	struct rect r;
         plot_style_t plot_style_fill_bg = {
             .fill_type = PLOT_OP_TYPE_SOLID,
             .fill_colour = BACKGROUND_COL,
         };
 
-	x0 = clip_x0;
-	x1 = clip_x1;
-	y0 = clip_y0;
-	y1 = clip_y1;
+	r = *clip;
 
-	if (x1 < x || x0 > x + ta->vis_width || y1 < y ||
-		   y0 > y + ta->vis_height)
+	if (r.x1 < x || r.x0 > x + ta->vis_width || r.y1 < y ||
+		   r.y0 > y + ta->vis_height)
 		/* Textarea outside the clipping rectangle */
 		return;
 
@@ -757,8 +754,8 @@ void textarea_redraw(struct text_area *ta, int x, int y,
         if (ta->flags & TEXTAREA_READONLY)
             plot_style_fill_bg.fill_colour = READONLY_BG;
 
-	line0 = (y0 - y + ta->scroll_y) / ta->line_height - 1;
-	line1 = (y1 - y + ta->scroll_y) / ta->line_height + 1;
+	line0 = (r.y0 - y + ta->scroll_y) / ta->line_height - 1;
+	line1 = (r.y1 - y + ta->scroll_y) / ta->line_height + 1;
 
 	if (line0 < 0)
 		line0 = 0;
@@ -771,26 +768,26 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (x0 < x)
-		x0 = x;
-	if (y0 < y)
-		y0 = y;
-	if (x1 > x + ta->vis_width)
-		x1 = x + ta->vis_width;
-	if (y1 > y + ta->vis_height)
-		y1 = y + ta->vis_height;
+	if (r.x0 < x)
+		r.x0 = x;
+	if (r.y0 < y)
+		r.y0 = y;
+	if (r.x1 > x + ta->vis_width)
+		r.x1 = x + ta->vis_width;
+	if (r.y1 > y + ta->vis_height)
+		r.y1 = y + ta->vis_height;
 
-	plot.clip(x0, y0, x1, y1);
-	plot.rectangle(x0, y0, x1, y1, &plot_style_fill_bg);
+	plot.clip(r.x0, r.y0, r.x1, r.y1);
+	plot.rectangle(r.x0, r.y0, r.x1, r.y1, &plot_style_fill_bg);
 	plot.rectangle(x, y,
 		       x + ta->vis_width - 1, y + ta->vis_height - 1,
 		       &pstyle_stroke_border);
 
-	if (x0 < x + MARGIN_LEFT)
-		x0 = x + MARGIN_LEFT;
-	if (x1 > x + ta->vis_width - MARGIN_RIGHT)
-		x1 = x + ta->vis_width - MARGIN_RIGHT;
-	plot.clip(x0, y0, x1, y1);
+	if (r.x0 < x + MARGIN_LEFT)
+		r.x0 = x + MARGIN_LEFT;
+	if (r.x1 > x + ta->vis_width - MARGIN_RIGHT)
+		r.x1 = x + ta->vis_width - MARGIN_RIGHT;
+	plot.clip(r.x0, r.y0, r.x1, r.y1);
 
 	if (line0 > 0)
 		c_pos = utf8_bounded_length(ta->text,
@@ -809,7 +806,7 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 	}
 
 	for (line = line0; (line <= line1) &&
-			(y + line * ta->line_height <= y1 + ta->scroll_y);
+			(y + line * ta->line_height <= r.y1 + ta->scroll_y);
 			line++) {
 		if (ta->lines[line].b_length == 0)
 			continue;
@@ -846,11 +843,11 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 							line_len,
        							b_start);
 				nsfont.font_width(&ta->fstyle, line_text,
-						b_start, &x0);
-				x0 += x + MARGIN_LEFT;
+						b_start, &r.x0);
+				r.x0 += x + MARGIN_LEFT;
 			}
 			else {
-				x0 = x + MARGIN_LEFT;
+				r.x0 = x + MARGIN_LEFT;
 				b_start = 0;
 			}
 
@@ -872,12 +869,12 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 			nsfont.font_width(&ta->fstyle,
 					&(ta->text[ta->lines[line].b_start +
 					b_start]),
-					b_end, &x1);
-			x1 += x0;
-			plot.rectangle(x0 - ta->scroll_x, y +
+					b_end, &r.x1);
+			r.x1 += r.x0;
+			plot.rectangle(r.x0 - ta->scroll_x, y +
 				       line * ta->line_height +
 				       1 - ta->scroll_y + text_y_offset,
-				       x1 - ta->scroll_x,
+				       r.x1 - ta->scroll_x,
 				       y + (line + 1) * ta->line_height -
 				       1 - ta->scroll_y + text_y_offset,
 				       &pstyle_fill_selection);
@@ -886,14 +883,14 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 
 		c_pos += c_len;
 
-		y0 = y + line * ta->line_height + text_y_offset_baseline;
+		r.y0 = y + line * ta->line_height + text_y_offset_baseline;
 
 		ta->fstyle.background =
 			   	(ta->flags & TEXTAREA_READONLY) ?
 					READONLY_BG : BACKGROUND_COL,
 
 		plot.text(x + MARGIN_LEFT - ta->scroll_x,
-				y0 - ta->scroll_y,
+				r.y0 - ta->scroll_y,
 			  	ta->text + ta->lines[line].b_start,
 			   	ta->lines[line].b_length,
 				&ta->fstyle);
@@ -901,13 +898,13 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 
 	if ((ta->selection_end == -1 ||
 			ta->selection_start == ta->selection_end) &&
-			x + ta->caret_x >= clip_x0 &&
-			x + ta->caret_x <= clip_x1) {
+			x + ta->caret_x >= clip->x0 &&
+			x + ta->caret_x <= clip->x1) {
 		/* There is no selection and caret is in horizontal
 		 * clip range. */
 		int caret_height = ta->line_height - 1;
 		y += ta->caret_y + text_y_offset;
-		if (y + caret_height >= clip_y0 && y <= clip_y1)
+		if (y + caret_height >= clip->y0 && y <= clip->y1)
 			/* Caret in vertical clip range; plot */
 			plot.line(x + ta->caret_x, y + ta->caret_y,
 				  	x + ta->caret_x,

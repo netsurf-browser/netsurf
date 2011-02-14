@@ -1867,8 +1867,7 @@ void tree_draw(struct tree *tree, int x, int y,
 			y = y + tree->editing->box.y;
 			if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 				x += NODE_INSTEP;
-			textarea_redraw(tree->textarea, x, y,
-					clip.x0, clip.y0, clip.x1, clip.y1);
+			textarea_redraw(tree->textarea, x, y, &clip);
 		}
 	}
 
