@@ -853,7 +853,7 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 		int intrinsic_height = content_get_height(box->object);
 
 		if (intrinsic_height != 0)
-			*width = intrinsic_width * ((float)(*height)) /
+			*width = (*height * intrinsic_width) /
 					intrinsic_height;
 		else
 			*width = intrinsic_width;
@@ -863,7 +863,7 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 		int intrinsic_height = content_get_height(box->object);
 
 		if (intrinsic_width != 0)
-			*height = intrinsic_height * ((float)(*width)) /
+			*height = (*width * intrinsic_height) /
 					intrinsic_width;
 		else
 			*height = intrinsic_height;
