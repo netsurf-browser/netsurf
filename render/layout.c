@@ -1197,14 +1197,21 @@ void layout_float_find_dimensions(int available_width,
 		if (width == AUTO && height == AUTO) {
 			width = content_get_width(box->object);
 			height = content_get_height(box->object);
-		} else if (width == AUTO)
-			width = content_get_width(box->object) * 
-					(float) height /
-					content_get_height(box->object);
-		else if (height == AUTO)
-			height = content_get_height(box->object) * 
-					(float) width /
-					content_get_width(box->object);
+		} else if (width == AUTO) {
+			if (content_get_height(box->object))
+				width = content_get_width(box->object) * 
+						(float) height /
+						content_get_height(box->object);
+			else
+				width = content_get_width(box->object);
+		} else if (height == AUTO) {
+			if (content_get_width(box->object))
+				height = content_get_height(box->object) * 
+						(float) width /
+						content_get_width(box->object);
+			else
+				height = content_get_height(box->object);
+		}
 	} else if (box->gadget && (box->gadget->type == GADGET_TEXTBOX ||
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
