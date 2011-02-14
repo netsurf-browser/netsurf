@@ -833,7 +833,7 @@ bool layout_block_object(struct box *block)
  * \param  uppate_width   Whether to update the width.
  * \param  update_height  Whether to update the height.
  *
- * See CSS 10.3 and 10.6.
+ * See CSS 2.1 sections 10.3 and 10.6.
  */
 
 void layout_get_object_dimensions(struct box *box, int *width, int *height,
@@ -843,12 +843,15 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 	assert(width != NULL && height != NULL);
 
 	if (*width == AUTO && *height == AUTO) {
+		/* No given dimensions; use intrinsic dimensions */
 		if (update_width)
 			*width = content_get_width(box->object);
 		if (update_height)
 			*height = content_get_height(box->object);
 
 	} else if (update_width && *width == AUTO) {
+		/* Have given height; width is calculated from the given height
+		 * and ratio of intrinsic dimensions */
 		int intrinsic_width = content_get_width(box->object);
 		int intrinsic_height = content_get_height(box->object);
 
@@ -859,6 +862,8 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 			*width = intrinsic_width;
 
 	} else if (update_height && *height == AUTO) {
+		/* Have given width; height is calculated from the given width
+		 * and ratio of intrinsic dimensions */
 		int intrinsic_width = content_get_width(box->object);
 		int intrinsic_height = content_get_height(box->object);
 
