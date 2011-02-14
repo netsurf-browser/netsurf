@@ -64,6 +64,9 @@ static bool layout_block_context(struct box *block, int viewport_height,
 static void layout_minmax_block(struct box *block,
 		const struct font_functions *font_func);
 static bool layout_block_object(struct box *block);
+static void layout_get_object_dimensions(struct box *box,
+		int *width, int *height,
+		bool update_width, bool update_height);
 static void layout_block_find_dimensions(int available_width,
 		int viewport_height, int lm, int rm,
 		struct box *box);
@@ -254,16 +257,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 	if (block->object) {
 		if (!layout_block_object(block))
 			return false;
-		if (block->height == AUTO) {
-			if (content_get_width(block->object))
-				block->height = 
-					content_get_height(block->object) *
-					(float) block->width /
-					content_get_width(block->object);
-			else
-				block->height = 
-					content_get_height(block->object);
-		}
+		layout_get_object_dimensions(block, &block->width,
+				&block->height, false, true);
 		return true;
 	}
 
@@ -829,6 +824,54 @@ bool layout_block_object(struct box *block)
 
 
 /**
+ * Compute the size of replaced boxes with auto dimensions, according to
+ * content.
+ *
+ * \param  box     Box with object
+ * \param  width   Width value in px or AUTO.  If AUTO, updated to value in px.
+ * \param  height  Height value in px or AUTO. If AUTO, updated to value in px.
+ * \param  uppate_width   Whether to update the width.
+ * \param  update_height  Whether to update the height.
+ *
+ * See CSS 10.3 and 10.6.
+ */
+
+void layout_get_object_dimensions(struct box *box, int *width, int *height,
+		bool update_width, bool update_height)
+{
+	assert(box->object != NULL);
+	assert(width != NULL && height != NULL);
+
+	if (*width == AUTO && *height == AUTO) {
+		if (update_width)
+			*width = content_get_width(box->object);
+		if (update_height)
+			*height = content_get_height(box->object);
+
+	} else if (update_width && *width == AUTO) {
+		int intrinsic_width = content_get_width(box->object);
+		int intrinsic_height = content_get_height(box->object);
+
+		if (intrinsic_height != 0)
+			*width = intrinsic_width * ((float)(*height)) /
+					intrinsic_height;
+		else
+			*width = intrinsic_width;
+
+	} else if (update_height && *height == AUTO) {
+		int intrinsic_width = content_get_width(box->object);
+		int intrinsic_height = content_get_height(box->object);
+
+		if (intrinsic_width != 0)
+			*height = intrinsic_height * ((float)(*width)) /
+					intrinsic_width;
+		else
+			*height = intrinsic_height;
+	}
+}
+
+
+/**
  * Compute dimensions of box, margins, paddings, and borders for a block-level
  * element.
  *
@@ -860,24 +903,8 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 
 	if (box->object && content_get_type(box->object) != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
-		if (width == AUTO && height == AUTO) {
-			width = content_get_width(box->object);
-			height = content_get_height(box->object);
-		} else if (width == AUTO) {
-			if (content_get_height(box->object))
-				width = content_get_width(box->object) *
-						(float) height /
-						content_get_height(box->object);
-			else
-				width = content_get_width(box->object);
-		} else if (height == AUTO) {
-			if (content_get_width(box->object))
-				height = content_get_height(box->object) *
-						(float) width /
-						content_get_width(box->object);
-			else
-				height = content_get_height(box->object);
-		}
+		layout_get_object_dimensions(box, &width, &height,
+				true, true);
 	}
 
 	box->width = layout_solve_width(box, available_width, width, lm, rm,
@@ -1194,24 +1221,8 @@ void layout_float_find_dimensions(int available_width,
 	if (box->object && content_get_type(box->object) != CONTENT_HTML) {
 		/* Floating replaced element, with intrinsic width or height.
 		 * See 10.3.6 and 10.6.2 */
-		if (width == AUTO && height == AUTO) {
-			width = content_get_width(box->object);
-			height = content_get_height(box->object);
-		} else if (width == AUTO) {
-			if (content_get_height(box->object))
-				width = content_get_width(box->object) * 
-						(float) height /
-						content_get_height(box->object);
-			else
-				width = content_get_width(box->object);
-		} else if (height == AUTO) {
-			if (content_get_width(box->object))
-				height = content_get_height(box->object) * 
-						(float) width /
-						content_get_width(box->object);
-			else
-				height = content_get_height(box->object);
-		}
+		layout_get_object_dimensions(box, &width, &height,
+				true, true);
 	} else if (box->gadget && (box->gadget->type == GADGET_TEXTBOX ||
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
@@ -2120,27 +2131,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		}
 
 		if (b->object) {
-			if (b->width == AUTO && b->height == AUTO) {
-				b->width = content_get_width(b->object);
-				b->height = content_get_height(b->object);
-			} else if (b->width == AUTO) {
-				if (content_get_height(b->object))
-					b->width = 
-						content_get_width(b->object) *
-						(float) b->height /
-						content_get_height(b->object);
-				else
-					b->width = content_get_width(b->object);
-			} else if (b->height == AUTO) {
-				if (content_get_width(b->object))
-					b->height = 
-						content_get_height(b->object) *
-						(float) b->width /
-						content_get_width(b->object);
-				else
-					b->height = 
-						content_get_height(b->object);
-			}
+			layout_get_object_dimensions(b, &b->width, &b->height,
+					true, true);
 		} else {
 			/* form control with no object */
 			if (b->width == AUTO)
@@ -2801,16 +2793,9 @@ struct box *layout_minmax_line(struct box *first,
 		}
 
 		if (b->object) {
-			if (width == AUTO && height == AUTO) {
-				width = content_get_width(b->object);
-			} else if (width == AUTO) {
-				if (content_get_height(b->object))
-					width = content_get_width(b->object) *
-						(float) height /
-						content_get_height(b->object);
-				else
-					width = content_get_width(b->object);
-			}
+			layout_get_object_dimensions(b, &width, &height,
+					true, false);
+
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
 					&fixed, &frac);
