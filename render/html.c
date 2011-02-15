@@ -1660,19 +1660,23 @@ bool html_object_type_permitted(const content_type type,
 
 void html_object_refresh(void *p)
 {
-	struct content *c = (struct content *)p;
+	hlcache_handle *h = (hlcache_handle *) p;
+	struct content *c = hlcache_handle_get_content(h);
+	const char *refresh_url;
 
-	assert(c->type == CONTENT_HTML);
+	assert(content_get_type(h) == CONTENT_HTML);
+
+	refresh_url = content_get_refresh_url(h);
 
 	/* Ignore if refresh URL has gone
 	 * (may happen if fetch errored) */
-	if (!c->refresh)
+	if (refresh_url == NULL)
 		return;
 
-	content__invalidate_reuse_data(c);
+	content_invalidate_reuse_data(h);
 
 	if (!html_replace_object(c->data.html.page, c->data.html.index,
-			c->refresh)) {
+			refresh_url)) {
 		/** \todo handle memory exhaustion */
 	}
 }
@@ -1959,14 +1963,22 @@ void html_open(struct content *c, struct browser_window *bw,
 void html_close(struct content *c)
 {
 	unsigned int i;
+
 	c->data.html.bw = 0;
-	schedule_remove(html_object_refresh, c);
+
 	for (i = 0; i != c->data.html.object_count; i++) {
-		if (c->data.html.object[i].content == 0)
+		if (c->data.html.object[i].content == NULL)
 			continue;
+
 		if (content_get_type(c->data.html.object[i].content) == 
 				CONTENT_UNKNOWN)
 			continue;
+
+		if (content_get_type(c->data.html.object[i].content) ==
+					CONTENT_HTML)
+			schedule_remove(html_object_refresh,
+					c->data.html.object[i].content);
+
                	content_close(c->data.html.object[i].content);
 	}
 }
