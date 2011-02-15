@@ -58,6 +58,9 @@
 
 #define AUTO INT_MIN
 
+/* Fixed point value percentage of an integer, to an integer */
+#define FPCT_OF_INT_TOINT(a, b) FIXTOINT(FDIVI(FMULI(a, b), 100))
+
 
 static bool layout_block_context(struct box *block, int viewport_height,
 		struct content *content);
@@ -961,16 +964,16 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 
 	if (box->style) {
 		enum css_height_e htype = CSS_HEIGHT_AUTO;
-		css_fixed length = 0;
+		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
 		if (containing_block) {
 			htype = css_computed_height(containing_block->style,
-					&length, &unit);
+					&value, &unit);
 		}
 
 		/* max-height */
-		if (css_computed_max_height(box->style, &length, &unit) ==
+		if (css_computed_max_height(box->style, &value, &unit) ==
 				CSS_MAX_HEIGHT_SET) {
 			if (unit == CSS_UNIT_PCT) {
 				if (containing_block &&
@@ -982,15 +985,15 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 					 * containing block has a valid
 					 * specified height. (CSS 2.1
 					 * Section 10.5) */
-					h = FIXTOFLT(length) *
-						containing_block->height / 100;
+					h = FPCT_OF_INT_TOINT(value,
+						containing_block->height);
 					if (h < box->height) {
 						box->height = h;
 						updated = true;
 					}
 				}
 			} else {
-				h = FIXTOINT(nscss_len2px(length, unit,
+				h = FIXTOINT(nscss_len2px(value, unit,
 						box->style));
 				if (h < box->height) {
 					box->height = h;
@@ -1000,7 +1003,7 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 		}
 
 		/* min-height */
-		if (css_computed_min_height(box->style, &length, &unit) ==
+		if (css_computed_min_height(box->style, &value, &unit) ==
 				CSS_MIN_HEIGHT_SET) {
 			if (unit == CSS_UNIT_PCT) {
 				if (containing_block &&
@@ -1012,15 +1015,15 @@ bool layout_apply_minmax_height(struct box *box, struct box *container)
 					 * containing block has a valid
 					 * specified height. (CSS 2.1
 					 * Section 10.5) */
-					h = FIXTOFLT(length) *
-						containing_block->height / 100;
+					h = FPCT_OF_INT_TOINT(value,
+						containing_block->height);
 					if (h > box->height) {
 						box->height = h;
 						updated = true;
 					}
 				}
 			} else {
-				h = FIXTOINT(nscss_len2px(length, unit,
+				h = FIXTOINT(nscss_len2px(value, unit,
 						box->style));
 				if (h > box->height) {
 					box->height = h;
@@ -1430,16 +1433,15 @@ void layout_find_dimensions(int available_width, int viewport_height,
 					 * containing block has a valid
 					 * specified height.
 					 * (CSS 2.1 Section 10.5) */
-					*height = FIXTOFLT(value) *
-						containing_block->height /
-						100;
+					*height = FPCT_OF_INT_TOINT(value,
+						containing_block->height);
 				} else if ((!box->parent ||
 						!box->parent->parent) &&
 						viewport_height >= 0) {
 					/* If root element or it's child
 					 * (HTML or BODY) */
-					*height = FIXTOFLT(value) *
-							viewport_height / 100;
+					*height = FPCT_OF_INT_TOINT(value,
+							viewport_height);
 				} else {
 					/* precentage height not permissible
 					 * treat height as auto */
@@ -1472,8 +1474,8 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 		if (type == CSS_MAX_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				*max_width = (FIXTOFLT(value) *
-						available_width) / 100;
+				*max_width = FPCT_OF_INT_TOINT(value,
+						available_width);
 			} else {
 				*max_width = FIXTOINT(nscss_len2px(value, unit,
 						style));
@@ -1502,8 +1504,8 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 		if (type == CSS_MIN_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				*min_width = (FIXTOFLT(value) *
-					available_width) / 100;
+				*min_width = FPCT_OF_INT_TOINT(value,
+						available_width);
 			} else {
 				*min_width = FIXTOINT(nscss_len2px(value, unit,
 						style));
@@ -1550,8 +1552,8 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 			if (type == CSS_MARGIN_SET) {
 				if (unit == CSS_UNIT_PCT) {
-					margin[i] = available_width *
-						FIXTOFLT(value) / 100;
+					margin[i] = FPCT_OF_INT_TOINT(value,
+							available_width);
 				} else {
 					margin[i] = FIXTOINT(nscss_len2px(value,
 							unit, style));
@@ -1583,8 +1585,8 @@ void layout_find_dimensions(int available_width, int viewport_height,
 			}
 
 			if (unit == CSS_UNIT_PCT) {
-				padding[i] = available_width *
-					FIXTOFLT(value) / 100;
+				padding[i] = FPCT_OF_INT_TOINT(value,
+						available_width);
 			} else {
 				padding[i] = FIXTOINT(nscss_len2px(value, unit,
 						style));
@@ -2117,7 +2119,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		wtype = css_computed_width(b->style, &value, &unit);
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				b->width = *width * FIXTOFLT(value) / 100;
+				b->width = FPCT_OF_INT_TOINT(value, *width);
 			} else {
 				b->width = FIXTOINT(nscss_len2px(value, unit,
 						b->style));
@@ -2775,7 +2777,7 @@ struct box *layout_minmax_line(struct box *first,
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
 				/*
-				b->width = width * FIXTOFLT(value) / 100
+				b->width = FPCT_OF_INT_TOINT(value, width);
 				*/
 
 				width = AUTO;
@@ -2849,7 +2851,7 @@ int layout_text_indent(const css_computed_style *style, int width)
 	css_computed_text_indent(style, &value, &unit);
 
 	if (unit == CSS_UNIT_PCT) {
-		return width * FIXTOFLT(value) / 100;
+		return FPCT_OF_INT_TOINT(value, width);
 	} else {
 		return FIXTOINT(nscss_len2px(value, unit, style));
 	}
@@ -3032,8 +3034,7 @@ bool layout_table(struct box *table, int available_width,
 	wtype = css_computed_width(style, &value, &unit);
 	if (wtype == CSS_WIDTH_SET) {
 		if (unit == CSS_UNIT_PCT) {
-			table_width = ceil(available_width *
-					FIXTOFLT(value) / 100);
+			table_width = FPCT_OF_INT_TOINT(value, available_width);
 		} else {
 			table_width =
 				FIXTOINT(nscss_len2px(value, unit, style));
@@ -3108,8 +3109,8 @@ bool layout_table(struct box *table, int available_width,
 				/* Table is absolutely positioned or its
 				 * containing block has a valid specified
 				 * height. (CSS 2.1 Section 10.5) */
-				min_height = FIXTOFLT(value) *
-					containing_block->height / 100;
+				min_height = FPCT_OF_INT_TOINT(value,
+						containing_block->height);
 			}
 		} else {
 			/* This is the minimum height for the table
@@ -3720,7 +3721,7 @@ void calculate_mbp_width(const css_computed_style *style, unsigned int side,
 		type = margin_funcs[side](style, &value, &unit);
 		if (type == CSS_MARGIN_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				*frac += FIXTOFLT(value) * 0.01;
+				*frac += FIXTOINT(FDIVI(value, 100));
 			} else {
 				*fixed += FIXTOINT(nscss_len2px(value, unit,
 						style));
@@ -3742,7 +3743,7 @@ void calculate_mbp_width(const css_computed_style *style, unsigned int side,
 	if (padding) {
 		padding_funcs[side](style, &value, &unit);
 		if (unit == CSS_UNIT_PCT) {
-			*frac += FIXTOFLT(value) * 0.01;
+			*frac += FIXTOINT(FDIVI(value, 100));
 		} else {
 			*fixed += FIXTOINT(nscss_len2px(value, unit, style));
 		}
@@ -4433,8 +4434,8 @@ void layout_compute_offsets(struct box *box,
 	type = css_computed_left(box->style, &value, &unit);
 	if (type == CSS_LEFT_SET) {
 		if (unit == CSS_UNIT_PCT) {
-			*left = (FIXTOFLT(value) *
-					containing_block->width) / 100;
+			*left = FPCT_OF_INT_TOINT(value,
+					containing_block->width);
 		} else {
 			*left = FIXTOINT(nscss_len2px(value, unit, box->style));
 		}
@@ -4446,8 +4447,8 @@ void layout_compute_offsets(struct box *box,
 	type = css_computed_right(box->style, &value, &unit);
 	if (type == CSS_RIGHT_SET) {
 		if (unit == CSS_UNIT_PCT) {
-			*right = (FIXTOFLT(value) *
-					containing_block->width) / 100;
+			*right = FPCT_OF_INT_TOINT(value,
+					containing_block->width);
 		} else {
 			*right = FIXTOINT(nscss_len2px(value, unit,
 					box->style));
@@ -4460,8 +4461,8 @@ void layout_compute_offsets(struct box *box,
 	type = css_computed_top(box->style, &value, &unit);
 	if (type == CSS_TOP_SET) {
 		if (unit == CSS_UNIT_PCT) {
-			*top = (FIXTOFLT(value) *
-					containing_block->height) / 100;
+			*top = FPCT_OF_INT_TOINT(value,
+					containing_block->height);
 		} else {
 			*top = FIXTOINT(nscss_len2px(value, unit, box->style));
 		}
@@ -4473,8 +4474,8 @@ void layout_compute_offsets(struct box *box,
 	type = css_computed_bottom(box->style, &value, &unit);
 	if (type == CSS_BOTTOM_SET) {
 		if (unit == CSS_UNIT_PCT) {
-			*bottom = (FIXTOFLT(value) *
-					containing_block->height) / 100;
+			*bottom = FPCT_OF_INT_TOINT(value,
+					containing_block->height);
 		} else {
 			*bottom = FIXTOINT(nscss_len2px(value, unit,
 					box->style));
