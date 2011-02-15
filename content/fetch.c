@@ -38,6 +38,7 @@
 
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers/about.h"
 #include "content/fetchers/curl.h"
 #include "content/fetchers/data.h"
 #include "content/fetchers/file.h"
