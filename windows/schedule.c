@@ -50,7 +50,6 @@ struct nscallback
  * The callback function will be called as soon as possible after t cs have
  * passed.
  */
-
 void schedule(int cs_ival, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
@@ -61,7 +60,7 @@ void schedule(int cs_ival, void (*callback)(void *p), void *p)
 
 	nscb = calloc(1, sizeof(struct nscallback));
 
-	LOG(("adding callback %p for  %p(%p) at %d cs", nscb, callback, p, cs_ival));
+	LOG(("adding callback %p for %p(%p) at %d cs", nscb, callback, p, cs_ival));
 
 	gettimeofday(&nscb->tv, NULL);
 	timeradd(&nscb->tv, &tv, &nscb->tv);
@@ -123,12 +122,8 @@ void schedule_remove(void (*callback)(void *p), void *p)
         }
 }
 
-/**
- * Process scheduled callbacks up to current time.
- *
- * @return The number of milliseconds untill the next scheduled event
- * or -1 for no event.
- */
+
+/* exported interface documented in schedule.h */
 int 
 schedule_run(void)
 {
@@ -169,11 +164,13 @@ schedule_run(void)
 
                         free(unlnk_nscb);
 
-                        /* need to deal with callback modifying the list. */
+			/* dispatched events can modify the list,
+			 * instead of locking we simply reset list
+			 * enumeration to the start.
+			 */ 
 			if (schedule_list == NULL)
 				return -1; /* no more callbacks scheduled */
 			
-                        /* reset enumeration to the start of the list */
                         cur_nscb = schedule_list;
                         prev_nscb = NULL;
 			nexttime = cur_nscb->tv;
@@ -190,16 +187,17 @@ schedule_run(void)
                 }
         }
 
-	/* make rettime relative to now */
+	/* make returned time relative to now */
 	timersub(&nexttime, &tv, &rettime);
 
-#if DEBUG_SCHEDULER
+#if defined(DEBUG_SCHEDULER)
 	LOG(("returning time to next event as %ldms",(rettime.tv_sec * 1000) + (rettime.tv_usec / 1000))); 
 #endif
 	/* return next event time in milliseconds (24days max wait) */
         return (rettime.tv_sec * 1000) + (rettime.tv_usec / 1000);
 }
 
+/* exported interface documented in schedule.h */
 void list_schedule(void)
 {
 	struct timeval tv;
