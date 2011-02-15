@@ -76,19 +76,9 @@ bool search_web_new_window(struct browser_window *bw, const char *searchterm)
 
 bool search_is_url(const char *url)
 {
-	char *url2, *host;
-	
-	if (url_normalize(url, &url2) != URL_FUNC_OK)
-		return false;
-	
-	if (url_host(url2, &host) != URL_FUNC_OK) {
-		free(url2);
-		return false;
-	}
+	/** \todo Implement this properly */
 
-	free(host);
-	free(url2);
-
+	/* For now, everything is an URL */
 	return true;
 }
 
