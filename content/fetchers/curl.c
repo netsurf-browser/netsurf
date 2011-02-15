@@ -40,7 +40,7 @@
 #include "utils/config.h"
 #include <openssl/ssl.h>
 #include "content/fetch.h"
-#include "content/fetchers/fetch_curl.h"
+#include "content/fetchers/curl.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"

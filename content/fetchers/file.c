@@ -37,7 +37,7 @@
 #include "utils/config.h"
 #include "content/dirlist.h"
 #include "content/fetch.h"
-#include "content/fetchers/fetch_file.h"
+#include "content/fetchers/file.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"

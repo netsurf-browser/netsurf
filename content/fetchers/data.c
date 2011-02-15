@@ -29,7 +29,7 @@
 
 #include "utils/config.h"
 #include "content/fetch.h"
-#include "content/fetchers/fetch_data.h"
+#include "content/fetchers/data.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"

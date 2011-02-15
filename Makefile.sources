@@ -4,8 +4,9 @@
 # Included by main makefile -- indicates generic sources for every build.
 #
 
-S_CONTENT := content.c dirlist.c fetch.c hlcache.c llcache.c urldb.c	\
-	fetchers/fetch_curl.c fetchers/fetch_data.c fetchers/fetch_file.c
+S_CONTENT := content.c dirlist.c fetch.c hlcache.c llcache.c urldb.c
+
+S_FETCHERS := curl.c data.c file.c about.c
 
 S_CSS := css.c dump.c internal.c select.c utils.c
 
@@ -22,6 +23,7 @@ S_DESKTOP := cookies.c history_global_core.c hotlist.c knockout.c	\
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(addprefix content/,$(S_CONTENT))				\
+	$(addprefix content/fetchers/,$(S_FETCHERS))			\
 	$(addprefix css/,$(S_CSS))					\
 	$(addprefix render/,$(S_RENDER))				\
 	$(addprefix utils/,$(S_UTILS))					\

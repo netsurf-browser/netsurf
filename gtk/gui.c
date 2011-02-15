@@ -42,7 +42,7 @@
 
 #include "content/content.h"
 #include "content/fetch.h"
-#include "content/fetchers/fetch_curl.h"
+#include "content/fetchers/curl.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
