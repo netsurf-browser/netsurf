@@ -660,28 +660,8 @@ void box_construct_after(xmlNode *n, struct content *content,
 		}
 
 		/* set box type from computed display */
-		if ((css_computed_position(after_style) ==
-				CSS_POSITION_ABSOLUTE ||
-				css_computed_position(after_style) ==
-				CSS_POSITION_FIXED) &&
-				(css_computed_display_static(after_style) ==
-				CSS_DISPLAY_INLINE ||
-			 	css_computed_display_static(after_style) ==
-				CSS_DISPLAY_INLINE_BLOCK ||
-			 	css_computed_display_static(after_style) ==
-				CSS_DISPLAY_INLINE_TABLE)) {
-			/* Special case for absolute positioning: make
-			 * absolute inlines into inline block so that
-			 * the boxes are constructed in an inline
-			 * container as if they were not absolutely
-			 * positioned. Layout expects and handles
-			 * this. */
-			after->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
-		} else {
-			/* Normal mapping */
-			after->type = box_map[css_computed_display(
-					after_style, n->parent == NULL)];
-		}
+		after->type = box_map[css_computed_display(
+				after_style, n->parent == NULL)];
 
 		box_add_child(box, after);
 	}
