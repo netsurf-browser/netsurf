@@ -22,7 +22,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon        ))
 
   CFLAGS += -D__USE_INLINE__ -D__USE_BASETYPE__ -I /SDK/local/common/include/libpng12
-  LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -lregex -lauto
+  LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -lregex -lauto -lpbl
   LDFLAGS += -lssl -lcrypto -lhubbub -lcss -lparserutils -lwapcaplet -liconv
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)

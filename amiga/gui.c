@@ -457,8 +457,8 @@ void gui_init(int argc, char** argv)
 	plot=amiplot;
 
 	if(option_context_menu) ami_context_menu_init();
+	ami_schedule_create();
 
-	schedule_list = NewObjList();
 	window_list = NewObjList();
 
 	urldb_load(option_url_file);
@@ -1919,7 +1919,7 @@ void ami_get_msg(void)
 		while(timermsg = GetMsg(msgport))
 		{
 			ReplyMsg(timermsg);
-			schedule_run();
+			schedule_run(FALSE);
 		}
 	}
 }
@@ -1947,7 +1947,7 @@ void gui_poll(bool active)
 	if(active)
 	{
 		gui_multitask();
-		schedule_run();
+		schedule_run(TRUE);
 	}
 	else
 	{
@@ -2140,7 +2140,8 @@ void gui_quit(void)
 	FreeSysObject(ASOT_IOREQUEST,tioreq);
 	FreeSysObject(ASOT_PORT,msgport);
 
-	FreeObjList(schedule_list);
+	ami_schedule_free();
+
 	FreeObjList(window_list);
 }
 

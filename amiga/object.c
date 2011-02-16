@@ -77,11 +77,7 @@ void FreeObjList(struct MinList *objlist)
 	do
 	{
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		if(node->Type == AMINS_CALLBACK)
-			ami_remove_timer_event((struct nscallback *)node->objstruct);
-
 		DelObject(node);
-		
 	}while(node=nnode);
 
 	FreeVec(objlist);

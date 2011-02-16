@@ -18,23 +18,14 @@
 
 #ifndef AMIGA_SCHEDULE_H
 #define AMIGA_SCHEDULE_H
-#include <exec/lists.h>
 #include <proto/timer.h>
 
 #include "amiga/os3support.h"
 
-struct MinList *schedule_list;
 struct TimeRequest *tioreq;
 struct MsgPort *msgport;
 
-struct nscallback
-{
-	struct TimeVal tv;
-	void *callback;
-	void *p;
-	struct TimeRequest *treq;
-};
-
-void ami_remove_timer_event(struct nscallback *nscb);
-BOOL schedule_run(void);
+BOOL ami_schedule_create(void);
+void ami_schedule_free(void);
+void schedule_run(BOOL poll);
 #endif

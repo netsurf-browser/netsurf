@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -18,10 +18,23 @@
 
 #include "desktop/browser.h"
 #include "amiga/os3support.h"
-#include "amiga/object.h"
 #include "amiga/schedule.h"
 
 #include <proto/exec.h>
+
+#include <pbl.h>
+
+struct nscallback
+{
+	struct TimeVal tv;
+	void *callback;
+	void *p;
+	struct TimeRequest *treq;
+};
+
+PblHeap *schedule_list;
+
+void ami_remove_timer_event(struct nscallback *nscb);
 
 /**
  * Schedule a callback.
@@ -36,22 +49,11 @@
 
 void schedule(int t, void (*callback)(void *p), void *p)
 {
-	struct nsObject *obj;
 	struct nscallback *nscb;
 	struct timeval tv;
 
-	obj = AddObject(schedule_list,AMINS_CALLBACK);
-	if(!obj) return;
-
-	obj->objstruct_size = sizeof(struct nscallback);
-	obj->objstruct = AllocVec(obj->objstruct_size,MEMF_PRIVATE | MEMF_CLEAR);
-	if(!obj->objstruct)
-	{
-		DelObject(obj);
-		return;
-	}
-
-	nscb = (struct nscallback *)obj->objstruct;
+	nscb = AllocVec(sizeof(struct nscallback), MEMF_PRIVATE | MEMF_CLEAR);
+	if(!nscb) return;
 
 	nscb->tv.Seconds = 0;
 	nscb->tv.Microseconds = t*10000;
@@ -76,6 +78,8 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 	nscb->callback = callback;
 	nscb->p = p;
+
+	pblHeapInsert(schedule_list, nscb);
 }
 
 /**
@@ -89,69 +93,65 @@ void schedule(int t, void (*callback)(void *p), void *p)
 
 void schedule_remove(void (*callback)(void *p), void *p)
 {
-	struct nsObject *node;
-	struct nsObject *nnode;
+	PblIterator *iterator;
 	struct nscallback *nscb;
+	bool restoreheap = false;
 
-	if(IsMinListEmpty(schedule_list)) return;
+	if(pblHeapIsEmpty(schedule_list)) return;
 
-	node = (struct nsObject *)GetHead((struct List *)schedule_list);
+	iterator = pblHeapIterator(schedule_list);
 
-	do
+	while ((nscb = pblIteratorNext(iterator)) != -1)
 	{
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-
-		nscb = node->objstruct;
-		if(!nscb) continue;
-
 		if((nscb->callback == callback) && (nscb->p == p))
 		{
 			ami_remove_timer_event(nscb);
-			DelObject(node);
+			pblIteratorRemove(iterator);
+			FreeVec(nscb);
+			restoreheap = true;
 		}
+	};
 
-	}while (node=nnode);
+	pblIteratorFree(iterator);
+
+	if(restoreheap) pblHeapConstruct(schedule_list);
 }
 
 /**
  * Process events up to current time.
+ * This implementation only takes the top entry off the heap, it does not
+ * venture to later scheduled events until the next time it is called -
+ * immediately afterwards, if we're in a timer signalled loop.
  */
 
-BOOL schedule_run(void)
+void schedule_run(BOOL poll)
 {
-	struct nsObject *node;
-	struct nsObject *nnode;
 	struct nscallback *nscb;
 	void (*callback)(void *p);
 	void *p;
 	struct timeval tv;
 
-	if(IsMinListEmpty(schedule_list)) return false;
+	nscb = pblHeapGetFirst(schedule_list);
 
-	GetSysTime(&tv);
+	if(nscb == -1) return false;
 
-	node = (struct nsObject *)GetHead((struct List *)schedule_list);
-
-	do
+	if(poll)
 	{
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		/* Ensure the scheduled event time has passed (CmpTime<=0)
+		 * For timer signalled events this must *always* be true,
+		 * so we save some time by only checking if we're polling.
+		 */
 
-		if((node->Type == AMINS_CALLBACK) && (node->objstruct))
-		{
-			nscb = node->objstruct;
+		GetSysTime(&tv);
+		if(CmpTime(&tv, &nscb->tv) > 0) return;
+ 	}
 
-			if(CmpTime(&tv,&nscb->tv) <= 0)
-			{
-				callback = nscb->callback;
-				p = nscb->p;
-				ami_remove_timer_event(nscb);
-				DelObject(node);
-				callback(p);
-			}
-		}
-	} while(node=nnode);
-
-        return true;
+	callback = nscb->callback;
+	p = nscb->p;
+	ami_remove_timer_event(nscb);
+	pblHeapRemoveFirst(schedule_list);
+	FreeVec(nscb);
+	callback(p);
 }
 
 void ami_remove_timer_event(struct nscallback *nscb)
@@ -160,10 +160,31 @@ void ami_remove_timer_event(struct nscallback *nscb)
 
 	if(nscb->treq)
 	{
-//		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
+		if(CheckIO((struct IORequest *)nscb->treq)==NULL)
    			AbortIO((struct IORequest *)nscb->treq);
 
 		WaitIO((struct IORequest *)nscb->treq);
 		FreeVec(nscb->treq);
 	}
+}
+
+int ami_schedule_compare(const void *prev, const void *next)
+{
+	struct nscallback *nscb1 = *(struct nscallback **)prev;
+	struct nscallback *nscb2 = *(struct nscallback **)next;
+
+	return CmpTime(&nscb1->tv, &nscb2->tv);
+}
+
+BOOL ami_schedule_create(void)
+{
+	schedule_list = pblHeapNew();
+	if(schedule_list == PBL_ERROR_OUT_OF_MEMORY) return false;
+
+	pblHeapSetCompareFunction(schedule_list, ami_schedule_compare);
+}
+
+void ami_schedule_free(void)
+{
+	pblHeapFree(schedule_list);
 }
