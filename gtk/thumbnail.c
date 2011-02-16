@@ -63,14 +63,20 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	assert(content);
 	assert(bitmap);
 
-	/* Get details of final thumbnail image */
+	/* Get details of required final thumbnail image */
 	pixbuf = gtk_bitmap_get_primary(bitmap);
 	width = gdk_pixbuf_get_width(pixbuf);
 	height = gdk_pixbuf_get_height(pixbuf);
 	depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 
 	/* Calculate size of buffer to render the content into */
+	/* We get the width from the content width, unless it exceeds 1024,
+	 * in which case we use 1024. This means we never create excessively
+	 * large render buffers for huge contents, which would eat memory and
+	 * cripple performance. */
 	cwidth = min(content_get_width(content), 1024);
+	/* The height is set in proportion with the width, according to the
+	 * aspect ratio of the required thumbnail. */
 	cheight = ((cwidth * height) + (width / 2)) / width;
 
 	/*  Create buffer to render into */
@@ -144,3 +150,4 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	return true;
 }
+
