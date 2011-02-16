@@ -1245,7 +1245,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_ADDTAB:
-							browser_window_create(NULL, gwin->bw, 0, true, true);
+							browser_window_create(option_homepage_url, gwin->bw, 0, true, true);
 						break;
 
 						case GID_URL:
