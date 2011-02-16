@@ -73,10 +73,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	cwidth = min(content_get_width(content), 1024);
 	cheight = ((cwidth * height) + (width / 2)) / width;
 
-	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
-		content_get_width(content), content_get_height(content), 
-		depth));
-
 	/*  Create buffer to render into */
 	pixmap = gdk_pixmap_new(NULL, cwidth, cheight, depth);
 	
