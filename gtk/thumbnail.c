@@ -57,28 +57,28 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	gint depth;
 	GdkPixmap *pixmap;
 	GdkPixbuf *big;
+	float plot_scale;
+	double scale;
 
 	assert(content);
 	assert(bitmap);
 
-	clip.x0 = 0;
-	clip.y0 = 0;
-	clip.x1 = content_get_width(content);
-	clip.y1 = content_get_width(content);
-
-	cwidth = min(content_get_width(content), 1024);
-	cheight = min(content_get_height(content), 768);
-
+	/* Get details of final thumbnail image */
 	pixbuf = gtk_bitmap_get_primary(bitmap);
 	width = gdk_pixbuf_get_width(pixbuf);
 	height = gdk_pixbuf_get_height(pixbuf);
 	depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
 
+	/* Calculate size of buffer to render the content into */
+	cwidth = min(content_get_width(content), 1024);
+	cheight = ((cwidth * height) + (width / 2)) / width;
+
 	LOG(("Trying to create a thumbnail pixmap for a content of %dx%d@%d",
 		content_get_width(content), content_get_height(content), 
 		depth));
 
-	pixmap = gdk_pixmap_new(NULL, cwidth, cwidth, depth);
+	/*  Create buffer to render into */
+	pixmap = gdk_pixmap_new(NULL, cwidth, cheight, depth);
 	
 	if (pixmap == NULL) {
 		/* the creation failed for some reason: most likely because
@@ -95,8 +95,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	/* set the plotting functions up */
 	plot = nsgtk_plotters;
 
-	nsgtk_plot_set_scale((double) cwidth / 
-			(double) content_get_width(content));
+	plot_scale = (float)cwidth / (float)content_get_width(content);
+	nsgtk_plot_set_scale(plot_scale);
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
@@ -104,23 +104,30 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
-	plot.rectangle(0, 0, cwidth, cwidth, plot_style_fill_white);
+
+	/* Set up clip rect */
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = cwidth;
+	clip.y1 = cheight;
 
 	plot.clip(&clip);
 
+	/* blank the background */
+	plot.rectangle(0, 0, cwidth, cheight, plot_style_fill_white);
+
 	/* render the content */
-	content_redraw(content, 0, 0, content_get_width(content), 
-			content_get_width(content),
-			&clip, 1.0, 0xFFFFFF);
+	content_redraw(content, 0, 0, cwidth, cheight,
+			&clip, plot_scale, 0xFFFFFF);
+
+	/* get the pixbuf we rendered the content into */
+	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
+			cwidth, cheight);
 
 	/* resample the large plot down to the size of our thumbnail */
-	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
-			cwidth, cwidth);
-
+	scale = (double)width / (double)cwidth;
 	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
-			(double)width / (double)cwidth,
-			(double)height / (double)cwidth,
-			GDK_INTERP_TILES);
+			scale, scale, GDK_INTERP_TILES);
 
 	/* As a debugging aid, try this to dump out a copy of the thumbnail as
 	 * a PNG: gdk_pixbuf_save(pixbuf, "thumbnail.png", "png", NULL, NULL);
