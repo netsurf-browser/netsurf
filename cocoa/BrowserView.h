@@ -19,7 +19,8 @@
 #import <Cocoa/Cocoa.h>
 
 #import "cocoa/ScrollableView.h"
-@class HistoryView;
+
+@class LocalHistoryController;
 
 @interface BrowserView : ScrollableView {
 	struct browser_window *browser;
@@ -33,8 +34,8 @@
 	BOOL isDragging;
 	NSPoint dragStart;
 	
-	HistoryView *history;
 	BOOL historyVisible;
+	LocalHistoryController *history;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;

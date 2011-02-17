@@ -92,7 +92,11 @@ S_COCOA := \
 	url.m \
 	utf8.m \
 	utils.m \
-	system_colour.m
+	system_colour.m \
+	ArrowBox.m \
+	ArrowWindow.m \
+	BlackScroller.m \
+	LocalHistoryController.m
 
 S_TABBAR := \
 	NSBezierPath_AMShading.m	\
@@ -119,7 +123,7 @@ SOURCES := $(addprefix $(shell pwd)/,$(SOURCES))
 EXETARGET := NetSurf
 
 S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib SearchWindow.xib PreferencesWindow.xib \
-		HistoryWindow.xib BookmarksWindow.xib
+		HistoryWindow.xib BookmarksWindow.xib LocalHistoryPanel.xib
 
 R_RESOURCES := default.css adblock.css quirks.css NetSurf.icns HomeTemplate.pdf
 R_RESOURCES := $(addprefix cocoa/res/,$(R_RESOURCES))

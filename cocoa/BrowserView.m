@@ -20,6 +20,8 @@
 #import "cocoa/HistoryView.h"
 #import "cocoa/font.h"
 #import "cocoa/plotter.h"
+#import "cocoa/LocalHistoryController.h"
+#import "cocoa/BrowserWindowController.h"
 
 #import "desktop/browser.h"
 #import "desktop/history_core.h"
@@ -412,10 +414,10 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	historyVisible = newVisible;
 	
 	if (historyVisible) {
-		if (nil  == history) history = [[HistoryView alloc] initWithBrowser: browser];
-		[history fadeIntoView: self];
+		if (nil == history) history = [[LocalHistoryController alloc] initWithBrowser: browser];
+		[history attachToView: [(BrowserWindowController *)[[self window] windowController] historyButton]];
 	} else {
-		[history fadeOut];
+		[history detach];
 	}
 }
 

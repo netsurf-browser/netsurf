@@ -16,16 +16,39 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#import <Cocoa/Cocoa.h>
+#import "cocoa/LocalHistoryController.h"
 
-@class HistoryView;
+#import "cocoa/HistoryView.h"
+#import "cocoa/ArrowWindow.h"
 
-@interface HistoryView : NSView {
-	struct browser_window *browser;
+@implementation LocalHistoryController
+
+@synthesize browser;
+@synthesize history;
+
+- initWithBrowser: (struct browser_window *) bw;
+{
+	if ((self = [super initWithWindowNibName: @"LocalHistoryPanel"]) == nil) return nil;
+	
+	browser = bw;
+	
+	return self;
 }
 
-@property (readwrite, assign, nonatomic) struct browser_window *browser;
+- (void) attachToView: (NSView *) view;
+{
+	[history updateHistory];
+	[(ArrowWindow *)[self window] attachToView: view];
+}
 
-- (void) updateHistory;
+- (void) detach;
+{
+	[(ArrowWindow *)[self window] detach];
+}
+
+- (void) windowDidLoad;
+{
+	[history setBrowser: browser];
+}
 
 @end

@@ -28,7 +28,7 @@
 	URLFieldCell *urlField;
 	NSObjectController *activeBrowserController;
 	NSSegmentedControl *navigationControl;
-	
+	NSButton *historyButton;
 	BrowserViewController *activeBrowser;
 }
 
@@ -37,6 +37,7 @@
 @property (readwrite, retain, nonatomic) IBOutlet URLFieldCell *urlField;
 @property (readwrite, retain, nonatomic) IBOutlet NSObjectController *activeBrowserController;
 @property (readwrite, retain, nonatomic) IBOutlet NSSegmentedControl *navigationControl;
+@property (readwrite, assign, nonatomic) IBOutlet NSButton *historyButton;
 
 @property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;
 

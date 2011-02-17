@@ -79,11 +79,9 @@
 								<string key="NSToolbarItemPaletteLabel">History</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSButton" key="NSToolbarItemView" id="229385913">
-									<reference key="NSNextResponder"/>
+									<nil key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{8, 14}, {30, 25}}</string>
-									<reference key="NSSuperview"/>
-									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSButtonCell" key="NSCell" id="296571644">
 										<int key="NSCellFlags">67239424</int>
@@ -126,11 +124,9 @@
 								<string key="NSToolbarItemPaletteLabel">Homepage</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSButton" key="NSToolbarItemView" id="518219892">
-									<reference key="NSNextResponder"/>
+									<nil key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{18, 14}, {30, 25}}</string>
-									<reference key="NSSuperview"/>
-									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSButtonCell" key="NSCell" id="413663381">
 										<int key="NSCellFlags">-2080244224</int>
@@ -169,11 +165,9 @@
 								<string key="NSToolbarItemPaletteLabel">Back/Forward</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSSegmentedControl" key="NSToolbarItemView" id="692457026">
-									<reference key="NSNextResponder"/>
+									<nil key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{7, 14}, {67, 25}}</string>
-									<reference key="NSSuperview"/>
-									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSSegmentedCell" key="NSCell" id="845979064">
 										<int key="NSCellFlags">67239424</int>
@@ -232,11 +226,9 @@
 								<string key="NSToolbarItemPaletteLabel">URL</string>
 								<nil key="NSToolbarItemToolTip"/>
 								<object class="NSTextField" key="NSToolbarItemView" id="77748234">
-									<reference key="NSNextResponder"/>
+									<nil key="NSNextResponder"/>
 									<int key="NSvFlags">268</int>
 									<string key="NSFrame">{{0, 14}, {96, 22}}</string>
-									<reference key="NSSuperview"/>
-									<reference key="NSWindow"/>
 									<bool key="NSEnabled">YES</bool>
 									<object class="NSTextFieldCell" key="NSCell" id="1053649244">
 										<int key="NSCellFlags">-1804468671</int>
@@ -714,6 +706,14 @@
 					</object>
 					<int key="connectionID">86</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">historyButton</string>
+						<reference key="source" ref="1001"/>
+						<reference key="destination" ref="229385913"/>
+					</object>
+					<int key="connectionID">87</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -976,9 +976,9 @@
 				</object>
 				<object class="NSMutableArray" key="dict.values">
 					<bool key="EncodedWithXMLCoder">YES</bool>
-					<string>{{347, 86}, {774, 554}}</string>
+					<string>{{276, 86}, {774, 554}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
-					<string>{{347, 86}, {774, 554}}</string>
+					<string>{{276, 86}, {774, 554}}</string>
 					<integer value="1"/>
 					<string>{196, 240}</string>
 					<string>{{202, 428}, {480, 270}}</string>
@@ -1002,7 +1002,7 @@
 					<object class="NSAffineTransform">
 						<bytes key="NSTransformStruct">P4AAAL+AAABDiwAAxAVAAA</bytes>
 					</object>
-					<string>{{426, 640}, {616, 0}}</string>
+					<string>{{355, 640}, {616, 0}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
@@ -1053,7 +1053,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">86</int>
+			<int key="maxID">87</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1061,6 +1061,17 @@
 				<object class="IBPartialClassDescription">
 					<string key="className">BrowserView</string>
 					<string key="superclassName">ScrollableView</string>
+					<object class="NSMutableDictionary" key="outlets">
+						<string key="NS.key.0">historyButton</string>
+						<string key="NS.object.0">NSButton</string>
+					</object>
+					<object class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<string key="NS.key.0">historyButton</string>
+						<object class="IBToOneOutletInfo" key="NS.object.0">
+							<string key="name">historyButton</string>
+							<string key="candidateClassName">NSButton</string>
+						</object>
+					</object>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">BrowserView.h</string>
@@ -1221,6 +1232,7 @@
 						<object class="NSArray" key="dict.sortedKeys">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>activeBrowserController</string>
+							<string>historyButton</string>
 							<string>navigationControl</string>
 							<string>tabBar</string>
 							<string>tabView</string>
@@ -1229,6 +1241,7 @@
 						<object class="NSMutableArray" key="dict.values">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>NSObjectController</string>
+							<string>NSButton</string>
 							<string>NSSegmentedControl</string>
 							<string>PSMTabBarControl</string>
 							<string>NSTabView</string>
@@ -1240,6 +1253,7 @@
 						<object class="NSArray" key="dict.sortedKeys">
 							<bool key="EncodedWithXMLCoder">YES</bool>
 							<string>activeBrowserController</string>
+							<string>historyButton</string>
 							<string>navigationControl</string>
 							<string>tabBar</string>
 							<string>tabView</string>
@@ -1250,6 +1264,10 @@
 							<object class="IBToOneOutletInfo">
 								<string key="name">activeBrowserController</string>
 								<string key="candidateClassName">NSObjectController</string>
+							</object>
+							<object class="IBToOneOutletInfo">
+								<string key="name">historyButton</string>
+								<string key="candidateClassName">NSButton</string>
 							</object>
 							<object class="IBToOneOutletInfo">
 								<string key="name">navigationControl</string>

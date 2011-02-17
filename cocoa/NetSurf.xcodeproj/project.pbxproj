@@ -246,6 +246,15 @@
 		26AFEAEA12E04253005AD082 /* DownloadWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DownloadWindowController.m; sourceTree = "<group>"; };
 		26AFEAF012E042F9005AD082 /* DownloadWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = DownloadWindow.xib; sourceTree = "<group>"; };
 		26AFED0312E09916005AD082 /* selection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = selection.m; sourceTree = "<group>"; };
+		26B4E91A130D351F0003B527 /* ArrowBox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ArrowBox.h; sourceTree = "<group>"; };
+		26B4E91B130D351F0003B527 /* ArrowBox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ArrowBox.m; sourceTree = "<group>"; };
+		26B4E91C130D351F0003B527 /* ArrowWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ArrowWindow.h; sourceTree = "<group>"; };
+		26B4E91D130D351F0003B527 /* ArrowWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ArrowWindow.m; sourceTree = "<group>"; };
+		26B4E91E130D351F0003B527 /* BlackScroller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BlackScroller.h; sourceTree = "<group>"; };
+		26B4E91F130D351F0003B527 /* BlackScroller.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BlackScroller.m; sourceTree = "<group>"; };
+		26B4E926130D36A90003B527 /* LocalHistoryPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LocalHistoryPanel.xib; sourceTree = "<group>"; };
+		26B4E928130D37E50003B527 /* LocalHistoryController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocalHistoryController.h; sourceTree = "<group>"; };
+		26B4E929130D37E50003B527 /* LocalHistoryController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocalHistoryController.m; sourceTree = "<group>"; };
 		26CDCEB312E702D8004FC66B /* NSBezierPath_AMShading.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSBezierPath_AMShading.h; sourceTree = "<group>"; };
 		26CDCEB412E702D8004FC66B /* NSBezierPath_AMShading.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSBezierPath_AMShading.m; sourceTree = "<group>"; };
 		26CDCEB512E702D8004FC66B /* NSString_AITruncation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_AITruncation.h; sourceTree = "<group>"; };
@@ -587,6 +596,7 @@
 				2625095012F72A8F0090D236 /* PreferencesWindow.xib */,
 				26376A4112F7FA67000F45FE /* HistoryWindow.xib */,
 				26376BAC12F820D7000F45FE /* BookmarksWindow.xib */,
+				26B4E926130D36A90003B527 /* LocalHistoryPanel.xib */,
 			);
 			name = Resources;
 			path = res;
@@ -701,6 +711,8 @@
 				2666DC5E12F6D2E70045E8B6 /* SearchWindowController.m */,
 				2666DD5012F706BC0045E8B6 /* BrowserWindow.h */,
 				2666DD5112F706BC0045E8B6 /* BrowserWindow.m */,
+				26B4E928130D37E50003B527 /* LocalHistoryController.h */,
+				26B4E929130D37E50003B527 /* LocalHistoryController.m */,
 			);
 			name = Browser;
 			sourceTree = "<group>";
@@ -708,6 +720,12 @@
 		26CDD26612E7441E004FC66B /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				26B4E91A130D351F0003B527 /* ArrowBox.h */,
+				26B4E91B130D351F0003B527 /* ArrowBox.m */,
+				26B4E91C130D351F0003B527 /* ArrowWindow.h */,
+				26B4E91D130D351F0003B527 /* ArrowWindow.m */,
+				26B4E91E130D351F0003B527 /* BlackScroller.h */,
+				26B4E91F130D351F0003B527 /* BlackScroller.m */,
 				26AFE8E212DF4200005AD082 /* ScrollableView.h */,
 				26AFE8E312DF4200005AD082 /* ScrollableView.m */,
 				26EC3B6812ED62C0000A960C /* URLFieldCell.h */,

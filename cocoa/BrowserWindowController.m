@@ -41,6 +41,7 @@
 @synthesize tabView;
 @synthesize urlField;
 @synthesize navigationControl;
+@synthesize historyButton;
 
 @synthesize activeBrowser;
 @synthesize activeBrowserController;

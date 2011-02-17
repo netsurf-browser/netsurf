@@ -20,12 +20,17 @@
 
 @class HistoryView;
 
-@interface HistoryView : NSView {
+@interface LocalHistoryController : NSWindowController {
+	HistoryView *history;
 	struct browser_window *browser;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
+@property (readwrite, assign, nonatomic) IBOutlet HistoryView *history;
 
-- (void) updateHistory;
+- initWithBrowser: (struct browser_window *) bw;
+
+- (void) attachToView: (NSView *) view;
+- (void) detach;
 
 @end
