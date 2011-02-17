@@ -27,5 +27,6 @@
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
 
 - (void) updateHistory;
+- (NSSize) size;
 
 @end

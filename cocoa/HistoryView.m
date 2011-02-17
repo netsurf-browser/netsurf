@@ -25,13 +25,6 @@
 #import "desktop/history_core.h"
 #import "desktop/plotters.h"
 
-static NSRect cocoa_history_rect( struct browser_window *bw )
-{
-	int width, height;
-	history_size( bw->history, &width, &height );
-	return cocoa_rect( 0, 0, width, height );
-}
-
 @implementation HistoryView
 
 @synthesize browser;
@@ -42,9 +35,19 @@ static NSRect cocoa_history_rect( struct browser_window *bw )
 	[self updateHistory];
 }
 
+- (NSSize) size;
+{
+	const CGFloat padding = 10;
+	
+	int width, height;
+	history_size( browser->history, &width, &height );
+	
+	return NSMakeSize( cocoa_px_to_pt( width ) + padding, cocoa_px_to_pt( height ) + padding );
+}
+
 - (void) updateHistory;
 {
-	[self setFrameSize: cocoa_history_rect( browser ).size];
+	[self setFrameSize: [self size]];
 	[self setNeedsDisplay: YES];
 }
 

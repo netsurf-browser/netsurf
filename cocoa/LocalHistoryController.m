@@ -37,8 +37,59 @@
 
 - (void) attachToView: (NSView *) view;
 {
+	const CGFloat ScrollerSpace = [NSScroller scrollerWidthForControlSize: NSSmallControlSize];;
+	
+	NSDisableScreenUpdates();
+	
+	ArrowWindow *box = (ArrowWindow *)[self window];
+
+	NSSize newSize = [history size];
+	newSize.width += ScrollerSpace;
+	newSize.height += ScrollerSpace;
+	
+	[box setContentSize: newSize];
+	[box setArrowPosition: 50];
 	[history updateHistory];
-	[(ArrowWindow *)[self window] attachToView: view];
+	[box attachToView: view];
+	
+	NSRect frame = [box frame];
+	NSRect screenFrame = [[box screen] visibleFrame];
+	
+	const CGFloat arrowSize = [box arrowSize];
+	frame.origin.x += arrowSize;
+	frame.origin.y += arrowSize;
+	frame.size.width -= 2 * arrowSize;
+	frame.size.height -= 2 * arrowSize;
+	
+	if (NSMinY( frame ) < NSMinY( screenFrame )) {
+		const CGFloat delta = NSMinY( screenFrame ) - NSMinY( frame );
+		frame.size.height -= delta;
+		frame.origin.y += delta;
+	}
+	
+	CGFloat arrowPositionChange = 50;
+	if (NSMaxX( frame ) > NSMaxX( screenFrame )) {
+		const CGFloat delta = NSMaxX( frame ) - NSMaxX( screenFrame );
+		arrowPositionChange += delta;
+		frame.origin.x -= delta;
+	}
+	
+	if (NSMinX( frame ) < NSMinX( screenFrame )) {
+		const CGFloat delta = NSMinX( screenFrame ) - NSMinX( frame );
+		arrowPositionChange -= delta;
+		frame.origin.x  += delta;
+		frame.size.width -= delta;
+	}
+
+	frame.origin.x -= arrowSize;
+	frame.origin.y -= arrowSize;
+	frame.size.width += 2 * arrowSize;
+	frame.size.height += 2 * arrowSize;
+	
+	[box setArrowPosition: arrowPositionChange];
+	[box setFrame: frame display: YES];
+	
+	NSEnableScreenUpdates();
 }
 
 - (void) detach;

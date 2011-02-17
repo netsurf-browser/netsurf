@@ -12,7 +12,7 @@
 		</object>
 		<object class="NSMutableArray" key="IBDocument.EditedObjectIDs">
 			<bool key="EncodedWithXMLCoder">YES</bool>
-			<integer value="1"/>
+			<integer value="2"/>
 		</object>
 		<object class="NSArray" key="IBDocument.PluginDependencies">
 			<bool key="EncodedWithXMLCoder">YES</bool>
@@ -64,7 +64,7 @@
 										<bool key="EncodedWithXMLCoder">YES</bool>
 										<object class="NSCustomView" id="820702167">
 											<reference key="NSNextResponder" ref="753770525"/>
-											<int key="NSvFlags">274</int>
+											<int key="NSvFlags">256</int>
 											<string key="NSFrameSize">{480, 270}</string>
 											<reference key="NSSuperview" ref="753770525"/>
 											<string key="NSClassName">HistoryView</string>
@@ -239,9 +239,9 @@
 				</object>
 				<object class="NSMutableArray" key="dict.values">
 					<bool key="EncodedWithXMLCoder">YES</bool>
-					<string>{{489, 207}, {480, 270}}</string>
+					<string>{{364, 310}, {480, 270}}</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
-					<string>{{489, 207}, {480, 270}}</string>
+					<string>{{364, 310}, {480, 270}}</string>
 					<boolean value="NO"/>
 					<string>{196, 240}</string>
 					<string>{{202, 428}, {480, 270}}</string>
