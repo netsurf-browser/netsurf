@@ -2064,23 +2064,38 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 nserror llcache_fetch_notmodified(llcache_object *object,
 		llcache_object **replacement)
 {
-	llcache_object_user *user, *next;
+	/* There may be no candidate if the server erroneously responded
+	 * to an unconditional request with a 304 Not Modified response.
+	 * In this case, we simply retain the initial object, having
+	 * invalidated it and marked it as complete.
+	 */
+	if (object->candidate != NULL) {
+		llcache_object_user *user, *next;
 
-	/* Move user(s) to candidate content */
-	for (user = object->users; user != NULL; user = next) {
-		next = user->next;
+		/* Move user(s) to candidate content */
+		for (user = object->users; user != NULL; user = next) {
+			next = user->next;
 
-		llcache_object_remove_user(object, user);
-		llcache_object_add_user(object->candidate, user);
+			llcache_object_remove_user(object, user);
+			llcache_object_add_user(object->candidate, user);
+		}
+
+		/* Candidate is no longer a candidate for us */
+		object->candidate->candidate_count--;
+
+		/* Clone our cache control data into the candidate */
+		llcache_object_clone_cache_data(object, object->candidate, 
+				false);
+		/* Bring candidate's cache data up to date */
+		llcache_object_cache_update(object->candidate);
+
+		/* Candidate is now our object */
+		*replacement = object->candidate;
+		object->candidate = NULL;
+	} else {
+		/* There was no candidate: retain object */
+		*replacement = object;
 	}
-
-	/* Candidate is no longer a candidate for us */
-	object->candidate->candidate_count--;
-
-	/* Clone our cache control data into the candidate */
-	llcache_object_clone_cache_data(object, object->candidate, false);
-	/* Bring candidate's cache data up to date */
-	llcache_object_cache_update(object->candidate);
 
 	/* Ensure fetch has stopped */
 	fetch_abort(object->fetch.fetch);
@@ -2091,10 +2106,6 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 
 	/* Mark it complete */
 	object->fetch.state = LLCACHE_FETCH_COMPLETE;
-
-	/* Candidate is now our object */
-	*replacement = object->candidate;
-	object->candidate = NULL;
 
 	/* Old object will be flushed from the cache on the next poll */
 
