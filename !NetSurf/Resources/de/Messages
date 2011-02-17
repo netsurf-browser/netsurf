@@ -207,7 +207,7 @@ Domains:Domains
 # Other menus
 #
 # URL suggestion menu
-URLSuggest:Aktuelle URL's
+URLSuggest:Aktuelle URLs
 
 # Menus within the choices system
 #
@@ -324,11 +324,11 @@ TreeLastUsed:Zuletzt genutzt: %s
 TreeSecure:Nur sichere Hosts: %s
 TreeVersion:Version: %s
 TreePersistent:Persistent: %s
-TreeHeaders: (from headers)
+TreeHeaders: (aus Header)
 TreeVersion0:Netscape
 TreeVersion1:RFC 2109
 TreeVersion2:RFC 2965
-TreeSession:Session end
+TreeSession:Sitzungsende
 TreeUnused:Nicht benutzt
 TreeImport:Importierte URL
 TreeNewFolder:Neues Verzeichnis
@@ -376,13 +376,13 @@ DateYesterday:Gestern
 Date1Week:vorige Woche
 Date2Week:vor 2 Wochen
 Date3Week:vor 3 Wochen
-Sunday:Sunday
-Monday:Monday
-Tuesday:Tuesday
-Wednesday:Wednesday
-Thursday:Thursday
-Friday:Friday
-Saturday:Saturday
+Sunday:Sonntag
+Monday:Montag
+Tuesday:Dienstag
+Wednesday:Mittwoch
+Thursday:Donnerstag
+Friday:Freitag
+Saturday:Samstag
 
 
 # Download user interface tokens
@@ -404,7 +404,7 @@ Abort:Abgebrochen
 #
 amiDownload:%ld von %ld Bytes heruntergeladen
 amiDownloadU:%ld Bytes heruntergeladen
-amiDownloadComplete:NetSurf: Download completed
+amiDownloadComplete:NetSurf: Download vollständig
 
 # GTK download window tokens
 #
@@ -414,87 +414,87 @@ amiDownloadComplete:NetSurf: Download completed
 
 gtkSizeInfo:%s of %s
 gtkProgressBar:%.0f%% of %u files
-gtkProgressBarPulse:Downloading %u files
-gtkProgressBarPulseSingle:Downloading %u file
+gtkProgressBarPulse:Lade %u Dateien herunter
+gtkProgressBarPulseSingle:Lade %u Datei
 
 # Column Headers
 #
-gtkProgress:Progress
+gtkProgress:Fortschritt
 gtkDetails:Details
-gtkSpeed:Speed
-gtkRemaining:Remaining
+gtkSpeed:Geschwindigkeit
+gtkRemaining:Übrig
 
 # Status Messages
 # spaces necessary
 #
 
-gtkError: Error 
-gtkComplete: Complete 
-gtkCanceled: Canceled 
-gtkWorking: Working 
+gtkError: Fehler 
+gtkComplete: Vollständig 
+gtkCanceled: Abgebrochen 
+gtkWorking: Arbeite 
 
 # Dialogs
 #
-gtkQuit:Quit NetSurf?
-gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
-gtkStartDownload:Download file?
-gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
-gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
-gtkFailed:Download failed
-gtkFileError:File error: %s
-gtkInfo:%s from %s is %s in size
-gtkSave:Save file as...
-gtkSourceSave:Save Source
-gtkSourceTabError:Error handling source data 
-gtkPlainSave:Save as text
-gtkFullSave:Save webpage complete - select an empty directory
-gtkUnknownHost:an unknown host
+gtkQuit:NetSurf beenden?
+gtkDownloadsRunning:Es sind noch Downloads aktiv, beim Beenden werden sie abgebrochen und die Dateien gelöscht.
+gtkStartDownload:Datei herunterladen?
+gtkOverwrite:Eine Datei mit dem Namen "%s" existiert bereits. Soll sie ersetzt werden?
+gtkOverwriteInfo:Die Datei existiert bereits im Verzeichnis "%s".  Beim ersetzen wird ihr momentaner Inhalt überschrieben.
+gtkFailed:Download fehlgeschlagen
+gtkFileError:Dateifehler: %s
+gtkInfo:%s von %s ist %s in size
+gtkSave:Datei speichern unter...
+gtkSourceSave:Quelltext speichern
+gtkSourceTabError:Fehler beim behandeln der Quelldaten 
+gtkPlainSave:Als Text speichern
+gtkFullSave:Speichern der Webseite abgeschlossen - wähle ein leeres Verzeichnis
+gtkUnknownHost:ein unbekannter Host
 gtkUnknownFile:
-gtkUnknownSize:unknown
+gtkUnknownSize:unbekannt
 
 # gtk Menu / Button labels
 #
 
-gtkNewTab:New _Tab
+gtkNewTab:Neuer _Tab
 gtkNewTabAccel:<ctrl>t
-gtkNewWindow:_New Window
+gtkNewWindow:_Neues Fenster
 gtkNewWindowAccel:<ctrl>n
-gtkOpenFile:_Open File
+gtkOpenFile:Datei öffnen
 gtkOpenFileAccel:<ctrl>o
-gtkCloseWindow:_Close Window
+gtkCloseWindow:Fenster schließen
 gtkCloseWindowAccel:<ctrl><shift>w
-gtkSavePage:Save Page..
+gtkSavePage:Seite speichern..
 gtkSavePageAccel:<ctrl>s
-gtkExport:Export
-gtkPlainText:Plain Text..
+gtkExport:Exportieren
+gtkPlainText:Reiner Text..
 gtkDrawFile:Drawfile..
 gtkPostScript:PostScript..
 gtkPDF:PDF..
-gtkPrintPreview:Print Preview..
+gtkPrintPreview:Druckvorschau...
 gtkPrintPreviewAccel:<ctrl><shift>p
-gtkPrint:Print..
+gtkPrint:Drucken...
 gtkPrintAccel:<ctrl>p
-gtkQuitMenu:_Quit
+gtkQuitMenu:Beenden
 gtkQuitAccel:<ctrl>q
 
-gtkCut:Cu_t
+gtkCut:Ausschneiden
 gtkCutAccel:<ctrl>x
-gtkCopy:_Copy
+gtkCopy:Kopieren
 gtkCopyAccel:<ctrl>c
-gtkPaste:_Paste
+gtkPaste:Einfügen
 gtkPasteAccel:<ctrl>v
-gtkDelete:_Delete
-gtkSelectAll:Select _All
+gtkDelete:Löschen
+gtkSelectAll:_Alles auswählen
 gtkSelectAllAccel:<ctrl>a
-gtkFind:_Find..
+gtkFind:_Finden..
 gtkFindAccel:<ctrl>f
-gtkPreferences:P_references
+gtkPreferences:Einstellungen
 
 gtkStop:_Stop
 gtkStopAccel:Escape
-gtkReload:_Reload
+gtkReload:Neu laden
 gtkReloadAccel:F5
-gtkScaleView:_Scale View
+gtkScaleView:Ansicht skalieren
 gtkZoomPlus:Zoom _in
 gtkZoomPlusAccel:<ctrl>plus
 gtkZoomMinus:Zoom _out
@@ -566,9 +566,9 @@ gtkThemeAdd:Theme added successfully
 
 PrintSheetFilled:Druckseite
 PrintSheetsFilled:Druckseiten
-Printer:Printer
-Copies:Copies
-Printing:Printing page
+Printer:Drucker
+Copies:Kopien
+Printing:Drucke Seite
 
 
 # Find text user interface tokens
@@ -581,7 +581,7 @@ NotFound:nichts
 Next:Nächster
 Prev:Vorheriger
 ShowAll:Alle zeigen
-CaseSens:GroßKleinschreibung
+CaseSens:Groß-/Kleinschreibung
 
 
 # 401 login user interface tokens
@@ -592,7 +592,7 @@ CaseSens:GroßKleinschreibung
 #
 Host:Host
 Realm:Realm
-Username:Username
+Username:Benutzername
 Password:Passwort
 Login:Login
 Cancel:Abbruch
@@ -607,12 +607,12 @@ Cancel:Abbruch
 SSLCerts:SSL Zertifikat
 SSLError:NetSurf konnte ein SSL Zertifikat nicht prüfen. Bitte die Details unten beachten.
 Subject:Bezug
-Issuer:Geber
+Issuer:Aussteller
 Version:Version
 ValidFrom:Gültig von
 ValidTo:Gültig bis
 Type:Typ
-Serial:Serial
+Serial:Seriennummer
 Accept:Akzeptiert
 Reject:Abgelehnt
 
@@ -626,7 +626,7 @@ Reject:Abgelehnt
 # Forms
 #
 Form_Submit:Übertragen
-Form_Reset:Reset
+Form_Reset:Zurücksetzen
 Form_None:
 Form_Many:(Viele)
 Form_Drop:Datei hier hinziehen
@@ -1408,7 +1408,7 @@ ClipboardUTF8:Text als UTF-8
 ContextMenu:Kontextmenu
 Enable:Erlauben
 Sticky:Klebrig
-Behaviour:Behaviour
+Behaviour:Verhalten
 OptionNoWindow:Kein Fenster beim Start öffnen
 OptionNoQuit:Nicht beenden beim Schließen des letzten Fensters
 
@@ -1437,7 +1437,7 @@ SetPassword:Passwort festlegen
 # These tokens appear to be unused at the current time.
 #
 
-TreeHistory:NetSurf history
+TreeHistory:NetSurf Verlauf
 SaveSelect:Sichern
 ExportAs:Exportieren als
 AnimImg:Animationen
