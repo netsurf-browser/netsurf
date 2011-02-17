@@ -62,12 +62,12 @@
 	[self setFrame: frame display: YES];
 }
 
-static const CGFloat padding = 4;
+static const CGFloat padding = 0;
 
 - (NSRect) contentRectForFrameRect: (NSRect)frameRect;
 {
 	const CGFloat arrowSize = [box arrowSize];
-	const CGFloat offset = 2 * ( 2 + padding + arrowSize );
+	const CGFloat offset = 2 * (padding + arrowSize );
 
 	return NSInsetRect( frameRect, offset, offset );
 }
@@ -75,7 +75,7 @@ static const CGFloat padding = 4;
 - (NSRect) frameRectForContentRect: (NSRect)contentRect;
 {
 	const CGFloat arrowSize = [box arrowSize];
-	const CGFloat offset = -2 * ( 2 + padding + arrowSize );
+	const CGFloat offset = -2 * (padding + arrowSize );
 	
 	return NSInsetRect( contentRect, offset, offset );
 }
@@ -83,7 +83,7 @@ static const CGFloat padding = 4;
 + (NSRect) frameRectForContentRect: (NSRect)cRect styleMask: (NSUInteger)aStyle;
 {
 	const CGFloat DefaultArrowSize = 15;
-	const CGFloat offset = -2 * (2 + padding + DefaultArrowSize);
+	const CGFloat offset = -2 * (padding + DefaultArrowSize);
 	
 	return NSInsetRect( cRect, offset, offset );
 }
