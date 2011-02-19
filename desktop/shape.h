@@ -17,7 +17,7 @@
  */
 
 /** \file
- * Core mouse state.
+ * Core shapes.
  */
 
 #ifndef _NETSURF_DESKTOP_SHAPE_H_
@@ -25,8 +25,8 @@
 
 /* Rectangle coordinates */
 struct rect {
-	int x0, y0;
-	int x1, y1;
+	int x0, y0; /* Top left */
+	int x1, y1; /* Bottom right */
 };
 
 #endif
