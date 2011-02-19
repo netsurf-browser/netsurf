@@ -1900,7 +1900,7 @@ void ami_get_msg(void)
 
 	if(signal & schedulesig)
 	{
-		while(timermsg = GetMsg(msgport))
+		if(timermsg = GetMsg(msgport))
 		{
 			ReplyMsg(timermsg);
 			schedule_run(FALSE);
