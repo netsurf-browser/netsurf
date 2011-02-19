@@ -20,6 +20,7 @@
 
 #include "content/urldb.h"
 #include "desktop/browser.h"
+#include "desktop/thumbnail.h"
 #include "utils/log.h"
 #include "image/bitmap.h"
 

@@ -43,6 +43,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_text.h"
 #include "desktop/selection.h"
+#include "desktop/thumbnail.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/form.h"

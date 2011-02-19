@@ -33,6 +33,7 @@ extern "C" {
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
+#include "desktop/thumbnail.h"
 #include "image/bitmap.h"
 #include "render/font.h"
 #include "utils/log.h"

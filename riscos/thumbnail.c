@@ -35,6 +35,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
+#include "desktop/thumbnail.h"
 #include "image/bitmap.h"
 #include "render/font.h"
 #include "riscos/bitmap.h"
@@ -83,7 +84,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 {
 	float scale = 1.0;
 	struct thumbnail_save_area *save_area;
-	struct rect clip;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
 	_kernel_oserror *error;
@@ -115,10 +115,9 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	ro_plot_origin_x = 0;
 	ro_plot_origin_y = bitmap->height * 2;
 	if (content_get_width(content))
-		scale = (float)bitmap->width /
-				(float)content_get_width(content);
+		scale = thumbnail_get_redraw_scale(content, bitmap->width);
+
 	ro_plot_set_scale(scale);
-	current_redraw_browser = NULL;  /* no selection */
 
 	/* switch output and redraw */
 	save_area = thumbnail_switch_output(sprite_area, sprite_header);
@@ -130,13 +129,9 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	rufl_invalidate_cache();
 	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG_GCOL,
 			os_ACTION_OVERWRITE, 0);
-	os_clg();
-	clip.x0 = 0;
-	clip.y0 = 0;
-	clip.x1 = bitmap->width;
-	clip.y1 = bitmap->height;
-	content_redraw(content, 0, 0, bitmap->width, bitmap->height,
-			&clip, scale, 0xFFFFFF);
+
+	thumbnail_redraw(content, bitmap->width, bitmap->height);
+
 	thumbnail_restore_output(save_area);
 	rufl_invalidate_cache();
 

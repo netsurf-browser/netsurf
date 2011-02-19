@@ -31,6 +31,7 @@
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/browser.h"
+#include "desktop/thumbnail.h"
 #include "gtk/scaffolding.h"
 #include "gtk/plotters.h"
 #include "gtk/bitmap.h"

@@ -50,6 +50,7 @@
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
 #include "desktop/textinput.h"
+#include "desktop/thumbnail.h"
 #include "desktop/tree.h"
 #include "desktop/gui.h"
 #include "render/box.h"

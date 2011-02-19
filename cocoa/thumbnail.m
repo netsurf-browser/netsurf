@@ -20,6 +20,7 @@
 
 #import "desktop/browser.h"
 #import "desktop/plotters.h"
+#import "desktop/thumbnail.h"
 #import "content/urldb.h"
 #import "image/bitmap.h"
 

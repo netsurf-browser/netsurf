@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/browser.h"
+#include "desktop/thumbnail.h"
 #include "content/urldb.h"
 
 bool 

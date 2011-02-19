@@ -34,6 +34,7 @@
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"
+#include "desktop/thumbnail.h"
 #include "image/bitmap.h"
 #include "render/font.h"
 #include "utils/log.h"

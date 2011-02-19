@@ -31,6 +31,7 @@
 #include "amiga/options.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
+#include "desktop/thumbnail.h"
 
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	const char *url)

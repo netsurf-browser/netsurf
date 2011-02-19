@@ -291,10 +291,6 @@ void global_history_add(const char *url);
 void global_history_add_recent(const char *url);
 char **global_history_get_recent(int *count);
 
-/* In platform specific thumbnail.c. */
-bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
-		const char *url);
-
 /* In platform specific schedule.c. */
 void schedule(int t, void (*callback)(void *p), void *p);
 void schedule_remove(void (*callback)(void *p), void *p);
