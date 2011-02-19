@@ -629,6 +629,13 @@ char *form_textarea_value(struct form_control *textarea)
 	char *value, *s;
 	struct box *text_box;
 
+	/* Textarea may have no associated box if styled with display: none */
+	if (textarea->box == NULL) {
+		/* Return the empty string: caller treats this as a 
+		 * non-successful control. */
+		return strdup("");
+	}
+
 	/* find required length */
 	for (text_box = textarea->box->children->children; text_box;
 			text_box = text_box->next) {
@@ -641,7 +648,8 @@ char *form_textarea_value(struct form_control *textarea)
 	/* construct value */
 	s = value = malloc(len + 1);
 	if (!s)
-		return 0;
+		return NULL;
+
 	for (text_box = textarea->box->children->children; text_box;
 			text_box = text_box->next) {
 		if (text_box->type == BOX_TEXT) {
