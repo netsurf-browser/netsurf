@@ -52,7 +52,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 {
         GdkPixbuf *pixbuf;
 	int cwidth, cheight;
-	struct rect clip;
 	gint width;
 	gint height;
 	gint depth;
@@ -98,7 +97,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	/* set the plotting functions up */
 	plot = nsgtk_plotters;
 
-	plot_scale = (float)cwidth / (float)content_get_width(content);
+	/* Plotters need to know thumbnail scale */
+	plot_scale = thumbnail_get_redraw_scale(content, cwidth);
 	nsgtk_plot_set_scale(plot_scale);
 
 	/* set to plot to pixmap */
@@ -108,20 +108,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 
-	/* Set up clip rect */
-	clip.x0 = 0;
-	clip.y0 = 0;
-	clip.x1 = cwidth;
-	clip.y1 = cheight;
-
-	plot.clip(&clip);
-
-	/* blank the background */
-	plot.rectangle(0, 0, cwidth, cheight, plot_style_fill_white);
-
 	/* render the content */
-	content_redraw(content, 0, 0, cwidth, cheight,
-			&clip, plot_scale, 0xFFFFFF);
+	thumbnail_redraw(content, cwidth, cheight);
 
 	/* get the pixbuf we rendered the content into */
 	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
