@@ -79,7 +79,6 @@
 #include <proto/keymap.h>
 #include <proto/locale.h>
 #include <proto/Picasso96API.h>
-#include <proto/timer.h>
 #include <proto/utility.h>
 #include <proto/wb.h>
 
@@ -133,8 +132,6 @@ char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 
 struct MsgPort *appport;
-struct Device *TimerBase;
-struct TimerIFace *ITimer;
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 struct Library  *KeymapBase = NULL;
@@ -272,20 +269,7 @@ void ami_open_resources(void)
 
 	urlStringClass = MakeStringClass();
 
-	msgport = AllocSysObjectTags(ASOT_PORT,
-				ASO_NoTrack,FALSE,
-				TAG_DONE);
-
-	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
-				ASOIOR_Size,sizeof(struct TimeRequest),
-				ASOIOR_ReplyPort,msgport,
-				ASO_NoTrack,FALSE,
-				TAG_DONE);
-
-	OpenDevice("timer.device",UNIT_WAITUNTIL,(struct IORequest *)tioreq,0);
-
-	TimerBase = (struct Device *)tioreq->Request.io_Device;
-	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+	ami_schedule_open_timer();
 
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
 							ASO_NoTrack,FALSE,
@@ -2131,15 +2115,7 @@ void gui_quit(void)
 	if(IKeymap) DropInterface((struct Interface *)IKeymap);
 	if(KeymapBase) CloseLibrary(KeymapBase);
 
-	if(ITimer)
-	{
-		DropInterface((struct Interface *)ITimer);
-	}
-
-	CloseDevice((struct IORequest *) tioreq);
-	FreeSysObject(ASOT_IOREQUEST,tioreq);
-	FreeSysObject(ASOT_PORT,msgport);
-
+	ami_schedule_close_timer();
 	ami_schedule_free();
 
 	FreeObjList(window_list);

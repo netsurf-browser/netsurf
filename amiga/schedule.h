@@ -22,9 +22,14 @@
 
 #include "amiga/os3support.h"
 
+struct Device *TimerBase;
+struct TimerIFace *ITimer;
+
 struct TimeRequest *tioreq;
 struct MsgPort *msgport;
 
+void ami_schedule_open_timer(void);
+void ami_schedule_close_timer(void);
 BOOL ami_schedule_create(void);
 void ami_schedule_free(void);
 void schedule_run(BOOL poll);

@@ -133,7 +133,7 @@ void schedule_run(BOOL poll)
 
 	nscb = pblHeapGetFirst(schedule_list);
 
-	if(nscb == -1) return false;
+	if(nscb == -1) return;
 
 	if(poll)
 	{
@@ -187,4 +187,34 @@ BOOL ami_schedule_create(void)
 void ami_schedule_free(void)
 {
 	pblHeapFree(schedule_list);
+}
+
+void ami_schedule_open_timer(void)
+{
+	msgport = AllocSysObjectTags(ASOT_PORT,
+				ASO_NoTrack,FALSE,
+				TAG_DONE);
+
+	tioreq = (struct TimeRequest *)AllocSysObjectTags(ASOT_IOREQUEST,
+				ASOIOR_Size,sizeof(struct TimeRequest),
+				ASOIOR_ReplyPort,msgport,
+				ASO_NoTrack,FALSE,
+				TAG_DONE);
+
+	OpenDevice("timer.device", UNIT_WAITUNTIL, (struct IORequest *)tioreq, 0);
+
+	TimerBase = (struct Device *)tioreq->Request.io_Device;
+	ITimer = (struct TimerIFace *)GetInterface((struct Library *)TimerBase,"main",1,NULL);
+}
+
+void ami_schedule_close_timer(void)
+{
+	if(ITimer)
+	{
+		DropInterface((struct Interface *)ITimer);
+	}
+
+	CloseDevice((struct IORequest *) tioreq);
+	FreeSysObject(ASOT_IOREQUEST,tioreq);
+	FreeSysObject(ASOT_PORT,msgport);
 }

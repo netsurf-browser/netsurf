@@ -30,7 +30,6 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <intuition/screens.h>
-#include <datatypes/pictureclass.h>
 
 struct gui_system_colour_ctx {
 	const char *name;
