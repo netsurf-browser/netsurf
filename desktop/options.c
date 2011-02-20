@@ -447,23 +447,121 @@ void options_write(const char *path)
 
 		case OPTION_COLOUR:
 			rgbcolour = ((0x000000FF & *((colour *)
-						     option_table[i].p)) << 16) |
+					option_table[i].p)) << 16) |
 				((0x0000FF00 & *((colour *)
-						 option_table[i].p)) << 0) |
+					option_table[i].p)) << 0) |
 				((0x00FF0000 & *((colour *)
-						 option_table[i].p)) >> 16);
+					option_table[i].p)) >> 16);
 			fprintf(fp, "%06x", rgbcolour);
 			break;
 
 		case OPTION_STRING:
 			if (*((char **) option_table[i].p))
-				fprintf(fp, "%s", *((char **) option_table[i].p));
+				fprintf(fp, "%s",
+						*((char **) option_table[i].p));
 			break;
 		}
 		fprintf(fp, "\n");
 	}
 
 	fclose(fp);
+}
+
+
+/**
+ * Output an option value into a string, in HTML format.
+ *
+ * \param option  The option to output the value of.
+ * \param size    The size of the string buffer.
+ * \param pos     The current position in string
+ * \param string  The string in which to output the value.
+ * \return The number of bytes written to string or -1 on error
+ */
+static size_t options_output_value_html(struct option_entry_s *option,
+		size_t size, size_t pos, char *string)
+{
+	size_t slen; /* length added to string */
+	colour rgbcolour; /* RRGGBB */
+
+	switch (option->type) {
+	case OPTION_BOOL:
+		slen = snprintf(string + pos, size - pos, "%s",
+				*((bool *)option->p) ? "true" : "false");
+		break;
+
+	case OPTION_INTEGER:
+		slen = snprintf(string + pos, size - pos, "%i",
+				*((int *)option->p));
+		break;
+
+	case OPTION_COLOUR:
+		rgbcolour = ((0x000000FF & *((colour *) option->p)) << 16) |
+				((0x0000FF00 & *((colour *) option->p)) << 0) |
+				((0x00FF0000 & *((colour *) option->p)) >> 16);
+		slen = snprintf(string + pos, size - pos,
+				"<span style=\"background-color: #%06x; "
+				"color: #%06x;\">#%06x</span>", rgbcolour,
+				(~rgbcolour) & 0xffffff, rgbcolour);
+		break;
+
+	case OPTION_STRING:
+		if (*((char **)option->p) != NULL) {
+			slen = snprintf(string + pos, size - pos, "%s",
+					*((char **)option->p));
+		} else {
+			slen = snprintf(string + pos, size - pos,
+					"<span class=\"null-content\">NULL"
+					"</span>");
+		}
+		break;
+	}
+
+	return slen;
+}
+
+
+/**
+ * Output an option value into a string, in plain text format.
+ *
+ * \param option  The option to output the value of.
+ * \param size    The size of the string buffer.
+ * \param pos     The current position in string
+ * \param string  The string in which to output the value.
+ * \return The number of bytes written to string or -1 on error
+ */
+static size_t options_output_value_text(struct option_entry_s *option,
+		size_t size, size_t pos, char *string)
+{
+	size_t slen; /* length added to string */
+	colour rgbcolour; /* RRGGBB */
+
+	switch (option->type) {
+	case OPTION_BOOL:
+		slen = snprintf(string + pos, size - pos, "%c",
+				*((bool *)option->p) ? '1' : '0');
+		break;
+
+	case OPTION_INTEGER:
+		slen = snprintf(string + pos, size - pos, "%i",
+				*((int *)option->p));
+		break;
+
+	case OPTION_COLOUR:
+		rgbcolour = ((0x000000FF & *((colour *) option->p)) << 16) |
+				((0x0000FF00 & *((colour *) option->p)) << 0) |
+				((0x00FF0000 & *((colour *) option->p)) >> 16);
+		slen = snprintf(string + pos, size - pos, "%x", rgbcolour);
+		break;
+
+	case OPTION_STRING:
+		if (*((char **)option->p) != NULL) {
+			slen = snprintf(string + pos, size - pos, "%s",
+					*((char **)option->p));
+		}
+		break;
+	}
+
+	return slen;
 }
 
 
@@ -474,7 +572,6 @@ int options_snoptionf(char *string, size_t size, unsigned int option,
 	size_t slen = 0; /* current output string length */
 	int fmtc = 0; /* current index into format string */
 	struct option_entry_s *option_entry;
-	colour rgbcolour; /* RRGGBB */
 
 	if (option >= option_table_entries)
 		return -1;
@@ -486,7 +583,8 @@ int options_snoptionf(char *string, size_t size, unsigned int option,
 			fmtc++;
 			switch (fmt[fmtc]) {
 			case 'k':
-				slen += snprintf(string + slen, size - slen, "%s", option_entry->key);
+				slen += snprintf(string + slen, size - slen,
+						"%s", option_entry->key);
 				break;
 
 			case 't':
@@ -520,64 +618,12 @@ int options_snoptionf(char *string, size_t size, unsigned int option,
 
 
 			case 'V':
-				switch (option_entry->type) {
-				case OPTION_BOOL:
-					slen += snprintf(string + slen, size - slen, "%s", *((bool *)option_entry->p) ? "true" : "false");
-					break;
-
-				case OPTION_INTEGER:
-					slen += snprintf(string + slen, size - slen, "%i", *((int *)option_entry->p));
-					break;
-
-				case OPTION_COLOUR:
-					rgbcolour = ((0x000000FF & *((colour *)
-								     option_entry->p)) << 16) |
-						((0x0000FF00 & *((colour *)
-								 option_entry->p)) << 0) |
-						((0x00FF0000 & *((colour *)
-								 option_entry->p)) >> 16);
-					slen += snprintf(string + slen, size - slen, "<span style=\"background-color: #%06x; color: #%06x;\">#%06x</span>", rgbcolour, (~rgbcolour) & 0xffffff, rgbcolour);
-					break;
-
-				case OPTION_STRING:
-					if (*((char **)option_entry->p) != NULL) {
-						slen += snprintf(string + slen, size - slen, "%s", *((char **)option_entry->p));
-					} else {
-						slen += snprintf(string + slen,
-								 size - slen,
-								 "<span class=\"null-content\">NULL</span>");
-					}
-					break;
-				}
+				slen += options_output_value_html(option_entry,
+						size, slen, string);
 				break;
-
 			case 'v':
-				switch (option_entry->type) {
-				case OPTION_BOOL:
-					slen += snprintf(string + slen, size - slen, "%c", *((bool *)option_entry->p) ? '1' : '0');
-					break;
-
-				case OPTION_INTEGER:
-					slen += snprintf(string + slen, size - slen, "%i", *((int *)option_entry->p));
-					break;
-
-				case OPTION_COLOUR:
-					rgbcolour = ((0x000000FF & *((colour *)
-								     option_entry->p)) << 16) |
-						((0x0000FF00 & *((colour *)
-								 option_entry->p)) << 0) |
-						((0x00FF0000 & *((colour *)
-								 option_entry->p)) >> 16);
-					slen += snprintf(string + slen, size - slen, "%x", rgbcolour);
-					break;
-
-				case OPTION_STRING:
-					if (*((char **)option_entry->p) != NULL) {
-						slen += snprintf(string + slen, size - slen, "%s", *((char **)option_entry->p));
-					}
-
-					break;
-				}
+				slen += options_output_value_text(option_entry,
+						size, slen, string);
 				break;
 			}
 			fmtc++;
@@ -606,3 +652,4 @@ void options_dump(FILE *outf)
 		opt_loop++;
 	} while (res > 0);
 }
+
