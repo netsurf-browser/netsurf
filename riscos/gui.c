@@ -872,7 +872,7 @@ void ro_gui_signal(int sig)
 		xhourglass_on();
 		xhourglass_colours(0x0000ffff, 0x000000ff,
 				&old_sand, &old_glass);
-		options_dump();
+		options_dump(stderr);
 		/*rufl_dump_state();*/
 
 #ifndef __ELF__

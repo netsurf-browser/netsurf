@@ -226,20 +226,26 @@ colour option_sys_colour_WindowText = 0x000000;
 
 EXTRA_OPTION_DEFINE
 
+enum option_type_e {
+	OPTION_BOOL,
+	OPTION_INTEGER,
+	OPTION_STRING,
+	OPTION_COLOUR
+} ;
 
-struct {
+struct option_entry_s {
 	const char *key;
-	enum { OPTION_BOOL, OPTION_INTEGER, OPTION_STRING, OPTION_COLOUR } type;
+	enum option_type_e type;
 	void *p;
-} option_table[] = {
+};
+
+struct option_entry_s option_table[] = {
 	{ "http_proxy",		OPTION_BOOL,	&option_http_proxy },
 	{ "http_proxy_host",	OPTION_STRING,	&option_http_proxy_host },
 	{ "http_proxy_port",	OPTION_INTEGER,	&option_http_proxy_port },
 	{ "http_proxy_auth",	OPTION_INTEGER,	&option_http_proxy_auth },
-	{ "http_proxy_auth_user",
-				OPTION_STRING,	&option_http_proxy_auth_user },
-	{ "http_proxy_auth_pass",
-				OPTION_STRING,	&option_http_proxy_auth_pass },
+	{ "http_proxy_auth_user", OPTION_STRING, &option_http_proxy_auth_user },
+	{ "http_proxy_auth_pass", OPTION_STRING, &option_http_proxy_auth_pass },
 	{ "font_size",		OPTION_INTEGER,	&option_font_size },
 	{ "font_min_size",	OPTION_INTEGER,	&option_font_min_size },
 	{ "font_sans",		OPTION_STRING,	&option_font_sans },
@@ -251,8 +257,7 @@ struct {
 	{ "accept_charset",	OPTION_STRING,	&option_accept_charset },
 	{ "memory_cache_size",	OPTION_INTEGER,	&option_memory_cache_size },
 	{ "disc_cache_age",	OPTION_INTEGER,	&option_disc_cache_age },
-	{ "block_advertisements",
-				OPTION_BOOL,	&option_block_ads },
+	{ "block_advertisements", OPTION_BOOL,	&option_block_ads },
 	{ "minimum_gif_delay",	OPTION_INTEGER,	&option_minimum_gif_delay },
 	{ "send_referer",	OPTION_BOOL,	&option_send_referer },
 	{ "animate_images",	OPTION_BOOL,	&option_animate_images },
@@ -262,30 +267,25 @@ struct {
 	{ "ca_path",		OPTION_STRING,	&option_ca_path },
 	{ "cookie_file",	OPTION_STRING,	&option_cookie_file },
 	{ "cookie_jar",		OPTION_STRING,	&option_cookie_jar },
-        { "homepage_url",	OPTION_STRING,	&option_homepage_url },
-        { "search_url_bar",	OPTION_BOOL,	&option_search_url_bar},
-        { "search_provider",	OPTION_INTEGER,	&option_search_provider},
+	{ "homepage_url",	OPTION_STRING,	&option_homepage_url },
+	{ "search_url_bar",	OPTION_BOOL,	&option_search_url_bar},
+	{ "search_provider",	OPTION_INTEGER,	&option_search_provider},
 	{ "url_suggestion",	OPTION_BOOL,	&option_url_suggestion },
 	{ "window_x",		OPTION_INTEGER,	&option_window_x },
 	{ "window_y",		OPTION_INTEGER,	&option_window_y },
 	{ "window_width",	OPTION_INTEGER,	&option_window_width },
 	{ "window_height",	OPTION_INTEGER,	&option_window_height },
-	{ "window_screen_width",
-				OPTION_INTEGER,	&option_window_screen_width },
-	{ "window_screen_height",
-				OPTION_INTEGER,	&option_window_screen_height },
-	{ "toolbar_status_size",
-				OPTION_INTEGER,	&option_toolbar_status_width },
+	{ "window_screen_width", OPTION_INTEGER, &option_window_screen_width },
+	{ "window_screen_height", OPTION_INTEGER, &option_window_screen_height },
+	{ "toolbar_status_size", OPTION_INTEGER, &option_toolbar_status_width },
 	{ "scale",		OPTION_INTEGER,	&option_scale },
 	{ "incremental_reflow",	OPTION_BOOL,	&option_incremental_reflow },
 	{ "min_reflow_period",	OPTION_INTEGER,	&option_min_reflow_period },
  	{ "core_select_menu",	OPTION_BOOL,	&option_core_select_menu },
 	/* Fetcher options */
 	{ "max_fetchers",	OPTION_INTEGER,	&option_max_fetchers },
-	{ "max_fetchers_per_host",
-				OPTION_INTEGER, &option_max_fetchers_per_host },
-	{ "max_cached_fetch_handles",
-			OPTION_INTEGER, &option_max_cached_fetch_handles },
+	{ "max_fetchers_per_host", OPTION_INTEGER, &option_max_fetchers_per_host },
+	{ "max_cached_fetch_handles", OPTION_INTEGER, &option_max_cached_fetch_handles },
 	{ "suppress_curl_debug",OPTION_BOOL,	&option_suppress_curl_debug },
 	{ "target_blank",	OPTION_BOOL,	&option_target_blank },
 	{ "button_2_tab",	OPTION_BOOL,	&option_button_2_tab },
@@ -298,10 +298,8 @@ struct {
 	{ "suppress_images",	OPTION_BOOL,	&option_suppress_images},
 	{ "remove_backgrounds",	OPTION_BOOL,	&option_remove_backgrounds},
 	{ "enable_loosening",	OPTION_BOOL,	&option_enable_loosening},
- 	{ "enable_PDF_compression",
- 				OPTION_BOOL,	&option_enable_PDF_compression},
- 	{ "enable_PDF_password",
- 				OPTION_BOOL,	&option_enable_PDF_password},
+ 	{ "enable_PDF_compression", OPTION_BOOL, &option_enable_PDF_compression},
+ 	{ "enable_PDF_password", OPTION_BOOL,	&option_enable_PDF_password},
 	/* Interface colours */
 	{ "gui_colour_bg_1",	OPTION_COLOUR,	&option_gui_colour_bg_1},
 	{ "gui_colour_fg_1",	OPTION_COLOUR,	&option_gui_colour_fg_1},
@@ -343,15 +341,8 @@ struct {
 #define option_table_entries (sizeof option_table / sizeof option_table[0])
 
 
-/**
- * Read options from a file.
- *
- * \param  path  name of file to read options from
- *
- * Option variables corresponding to lines in the file are updated. Missing
- * options are unchanged. If the file fails to open, options are unchanged.
- */
 
+/* exported interface documented in options.h */
 void options_read(const char *path)
 {
 	char s[100];
@@ -382,32 +373,32 @@ void options_read(const char *path)
 				continue;
 
 			switch (option_table[i].type) {
-				case OPTION_BOOL:
-					*((bool *) option_table[i].p) =
-							value[0] == '1';
-					break;
+			case OPTION_BOOL:
+				*((bool *) option_table[i].p) =
+					value[0] == '1';
+				break;
 
-				case OPTION_INTEGER:
-					*((int *) option_table[i].p) =
-							atoi(value);
-					break;
+			case OPTION_INTEGER:
+				*((int *) option_table[i].p) =
+					atoi(value);
+				break;
 
-				case OPTION_COLOUR:
-					sscanf(value, "%x", &rgbcolour);
-					*((colour *) option_table[i].p) =
-							((0x000000FF &
-							rgbcolour) << 16) |
-							((0x0000FF00 &
-							rgbcolour) << 0) |
-							((0x00FF0000 &
-							rgbcolour) >> 16);
-					break;
+			case OPTION_COLOUR:
+				sscanf(value, "%x", &rgbcolour);
+				*((colour *) option_table[i].p) =
+					((0x000000FF &
+					  rgbcolour) << 16) |
+					((0x0000FF00 &
+					  rgbcolour) << 0) |
+					((0x00FF0000 &
+					  rgbcolour) >> 16);
+				break;
 
-				case OPTION_STRING:
-					free(*((char **) option_table[i].p));
-					*((char **) option_table[i].p) =
-							strdup(value);
-					break;
+			case OPTION_STRING:
+				free(*((char **) option_table[i].p));
+				*((char **) option_table[i].p) =
+					strdup(value);
+				break;
 			}
 			break;
 		}
@@ -429,14 +420,7 @@ void options_read(const char *path)
 }
 
 
-/**
- * Save options to a file.
- *
- * \param  path  name of file to write options to
- *
- * Errors are ignored.
- */
-
+/* exported interface documented in options.h */
 void options_write(const char *path)
 {
 	unsigned int i;
@@ -452,29 +436,29 @@ void options_write(const char *path)
 	for (i = 0; i != option_table_entries; i++) {
 		fprintf(fp, "%s:", option_table[i].key);
 		switch (option_table[i].type) {
-			case OPTION_BOOL:
-				fprintf(fp, "%c", *((bool *) option_table[i].p) ?
-						'1' : '0');
-				break;
+		case OPTION_BOOL:
+			fprintf(fp, "%c", *((bool *) option_table[i].p) ?
+				'1' : '0');
+			break;
 
-			case OPTION_INTEGER:
-				fprintf(fp, "%i", *((int *) option_table[i].p));
-				break;
+		case OPTION_INTEGER:
+			fprintf(fp, "%i", *((int *) option_table[i].p));
+			break;
 
-			case OPTION_COLOUR:
-				rgbcolour = ((0x000000FF & *((colour *)
-						option_table[i].p)) << 16) |
-						((0x0000FF00 & *((colour *)
-						option_table[i].p)) << 0) |
-						((0x00FF0000 & *((colour *)
-						option_table[i].p)) >> 16);
-				fprintf(fp, "%06x", rgbcolour);
-				break;
+		case OPTION_COLOUR:
+			rgbcolour = ((0x000000FF & *((colour *)
+						     option_table[i].p)) << 16) |
+				((0x0000FF00 & *((colour *)
+						 option_table[i].p)) << 0) |
+				((0x00FF0000 & *((colour *)
+						 option_table[i].p)) >> 16);
+			fprintf(fp, "%06x", rgbcolour);
+			break;
 
-			case OPTION_STRING:
-				if (*((char **) option_table[i].p))
-					fprintf(fp, "%s", *((char **) option_table[i].p));
-				break;
+		case OPTION_STRING:
+			if (*((char **) option_table[i].p))
+				fprintf(fp, "%s", *((char **) option_table[i].p));
+			break;
 		}
 		fprintf(fp, "\n");
 	}
@@ -482,44 +466,141 @@ void options_write(const char *path)
 	fclose(fp);
 }
 
-/**
- * Dump user options to stderr
- */
-void options_dump(void)
+
+/* exported interface documented in options.h */
+int snoptionf(char *string, size_t size, unsigned int option, const char *fmt)
 {
-	unsigned int i;
-	colour rgbcolour;
+	size_t slen = 0; /* current output string length */
+	int fmtc = 0; /* current index into format string */
+	struct option_entry_s *option_entry;
+	colour rgbcolour; /* RRGGBB */
 
-	for (i = 0; i != option_table_entries; i++) {
-		fprintf(stderr, "%s:", option_table[i].key);
-		switch (option_table[i].type) {
-			case OPTION_BOOL:
-				fprintf(stderr, "%c",
-					*((bool *) option_table[i].p) ?
-						'1' : '0');
+	if (option >= option_table_entries)
+		return -1;
+
+	option_entry = option_table + option;
+
+	while((slen < size) && (fmt[fmtc] != 0)) {
+		if (fmt[fmtc] == '%') {
+			fmtc++;
+			switch (fmt[fmtc]) {
+			case 'k':
+				slen += snprintf(string + slen, size - slen, "%s", option_entry->key);
 				break;
 
-			case OPTION_INTEGER:
-				fprintf(stderr, "%i",
-					*((int *) option_table[i].p));
+			case 't':
+				switch (option_entry->type) {
+				case OPTION_BOOL:
+					slen += snprintf(string + slen,
+							 size - slen,
+							 "boolean");
+					break;
+
+				case OPTION_INTEGER:
+					slen += snprintf(string + slen,
+							 size - slen,
+							 "integer");
+					break;
+
+				case OPTION_COLOUR:
+					slen += snprintf(string + slen,
+							 size - slen,
+							 "colour");
+					break;
+
+				case OPTION_STRING:
+					slen += snprintf(string + slen,
+							 size - slen,
+							 "string");
+					break;
+
+				}
 				break;
 
-			case OPTION_COLOUR:
-				rgbcolour = ((0x000000FF | *((colour *)
-						option_table[i].p)) << 16) &
+
+			case 'V':
+				switch (option_entry->type) {
+				case OPTION_BOOL:
+					slen += snprintf(string + slen, size - slen, "%s", *((bool *)option_entry->p) ? "true" : "false");
+					break;
+
+				case OPTION_INTEGER:
+					slen += snprintf(string + slen, size - slen, "%i", *((int *)option_entry->p));
+					break;
+
+				case OPTION_COLOUR:
+					rgbcolour = ((0x000000FF | *((colour *)
+								     option_entry->p)) << 16) &
 						((0x0000FF00 | *((colour *)
-						option_table[i].p)) << 0) &
+								 option_entry->p)) << 0) &
 						((0x00FF0000 | *((colour *)
-						option_table[i].p)) >> 16);
-				fprintf(stderr, "%x", rgbcolour);
+								 option_entry->p)) >> 16);
+					slen += snprintf(string + slen, size - slen, "<span style=\"background-color: #%06x; color: #%06x;\">%x</span>", rgbcolour, (~rgbcolour) & 0xffffff, rgbcolour);
+					break;
+
+				case OPTION_STRING:
+					if (*((char **)option_entry->p) != NULL) {
+						slen += snprintf(string + slen, size - slen, "%s", *((char **)option_entry->p));
+					} else {
+						slen += snprintf(string + slen,
+								 size - slen,
+								 "<span class=\"null-content\">NULL</span>");
+					}
+					break;
+				}
 				break;
 
-			case OPTION_STRING:
-				if (*((char **) option_table[i].p))
-					fprintf(stderr, "%s",
-						*((char **) option_table[i].p));
+			case 'v':
+				switch (option_entry->type) {
+				case OPTION_BOOL:
+					slen += snprintf(string + slen, size - slen, "%c", *((bool *)option_entry->p) ? '1' : '0');
+					break;
+
+				case OPTION_INTEGER:
+					slen += snprintf(string + slen, size - slen, "%i", *((int *)option_entry->p));
+					break;
+
+				case OPTION_COLOUR:
+					rgbcolour = ((0x000000FF | *((colour *)
+								     option_entry->p)) << 16) &
+						((0x0000FF00 | *((colour *)
+								 option_entry->p)) << 0) &
+						((0x00FF0000 | *((colour *)
+								 option_entry->p)) >> 16);
+					slen += snprintf(string + slen, size - slen, "%x", rgbcolour);
+					break;
+
+				case OPTION_STRING:
+					if (*((char **)option_entry->p) != NULL) {
+						slen += snprintf(string + slen, size - slen, "%s", *((char **)option_entry->p));
+					}
+
+					break;
+				}
 				break;
+			}
+			fmtc++;
+		} else {
+			string[slen] = fmt[fmtc];
+			slen++;
+			fmtc++;
 		}
-		fprintf(stderr, "\n");
 	}
+	return slen;
+}
+
+/* exported interface documented in options.h */
+void options_dump(FILE *outf)
+{
+	char buffer[256];
+	int opt_loop = 0;
+	int res;
+
+	do {
+		res = snoptionf(buffer, sizeof buffer, opt_loop, "%k:%v\n");
+		if (res > 0) {
+			fprintf(outf, "%s", buffer);
+		}
+		opt_loop++;
+	} while (res > 0);
 }

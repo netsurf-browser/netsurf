@@ -36,10 +36,12 @@
 #define _NETSURF_DESKTOP_OPTIONS_H_
 
 #include <stdbool.h>
+#include <stdio.h>
 #include "desktop/plot_style.h"
 
-enum { OPTION_HTTP_PROXY_AUTH_NONE = 0, OPTION_HTTP_PROXY_AUTH_BASIC = 1,
-		OPTION_HTTP_PROXY_AUTH_NTLM = 2 };
+enum { OPTION_HTTP_PROXY_AUTH_NONE = 0,
+       OPTION_HTTP_PROXY_AUTH_BASIC = 1,
+       OPTION_HTTP_PROXY_AUTH_NTLM = 2 };
 
 extern bool option_http_proxy;
 extern char *option_http_proxy_host;
@@ -143,8 +145,48 @@ extern colour option_sys_colour_WindowFrame;
 extern colour option_sys_colour_WindowText;
 
 
+/**
+ * Read options from a file.
+ *
+ * \param  path  name of file to read options from
+ *
+ * Option variables corresponding to lines in the file are updated. Missing
+ * options are unchanged. If the file fails to open, options are unchanged.
+ */
 void options_read(const char *path);
+
+/**
+ * Save options to a file.
+ *
+ * \param  path  name of file to write options to
+ *
+ * Errors are ignored.
+ */
 void options_write(const char *path);
-void options_dump(void);
+
+/**
+ * Dump user options to stream
+ *
+ * \param outf output stream to dump options to.
+ */
+void options_dump(FILE *outf);
+
+/**
+ * Fill a buffer with an option using a format.
+ *
+ * The format string is copied into the output buffer with the
+ * following replaced:
+ * %k - The options key
+ * %t - The options type
+ * %V - value - HTML type formatting
+ * %v - value - plain formatting
+ *
+ * \param string The buffer in which to place teh results.
+ * \param size The size of the string buffer.
+ * \param option The opaque option number.
+ * \param fmt The format string.
+ * \return The number of bytes written to \a string or -1 on error
+ */
+int snoptionf(char *string, size_t size, unsigned int option, const char *fmt);
 
 #endif

@@ -175,6 +175,120 @@ fetch_about_credits_handler_aborted:
 	return false;
 }
 
+static bool fetch_about_config_handler(struct fetch_about_context *ctx)
+{
+	char buffer[1024];
+	int code = 200;
+	int slen;
+	unsigned int opt_loop = 0;
+	int res = 0;
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, code);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
+		goto fetch_about_config_handler_aborted;
+
+	slen = snprintf(buffer, sizeof buffer, 
+			"<html><head><title>NetSurf Browser Config</title>"
+			"<style type=\"text/css\">"
+			".null-content { font-style: italic }"
+			"</style></head>"
+			"<body><h1>NetSurf Browser Config</h1>"
+			"<table><tr><th></th><th></th><th></th></tr>");
+
+	do {
+		res = snoptionf(buffer + slen, sizeof buffer - slen, opt_loop, 
+				"<tr><td>%k</td><td>%t</td><td>%V</td></tr>");
+		if (res <= 0) 
+			break; /* last option */
+
+		if (res >= (sizeof buffer - slen)) {
+			/* last entry would not fit in buffer, submit buffer */
+			if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
+					slen, FETCH_ERROR_NO_ERROR))
+				goto fetch_about_config_handler_aborted;
+			slen = 0;
+		} else {
+			/* normal addition */
+			slen += res;
+			opt_loop++;
+		}
+	} while (res > 0);
+
+	slen += snprintf(buffer + slen, sizeof buffer - slen, 
+			 "</table></body></html>");
+
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
+			FETCH_ERROR_NO_ERROR))
+		goto fetch_about_config_handler_aborted;
+
+	fetch_about_send_callback(FETCH_FINISHED, ctx, 0, 0,
+			FETCH_ERROR_NO_ERROR);
+
+	return true;
+
+fetch_about_config_handler_aborted:
+	return false;
+}
+
+/** Generate the text of a Choices file which represents the current
+ * in use options. 
+ */
+static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
+{
+	char buffer[1024];
+	int code = 200;
+	int slen;
+	unsigned int opt_loop = 0;
+	int res = 0;
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, code);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/plain"))
+		goto fetch_about_choices_handler_aborted;
+
+	slen = snprintf(buffer, sizeof buffer, 
+		 "# Automatically generated current NetSurf browser Choices\n");
+
+	do {
+		res = snoptionf(buffer + slen, 
+				sizeof buffer - slen, 
+				opt_loop, 
+				"%k:%v\n");
+		if (res <= 0) 
+			break; /* last option */
+
+		if (res >= (sizeof buffer - slen)) {
+			/* last entry would not fit in buffer, submit buffer */
+			if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
+					slen, FETCH_ERROR_NO_ERROR))
+				goto fetch_about_choices_handler_aborted;
+			slen = 0;
+		} else {
+			/* normal addition */
+			slen += res;
+			opt_loop++;
+		}
+	} while (res > 0);
+
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
+			FETCH_ERROR_NO_ERROR))
+		goto fetch_about_choices_handler_aborted;
+
+	fetch_about_send_callback(FETCH_FINISHED, ctx, 0, 0,
+			FETCH_ERROR_NO_ERROR);
+
+	return true;
+
+fetch_about_choices_handler_aborted:
+	return false;
+}
+
+
 struct about_handlers {
 	const char *name;
 	fetch_about_handler handler;
@@ -182,6 +296,8 @@ struct about_handlers {
 
 struct about_handlers about_handler_list[] = { 
 	{ "credits", fetch_about_credits_handler },
+	{ "config", fetch_about_config_handler },
+	{ "Choices", fetch_about_choices_handler },
 	{ "blank", fetch_about_blank_handler } /* The default */
 };
 
