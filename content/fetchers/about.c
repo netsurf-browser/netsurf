@@ -199,7 +199,8 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"<table><tr><th></th><th></th><th></th></tr>");
 
 	do {
-		res = snoptionf(buffer + slen, sizeof buffer - slen, opt_loop, 
+		res = options_snoptionf(buffer + slen, sizeof buffer - slen,
+				opt_loop,
 				"<tr><td>%k</td><td>%t</td><td>%V</td></tr>");
 		if (res <= 0) 
 			break; /* last option */
@@ -255,7 +256,7 @@ static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 		 "# Automatically generated current NetSurf browser Choices\n");
 
 	do {
-		res = snoptionf(buffer + slen, 
+		res = options_snoptionf(buffer + slen, 
 				sizeof buffer - slen, 
 				opt_loop, 
 				"%k:%v\n");

@@ -187,6 +187,8 @@ void options_dump(FILE *outf);
  * \param fmt The format string.
  * \return The number of bytes written to \a string or -1 on error
  */
-int snoptionf(char *string, size_t size, unsigned int option, const char *fmt);
+int options_snoptionf(char *string, size_t size, unsigned int option,
+		const char *fmt);
 
 #endif
+

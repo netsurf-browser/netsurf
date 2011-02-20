@@ -468,7 +468,8 @@ void options_write(const char *path)
 
 
 /* exported interface documented in options.h */
-int snoptionf(char *string, size_t size, unsigned int option, const char *fmt)
+int options_snoptionf(char *string, size_t size, unsigned int option,
+		const char *fmt)
 {
 	size_t slen = 0; /* current output string length */
 	int fmtc = 0; /* current index into format string */
@@ -597,7 +598,8 @@ void options_dump(FILE *outf)
 	int res;
 
 	do {
-		res = snoptionf(buffer, sizeof buffer, opt_loop, "%k:%v\n");
+		res = options_snoptionf(buffer, sizeof buffer, opt_loop,
+				"%k:%v\n");
 		if (res > 0) {
 			fprintf(outf, "%s", buffer);
 		}
