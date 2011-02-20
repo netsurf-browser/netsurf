@@ -205,7 +205,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 		if (res <= 0) 
 			break; /* last option */
 
-		if (res >= (sizeof buffer - slen)) {
+		if (res >= (int) (sizeof buffer - slen)) {
 			/* last entry would not fit in buffer, submit buffer */
 			if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
 					slen, FETCH_ERROR_NO_ERROR))
@@ -263,7 +263,7 @@ static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 		if (res <= 0) 
 			break; /* last option */
 
-		if (res >= (sizeof buffer - slen)) {
+		if (res >= (int) (sizeof buffer - slen)) {
 			/* last entry would not fit in buffer, submit buffer */
 			if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
 					slen, FETCH_ERROR_NO_ERROR))
