@@ -74,6 +74,7 @@
 #include "riscos/gui.h"
 #include "riscos/help.h"
 #include "riscos/hotlist.h"
+#include "riscos/iconbar.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/options.h"
@@ -86,6 +87,7 @@
 #include "riscos/sslcert.h"
 #include "riscos/textselection.h"
 #include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/uri.h"
 #include "riscos/url_protocol.h"
@@ -93,6 +95,7 @@
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/wimputils.h"
+#include "riscos/window.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -249,7 +252,6 @@ static struct
 static void ro_gui_create_dirs(void);
 static void ro_gui_create_dir(char *path);
 static void ro_gui_choose_language(void);
-static void ro_gui_icon_bar_create(void);
 static void ro_gui_signal(int sig);
 static void ro_gui_cleanup(void);
 static void ro_gui_handle_event(wimp_event_no event, wimp_block *block);
@@ -257,7 +259,6 @@ static void ro_gui_null_reason_code(void);
 static void ro_gui_close_window_request(wimp_close *close);
 static void ro_gui_pointer_leaving_window(wimp_leaving *leaving);
 static void ro_gui_pointer_entering_window(wimp_entering *entering);
-static bool ro_gui_icon_bar_click(wimp_pointer *pointer);
 static void ro_gui_check_resolvers(void);
 static void ro_gui_drag_end(wimp_dragged *drag);
 static void ro_gui_keypress(wimp_key *key);
@@ -349,7 +350,7 @@ static void gui_init(int argc, char** argv)
 		option_theme_path = strdup("NetSurf:Themes");
 	if (!option_theme_save)
 		option_theme_save = strdup(CHOICES_PREFIX "Themes");
-	
+
 	tree_set_icon_dir(strdup("NetSurf:Resources.Icons"));
 
 	if (!option_theme || ! option_toolbar_browser ||
@@ -479,12 +480,16 @@ static void gui_init(int argc, char** argv)
 	ro_gui_query_init();
 	/* Initialise the history subsystem */
 	ro_gui_history_init();
+	/* Initialise toolbars */
+	ro_toolbar_init();
+	/* Initialise browser windows */
+	ro_gui_window_initialise();
 
 	/* Done with the templates file */
 	wimp_close_template();
 
-	/* Create Iconbar icon */
-	ro_gui_icon_bar_create();
+	/* Create Iconbar icon and menus */
+	ro_gui_iconbar_initialise();
 
 	/* Finally, check Inet$Resolvers for sanity */
 	ro_gui_check_resolvers();
@@ -617,31 +622,6 @@ const char *ro_gui_default_language(void)
 	if (is_dir(path))
 		return lang;
 	return "en";
-}
-
-
-/**
- * Create an iconbar icon.
- */
-
-void ro_gui_icon_bar_create(void)
-{
-	os_error *error;
-
-	wimp_icon_create icon = {
-		wimp_ICON_BAR_RIGHT,
-		{ { 0, 0, 68, 68 },
-		wimp_ICON_SPRITE | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED |
-				(wimp_BUTTON_CLICK << wimp_ICON_BUTTON_TYPE_SHIFT),
-		{ "!netsurf" } } };
-	error = xwimp_create_icon(&icon, 0);
-	if (error) {
-		LOG(("xwimp_create_icon: 0x%x: %s",
-				error->errnum, error->errmess));
-		die(error->errmess);
-	}
-	ro_gui_wimp_event_register_mouse_click(wimp_ICON_BAR,
-			ro_gui_icon_bar_click);
 }
 
 
@@ -1234,43 +1214,6 @@ void ro_gui_pointer_entering_window(wimp_entering *entering)
 
 
 /**
- * Handle Mouse_Click events on the iconbar icon.
- */
-
-bool ro_gui_icon_bar_click(wimp_pointer *pointer)
-{
-	char url[80];
-	int key_down = 0;
-
-	if (pointer->buttons == wimp_CLICK_MENU) {
-		ro_gui_menu_create(iconbar_menu, pointer->pos.x,
-				   96 + iconbar_menu_height, wimp_ICON_BAR,
-				   true);
-
-	} else if (pointer->buttons == wimp_CLICK_SELECT) {
-		if (option_homepage_url && option_homepage_url[0]) {
-			browser_window_create(option_homepage_url, NULL, 0,
-					true, false);
-		} else {
-			snprintf(url, sizeof url,
-					"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-					option_language);
-			browser_window_create(url, NULL, 0, true, false);
-		}
-
-	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-		xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
-		if (key_down == 0)
-			ro_gui_menu_handle_action(pointer->w, HOTLIST_SHOW,
-					false);
-		else
-			ro_gui_debugwin_open();
-	}
-	return true;
-}
-
-
-/**
  * Handle User_Drag_Box events.
  */
 
@@ -1302,8 +1245,8 @@ void ro_gui_drag_end(wimp_dragged *drag)
 			ro_treeview_drag_end(drag);
 			break;
 
-		case GUI_DRAG_TOOLBAR_CONFIG:
-			ro_gui_theme_toolbar_editor_drag_end(drag);
+		case GUI_DRAG_BUTTONBAR:
+			ro_gui_button_bar_drag_end(drag);
 			break;
 
 		case GUI_DRAG_FRAME:
@@ -1376,7 +1319,7 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 			break;
 
 		case message_MENUS_DELETED:
-			ro_gui_menu_closed(true);
+			ro_gui_menu_closed();
 			break;
 
 		case message_CLAIM_ENTITY:

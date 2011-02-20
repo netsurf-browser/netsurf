@@ -30,16 +30,8 @@ void ro_gui_cookies_preinitialise(void);
 void ro_gui_cookies_postinitialise(void);
 bool ro_gui_cookies_check_window(wimp_w window);
 bool ro_gui_cookies_check_menu(wimp_menu *menu);
-bool ro_gui_cookies_toolbar_click(wimp_pointer *pointer);
-
-void ro_gui_cookies_menu_prepare(wimp_w window, wimp_menu *menu);
-bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
-		wimp_selection *selection, menu_action action);
-void ro_gui_cookies_menu_warning(wimp_w window, wimp_menu *menu,
-		wimp_selection *selection, menu_action action);
 
 void ro_gui_cookies_open(void);
-void ro_gui_cookies_update_theme(bool full_update);
 
 #endif
 

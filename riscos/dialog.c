@@ -44,7 +44,7 @@
 #include "riscos/options.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
@@ -86,6 +86,9 @@ static struct {
 
 
 static bool ro_gui_dialog_openurl_apply(wimp_w w);
+static bool ro_gui_dialog_open_url_menu_prepare(wimp_w w, wimp_i i,
+		wimp_menu *menu, wimp_pointer *pointer);
+
 static bool ro_gui_dialog_zoom_apply(wimp_w w);
 
 /**
@@ -162,10 +165,12 @@ void ro_gui_dialog_init(void)
 	/* open URL */
 	dialog_openurl = ro_gui_dialog_create("open_url");
 	ro_gui_wimp_event_register_menu_gright(dialog_openurl, ICON_OPENURL_URL,
-			ICON_OPENURL_MENU, url_suggest_menu);
+			ICON_OPENURL_MENU, ro_gui_url_suggest_menu);
 	ro_gui_wimp_event_register_cancel(dialog_openurl, ICON_OPENURL_CANCEL);
 	ro_gui_wimp_event_register_ok(dialog_openurl, ICON_OPENURL_OPEN,
 			ro_gui_dialog_openurl_apply);
+	ro_gui_wimp_event_register_menu_prepare(dialog_openurl,
+			ro_gui_dialog_open_url_menu_prepare);
 	ro_gui_wimp_event_set_help_prefix(dialog_openurl, "HelpOpenURL");
 
 	/* scale view */
@@ -426,8 +431,8 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 	open = state.flags & wimp_WINDOW_OPEN;
 	if (!open) {
 	  	/* cancel any editing */
-	  	if ((toolbar) && (toolbar->editor))
-	  		ro_gui_theme_toggle_edit(toolbar);
+	  	if (ro_toolbar_get_editing(toolbar))
+	  		ro_toolbar_toggle_edit(toolbar);
 
 		/* move to the centre */
 		ro_gui_screen_size(&screen_width, &screen_height);
@@ -443,7 +448,7 @@ bool ro_gui_dialog_open_top(wimp_w w, struct toolbar *toolbar,
 		state.xscroll = 0;
 		state.yscroll = 0;
 		if (toolbar)
-			state.yscroll = ro_gui_theme_toolbar_height(toolbar);
+			state.yscroll = ro_toolbar_height(toolbar);
 	}
 
 	/* open the window at the top of the stack */
@@ -726,4 +731,29 @@ void ro_gui_dialog_prepare_open_url(void)
 	ro_gui_set_icon_shaded_state(dialog_openurl,
 			ICON_OPENURL_MENU, !ro_gui_url_suggest_prepare_menu());
 	ro_gui_wimp_event_memorise(dialog_openurl);
+}
+
+
+/**
+ * Callback to prepare menus in the Open URL dialog.  At present, this
+ * only has to handle the URL Suggestion pop-up.
+ *
+ * \param w		The window handle owning the menu.
+ * \param i		The icon handle owning the menu.
+ * \param *menu		The menu to be prepared.
+ * \param *pointer	The associated mouse click event block, or NULL
+ *			on an Adjust-click re-opening.
+ * \return		true if the event was handled; false if not.
+ */
+
+bool ro_gui_dialog_open_url_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_pointer *pointer)
+{
+	if (menu != ro_gui_url_suggest_menu || i != ICON_OPENURL_MENU)
+		return false;
+
+	if (pointer != NULL)
+		return ro_gui_url_suggest_prepare_menu();
+
+	return true;
 }

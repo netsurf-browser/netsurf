@@ -63,7 +63,7 @@
 #include "riscos/gui.h"
 #include "riscos/options.h"
 #include "riscos/plugin.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -362,8 +362,7 @@ void plugin_open(struct content *c, struct browser_window *bw,
 
 		pmo.bbox.x0 = 10;
 		/* avoid toolbar */
-		pmo.bbox.y1 = -10 - (bw->window->toolbar ?
-					bw->window->toolbar->height : 0);
+		pmo.bbox.y1 = -10 - ro_toolbar_height(bw->window->toolbar);
 		pmo.bbox.x1 = (state.visible.x1 - state.visible.x0) - 10;
 		pmo.bbox.y0 = (state.visible.y0 - state.visible.y1) - 10;
 	}
@@ -501,8 +500,8 @@ void plugin_reformat(struct content *c, int width, int height)
 		/* standalone */
 		x = 10 / 2;
 		/* avoid toolbar */
-		y = (10 + (c->data.plugin.bw->window->toolbar ?
-			c->data.plugin.bw->window->toolbar->height : 0)) / 2;
+		y = (10 + ro_toolbar_height(
+				c->data.plugin.bw->window->toolbar0)) / 2;
 	}
 
 	pmr.size = 52;

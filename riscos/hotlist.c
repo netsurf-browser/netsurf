@@ -39,7 +39,7 @@
 #include "riscos/menus.h"
 #include "riscos/options.h"
 #include "riscos/save.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -47,6 +47,22 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"
+
+static void ro_gui_hotlist_toolbar_update_buttons(void);
+static void ro_gui_hotlist_toolbar_save_buttons(char *config);
+static bool ro_gui_hotlist_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_pointer *pointer);
+static void ro_gui_hotlist_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+static bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+static void ro_gui_hotlist_toolbar_click(button_bar_action action);
+
+struct ro_treeview_callbacks ro_hotlist_treeview_callbacks = {
+	ro_gui_hotlist_toolbar_click,
+	ro_gui_hotlist_toolbar_update_buttons,
+	ro_gui_hotlist_toolbar_save_buttons
+};
 
 /* The RISC OS hotlist window, toolbar and treeview data. */
 
@@ -79,20 +95,29 @@ void ro_gui_hotlist_postinitialise(void)
 {
 	/* Create our toolbar. */
 
-	hotlist_window.toolbar = ro_gui_theme_create_toolbar(NULL,
-			THEME_HOTLIST_TOOLBAR);
-	if (hotlist_window.toolbar)
-		ro_gui_theme_attach_toolbar(hotlist_window.toolbar,
-				hotlist_window.window);
+	hotlist_window.toolbar = ro_toolbar_create(NULL, hotlist_window.window,
+			THEME_STYLE_HOTLIST_TOOLBAR, TOOLBAR_FLAGS_NONE,
+			ro_treeview_get_toolbar_callbacks(), NULL,
+			"HelpHotToolbar");
+	if (hotlist_window.toolbar != NULL) {
+		ro_toolbar_add_buttons(hotlist_window.toolbar,
+				hotlist_toolbar_buttons,
+				option_toolbar_hotlist);
+		ro_toolbar_rebuild(hotlist_window.toolbar);
+	}
 
 	/* Create the treeview with the window and toolbar. */
 
 	hotlist_window.tv = ro_treeview_create(hotlist_window.window,
-			hotlist_window.toolbar, hotlist_get_tree_flags());
+			hotlist_window.toolbar, &ro_hotlist_treeview_callbacks,
+			hotlist_get_tree_flags());
 	if (hotlist_window.tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		return;
 	}
+
+	ro_toolbar_update_client_data(hotlist_window.toolbar,
+			hotlist_window.tv);
 
 	/* Initialise the hotlist into the tree. */
 
@@ -133,10 +158,14 @@ void ro_gui_hotlist_postinitialise(void)
 
 	hotlist_window.menu = ro_gui_menu_define_menu(&hotlist_definition);
 
-	ro_gui_wimp_event_register_window_menu(hotlist_window.window,
-			hotlist_window.menu, ro_gui_hotlist_menu_prepare,
-			ro_gui_hotlist_menu_select, NULL,
-			ro_gui_hotlist_menu_warning, false);
+	ro_gui_wimp_event_register_menu(hotlist_window.window,
+			hotlist_window.menu, false, false);
+	ro_gui_wimp_event_register_menu_prepare(hotlist_window.window,
+			ro_gui_hotlist_menu_prepare);
+	ro_gui_wimp_event_register_menu_selection(hotlist_window.window,
+			ro_gui_hotlist_menu_select);
+	ro_gui_wimp_event_register_menu_warning(hotlist_window.window,
+			ro_gui_hotlist_menu_warning);
 }
 
 
@@ -149,82 +178,86 @@ void ro_gui_hotlist_open(void)
 {
 	tree_set_redraw(ro_treeview_get_tree(hotlist_window.tv), true);
 
+	ro_gui_hotlist_toolbar_update_buttons();
+
 	if (!ro_gui_dialog_open_top(hotlist_window.window,
 			hotlist_window.toolbar, 600, 800)) {
-
-	xwimp_set_caret_position(hotlist_window.window, -1, -100, -100, 32, -1);
-// \todo	ro_gui_theme_process_toolbar(hotlist_window.toolbar, -1);
 		ro_treeview_set_origin(hotlist_window.tv, 0,
-				-(ro_gui_theme_toolbar_height(
-				hotlist_window.toolbar)));
-//		ro_gui_tree_stop_edit(tree);
-//
-//		if (tree->root->child) {
-//			tree_set_node_selected(tree, tree->root, false);
-//			tree_handle_node_changed(tree, tree->root,
-//				false, true);
-//		}
+				-(ro_toolbar_height(hotlist_window.toolbar)));
 	}
 }
 
 /**
- * Handle Mouse Click events on the toolbar.
+ * Handle toolbar button clicks.
  *
- * \param  *pointer		Pointer to the Mouse Click Event block.
- * \return			Return true if click handled; else false.
+ * \param  action		The action to handle
  */
 
-bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer)
+void ro_gui_hotlist_toolbar_click(button_bar_action action)
 {
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return ro_gui_wimp_event_process_window_menu_click(pointer);
+	switch (action) {
+	case TOOLBAR_BUTTON_DELETE:
+		hotlist_delete_selected();
+		break;
 
-	if (hotlist_window.toolbar->editor != NULL) {
-		ro_gui_theme_toolbar_editor_click(hotlist_window.toolbar,
-				pointer);
-		return true;
-	}
+	case TOOLBAR_BUTTON_EXPAND:
+		hotlist_expand_addresses();
+		break;
 
-	switch (pointer->i) {
-	case ICON_TOOLBAR_DELETE:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			hotlist_delete_selected();
-			return true;
-		}
+	case TOOLBAR_BUTTON_COLLAPSE:
+		hotlist_collapse_addresses();
 		break;
-	case ICON_TOOLBAR_EXPAND:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			hotlist_expand_addresses();
-			return true;
-		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-			hotlist_collapse_addresses();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_OPEN:
+		hotlist_expand_directories();
 		break;
-	case ICON_TOOLBAR_OPEN:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			hotlist_expand_directories();
-			return true;
-		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-			hotlist_collapse_directories();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_CLOSE:
+		hotlist_collapse_directories();
 		break;
-	case ICON_TOOLBAR_LAUNCH:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			hotlist_launch_selected();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_LAUNCH:
+		hotlist_launch_selected();
 		break;
-	case ICON_TOOLBAR_CREATE:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			hotlist_add_folder();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_CREATE:
+		hotlist_add_folder();
+		break;
+
+	default:
 		break;
 	}
+}
 
-	return true;
+
+/**
+ * Update the button state in the hotlist toolbar.
+ */
+
+void ro_gui_hotlist_toolbar_update_buttons(void)
+{
+	ro_toolbar_set_button_shaded_state(hotlist_window.toolbar,
+			TOOLBAR_BUTTON_DELETE,
+			!ro_treeview_has_selection(hotlist_window.tv));
+
+	ro_toolbar_set_button_shaded_state(hotlist_window.toolbar,
+			TOOLBAR_BUTTON_LAUNCH,
+			!ro_treeview_has_selection(hotlist_window.tv));
+}
+
+
+/**
+ * Save a new button arrangement in the hotlist toolbar.
+ *
+ * \param *config		The new button configuration string.
+ */
+
+void ro_gui_hotlist_toolbar_save_buttons(char *config)
+{
+	if (option_toolbar_hotlist != NULL)
+		free(option_toolbar_hotlist);
+	option_toolbar_hotlist = config;
+	ro_gui_save_options();
 }
 
 
@@ -233,53 +266,54 @@ bool ro_gui_hotlist_toolbar_click(wimp_pointer *pointer)
  *
  * \param  window		The window owning the menu.
  * \param  *menu		The menu about to be opened.
+ * \param  *pointer		Pointer to the relevant wimp event block, or
+ *				NULL for an Adjust click.
+ * \return			true if the event was handled; else false.
  */
 
-void ro_gui_hotlist_menu_prepare(wimp_w window, wimp_menu *menu)
+bool ro_gui_hotlist_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_pointer *pointer)
 {
 	bool selection;
 
-	if (menu != hotlist_window.menu && menu != tree_toolbar_menu)
-		return;
+	if (menu != hotlist_window.menu)
+		return false;
 
-	if (menu == hotlist_window.menu) {
-		selection = ro_treeview_has_selection(hotlist_window.tv);
+	selection = ro_treeview_has_selection(hotlist_window.tv);
 
-		ro_gui_menu_set_entry_shaded(hotlist_window.menu,
-				TREE_SELECTION, !selection);
-		ro_gui_menu_set_entry_shaded(hotlist_window.menu,
-				TREE_CLEAR_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(hotlist_window.menu,
+			TREE_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(hotlist_window.menu,
+			TREE_CLEAR_SELECTION, !selection);
 
-		ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
-				NULL, NULL, NULL, NULL);
-	}
+	ro_gui_save_prepare(GUI_SAVE_HOTLIST_EXPORT_HTML,
+			NULL, NULL, NULL, NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_BUTTONS,
-			(hotlist_window.toolbar == NULL ||
-			hotlist_window.toolbar->editor != NULL));
+			ro_toolbar_menu_option_shade(hotlist_window.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_BUTTONS,
-			(hotlist_window.toolbar != NULL &&
-			(hotlist_window.toolbar->display_buttons ||
-			(hotlist_window.toolbar->editor != NULL))));
+			ro_toolbar_menu_buttons_tick(hotlist_window.toolbar));
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_EDIT,
-			hotlist_window.toolbar == NULL);
+			ro_toolbar_menu_edit_shade(hotlist_window.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_EDIT,
-			(hotlist_window.toolbar != NULL &&
-			hotlist_window.toolbar->editor != NULL));
+			ro_toolbar_menu_edit_tick(hotlist_window.toolbar));
+
+	return true;
 }
 
 
 /**
  * Handle submenu warnings for the hotlist menu
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu to which the warning applies.
  * \param  *selection		The wimp menu selection data.
  * \param  action		The selected menu action.
  */
 
-void ro_gui_hotlist_menu_warning(wimp_w window, wimp_menu *menu,
+void ro_gui_hotlist_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	/* Do nothing */
@@ -288,19 +322,20 @@ void ro_gui_hotlist_menu_warning(wimp_w window, wimp_menu *menu,
 /**
  * Handle selections from the hotlist menu
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu from which the selection was made.
  * \param  *selection		The wimp menu selection data.
  * \param  action		The selected menu action.
  * \return			true if action accepted; else false.
  */
 
-bool ro_gui_hotlist_menu_select(wimp_w window, wimp_menu *menu,
+bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	switch (action) {
 	case HOTLIST_EXPORT:
-		ro_gui_dialog_open_persistent(window, dialog_saveas, true);
+		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
 	case TREE_NEW_FOLDER:
 		hotlist_add_folder();
@@ -342,33 +377,18 @@ bool ro_gui_hotlist_menu_select(wimp_w window, wimp_menu *menu,
 		hotlist_clear_selection();
 		return true;
 	case TOOLBAR_BUTTONS:
-		hotlist_window.toolbar->display_buttons =
-				!hotlist_window.toolbar->display_buttons;
-		ro_gui_theme_refresh_toolbar(hotlist_window.toolbar);
+		ro_toolbar_set_display_buttons(hotlist_window.toolbar,
+				!ro_toolbar_get_display_buttons(
+					hotlist_window.toolbar));
 		return true;
 	case TOOLBAR_EDIT:
-		ro_gui_theme_toggle_edit(hotlist_window.toolbar);
+		ro_toolbar_toggle_edit(hotlist_window.toolbar);
 		return true;
 	default:
 		return false;
 	}
 
 	return false;
-}
-
-/**
- * Update the theme details of the hotlist window.
- *
- * \param full_update		true to force a full theme change; false to
- *				refresh the toolbar size.
- */
-
-void ro_gui_hotlist_update_theme(bool full_update)
-{
-	if (full_update)
-		ro_treeview_update_theme(hotlist_window.tv);
-	else
-		ro_treeview_update_toolbar(hotlist_window.tv);
 }
 
 /**

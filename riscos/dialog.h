@@ -22,7 +22,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "oslib/wimp.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/gui.h"
 
 void ro_gui_dialog_init(void);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010, 2011 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,22 +17,17 @@
  */
 
 /** \file
- * URL Suggestion Menu (interface).
+ * Browser window handling (interface).
  */
 
-#ifndef _NETSURF_RISCOS_URL_SUGGEST_H_
-#define _NETSURF_RISCOS_URL_SUGGEST_H_
+#include <stdbool.h>
 
-#include "oslib/wimp.h"
+#ifndef _NETSURF_RISCOS_WINDOW_H_
+#define _NETSURF_RISCOS_WINDOW_H_
 
-#define URL_SUGGEST_MAX_URLS 16
+void ro_gui_window_initialise(void);
 
-extern wimp_menu *ro_gui_url_suggest_menu;
-
-bool ro_gui_url_suggest_init(void);
-bool ro_gui_url_suggest_get_menu_available(void);
-bool ro_gui_url_suggest_prepare_menu(void);
-const char *ro_gui_url_suggest_get_selection(wimp_selection *selection);
+bool ro_gui_window_check_menu(wimp_menu *menu);
 
 #endif
 

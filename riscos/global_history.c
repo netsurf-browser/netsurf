@@ -38,7 +38,7 @@
 #include "riscos/menus.h"
 #include "riscos/options.h"
 #include "riscos/save.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -46,6 +46,22 @@
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+
+static void ro_gui_global_history_toolbar_update_buttons(void);
+static void ro_gui_global_history_toolbar_save_buttons(char *config);
+static bool ro_gui_global_history_menu_prepare(wimp_w w, wimp_i i,
+		wimp_menu *menu, wimp_pointer *pointer);
+static void ro_gui_global_history_menu_warning(wimp_w w, wimp_i i,
+		wimp_menu *menu, wimp_selection *selection, menu_action action);
+static bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i,
+		wimp_menu *menu, wimp_selection *selection, menu_action action);
+static void ro_gui_global_history_toolbar_click(button_bar_action action);
+
+struct ro_treeview_callbacks ro_global_history_treeview_callbacks = {
+	ro_gui_global_history_toolbar_click,
+	ro_gui_global_history_toolbar_update_buttons,
+	ro_gui_global_history_toolbar_save_buttons
+};
 
 /* The RISC OS global history window, toolbar and treeview data */
 
@@ -76,25 +92,34 @@ void ro_gui_global_history_preinitialise(void)
 
 void ro_gui_global_history_postinitialise(void)
 {
-
 	/* Create our toolbar. */
 
-	global_history_window.toolbar = ro_gui_theme_create_toolbar(NULL,
-			THEME_HISTORY_TOOLBAR);
-	if (global_history_window.toolbar)
-		ro_gui_theme_attach_toolbar(global_history_window.toolbar,
-				global_history_window.window);
+	global_history_window.toolbar = ro_toolbar_create(NULL,
+			global_history_window.window,
+			THEME_STYLE_GLOBAL_HISTORY_TOOLBAR, TOOLBAR_FLAGS_NONE,
+			ro_treeview_get_toolbar_callbacks(), NULL,
+			"HelpGHistoryToolbar");
+	if (global_history_window.toolbar != NULL) {
+		ro_toolbar_add_buttons(global_history_window.toolbar,
+				global_history_toolbar_buttons,
+				option_toolbar_history);
+		ro_toolbar_rebuild(global_history_window.toolbar);
+	}
 
 	/* Create the treeview with the window and toolbar. */
 
 	global_history_window.tv =
 			ro_treeview_create(global_history_window.window,
 			global_history_window.toolbar,
+			&ro_global_history_treeview_callbacks,
 			history_global_get_tree_flags());
 	if (global_history_window.tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		return;
 	}
+
+	ro_toolbar_update_client_data(global_history_window.toolbar,
+			global_history_window.tv);
 
 	/* Initialise the global history into the tree. */
 
@@ -130,11 +155,14 @@ void ro_gui_global_history_postinitialise(void)
 	global_history_window.menu = ro_gui_menu_define_menu(
 			&global_history_definition);
 
-	ro_gui_wimp_event_register_window_menu(global_history_window.window,
-			global_history_window.menu,
-			ro_gui_global_history_menu_prepare,
-			ro_gui_global_history_menu_select, NULL,
-			ro_gui_global_history_menu_warning, false);
+	ro_gui_wimp_event_register_menu(global_history_window.window,
+			global_history_window.menu, false, false);
+	ro_gui_wimp_event_register_menu_prepare(global_history_window.window,
+			ro_gui_global_history_menu_prepare);
+	ro_gui_wimp_event_register_menu_selection(global_history_window.window,
+			ro_gui_global_history_menu_select);
+	ro_gui_wimp_event_register_menu_warning(global_history_window.window,
+			ro_gui_global_history_menu_warning);
 }
 
 /**
@@ -145,120 +173,143 @@ void ro_gui_global_history_open(void)
 {
 	tree_set_redraw(ro_treeview_get_tree(global_history_window.tv), true);
 
+	ro_gui_global_history_toolbar_update_buttons();
+
 	if (!ro_gui_dialog_open_top(global_history_window.window,
 			global_history_window.toolbar, 600, 800)) {
 		ro_treeview_set_origin(global_history_window.tv, 0,
-				-(ro_gui_theme_toolbar_height(
+				-(ro_toolbar_height(
 				global_history_window.toolbar)));
 	}
 }
 
 /**
- * Handle Mouse Click events on the toolbar.
+ * Handle toolbar button clicks.
  *
- * \param  *pointer		Pointer to the Mouse Click Event block.
- * \return			Return true if click handled; else false.
+ * \param  action		The action to handle
  */
 
-bool ro_gui_global_history_toolbar_click(wimp_pointer *pointer)
+void ro_gui_global_history_toolbar_click(button_bar_action action)
 {
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return ro_gui_wimp_event_process_window_menu_click(pointer);
+	switch (action) {
+	case TOOLBAR_BUTTON_DELETE:
+		history_global_delete_selected();
+		break;
 
-	if (global_history_window.toolbar->editor != NULL) {
-		ro_gui_theme_toolbar_editor_click(global_history_window.toolbar,
-				pointer);
-		return true;
-	}
+	case TOOLBAR_BUTTON_EXPAND:
+		history_global_expand_addresses();
+		break;
 
-	switch (pointer->i) {
-	case ICON_TOOLBAR_DELETE:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			history_global_delete_selected();
-			return true;
-		}
+	case TOOLBAR_BUTTON_COLLAPSE:
+		history_global_collapse_addresses();
 		break;
-	case ICON_TOOLBAR_EXPAND:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			history_global_expand_addresses();
-			return true;
-		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-			history_global_collapse_addresses();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_OPEN:
+		history_global_expand_directories();
 		break;
-	case ICON_TOOLBAR_OPEN:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			history_global_expand_directories();
-			return true;
-		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-			history_global_collapse_directories();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_CLOSE:
+		history_global_collapse_directories();
 		break;
-	case ICON_TOOLBAR_LAUNCH:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			history_global_launch_selected();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_LAUNCH:
+		history_global_launch_selected();
+		break;
+
+	default:
 		break;
 	}
+}
 
-	return true;
+
+/**
+ * Update the button state in the global history toolbar.
+ */
+
+void ro_gui_global_history_toolbar_update_buttons(void)
+{
+	ro_toolbar_set_button_shaded_state(global_history_window.toolbar,
+			TOOLBAR_BUTTON_DELETE,
+			!ro_treeview_has_selection(global_history_window.tv));
+
+	ro_toolbar_set_button_shaded_state(global_history_window.toolbar,
+			TOOLBAR_BUTTON_LAUNCH,
+			!ro_treeview_has_selection(global_history_window.tv));
+}
+
+
+/**
+ * Save a new button arrangement in the global history toolbar.
+ *
+ * \param *config		The new button configuration string.
+ */
+
+void ro_gui_global_history_toolbar_save_buttons(char *config)
+{
+	if (option_toolbar_history != NULL)
+		free(option_toolbar_history);
+	option_toolbar_history = config;
+	ro_gui_save_options();
 }
 
 
 /**
  * Prepare the global history menu for opening
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu about to be opened.
+ * \param  *pointer		Pointer to the relevant wimp event block, or
+ *				NULL for an Adjust click.
+ * \return			true if the event was handled; else false.
  */
 
-void ro_gui_global_history_menu_prepare(wimp_w window, wimp_menu *menu)
+bool ro_gui_global_history_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_pointer *pointer)
 {
 	bool selection;
 
-	if (menu != global_history_window.menu && menu != tree_toolbar_menu)
-		return;
+	if (menu != global_history_window.menu)
+		return false;
 
-	if (menu == global_history_window.menu) {
-		selection = ro_treeview_has_selection(global_history_window.tv);
+	selection = ro_treeview_has_selection(global_history_window.tv);
 
-		ro_gui_menu_set_entry_shaded(global_history_window.menu,
-				TREE_SELECTION, !selection);
-		ro_gui_menu_set_entry_shaded(global_history_window.menu,
-				TREE_CLEAR_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(global_history_window.menu,
+			TREE_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(global_history_window.menu,
+			TREE_CLEAR_SELECTION, !selection);
 
-		ro_gui_save_prepare(GUI_SAVE_HISTORY_EXPORT_HTML,
-				NULL, NULL, NULL, NULL);
-	}
+	ro_gui_save_prepare(GUI_SAVE_HISTORY_EXPORT_HTML,
+			NULL, NULL, NULL, NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_BUTTONS,
-			(global_history_window.toolbar == NULL ||
-			global_history_window.toolbar->editor));
+			ro_toolbar_menu_option_shade(
+				global_history_window.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_BUTTONS,
-			(global_history_window.toolbar != NULL &&
-			(global_history_window.toolbar->display_buttons ||
-			(global_history_window.toolbar->editor))));
+			ro_toolbar_menu_buttons_tick(
+				global_history_window.toolbar));
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_EDIT,
-			global_history_window.toolbar == NULL);
+			ro_toolbar_menu_edit_shade(
+				global_history_window.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_EDIT,
-			(global_history_window.toolbar != NULL &&
-			global_history_window.toolbar->editor));
+			ro_toolbar_menu_edit_tick(
+				global_history_window.toolbar));
+
+	return true;
 }
 
 /**
  * Handle submenu warnings for the global_hostory menu
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu to which the warning applies.
  * \param  *selection		The wimp menu selection data.
  * \param  action		The selected menu action.
  */
 
-void ro_gui_global_history_menu_warning(wimp_w window, wimp_menu *menu,
+void ro_gui_global_history_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	/* Do nothing */
@@ -267,19 +318,20 @@ void ro_gui_global_history_menu_warning(wimp_w window, wimp_menu *menu,
 /**
  * Handle selections from the global history menu
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu from which the selection was made.
  * \param  *selection		The wimp menu selection data.
  * \param  action		The selected menu action.
  * \return			true if action accepted; else false.
  */
 
-bool ro_gui_global_history_menu_select(wimp_w window, wimp_menu *menu,
+bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	switch (action) {
 	case HISTORY_EXPORT:
-		ro_gui_dialog_open_persistent(window, dialog_saveas, true);
+		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
 	case TREE_EXPAND_ALL:
 		history_global_expand_all();
@@ -312,33 +364,18 @@ bool ro_gui_global_history_menu_select(wimp_w window, wimp_menu *menu,
 		history_global_clear_selection();
 		return true;
 	case TOOLBAR_BUTTONS:
-		global_history_window.toolbar->display_buttons =
-				!global_history_window.toolbar->display_buttons;
-		ro_gui_theme_refresh_toolbar(global_history_window.toolbar);
+		ro_toolbar_set_display_buttons(global_history_window.toolbar,
+				!ro_toolbar_get_display_buttons(
+					global_history_window.toolbar));
 		return true;
 	case TOOLBAR_EDIT:
-		ro_gui_theme_toggle_edit(global_history_window.toolbar);
+		ro_toolbar_toggle_edit(global_history_window.toolbar);
 		return true;
 	default:
 		return false;
 	}
 
 	return false;
-}
-
-/**
- * Update the theme details of the global history window.
- *
- * \param full_update		true to force a full theme change; false to
- *				refresh the toolbar size.
- */
-
-void ro_gui_global_history_update_theme(bool full_update)
-{
-	if (full_update)
-		ro_treeview_update_theme(global_history_window.tv);
-	else
-		ro_treeview_update_toolbar(global_history_window.tv);
 }
 
 /**

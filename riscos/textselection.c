@@ -30,6 +30,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "riscos/gui.h"
+#include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/save.h"
 #include "riscos/textselection.h"
@@ -260,6 +261,8 @@ bool gui_empty_clipboard(void)
 
 void gui_clear_selection(struct gui_window *g)
 {
+	/* Refresh any open menu, in case it's the browser window menu.  */
+	ro_gui_menu_refresh(0);
 }
 
 
@@ -566,7 +569,7 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 	bw = g->bw;
 	h = bw->current_content;
-	if (h && content_get_type(h) == CONTENT_HTML && 
+	if (h && content_get_type(h) == CONTENT_HTML &&
 			html_get_box_tree(h)) {
 		struct box *box = html_get_box_tree(h);
 

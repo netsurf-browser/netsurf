@@ -149,8 +149,8 @@ void gui_cert_verify(const char *url,
 
 	/* Create the SSL data and build a tree from it. */
 
-	sslcert_window->tv = ro_treeview_create(sslcert_window->pane, NULL,
-			sslcert_get_tree_flags());
+	sslcert_window->tv = ro_treeview_create(sslcert_window->pane,
+			NULL, NULL, sslcert_get_tree_flags());
 	if (sslcert_window->tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		free(sslcert_window);

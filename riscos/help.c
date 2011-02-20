@@ -33,12 +33,13 @@
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/help.h"
+#include "riscos/iconbar.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
-#include "riscos/theme.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
+#include "riscos/window.h"
 #include "utils/messages.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -91,18 +92,18 @@ static os_t help_time = 0;
  */
 void ro_gui_interactive_help_request(wimp_message *message)
 {
-	char message_token[32];
-	char menu_buffer[4];
-	wimp_selection menu_tree;
-	help_full_message_request *message_data;
-	wimp_w window;
-	wimp_i icon;
-	unsigned int index;
-	bool greyed = false;
-	wimp_menu *test_menu;
-	os_error *error;
-	const char *auto_text;
-	int i;
+	char				message_token[32];
+	char				menu_buffer[4];
+	wimp_selection			menu_tree;
+	help_full_message_request	*message_data;
+	wimp_w				window;
+	wimp_i				icon;
+	unsigned int			index;
+	bool				greyed = false;
+	wimp_menu			*test_menu;
+	os_error			*error;
+	const char			*auto_text, *auto_suffix;
+	int				i;
 
 	/* check we aren't turned off */
 	if (!option_interactive_help)
@@ -123,9 +124,15 @@ void ro_gui_interactive_help_request(wimp_message *message)
 
 	/* do the basic window checks */
 	auto_text = ro_gui_wimp_event_get_help_prefix(window);
-	if (auto_text)
-		sprintf(message_token, "%s%i", auto_text, (int)icon);
-	else if (window == wimp_ICON_BAR)
+	if (auto_text != NULL) {
+		auto_suffix = ro_gui_wimp_event_get_help_suffix(window, icon,
+				&message_data->pos, message_data->buttons);
+
+		if (auto_suffix == NULL)
+			sprintf(message_token, "%s%i", auto_text, (int)icon);
+		else
+			sprintf(message_token, "%s%s", auto_text, auto_suffix);
+	} else if (window == wimp_ICON_BAR)
 		sprintf(message_token, "HelpIconbar");
 	else if (ro_gui_hotlist_check_window(message->data.data_xfer.w)) {
 		i = ro_treeview_get_help(message_data);
@@ -171,9 +178,9 @@ void ro_gui_interactive_help_request(wimp_message *message)
 		return;
 
 	/* get the menu prefix */
-	if (current_menu == iconbar_menu)
+	if (ro_gui_iconbar_check_menu(current_menu))
 		sprintf(message_token, "HelpIconMenu");
-	else if (current_menu == browser_menu)
+	else if (ro_gui_window_check_menu(current_menu))
 		sprintf(message_token, "HelpBrowserMenu");
 	else if (ro_gui_hotlist_check_menu(current_menu))
 		sprintf(message_token, "HelpHotlistMenu");

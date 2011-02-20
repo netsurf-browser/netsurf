@@ -50,8 +50,9 @@
 static bool ro_gui_options_image_click(wimp_pointer *pointer);
 static bool ro_gui_options_image_ok(wimp_w w);
 static void ro_gui_options_image_redraw(wimp_draw *redraw);
-static void ro_gui_options_image_update(wimp_w w, wimp_i i);
-static void ro_gui_options_image_read(wimp_w w, unsigned int *bg, 
+static bool ro_gui_options_image_update(wimp_w w, wimp_i i, wimp_menu *m,
+		wimp_selection *s, menu_action a);
+static void ro_gui_options_image_read(wimp_w w, unsigned int *bg,
 		unsigned int *fg);
 static void ro_gui_options_update_shading(wimp_w w);
 
@@ -86,7 +87,7 @@ bool ro_gui_options_image_initialise(wimp_w w)
 					image_quality_menu->entries[i].
 						data.indirected_text.text, true);
 	}
-	ro_gui_set_icon_decimal(w, IMAGE_SPEED_FIELD, 
+	ro_gui_set_icon_decimal(w, IMAGE_SPEED_FIELD,
 			option_minimum_gif_delay, 2);
 	ro_gui_set_icon_selected_state(w, IMAGE_DISABLE_ANIMATION,
 			!option_animate_images);
@@ -127,9 +128,12 @@ void ro_gui_options_image_finalise(wimp_w w)
 	ro_gui_wimp_event_finalise(w);
 }
 
-void ro_gui_options_image_update(wimp_w w, wimp_i i)
+bool ro_gui_options_image_update(wimp_w w, wimp_i i, wimp_menu *m,
+		wimp_selection *s, menu_action a)
 {
 	ro_gui_redraw_icon(w, IMAGE_CURRENT_DISPLAY);
+
+	return true;
 }
 
 void ro_gui_options_image_redraw(wimp_draw *redraw)
@@ -204,11 +208,11 @@ bool ro_gui_options_image_click(wimp_pointer *pointer)
 	ro_gui_options_image_read(pointer->w, &old_bg, &old_fg);
 	switch (pointer->i) {
 		case IMAGE_DEFAULT_BUTTON:
-			ro_gui_set_icon_string(pointer->w, 
+			ro_gui_set_icon_string(pointer->w,
 					IMAGE_FOREGROUND_FIELD,
 					image_quality_menu->entries[3].
 						data.indirected_text.text, true);
-  			ro_gui_set_icon_string(pointer->w, 
+  			ro_gui_set_icon_string(pointer->w,
 					IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[2].
 						data.indirected_text.text, true);
@@ -228,7 +232,8 @@ bool ro_gui_options_image_click(wimp_pointer *pointer)
 
 	ro_gui_options_image_read(pointer->w, &bg, &fg);
 	if ((bg != old_bg) || (fg != old_fg))
-		ro_gui_options_image_update(pointer->w, pointer->i);
+		ro_gui_options_image_update(pointer->w, pointer->i,
+				NULL, NULL, NO_ACTION);
 
 	return false;
 }
@@ -247,7 +252,7 @@ void ro_gui_options_update_shading(wimp_w w)
 
 bool ro_gui_options_image_ok(wimp_w w)
 {
-	ro_gui_options_image_read(w, (unsigned int *) &option_bg_plot_style, 
+	ro_gui_options_image_read(w, (unsigned int *) &option_bg_plot_style,
 			(unsigned int *) &option_fg_plot_style);
 	option_minimum_gif_delay = ro_gui_get_icon_decimal(w,
 			IMAGE_SPEED_FIELD, 2);

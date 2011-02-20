@@ -1,6 +1,6 @@
 /*
  * Copyright 2005 Richard Wilson <info@tinct.net>
- * Copyright 2010 Stephen Fryatt <stevef@netsurf-browser.org>
+ * Copyright 2010, 2011 Stephen Fryatt <stevef@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -95,16 +95,19 @@ struct event_window {
 	void (*open_window)(wimp_open *open);
 	void (*close_window)(wimp_w w);
 	void (*redraw_window)(wimp_draw *redraw);
-	void (*menu_selection)(wimp_w w, wimp_i i);
+	bool (*menu_prepare)(wimp_w w, wimp_i i, wimp_menu *m,
+			wimp_pointer *p);
+	bool (*menu_selection)(wimp_w w, wimp_i i, wimp_menu *m,
+			wimp_selection *s, menu_action a);
+	void (*menu_warning)(wimp_w w, wimp_i i, wimp_menu *m,
+			wimp_selection *s, menu_action a);
+	void (*menu_close)(wimp_w w, wimp_i i, wimp_menu *m);
 	wimp_menu *window_menu;
 	bool window_menu_auto;
-	void (*window_menu_prepare)(wimp_w w, wimp_menu *m);
-	bool (*window_menu_selection)(wimp_w w, wimp_menu *m,
-			wimp_selection *s, menu_action action);
-	void (*window_menu_close)(wimp_w w, wimp_menu *m);
-	void (*window_menu_warning)(wimp_w w, wimp_menu *m,
-			wimp_selection *s, menu_action action);
+	bool window_menu_iconbar;
 	const char *help_prefix;
+	const char *(*get_help_suffix)(wimp_w w, wimp_i i, os_coord *pos,
+			wimp_mouse_state buttons);
 	void *user_data;
 	struct icon_event *first;
 	struct event_window *next;
@@ -117,7 +120,7 @@ static struct event_window *ro_gui_wimp_event_get_window(wimp_w w);
 static struct event_window *ro_gui_wimp_event_find_window(wimp_w w);
 static struct icon_event *ro_gui_wimp_event_get_event(wimp_w w, wimp_i i,
 		event_type type);
-static void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event);
+static void ro_gui_wimp_event_prepare_gright_menu(wimp_w w, struct icon_event *event);
 static struct event_window *ro_gui_wimp_event_remove_window(wimp_w w);
 
 static struct event_window *ro_gui_wimp_event_windows[WIN_HASH_SIZE];
@@ -243,6 +246,40 @@ bool ro_gui_wimp_event_validate(wimp_w w)
 	return true;
 }
 
+/**
+ * Transfer event data from one window to another. This can be used as an
+ * alternative to ro_gui_wimp_event_finalise() and re-registering, if
+ * events need to continue across a change of window handle.
+ *
+ * All aspects of the registered events MUST remain the same in the new
+ * window!
+ *
+ * \param from		The current window, which is to be deleted.
+ * \param to		The window to which the events should transfer.
+ * \return		true on success; false for an unknown window.
+ */
+
+bool ro_gui_wimp_event_transfer(wimp_w from, wimp_w to)
+{
+	struct event_window	*window;
+	int			h;
+
+	LOG(("Transferring all events from window 0x%x to window 0x%x",
+			(unsigned int) from, (unsigned int) to));
+
+	window = ro_gui_wimp_event_remove_window(from);
+	if (window == NULL || window->w != from)
+		return false;
+
+	h = WIN_HASH(to);
+	window->w = to;
+	window->next = ro_gui_wimp_event_windows[h];
+	ro_gui_wimp_event_windows[h] = window;
+
+	ro_gui_menu_window_changed(from, to);
+
+	return true;
+}
 
 /**
  * Free any resources associated with a window.
@@ -280,6 +317,61 @@ void ro_gui_wimp_event_finalise(wimp_w w)
 
 
 /**
+ * Free any resources associated with a specific icon in a window.
+ *
+ * \param w		The window containing the icon.
+ * \param i		The icon to free resources for.
+ */
+
+void ro_gui_wimp_event_deregister(wimp_w w, wimp_i i)
+{
+	struct event_window	*window;
+	struct icon_event	*event, *parent, *child;
+
+	LOG(("Removing all events for window 0x%x, icon %d",
+			(unsigned int)w, (int)i));
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return;
+
+	/* Remove any events that apply to the given icon. */
+
+	event = window->first;
+	parent = NULL;
+
+	while (event != NULL) {
+		child = event->next;
+
+		if (event->i == i) {
+			LOG(("Removing event 0x%x", (unsigned int) event));
+
+			if (parent == NULL)
+				window->first = child;
+			else
+				parent->next = child;
+
+			switch (event->type) {
+			case EVENT_NUMERIC_FIELD:
+			case EVENT_TEXT_FIELD:
+				if (event->previous_value.textual)
+					free(event->previous_value.textual);
+				event->previous_value.textual = NULL;
+				break;
+			default:
+				break;
+			}
+
+			free(event);
+		} else {
+			parent = event;
+		}
+
+		event = child;
+	}
+}
+
+
+/**
  * Set the associated help prefix for a given window.
  *
  * \param w		the window to get the prefix for
@@ -312,6 +404,45 @@ const char *ro_gui_wimp_event_get_help_prefix(wimp_w w)
 	if (window)
 		return window->help_prefix;
 	return NULL;
+}
+
+
+/**
+ * Register a handler to decode help suffixes for a given window.
+ *
+ */
+
+bool ro_gui_wimp_event_register_help_suffix(wimp_w w,
+		const char *(*get_help_suffix)(wimp_w w, wimp_i i,
+			os_coord *pos, wimp_mouse_state buttons))
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->get_help_suffix = get_help_suffix;
+	return true;
+}
+
+
+/**
+ * Get the associated help suffix.
+ *
+ * \param w		The window to get the suffix for
+ * \return		The associated prefix, or NULL
+ */
+
+const char *ro_gui_wimp_event_get_help_suffix(wimp_w w, wimp_i i,
+		os_coord *pos, wimp_mouse_state buttons)
+{
+	struct		event_window *window;
+
+	window = ro_gui_wimp_event_find_window(w);
+	if (window == NULL || window->get_help_suffix == NULL)
+		return NULL;
+
+	return window->get_help_suffix(w, i, pos, buttons);
 }
 
 
@@ -371,7 +502,8 @@ void *ro_gui_wimp_event_get_user_data(wimp_w w)
  * \param menu		the menu that has been selected
  * \param selection	the selection information
  * \param action	the menu action info from menus.c
- * \return		true if the event was handled, false otherwise
+ * \return		true if the menu is OK for an Adjust re-open;
+ *			else false.
  */
 bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
@@ -384,32 +516,33 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	wimp_caret caret;
 	wimp_icon_state ic;
 	unsigned int button_type;
+	bool prepared;
 
 	window = ro_gui_wimp_event_find_window(w);
-	if (!window)
+	if (window == NULL)
 		return false;
 
 	/* Start by looking for an icon event that matches.  If there isn't one,
-	 * then check to see if there is a window menu and associated
-	 * selection handler available instead.
+	 * then return details for an unconnected menu.  It's up to the
+	 * event recipient to sort out if this is a window menu or not, based
+	 * on the menu handle passed back.
 	 */
 
 	for (event = window->first; event; event = event->next)
 		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
 			break;
 	if (!event) {
-		if ((window->window_menu) && (window->window_menu == menu)
-				&& (window->window_menu_selection)) {
-			window->window_menu_selection(w, menu,
-					selection, action);
+		if (window->menu_selection)
+			window->menu_selection(window->w, wimp_ICON_WINDOW,
+					menu, selection, action);
 
-			/* Prepare the menu pending a possible Adjust click. */
-			if (window->window_menu_prepare)
-				window->window_menu_prepare(w, menu);
-			return true;
-		} else {
-			return false;
-		}
+		/* Prepare the menu pending a possible Adjust click. */
+		if (window->menu_prepare)
+			if (!window->menu_prepare(window->w, wimp_ICON_WINDOW,
+					menu, NULL))
+				return false;
+
+		return true;
 	}
 
 	menu_entry = &menu->entries[selection->items[0]];
@@ -423,9 +556,15 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	ro_gui_set_icon_string(window->w, event->data.menu_gright.field,
 			menu_entry->data.indirected_text.text, false);
-	ro_gui_wimp_event_prepare_menu(window->w, event);
 	if (window->menu_selection)
-		window->menu_selection(window->w, event->i);
+		window->menu_selection(window->w, event->i, menu,
+				selection, action);
+	prepared = true;
+	if (window->menu_prepare)
+		prepared = window->menu_prepare(window->w, event->i,
+				menu, NULL);
+	if (prepared)
+		ro_gui_wimp_event_prepare_gright_menu(window->w, event);
 
 	/* set the caret for writable icons and send a CTRL+U keypress to
 	 * stimulate activity if needed */
@@ -441,7 +580,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 	button_type = (ic.icon.flags & wimp_ICON_BUTTON_TYPE) >> wimp_ICON_BUTTON_TYPE_SHIFT;
 	if ((button_type != wimp_BUTTON_WRITABLE) &&
 			(button_type != wimp_BUTTON_WRITE_CLICK_DRAG))
-		return true;
+		return prepared;
 	error = xwimp_get_caret_position(&caret);
 	if (error) {
 		LOG(("xwimp_get_caret_position: 0x%x: %s",
@@ -463,7 +602,7 @@ bool ro_gui_wimp_event_menu_selection(wimp_w w, wimp_i i, wimp_menu *menu,
 		key.c = 21;	// ctrl+u
 		window->keypress(&key);
 	}
-	return true;
+	return prepared;
 }
 
 
@@ -493,6 +632,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 	wimp_window_state open;
 	wimp_caret caret;
 	os_error *error;
+	bool prepared;
 
 	w = pointer->w;
 	window = ro_gui_wimp_event_find_window(w);
@@ -500,7 +640,9 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 		return false;
 
 	/* Menu clicks take priority if there is an auto menu defined. */
-	if ((window->window_menu) && (window->window_menu_auto)) {
+	if ((pointer->buttons == wimp_CLICK_MENU) &&
+			(window->window_menu != NULL) &&
+			(window->window_menu_auto)) {
 		ro_gui_wimp_event_process_window_menu_click(pointer);
 		return true;
 	}
@@ -574,7 +716,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				}
 				ro_gui_dialog_add_persistent(current_menu_window,
 						pointer->w);
-				ro_gui_menu_closed(false);
+				ro_gui_menu_closed();
 				gui_poll(true);
 				error = xwimp_open_window(PTR_WIMP_OPEN(&open));
 				if (error) {
@@ -596,8 +738,15 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 				}
 			}
 			/* display the menu */
-			ro_gui_wimp_event_prepare_menu(pointer->w, event);
-			ro_gui_popup_menu(event->data.menu_gright.menu, pointer->w, pointer->i);
+
+			prepared = true;
+			if (window->menu_prepare != NULL)
+				prepared = window->menu_prepare(pointer->w, pointer->i,
+						event->data.menu_gright.menu, pointer);
+			if (prepared) {
+				ro_gui_wimp_event_prepare_gright_menu(pointer->w, event);
+				ro_gui_popup_menu(event->data.menu_gright.menu, pointer->w, pointer->i);
+			}
 			break;
 		case EVENT_CHECKBOX:
 			break;
@@ -617,7 +766,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
 			if (pointer->buttons & wimp_CLICK_SELECT) {
 				ro_gui_dialog_close(pointer->w);
 				ro_gui_wimp_event_close_window(pointer->w);
-				ro_gui_menu_closed(true);
+				ro_gui_menu_closed();
 			} else {
 				ro_gui_wimp_event_restore(pointer->w);
 			}
@@ -636,7 +785,7 @@ bool ro_gui_wimp_event_mouse_click(wimp_pointer *pointer)
  * /param w	the window owning the menu
  * /param event	the icon event owning the menu
  */
-void ro_gui_wimp_event_prepare_menu(wimp_w w, struct icon_event *event)
+void ro_gui_wimp_event_prepare_gright_menu(wimp_w w, struct icon_event *event)
 {
 	int i;
 	const char *text;
@@ -699,7 +848,7 @@ void ro_gui_wimp_event_ok_click(struct event_window *window,
 	if (state & wimp_CLICK_SELECT) {
 		ro_gui_dialog_close(window->w);
 		ro_gui_wimp_event_close_window(window->w);
-		ro_gui_menu_closed(true);
+		ro_gui_menu_closed();
 	} else {
 		ro_gui_wimp_event_memorise(window->w);
 	}
@@ -863,7 +1012,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 			}
 		}
 	} else {
-		k.c |= (1u<<31);
+		k.c |= IS_WIMP_KEY;
 	}
 
 	/* registered routines take priority */
@@ -894,7 +1043,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key)
 				return false;
 			ro_gui_dialog_close(key->w);
 			ro_gui_wimp_event_close_window(key->w);
-			ro_gui_menu_closed(true);
+			ro_gui_menu_closed();
 			return true;
 		/* Return performs the OK action */
 		case wimp_KEY_RETURN:
@@ -975,21 +1124,100 @@ bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw)
 
 bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer)
 {
-	struct event_window *window;
+	struct event_window	*window;
+	int			xpos, ypos, line_height, gap_height, entry;
 
 	window = ro_gui_wimp_event_find_window(pointer->w);
 	if ((window) && (window->window_menu)
 			&& (pointer->buttons == wimp_CLICK_MENU)) {
-		if (window->window_menu_prepare)
-			window->window_menu_prepare(window->w,
-					window->window_menu);
+		if (window->menu_prepare)
+			if (!window->menu_prepare(window->w, wimp_ICON_WINDOW,
+					window->window_menu, pointer))
+				return false;
 
-		ro_gui_menu_create(window->window_menu,
-				pointer->pos.x, pointer->pos.y,
-				window->w, false);
+		if (window->window_menu_iconbar) {
+			xpos = pointer->pos.x;
+			ypos = 96;
+
+			line_height = window->window_menu->height +
+					window->window_menu->gap;
+			gap_height = 24; /* The fixed dotted line height */
+
+			entry = 0;
+			do {
+				ypos += line_height;
+				if ((window->window_menu->
+						entries[entry].menu_flags &
+						wimp_MENU_SEPARATE) != 0)
+					ypos += gap_height;
+			} while ((window->window_menu->
+					entries[entry++].menu_flags &
+					wimp_MENU_LAST) == 0);
+		} else {
+			xpos = pointer->pos.x;
+			ypos = pointer->pos.y;
+		}
+
+		ro_gui_menu_create(window->window_menu, xpos, ypos, window->w);
 		return true;
 	}
 	return false;
+}
+
+
+/**
+ * Trigger a window's Prepare Menu event.
+ *
+ * \param w			The window to use.
+ * \param i			The icon to use.
+ * \param *menu			The menu handle to use.
+ * \return			true if the affected menu was prepared OK; else
+ *				false.
+ */
+
+bool ro_gui_wimp_event_prepare_menu(wimp_w w, wimp_i i, wimp_menu *menu)
+{
+	struct event_window	*window;
+
+	window = ro_gui_wimp_event_find_window(w);
+	if (window == NULL)
+		return false;
+
+	if (window->menu_prepare)
+		return window->menu_prepare(w, i, menu, NULL);
+
+	/* The menu is always OK if there's no event handler. */
+
+	return true;
+}
+
+/**
+ * Register a window menu to be (semi-)automatically handled.
+ *
+ * \param w			The window to attach the menu to.
+ * \param *m			The menu to be attached.
+ * \param menu_auto		true if the menu should be opened autimatically
+ *				on Menu clicks with no task intervention; false
+ *				to pass clicks to the window's Mouse Event
+ *				handler and leave that to pass the menu click
+ *				back to us for handling and menu opening.
+ * \param bool_position_ibar	true if the menu should open in an iconbar
+ *				position; false to open at the pointer.
+ * \return			true if the menu was registed ok; else false.
+ */
+
+bool ro_gui_wimp_event_register_menu(wimp_w w, wimp_menu *m,
+		bool menu_auto, bool position_ibar)
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->window_menu = m;
+	window->window_menu_auto = menu_auto;
+	window->window_menu_iconbar = position_ibar;
+	return true;
 }
 
 /**
@@ -1227,11 +1455,40 @@ bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 	return true;
 }
 
+
+/**
+ * Register a function to be called before a menu is (re-)opened.
+ *
+ * \param *w			The window for which events should be returned.
+ * \param *callback		A function to be called beofre the menu is
+ *				(re-)opened.
+ * \return			true if the menu was registed ok; else false.
+ */
+bool ro_gui_wimp_event_register_menu_prepare(wimp_w w,
+		bool (*callback)(wimp_w w, wimp_i i, wimp_menu *m,
+			wimp_pointer *p))
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->menu_prepare = callback;
+	return true;
+}
+
+
 /**
  * Register a function to be called following a menu selection.
+ *
+ * \param *w			The window for which events should be returned.
+ * \param *callback		A function to be called when a selection is
+ *				made.
+ * \return			true if the menu was registed ok; else false.
  */
 bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
-		void (*callback)(wimp_w w, wimp_i i))
+		bool (*callback)(wimp_w w, wimp_i i, wimp_menu *m,
+			wimp_selection *s, menu_action a))
 {
 	struct event_window *window;
 
@@ -1242,32 +1499,45 @@ bool ro_gui_wimp_event_register_menu_selection(wimp_w w,
 	return true;
 }
 
-/**
- * Register a set of functions to be called to handle a window menu.
- *
- * \param
- */
 
-bool ro_gui_wimp_event_register_window_menu(wimp_w w, wimp_menu *m,
-		void (*callback_prepare)(wimp_w w, wimp_menu *m),
-		bool (*callback_selection)(wimp_w w, wimp_menu *m,
-				wimp_selection *s, menu_action action),
-		void (*callback_close)(wimp_w w, wimp_menu *m),
-		void (*callback_warning)(wimp_w w, wimp_menu *m,
-				wimp_selection *s, menu_action action),
-		bool menu_auto)
+/**
+ * Register a function to be called when a sub-menu warning is received.
+ *
+ * \param *w			The window for which events should be returned.
+ * \param *callback		A function to be called whenever a submenu
+ *				warning is received for the menu.
+ * \return			true if the menu was registed ok; else false.
+ */
+bool ro_gui_wimp_event_register_menu_warning(wimp_w w,
+		void (*callback)(wimp_w w, wimp_i i, wimp_menu *m,
+			wimp_selection *s, menu_action a))
 {
 	struct event_window *window;
 
 	window = ro_gui_wimp_event_get_window(w);
 	if (!window)
 		return false;
-	window->window_menu = m;
-	window->window_menu_prepare = callback_prepare;
-	window->window_menu_selection = callback_selection;
-	window->window_menu_close = callback_close;
-	window->window_menu_warning = callback_warning;
-	window->window_menu_auto = menu_auto;
+	window->menu_warning = callback;
+	return true;
+}
+
+
+/**
+ * Register a function to be called before a menu is finally closed.
+ *
+ * \param *w			The window for which events should be returned.
+ * \param *callback		A function to be called when the menu is closed.
+ * \return			true if the menu was registed ok; else false.
+ */
+bool ro_gui_wimp_event_register_menu_close(wimp_w w,
+		void (*callback)(wimp_w w, wimp_i i, wimp_menu *m))
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->menu_close = callback;
 	return true;
 }
 
@@ -1408,14 +1678,23 @@ bool ro_gui_wimp_event_submenu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	for (event = window->first; event; event = event->next)
 		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
 			break;
-	if (event)
+	if (event) {
+		if (window->menu_close != NULL &&
+				event->type == EVENT_MENU_GRIGHT &&
+				event->data.menu_gright.menu == menu) {
+			window->menu_close(w, i, menu);
+			return true;
+		}
+
 		return false;
+	}
 
 	/* If the warning is for a window menu, then pass the event on to it. */
 
 	if ((window->window_menu) && (window->window_menu == menu)) {
-		if (window->window_menu_warning) {
-			window->window_menu_warning(w, menu, selection, action);
+		if (window->menu_warning) {
+			window->menu_warning(w, wimp_ICON_WINDOW, menu,
+					selection, action);
 			return true;
 		}
 	}
@@ -1440,8 +1719,8 @@ void ro_gui_wimp_event_menus_closed(wimp_w w, wimp_i i, wimp_menu *menu)
 	ro_gui_wimp_event_register_submenu(0);
 
 	/* Process the event for any window menus.  Find the window data, then
-	 * try and match to an icon event.  If we can, then there isn't anything
-	 * to do.
+	 * try and match to an icon event.  If we can, then GRight menus are
+	 * sent the event; otherwise, we do nothing.
 	 */
 
 	window = ro_gui_wimp_event_find_window(w);
@@ -1451,14 +1730,19 @@ void ro_gui_wimp_event_menus_closed(wimp_w w, wimp_i i, wimp_menu *menu)
 	for (event = window->first; event; event = event->next)
 		if ((event->type == EVENT_MENU_GRIGHT) && (event->i == i))
 			break;
-	if (event)
+	if (event) {
+		if (window->menu_close != NULL &&
+				event->type == EVENT_MENU_GRIGHT &&
+				event->data.menu_gright.menu == menu)
+			window->menu_close(w, i, menu);
 		return;
+	}
 
 	/* If the close is for a window menu, then pass the event on to it. */
 
 	if ((window->window_menu) && (window->window_menu == menu) &&
-			(window->window_menu_close))
-		window->window_menu_close(w, menu);
+			(window->menu_close))
+		window->menu_close(w, wimp_ICON_WINDOW, menu);
 }
 
 /**

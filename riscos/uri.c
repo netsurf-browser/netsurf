@@ -27,7 +27,6 @@
 #include "utils/config.h"
 #include "content/fetch.h"
 #include "desktop/browser.h"
-#include "riscos/theme.h"
 #include "desktop/gui.h"
 #include "riscos/gui.h"
 #include "riscos/uri.h"

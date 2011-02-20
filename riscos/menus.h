@@ -23,13 +23,9 @@
 #include "oslib/wimp.h"
 #include "riscos/gui.h"
 
-extern wimp_menu *iconbar_menu, *browser_menu, *hotlist_menu, *cookies_menu,
-	*global_history_menu, *image_quality_menu,
-	*browser_toolbar_menu, *tree_toolbar_menu, *proxy_type_menu;
-extern wimp_menu *languages_menu, *url_suggest_menu;
+extern wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 
 extern wimp_menu *current_menu;
-extern int iconbar_menu_height;
 
 typedef enum {
 
@@ -170,21 +166,16 @@ struct ns_menu {
 
 
 void ro_gui_menu_init(void);
-void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w, bool prepare);
-bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
-		bool windows_at_pointer);
-void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
-		bool windows);
-void ro_gui_menu_closed(bool cleanup);
-void ro_gui_menu_objects_moved(void);
+void ro_gui_menu_create(wimp_menu* menu, int x, int y, wimp_w w);
+void ro_gui_menu_closed(void);
 void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i);
+void ro_gui_menu_window_changed(wimp_w from, wimp_w to);
 void ro_gui_menu_selection(wimp_selection* selection);
 void ro_gui_menu_warning(wimp_message_menu_warning *warning);
+void ro_gui_menu_refresh(wimp_menu *menu);
 void ro_gui_menu_init_structure(wimp_menu *menu, int entries);
-void ro_gui_prepare_navigate(struct gui_window *gui);
 const char *ro_gui_menu_find_menu_entry_key(wimp_menu *menu,
 		const char *translated);
-
 wimp_menu *ro_gui_menu_define_menu(const struct ns_menu *menu);
 void ro_gui_menu_set_entry_shaded(wimp_menu *menu, menu_action action,
 		bool shaded);

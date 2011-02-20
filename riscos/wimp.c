@@ -36,7 +36,6 @@
 #include "desktop/gui.h"
 #include "riscos/gui.h"
 #include "riscos/oslib_pre7.h"
-#include "riscos/theme.h"
 #include "riscos/wimp.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -546,6 +545,71 @@ bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i)
 
 
 /**
+ * Set the deleted state of an icon.
+ *
+ * \param  w	 window handle
+ * \param  i	 icon handle
+ * \param  state shaded state
+ */
+void ro_gui_set_icon_deleted_state(wimp_w w, wimp_i i, bool state)
+{
+	wimp_caret caret;
+	os_error *error;
+
+	/* update the state */
+	if (ro_gui_get_icon_deleted_state(w, i) == state)
+		return;
+	error = xwimp_set_icon_state(w, i,
+			(state ? wimp_ICON_DELETED : 0), wimp_ICON_DELETED);
+	if (error) {
+		LOG(("xwimp_get_icon_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+	}
+	if (!state)
+		return;
+
+	/* ensure the caret is not in a shaded icon */
+	error = xwimp_get_caret_position(&caret);
+	if (error) {
+		LOG(("xwimp_get_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+	if ((caret.w != w) || (caret.i != i))
+		return;
+	/* move the caret to the first avaiable writable */
+	if (ro_gui_set_caret_first(w))
+		return;
+	/* lose the caret */
+	error = xwimp_set_caret_position((wimp_w)-1, (wimp_i)-1, -1, -1, -1, -1);
+	if (error) {
+		LOG(("xwimp_set_caret_position: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+}
+
+
+/**
+ * Gets the deleted state of an icon.
+ *
+ * \param  w	 window handle
+ * \param  i	 icon handle
+ */
+bool ro_gui_get_icon_deleted_state(wimp_w w, wimp_i i)
+{
+	wimp_icon_state ic;
+	ic.w = w;
+	ic.i = i;
+	xwimp_get_icon_state(&ic);
+	return (ic.icon.flags & wimp_ICON_DELETED) != 0;
+}
+
+
+/**
  * Set the button type of an icon.
  *
  * \param  w	window handle
@@ -837,6 +901,52 @@ os_error *ro_gui_wimp_get_sprite(const char *name, osspriteop_header **sprite)
 				rom_base, (osspriteop_id)name, sprite);
 
 	return error;
+}
+
+
+/**
+ * Get the dimensions of a sprite
+ *
+ * \param *area			The sprite area to use.
+ * \param *sprite		Pointer to the sprite name.
+ * \param *width		Return the sprite width.
+ * \param *height		Return the sprite height.
+ * \return			true if successful; else false.
+ */
+
+bool ro_gui_wimp_get_sprite_dimensions(osspriteop_area *area, char *sprite,
+		int *width, int *height)
+{
+	os_error			*error = NULL;
+	os_mode				mode;
+	os_coord			dimensions;
+
+	dimensions.x = 0;
+	dimensions.y = 0;
+
+	if (area != (osspriteop_area *) -1)
+		error = xosspriteop_read_sprite_info(osspriteop_USER_AREA,
+				area, (osspriteop_id) sprite,
+				&dimensions.x, &dimensions.y, 0, &mode);
+
+	if (error != NULL || area == (osspriteop_area *) -1)
+		error = xwimpspriteop_read_sprite_info(sprite,
+				&dimensions.x, &dimensions.y, 0, &mode);
+
+	if (error == NULL) {
+		ro_convert_pixels_to_os_units(&dimensions, mode);
+		if (width != NULL)
+			*width = dimensions.x;
+		if (height != NULL)
+			*height = dimensions.y;
+	} else if (error->errnum != error_SPRITE_OP_DOESNT_EXIST) {
+		LOG(("xosspriteop_read_sprite_info: 0x%x: %s",
+				error->errnum, error->errmess));
+		warn_user("MiscError", error->errmess);
+		return false;
+	}
+
+	return true;
 }
 
 

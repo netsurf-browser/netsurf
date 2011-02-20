@@ -57,7 +57,7 @@
 #include "riscos/options.h"
 #include "riscos/save.h"
 #include "riscos/tinct.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/url_suggest.h"
 #include "riscos/wimp.h"
@@ -93,14 +93,7 @@ static struct menu_definition_entry *ro_gui_menu_find_entry(wimp_menu *menu,
 		menu_action action);
 static menu_action ro_gui_menu_find_action(wimp_menu *menu,
 		wimp_menu_entry *menu_entry);
-static void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
-		struct browser_window **bw, hlcache_handle **h,
-		struct toolbar **toolbar,
-		bool *is_cookies, bool *is_hotlist, bool *is_global_history);
 static int ro_gui_menu_get_checksum(void);
-static void ro_gui_menu_prepare_pageinfo(struct gui_window *g);
-static void ro_gui_menu_prepare_objectinfo(hlcache_handle *object,
-		const char *href);
 static bool ro_gui_menu_translate(struct menu_definition *menu);
 
 
@@ -115,27 +108,12 @@ static struct menu_definition *ro_gui_menu_definitions;
 wimp_menu *current_menu;
 /** Whether a menu is currently open */
 bool current_menu_open = false;
-/** Object under menu, or 0 if no object. */
-static hlcache_handle *current_menu_object = 0;
-/** URL of link under menu, or 0 if no link. */
-static const char *current_menu_url = 0;
-/** Menu of options for form select controls. */
-static wimp_menu *gui_form_select_menu = 0;
-/** Form control which gui_form_select_menu is for. */
-static struct form_control *gui_form_select_control;
 /** Window that owns the current menu */
 wimp_w current_menu_window;
 /** Icon that owns the current menu (only valid for popup menus) */
 static wimp_i current_menu_icon;
-/** The height of the iconbar menu */
-int iconbar_menu_height = 5 * 44;
 /** The available menus */
-wimp_menu *iconbar_menu, *browser_menu, *image_quality_menu,
-		*browser_toolbar_menu, *tree_toolbar_menu,
-		*proxy_type_menu, *languages_menu;
-
-static wimp_MENU(URL_SUGGEST_MAX_URLS) url_suggest_menu_block;
-wimp_menu *url_suggest_menu = (wimp_menu *) &url_suggest_menu_block;
+wimp_menu *image_quality_menu, *proxy_type_menu, *languages_menu;
 
 /* the values given in PRM 3-157 for how to check menus/windows are
  * incorrect so we use a hack of checking if the sub-menu has bit 0
@@ -148,122 +126,6 @@ wimp_menu *url_suggest_menu = (wimp_menu *) &url_suggest_menu_block;
  */
 void ro_gui_menu_init(void)
 {
-	/* iconbar menu */
-	static const struct ns_menu iconbar_definition = {
-		"NetSurf", {
-			{ "Info", NO_ACTION, &dialog_info },
-			{ "AppHelp", HELP_OPEN_CONTENTS, 0 },
-			{ "Open", BROWSER_NAVIGATE_URL, 0 },
-			{ "Open.OpenURL", BROWSER_NAVIGATE_URL, &dialog_openurl },
-			{ "Open.HotlistShow", HOTLIST_SHOW, 0 },
-			{ "Open.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
-			{ "Open.ShowCookies", COOKIES_SHOW, 0 },
-			{ "Choices", CHOICES_SHOW, 0 },
-			{ "Quit", APPLICATION_QUIT, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	iconbar_menu = ro_gui_menu_define_menu(&iconbar_definition);
-
-	/* browser menu */
-	static const struct ns_menu browser_definition = {
-		"NetSurf", {
-			{ "Page", BROWSER_PAGE, 0 },
-			{ "Page.PageInfo",BROWSER_PAGE_INFO, &dialog_pageinfo },
-			{ "Page.Save", BROWSER_SAVE, &dialog_saveas },
-			{ "Page.SaveComp", BROWSER_SAVE_COMPLETE, &dialog_saveas },
-			{ "Page.Export", NO_ACTION, 0 },
-#ifdef WITH_DRAW_EXPORT
-			{ "Page.Export.Draw", BROWSER_EXPORT_DRAW, &dialog_saveas },
-#endif
-#ifdef WITH_PDF_EXPORT
-			{ "Page.Export.PDF", BROWSER_EXPORT_PDF, &dialog_saveas },
-#endif
-			{ "Page.Export.Text", BROWSER_EXPORT_TEXT, &dialog_saveas },
-			{ "Page.SaveURL", NO_ACTION, 0 },
-			{ "Page.SaveURL.URI", BROWSER_SAVE_URL_URI, &dialog_saveas },
-			{ "Page.SaveURL.URL", BROWSER_SAVE_URL_URL, &dialog_saveas },
-			{ "Page.SaveURL.LinkText", BROWSER_SAVE_URL_TEXT, &dialog_saveas },
-			{ "_Page.Print", BROWSER_PRINT, &dialog_print },
-			{ "Page.NewWindow", BROWSER_NEW_WINDOW, 0 },
-			{ "Page.FindText", BROWSER_FIND_TEXT, &dialog_search },
-			{ "Page.ViewSrc", BROWSER_VIEW_SOURCE, 0 },
-			{ "Object", BROWSER_OBJECT, 0 },
-			{ "Object.Object", BROWSER_OBJECT_OBJECT, 0 },
-			{ "Object.Object.ObjInfo", BROWSER_OBJECT_INFO, &dialog_objinfo },
-			{ "Object.Object.ObjSave", BROWSER_OBJECT_SAVE, &dialog_saveas },
-			{ "Object.Object.Export", BROWSER_OBJECT_EXPORT, 0 },
-			{ "Object.Object.Export.Sprite", BROWSER_OBJECT_EXPORT_SPRITE, &dialog_saveas },
-#ifdef WITH_DRAW_EXPORT
-			{ "Object.Object.Export.ObjDraw", BROWSER_OBJECT_EXPORT_DRAW, &dialog_saveas },
-#endif
-			{ "Object.Object.SaveURL", NO_ACTION, 0 },
-			{ "Object.Object.SaveURL.URI", BROWSER_OBJECT_SAVE_URL_URI, &dialog_saveas },
-			{ "Object.Object.SaveURL.URL", BROWSER_OBJECT_SAVE_URL_URL, &dialog_saveas },
-			{ "Object.Object.SaveURL.LinkText", BROWSER_OBJECT_SAVE_URL_TEXT, &dialog_saveas },
-			{ "Object.Object.ObjPrint", BROWSER_OBJECT_PRINT, 0 },
-			{ "Object.Object.ObjReload", BROWSER_OBJECT_RELOAD, 0 },
-			{ "Object.Link", BROWSER_OBJECT_LINK, 0 },
-			{ "Object.Link.LinkSave", BROWSER_LINK_SAVE, 0 },
-			{ "Object.Link.LinkSave.URI", BROWSER_LINK_SAVE_URI, &dialog_saveas },
-			{ "Object.Link.LinkSave.URL", BROWSER_LINK_SAVE_URL, &dialog_saveas },
-			{ "Object.Link.LinkSave.LinkText", BROWSER_LINK_SAVE_TEXT, &dialog_saveas },
-			{ "_Object.Link.LinkDload", BROWSER_LINK_DOWNLOAD, 0 },
-			{ "Object.Link.LinkNew", BROWSER_LINK_NEW_WINDOW, 0 },
-			{ "Selection", BROWSER_SELECTION, 0 },
-			{ "_Selection.SelSave", BROWSER_SELECTION_SAVE, &dialog_saveas },
-			{ "Selection.Copy", BROWSER_SELECTION_COPY, 0 },
-			{ "Selection.Cut", BROWSER_SELECTION_CUT, 0 },
-			{ "_Selection.Paste", BROWSER_SELECTION_PASTE, 0 },
-			{ "Selection.Clear", BROWSER_SELECTION_CLEAR, 0 },
-			{ "Selection.SelectAll", BROWSER_SELECTION_ALL, 0 },
-			{ "Navigate", NO_ACTION, 0 },
-			{ "Navigate.Home", BROWSER_NAVIGATE_HOME, 0 },
-			{ "Navigate.Back", BROWSER_NAVIGATE_BACK, 0 },
-			{ "Navigate.Forward", BROWSER_NAVIGATE_FORWARD, 0 },
-			{ "_Navigate.UpLevel", BROWSER_NAVIGATE_UP, 0 },
-			{ "Navigate.Reload", BROWSER_NAVIGATE_RELOAD_ALL, 0 },
-			{ "Navigate.Stop", BROWSER_NAVIGATE_STOP, 0 },
-			{ "View", NO_ACTION, 0 },
-			{ "View.ScaleView", BROWSER_SCALE_VIEW, &dialog_zoom },
-			{ "View.Images", NO_ACTION, 0 },
-			{ "View.Images.ForeImg", BROWSER_IMAGES_FOREGROUND, 0 },
-			{ "View.Images.BackImg", BROWSER_IMAGES_BACKGROUND, 0 },
-			{ "View.Toolbars", NO_ACTION, 0 },
-			{ "View.Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "View.Toolbars.ToolAddress", TOOLBAR_ADDRESS_BAR, 0 },
-			{ "_View.Toolbars.ToolThrob", TOOLBAR_THROBBER, 0 },
-			{ "View.Toolbars.EditToolbar", TOOLBAR_EDIT, 0 },
-			{ "_View.Render", NO_ACTION, 0 },
-			{ "View.Render.RenderAnims", BROWSER_BUFFER_ANIMS, 0 },
-			{ "View.Render.RenderAll", BROWSER_BUFFER_ALL, 0 },
-			{ "_View.OptDefault", BROWSER_SAVE_VIEW, 0 },
-			{ "View.Window", NO_ACTION, 0 },
-			{ "View.Window.WindowSave", BROWSER_WINDOW_DEFAULT, 0 },
-			{ "View.Window.WindowStagr", BROWSER_WINDOW_STAGGER, 0 },
-			{ "_View.Window.WindowSize", BROWSER_WINDOW_COPY, 0 },
-			{ "View.Window.WindowReset", BROWSER_WINDOW_RESET, 0 },
-			{ "Utilities", NO_ACTION, 0 },
-			{ "Utilities.Hotlist", HOTLIST_SHOW, 0 },
-			{ "Utilities.Hotlist.HotlistAdd", HOTLIST_ADD_URL, 0 },
-			{ "Utilities.Hotlist.HotlistShow", HOTLIST_SHOW, 0 },
-			{ "Utilities.History", HISTORY_SHOW_GLOBAL, 0 },
-			{ "Utilities.History.HistLocal", HISTORY_SHOW_LOCAL, 0 },
-			{ "Utilities.History.HistGlobal", HISTORY_SHOW_GLOBAL, 0 },
-			{ "Utilities.Cookies", COOKIES_SHOW, 0 },
-			{ "Utilities.Cookies.ShowCookies", COOKIES_SHOW, 0 },
-			{ "Utilities.Cookies.DeleteCookies", COOKIES_DELETE, 0 },
-			{ "Help", HELP_OPEN_CONTENTS, 0 },
-			{ "Help.HelpContent", HELP_OPEN_CONTENTS, 0 },
-			{ "Help.HelpGuide", HELP_OPEN_GUIDE, 0 },
-			{ "_Help.HelpInfo", HELP_OPEN_INFORMATION, 0 },
-			{ "_Help.HelpAbout", HELP_OPEN_ABOUT, 0 },
-			{ "Help.HelpInter", HELP_LAUNCH_INTERACTIVE, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	browser_menu = ro_gui_menu_define_menu(&browser_definition);
-
 	/* image quality menu */
 	static const struct ns_menu images_definition = {
 		"Display", {
@@ -275,32 +137,6 @@ void ro_gui_menu_init(void)
 		}
 	};
 	image_quality_menu = ro_gui_menu_define_menu(&images_definition);
-
-	/* browser toolbar menu */
-	static const struct ns_menu browser_toolbar_definition = {
-		"Toolbar", {
-			{ "Toolbars", NO_ACTION, 0 },
-			{ "Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "Toolbars.ToolAddress", TOOLBAR_ADDRESS_BAR, 0 },
-			{ "Toolbars.ToolThrob", TOOLBAR_THROBBER, 0 },
-			{ "EditToolbar", TOOLBAR_EDIT, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	browser_toolbar_menu = ro_gui_menu_define_menu(
-			&browser_toolbar_definition);
-
-	/* tree toolbar menu */
-	static const struct ns_menu tree_toolbar_definition = {
-		"Toolbar", {
-			{ "Toolbars", NO_ACTION, 0 },
-			{ "Toolbars.ToolButtons", TOOLBAR_BUTTONS, 0 },
-			{ "EditToolbar", TOOLBAR_EDIT, 0 },
-			{NULL, 0, 0}
-		}
-	};
-	tree_toolbar_menu = ro_gui_menu_define_menu(&tree_toolbar_definition);
-
 
 	/* proxy menu */
 	static const struct ns_menu proxy_type_definition = {
@@ -315,7 +151,7 @@ void ro_gui_menu_init(void)
 	proxy_type_menu = ro_gui_menu_define_menu(&proxy_type_definition);
 
 	/* special case menus */
-	ro_gui_url_suggest_init(url_suggest_menu);
+	ro_gui_url_suggest_init();
 
 	/* Note: This table *must* be kept in sync with the LangNames file */
 	static const struct ns_menu lang_definition = {
@@ -381,16 +217,10 @@ void ro_gui_menu_init(void)
  * \param x			The x position.
  * \param y			The y position.
  * \param w			The window that the menu belongs to.
- * \param prepare		true if the menu is to be prepared; otherwise
- *				false (mainly for use by wimp_event module).
  */
-void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w, bool prepare)
+void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w)
 {
-	struct gui_window *g;
 	os_error *error;
-	os_coord pos;
-	int i;
-	menu_action action;
 	struct menu_definition *definition;
 
 	/* translate menu, if necessary (this returns quickly
@@ -403,62 +233,10 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w, bool prepare)
 		}
 	}
 
-	/* read the object under the pointer for a new gui_window menu */
-	if ((!current_menu) && (menu == browser_menu)) {
-		hlcache_handle *h;
-
-		g = ro_gui_window_lookup(w);
-		h = g->bw->current_content;
-
-		if (!ro_gui_window_to_window_pos(g, x, y, &pos))
-			return;
-		current_menu_object = NULL;
-		current_menu_url = NULL;
-		if (h) {
-			switch (content_get_type(h)) {
-				case CONTENT_HTML: {
-					struct box *box;
-					box = box_object_at_point(h, pos.x,
-							pos.y);
-					current_menu_object = box ?
-							box->object : NULL;
-					box = box_href_at_point(h, pos.x,
-							pos.y);
-					current_menu_url = box ?
-							box->href : NULL;
-				}
-				break;
-				case CONTENT_TEXTPLAIN:
-					/* no object, no url */
-					break;
-				default:
-					current_menu_object = h;
-					break;
-			}
-		}
-	}
-
 	/* store the menu characteristics */
 	current_menu = menu;
 	current_menu_window = w;
-	current_menu_icon = -1;
-
-	/* prepare the menu state */
-	if (menu == url_suggest_menu) {
-		if (!ro_gui_url_suggest_prepare_menu())
-			return;
-	} else if (menu == recent_search_menu) {
-	  	if (!ro_gui_search_prepare_menu())
-	  		return;
-	} else if (prepare) {
-		i = 0;
-		do {
-			action = ro_gui_menu_find_action(menu,
-					&menu->entries[i]);
-			if (action != NO_ACTION)
-				ro_gui_menu_prepare_action(w, action, false);
-		} while (!(menu->entries[i++].menu_flags & wimp_MENU_LAST));
-	}
+	current_menu_icon = wimp_ICON_WINDOW;
 
 	/* create the menu */
 	current_menu_open = true;
@@ -467,7 +245,7 @@ void ro_gui_menu_create(wimp_menu *menu, int x, int y, wimp_w w, bool prepare)
 		LOG(("xwimp_create_menu: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("MenuError", error->errmess);
-		ro_gui_menu_closed(true);
+		ro_gui_menu_closed();
 	}
 }
 
@@ -507,42 +285,28 @@ void ro_gui_popup_menu(wimp_menu *menu, wimp_w w, wimp_i i)
 	ro_gui_menu_create(menu,
 			state.visible.x0 + icon_state.icon.extent.x1 + 64,
 			state.visible.y1 + icon_state.icon.extent.y1 -
-			state.yscroll, w, true);
+			state.yscroll, w);
 	current_menu_icon = i;
 }
 
 
 /**
  * Clean up after a menu has been closed, or forcible close an open menu.
- *
- * \param cleanup	Call any terminating functions (sub-window isn't going to be instantly re-opened)
- */
-void ro_gui_menu_closed(bool cleanup)
+  */
+void ro_gui_menu_closed(void)
 {
-	struct gui_window *g;
-	struct browser_window *bw;
-	hlcache_handle *h;
-	struct toolbar *t;
 	os_error *error;
-	bool is_cookies, is_hotlist, is_global_history;
 
 	if (current_menu) {
-
 		error = xwimp_create_menu(wimp_CLOSE_MENU, 0, 0);
 		if (error) {
 			LOG(("xwimp_create_menu: 0x%x: %s",
 					error->errnum, error->errmess));
 			warn_user("MenuError", error->errmess);
 		}
-		ro_gui_menu_get_window_details(current_menu_window,
-				&g, &bw, &h, &t,
-				&is_cookies, &is_hotlist,
-				&is_global_history);
 
-		if (cleanup) {
-		  	ro_gui_wimp_event_menus_closed(current_menu_window,
-		  			current_menu_icon, current_menu);
-		}
+	  	ro_gui_wimp_event_menus_closed(current_menu_window,
+	  			current_menu_icon, current_menu);
 
 		current_menu = NULL;
 	}
@@ -550,46 +314,43 @@ void ro_gui_menu_closed(bool cleanup)
 	current_menu_window = NULL;
 	current_menu_icon = 0;
 	current_menu_open = false;
-	gui_form_select_control = NULL;
 }
 
 
 /**
- * The content has changed, reset object references
+ * Allow the current menu window to change, if the window is deleted and
+ * recreated while a menu is active on an Adjust-click.
+ *
+ * \param from			The original window handle.
+ * \param to			The new replacement window handle.
  */
-void ro_gui_menu_objects_moved(void)
-{
-  	gui_form_select_control = NULL;
-	current_menu_object = NULL;
-	current_menu_url = NULL;
 
-	ro_gui_menu_prepare_action(0, BROWSER_OBJECT, false);
-	if ((current_menu) && (current_menu == gui_form_select_menu))
-		ro_gui_menu_closed(true);
+void ro_gui_menu_window_changed(wimp_w from, wimp_w to)
+{
+
+	if (from == current_menu_window)
+		current_menu_window = to;
 }
 
 
 /**
  * Handle menu selection.
  */
+
 void ro_gui_menu_selection(wimp_selection *selection)
 {
-	int			i, j;
-	bool			needs_prepare;
+	int			i; //, j;
 	wimp_menu_entry		*menu_entry;
 	menu_action		action;
 	wimp_pointer		pointer;
-	struct gui_window	*g = NULL;
-	wimp_menu		*menu;
 	os_error		*error;
 	int			previous_menu_icon = current_menu_icon;
-	char			*url;
 
 	/* if we are using gui_multitask then menu selection events
 	 * may be delivered after the menu has been closed. As such,
 	 * we simply ignore these events. */
 	if (!current_menu)
-		return
+		return;
 
 	assert(current_menu_window);
 
@@ -600,51 +361,13 @@ void ro_gui_menu_selection(wimp_selection *selection)
 				entries[selection->items[i]];
 	action = ro_gui_menu_find_action(current_menu, menu_entry);
 
-	/* Deal with the menu action.  We first pass it to Wimp_Event to
-	 * handle any automatic menus.  If this doesn't recognise the details,
-	 * it is passed on to the code in menus.c.
+	/* Deal with the menu action.  If this manages to re-prepare the
+	 * menu for re-opening, we test for and act on Adjust clicks.
 	 */
 
-	needs_prepare = false;
-
 	if (!ro_gui_wimp_event_menu_selection(current_menu_window,
-			current_menu_icon, current_menu, selection, action)) {
-
-		/* perform menu action */
-		if (action != NO_ACTION)
-			ro_gui_menu_handle_action(current_menu_window,
-					 action, false);
-
-		/* perform non-automated actions */
-		if (current_menu == url_suggest_menu) {
-			g = ro_gui_toolbar_lookup(current_menu_window);
-			if (g) {
-				url = url_suggest_menu->entries[selection->items[0]].
-						data.indirected_text.text;
-				gui_window_set_url(g, url);
-				browser_window_go(g->bw, url, 0, true);
-			}
-		} else if (current_menu == gui_form_select_menu) {
-			g = ro_gui_window_lookup(current_menu_window);
-			assert(g);
-
-			if (selection->items[0] >= 0) {
-				form_select_process_selection(g->bw->current_content,
-						gui_form_select_control,
-						selection->items[0]);
-			}
-		}
-
-		/* allow automatic menus to have their data updated */
-//		ro_gui_wimp_event_menu_selection(current_menu_window,
-//				current_menu_icon, current_menu, selection);
-
-		/* Menus not handled by ro_gui_wimp_event_menu_selection()
-		 * will need to be re-prepared before an adjust reopening.
-		 */
-
-		needs_prepare = true;
-	}
+			current_menu_icon, current_menu, selection, action))
+		return;
 
 	/* re-open the menu for Adjust clicks */
 	error = xwimp_get_pointer_info(&pointer);
@@ -652,43 +375,16 @@ void ro_gui_menu_selection(wimp_selection *selection)
 		LOG(("xwimp_get_pointer_info: 0x%x: %s",
 				error->errnum, error->errmess));
 		warn_user("WimpError", error->errmess);
-		ro_gui_menu_closed(true);
+		ro_gui_menu_closed();
 		return;
 	}
 
 	if (pointer.buttons != wimp_CLICK_ADJUST) {
-		ro_gui_menu_closed(true);
+		ro_gui_menu_closed();
 		return;
 	}
 
-	/* re-prepare all the visible entries */
-	if (needs_prepare) {
-		i = 0;
-		menu = current_menu;
-		do {
-			j = 0;
-			do {
-				action = ro_gui_menu_find_action(current_menu,
-						&menu->entries[j]);
-				if (action != NO_ACTION)
-					ro_gui_menu_prepare_action(current_menu_window,
-							action, false);
-			} while (!(menu->entries[j++].menu_flags & wimp_MENU_LAST));
-			j = selection->items[i++];
-			if (j != -1) {
-				menu = menu->entries[j].sub_menu;
-				if ((!menu) || (menu == wimp_NO_SUB_MENU))
-					break;
-			}
-		} while (j != -1);
-	}
-
-	if (current_menu == gui_form_select_menu) {
-		assert(g); /* Keep scan-build happy */
-		gui_create_form_select_menu(g->bw, gui_form_select_control);
-	} else
-		ro_gui_menu_create(current_menu, 0, 0, current_menu_window, true);
-
+	ro_gui_menu_create(current_menu, 0, 0, current_menu_window);
 	current_menu_icon = previous_menu_icon;
 }
 
@@ -701,7 +397,6 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 	int i;
 	menu_action action;
 	wimp_menu_entry *menu_entry;
-	wimp_menu *sub_menu;
 	os_error *error;
 
 	assert(current_menu);
@@ -716,42 +411,31 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 				entries[warning->selection.items[i]];
 	action = ro_gui_menu_find_action(current_menu, menu_entry);
 
-	/* We only process the menu in the old way if the wimp_event module
-	 * hasn't processed it for us.
+	/* Process the warning via Wimp_Event, then register the resulting
+	 * submenu with the module.
 	 */
 
-	if (!ro_gui_wimp_event_submenu_warning(current_menu_window,
+	ro_gui_wimp_event_submenu_warning(current_menu_window,
 			current_menu_icon, current_menu, &(warning->selection),
-			action)) {
-		if (IS_MENU(menu_entry->sub_menu)) {
-			ro_gui_wimp_event_register_submenu((wimp_w)0);
-			sub_menu = menu_entry->sub_menu;
-			i = 0;
-			do {
-				action = ro_gui_menu_find_action(current_menu,
-						&sub_menu->entries[i]);
-				if (action != NO_ACTION)
-					ro_gui_menu_prepare_action(current_menu_window,
-							action, false);
-			} while (!(sub_menu->entries[i++].menu_flags &
-					wimp_MENU_LAST));
-		} else {
-			ro_gui_wimp_event_register_submenu((wimp_w)menu_entry->sub_menu);
-			action = ro_gui_menu_find_action(current_menu, menu_entry);
-			if (action != NO_ACTION)
-				ro_gui_menu_prepare_action(current_menu_window,
-						action, true);
-		}
+			action);
+
+	if (IS_MENU(menu_entry->sub_menu)) {
+		ro_gui_wimp_event_register_submenu((wimp_w) 0);
+	} else {
+		ro_gui_wimp_event_register_submenu((wimp_w)
+				menu_entry->sub_menu);
+
+		/* If this is a dialogue box, remove the close and back icons.
+		 */
+
+		ro_gui_wimp_update_window_furniture((wimp_w)
+				menu_entry->sub_menu,
+				wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_BACK_ICON,
+				0);
 	}
 
-	/* If this is a dialogue box, remove the close and back icons. */
-
-	if (!(IS_MENU(menu_entry->sub_menu)))
-		ro_gui_wimp_update_window_furniture((wimp_w)menu_entry->sub_menu,
-				wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_BACK_ICON, 0);
-
-
 	/* open the sub-menu */
+
 	error = xwimp_create_sub_menu(menu_entry->sub_menu,
 			warning->pos.x, warning->pos.y);
 	if (error) {
@@ -761,244 +445,42 @@ void ro_gui_menu_warning(wimp_message_menu_warning *warning)
 	}
 }
 
-
 /**
- * Update navigate menu status and toolbar icons.
+ * Update the current menu by sending it a Menu Prepare event through wimp_event
+ * and then reopening it if the contents has changed.
  *
- * /param gui  the gui_window to update
+ * \param *menu		The menu to refresh: if 0, the current menu will be
+ *			refreshed regardless, otherwise it will be refreshed
+ *			only if it matches the supplied handle.
  */
-void ro_gui_prepare_navigate(struct gui_window *gui)
+
+void ro_gui_menu_refresh(wimp_menu *menu)
 {
-	ro_gui_menu_prepare_action(gui->window, HOTLIST_SHOW, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_STOP, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_RELOAD_ALL,
-			false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_BACK, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_FORWARD,
-			false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_NAVIGATE_UP, false);
-	ro_gui_menu_prepare_action(gui->window, HOTLIST_SHOW, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_SAVE, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_PRINT, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_SCALE_VIEW, false);
-	ro_gui_menu_prepare_action(gui->window, BROWSER_FIND_TEXT, false);
-
-	if (gui->toolbar) {
-		ro_gui_set_icon_shaded_state(gui->toolbar->toolbar_handle,
-				ICON_TOOLBAR_SUGGEST,
-				!ro_gui_url_suggest_prepare_menu());
-	}
-}
-
-
-/**
- * Prepare the page info window for use
- *
- * \param g  the gui_window to set the display icons for
- */
-void ro_gui_menu_prepare_pageinfo(struct gui_window *g)
-{
-	hlcache_handle *h = g->bw->current_content;
-	char icon_buf[20] = "file_xxx";
-	char enc_buf[40];
-	char enc_token[10] = "Encoding0";
-	const char *icon = icon_buf;
-	const char *title, *url, *mime;
-	const char *enc = "-";
-
-	assert(h);
-
-	title = content_get_title(h);
-	if (title == NULL)
-		title = "-";
-	url = content_get_url(h);
-	if (url == NULL)
-		url = "-";
-	mime = content_get_mime_type(h);
-	if (mime == NULL)
-		mime = "-";
-
-	sprintf(icon_buf, "file_%x", ro_content_filetype(h));
-	if (!ro_gui_wimp_sprite_exists(icon_buf))
-		sprintf(icon_buf, "file_xxx");
-
-	if (content_get_type(h) == CONTENT_HTML) {
-		if (html_get_encoding(h)) {
-			enc_token[8] = '0' + html_get_encoding_source(h);
-			snprintf(enc_buf, sizeof enc_buf, "%s (%s)",
-					html_get_encoding(h),
-					messages_get(enc_token));
-			enc = enc_buf;
-		} else {
-			enc = messages_get("EncodingUnk");
-		}
-	}
-
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ICON, icon, true);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TITLE, title, true);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_URL, url, true);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC, enc, true);
-	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE, mime, true);
-}
-
-
-/**
- * Prepare the object info window for use
- *
- * \param object  the object for which information is to be displayed
- * \param href    corresponding href, if any
- */
-void ro_gui_menu_prepare_objectinfo(hlcache_handle *object, const char *href)
-{
-	char icon_buf[20] = "file_xxx";
-	const char *url, *mime;
-	const char *target = "-";
-
-	sprintf(icon_buf, "file_%.3x",
-			ro_content_filetype(object));
-	if (!ro_gui_wimp_sprite_exists(icon_buf))
-		sprintf(icon_buf, "file_xxx");
-
-	url = content_get_url(object);
-	if (url == NULL)
-		url = "-";
-	mime = content_get_mime_type(object);
-	if (mime == NULL)
-		mime = "-";
-
-	if (href)
-		target = href;
-
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_ICON, icon_buf, true);
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_URL, url, true);
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TARGET, target, true);
-	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE, mime, true);
-}
-
-
-/**
- * Display a menu of options for a form select control.
- *
- * \param  bw	    browser window containing form control
- * \param  control  form control of type GADGET_SELECT
- */
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control)
-{
-	unsigned int i, entries;
-	char *text_convert, *temp;
-	struct form_option *option;
-	wimp_pointer pointer;
+	int checksum = 0;
 	os_error *error;
-	bool reopen = true;
-	utf8_convert_ret err;
 
-	assert(control);
-
-	for (entries = 0, option = control->data.select.items; option;
-			option = option->next)
-		entries++;
-	if (entries == 0) {
-		ro_gui_menu_closed(true);
+	if (!current_menu_open)
 		return;
-	}
 
-	if ((gui_form_select_menu) && (control != gui_form_select_control)) {
-		for (i = 0; ; i++) {
-			free(gui_form_select_menu->entries[i].data.
-					indirected_text.text);
-			if (gui_form_select_menu->entries[i].menu_flags &
-					wimp_MENU_LAST)
-				break;
-		}
-		free(gui_form_select_menu->title_data.indirected_text.text);
-		free(gui_form_select_menu);
-		gui_form_select_menu = 0;
-	}
+	checksum = ro_gui_menu_get_checksum();
 
-	if (!gui_form_select_menu) {
-		reopen = false;
-		gui_form_select_menu = malloc(wimp_SIZEOF_MENU(entries));
-		if (!gui_form_select_menu) {
-			warn_user("NoMemory", 0);
-			ro_gui_menu_closed(true);
-			return;
-		}
-		err = utf8_to_local_encoding(messages_get("SelectMenu"), 0,
-				&text_convert);
-		if (err != UTF8_CONVERT_OK) {
-			/* badenc should never happen */
-			assert(err != UTF8_CONVERT_BADENC);
-			LOG(("utf8_to_local_encoding failed"));
-			warn_user("NoMemory", 0);
-			ro_gui_menu_closed(true);
-			return;
-		}
-		gui_form_select_menu->title_data.indirected_text.text =
-				text_convert;
-		ro_gui_menu_init_structure(gui_form_select_menu, entries);
-	}
-
-	for (i = 0, option = control->data.select.items; option;
-			i++, option = option->next) {
-		gui_form_select_menu->entries[i].menu_flags = 0;
-		if (option->selected)
-			gui_form_select_menu->entries[i].menu_flags =
-					wimp_MENU_TICKED;
-		if (!reopen) {
-
-			/* convert spaces to hard spaces to stop things
-			 * like 'Go Home' being treated as if 'Home' is a
-			 * keyboard shortcut and right aligned in the menu.
-			 */
-
-			temp = cnv_space2nbsp(option->text);
-			if (!temp) {
-				LOG(("cnv_space2nbsp failed"));
-				warn_user("NoMemory", 0);
-				ro_gui_menu_closed(true);
-				return;
-			}
-
-			err = utf8_to_local_encoding(temp,
-				0, &text_convert);
-			if (err != UTF8_CONVERT_OK) {
-				/* A bad encoding should never happen,
-				 * so assert this */
-				assert(err != UTF8_CONVERT_BADENC);
-				LOG(("utf8_to_enc failed"));
-				warn_user("NoMemory", 0);
-				ro_gui_menu_closed(true);
-				return;
-			}
-
-			free(temp);
-
-			gui_form_select_menu->entries[i].data.indirected_text.text =
-					text_convert;
-			gui_form_select_menu->entries[i].data.indirected_text.size =
-					strlen(gui_form_select_menu->entries[i].
-					data.indirected_text.text) + 1;
-		}
-	}
-
-	gui_form_select_menu->entries[0].menu_flags |=
-			wimp_MENU_TITLE_INDIRECTED;
-	gui_form_select_menu->entries[i - 1].menu_flags |= wimp_MENU_LAST;
-
-	error = xwimp_get_pointer_info(&pointer);
-	if (error) {
-		LOG(("xwimp_get_pointer_info: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		ro_gui_menu_closed(true);
+	if (!ro_gui_wimp_event_prepare_menu(current_menu_window,
+			current_menu_icon, current_menu))
 		return;
-	}
 
-	gui_form_select_control = control;
-	ro_gui_menu_create(gui_form_select_menu,
-			pointer.pos.x, pointer.pos.y, bw->window->window, true);
+	/* \TODO -- Call the menu's event handler here. */
+
+	if (checksum != ro_gui_menu_get_checksum()) {
+		error = xwimp_create_menu(current_menu, 0, 0);
+		if (error) {
+			LOG(("xwimp_create_menu: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("MenuError", error->errmess);
+		}
+	}
 }
+
+
 
 
 /**
@@ -1345,908 +827,6 @@ void ro_gui_menu_set_entry_ticked(wimp_menu *menu, menu_action action,
 
 
 /**
- * Handles an action.
- *
- * \param owner		      the window to handle the action for
- * \param action	      the action to handle
- * \param windows_at_pointer  whether to open any windows at the pointer location
- */
-bool ro_gui_menu_handle_action(wimp_w owner, menu_action action,
-		bool windows_at_pointer)
-{
-	wimp_window_state state;
-	struct gui_window *g = NULL;
-	struct browser_window *bw = NULL;
-	hlcache_handle *h = NULL;
-	struct toolbar *t = NULL;
-	os_error *error;
-	char url[80];
-	bool is_cookies, is_hotlist, is_global_history;
-
-	ro_gui_menu_get_window_details(owner, &g, &bw, &h, &t,
-			&is_cookies, &is_hotlist, &is_global_history);
-
-	switch (action) {
-
-		/* help actions */
-		case HELP_OPEN_CONTENTS:
-			ro_gui_open_help_page("documentation/index");
-			return true;
-		case HELP_OPEN_GUIDE:
-			ro_gui_open_help_page("documentation/guide");
-			return true;
-		case HELP_OPEN_INFORMATION:
-			ro_gui_open_help_page("documentation/info");
-			return true;
-		case HELP_OPEN_ABOUT:
-			ro_gui_open_help_page("about/index");
-			return true;
-		case HELP_LAUNCH_INTERACTIVE:
-			if (!ro_gui_interactive_help_available()) {
-				ro_gui_interactive_help_start();
-				option_interactive_help = true;
-			} else {
-				option_interactive_help = !option_interactive_help;
-			}
-			return true;
-
-		/* history actions */
-		case HISTORY_SHOW_LOCAL:
-			if ((!bw) || (!bw->history))
-				return false;
-			ro_gui_history_open(bw, bw->history,
-						windows_at_pointer);
-			return true;
-		case HISTORY_SHOW_GLOBAL:
-			ro_gui_global_history_open();
-			return true;
-
-		/* hotlist actions */
-		case HOTLIST_ADD_URL:
-			if (h == NULL || content_get_url(h) == NULL)
-				return false;
-			hotlist_add_page(content_get_url(h));
-			return true;
-		case HOTLIST_SHOW:
-			ro_gui_hotlist_open();
-			return true;
-
-		/* cookies actions */
-		case COOKIES_SHOW:
-			ro_gui_cookies_open();
-			return true;
-
-		case COOKIES_DELETE:
-			cookies_delete_all();
-			return true;
-
-		/* page actions */
-		case BROWSER_PAGE_INFO:
-			if (!h)
-				return false;
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(g->window,
-					dialog_pageinfo, windows_at_pointer);
-			return true;
-		case BROWSER_PRINT:
-			if (!h)
-				return false;
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(g->window,
-					dialog_print, windows_at_pointer);
-			return true;
-		case BROWSER_NEW_WINDOW:
-			if (!h)
-				return false;
-			browser_window_create(content_get_url(h), bw, 0, false,
-					false);
-			return true;
-		case BROWSER_VIEW_SOURCE:
-			if (!h)
-				return false;
-			ro_gui_view_source(h);
-			return true;
-
-		/* object actions */
-		case BROWSER_OBJECT_INFO:
-			if (!current_menu_object)
-				return false;
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(g->window,
-					dialog_objinfo, windows_at_pointer);
-			return true;
-		case BROWSER_OBJECT_RELOAD:
-			if (!current_menu_object)
-				return false;
-			content_invalidate_reuse_data(current_menu_object);
-			browser_window_reload(bw, false);
-			return true;
-
-		/* link actions */
-		case BROWSER_LINK_SAVE_URI:
-		case BROWSER_LINK_SAVE_URL:
-		case BROWSER_LINK_SAVE_TEXT:
-			if (!current_menu_url)
-				return false;
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(owner, dialog_saveas,
-					windows_at_pointer);
-			break;
-		case BROWSER_LINK_DOWNLOAD:
-			if (!current_menu_url)
-				return false;
-			browser_window_download(bw, current_menu_url,
-					content_get_url(h));
-			break;
-		case BROWSER_LINK_NEW_WINDOW:
-			if (!current_menu_url)
-				return false;
-			browser_window_create(current_menu_url, bw,
-					content_get_url(h), true, false);
-			break;
-
-		/* save actions */
-		case BROWSER_OBJECT_SAVE:
-		case BROWSER_OBJECT_EXPORT_SPRITE:
-		case BROWSER_OBJECT_EXPORT_DRAW:
-			h = current_menu_object;
-			/* Fall through */
-		case BROWSER_SAVE:
-		case BROWSER_SAVE_COMPLETE:
-		case BROWSER_EXPORT_DRAW:
-		case BROWSER_EXPORT_PDF:
-		case BROWSER_EXPORT_TEXT:
-		case BROWSER_SAVE_URL_URI:
-		case BROWSER_SAVE_URL_URL:
-		case BROWSER_SAVE_URL_TEXT:
-			if (!h)
-				return false;
-			/* Fall through */
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(owner, dialog_saveas,
-					windows_at_pointer);
-			return true;
-
-		/* selection actions */
-		case BROWSER_SELECTION_SAVE:
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(owner, dialog_saveas,
-					windows_at_pointer);
-			return true;
-		case BROWSER_SELECTION_COPY:
-			browser_window_key_press(bw, KEY_COPY_SELECTION);
-			break;
-		case BROWSER_SELECTION_CUT:
-			browser_window_key_press(bw, KEY_CUT_SELECTION);
-			return true;
-		case BROWSER_SELECTION_PASTE:
-			browser_window_key_press(bw, KEY_PASTE);
-			return true;
-		case BROWSER_SELECTION_ALL:
-			browser_window_key_press(bw, KEY_SELECT_ALL);
-			break;
-		case BROWSER_SELECTION_CLEAR:
-			browser_window_key_press(bw, KEY_CLEAR_SELECTION);
-			break;
-
-		/* navigation actions */
-		case BROWSER_NAVIGATE_HOME:
-			if (!bw)
-				return false;
-			if ((option_homepage_url) &&
-					(option_homepage_url[0])) {
-				browser_window_go(g->bw,
-						option_homepage_url, 0, true);
-			} else {
-				snprintf(url, sizeof url,
-						"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-						option_language);
-				browser_window_go(g->bw, url, 0, true);
-			}
-			return true;
-		case BROWSER_NAVIGATE_BACK:
-			if ((!bw) || (!bw->history))
-				return false;
-			history_back(bw, bw->history);
-			return true;
-		case BROWSER_NAVIGATE_FORWARD:
-			if ((!bw) || (!bw->history))
-				return false;
-			history_forward(bw, bw->history);
-			return true;
-		case BROWSER_NAVIGATE_UP:
-			if ((!bw) || (!h))
-				return false;
-			return ro_gui_window_navigate_up(bw->window,
-					content_get_url(h));
-		case BROWSER_NAVIGATE_RELOAD:
-		case BROWSER_NAVIGATE_RELOAD_ALL:
-			if (!bw)
-				return false;
-			browser_window_reload(bw,
-					(action == BROWSER_NAVIGATE_RELOAD_ALL));
-			return true;
-		case BROWSER_NAVIGATE_STOP:
-			if (!bw)
-				return false;
-			browser_window_stop(bw);
-			return true;
-		case BROWSER_NAVIGATE_URL:
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(NULL, dialog_openurl,
-					windows_at_pointer);
-			return true;
-
-		/* browser window/display actions */
-		case BROWSER_SCALE_VIEW:
-			if (!h)
-				return false;
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(g->window, dialog_zoom,
-					windows_at_pointer);
-			return true;
-		case BROWSER_FIND_TEXT:
-			if (!h || (content_get_type(h) != CONTENT_TEXTPLAIN &&
-					content_get_type(h) != CONTENT_HTML))
-				return false;
-			ro_gui_menu_prepare_action(owner, action, true);
-			ro_gui_dialog_open_persistent(g->window,
-					dialog_search, windows_at_pointer);
-			return true;
-		case BROWSER_IMAGES_BACKGROUND:
-			if (!g)
-				return false;
-			g->option.background_images =
-					!g->option.background_images;
-			gui_window_redraw_window(g);
-			return true;
-		case BROWSER_BUFFER_ANIMS:
-			if (!g)
-				return false;
-			g->option.buffer_animations =
-					!g->option.buffer_animations;
-			break;
-		case BROWSER_BUFFER_ALL:
-			if (!g)
-				return false;
-			g->option.buffer_everything =
-					!g->option.buffer_everything;
-			break;
-		case BROWSER_SAVE_VIEW:
-			if (!bw)
-				return false;
-			ro_gui_window_default_options(bw);
-			ro_gui_save_options();
-			return true;
-		case BROWSER_WINDOW_DEFAULT:
-			if (!g)
-				return false;
-			ro_gui_screen_size(&option_window_screen_width,
-					&option_window_screen_height);
-			state.w = current_menu_window;
-			error = xwimp_get_window_state(&state);
-			if (error) {
-				LOG(("xwimp_get_window_state: 0x%x: %s",
-						error->errnum,
-						error->errmess));
-				warn_user("WimpError", error->errmess);
-			}
-			option_window_x = state.visible.x0;
-			option_window_y = state.visible.y0;
-			option_window_width =
-					state.visible.x1 - state.visible.x0;
-			option_window_height =
-					state.visible.y1 - state.visible.y0;
-			ro_gui_save_options();
-			return true;
-		case BROWSER_WINDOW_STAGGER:
-			option_window_stagger = !option_window_stagger;
-			ro_gui_save_options();
-			return true;
-		case BROWSER_WINDOW_COPY:
-			option_window_size_clone = !option_window_size_clone;
-			ro_gui_save_options();
-			return true;
-		case BROWSER_WINDOW_RESET:
-			option_window_screen_width = 0;
-			option_window_screen_height = 0;
-			ro_gui_save_options();
-			return true;
-
-		/* toolbar actions */
-		case TOOLBAR_BUTTONS:
-			assert(t);
-			t->display_buttons = !t->display_buttons;
-			ro_gui_theme_refresh_toolbar(t);
-			return true;
-		case TOOLBAR_ADDRESS_BAR:
-			assert(t);
-			t->display_url = !t->display_url;
-			ro_gui_theme_refresh_toolbar(t);
-			if (t->display_url)
-				ro_gui_set_caret_first(t->toolbar_handle);
-			return true;
-		case TOOLBAR_THROBBER:
-			assert(t);
-			t->display_throbber = !t->display_throbber;
-			ro_gui_theme_refresh_toolbar(t);
-			return true;
-		case TOOLBAR_EDIT:
-			assert(t);
-			ro_gui_theme_toggle_edit(t);
-			return true;
-
-		/* misc actions */
-		case APPLICATION_QUIT:
-			if (ro_gui_prequit()) {
-				LOG(("QUIT in response to user request"));
-				netsurf_quit = true;
-			}
-			return true;
-		case CHOICES_SHOW:
-			ro_gui_configure_show();
-			return true;
-
-		/* unknown action */
-		default:
-			return false;
-	}
-	return false;
-}
-
-
-/**
- * Prepares an action for use.
- *
- * \param owner	   the window to prepare the action for
- * \param action   the action to prepare
- * \param windows  whether to update sub-windows
- */
-void ro_gui_menu_prepare_action(wimp_w owner, menu_action action,
-		bool windows)
-{
-	struct gui_window *g;
-	struct browser_window *bw;
-	hlcache_handle *h;
-	struct toolbar *t;
-	bool result = false;
-	int checksum = 0;
-	os_error *error;
-	char *parent;
-	url_func_result res;
-	bool compare;
-	bool is_cookies, is_hotlist, is_global_history;
-
-	ro_gui_menu_get_window_details(owner, &g, &bw, &h, &t,
-			&is_cookies, &is_hotlist, &is_global_history);
-	if (current_menu_open)
-		checksum = ro_gui_menu_get_checksum();
-	if (!h) {
-		current_menu_object = NULL;
-		current_menu_url = NULL;
-	}
-
-	switch (action) {
-
-		/* help actions */
-		case HELP_LAUNCH_INTERACTIVE:
-			result = ro_gui_interactive_help_available()
-					&& option_interactive_help;
-			ro_gui_menu_set_entry_ticked(current_menu,
-					action, result);
-			ro_gui_save_options();
-			break;
-
-		/* history actions */
-		case HISTORY_SHOW_LOCAL:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				(!bw || (!bw->history) ||
-				!(h || history_back_available(bw->history) ||
-				history_forward_available(bw->history))));
-			break;
-
-		/* hotlist actions */
-		case HOTLIST_ADD_URL:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					h == NULL);
-			break;
-
-		/* page actions */
-		case BROWSER_PAGE:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h ||
-					(content_get_type(h) != CONTENT_HTML &&
-					content_get_type(h) != CONTENT_TEXTPLAIN));
-			break;
-		case BROWSER_PAGE_INFO:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((windows) && (h))
-				ro_gui_menu_prepare_pageinfo(g);
-			break;
-		case BROWSER_PRINT:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((t) && (t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_PRINT, !h);
-			if ((windows) && (h))
-				ro_gui_print_prepare(g);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_PRINT, !h);
-			break;
-		case BROWSER_NEW_WINDOW:
-		case BROWSER_VIEW_SOURCE:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			break;
-
-		/* object actions */
-		case BROWSER_OBJECT:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!current_menu_object &&
-					!current_menu_url);
-			break;
-
-		case BROWSER_OBJECT_LINK:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!current_menu_url);
-			break;
-
-		case BROWSER_OBJECT_INFO:
-			if (windows && current_menu_object)
-				ro_gui_menu_prepare_objectinfo(
-						current_menu_object,
-						current_menu_url);
-			/* Fall through */
-		case BROWSER_OBJECT_RELOAD:
-		case BROWSER_OBJECT_OBJECT:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!current_menu_object);
-			break;
-
-		case BROWSER_OBJECT_PRINT:
-			/* not yet implemented */
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					true);
-			break;
-
-		/* save actions (browser, hotlist, history) */
-		case BROWSER_OBJECT_SAVE:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !current_menu_object);
-			if (windows && current_menu_object)
-				ro_gui_save_prepare(GUI_SAVE_OBJECT_ORIG,
-						current_menu_object,
-						NULL, NULL, NULL);
-			break;
-		case BROWSER_OBJECT_EXPORT:
-		case BROWSER_OBJECT_EXPORT_SPRITE:
-		case BROWSER_OBJECT_EXPORT_DRAW: {
-			bool exp_sprite = false;
-			bool exp_draw = false;
-
-			if (current_menu_object)
-				h = current_menu_object;
-
-			if (h) {
-				switch (content_get_type(h)) {
-/* \todo - this classification should prob be done in content_() */
-				/* bitmap types (Sprite export possible) */
-#ifdef WITH_JPEG
-				case CONTENT_JPEG:
-#endif
-#ifdef WITH_MNG
-				case CONTENT_JNG:
-				case CONTENT_MNG:
-#endif
-#ifdef WITH_GIF
-				case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-				case CONTENT_BMP:
-				case CONTENT_ICO:
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-				case CONTENT_PNG:
-#endif
-#ifdef WITH_SPRITE
-				case CONTENT_SPRITE:
-#endif
-					exp_sprite = true;
-					break;
-
-				/* vector types (Draw export possible) */
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-				case CONTENT_SVG:
-#endif
-#ifdef WITH_DRAW
-				case CONTENT_DRAW:
-#endif
-					exp_draw = true;
-					break;
-
-				default: break;
-				}
-			}
-
-			switch (action) {
-			case BROWSER_OBJECT_EXPORT_SPRITE:
-				if (!exp_sprite)
-					h = NULL;
-				break;
-			case BROWSER_OBJECT_EXPORT_DRAW:
-				if (!exp_draw)
-					h = NULL;
-				break;
-			default:
-				if (!exp_sprite && !exp_draw)
-					h = NULL;
-				break;
-			}
-
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_OBJECT_NATIVE, h, NULL, NULL, NULL);
-		}
-		break;
-		case BROWSER_LINK_SAVE_URI:
-		case BROWSER_LINK_SAVE_URL:
-		case BROWSER_LINK_SAVE_TEXT:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !current_menu_url);
-			if (windows && current_menu_url) {
-				gui_save_type save_type;
-				switch (action) {
-					case BROWSER_LINK_SAVE_URI:
-						save_type = GUI_SAVE_LINK_URI;
-						break;
-					case BROWSER_LINK_SAVE_URL:
-						save_type = GUI_SAVE_LINK_URL;
-						break;
-					default:
-						save_type = GUI_SAVE_LINK_TEXT;
-						break;
-				}
-				ro_gui_save_prepare(save_type, NULL, NULL,
-						current_menu_url, NULL);
-			}
-			break;
-
-		case BROWSER_SELECTION:
-			/* make menu available if there's anything that /could/
-			 * be selected */
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!h || (content_get_type(h) != CONTENT_HTML &&
-				content_get_type(h) != CONTENT_TEXTPLAIN));
-			break;
-		case BROWSER_SELECTION_SAVE:
-			if (h && (!bw->sel || !selection_defined(bw->sel)))
-				h = NULL;
-			ro_gui_menu_set_entry_shaded(current_menu, action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL, bw->sel, NULL, NULL);
-			break;
-		case BROWSER_SELECTION_COPY:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!(h && bw->sel && selection_defined(bw->sel)));
-			break;
-		case BROWSER_SELECTION_CUT:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-				!(h && bw->sel && selection_defined(bw->sel)
-					&& !selection_read_only(bw->sel)));
-			break;
-		case BROWSER_SELECTION_PASTE:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					!(h && bw->paste_callback));
-			break;
-		case BROWSER_SAVE:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_SOURCE, h, NULL, NULL, NULL);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_SAVE, !h);
-			break;
-		case BROWSER_SAVE_COMPLETE:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_COMPLETE, h, NULL, NULL, NULL);
-			break;
-		case BROWSER_EXPORT_DRAW:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_DRAW, h, NULL, NULL, NULL);
-			break;
-		case BROWSER_EXPORT_PDF:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_PDF, h, NULL, NULL, NULL);
-			break;
-		case BROWSER_EXPORT_TEXT:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_TEXT, h, NULL, NULL, NULL);
-			break;
-		case BROWSER_OBJECT_SAVE_URL_URI:
-			if (h && content_get_type(h) == CONTENT_HTML)
-				h = current_menu_object;
-			/* Fall through */
-		case BROWSER_SAVE_URL_URI:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_LINK_URI, NULL,
-						NULL,
-						content_get_url(h),
-						content_get_title(h));
-			break;
-		case BROWSER_OBJECT_SAVE_URL_URL:
-			if (h && content_get_type(h) == CONTENT_HTML)
-				h = current_menu_object;
-			/* Fall through */
-		case BROWSER_SAVE_URL_URL:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL,
-						NULL,
-						content_get_url(h),
-						content_get_title(h));
-			break;
-		case BROWSER_OBJECT_SAVE_URL_TEXT:
-			h = current_menu_object;
-			/* Fall through */
-		case BROWSER_SAVE_URL_TEXT:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, NULL,
-						NULL,
-						content_get_url(h),
-						content_get_title(h));
-			break;
-
-		/* navigation actions */
-		case BROWSER_NAVIGATE_BACK:
-			result = browser_window_back_available(bw);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_BACK, !result);
-			break;
-		case BROWSER_NAVIGATE_FORWARD:
-			result = browser_window_forward_available(bw);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_FORWARD, !result);
-			break;
-		case BROWSER_NAVIGATE_UP:
-			result = (bw && h);
-			if (result) {
-				res = url_parent(content_get_url(h), &parent);
-				if (res == URL_FUNC_OK) {
-				  	res = url_compare(content_get_url(h),
-				  			parent, false,
-				  			&compare);
-					if (res == URL_FUNC_OK)
-					  	result = !compare;
-				  	free(parent);
-       	                	} else {
-       	                	  	result = false;
-       	                	}
-			}
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_UP, !result);
-			break;
-		case BROWSER_NAVIGATE_RELOAD:
-		case BROWSER_NAVIGATE_RELOAD_ALL:
-			result = browser_window_reload_available(bw);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_RELOAD, !result);
-			break;
-		case BROWSER_NAVIGATE_STOP:
-			result = browser_window_stop_available(bw);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !result);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_STOP, !result);
-			break;
-		case BROWSER_NAVIGATE_URL:
-			if (windows)
-				ro_gui_dialog_prepare_open_url();
-			break;
-
-		/* display actions */
-		case BROWSER_SCALE_VIEW:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !h);
-			if ((h) && (windows))
-				ro_gui_dialog_prepare_zoom(g);
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_SCALE, !h);
-			break;
-		case BROWSER_FIND_TEXT:
-			result = !h || (content_get_type(h) != CONTENT_HTML &&
-					content_get_type(h) != CONTENT_TEXTPLAIN);
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, result);
-			if ((!result) && (windows)) {
-				ro_gui_search_prepare(g->bw);
-			}
-			if ((t) && (!t->editor) &&
-					(t->type == THEME_BROWSER_TOOLBAR))
-				ro_gui_set_icon_shaded_state(
-						t->toolbar_handle,
-						ICON_TOOLBAR_SEARCH, result);
-			break;
-		case BROWSER_IMAGES_FOREGROUND:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, true);
-			ro_gui_menu_set_entry_ticked(current_menu,
-					action, true);
-			break;
-		case BROWSER_IMAGES_BACKGROUND:
-			if (g)
-				ro_gui_menu_set_entry_ticked(current_menu,
-					action, g->option.background_images);
-			break;
-		case BROWSER_BUFFER_ANIMS:
-			if (g) {
-				ro_gui_menu_set_entry_shaded(current_menu,
-					action, g->option.buffer_everything);
-				ro_gui_menu_set_entry_ticked(current_menu,
-					action,
-					g->option.buffer_animations ||
-					g->option.buffer_everything);
-			}
-			break;
-		case BROWSER_BUFFER_ALL:
-			if (g)
-				ro_gui_menu_set_entry_ticked(current_menu,
-					action, g->option.buffer_everything);
-			break;
-		case BROWSER_WINDOW_STAGGER:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					option_window_screen_width == 0);
-			ro_gui_menu_set_entry_ticked(current_menu, action,
-					((option_window_screen_width == 0) ||
-					option_window_stagger));
-			break;
-		case BROWSER_WINDOW_COPY:
-			ro_gui_menu_set_entry_ticked(current_menu, action,
-					option_window_size_clone);
-			break;
-		case BROWSER_WINDOW_RESET:
-			ro_gui_menu_set_entry_shaded(current_menu, action,
-					option_window_screen_width == 0);
-			break;
-
-		/* tree actions */
-		case TREE_SELECTION:
-			break;
-
-		/* toolbar actions */
-		case TOOLBAR_BUTTONS:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, (!t || (t->editor)));
-			ro_gui_menu_set_entry_ticked(current_menu,
-					action, (t &&
-					((t->display_buttons) || (t->editor))));
-			break;
-		case TOOLBAR_ADDRESS_BAR:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !t);
-			ro_gui_menu_set_entry_ticked(current_menu, action,
-					(t && t->display_url));
-			break;
-		case TOOLBAR_THROBBER:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !t);
-			ro_gui_menu_set_entry_ticked(current_menu, action,
-					(t && t->display_throbber));
-			break;
-		case TOOLBAR_EDIT:
-			ro_gui_menu_set_entry_shaded(current_menu,
-					action, !t);
-			ro_gui_menu_set_entry_ticked(current_menu, action,
-					(t && t->editor));
-			break;
-
-		/* unknown action */
-		default:
-			return;
-	}
-
-	/* update open menus */
-	if ((current_menu_open) &&
-			(checksum != ro_gui_menu_get_checksum())) {
-		error = xwimp_create_menu(current_menu, 0, 0);
-		if (error) {
-			LOG(("xwimp_create_menu: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MenuError", error->errmess);
-		}
-	}
-}
-
-
-/**
- * Gets various details relating to a window
- *
- * \param w  the window to complete information for
- */
-void ro_gui_menu_get_window_details(wimp_w w, struct gui_window **g,
-		struct browser_window **bw, hlcache_handle **h,
-		struct toolbar **toolbar,
-		bool *is_cookies, bool *is_hotlist, bool *is_global_history)
-{
-	*is_cookies = false;
-	*is_hotlist = false;
-	*is_global_history = false;
-
-	*g = ro_gui_window_lookup(w);
-
-	if (*g) {
-		*bw = (*g)->bw;
-		*toolbar = (*g)->toolbar;
-		if (*bw)
-			*h = (*bw)->current_content;
-	} else {
-		*bw = NULL;
-		*h = NULL;
-		if (ro_gui_hotlist_check_window(w)) {
-			*is_hotlist = true;
-//			*toolbar = treeview_window->toolbar;
-		} else if (ro_gui_global_history_check_window(w)) {
-			*is_global_history = true;
-//			*toolbar = treeview_window->toolbar;
-		} else if (ro_gui_cookies_check_window(w)) {
-			*is_cookies = true;
-//			*toolbar = treeview_window->toolbar;
-		} else {
-			*toolbar = NULL;
-		}
-	}
-}
-
-
-/**
  * Calculates a simple checksum for the current menu state
  */
 int ro_gui_menu_get_checksum(void)
@@ -2364,3 +944,4 @@ bool ro_gui_menu_translate(struct menu_definition *menu)
 
 	return true;
 }
+

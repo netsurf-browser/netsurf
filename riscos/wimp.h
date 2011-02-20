@@ -54,6 +54,8 @@ void ro_gui_set_icon_selected_state(wimp_w w, wimp_i i, bool state);
 bool ro_gui_get_icon_selected_state(wimp_w w, wimp_i i);
 void ro_gui_set_icon_shaded_state(wimp_w w, wimp_i i, bool state);
 bool ro_gui_get_icon_shaded_state(wimp_w w, wimp_i i);
+void ro_gui_set_icon_deleted_state(wimp_w w, wimp_i i, bool state);
+bool ro_gui_get_icon_deleted_state(wimp_w w, wimp_i i);
 void ro_gui_set_icon_button_type(wimp_w w, wimp_i i, int type);
 void ro_gui_set_icon_sprite(wimp_w w, wimp_i i, osspriteop_area *area,
 		const char *name);
@@ -64,7 +66,8 @@ void ro_gui_open_window_centre(wimp_w parent, wimp_w child);
 osspriteop_area *ro_gui_load_sprite_file(const char *pathname);
 bool ro_gui_wimp_sprite_exists(const char *sprite);
 os_error *ro_gui_wimp_get_sprite(const char *name, osspriteop_header **sprite);
-
+bool ro_gui_wimp_get_sprite_dimensions(osspriteop_area *area, char *sprite,
+		int *width, int *height);
 
 wimp_w ro_gui_set_window_background_colour(wimp_w window, wimp_colour background);
 void ro_gui_set_icon_colours(wimp_w window, wimp_i icon,

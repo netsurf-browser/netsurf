@@ -36,7 +36,7 @@
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/options.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -44,6 +44,22 @@
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+
+static void ro_gui_cookies_toolbar_update_buttons(void);
+static void ro_gui_cookies_toolbar_save_buttons(char *config);
+static bool ro_gui_cookies_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_pointer *pointer);
+static void ro_gui_cookies_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+static bool ro_gui_cookies_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_selection *selection, menu_action action);
+static void ro_gui_cookies_toolbar_click(button_bar_action action);
+
+struct ro_treeview_callbacks ro_cookies_treeview_callbacks = {
+	ro_gui_cookies_toolbar_click,
+	ro_gui_cookies_toolbar_update_buttons,
+	ro_gui_cookies_toolbar_save_buttons
+};
 
 /* The RISC OS cookie window, toolbar and treeview data. */
 
@@ -76,20 +92,29 @@ void ro_gui_cookies_postinitialise(void)
 {
 	/* Create our toolbar. */
 
-	cookies_window.toolbar = ro_gui_theme_create_toolbar(NULL,
-			THEME_COOKIES_TOOLBAR);
-	if (cookies_window.toolbar)
-		ro_gui_theme_attach_toolbar(cookies_window.toolbar,
-				cookies_window.window);
+	cookies_window.toolbar = ro_toolbar_create(NULL, cookies_window.window,
+			THEME_STYLE_COOKIES_TOOLBAR, TOOLBAR_FLAGS_NONE,
+			ro_treeview_get_toolbar_callbacks(), NULL,
+			"HelpCookiesToolbar");
+	if (cookies_window.toolbar != NULL) {
+		ro_toolbar_add_buttons(cookies_window.toolbar,
+				cookies_toolbar_buttons,
+				option_toolbar_cookies);
+		ro_toolbar_rebuild(cookies_window.toolbar);
+	}
 
 	/* Create the treeview with the window and toolbar. */
 
 	cookies_window.tv = ro_treeview_create(cookies_window.window,
-			cookies_window.toolbar, cookies_get_tree_flags());
+			cookies_window.toolbar, &ro_cookies_treeview_callbacks,
+			cookies_get_tree_flags());
 	if (cookies_window.tv == NULL) {
 		LOG(("Failed to allocate treeview"));
 		return;
 	}
+
+	ro_toolbar_update_client_data(cookies_window.toolbar,
+			cookies_window.tv);
 
 	/* Initialise the cookies into the tree. */
 
@@ -123,14 +148,18 @@ void ro_gui_cookies_postinitialise(void)
 	};
 	cookies_window.menu = ro_gui_menu_define_menu(&cookies_definition);
 
-	ro_gui_wimp_event_register_window_menu(cookies_window.window,
-			cookies_window.menu, ro_gui_cookies_menu_prepare,
-			ro_gui_cookies_menu_select, NULL,
-			ro_gui_cookies_menu_warning, false);
+	ro_gui_wimp_event_register_menu(cookies_window.window,
+			cookies_window.menu, false, false);
+	ro_gui_wimp_event_register_menu_prepare(cookies_window.window,
+			ro_gui_cookies_menu_prepare);
+	ro_gui_wimp_event_register_menu_selection(cookies_window.window,
+			ro_gui_cookies_menu_select);
+	ro_gui_wimp_event_register_menu_warning(cookies_window.window,
+			ro_gui_cookies_menu_warning);
 }
 
 /**
- * \TODO - Open the cookies window.
+ * Open the cookies window.
  *
  */
 
@@ -138,111 +167,128 @@ void ro_gui_cookies_open(void)
 {
 	tree_set_redraw(ro_treeview_get_tree(cookies_window.tv), true);
 
+	ro_gui_cookies_toolbar_update_buttons();
+
 	if (!ro_gui_dialog_open_top(cookies_window.window,
 			cookies_window.toolbar, 600, 800)) {
 		ro_treeview_set_origin(cookies_window.tv, 0,
-				-(ro_gui_theme_toolbar_height(
-				cookies_window.toolbar)));
+				-(ro_toolbar_height(cookies_window.toolbar)));
 	}
 }
 
 
 /**
- * Handle Mouse Click events on the toolbar.
+ * Handle toolbar button clicks.
  *
- * \param  *pointer		Pointer to the Mouse Click Event block.
- * \return			Return true if click handled; else false.
+ * \param  action		The action to handle
  */
 
-bool ro_gui_cookies_toolbar_click(wimp_pointer *pointer)
+void ro_gui_cookies_toolbar_click(button_bar_action action)
 {
-	if (pointer->buttons == wimp_CLICK_MENU)
-		return ro_gui_wimp_event_process_window_menu_click(pointer);
-
-	if (cookies_window.toolbar->editor != NULL) {
-		ro_gui_theme_toolbar_editor_click(cookies_window.toolbar,
-				pointer);
-		return true;
-	}
-
-	switch (pointer->i) {
-	case ICON_TOOLBAR_DELETE:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			cookies_delete_selected();
-			return true;
-		}
+	switch (action) {
+	case TOOLBAR_BUTTON_DELETE:
+		cookies_delete_selected();
 		break;
-	case ICON_TOOLBAR_EXPAND:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			cookies_expand_cookies();
-			return true;
-		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-			cookies_collapse_cookies();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_EXPAND:
+		cookies_expand_cookies();
 		break;
-	case ICON_TOOLBAR_OPEN:
-		if (pointer->buttons == wimp_CLICK_SELECT) {
-			cookies_expand_domains();
-			return true;
-		} else if (pointer->buttons == wimp_CLICK_ADJUST) {
-			cookies_collapse_domains();
-			return true;
-		}
+
+	case TOOLBAR_BUTTON_COLLAPSE:
+		cookies_collapse_cookies();
+		break;
+
+	case TOOLBAR_BUTTON_OPEN:
+		cookies_expand_domains();
+		break;
+
+	case TOOLBAR_BUTTON_CLOSE:
+		cookies_collapse_domains();
+		break;
+
+	default:
 		break;
 	}
-
-	return false;
 }
+
+
+/**
+ * Update the button state in the cookies toolbar.
+ */
+
+void ro_gui_cookies_toolbar_update_buttons(void)
+{
+	ro_toolbar_set_button_shaded_state(cookies_window.toolbar,
+			TOOLBAR_BUTTON_DELETE,
+			!ro_treeview_has_selection(cookies_window.tv));
+}
+
+
+/**
+ * Save a new button arrangement in the cookies toolbar.
+ *
+ * \param *config		The new button configuration string.
+ */
+
+void ro_gui_cookies_toolbar_save_buttons(char *config)
+{
+	if (option_toolbar_cookies != NULL)
+		free(option_toolbar_cookies);
+	option_toolbar_cookies = config;
+	ro_gui_save_options();
+}
+
 
 /**
  * Prepare the cookies menu for opening
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu about to be opened.
+ * \param  *pointer		Pointer to the relevant wimp event block, or
+ *				NULL for an Adjust click.
+ * \return			true if the event was handled; else false.
  */
 
-void ro_gui_cookies_menu_prepare(wimp_w window, wimp_menu *menu)
+bool ro_gui_cookies_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
+		wimp_pointer *pointer)
 {
 	bool selection;
 
-	if (menu != cookies_window.menu && menu != tree_toolbar_menu)
-		return;
+	if (menu != cookies_window.menu)
+		return false;
 
-	if (menu == cookies_window.menu) {
-		selection = ro_treeview_has_selection(cookies_window.tv);
+	selection = ro_treeview_has_selection(cookies_window.tv);
 
-		ro_gui_menu_set_entry_shaded(cookies_window.menu, TREE_SELECTION,
-				!selection);
-		ro_gui_menu_set_entry_shaded(cookies_window.menu, TREE_CLEAR_SELECTION,
-				!selection);
-	}
+	ro_gui_menu_set_entry_shaded(cookies_window.menu,
+			TREE_SELECTION, !selection);
+	ro_gui_menu_set_entry_shaded(cookies_window.menu,
+			TREE_CLEAR_SELECTION, !selection);
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_BUTTONS,
-			(cookies_window.toolbar == NULL ||
-			cookies_window.toolbar->editor));
+			ro_toolbar_menu_option_shade(cookies_window.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_BUTTONS,
-			(cookies_window.toolbar != NULL &&
-			(cookies_window.toolbar->display_buttons ||
-			(cookies_window.toolbar->editor))));
+			ro_toolbar_menu_buttons_tick(cookies_window.toolbar));
 
 	ro_gui_menu_set_entry_shaded(menu, TOOLBAR_EDIT,
-			cookies_window.toolbar == NULL);
+			ro_toolbar_menu_edit_shade(cookies_window.toolbar));
 	ro_gui_menu_set_entry_ticked(menu, TOOLBAR_EDIT,
-			(cookies_window.toolbar != NULL &&
-			cookies_window.toolbar->editor));
+			ro_toolbar_menu_edit_tick(cookies_window.toolbar));
+
+	return true;
 }
 
 /**
  * Handle submenu warnings for the cookies menu
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu to which the warning applies.
  * \param  *selection		The wimp menu selection data.
  * \param  action		The selected menu action.
  */
 
-void ro_gui_cookies_menu_warning(wimp_w window, wimp_menu *menu,
+void ro_gui_cookies_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	/* Do nothing */
@@ -251,14 +297,15 @@ void ro_gui_cookies_menu_warning(wimp_w window, wimp_menu *menu,
 /**
  * Handle selections from the cookies menu
  *
- * \param  window		The window owning the menu.
+ * \param  w			The window owning the menu.
+ * \param  i			The icon owning the menu.
  * \param  *menu		The menu from which the selection was made.
  * \param  *selection		The wimp menu selection data.
  * \param  action		The selected menu action.
  * \return			true if action accepted; else false.
  */
 
-bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
+bool ro_gui_cookies_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action)
 {
 	switch (action) {
@@ -290,33 +337,18 @@ bool ro_gui_cookies_menu_select(wimp_w window, wimp_menu *menu,
 		cookies_clear_selection();
 		return true;
 	case TOOLBAR_BUTTONS:
-		cookies_window.toolbar->display_buttons =
-				!cookies_window.toolbar->display_buttons;
-		ro_gui_theme_refresh_toolbar(cookies_window.toolbar);
+		ro_toolbar_set_display_buttons(cookies_window.toolbar,
+				!ro_toolbar_get_display_buttons(
+					cookies_window.toolbar));
 		return true;
 	case TOOLBAR_EDIT:
-		ro_gui_theme_toggle_edit(cookies_window.toolbar);
+		ro_toolbar_toggle_edit(cookies_window.toolbar);
 		return true;
 	default:
 		return false;
 	}
 
 	return false;
-}
-
-/**
- * Update the theme details of the cookies window.
- *
- * \param full_update		true to force a full theme change; false to
- *				refresh the toolbar size.
- */
-
-void ro_gui_cookies_update_theme(bool full_update)
-{
-	if (full_update)
-		ro_treeview_update_theme(cookies_window.tv);
-	else
-		ro_treeview_update_toolbar(cookies_window.tv);
 }
 
 /**

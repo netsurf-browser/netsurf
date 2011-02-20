@@ -29,6 +29,7 @@
 #include "riscos/menus.h"
 #include "riscos/options.h"
 #include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -261,11 +262,17 @@ void ro_gui_options_theme_load(void)
 	/* create toolbars for each theme */
 	theme_count = 0;
 	descriptor = theme_list;
-	while (descriptor) {
+	while (descriptor != NULL) {
 		/* try to create a toolbar */
-		toolbar = ro_gui_theme_create_toolbar(descriptor,
-				THEME_BROWSER_TOOLBAR);
-		if (toolbar) {
+		toolbar = ro_toolbar_create(descriptor, NULL,
+				THEME_STYLE_BROWSER_TOOLBAR,
+				TOOLBAR_FLAGS_DISPLAY, NULL, NULL, NULL);
+		if (toolbar != NULL) {
+			ro_toolbar_add_buttons(toolbar, brower_toolbar_buttons,
+				option_toolbar_browser);
+			ro_toolbar_add_url(toolbar);
+			ro_toolbar_add_throbber(toolbar);
+			ro_toolbar_rebuild(toolbar);
 			toolbar_display = calloc(sizeof(struct toolbar_display), 1);
 			if (!toolbar_display) {
 				LOG(("No memory for calloc()"));
@@ -311,21 +318,23 @@ void ro_gui_options_theme_load(void)
 		/* update the toolbar */
 		item_height = 44 + 44 + 16;
 		if (link->next) item_height += 16;
-		ro_gui_theme_process_toolbar(link->toolbar, parent_width);
-		extent.y0 = nested_y - link->toolbar->height - item_height;
+		ro_toolbar_process(link->toolbar, parent_width, false);
+		extent.y0 = nested_y -
+				ro_toolbar_height(link->toolbar) -
+				item_height;
 		if (link->next) extent.y0 -= 16;
 		if (extent.y0 > min_extent) extent.y0 = min_extent;
 		xwimp_set_extent(theme_pane, &extent);
-		ro_gui_set_icon_button_type(link->toolbar->toolbar_handle,
-				ICON_TOOLBAR_URL, wimp_BUTTON_NEVER);
 
 		/* create the descriptor icons and separator line */
 		new_icon.icon.extent.x0 = 8;
 		new_icon.icon.extent.x1 = parent_width - 8;
 		new_icon.icon.flags &= ~wimp_ICON_BORDER;
 		new_icon.icon.flags |= wimp_ICON_SPRITE;
-		new_icon.icon.extent.y1 = nested_y - link->toolbar->height - 8;
-		new_icon.icon.extent.y0 = nested_y - link->toolbar->height - 52;
+		new_icon.icon.extent.y1 = nested_y -
+				ro_toolbar_height(link->toolbar) - 8;
+		new_icon.icon.extent.y0 = nested_y -
+				ro_toolbar_height(link->toolbar) - 52;
 		new_icon.icon.data.indirected_text_and_sprite.text =
 			(char *)&link->descriptor->name;
 		new_icon.icon.data.indirected_text_and_sprite.size =
@@ -363,10 +372,11 @@ void ro_gui_options_theme_load(void)
 		}
 
 		/* nest the toolbar window */
-		state.w = link->toolbar->toolbar_handle;
+		state.w = ro_toolbar_get_window(link->toolbar);
 		state.yscroll = 0;
 		state.visible.y1 = nested_y + base_extent;
-		state.visible.y0 = state.visible.y1 - link->toolbar->height + 2;
+		state.visible.y0 = state.visible.y1 -
+				ro_toolbar_height(link->toolbar) + 2;
 		xwimp_open_window_nested(PTR_WIMP_OPEN(&state), theme_pane,
 				wimp_CHILD_LINKS_PARENT_WORK_AREA
 						<< wimp_CHILD_BS_EDGE_SHIFT |
@@ -374,7 +384,8 @@ void ro_gui_options_theme_load(void)
 						<< wimp_CHILD_TS_EDGE_SHIFT);
 
 		/* continue processing */
-		nested_y -= link->toolbar->height + item_height;
+		nested_y -= ro_toolbar_height(link->toolbar) +
+				item_height;
 		link = link->next;
 	}
 
@@ -404,7 +415,7 @@ void ro_gui_options_theme_free(void)
 		if (next_toolbar)
 			xwimp_delete_icon(theme_pane,
 					toolbar->icon_number + 2);
-		ro_gui_theme_destroy_toolbar(toolbar->toolbar);
+		ro_toolbar_destroy(toolbar->toolbar);
 		free(toolbar);
 	}
 	toolbars = NULL;

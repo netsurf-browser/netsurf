@@ -29,6 +29,7 @@
 #include <oslib/wimp.h>
 
 #include "desktop/tree.h"
+#include "riscos/toolbar.h"
 
 /* defined in front end code */
 extern const char tree_directory_icon_name[];
@@ -36,13 +37,16 @@ extern const char tree_content_icon_name[];
 
 typedef struct ro_treeview ro_treeview;
 
-struct ro_treeview_table {
-	void (*open_menu)(wimp_pointer *pointer);
+struct ro_treeview_callbacks {
+	void (*toolbar_button_click)(button_bar_action action);
+	void (*toolbar_button_update)(void);
+	void (*toolbar_button_save)(char *);
 };
 
 ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
-		unsigned int flags);
+		struct ro_treeview_callbacks *callbacks, unsigned int flags);
 void ro_treeview_destroy(ro_treeview *tv);
+const struct toolbar_callbacks *ro_treeview_get_toolbar_callbacks(void);
 
 struct tree *ro_treeview_get_tree(ro_treeview *tv);
 wimp_w ro_treeview_get_window(ro_treeview *tv);
@@ -51,8 +55,6 @@ bool ro_treeview_has_selection(ro_treeview *tv);
 void ro_treeview_set_origin(ro_treeview *tv, int x, int y);
 void ro_treeview_mouse_at(wimp_pointer *pointer);
 void ro_treeview_drag_end(wimp_dragged *drag);
-void ro_treeview_update_theme(ro_treeview *tv);
-void ro_treeview_update_toolbar(ro_treeview *tv);
 int ro_treeview_get_help(help_full_message_request *message_data);
 
 #endif

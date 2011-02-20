@@ -46,7 +46,7 @@
 #include "riscos/gui.h"
 #include "riscos/image.h"
 #include "riscos/menus.h"
-#include "riscos/theme.h"
+#include "riscos/toolbar.h"
 #include "riscos/tinct.h"
 #include "riscos/textarea.h"
 #include "riscos/treeview.h"
@@ -87,6 +87,7 @@ struct ro_treeview
 		int y;		/*< Y coordinate of drag start             */
 	} drag_start;
 	tree_drag_type drag;	/*< The current drag type for the tree     */
+	struct ro_treeview_callbacks *callbacks;	/*< Callback handlers */
 };
 
 static void ro_treeview_redraw_request(int x, int y, int width, int height,
@@ -109,6 +110,13 @@ static bool ro_treeview_keypress(wimp_key *key);
 static void ro_treeview_set_window_extent(ro_treeview *tv,
 		int width, int height);
 
+static void ro_treeview_update_theme(void *data, bool ok);
+static void ro_treeview_update_toolbar(void *data);
+static void ro_treeview_button_update(void *data);
+static void ro_treeview_save_toolbar_buttons(void *data, char *config);
+static void ro_treeview_button_click(void *data,
+		toolbar_action_type action_type, union toolbar_action action);
+
 static const struct treeview_table ro_tree_callbacks = {
 	ro_treeview_redraw_request,
 	ro_treeview_resized,
@@ -116,18 +124,29 @@ static const struct treeview_table ro_tree_callbacks = {
 	ro_treeview_get_window_dimensions
 };
 
+static const struct toolbar_callbacks ro_treeview_toolbar_callbacks = {
+	ro_treeview_update_theme,
+	ro_treeview_update_toolbar,
+	ro_treeview_button_update,
+	ro_treeview_button_click,
+	NULL,				/* No toolbar keypress handler    */
+	ro_treeview_save_toolbar_buttons
+};
+
+
 /**
  * Create a RISC OS GUI implementation of a treeview tree.
  *
  * \param  window		The window to create the tree in.
  * \param  *toolbar		A toolbar to attach to the window.
+ * \param  *callbacks		Callbacks to service the treeview.
  * \param  flags		The treeview flags.
  *
  * \return			The RISC OS treeview pointer.
  */
 
 ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
-		unsigned int flags)
+		struct ro_treeview_callbacks *callbacks, unsigned int flags)
 {
 	ro_treeview *tv;
 
@@ -166,6 +185,10 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 
 	tv->drag = TREE_NO_DRAG;
 
+	/* Record the callback info. */
+
+	tv->callbacks = callbacks;
+
 	/* Register wimp events to handle the supplied window. */
 
 	ro_gui_wimp_event_register_redraw_window(tv->w, ro_treeview_redraw);
@@ -191,6 +214,18 @@ void ro_treeview_destroy(ro_treeview *tv)
 	tree_delete(tv->tree);
 
 	free(tv);
+}
+
+/**
+ * Return a pointer to a toolbar callbacks structure with the handlers to be
+ * used by any treeview window toolbars.
+ *
+ * \return			A pointer to the callback structure.
+ */
+
+const struct toolbar_callbacks *ro_treeview_get_toolbar_callbacks(void)
+{
+	return &ro_treeview_toolbar_callbacks;
 }
 
 /**
@@ -702,7 +737,7 @@ static void ro_treeview_open(wimp_open *open)
 	}
 
 	if (tv->tb)
-		ro_gui_theme_process_toolbar(tv->tb, -1);
+		ro_toolbar_process(tv->tb, -1, false);
 }
 
 
@@ -786,10 +821,16 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 		if (tv->drag == TREE_SELECT_DRAG ||
 				tv->drag == TREE_MOVE_DRAG)
 			ro_treeview_drag_start(tv, pointer, &state);
+
+
+		if (tv->callbacks != NULL &&
+				tv->callbacks->toolbar_button_update != NULL)
+			tv->callbacks->toolbar_button_update();
 	}
 
 	/* We assume that the owning module will have attached a window menu
-	 * to our parent window.  If it hasn't, this call will quietly fail.
+	 * to our parent window with the auto flag unset (so that we can fudge
+	 * the selection above).  If it hasn't, this call will quietly fail.
 	 */
 
 	if (pointer->buttons == wimp_CLICK_MENU)
@@ -860,6 +901,10 @@ void ro_treeview_mouse_at(wimp_pointer *pointer)
 				tv->drag_start.y, xpos, ypos);
 		tv->drag = TREE_NO_DRAG;
 	}
+
+	if (tv->callbacks != NULL &&
+			tv->callbacks->toolbar_button_update != NULL)
+		tv->callbacks->toolbar_button_update();
 }
 
 
@@ -884,7 +929,7 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 	drag.bbox.y0 = state->visible.y0;
 	drag.bbox.x1 = state->visible.x1;
 	drag.bbox.y1 = state->visible.y1 -
-	ro_gui_theme_toolbar_height(tv->tb);
+	ro_toolbar_height(tv->tb);
 
 	switch (tv->drag) {
 	case TREE_SELECT_DRAG:
@@ -922,7 +967,7 @@ static void ro_treeview_drag_start(ro_treeview *tv, wimp_pointer *pointer,
 		auto_scroll.pause_zone_sizes.y0 = 80;
 		auto_scroll.pause_zone_sizes.x1 = 80;
 		auto_scroll.pause_zone_sizes.y1 = 80 +
-				ro_gui_theme_toolbar_height(tv->tb);
+				ro_toolbar_height(tv->tb);
 		auto_scroll.pause_duration = 0;
 		auto_scroll.state_change = (void *) 1;
 
@@ -1038,8 +1083,14 @@ static bool ro_treeview_keypress(wimp_key *key)
 	}
 
 	if (!(c & IS_WIMP_KEY)) {
-		if (tree_keypress(tv->tree, c))
+		if (tree_keypress(tv->tree, c)) {
+			if (tv->callbacks &&
+					tv->callbacks->toolbar_button_update
+					!= NULL)
+				tv->callbacks->toolbar_button_update();
+
 			return true;
+		}
 	}
 
 	return false;
@@ -1049,23 +1100,20 @@ static bool ro_treeview_keypress(wimp_key *key)
 /**
  * Update a treeview to use a new theme.
  *
- * \param  *tv			Pointer to the treeview to update.
+ * \param *data			Pointer to the treeview to update.
+ * \param ok			true if the bar still exists; else false.
  */
 
-void ro_treeview_update_theme(ro_treeview *tv)
+void ro_treeview_update_theme(void *data, bool ok)
 {
-	if (tv != NULL && tv->tb != NULL){
-		/* \todo -- Check for toolbar editing here. */
+	ro_treeview *tv = (ro_treeview *) data;
 
-		if (!ro_gui_theme_update_toolbar(NULL, tv->tb)) {
-			ro_gui_theme_destroy_toolbar(tv->tb);
+	if (tv != NULL && tv->tb != NULL){
+		if (ok) {
+			ro_treeview_update_toolbar(tv);
+		} else {
 			tv->tb = NULL;
 		}
-
-		/* \todo -- Check for toolbar editing here. */
-
-		ro_gui_theme_attach_toolbar(tv->tb, tv->w);
-		ro_treeview_update_toolbar(tv);
 	}
 }
 
@@ -1073,33 +1121,86 @@ void ro_treeview_update_theme(ro_treeview *tv)
 /**
  * Change the size of a treeview's toolbar and redraw the window.
  *
- * \param *tv			The treeview to update.
+ * \param *data			The treeview to update.
  */
 
-void ro_treeview_update_toolbar(ro_treeview *tv)
+void ro_treeview_update_toolbar(void *data)
 {
+	ro_treeview *tv = (ro_treeview *) data;
+
+	if (tv != NULL && tv->tb != NULL) {
 		ro_treeview_set_origin(tv, 0,
-				-(ro_gui_theme_toolbar_height(tv->tb)));
+				-(ro_toolbar_height(tv->tb)));
 
 		xwimp_force_redraw(tv->w, 0, tv->extent.y, tv->extent.x, 0);
-
+	}
 }
 
-#if 0
-	if ((tree) && (tree->toolbar)) {
-		if (tree->toolbar->editor)
-			if (!ro_gui_theme_update_toolbar(NULL, tree->toolbar->editor))
-				tree->toolbar->editor = NULL;
-		if (!ro_gui_theme_update_toolbar(NULL, tree->toolbar)) {
-			ro_gui_theme_destroy_toolbar(tree->toolbar);
-			tree->toolbar = NULL;
-		}
-		ro_gui_theme_toolbar_editor_sync(tree->toolbar);
-		ro_gui_theme_attach_toolbar(tree->toolbar, (wimp_w)tree->handle);
-		tree_resized(tree);
-		xwimp_force_redraw((wimp_w)tree->handle, 0, -16384, 16384, 16384);
-	}
-#endif
+
+/**
+ * Update the toolbar icons in a treeview window's toolbar.  As we're just
+ * an intermediate widget, we pass the details on down the chain.
+ *
+ * \param *data			The treeview owning the toolbar.
+ */
+
+void ro_treeview_button_update(void *data)
+{
+	ro_treeview *tv = (ro_treeview *) data;
+
+	if (tv == NULL || tv->callbacks == NULL)
+		return;
+
+	if (tv->callbacks->toolbar_button_update != NULL)
+		tv->callbacks->toolbar_button_update();
+}
+
+
+/**
+ * Save a new button configuration from a treeview window's toolbar.  As
+ * we're just an intermediate widget, we pass the details on.
+ *
+ * \param *data			The treeview owning the toolbar.
+ * \param *config		The new button config string.
+ */
+
+void ro_treeview_save_toolbar_buttons(void *data, char *config)
+{
+	ro_treeview *tv = (ro_treeview *) data;
+
+	if (tv == NULL || tv->callbacks == NULL)
+		return;
+
+	if (tv->callbacks->toolbar_button_save != NULL)
+		tv->callbacks->toolbar_button_save(config);
+}
+
+
+/**
+ * Process clicks on buttons in a treeview window's toolbar.  As we're just
+ * an intermediate widget, we just pass the details on down the chain.
+ *
+ * \param *data			The treeview owning the click.
+ * \param action_type		The action type to be handled.
+ * \param action		The action to handle.
+ */
+
+void ro_treeview_button_click(void *data,
+		toolbar_action_type action_type, union toolbar_action action)
+{
+	ro_treeview *tv = (ro_treeview *) data;
+
+	if (tv == NULL || tv->callbacks == NULL ||
+			action_type != TOOLBAR_ACTION_BUTTON)
+		return;
+
+	if (tv->callbacks->toolbar_button_click != NULL)
+		tv->callbacks->toolbar_button_click(action.button);
+
+	if (tv->callbacks->toolbar_button_update != NULL)
+		tv->callbacks->toolbar_button_update();
+}
+
 
 /**
  * Return a token identifying the interactive help message for a given cursor

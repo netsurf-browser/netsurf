@@ -34,33 +34,49 @@ struct url_suggest_item {
 	struct url_suggest_item	*next;  /*< The next URL in the list.     */
 };
 
-static bool url_suggest_callback(const char *url, const struct url_data *data);
+static bool ro_gui_url_suggest_callback(const char *url,
+		const struct url_data *data);
 
-static wimp_menu *suggest_menu;
 static int suggest_entries;
 static time_t suggest_time;
 static struct url_suggest_item *suggest_list;
 
+static wimp_MENU(URL_SUGGEST_MAX_URLS) url_suggest_menu_block;
+wimp_menu *ro_gui_url_suggest_menu = (wimp_menu *) &url_suggest_menu_block;
+
+
 /**
- * Initialise the URL suggestion menu.  A menu block which must be set to
- * contain URL_SUGGEST_MAX_URLS entries is passed in.
+ * Initialise the URL suggestion menu.  This MUST be called before anything
+ * tries to use the URL menu.
  *
- * /param  *menu	The menu to use as the suggestion menu.
  * /return		true if initialisation was OK; else false.
  */
 
-bool ro_gui_url_suggest_init(wimp_menu *menu)
+bool ro_gui_url_suggest_init(void)
 {
-	suggest_menu = menu;
-
-	suggest_menu->title_data.indirected_text.text =
+	ro_gui_url_suggest_menu->title_data.indirected_text.text =
 			(char *) messages_get("URLSuggest");
-	ro_gui_menu_init_structure((wimp_menu *) suggest_menu,
+	ro_gui_menu_init_structure((wimp_menu *) ro_gui_url_suggest_menu,
 			URL_SUGGEST_MAX_URLS);
 
 	suggest_entries = 0;
 
 	return true;
+}
+
+
+/**
+ * Check if there is a URL suggestion menu available for use.
+ *
+ * \TODO -- Ideally this should be able to decide if there's a menu
+ *          available without actually having to build it all.
+ *
+ * /return		true if the menu has entries; else false.
+ */
+
+bool ro_gui_url_suggest_get_menu_available(void)
+{
+	return ro_gui_url_suggest_prepare_menu();
 }
 
 
@@ -82,7 +98,7 @@ bool ro_gui_url_suggest_prepare_menu(void)
 	suggest_list = NULL;
 	suggest_time = time(NULL);
 
-	urldb_iterate_entries(url_suggest_callback);
+	urldb_iterate_entries(ro_gui_url_suggest_callback);
 
 	/* If any menu entries were found, put them into the menu.  The list
 	 * is in reverse order, last to first, so the menu is filled backwards.
@@ -100,10 +116,12 @@ bool ro_gui_url_suggest_prepare_menu(void)
 		while (list != NULL && i > 0) {
 			i--;
 
-			suggest_menu->entries[i].menu_flags = 0;
-			suggest_menu->entries[i].data.indirected_text.text =
+			ro_gui_url_suggest_menu->entries[i].menu_flags = 0;
+			ro_gui_url_suggest_menu->
+					entries[i].data.indirected_text.text =
 					(char *) list->url;
-			suggest_menu->entries[i].data.indirected_text.size =
+			ro_gui_url_suggest_menu->
+					entries[i].data.indirected_text.size =
 					strlen(list->url) + 1;
 
 			next = list->next;
@@ -113,9 +131,10 @@ bool ro_gui_url_suggest_prepare_menu(void)
 
 		assert(i == 0);
 
-		suggest_menu->entries[0].menu_flags |=
+		ro_gui_url_suggest_menu->entries[0].menu_flags |=
 				wimp_MENU_TITLE_INDIRECTED;
-		suggest_menu->entries[suggest_entries - 1].menu_flags |=
+		ro_gui_url_suggest_menu->
+				entries[suggest_entries - 1].menu_flags |=
 				wimp_MENU_LAST;
 
 		return true;
@@ -133,7 +152,7 @@ bool ro_gui_url_suggest_prepare_menu(void)
  * \return 		true to continue iteration, false otherwise
  */
 
-bool url_suggest_callback(const char *url, const struct url_data *data)
+bool ro_gui_url_suggest_callback(const char *url, const struct url_data *data)
 {
 	int			count;
 	unsigned int		weight;
@@ -193,3 +212,21 @@ bool url_suggest_callback(const char *url, const struct url_data *data)
 	return true;
 }
 
+
+/**
+ * Process a selection from the URL Suggest menu.
+ *
+ * \param *selection	The menu selection.
+ * \return		Pointer to the URL that was selected, or NULL for none.
+ */
+
+const char *ro_gui_url_suggest_get_selection(wimp_selection *selection)
+{
+	const char	*url = NULL;
+
+	if (selection->items[0] >= 0)
+		url = ro_gui_url_suggest_menu->entries[selection->items[0]].
+				data.indirected_text.text;
+
+	return url;
+}

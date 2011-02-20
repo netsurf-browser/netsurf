@@ -29,12 +29,72 @@
 
 struct gui_window;
 
-void ro_gui_url_complete_start(struct gui_window *g);
-bool ro_gui_url_complete_keypress(struct gui_window *g, uint32_t key);
-void ro_gui_url_complete_resize(struct gui_window *g, wimp_open *open);
-bool ro_gui_url_complete_close(struct gui_window *g, wimp_i i);
+/**
+ * Should be called when the caret is placed into a URL completion icon.
+ *
+ * \param *toolbar		The toolbar to initialise URL completion for.
+ */
+
+void ro_gui_url_complete_start(struct toolbar *toolbar);
+
+
+/**
+ * Handles a keypress for URL completion
+ *
+ * \param *toolbar		The toolbar to be updated.
+ * \param key			the key pressed (as UTF32 code or
+ *				wimp key + bit31 set)
+ * \return			true to indicate keypress handled; else false.
+ */
+
+bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key);
+
+
+/**
+ * Move and resize the url completion window to match the toolbar.
+ *
+ * \param *toolbar		The toolbar to update
+ * \param *open			the wimp_open request (updated on exit)
+ */
+
+void ro_gui_url_complete_resize(struct toolbar *toolbar, wimp_open *open);
+
+
+/**
+ * Try to close the current url completion window
+ *
+ * \return whether the window was closed
+ */
+
+bool ro_gui_url_complete_close(void);
+
+
+/**
+ * Redraws a section of the URL completion window
+ *
+ * \param redraw  the area to redraw
+ */
+
 void ro_gui_url_complete_redraw(wimp_draw *redraw);
+
+
+/**
+ * Handle mouse movement over the URL completion window.
+ *
+ * \param pointer  the pointer state
+ */
+
 void ro_gui_url_complete_mouse_at(wimp_pointer *pointer);
+
+
+/**
+ * Handle mouse clicks in the URL completion window.
+ *
+ * \param pointer  the pointer state
+ * \return whether the click was handled
+ */
+
 bool ro_gui_url_complete_click(wimp_pointer *pointer);
 
 #endif
+

@@ -60,7 +60,8 @@
 static int ro_gui_options_connection_proxy_type(wimp_w w);
 static void ro_gui_options_connection_default(wimp_pointer *pointer);
 static bool ro_gui_options_connection_ok(wimp_w w);
-static void ro_gui_options_connection_update(wimp_w w, wimp_i i);
+static bool ro_gui_options_connection_update(wimp_w w, wimp_i i, wimp_menu *m,
+		wimp_selection *s, menu_action a);
 
 bool ro_gui_options_connection_initialise(wimp_w w)
 {
@@ -88,7 +89,7 @@ bool ro_gui_options_connection_initialise(wimp_w w)
 			option_max_fetchers_per_host);
 	ro_gui_set_icon_integer(w, CONNECTION_CACHE_FETCH_FIELD,
 			option_max_cached_fetch_handles);
-	ro_gui_options_connection_update(w, -1);
+	ro_gui_options_connection_update(w, -1, NULL, NULL, NO_ACTION);
 
 	/* register icons */
 	ro_gui_wimp_event_register_menu_gright(w, CONNECTION_PROXY_FIELD,
@@ -124,7 +125,8 @@ bool ro_gui_options_connection_initialise(wimp_w w)
 
 }
 
-void ro_gui_options_connection_update(wimp_w w, wimp_i i)
+bool ro_gui_options_connection_update(wimp_w w, wimp_i i, wimp_menu *m,
+		wimp_selection *s, menu_action a)
 {
 	int proxy_type;
 	bool host, user;
@@ -142,6 +144,8 @@ void ro_gui_options_connection_update(wimp_w w, wimp_i i)
 	ro_gui_set_icon_shaded_state(w, CONNECTION_PROXY_USERNAME, !user);
 	ro_gui_set_icon_shaded_state(w, CONNECTION_PROXY_PASSWORD_LABEL, !user);
 	ro_gui_set_icon_shaded_state(w, CONNECTION_PROXY_PASSWORD, !user);
+
+	return true;
 }
 
 int ro_gui_options_connection_proxy_type(wimp_w w)
@@ -169,7 +173,7 @@ void ro_gui_options_connection_default(wimp_pointer *pointer)
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_MAX_FETCH_FIELD, 24);
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_HOST_FETCH_FIELD, 5);
 	ro_gui_set_icon_integer(pointer->w, CONNECTION_CACHE_FETCH_FIELD, 6);
-	ro_gui_options_connection_update(pointer->w, -1);
+	ro_gui_options_connection_update(pointer->w, -1, NULL, NULL, NO_ACTION);
 }
 
 bool ro_gui_options_connection_ok(wimp_w w)

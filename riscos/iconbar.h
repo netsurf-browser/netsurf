@@ -17,22 +17,16 @@
  */
 
 /** \file
- * URL Suggestion Menu (interface).
+ * Iconbar icon and menus (interface).
  */
 
-#ifndef _NETSURF_RISCOS_URL_SUGGEST_H_
-#define _NETSURF_RISCOS_URL_SUGGEST_H_
+#include <stdbool.h>
 
-#include "oslib/wimp.h"
+#ifndef _NETSURF_RISCOS_ICONBAR_H_
+#define _NETSURF_RISCOS_ICONBAR_H_
 
-#define URL_SUGGEST_MAX_URLS 16
-
-extern wimp_menu *ro_gui_url_suggest_menu;
-
-bool ro_gui_url_suggest_init(void);
-bool ro_gui_url_suggest_get_menu_available(void);
-bool ro_gui_url_suggest_prepare_menu(void);
-const char *ro_gui_url_suggest_get_selection(wimp_selection *selection);
+void ro_gui_iconbar_initialise(void);
+bool ro_gui_iconbar_check_menu(wimp_menu *menu);
 
 #endif
 
