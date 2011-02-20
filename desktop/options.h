@@ -181,10 +181,10 @@ void options_dump(FILE *outf);
  * %V - value - HTML type formatting
  * %v - value - plain formatting
  *
- * \param string The buffer in which to place teh results.
- * \param size The size of the string buffer.
- * \param option The opaque option number.
- * \param fmt The format string.
+ * \param string  The buffer in which to place the results.
+ * \param size    The size of the string buffer.
+ * \param option  The opaque option number.
+ * \param fmt     The format string.
  * \return The number of bytes written to \a string or -1 on error
  */
 int options_snoptionf(char *string, size_t size, unsigned int option,
