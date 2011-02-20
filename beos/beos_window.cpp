@@ -956,7 +956,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	clip.x1 = (int)updateRect.right + 1;
 	clip.y1 = (int)updateRect.bottom + 1;
 
-	browser_window_redraw(c, 0, 0, &clip);
+	browser_window_redraw(g->bw, 0, 0, &clip);
 
 	current_redraw_browser = NULL;
 
