@@ -480,7 +480,7 @@ void options_write(const char *path)
 static size_t options_output_value_html(struct option_entry_s *option,
 		size_t size, size_t pos, char *string)
 {
-	size_t slen; /* length added to string */
+	size_t slen = 0; /* length added to string */
 	colour rgbcolour; /* RRGGBB */
 
 	switch (option->type) {
@@ -532,7 +532,7 @@ static size_t options_output_value_html(struct option_entry_s *option,
 static size_t options_output_value_text(struct option_entry_s *option,
 		size_t size, size_t pos, char *string)
 {
-	size_t slen; /* length added to string */
+	size_t slen = 0; /* length added to string */
 	colour rgbcolour; /* RRGGBB */
 
 	switch (option->type) {
