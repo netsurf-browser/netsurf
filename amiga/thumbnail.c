@@ -37,12 +37,12 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	const char *url)
 {
 	struct BitScaleArgs bsa;
-	struct rect clip;
+	int plot_width;
+	int plot_height;
 
-	clip.x0 = 0;
-	clip.y0 = 0;
-	clip.x1 = content_get_width(content);
-	clip.y1 = content_get_width(content);
+	plot_width = min(content_get_width(content), 1024);
+	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
+			bitmap->width;
 
 	bitmap->nativebm = p96AllocBitMap(bitmap->width, bitmap->height, 32,
 							BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
@@ -53,18 +53,24 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	ami_clearclipreg(&browserglob);
 	current_redraw_browser = curbw;
 	plot = amiplot;
-	content_redraw(content, 0, 0, content_get_width(content),
-		content_get_width(content), &clip, 1.0, 0xFFFFFF);
+
+	glob->scale = thumbnail_get_redraw_scale(content, plot_width);
+
+	thumbnail_redraw(content, plot_width, plot_height);
+
 	current_redraw_browser = NULL;
 
 	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
 	{
+		float resample_scale = bitmap->width / (float)plot_width;
 		uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride;
 		if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
 
 		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
-					COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(bitmap->width/content_get_width(content)),
-					COMPTAG_ScaleY,COMP_FLOAT_TO_FIX(bitmap->height/content_get_width(content)),
+					COMPTAG_ScaleX,
+					COMP_FLOAT_TO_FIX(resample_scale),
+					COMPTAG_ScaleY,
+					COMP_FLOAT_TO_FIX(resample_scale),
 					COMPTAG_Flags,flags,
 					COMPTAG_DestX,0,
 					COMPTAG_DestY,0,
@@ -78,15 +84,15 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	{
 		bsa.bsa_SrcX = 0;
 		bsa.bsa_SrcY = 0;
-		bsa.bsa_SrcWidth = content_get_width(content);
-		bsa.bsa_SrcHeight = content_get_width(content);
+		bsa.bsa_SrcWidth = plot_width;
+		bsa.bsa_SrcHeight = plot_height;
 		bsa.bsa_DestX = 0;
 		bsa.bsa_DestY = 0;
 	//	bsa.bsa_DestWidth = width;
 	//	bsa.bsa_DestHeight = height;
-		bsa.bsa_XSrcFactor = content_get_width(content);
+		bsa.bsa_XSrcFactor = plot_width;
 		bsa.bsa_XDestFactor = bitmap->width;
-		bsa.bsa_YSrcFactor = content_get_width(content);
+		bsa.bsa_YSrcFactor = plot_height;
 		bsa.bsa_YDestFactor = bitmap->height;
 		bsa.bsa_SrcBitMap = browserglob.bm;
 		bsa.bsa_DestBitMap = bitmap->nativebm;
