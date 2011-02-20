@@ -42,8 +42,9 @@ thumbnail_create(hlcache_handle *content,
 	struct bitmap *fsbitmap;
 	struct rect clip;
 
-	width = min(content_get_width(content), 800);
-	height = min(content_get_height(content), 600);
+	width = min(content_get_width(content), 1024);
+	height = ((width * bitmap->height) + (bitmap->width / 2)) /
+			bitmap->width;
 
 	clip.x0 = 0;
 	clip.y0 = 0;
