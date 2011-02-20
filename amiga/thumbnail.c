@@ -18,6 +18,13 @@
 
 #include "amiga/os3support.h"
 #include "desktop/browser.h"
+#include "amiga/gui.h"
+#include "amiga/bitmap.h"
+#include "amiga/options.h"
+#include "content/urldb.h"
+#include "desktop/plotters.h"
+#include "desktop/thumbnail.h"
+
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
 #include <intuition/intuition.h>
@@ -26,12 +33,8 @@
 #include <graphics/composite.h>
 #endif
 #include <graphics/gfxbase.h>
-#include "amiga/gui.h"
-#include "amiga/bitmap.h"
-#include "amiga/options.h"
-#include "content/urldb.h"
-#include "desktop/plotters.h"
-#include "desktop/thumbnail.h"
+
+#include <sys/param.h>
 
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	const char *url)
@@ -40,7 +43,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	int plot_width;
 	int plot_height;
 
-	plot_width = min(content_get_width(content), 1024);
+	plot_width = MIN(content_get_width(content), 1024);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
