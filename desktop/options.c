@@ -529,13 +529,13 @@ int snoptionf(char *string, size_t size, unsigned int option, const char *fmt)
 					break;
 
 				case OPTION_COLOUR:
-					rgbcolour = ((0x000000FF | *((colour *)
-								     option_entry->p)) << 16) &
-						((0x0000FF00 | *((colour *)
-								 option_entry->p)) << 0) &
-						((0x00FF0000 | *((colour *)
+					rgbcolour = ((0x000000FF & *((colour *)
+								     option_entry->p)) << 16) |
+						((0x0000FF00 & *((colour *)
+								 option_entry->p)) << 0) |
+						((0x00FF0000 & *((colour *)
 								 option_entry->p)) >> 16);
-					slen += snprintf(string + slen, size - slen, "<span style=\"background-color: #%06x; color: #%06x;\">%x</span>", rgbcolour, (~rgbcolour) & 0xffffff, rgbcolour);
+					slen += snprintf(string + slen, size - slen, "<span style=\"background-color: #%06x; color: #%06x;\">#%06x</span>", rgbcolour, (~rgbcolour) & 0xffffff, rgbcolour);
 					break;
 
 				case OPTION_STRING:
