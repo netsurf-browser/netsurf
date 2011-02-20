@@ -940,10 +940,6 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	if (c == NULL)
 		return;
 
-	/* HTML rendering handles scale itself */
-	if (content_get_type(c) == CONTENT_HTML)
-		scale = 1;
-
 	if (!view->LockLooper())
 		return;
 	nsbeos_current_gc_set(view);
@@ -959,11 +955,9 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	clip.y0 = (int)updateRect.top;
 	clip.x1 = (int)updateRect.right + 1;
 	clip.y1 = (int)updateRect.bottom + 1;
-	content_redraw(c, 0, 0,
-			(view->Bounds().Width() + 1) * scale,
-			(view->Bounds().Height() + 1) * scale,
-			&clip,
-			g->bw->scale, 0xFFFFFF);
+
+	browser_window_redraw(c, 0, 0, &clip);
+
 	current_redraw_browser = NULL;
 
 	if (g->careth != 0)
