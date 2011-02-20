@@ -66,6 +66,9 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	BView *thumbView;
 	float width;
 	float height;
+	float plot_scale;
+	int big_width;
+	int big_height;
 	int depth;
 	struct rect clip;
 
@@ -76,17 +79,12 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	width = thumbnail->Bounds().Width();
 	height = thumbnail->Bounds().Height();
 	depth = 32;
-	//depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
+	
+	big_width = min(content_get_width(content), 1024);
+	big_height = ((big_width * height) + (width / 2)) / width;
 
-	LOG(("Trying to create a thumbnail bitmap %d x %d for a content of %d x %d @ %d",
-		width, height,
-		content_get_width(content), content_get_width(content), depth));
-
-	BRect contentRect(0, 0,
-		content_get_width(content) - 1,
-		content_get_width(content) - 1);
-	big = new BBitmap(contentRect,
-		B_BITMAP_ACCEPTS_VIEWS, B_RGB32);
+	BRect contentRect(0, 0, big_width - 1, big_height - 1);
+	big = new BBitmap(contentRect, B_BITMAP_ACCEPTS_VIEWS, B_RGB32);
 
 	if (big->InitCheck() < B_OK) {
 		delete big;
@@ -120,23 +118,20 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	nsbeos_current_gc_set(view);
 
 	plot = nsbeos_plotters;
-	nsbeos_plot_set_scale(1.0);
+	plot_scale = thumbnail_get_redraw_scale(content, big_width)
+	nsbeos_plot_set_scale(plot_scale);
 
-	plot.rectangle(0, 0,
-		content_get_width(content),
-		content_get_width(content),
+	plot.rectangle(0, 0, big_width, big_height,
 		plot_style_fill_white);
 
 	clip.x0 = 0;
 	clip.y0 = 0;
-	clip.x1 = content_get_width(content);
-	clip.y1 = content_get_width(content);
+	clip.x1 = big_width;
+	clip.y1 = big_height;
 
 	/* render the content */
-	content_redraw(content, 0, 0,
-			content_get_width(content), content_get_width(content),
-			&clip,
-			1.0, 0xFFFFFF);
+	content_redraw(content, 0, 0, big_width, big_height,
+			&clip, plot_scale, 0xFFFFFF);
 
 	view->Sync();
 	view->UnlockLooper();
