@@ -872,24 +872,11 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 		clip.y0 = b->redraw.area.y0 + b->scroll.current.y;
 		clip.x1 = b->redraw.area.x1 + b->scroll.current.x;
 		clip.y1 = b->redraw.area.y1 + b->scroll.current.y;
-		/* must clear the surface: */
-		plot.clip(&clip);
-		plot.rectangle( b->redraw.area.x0, 
-						b->redraw.area.y0, 
-						b->redraw.area.x1, 
-						b->redraw.area.y1, 
-						plot_style_fill_white
-		);		
 	}
 
-	content_redraw( 
-		b->bw->current_content,
-		-b->scroll.current.x, -b->scroll.current.y,
-		content_get_width( b->bw->current_content), 
-		content_get_height( b->bw->current_content),
-		&clip,
-		b->bw->scale, 0xFFFFFF
-	);
+	browser_window_redraw( b->bw, -b->scroll.current.x,
+			-b->scroll.current.y, &clip );
+
 	current_redraw_browser = NULL;
 
 	/* reset redraw area */
