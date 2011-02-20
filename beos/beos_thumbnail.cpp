@@ -70,7 +70,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	int big_width;
 	int big_height;
 	int depth;
-	struct rect clip;
 
 	assert(content);
 	assert(bitmap);
@@ -121,17 +120,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	plot_scale = thumbnail_get_redraw_scale(content, big_width)
 	nsbeos_plot_set_scale(plot_scale);
 
-	plot.rectangle(0, 0, big_width, big_height,
-		plot_style_fill_white);
-
-	clip.x0 = 0;
-	clip.y0 = 0;
-	clip.x1 = big_width;
-	clip.y1 = big_height;
-
 	/* render the content */
-	content_redraw(content, 0, 0, big_width, big_height,
-			&clip, plot_scale, 0xFFFFFF);
+	thumbnail_redraw(content, big_width, big_height);
 
 	view->Sync();
 	view->UnlockLooper();
