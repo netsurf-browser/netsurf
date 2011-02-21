@@ -39,7 +39,7 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 	CGColorSpaceRelease( cspace );
 
 	size_t width = MIN( content_get_width( content ), 1024 );
-	size_t height = ((width * bheight) + bwidth / 2)) / bwidth;
+	size_t height = ((width * bheight) + bwidth / 2) / bwidth;
 	
 	CGContextTranslateCTM( bitmapContext, 0, bheight );
 	CGContextScaleCTM( bitmapContext, (CGFloat)bwidth / width, -(CGFloat)bheight / height );
