@@ -235,15 +235,18 @@ bool ro_gui_url_bar_set_extent(struct url_bar *url_bar,
 
 	/* Redraw the relevant bits of the toolbar. */
 
-	if (url_bar->window != NULL && url_bar->container_icon != -1) {
-		xwimp_force_redraw(url_bar->window,
-				url_bar->extent.x0 +
-					(stretch) ? URLBAR_FAVICON_WIDTH : 0,
-				url_bar->extent.y0,
+	if (url_bar->window != NULL && !url_bar->hidden) {
+		if (stretch) {
+			xwimp_force_redraw(url_bar->window,
+					x0 + URLBAR_FAVICON_WIDTH, y0,
+					(x1 > url_bar->extent.x1) ?
+					x1 : url_bar->extent.x1, y1);
+		} else {
+			xwimp_force_redraw(url_bar->window,
+				url_bar->extent.x0, url_bar->extent.y0,
 				url_bar->extent.x1, url_bar->extent.y1);
-		xwimp_force_redraw(url_bar->window,
-				x0 + (stretch) ? URLBAR_FAVICON_WIDTH : 0,
-				y0, x1, y1);
+			xwimp_force_redraw(url_bar->window, x0, y0, x1, y1);
+		}
 	}
 
 	/* Reposition the URL bar icons. */
