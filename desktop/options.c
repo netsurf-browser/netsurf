@@ -633,6 +633,10 @@ int options_snoptionf(char *string, size_t size, unsigned int option,
 			fmtc++;
 		}
 	}
+
+	/* Ensure that we NUL-terminate the output */
+	string[min(slen, size - 1)] = '\0';
+
 	return slen;
 }
 
