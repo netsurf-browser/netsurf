@@ -31,12 +31,13 @@
 
 /* assign vdi line style to dst ( netsurf type ) */ 
 #define NSLT2VDI(dst, src) \
+	dst = 0;\
 	switch( src->stroke_type ) {\
 		case PLOT_OP_TYPE_DOT: \
-			dst = 3;	\
+			dst = (0xAAAA00 | 7);\
 		break;\
 		case PLOT_OP_TYPE_DASH:\
-			dst = 5;	\
+			dst = 3;	\
 		break;\
 		case PLOT_OP_TYPE_SOLID:\
 		case PLOT_OP_TYPE_NONE:\
@@ -534,7 +535,7 @@ static int disc(GEM_PLOTTER self,int x, int y, int radius, const plot_style_t * 
 static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_style_t * pstyle)
 {
 	short pxy[4];
-	short lt;
+	uint32_t lt;
 	int sw = pstyle->stroke_width;
 
 	pxy[0] = CURFB(self).x + x0;
@@ -546,7 +547,10 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 	if( sw == 0)
 		sw = 1;
 	NSLT2VDI(lt, pstyle)
-	vsl_type( self->vdi_handle, lt );
+	vsl_type( self->vdi_handle, (lt&0x0F) );
+	if( (lt&0x0F) == 7 ){
+		vsl_udsty(self->vdi_handle, ((lt&0xFFFF00) >> 8) );
+	}
 	vsl_width( self->vdi_handle, (short)sw );
 	vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
 	v_pline(self->vdi_handle, 2, (short *)&pxy );
