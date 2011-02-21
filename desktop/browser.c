@@ -370,17 +370,21 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		error = llcache_handle_retrieve(url2, fetch_flags, referer, 
 				fetch_is_post ? &post : NULL,
 				NULL, NULL, &l);
-		if (error != NSERROR_OK)
+		if (error == NSERROR_NO_FETCH_HANDLER) {
+			gui_launch_url(url2);
+		} else if (error != NSERROR_OK) {
 			LOG(("Failed to fetch download: %d", error));
+		} else {
+			error = download_context_create(l, bw->window);
+			if (error != NSERROR_OK) {
+				LOG(("Failed creating download context: %d", 
+						error));
+				llcache_handle_abort(l);
+				llcache_handle_release(l);
+			}
+		}
 
 		free(url2);
-
-		error = download_context_create(l, bw->window);
-		if (error != NSERROR_OK) {
-			LOG(("Failed creating download context: %d", error));
-			llcache_handle_abort(l);
-			llcache_handle_release(l);
-		}
 
 		return;
 	}
