@@ -26,6 +26,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
+#include "desktop/knockout.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
@@ -38,8 +39,12 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 {
 	struct rect clip;
 	float scale;
+	bool plot_ok = true;
 
 	assert(content);
+
+	if (plot.option_knockout)
+		knockout_plot_start(&plot);
 
 	/* No selection */
 	current_redraw_browser = NULL;
@@ -53,15 +58,20 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 	plot.clip(&clip);
 
 	/* Plot white background */
-	plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+	plot_ok &= plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
 			plot_style_fill_white);
 
 	/* Find the scale we're using */
 	scale = thumbnail_get_redraw_scale(content, width);
 
 	/* Render the content */
-	return content_redraw(content, 0, 0, width, height, &clip, scale,
-			0xFFFFFF);	
+	plot_ok &= content_redraw(content, 0, 0, width, height, &clip, scale,
+			0xFFFFFF);
+	
+	if (plot.option_knockout)
+		knockout_plot_end();
+
+	return plot_ok;
 }
 
 

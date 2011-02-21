@@ -37,7 +37,6 @@
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
-#include "desktop/knockout.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/options.h"
@@ -116,7 +115,7 @@ bool html_redraw(struct content *c, int x, int y,
 		float scale, colour background_colour)
 {
 	struct box *box;
-	bool result = true, want_knockout;
+	bool result = true;
 	bool select, select_only;
 	plot_style_t pstyle_fill_bg = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
@@ -125,10 +124,6 @@ bool html_redraw(struct content *c, int x, int y,
 
 	box = c->data.html.layout;
 	assert(box);
-
-	want_knockout = plot.option_knockout;
-	if (want_knockout)
-		knockout_plot_start(&plot);
 
 	/* The select menu needs special treating because, when opened, it
 	 * reaches beyond its layout box.
@@ -174,9 +169,6 @@ bool html_redraw(struct content *c, int x, int y,
 				x + menu_x, y + menu_y,
     				current_redraw_browser->scale, clip);
 	}
-	
-	if (want_knockout)
-		knockout_plot_end();
 
 	return result;
 

@@ -48,6 +48,7 @@
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
 #include "desktop/gui.h"
+#include "desktop/knockout.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
@@ -94,19 +95,25 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 {
 	int width = 0;
 	int height = 0;
+	bool plot_ok = true;
 
 	if (bw == NULL) {
 		LOG(("NULL browser window"));
 		return false;
 	}
 
-	plot.clip(clip);
-
 	if (bw->current_content == NULL) {
+		/* Browser window has no content, render blank fill */
+		plot.clip(clip);
 		return plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
 				plot_style_fill_white);
-
 	}
+
+	/* Browser window has content */
+	if (plot.option_knockout)
+		knockout_plot_start(&plot);
+
+	plot.clip(clip);
 
 	if (content_get_type(bw->current_content) != CONTENT_HTML) {
 		/* Set render area according to scale */
@@ -115,12 +122,18 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 		/* Non-HTML may not fill viewport to extents, so plot white
 		 * background fill */
-		plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
-				plot_style_fill_white);
+		plot_ok &= plot.rectangle(clip->x0, clip->y0,
+				clip->x1, clip->y1, plot_style_fill_white);
 	}
  
-	return content_redraw(bw->current_content, x, y, width, height,
-			clip, bw->scale, 0xFFFFFF);	
+	/* Render the content */
+	plot_ok &= content_redraw(bw->current_content, x, y, width, height,
+			clip, bw->scale, 0xFFFFFF);
+	
+	if (plot.option_knockout)
+		knockout_plot_end();
+
+	return plot_ok;
 }
 
 /* exported interface, documented in browser.h */
