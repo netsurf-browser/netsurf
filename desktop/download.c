@@ -137,15 +137,19 @@ static nserror download_callback(llcache_handle *handle,
 		break;
 
 	case LLCACHE_EVENT_DONE:
-		assert(ctx->window != NULL);
-
-		gui_download_window_done(ctx->window);
+		/* There may be no associated window if there was no data or headers */
+		if (ctx->window != NULL)
+			gui_download_window_done(ctx->window);
+		else
+			download_context_destroy(ctx);
 
 		break;
 
 	case LLCACHE_EVENT_ERROR:
 		if (ctx->window != NULL)
 			gui_download_window_error(ctx->window, event->data.msg);
+		else
+			download_context_destroy(ctx);
 
 		break;
 
