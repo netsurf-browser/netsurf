@@ -550,7 +550,7 @@ static size_t options_output_value_text(struct option_entry_s *option,
 		rgbcolour = ((0x000000FF & *((colour *) option->p)) << 16) |
 				((0x0000FF00 & *((colour *) option->p)) << 0) |
 				((0x00FF0000 & *((colour *) option->p)) >> 16);
-		slen = snprintf(string + pos, size - pos, "%x", rgbcolour);
+		slen = snprintf(string + pos, size - pos, "%06x", rgbcolour);
 		break;
 
 	case OPTION_STRING:
