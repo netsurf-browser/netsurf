@@ -40,6 +40,18 @@ nserror http_parse_content_type(const char *header_value, char **media_type,
 		http_parameter **parameters);
 
 /**
+ * Parse an HTTP Content-Disposition header value
+ *
+ * \param header_value      Header value to parse
+ * \param disposition_type  Pointer to location to receive disposition type
+ * \param parameters        Pointer to location to receive parameter list
+ * \return NSERROR_OK on success,
+ *         NSERROR_NOMEM on memory exhaustion
+ */
+nserror http_parse_content_disposition(const char *header_value,
+		char **disposition_type, http_parameter **parameters);
+
+/**
  * Find a named item in an HTTP parameter list
  *
  * \param list   List to search

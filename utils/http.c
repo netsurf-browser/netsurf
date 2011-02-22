@@ -344,6 +344,42 @@ nserror http_parse_content_type(const char *header_value, char **media_type,
 }
 
 /* See http.h for documentation */
+nserror http_parse_content_disposition(const char *header_value,
+		char **disposition_type, http_parameter **parameters)
+{
+	const char *pos = header_value;
+	char *type;
+	http_parameter *params = NULL;
+	nserror error;
+
+	/* disposition-type *( ";" parameter ) */
+
+	while (*pos == ' ' || *pos == '\t')
+		pos++;
+
+	error = http_parse_token(&pos, &type);
+	if (error != NSERROR_OK)
+		return error;
+
+	while (*pos == ' ' || *pos == '\t')
+		pos++;
+
+	if (*pos == ';') {
+		error = http_parse_parameter_list(&pos, &params);
+		if (error != NSERROR_OK) {
+			free(type);
+			return error;
+		}
+	}
+
+	*disposition_type = type;
+	*parameters = params;
+
+	return NSERROR_OK;
+
+}
+
+/* See http.h for documentation */
 nserror http_parameter_list_find_item(const http_parameter *list,
 		const char *name, const char **value)
 {
