@@ -4487,6 +4487,40 @@ void layout_compute_offsets(struct box *box,
 
 
 /**
+ * Apply changes to box descendant_[xy][01] values due to given child.
+ *
+ * \param  box    box to update
+ * \param  child  a box, which may affect box's descendant bbox
+ * \param  off_x  offset to apply to child->x coord to treat as child of box
+ * \param  off_y  offset to apply to child->y coord to treat as child of box
+ */
+
+static void layout_update_descendant_bbox(struct box *box, struct box *child,
+		int off_x, int off_y)
+{
+	/* get coordinates of child relative to box */
+	int child_x = child->x - off_x;
+	int child_y = child->y - off_y;
+
+	/* get child's descendant bbox relative to box */
+	int child_desc_x0 = child_x + child->descendant_x0;
+	int child_desc_y0 = child_y + child->descendant_y0;
+	int child_desc_x1 = child_x + child->descendant_x1;
+	int child_desc_y1 = child_y + child->descendant_y1;
+
+	/* increase box's descendant bbox to contain descendants */
+	if (child_desc_x0 < box->descendant_x0)
+		box->descendant_x0 = child_desc_x0;
+	if (child_desc_y0 < box->descendant_y0)
+		box->descendant_y0 = child_desc_y0;
+	if (box->descendant_x1 < child_desc_x1)
+		box->descendant_x1 = child_desc_x1;
+	if (box->descendant_y1 < child_desc_y1)
+		box->descendant_y1 = child_desc_y1;
+}
+
+
+/**
  * Recursively calculate the descendant_[xy][01] values for a laid-out box tree.
  *
  * \param  box  tree of boxes to update
@@ -4530,22 +4564,9 @@ void layout_calculate_descendant_bboxes(struct box *box)
 					child->type == BOX_FLOAT_RIGHT)
 				continue;
 
-			if (child->x + child->descendant_x0 - box->x <
-					box->descendant_x0)
-				box->descendant_x0 = child->x +
-						child->descendant_x0 - box->x;
-			if (box->descendant_x1 < child->x +
-					child->descendant_x1 - box->x)
-				box->descendant_x1 = child->x +
-						child->descendant_x1 - box->x;
-			if (child->y + child->descendant_y0 - box->y <
-					box->descendant_y0)
-				box->descendant_y0 = child->y +
-						child->descendant_y0 - box->y;
-			if (box->descendant_y1 < child->y +
-					child->descendant_y1 - box->y)
-				box->descendant_y1 = child->y +
-						child->descendant_y1 - box->y;
+			layout_update_descendant_bbox(box, child,
+					box->x, box->y);
+
 			if (child == box->inline_end)
 				break;
 		}
@@ -4563,14 +4584,7 @@ void layout_calculate_descendant_bboxes(struct box *box)
 				CSS_OVERFLOW_HIDDEN)
 			continue;
 
-		if (child->x + child->descendant_x0 < box->descendant_x0)
-			box->descendant_x0 = child->x + child->descendant_x0;
-		if (box->descendant_x1 < child->x + child->descendant_x1)
-			box->descendant_x1 = child->x + child->descendant_x1;
-		if (child->y + child->descendant_y0 < box->descendant_y0)
-			box->descendant_y0 = child->y + child->descendant_y0;
-		if (box->descendant_y1 < child->y + child->descendant_y1)
-			box->descendant_y1 = child->y + child->descendant_y1;
+		layout_update_descendant_bbox(box, child, 0, 0);
 	}
 
 	for (child = box->float_children; child; child = child->next_float) {
@@ -4579,27 +4593,14 @@ void layout_calculate_descendant_bboxes(struct box *box)
 
 		layout_calculate_descendant_bboxes(child);
 
-		if (child->x + child->descendant_x0 < box->descendant_x0)
-			box->descendant_x0 = child->x + child->descendant_x0;
-		if (box->descendant_x1 < child->x + child->descendant_x1)
-			box->descendant_x1 = child->x + child->descendant_x1;
-		if (child->y + child->descendant_y0 < box->descendant_y0)
-			box->descendant_y0 = child->y + child->descendant_y0;
-		if (box->descendant_y1 < child->y + child->descendant_y1)
-			box->descendant_y1 = child->y + child->descendant_y1;
+		layout_update_descendant_bbox(box, child, 0, 0);
 	}
 
 	if (box->list_marker) {
 		child = box->list_marker;
 		layout_calculate_descendant_bboxes(child);
 
-		if (child->x + child->descendant_x0 < box->descendant_x0)
-			box->descendant_x0 = child->x + child->descendant_x0;
-		if (box->descendant_x1 < child->x + child->descendant_x1)
-			box->descendant_x1 = child->x + child->descendant_x1;
-		if (child->y + child->descendant_y0 < box->descendant_y0)
-			box->descendant_y0 = child->y + child->descendant_y0;
-		if (box->descendant_y1 < child->y + child->descendant_y1)
-			box->descendant_y1 = child->y + child->descendant_y1;
+		layout_update_descendant_bbox(box, child, 0, 0);
 	}
 }
+
