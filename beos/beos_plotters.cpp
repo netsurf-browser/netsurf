@@ -66,7 +66,7 @@ static bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t 
 static bool nsbeos_plot_polygon(const int *p, unsigned int n, const plot_style_t *style);
 static bool nsbeos_plot_path(const float *p, unsigned int n, colour fill, float width,
                     colour c, const float transform[6]);
-static bool nsbeos_plot_clip(const struct clip *rect);
+static bool nsbeos_plot_clip(const struct rect *ns_clip);
 static bool nsbeos_plot_text(int x, int y, const char *text, size_t length, 
 		const plot_font_style_t *fstyle);
 static bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style);

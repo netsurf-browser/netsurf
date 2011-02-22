@@ -26,6 +26,7 @@
 
 #define __STDBOOL_H__	1
 #include <assert.h>
+#include <sys/param.h>
 #include <Bitmap.h>
 #include <View.h>
 extern "C" {
@@ -79,8 +80,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	height = thumbnail->Bounds().Height();
 	depth = 32;
 	
-	big_width = min(content_get_width(content), 1024);
-	big_height = ((big_width * height) + (width / 2)) / width;
+	big_width = MIN(content_get_width(content), 1024);
+	big_height = (int)(((big_width * height) + (width / 2)) / width);
 
 	BRect contentRect(0, 0, big_width - 1, big_height - 1);
 	big = new BBitmap(contentRect, B_BITMAP_ACCEPTS_VIEWS, B_RGB32);
@@ -117,7 +118,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	nsbeos_current_gc_set(view);
 
 	plot = nsbeos_plotters;
-	plot_scale = thumbnail_get_redraw_scale(content, big_width)
+	plot_scale = thumbnail_get_redraw_scale(content, big_width);
 	nsbeos_plot_set_scale(plot_scale);
 
 	/* render the content */
