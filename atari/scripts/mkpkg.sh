@@ -29,7 +29,7 @@
 
 # config variable, set default values
 src="/f/netsurf/netsurf/"
-dst=$src"atari/pkg/"
+dst=$src"atari/nspkg/"
 shortfs=0
 inc_short_fonts=0
 font_src="/usr/share/fonts/truetype/ttf-dejavu/"
@@ -98,6 +98,7 @@ mkdir $dst"res"
 mkdir $dst"res/icons"
 mkdir $dst"res/fonts"
 touch $dst"cookies"
+cp $src"atari/doc" $dst -R
 cp $src"ns.prg" $dst
 chmod +x $dst"ns.prg"
 strip $dst"ns.prg"
@@ -143,9 +144,10 @@ fi
 
 echo "
 atari_screen_driver:vdi
+# select font driver, available values: freetype, internal, vdi
 atari_font_driver:freetype
 atari_transparency:1
-homepage_url:file:///./res/blank
+homepage_url:file://./res/blank
 http_proxy:0
 http_proxy_host:
 http_proxy_port:8123
@@ -155,21 +157,12 @@ http_proxy_auth_pass:
 suppress_curl_debug:1
 font_size:120
 font_min_size:110
-#font_sans:Sans
-#font_serif:Serif
-#font_mono:Monospace
-#font_cursive:Serif
-#font_fantasy:Serif
-accept_language:
-accept_charset:
 memory_cache_size:204800
-disc_cache_age:28
 block_advertisements:0
 minimum_gif_delay:0
 send_referer:1
 animate_images:1
 expire_url:28
-#font_default:1
 ca_bundle:./res/cabundle
 ca_path:./res/certs
 cookie_file:./res/cookies
@@ -177,29 +170,23 @@ url_file:./res/url.db
 tree_icons_dir:./res/icons
 downloads_directory:./download
 hotlist_path:./res/hotlist
-scale:100
 incremental_reflow:1
-min_reflow_period:2000
+min_reflow_period:350
 core_select_menu:1
-max_fetchers:8
+max_fetchers:6
 max_fetchers_per_host:2
 max_cached_fetch_handles:6
 target_blank:1
 suppress_images:0
 remove_backgrounds:0
 enable_loosening:1
-render_resample:0
-downloads_clear:0
-history_age:0
+render_resample:1
 hover_urls:1
-search_url_bar:1
-search_provider:0
-focus_new:0
-new_blank:0
 " > $dst"Choices"
 
 cd $dst
-tar cvf - ./* | gzip -c > ns.tar.gz
+tar cvf - ./* | gzip -9 -c > netsurf.tar.gz
+zip netsurf.zip -9 -r ./ -x netsurf.tar.gz
 
 echo
 exit 0
