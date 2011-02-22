@@ -409,7 +409,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 		if (!plot.clip(&r))
 			return false;
 	} else {
-		/* clip box unchanged */
+		/* clip box is fine, clip to it */
+		if (!plot.clip(&r))
 		r = *clip;
 	}
 
@@ -722,9 +723,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 					y_parent + box->y, clip, scale);
 	}
 
-
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-			box->type == BOX_TABLE_CELL || box->object)
+			box->type == BOX_TABLE_CELL || box->type == BOX_INLINE)
 		if (!plot.clip(clip))
 			return false;
 
