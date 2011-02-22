@@ -1,0 +1,66 @@
+
+NETSURF ATARI FAQ	
+
+Date: 15.02.2011
+
+01.) CAN NETSURF ALSO BE RUN WITHIN AN TOS ENVIRONMENT?
+02.) I DON'T HAVE AN 15 BIT GRAPHICS CARD, HOW TO RUN NETSURF ANYWAY?
+03.) WHEN I WANT TO RUN NETSURF IT SAYS: "SOCKET NOT CONNECTED".
+04.) I'M GETTING "INSUFFICENT MEMORY" MESSAGES WHEN RUNNING NETSURF.
+05.) A PAGE CRASHES - WHAT CAN I DO?
+
+1.) Question:
+    CAN NETSURF ALSO BE RUN WITHIN AN TOS ENVIRONMENT?
+
+    Answer: 
+    Yes NS can run on classic TOS. More or less.
+    It is intended to run within the FreeMint environment. 
+    However there is no support for networking
+    right now. Networking support for FireTOS is maybe possible 
+    in the future.
+    NS also has problems with Path conversions on all FileSystems
+    running under TOS. Try setting full paths within the Choices file.
+
+
+2.) Question: 
+    I DON'T HAVE AN 15 BIT GRAPHICS CARD, HOW TO RUN NETSURF ANYWAY?
+
+    Answer:
+    You need to trigger the config a bit.
+	enable the following Choices settings:
+
+    atari_font_driver:vdi
+    atari_transparency:0
+    suppress_images:1
+
+    This will run netsurf as a bloat textmode browser :)
+
+3.) Question:
+    WHEN I WANT TO RUN NETSURF IT SAYS: "SOCKET NOT CONNECTED"
+
+    Answer: 
+    Take a look at the system requirements! I statet NetSurf needs 
+    the latest FreeMiNT 1.17 RELEASE. There was a bug within previous
+    Versions. Please update your kernel. OR install polipo proxy 
+    provided as RPM within sparemint distribution. This is an 
+    workaround, it should work out of the box. But if you want to 
+    use the polipo disk-cache you should edit the config file.
+
+4.) Question:
+    I'M GETTING "INSUFFICENT MEMORY" MESSAGES WHEN RUNNING NETSURF.
+
+    Answer:
+	Try to increase the TPA_INITIALMEM Configuration value within MINT.CNF
+
+5.) Question:
+    A PAGE CRASHES - WHAT CAN I DO?
+
+    Answer:
+    Try to increase the stack memory for netsurf with the stack tool,
+    example:
+    stack -S 3000k ./ns.prg
+
+	If this results in "insufficent memory" messages - look for the 
+    FAQ entry.
+ 
+
