@@ -4520,15 +4520,24 @@ static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
 static void layout_update_descendant_bbox(struct box *box, struct box *child,
 		int off_x, int off_y)
 {
+	int child_desc_x0, child_desc_y0, child_desc_x1, child_desc_y1;
+
 	/* get coordinates of child relative to box */
 	int child_x = child->x - off_x;
 	int child_y = child->y - off_y;
 
-	/* get child's descendant bbox relative to box */
-	int child_desc_x0 = child_x + child->descendant_x0;
-	int child_desc_y0 = child_y + child->descendant_y0;
-	int child_desc_x1 = child_x + child->descendant_x1;
-	int child_desc_y1 = child_y + child->descendant_y1;
+	if (child->style && css_computed_overflow(child->style) ==
+			CSS_OVERFLOW_VISIBLE) {
+		/* get child's descendant bbox relative to box */
+		child_desc_x0 = child_x + child->descendant_x0;
+		child_desc_y0 = child_y + child->descendant_y0;
+		child_desc_x1 = child_x + child->descendant_x1;
+		child_desc_y1 = child_y + child->descendant_y1;
+	} else {
+		/* child's descendants don't matter; use child's border edge */
+		layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
+				&child_desc_x1, &child_desc_y1);
+	}
 
 	/* increase box's descendant bbox to contain descendants */
 	if (child_desc_x0 < box->descendant_x0)
