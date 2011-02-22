@@ -64,6 +64,7 @@
 
 
 #define TOOLBAR_WIDGET_GUTTER 8
+#define TOOLBAR_DEFAULT_WIDTH 16384
 
 /* Toolbar rows used to index into the arrays of row-specific data.
  */
@@ -159,7 +160,7 @@ static wimp_window ro_toolbar_window = {
 	wimp_COLOUR_MID_LIGHT_GREY,
 	wimp_COLOUR_CREAM,
 	wimp_WINDOW_NEVER3D | 0x16u /* RISC OS 5.03+ */,
-	{0, 0, 16384, 16384},
+	{0, 0, TOOLBAR_DEFAULT_WIDTH, 16384},
 	0,
 	wimp_BUTTON_CLICK_DRAG << wimp_ICON_BUTTON_TYPE_SHIFT,
 	wimpspriteop_AREA,
@@ -590,6 +591,7 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 	os_error		*error;
 	wimp_outline		outline;
 	wimp_window_state	state;
+	os_box			extent;
 	int			old_height, old_width;
 	int			xeig, yeig;
 	os_coord		pixel = {1, 1};
@@ -637,7 +639,7 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 		error = xwimp_get_window_state(&state);
 		if (error) {
 			LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
+					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			return false;
 		}
@@ -653,10 +655,23 @@ bool ro_toolbar_process(struct toolbar *toolbar, int width, bool reformat)
 		else
 			toolbar->current_height = toolbar->clip_height;
 
-		/*	Update our position
-		*/
-		if (old_height != toolbar->current_height)
+		/* Resize the work area extent and update our position. */
+
+		if (old_height != toolbar->current_height) {
+			extent.x0 = 0;
+			extent.y0 = 0;
+			extent.x1 = TOOLBAR_DEFAULT_WIDTH;
+			extent.y1 = toolbar->current_height - 2;
+			error = xwimp_set_extent(toolbar->toolbar_handle,
+					&extent);
+			if (error) {
+				LOG(("xwimp_get_window_state: 0x%x: %s",
+						error->errnum, error->errmess));
+				warn_user("WimpError", error->errmess);
+			}
+
 			ro_toolbar_attach(toolbar, toolbar->parent_handle);
+		}
 	} else {
 		toolbar->clip_height = toolbar->full_height;
 		toolbar->current_height = toolbar->full_height;
