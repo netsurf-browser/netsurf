@@ -410,8 +410,9 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 	} else {
 		/* clip box is fine, clip to it */
-		if (!plot.clip(&r))
 		r = *clip;
+		if (!plot.clip(&r))
+			return false;
 	}
 
 	/* background colour and image for block level content and replaced
