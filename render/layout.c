@@ -4537,6 +4537,11 @@ static void layout_update_descendant_bbox(struct box *box, struct box *child,
 		/* child's descendants don't matter; use child's border edge */
 		layout_get_box_bbox(child, &child_desc_x0, &child_desc_y0,
 				&child_desc_x1, &child_desc_y1);
+		/* get the bbox relative to box */
+		child_desc_x0 += child_x;
+		child_desc_y0 += child_y;
+		child_desc_x1 += child_x;
+		child_desc_y1 += child_y;
 	}
 
 	/* increase box's descendant bbox to contain descendants */
