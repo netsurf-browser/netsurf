@@ -4487,6 +4487,28 @@ void layout_compute_offsets(struct box *box,
 
 
 /**
+ * Find a box's bounding box relative to itself, i.e. the box's border edge box
+ *
+ * \param  box      box find bounding box of
+ * \param  desc_x0  updated to left of box's bbox
+ * \param  desc_y0  updated to top of box's bbox
+ * \param  desc_x1  updated to right of box's bbox
+ * \param  desc_y1  updated to bottom of box's bbox
+ */
+
+static void layout_get_box_bbox(struct box *box, int *desc_x0, int *desc_y0,
+		int *desc_x1, int *desc_y1)
+{
+	*desc_x0 = -box->border[LEFT].width;
+	*desc_y0 = -box->border[TOP].width;
+	*desc_x1 = box->padding[LEFT] + box->width + box->padding[RIGHT] +
+			box->border[RIGHT].width;
+	*desc_y1 = box->padding[TOP] + box->height + box->padding[BOTTOM] +
+			box->border[BOTTOM].width;
+}
+
+
+/**
  * Apply changes to box descendant_[xy][01] values due to given child.
  *
  * \param  box    box to update
@@ -4539,13 +4561,11 @@ void layout_calculate_descendant_bboxes(struct box *box)
 		assert(0);
 	}
 
-	box->descendant_x0 = -box->border[LEFT].width;
-	box->descendant_y0 = -box->border[TOP].width;
-	box->descendant_x1 = box->padding[LEFT] + box->width +
-			box->padding[RIGHT] + box->border[RIGHT].width;
-	box->descendant_y1 = box->padding[TOP] + box->height +
-			box->padding[BOTTOM] + box->border[BOTTOM].width;
+	/* Initialise box's descendant box to border edge box */
+	layout_get_box_bbox(box, &box->descendant_x0, &box->descendant_y0,
+			&box->descendant_x1, &box->descendant_y1);
 
+	/* Extend it to contain HTML contents if box is replaced */
 	if (box->object && content_get_type(box->object) == CONTENT_HTML) {
 		if (box->descendant_x1 < content_get_width(box->object))
 			box->descendant_x1 = content_get_width(box->object);
