@@ -62,6 +62,8 @@
 #define ICON_DOWNLOAD_PROGRESS 5
 #define ICON_DOWNLOAD_STATUS 6
 
+#define RO_DOWNLOAD_MAX_PATH_LEN 255
+
 typedef enum
 {
 	QueryRsn_Quit,
@@ -82,7 +84,7 @@ struct gui_download_window {
 
 	char url[256];		/**< Buffer for URL icon. */
 	char sprite_name[20];	/**< Buffer for sprite icon. */
-	char path[256];		/**< Buffer for pathname icon. */
+	char path[RO_DOWNLOAD_MAX_PATH_LEN];	/**< Buffer for pathname icon. */
 	char status[256];	/**< Buffer for status icon. */
 
 	/** User has chosen the destination, and it is being written. */
@@ -217,14 +219,14 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	const char *url = download_context_get_url(ctx);
 	const char *mime_type = download_context_get_mime_type(ctx);
 	const char *temp_name;
-	char *nice, *scheme = NULL;
+	char *scheme = NULL;
+	char *filename = NULL;
 	struct gui_download_window *dw;
 	bool space_warning = false;
 	os_error *error;
 	url_func_result res;
 	char *local_path;
 	utf8_convert_ret err;
-	size_t leaf_ofst;
 	size_t i;
 
 	dw = malloc(sizeof *dw);
@@ -335,33 +337,32 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	download_template->icons[ICON_DOWNLOAD_ICON].data.indirected_sprite.id =
 			(osspriteop_id) dw->sprite_name;
 
-	if (download_dir) {
-		memcpy(dw->path, download_dir, download_dir_len);
-		dw->path[download_dir_len] = '.';
-		leaf_ofst = download_dir_len + 1;
-	} else
-		leaf_ofst = 0;
+	/* Get a suitable path- and leafname for the download. */
+	temp_name = download_context_get_filename(dw->ctx);
 
-	if (url_nice(url, &nice, option_strip_extensions) == URL_FUNC_OK) {
-		size_t imax = sizeof dw->path - (leaf_ofst + 1);
-		for (i = 0; i < imax && nice[i]; i++) {
-			if (nice[i] == '.')
-				nice[i] = '/';
-			else if (nice[i] <= ' ' ||
-					strchr(":*#$&@^%\\", nice[i]))
-				nice[i] = '_';
-		}
-		memcpy(dw->path + leaf_ofst, nice, i);
-		dw->path[leaf_ofst + i] = '\0';
-		free(nice);
-	} else {
-		const char *leaf = messages_get("SaveObject");
-		size_t len = strlen(leaf);
-		if (len >= sizeof dw->path - leaf_ofst)
-			len = sizeof dw->path - leaf_ofst - 1;
-		memcpy(dw->path + leaf_ofst, leaf, len);
-		dw->path[leaf_ofst + len] = '\0';
+	if (temp_name == NULL)
+		temp_name = messages_get("SaveObject");
+
+	if (temp_name != NULL)
+		filename = strdup(temp_name);
+
+	if (filename == NULL) {
+		LOG(("Failed to establish download filename."));
+		warn_user("SaveError", error->errmess);
+		free(dw);
+		return 0;
 	}
+
+	for (i = 0; filename[i] != '\0'; i++)
+		if (filename[i] == '.')
+			filename[i] = '/';
+
+	if (download_dir != NULL && strlen(download_dir) > 0)
+		snprintf(dw->path, RO_DOWNLOAD_MAX_PATH_LEN, "%s.%s",
+				download_dir, filename);
+	else
+		snprintf(dw->path, RO_DOWNLOAD_MAX_PATH_LEN, "%s",
+				filename);
 
 	err = utf8_to_local_encoding(dw->path, 0, &local_path);
 	if (err != UTF8_CONVERT_OK) {
