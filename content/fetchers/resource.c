@@ -234,10 +234,6 @@ static void fetch_resource_poll(const char *scheme)
 	/* Iterate over ring, processing each pending fetch */
 	c = ring;
 	do {
-		/* Take a copy of the next pointer as we may destroy
-		 * the ring item we're currently processing */
-		next = c->r_next;
-
 		/* Ignore fetches that have been flagged as locked.
 		 * This allows safe re-entrant calls to this function.
 		 * Re-entrancy can occur if, as a result of a callback,
@@ -245,6 +241,7 @@ static void fetch_resource_poll(const char *scheme)
 		 * again.
 		 */
 		if (c->locked == true) {
+			next = c->r_next;
 			continue;
 		}
 
@@ -254,6 +251,10 @@ static void fetch_resource_poll(const char *scheme)
 			c->handler(c);
 		}
 
+		/* Compute next fetch item at the last possible moment
+		 * as processing this item may have added to the ring
+		 */
+		next = c->r_next;
 
 		fetch_remove_from_queues(c->fetchh);
 		fetch_free(c->fetchh);

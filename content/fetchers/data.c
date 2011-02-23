@@ -235,10 +235,6 @@ static void fetch_data_poll(const char *scheme)
 	/* Iterate over ring, processing each pending fetch */
 	c = ring;
 	do {
-		/* Take a copy of the next pointer as we may destroy
-		 * the ring item we're currently processing */
-		next = c->r_next;
-
 		/* Ignore fetches that have been flagged as locked.
 		 * This allows safe re-entrant calls to this function.
 		 * Re-entrancy can occur if, as a result of a callback,
@@ -246,11 +242,12 @@ static void fetch_data_poll(const char *scheme)
 		 * again.
 		 */
 		if (c->locked == true) {
+			next = c->r_next;
 			continue;
 		}
 
 		/* Only process non-aborted fetches */
-		if (!c->aborted && fetch_data_process(c) == true) {
+		if (c->aborted == false && fetch_data_process(c) == true) {
 			char header[64];
 
 			fetch_set_http_code(c->parent_fetch, 200);
@@ -265,17 +262,22 @@ static void fetch_data_poll(const char *scheme)
 			fetch_data_send_callback(FETCH_HEADER, c, header, 
 					strlen(header), FETCH_ERROR_NO_ERROR);
 
-			snprintf(header, sizeof header, "Content-Length: %zd",
+			if (c->aborted == false) {
+				snprintf(header, sizeof header, 
+					"Content-Length: %zd",
 					c->datalen);
-			fetch_data_send_callback(FETCH_HEADER, c, header, 
-					strlen(header), FETCH_ERROR_NO_ERROR);
+				fetch_data_send_callback(FETCH_HEADER, c, 
+					header, strlen(header), 
+					FETCH_ERROR_NO_ERROR);
+			}
 
-			if (!c->aborted) {
+			if (c->aborted == false) {
 				fetch_data_send_callback(FETCH_DATA, 
 					c, c->data, c->datalen,
 					FETCH_ERROR_NO_ERROR);
 			}
-			if (!c->aborted) {
+
+			if (c->aborted == false) {
 				fetch_data_send_callback(FETCH_FINISHED, 
 					c, 0, 0, FETCH_ERROR_NO_ERROR);
 			}
@@ -287,6 +289,11 @@ static void fetch_data_poll(const char *scheme)
 			 */
 			assert(c->locked == false);
 		}
+
+		/* Compute next fetch item at the last possible moment as
+		 * processing this item may have added to the ring.
+		 */
+		next = c->r_next;
 
 		fetch_remove_from_queues(c->parent_fetch);
 		fetch_free(c->parent_fetch);
