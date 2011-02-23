@@ -38,6 +38,7 @@
 
 #include "utils/config.h"
 #include "content/fetch.h"
+#include "content/fetchers/resource.h"
 #include "content/fetchers/about.h"
 #include "content/fetchers/curl.h"
 #include "content/fetchers/data.h"
@@ -112,6 +113,7 @@ void fetch_init(void)
 	fetch_curl_register();
 	fetch_data_register();
 	fetch_file_register();
+	fetch_resource_register();
 	fetch_about_register();
 	fetch_active = false;
 }

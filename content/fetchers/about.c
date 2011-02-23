@@ -127,52 +127,16 @@ fetch_about_blank_handler_aborted:
 	return false;
 }
 
-static const char *authors[] = {
-		"John-Mark Bell", "James Bursa", "Michael Drake",
-		"Rob Kendrick", "Adrian Lees", "Vincent Sanders",
-		"Daniel Silverstone", "Richard Wilson", NULL
-};
 
 static bool fetch_about_credits_handler(struct fetch_about_context *ctx)
 {
-	char buffer[4096];
-	int code = 200;
-	int slen;
-	int auth_loop = 0;
+	/* content is going to return redirect */
+	fetch_set_http_code(ctx->fetchh, 302);
 
-	/* content is going to return ok */
-	fetch_set_http_code(ctx->fetchh, code);
-
-	/* content type */
-	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
-		goto fetch_about_credits_handler_aborted;
-
-	slen = snprintf(buffer, sizeof buffer, 
-		 "<html><head><title>NetSurf Browser Credits</title></head>"
-		 "<body><h1>NetSurf Browser Credits</h1>"
-		 "<p>Authors</p>"
-		 "<ul>");
-
-	while (authors[auth_loop] != NULL) {
-		slen += snprintf(buffer + slen, sizeof buffer - slen, 
-				 "<li>%s</li>", authors[auth_loop]);
-		auth_loop++;
-	}
-
-	slen += snprintf(buffer + slen, sizeof buffer - slen, 
-			 "</ul></body></html>");
-
-	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
-			FETCH_ERROR_NO_ERROR))
-		goto fetch_about_credits_handler_aborted;
-
-	fetch_about_send_callback(FETCH_FINISHED, ctx, 0, 0,
-			FETCH_ERROR_NO_ERROR);
+	fetch_about_send_callback(FETCH_REDIRECT, ctx, "resource:credits.html",
+			0, FETCH_ERROR_NO_ERROR);
 
 	return true;
-
-fetch_about_credits_handler_aborted:
-	return false;
 }
 
 static bool fetch_about_config_handler(struct fetch_about_context *ctx)

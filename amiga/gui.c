@@ -34,6 +34,7 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/url.h"
+#include "content/fetchers/resource.h"
 
 /* NetSurf Amiga platform includes */
 #include "amiga/arexx.h"
@@ -410,6 +411,11 @@ void ami_amiupdate(void)
 		FClose(amiupdatefh);
 	}
 	/* end Amiupdate */
+}
+
+char* gui_find_resource(const char *filename)
+{
+	return NULL;
 }
 
 void gui_init(int argc, char** argv)

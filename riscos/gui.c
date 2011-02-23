@@ -54,6 +54,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "content/fetchers/resource.h"
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
@@ -277,6 +278,11 @@ static void ro_msg_prequit(wimp_message *message);
 static void ro_msg_save_desktop(wimp_message *message);
 static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
+
+char* gui_find_resource(const char *filename)
+{
+	return NULL;
+}
 
 /**
  * Initialise the gui (RISC OS specific part).

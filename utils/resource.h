@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_UTILS_FINDRESOURCE_H_
-#define _NETSURF_UTILS_FINDRESOURCE_H_
+/** \file Utility routines to locate file resources. */
+
+#ifndef _NETSURF_UTILS_RESOURCE_H_
+#define _NETSURF_UTILS_RESOURCE_H_
 
 /** Create a normalised file name.
  *
@@ -32,20 +34,20 @@
  * @return A pointer to the expanded filename or NULL if the file is
  *         not present or accessible.
  */
-char *vsfindfile(char *str, const char *format, va_list ap);
+char *resource_vsfindfile(char *str, const char *format, va_list ap);
 
 /** Create a normalised file name.
  *
  * Similar to vsfindfile but takes variadic (printf like) parameters
  */
-char *sfindfile(char *str, const char *format, ...);
+char *resource_sfindfile(char *str, const char *format, ...);
 
 /** Create a normalised file name.
  *
  * Similar to sfindfile but allocates its own storage for the
  * returned string. The caller must free this sorage.
  */
-char *findfile(const char *format, ...);
+char *resource_findfile(const char *format, ...);
 
 /** Searches an array of resource paths for a file.
  *
@@ -58,23 +60,23 @@ char *findfile(const char *format, ...);
  * @param filename The filename of the resource to search for.
  * @return A pointer to filepath if a target is found or NULL if not.
  */
-char *sfindresource(char **respathv, char *filepath, const char *filename);
+char *resource_sfind(char **respathv, char *filepath, const char *filename);
 
 /** Searches an array of resource paths for a file.
  *
- * Similar to sfindresource except it allocates its own storage for
+ * Similar to resource_sfind except it allocates its own storage for
  * the returned string. The caller must free this sorage.
  */
-char *findresource(char **respathv, const char *filename);
+char *resource_find(char **respathv, const char *filename);
 
 /** Searches an array of resource paths for a file optionally forcing a default.
  *
- * Similar to sfindresource except if no resource is found the default
+ * Similar to resource_sfind except if no resource is found the default
  * is used as an additional path element to search, if that still
  * fails the returned path is set to the concatination of the default
  * path and the filename.
  */
-char *sfindresourcedef(char **respathv, char *filepath, const char *filename, const char *def);
+char *resource_sfinddef(char **respathv, char *filepath, const char *filename, const char *def);
 
 /** Merge two string vectors into a resource search path vector.
  *
@@ -83,6 +85,21 @@ char *sfindresourcedef(char **respathv, char *filepath, const char *filename, co
  * @return A pointer to a NULL terminated string vector of valid
  *         resource directories.
  */
-char **findresource_generate(char * const *pathv, const char * const *langv);
+char **resource_generate(char * const *pathv, const char * const *langv);
 
-#endif
+
+/** Convert a colon separated list of path elements into a string vector. 
+ *
+ * @param path A colon separated path.
+ * @return A pointer to a NULL terminated string vector of valid
+ *         resource directories.
+ */
+char **resource_path_to_strvec(const char *path);
+
+/** Free a string vector 
+ *
+ * Free a string vector allocated by resource_path_to_strvec
+ */
+void resource_free_strvec(char **pathv);
+
+#endif /* _NETSURF_UTILS_RESOURCE_H_ */

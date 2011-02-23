@@ -34,6 +34,7 @@
 
 #include "content/urldb.h"
 #include "content/fetch.h"
+#include "content/fetchers/resource.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
@@ -1054,6 +1055,11 @@ static inline void create_cursor(int flags, short mode, void * form, MFORM_EX * 
 		m->number = mode;
 		m->tree = (OBJECT*)form;
 	}
+}
+
+char* gui_find_resource(const char *filename)
+{
+	return NULL;
 }
 
 static void gui_init(int argc, char** argv)

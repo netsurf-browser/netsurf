@@ -32,12 +32,13 @@
 #include <string.h>
 
 #include "utils/config.h"
-#include "utils/findresource.h"
+#include "utils/resource.h"
 
-#define MAX_RESPATH 128 /* maximum number of elements in the resource vector */
+/** maximum number of elements in the resource vector */
+#define MAX_RESPATH 128 
 
 /* exported interface documented in findresource.h */
-char *vsfindfile(char *str, const char *format, va_list ap)
+char *resource_vsfindfile(char *str, const char *format, va_list ap)
 {
 	char *realpathname;
 	char *pathname;
@@ -73,20 +74,20 @@ char *vsfindfile(char *str, const char *format, va_list ap)
 }
 
 /* exported interface documented in findresource.h */
-char *sfindfile(char *str, const char *format, ...)
+char *resource_sfindfile(char *str, const char *format, ...)
 {
 	va_list ap;
 	char *ret;
 
 	va_start(ap, format);
-	ret = vsfindfile(str, format, ap);
+	ret = resource_vsfindfile(str, format, ap);
 	va_end(ap);
 
 	return ret;
 }
 
 /* exported interface documented in findresource.h */
-char *findfile(const char *format, ...)
+char *resource_findfile(const char *format, ...)
 {
 	char *str;
 	char *ret;
@@ -97,7 +98,7 @@ char *findfile(const char *format, ...)
 		return NULL; /* unable to allocate memory */
 
 	va_start(ap, format);
-	ret = vsfindfile(str, format, ap);
+	ret = resource_vsfindfile(str, format, ap);
 	va_end(ap);
 
 	if (ret == NULL)
@@ -107,7 +108,7 @@ char *findfile(const char *format, ...)
 }
 
 /* exported interface documented in findresource.h */
-char *sfindresource(char **respathv, char *filepath, const char *filename)
+char *resource_sfind(char **respathv, char *filepath, const char *filename)
 {
 	int respathc = 0;
 
@@ -115,7 +116,7 @@ char *sfindresource(char **respathv, char *filepath, const char *filename)
 		return NULL;
 
 	while (respathv[respathc] != NULL) {
-		if (sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL)
+		if (resource_sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL)
 			return filepath;
 
 		respathc++;
@@ -125,7 +126,7 @@ char *sfindresource(char **respathv, char *filepath, const char *filename)
 }
 
 /* exported interface documented in findresource.h */
-char *findresource(char **respathv, const char *filename)
+char *resource_find(char **respathv, const char *filename)
 {
 	char *ret;
 	char *filepath;
@@ -137,7 +138,7 @@ char *findresource(char **respathv, const char *filename)
 	if (filepath == NULL)
 		return NULL;
 
-	ret = sfindresource(respathv, filepath, filename);
+	ret = resource_sfind(respathv, filepath, filename);
 
 	if (ret == NULL)
 		free(filepath);
@@ -146,7 +147,7 @@ char *findresource(char **respathv, const char *filename)
 }
 
 /* exported interface documented in findresource.h */
-char *sfindresourcedef(char **respathv, char *filepath, const char *filename, const char *def)
+char *resource_sfinddef(char **respathv, char *filepath, const char *filename, const char *def)
 {
 	char t[PATH_MAX];
 	char *ret;
@@ -154,10 +155,9 @@ char *sfindresourcedef(char **respathv, char *filepath, const char *filename, co
 	if ((respathv == NULL) || (respathv[0] == NULL) || (filepath == NULL))
 		return NULL;
 
-	ret = sfindresource(respathv, filepath, filename);
+	ret = resource_sfind(respathv, filepath, filename);
 
-	if ((ret == NULL) && 
-	    (def != NULL)) {
+	if ((ret == NULL) && (def != NULL)) {
 		/* search failed, return the path specified */
 		ret = filepath;
 		if (def[0] == '~') {
@@ -174,9 +174,9 @@ char *sfindresourcedef(char **respathv, char *filepath, const char *filename, co
 }
 
 
-/* exported interface documented in findresource.h */
+/* exported interface documented in resource.h */
 char **
-findresource_generate(char * const *pathv, const char * const *langv)
+resource_generate(char * const *pathv, const char * const *langv)
 {
 	char **respath; /* resource paths vector */
 	int pathc = 0;
@@ -193,7 +193,7 @@ findresource_generate(char * const *pathv, const char * const *langv)
 			/* path element exists and is a directory */
 			langc = 0;
 			while (langv[langc] != NULL) {
-				snprintf(tmppath, PATH_MAX,"%s/%s",pathv[pathc],langv[langc]);
+				snprintf(tmppath, sizeof tmppath, "%s/%s", pathv[pathc],langv[langc]);
 				if ((stat(tmppath, &dstat) == 0) && 
 				    S_ISDIR(dstat.st_mode)) {
 					/* path element exists and is a directory */
@@ -207,4 +207,104 @@ findresource_generate(char * const *pathv, const char * const *langv)
 	}
 
 	return respath;
+}
+
+/* expand ${} in a string into environment variables */
+static char *
+expand_path(const char *path)
+{
+	char *exp = strdup(path);
+	int explen;
+	int cstart = -1;
+	int cloop = 0;
+	char *envv;
+	int envlen;
+	int replen; /* length of replacement */
+
+	if (exp == NULL)
+		return NULL;
+
+	explen = strlen(exp) + 1;
+
+	while (exp[cloop] != 0) {
+		if ((exp[cloop] == '$') && 
+		    (exp[cloop + 1] == '{')) {
+			cstart = cloop;
+			cloop++;
+		} 
+		
+		if ((cstart != -1) &&
+		    (exp[cloop] == '}')) {
+			replen = cloop - cstart;
+			exp[cloop] = 0;
+			envv = getenv(exp + cstart + 2);
+			if (envv == NULL) {
+				memmove(exp + cstart, 
+					exp + cloop + 1, 
+					explen - cloop - 1);
+				explen -= replen;
+			} else {
+				envlen = strlen(envv);
+				exp = realloc(exp, explen + envlen - replen);
+				memmove(exp + cstart + envlen, 
+					exp + cloop + 1, 
+					explen - cloop - 1);
+				memmove(exp + cstart, envv, envlen);
+				explen += envlen - replen;
+			}
+			cloop -= replen;
+			cstart = -1;
+		}
+
+		cloop++;
+	}
+
+	return exp;
+}
+
+/* exported interface documented in resource.h */
+char **
+resource_path_to_strvec(const char *path)
+{
+	char **strvec;
+	int strc = 0;
+
+	strvec = calloc(MAX_RESPATH, sizeof(char *));
+	if (strvec == NULL)
+		return NULL;
+
+	strvec[strc] = expand_path(path);
+	if (strvec[strc] == NULL) {
+		free(strvec);
+		return NULL;
+	}
+	strc++;
+
+	strvec[strc] = strchr(strvec[0], ':');
+	while ((strc < (MAX_RESPATH - 2)) && 
+	       (strvec[strc] != NULL)) {
+		/* null terminate previous entry */
+		*strvec[strc] = 0; 
+		strvec[strc]++;
+
+		/* skip colons */
+		while (*strvec[strc] == ':')
+			strvec[strc]++;
+
+		if (*strvec[strc] == 0)
+			break; /* string is terminated */
+
+		strc++;
+
+		strvec[strc] = strchr(strvec[strc - 1], ':');
+	}
+
+	return strvec;
+}
+
+/* exported interface documented in resource.h */
+void resource_free_strvec(char **pathv)
+{
+	free(pathv[0]);
+	free(pathv);
 }

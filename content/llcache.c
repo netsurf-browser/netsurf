@@ -1952,6 +1952,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	const llcache_post_data *post = object->fetch.post;
 	char *url, *absurl;
 	char *scheme;
+	char *object_scheme;
 	url_func_result result;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
@@ -1999,20 +2000,34 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 		return NSERROR_NOMEM;
 	}
 
-	/* Ensure that redirects to file:/// don't happen */
+	/* Ensure that redirects to file:/// only happen for valid schemes */
+	result = url_scheme(object->url, &object_scheme);
+	if (result != URL_FUNC_OK) {
+		free(url);
+		return NSERROR_NOMEM;
+	}
+
 	result = url_scheme(url, &scheme);
 	if (result != URL_FUNC_OK) {
 		free(url);
 		return NSERROR_NOMEM;
 	}
 
-	if (strcasecmp(scheme, "file") == 0) {
-		free(scheme);
-		free(url);
-		return NSERROR_OK;
+	/* resource is allowed to redirect anywhere */
+	if ((strcasecmp(object_scheme, "resource") != 0) &&
+	    (strcasecmp(object_scheme, "about") != 0)) {
+		/* file, about and resource are not valid redirect targets */
+		if ((strcasecmp(scheme, "file") == 0) ||
+		    (strcasecmp(scheme, "about") == 0) ||
+		    (strcasecmp(scheme, "resource") == 0)) {
+			free(scheme);
+			free(url);
+			return NSERROR_OK;
+		}
 	}
 
 	free(scheme);
+	free(object_scheme);
 
 	/* Bail out if we've no way of handling this URL */
 	if (fetch_can_fetch(url) == false) {

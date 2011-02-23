@@ -46,6 +46,7 @@ extern "C" {
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/fetchers/curl.h"
+#include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
@@ -419,6 +420,11 @@ static int32 bapp_thread(void *arg)
 	be_app->Lock();
 	be_app->Run();
 	return 0;
+}
+
+char* gui_find_resource(const char *filename)
+{
+	return NULL;
 }
 
 static void gui_init2(int argc, char** argv)

@@ -155,10 +155,16 @@ const char *fetch_filetype(const char *unix_path)
 	const char *ptr;
 	char *lowerchar;
 	const char *type;
+	int l;
 
 	stat(unix_path, &statbuf);
 	if (S_ISDIR(statbuf.st_mode))
 		return "application/x-netsurf-directory";
+
+	l = strlen(unix_path);
+	if ((3 < l) && (strcasecmp(unix_path + l - 4, ",f79") == 0)) {
+		return "text/css";
+	}
 
 	if (strchr(unix_path, '.') == NULL) {
 		/* no extension anywhere! */

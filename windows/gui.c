@@ -32,6 +32,7 @@
 
 #include "content/urldb.h"
 #include "content/fetch.h"
+#include "content/fetchers/resource.h"
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/history_core.h"
@@ -2556,6 +2557,11 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 void gui_quit(void)
 {
 	LOG(("gui_quit"));
+}
+
+char* gui_find_resource(const char *filename)
+{
+	return NULL;
 }
 
 static void gui_init(int argc, char** argv)

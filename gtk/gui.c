@@ -43,6 +43,7 @@
 #include "content/content.h"
 #include "content/fetch.h"
 #include "content/fetchers/curl.h"
+#include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "desktop/browser.h"
@@ -78,7 +79,7 @@
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "utils/findresource.h"
+#include "utils/resource.h"
 
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
@@ -122,101 +123,7 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 #define THROBBER_FRAMES 9
 
-#define MAX_RESPATH 128 /* maximum number of elements in the resource vector */
-
-/* expand ${} in a string into environment variables */
-static char *
-expand_path(const char *path)
-{
-	char *exp = strdup(path);
-	int explen;
-	int cstart = -1;
-	int cloop = 0;
-	char *envv;
-	int envlen;
-	int replen; /* length of replacement */
-
-	if (exp == NULL)
-		return NULL;
-
-	explen = strlen(exp) + 1;
-
-	while (exp[cloop] != 0) {
-		if ((exp[cloop] == '$') && 
-		    (exp[cloop + 1] == '{')) {
-			cstart = cloop;
-			cloop++;
-		} 
-		
-		if ((cstart != -1) &&
-		    (exp[cloop] == '}')) {
-			replen = cloop - cstart;
-			exp[cloop] = 0;
-			envv = getenv(exp + cstart + 2);
-			if (envv == NULL) {
-				memmove(exp + cstart, 
-					exp + cloop + 1, 
-					explen - cloop - 1);
-				explen -= replen;
-			} else {
-				envlen = strlen(envv);
-				exp = realloc(exp, explen + envlen - replen);
-				memmove(exp + cstart + envlen, 
-					exp + cloop + 1, 
-					explen - cloop - 1);
-				memmove(exp + cstart, envv, envlen);
-				explen += envlen - replen;
-			}
-			cloop -= replen;
-			cstart = -1;
-		}
-
-		cloop++;
-	}
-
-	return exp;
-}
-
-/* convert a colon separated list of path elements into a string vector */
-static char **
-path_to_strvec(const char *path)
-{
-	char **strvec;
-	int strc = 0;
-
-	strvec = calloc(MAX_RESPATH, sizeof(char *));
-	if (strvec == NULL)
-		return NULL;
-
-	strvec[strc] = expand_path(path);
-	if (strvec[strc] == NULL) {
-		free(strvec);
-		return NULL;
-	}
-	strc++;
-
-	strvec[strc] = strchr(strvec[0], ':');
-	while ((strc < (MAX_RESPATH - 2)) && 
-	       (strvec[strc] != NULL)) {
-		/* null terminate previous entry */
-		*strvec[strc] = 0; 
-		strvec[strc]++;
-
-		/* skip colons */
-		while (*strvec[strc] == ':')
-			strvec[strc]++;
-
-		if (*strvec[strc] == 0)
-			break; /* string is terminated */
-
-		strc++;
-
-		strvec[strc] = strchr(strvec[strc - 1], ':');
-	}
-
-	return strvec;
-}
-
+char **respaths; /** resource search path vector */
 
 /** Create an array of valid paths to search for resources.
  *
@@ -231,14 +138,13 @@ nsgtk_init_resource(const char *resource_path)
 	char **pathv; /* resource path string vector */
 	char **respath; /* resource paths vector */
 
-	pathv = path_to_strvec(resource_path);
+	pathv = resource_path_to_strvec(resource_path);
 
 	langv = g_get_language_names();
 
-	respath = findresource_generate(pathv, langv);
+	respath = resource_generate(pathv, langv);
 
-	free(pathv[0]);
-	free(pathv);
+	resource_free_strvec(pathv);
 
 	return respath;
 }
@@ -259,7 +165,7 @@ static bool nsgtk_throbber_init(char **respath, int framec)
 
 	for (frame_num = 0; frame_num < framec; frame_num++) {
 		snprintf(targetname, PATH_MAX, "throbber/throbber%d.png", frame_num);
-		filenames[frame_num] = findresource(respath, targetname);
+		filenames[frame_num] = resource_find(respath, targetname);
 	}
 
 	ret = nsgtk_throbber_initialise_from_png(frame_num, filenames);
@@ -285,7 +191,7 @@ nsgtk_new_glade(char **respath, const char *name, GladeXML **pglade)
 
 	snprintf(resname, PATH_MAX, "%s.glade", name);
 
-	filepath = findresource(respath, resname);
+	filepath = resource_find(respath, resname);
 	if (filepath == NULL) {
 		snprintf(errorstr, NEW_GLADE_ERROR_SIZE, 
 			 "Unable to locate %s glade template file.\n", name);
@@ -362,12 +268,12 @@ static void check_options(char **respath)
 	 * values! 
 	 */
 	if (!option_cookie_file) {
-		sfindresourcedef(respath, buf, "Cookies", "~/.netsurf/");
+		resource_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
 		LOG(("Using '%s' as Cookies file", buf));
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		sfindresourcedef(respath, buf, "Cookies", "~/.netsurf/");
+		resource_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
 		LOG(("Using '%s' as Cookie Jar file", buf));
 		option_cookie_jar = strdup(buf);
 	}
@@ -375,13 +281,13 @@ static void check_options(char **respath)
 		die("Failed initialising cookie options");
 
 	if (!option_url_file) {
-		sfindresourcedef(respath, buf, "URLs", "~/.netsurf/");
+		resource_sfinddef(respath, buf, "URLs", "~/.netsurf/");
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
 
         if (!option_ca_path) {
-		sfindresourcedef(respath, buf, "certs", "/etc/ssl/");
+		resource_sfinddef(respath, buf, "certs", "/etc/ssl/");
                 LOG(("Using '%s' as certificate path", buf));
                 option_ca_path = strdup(buf);
         }
@@ -391,12 +297,12 @@ static void check_options(char **respath)
         	option_downloads_directory = hdir;
 	}
 	
-	sfindresourcedef(respath, buf, "icons/", "~/.netsurf/");
+	resource_sfinddef(respath, buf, "icons/", "~/.netsurf/");
 	LOG(("Using '%s' as Tree icons dir", buf));
 	tree_set_icon_dir(strdup(buf));
 
 	if (!option_hotlist_path) {
-		sfindresourcedef(respath, buf, "Hotlist", "~/.netsurf/");
+		resource_sfinddef(respath, buf, "Hotlist", "~/.netsurf/");
 		LOG(("Using '%s' as Hotlist file", buf));
 		option_hotlist_path = strdup(buf);		
 	}
@@ -404,7 +310,7 @@ static void check_options(char **respath)
 		die("Failed initialising hotlist option");	
 	
 
-	sfindresourcedef(respath, buf, "Print", "~/.netsurf/");
+	resource_sfinddef(respath, buf, "Print", "~/.netsurf/");
 	LOG(("Using '%s' as Print Settings file", buf));
 	print_options_file_location = strdup(buf);
 
@@ -419,6 +325,13 @@ static void check_options(char **respath)
 	SETFONTDEFAULT(option_font_fantasy, "Serif");
 
 }
+
+char* gui_find_resource(const char *filename)
+{
+	char buf[PATH_MAX];
+	return path_to_url(resource_sfind(respaths, buf, filename));
+}
+
 
 /**
  * Initialize GTK interface.
@@ -440,33 +353,33 @@ static void gui_init(int argc, char** argv, char **respath)
 	 * however these may be translated which breaks things
 	 * relying on res_dir_location.
 	 */	
-	resource_filename = findresource(respath, "languages");
+	resource_filename = resource_find(respath, "languages");
 	resource_filename[strlen(resource_filename) - 9] = 0;
 	res_dir_location = resource_filename;
 
 	/* languages file */
-	languages_file_location = findresource(respath, "languages");
+	languages_file_location = resource_find(respath, "languages");
 
 	/* initialise the glade templates */
 	nsgtk_init_glade(respath);
 
 	/* set default icon if its available */
-	resource_filename = findresource(respath, "netsurf.xpm");
+	resource_filename = resource_find(respath, "netsurf.xpm");
 	if (resource_filename != NULL) {
 		gtk_window_set_default_icon_from_file(resource_filename, NULL);
 		free(resource_filename);
 	}
 
 	/* Search engine sources */
-	search_engines_file_location = findresource(respath, "SearchEngines");
+	search_engines_file_location = resource_find(respath, "SearchEngines");
 	LOG(("Using '%s' as Search Engines file", search_engines_file_location));
 
 	/* Default Icon */
-	search_default_ico_location = findresource(respath, "default.ico");
+	search_default_ico_location = resource_find(respath, "default.ico");
 	LOG(("Using '%s' as default search ico", search_default_ico_location));
 
 	/* Toolbar inicies file */
-	toolbar_indices_file_location = findresource(respath, "toolbarIndices");
+	toolbar_indices_file_location = resource_find(respath, "toolbarIndices");
 	LOG(("Using '%s' as custom toolbar settings file", toolbar_indices_file_location));
 
         /* load throbber images */
@@ -476,19 +389,17 @@ static void gui_init(int argc, char** argv, char **respath)
 	/* Initialise completions - cannot fail */
 	nsgtk_completion_init();
 
-	sfindresourcedef(respath, buf, "mime.types", "/etc/");
+	resource_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
-	sfindresourcedef(respath, buf, "gtkdefault.css", "./gtk/res/");
-	default_stylesheet_url = path_to_url(buf);
+	default_stylesheet_url = strdup("resource:gtkdefault.css");
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	sfindresourcedef(respath, buf, "quirks.css", "./gtk/res/");
-	quirks_stylesheet_url = path_to_url(buf);
+	quirks_stylesheet_url = strdup("resource:quirks.css");
+	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
 
-	sfindresourcedef(respath, buf, "adblock.css", "./gtk/res/");
-	adblock_stylesheet_url = path_to_url(buf);
+	adblock_stylesheet_url = strdup("resource:adblock.css");
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	urldb_load(option_url_file);
@@ -560,32 +471,19 @@ int main(int argc, char** argv)
 {
 	char *messages;
 	char *options;
-	char **respaths;
 
 	/* check home directory is available */
 	nsgtk_check_homedir();
 
 	respaths = nsgtk_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"GTK_RESPATH":./gtk/res");
 
-	/* Some modern distributions can set ALL_PROXY/all_proxy if configured
-	 * to by the user.  Due to a bug in many versions of libcurl
-	 * (including the one shipped in Ubuntu 10.04 LTS), this also takes
-	 * effect on file:// URLs, meaning that NetSurf cannot load its
-	 * default CSS file.  Given all examples of distributions I've checked
-	 * also set http_proxy and friends, we can safely unset these.
-	 */
-
-	unsetenv("ALL_PROXY");
-	unsetenv("all_proxy");
-
 	gtk_init(&argc, &argv);
 	
         /* set standard error to be non-buffering */
 	setbuf(stderr, NULL);
 
-	options = findresource(respaths, "Choices");
-
-	messages = findresource(respaths, "Messages");
+	options = resource_find(respaths, "Choices");
+	messages = resource_find(respaths, "Messages");
 
 	netsurf_init(&argc, &argv, options, messages);
 
@@ -896,9 +794,16 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 
 char *path_to_url(const char *path)
 {
-	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-	char *url = malloc(urllen);
+	int urllen;
+	char *url;
 
+	if (path == NULL) {
+		return NULL;
+	}
+		
+	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
+
+	url = malloc(urllen);
 	if (url == NULL) {
 		return NULL;
 	}

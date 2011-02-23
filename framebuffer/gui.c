@@ -37,6 +37,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/shape.h"
+#include "utils/resource.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/messages.h"
@@ -63,7 +64,6 @@
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
-char *options_file_location;
 
 fbtk_widget_t *fbtk;
 
@@ -435,33 +435,31 @@ process_cmdline(int argc, char** argv)
 	return true;
 }
 
-
 static void
 gui_init(int argc, char** argv)
 {
-	char buf[PATH_MAX];
 	nsfb_t *nsfb;
 
 	option_core_select_menu = true;
 
 	/* set up stylesheet urls */
-	fb_find_resource(buf, "default.css", "./framebuffer/res/default.css");
-	default_stylesheet_url = path_to_url(buf);
+	default_stylesheet_url = strdup("resource:default.css");
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	fb_find_resource(buf, "quirks.css", "./framebuffer/res/quirks.css");
-	quirks_stylesheet_url = path_to_url(buf);
+	quirks_stylesheet_url = strdup("resource:quirks.css");
+	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
+
+	adblock_stylesheet_url = strdup("resource:adblock.css");
+	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	if (option_cookie_file == NULL) {
-		fb_find_resource(buf, "Cookies", "~/.netsurf/Cookies");
-		LOG(("Using '%s' as Cookies file", buf));
-		option_cookie_file = strdup(buf);
+		option_cookie_file = resource_find(respaths, "Cookies");
+		LOG(("Using '%s' as Cookies file", option_cookie_file));
 	}
 
 	if (option_cookie_jar == NULL) {
-		fb_find_resource(buf, "Cookies", "~/.netsurf/Cookies");
-		LOG(("Using '%s' as Cookie Jar file", buf));
-		option_cookie_jar = strdup(buf);
+		option_cookie_jar = resource_find(respaths, "Cookies");
+		LOG(("Using '%s' as Cookie Jar file", option_cookie_jar));
 	}
 
 	if (option_cookie_file == NULL || option_cookie_jar == NULL)
@@ -496,16 +494,20 @@ int
 main(int argc, char** argv)
 {
 	struct browser_window *bw;
-	char options[PATH_MAX];
-	char messages[PATH_MAX];
+	char *options;
+	char *messages;
 
 	setbuf(stderr, NULL);
 
-	fb_find_resource(messages, "messages", "./framebuffer/res/messages");
-	fb_find_resource(options, "Choices-fb", "~/.netsurf/Choices-fb");
-	options_file_location = strdup(options);
+	respaths = fb_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"NETSURF_FB_RESPATH":./framebuffer/res:"NETSURF_FB_FONTPATH);
+
+	options = resource_find(respaths, "Choices");
+	messages = resource_find(respaths, "messages");
 
 	netsurf_init(&argc, &argv, options, messages);
+
+	free(messages);
+	free(options);
 
 	gui_init(argc, argv);
 

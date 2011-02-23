@@ -27,6 +27,7 @@
 #include "render/font.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
+#include "utils/resource.h"
 #include "desktop/options.h"
 
 #include "framebuffer/gui.h"
@@ -112,7 +113,7 @@ static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Po
 
 /* create new framebuffer face and cause it to be loaded to check its ok */
 static fb_faceid_t *
-fb_new_face(const char *option, const char *resname, const char *fontfile)
+fb_new_face(const char *option, const char *resname, const char *fontname)
 {
         fb_faceid_t *newf;
         FT_Error error;
@@ -124,13 +125,13 @@ fb_new_face(const char *option, const char *resname, const char *fontfile)
         if (option != NULL) {
                 newf->fontfile = strdup(option);
         } else {
-                fb_find_resource(buf, resname, fontfile);
+		resource_sfind(respaths, buf, fontname);
                 newf->fontfile = strdup(buf);
         }
 
         error = FTC_Manager_LookupFace(ft_cmanager, (FTC_FaceID)newf, &aface);
         if (error) {
-                LOG(("Could not find font face %s (code %d)\n", fontfile, error));
+                LOG(("Could not find font face %s (code %d)\n", fontname, error));
                 free(newf);
                 newf = NULL;
         }

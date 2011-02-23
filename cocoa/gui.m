@@ -34,6 +34,7 @@
 #import "desktop/401login.h"
 #import "utils/utils.h"
 #import "image/ico.h"
+#import "content/fetchers/resource.h"
 
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -48,6 +49,11 @@ NSString * const kAlwaysCancelDownload = @"AlwaysCancelDownload";
 NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
+
+char* gui_find_resource(const char *filename)
+{
+	return NULL;
+}
 
 void gui_multitask(void)
 {
