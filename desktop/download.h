@@ -87,4 +87,12 @@ const char *download_context_get_mime_type(const download_context *ctx);
  */
 unsigned long download_context_get_total_length(const download_context *ctx);
 
+/**
+ * Retrieve the filename for a download
+ *
+ * \param ctx  Context to retrieve filename from
+ * \return Filename string
+ */
+const char *download_context_get_filename(const download_context *ctx);
+
 #endif
