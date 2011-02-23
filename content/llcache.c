@@ -2000,7 +2000,9 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 		return NSERROR_NOMEM;
 	}
 
-	/* Ensure that redirects to file:/// only happen for valid schemes */
+	/* Reject attempts to redirect from unvalidated to validated schemes
+	 * A "validated" scheme is one over which we have some guarantee that
+	 * the source is trustworthy. */
 	result = url_scheme(object->url, &object_scheme);
 	if (result != URL_FUNC_OK) {
 		free(url);
@@ -2009,17 +2011,19 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 
 	result = url_scheme(url, &scheme);
 	if (result != URL_FUNC_OK) {
+		free(object_scheme);
 		free(url);
 		return NSERROR_NOMEM;
 	}
 
-	/* resource is allowed to redirect anywhere */
+	/* resource: and about: are allowed to redirect anywhere */
 	if ((strcasecmp(object_scheme, "resource") != 0) &&
 	    (strcasecmp(object_scheme, "about") != 0)) {
 		/* file, about and resource are not valid redirect targets */
 		if ((strcasecmp(scheme, "file") == 0) ||
 		    (strcasecmp(scheme, "about") == 0) ||
 		    (strcasecmp(scheme, "resource") == 0)) {
+			free(object_scheme);
 			free(scheme);
 			free(url);
 			return NSERROR_OK;
