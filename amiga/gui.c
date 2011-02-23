@@ -414,7 +414,12 @@ void ami_amiupdate(void)
 
 char* gui_find_resource(const char *filename)
 {
-	return NULL;
+	char path[1024];
+
+	strcpy(path, "PROGDIR:Resources");
+	path_add_part(path, sizeof(path), filename);
+
+	return path_to_url(path);
 }
 
 void gui_init(int argc, char** argv)
