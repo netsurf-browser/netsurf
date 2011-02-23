@@ -156,7 +156,6 @@ extern colour scroll_widget_arrow_colour;
 
 static struct DrawInfo *dri;
 
-
 void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
@@ -2413,7 +2412,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			{
 				ULONG addtabclosegadget = TAG_IGNORE;
 
-				ami_create_menu(bw->browser_window_type, gwin->shared);
+				ami_create_menu(bw->browser_window_type, gwin->shared, dri);
 
 				NewList(&gwin->shared->tab_list);
 				gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
@@ -3229,9 +3228,9 @@ void ami_do_redraw(struct gui_window_2 *g)
 			g->redraw_scroll = false;
 
  		if(g->new_content) g->redraw_scroll = false;
-	}
 
-//	if (c->type == CONTENT_HTML) scale = 1;
+		if(g->bw->scale != 1.0) g->redraw_scroll = false;
+	}
 
 	if(g->redraw_scroll && content_get_type(c) == CONTENT_HTML)
 	{
@@ -3377,7 +3376,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		}
 		g->shared->redraw_required = true;
 
-		if(option_faster_scroll) g->shared->redraw_scroll = true;
+		if(option_faster_scroll == true) g->shared->redraw_scroll = true;
 			else g->shared->redraw_scroll = false;
 
 		g->scrollx = sx;
@@ -3809,9 +3808,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 //					history_set_current_scroll(gwin->bw->history,
 //						gwin->bw->window->scrollx,gwin->bw->window->scrolly);
 
-					if(option_faster_scroll)
-						gwin->redraw_scroll = true;
-					else gwin->redraw_scroll = false;
+					if(option_faster_scroll == true) gwin->redraw_scroll = true;
+						else gwin->redraw_scroll = false;
 
 					gwin->redraw_required = true;
  				break;
