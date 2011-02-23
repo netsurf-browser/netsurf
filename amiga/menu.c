@@ -26,6 +26,16 @@
 #include <dos/anchorpath.h>
 #endif
 #include <libraries/gadtools.h>
+#include <proto/gadtools.h>
+#include <classes/window.h>
+#include <proto/intuition.h>
+
+#include <proto/label.h>
+#include <images/label.h>
+#include <proto/bitmap.h>
+#include <images/bitmap.h>
+
+#include <reaction/reaction_macros.h>
 
 #include "amiga/menu.h"
 #include "amiga/utf8.h"
@@ -44,14 +54,10 @@
 #include "amiga/clipboard.h"
 #include "amiga/gui_options.h"
 #include "amiga/theme.h"
-#include "desktop/tree_url_node.h"
-#include <classes/window.h>
-#include <proto/intuition.h>
-#include "desktop/hotlist.h"
-#include <proto/gadtools.h>
 #include "amiga/print.h"
 #include "amiga/download.h"
-
+#include "desktop/tree_url_node.h"
+#include "desktop/hotlist.h"
 #include "content/fetch.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
@@ -62,6 +68,16 @@
 #include "desktop/textinput.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+
+#define IMAGE_MENU_ITEM(n, i, t) \
+	gwin->menulab[n] = LabelObject, \
+		LABEL_DrawInfo, dri, \
+		LABEL_Image, BitMapObject, \
+			BITMAP_Screen, scrn, \
+			BITMAP_SourceFile, i, \
+		BitMapEnd, \
+		LABEL_Text, t, \
+	LabelEnd;
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
@@ -83,7 +99,16 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
 	{
 		if(gwin->menulab[i] && (gwin->menulab[i] != NM_BARLABEL))
+		{
+			if(gwin->menutype[i] & MENU_IMAGE)
+			{
+				//TODO: Free image structure
+			}
+			else
+			{
 				ami_utf8_free(gwin->menulab[i]);
+			}
+		}
 
 		gwin->menulab[i] = NULL;
 		gwin->menukey[i] = 0;
@@ -96,7 +121,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 	gwin->menu = NULL;
 }
 
-void ami_init_menulabs(struct gui_window_2 *gwin)
+void ami_init_menulabs(struct gui_window_2 *gwin, struct DrawInfo *dri)
 {
 	int i;
 
@@ -236,6 +261,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menutype[AMI_MENU_AREXX_MAX] = NM_END;
 }
 
+/* Menu refresh for hotlist - disabled, see below.
 void ami_menu_refresh(struct gui_window_2 *gwin)
 {
 	SetAttrs(gwin->objects[OID_MAIN],
@@ -251,13 +277,14 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 
 	schedule(6000,(void *)ami_menu_refresh,gwin);
 }
+*/
 
-struct NewMenu *ami_create_menu(ULONG type, struct gui_window_2 *gwin)
+struct NewMenu *ami_create_menu(ULONG type, struct gui_window_2 *gwin, struct DrawInfo *dri)
 {
 	int i;
 	ULONG menuflags = 0;
 
-	ami_init_menulabs(gwin);
+	ami_init_menulabs(gwin, dri);
 	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
 
 	if(type != BROWSER_WINDOW_NORMAL)
