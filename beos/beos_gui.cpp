@@ -716,7 +716,6 @@ void gui_poll(bool active)
 	FD_ZERO(&exc_fd_set);
 
 	if (active) {
-		fetch_poll();
 		code = curl_multi_fdset(fetch_curl_multi,
 				&read_fd_set,
 				&write_fd_set,
