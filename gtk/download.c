@@ -76,8 +76,8 @@ static void nsgtk_download_change_sensitivity(
 static void nsgtk_download_change_status (
 		struct gui_download_window *dl, nsgtk_download_status status);
 
-static gchar* nsgtk_download_dialog_show (gchar *filename, gchar *domain,
-		const gchar *size);
+static gchar* nsgtk_download_dialog_show (const gchar *filename, 
+		const gchar *domain, const gchar *size);
 static gchar* nsgtk_download_info_to_string (struct gui_download_window *dl);
 static gchar* nsgtk_download_time_to_string (gint seconds);
 static gboolean nsgtk_download_handle_error (GError *error);
@@ -203,7 +203,6 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	const char *url = download_context_get_url(ctx);
 	unsigned long total_size = download_context_get_total_length(ctx);
 	gchar *domain;
-	gchar *filename;
 	gchar *destination;
 	gboolean unknown_size = total_size == 0;
 	const char *size = (total_size == 0 ? 
@@ -217,27 +216,18 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	if (download == NULL)
 		return NULL;
 	
-	if (url_nice(url, &filename, false) != URL_FUNC_OK) {
-		filename = g_strdup(messages_get("gtkUnknownFile"));
-		if (filename == NULL) {
-			free(download);
-			return NULL;
-		}
-	}
-
 	if (url_host(url, &domain) != URL_FUNC_OK) {
 		domain = g_strdup(messages_get("gtkUnknownHost"));
 		if (domain == NULL) {
-			g_free(filename);
 			free(download);
 			return NULL;
 		}
 	}
 	
-	destination = nsgtk_download_dialog_show(filename, domain, size);
+	destination = nsgtk_download_dialog_show(
+			download_context_get_filename(ctx), domain, size);
 	if (destination == NULL) {
 		g_free(domain);
-		g_free(filename);
 		free(download);
 		return NULL;
 	}
@@ -252,7 +242,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 				&nsgtk_download_iter));
 			
 	download->ctx = ctx;
-	download->name = g_string_new(filename);
+	download->name = g_string_new(download_context_get_filename(ctx));
 	download->time_left = g_string_new("");
 	download->size_total = total_size;
 	download->size_downloaded = 0;
@@ -260,7 +250,6 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	download->start_time = g_timer_elapsed(nsgtk_downloads_timer, NULL);
 	download->time_remaining = -1;
 	download->status = NSGTK_DOWNLOAD_NONE;
-	download->filename = destination;
 	download->progress = 0;
 	download->error = NULL;
 	download->write =
@@ -269,7 +258,6 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	if (nsgtk_download_handle_error(download->error)) {
 		g_string_free(download->name, TRUE);
 		g_string_free(download->time_left, TRUE);
-		g_free(download->filename);
 		free(download);
 		return NULL;
 	}
@@ -562,7 +550,6 @@ void nsgtk_download_store_clear_item (struct gui_download_window *dl)
 		download_context_destroy(dl->ctx);
 		g_string_free(dl->name, TRUE);
 		g_string_free(dl->time_left, TRUE);
-		g_free(dl->filename);
 		g_free(dl);
 		
 		nsgtk_download_sensitivity_evaluate(nsgtk_download_selection);
@@ -582,7 +569,7 @@ void nsgtk_download_store_cancel_item (struct gui_download_window *dl)
 	
 		download_context_abort(dl->ctx);	
 		
-		g_unlink(dl->filename);
+		g_unlink(download_context_get_filename(dl->ctx));
 		
 		nsgtk_download_update(TRUE);
 	}
@@ -658,7 +645,7 @@ void nsgtk_download_change_status (
 	}
 }
 	
-gchar* nsgtk_download_dialog_show (gchar *filename, gchar *domain, 
+gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *domain, 
 		const gchar *size)
 {
 	enum { GTK_RESPONSE_DOWNLOAD, GTK_RESPONSE_SAVE_AS };

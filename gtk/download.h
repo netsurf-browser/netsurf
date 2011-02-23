@@ -63,7 +63,6 @@ struct gui_download_window {
 	gfloat time_remaining;
 	gfloat start_time;
 	gfloat speed;
-	gchar *filename;
 	
 	GtkTreeRowReference *row;
 	GIOChannel *write;
