@@ -46,9 +46,6 @@ fb_init_resource(const char *resource_path)
 	char **pathv; /* resource path string vector */
 	char **respath; /* resource paths vector */
 	const char *lang = NULL;
-	char *foo;
-	int bar=0;
-	fprintf(stderr, "fb_init_resource:%s\n",resource_path);
 
 	pathv = resource_path_to_strvec(resource_path);
 
@@ -56,12 +53,6 @@ fb_init_resource(const char *resource_path)
 
 	resource_free_strvec(pathv);
 
-	foo = respath[bar];
-	while (foo != NULL) {
-	fprintf(stderr, "%s\n",foo);
-	bar++;
-	foo = respath[bar];
-	}
 	return respath;
 }
 
