@@ -83,7 +83,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 			ASLFR_TitleText,messages_get("NetSurf"),
 			ASLFR_Screen,scrn,
 			ASLFR_InitialDrawer, option_download_dir,
-			ASLFR_InitialFile,FilePart(url),
+			ASLFR_InitialFile, download_context_get_filename(ctx),
 			TAG_DONE))
 		{
 			strlcpy(&dw->fname,savereq->fr_Drawer,1024);
