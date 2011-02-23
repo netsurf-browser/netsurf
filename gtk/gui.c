@@ -123,7 +123,7 @@ static void nsgtk_PDF_no_pass(GtkButton *w, gpointer data);
 
 #define THROBBER_FRAMES 9
 
-char **respaths; /** resource search path vector */
+static char **respaths; /** resource search path vector */
 
 /** Create an array of valid paths to search for resources.
  *
