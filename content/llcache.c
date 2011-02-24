@@ -777,9 +777,12 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 	for (obj = llcache_cached_objects; obj != NULL; obj = obj->next) {
 		bool match;
 
-		if (url_compare(obj->url, url, true, &match) == URL_FUNC_OK &&
-				match == true && (newest == NULL ||
-				obj->cache.req_time > newest->cache.req_time)) {
+		if ((newest == NULL || 
+				obj->cache.req_time > newest->cache.req_time) &&
+				obj->cache.no_cache == false &&
+				url_compare(obj->url, url, true, 
+					&match) == URL_FUNC_OK &&
+				match == true) {
 			newest = obj;
 		}
 	}
