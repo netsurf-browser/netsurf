@@ -229,6 +229,9 @@ static inline void llcache_invalidate_cache_control_data(llcache_object *object)
 {
 	free(object->cache.etag);
 	memset(&(object->cache), 0, sizeof(llcache_cache_control));
+
+	object->cache.age = INVALID_AGE;
+	object->cache.max_age = INVALID_AGE;
 }
 
 
@@ -1083,16 +1086,8 @@ nserror llcache_object_refetch(llcache_object *object)
 	headers[header_idx] = NULL;
 
 	/* Reset cache control data */
+	llcache_invalidate_cache_control_data(object);
 	object->cache.req_time = time(NULL);
-	object->cache.res_time = 0;
-	object->cache.date = 0;
-	object->cache.expires = 0;
-	object->cache.age = INVALID_AGE;
-	object->cache.max_age = INVALID_AGE;
-	object->cache.no_cache = false;
-	free(object->cache.etag);
-	object->cache.etag = NULL;
-	object->cache.last_modified = 0;
 
 	/* Reset fetch state */
 	object->fetch.state = LLCACHE_FETCH_INIT;
@@ -2219,6 +2214,10 @@ nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
  * \param name	  Pointer to location to receive header name
  * \param value	  Pointer to location to receive header value
  * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * \note This function also has the side-effect of updating 
+ *       the cache control data for the object if an interesting
+ *       header is encountered
  */
 nserror llcache_fetch_parse_header(llcache_object *object, const char *data, 
 		size_t len, char **name, char **value)
@@ -2319,10 +2318,6 @@ nserror llcache_fetch_process_header(llcache_object *object, const char *data,
 	char *name, *value;
 	llcache_header *temp;
 
-	error = llcache_fetch_parse_header(object, data, len, &name, &value);
-	if (error != NSERROR_OK)
-		return error;
-
 	/* The headers for multiple HTTP responses may be delivered to us if
 	 * the fetch layer receives a 401 response for which it has 
 	 * authentication credentials. This will result in a silent re-request
@@ -2334,7 +2329,8 @@ nserror llcache_fetch_process_header(llcache_object *object, const char *data,
 	 * must discard any headers we've read so far, reset the cache data 
 	 * that we might have computed, and start again.
 	 */
-	if (strncmp(name, "HTTP/", SLEN("HTTP/")) == 0 && value[0] == '\0') {
+	/** \todo Properly parse the response line */
+	if (strncmp(data, "HTTP/", SLEN("HTTP/")) == 0) {
 		time_t req_time = object->cache.req_time;
 
 		llcache_invalidate_cache_control_data(object);
@@ -2344,6 +2340,10 @@ nserror llcache_fetch_process_header(llcache_object *object, const char *data,
 
 		llcache_destroy_headers(object);
 	}
+
+	error = llcache_fetch_parse_header(object, data, len, &name, &value);
+	if (error != NSERROR_OK)
+		return error;
 
 	/* Append header data to the object's headers array */
 	temp = realloc(object->headers, (object->num_headers + 1) * 
