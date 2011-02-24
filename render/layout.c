@@ -365,8 +365,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 				 * floats. */
 				int x0, x1, top;
 				struct box *left, *right;
-				top = cy > y ? cy : y;
-				top += max_pos_margin - max_neg_margin;
+				top = cy + max_pos_margin - max_neg_margin;
+				top = (top > y) ? top : y;
 				x0 = cx;
 				x1 = cx + box->parent->width -
 						box->parent->padding[LEFT] -
