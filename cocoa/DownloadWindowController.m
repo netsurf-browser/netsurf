@@ -83,7 +83,7 @@ static void cocoa_register_download( DownloadWindowController *download );
 {
 	canClose = NO;
 	[[NSSavePanel savePanel] beginSheetForDirectory: nil 
-											   file: [[url path] lastPathComponent]
+											   file: [NSString stringWithUTF8String: download_context_get_filename( context )]
 									 modalForWindow: [self window] 
 									  modalDelegate: self 
 									 didEndSelector: @selector(savePanelDidEnd:returnCode:contextInfo:) 
