@@ -511,8 +511,10 @@ void html_finish_conversion(struct content *c)
 		}
 	}
 
+#ifdef FAVICONS_ARE_NOT_A_PERFORMANCE_HOLE
 	/* get icon */
-	favicon_get_icon(c, html);	
+	favicon_get_icon(c, html);
+#endif	
 
 	/* convert xml tree to box tree */
 	LOG(("XML to box"));
