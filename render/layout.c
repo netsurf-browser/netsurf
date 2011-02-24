@@ -96,7 +96,7 @@ static bool layout_line(struct box *first, int *width, int *y,
 		bool has_text_children,
 		struct content *content, struct box **next_box);
 static struct box *layout_minmax_line(struct box *first, int *min, int *max,
-		const struct font_functions *font_func);
+		bool first_line, const struct font_functions *font_func);
 static int layout_text_indent(const css_computed_style *style, int width);
 static bool layout_float(struct box *b, int width, struct content *content);
 static void place_float_below(struct box *c, int width, int cx, int y,
@@ -1837,6 +1837,7 @@ void layout_minmax_inline_container(struct box *inline_container,
 	struct box *child;
 	int line_min = 0, line_max = 0;
 	int min = 0, max = 0;
+	bool first_line = true;
 
 	assert(inline_container->type == BOX_INLINE_CONTAINER);
 
@@ -1845,13 +1846,13 @@ void layout_minmax_inline_container(struct box *inline_container,
 		return;
 
 	for (child = inline_container->children; child; ) {
-		child = layout_minmax_line(child,
-				&line_min, &line_max,
-				font_func);
+		child = layout_minmax_line(child, &line_min, &line_max,
+				first_line, font_func);
 		if (min < line_min)
 			min = line_min;
 		if (max < line_max)
 			max = line_max;
+		first_line = false;
         }
 
 	inline_container->min_width = min;
@@ -2622,15 +2623,16 @@ bool layout_line(struct box *first, int *width, int *y,
 /**
  * Calculate minimum and maximum width of a line.
  *
- * \param  first     a box in an inline container
- * \param  line_min  updated to minimum width of line starting at first
- * \param  line_max  updated to maximum width of line starting at first
+ * \param  first       a box in an inline container
+ * \param  line_min    updated to minimum width of line starting at first
+ * \param  line_max    updated to maximum width of line starting at first
+ * \param  first_line  true iff this is the first line in the inline container
  * \return  first box in next line, or 0 if no more lines
  * \post  0 <= *line_min <= *line_max
  */
 
 struct box *layout_minmax_line(struct box *first,
-		int *line_min, int *line_max,
+		int *line_min, int *line_max, bool first_line,
   		const struct font_functions *font_func)
 {
 	int min = 0, max = 0, width, height, fixed;
@@ -2638,6 +2640,10 @@ struct box *layout_minmax_line(struct box *first,
 	size_t i, j;
 	struct box *b;
 	plot_font_style_t fstyle;
+
+	assert(first->parent);
+	assert(first->parent->parent);
+	assert(first->parent->parent->style);
 
 	/* corresponds to the pass 1 loop in layout_line() */
 	for (b = first; b; b = b->next) {
@@ -2823,7 +2829,14 @@ struct box *layout_minmax_line(struct box *first,
 		max += width;
 	}
 
-	/* \todo  first line text-indent */
+	if (first_line) {
+		/* todo: handle percentage values properly */
+		/* todo: handle text-indent interaction with floats */
+		int text_indent = layout_text_indent(
+				first->parent->parent->style, 100);
+		min = (min + text_indent < 0) ? 0 : min + text_indent;
+		max = (max + text_indent < 0) ? 0 : max + text_indent;
+	}
 
 	*line_min = min;
 	*line_max = max;
