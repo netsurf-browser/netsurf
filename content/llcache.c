@@ -779,7 +779,6 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 
 		if ((newest == NULL || 
 				obj->cache.req_time > newest->cache.req_time) &&
-				obj->cache.no_cache == false &&
 				url_compare(obj->url, url, true, 
 					&match) == URL_FUNC_OK &&
 				match == true) {
