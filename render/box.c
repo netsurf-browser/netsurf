@@ -1343,7 +1343,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			data->box = box;
 			if (!scroll_create(false,
 					padding_height,
-					box->descendant_y1 - box->descendant_y0,
+					box->descendant_y1 - box->padding[TOP],
      					box->height,
 					data,
      					html_overflow_scroll_callback,
@@ -1353,7 +1353,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			scroll_set_extents(box->scroll_y,
 					padding_height, box->height,
      					box->descendant_y1 -
-					box->descendant_y0);
+					box->padding[TOP]);
 	}
 	if (bottom) {
 		if (box->scroll_x == NULL) {
@@ -1368,7 +1368,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			if (!scroll_create(true,
 					padding_width -
 					(right ? SCROLLBAR_WIDTH : 0),
-					box->descendant_x1 - box->descendant_x0,
+					box->descendant_x1 - box->padding[LEFT],
      					box->width,
 					data,
      					html_overflow_scroll_callback,
@@ -1380,7 +1380,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 					(right ? SCROLLBAR_WIDTH : 0),
 					box->width,
      					box->descendant_x1 -
-					box->descendant_x0);
+					box->padding[LEFT]);
 	}
 	
 	if (right && bottom)
@@ -1398,8 +1398,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 
 bool box_vscrollbar_present(const struct box * const box)
 {
-	return box->descendant_y0 < -box->border[TOP].width ||
-			box->padding[TOP] + box->height + box->padding[BOTTOM] +
+	return box->padding[TOP] + box->height + box->padding[BOTTOM] +
 			box->border[BOTTOM].width < box->descendant_y1;
 }
 
@@ -1413,8 +1412,7 @@ bool box_vscrollbar_present(const struct box * const box)
 
 bool box_hscrollbar_present(const struct box * const box)
 {
-	return box->descendant_x0 < -box->border[LEFT].width ||
-			box->padding[LEFT] + box->width + box->padding[RIGHT] +
+	return box->padding[LEFT] + box->width + box->padding[RIGHT] +
 			box->border[RIGHT].width < box->descendant_x1;
 }
 
