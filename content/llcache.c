@@ -86,6 +86,12 @@ typedef struct {
 	bool tried_with_auth;		/**< Whether we've tried with auth */
 } llcache_fetch_ctx;
 
+typedef enum {
+	LLCACHE_VALIDATE_FRESH,		/**< Only revalidate if not fresh */
+	LLCACHE_VALIDATE_ALWAYS,	/**< Always revalidate */
+	LLCACHE_VALIDATE_ONCE		/**< Revalidate once only */
+} llcache_validate;
+
 /** Cache control data */
 typedef struct {
 	time_t req_time;	/**< Time of request */
@@ -95,7 +101,7 @@ typedef struct {
 #define INVALID_AGE -1
 	int age;		/**< Age: response header */
 	int max_age;		/**< Max-Age Cache-control parameter */
-	bool no_cache;		/**< No-Cache Cache-control parameter */
+	llcache_validate no_cache;	/**< No-Cache Cache-control parameter */
 	char *etag;		/**< Etag: response header */
 	time_t last_modified;	/**< Last-Modified: response header */
 } llcache_cache_control;
@@ -506,8 +512,10 @@ nserror llcache_handle_force_stream(llcache_handle *handle)
 /* See llcache.h for documentation */
 nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
 {
-	if (handle->object != NULL && handle->object->fetch.fetch == NULL) {
-		handle->object->cache.no_cache = true;
+	if (handle->object != NULL && handle->object->fetch.fetch == NULL && 
+			handle->object->cache.no_cache == 
+				LLCACHE_VALIDATE_FRESH) {
+		handle->object->cache.no_cache = LLCACHE_VALIDATE_ONCE;
 	}
 
 	return NSERROR_OK;
@@ -902,7 +910,8 @@ bool llcache_object_is_fresh(const llcache_object *object)
 	 *    its current age is within the freshness lifetime
 	 * or if we're still fetching the object
 	 */
-	return (cd->no_cache == false && (freshness_lifetime > current_age || 
+	return (cd->no_cache == LLCACHE_VALIDATE_FRESH && 
+			(freshness_lifetime > current_age || 
 			object->fetch.state != LLCACHE_FETCH_COMPLETE));
 }
 
@@ -968,7 +977,7 @@ nserror llcache_object_clone_cache_data(llcache_object *source,
 	if (source->cache.max_age != INVALID_AGE)
 		destination->cache.max_age = source->cache.max_age;
 
-	if (source->cache.no_cache)
+	if (source->cache.no_cache != LLCACHE_VALIDATE_FRESH)
 		destination->cache.no_cache = source->cache.no_cache;
 	
 	if (source->cache.last_modified != 0)
@@ -2104,6 +2113,12 @@ nserror llcache_fetch_notmodified(llcache_object *object,
 				false);
 		/* Bring candidate's cache data up to date */
 		llcache_object_cache_update(object->candidate);
+		/* Revert no-cache to normal, if required */
+		if (object->candidate->cache.no_cache == 
+				LLCACHE_VALIDATE_ONCE) {
+			object->candidate->cache.no_cache = 
+				LLCACHE_VALIDATE_FRESH;
+		}
 
 		/* Candidate is now our object */
 		*replacement = object->candidate;
@@ -2262,7 +2277,7 @@ nserror llcache_fetch_parse_header(llcache_object *object, const char *data,
 					strncasecmp(start, "no-store", 8) == 0))
 				/* When we get a disk cache we should
 				 * distinguish between these two */
-				object->cache.no_cache = true;
+				object->cache.no_cache = LLCACHE_VALIDATE_ALWAYS;
 			else if (7 < comma - start && 
 					strncasecmp(start, "max-age", 7) == 0) {
 				/* Find '=' */
