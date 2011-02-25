@@ -58,7 +58,7 @@ char *url_to_path(const char *url)
 	if( atari_sysinfo.gdosversion > TOS4VER ) {
 		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
 	} else {
-		/* do not include / within ulr_path */
+		/* do not include / within url_path */
 		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN));
 		int l = strlen(path);
 		int i;
