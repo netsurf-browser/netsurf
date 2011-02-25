@@ -1048,12 +1048,6 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 			f->content_length = atol(data + i);
 	} else if (17 < size && strncasecmp(data, "WWW-Authenticate:", 17) == 0) {
 		/* extract the first Realm from WWW-Authenticate header */
-		free(f->realm);
-		f->realm = malloc(size);
-		if (!f->realm) {
-			LOG(("malloc failed"));
-			return size;
-		}
 		SKIP_ST(17);
 
 		while (i < (int) size - 5 &&
@@ -1064,15 +1058,19 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		i++;
 
 		if (i < (int) size) {
-			strncpy(f->realm, data + i, size - i);
-			f->realm[size - i] = '\0';
-			for (i = size - i - 1; i >= 0 &&
-					(f->realm[i] == ' ' ||
-					f->realm[i] == '"' ||
-					f->realm[i] == '\t' ||
-					f->realm[i] == '\r' ||
-					f->realm[i] == '\n'); --i)
-				f->realm[i] = '\0';
+			free(f->realm);
+			f->realm = malloc(size - i + 1);
+			if (f->realm != NULL) {
+				strncpy(f->realm, data + i, size - i);
+				f->realm[size - i] = '\0';
+				for (i = size - i - 1; i >= 0 &&
+						(f->realm[i] == ' ' ||
+						f->realm[i] == '"' ||
+						f->realm[i] == '\t' ||
+						f->realm[i] == '\r' ||
+						f->realm[i] == '\n'); --i)
+					f->realm[i] = '\0';
+			}
 		}
 	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
 		/* extract Set-Cookie header */
