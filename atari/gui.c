@@ -292,8 +292,6 @@ void gui_window_destroy(struct gui_window *w)
 	LGRECT dbg;
 	struct gui_window * root = browser_find_root( w );
 	browser_get_rect( root, BR_CONTENT, &dbg );
-	printf("destroy browser\n");
-	/* search_destroy(); */
 	switch(w->browser->bw->browser_window_type) {
 		case BROWSER_WINDOW_NORMAL:
 			window_destroy( w );
@@ -347,11 +345,12 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 	if (gw == NULL)
 		return;
-	char tmp[80];
 	/* TODO: query AES for max. title length */
-	strncpy((char*)&tmp, title, 80);
-	tmp[79]=0;
-	WindSetStr( gw->root->handle, WF_NAME, (char *)&tmp );
+	if( gw->root && gw->parent == NULL ){
+		strncpy((char*)&gw->root->title, title, 79);
+		gw->root->title[79] = 0;
+		WindSetStr( gw->root->handle, WF_NAME, (char *)&gw->root->title );
+	}
 }
 
 /**
