@@ -86,6 +86,7 @@
 #include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
+#include "riscos/system_colour.h"
 #include "riscos/textselection.h"
 #include "riscos/theme.h"
 #include "riscos/toolbar.h"
@@ -212,6 +213,7 @@ static ns_wimp_message_list task_messages = {
 		message_DRAGGING,
 		message_DRAG_CLAIM,
 		message_MODE_CHANGE,
+		message_PALETTE_CHANGE,
 		message_FONT_CHANGED,
 		message_URI_PROCESS,
 		message_URI_RETURN_RESULT,
@@ -1339,6 +1341,11 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_MODE_CHANGE:
 			ro_gui_get_screen_properties();
 			rufl_invalidate_cache();
+			ro_gui_system_colour_update();
+			break;
+
+		case message_PALETTE_CHANGE:
+			ro_gui_system_colour_update();
 			break;
 
 		case message_FONT_CHANGED:
