@@ -1255,7 +1255,7 @@ url_func_result url_get_components(const char *url,
  * See RFC 3986 for reference.
  *
  * \param  components  the components to reform into a URL
- * \return  a new URL allocated on the stack, or NULL on failure
+ * \return  a new URL allocated on the heap, or NULL on failure
  */
 
 char *url_reform_components(const struct url_components *components)
