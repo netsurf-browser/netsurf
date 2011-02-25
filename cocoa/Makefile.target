@@ -154,15 +154,23 @@ $$(OBJROOT)/$(1).lproj: $(2)
 	$(Q)cp -pLR $(2) $$@
 endef
 
+# compile_xib (xib) (lang)
 define compile_xib
-R_RESOURCES += $$(OBJROOT)/$(1:.xib=.nib)
-$$(OBJROOT)/$(1:.xib=.nib): cocoa/res/$(1) $$(OBJROOT)/created
-	$(VQ)echo Compiling XIB: $$<
-	$(Q)ibtool $$< --compile $$@
+$$(OBJROOT)/$(2).lproj: $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib)
+
+$$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(1) $$(OBJROOT)/created
+	$(VQ)echo Compiling XIB $(1) for language $(2)
+	$(Q)mkdir -p $$(OBJROOT)/$(2).lproj
+	$(Q)cocoa/compile-xib.sh cocoa/res/$(1) $(2) $$@
+	
+ifeq ($(wildcard cocoa/res/$(2).lproj/$(1).strings), cocoa/res/$(2).lproj/$(1).strings)
+$$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(2).lproj/$(1).strings
+endif
+
 endef
 
 $(foreach lang,$(LANGUAGES),$(eval $(call make_lproj,$(lang),$(addprefix cocoa/res/$(lang).lproj/,$(LOCALIZED_RESOURCES)))))
-$(foreach xib,$(S_XIBS),$(eval $(call compile_xib,$(xib))))
+$(foreach lang,$(LANGUAGES),$(foreach xib,$(S_XIBS),$(eval $(call compile_xib,$(xib),$(lang)))))
 
 NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) NetSurf.app/Contents/Info.plist
 	$(VQ)echo Assembling NetSurf.app bundle
