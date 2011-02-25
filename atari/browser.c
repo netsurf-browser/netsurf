@@ -872,6 +872,14 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 		clip.y0 = b->redraw.area.y0 + b->scroll.current.y;
 		clip.x1 = b->redraw.area.x1 + b->scroll.current.x;
 		clip.y1 = b->redraw.area.y1 + b->scroll.current.y;
+		/* must clear the surface: */
+		plot.clip( &clip );
+		plot.rectangle( b->redraw.area.x0, 
+						b->redraw.area.y0, 
+						b->redraw.area.x1, 
+						b->redraw.area.y1, 
+						plot_style_fill_white
+		);	
 	}
 
 	browser_window_redraw( b->bw, -b->scroll.current.x,
@@ -892,27 +900,24 @@ void browser_redraw_caret( struct gui_window * gw, GRECT * area )
 	GRECT caret;
 	struct s_browser * b = gw->browser;
 	if( b->caret.redraw == true ){
+		struct rect old_clip;
+		struct rect clip;
+
 		caret = b->caret.requested;
 		caret.g_x -= gw->browser->scroll.current.x;
 		caret.g_y -= gw->browser->scroll.current.y;
-		struct s_clipping oldclip;
-		struct rect old_clip;
-		struct rect clip;
 		clip.x0 = caret.g_x - 1;
 		clip.y0 = caret.g_y - 1;
 		clip.x1 = caret.g_x + caret.g_w + 1;
 		clip.y1 = caret.g_y + caret.g_h + 1;
-		plot_get_clip( &oldclip );
+		/* store old clip before adjusting it: */
+		plot_get_clip( &old_clip );
 		/* clip to cursor: */
 		plot_clip( &clip );
 		plot_rectangle( caret.g_x, caret.g_y, 
 			caret.g_x+caret.g_w, caret.g_y+caret.g_h,
 			plot_style_caret );
-		/* restore clip area: */
-		old_clip.x0 = old_clip.x0;
-		old_clip.y0 = old_clip.y0;
-		old_clip.x1 = old_clip.x1;
-		old_clip.y1 = old_clip.y1;
+		/* restore old clip area: */
 		plot_clip( &old_clip );
 		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
 		b->caret.current.g_y = caret.g_y + gw->browser->scroll.current.y;
@@ -926,6 +931,7 @@ void browser_redraw( struct gui_window * gw )
 	LGRECT bwrect;
 	struct s_browser * b = gw->browser;
 	short todo[4];
+	struct rect clip;
 
 	if( b->attached == false ) {
 		return;
@@ -938,7 +944,11 @@ void browser_redraw( struct gui_window * gw )
 
 	plotter->resize(plotter, bwrect.g_w, bwrect.g_h);
 	plotter->move(plotter, bwrect.g_x, bwrect.g_y );
-	plotter->clip( plotter, 0, 0, bwrect.g_w, bwrect.g_h );
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = bwrect.g_w;
+	clip.y1 = bwrect.g_h;
+	plotter->clip( plotter, &clip );
 	plotter->lock(plotter);
 
 	if( b->scroll.required == true && b->bw->current_content != NULL) {
