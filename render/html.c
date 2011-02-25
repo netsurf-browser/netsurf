@@ -414,7 +414,15 @@ bool html_convert(struct content *c)
 		url_func_result res;
 
 		/* Make all actions absolute */
-		res = url_join(f->action, c->data.html.base_url, &action);
+		if (f->action == NULL || f->action[0] == '\0') {
+			/* HTML5 4.10.22.3 step 11 */
+			res = url_join(content__get_url(c), 
+					c->data.html.base_url, &action);
+		} else {
+			res = url_join(f->action, 
+					c->data.html.base_url, &action);
+		}
+
 		if (res != URL_FUNC_OK) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
