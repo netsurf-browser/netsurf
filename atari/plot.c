@@ -112,17 +112,16 @@ static bool plot_polygon(const int *p, unsigned int n,
 
 bool plot_clip(const struct rect *clip)
 {
-	plotter->clip( plotter, clip->x0, clip->y0, clip->x1, clip->y1 );
+	plotter->clip( plotter, clip );
 	return ( true );
 }
 
-bool plot_get_clip(struct s_clipping * out){
-	out->x0 = plotter->clipping.x0;
-	out->y0 = plotter->clipping.y0;
-	out->x1 = plotter->clipping.x1;
-	out->y1 = plotter->clipping.y1;
+
+bool plot_get_clip(struct rect * out){
+	plotter_get_clip( plotter , out );
 	return( true );
 }
+
 
 static bool plot_text(int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle )
 {
@@ -151,7 +150,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 	int bmpw,bmph;
-	struct s_clipping clip;
+	struct rect clip;
 	
 	if( option_suppress_images != 0 ) {
 		return( true );
