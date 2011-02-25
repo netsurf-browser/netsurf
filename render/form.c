@@ -332,7 +332,7 @@ bool form_successful_controls(struct form *form,
 	char *charset;
 
 	last_success = &sentinel;
-	sentinel.next = 0;
+	sentinel.next = NULL;
 
 	charset = form_acceptable_charset(form);
 	if (!charset)
@@ -1463,63 +1463,72 @@ void form_radio_set(hlcache_handle *content,
 void form_submit(hlcache_handle *h, struct browser_window *target,
 		struct form *form, struct form_control *submit_button)
 {
-	char *data = 0, *url = 0;
+	char *data = NULL, *url = NULL;
 	struct fetch_multipart_data *success;
+	struct url_components components;
+	url_func_result res;
 
-	assert(form);
+	assert(form != NULL);
 	assert(content_get_type(h) == CONTENT_HTML);
 
-	if (!form_successful_controls(form, submit_button, &success)) {
+	if (form_successful_controls(form, submit_button, &success) == false) {
 		warn_user("NoMemory", 0);
 		return;
 	}
 
 	switch (form->method) {
-		case method_GET:
-			data = form_url_encode(form, success);
-			if (!data) {
-				fetch_multipart_data_destroy(success);
-				warn_user("NoMemory", 0);
-				return;
-			}
-			url = calloc(1, strlen(form->action) +
-					strlen(data) + 2);
-			if (!url) {
-				fetch_multipart_data_destroy(success);
-				free(data);
-				warn_user("NoMemory", 0);
-				return;
-			}
-			if (form->action[strlen(form->action)-1] == '?') {
-				sprintf(url, "%s%s", form->action, data);
-			}
-			else {
-				sprintf(url, "%s?%s", form->action, data);
-			}
-			browser_window_go(target, url, content_get_url(h),
-					true);
-			break;
+	case method_GET:
+		data = form_url_encode(form, success);
+		if (data == NULL) {
+			fetch_multipart_data_destroy(success);
+			warn_user("NoMemory", 0);
+			return;
+		}
 
-		case method_POST_URLENC:
-			data = form_url_encode(form, success);
-			if (!data) {
-				fetch_multipart_data_destroy(success);
-				warn_user("NoMemory", 0);
-				return;
-			}
-			browser_window_go_post(target, form->action, data, 0,
-					true,  content_get_url(h),
-					false, true, 0);
-			break;
+		/* Decompose action */
+		res = url_get_components(form->action, &components);
+		if (res != URL_FUNC_OK) {
+			free(data);
+			fetch_multipart_data_destroy(success);
+			warn_user("NoMemory", 0);
+			return;
+		}
 
-		case method_POST_MULTIPART:
-			browser_window_go_post(target, form->action, 0,
-					success, true, content_get_url(h),
-					false, true, 0);
-			break;
+		/* Replace query segment */
+		components.query = data;
 
-		default:
-			assert(0);
+		/* Construct submit url */
+		url = url_reform_components(&components);
+		if (url == NULL) {
+			free(data);
+			fetch_multipart_data_destroy(success);
+			warn_user("NoMemory", 0);
+			return;
+		}
+
+		url_destroy_components(&components);
+
+		browser_window_go(target, url, content_get_url(h), true);
+		break;
+
+	case method_POST_URLENC:
+		data = form_url_encode(form, success);
+		if (data == NULL) {
+			fetch_multipart_data_destroy(success);
+			warn_user("NoMemory", 0);
+			return;
+		}
+
+		browser_window_go_post(target, form->action, data, 0,
+				true,  content_get_url(h),
+				false, true, 0);
+		break;
+
+	case method_POST_MULTIPART:
+		browser_window_go_post(target, form->action, 0,
+				success, true, content_get_url(h),
+				false, true, 0);
+		break;
 	}
 
 	fetch_multipart_data_destroy(success);
