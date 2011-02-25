@@ -1198,7 +1198,6 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	struct object_param *param;
 	xmlChar *codebase, *classid, *data;
 	xmlNode *c;
-	struct box *inline_container = 0;
 
 	if (box->style && css_computed_display(box->style, 
 			n->parent == NULL) == CSS_DISPLAY_NONE)
@@ -1324,15 +1323,6 @@ bool box_object(BOX_SPECIAL_PARAMS)
 			params->data ? params->data : params->classid,
 			box, 0, content->available_width, 1000, false))
 		return false;
-
-	/* convert children and place into fallback */
-	for (c = n->children; c; c = c->next) {
-		if (!convert_xml_to_box(c, content, box->style, box,
-				&inline_container, 0, 0, 0))
-			return false;
-	}
-	box->fallback = box->children;
-	box->children = box->last = 0;
 
 	*convert_children = false;
 	return true;

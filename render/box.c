@@ -163,7 +163,6 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->children = NULL;
 	box->last = NULL;
 	box->parent = NULL;
-	box->fallback = NULL;
 	box->inline_end = NULL;
 	box->float_children = NULL;
 	box->float_container = NULL;
@@ -888,21 +887,10 @@ struct box *box_find_by_id(struct box *box, const char *id)
 
 bool box_visible(struct box *box)
 {
-	struct box *fallback;
-
 	/* visibility: hidden */
 	if (box->style && css_computed_visibility(box->style) == 
 			CSS_VISIBILITY_HIDDEN)
 		return false;
-
-	/* check if a fallback */
-	while (box->parent) {
-		for (fallback = box->parent->fallback; fallback;
-				fallback = fallback->next)
-			if (fallback == box)
-				return false;
-		box = box->parent;
-	}
 
 	return true;
 }
@@ -1019,13 +1007,6 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 					c->prev, prev);
 		box_dump(stream, c, depth + 1);
 	}
-	if (box->fallback) {
-		for (i = 0; i != depth; i++)
-			fprintf(stream, "  ");
-		fprintf(stream, "fallback:\n");
-		for (c = box->fallback; c; c = c->next)
-			box_dump(stream, c, depth + 1);
-	}
 }
 
 /* Box tree duplication below
@@ -1054,9 +1035,8 @@ int box_compare_dict_elements(const struct box_dict_element *a,
 }
 
 /** Duplication of a box tree. We assume that all the content is fetched,
-fallbacks have been applied where necessary and we reuse a lot of content
-like strings, fetched objects etc - just replicating all we need to create
-two different layouts.
+and we reuse a lot of content like strings, fetched objects etc - just 
+replicating all we need to create two different layouts.
 \return true on success, false on lack of memory
 */
 struct box* box_duplicate_tree(struct box *root, struct content *c)

@@ -212,7 +212,6 @@ struct box {
 	struct box *children;  /**< First child box, or 0. */
 	struct box *last;      /**< Last child box, or 0. */
 	struct box *parent;    /**< Parent box, or 0. */
-	struct box *fallback;  /**< Fallback children for object, or 0. */
 	/** INLINE_END box corresponding to this INLINE box, or INLINE box
 	 * corresponding to this INLINE_END box. */
 	struct box *inline_end;
