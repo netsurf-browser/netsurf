@@ -163,7 +163,7 @@ $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(1) $$(OBJROOT)/created
 	$(Q)mkdir -p $$(OBJROOT)/$(2).lproj
 	$(Q)cocoa/compile-xib.sh cocoa/res/$(1) $(2) $$@
 	
-ifeq ($(wildcard cocoa/res/$(2).lproj/$(1).strings), cocoa/res/$(2).lproj/$(1).strings)
+ifeq ($(wildcard cocoa/res/$(2).lproj/$(1).strings),cocoa/res/$(2).lproj/$(1).strings)
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(2).lproj/$(1).strings
 endif
 
