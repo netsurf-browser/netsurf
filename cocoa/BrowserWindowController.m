@@ -115,8 +115,12 @@
 	if ([tabView numberOfTabViewItems] <= 1) return YES;
 	if ([[NSUserDefaults standardUserDefaults] boolForKey: kAlwaysCloseMultipleTabs]) return YES;
 	
-	NSAlert *ask = [NSAlert alertWithMessageText: @"Do you really want to close this window?" defaultButton:@"Yes" alternateButton:@"No" otherButton:nil 
-					   informativeTextWithFormat: @"There are %d tabs open, do you want to close them all?", [tabView numberOfTabViewItems]];
+	NSAlert *ask = [NSAlert alertWithMessageText: NSLocalizedString( @"Do you really want to close this window?", nil )
+								   defaultButton: NSLocalizedString( @"Yes", @"'Yes' button" )
+								 alternateButton: NSLocalizedString( @"No" , @"'No' button" )
+									 otherButton:nil 
+					   informativeTextWithFormat: NSLocalizedString( @"There are %d tabs open, do you want to close them all?", nil ),
+							[tabView numberOfTabViewItems]];
 	[ask setShowsSuppressionButton:YES];
 	
 	[ask beginSheetModalForWindow: window modalDelegate:self didEndSelector:@selector(canCloseAlertDidEnd:returnCode:contextInfo:) 

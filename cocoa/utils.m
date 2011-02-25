@@ -30,7 +30,11 @@ void die(const char * const error)
 
 void warn_user(const char *warning, const char *detail)
 {
-	NSRunAlertPanel( @"Warning", @"Warning %s: %s", @"OK", nil, nil, warning, detail );
+	NSRunAlertPanel( NSLocalizedString( @"Warning", @"Warning title" ), 
+					NSLocalizedString( @"Warning %s%s%s", @"Warning message" ), 
+					NSLocalizedString( @"OK", @"" ), nil, nil, 
+					warning, detail != NULL ? ": " : "",
+					detail != NULL ? detail : "" );
 }
 
 void PDF_Password(char **owner_pass, char **user_pass, char *path)

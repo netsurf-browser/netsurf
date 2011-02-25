@@ -140,7 +140,8 @@ static void cocoa_register_download( DownloadWindowController *download );
 - (void) showError: (NSString *)error;
 {
 	canClose = NO;
-	NSAlert *alert = [NSAlert alertWithMessageText: @"Error" defaultButton: @"OK" 
+	NSAlert *alert = [NSAlert alertWithMessageText: NSLocalizedString( @"Error", @"show error" ) 
+									 defaultButton: NSLocalizedString( @"OK", @"'OK' button" ) 
 								   alternateButton: nil otherButton: nil 
 						 informativeTextWithFormat: @"%@", error];
 	
@@ -170,9 +171,12 @@ static void cocoa_register_download( DownloadWindowController *download );
 {
 	if ([[NSUserDefaults standardUserDefaults] boolForKey: kAlwaysCancelDownload]) return YES;
 	
-	NSAlert *ask = [NSAlert alertWithMessageText: @"Cancel download?" defaultButton: @"Yes" 
-								 alternateButton: @"No" otherButton: nil 
-					   informativeTextWithFormat: @"Should the download of '%@' really be cancelled?", [self fileName]];
+	NSAlert *ask = [NSAlert alertWithMessageText: NSLocalizedString( @"Cancel download?", @"Download" )
+								   defaultButton: NSLocalizedString( @"Yes", @"" ) 
+								 alternateButton: NSLocalizedString( @"No", @"" )  
+									 otherButton: nil 
+					   informativeTextWithFormat: NSLocalizedString( @"Should the download of '%@' really be cancelled?", @"Download" ), 
+													[self fileName]];
 	[ask setShowsSuppressionButton: YES];
 	[ask beginSheetModalForWindow: [self window] modalDelegate: self 
 				   didEndSelector: @selector(askCancelDidEnd:returnCode:contextInfo:) contextInfo: NULL];
@@ -242,19 +246,19 @@ static NSString *cocoa_file_size_string( float size )
 
 static NSString *cocoa_time_string( unsigned seconds )
 {
-	if (seconds <= 10) return @"less than 10 seconds";
+	if (seconds <= 10) return NSLocalizedString( @"less than 10 seconds", @"time remaining" );
 	
-	if (seconds < 60) return [NSString stringWithFormat: @"%u seconds", seconds];
+	if (seconds < 60) return [NSString stringWithFormat: NSLocalizedString( @"%u seconds", @"time remaining" ), seconds];
 	
 	unsigned minutes = seconds / 60;
 	seconds = seconds % 60;
 	
-	if (minutes < 60) return [NSString stringWithFormat: @"%u:%02u minutes", minutes, seconds];
+	if (minutes < 60) return [NSString stringWithFormat: NSLocalizedString( @"%u:%02u minutes", @"time remaining: minutes, seconds" ) , minutes, seconds];
 	
 	unsigned hours = minutes / 60;
 	minutes = minutes % 60;
 	
-	return [NSString stringWithFormat: @"%2:%02u hours", hours, minutes];
+	return [NSString stringWithFormat: NSLocalizedString( @"%2:%02u hours", @"time remaining: hours, minutes" ), hours, minutes];
 }
 
 - (NSString *) statusText;
@@ -275,7 +279,7 @@ static NSString *cocoa_time_string( unsigned seconds )
 			float timeRemaining = (float)(totalSize - receivedSize) / speed;
 			timeRemainingString = [NSString stringWithFormat: @": %@", cocoa_time_string( timeRemaining )];
 		}
-		totalSizeString = [NSString stringWithFormat: @" of %@", cocoa_file_size_string( totalSize )];
+		totalSizeString = [NSString stringWithFormat: NSLocalizedString( @" of %@", @"... of (total size)" ), cocoa_file_size_string( totalSize )];
 	}
 	
 	return [NSString stringWithFormat: @"%@%@%@%@", cocoa_file_size_string( receivedSize ), 

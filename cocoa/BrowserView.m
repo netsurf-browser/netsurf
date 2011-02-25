@@ -474,13 +474,17 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	if ((box = box = box_object_at_point( browser->current_content, point.x, point.y )) != NULL) {
 		NSString *imageURL = [NSString stringWithUTF8String: content_get_url( box->object )];
 		
-		[[popupMenu addItemWithTitle: @"Open image in new tab" action: @selector(cmOpenURLInTab:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new tab", @"Context menu" )
+							  action: @selector(cmOpenURLInTab:) 
 					   keyEquivalent: @""] setRepresentedObject: imageURL];
-		[[popupMenu addItemWithTitle: @"Open image in new window" action: @selector(cmOpenURLInWindow:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new window", @"Context menu" )
+							  action: @selector(cmOpenURLInWindow:) 
 					   keyEquivalent: @""] setRepresentedObject: imageURL];
-		[[popupMenu addItemWithTitle: @"Save image as" action: @selector(cmDownloadURL:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Save image as", @"Context menu" )
+							  action: @selector(cmDownloadURL:) 
 					   keyEquivalent: @""] setRepresentedObject: imageURL];
-		[[popupMenu addItemWithTitle: @"Copy image" action: @selector(cmImageCopy:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Copy image", @"Context menu" )
+							  action: @selector(cmImageCopy:) 
 					   keyEquivalent: @""] setRepresentedObject: (id)content_get_bitmap( box->object )];
 		
 		[popupMenu addItem: [NSMenuItem separatorItem]];
@@ -489,21 +493,28 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	if ((box = box_href_at_point( browser->current_content, point.x, point.y )) != NULL) {
 		NSString *target = [NSString stringWithUTF8String: box->href];
 		
-		[[popupMenu addItemWithTitle: @"Open link in new tab" action: @selector(cmOpenURLInTab:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new tab", @"Context menu" )
+							  action: @selector(cmOpenURLInTab:) 
 					   keyEquivalent: @""] setRepresentedObject: target];
-		[[popupMenu addItemWithTitle: @"Open link in new window" action: @selector(cmOpenURLInWindow:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new window", @"Context menu" )
+							  action: @selector(cmOpenURLInWindow:) 
 					   keyEquivalent: @""] setRepresentedObject: target];
-		[[popupMenu addItemWithTitle: @"Save link target" action: @selector(cmDownloadURL:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Save link target", @"Context menu" )
+							  action: @selector(cmDownloadURL:) 
 					   keyEquivalent: @""] setRepresentedObject: target];
-		[[popupMenu addItemWithTitle: @"Copy link" action: @selector(cmLinkCopy:) 
+		[[popupMenu addItemWithTitle: NSLocalizedString( @"Copy link", @"Context menu" )
+							  action: @selector(cmLinkCopy:) 
 					   keyEquivalent: @""] setRepresentedObject: target];
 		
 		[popupMenu addItem: [NSMenuItem separatorItem]];
 	}
 	
-	[popupMenu addItemWithTitle: @"Back" action: @selector(goBack:) keyEquivalent: @""];
-	[popupMenu addItemWithTitle: @"Reload" action: @selector(reloadPage:) keyEquivalent: @""];
-	[popupMenu addItemWithTitle: @"Forward" action: @selector(goForward:) keyEquivalent: @""];
+	[popupMenu addItemWithTitle: NSLocalizedString( @"Back", @"Context menu" )
+						 action: @selector(goBack:) keyEquivalent: @""];
+	[popupMenu addItemWithTitle: NSLocalizedString( @"Reload", @"Context menu" )
+						 action: @selector(reloadPage:) keyEquivalent: @""];
+	[popupMenu addItemWithTitle: NSLocalizedString( @"Forward", @"Context menu" )
+						 action: @selector(goForward:) keyEquivalent: @""];
 	
 	[NSMenu popUpContextMenu: popupMenu withEvent: event forView: self];
 	
