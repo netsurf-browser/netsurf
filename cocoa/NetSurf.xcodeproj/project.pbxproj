@@ -176,6 +176,13 @@
 		261DB23513180CEE00C59F12 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		261DB24F1318444F00C59F12 /* compile-xib.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "compile-xib.sh"; sourceTree = "<group>"; };
 		261DB2501318444F00C59F12 /* extract-strings.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "extract-strings.sh"; sourceTree = "<group>"; };
+		261DB29013185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/BookmarksWindow.xib.strings; sourceTree = "<group>"; };
+		261DB29413185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/BrowserWindow.xib.strings; sourceTree = "<group>"; };
+		261DB29613185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/DownloadWindow.xib.strings; sourceTree = "<group>"; };
+		261DB29813185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/HistoryWindow.xib.strings; sourceTree = "<group>"; };
+		261DB29C13185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/MainMenu.xib.strings; sourceTree = "<group>"; };
+		261DB29E13185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/PreferencesWindow.xib.strings; sourceTree = "<group>"; };
+		261DB2A013185C0A00C59F12 /* de */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/SearchWindow.xib.strings; sourceTree = "<group>"; };
 		2622F1D512DCD84600CD5A62 /* TreeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TreeView.h; sourceTree = "<group>"; };
 		2622F1D612DCD84600CD5A62 /* TreeView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TreeView.m; sourceTree = "<group>"; };
 		2625095012F72A8F0090D236 /* PreferencesWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PreferencesWindow.xib; sourceTree = "<group>"; };
@@ -597,6 +604,13 @@
 		265F310F12D663C20048B600 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				261DB28F13185C0A00C59F12 /* BookmarksWindow.xib.strings */,
+				261DB29313185C0A00C59F12 /* BrowserWindow.xib.strings */,
+				261DB29513185C0A00C59F12 /* DownloadWindow.xib.strings */,
+				261DB29713185C0A00C59F12 /* HistoryWindow.xib.strings */,
+				261DB29B13185C0A00C59F12 /* MainMenu.xib.strings */,
+				261DB29D13185C0A00C59F12 /* PreferencesWindow.xib.strings */,
+				261DB29F13185C0A00C59F12 /* SearchWindow.xib.strings */,
 				261DB22113180AFF00C59F12 /* Localizable.strings */,
 				2684028E1301848100850DA2 /* HomeTemplate.pdf */,
 				26AFE63E12DDEB0A005AD082 /* NetSurf.icns */,
@@ -884,6 +898,62 @@
 				261DB23513180CEE00C59F12 /* nl */,
 			);
 			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		261DB28F13185C0A00C59F12 /* BookmarksWindow.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB29013185C0A00C59F12 /* de */,
+			);
+			name = BookmarksWindow.xib.strings;
+			sourceTree = "<group>";
+		};
+		261DB29313185C0A00C59F12 /* BrowserWindow.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB29413185C0A00C59F12 /* de */,
+			);
+			name = BrowserWindow.xib.strings;
+			sourceTree = "<group>";
+		};
+		261DB29513185C0A00C59F12 /* DownloadWindow.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB29613185C0A00C59F12 /* de */,
+			);
+			name = DownloadWindow.xib.strings;
+			sourceTree = "<group>";
+		};
+		261DB29713185C0A00C59F12 /* HistoryWindow.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB29813185C0A00C59F12 /* de */,
+			);
+			name = HistoryWindow.xib.strings;
+			sourceTree = "<group>";
+		};
+		261DB29B13185C0A00C59F12 /* MainMenu.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB29C13185C0A00C59F12 /* de */,
+			);
+			name = MainMenu.xib.strings;
+			sourceTree = "<group>";
+		};
+		261DB29D13185C0A00C59F12 /* PreferencesWindow.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB29E13185C0A00C59F12 /* de */,
+			);
+			name = PreferencesWindow.xib.strings;
+			sourceTree = "<group>";
+		};
+		261DB29F13185C0A00C59F12 /* SearchWindow.xib.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB2A013185C0A00C59F12 /* de */,
+			);
+			name = SearchWindow.xib.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
