@@ -299,7 +299,18 @@ void gui_download_window_done(struct gui_download_window *dw)
 		dw->fd = NULL;
 	}
 	OBJECT * tree = ObjcTree(OC_FORM, dw->form );
-	ObjcChange( OC_FORM, dw->form, DOWNLOAD_BT_ABORT, DISABLED, TRUE);
+	tree[DOWNLOAD_PROGRESS_DONE].ob_width = 400;
+	snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
+		"%lu%s", 100, "%" 
+	);
+	snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",  
+		human_friendly_bytesize(dw->size_downloaded),
+		(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : human_friendly_bytesize(dw->size_downloaded)
+	);
+	ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
+	ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
+	ObjcChange( OC_FORM, dw->form, DOWNLOAD_BT_ABORT, DISABLED, FALSE);
+	snd_rdw( dw->form );
 	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
 		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0); 
 	}
