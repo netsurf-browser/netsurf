@@ -58,7 +58,8 @@ void nsatari_search_set_status(bool found, void *p)
 void nsatari_search_set_hourglass(bool active, void *p)
 {
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
-	if( active ) 
+	LOG((""));
+	if( active && current != NULL ) 
 		gui_window_set_pointer(s->bw->window, GUI_POINTER_PROGRESS);
 	else
 		gui_window_set_pointer(s->bw->window, GUI_POINTER_DEFAULT);
@@ -112,7 +113,10 @@ static SEARCH_FORM_SESSION get_search_session(WINDOW * win)
 
 static void destroy_search_session( SEARCH_FORM_SESSION s )
 {
-	free( s );
+	if( s != NULL ){
+		LOG((""));
+		free( s );
+	}
 }
 
 static int apply_form( WINDOW * win, struct s_search_form_state * s )
@@ -211,6 +215,7 @@ static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unu
 static void __CDECL evnt_close( WINDOW *win, short buff[8]) 
 {
 	/* Free Search Contexts */
+	/* todo: destroy search context, if any? */
 	SEARCH_FORM_SESSION s = get_search_session(win);
 	if( s != NULL ){ 
 		destroy_search_session( s );
@@ -221,6 +226,7 @@ static void __CDECL evnt_close( WINDOW *win, short buff[8])
 
 void search_destroy( struct gui_window * gw )
 {
+	LOG(("search_destroy %p / %p", gw, current ));
 	if( current != NULL ){
 		ApplWrite( _AESapid, WM_CLOSED, current->formwind->handle, 0,0,0,0);
 		/* Handle Close event */
@@ -228,6 +234,7 @@ void search_destroy( struct gui_window * gw )
 		/* Handle Destroy Event */
 		EvntWindom( MU_MESAG );
 	}
+	LOG(("done"));
 }
 
 SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
