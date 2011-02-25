@@ -169,6 +169,11 @@
 		2612269412D7AEA800E10F91 /* en */ = {isa = PBXFileReference; lastKnownFileType = text; name = en; path = en.lproj/Messages; sourceTree = "<group>"; };
 		2612269512D7AEB500E10F91 /* it */ = {isa = PBXFileReference; lastKnownFileType = text; name = it; path = it.lproj/Messages; sourceTree = "<group>"; };
 		2612269612D7AEBE00E10F91 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text; name = fr; path = fr.lproj/Messages; sourceTree = "<group>"; };
+		261DB22213180AFF00C59F12 /* en */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		261DB22613180B4F00C59F12 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		261DB23313180CD600C59F12 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		261DB23413180CE000C59F12 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
+		261DB23513180CEE00C59F12 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
 		2622F1D512DCD84600CD5A62 /* TreeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TreeView.h; sourceTree = "<group>"; };
 		2622F1D612DCD84600CD5A62 /* TreeView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TreeView.m; sourceTree = "<group>"; };
 		2625095012F72A8F0090D236 /* PreferencesWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PreferencesWindow.xib; sourceTree = "<group>"; };
@@ -581,6 +586,7 @@
 		265F310F12D663C20048B600 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				261DB22113180AFF00C59F12 /* Localizable.strings */,
 				2684028E1301848100850DA2 /* HomeTemplate.pdf */,
 				26AFE63E12DDEB0A005AD082 /* NetSurf.icns */,
 				2612268F12D7AE4100E10F91 /* Messages */,
@@ -854,6 +860,18 @@
 				2612269612D7AEBE00E10F91 /* fr */,
 			);
 			name = Messages;
+			sourceTree = "<group>";
+		};
+		261DB22113180AFF00C59F12 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				261DB22213180AFF00C59F12 /* en */,
+				261DB22613180B4F00C59F12 /* de */,
+				261DB23313180CD600C59F12 /* fr */,
+				261DB23413180CE000C59F12 /* it */,
+				261DB23513180CEE00C59F12 /* nl */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
