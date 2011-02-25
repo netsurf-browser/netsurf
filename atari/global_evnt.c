@@ -70,6 +70,10 @@ static char * menu_titles[NUM_MENU_TITLES] = {NULL};
 static void __CDECL menu_about(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	char buf[PATH_MAX];
+	strcpy((char*)&buf, "file://");
+	strncat((char*)&buf, (char*)"./doc/README.TXT", PATH_MAX - (strlen("file://")+1) );
+	browser_window_create((char*)&buf, 0, 0, true, false);
 }
 
 static void __CDECL menu_new_win(WINDOW *win, int item, int title, void *data)
@@ -253,6 +257,7 @@ static void __CDECL menu_help_content(WINDOW *win, int item, int title, void *da
 
 static struct s_menu_item_evnt menu_evnt_tbl[] =
 {
+	{T_ABOUT,MAINMENU_M_ABOUT, "About", menu_about, {0,0,0}, NULL },
 	{T_FILE, MAINMENU_M_NEWWIN, "NewWindow", menu_new_win, {0,0,0}, NULL},
 	{T_FILE, MAINMENU_M_OPENURL, "OpenURL", menu_open_url, {0,0,0}, NULL},
 	{T_FILE, MAINMENU_M_OPENFILE, "OpenFile", menu_open_file, {0,0,0}, NULL},
