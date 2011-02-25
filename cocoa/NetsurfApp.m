@@ -93,6 +93,8 @@
 
 -(void) terminate: (id)sender;
 {
+	[[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillTerminateNotification object:self];
+	
 	netsurf_quit = true;
 	[self postEvent: [NSEvent otherEventWithType: NSApplicationDefined location: NSZeroPoint 
 								   modifierFlags: 0 timestamp: 0 windowNumber: 0 context: NULL 

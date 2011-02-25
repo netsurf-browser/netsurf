@@ -27,6 +27,11 @@
 #import "desktop/tree.h"
 #import "desktop/tree_url_node.h"
 
+@interface BookmarksController ()
+- (void) noteAppWillTerminate: (NSNotification *) note;
+- (void) save;
+@end
+
 @implementation BookmarksController
 
 @synthesize defaultMenu;
@@ -46,7 +51,22 @@ static const char *cocoa_hotlist_path( void )
 	hotlist_initialise( [tree tree], cocoa_hotlist_path(), "" );
 	nodeForMenu = NSCreateMapTable( NSNonOwnedPointerMapKeyCallBacks, NSNonOwnedPointerMapValueCallBacks, 0 );
 	
+	[[NSNotificationCenter defaultCenter] addObserver:self 
+											 selector:@selector( noteAppWillTerminate: ) 
+												 name:NSApplicationWillTerminateNotification
+											   object:NSApp];
+
 	return self;
+}
+
+- (void) noteAppWillTerminate: (NSNotification *) note;
+{
+	[self save];
+}
+
+- (void) save;
+{
+	hotlist_export( cocoa_hotlist_path() );
 }
 
 - (void) dealloc;
@@ -55,6 +75,8 @@ static const char *cocoa_hotlist_path( void )
 	NSFreeMapTable( nodeForMenu );
 	hotlist_cleanup( cocoa_hotlist_path() );
 	[tree release];
+	
+	[[NSNotificationCenter defaultCenter] removeObserver: self];
 	
 	[super dealloc];
 }
