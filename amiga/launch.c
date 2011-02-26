@@ -112,7 +112,6 @@ void ami_openurl_open(void)
 	}
 
 	NewMinList(&ami_unsupportedprotocols);
-	ami_openurl_add_protocol("about:");
 	ami_openurl_add_protocol("javascript:");
 }
 
