@@ -51,18 +51,15 @@ void schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
 	struct timeval tv;
+	ULONG time_us = 0;
 
 	nscb = AllocVec(sizeof(struct nscallback), MEMF_PRIVATE | MEMF_CLEAR);
 	if(!nscb) return;
 
-	nscb->tv.Seconds = 0;
-	nscb->tv.Microseconds = t*10000;
+	time_us = t*10000; /* t converted to µs */
 
-	while(nscb->tv.Microseconds >= 1000000)
-	{
-		nscb->tv.Seconds++;
-		nscb->tv.Microseconds -= 1000000;
-	}
+	nscb->tv.Seconds = time_us / 1000000;
+	nscb->tv.Microseconds = time_us % 1000000;
 
 	GetSysTime(&tv);
 	AddTime(&nscb->tv,&tv); // now contains time when event occurs
