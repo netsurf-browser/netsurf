@@ -70,7 +70,7 @@ static void cocoa_plot_path_set_stroke_pattern(NSBezierPath *path,const plot_sty
 			break;
 	}
 
-	[path setLineWidth: cocoa_px_to_pt( pstyle->stroke_width )];
+	[path setLineWidth: cocoa_px_to_pt( pstyle->stroke_width > 0 ? pstyle->stroke_width : 1 )];
 }
 
 static bool plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle)
@@ -87,7 +87,9 @@ static bool plot_line(int x0, int y0, int x1, int y1, const plot_style_t *pstyle
 	
 	const bool horizontal = y0 == y1;
 	const bool vertical = x0 == x1;
-	cocoa_center_pixel( !horizontal, !vertical );
+	const bool oddThickness = pstyle->stroke_width != 0 ? (pstyle->stroke_width % 2) != 0 : true;
+	
+	if (oddThickness) cocoa_center_pixel( !horizontal, !vertical );
 	
 	[cocoa_convert_colour( pstyle->stroke_colour ) set];
 	[path stroke];
@@ -141,7 +143,7 @@ void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle)
 	}
 	
 	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
-		cocoa_center_pixel( true, true );
+		if (pstyle->stroke_width % 2 != 0) cocoa_center_pixel( true, true );
 		
 		cocoa_plot_path_set_stroke_pattern(path,pstyle);
 		
