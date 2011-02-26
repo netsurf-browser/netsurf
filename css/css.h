@@ -61,6 +61,7 @@ struct nscss_import {
 	uint64_t media;		/**< Media types that sheet applies to */
 };
 
+void css_cleanup(void);
 
 bool nscss_create(struct content *c, const struct http_parameter *params);
 

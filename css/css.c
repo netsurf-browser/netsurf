@@ -52,6 +52,16 @@ static css_error nscss_register_imports(struct content_css_data *c);
 static css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import);
 
+static css_stylesheet *blank_import;
+
+/**
+ * Clean up after the CSS subsystem
+ */
+void css_cleanup(void)
+{
+	if (blank_import != NULL)
+		css_stylesheet_destroy(blank_import);
+}
 
 /**
  * Initialise a CSS content
@@ -570,8 +580,6 @@ css_error nscss_register_import(struct content_css_data *c,
 		struct content *s = hlcache_handle_get_content(import);
 		sheet = s->data.css.sheet;
 	} else {
-		static css_stylesheet *blank_import;
-
 		/* Create a blank sheet if needed. */
 		if (blank_import == NULL) {
 			css_stylesheet_params params;

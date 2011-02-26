@@ -35,6 +35,7 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "css/css.h"
 #include "desktop/netsurf.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
@@ -180,6 +181,9 @@ void netsurf_exit(void)
 {
 	LOG(("Closing GUI"));
 	gui_quit();
+
+	/* Clean up after CSS */
+	css_cleanup();
 
 	LOG(("Closing search and related resources"));
 	search_web_cleanup();
