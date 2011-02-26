@@ -175,19 +175,6 @@ void ami_free_layers(struct gui_globals *gg)
 	FreeVec(gg->areabuf);
 }
 
-bool ami_clg(colour c)
-{
-	p96RectFill(&glob->rp,0,0,scrn->Width-1,scrn->Width-1,
-	p96EncodeColor(RGBFB_A8B8G8R8,c));
-/*
-	SetRPAttrs(&glob->rp,RPTAG_BPenColor,p96EncodeColor(RGBFB_A8B8G8R8,c),
-					TAG_DONE);
-	Move(&glob->rp,0,0);
-	ClearScreen(&glob->rp);
-*/
-	return true;
-}
-
 void ami_clearclipreg(struct gui_globals *gg)
 {
 	struct Region *reg = NULL;
@@ -207,11 +194,13 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_rectangle()"));
 	#endif
 
-        if (style->fill_type != PLOT_OP_TYPE_NONE) { 
+	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
 #ifndef NS_AMIGA_CAIRO_ALL
-		p96RectFill(&glob->rp,x0,y0,x1-1,y1-1,
-			    p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour));
+		SetRPAttrs(&glob->rp, RPTAG_APenColor,
+			p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+			TAG_DONE);
+		RectFill(&glob->rp, x0, y0, x1-1, y1-1);
 #else
 		ami_cairo_set_colour(glob->cr, style->fill_colour);
 		ami_cairo_set_solid(glob->cr);

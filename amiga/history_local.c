@@ -40,7 +40,7 @@
 #include <intuition/icclass.h>
 #include <proto/utility.h>
 #include "utils/messages.h"
-#include "amiga/plotters.h"
+#include "graphics/rpattr.h"
 
 #include <proto/window.h>
 #include <proto/space.h>
@@ -163,7 +163,9 @@ void ami_history_redraw(struct history_window *hw)
 	GetAttr(SCROLLER_Top,hw->objects[OID_VSCROLL],(ULONG *)&ys);
 
 	glob = &hw->gg;
-	ami_clg(0xffffff);
+
+	SetRPAttrs(&glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
+	RectFill(&glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
 
 	history_redraw_rectangle(history_current, xs, ys,
 		bbox->Width + xs, bbox->Height + ys, 0, 0);
