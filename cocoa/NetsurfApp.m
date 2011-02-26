@@ -106,12 +106,6 @@
 
 #pragma mark -
 
-static char *cocoa_get_resource_url( NSString *name, NSString *type )
-{
-	NSString *path = [[NSBundle mainBundle] pathForResource: name ofType: type];
-	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
-}
-
 static NSString *cocoa_get_preferences_path( void )
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains( NSApplicationSupportDirectory, NSUserDomainMask, YES );
@@ -176,11 +170,7 @@ void cocoa_autorelease( void )
 int main( int argc, char **argv )
 {
 	cocoa_autorelease();
-	
-	default_stylesheet_url = cocoa_get_resource_url( @"default", @"css" );
-	quirks_stylesheet_url = cocoa_get_resource_url( @"quirks", @"css" );
-	adblock_stylesheet_url = cocoa_get_resource_url( @"adblock", @"css" );
-	
+		
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
 	

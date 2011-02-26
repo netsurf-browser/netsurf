@@ -36,9 +36,9 @@
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
 
-char *default_stylesheet_url;
-char *adblock_stylesheet_url;
-char *quirks_stylesheet_url;
+char *default_stylesheet_url = (char *)"resource:default.css";
+char *adblock_stylesheet_url = (char *)"resource:adblock.css";
+char *quirks_stylesheet_url = (char *)"resource:quirks.css";
 
 NSString * const kCookiesFileOption = @"CookiesFile";
 NSString * const kURLsFileOption = @"URLsFile";
@@ -52,7 +52,9 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 char* gui_find_resource(const char *filename)
 {
-	return NULL;
+	NSString *path = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: filename] ofType: @""];
+	if (path == nil) return NULL;
+	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
 }
 
 void gui_multitask(void)
