@@ -26,9 +26,18 @@
 #include "utils/errors.h"
 
 struct content;
+struct content_css_data;
 struct hlcache_handle;
 struct http_parameter;
 struct nscss_import;
+
+/**
+ * Type of callback called when a CSS object has finished
+ *
+ * \param css  CSS object that has completed
+ * \param pw   Client-specific data
+ */
+typedef void (*nscss_done_callback)(struct content_css_data *css, void *pw);
 
 /**
  * CSS content data
@@ -37,8 +46,11 @@ struct content_css_data
 {
 	css_stylesheet *sheet;		/**< Stylesheet object */
 	char *charset;			/**< Character set of stylesheet */
-        uint32_t import_count;		/**< Number of sheets imported */
 	struct nscss_import *imports;	/**< Array of imported sheets */
+	uint32_t import_count;		/**< Number of sheets imported */
+	uint32_t next_to_register;	/**< Index of next import to register */
+	nscss_done_callback done;	/**< Completion callback */
+	void *pw;			/**< Client data */
 };
 
 /**
@@ -49,13 +61,6 @@ struct nscss_import {
 	uint64_t media;		/**< Media types that sheet applies to */
 };
 
-/**
- * Type of callback called when a CSS object has finished importing sheets
- *
- * \param css  CSS object that has completed
- * \param pw   Client-specific data
- */
-typedef void (*nscss_done_callback)(struct content_css_data *css, void *pw);
 
 bool nscss_create(struct content *c, const struct http_parameter *params);
 
@@ -68,11 +73,11 @@ void nscss_destroy(struct content *c);
 bool nscss_clone(const struct content *old, struct content *new_content);
 
 nserror nscss_create_css_data(struct content_css_data *c,
-		const char *url, const char *charset, bool quirks);
+		const char *url, const char *charset, bool quirks,
+		nscss_done_callback done, void *pw);
 css_error nscss_process_css_data(struct content_css_data *c, const char *data, 
 		unsigned int size);
-css_error nscss_convert_css_data(struct content_css_data *c,
-		nscss_done_callback callback, void *pw);
+css_error nscss_convert_css_data(struct content_css_data *c);
 void nscss_destroy_css_data(struct content_css_data *c);
 
 struct nscss_import *nscss_get_imports(struct hlcache_handle *h, uint32_t *n);

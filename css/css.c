@@ -37,20 +37,21 @@
  */
 typedef struct {
 	struct content_css_data *css;		/**< Object containing import */
-
-	const char *referer;			/**< URL of containing object */
-
-	nscss_done_callback cb;			/**< Completion callback */
-	void *pw;				/**< Client data */
+	uint32_t index;				/**< Index into parent sheet's 
+						 *   imports array */
 } nscss_import_ctx;
 
 static void nscss_content_done(struct content_css_data *css, void *pw);
-static css_error nscss_request_import(struct content_css_data *c, 
-		nscss_import_ctx *ctx);
-static css_error nscss_import_complete(struct content_css_data *c,
-		const hlcache_handle *import);
+static css_error nscss_handle_import(void *pw, css_stylesheet *parent, 
+		lwc_string *url, uint64_t media);
 static nserror nscss_import(hlcache_handle *handle,
 		const hlcache_event *event, void *pw);
+static css_error nscss_import_complete(nscss_import_ctx *ctx);
+
+static css_error nscss_register_imports(struct content_css_data *c);
+static css_error nscss_register_import(struct content_css_data *c,
+		const hlcache_handle *import);
+
 
 /**
  * Initialise a CSS content
@@ -77,7 +78,8 @@ bool nscss_create(struct content *c, const http_parameter *params)
 	}
 
 	if (nscss_create_css_data(&c->data.css, content__get_url(c),
-			charset, c->quirks) != NSERROR_OK) {
+			charset, c->quirks, 
+			nscss_content_done, c) != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
@@ -93,14 +95,20 @@ bool nscss_create(struct content *c, const http_parameter *params)
  * \param url      URL of stylesheet
  * \param charset  Stylesheet charset
  * \param quirks   Stylesheet quirks mode
+ * \param done     Callback to call when content has completed
+ * \param pw       Client data for \a done
  * \return NSERROR_OK on success, NSERROR_NOMEM on memory exhaustion
  */
 nserror nscss_create_css_data(struct content_css_data *c,
-		const char *url, const char *charset, bool quirks)
+		const char *url, const char *charset, bool quirks,
+		nscss_done_callback done, void *pw)
 {
 	css_error error;
 	css_stylesheet_params params;
 
+	c->pw = pw;
+	c->done = done;
+	c->next_to_register = (uint32_t) -1;
 	c->import_count = 0;
 	c->imports = NULL;
 	if (charset != NULL)
@@ -116,8 +124,8 @@ nserror nscss_create_css_data(struct content_css_data *c,
 	params.inline_style = false;
 	params.resolve = nscss_resolve_url;
 	params.resolve_pw = NULL;
-	params.import = NULL;
-	params.import_pw = NULL;
+	params.import = nscss_handle_import;
+	params.import_pw = c;
 	params.color = gui_system_colour;
 	params.color_pw = NULL;
 	params.font = NULL;
@@ -179,7 +187,7 @@ bool nscss_convert(struct content *c)
 	union content_msg_data msg_data;
 	css_error error;
 
-	error = nscss_convert_css_data(&c->data.css, nscss_content_done, c);
+	error = nscss_convert_css_data(&c->data.css);
 	if (error != CSS_OK) {
 		msg_data.error = "?";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -191,62 +199,12 @@ bool nscss_convert(struct content *c)
 }
 
 /**
- * Handle notification that a CSS object is done
- *
- * \param css  CSS object
- * \param pw   Private data
- */
-void nscss_content_done(struct content_css_data *css, void *pw)
-{
-	union content_msg_data msg_data;
-	struct content *c = pw;
-	uint32_t i;
-	size_t size;
-	css_error error;
-
-	/* Retrieve the size of this sheet */
-	error = css_stylesheet_size(css->sheet, &size);
-	if (error != CSS_OK) {
-		msg_data.error = "?";
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		c->status = CONTENT_STATUS_ERROR;
-		return;
-	}
-	c->size += size;
-
-	/* Add on the size of the imported sheets */
-	for (i = 0; i < css->import_count; i++) {
-		if (css->imports[i].c != NULL) {
-			struct content *import = hlcache_handle_get_content(
-					css->imports[i].c);
-
-			if (import != NULL) {
-				c->size += import->size;
-			}
-		}
-	}
-
-	/* Finally, catch the content's users up with reality */
-	if (css->import_count == 0) {
-		/* No imports? Ok, so we've not returned from nscss_convert yet.
-		 * Just set the status, as content_convert will notify users */
-		c->status = CONTENT_STATUS_DONE;
-	} else {
-		content_set_ready(c);
-		content_set_done(c);
-	}
-}
-
-/**
  * Convert CSS data ready for use
  *
  * \param c         CSS data to convert
- * \param callback  Callback to call when imports are fetched
- * \param pw        Client data for callback
  * \return CSS error
  */
-css_error nscss_convert_css_data(struct content_css_data *c,
-		nscss_done_callback callback, void *pw)
+css_error nscss_convert_css_data(struct content_css_data *c)
 {
 	css_error error;
 
@@ -254,29 +212,16 @@ css_error nscss_convert_css_data(struct content_css_data *c,
 
 	/* Process pending imports */
 	if (error == CSS_IMPORTS_PENDING) {
-		const char *referer;
-		nscss_import_ctx *ctx;
+		/* We must not have registered any imports yet */
+		assert(c->next_to_register == (uint32_t) -1);
 
-		error = css_stylesheet_get_url(c->sheet, &referer);
-		if (error != CSS_OK) {
-			return error;
-		}
-
-		ctx = malloc(sizeof(*ctx));
-		if (ctx == NULL)
-			return CSS_NOMEM;
-
-		ctx->css = c;
-		ctx->referer = referer;
-		ctx->cb = callback;
-		ctx->pw = pw;
-
-		error = nscss_request_import(c, ctx);
-		if (error != CSS_OK)
-			free(ctx);
+		/* Start registering, until we find one that 
+		 * hasn't finished fetching */
+		c->next_to_register = 0;
+		error = nscss_register_imports(c);
 	} else if (error == CSS_OK) {
 		/* No imports, and no errors, so complete conversion */
-		callback(c, pw);
+		c->done(c, c->pw);
 	} else {
 		const char *url;
 
@@ -335,7 +280,8 @@ bool nscss_clone(const struct content *old, struct content *new_content)
 	if (nscss_create_css_data(&new_content->data.css,
 			content__get_url(new_content),
 			old->data.css.charset, 
-			new_content->quirks) != NSERROR_OK)
+			new_content->quirks,
+			nscss_content_done, new_content) != NSERROR_OK)
 		return false;
 
 	data = content__get_source_data(new_content, &size);
@@ -373,35 +319,101 @@ struct nscss_import *nscss_get_imports(hlcache_handle *h, uint32_t *n)
 	return c->data.css.imports;
 }
 
+/*****************************************************************************
+ * Object completion                                                         *
+ *****************************************************************************/
+
 /**
- * Request that the next import fetch is triggered
+ * Handle notification that a CSS object is done
  *
- * \param c    CSS object requesting the import
- * \param ctx  Import context
- * \return CSS_OK on success,
- *         CSS_NOMEM on memory exhaustion
- *         CSS_INVALID if no imports remain
+ * \param css  CSS object
+ * \param pw   Private data
  */
-css_error nscss_request_import(struct content_css_data *c, 
-		nscss_import_ctx *ctx)
+void nscss_content_done(struct content_css_data *css, void *pw)
+{
+	union content_msg_data msg_data;
+	struct content *c = pw;
+	uint32_t i;
+	size_t size;
+	css_error error;
+
+	/* Retrieve the size of this sheet */
+	error = css_stylesheet_size(css->sheet, &size);
+	if (error != CSS_OK) {
+		msg_data.error = "?";
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		c->status = CONTENT_STATUS_ERROR;
+		return;
+	}
+	c->size += size;
+
+	/* Add on the size of the imported sheets */
+	for (i = 0; i < css->import_count; i++) {
+		if (css->imports[i].c != NULL) {
+			struct content *import = hlcache_handle_get_content(
+					css->imports[i].c);
+
+			if (import != NULL) {
+				c->size += import->size;
+			}
+		}
+	}
+
+	/* Finally, catch the content's users up with reality */
+	if (css->import_count == 0) {
+		/* No imports? Ok, so we've not returned from nscss_convert yet.
+		 * Just set the status, as content_convert will notify users */
+		c->status = CONTENT_STATUS_DONE;
+	} else {
+		content_set_ready(c);
+		content_set_done(c);
+	}
+}
+
+/*****************************************************************************
+ * Import handling                                                           *
+ *****************************************************************************/
+
+/**
+ * Handle notification of the need for an imported stylesheet
+ *
+ * \param pw      CSS object requesting the import
+ * \param parent  Stylesheet requesting the import
+ * \param url     URL of the imported sheet
+ * \param media   Applicable media for the imported sheet
+ * \return CSS_OK on success, appropriate error otherwise
+ */
+css_error nscss_handle_import(void *pw, css_stylesheet *parent,
+		lwc_string *url, uint64_t media)
 {
 	static const content_type accept[] = { CONTENT_CSS, CONTENT_UNKNOWN };
+	struct content_css_data *c = pw;
+	nscss_import_ctx *ctx;
 	hlcache_child_context child;
 	struct nscss_import *imports;
-	lwc_string *uri;
-	uint64_t media;
+	const char *referer;
 	css_error error;
 	nserror nerror;
 
-	error = css_stylesheet_next_pending_import(c->sheet, &uri, &media);
+	assert(parent == c->sheet);
+
+	error = css_stylesheet_get_url(c->sheet, &referer);
 	if (error != CSS_OK) {
 		return error;
 	}
+
+	ctx = malloc(sizeof(*ctx));
+	if (ctx == NULL)
+		return CSS_NOMEM;
+
+	ctx->css = c;
+	ctx->index = c->import_count;
 
 	/* Increase space in table */
 	imports = realloc(c->imports, (c->import_count + 1) * 
 			sizeof(struct nscss_import));
 	if (imports == NULL) {
+		free(ctx);
 		return CSS_NOMEM;
 	}
 	c->imports = imports;
@@ -410,33 +422,145 @@ css_error nscss_request_import(struct content_css_data *c,
 	child.charset = NULL;
 	error = css_stylesheet_quirks_allowed(c->sheet, &child.quirks);
 	if (error != CSS_OK) {
+		free(ctx);
 		return error;
 	}
 
 	/* Create content */
 	c->imports[c->import_count].media = media;
-	nerror = hlcache_handle_retrieve(lwc_string_data(uri),
-			0, ctx->referer, NULL, nscss_import, ctx,
+	nerror = hlcache_handle_retrieve(lwc_string_data(url),
+			0, referer, NULL, nscss_import, ctx,
 			&child, accept,
-			&c->imports[c->import_count++].c);
-	
-	lwc_string_unref(uri);
-	
+			&c->imports[c->import_count].c);
 	if (nerror != NSERROR_OK) {
+		free(ctx);
 		return CSS_NOMEM;
 	}
+
+	c->import_count++;
 
 	return CSS_OK;
 }
 
 /**
- * Handle the completion of an import fetch
+ * Handler for imported stylesheet events
  *
- * \param c       CSS object that requested the import
- * \param import  Cache handle of import, or NULL on failure
+ * \param handle  Handle for stylesheet
+ * \param event   Event object
+ * \param pw      Callback context
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror nscss_import(hlcache_handle *handle,
+		const hlcache_event *event, void *pw)
+{
+	nscss_import_ctx *ctx = pw;
+	css_error error = CSS_OK;
+
+	assert(ctx->css->imports[ctx->index].c == handle);
+
+	switch (event->type) {
+	case CONTENT_MSG_LOADING:
+		if (content_get_type(handle) != CONTENT_CSS) {
+			assert(0 && "Non-CSS type unexpected");
+		}
+		break;
+	case CONTENT_MSG_READY:
+		break;
+	case CONTENT_MSG_DONE:
+		error = nscss_import_complete(ctx);
+		break;
+	case CONTENT_MSG_ERROR:
+		hlcache_handle_release(handle);
+		ctx->css->imports[ctx->index].c = NULL;
+
+		error = nscss_import_complete(ctx);
+		/* Already released handle */
+		break;
+	case CONTENT_MSG_STATUS:
+		break;
+	default:
+		assert(0);
+	}
+
+	/* Preserve out-of-memory. Anything else is OK */
+	return error == CSS_NOMEM ? NSERROR_NOMEM : NSERROR_OK;
+}
+
+/**
+ * Handle an imported stylesheet completing
+ *
+ * \param ctx  Import context
  * \return CSS_OK on success, appropriate error otherwise
  */
-css_error nscss_import_complete(struct content_css_data *c,
+css_error nscss_import_complete(nscss_import_ctx *ctx)
+{
+	css_error error = CSS_OK;
+
+	/* If this import is the next to be registered, do so */
+	if (ctx->css->next_to_register == ctx->index)
+		error = nscss_register_imports(ctx->css);
+
+	/* No longer need import context */
+	free(ctx);
+
+	return error;
+}
+
+/*****************************************************************************
+ * Import registration                                                       *
+ *****************************************************************************/
+
+/**
+ * Register imports with a stylesheet
+ *
+ * \param c  CSS object containing the imports
+ * \return CSS_OK on success, appropriate error otherwise
+ */
+css_error nscss_register_imports(struct content_css_data *c)
+{
+	uint32_t index;
+	css_error error;
+
+	assert(c->next_to_register != (uint32_t) -1);
+	assert(c->next_to_register < c->import_count);
+
+	/* Register imported sheets */
+	for (index = c->next_to_register; index < c->import_count; index++) {
+		/* Stop registering if we encounter one whose fetch hasn't 
+		 * completed yet. We'll resume at this point when it has 
+		 * completed.
+		 */
+		if (c->imports[index].c != NULL && 
+			content_get_status(c->imports[index].c) != 
+				CONTENT_STATUS_DONE) {
+			break;
+		}
+
+		error = nscss_register_import(c, c->imports[index].c);
+		if (error != CSS_OK)
+			return error;
+	}
+
+	/* Record identity of the next import to register */
+	c->next_to_register = (uint32_t) index;
+
+	if (c->next_to_register == c->import_count) {
+		/* No more imports: notify parent that we're DONE */
+		c->done(c, c->pw);
+	}
+
+	return CSS_OK;
+}
+
+
+/**
+ * Register an import with a stylesheet
+ *
+ * \param c       CSS object that requested the import
+ * \param import  Cache handle of import, or NULL for blank
+ * \return CSS_OK on success, appropriate error otherwise
+ */
+css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import)
 {
 	css_stylesheet *sheet;
@@ -473,6 +597,12 @@ css_error nscss_import_complete(struct content_css_data *c,
 			if (error != CSS_OK) {
 				return error;
 			}
+
+			error = css_stylesheet_data_done(blank_import);
+			if (error != CSS_OK) {
+				css_stylesheet_destroy(blank_import);
+				return error;
+			}
 		}
 
 		sheet = blank_import;
@@ -484,70 +614,5 @@ css_error nscss_import_complete(struct content_css_data *c,
 	}
 
 	return error;
-}
-
-/**
- * Handler for imported stylesheet events
- *
- * \param handle  Handle for stylesheet
- * \param event   Event object
- * \param pw      Callback context
- * \return NSERROR_OK on success, appropriate error otherwise
- */
-nserror nscss_import(hlcache_handle *handle,
-		const hlcache_event *event, void *pw)
-{
-	nscss_import_ctx *ctx = pw;
-	css_error error = CSS_OK;
-	bool next = false;
-
-	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		if (content_get_type(handle) != CONTENT_CSS) {
-			assert(0 && "Non-CSS type unexpected");
-		}
-		break;
-	case CONTENT_MSG_READY:
-		break;
-	case CONTENT_MSG_DONE:
-		error = nscss_import_complete(ctx->css, handle);
-		if (error != CSS_OK) {
-			hlcache_handle_release(handle);
-			ctx->css->imports[ctx->css->import_count - 1].c = NULL;
-		}
-		next = true;
-		break;
-	case CONTENT_MSG_ERROR:
-		assert(ctx->css->imports[
-				ctx->css->import_count - 1].c == handle);
-
-		hlcache_handle_release(handle);
-		ctx->css->imports[ctx->css->import_count - 1].c = NULL;
-
-		error = nscss_import_complete(ctx->css, NULL);
-		/* Already released handle */
-
-		next = true;
-		break;
-	case CONTENT_MSG_STATUS:
-		break;
-	default:
-		assert(0);
-	}
-
-	/* Request next import, if we're in a position to do so */
-	if (error == CSS_OK && next)
-		error = nscss_request_import(ctx->css, ctx);
-
-	if (error != CSS_OK) {
-		/* No more imports, or error: notify parent that we're DONE */
-		ctx->cb(ctx->css, ctx->pw);
-
-		/* No longer need import context */
-		free(ctx);
-	}
-
-	/* Preserve out-of-memory. Invalid is OK */
-	return error == CSS_NOMEM ? NSERROR_NOMEM : NSERROR_OK;
 }
 

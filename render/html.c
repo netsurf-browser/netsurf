@@ -1107,7 +1107,8 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	}
 
 	error = nscss_create_css_data(sheet,
-		c->data.html.base_url, NULL, c->data.html.quirks);
+		c->data.html.base_url, NULL, c->data.html.quirks,
+		html_inline_style_done, c);
 	if (error != NSERROR_OK) {
 		c->data.html.stylesheet_count--;
 		goto no_memory;
@@ -1134,8 +1135,7 @@ bool html_process_style_element(struct content *c, unsigned int *index,
 	c->active++;
 
 	/* Convert the content -- manually, as we want the result */
-	if (nscss_convert_css_data(sheet, 
-			html_inline_style_done, c) != CSS_OK) {
+	if (nscss_convert_css_data(sheet) != CSS_OK) {
 		/* conversion failed */
 		c->active--;
 		nscss_destroy_css_data(sheet);
