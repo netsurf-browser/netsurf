@@ -48,6 +48,7 @@
 	[self setWindowController: nil];
 	[self setTitle: nil];
 	[self setStatus: nil];
+	[self setFavicon: nil];
 	
 	[super dealloc];
 }

@@ -32,11 +32,11 @@
 	BrowserViewController *activeBrowser;
 }
 
-@property (readwrite, retain, nonatomic) IBOutlet PSMTabBarControl *tabBar;
-@property (readwrite, retain, nonatomic) IBOutlet NSTabView *tabView;
-@property (readwrite, retain, nonatomic) IBOutlet URLFieldCell *urlField;
-@property (readwrite, retain, nonatomic) IBOutlet NSObjectController *activeBrowserController;
-@property (readwrite, retain, nonatomic) IBOutlet NSSegmentedControl *navigationControl;
+@property (readwrite, assign, nonatomic) IBOutlet PSMTabBarControl *tabBar;
+@property (readwrite, assign, nonatomic) IBOutlet NSTabView *tabView;
+@property (readwrite, assign, nonatomic) IBOutlet URLFieldCell *urlField;
+@property (readwrite, assign, nonatomic) IBOutlet NSObjectController *activeBrowserController;
+@property (readwrite, assign, nonatomic) IBOutlet NSSegmentedControl *navigationControl;
 @property (readwrite, assign, nonatomic) IBOutlet NSButton *historyButton;
 
 @property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;

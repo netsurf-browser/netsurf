@@ -26,6 +26,6 @@
 	TreeView *view;
 }
 
-@property (readwrite, retain, nonatomic) IBOutlet TreeView *view;
+@property (readwrite, assign, nonatomic) IBOutlet TreeView *view;
 
 @end

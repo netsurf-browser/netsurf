@@ -28,8 +28,8 @@
 	NSMenu *defaultMenu;
 }
 
-@property (readwrite, retain, nonatomic) IBOutlet NSMenu *defaultMenu;
-@property (readwrite, retain, nonatomic) IBOutlet TreeView *view;
+@property (readwrite, assign, nonatomic) IBOutlet NSMenu *defaultMenu;
+@property (readwrite, assign, nonatomic) IBOutlet TreeView *view;
 
 - (IBAction) openBookmarkURL: (id) sender;
 - (IBAction) addBookmark: (id) sender;

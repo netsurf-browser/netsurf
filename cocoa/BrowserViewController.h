@@ -39,7 +39,7 @@ struct browser_window;
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
 @property (readwrite, copy, nonatomic) NSString *url;
-@property (readwrite, retain, nonatomic) IBOutlet BrowserView *browserView;
+@property (readwrite, assign, nonatomic) IBOutlet BrowserView *browserView;
 @property (readwrite, retain, nonatomic) BrowserWindowController *windowController;
 @property (readwrite, copy, nonatomic) NSString *title;
 @property (readwrite, copy, nonatomic) NSString *status;
