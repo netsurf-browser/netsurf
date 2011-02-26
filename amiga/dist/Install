@@ -491,23 +491,20 @@
 
 (complete 90)
 
-(if #theme
+(if #themeshort
 	(
 		(set #theme-icon
-			(tackon @default-dest
-				(tackon "Resources"
-					(tackon #themeshort "NetSurf.info")
-				)
+			(tackon "Resources/Themes"
+				(tackon #themeshort "NetSurf.info")
 			)
 		)
-		(set #icon-exists (exists #theme-icon))
 
-		(if #icon-exists
+		(if (exists #theme-icon)
 			(
 				(copyfiles
 					(prompt "Copying theme icon")
-					(source #theme-icon)
 					(help @copyfiles-help)
+					(source #theme-icon)
 					(dest @default-dest)
 				)
 			)
