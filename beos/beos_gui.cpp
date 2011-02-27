@@ -424,7 +424,10 @@ static int32 bapp_thread(void *arg)
 
 char* gui_find_resource(const char *filename)
 {
-	return NULL;
+	BString u("rsrc:/");
+	u << filename;
+	fprintf(stderr, "%s(%s) -> '%s'\n", __FUNCTION__, filename, u.String());
+	return strdup(u.String());
 }
 
 static void gui_init2(int argc, char** argv)
