@@ -74,8 +74,6 @@
 	[b setTarget: self];
 	[b setAction: @selector(newTab:)];
 	
-	[[self window] setAcceptsMouseMovedEvents: YES];
-	
 	[urlField setRefreshAction: @selector(reloadPage:)];
 	[urlField bind: @"favicon" toObject: activeBrowserController withKeyPath: @"selection.favicon"  options: nil];
 	
