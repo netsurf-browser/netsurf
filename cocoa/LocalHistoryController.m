@@ -18,6 +18,7 @@
 
 #import "cocoa/LocalHistoryController.h"
 
+#import "cocoa/BrowserView.h"
 #import "cocoa/HistoryView.h"
 #import "cocoa/ArrowWindow.h"
 
@@ -99,6 +100,20 @@
 - (void) redraw;
 {
 	[history setNeedsDisplay: YES];
+}
+
+- (void) keyDown: (NSEvent *)theEvent;
+{
+	unichar key = [[theEvent characters] characterAtIndex: 0];
+	switch (key) {
+		case 27:
+			[browser setHistoryVisible: NO];
+			break;
+			
+		default:
+			NSBeep();
+			break;
+	};
 }
 
 @end

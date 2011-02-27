@@ -274,7 +274,11 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) keyDown: (NSEvent *)theEvent;
 {
-	[self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
+	if (!historyVisible) {
+		[self interpretKeyEvents: [NSArray arrayWithObject: theEvent]];
+	} else {
+		[history keyDown: theEvent];
+	}
 }
 
 - (void) insertText: (id)string;

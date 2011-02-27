@@ -35,4 +35,6 @@
 - (void) detach;
 - (void) redraw;
 
+- (void) keyDown: (NSEvent *)theEvent;
+
 @end
