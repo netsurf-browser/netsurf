@@ -20,6 +20,8 @@
 #import "cocoa/font.h"
 #import "cocoa/coordinates.h"
 #import "cocoa/plotter.h"
+#import "cocoa/LocalHistoryController.h"
+#import "cocoa/BrowserView.h"
 
 #import "desktop/browser.h"
 #import "desktop/history_core.h"
@@ -27,11 +29,12 @@
 
 @implementation HistoryView
 
-@synthesize browser;
+@synthesize browser = browserView;
 
-- (void) setBrowser: (struct browser_window *) bw;
+- (void) setBrowser: (BrowserView *) bw;
 {
-	browser = bw;
+	browserView = bw;
+	browser = [bw browser];
 	[self updateHistory];
 }
 
@@ -63,9 +66,11 @@
 {
 	const NSPoint location = [self convertPoint: [theEvent locationInWindow] fromView: nil];
 	const bool newWindow = [theEvent modifierFlags] & NSCommandKeyMask;
-	history_click( browser, browser->history, 
-				   cocoa_pt_to_px( location.x ), cocoa_pt_to_px( location.y ), 
-				   newWindow );
+	if (history_click( browser, browser->history, 
+					   cocoa_pt_to_px( location.x ), cocoa_pt_to_px( location.y ),
+					   newWindow )) {
+		[browserView setHistoryVisible: NO];
+	}
 }
 
 - (BOOL) isFlipped;

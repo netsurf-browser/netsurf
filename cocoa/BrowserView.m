@@ -76,6 +76,11 @@ static NSMutableArray *cocoa_reformat_pending = nil;
 	}
 }
 
+- (void) updateHistory;
+{
+	[history redraw];
+}
+
 static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
 	NSRect caretRect = {
@@ -413,7 +418,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	historyVisible = newVisible;
 	
 	if (historyVisible) {
-		if (nil == history) history = [[LocalHistoryController alloc] initWithBrowser: browser];
+		if (nil == history) history = [[LocalHistoryController alloc] initWithBrowser: self];
 		[history attachToView: [(BrowserWindowController *)[[self window] windowController] historyButton]];
 	} else {
 		[history detach];

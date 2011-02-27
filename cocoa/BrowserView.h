@@ -46,5 +46,6 @@
 - (void) addCaretAt: (NSPoint) point height: (CGFloat) height;
 
 - (void) reformat;
+- (void) updateHistory;
 
 @end

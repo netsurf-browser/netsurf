@@ -34,7 +34,6 @@ struct browser_window;
 	NSImage *favicon;
 	BOOL canGoBack;
 	BOOL canGoForward;
-	BOOL navigatedUsingBackForwards;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;

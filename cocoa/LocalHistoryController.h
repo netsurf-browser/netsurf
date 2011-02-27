@@ -19,18 +19,20 @@
 #import <Cocoa/Cocoa.h>
 
 @class HistoryView;
+@class BrowserView;
 
 @interface LocalHistoryController : NSWindowController {
 	HistoryView *history;
-	struct browser_window *browser;
+	BrowserView *browser;
 }
 
-@property (readwrite, assign, nonatomic) struct browser_window *browser;
+@property (readwrite, assign, nonatomic) BrowserView *browser;
 @property (readwrite, assign, nonatomic) IBOutlet HistoryView *history;
 
-- initWithBrowser: (struct browser_window *) bw;
+- initWithBrowser: (BrowserView *) bw;
 
 - (void) attachToView: (NSView *) view;
 - (void) detach;
+- (void) redraw;
 
 @end

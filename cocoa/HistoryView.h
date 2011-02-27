@@ -19,12 +19,14 @@
 #import <Cocoa/Cocoa.h>
 
 @class HistoryView;
+@class BrowserView;
 
 @interface HistoryView : NSView {
 	struct browser_window *browser;
+	BrowserView *browserView;
 }
 
-@property (readwrite, assign, nonatomic) struct browser_window *browser;
+@property (readwrite, assign, nonatomic) BrowserView *browser;
 
 - (void) updateHistory;
 - (NSSize) size;

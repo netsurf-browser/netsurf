@@ -26,7 +26,7 @@
 @synthesize browser;
 @synthesize history;
 
-- initWithBrowser: (struct browser_window *) bw;
+- initWithBrowser: (BrowserView *) bw;
 {
 	if ((self = [super initWithWindowNibName: @"LocalHistoryPanel"]) == nil) return nil;
 	
@@ -100,6 +100,11 @@
 - (void) windowDidLoad;
 {
 	[history setBrowser: browser];
+}
+
+- (void) redraw;
+{
+	[history setNeedsDisplay: YES];
 }
 
 @end
