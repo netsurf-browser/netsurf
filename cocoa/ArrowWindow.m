@@ -88,11 +88,6 @@ static const CGFloat padding = 0;
 	return NSInsetRect( cRect, offset, offset );
 }
 
-- (id) contentView;
-{
-	return content;
-}
-
 - (BOOL) canBecomeKeyWindow;
 {
 	return acceptsKey;
