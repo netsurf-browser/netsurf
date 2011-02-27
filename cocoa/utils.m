@@ -44,14 +44,16 @@ void PDF_Password(char **owner_pass, char **user_pass, char *path)
 
 char *filename_from_path(char *path)
 {
-	UNIMPL();
-	return NULL;
+	return strdup( [[[NSString stringWithUTF8String: path] lastPathComponent] UTF8String] );
 }
 
 bool path_add_part(char *path, int length, const char *newpart)
 {
-	UNIMPL();
-	return false;
+	NSString *newPath = [[NSString stringWithUTF8String: path] stringByAppendingPathComponent: [NSString stringWithUTF8String: newpart]];
+
+	strncpy( path, [newPath UTF8String], length );
+	
+	return true;
 }
 
 void tree_icon_name_from_content_type(char *buffer, content_type type)
