@@ -37,17 +37,11 @@
 
 - (void) attachToView: (NSView *) view;
 {
-	const CGFloat ScrollerSpace = [NSScroller scrollerWidthForControlSize: NSSmallControlSize];;
-	
 	NSDisableScreenUpdates();
 	
 	ArrowWindow *box = (ArrowWindow *)[self window];
 
-	NSSize newSize = [history size];
-	newSize.width += ScrollerSpace;
-	newSize.height += ScrollerSpace;
-	
-	[box setContentSize: newSize];
+	[box setContentSize: [history size]];
 	[box setArrowPosition: 50];
 	[history updateHistory];
 	[box attachToView: view];
