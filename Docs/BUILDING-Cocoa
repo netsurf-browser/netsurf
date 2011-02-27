@@ -9,27 +9,16 @@
   on ppc.
 
 
-  Building and executing NetSurf
-================================
+  Building NetSurf
+==================
 
-  After installing the dependencies NetSurf can be built in Xcode using the
-  provided project file "NetSurf.xcodeproj".  This builds a version using only
-  the minimal set of dependencies (LibParserUtils, LibWapcaplet, Hubbub,
-  LibCSS) and libraries provided by Mac OS X.
+  After installing the dependencies NetSurf can be built either using the Xcode
+  project file 'cocoa/NetSurf.xcodeproj' or on the command line using the
+  Makefile:
 
-  To build a more complete version a local configuration file has to be
-  created.  To do this open a Terminal and change to the "cocoa/config"
-  folder and run this command:
+     $ make TARGET=cocoa
 
-     $ sh detect.sh --with-jpeg=<prefix for libjpeg> --with-mng=<prefix for libmng>
-
-  You can leave out the options for the JPEG and MNG libraries if you don't
-  have them installed.
-
-  This script uses the "pkg-config" program to find the required libraries
-  and generates the file "local.xcconfig".  After that NetSurf can be built
-  using Xcode.
-
+  In both cases the actual build process is controlled by the Makefile.
 
   Obtaining NetSurf's build dependencies
 ========================================
