@@ -84,7 +84,8 @@ bool draw_convert(struct content *c)
 			c->height, source_size);
 	content__set_title(c, title);
 
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	/* Done: update status bar */
 	content_set_status(c, "");
 	return true;

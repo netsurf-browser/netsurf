@@ -97,7 +97,9 @@ bool nsico_convert(struct content *c)
 	assert(bmp);
 	c->bitmap = bmp->bitmap;
 	bitmap_modified(c->bitmap);
-	c->status = CONTENT_STATUS_DONE;
+
+	content_set_ready(c);
+	content_set_done(c);
 
 	/* Done: update status bar */
 	content_set_status(c, "");

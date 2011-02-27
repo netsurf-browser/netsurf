@@ -108,7 +108,9 @@ bool nsbmp_convert(struct content *c)
 	/* exit as a success */
 	c->bitmap = bmp->bitmap;
 	bitmap_modified(c->bitmap);
-	c->status = CONTENT_STATUS_DONE;
+
+	content_set_ready(c);
+	content_set_done(c);
 
 	/* Done: update status bar */
 	content_set_status(c, "");

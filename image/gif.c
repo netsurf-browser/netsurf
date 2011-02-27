@@ -138,7 +138,8 @@ bool nsgif_convert(struct content *c)
 
 	/* Exit as a success */
 	c->bitmap = gif->frame_image;
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	/* Done: update status bar */
 	content_set_status(c, "");
 	return true;

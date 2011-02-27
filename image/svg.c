@@ -70,7 +70,8 @@ bool svg_convert(struct content *c)
 		snprintf(c->title, 100, messages_get("svgTitle"),
 				width, height, c->source_size);*/
 	//c->size += ?;
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	/* Done: update status bar */
 	content_set_status(c, "");
 

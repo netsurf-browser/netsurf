@@ -107,7 +107,9 @@ bool webp_convert(struct content *c)
 	content__set_title(c, title);
 
 	bitmap_modified(c->bitmap);
-	c->status = CONTENT_STATUS_DONE;
+
+	content_set_ready(c);
+	content_set_done(c);
 
 	content_set_status(c, "");
 	return true;

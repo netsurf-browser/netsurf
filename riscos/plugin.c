@@ -219,7 +219,9 @@ bool plugin_convert(struct content *c, int width, int height)
 	c->width = width;
 	c->height = height;
 
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
+
 	return true;
 }
 

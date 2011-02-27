@@ -289,7 +289,8 @@ bool nspng_convert(struct content *c)
 	c->bitmap = c->data.png.bitmap;
 	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 	bitmap_modified(c->bitmap);
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	content_set_status(c, "");
 
 	return true;

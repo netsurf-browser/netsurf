@@ -167,7 +167,8 @@ bool nsjpeg_convert(struct content *c)
 			width, height, size);
 	content__set_title(c, title);
 	c->size += height * rowstride;
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	/* Done: update status bar */
 	content_set_status(c, "");
 	return true;

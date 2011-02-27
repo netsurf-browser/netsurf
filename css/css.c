@@ -32,6 +32,9 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 
+/* Define to trace import fetches */
+#undef NSCSS_IMPORT_TRACE
+
 /**
  * Context for import fetches
  */
@@ -370,14 +373,8 @@ void nscss_content_done(struct content_css_data *css, void *pw)
 	}
 
 	/* Finally, catch the content's users up with reality */
-	if (css->import_count == 0) {
-		/* No imports? Ok, so we've not returned from nscss_convert yet.
-		 * Just set the status, as content_convert will notify users */
-		c->status = CONTENT_STATUS_DONE;
-	} else {
-		content_set_ready(c);
-		content_set_done(c);
-	}
+	content_set_ready(c);
+	content_set_done(c);
 }
 
 /*****************************************************************************
@@ -447,6 +444,12 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 		return CSS_NOMEM;
 	}
 
+#ifdef NSCSS_IMPORT_TRACE
+	LOG(("Import %d '%s' -> (handle: %p ctx: %p)", 
+			c->import_count, lwc_string_data(url), 
+			c->imports[c->import_count].c, ctx));
+#endif
+
 	c->import_count++;
 
 	return CSS_OK;
@@ -465,6 +468,10 @@ nserror nscss_import(hlcache_handle *handle,
 {
 	nscss_import_ctx *ctx = pw;
 	css_error error = CSS_OK;
+
+#ifdef NSCSS_IMPORT_TRACE
+	LOG(("Event %d for %p (%p)", event->type, handle, ctx));
+#endif
 
 	assert(ctx->css->imports[ctx->index].c == handle);
 
@@ -509,6 +516,10 @@ css_error nscss_import_complete(nscss_import_ctx *ctx)
 	/* If this import is the next to be registered, do so */
 	if (ctx->css->next_to_register == ctx->index)
 		error = nscss_register_imports(ctx->css);
+
+#ifdef NSCSS_IMPORT_TRACE
+	LOG(("Destroying import context %p for %d", ctx, ctx->index));
+#endif
 
 	/* No longer need import context */
 	free(ctx);

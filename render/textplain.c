@@ -301,7 +301,8 @@ bool textplain_convert(struct content *c)
 	parserutils_inputstream_destroy(stream);
 	c->data.textplain.inputstream = NULL;
 
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	content_set_status(c, messages_get("Done"));
 
 	return true;

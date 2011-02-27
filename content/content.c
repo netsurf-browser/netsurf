@@ -686,19 +686,13 @@ void content_convert(struct content *c)
 	
 	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
 
-	c->locked = true;
 	if (handler_map[c->type].convert) {
+		c->locked = true;
 		if (!handler_map[c->type].convert(c)) {
 			c->status = CONTENT_STATUS_ERROR;
 		}
+		c->locked = false;
 	} else {
-		c->status = CONTENT_STATUS_DONE;
-	}
-	c->locked = false;
-
-	if (c->status == CONTENT_STATUS_READY)
-		content_set_ready(c);
-	if (c->status == CONTENT_STATUS_DONE) {
 		content_set_ready(c);
 		content_set_done(c);
 	}

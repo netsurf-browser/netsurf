@@ -330,7 +330,8 @@ bool nsmng_convert(struct content *c)
 	content__set_title(c, title);
 
 	c->size += c->width * c->height * 4;
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	/* Done: update status bar */
 	content_set_status(c, "");
 

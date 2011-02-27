@@ -160,7 +160,8 @@ bool amiga_icon_convert(struct content *c)
 	c->height = height;
 
 	bitmap_modified(c->bitmap);
-	c->status = CONTENT_STATUS_DONE;
+	content_set_ready(c);
+	content_set_done(c);
 	content_set_status(c, "");
 
 	if(dobj) FreeDiskObject(dobj);
