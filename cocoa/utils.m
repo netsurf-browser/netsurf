@@ -58,5 +58,9 @@ bool path_add_part(char *path, int length, const char *newpart)
 
 void tree_icon_name_from_content_type(char *buffer, content_type type)
 {
-	UNIMPL();
+	switch (type) {
+		default:
+			strcpy( buffer, "content.png" );
+			break;
+	}
 }

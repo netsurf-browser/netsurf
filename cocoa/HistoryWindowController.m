@@ -31,7 +31,7 @@
 	if ((self = [super initWithWindowNibName: @"HistoryWindow"]) == nil) return nil;
 	
 	tree = [[Tree alloc] initWithFlags: history_global_get_tree_flags()];
-	history_global_initialise( [tree tree], "" );
+	history_global_initialise( [tree tree], "directory.png" );
 	
 	return self;
 }

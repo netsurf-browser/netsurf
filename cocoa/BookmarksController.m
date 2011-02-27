@@ -48,7 +48,7 @@ static const char *cocoa_hotlist_path( void )
 	if ((self = [super initWithWindowNibName: @"BookmarksWindow"]) == nil) return nil;
 	
 	tree = [[Tree alloc] initWithFlags: hotlist_get_tree_flags()];
-	hotlist_initialise( [tree tree], cocoa_hotlist_path(), "" );
+	hotlist_initialise( [tree tree], cocoa_hotlist_path(), "directory.png" );
 	nodeForMenu = NSCreateMapTable( NSNonOwnedPointerMapKeyCallBacks, NSNonOwnedPointerMapValueCallBacks, 0 );
 	
 	[[NSNotificationCenter defaultCenter] addObserver:self 

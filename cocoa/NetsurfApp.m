@@ -33,6 +33,7 @@
 #import "desktop/save_complete.h"
 #import "desktop/selection.h"
 #import "desktop/textinput.h"
+#import "desktop/tree.h"
 #import "render/html.h"
 #import "utils/url.h"
 #import "utils/log.h"
@@ -73,6 +74,8 @@
 
 	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
 	urldb_load_cookies( option_cookie_file );
+	
+	tree_set_icon_dir( strdup( [[[NSBundle mainBundle] pathForResource: @"Icons" ofType: @""] UTF8String] ) );
 	
 	cocoa_update_scale_factor();
 }
