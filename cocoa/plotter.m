@@ -143,7 +143,7 @@ void cocoa_plot_render_path(NSBezierPath *path,const plot_style_t *pstyle)
 	}
 	
 	if (pstyle->stroke_type != PLOT_OP_TYPE_NONE) {
-		if (pstyle->stroke_width % 2 != 0) cocoa_center_pixel( true, true );
+		if (pstyle->stroke_width == 0 || pstyle->stroke_width % 2 != 0) cocoa_center_pixel( true, true );
 		
 		cocoa_plot_path_set_stroke_pattern(path,pstyle);
 		
