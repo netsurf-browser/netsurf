@@ -168,7 +168,7 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 - (void) viewDidMoveToWindow;
 {
 	NSTrackingArea *area = [[NSTrackingArea alloc] initWithRect: [self visibleRect]
-														options: NSTrackingMouseMoved | NSTrackingActiveInKeyWindow | NSTrackingInVisibleRect
+														options: NSTrackingMouseMoved | NSTrackingMouseEnteredAndExited | NSTrackingActiveInKeyWindow | NSTrackingInVisibleRect
 														  owner: self
 													   userInfo: nil];
 	[self addTrackingArea: area];
@@ -265,6 +265,11 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	NSPoint location = [self convertMousePoint: theEvent];
 
 	browser_window_mouse_track( browser, cocoa_mouse_flags_for_event( theEvent ), location.x, location.y );
+}
+
+- (void) mouseExited: (NSEvent *) theEvent;
+{
+	[[NSCursor arrowCursor] set];
 }
 
 - (void) keyDown: (NSEvent *)theEvent;
