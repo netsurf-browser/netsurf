@@ -78,6 +78,14 @@ static const struct treeview_table cocoa_tree_callbacks = {
 	tree_set_redraw( tree, newRedrawing );
 }
 
+
++ (void) initialize;
+{
+	if (self == [Tree class]) {
+		tree_set_icon_dir( strdup( [[[NSBundle mainBundle] pathForResource: @"Icons" ofType: @""] UTF8String] ) );
+	}
+}
+
 //MARK: -
 //MARK: Callbacks
 

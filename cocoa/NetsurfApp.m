@@ -75,8 +75,6 @@
 	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
 	urldb_load_cookies( option_cookie_file );
 	
-	tree_set_icon_dir( strdup( [[[NSBundle mainBundle] pathForResource: @"Icons" ofType: @""] UTF8String] ) );
-	
 	cocoa_update_scale_factor();
 }
 
