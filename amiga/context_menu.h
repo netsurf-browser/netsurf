@@ -20,30 +20,8 @@
 #define AMIGA_CONTEXT_MENU_H
 #include "amiga/gui.h"
 
-enum {
-	CMID_SELECTFILE,
-	CMID_COPYURL,
-	CMID_URLOPENWIN,
-	CMID_URLOPENTAB,
-	CMID_SAVEURL,
-	CMID_SHOWOBJ,
-	CMID_COPYOBJ,
-	CMID_CLIPOBJ,
-	CMID_SAVEOBJ,
-	CMID_SAVEIFFOBJ,
-	CMID_SELALL,
-	CMID_SELCLEAR,
-	CMID_SELCUT,
-	CMID_SELCOPY,
-	CMID_SELPASTE,
-	CMID_SELSEARCH,
-	CMSUB_OBJECT,
-	CMSUB_URL,
-	CMSUB_SEL,
-	CMID_LAST
-};
-
 void ami_context_menu_init(void);
 void ami_context_menu_free(void);
-void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y);
+BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap);
+void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y);
 #endif

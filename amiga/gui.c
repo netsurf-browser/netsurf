@@ -142,7 +142,6 @@ struct ApplicationIFace *IApplication=NULL;
 
 Class *urlStringClass;
 
-BOOL rmbtrapped;
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
 struct MsgPort *applibport = NULL;
@@ -1054,12 +1053,7 @@ void ami_handle_msg(void)
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))
 					{
 						ami_update_quals(gwin);
-
-						if(option_context_menu && rmbtrapped == FALSE)
-						{
-							SetWindowAttr(gwin->win,WA_RMBTrap,(APTR)TRUE,1);
-							rmbtrapped=TRUE; // crash points to this line
-						}
+						ami_context_menu_mouse_trap(gwin, TRUE);
 
 						if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 						{
@@ -1078,11 +1072,7 @@ void ami_handle_msg(void)
 					}
 					else
 					{
-						if(option_context_menu && rmbtrapped == TRUE)
-						{
-							SetWindowAttr(gwin->win,WA_RMBTrap,FALSE,1);
-							rmbtrapped=FALSE;
-						}
+						ami_context_menu_mouse_trap(gwin, FALSE);
 
 						if(!gwin->mouse_state)	ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 					}
@@ -1119,14 +1109,6 @@ void ami_handle_msg(void)
 								browser_window_mouse_click(gwin->bw,BROWSER_MOUSE_PRESS_2 | gwin->key_state,x,y);
 								gwin->mouse_state=BROWSER_MOUSE_PRESS_2;
 							break;
-
-							case MENUDOWN:
-								if(!option_sticky_context_menu) ami_context_menu_show(gwin,x,y);
-							break;
-
-							case MENUUP:
-								if(option_sticky_context_menu) ami_context_menu_show(gwin,x,y);
-							break;
 						}
 					}
 
@@ -1137,6 +1119,16 @@ void ami_handle_msg(void)
 
 					switch(code)
 					{
+						case MENUDOWN:
+							if(!option_sticky_context_menu)
+								ami_context_menu_show(gwin,x,y);
+						break;
+
+						case MENUUP:
+							if(option_sticky_context_menu)
+								ami_context_menu_show(gwin,x,y);
+						break;
+
 						case SELECTUP:
 							if(gwin->mouse_state & BROWSER_MOUSE_PRESS_1)
 							{
@@ -2844,6 +2836,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				TAG_DONE);
 	}
 
+	gwin->shared->rmbtrapped = FALSE;
 	gwin->shared->bw = bw;
 	curbw = bw;
 
@@ -3899,4 +3892,20 @@ struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 		}
 	}
 	return text_box;
+}
+
+BOOL ami_gadget_hit(Object *obj, int x, int y)
+{
+	int top, left, width, height;
+
+	GetAttrs(obj,
+		GA_Left, &left,
+		GA_Top, &top,
+		GA_Width, &width,
+		GA_Height, &height,
+		TAG_DONE);
+
+	if((x >= left) && (x <= (left + width)) && (y >= top) && (y <= (top + height)))
+		return TRUE;
+	else return FALSE;
 }
