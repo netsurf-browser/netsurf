@@ -32,6 +32,7 @@
 #include "amiga/iff_dr2d.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
+#include "desktop/history_core.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "utils/utf8.h"
@@ -40,9 +41,12 @@
 
 #include <string.h>
 
-uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
-bool ami_context_menu_copy_selection(const char *text, size_t length, struct box *box,
-	void *handle, const char *whitespace_text, size_t whitespace_length);
+static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
+static bool ami_context_menu_copy_selection(const char *text, size_t length,
+	struct box *box, void *handle, const char *whitespace_text,
+	size_t whitespace_length);
+static bool ami_context_menu_history(const struct history *history, int x0, int y0,
+	int x1, int y1, const struct history_entry *entry, void *user_data);
 
 enum {
 	CMID_SELECTFILE,
@@ -162,10 +166,13 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		ami_gadget_hit(gwin->objects[GID_BACK],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
+		history_enumerate_back(gwin->bw->history, ami_context_menu_history, gwin);
+
 		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, (ULONG)ctxmenulab[CMID_HISTORY],
 				PMIA_ID, CMID_HISTORY,
+				PMIA_UserData, NULL,
 			TAG_DONE),
 		~0);
 
@@ -333,7 +340,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	IDoMethod(gwin->objects[OID_MENU],PM_OPEN,gwin->win);
 }
 
-uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
+static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 {
     int32 itemid = 0;
 	struct gui_window_2 *gwin = hook->h_Data;
@@ -480,7 +487,15 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
 			break;
 
 			case CMID_HISTORY:
-				ami_history_open(gwin->bw, gwin->bw->history);
+				if(userdata == NULL)
+				{
+					ami_history_open(gwin->bw, gwin->bw->history);
+				}
+				else
+				{
+					history_go(gwin->bw, gwin->bw->history,
+						(struct history_entry *)userdata, false);
+				}
 			break;
 
 			case CMID_SELCUT:
@@ -530,8 +545,9 @@ uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
     return itemid;
 }
 
-bool ami_context_menu_copy_selection(const char *text, size_t length, struct box *box,
-	void *handle, const char *whitespace_text, size_t whitespace_length)
+static bool ami_context_menu_copy_selection(const char *text, size_t length,
+	struct box *box, void *handle, const char *whitespace_text,
+	size_t whitespace_length)
 {
 	struct ami_context_menu_selection *sel = handle;
 	int len = length;
@@ -547,4 +563,18 @@ bool ami_context_menu_copy_selection(const char *text, size_t length, struct box
 	sel->text[sel->length] = '\0';
 
 	return true;
+}
+
+static bool ami_context_menu_history(const struct history *history, int x0, int y0,
+	int x1, int y1, const struct history_entry *entry, void *user_data)
+{
+	struct gui_window_2 *gwin = (struct gui_window_2 *)user_data;
+
+	IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+		NewObject(POPUPMENU_GetItemClass(), NULL,
+			PMIA_Title, (ULONG)history_entry_get_title(entry),
+			PMIA_ID, CMID_HISTORY,
+			PMIA_UserData, entry,
+		TAG_DONE),
+	~0);
 }
