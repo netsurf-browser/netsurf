@@ -29,9 +29,11 @@
 #include "amiga/options.h"
 #include "amiga/clipboard.h"
 #include "amiga/bitmap.h"
+#include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
+#include "desktop/searchweb.h"
 #include "desktop/history_core.h"
 #include "render/box.h"
 #include "render/form.h"
@@ -123,7 +125,7 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 {
 	int top, left, width, height;
 
-	if(option_context_menu == false) return;
+	if(option_context_menu == false) return FALSE;
 
 	if((option_kiosk_mode == false) && (trap == FALSE) &&
 		(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
@@ -131,9 +133,13 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 		if(ami_gadget_hit(gwin->objects[GID_BACK],
 				gwin->win->MouseX, gwin->win->MouseY))
 			trap = TRUE;
+
+		if(ami_gadget_hit(gwin->objects[GID_FORWARD],
+				gwin->win->MouseX, gwin->win->MouseY))
+			trap = TRUE;
 	}
 
-	if(gwin->rmbtrapped == trap) return;
+	if(gwin->rmbtrapped == trap) return trap;
 
 	SetWindowAttr(gwin->win, WA_RMBTrap, trap, 1);
 	gwin->rmbtrapped = trap;
@@ -163,10 +169,40 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						TAG_DONE);
 
 	if(gwin->bw && gwin->bw->history &&
+		browser_window_back_available(gwin->bw) &&
 		ami_gadget_hit(gwin->objects[GID_BACK],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
 		history_enumerate_back(gwin->bw->history, ami_context_menu_history, gwin);
+
+		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, ~0,
+			TAG_DONE),
+		~0);
+
+		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ctxmenulab[CMID_HISTORY],
+				PMIA_ID, CMID_HISTORY,
+				PMIA_UserData, NULL,
+			TAG_DONE),
+		~0);
+
+		menuhascontent = true;
+	}
+	else if(gwin->bw && gwin->bw->history &&
+		browser_window_forward_available(gwin->bw) &&
+		ami_gadget_hit(gwin->objects[GID_FORWARD],
+			gwin->win->MouseX, gwin->win->MouseY))
+	{
+		history_enumerate_forward(gwin->bw->history, ami_context_menu_history, gwin);
+
+		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, ~0,
+			TAG_DONE),
+		~0);
 
 		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
