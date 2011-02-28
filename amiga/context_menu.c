@@ -144,6 +144,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	int box_x=0;
 	int box_y=0;
 	bool menuhascontent = false;
+	bool no_url = true, no_obj = true, no_sel = true;
 
 	if(!cc) return;
 	if(content_get_type(cc) != CONTENT_HTML) return;
@@ -180,7 +181,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				css_computed_visibility(curbox->style) == CSS_VISIBILITY_HIDDEN)
 			continue;
 
-			if(curbox->href)
+			if(no_url && curbox->href)
 			{
 				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -210,10 +211,11 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					TAG_DONE),
 				~0);
 
+				no_url = false;
 				menuhascontent = true;
 			}
 
-			if (curbox->object)
+			if(no_obj && curbox->object)
 			{
 				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -248,10 +250,14 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					TAG_DONE),
 				~0);
 
+				no_obj = false;
 				menuhascontent = true;
 			}
 
-			if(curbox->text)
+			if(no_sel && (curbox->text) ||
+				(curbox->gadget && ((curbox->gadget->type == GADGET_TEXTBOX) ||
+				(curbox->gadget->type == GADGET_TEXTAREA) ||
+				(curbox->gadget->type == GADGET_PASSWORD))))
 			{
 				BOOL disabled_readonly = selection_read_only(gwin->bw->sel);
 				BOOL disabled_noselection = !selection_defined(gwin->bw->sel);
@@ -297,6 +303,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					TAG_DONE),
 				~0);
 
+				no_sel = false;
 				menuhascontent = true;
 			}
 
