@@ -697,13 +697,6 @@ void content_convert(struct content *c)
 		content_set_ready(c);
 		content_set_done(c);
 	}
-
-	/* After conversion, the content must be in error or either the 
-	 * READY or DONE state and must not be locked */
-	assert(c->status == CONTENT_STATUS_READY || 
-			c->status == CONTENT_STATUS_DONE || 
-			c->status == CONTENT_STATUS_ERROR);
-	assert(c->locked == false);
 }
 
 /**
