@@ -182,4 +182,63 @@ static inline bool compare_float( float a, float b )
 	[browserView updateHistory];
 }
 
+struct history_add_menu_item_data {
+	NSInteger index;
+	NSMenu *menu;
+	id target;
+};
+
+static bool history_add_menu_item_cb( const struct history *history, int x0, int y0, int x1, int y1, 
+									 const struct history_entry *page, void *user_data )
+{
+	struct history_add_menu_item_data *data = user_data; 
+	
+	NSMenuItem *item = nil;
+	if (data->index < [data->menu numberOfItems]) {
+		item = [data->menu itemAtIndex: data->index];
+	} else {
+		item = [[NSMenuItem alloc] initWithTitle: @"" 
+										  action: @selector( historyItemSelected: ) 
+								   keyEquivalent: @""];
+		[data->menu addItem: item];
+		[item release];
+	}
+	++data->index;
+	
+	[item setTarget: data->target];
+	[item setTitle: [NSString stringWithUTF8String: history_entry_get_title( page )]];
+	[item setRepresentedObject: [NSValue valueWithPointer: page]];
+	
+	return true;
+}
+
+- (IBAction) historyItemSelected: (id) sender;
+{
+	struct history_entry *entry = [[sender representedObject] pointerValue];
+	history_go( browser, browser->history, entry, false );
+	[self updateBackForward];
+}
+
+- (void) buildBackMenu: (NSMenu *)menu;
+{
+	struct history_add_menu_item_data data = {
+		.index = 0,
+		.menu = menu,
+		.target = self
+	};
+	history_enumerate_back( browser->history, history_add_menu_item_cb, &data );
+	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
+}
+
+- (void) buildForwardMenu: (NSMenu *)menu;
+{
+	struct history_add_menu_item_data data = {
+		.index = 0,
+		.menu = menu,
+		.target = self
+	};
+	history_enumerate_forward( browser->history, history_add_menu_item_cb, &data );
+	while (data.index < [menu numberOfItems]) [menu removeItemAtIndex: data.index];
+}
+
 @end

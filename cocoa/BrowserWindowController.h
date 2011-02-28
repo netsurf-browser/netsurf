@@ -30,6 +30,8 @@
 	NSSegmentedControl *navigationControl;
 	NSButton *historyButton;
 	BrowserViewController *activeBrowser;
+	NSMenu *historyBackMenu;
+	NSMenu *historyForwardMenu;
 }
 
 @property (readwrite, assign, nonatomic) IBOutlet PSMTabBarControl *tabBar;
@@ -38,6 +40,8 @@
 @property (readwrite, assign, nonatomic) IBOutlet NSObjectController *activeBrowserController;
 @property (readwrite, assign, nonatomic) IBOutlet NSSegmentedControl *navigationControl;
 @property (readwrite, assign, nonatomic) IBOutlet NSButton *historyButton;
+@property (readwrite, assign, nonatomic) IBOutlet NSMenu *historyBackMenu;
+@property (readwrite, assign, nonatomic) IBOutlet NSMenu *historyForwardMenu;
 
 @property (readwrite, assign, nonatomic) BrowserViewController *activeBrowser;
 

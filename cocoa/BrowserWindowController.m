@@ -42,6 +42,8 @@
 @synthesize urlField;
 @synthesize navigationControl;
 @synthesize historyButton;
+@synthesize historyBackMenu;
+@synthesize historyForwardMenu;
 
 @synthesize activeBrowser;
 @synthesize activeBrowserController;
@@ -83,6 +85,9 @@
 	[self bind: @"canGoForward" 
 	  toObject: activeBrowserController withKeyPath: @"selection.canGoForward" 
 	   options: nil];
+	
+	[navigationControl setMenu: historyBackMenu forSegment: 0];
+	[navigationControl setMenu: historyForwardMenu forSegment: 1];
 }
 
 - (void) addTab: (BrowserViewController *)browser;
@@ -182,6 +187,15 @@
 - (void)windowDidBecomeMain: (NSNotification *)note;
 {
 	[(NetSurfApp *)NSApp setFrontTab: [[tabView selectedTabViewItem] identifier]];
+}
+
+- (void)menuNeedsUpdate:(NSMenu *)menu
+{
+	if (menu == historyBackMenu) {
+		[activeBrowser buildBackMenu: menu];
+	} else if (menu == historyForwardMenu) {
+		[activeBrowser buildForwardMenu: menu];
+	}
 }
 
 #pragma mark -
