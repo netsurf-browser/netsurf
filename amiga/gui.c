@@ -2986,6 +2986,12 @@ void gui_window_destroy(struct gui_window *g)
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 
+	/* These aren't freed by the above.
+	 * TODO: nav_west etc need freeing too */
+	DisposeObject(g->shared->objects[GID_ADDTAB_BM]);
+	DisposeObject(g->shared->objects[GID_CLOSETAB_BM]);
+	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
+
 	ami_free_menulabs(g->shared);
 	free(g->shared->wintitle);
 	ami_utf8_free(g->shared->status);
