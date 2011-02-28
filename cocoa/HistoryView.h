@@ -24,6 +24,7 @@
 @interface HistoryView : NSView {
 	struct browser_window *browser;
 	BrowserView *browserView;
+	NSMutableArray *toolTips;
 }
 
 @property (readwrite, assign, nonatomic) BrowserView *browser;
