@@ -2409,21 +2409,34 @@ bool layout_line(struct box *first, int *width, int *y,
 				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
+				int space_width;
+
+				/* Create clone of split_box, c2 */
 				c2 = talloc_memdup(content, split_box,
 						sizeof *c2);
 				if (!c2)
 					return false;
+				c2->clone = 1;
+
+				/* Add copy of the split text to c2 */
 				c2->text = talloc_strndup(content,
 						split_box->text + space + 1,
 						split_box->length -(space + 1));
 				if (!c2->text)
 					return false;
+
+				/* Set c2 according to the remaining text */
+				font_func->font_width(&fstyle, " ", 1,
+						&space_width);
+				c2->width -= w + space_width;
 				c2->length = split_box->length - (space + 1);
-				c2->width = UNKNOWN_WIDTH;
-				c2->clone = 1;
+
+				/* Update split_box for its reduced text */
 				split_box->length = space;
 				split_box->width = w;
 				split_box->space = 1;
+
+				/* Insert c2 into box list */
 				c2->next = split_box->next;
 				split_box->next = c2;
 				c2->prev = split_box;
@@ -2471,21 +2484,34 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (space == 0)
 				space = 1;
 			if (space != split_box->length) {
+				int space_width;
+
+				/* Create clone of split_box, c2 */
 				c2 = talloc_memdup(content, split_box,
 						sizeof *c2);
 				if (!c2)
 					return false;
+				c2->clone = 1;
+
+				/* Add copy of the split text to c2 */
 				c2->text = talloc_strndup(content,
 						split_box->text + space + 1,
 						split_box->length -(space + 1));
 				if (!c2->text)
 					return false;
+
+				/* Set c2 according to the remaining text */
+				font_func->font_width(&fstyle, " ", 1,
+						&space_width);
+				c2->width -= w + space_width;
 				c2->length = split_box->length - (space + 1);
-				c2->width = UNKNOWN_WIDTH;
-				c2->clone = 1;
+
+				/* Update split_box for its reduced text */
 				split_box->length = space;
 				split_box->width = w;
 				split_box->space = 1;
+
+				/* Insert c2 into box list */
 				c2->next = split_box->next;
 				split_box->next = c2;
 				c2->prev = split_box;
