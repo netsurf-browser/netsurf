@@ -688,23 +688,36 @@ void content_convert(struct content *c)
 
 	if (handler_map[c->type].convert) {
 		c->locked = true;
-		if (!handler_map[c->type].convert(c)) {
+		if (handler_map[c->type].convert(c) == false) {
+			c->locked = false;
 			c->status = CONTENT_STATUS_ERROR;
 		}
-		c->locked = false;
+		/* Conversion to the READY state will unlock the content */
 	} else {
 		content_set_ready(c);
 		content_set_done(c);
 	}
+
+	/* After conversion, the content must be in error or either the 
+	 * READY or DONE state and must not be locked */
+	assert(c->status == CONTENT_STATUS_READY || 
+			c->status == CONTENT_STATUS_DONE || 
+			c->status == CONTENT_STATUS_ERROR);
+	assert(c->locked == false);
 }
 
 /**
- * Put a content in status CONTENT_STATUS_READY.
+ * Put a content in status CONTENT_STATUS_READY and unlock the content.
  */
 
 void content_set_ready(struct content *c)
 {
 	union content_msg_data msg_data;
+
+	/* The content must be locked at this point, as it can only 
+	 * become READY after conversion. */
+	assert(c->locked);
+	c->locked = false;
 
 	c->status = CONTENT_STATUS_READY;
 	content_update_status(c);
@@ -743,7 +756,7 @@ void content__reformat(struct content *c, int width, int height)
 	assert(c != 0);
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
-	assert(!c->locked);
+	assert(c->locked == false);
 	LOG(("%p %s", c, llcache_handle_get_url(c->llcache)));
 	c->locked = true;
 	c->available_width = width;
@@ -765,7 +778,7 @@ void content_destroy(struct content *c)
 {
 	assert(c);
 	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
-	assert(!c->locked);
+	assert(c->locked == false);
 
 	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
 		handler_map[c->type].destroy(c);
