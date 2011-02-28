@@ -254,7 +254,6 @@ const char * const content_type_name[] = {
 };
 
 const char * const content_status_name[] = {
-	"TYPE_UNKNOWN",
 	"LOADING",
 	"READY",
 	"DONE",
@@ -423,9 +422,6 @@ content_type content_lookup(const char *mime_type)
  *
  * \param  url	URL of content, copied
  * \return  the new content structure, or 0 on memory exhaustion
- *
- * The type is initialised to CONTENT_UNKNOWN, and the status to
- * CONTENT_STATUS_TYPE_UNKNOWN.
  */
 
 struct content * content_create(llcache_handle *llcache,
@@ -643,8 +639,7 @@ void content_update_status(struct content *c)
 	if (status == token)
 		status = token + 4;
 
-	if (c->status == CONTENT_STATUS_TYPE_UNKNOWN ||
-			c->status == CONTENT_STATUS_LOADING ||
+	if (c->status == CONTENT_STATUS_LOADING ||
 			c->status == CONTENT_STATUS_READY)
 		time = wallclock() - c->time;
 	else
@@ -1262,7 +1257,7 @@ content_status content_get_status(hlcache_handle *h)
 content_status content__get_status(struct content *c)
 {
 	if (c == NULL)
-		return CONTENT_STATUS_TYPE_UNKNOWN;
+		return CONTENT_STATUS_ERROR;
 
 	return c->status;
 }

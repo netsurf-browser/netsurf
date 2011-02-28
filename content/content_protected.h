@@ -167,8 +167,8 @@ struct content {
 	/** Bitmap, for various image contents. */
 	struct bitmap *bitmap;
 
-	unsigned int time;		/**< Creation time, if TYPE_UNKNOWN,
-					  LOADING or READY,
+	unsigned int time;		/**< Creation time,
+					  if LOADING or READY,
 					  otherwise total time. */
 
 	unsigned int reformat_time;	/**< Earliest time to attempt a

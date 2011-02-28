@@ -44,7 +44,6 @@ struct rect;
 
 /** Status of a content */
 typedef enum {
-	CONTENT_STATUS_TYPE_UNKNOWN,	/**< Type not yet known. */
 	CONTENT_STATUS_LOADING,	/**< Content is being fetched or
 				  converted and is not safe to display. */
 	CONTENT_STATUS_READY,	/**< Some parts of content still being
