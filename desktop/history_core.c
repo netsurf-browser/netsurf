@@ -94,6 +94,8 @@ static bool history_redraw_entry(struct history *history,
 		int x, int y, bool clip);
 static struct history_entry *history_find_position(struct history_entry *entry,
 		int x, int y);
+static bool history_enumerate_entry(const struct history *history, 
+		const struct history_entry *entry, history_enumerate_cb cb, void *ud);
 
 
 /**
@@ -765,4 +767,55 @@ struct history_entry *history_find_position(struct history_entry *entry,
 	}
 
 	return 0;
+}
+
+/* Documented in history_core.h */
+void history_enumerate(const struct history *history, history_enumerate_cb cb, 
+	void *user_data)
+{
+	history_enumerate_entry(history, history->start, cb, user_data);
+}
+
+/**
+ * Enumerate subentries in history
+ * See also history_enumerate()
+ *
+ * \param	history		history to enumerate
+ * \param	entry		entry to start enumeration at
+ * \param	cb			callback function
+ * \param	ud			context pointer passed to cb
+ * \return	true to continue enumeration, false to cancel
+ */
+static bool history_enumerate_entry(const struct history *history, 
+	const struct history_entry *entry, history_enumerate_cb cb, void *ud)
+{
+	const struct history_entry *child;
+	
+	if (!cb(history, entry->x, entry->y, entry->x + WIDTH, entry->y + HEIGHT,
+			entry, ud)) return false;
+	
+	for (child = entry->forward; child; child = child->next) {
+		if (!history_enumerate_entry(history, child, cb, ud))
+			return false;
+	}
+	
+	return true;
+}
+
+/* Documented in history_core.h */
+const char *history_entry_get_url(const struct history_entry *entry)
+{
+	return entry->page.url;
+}
+
+/* Documented in history_core.h */
+const char *history_entry_get_fragment_id(const struct history_entry *entry)
+{
+	return entry->page.frag_id;
+}
+
+/* Documented in history_core.h */
+const char *history_entry_get_title(const struct history_entry *entry)
+{
+	return entry->page.title;
 }

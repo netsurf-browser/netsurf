@@ -28,6 +28,7 @@
 struct hlcache_handle;
 struct history;
 struct browser_window;
+struct history_entry;
 
 struct history *history_create(void);
 struct history *history_clone(struct history *history);
@@ -46,5 +47,51 @@ bool history_redraw_rectangle(struct history *history,
 bool history_click(struct browser_window *bw, struct history *history,
 		int x, int y, bool new_window);
 const char *history_position_url(struct history *history, int x, int y);
+
+/**
+ * Callback function type for history enumeration
+ *
+ * \param	history			history being enumerated
+ * \param	x0, y0, x1, y1	Coordinates of entry in history tree view
+ * \param	entry			Current history entry
+ * \return	true to continue enumeration, false to cancel enumeration
+ */
+typedef bool (*history_enumerate_cb)(const struct history *history, int x0, int y0, 
+	 int x1, int y1, 
+	 const struct history_entry *entry, void *user_data);
+
+/**
+ * Enumerate all entries in the history.
+ * Do not change the history while it is being enumerated.
+ *
+ * \param	history		history to enumerate
+ * \param	cb			callback function
+ * \param	user_data	context pointer passed to cb
+ */
+void history_enumerate(const struct history *history, history_enumerate_cb cb, void *user_data);
+
+/**
+ * Returns the URL to a history entry
+ *
+ * \param	entry		the history entry to retrieve the URL from
+ * \return	the URL
+ */
+const char *history_entry_get_url(const struct history_entry *entry);
+
+/**
+ * Returns the URL to a history entry
+ *
+ * \param	entry		the history entry to retrieve the fragment id from
+ * \return	the fragment id
+ */
+const char *history_entry_get_fragment_id(const struct history_entry *entry);
+
+/**
+ * Returns the title of a history entry
+ *
+ * \param	entry		the history entry to retrieve the title from
+ * \return	the title
+ */
+const char *history_entry_get_title(const struct history_entry *entry);
 
 #endif
