@@ -95,6 +95,7 @@ struct gui_window_2 {
 	struct find_window *searchwin;
 	ULONG oldh;
 	ULONG oldv;
+	int temp;
 	bool redraw_scroll;
 	bool new_content;
 	char *menulab[AMI_MENU_AREXX_MAX + 1];

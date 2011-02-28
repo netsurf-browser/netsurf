@@ -173,6 +173,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		ami_gadget_hit(gwin->objects[GID_BACK],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
+		gwin->temp = 0;
 		history_enumerate_back(gwin->bw->history, ami_context_menu_history, gwin);
 
 		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
@@ -196,6 +197,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		ami_gadget_hit(gwin->objects[GID_FORWARD],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
+		gwin->temp = 0;
 		history_enumerate_forward(gwin->bw->history, ami_context_menu_history, gwin);
 
 		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
@@ -606,6 +608,9 @@ static bool ami_context_menu_history(const struct history *history, int x0, int 
 {
 	struct gui_window_2 *gwin = (struct gui_window_2 *)user_data;
 
+	gwin->temp++;
+	if(gwin->temp > 10) return false;
+
 	IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
 		NewObject(POPUPMENU_GetItemClass(), NULL,
 			PMIA_Title, (ULONG)history_entry_get_title(entry),
@@ -613,4 +618,6 @@ static bool ami_context_menu_history(const struct history *history, int x0, int 
 			PMIA_UserData, entry,
 		TAG_DONE),
 	~0);
+
+	return true;
 }
