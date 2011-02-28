@@ -71,6 +71,26 @@ typedef bool (*history_enumerate_cb)(const struct history *history, int x0, int 
 void history_enumerate(const struct history *history, history_enumerate_cb cb, void *user_data);
 
 /**
+ * Enumerate all entries that will be reached by the 'forward' button
+ *
+ * \param	history		The history object to enumerate in
+ * \param	cb			The callback function
+ * \param	user_data	Data passed to the callback
+ */
+void history_enumerate_forward( struct history *history, 
+		history_enumerate_cb cb, void *user_data );
+
+/**
+ * Enumerate all entries that will be reached by the 'back' button
+ *
+ * \param	history		The history object to enumerate in
+ * \param	cb			The callback function
+ * \param	user_data	Data passed to the callback
+ */
+void history_enumerate_back( struct history *history, 
+		history_enumerate_cb cb, void *user_data );
+
+/**
  * Returns the URL to a history entry
  *
  * \param	entry		the history entry to retrieve the URL from
@@ -93,5 +113,16 @@ const char *history_entry_get_fragment_id(const struct history_entry *entry);
  * \return	the title
  */
 const char *history_entry_get_title(const struct history_entry *entry);
+
+/**
+ * Open a history entry in the specified browser window
+ *
+ * \param  bw          browser window
+ * \param  history     history containing entry
+ * \param  entry       entry to open
+ * \param  new_window  open entry in new window
+ */
+void history_go(struct browser_window *bw, struct history *history,
+				struct history_entry *entry, bool new_window);
 
 #endif

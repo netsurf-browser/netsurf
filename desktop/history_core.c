@@ -83,8 +83,6 @@ struct history {
 static struct history_entry *history_clone_entry(struct history *history,
 		struct history_entry *entry);
 static void history_free_entry(struct history_entry *entry);
-static void history_go(struct browser_window *bw, struct history *history,
-		struct history_entry *entry, bool new_window);
 static void history_layout(struct history *history);
 static int history_layout_subtree(struct history *history,
 		struct history_entry *entry, int x, int y, bool shuffle);
@@ -421,15 +419,7 @@ bool history_forward_available(struct history *history)
 }
 
 
-/**
- * Open a history entry in the specified browser window
- *
- * \param  bw          browser window
- * \param  history     history containing entry
- * \param  entry       entry to open
- * \param  new_window  open entry in new window
- */
-
+/* Documented in history_core.h */
 void history_go(struct browser_window *bw, struct history *history,
 		struct history_entry *entry, bool new_window)
 {
@@ -767,6 +757,36 @@ struct history_entry *history_find_position(struct history_entry *entry,
 	}
 
 	return 0;
+}
+
+/* Documented in history_core.h */
+void history_enumerate_forward(struct history *history, 
+	history_enumerate_cb cb, void *user_data)
+{
+	struct history_entry *entry;
+	
+	if (history == NULL || history->current == NULL) return;
+	
+	for (entry = history->current->forward_pref; entry != NULL; entry = entry->forward_pref) {
+		if (!cb(history, entry->x, entry->y, entry->x + WIDTH, 
+				entry->y + HEIGHT, entry, user_data))
+			break;
+	}
+}
+
+/* Documented in history_core.h */
+void history_enumerate_back(struct history *history, 
+	history_enumerate_cb cb, void *user_data)
+{
+	struct history_entry *entry;
+	
+	if (history == NULL || history->current == NULL) return;
+	
+	for (entry = history->current->back; entry != NULL; entry = entry->back) {
+		if (!cb(history, entry->x, entry->y, entry->x + WIDTH, 
+				entry->y + HEIGHT, entry, user_data))
+			break;
+	}
 }
 
 /* Documented in history_core.h */
