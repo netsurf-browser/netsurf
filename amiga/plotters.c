@@ -596,6 +596,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
+	if((width == 0) || (height == 0)) return true;
+
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
 
