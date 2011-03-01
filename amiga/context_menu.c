@@ -420,7 +420,9 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					box->gadget->value = utf8_fn;
 
 					box_coords(box, (int *)&x, (int *)&y);
-					gui_window_redraw(gwin->bw->window,x,y,
+					ami_do_redraw_limits(gwin->bw->window, 
+						gwin->bw->window->shared->bw,
+						x,y,
 						x + box->width,
 						y + box->height);
 				}

@@ -883,9 +883,12 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 	struct rect clip;
 	PAINTSTRUCT ps;
 
-	plot_hdc = BeginPaint(hwnd, &ps);
+	BeginPaint(hwnd, &ps);
 
 	if (gw != NULL) {
+
+		plot_hdc = ps.hdc;
+
 		clip.x0 = ps.rcPaint.left;
 		clip.y0 = ps.rcPaint.top;
 		clip.x1 = ps.rcPaint.right;
@@ -2044,30 +2047,11 @@ void gui_window_set_title(struct gui_window *w, const char *title)
 }
 
 /**
- * redraw a rectangle of the window
- */
-void gui_window_redraw(struct gui_window *w, int x0, int y0, int x1, int y1)
-{
-	RECT redrawrect;
-
-	LOG(("redraw %p %d,%d %d,%d", w, x0, y0, x1, y1));
-	if (w == NULL)
-		return;
-
-	redrawrect.left = x0;
-	redrawrect.top = y0;
-	redrawrect.right = x1;
-	redrawrect.bottom = y1;
-
-	RedrawWindow(w->drawingarea, &redrawrect, NULL, RDW_INVALIDATE | RDW_NOERASE);
-}
-
-/**
  * redraw the whole window
  */
 void gui_window_redraw_window(struct gui_window *gw)
 {
-	LOG(("redraw window %p", gw));
+	/* LOG(("gw:%p", gw)); */
 	if (gw == NULL)
 		return;
 
@@ -2077,13 +2061,15 @@ void gui_window_redraw_window(struct gui_window *gw)
 void gui_window_update_box(struct gui_window *gw,
 			   const union content_msg_data *data)
 {
+	/* LOG(("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height)); */
+
 	if (gw == NULL)
 		return;
 
 	RECT redrawrect;
 
-	redrawrect.left = (long)data->redraw.x;
-	redrawrect.top = (long)data->redraw.y;
+	redrawrect.left = (long)data->redraw.x - (gw->scrollx / gw->bw->scale);
+	redrawrect.top = (long)data->redraw.y - (gw->scrolly / gw->bw->scale);
 	redrawrect.right =(long)(data->redraw.x + data->redraw.width);
 	redrawrect.bottom = (long)(data->redraw.y + data->redraw.height);
 

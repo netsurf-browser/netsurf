@@ -451,7 +451,7 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 					file_box->gadget->value = utf8_fn;
 					/* Redraw box. */
 					box_coords(file_box, &posx, &posy);
-					gui_window_redraw(bw->window, 
+					browser_schedule_redraw(bw->window, 
 						posx - gw->browser->scroll.current.x, 
 						posy - gw->browser->scroll.current.y,
 						posx - gw->browser->scroll.current.x + file_box->width,

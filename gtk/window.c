@@ -798,23 +798,36 @@ void gui_window_destroy(struct gui_window *g)
 
 }
 
+
 static void nsgtk_redraw_caret(struct gui_window *g)
 {
+	int sx, sy;
+
 	if (g->careth == 0)
 		return;
-
-	gui_window_redraw(g, g->caretx, g->carety,
-				g->caretx, g->carety + g->careth);
-}
-
-void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	int sx, sy;
 
 	gui_window_get_scroll(g, &sx, &sy);
 
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-				   x0 - sx, y0 - sy, x1-x0+1, y1-y0+1);
+			g->caretx - sx, g->carety - sy, 1, g->careth + 1);
+
+}
+
+void gui_window_remove_caret(struct gui_window *g)
+{
+	int sx, sy;
+	int oh = g->careth;
+
+	if (oh == 0)
+		return;
+
+	g->careth = 0;
+
+	gui_window_get_scroll(g, &sx, &sy);
+
+	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
+			g->caretx - sx, g->carety - sy, 1, oh + 1);
+
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -1047,19 +1060,6 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	nsgtk_redraw_caret(g);
 
 	gtk_widget_grab_focus(GTK_WIDGET(g->layout));
-}
-
-void gui_window_remove_caret(struct gui_window *g)
-{
-	int oh = g->careth;
-
-	if (oh == 0)
-		return;
-
-	g->careth = 0;
-
-	gui_window_redraw(g, g->caretx, g->carety,
-			  g->caretx, g->carety + oh);
 }
 
 void gui_window_new_content(struct gui_window *g)

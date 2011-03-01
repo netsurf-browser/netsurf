@@ -1302,12 +1302,6 @@ gui_window_set_title(struct gui_window *g, const char *title)
 }
 
 void
-gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	fb_queue_redraw(g->browser, x0, y0, x1, y1);
-}
-
-void
 gui_window_redraw_window(struct gui_window *g)
 {
 	fb_queue_redraw(g->browser, 0, 0, fbtk_get_width(g->browser), fbtk_get_height(g->browser) );

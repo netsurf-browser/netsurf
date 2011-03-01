@@ -363,13 +363,6 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 	window_set_stauts( w , (char*)text );
 }
 
-void gui_window_redraw(struct gui_window *gw, int x0, int y0, int x1, int y1)
-{
-	if (gw == NULL)
-		return;
-	browser_schedule_redraw( gw, x0, y0, x1, y1 );
-}
-
 void gui_window_redraw_window(struct gui_window *gw)
 {
 	CMP_BROWSER b;

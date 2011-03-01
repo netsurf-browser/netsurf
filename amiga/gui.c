@@ -1747,7 +1747,8 @@ void ami_handle_appmsg(void)
 							file_box->gadget->value = utf8_fn;
 
 							box_coords(file_box, (int *)&x, (int *)&y);
-							gui_window_redraw(gwin->bw->window,x,y,
+							ami_do_redraw_limits(gwin->bw->window, 
+								gwin->bw->window->shared->bw, x, y,
 								x + file_box->width,
 								y + file_box->height);
 						}
@@ -3150,18 +3151,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	}
 
 	current_redraw_browser = NULL;
-}
-
-void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	ULONG sx,sy;
-	struct browser_window *bw;
-
-	if(!g) return;
-
-	bw = g->shared->bw;
-
-	ami_do_redraw_limits(g, bw, x0, y0, x1, y1);
 }
 
 void gui_window_redraw_window(struct gui_window *g)

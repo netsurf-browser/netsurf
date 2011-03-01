@@ -716,31 +716,6 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 
 /**
- * Force a redraw of part of the contents of a browser window.
- *
- * \param  g   gui_window to redraw
- * \param  x0  rectangle to redraw
- * \param  y0  rectangle to redraw
- * \param  x1  rectangle to redraw
- * \param  y1  rectangle to redraw
- */
-
-void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	os_error *error;
-
-	assert(g);
-
-	error = xwimp_force_redraw(g->window, x0 * 2, -y1 * 2, x1 * 2, -y0 * 2);
-	if (error) {
-		LOG(("xwimp_force_redraw: 0x%x: %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-	}
-}
-
-
-/**
  * Force a redraw of the entire contents of a browser window.
  *
  * \param  g   gui_window to redraw
@@ -3444,9 +3419,15 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 
 		/* Redraw box. */
 		box_coords(file_box, &pos.x, &pos.y);
-		gui_window_redraw(bw->window, pos.x, pos.y,
-				pos.x + file_box->width,
-				pos.y + file_box->height);
+
+		error = xwimp_force_redraw(bw->window->window, 
+				pos.x * 2, -(pos.y + file_box->height) * 2, 
+				(pos.x + file_box->width) * 2, -pos.y * 2);
+		if (error) {
+			LOG(("xwimp_force_redraw: 0x%x: %s",
+			     error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+		}
 	} else {
 
 		const char *filename = message->data.data_xfer.file_name;
