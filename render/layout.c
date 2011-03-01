@@ -1901,6 +1901,63 @@ int line_height(const css_computed_style *style)
 
 
 /**
+ * Split a text box.
+ *
+ * \param  content     memory pool for any new boxes
+ * \param  fstyle      style for text in text box
+ * \param  split_box   box with text to split
+ * \param  new_length  new length for text in split_box, after splitting
+ * \param  new_width   new width for text in split_box, after splitting
+ * \return  true on success, false on memory exhaustion
+ *
+ * A new box is created and inserted into the box tree after split_box,
+ * containing the text after new_length excluding the initial space character.
+ */
+
+static bool layout_text_box_split(struct content *content,
+		plot_font_style_t *fstyle, struct box *split_box,
+		size_t new_length, int new_width)
+{
+	int space_width;
+	struct box *c2;
+	const struct font_functions *font_func = content->data.html.font_func;
+
+	/* Create clone of split_box, c2 */
+	c2 = talloc_memdup(content, split_box, sizeof *c2);
+	if (!c2)
+		return false;
+	c2->clone = 1;
+
+	/* Add copy of the split text to c2 */
+	c2->text = talloc_strndup(content, split_box->text + new_length + 1,
+			split_box->length - (new_length + 1));
+	if (!c2->text)
+		return false;
+
+	/* Set c2 according to the remaining text */
+	font_func->font_width(fstyle, " ", 1, &space_width);
+	c2->width -= new_width + space_width;
+	c2->length = split_box->length - (new_length + 1);
+
+	/* Update split_box for its reduced text */
+	split_box->length = new_length;
+	split_box->width = new_width;
+	split_box->space = 1;
+
+	/* Insert c2 into box list */
+	c2->next = split_box->next;
+	split_box->next = c2;
+	c2->prev = split_box;
+	if (c2->next)
+		c2->next->prev = c2;
+	else
+		c2->parent->last = c2;
+
+	return true;
+}
+
+
+/**
  * Position a line of boxes in inline formatting context.
  *
  * \param  first   box at start of line
@@ -2362,7 +2419,6 @@ bool layout_line(struct box *first, int *width, int *y,
 		unsigned int i;
 		size_t space = 0;
 		int w;
-		struct box * c2;
 
 		x = x_previous;
 
@@ -2409,42 +2465,10 @@ bool layout_line(struct box *first, int *width, int *y,
 				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
-				int space_width;
-
-				/* Create clone of split_box, c2 */
-				c2 = talloc_memdup(content, split_box,
-						sizeof *c2);
-				if (!c2)
+				if (!layout_text_box_split(content, &fstyle,
+						split_box, space, w))
 					return false;
-				c2->clone = 1;
-
-				/* Add copy of the split text to c2 */
-				c2->text = talloc_strndup(content,
-						split_box->text + space + 1,
-						split_box->length -(space + 1));
-				if (!c2->text)
-					return false;
-
-				/* Set c2 according to the remaining text */
-				font_func->font_width(&fstyle, " ", 1,
-						&space_width);
-				c2->width -= w + space_width;
-				c2->length = split_box->length - (space + 1);
-
-				/* Update split_box for its reduced text */
-				split_box->length = space;
-				split_box->width = w;
-				split_box->space = 1;
-
-				/* Insert c2 into box list */
-				c2->next = split_box->next;
-				split_box->next = c2;
-				c2->prev = split_box;
-				if (c2->next)
-					c2->next->prev = c2;
-				else
-					c2->parent->last = c2;
-				b = c2;
+				b = split_box->next;
 			}
 			x += space_before + w;
 			LOG(("forcing"));
@@ -2484,42 +2508,10 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (space == 0)
 				space = 1;
 			if (space != split_box->length) {
-				int space_width;
-
-				/* Create clone of split_box, c2 */
-				c2 = talloc_memdup(content, split_box,
-						sizeof *c2);
-				if (!c2)
+				if (!layout_text_box_split(content, &fstyle,
+						split_box, space, w))
 					return false;
-				c2->clone = 1;
-
-				/* Add copy of the split text to c2 */
-				c2->text = talloc_strndup(content,
-						split_box->text + space + 1,
-						split_box->length -(space + 1));
-				if (!c2->text)
-					return false;
-
-				/* Set c2 according to the remaining text */
-				font_func->font_width(&fstyle, " ", 1,
-						&space_width);
-				c2->width -= w + space_width;
-				c2->length = split_box->length - (space + 1);
-
-				/* Update split_box for its reduced text */
-				split_box->length = space;
-				split_box->width = w;
-				split_box->space = 1;
-
-				/* Insert c2 into box list */
-				c2->next = split_box->next;
-				split_box->next = c2;
-				c2->prev = split_box;
-				if (c2->next)
-					c2->next->prev = c2;
-				else
-					c2->parent->last = c2;
-				b = c2;
+				b = split_box->next;
 			}
 			x += space_before + w;
 			LOG(("fitting words"));
