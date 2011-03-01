@@ -24,20 +24,39 @@ typedef struct {
 	long v;
 } COOKIE;
 
+/* System type detection added by [GS]  */
+#define SYS_TOS    0x0001
+#define SYS_MAGIC  0x0002
+#define SYS_MINT   0x0004
+#define SYS_GENEVA 0x0010
+#define SYS_NAES   0x0020
+#define SYS_XAAES  0x0040
+/* detect the system type, AES + kernel */
+#define sys_type()    (_systype_v ? _systype_v : _systype())
+#define sys_MAGIC()   ((sys_type() & SYS_MAGIC) != 0)
+#define sys_NAES()    ((sys_type() & SYS_NAES)  != 0)
+#define sys_XAAES()   ((sys_type() & SYS_XAAES) != 0)
+
+
 typedef struct {
-	unsigned short gdosversion;
+	unsigned short gemdos_version;
+	unsigned short gdos_FSMC;
+	unsigned short systype;
 	unsigned short small_sfont_pxh;
 	unsigned short medium_sfont_pxh;
 	unsigned short large_sfont_pxh;
 	bool sfont_monospaced;
+  short aes_max_win_title_len;
 } NS_ATARI_SYSINFO;
 
 extern NS_ATARI_SYSINFO atari_sysinfo;
+extern unsigned short _systype_v;
 
-#define TOS4VER 0x03000 /* this is assumed to be the last single tasking OS */
+#define TOS4VER 0x03300 /* this is assumed to be the last single tasking OS */
 
 void init_os_info(void);
 int tos_getcookie( long tag, long * value );
 void fix_path(char * path);
 char * gdos_realpath(const char * path, char * rpath);
+unsigned short _systype (void);
 #endif

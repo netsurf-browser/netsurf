@@ -55,18 +55,24 @@ char *url_to_path(const char *url)
 	char *path;
 
 	/* return the absolute path including leading / */
-	if( atari_sysinfo.gdosversion > TOS4VER ) {
+	if( sys_type() & SYS_MINT ) {
 		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
 	} else {
 		/* do not include / within url_path */
-		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN));
-		int l = strlen(path);
-		int i;
-		for( i = 0; i<l-1; i++){
+		char * drive = url_path + (FILE_SCHEME_PREFIX_LEN);
+		path = malloc( strlen(drive) + 4 );
+		int i=0;
+		path[i++] = drive[0];
+		path[i++] = ':';
+		path[i++] = 0x5C;
+		while( drive[i-1] != 0){
+			path[i] = drive[i-1];
 			if( path[i] == '/' ){
 				path[i] = 0x5C;
 			}
+			i++;
 		}
+		path[i] = 0;
 		LOG(("%s", path));
 	}
 	curl_free(url_path);

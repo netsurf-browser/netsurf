@@ -210,7 +210,8 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	} else {
 		vst_color( self->vdi_handle, BLACK );
 	}
-	if( atari_sysinfo.gdosversion > 0x03000 ){
+
+	if( atari_sysinfo.gdos_FSMC ){
 		v_ftext( self->vdi_handle, x, y, (char*)&textcpy );
 	} else {
 		v_gtext( self->vdi_handle, x, y, (char*)&textcpy );
