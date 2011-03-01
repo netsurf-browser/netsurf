@@ -137,19 +137,14 @@
       1> makelink sdk:local/newlib/lib/libcrypto.so sobjs:libssl-0.9.8.so soft
 
 
-  Libhpdf
+  Libharu
 ---------
 
-  NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
-  is currently enabled by default, and cannot be auto-detected by the Makefile.
-  If you wish to disable it, do so by creating a Makefile.config.
+  NetSurf can use Haru PDF to enable PDF export.  Haru PDF can be obtained
+  from http://libharu.org/.  We require libharu 2.2 or later.
 
-  Haru PDF can be obtained from http://libharu.sourceforge.net/, although we
-  currently depend on features that the official version does not have.  You
-  can obtain our patched version from the following Subversion address until
-  the patches are accepted upstream;
-
-      svn://svn.netsurf-browser.org/trunk/libhpdf
+  | Note: libharu cannot be auto-detected by the Makefile.  If you wish to
+  |       enable it, do so by creating a Makefile.config file.
 
 
   libregex

@@ -127,21 +127,14 @@
   |
   |       For more information, consult the libparserutils README file.
 
-  Libhpdf
+  Libharu
 ---------
 
-  NetSurf can use Haru PDF to enable PDF export and printing in GTK.  This
-  is currently enabled by default, and cannot be auto-detected by the Makefile.
-  If you wish to disable it, do so by creating a Makefile.config file.
+  NetSurf can use Haru PDF to enable PDF export.  Haru PDF can be obtained
+  from http://libharu.org/.  We require libharu 2.2 or later.
 
-  Haru PDF can be obtained from http://libharu.org/, although we currently
-  depend on features that none of the official released versions does have.
-  The current development versions of libharu are fine and we anticipate
-  the libharu 2.2 release will be fine for NetSurf usage.
-  A recently taken snapshot of one of those libharu development versions can
-  be found at:
-
-      svn://svn.netsurf-browser.org/trunk/libharu
+  | Note: libharu cannot be auto-detected by the Makefile.  If you wish to
+  |       enable it, do so by creating a Makefile.config file.
 
   General requirements
 ----------------------
