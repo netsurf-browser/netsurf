@@ -1339,15 +1339,15 @@ void ami_handle_msg(void)
 							case 'n':
 								if((option_kiosk_mode == false) &&
 									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
-									browser_window_create(NULL, gwin->bw,
+									browser_window_create(option_homepage_url, NULL,
 										0, true, false);
 							break;
 
 							case 't':
 								if((option_kiosk_mode == false) &&
 									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
-									browser_window_create(NULL, gwin->bw, 
-										0, true, true);
+									browser_window_create(option_homepage_url,
+										gwin->bw, 0, true, true);
 							break;
 
 							case 'k':
