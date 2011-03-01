@@ -1922,6 +1922,7 @@ static bool layout_text_box_split(struct content *content,
 	struct box *c2;
 	const struct font_functions *font_func = content->data.html.font_func;
 
+	/* Find the width of a space, using fstyle, if currently unknown */
 	if (split_box->space == 0 || split_box->space == UNKNOWN_WIDTH) {
 		font_func->font_width(fstyle, " ", 1, &split_box->space);
 	}
@@ -1933,11 +1934,19 @@ static bool layout_text_box_split(struct content *content,
 		return false;
 	c2->clone = 1;
 
-	/* Add copy of the split text to c2 */
-	c2->text = talloc_strndup(content, split_box->text + new_length + 1,
-			split_box->length - (new_length + 1));
-	if (!c2->text)
-		return false;
+	/* Set remaining text in c2 */
+	if (split_box->parent->parent->gadget != NULL) {
+		/* Inside a form text input / textarea, special case */
+		/* TODO: Move text inputs to core textarea widget and remove
+		 *       this */
+		c2->text = talloc_strndup(content,
+				split_box->text + new_length + 1,
+				split_box->length - (new_length + 1));
+		if (!c2->text)
+			return false;
+	} else {
+		c2->text += new_length + 1;
+	}
 
 	/* Set c2 according to the remaining text */
 	c2->width -= new_width + space_width;
