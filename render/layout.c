@@ -1922,6 +1922,11 @@ static bool layout_text_box_split(struct content *content,
 	struct box *c2;
 	const struct font_functions *font_func = content->data.html.font_func;
 
+	if (split_box->space == 0 || split_box->space == UNKNOWN_WIDTH) {
+		font_func->font_width(fstyle, " ", 1, &split_box->space);
+	}
+	space_width = split_box->space;
+
 	/* Create clone of split_box, c2 */
 	c2 = talloc_memdup(content, split_box, sizeof *c2);
 	if (!c2)
@@ -1935,14 +1940,12 @@ static bool layout_text_box_split(struct content *content,
 		return false;
 
 	/* Set c2 according to the remaining text */
-	font_func->font_width(fstyle, " ", 1, &space_width);
 	c2->width -= new_width + space_width;
 	c2->length = split_box->length - (new_length + 1);
 
 	/* Update split_box for its reduced text */
 	split_box->length = new_length;
 	split_box->width = new_width;
-	split_box->space = 1;
 
 	/* Insert c2 into box list */
 	c2->next = split_box->next;
@@ -2100,13 +2103,13 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 		} else if (b->type == BOX_INLINE_END) {
 			b->width = 0;
-			if (b->space) {
-				/** \todo optimize out */
+			if (b->space == UNKNOWN_WIDTH) {
 				font_func->font_width(&fstyle, " ", 1,
-						&space_after);
-			} else {
-				space_after = 0;
+						&b->space);
+				/** \todo handle errors */
 			}
+			space_after = b->space;
+
 			x += b->padding[RIGHT] + b->border[RIGHT].width +
 					b->margin[RIGHT];
 			continue;
@@ -2153,18 +2156,17 @@ bool layout_line(struct box *first, int *width, int *y,
 						b->width += SCROLLBAR_WIDTH;
 				} else {
 					font_func->font_width(&fstyle, b->text,
-						b->length, &b->width);
+							b->length, &b->width);
 				}
 			}
 
 			x += b->width;
-			if (b->space)
-				/** \todo optimize out */
+			if (b->space == UNKNOWN_WIDTH) {
 				font_func->font_width(&fstyle, " ", 1,
-						&space_after);
-			else
-				space_after = 0;
-
+						&b->space);
+				/** \todo handle errors */
+			}
+			space_after = b->space;
 			continue;
 		}
 
@@ -2285,16 +2287,17 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (b->object)
 				space_after = 0;
 			else if (b->text || b->type == BOX_INLINE_END) {
-				space_after = 0;
-				if (b->space) {
+				if (b->space == UNKNOWN_WIDTH) {
 					font_plot_style_from_css(b->style,
 							&fstyle);
-					/** \todo handle errors, optimize */
+					/** \todo handle errors */
 					font_func->font_width(&fstyle, " ", 1,
-							&space_after);
+							&b->space);
 				}
-			} else
+				space_after = b->space;
+			} else {
 				space_after = 0;
+			}
 			split_box = b;
 			move_y = true;
 			inline_count++;
@@ -2726,9 +2729,10 @@ struct box *layout_minmax_line(struct box *first,
 					&fixed, &frac);
 			if (0 < fixed)
 				max += fixed;
-			if (b->next && b->space) {
-				font_func->font_width(&fstyle, " ", 1, &width);
-				max += width;
+			if (b->next && b->space == UNKNOWN_WIDTH) {
+				font_func->font_width(&fstyle, " ", 1,
+						&b->space);
+				max += b->space;
 			}
 			continue;
 		}
@@ -2772,9 +2776,10 @@ struct box *layout_minmax_line(struct box *first,
 				}
 			}
 			max += b->width;
-			if (b->next && b->space) {
-				font_func->font_width(&fstyle, " ", 1, &width);
-				max += width;
+			if (b->next && b->space == UNKNOWN_WIDTH) {
+				font_func->font_width(&fstyle, " ", 1,
+						&b->space);
+				max += b->space;
 			}
 
 			/* min = widest word */

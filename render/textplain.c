@@ -612,7 +612,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 				next_offset = utf8_next(text, length, next_offset);
 
 				if (!text_redraw(text + offset, next_offset - offset,
-					line[lineno].start + offset, false,
+					line[lineno].start + offset, 0,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
 					clip, line_height, scale, false))

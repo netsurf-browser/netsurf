@@ -45,7 +45,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-
 /** ghost caret used to indicate the insertion point when dragging text
     into a textarea/input field */
 struct caret ghost_caret;
@@ -95,6 +94,8 @@ static bool word_right(const char *text, size_t len, size_t *poffset,
 		size_t *pchars);
 static bool ensure_caret_visible(struct browser_window *bw,
 		struct box *textarea);
+
+#define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
 
 /**
  * Remove the given text caret from the window by invalidating it
@@ -424,11 +425,11 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 			selection_clear(bw->sel, false);
 
 		if (end_box != text_box ||
-			char_offset < text_box->length + text_box->space) {
+			char_offset < text_box->length + SPACE_LEN(text_box)) {
 			/* there's something at the end of the line to delete */
-			textarea_cut(bw, text_box, char_offset,
-				end_box, end_box->length + end_box->space,
-				false);
+			textarea_cut(bw, text_box, char_offset, end_box,
+					end_box->length + SPACE_LEN(end_box),
+					false);
 			reflow = true;
 			break;
 		}
@@ -753,11 +754,11 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 	if (reflow)
 		textarea_reflow(bw, textarea, inline_container);
 
-	if (text_box->length + text_box->space <= char_offset) {
+	if (text_box->length + SPACE_LEN(text_box) <= char_offset) {
 		if (text_box->next && text_box->next->type == BOX_TEXT) {
 			/* the text box has been split when reflowing and
 			   the caret is in the second part */
-			char_offset -= (text_box->length + text_box->space);
+			char_offset -= (text_box->length + SPACE_LEN(text_box));
 			text_box = text_box->next;
 			assert(text_box);
 			assert(char_offset <= text_box->length);
@@ -771,7 +772,7 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 					(text_box->next &&
 					text_box->next->type == BOX_BR));
 
-			char_offset = text_box->length + text_box->space;
+			char_offset = text_box->length + SPACE_LEN(text_box);
 		}
 	}
 
@@ -1376,13 +1377,13 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 		char_offset = textarea->gadget->caret_box_offset;
 		text_box = textarea->gadget->caret_text_box;
 
-		while ((char_offset > text_box->length + text_box->space) &&
+		while ((char_offset > text_box->length + SPACE_LEN(text_box)) &&
 				(text_box->next) &&
 				(text_box->next->type == BOX_TEXT)) {
 			LOG(("Caret out of range: Was %d in boxlen %d "
 					"space %d", char_offset,
-					text_box->length, text_box->space));
-			char_offset -= text_box->length + text_box->space;
+					text_box->length, SPACE_LEN(text_box)));
+			char_offset -= text_box->length + SPACE_LEN(text_box);
 			text_box = text_box->next;
 		}
 
@@ -1716,15 +1717,15 @@ bool textbox_insert(struct browser_window *bw, struct box *text_box,
 	/* insert in text box */
 	text = talloc_realloc(current_content, text_box->text,
 			char,
-			text_box->length + text_box->space + utf8_len + 1);
+			text_box->length + SPACE_LEN(text_box) + utf8_len + 1);
 	if (!text) {
 		warn_user("NoMemory", 0);
 		return false;
 	}
 	text_box->text = text;
 
-	if (text_box->space &&
-			char_offset == text_box->length + text_box->space) {
+	if (text_box->space != 0 &&
+			char_offset == text_box->length + SPACE_LEN(text_box)) {
 		if (hide)
 			text_box->space = 0;
 		else {
@@ -1798,18 +1799,18 @@ bool textbox_delete(struct browser_window *bw, struct box *text_box,
 	}
 
 	/* delete from visible textbox */
-	if (next_offset <= text_box->length + text_box->space) {
+	if (next_offset <= text_box->length + SPACE_LEN(text_box)) {
 		/* handle removal of trailing space */
-		if (text_box->space && next_offset > text_box->length) {
+		if (text_box->space != 0 && next_offset > text_box->length) {
 			if (char_offset > 0) {
 				/* is the trailing character still a space? */
 				int tmp = utf8_prev(text_box->text, char_offset);
 				if (isspace(text_box->text[tmp]))
 					char_offset = tmp;
 				else
-					text_box->space = false;
+					text_box->space = 0;
 			} else {
-				text_box->space = false;
+				text_box->space = 0;
 			}
 
 			text_box->length = char_offset;
@@ -1846,7 +1847,7 @@ bool textbox_delete(struct browser_window *bw, struct box *text_box,
 bool delete_handler(struct browser_window *bw, struct box *b,
 		int offset, size_t length)
 {
-	size_t text_length = b->length + b->space;
+	size_t text_length = b->length + SPACE_LEN(b);
 
 	/* only remove if its not the first box */
 	if (offset <= 0 && length >= text_length && b->prev != NULL) {
@@ -2053,21 +2054,23 @@ bool textarea_cut(struct browser_window *bw,
 			/* append box text to clipboard and then delete it */
 			if (clipboard &&
 				!gui_add_to_clipboard(box->text + start_idx,
-					box->length - start_idx, box->space)) {
+					box->length - start_idx,
+					SPACE_LEN(box))) {
 				gui_commit_clipboard();
 				return false;
 			}
 
 			if (del) {
 				if (!delete_handler(bw, box, start_idx,
-						(box->length + box->space) -
+						(box->length + SPACE_LEN(box)) -
 						start_idx) && clipboard) {
 					gui_commit_clipboard();
 					return false;
 				}
 			} else {
 				textbox_delete(bw, box, start_idx,
-					(box->length + box->space) - start_idx);
+					(box->length + SPACE_LEN(box)) -
+					start_idx);
 			}
 		}
 

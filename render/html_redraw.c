@@ -820,7 +820,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
  * \param  utf8_text  pointer to UTF-8 text string
  * \param  utf8_len   length of string, in bytes
  * \param  offset     byte offset within textual representation
- * \param  space      indicates whether string is followed by a space
+ * \param  space      width of space that follows string (0 = no space)
  * \param  fstyle     text style to use
  * \param  x          x ordinate at which to plot text
  * \param  y          y ordinate at which to plot text
@@ -832,7 +832,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
  */
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
-		size_t offset, bool space, const plot_font_style_t *fstyle,
+		size_t offset, int space, const plot_font_style_t *fstyle,
 		int x, int y, const struct rect *clip, int height,
 		float scale, bool excluded)
 {
@@ -891,12 +891,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			/* is there a trailing space that should be highlighted
 			 * as well? */
 			if (end_idx > utf8_len) {
-				int spc_width;
-				/* \todo is there a more elegant/efficient
-				 * solution? */
-				if (nsfont.font_width(fstyle, " ", 1,
-						&spc_width))
-					endx += spc_width;
+					endx += space;
 			}
 
 			if (scale != 1.0) {

@@ -225,7 +225,7 @@ size_t html_selection_drag_end(struct hlcache_handle *h,
 		browser_mouse_state mouse, int x, int y, int dir);
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
-		size_t offset, bool space,
+		size_t offset, int space,
 		const plot_font_style_t *fstyle,
 		int x, int y,
 		const struct rect *clip,

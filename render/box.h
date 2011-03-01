@@ -101,6 +101,10 @@ struct object_params;
 struct object_param;
 
 
+#define UNKNOWN_WIDTH INT_MAX
+#define UNKNOWN_MAX_WIDTH INT_MAX
+
+
 /** Type of a struct box. */
 typedef enum {
 	BOX_BLOCK, BOX_INLINE_CONTAINER, BOX_INLINE,
@@ -187,8 +191,8 @@ struct box {
 	char *text;     /**< Text, or 0 if none. Unterminated. */
 	size_t length;  /**< Length of text. */
 
-	/** Text is followed by a space. */
-	unsigned int space : 1;
+	/** Width of space after current text (depends on font and size). */
+	int space;
 	/** This box is a continuation of the previous box (eg from line
 	 * breaking). */
 	unsigned int clone : 1;
@@ -293,8 +297,6 @@ extern const char *TARGET_TOP;
 extern const char *TARGET_BLANK;
 
 
-#define UNKNOWN_WIDTH INT_MAX
-#define UNKNOWN_MAX_WIDTH INT_MAX
 
 void *box_style_alloc(void *ptr, size_t len, void *pw);
 struct box * box_create(css_select_results *styles, css_computed_style *style,

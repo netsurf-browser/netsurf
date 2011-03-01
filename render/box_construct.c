@@ -718,7 +718,8 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 				assert((*inline_container)->last != 0);
 
-				(*inline_container)->last->space = 1;
+				(*inline_container)->last->space =
+						UNKNOWN_WIDTH;
 			}
 
 			free(text);
@@ -759,7 +760,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 
 		/* strip ending space char off */
 		if (box->length > 1 && box->text[box->length - 1] == ' ') {
-			box->space = 1;
+			box->space = UNKNOWN_WIDTH;
 			box->length--;
 		}
 
@@ -797,7 +798,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 			memmove(box->text, &box->text[1], box->length);
 
 			if (box->prev != NULL)
-				box->prev->space = 1;
+				box->prev->space = UNKNOWN_WIDTH;
 		}
 
 	} else {
