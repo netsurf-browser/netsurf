@@ -933,12 +933,9 @@ void browser_redraw( struct gui_window * gw )
 	short todo[4];
 	struct rect clip;
 
-	if( b->attached == false ) {
+	if( b->attached == false || b->bw->current_content == NULL ) {
 		return;
 	}
-
-	if( b->bw->current_content == NULL )
-		return;
 
 	browser_get_rect(gw, BR_CONTENT, &bwrect);
 
