@@ -122,6 +122,8 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 {
 	int retval = 0;
 	int i;
+	struct rect clip;
+
 	self->dtor = dtor;
 	self->resize= resize;
 	self->move = move;
@@ -167,7 +169,12 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	/* offscreen: FIRSTFB(self).mem = malloc( FIRSTFB(self).size ); */
 	FIRSTFB(self).mem = NULL;
 	update_visible_rect( self );
-	self->clip( self, 0, 0, FIRSTFB(self).w, FIRSTFB(self).h );
+
+	clip.x0 = 0;
+	clip.y0 = 0;
+	clip.x1 = FIRSTFB(self).w;
+	clip.y1 = FIRSTFB(self).h;
+	self->clip( self, &clip );
 	/* store system palette & setup the new (web) palette: */
 	i = 0;
 	if( app.nplanes <= 8 ){
@@ -601,7 +608,7 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 	unsigned int i=0;
 	short d[4];
 	if( vdi_sysinfo.maxpolycoords > 0 )
-		assert( n < vdi_sysinfo.maxpolycoords );
+		assert( (signed int)n < vdi_sysinfo.maxpolycoords );
 /*
 	Does this double check make sense? 
 	else 
@@ -1041,11 +1048,8 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 
 static int text(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle)
 {
-	self->font_plotter->text( self->font_plotter,
-		x,
-		y,
-		text, length,
-		fstyle
+	self->font_plotter->text( self->font_plotter, x, y,
+		text, length, fstyle
 	);
 	return ( 1 );
 }

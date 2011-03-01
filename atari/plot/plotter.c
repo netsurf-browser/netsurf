@@ -683,7 +683,7 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 }
 
 /* Shared (static in object oriented slang) plotter functions: */
-int plotter_get_clip( GEM_PLOTTER self, struct s_clipping * out )
+int plotter_get_clip( GEM_PLOTTER self, struct rect * out )
 {
 	out->x0 = self->clipping.x0;
 	out->y0 = self->clipping.y0;
@@ -692,12 +692,12 @@ int plotter_get_clip( GEM_PLOTTER self, struct s_clipping * out )
 	return( 1 );
 }
 
-int plotter_std_clip(GEM_PLOTTER self,int x0, int y0, int x1, int y1)
+int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip)
 {
-	self->clipping.x0 = x0;
-	self->clipping.y0 =	y0;
-	self->clipping.x1 = x1;
-	self->clipping.y1 = y1;
+	self->clipping.x0 = clip->x0;
+	self->clipping.y0 =	clip->y0;
+	self->clipping.x1 = clip->x1;
+	self->clipping.y1 = clip->y1;
 	return ( 1 );
 }
 
@@ -706,7 +706,7 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set)
 {
 	return;
 	if( set == true ) {
-		struct s_clipping * c = &self->clipping;
+		struct rect * c = &self->clipping;
 		short vdiflags[58];
 		short newclip[4];
 		vq_extnd( self->vdi_handle, 1, (short*)&vdiflags);

@@ -25,6 +25,7 @@
 #include <string.h>
 #include <windom.h>
 
+#include "desktop/plotters.h"
 #include "desktop/plot_style.h"
 #include "image/bitmap.h"
 #include "atari/bitmap.h"
@@ -103,12 +104,7 @@ struct s_font_plotter
 };
 
 
-struct s_clipping {
-	short x0;
-	short y0;
-	short x1;
-	short y1;
-};
+struct rect;
 
 struct s_vdi_sysinfo {
 	short vdi_handle;			/* vdi handle 					*/
@@ -162,7 +158,7 @@ typedef	int (*_pmf_update_screen_region)( GEM_PLOTTER self, GRECT region );
 typedef	int (*_pmf_update_screen)(GEM_PLOTTER self);
 typedef	int (*_pmf_put_pixel)(GEM_PLOTTER self, int x, int y, int color );
 typedef	int (*_pmf_copy_rect)(GEM_PLOTTER self, GRECT src, GRECT dst );
-typedef	int (*_pmf_clip)(GEM_PLOTTER self, int x0, int y0, int x1, int y1);
+typedef	int (*_pmf_clip)(GEM_PLOTTER self, const struct rect * clip );
 typedef	int (*_pmf_arc)(GEM_PLOTTER self, int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle);
 typedef	int (*_pmf_disc)(GEM_PLOTTER self, int x, int y, int radius, const plot_style_t * pstyle);
 typedef	int (*_pmf_line)(GEM_PLOTTER self, int x0, int y0, int x1,	int y1, const plot_style_t * pstyle);
@@ -185,7 +181,7 @@ struct s_gem_plotter
 	struct s_vdi_sysinfo * scr;
 	void * priv_data;
 	int bpp_virt;     	/* bit depth of framebuffer */
-	struct s_clipping clipping;
+	struct rect clipping;
 	struct s_frame_buf fbuf[MAX_FRAMEBUFS];
 	int cfbi; 			/* current framebuffer index */
 
@@ -296,8 +292,8 @@ void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
 short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
 
 /* shared / static methods ... */
-int plotter_get_clip( GEM_PLOTTER self, struct s_clipping * out );
-int plotter_std_clip(GEM_PLOTTER self,int x0, int y0, int x1, int y1);
+int plotter_get_clip( GEM_PLOTTER self, struct rect * out );
+int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
 void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 
 #define PLOTTER_IS_LOCKED(plotter) ( plotter->private_flags & PLOTTER_FLAG_LOCKED )
