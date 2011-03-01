@@ -4603,14 +4603,8 @@ void layout_calculate_descendant_bboxes(struct box *box)
 {
 	struct box *child;
 
-	if ((box->width == UNKNOWN_WIDTH) || (box->height == AUTO) /*||
-			box->width < 0 || box->height < 0*/) {
-		LOG(("%p has bad width or height", box));
-		/*while (box->parent)
-			box = box->parent;
-		box_dump(box, 0);*/
-		assert(0);
-	}
+	assert((box->width != UNKNOWN_WIDTH) && (box->height != AUTO));
+	/* assert((box->width >= 0) && (box->height >= 0)); */
 
 	/* Initialise box's descendant box to border edge box */
 	layout_get_box_bbox(box, &box->descendant_x0, &box->descendant_y0,
