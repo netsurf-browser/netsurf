@@ -161,7 +161,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 
 	if ( repeat_x || repeat_y ) {	
 		plotter_get_clip( plotter, &clip );
-		if( repeat_x && width == 1 && repeat_y && height == 1 ){
+		if( repeat_x && width == 1 && repeat_y && height == 1 ){			
 			width = MAX( width, clip.x1 - x );
 			height = MAX( height,  clip.y1 - y );
 		}
@@ -181,8 +181,10 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	}
 
 	/* out of memory? */
-	if( bm == NULL )
+	if( bm == NULL ) {
+		printf("plot: out of memory!");
 		return( true );
+	}
 
 	if (!(repeat_x || repeat_y)) {
 		plotter->bitmap( plotter, bm, x, y, bg, flags );
@@ -190,6 +192,11 @@ static bool plot_bitmap(int x, int y, int width, int height,
 		int xf,yf;
 		int xoff = x;
 		int yoff = y;
+		
+		if (yoff > clip.y0 )
+			yoff = (clip.y0 - height) + ((yoff - clip.y0) % height);
+		if (xoff > clip.x0 )
+			xoff = (clip.x0 - width) + ((xoff - clip.x0) % width);
 		/* for now, repeating just works in the rigth / down direction */
 		/*
 		if( repeat_x == true )
@@ -197,7 +204,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 		if(repeat_y == true )
 			yoff = clip.y0;
 		*/
-		
+
 		for( xf = xoff; xf < clip.x1; xf += width ) {
 			for( yf = yoff; yf < clip.y1; yf += height ) {
 				plotter->bitmap( plotter, bm, xf, yf, bg, flags );
