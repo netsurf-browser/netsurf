@@ -130,11 +130,13 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 	if((option_kiosk_mode == false) && (trap == FALSE) &&
 		(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 	{
-		if(ami_gadget_hit(gwin->objects[GID_BACK],
+		if(browser_window_back_available(gwin->bw) &&
+				ami_gadget_hit(gwin->objects[GID_BACK],
 				gwin->win->MouseX, gwin->win->MouseY))
 			trap = TRUE;
 
-		if(ami_gadget_hit(gwin->objects[GID_FORWARD],
+		if(browser_window_forward_available(gwin->bw) &&
+				ami_gadget_hit(gwin->objects[GID_FORWARD],
 				gwin->win->MouseX, gwin->win->MouseY))
 			trap = TRUE;
 	}
@@ -169,7 +171,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						TAG_DONE);
 
 	if(gwin->bw && gwin->bw->history &&
-		browser_window_back_available(gwin->bw) &&
 		ami_gadget_hit(gwin->objects[GID_BACK],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
@@ -193,7 +194,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		menuhascontent = true;
 	}
 	else if(gwin->bw && gwin->bw->history &&
-		browser_window_forward_available(gwin->bw) &&
 		ami_gadget_hit(gwin->objects[GID_FORWARD],
 			gwin->win->MouseX, gwin->win->MouseY))
 	{
