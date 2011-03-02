@@ -85,7 +85,7 @@ void *box_style_alloc(void *ptr, size_t len, void *pw)
 static int
 free_box_style(struct box *b)
 {
-	if (b->style_owned && b->style != NULL) {
+	if ((b->flags & STYLE_OWNED) && b->style != NULL) {
 		css_computed_style_destroy(b->style);
 		b->style = NULL;
 	}
@@ -132,9 +132,9 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	
 	box->type = BOX_INLINE;
 	box->flags = 0;
+	box->flags = style_owned ? box->flags | STYLE_OWNED : box->flags;
 	box->styles = styles;
 	box->style = style;
-	box->style_owned = style_owned;
 	box->x = box->y = 0;
 	box->width = UNKNOWN_WIDTH;
 	box->height = 0;

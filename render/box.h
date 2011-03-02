@@ -118,7 +118,8 @@ typedef enum {
 
 /** Type of a struct box. */
 typedef enum {
-	NEW_LINE = 1 << 0	/* first inline on a new line */
+	NEW_LINE    = 1 << 0,	/* first inline on a new line */
+	STYLE_OWNED = 1 << 1	/* style is owned by this box */
 } box_flags;
 
 /* Sides of a box */
@@ -149,8 +150,6 @@ struct box {
 	 *  a box's 'styles' select results, except for implied boxes, where it
 	 *  is a pointer to an owned computed style. */
 	css_computed_style *style;
-	/** Whether the style is owned by this box. */
-	bool style_owned;
 
 	/** Coordinate of left padding edge relative to parent box, or relative
 	 * to ancestor that contains this box in float_children for FLOAT_. */
