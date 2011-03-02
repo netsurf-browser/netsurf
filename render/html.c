@@ -1540,7 +1540,7 @@ void html_object_done(struct box *box, hlcache_handle *object,
 		b->max_width = UNKNOWN_MAX_WIDTH;
 
 	/* delete any clones of this box */
-	while (box->next && box->next->clone) {
+	while (box->next && (box->next->flags & CLONE)) {
 		/* box_free_box(box->next); */
 		box->next = box->next->next;
 	}

@@ -1932,7 +1932,7 @@ static bool layout_text_box_split(struct content *content,
 	c2 = talloc_memdup(content, split_box, sizeof *c2);
 	if (!c2)
 		return false;
-	c2->clone = 1;
+	c2->flags |= CLONE;
 
 	/* Set remaining text in c2 */
 	if (split_box->parent->parent->gadget != NULL) {

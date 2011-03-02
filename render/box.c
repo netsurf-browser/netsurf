@@ -149,7 +149,6 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->text = NULL;
 	box->length = 0;
 	box->space = 0;
-	box->clone = 0;
 	box->href = href;
 	box->target = target;
 	box->title = title;
@@ -281,7 +280,7 @@ void box_free(struct box *box)
 
 void box_free_box(struct box *box)
 {
-	if (!box->clone) {
+	if (!(box->flags & CLONE)) {
 		if (box->gadget)
 			form_free_control(box->gadget);
 		if (box->scroll_x != NULL)

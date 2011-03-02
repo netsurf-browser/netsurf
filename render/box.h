@@ -121,7 +121,8 @@ typedef enum {
 	NEW_LINE    = 1 << 0,	/* first inline on a new line */
 	STYLE_OWNED = 1 << 1,	/* style is owned by this box */
 	PRINTED     = 1 << 2,	/* box has already been printed */
-	PRE_STRIP   = 1 << 3	/* PRE tag needing leading newline stripped */
+	PRE_STRIP   = 1 << 3,	/* PRE tag needing leading newline stripped */
+	CLONE       = 1 << 4	/* continuation of previous box from wrapping */
 } box_flags;
 
 /* Sides of a box */
@@ -203,9 +204,6 @@ struct box {
 
 	/** Width of space after current text (depends on font and size). */
 	int space;
-	/** This box is a continuation of the previous box (eg from line
-	 * breaking). */
-	unsigned int clone : 1;
 
 	char *href;   /**< Link, or 0. */
 	const char *target;  /**< Link target, or 0. */

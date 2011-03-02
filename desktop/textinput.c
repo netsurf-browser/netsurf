@@ -2001,7 +2001,7 @@ struct box *textarea_insert_break(struct browser_window *bw,
 	box_insert_sibling(text_box, new_br);
 
 	memcpy(new_text, text_box, sizeof (struct box));
-	new_text->clone = 1;
+	new_text->flags |= CLONE;
 	new_text->text = text;
 	memcpy(new_text->text, text_box->text + char_offset,
 			text_box->length - char_offset);
