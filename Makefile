@@ -590,8 +590,9 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/icons $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/quirks.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
@@ -611,6 +612,7 @@ install-gtk: nsgtk
 	@# Install glade templates
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
+	gzip -9v < gtk/res/hotlist.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)hotlist.glade
 	gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
 	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
 	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
