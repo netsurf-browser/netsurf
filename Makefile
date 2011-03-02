@@ -610,6 +610,7 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/it $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/nl $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install glade templates
+	gzip -9v < gtk/res/cookies.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)cookies.glade
 	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
 	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
 	gzip -9v < gtk/res/hotlist.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)hotlist.glade
