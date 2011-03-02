@@ -116,7 +116,7 @@ typedef enum {
 } box_type;
 
 
-/** Type of a struct box. */
+/** Flags for a struct box. */
 typedef enum {
 	NEW_LINE    = 1 << 0,	/* first inline on a new line */
 	STYLE_OWNED = 1 << 1,	/* style is owned by this box */
