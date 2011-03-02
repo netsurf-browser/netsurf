@@ -132,7 +132,7 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	
 	box->type = BOX_INLINE;
 	box->flags = 0;
-	box->flags = style_owned ? box->flags | STYLE_OWNED : box->flags;
+	box->flags = style_owned ? (box->flags | STYLE_OWNED) : box->flags;
 	box->styles = styles;
 	box->style = style;
 	box->x = box->y = 0;
@@ -150,7 +150,6 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->length = 0;
 	box->space = 0;
 	box->clone = 0;
-	box->strip_leading_newline = 0;
 	box->href = href;
 	box->target = target;
 	box->title = title;

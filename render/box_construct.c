@@ -302,10 +302,10 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	gui_multitask();
 
 	/* In case the parent is a pre block, we clear the
-	 * strip_leading_newline flag since it is not used if we
+	 * PRE_STRIP flag since it is not used if we
 	 * follow the pre with a tag
 	 */
-	parent->strip_leading_newline = 0;
+	parent->flags &= ~PRE_STRIP;
 
 	styles = box_get_style(content, parent_style, n);
 	if (!styles)
@@ -824,7 +824,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 		current = text;
 
 		/* swallow a single leading new line */
-		if (parent->strip_leading_newline) {
+		if (parent->flags & PRE_STRIP) {
 			switch (*current) {
 			case '\n':
 				current++; break;
@@ -833,7 +833,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
 				if (*current == '\n') current++;
 				break;
 			}
-			parent->strip_leading_newline = 0;
+			parent->flags &= ~PRE_STRIP;
 		}
 
 		do {
@@ -1079,7 +1079,7 @@ bool box_br(BOX_SPECIAL_PARAMS)
 
 bool box_pre(BOX_SPECIAL_PARAMS)
 {
-	box->strip_leading_newline = 1;
+	box->flags |= PRE_STRIP;
 	return true;
 }
 
