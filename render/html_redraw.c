@@ -267,7 +267,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	struct box *bg_box = NULL;
 	bool has_x_scroll, has_y_scroll;
 
-	if (html_redraw_printing && box->printed)
+	if (html_redraw_printing && (box->flags & PRINTED))
 		return true;
 
 	/* avoid trivial FP maths */
@@ -377,7 +377,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 				return true;
 			}
 		}
-		else box->printed = true;/*it won't be printed anymore*/
+		else box->flags |= PRINTED; /*it won't be printed anymore*/
 	}
 
 	/* if visibility is hidden render children only */

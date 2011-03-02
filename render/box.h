@@ -119,7 +119,8 @@ typedef enum {
 /** Type of a struct box. */
 typedef enum {
 	NEW_LINE    = 1 << 0,	/* first inline on a new line */
-	STYLE_OWNED = 1 << 1	/* style is owned by this box */
+	STYLE_OWNED = 1 << 1,	/* style is owned by this box */
+	PRINTED     = 1 << 2	/* box has already been printed */
 } box_flags;
 
 /* Sides of a box */
@@ -216,8 +217,6 @@ struct box {
 	unsigned int columns;  /**< Number of columns for TABLE / TABLE_CELL. */
 	unsigned int rows;     /**< Number of rows for TABLE only. */
 	unsigned int start_column;  /**< Start column for TABLE_CELL only. */
-
-	bool printed; /** Whether this box has already been printed*/
 
 	struct box *next;      /**< Next sibling box, or 0. */
 	struct box *prev;      /**< Previous sibling box, or 0. */

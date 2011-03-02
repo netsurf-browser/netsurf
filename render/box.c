@@ -157,7 +157,6 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->columns = 1;
 	box->rows = 1;
 	box->start_column = 0;
-	box->printed = false;
 	box->next = NULL;
 	box->prev = NULL;
 	box->children = NULL;
