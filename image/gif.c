@@ -293,24 +293,26 @@ void nsgif_animate(void *p)
 		/* previous frame needed clearing: expand the redraw area to
 		 * cover it */
 		if (data.redraw.full_redraw) {
-			if (data.redraw.x > gif->frames[f - 1].redraw_x) {
+			if (data.redraw.x >
+					(int)(gif->frames[f - 1].redraw_x)) {
 				data.redraw.width += data.redraw.x -
 						gif->frames[f - 1].redraw_x;
 				data.redraw.x = gif->frames[f - 1].redraw_x;
 			}
-			if (data.redraw.y > gif->frames[f - 1].redraw_y) {
+			if (data.redraw.y >
+					(int)(gif->frames[f - 1].redraw_y)) {
 				data.redraw.height += (data.redraw.y -
 						gif->frames[f - 1].redraw_y);
 				data.redraw.y = gif->frames[f - 1].redraw_y;
 			}
-			if ((gif->frames[f - 1].redraw_x +
+			if ((int)(gif->frames[f - 1].redraw_x +
 					gif->frames[f - 1].redraw_width) >
 					(data.redraw.x + data.redraw.width))
 				data.redraw.width =
 						gif->frames[f - 1].redraw_x -
 						data.redraw.x +
 						gif->frames[f - 1].redraw_width;
-			if ((gif->frames[f - 1].redraw_y +
+			if ((int)(gif->frames[f - 1].redraw_y +
 					gif->frames[f - 1].redraw_height) >
 					(data.redraw.y + data.redraw.height))
 				data.redraw.height =
@@ -322,8 +324,8 @@ void nsgif_animate(void *p)
 	} else {
 		/* do advanced check */
 		if ((data.redraw.x == 0) && (data.redraw.y == 0) &&
-				(data.redraw.width == gif->width) &&
-				(data.redraw.height == gif->height)) {
+				(data.redraw.width == (int)(gif->width)) &&
+				(data.redraw.height == (int)(gif->height))) {
 			data.redraw.full_redraw = !gif->frames[f].opaque;
 		} else {
 			data.redraw.full_redraw = true;
