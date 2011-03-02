@@ -72,16 +72,16 @@ union content_msg_data {
 	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
 	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
 	struct {
-		float x, y, width, height;
+		int x, y, width, height;
 		/** Redraw the area fully. If false, object must be set,
 		 * and only the object will be redrawn. */
 		bool full_redraw;
 		/** Object to redraw if full_redraw is false. */
 		struct content *object;
 		/** Coordinates to plot object at. */
-		float object_x, object_y;
+		int object_x, object_y;
 		/** Dimensions to plot object with. */
-		float object_width, object_height;
+		int object_width, object_height;
 	} redraw;
 	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
 	/** Low-level cache handle, for CONTENT_MSG_DOWNLOAD */
