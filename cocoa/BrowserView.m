@@ -285,7 +285,10 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 {
 	for (NSUInteger i = 0, length = [string length]; i < length; i++) {
 		unichar ch = [string characterAtIndex: i];
-		browser_window_key_press( browser, ch );
+		if (!browser_window_key_press( browser, ch )) {
+			if (ch == ' ') [self scrollPageDown: self];
+			break;
+		}
 	}
 }
 
@@ -315,7 +318,9 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 - (void) deleteBackward: (id)sender;
 {
-	browser_window_key_press( browser, KEY_DELETE_LEFT );
+	if (!browser_window_key_press( browser, KEY_DELETE_LEFT )) {
+		[NSApp sendAction: @selector( goBack: ) to: nil from: self];
+	}
 }
 
 - (void) deleteForward: (id)sender;
