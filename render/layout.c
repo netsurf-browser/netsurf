@@ -2560,7 +2560,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	}
 
 	for (d = first; d != b; d = d->next) {
-		d->inline_new_line = false;
+		d->flags &= ~NEW_LINE;
 
 		if (d->type == BOX_INLINE_BLOCK &&
 				(css_computed_position(d->style) ==
@@ -2601,7 +2601,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		}
 	}
 
-	first->inline_new_line = true;
+	first->flags |= NEW_LINE;
 
 	assert(b != first || (move_y && 0 < used_height && (left || right)));
 

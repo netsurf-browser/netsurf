@@ -528,7 +528,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 				ib_b_right = ib->border[RIGHT].width * scale;
 			}
 
-			if (ib->inline_new_line && ib != box) {
+			if ((ib->flags & NEW_LINE) && ib != box) {
 				/* inline element has wrapped, plot background
 				 * and borders */
 				if (!html_redraw_inline_background(

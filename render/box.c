@@ -131,6 +131,7 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 		talloc_set_destructor(box, free_box_style);
 	
 	box->type = BOX_INLINE;
+	box->flags = 0;
 	box->styles = styles;
 	box->style = style;
 	box->style_owned = style_owned;
@@ -156,7 +157,6 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->columns = 1;
 	box->rows = 1;
 	box->start_column = 0;
-	box->inline_new_line = false;
 	box->printed = false;
 	box->next = NULL;
 	box->prev = NULL;

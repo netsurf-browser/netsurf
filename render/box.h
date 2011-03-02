@@ -115,6 +115,12 @@ typedef enum {
 	BOX_INLINE_END, BOX_NONE
 } box_type;
 
+
+/** Type of a struct box. */
+typedef enum {
+	NEW_LINE = 1 << 0	/* first inline on a new line */
+} box_flags;
+
 /* Sides of a box */
 enum box_side { TOP, RIGHT, BOTTOM, LEFT };
 
@@ -131,6 +137,9 @@ struct box_border {
 struct box {
 	/** Type of box. */
 	box_type type;
+
+	/** Box flags */
+	box_flags flags;
 
 	/** Computed styles for elements and their pseudo elements.  NULL on
 	 *  non-element boxes. */
@@ -219,7 +228,6 @@ struct box {
 	/** INLINE_END box corresponding to this INLINE box, or INLINE box
 	 * corresponding to this INLINE_END box. */
 	struct box *inline_end;
-	bool inline_new_line;
 
 	/** First float child box, or 0. Float boxes are in the tree twice, in
 	 * this list for the block box which defines the area for floats, and
