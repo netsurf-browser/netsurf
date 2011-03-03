@@ -38,6 +38,10 @@
 
   OpenSSL, LibXML2, LibPNG, curl, iconv and zlib are provided by Mac OS X.
 
+  The curl library provided by Mac OS X 10.6 causes a crash while fetching
+  https resources, so you should install version 7.21.4 (or newer) of libcurl
+  if you are running on 10.6.
+
   LibJPEG and LibMNG can be installed from source or using one of the mentioned
   package managers. 
 
