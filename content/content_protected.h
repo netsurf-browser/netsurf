@@ -219,7 +219,6 @@ content_type content__get_type(struct content *c);
 const char *content__get_mime_type(struct content *c);
 const char *content__get_url(struct content *c);
 const char *content__get_title(struct content *c);
-content_status content__get_status(struct content *c);
 const char *content__get_status_message(struct content *c);
 int content__get_width(struct content *c);
 int content__get_height(struct content *c);
