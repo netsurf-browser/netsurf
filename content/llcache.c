@@ -84,6 +84,8 @@ typedef struct {
 	uint32_t redirect_count;	/**< Count of redirects followed */
 
 	bool tried_with_auth;		/**< Whether we've tried with auth */
+
+	bool outstanding_query;		/**< Waiting for a query response */
 } llcache_fetch_ctx;
 
 typedef enum {
@@ -1634,7 +1636,8 @@ nserror llcache_clean(void)
 
 		/* The candidate count of uncacheable objects is always 0 */
 		if (object->users == NULL && object->candidate_count == 0 &&
-				object->fetch.fetch == NULL) {
+				object->fetch.fetch == NULL &&
+				object->fetch.outstanding_query == false) {
 #ifdef LLCACHE_TRACE
 			LOG(("Found victim %p", object));
 #endif
@@ -1652,7 +1655,8 @@ nserror llcache_clean(void)
 
 		if (object->users == NULL && object->candidate_count == 0 &&
 				llcache_object_is_fresh(object) == false &&
-				object->fetch.fetch == NULL) {
+				object->fetch.fetch == NULL &&
+				object->fetch.outstanding_query == false) {
 #ifdef LLCACHE_TRACE
 			LOG(("Found victim %p", object));
 #endif
@@ -1673,7 +1677,9 @@ nserror llcache_clean(void)
 
 			if (object->users == NULL && 
 					object->candidate_count == 0 &&
-					object->fetch.fetch == NULL) {
+					object->fetch.fetch == NULL &&
+					object->fetch.outstanding_query == 
+							false) {
 #ifdef LLCACHE_TRACE
 				LOG(("Found victim %p", object));
 #endif
@@ -1746,6 +1752,8 @@ nserror llcache_query_handle_response(bool proceed, void *cbpw)
 {
 	llcache_event event;
 	llcache_object *object = cbpw;
+
+	object->fetch.outstanding_query = false;
 
 	/* Refetch, using existing fetch parameters, if client allows us to */
 	if (proceed)
@@ -2451,6 +2459,8 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 			query.url = object->url;
 			query.data.auth.realm = realm;
 
+			object->fetch.outstanding_query = true;
+
 			error = query_cb(&query, query_cb_pw, 
 					llcache_query_handle_response, object);
 		} else {
@@ -2503,6 +2513,8 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 		query.url = object->url;
 		query.data.ssl.certs = certs;
 		query.data.ssl.num = num;
+
+		object->fetch.outstanding_query = true;
 
 		error = query_cb(&query, query_cb_pw,
 				llcache_query_handle_response, object);
