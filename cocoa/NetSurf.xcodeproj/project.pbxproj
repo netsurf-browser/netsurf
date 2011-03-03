@@ -15,12 +15,12 @@
 		260F1F6812D620E800D9B07F /* dirlist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dirlist.h; sourceTree = "<group>"; };
 		260F1F6912D620E800D9B07F /* fetch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fetch.c; sourceTree = "<group>"; };
 		260F1F6A12D620E800D9B07F /* fetch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fetch.h; sourceTree = "<group>"; };
-		260F1F6C12D620E800D9B07F /* fetch_curl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fetch_curl.c; sourceTree = "<group>"; };
-		260F1F6D12D620E800D9B07F /* fetch_curl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fetch_curl.h; sourceTree = "<group>"; };
-		260F1F6E12D620E800D9B07F /* fetch_data.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fetch_data.c; sourceTree = "<group>"; };
-		260F1F6F12D620E800D9B07F /* fetch_data.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fetch_data.h; sourceTree = "<group>"; };
-		260F1F7012D620E800D9B07F /* fetch_file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fetch_file.c; sourceTree = "<group>"; };
-		260F1F7112D620E800D9B07F /* fetch_file.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fetch_file.h; sourceTree = "<group>"; };
+		260F1F6C12D620E800D9B07F /* curl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = curl.c; sourceTree = "<group>"; };
+		260F1F6D12D620E800D9B07F /* curl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = curl.h; sourceTree = "<group>"; };
+		260F1F6E12D620E800D9B07F /* data.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = data.c; sourceTree = "<group>"; };
+		260F1F6F12D620E800D9B07F /* data.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data.h; sourceTree = "<group>"; };
+		260F1F7012D620E800D9B07F /* file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = file.c; sourceTree = "<group>"; };
+		260F1F7112D620E800D9B07F /* file.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file.h; sourceTree = "<group>"; };
 		260F1F7212D620E800D9B07F /* hlcache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hlcache.c; sourceTree = "<group>"; };
 		260F1F7312D620E800D9B07F /* hlcache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hlcache.h; sourceTree = "<group>"; };
 		260F1F7412D620E800D9B07F /* llcache.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = llcache.c; sourceTree = "<group>"; };
@@ -128,8 +128,8 @@
 		260F1FE812D620E800D9B07F /* errors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = errors.h; sourceTree = "<group>"; };
 		260F1FE912D620E800D9B07F /* filename.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = filename.c; sourceTree = "<group>"; };
 		260F1FEA12D620E800D9B07F /* filename.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filename.h; sourceTree = "<group>"; };
-		260F1FEB12D620E800D9B07F /* findresource.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = findresource.c; sourceTree = "<group>"; };
-		260F1FEC12D620E800D9B07F /* findresource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = findresource.h; sourceTree = "<group>"; };
+		260F1FEB12D620E800D9B07F /* resource.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = resource.c; sourceTree = "<group>"; };
+		260F1FEC12D620E800D9B07F /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resource.h; sourceTree = "<group>"; };
 		260F1FED12D620E800D9B07F /* hashtable.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hashtable.c; sourceTree = "<group>"; };
 		260F1FEE12D620E800D9B07F /* hashtable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hashtable.h; sourceTree = "<group>"; };
 		260F1FEF12D620E800D9B07F /* http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = http.c; sourceTree = "<group>"; };
@@ -310,6 +310,10 @@
 		26CDD00212E70F56004FC66B /* BrowserWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserWindowController.m; sourceTree = "<group>"; };
 		26CDD0F412E726E0004FC66B /* BrowserViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BrowserViewController.h; sourceTree = "<group>"; };
 		26CDD0F512E726E0004FC66B /* BrowserViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BrowserViewController.m; sourceTree = "<group>"; };
+		26E7A22B131FEBA8005B5B6A /* about.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = about.c; sourceTree = "<group>"; };
+		26E7A22C131FEBA8005B5B6A /* about.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = about.h; sourceTree = "<group>"; };
+		26E7A22D131FEBA8005B5B6A /* resource.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = resource.c; sourceTree = "<group>"; };
+		26E7A22E131FEBA8005B5B6A /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resource.h; sourceTree = "<group>"; };
 		26EC3B6812ED62C0000A960C /* URLFieldCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = URLFieldCell.h; sourceTree = "<group>"; };
 		26EC3B6912ED62C0000A960C /* URLFieldCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = URLFieldCell.m; sourceTree = "<group>"; };
 		26EC3C4212ED8202000A960C /* HistoryView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HistoryView.h; sourceTree = "<group>"; };
@@ -353,12 +357,16 @@
 		260F1F6B12D620E800D9B07F /* fetchers */ = {
 			isa = PBXGroup;
 			children = (
-				260F1F6C12D620E800D9B07F /* fetch_curl.c */,
-				260F1F6D12D620E800D9B07F /* fetch_curl.h */,
-				260F1F6E12D620E800D9B07F /* fetch_data.c */,
-				260F1F6F12D620E800D9B07F /* fetch_data.h */,
-				260F1F7012D620E800D9B07F /* fetch_file.c */,
-				260F1F7112D620E800D9B07F /* fetch_file.h */,
+				26E7A22B131FEBA8005B5B6A /* about.c */,
+				26E7A22C131FEBA8005B5B6A /* about.h */,
+				26E7A22D131FEBA8005B5B6A /* resource.c */,
+				26E7A22E131FEBA8005B5B6A /* resource.h */,
+				260F1F6C12D620E800D9B07F /* curl.c */,
+				260F1F6D12D620E800D9B07F /* curl.h */,
+				260F1F6E12D620E800D9B07F /* data.c */,
+				260F1F6F12D620E800D9B07F /* data.h */,
+				260F1F7012D620E800D9B07F /* file.c */,
+				260F1F7112D620E800D9B07F /* file.h */,
 			);
 			path = fetchers;
 			sourceTree = "<group>";
@@ -481,20 +489,12 @@
 				260F1FDC12D620E800D9B07F /* parser_binding.h */,
 				260F1FDD12D620E800D9B07F /* table.c */,
 				260F1FDE12D620E800D9B07F /* table.h */,
-				260F1FDF12D620E800D9B07F /* test */,
 				260F1FE012D620E800D9B07F /* textplain.c */,
 				260F1FE112D620E800D9B07F /* textplain.h */,
 			);
 			name = render;
 			path = ../render;
 			sourceTree = SOURCE_ROOT;
-		};
-		260F1FDF12D620E800D9B07F /* test */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = test;
-			sourceTree = "<group>";
 		};
 		260F1FE212D620E800D9B07F /* utils */ = {
 			isa = PBXGroup;
@@ -507,8 +507,8 @@
 				260F1FE812D620E800D9B07F /* errors.h */,
 				260F1FE912D620E800D9B07F /* filename.c */,
 				260F1FEA12D620E800D9B07F /* filename.h */,
-				260F1FEB12D620E800D9B07F /* findresource.c */,
-				260F1FEC12D620E800D9B07F /* findresource.h */,
+				260F1FEB12D620E800D9B07F /* resource.c */,
+				260F1FEC12D620E800D9B07F /* resource.h */,
 				260F1FED12D620E800D9B07F /* hashtable.c */,
 				260F1FEE12D620E800D9B07F /* hashtable.h */,
 				260F1FEF12D620E800D9B07F /* http.c */,
