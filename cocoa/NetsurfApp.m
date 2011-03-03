@@ -175,6 +175,8 @@ int main( int argc, char **argv )
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
 	
+	option_ca_bundle = strdup( [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String] );
+
 	netsurf_init(&argc, &argv, options, messages);
 	
     [cocoa_prepare_app() run];
