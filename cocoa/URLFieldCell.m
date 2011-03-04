@@ -18,6 +18,7 @@
 
 #import "cocoa/URLFieldCell.h"
 
+#import "content/urldb.h"
 
 @interface URLFieldCell ()
 
@@ -73,11 +74,57 @@
 				delegate: anObject event: theEvent];
 }
 
+- (void) startDragURLAt: (NSPoint) point inView: (NSView *) view;
+{
+	NSString *url = [self stringValue];
+	NSString *title = url;
+
+	const struct url_data *data = urldb_get_url_data( [url UTF8String] );
+	if (data && data->title) title = [NSString stringWithUTF8String: data->title];
+
+	NSPasteboard *pb = [NSPasteboard pasteboardWithName: NSDragPboard];
+	[pb declareTypes: [NSArray arrayWithObjects: NSStringPboardType, NSURLPboardType, 
+					   @"public.url", @"public.url-name", nil] owner: nil];
+	[pb setString: url forType: NSStringPboardType];
+	[pb setString: url forType: @"public.url"];
+	[pb setString: title forType: @"public.url-name"];
+	[[NSURL URLWithString: url] writeToPasteboard: pb];
+	
+	NSRect urlBounds = NSZeroRect;
+	urlBounds.size = [title sizeWithAttributes: nil];
+	urlBounds.size.width += urlBounds.size.height + 2;
+	
+	NSImage *image = [[NSImage alloc] initWithSize: urlBounds.size];
+	
+	[image lockFocus];
+	[favicon drawInRect: NSMakeRect( urlBounds.origin.x, urlBounds.origin.y, urlBounds.size.height, urlBounds.size.height )
+			   fromRect: NSZeroRect operation: NSCompositeCopy fraction: 1.0];
+	urlBounds.origin.x += urlBounds.size.height + 2;
+	[title drawInRect: urlBounds withAttributes: nil];
+	[image unlockFocus];
+	
+	point.x -= urlBounds.size.height / 2;
+	point.y += urlBounds.size.height / 2;
+	
+	[view dragImage: image at: point offset: NSZeroSize event: [NSApp currentEvent] 
+		 pasteboard: pb source: self slideBack: YES];
+	
+	[image release];
+}
+
+- (NSDragOperation)draggingSourceOperationMaskForLocal:(BOOL)isLocal
+{
+	return NSDragOperationCopy | NSDragOperationGeneric;
+}
+
 - (BOOL) trackMouse: (NSEvent *)theEvent inRect: (NSRect)cellFrame ofView: (NSView *)controlView untilMouseUp: (BOOL)flag;
 {
 	const NSPoint point = [controlView convertPoint: [theEvent locationInWindow] fromView: nil];
 	const NSRect buttonRect = [self buttonFrame: cellFrame];
-	if (NSPointInRect( point, buttonRect )) {
+	if (NSPointInRect( point, [self iconFrame: cellFrame] )) {
+		[self startDragURLAt: point inView: controlView];
+		return NO;
+	} else  if (NSPointInRect( point, buttonRect )) {
 		return [[self refreshCell] trackMouse: theEvent inRect: buttonRect 
 									   ofView: controlView untilMouseUp: flag];
 	} else {
