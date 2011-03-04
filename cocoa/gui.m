@@ -129,12 +129,6 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	[(BrowserViewController *)g setTitle: [NSString stringWithUTF8String: title]];
 }
 
-void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	const NSRect rect = cocoa_rect( x0, y0, x1, y1 );
-	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
-}
-
 void gui_window_redraw_window(struct gui_window *g)
 {
 	[[(BrowserViewController *)g browserView] setNeedsDisplay: YES];
