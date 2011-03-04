@@ -612,7 +612,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 {
     NSPasteboard *pb = [sender draggingPasteboard];
 
-    NSString *type = [pb availableTypeFromArray:[NSArray arrayWithObjects: NSURLPboardType, @"public.url", nil]];
+    NSString *type = [pb availableTypeFromArray:[NSArray arrayWithObjects: @"public.url", NSURLPboardType,  nil]];
 
 	NSString *url = nil;
 	if ([type isEqualToString: NSURLPboardType]) url = [[NSURL URLFromPasteboard: pb] absoluteString];
