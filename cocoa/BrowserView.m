@@ -59,6 +59,16 @@ static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
 static NSMutableArray *cocoa_reformat_pending = nil;
 
+
+- initWithFrame: (NSRect) frame;
+{
+	if ((self = [super initWithFrame: frame]) == nil) return nil;
+	
+	[self registerForDraggedTypes: [NSArray arrayWithObjects: NSURLPboardType, @"public.url", nil]];
+	
+	return self;
+}
+
 - (void) dealloc;
 {
 	[self setCaretTimer: nil];
@@ -579,5 +589,39 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	[pb declareTypes: [NSArray arrayWithObject: NSStringPboardType] owner: nil];
 	[pb setString: [sender representedObject] forType: NSStringPboardType];
 }
+
+
+// MARK: -
+// MARK: Accepting dragged URLs
+
+- (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender
+{
+    if ((NSDragOperationCopy | NSDragOperationGeneric) & [sender draggingSourceOperationMask]) {
+        return NSDragOperationCopy;
+    }
+
+    return NSDragOperationNone;
+}
+
+- (BOOL)prepareForDragOperation:(id <NSDraggingInfo>)sender
+{
+    return YES;
+}
+
+- (BOOL)performDragOperation:(id <NSDraggingInfo>)sender
+{
+    NSPasteboard *pb = [sender draggingPasteboard];
+
+    NSString *type = [pb availableTypeFromArray:[NSArray arrayWithObjects: NSURLPboardType, @"public.url", nil]];
+
+	NSString *url = nil;
+	if ([type isEqualToString: NSURLPboardType]) url = [[NSURL URLFromPasteboard: pb] absoluteString];
+	else url = [pb stringForType: type];
+	
+	browser_window_go( browser, [url UTF8String], NULL, true );
+	
+    return YES;
+}
+
 
 @end
