@@ -3076,7 +3076,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
  * Redraw an area of the browser window - Amiga-specific function
  *
  * \param  g   a struct gui_window 
- * \param  c   a struct content
+ * \param  bw  a struct browser_window
  * \param  x0  top-left co-ordinate (in document co-ordinates)
  * \param  y0  top-left co-ordinate (in document co-ordinates)
  * \param  x1  bottom-right co-ordinate (in document co-ordinates)
@@ -3094,6 +3094,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	struct rect clip;
 
 	if(!g) return;
+	if(browser_window_redraw_ready(bw) == false) return;
 
 	sx = g->scrollx;
 	sy = g->scrolly;
@@ -3107,8 +3108,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	}
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
-
-	if(!bw) return;
 
 	current_redraw_browser = bw;
 
@@ -3206,14 +3205,13 @@ void ami_do_redraw(struct gui_window_2 *g)
 	ULONG oldh=g->oldh,oldv=g->oldv;
 	bool morescroll = false;
 
+	if(browser_window_redraw_ready(g->bw) == false) return;
+
 	GetAttr(SPACE_AreaBox, (Object *)g->objects[GID_BROWSER], (ULONG *)&bbox);
 	ami_get_hscroll_pos(g, (ULONG *)&hcurrent);
 	ami_get_vscroll_pos(g, (ULONG *)&vcurrent);
 
 	c = g->bw->current_content;
-
-	if(!c) return;
-	if(content_is_locked(c)) return;
 
 	current_redraw_browser = g->bw;
 
