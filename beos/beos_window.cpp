@@ -1358,12 +1358,6 @@ void nsbeos_redraw_caret(struct gui_window *g)
 	if (g->careth == 0)
 		return;
 
-	gui_window_redraw(g, g->caretx, g->carety,
-				g->caretx, g->carety + g->careth);
-}
-
-void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
 	if (g->view == NULL)
 		return;
 	if (!g->view->LockLooper())
@@ -1371,7 +1365,8 @@ void gui_window_redraw(struct gui_window *g, int x0, int y0, int x1, int y1)
 
 	nsbeos_current_gc_set(g->view);
 
-	g->view->Invalidate(BRect(x0, y0, x1, y1));
+	g->view->Invalidate(BRect(g->caretx, g->carety,
+				g->caretx, g->carety + g->careth));
 
 	nsbeos_current_gc_set(NULL);
 	g->view->UnlockLooper();
@@ -1727,8 +1722,17 @@ void gui_window_remove_caret(struct gui_window *g)
 
 	g->careth = 0;
 
-	gui_window_redraw(g, g->caretx, g->carety,
-			  g->caretx, g->carety + oh);
+	if (g->view == NULL)
+		return;
+	if (!g->view->LockLooper())
+		return;
+
+	nsbeos_current_gc_set(g->view);
+
+	g->view->Invalidate(BRect(g->caretx, g->carety, g->caretx, g->carety + oh));
+
+	nsbeos_current_gc_set(NULL);
+	g->view->UnlockLooper();
 }
 
 void gui_window_new_content(struct gui_window *g)
