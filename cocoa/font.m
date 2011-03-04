@@ -85,7 +85,7 @@ static bool nsfont_split(const plot_font_style_t *style,
 	}
 	
 
-	chars = [[cocoa_text_storage string] rangeOfString: @" " options: NSBackwardsSearch range: NSMakeRange( 0, chars )].location;
+	chars = [[cocoa_text_storage string] rangeOfString: @" " options: NSBackwardsSearch range: NSMakeRange( 0, chars + 1 )].location;
 	if (chars == NSNotFound) {
 		*char_offset = 0;
 		*actual_x = 0;
