@@ -3139,12 +3139,29 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	if(browser_window_redraw(bw, -sx, -sy, &clip))
 	{
 		ami_clearclipreg(&browserglob);
+
+/* This is identical to the below, but for some reason doesn't blit anything.
+ * Probably some values are wrong and BltBitMapTags is fussier.
+
+		BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+				BLITA_Source, browserglob.bm,
+				BLITA_SrcX, clip.x0 * g->shared->bw->scale,
+				BLITA_SrcY, clip.y0 * g->shared->bw->scale,
+				BLITA_DestType, BLITT_RASTPORT, 
+				BLITA_Dest, g->shared->win->RPort,
+				BLITA_DestX, xoffset + (clip.x0 * g->shared->bw->scale),
+				BLITA_DestY, yoffset + (clip.y0 * g->shared->bw->scale),
+				BLITA_Width, (x1 - x0) * g->shared->bw->scale,
+				BLITA_Height, (y1 - y0) * g->shared->bw->scale,
+				TAG_DONE);
+*/
+
 		BltBitMapRastPort(browserglob.bm,
-						(x0 - sx) * g->shared->bw->scale,
-						(y0 - sy) * g->shared->bw->scale,
+						clip.x0 * g->shared->bw->scale,
+						clip.y0 * g->shared->bw->scale,
 						g->shared->win->RPort,
-						xoffset + ((x0 - sx) * g->shared->bw->scale),
-						yoffset + ((y0 - sy) * g->shared->bw->scale),
+						xoffset + (clip.x0 * g->shared->bw->scale),
+						yoffset + (clip.y0 * g->shared->bw->scale),
 						(x1 - x0) * g->shared->bw->scale,
 						(y1 - y0) * g->shared->bw->scale,
 						0x0C0);
@@ -3199,7 +3216,6 @@ void ami_do_redraw(struct gui_window_2 *g)
 	if(content_is_locked(c)) return;
 
 	current_redraw_browser = g->bw;
-//	currp = &browserglob.rp;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -3278,8 +3294,18 @@ void ami_do_redraw(struct gui_window_2 *g)
 		if(browser_window_redraw(g->bw, -hcurrent, -vcurrent, &clip))
 		{
 			ami_clearclipreg(&browserglob);
-			BltBitMapRastPort(browserglob.bm,0,0,g->win->RPort,bbox->Left,bbox->Top,
-								bbox->Width,bbox->Height,0x0C0);
+
+			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+				BLITA_Source, browserglob.bm,
+				BLITA_SrcX, 0,
+				BLITA_SrcY, 0,
+				BLITA_DestType, BLITT_RASTPORT, 
+				BLITA_Dest, g->win->RPort,
+				BLITA_DestX, bbox->Left,
+				BLITA_DestY, bbox->Top,
+				BLITA_Width, bbox->Width,
+				BLITA_Height, bbox->Height,
+				TAG_DONE);
 		}
 	}
 
