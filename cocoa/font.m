@@ -113,7 +113,10 @@ void cocoa_set_font_scale_factor( float newFactor )
 
 void cocoa_draw_string( CGFloat x, CGFloat y, const char *bytes, size_t length, const plot_font_style_t *style )
 {
-	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, style );
+	plot_font_style_t actualStyle = *style;
+	actualStyle.size = (CGFloat)actualStyle.size * cocoa_font_scale_factor;
+	
+	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, &actualStyle );
 	if (layout == nil) return;
 	
 	NSFont *font = [cocoa_text_storage attribute: NSFontAttributeName atIndex: 0 effectiveRange: NULL];
@@ -219,7 +222,7 @@ static NSString * const cocoa_font_families[PLOT_FONT_FAMILY_COUNT] = {
 static inline NSFont *cocoa_font_get_nsfont( const plot_font_style_t *style )
 {
 	NSFont *font = [NSFont fontWithName: cocoa_font_families[style->family]
-								   size: cocoa_font_scale_factor * (CGFloat)style->size / FONT_SIZE_SCALE];
+								   size: (CGFloat)style->size / FONT_SIZE_SCALE];
 	
 	NSFontTraitMask traits = 0;
 	if (style->flags & FONTF_ITALIC || style->flags & FONTF_OBLIQUE) traits |= NSItalicFontMask;
