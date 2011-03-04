@@ -1340,6 +1340,7 @@ Use:Use
 HomePageURL:URL
 HomePageDefault:Use default page
 HomePageCurrent:Use current page
+HomePageBlank:Use blank page
 ContentBlocking:Content blocking
 BlockAds:Hide advertisements
 ContentLanguage:Content language

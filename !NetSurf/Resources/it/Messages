@@ -1327,6 +1327,7 @@ Use:Usa
 HomePageURL:URL
 HomePageDefault:Usa pagina predefinita
 HomePageCurrent:Usa pagina corrente
+HomePageBlank:Use blank page
 ContentBlocking:Blocca contenuti
 BlockAds:Nascondi annunci
 ContentLanguage:Lingua contenuti

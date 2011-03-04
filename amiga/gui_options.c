@@ -1,5 +1,5 @@
 /*
- * Copyright 2009, 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -72,6 +72,7 @@ enum
 	GID_OPTS_HOMEPAGE,
 	GID_OPTS_HOMEPAGE_DEFAULT,
 	GID_OPTS_HOMEPAGE_CURRENT,
+	GID_OPTS_HOMEPAGE_BLANK,
 	GID_OPTS_HIDEADS,
 	GID_OPTS_CONTENTLANG,
 	GID_OPTS_FROMLOCALE,
@@ -241,6 +242,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
 	gadlab[GID_OPTS_HOMEPAGE_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("HomePageDefault"));
 	gadlab[GID_OPTS_HOMEPAGE_CURRENT] = (char *)ami_utf8_easy((char *)messages_get("HomePageCurrent"));
+	gadlab[GID_OPTS_HOMEPAGE_BLANK] = (char *)ami_utf8_easy((char *)messages_get("HomePageBlank"));
 	gadlab[GID_OPTS_HIDEADS] = (char *)ami_utf8_easy((char *)messages_get("BlockAds"));
 	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("LocaleLang"));
 	gadlab[GID_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("HistoryAge"));
@@ -479,14 +481,14 @@ void ami_gui_opts_open(void)
 			WA_Activate, TRUE,
 			WA_DepthGadget, TRUE,
 			WA_DragBar, TRUE,
-			WA_CloseGadget, FALSE,
+			WA_CloseGadget, TRUE,
 			WA_SizeGadget, FALSE,
 			WA_CustomScreen,scrn,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gow,
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
-			WA_IDCMP,IDCMP_GADGETUP,
+			WA_IDCMP, IDCMP_GADGETUP | IDCMP_CLOSEWINDOW,
 			WINDOW_ParentGroup, gow->objects[GID_OPTS_MAIN] = VGroupObject,
 				LAYOUT_AddChild, ClickTabObject,
 					GA_RelVerify, TRUE,
@@ -519,6 +521,11 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE_CURRENT] = ButtonObject,
 											GA_ID,GID_OPTS_HOMEPAGE_CURRENT,
 											GA_Text,gadlab[GID_OPTS_HOMEPAGE_CURRENT],
+											GA_RelVerify,TRUE,
+										ButtonEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE_BLANK] = ButtonObject,
+											GA_ID,GID_OPTS_HOMEPAGE_BLANK,
+											GA_Text,gadlab[GID_OPTS_HOMEPAGE_BLANK],
 											GA_RelVerify,TRUE,
 										ButtonEnd,
 									LayoutEnd,
@@ -1617,6 +1624,11 @@ BOOL ami_gui_opts_event(void)
 	{
        	switch(result & WMHI_CLASSMASK) // class
    		{
+			case WMHI_CLOSEWINDOW:
+				ami_gui_opts_close();
+				return TRUE;
+			break;
+
 			case WMHI_GADGETUP:
 				switch(result & WMHI_GADGETMASK)
 				{
@@ -1646,6 +1658,12 @@ BOOL ami_gui_opts_event(void)
 						if(curbw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win, NULL, STRINGA_TextVal,
 							content_get_url(curbw->current_content), TAG_DONE);
+					break;
+
+					case GID_OPTS_HOMEPAGE_BLANK:
+						if(curbw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
+							gow->win, NULL, STRINGA_TextVal,
+							"about:blank", TAG_DONE);
 					break;
 
 					case GID_OPTS_FROMLOCALE:
