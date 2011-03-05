@@ -64,6 +64,7 @@ extern int option_cookies_window_ypos;
 extern int option_cookies_window_xsize;
 extern int option_cookies_window_ysize;
 extern int option_cairo_renderer;
+extern bool option_direct_render;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -110,6 +111,7 @@ int option_cookies_window_ypos = 0; \
 int option_cookies_window_xsize = 0; \
 int option_cookies_window_ysize = 0; \
 int option_cairo_renderer = 1; \
+bool option_direct_render = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -155,5 +157,6 @@ int option_cairo_renderer = 1; \
 { "cookies_window_ypos",	OPTION_INTEGER,	&option_cookies_window_ypos}, \
 { "cookies_window_xsize",	OPTION_INTEGER,	&option_cookies_window_xsize}, \
 { "cookies_window_ysize",	OPTION_INTEGER,	&option_cookies_window_ysize}, \
-{ "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer},
+{ "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer}, \
+{ "direct_render",	OPTION_BOOL,	&option_direct_render},
 #endif

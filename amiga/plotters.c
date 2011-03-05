@@ -130,33 +130,36 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->tmprasbuf = AllocVec(width*height,MEMF_PRIVATE | MEMF_CLEAR);
 
 	gg->bm = p96AllocBitMap(width, height, 32,
-						BMF_INTERLEAVED, friend, RGBFB_A8R8G8B8);
-
+					BMF_INTERLEAVED, friend, RGBFB_A8R8G8B8);
 	if(!gg->bm) warn_user("NoMemory","");
 
-	InitRastPort(&gg->rp);
-	gg->rp.BitMap = gg->bm;
+	gg->rp = AllocVec(sizeof(struct RastPort), MEMF_PRIVATE | MEMF_CLEAR);
+	if(!gg->rp) warn_user("NoMemory","");
 
-	SetDrMd(&gg->rp,BGBACKFILL);
+	InitRastPort(gg->rp);
+	gg->rp->BitMap = gg->bm;
 
-	gg->rp.Layer = CreateUpfrontLayer(gg->layerinfo,gg->rp.BitMap,0,0,
+	/* Is all this safe to do to an existing window RastPort? */
+	SetDrMd(gg->rp,BGBACKFILL);
+
+	gg->rp->Layer = CreateUpfrontLayer(gg->layerinfo,gg->rp->BitMap,0,0,
 					width-1, height-1, LAYERSIMPLE, NULL);
 
-	InstallLayerHook(gg->rp.Layer,LAYERS_NOBACKFILL);
+	InstallLayerHook(gg->rp->Layer,LAYERS_NOBACKFILL);
 
-	gg->rp.AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
+	gg->rp->AreaInfo = AllocVec(sizeof(struct AreaInfo),MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!gg->areabuf) || (!gg->rp.AreaInfo))	warn_user("NoMemory","");
+	if((!gg->areabuf) || (!gg->rp->AreaInfo))	warn_user("NoMemory","");
 
-	InitArea(gg->rp.AreaInfo,gg->areabuf,100/5);
-	gg->rp.TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
+	InitArea(gg->rp->AreaInfo,gg->areabuf,100/5);
+	gg->rp->TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((!gg->tmprasbuf) || (!gg->rp.TmpRas))	warn_user("NoMemory","");
+	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
 
-	InitTmpRas(gg->rp.TmpRas, gg->tmprasbuf, width*height);
+	InitTmpRas(gg->rp->TmpRas, gg->tmprasbuf, width*height);
 
 #ifdef NS_AMIGA_CAIRO
-	gg->surface = cairo_amigaos_surface_create(gg->rp.BitMap);
+	gg->surface = cairo_amigaos_surface_create(gg->rp->BitMap);
 	gg->cr = cairo_create(gg->surface);
 #endif
 }
@@ -167,21 +170,22 @@ void ami_free_layers(struct gui_globals *gg)
 	cairo_destroy(gg->cr);
 	cairo_surface_destroy(gg->surface);
 #endif
-	DeleteLayer(0,gg->rp.Layer);
-	FreeVec(gg->rp.TmpRas);
-	FreeVec(gg->rp.AreaInfo);
-
-	DisposeLayerInfo(gg->layerinfo);
-	p96FreeBitMap(gg->bm);
+	DeleteLayer(0,gg->rp->Layer);
+	FreeVec(gg->rp->TmpRas);
+	FreeVec(gg->rp->AreaInfo);
 	FreeVec(gg->tmprasbuf);
 	FreeVec(gg->areabuf);
+	DisposeLayerInfo(gg->layerinfo);
+
+	FreeVec(gg->rp);
+	p96FreeBitMap(gg->bm);
 }
 
 void ami_clearclipreg(struct gui_globals *gg)
 {
 	struct Region *reg = NULL;
 
-	reg = InstallClipRegion(gg->rp.Layer,NULL);
+	reg = InstallClipRegion(gg->rp->Layer,NULL);
 	if(reg) DisposeRegion(reg);
 
 	gg->rect.MinX = 0;
@@ -200,10 +204,10 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 		if(option_cairo_renderer < 2)
 		{
-			SetRPAttrs(&glob->rp, RPTAG_APenColor,
+			SetRPAttrs(glob->rp, RPTAG_APenColor,
 				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
 				TAG_DONE);
-			RectFill(&glob->rp, x0, y0, x1-1, y1-1);
+			RectFill(glob->rp, x0, y0, x1-1, y1-1);
 		}
 		else
 		{
@@ -222,37 +226,37 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
 		if(option_cairo_renderer < 2)
 		{
-			glob->rp.PenWidth = style->stroke_width;
-			glob->rp.PenHeight = style->stroke_width;
+			glob->rp->PenWidth = style->stroke_width;
+			glob->rp->PenHeight = style->stroke_width;
 
 			switch (style->stroke_type) {
 				case PLOT_OP_TYPE_SOLID: /**< Solid colour */
                 default:
-                        glob->rp.LinePtrn = PATT_LINE;
+                        glob->rp->LinePtrn = PATT_LINE;
                         break;
 
                 case PLOT_OP_TYPE_DOT: /**< Doted plot */
-                        glob->rp.LinePtrn = PATT_DOT;
+                        glob->rp->LinePtrn = PATT_DOT;
                         break;
 
                 case PLOT_OP_TYPE_DASH: /**< dashed plot */
-                        glob->rp.LinePtrn = PATT_DASH;
+                        glob->rp->LinePtrn = PATT_DASH;
                         break;
                 }
 
-			SetRPAttrs(&glob->rp,
+			SetRPAttrs(glob->rp,
 				   RPTAG_APenColor,
 				   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
 				   TAG_DONE);
-			Move(&glob->rp, x0,y0);
-			Draw(&glob->rp, x1, y0);
-			Draw(&glob->rp, x1, y1);
-			Draw(&glob->rp, x0, y1);
-			Draw(&glob->rp, x0, y0);
+			Move(glob->rp, x0,y0);
+			Draw(glob->rp, x1, y0);
+			Draw(glob->rp, x1, y1);
+			Draw(glob->rp, x0, y1);
+			Draw(glob->rp, x0, y0);
 
-			glob->rp.PenWidth = 1;
-			glob->rp.PenHeight = 1;
-			glob->rp.LinePtrn = PATT_LINE;
+			glob->rp->PenWidth = 1;
+			glob->rp->PenHeight = 1;
+			glob->rp->LinePtrn = PATT_LINE;
 		}
 		else
 		{
@@ -295,34 +299,34 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	if(option_cairo_renderer < 2)
 	{
-		glob->rp.PenWidth = style->stroke_width;
-		glob->rp.PenHeight = style->stroke_width;
+		glob->rp->PenWidth = style->stroke_width;
+		glob->rp->PenHeight = style->stroke_width;
 
 		switch (style->stroke_type) {
 		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
 		default:
-			glob->rp.LinePtrn = PATT_LINE;
+			glob->rp->LinePtrn = PATT_LINE;
 		break;
 
 		case PLOT_OP_TYPE_DOT: /**< Doted plot */
-			glob->rp.LinePtrn = PATT_DOT;
+			glob->rp->LinePtrn = PATT_DOT;
 		break;
 
 		case PLOT_OP_TYPE_DASH: /**< dashed plot */
-			glob->rp.LinePtrn = PATT_DASH;
+			glob->rp->LinePtrn = PATT_DASH;
 		break;
 		}
 
-		SetRPAttrs(&glob->rp,
+		SetRPAttrs(glob->rp,
 		   RPTAG_APenColor,
 		   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
 		   TAG_DONE);
-		Move(&glob->rp,x0,y0);
-		Draw(&glob->rp,x1,y1);
+		Move(glob->rp,x0,y0);
+		Draw(glob->rp,x1,y1);
 
-		glob->rp.PenWidth = 1;
-		glob->rp.PenHeight = 1;
-		glob->rp.LinePtrn = PATT_LINE;
+		glob->rp->PenWidth = 1;
+		glob->rp->PenHeight = 1;
+		glob->rp->LinePtrn = PATT_LINE;
 	}
 	else
 	{
@@ -373,7 +377,7 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 	{
 		ULONG cx,cy;
 
-		SetRPAttrs(&glob->rp,
+		SetRPAttrs(glob->rp,
 		   RPTAG_APenColor,
 		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
 		   RPTAG_OPenColor,
@@ -381,15 +385,15 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 //					RPTAG_OPenColor,0xffffffff,
 		   TAG_DONE);
 
-		AreaMove(&glob->rp,p[0],p[1]);
+		AreaMove(glob->rp,p[0],p[1]);
 
 		for(k=1;k<n;k++)
 		{
-			AreaDraw(&glob->rp,p[k*2],p[(k*2)+1]);
+			AreaDraw(glob->rp,p[k*2],p[(k*2)+1]);
 		}
 
-		AreaEnd(&glob->rp);
-		BNDRYOFF(&glob->rp);
+		AreaEnd(glob->rp);
+		BNDRYOFF(glob->rp);
 	}
 	else
 	{
@@ -418,7 +422,7 @@ bool ami_clip(const struct rect *clip)
 
 	struct Region *reg = NULL;
 
-	if(glob->rp.Layer)
+	if(glob->rp->Layer)
 	{
 		reg = NewRegion();
 
@@ -429,7 +433,7 @@ bool ami_clip(const struct rect *clip)
 
 		OrRectRegion(reg,&glob->rect);
 
-		reg = InstallClipRegion(glob->rp.Layer,reg);
+		reg = InstallClipRegion(glob->rp->Layer,reg);
 
 		if(reg) DisposeRegion(reg);
 	}
@@ -454,7 +458,7 @@ bool ami_text(int x, int y, const char *text, size_t length,
 	LOG(("[ami_plotter] Entered ami_text()"));
 	#endif
 
-	ami_unicode_text(&glob->rp,text,length,fstyle,x,y);
+	ami_unicode_text(glob->rp,text,length,fstyle,x,y);
 	return true;
 }
 
@@ -467,21 +471,21 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	if(option_cairo_renderer < 2)
 	{
 		if (style->fill_type != PLOT_OP_TYPE_NONE) {
-			SetRPAttrs(&glob->rp,
+			SetRPAttrs(glob->rp,
 					RPTAG_APenColor,
 					p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
 					TAG_DONE);
-			AreaCircle(&glob->rp,x,y,radius);
-			AreaEnd(&glob->rp);
+			AreaCircle(glob->rp,x,y,radius);
+			AreaEnd(glob->rp);
 		}
 
 		if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-			SetRPAttrs(&glob->rp,
+			SetRPAttrs(glob->rp,
 					RPTAG_APenColor,
 					p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
 					TAG_DONE);
 
-			DrawEllipse(&glob->rp,x,y,radius,radius);
+			DrawEllipse(glob->rp,x,y,radius,radius);
 		}
 	}
 	else
@@ -536,12 +540,12 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
 
-		SetRPAttrs(&glob->rp,
+		SetRPAttrs(glob->rp,
 				RPTAG_APenColor,
 				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
 				TAG_DONE);
 
-//	DrawArc(&glob->rp,x,y,(float)angle1,(float)angle2,radius);
+//	DrawArc(glob->rp,x,y,(float)angle1,(float)angle2,radius);
 	}
 	return true;
 }
@@ -562,7 +566,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		(y > glob->rect.MaxY))
 		return true;
 
-	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp.BitMap);
+	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
 
 	if(!tbm) return true;
 
@@ -576,7 +580,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		if(!bitmap->opaque) 
 			comptype = COMPOSITE_Src_Over_Dest;
 
-		CompositeTags(comptype,tbm,glob->rp.BitMap,
+		CompositeTags(comptype,tbm,glob->rp->BitMap,
 					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX,glob->rect.MinX,
 					COMPTAG_DestY,glob->rect.MinY,
@@ -593,7 +597,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
-						BLITA_Dest,&glob->rp,
+						BLITA_Dest,glob->rp,
 						BLITA_DestX,x,
 						BLITA_DestY,y,
 						BLITA_SrcType,BLITT_BITMAP,
@@ -635,7 +639,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
 		return true;
 
-	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp.BitMap);
+	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
 
 	if(!tbm) return true;
 
@@ -697,11 +701,11 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfh->h_Data = &bfbm;
 	}
 
-	InstallLayerHook(glob->rp.Layer,bfh);
+	InstallLayerHook(glob->rp->Layer,bfh);
 
-	EraseRect(&glob->rp,xm,ym,xf,yf);
+	EraseRect(glob->rp,xm,ym,xf,yf);
 
-	InstallLayerHook(glob->rp.Layer,LAYERS_NOBACKFILL);
+	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
 	if(bitmap->opaque) DeleteBackFillHook(bfh);
 		else FreeVec(bfh);
 

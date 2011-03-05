@@ -165,6 +165,8 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 void ami_try_quit(void);
+void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
+		int x0, int y0, int x1, int y1);
 
 STRPTR ami_locale_langs(void)
 {
@@ -2852,9 +2854,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	glob = &browserglob;
 
 	if(locked_screen) UnlockPubScreen(NULL,scrn);
-
-	//if (search_web_ico() == NULL)
-		search_web_retrieve_ico(false);
+	search_web_retrieve_ico(false);
 
 	return gwin;
 }
@@ -3097,6 +3097,8 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	ULONG cur_tab = 0;
 	ULONG sx, sy;
 	struct rect clip;
+	struct RastPort *temprp;
+	int posx, posy;
 
 	if(!g) return;
 	if(browser_window_redraw_ready(bw) == false) return;
@@ -3121,29 +3123,47 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
-	plot=amiplot;
-	glob = &browserglob;
-
 	if((y1<sy) || (y0>sy+height)) return;
 	if((x1<sx) || (x0>sx+width)) return;
 
 	if((x0-(int)sx)<0) x0 = sx;
 	if((y0-(int)sy)<0) y0 = sy;
 
+	/* Check this - xoffset/yoffset are window-relative, not bitmap-relative */
 	if((x1-x0)+(xoffset+x0-sx)>(width)) x1 = (width-(x0-sx)+x0);
 	if((y1-y0)+(yoffset+y0-sy)>(height)) y1 = (height-(y0-sy)+y0);
 
+	plot = amiplot;
+	glob = &browserglob;
 	glob->scale = bw->scale;
 
-	clip.x0 = (x0 - sx);
-	clip.y0 = (y0 - sy);
-	clip.x1 = (x1 - sx);
-	clip.y1 = (y1 - sy);
+	if(option_direct_render == false)
+	{
+		clip.x0 = (x0 - sx);
+		clip.y0 = (y0 - sy);
+		clip.x1 = (x1 - sx);
+		clip.y1 = (y1 - sy);
+		posx = - sx;
+		posy = - sy;
+	}
+	else
+	{
+		temprp = browserglob.rp;
+ 		browserglob.rp = g->shared->win->RPort;
+		clip.x0 = (x0 - sx) + bbox->Left;
+		clip.y0 = (y0 - sy) + bbox->Top;
+		clip.x1 = (x1 - sx) + bbox->Left;
+		clip.y1 = (y1 - sy) + bbox->Top;
+		posx = bbox->Left - sx; /* wrong */
+		posy = bbox->Top - sy; /* wrong */
+	}
 
-	if(browser_window_redraw(bw, -sx, -sy, &clip))
+	if(browser_window_redraw(bw, posx, posy, &clip))
 	{
 		ami_clearclipreg(&browserglob);
 
+		if(option_direct_render == false)
+		{
 /* This is identical to the below, but for some reason doesn't blit anything.
  * Probably some values are wrong and BltBitMapTags is fussier.
 
@@ -3169,6 +3189,11 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 						(x1 - x0) * g->shared->bw->scale,
 						(y1 - y0) * g->shared->bw->scale,
 						0x0C0);
+		}
+		else
+		{
+	 		browserglob.rp = temprp;
+		}
 	}
 
 	current_redraw_browser = NULL;
@@ -3209,6 +3234,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 	struct IBox *bbox;
 	ULONG oldh=g->oldh,oldv=g->oldv;
 	bool morescroll = false;
+	struct RastPort *temprp;
 
 	if(browser_window_redraw_ready(g->bw) == false) return;
 
@@ -3224,8 +3250,6 @@ void ami_do_redraw(struct gui_window_2 *g)
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
-	plot = amiplot;
-	glob = &browserglob;
 
 	if(g->bw->reformat_pending)
 	{
@@ -3287,28 +3311,49 @@ void ami_do_redraw(struct gui_window_2 *g)
 	{
 		struct rect clip;
 
-		clip.x0 = 0;
-		clip.y0 = 0;
-		clip.x1 = width + hcurrent;
-		clip.y1 = height + vcurrent;
-
+		plot = amiplot;
+		glob = &browserglob;
 		glob->scale = g->bw->scale;
 
-		if(browser_window_redraw(g->bw, -hcurrent, -vcurrent, &clip))
+		if(option_direct_render == false)
+		{
+			clip.x0 = 0;
+			clip.y0 = 0;
+			clip.x1 = width + hcurrent;
+			clip.y1 = height + vcurrent;
+		}
+		else
+		{
+			temprp = browserglob.rp;
+ 			browserglob.rp = g->win->RPort;
+			clip.x0 = bbox->Left;
+			clip.y0 = bbox->Top;
+			clip.x1 = bbox->Left + bbox->Width;
+			clip.y1 = bbox->Top + bbox->Height;
+		}
+
+		if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip))
 		{
 			ami_clearclipreg(&browserglob);
 
-			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-				BLITA_Source, browserglob.bm,
-				BLITA_SrcX, 0,
-				BLITA_SrcY, 0,
-				BLITA_DestType, BLITT_RASTPORT, 
-				BLITA_Dest, g->win->RPort,
-				BLITA_DestX, bbox->Left,
-				BLITA_DestY, bbox->Top,
-				BLITA_Width, bbox->Width,
-				BLITA_Height, bbox->Height,
-				TAG_DONE);
+			if(option_direct_render == false)
+			{
+				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+					BLITA_Source, browserglob.bm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestType, BLITT_RASTPORT, 
+					BLITA_Dest, g->win->RPort,
+					BLITA_DestX, bbox->Left,
+					BLITA_DestY, bbox->Top,
+					BLITA_Width, bbox->Width,
+					BLITA_Height, bbox->Height,
+					TAG_DONE);
+			}
+			else
+			{
+ 				browserglob.rp = temprp;
+			}
 		}
 	}
 

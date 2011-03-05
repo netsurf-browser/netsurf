@@ -28,7 +28,7 @@
 struct gui_globals
 {
 	struct BitMap *bm;
-	struct RastPort rp;
+	struct RastPort *rp;
 	struct Layer_Info *layerinfo;
 	APTR areabuf;
 	APTR tmprasbuf;
