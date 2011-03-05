@@ -1918,15 +1918,22 @@ static bool layout_text_box_split(struct content *content,
 		plot_font_style_t *fstyle, struct box *split_box,
 		size_t new_length, int new_width)
 {
-	int space_width;
+	int space_width = split_box->space;
 	struct box *c2;
 	const struct font_functions *font_func = content->data.html.font_func;
 
-	/* Find the width of a space, using fstyle, if currently unknown */
-	if (split_box->space == 0 || split_box->space == UNKNOWN_WIDTH) {
-		font_func->font_width(fstyle, " ", 1, &split_box->space);
+	if (space_width == 0) {
+		/* Currently split_box has no space. */
+		/* Get the space width because the split_box will need it */
+		/* Don't set it in split_box yet, or it will get cloned. */
+		font_func->font_width(fstyle, " ", 1, &space_width);
+	} else if (space_width == UNKNOWN_WIDTH) {
+		/* Split_box has a space but its width is unknown. */
+		/* Get the space width because the split_box will need it */
+		/* Set it in split_box, so it gets cloned. */
+		font_func->font_width(fstyle, " ", 1, &space_width);
+		split_box->space = space_width;
 	}
-	space_width = split_box->space;
 
 	/* Create clone of split_box, c2 */
 	c2 = talloc_memdup(content, split_box, sizeof *c2);
@@ -1954,9 +1961,10 @@ static bool layout_text_box_split(struct content *content,
 	c2->length = split_box->length - (new_length + 1);
 
 	/* Update split_box for its reduced text */
-	split_box->length = new_length;
 	split_box->width = new_width;
 	split_box->flags |= MEASURED;
+	split_box->length = new_length;
+	split_box->space = space_width;
 
 	/* Insert c2 into box list */
 	c2->next = split_box->next;
