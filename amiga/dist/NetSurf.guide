@@ -43,6 +43,7 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @{b}no_iframes@{ub} Disable IFrames
 @{b}printer_unit@{ub} Specifies which printer.device unit to print to
 @{b}drag_save_icons@{ub} Enables displaying Workbench-style transparent icons under the pointer when performing drag saves (ctrl-drag of objects available if NetSurf is running on the Workbench screen) and text selection drags.  If set to 0 the pointer style will change instead.  OS 4.0 users may want to set this to 0 as icons will appear opaque and obscure the drop position.
+@{b}cairo_renderer@{ub} Set rendering engine (SObjs version only). 0 = graphics.library, 1 = Cairo/graphics.library mixed (recommended), 2 = Full Cairo.
 
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
@@ -244,6 +245,8 @@ There are a number of options which can be changed that will affect the speed of
 @{lindent 2}* In preferences, Rendering tab set:
 @{b}Cache native versions@{ub} to @{b}Scaled@{ub} (or preferably @{b}All@{ub}, but this will use more graphics mem, and scaling images is a bigger performance hit)
 Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in hardware.@{lindent}
+
+@{lindent 2}* In @{"Options" link Options}, set cairo_renderer:1
 @endnode
 
 @node contact "Credits"

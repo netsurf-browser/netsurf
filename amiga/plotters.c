@@ -119,6 +119,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	 * Height is set to screen width to give enough space for thumbnails *
 	 * Also applies to the further gfx/layers functions and memory below */
 
+	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
+
 	if(!width) width = scrn->Width;
 	if(!height) height = scrn->Width;
 
@@ -128,7 +130,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->tmprasbuf = AllocVec(width*height,MEMF_PRIVATE | MEMF_CLEAR);
 
 	gg->bm = p96AllocBitMap(width, height, 32,
-						BMF_INTERLEAVED, NULL, RGBFB_A8R8G8B8);
+						BMF_INTERLEAVED, friend, RGBFB_A8R8G8B8);
 
 	if(!gg->bm) warn_user("NoMemory","");
 
@@ -196,30 +198,35 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
-#ifndef NS_AMIGA_CAIRO_ALL
-		SetRPAttrs(&glob->rp, RPTAG_APenColor,
-			p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-			TAG_DONE);
-		RectFill(&glob->rp, x0, y0, x1-1, y1-1);
-#else
-		ami_cairo_set_colour(glob->cr, style->fill_colour);
-		ami_cairo_set_solid(glob->cr);
+		if(option_cairo_renderer < 2)
+		{
+			SetRPAttrs(&glob->rp, RPTAG_APenColor,
+				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+				TAG_DONE);
+			RectFill(&glob->rp, x0, y0, x1-1, y1-1);
+		}
+		else
+		{
+#ifdef NS_AMIGA_CAIRO
+			ami_cairo_set_colour(glob->cr, style->fill_colour);
+			ami_cairo_set_solid(glob->cr);
 
-		cairo_set_line_width(glob->cr, 0);
-		cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
-		cairo_fill(glob->cr);
-		cairo_stroke(glob->cr);
+			cairo_set_line_width(glob->cr, 0);
+			cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+			cairo_fill(glob->cr);
+			cairo_stroke(glob->cr);
 #endif
-
+		}
 	}
 
-        if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-#ifndef NS_AMIGA_CAIRO_ALL
-		glob->rp.PenWidth = style->stroke_width;
-		glob->rp.PenHeight = style->stroke_width;
+	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+		if(option_cairo_renderer < 2)
+		{
+			glob->rp.PenWidth = style->stroke_width;
+			glob->rp.PenHeight = style->stroke_width;
 
-                switch (style->stroke_type) {
-                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+			switch (style->stroke_type) {
+				case PLOT_OP_TYPE_SOLID: /**< Solid colour */
                 default:
                         glob->rp.LinePtrn = PATT_LINE;
                         break;
@@ -233,21 +240,24 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
                         break;
                 }
 
-		SetRPAttrs(&glob->rp,
-			   RPTAG_APenColor,
-			   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
-			   TAG_DONE);
-		Move(&glob->rp, x0,y0);
-		Draw(&glob->rp, x1, y0);
-		Draw(&glob->rp, x1, y1);
-		Draw(&glob->rp, x0, y1);
-		Draw(&glob->rp, x0, y0);
+			SetRPAttrs(&glob->rp,
+				   RPTAG_APenColor,
+				   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
+				   TAG_DONE);
+			Move(&glob->rp, x0,y0);
+			Draw(&glob->rp, x1, y0);
+			Draw(&glob->rp, x1, y1);
+			Draw(&glob->rp, x0, y1);
+			Draw(&glob->rp, x0, y0);
 
-		glob->rp.PenWidth = 1;
-		glob->rp.PenHeight = 1;
-		glob->rp.LinePtrn = PATT_LINE;
-#else
-		ami_cairo_set_colour(glob->cr, style->stroke_colour);
+			glob->rp.PenWidth = 1;
+			glob->rp.PenHeight = 1;
+			glob->rp.LinePtrn = PATT_LINE;
+		}
+		else
+		{
+#ifdef NS_AMIGA_CAIRO
+			ami_cairo_set_colour(glob->cr, style->stroke_colour);
 
                 switch (style->stroke_type) {
                 case PLOT_OP_TYPE_SOLID: /**< Solid colour */
@@ -269,9 +279,10 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
                 else
                         cairo_set_line_width(glob->cr, style->stroke_width);
 
-		cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
-		cairo_stroke(glob->cr);
+			cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
+			cairo_stroke(glob->cr);
 #endif
+		}
 	}
 	return true;
 }
@@ -282,37 +293,41 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_line()"));
 	#endif
 
-#ifndef NS_AMIGA_CAIRO_ALL
-	glob->rp.PenWidth = style->stroke_width;
-	glob->rp.PenHeight = style->stroke_width;
+	if(option_cairo_renderer < 2)
+	{
+		glob->rp.PenWidth = style->stroke_width;
+		glob->rp.PenHeight = style->stroke_width;
 
-	switch (style->stroke_type) {
-	case PLOT_OP_TYPE_SOLID: /**< Solid colour */
-	default:
-		glob->rp.LinePtrn = PATT_LINE;
+		switch (style->stroke_type) {
+		case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+		default:
+			glob->rp.LinePtrn = PATT_LINE;
 		break;
 
-	case PLOT_OP_TYPE_DOT: /**< Doted plot */
-		glob->rp.LinePtrn = PATT_DOT;
+		case PLOT_OP_TYPE_DOT: /**< Doted plot */
+			glob->rp.LinePtrn = PATT_DOT;
 		break;
 
-	case PLOT_OP_TYPE_DASH: /**< dashed plot */
-		glob->rp.LinePtrn = PATT_DASH;
+		case PLOT_OP_TYPE_DASH: /**< dashed plot */
+			glob->rp.LinePtrn = PATT_DASH;
 		break;
-	}
+		}
 
-	SetRPAttrs(&glob->rp,
+		SetRPAttrs(&glob->rp,
 		   RPTAG_APenColor,
 		   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
 		   TAG_DONE);
-	Move(&glob->rp,x0,y0);
-	Draw(&glob->rp,x1,y1);
+		Move(&glob->rp,x0,y0);
+		Draw(&glob->rp,x1,y1);
 
-	glob->rp.PenWidth = 1;
-	glob->rp.PenHeight = 1;
-	glob->rp.LinePtrn = PATT_LINE;
-#else
-	ami_cairo_set_colour(glob->cr, style->stroke_colour);
+		glob->rp.PenWidth = 1;
+		glob->rp.PenHeight = 1;
+		glob->rp.LinePtrn = PATT_LINE;
+	}
+	else
+	{
+#ifdef NS_AMIGA_CAIRO
+		ami_cairo_set_colour(glob->cr, style->stroke_colour);
 
 	switch (style->stroke_type) {
 	case PLOT_OP_TYPE_SOLID: /**< Solid colour */
@@ -334,14 +349,15 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	else
 		cairo_set_line_width(glob->cr, style->stroke_width);
 
-	/* core expects horizontal and vertical lines to be on pixels, not
-	 * between pixels */
-	cairo_move_to(glob->cr, (x0 == x1) ? x0 + 0.5 : x0,
-			(y0 == y1) ? y0 + 0.5 : y0);
-	cairo_line_to(glob->cr, (x0 == x1) ? x1 + 0.5 : x1,
-			(y0 == y1) ? y1 + 0.5 : y1);
-	cairo_stroke(glob->cr);
+		/* core expects horizontal and vertical lines to be on pixels, not
+		 * between pixels */
+		cairo_move_to(glob->cr, (x0 == x1) ? x0 + 0.5 : x0,
+				(y0 == y1) ? y0 + 0.5 : y0);
+		cairo_line_to(glob->cr, (x0 == x1) ? x1 + 0.5 : x1,
+				(y0 == y1) ? y1 + 0.5 : y1);
+		cairo_stroke(glob->cr);
 #endif
+	}
 	return true;
 }
 
@@ -352,10 +368,12 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 	#endif
 
 	int k;
-#ifndef NS_AMIGA_CAIRO
-	ULONG cx,cy;
 
-	SetRPAttrs(&glob->rp,
+	if(option_cairo_renderer < 1)
+	{
+		ULONG cx,cy;
+
+		SetRPAttrs(&glob->rp,
 		   RPTAG_APenColor,
 		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
 		   RPTAG_OPenColor,
@@ -363,28 +381,31 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 //					RPTAG_OPenColor,0xffffffff,
 		   TAG_DONE);
 
-	AreaMove(&glob->rp,p[0],p[1]);
+		AreaMove(&glob->rp,p[0],p[1]);
 
-	for(k=1;k<n;k++)
+		for(k=1;k<n;k++)
+		{
+			AreaDraw(&glob->rp,p[k*2],p[(k*2)+1]);
+		}
+
+		AreaEnd(&glob->rp);
+		BNDRYOFF(&glob->rp);
+	}
+	else
 	{
-		AreaDraw(&glob->rp,p[k*2],p[(k*2)+1]);
-	}
+#ifdef NS_AMIGA_CAIRO
+		ami_cairo_set_colour(glob->cr, style->fill_colour);
+		ami_cairo_set_solid(glob->cr);
 
-	AreaEnd(&glob->rp);
-	BNDRYOFF(&glob->rp);
-#else
-	ami_cairo_set_colour(glob->cr, style->fill_colour);
-	ami_cairo_set_solid(glob->cr);
-
-	cairo_set_line_width(glob->cr, 0);
-	cairo_move_to(glob->cr, p[0], p[1]);
-	for (k = 1; k != n; k++) {
-		cairo_line_to(glob->cr, p[k * 2], p[k * 2 + 1]);
-	}
-	cairo_fill(glob->cr);
-	cairo_stroke(glob->cr);
+		cairo_set_line_width(glob->cr, 0);
+		cairo_move_to(glob->cr, p[0], p[1]);
+		for (k = 1; k != n; k++) {
+			cairo_line_to(glob->cr, p[k * 2], p[k * 2 + 1]);
+		}
+		cairo_fill(glob->cr);
+		cairo_stroke(glob->cr);
 #endif
-
+	}
 	return true;
 }
 
@@ -413,11 +434,14 @@ bool ami_clip(const struct rect *clip)
 		if(reg) DisposeRegion(reg);
 	}
 
-#ifdef NS_AMIGA_CAIRO_ALL
-	cairo_reset_clip(glob->cr);
-	cairo_rectangle(glob->cr, clip->x0, clip->y0,
+#ifdef NS_AMIGA_CAIRO
+	if(option_cairo_renderer == 2)
+	{
+		cairo_reset_clip(glob->cr);
+		cairo_rectangle(glob->cr, clip->x0, clip->y0,
 			clip->x1 - clip->x0, clip->y1 - clip->y0);
-	cairo_clip(glob->cr);
+		cairo_clip(glob->cr);
+	}
 #endif
 
 	return true;
@@ -440,49 +464,50 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_disc()"));
 	#endif
 
-#ifndef NS_AMIGA_CAIRO_ALL
-	if (style->fill_type != PLOT_OP_TYPE_NONE) {
-		SetRPAttrs(&glob->rp,
-			   RPTAG_APenColor,
-			   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-			   TAG_DONE);
-		AreaCircle(&glob->rp,x,y,radius);
-		AreaEnd(&glob->rp);
+	if(option_cairo_renderer < 2)
+	{
+		if (style->fill_type != PLOT_OP_TYPE_NONE) {
+			SetRPAttrs(&glob->rp,
+					RPTAG_APenColor,
+					p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+					TAG_DONE);
+			AreaCircle(&glob->rp,x,y,radius);
+			AreaEnd(&glob->rp);
+		}
+
+		if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+			SetRPAttrs(&glob->rp,
+					RPTAG_APenColor,
+					p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
+					TAG_DONE);
+
+			DrawEllipse(&glob->rp,x,y,radius,radius);
+		}
 	}
+	else
+	{
+#ifdef NS_AMIGA_CAIRO
+		if (style->fill_type != PLOT_OP_TYPE_NONE) {
+			ami_cairo_set_colour(glob->cr, style->fill_colour);
+			ami_cairo_set_solid(glob->cr);
 
-	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		SetRPAttrs(&glob->rp,
-			   RPTAG_APenColor,
-			   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
-			   TAG_DONE);
+			cairo_set_line_width(glob->cr, 0);
 
-		DrawEllipse(&glob->rp,x,y,radius,radius);
-	}
-#else
-	if (style->fill_type != PLOT_OP_TYPE_NONE) {
-		ami_cairo_set_colour(glob->cr, style->fill_colour);
-		ami_cairo_set_solid(glob->cr);
+			cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
+			cairo_fill(glob->cr);
+			cairo_stroke(glob->cr);
+		}
 
-		cairo_set_line_width(glob->cr, 0);
+		if (style->stroke_type != PLOT_OP_TYPE_NONE) {
+			ami_cairo_set_colour(glob->cr, style->stroke_colour);
+			ami_cairo_set_solid(glob->cr);
 
-		cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
-
-		cairo_fill(glob->cr);
-
-		cairo_stroke(glob->cr);
-	}
-
-	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		ami_cairo_set_colour(glob->cr, style->stroke_colour);
-		ami_cairo_set_solid(glob->cr);
-
-		cairo_set_line_width(glob->cr, 1);
-
-		cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
-
-		cairo_stroke(glob->cr);
-	}
+			cairo_set_line_width(glob->cr, 1);
+			cairo_arc(glob->cr, x, y, radius, 0, M_PI * 2);
+			cairo_stroke(glob->cr);
+		}
 #endif
+	}
 	return true;
 }
 
@@ -492,27 +517,32 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 	LOG(("[ami_plotter] Entered ami_arc()"));
 	#endif
 
+	if(option_cairo_renderer >= 1)
+	{
 #ifdef NS_AMIGA_CAIRO
-	ami_cairo_set_colour(glob->cr, style->fill_colour);
-	ami_cairo_set_solid(glob->cr);
+		ami_cairo_set_colour(glob->cr, style->fill_colour);
+		ami_cairo_set_solid(glob->cr);
 
-	cairo_set_line_width(glob->cr, 1);
-	cairo_arc(glob->cr, x, y, radius,
+		cairo_set_line_width(glob->cr, 1);
+		cairo_arc(glob->cr, x, y, radius,
 			(angle1 + 90) * (M_PI / 180),
 			(angle2 + 90) * (M_PI / 180));
-	cairo_stroke(glob->cr);
-#else
+		cairo_stroke(glob->cr);
+#endif
+	}
+	else
+	{
+		/* TODO: gfx.lib plotter needs arc support */
 /* http://www.crbond.com/primitives.htm
 CommonFuncsPPC.lha */
 
-	SetRPAttrs(&glob->rp,
-                   RPTAG_APenColor,
-                   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-		   TAG_DONE);
+		SetRPAttrs(&glob->rp,
+				RPTAG_APenColor,
+				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
+				TAG_DONE);
 
 //	DrawArc(&glob->rp,x,y,(float)angle1,(float)angle2,radius);
-#endif
-
+	}
 	return true;
 }
 
@@ -760,78 +790,84 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 /* For SVG only, because it needs Bezier curves we are going to cheat
    and insist on Cairo */
 #ifdef NS_AMIGA_CAIRO
-	unsigned int i;
-	cairo_matrix_t old_ctm, n_ctm;
+/* We should probably check if the off-screen bitmap is 32-bit and render
+ * using Cairo regardless if it is.  For now, we respect user preferences.
+ */
+	if(option_cairo_renderer >= 1)
+	{
+		unsigned int i;
+		cairo_matrix_t old_ctm, n_ctm;
 
-	if (n == 0)
-		return true;
+		if (n == 0)
+			return true;
 
-	if (p[0] != PLOTTER_PATH_MOVE) {
-		LOG(("Path does not start with move"));
-		return false;
-	}
-
-	/* Save CTM */
-	cairo_get_matrix(glob->cr, &old_ctm);
-
-	/* Set up line style and width */
-	cairo_set_line_width(glob->cr, 1);
-	ami_cairo_set_solid(glob->cr);
-
-	/* Load new CTM */
-	n_ctm.xx = transform[0];
-	n_ctm.yx = transform[1];
-	n_ctm.xy = transform[2];
-	n_ctm.yy = transform[3];
-	n_ctm.x0 = transform[4];
-	n_ctm.y0 = transform[5];
-
-	cairo_set_matrix(glob->cr, &n_ctm);
-
-	/* Construct path */
-	for (i = 0; i < n; ) {
-		if (p[i] == PLOTTER_PATH_MOVE) {
-			cairo_move_to(glob->cr, p[i+1], p[i+2]);
-			i += 3;
-		} else if (p[i] == PLOTTER_PATH_CLOSE) {
-			cairo_close_path(glob->cr);
-			i++;
-		} else if (p[i] == PLOTTER_PATH_LINE) {
-			cairo_line_to(glob->cr, p[i+1], p[i+2]);
-			i += 3;
-		} else if (p[i] == PLOTTER_PATH_BEZIER) {
-			cairo_curve_to(glob->cr, p[i+1], p[i+2],
-					p[i+3], p[i+4],
-					p[i+5], p[i+6]);
-			i += 7;
-		} else {
-			LOG(("bad path command %f", p[i]));
-			/* Reset matrix for safety */
-			cairo_set_matrix(glob->cr, &old_ctm);
+		if (p[0] != PLOTTER_PATH_MOVE) {
+			LOG(("Path does not start with move"));
 			return false;
 		}
-	}
 
-	/* Restore original CTM */
-	cairo_set_matrix(glob->cr, &old_ctm);
+		/* Save CTM */
+		cairo_get_matrix(glob->cr, &old_ctm);
 
-	/* Now draw path */
-	if (fill != NS_TRANSPARENT) {
-		ami_cairo_set_colour(glob->cr,fill);
+		/* Set up line style and width */
+		cairo_set_line_width(glob->cr, 1);
+		ami_cairo_set_solid(glob->cr);
 
-		if (c != NS_TRANSPARENT) {
-			/* Fill & Stroke */
-			cairo_fill_preserve(glob->cr);
+		/* Load new CTM */
+		n_ctm.xx = transform[0];
+		n_ctm.yx = transform[1];
+		n_ctm.xy = transform[2];
+		n_ctm.yy = transform[3];
+		n_ctm.x0 = transform[4];
+		n_ctm.y0 = transform[5];
+
+		cairo_set_matrix(glob->cr, &n_ctm);
+
+		/* Construct path */
+		for (i = 0; i < n; ) {
+			if (p[i] == PLOTTER_PATH_MOVE) {
+				cairo_move_to(glob->cr, p[i+1], p[i+2]);
+				i += 3;
+			} else if (p[i] == PLOTTER_PATH_CLOSE) {
+				cairo_close_path(glob->cr);
+				i++;
+			} else if (p[i] == PLOTTER_PATH_LINE) {
+				cairo_line_to(glob->cr, p[i+1], p[i+2]);
+				i += 3;
+			} else if (p[i] == PLOTTER_PATH_BEZIER) {
+				cairo_curve_to(glob->cr, p[i+1], p[i+2],
+					p[i+3], p[i+4],
+					p[i+5], p[i+6]);
+				i += 7;
+			} else {
+				LOG(("bad path command %f", p[i]));
+				/* Reset matrix for safety */
+				cairo_set_matrix(glob->cr, &old_ctm);
+				return false;
+			}
+		}
+
+		/* Restore original CTM */
+		cairo_set_matrix(glob->cr, &old_ctm);
+
+		/* Now draw path */
+		if (fill != NS_TRANSPARENT) {
+			ami_cairo_set_colour(glob->cr,fill);
+
+			if (c != NS_TRANSPARENT) {
+				/* Fill & Stroke */
+				cairo_fill_preserve(glob->cr);
+				ami_cairo_set_colour(glob->cr,c);
+				cairo_stroke(glob->cr);
+			} else {
+				/* Fill only */
+				cairo_fill(glob->cr);
+			}
+		} else if (c != NS_TRANSPARENT) {
+			/* Stroke only */
 			ami_cairo_set_colour(glob->cr,c);
 			cairo_stroke(glob->cr);
-		} else {
-			/* Fill only */
-			cairo_fill(glob->cr);
 		}
-	} else if (c != NS_TRANSPARENT) {
-		/* Stroke only */
-		ami_cairo_set_colour(glob->cr,c);
-		cairo_stroke(glob->cr);
 	}
 #endif
 	return true;

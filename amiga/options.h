@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -63,6 +63,7 @@ extern int option_cookies_window_xpos;
 extern int option_cookies_window_ypos;
 extern int option_cookies_window_xsize;
 extern int option_cookies_window_ysize;
+extern int option_cairo_renderer;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -108,6 +109,7 @@ int option_cookies_window_xpos = 0; \
 int option_cookies_window_ypos = 0; \
 int option_cookies_window_xsize = 0; \
 int option_cookies_window_ysize = 0; \
+int option_cairo_renderer = 1; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -152,5 +154,6 @@ int option_cookies_window_ysize = 0; \
 { "cookies_window_xpos",	OPTION_INTEGER,	&option_cookies_window_xpos}, \
 { "cookies_window_ypos",	OPTION_INTEGER,	&option_cookies_window_ypos}, \
 { "cookies_window_xsize",	OPTION_INTEGER,	&option_cookies_window_xsize}, \
-{ "cookies_window_ysize",	OPTION_INTEGER,	&option_cookies_window_ysize},
+{ "cookies_window_ysize",	OPTION_INTEGER,	&option_cookies_window_ysize}, \
+{ "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer},
 #endif

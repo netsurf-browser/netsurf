@@ -298,6 +298,11 @@ void ami_set_options(void)
 
 	option_core_select_menu = true;
 
+	#ifndef NS_AMIGA_CAIRO
+	/* Ensure we get some output when Cairo not available */
+	option_cairo_renderer = 0;
+	#endif
+
 	if((!option_accept_language) || (option_accept_language[0] == '\0'))
 	{
 		if(tempacceptlangs = ami_locale_langs())
