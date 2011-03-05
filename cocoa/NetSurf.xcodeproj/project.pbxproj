@@ -269,6 +269,8 @@
 		26B4E926130D36A90003B527 /* LocalHistoryPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LocalHistoryPanel.xib; sourceTree = "<group>"; };
 		26B4E928130D37E50003B527 /* LocalHistoryController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocalHistoryController.h; sourceTree = "<group>"; };
 		26B4E929130D37E50003B527 /* LocalHistoryController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocalHistoryController.m; sourceTree = "<group>"; };
+		26BA25AB1321653200AEC1DA /* apple_image.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = apple_image.m; sourceTree = "<group>"; };
+		26BA25AC1321653200AEC1DA /* apple_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apple_image.h; sourceTree = "<group>"; };
 		26CDCEB312E702D8004FC66B /* NSBezierPath_AMShading.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSBezierPath_AMShading.h; sourceTree = "<group>"; };
 		26CDCEB412E702D8004FC66B /* NSBezierPath_AMShading.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NSBezierPath_AMShading.m; sourceTree = "<group>"; };
 		26CDCEB512E702D8004FC66B /* NSString_AITruncation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NSString_AITruncation.h; sourceTree = "<group>"; };
@@ -583,6 +585,8 @@
 		265F303F12D6637E0048B600 /* Cocoa Frontend */ = {
 			isa = PBXGroup;
 			children = (
+				26BA25AB1321653200AEC1DA /* apple_image.m */,
+				26BA25AC1321653200AEC1DA /* apple_image.h */,
 				26CDD26512E74402004FC66B /* Browser */,
 				26CDD26712E74453004FC66B /* Download */,
 				26CDD26612E7441E004FC66B /* Views */,

@@ -31,12 +31,6 @@
   CFLAGS += -I/usr/include/libxml2
   CFLAGS += -include cocoa/Prefix.pch
 
-ifneq ($(wildcard /opt/local*),)
-  # libjpeg is there when installed from MacPort.
-  LDFLAGS += -L/opt/local/lib
-  CFLAGS += -I/opt/local/include
-endif
-
   VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
   VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
   VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
@@ -96,7 +90,8 @@ S_COCOA := \
 	ArrowBox.m \
 	ArrowWindow.m \
 	BlackScroller.m \
-	LocalHistoryController.m
+	LocalHistoryController.m \
+	apple_image.m
 
 S_TABBAR := \
 	NSBezierPath_AMShading.m	\

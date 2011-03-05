@@ -74,6 +74,9 @@ typedef enum {
 #ifdef WITH_AMIGA_ICON
 	CONTENT_AMIGA_ICON,
 #endif
+#ifdef WITH_APPLE_IMAGE
+	CONTENT_APPLE_IMAGE,
+#endif
 	/* these must be the last two */
 	CONTENT_OTHER,
 	CONTENT_UNKNOWN  /**< content-type not received yet */

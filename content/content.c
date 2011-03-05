@@ -83,6 +83,10 @@
 #ifdef WITH_AMIGA_ICON
 #include "amiga/icon.h"
 #endif
+#ifdef WITH_APPLE_IMAGE
+#include "cocoa/apple_image.h"
+#endif
+
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -140,6 +144,10 @@ static const struct mime_entry mime_map[] = {
 	{"image/jpeg", CONTENT_JPEG},
 	{"image/jpg", CONTENT_JPEG},
 #endif
+#ifdef WITH_APPLE_IMAGE
+	{"image/jpeg", CONTENT_APPLE_IMAGE},
+	{"image/jpg", CONTENT_APPLE_IMAGE},
+#endif
 #ifdef WITH_MNG
 	{"image/mng", CONTENT_MNG},
 #endif
@@ -148,6 +156,9 @@ static const struct mime_entry mime_map[] = {
 #endif
 #ifdef WITH_JPEG
 	{"image/pjpeg", CONTENT_JPEG},
+#endif
+#ifdef WITH_APPLE_IMAGE
+	{"image/pjpeg", CONTENT_APPLE_IMAGE},
 #endif
 #if defined(WITH_MNG) || defined(WITH_PNG)
 	{"image/png", CONTENT_PNG},
@@ -248,6 +259,9 @@ const char * const content_type_name[] = {
 #endif
 #ifdef WITH_AMIGA_ICON
 	"AMIGA_ICON",
+#endif
+#ifdef WITH_APPLE_IMAGE
+	"APPLE_IMAGE",
 #endif
 	"OTHER",
 	"UNKNOWN"
@@ -384,6 +398,10 @@ static const struct handler_entry handler_map[] = {
 	{0, 0, amiga_icon_convert,
 		0, amiga_icon_destroy, 0, 0, 0, amiga_icon_redraw, 0, 
 		0, 0, amiga_icon_clone, false},
+#endif
+#ifdef WITH_APPLE_IMAGE
+	{0, 0, apple_image_convert, 0, apple_image_destroy, 0, 0, 0,
+		apple_image_redraw, apple_image_redraw_tiled, 0, 0, apple_image_clone, false},
 #endif
 	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
 };

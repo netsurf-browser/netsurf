@@ -81,7 +81,9 @@
 #ifdef WITH_AMIGA_ICON
 #include "amiga/icon.h"
 #endif
-
+#ifdef WITH_APPLE_IMAGE
+#include "cocoa/apple_image.h"
+#endif
 
 struct bitmap;
 struct content;
@@ -158,6 +160,9 @@ struct content {
 #endif
 #ifdef WITH_AMIGA_ICON
                 struct content_amiga_icon_data amiga_icon;
+#endif
+#ifdef WITH_APPLE_IMAGE
+		struct content_apple_image_data apple_image;
 #endif
 	} data;
 

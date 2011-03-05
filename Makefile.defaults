@@ -373,9 +373,11 @@ ifeq ($(TARGET),cocoa)
   NETSURF_USE_NSSVG := YES
   
   NETSURF_USE_MNG := NO
+  
+  NETSURF_USE_JPEG := NO
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2 -Wuninitialized -DWITH_APPLE_IMAGE
 
 endif
 

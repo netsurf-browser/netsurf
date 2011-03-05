@@ -1176,6 +1176,9 @@ bool box_duplicate_main_tree(struct box *box, struct content *c, int *count)
 #if defined(WITH_NS_SVG) || defined(WITH_RSVG)
 			content_get_type(box->object) == CONTENT_SVG ||
 #endif
+#ifdef WITH_APPLE_IMAGE
+			content_get_type(box->object) == CONTENT_APPLE_IMAGE ||
+#endif
 			false))
 		box->object = NULL;
 
