@@ -1950,11 +1950,13 @@ static bool layout_text_box_split(struct content *content,
 
 	/* Set c2 according to the remaining text */
 	c2->width -= new_width + space_width;
+	c2->flags &= ~MEASURED; /* width has been estimated */
 	c2->length = split_box->length - (new_length + 1);
 
 	/* Update split_box for its reduced text */
 	split_box->length = new_length;
 	split_box->width = new_width;
+	split_box->flags |= MEASURED;
 
 	/* Insert c2 into box list */
 	c2->next = split_box->next;
@@ -2166,7 +2168,18 @@ bool layout_line(struct box *first, int *width, int *y,
 				} else {
 					font_func->font_width(&fstyle, b->text,
 							b->length, &b->width);
+					b->flags |= MEASURED;
 				}
+			}
+
+			/* If the current text has not been measured (i.e. its
+			 * width was estimated after splitting), and it fits on
+			 * the line, measure it properly. */
+			if (b->text && (x + b->width < x1 - x0) &&
+					!(b->flags & MEASURED)) {
+				font_func->font_width(&fstyle, b->text,
+						b->length, &b->width);
+				b->flags |= MEASURED;
 			}
 
 			x += b->width;
@@ -2782,6 +2795,7 @@ struct box *layout_minmax_line(struct box *first,
 				} else {
 					font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);
+					b->flags |= MEASURED;
 				}
 			}
 			max += b->width;
@@ -3826,6 +3840,7 @@ void layout_lists(struct box *box,
 							marker->text,
 							marker->length,
 							&marker->width);
+					marker->flags |= MEASURED;
 				}
 				marker->x = -marker->width;
 				marker->y = 0;

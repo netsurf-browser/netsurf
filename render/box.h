@@ -122,7 +122,8 @@ typedef enum {
 	STYLE_OWNED = 1 << 1,	/* style is owned by this box */
 	PRINTED     = 1 << 2,	/* box has already been printed */
 	PRE_STRIP   = 1 << 3,	/* PRE tag needing leading newline stripped */
-	CLONE       = 1 << 4	/* continuation of previous box from wrapping */
+	CLONE       = 1 << 4,	/* continuation of previous box from wrapping */
+	MEASURED    = 1 << 5	/* text box width has been measured */
 } box_flags;
 
 /* Sides of a box */
