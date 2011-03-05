@@ -2182,9 +2182,11 @@ bool layout_line(struct box *first, int *width, int *y,
 
 			/* If the current text has not been measured (i.e. its
 			 * width was estimated after splitting), and it fits on
-			 * the line, measure it properly. */
+			 * the line, measure it properly, so next box is placed
+			 * correctly. */
 			if (b->text && (x + b->width < x1 - x0) &&
-					!(b->flags & MEASURED)) {
+					!(b->flags & MEASURED) &&
+					b->next) {
 				font_func->font_width(&fstyle, b->text,
 						b->length, &b->width);
 				b->flags |= MEASURED;
