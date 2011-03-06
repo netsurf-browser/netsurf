@@ -69,7 +69,7 @@
 #include "riscos/draw.h"
 #endif
 #ifdef WITH_PLUGIN
-#include "riscos/plugin.h"
+#include "desktop/plugin.h"
 #endif
 #ifdef WITH_ARTWORKS
 #include "riscos/artworks.h"
@@ -367,7 +367,7 @@ static const struct handler_entry handler_map[] = {
 #endif
 #ifdef WITH_PLUGIN
 	{plugin_create, 0, plugin_convert,
-		plugin_reformat, plugin_destroy, 0, plugin_redraw, 0, 0, 0,
+		plugin_reformat, plugin_destroy, 0, 0, 0, plugin_redraw, 0,
 		plugin_open, plugin_close, plugin_clone,
 		true},
 #endif

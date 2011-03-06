@@ -183,8 +183,7 @@ static void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
  * \param params Parameters associated with the content
  * \return true on success, false otherwise
  */
-bool plugin_create(struct content *c, struct content *parent,
-		const char *params[])
+bool plugin_create(struct content *c, const http_parameter *params)
 {
 	LOG(("plugin_create"));
 	c->data.plugin.bw = 0;
@@ -213,11 +212,9 @@ bool plugin_create(struct content *c, struct content *parent,
  * \param height Height of available space
  * \return true on success, false otherwise
  */
-bool plugin_convert(struct content *c, int width, int height)
+bool plugin_convert(struct content *c)
 {
 	LOG(("plugin_convert"));
-	c->width = width;
-	c->height = height;
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -534,6 +531,24 @@ void plugin_reformat(struct content *c, int width, int height)
 		return;
 	}
 }
+
+
+bool plugin_clone(const struct content *old, struct content *new_content)
+{
+	LOG(("plugin_clone"));
+	/* We "clone" the old content by replaying creation and conversion */
+	if (plugin_create(new_content, NULL) == false)
+		return false;
+
+	if (old->status == CONTENT_STATUS_READY || 
+			old->status == CONTENT_STATUS_DONE) {
+		if (plugin_convert(new_content) == false)
+			return false;
+	}
+
+	return true;
+}
+
 
 /**
  * Creates a system variable from the mimetype

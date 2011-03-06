@@ -317,11 +317,12 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 
 	if((format == IDFMT_DIRECTMAPPED) || (format == IDFMT_PALETTEMAPPED))
 	{
+#ifdef WITH_BMP
 		if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
 		{
 			nsico_set_bitmap_from_size(icon, 16, 16);
 		}
-
+#endif
 		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 		{
 			bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16, NULL);

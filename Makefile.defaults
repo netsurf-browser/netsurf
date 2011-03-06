@@ -213,6 +213,10 @@ ifeq ($(TARGET),amiga)
   # Valid options: YES, NO                 (recommended)
   NETSURF_USE_AMIGA_ICON := YES
 
+  # Enable NetSurf's use of DataTypes for unknown filetypes
+  # Valid options: YES, NO
+  NETSURF_USE_PLUGINS := YES
+
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # (NB: Requires NETSURF_AMIGA_USE_CAIRO)
   # Valid options: YES, NO

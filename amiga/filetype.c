@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "amiga/filetype.h"
 #include "content/fetch.h"
 #include "content/content_type.h"
 #include "utils/log.h"
@@ -37,7 +38,6 @@ const char *fetch_filetype(const char *unix_path)
 	STRPTR ttype = NULL;
 	struct DiskObject *dobj = NULL;
 	BPTR lock = 0;
-	struct DataTypeHeader *dth = NULL;
 	struct DataType *dtn;
 	BOOL found = FALSE;
 
@@ -80,53 +80,7 @@ const char *fetch_filetype(const char *unix_path)
 		{
 			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))
 			{
-				dth = dtn->dtn_Header;
-
-				switch(dth->dth_GroupID)
-				{
-					case GID_SYSTEM:
-						if(strcmp("directory",dth->dth_BaseName)==0)
-						{
-							strcpy(mimetype,"application/x-netsurf-directory");
-						}
-						else if(strcmp("binary",dth->dth_BaseName)==0)
-						{
-							strcpy(mimetype,"application/octet-stream");
-						}
-						else sprintf(mimetype,"application/%s",dth->dth_BaseName);
-					break;
-					case GID_TEXT:
-					case GID_DOCUMENT:
-						if(strcmp("ascii",dth->dth_BaseName)==0)
-						{
-							strcpy(mimetype,"text/plain");
-						}
-						else if(strcmp("simplehtml",dth->dth_BaseName)==0)
-						{
-							strcpy(mimetype,"text/html");
-						}
-						else
-						{
-							sprintf(mimetype,"text/%s",dth->dth_BaseName);
-						}
-					break;
-					case GID_SOUND:
-					case GID_INSTRUMENT:
-					case GID_MUSIC:
-						sprintf(mimetype,"audio/%s",dth->dth_BaseName);
-					break;
-					case GID_PICTURE:
-						sprintf(mimetype,"image/%s",dth->dth_BaseName);
-						if(strcmp("sprite",dth->dth_BaseName)==0)
-						{
-							strcpy(mimetype,"image/x-riscos-sprite");
-						}
-					break;
-					case GID_ANIMATION:
-					case GID_MOVIE:
-						sprintf(mimetype,"video/%s",dth->dth_BaseName);
-					break;
-				}
+				ami_datatype_to_mimetype(dtn, &mimetype);
 				found = TRUE;
 				ReleaseDataType(dtn);
 			}
@@ -211,6 +165,58 @@ const char *ami_content_type_to_file_type(content_type type)
 #endif
 		default:
 			return "project";	
+		break;
+	}
+}
+
+void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype)
+{
+	struct DataTypeHeader *dth = dtn->dtn_Header;
+
+	switch(dth->dth_GroupID)
+	{
+		case GID_TEXT:
+		case GID_DOCUMENT:
+			if(strcmp("ascii",dth->dth_BaseName)==0)
+			{
+				strcpy(mimetype,"text/plain");
+			}
+			else if(strcmp("simplehtml",dth->dth_BaseName)==0)
+			{
+				strcpy(mimetype,"text/html");
+			}
+			else
+			{
+				sprintf(mimetype,"text/%s",dth->dth_BaseName);
+			}
+		break;
+		case GID_SOUND:
+		case GID_INSTRUMENT:
+		case GID_MUSIC:
+			sprintf(mimetype,"audio/%s",dth->dth_BaseName);
+		break;
+		case GID_PICTURE:
+			sprintf(mimetype,"image/%s",dth->dth_BaseName);
+			if(strcmp("sprite",dth->dth_BaseName)==0)
+			{
+				strcpy(mimetype,"image/x-riscos-sprite");
+			}
+		break;
+		case GID_ANIMATION:
+		case GID_MOVIE:
+			sprintf(mimetype,"video/%s",dth->dth_BaseName);
+		break;
+		case GID_SYSTEM:
+		default:
+			if(strcmp("directory",dth->dth_BaseName)==0)
+			{
+				strcpy(mimetype,"application/x-netsurf-directory");
+			}
+			else if(strcmp("binary",dth->dth_BaseName)==0)
+			{
+				strcpy(mimetype,"application/octet-stream");
+			}
+			else sprintf(mimetype,"application/%s",dth->dth_BaseName);
 		break;
 	}
 }

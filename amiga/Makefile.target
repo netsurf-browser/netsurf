@@ -20,6 +20,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
   $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon        ))
+  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,DataTypes images))
 
   CFLAGS += -D__USE_INLINE__ -D__USE_BASETYPE__ -I /SDK/local/common/include/libpng12
   LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -lregex -lauto -lpbl
@@ -54,7 +55,7 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_AMIGA are sources purely for the Amiga build
-S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c		\
+S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c plugin.c		\
 	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
 	cookies.c context_menu.c clipboard.c save_complete.c		\

@@ -3154,8 +3154,8 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 		clip.y0 = (y0 - sy) + bbox->Top;
 		clip.x1 = (x1 - sx) + bbox->Left;
 		clip.y1 = (y1 - sy) + bbox->Top;
-		posx = bbox->Left - sx; /* wrong */
-		posy = bbox->Top - sy; /* wrong */
+		posx = bbox->Left - sx;
+		posy = bbox->Top - sy;
 	}
 
 	if(browser_window_redraw(bw, posx, posy, &clip))
@@ -3604,12 +3604,12 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	if ((icon != NULL) &&
 		(content_get_status(icon) != CONTENT_STATUS_READY) &&
 		(content_get_status(icon) != CONTENT_STATUS_DONE)) return;
-
+#ifdef WITH_BMP
 	if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
 	{
 		nsico_set_bitmap_from_size(icon, 16, 16);
 	}
-
+#endif
 	if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16,
@@ -3661,12 +3661,12 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	if(IsMinListEmpty(window_list))	return;
 	if(option_kiosk_mode == true) return;
 	if (ico == NULL) ico = search_web_ico();
-
+#ifdef WITH_BMP
 	if ((ico != NULL) && (content_get_type(ico) == CONTENT_ICO))
 	{
 		nsico_set_bitmap_from_size(ico, 16, 16);
 	}
-
+#endif
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);

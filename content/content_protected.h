@@ -52,7 +52,7 @@
 #include "image/ico.h"
 #endif
 #ifdef WITH_PLUGIN
-#include "riscos/plugin.h"
+#include "desktop/plugin.h"
 #endif
 #ifdef WITH_MNG
 #include "image/mng.h"

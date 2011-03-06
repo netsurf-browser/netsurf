@@ -862,6 +862,7 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 	char fname[1024];
 	BOOL ret = FALSE;
 	char *mt = NULL;
+	content_type ct;
 
 	if(ap->ap_Info.fib_DirEntryType > 0) return(TRUE);
 
@@ -869,8 +870,14 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 	AddPart(fname,ap->ap_Info.fib_FileName,1024);
 
   	mt = fetch_mimetype(fname);
+	ct = content_lookup(mt);
 
-	if(content_lookup(mt) != CONTENT_OTHER) ret = TRUE;
+	if(ct != CONTENT_OTHER) ret = TRUE;
+
+#ifdef WITH_PLUGIN
+	if(ct == CONTENT_PLUGIN) ret = plugin_handleable(mt);
+#endif
+
 	free(mt);
 	return ret;
 }

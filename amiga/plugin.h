@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,11 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef AMIGA_FILETYPE_H
-#define AMIGA_FILETYPE_H
-#include "content/content_type.h"
-#include <datatypes/datatypes.h>
+#ifndef NETSURF_AMIGA_PLUGIN_H_
+#define NETSURF_AMIGA_PLUGIN_H_
 
-const char *ami_content_type_to_file_type(content_type type);
-void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype);
+#ifdef WITH_PLUGIN
+
+#include <intuition/classusr.h>
+
+#include "desktop/plugin.h"
+
+struct content_plugin_data {
+	Object *dto;
+	int x;
+	int y;
+	int w;
+	int h;
+};
+
+#endif /* WITH_PLUGIN */
 #endif

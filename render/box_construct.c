@@ -78,6 +78,9 @@ static const content_type image_types[] = {
 #ifdef WITH_DRAW
 	CONTENT_DRAW,
 #endif
+#ifdef WITH_PLUGIN
+	CONTENT_PLUGIN,
+#endif
 #ifdef WITH_ARTWORKS
 	CONTENT_ARTWORKS,
 #endif
