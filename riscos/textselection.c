@@ -208,7 +208,7 @@ bool copy_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
-	bool add_space = box != NULL ? box->space : false;
+	bool add_space = box != NULL ? box->space != 0 : false;
 
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text != NULL && whitespace_length > 0) {

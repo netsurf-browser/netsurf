@@ -246,7 +246,7 @@ bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 
 		if(text)
 		{
-			bool add_space = box != NULL ? box->space : false;
+			bool add_space = box != NULL ? box->space != 0 : false;
 
 			if (!ami_add_to_clipboard(text, length, add_space)) return false;
 		}

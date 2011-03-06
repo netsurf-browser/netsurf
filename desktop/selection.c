@@ -63,6 +63,8 @@
 #define NUMBER_SPACE(x) ((x) & 0xF0000000U)
 #define SAME_SPACE(s, offset) (NUMBER_SPACE((s)->max_idx) == NUMBER_SPACE(offset))
 
+#define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
+
 
 struct rdw_info {
 	bool inited;
@@ -225,7 +227,7 @@ unsigned selection_label_subtree(struct box *box, unsigned idx)
 	box->byte_offset = idx;
 
 	if (box->text)
-		idx += box->length + box->space;
+		idx += box->length + SPACE_LEN(box);
 
 	while (child) {
 		if (!IS_INPUT(child)) {
@@ -405,7 +407,7 @@ void selection_track(struct selection *s, browser_mouse_state mouse,
 bool selected_part(struct box *box, unsigned start_idx, unsigned end_idx,
 		unsigned *start_offset, unsigned *end_offset)
 {
-	size_t box_length = box->length + box->space;
+	size_t box_length = box->length + SPACE_LEN(box);
 
 	if (box_length > 0) {
 		if (box->byte_offset >= start_idx &&
@@ -609,7 +611,7 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 {
 	if (box) {
 		struct rdw_info *r = (struct rdw_info*)handle;
-		int width, height, space_width;
+		int width, height;
 		int x, y;
 		plot_font_style_t fstyle;
 
@@ -622,9 +624,8 @@ bool redraw_handler(const char *text, size_t length, struct box *box,
 		width = box->padding[LEFT] + box->width + box->padding[RIGHT];
 		height = box->padding[TOP] + box->height + box->padding[BOTTOM];
 
-		if (box->type == BOX_TEXT && box->space &&
-				nsfont.font_width(&fstyle, " ", 1, &space_width))
-			width += space_width;
+		if (box->type == BOX_TEXT && box->space != 0)
+			width += box->space;
 
 		if (r->inited) {
 			if (x < r->r.x0) r->r.x0 = x;
@@ -807,7 +808,7 @@ struct box *get_box(struct box *b, unsigned offset, size_t *pidx)
 	if (b->text) {
 
 		if (offset >= b->byte_offset &&
-			offset <= b->byte_offset + b->length + b->space) {
+			offset <= b->byte_offset + b->length + SPACE_LEN(b)) {
 
 			/* it's in this box */
 			*pidx = offset - b->byte_offset;

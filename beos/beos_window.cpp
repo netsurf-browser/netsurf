@@ -1888,7 +1888,7 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 		run->font = font;
 		run->color = nsbeos_rgb_colour(nscss_color_to_ns(box->style->color));
 		current_selection_textruns.AddItem(run);
-		space = box->space;
+		space = box->space != 0;
 	}
 
 	/* add the text from this box */

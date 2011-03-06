@@ -2493,7 +2493,7 @@ gui_selection_traverse_handler(const char *text,
 			       const char *space_text,
 			       size_t space_length)
 {
-	bool add_space = box != NULL ? box->space : false;
+	bool add_space = box != NULL ? box->space != 0 : false;
 
 	if (space_text != NULL && space_length > 0) {
 		if (!gui_add_to_clipboard(space_text, space_length, false)) {
