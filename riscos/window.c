@@ -96,8 +96,8 @@ static void ro_gui_window_open(wimp_open *open);
 static void ro_gui_window_close(wimp_w w);
 static bool ro_gui_window_click(wimp_pointer *mouse);
 static bool ro_gui_window_keypress(wimp_key *key);
-static void ro_gui_window_toolbar_keypress(void *data, wimp_key *key);
-static void ro_gui_window_handle_local_keypress(struct gui_window *g,
+static bool ro_gui_window_toolbar_keypress(void *data, wimp_key *key);
+static bool ro_gui_window_handle_local_keypress(struct gui_window *g,
 		wimp_key *key, bool is_toolbar);
 static bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_pointer *pointer);
@@ -2032,6 +2032,9 @@ bool ro_gui_window_click(wimp_pointer *pointer)
 
 /**
  * Process Key_Pressed events in a browser window.
+ *
+ * \param *key			The wimp keypress block for the event.
+ * \return			true if the event was handled, else false.
  */
 
 bool ro_gui_window_keypress(wimp_key *key)
@@ -2111,9 +2114,7 @@ bool ro_gui_window_keypress(wimp_key *key)
 			return true;
 	}
 
-	ro_gui_window_handle_local_keypress(g, key, false);
-
-	return true;
+	return ro_gui_window_handle_local_keypress(g, key, false);
 }
 
 
@@ -2122,14 +2123,17 @@ bool ro_gui_window_keypress(wimp_key *key)
  *
  * \param *data			Client data, pointing to the GUI Window.
  * \param *key			The keypress data.
+ * \return			true if the keypress was handled; else false.
  */
 
-void ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
+bool ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
 {
 	struct gui_window *g = (struct gui_window *) data;
 
 	if (g != NULL)
-		ro_gui_window_handle_local_keypress(g, key, true);
+		return ro_gui_window_handle_local_keypress(g, key, true);
+
+	return false;
 }
 
 
@@ -2142,9 +2146,10 @@ void ro_gui_window_toolbar_keypress(void *data, wimp_key *key)
  * \param *key			The keypress data.
  * \param is_toolbar		true if the keypress is from a toolbar;
  *				else false.
+ * \return			true if the keypress was claimed; else false.
  */
 
-void ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
+bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		bool is_toolbar)
 {
 	hlcache_handle		*h;
@@ -2156,106 +2161,106 @@ void ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	uint32_t		c = (uint32_t) key->c;
 
 	if (g == NULL)
-		return;
+		return false;
 
 	h = g->bw->current_content;
 
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
 		ro_gui_open_help_page("documentation/index");
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F1:
 		ro_gui_window_action_page_info(g);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F2:
 		if (g->toolbar == NULL)
-			return;
+			return false;
 		ro_gui_url_complete_close();
 		ro_toolbar_set_url(g->toolbar, "www.", true, true);
 		ro_gui_url_complete_start(g->toolbar);
 		ro_gui_url_complete_keypress(g->toolbar, wimp_KEY_DOWN);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F2:
 		/* Close window. */
 		ro_gui_url_complete_close();
 		browser_window_destroy(g->bw);
-		return;
+		return true;
 
 	case 19:		/* Ctrl + S */
 	case IS_WIMP_KEY + wimp_KEY_F3:
 		ro_gui_window_action_save(g, GUI_SAVE_SOURCE);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F3:
 		ro_gui_window_action_save(g, GUI_SAVE_TEXT);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_SHIFT + wimp_KEY_F3:
 		ro_gui_window_action_save(g, GUI_SAVE_COMPLETE);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F3:
 		ro_gui_window_action_save(g, GUI_SAVE_DRAW);
-		return;
+		return true;
 
 	case 6:			/* Ctrl + F */
 	case IS_WIMP_KEY + wimp_KEY_F4:	/* Search */
 		ro_gui_window_action_search(g);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F5:	/* Reload */
 		if (g->bw != NULL)
 			browser_window_reload(g->bw, false);
-		return;
+		return true;
 
 	case 18:		/* Ctrl+R (Full reload) */
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F5:
 		if (g->bw != NULL)
 			browser_window_reload(g->bw, true);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F6:	/* Hotlist */
 		ro_gui_hotlist_open();
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F7:	/* Show local history */
 		ro_gui_window_action_local_history(g);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F7:
 		/* Show global history */
 		ro_gui_global_history_open();
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F8:	/* View source */
 		ro_gui_view_source(h);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F9:
 		/* Dump content for debugging. */
 		ro_gui_dump_content(h);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F9:
 		urldb_dump();
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_SHIFT + wimp_KEY_F9:
 		talloc_report_full(0, stderr);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_F11:	/* Zoom */
 		ro_gui_window_action_zoom(g);
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_SHIFT + wimp_KEY_F11:
 		/* Toggle display of box outlines. */
 		html_redraw_debug = !html_redraw_debug;
 		gui_window_redraw_window(g);
-		return;
+		return true;
 
 	case wimp_KEY_RETURN:
 		if (is_toolbar) {
@@ -2263,21 +2268,21 @@ void ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 			if (toolbar_url != NULL)
 				ro_gui_window_launch_url(g, toolbar_url);
 		}
-		return;
+		return true;
 
 	case wimp_KEY_ESCAPE:
 		if (ro_gui_url_complete_close()) {
 			ro_gui_url_complete_start(g->toolbar);
-			return;
+			return true;
 		}
 
 		if (g->bw != NULL)
 			browser_window_stop(g->bw);
-		return;
+		return true;
 
 	case 14:	/* CTRL+N */
 		ro_gui_window_action_new_window(g);
-		return;
+		return true;
 
 	case 17:       /* CTRL+Q (Zoom out) */
 	case 23:       /* CTRL+W (Zoom in) */
@@ -2312,18 +2317,18 @@ void ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 //				browser_window_update(g->bw, false);
 //			browser_reformat_pending = true;
 		}
-		return;
+		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_PRINT:
 		ro_gui_window_action_print(g);
-		return;
+		return true;
 
 	case IS_WIMP_KEY | wimp_KEY_LEFT:
 	case IS_WIMP_KEY | wimp_KEY_RIGHT:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
 		if (is_toolbar)
-			return;
+			return false;
 		break;
 	case IS_WIMP_KEY + wimp_KEY_UP:
 	case IS_WIMP_KEY + wimp_KEY_DOWN:
@@ -2332,16 +2337,20 @@ void ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	case wimp_KEY_HOME:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
 	case IS_WIMP_KEY + wimp_KEY_END:
-	default:
 		break;
+	default:
+		return false; /* This catches any keys we don't want to claim */
 	}
+
+	/* Any keys that exit from the above switch() via break should be
+	 * processed as scroll actions in the browser window. */
 
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
 		LOG(("xwimp_get_window_state: 0x%x: %s",
 				error->errnum, error->errmess));
-		return;
+		return false;
 	}
 
 	y = state.visible.y1 - state.visible.y0 - 32;
@@ -2388,6 +2397,8 @@ void ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		LOG(("xwimp_open_window: 0x%x: %s",
 				error->errnum, error->errmess));
 	}
+
+	return true;
 }
 
 

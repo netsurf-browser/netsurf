@@ -72,7 +72,7 @@ struct toolbar_callbacks {
 	void (*user_action)(void *, toolbar_action_type, union toolbar_action);
 
 	/** Call to handle keypresses. */
-	void (*key_press)(void *, wimp_key *);
+	bool (*key_press)(void *, wimp_key *);
 
 	/** Call on change to button order. */
 	void (*save_buttons)(void *, char *);

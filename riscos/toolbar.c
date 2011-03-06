@@ -1171,10 +1171,10 @@ bool ro_toolbar_keypress(wimp_key *key)
 
 	/* Otherwsie, pass the keypress on to the client. */
 
-	if (toolbar->callbacks->user_action != NULL)
-		toolbar->callbacks->key_press(toolbar->client_data, key);
+	if (toolbar->callbacks->key_press != NULL)
+		return toolbar->callbacks->key_press(toolbar->client_data, key);
 
-	return true;
+	return false;
 }
 
 
