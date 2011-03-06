@@ -2734,7 +2734,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case BROWSER_SELECTION_SAVE:
-		if (h != NULL)
+		if (bw->sel != NULL && selection_defined(bw->sel))
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
 					bw->sel, NULL, NULL);
 		break;
@@ -3420,8 +3420,8 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 		/* Redraw box. */
 		box_coords(file_box, &pos.x, &pos.y);
 
-		error = xwimp_force_redraw(bw->window->window, 
-				pos.x * 2, -(pos.y + file_box->height) * 2, 
+		error = xwimp_force_redraw(bw->window->window,
+				pos.x * 2, -(pos.y + file_box->height) * 2,
 				(pos.x + file_box->width) * 2, -pos.y * 2);
 		if (error) {
 			LOG(("xwimp_force_redraw: 0x%x: %s",
