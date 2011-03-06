@@ -40,7 +40,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 {
 	struct bitmap *bitmap;
 	BITMAPV5HEADER *pbmi;
-	BITMAP *windib;
+	HBITMAP windib;
 	uint8_t *pixdata;
 
 	LOG(("width %d, height %d, state %u",width,height,state));
@@ -61,7 +61,7 @@ void *bitmap_create(int width, int height, unsigned int state)
 	pbmi->bV5BlueMask = 0xff0000; /* blue mask */
 	pbmi->bV5AlphaMask = 0xff000000; /* alpha mask */
 
-	windib = CreateDIBSection(NULL, (BITMAPINFO *)pbmi, DIB_RGB_COLORS, &pixdata, NULL, 0);
+	windib = CreateDIBSection(NULL, (BITMAPINFO *)pbmi, DIB_RGB_COLORS, (void **)&pixdata, NULL, 0);
 
 
 	if (windib == NULL) {

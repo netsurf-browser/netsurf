@@ -137,8 +137,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 
 bool nsws_download_window_up(struct gui_download_window *w)
 {
-	 w->hwnd = CreateDialog(hinstance, MAKEINTRESOURCE(
-			NSWS_ID_DOWNLOAD_DIALOG),
+	 w->hwnd = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DLG_DOWNLOAD),
 			gui_window_main_window(w->window),
 			nsws_download_event_callback);
 	if (w->hwnd == NULL) {
@@ -155,7 +154,7 @@ BOOL CALLBACK nsws_download_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 	HWND sub;
 	switch(msg){
 	case WM_INITDIALOG:
-		sub = GetDlgItem(hwnd, NSWS_ID_DOWNLOAD_LABEL);
+		sub = GetDlgItem(hwnd, IDC_DOWNLOAD_LABEL);
 		nsws_download_update_label((void *)download1);
 		nsws_download_update_progress((void *)download1);
 		return TRUE;
@@ -182,7 +181,7 @@ void nsws_download_update_label(void *p)
 		schedule_remove(nsws_download_update_label, p);
 		return;
 	}
-	HWND sub = GetDlgItem(w->hwnd, NSWS_ID_DOWNLOAD_LABEL);
+	HWND sub = GetDlgItem(w->hwnd, IDC_DOWNLOAD_LABEL);
 	char *size = human_friendly_bytesize(w->downloaded);
 	int i = 0, temp = w->time_remaining;
 	if (temp == -1) {
@@ -230,7 +229,7 @@ void nsws_download_update_progress(void *p)
 		schedule_remove(nsws_download_update_progress, p);
 		return;
 	}
-	HWND sub = GetDlgItem(w->hwnd, NSWS_ID_DOWNLOAD_PROGRESS);
+	HWND sub = GetDlgItem(w->hwnd, IDC_DOWNLOAD_PROGRESS);
 	SendMessage(sub, PBM_SETPOS, (WPARAM)(w->progress / 100), 0);
 	if (w->progress < 10000)
 		schedule(50, nsws_download_update_progress, p);

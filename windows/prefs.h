@@ -19,8 +19,6 @@
 #ifndef _NETSURF_WINDOWS_PREFS_H_
 #define _NETSURF_WINDOWS_PREFS_H_
 
-#include <windows.h>
-
-void nsws_prefs_dialog_init(HWND parent);
+void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent);
 
 #endif

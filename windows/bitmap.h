@@ -23,7 +23,7 @@
 #include "desktop/plotters.h"
 
 struct bitmap {
-	BITMAP *windib;
+	HBITMAP windib;
 	BITMAPV5HEADER *pbmi;
 	int width;
 	int height;

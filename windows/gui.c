@@ -233,7 +233,7 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	switch (msg) {
 	case WM_CHAR:
 		if (wparam == 13) {
-			SendMessage(gw->main, WM_COMMAND, NSWS_ID_LAUNCH_URL, 0);
+			SendMessage(gw->main, WM_COMMAND, IDC_MAIN_LAUNCH_URL, 0);
 			return 0;
 		}
 		break;
@@ -289,7 +289,7 @@ nsws_window_toolbar_command(struct gui_window *gw,
 
 	switch(identifier) {
 
-	case NSWS_ID_URLBAR:
+	case IDC_MAIN_URLBAR:
 		switch (notification_code) {
 		case EN_CHANGE:
 			LOG(("EN_CHANGE"));
@@ -411,23 +411,23 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 	bool back = history_back_available(w->bw->history);
 
 	if (w->mainmenu != NULL) {
-		EnableMenuItem(w->mainmenu, NSWS_ID_NAV_FORWARD,
+		EnableMenuItem(w->mainmenu, IDM_NAV_FORWARD,
 			       (forward ? MF_ENABLED : MF_GRAYED));
-		EnableMenuItem(w->mainmenu, NSWS_ID_NAV_BACK,
+		EnableMenuItem(w->mainmenu, IDM_NAV_BACK,
 			       (back ? MF_ENABLED : MF_GRAYED));
-		EnableMenuItem(w->rclick, NSWS_ID_NAV_FORWARD,
+		EnableMenuItem(w->rclick, IDM_NAV_FORWARD,
 			       (forward ? MF_ENABLED : MF_GRAYED));
-		EnableMenuItem(w->rclick, NSWS_ID_NAV_BACK,
+		EnableMenuItem(w->rclick, IDM_NAV_BACK,
 			       (back ? MF_ENABLED : MF_GRAYED));
 	}
 
 	if (w->toolbar != NULL) {
 		SendMessage(w->toolbar, TB_SETSTATE,
-			    (WPARAM) NSWS_ID_NAV_FORWARD,
+			    (WPARAM) IDM_NAV_FORWARD,
 			    MAKELONG((forward ? TBSTATE_ENABLED :
 				      TBSTATE_INDETERMINATE), 0));
 		SendMessage(w->toolbar, TB_SETSTATE,
-			    (WPARAM) NSWS_ID_NAV_BACK,
+			    (WPARAM) IDM_NAV_BACK,
 			    MAKELONG((back ? TBSTATE_ENABLED :
 				      TBSTATE_INDETERMINATE), 0));
 	}
@@ -454,31 +454,31 @@ static void nsws_update_edit(struct gui_window *w)
 		del = false;
 	}
 	EnableMenuItem(w->mainmenu,
-		       NSWS_ID_EDIT_PASTE,
+		       IDM_EDIT_PASTE,
 		       (paste ? MF_ENABLED : MF_GRAYED));
 
 	EnableMenuItem(w->rclick,
-		       NSWS_ID_EDIT_PASTE,
+		       IDM_EDIT_PASTE,
 		       (paste ? MF_ENABLED : MF_GRAYED));
 
 	EnableMenuItem(w->mainmenu,
-		       NSWS_ID_EDIT_COPY,
+		       IDM_EDIT_COPY,
 		       (copy ? MF_ENABLED : MF_GRAYED));
 
 	EnableMenuItem(w->rclick,
-		       NSWS_ID_EDIT_COPY,
+		       IDM_EDIT_COPY,
 		       (copy ? MF_ENABLED : MF_GRAYED));
 
 	if (del == true) {
-		EnableMenuItem(w->mainmenu, NSWS_ID_EDIT_CUT, MF_ENABLED);
-		EnableMenuItem(w->mainmenu, NSWS_ID_EDIT_DELETE, MF_ENABLED);
-		EnableMenuItem(w->rclick, NSWS_ID_EDIT_CUT, MF_ENABLED);
-		EnableMenuItem(w->rclick, NSWS_ID_EDIT_DELETE, MF_ENABLED);
+		EnableMenuItem(w->mainmenu, IDM_EDIT_CUT, MF_ENABLED);
+		EnableMenuItem(w->mainmenu, IDM_EDIT_DELETE, MF_ENABLED);
+		EnableMenuItem(w->rclick, IDM_EDIT_CUT, MF_ENABLED);
+		EnableMenuItem(w->rclick, IDM_EDIT_DELETE, MF_ENABLED);
 	} else {
-		EnableMenuItem(w->mainmenu, NSWS_ID_EDIT_CUT, MF_GRAYED);
-		EnableMenuItem(w->mainmenu, NSWS_ID_EDIT_DELETE, MF_GRAYED);
-		EnableMenuItem(w->rclick, NSWS_ID_EDIT_CUT, MF_GRAYED);
-		EnableMenuItem(w->rclick, NSWS_ID_EDIT_DELETE, MF_GRAYED);
+		EnableMenuItem(w->mainmenu, IDM_EDIT_CUT, MF_GRAYED);
+		EnableMenuItem(w->mainmenu, IDM_EDIT_DELETE, MF_GRAYED);
+		EnableMenuItem(w->rclick, IDM_EDIT_CUT, MF_GRAYED);
+		EnableMenuItem(w->rclick, IDM_EDIT_DELETE, MF_GRAYED);
 	}
 }
 
@@ -523,33 +523,33 @@ static void nsws_window_set_accels(struct gui_window *w)
 	for (i = 0; i < nitems; i++)
 		accels[i].fVirt = FCONTROL | FVIRTKEY;
 	accels[0].key = 0x51; /* Q */
-	accels[0].cmd = NSWS_ID_FILE_QUIT;
+	accels[0].cmd = IDM_FILE_QUIT;
 	accels[1].key = 0x4E; /* N */
-	accels[1].cmd = NSWS_ID_FILE_OPEN_WINDOW;
+	accels[1].cmd = IDM_FILE_OPEN_WINDOW;
 	accels[2].key = VK_LEFT;
-	accels[2].cmd = NSWS_ID_NAV_BACK;
+	accels[2].cmd = IDM_NAV_BACK;
 	accels[3].key = VK_RIGHT;
-	accels[3].cmd = NSWS_ID_NAV_FORWARD;
+	accels[3].cmd = IDM_NAV_FORWARD;
 	accels[4].key = VK_UP;
-	accels[4].cmd = NSWS_ID_NAV_HOME;
+	accels[4].cmd = IDM_NAV_HOME;
 	accels[5].key = VK_BACK;
-	accels[5].cmd = NSWS_ID_NAV_STOP;
+	accels[5].cmd = IDM_NAV_STOP;
 	accels[6].key = VK_SPACE;
-	accels[6].cmd = NSWS_ID_NAV_RELOAD;
+	accels[6].cmd = IDM_NAV_RELOAD;
 	accels[7].key = 0x4C; /* L */
-	accels[7].cmd = NSWS_ID_FILE_OPEN_LOCATION;
+	accels[7].cmd = IDM_FILE_OPEN_LOCATION;
 	accels[8].key = 0x57; /* w */
-	accels[8].cmd = NSWS_ID_FILE_CLOSE_WINDOW;
+	accels[8].cmd = IDM_FILE_CLOSE_WINDOW;
 	accels[9].key = 0x41; /* A */
-	accels[9].cmd = NSWS_ID_EDIT_SELECT_ALL;
+	accels[9].cmd = IDM_EDIT_SELECT_ALL;
 	accels[10].key = VK_F8;
-	accels[10].cmd = NSWS_ID_VIEW_SOURCE;
+	accels[10].cmd = IDM_VIEW_SOURCE;
 	accels[11].key = VK_RETURN;
 	accels[11].fVirt = FVIRTKEY;
-	accels[11].cmd = NSWS_ID_LAUNCH_URL;
+	accels[11].cmd = IDC_MAIN_LAUNCH_URL;
 	accels[12].key = VK_F11;
 	accels[12].fVirt = FVIRTKEY;
-	accels[12].cmd = NSWS_ID_VIEW_FULLSCREEN;
+	accels[12].cmd = IDM_VIEW_FULLSCREEN;
 
 	w->acceltable = CreateAcceleratorTable(accels, nitems);
 }
@@ -593,7 +593,7 @@ nsws_window_throbber_create(struct gui_window *w)
 			    NSWS_THROBBER_WIDTH,
 			    NSWS_THROBBER_WIDTH,
 			    w->main,
-			    (HMENU) NSWS_ID_THROBBER,
+			    (HMENU) IDC_MAIN_THROBBER,
 			    hinstance,
 			    NULL);
 
@@ -650,7 +650,7 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
 			      urlwidth,
 			      urlheight,
 			      hwndparent,
-			      (HMENU)NSWS_ID_URLBAR,
+			      (HMENU)IDC_MAIN_URLBAR,
 			      hinstance, 
 			      0);
 
@@ -681,11 +681,11 @@ nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 	HWND hWndToolbar;
 	/* Toolbar buttons */
 	TBBUTTON tbButtons[] = {
-		{0, NSWS_ID_NAV_BACK, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
-		{1, NSWS_ID_NAV_FORWARD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
-		{2, NSWS_ID_NAV_HOME, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
-		{3, NSWS_ID_NAV_RELOAD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
-		{4, NSWS_ID_NAV_STOP, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{0, IDM_NAV_BACK, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{1, IDM_NAV_FORWARD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{2, IDM_NAV_HOME, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{3, IDM_NAV_RELOAD, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
+		{4, IDM_NAV_STOP, TBSTATE_ENABLED, BTNS_BUTTON, {0}, 0, 0},
 	};
 	WNDPROC	toolproc;
 
@@ -716,13 +716,13 @@ nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
 
 	/* Create the standard image list and assign to toolbar. */
-	nsws_set_imagelist(hWndToolbar, TB_SETIMAGELIST, NSWS_ID_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
+	nsws_set_imagelist(hWndToolbar, TB_SETIMAGELIST, IDR_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
 
 	/* Create the disabled image list and assign to toolbar. */
-	nsws_set_imagelist(hWndToolbar, TB_SETDISABLEDIMAGELIST, NSWS_ID_TOOLBAR_GREY_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
+	nsws_set_imagelist(hWndToolbar, TB_SETDISABLEDIMAGELIST, IDR_TOOLBAR_BITMAP_GREY, gw->toolbuttonsize, gw->toolbuttonc);
 
 	/* Create the hot image list and assign to toolbar. */
-	nsws_set_imagelist(hWndToolbar, TB_SETHOTIMAGELIST, NSWS_ID_TOOLBAR_HOT_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
+	nsws_set_imagelist(hWndToolbar, TB_SETHOTIMAGELIST, IDR_TOOLBAR_BITMAP_HOT, gw->toolbuttonsize, gw->toolbuttonc);
 
 	/* Add buttons. */
 	SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
@@ -1265,7 +1265,7 @@ nsws_window_resize(struct gui_window *w,
 
 	if (w->toolbar != NULL) {
 		SendMessage(w->toolbar, TB_SETSTATE,
-			    (WPARAM) NSWS_ID_NAV_STOP,
+			    (WPARAM) IDM_NAV_STOP,
 			    MAKELONG(TBSTATE_INDETERMINATE, 0));
 	}
 
@@ -1284,7 +1284,7 @@ nsws_window_command(struct gui_window *gw,
 
 	switch(identifier) {
 
-	case NSWS_ID_FILE_QUIT: 
+	case IDM_FILE_QUIT: 
 	{
 		struct gui_window *w;
 		w = window_list;
@@ -1295,40 +1295,37 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_FILE_OPEN_LOCATION:
+	case IDM_FILE_OPEN_LOCATION:
 		SetFocus(gw->urlbar);
 		break;
 
-	case NSWS_ID_FILE_OPEN_WINDOW:
+	case IDM_FILE_OPEN_WINDOW:
 		browser_window_create(NULL, gw->bw, NULL, false, false);
 		break;
 
-	case NSWS_ID_FILE_CLOSE_WINDOW:
+	case IDM_FILE_CLOSE_WINDOW:
 		PostMessage(gw->main, WM_CLOSE, 0, 0);
 		break;
 
-	case NSWS_ID_FILE_SAVE_PAGE:
+	case IDM_FILE_SAVE_PAGE:
 		break;
 
-	case NSWS_ID_FILE_SAVEAS_TEXT:
+	case IDM_FILE_SAVEAS_TEXT:
 		break;
 
-	case NSWS_ID_FILE_SAVEAS_PDF:
+	case IDM_FILE_SAVEAS_PDF:
 		break;
 
-	case NSWS_ID_FILE_SAVEAS_DRAWFILE:
+	case IDM_FILE_SAVEAS_POSTSCRIPT:
 		break;
 
-	case NSWS_ID_FILE_SAVEAS_POSTSCRIPT:
+	case IDM_FILE_PRINT_PREVIEW:
 		break;
 
-	case NSWS_ID_FILE_PRINT_PREVIEW:
+	case IDM_FILE_PRINT:
 		break;
 
-	case NSWS_ID_FILE_PRINT:
-		break;
-
-	case NSWS_ID_EDIT_CUT:
+	case IDM_EDIT_CUT:
 		OpenClipboard(gw->main);
 		EmptyClipboard();
 		CloseClipboard();
@@ -1339,7 +1336,7 @@ nsws_window_command(struct gui_window *gw,
 		}
 		break;
 
-	case NSWS_ID_EDIT_COPY:
+	case IDM_EDIT_COPY:
 		OpenClipboard(gw->main);
 		EmptyClipboard();
 		CloseClipboard();
@@ -1350,7 +1347,7 @@ nsws_window_command(struct gui_window *gw,
 		}
 		break;
 
-	case NSWS_ID_EDIT_PASTE: {
+	case IDM_EDIT_PASTE: {
 		OpenClipboard(gw->main);
 		HANDLE h = GetClipboardData(CF_TEXT);
 		if (h != NULL) {
@@ -1366,28 +1363,28 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_EDIT_DELETE:
+	case IDM_EDIT_DELETE:
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, WM_CUT, 0, 0);
 		else
 			browser_window_key_press(gw->bw, KEY_DELETE_RIGHT);
 		break;
 
-	case NSWS_ID_EDIT_SELECT_ALL:
+	case IDM_EDIT_SELECT_ALL:
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, EM_SETSEL, 0, -1);
 		else
 			selection_select_all(gw->bw->sel);
 		break;
 
-	case NSWS_ID_EDIT_SEARCH:
+	case IDM_EDIT_SEARCH:
 		break;
 
-	case NSWS_ID_EDIT_PREFERENCES:
-		nsws_prefs_dialog_init(gw->main);
+	case IDM_EDIT_PREFERENCES:
+		nsws_prefs_dialog_init(hinstance, gw->main);
 		break;
 
-	case NSWS_ID_NAV_BACK:
+	case IDM_NAV_BACK:
 		if ((gw->bw != NULL) && 
 		    (history_back_available(gw->bw->history))) {
 			history_back(gw->bw, gw->bw->history);
@@ -1395,7 +1392,7 @@ nsws_window_command(struct gui_window *gw,
 		nsws_window_update_forward_back(gw);
 		break;
 
-	case NSWS_ID_NAV_FORWARD:
+	case IDM_NAV_FORWARD:
 		if ((gw->bw != NULL) && 
 		    (history_forward_available(gw->bw->history))) {
 			history_forward(gw->bw, gw->bw->history);
@@ -1403,26 +1400,26 @@ nsws_window_command(struct gui_window *gw,
 		nsws_window_update_forward_back(gw);
 		break;
 
-	case NSWS_ID_NAV_HOME:
+	case IDM_NAV_HOME:
 		browser_window_go(gw->bw, default_page, 0, true);
 		break;
 
-	case NSWS_ID_NAV_STOP:
+	case IDM_NAV_STOP:
 		browser_window_stop(gw->bw);
 		break;
 
-	case NSWS_ID_NAV_RELOAD:
+	case IDM_NAV_RELOAD:
 		browser_window_reload(gw->bw, true);
 		break;
 
-	case NSWS_ID_NAV_LOCALHISTORY:
+	case IDM_NAV_LOCALHISTORY:
 		nsws_localhistory_init(gw);
 		break;
 
-	case NSWS_ID_NAV_GLOBALHISTORY:
+	case IDM_NAV_GLOBALHISTORY:
 		break;
 
-	case NSWS_ID_VIEW_ZOOMPLUS: {
+	case IDM_VIEW_ZOOMPLUS: {
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
@@ -1434,7 +1431,7 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_VIEW_ZOOMMINUS: {
+	case IDM_VIEW_ZOOMMINUS: {
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
@@ -1447,7 +1444,7 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_VIEW_ZOOMNORMAL: {
+	case IDM_VIEW_ZOOMNORMAL: {
 		int x, y;
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
@@ -1459,10 +1456,10 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_VIEW_SOURCE:
+	case IDM_VIEW_SOURCE:
 		break;
 
-	case NSWS_ID_VIEW_SAVE_WIN_METRICS: {
+	case IDM_VIEW_SAVE_WIN_METRICS: {
 		RECT r;
 		GetWindowRect(gw->main, &r);
 		option_window_x = r.left;
@@ -1473,7 +1470,7 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_VIEW_FULLSCREEN: {
+	case IDM_VIEW_FULLSCREEN: {
 		RECT rdesk;
 		if (gw->fullscreen == NULL) {
 			HWND desktop = GetDesktopWindow();
@@ -1511,36 +1508,36 @@ nsws_window_command(struct gui_window *gw,
 		break;
 	}
 
-	case NSWS_ID_VIEW_DOWNLOADS:
+	case IDM_VIEW_DOWNLOADS:
 		break;
 
-	case NSWS_ID_VIEW_TOGGLE_DEBUG_RENDERING:
+	case IDM_VIEW_TOGGLE_DEBUG_RENDERING:
 		html_redraw_debug = !html_redraw_debug;
 		if (gw->bw != NULL) {
 			browser_window_reformat(gw->bw, gw->width, gw->height);
 		}
 		break;
 
-	case NSWS_ID_VIEW_DEBUGGING_SAVE_BOXTREE:
+	case IDM_VIEW_DEBUGGING_SAVE_BOXTREE:
 		break;
 
-	case NSWS_ID_VIEW_DEBUGGING_SAVE_DOMTREE:
+	case IDM_VIEW_DEBUGGING_SAVE_DOMTREE:
 		break;
 
-	case NSWS_ID_HELP_CONTENTS:
+	case IDM_HELP_CONTENTS:
 		break;
 
-	case NSWS_ID_HELP_GUIDE:
+	case IDM_HELP_GUIDE:
 		break;
 
-	case NSWS_ID_HELP_INFO:
+	case IDM_HELP_INFO:
 		break;
 
-	case NSWS_ID_HELP_ABOUT:
+	case IDM_HELP_ABOUT:
 		nsws_about_dialog_init(hinstance, gw->main);
 		break;
 
-	case NSWS_ID_LAUNCH_URL:
+	case IDC_MAIN_LAUNCH_URL:
 	{
 		if (GetFocus() != gw->urlbar)
 			break;
@@ -1570,6 +1567,7 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	gw = nsws_get_gui_window(hwnd);
 
+	if ((msg!=WM_SETCURSOR) && (msg!=WM_MOUSEMOVE) &&(msg!=WM_NCHITTEST))
 	LOG(("%s, hwnd %p, gw %p", msg_num_to_name(msg), hwnd, gw));
 
 	if (gw == NULL) {
@@ -1641,12 +1639,12 @@ static void create_local_windows_classes(void) {
 	w.cbClsExtra	= 0;
 	w.cbWndExtra	= 0;
 	w.hInstance	= hinstance;
-	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(NSWS_ID_NETSURF32_ICON)); /* -> NetSurf */
+	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF32_ICON)); /* -> NetSurf */
 	w.hCursor	= NULL;
 	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
 	w.lpszMenuName	= NULL;
 	w.lpszClassName = windowclassname_main;
-	w.hIconSm	= LoadIcon(hinstance, MAKEINTRESOURCE(NSWS_ID_NETSURF16_ICON)); /* -> NetSurf */
+	w.hIconSm	= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF16_ICON)); /* -> NetSurf */
 	RegisterClassEx(&w);
 
 	/* drawable area */
@@ -1671,7 +1669,7 @@ static HWND nsws_window_statusbar_create(struct gui_window *w)
 				   WS_CHILD | WS_VISIBLE,
 				   0, 0, 0, 0,
 				   w->main,
-				   (HMENU)NSWS_ID_STATUSBAR,
+				   (HMENU)IDC_MAIN_STATUSBAR,
 				   hinstance,
 				   NULL);
 	SendMessage(hwnd, SB_SETTEXT, 0, (LPARAM)"NetSurf");
@@ -1712,8 +1710,8 @@ static HWND nsws_window_create(struct gui_window *gw)
 #endif
 	InitCommonControlsEx(&icc);
 
-	gw->mainmenu = LoadMenu(hinstance, MAKEINTRESOURCE(NSWS_ID_MAINMENU));
-	gw->rclick = LoadMenu(hinstance, MAKEINTRESOURCE(NSWS_ID_CTXMENU));
+	gw->mainmenu = LoadMenu(hinstance, MAKEINTRESOURCE(IDR_MENU_MAIN));
+	gw->rclick = LoadMenu(hinstance, MAKEINTRESOURCE(IDR_MENU_CONTEXT));
 
 	LOG(("creating window for hInstance %p", hinstance));
 	hwnd = CreateWindowEx(0,
@@ -2289,18 +2287,18 @@ void gui_window_start_throbber(struct gui_window *w)
 	nsws_window_update_forward_back(w);
 
 	if (w->mainmenu != NULL) {
-		EnableMenuItem(w->mainmenu, NSWS_ID_NAV_STOP, MF_ENABLED);
-		EnableMenuItem(w->mainmenu, NSWS_ID_NAV_RELOAD, MF_GRAYED);
+		EnableMenuItem(w->mainmenu, IDM_NAV_STOP, MF_ENABLED);
+		EnableMenuItem(w->mainmenu, IDM_NAV_RELOAD, MF_GRAYED);
 	}
 	if (w->rclick != NULL) {
-		EnableMenuItem(w->rclick, NSWS_ID_NAV_STOP, MF_ENABLED);
-		EnableMenuItem(w->rclick, NSWS_ID_NAV_RELOAD, MF_GRAYED);
+		EnableMenuItem(w->rclick, IDM_NAV_STOP, MF_ENABLED);
+		EnableMenuItem(w->rclick, IDM_NAV_RELOAD, MF_GRAYED);
 	}
 	if (w->toolbar != NULL) {
-		SendMessage(w->toolbar, TB_SETSTATE, (WPARAM) NSWS_ID_NAV_STOP,
+		SendMessage(w->toolbar, TB_SETSTATE, (WPARAM) IDM_NAV_STOP,
 			    MAKELONG(TBSTATE_ENABLED, 0));
 		SendMessage(w->toolbar, TB_SETSTATE,
-			    (WPARAM) NSWS_ID_NAV_RELOAD,
+			    (WPARAM) IDM_NAV_RELOAD,
 			    MAKELONG(TBSTATE_INDETERMINATE, 0));
 	}
 	w->throbbing = true;
@@ -2313,18 +2311,18 @@ void gui_window_stop_throbber(struct gui_window *w)
 		return;
 	nsws_window_update_forward_back(w);
 	if (w->mainmenu != NULL) {
-		EnableMenuItem(w->mainmenu, NSWS_ID_NAV_STOP, MF_GRAYED);
-		EnableMenuItem(w->mainmenu, NSWS_ID_NAV_RELOAD, MF_ENABLED);
+		EnableMenuItem(w->mainmenu, IDM_NAV_STOP, MF_GRAYED);
+		EnableMenuItem(w->mainmenu, IDM_NAV_RELOAD, MF_ENABLED);
 	}
 	if (w->rclick != NULL) {
-		EnableMenuItem(w->rclick, NSWS_ID_NAV_STOP, MF_GRAYED);
-		EnableMenuItem(w->rclick, NSWS_ID_NAV_RELOAD, MF_ENABLED);
+		EnableMenuItem(w->rclick, IDM_NAV_STOP, MF_GRAYED);
+		EnableMenuItem(w->rclick, IDM_NAV_RELOAD, MF_ENABLED);
 	}
 	if (w->toolbar != NULL) {
-		SendMessage(w->toolbar, TB_SETSTATE, (WPARAM) NSWS_ID_NAV_STOP,
+		SendMessage(w->toolbar, TB_SETSTATE, (WPARAM) IDM_NAV_STOP,
 			    MAKELONG(TBSTATE_INDETERMINATE, 0));
 		SendMessage(w->toolbar, TB_SETSTATE,
-			    (WPARAM) NSWS_ID_NAV_RELOAD,
+			    (WPARAM) IDM_NAV_RELOAD,
 			    MAKELONG(TBSTATE_ENABLED, 0));
 	}
 	w->throbbing = false;
@@ -2582,13 +2580,15 @@ static void gui_init(int argc, char** argv)
 	nsws_window_init_pointers();
 	LOG(("argc %d, argv %p", argc, argv));
 
+	/* ensure homepage option has a default */
+	if (option_homepage_url == NULL || option_homepage_url[0] == '\0')
+		option_homepage_url = strdup(default_page);
+
+	/* If there is a url specified on the command line use it */
 	if (argc > 1)
 		addr = argv[1];
-	else if (option_homepage_url != NULL && option_homepage_url[0]
-		 != '\0')
+	else 
 		addr = option_homepage_url;
-	else
-		addr = default_page;
 
 	LOG(("calling browser_window_create"));
 	bw = browser_window_create(addr, 0, 0, true, false);

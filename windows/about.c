@@ -67,7 +67,7 @@ BOOL CALLBACK nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 {
 	switch(msg) {
 	case WM_INITDIALOG: {
-		HWND content = GetDlgItem(hwnd, NSWS_ID_ABOUT_CONTENT);
+		HWND content = GetDlgItem(hwnd, IDC_ABOUT_CONTENT);
 		/* modify label NSWS_ID_ABOUT_CONTENT */
 		size_t len;
 		char *newcontent, *authors, *artists, *documenters;
@@ -165,7 +165,7 @@ BOOL CALLBACK nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
 
 void nsws_about_dialog_init(HINSTANCE hinst, HWND parent)
 {
-	int ret = DialogBox(hinst, MAKEINTRESOURCE(NSWS_ID_ABOUT_DIALOG), parent,
+	int ret = DialogBox(hinst, MAKEINTRESOURCE(IDD_DLG_ABOUT), parent,
 			nsws_about_event_callback);
 	if (ret == -1) {
 		warn_user(messages_get("NoMemory"), 0);
