@@ -32,6 +32,8 @@
 
 @interface BrowserView ()
 
+@property (readwrite, copy, nonatomic) NSString *markedText;
+
 - (void) scrollHorizontal: (CGFloat) amount;
 - (void) scrollVertical: (CGFloat) amount;
 - (CGFloat) pageScroll;
@@ -54,6 +56,7 @@
 
 @synthesize browser;
 @synthesize caretTimer;
+@synthesize markedText;
 
 static const CGFloat CaretWidth = 1.0;
 static const NSTimeInterval CaretBlinkTime = 0.8;
@@ -72,6 +75,7 @@ static NSMutableArray *cocoa_reformat_pending = nil;
 - (void) dealloc;
 {
 	[self setCaretTimer: nil];
+	[self setMarkedText: nil];
 	[history release];
 	
 	[super dealloc];
@@ -300,6 +304,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 			break;
 		}
 	}
+	[self setMarkedText: nil];
 }
 
 - (void) moveLeft: (id)sender;
@@ -623,5 +628,63 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
     return YES;
 }
 
+// MARK: -
+// MARK: NSTextInput protocol implementation
+
+- (void) setMarkedText: (id) aString selectedRange: (NSRange) selRange 
+{
+	[markedText release];
+	markedText = [aString isEqualToString: @""] ? nil : [aString copy];
+}
+
+- (void) unmarkText 
+{
+	[self setMarkedText: nil];
+}
+
+- (BOOL) hasMarkedText 
+{
+	return markedText != nil;
+}
+
+- (NSInteger) conversationIdentifier 
+{
+	return (NSInteger)self;
+}
+
+- (NSAttributedString *) attributedSubstringFromRange: (NSRange) theRange 
+{
+	return [[[NSAttributedString alloc] initWithString: @""] autorelease];
+}
+
+- (NSRange) markedRange 
+{
+	return NSMakeRange( NSNotFound, 0 );
+}
+
+- (NSRange) selectedRange 
+{
+	return NSMakeRange( NSNotFound, 0 );
+}
+
+- (NSRect) firstRectForCharacterRange: (NSRange) theRange 
+{
+	return NSZeroRect;
+}
+
+- (NSUInteger) characterIndexForPoint: (NSPoint) thePoint 
+{
+	return 0;
+}
+
+- (NSArray *) validAttributesForMarkedText 
+{
+	return [NSArray array];
+}
+
+- (void) doCommandBySelector: (SEL) sel;
+{
+	[super doCommandBySelector: sel];
+}
 
 @end

@@ -22,7 +22,7 @@
 
 @class LocalHistoryController;
 
-@interface BrowserView : ScrollableView {
+@interface BrowserView : ScrollableView <NSTextInput> {
 	struct browser_window *browser;
 	
 	NSPoint caretPoint;
@@ -36,6 +36,8 @@
 	
 	BOOL historyVisible;
 	LocalHistoryController *history;
+	
+	NSString *markedText;
 }
 
 @property (readwrite, assign, nonatomic) struct browser_window *browser;
