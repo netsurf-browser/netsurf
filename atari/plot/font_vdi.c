@@ -171,6 +171,21 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 	return( 0 );
 }
 
+static inline void vst_rgbcolor( short vdih, uint32_t cin )
+{
+	if( vdi_sysinfo.scr_bpp > 8 ) {
+		unsigned short c[4];
+		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );	
+		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0] );
+		vst_color( vdih, OFFSET_CUSTOM_COLOR );
+	} else {
+		if( vdi_sysinfo.scr_bpp >= 4 )
+			vst_color( vdih, RGB_TO_VDI(cin) );
+		else
+			vst_color( vdih, BLACK );
+	}
+}
+
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, 
 				 const plot_font_style_t *fstyle )
 {
@@ -205,11 +220,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	vst_alignment(vdih, 0, 4, &cw, &ch );
 	vst_height( self->vdi_handle, pxsize, &cw, &ch, &cellw, &cellh);
 	vswr_mode( self->vdi_handle, MD_TRANS );
-	if( vdi_sysinfo.scr_bpp >= 4 ){
-		vst_color( self->vdi_handle, RGB_TO_VDI(fstyle->foreground) );		
-	} else {
-		vst_color( self->vdi_handle, BLACK );
-	}
+	vst_rgbcolor(self->vdi_handle, fstyle->foreground );
 
 	if( atari_sysinfo.gdos_FSMC ){
 		v_ftext( self->vdi_handle, x, y, (char*)&textcpy );
