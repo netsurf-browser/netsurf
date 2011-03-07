@@ -1130,7 +1130,7 @@ static void gui_init2(int argc, char** argv)
 	const char *addr = NETSURF_HOMEPAGE;
 	MenuBar( h_gem_menu , 1 );
 	bind_global_events();
-	if( atari_sysinfo.gdosversion > TOS4VER ) {
+	if( atari_sysinfo.gemdos_version > TOS4VER ) {
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
 }
