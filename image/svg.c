@@ -150,6 +150,7 @@ bool svg_redraw(struct content *c, int x, int y,
 
 			fstyle.background = 0xffffff;
 			fstyle.foreground = 0x000000;
+			fstyle.size = (8 * FONT_SIZE_SCALE) * scale;
 
 			ok = plot.text(px, py,
 					diagram->shape[i].text,

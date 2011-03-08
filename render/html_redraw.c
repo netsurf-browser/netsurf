@@ -797,6 +797,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 
 	font_plot_style_from_css(box->style, &fstyle);
 	fstyle.background = current_background_color;
+	fstyle.size *= scale;
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
 			box->space, &fstyle, x, y,
