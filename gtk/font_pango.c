@@ -246,7 +246,7 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 		return true;
 
 	desc = nsfont_style_to_description(fstyle);
-	size = (gint)((double)pango_font_description_get_size(desc) * nsgtk_plot_get_scale());
+	size = (gint)(pango_font_description_get_size(desc));
 	if (pango_font_description_get_size_is_absolute(desc))
 		pango_font_description_set_absolute_size(desc, size);
 	else
