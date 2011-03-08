@@ -106,7 +106,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint8 *utf8;
 	uint32 co = 0;
 	int utf16charlen;
-	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
+	ULONG emwidth = (ULONG)(fstyle->size / FONT_SIZE_SCALE);
 	int32 tempx;
 
 	len = utf8_bounded_length(string, length);
@@ -215,7 +215,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	size_t len;
 	int utf8len, utf8clen = 0;
 	int32 tempx = 0;
-	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
+	ULONG emwidth = (ULONG)(fstyle->size / FONT_SIZE_SCALE);
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -329,7 +329,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	}
 
 	/* Scale to 16.16 fixed point */
-	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE) * glob->scale;
+	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,(72<<16) | 72,
@@ -406,7 +406,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	uint32 x=0;
 	uint8 co = 0;
 	int32 tempx = 0;
-	ULONG emwidth = (ULONG)((fstyle->size / FONT_SIZE_SCALE) * glob->scale);
+	ULONG emwidth = (ULONG)(fstyle->size / FONT_SIZE_SCALE);
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
