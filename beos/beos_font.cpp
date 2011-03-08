@@ -259,7 +259,7 @@ bool nsfont_paint(const plot_font_style_t *fstyle,
 	//view->SetScale() XXX
 
 //printf("nsfont_paint: Size: %f\n", font.Size());
-	size = (float)(font.Size() * nsbeos_plot_get_scale());
+	size = (float)font.Size();
 #warning XXX use scale
 
 	view->SetFont(&font);
