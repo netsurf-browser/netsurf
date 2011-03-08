@@ -385,12 +385,11 @@ bool nsfont_split(const plot_font_style_t *fstyle,
  * \param  length  length of string
  * \param  x       x coordinate
  * \param  y       y coordinate
- * \param  scale   scale to apply to font size
  * \return  true on success, false on error and error reported
  */
 
 bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
-		size_t length, int x, int y, float scale)
+		size_t length, int x, int y)
 {
 	const char *font_family;
 	unsigned int font_size;
@@ -401,7 +400,7 @@ bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
 	if (font_size == 0)
 		return true;
 
-	code = rufl_paint(font_family, font_style, font_size * scale,
+	code = rufl_paint(font_family, font_style, font_size,
 			string, length, x, y,
 			print_active ? 0 : rufl_BLEND_FONT);
 	if (code != rufl_OK) {

@@ -407,8 +407,7 @@ bool ro_plot_text(int x, int y, const char *text, size_t length,
 
 	return nsfont_paint(fstyle, text, length,
 			ro_plot_origin_x + x * 2,
-			ro_plot_origin_y - y * 2,
-			ro_plot_scale);
+			ro_plot_origin_y - y * 2);
 }
 
 
