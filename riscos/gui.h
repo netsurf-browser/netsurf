@@ -195,7 +195,7 @@ void nsfont_init(void);
 bool nsfont_exists(const char *font_family);
 const char *nsfont_fallback_font(void);
 bool nsfont_paint(const plot_font_style_t *fstyle, const char *string,
-		size_t length, int x, int y, float scale);
+		size_t length, int x, int y);
 void nsfont_read_style(const plot_font_style_t *fstyle,
 		const char **font_family, unsigned int *font_size,
 		rufl_style *font_style);
