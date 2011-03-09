@@ -21,6 +21,3 @@
  
 extern HDC plot_hdc;
 
-void nsws_plot_set_scale(float s);
-float nsws_plot_get_scale(void);
-

@@ -48,7 +48,6 @@
 
 HDC plot_hdc;
 
-static float nsws_plot_scale = 1.0;
 
 static RECT plot_clip; /* currently set clipping rectangle */
 
@@ -875,16 +874,6 @@ static bool path(const float *p, unsigned int n, colour fill, float width,
 	LOG(("path unimplemented"));
 #endif
 	return true;
-}
-
-void nsws_plot_set_scale(float s)
-{
-	nsws_plot_scale = s;
-}
-
-float nsws_plot_get_scale(void)
-{
-	return nsws_plot_scale;
 }
 
 struct plotter_table plot = {
