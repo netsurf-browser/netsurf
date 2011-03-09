@@ -2,7 +2,7 @@
 # Amiga target setup
 # ----------------------------------------------------------------------------
 
-CFLAGS += -std=c99 -I . -Dnsamiga
+CFLAGS += -std=c99 -I . -Dnsamiga -U__STRICT_ANSI__
 
 NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP

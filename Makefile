@@ -111,7 +111,7 @@ RESOURCES =
 ifneq ($(TARGET),riscos)
   ifneq ($(TARGET),gtk)
     ifneq ($(TARGET),beos)
-      ifneq ($(TARGET),amiga)
+      ifneq ($(findstring amiga,$(TARGET)),amiga)
         ifneq ($(TARGET),framebuffer)
           ifneq ($(TARGET),windows)
             ifneq ($(TARGET),atari)
@@ -212,11 +212,19 @@ else
         PKG_CONFIG :=
       endif
     else
-      ifeq ($(TARGET),amiga)
-        ifneq ($(HOST),amiga)
-          # TODO: We'll eventually need ppc-unknown-amigaos4, too -- how?
-          GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-unknown-amigaos/env
-          GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-unknown-amigaos/cross/bin
+      ifeq ($(findstring amiga,$(TARGET)),amiga)
+        ifneq ($(findstring amiga,$(HOST)),amiga)
+          ifeq ($(TARGET),amigaos3)
+            GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-unknown-amigaos/env
+            GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-unknown-amigaos/cross/bin
+
+            SUBTARGET = os3
+          else
+            GCCSDK_INSTALL_ENV ?= /opt/netsurf/ppc-amigaos/env
+            GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/ppc-amigaos/cross/bin
+          endif
+
+          override TARGET := amiga
 
           CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
 
