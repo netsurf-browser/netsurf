@@ -1677,7 +1677,6 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 {
 	osbool more;
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(redraw->w);
-	float scale = g->bw->scale;
 	os_error *error;
 
 	/* We can't render locked contents.  If the browser window is not
@@ -1687,7 +1686,6 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		return;
 
 	plot = ro_plotters;
-	ro_plot_set_scale(scale);
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = g->bw;
 
@@ -4390,7 +4388,6 @@ void ro_gui_window_update_boxes(void)
 		plot = ro_plotters;
 		ro_plot_origin_x = update.box.x0 - update.xscroll;
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
-		ro_plot_set_scale(g->bw->scale);
 
 		while (more) {
 			clip.x0 = (update.clip.x0 - ro_plot_origin_x) / 2;

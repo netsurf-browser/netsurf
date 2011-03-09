@@ -317,10 +317,7 @@ void ro_treeview_redraw_request(int x, int y, int width, int height,
 		wimp_draw		update;
 		osbool			more;
 
-		/* The scale can't be changed; it's always 1:1. */
-
 		plot = ro_plotters;
-		ro_plot_set_scale(1.0);
 
 		update.w = tv->w;
 		update.box.x0 = (2 * x) + tv->origin.x;
@@ -360,10 +357,7 @@ void ro_treeview_redraw(wimp_draw *redraw)
 		 */
 	}
 
-	/* The scale can't be changed; it's always 1:1. */
-
 	plot = ro_plotters;
-	ro_plot_set_scale(1.0);
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {

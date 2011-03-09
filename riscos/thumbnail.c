@@ -117,8 +117,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	if (content_get_width(content))
 		scale = thumbnail_get_redraw_scale(content, bitmap->width);
 
-	ro_plot_set_scale(scale);
-
 	/* switch output and redraw */
 	save_area = thumbnail_switch_output(sprite_area, sprite_header);
 	if (!save_area) {

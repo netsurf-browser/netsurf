@@ -205,7 +205,6 @@ void ro_gui_wimp_get_desktop_font(void);
 extern const struct plotter_table ro_plotters;
 extern int ro_plot_origin_x;
 extern int ro_plot_origin_y;
-void ro_plot_set_scale(float scale);
 
 /* in theme_install.c */
 bool ro_gui_theme_install_apply(wimp_w w);

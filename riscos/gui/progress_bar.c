@@ -473,7 +473,6 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 
 	/* initialise the plotters */
 	plot = ro_plotters;
-	ro_plot_set_scale(1.0);
   	ro_plot_origin_x = 0;
   	ro_plot_origin_y = 0;
 

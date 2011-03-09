@@ -1012,7 +1012,6 @@ void ro_toolbar_redraw(wimp_draw *redraw)
 	assert(toolbar != NULL);
 
 	plot = ro_plotters;
-	ro_plot_set_scale(1.0);
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {

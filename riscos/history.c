@@ -141,7 +141,6 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 	os_error *error;
 
 	plot = ro_plotters;
-	ro_plot_set_scale(1.0);
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {

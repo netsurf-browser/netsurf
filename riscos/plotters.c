@@ -69,7 +69,6 @@ const struct plotter_table ro_plotters = {
 
 int ro_plot_origin_x = 0;
 int ro_plot_origin_y = 0;
-float ro_plot_scale = 1.0;
 
 /** One version of the A9home OS is incapable of drawing patterned lines */
 bool ro_plot_patterned_lines = true;
@@ -536,13 +535,4 @@ bool ro_plot_bitmap(int x, int y, int width, int height,
 			flags & BITMAPF_REPEAT_X || flags & BITMAPF_REPEAT_Y,
 			bitmap_get_opaque(bitmap) ? IMAGE_PLOT_TINCT_OPAQUE :
 			IMAGE_PLOT_TINCT_ALPHA);
-}
-
-/**
- * Set the scale for subsequent text plotting.
- */
-
-void ro_plot_set_scale(float scale)
-{
-	ro_plot_scale = scale;
 }
