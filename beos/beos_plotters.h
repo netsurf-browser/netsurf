@@ -49,8 +49,6 @@ extern BView *nsbeos_current_gc_lock(void);
 extern void nsbeos_current_gc_unlock(void);
 extern void nsbeos_current_gc_set(BView *view);
 
-void nsbeos_plot_set_scale(float s);
-float nsbeos_plot_get_scale(void);
 rgb_color nsbeos_rgb_colour(colour c);
 void nsbeos_set_colour(colour c);
 void nsbeos_plot_caret(int x, int y, int h);

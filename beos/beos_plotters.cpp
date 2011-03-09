@@ -79,7 +79,6 @@ static bool nsbeos_plot_bitmap(int x, int y, int width, int height,
 #if 0 /* GTK */
 static GdkRectangle cliprect;
 #endif
-static float nsbeos_plot_scale = 1.0;
 
 #warning make patterns nicer
 static const pattern kDottedPattern = { 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa };
@@ -778,16 +777,6 @@ void nsbeos_set_colour(colour c)
 			g / 255.0, b / 255.0, 1.0);
 #endif
 #endif
-}
-
-void nsbeos_plot_set_scale(float s)
-{
-	nsbeos_plot_scale = s;
-}
-
-float nsbeos_plot_get_scale(void)
-{
-	return nsbeos_plot_scale;
 }
 
 /** Plot a caret.  It is assumed that the plotters have been set up. */

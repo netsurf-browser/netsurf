@@ -119,7 +119,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	plot = nsbeos_plotters;
 	plot_scale = thumbnail_get_redraw_scale(content, big_width);
-	nsbeos_plot_set_scale(plot_scale);
 
 	/* render the content */
 	thumbnail_redraw(content, big_width, big_height);

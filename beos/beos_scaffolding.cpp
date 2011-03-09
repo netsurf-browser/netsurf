@@ -1390,7 +1390,6 @@ gboolean nsbeos_history_expose_event(beosWidget *widget,
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 	plot = nsbeos_plotters;
-	nsbeos_plot_set_scale(1.0);
 
 	history_redraw(bw->history);
 

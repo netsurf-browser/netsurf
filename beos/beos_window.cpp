@@ -948,7 +948,6 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 		view->Window()->BeginViewTransaction();
 
 	plot = nsbeos_plotters;
-	nsbeos_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
 
 	clip.x0 = (int)updateRect.left;
