@@ -47,18 +47,6 @@ struct bitmap;
 bool thumbnail_redraw(struct hlcache_handle *content,
 		int width, int height);
 
-/**
- * Get scale at which thumbnail will be rendered for a given content and
- * thumbnail size.
- *
- * \param  content  The content to redraw for thumbnail
- * \param  width    The thumbnail width
- * \return scale thumbnail will be rendered at
- *
- * Units for width and height are pixels.
- */
-float thumbnail_get_redraw_scale(struct hlcache_handle *content, int width);
-
 
 /* In platform specific thumbnail.c. */
 bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,

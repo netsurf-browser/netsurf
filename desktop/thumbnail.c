@@ -33,6 +33,28 @@
 #include "utils/log.h"
 
 
+/**
+ * Get scale at which thumbnail will be rendered for a given content and
+ * thumbnail size.
+ *
+ * \param  content  The content to redraw for thumbnail
+ * \param  width    The thumbnail width
+ * \return scale thumbnail will be rendered at
+ *
+ * Units for width and height are pixels.
+ */
+static float thumbnail_get_redraw_scale(struct hlcache_handle *content,
+		int width)
+{
+	assert(content);
+
+	if (content_get_width(content))
+		return (float)width / (float)content_get_width(content);
+	else
+		return 1.0;	
+}
+
+
 /* exported interface, documented in thumbnail.h */
 bool thumbnail_redraw(struct hlcache_handle *content,
 		int width, int height)
@@ -72,16 +94,4 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 		knockout_plot_end();
 
 	return plot_ok;
-}
-
-
-/* exported interface, documented in thumbnail.h */
-float thumbnail_get_redraw_scale(struct hlcache_handle *content, int width)
-{
-	assert(content);
-
-	if (content_get_width(content))
-		return (float)width / (float)content_get_width(content);
-	else
-		return 1.0;	
 }
