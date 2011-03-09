@@ -308,7 +308,7 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 		return UTF8_CONVERT_NOMEM;
 
 	/* perform conversion */
-	if (iconv(cd, &in, &slen, &out, &rlen) == (size_t)-1) {
+	if (iconv(cd, (void *) &in, &slen, &out, &rlen) == (size_t)-1) {
 		free(temp);
 		/* clear the cached conversion descriptor as it's invalid */
 		if (last_cd.cd)
