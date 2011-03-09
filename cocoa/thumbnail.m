@@ -46,9 +46,6 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 
 	[NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithGraphicsPort: bitmapContext flipped: YES]];
 
-	/* todo: ??? set plot scale according to the scale the thumbnail will be
-	 * rendered at, by calling thumbnail_get_redraw_scale(). ??? */
-
 	thumbnail_redraw( content, width, height );
 
 	[NSGraphicsContext setCurrentContext: nil];

@@ -57,8 +57,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	current_redraw_browser = curbw;
 	plot = amiplot;
 
-	glob->scale = thumbnail_get_redraw_scale(content, plot_width);
-
 	thumbnail_redraw(content, plot_width, plot_height);
 
 	current_redraw_browser = NULL;

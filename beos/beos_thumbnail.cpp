@@ -67,7 +67,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	BView *thumbView;
 	float width;
 	float height;
-	float plot_scale;
 	int big_width;
 	int big_height;
 	int depth;
@@ -118,7 +117,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	nsbeos_current_gc_set(view);
 
 	plot = nsbeos_plotters;
-	plot_scale = thumbnail_get_redraw_scale(content, big_width);
 
 	/* render the content */
 	thumbnail_redraw(content, big_width, big_height);

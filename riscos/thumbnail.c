@@ -82,7 +82,6 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		const char *url)
 {
-	float scale = 1.0;
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
@@ -114,8 +113,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	plot = ro_plotters;
 	ro_plot_origin_x = 0;
 	ro_plot_origin_y = bitmap->height * 2;
-	if (content_get_width(content))
-		scale = thumbnail_get_redraw_scale(content, bitmap->width);
 
 	/* switch output and redraw */
 	save_area = thumbnail_switch_output(sprite_area, sprite_header);

@@ -57,7 +57,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	gint depth;
 	GdkPixmap *pixmap;
 	GdkPixbuf *big;
-	float plot_scale;
 	double scale;
 
 	assert(content);
@@ -96,9 +95,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	/* set the plotting functions up */
 	plot = nsgtk_plotters;
-
-	/* Plotters need to know thumbnail scale */
-	plot_scale = thumbnail_get_redraw_scale(content, cwidth);
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
