@@ -17,6 +17,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/types.h>
 #include "utils/utf8.h"
@@ -66,7 +67,7 @@ utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
 	LONG charset;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
 #endif
 	
 	return utf8_from_enc(string,encname,len,result);
@@ -81,7 +82,7 @@ utf8_convert_ret utf8_to_local_encoding(const char *string, size_t len,
 	LONG charset;
 
 	charset = GetDiskFontCtrl(DFCTRL_CHARSET);
-	encname = ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
+	encname = (const char *) ObtainCharsetInfo(DFCS_NUMBER, charset, DFCS_MIMENAME);
 #endif
 
 	return utf8_to_enc(string,encname,len,result);
