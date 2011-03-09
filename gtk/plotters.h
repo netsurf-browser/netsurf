@@ -37,8 +37,6 @@ extern GdkGC *current_gc;
 extern cairo_t *current_cr;
 #endif
 
-void nsgtk_plot_set_scale(float s);
-float nsgtk_plot_get_scale(void);
 void nsgtk_set_colour(colour c);
 void nsgtk_plot_caret(int x, int y, int h);
 

@@ -99,7 +99,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	/* Plotters need to know thumbnail scale */
 	plot_scale = thumbnail_get_redraw_scale(content, cwidth);
-	nsgtk_plot_set_scale(plot_scale);
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;

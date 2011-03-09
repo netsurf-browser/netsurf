@@ -176,7 +176,6 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 #endif
 
 	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(g->bw->scale);
 	current_redraw_browser = g->bw;
 
 	clip.x0 = event->area.x;

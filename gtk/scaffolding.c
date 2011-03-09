@@ -1498,7 +1498,6 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(1.0);
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;

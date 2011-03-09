@@ -51,21 +51,8 @@ GdkGC *current_gc;
 cairo_t *current_cr;
 
 static GdkRectangle cliprect;
-static float nsgtk_plot_scale = 1.0;
 
 struct plotter_table plot;
-
-/** set plotting scale factor. */
-void nsgtk_plot_set_scale(float s)
-{
-	nsgtk_plot_scale = s;
-}
-
-/** get plotting scale factor. */
-float nsgtk_plot_get_scale(void)
-{
-	return nsgtk_plot_scale;
-}
 
 /** Set cairo context colour to nsgtk colour. */
 void nsgtk_set_colour(colour c)

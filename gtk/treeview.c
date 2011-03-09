@@ -210,14 +210,13 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(1.0);current_widget = widget;
+	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 	plot = nsgtk_plotters;
-	nsgtk_plot_set_scale(1.0);
 	
 	tree_set_redraw(tree, true);
 	tree_draw(tree, 0, 0, x, y, width, height);
