@@ -198,7 +198,7 @@ bool bitmap_test_opaque(void *bitmap)
 	struct bitmap *bm = bitmap;
 	uint32 p = bm->width * bm->height;
 	uint32 a = 0;
-	uint32 *bmi = bm->pixdata;
+	uint32 *bmi = (uint32 *) bm->pixdata;
 
 	assert(bitmap);
 
