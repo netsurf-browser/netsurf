@@ -170,14 +170,17 @@ void ami_free_layers(struct gui_globals *gg)
 	cairo_destroy(gg->cr);
 	cairo_surface_destroy(gg->surface);
 #endif
-	DeleteLayer(0,gg->rp->Layer);
-	FreeVec(gg->rp->TmpRas);
-	FreeVec(gg->rp->AreaInfo);
+	if(gg->rp)
+	{
+		DeleteLayer(0,gg->rp->Layer);
+		FreeVec(gg->rp->TmpRas);
+		FreeVec(gg->rp->AreaInfo);
+		FreeVec(gg->rp);
+	}
+
 	FreeVec(gg->tmprasbuf);
 	FreeVec(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
-
-	FreeVec(gg->rp);
 	p96FreeBitMap(gg->bm);
 }
 
