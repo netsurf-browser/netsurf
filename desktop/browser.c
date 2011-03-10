@@ -546,7 +546,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		/* new content; set scroll_to_top */
 		browser_window_update(bw, true);
-		content_open(c, bw, 0, 0, 0, 0);
+		content_open(c, bw, 0, 0, 0);
 		browser_window_set_status(bw, content_get_status_message(c));
 
 		/* history */

@@ -132,7 +132,7 @@ bool content_redraw_tiled(struct hlcache_handle *h, int x, int y,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
-		struct content *page, unsigned int index, struct box *box,
+		struct content *page, struct box *box, 
 		struct object_params *params);
 void content_close(struct hlcache_handle *h);
 

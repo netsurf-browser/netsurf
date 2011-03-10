@@ -264,12 +264,11 @@ bool plugin_redraw(struct content *c, int x, int y,
  * \param  bw      browser window containing the content
  * \param  page    content of type CONTENT_HTML containing c, or 0 if not an
  *                 object within a page
- * \param  index   index in page->data.html.object, or 0 if not an object
  * \param  box     box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  */
 void plugin_open(struct content *c, struct browser_window *bw,
-		struct content *page, unsigned int index, struct box *box,
+		struct content *page, struct box *box,
 		struct object_params *params)
 {
 	bool standalone = false, helper = false;

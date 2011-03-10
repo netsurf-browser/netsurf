@@ -201,7 +201,7 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		bool background);
 void html_stop(struct content *c);
 void html_open(struct content *c, struct browser_window *bw,
-		struct content *page, unsigned int index, struct box *box,
+		struct content *page, struct box *box,
 		struct object_params *params);
 void html_close(struct content *c);
 void html_set_status(struct content *c, const char *extra);

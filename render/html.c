@@ -1383,7 +1383,7 @@ nserror html_object_callback(hlcache_handle *object,
 			if (c->data.html.bw != NULL)
 				content_open(object,
 						c->data.html.bw, c,
-						0, box,
+						box,
 						box->object_params);
 			break;
 		}
@@ -1874,7 +1874,7 @@ void html_set_status(struct content *c, const char *extra)
  */
 
 void html_open(struct content *c, struct browser_window *bw,
-		struct content *page, unsigned int index, struct box *box,
+		struct content *page, struct box *box,
 		struct object_params *params)
 {
 	struct content_html_object *object, *next;
@@ -1893,7 +1893,7 @@ void html_open(struct content *c, struct browser_window *bw,
 			continue;
 
                	content_open(object->content,
-				bw, c, 0,
+				bw, c,
 				object->box,
 				object->box->object_params);
 	}

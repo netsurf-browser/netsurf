@@ -295,7 +295,7 @@ struct handler_entry {
 			float scale, colour background_colour,
 			bool repeat_x, bool repeat_y);
 	void (*open)(struct content *c, struct browser_window *bw,
-			struct content *page, unsigned int index,
+			struct content *page,
 			struct box *box,
 			struct object_params *params);
 	void (*close)(struct content *c);
@@ -1129,7 +1129,6 @@ void content_broadcast(struct content *c, content_msg msg,
  * \param  bw	   browser window containing the content
  * \param  page	   content of type CONTENT_HTML containing c, or 0 if not an
  *		   object within a page
- * \param  index   index in page->data.html.object, or 0 if not an object
  * \param  box	   box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  *
@@ -1137,7 +1136,7 @@ void content_broadcast(struct content *c, content_msg msg,
  */
 
 void content_open(hlcache_handle *h, struct browser_window *bw,
-		struct content *page, unsigned int index, struct box *box,
+		struct content *page, struct box *box,
 		struct object_params *params)
 {
 	struct content *c = hlcache_handle_get_content(h);
@@ -1145,7 +1144,7 @@ void content_open(hlcache_handle *h, struct browser_window *bw,
 	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
 	if (handler_map[c->type].open)
-		handler_map[c->type].open(c, bw, page, index, box, params);
+		handler_map[c->type].open(c, bw, page, box, params);
 }
 
 

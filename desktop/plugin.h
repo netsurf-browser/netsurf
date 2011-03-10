@@ -50,7 +50,7 @@ bool plugin_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
 void plugin_open(struct content *c, struct browser_window *bw,
-		struct content *page, unsigned int index, struct box *box,
+		struct content *page, struct box *box,
 		struct object_params *params);
 void plugin_close(struct content *c);
 bool plugin_clone(const struct content *old, struct content *new_content);
