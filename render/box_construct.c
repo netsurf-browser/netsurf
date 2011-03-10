@@ -190,9 +190,6 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	root.float_children = NULL;
 	root.next_float = NULL;
 
-	c->data.html.object_count = 0;
-	c->data.html.object = 0;
-
 	/* The root box's style */
 	if (!convert_xml_to_box(n, c, NULL, &root,
 			&inline_container, 0, 0, 0))

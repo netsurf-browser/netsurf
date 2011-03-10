@@ -66,7 +66,7 @@ static bool html_find_stylesheets(struct content *c, xmlNode *html);
 static bool html_process_style_element(struct content *c, unsigned int *index,
 		xmlNode *style);
 static void html_inline_style_done(struct content_css_data *css, void *pw);
-static bool html_replace_object(struct content *c, unsigned int i, 
+static bool html_replace_object(struct content_html_object *object,
 		const char *url);
 static nserror html_object_callback(hlcache_handle *object,
 		const hlcache_event *event, void *pw);
@@ -123,15 +123,14 @@ bool html_create(struct content *c, const http_parameter *params)
 	html->stylesheet_count = 0;
 	html->stylesheets = NULL;
 	html->select_ctx = NULL;
-	html->object_count = 0;
-	html->object = NULL;
+	html->num_objects = 0;
+	html->object_list = NULL;
 	html->forms = NULL;
 	html->imagemaps = NULL;
 	html->bw = NULL;
 	html->frameset = NULL;
 	html->iframe = NULL;
 	html->page = NULL;
-	html->index = 0;
 	html->box = NULL;
 	html->font_func = &nsfont;
 
@@ -1250,9 +1249,7 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		int available_width, int available_height,
 		bool background)
 {
-	unsigned int i = c->data.html.object_count;
 	struct content_html_object *object;
-	hlcache_handle *c_fetch;
 	hlcache_child_context child;
 	char *url2;
 	url_func_result res;
@@ -1268,30 +1265,38 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 		return res != URL_FUNC_NOMEM;
 	}
 
+	object = talloc(c, struct content_html_object);
+	if (object == NULL) {
+		free(url2);
+		return false;
+	}
+
+	object->parent = c;
+	object->next = NULL;
+	object->content = NULL;
+	object->box = box;
+	object->permitted_types = permitted_types;
+	object->background = background;
+ 
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
-			html_object_callback, c, &child, permitted_types,
-			&c_fetch);
+			html_object_callback, object, &child, permitted_types,
+			&object->content);
 
 	/* No longer need normalized url */
 	free(url2);
 
-        if (error == NSERROR_OK) {
-                /* add to object list */
-                object = talloc_realloc(c, c->data.html.object,
-                                        struct content_html_object, i + 1);
-                if (object == NULL) {
-                        hlcache_handle_release(c_fetch);
-                        return false;
-                }
-                c->data.html.object = object;
-                c->data.html.object[i].box = box;
-                c->data.html.object[i].permitted_types = permitted_types;
-                c->data.html.object[i].background = background;
-                c->data.html.object[i].content = c_fetch;
-                c->data.html.object_count++;
-                c->active++;
-        }
-        
+        if (error != NSERROR_OK) {
+		talloc_free(object);
+		return error != NSERROR_NOMEM;
+	}
+
+	/* add to object list */
+	object->next = c->data.html.object_list;
+	c->data.html.object_list = object;
+
+	c->data.html.num_objects++;
+	c->active++;
+
 	return error != NSERROR_NOMEM;
 }
 
@@ -1299,34 +1304,36 @@ bool html_fetch_object(struct content *c, const char *url, struct box *box,
 /**
  * Start a fetch for an object required by a page, replacing an existing object.
  *
- * \param  c               content of type CONTENT_HTML
- * \param  i               index of object to replace in c->data.html.object
+ * \param  object          Object to replace
  * \param  url             URL of object to fetch (copied)
  * \return  true on success, false on memory exhaustion
  */
 
-bool html_replace_object(struct content *c, unsigned int i, const char *url)
+bool html_replace_object(struct content_html_object *object, const char *url)
 {
-	hlcache_handle *c_fetch;
+	struct content *c;
 	hlcache_child_context child;
 	struct content *page;
 	char *url2;
 	url_func_result res;
 	nserror error;
 
-	assert(c->type == CONTENT_HTML);
+	assert(object != NULL);
+
+	c = object->parent;
 
 	child.charset = c->data.html.encoding;
 	child.quirks = c->quirks;
 
-	if (c->data.html.object[i].content) {
+	if (object->content != NULL) {
 		/* remove existing object */
-		if (content_get_status(c->data.html.object[i].content) !=
-				CONTENT_STATUS_DONE)
+		if (content_get_status(object->content) != CONTENT_STATUS_DONE)
 			c->active--;
-		hlcache_handle_release(c->data.html.object[i].content);
-		c->data.html.object[i].content = NULL;
-		c->data.html.object[i].box->object = NULL;
+
+		hlcache_handle_release(object->content);
+		object->content = NULL;
+
+		object->box->object = NULL;
 	}
 
 	res = url_normalize(url, &url2);
@@ -1336,15 +1343,13 @@ bool html_replace_object(struct content *c, unsigned int i, const char *url)
 	/* initialise fetch */
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
 			html_object_callback, c, &child,
-			c->data.html.object[i].permitted_types,
-			&c_fetch);
+			object->permitted_types,
+			&object->content);
 
 	free(url2);
 
 	if (error != NSERROR_OK)
 		return false;
-
-	c->data.html.object[i].content = c_fetch;
 
 	for (page = c; page; page = page->data.html.page) {
 		assert(page->type == CONTENT_HTML);
@@ -1363,20 +1368,10 @@ bool html_replace_object(struct content *c, unsigned int i, const char *url)
 nserror html_object_callback(hlcache_handle *object,
 		const hlcache_event *event, void *pw)
 {
-	struct content *c = pw;
-	unsigned int i;
-	struct content_html_object *o;
+	struct content_html_object *o = pw;
+	struct content *c = o->parent;
 	int x, y;
 	struct box *box;
-
-	/* Find object record in parent */
-	for (i = 0, o = c->data.html.object; i != c->data.html.object_count;
-			i++, o++) {
-		if (o->content == object)
-			break;
-	}
-
-	assert(i != c->data.html.object_count);
 
 	box = o->box;
 
@@ -1388,7 +1383,7 @@ nserror html_object_callback(hlcache_handle *object,
 			if (c->data.html.bw != NULL)
 				content_open(object,
 						c->data.html.bw, c,
-						i, box,
+						0, box,
 						box->object_params);
 			break;
 		}
@@ -1404,8 +1399,7 @@ nserror html_object_callback(hlcache_handle *object,
 		html_set_status(c, messages_get("BadObject"));
 		content_broadcast(c, CONTENT_MSG_STATUS, event->data);
 
-		html_object_failed(box, c,
-				c->data.html.object[i].background);
+		html_object_failed(box, c, o->background);
 		break;
 
 	case CONTENT_MSG_READY:
@@ -1480,10 +1474,22 @@ nserror html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_REFRESH:
-		if (content_get_type(object) == CONTENT_HTML)
+		if (content_get_type(object) == CONTENT_HTML) {
+			struct content_html_object *o;
+
+			for (o = c->data.html.object_list; o != NULL; 
+					o = o->next) {
+				if (o->content == object)
+					break;
+			}
+
+			assert(o != NULL);
+
 			/* only for HTML objects */
 			schedule(event->data.delay * 100,
-					html_object_refresh, object);
+					html_object_refresh, o);
+		}
+
 		break;
 
 	default:
@@ -1592,23 +1598,21 @@ bool html_object_type_permitted(const content_type type,
 
 void html_object_refresh(void *p)
 {
-	hlcache_handle *h = (hlcache_handle *) p;
-	struct content *c = hlcache_handle_get_content(h);
+	struct content_html_object *object = p;
 	const char *refresh_url;
 
-	assert(content_get_type(h) == CONTENT_HTML);
+	assert(content_get_type(object->content) == CONTENT_HTML);
 
-	refresh_url = content_get_refresh_url(h);
+	refresh_url = content_get_refresh_url(object->content);
 
 	/* Ignore if refresh URL has gone
 	 * (may happen if fetch errored) */
 	if (refresh_url == NULL)
 		return;
 
-	content_invalidate_reuse_data(h);
+	content_invalidate_reuse_data(object->content);
 
-	if (!html_replace_object(c->data.html.page, c->data.html.index,
-			refresh_url)) {
+	if (!html_replace_object(object, refresh_url)) {
 		/** \todo handle memory exhaustion */
 	}
 }
@@ -1619,23 +1623,23 @@ void html_object_refresh(void *p)
 
 void html_stop(struct content *c)
 {
-	unsigned int i;
-	hlcache_handle *object;
+	struct content_html_object *object;
 
 	assert(c->status == CONTENT_STATUS_READY);
 
-	for (i = 0; i != c->data.html.object_count; i++) {
-		object = c->data.html.object[i].content;
-		if (object == NULL)
+	for (object = c->data.html.object_list; object != NULL; 
+			object = object->next) {
+		if (object->content == NULL)
 			continue;
 
-		if (content_get_status(object) == CONTENT_STATUS_DONE)
+		if (content_get_status(object->content) == CONTENT_STATUS_DONE)
 			; /* already loaded: do nothing */
-		else if (content_get_status(object) == CONTENT_STATUS_READY)
-			hlcache_handle_abort(object);
+		else if (content_get_status(object->content) == 
+				CONTENT_STATUS_READY)
+			hlcache_handle_abort(object->content);
 		else {
-			hlcache_handle_release(object);
-			c->data.html.object[i].content = NULL;
+			hlcache_handle_release(object->content);
+			object->content = NULL;
 		}
 	}
 	c->status = CONTENT_STATUS_DONE;
@@ -1770,16 +1774,20 @@ void html_destroy(struct content *c)
 	}
 
 	/* Free objects */
-	for (i = 0; i != html->object_count; i++) {
-		LOG(("object %i %p", i, html->object[i].content));
-		if (html->object[i].content != NULL) {
-			if (content_get_type(html->object[i].content) ==
-					CONTENT_HTML)
-				schedule_remove(html_object_refresh,
-						html->object[i].content);
+	while (html->object_list != NULL) {
+		struct content_html_object *victim = html->object_list;
 
-			hlcache_handle_release(html->object[i].content);
+		LOG(("object %p", victim->content));
+
+		if (victim->content != NULL) {
+			if (content_get_type(victim->content) == CONTENT_HTML)
+				schedule_remove(html_object_refresh, victim);
+
+			hlcache_handle_release(victim->content);
 		}
+
+		html->object_list = victim->next;
+		talloc_free(victim);
 	}
 }
 
@@ -1844,18 +1852,18 @@ bool html_clone(const struct content *old, struct content *new_content)
 void html_set_status(struct content *c, const char *extra)
 {
 	unsigned int stylesheets = 0, objects = 0;
-	if (c->data.html.object_count == 0)
+	if (c->data.html.num_objects == 0)
 		stylesheets = c->data.html.stylesheet_count - c->active;
 	else {
 		stylesheets = c->data.html.stylesheet_count;
-		objects = c->data.html.object_count - c->active;
+		objects = c->data.html.num_objects - c->active;
 	}
 	content_set_status(c, "%u/%u %s %u/%u %s  %s",
 			stylesheets, c->data.html.stylesheet_count,
 			messages_get((c->data.html.stylesheet_count == 1) ?
 					"styl" : "styls"),
-			objects, c->data.html.object_count,
-			messages_get((c->data.html.object_count == 1) ?
+			objects, c->data.html.num_objects,
+			messages_get((c->data.html.num_objects == 1) ?
 					"obj" : "objs"),
 			extra);
 }
@@ -1869,21 +1877,25 @@ void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, unsigned int index, struct box *box,
 		struct object_params *params)
 {
-	unsigned int i;
+	struct content_html_object *object, *next;
+
 	c->data.html.bw = bw;
 	c->data.html.page = page;
-	c->data.html.index = index;
 	c->data.html.box = box;
-	for (i = 0; i != c->data.html.object_count; i++) {
-		if (c->data.html.object[i].content == 0)
+
+	for (object = c->data.html.object_list; object != NULL; object = next) {
+		next = object->next;
+
+		if (object->content == NULL)
 			continue;
-		if (content_get_type(c->data.html.object[i].content) == 
-				CONTENT_UNKNOWN)
+
+		if (content_get_type(object->content) == CONTENT_UNKNOWN)
 			continue;
-               	content_open(c->data.html.object[i].content,
-				bw, c, i,
-				c->data.html.object[i].box,
-				c->data.html.object[i].box->object_params);
+
+               	content_open(object->content,
+				bw, c, 0,
+				object->box,
+				object->box->object_params);
 	}
 }
 
@@ -1894,24 +1906,23 @@ void html_open(struct content *c, struct browser_window *bw,
 
 void html_close(struct content *c)
 {
-	unsigned int i;
+	struct content_html_object *object, *next;
 
 	c->data.html.bw = 0;
 
-	for (i = 0; i != c->data.html.object_count; i++) {
-		if (c->data.html.object[i].content == NULL)
+	for (object = c->data.html.object_list; object != NULL; object = next) {
+		next = object->next;
+
+		if (object->content == NULL)
 			continue;
 
-		if (content_get_type(c->data.html.object[i].content) == 
-				CONTENT_UNKNOWN)
+		if (content_get_type(object->content) == CONTENT_UNKNOWN)
 			continue;
 
-		if (content_get_type(c->data.html.object[i].content) ==
-					CONTENT_HTML)
-			schedule_remove(html_object_refresh,
-					c->data.html.object[i].content);
+		if (content_get_type(object->content) == CONTENT_HTML)
+			schedule_remove(html_object_refresh, object);
 
-               	content_close(c->data.html.object[i].content);
+               	content_close(object->content);
 	}
 }
 
@@ -2124,7 +2135,7 @@ struct html_stylesheet *html_get_stylesheets(hlcache_handle *h, unsigned int *n)
  *
  * \param h  Content to retrieve objects from
  * \param n  Pointer to location to receive number of objects
- * \return Pointer to array of objects
+ * \return Pointer to list of objects
  */
 struct content_html_object *html_get_objects(hlcache_handle *h, unsigned int *n)
 {
@@ -2134,9 +2145,9 @@ struct content_html_object *html_get_objects(hlcache_handle *h, unsigned int *n)
 	assert(c->type == CONTENT_HTML);
 	assert(n != NULL);
 
-	*n = c->data.html.object_count;
+	*n = c->data.html.num_objects;
 
-	return c->data.html.object;
+	return c->data.html.object_list;
 }
 
 /**

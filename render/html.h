@@ -85,6 +85,9 @@ typedef enum {
 
 /** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
 struct content_html_object {
+	struct content *parent;		/**< Parent document */
+	struct content_html_object *next; /**< Next in chain */
+
 	struct hlcache_handle *content;  /**< Content, or 0. */
 	struct box *box;  /**< Node in box tree containing it. */
 	/** Pointer to array of permitted content_type, terminated by
@@ -157,10 +160,10 @@ struct content_html_data {
 	/**< Style selection context */
 	css_select_ctx *select_ctx;
 
-	/** Number of entries in object. */
-	unsigned int object_count;
-	/** Objects. Each may be 0. */
-	struct content_html_object *object;
+	/** Number of entries in object_list. */
+	unsigned int num_objects;
+	/** List of objects. */
+	struct content_html_object *object_list;
 	/** Forms, in reverse order to document. */
 	struct form *forms;
 	/** Hash table of imagemaps. */
@@ -178,8 +181,6 @@ struct content_html_data {
 	/** Content of type CONTENT_HTML containing this, or 0 if not an object
 	 * within a page. */
 	struct content *page;
-	/** Index in page->data.html.object, or 0 if not an object. */
-	unsigned int index;
 	/** Box containing this, or 0 if not an object. */
 	struct box *box;
 };
