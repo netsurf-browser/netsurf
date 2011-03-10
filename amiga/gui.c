@@ -564,7 +564,6 @@ static void gui_init2(int argc, char** argv)
 	notalreadyrunning = ami_arexx_init();
 
 	/* Treeview init code ends up calling a font function which needs this */
-	browserglob.scale = 1.0;
 	glob = &browserglob;
 	/**/
 
@@ -3135,7 +3134,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 
 	plot = amiplot;
 	glob = &browserglob;
-	glob->scale = bw->scale;
 
 	if(option_direct_render == false)
 	{
@@ -3313,7 +3311,6 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		plot = amiplot;
 		glob = &browserglob;
-		glob->scale = g->bw->scale;
 
 		if(option_direct_render == false)
 		{
@@ -3809,7 +3806,6 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 
 void gui_window_set_scale(struct gui_window *g, float scale)
 {
-	browserglob.scale = scale;
 	g->shared->new_content = true;
 	g->shared->redraw_required = true;
 }

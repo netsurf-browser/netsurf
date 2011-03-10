@@ -33,7 +33,6 @@ struct gui_globals
 	APTR areabuf;
 	APTR tmprasbuf;
 	struct Rectangle rect;
-	float scale;
 #ifdef NS_AMIGA_CAIRO
 	cairo_surface_t *surface;
 	cairo_t *cr;
