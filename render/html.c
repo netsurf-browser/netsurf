@@ -1475,16 +1475,6 @@ nserror html_object_callback(hlcache_handle *object,
 
 	case CONTENT_MSG_REFRESH:
 		if (content_get_type(object) == CONTENT_HTML) {
-			struct content_html_object *o;
-
-			for (o = c->data.html.object_list; o != NULL; 
-					o = o->next) {
-				if (o->content == object)
-					break;
-			}
-
-			assert(o != NULL);
-
 			/* only for HTML objects */
 			schedule(event->data.delay * 100,
 					html_object_refresh, o);
