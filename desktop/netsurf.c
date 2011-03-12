@@ -107,11 +107,6 @@ nserror netsurf_init(int *pargc,
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
-#if !((defined(__SVR4) && defined(__sun)) || defined(__NetBSD__) || \
-	defined(__OpenBSD__) || defined(_WIN32) || defined(__AMIGA__))
-	stdout = stderr;
-#endif
-
 	if (((*pargc) > 1) && 
 	    ((*pargv)[1][0] == '-') && 
 	    ((*pargv)[1][1] == 'v') && 
