@@ -115,7 +115,7 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 		struct save_complete_entry **list)
 {
 	struct html_stylesheet *sheets;
-	struct content_html_object *objects;
+	struct content_html_object *object;
 	char filename[256];
 	unsigned int i, count;
 	xmlDocPtr doc;
@@ -184,10 +184,10 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 	}
 	
 	/* save objects */
-	objects = html_get_objects(c, &count);
+	object = html_get_objects(c, &count);
 
-	for (i = 0; i != count; i++) {
-		hlcache_handle *obj = objects[i].content;
+	for (; object != NULL; object = object->next) {
+		hlcache_handle *obj = object->content;
 		const char *obj_data;
 		unsigned long obj_size;
 

@@ -913,18 +913,17 @@ void browser_window_reload(struct browser_window *bw, bool all)
 
 	if (all && content_get_type(bw->current_content) == CONTENT_HTML) {
 		struct html_stylesheet *sheets;
-		struct content_html_object *objects;
+		struct content_html_object *object;
 		unsigned int count;
 
 		c = bw->current_content;
 
 		/* invalidate objects */
-		objects = html_get_objects(c, &count);
+		object = html_get_objects(c, &count);
 
-		for (i = 0; i != count; i++) {
-			if (objects[i].content != NULL)
-				content_invalidate_reuse_data(
-						objects[i].content);
+		for (; object != NULL; object = object->next) {
+			if (object->content != NULL)
+				content_invalidate_reuse_data(object->content);
 		}
 
 		/* invalidate stylesheets */
