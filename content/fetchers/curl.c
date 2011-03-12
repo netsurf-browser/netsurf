@@ -51,6 +51,12 @@
 #include "utils/ring.h"
 #include "utils/useragent.h"
 
+/* BIG FAT WARNING: This is here because curl doesn't give you an FD to
+ * poll on, until it has processed a bit of the handle.	 So we need schedules
+ * in order to make this work.
+ */
+#include <desktop/browser.h>
+
 /** SSL certificate info */
 struct cert_info {
 	X509 *cert;		/**< Pointer to certificate */
@@ -440,7 +446,9 @@ bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
 	/* add to the global curl multi handle */
 	codem = curl_multi_add_handle(fetch_curl_multi, fetch->curl_handle);
 	assert(codem == CURLM_OK || codem == CURLM_CALL_MULTI_PERFORM);
-
+	
+	schedule(1, (schedule_callback_fn)fetch_curl_poll, NULL);
+	
 	return true;
 }
 
@@ -702,7 +710,9 @@ void fetch_curl_poll(const char *scheme_ignored)
 	int running, queue;
 	CURLMcode codem;
 	CURLMsg *curl_msg;
-
+	
+	schedule_remove((schedule_callback_fn)fetch_curl_poll, NULL);
+	
 	/* do any possible work on the current fetches */
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
