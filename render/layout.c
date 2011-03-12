@@ -352,8 +352,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		else if (max_neg_margin < -box->margin[TOP])
 			max_neg_margin = -box->margin[TOP];
 
-		/* no /required/ margins if box doesn't establish a new block
-		 * formatting context */
+		/* Blocks establishing a block formatting context get minimum
+		 * left and right margins to avoid any floats. */
 		lm = rm = 0;
 
                 if (box->type == BOX_BLOCK || box->object) {
