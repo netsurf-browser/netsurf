@@ -162,8 +162,14 @@ const char *fetch_filetype(const char *unix_path)
 		return "application/x-netsurf-directory";
 
 	l = strlen(unix_path);
+
+	/* Hacky RISC OS compatibility */
 	if ((3 < l) && (strcasecmp(unix_path + l - 4, ",f79") == 0)) {
 		return "text/css";
+	} else if ((3 < l) && (strcasecmp(unix_path + l - 4, ",faf") == 0)) {
+		return "text/html";
+	} else if ((3 < l) && (strcasecmp(unix_path + l - 4, ",b60") == 0)) {
+		return "image/png";
 	}
 
 	if (strchr(unix_path, '.') == NULL) {
