@@ -131,6 +131,8 @@ main(int argc, char **argv)
   fprintf(stdout, "GENERIC STARTED\n");
   netsurf_main_loop();
   fprintf(stdout, "GENERIC CLOSING_DOWN\n");
+  monkey_kill_browser_windows();
+  
   netsurf_exit();
   fprintf(stdout, "GENERIC FINISHED\n");
   return 0;

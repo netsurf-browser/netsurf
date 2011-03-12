@@ -41,5 +41,5 @@ struct gui_window *monkey_find_window_by_content(hlcache_handle *content);
 void monkey_window_process_reformats(void);
 
 void monkey_window_handle_command(int argc, char **argv);
-
+void monkey_kill_browser_windows(void);
 #endif /* NETSURF_MONKEY_BROWSER_H */

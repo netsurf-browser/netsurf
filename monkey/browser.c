@@ -76,6 +76,13 @@ monkey_window_process_reformats(void)
   } RING_ITERATE_END(gw_ring, c_ring);
 }
 
+void
+monkey_kill_browser_windows(void)
+{
+  while (gw_ring != NULL) {
+    browser_window_destroy(gw_ring->bw);
+  }
+}
 
 struct gui_window *
 gui_create_browser_window(struct browser_window *bw,
@@ -459,6 +466,58 @@ monkey_window_handle_go(int argc, char **argv)
 
 }
 
+static void
+monkey_window_handle_redraw(int argc, char **argv)
+{
+  struct gui_window *gw;
+  struct rect clip;
+  
+  if (argc != 3 && argc != 7) {
+    fprintf(stdout, "ERROR WINDOW REDRAW ARGS BAD");
+    return;
+  }
+
+  gw = monkey_find_window_by_num(atoi(argv[2]));
+  
+  if (gw == NULL) {
+    fprintf(stdout, "ERROR WINDOW NUM BAD\n");
+    return;
+  }
+  
+  clip.x0 = 0;
+  clip.y0 = 0;
+  clip.x1 = gw->width;
+  clip.y1 = gw->height;
+  
+  if (argc == 7) {
+    clip.x0 = atoi(argv[3]);
+    clip.y0 = atoi(argv[4]);
+    clip.x1 = atoi(argv[5]);
+    clip.y1 = atoi(argv[6]);
+  }
+  
+  LOG(("Issue redraw"));
+  browser_window_redraw(gw->bw, gw->scrollx, gw->scrolly, &clip);  
+}
+
+static void
+monkey_window_handle_reload(int argc, char **argv)
+{
+  struct gui_window *gw;
+  if (argc != 3 && argc != 4) {
+    fprintf(stdout, "ERROR WINDOW RELOAD ARGS BAD");
+  }
+  
+  gw = monkey_find_window_by_num(atoi(argv[2]));
+  
+  if (gw == NULL) {
+    fprintf(stdout, "ERROR WINDOW NUM BAD\n");
+  } else {
+    browser_window_reload(gw->bw, argc == 4);
+  }
+}
+
+
 void
 monkey_window_handle_command(int argc, char **argv)
 {
@@ -471,6 +530,10 @@ monkey_window_handle_command(int argc, char **argv)
     monkey_window_handle_destroy(argc, argv);
   } else if (strcmp(argv[1], "GO") == 0) {
     monkey_window_handle_go(argc, argv);
+  } else if (strcmp(argv[1], "REDRAW") == 0) {
+    monkey_window_handle_redraw(argc, argv);
+  } else if (strcmp(argv[1], "RELOAD") == 0) {
+    monkey_window_handle_reload(argc, argv);
   }
   
 }
