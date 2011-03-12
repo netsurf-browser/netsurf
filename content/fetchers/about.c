@@ -139,6 +139,18 @@ static bool fetch_about_credits_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
+{
+	/* content is going to return redirect */
+	fetch_set_http_code(ctx->fetchh, 302);
+
+	fetch_about_send_callback(FETCH_REDIRECT, ctx, "resource:licence.html",
+			0, FETCH_ERROR_NO_ERROR);
+
+	return true;
+}
+
+
 static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 {
 	char buffer[1024];
@@ -261,6 +273,7 @@ struct about_handlers {
 
 struct about_handlers about_handler_list[] = { 
 	{ "credits", fetch_about_credits_handler },
+	{ "licence", fetch_about_licence_handler },
 	{ "config", fetch_about_config_handler },
 	{ "Choices", fetch_about_choices_handler },
 	{ "blank", fetch_about_blank_handler } /* The default */
