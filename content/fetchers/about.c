@@ -168,16 +168,30 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 
 	slen = snprintf(buffer, sizeof buffer, 
 			"<html><head><title>NetSurf Browser Config</title>"
-			"<style type=\"text/css\">"
-			".null-content { font-style: italic }"
-			"</style></head>"
-			"<body><h1>NetSurf Browser Config</h1>"
-			"<table><tr><th></th><th></th><th></th></tr>");
+			"<link rel=\"stylesheet\" title=\"Standard\" "
+			"type=\"text/css\" href=\"resource:internal.css\">"
+			"<style>"
+			"table.config th {"
+				"text-align: left; }"
+			"table.config td {"
+				"padding-left: 1em; }"
+			"table.config td + td {"
+				"padding-left: 3em; }"
+			"</style>"
+			"</head>"
+			"<body>"
+			"<p class=\"banner\">"
+			"<a href=\"http://www.netsurf-browser.org/\">"
+			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
+			"</p>"
+			"<h1>NetSurf Browser Config</h1>"
+			"<table class=\"config\">"
+			"<tr><th></th><th></th><th></th></tr>");
 
 	do {
 		res = options_snoptionf(buffer + slen, sizeof buffer - slen,
 				opt_loop,
-				"<tr><td>%k</td><td>%t</td><td>%V</td></tr>");
+				"<tr><th>%k</th><td>%t</td><td>%V</td></tr>");
 		if (res <= 0) 
 			break; /* last option */
 
