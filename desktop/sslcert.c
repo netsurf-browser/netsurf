@@ -56,7 +56,7 @@ struct sslcert_session_data {
 };
 
 /** Handle for the window icon. */
-static hlcache_handle *sslcert_icon;
+static hlcache_handle *sslcert_icon = NULL;
 
 /** Initialise ssl certificate window. */
 void sslcert_init(const char* icon_name)
@@ -78,8 +78,8 @@ unsigned int sslcert_get_tree_flags(void)
 
 void sslcert_cleanup(void)
 {
-	hlcache_handle_release(sslcert_icon);
-	return;
+	if (sslcert_icon != NULL)
+		hlcache_handle_release(sslcert_icon);
 }
 
 struct sslcert_session_data *
