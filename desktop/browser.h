@@ -292,8 +292,10 @@ void global_history_add_recent(const char *url);
 char **global_history_get_recent(int *count);
 
 /* In platform specific schedule.c. */
-void schedule(int t, void (*callback)(void *p), void *p);
-void schedule_remove(void (*callback)(void *p), void *p);
+typedef void (*schedule_callback_fn)(void *p);
+
+void schedule(int t, schedule_callback_fn callback, void *p);
+void schedule_remove(schedule_callback_fn callback, void *p);
 
 /* In platform specific theme_install.c. */
 #ifdef WITH_THEME_INSTALL
