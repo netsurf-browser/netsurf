@@ -100,6 +100,8 @@ gui_poll(bool active)
   if (browser_reformat_pending)
     block = false;
 
+  schedule_run();
+
   if (active) {
     FD_ZERO(&read_fd_set);
     FD_ZERO(&write_fd_set);
