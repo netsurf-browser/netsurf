@@ -140,10 +140,10 @@ gui_poll(bool active)
   }
   
   LOG(("Iterate %sactive %sblocking", active?"":"in", block?"":"non-"));
-  if (block && !active) {
+  if (block) {
     fprintf(stdout, "GENERIC POLL BLOCKING\n");
   }
-  g_main_context_iteration(g_main_context_default(), block && !active);
+  g_main_context_iteration(g_main_context_default(), block);
 
   for (unsigned int i = 0; i != fd_count; i++) {
     g_main_context_remove_poll(0, fd_list[i]);
