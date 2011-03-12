@@ -711,8 +711,6 @@ void fetch_curl_poll(const char *scheme_ignored)
 	CURLMcode codem;
 	CURLMsg *curl_msg;
 	
-	schedule_remove((schedule_callback_fn)fetch_curl_poll, NULL);
-	
 	/* do any possible work on the current fetches */
 	do {
 		codem = curl_multi_perform(fetch_curl_multi, &running);
@@ -736,6 +734,10 @@ void fetch_curl_poll(const char *scheme_ignored)
 				break;
 		}
 		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
+	}
+	
+	if (running != 0) {
+		schedule(10, (schedule_callback_fn)fetch_curl_poll, fetch_curl_poll);
 	}
 }
 
