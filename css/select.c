@@ -849,9 +849,13 @@ css_error node_has_name(void *pw, void *node,
 	size_t len = lwc_string_length(qname->name);
 	const char *data = lwc_string_data(qname->name);
 
-	/* Element names are case insensitive in HTML */
-	*match = strlen((const char *) n->name) == len &&
+	if (len == 1 && data[0] == '*') {
+		*match = true;
+	} else {
+		/* Element names are case insensitive in HTML */
+		*match = strlen((const char *) n->name) == len &&
 			strncasecmp((const char *) n->name, data, len) == 0;
+	}
 
 	return CSS_OK;
 }
