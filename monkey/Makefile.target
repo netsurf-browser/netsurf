@@ -1,0 +1,65 @@
+# ----------------------------------------------------------------------------
+# Monkey flag setup (using pkg-config)
+# ----------------------------------------------------------------------------
+
+
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub libcss)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
+
+  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
+  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+  NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
+
+  # add a line similar to below for each optional pkg-configed lib here
+  $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
+  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
+
+  # no pkg-config for this library
+  $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
+
+  MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
+		-D_GNU_SOURCE \
+		-D_BSD_SOURCE \
+		-D_XOPEN_SOURCE=600 \
+		-D_POSIX_C_SOURCE=200112L \
+		-D_NETBSD_SOURCE \
+		-DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\" \
+		$(WARNFLAGS) -I. -g \
+		$(shell $(PKG_CONFIG) --cflags glib-2.0) \
+		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl) \
+		$(shell $(PKG_CONFIG) --cflags openssl) \
+		$(shell xml2-config --cflags)
+
+  MONKEYLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
+
+  CFLAGS += $(MONKEYCFLAGS) -Werror
+  LDFLAGS += $(MONKEYLDFLAGS)
+
+  # ---------------------------------------------------------------------------
+  # Windows flag setup
+  # ---------------------------------------------------------------------------
+
+  ifeq ($(HOST),Windows_NT)
+    CFLAGS += -U__STRICT_ANSI__
+  endif
+
+# ----------------------------------------------------------------------------
+# Source file setup
+# ----------------------------------------------------------------------------
+
+# S_MONKEY are sources purely for the MONKEY build
+S_MONKEY := main.c utils.c filetype.c schedule.c system_colour.c	\
+            bitmap.c plot.c browser.c download.c thumbnail.c		\
+            401login.c cert.c font.c poll.c
+
+S_MONKEY := $(addprefix monkey/,$(S_MONKEY))
+
+SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_MONKEY)
+EXETARGET := nsmonkey

@@ -49,6 +49,8 @@
 #include "framebuffer/options.h"
 #elif defined(nsatari)
 #include "atari/options.h"
+#elif defined(nsmonkey)
+#include "monkey/options.h"
 #else
 #define EXTRA_OPTION_DEFINE
 #define EXTRA_OPTION_TABLE

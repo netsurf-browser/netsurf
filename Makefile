@@ -116,7 +116,9 @@ ifneq ($(TARGET),riscos)
           ifneq ($(TARGET),windows)
             ifneq ($(TARGET),atari)
               ifneq ($(TARGET),cocoa)
-                $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer", "windows", "atari" or "cocoa")
+                ifneq ($(TARGET),monkey)
+                  $(error Unknown TARGET "$(TARGET)", should either be "riscos", "gtk", "beos", "amiga", "framebuffer", "windows", "atari" or "cocoa" or "monkey")
+                endif
               endif
             endif
           endif

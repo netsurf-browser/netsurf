@@ -21,6 +21,8 @@
 #ifndef _NETSURF_UTILS_RESOURCE_H_
 #define _NETSURF_UTILS_RESOURCE_H_
 
+#include <stdarg.h>
+
 /** Create a normalised file name.
  *
  * If the file described by the format exists and is accessible the
