@@ -3,7 +3,7 @@
 <html>
 <head>
 <title>NetSurf | About Credits</title>
-<link rel="stylesheet" title="Standard" type="text/css" href="internal.css">
+<link rel="stylesheet" title="Standard" type="text/css" href="resource:internal.css">
 <style>
 div.licence {
 	background: #ddd;
@@ -32,7 +32,7 @@ dl.components > dd > span + span {
 </head>
 
 <body>
-<p class="banner"><a href="http://www.netsurf-browser.org/"><img src="netsurf.png" alt="NetSurf"></a></p>
+<p class="banner"><a href="http://www.netsurf-browser.org/"><img src="resource:netsurf.png" alt="NetSurf"></a></p>
 
 <h1>NetSurf Licence</h1>
 
