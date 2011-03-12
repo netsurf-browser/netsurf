@@ -23,6 +23,8 @@
 #include "monkey/schedule.h"
 #include "monkey/browser.h"
 #include "content/fetchers/curl.h"
+#include "monkey/dispatch.h"
+#include "monkey/poll.h"
 
 #ifdef DEBUG_POLL_LOOP
 #include "utils/log.h"
@@ -33,7 +35,60 @@
 
 #include <glib.h>
 
-void gui_poll(bool active)
+typedef struct {
+  GSource gs;
+  GPollFD pf;
+} MonkeySource;
+
+static gboolean monkey_source_prepare(GSource    *source,
+                               gint       *timeout_)
+{
+  *timeout_ = -1;
+  return FALSE;
+}
+
+
+static gboolean monkey_source_check(GSource    *source)
+{
+  MonkeySource *ms = (MonkeySource *)source;
+  if (ms->pf.revents & G_IO_IN) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+static gboolean monkey_source_dispatch(GSource    *source,
+                                GSourceFunc callback,
+                                gpointer    user_data)
+{
+  monkey_process_command();
+  return TRUE;
+}
+
+static void monkey_source_finalize(GSource    *source)
+{
+  
+}
+
+GSourceFuncs monkey_source_funcs = {
+  .prepare = monkey_source_prepare,
+  .check = monkey_source_check,
+  .dispatch = monkey_source_dispatch,
+  .finalize = monkey_source_finalize,
+};
+
+void
+monkey_prepare_input(void)
+{
+  MonkeySource *gs = (MonkeySource *)g_source_new(&monkey_source_funcs, sizeof *gs);
+  gs->pf.fd = 0;
+  gs->pf.events = G_IO_IN | G_IO_ERR;
+  g_source_add_poll((GSource *)gs, &gs->pf);
+  g_source_attach((GSource *)gs, NULL);
+}
+
+void
+gui_poll(bool active)
 {
   CURLMcode code;
   fd_set read_fd_set, write_fd_set, exc_fd_set;

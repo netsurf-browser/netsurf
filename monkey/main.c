@@ -22,6 +22,9 @@
 
 #include "monkey/filetype.h"
 #include "monkey/options.h"
+#include "monkey/poll.h"
+#include "monkey/dispatch.h"
+#include "monkey/browser.h"
 
 #include "content/urldb.h"
 #include "content/fetchers/resource.h"
@@ -75,6 +78,17 @@ char* gui_find_resource(const char *filename)
 	return path_to_url(resource_sfind(respaths, buf, filename));
 }
 
+void
+gui_launch_url(const char *url)
+{
+  fprintf(stdout, "GENERIC LAUNCH URL %s\n", url);
+}
+
+static void quit_handler(int argc, char **argv)
+{
+  netsurf_quit = true;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -110,11 +124,14 @@ main(int argc, char **argv)
 
   sslcert_init("content.png");
   
-  browser_window_create("http://www.netsurf-browser.org/welcome/", 0, 0, true, false);
+  monkey_prepare_input();
+  monkey_register_handler("QUIT", quit_handler);
+  monkey_register_handler("WINDOW", monkey_window_handle_command);
   
+  fprintf(stdout, "GENERIC STARTED\n");
   netsurf_main_loop();
-  
+  fprintf(stdout, "GENERIC CLOSING_DOWN\n");
   netsurf_exit();
-  
+  fprintf(stdout, "GENERIC FINISHED\n");
   return 0;
 }

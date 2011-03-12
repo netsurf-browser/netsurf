@@ -24,6 +24,7 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "utils/ring.h"
+#include "utils/log.h"
 
 #include "monkey/browser.h"
 
@@ -90,9 +91,9 @@ gui_create_browser_window(struct browser_window *bw,
   ret->width = 800;
   ret->height = 600;
   
-  fprintf(stdout, "BROWSER_WINDOW NEW WIN %u FOR %p CLONE %p NEWTAB %s\n",
+  fprintf(stdout, "WINDOW NEW WIN %u FOR %p CLONE %p NEWTAB %s\n",
           ret->win_num, bw, clone, new_tab ? "TRUE" : "FALSE");
-  fprintf(stdout, "BROWSER_WINDOW SIZE WIN %u WIDTH %d HEIGHT %d\n",
+  fprintf(stdout, "WINDOW SIZE WIN %u WIDTH %d HEIGHT %d\n",
           ret->win_num, ret->width, ret->height);
   
   RING_INSERT(gw_ring, ret);
@@ -109,7 +110,7 @@ gui_window_get_browser_window(struct gui_window *g)
 void
 gui_window_destroy(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW DESTROY WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW DESTROY WIN %u\n", g->win_num);
   RING_REMOVE(gw_ring, g);
   free(g);
 }
@@ -117,26 +118,20 @@ gui_window_destroy(struct gui_window *g)
 void
 gui_window_set_title(struct gui_window *g, const char *title)
 {
-  fprintf(stdout, "BROWSER_WINDOW TITLE WIN %u STR %s\n", g->win_num, title);
+  fprintf(stdout, "WINDOW TITLE WIN %u STR %s\n", g->win_num, title);
 }
 
 void
 gui_window_redraw_window(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW REDRAW WIN %u\n", g->win_num);
-}
-
-void
-gui_launch_url(const char *url)
-{
-  fprintf(stdout, "GENERIC LAUNCH URL %s\n", url);
+  fprintf(stdout, "WINDOW REDRAW WIN %u\n", g->win_num);
 }
 
 void
 gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
                           bool scaled)
 {
-  fprintf(stdout, "BROWSER_WINDOW GET_DIMENSIONS WIN %u WIDTH %d HEIGHT %d\n",
+  fprintf(stdout, "WINDOW GET_DIMENSIONS WIN %u WIDTH %d HEIGHT %d\n",
           g->win_num, g->width, g->height);
   *width = g->width;
   *height = g->height;
@@ -145,25 +140,25 @@ gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 void
 gui_window_new_content(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW NEW_CONTENT WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW NEW_CONTENT WIN %u\n", g->win_num);
 }
 
 void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
-  fprintf(stdout, "BROWSER_WINDOW NEW_ICON WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW NEW_ICON WIN %u\n", g->win_num);
 }
 
 void
 gui_window_start_throbber(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW START_THROBBER WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW START_THROBBER WIN %u\n", g->win_num);
 }
 
 void
 gui_window_stop_throbber(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW STOP_THROBBER WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW STOP_THROBBER WIN %u\n", g->win_num);
 }
 
 void
@@ -171,14 +166,14 @@ gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
   g->scrollx = sx;
   g->scrolly = sy;
-  fprintf(stdout, "BROWSER_WINDOW SET_SCROLL WIN %u X %d Y %d\n", g->win_num, sx, sy);
+  fprintf(stdout, "WINDOW SET_SCROLL WIN %u X %d Y %d\n", g->win_num, sx, sy);
 }
 
 void
 gui_window_update_box(struct gui_window *g,
                       const union content_msg_data *data)
 {
-  fprintf(stdout, "BROWSER_WINDOW UPDATE_BOX WIN %u X %d Y %d WIDTH %d HEIGHT %d\n",
+  fprintf(stdout, "WINDOW UPDATE_BOX WIN %u X %d Y %d WIDTH %d HEIGHT %d\n",
           g->win_num, data->redraw.x, data->redraw.y,
           data->redraw.width, data->redraw.height);
   
@@ -190,7 +185,7 @@ gui_window_update_extent(struct gui_window *g)
   if (!g->bw->current_content)
     return;
 
-  fprintf(stdout, "BROWSER_WINDOW UPDATE_EXTENT WIN %u WIDTH %d HEIGHT %d\n", 
+  fprintf(stdout, "WINDOW UPDATE_EXTENT WIN %u WIDTH %d HEIGHT %d\n", 
           g->win_num,
           content_get_width(g->bw->current_content),
           content_get_height(g->bw->current_content));
@@ -199,7 +194,7 @@ gui_window_update_extent(struct gui_window *g)
 void
 gui_window_set_status(struct gui_window *g, const char *text)
 {
-  fprintf(stdout, "BROWSER_WINDOW SET_STATUS WIN %u STR %s\n", g->win_num, text);
+  fprintf(stdout, "WINDOW SET_STATUS WIN %u STR %s\n", g->win_num, text);
 }
 
 void
@@ -268,19 +263,19 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
   default:
     break;
   }
-  fprintf(stdout, "BROWSER_WINDOW SET_POINTER WIN %u POINTER %s\n", g->win_num, ptr_name);
+  fprintf(stdout, "WINDOW SET_POINTER WIN %u POINTER %s\n", g->win_num, ptr_name);
 }
 
 void
 gui_window_set_scale(struct gui_window *g, float scale)
 {
-  fprintf(stdout, "BROWSER_WINDOW SET_SCALE WIN %u SCALE %f\n", g->win_num, scale);
+  fprintf(stdout, "WINDOW SET_SCALE WIN %u SCALE %f\n", g->win_num, scale);
 }
 
 void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
-  fprintf(stdout, "BROWSER_WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);
+  fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);
 }
 
 void
@@ -293,7 +288,7 @@ gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 bool
 gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-  fprintf(stdout, "BROWSER_WINDOW GET_SCROLL WIN %u X %d Y %d\n",
+  fprintf(stdout, "WINDOW GET_SCROLL WIN %u X %d Y %d\n",
           g->win_num, g->scrollx, g->scrolly);
   *sx = g->scrollx;
   *sy = g->scrolly;
@@ -303,7 +298,7 @@ gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 bool
 gui_window_scroll_start(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW SCROLL_START WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW SCROLL_START WIN %u\n", g->win_num);
   g->scrollx = g->scrolly = 0;
   return true;
 }
@@ -312,7 +307,7 @@ void
 gui_window_position_frame(struct gui_window *g, int x0, int y0,
                           int x1, int y1)
 {
-  fprintf(stdout, "BROWSER_WINDOW POSITION_FRAME WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
+  fprintf(stdout, "WINDOW POSITION_FRAME WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
           g->win_num, x0, y0, x1, y1);
 }
 
@@ -331,7 +326,7 @@ void
 gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
                           int x1, int y1)
 {
-  fprintf(stdout, "BROWSER_WINDOW SCROLL_VISIBLE WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
+  fprintf(stdout, "WINDOW SCROLL_VISIBLE WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
           g->win_num, x0, y0, x1, y1);
 }
 
@@ -382,21 +377,21 @@ gui_copy_to_clipboard(struct selection *s)
 void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
-  fprintf(stdout, "BROWSER_WINDOW PLACE_CARET WIN %u X %d Y %d HEIGHT %d\n",
+  fprintf(stdout, "WINDOW PLACE_CARET WIN %u X %d Y %d HEIGHT %d\n",
           g->win_num, x, y, height);
 }
 
 void
 gui_window_remove_caret(struct gui_window *g)
 {
-  fprintf(stdout, "BROWSER_WINDOW REMOVE_CARET WIN %u\n", g->win_num);
+  fprintf(stdout, "WINDOW REMOVE_CARET WIN %u\n", g->win_num);
 }
 
 bool
 gui_window_box_scroll_start(struct gui_window *g,
                             int x0, int y0, int x1, int y1)
 {
-  fprintf(stdout, "BROWSER_WINDOW SCROLL_START WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
+  fprintf(stdout, "WINDOW SCROLL_START WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
           g->win_num, x0, y0, x1, y1);
   return false;
 }
@@ -405,7 +400,7 @@ void
 gui_create_form_select_menu(struct browser_window *bw,
                             struct form_control *control)
 {
-  fprintf(stdout, "BROWSER_WINDOW SELECT_MENU WIN %u\n",
+  fprintf(stdout, "WINDOW SELECT_MENU WIN %u\n",
           bw->window->win_num);
 }
 
@@ -413,6 +408,69 @@ void
 gui_window_save_link(struct gui_window *g, const char *url, 
                      const char *title)
 {
-  fprintf(stdout, "BROWSER_WINDOW SAVE_LINK WIN %u URL %s TITLE %s\n",
+  fprintf(stdout, "WINDOW SAVE_LINK WIN %u URL %s TITLE %s\n",
           g->win_num, url, title);
+}
+
+
+/**** Handlers ****/
+
+static void
+monkey_window_handle_new(int argc, char **argv)
+{
+  struct browser_window *bw;
+  if (argc > 3)
+    return;
+  bw = browser_window_create((argc == 3) ? argv[2] : NULL, NULL, NULL, true, false);
+}
+
+static void
+monkey_window_handle_destroy(int argc, char **argv)
+{
+  struct gui_window *gw;
+  uint32_t nr = atoi((argc > 2) ? argv[2] : "-1");
+  
+  gw = monkey_find_window_by_num(nr);
+  
+  if (gw == NULL) {
+    fprintf(stdout, "ERROR WINDOW NUM BAD\n");
+  } else {
+    browser_window_destroy(gw->bw);
+  }
+}
+
+static void
+monkey_window_handle_go(int argc, char **argv)
+{
+  struct gui_window *gw;
+  
+  if (argc < 4 || argc > 5) {
+    fprintf(stdout, "ERROR WINDOW GO ARGS BAD\n");
+    return;
+  }
+  
+  gw = monkey_find_window_by_num(atoi(argv[2]));
+  
+  if (gw == NULL) {
+    fprintf(stdout, "ERROR WINDOW NUM BAD\n");
+  } else {
+    browser_window_go(gw->bw, argv[3], (argc == 5) ? argv[4] : NULL, true);
+  }
+
+}
+
+void
+monkey_window_handle_command(int argc, char **argv)
+{
+  if (argc == 1)
+    return;
+  
+  if (strcmp(argv[1], "NEW") == 0) {
+    monkey_window_handle_new(argc, argv);
+  } else if (strcmp(argv[1], "DESTROY") == 0) {
+    monkey_window_handle_destroy(argc, argv);
+  } else if (strcmp(argv[1], "GO") == 0) {
+    monkey_window_handle_go(argc, argv);
+  }
+  
 }
