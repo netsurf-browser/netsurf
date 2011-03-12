@@ -328,9 +328,9 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 
 	/* Grab parent size, defaulting to medium if none */
 	if (parent == NULL) {
-		parent_size.value = FDIVI(
-				FMULI(factors[CSS_FONT_SIZE_MEDIUM - 1],
-				option_font_size), 10);
+		parent_size.value = FDIV(FMUL(factors[CSS_FONT_SIZE_MEDIUM - 1],
+					      INTTOFIX(option_font_size)), 
+					 INTTOFIX(10));
 		parent_size.unit = CSS_UNIT_PT;
 	} else {
 		assert(parent->status == CSS_FONT_SIZE_DIMENSION);
@@ -345,9 +345,9 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 
 	if (size->status < CSS_FONT_SIZE_LARGER) {
 		/* Keyword -- simple */
-		size->data.length.value = FDIVI(
-				FMULI(factors[size->status - 1],
-				option_font_size), 10);
+		size->data.length.value = FDIV(FMUL(factors[size->status - 1],
+						    INTTOFIX(option_font_size)), 
+					       F_10);
 		size->data.length.unit = CSS_UNIT_PT;
 	} else if (size->status == CSS_FONT_SIZE_LARGER) {
 		/** \todo Step within table, if appropriate */

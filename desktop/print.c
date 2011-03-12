@@ -68,11 +68,12 @@ bool print_basic_run(hlcache_handle *content,
 
 	assert(content != NULL && printer != NULL && settings != NULL);
 	
-	if (!print_set_up(content, printer, settings, NULL))
-		ret = false;
+	if (print_set_up(content, printer, settings, NULL))
+		return false;
 
-	while (ret && (done_height < content_get_height(printed_content)) )
+	while (ret && (done_height < content_get_height(printed_content)) ) {
 		ret = print_draw_next_page(printer, settings);
+	}
 
 	print_cleanup(content, printer, settings);
 	
@@ -95,7 +96,7 @@ bool print_set_up(hlcache_handle *content,
 {
 	printed_content = print_init(content, settings);
 	
-	if (!printed_content)
+	if (printed_content == NULL)
 		return false;
 	
 	print_apply_settings(printed_content, settings);

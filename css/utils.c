@@ -25,7 +25,7 @@
 #include "utils/log.h"
 
 /** Screen DPI in fixed point units: defaults to 90, which RISC OS uses */
-css_fixed nscss_screen_dpi = INTTOFIX(90);
+css_fixed nscss_screen_dpi = F_90;
 
 /**
  * Convert an absolute CSS length to points.
@@ -42,18 +42,18 @@ css_fixed nscss_len2pt(css_fixed length, css_unit unit)
 	switch (unit) {
 	/* We assume the screen and any other output has the same dpi */
 	/* 1in = DPIpx => 1px = (72/DPI)pt */
-	case CSS_UNIT_PX: return FDIV(FMULI(length, 72), nscss_screen_dpi);
+	case CSS_UNIT_PX: return FDIV(FMUL(length, F_72), nscss_screen_dpi);
 	/* 1in = 72pt */
-	case CSS_UNIT_IN: return FMULI(length, 72);
+	case CSS_UNIT_IN: return FMUL(length, F_72);
 	/* 1in = 2.54cm => 1cm = (72/2.54)pt */
 	case CSS_UNIT_CM: return FMUL(length, 
-				FDIV(INTTOFIX(72), FLTTOFIX(2.54)));
+				FDIV(F_72, FLTTOFIX(2.54)));
 	/* 1in = 25.4mm => 1mm = (72/25.4)pt */
 	case CSS_UNIT_MM: return FMUL(length, 
-				FDIV(INTTOFIX(72), FLTTOFIX(25.4)));
+				      FDIV(F_72, FLTTOFIX(25.4)));
 	case CSS_UNIT_PT: return length;
 	/* 1pc = 12pt */
-	case CSS_UNIT_PC: return FMULI(length, 12);
+	case CSS_UNIT_PC: return FMUL(length, INTTOFIX(12));
 	default: break;
 	}
 
@@ -91,14 +91,13 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 		font_size = nscss_len2pt(font_size, font_unit);
 
 		/* Clamp to configured minimum */
-		if (font_size < FDIVI(INTTOFIX(option_font_min_size), 10)) {
-			font_size = FDIVI(INTTOFIX(option_font_min_size), 10);
+		if (font_size < FDIV(INTTOFIX(option_font_min_size), F_10)) {
+			font_size = FDIV(INTTOFIX(option_font_min_size), F_10);
 		}
 
 		/* Convert to pixels (manually, to maximise precision) 
 		 * 1in = 72pt => 1pt = (DPI/72)px */
-		px_per_unit = FDIV(FMUL(font_size, nscss_screen_dpi), 
-				INTTOFIX(72));
+		px_per_unit = FDIV(FMUL(font_size, nscss_screen_dpi), F_72);
 
 		/* Scale ex units: we use a fixed ratio of 1ex = 0.6em */
 		if (unit == CSS_UNIT_EX)
@@ -106,7 +105,7 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 	}
 		break;
 	case CSS_UNIT_PX: 
-		px_per_unit = INTTOFIX(1);
+		px_per_unit = F_1;
 		break;
 	/* 1in = DPIpx */
 	case CSS_UNIT_IN: 
@@ -122,7 +121,7 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 		break;
 	/* 1in = 72pt => 1pt = (DPI/72)px */
 	case CSS_UNIT_PT: 
-		px_per_unit = FDIV(nscss_screen_dpi, INTTOFIX(72));
+		px_per_unit = FDIV(nscss_screen_dpi, F_72);
 		break;
 	/* 1pc = 12pt => 1in = 6pc => 1pc = (DPI/6)px */
 	case CSS_UNIT_PC: 
@@ -135,9 +134,9 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 
 	/* Ensure we round px_per_unit to the nearest whole number of pixels:
 	 * the use of FIXTOINT() below will truncate. */
-	px_per_unit += FLTTOFIX(0.5);
+	px_per_unit += F_0_5;
 
 	/* Calculate total number of pixels */
-	return FMULI(length, FIXTOINT(px_per_unit));
+	return FMUL(length, TRUNCATEFIX(px_per_unit));
 }
 

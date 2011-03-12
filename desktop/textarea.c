@@ -178,9 +178,7 @@ struct text_area *textarea_create(int width, int height,
 
 	ret->fstyle = *style;
 
-	ret->line_height = FIXTOINT(FDIVI((FMUL(FLTTOFIX(1.2),
-			FMULI(nscss_screen_dpi,
-			(style->size / FONT_SIZE_SCALE)))), 72));
+	ret->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2), FMUL(nscss_screen_dpi, INTTOFIX((style->size / FONT_SIZE_SCALE))))), F_72));
 
 	ret->caret_pos.line = ret->caret_pos.char_off = 0;
 	ret->caret_x = MARGIN_LEFT;

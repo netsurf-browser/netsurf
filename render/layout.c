@@ -59,7 +59,7 @@
 #define AUTO INT_MIN
 
 /* Fixed point value percentage of an integer, to an integer */
-#define FPCT_OF_INT_TOINT(a, b) FIXTOINT(FMULI(FDIVI(a, 100), b))
+#define FPCT_OF_INT_TOINT(a, b) FIXTOINT(FMUL(FDIV(a, F_100), INTTOFIX(b)))
 
 
 static bool layout_block_context(struct box *block, int viewport_height,
@@ -1889,7 +1889,7 @@ int line_height(const css_computed_style *style)
 		line_height = nscss_len2px(lhvalue, CSS_UNIT_EM, style);
 
 		if (lhtype != CSS_LINE_HEIGHT_NUMBER)
-			line_height = FDIVI(line_height, 100);
+			line_height = FDIV(line_height, F_100);
 	} else {
 		assert(lhunit != CSS_UNIT_PCT);
 
@@ -3790,7 +3790,7 @@ void calculate_mbp_width(const css_computed_style *style, unsigned int side,
 		type = margin_funcs[side](style, &value, &unit);
 		if (type == CSS_MARGIN_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				*frac += FIXTOINT(FDIVI(value, 100));
+				*frac += FIXTOINT(FDIV(value, F_100));
 			} else {
 				*fixed += FIXTOINT(nscss_len2px(value, unit,
 						style));
@@ -3812,7 +3812,7 @@ void calculate_mbp_width(const css_computed_style *style, unsigned int side,
 	if (padding) {
 		padding_funcs[side](style, &value, &unit);
 		if (unit == CSS_UNIT_PCT) {
-			*frac += FIXTOINT(FDIVI(value, 100));
+			*frac += FIXTOINT(FDIV(value, F_100));
 		} else {
 			*fixed += FIXTOINT(nscss_len2px(value, unit, style));
 		}
