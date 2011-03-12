@@ -24,8 +24,10 @@
  *
  * Layout is carried out in two stages:
  *
- * - calculation of minimum / maximum box widths
- * - layout (position and dimensions)
+ * 1. + calculation of minimum / maximum box widths, and
+ *    + determination of whether block level boxes will have >zero height
+ *
+ * 2. + layout (position and dimensions)
  *
  * In most cases the functions for the two stages are a corresponding pair
  * layout_minmax_X() and layout_X().
@@ -89,14 +91,15 @@ static int layout_clear(struct box *fl, enum css_clear_e clear);
 static void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right);
 static void layout_minmax_inline_container(struct box *inline_container,
-		const struct font_functions *font_func);
+		bool *has_height, const struct font_functions *font_func);
 static int line_height(const css_computed_style *style);
 static bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
 		struct content *content, struct box **next_box);
 static struct box *layout_minmax_line(struct box *first, int *min, int *max,
-		bool first_line, const struct font_functions *font_func);
+		bool first_line, bool *line_has_height,
+		const struct font_functions *font_func);
 static int layout_text_indent(const css_computed_style *style, int width);
 static bool layout_float(struct box *b, int width, struct content *content);
 static void place_float_below(struct box *c, int width, int cx, int y,
@@ -478,7 +481,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 			/* Skip children, because they are done in the new
 			 * block context */
 			goto advance_to_next_box;
-	        } else if (box->type == BOX_BLOCK) {
+		} else if (box->type == BOX_BLOCK && (box->flags & HAS_HEIGHT)) {
 			/* This block doesn't establish a new block formatting
 			 * context */
 			cy += max_pos_margin - max_neg_margin;
@@ -664,6 +667,10 @@ void layout_minmax_block(struct box *block,
 	enum css_width_e wtype = CSS_WIDTH_AUTO;
 	css_fixed width = 0;
 	css_unit wunit = CSS_UNIT_PX;
+	enum css_width_e htype = CSS_HEIGHT_AUTO;
+	css_fixed height = 0;
+	css_unit hunit = CSS_UNIT_PX;
+	bool child_has_height = false;
 
 	assert(block->type == BOX_BLOCK ||
 			block->type == BOX_INLINE_BLOCK ||
@@ -673,8 +680,10 @@ void layout_minmax_block(struct box *block,
 	if (block->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
-	if (block->style != NULL)
+	if (block->style != NULL) {
 		wtype = css_computed_width(block->style, &width, &wunit);
+		htype = css_computed_height(block->style, &height, &hunit);
+	}
 
 	if (block->gadget && (block->gadget->type == GADGET_TEXTBOX ||
 			block->gadget->type == GADGET_PASSWORD ||
@@ -685,6 +694,8 @@ void layout_minmax_block(struct box *block,
 		css_unit unit = CSS_UNIT_EM;
 
 		min = max = FIXTOINT(nscss_len2px(size, unit, block->style));
+
+		block->flags |= HAS_HEIGHT;
 	}
 
 	if (block->gadget && (block->gadget->type == GADGET_RADIO ||
@@ -696,6 +707,8 @@ void layout_minmax_block(struct box *block,
 		/* form checkbox or radio button
 		 * if width is AUTO, set it to 1em */
 		min = max = FIXTOINT(nscss_len2px(size, unit, block->style));
+
+		block->flags |= HAS_HEIGHT;
 	}
 
 	if (block->object) {
@@ -707,19 +720,25 @@ void layout_minmax_block(struct box *block,
 		} else {
 			min = max = content_get_width(block->object);
 		}
+
+		block->flags |= HAS_HEIGHT;
 	} else {
 		/* recurse through children */
 		for (child = block->children; child; child = child->next) {
 			switch (child->type) {
 			case BOX_BLOCK:
 				layout_minmax_block(child, font_func);
+				if (child->flags & HAS_HEIGHT)
+					child_has_height = true;
 				break;
 			case BOX_INLINE_CONTAINER:
 				layout_minmax_inline_container(child,
-						font_func);
+						&child_has_height, font_func);
 				break;
 			case BOX_TABLE:
 				layout_minmax_table(child, font_func);
+				/* todo: fix for zero height tables */
+				child_has_height = true;
 				break;
 			default:
 				assert(0);
@@ -740,6 +759,9 @@ void layout_minmax_block(struct box *block,
 				min = child->min_width;
 			if (max < child->max_width)
 				max = child->max_width;
+
+			if (child_has_height)
+				block->flags |= HAS_HEIGHT;
 		}
 	}
 
@@ -753,6 +775,9 @@ void layout_minmax_block(struct box *block,
 			wunit != CSS_UNIT_PCT) {
 		min = max = FIXTOINT(nscss_len2px(width, wunit, block->style));
 	}
+
+	if (height > 0 && hunit != CSS_UNIT_PCT)
+		block->flags |= HAS_HEIGHT;
 
 	/* add margins, border, padding to min, max widths */
 	/* Note: we don't know available width here so percentage margin
@@ -1832,12 +1857,13 @@ bool layout_inline_container(struct box *inline_container, int width,
  */
 
 void layout_minmax_inline_container(struct box *inline_container,
-		const struct font_functions *font_func)
+		bool *has_height, const struct font_functions *font_func)
 {
 	struct box *child;
 	int line_min = 0, line_max = 0;
 	int min = 0, max = 0;
 	bool first_line = true;
+	bool line_has_height;
 
 	assert(inline_container->type == BOX_INLINE_CONTAINER);
 
@@ -1845,14 +1871,17 @@ void layout_minmax_inline_container(struct box *inline_container,
 	if (inline_container->max_width != UNKNOWN_MAX_WIDTH)
 		return;
 
+	*has_height = false;
+
 	for (child = inline_container->children; child; ) {
 		child = layout_minmax_line(child, &line_min, &line_max,
-				first_line, font_func);
+				first_line, &line_has_height, font_func);
 		if (min < line_min)
 			min = line_min;
 		if (max < line_max)
 			max = line_max;
 		first_line = false;
+		*has_height |= line_has_height;
         }
 
 	inline_container->min_width = min;
@@ -2680,13 +2709,14 @@ bool layout_line(struct box *first, int *width, int *y,
  * \param  line_min    updated to minimum width of line starting at first
  * \param  line_max    updated to maximum width of line starting at first
  * \param  first_line  true iff this is the first line in the inline container
+ * \param  line_has_height  updated to true or false, depending on line
  * \return  first box in next line, or 0 if no more lines
  * \post  0 <= *line_min <= *line_max
  */
 
 struct box *layout_minmax_line(struct box *first,
 		int *line_min, int *line_max, bool first_line,
-  		const struct font_functions *font_func)
+  		bool *line_has_height, const struct font_functions *font_func)
 {
 	int min = 0, max = 0, width, height, fixed;
 	float frac;
@@ -2697,6 +2727,8 @@ struct box *layout_minmax_line(struct box *first,
 	assert(first->parent);
 	assert(first->parent->parent);
 	assert(first->parent->parent->style);
+
+	*line_has_height = false;
 
 	/* corresponds to the pass 1 loop in layout_line() */
 	for (b = first; b; b = b->next) {
@@ -2737,6 +2769,9 @@ struct box *layout_minmax_line(struct box *first,
 			if (min < b->min_width)
 				min = b->min_width;
 			max += b->max_width;
+
+			if (b->flags & HAS_HEIGHT)
+				*line_has_height = true;
 			continue;
 		}
 
@@ -2753,6 +2788,7 @@ struct box *layout_minmax_line(struct box *first,
 						&fixed, &frac);
 			if (0 < fixed)
 				max += fixed;
+			*line_has_height = true;
 			/* \todo  update min width, consider fractional extra */
 		} else if (b->type == BOX_INLINE_END) {
 			fixed = frac = 0;
@@ -2766,6 +2802,7 @@ struct box *layout_minmax_line(struct box *first,
 						&b->space);
 				max += b->space;
 			}
+			*line_has_height = true;
 			continue;
 		}
 
@@ -2828,6 +2865,8 @@ struct box *layout_minmax_line(struct box *first,
 				i = j + 1;
 			} while (j != b->length);
 
+			*line_has_height = true;
+
 			continue;
 		}
 
@@ -2883,6 +2922,8 @@ struct box *layout_minmax_line(struct box *first,
 		if (min < width)
 			min = width;
 		max += width;
+
+		*line_has_height = true;
 	}
 
 	if (first_line) {
