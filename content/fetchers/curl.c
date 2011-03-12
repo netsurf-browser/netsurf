@@ -213,8 +213,10 @@ void fetch_curl_register(void)
 	data = curl_version_info(CURLVERSION_NOW);
 
 	for (i = 0; data->protocols[i]; i++) {
-		if (strcmp(data->protocols[i], "file") == 0)
-			continue; /* do not use curl for file: */
+		/* Ignore non-http(s) protocols */
+		if (strcmp(data->protocols[i], "http") != 0 &&
+				strcmp(data->protocols[i], "https") != 0)
+			continue;
 
 		if (!fetch_add_fetcher(data->protocols[i],
 				       fetch_curl_initialise,
