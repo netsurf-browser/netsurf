@@ -525,6 +525,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
 	$$(Q)$$(CC) $$(CFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
@@ -533,6 +534,7 @@ define compile_target_c
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo " COMPILE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
 	$$(Q)$$(CC) $$(CFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
 		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
@@ -547,6 +549,7 @@ $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 		    $(1) | sed 's,^.*:,$$(DEPROOT)/$(3) $$(OBJROOT)/$(2):,' \
 		    > $$(DEPROOT)/$(3)
 	$$(VQ)echo " COMPILE: $(1)"
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
 	$$(Q)$$(CXX) $$(CFLAGS) -o $$(OBJROOT)/$(2) -c $(1)
 
 endef
@@ -558,6 +561,7 @@ define compile_target_s
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
 	$$(VQ)echo "ASSEMBLE: $(1)"
 	$$(Q)$$(RM) $$(DEPROOT)/$(3)
+	$$(Q)$$(RM) $$(OBJROOT)/$(2)
 	$$(Q)$$(CC) $$(ASFLAGS) -MMD -MT '$$(DEPROOT)/$(3) $$(OBJROOT)/$(2)' \
 		    -MF $$(DEPROOT)/$(3) -o $$(OBJROOT)/$(2) -c $(1)
 
