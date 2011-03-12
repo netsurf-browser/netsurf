@@ -32,45 +32,45 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 
-static css_error node_name(void *pw, void *node, lwc_string **name);
+static css_error node_name(void *pw, void *node, css_qname *qname);
 static css_error node_classes(void *pw, void *node,
 		lwc_string ***classes, uint32_t *n_classes);
 static css_error node_id(void *pw, void *node, lwc_string **id);
 static css_error named_ancestor_node(void *pw, void *node,
-		lwc_string *name, void **ancestor);
+		const css_qname *qname, void **ancestor);
 static css_error named_parent_node(void *pw, void *node,
-		lwc_string *name, void **parent);
+		const css_qname *qname, void **parent);
 static css_error named_sibling_node(void *pw, void *node,
-		lwc_string *name, void **sibling);
+		const css_qname *qname, void **sibling);
 static css_error named_generic_sibling_node(void *pw, void *node,
-		lwc_string *name, void **sibling);
+		const css_qname *qname, void **sibling);
 static css_error parent_node(void *pw, void *node, void **parent);
 static css_error sibling_node(void *pw, void *node, void **sibling);
 static css_error node_has_name(void *pw, void *node,
-		lwc_string *name, bool *match);
+		const css_qname *qname, bool *match);
 static css_error node_has_class(void *pw, void *node,
 		lwc_string *name, bool *match);
 static css_error node_has_id(void *pw, void *node,
 		lwc_string *name, bool *match);
 static css_error node_has_attribute(void *pw, void *node,
-		lwc_string *name, bool *match);
+		const css_qname *qname, bool *match);
 static css_error node_has_attribute_equal(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match);
 static css_error node_has_attribute_dashmatch(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match);
 static css_error node_has_attribute_includes(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match);
 static css_error node_has_attribute_prefix(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match);
 static css_error node_has_attribute_suffix(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match);
 static css_error node_has_attribute_substring(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match);
 static css_error node_is_root(void *pw, void *node, bool *match);
 static css_error node_count_siblings(void *pw, void *node,
@@ -447,19 +447,22 @@ bool nscss_parse_colour(const char *data, css_color *result)
 /**
  * Callback to retrieve a node's name.
  *
- * \param pw    HTML document
- * \param node  DOM node
- * \param name  Pointer to location to receive node name
+ * \param pw     HTML document
+ * \param node   DOM node
+ * \param qname  Pointer to location to receive node name
  * \return CSS_OK on success,
  *         CSS_NOMEM on memory exhaustion.
  */
-css_error node_name(void *pw, void *node, lwc_string **name)
+css_error node_name(void *pw, void *node, css_qname *qname)
 {
 	xmlNode *n = node;
 	lwc_error lerror;
 
+	qname->ns = NULL;
+
 	lerror = lwc_intern_string((const char *) n->name,
-			strlen((const char *) n->name), name);
+			strlen((const char *) n->name), 
+			&qname->name);
 	switch (lerror) {
 	case lwc_error_oom:
 		return CSS_NOMEM;
@@ -645,18 +648,18 @@ css_error node_id(void *pw, void *node, lwc_string **id)
  *
  * \param pw        HTML document
  * \param node      DOM node
- * \param name      Node name to search for
+ * \param qname     Node name to search for
  * \param ancestor  Pointer to location to receive ancestor
  * \return CSS_OK.
  *
  * \post \a ancestor will contain the result, or NULL if there is no match
  */
 css_error named_ancestor_node(void *pw, void *node,
-		lwc_string *name, void **ancestor)
+		const css_qname *qname, void **ancestor)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(name);
-	const char *data = lwc_string_data(name);
+	size_t len = lwc_string_length(qname->name);
+	const char *data = lwc_string_data(qname->name);
 
 	*ancestor = NULL;
 
@@ -680,18 +683,18 @@ css_error named_ancestor_node(void *pw, void *node,
  *
  * \param pw      HTML document
  * \param node    DOM node
- * \param name    Node name to search for
+ * \param qname   Node name to search for
  * \param parent  Pointer to location to receive parent
  * \return CSS_OK.
  *
  * \post \a parent will contain the result, or NULL if there is no match
  */
 css_error named_parent_node(void *pw, void *node,
-		lwc_string *name, void **parent)
+		const css_qname *qname, void **parent)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(name);
-	const char *data = lwc_string_data(name);
+	size_t len = lwc_string_length(qname->name);
+	const char *data = lwc_string_data(qname->name);
 
 	*parent = NULL;
 
@@ -714,18 +717,18 @@ css_error named_parent_node(void *pw, void *node,
  *
  * \param pw       HTML document
  * \param node     DOM node
- * \param name     Node name to search for
+ * \param qname    Node name to search for
  * \param sibling  Pointer to location to receive sibling
  * \return CSS_OK.
  *
  * \post \a sibling will contain the result, or NULL if there is no match
  */
 css_error named_sibling_node(void *pw, void *node,
-		lwc_string *name, void **sibling)
+		const css_qname *qname, void **sibling)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(name);
-	const char *data = lwc_string_data(name);
+	size_t len = lwc_string_length(qname->name);
+	const char *data = lwc_string_data(qname->name);
 
 	*sibling = NULL;
 
@@ -748,18 +751,18 @@ css_error named_sibling_node(void *pw, void *node,
  *
  * \param pw       HTML document
  * \param node     DOM node
- * \param name     Node name to search for
+ * \param qname    Node name to search for
  * \param sibling  Pointer to location to receive ancestor
  * \return CSS_OK.
  *
  * \post \a sibling will contain the result, or NULL if there is no match
  */
 css_error named_generic_sibling_node(void *pw, void *node,
-		lwc_string *name, void **sibling)
+		const css_qname *qname, void **sibling)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(name);
-	const char *data = lwc_string_data(name);
+	size_t len = lwc_string_length(qname->name);
+	const char *data = lwc_string_data(qname->name);
 
 	*sibling = NULL;
 
@@ -833,18 +836,18 @@ css_error sibling_node(void *pw, void *node, void **sibling)
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK.
  *
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_name(void *pw, void *node,
-		lwc_string *name, bool *match)
+		const css_qname *qname, bool *match)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(name);
-	const char *data = lwc_string_data(name);
+	size_t len = lwc_string_length(qname->name);
+	const char *data = lwc_string_data(qname->name);
 
 	/* Element names are case insensitive in HTML */
 	*match = strlen((const char *) n->name) == len &&
@@ -995,7 +998,7 @@ css_error node_has_id(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
  *         CSS_NOMEM on memory exhaustion.
@@ -1003,12 +1006,12 @@ css_error node_has_id(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute(void *pw, void *node,
-		lwc_string *name, bool *match)
+		const css_qname *qname, bool *match)
 {
 	xmlNode *n = node;
 	xmlAttr *attr;
 
-	attr = xmlHasProp(n, (const xmlChar *) lwc_string_data(name));
+	attr = xmlHasProp(n, (const xmlChar *) lwc_string_data(qname->name));
 	*match = attr != NULL;
 
 	return CSS_OK;
@@ -1020,7 +1023,7 @@ css_error node_has_attribute(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param value  Value to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
@@ -1029,7 +1032,7 @@ css_error node_has_attribute(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute_equal(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
 	xmlNode *n = node;
@@ -1039,7 +1042,8 @@ css_error node_has_attribute_equal(void *pw, void *node,
 	*match = false;
 
 	if (vlen != 0) {
-		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		attr = xmlGetProp(n, 
+				(const xmlChar *) lwc_string_data(qname->name));
 		if (attr != NULL) {
 			*match = strlen((const char *) attr) ==
 						lwc_string_length(value) &&
@@ -1059,7 +1063,7 @@ css_error node_has_attribute_equal(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param value  Value to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
@@ -1068,7 +1072,7 @@ css_error node_has_attribute_equal(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute_dashmatch(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
 	xmlNode *n = node;
@@ -1078,7 +1082,8 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
         *match = false;
 
 	if (vlen != 0) {
-		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		attr = xmlGetProp(n, 
+				(const xmlChar *) lwc_string_data(qname->name));
 		if (attr != NULL) {
 			const char *vdata = lwc_string_data(value);
 			const char *data = (const char *) attr;
@@ -1103,7 +1108,7 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param value  Value to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
@@ -1112,7 +1117,7 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute_includes(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
 	xmlNode *n = node;
@@ -1122,7 +1127,8 @@ css_error node_has_attribute_includes(void *pw, void *node,
         *match = false;
 
 	if (vlen != 0) {
-		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		attr = xmlGetProp(n, 
+				(const xmlChar *) lwc_string_data(qname->name));
 		if (attr != NULL) {
 			const char *p;
 			const char *start = (const char *) attr;
@@ -1155,7 +1161,7 @@ css_error node_has_attribute_includes(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param value  Value to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
@@ -1164,7 +1170,7 @@ css_error node_has_attribute_includes(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute_prefix(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
 	xmlNode *n = node;
@@ -1174,7 +1180,8 @@ css_error node_has_attribute_prefix(void *pw, void *node,
         *match = false;
 
 	if (vlen != 0) {
-		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		attr = xmlGetProp(n, 
+				(const xmlChar *) lwc_string_data(qname->name));
 		if (attr != NULL) {
 			if (strlen((char *) attr) >= vlen && 
 					strncasecmp((char *) attr,
@@ -1194,7 +1201,7 @@ css_error node_has_attribute_prefix(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param value  Value to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
@@ -1203,7 +1210,7 @@ css_error node_has_attribute_prefix(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute_suffix(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
 	xmlNode *n = node;
@@ -1213,7 +1220,8 @@ css_error node_has_attribute_suffix(void *pw, void *node,
         *match = false;
 
 	if (vlen != 0) {
-		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		attr = xmlGetProp(n, 
+				(const xmlChar *) lwc_string_data(qname->name));
 		if (attr != NULL) {
 			size_t len = strlen((char *) attr);
 			const char *start = (char *) attr + len - vlen;
@@ -1235,7 +1243,7 @@ css_error node_has_attribute_suffix(void *pw, void *node,
  *
  * \param pw     HTML document
  * \param node   DOM node
- * \param name   Name to match
+ * \param qname  Name to match
  * \param value  Value to match
  * \param match  Pointer to location to receive result
  * \return CSS_OK on success,
@@ -1244,7 +1252,7 @@ css_error node_has_attribute_suffix(void *pw, void *node,
  * \post \a match will contain true if the node matches and false otherwise.
  */
 css_error node_has_attribute_substring(void *pw, void *node,
-		lwc_string *name, lwc_string *value,
+		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
 	xmlNode *n = node;
@@ -1254,7 +1262,8 @@ css_error node_has_attribute_substring(void *pw, void *node,
         *match = false;
 
 	if (vlen != 0) {
-		attr = xmlGetProp(n, (const xmlChar *) lwc_string_data(name));
+		attr = xmlGetProp(n, 
+				(const xmlChar *) lwc_string_data(qname->name));
 		if (attr != NULL) {
 			const char *vdata = lwc_string_data(value);
 			size_t len = strlen((char *) attr);
