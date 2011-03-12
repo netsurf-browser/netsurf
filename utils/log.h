@@ -28,15 +28,27 @@
 #else
 
 extern const char *nslog_gettime(void);
+extern void nslog_log(const char *format, ...);
 
 #  ifdef __GNUC__
-#    define LOG(x) do { if (verbose_log) (printf("%s " __FILE__ " %s %i: ", nslog_gettime(), __PRETTY_FUNCTION__, __LINE__), printf x, fputc('\n', stdout)); } while (0)
-
+#    define LOG_FN __PRETTY_FUNCTION__
+#    define LOG_LN __LINE__
 #  elif defined(__CC_NORCROFT)
-#    define LOG(x) do { if (verbose_log) (printf("%s "__FILE__ " %s %i: ", nslog_gettime(), __func__, __LINE__), printf x, fputc('\n', stdout)); } while (0)
+#    define LOG_FN __func__
+#    define LOG_LN __LINE__
 #  else
-#    define LOG(x) do { if (verbose_log) (printf("%s" __FILE__ " %i: ", nslog_gettime(), __LINE__), printf x, fputc('\n', stdout)); } while (0)
+#    define LOG_FN ""
+#    define LOG_LN __LINE__
 #  endif
+
+#define LOG(x) \
+	do { \
+		nslog_log("%s " __FILE__ " %s %i: ", \
+				nslog_gettime(), LOG_FN, LOG_LN); \
+		nslog_log x; \
+		nslog_log("\n"); \
+	} while(0)
+
 #endif
 
 #endif

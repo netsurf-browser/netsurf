@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include "desktop/netsurf.h"
@@ -45,3 +46,17 @@ const char *nslog_gettime(void)
         snprintf(buff, sizeof(buff),"(%ld.%ld)", (long)tv.tv_sec, (long)tv.tv_usec);
         return buff;
 }
+
+void nslog_log(const char *format, ...)
+{
+	if (verbose_log) {
+		va_list ap;
+
+		va_start(ap, format);
+
+		vfprintf(stderr, format, ap);
+
+		va_end(ap);
+	}
+}
+
