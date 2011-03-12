@@ -23,7 +23,9 @@
 #include "desktop/browser.h"
 #include "gtk/schedule.h"
 
-#ifdef DEBUG_GTK_SCHEDULE
+#undef DEBUG_MONKEY_SCHEDULE
+
+#ifdef DEBUG_MONKEY_SCHEDULE
 #include "utils/log.h"
 #else
 #define LOG(X)
@@ -52,6 +54,7 @@ nsgtk_schedule_generic_callback(gpointer data)
                 LOG(("CB at %p already dead.", cb));
         }
         queued_callbacks = g_list_remove(queued_callbacks, cb);
+        LOG(("CB %p(%p) now pending run", cb->callback, cb->context));
         pending_callbacks = g_list_append(pending_callbacks, cb);
         return FALSE;
 }
@@ -98,6 +101,7 @@ schedule(int t, void (*callback)(void *p), void *p)
         cb->context = p;
         cb->callback_killed = false;
         /* Prepend is faster right now. */
+        LOG(("queued a callback to %p(%p) for %d msecs time", callback, p, msec_timeout));
         queued_callbacks = g_list_prepend(queued_callbacks, cb);
         g_timeout_add(msec_timeout, nsgtk_schedule_generic_callback, cb);
 }
@@ -107,7 +111,7 @@ schedule_run(void)
 {
         /* Capture this run of pending callbacks into the list. */
         this_run = pending_callbacks;
-
+        
         if (this_run == NULL)
                 return false; /* Nothing to do */
 
@@ -120,8 +124,12 @@ schedule_run(void)
         while (this_run != NULL) {
                 _nsgtk_callback_t *cb = (_nsgtk_callback_t *)(this_run->data);
                 this_run = g_list_remove(this_run, this_run->data);
-                if (!cb->callback_killed)
-                        cb->callback(cb->context);
+                if (!cb->callback_killed) {
+                  LOG(("CB DO %p(%p)", cb->callback, cb->context));
+                  cb->callback(cb->context);
+                } else {
+                  LOG(("CB %p(%p) already dead, dropping", cb->callback, cb->context));
+                }
                 free(cb);
         }
         return true;
