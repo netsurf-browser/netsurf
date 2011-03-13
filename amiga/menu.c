@@ -66,6 +66,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "desktop/plugin.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 
@@ -467,22 +468,16 @@ void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,
 void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 {
 	struct browser_window *bw;
-	struct gui_window tgw;
 	ULONG menunum=0,itemnum=0,subnum=0;
 	menunum = MENUNUM(code);
 	itemnum = ITEMNUM(code);
 	subnum = SUBNUM(code);
-	bool openwin=false;
-	bool opentab=true;
 	char *temp;
 	BPTR lock = 0;
 	char *source_data;
 	ULONG source_size;
 	struct bitmap *bm;
-
-	tgw.tab_node = NULL;
-	tgw.tab = 0;
-	tgw.shared = gwin;
+	int sel = 0;
 
 	switch(menunum)
 	{
@@ -490,11 +485,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // new window
-					bw = browser_window_create(option_homepage_url, NULL, 0, true, openwin);
+					bw = browser_window_create(option_homepage_url, NULL, 0, true, false);
 				break;
 
 				case 1: // new tab
-					bw = browser_window_create(option_homepage_url, gwin->bw, 0, true, opentab);
+					bw = browser_window_create(option_homepage_url, gwin->bw, 0, true, true);
 				break;
 
 				case 3: // open local file
@@ -652,11 +647,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				case 11: // about
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
-					TimedDosRequesterTags(
+					sel = TimedDosRequesterTags(
 						TDR_ImageType,TDRIMAGE_INFO,
 						TDR_TitleString,messages_get("NetSurf"),
 						TDR_Window,gwin->win,
-						TDR_GadgetString,messages_get("OK"),
+						TDR_GadgetString, "OK|Credits|Licence",
 #ifndef NDEBUG
 						TDR_FormatString,"NetSurf %s\n%s\n%s (%s)\n\nhttp://www.netsurf-browser.org",
 #else
@@ -671,6 +666,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						TDR_Arg3,versvn,
 						TDR_Arg4,verdate,
 						TAG_DONE);
+
+					if(sel == 2)
+						browser_window_create("about:credits", NULL, 0, true, false);
+					else if(sel == 0)
+						browser_window_create("about:licence", NULL, 0, true, false);
 
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				break;
@@ -710,7 +710,6 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 				case 2: // paste
 					browser_window_key_press(gwin->bw, KEY_PASTE);
-					//gui_paste_from_clipboard(&tgw,0,0);
 				break;
 
 				case 4: // select all
