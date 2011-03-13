@@ -312,6 +312,8 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
                         "# This is a *DEVELOPMENT* build from the trunk.\n\n"
 #elif defined(WT_BRANCHISRELEASE)
                         "# This is a release build of NetSurf\n\n"
+#elif defined(WT_NO_SVN)
+                        "# This NetSurf was built outside of our revision control environment.\n# This testament is therefore very useful.\n\n"
 #else
                         "# This NetSurf was built from a branch.\n\n"
 #endif

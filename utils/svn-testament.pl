@@ -31,8 +31,8 @@ if ( $svn_present ) {
    }
 } else {
    $svninfo{repositoryroot} = "http://nowhere/";
-   $svninfo{url} = "http://nowhere/netsurf/trunk/";
-   $svninfo{revision} = "0";
+   $svninfo{url} = "http://nowhere/tarball/";
+   $svninfo{revision} = "unknown";
 }
 
 my %svnstatus; # The SVN status output
@@ -77,6 +77,9 @@ if ($url =~ m@/trunk/@) {
 }
 if ($url =~ m@/tags/@) {
    $testament .= "#define WT_BRANCHISTAG 1\n";
+}
+if ($url =~ m@/tarball/@) {
+   $testament .= "#define WT_NO_SVN 1\n";
 }
 $testament .= "#define WT_REVID \"$svninfo{revision}\"\n";
 $testament .= "#define WT_MODIFIED " . scalar(keys %svnstatus) . "\n";
