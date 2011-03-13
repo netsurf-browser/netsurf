@@ -47,6 +47,9 @@
 	 ((((7 * ((c1 >> 8) & 0xff)) >> 3) + 32) << 8) |	\
 	 ((((7 * (c1 & 0xff)) >> 3) + 32) << 0))
 
+/* Convert pixels to points, assuming a DPI of 90 */
+#define px_to_pt(x) (((x) * 72) / 90)
+
 /** Text redraw callback.
  *
  * Called when a text widget requires redrawing.
@@ -91,7 +94,7 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	if (widget->u.text.text != NULL) {
 		fh = widget->height - border - border;
 		font_style.family = PLOT_FONT_FAMILY_SANS_SERIF;
-		font_style.size = fh * FONT_SIZE_SCALE;
+		font_style.size = px_to_pt(fh) * FONT_SIZE_SCALE;
 		font_style.weight = 400;
 		font_style.flags = FONTF_NONE;
 		font_style.background = widget->bg;
@@ -189,7 +192,7 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	if (widget->u.text.text != NULL) {
 		fh = widget->height - border - border;
 		font_style.family = PLOT_FONT_FAMILY_SANS_SERIF;
-		font_style.size = fh * FONT_SIZE_SCALE;
+		font_style.size = px_to_pt(fh) * FONT_SIZE_SCALE;
 		font_style.weight = 400;
 		font_style.flags = FONTF_NONE;
 		font_style.background = widget->bg;
