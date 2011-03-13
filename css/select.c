@@ -110,6 +110,8 @@ static uint8_t charToHex(char c);
  * Selection callback table for libcss
  */
 static css_select_handler selection_handler = {
+	CSS_SELECT_HANDLER_VERSION_1,
+
 	node_name,
 	node_classes,
 	node_id,
@@ -167,6 +169,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 	css_stylesheet *sheet;
 	css_error error;
 
+	params.params_version = CSS_STYLESHEET_PARAMS_VERSION_1;
 	params.level = CSS_LEVEL_DEFAULT;
 	params.charset = charset;
 	params.url = url;

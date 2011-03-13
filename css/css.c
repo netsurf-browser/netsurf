@@ -129,6 +129,7 @@ nserror nscss_create_css_data(struct content_css_data *c,
 	else
 		c->charset = NULL;
 
+	params.params_version = CSS_STYLESHEET_PARAMS_VERSION_1;
 	params.level = CSS_LEVEL_DEFAULT;
 	params.charset = charset;
 	params.url = url;
@@ -595,6 +596,7 @@ css_error nscss_register_import(struct content_css_data *c,
 		if (blank_import == NULL) {
 			css_stylesheet_params params;
 
+			params.params_version = CSS_STYLESHEET_PARAMS_VERSION_1;
 			params.level = CSS_LEVEL_DEFAULT;
 			params.charset = NULL;
 			params.url = "";
