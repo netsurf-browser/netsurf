@@ -88,3 +88,12 @@ GtkStateType nsgtk_widget_get_state(GtkWidget *widget)
   #endif
 }
 
+void nsgtk_dialog_set_has_separator(GtkDialog *dialog, gboolean setting)
+{
+  #if GTK_CHECK_VERSION(2,21,8)
+	/* Deprecated */
+  #else
+	gtk_dialog_set_has_separator(dialog, setting);
+  #endif
+}
+

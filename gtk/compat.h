@@ -32,5 +32,6 @@ gboolean nsgtk_widget_get_realized(GtkWidget *widget);
 gboolean nsgtk_widget_get_mapped(GtkWidget *widget);
 gboolean nsgtk_widget_is_drawable(GtkWidget *widget);
 GtkStateType nsgtk_widget_get_state(GtkWidget *widget);
+void nsgtk_dialog_set_has_separator(GtkDialog *dialog, gboolean setting);
 
 #endif /* NETSURF_GTK_COMPAT_H */

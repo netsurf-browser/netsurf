@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/dialogs/about.h"
 #include "desktop/browser.h"
@@ -94,7 +95,7 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 	gtk_box_pack_start(GTK_BOX (vbox), label, FALSE, FALSE, 0);
 
 
-	gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
+	nsgtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
 
 	/* Add the credits button */
 	button = gtk_button_new_from_stock ("Credits");
