@@ -21,7 +21,10 @@
 #include "amiga/schedule.h"
 
 #include <proto/exec.h>
+#include <proto/timer.h>
 
+#include <stdio.h>
+#include <stdbool.h>
 #include <pbl.h>
 
 struct nscallback
@@ -50,7 +53,7 @@ void ami_remove_timer_event(struct nscallback *nscb);
 void schedule(int t, void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
-	struct timeval tv;
+	struct TimeVal tv;
 	ULONG time_us = 0;
 
 	nscb = AllocVec(sizeof(struct nscallback), MEMF_PRIVATE | MEMF_CLEAR);
@@ -126,7 +129,7 @@ void schedule_run(BOOL poll)
 	struct nscallback *nscb;
 	void (*callback)(void *p);
 	void *p;
-	struct timeval tv;
+	struct TimeVal tv;
 
 	nscb = pblHeapGetFirst(schedule_list);
 
