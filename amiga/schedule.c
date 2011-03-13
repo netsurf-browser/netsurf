@@ -56,6 +56,8 @@ void schedule(int t, void (*callback)(void *p), void *p)
 	struct TimeVal tv;
 	ULONG time_us = 0;
 
+	if(schedule_list == NULL) return;
+
 	nscb = AllocVec(sizeof(struct nscallback), MEMF_PRIVATE | MEMF_CLEAR);
 	if(!nscb) return;
 
