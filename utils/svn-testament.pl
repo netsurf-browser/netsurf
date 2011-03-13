@@ -60,6 +60,11 @@ my %userinfo; # The information about the current user
    $userinfo{GECOS} = $gecos;
 }
 
+# The current date, in AmigaOS version friendly format (dd.mm.yyyy)
+
+my $compiledate = `date +%d.%m.%Y`;
+chomp $compiledate;
+
 # Spew the testament out
 
 my $testament = "";
@@ -77,6 +82,7 @@ $hostname =~ s/"/\\"/g;
 
 $testament .= "#define WT_ROOT \"$qroot\"\n";
 $testament .= "#define WT_HOSTNAME \"$hostname\"\n";
+$testament .= "#define WT_COMPILEDATE \"$compiledate\"\n";
 
 my $url = $svninfo{url};
 # This only works on 1.3.x and above

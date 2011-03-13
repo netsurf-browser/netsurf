@@ -18,24 +18,25 @@
 
 #include "amiga/os3support.h"
 
-#include "arexx.h"
-#include <reaction/reaction_macros.h>
-#include <string.h>
-#include <proto/intuition.h>
+#include "amiga/arexx.h"
 #include "desktop/browser.h"
 #include "desktop/history_core.h"
 #include "amiga/gui.h"
-#include <proto/dos.h>
-#include <proto/exec.h>
 #include "amiga/download.h"
 #include "amiga/options.h"
+#include "utils/testament.h"
 
+#include <string.h>
+#include <math.h>
+
+#include <proto/intuition.h>
+#include <proto/dos.h>
+#include <proto/exec.h>
 #include <proto/clicktab.h>
 #include <gadgets/clicktab.h>
+#include <reaction/reaction_macros.h>
 
 const char * const verarexx;
-const int verver;
-const int verrev;
 const char * const netsurf_version;
 const int netsurf_version_major;
 const int netsurf_version_minor;
@@ -376,7 +377,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	{
 		if(cmd->ac_ArgList[1])
 		{
-			if((verver > *(ULONG *)cmd->ac_ArgList[0]) || ((verrev >= *(ULONG *)cmd->ac_ArgList[1]) && (verver == *(ULONG *)cmd->ac_ArgList[0])))
+			if((netsurf_version_major > *(ULONG *)cmd->ac_ArgList[0]) || ((atoi(WT_REVID) >= *(ULONG *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(ULONG *)cmd->ac_ArgList[0])))
 			{
 				strcpy(result,"1");
 			}
@@ -387,7 +388,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 		}
 		else if(cmd->ac_ArgList[0])
 		{
-			if((verver >= *(ULONG *)cmd->ac_ArgList[0]))
+			if((netsurf_version_major >= *(ULONG *)cmd->ac_ArgList[0]))
 			{
 				strcpy(result,"1");
 			}
