@@ -205,12 +205,12 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
-void ami_messages_load(char *lang)
+bool ami_locate_resource(char *lang, char *file)
 {
 	struct Locale *locale;
 	int i;
 	BPTR lock = 0;
-	bool found=FALSE;
+	bool found = false;
 
 	if(lock=Lock("PROGDIR:Resources/LangNames",ACCESS_READ))
 	{
@@ -231,22 +231,51 @@ void ami_messages_load(char *lang)
 		{
 			continue;
 		}
-		strcat(lang,"/Messages");
-//		printf("%s\n",lang);
+		strcat(lang, "/");
+		strcat(lang, file);
+
 		if(lock=Lock(lang,ACCESS_READ))
 		{
 			UnLock(lock);
-			found=TRUE;
+			found = true;
 			break;
 		}
 	}
 
 	if(!found)
 	{
-		strcpy(lang,"PROGDIR:Resources/en/Messages");
+		/* If not found yet, check in PROGDIR:Resources/en,
+		 * might not be in user's preferred languages */
+
+		strcpy(lang, "PROGDIR:Resources/en/");
+		strcat(lang, file);
+
+		if(lock=Lock(lang, ACCESS_READ))
+		{
+			UnLock(lock);
+			found = true;
+		}
+		else found = false;
 	}
 
 	CloseLocale(locale);
+
+	if(!found)
+	{
+		/* Lastly check directly in PROGDIR:Resources */
+
+		strcpy(lang, "PROGDIR:Resources/");
+		strcat(lang, file);
+
+		if(lock=Lock(lang, ACCESS_READ))
+		{
+			UnLock(lock);
+			found = true;
+		}
+		else found = false;
+	}
+
+	return found;
 }
 
 void ami_open_resources(void)
@@ -421,9 +450,19 @@ void ami_amiupdate(void)
 char* gui_find_resource(const char *filename)
 {
 	char path[1024];
+	char filename2[1024];
 
-	strcpy(path, "PROGDIR:Resources");
-	path_add_part(path, sizeof(path), filename);
+	if(ami_locate_resource(path, filename) == false)
+	{
+		/* Try with RISC OS HTML filetype, might work */
+		strcpy(filename2, filename);
+		strcat(filename2, ",faf");
+
+		if(ami_locate_resource(path, filename2) == false)
+		{
+			return NULL;
+		}
+	}
 
 	return path_to_url(path);
 }
@@ -711,7 +750,9 @@ int main(int argc, char** argv)
 	char messages[100];
 	char script[1024];
 
-	ami_messages_load(messages);
+	if(ami_locate_resource(messages, "Messages") == false)
+		die("Cannot open Messages file");
+
 	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
 
 	gui_init(argc, argv);
