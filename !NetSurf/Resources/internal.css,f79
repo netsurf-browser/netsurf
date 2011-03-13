@@ -98,3 +98,64 @@ dd > ul {
 	border-top: 2px solid #94adff; }
 
 
+/*
+ * Directory Listing Style
+ */
+
+body#dirlist {
+	background-color: #abf;
+	padding-bottom: 2em; }
+
+body#dirlist h1 {
+	padding: 5mm;
+	margin: 0;
+	border-bottom: 2px solid #bcf; }
+
+body#dirlist p {
+	padding: 2px 5mm;
+	margin: 0; }
+
+body#dirlist div {
+	display: table;
+	width: 94%;
+	margin: 5mm auto 2em auto;
+	padding: 0; }
+
+body#dirlist a, strong {
+	display: table-row;
+	margin: 0;
+	padding: 0; }
+
+body#dirlist a.odd {
+	background-color: #bcf; }
+
+body#dirlist a.even {
+	background-color: #b2c3ff; }
+
+body#dirlist span {
+	display: table-cell; }
+
+body#dirlist em > span {
+	padding-bottom: 1px; }
+
+body#dirlist a + a>span {
+	border-top: 1px solid #9af; }
+
+body#dirlist span.name {
+	padding-left: 22px;
+	min-height: 19px;}
+
+body#dirlist a.dir > span.name {
+	font-weight: bold; }
+
+body#dirlist a.dir > span.type {
+	font-weight: bold; }
+
+body#dirlist span.size {
+	text-align: right;
+	padding-right: 0.3em; }
+
+body#dirlist span.size + span.size {
+	text-align: left;
+	padding-right: 0; }
+

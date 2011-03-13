@@ -56,26 +56,9 @@ bool dirlist_generate_top(char *buffer, int buffer_length)
 	int error = snprintf(buffer, buffer_length,
 		"<html>\n"
 		"<head>\n"
-		"<style>\n"
-		"html, body { margin: 0; padding: 0; }\n"
-		"body { background-color: #abf; padding-bottom: 2em; }\n"
-		"h1 { padding: 5mm; margin: 0; "
-				"border-bottom: 2px solid #bcf; }\n"
-		"p { padding: 2px 5mm; margin: 0; }\n"
-		"div { display: table; width: 94%%; margin: 5mm auto 2em auto; "
-				"padding: 0; }\n"
-		"a, strong { display: table-row; margin: 0; padding: 0; }\n"
-		"a.odd { background-color: #bcf; }\n"
-		"a.even { background-color: #b2c3ff; }\n"
-		"span { display: table-cell; }\n"
-		"em > span { padding-bottom: 1px; }\n"
-		"a + a>span { border-top: 1px solid #9af; }\n"
-		"span.name { padding-left: 22px; min-height: 19px;}\n"
-		"a.dir > span.name { font-weight: bold; }\n"
-		"a.dir > span.type { font-weight: bold; }\n"
-		"span.size { text-align: right; padding-right: 0.3em; }\n"
-		"span.size + span.size { text-align: left; "
-				"padding-right: 0; }\n");
+		"<link rel=\"stylesheet\" title=\"Standard\" "
+			"type=\"text/css\" href=\"resource:internal.css\">\n"
+		"<style>\n");
 	if (error < 0 || error >= buffer_length)
 		/* Error or buffer too small */
 		return false;
@@ -161,7 +144,7 @@ bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
 			"</style>\n"
 			"<title>%s</title>\n"
 			"</head>\n"
-			"<body>\n"
+			"<body id=\"dirlist\">\n"
 			"<h1>%s</h1>\n",
 			title, title);
 	if (error < 0 || error >= buffer_length)
