@@ -359,7 +359,7 @@ $(TOOLROOT)/created: $(OBJROOT)/created
 	$(Q)$(MKDIR) $(TOOLROOT)
 	$(Q)$(TOUCH) $(TOOLROOT)/created
 
-CLEANS := clean-target
+CLEANS := clean-target clean-testament
 
 POSTEXES :=
 
@@ -480,12 +480,20 @@ clean-target:
 	$(VQ)echo "   CLEAN: $(EXETARGET)"
 	$(Q)$(RM) $(EXETARGET)
 
+clean-testament:
+	$(VQ)echo "   CLEAN: utils/testament.h"
+	$(Q)$(RM) utils/testament.h
+
 clean-builddir:
 	$(VQ)echo "   CLEAN: $(OBJROOT)"
 	$(Q)$(RM) -r $(OBJROOT)
 CLEANS += clean-builddir
 
 all-program: $(EXETARGET) post-exe
+
+.PHONY: testament
+testament:
+	$(Q)$(PERL) utils/svn-testament.pl $(shell pwd) utils/testament.h
 
 post-exe: $(POSTEXES)
 

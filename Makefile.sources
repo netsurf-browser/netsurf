@@ -45,6 +45,8 @@ S_BROWSER := browser.c download.c frames.c history_core.c netsurf.c	\
 	save_complete.c save_text.c selection.c textinput.c
 S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
 
+# The following files depend on the testament
+content/fetchers/about.c: testament
 
 # Some extra rules for building the transliteration table.
 ifeq ($(HOST),riscos)
