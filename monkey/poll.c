@@ -97,10 +97,10 @@ gui_poll(bool active)
   unsigned int fd_count = 0;
   bool block = true;
         
+  schedule_run();
+
   if (browser_reformat_pending)
     block = false;
-
-  schedule_run();
 
   if (active) {
     FD_ZERO(&read_fd_set);

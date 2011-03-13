@@ -509,6 +509,8 @@ void gui_poll(bool active)
 	unsigned int fd_count = 0;
 	bool block = true;
 
+	schedule_run()
+	
 	if (browser_reformat_pending)
 		block = false;
 
