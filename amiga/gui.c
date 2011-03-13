@@ -2165,8 +2165,8 @@ void gui_quit(void)
 	if(IKeymap) DropInterface((struct Interface *)IKeymap);
 	if(KeymapBase) CloseLibrary(KeymapBase);
 
-	ami_schedule_close_timer();
 	ami_schedule_free();
+	ami_schedule_close_timer();
 
 	FreeObjList(window_list);
 }

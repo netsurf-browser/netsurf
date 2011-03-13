@@ -117,6 +117,25 @@ void schedule_remove(void (*callback)(void *p), void *p)
 	if(restoreheap) pblHeapConstruct(schedule_list);
 }
 
+void schedule_remove_all(void)
+{
+	PblIterator *iterator;
+	struct nscallback *nscb;
+
+	if(pblHeapIsEmpty(schedule_list)) return;
+
+	iterator = pblHeapIterator(schedule_list);
+
+	while ((nscb = pblIteratorNext(iterator)) != -1)
+	{
+		ami_remove_timer_event(nscb);
+		pblIteratorRemove(iterator);
+		FreeVec(nscb);
+	};
+
+	pblIteratorFree(iterator);
+}
+
 /**
  * Process events up to current time.
  * This implementation only takes the top entry off the heap, it does not
@@ -186,7 +205,8 @@ BOOL ami_schedule_create(void)
 
 void ami_schedule_free(void)
 {
-	pblHeapFree(schedule_list);
+	schedule_remove_all();
+	pblHeapFree(schedule_list); // this should be empty at this point
 }
 
 void ami_schedule_open_timer(void)
