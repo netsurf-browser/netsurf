@@ -24,6 +24,7 @@
 #include FT_CACHE_H
 
 #include "css/css.h"
+#include "css/utils.h"
 #include "render/font.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
@@ -365,7 +366,7 @@ static void fb_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 	srec->width = srec->height = (fstyle->size * 64) / FONT_SIZE_SCALE;
 	srec->pixel = 0;
 
-	srec->x_res = srec->y_res = 72;
+	srec->x_res = srec->y_res = FIXTOINT(nscss_screen_dpi);
 }
 
 FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
