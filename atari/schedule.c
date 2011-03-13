@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "desktop/schedule.h"
+#include "utils/schedule.h"
 #include "atari/schedule.h"
 
 #include "utils/log.h"

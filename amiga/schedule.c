@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "desktop/schedule.h"
+#include "utils/schedule.h"
 #include "amiga/os3support.h"
 #include "amiga/schedule.h"
 

@@ -19,8 +19,8 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include "desktop/schedule.h"
-#include "framebuffer/schedule.h"
+#include "utils/schedule.h"
+#include "windows/schedule.h"
 
 #include "utils/log.h"
 #include "utils/utils.h"

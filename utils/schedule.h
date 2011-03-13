@@ -20,8 +20,8 @@
  * Job scheduler (interface).
  */
 
-#ifndef _NETSURF_DESKTOP_SCHEDULE_H_
-#define _NETSURF_DESKTOP_SCHEDULE_H_
+#ifndef _NETSURF_UTILS_SCHEDULE_H_
+#define _NETSURF_UTILS_SCHEDULE_H_
 
 /* In platform specific schedule.c. */
 typedef void (*schedule_callback_fn)(void *p);

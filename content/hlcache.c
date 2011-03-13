@@ -26,11 +26,11 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/schedule.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/ring.h"
+#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 

@@ -33,13 +33,13 @@
 #include <sys/time.h>
 #include <time.h>
 #include <libmng.h>
-#include "desktop/schedule.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/mng.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
 #include "utils/utils.h"
 
 /*	We do not currently support any form of colour/gamma correction, nor do

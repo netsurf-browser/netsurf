@@ -23,6 +23,7 @@
 #include <List.h>
 
 extern "C" {
+#include "utils/schedule.h"
 #include "desktop/browser.h"
 
 #ifdef DEBUG_BEOS_SCHEDULE

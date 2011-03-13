@@ -31,6 +31,7 @@
 #include "oslib/wimpspriteop.h"
 #include "desktop/plotters.h"
 #include "utils/log.h"
+#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "riscos/gui.h"
 #include "riscos/tinct.h"

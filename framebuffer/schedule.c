@@ -20,7 +20,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "desktop/schedule.h"
+#include "utils/schedule.h"
 #include "framebuffer/schedule.h"
 
 #include "utils/log.h"

@@ -38,13 +38,13 @@
 #include <libnsgif.h>
 #include "utils/config.h"
 #include "content/content_protected.h"
-#include "desktop/schedule.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/gif.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
 #include "utils/utils.h"
 
 static void nsgif_invalidate(void *bitmap, void *private_word);
