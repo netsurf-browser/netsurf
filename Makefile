@@ -493,7 +493,7 @@ all-program: $(EXETARGET) post-exe
 
 .PHONY: testament
 testament:
-	$(Q)$(PERL) utils/svn-testament.pl $(shell pwd) utils/testament.h
+	$(Q)$(PERL) utils/svn-testament.pl $(CURDIR) utils/testament.h
 
 post-exe: $(POSTEXES)
 
