@@ -291,9 +291,30 @@ void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
 /* convert an rgb color to an index into the web palette */
 short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
 
-/* shared / static methods ... */
+/*
+	setup an MFDB struct and allocate memory for it when it is needed. 
+	If bpp == 0, this function assumes that the MFDB shall point to the screen
+	and will not allocate any memory (mfdb.fd_addr == 0).  
+	The function will return 0 when the memory allocation fails 
+	( out of memory).
+*/
+int init_mfdb(int bpp, int w, int h, bool stand, MFDB * out );
+
+/* shared / static methods follows */
+
+/*
+	Get clipping for current framebuffer 
+*/
 int plotter_get_clip( GEM_PLOTTER self, struct rect * out );
+
+/*
+	Set clipping for current framebuffer
+*/
 int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
+
+/*
+	convert framebuffer clipping to vdi clipping and activates it 
+*/
 void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 
 #define PLOTTER_IS_LOCKED(plotter) ( plotter->private_flags & PLOTTER_FLAG_LOCKED )

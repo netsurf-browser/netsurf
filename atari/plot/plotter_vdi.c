@@ -714,30 +714,6 @@ static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh 
 }
 
 /*
-	fuellt ein mfdb, wenn bpp==null wird angenommen das ein MFDB fr 
-    den Bildschirm initialisiert werden soll, der Speicher fuer das Bild
-	wird daher nicht alloziert ( fd_addr == 0 )
-*/
-static int init_mfdb(int bpp, int w, int h, MFDB * out )
-{
-	int pxsize = bpp >> 3;
-	int dststride;
-	dststride = MFDB_STRIDE( w );
-	if( bpp > 0 ) { 
-		out->fd_addr = malloc( dststride * pxsize * h );
-		out->fd_stand = 0;
-		out->fd_nplanes = (short)bpp;
-		out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
-	} else {
-		memset( out, 0, sizeof(MFDB) );
-	}
-	out->fd_w = dststride;
-	out->fd_h = h;
-	out->fd_wdwidth = dststride >> 4;
-	return( 1 );
-}
-
-/*
 * Capture the screen at x,y location
 * param self instance
 * param x absolute screen coords
@@ -756,9 +732,8 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 	assert( vdi_sysinfo.vdiformat == VDI_FORMAT_PACK  );	
 
 	{
-		int pxsize =  vdi_sysinfo.scr_bpp >> 3;
 		int scr_stride = MFDB_STRIDE( w );
-		int scr_size = scr_stride * pxsize * h;
+		int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
 		if( DUMMY_PRIV(self)->size_buf_scr == 0 ){
 			/* init screen mfdb */
 			DUMMY_PRIV(self)->buf_scr.fd_addr = malloc( scr_size );
@@ -782,7 +757,7 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 		assert( DUMMY_PRIV(self)->buf_scr.fd_addr != NULL );
 	}
 
-	init_mfdb( 0, w, h, &scr );
+	init_mfdb( 0, w, h, 0, &scr );
 	pxy[0] = x;
 	pxy[1] = y;
 	pxy[2] = pxy[0] + w-1;
@@ -875,7 +850,6 @@ static int convert_bitmap( GEM_PLOTTER self,
 	uint32_t flags,
 	MFDB *out  )
 {
-	short vpxsize = self->bpp_virt >> 3; /* / 8 */
 	int dststride;						/* stride of dest. image */
 	int dstsize;						/* size of dest. in byte */
 	int err;
@@ -929,7 +903,7 @@ static int convert_bitmap( GEM_PLOTTER self,
 
 	/* (re)allocate buffer for framebuffer image: */
 	dststride = MFDB_STRIDE( clip->g_w );
-	dstsize = dststride * vpxsize * clip->g_h;
+	dstsize = ( ((dststride >> 3) * clip->g_h) * self->bpp_virt);
 	if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
 		int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
 		if( DUMMY_PRIV(self)->buf_packed == NULL )
@@ -972,7 +946,7 @@ static int convert_bitmap( GEM_PLOTTER self,
 		0,			/* x dst coord of top left in pixel coords */
 		0,			/* y dst coord of top left in pixel coords */
 		clip->g_w, clip->g_h,
-		dststride * vpxsize /* stride as bytes */
+		(dststride >> 3) *  self->bpp_virt /* stride as bytes */
 	);
 	assert( err != 0 );
 

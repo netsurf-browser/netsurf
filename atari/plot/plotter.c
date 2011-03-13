@@ -682,7 +682,29 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 	return( tval[2]*36+tval[1]*6+tval[0] );
 }
 
-/* Shared (static in object oriented slang) plotter functions: */
+
+int init_mfdb(int bpp, int w, int h, bool stand, MFDB * out )
+{
+	int dststride;
+	dststride = MFDB_STRIDE( w );
+	if( bpp > 0 ) { 
+		out->fd_addr = malloc( ((dststride >> 3) * h) * bpp );
+		if( out->fd_addr == NULL ){
+			return( 0 );
+		}
+		out->fd_stand = stand;
+		out->fd_nplanes = (short)bpp;
+		out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
+	} else {
+		memset( out, 0, sizeof(MFDB) );
+	}
+	out->fd_w = dststride;
+	out->fd_h = h;
+	out->fd_wdwidth = dststride >> 4;
+	return( 1 );
+}
+
+
 int plotter_get_clip( GEM_PLOTTER self, struct rect * out )
 {
 	out->x0 = self->clipping.x0;
@@ -691,6 +713,7 @@ int plotter_get_clip( GEM_PLOTTER self, struct rect * out )
 	out->y1 = self->clipping.y1;
 	return( 1 );
 }
+
 
 int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip)
 {
@@ -701,7 +724,7 @@ int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip)
 	return ( 1 );
 }
 
-/* this converts framebuffer clipping to vdi clipping and sets it */
+
 void plotter_vdi_clip( GEM_PLOTTER self, bool set)
 {
 	return;
