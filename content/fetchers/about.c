@@ -332,6 +332,14 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 			FETCH_ERROR_NO_ERROR))
 		goto fetch_about_testament_handler_aborted;
         
+	slen = snprintf(buffer, sizeof buffer, 
+                        "Built on %s in %s\n\n",
+                        WT_HOSTNAME, WT_ROOT);
+
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
+			FETCH_ERROR_NO_ERROR))
+		goto fetch_about_testament_handler_aborted;
+        
         if (WT_MODIFIED > 0) {
                 slen = snprintf(buffer, sizeof buffer, 
                                 "Working tree has %d modification%s\n\n",

@@ -67,6 +67,17 @@ my $testament = "";
 $testament .= "#define USERNAME \"$userinfo{USERNAME}\"\n";
 $testament .= "#define GECOS \"$userinfo{GECOS}\"\n";
 
+my $qroot = $root;
+$qroot =~ s/"/\\"/g;
+
+my $hostname = $ENV{HOSTNAME};
+
+$hostname = "unknown-host" unless (defined($hostname) && $hostname ne "");
+$hostname =~ s/"/\\"/g;
+
+$testament .= "#define WT_ROOT \"$qroot\"\n";
+$testament .= "#define WT_HOSTNAME \"$hostname\"\n";
+
 my $url = $svninfo{url};
 # This only works on 1.3.x and above
 $url = substr($url, length($svninfo{repositoryroot}));
