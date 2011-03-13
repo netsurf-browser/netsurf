@@ -185,3 +185,19 @@ void dbg_pxy( char * str, short * pxy )
 	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str, 
 		pxy[0], pxy[1], pxy[2], pxy[3] );
 } 
+
+/* some LDG functions here to reduce dependencies */
+void * ldg_open( char * name, short * global )
+{
+	return( NULL );
+}
+
+void * ldg_find( char * name, short * ldg )
+{
+	return( NULL );
+}
+
+int ldg_close( void * ldg, short * global ) 
+{
+	return( 0 );
+} 

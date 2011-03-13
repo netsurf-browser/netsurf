@@ -29,7 +29,7 @@ CFLAGS += -std=c99 -I. -Dsmall $(WARNFLAGS) -Dnsatari \
  
 LDFLAGS += $(shell curl-config --libs)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub openssl libcss)
-LDFLAGS += -L/usr/lib/ -lxml2 -lz -lHermes -liconv -L/usr/lib -lwindom -lldg -lgem -lm  
+LDFLAGS += -L/usr/lib/ -lxml2 -lz -lHermes -liconv -L/usr/lib -lwindom -lgem -lm  
 
 
 # S_ATARI are sources purely for the Atari FreeMiNT build
