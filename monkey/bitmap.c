@@ -99,7 +99,6 @@ size_t bitmap_get_bpp(void *bitmap)
 
 bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 {
-  fprintf(stdout, "BITMAP_SAVE %s %08x\n", path, flags);
   return true;
 }
 
