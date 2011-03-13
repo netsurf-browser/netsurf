@@ -402,5 +402,9 @@ ifeq ($(TARGET),cocoa)
 endif
 
 # Include any local configuration
+ifneq ($(MAKEFILE_DEFAULTS_FINISHED),)
+$(error Makefile.defaults has been double-included.  If you did something utterly brain-dead such as copying Makefile.defaults to Makefile.config then you deserve all the pain you can imagine.  Do NOT do that.  Why not read the comments at the top of Makefile.defaults.  They are there to help you, you numpty)
+endif
+MAKEFILE_DEFAULTS_FINISHED=yes
 -include Makefile.config
 
