@@ -97,6 +97,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
 	struct nscallback *nscb;
 	bool restoreheap = false;
 
+	if(schedule_list == NULL) return;
 	if(pblHeapIsEmpty(schedule_list)) return;
 
 	iterator = pblHeapIterator(schedule_list);
@@ -207,6 +208,7 @@ void ami_schedule_free(void)
 {
 	schedule_remove_all();
 	pblHeapFree(schedule_list); // this should be empty at this point
+	schedule_list = NULL;
 }
 
 void ami_schedule_open_timer(void)
