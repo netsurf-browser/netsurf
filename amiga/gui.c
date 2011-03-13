@@ -299,8 +299,6 @@ void ami_open_resources(void)
 
 	urlStringClass = MakeStringClass();
 
-	ami_schedule_open_timer();
-
     if(!(appport = AllocSysObjectTags(ASOT_PORT,
 							ASO_NoTrack,FALSE,
 							TAG_DONE))) die(messages_get("NoMemory"));
@@ -496,7 +494,6 @@ void gui_init(int argc, char** argv)
 	plot=amiplot;
 
 	if(option_context_menu) ami_context_menu_init();
-	ami_schedule_create();
 
 	window_list = NewObjList();
 
@@ -752,6 +749,9 @@ int main(int argc, char** argv)
 
 	if(ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
+
+	ami_schedule_open_timer();
+	ami_schedule_create();
 
 	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
 
