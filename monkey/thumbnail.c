@@ -26,6 +26,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
   if (win == NULL) {
     fprintf(stdout, "GENERIC THUMBNAIL URL %s\n", url);
   }
-  fprintf(stdout, "BROWSER_WINDOW THUMBNAIL WIN %u URL %s\n", win->win_num, url);
+  fprintf(stdout, "WINDOW THUMBNAIL WIN %u URL %s\n", win->win_num, url);
   return false;
 }
