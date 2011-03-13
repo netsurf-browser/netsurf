@@ -18,8 +18,9 @@
 
 #include <sys/time.h>
 #include <time.h>
+#include <stdlib.h>
 
-#include "desktop/browser.h"
+#include "desktop/schedule.h"
 #include "framebuffer/schedule.h"
 
 #include "utils/log.h"

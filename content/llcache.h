@@ -166,13 +166,18 @@ nserror llcache_initialise(llcache_query_callback cb, void *pw);
 void llcache_finalise(void);
 
 /**
- * Cause the low-level cache to emit any pending notifications 
- * and attempt to clean the cache. No guarantee is made about
- * what, if any, cache cleaning will occur.
+ * Cause the low-level cache to emit any pending notifications.
  *
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
 nserror llcache_poll(void);
+
+/**
+ * Cause the low-level cache to attempt to perform cleanup.  No
+ * guarantees are made as to whether or not cleanups will take
+ * place and what, if any, space savings will be made.
+ */
+void llcache_clean(void);
 
 /**
  * Retrieve a handle for a low-level cache object

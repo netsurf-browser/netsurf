@@ -44,6 +44,7 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
+#include "desktop/schedule.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"

@@ -64,6 +64,15 @@ enum hlcache_retrieve_flag {
 };
 
 /**
+ * Initialise the high-level cache, preparing the llcache also.
+ *
+ * \param cb  Query handler for llcache
+ * \param pw  Pointer to llcache query handler data
+ * \return NSERROR_OK on success, appropriate error otherwise.
+ */
+nserror hlcache_initialise(llcache_query_callback cb, void *pw);
+
+/**
  * Finalise the high-level cache, destroying any remaining contents
  */
 void hlcache_finalise(void);

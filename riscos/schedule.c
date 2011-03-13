@@ -27,6 +27,7 @@
 #include "oslib/os.h"
 #include "riscos/gui.h"
 #include "utils/log.h"
+#include "desktop/schedule.h"
 
 
 /** Entry in the queue of scheduled callbacks. */

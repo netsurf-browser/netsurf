@@ -37,6 +37,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/shape.h"
+#include "desktop/schedule.h"
 #include "utils/resource.h"
 #include "utils/log.h"
 #include "utils/url.h"

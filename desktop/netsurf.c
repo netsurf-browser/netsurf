@@ -145,8 +145,9 @@ nserror netsurf_init(int *pargc,
 	setlocale(LC_ALL, "C");
 
 	fetch_init();
-
-	llcache_initialise(netsurf_llcache_query_handler, NULL);
+	
+	/* Initialise the hlcache and allow it to init the llcache for us */
+	hlcache_initialise(netsurf_llcache_query_handler, NULL);
 
 	/* Initialize system colours */
 	gui_system_colour_init();

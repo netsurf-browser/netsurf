@@ -193,8 +193,6 @@ static nserror llcache_object_notify_users(llcache_object *object);
 static nserror llcache_object_snapshot(llcache_object *object,
 		llcache_object **snapshot);
 
-static nserror llcache_clean(void);
-
 static nserror llcache_post_data_clone(const llcache_post_data *orig, 
 		llcache_post_data **clone);
 
@@ -307,8 +305,6 @@ void llcache_finalise(void)
 /* See llcache.h for documentation */
 nserror llcache_poll(void)
 {
-	static uint32_t last_clean_time;
-	uint32_t now;
 	llcache_object *object;
 	
 	fetch_poll();
@@ -323,18 +319,6 @@ nserror llcache_poll(void)
 			object = object->next) {
 		llcache_object_notify_users(object);
 	}
-
-	/* Only attempt to clean the cache every 5 seconds */
-#define LLCACHE_CLEAN_INTERVAL_CS (500)
-	now = wallclock();
-
-	if (now > last_clean_time + LLCACHE_CLEAN_INTERVAL_CS) {
-		/* Attempt to clean the cache */
-		llcache_clean();
-
-		last_clean_time = now;
-	}
-#undef LLCACHE_CLEAN_INTERVAL_CS
 
 	return NSERROR_OK;
 }
@@ -1611,10 +1595,8 @@ nserror llcache_object_snapshot(llcache_object *object,
 
 /**
  * Attempt to clean the cache
- *
- * \return NSERROR_OK.
  */
-nserror llcache_clean(void)
+void llcache_clean(void)
 {
 	llcache_object *object, *next;
 	uint32_t llcache_size = 0;
@@ -1697,7 +1679,6 @@ nserror llcache_clean(void)
 	LOG(("Size: %u", llcache_size));
 #endif
 
-	return NSERROR_OK;
 }
 
 /**
@@ -2241,8 +2222,8 @@ nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
  * \return NSERROR_OK on success, appropriate error otherwise
  *
  * \note This function also has the side-effect of updating 
- *       the cache control data for the object if an interesting
- *       header is encountered
+ *	 the cache control data for the object if an interesting
+ *	 header is encountered
  */
 nserror llcache_fetch_parse_header(llcache_object *object, const char *data, 
 		size_t len, char **name, char **value)

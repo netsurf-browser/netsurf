@@ -51,6 +51,7 @@
 #include "desktop/knockout.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"
+#include "desktop/schedule.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
 

@@ -38,7 +38,7 @@
 #include <libnsgif.h>
 #include "utils/config.h"
 #include "content/content_protected.h"
-#include "desktop/browser.h"
+#include "desktop/schedule.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"

@@ -26,6 +26,7 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "desktop/schedule.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -74,7 +75,8 @@ static hlcache_entry *hlcache_content_list;
 /** Ring of retrieval contexts */
 static hlcache_retrieval_ctx *hlcache_retrieval_ctx_ring;
 
-static void hlcache_clean(void);
+static void hlcache_clean(void *ignored);
+
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
@@ -88,13 +90,31 @@ static void hlcache_content_callback(struct content *c,
  * Public API								      *
  ******************************************************************************/
 
+nserror
+hlcache_initialise(llcache_query_callback cb, void *pw)
+{
+	nserror ret = llcache_initialise(cb, pw);
+	
+	if (ret != NSERROR_OK)
+		return ret;
+	
+	/* Schedule the cache cleanup for 5 seconds time */
+	schedule(500, hlcache_clean, NULL);
+	
+	return NSERROR_OK;
+}
+
+
 /* See hlcache.h for documentation */
 void hlcache_finalise(void)
 {
 	uint32_t num_contents, prev_contents;
 	hlcache_entry *entry;
 	hlcache_retrieval_ctx *ctx, *next;
-        
+	
+	/* Remove the hlcache_clean schedule */
+	schedule_remove(hlcache_clean, NULL);
+	
 	/* Obtain initial count of contents remaining */
 	for (num_contents = 0, entry = hlcache_content_list; 
 			entry != NULL; entry = entry->next) {
@@ -107,7 +127,7 @@ void hlcache_finalise(void)
 	do {
 		prev_contents = num_contents;
 
-		hlcache_clean();
+		hlcache_clean(NULL);
 
 		for (num_contents = 0, entry = hlcache_content_list; 
 				entry != NULL; entry = entry->next) {
@@ -123,7 +143,7 @@ void hlcache_finalise(void)
 			LOG(("	%p : %s (%d users)", entry, 
 			     content_get_url(&entry_handle), content_count_users(entry->content)));
 		} else {
-			LOG(("  %p", entry));
+			LOG(("	%p", entry));
 		}
 	}
 
@@ -155,22 +175,8 @@ void hlcache_finalise(void)
 /* See hlcache.h for documentation */
 nserror hlcache_poll(void)
 {
-	static uint32_t last_clean_time;
-	uint32_t now;
 
 	llcache_poll();
-
-	/* Only attempt to clean the cache every 5 seconds */
-#define HLCACHE_CLEAN_INTERVAL_CS (500)
-	now = wallclock();
-
-	if (now > last_clean_time + HLCACHE_CLEAN_INTERVAL_CS) {
-		/* Give the cache a clean */
-		hlcache_clean();
-
-		last_clean_time = now;
-	}
-#undef HLCACHE_CLEAN_INTERVAL_CS
 
 	return NSERROR_OK;
 }
@@ -368,7 +374,7 @@ nserror hlcache_handle_replace_callback(hlcache_handle *handle,
 /**
  * Attempt to clean the cache
  */
-void hlcache_clean(void)
+void hlcache_clean(void *ignored)
 {
 	hlcache_entry *entry, *next;
 
@@ -407,6 +413,12 @@ void hlcache_clean(void)
 		/* Destroy entry */
 		free(entry);
 	}
+	
+	/* Attempt to clean the llcache */
+	llcache_clean();
+	
+	/* Re-schedule ourselves for 5 seconds time */
+	schedule(500, hlcache_clean, NULL);
 }
 
 /**
@@ -447,7 +459,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 				
 				llcache_handle_abort(handle);
 				llcache_handle_release(handle);
-                                free((char *) ctx->child.charset);
+				free((char *) ctx->child.charset);
 				free(ctx);
 				return error;
 			}

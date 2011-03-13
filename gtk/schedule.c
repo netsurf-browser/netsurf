@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "desktop/browser.h"
+#include "desktop/schedule.h"
 #include "gtk/schedule.h"
 
 #ifdef DEBUG_GTK_SCHEDULE

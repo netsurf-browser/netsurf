@@ -32,6 +32,7 @@
 #include "content/urldb.h"
 #include "desktop/cookies.h"
 #include "desktop/options.h"
+#include "desktop/schedule.h"
 #include "desktop/tree.h"
 #include "utils/messages.h"
 #include "utils/log.h"
