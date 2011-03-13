@@ -104,6 +104,12 @@ hlcache_initialise(llcache_query_callback cb, void *pw)
 	return NSERROR_OK;
 }
 
+/* See hlcache.h for documentation */
+void hlcache_stop(void)
+{
+	/* Remove the hlcache_clean schedule */
+	schedule_remove(hlcache_clean, NULL);
+}
 
 /* See hlcache.h for documentation */
 void hlcache_finalise(void)
@@ -111,9 +117,6 @@ void hlcache_finalise(void)
 	uint32_t num_contents, prev_contents;
 	hlcache_entry *entry;
 	hlcache_retrieval_ctx *ctx, *next;
-	
-	/* Remove the hlcache_clean schedule */
-	schedule_remove(hlcache_clean, NULL);
 	
 	/* Obtain initial count of contents remaining */
 	for (num_contents = 0, entry = hlcache_content_list; 

@@ -175,6 +175,8 @@ int netsurf_main_loop(void)
 
 void netsurf_exit(void)
 {
+	hlcache_stop();
+	
 	LOG(("Closing GUI"));
 	gui_quit();
 

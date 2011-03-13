@@ -73,6 +73,12 @@ enum hlcache_retrieve_flag {
 nserror hlcache_initialise(llcache_query_callback cb, void *pw);
 
 /**
+ * Stop the high-level cache periodic functionality so that the
+ * exit sequence can run.
+ */
+void hlcache_stop(void);
+
+/**
  * Finalise the high-level cache, destroying any remaining contents
  */
 void hlcache_finalise(void);
