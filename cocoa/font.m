@@ -38,7 +38,6 @@ static NSDictionary *cocoa_font_attributes( const plot_font_style_t *style );
 
 static NSTextStorage *cocoa_text_storage = nil;
 static NSTextContainer *cocoa_text_container = nil;
-static CGFloat cocoa_font_scale_factor = 1.0;
 
 static bool nsfont_width(const plot_font_style_t *style,
 						 const char *string, size_t length,
@@ -106,17 +105,9 @@ const struct font_functions nsfont = {
 
 #pragma mark -
 
-void cocoa_set_font_scale_factor( float newFactor )
-{
-	cocoa_font_scale_factor = newFactor;
-}
-
 void cocoa_draw_string( CGFloat x, CGFloat y, const char *bytes, size_t length, const plot_font_style_t *style )
 {
-	plot_font_style_t actualStyle = *style;
-	actualStyle.size = (CGFloat)actualStyle.size * cocoa_font_scale_factor;
-	
-	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, &actualStyle );
+	NSLayoutManager *layout = cocoa_prepare_layout_manager( bytes, length, style );
 	if (layout == nil) return;
 	
 	NSFont *font = [cocoa_text_storage attribute: NSFontAttributeName atIndex: 0 effectiveRange: NULL];

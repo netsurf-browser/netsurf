@@ -147,7 +147,6 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
 	current_redraw_browser = browser;
-	cocoa_set_font_scale_factor( browser->scale );
 	
 	const NSRect *rects = NULL;
 	NSInteger count = 0;

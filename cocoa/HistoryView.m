@@ -57,7 +57,6 @@
 	[[NSColor clearColor] set];
 	[NSBezierPath fillRect: rect];
 	
-	cocoa_set_font_scale_factor( 1.0 );
 	cocoa_set_clip( rect );
 	
 	history_redraw( browser->history );

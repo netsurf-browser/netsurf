@@ -22,6 +22,5 @@
 #import "desktop/plot_style.h"
 
 void cocoa_draw_string( CGFloat x, CGFloat y, const char *bytes, size_t length, const plot_font_style_t *style );
-void cocoa_set_font_scale_factor( float newFactor );
 
 #endif
