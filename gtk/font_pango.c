@@ -57,6 +57,22 @@ const struct font_functions nsfont = {
 	nsfont_split
 };
 
+static PangoContext *nsfont_pango_context = NULL;
+static PangoLayout *nsfont_pango_layout = NULL;
+
+static inline void nsfont_pango_check(void)
+{
+	if (nsfont_pango_context == NULL) {
+		LOG(("Creating nsfont_pango_context."));
+		nsfont_pango_context = gdk_pango_context_get();
+	}
+	
+	if (nsfont_pango_layout == NULL) {
+		LOG(("Creating nsfont_pango_layout."));
+		nsfont_pango_layout = pango_layout_new(nsfont_pango_context);
+	}
+}
+
 /**
  * Measure the width of a string.
  *
@@ -72,25 +88,23 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 		int *width)
 {
 	PangoFontDescription *desc;
-	PangoContext *context;
-	PangoLayout *layout;
 
 	if (length == 0) {
 		*width = 0;
 		return true;
 	}
+	
+	nsfont_pango_check();
 
 	desc = nsfont_style_to_description(fstyle);
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout, desc);
-	pango_layout_set_text(layout, string, length);
+	pango_layout_set_font_description(nsfont_pango_layout, desc);
+	pango_layout_set_text(nsfont_pango_layout, string, length);
 
-	pango_layout_get_pixel_size(layout, width, 0);
+	pango_layout_get_pixel_size(nsfont_pango_layout, width, 0);
 
-	g_object_unref(layout);
-	g_object_unref(context);
 	pango_font_description_free(desc);
+
+	LOG(("fstyle: %p string: %s, length: %u -> %d", fstyle, string, length, *width));
 
 	return true;
 }
@@ -114,24 +128,20 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 {
 	int index;
 	PangoFontDescription *desc;
-	PangoContext *context;
-	PangoLayout *layout;
 	PangoRectangle pos;
 
-	desc = nsfont_style_to_description(fstyle);
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout, desc);
-	pango_layout_set_text(layout, string, length);
+	nsfont_pango_check();
 
-	if (pango_layout_xy_to_index(layout, x * PANGO_SCALE, 
+	desc = nsfont_style_to_description(fstyle);
+	pango_layout_set_font_description(nsfont_pango_layout, desc);
+	pango_layout_set_text(nsfont_pango_layout, string, length);
+
+	if (pango_layout_xy_to_index(nsfont_pango_layout, x * PANGO_SCALE, 
 			0, &index, 0) == FALSE)
 		index = length;
 
-	pango_layout_index_to_pos(layout, index, &pos);
+	pango_layout_index_to_pos(nsfont_pango_layout, index, &pos);
 
-	g_object_unref(layout);
-	g_object_unref(context);
 	pango_font_description_free(desc);
 
 	*char_offset = index;
@@ -255,8 +265,9 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 #ifdef CAIRO_VERSION
 	layout = pango_cairo_create_layout(current_cr);
 #else
-	context = gdk_pango_context_get();
-	layout = pango_layout_new(context);
+	nsfont_pango_check();
+	context = nsfont_pango_context;
+	layout = nsfont_pango_layout;
 #endif
 
 	pango_layout_set_font_description(layout, desc);
@@ -271,9 +282,7 @@ bool nsfont_paint(int x, int y, const char *string, size_t length,
 	gdk_draw_layout_line_with_colors(current_drawable, current_gc,
 			x, y, line, &colour, 0);
 
-	g_object_unref(context);
 #endif
-	g_object_unref(layout);
 	pango_font_description_free(desc);
 
 	return true;
