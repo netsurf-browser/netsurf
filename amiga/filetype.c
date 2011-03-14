@@ -51,6 +51,17 @@ const char *fetch_filetype(const char *unix_path)
 		found = TRUE;
 	}
 
+	/* Have a quick check for the RISC OS CSS filetype.  Some of the redirects
+	 * caused by links in the SVN tree prevent NetSurf from reading the MIME
+	 * type from the icon (step two, below).
+	 */
+
+	if(strncmp(unix_path + strlen(unix_path) - 4, ",f79", 4) == 0)
+	{
+		strcpy(mimetype,"text/css");
+		found = TRUE;
+	}
+
 	/* Secondly try getting a tooltype "MIMETYPE" and use that as the MIME type.
 	    Will fail over to default icons if the file doesn't have a real icon. */
 
