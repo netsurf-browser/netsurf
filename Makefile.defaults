@@ -398,6 +398,7 @@ ifeq ($(TARGET),cocoa)
 
   DEVELOPER_PATH := /Developer
   MACOSX_VERSION := 10.5
+  SDK_VERSION := $(MACOSX_VERSION)
 
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized 
