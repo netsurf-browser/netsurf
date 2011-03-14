@@ -396,6 +396,9 @@ ifeq ($(TARGET),cocoa)
   NETSURF_USE_JPEG := NO
   NETSURF_USE_IMAGEIO := YES
 
+  DEVELOPER_PATH := /Developer
+  MACOSX_VERSION := 10.5
+
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized 
 
