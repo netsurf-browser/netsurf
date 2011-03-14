@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -51,16 +51,6 @@ const char *fetch_filetype(const char *unix_path)
 		found = TRUE;
 	}
 
-	/* Have a quick check for the RISC OS CSS filetype.  Some of the redirects
-	 * caused by links in the SVN tree prevent NetSurf from reading the MIME
-	 * type from the icon (step two, below).
-	 */
-
-	if(strncmp(unix_path + strlen(unix_path) - 4, ",f79", 4) == 0)
-	{
-		strcpy(mimetype,"text/css");
-		found = TRUE;
-	}
 
 	/* Secondly try getting a tooltype "MIMETYPE" and use that as the MIME type.
 	    Will fail over to default icons if the file doesn't have a real icon. */
@@ -99,7 +89,31 @@ const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
-	if(!found) strcpy(mimetype,"text/html"); /* If all else fails */
+	/* Have a quick check for file extensions (inc RISC OS filetype).
+	 * Makes detection a little more robust, and some of the redirects
+	 * caused by links in the SVN tree prevent NetSurf from reading the
+	 * MIME type from the icon (step two, above).
+	 */
+
+	if((!found) || (strcmp("text/plain", mimetype) == 0))
+	{
+		if((strncmp(unix_path + strlen(unix_path) - 4, ".css", 4) == 0) ||
+			(strncmp(unix_path + strlen(unix_path) - 4, ",f79", 4) == 0))
+		{
+			strcpy(mimetype,"text/css");
+			found = TRUE;
+		}
+
+		if((strncmp(unix_path + strlen(unix_path) - 4, ".htm", 4) == 0) ||
+			(strncmp(unix_path + strlen(unix_path) - 5, ".html", 5) == 0) ||
+			(strncmp(unix_path + strlen(unix_path) - 4, ",faf", 4) == 0))
+		{
+			strcpy(mimetype,"text/html");
+			found = TRUE;
+		}
+	}
+
+	if(!found) strcpy(mimetype,"text/plain"); /* If all else fails */
 
 	return mimetype;
 }

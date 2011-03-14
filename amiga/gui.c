@@ -452,14 +452,19 @@ char* gui_find_resource(const char *filename)
 
 	if(ami_locate_resource(path, filename) == false)
 	{
-		/* Try with RISC OS HTML filetype, might work */
-		strcpy(filename2, filename);
-		strcat(filename2, ",faf");
-
-		if(ami_locate_resource(path, filename2) == false)
+		if((strncmp(filename + strlen(filename) - 4, ".htm", 4) == 0) ||
+			(strncmp(filename + strlen(filename) - 5, ".html", 5) == 0))
 		{
-			return NULL;
+			/* Try with RISC OS HTML filetype, might work */
+			strcpy(filename2, filename);
+			strcat(filename2, ",faf");
+
+			if(ami_locate_resource(path, filename2) == false)
+			{
+				return NULL;
+			}
 		}
+		else return NULL;
 	}
 
 	return path_to_url(path);
