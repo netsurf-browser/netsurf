@@ -1,20 +1,20 @@
 #!/bin/sh
 # call: compile-xib.sh [xib file] [language] [(optional output nib file)]
-DIR=`dirname "$1"`
-XIB=`basename -s .xib "$1"`
+DIR=`dirname "$2"`
+XIB=`basename -s .xib "$2"`
 
-STRINGS_FILE="$DIR/$2.lproj/$XIB.xib.strings"
+STRINGS_FILE="$DIR/$3.lproj/$XIB.xib.strings"
 TRANSLATE=""
 if [ -f $STRINGS_FILE ] 
 then
 	TRANSLATE="--strings-file $STRINGS_FILE"
 fi
 
-OUTPUT="$2.$XIB.nib"
+OUTPUT="$3.$XIB.nib"
 
-if [ "x$3" != "x" ]
+if [ "x$4" != "x" ]
 then
-	OUTPUT="$3"
+	OUTPUT="$4"
 fi
 
-exec ibtool $TRANSLATE --compile $OUTPUT $1
+exec $1/usr/bin/ibtool $TRANSLATE --compile $OUTPUT $2
