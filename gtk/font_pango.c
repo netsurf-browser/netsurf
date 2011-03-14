@@ -104,7 +104,7 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 
 	pango_font_description_free(desc);
 
-	LOG(("fstyle: %p string: %s, length: %u -> %d", fstyle, string, length, *width));
+	LOG(("fstyle: %p string:\"%.*s\", length: %u -> %d", fstyle, length, string, length, *width));
 
 	return true;
 }
