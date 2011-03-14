@@ -16,9 +16,6 @@
 # theme_throbber is a film strip of theme_throbber_frames frames
 # The first frame must be the inactive image.
 #
-# Various default CSS styles can be overridden by adding a file
-# "amiga.css" in this directory.
-#
 theme_nav_west:back.png
 theme_nav_west_s:back_h.png
 theme_nav_west_g:back_g.png
