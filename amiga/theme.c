@@ -115,7 +115,12 @@ void ami_theme_init(void)
 		UnLock(lock);
 	}
 
-	messages_load(themefile);
+	lock = Lock(themefile,ACCESS_READ);
+	if(lock)
+	{
+		UnLock(lock);
+		messages_load(themefile);
+	}
 }
 
 void ami_theme_throbber_setup(void)
