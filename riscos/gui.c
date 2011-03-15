@@ -288,6 +288,9 @@ char* gui_find_resource(const char *filename)
 			SLEN("file:///NetSurf:/Resources/") + 1;
 
 	char *resource_url = malloc(length);
+	if (resource_url == NULL)
+		return NULL;
+
 	resource_url = strcpy(resource_url, "file:///NetSurf:/Resources/");
 	return strcat(resource_url, filename);
 }
