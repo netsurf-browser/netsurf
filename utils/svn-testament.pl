@@ -78,7 +78,7 @@ $testament .= "#define GECOS \"$userinfo{GECOS}\"\n";
 my $qroot = $root;
 $qroot =~ s/"/\\"/g;
 
-my $hostname = $ENV{HOSTNAME};
+my $hostname = POSIX::uname()[1];
 
 if ( !defined ( $hostname ) ) { # Try hostname command if env-var empty
    $hostname = `hostname`;
