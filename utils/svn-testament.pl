@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use POSIX;
 
 =head1
 
@@ -65,7 +64,8 @@ my %userinfo; # The information about the current user
 
 # The current date, in AmigaOS version friendly format (dd.mm.yyyy)
 
-my $compiledate = POSIX::strftime("%d.%m.%Y", localtime);
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
+my $compiledate = sprintf("%d.%d.%d",$mday,$mon+1,$year+1900);
 chomp $compiledate;
 
 # Spew the testament out
@@ -78,9 +78,10 @@ $testament .= "#define GECOS \"$userinfo{GECOS}\"\n";
 my $qroot = $root;
 $qroot =~ s/"/\\"/g;
 
-my $hostname = POSIX::uname()[1];
+my $hostname = $ENV{HOSTNAME};
 
-if ( !defined ( $hostname ) ) { # Try hostname command if env-var empty
+unless ( defined($hostname) && $hostname ne "") {
+   # Try hostname command if env-var empty
    $hostname = `hostname`;
    chomp $hostname;
 }
