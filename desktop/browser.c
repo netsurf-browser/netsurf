@@ -97,6 +97,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	int width = 0;
 	int height = 0;
 	bool plot_ok = true;
+	content_type content_type;
 
 	if (bw == NULL) {
 		LOG(("NULL browser window"));
@@ -116,7 +117,8 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 	plot.clip(clip);
 
-	if (content_get_type(bw->current_content) != CONTENT_HTML) {
+	content_type = content_get_type(bw->current_content);
+	if (content_type != CONTENT_HTML && content_type != CONTENT_TEXTPLAIN) {
 		/* Set render area according to scale */
 		width = content_get_width(bw->current_content) * bw->scale;
 		height = content_get_height(bw->current_content) * bw->scale;
