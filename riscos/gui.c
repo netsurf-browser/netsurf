@@ -283,15 +283,26 @@ static void ro_gui_view_source_bounce(wimp_message *message);
 
 char* gui_find_resource(const char *filename)
 {
-	/* TODO: handle language directories */
-	size_t length = strlen(filename) +
-			SLEN("file:///NetSurf:/Resources/") + 1;
+	/* Find max URL length */
+	size_t length = SLEN("file:///NetSurf:/Resources/") + SLEN("xx/") +
+			strlen(filename) + 1;
 
+	/* Allocate memory for URL (freed by the core) */
 	char *resource_url = malloc(length);
 	if (resource_url == NULL)
 		return NULL;
 
+	/* Insert base URL */
 	resource_url = strcpy(resource_url, "file:///NetSurf:/Resources/");
+
+	/* Add language directory to URL, for translated files */
+	/* TODO: handle non-en langauages
+	 *       handle non-html translated files */
+	if (strncmp(filename + strlen(filename) - 5, ".html", 5) == 0) {
+		resource_url = strcat(resource_url, "en/");
+	}
+
+	/* Add filename to URL */
 	return strcat(resource_url, filename);
 }
 
