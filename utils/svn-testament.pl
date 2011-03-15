@@ -84,7 +84,7 @@ $qroot =~ s/"/\\"/g;
 
 my $hostname = $ENV{HOSTNAME};
 
-if ( $hostname eq "" ) { # Try hostname command if env-var empty
+if ( !defined ( $hostname ) ) { # Try hostname command if env-var empty
    $hostname = `hostname`;
    chomp $hostname;
 }
