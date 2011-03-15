@@ -3362,8 +3362,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 		{
 			clip.x0 = 0;
 			clip.y0 = 0;
-			clip.x1 = width + hcurrent;
-			clip.y1 = height + vcurrent;
+			clip.x1 = width;
+			clip.y1 = height;
+
+			if(content_get_type(c) == CONTENT_TEXTPLAIN)
+			{
+				clip.x1 += hcurrent;
+				clip.y1 += vcurrent;
+			}
 		}
 		else
 		{
