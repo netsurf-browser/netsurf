@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use File::Temp;
 
 =head1
 
@@ -24,8 +25,20 @@ if ( -d ".svn" ) {
    $svn_present = 1;
 }
 
+sub gather_output {
+   my $cmd = shift;
+   my $tmpfile = File::Temp::tmpnam();
+   local $/ = undef();
+   system("$cmd > $tmpfile");
+   open CMDH, "<", $tmpfile;
+   my $ret = <CMDH>;
+   close CMDH;
+   unlink($tmpfile);
+   return $ret;
+}
+
 if ( $svn_present ) {
-   foreach my $line (split(/\n/, `svn info $root`)) {
+   foreach my $line (split(/\n/, gather_output("svn info $root"))) {
       my ($key, $value) = split(/: /, $line, 2);
       $key = lc($key);
       $key =~ s/\s+//g;
@@ -40,7 +53,7 @@ if ( $svn_present ) {
 my %svnstatus; # The SVN status output
 
 if ( $svn_present ) {
-   foreach my $line (split(/\n/, `svn status $root`)) {
+   foreach my $line (split(/\n/, gather_output("svn status $root"))) {
       chomp $line;
       my $op = substr($line, 0, 1);
       if ($op eq ' ' && substr($line, 1, 1) ne ' ') { $op = "p"; }
@@ -65,7 +78,7 @@ my %userinfo; # The information about the current user
 # The current date, in AmigaOS version friendly format (dd.mm.yyyy)
 
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
-my $compiledate = sprintf("%d.%d.%d",$mday,$mon+1,$year+1900);
+my $compiledate = sprintf("%02d.%02d.%d",$mday,$mon+1,$year+1900);
 chomp $compiledate;
 
 # Spew the testament out
@@ -82,7 +95,7 @@ my $hostname = $ENV{HOSTNAME};
 
 unless ( defined($hostname) && $hostname ne "") {
    # Try hostname command if env-var empty
-   $hostname = `hostname`;
+   $hostname = gather_output("hostname");
    chomp $hostname;
 }
 
