@@ -1451,16 +1451,25 @@ MULTIHANDLER(closetab)
 
 MULTIHANDLER(contents)
 {
+	browser_window_go(gui_window_get_browser_window(g->top_level), 
+			  "http://www.netsurf-browser.org/documentation/", 0, true);
+
 	return TRUE;
 }
 
 MULTIHANDLER(guide)
 {
+	browser_window_go(gui_window_get_browser_window(g->top_level), 
+			  "http://www.netsurf-browser.org/documentation/guide", 0, true);
+
 	return TRUE;
 }
 
 MULTIHANDLER(info)
 {
+	browser_window_go(gui_window_get_browser_window(g->top_level), 
+			  "http://www.netsurf-browser.org/documentation/info", 0, true);
+
 	return TRUE;
 }
 
@@ -2526,14 +2535,11 @@ void nsgtk_scaffolding_toolbar_init(struct gtk_scaffolding *g)
 	SENSITIVITY(STOP);
 	SENSITIVITY(PRINTPREVIEW);
 	SENSITIVITY(DELETE);
-	SENSITIVITY(CONTENTS);
 	SENSITIVITY(DRAWFILE);
 	SENSITIVITY(POSTSCRIPT);
 	SENSITIVITY(NEXTTAB);
 	SENSITIVITY(PREVTAB);
 	SENSITIVITY(CLOSETAB);
-	SENSITIVITY(GUIDE);
-	SENSITIVITY(INFO);
 #ifndef WITH_PDF_EXPORT
 	SENSITIVITY(PDF);
 #endif
