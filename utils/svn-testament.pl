@@ -58,6 +58,13 @@ my %userinfo; # The information about the current user
    $gecos =~ s/,.+//g;
    $gecos =~ s/"/'/g;
    $userinfo{GECOS} = $gecos;
+
+   if ( $pwdline eq "" ) { # Try whoami if we don't have getent
+      my $pwdline = `whoami`;
+      chomp $pwdline;
+      $userinfo{USERNAME} = $pwdline;
+      $userinfo{GECOS} = $pwdline;
+   }
 }
 
 # The current date, in AmigaOS version friendly format (dd.mm.yyyy)
@@ -76,6 +83,11 @@ my $qroot = $root;
 $qroot =~ s/"/\\"/g;
 
 my $hostname = $ENV{HOSTNAME};
+
+if ( $hostname eq "" ) { # Try hostname command if env-var empty
+   $hostname = `hostname`;
+   chomp $hostname;
+}
 
 $hostname = "unknown-host" unless (defined($hostname) && $hostname ne "");
 $hostname =~ s/"/\\"/g;
