@@ -164,8 +164,8 @@ void ami_history_redraw(struct history_window *hw)
 
 	glob = &hw->gg;
 
-	SetRPAttrs(&glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
-	RectFill(&glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
+	SetRPAttrs(glob->rp, RPTAG_APenColor, 0xffffffff, TAG_DONE);
+	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
 
 	history_redraw_rectangle(history_current, xs, ys,
 		bbox->Width + xs, bbox->Height + ys, 0, 0);
