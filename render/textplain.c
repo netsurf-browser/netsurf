@@ -56,10 +56,11 @@
 
 
 #define TAB_WIDTH 8  /* must be power of 2 currently */
+#define TEXT_SIZE 10 * FONT_SIZE_SCALE  /* Unscaled text size in pt */
 
 static plot_font_style_t textplain_style = {
 	.family = PLOT_FONT_FAMILY_MONOSPACE,
-	.size = 10 * FONT_SIZE_SCALE,
+	.size = TEXT_SIZE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0xffffff,
@@ -586,7 +587,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 	else
 		plot_style_highlight = plot_style_fill_white;
 
-	/* Set background colour to plot with */
+	/* Set up font plot style */
 	textplain_style.background = background_colour;
 
 	x += MARGIN * scale;
@@ -611,7 +612,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 			while (next_offset < length && text[next_offset] != '\t')
 				next_offset = utf8_next(text, length, next_offset);
 
-				if (!text_redraw(text + offset, next_offset - offset,
+			if (!text_redraw(text + offset, next_offset - offset,
 					line[lineno].start + offset, 0,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
