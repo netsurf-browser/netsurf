@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use POSIX;
 
 =head1
 
@@ -17,13 +18,15 @@ my $targetfile = shift @ARGV;
 
 my %svninfo; # The SVN info output
 
+$root .= "/" unless ($root =~ m@/$@);
+
 my $svn_present = 0;
 if ( -d ".svn" ) {
    $svn_present = 1;
 }
 
 if ( $svn_present ) {
-   foreach my $line (split(/\n/, `cd $root;svn info`)) {
+   foreach my $line (split(/\n/, `svn info $root`)) {
       my ($key, $value) = split(/: /, $line, 2);
       $key = lc($key);
       $key =~ s/\s+//g;
@@ -38,10 +41,12 @@ if ( $svn_present ) {
 my %svnstatus; # The SVN status output
 
 if ( $svn_present ) {
-   foreach my $line (split(/\n/, `cd $root; svn status `)) {
+   foreach my $line (split(/\n/, `svn status $root`)) {
+      chomp $line;
       my $op = substr($line, 0, 1);
       if ($op eq ' ' && substr($line, 1, 1) ne ' ') { $op = "p"; }
-      my $fn = substr($line, 7);
+      my $fn = substr($line, 8);
+      $fn = substr($fn, length($root)) if (substr($fn, 0, length($root)) eq $root);
       next unless (care_about_file($fn, $op));
       $svnstatus{$fn} = $op;
    }
@@ -50,26 +55,17 @@ if ( $svn_present ) {
 my %userinfo; # The information about the current user
 
 {
-   my $pwdline = `getent passwd $<`;
-   chomp $pwdline;
-   my @pwdinfo = split(/:/, $pwdline);
-   $userinfo{USERNAME} = $pwdinfo[0];
-   my $gecos = $pwdinfo[4];
+   my @pwent = getpwuid($<);
+   $userinfo{USERNAME} = $pwent[0];
+   my $gecos = $pwent[6];
    $gecos =~ s/,.+//g;
    $gecos =~ s/"/'/g;
    $userinfo{GECOS} = $gecos;
-
-   if ( $pwdline eq "" ) { # Try whoami if we don't have getent
-      my $pwdline = `whoami`;
-      chomp $pwdline;
-      $userinfo{USERNAME} = $pwdline;
-      $userinfo{GECOS} = $pwdline;
-   }
 }
 
 # The current date, in AmigaOS version friendly format (dd.mm.yyyy)
 
-my $compiledate = `date +%d.%m.%Y`;
+my $compiledate = POSIX::strftime("%d.%m.%Y", localtime);
 chomp $compiledate;
 
 # Spew the testament out
