@@ -497,24 +497,29 @@ void gtk_print_signal_begin_print (GtkPrintOperation *operation,
 	settings->scale = 0.7;/*at 0.7 the pages look the best*/
 	settings->font_func = &nsfont;
 	
-	print_set_up(content_to_print, &gtk_printer, 
-			settings, &height_to_print);
+	if (print_set_up(content_to_print, &gtk_printer, 
+			 settings, &height_to_print) == false) {
+		gtk_print_operation_cancel(operation);
+		
+	} else {
 
-	LOG(("page_width: %f ;page_height: %f; content height: %lf",
-		settings->page_width, settings->page_height, height_to_print));
+		LOG(("page_width: %f ;page_height: %f; content height: %lf",
+		     settings->page_width, settings->page_height, 
+		     height_to_print));
 	
-	height_on_page = settings->page_height;
-	height_on_page = height_on_page - 
+		height_on_page = settings->page_height;
+		height_on_page = height_on_page - 
 			FIXTOFLT(FSUB(settings->margins[MARGINTOP],
-			settings->margins[MARGINBOTTOM]));
-	height_to_print *= settings->scale;
+				      settings->margins[MARGINBOTTOM]));
+		height_to_print *= settings->scale;
 	
-	page_number = height_to_print / height_on_page;
+		page_number = height_to_print / height_on_page;
 
-	if (height_to_print - page_number * height_on_page > 0)
-		page_number += 1;
+		if (height_to_print - page_number * height_on_page > 0)
+			page_number += 1;
 				
-	gtk_print_operation_set_n_pages(operation, page_number);
+		gtk_print_operation_set_n_pages(operation, page_number);
+	}
 }
 
 /** 

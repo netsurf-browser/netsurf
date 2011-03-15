@@ -165,4 +165,14 @@ nserror hlcache_handle_replace_callback(hlcache_handle *handle,
  */
 struct content *hlcache_handle_get_content(const hlcache_handle *handle);
 
+/**
+ * Clone a high level cache handle.
+ *
+ * \param handle The handle to clone.
+ * \param result The cloned handle.
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ */
+nserror hlcache_handle_clone(hlcache_handle *handle, hlcache_handle **result);
+
 #endif

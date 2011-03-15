@@ -370,6 +370,12 @@ nserror hlcache_handle_replace_callback(hlcache_handle *handle,
 	return NSERROR_OK;
 }
 
+nserror hlcache_handle_clone(hlcache_handle *handle, hlcache_handle **result)
+{
+	*result = NULL;
+	return NSERROR_CLONE_FAILED;
+}
+
 /******************************************************************************
  * High-level cache internals						      *
  ******************************************************************************/

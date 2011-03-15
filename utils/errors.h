@@ -35,7 +35,9 @@ typedef enum {
 
 	NSERROR_NOT_FOUND,		/**< Requested item not found */
 
-	NSERROR_SAVE_FAILED		/**< Failed to save data */
+	NSERROR_SAVE_FAILED,		/**< Failed to save data */
+
+	NSERROR_CLONE_FAILED		/**< Failed to clone handle */
 } nserror;
 
 #endif

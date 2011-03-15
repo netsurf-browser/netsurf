@@ -159,43 +159,11 @@ bool print_draw_next_page(const struct printer *printer,
 hlcache_handle *print_init(hlcache_handle *content,
 		struct print_settings *settings)
 {
-#ifdef FIX_CORE_PRINTING
 	hlcache_handle* printed_content;
-	hlcache_handle_user *user_sentinel;
 	
-	content_add_user(content, NULL, (intptr_t) print_init, 0);
-	
-	printed_content = talloc_memdup(content, content, sizeof *content);
-	
-	if (!printed_content)
-		return NULL;
-	
-	printed_content->data.html.bw = 0;
-	
-	user_sentinel = talloc(printed_content, hlcache_handle_user);
-	user_sentinel->callback = 0;
-	user_sentinel->p1 = user_sentinel->p2 = 0;
-	user_sentinel->next = 0;
-	printed_content->user_list = user_sentinel;
-	content_add_user(printed_content, NULL, (intptr_t)print_init, 0);
-	
-	printed_content->data.html.layout =
-			box_duplicate_tree(content->data.html.layout,
-			printed_content);
-	
-	if (!printed_content->data.html.layout) {
-		talloc_free(printed_content);
-		return NULL;
-	}
-	
-	assert(settings->font_func != NULL);
-
-	printed_content->data.html.font_func = settings->font_func;
-	
+	hlcache_handle_clone(content, &printed_content);
+			
 	return printed_content;
-#else
-	return NULL;
-#endif
 }
 
 /**
@@ -240,21 +208,16 @@ bool print_apply_settings(hlcache_handle *content,
 bool print_cleanup(hlcache_handle *content, const struct printer *printer,
 		struct print_settings *settings)
 {
-#ifdef FIX_CORE_PRINTING
 	printer->print_end();
 	
 	html_redraw_printing = false;
 	
 	if (printed_content) {
-		content_remove_user(printed_content, NULL, print_init);
-		talloc_free(printed_content);
+		hlcache_handle_release(printed_content);
 	}
-	
-	content_remove_user(content, NULL, print_init);
 	
 	free((void *)settings->output);
 	free(settings);
-#endif
 	
 	return true;
 }
