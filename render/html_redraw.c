@@ -797,7 +797,6 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 
 	font_plot_style_from_css(box->style, &fstyle);
 	fstyle.background = current_background_color;
-	fstyle.size *= scale;
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
 			box->space, &fstyle, x, y,
@@ -822,7 +821,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
  * \param  utf8_len   length of string, in bytes
  * \param  offset     byte offset within textual representation
  * \param  space      width of space that follows string (0 = no space)
- * \param  fstyle     text style to use
+ * \param  fstyle     text style to use (pass text size unscaled)
  * \param  x          x ordinate at which to plot text
  * \param  y          y ordinate at which to plot text
  * \param  clip       pointer to current clip rectangle
@@ -838,6 +837,10 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		float scale, bool excluded)
 {
 	bool highlighted = false;
+	plot_font_style_t plot_fstyle = *fstyle;
+
+	/* Need scaled text size to pass to plotters */
+	plot_fstyle.size *= scale;
 
 	/* is this box part of a selection? */
 	if (!excluded && current_redraw_browser) {
@@ -872,7 +875,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			bool text_visible = true;
 			int startx, endx;
 			plot_style_t *pstyle_fill_hback = plot_style_fill_white;
-			plot_font_style_t fstyle_hback = *fstyle;
+			plot_font_style_t fstyle_hback = plot_fstyle;
 
 			if (end_idx > utf8_len) {
 				/* adjust for trailing space, not present in
@@ -904,7 +907,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			if (start_idx > 0 &&
 				!plot.text(x, y + (int) (height * 0.75 * scale),
 						utf8_text, start_idx,
-						fstyle))
+						&plot_fstyle))
 				return false;
 
 			/* decide whether highlighted portion is to be
@@ -963,7 +966,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 					if (!plot.text(x, y + (int)
 						(height * 0.75 * scale),
 						utf8_text, utf8_len,
-						fstyle))
+						&plot_fstyle))
 						return false;
 				}
 			}
@@ -977,7 +980,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 	if (!highlighted) {
 		if (!plot.text(x, y + (int) (height * 0.75 * scale),
 				utf8_text, utf8_len,
-				fstyle))
+				&plot_fstyle))
 			return false;
 	}
 	return true;
