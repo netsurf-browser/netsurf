@@ -283,7 +283,13 @@ static void ro_gui_view_source_bounce(wimp_message *message);
 
 char* gui_find_resource(const char *filename)
 {
-	return NULL;
+	/* TODO: handle language directories */
+	size_t length = strlen(filename) +
+			SLEN("file:///NetSurf:/Resources/") + 1;
+
+	char *resource_url = malloc(length);
+	resource_url = strcpy(resource_url, "file:///NetSurf:/Resources/");
+	return strcat(resource_url, filename);
 }
 
 /**
@@ -404,9 +410,9 @@ static void gui_init(int argc, char** argv)
 		die("Failed duplicating NetSurf directory string");
 
 	/* Initialise stylesheet URLs */
-	default_stylesheet_url = strdup("file:///NetSurf:/Resources/CSS");
-	quirks_stylesheet_url = strdup("file:///NetSurf:/Resources/Quirks");
-	adblock_stylesheet_url = strdup("file:///NetSurf:/Resources/AdBlock");
+	default_stylesheet_url = strdup("resource:CSS");
+	quirks_stylesheet_url = strdup("resource:Quirks");
+	adblock_stylesheet_url = strdup("resource:AdBlock");
 	if (!default_stylesheet_url || !quirks_stylesheet_url ||
 			!adblock_stylesheet_url)
 		die("Failed initialising string constants.");
