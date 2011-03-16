@@ -2177,7 +2177,8 @@ void ro_gui_open_help_page(const char *page)
 
 	if ((length = snprintf(url, sizeof url,
 			"file:///<NetSurf$Dir>/Docs/%s_%s",
-			page, option_language)) >= 0 && length < (int)sizeof(url))
+			page, option_language)) >= 0 &&
+			length < (int)sizeof(url))
 		browser_window_create(url, NULL, 0, true, false);
 }
 
