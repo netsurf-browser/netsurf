@@ -578,6 +578,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
+	float scale;
 
 	if (cbi->event->type != NSFB_EVENT_KEY_DOWN &&
 	    cbi->event->type != NSFB_EVENT_KEY_UP)
@@ -589,17 +590,19 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_DOWN:
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_MOUSE_1:
+			scale = gw->bw->scale;
 			browser_window_mouse_click(gw->bw,
-						   BROWSER_MOUSE_PRESS_1,
-						   cbi->x + bwidget->scrollx,
-						   cbi->y + bwidget->scrolly);
+					BROWSER_MOUSE_PRESS_1,
+					(cbi->x + bwidget->scrollx) / scale,
+					(cbi->y + bwidget->scrolly) / scale);
 			break;
 
 		case NSFB_KEY_MOUSE_3:
+			scale = gw->bw->scale;
 			browser_window_mouse_click(gw->bw,
-						   BROWSER_MOUSE_PRESS_2,
-						   cbi->x + bwidget->scrollx,
-						   cbi->y + bwidget->scrolly);
+					BROWSER_MOUSE_PRESS_2,
+					(cbi->x + bwidget->scrollx) / scale,
+					(cbi->y + bwidget->scrolly) / scale);
 			break;
 
 		case NSFB_KEY_MOUSE_4:
@@ -621,17 +624,19 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_UP:
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_MOUSE_1:
+			scale = gw->bw->scale;
 			browser_window_mouse_click(gw->bw,
-						   BROWSER_MOUSE_CLICK_1,
-						   cbi->x + bwidget->scrollx,
-						   cbi->y + bwidget->scrolly);
+					BROWSER_MOUSE_CLICK_1,
+					(cbi->x + bwidget->scrollx) / scale,
+					(cbi->y + bwidget->scrolly) / scale);
 			break;
 
 		case NSFB_KEY_MOUSE_3:
+			scale = gw->bw->scale;
 			browser_window_mouse_click(gw->bw,
-						   BROWSER_MOUSE_CLICK_2,
-						   cbi->x + bwidget->scrollx,
-						   cbi->y + bwidget->scrolly);
+					BROWSER_MOUSE_CLICK_2,
+					(cbi->x + bwidget->scrollx) / scale,
+					(cbi->y + bwidget->scrolly) / scale);
 			break;
 
 		default:
@@ -654,10 +659,9 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 
-	browser_window_mouse_track(gw->bw,
-				   0,
-				   cbi->x + bwidget->scrollx,
-				   cbi->y + bwidget->scrolly);
+	browser_window_mouse_track(gw->bw, 0,
+			(cbi->x + bwidget->scrollx) / gw->bw->scale,
+			(cbi->y + bwidget->scrolly) / gw->bw->scale);
 
 	return 0;
 }
