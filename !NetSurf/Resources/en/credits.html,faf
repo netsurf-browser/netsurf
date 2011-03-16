@@ -21,7 +21,7 @@ div#DevList ul {
 <p>NetSurf was brought to you by the following people:</p>
 
 <div id="DevList">
-<div>
+
 <h2>Code</h2>
 <ul>
 <li>Kevin Bagust</li>
@@ -59,8 +59,7 @@ div#DevList ul {
 <li>Bo Yang</li>
 <li>Chris Young</li>
 </ul>
-</div>
-<div>
+
 <h2>Documentation</h2>
 <ul>
 <li>John-Mark Bell</li>
@@ -70,8 +69,7 @@ div#DevList ul {
 <li>James Shaw</li>
 <li>Richard Wilson</li>
 </ul>
-</div>
-<div>
+
 <h2>Graphics</h2>
 <ul>
 <li>Michael Drake</li>
@@ -80,8 +78,7 @@ div#DevList ul {
 <li>Richard Hallas</li>
 <li>Phil Mellor</li>
 </ul>
-</div>
-<div>
+
 <h2>Translations</h2>
 <ul>
 <li>Sebastian Barthel</li>
@@ -91,7 +88,7 @@ div#DevList ul {
 <li>Jérôme Mathevet</li>
 <li>Simon Voortman</li>
 </ul>
-</div>
+
 </div>
 
 <div class="footer">
