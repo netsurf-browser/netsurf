@@ -51,25 +51,25 @@ dl.components > dd > span + span {
 <dl class="components">
 <dt><a href="http://www.netsurf-browser.org/">NetSurf</a></dt>
 <dd>
-<span>&copy; 2002&ndash;2010 The NetSurf Developers</span>
+<span>&copy; 2002&ndash;2011 The NetSurf Developers</span>
 <span><a href="#gplv2">GPLv2</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libcss/">LibCSS</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2010 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2011 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/hubbub/">Hubbub</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2010 John-Mark Bell<br />&copy; 2008&ndash;2009 Andrew Sidwell</span>
+<span>&copy; 2007&ndash;2011 John-Mark Bell<br />&copy; 2008&ndash;2009 Andrew Sidwell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libparserutils/">LibParserUtils</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2009 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2011 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -105,7 +105,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://source.netsurf-browser.org/trunk/libnsfb/">Libnsfb</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2010 Vincent Sanders</span>
+<span>&copy; 2009&ndash;2011 Vincent Sanders</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -117,7 +117,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.netsurf-browser.org/projects/libwapcaplet">LibWapcaplet</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2010 NetSurf Browser Project, Daniel Silverstone</span>
+<span>&copy; 2009&ndash;2011 NetSurf Browser Project, Daniel Silverstone</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 </dl>
