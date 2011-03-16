@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.7/3.0 Development (Revision 11910)
+# Italian messages for NetSurf 2.7/3.0 Development (Revision 12071)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 4.03.2011
+# 16.03.2011
 # =========================================================================
 #
 # Description
@@ -60,7 +60,7 @@ Export:Esporta
 SaveURL:Salva indirizzo
 Print:Stampa  STAMPA
 NewWindow:Nuova finestra  ^N
-ViewSrc:Visualizza sorgente...  F8
+ViewSrc:Mostra sorgente...  F8
 
 # Main -> Page -> Export menu
 #
@@ -162,8 +162,8 @@ WindowReset:Resetta posizione della finestra
 HelpContent:Contenuti  F1
 HelpGuide:Guida in linea
 HelpInfo:Informazioni utente
-HelpCredits:Credits
-HelpLicence:Licence
+HelpCredits:Ringraziamenti
+HelpLicence:Licenza
 HelpInter:Aiuto interattivo
 
 # Toolbar menu
@@ -219,8 +219,8 @@ Languages:Lingua
 #
 # Network pane
 ProxyType:Tipo di Proxy
-ProxyNone:Nessun proxy
-ProxyNoAuth:Proxy semplice
+ProxyNone:Nessuno
+ProxyNoAuth:Semplice
 ProxyBasic:Autentificazione di Base
 ProxyNTLM:Autentificazione NTLM
 #
@@ -271,7 +271,7 @@ HistGlobalNS:Mostra cronologia globale...
 HistLocalNS:Mostra cronologia locale...
 FindTextNS:Trova testo...
 Redraw:Ridisegna pagina
-ScaleNS:Dimensione font
+ScaleNS:Scala di zoom
 ScaleInc:Incrementa
 ScaleDec:Decrementa
 ScaleNorm:Normale
@@ -932,7 +932,7 @@ HelpToolbar15:\Tapri la lista dei siti visitati più recenti
 HelpToolbar16:\Tthrobber animato durante le attività di rete
 
 HelpStatus0:\Ttrascina per modificare la dimensione della barra di stato
-HelpStatus1:\Tvisualizza informazioni relative alle attività del browser
+HelpStatus1:\Tmostra informazioni relative alle attività del browser
 
 HelpIconMenu0:\Rmostra le informazioni su NetSurf
 HelpIconMenu1:\Smostra la documentazione di NetSurf
@@ -1023,8 +1023,8 @@ HelpBrowserMenu6:\Rmostra la documentazione disponibile
 HelpBrowserMenu6-0:\Sapri i contenuti della documentazione in una nuova finestra
 HelpBrowserMenu6-1:\Sapri la guida in linea in una nuova finestra
 HelpBrowserMenu6-2:\Sapri la pagina delle informazioni utente in una nuova finestra
-HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
-HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
+HelpBrowserMenu6-3:\Sapri la pagina about:credits in una nuova finestra
+HelpBrowserMenu6-4:\Sapri la pagina about:licence in una nuova finestra
 HelpBrowserMenu6-5:\Savvia la guida in linea
 
 HelpBrowser-1:Clicca \s sul link per procedere.|MClicca \a in un link per aprirlo in una nuova finestra|MShift+\s clicca sul link per scaricarne i contenuti.|MShift+\a clicca per salvare l'indirizzo del link.

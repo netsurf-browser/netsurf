@@ -21,15 +21,16 @@
 #include <proto/dos.h>
 #include <proto/asl.h>
 #include <proto/exec.h>
+#include <proto/gadtools.h>
 #include <proto/intuition.h>
+#include <proto/utility.h>
 #ifdef __amigaos4__
 #include <dos/anchorpath.h>
 #endif
-#include <libraries/gadtools.h>
-#include <proto/gadtools.h>
-#include <classes/window.h>
-#include <proto/intuition.h>
 
+#include <libraries/gadtools.h>
+
+#include <classes/window.h>
 #include <proto/label.h>
 #include <images/label.h>
 #include <proto/bitmap.h>
@@ -37,28 +38,29 @@
 
 #include <reaction/reaction_macros.h>
 
-#include "amiga/menu.h"
-#include "amiga/utf8.h"
-#include "amiga/options.h"
-#include "amiga/hotlist.h"
-#include "amiga/gui.h"
-#include "amiga/save_pdf.h"
-#include "amiga/tree.h"
-#include "amiga/history.h"
-#include "amiga/cookies.h"
 #include "amiga/arexx.h"
-#include "amiga/search.h"
-#include "amiga/history_local.h"
 #include "amiga/bitmap.h"
-#include "amiga/iff_dr2d.h"
 #include "amiga/clipboard.h"
-#include "amiga/gui_options.h"
-#include "amiga/theme.h"
-#include "amiga/print.h"
+#include "amiga/cookies.h"
 #include "amiga/download.h"
+#include "amiga/gui.h"
+#include "amiga/gui_options.h"
+#include "amiga/history.h"
+#include "amiga/history_local.h"
+#include "amiga/hotlist.h"
+#include "amiga/icon.h"
+#include "amiga/iff_dr2d.h"
+#include "amiga/menu.h"
+#include "amiga/options.h"
+#include "amiga/print.h"
+#include "amiga/save_pdf.h"
+#include "amiga/search.h"
+#include "amiga/theme.h"
+#include "amiga/tree.h"
+#include "amiga/utf8.h"
+#include "content/fetch.h"
 #include "desktop/tree_url_node.h"
 #include "desktop/hotlist.h"
-#include "content/fetch.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/save_text.h"
@@ -472,7 +474,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	menunum = MENUNUM(code);
 	itemnum = ITEMNUM(code);
 	subnum = SUBNUM(code);
-	char *temp;
+	char *temp, *temp2;
 	BPTR lock = 0;
 	char *source_data;
 	ULONG source_size;
@@ -647,11 +649,18 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				case 11: // about
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
+					temp = ASPrintf("%s|%s|%s", messages_get("OK"),
+								messages_get("HelpCredits"),
+								messages_get("HelpLicence"));
+
+					temp2 = ami_utf8_easy(temp);
+					FreeVec(temp);
+
 					sel = TimedDosRequesterTags(
 						TDR_ImageType,TDRIMAGE_INFO,
-						TDR_TitleString,messages_get("NetSurf"),
-						TDR_Window,gwin->win,
-						TDR_GadgetString, "OK|Credits|Licence",
+						TDR_TitleString, messages_get("NetSurf"),
+						TDR_Window, gwin->win,
+						TDR_GadgetString, temp2,
 #ifndef NDEBUG
 						TDR_FormatString,"NetSurf %s\n%s\n%s (%s)\n\nhttp://www.netsurf-browser.org",
 #else
@@ -666,6 +675,8 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						TDR_Arg3,versvn,
 						TDR_Arg4,verdate,
 						TAG_DONE);
+
+					free(temp2);
 
 					if(sel == 2)
 						browser_window_create("about:credits", NULL, 0, true, false);

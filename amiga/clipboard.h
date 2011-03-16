@@ -18,6 +18,9 @@
 
 #ifndef AMIGA_CLIPBOARD_H
 #define AMIGA_CLIPBOARD_H
+struct bitmap;
+struct hlcache_handle;
+struct selection;
 
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
