@@ -17,20 +17,24 @@
  */
 
 #ifdef __amigaos4__
+
 #include <proto/popupmenu.h>
-#endif
 #include <proto/intuition.h>
 #include <proto/asl.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
 
+#include <reaction/reaction_macros.h>
+
 #include "amiga/context_menu.h"
-#include "amiga/utf8.h"
-#include "amiga/options.h"
 #include "amiga/clipboard.h"
 #include "amiga/bitmap.h"
+#include "amiga/gui.h"
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/options.h"
+#include "amiga/theme.h"
+#include "amiga/utf8.h"
 #include "desktop/textinput.h"
 #include "desktop/selection.h"
 #include "desktop/searchweb.h"
@@ -49,6 +53,8 @@ static bool ami_context_menu_copy_selection(const char *text, size_t length,
 	size_t whitespace_length);
 static bool ami_context_menu_history(const struct history *history, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
+
+uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 
 enum {
 	CMID_SELECTFILE,
@@ -74,6 +80,8 @@ enum {
 	CMID_LAST
 };
 
+struct Library  *PopupMenuBase = NULL;
+struct PopupMenuIFace *IPopupMenu = NULL;
 char *ctxmenulab[CMID_LAST];
 
 struct ami_context_menu_selection
@@ -84,6 +92,11 @@ struct ami_context_menu_selection
 
 void ami_context_menu_init(void)
 {
+	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
+	{
+		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
+	}
+
 	ctxmenulab[CMID_SELECTFILE] = ami_utf8_easy((char *)messages_get("SelectFile"));
 	ctxmenulab[CMID_COPYURL] = ami_utf8_easy((char *)messages_get("CopyURL"));
 	ctxmenulab[CMID_SHOWOBJ] = ami_utf8_easy((char *)messages_get("ObjShow"));
@@ -119,6 +132,9 @@ void ami_context_menu_free(void)
 	{
 		ami_utf8_free(ctxmenulab[i]);
 	}
+
+	if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
+	if(PopupMenuBase) CloseLibrary(PopupMenuBase);
 }
 
 BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
@@ -623,3 +639,83 @@ static bool ami_context_menu_history(const struct history *history, int x0, int 
 
 	return true;
 }
+
+uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
+{
+	int32 itemid = 0;
+	struct gui_window *gwin = hook->h_Data;
+
+	if(GetAttr(PMIA_ID, item, &itemid))
+	{
+		form_select_process_selection(gwin->shared->bw->current_content,gwin->shared->control,itemid);
+	}
+
+	return itemid;
+}
+
+void gui_create_form_select_menu(struct browser_window *bw,
+		struct form_control *control)
+{
+	/* TODO: PMIA_Title memory leaks as we don't free the strings.
+	 * We use the core menu anyway, but in future when popupmenu.class
+	 * improves we will probably start using this again.
+	 */
+
+	struct gui_window *gwin = bw->window;
+	struct form_option *opt = control->data.select.items;
+	ULONG i = 0;
+
+	if(gwin->shared->objects[OID_MENU]) DisposeObject(gwin->shared->objects[OID_MENU]);
+
+	gwin->shared->popuphook.h_Entry = ami_popup_hook;
+	gwin->shared->popuphook.h_Data = gwin;
+
+	gwin->shared->control = control;
+
+    gwin->shared->objects[OID_MENU] = PMMENU(ami_utf8_easy(control->name)),
+                        PMA_MenuHandler, &gwin->shared->popuphook, End;
+
+	while(opt)
+	{
+		IDoMethod(gwin->shared->objects[OID_MENU], PM_INSERT,
+			NewObject( POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ami_utf8_easy(opt->text),
+				PMIA_ID, i,
+				PMIA_CheckIt, TRUE,
+				PMIA_Checked, opt->selected,
+				TAG_DONE),
+			~0);
+
+		opt = opt->next;
+		i++;
+	}
+
+	gui_window_set_pointer(gwin, GUI_POINTER_DEFAULT); // Clear the menu-style pointer
+
+	IDoMethod(gwin->shared->objects[OID_MENU], PM_OPEN, gwin->shared->win);
+}
+
+#else
+
+void ami_context_menu_init(void)
+{
+}
+
+void ami_context_menu_free(void)
+{
+}
+
+BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
+{
+	return FALSE;
+}
+
+void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y)
+{
+}
+
+void gui_create_form_select_menu(struct browser_window *bw,
+		struct form_control *control)
+{
+}
+#endif

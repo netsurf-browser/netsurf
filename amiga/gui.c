@@ -102,16 +102,10 @@
 #include <proto/button.h>
 #include <proto/clicktab.h>
 #include <proto/layout.h>
-#ifdef __amigaos4__
-#include <proto/popupmenu.h>
-#endif
 #include <proto/space.h>
 #include <proto/string.h>
 #include <proto/window.h>
 
-#ifdef __amigaos4__
-#include <classes/popupmenu.h>
-#endif
 #include <classes/window.h>
 #include <gadgets/button.h>
 #include <gadgets/clicktab.h>
@@ -133,8 +127,6 @@ char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
 
 struct MsgPort *appport;
-struct Library  *PopupMenuBase = NULL;
-struct PopupMenuIFace *IPopupMenu = NULL;
 struct Library  *KeymapBase = NULL;
 struct KeymapIFace *IKeymap = NULL;
 struct Library *ApplicationBase=NULL;
@@ -157,7 +149,6 @@ static struct DrawInfo *dri;
 
 void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
-uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
 void ami_change_tab(struct gui_window_2 *gwin, int direction);
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs);
@@ -281,11 +272,6 @@ bool ami_locate_resource(char *lang, char *file)
 void ami_open_resources(void)
 {
 	/* Allocate ports/ASL and open libraries and devices */
-
-	if(PopupMenuBase = OpenLibrary("popupmenu.class",0))
-	{
-		IPopupMenu = (struct PopupMenuIFace *)GetInterface(PopupMenuBase,"main",1,NULL);
-	}
 
 	if(KeymapBase = OpenLibrary("keymap.library",37))
 	{
@@ -2164,9 +2150,6 @@ void gui_quit(void)
 	if(IApplication) DropInterface((struct Interface *)IApplication);
 	if(ApplicationBase) CloseLibrary(ApplicationBase);
 
-	if(IPopupMenu) DropInterface((struct Interface *)IPopupMenu);
-	if(PopupMenuBase) CloseLibrary(PopupMenuBase);
-
 	if(IKeymap) DropInterface((struct Interface *)IKeymap);
 	if(KeymapBase) CloseLibrary(KeymapBase);
 
@@ -3862,37 +3845,6 @@ void gui_window_set_scale(struct gui_window *g, float scale)
 	g->shared->redraw_required = true;
 }
 
-void gui_create_form_select_menu(struct browser_window *bw,
-		struct form_control *control)
-{
-	struct gui_window *gwin = bw->window;
-	struct form_option *opt = control->data.select.items;
-	ULONG i = 0;
-
-	if(gwin->shared->objects[OID_MENU]) DisposeObject(gwin->shared->objects[OID_MENU]);
-
-	gwin->shared->popuphook.h_Entry = ami_popup_hook;
-	gwin->shared->popuphook.h_Data = gwin;
-
-	gwin->shared->control = control;
-
-    gwin->shared->objects[OID_MENU] = PMMENU(ami_utf8_easy(control->name)),
-                        PMA_MenuHandler, &gwin->shared->popuphook,End;
-
-	while(opt)
-	{
-		IDoMethod(gwin->shared->objects[OID_MENU],PM_INSERT,NewObject( POPUPMENU_GetItemClass(), NULL, PMIA_Title, (ULONG)ami_utf8_easy(opt->text),PMIA_ID,i,PMIA_CheckIt,TRUE,PMIA_Checked,opt->selected,TAG_DONE),~0);
-
-		opt = opt->next;
-		i++;
-	}
-
-	gui_window_set_pointer(gwin,GUI_POINTER_DEFAULT); // Clear the menu-style pointer
-
-	IDoMethod(gwin->shared->objects[OID_MENU],PM_OPEN,gwin->shared->win);
-
-}
-
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid,x,y;
@@ -3947,19 +3899,6 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	}
 //	ReplyMsg((struct Message *)msg);
 } 
-
-uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
-{
-	int32 itemid = 0;
-	struct gui_window *gwin = hook->h_Data;
-
-	if(GetAttr(PMIA_ID, item, &itemid))
-	{
-		form_select_process_selection(gwin->shared->bw->current_content,gwin->shared->control,itemid);
-	}
-
-	return itemid;
-}
 
 /* return the text box at posn x,y in window coordinates
    x,y are updated to be document co-ordinates */
