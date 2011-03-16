@@ -342,7 +342,8 @@ void ro_gui_window_initialise(void)
 			{ "Help.HelpContent", HELP_OPEN_CONTENTS, 0 },
 			{ "Help.HelpGuide", HELP_OPEN_GUIDE, 0 },
 			{ "_Help.HelpInfo", HELP_OPEN_INFORMATION, 0 },
-			{ "_Help.HelpAbout", HELP_OPEN_ABOUT, 0 },
+			{ "Help.HelpCredits", HELP_OPEN_CREDITS, 0 },
+			{ "_Help.HelpLicence", HELP_OPEN_LICENCE, 0 },
 			{ "Help.HelpInter", HELP_LAUNCH_INTERACTIVE, 0 },
 			{NULL, 0, 0}
 		}
@@ -2927,8 +2928,11 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_OPEN_INFORMATION:
 		ro_gui_open_help_page("documentation/info");
 		break;
-	case HELP_OPEN_ABOUT:
-		ro_gui_open_help_page("about/index");
+	case HELP_OPEN_CREDITS:
+		browser_window_create("about:credits", NULL, 0, true, false);
+		break;
+	case HELP_OPEN_LICENCE:
+		browser_window_create("about:licence", NULL, 0, true, false);
 		break;
 	case HELP_LAUNCH_INTERACTIVE:
 		if (!ro_gui_interactive_help_available()) {

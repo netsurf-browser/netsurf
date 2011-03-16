@@ -162,7 +162,8 @@ WindowReset:Resetta posizione della finestra
 HelpContent:Contenuti  F1
 HelpGuide:Guida in linea
 HelpInfo:Informazioni utente
-HelpAbout:Informazioni su NetSurf
+HelpCredits:Credits
+HelpLicence:Licence
 HelpInter:Aiuto interattivo
 
 # Toolbar menu
@@ -1022,8 +1023,9 @@ HelpBrowserMenu6:\Rmostra la documentazione disponibile
 HelpBrowserMenu6-0:\Sapri i contenuti della documentazione in una nuova finestra
 HelpBrowserMenu6-1:\Sapri la guida in linea in una nuova finestra
 HelpBrowserMenu6-2:\Sapri la pagina delle informazioni utente in una nuova finestra
-HelpBrowserMenu6-3:\Sapri la pagina delle informazioni di NetSurf in una nuova finestra
-HelpBrowserMenu6-4:\Savvia la guida in linea
+HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
+HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
+HelpBrowserMenu6-5:\Savvia la guida in linea
 
 HelpBrowser-1:Clicca \s sul link per procedere.|MClicca \a in un link per aprirlo in una nuova finestra|MShift+\s clicca sul link per scaricarne i contenuti.|MShift+\a clicca per salvare l'indirizzo del link.
 

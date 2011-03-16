@@ -160,7 +160,8 @@ WindowReset:Fensterposition zurücksetzen
 HelpContent:Inhalt  F1              
 HelpGuide:Handbuch
 HelpInfo:Nutzerinformation
-HelpAbout:Über NetSurf
+HelpCredits:Credits
+HelpLicence:Licence
 HelpInter:interaktive Hilfe
 
 # Toolbar menu
@@ -1016,8 +1017,9 @@ HelpBrowserMenu6:Untermenü Hilfe.|MZeigt Informationen zu und über NetSurf.
 HelpBrowserMenu6-0:Öffnet die NetSurf Dokumentation in einem neuen Browserfenster.
 HelpBrowserMenu6-1:Öffnet das NetSurf Handbuch in einem neuen Browserfenster.
 HelpBrowserMenu6-2:Öffnet eine Seite mit allgemeinen Informationen zu NetSurf in einem neuen Browserfenster.
-HelpBrowserMenu6-3:Öffnet eine Seite mit Informationen zu Entwicklerteam und bei der Entwicklung genutzter Software in einem neuen Browserfenster.
-HelpBrowserMenu6-4:Lädt die interaktive Hilfe.
+HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
+HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
+HelpBrowserMenu6-5:Lädt die interaktive Hilfe.
 
 HelpBrowser-1:Das ist ein Browserfenster.|MEinen Link mit AUSWAHL anklicken, um ihm zu folgen.|MEinen Link mit SPEZIAL anklicken, um ihn in einem neuen Fenster zu öffnen.|MShift+AUSWAHL über einem Verweis lädt den verlinkten Inhalt herunter.|MShift+SPEZIAL über einem Link klicken zum Speichern der Adresse des Verweises.
 

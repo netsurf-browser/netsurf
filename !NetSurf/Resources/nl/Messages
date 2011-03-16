@@ -160,7 +160,8 @@ DeleteCookies:Verwijder alle cookies
 HelpContent:Inhoud  F1
 HelpGuide:Handboek
 HelpInfo:Gebruikers informatie
-HelpAbout:Over NetSurf
+HelpCredits:Credits
+HelpLicence:Licence
 HelpInter:Interactieve hulp
 
 # Toolbar menu
@@ -1017,8 +1018,9 @@ HelpBrowserMenu6:\Rsee the help resources available.
 HelpBrowserMenu6-0:\Sopen the documentation contents page in a new \w.
 HelpBrowserMenu6-1:\Sopen the user guide in a new \w.
 HelpBrowserMenu6-2:\Sopen the user information page in a new \w.
-HelpBrowserMenu6-3:\Sopen the NetSurf about page in a new \w.
-HelpBrowserMenu6-4:\Srun Help.
+HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
+HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
+HelpBrowserMenu6-5:\Srun Help.
 
 HelpBrowser-1:Click \s on a link to follow it.|MClick \a on a link to open it in a new \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 

@@ -160,7 +160,8 @@ WindowReset:RAZ de la position par défaut
 HelpContent:Contenus  F1
 HelpGuide:Guide de l'utilisateur
 HelpInfo:Information utilisateur
-HelpAbout:À propos de NetSurf
+HelpCredits:Credits
+HelpLicence:Licence
 HelpInter:Aide interactive
 
 # Toolbar menu
@@ -1022,8 +1023,9 @@ HelpBrowserMenu6:\Rvoir l'aide disponible.
 HelpBrowserMenu6-0:\Souvrir la page de documentation dans une nouvelle fenêtre.
 HelpBrowserMenu6-1:\Souvrir le guide de l'utilisateur dans une nouvelle fenêtre.
 HelpBrowserMenu6-2:\Souvrir la page d'information de l'utilisateur dans une nouvelle fenêtre.
-HelpBrowserMenu6-3:\Souvrir la page "À propos de" de NetSurf dans une nouvelle fenêtre.
-HelpBrowserMenu6-4:\Slancer Help.
+HelpBrowserMenu6-3:\Sopen the about:credits page in a new \w.
+HelpBrowserMenu6-4:\Sopen the about:licence page in a new \w.
+HelpBrowserMenu6-5:\Slancer Help.
 
 HelpBrowser-1:Cliquer \s sur un lien pour le suivre.|MCliquer \a sur un lien pour l'ouvrir dans une nouvelle \w.|MShift+\s click on a link to download the link target contents.|MShift+\a click to save the link target address.
 
