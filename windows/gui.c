@@ -27,7 +27,6 @@
 
 #include <windows.h>
 #include <windowsx.h>
-#define _WIN32_IE (0x0501)
 #include <commctrl.h>
 
 #include "content/urldb.h"

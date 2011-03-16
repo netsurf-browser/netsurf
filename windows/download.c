@@ -17,7 +17,6 @@
  */
 
 #include <limits.h>
-#define _WIN32_IE 0x0500
 #include <windows.h>
 #include <shlobj.h>
 #include <sys/time.h>

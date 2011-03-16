@@ -17,8 +17,8 @@
  */
 
 #include <windows.h>
-#define _WIN32_IE (0x0501)
 #include <commctrl.h>
+
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
