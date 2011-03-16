@@ -124,6 +124,14 @@ void browser_window_recalculate_iframes(struct browser_window *bw) {
 	int bw_width, bw_height;
 	int index;
 
+#ifdef nsamiga
+	/* In the Amiga frontend we can switch off IFrames because they
+	 * turn into pop-up hell due to broken frames implementation.
+	 * This stops NetSurf asserting in this specific instance.
+	 */
+	if(bw && bw->window == NULL) return;
+#endif
+
 	assert(bw != NULL);
 	assert(bw->window != NULL);
 
