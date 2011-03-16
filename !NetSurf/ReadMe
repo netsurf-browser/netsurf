@@ -39,9 +39,9 @@ Note   RISC OS 3.1 and earlier are not supported.
 Licences
 --------
 
-NetSurf is provided under the GPL, as well as several other
-licences for different components it uses.
-See !NetSurf.Docs.about.index_en for details.
+NetSurf is provided under the GPL, as well as several other licences
+for different components it uses.  Visit NetSurf's about:licence URL
+for details.
 
 
 The !Boot and !System directories contain items provided produced
