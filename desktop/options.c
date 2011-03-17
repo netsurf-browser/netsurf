@@ -425,7 +425,7 @@ void options_read(const char *path)
 /* exported interface documented in options.h */
 void options_write(const char *path)
 {
-	unsigned int i;
+	unsigned int entry;
 	FILE *fp;
 	colour rgbcolour; /* RRGGBB */
 
@@ -435,35 +435,37 @@ void options_write(const char *path)
 		return;
 	}
 
-	for (i = 0; i != option_table_entries; i++) {
-		fprintf(fp, "%s:", option_table[i].key);
-		switch (option_table[i].type) {
+	for (entry = 0; entry != option_table_entries; entry++) {
+		switch (option_table[entry].type) {
 		case OPTION_BOOL:
-			fprintf(fp, "%c", *((bool *) option_table[i].p) ?
-				'1' : '0');
+			fprintf(fp, "%s:%c\n", option_table[entry].key, 
+				*((bool *) option_table[entry].p) ? '1' : '0');
 			break;
 
 		case OPTION_INTEGER:
-			fprintf(fp, "%i", *((int *) option_table[i].p));
+			fprintf(fp, "%s:%i\n", option_table[entry].key, 
+				*((int *) option_table[entry].p));
 			break;
 
 		case OPTION_COLOUR:
 			rgbcolour = ((0x000000FF & *((colour *)
-					option_table[i].p)) << 16) |
+					option_table[entry].p)) << 16) |
 				((0x0000FF00 & *((colour *)
-					option_table[i].p)) << 0) |
+					option_table[entry].p)) << 0) |
 				((0x00FF0000 & *((colour *)
-					option_table[i].p)) >> 16);
-			fprintf(fp, "%06x", rgbcolour);
+					option_table[entry].p)) >> 16);
+			fprintf(fp, "%s:%06x\n", option_table[entry].key, 
+				rgbcolour);
 			break;
 
 		case OPTION_STRING:
-			if (*((char **) option_table[i].p))
-				fprintf(fp, "%s",
-						*((char **) option_table[i].p));
+			if (((*((char **) option_table[entry].p)) != NULL) && 
+			    (*(*((char **) option_table[entry].p)) != 0)) {
+				fprintf(fp, "%s:%s\n", option_table[entry].key,
+					*((char **) option_table[entry].p));
+			}
 			break;
 		}
-		fprintf(fp, "\n");
 	}
 
 	fclose(fp);

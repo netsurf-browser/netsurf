@@ -159,3 +159,18 @@ body#dirlist span.size + span.size {
 	text-align: left;
 	padding-right: 0; }
 
+/* 
+ * configuration listing style 
+ */
+
+body#configlist table.config th {
+	text-align: left; }
+
+body#configlist table.config td {
+	padding-left: 1em; }
+
+body#configlist table.config td + td {
+	padding-left: 3em; }
+
+body#configlist .null-content {
+        font-style: italic; }

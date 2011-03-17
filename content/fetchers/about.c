@@ -16,7 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* about: URL handling. Based on the data fetcher by Rob Kendrick */
+/* about: URL handling. 
+ *
+ * Based on the data fetcher by Rob Kendrick 
+ * This fetcher provides a simple scheme for the user to access
+ * information from the browser from a known, fixed URL.
+ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -182,16 +187,8 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"<html><head><title>NetSurf Browser Config</title>"
 			"<link rel=\"stylesheet\" title=\"Standard\" "
 			"type=\"text/css\" href=\"resource:internal.css\">"
-			"<style>"
-			"table.config th {"
-				"text-align: left; }"
-			"table.config td {"
-				"padding-left: 1em; }"
-			"table.config td + td {"
-				"padding-left: 3em; }"
-			"</style>"
 			"</head>"
-			"<body>"
+			"<body id =\"configlist\">"
 			"<p class=\"banner\">"
 			"<a href=\"http://www.netsurf-browser.org/\">"
 			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
