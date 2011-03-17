@@ -54,6 +54,7 @@ extern "C" {
 #include "render/form.h"
 #include "render/html.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "utils/log.h"
 }
