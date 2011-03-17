@@ -177,7 +177,7 @@ fetch_resource_setup(struct fetch *fetchh,
 
 	url_get_components(url, &urlcomp);
 
-	ctx->redirect_url = gui_find_resource(urlcomp.path);
+	ctx->redirect_url = gui_get_resource_url(urlcomp.path);
 	if (ctx->redirect_url == NULL) {
 		ctx->handler = fetch_resource_notfound_handler;
 	} else {

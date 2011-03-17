@@ -1049,7 +1049,7 @@ static inline void create_cursor(int flags, short mode, void * form, MFORM_EX * 
 	}
 }
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
 	return NULL;
 }

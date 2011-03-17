@@ -48,6 +48,6 @@ void fetch_resource_register(void);
  * \return A string containing the full URL of the target object or
  *         NULL if no suitable resource can be found.
  */
-char* gui_find_resource(const char *filename);
+char* gui_get_resource_url(const char *filename);
 
 #endif

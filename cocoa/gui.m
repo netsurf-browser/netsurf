@@ -50,7 +50,7 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
 	NSString *path = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: filename] ofType: @""];
 	if (path == nil) return NULL;

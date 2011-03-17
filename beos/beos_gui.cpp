@@ -422,7 +422,7 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
 	BString u("rsrc:/");
 	u << filename;

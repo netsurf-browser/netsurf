@@ -281,24 +281,26 @@ static void ro_msg_save_desktop(wimp_message *message);
 static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
-	/* Find max URL length */
-	size_t length = SLEN("file:///NetSurf:/Resources/") + SLEN("xx/") +
-			strlen(filename) + 1;
+	const char base_url[] = "file:///NetSurf:/Resources/";
+	size_t filename_len = strlen(filename);
 
-	/* Allocate memory for URL (freed by the core) */
+	/* Find max URL length */
+	size_t length = SLEN(base_url) + SLEN("xx/") + filename_len + 1;
+
+	/* Allocate memory for URL (will be owned and freed by the core) */
 	char *resource_url = malloc(length);
 	if (resource_url == NULL)
 		return NULL;
 
 	/* Insert base URL */
-	resource_url = strcpy(resource_url, "file:///NetSurf:/Resources/");
+	resource_url = strcpy(resource_url, base_url);
 
 	/* Add language directory to URL, for translated files */
 	/* TODO: handle non-en langauages
 	 *       handle non-html translated files */
-	if (strncmp(filename + strlen(filename) - 5, ".html", 5) == 0) {
+	if (strncmp(filename + filename_len - 5, ".html", 5) == 0) {
 		resource_url = strcat(resource_url, "en/");
 	}
 

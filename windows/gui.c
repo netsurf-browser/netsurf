@@ -2542,7 +2542,7 @@ void gui_quit(void)
 	LOG(("gui_quit"));
 }
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
 	return NULL;
 }

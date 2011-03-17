@@ -431,7 +431,7 @@ void ami_amiupdate(void)
 	/* end Amiupdate */
 }
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
 	char path[1024];
 	char filename2[1024];

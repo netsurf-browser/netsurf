@@ -92,7 +92,7 @@ char *url_to_path(const char *url)
 	return respath;
 }
 
-char* gui_find_resource(const char *filename)
+char* gui_get_resource_url(const char *filename)
 {
 	char buf[PATH_MAX];
 	return path_to_url(filepath_sfind(respaths, buf, filename));
