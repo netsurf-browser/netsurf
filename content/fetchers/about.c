@@ -387,17 +387,18 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 struct about_handlers {
 	const char *name;
 	fetch_about_handler handler;
+	bool duplicate;
 };
 
 struct about_handlers about_handler_list[] = { 
-	{ "credits", fetch_about_credits_handler },
-	{ "licence", fetch_about_licence_handler },
-	{ "license", fetch_about_license_handler },
-	{ "config", fetch_about_config_handler },
-	{ "Choices", fetch_about_choices_handler },
-        { "testament", fetch_about_testament_handler },
-        { "about", fetch_about_about_handler },
-	{ "blank", fetch_about_blank_handler } /* The default */
+	{ "credits", fetch_about_credits_handler, false },
+	{ "licence", fetch_about_licence_handler, false },
+	{ "license", fetch_about_license_handler, true },
+	{ "config", fetch_about_config_handler, false },
+	{ "Choices", fetch_about_choices_handler, false },
+        { "testament", fetch_about_testament_handler, false },
+        { "about", fetch_about_about_handler, false },
+	{ "blank", fetch_about_blank_handler, false } /* The default */
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) / sizeof(struct about_handlers))
@@ -437,6 +438,11 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 			"<ul>\n");
 
 	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
+
+		/* Skip over duplicate entries */
+		if (about_handler_list[abt_loop].duplicate)
+			continue;
+
 		res = snprintf(buffer + slen, sizeof buffer - slen, 
 			       "<li><a href=\"about:%s\">about:%s</a></li>\n", 
 			       about_handler_list[abt_loop].name, 
