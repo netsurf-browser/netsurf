@@ -614,7 +614,6 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	@cp -RL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/docs $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/themes $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install translations
 	@cp -RL gtk/res/C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
