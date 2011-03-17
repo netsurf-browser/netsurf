@@ -374,9 +374,9 @@ fetch_about_testament_handler_aborted:
 static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
 struct about_handlers {
-	const char *name;
-	fetch_about_handler handler;
-	bool duplicate;
+	const char *name; /**< name to match in url */
+	fetch_about_handler handler; /* handler for the url */
+	bool hidden; /* Flag indicating if entry should be show in listing */
 };
 
 struct about_handlers about_handler_list[] = { 
@@ -386,8 +386,8 @@ struct about_handlers about_handler_list[] = {
 	{ "config", fetch_about_config_handler, false },
 	{ "Choices", fetch_about_choices_handler, false },
 	{ "testament", fetch_about_testament_handler, false },
-	{ "about", fetch_about_about_handler, false },
-	{ "blank", fetch_about_blank_handler, false } /* The default */
+	{ "about", fetch_about_about_handler, true },
+	{ "blank", fetch_about_blank_handler, true } /* The default */
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) / sizeof(struct about_handlers))
@@ -429,7 +429,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
 
 		/* Skip over duplicate entries */
-		if (about_handler_list[abt_loop].duplicate)
+		if (about_handler_list[abt_loop].hidden)
 			continue;
 
 		res = snprintf(buffer + slen, sizeof buffer - slen, 
