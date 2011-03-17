@@ -428,7 +428,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 
 	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
 
-		/* Skip over duplicate entries */
+		/* Skip over hidden entries */
 		if (about_handler_list[abt_loop].hidden)
 			continue;
 
