@@ -156,17 +156,6 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
-static bool fetch_about_license_handler(struct fetch_about_context *ctx)
-{
-	/* content is going to return redirect to the noun */
-	fetch_set_http_code(ctx->fetchh, 302);
-
-	fetch_about_send_callback(FETCH_REDIRECT, ctx, "about:licence",
-			0, FETCH_ERROR_NO_ERROR);
-
-	return true;
-}
-
 
 static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 {
@@ -393,7 +382,7 @@ struct about_handlers {
 struct about_handlers about_handler_list[] = { 
 	{ "credits", fetch_about_credits_handler, false },
 	{ "licence", fetch_about_licence_handler, false },
-	{ "license", fetch_about_license_handler, true },
+	{ "license", fetch_about_licence_handler, true },
 	{ "config", fetch_about_config_handler, false },
 	{ "Choices", fetch_about_choices_handler, false },
 	{ "testament", fetch_about_testament_handler, false },
