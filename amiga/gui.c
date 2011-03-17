@@ -3295,7 +3295,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 		if(g->bw->scale != 1.0) g->redraw_scroll = false;
 	}
 
-	if(g->redraw_scroll && content_get_type(c) == CONTENT_HTML)
+	if(g->redraw_scroll)
 	{
 		g->bw->window->c_h_temp = g->bw->window->c_h;
 		gui_window_remove_caret(g->bw->window);
