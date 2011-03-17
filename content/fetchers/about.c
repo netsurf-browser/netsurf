@@ -294,12 +294,12 @@ fetch_about_choices_handler_aborted:
 typedef struct { const char *leaf; const char modtype; } modification_t;
 static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 {
-        static modification_t modifications[] = WT_MODIFICATIONS;
+	static modification_t modifications[] = WT_MODIFICATIONS;
 	char buffer[1024];
 	int code = 200;
 	int slen;
-        int i;
-        
+	int i;
+	
 
 	/* content is going to return ok */
 	fetch_set_http_code(ctx->fetchh, code);
@@ -315,63 +315,63 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 			FETCH_ERROR_NO_ERROR))
 		goto fetch_about_testament_handler_aborted;
 	
-        slen = snprintf(buffer, sizeof buffer, 
+	slen = snprintf(buffer, sizeof buffer, 
 #if defined(WT_BRANCHISTRUNK)
-                        "# This is a *DEVELOPMENT* build from the trunk.\n\n"
+			"# This is a *DEVELOPMENT* build from the trunk.\n\n"
 #elif defined(WT_BRANCHISRELEASE)
-                        "# This is a release build of NetSurf\n\n"
+			"# This is a release build of NetSurf\n\n"
 #elif defined(WT_NO_SVN)
-                        "# This NetSurf was built outside of our revision control environment.\n# This testament is therefore very useful.\n\n"
+			"# This NetSurf was built outside of our revision control environment.\n# This testament is therefore very useful.\n\n"
 #else
-                        "# This NetSurf was built from a branch.\n\n"
+			"# This NetSurf was built from a branch.\n\n"
 #endif
-                        );
-        
+			);
+	
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
 			FETCH_ERROR_NO_ERROR))
 		goto fetch_about_testament_handler_aborted;
 
-        
+	
 	slen = snprintf(buffer, sizeof buffer, 
-                        "Built by %s (%s) from %s at revision %s\n\n",
-                        GECOS, USERNAME, WT_BRANCHPATH, WT_REVID);
+			"Built by %s (%s) from %s at revision %s\n\n",
+			GECOS, USERNAME, WT_BRANCHPATH, WT_REVID);
 
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
 			FETCH_ERROR_NO_ERROR))
 		goto fetch_about_testament_handler_aborted;
-        
+	
 	slen = snprintf(buffer, sizeof buffer, 
-                        "Built on %s in %s\n\n",
-                        WT_HOSTNAME, WT_ROOT);
+			"Built on %s in %s\n\n",
+			WT_HOSTNAME, WT_ROOT);
 
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
 			FETCH_ERROR_NO_ERROR))
 		goto fetch_about_testament_handler_aborted;
-        
-        if (WT_MODIFIED > 0) {
-                slen = snprintf(buffer, sizeof buffer, 
-                                "Working tree has %d modification%s\n\n",
-                                WT_MODIFIED, WT_MODIFIED == 1 ? "" : "s");
-        } else {
-                slen = snprintf(buffer, sizeof buffer,
-                                "Working tree is not modified.\n");
-        }
+	
+	if (WT_MODIFIED > 0) {
+		slen = snprintf(buffer, sizeof buffer, 
+				"Working tree has %d modification%s\n\n",
+				WT_MODIFIED, WT_MODIFIED == 1 ? "" : "s");
+	} else {
+		slen = snprintf(buffer, sizeof buffer,
+				"Working tree is not modified.\n");
+	}
 
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
 			FETCH_ERROR_NO_ERROR))
 		goto fetch_about_testament_handler_aborted;
-        
-        for (i = 0; i < WT_MODIFIED; ++i) {
-                slen = snprintf(buffer, sizeof buffer,
-                                "  %c  %s\n",
-                                modifications[i].modtype,
-                                modifications[i].leaf);
-                if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
-                                              FETCH_ERROR_NO_ERROR))
-                        goto fetch_about_testament_handler_aborted;
-                
-        }
-        
+	
+	for (i = 0; i < WT_MODIFIED; ++i) {
+		slen = snprintf(buffer, sizeof buffer,
+				"  %c  %s\n",
+				modifications[i].modtype,
+				modifications[i].leaf);
+		if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
+					      FETCH_ERROR_NO_ERROR))
+			goto fetch_about_testament_handler_aborted;
+		
+	}
+	
 	fetch_about_send_callback(FETCH_FINISHED, ctx, 0, 0,
 			FETCH_ERROR_NO_ERROR);
 
@@ -396,8 +396,8 @@ struct about_handlers about_handler_list[] = {
 	{ "license", fetch_about_license_handler, true },
 	{ "config", fetch_about_config_handler, false },
 	{ "Choices", fetch_about_choices_handler, false },
-        { "testament", fetch_about_testament_handler, false },
-        { "about", fetch_about_about_handler, false },
+	{ "testament", fetch_about_testament_handler, false },
+	{ "about", fetch_about_about_handler, false },
 	{ "blank", fetch_about_blank_handler, false } /* The default */
 };
 
