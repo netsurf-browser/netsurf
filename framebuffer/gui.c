@@ -37,7 +37,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/shape.h"
-#include "utils/resource.h"
+#include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
@@ -457,12 +457,12 @@ gui_init(int argc, char** argv)
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	if (option_cookie_file == NULL) {
-		option_cookie_file = resource_find(respaths, "Cookies");
+		option_cookie_file = filepath_find(respaths, "Cookies");
 		LOG(("Using '%s' as Cookies file", option_cookie_file));
 	}
 
 	if (option_cookie_jar == NULL) {
-		option_cookie_jar = resource_find(respaths, "Cookies");
+		option_cookie_jar = filepath_find(respaths, "Cookies");
 		LOG(("Using '%s' as Cookie Jar file", option_cookie_jar));
 	}
 
@@ -505,8 +505,8 @@ main(int argc, char** argv)
 
 	respaths = fb_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"NETSURF_FB_RESPATH":./framebuffer/res:"NETSURF_FB_FONTPATH);
 
-	options = resource_find(respaths, "Choices");
-	messages = resource_find(respaths, "messages");
+	options = filepath_find(respaths, "Choices");
+	messages = filepath_find(respaths, "messages");
 
 	netsurf_init(&argc, &argv, options, messages);
 

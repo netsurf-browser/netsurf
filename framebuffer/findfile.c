@@ -25,9 +25,9 @@
 
 #include <curl/curl.h>
 
+#include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/url.h"
-#include "utils/resource.h"
 #include "content/fetchers/resource.h"
 
 #include "framebuffer/findfile.h"
@@ -47,11 +47,11 @@ fb_init_resource(const char *resource_path)
 	char **respath; /* resource paths vector */
 	const char *lang = NULL;
 
-	pathv = resource_path_to_strvec(resource_path);
+	pathv = filepath_path_to_strvec(resource_path);
 
-	respath = resource_generate(pathv, &lang);
+	respath = filepath_generate(pathv, &lang);
 
-	resource_free_strvec(pathv);
+	filepath_free_strvec(pathv);
 
 	return respath;
 }
@@ -95,7 +95,7 @@ char *url_to_path(const char *url)
 char* gui_find_resource(const char *filename)
 {
 	char buf[PATH_MAX];
-	return path_to_url(resource_sfind(respaths, buf, filename));
+	return path_to_url(filepath_sfind(respaths, buf, filename));
 }
 
 /*

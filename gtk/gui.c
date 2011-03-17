@@ -74,12 +74,12 @@
 
 #include "render/box.h"
 #include "render/form.h"
+#include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "utils/resource.h"
 
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
@@ -138,13 +138,13 @@ nsgtk_init_resource(const char *resource_path)
 	char **pathv; /* resource path string vector */
 	char **respath; /* resource paths vector */
 
-	pathv = resource_path_to_strvec(resource_path);
+	pathv = filepath_path_to_strvec(resource_path);
 
 	langv = g_get_language_names();
 
-	respath = resource_generate(pathv, langv);
+	respath = filepath_generate(pathv, langv);
 
-	resource_free_strvec(pathv);
+	filepath_free_strvec(pathv);
 
 	return respath;
 }
@@ -165,7 +165,7 @@ static bool nsgtk_throbber_init(char **respath, int framec)
 
 	for (frame_num = 0; frame_num < framec; frame_num++) {
 		snprintf(targetname, PATH_MAX, "throbber/throbber%d.png", frame_num);
-		filenames[frame_num] = resource_find(respath, targetname);
+		filenames[frame_num] = filepath_find(respath, targetname);
 	}
 
 	ret = nsgtk_throbber_initialise_from_png(frame_num, filenames);
@@ -191,7 +191,7 @@ nsgtk_new_glade(char **respath, const char *name, GladeXML **pglade)
 
 	snprintf(resname, PATH_MAX, "%s.glade", name);
 
-	filepath = resource_find(respath, resname);
+	filepath = filepath_find(respath, resname);
 	if (filepath == NULL) {
 		snprintf(errorstr, NEW_GLADE_ERROR_SIZE, 
 			 "Unable to locate %s glade template file.\n", name);
@@ -268,12 +268,12 @@ static void check_options(char **respath)
 	 * values! 
 	 */
 	if (!option_cookie_file) {
-		resource_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
+		filepath_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
 		LOG(("Using '%s' as Cookies file", buf));
 		option_cookie_file = strdup(buf);
 	}
 	if (!option_cookie_jar) {
-		resource_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
+		filepath_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
 		LOG(("Using '%s' as Cookie Jar file", buf));
 		option_cookie_jar = strdup(buf);
 	}
@@ -281,13 +281,13 @@ static void check_options(char **respath)
 		die("Failed initialising cookie options");
 
 	if (!option_url_file) {
-		resource_sfinddef(respath, buf, "URLs", "~/.netsurf/");
+		filepath_sfinddef(respath, buf, "URLs", "~/.netsurf/");
 		LOG(("Using '%s' as URL file", buf));
 		option_url_file = strdup(buf);
 	}
 
         if (!option_ca_path) {
-		resource_sfinddef(respath, buf, "certs", "/etc/ssl/");
+		filepath_sfinddef(respath, buf, "certs", "/etc/ssl/");
                 LOG(("Using '%s' as certificate path", buf));
                 option_ca_path = strdup(buf);
         }
@@ -297,12 +297,12 @@ static void check_options(char **respath)
         	option_downloads_directory = hdir;
 	}
 	
-	resource_sfinddef(respath, buf, "icons/", "~/.netsurf/");
+	filepath_sfinddef(respath, buf, "icons/", "~/.netsurf/");
 	LOG(("Using '%s' as Tree icons dir", buf));
 	tree_set_icon_dir(strdup(buf));
 
 	if (!option_hotlist_path) {
-		resource_sfinddef(respath, buf, "Hotlist", "~/.netsurf/");
+		filepath_sfinddef(respath, buf, "Hotlist", "~/.netsurf/");
 		LOG(("Using '%s' as Hotlist file", buf));
 		option_hotlist_path = strdup(buf);		
 	}
@@ -310,7 +310,7 @@ static void check_options(char **respath)
 		die("Failed initialising hotlist option");	
 	
 
-	resource_sfinddef(respath, buf, "Print", "~/.netsurf/");
+	filepath_sfinddef(respath, buf, "Print", "~/.netsurf/");
 	LOG(("Using '%s' as Print Settings file", buf));
 	print_options_file_location = strdup(buf);
 
@@ -329,7 +329,7 @@ static void check_options(char **respath)
 char* gui_find_resource(const char *filename)
 {
 	char buf[PATH_MAX];
-	return path_to_url(resource_sfind(respaths, buf, filename));
+	return path_to_url(filepath_sfind(respaths, buf, filename));
 }
 
 
@@ -353,33 +353,33 @@ static void gui_init(int argc, char** argv, char **respath)
 	 * however these may be translated which breaks things
 	 * relying on res_dir_location.
 	 */	
-	resource_filename = resource_find(respath, "languages");
+	resource_filename = filepath_find(respath, "languages");
 	resource_filename[strlen(resource_filename) - 9] = 0;
 	res_dir_location = resource_filename;
 
 	/* languages file */
-	languages_file_location = resource_find(respath, "languages");
+	languages_file_location = filepath_find(respath, "languages");
 
 	/* initialise the glade templates */
 	nsgtk_init_glade(respath);
 
 	/* set default icon if its available */
-	resource_filename = resource_find(respath, "netsurf.xpm");
+	resource_filename = filepath_find(respath, "netsurf.xpm");
 	if (resource_filename != NULL) {
 		gtk_window_set_default_icon_from_file(resource_filename, NULL);
 		free(resource_filename);
 	}
 
 	/* Search engine sources */
-	search_engines_file_location = resource_find(respath, "SearchEngines");
+	search_engines_file_location = filepath_find(respath, "SearchEngines");
 	LOG(("Using '%s' as Search Engines file", search_engines_file_location));
 
 	/* Default Icon */
-	search_default_ico_location = resource_find(respath, "default.ico");
+	search_default_ico_location = filepath_find(respath, "default.ico");
 	LOG(("Using '%s' as default search ico", search_default_ico_location));
 
 	/* Toolbar inicies file */
-	toolbar_indices_file_location = resource_find(respath, "toolbarIndices");
+	toolbar_indices_file_location = filepath_find(respath, "toolbarIndices");
 	LOG(("Using '%s' as custom toolbar settings file", toolbar_indices_file_location));
 
         /* load throbber images */
@@ -389,7 +389,7 @@ static void gui_init(int argc, char** argv, char **respath)
 	/* Initialise completions - cannot fail */
 	nsgtk_completion_init();
 
-	resource_sfinddef(respath, buf, "mime.types", "/etc/");
+	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
 
 	/* set up stylesheet urls */
@@ -482,8 +482,8 @@ int main(int argc, char** argv)
         /* set standard error to be non-buffering */
 	setbuf(stderr, NULL);
 
-	options = resource_find(respaths, "Choices");
-	messages = resource_find(respaths, "Messages");
+	options = filepath_find(respaths, "Choices");
+	messages = filepath_find(respaths, "Messages");
 
 	netsurf_init(&argc, &argv, options, messages);
 

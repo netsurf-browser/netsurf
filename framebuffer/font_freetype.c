@@ -26,9 +26,9 @@
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/font.h"
+#include "utils/filepath.h"
 #include "utils/utf8.h"
 #include "utils/log.h"
-#include "utils/resource.h"
 #include "desktop/options.h"
 
 #include "framebuffer/gui.h"
@@ -126,7 +126,7 @@ fb_new_face(const char *option, const char *resname, const char *fontname)
         if (option != NULL) {
                 newf->fontfile = strdup(option);
         } else {
-		resource_sfind(respaths, buf, fontname);
+		filepath_sfind(respaths, buf, fontname);
                 newf->fontfile = strdup(buf);
         }
 

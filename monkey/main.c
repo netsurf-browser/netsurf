@@ -31,7 +31,7 @@
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/sslcert.h"
-#include "utils/resource.h"
+#include "utils/filepath.h"
 #include "utils/url.h"
 
 char *default_stylesheet_url = NULL;
@@ -48,13 +48,13 @@ nsmonkey_init_resource(const char *resource_path)
 	char **pathv; /* resource path string vector */
 	char **respath; /* resource paths vector */
 
-	pathv = resource_path_to_strvec(resource_path);
+	pathv = filepath_path_to_strvec(resource_path);
 
 	langv = g_get_language_names();
 
-	respath = resource_generate(pathv, langv);
+	respath = filepath_generate(pathv, langv);
 
-	resource_free_strvec(pathv);
+	filepath_free_strvec(pathv);
 
 	return respath;
 }
@@ -75,7 +75,7 @@ void gui_quit(void)
 char* gui_find_resource(const char *filename)
 {
 	char buf[PATH_MAX];
-	return path_to_url(resource_sfind(respaths, buf, filename));
+	return path_to_url(filepath_sfind(respaths, buf, filename));
 }
 
 void
@@ -104,15 +104,15 @@ main(int argc, char **argv)
   /* Prep the search paths */
   respaths = nsmonkey_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"MONKEY_RESPATH":./monkey/res");
   
-  options = resource_find(respaths, "Choices");
-  messages = resource_find(respaths, "Messages");
+  options = filepath_find(respaths, "Choices");
+  messages = filepath_find(respaths, "Messages");
 
   netsurf_init(&argc, &argv, options, messages);
   
   free(messages);
   free(options);
     
-  resource_sfinddef(respaths, buf, "mime.types", "/etc/");
+  filepath_sfinddef(respaths, buf, "mime.types", "/etc/");
   gtk_fetch_filetype_init(buf);
   
   default_stylesheet_url = strdup("resource:gtkdefault.css");

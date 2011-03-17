@@ -32,13 +32,13 @@
 #include <string.h>
 
 #include "utils/config.h"
-#include "utils/resource.h"
+#include "utils/filepath.h"
 
 /** maximum number of elements in the resource vector */
 #define MAX_RESPATH 128 
 
-/* exported interface documented in findresource.h */
-char *resource_vsfindfile(char *str, const char *format, va_list ap)
+/* exported interface documented in filepath.h */
+char *filepath_vsfindfile(char *str, const char *format, va_list ap)
 {
 	char *realpathname;
 	char *pathname;
@@ -73,21 +73,21 @@ char *resource_vsfindfile(char *str, const char *format, va_list ap)
 	return realpathname;
 }
 
-/* exported interface documented in findresource.h */
-char *resource_sfindfile(char *str, const char *format, ...)
+/* exported interface documented in filepath.h */
+char *filepath_sfindfile(char *str, const char *format, ...)
 {
 	va_list ap;
 	char *ret;
 
 	va_start(ap, format);
-	ret = resource_vsfindfile(str, format, ap);
+	ret = filepath_vsfindfile(str, format, ap);
 	va_end(ap);
 
 	return ret;
 }
 
-/* exported interface documented in findresource.h */
-char *resource_findfile(const char *format, ...)
+/* exported interface documented in filepath.h */
+char *filepath_findfile(const char *format, ...)
 {
 	char *str;
 	char *ret;
@@ -98,7 +98,7 @@ char *resource_findfile(const char *format, ...)
 		return NULL; /* unable to allocate memory */
 
 	va_start(ap, format);
-	ret = resource_vsfindfile(str, format, ap);
+	ret = filepath_vsfindfile(str, format, ap);
 	va_end(ap);
 
 	if (ret == NULL)
@@ -107,8 +107,8 @@ char *resource_findfile(const char *format, ...)
 	return ret;
 }
 
-/* exported interface documented in findresource.h */
-char *resource_sfind(char **respathv, char *filepath, const char *filename)
+/* exported interface documented in filepath.h */
+char *filepath_sfind(char **respathv, char *filepath, const char *filename)
 {
 	int respathc = 0;
 
@@ -116,7 +116,7 @@ char *resource_sfind(char **respathv, char *filepath, const char *filename)
 		return NULL;
 
 	while (respathv[respathc] != NULL) {
-		if (resource_sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL)
+		if (filepath_sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL)
 			return filepath;
 
 		respathc++;
@@ -125,8 +125,8 @@ char *resource_sfind(char **respathv, char *filepath, const char *filename)
 	return NULL;
 }
 
-/* exported interface documented in findresource.h */
-char *resource_find(char **respathv, const char *filename)
+/* exported interface documented in filepath.h */
+char *filepath_find(char **respathv, const char *filename)
 {
 	char *ret;
 	char *filepath;
@@ -138,7 +138,7 @@ char *resource_find(char **respathv, const char *filename)
 	if (filepath == NULL)
 		return NULL;
 
-	ret = resource_sfind(respathv, filepath, filename);
+	ret = filepath_sfind(respathv, filepath, filename);
 
 	if (ret == NULL)
 		free(filepath);
@@ -146,8 +146,8 @@ char *resource_find(char **respathv, const char *filename)
 	return ret;
 }
 
-/* exported interface documented in findresource.h */
-char *resource_sfinddef(char **respathv, char *filepath, const char *filename, const char *def)
+/* exported interface documented in filepath.h */
+char *filepath_sfinddef(char **respathv, char *filepath, const char *filename, const char *def)
 {
 	char t[PATH_MAX];
 	char *ret;
@@ -155,7 +155,7 @@ char *resource_sfinddef(char **respathv, char *filepath, const char *filename, c
 	if ((respathv == NULL) || (respathv[0] == NULL) || (filepath == NULL))
 		return NULL;
 
-	ret = resource_sfind(respathv, filepath, filename);
+	ret = filepath_sfind(respathv, filepath, filename);
 
 	if ((ret == NULL) && (def != NULL)) {
 		/* search failed, return the path specified */
@@ -174,9 +174,9 @@ char *resource_sfinddef(char **respathv, char *filepath, const char *filename, c
 }
 
 
-/* exported interface documented in resource.h */
+/* exported interface documented in filepath.h */
 char **
-resource_generate(char * const *pathv, const char * const *langv)
+filepath_generate(char * const *pathv, const char * const *langv)
 {
 	char **respath; /* resource paths vector */
 	int pathc = 0;
@@ -262,9 +262,9 @@ expand_path(const char *path)
 	return exp;
 }
 
-/* exported interface documented in resource.h */
+/* exported interface documented in filepath.h */
 char **
-resource_path_to_strvec(const char *path)
+filepath_path_to_strvec(const char *path)
 {
 	char **strvec;
 	int strc = 0;
@@ -302,8 +302,8 @@ resource_path_to_strvec(const char *path)
 	return strvec;
 }
 
-/* exported interface documented in resource.h */
-void resource_free_strvec(char **pathv)
+/* exported interface documented in filepath.h */
+void filepath_free_strvec(char **pathv)
 {
 	free(pathv[0]);
 	free(pathv);
