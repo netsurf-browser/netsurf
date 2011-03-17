@@ -59,8 +59,14 @@ fb_init_resource(const char *resource_path)
 
 char *path_to_url(const char *path)
 {
-	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
-	char *url = malloc(urllen);
+	int urllen; 
+	char *url; 
+
+	if (path == NULL)
+		return NULL;
+
+	urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
+	url = malloc(urllen);
 
 	if (*path == '/') {
 		path++; /* file: paths are already absolute */
