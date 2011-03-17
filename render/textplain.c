@@ -557,8 +557,8 @@ bool textplain_redraw(struct content *c, int x, int y,
 	unsigned long line_count = c->data.textplain.physical_line_count;
 	float line_height = textplain_line_height();
 	float scaled_line_height = line_height * scale;
-	long line0 = clip->y0 / scaled_line_height - 1;
-	long line1 = clip->y1 / scaled_line_height + 1;
+	long line0 = (clip->y0 - y) / scaled_line_height - 1;
+	long line1 = (clip->y1 - y) / scaled_line_height + 1;
 	struct textplain_line *line = c->data.textplain.physical_line;
 	size_t length;
 	plot_style_t *plot_style_highlight;
