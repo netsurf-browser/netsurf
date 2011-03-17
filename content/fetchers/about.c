@@ -195,12 +195,12 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"</p>"
 			"<h1>NetSurf Browser Config</h1>"
 			"<table class=\"config\">"
-			"<tr><th></th><th></th><th></th></tr>");
+			"<tr><th></th><th></th><th></th></tr>\n");
 
 	do {
 		res = options_snoptionf(buffer + slen, sizeof buffer - slen,
 				opt_loop,
-				"<tr><th>%k</th><td>%t</td><td>%V</td></tr>");
+				"<tr><th>%k</th><td>%t</td><td>%V</td></tr>\n");
 		if (res <= 0) 
 			break; /* last option */
 
@@ -381,6 +381,9 @@ fetch_about_testament_handler_aborted:
 	return false;
 }
 
+/* Forward declaration because this handler requires the handler table. */
+static bool fetch_about_about_handler(struct fetch_about_context *ctx);
+
 struct about_handlers {
 	const char *name;
 	fetch_about_handler handler;
@@ -393,10 +396,82 @@ struct about_handlers about_handler_list[] = {
 	{ "config", fetch_about_config_handler },
 	{ "Choices", fetch_about_choices_handler },
         { "testament", fetch_about_testament_handler },
+        { "about", fetch_about_about_handler },
 	{ "blank", fetch_about_blank_handler } /* The default */
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) / sizeof(struct about_handlers))
+
+/**
+ * List all the valid about: paths available 
+ * 
+ * \param ctx The fetch context.
+ * \return true for sucess or false to generate an error.
+ */
+static bool fetch_about_about_handler(struct fetch_about_context *ctx)
+{
+	char buffer[1024];
+	int code = 200;
+	int slen;
+	unsigned int abt_loop = 0;
+	int res = 0;
+
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, code);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
+		goto fetch_about_config_handler_aborted;
+
+	slen = snprintf(buffer, sizeof buffer, 
+			"<html><head><title>NetSurf List of About pages</title>"
+			"<link rel=\"stylesheet\" title=\"Standard\" "
+			"type=\"text/css\" href=\"resource:internal.css\">"
+			"</head>"
+			"<body id =\"aboutlist\">"
+			"<p class=\"banner\">"
+			"<a href=\"http://www.netsurf-browser.org/\">"
+			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
+			"</p>"
+			"<h1>NetSurf List of About pages</h1>"
+			"<ul>\n");
+
+	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
+		res = snprintf(buffer + slen, sizeof buffer - slen, 
+			       "<li><a href=\"about:%s\">about:%s</a></li>\n", 
+			       about_handler_list[abt_loop].name, 
+			       about_handler_list[abt_loop].name);
+		if (res <= 0) 
+			break; /* last option */
+
+		if (res >= (int)(sizeof buffer - slen)) {
+			/* last entry would not fit in buffer, submit buffer */
+			if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
+					slen, FETCH_ERROR_NO_ERROR))
+				goto fetch_about_config_handler_aborted;
+			slen = 0;
+		} else {
+			/* normal addition */
+			slen += res;
+		}
+	}
+
+	slen += snprintf(buffer + slen, sizeof buffer - slen, 
+			 "</ul></body></html>");
+
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
+			FETCH_ERROR_NO_ERROR))
+		goto fetch_about_config_handler_aborted;
+
+	fetch_about_send_callback(FETCH_FINISHED, ctx, 0, 0,
+			FETCH_ERROR_NO_ERROR);
+
+	return true;
+
+fetch_about_config_handler_aborted:
+	return false;
+}
+
 
 /** callback to initialise the about fetcher. */
 static bool fetch_about_initialise(const char *scheme)
