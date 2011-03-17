@@ -557,8 +557,8 @@ bool textplain_redraw(struct content *c, int x, int y,
 	unsigned long line_count = c->data.textplain.physical_line_count;
 	float line_height = textplain_line_height();
 	float scaled_line_height = line_height * scale;
-	long line0 = (clip->y0 - y) / scaled_line_height - 1;
-	long line1 = (clip->y1 - y) / scaled_line_height + 1;
+	long line0 = (clip->y0 - y * scale) / scaled_line_height - 1;
+	long line1 = (clip->y1 - y * scale) / scaled_line_height + 1;
 	struct textplain_line *line = c->data.textplain.physical_line;
 	size_t length;
 	plot_style_t *plot_style_highlight;
@@ -590,8 +590,8 @@ bool textplain_redraw(struct content *c, int x, int y,
 	/* Set up font plot style */
 	textplain_style.background = background_colour;
 
-	x += MARGIN * scale;
-	y += MARGIN * scale;
+	x = (x + MARGIN) * scale;
+	y = (y + MARGIN) * scale;
 	for (lineno = line0; lineno != line1; lineno++) {
 		const char *text = utf8_data + line[lineno].start;
 		int tab_width = textplain_tab_width * scale;
