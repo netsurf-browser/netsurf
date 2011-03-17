@@ -17,21 +17,36 @@
  */
 
 /** \file
- * resource: URL method handler
+ * resource: URL method handler.
+ * 
+ * The resource fetcher is intended to provide a flat uniform URL
+ * space for browser local resources referenced by URL. Using this
+ * scheme each frontend is only required to provide a single entry
+ * point to locate resources which can be accessed by the standard URL
+ * type scheme.
+ *
  */
 
 #ifndef NETSURF_CONTENT_FETCHERS_FETCH_RESOURCE_H
 #define NETSURF_CONTENT_FETCHERS_FETCH_RESOURCE_H
 
 /**
- * register the resource scheme.
+ * Register the resource scheme.
  * 
  * should only be called from the fetch initialise
  */
 void fetch_resource_register(void);
 
 /**
- * callback to translate resource to full url
+ * Callback to translate resource to full url.
+ *
+ * Transforms a resource: filename into a full URL. The returned URL
+ * is used as the target for a redirect. The caller takes ownership of
+ * the returned string including freeing it when finished with it.
+ *
+ * \param filename The filename of the resource to locate.
+ * \return A string containing the full URL of the target object or
+ *         NULL if no suitable resource can be found.
  */
 char* gui_find_resource(const char *filename);
 
