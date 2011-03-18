@@ -3,7 +3,7 @@
 <html>
 <head>
 <title>NetSurf | About Licence</title>
-<link rel="stylesheet" title="Standard" type="text/css" href="resource:internal.css">
+<link rel="stylesheet" type="text/css" href="resource:internal.css">
 <style>
 div.licence {
 	background: #ddd;
@@ -36,9 +36,18 @@ dl.components > dd > span + span {
 
 <h1>NetSurf Licence</h1>
 
-<p>NetSurf, the source code, documentation, translatable messages files and UI definitions are licensed under the GNU General Public Licence, version 2.0. In addition, as a special exception, permission is granted to link the code of this release of NetSurf with the OpenSSL project's "OpenSSL" library (or with modified versions of it that use the same licence as the "OpenSSL" library), and distribute the linked executables.</p>
+<p>NetSurf, the source code, documentation, translatable messages files and UI
+definitions are licensed under the GNU General Public Licence, version 2.0.  In
+addition, as a special exception, permission is granted to link the code of this
+release of NetSurf with the OpenSSL project's "OpenSSL" library (or with
+modified versions of it that use the same licence as the "OpenSSL" library),
+and distribute the linked executables.</p>
 
-<p>You must obey the GNU General Public License version 2 in all respects for all of the code used other than "OpenSSL". If you modify the code, you may extend this exception to your version of the code, but you are not obligated to do so. If you do not wish to do so, delete this exception statement from your version.</p>
+<p>You must obey the GNU General Public License version 2 in all respects for
+all of the code used other than "OpenSSL". If you modify the code, you may
+extend this exception to your version of the code, but you are not obligated to
+do so. If you do not wish to do so, delete this exception statement from your
+version.</p>
 
 <h2>Component Licencing</h2>
 
@@ -63,7 +72,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.netsurf-browser.org/projects/hubbub/">Hubbub</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2011 John-Mark Bell<br />&copy; 2008&ndash;2009 Andrew Sidwell</span>
+<span>&copy; 2007&ndash;2011 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -99,13 +108,13 @@ dl.components > dd > span + span {
 
 <dt><a href="http://source.netsurf-browser.org/trunk/libnsbmp/">Libnsbmp</a></dt>
 <dd>
-<span>&copy; 2006 Richard Wilson<br />&copy; 2008 Sean Fox</span>
+<span>&copy; 2006 Richard Wilson<br>&copy; 2008 Sean Fox</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://source.netsurf-browser.org/trunk/libnsfb/">Libnsfb</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2011 Vincent Sanders</span>
+<span>&copy; 2009&ndash;2011 Vincent Sanders<br>&copy; 2009&ndash;2011 Michael Drake</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -163,7 +172,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.openssl.org/">OpenSSL</a></dt>
 <dd>
-<span>&copy; 1995&ndash;1998 Eric A. Young, Tim J. Hudson<br />&copy; 1998&ndash;2010 The OpenSSL Project</span>
+<span>&copy; 1995&ndash;1998 Eric A. Young, Tim J. Hudson<br>&copy; 1998&ndash;2010 The OpenSSL Project</span>
 <span><a href="#openssl">OpenSSL</a></span>
 </dd>
 
@@ -181,7 +190,10 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.riscos.info/websvn/listing.php?repname=gccsdk&path=%2Ftrunk%2Fgcc4%2Frecipe%2Ffiles%2Fgcc%2Flibunixlib%2F&#a9586e56e500c7fdfb58279167b82472d">UnixLib</a></dt>
 <dd>
-<span>&copy; 1995&ndash;1999 Simon Callan, Nick Burrett, Nicholas Clark and Peter Burwood<br />&copy; 1999&ndash;2009 Nick Burrett, John Tytgat, Peter Naulls, Lee Noar, Peter Teichmann, Alex Waugh, Christian Ludlam, Theo Markettos, Graham Shaw, James Bursa and John-Mark Bell.</span>
+<span>&copy; 1995&ndash;1999 Simon Callan, Nick Burrett, Nicholas Clark and
+Peter Burwood<br>&copy; 1999&ndash;2009 Nick Burrett, John Tytgat, Peter Naulls,
+Lee Noar, Peter Teichmann, Alex Waugh, Christian Ludlam, Theo Markettos,
+Graham Shaw, James Bursa and John-Mark Bell.</span>
 <span><a href="#unixlib">UnixLib</a></span>
 </dd>
 
@@ -194,8 +206,10 @@ dl.components > dd > span + span {
 
 <h2>Licence texts</h2>
 
-<p>Generic forms of the licence texts appear here where possible.  Some components may vary the licence slightly, and our best effort has been made to detect these
-changes and have the different licence listed here.  Changes in white space, etc, were not considered.</p>
+<p>Generic forms of the licence texts appear here where possible.  Some
+components may vary the licence slightly, and our best effort has been made to
+detect these changes and have the different licence listed here.  Changes in
+white space, etc, were not considered.</p>
 
 <a name="gplv2" />
 <h3>GNU General Public Licence, Version 2</h3>

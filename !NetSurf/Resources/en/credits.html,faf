@@ -3,7 +3,7 @@
 <html>
 <head>
 <title>NetSurf | About Credits</title>
-<link rel="stylesheet" title="Standard" type="text/css" href="resource:internal.css">
+<link rel="stylesheet" type="text/css" href="resource:internal.css">
 <style>
 div#DevList li {
 	float: left;

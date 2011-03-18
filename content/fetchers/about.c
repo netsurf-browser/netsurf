@@ -173,17 +173,18 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 		goto fetch_about_config_handler_aborted;
 
 	slen = snprintf(buffer, sizeof buffer, 
-			"<html><head><title>NetSurf Browser Config</title>"
-			"<link rel=\"stylesheet\" title=\"Standard\" "
-			"type=\"text/css\" href=\"resource:internal.css\">"
-			"</head>"
-			"<body id =\"configlist\">"
+			"<html>\n<head>\n"
+			"<title>NetSurf Browser Config</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"configlist\">\n"
 			"<p class=\"banner\">"
 			"<a href=\"http://www.netsurf-browser.org/\">"
 			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
-			"</p>"
-			"<h1>NetSurf Browser Config</h1>"
-			"<table class=\"config\">"
+			"</p>\n"
+			"<h1>NetSurf Browser Config</h1>\n"
+			"<table class=\"config\">\n"
 			"<tr><th></th><th></th><th></th></tr>\n");
 
 	do {
@@ -207,7 +208,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 	} while (res > 0);
 
 	slen += snprintf(buffer + slen, sizeof buffer - slen, 
-			 "</table></body></html>");
+			 "</table>\n</body>\n</html>\n");
 
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
 			FETCH_ERROR_NO_ERROR))
@@ -310,7 +311,9 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 #elif defined(WT_BRANCHISRELEASE)
 			"# This is a release build of NetSurf\n\n"
 #elif defined(WT_NO_SVN)
-			"# This NetSurf was built outside of our revision control environment.\n# This testament is therefore very useful.\n\n"
+			"# This NetSurf was built outside of our revision "
+			"control environment.\n"
+			"# This testament is therefore very useful.\n\n"
 #else
 			"# This NetSurf was built from a branch.\n\n"
 #endif
@@ -414,16 +417,17 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 		goto fetch_about_config_handler_aborted;
 
 	slen = snprintf(buffer, sizeof buffer, 
-			"<html><head><title>NetSurf List of About pages</title>"
-			"<link rel=\"stylesheet\" title=\"Standard\" "
-			"type=\"text/css\" href=\"resource:internal.css\">"
-			"</head>"
-			"<body id =\"aboutlist\">"
+			"<html>\n<head>\n"
+			"<title>NetSurf List of About pages</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"aboutlist\">\n"
 			"<p class=\"banner\">"
 			"<a href=\"http://www.netsurf-browser.org/\">"
 			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
-			"</p>"
-			"<h1>NetSurf List of About pages</h1>"
+			"</p>\n"
+			"<h1>NetSurf List of About pages</h1>\n"
 			"<ul>\n");
 
 	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
@@ -452,7 +456,7 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx)
 	}
 
 	slen += snprintf(buffer + slen, sizeof buffer - slen, 
-			 "</ul></body></html>");
+			 "</ul>\n</body>\n</html>\n");
 
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
 			FETCH_ERROR_NO_ERROR))
