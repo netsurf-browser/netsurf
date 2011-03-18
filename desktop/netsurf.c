@@ -95,6 +95,7 @@ nserror netsurf_init(int *pargc,
 		     const char *messages)
 {
 	struct utsname utsname;
+	nserror ret = NSERROR_OK;
 
 #ifdef HAVE_SIGPIPE
 	/* Ignore SIGPIPE - this is necessary as OpenSSL can generate these
@@ -152,7 +153,9 @@ nserror netsurf_init(int *pargc,
 	/* Initialize system colours */
 	gui_system_colour_init();
 
-	return NSERROR_OK;
+	options_commandline(pargc, *pargv);
+
+	return ret;
 }
 
 

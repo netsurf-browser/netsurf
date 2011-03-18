@@ -190,5 +190,10 @@ void options_dump(FILE *outf);
 int options_snoptionf(char *string, size_t size, unsigned int option,
 		const char *fmt);
 
+/**
+ * Process commandline and set options approriately.
+ */
+void options_commandline(int *pargc, char **argv);
+
 #endif
 

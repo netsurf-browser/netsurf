@@ -342,14 +342,50 @@ struct option_entry_s option_table[] = {
 
 #define option_table_entries (sizeof option_table / sizeof option_table[0])
 
+/**
+ * Set an option value based on a string
+ */
+static bool 
+strtooption(const char *value, struct option_entry_s *option_entry)
+{
+	bool ret = false;
+	colour rgbcolour; /* RRGGBB */
 
+	switch (option_entry->type) {
+	case OPTION_BOOL:
+		*((bool *)option_entry->p) = value[0] == '1';
+		ret = true;
+		break;
+
+	case OPTION_INTEGER:
+		*((int *)option_entry->p) = atoi(value);
+		ret = true;
+		break;
+
+	case OPTION_COLOUR:
+		sscanf(value, "%x", &rgbcolour);
+		*((colour *)option_entry->p) =
+			((0x000000FF & rgbcolour) << 16) |
+			((0x0000FF00 & rgbcolour) << 0) |
+			((0x00FF0000 & rgbcolour) >> 16);
+		ret = true;
+		break;
+
+	case OPTION_STRING:
+		free(*((char **)option_entry->p));
+		*((char **)option_entry->p) = strdup(value);
+		ret = true;
+		break;
+	}
+
+	return ret;
+}
 
 /* exported interface documented in options.h */
 void options_read(const char *path)
 {
 	char s[100];
 	FILE *fp;
-	colour rgbcolour; /* RRGGBB */
 
 	fp = fopen(path, "r");
 	if (!fp) {
@@ -374,34 +410,7 @@ void options_read(const char *path)
 			if (strcasecmp(s, option_table[i].key) != 0)
 				continue;
 
-			switch (option_table[i].type) {
-			case OPTION_BOOL:
-				*((bool *) option_table[i].p) =
-					value[0] == '1';
-				break;
-
-			case OPTION_INTEGER:
-				*((int *) option_table[i].p) =
-					atoi(value);
-				break;
-
-			case OPTION_COLOUR:
-				sscanf(value, "%x", &rgbcolour);
-				*((colour *) option_table[i].p) =
-					((0x000000FF &
-					  rgbcolour) << 16) |
-					((0x0000FF00 &
-					  rgbcolour) << 0) |
-					((0x00FF0000 &
-					  rgbcolour) >> 16);
-				break;
-
-			case OPTION_STRING:
-				free(*((char **) option_table[i].p));
-				*((char **) option_table[i].p) =
-					strdup(value);
-				break;
-			}
+			strtooption(value, option_table + i);
 			break;
 		}
 	}
@@ -568,6 +577,64 @@ static size_t options_output_value_text(struct option_entry_s *option,
 	return slen;
 }
 
+/* exported interface documented in options.h */
+void options_commandline(int *pargc, char **argv)
+{
+	char *arg;
+	char *val;
+	int arglen;
+	int idx = 1;
+	int mv_loop;
+
+	unsigned int entry_loop;
+
+	while (idx < *pargc) {
+		arg = argv[idx];
+		arglen = strlen(arg);
+
+		/* check we have an option */
+		/* option must start -- and be as long as the shortest option*/
+		if ((arglen < (2+5) ) || (arg[0] != '-') || (arg[1] != '-'))
+			break;
+
+		arg += 2; /* skip -- */
+
+		val = strchr(arg, '=');
+		if (val == NULL) {
+			/* no equals sign - next parameter is val */
+			idx++;
+			if (idx >= *pargc)
+				break;
+			val = argv[idx];
+		} else {
+			/* equals sign */
+			arglen = val - arg ;
+			val++;
+		}
+
+		/* arg+arglen is the option to set, val is the value */
+
+		LOG(("%.*s = %s",arglen,arg,val));
+
+		for (entry_loop = 0; 
+		     entry_loop < option_table_entries; 
+		     entry_loop++) {
+			if (strncmp(arg, option_table[entry_loop].key, 
+				    arglen) == 0) { 
+				strtooption(val, option_table + entry_loop);
+				break;
+			}			
+		}
+
+		idx++;
+	}
+
+	/* remove processed options from argv */
+	for (mv_loop=0;mv_loop < (*pargc - idx); mv_loop++) {
+		argv[mv_loop + 1] = argv[mv_loop + idx];
+	}
+	*pargc -= (idx - 1);
+}
 
 /* exported interface documented in options.h */
 int options_snoptionf(char *string, size_t size, unsigned int option,
