@@ -3746,8 +3746,8 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	gui_window_remove_caret(g);
 
 	GetAttr(SPACE_AreaBox,g->shared->objects[GID_BROWSER],(ULONG *)&bbox);
-	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
-	ami_get_vscroll_pos(g->shared, (ULONG *)&ys);
+	xs = g->scrollx;
+	ys = g->scrolly;
 
 	SetAPen(g->shared->win->RPort,3);
 
