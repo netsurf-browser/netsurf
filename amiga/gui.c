@@ -3755,14 +3755,12 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 
 	if(((x-xs) <= 0) || ((x-xs+2) >= (bbox->Width)) || ((y-ys) <= 0) || ((y-ys) >= (bbox->Height))) return;
 
-/* Backup the area under the cursor - args need checking
-	BltBitMap(g->shared->win->RPort->BitMap, bbox->Left+x-xs, bbox->Top+y-ys,
-		browserglob.bm, x-xs, y-ys,2+1, height+1, 0x0C0, 0xff, NULL);
-*/
+	g->c_w = 2;
 
 	SetDrMd(g->shared->win->RPort,COMPLEMENT);
 
-	RectFill(g->shared->win->RPort,x+bbox->Left-xs,y+bbox->Top-ys,x+bbox->Left+2-xs,y+bbox->Top+height-ys);
+	RectFill(g->shared->win->RPort, x + bbox->Left - xs, y + bbox->Top - ys,
+		x + bbox->Left + g->c_w - xs, y+bbox->Top + height - ys);
 
 	SetDrMd(g->shared->win->RPort,JAM1);
 
@@ -3787,11 +3785,8 @@ void gui_window_remove_caret(struct gui_window *g)
 		(g->shared->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
-	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
-	ami_get_hscroll_pos(g->shared, (ULONG *)&xs);
-	ami_get_vscroll_pos(g->shared, (ULONG *)&ys);
-
-	BltBitMapRastPort(browserglob.bm,g->c_x-xs,g->c_y-ys,g->shared->win->RPort,bbox->Left+g->c_x-xs,bbox->Top+g->c_y-ys,2+1,g->c_h+1,0x0C0);
+	ami_do_redraw_limits(g, g->shared->bw, g->c_x, g->c_y,
+		g->c_x + g->c_w + 1, g->c_y + g->c_h + 1);
 
 	g->c_h = 0;
 }
