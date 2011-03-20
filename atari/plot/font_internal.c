@@ -24,6 +24,8 @@
 #include "utils/utf8.h"
 #include "utils/log.h"
 
+#include <windom.h>
+
 
 static int dtor( FONT_PLOTTER self );
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 	const char * str, size_t length, int * width  );
@@ -43,6 +45,10 @@ const struct fb_font_desc font_italic;
 const struct fb_font_desc font_bold;
 const struct fb_font_desc font_italic_bold;
 
+static MFDB tmp;
+static int tmp_mfdb_size;
+
+#define FONTDATAMAX 4096
 
 static const struct fb_font_desc*
 fb_get_font(const plot_font_style_t *fstyle)
@@ -92,6 +98,9 @@ int ctor_font_plotter_internal( FONT_PLOTTER self )
 
 static int dtor( FONT_PLOTTER self )
 {
+	if( tmp.fd_addr != NULL ){
+		free( tmp.fd_addr ); 
+	}
 	return( 1 );
 }
 
@@ -169,28 +178,73 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 
     utf8_to_font_encoding(fb_font, text, length, &buffer);
     if (buffer == NULL)
-        return true;
+        return 1;
 
         /* y is given to the fonts baseline we need it to the fonts top */
-        y-=((fb_font->height * 75)/100);
+	y-=((fb_font->height * 75)/100);
 
-        y+=1; /* the coord is the bottom-left of the pixels offset by 1 to make
+	/* needed? */
+    y+=1;  /* the coord is the bottom-left of the pixels offset by 1 to make
                *   it work since fb coords are the top-left of pixels
                */
-	c =  fstyle->foreground;
-	/* in -> BGR */
-	/* out -> ARGB */
-	c = (ABGR_TO_RGB(c) | 0xFF);
     blen = strlen(buffer);
-    loc.g_y = y;
-    loc.g_w = fb_font->width;
-    loc.g_h = fb_font->height;
-    for (chr = 0; chr < blen; chr++) {
-        loc.g_x = x;
-        chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
-        draw_glyph1(self, &loc, (uint8_t *)chrp, 32, c);
-        x+=fb_font->width;
-    }
+	if ( blen < 1 ) {
+		return( 1 );
+	}
+	
+	if( self->plotter->flags & PLOT_FLAG_OFFSCREEN ){
+		/* 	when the plotter is an offscreen plotter the call to 
+			bitmap() isn't that expensive. Draw an 8 bit bitmap into the 
+			offscreen buffer. 
+		*/
+		c =  fstyle->foreground;
+		/* in -> BGR */
+		/* out -> ARGB */
+		c = (ABGR_TO_RGB(c) | 0xFF);
+    	loc.g_y = y;
+		loc.g_x = x;
+    	loc.g_w = fb_font->width;
+    	loc.g_h = fb_font->height;
+    	for (chr = 0; chr < blen; chr++) {
+        	loc.g_x = x;
+        	chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
+        	draw_glyph1(self, &loc, (uint8_t *)chrp, 32, c);
+        	x+=fb_font->width;
+    	}
+	} else {
+		/* render the whole string into an monochrom mfdb */
+		/* and plot that to reduce overhead */
+		loc.g_x = x;
+    	loc.g_y = y;
+    	loc.g_w = blen * fb_font->width;
+		assert( loc.g_w > 0 );
+    	loc.g_h = fb_font->height;
+		int stride = MFDB_STRIDE( loc.g_w );
+		if( tmp.fd_addr == NULL || tmp_mfdb_size < MFDB_SIZE( 1, stride, loc.g_h) ){
+			tmp_mfdb_size = init_mfdb( 1, loc.g_w, loc.g_h+1,  MFDB_FLAG_STAND | MFDB_FLAG_ZEROMEM, &tmp );
+		} else {
+			void * buf = tmp.fd_addr;
+			int size = init_mfdb( 1, loc.g_w, loc.g_h+1,  MFDB_FLAG_STAND | MFDB_FLAG_NOALLOC, &tmp );
+			tmp.fd_addr = buf;
+			memset( tmp.fd_addr, 0, size );
+		}
+		int ypos;		
+		int rowsize = tmp.fd_wdwidth << 1;
+		char * d;
+		uint32_t * pp;
+		for (chr = 0; chr < blen; chr++) {
+        	pp = (uint32_t*)fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
+			d = ((uint8_t*)tmp.fd_addr) + chr;
+			for( ypos=0; (unsigned int)ypos<loc.g_h; ypos++){
+				*d = (unsigned char)*pp++;
+				d += rowsize;
+			}
+    	}
+		unsigned short out[4];
+		rgb_to_vdi1000( (unsigned char*)&fstyle->foreground, (unsigned short*)&out );
+		vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
+		self->plotter->plot_mfdb( self->plotter, &loc, &tmp, PLOT_FLAG_TRANS );	
+	}
 
     free(buffer);
 	return( 1 );
@@ -199,8 +253,6 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 /* ------------------*/
 /* Fontdata 		 */
 /* ------------------*/
-
-#define FONTDATAMAX 4096
 
 static const uint32_t fontdata_bold[FONTDATAMAX] = {
 	0x00, 0xFE, 0x00, 0xEE, 0xAA, 0xAA, 0xAA, 0xEE,

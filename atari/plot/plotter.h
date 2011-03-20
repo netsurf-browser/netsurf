@@ -38,6 +38,7 @@
 #include "utils/log.h"
 
 #ifndef ceilf
+#warning "ceilf emulation"
 #define ceilf(x) (float)ceil((double)x)
 #endif
 
@@ -54,6 +55,10 @@
 #define PLOT_FLAG_LOCKED 	0x02
 #define PLOT_FLAG_DITHER 	0x04
 #define PLOT_FLAG_TRANS		0x08
+
+#define MFDB_FLAG_STAND			0x01
+#define MFDB_FLAG_ZEROMEM		0x02
+#define MFDB_FLAG_NOALLOC		0x04
 
 /* Error codes: */
 #define ERR_BUFFERSIZE_EXCEEDS_SCREEN 1
@@ -168,6 +173,7 @@ typedef	int (*_pmf_path)(GEM_PLOTTER self, const float *p, unsigned int n, int f
 typedef	int (*_pmf_bitmap_resize) ( GEM_PLOTTER self, struct bitmap * bm, int nw, int nh );
 typedef	int (*_pmf_bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 				unsigned long bg, unsigned long flags );
+typedef int (*_pmf_plot_mfdb)(GEM_PLOTTER self, GRECT * loc, MFDB * mfdb, uint32_t flags);
 typedef	int (*_pmf_text)(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
 typedef	int (*_pmf_dtor)(GEM_PLOTTER self);
 
@@ -206,6 +212,7 @@ struct s_gem_plotter
 	_pmf_path path;
 	_pmf_bitmap_resize bitmap_resize;
 	_pmf_bitmap bitmap;
+	_pmf_plot_mfdb plot_mfdb;
 	_pmf_text text;
 	_pmf_dtor dtor;
 };
@@ -296,9 +303,10 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
 	If bpp == 0, this function assumes that the MFDB shall point to the screen
 	and will not allocate any memory (mfdb.fd_addr == 0).  
 	The function will return 0 when the memory allocation fails 
-	( out of memory).
+	( out of memory), otherwise it returns the size of the mfdb.fd_addr
+  as number of bytes.    
 */
-int init_mfdb(int bpp, int w, int h, bool stand, MFDB * out );
+int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out );
 
 /* shared / static methods follows */
 
@@ -308,9 +316,20 @@ int init_mfdb(int bpp, int w, int h, bool stand, MFDB * out );
 int plotter_get_clip( GEM_PLOTTER self, struct rect * out );
 
 /*
+	Get clipping for current framebuffer as GRECT
+*/
+void plotter_get_clip_grect( GEM_PLOTTER self, GRECT * out );
+
+/*
+	Get current visible coords 
+*/
+void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out );
+
+/*
 	Set clipping for current framebuffer
 */
 int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
+
 
 /*
 	convert framebuffer clipping to vdi clipping and activates it 
@@ -358,5 +377,6 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 #define OFFSET_CUSTOM_COLOR 255
 #define RGB_TO_VDI(c) rgb_to_666_index( (c&0xFF),(c&0xFF00)>>8,(c&0xFF0000)>>16)+OFFSET_WEB_PAL
 #define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8 
+#define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
 
 #endif

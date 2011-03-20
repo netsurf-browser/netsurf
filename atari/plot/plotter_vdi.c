@@ -65,6 +65,7 @@ static int path(GEM_PLOTTER self,const float *p, unsigned int n, int fill, float
 static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh );
 static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 					unsigned long bg, unsigned long flags );
+static int plot_mfdb( GEM_PLOTTER self, GRECT * where, MFDB * mfdb, uint32_t flags);
 static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, const plot_font_style_t *fstyle);
 
 static unsigned short sys_pal[256][3]; /*RGB*/
@@ -143,6 +144,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->path = path;
 	self->bitmap = bitmap;
 	self->bitmap_resize = bitmap_resize;
+	self->plot_mfdb = plot_mfdb;
 	self->text = text;
 	LOG(("Screen: x: %d, y: %d\n", vdi_sysinfo.scr_w, vdi_sysinfo.scr_h));
 
@@ -352,10 +354,7 @@ static int update_region( GEM_PLOTTER self, GRECT region )
 	int src_offs;
 	GRECT screen_area, tmp, visible;
 	short pxy[10];
-	visible.g_x = CURFB(self).vis_x;
-	visible.g_y = CURFB(self).vis_y;
-	visible.g_w = CURFB(self).vis_w;
-	visible.g_h = CURFB(self).vis_h;
+	plotter_get_visible_grect( self, &visible );
 
 /*
 	LOG(("%s: %s %d\n", (char*)__FILE__, __FUNCTION__, __LINE__));
@@ -453,10 +452,7 @@ static int copy_rect( GEM_PLOTTER self, GRECT src, GRECT dst )
 	GRECT vis;
 
 	/* clip to visible rect, only needed for onscreen renderer: */
-	vis.g_x = CURFB(self).vis_x;
-	vis.g_y = CURFB(self).vis_y;
-	vis.g_w = CURFB(self).vis_w;
-	vis.g_h = CURFB(self).vis_h;
+	plotter_get_visible_grect( self, &vis );
 
 	if( !rc_intersect(&vis, &src) )
 		return 1;
@@ -990,10 +986,7 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 		return( true );
 	}
 
-	vis.g_x = CURFB(self).vis_x;
-	vis.g_y = CURFB(self).vis_y;
-	vis.g_w = CURFB(self).vis_w;
-	vis.g_h = CURFB(self).vis_h;
+	plotter_get_visible_grect( self, &vis );
 	if( !rc_intersect( &vis, &off) ) {
 		return( true );
 	}
@@ -1018,6 +1011,64 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	vro_cpyfm( self->vdi_handle, S_ONLY, (short*)&pxy, &src_mf,  &scrmf);
 	convert_bitmap_done( self );
 	return( true );
+}
+
+static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flags)
+{
+
+	MFDB screen, tran;
+	MFDB * src;
+	short pxy[8];
+	short pxyclip[4];
+	short c[2] = {OFFSET_CUSTOM_COLOR, WHITE};	
+	plotter_vdi_clip(self, true);
+
+	init_mfdb( 0, loc->g_w, loc->g_h, 0, &screen );
+
+	pxy[0] = 0;
+	pxy[1] = 0;
+	pxy[2] = loc->g_w -1;
+	pxy[3] = loc->g_h -1;
+	pxy[4] = CURFB(self).x + loc->g_x;
+	pxy[5] = CURFB(self).y + loc->g_y;
+	pxy[6] = pxy[4] + loc->g_w -1;
+	pxy[7] = pxy[5] + loc->g_h -1;
+
+	if( insrc->fd_stand ){
+		int size = init_mfdb( insrc->fd_nplanes, loc->g_w, loc->g_h, 
+			MFDB_FLAG_NOALLOC, 
+			&tran 
+		);
+		if( DUMMY_PRIV(self)->size_buf_scr == 0 ){
+			DUMMY_PRIV(self)->buf_scr.fd_addr = malloc( size );
+			DUMMY_PRIV(self)->size_buf_scr = size;
+		} else {
+			if( size > DUMMY_PRIV(self)->size_buf_scr ) {
+				DUMMY_PRIV(self)->buf_scr.fd_addr = realloc( 
+					DUMMY_PRIV(self)->buf_scr.fd_addr, size
+				);
+				DUMMY_PRIV(self)->size_buf_scr = size;
+			}
+		}		
+		tran.fd_addr = DUMMY_PRIV(self)->buf_scr.fd_addr;
+		vr_trnfm( self->vdi_handle, insrc, &tran );
+		src = &tran;
+	} else {
+		src = insrc;
+	}
+
+	if( flags & PLOT_FLAG_TRANS && src->fd_nplanes == 1){
+		vrt_cpyfm( self->vdi_handle, MD_TRANS, (short*)pxy, src, &screen, (short*)&c );
+	} else {
+		
+	}
+	if( insrc->fd_stand ){ 
+		// TODO: shrink conv buffer 
+	}
+	
+
+	plotter_vdi_clip(self, false);
+	return( 1 );
 }
 
 static int text(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle)

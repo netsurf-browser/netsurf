@@ -683,16 +683,22 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 }
 
 
-int init_mfdb(int bpp, int w, int h, bool stand, MFDB * out )
+int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
 {
 	int dststride;
 	dststride = MFDB_STRIDE( w );
+	int size = MFDB_SIZE( bpp, dststride, h ); 
 	if( bpp > 0 ) { 
-		out->fd_addr = malloc( ((dststride >> 3) * h) * bpp );
-		if( out->fd_addr == NULL ){
-			return( 0 );
+		if( (flags & MFDB_FLAG_NOALLOC) == 0  ) { 
+			out->fd_addr = malloc( size );
+			if( out->fd_addr == NULL ){
+				return( 0 );
+			}
+			if( (flags & MFDB_FLAG_ZEROMEM) ){
+				memset( out->fd_addr, 0, size );
+			}
 		}
-		out->fd_stand = stand;
+		out->fd_stand = (flags & MFDB_FLAG_STAND) ? 1 : 0;
 		out->fd_nplanes = (short)bpp;
 		out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
 	} else {
@@ -701,7 +707,7 @@ int init_mfdb(int bpp, int w, int h, bool stand, MFDB * out )
 	out->fd_w = dststride;
 	out->fd_h = h;
 	out->fd_wdwidth = dststride >> 4;
-	return( 1 );
+	return( size );
 }
 
 
@@ -714,6 +720,21 @@ int plotter_get_clip( GEM_PLOTTER self, struct rect * out )
 	return( 1 );
 }
 
+void plotter_get_clip_grect( GEM_PLOTTER self, GRECT * out )
+{
+	out->g_x = self->clipping.x0;
+	out->g_y = self->clipping.y0;
+	out->g_w = self->clipping.x1 - self->clipping.x0;
+	out->g_h = self->clipping.y1 - self->clipping.y0;
+}
+
+void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out )
+{
+	out->g_x = self->clipping.x0;
+	out->g_y = self->clipping.y0;
+	out->g_w = self->clipping.x1 - self->clipping.x0;
+	out->g_h = self->clipping.y1 - self->clipping.y0;
+}
 
 int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip)
 {
