@@ -145,6 +145,7 @@ Technical info & outlook
 Greetings & Thanks
 ------------------
 
+ - AtFact for providing help with resource files & images
  - The MiNT Mailing list, they all helped me a lot!
  - The NetSurf Mailing list guys, especially the Amiga guys.
  - The NetSurf developers that did a great job! 
@@ -152,6 +153,7 @@ Greetings & Thanks
  - Everyone that provides feedback! 
  - The forum.atari-home.de members for giving me much help 
    during setup of my atari!
+
 
 ----
 M0N0 - 19.02.2011
