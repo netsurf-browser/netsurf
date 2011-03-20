@@ -113,6 +113,10 @@ struct s_browser * browser_create(  struct gui_window * gw,
 								browser_evnt_wdestroy, (void*)bnew );
 
 		mt_CompDataAttach( &app, bnew->comp, CDT_OWNER, gw ); 
+		bnew->scroll.requested.y = 0;	
+		bnew->scroll.requested.x = 0;
+		bnew->scroll.current.x = 0;
+		bnew->scroll.current.y = 0;
 	}
 	return( bnew );
 }
@@ -440,11 +444,12 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 	}
 
 
-
 	switch( mode ) {
 
 		case WA_UPPAGE:
 		case WA_UPLINE: 
+			if( max_y_scroll < 1 )
+				return;
 			if( abs == false )
 				b->scroll.requested.y -= value;
 			else 
@@ -453,6 +458,8 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 
 		case WA_DNPAGE:
 		case WA_DNLINE:
+			if( max_y_scroll < 1 )
+				return;
 			if( abs == false )
 				b->scroll.requested.y += value;
 			else
@@ -461,6 +468,8 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 
 		case WA_LFPAGE:
 		case WA_LFLINE: 
+			if( max_x_scroll < 1 )
+				return;
 			if( abs == false )
 				b->scroll.requested.x -= value;
 			else
@@ -469,6 +478,8 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 
 		case WA_RTPAGE:
 		case WA_RTLINE:
+			if( max_x_scroll < 1 )
+				return;
 			if( abs == false )
 				b->scroll.requested.x += value;
 			else
@@ -861,27 +872,11 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 
 	current_redraw_browser = b->bw;
 
-	if(content_get_type(b->bw->current_content) == CONTENT_HTML ) {
-		clip.x0 = b->redraw.area.x0;
-		clip.y0 = b->redraw.area.y0;
-		clip.x1 = b->redraw.area.x1;
-		clip.y1 = b->redraw.area.y1;
-	} else {
-		/* totally different coords, I don't understand why! */
-		clip.x0 = b->redraw.area.x0 + b->scroll.current.x;
-		clip.y0 = b->redraw.area.y0 + b->scroll.current.y;
-		clip.x1 = b->redraw.area.x1 + b->scroll.current.x;
-		clip.y1 = b->redraw.area.y1 + b->scroll.current.y;
-		/* must clear the surface: */
-		plot.clip( &clip );
-		plot.rectangle( b->redraw.area.x0, 
-						b->redraw.area.y0, 
-						b->redraw.area.x1, 
-						b->redraw.area.y1, 
-						plot_style_fill_white
-		);	
-	}
-
+	clip.x0 = b->redraw.area.x0;
+	clip.y0 = b->redraw.area.y0;
+	clip.x1 = b->redraw.area.x1;
+	clip.y1 = b->redraw.area.y1;
+	
 	browser_window_redraw( b->bw, -b->scroll.current.x,
 			-b->scroll.current.y, &clip );
 
