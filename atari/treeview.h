@@ -40,7 +40,7 @@ struct atari_treeview
 
 typedef struct atari_treeview * NSTREEVIEW;
 
-NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW * win ) ;
+NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW * win );
 void atari_treeview_destroy( NSTREEVIEW tv );
 void atari_treeview_open( NSTREEVIEW tv );
 void atari_treeview_close( NSTREEVIEW tv );
