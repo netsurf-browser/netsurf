@@ -24,7 +24,7 @@
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
 
   # no pkg-config for this library
-  $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
+  $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
 
   GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-DGTK_DISABLE_DEPRECATED \

@@ -53,7 +53,7 @@ NETSURF_USE_PNG := YES
 # Valid options: YES, NO	  (at least one of PNG/MNG highly recommended)
 NETSURF_USE_MNG := YES
 
-# Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+# Enable NetSurf's use of libwebp for displaying WebPs
 # Valid options: YES, NO
 NETSURF_USE_WEBP := NO
 
@@ -220,7 +220,7 @@ ifeq ($(TARGET),amiga)
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := YES
 
-  # Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+  # Enable NetSurf's use of libwebp for displaying WebPs
   # Valid options: YES, NO
   NETSURF_USE_WEBP := YES
 
@@ -340,7 +340,7 @@ ifeq ($(TARGET),atari)
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := NO
 
-  # Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+  # Enable NetSurf's use of libwebp for displaying WebPs
   # Valid options: YES, NO
   NETSURF_USE_WEBP := NO
 
@@ -379,7 +379,7 @@ ifeq ($(TARGET),cocoa)
   # Valid options: YES, NO, AUTO
   NETSURF_USE_ROSPRITE := NO
 
-  # Enable NetSurf's use of libwebp/libvpx for displaying WebPs
+  # Enable NetSurf's use of libwebp for displaying WebPs
   # Valid options: YES, NO
   NETSURF_USE_WEBP := NO
 

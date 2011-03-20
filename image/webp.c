@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <webpimg.h>
+#include <webp/decode.h>
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "content/content_protected.h"
@@ -44,24 +44,21 @@
 bool webp_convert(struct content *c)
 {
 	union content_msg_data msg_data;
-	const uint8 *data;
+	const uint8_t *data;
 	unsigned char *imagebuf = NULL;
-	uint32 *imagebufptr = NULL;
+	uint32_t *imagebufptr = NULL;
 	unsigned long size;
-	uint8 *Y = NULL, *U = NULL, *V = NULL;
 	int width = 0, height = 0;
-	uint32 offset = 0;
-	uint8 r, g, b, a;
 	char title[100];
-	WebPResult res = webp_success;
+	int res = 0;
+	uint8_t *res_p = NULL;
 
 	data = (uint8 *)content__get_source_data(c, &size);
 
-	res = WebPDecode(data, size, &Y, &U, &V, &width, &height);
-	if (res != webp_success) {
+	res = WebPGetInfo(data, size, &width, &height);
+	if (res == 0) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		if(Y) free(Y);
 		return false;
 	}
 
@@ -69,35 +66,23 @@ bool webp_convert(struct content *c)
 	if (!c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		if(Y) free(Y);
 		return false;
 	}
+
 	imagebuf = bitmap_get_buffer(c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		if(Y) free(Y);
 		return false;
 	}
-	unsigned int row_width = bitmap_get_rowstride(c->bitmap) / 4;
+	unsigned int row_width = bitmap_get_rowstride(c->bitmap);
 
-	YUV420toRGBA(Y, U, V, row_width, width, height, (uint32 *)imagebuf);
-
-	if(Y) free(Y);
-
-	/* Decoded data is RGBA on both big- and little-endian platforms,
-	 * so ensure correct byte order. */
-
-	size = width * height * 4;
-
-	for (offset = 0; offset < size; offset += 4) {
-		a = imagebuf[offset+3];
-		b = imagebuf[offset+2];
-		g = imagebuf[offset+1];
-		r = imagebuf[offset];
-
-		imagebufptr = imagebuf + offset;
-		*imagebufptr = r << 24 | g << 16 | b << 8 | a;
+	res_p = WebPDecodeRGBAInto(data, size, imagebuf,
+				row_width * height, row_width);
+	if (res_p == NULL) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
 	}
 
 	c->width = width;
