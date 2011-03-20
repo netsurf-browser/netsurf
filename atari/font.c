@@ -21,9 +21,6 @@
 #include <stdbool.h>
 #include <windom.h>
 
-#include <ft2build.h>
-#include FT_CACHE_H
-
 #include "css/css.h"
 #include "render/font.h"
 #include "utils/utf8.h"

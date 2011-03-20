@@ -50,6 +50,7 @@
 #include "desktop/mouse.h"
 #include "render/html.h"
 #include "render/font.h"
+#include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -150,7 +151,7 @@ void gui_poll(bool active)
 	/* right now, schedule is only used for the spinner, */
 	/* spinner code must be reviewed, so disable schedule for now */
 	timeout = schedule_run(); 
-	if ( active )
+	if ( active || browser_reformat_pending )
 		timeout = 1;
 
 	if(input_window) {
@@ -175,7 +176,7 @@ void gui_poll(bool active)
 		}
 		/* if we have some state that can't be recognized by evnt_multi, don't block
 			so tracking can take place after timeout: */
-		if( MOUSE_IS_DRAGGING() ) // MOUSE_EVNT_IN_PROGRESS()
+		if( MOUSE_IS_DRAGGING() ) 
 			timeout = 1;
 	}
 
@@ -347,9 +348,9 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 		return;
 	/* TODO: query AES for max. title length */
 	if( gw->root && gw->parent == NULL ){
-		strncpy((char*)&gw->root->title, title, 79);
-		gw->root->title[79] = 0;
-		WindSetStr( gw->root->handle, WF_NAME, (char *)&gw->root->title );
+		strncpy(gw->root->title, title, atari_sysinfo.aes_max_win_title_len);
+		gw->root->title[atari_sysinfo.aes_max_win_title_len] = 0;
+		WindSetStr( gw->root->handle, WF_NAME, gw->root->title );
 	}
 }
 
@@ -463,8 +464,8 @@ void gui_window_update_extent(struct gui_window *gw)
 			gw->browser->bw->scale
 		);*/
 		browser_set_content_size( gw, 
-			content_get_width(gw->browser->bw->current_content), 
-			content_get_height(gw->browser->bw->current_content) 
+			content_get_width(gw->browser->bw->current_content),
+			content_get_height(gw->browser->bw->current_content)
 		);
 	}
 }
@@ -1051,7 +1052,15 @@ static inline void create_cursor(int flags, short mode, void * form, MFORM_EX * 
 
 char* gui_get_resource_url(const char *filename)
 {
-	return NULL;
+	char buf[PATH_MAX];
+	int len;
+	char * ret;
+	printf("gui_find_res: %s\n", filename);
+	atari_find_resource((char*)&buf, filename, filename); 
+	printf("found: %s\n", (char*)&buf);
+	/* TODO: handle failure? */
+	len = strlen( (char*)&buf ) + 1;
+	return( path_to_url((char*)&buf) );
 }
 
 static void gui_init(int argc, char** argv)
@@ -1124,13 +1133,15 @@ static void gui_init(int argc, char** argv)
 	atari_plotter_init( option_atari_screen_driver, option_atari_font_driver );
 }
 
+static char *theapp = "NetSurf";
 static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
 	MenuBar( h_gem_menu , 1 );
 	bind_global_events();
-	if( atari_sysinfo.gemdos_version > TOS4VER ) {
+	menu_register( -1, theapp);
+	if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
 }
