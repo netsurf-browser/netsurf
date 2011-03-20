@@ -217,7 +217,7 @@ struct s_gui_win_root
 	struct s_focus_info focus;
 	float scale;
 	bool throbbing;
-	char title[80];
+	char * title;
 	GRECT loc;	/* current size of window on screen */
 };
 

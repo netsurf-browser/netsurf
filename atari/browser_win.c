@@ -55,6 +55,7 @@
 #include "atari/plot/plotter.h"
 #include "atari/dragdrop.h"
 #include "atari/search.h"
+#include "atari/osspec.h"
 
 
 bool cfg_rt_resize = false;
@@ -116,6 +117,7 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	if( gw->root == NULL )
 		return( -1 );
 	memset( gw->root, 0, sizeof(struct s_gui_win_root) );
+	gw->root->title = malloc(atari_sysinfo.aes_max_win_title_len+1);
 	gw->root->handle = WindCreate( flags,40, 40, app.w, app.h );
 	gw->root->cmproot = mt_CompCreate(&app, CLT_VERTICAL, 1, 1);
 	WindSetPtr( gw->root->handle, WF_COMPONENT, gw->root->cmproot, NULL);
@@ -140,8 +142,9 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	}
 
 	WindSetStr(gw->root->handle, WF_ICONTITLE, (char*)"NetSurf");
+	
+	/* Event Handlers: */
 	EvntDataAttach( gw->root->handle, WM_CLOSED, evnt_window_close, NULL );
-
 	/* capture resize/move events so we can handle that manually */
 	if( !cfg_rt_resize ) {
 		EvntAttach( gw->root->handle, WM_SIZED, evnt_window_resize);
@@ -206,6 +209,9 @@ int window_destroy( struct gui_window * gw)
 	/* needed? */ /*listRemove( (LINKABLE*)gw->root->cmproot ); */
 	LOG(("Freeing root window"));
 	if( gw->root ) {
+		/* TODO: check if no other browser is bound to this root window! */
+		if( gw->root->title )
+			free( gw->root->title ); 
 		if( gw->root->cmproot )
 			mt_CompDelete( &app, gw->root->cmproot );
 		ApplWrite( _AESapid, WM_DESTROY, gw->root->handle->handle, 0, 0, 0, 0);
