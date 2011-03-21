@@ -46,14 +46,13 @@ bool webp_convert(struct content *c)
 	union content_msg_data msg_data;
 	const uint8_t *data;
 	unsigned char *imagebuf = NULL;
-	uint32_t *imagebufptr = NULL;
 	unsigned long size;
 	int width = 0, height = 0;
 	char title[100];
 	int res = 0;
 	uint8_t *res_p = NULL;
 
-	data = (uint8 *)content__get_source_data(c, &size);
+	data = (uint8_t *)content__get_source_data(c, &size);
 
 	res = WebPGetInfo(data, size, &width, &height);
 	if (res == 0) {
