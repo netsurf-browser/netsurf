@@ -43,6 +43,8 @@
 
 #include "widget.h"
 
+#ifdef FBTK_LOGGING
+
 /* tree dump debug, also example of depth first tree walk */
 static void
 dump_tk_tree(fbtk_widget_t *widget)
@@ -72,6 +74,8 @@ dump_tk_tree(fbtk_widget_t *widget)
 		}
 	}
 }
+
+#endif 
 
 /* exported function documented in fbtk.h */
 void

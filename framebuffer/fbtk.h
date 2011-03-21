@@ -19,11 +19,19 @@
 #ifndef NETSURF_FB_FBTK_H
 #define NETSURF_FB_FBTK_H
 
+#ifdef FBTK_LOGGING
+#define FBTK_LOG(x) LOG(x)
+#else
+#define FBTK_LOG(x)
+#endif
 
 #define FB_SCROLL_COLOUR 0xFFAAAAAA
 #define FB_FRAME_COLOUR 0xFFDDDDDD
 #define FB_COLOUR_BLACK 0xFF000000
 #define FB_COLOUR_WHITE 0xFFFFFFFF
+
+#define FBTK_WIDGET_PADDING 30 /* percentage of widget size used for padding */ 
+#define FBTK_DPI 90 /* screen DPI */
 
 typedef struct fbtk_widget_s fbtk_widget_t;
 

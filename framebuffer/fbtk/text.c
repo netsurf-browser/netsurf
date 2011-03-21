@@ -37,7 +37,7 @@
 
 #include "widget.h"
 
-#define TEXT_WIDGET_BORDER 3 /**< The pixel border round a text widget. */
+//#define TEXT_WIDGET_BORDER 3 /**< The pixel border round a text widget. */
 
 /* Lighten a colour by taking seven eights of each channel's intensity
  * and adding a full eighth
@@ -48,7 +48,7 @@
 	 ((((7 * (c1 & 0xff)) >> 3) + 32) << 0))
 
 /* Convert pixels to points, assuming a DPI of 90 */
-#define px_to_pt(x) (((x) * 72) / 90)
+#define px_to_pt(x) (((x) * 72) / FBTK_DPI)
 
 /** Text redraw callback.
  *
@@ -66,9 +66,9 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	fbtk_widget_t *root;
 	plot_font_style_t font_style;
 	int fh;
-	int border;
+	int padding;
 
-	border = (widget->height * 10) / 90;
+	padding = (widget->height * FBTK_WIDGET_PADDING) / 200;
 
 	root = fbtk_get_root_widget(widget);
 
@@ -84,15 +84,16 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		nsfb_plot_rectangle_fill(root->u.root.fb, &bbox, widget->bg);
 	}
 
+	/* widget can have a single pixel outline border */
 	if (widget->u.text.outline) {
 		rect.x1--;
 		rect.y1--;
 		nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0x00000000, false, false);
-		border++;
+		padding++;
 	}
 
 	if (widget->u.text.text != NULL) {
-		fh = widget->height - border - border;
+		fh = widget->height - padding - padding;
 		font_style.family = PLOT_FONT_FAMILY_SANS_SERIF;
 		font_style.size = px_to_pt(fh) * FONT_SIZE_SCALE;
 		font_style.weight = 400;
@@ -100,16 +101,16 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		font_style.background = widget->bg;
 		font_style.foreground = widget->fg;
 
-		LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d border %d",
+		FBTK_LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d padding %d",
 		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
-		     widget->width, widget->height, fh, border));
+		     widget->width, widget->height, fh, padding));
 		/* Call the fb text plotting, baseline is 3/4 down the
 		 * font, somewhere along the way the co-ordinate
 		 * system for the baseline is to the "higher value
 		 * pixel co-ordinate" due to this the + 1 is neccessary.
 		 */
-		plot.text(bbox.x0 + border,
-			  bbox.y0 + (((fh * 3) + 3)/4) + border + 1,
+		plot.text(bbox.x0 + padding,
+			  bbox.y0 + (((fh * 3) + 3)/4) + padding + 1,
 			  widget->u.text.text,
 			  strlen(widget->u.text.text),
 			  &font_style);
