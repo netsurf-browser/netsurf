@@ -96,6 +96,18 @@ const char *fetch_filetype(const char *unix_path)
 	// NOT THREADSAFE
 	static char type[B_MIME_TYPE_LENGTH];
 
+	// override reading the mime type for known types
+	// avoids getting CSS files as text/x-source-code
+	// even though it's the mime sniffer rules that should be fixed.
+	BString ext(unix_path);
+	ext.Remove(0, ext.FindLast('.') + 1);
+	for (i = 0; default_types[i].type; i++) {
+		if (ext == default_types[i].ext1)
+			return default_types[i].type;
+		if (ext == default_types[i].ext2)
+			return default_types[i].type;
+	}
+
 	BEntry entry(unix_path, true);
 	BNode node(&entry);
 	err = node.InitCheck();
@@ -109,18 +121,6 @@ const char *fetch_filetype(const char *unix_path)
 	err = info.InitCheck();
 	if (err < B_OK)
 		return "test/plain";
-
-	// override reading the mime type for known types
-	// avoids getting CSS files as text/x-source-code
-	// even though it's the mime sniffer rules that should be fixed.
-	BString ext(unix_path);
-	ext.Remove(0, ext.FindLast('.') + 1);
-	for (i = 0; default_types[i].type; i++) {
-		if (ext == default_types[i].ext1)
-			return default_types[i].type;
-		if (ext == default_types[i].ext2)
-			return default_types[i].type;
-	}
 
 	err = info.GetType(type);
 	if (err < B_OK) {

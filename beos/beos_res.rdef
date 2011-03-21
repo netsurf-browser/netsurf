@@ -25,6 +25,8 @@ resource(203, "ca-bundle.txt") #'data' import "res/ca-bundle.txt";
 resource(204, "messages") #'data' import "res/messages";
 /* resource(206, "about.en.html") #'data' import "res/about.en.html"; */
 /* resource(210, "netsurf.xpm") #'data' import "res/netsurf.xpm"; */
+resource(205, "netsurf.png") #'data' import "res/netsurf.png";
+resource(206, "internal.css") #'data' import "res/internal.css";
 
 /* throbber */
 resource(400, "throbber0.png") #'data' import "res/throbber/throbber0.png";
@@ -36,6 +38,11 @@ resource(405, "throbber5.png") #'data' import "res/throbber/throbber5.png";
 resource(406, "throbber6.png") #'data' import "res/throbber/throbber6.png";
 resource(407, "throbber7.png") #'data' import "res/throbber/throbber7.png";
 resource(408, "throbber8.png") #'data' import "res/throbber/throbber8.png";
+
+/*  */
+resource(500, "credits.html") #'data' import "res/en/credits.html,faf";
+resource(501, "licence.html") #'data' import "res/en/licence.html,faf";
+
 
 resource(1, "BEOS:APP_FLAGS") (#'APPF') $"01000000";
 

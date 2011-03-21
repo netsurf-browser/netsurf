@@ -171,17 +171,10 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 			"Malformed rsrc: URL", 0, FETCH_ERROR_URL);
 		return false;
 	}
-	comma = strchr(slash, ',');
+
+	// doesn't exist in the filesystem but we should hit the internal types.
+	c->mimetype = strdup(fetch_filetype(slash));
 	c->name = strdup(slash + 1);
-	
-	if (!comma) {
-		/* there is no mimetype here, assume text/plain */
-		c->mimetype = strdup("text/plain;charset=US-ASCII");
-	} else {	
-		/* make a copy of everything after the comma */
-		c->mimetype = strdup(comma + 1);
-		c->name[strlen(c->name) - strlen(comma)] = '\0';
-	}
 	
 	if (c->mimetype == NULL) {
 		fetch_rsrc_send_callback(FETCH_ERROR, c,

@@ -616,7 +616,7 @@ void gui_init(int argc, char** argv)
 	/* set up stylesheet urls */
 
 #ifdef USE_RESOURCES
-	default_stylesheet_url = strdup("rsrc:/beosdefault.css,text/css");
+	default_stylesheet_url = strdup("rsrc:/beosdefault.css");
 #else
 	find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");
 	default_stylesheet_url = path_to_url(buf);
@@ -625,7 +625,7 @@ void gui_init(int argc, char** argv)
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
 #ifdef USE_RESOURCES
-	quirks_stylesheet_url = strdup("rsrc:/quirks.css,text/css");
+	quirks_stylesheet_url = strdup("rsrc:/quirks.css");
 #else
 	find_resource(buf, "quirks.css", "./beos/res/quirks.css");
 	default_stylesheet_url = path_to_url(buf);
@@ -633,7 +633,7 @@ void gui_init(int argc, char** argv)
 
 
 #ifdef USE_RESOURCES
-	adblock_stylesheet_url = strdup("rsrc:/adblock.css,text/css");
+	adblock_stylesheet_url = strdup("rsrc:/adblock.css");
 #else
 	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
 	adblock_stylesheet_url = path_to_url(buf);
