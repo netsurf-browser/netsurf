@@ -117,6 +117,10 @@ S_TABBAR := $(addprefix cocoa/PSMTabBarControl/,$(S_TABBAR))
 SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA) $(S_TABBAR)
 SOURCES := $(addprefix $(shell pwd)/,$(SOURCES))
 
+# Since we prefix the sources with the pwd, also create a special
+# prefixed rule so that the testament is run
+$(shell pwd)/content/fetchers/about.c: testament
+
 EXETARGET := NetSurf
 
 S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib SearchWindow.xib PreferencesWindow.xib \
