@@ -1638,12 +1638,12 @@ static void create_local_windows_classes(void) {
 	w.cbClsExtra	= 0;
 	w.cbWndExtra	= 0;
 	w.hInstance	= hinstance;
-	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF32_ICON)); /* -> NetSurf */
+	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON)); 
 	w.hCursor	= NULL;
 	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
 	w.lpszMenuName	= NULL;
 	w.lpszClassName = windowclassname_main;
-	w.hIconSm	= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF16_ICON)); /* -> NetSurf */
+	w.hIconSm	= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
 	RegisterClassEx(&w);
 
 	/* drawable area */
