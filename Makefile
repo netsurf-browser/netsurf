@@ -470,7 +470,7 @@ CLEANS += clean-builddir
 all-program: $(EXETARGET) post-exe
 
 .PHONY: testament
-testament:
+testament utils/testament.h:
 	$(Q)$(PERL) utils/svn-testament.pl $(CURDIR) utils/testament.h
 
 post-exe: $(POSTEXES)
