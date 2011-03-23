@@ -1343,7 +1343,7 @@ bool html_replace_object(struct content_html_object *object, const char *url)
 
 	/* initialise fetch */
 	error = hlcache_handle_retrieve(url2, 0, content__get_url(c), NULL,
-			html_object_callback, c, &child,
+			html_object_callback, object, &child,
 			object->permitted_types,
 			&object->content);
 
