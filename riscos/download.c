@@ -228,7 +228,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	url_func_result res;
 	char *local_path;
 	utf8_convert_ret err;
-	size_t i;
+	size_t i, last_dot;
 
 	dw = malloc(sizeof *dw);
 	if (!dw) {
@@ -354,9 +354,18 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		return 0;
 	}
 
-	for (i = 0; filename[i] != '\0'; i++)
-		if (filename[i] == '.')
+	for (i = 0, last_dot = (size_t) -1; filename[i] != '\0'; i++) {
+		const char c = filename[i];
+
+		if (c == '.') {
+			last_dot = i;
 			filename[i] = '/';
+		} else if (c <= ' ' || strchr(":*#$&@^%\\", c) != NULL)
+			filename[i] = '_';
+	}
+
+	if (option_strip_extensions && last_dot != (size_t) -1)
+		filename[last_dot] = '\0';
 
 	if (download_dir != NULL && strlen(download_dir) > 0)
 		snprintf(dw->path, RO_DOWNLOAD_MAX_PATH_LEN, "%s.%s",
