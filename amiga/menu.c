@@ -785,14 +785,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // add
+					bw = gwin->bw;
+
 					if (bw == NULL ||
-							bw->current_content
-							== NULL ||
-							content_get_url(bw->current_content)
-							== NULL)
-						break;
-					hotlist_add_page(content_get_url(gwin->bw->
-							current_content));
+						bw->current_content == NULL ||
+						content_get_url(bw->current_content) == NULL)
+					break;
+
+					hotlist_add_page(content_get_url(bw->current_content));
 				break;
 
 				case 1: // show
