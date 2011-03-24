@@ -85,6 +85,8 @@ void ro_gui_cert_preinitialise(void)
 			wimp_WINDOW_TITLE_ICON |
 			wimp_WINDOW_SIZE_ICON |
 			wimp_WINDOW_TOGGLE_ICON);
+
+	ro_gui_cert_tree_template->flags |= wimp_WINDOW_HSCROLL;
 }
 
 /**
@@ -221,7 +223,8 @@ void gui_cert_verify(const char *url,
 	state.visible.x1 = state.visible.x0 + istate.icon.extent.x1 - 20 -
 			ro_get_vscroll_width(sslcert_window->pane);
 	state.visible.x0 += istate.icon.extent.x0 + 20;
-	state.visible.y0 = state.visible.y1 + istate.icon.extent.y0 + 20;
+	state.visible.y0 = state.visible.y1 + istate.icon.extent.y0 + 20 +
+			ro_get_hscroll_height(sslcert_window->pane);
 	state.visible.y1 += istate.icon.extent.y1 - 32;
 
 	set_extent = false;
@@ -266,6 +269,8 @@ void gui_cert_verify(const char *url,
 		ro_gui_cert_release_window(sslcert_window);
 		return;
 	}
+
+	ro_treeview_set_origin(sslcert_window->tv, 0, 0);
 }
 
 /**
