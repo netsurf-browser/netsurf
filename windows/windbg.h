@@ -19,7 +19,16 @@
 #ifndef _NETSURF_WINDOWS_WINDBG_H_
 #define _NETSURF_WINDOWS_WINDBG_H_
 
+#include "utils/log.h"
+
 const char *msg_num_to_name(int msg);
 void win_perror(const char * lpszFunction);
+
+#define LOG_WIN_MSG(h, m, w, l)				\
+	if (((m) != WM_SETCURSOR) &&			\
+	    ((m) != WM_MOUSEMOVE) &&			\
+	    ((m) != WM_NCHITTEST) &&			\
+	    ((m) != WM_ENTERIDLE))			\
+		LOG(("%s, hwnd %p, w 0x%x, l 0x%x", msg_num_to_name(m), h, w, l));
 
 #endif

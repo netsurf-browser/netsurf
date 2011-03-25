@@ -20,6 +20,9 @@
 # ignored.
 #
 
+# Globals
+NetSurf:NetSurf
+NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
 
 # Menus
 # =====
@@ -29,7 +32,6 @@
 
 # Iconbar menu
 #
-NetSurf:NetSurf
 Info:Info
 AppHelp:Help...  F1
 Open:Open

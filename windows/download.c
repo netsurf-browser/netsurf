@@ -23,6 +23,7 @@
 
 #include "content/fetch.h"
 #include "desktop/gui.h"
+#include "utils/schedule.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"

@@ -22,145 +22,113 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "desktop/netsurf.h"
+#include "utils/log.h"
 
+#include "windows/gui.h"
 #include "windows/about.h"
 #include "windows/resourceid.h"
 
-const char *netsurf_authors[] = {
-       "John-Mark Bell", "James Bursa", "Michael Drake",
-       "Rob Kendrick", "Adrian Lees", "Vincent Sanders",
-       "Daniel Silverstone", "Richard Wilson",
-       "\nContributors:", "Kevin Bagust", "Stefaan Claes",
-       "Matthew Hambley", "Rob Jackson", "Jeffrey Lee", "Phil Mellor",
-       "Philip Pemberton", "Darren Salt", "Andrew Timmins",
-       "John Tytgat", "Chris Williams",
-       "\nGoogle Summer of Code Contributors:", "Mark Benjamin",
-       "Adam Blokus", "Paul Blokus", "Sean Fox", "Michael Lester",
-       "Andrew Sidwell", "Bo Yang", NULL
-};
-const char * const netsurf_translators = "Sebastian Barthel\n"
-       "Bruno D'Arcangeli\nGerard van Katwijk\nJérôme Mathevet\n"
-       "Simon Voortman.";
-const char *netsurf_artists[] = {
-       "Michael Drake", "\nContributors:", "Andrew Duffell",
-       "John Duffell", "Richard Hallas", "Phil Mellor", NULL
-};
-const char *netsurf_documenters[] = {
-       "John-Mark Bell", "James Bursa", "Michael Drake",
-       "Richard Wilson", "\nContributors:", "James Shaw", NULL
-};
-const char * const netsurf_name = "NetSurf";
-const char * const netsurf_description = 
-       "Small as a mouse, fast as a cheetah, and available for free.\n"
-       "NetSurf is a portable web browser for RISC OS, AmigaOS, BeOS, "
-       "Windows and UNIX-like platforms.";
-const char * const netsurf_url = "http://www.netsurf-browser.org/";
-const char * const netsurf_url_label = "NetSurf Website";
-const char * const netsurf_copyright =
-       "Copyright © 2003 - 2009 The NetSurf Developers";
+#include "windbg.h"
 
-BOOL CALLBACK nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
-		LPARAM lparam);
-
-BOOL CALLBACK nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam,
-		LPARAM lparam)
+/**
+ * Initialize the about dialog text fields
+ */
+static BOOL init_about_dialog(HWND hwnd)
 {
-	switch(msg) {
-	case WM_INITDIALOG: {
-		HWND content = GetDlgItem(hwnd, IDC_ABOUT_CONTENT);
-		/* modify label NSWS_ID_ABOUT_CONTENT */
-		size_t len;
-		char *newcontent, *authors, *artists, *documenters;
-		int i;
-		for (i = 0, len = 0; netsurf_authors[i] != NULL; i++) {
-			len += strlen(netsurf_authors[i]) + 1;
+	char ver_str[128];
+	HWND dlg_itm;
+	HFONT hFont;
+
+	dlg_itm = GetDlgItem(hwnd, IDC_ABOUT_VERSION);
+	if (dlg_itm != NULL) {
+
+		hFont=CreateFont (26, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, "Arial");
+		if (hFont != NULL) {
+			LOG(("Setting font object"));
+			SendMessage(dlg_itm, WM_SETFONT, (WPARAM)hFont, 0);
 		}
-		authors = malloc(len + 1);
-		if (authors == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
-			return FALSE;
-		}
-		authors[0] = '\0';
-		for (i = 0; netsurf_authors[i] != NULL; i++) {
-			strcat(authors, netsurf_authors[i]);
-			strcat(authors, " ");
-		}
-		for (i = 0, len = 0; netsurf_artists[i] != NULL; i++) {
-			len += strlen(netsurf_artists[i]) + 1;
-		}
-		artists = malloc(len + 1);
-		if (artists == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
-			free(authors);
-			return FALSE;
-		}
-		artists[0] = '\0';
-		for (i = 0; netsurf_artists[i] != NULL; i++) {
-			strcat(artists, netsurf_artists[i]);
-			strcat(artists, " ");
-		}
-		for (i = 0, len = 0; netsurf_documenters[i] != NULL; i++) {
-			len += strlen(netsurf_documenters[i]) + 1;
-		}
-		documenters = malloc(len + 1);
-		if (documenters == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
-			free(authors);
-			free(artists);
-			return FALSE;
-		}
-		documenters[0] = '\0';
-		for (i = 0; netsurf_documenters[i] != NULL; i++) {
-			strcat(documenters, netsurf_documenters[i]);
-			strcat(documenters, " ");
-		}
-		len = strlen(netsurf_name) + 1 + strlen(netsurf_version) +
-				2 + strlen(netsurf_description) + 2 + 
-				strlen(netsurf_url) + 2 + 
-				strlen(netsurf_copyright) + 2 +
-				strlen(netsurf_translators) + 2 + 
-				strlen(authors) + 2 + strlen(artists) + 2 +
-				strlen(documenters) + 2 + SLEN("authors:") + 2 +
-				SLEN("artists:") + 2 + SLEN("documenters:") + 2 +
-				SLEN("translators:") + 2;
-		newcontent = malloc(len + 1);
-		if (newcontent == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
-			free(authors);
-			free(artists);
-			free(documenters);
-			return FALSE;
-		}
-		sprintf(newcontent, "%s %s\n\n%s\n\nauthors:\n\n%s\n\n"
-				"artists:\n\n%s\n\ndocumenters:\n\n%s\n\n"
-				"translators:\n\n%s\n\n%s\n\n%s\n",
-				netsurf_name, netsurf_version,
-				netsurf_description, authors, artists, 
-				documenters, netsurf_translators, netsurf_url,
-				netsurf_copyright);
-		SendMessage(content, WM_SETTEXT, 0, (LPARAM)newcontent);
-		free(authors);
-		free(artists);
-		free(documenters);
-		free(newcontent);
+
+		snprintf(ver_str, sizeof(ver_str), "%s %s", 
+			 messages_get("NetSurf"), netsurf_version); 
 		
-		return TRUE;
+		SendMessage(dlg_itm, WM_SETTEXT, 0, (LPARAM)ver_str);
 	}
+
+	dlg_itm = GetDlgItem(hwnd, IDC_ABOUT_COPYRIGHT);
+	if (dlg_itm != NULL) {
+		snprintf(ver_str, sizeof(ver_str), "%s", 
+			 messages_get("NetSurfCopyright")); 
+		
+		SendMessage(dlg_itm, WM_SETTEXT, 0, (LPARAM)ver_str);
+	}
+
+	return TRUE;
+}
+
+/**
+ * destroy resources used to create about dialog
+ */
+static BOOL destroy_about_dialog(HWND hwnd)
+{
+	HWND dlg_itm;
+	HFONT hFont;
+
+	dlg_itm = GetDlgItem(hwnd, IDC_ABOUT_VERSION);
+	if (dlg_itm != NULL) {
+		hFont = (HFONT)SendMessage(dlg_itm, WM_GETFONT, 0, 0);
+		if (hFont != NULL) {
+			LOG(("Destroyed font object"));
+			DeleteObject(hFont); 	
+		}
+	}
+		
+	return TRUE;
+
+}
+
+static BOOL CALLBACK 
+nsws_about_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+{
+
+	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
+
+	switch(msg) {
+	case WM_INITDIALOG: 
+		return init_about_dialog(hwnd);
+
 	case WM_COMMAND:
 		switch(LOWORD(wparam)) {
 		case IDOK:
+			LOG(("OK clicked"));
 			EndDialog(hwnd, IDOK);
 			break;
-		default:
-			return FALSE;
+
+		case IDCANCEL:
+			LOG(("Cancel clicked"));
+			EndDialog(hwnd, IDOK);
+			break;
+
+		case IDC_BTN_CREDITS: 
+			nsws_window_go(hwnd, "about:credits");
+			EndDialog(hwnd, IDOK);
+			break;
+
+		case IDC_BTN_LICENCE:
+			nsws_window_go(hwnd, "about:licence");
+			EndDialog(hwnd, IDOK);
+			break;
+
 		}
 		break;
+
 	case WM_CREATE:
 		return TRUE;
-	default:
-		return FALSE;
+
+	case WM_DESTROY:
+		return destroy_about_dialog(hwnd);
+
 	}
-	return TRUE;
+	return FALSE;
 }
 
 void nsws_about_dialog_init(HINSTANCE hinst, HWND parent)

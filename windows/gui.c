@@ -183,36 +183,45 @@ void gui_poll(bool active)
 static struct gui_window *
 nsws_get_gui_window(HWND hwnd)
 {
-	struct gui_window *gw;
-	HWND phwnd;
+	struct gui_window *gw = NULL;
+	HWND phwnd = hwnd;
 
-	gw = GetProp(hwnd, TEXT("GuiWnd"));
-
-	if (gw == NULL) {
-		/* try the parent window instead */
-		phwnd = GetParent(hwnd);
+	/* scan the window hierachy for gui window */
+	while (phwnd != NULL) {
 		gw = GetProp(phwnd, TEXT("GuiWnd"));
+		if (gw != NULL)
+			break;
+		phwnd = GetParent(phwnd);
 	}
 
 	if (gw == NULL) {
-		/* unable to fetch from property, try searching the
-		 * gui window list
-		 */
-		gw = window_list;
-		while (gw != NULL) {
-			if ((gw->main == hwnd) ||
-			    (gw->drawingarea == hwnd) || 
-			    (gw->urlbar == hwnd) || 
-			    (gw->toolbar == hwnd)) {
+		/* try again looking for owner windows instead */
+		phwnd = hwnd;
+		while (phwnd != NULL) {
+			gw = GetProp(phwnd, TEXT("GuiWnd"));
+			if (gw != NULL)
 				break;
-			}
-			gw = gw->next;
+			phwnd = GetWindow(phwnd, GW_OWNER);
 		}
 	}
 
+	LOG(("gw %p",gw));
 	return gw;
 }
 
+bool
+nsws_window_go(HWND hwnd, const char *url)
+{
+	struct gui_window * gw;
+
+	gw = nsws_get_gui_window(hwnd);
+	if (gw == NULL)
+		return false;
+
+	browser_window_go(gw->bw, url, 0, true);
+
+	return true;
+}
 
 /**
  * callback for url bar events
@@ -222,11 +231,13 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
 	WNDPROC urlproc;
+	HFONT hFont;
+
+	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
 
 	gw = nsws_get_gui_window(hwnd);
 
-	LOG(("%s, hwnd %p, gw %p, wparam %d, lparam %ld", 
-	     msg_num_to_name(msg), hwnd, gw, wparam, lparam));
+	urlproc = (WNDPROC)GetProp(hwnd, TEXT("OrigMsgProc"));
 
 	/* override messages */
 	switch (msg) {
@@ -237,20 +248,25 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		}
 		break;
 
-	}
+	case WM_DESTROY:
+		hFont = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
+		if (hFont != NULL) {
+			LOG(("Destroyed font object"));
+			DeleteObject(hFont); 	
+		}
 
-        /* remove properties if window is being destroyed */
-	if (msg == WM_NCDESTROY) {
+
+	case WM_NCDESTROY:
+		/* remove properties if window is being destroyed */
 		RemoveProp(hwnd, TEXT("GuiWnd"));
-		urlproc = (WNDPROC)RemoveProp(hwnd, TEXT("OrigMsgProc"));
-	} else {
-		urlproc = (WNDPROC)GetProp(hwnd, TEXT("OrigMsgProc"));
+		RemoveProp(hwnd, TEXT("OrigMsgProc"));
+		break;
 	}
 
 	if (urlproc == NULL) {
 		/* the original toolbar procedure is not available */
 		return DefWindowProc(hwnd, msg, wparam, lparam);
-	} 
+	}
 
 	/* chain to the next handler */
 	return CallWindowProc(urlproc, hwnd, msg, wparam, lparam);
@@ -258,29 +274,29 @@ nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 /* calculate the dimensions of the url bar relative to the parent toolbar */
 static void
-urlbar_dimensions(HWND hWndParent, 
-		  int toolbuttonsize, 
-		  int buttonc, 
-		  int *x, 
-		  int *y, 
-		  int *width, 
+urlbar_dimensions(HWND hWndParent,
+		  int toolbuttonsize,
+		  int buttonc,
+		  int *x,
+		  int *y,
+		  int *width,
 		  int *height)
 {
 	RECT rc;
-	const int cy_edit = 24;
+	const int cy_edit = 23;
 
 	GetClientRect(hWndParent, &rc);
-	*x = (toolbuttonsize + 2) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
-	*y = (((rc.bottom - rc.top) + 1) - cy_edit) >> 1;
-	*width = ((rc.right - rc.left) + 1) - *x - (NSWS_THROBBER_WIDTH>>1) - NSWS_THROBBER_WIDTH;
+	*x = (toolbuttonsize + 1) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
+	*y = ((rc.bottom - 1) - cy_edit) >> 1;
+	*width = (rc.right - 1) - *x - (NSWS_THROBBER_WIDTH>>1) - NSWS_THROBBER_WIDTH;
 	*height = cy_edit;
 }
 
 
 static LRESULT
-nsws_window_toolbar_command(struct gui_window *gw, 
-		    int notification_code, 
-		    int identifier, 
+nsws_window_toolbar_command(struct gui_window *gw,
+		    int notification_code,
+		    int identifier,
 		    HWND ctrl_window)
 {
 	LOG(("notification_code %d identifier %d ctrl_window %p",
@@ -345,16 +361,16 @@ nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	int urlx, urly, urlwidth, urlheight;
 	WNDPROC toolproc;
 
-	gw = nsws_get_gui_window(hwnd);
+	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
 
-	LOG(("%s, hwnd %p, gw %p", msg_num_to_name(msg), hwnd, gw));
+	gw = nsws_get_gui_window(hwnd);
 
 	switch (msg) {
 	case WM_SIZE:
 
-		urlbar_dimensions(hwnd, 
-				  gw->toolbuttonsize, 
-				  gw->toolbuttonc, 
+		urlbar_dimensions(hwnd,
+				  gw->toolbuttonsize,
+				  gw->toolbuttonc,
 				  &urlx, &urly, &urlwidth, &urlheight);
 
 		/* resize url */
@@ -372,15 +388,15 @@ nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		break;
 
 	case WM_COMMAND:
-		if (nsws_window_toolbar_command(gw, 
-						HIWORD(wparam), 
-						LOWORD(wparam), 
+		if (nsws_window_toolbar_command(gw,
+						HIWORD(wparam),
+						LOWORD(wparam),
 						(HWND)lparam) == 0)
 			return 0;
 		break;
 	}
 
-        /* remove properties if window is being destroyed */
+	/* remove properties if window is being destroyed */
 	if (msg == WM_NCDESTROY) {
 		RemoveProp(hwnd, TEXT("GuiWnd"));
 		toolproc = (WNDPROC)RemoveProp(hwnd, TEXT("OrigMsgProc"));
@@ -391,11 +407,11 @@ nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	if (toolproc == NULL) {
 		/* the original toolbar procedure is not available */
 		return DefWindowProc(hwnd, msg, wparam, lparam);
-	} 
-	
+	}
+
 	/* chain to the next handler */
 	return CallWindowProc(toolproc, hwnd, msg, wparam, lparam);
-	
+
 }
 
 /**
@@ -578,7 +594,7 @@ static void nsws_window_set_ico(struct gui_window *w)
 /**
  * creation of throbber
  */
-static HWND 
+static HWND
 nsws_window_throbber_create(struct gui_window *w)
 {
 	HWND hwnd;
@@ -623,7 +639,7 @@ nsws_set_imagelist(HWND hwnd, UINT msg, int resid, int bsize, int bcnt)
 	return hImageList;
 }
 
-/** create a urlbar and message handler 
+/** create a urlbar and message handler
  *
  * Create an Edit control for enerting urls
  */
@@ -633,15 +649,16 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
 	int urlx, urly, urlwidth, urlheight;
 	HWND hwnd;
 	WNDPROC	urlproc;
+	HFONT hFont;
 
-	urlbar_dimensions(hwndparent, 
-			  gw->toolbuttonsize, 
-			  gw->toolbuttonc, 
+	urlbar_dimensions(hwndparent,
+			  gw->toolbuttonsize,
+			  gw->toolbuttonc,
 			  &urlx, &urly, &urlwidth, &urlheight);
 
 	/* Create the edit control */
-	hwnd = CreateWindowEx(0L, 
-			      TEXT("Edit"), 
+	hwnd = CreateWindowEx(0L,
+			      TEXT("Edit"),
 			      NULL,
 			      WS_CHILD | WS_BORDER | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL,
 			      urlx,
@@ -650,7 +667,7 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
 			      urlheight,
 			      hwndparent,
 			      (HMENU)IDC_MAIN_URLBAR,
-			      hinstance, 
+			      hinstance,
 			      0);
 
 	if (hwnd == NULL) {
@@ -661,15 +678,21 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
 	SetProp(hwnd, TEXT("GuiWnd"), (HANDLE)gw);
 
 	/* subclass the message handler */
-	urlproc = (WNDPROC)SetWindowLongPtr(hwnd, 
-					    GWLP_WNDPROC, 
+	urlproc = (WNDPROC)SetWindowLongPtr(hwnd,
+					    GWLP_WNDPROC,
 					    (LONG_PTR)nsws_window_urlbar_callback);
 
 	/* save the real handler  */
 	SetProp(hwnd, TEXT("OrigMsgProc"), (HANDLE)urlproc);
 
-	LOG(("Created url bar hwnd %p", hwnd));
-	
+	hFont = CreateFont(urlheight - 4, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, "Arial");
+	if (hFont != NULL) {
+		LOG(("Setting font object"));
+		SendMessage(hwnd, WM_SETFONT, (WPARAM)hFont, 0);
+	}
+
+	LOG(("Created url bar hwnd:%p, x:%d, y:%d, w:%d, h:%d", hwnd,urlx, urly, urlwidth,  urlheight));
+
 	return hwnd;
 }
 
@@ -702,14 +725,12 @@ nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 	SetProp(hWndToolbar, TEXT("GuiWnd"), (HANDLE)gw);
 
 	/* subclass the message handler */
-	toolproc = (WNDPROC)SetWindowLongPtr(hWndToolbar, 
-					     GWLP_WNDPROC, 
+	toolproc = (WNDPROC)SetWindowLongPtr(hWndToolbar,
+					     GWLP_WNDPROC,
 					     (LONG_PTR)nsws_window_toolbar_callback);
 
 	/* save the real handler  */
 	SetProp(hWndToolbar, TEXT("OrigMsgProc"), (HANDLE)toolproc);
-
-
 
 	/* remember how many buttons are being created */
 	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
@@ -755,7 +776,7 @@ static LRESULT nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 	/* if mouse button held down and pointer moved more than
 	 * minimum distance drag is happening */
 	if (((gw->mouse->state & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2)) != 0) &&
-	    (abs(x - gw->mouse->pressed_x) >= 5) && 
+	    (abs(x - gw->mouse->pressed_x) >= 5) &&
 	    (abs(y - gw->mouse->pressed_y) >= 5)) {
 
 		LOG(("Drag start state 0x%x", gw->mouse->state));
@@ -791,9 +812,9 @@ static LRESULT nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
 	return 0;
 }
 
-static LRESULT 
-nsws_drawable_mousedown(struct gui_window *gw, 
-			int x, int y, 
+static LRESULT
+nsws_drawable_mousedown(struct gui_window *gw,
+			int x, int y,
 			browser_mouse_state button)
 {
 	if ((gw == NULL) ||
@@ -947,7 +968,7 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 
 	si.fMask = SIF_POS;
 
-	if ((gw->bw != NULL) && 
+	if ((gw->bw != NULL) &&
 	    (gw->bw->current_content != NULL)) {
 		si.nPos = MIN(si.nPos,
 			      content_get_width(gw->bw->current_content) *
@@ -957,8 +978,8 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
 	GetScrollInfo(hwnd, SB_HORZ, &si);
 	if (si.nPos != mem) {
-		gui_window_set_scroll(gw, 
-				      gw->scrollx + gw->requestscrollx + si.nPos - mem, 
+		gui_window_set_scroll(gw,
+				      gw->scrollx + gw->requestscrollx + si.nPos - mem,
 				      gw->scrolly);
 	}
 
@@ -1152,10 +1173,9 @@ nsws_window_drawable_event_callback(HWND hwnd,
 {
 	struct gui_window *gw;
 
+	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
+
 	gw = nsws_get_gui_window(hwnd);
-
-	LOG(("%s, hwnd %p, gw %p", msg_num_to_name(msg), hwnd, gw));
-
 	if (gw == NULL) {
 		LOG(("Unable to find gui window structure for hwnd %p", hwnd));
 		return DefWindowProc(hwnd, msg, wparam, lparam);
@@ -1227,7 +1247,7 @@ nsws_window_drawable_event_callback(HWND hwnd,
 }
 
 static LRESULT
-nsws_window_resize(struct gui_window *w,
+nsws_window_resize(struct gui_window *gw,
 		   HWND hwnd,
 		   WPARAM wparam,
 		   LPARAM lparam)
@@ -1235,35 +1255,35 @@ nsws_window_resize(struct gui_window *w,
 	int x, y;
 	RECT rmain, rstatus, rtool;
 
-	if ((w->toolbar == NULL) ||
-	    (w->urlbar == NULL) ||
-	    (w->statusbar == NULL))
+	if ((gw->toolbar == NULL) ||
+	    (gw->urlbar == NULL) ||
+	    (gw->statusbar == NULL))
 		return 0;
 
-	SendMessage(w->statusbar, WM_SIZE, wparam, lparam);
-	SendMessage(w->toolbar, WM_SIZE, wparam, lparam);
+	SendMessage(gw->statusbar, WM_SIZE, wparam, lparam);
+	SendMessage(gw->toolbar, WM_SIZE, wparam, lparam);
 
 	GetClientRect(hwnd, &rmain);
-	GetClientRect(w->toolbar, &rtool);
-	GetWindowRect(w->statusbar, &rstatus);
-	gui_window_get_scroll(w, &x, &y);
-	w->height = HIWORD(lparam) - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
-	w->width = LOWORD(lparam);
+	GetClientRect(gw->toolbar, &rtool);
+	GetWindowRect(gw->statusbar, &rstatus);
+	gui_window_get_scroll(gw, &x, &y);
+	gw->height = HIWORD(lparam) - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
+	gw->width = LOWORD(lparam);
 
-	if (w->drawingarea != NULL) {
-		MoveWindow(w->drawingarea,
+	if (gw->drawingarea != NULL) {
+		MoveWindow(gw->drawingarea,
 			   0,
 			   rtool.bottom,
-			   w->width,
-			   w->height,
+			   gw->width,
+			   gw->height,
 			   true);
 	}
-	nsws_window_update_forward_back(w);
+	nsws_window_update_forward_back(gw);
 
-	gui_window_set_scroll(w, x, y);
+	gui_window_set_scroll(gw, x, y);
 
-	if (w->toolbar != NULL) {
-		SendMessage(w->toolbar, TB_SETSTATE,
+	if (gw->toolbar != NULL) {
+		SendMessage(gw->toolbar, TB_SETSTATE,
 			    (WPARAM) IDM_NAV_STOP,
 			    MAKELONG(TBSTATE_INDETERMINATE, 0));
 	}
@@ -1273,9 +1293,10 @@ nsws_window_resize(struct gui_window *w,
 
 
 static LRESULT
-nsws_window_command(struct gui_window *gw, 
-		    int notification_code, 
-		    int identifier, 
+nsws_window_command(HWND hwnd,
+		    struct gui_window *gw,
+		    int notification_code,
+		    int identifier,
 		    HWND ctrl_window)
 {
 	LOG(("notification_code %x identifier %x ctrl_window %p",
@@ -1283,7 +1304,7 @@ nsws_window_command(struct gui_window *gw,
 
 	switch(identifier) {
 
-	case IDM_FILE_QUIT: 
+	case IDM_FILE_QUIT:
 	{
 		struct gui_window *w;
 		w = window_list;
@@ -1384,7 +1405,7 @@ nsws_window_command(struct gui_window *gw,
 		break;
 
 	case IDM_NAV_BACK:
-		if ((gw->bw != NULL) && 
+		if ((gw->bw != NULL) &&
 		    (history_back_available(gw->bw->history))) {
 			history_back(gw->bw, gw->bw->history);
 		}
@@ -1392,7 +1413,7 @@ nsws_window_command(struct gui_window *gw,
 		break;
 
 	case IDM_NAV_FORWARD:
-		if ((gw->bw != NULL) && 
+		if ((gw->bw != NULL) &&
 		    (history_forward_available(gw->bw->history))) {
 			history_forward(gw->bw, gw->bw->history);
 		}
@@ -1524,12 +1545,18 @@ nsws_window_command(struct gui_window *gw,
 		break;
 
 	case IDM_HELP_CONTENTS:
+		nsws_window_go(hwnd,
+			       "http://www.netsurf-browser.org/documentation/");
 		break;
 
 	case IDM_HELP_GUIDE:
+		nsws_window_go(hwnd,
+			       "http://www.netsurf-browser.org/documentation/guide");
 		break;
 
 	case IDM_HELP_INFO:
+		nsws_window_go(hwnd,
+			       "http://www.netsurf-browser.org/documentation/info");
 		break;
 
 	case IDM_HELP_ABOUT:
@@ -1556,19 +1583,18 @@ nsws_window_command(struct gui_window *gw,
 	return 0; /* control message handled */
 }
 
+
 /**
  * callback for window events generally
  */
-LRESULT CALLBACK 
+LRESULT CALLBACK
 nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
 
+	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
+
 	gw = nsws_get_gui_window(hwnd);
-
-	if ((msg!=WM_SETCURSOR) && (msg!=WM_MOUSEMOVE) &&(msg!=WM_NCHITTEST))
-	LOG(("%s, hwnd %p, gw %p", msg_num_to_name(msg), hwnd, gw));
-
 	if (gw == NULL) {
 		LOG(("Unable to find gui window structure for hwnd %p", hwnd));
 		return DefWindowProc(hwnd, msg, wparam, lparam);
@@ -1589,13 +1615,6 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		return DefWindowProc(hwnd, msg, wparam, lparam);
 		break;
 	}
-	case WM_NCLBUTTONDOWN: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	}
 	case WM_ENTERMENULOOP:
 		nsws_update_edit(w);
 		return DefWindowProc(hwnd, msg, wparam, lparam);
@@ -1607,10 +1626,10 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		break;
 
 	case WM_COMMAND:
-		if (nsws_window_command(gw, HIWORD(wparam), LOWORD(wparam), (HWND)lparam) == 0)
+		if (nsws_window_command(hwnd, gw, HIWORD(wparam), LOWORD(wparam), (HWND)lparam) == 0)
 			return 0;
 		break;
-			
+
 
 	case WM_SIZE:
 		return nsws_window_resize(gw, hwnd, wparam, lparam);
@@ -1638,7 +1657,7 @@ static void create_local_windows_classes(void) {
 	w.cbClsExtra	= 0;
 	w.cbWndExtra	= 0;
 	w.hInstance	= hinstance;
-	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON)); 
+	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
 	w.hCursor	= NULL;
 	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
 	w.lpszMenuName	= NULL;
@@ -1731,6 +1750,9 @@ static HWND nsws_window_create(struct gui_window *gw)
 		return NULL;
 	}
 
+	/* set the gui window associated with this browser */
+	SetProp(hwnd, TEXT("GuiWnd"), (HANDLE)gw);
+
 	nscss_screen_dpi = get_window_dpi(hwnd);
 
 	if ((option_window_width >= 100) &&
@@ -1762,6 +1784,7 @@ gui_create_browser_window(struct browser_window *bw,
 			  bool new_tab)
 {
 	struct gui_window *gw;
+	RECT rmain, rstatus, rtool;
 
 	LOG(("Creating gui window for browser window %p", bw));
 
@@ -1803,10 +1826,20 @@ gui_create_browser_window(struct browser_window *bw,
 		gw->main = nsws_window_create(gw);
 		gw->toolbar = nsws_window_toolbar_create(gw, gw->main);
 		gw->statusbar = nsws_window_statusbar_create(gw);
+
+
+		GetClientRect(gw->main, &rmain);
+		GetClientRect(gw->toolbar, &rtool);
+		GetWindowRect(gw->statusbar, &rstatus);
+
+		gw->width = rmain.right;
+		gw->height = rmain.bottom - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
+
 		gw->drawingarea = CreateWindow(windowclassname_drawable,
 					       NULL,
 					       WS_VISIBLE | WS_CHILD,
-					       0,  0,  0,  0,
+					       0,  rtool.bottom,  
+					       gw->width,  gw->height,
 					       gw->main,
 					       NULL,
 					       hinstance,
@@ -1821,8 +1854,6 @@ gui_create_browser_window(struct browser_window *bw,
 		input_window = gw;
 		open_windows++;
 		ShowWindow(gw->main, SW_SHOWNORMAL);
-		ShowWindow(gw->drawingarea, SW_SHOWNORMAL);
-
 		break;
 
 	case BROWSER_WINDOW_FRAME:
@@ -2586,7 +2617,7 @@ static void gui_init(int argc, char** argv)
 	/* If there is a url specified on the command line use it */
 	if (argc > 1)
 		addr = argv[1];
-	else 
+	else
 		addr = option_homepage_url;
 
 	LOG(("calling browser_window_create"));
