@@ -287,7 +287,7 @@ urlbar_dimensions(HWND hWndParent,
 
 	GetClientRect(hWndParent, &rc);
 	*x = (toolbuttonsize + 1) * (buttonc + 1) + (NSWS_THROBBER_WIDTH>>1);
-	*y = ((rc.bottom - 1) - cy_edit) >> 1;
+	*y = ((((rc.bottom - 1) - cy_edit) >> 1) * 2) / 3;
 	*width = (rc.right - 1) - *x - (NSWS_THROBBER_WIDTH>>1) - NSWS_THROBBER_WIDTH;
 	*height = cy_edit;
 }
@@ -1163,7 +1163,6 @@ nsws_drawable_resize(struct gui_window *gw)
 	return 0;
 }
 
-
 /* Called when activity occours within the drawable window. */
 LRESULT CALLBACK
 nsws_window_drawable_event_callback(HWND hwnd,
@@ -1253,7 +1252,7 @@ nsws_window_resize(struct gui_window *gw,
 		   LPARAM lparam)
 {
 	int x, y;
-	RECT rmain, rstatus, rtool;
+	RECT rstatus, rtool;
 
 	if ((gw->toolbar == NULL) ||
 	    (gw->urlbar == NULL) ||
@@ -1263,12 +1262,11 @@ nsws_window_resize(struct gui_window *gw,
 	SendMessage(gw->statusbar, WM_SIZE, wparam, lparam);
 	SendMessage(gw->toolbar, WM_SIZE, wparam, lparam);
 
-	GetClientRect(hwnd, &rmain);
 	GetClientRect(gw->toolbar, &rtool);
 	GetWindowRect(gw->statusbar, &rstatus);
 	gui_window_get_scroll(gw, &x, &y);
-	gw->height = HIWORD(lparam) - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
 	gw->width = LOWORD(lparam);
+	gw->height = HIWORD(lparam) - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
 
 	if (gw->drawingarea != NULL) {
 		MoveWindow(gw->drawingarea,
@@ -1591,8 +1589,25 @@ LRESULT CALLBACK
 nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
+		RECT rmain;
 
 	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
+
+	/* deal with window creation as a special case */
+	if (msg == WM_CREATE) {
+		/* To cause all the component child windows to be
+		 * re-sized correctly a WM_SIZE message of the actual
+		 * created size must be sent. 
+		 *
+		 * The message must be posted here because the actual
+		 * size values of the component windows are not known
+		 * until after the WM_CREATE message is dispatched.
+		 */
+		GetClientRect(hwnd, &rmain);
+		PostMessage(hwnd, WM_SIZE, 0, MAKELPARAM(rmain.right, rmain.bottom));
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+	}
+
 
 	gw = nsws_get_gui_window(hwnd);
 	if (gw == NULL) {
@@ -1602,23 +1617,6 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 	switch(msg) {
 
-/*
-	case WM_LBUTTONDBLCLK: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if ((gw != NULL) && (gw->bw != NULL) )
-			browser_window_mouse_click(gw->bw,
-						   BROWSER_MOUSE_DOUBLE_CLICK,
-						   (x + gw->scrollx) / gw->bw->scale,
-						   (y + gw->scrolly) / gw->bw->scale);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	}
-	case WM_ENTERMENULOOP:
-		nsws_update_edit(w);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-*/
 
 	case WM_CONTEXTMENU:
 		if (nsws_ctx_menu(gw, hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)))
@@ -1629,7 +1627,6 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 		if (nsws_window_command(hwnd, gw, HIWORD(wparam), LOWORD(wparam), (HWND)lparam) == 0)
 			return 0;
 		break;
-
 
 	case WM_SIZE:
 		return nsws_window_resize(gw, hwnd, wparam, lparam);
@@ -1762,7 +1759,7 @@ static HWND nsws_window_create(struct gui_window *gw)
 		LOG(("Setting Window position %d,%d %d,%d",
 		     option_window_x, option_window_y,
 		     option_window_width, option_window_height));
-		SetWindowPos(hwnd, HWND_TOPMOST,
+		SetWindowPos(hwnd, HWND_TOP,
 			     option_window_x, option_window_y,
 			     option_window_width, option_window_height,
 			     SWP_SHOWWINDOW);
@@ -1784,7 +1781,6 @@ gui_create_browser_window(struct browser_window *bw,
 			  bool new_tab)
 {
 	struct gui_window *gw;
-	RECT rmain, rstatus, rtool;
 
 	LOG(("Creating gui window for browser window %p", bw));
 
@@ -1827,19 +1823,10 @@ gui_create_browser_window(struct browser_window *bw,
 		gw->toolbar = nsws_window_toolbar_create(gw, gw->main);
 		gw->statusbar = nsws_window_statusbar_create(gw);
 
-
-		GetClientRect(gw->main, &rmain);
-		GetClientRect(gw->toolbar, &rtool);
-		GetWindowRect(gw->statusbar, &rstatus);
-
-		gw->width = rmain.right;
-		gw->height = rmain.bottom - (rtool.bottom - rtool.top) - (rstatus.bottom - rstatus.top);
-
 		gw->drawingarea = CreateWindow(windowclassname_drawable,
 					       NULL,
 					       WS_VISIBLE | WS_CHILD,
-					       0,  rtool.bottom,  
-					       gw->width,  gw->height,
+					       0, 0, 0, 0,
 					       gw->main,
 					       NULL,
 					       hinstance,
