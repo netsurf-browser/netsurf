@@ -113,7 +113,6 @@ enum
 	GID_OPTS_DLDIR,
 	GID_OPTS_TAB_ACTIVE,
 	GID_OPTS_TAB_2,
-	GID_OPTS_SEARCH_URLBAR,
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CMENU_ENABLE,
@@ -277,7 +276,6 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
-	gadlab[GID_OPTS_SEARCH_URLBAR] = (char *)ami_utf8_easy((char *)messages_get("SearchURL"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
@@ -1110,40 +1108,36 @@ void ami_gui_opts_open(void)
 									LayoutEnd, // context menus
 								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild,HGroupObject,
-									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_SEARCH],
-		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SEARCH_URLBAR] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_SEARCH_URLBAR,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_SEARCH_URLBAR],
-  				      		            GA_Selected, option_search_url_bar,
-            	    				CheckBoxEnd,
-									LAYOUT_AddChild, gow->objects[GID_OPTS_SEARCH_PROV] = ChooserObject,
-										GA_ID, GID_OPTS_SEARCH_PROV,
-										GA_RelVerify, TRUE,
-										CHOOSER_PopUp, TRUE,
-										CHOOSER_LabelArray, websearch_list,
-										CHOOSER_Selected, option_search_provider,
-										CHOOSER_MaxLabels, 40,
-									ChooserEnd,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_SEARCH_PROV],
-									LabelEnd,
-								LayoutEnd, // search
-								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild,HGroupObject,
-									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_CLIPBOARD],
-		                			LAYOUT_AddChild, gow->objects[GID_OPTS_CLIPBOARD] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_CLIPBOARD,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
-  				      		            GA_Selected, option_utf8_clipboard,
-            	    				CheckBoxEnd,
-								LayoutEnd, // clipboard
+								LAYOUT_AddChild, HGroupObject,
+									LAYOUT_AddChild,HGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_SEARCH],
+										LAYOUT_AddChild, gow->objects[GID_OPTS_SEARCH_PROV] = ChooserObject,
+											GA_ID, GID_OPTS_SEARCH_PROV,
+											GA_RelVerify, TRUE,
+											CHOOSER_PopUp, TRUE,
+											CHOOSER_LabelArray, websearch_list,
+											CHOOSER_Selected, option_search_provider,
+											CHOOSER_MaxLabels, 40,
+										ChooserEnd,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[GID_OPTS_SEARCH_PROV],
+										LabelEnd,
+									LayoutEnd, // search
+									CHILD_WeightedHeight, 0,
+									LAYOUT_AddChild,HGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_CLIPBOARD],
+			                			LAYOUT_AddChild, gow->objects[GID_OPTS_CLIPBOARD] = CheckBoxObject,
+      		              					GA_ID, GID_OPTS_CLIPBOARD,
+         		           					GA_RelVerify, TRUE,
+         	    	       					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
+  				    	  		            GA_Selected, option_utf8_clipboard,
+            	    					CheckBoxEnd,
+									LayoutEnd, // clipboard
+								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
@@ -1538,10 +1532,6 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_2],(ULONG *)&data);
 	if(data) option_button_2_tab = true;
 		else option_button_2_tab = false;
-
-	GetAttr(GA_Selected,gow->objects[GID_OPTS_SEARCH_URLBAR],(ULONG *)&data);
-	if(data) option_search_url_bar = true;
-		else option_search_url_bar = false;
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&option_search_provider);
 	search_web_provider_details(option_search_provider);
