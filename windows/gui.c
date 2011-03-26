@@ -205,7 +205,6 @@ nsws_get_gui_window(HWND hwnd)
 		}
 	}
 
-	LOG(("gw %p",gw));
 	return gw;
 }
 

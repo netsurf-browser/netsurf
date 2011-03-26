@@ -77,7 +77,7 @@ bool nsgtk_throbber_initialise_from_png(const int frames, char** frame_files)
 	if (errors_when_loading == true) {
 		for (frame_loop = 0; frame_loop < frames; frame_loop++) {
 			if (throb->framedata[frame_loop] != NULL)
-				gdk_pixbuf_unref(throb->framedata[frame_loop]);
+				g_object_unref(throb->framedata[frame_loop]);
 		}
 
 		free(throb->framedata);
@@ -96,7 +96,7 @@ void nsgtk_throbber_finalise(void)
 	int i;
 
 	for (i = 0; i < nsgtk_throbber->nframes; i++)
-		gdk_pixbuf_unref(nsgtk_throbber->framedata[i]);
+		g_object_unref(nsgtk_throbber->framedata[i]);
 
 	free(nsgtk_throbber->framedata);
 	free(nsgtk_throbber);

@@ -66,7 +66,7 @@ static inline void nsgtk_print_set_colour(colour c)
 	colour.blue = b | (b << 8);
 	colour.pixel = (r << 16) | (g << 8) | b;
 
-	gdk_color_alloc(gdk_colormap_get_system(), &colour);
+	gdk_colormap_alloc_color(gdk_colormap_get_system(), &colour, true, true);
 
 	cairo_set_source_rgba(gtk_print_current_cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);

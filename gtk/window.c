@@ -954,8 +954,8 @@ static GdkCursor *nsgtk_create_menu_cursor(void)
 						16, 16);
 
 	r = gdk_cursor_new_from_pixmap(source, mask, &fg, &bg, 0, 3);
-	gdk_pixmap_unref(source);
-	gdk_pixmap_unref(mask);
+	g_object_unref(source);
+	g_object_unref(mask);
 
 	return r;
 }

@@ -69,8 +69,7 @@ void nsgtk_set_colour(colour c)
 	colour.blue = b | (b << 8);
 	colour.pixel = (r << 16) | (g << 8) | b;
 
-	gdk_color_alloc(gdk_colormap_get_system(),
-			&colour);
+	gdk_colormap_alloc_color(gdk_colormap_get_system(), &colour, true, true);
 	gdk_gc_set_foreground(current_gc, &colour);
 
 	cairo_set_source_rgba(current_cr, r / 255.0,
@@ -89,8 +88,8 @@ void nsgtk_plot_caret(int x, int y, int h)
 	colour.green = 0;
 	colour.blue = 0;
 	colour.pixel = 0;
-	gdk_color_alloc(gdk_colormap_get_system(),
-			&colour);
+	gdk_colormap_alloc_color(gdk_colormap_get_system(),
+				 &colour, true, true);
 	gdk_gc_set_foreground(current_gc, &colour);
 
 	gdk_draw_line(current_drawable, current_gc,
