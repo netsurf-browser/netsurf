@@ -499,13 +499,18 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					strlcpy(&fname,savereq->fr_Drawer,1024);
 					AddPart(fname,savereq->fr_File,1024);
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-					if(fh = FOpen(fname,MODE_NEWFILE,0))
-					{
-						if((source_data = content_get_source_data(object, &source_size)))
-							FWrite(fh, source_data, 1, source_size);
 
-						FClose(fh);
-						SetComment(fname, content_get_url(object));
+					if(ami_download_check_overwrite(fname, gwin->win))
+					{
+						if(fh = FOpen(fname,MODE_NEWFILE,0))
+						{
+							if((source_data =
+								content_get_source_data(object, &source_size)))
+									FWrite(fh, source_data, 1, source_size);
+
+							FClose(fh);
+							SetComment(fname, content_get_url(object));
+						}
 					}
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
@@ -529,15 +534,16 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					{
 						bm->url = content_get_url(object);
 						bm->title = content_get_title(object);
-						bitmap_save(bm, fname, 0);
+						if(bitmap_save(bm, fname, 0))
+							SetComment(fname, content_get_url(object));
 					}
 #ifdef WITH_NS_SVG
 					else if(content_get_type(object) == CONTENT_SVG)
 					{
-						ami_save_svg(object,fname);
+						if(ami_save_svg(object,fname))
+							SetComment(fname, content_get_url(object));
 					}
 #endif
-					SetComment(fname, content_get_url(object));
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
 			break;

@@ -31,10 +31,12 @@
 #endif
 #include <workbench/icon.h>
 
+#include "amiga/clipboard.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
 #include "amiga/filetype.h"
 #include "amiga/options.h"
+#include "amiga/icon.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/theme.h"
 
@@ -154,6 +156,9 @@ void ami_drag_save(struct Window *win)
 			BPTR fh = 0;
 			AddPart(path, content_get_title(c), 1024);
 
+			if(!ami_download_check_overwrite(path, win))
+				break;
+
 			if(fh = FOpen(path,MODE_NEWFILE,0))
 			{
 				if((source_data = content_get_source_data(c, &source_size)))
@@ -167,6 +172,8 @@ void ami_drag_save(struct Window *win)
 
 		case GUI_SAVE_TEXT_SELECTION: // selection
 			AddPart(path,"netsurf_text_file",1024);
+			if(!ami_download_check_overwrite(path, win))
+				break;
 			selection_save_text((struct selection *)drag_save_data,path);
 		break;
 
@@ -176,6 +183,9 @@ void ami_drag_save(struct Window *win)
 			BPTR lock = 0;
 
 			AddPart(path, content_get_title(c), 1024);
+			if(!ami_download_check_overwrite(path, win))
+				break;
+
 			if(lock = CreateDir(path))
 			{
 				UnLock(lock);
@@ -197,12 +207,14 @@ void ami_drag_save(struct Window *win)
 			{
 				bm->url = content_get_url(c);
 				bm->title = content_get_title(c);
-				bitmap_save(bm, path, 0);
+				if(bitmap_save(bm, path, 0))
+					SetComment(path, content_get_url(c));
 			}
 #ifdef WITH_NS_SVG
 			else if(content_get_type(c) == CONTENT_SVG)
 			{
-				ami_save_svg(c, path);
+				if(ami_save_svg(c, path))
+					SetComment(path, content_get_url(c));
 			}
 #endif
 		}

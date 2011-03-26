@@ -1047,7 +1047,7 @@ void ami_gui_opts_open(void)
          	           						GA_RelVerify, TRUE,
 											GA_Disabled, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_OVERWRITE],
-	  				      		            GA_Selected, FALSE, //option_ask_overwrite,
+	  				      		            GA_Selected, option_ask_overwrite,
     	        	    				CheckBoxEnd,
 			                			LAYOUT_AddChild, gow->objects[GID_OPTS_NOTIFY] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_NOTIFY,

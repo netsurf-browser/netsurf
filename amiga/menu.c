@@ -534,12 +534,17 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if(fh = FOpen(fname,MODE_NEWFILE,0))
+
+								if(ami_download_check_overwrite(fname, gwin->win))
 								{
-									if((source_data = content_get_source_data(gwin->bw->current_content, &source_size)))
-										FWrite(fh,source_data, 1, source_size);
-									FClose(fh);
-									SetComment(fname, content_get_url(gwin->bw->current_content));
+									if(fh = FOpen(fname,MODE_NEWFILE,0))
+									{
+										if((source_data =
+											content_get_source_data(gwin->bw->current_content, &source_size)))
+												FWrite(fh,source_data, 1, source_size);
+										FClose(fh);
+										SetComment(fname, content_get_url(gwin->bw->current_content));
+									}
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
@@ -555,8 +560,12 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								save_as_text(gwin->bw->current_content,fname);
-								SetComment(fname,content_get_url(gwin->bw->current_content));
+
+								if(ami_download_check_overwrite(fname, gwin->win))
+								{
+									save_as_text(gwin->bw->current_content,fname);
+									SetComment(fname,content_get_url(gwin->bw->current_content));
+								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 						break;
@@ -571,13 +580,16 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if(lock = CreateDir(fname))
+								if(ami_download_check_overwrite(fname, gwin->win))
 								{
-									UnLock(lock);
-									save_complete(gwin->bw->current_content,fname);
-									SetComment(fname,content_get_url(gwin->bw->current_content));
-									ami_superimpose_favicon(fname,
-										gwin->bw->window->favicon, NULL);
+									if(lock = CreateDir(fname))
+									{
+										UnLock(lock);
+										save_complete(gwin->bw->current_content,fname);
+										SetComment(fname,content_get_url(gwin->bw->current_content));
+										ami_superimpose_favicon(fname,
+											gwin->bw->window->favicon, NULL);
+									}
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
@@ -594,10 +606,12 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(&fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								save_as_pdf(gwin->bw->current_content,fname);
-								SetComment(fname, content_get_url(gwin->bw->current_content));
-								ami_superimpose_favicon(fname,
-									gwin->bw->window->favicon, "pdf");
+								if(save_as_pdf(gwin->bw->current_content,fname))
+								{
+									SetComment(fname, content_get_url(gwin->bw->current_content));
+									ami_superimpose_favicon(fname,
+										gwin->bw->window->favicon, "pdf");
+								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 #endif
@@ -617,15 +631,16 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								{
 									bm->url = content_get_url(gwin->bw->current_content);
 									bm->title = content_get_title(gwin->bw->current_content);
-									bitmap_save(bm, fname, 0);
+									if(bitmap_save(bm, fname, 0))
+										SetComment(fname, content_get_url(gwin->bw->current_content));
 								}
 #ifdef WITH_NS_SVG
 								else if(content_get_type(gwin->bw->current_content) == CONTENT_SVG)
 								{
-									ami_save_svg(gwin->bw->current_content,fname);
+									if(ami_save_svg(gwin->bw->current_content,fname))
+										SetComment(fname, content_get_url(gwin->bw->current_content));
 								}
 #endif
-								SetComment(fname, content_get_url(gwin->bw->current_content));
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
 						break;

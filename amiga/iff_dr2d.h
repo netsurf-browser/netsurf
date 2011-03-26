@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #ifndef AMIGA_DR2D_STANDALONE
 #include "content/content.h"
+#include "amiga/download.h"
 #endif
 
 #define ID_DR2D MAKE_ID('D','R','2','D')

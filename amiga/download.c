@@ -38,6 +38,7 @@
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/theme.h"
+#include "amiga/utf8.h"
 
 #include "desktop/download.h"
 #include "desktop/selection.h"
@@ -59,6 +60,20 @@
 #include <gadgets/layout.h>
 
 #include <reaction/reaction_macros.h>
+
+struct gui_download_window {
+	struct nsObject *node;
+	struct Window *win;
+	Object *objects[GID_LAST];
+	BPTR fh;
+	uint32 size;
+	uint32 downloaded;
+	struct dlnode *dln;
+	struct browser_window *bw;
+	struct download_context *ctx;
+	char *url;
+	char fname[1024];
+};
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
@@ -87,8 +102,16 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		{
 			strlcpy(&dw->fname,savereq->fr_Drawer,1024);
 			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
+			if(!ami_download_check_overwrite(dw->fname, gui->shared->win))
+			{
+				FreeVec(dw);
+				return NULL;
+			}
 		}
-		else return NULL;
+		else
+		{
+
+		}
 	}
 
 	dw->size = total_size;
@@ -302,27 +325,69 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 		strlcpy(&fname,savereq->fr_Drawer,1024);
 		AddPart(fname,savereq->fr_File,1024);
 		ami_update_pointer(g->shared->win,GUI_POINTER_WAIT);
-		if(fh = FOpen(fname,MODE_NEWFILE,0))
+
+		if(ami_download_check_overwrite(fname, g->shared->win))
 		{
-			openurlstring = ASPrintf("openurl \"%s\"\n",url);
-			FWrite(fh,openurlstring,1,strlen(openurlstring));
-			FClose(fh);
-			FreeVec(openurlstring);
-			SetComment(fname,url);
+			if(fh = FOpen(fname,MODE_NEWFILE,0))
+			{
+				/* TODO: Should be URLOpen on OS4.1 */
+				openurlstring = ASPrintf("openurl \"%s\"\n",url);
+				FWrite(fh,openurlstring,1,strlen(openurlstring));
+				FClose(fh);
+				FreeVec(openurlstring);
+				SetComment(fname,url);
 
-			dobj = GetIconTags(NULL,ICONGETA_GetDefaultName,"url",
-								ICONGETA_GetDefaultType,WBPROJECT,
-								TAG_DONE);		
+				dobj = GetIconTags(NULL,ICONGETA_GetDefaultName,"url",
+									ICONGETA_GetDefaultType,WBPROJECT,
+									TAG_DONE);		
 
-			dobj->do_DefaultTool = "IconX";
+				dobj->do_DefaultTool = "IconX";
 
-			PutIconTags(fname,dobj,
-						ICONPUTA_NotifyWorkbench,TRUE,
-						TAG_DONE);
+				PutIconTags(fname,dobj,
+							ICONPUTA_NotifyWorkbench,TRUE,
+							TAG_DONE);
 
-			FreeDiskObject(dobj);
+				FreeDiskObject(dobj);
+			}
+			FreeVec(linkname);
 		}
-		FreeVec(linkname);
 		ami_update_pointer(g->shared->win,GUI_POINTER_DEFAULT);
 	}
+}
+
+BOOL ami_download_check_overwrite(const char *file, struct Window *win)
+{
+	/* Return TRUE if file can be (over-)written */
+	int res = 0;
+	BPTR lock = 0;
+
+	if(option_ask_overwrite == false) return TRUE;
+
+	lock = Lock(file, ACCESS_READ);
+
+	if(lock)
+	{
+		UnLock(lock);
+
+		char *utf8text = ami_utf8_easy(messages_get("OverwriteFile"));
+		char *utf8gadget1 = ami_utf8_easy(messages_get("DontReplace"));
+		char *utf8gadget2 = ami_utf8_easy(messages_get("Replace"));
+		char *utf8gadgets = ASPrintf("%s|%s", utf8gadget1, utf8gadget2);
+		free(utf8gadget1);
+		free(utf8gadget2);
+
+		res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_WARNING,
+			TDR_TitleString, messages_get("NetSurf"),
+			TDR_FormatString, utf8text,
+			TDR_GadgetString, utf8gadgets,
+			TDR_Window, win,
+			TAG_DONE);
+
+		if(utf8text) free(utf8text);
+		if(utf8gadgets) FreeVec(utf8gadgets);
+	}
+	else return TRUE;
+
+	if(res == 0) return TRUE;
+		else return FALSE;
 }

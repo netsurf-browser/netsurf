@@ -24,6 +24,7 @@
 #include "amiga/gui.h"
 
 struct download_context;
+struct gui_download_window;
 
 struct dlnode
 {
@@ -31,21 +32,8 @@ struct dlnode
 	char *filename;
 };
 
-struct gui_download_window {
-	struct nsObject *node;
-	struct Window *win;
-	Object *objects[GID_LAST];
-	BPTR fh;
-	uint32 size;
-	uint32 downloaded;
-	struct dlnode *dln;
-	struct browser_window *bw;
-	struct download_context *ctx;
-	char *url;
-	char fname[1024];
-};
-
 void ami_download_window_abort(struct gui_download_window *dw);
 BOOL ami_download_window_event(struct gui_download_window *dw);
 void ami_free_download_list(struct List *dllist);
+BOOL ami_download_check_overwrite(const char *file, struct Window *win);
 #endif

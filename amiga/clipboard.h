@@ -18,6 +18,8 @@
 
 #ifndef AMIGA_CLIPBOARD_H
 #define AMIGA_CLIPBOARD_H
+#include <stdbool.h>
+
 struct bitmap;
 struct hlcache_handle;
 struct selection;

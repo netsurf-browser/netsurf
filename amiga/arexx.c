@@ -19,11 +19,11 @@
 #include "amiga/os3support.h"
 
 #include "amiga/arexx.h"
+#include "amiga/download.h"
+#include "amiga/gui.h"
+#include "amiga/options.h"
 #include "desktop/browser.h"
 #include "desktop/history_core.h"
-#include "amiga/gui.h"
-#include "amiga/download.h"
-#include "amiga/options.h"
 #include "utils/testament.h"
 
 #include <string.h>
