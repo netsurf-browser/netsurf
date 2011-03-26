@@ -41,5 +41,4 @@ struct bitmap {
 
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm);
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
-APTR ami_colormap_to_clut(struct ColorMap *cmap);
 #endif

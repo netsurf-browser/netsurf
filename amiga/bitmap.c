@@ -421,26 +421,3 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 
 	return tbm;
 }
-
-APTR ami_colormap_to_clut(struct ColorMap *cmap)
-{
-	int i;
-	UBYTE *clut = AllocVec(256 * 4, MEMF_PRIVATE | MEMF_CLEAR);
-	ULONG colour[3 * 256];
-
-	if(!clut) return NULL;
-
-	/* Get the palette from the ColorMap */
-	GetRGB32(cmap, 0, 256, (ULONG *)&colour);
-
-	/* convert it to a table of ARGB values */
-	for(i = 0; i < 1024; i += 4)
-	{
-		clut[i] = (0xff << 24) |
-				((colour[i] & 0xff000000) >> 8) |
-				((colour[i + 1] & 0xff000000) >> 16) |
-				((colour[i + 2] & 0xff000000) >> 24);
-	}
-
-	return clut;
-}
