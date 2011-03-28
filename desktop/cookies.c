@@ -324,7 +324,7 @@ static struct node *cookies_create_cookie_node(struct node *parent,
 /**
  * Called when scheduled event gets fired. Actually performs the update.
  */
-static void cookies_schedule_callback(void *scheduled_data)
+static void cookies_schedule_callback(const void *scheduled_data)
 {
 	const struct cookie_data *data = scheduled_data;
 	struct node *node = NULL;
@@ -412,7 +412,7 @@ bool cookies_schedule_update(const struct cookie_data *data)
 	assert(user_delete == false);
 
 	if (cookies_tree_root != NULL)
-		schedule(100, cookies_schedule_callback, (void *)data);
+		cookies_schedule_callback(data);
 
 	return true;
 }
@@ -424,7 +424,7 @@ void cookies_remove(const struct cookie_data *data)
 	assert(data != NULL);
 
 	if (cookies_tree_root != NULL)
-		schedule_remove(cookies_schedule_callback, (void *)data);
+		cookies_schedule_callback(data);
 }
 
 
