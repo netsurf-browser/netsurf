@@ -85,8 +85,6 @@ void ro_gui_cert_preinitialise(void)
 			wimp_WINDOW_TITLE_ICON |
 			wimp_WINDOW_SIZE_ICON |
 			wimp_WINDOW_TOGGLE_ICON);
-
-	ro_gui_cert_tree_template->flags |= wimp_WINDOW_HSCROLL;
 }
 
 /**
