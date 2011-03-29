@@ -24,7 +24,7 @@ NETSURFRES=`dirname $0`/gtk/res/
 export NETSURFRES
 
 if [ "x$1" = "x--gdb" ]; then
-  GDB="gdb --args -x"
+  GDB="gdb --args"
   echo
   echo
   echo "**********************************************************"
