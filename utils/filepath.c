@@ -33,7 +33,6 @@
 
 #include "utils/config.h"
 #include "utils/filepath.h"
-#include "utils/log.h"
 
 /** maximum number of elements in the resource vector */
 #define MAX_RESPATH 128 
@@ -118,8 +117,6 @@ char *filepath_sfind(char **respathv, char *filepath, const char *filename)
 
 	while (respathv[respathc] != NULL) {
 		if (filepath_sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL) {
-			LOG(("ret\"%s\"",filepath));
-
 			return filepath;
 		}
 
@@ -146,8 +143,6 @@ char *filepath_find(char **respathv, const char *filename)
 
 	if (ret == NULL)
 		free(filepath);
-
-	LOG(("ret\"%s\"",ret));
 
 	return ret;
 }

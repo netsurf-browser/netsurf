@@ -66,13 +66,6 @@ nsws_init_resource(const char *resource_path)
 		pathi++;
 	pathv[pathi] = winpath;
 
-
-	pathi = 0;
-	while (pathv[pathi] != NULL) {
-		LOG(("pathv[%d] = \"%s\"",pathi, pathv[pathi]));
-		pathi++;
-	}
-
 	respath = filepath_generate(pathv, &lang);
 
 	filepath_free_strvec(pathv);
@@ -88,8 +81,16 @@ static char *realpath(const char *path, char *resolved_path)
 
 char *path_to_url(const char *path)
 {
-	char *url = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 3);
+	char *url;
 	char *sidx;
+
+	if (path == NULL)
+		return NULL;
+
+	url = malloc(strlen(path) + FILE_SCHEME_PREFIX_LEN + 3);
+
+	if (url == NULL)
+		return NULL;
 
 	strcpy(url, FILE_SCHEME_PREFIX);
 	if (*path == '/') {

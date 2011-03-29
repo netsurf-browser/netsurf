@@ -2603,8 +2603,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	LPWSTR *argvw;
 	char *messages;
 
-	verbose_log = true;
-
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
 	}
