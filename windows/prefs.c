@@ -113,6 +113,8 @@ static BOOL CALLBACK options_appearance_dialog_handler(HWND hwnd,
 	char *temp, number[6];
 	HWND sub;
 
+	LOG_WIN_MSG(hwnd, msg, wparam, lParam);
+
 	switch (msg) {
 	case WM_INITDIALOG:
 		sub = GetDlgItem(hwnd, IDC_PREFS_FONTDEF);
@@ -401,6 +403,8 @@ static BOOL CALLBACK options_connections_dialog_handler(HWND hwnd,
 	char *temp, number[6];
 	HWND sub;
 
+	LOG_WIN_MSG(hwnd, msg, wparam, lParam);
+
 	switch (msg) {
 	case WM_INITDIALOG:
 		sub = GetDlgItem(hwnd, IDC_PREFS_PROXYTYPE);
@@ -561,6 +565,8 @@ static BOOL CALLBACK options_general_dialog_handler(HWND hwnd,
 {
 	HWND sub;
 
+	LOG_WIN_MSG(hwnd, msg, wparam, lParam);
+
 	switch (msg) {
 	case WM_INITDIALOG:
 		/* homepage url */
@@ -629,7 +635,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	PROPSHEETHEADER psh;
 
 	psp[0].dwSize = sizeof(PROPSHEETPAGE);
-	psp[0].dwFlags = PSP_USEICONID;
+	psp[0].dwFlags = 0;/*PSP_USEICONID*/
 	psp[0].hInstance = hinst;
 	psp[0].pszTemplate = MAKEINTRESOURCE(IDD_DLG_OPTIONS_GENERAL);
 	psp[0].pfnDlgProc = options_general_dialog_handler;
@@ -637,7 +643,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	psp[0].pfnCallback = NULL;
 
 	psp[1].dwSize = sizeof(PROPSHEETPAGE);
-	psp[1].dwFlags = PSP_USEICONID;
+	psp[1].dwFlags = 0;/*PSP_USEICONID*/
 	psp[1].hInstance = hinst;
 	psp[1].pszTemplate = MAKEINTRESOURCE(IDD_DLG_OPTIONS_CONNECTIONS);
 	psp[1].pfnDlgProc = options_connections_dialog_handler;
@@ -645,7 +651,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	psp[1].pfnCallback = NULL;
 
 	psp[2].dwSize = sizeof(PROPSHEETPAGE);
-	psp[2].dwFlags = PSP_USEICONID;
+	psp[2].dwFlags = 0;/*PSP_USEICONID*/
 	psp[2].hInstance = hinst;
 	psp[2].pszTemplate = MAKEINTRESOURCE(IDD_DLG_OPTIONS_APPERANCE);
 	psp[2].pfnDlgProc = options_appearance_dialog_handler;
@@ -657,7 +663,7 @@ void nsws_prefs_dialog_init(HINSTANCE hinst, HWND parent)
 	psh.dwFlags = PSH_NOAPPLYNOW | PSH_USEICONID | PSH_PROPSHEETPAGE;
 	psh.hwndParent = parent;
 	psh.hInstance = hinst;
-//	psh.pszIcon = MAKEINTRESOURCE(IDI_CELL_PROPERTIES);
+	psh.pszIcon = MAKEINTRESOURCE(IDR_NETSURF_ICON);
 	psh.pszCaption = (LPSTR) "NetSurf Options";
 	psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
 	psh.nStartPage = 0;

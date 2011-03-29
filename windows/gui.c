@@ -47,6 +47,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "utils/filepath.h"
 
 #include "windows/about.h"
 #include "windows/gui.h"
@@ -120,6 +121,8 @@ struct gui_window {
 };
 
 static struct nsws_pointers nsws_pointer;
+
+static char **respaths; /** resource search path vector */
 
 #ifndef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -567,28 +570,6 @@ static void nsws_window_set_accels(struct gui_window *w)
 
 	w->acceltable = CreateAcceleratorTable(accels, nitems);
 }
-
-/**
- * set window icons
- */
-static void nsws_window_set_ico(struct gui_window *w)
-{
-	char ico[PATH_MAX];
-
-	nsws_find_resource(ico, "NetSurf32.ico", "windows/res/NetSurf32.ico");
-	LOG(("setting ico as %s", ico));
-	hIcon = LoadImage(NULL, ico, IMAGE_ICON, 32, 32, LR_LOADFROMFILE);
-
-	if (hIcon != NULL)
-		SendMessage(w->main, WM_SETICON, ICON_BIG, (LPARAM) hIcon);
-	nsws_find_resource(ico, "NetSurf16.ico", "windows/res/NetSurf16.ico");
-	LOG(("setting ico as %s", ico));
-	hIconS = LoadImage(NULL, ico, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
-
-	if (hIconS != NULL)
-		SendMessage(w->main, WM_SETICON, ICON_SMALL, (LPARAM)hIconS);
-}
-
 
 /**
  * creation of throbber
@@ -1765,7 +1746,6 @@ static HWND nsws_window_create(struct gui_window *gw)
 	}
 
 	nsws_window_set_accels(gw);
-	nsws_window_set_ico(gw);
 
 	return hwnd;
 }
@@ -2561,40 +2541,32 @@ void gui_quit(void)
 
 char* gui_get_resource_url(const char *filename)
 {
-	return NULL;
+	char buf[PATH_MAX];
+	return path_to_url(filepath_sfind(respaths, buf, filename));
 }
 
 static void gui_init(int argc, char** argv)
 {
-	char buf[PATH_MAX], sbuf[PATH_MAX];
-	int len;
 	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
 
 	LOG(("argc %d, argv %p", argc, argv));
 
 	/* set up stylesheet urls */
-	getcwd(sbuf, PATH_MAX);
-	len = strlen(sbuf);
-	strncat(sbuf, "windows/res/default.css", PATH_MAX - len);
-	nsws_find_resource(buf, "default.css", sbuf);
-	default_stylesheet_url = path_to_url(buf);
+	default_stylesheet_url = strdup("resource:default.css");
 	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
 
-	getcwd(sbuf, PATH_MAX);
-	len = strlen(sbuf);
-	strncat(sbuf, "windows/res/quirks.css", PATH_MAX - len);
-	nsws_find_resource(buf, "quirks.css", sbuf);
-	quirks_stylesheet_url = path_to_url(buf);
-	LOG(("Using '%s' as quirks stylesheet url", quirks_stylesheet_url ));
+	quirks_stylesheet_url = strdup("resource:quirks.css");
+	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
 
+	adblock_stylesheet_url = strdup("resource:adblock.css");
+	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	create_local_windows_classes();
 
 	option_target_blank = false;
 
 	nsws_window_init_pointers();
-	LOG(("argc %d, argv %p", argc, argv));
 
 	/* ensure homepage option has a default */
 	if (option_homepage_url == NULL || option_homepage_url[0] == '\0')
@@ -2615,9 +2587,9 @@ void gui_stdout(void)
 {
 	/* mwindows compile flag normally invalidates stdout unless
 	   already redirected */
-	if (_get_osfhandle(fileno(stdout)) == -1) {
+	if (_get_osfhandle(fileno(stderr)) == -1) {
 		AllocConsole();
-		freopen("CONOUT$", "w", stdout);
+		freopen("CONOUT$", "w", stderr);
 	}
 }
 
@@ -2629,8 +2601,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	int argc = 0, argctemp = 0;
 	size_t len;
 	LPWSTR *argvw;
-	char options[PATH_MAX];
-	char messages[PATH_MAX];
+	char *messages;
+
+	verbose_log = true;
 
 	if (SLEN(lpcli) > 0) {
 		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -2658,21 +2631,24 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 		argctemp++;
 	}
 
-	/* load browser messages */
-	nsws_find_resource(messages, "messages", "./windows/res/messages");
+	respaths = nsws_init_resource("${APPDATA}\\NetSurf:${HOME}\\.netsurf:${NETSURFRES}:${PROGRAMFILES}\\NetSurf\\res:"NETSURF_WINDOWS_RESPATH);
 
-	/* load browser options */
-	nsws_find_resource(options, "preferences", "~/.netsurf/preferences");
-	options_file_location = strdup(options);
+	messages = filepath_find(respaths, "messages");
 
+	options_file_location = filepath_find(respaths, "preferences");
+	
 	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options, messages);
+	netsurf_init(&argc, &argv, options_file_location, messages);
+
+	free(messages);
 
 	gui_init(argc, argv);
 
 	netsurf_main_loop();
 
 	netsurf_exit();
+
+	free(options_file_location);
 
 	return 0;
 }

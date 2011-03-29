@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <windows.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdbool.h>
@@ -29,8 +30,55 @@
 #include "utils/url.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+#include "utils/filepath.h"
 
 #include "windows/findfile.h"
+
+/** Create an array of valid paths to search for resources.
+ *
+ * The idea is that all the complex path computation to find resources
+ * is performed here, once, rather than every time a resource is
+ * searched for.
+ */
+char **
+nsws_init_resource(const char *resource_path)
+{
+	char **pathv; /* resource path string vector */
+	char **respath; /* resource paths vector */
+	const char *lang = NULL;
+	char *winpath;
+	int pathi;
+	char *slsh;
+
+	pathv = filepath_path_to_strvec(resource_path);
+	if (pathv == NULL)
+		return NULL;
+ 
+	winpath = malloc(MAX_PATH);
+	GetModuleFileName(NULL, winpath, MAX_PATH);
+	slsh = strrchr(winpath, '\\');
+	if (slsh != NULL)
+		*slsh=0;
+	strncat(winpath, "\\windows\\res", MAX_PATH);
+
+	pathi = 0;
+	while (pathv[pathi] != NULL)
+		pathi++;
+	pathv[pathi] = winpath;
+
+
+	pathi = 0;
+	while (pathv[pathi] != NULL) {
+		LOG(("pathv[%d] = \"%s\"",pathi, pathv[pathi]));
+		pathi++;
+	}
+
+	respath = filepath_generate(pathv, &lang);
+
+	filepath_free_strvec(pathv);
+
+	return respath;
+}
 
 static char *realpath(const char *path, char *resolved_path)
 {

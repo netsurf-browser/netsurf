@@ -33,6 +33,7 @@
 
 #include "utils/config.h"
 #include "utils/filepath.h"
+#include "utils/log.h"
 
 /** maximum number of elements in the resource vector */
 #define MAX_RESPATH 128 
@@ -116,8 +117,11 @@ char *filepath_sfind(char **respathv, char *filepath, const char *filename)
 		return NULL;
 
 	while (respathv[respathc] != NULL) {
-		if (filepath_sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL)
+		if (filepath_sfindfile(filepath, "%s/%s", respathv[respathc], filename) != NULL) {
+			LOG(("ret\"%s\"",filepath));
+
 			return filepath;
+		}
 
 		respathc++;
 	}
@@ -142,6 +146,8 @@ char *filepath_find(char **respathv, const char *filename)
 
 	if (ret == NULL)
 		free(filepath);
+
+	LOG(("ret\"%s\"",ret));
 
 	return ret;
 }
@@ -211,9 +217,9 @@ filepath_generate(char * const *pathv, const char * const *langv)
 
 /* expand ${} in a string into environment variables */
 static char *
-expand_path(const char *path)
+expand_path(const char *path, int pathlen)
 {
-	char *exp = strdup(path);
+	char *exp;
 	int explen;
 	int cstart = -1;
 	int cloop = 0;
@@ -221,10 +227,14 @@ expand_path(const char *path)
 	int envlen;
 	int replen; /* length of replacement */
 
+	exp = malloc(pathlen + 1);
 	if (exp == NULL)
 		return NULL;
 
-	explen = strlen(exp) + 1;
+	memcpy(exp, path, pathlen);
+	exp[pathlen] = 0;
+
+	explen = strlen(exp);
 
 	while (exp[cloop] != 0) {
 		if ((exp[cloop] == '$') && 
@@ -241,14 +251,14 @@ expand_path(const char *path)
 			if (envv == NULL) {
 				memmove(exp + cstart, 
 					exp + cloop + 1, 
-					explen - cloop - 1);
+					explen - cloop);
 				explen -= replen;
 			} else {
 				envlen = strlen(envv);
 				exp = realloc(exp, explen + envlen - replen);
 				memmove(exp + cstart + envlen, 
 					exp + cloop + 1, 
-					explen - cloop - 1);
+					explen - cloop );
 				memmove(exp + cstart, envv, envlen);
 				explen += envlen - replen;
 			}
@@ -257,6 +267,11 @@ expand_path(const char *path)
 		}
 
 		cloop++;
+	}
+
+	if (explen == 1) {
+		free(exp);
+		exp = NULL;
 	}
 
 	return exp;
@@ -268,37 +283,40 @@ filepath_path_to_strvec(const char *path)
 {
 	char **strvec;
 	int strc = 0;
+	const char *estart; /* path element start */
+	const char *eend; /* path element end */
+	int elen;
 
 	strvec = calloc(MAX_RESPATH, sizeof(char *));
 	if (strvec == NULL)
 		return NULL;
 
-	strvec[strc] = expand_path(path);
-	if (strvec[strc] == NULL) {
-		free(strvec);
-		return NULL;
-	}
-	strc++;
+	estart = eend = path;
 
-	strvec[strc] = strchr(strvec[0], ':');
-	while ((strc < (MAX_RESPATH - 2)) && 
-	       (strvec[strc] != NULL)) {
-		/* null terminate previous entry */
-		*strvec[strc] = 0; 
-		strvec[strc]++;
+	while (strc < (MAX_RESPATH - 2)) {
+		while ( (*eend != 0) && (*eend != ':') )
+			eend++;
+		elen = eend - estart;
+
+		if (elen > 1) {
+			/* more than an empty colon */
+			strvec[strc] = expand_path(estart, elen);
+			if (strvec[strc] != NULL) {
+				/* successfully expanded an element */
+				strc++;
+			}
+		}
 
 		/* skip colons */
-		while (*strvec[strc] == ':')
-			strvec[strc]++;
+		while (*eend == ':')
+			eend++;
 
-		if (*strvec[strc] == 0)
-			break; /* string is terminated */
-
-		strc++;
-
-		strvec[strc] = strchr(strvec[strc - 1], ':');
+		/* check for termination */
+		if (*eend == 0)
+			break;
+		
+		estart = eend;
 	}
-
 	return strvec;
 }
 
