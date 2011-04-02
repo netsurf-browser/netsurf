@@ -108,21 +108,14 @@ nserror netsurf_init(int *pargc,
 	signal(SIGPIPE, SIG_IGN);
 #endif
 
-	if (((*pargc) > 1) && 
-	    ((*pargv)[1][0] == '-') && 
-	    ((*pargv)[1][1] == 'v') && 
-	    ((*pargv)[1][2] == 0)) {
-		int argcmv;
-		verbose_log = true;
-		for (argcmv = 2; argcmv < (*pargc); argcmv++) {
-			(*pargv)[argcmv - 1] = (*pargv)[argcmv];
-		}
-		(*pargc)--;
-
 #ifndef HAVE_STDOUT
-                gui_stdout();
+	ret = nslog_init(nslog_ensure, pargc, *pargv);
+#else
+	ret = nslog_init(NULL, pargc, *pargv);
 #endif
-	}
+
+	if (ret != NSERROR_OK) 
+		return ret;
 
 #ifdef _MEMDEBUG_H_
 	memdebug_memdebug("memdump");

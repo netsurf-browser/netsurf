@@ -22,11 +22,34 @@
 
 #include <stdio.h>
 #include "desktop/netsurf.h"
+#include "utils/errors.h"
 
 #ifdef NDEBUG
 #  define LOG(x) ((void) 0)
 #else
 
+
+/**
+ * Ensures the FILE handle is available to write logging to.
+ *
+ * This is provided by the frontends if required
+ */
+typedef bool(nslog_ensure_t)(FILE *fptr);
+
+/**
+ * Initialise the logging system.
+ *
+ * Sets up everything required for logging. Processes the argv passed
+ * to remove the -v switch for verbose logging. If necessary ensures
+ * the output file handle is available.
+ */
+extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
+
+/**
+ * Obtain a formatted string suitable for prepending to a log message
+ *
+ * \return formatted string of the time since first log call
+ */
 extern const char *nslog_gettime(void);
 extern void nslog_log(const char *format, ...);
 

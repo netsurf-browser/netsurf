@@ -37,7 +37,10 @@ typedef enum {
 
 	NSERROR_SAVE_FAILED,		/**< Failed to save data */
 
-	NSERROR_CLONE_FAILED		/**< Failed to clone handle */
+	NSERROR_CLONE_FAILED,		/**< Failed to clone handle */
+
+	NSERROR_INIT_FAILED		/**< Initialisation failed */
+
 } nserror;
 
 #endif

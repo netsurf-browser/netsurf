@@ -67,7 +67,10 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include "desktop/search.h"
 #include "utils/errors.h"
 
-void gui_stdout(void);
+/** \todo remove these when each frontend calls nslog_init */
+#include <stdio.h>
+bool nslog_ensure(FILE *fptr);
+
 void gui_multitask(void);
 void gui_poll(bool active);
 void gui_quit(void);
