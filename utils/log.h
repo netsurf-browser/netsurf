@@ -24,11 +24,6 @@
 #include "desktop/netsurf.h"
 #include "utils/errors.h"
 
-#ifdef NDEBUG
-#  define LOG(x) ((void) 0)
-#else
-
-
 /**
  * Ensures the FILE handle is available to write logging to.
  *
@@ -44,6 +39,10 @@ typedef bool(nslog_ensure_t)(FILE *fptr);
  * the output file handle is available.
  */
 extern nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv);
+
+#ifdef NDEBUG
+#  define LOG(x) ((void) 0)
+#else
 
 /**
  * Obtain a formatted string suitable for prepending to a log message

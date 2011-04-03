@@ -26,10 +26,11 @@
 #include "css/utils.h"
 #include "render/box.h"
 #include "render/table.h"
-#define NDEBUG
 #include "utils/log.h"
-#undef NDEBUG
 #include "utils/talloc.h"
+
+/* Define to enable verbose table debug */
+#undef TABLE_DEBUG
 
 /**
  * Container for border values during table border calculations
@@ -214,11 +215,13 @@ bool table_calculate_column_types(struct box *table)
 			col[i].type = COLUMN_WIDTH_AUTO;
 	}
 
+#ifdef TABLE_DEBUG
 	for (i = 0; i != table->columns; i++)
 		LOG(("table %p, column %u: type %s, width %i", table, i,
 				((const char *[]) {"UNKNOWN", "FIXED", "AUTO",
 				"PERCENT", "RELATIVE"})[col[i].type],
 				col[i].width));
+#endif
 
 	return true;
 }

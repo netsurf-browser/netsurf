@@ -38,12 +38,13 @@
 #include "render/font.h"
 #include "render/form.h"
 #include "render/layout.h"
-#define NDEBUG
 #include "utils/log.h"
-#undef NDEBUG
 #include "utils/talloc.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
+
+/* Define to enable textinput debug */
+#undef TEXTINPUT_DEBUG
 
 /** ghost caret used to indicate the insertion point when dragging text
     into a textarea/input field */
@@ -335,8 +336,10 @@ bool browser_window_textarea_callback(struct browser_window *bw,
 	plot_font_style_t fstyle;
 
 	/* box_dump(textarea, 0); */
+#ifdef TEXTINPUT_DEBUG
 	LOG(("key %i at %i in '%.*s'", key, char_offset,
 			(int) text_box->length, text_box->text));
+#endif
 
 	box_coords(textarea, &box_x, &box_y);
 	box_x -= scroll_get_offset(textarea->scroll_x);
@@ -1380,9 +1383,11 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 		while ((char_offset > text_box->length + SPACE_LEN(text_box)) &&
 				(text_box->next) &&
 				(text_box->next->type == BOX_TEXT)) {
+#ifdef TEXTINPUT_DEBUG
 			LOG(("Caret out of range: Was %d in boxlen %d "
 					"space %d", char_offset,
 					text_box->length, SPACE_LEN(text_box)));
+#endif
 			char_offset -= text_box->length + SPACE_LEN(text_box);
 			text_box = text_box->next;
 		}
@@ -1390,9 +1395,11 @@ bool browser_window_textarea_paste_text(struct browser_window *bw,
 		/* not sure if this will happen or not...
 		 * but won't stick an assert here as we can recover from it */
 		if (char_offset > text_box->length) {
+#ifdef TEXTINPUT_DEBUG
 			LOG(("Caret moved beyond end of line: "
 				"Was %d in boxlen %d", char_offset,
 				text_box->length));
+#endif
 			char_offset = text_box->length;
 		}
 

@@ -28,9 +28,6 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
-static struct timeval start_tv;
-static char buff[32];
-
 nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 {
 	nserror ret = NSERROR_OK;
@@ -59,9 +56,13 @@ nserror nslog_init(nslog_ensure_t *ensure, int *pargc, char **argv)
 	return ret;
 }
 
+#ifndef NDEBUG
 
 const char *nslog_gettime(void)
 {
+	static struct timeval start_tv;
+	static char buff[32];
+
 	struct timeval tv;
         struct timeval now_tv;
 
@@ -72,7 +73,9 @@ const char *nslog_gettime(void)
 
 	timeval_subtract(&tv, &now_tv, &start_tv);
 
-        snprintf(buff, sizeof(buff),"(%ld.%ld)", (long)tv.tv_sec, (long)tv.tv_usec);
+        snprintf(buff, sizeof(buff),"(%ld.%ld)", 
+			(long)tv.tv_sec, (long)tv.tv_usec);
+
         return buff;
 }
 
@@ -88,4 +91,6 @@ void nslog_log(const char *format, ...)
 		va_end(ap);
 	}
 }
+
+#endif
 

@@ -51,12 +51,13 @@
 #include "render/form.h"
 #include "render/layout.h"
 #include "render/table.h"
-#define NDEBUG
 #include "utils/log.h"
-#undef NDEBUG
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
+
+/* Define to enable layout debugging */
+#undef LAYOUT_DEBUG
 
 #define AUTO INT_MIN
 
@@ -489,7 +490,9 @@ bool layout_block_context(struct box *block, int viewport_height,
 			max_pos_margin = max_neg_margin = 0;
 		}
 
+#ifdef LAYOUT_DEBUG
 		LOG(("box %p, cx %i, cy %i", box, cx, cy));
+#endif
 
 		/* Layout (except tables). */
 		if (box->object) {
@@ -836,8 +839,10 @@ bool layout_block_object(struct box *block)
 			block->type == BOX_TABLE_CELL);
 	assert(block->object);
 
+#ifdef LAYOUT_DEBUG
 	LOG(("block %p, object %s, width %i", block,
 			content_get_url(block->object), block->width));
+#endif
 
 	if (content_get_type(block->object) == CONTENT_HTML) {
 		content_reformat(block->object, block->width, 1);
@@ -1756,7 +1761,11 @@ void find_sides(struct box *fl, int y0, int y1,
 		int *x0, int *x1, struct box **left, struct box **right)
 {
 	int fy0, fy1, fx0, fx1;
+
+#ifdef LAYOUT_DEBUG
 	LOG(("y0 %i, y1 %i, x0 %i, x1 %i", y0, y1, *x0, *x1));
+#endif
+
 	*left = *right = 0;
 	for (; fl; fl = fl->next_float) {
 		fy0 = fl->y;
@@ -1777,7 +1786,10 @@ void find_sides(struct box *fl, int y0, int y1,
 			}
 		}
 	}
+
+#ifdef LAYOUT_DEBUG
 	LOG(("x0 %i, x1 %i, left %p, right %p", *x0, *x1, *left, *right));
+#endif
 }
 
 
@@ -1804,8 +1816,10 @@ bool layout_inline_container(struct box *inline_container, int width,
 
 	assert(inline_container->type == BOX_INLINE_CONTAINER);
 
+#ifdef LAYOUT_DEBUG
 	LOG(("inline_container %p, width %i, cont %p, cx %i, cy %i",
 			inline_container, width, cont, cx, cy));
+#endif
 
 	has_text_children = false;
 	for (c = inline_container->children; c; c = c->next) {
@@ -1831,7 +1845,9 @@ bool layout_inline_container(struct box *inline_container, int width,
 	 * curwidth = width and have the multiword lines wrap to the min width)
 	 */
 	for (c = inline_container->children; c; ) {
+#ifdef LAYOUT_DEBUG
 		LOG(("c %p", c));
+#endif
 		curwidth = inline_container->width;
 		if (!layout_line(c, &curwidth, &y, cx, cy + y, cont, first_line,
 				has_text_children, content, &next))
@@ -2049,9 +2065,11 @@ bool layout_line(struct box *first, int *width, int *y,
 	const struct font_functions *font_func = content->data.html.font_func;
 	plot_font_style_t fstyle;
 
+#ifdef LAYOUT_DEBUG
 	LOG(("first %p, first->text '%.*s', width %i, y %i, cx %i, cy %i",
 			first, (int) first->length, first->text, *width,
 			*y, cx, cy));
+#endif
 
 	/* find sides at top of line */
 	x0 += cx;
@@ -2080,7 +2098,10 @@ bool layout_line(struct box *first, int *width, int *y,
 	/* pass 1: find height of line assuming sides at top of line: loop
 	 * body executed at least once
 	 * keep in sync with the loop in layout_minmax_line() */
+#ifdef LAYOUT_DEBUG
 	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
+#endif
+
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
 		enum css_width_e wtype;
 		enum css_height_e htype;
@@ -2092,7 +2113,10 @@ bool layout_line(struct box *first, int *width, int *y,
 				b->type == BOX_FLOAT_RIGHT ||
 				b->type == BOX_BR || b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END);
+
+#ifdef LAYOUT_DEBUG
 		LOG(("pass 1: b %p, x %i", b, x));
+#endif
 
 		if (b->type == BOX_BR)
 			break;
@@ -2305,9 +2329,15 @@ bool layout_line(struct box *first, int *width, int *y,
 	space_after = space_before = 0;
 
 	/* pass 2: place boxes in line: loop body executed at least once */
+#ifdef LAYOUT_DEBUG
 	LOG(("x0 %i, x1 %i, x1 - x0 %i", x0, x1, x1 - x0));
+#endif
+
 	for (x = x_previous = 0, b = first; x <= x1 - x0 && b; b = b->next) {
+#ifdef LAYOUT_DEBUG
 		LOG(("pass 2: b %p, x %i", b, x));
+#endif
+
 		if (b->type == BOX_INLINE_BLOCK &&
 				(css_computed_position(b->style) ==
 						CSS_POSITION_ABSOLUTE ||
@@ -2373,15 +2403,22 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		} else {
 			/* float */
+#ifdef LAYOUT_DEBUG
 			LOG(("float %p", b));
+#endif
+
 			d = b->children;
 			d->float_children = 0;
 			b->float_container = d->float_container = cont;
 
 			if (!layout_float(d, *width, content))
 				return false;
+
+#ifdef LAYOUT_DEBUG
 			LOG(("%p : %d %d", d, d->margin[TOP],
 					d->border[TOP].width));
+#endif
+
 			d->x = d->margin[LEFT] + d->border[LEFT].width;
 			d->y = d->margin[TOP] + d->border[TOP].width;
 			b->width = d->margin[LEFT] + d->border[LEFT].width +
@@ -2468,7 +2505,10 @@ bool layout_line(struct box *first, int *width, int *y,
 					right = b;
 			}
 			if (cont->float_children == b) {
+#ifdef LAYOUT_DEBUG
 				LOG(("float %p already placed", b));
+#endif
+
 				box_dump(stderr, cont, 0);
 				assert(0);
 			}
@@ -2514,11 +2554,13 @@ bool layout_line(struct box *first, int *width, int *y,
 					space, &w);
 		}
 
+#ifdef LAYOUT_DEBUG
 		LOG(("splitting: split_box %p \"%.*s\", space %zu, w %i, "
 				"left %p, right %p, inline_count %u",
 				split_box, (int) split_box->length,
 				split_box->text, space, w,
 				left, right, inline_count));
+#endif
 
 		if ((space == 0 || x1 - x0 <= x + space_before + w) &&
 				!left && !right && inline_count == 1) {
@@ -2535,7 +2577,9 @@ bool layout_line(struct box *first, int *width, int *y,
 				b = split_box->next;
 			}
 			x += space_before + w;
+#ifdef LAYOUT_DEBUG
 			LOG(("forcing"));
+#endif
 		} else if ((space == 0 || x1 - x0 <= x + space_before + w) &&
 				inline_count == 1) {
 			/* first word of first box doesn't fit, but a float is
@@ -2543,22 +2587,30 @@ bool layout_line(struct box *first, int *width, int *y,
 			assert(left || right);
 			used_height = 0;
 			if (left) {
+#ifdef LAYOUT_DEBUG
 				LOG(("cy %i, left->y %i, left->height %i",
 						cy, left->y, left->height));
+#endif
 				used_height = left->y + left->height - cy + 1;
+#ifdef LAYOUT_DEBUG
 				LOG(("used_height %i", used_height));
+#endif
 			}
 			if (right && used_height <
 					right->y + right->height - cy + 1)
 				used_height = right->y + right->height - cy + 1;
 			assert(0 < used_height);
 			b = split_box;
+#ifdef LAYOUT_DEBUG
 			LOG(("moving below float"));
+#endif
                 } else if (space == 0 || x1 - x0 <= x + space_before + w) {
                 	/* first word of box doesn't fit so leave box for next
                 	 * line */
 			b = split_box;
+#ifdef LAYOUT_DEBUG
 			LOG(("leaving for next line"));
+#endif
 		} else {
 			/* fit as many words as possible */
 			assert(space != 0);
@@ -2567,8 +2619,10 @@ bool layout_line(struct box *first, int *width, int *y,
 			font_func->font_split(&fstyle,
 					split_box->text, split_box->length,
 					x1 - x0 - x - space_before, &space, &w);
+#ifdef LAYOUT_DEBUG
 			LOG(("'%.*s' %i %zu %i", (int) split_box->length,
 					split_box->text, x1 - x0, space, w));
+#endif
 			if (space == 0)
 				space = 1;
 			if (space != split_box->length) {
@@ -2578,7 +2632,9 @@ bool layout_line(struct box *first, int *width, int *y,
 				b = split_box->next;
 			}
 			x += space_before + w;
+#ifdef LAYOUT_DEBUG
 			LOG(("fitting words"));
+#endif
 		}
 		move_y = true;
 	}
@@ -2743,7 +2799,9 @@ struct box *layout_minmax_line(struct box *first,
 				b->type == BOX_BR || b->type == BOX_TEXT ||
 				b->type == BOX_INLINE_END);
 
+#ifdef LAYOUT_DEBUG
 		LOG(("%p: min %i, max %i", b, min, max));
+#endif
 
 		if (b->type == BOX_BR) {
 			b = b->next;
@@ -2937,7 +2995,10 @@ struct box *layout_minmax_line(struct box *first,
 
 	*line_min = min;
 	*line_max = max;
+
+#ifdef LAYOUT_DEBUG
 	LOG(("line_min %i, line_max %i", min, max));
+#endif
 
 	assert(b != first);
 	assert(0 <= *line_min && *line_min <= *line_max);
@@ -3015,7 +3076,11 @@ void place_float_below(struct box *c, int width, int cx, int y,
 	int x0, x1, yy = y;
 	struct box *left;
 	struct box *right;
+
+#ifdef LAYOUT_DEBUG
 	LOG(("c %p, width %i, cx %i, y %i, cont %p", c, width, cx, y, cont));
+#endif
+
 	do {
 		y = yy;
 		x0 = cx;
@@ -3231,11 +3296,14 @@ bool layout_table(struct box *table, int available_width,
 
 	/* calculate width required by cells */
 	for (i = 0; i != columns; i++) {
+#ifdef LAYOUT_DEBUG
 		LOG(("table %p, column %u: type %s, width %i, min %i, max %i",
 				table, i,
 				((const char *[]) {"UNKNOWN", "FIXED", "AUTO",
 				"PERCENT", "RELATIVE"})[col[i].type],
 				col[i].width, col[i].min, col[i].max));
+#endif
+
 		if (col[i].positioned) {
 			positioned_columns++;
 			continue;
@@ -3251,14 +3319,19 @@ bool layout_table(struct box *table, int available_width,
 					col[i].min;
 		} else
 			required_width += col[i].min;
+
+#ifdef LAYOUT_DEBUG
 		LOG(("required_width %i", required_width));
+#endif
 	}
 	required_width += (columns + 1 - positioned_columns) *
 			border_spacing_h;
 
+#ifdef LAYOUT_DEBUG
 	LOG(("width %i, min %i, max %i, auto %i, required %i",
 			table_width, table->min_width, table->max_width,
 			auto_width, required_width));
+#endif
 
 	if (auto_width < required_width) {
 		/* table narrower than required width for columns:
@@ -4072,7 +4145,9 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 	else
 		bottom = -top;
 
+#ifdef LAYOUT_DEBUG
 	LOG(("left %i, right %i, top %i, bottom %i", left, right, top, bottom));
+#endif
 
 	*x = left;
 	*y = top;
@@ -4207,11 +4282,14 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	box->float_container = NULL;
 
 	/* 10.3.7 */
+#ifdef LAYOUT_DEBUG
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
 			left, margin[LEFT], border[LEFT].width,
 			padding[LEFT], width, padding[RIGHT],
 			border[RIGHT].width, margin[RIGHT], right,
 			containing_block->width));
+#endif
+
 	if (left == AUTO && width == AUTO && right == AUTO) {
 		if (margin[LEFT] == AUTO)
 			margin[LEFT] = 0;
@@ -4372,11 +4450,14 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 					border[RIGHT].width - margin[RIGHT];
 		}
 	}
+
+#ifdef LAYOUT_DEBUG
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
 			left, margin[LEFT], border[LEFT].width, padding[LEFT],
 			width, padding[RIGHT], border[RIGHT].width,
 			margin[RIGHT], right,
 			containing_block->width));
+#endif
 
 	box->x = left + margin[LEFT] + border[LEFT].width - cx;
 	if (containing_block->type == BOX_BLOCK ||
@@ -4404,11 +4485,14 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	}
 
 	/* 10.6.4 */
+#ifdef LAYOUT_DEBUG
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
 			top, margin[TOP], border[TOP].width, padding[TOP],
 			height, padding[BOTTOM], border[BOTTOM].width,
 			margin[BOTTOM], bottom,
 			containing_block->height));
+#endif
+
 	if (top == AUTO && height == AUTO && bottom == AUTO) {
 		top = static_top;
 		height = box->height;
@@ -4492,11 +4576,14 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 					margin[BOTTOM];
 		}
 	}
+
+#ifdef LAYOUT_DEBUG
 	LOG(("%i + %i + %i + %i + %i + %i + %i + %i + %i = %i",
 			top, margin[TOP], border[TOP].width, padding[TOP],
 			height, padding[BOTTOM], border[BOTTOM].width,
 			margin[BOTTOM], bottom,
 			containing_block->height));
+#endif
 
 	box->y = top + margin[TOP] + border[TOP].width - cy;
 	if (containing_block->type == BOX_BLOCK ||
