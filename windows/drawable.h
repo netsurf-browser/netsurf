@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Vincent Sanders <vince@netsurf-browser.org>
+ * Copyright 2011 Vincent Sanders <vince@simtec.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,19 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NETSURF_WINDOWS_WINDBG_H_
-#define _NETSURF_WINDOWS_WINDBG_H_
+#ifndef _NETSURF_WINDOWS_DRAWABLE_H_
+#define _NETSURF_WINDOWS_DRAWABLE_H_
 
-#include "utils/log.h"
+nserror nsws_create_drawable_class(HINSTANCE hinstance);
+HWND nsws_window_create_drawable(HINSTANCE hinstance, HWND hparent, struct gui_window *gw);
 
-const char *msg_num_to_name(int msg);
-void win_perror(const char *lpszFunction);
-
-#define LOG_WIN_MSG(h, m, w, l)				\
-	if (((m) != WM_SETCURSOR) &&			\
-	    ((m) != WM_MOUSEMOVE) &&			\
-	    ((m) != WM_NCHITTEST) &&			\
-	    ((m) != WM_ENTERIDLE))			\
-		LOG(("%s, hwnd %p, w 0x%x, l 0x%x", msg_num_to_name(m), h, w, l));
-
-#endif
+#endif /* _NETSURF_WINDOWS_DRAWABLE_H_ */

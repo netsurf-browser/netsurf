@@ -137,7 +137,7 @@ gui_download_window_create(download_context *ctx, struct gui_window *gui)
 
 bool nsws_download_window_up(struct gui_download_window *w)
 {
-	 w->hwnd = CreateDialog(hinstance, MAKEINTRESOURCE(IDD_DLG_DOWNLOAD),
+	 w->hwnd = CreateDialog(hInstance, MAKEINTRESOURCE(IDD_DLG_DOWNLOAD),
 			gui_window_main_window(w->window),
 			nsws_download_event_callback);
 	if (w->hwnd == NULL) {

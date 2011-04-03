@@ -20,10 +20,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -31,9 +29,7 @@
 
 #include "content/urldb.h"
 #include "content/fetch.h"
-#include "content/fetchers/resource.h"
 #include "css/utils.h"
-#include "desktop/gui.h"
 #include "desktop/history_core.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"
@@ -43,101 +39,38 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
-#include "utils/url.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
-#include "utils/filepath.h"
 
+#include "windows/window.h"
 #include "windows/about.h"
 #include "windows/gui.h"
-#include "windows/findfile.h"
+#include "windows/drawable.h"
 #include "windows/font.h"
 #include "windows/localhistory.h"
 #include "windows/plot.h"
 #include "windows/prefs.h"
 #include "windows/resourceid.h"
 #include "windows/schedule.h"
+#include "windows/findfile.h"
+#include "windows/windbg.h"
 
-#include "windbg.h"
-
-char *default_stylesheet_url;
-char *adblock_stylesheet_url;
-char *quirks_stylesheet_url;
-char *options_file_location;
+HINSTANCE hInstance; /** win32 application instance handle. */
 
 struct gui_window *input_window = NULL;
 struct gui_window *search_current_window;
 struct gui_window *window_list = NULL;
 HWND font_hwnd;
 
-static char default_page[] = "http://www.netsurf-browser.org/welcome/";
-static HICON hIcon, hIconS;
 static int open_windows = 0;
 
 static const char windowclassname_main[] = "nswsmainwindow";
-static const char windowclassname_drawable[] = "nswsdrawablewindow";
 
 #define NSWS_THROBBER_WIDTH 24
 #define NSWS_URL_ENTER (WM_USER)
 
-struct gui_window {
-	/* The front's private data connected to a browser window */
-	/* currently 1<->1 gui_window<->windows window [non-tabbed] */
-	struct browser_window *bw; /** the browser_window */
-
-	HWND main; /**< handle to the actual window */
-	HWND toolbar; /**< toolbar handle */
-	HWND urlbar; /**< url bar handle */
-	HWND throbber; /** throbber handle */
-	HWND drawingarea; /**< drawing area handle */
-	HWND statusbar; /**< status bar handle */
-	HWND vscroll; /**< vertical scrollbar handle */
-	HWND hscroll; /**< horizontal scrollbar handle */
-
-	HMENU mainmenu; /**< the main menu */
-	HMENU rclick; /**< the right-click menu */
-	struct nsws_localhistory *localhistory;	/**< handle to local history window */
-	int width; /**< width of window */
-	int height; /**< height of drawing area */
-
-	int toolbuttonc; /**< number of toolbar buttons */
-	int toolbuttonsize; /**< width, height of buttons */
-	bool throbbing; /**< whether currently throbbing */
-
-	struct browser_mouse *mouse; /**< mouse state */
-
-	HACCEL acceltable; /**< accelerators */
-
-	float scale; /**< scale of content */
-
-	int scrollx; /**< current scroll location */
-	int scrolly; /**< current scroll location */
-
-	RECT *fullscreen; /**< memorize non-fullscreen area */
-	RECT redraw; /**< Area needing redraw. */
-	int requestscrollx, requestscrolly; /**< scolling requested. */
-	struct gui_window *next, *prev; /**< global linked list */
-};
-
 static struct nsws_pointers nsws_pointer;
-
-static char **respaths; /** resource search path vector */
-
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
-
-LRESULT CALLBACK nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-LRESULT CALLBACK nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-LRESULT CALLBACK nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-LRESULT CALLBACK nsws_window_drawable_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
-HINSTANCE hinstance;
 
 void gui_multitask(void)
 {
@@ -182,34 +115,6 @@ void gui_poll(bool active)
 	}
 }
 
-/* obtain gui window structure from windows window handle */
-static struct gui_window *
-nsws_get_gui_window(HWND hwnd)
-{
-	struct gui_window *gw = NULL;
-	HWND phwnd = hwnd;
-
-	/* scan the window hierachy for gui window */
-	while (phwnd != NULL) {
-		gw = GetProp(phwnd, TEXT("GuiWnd"));
-		if (gw != NULL)
-			break;
-		phwnd = GetParent(phwnd);
-	}
-
-	if (gw == NULL) {
-		/* try again looking for owner windows instead */
-		phwnd = hwnd;
-		while (phwnd != NULL) {
-			gw = GetProp(phwnd, TEXT("GuiWnd"));
-			if (gw != NULL)
-				break;
-			phwnd = GetWindow(phwnd, GW_OWNER);
-		}
-	}
-
-	return gw;
-}
 
 bool
 nsws_window_go(HWND hwnd, const char *url)
@@ -228,7 +133,7 @@ nsws_window_go(HWND hwnd, const char *url)
 /**
  * callback for url bar events
  */
-LRESULT CALLBACK
+static LRESULT CALLBACK
 nsws_window_urlbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
@@ -356,7 +261,7 @@ nsws_window_toolbar_command(struct gui_window *gw,
 /**
  * callback for toolbar events
  */
-LRESULT CALLBACK
+static LRESULT CALLBACK
 nsws_window_toolbar_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
@@ -589,7 +494,7 @@ nsws_window_throbber_create(struct gui_window *w)
 			    NSWS_THROBBER_WIDTH,
 			    w->main,
 			    (HMENU) IDC_MAIN_THROBBER,
-			    hinstance,
+			    hInstance,
 			    NULL);
 
 	nsws_find_resource(avi, "throbber.avi", "windows/res/throbber.avi");
@@ -604,18 +509,32 @@ nsws_window_throbber_create(struct gui_window *w)
 }
 
 static HIMAGELIST
-nsws_set_imagelist(HWND hwnd, UINT msg, int resid, int bsize, int bcnt)
+get_imagelist(int resid, int bsize, int bcnt)
 {
 	HIMAGELIST hImageList;
 	HBITMAP hScrBM;
 
+	LOG(("resource id %d, bzize %d, bcnt %d",resid, bsize, bcnt));
+
 	hImageList = ImageList_Create(bsize, bsize, ILC_COLOR24 | ILC_MASK, 0, bcnt);
-	hScrBM = LoadImage(hinstance, MAKEINTRESOURCE(resid),
+	if (hImageList == NULL) 
+		return NULL;
+
+	hScrBM = LoadImage(hInstance, MAKEINTRESOURCE(resid),
 			   IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
-	ImageList_AddMasked(hImageList, hScrBM, 0xcccccc);
+
+	if (hScrBM == NULL) {
+		win_perror("LoadImage");
+		return NULL;		
+	}
+
+	if (ImageList_AddMasked(hImageList, hScrBM, 0xcccccc) == -1) {
+		/* failed to add masked bitmap */
+		ImageList_Destroy(hImageList);
+		hImageList = NULL;
+	}
 	DeleteObject(hScrBM);
 
-	SendMessage(hwnd, msg, (WPARAM)0, (LPARAM)hImageList);
 	return hImageList;
 }
 
@@ -647,7 +566,7 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
 			      urlheight,
 			      hwndparent,
 			      (HMENU)IDC_MAIN_URLBAR,
-			      hinstance,
+			      hInstance,
 			      0);
 
 	if (hwnd == NULL) {
@@ -678,8 +597,9 @@ nsws_window_urlbar_create(struct gui_window *gw, HWND hwndparent)
 
 /* create a toolbar add controls and message handler */
 static HWND
-nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
+nsws_window_create_toolbar(struct gui_window *gw, HWND hWndParent)
 {
+	HIMAGELIST hImageList;
 	HWND hWndToolbar;
 	/* Toolbar buttons */
 	TBBUTTON tbButtons[] = {
@@ -716,13 +636,19 @@ nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 	gw->toolbuttonc = sizeof(tbButtons) / sizeof(TBBUTTON);
 
 	/* Create the standard image list and assign to toolbar. */
-	nsws_set_imagelist(hWndToolbar, TB_SETIMAGELIST, IDR_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
+	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP, gw->toolbuttonsize, gw->toolbuttonc);
+	if (hImageList != NULL) 
+		SendMessage(hWndToolbar, TB_SETIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Create the disabled image list and assign to toolbar. */
-	nsws_set_imagelist(hWndToolbar, TB_SETDISABLEDIMAGELIST, IDR_TOOLBAR_BITMAP_GREY, gw->toolbuttonsize, gw->toolbuttonc);
+	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_GREY, gw->toolbuttonsize, gw->toolbuttonc);
+	if (hImageList != NULL) 
+		SendMessage(hWndToolbar, TB_SETDISABLEDIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Create the hot image list and assign to toolbar. */
-	nsws_set_imagelist(hWndToolbar, TB_SETHOTIMAGELIST, IDR_TOOLBAR_BITMAP_HOT, gw->toolbuttonsize, gw->toolbuttonc);
+	hImageList = get_imagelist(IDR_TOOLBAR_BITMAP_HOT, gw->toolbuttonsize, gw->toolbuttonc);
+	if (hImageList != NULL) 
+		SendMessage(hWndToolbar, TB_SETHOTIMAGELIST, 0, (LPARAM)hImageList);
 
 	/* Add buttons. */
 	SendMessage(hWndToolbar, TB_BUTTONSTRUCTSIZE, (WPARAM)sizeof(TBBUTTON), 0);
@@ -733,496 +659,6 @@ nsws_window_toolbar_create(struct gui_window *gw, HWND hWndParent)
 	gw->throbber = nsws_window_throbber_create(gw);
 
 	return hWndToolbar;
-}
-
-
-
-
-static LRESULT nsws_drawable_mousemove(struct gui_window *gw, int x, int y)
-{
-	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-	bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
-	bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
-
-	if ((gw == NULL) ||
-	    (gw->mouse == NULL) ||
-	    (gw->bw == NULL))
-		return 0;
-
-	/* scale co-ordinates */
-	x = (x + gw->scrollx) / gw->bw->scale;
-	y = (y + gw->scrolly) / gw->bw->scale;
-
-	/* if mouse button held down and pointer moved more than
-	 * minimum distance drag is happening */
-	if (((gw->mouse->state & (BROWSER_MOUSE_PRESS_1 | BROWSER_MOUSE_PRESS_2)) != 0) &&
-	    (abs(x - gw->mouse->pressed_x) >= 5) &&
-	    (abs(y - gw->mouse->pressed_y) >= 5)) {
-
-		LOG(("Drag start state 0x%x", gw->mouse->state));
-
-		if ((gw->mouse->state & BROWSER_MOUSE_PRESS_1) != 0) {
-			browser_window_mouse_click(gw->bw, BROWSER_MOUSE_DRAG_1,
-						   gw->mouse->pressed_x,
-						   gw->mouse->pressed_y);
-			gw->mouse->state &= ~BROWSER_MOUSE_PRESS_1;
-			gw->mouse->state |= BROWSER_MOUSE_HOLDING_1 |
-				BROWSER_MOUSE_DRAG_ON;
-		}
-		else if ((gw->mouse->state & BROWSER_MOUSE_PRESS_2) != 0) {
-			browser_window_mouse_click(gw->bw, BROWSER_MOUSE_DRAG_2,
-						   gw->mouse->pressed_x,
-						   gw->mouse->pressed_y);
-			gw->mouse->state &= ~BROWSER_MOUSE_PRESS_2;
-			gw->mouse->state |= BROWSER_MOUSE_HOLDING_2 |
-				BROWSER_MOUSE_DRAG_ON;
-		}
-	}
-
-	if (((gw->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
-		gw->mouse->state &= ~BROWSER_MOUSE_MOD_1;
-	if (((gw->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
-		gw->mouse->state &= ~BROWSER_MOUSE_MOD_2;
-	if (((gw->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
-		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
-
-
-	browser_window_mouse_track(gw->bw, gw->mouse->state, x, y);
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_mousedown(struct gui_window *gw,
-			int x, int y,
-			browser_mouse_state button)
-{
-	if ((gw == NULL) ||
-	    (gw->mouse == NULL) ||
-	    (gw->bw == NULL)) {
-		nsws_localhistory_close(gw);
-		return 0;
-	}
-
-	gw->mouse->state = button;
-	if ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000)
-		gw->mouse->state |= BROWSER_MOUSE_MOD_1;
-	if ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000)
-		gw->mouse->state |= BROWSER_MOUSE_MOD_2;
-	if ((GetKeyState(VK_MENU) & 0x8000) == 0x8000)
-		gw->mouse->state |= BROWSER_MOUSE_MOD_3;
-
-	gw->mouse->pressed_x = (x + gw->scrollx) / gw->bw->scale;
-	gw->mouse->pressed_y = (y + gw->scrolly) / gw->bw->scale;
-
-	LOG(("mouse click bw %p, state %x, x %f, y %f",gw->bw,
-	     gw->mouse->state,
-	     (x + gw->scrollx) / gw->bw->scale,
-	     (y + gw->scrolly) / gw->bw->scale));
-
-	browser_window_mouse_click(gw->bw, gw->mouse->state,
-				   (x + gw->scrollx) / gw->bw->scale ,
-				   (y + gw->scrolly) / gw->bw->scale);
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_mouseup(struct gui_window *gw,
-		      int x,
-		      int y,
-		      browser_mouse_state press,
-		      browser_mouse_state click)
-{
-	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-	bool ctrl = ((GetKeyState(VK_CONTROL) & 0x8000) == 0x8000);
-	bool alt = ((GetKeyState(VK_MENU) & 0x8000) == 0x8000);
-
-	if ((gw == NULL) ||
-	    (gw->mouse == NULL) ||
-	    (gw->bw == NULL))
-		return 0;
-
-	LOG(("state 0x%x, press 0x%x", gw->mouse->state, press));
-	if ((gw->mouse->state & press) != 0) {
-		gw->mouse->state &= ~press;
-		gw->mouse->state |= click;
-	}
-
-	if (((gw->mouse->state & BROWSER_MOUSE_MOD_1) != 0) && !shift)
-		gw->mouse->state &= ~BROWSER_MOUSE_MOD_1;
-	if (((gw->mouse->state & BROWSER_MOUSE_MOD_2) != 0) && !ctrl)
-		gw->mouse->state &= ~BROWSER_MOUSE_MOD_2;
-	if (((gw->mouse->state & BROWSER_MOUSE_MOD_3) != 0) && !alt)
-		gw->mouse->state &= ~BROWSER_MOUSE_MOD_3;
-
-	if ((gw->mouse->state & click) != 0) {
-		LOG(("mouse click bw %p, state 0x%x, x %f, y %f",gw->bw,
-					   gw->mouse->state,
-					   (x + gw->scrollx) / gw->bw->scale,
-					   (y + gw->scrolly) / gw->bw->scale));
-
-		browser_window_mouse_click(gw->bw,
-					   gw->mouse->state,
-					   (x + gw->scrollx) / gw->bw->scale,
-					   (y + gw->scrolly) / gw->bw->scale);
-	} else {
-		browser_window_mouse_drag_end(gw->bw,
-					      0,
-					      (x + gw->scrollx) / gw->bw->scale,
-					      (y + gw->scrolly) / gw->bw->scale);
-	}
-
-	gw->mouse->state = 0;
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
-{
-	struct rect clip;
-	PAINTSTRUCT ps;
-
-	BeginPaint(hwnd, &ps);
-
-	if (gw != NULL) {
-
-		plot_hdc = ps.hdc;
-
-		clip.x0 = ps.rcPaint.left;
-		clip.y0 = ps.rcPaint.top;
-		clip.x1 = ps.rcPaint.right;
-		clip.y1 = ps.rcPaint.bottom;
-
-		browser_window_redraw(gw->bw,
-				      -gw->scrollx / gw->bw->scale,
-				      -gw->scrolly / gw->bw->scale,
-				      &clip);
-
-	}
-
-	EndPaint(hwnd, &ps);
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
-{
-	SCROLLINFO si;
-	int mem;
-
-	LOG(("HSCROLL %d", gw->requestscrollx));
-
-	if (gw->requestscrollx != 0)
-		return 0;
-
-	si.cbSize = sizeof(si);
-	si.fMask = SIF_ALL;
-	GetScrollInfo(hwnd, SB_HORZ, &si);
-	mem = si.nPos;
-	switch (LOWORD(wparam))	{
-	case SB_LINELEFT:
-		si.nPos -= 30;
-		break;
-
-	case SB_LINERIGHT:
-		si.nPos += 30;
-		break;
-
-	case SB_PAGELEFT:
-		si.nPos -= gw->width;
-		break;
-
-	case SB_PAGERIGHT:
-		si.nPos += gw->width;
-		break;
-
-	case SB_THUMBTRACK:
-		si.nPos = si.nTrackPos;
-		break;
-
-	default:
-		break;
-	}
-
-	si.fMask = SIF_POS;
-
-	if ((gw->bw != NULL) &&
-	    (gw->bw->current_content != NULL)) {
-		si.nPos = MIN(si.nPos,
-			      content_get_width(gw->bw->current_content) *
-			      gw->bw->scale - gw->width);
-	}
-	si.nPos = MAX(si.nPos, 0);
-	SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
-	GetScrollInfo(hwnd, SB_HORZ, &si);
-	if (si.nPos != mem) {
-		gui_window_set_scroll(gw,
-				      gw->scrollx + gw->requestscrollx + si.nPos - mem,
-				      gw->scrolly);
-	}
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_vscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
-{
-	SCROLLINFO si;
-	int mem;
-
-	LOG(("VSCROLL %d", gw->requestscrolly));
-
-	if (gw->requestscrolly != 0)
-		return 0;
-
-	si.cbSize = sizeof(si);
-	si.fMask = SIF_ALL;
-	GetScrollInfo(hwnd, SB_VERT, &si);
-	mem = si.nPos;
-	switch (LOWORD(wparam))	{
-	case SB_TOP:
-		si.nPos = si.nMin;
-		break;
-
-	case SB_BOTTOM:
-		si.nPos = si.nMax;
-		break;
-
-	case SB_LINEUP:
-		si.nPos -= 30;
-		break;
-
-	case SB_LINEDOWN:
-		si.nPos += 30;
-		break;
-
-	case SB_PAGEUP:
-		si.nPos -= gw->height;
-		break;
-
-	case SB_PAGEDOWN:
-		si.nPos += gw->height;
-		break;
-
-	case SB_THUMBTRACK:
-		si.nPos = si.nTrackPos;
-		break;
-
-	default:
-		break;
-	}
-	si.fMask = SIF_POS;
-	if ((gw->bw != NULL) &&
-	    (gw->bw->current_content != NULL)) {
-		si.nPos = MIN(si.nPos,
-			      content_get_height(gw->bw->current_content) *
-			      gw->bw->scale - gw->height);
-	}
-	si.nPos = MAX(si.nPos, 0);
-	SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
-	GetScrollInfo(hwnd, SB_VERT, &si);
-	if (si.nPos != mem) {
-		gui_window_set_scroll(gw, gw->scrollx, gw->scrolly +
-				      gw->requestscrolly + si.nPos - mem);
-	}
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_key(struct gui_window *gw, HWND hwnd, WPARAM wparam)
-{
-	if (GetFocus() != hwnd)
-		return 0 ;
-
-	uint32_t i;
-	bool shift = ((GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
-	bool capslock = ((GetKeyState(VK_CAPITAL) & 1) == 1);
-
-	switch(wparam) {
-	case VK_LEFT:
-		i = KEY_LEFT;
-		if (shift)
-			SendMessage(hwnd, WM_HSCROLL,
-				    MAKELONG(SB_LINELEFT, 0), 0);
-		break;
-
-	case VK_RIGHT:
-		i = KEY_RIGHT;
-		if (shift)
-			SendMessage(hwnd, WM_HSCROLL,
-				    MAKELONG(SB_LINERIGHT, 0), 0);
-		break;
-
-	case VK_UP:
-		i = KEY_UP;
-		if (shift)
-			SendMessage(hwnd, WM_VSCROLL,
-				    MAKELONG(SB_LINEUP, 0), 0);
-		break;
-
-	case VK_DOWN:
-		i = KEY_DOWN;
-		if (shift)
-			SendMessage(hwnd, WM_VSCROLL,
-				    MAKELONG(SB_LINEDOWN, 0), 0);
-		break;
-
-	case VK_HOME:
-		i = KEY_LINE_START;
-		if (shift)
-			SendMessage(hwnd, WM_HSCROLL,
-				    MAKELONG(SB_PAGELEFT, 0), 0);
-		break;
-
-	case VK_END:
-		i = KEY_LINE_END;
-		if (shift)
-			SendMessage(hwnd, WM_HSCROLL,
-				    MAKELONG(SB_PAGERIGHT, 0), 0);
-		break;
-
-	case VK_DELETE:
-		i = KEY_DELETE_RIGHT;
-		break;
-
-	case VK_NEXT:
-		i = wparam;
-		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEDOWN, 0),
-			    0);
-		break;
-
-	case VK_PRIOR:
-		i = wparam;
-		SendMessage(hwnd, WM_VSCROLL, MAKELONG(SB_PAGEUP, 0),
-			    0);
-		break;
-
-	default:
-		i = wparam;
-		break;
-	}
-
-	if ((i >= 'A') && (i <= 'Z') &&
-	    (((!capslock) && (!shift)) ||
-	     ((capslock) && (shift))))
-		i += 'a' - 'A';
-
-	if (gw != NULL)
-		browser_window_key_press(gw->bw, i);
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_wheel(struct gui_window *gw, HWND hwnd, WPARAM wparam)
-{
-	int i, z = GET_WHEEL_DELTA_WPARAM(wparam) / WHEEL_DELTA;
-	int key = LOWORD(wparam);
-	DWORD command;
-	unsigned int newmessage = WM_VSCROLL;
-	if (key == MK_SHIFT) {
-		command = (z > 0) ? SB_LINERIGHT : SB_LINELEFT;
-		newmessage = WM_HSCROLL;
-	} else
-		/* add MK_CONTROL -> zoom */
-		command = (z > 0) ? SB_LINEUP : SB_LINEDOWN;
-	z = (z < 0) ? -1 * z : z;
-	for (i = 0; i < z; i++)
-		SendMessage(hwnd, newmessage, MAKELONG(command, 0), 0);
-
-	return 0;
-}
-
-static LRESULT
-nsws_drawable_resize(struct gui_window *gw)
-{
-	browser_window_reformat(gw->bw, gw->width, gw->height);
-	return 0;
-}
-
-/* Called when activity occours within the drawable window. */
-LRESULT CALLBACK
-nsws_window_drawable_event_callback(HWND hwnd,
-				    UINT msg,
-				    WPARAM wparam,
-				    LPARAM lparam)
-{
-	struct gui_window *gw;
-
-	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
-
-	gw = nsws_get_gui_window(hwnd);
-	if (gw == NULL) {
-		LOG(("Unable to find gui window structure for hwnd %p", hwnd));
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-	}
-
-	switch(msg) {
-
-	case WM_MOUSEMOVE:
-		return nsws_drawable_mousemove(gw,
-					       GET_X_LPARAM(lparam),
-					       GET_Y_LPARAM(lparam));
-
-	case WM_LBUTTONDOWN:
-		nsws_drawable_mousedown(gw,
-					GET_X_LPARAM(lparam),
-					GET_Y_LPARAM(lparam),
-					BROWSER_MOUSE_PRESS_1);
-		SetFocus(hwnd);
-		nsws_localhistory_close(gw);
-		return 0;
-		break;
-
-	case WM_RBUTTONDOWN:
-		nsws_drawable_mousedown(gw,
-					GET_X_LPARAM(lparam),
-					GET_Y_LPARAM(lparam),
-					BROWSER_MOUSE_PRESS_2);
-		SetFocus(hwnd);
-		return 0;
-		break;
-
-	case WM_LBUTTONUP:
-		return nsws_drawable_mouseup(gw,
-					     GET_X_LPARAM(lparam),
-					     GET_Y_LPARAM(lparam),
-					     BROWSER_MOUSE_PRESS_1,
-					     BROWSER_MOUSE_CLICK_1);
-
-	case WM_RBUTTONUP:
-		return nsws_drawable_mouseup(gw,
-					     GET_X_LPARAM(lparam),
-					     GET_Y_LPARAM(lparam),
-					     BROWSER_MOUSE_PRESS_2,
-					     BROWSER_MOUSE_CLICK_2);
-
-	case WM_ERASEBKGND: /* ignore as drawable window is redrawn on paint */
-		return 0;
-
-	case WM_PAINT: /* redraw the exposed part of the window */
-		return nsws_drawable_paint(gw, hwnd);
-
-	case WM_KEYDOWN:
-		return nsws_drawable_key(gw, hwnd, wparam);
-
-	case WM_SIZE:
-		return nsws_drawable_resize(gw);
-
-	case WM_HSCROLL:
-		return nsws_drawable_hscroll(gw, hwnd, wparam);
-
-	case WM_VSCROLL:
-		return nsws_drawable_vscroll(gw, hwnd, wparam);
-
-	case WM_MOUSEWHEEL:
-		return nsws_drawable_wheel(gw, hwnd, wparam);
-
-	}
-	return DefWindowProc(hwnd, msg, wparam, lparam);
 }
 
 static LRESULT
@@ -1379,7 +815,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_EDIT_PREFERENCES:
-		nsws_prefs_dialog_init(hinstance, gw->main);
+		nsws_prefs_dialog_init(hInstance, gw->main);
 		break;
 
 	case IDM_NAV_BACK:
@@ -1399,7 +835,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_NAV_HOME:
-		browser_window_go(gw->bw, default_page, 0, true);
+		browser_window_go(gw->bw, option_homepage_url, 0, true);
 		break;
 
 	case IDM_NAV_STOP:
@@ -1411,7 +847,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_NAV_LOCALHISTORY:
-		nsws_localhistory_init(gw);
+		gw->localhistory = nsws_window_create_localhistory(gw);
 		break;
 
 	case IDM_NAV_GLOBALHISTORY:
@@ -1538,7 +974,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_HELP_ABOUT:
-		nsws_about_dialog_init(hinstance, gw->main);
+		nsws_about_dialog_init(hInstance, gw->main);
 		break;
 
 	case IDC_MAIN_LAUNCH_URL:
@@ -1565,11 +1001,11 @@ nsws_window_command(HWND hwnd,
 /**
  * callback for window events generally
  */
-LRESULT CALLBACK
+static LRESULT CALLBACK
 nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	struct gui_window *gw;
-		RECT rmain;
+	RECT rmain;
 
 	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
 
@@ -1624,39 +1060,12 @@ nsws_window_event_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 }
 
 
-static void create_local_windows_classes(void) {
-	WNDCLASSEX w;
 
-	/* main window */
-	w.cbSize	= sizeof(WNDCLASSEX);
-	w.style		= 0;
-	w.lpfnWndProc	= nsws_window_event_callback;
-	w.cbClsExtra	= 0;
-	w.cbWndExtra	= 0;
-	w.hInstance	= hinstance;
-	w.hIcon		= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
-	w.hCursor	= NULL;
-	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
-	w.lpszMenuName	= NULL;
-	w.lpszClassName = windowclassname_main;
-	w.hIconSm	= LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
-	RegisterClassEx(&w);
-
-	/* drawable area */
-	w.lpfnWndProc	= nsws_window_drawable_event_callback;
-	w.hIcon		= NULL;
-	w.lpszMenuName	= NULL;
-	w.lpszClassName = windowclassname_drawable;
-	w.hIconSm	= NULL;
-
-	RegisterClassEx(&w);
-
-}
 
 /**
  * creation of status bar
  */
-static HWND nsws_window_statusbar_create(struct gui_window *w)
+static HWND nsws_window_create_statusbar(struct gui_window *w)
 {
 	HWND hwnd = CreateWindowEx(0,
 				   STATUSCLASSNAME,
@@ -1665,7 +1074,7 @@ static HWND nsws_window_statusbar_create(struct gui_window *w)
 				   0, 0, 0, 0,
 				   w->main,
 				   (HMENU)IDC_MAIN_STATUSBAR,
-				   hinstance,
+				   hInstance,
 				   NULL);
 	SendMessage(hwnd, SB_SETTEXT, 0, (LPARAM)"NetSurf");
 	return hwnd;
@@ -1705,10 +1114,10 @@ static HWND nsws_window_create(struct gui_window *gw)
 #endif
 	InitCommonControlsEx(&icc);
 
-	gw->mainmenu = LoadMenu(hinstance, MAKEINTRESOURCE(IDR_MENU_MAIN));
-	gw->rclick = LoadMenu(hinstance, MAKEINTRESOURCE(IDR_MENU_CONTEXT));
+	gw->mainmenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_MAIN));
+	gw->rclick = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU_CONTEXT));
 
-	LOG(("creating window for hInstance %p", hinstance));
+	LOG(("creating window for hInstance %p", hInstance));
 	hwnd = CreateWindowEx(0,
 			      windowclassname_main,
 			      "NetSurf Browser",
@@ -1719,7 +1128,7 @@ static HWND nsws_window_create(struct gui_window *gw)
 			      gw->height,
 			      NULL,
 			      gw->mainmenu,
-			      hinstance,
+			      hInstance,
 			      NULL);
 
 	if (hwnd == NULL) {
@@ -1799,22 +1208,11 @@ gui_create_browser_window(struct browser_window *bw,
 	switch(bw->browser_window_type) {
 	case BROWSER_WINDOW_NORMAL:
 		gw->main = nsws_window_create(gw);
-		gw->toolbar = nsws_window_toolbar_create(gw, gw->main);
-		gw->statusbar = nsws_window_statusbar_create(gw);
+		gw->toolbar = nsws_window_create_toolbar(gw, gw->main);
+		gw->statusbar = nsws_window_create_statusbar(gw);
+		gw->drawingarea = nsws_window_create_drawable(hInstance, gw->main, gw);
 
-		gw->drawingarea = CreateWindow(windowclassname_drawable,
-					       NULL,
-					       WS_VISIBLE | WS_CHILD,
-					       0, 0, 0, 0,
-					       gw->main,
-					       NULL,
-					       hinstance,
-					       NULL);
 		LOG(("BROWSER_WINDOW_NORMAL: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
-
-
-		/* set the gui window associated with this toolbar */
-		SetProp(gw->drawingarea, TEXT("GuiWnd"), (HANDLE)gw);
 
 		font_hwnd = gw->drawingarea;
 		input_window = gw;
@@ -1823,19 +1221,12 @@ gui_create_browser_window(struct browser_window *bw,
 		break;
 
 	case BROWSER_WINDOW_FRAME:
-		gw->drawingarea = CreateWindow(windowclassname_drawable,
-					       NULL,
-					       WS_VISIBLE | WS_CHILD,
-					       0,  0,  0,  0,
-					       bw->parent->window->drawingarea,
-					       NULL,
-					       hinstance,
-					       NULL);
-		/* set the gui window associated with this toolbar */
-		SetProp(gw->drawingarea, TEXT("GuiWnd"), (HANDLE)gw);
+		gw->drawingarea = nsws_window_create_drawable(hInstance, bw->parent->window->drawingarea, gw);
 
 		ShowWindow(gw->drawingarea, SW_SHOWNORMAL);
-		LOG(("create frame"));
+
+		LOG(("BROWSER_WINDOW_FRAME: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
+
 		break;
 
 	case BROWSER_WINDOW_FRAMESET:
@@ -1843,20 +1234,12 @@ gui_create_browser_window(struct browser_window *bw,
 		break;
 
 	case BROWSER_WINDOW_IFRAME:
-		LOG(("create iframe"));
-		gw->drawingarea = CreateWindow(windowclassname_drawable,
-					       NULL,
-					       WS_VISIBLE | WS_CHILD,
-					       0, 0, 0, 0,
-					       bw->parent->window->drawingarea,
-					       NULL,
-					       hinstance,
-					       NULL);
-
-		/* set the gui window associated with this toolbar */
-		SetProp(gw->drawingarea, TEXT("GuiWnd"), (HANDLE)gw);
+		gw->drawingarea = nsws_window_create_drawable(hInstance, bw->parent->window->drawingarea, gw);
 
 		ShowWindow(gw->drawingarea, SW_SHOWNORMAL);
+
+		LOG(("BROWSER_WINDOW_IFRAME: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
+
 		break;
 
 	default:
@@ -1869,18 +1252,11 @@ gui_create_browser_window(struct browser_window *bw,
 
 
 
-HICON nsws_window_get_ico(bool large)
-{
-	return large ? hIcon : hIconS;
-}
-
-
-
 
 /**
  * cache pointers for quick swapping
  */
-static void nsws_window_init_pointers(void)
+void nsws_window_init_pointers(HINSTANCE hinstance)
 {
 	nsws_pointer.hand = LoadCursor(NULL, IDC_HAND);
 	nsws_pointer.ibeam = LoadCursor(NULL, IDC_IBEAM);
@@ -1941,12 +1317,6 @@ struct nsws_localhistory *gui_window_localhistory(struct gui_window *w)
 	return w->localhistory;
 }
 
-void gui_window_set_localhistory(struct gui_window *w,
-				 struct nsws_localhistory *l)
-{
-	if (w != NULL)
-		w->localhistory = l;
-}
 
 RECT *gui_window_redraw_rect(struct gui_window *w)
 {
@@ -2110,8 +1480,8 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.nMin = 0;
 	si.nMax = (content_get_height(w->bw->current_content) * w->bw->scale) - 1;
 	si.nPage = w->height;
-	si.nPos = MAX(w->scrolly + w->requestscrolly, 0);
-	si.nPos = MIN(si.nPos, content_get_height(w->bw->current_content) * w->bw->scale - w->height);
+	si.nPos = max(w->scrolly + w->requestscrolly, 0);
+	si.nPos = min(si.nPos, content_get_height(w->bw->current_content) * w->bw->scale - w->height);
 	SetScrollInfo(w->drawingarea, SB_VERT, &si, TRUE);
 	LOG(("SetScrollInfo VERT min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -2121,8 +1491,8 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 	si.nMin = 0;
 	si.nMax = (content_get_width(w->bw->current_content) * w->bw->scale) -1;
 	si.nPage = w->width;
-	si.nPos = MAX(w->scrollx + w->requestscrollx, 0);
-	si.nPos = MIN(si.nPos, content_get_width(w->bw->current_content) * w->bw->scale - w->width);
+	si.nPos = max(w->scrollx + w->requestscrollx, 0);
+	si.nPos = min(si.nPos, content_get_width(w->bw->current_content) * w->bw->scale - w->width);
 	SetScrollInfo(w->drawingarea, SB_HORZ, &si, TRUE);
 	LOG(("SetScrollInfo HORZ min:%d max:%d page:%d pos:%d", si.nMin, si.nMax, si.nPage, si.nPos));
 
@@ -2148,8 +1518,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
 			       int x1, int y1)
 {
-	LOG(("scroll visible %s:(%p, %d, %d, %d, %d)", __func__, w, x0,
-	     y0, x1, y1));
+	LOG(("scroll visible (%p, %d, %d, %d, %d)", w, x0, y0, x1, y1));
 }
 
 void gui_window_position_frame(struct gui_window *w, int x0, int y0,
@@ -2197,7 +1566,6 @@ void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
 	if (w == NULL)
 		return;
 
-	LOG(("shape %d", shape));
 	switch (shape) {
 	case GUI_POINTER_POINT: /* link */
 	case GUI_POINTER_MENU:
@@ -2522,9 +1890,6 @@ void gui_create_form_select_menu(struct browser_window *bw,
 {
 }
 
-void gui_launch_url(const char *url)
-{
-}
 
 void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 		     unsigned long num,
@@ -2533,120 +1898,34 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 	cb(false, cbpw);
 }
 
+/**
+ * Create the main window class.
+ */
+nserror 
+nsws_create_main_class(HINSTANCE hinstance) {
+	nserror ret = NSERROR_OK;
+	WNDCLASSEX w;
 
-void gui_quit(void)
-{
-	LOG(("gui_quit"));
-}
+	/* main window */
+	w.cbSize = sizeof(WNDCLASSEX);
+	w.style	= 0;
+	w.lpfnWndProc = nsws_window_event_callback;
+	w.cbClsExtra = 0;
+	w.cbWndExtra = 0;
+	w.hInstance = hinstance;
+	w.hIcon = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
+	w.hCursor = NULL;
+	w.hbrBackground	= (HBRUSH)(COLOR_MENU + 1);
+	w.lpszMenuName = NULL;
+	w.lpszClassName = windowclassname_main;
+	w.hIconSm = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
 
-char* gui_get_resource_url(const char *filename)
-{
-	char buf[PATH_MAX];
-	return path_to_url(filepath_sfind(respaths, buf, filename));
-}
-
-static void gui_init(int argc, char** argv)
-{
-	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE;
-
-	LOG(("argc %d, argv %p", argc, argv));
-
-	/* set up stylesheet urls */
-	default_stylesheet_url = strdup("resource:default.css");
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-	quirks_stylesheet_url = strdup("resource:quirks.css");
-	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
-
-	adblock_stylesheet_url = strdup("resource:adblock.css");
-	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
-
-	create_local_windows_classes();
-
-	option_target_blank = false;
-
-	nsws_window_init_pointers();
-
-	/* ensure homepage option has a default */
-	if (option_homepage_url == NULL || option_homepage_url[0] == '\0')
-		option_homepage_url = strdup(default_page);
-
-	/* If there is a url specified on the command line use it */
-	if (argc > 1)
-		addr = argv[1];
-	else
-		addr = option_homepage_url;
-
-	LOG(("calling browser_window_create"));
-	bw = browser_window_create(addr, 0, 0, true, false);
-
-}
-
-void gui_stdout(void)
-{
-	/* mwindows compile flag normally invalidates stdout unless
-	   already redirected */
-	if (_get_osfhandle(fileno(stderr)) == -1) {
-		AllocConsole();
-		freopen("CONOUT$", "w", stderr);
-	}
-}
-
-/* OS program entry point */
-int WINAPI
-WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
-{
-	char **argv = NULL;
-	int argc = 0, argctemp = 0;
-	size_t len;
-	LPWSTR *argvw;
-	char *messages;
-
-	if (SLEN(lpcli) > 0) {
-		argvw = CommandLineToArgvW(GetCommandLineW(), &argc);
+	if (RegisterClassEx(&w) == 0) {
+		win_perror("DrawableClass");
+		ret = NSERROR_INIT_FAILED;
 	}
 
-	hinstance = hInstance;
-	setbuf(stderr, NULL);
+	hInstance = hinstance;
 
-	/* Construct a unix style argc/argv */
-	argv = malloc(sizeof(char *) * argc);
-	while (argctemp < argc) {
-		len = wcstombs(NULL, argvw[argctemp], 0) + 1;
-		if (len > 0) {
-			argv[argctemp] = malloc(len);
-		}
-
-		if (argv[argctemp] != NULL) {
-			wcstombs(argv[argctemp], argvw[argctemp], len);
-			/* alter windows-style forward slash flags to
-			 * hyphen flags.
-			 */
-			if (argv[argctemp][0] == '/')
-				argv[argctemp][0] = '-';
-		}
-		argctemp++;
-	}
-
-	respaths = nsws_init_resource("${APPDATA}\\NetSurf:${HOME}\\.netsurf:${NETSURFRES}:${PROGRAMFILES}\\NetSurf\\res:"NETSURF_WINDOWS_RESPATH);
-
-	messages = filepath_find(respaths, "messages");
-
-	options_file_location = filepath_find(respaths, "preferences");
-	
-	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options_file_location, messages);
-
-	free(messages);
-
-	gui_init(argc, argv);
-
-	netsurf_main_loop();
-
-	netsurf_exit();
-
-	free(options_file_location);
-
-	return 0;
+	return ret;
 }

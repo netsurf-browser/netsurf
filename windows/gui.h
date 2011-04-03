@@ -24,7 +24,7 @@
 #include "desktop/gui.h"
 #include "windows/localhistory.h"
 
-extern HINSTANCE hinstance;
+extern HINSTANCE hInstance;
 
 /* bounding box */
 typedef struct bbox_s {
@@ -50,15 +50,6 @@ struct nsws_pointers {
 	HCURSOR		arrow;
 };
 
-struct browser_mouse {
-       struct gui_window *gui;
-       struct box *box;
-       
-       double pressed_x;
-       double pressed_y;
-       bool waiting;
-       browser_mouse_state state;
-};
 
 extern struct gui_window *window_list;
 extern char *options_file_location;
@@ -84,8 +75,12 @@ int gui_window_scrollingy(struct gui_window *w);
 
 struct gui_window *gui_window_iterate(struct gui_window *);
 struct browser_window *gui_window_browser_window(struct gui_window *);
+
 struct nsws_pointers *nsws_get_pointers(void);
-HICON nsws_window_get_ico(bool);
+
+void nsws_window_init_pointers(HINSTANCE hinstance);
+
+nserror nsws_create_main_class(HINSTANCE hinstance);
 
 /**
  * Cause a browser window to navigate to a url

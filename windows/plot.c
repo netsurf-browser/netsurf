@@ -35,27 +35,23 @@
 #include "windows/gui.h"
 #include "windows/plot.h"
 
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
 
 /* set NSWS_PLOT_DEBUG to 0 for no debugging, 1 for debugging */
-#define NSWS_PLOT_DEBUG 0
+/* #define NSWS_PLOT_DEBUG  */
+
+#ifdef NSWS_PLOT_DEBUG
+#define PLOT_LOG(x) LOG(x)
+#else
+#define PLOT_LOG(x)
+#endif
 
 HDC plot_hdc;
-
 
 static RECT plot_clip; /* currently set clipping rectangle */
 
 static bool clip(const struct rect *clip)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("clip %d,%d to %d,%d", clip->x0, clip->y0, clip->x1, clip->y1));
-#endif
+	PLOT_LOG(("clip %d,%d to %d,%d", clip->x0, clip->y0, clip->x1, clip->y1));
 
 	plot_clip.left = clip->x0;
 	plot_clip.top = clip->y0;
@@ -67,9 +63,7 @@ static bool clip(const struct rect *clip)
 
 static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("from %d,%d to %d,%d", x0, y0, x1, y1));
-#endif
+	PLOT_LOG(("from %d,%d to %d,%d", x0, y0, x1, y1));
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -123,9 +117,7 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("rectangle from %d,%d to %d,%d", x0, y0, x1, y1));
-#endif
+	PLOT_LOG(("rectangle from %d,%d to %d,%d", x0, y0, x1, y1));
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -192,9 +184,7 @@ static bool rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("polygon %d points", n));
-#endif
+	PLOT_LOG(("polygon %d points", n));
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -242,9 +232,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 		points[i].x = (long) p[2 * i];
 		points[i].y = (long) p[2 * i + 1];
 
-#if NSWS_PLOT_DEBUG
-		printf ("%ld,%ld ", points[i].x, points[i].y);
-#endif
+		PLOT_LOG(("%ld,%ld ", points[i].x, points[i].y));
 	}
 
 	SelectClipRgn(plot_hdc, clipregion);
@@ -260,9 +248,6 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 	DeleteObject(pen);
 	DeleteObject(brush);
 
-#if NSWS_PLOT_DEBUG
-	printf("\n");
-#endif
 	return true;
 }
 
@@ -270,9 +255,7 @@ static bool polygon(const int *p, unsigned int n, const plot_style_t *style)
 static bool text(int x, int y, const char *text, size_t length,
 		 const plot_font_style_t *style)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("words %s at %d,%d", text, x, y));
-#endif
+	PLOT_LOG(("words %s at %d,%d", text, x, y));
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -330,9 +313,7 @@ static bool text(int x, int y, const char *text, size_t length,
 
 static bool disc(int x, int y, int radius, const plot_style_t *style)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("disc at %d,%d radius %d", x, y, radius));
-#endif
+	PLOT_LOG(("disc at %d,%d radius %d", x, y, radius));
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -401,10 +382,8 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 static bool arc(int x, int y, int radius, int angle1, int angle2,
 		const plot_style_t *style)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("arc centre %d,%d radius %d from %d to %d", x, y, radius,
+	PLOT_LOG(("arc centre %d,%d radius %d from %d to %d", x, y, radius,
 	     angle1, angle2));
-#endif
 
 	/* ensure the plot HDC is set */
 	if (plot_hdc == NULL) {
@@ -579,10 +558,8 @@ plot_alpha_bitmap(HDC hdc,
 	BITMAPINFO *bmi;
 	HBITMAP MemBMh;
 
-#if NSWS_PLOT_DEBUG
-	LOG(("%p bitmap %d,%d width %d height %d", bitmap, x, y, width, height));
-	LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
-#endif
+	PLOT_LOG(("%p bitmap %d,%d width %d height %d", bitmap, x, y, width, height));
+	PLOT_LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
 
 	Memhdc = CreateCompatibleDC(hdc);
 	if (Memhdc == NULL) {
@@ -591,7 +568,7 @@ plot_alpha_bitmap(HDC hdc,
 
 	if ((bitmap->width != width) || 
 	    (bitmap->height != height)) {
-		LOG(("scaling from %d,%d to %d,%d", 
+		PLOT_LOG(("scaling from %d,%d to %d,%d", 
 		     bitmap->width, bitmap->height, width, height));
 		bitmap = bitmap_scale(bitmap, width, height);
 		if (bitmap == NULL)
@@ -751,7 +728,7 @@ plot_bitmap(struct bitmap *bitmap, int x, int y, int width, int height)
 		bltres = plot_alpha_bitmap(plot_hdc, bitmap, x, y, width, height);
 	}
 
-	/* LOG(("bltres = %d", bltres)); */
+	PLOT_LOG(("bltres = %d", bltres)); 
 
 	DeleteObject(clipregion);
 
@@ -771,7 +748,7 @@ windows_plot_bitmap(int x, int y,
 
 	/* Bail early if we can */
 
-	LOG(("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height));
+	PLOT_LOG(("Plotting %p at %d,%d by %d,%d",bitmap, x,y,width,height));
 
 	if (bitmap == NULL) {
 		LOG(("Passed null bitmap!"));
@@ -827,10 +804,9 @@ windows_plot_bitmap(int x, int y,
 					  plot_clip.bottom);
 		}
 	}
-/*
-	LOG(("Tiled plotting %d,%d by %d,%d",x,y,width,height));
-	LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
-*/
+
+	PLOT_LOG(("Tiled plotting %d,%d by %d,%d",x,y,width,height));
+	PLOT_LOG(("clipped %ld,%ld to %ld,%ld",plot_clip.left, plot_clip.top, plot_clip.right, plot_clip.bottom));
 
 	/* get left most tile position */
 	if (repeat_x)
@@ -840,9 +816,7 @@ windows_plot_bitmap(int x, int y,
 	if (repeat_y)
 		for (; y > plot_clip.top; y -= height);
 
-/*
-	LOG(("repeat from %d,%d to %ld,%ld", x, y, plot_clip.right, plot_clip.bottom));
-*/
+	PLOT_LOG(("repeat from %d,%d to %ld,%ld", x, y, plot_clip.right, plot_clip.bottom));
 
 	/* tile down and across to extents */
 	for (xf = x; xf < plot_clip.right; xf += width) {
@@ -861,18 +835,14 @@ windows_plot_bitmap(int x, int y,
 
 static bool flush(void)
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("flush unimplemented"));
-#endif
+	PLOT_LOG(("flush unimplemented"));
 	return true;
 }
 
 static bool path(const float *p, unsigned int n, colour fill, float width,
 		 colour c, const float transform[6])
 {
-#if NSWS_PLOT_DEBUG
-	LOG(("path unimplemented"));
-#endif
+	PLOT_LOG(("path unimplemented"));
 	return true;
 }
 

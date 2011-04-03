@@ -26,63 +26,328 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+
+#include "windows/window.h"
 #include "windows/localhistory.h"
 #include "windows/gui.h"
 #include "windows/plot.h"
+#include "windows/resourceid.h"
+#include "windows/windbg.h"
 
-#ifndef MIN
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-#endif
+static const char windowclassname_localhistory[] = "nswslocalhistorywindow";
 
 struct nsws_localhistory {
-	HWND	hwnd;		/**< the window handle */
-	int	width;		/**< the width of the memory history */
-	int 	height;		/**< the height of the memory history */
-	int 	guiwidth;	/**< the width of the history window */
-	int 	guiheight;	/**< the height of the history window */
-	int	vscroll;	/**< the vertical scroll location */
-	int	hscroll;	/**< the horizontal scroll location */
+	HWND hwnd; /**< the window handle */
+	int width; /**< the width of the memory history */
+	int height; /**< the height of the memory history */
+	int guiwidth; /**< the width of the history window */
+	int guiheight; /**< the height of the history window */
+	int vscroll; /**< the vertical scroll location */
+	int hscroll; /**< the horizontal scroll location */
 };
 
-static struct nsws_localhistory localhistory;
 
-LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
-		WPARAM wparam, LPARAM lparam);
-static void nsws_localhistory_scroll_check(struct gui_window *w);
-static void nsws_localhistory_clear(struct gui_window *w);
-
-void nsws_localhistory_init(struct gui_window *w)
+static void nsws_localhistory_scroll_check(struct nsws_localhistory *l, struct gui_window *gw)
 {
-	LOG(("gui window %p", w));
-	static const char localhistorywindowclassname[] = "nsws_localhistory_window";
-	WNDCLASSEX we;
-	HWND mainhwnd = gui_window_main_window(w);
+	SCROLLINFO si;
+
+	if ((gw->bw == NULL) || (l->hwnd == NULL))
+		return;
+
+	history_size(gw->bw->history, &(l->width), &(l->height));
+
+	si.cbSize = sizeof(si);
+	si.fMask = SIF_ALL;
+	si.nMin = 0;
+	si.nMax = l->height;
+	si.nPage = l->guiheight;
+	si.nPos = 0;
+	SetScrollInfo(l->hwnd, SB_VERT, &si, TRUE);
+
+	si.nMax = l->width;
+	si.nPage = l->guiwidth;
+	SetScrollInfo(l->hwnd, SB_HORZ, &si, TRUE);
+	if (l->guiheight >= l->height)
+		l->vscroll = 0;
+	if (l->guiwidth >= l->width)
+		l->hscroll = 0;
+	SendMessage(l->hwnd, WM_PAINT, 0, 0);
+}
+
+
+
+static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
+{
+	HDC tmp_hdc; 
+
+	LOG(("gui window %p", gw));
+
+	l->vscroll = 0;
+	l->hscroll = 0;
+
+	if (gw->bw != NULL) {
+		/* set global HDC for the plotters */
+		tmp_hdc = plot_hdc;
+		plot_hdc = GetDC(l->hwnd);
+
+		history_redraw(gw->bw->history);
+
+		ReleaseDC(l->hwnd, plot_hdc);
+
+		plot_hdc = tmp_hdc;
+	}
+
+	nsws_localhistory_scroll_check(l, gw);
+}
+
+
+/*
+  void history_gui_set_pointer(gui_pointer_shape shape, void *p)
+  {
+  struct nsws_pointers *pointers = nsws_get_pointers();
+  if (pointers == NULL)
+  return;
+  switch(shape) {
+  case GUI_POINTER_POINT:
+  SetCursor(pointers->hand);
+  break;
+  default:
+  SetCursor(pointers->arrow);
+  break;
+  }
+  }
+*/
+
+
+void nsws_localhistory_close(struct gui_window *w)
+{
+	struct nsws_localhistory *l = gui_window_localhistory(w);
+	if (l != NULL)
+		CloseWindow(l->hwnd);
+}
+
+static LRESULT CALLBACK 
+nsws_localhistory_event_callback(HWND hwnd, UINT msg,
+				 WPARAM wparam, LPARAM lparam)
+{
+	int x,y;
+	struct gui_window *gw;
+
+	LOG_WIN_MSG(hwnd, msg, wparam, lparam);
+
+	gw = nsws_get_gui_window(hwnd);
+	if (gw == NULL) {
+		LOG(("Unable to find gui window structure for hwnd %p", hwnd));
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+	}
+
+	switch(msg) {
+
+	case WM_CREATE:
+		nsws_localhistory_scroll_check(gw->localhistory, gw);
+		break;
+
+	case WM_SIZE:
+		gw->localhistory->guiheight = HIWORD(lparam);
+		gw->localhistory->guiwidth = LOWORD(lparam);
+		nsws_localhistory_scroll_check(gw->localhistory, gw);
+		break;
+
+	case WM_LBUTTONUP: 
+		if (gw->bw == NULL)
+			break;
+
+		x = GET_X_LPARAM(lparam);
+		y = GET_Y_LPARAM(lparam);
+
+		if (history_click(gw->bw,
+				   gw->bw->history,
+				   gw->localhistory->hscroll + x,
+				   gw->localhistory->vscroll + y,
+				   false)) {
+			DestroyWindow(hwnd);
+		}
+	
+		break;
+
+	case WM_MOUSEMOVE: 
+		x = GET_X_LPARAM(lparam);
+		y = GET_Y_LPARAM(lparam);
+/*		if (gw->bw != NULL)
+		history_hover(gw->bw->history, x, y, (void *)hwnd);*/
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+		break;
+	
+
+	case WM_VSCROLL:
+	{
+		SCROLLINFO si;
+		int mem;
+		si.cbSize = sizeof(si);
+		si.fMask = SIF_ALL;
+		GetScrollInfo(hwnd, SB_VERT, &si);
+		mem = si.nPos;
+		switch (LOWORD(wparam))	{
+		case SB_TOP:
+			si.nPos = si.nMin;
+			break;
+		case SB_BOTTOM:
+			si.nPos = si.nMax;
+			break;
+		case SB_LINEUP:
+			si.nPos -= 30;
+			break;
+		case SB_LINEDOWN:
+			si.nPos += 30;
+			break;
+		case SB_PAGEUP:
+			si.nPos -= gw->localhistory->guiheight;
+			break;
+		case SB_PAGEDOWN:
+			si.nPos += gw->localhistory->guiheight;
+			break;
+		case SB_THUMBTRACK:
+			si.nPos = si.nTrackPos;
+			break;
+		default:
+			break;
+		}
+		si.nPos = min(si.nPos, gw->localhistory->height);
+		si.nPos = min(si.nPos, 0);
+		si.fMask = SIF_POS;
+		SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
+		GetScrollInfo(hwnd, SB_VERT, &si);
+		if (si.nPos != mem) {
+			gw->localhistory->vscroll += si.nPos - mem;
+			ScrollWindowEx(hwnd, 0, -(si.nPos - mem), NULL, NULL, NULL, NULL, SW_ERASE | SW_INVALIDATE);
+		}
+		break;
+	}
+
+	case WM_HSCROLL:
+	{
+		SCROLLINFO si;
+		int mem;
+
+		si.cbSize = sizeof(si);
+		si.fMask = SIF_ALL;
+		GetScrollInfo(hwnd, SB_HORZ, &si);
+		mem = si.nPos;
+
+		switch (LOWORD(wparam))	{
+		case SB_LINELEFT:
+			si.nPos -= 30;
+			break;
+		case SB_LINERIGHT:
+			si.nPos += 30;
+			break;
+		case SB_PAGELEFT:
+			si.nPos -= gw->localhistory->guiwidth;
+			break;
+		case SB_PAGERIGHT:
+			si.nPos += gw->localhistory->guiwidth;
+			break;
+		case SB_THUMBTRACK:
+			si.nPos = si.nTrackPos;
+			break;
+		default:
+			break;
+		}
+		si.nPos = min(si.nPos, gw->localhistory->width);
+		si.nPos = max(si.nPos, 0);
+		si.fMask = SIF_POS;
+		SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
+		GetScrollInfo(hwnd, SB_HORZ, &si);
+		if (si.nPos != mem) {
+			gw->localhistory->hscroll += si.nPos - mem;
+			ScrollWindowEx(hwnd, -(si.nPos - mem), 0, NULL, NULL, NULL, NULL, SW_ERASE | SW_INVALIDATE);
+		}
+		break;
+	}
+
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc, tmp_hdc;
+		hdc = BeginPaint(hwnd, &ps);
+		if (gw->bw != NULL) {
+			/* set global HDC for the plotters */
+			tmp_hdc = plot_hdc;
+			plot_hdc = hdc;
+
+			history_redraw_rectangle(gw->bw->history,
+				 gw->localhistory->hscroll + ps.rcPaint.left,
+				 gw->localhistory->vscroll + ps.rcPaint.top,
+				 gw->localhistory->hscroll + (ps.rcPaint.right - ps.rcPaint.left),
+				 gw->localhistory->vscroll + (ps.rcPaint.bottom - ps.rcPaint.top),
+				 ps.rcPaint.left,
+				 ps.rcPaint.top);
+
+			plot_hdc = tmp_hdc;
+
+		}
+		EndPaint(hwnd, &ps);
+
+		break;
+	}
+
+	case WM_CLOSE:
+		DestroyWindow(hwnd);		
+		return 1;
+
+	case WM_DESTROY:
+		free(gw->localhistory);
+		gw->localhistory = NULL;
+		break;
+
+	default:
+		return DefWindowProc(hwnd, msg, wparam, lparam);
+
+	}
+	return 0;
+}
+
+/* exported method documented in windows/localhistory.h */
+struct nsws_localhistory *nsws_window_create_localhistory(struct gui_window *gw)
+{
+	struct nsws_localhistory *localhistory;
 	INITCOMMONCONTROLSEX icc;
-	HICON hIcon = nsws_window_get_ico(true);
-	HICON hIconS = nsws_window_get_ico(false);
-	struct browser_window *bw = gui_window_browser_window(w);
 	int margin = 50;
 	RECT r;
-	
-	localhistory.width = 0;
-	localhistory.height = 0;
 
-	if ((bw != NULL) && (bw->history != NULL))
-		history_size(bw->history, &(localhistory.width),
-				&(localhistory.height));
-	
-	GetWindowRect(mainhwnd, &r);
-	SetWindowPos(mainhwnd, HWND_NOTOPMOST, 0, 0, 0, 0, 
-			SWP_NOSIZE | SWP_NOMOVE);
+	LOG(("gui window %p", gw));
 
-	localhistory.guiwidth = MIN(r.right - r.left - margin,
-				localhistory.width + margin);
-	localhistory.guiheight = MIN(r.bottom - r.top - margin, 
-				localhistory.height + margin);
+	/* if we already have a window, just update and re-show it */
+	if (gw->localhistory != NULL) {
+		nsws_localhistory_up(gw->localhistory, gw);
+		UpdateWindow(gw->localhistory->hwnd);
+		ShowWindow(gw->localhistory->hwnd, SW_SHOWNORMAL);
+		return gw->localhistory;
+	}	
+
+	localhistory = calloc(1, sizeof(struct nsws_localhistory));
+
+	if (localhistory == NULL) {
+		return NULL;
+	}
+	gw->localhistory = localhistory;
+
+	localhistory->width = 0;
+	localhistory->height = 0;
+
+	if ((gw->bw != NULL) && (gw->bw->history != NULL)) {
+		history_size(gw->bw->history, 
+			     &(localhistory->width), 
+			     &(localhistory->height));
+	}
+
+	GetWindowRect(gw->main, &r);
+	SetWindowPos(gw->main, HWND_NOTOPMOST, 0, 0, 0, 0, 
+		     SWP_NOSIZE | SWP_NOMOVE);
+
+	localhistory->guiwidth = min(r.right - r.left - margin,
+				    localhistory->width + margin);
+	localhistory->guiheight = min(r.bottom - r.top - margin,
+				     localhistory->height + margin);
 
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
@@ -90,313 +355,58 @@ void nsws_localhistory_init(struct gui_window *w)
 	icc.dwICC |= ICC_STANDARD_CLASSES;
 #endif
 	InitCommonControlsEx(&icc);
-	
-	we.cbSize		= sizeof(WNDCLASSEX);
-	we.style		= 0;
-	we.lpfnWndProc		= nsws_localhistory_event_callback;
-	we.cbClsExtra		= 0;
-	we.cbWndExtra		= 0;
-	we.hInstance		= hinstance;
-	we.hIcon		= (hIcon == NULL) ? 
-			LoadIcon(NULL, IDI_APPLICATION) : hIcon;
-	we.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	we.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
-	we.lpszMenuName		= NULL;
-	we.lpszClassName	= localhistorywindowclassname;
-	we.hIconSm		= (hIconS == NULL) ? 
-			LoadIcon(NULL, IDI_APPLICATION) : hIconS;
-	RegisterClassEx(&we);
-	LOG(("creating local history window for hInstance %p", hinstance));
-	localhistory.hwnd = CreateWindow(localhistorywindowclassname, 
-			"NetSurf History",WS_THICKFRAME | WS_HSCROLL |
-			WS_VSCROLL | WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
-			CS_DBLCLKS, r.left + margin/2, r.top + margin/2,
-			localhistory.guiwidth, localhistory.guiheight, NULL,
-			NULL, hinstance, NULL);
-	LOG(("gui_window %p width %d height %d hwnd %p", w,
-			localhistory.guiwidth, localhistory.guiheight,
-			localhistory.hwnd));
 
-	ShowWindow(localhistory.hwnd, SW_SHOWNORMAL);
-	UpdateWindow(localhistory.hwnd);
-	gui_window_set_localhistory(w, &localhistory);
-	nsws_localhistory_up(w);
+
+	LOG(("creating local history window for hInstance %p", hInstance));
+	localhistory->hwnd = CreateWindow(windowclassname_localhistory,
+					 "NetSurf History",
+					 WS_THICKFRAME | WS_HSCROLL |
+					 WS_VSCROLL | WS_CLIPCHILDREN |
+					 WS_CLIPSIBLINGS | WS_SYSMENU | CS_DBLCLKS,
+					 r.left + margin/2,
+					 r.top + margin/2,
+					 localhistory->guiwidth,
+					 localhistory->guiheight,
+					 NULL, NULL, hInstance, NULL);
+
+	/* set the gui window associated with this browser */
+	SetProp(localhistory->hwnd, TEXT("GuiWnd"), (HANDLE)gw);
+
+	LOG(("gui_window %p width %d height %d hwnd %p", gw,
+	     localhistory->guiwidth, localhistory->guiheight,
+	     localhistory->hwnd));
+
+	nsws_localhistory_up(localhistory, gw);
+	UpdateWindow(localhistory->hwnd);
+	ShowWindow(localhistory->hwnd, SW_SHOWNORMAL);
+
+	return localhistory;
 }
 
-LRESULT CALLBACK nsws_localhistory_event_callback(HWND hwnd, UINT msg,
-		WPARAM wparam, LPARAM lparam)
-{
-	bool match = false;
-	struct gui_window *w = window_list;
-	struct browser_window *bw = NULL;
-	struct nsws_localhistory *local;
-	while (w != NULL) {
-		local = gui_window_localhistory(w);
-		if ((local != NULL) && (local->hwnd == hwnd)) {
-			match = true;
-			break;
-		}
-		w = gui_window_iterate(w);
+/* exported method documented in windows/localhistory.h */
+nserror
+nsws_create_localhistory_class(HINSTANCE hinstance) {
+	nserror ret = NSERROR_OK;
+	WNDCLASSEX w;
+
+	/* localhistory window */
+	w.cbSize = sizeof(WNDCLASSEX);
+	w.style	= 0;
+	w.lpfnWndProc = nsws_localhistory_event_callback;
+	w.cbClsExtra = 0;
+	w.cbWndExtra = 0;
+	w.hInstance = hinstance;
+	w.hIcon = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
+	w.hCursor = LoadCursor(NULL, IDC_ARROW);
+	w.hbrBackground	= (HBRUSH)(COLOR_WINDOW + 1);
+	w.lpszMenuName = NULL;
+	w.lpszClassName = windowclassname_localhistory;
+	w.hIconSm = LoadIcon(hinstance, MAKEINTRESOURCE(IDR_NETSURF_ICON));
+
+	if (RegisterClassEx(&w) == 0) {
+		win_perror("DrawableClass");
+		ret = NSERROR_INIT_FAILED;
 	}
-	if (match)
-		bw = gui_window_browser_window(w);
 
-	switch(msg) {
-	case WM_CREATE:
-		nsws_localhistory_scroll_check(w);
-		break;
-
-	case WM_SIZE:
-		localhistory.guiheight = HIWORD(lparam);
-		localhistory.guiwidth = LOWORD(lparam);
-		nsws_localhistory_scroll_check(w);
-/*		current_hwnd = hwnd;
-		plot.rectangle(0, 0, localhistory.guiwidth,
-				localhistory.guiheight, plot_style_fill_white);
-*/		break;
-
-/*	case WM_MOVE: {
-		RECT r, rmain;
-		if (w != NULL) {
-			current_hwnd = gui_window_main_window(w);
-			GetWindowRect(hwnd, &r);
-			GetWindowRect(current_hwnd, &rmain);
-			gui_window_redraw(w, 
-					MIN(r.top - rmain.top , 0),
-					MIN(r.left - rmain.left, 0),
-					gui_window_height(w) - 
-					MIN(rmain.bottom - r.bottom, 0),
-					gui_window_width(w) - 
-					MIN(rmain.right - r.right, 0));
-			current_hwnd = hwnd;
-			return DefWindowProc(hwnd, msg, wparam, lparam);
-		}
-	}
-*/	case WM_LBUTTONUP: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-		if (bw == NULL)
-			break;
-
-		if ((bw != NULL) && 
-		    (history_click(bw, 
-				   bw->history, 
-				   localhistory.hscroll + x, 
-				   localhistory.vscroll + y, 
-				   false))) {
-			DestroyWindow(hwnd);
-		}
-	}
-	case WM_MOUSEMOVE: {
-		int x,y;
-		x = GET_X_LPARAM(lparam);
-		y = GET_Y_LPARAM(lparam);
-/*		if (bw != NULL)
-		history_hover(bw->history, x, y, (void *)hwnd);*/
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	}
-	case WM_VSCROLL:
-	{
-		if ((w == NULL) || (bw == NULL))
-			break;
-		SCROLLINFO si;
-		int mem;
-		si.cbSize = sizeof(si);
-		si.fMask = SIF_ALL;
-		GetScrollInfo(hwnd, SB_VERT, &si);
-		mem = si.nPos;
-		switch (LOWORD(wparam))
-		{
-			case SB_TOP:
-				si.nPos = si.nMin;
-				break;
-			case SB_BOTTOM:
-				si.nPos = si.nMax;
-				break;
-			case SB_LINEUP:
-				si.nPos -= 30;
-				break;
-			case SB_LINEDOWN:
-				si.nPos += 30;
-				break;
-			case SB_PAGEUP:
-				si.nPos -= localhistory.guiheight;
-				break;
-			case SB_PAGEDOWN:
-				si.nPos += localhistory.guiheight;
-				break;
-			case SB_THUMBTRACK:
-				si.nPos = si.nTrackPos;
-				break;
-			default:
-				break;
-		}
-		si.nPos = MIN(si.nPos, localhistory.height);
-		si.nPos = MAX(si.nPos, 0);
-		si.fMask = SIF_POS;
-		SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
-		GetScrollInfo(hwnd, SB_VERT, &si);
-		if (si.nPos != mem) {
-			localhistory.vscroll += si.nPos - mem;
-			ScrollWindowEx(hwnd, 0, -(si.nPos - mem), NULL, NULL, NULL, NULL, SW_ERASE | SW_INVALIDATE);
-		}
-		break;
-	}
-	case WM_HSCROLL:
-	{
-		if ((w == NULL) || (bw == NULL))
-			break;
-		SCROLLINFO si;
-		int mem;
-		si.cbSize = sizeof(si);
-		si.fMask = SIF_ALL;
-		GetScrollInfo(hwnd, SB_HORZ, &si);
-		mem = si.nPos;
-		switch (LOWORD(wparam))
-		{
-			case SB_LINELEFT:
-				si.nPos -= 30;
-				break;
-			case SB_LINERIGHT:
-				si.nPos += 30;
-				break;
-			case SB_PAGELEFT:
-				si.nPos -= localhistory.guiwidth;
-				break;
-			case SB_PAGERIGHT:
-				si.nPos += localhistory.guiwidth;
-				break;
-			case SB_THUMBTRACK:
-				si.nPos = si.nTrackPos;
-				break;
-			default:
-				break;
-		}
-		si.nPos = MIN(si.nPos, localhistory.width);
-		si.nPos = MAX(si.nPos, 0);
-		si.fMask = SIF_POS;
-		SetScrollInfo(hwnd, SB_HORZ, &si, TRUE);
-		GetScrollInfo(hwnd, SB_HORZ, &si);
-		if (si.nPos != mem) {
-			localhistory.hscroll += si.nPos - mem;
-			ScrollWindowEx(hwnd, -(si.nPos - mem), 0, NULL, NULL, NULL, NULL, SW_ERASE | SW_INVALIDATE);
-		}
-		break;
-	}	
-	case WM_PAINT: {
-		PAINTSTRUCT ps;
-		HDC hdc, tmp_hdc;
-		hdc = BeginPaint(hwnd, &ps);
-		if (bw != NULL) {
-			/* set global HDC for the plotters */
-			tmp_hdc = plot_hdc;
-			plot_hdc = hdc;
-			
-			history_redraw_rectangle(bw->history,
-				localhistory.hscroll + ps.rcPaint.left,
-				localhistory.vscroll + ps.rcPaint.top,	
-				localhistory.hscroll + (ps.rcPaint.right - ps.rcPaint.left),
-				localhistory.vscroll + (ps.rcPaint.bottom - ps.rcPaint.top),
-				ps.rcPaint.left, 
-				ps.rcPaint.top);
-
-			plot_hdc = tmp_hdc;
-
-		}
-		EndPaint(hwnd, &ps);
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-		break;
-	}
-	case WM_CLOSE:
-		nsws_localhistory_clear(w);
-		DestroyWindow(hwnd);
-		break;
-
-	case WM_DESTROY:
-		nsws_localhistory_clear(w);
-		PostQuitMessage(0);
-		break;
-
-	default:
-		return DefWindowProc(hwnd, msg, wparam, lparam);
-	}
-	return 0;
+	return ret;
 }
-
-void nsws_localhistory_up(struct gui_window *w)
-{
-	LOG(("gui window %p", w));
-	HDC hdc = GetDC(NULL);
-	struct browser_window *bw = gui_window_browser_window(w);
-	
-	localhistory.vscroll = 0;
-	localhistory.hscroll = 0;
-	
-	if (bw != NULL)
-		history_redraw(bw->history);
-	
-	nsws_localhistory_scroll_check(w);
-
-	ReleaseDC(localhistory.hwnd, hdc);
-}
-
-void nsws_localhistory_scroll_check(struct gui_window *w)
-{
-	if (w == NULL)
-		return;
-	struct browser_window *bw = gui_window_browser_window(w);
-	if ((bw == NULL) || (localhistory.hwnd == NULL))
-		return;
-	history_size(bw->history, &(localhistory.width), &(localhistory.height));
-	
-	SCROLLINFO si;
-	si.cbSize = sizeof(si);
-	si.fMask = SIF_ALL;
-	si.nMin = 0;
-	si.nMax = localhistory.height;
-	si.nPage = localhistory.guiheight;
-	si.nPos = 0;
-	SetScrollInfo(localhistory.hwnd, SB_VERT, &si, TRUE);
-	
-	si.nMax = localhistory.width;
-	si.nPage = localhistory.guiwidth;
-	SetScrollInfo(localhistory.hwnd, SB_HORZ, &si, TRUE);
-	if (localhistory.guiheight >= localhistory.height)
-		localhistory.vscroll = 0;
-	if (localhistory.guiwidth >= localhistory.width)
-		localhistory.hscroll = 0;
-	SendMessage(localhistory.hwnd, WM_PAINT, 0, 0);
-}
-
-/*
-void history_gui_set_pointer(gui_pointer_shape shape, void *p)
-{
-	struct nsws_pointers *pointers = nsws_get_pointers();
-	if (pointers == NULL)
-		return;
-	switch(shape) {
-	case GUI_POINTER_POINT:
-		SetCursor(pointers->hand);
-		break;
-	default:
-		SetCursor(pointers->arrow);
-		break;
-	}
-}
-*/
-
-void nsws_localhistory_close(struct gui_window *w)
-{
-	struct nsws_localhistory *l = gui_window_localhistory(w);
-	if (l != NULL)
-		DestroyWindow(l->hwnd);
-}
-
-void nsws_localhistory_clear(struct gui_window *w)
-{
-	if (w != NULL)
-		gui_window_set_localhistory(w, NULL);
-}
-

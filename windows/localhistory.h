@@ -19,12 +19,14 @@
 #ifndef _NETSURF_WINDOWS_LOCALHISTORY_H_
 #define _NETSURF_WINDOWS_LOCALHISTORY_H_
 
-#include "desktop/browser.h"
-
 struct nsws_localhistory;
 
-void nsws_localhistory_init(struct gui_window *);
-void nsws_localhistory_up(struct gui_window *);
-void nsws_localhistory_close(struct gui_window *);
+void nsws_localhistory_open(struct gui_window *gw);
+void nsws_localhistory_close(struct gui_window *gw);
+
+/* creates localhistory window */
+struct nsws_localhistory * nsws_window_create_localhistory(struct gui_window *gw);
+
+nserror nsws_create_localhistory_class(HINSTANCE hinstance);
 
 #endif
