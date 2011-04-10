@@ -17,6 +17,7 @@
  */
 #ifndef GEM_PLOTTER_DUMMY_H_INCLUDED
 #define GEM_PLOTTER_DUMMY_H_INCLUDED
+
 #include "plotter.h"
 #include <Hermes/Hermes.h>
 
@@ -26,23 +27,42 @@ struct s_vdi_priv_data {
 	int size_buf_packed;	
 	void * buf_planar;		/* temp buffer for bitmap conversion */
 	int size_buf_planar;
-	MFDB buf_scr;					/* buffer for native screen capture  */
+	MFDB buf_scr;					/* buffer for plot operations that require device format  */
 	int size_buf_scr;  
 	struct bitmap * buf_scr_compat;
 	HermesFormat vfmt;		/* framebuffer format */
 												/* no screen format here, hermes may not suitable for it */
 	HermesFormat nsfmt;		/* netsurf bitmap format */
-}; 
+};
 
 #define CONV_KEEP_LIMIT 512000	/* how much memory should be kept allocated for temp. conversion bitmaps? */
 #define CONV_BLOCK_SIZE	32000	/* how much memory to allocate if some is needed */
+
+/* this is an shortcut cast to access the members of the s_vdi_priv_data */
 #define DUMMY_PRIV(self) ((struct s_vdi_priv_data*)self->priv_data)
 
-/* Each driver must export 1 method to create the plotter object: */
+/* Each driver object must export 1 it's own constructor: */
 int ctor_plotter_vdi( GEM_PLOTTER p );
 
+/*
+* Capture the screen at x,y location
+* param self instance
+* param x absolute screen coords
+* param y absolute screen coords
+* param w width
+* param h height
+* 
+* This creates an snapshot in RGBA format (NetSurf's native format) 
+*  
+*/
 static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, int h);
+
+/* Garbage collection of the snapshot routine */
+/* this should be called after you are done with the data returned by snapshot_create */
+/* don't access the screenshot after you called this function */
 static void snapshot_suspend(GEM_PLOTTER self );
+
+/* destroy memory used by screenshot */
 static void snapshot_destroy( GEM_PLOTTER self );
 
 #endif
