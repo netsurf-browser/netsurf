@@ -34,8 +34,6 @@ struct bitmap {
 };
 
 #define NS_BMP_DEFAULT_BPP 4
-/* calculate MFDB compatible rowstride (in number of pixels!) */
-#define MFDB_STRIDE( w ) (((w & 15) != 0) ? (w | 15)+1 : w)
 
 void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int state, void * pixdata );
 void bitmap_to_mfdb(void * bitmap, MFDB * out);
