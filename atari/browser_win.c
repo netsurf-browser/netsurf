@@ -63,6 +63,11 @@ bool cfg_rt_move = false;
 extern void * h_gem_rsrc;
 extern struct gui_window *input_window;
 extern GEM_PLOTTER plotter;
+extern int mouse_click_time[3];
+extern int mouse_hold_start[3];
+extern browser_mouse_state bmstate;
+extern short last_drag_x;
+extern short last_drag_y;
 
 void __CDECL std_szd( WINDOW * win, short buff[8], void * );
 void __CDECL std_mvd( WINDOW * win, short buff[8], void * );
@@ -102,6 +107,154 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 	browser_scroll( input_window, buff[4], value, abs );
 }
 
+/* 	
+	this gets called at end of gui poll to track the mouse state and 
+	finally checks for released buttons. 
+ */
+static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, short my, short mbut, short mkstate ){
+	int i = 0;
+	int nx, ny; 
+	struct gui_window * gw = input_window;
+	
+	if( !gw ) {
+		bmstate = 0;
+		mouse_hold_start[0] = 0;
+		mouse_hold_start[1] = 0;
+		return;
+	}
+
+	/* todo: creat function find_browser_window( mx, my ) */
+	nx = (mx - bwrect->g_x + gw->browser->scroll.current.x);
+	ny = (my - bwrect->g_y + gw->browser->scroll.current.y);
+
+	if( mkstate & (K_RSHIFT | K_LSHIFT) ){
+		bmstate |= BROWSER_MOUSE_MOD_1;
+	} else {
+		bmstate &= ~(BROWSER_MOUSE_MOD_1);
+	}
+	if( (mkstate & K_CTRL) ){
+		bmstate |= BROWSER_MOUSE_MOD_2;
+	} else {
+		bmstate &= ~(BROWSER_MOUSE_MOD_2);
+	}
+	if( (mkstate & K_ALT) ){
+		bmstate |= BROWSER_MOUSE_MOD_3;
+	} else {
+		bmstate &= ~(BROWSER_MOUSE_MOD_3);
+	}
+
+	if( !(mbut&1) && !(mbut&2) ) {
+		if(bmstate & BROWSER_MOUSE_DRAG_ON )
+			bmstate &= ~( BROWSER_MOUSE_DRAG_ON );
+	}
+
+	/* todo: if we need right button click, increase loop count */
+	for( i = 1; i<2; i++ ) {
+		if( !(mbut & i) ) {
+			if( mouse_hold_start[i-1] > 0 ) {
+				mouse_hold_start[i-1] = 0;
+				/* TODO: not just use the input window browser, find the right one by component! */
+				if( i==1 ) {
+					LOG(("Drag for %d ended", i));
+					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
+					if( within ) {
+						browser_window_mouse_drag_end( 
+							gw->browser->bw, 0, nx, ny
+						);
+					}
+				}
+				if( i==2 ) {
+					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 ) ;
+					LOG(("Drag for %d ended", i));
+					if( within ) {
+						browser_window_mouse_drag_end( 
+							gw->browser->bw, 0, nx, ny
+						);
+					}
+				}
+			} 
+		} 
+	}
+}
+
+
+static void __CDECL evnt_window_m1( WINDOW * win, short buff[8])
+{
+	struct gui_window * gw = input_window;
+	static bool prev_url = false;
+	static bool prev_sb = false;
+	short mx, my, mbut, mkstate;
+	bool a = false;	/* flags if mouse is within controls or browser canvas */
+	bool within = false;
+	LGRECT urlbox, bwbox, sbbox;
+	int nx, ny; 	/* relative mouse position */
+
+
+	if( gw == NULL)
+		return;
+
+	graf_mkstate(&mx, &my, &mbut, &mkstate); 
+
+	browser_get_rect( gw, BR_CONTENT, &bwbox ); 
+	if( gw->root->toolbar )
+		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
+	if( gw->root->statusbar )
+		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
+
+	if( mx > bwbox.g_x && mx < bwbox.g_x + bwbox.g_w && 
+		my > bwbox.g_y &&  my < bwbox.g_y + bwbox.g_h ){
+		within = true;
+	}
+
+	if( evnt.m1_flag == MO_LEAVE ) {
+		if( MOUSE_IS_DRAGGING() ){
+			window_track_mouse_state( &bwbox, within, mx, my, mbut, mkstate );
+		}
+		if( gw->root->toolbar && within == false ) {
+			if( (mx > urlbox.g_x && mx < urlbox.g_x + urlbox.g_w ) &&
+			 	(my > urlbox.g_y && my < + urlbox.g_y + urlbox.g_h )) {
+				gem_set_cursor( &gem_cursors.ibeam );
+				prev_url = a = true;
+			}
+		}
+		if( gw->root->statusbar && within == false /* && a == false */ ) {
+			if( mx >= sbbox.g_x + (sbbox.g_w-MOVER_WH) && mx <= sbbox.g_x + sbbox.g_w &&
+				my >= sbbox.g_y + (sbbox.g_h-MOVER_WH) && my <= sbbox.g_y + sbbox.g_h ) {
+				/* mouse within sizer box ( bottom right ) */
+				prev_sb = a =  true;
+				gem_set_cursor( &gem_cursors.sizenwse ); 
+			}
+		}
+		if( !a ) {
+			if( prev_url || prev_sb ) {
+				gem_set_cursor( &gem_cursors.arrow ); 
+				prev_url = false;
+				prev_sb = false;
+			}
+			/* report mouse move in the browser window */
+			if( within ){
+				nx = mx - bwbox.g_x;
+				ny = my - bwbox.g_y;
+				if( ( abs(mx-last_drag_x)>5 || abs(mx-last_drag_y)>5 ) || 
+					!MOUSE_IS_DRAGGING() ){
+					browser_window_mouse_track( 
+						input_window->browser->bw, 
+						bmstate, 
+						nx + gw->browser->scroll.current.x, 
+						ny + gw->browser->scroll.current.y
+					);
+					if( MOUSE_IS_DRAGGING() ){
+						last_drag_x = mx;
+						last_drag_y = my;
+					}
+				}
+			} 
+		}
+	} else {
+		/* set input window? */ 	
+	}
+}
+
 int window_create( struct gui_window * gw, struct browser_window * bw, unsigned long inflags)
 {
 	short buff[8];
@@ -119,6 +272,11 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	memset( gw->root, 0, sizeof(struct s_gui_win_root) );
 	gw->root->title = malloc(atari_sysinfo.aes_max_win_title_len+1);
 	gw->root->handle = WindCreate( flags,40, 40, app.w, app.h );
+	if( gw->root->handle == NULL ) {
+		free( gw->root->title );
+		free( gw->root );
+		return( -1 );
+	}
 	gw->root->cmproot = mt_CompCreate(&app, CLT_VERTICAL, 1, 1);
 	WindSetPtr( gw->root->handle, WF_COMPONENT, gw->root->cmproot, NULL);
 
@@ -163,6 +321,7 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, &evnt_data, EV_BOT);
 	EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, &evnt_data, EV_BOT);
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
+	EvntAttach( gw->root->handle, WM_XM1, evnt_window_m1 );
 
 	/*
 	OBJECT * tbut;
@@ -199,9 +358,13 @@ int window_destroy( struct gui_window * gw)
 			sb_destroy( gw->root->statusbar );
 	}
 
+	search_destroy( gw );
+
 	LOG(("Freeing browser window"));
 	if( gw->browser )
 		browser_destroy( gw->browser );
+
+	
 
 	/* destroy the icon: */
 	/*window_set_icon(gw, NULL, false );*/
@@ -222,6 +385,8 @@ int window_destroy( struct gui_window * gw)
 	}
 	return( err );
 }
+
+
 
 void window_open( struct gui_window * gw)
 {

@@ -59,7 +59,7 @@ struct s_menu_item_evnt {
 void snd_redraw(short x, short y, short w, short h);
 void snd_win_redraw(WINDOW * win, short x, short y, short w, short h);
 /* Call this after each call to evnt_multi, to check for states that evnt_multi doesn't: */
-void global_track_mouse_state( void );
+void global_track_mouse_state( LGRECT * bwrect, bool within, short, short, short, short );
 void bind_global_events( void );
 void unbind_global_events( void );
 
@@ -68,7 +68,7 @@ void unbind_global_events( void );
 static void __CDECL global_evnt_apterm( WINDOW * win, short buff[8] );
 static void __CDECL global_evnt_menu( WINDOW * win, short buff[8] );
 static void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data);
-static void __CDECL global_evnt_m1( WINDOW * win, short buff[8], void * data);
+
 /* Menu event handlers: */
 static void __CDECL menu_about(WINDOW *win, int item, int title, void *data);
 

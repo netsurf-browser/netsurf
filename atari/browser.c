@@ -50,6 +50,9 @@ extern int mouse_click_time[3];
 extern int mouse_hold_start[3];
 extern GEM_PLOTTER plotter;
 extern struct gui_window *input_window;
+extern short last_drag_x;
+extern short last_drag_y;
+
 
 
 static void __CDECL browser_evnt_wdestroy( WINDOW * c, short buff[8], void * data);
@@ -347,40 +350,42 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 {
 	long lbuff[8];
 	short i;
-	short mbut, mkstat, mx, my;
-	graf_mkstate(&mx, &my, &mbut, &mkstat);
+	short mx, my, dummy, mbut;
 	uint32_t tnow = clock()*1000 / CLOCKS_PER_SEC;
 	LGRECT cwork;
 	struct gui_window * gw = data;
 	input_window = gw;
 	window_set_focus( gw, BROWSER, (void*)gw->browser );
 	browser_get_rect( gw, BR_CONTENT, &cwork );
-	mx = evnt.mx - cwork.g_x; /*+ gw->browser->scroll.current.x*/;
-	my = evnt.my - cwork.g_y; /*+ gw->browser->scroll.current.y*/;
-	LOG(("mevent within %s at %d / %d", gw->browser->bw->name, mx, my ));
+	mx = evnt.mx - cwork.g_x; 
+	my = evnt.my - cwork.g_y;
+	LOG(("mevent (%d) within %s at %d / %d\n", evnt.nb_click, gw->browser->bw->name, mx, my ));
 
-	if( (mkstat & K_RSHIFT) || (mkstat & K_LSHIFT) ){
+	if( evnt.mkstate & (K_RSHIFT | K_LSHIFT) ){
 		bmstate |= BROWSER_MOUSE_MOD_1;
 	} else {
 		bmstate &= ~(BROWSER_MOUSE_MOD_1);
 	}
-	if( (mkstat & K_CTRL) ){
+	if( (evnt.mkstate & K_CTRL) ){
 		bmstate |= BROWSER_MOUSE_MOD_2;
 	} else {
-		bmstate &= ~(BROWSER_MOUSE_MOD_1);
+		bmstate &= ~(BROWSER_MOUSE_MOD_2);
 	}
-	if( (mkstat & K_ALT) ){
+	if( (evnt.mkstate & K_ALT) ){
 		bmstate |= BROWSER_MOUSE_MOD_3;
 	} else {
-		bmstate &= ~(BROWSER_MOUSE_MOD_2);
-	}	
+		bmstate &= ~(BROWSER_MOUSE_MOD_3);
+	}
 	int sx = (mx + gw->browser->scroll.current.x);
 	int sy = (my + gw->browser->scroll.current.y);
+
+	graf_mkstate(&dummy, &dummy, &mbut, &dummy);
+	/* todo: if we need right button click, increase loop count */
 	for( i = 1; i<2; i++) {
-		if( (mbut & i) ) {
+		if( (mbut & i)  ) {
 			if( mouse_hold_start[i-1] == 0 ) {
-				mouse_hold_start[i-1] = clock()*1000 / CLOCKS_PER_SEC;
-				LOG(("Drag %d starts", i));
+				mouse_hold_start[i-1] = tnow;
+				LOG(("Drag %d starts at %d,%d\n", i, sx, sy));
 				if( i == 1 ) {
 					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
 					bmstate |= BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
@@ -397,17 +402,25 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 					bmstate |= BROWSER_MOUSE_DRAG_2 | BROWSER_MOUSE_DRAG_ON;
 				}
 			}
-		} else {
-			/* remember click time, so we can track double clicks: */
-			/* this does not really work, because a normal double click is swallowed by evnt_multi */
-			if( tnow - mouse_click_time[i-1] < 500 ) {
-				/* double click */
+
+			if( i != 0 ){
+				if( (abs(mx-last_drag_x)>5) || (abs(mx-last_drag_y)>5) ){	
+					browser_window_mouse_track( 
+						gw->browser->bw,
+						bmstate, 
+						sx, sy
+					);
+					last_drag_x = mx;
+					last_drag_y = my;
+				}
 			}
+
+		} else {
 			mouse_click_time[i-1] = tnow; /* clock in ms */
 			/* check if this event was during an drag op: */
-			if( mouse_hold_start[i-1] < 10 ) {
+			if( mouse_hold_start[i-1] == 0 ) {
 				if( i == 1) {
-					LOG(("Click within %s at %d / %d", gw->browser->bw->name, sx, sy ));
+					LOG(("Click within %s at %d / %d\n", gw->browser->bw->name, sx, sy ));
 					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
 					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_1,sx,sy);
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_CLICK_1);
@@ -422,7 +435,7 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 			}
 			mouse_hold_start[i-1] = 0;
 		}
-	}	
+	}
 }
 
 void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
@@ -1025,6 +1038,7 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	LGRECT work, lclip, rwork;
 	int xoff,yoff,width,heigth;
 	short cw, ch, cellw, cellh;
+	/* use that instead of browser_find_root() ? */
 	w = (WINDOW*)mt_CompGetPtr( &app, c, CF_WINDOW );
 	browser_get_rect( gw, BR_CONTENT, &work );
 	browser_get_rect( rgw, BR_CONTENT, &rwork );

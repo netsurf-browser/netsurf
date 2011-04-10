@@ -24,18 +24,18 @@
 #include "desktop/tree.h"
 #include "atari/gui.h"
 
-/* defined in front end code */
-/*
-extern const char tree_directory_icon_name[];
-extern const char tree_content_icon_name[];
-*/
+#define ATARI_TREEVIEW_WIDGETS (CLOSER | MOVER | SIZER| NAME | FULLER | SMALLER | VSLIDE | HSLIDE | UPARROW | DNARROW | LFARROW | RTARROW)
 
 struct atari_treeview
 {
 	struct tree * tree;
 	WINDOW * window;
-	struct s_browser_redrw_info redraw;
-	/*tree_drag_type drag;*/
+	bool disposing;
+	bool redraw;
+	GRECT rdw_area;
+	POINT click;
+	POINT extent;
+	POINT startdrag;
 };
 
 typedef struct atari_treeview * NSTREEVIEW;
@@ -44,8 +44,10 @@ NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW * win );
 void atari_treeview_destroy( NSTREEVIEW tv );
 void atari_treeview_open( NSTREEVIEW tv );
 void atari_treeview_close( NSTREEVIEW tv );
-struct tree * atari_treeview_get_tree( NSTREEVIEW tv );
-WINDOW * atari_tree_get_window( NSTREEVIEW tv );
+void atari_treeview_request_redraw(int x, int y, int w, int h, void *pw);
+void atari_treeview_redraw( NSTREEVIEW tv );
+bool atari_treeview_mevent( NSTREEVIEW tv, browser_mouse_state bms, int x, int y);
+
 
 
 #endif

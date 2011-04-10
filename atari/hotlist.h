@@ -18,13 +18,32 @@
 
 #ifndef NS_ATARI_HOTLIST_H
 #define NS_ATARI_HOTLIST_H
-
+#include <stdbool.h>
+#include <windom.h>
+#include "desktop/tree.h"
+#include "atari/treeview.h"
 /* The hotlist window, toolbar and treeview data. */
 
+struct atari_hotlist {
+	WINDOW * window;
+	NSTREEVIEW tv;		/*< The hotlist treeview handle.  */
+	bool open;
+	bool init;
+	char path[PATH_MAX];
+};
 
-void hotlist_init(void);
-void hotlist_open(void);
-void hotlist_close(void);
-void hotlist_destroy(void);
+extern struct atari_hotlist hl;
+
+void hotlist_init( void );
+void hotlist_open( void );
+void hotlist_close( void );
+void hotlist_destroy( void );
+void atari_hotlist_add_page( const char * url, const char * title );
+
+inline void hotlist_redraw( void );
+inline void hotlist_redraw( void )
+{
+	atari_treeview_redraw( hl.tv );
+}
 
 #endif

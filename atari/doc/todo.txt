@@ -1,11 +1,13 @@
 TODO's (no priority order)
 
- - Optimize drawing of 1px width / height tiled bitmaps (stretch)
  - Optimize remove / redraw of caret, use pixbuffer instead?
  - Optimize drawing of bitmaps on Low-Memory machines
  - Optimize Clipping for Plotters ( use OS clipping instead of own clipping )
+   ( partially done, needs improvement? )
  - Restore the Palette when Windows get's the Focus
+   -> only needed for <= 256 colors 
  - Make drawing of tiled bitmaps optional ( they are slooow )
+   -> already optimized, still needed? 
  - Implement TreeView 
  - Implement TreeView Hotlits
  - Implement TreeView History
@@ -29,12 +31,15 @@ TODO's (no priority order)
    ( at best, implement callback for this...)
  - Yahoo.de / .com etc. still crashes - this is probably not an Atari-Version
    fault, but applies to all other netsurf versions. 
+   -> this is caused by regex stack exhaust within mintlib
  - Have browser_window specific cursor, window specifc cursor 
- - At some places I query for gdos version and use v_gtext when running 
-   classic TOS. This is maybe not really correct, altough the v_ftext work
-   on the newer OS (MiNT) it doesn't mean I'm using it correct. 
  - When minimized (not iconyfied) NetSurf doesn't recognize that.
- - Iconify Code kompletieren ( favicon, icon nach oben schieben - icon name anzeigen)
- - fix ablend() function within vdi plotter, antialiased text only looks good when rendered 
-   on white / black backgrounds, maybe other colors, but red looks ugly. 
+ - complete Iconify (webpage favicon )
+ - improve mouse tracking 
+ - fix this: 
+path2url in: ./res/icons/dir.png
+path2url out: file:///./res/icons/dir.png
+url2path in: file:///./res/icons/dir.png
+ - loesung fuer kompletten tree icons path finden
+ - schauen warum download_path nicht verwendet wird.
  

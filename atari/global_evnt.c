@@ -31,6 +31,7 @@
 #include "desktop/browser.h"
 #include "desktop/mouse.h"
 #include "desktop/textinput.h"
+#include "desktop/hotlist.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 
@@ -52,6 +53,8 @@ extern OBJECT * 	h_gem_menu;
 extern int mouse_click_time[3];
 extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
+extern short last_drag_x;
+extern short last_drag_y;
 
 /* Zero based resource tree ids: */
 #define T_ABOUT 0
@@ -235,6 +238,14 @@ static void __CDECL menu_ghistory(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_add_bookmark(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	if( input_window ) {
+		if( input_window->browser->bw->current_content != NULL ){
+			atari_hotlist_add_page(
+				content_get_url( input_window->browser->bw->current_content),
+				NULL
+			);
+		}
+	}
 }
 
 static void __CDECL menu_bookmarks(WINDOW *win, int item, int title, void *data)
@@ -303,19 +314,14 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 
 	int i=0;
 	bool done = false;
-	struct s_evnt_data * loc_evnt_data;
-	loc_evnt_data = (struct s_event_data*)data;
 	struct gui_window * gw = input_window;
 	struct gui_window * gw_tmp;
 	if( gw == NULL )
-		return;
-	if( loc_evnt_data->ignore )
 		return;
 	kstate = evnt.mkstate;
 	kcode = evnt.keybd;
 	nkc= gem_to_norm( (short)kstate, (short)kcode ); 
 	nks = (nkc & 0xFF00);
-	loc_evnt_data->ignore = false;
 	if( kstate & (K_LSHIFT|K_RSHIFT))
 		kstate |= K_LSHIFT|K_RSHIFT;
 	if( window_url_widget_has_focus( gw ) ) {
@@ -326,6 +332,7 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 		gw_tmp = window_list;
 		/* search for active browser component: */
 		while( gw_tmp != NULL && done == false ) {
+			/* todo: only handle when input_window == ontop */
 			if( window_widget_has_focus( (struct gui_window *)input_window,
 										 BROWSER,(void*)gw_tmp->browser)) {
 				done = browser_input( gw_tmp, nkc );
@@ -361,148 +368,6 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 			}
 		}
 		i++;
-	}
-}
-
-/* 	this gets called at end of gui poll to track the mouse state and 
-	finally checks for released buttons. 
- */
-void global_track_mouse_state( void ){
-	int i = 0;
-	int nx, ny; 
-	short mbut, mkstat, mx, my;
-	long hold_time = 0;
-	COMPONENT * cmp;
-	LGRECT cmprect;
-	struct gui_window * gw = input_window;
-	
-	if( !gw ) {
-		bmstate = 0;
-		mouse_hold_start[0] = 0;
-		mouse_hold_start[1] = 0;
-		return;
-	}
-
-	graf_mkstate(&mx, &my, &mbut, &mkstat);
-
-	/* todo: creat function find_browser_window( mx, my ) */
-	cmp = mt_CompFind( &app, gw->root->cmproot, mx, my );
-	if( cmp == NULL ) {
-		bmstate = 0;
-		mouse_hold_start[0] = 0;
-		mouse_hold_start[1] = 0;
-		return;
-	}
-
-	browser_get_rect( gw, BR_CONTENT, &cmprect ); 
-	nx = mx - cmprect.g_x; 
-	ny = my - cmprect.g_y; 
-	if( nx > cmprect.g_w ){
-		
-	}
-
-	if( ny > cmprect.g_h ){
-		browser_scroll( gw, WA_DNPAGE, 10 + (ny - cmprect.g_h) , false );
-		return;		
-	}	
-
-	nx = (nx + gw->browser->scroll.current.x);
-	ny = (ny + gw->browser->scroll.current.y);
-	bmstate &= ~(BROWSER_MOUSE_MOD_1);
-	bmstate &= ~(BROWSER_MOUSE_MOD_2);
-	bmstate &= ~(BROWSER_MOUSE_MOD_3);
-
-	if( !(mbut&1) && !(mbut&2) ) {
-		if(bmstate & BROWSER_MOUSE_DRAG_ON )
-			bmstate &= ~( BROWSER_MOUSE_DRAG_ON );
-	}
-
-	for( i = 1; i<3; i++ ) {
-		if( !(mbut & i) ) {
-			if( mouse_hold_start[i-1] > 0 ) {
-				mouse_hold_start[i-1] = 0;
-				/* TODO: not just use the input window browser, find the right one by component! */
-				if( i==1 ) {
-					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
-					LOG(("Drag for %d ended", i));
-					browser_window_mouse_drag_end( 
-						gw->browser->bw,
-						0, nx, ny
-					);
-				}
-				if( i==2 ) {
-					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 ) ;
-					LOG(("Drag for %d ended", i));
-					browser_window_mouse_drag_end( 
-						gw->browser->bw,
-						0, nx, ny
-					);
-				}
-			} 
-		} 
-	}
-	browser_window_mouse_track(gw->browser->bw, bmstate, nx, ny );
-}
-
-
-void __CDECL global_evnt_m1( WINDOW * win, short buff[8], void * data)
-{
-	struct gui_window * gw = input_window;
-	static bool prev_url = false;
-	static bool prev_sb = false;
-	bool a=false;
-	LGRECT urlbox, bwbox, sbbox;
-	int nx, ny; 	/* relative mouse position */
-
-	if( gw == NULL)
-		return;
-	
-	if( gw->root->toolbar )
-		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
-	/* todo: use get_browser_rect */
-	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &bwbox);
-	mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
-
-	if( evnt.m1_flag == MO_LEAVE && input_window != NULL ) {
-		if( gw->root->toolbar ) {
-			if( (evnt.mx > urlbox.g_x && evnt.mx < urlbox.g_x + urlbox.g_w ) &&
-			 	(evnt.my > urlbox.g_y && evnt.my < + urlbox.g_y + urlbox.g_h )) {
-				gem_set_cursor( &gem_cursors.ibeam );
-				prev_url = a = true;
-			}
-		}
-		if( gw->root->statusbar && a == false ) {
-			if( evnt.mx >= sbbox.g_x + (sbbox.g_w-MOVER_WH) && evnt.mx <= sbbox.g_x + sbbox.g_w &&
-						evnt.my >= sbbox.g_y + (sbbox.g_h-MOVER_WH) && evnt.my <= sbbox.g_y + sbbox.g_h ) {
-				/* mouse within mover */
-				prev_sb = a = true;
-				gem_set_cursor( &gem_cursors.sizenwse ); 
-			}
-		}
-		if( !a ) {
-			if( prev_url || prev_sb ) {
-				gem_set_cursor( &gem_cursors.arrow ); 
-				prev_url = false;
-				prev_sb = false;
-			}
-			/* report mouse move in the browser window */
-			if( evnt.mx > bwbox.g_x && evnt.mx < bwbox.g_x + bwbox.g_w && 
-				evnt.my > bwbox.g_y &&  evnt.my < bwbox.g_y + bwbox.g_h ){
-				/* TODO: use global mouse state instead of zero
-				   TODO: find COMPONENT and report to its browser, or maybe
-				   its better to catch mouse movements with component events?
-				*/ 
-				nx = evnt.mx - bwbox.g_x;
-				ny = evnt.my - bwbox.g_y;
-				/*LOG(("m1 bw: %p, x: %d, y: %d, state: %d\n" , input_window->browser->bw, nx, ny, bmstate));*/
-				browser_window_mouse_track( 
-					input_window->browser->bw, 
-					bmstate, 
-					nx + gw->browser->scroll.current.x, 
-					ny + gw->browser->scroll.current.y
-				);
-			} 
-		}
 	}
 }
 
@@ -665,7 +530,7 @@ void bind_global_events( void )
 	EvntDataAttach( NULL, WM_XKEYBD, global_evnt_keybd, (void*)&evnt_data );
 	EvntAttach( NULL, AP_TERM, global_evnt_apterm );
 	EvntAttach( NULL, MN_SELECTED,  global_evnt_menu );
-	EvntDataAttach( NULL, WM_XM1, global_evnt_m1, NULL );
+	/* EvntDataAttach( NULL, WM_XM1, global_evnt_m1, NULL ); */
 
 	/* TODO: maybe instant redraw after this is better! */
 	set_menu_title( MAINMENU_T_FILE, "Page");

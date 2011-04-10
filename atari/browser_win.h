@@ -78,4 +78,6 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_keybd(WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_mbutton(WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_m1( WINDOW * win, short buff[8]);
+
 #endif

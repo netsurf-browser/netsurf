@@ -29,6 +29,7 @@
 #include "desktop/options.h"
 #include "desktop/hotlist.h"
 #include "desktop/tree.h"
+#include "desktop/tree_url_node.h"
 #include "desktop/gui.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -40,50 +41,61 @@
 #include "atari/hotlist.h"
 #include "atari/findfile.h"
 #include "atari/res/netsurf.rsh"
+#include "atari/options.h"
 
-static struct atari_hotlist {
-	WINDOW * window;
-	NSTREEVIEW tv;		/*< The hotlist treeview handle.  */
-	bool open;
-} hl;
-
+struct atari_hotlist hl;
 
 static void evnt_hl_toolbar( WINDOW *win, short buff[8]) {
-	int obj = buff[4];	/* Selected object */
-	
-	LOG(("item: %d clicked", obj ));
-
-	switch( obj) {
+	/* handle toolbar object (index in buff[4] ) */	
+	switch( buff[4] ) { 
 	case TOOLBAR_HOTLIST_CREATE_FOLDER:
+		hotlist_add_folder();
 		break;
+
 	case TOOLBAR_HOTLIST_ADD:
+		atari_hotlist_add_page("http://www.de", "");
 		break;
+
 	case TOOLBAR_HOTLIST_DELETE:
+		hotlist_delete_selected();
+		break;
+	
+	case TOOLBAR_HOTLIST_EDIT:
+		hotlist_edit_selected();
 		break;
 	}
-	
-	/* object state to normal and redraw object */
-/*
-	ObjcChange( TOOLBAR_HOTLIST, hl.window, obj, SELECTED, 1);
-	ObjcChange( TOOLBAR_HOTLIST, hl.window, obj, 0 , 1);
-*/
+	ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG ); 
 }
+
 
 static void __CDECL evnt_hl_close( WINDOW *win, short buff[8] )
 {
 	hotlist_close();
 }
 
+
+static void __CDECL evnt_hl_mbutton( WINDOW *win, short buff[8] )
+{
+	/* todo: implement popup? 
+	if(evnt.mbut & 2) {
+		
+	}
+	*/
+}
+
+
 void hotlist_init(void)
 {
-	char hlfilepath[PATH_MAX];
+	if( strcmp(option_hotlist_file, "") == 0 ){
+		atari_find_resource( (char*)&hl.path, "hotlist", "hotlist" );
+	} else {
+		strncpy( (char*)&hl.path, option_hotlist_file, PATH_MAX-1 );
+	}
 
-	atari_find_resource( 
-		(char*)&hlfilepath, "hotlist", "res/Hotlist"
-	);
+	LOG(("Hotlist: %s",  (char*)&hl.path ));
 
 	if( hl.window == NULL ){
-		int flags = CLOSER | MOVER | SIZER| NAME | FULLER | SMALLER ;
+		int flags = ATARI_TREEVIEW_WIDGETS;
 		OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
 		assert( tree );
 		hl.open = false;
@@ -94,58 +106,84 @@ void hotlist_init(void)
 		}
 		/* TODO: load hotlist strings from messages */
 		WindSetStr( hl.window, WF_NAME, (char*)"Hotlist" );
-		WindSetPtr( hl.window, WF_TOOLBAR, 
-			tree, 
-			evnt_hl_toolbar
-		);
+		WindSetPtr( hl.window, WF_TOOLBAR, tree, evnt_hl_toolbar );
 		EvntAttach( hl.window, WM_CLOSED, evnt_hl_close );
+		EvntAttach( hl.window, WM_XBUTTON,evnt_hl_mbutton );
 		hl.tv = atari_treeview_create( 
 			hotlist_get_tree_flags(),
 			hl.window
 		);
 		if (hl.tv == NULL) {
+			/* handle it properly, clean up previous allocs */
 			LOG(("Failed to allocate treeview"));
 			return;
 		}
+		
 		hotlist_initialise(
-				atari_treeview_get_tree(hl.tv),
-				/* TODO: use option_hotlist_file or slt*/
-				(char*)&hlfilepath,
-				"dir.png"
-		);	
+			hl.tv->tree,
+			/* TODO: use option_hotlist_file or slt*/
+			(char*)&hl.path,
+			"dir.png"
+		);
+		
 	} else {
 
 	}
+	hl.init = true;
 }
 
 
 void hotlist_open(void) 
 {
-	hotlist_init();
+	if( hl.init == false ) {
+		return;
+	}
 	if( hl.open == false ) {
 		WindOpen( hl.window, -1, -1, app.w/3, app.h/2);
 		hl.open = true;
+		atari_treeview_open( hl.tv );
+	} else {
+		WindTop( hl.window );	
 	}
-	tree_set_redraw(atari_treeview_get_tree(hl.tv), true);
 }
 
 void hotlist_close(void)
 {
 	WindClose(hl.window);
 	hl.open = false;
+	atari_treeview_close( hl.tv );
 }
 
 void hotlist_destroy(void)
 {
+	if( hl.init == false ) {
+		return;
+	}
 	if( hl.window != NULL ) {
+		hotlist_cleanup( (char*)&hl.path );
 		if( hl.open ) 
 			hotlist_close();
 		WindDelete( hl.window );
-		printf("delete hl tree");
-		atari_treeview_destroy( hl.tv  );
 		hl.window = NULL;
+		atari_treeview_destroy( hl.tv  );
+		hl.init = false;
 	}
+	LOG(("done"));
 }
 
+struct node;
 
-
+void atari_hotlist_add_page( const char * url, const char * title )
+{
+	struct node * root;
+	struct node * selected = NULL;
+	struct node * folder = NULL;
+	NSTREEVIEW tv = hl.tv;
+	if(hl.tv == NULL )
+		return;
+	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
+		hotlist_add_page_xy( url, hl.tv->click.x, hl.tv->click.y );
+	} else {
+		hotlist_add_page( url );
+	}
+}

@@ -103,14 +103,15 @@ struct s_focus_info
 	void * element;
 };
 
-
+/*
 struct s_gui_input_state {
 	short mbut;
 	short mkstat;
 	short mx;
 	short my;
+	browser_mouse_state bms;
 } prev_inp_state;
-
+*/
 
 #define TB_BUTTON_WIDTH 32
 #define TB_BUTTON_HEIGHT 21 /* includes 1px 3d effect */
@@ -229,9 +230,6 @@ struct gui_window {
 };
 
 extern struct gui_window *window_list;
-
-/* scroll a window */
-void gem_window_scroll(struct browser_window * , int x, int y);
 
 #define MOUSE_IS_DRAGGING() (mouse_hold_start[0] || mouse_hold_start[1])
 

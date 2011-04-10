@@ -81,7 +81,6 @@
 char *default_stylesheet_url;
 char *adblock_stylesheet_url;
 char *quirks_stylesheet_url;
-char *options_file_location;
 char *tmp_clipboard;
 struct gui_window *input_window = NULL;
 struct gui_window *window_list = NULL;
@@ -90,11 +89,11 @@ OBJECT * 	h_gem_menu;
 OBJECT **rsc_trindex;
 short vdih;
 short rsc_ntree;
-static clock_t last_multi_task;
 int mouse_click_time[3] = { INT_MAX, INT_MAX, INT_MAX };
 int mouse_hold_start[3];
+short last_drag_x;
+short last_drag_y;
 browser_mouse_state bmstate;
-bool lck_multi = false;
 
 /* Comandline / Options: */
 int cfg_width;
@@ -107,66 +106,41 @@ extern GEM_PLOTTER plotter;
 void gui_multitask(void)
 {
 	short winloc[4];
+	short mx, my, dummy, aestop;
 	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON | MU_TIMER;
-	if( /*((clock() * 1000 / CLOCKS_PER_SEC) - last_multi_task ) < 50 || */ lck_multi == true   ) {
-		return;
-	}
-	/* 	todo: instead of time, use dummy window message here, 
-		timer takes at least 10ms, WMs take about 1ms!
-	*/
-	evnt.timer = 1;
-	if(input_window) {
-		wind_get(input_window->root->handle->handle, WF_WORKXYWH, &winloc[0],
-			&winloc[1], &winloc[2], &winloc[3] );
-		graf_mkstate( &prev_inp_state.mx, &prev_inp_state.my,
-				&prev_inp_state.mbut, &prev_inp_state.mkstat );
-		flags |= MU_M1;
-		if( prev_inp_state.mx >= winloc[0] && prev_inp_state.mx <= winloc[0] + winloc[2] &&
-				prev_inp_state.my >= winloc[1] && prev_inp_state.my <= winloc[1] + winloc[3] ){
-			/* if the cursor is within workarea, capture an movement WITHIN: */
-			evnt.m1_flag = MO_LEAVE;
-			evnt.m1_w = 2;
-			evnt.m1_h = 2;
-			evnt.m1_x = prev_inp_state.mx;
-			evnt.m1_y = prev_inp_state.my;
-		} else {
-			/* otherwise capture mouse move INTO the work area: */
-			evnt.m1_flag = MO_ENTER;
-			evnt.m1_w = winloc[2];
-			evnt.m1_h = winloc[3];
-			evnt.m1_x = winloc[0];
-			evnt.m1_y = winloc[1];
-		}
-	}
+	evnt.timer = 0;
 	EvntWindom( flags );
-	if( MOUSE_IS_DRAGGING() )
-		global_track_mouse_state();
-	last_multi_task = clock()*1000 / CLOCKS_PER_SEC;
 }
+
 void gui_poll(bool active)
 {
 	short winloc[4];
-	int timeout = 50; /* timeout in milliseconds */
+	// int timeout; /* timeout in milliseconds */
 	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON ;
-	/* right now, schedule is only used for the spinner, */
-	/* spinner code must be reviewed, so disable schedule for now */
-	timeout = schedule_run(); 
-	if ( active || browser_reformat_pending )
-		timeout = 1;
+	short mx, my, dummy;
+	short aestop;
 
-	if(input_window) {
+	evnt.timer = schedule_run(); 
+	if ( active || browser_reformat_pending )
+		evnt.timer = 0;
+
+	wind_get( 0, WF_TOP, &aestop, &winloc[1], &winloc[2], &winloc[3]);
+	if( winloc[1] != _AESapid ){
+		aestop = 0;
+	}
+
+	if(aestop > 0) {
 		flags |= MU_M1;
-		wind_get(input_window->root->handle->handle, WF_WORKXYWH, &winloc[0],
+		wind_get( aestop, WF_WORKXYWH, &winloc[0],
 			&winloc[1], &winloc[2], &winloc[3] );
-		graf_mkstate( &prev_inp_state.mx, &prev_inp_state.my,
-				&prev_inp_state.mbut, &prev_inp_state.mkstat );
-		if( prev_inp_state.mx >= winloc[0] && prev_inp_state.mx <= winloc[0] + winloc[2] &&
-				prev_inp_state.my >= winloc[1] && prev_inp_state.my <= winloc[1] + winloc[3] ){
+		graf_mkstate( &mx, &my, &dummy, &dummy );
+		/* this can be improved a lot under XaAES - there is an event for mouse move */
+		if( mx >= winloc[0] && mx <= winloc[0] + winloc[2] &&
+			my >= winloc[1] && my <= winloc[1] + winloc[3] ){
 			evnt.m1_flag = MO_LEAVE;
-			evnt.m1_w = 2;
-			evnt.m1_h = 2;
-			evnt.m1_x = prev_inp_state.mx;
-			evnt.m1_y = prev_inp_state.my;
+			evnt.m1_w = evnt.m1_h = 1;
+			evnt.m1_x = mx;
+			evnt.m1_y = my;
 		} else {
 			evnt.m1_flag = MO_ENTER;
 			evnt.m1_w = winloc[2];
@@ -174,28 +148,19 @@ void gui_poll(bool active)
 			evnt.m1_x = winloc[0];
 			evnt.m1_y = winloc[1];
 		}
-		/* if we have some state that can't be recognized by evnt_multi, don't block
-			so tracking can take place after timeout: */
-		if( MOUSE_IS_DRAGGING() ) 
-			timeout = 1;
 	}
 
-	if( timeout >= 0 ) {
+	if( evnt.timer >= 0 ) {
 		flags |= MU_TIMER;
-		evnt.timer = timeout;
 	}
-	lck_multi = true;
 	EvntWindom( flags );
-	lck_multi = false;
-	if( MOUSE_IS_DRAGGING() ) // MOUSE_EVNT_IN_PROGRESS()
-		global_track_mouse_state();
-	last_multi_task = clock()*1000 / CLOCKS_PER_SEC;
 	struct gui_window * g;
 	for( g = window_list; g != NULL; g=g->next ) {
 		if( browser_redraw_required( g ) ){
 			browser_redraw( g );
 		}
 	}
+	hotlist_redraw();
 }
 
 struct gui_window *
@@ -457,12 +422,6 @@ void gui_window_update_extent(struct gui_window *gw)
 	oldx = gw->browser->scroll.current.x;
 	oldy = gw->browser->scroll.current.y;
 	if( gw->browser->bw->current_content != NULL ) {
-		/*printf("update_extent %p (\"%s\"), c_w: %d, c_h: %d, scale: %f\n",
-			gw->browser->bw,gw->browser->bw->name,
-			content_get_width(gw->browser->bw->current_content),
-			content_get_height(gw->browser->bw->current_content),
-			gw->browser->bw->scale
-		);*/
 		browser_set_content_size( gw, 
 			content_get_width(gw->browser->bw->current_content),
 			content_get_height(gw->browser->bw->current_content)
@@ -966,6 +925,9 @@ void gui_quit(void)
 		}
 		gw = tmp;
 	}
+
+	hotlist_destroy();
+
 	/* send WM_DESTROY to windows purely managed by windom: */
 	while( wglb.first ) {
 		ApplWrite( _AESapid, WM_DESTROY, wglb.first->handle, 0, 0, 0, 0);
@@ -974,7 +936,6 @@ void gui_quit(void)
 
 	urldb_save_cookies(option_cookie_file);
 	urldb_save(option_url_file);	
-	hotlist_destroy();
 
 	RsrcXtype( 0, rsc_trindex, rsc_ntree);
 	unbind_global_events();
@@ -1055,9 +1016,7 @@ char* gui_get_resource_url(const char *filename)
 	char buf[PATH_MAX];
 	int len;
 	char * ret;
-	printf("gui_find_res: %s\n", filename);
 	atari_find_resource((char*)&buf, filename, filename); 
-	printf("found: %s\n", (char*)&buf);
 	/* TODO: handle failure? */
 	len = strlen( (char*)&buf ) + 1;
 	return( path_to_url((char*)&buf) );
@@ -1124,13 +1083,15 @@ static void gui_init(int argc, char** argv)
 		LOG(("Loading cookies from: %s", option_cookie_file ));		
 	}
 
-
-
 	if (process_cmdline(argc,argv) != true)
 		die("unable to process command line.\n");
 
 	nkc_init();
 	atari_plotter_init( option_atari_screen_driver, option_atari_font_driver );
+	/* Interface colours */
+	option_gui_colour_bg_1 = 0xFFFFFF; /** Background          (bbggrr) */
+	option_gui_colour_fg_1 = 0xFF0000; /** Foreground          (bbggrr) */
+	option_gui_colour_fg_2 = 0x000000; /** Foreground selected (bbggrr) */
 }
 
 static char *theapp = "NetSurf";
@@ -1144,9 +1105,11 @@ static void gui_init2(int argc, char** argv)
 	if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
+ 	tree_set_icon_dir( option_tree_icons_path );
+	hotlist_init();
 }
 
-
+/* #define WITH_DBG_LOGFILE 1 */
 /** Entry point from OS.
  *
  * /param argc The number of arguments in the string vector.
@@ -1170,9 +1133,8 @@ int main(int argc, char** argv)
 
 	graf_mouse(BUSY_BEE, NULL);
 	init_os_info();
-	atari_find_resource(messages, "messages", "res/messages");
-	atari_find_resource(options, "Choices", "Choices");
-	options_file_location = strdup(options);
+	atari_find_resource((char*)&messages, "messages", "res/messages");
+	atari_find_resource((char*)&options, "Choices", "Choices");
 
 	netsurf_init(&argc, &argv, options, messages);
 	gui_init(argc, argv);
@@ -1181,13 +1143,12 @@ int main(int argc, char** argv)
 	graf_mouse( ARROW , NULL);
 	netsurf_main_loop();
 	netsurf_exit();
-	if( options_file_location != NULL ){
-		free( options_file_location );
-	}
+
 	LOG(("ApplExit"));
 	ApplExit();
 #ifdef WITH_DBG_LOGFILE	
 	fclose(stdout);
+	fclose(stderr);
 #endif
 
 	return 0;
