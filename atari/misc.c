@@ -70,6 +70,8 @@ char *filename_from_path(char *path)
 	char *leafname;
 
 	leafname = strrchr(path, '\\');
+	if( !leafname )
+		leafname = strrchr(path, '/');
 	if (!leafname)
 		leafname = path;
 	else
@@ -101,7 +103,6 @@ bool path_add_part(char *path, int length, const char *newpart)
 struct gui_window * find_root_gui_window( WINDOW * win )
 {
 
-	int i=0;
 	struct gui_window * gw;
 	gw = window_list;
 	while( gw != NULL ) {
@@ -110,8 +111,6 @@ struct gui_window * find_root_gui_window( WINDOW * win )
 		}
 		else
 			gw = gw->next;
-		i++;
-		assert( i < 1000);
 	}
 	return( NULL );
 }
@@ -120,7 +119,6 @@ struct gui_window * find_root_gui_window( WINDOW * win )
 struct gui_window * find_cmp_window( COMPONENT * c )
 {
 	struct gui_window * gw;
-	int i=0;
 	gw = window_list;
 	while( gw != NULL ) {
 		assert( gw->browser != NULL );
@@ -129,8 +127,6 @@ struct gui_window * find_cmp_window( COMPONENT * c )
 		}
 		else
 			gw = gw->next;
-		i++;
-		assert( i < 1000);
 	}
 	return( NULL );
 }

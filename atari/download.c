@@ -48,6 +48,8 @@
 #include "atari/options.h"
 #include "atari/osspec.h"
 
+/*TODO: get filename from core. */
+
 static void gui_download_window_destroy( struct gui_download_window * gdw );
 
 static void __CDECL evnt_bt_abort_click
@@ -124,7 +126,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 
 	char *filename;
 	char *destination;
-	const char * path = option_downloads_directory;
+	const char * path = option_downloads_path;
 	const char * url;
 	struct gui_download_window * gdw;
 
@@ -256,7 +258,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 			p = (dw->size_downloaded *100) / dw->size_total;
 		}
 		speed = dw->size_downloaded / sdiff;
-		tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*4, 400 ), 1);
+		tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100), DOWNLOAD_BAR_MAX ), 1);
 		if( dw->size_total > 0 ){  
 			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
 				"%lu%s", p, "%" 
@@ -299,7 +301,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 		dw->fd = NULL;
 	}
 	OBJECT * tree = ObjcTree(OC_FORM, dw->form );
-	tree[DOWNLOAD_PROGRESS_DONE].ob_width = 400;
+	tree[DOWNLOAD_PROGRESS_DONE].ob_width = DOWNLOAD_BAR_MAX;
 	snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
 		"%lu%s", 100, "%" 
 	);

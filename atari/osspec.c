@@ -9,6 +9,7 @@
 #include <mint/cookie.h>
 #include <windom.h>
 
+#include "utils/log.h"
 #include "atari/osspec.h"
 
 NS_ATARI_SYSINFO atari_sysinfo;
@@ -16,9 +17,6 @@ NS_ATARI_SYSINFO atari_sysinfo;
 unsigned short _systype_v;
 unsigned short _systype (void)
 {
-_systype_v = (_systype_v & ~0xF) | SYS_MINT | SYS_XAAES;
-	return _systype_v;
-
 	int32_t * cptr = NULL;
 	_systype_v = SYS_TOS;
 	
@@ -31,9 +29,9 @@ _systype_v = (_systype_v & ~0xF) | SYS_MINT | SYS_XAAES;
 			_systype_v = (_systype_v & ~0xF) | SYS_MAGIC;
 		} else if (*cptr == C_MiNT ) {
 			_systype_v = (_systype_v & ~0xF) | SYS_MINT;
-		} else if (*cptr == C_Gnva/*Gnva*/) {
+		} else if (*cptr == C_Gnva /* Gnva */ ) {
 			_systype_v |= SYS_GENEVA;
-		} else if (*cptr == C_nAES/*nAES*/) {
+		} else if (*cptr == C_nAES /* nAES */ ) {
 			_systype_v |= SYS_NAES;
 		}
 		cptr += 2;
@@ -115,6 +113,7 @@ void fix_path(char * path)
 		return;
 	}
 	if( strncmp(path, "/dev/", 5) != 0 ) {
+		/* path is okay, nothing to fix: */ 
 		return;
 	}
 	strncpy((char*)&npath, path, PATH_MAX);
@@ -123,6 +122,7 @@ void fix_path(char * path)
 	npath[2] = 0;
 	strcat((char*)&npath, &path[6]);
 	strcpy(path, (char*)&npath);
+	LOG(("fixed path: %s\n", path ));
 }
 
 /* 
@@ -133,21 +133,13 @@ char * gdos_realpath(const char * path, char * rpath)
 {
 	size_t l;
 	size_t i;
-	char old;
+	char old = '/';
 	char fsep = 0x5C;
 	if( rpath == NULL ){
 		return( NULL );
 	}
 	if( sys_type() & SYS_MINT ){
 		return( realpath(path, rpath) );
-	}
-
-	if( fsep == '/') {
-		/* replace '\' with / */
-		old = 0x5C; /* / */
-	} else {
-		/* replace '/' with \ */
-		old = '/';
 	}
 
 	if( path[0] != '/' && path[0] != 0x5c && path[1] != ':') {
@@ -157,13 +149,16 @@ char * gdos_realpath(const char * path, char * rpath)
 		fix_path((char*)&cwd);
 		strcpy(rpath, (char*)&cwd);
 		l = strlen(rpath);
+		/* append path seperator if needed: */
 		if(rpath[l-1] != 0x5C && rpath[l-1] != '/') {
 			rpath[l] = fsep;
 			rpath[l+1] = 0;
 		}
+		/* check if path is starting with: ./ */
 		if( (path[1] == '/' || path[1] == 0x5C ) ) {
 			strcat(rpath, &path[2]);
 		} else {
+			/* otherwise just append it */
 			strcat(rpath, path);
 		}
 	} else {

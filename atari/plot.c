@@ -174,15 +174,18 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	}
 
 	if(  width != bmpw || height != bmph ) {
-		assert( plotter->bitmap_resize(plotter, bitmap, width, height ) == 0);
-		bm = bitmap->resized;
+		plotter->bitmap_resize(plotter, bitmap, width, height );
+		if( bitmap->resized )
+			bm = bitmap->resized;
+		else 
+			bm = bitmap;
 	} else {
 		bm = bitmap;
 	}
 
 	/* out of memory? */
 	if( bm == NULL ) {
-		printf("plot: out of memory!");
+		printf("plot: out of memory! bmp: %p, bmpres: %p\n", bitmap, bitmap->resized );
 		return( true );
 	}
 
@@ -240,6 +243,5 @@ struct plotter_table plot = {
 	.flush = NULL,
 	.group_start = NULL,
 	.group_end = NULL,
-	/*.option_knockout = false */
-	.option_knockout = true
+	.option_knockout = false
 };

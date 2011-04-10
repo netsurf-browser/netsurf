@@ -32,10 +32,9 @@
 #include "atari/misc.h"
 #include "atari/osspec.h"
 
-
-
 char *path_to_url(const char *path)
 {
+	/* printf("path2url in: %s\n", path); */
 	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
 	char *url = malloc(urllen);
 
@@ -45,6 +44,15 @@ char *path_to_url(const char *path)
 
 	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
 
+	int i=0;
+	while( url[i] != 0 ){
+		if( url[i] == 0x5C ){
+			url[i] = '/';
+		}
+		i++;
+	}
+
+	/* printf("path2url out: %s\n", url); */
 	return url;
 }
 
@@ -53,8 +61,9 @@ char *url_to_path(const char *url)
 {
 	char *url_path = curl_unescape(url, 0);
 	char *path;
-
+	/* printf( "url2path in: %s\n", url_path ); */
 	/* return the absolute path including leading / */
+	/* todo: better check for filesystem? */
 	if( sys_type() & SYS_MINT ) {
 		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
 	} else {
@@ -76,6 +85,7 @@ char *url_to_path(const char *url)
 		LOG(("%s", path));
 	}
 	curl_free(url_path);
+	/* printf( "url2path out: %s\n", path ); */
 	return path;
 }
 

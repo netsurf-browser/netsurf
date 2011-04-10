@@ -35,8 +35,10 @@ extern char *option_atari_face_serif; /* serif face */
 extern char *option_atari_face_serif_bold; /* bold serif face */
 extern char *option_atari_face_cursive; 
 extern char *option_atari_face_fantasy;
-extern char *option_downloads_directory;
+extern char *option_downloads_path;
 extern char *option_url_file;
+extern char *option_hotlist_file;
+extern char *option_tree_icons_path;
 
 #define EXTRA_OPTION_DEFINE \
 char * option_atari_screen_driver = (char*)"vdi";\
@@ -54,8 +56,10 @@ char *option_atari_face_serif;			\
 char *option_atari_face_serif_bold; \
 char *option_atari_face_cursive; \
 char *option_atari_face_fantasy; \
-char *option_downloads_directory = (char*)"./"; \
-char *option_url_file = (char*)"url.db";
+char *option_downloads_path = (char*)"./"; \
+char *option_url_file = (char*)"url.db";\
+char *option_hotlist_file = (char*)"hotlist";\
+char *option_tree_icons_path = (char*)"./res/icons";
 
 #define EXTRA_OPTION_TABLE \
 	{ "atari_screen_driver", OPTION_STRING, &option_atari_screen_driver },\
@@ -73,7 +77,9 @@ char *option_url_file = (char*)"url.db";
 	{ "font_face_serif_bold", OPTION_STRING, &option_atari_face_serif_bold },\
 	{ "font_face_cursive", OPTION_STRING, &option_atari_face_cursive },\
 	{ "font_face_fantasy", OPTION_STRING, &option_atari_face_fantasy },\
-	{ "downloads_directory", OPTION_STRING, &option_downloads_directory },\
-	{ "url_file", OPTION_STRING, &option_url_file }
+	{ "downloads_path", OPTION_STRING, &option_downloads_path },\
+	{ "url_file", OPTION_STRING, &option_url_file },\
+	{ "hotlist_file", OPTION_STRING, &option_hotlist_file },\
+	{ "tree_icons_path", OPTION_STRING, &option_tree_icons_path }
 #endif
 
