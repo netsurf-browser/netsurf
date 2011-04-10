@@ -48,23 +48,26 @@
 #endif
 
 #define MAX_FRAMEBUFS 0x010
-#define C2P (1<<0)	/* C2P convert buffer 1 to buffer 2 */
+#define C2P (1<<0)	                    /* C2P convert buffer 1 to buffer 2 */
 /* TODO: implement offscreen buffer switch */
-/* Plotter Flags: */
-#define PLOT_FLAG_OFFSCREEN 0x01
-#define PLOT_FLAG_LOCKED 	0x02
-#define PLOT_FLAG_DITHER 	0x04
-#define PLOT_FLAG_TRANS		0x08
 
-#define MFDB_FLAG_STAND			0x01
+/* Plotter Flags: */
+#define PLOT_FLAG_OFFSCREEN 0x01	/* offsreen plotter should set/accept this flag */
+#define PLOT_FLAG_LOCKED 	0x02		/* plotter should set this flag during screen updates */
+#define PLOT_FLAG_DITHER 	0x04		/* true if the plotter shall dither images */
+#define PLOT_FLAG_TRANS		0x08		/* true if the plotter supports transparent operations */
+
+/* Flags for init_mfdb function: */
+#define MFDB_FLAG_STAND			0x01	
 #define MFDB_FLAG_ZEROMEM		0x02
 #define MFDB_FLAG_NOALLOC		0x04
 
 /* Error codes: */
-#define ERR_BUFFERSIZE_EXCEEDS_SCREEN 1
-#define ERR_NO_MEM 2
-#define ERR_PLOTTER_NOT_AVAILABLE 3
+#define ERR_BUFFERSIZE_EXCEEDS_SCREEN 1	/* The buffer allocated is larger than the screen */
+#define ERR_NO_MEM 2										/* Not enough memory for requested operation */
+#define ERR_PLOTTER_NOT_AVAILABLE 3			/* invalid plotter driver name passed */
 
+/* Error code translations: */
 static const char * plot_error_codes[] =
 {
 	"None",
@@ -73,14 +76,13 @@ static const char * plot_error_codes[] =
 	"ERR_PLOTTER_NOT_AVAILABLE"
 };
 
-/* Grapics & Font Plotter Objects: */
+/* Grapics & Font Plotter "Objects": */
 typedef struct s_font_plotter * FONT_PLOTTER;
 typedef struct s_gem_plotter * GEM_PLOTTER;
 typedef struct s_font_plotter * GEM_FONT_PLOTTER; /* for public use ... */
 
 
 /* declaration of font plotter member functions: (_fpmf_ prefix) */
-
 typedef int (*_fpmf_str_width)( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 						const char * str, size_t length, int * width);
 typedef int (*_fpmf_str_split)( FONT_PLOTTER self, const plot_font_style_t *fstyle,
@@ -93,6 +95,7 @@ typedef int (*_fpmf_text)( FONT_PLOTTER self, int x, int y, const char *text,
 													size_t length, const plot_font_style_t *fstyle);
 typedef int (*_fpmf_dtor)( FONT_PLOTTER self );
 
+/* prototype of the font plotter "object" */
 struct s_font_plotter
 {
 	char * name;
@@ -112,28 +115,27 @@ struct s_font_plotter
 struct rect;
 
 struct s_vdi_sysinfo {
-	short vdi_handle;			/* vdi handle 					*/
-	short scr_w;				/* resolution horz. 			*/
-	short scr_h;				/* resolution vert. 			*/
-	short scr_bpp;				/* bits per pixel 				*/
-	int colors;					/* 0=hiclor, 2=mono				*/
-	unsigned long hicolors;		/* if colors = 0				*/
-	short pixelsize;			/* bytes per pixel 				*/
-	unsigned short pitch;		/* row pitch 					*/
-	unsigned short vdiformat;	/* pixel format 				*/
-	unsigned short clut;		/* type of clut support 		*/
-	void * screen;				/* pointer to screen, or NULL	*/
-	unsigned long  screensize;	/* size of screen (in bytes)	*/
-	unsigned long  mask_r;		/* color masks 					*/
+	short vdi_handle;					/* vdi handle 						*/
+	short scr_w;							/* resolution horz. 			*/
+	short scr_h;							/* resolution vert. 			*/
+	short scr_bpp;						/* bits per pixel 				*/
+	int colors;								/* 0=hiclor, 2=mono				*/
+	unsigned long hicolors;		/* if colors = 0					*/
+	short pixelsize;					/* bytes per pixel 				*/
+	unsigned short pitch;			/* row pitch 							*/
+	unsigned short vdiformat;	/* pixel format 					*/
+	unsigned short clut;			/* type of clut support 	*/
+	void * screen;						/* pointer to screen, or NULL	*/
+	unsigned long  screensize;/* size of screen (in bytes)	*/
+	unsigned long  mask_r;		/* color masks 						*/
 	unsigned long  mask_g;
 	unsigned long  mask_b;
 	unsigned long  mask_a;
-	short maxintin;				/* maximum pxy items 			*/
-	short maxpolycoords;		/* max coords for p_line etc.	*/
-	unsigned long EdDiVersion;	/* EdDi Version or 0 			*/
-	bool rasterscale;			/* raster scaling support		*/
+	short maxintin;						/* maximum pxy items 			*/
+	short maxpolycoords;			/* max coords for p_line etc.	*/
+	unsigned long EdDiVersion;/* EdDi Version or 0 			*/
+	bool rasterscale;					/* raster scaling support	*/
 };
-
 
 
 struct s_frame_buf
@@ -178,7 +180,7 @@ typedef	int (*_pmf_text)(GEM_PLOTTER self, int x, int y, const char *text, size_
 typedef	int (*_pmf_dtor)(GEM_PLOTTER self);
 
 
-
+/* this is the prototype of an plotter "object" */
 struct s_gem_plotter
 {
 	char * name;         /* name that identifies the Plotter */
@@ -218,12 +220,14 @@ struct s_gem_plotter
 };
 
 
+/* these 2 structs hold info about an specific driver. */
+/* a table in plotter.c defines all the available plotters */
 struct s_driver_table_entry
 {
-	char * name;
-	int (*ctor)( GEM_PLOTTER self );
-	int flags;
-	int max_bpp;
+	char * name;											/* name (unique) */
+	int (*ctor)( GEM_PLOTTER self );	/* pointer to ctor of the plotter */
+	int flags;												/* a bitmask containing info about supported operations */
+	int max_bpp;											/* the maximum supported screen depth of the plotter */
 };
 
 struct s_font_driver_table_entry
@@ -336,35 +340,8 @@ int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
 */
 void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 
+
 #define PLOTTER_IS_LOCKED(plotter) ( plotter->private_flags & PLOTTER_FLAG_LOCKED )
-#define FILL_PLOTTER_VTAB( p ) \
-   p->dtor = dtor;\
-   p->resize= resize;\
-   p->move = move;\
-   p->lock = lock;\
-   p->unlock = unlock;\
-   p->update_region = update_region;\
-   p->update_screen_region = update_screen_region;\
-   p->update_screen = update_screen;\
-   p->put_pixel = put_pixel;\
-   p->copy_rect = copy_rect; \
-   p->clip = clip;\
-   p->arc = arc;\
-   p->disc = disc;\
-   p->line = line;\
-   p->rectangle = rectangle;\
-   p->polygon = polygon;\
-   p->path = path;\
-   p->bitmap = bitmap;\
-   p->text = text;\
-
-
-#define FILL_FONT_PLOTTER_VTAB( p ) \
-	p->dtor = dtor;\
-	p->str_width = str_width;\
-	p->str_split = str_split;\
-	p->pixel_position = pixel_position;\
-	p->text = text;\
 
 #define CURFB( p ) \
 	p->fbuf[p->cfbi]
@@ -372,11 +349,24 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 #define FIRSTFB( p ) \
 	p->fbuf[0]
 
-#define OFFSET_WEB_PAL 16
+/* some Well known indexes into the VDI palette */
+/* common indexes into the VDI palette */
+/* (only used when running with 256 colors or less ) */
+#define OFFSET_WEB_PAL 16		
 #define OFFSET_CUST_PAL 232
-#define OFFSET_CUSTOM_COLOR 255
+#define OFFSET_CUSTOM_COLOR 255	/* this one is used by the TC renderer */
 #define RGB_TO_VDI(c) rgb_to_666_index( (c&0xFF),(c&0xFF00)>>8,(c&0xFF0000)>>16)+OFFSET_WEB_PAL
 #define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8 
+
+/* calculate MFDB compatible rowstride (in number of bits) */
+#define MFDB_STRIDE( w ) (((w & 15) != 0) ? (w | 15)+1 : w)
+
+/* 
+Calculate size of an mfdb, params:
+	Bits per pixel, 
+	Word aligned rowstride (width) as returned by MFDB_STRIDE, 
+	height in pixels 
+*/
 #define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
 
 #endif

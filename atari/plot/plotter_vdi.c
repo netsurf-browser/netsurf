@@ -80,15 +80,6 @@ static HermesHandle hermes_cnv_h; /* hermes converter instance handle */
 static HermesHandle hermes_res_h;
 int32 * hermes_pal_p;
 
-/*
-static inline void vs_rgbcolor(short vdih, uint32_t cin ) 
-{
-	unsigned short c[4];
-	rgb_to_vdi1000( &cin, &c );	
-	vs_color( vdih, OFFSET_CUST_PAL, &c[0] );
-}
-*/
-
 static inline void vsl_rgbcolor( short vdih, uint32_t cin )
 {
 	if( vdi_sysinfo.scr_bpp > 8 ) {
@@ -194,7 +185,6 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 				}
 				if( i >= OFFSET_CUST_PAL ) {
 					/* here we could define 22 additional colors... */ 
-					/* rgb_to_vdi1000( &rgb_font_pal[i-OFFSET_FONT_PAL], &pal[i] ); */
 				}
 				vs_color( self->vdi_handle, i, &pal[i][0] );
 			}
@@ -205,6 +195,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 
 	unsigned char * col;
 	assert( Hermes_Init() );
+/*
 	hermes_pal_h = Hermes_PaletteInstance();
 	hermes_pal_p = Hermes_PaletteGet(hermes_pal_h);
 	assert(hermes_pal_p);
@@ -221,10 +212,10 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 			col[1] = rgb_web_pal[i-OFFSET_WEB_PAL][1];
 			col[2] = rgb_web_pal[i-OFFSET_WEB_PAL][2];
 		}
-		/* font colors missing */
 		col[3] = 0;
 	}
 	Hermes_PaletteInvalidateCache(hermes_pal_h);
+*/
 
 	unsigned long flags = ( self->flags & PLOT_FLAG_DITHER ) ? HERMES_CONVERT_DITHER : 0;
 	hermes_cnv_h = Hermes_ConverterInstance( flags );
@@ -271,7 +262,7 @@ static int dtor( GEM_PLOTTER self )
 
 	/* close Hermes stuff: */
 	Hermes_ConverterReturn( hermes_cnv_h );
-	Hermes_PaletteReturn( hermes_pal_h );
+	/* Hermes_PaletteReturn( hermes_pal_h ); */
 	Hermes_Done();
 
 	if( self->priv_data != NULL ){
@@ -667,6 +658,7 @@ static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh 
 			bitmap_destroy( img->resized );
 			img->resized = NULL;
 		} else {
+			/* the bitmap is already resized */
 			return( 0 );
 		}
 	}
@@ -709,14 +701,6 @@ static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh 
 	return( 0 );
 }
 
-/*
-* Capture the screen at x,y location
-* param self instance
-* param x absolute screen coords
-* param y absolute screen coords
-* param w width
-* param h height
-*/
 static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, int h)
 {
 	MFDB scr;
@@ -836,7 +820,7 @@ static void snapshot_destroy( GEM_PLOTTER self )
 	}
 } 
 
-/* convert bitmap to framebuffer format */
+/* convert bitmap to the virutal (chunked) framebuffer format */
 static int convert_bitmap( GEM_PLOTTER self,
 	struct bitmap * img,
 	int x,
@@ -1020,19 +1004,15 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flag
 	MFDB * src;
 	short pxy[8];
 	short pxyclip[4];
-	short c[2] = {OFFSET_CUSTOM_COLOR, WHITE};	
-	plotter_vdi_clip(self, true);
+	short c[2] = {OFFSET_CUSTOM_COLOR, WHITE};
+	GRECT off;
 
+	plotter_get_clip_grect( self, &off );
+	if( rc_intersect(loc, &off) == 0 ){
+		return( 1 ); 
+	}
+	
 	init_mfdb( 0, loc->g_w, loc->g_h, 0, &screen );
-
-	pxy[0] = 0;
-	pxy[1] = 0;
-	pxy[2] = loc->g_w -1;
-	pxy[3] = loc->g_h -1;
-	pxy[4] = CURFB(self).x + loc->g_x;
-	pxy[5] = CURFB(self).y + loc->g_y;
-	pxy[6] = pxy[4] + loc->g_w -1;
-	pxy[7] = pxy[5] + loc->g_h -1;
 
 	if( insrc->fd_stand ){
 		int size = init_mfdb( insrc->fd_nplanes, loc->g_w, loc->g_h, 
@@ -1057,17 +1037,30 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flag
 		src = insrc;
 	}
 
+	pxy[0] = off.g_x - loc->g_x;
+	pxy[1] = off.g_y - loc->g_y;
+	pxy[2] = pxy[0] + off.g_w - 1;
+	pxy[3] = pxy[1] + off.g_h - 1;
+	pxy[4] = CURFB(self).x + off.g_x;
+	pxy[5] = CURFB(self).y + off.g_y;
+	pxy[6] = pxy[4] + off.g_w-1;
+	pxy[7] = pxy[5] + off.g_h-1;
+
+
 	if( flags & PLOT_FLAG_TRANS && src->fd_nplanes == 1){
 		vrt_cpyfm( self->vdi_handle, MD_TRANS, (short*)pxy, src, &screen, (short*)&c );
 	} else {
-		
+		/* this method only plots transparent bitmaps, right now... */ 
 	}
-	if( insrc->fd_stand ){ 
-		// TODO: shrink conv buffer 
-	}
-	
 
-	plotter_vdi_clip(self, false);
+	/* TODO: shrink conversion buffer? 
+		no, it requires time. 
+	if( insrc->fd_stand ){ 
+
+	}
+
+	*/
+	
 	return( 1 );
 }
 
