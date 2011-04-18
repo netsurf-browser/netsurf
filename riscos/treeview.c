@@ -749,6 +749,7 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 	wimp_window_state	state;
 	int			xpos, ypos;
 	browser_mouse_state	mouse;
+	bool			handled = false;
 
 	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(pointer->w);
 	if (tv == NULL) {
@@ -800,7 +801,7 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 	}
 
 	if (mouse != 0) {
-		tree_mouse_action(tv->tree, mouse, xpos, ypos);
+		handled = tree_mouse_action(tv->tree, mouse, xpos, ypos);
 
 		tv->drag = tree_drag_status(tv->tree);
 		if (tv->drag != TREE_NO_DRAG) {
@@ -822,13 +823,27 @@ static bool ro_treeview_mouse_click(wimp_pointer *pointer)
 			tv->callbacks->toolbar_button_update();
 	}
 
-	/* We assume that the owning module will have attached a window menu
-	 * to our parent window with the auto flag unset (so that we can fudge
-	 * the selection above).  If it hasn't, this call will quietly fail.
+	/* Special actions for some mouse buttons.  Adjust closes the dialog;
+	 * Menu opens a menu.  For the latter, we assume that the owning module
+	 * will have attached a window menu to our parent window with the auto
+	 * flag unset (so that we can fudge the selection above).  If it hasn't,
+	 * the call will quietly fail.
+	 *
+	 * \TODO -- Adjust-click close isn't a perfect copy of what the RO
+	 *          version did: adjust clicks anywhere close the tree, and
+	 *          selections persist.
 	 */
 
-	if (pointer->buttons == wimp_CLICK_MENU)
+	switch(pointer->buttons) {
+	case wimp_CLICK_ADJUST:
+		if (handled)
+			ro_gui_dialog_close(tv->w);
+		break;
+
+	case wimp_CLICK_MENU:
 		ro_gui_wimp_event_process_window_menu_click(pointer);
+		break;
+	}
 
 	return true;
 }
