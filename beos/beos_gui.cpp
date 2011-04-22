@@ -702,7 +702,7 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 
 void gui_poll(bool active)
 {
-	CALLED();
+	//CALLED();
 	CURLMcode code;
 
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
