@@ -289,7 +289,7 @@ char *realpath(const char *f, char *buf)
 		strncpy(buf, f, MAXPATHLEN);
 		return NULL;
 	}
-	printf("RP: '%s'\n", path.Path());
+	//printf("RP: '%s'\n", path.Path());
 	strncpy(buf, path.Path(), MAXPATHLEN);
 	return buf;
 }

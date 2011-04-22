@@ -1644,7 +1644,7 @@ static BMenuItem *make_menu_item(const char *name, BMessage *message)
 		} else if (accel.Length() > 0) {
 			key = accel[0];
 		}
-		printf("MENU: detected 	accel '%s' mods 0x%08lx, key %d\n", accel.String(), mods, key);
+		//printf("MENU: detected 	accel '%s' mods 0x%08lx, key %d\n", accel.String(), mods, key);
 	}
 
 	// turn ... into ellipsis
