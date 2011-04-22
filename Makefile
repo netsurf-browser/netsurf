@@ -37,6 +37,11 @@ all: all-program
 #	In case you don't see anything printed (including the warning), you
 #	have an up-to-date RISC OS build system. ;-)
 HOST := $(shell uname -s)
+
+# Sanitise host
+# TODO: Ideally, we want the equivalent of s/[^A-Za-z0-9]/_/g here
+HOST := $(subst .,_,$(subst -,_,$(subst /,_,$(HOST))))
+
 ifeq ($(HOST),)
   HOST := riscos
   $(warning Build platform determination failed but that's a known problem for RISC OS so we're assuming a native RISC OS build.)
