@@ -477,6 +477,8 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
 	nscss_screen_dpi = INTTOFIX(72);
+	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
+
 	scroll_widget_fg_colour = 0x00aaaaaa;
 	scroll_widget_bg_colour = 0x00833c3c;
 	scroll_widget_arrow_colour = 0x00d6d6d6;
