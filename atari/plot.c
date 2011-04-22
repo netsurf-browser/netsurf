@@ -89,6 +89,14 @@ int atari_plotter_finalise( void )
 	delete_font_plotter( fplotter );
 }
 
+void plot_set_knockout( int set ){
+	if( set == 0 ) {
+		plot.option_knockout = false;		
+	} else {
+		plot.option_knockout = true;
+	}
+}
+
 bool plot_rectangle( int x0, int y0, int x1, int y1,
 							const plot_style_t *style )
 {
