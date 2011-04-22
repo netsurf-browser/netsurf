@@ -20,10 +20,10 @@
 #define AMIGA_FONT_H
 
 #include "desktop/plotters.h"
-#include <graphics/text.h>
+#include <graphics/rastport.h>
 
 ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG x,ULONG y);
-ULONG ami_font_setdevicedpi(int dpi);
+void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
 #endif

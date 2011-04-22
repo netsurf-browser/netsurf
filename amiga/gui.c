@@ -565,7 +565,7 @@ void ami_openscreen(void)
 		}
 	}
 	dri = GetScreenDrawInfo(scrn);
-	ami_font_setdevicedpi(FIXTOINT(nscss_screen_dpi));
+	ami_font_setdevicedpi(id);
 
 	gui_system_colour_finalize();
 	gui_system_colour_init();
