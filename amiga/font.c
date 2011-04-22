@@ -634,7 +634,7 @@ void ami_font_setdevicedpi(int id)
 				DTAG_DISP, 0))
 			{
 				dinfo_res = dinfo.Resolution;
-				xdpi = (dinfo_res.y / dinfo_res.x) * ydpi;
+				xdpi = (dinfo_res.x / dinfo_res.y) * ydpi;
 
 				LOG(("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld)",
 					xdpi, ydpi, dinfo_res.x , dinfo_res.y));
