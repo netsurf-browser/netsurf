@@ -409,8 +409,10 @@ void ami_set_options(void)
 
 void ami_amiupdate(void)
 {
+	/* Create AppPath location for AmiUpdate use */
+
 	BPTR lock = 0, amiupdatefh = 0;
-	/* AmiUpdate */
+
 	if(((lock = Lock("ENVARC:AppPaths",SHARED_LOCK)) == 0))
 	{
 		lock = CreateDir("ENVARC:AppPaths");
@@ -418,7 +420,7 @@ void ami_amiupdate(void)
 	
 	UnLock(lock);
 
-	if(lock=GetCurrentDir())
+	if(lock = Lock("PROGDIR:", ACCESS_READ))
 	{
 		char filename[1024];
 
@@ -427,8 +429,8 @@ void ami_amiupdate(void)
 		amiupdatefh = FOpen("ENVARC:AppPaths/NetSurf",MODE_NEWFILE,0);
 		FPuts(amiupdatefh,(CONST_STRPTR)&filename);
 		FClose(amiupdatefh);
+		UnLock(lock);
 	}
-	/* end Amiupdate */
 }
 
 char* gui_get_resource_url(const char *filename)
