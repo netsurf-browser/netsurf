@@ -40,6 +40,11 @@
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 
+#define NSA_NORMAL 0
+#define NSA_ITALIC 1
+#define NSA_BOLD 2
+#define NSA_BOLDITALIC 3
+
 #define NSA_VALUE_BOLDX (1 << 12)
 #define NSA_VALUE_BOLDY (1 << 12)
 #define NSA_VALUE_SHEARSIN (1 << 14)
@@ -49,6 +54,8 @@ static struct OutlineFont *of[PLOT_FONT_FAMILY_COUNT+1];
 static struct OutlineFont *ofb[PLOT_FONT_FAMILY_COUNT+1];
 static struct OutlineFont *ofi[PLOT_FONT_FAMILY_COUNT+1];
 static struct OutlineFont *ofbi[PLOT_FONT_FAMILY_COUNT+1];
+
+ULONG ami_devicedpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth);
@@ -367,7 +374,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
 	if(ESetInfo(&ofont->olf_EEngine,
-			OT_DeviceDPI,   (72<<16) | 72,
+			OT_DeviceDPI,   ami_devicedpi,
 			OT_PointHeight, ysize,
 			OT_EmboldenX,   emboldenx,
 			OT_EmboldenY,   emboldeny,
@@ -604,4 +611,11 @@ void ami_close_fonts(void)
 		if(ofi[i]) CloseOutlineFont(ofi[i],NULL);
 		if(ofbi[i]) CloseOutlineFont(ofbi[i],NULL);
 	}
+}
+
+ULONG ami_font_setdevicedpi(int dpi)
+{
+	ami_devicedpi = (dpi<<16) | dpi;
+
+	return ami_devicedpi;
 }

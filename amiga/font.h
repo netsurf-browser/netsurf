@@ -22,14 +22,8 @@
 #include "desktop/plotters.h"
 #include <graphics/text.h>
 
-#define NSA_NORMAL 0
-#define NSA_ITALIC 1
-#define NSA_BOLD 2
-#define NSA_BOLDITALIC 3
-
-void ami_close_font(struct TextFont *tfont);
 ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG x,ULONG y);
-
+ULONG ami_font_setdevicedpi(int dpi);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
 #endif
