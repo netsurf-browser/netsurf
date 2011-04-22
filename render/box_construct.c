@@ -106,8 +106,8 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
-void box_construct_after(xmlNode *n, struct content *content,
-		struct box *box, const css_computed_style *after_style);
+void box_construct_generate(xmlNode *n, struct content *content,
+		struct box *box, const css_computed_style *style);
 bool box_construct_text(xmlNode *n, struct content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
@@ -356,6 +356,18 @@ bool box_construct_element(xmlNode *n, struct content *content,
 		/* Normal mapping */
 		box->type = box_map[css_computed_display(box->style, 
 				n->parent == NULL)];
+	}
+
+	/* handle the :before pseudo element */
+
+	/* TODO: Replace with true implementation.
+	 * Currently we only implement enough of this to support the
+	 * 'clearfix' hack, which is in widespread use and the layout
+	 * of many sites depend on. As such, only bother if box is a
+	 * block for now. */
+	if (box->type == BOX_BLOCK) {
+		box_construct_generate(n, content, box,
+				box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
 	}
 
 	/* special elements */
@@ -608,21 +620,20 @@ bool box_construct_element(xmlNode *n, struct content *content,
 	 * of many sites depend on. As such, only bother if box is a
 	 * block for now. */
 	if (box->type == BOX_BLOCK) {
-		box_construct_after(n, content, box,
+		box_construct_generate(n, content, box,
 				box->styles->styles[CSS_PSEUDO_ELEMENT_AFTER]);
 	}
 
 	return true;
 }
 
-
 /**
- * Construct the box required for an :after pseudo element.
+ * Construct the box required for a generated element.
  *
  * \param  n		XML node of type XML_ELEMENT_NODE
  * \param  content	content of type CONTENT_HTML that is being processed
- * \param  box		box which may have an :after s
- * \param  after_style	complete computed style for after pseudo element
+ * \param  box		box which may have generated content
+ * \param  style	complete computed style for pseudo element
  *
  * TODO:
  * This is currently incomplete. It just does enough to support the clearfix
@@ -634,36 +645,36 @@ bool box_construct_element(xmlNode *n, struct content *content,
  * We don't actually support generated content yet.
  */
 
-void box_construct_after(xmlNode *n, struct content *content,
-		struct box *box, const css_computed_style *after_style)
+void box_construct_generate(xmlNode *n, struct content *content,
+		struct box *box, const css_computed_style *style)
 {
-	struct box *after = 0;
+	struct box *gen = NULL;
 	const css_computed_content_item *c_item;
 
-	if (after_style == NULL ||
-			css_computed_content(after_style, &c_item) ==
+	if (style == NULL ||
+			css_computed_content(style, &c_item) ==
 			CSS_CONTENT_NORMAL) {
 		/* No pseudo element */
 		return;
 	}
 
 	/* create box for this element */
-	if (css_computed_display(after_style, n->parent == NULL) ==
+	if (css_computed_display(style, n->parent == NULL) ==
 			CSS_DISPLAY_BLOCK) {
 		/* currently only support block level after elements */
 
 		/** \todo Not wise to drop const from the computed style */ 
-		after = box_create(NULL, (css_computed_style *)after_style,
+		gen = box_create(NULL, (css_computed_style *) style,
 				false, NULL, NULL, NULL, NULL, content);
-		if (after == NULL) {
+		if (gen == NULL) {
 			return;
 		}
 
 		/* set box type from computed display */
-		after->type = box_map[css_computed_display(
-				after_style, n->parent == NULL)];
+		gen->type = box_map[css_computed_display(
+				style, n->parent == NULL)];
 
-		box_add_child(box, after);
+		box_add_child(box, gen);
 	}
 }
 
