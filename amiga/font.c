@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -39,6 +39,11 @@
 #include "utils/utils.h"
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
+
+#define NSA_VALUE_BOLDX (1 << 12)
+#define NSA_VALUE_BOLDY (1 << 12)
+#define NSA_VALUE_SHEARSIN (1 << 14)
+#define NSA_VALUE_SHEARCOS (1 << 16)
 
 static struct OutlineFont *of[PLOT_FONT_FAMILY_COUNT+1];
 static struct OutlineFont *ofb[PLOT_FONT_FAMILY_COUNT+1];
@@ -296,7 +301,10 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	ULONG ysize;
 	int tstyle = 0;
 	plot_font_generic_family_t fontfamily;
-	ULONG embolden = 0;
+	ULONG emboldenx = 0;
+	ULONG emboldeny = 0;
+	ULONG shearsin = 0;
+	ULONG shearcos = (1 << 16);
 
 	if(fallback) fontfamily = NSA_UNICODE_FONT;
 		else fontfamily = fstyle->family;
@@ -310,8 +318,16 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	switch(tstyle)
 	{
 		case NSA_ITALIC:
-			if(ofi[fontfamily]) ofont = ofi[fontfamily];
-				else ofont = of[fontfamily];
+			if(ofi[fontfamily])
+			{
+				ofont = ofi[fontfamily];
+			}
+			else
+			{
+				ofont = of[fontfamily];
+				shearsin = NSA_VALUE_SHEARSIN;
+				shearcos = NSA_VALUE_SHEARCOS;
+			}
 		break;
 
 		case NSA_BOLD:
@@ -322,7 +338,8 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 			else
 			{
 				ofont = of[fontfamily];
-				embolden = (1 << 12);
+				emboldenx = NSA_VALUE_BOLDX;
+				emboldeny = NSA_VALUE_BOLDY;
 			}
 		break;
 
@@ -334,7 +351,10 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 			else
 			{
 				ofont = of[fontfamily];
-				embolden = (1 << 12);
+				emboldenx = NSA_VALUE_BOLDX;
+				emboldeny = NSA_VALUE_BOLDY;
+				shearsin = NSA_VALUE_SHEARSIN;
+				shearcos = NSA_VALUE_SHEARCOS;
 			}
 		break;
 
@@ -347,10 +367,12 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
 	if(ESetInfo(&ofont->olf_EEngine,
-			OT_DeviceDPI, (72<<16) | 72,
+			OT_DeviceDPI,   (72<<16) | 72,
 			OT_PointHeight, ysize,
-			OT_EmboldenX, embolden,
-			OT_EmboldenY, embolden,
+			OT_EmboldenX,   emboldenx,
+			OT_EmboldenY,   emboldeny,
+			OT_ShearSin,    shearsin,
+			OT_ShearCos,    shearcos,
 			TAG_END) == OTERR_Success)
 		return ofont;
 
