@@ -17,26 +17,31 @@
  */
 
 #include <assert.h>
-#include "css/css.h"
-#include "render/font.h"
-#include "amiga/gui.h"
-#include <proto/graphics.h>
-#include <proto/diskfont.h>
-#include <graphics/rpattr.h>
+
 #include "amiga/font.h"
-#include "desktop/options.h"
+#include "amiga/gui.h"
 #include "amiga/utf8.h"
+#include "amiga/options.h"
+#include "css/css.h"
+#include "css/utils.h"
+#include "render/font.h"
+#include "utils/log.h"
 #include "utils/utf8.h"
+#include "utils/utils.h"
+
+#include <proto/diskfont.h>
+#include <proto/exec.h>
+#include <proto/graphics.h>
+#include <proto/Picasso96API.h>
+#include <proto/utility.h>
+
 #include <diskfont/diskfonttag.h>
 #include <diskfont/oterrors.h>
-#include <proto/Picasso96API.h>
-#include <proto/exec.h>
+#include <graphics/rpattr.h>
+
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #endif
-#include "amiga/options.h"
-#include <proto/utility.h>
-#include "utils/utils.h"
 
 #define NSA_UNICODE_FONT PLOT_FONT_FAMILY_COUNT
 
@@ -613,9 +618,29 @@ void ami_close_fonts(void)
 	}
 }
 
-ULONG ami_font_setdevicedpi(int dpi)
+void ami_font_setdevicedpi(int id)
 {
-	ami_devicedpi = (dpi<<16) | dpi;
+	DisplayInfoHandle dih;
+	struct DisplayInfo dinfo;
+	Point dinfo_res;
+	ULONG ydpi = FIXTOINT(nscss_screen_dpi);
+	ULONG xdpi = ydpi;
 
-	return ami_devicedpi;
+	if(id)
+	{
+		if(dih = FindDisplayInfo(id))
+		{
+			if(GetDisplayInfoData(dih, &dinfo, sizeof(struct DisplayInfo),
+				DTAG_DISP, 0))
+			{
+				dinfo_res = dinfo.Resolution;
+				xdpi = (dinfo_res.y / dinfo_res.x) * ydpi;
+
+				LOG(("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld)",
+					xdpi, ydpi, dinfo_res.x , dinfo_res.y));
+			}
+		}
+	}
+
+	ami_devicedpi = (xdpi << 16) | ydpi;
 }
