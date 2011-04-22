@@ -69,6 +69,8 @@ static bool layout_block_context(struct box *block, int viewport_height,
 		struct content *content);
 static void layout_minmax_block(struct box *block,
 		const struct font_functions *font_func);
+static struct box* layout_next_margin_block(struct box *box, struct box *block,
+		int viewport_height, int *max_pos_margin, int *max_neg_margin);
 static bool layout_block_object(struct box *block);
 static void layout_get_object_dimensions(struct box *box,
 		int *width, int *height,
@@ -208,7 +210,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 	int max_neg_margin = 0;
 	int y = 0;
 	int lm, rm;
-	struct box *margin_box;
+	struct box *margin_collapse = NULL;
+	bool in_margin = false;
 	css_fixed gadget_size;
 	css_unit gadget_unit; /* Checkbox / radio buttons */
 
@@ -281,7 +284,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 					gadget_unit, block->style));
 	}
 
-	box = margin_box = block->children;
+	box = block->children;
 	/* set current coordinates to top-left of the block */
 	cx = 0;
 	y = cy = block->padding[TOP];
@@ -314,7 +317,6 @@ bool layout_block_context(struct box *block, int viewport_height,
 	while (box) {
 		assert(box->type == BOX_BLOCK || box->type == BOX_TABLE ||
 				box->type == BOX_INLINE_CONTAINER);
-		assert(margin_box);
 
 		/* Tables are laid out before being positioned, because the
 		 * position depends on the width which is calculated in
@@ -336,25 +338,22 @@ bool layout_block_context(struct box *block, int viewport_height,
 			goto advance_to_next_box;
 		}
 
+		/* If we don't know which box the current margin collapses
+		 * through to, find out.  Update the pos/neg margin values. */
+		if (margin_collapse == NULL) {
+			margin_collapse = layout_next_margin_block(box, block,
+					viewport_height,
+					&max_pos_margin, &max_neg_margin);
+			/* We have a margin that has not yet been applied. */
+			in_margin = true;
+		}
+
 		/* Clearance. */
 		y = 0;
 		if (box->style && css_computed_clear(box->style) !=
 				CSS_CLEAR_NONE)
 			y = layout_clear(block->float_children,
 					css_computed_clear(box->style));
-
-		/* Get top margin */
-		if (box->style) {
-			layout_find_dimensions(box->parent->width,
-					viewport_height, box, box->style,
-					NULL, NULL, NULL, NULL,
-					box->margin, NULL, NULL);
-		}
-
-		if (max_pos_margin < box->margin[TOP])
-			max_pos_margin = box->margin[TOP];
-		else if (max_neg_margin < -box->margin[TOP])
-			max_neg_margin = -box->margin[TOP];
 
 		/* Blocks establishing a block formatting context get minimum
 		 * left and right margins to avoid any floats. */
@@ -405,8 +404,9 @@ bool layout_block_context(struct box *block, int viewport_height,
 					 * diminished due to floats. */
 					int x0, x1, top;
 					struct box *left, *right;
-					top = cy > y ? cy : y;
-					top += max_pos_margin - max_neg_margin;
+					top = cy + max_pos_margin -
+							max_neg_margin;
+					top = (top > y) ? top : y;
 					x0 = cx;
 					x1 = cx + box->parent->width -
 						box->parent->padding[LEFT] -
@@ -436,18 +436,34 @@ bool layout_block_context(struct box *block, int viewport_height,
 		cx += box->x;
 
 		/* Position box: vertical. */
-		if (box->type != BOX_BLOCK || y ||
-				box->border[TOP].width || box->padding[TOP]) {
-			margin_box->y += max_pos_margin - max_neg_margin;
-			cy += max_pos_margin - max_neg_margin;
-			max_pos_margin = max_neg_margin = 0;
-			margin_box = 0;
+		if (box->border[TOP].width) {
 			box->y += box->border[TOP].width;
 			cy += box->border[TOP].width;
-			if (cy < y) {
-				box->y += y - cy;
-				cy = y;
-			}
+		}
+
+		/* Vertical margin */
+		if (((box->type == BOX_BLOCK &&
+				(box->flags & HAS_HEIGHT)) ||
+				box->type == BOX_TABLE ||
+				(box->type == BOX_INLINE_CONTAINER &&
+				box != box->parent->children) ||
+				margin_collapse == box) &&
+				in_margin == true) {
+			/* Margin goes above this box. */
+			cy += max_pos_margin - max_neg_margin;
+			box->y += max_pos_margin - max_neg_margin;
+
+			/* Current margin has been applied. */
+			in_margin = false;
+			max_pos_margin = max_neg_margin = 0;
+		}
+
+		/* Handle clearance */
+		if (box->type != BOX_INLINE_CONTAINER &&
+				(y > 0) && (cy < y)) {
+			/* box clears something*/
+			box->y += y - cy;
+			cy = y;
 		}
 
 		/* Unless the box has an overflow style of visible, the box
@@ -455,15 +471,12 @@ bool layout_block_context(struct box *block, int viewport_height,
 		if (box->type == BOX_BLOCK && box->style &&
 				css_computed_overflow(box->style) !=
 				CSS_OVERFLOW_VISIBLE) {
-			cy += max_pos_margin - max_neg_margin;
-			box->y += max_pos_margin - max_neg_margin;
 
 			layout_block_context(box, viewport_height, content);
 
-			if (box->type == BOX_BLOCK || box->object)
-				cy += box->padding[TOP];
+			cy += box->padding[TOP];
 
-			if (box->type == BOX_BLOCK && box->height == AUTO) {
+			if (box->height == AUTO) {
 				box->height = 0;
 				layout_block_add_scrollbar(box, BOTTOM);
 			}
@@ -471,23 +484,13 @@ bool layout_block_context(struct box *block, int viewport_height,
 			cx -= box->x;
 			cy += box->height + box->padding[BOTTOM] +
 					box->border[BOTTOM].width;
-			max_pos_margin = max_neg_margin = 0;
-			if (max_pos_margin < box->margin[BOTTOM])
-				max_pos_margin = box->margin[BOTTOM];
-			else if (max_neg_margin < -box->margin[BOTTOM])
-				max_neg_margin = -box->margin[BOTTOM];
 			y = box->y + box->padding[TOP] + box->height +
 					box->padding[BOTTOM] +
 					box->border[BOTTOM].width;
+
 			/* Skip children, because they are done in the new
 			 * block context */
 			goto advance_to_next_box;
-		} else if (box->type == BOX_BLOCK && (box->flags & HAS_HEIGHT)) {
-			/* This block doesn't establish a new block formatting
-			 * context */
-			cy += max_pos_margin - max_neg_margin;
-			box->y += max_pos_margin - max_neg_margin;
-			max_pos_margin = max_neg_margin = 0;
 		}
 
 #ifdef LAYOUT_DEBUG
@@ -546,14 +549,17 @@ bool layout_block_context(struct box *block, int viewport_height,
 		/* Advance to next box. */
 		if (box->type == BOX_BLOCK && !box->object && box->children) {
 			/* Down into children. */
+
+			if (box == margin_collapse) {
+				/* Current margin collapsed though to this box.
+				 * Unset margin_collapse. */
+				margin_collapse = NULL;
+			}
+
 			y = box->padding[TOP];
 			box = box->children;
 			box->y = y;
 			cy += y;
-			if (!margin_box) {
-				max_pos_margin = max_neg_margin = 0;
-				margin_box = box;
-			}
 			continue;
 		} else if (box->type == BOX_BLOCK || box->object)
 			cy += box->padding[TOP];
@@ -565,23 +571,42 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 		cy += box->height + box->padding[BOTTOM] +
 				box->border[BOTTOM].width;
-		max_pos_margin = max_neg_margin = 0;
-		if (max_pos_margin < box->margin[BOTTOM])
-			max_pos_margin = box->margin[BOTTOM];
-		else if (max_neg_margin < -box->margin[BOTTOM])
-			max_neg_margin = -box->margin[BOTTOM];
 		cx -= box->x;
 		y = box->y + box->padding[TOP] + box->height +
 				box->padding[BOTTOM] +
 				box->border[BOTTOM].width;
+
 	advance_to_next_box:
 		if (!box->next) {
 			/* No more siblings:
 			 * up to first ancestor with a sibling. */
+
 			do {
+				if (box == margin_collapse) {
+					/* Current margin collapsed though to
+					 * this box.  Unset margin_collapse. */
+					margin_collapse = NULL;
+				}
+
+				/* Apply bottom margin */
+				if (max_pos_margin < box->margin[BOTTOM])
+					max_pos_margin = box->margin[BOTTOM];
+				else if (max_neg_margin < -box->margin[BOTTOM])
+					max_neg_margin = -box->margin[BOTTOM];
+
 				box = box->parent;
 				if (box == block)
 					break;
+
+				/* Margin is invalidated if this is a box
+				 * margins can't collapse through. */
+				if (box->type == BOX_BLOCK &&
+						box->flags & MAKE_HEIGHT) {
+					margin_collapse = NULL;
+					in_margin = false;
+					max_pos_margin = max_neg_margin = 0;
+				}
+
 				if (box->height == AUTO) {
 					box->height = y - box->padding[TOP];
 
@@ -607,22 +632,31 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 				cy += box->padding[BOTTOM] +
 						box->border[BOTTOM].width;
-				if (max_pos_margin < box->margin[BOTTOM])
-					max_pos_margin = box->margin[BOTTOM];
-				else if (max_neg_margin < -box->margin[BOTTOM])
-					max_neg_margin = -box->margin[BOTTOM];
 				cx -= box->x;
 				y = box->y + box->padding[TOP] + box->height +
 						box->padding[BOTTOM] +
 						box->border[BOTTOM].width;
-			} while (box != block && !box->next);
+
+			} while (box->next == NULL);
 			if (box == block)
 				break;
 		}
+
 		/* To next sibling. */
+
+		if (box == margin_collapse) {
+			/* Current margin collapsed though to this box.
+			 * Unset margin_collapse. */
+			margin_collapse = NULL;
+		}
+
+		if (max_pos_margin < box->margin[BOTTOM])
+			max_pos_margin = box->margin[BOTTOM];
+		else if (max_neg_margin < -box->margin[BOTTOM])
+			max_neg_margin = -box->margin[BOTTOM];
+
 		box = box->next;
 		box->y = y;
-		margin_box = box;
 	}
 
 	/* Account for bottom margin of last contained block */
@@ -737,11 +771,17 @@ void layout_minmax_block(struct box *block,
 			case BOX_INLINE_CONTAINER:
 				layout_minmax_inline_container(child,
 						&child_has_height, font_func);
+				if (child_has_height &&
+						child ==
+						child->parent->children) {
+					block->flags |= MAKE_HEIGHT;
+				}
 				break;
 			case BOX_TABLE:
 				layout_minmax_table(child, font_func);
 				/* todo: fix for zero height tables */
 				child_has_height = true;
+				child->flags |= MAKE_HEIGHT;
 				break;
 			default:
 				assert(0);
@@ -779,8 +819,10 @@ void layout_minmax_block(struct box *block,
 		min = max = FIXTOINT(nscss_len2px(width, wunit, block->style));
 	}
 
-	if (height > 0 && hunit != CSS_UNIT_PCT)
+	if (height > 0 && hunit != CSS_UNIT_PCT) {
+		block->flags |= MAKE_HEIGHT;
 		block->flags |= HAS_HEIGHT;
+	}
 
 	/* add margins, border, padding to min, max widths */
 	/* Note: we don't know available width here so percentage margin
@@ -820,6 +862,121 @@ void layout_minmax_block(struct box *block,
 	}
 
 	assert(0 <= block->min_width && block->min_width <= block->max_width);
+}
+
+
+/**
+ * Find next block that current margin collapses to.
+ *
+ * \param  box    box to start tree-order search from (top margin is included)
+ * \param  block  box responsible for current block fromatting context
+ * \param  viewport_height  height of viewport in px
+ * \param  max_pos_margin  updated to to maximum positive margin encountered
+ * \param  max_neg_margin  updated to to maximum negative margin encountered
+ * \return  next box that current margin collapses to, or NULL if none.
+ */
+
+struct box* layout_next_margin_block(struct box *box, struct box *block,
+		int viewport_height, int *max_pos_margin, int *max_neg_margin)
+{
+	assert(block != NULL);
+
+	while (box != NULL) {
+
+		if (box->type == BOX_INLINE_CONTAINER || (box->style &&
+				(css_computed_position(box->style) !=
+					CSS_POSITION_ABSOLUTE &&
+				 css_computed_position(box->style) !=
+					CSS_POSITION_FIXED))) {
+			/* Not positioned */
+
+			/* Get margins */
+			if (box->style) {
+				layout_find_dimensions(box->parent->width,
+						viewport_height, box,
+						box->style,
+						NULL, NULL, NULL, NULL,
+						box->margin, box->padding,
+						box->border);
+
+				/* Apply top margin */
+				if (*max_pos_margin < box->margin[TOP])
+					*max_pos_margin = box->margin[TOP];
+				else if (*max_neg_margin < -box->margin[TOP])
+					*max_neg_margin = -box->margin[TOP];
+			}
+
+			/* Check whether box is the box current margin collapses
+			 * to */
+			if (box->flags & MAKE_HEIGHT ||
+					box->border[TOP].width ||
+					box->padding[TOP] ||
+					(box->style &&
+					css_computed_overflow(box->style) !=
+					CSS_OVERFLOW_VISIBLE) ||
+					(box->type == BOX_INLINE_CONTAINER &&
+					box != box->parent->children)) {
+				/* Collapse to this box; return it */
+				return box;
+			}
+		}
+
+
+		/* Find next box */
+		if (box->type == BOX_BLOCK && !box->object && box->children &&
+				box->style &&
+				css_computed_overflow(box->style) ==
+				CSS_OVERFLOW_VISIBLE) {
+			/* Down into children. */
+			box = box->children;
+		} else {
+			if (!box->next) {
+				/* No more siblings:
+				 * Go up to first ancestor with a sibling. */
+				do {
+					/* Apply bottom margin */
+					if (*max_pos_margin <
+							box->margin[BOTTOM])
+						*max_pos_margin =
+							box->margin[BOTTOM];
+					else if (*max_neg_margin <
+							-box->margin[BOTTOM])
+						*max_neg_margin =
+							-box->margin[BOTTOM];
+
+					box = box->parent;
+				} while (box != block && !box->next);
+
+				if (box == block) {
+					/* Margins don't collapse with stuff
+					 * outside the block formatting context
+					 */
+					return block;
+				}
+			}
+
+			/* Apply bottom margin */
+			if (*max_pos_margin < box->margin[BOTTOM])
+				*max_pos_margin = box->margin[BOTTOM];
+			else if (*max_neg_margin < -box->margin[BOTTOM])
+				*max_neg_margin = -box->margin[BOTTOM];
+
+			/* To next sibling. */
+			box = box->next;
+
+			/* Get margins */
+			if (box->style) {
+				layout_find_dimensions(box->parent->width,
+						viewport_height, box,
+						box->style,
+						NULL, NULL, NULL, NULL,
+						box->margin, box->padding,
+						box->border);
+			}
+		}
+	}
+
+	return NULL;
 }
 
 
