@@ -296,6 +296,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	ULONG ysize;
 	int tstyle = 0;
 	plot_font_generic_family_t fontfamily;
+	ULONG embolden = 0;
 
 	if(fallback) fontfamily = NSA_UNICODE_FONT;
 		else fontfamily = fstyle->family;
@@ -314,13 +315,27 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 		break;
 
 		case NSA_BOLD:
-			if(ofb[fontfamily]) ofont = ofb[fontfamily];
-				else ofont = of[fontfamily];
+			if(ofb[fontfamily])
+			{
+				ofont = ofb[fontfamily];
+			}
+			else
+			{
+				ofont = of[fontfamily];
+				embolden = (1 << 12);
+			}
 		break;
 
 		case NSA_BOLDITALIC:
-			if(ofbi[fontfamily]) ofont = ofbi[fontfamily];
-				else ofont = of[fontfamily];
+			if(ofbi[fontfamily])
+			{
+				ofont = ofbi[fontfamily];
+			}
+			else
+			{
+				ofont = of[fontfamily];
+				embolden = (1 << 12);
+			}
 		break;
 
 		default:
@@ -332,12 +347,12 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
 
 	if(ESetInfo(&ofont->olf_EEngine,
-			OT_DeviceDPI,(72<<16) | 72,
-			OT_PointHeight,ysize,
+			OT_DeviceDPI, (72<<16) | 72,
+			OT_PointHeight, ysize,
+			OT_EmboldenX, embolden,
+			OT_EmboldenY, embolden,
 			TAG_END) == OTERR_Success)
-	{
 		return ofont;
-	}
 
 	return NULL;
 }
