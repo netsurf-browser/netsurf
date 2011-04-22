@@ -291,8 +291,10 @@ define pkg_config_find_and_add
         $$(info M.CONFIG: $(3) ($(2))	enabled       (NETSURF_USE_$(1) := YES))
       endif
     else
-      $$(info M.CONFIG: $(3) ($(2))	failed        (NETSURF_USE_$(1) := YES))
-      $$(error Unable to find library for: $(3) ($(2)))
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info M.CONFIG: $(3) ($(2))	failed        (NETSURF_USE_$(1) := YES))
+        $$(error Unable to find library for: $(3) ($(2)))
+      endif
     endif
   else ifeq ($$(NETSURF_USE_$(1)),AUTO)
     ifeq ($$(NETSURF_FEATURE_$(1)_AVAILABLE),yes)
@@ -311,8 +313,10 @@ define pkg_config_find_and_add
       $$(info M.CONFIG: $(3) ($(2))	disabled      (NETSURF_USE_$(1) := NO))
     endif
   else
-    $$(info M.CONFIG: $(3) ($(2))	error         (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
-    $$(error NETSURF_USE_$(1) must be YES, NO, or AUTO)
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info M.CONFIG: $(3) ($(2))	error         (NETSURF_USE_$(1) := $$(NETSURF_USE_$(1))))
+      $$(error NETSURF_USE_$(1) must be YES, NO, or AUTO)
+    endif
   endif
 endef
 
@@ -630,21 +634,21 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/it $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/nl $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install glade templates
-	gzip -9v < gtk/res/cookies.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)cookies.glade
-	gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
-	gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
-	gzip -9v < gtk/res/hotlist.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)hotlist.glade
-	gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
-	gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
-	gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
-	gzip -9v < gtk/res/password.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)password.glade
-	gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
-	gzip -9v < gtk/res/ssl.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)ssl.glade
-	gzip -9v < gtk/res/toolbar.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
-	gzip -9v < gtk/res/warning.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)warning.glade
+	@gzip -9v < gtk/res/cookies.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)cookies.glade
+	@gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
+	@gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
+	@gzip -9v < gtk/res/hotlist.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)hotlist.glade
+	@gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
+	@gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
+	@gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
+	@gzip -9v < gtk/res/password.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)password.glade
+	@gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
+	@gzip -9v < gtk/res/ssl.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)ssl.glade
+	@gzip -9v < gtk/res/toolbar.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
+	@gzip -9v < gtk/res/warning.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)warning.glade
 
 install-beos: NetSurf
-	# TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
+#       TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
 	mkdir -p $(DESTDIR)$(NETSURF_BEOS_BIN)
 	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 #	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
