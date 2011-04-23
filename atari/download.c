@@ -182,7 +182,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		strcat( tpath, "/");
 	}
 	strcat( tpath, filename );
-	gdos_realpath(tpath, tpath2);
+	gemdos_realpath(tpath, tpath2);
 	gdw->destination = malloc(strlen(tpath2) + 2);
 	strcpy(gdw->destination, tpath2);
 	gdw->fd = fopen(gdw->destination, "wb" );

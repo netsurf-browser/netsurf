@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <curl/curl.h>
 #include <windom.h>
 
@@ -32,15 +33,31 @@
 #include "atari/misc.h"
 #include "atari/osspec.h"
 
-char *path_to_url(const char *path)
+char *path_to_url(const char *path_in)
 {
-	/* printf("path2url in: %s\n", path); */
+	char * path_ptr=NULL;
+	char * path;
+	LOG(("path2url in: %s\n", path_in));
+
+	if (*path_in == '/') {
+		path_in++; /* file: path is are already absolute */
+		path = (char*)path_in;
+	} else {
+		path = path_ptr = (char*)malloc(PATH_MAX+1);
+		gemdos_realpath(path_in, path);
+		if( *path == '/' || *path == 0x5C ) {
+			path++;
+		}
+		if( sys_type() != SYS_MINT ){
+			if( path[1] == ':' ) {
+				path[1] = path[0];
+				path++;
+			}
+		}
+	}
+
 	int urllen = strlen(path) + FILE_SCHEME_PREFIX_LEN + 1;
 	char *url = malloc(urllen);
-
-	if (*path == '/') {
-		path++; /* file: paths are already absolute */
-	} 
 
 	snprintf(url, urllen, "%s%s", FILE_SCHEME_PREFIX, path);
 
@@ -51,8 +68,9 @@ char *path_to_url(const char *path)
 		}
 		i++;
 	}
-
-	/* printf("path2url out: %s\n", url); */
+	if( path_ptr ) 
+		free( path_ptr );
+	LOG(("path2url out: %s\n", url));
 	return url;
 }
 
@@ -61,31 +79,22 @@ char *url_to_path(const char *url)
 {
 	char *url_path = curl_unescape(url, 0);
 	char *path;
+	char abspath[PATH_MAX+1];
+	LOG(( "url2path in: %s\n", url ));
 	/* printf( "url2path in: %s\n", url_path ); */
 	/* return the absolute path including leading / */
 	/* todo: better check for filesystem? */
 	if( sys_type() & SYS_MINT ) {
-		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN - 1));
+		/* it's ok to have relative paths with mint, just strip proto: */
+		path = strdup(url_path + (FILE_SCHEME_PREFIX_LEN -1));
 	} else {
 		/* do not include / within url_path */
-		char * drive = url_path + (FILE_SCHEME_PREFIX_LEN);
-		path = malloc( strlen(drive) + 4 );
-		int i=0;
-		path[i++] = drive[0];
-		path[i++] = ':';
-		path[i++] = 0x5C;
-		while( drive[i-1] != 0){
-			path[i] = drive[i-1];
-			if( path[i] == '/' ){
-				path[i] = 0x5C;
-			}
-			i++;
-		}
-		path[i] = 0;
-		LOG(("%s", path));
+		char * tmp = url_path + (FILE_SCHEME_PREFIX_LEN-1);
+		gemdos_realpath( tmp, (char*)&abspath );
+		path = strdup( (char*)&abspath );
 	}
 	curl_free(url_path);
-	/* printf( "url2path out: %s\n", path ); */
+	LOG(( "url2path out: %s\n", path ));
 	return path;
 }
 
@@ -113,7 +122,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 	strcpy(t, NETSURF_GEM_RESPATH);
 	strcat(t, filename);
 	LOG(("checking %s", (char*)&t));
-	if (gdos_realpath(t, buf) != NULL) {
+	if (gemdos_realpath(t, buf) != NULL) {
 		if (access(buf, R_OK) == 0) {
 			return buf;
 		}
@@ -121,7 +130,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 	strcpy(t, "./");
 	strcat(t, filename);
 	LOG(("checking %s", (char*)&t));
-	if (gdos_realpath(t, buf) != NULL) {
+	if (gemdos_realpath(t, buf) != NULL) {
 		if (access(buf, R_OK) == 0) {
 			return buf;
 		}
@@ -133,7 +142,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 		strcat(t, "/.netsurf/");
 		strcat(t, filename);
 		LOG(("checking %s", (char*)&t));
-		if (gdos_realpath(t, buf) != NULL) {
+		if (gemdos_realpath(t, buf) != NULL) {
 			if (access(buf, R_OK) == 0)
 				return buf;
 		}
@@ -141,7 +150,7 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 
 	cdir = getenv("NETSURFRES");
 	if (cdir != NULL) {
-		if (gdos_realpath(cdir, buf) != NULL) {
+		if (gemdos_realpath(cdir, buf) != NULL) {
 			strcat(buf, "/");
 			strcat(buf, filename);
 			LOG(("checking %s", (char*)&t));
@@ -152,12 +161,12 @@ char * atari_find_resource(char *buf, const char *filename, const char *def)
 	if (def[0] == '~') {
 		snprintf(t, PATH_MAX, "%s%s", getenv("HOME"), def + 1);
 		LOG(("checking %s", (char*)&t));
-		if (gdos_realpath(t, buf) == NULL) {
+		if (gemdos_realpath(t, buf) == NULL) {
 			strcpy(buf, t);
 		}
 	} else {
 		LOG(("checking %s", (char*)def));
-		if (gdos_realpath(def, buf) == NULL) {
+		if (gemdos_realpath(def, buf) == NULL) {
 			strcpy(buf, def);
 		}
 	}

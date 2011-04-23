@@ -150,17 +150,22 @@ void gui_poll(bool active)
 		}
 	}
 
-	if( evnt.timer >= 0 ) {
+	/*printf("time: %d, active: %d, pending: %d\n", evnt.timer, 
+		active, browser_reformat_pending );*/
+	if( evnt.timer > 0 ) {
 		flags |= MU_TIMER;
+		EvntWindom( flags );
 	}
-	EvntWindom( flags );
 	struct gui_window * g;
 	for( g = window_list; g != NULL; g=g->next ) {
 		if( browser_redraw_required( g ) ){
 			browser_redraw( g );
 		}
 	}
-	hotlist_redraw();
+	if( evnt.timer != 0 && !active ){
+		/* this suits for stuff with lower priority */ 
+		hotlist_redraw();
+	}
 }
 
 struct gui_window *
@@ -1088,6 +1093,8 @@ static void gui_init(int argc, char** argv)
 
 	nkc_init();
 	atari_plotter_init( option_atari_screen_driver, option_atari_font_driver );
+	LOG(("Knockout rendering: %s\n",  option_atari_knockout ? "yes" : "no"));
+	plot_set_knockout( option_atari_knockout );
 	/* Interface colours */
 	option_gui_colour_bg_1 = 0xFFFFFF; /** Background          (bbggrr) */
 	option_gui_colour_fg_1 = 0xFF0000; /** Foreground          (bbggrr) */
@@ -1124,18 +1131,14 @@ int main(int argc, char** argv)
 	setbuf(stderr, NULL);
 	setbuf(stdout, NULL);
 #ifdef WITH_DBG_LOGFILE
-	verbose_log = true;
 	freopen("stdout.log", "a+", stdout);
 	freopen("stderr.log", "a+", stderr);
 #endif
-
 	ApplInit();
-
 	graf_mouse(BUSY_BEE, NULL);
 	init_os_info();
 	atari_find_resource((char*)&messages, "messages", "res/messages");
 	atari_find_resource((char*)&options, "Choices", "Choices");
-
 	netsurf_init(&argc, &argv, options, messages);
 	gui_init(argc, argv);
 	gui_init2(argc, argv);

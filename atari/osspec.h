@@ -57,6 +57,6 @@ extern unsigned short _systype_v;
 void init_os_info(void);
 int tos_getcookie( long tag, long * value );
 void fix_path(char * path);
-char * gdos_realpath(const char * path, char * rpath);
+char * gemdos_realpath(const char * path, char * rpath);
 unsigned short _systype (void);
 #endif
