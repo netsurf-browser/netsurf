@@ -54,7 +54,7 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @endnode
 
 @node Fonts
-The font to use for each font type can be defined in NetSurf's options.  OS4 NetSurf does not currently support soft styles for bold and italic, so a designed font for these will need to be specified as follows:
+The font to use for each font type can be defined in NetSurf's options.  OS4 NetSurf supports soft styles for bold and italic, however designed fonts look better and it is highly recommend to set them as follows:
 
 Within @{"TypeManager" system "SYS:System/TypeManager"} select a font being used by NetSurf and click on Modify.
 On the Files tab, Font family section, choose the @{b}bold@{ub}, @{i}italic@{ui} and @{b}@{i}bold-italic@{ui}@{ub} version of the font.
