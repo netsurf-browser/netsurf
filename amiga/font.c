@@ -623,8 +623,10 @@ void ami_font_setdevicedpi(int id)
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
 	Point dinfo_res;
-	ULONG ydpi = FIXTOINT(nscss_screen_dpi);
-	ULONG xdpi = ydpi;
+	ULONG ydpi = option_amiga_ydpi;
+	ULONG xdpi = option_amiga_ydpi;
+
+	nscss_screen_dpi = INTTOFIX(option_amiga_ydpi);
 
 	if(id)
 	{

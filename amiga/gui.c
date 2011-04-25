@@ -476,7 +476,6 @@ void gui_init(int argc, char** argv)
 	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
-	nscss_screen_dpi = INTTOFIX(72);
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
 
 	scroll_widget_fg_colour = 0x00aaaaaa;
