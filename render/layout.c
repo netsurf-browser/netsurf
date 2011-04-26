@@ -722,6 +722,22 @@ void layout_minmax_block(struct box *block,
 		htype = css_computed_height(block->style, &height, &hunit);
 	}
 
+	/* set whether the minimum width is of any interest for this box */
+	if (((block->parent && (block->parent->type == BOX_FLOAT_LEFT ||
+			block->parent->type == BOX_FLOAT_RIGHT)) ||
+			block->type == BOX_INLINE_BLOCK) &&
+			wtype != CSS_WIDTH_SET) {
+		/* box shrinks to fit; need minimum width */
+		block->flags |= NEED_MIN;
+	} else if (block->type == BOX_TABLE_CELL) {		
+		/* box shrinks to fit; need minimum width */
+		block->flags |= NEED_MIN;
+	} else if (block->parent && (block->parent->flags & NEED_MIN) &&
+			wtype != CSS_WIDTH_SET) {	
+		/* box inside shrink-to-fit context; need minimum width */
+		block->flags |= NEED_MIN;
+	}
+
 	if (block->gadget && (block->gadget->type == GADGET_TEXTBOX ||
 			block->gadget->type == GADGET_PASSWORD ||
 			block->gadget->type == GADGET_FILE ||
@@ -769,6 +785,9 @@ void layout_minmax_block(struct box *block,
 					child_has_height = true;
 				break;
 			case BOX_INLINE_CONTAINER:
+				if (block->flags & NEED_MIN)
+					child->flags |= NEED_MIN;
+
 				layout_minmax_inline_container(child,
 						&child_has_height, font_func);
 				if (child_has_height &&
@@ -3068,17 +3087,23 @@ struct box *layout_minmax_line(struct box *first,
 			}
 
 			/* min = widest word */
-			i = 0;
-			do {
-				for (j = i; j != b->length &&
-						b->text[j] != ' '; j++)
-					;
-				font_func->font_width(&fstyle, b->text + i,
-						j - i, &width);
-				if (min < width)
-					min = width;
-				i = j + 1;
-			} while (j != b->length);
+			if (b->parent->flags & NEED_MIN) {
+				/* If we care what the minimum width is,
+				 * calculate it.  (It's only needed if we're
+				 * shrinking-to-fit.) */
+				i = 0;
+				do {
+					for (j = i; j != b->length &&
+							b->text[j] != ' '; j++)
+						;
+					font_func->font_width(&fstyle,
+							b->text + i,
+							j - i, &width);
+					if (min < width)
+						min = width;
+					i = j + 1;
+				} while (j != b->length);
+			}
 
 			*line_has_height = true;
 
