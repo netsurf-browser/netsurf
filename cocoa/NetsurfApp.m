@@ -179,7 +179,13 @@ int main( int argc, char **argv )
 
 	netsurf_init(&argc, &argv, options, messages);
 	
-    [cocoa_prepare_app() run];
+	NSApplication *app = cocoa_prepare_app();
+	
+	for (int i = 1; i < argc; i++) {
+		browser_window_create( argv[i], NULL, NULL, true, false );
+	}
+
+	[app run];
 	
 	netsurf_exit();
 	
