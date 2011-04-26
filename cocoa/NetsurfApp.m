@@ -182,6 +182,9 @@ int main( int argc, char **argv )
 	NSApplication *app = cocoa_prepare_app();
 	
 	for (int i = 1; i < argc; i++) {
+		/* skip -psn_* and other possible options */
+		if (argv[i][0] == '-')
+			continue;
 		browser_window_create( argv[i], NULL, NULL, true, false );
 	}
 
