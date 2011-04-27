@@ -126,7 +126,8 @@ typedef enum {
 	MEASURED    = 1 << 5,	/* text box width has been measured */
 	HAS_HEIGHT  = 1 << 6,	/* box has height (perhaps due to children) */
 	MAKE_HEIGHT = 1 << 7,	/* box causes its own height */
-	NEED_MIN    = 1 << 8	/* minimum width is required for layout */
+	NEED_MIN    = 1 << 8,	/* minimum width is required for layout */
+	REPLACE_DIM = 1 << 9	/* replaced element has given dimensions */
 } box_flags;
 
 /* Sides of a box */

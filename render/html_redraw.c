@@ -427,7 +427,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	if (bg_box && bg_box->type != BOX_BR &&
 			bg_box->type != BOX_TEXT &&
 			bg_box->type != BOX_INLINE_END &&
-			(bg_box->type != BOX_INLINE || bg_box->object)) {
+			(bg_box->type != BOX_INLINE || bg_box->object ||
+			box->flags & REPLACE_DIM)) {
 		/* find intersection of clip box and border edge */
 		struct rect p;
 		p.x0 = x - border_left < r.x0 ? r.x0 : x - border_left;
@@ -471,7 +472,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	/* borders for block level content and replaced inlines */
 	if (box->style && box->type != BOX_TEXT &&
 			box->type != BOX_INLINE_END &&
-			(box->type != BOX_INLINE || box->object) &&
+			(box->type != BOX_INLINE || box->object ||
+			box->flags & REPLACE_DIM) &&
 			(border_top || border_right ||
 			 border_bottom || border_left)) {
 		if (!html_redraw_borders(box, x_parent, y_parent,

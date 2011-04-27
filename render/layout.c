@@ -270,6 +270,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		layout_get_object_dimensions(block, &block->width,
 				&block->height, false, true);
 		return true;
+	} else if (block->flags & REPLACE_DIM) {
+		return true;
 	}
 
 	/* special case if the block contains an radio button or checkbox */
@@ -359,8 +361,9 @@ bool layout_block_context(struct box *block, int viewport_height,
 		 * left and right margins to avoid any floats. */
 		lm = rm = 0;
 
-                if (box->type == BOX_BLOCK || box->object) {
-                	if (!box->object && box->style &&
+		if (box->type == BOX_BLOCK || box->object) {
+			if (!box->object && !(box->flags & REPLACE_DIM) &&
+					box->style &&
 					css_computed_overflow(box->style) !=
 					CSS_OVERFLOW_VISIBLE) {
 				/* box establishes new block formatting context
@@ -1115,7 +1118,8 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 			&width, &height, &max_width, &min_width,
 			margin, padding, border);
 
-	if (box->object && content_get_type(box->object) != CONTENT_HTML) {
+	if (box->object && !(box->flags & REPLACE_DIM) &&
+			content_get_type(box->object) != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
 		layout_get_object_dimensions(box, &width, &height,
 				true, true);
@@ -1432,7 +1436,8 @@ void layout_float_find_dimensions(int available_width,
 	padding[RIGHT] += scrollbar_width;
 	padding[BOTTOM] += scrollbar_width;
 
-	if (box->object && content_get_type(box->object) != CONTENT_HTML) {
+	if (box->object && !(box->flags & REPLACE_DIM) &&
+			content_get_type(box->object) != CONTENT_HTML) {
 		/* Floating replaced element, with intrinsic width or height.
 		 * See 10.3.6 and 10.6.2 */
 		layout_get_object_dimensions(box, &width, &height,
@@ -2011,7 +2016,8 @@ bool layout_inline_container(struct box *inline_container, int width,
 				whitespace == CSS_WHITE_SPACE_PRE_WRAP);
 		}
 
-		if ((!c->object && c->text && (c->length || is_pre)) ||
+		if ((!c->object && !(c->flags & REPLACE_DIM) && c->text &&
+				(c->length || is_pre)) ||
 				c->type == BOX_BR)
 			has_text_children = true;
 	}
@@ -2363,7 +2369,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			continue;
 		}
 
-		if (!b->object && !b->gadget) {
+		if (!b->object && !b->gadget &&
+				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
 			b->height = line_height(b->style ? b->style :
 					b->parent->parent->style);
@@ -2458,7 +2465,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			b->height = AUTO;
 		}
 
-		if (b->object) {
+		if (b->object && !(b->flags & REPLACE_DIM)) {
 			layout_get_object_dimensions(b, &b->width, &b->height,
 					true, true);
 		} else {
@@ -2551,7 +2558,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 
 			space_before = space_after;
-			if (b->object)
+			if (b->object || b->flags & REPLACE_DIM)
 				space_after = 0;
 			else if (b->text || b->type == BOX_INLINE_END) {
 				if (b->space == UNKNOWN_WIDTH) {
@@ -2705,6 +2712,7 @@ bool layout_line(struct box *first, int *width, int *y,
 		if ((split_box->type == BOX_INLINE ||
 				split_box->type == BOX_TEXT) &&
 				!split_box->object &&
+				!(split_box->flags & REPLACE_DIM) &&
 				!split_box->gadget && split_box->text) {
 			/* skip leading spaces, otherwise code gets fooled into
 			 * thinking it's all one long word */
@@ -2858,7 +2866,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			d->y = *y;
 			continue;
 		} else if ((d->type == BOX_INLINE &&
-				((d->object || d->gadget) == false)) ||
+				((d->object || d->gadget) == false) &&
+				!(d->flags & REPLACE_DIM)) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
 				d->type == BOX_INLINE_END) {
@@ -3012,7 +3021,8 @@ struct box *layout_minmax_line(struct box *first,
 		assert(b->style);
 		font_plot_style_from_css(b->style, &fstyle);
 
-		if (b->type == BOX_INLINE && !b->object) {
+		if (b->type == BOX_INLINE && !b->object &&
+				!(b->flags & REPLACE_DIM)) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
 					&fixed, &frac);
@@ -3040,7 +3050,8 @@ struct box *layout_minmax_line(struct box *first,
 			continue;
 		}
 
-		if (!b->object && !b->gadget) {
+		if (!b->object && !b->gadget &&
+				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
 			if (!b->text)
 				continue;
@@ -3140,9 +3151,11 @@ struct box *layout_minmax_line(struct box *first,
 			height = AUTO;
 		}
 
-		if (b->object) {
-			layout_get_object_dimensions(b, &width, &height,
-					true, false);
+		if (b->object || (b->flags & REPLACE_DIM)) {
+			if (b->object) {
+				layout_get_object_dimensions(b, &width, &height,
+						true, false);
+			}
 
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,

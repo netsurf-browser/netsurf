@@ -1159,6 +1159,11 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	bool ok;
 	char *s, *url;
 	xmlChar *alt, *src;
+	enum css_width_e wtype;
+	enum css_height_e htype;
+	css_fixed value = 0;
+	css_unit wunit = CSS_UNIT_PX;
+	css_unit hunit = CSS_UNIT_PX;
 
 	if (box->style && css_computed_display(box->style, 
 			n->parent == NULL) == CSS_DISPLAY_NONE)
@@ -1196,6 +1201,17 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	ok = html_fetch_object(content, url, box, image_types,
 			content->available_width, 1000, false);
 	free(url);
+
+	wtype = css_computed_width(box->style, &value, &wunit);
+	htype = css_computed_height(box->style, &value, &hunit);
+
+	if (wtype == CSS_WIDTH_SET && wunit != CSS_UNIT_PCT &&
+			htype == CSS_HEIGHT_SET && hunit != CSS_UNIT_PCT) {
+		/* We know the dimensions the image will be shown at before it's
+		 * fetched. */
+		box->flags |= REPLACE_DIM;
+	}
+
 	return ok;
 }
 

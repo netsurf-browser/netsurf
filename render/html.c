@@ -1415,8 +1415,29 @@ nserror html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_DONE:
-		html_object_done(box, object, o->background);
-		c->active--;
+
+		if (box->flags & REPLACE_DIM) {
+			union content_msg_data data;
+
+			c->active--;
+			html_object_done(box, object, o->background);
+
+			if (!box_visible(box))
+				break;
+
+			box_coords(box, &x, &y);
+
+			data.redraw.x = x + box->padding[LEFT];
+			data.redraw.y = y + box->padding[TOP];
+			data.redraw.width = box->width;
+			data.redraw.height = box->height;
+			data.redraw.full_redraw = true;
+
+			content_broadcast(c, CONTENT_MSG_REDRAW, data);
+		} else {
+			c->active--;
+			html_object_done(box, object, o->background);
+		}
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -1500,12 +1521,14 @@ nserror html_object_callback(hlcache_handle *object,
 	/* If  1) the configuration option to reflow pages while objects are
 	 *        fetched is set
 	 *     2) an object is newly fetched & converted,
-	 *     3) the object's parent HTML is ready for reformat,
-	 *     4) the time since the previous reformat is more than the
+	 *     3) the box's dimensions need to change due to being replaced
+	 *     4) the object's parent HTML is ready for reformat,
+	 *     5) the time since the previous reformat is more than the
 	 *        configured minimum time between reformats
 	 * then reformat the page to display newly fetched objects */
 	else if (option_incremental_reflow &&
 			event->type == CONTENT_MSG_DONE &&
+			!(box->flags & REPLACE_DIM) &&
 			(c->status == CONTENT_STATUS_READY ||
 			 c->status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->reformat_time)) {
@@ -1532,14 +1555,16 @@ void html_object_done(struct box *box, hlcache_handle *object,
 
 	box->object = object;
 
-	/* invalidate parent min, max widths */
-	for (b = box; b; b = b->parent)
-		b->max_width = UNKNOWN_MAX_WIDTH;
+	if (!(box->flags & REPLACE_DIM)) {
+		/* invalidate parent min, max widths */
+		for (b = box; b; b = b->parent)
+			b->max_width = UNKNOWN_MAX_WIDTH;
 
-	/* delete any clones of this box */
-	while (box->next && (box->next->flags & CLONE)) {
-		/* box_free_box(box->next); */
-		box->next = box->next->next;
+		/* delete any clones of this box */
+		while (box->next && (box->next->flags & CLONE)) {
+			/* box_free_box(box->next); */
+			box->next = box->next->next;
+		}
 	}
 }
 
