@@ -21,6 +21,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 
+#include "amiga/clipboard.h"
 #include "amiga/iff_cset.h"
 #include "amiga/options.h"
 #include "amiga/gui.h"
@@ -43,6 +44,9 @@
 struct IFFHandle *iffh = NULL;
 
 bool ami_add_to_clipboard(const char *text, size_t length, bool space);
+static bool ami_copy_selection(const char *text, size_t length,
+	struct box *box, void *handle, const char *whitespace_text,
+	size_t whitespace_length);
 
 struct IFFHandle *ami_clipboard_init_internal(int unit)
 {
@@ -275,11 +279,44 @@ bool gui_copy_to_clipboard(struct selection *s)
 	return false;
 }
 
+struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
+{
+	struct ami_text_selection *sel;
+
+	sel = AllocVec(sizeof(struct ami_text_selection),
+			MEMF_PRIVATE | MEMF_CLEAR);
+
+	if(sel) selection_traverse(gwin->bw->sel, ami_copy_selection, sel);
+
+	return sel;
+}
+
+static bool ami_copy_selection(const char *text, size_t length,
+	struct box *box, void *handle, const char *whitespace_text,
+	size_t whitespace_length)
+{
+	struct ami_text_selection *sel = handle;
+	int len = length;
+
+	if((length + (sel->length)) > (sizeof(sel->text)))
+		len = sizeof(sel->text) - (sel->length);
+
+	if(len <= 0) return false;
+
+	memcpy((sel->text) + (sel->length), text, len);
+	sel->length += len;
+
+	sel->text[sel->length] = '\0';
+
+	return true;
+}
+
 void ami_drag_selection(struct selection *s)
 {
 	struct box *text_box;
-	ULONG x;
-	ULONG y;
+	int x;
+	int y;
+	struct ami_text_selection *sel;
 	struct IFFHandle *old_iffh = iffh;
 	struct gui_window_2 *gwin = ami_window_at_pointer();
 
@@ -307,7 +344,31 @@ void ami_drag_selection(struct selection *s)
 	}
 	else
 	{
-		DisplayBeep(scrn);
+		x = gwin->win->MouseX;
+		y = gwin->win->MouseY;
+
+		if(ami_gadget_hit(gwin->objects[GID_URL], x, y))
+		{
+			if(sel = ami_selection_to_text(gwin))
+			{
+				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
+					gwin->win, NULL, STRINGA_TextVal, sel->text, TAG_DONE);
+				FreeVec(sel);
+			}
+		}
+		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
+		{
+			if(sel = ami_selection_to_text(gwin))
+			{
+				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
+					gwin->win, NULL, STRINGA_TextVal, sel->text, TAG_DONE);
+				FreeVec(sel);
+			}
+		}
+		else
+		{
+			DisplayBeep(scrn);
+		}
 	}
 }
 

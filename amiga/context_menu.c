@@ -48,9 +48,6 @@
 #include <string.h>
 
 static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
-static bool ami_context_menu_copy_selection(const char *text, size_t length,
-	struct box *box, void *handle, const char *whitespace_text,
-	size_t whitespace_length);
 static bool ami_context_menu_history(const struct history *history, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
 
@@ -83,12 +80,6 @@ enum {
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
 char *ctxmenulab[CMID_LAST];
-
-struct ami_context_menu_selection
-{
-	char text[1024];
-	int length;
-};
 
 void ami_context_menu_init(void)
 {
@@ -584,16 +575,11 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_SELSEARCH:
 			{
-				struct ami_context_menu_selection *sel;
+				struct ami_text_selection *sel;
 				char *url;
 
-				sel = AllocVec(sizeof(struct ami_context_menu_selection),
-					MEMF_PRIVATE | MEMF_CLEAR);
-
-				if(sel)
+				if(sel = ami_selection_to_text(gwin))
 				{
-					selection_traverse(gwin->bw->sel, ami_context_menu_copy_selection,
-						sel);
 					url = search_web_from_term(sel->text);
 					browser_window_go(gwin->bw, url, NULL, true);
 
@@ -605,26 +591,6 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
     }
 
     return itemid;
-}
-
-static bool ami_context_menu_copy_selection(const char *text, size_t length,
-	struct box *box, void *handle, const char *whitespace_text,
-	size_t whitespace_length)
-{
-	struct ami_context_menu_selection *sel = handle;
-	int len = length;
-
-	if((length + (sel->length)) > (sizeof(sel->text)))
-		len = sizeof(sel->text) - (sel->length);
-
-	if(len <= 0) return false;
-
-	memcpy((sel->text) + (sel->length), text, len);
-	sel->length += len;
-
-	sel->text[sel->length] = '\0';
-
-	return true;
 }
 
 static bool ami_context_menu_history(const struct history *history, int x0, int y0,

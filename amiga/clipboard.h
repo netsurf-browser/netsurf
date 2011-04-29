@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2009, 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -23,12 +23,20 @@
 struct bitmap;
 struct hlcache_handle;
 struct selection;
+struct gui_window_2;
+
+struct ami_text_selection
+{
+	char text[1024];
+	int length;
+};
 
 void ami_clipboard_init(void);
 void ami_clipboard_free(void);
 void ami_drag_selection(struct selection *s);
 bool ami_easy_clipboard(char *text);
 bool ami_easy_clipboard_bitmap(struct bitmap *bitmap);
+struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin);
 #ifdef WITH_NS_SVG
 bool ami_easy_clipboard_svg(struct hlcache_handle *c);
 #endif

@@ -111,7 +111,7 @@ void ami_drag_save(struct Window *win)
 	ami_drag_icon_close(NULL);
 	ami_autoscroll = FALSE;
 
-	if(strcmp(option_use_pubscreen,"Workbench") == 0)
+	if(option_use_pubscreen && (strcmp(option_use_pubscreen,"Workbench") == 0))
 	{
 		which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
 									WBOBJA_Type,&type,
@@ -348,5 +348,5 @@ struct gui_window_2 *ami_window_at_pointer(void)
 	UnlockLayerInfo(&scrn->LayerInfo);
 
 	if(layer) return ami_find_gwin_by_id(layer->Window);
-	else return NULL;
+		else return NULL;
 }
