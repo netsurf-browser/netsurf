@@ -221,13 +221,13 @@ bool ami_add_to_clipboard(const char *text, size_t length, bool space)
 	}
 	else
 	{
-		buffer = ami_to_utf8_easy(text);
+		buffer = ami_utf8_easy(text);
 
 		if(buffer)
 		{
 			char *p;
 
-			p = text;
+			p = buffer;
 
 			while(*p != '\0')
 			{
@@ -235,8 +235,9 @@ bool ami_add_to_clipboard(const char *text, size_t length, bool space)
 				p++;
 			}
 			WriteChunkBytes(iffh, buffer, strlen(buffer));
+
+			ami_utf8_free(buffer);
 		}
-		ami_utf8_free(buffer);
 	}
 
 	if(space) WriteChunkBytes(iffh," ",1);
