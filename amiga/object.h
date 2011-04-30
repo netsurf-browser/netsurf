@@ -34,19 +34,19 @@ enum
 	AMINS_HISTORYWINDOW,
 	AMINS_GUIOPTSWINDOW,
 	AMINS_PRINTWINDOW,
-	AMINS_FETCHER,
+	AMINS_FONT,
 };
 
 struct nsObject
 {
-	struct MinNode dtz_Node;
+	struct Node dtz_Node;
 	ULONG Type;
 	void *objstruct;
 	ULONG objstruct_size;
 };
 
 struct MinList *NewObjList(void);
-struct nsObject *AddObject(struct MinList *objlist,ULONG otype);
+struct nsObject *AddObject(struct MinList *objlist, ULONG otype);
 void DelObject(struct nsObject *dtzo);
 void DelObjectNoFree(struct nsObject *dtzo);
 void FreeObjList(struct MinList *objlist);

@@ -22,8 +22,12 @@
 #include "desktop/plotters.h"
 #include <graphics/rastport.h>
 
-ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG x,ULONG y);
+struct ami_font_node;
+
+ULONG ami_unicode_text(struct RastPort *rp, const char *string,
+	ULONG length, const plot_font_style_t *fstyle, ULONG x, ULONG y);
 void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
+void ami_font_close(struct ami_font_node *node);
 #endif

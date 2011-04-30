@@ -21,6 +21,7 @@
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
+#include "amiga/object.h"
 #include "amiga/options.h"
 #include "css/css.h"
 #include "css/utils.h"
@@ -55,11 +56,15 @@
 #define NSA_VALUE_SHEARSIN (1 << 14)
 #define NSA_VALUE_SHEARCOS (1 << 16)
 
-static struct OutlineFont *of[PLOT_FONT_FAMILY_COUNT+1];
-static struct OutlineFont *ofb[PLOT_FONT_FAMILY_COUNT+1];
-static struct OutlineFont *ofi[PLOT_FONT_FAMILY_COUNT+1];
-static struct OutlineFont *ofbi[PLOT_FONT_FAMILY_COUNT+1];
+struct ami_font_node
+{
+	struct OutlineFont *font;
+	char *bold;
+	char *italic;
+	char *bolditalic;
+};
 
+struct MinList *ami_font_list = NULL;
 ULONG ami_devicedpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
@@ -300,6 +305,45 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 }
 
 /**
+ * Search for a font in the list and load from disk if not present
+ */
+struct ami_font_node *ami_font_open(const char *font)
+{
+	struct nsObject *node;
+	struct ami_font_node *nodedata;
+
+	node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
+	if(node) return node->objstruct;
+
+	LOG(("Font cache miss: %s", font));
+
+	nodedata = AllocVec(sizeof(struct ami_font_node), MEMF_PRIVATE | MEMF_CLEAR);
+
+	node = AddObject(ami_font_list, AMINS_FONT);
+	if(!node) return NULL;
+
+	node->objstruct = nodedata;
+	node->dtz_Node.ln_Name = strdup(font);
+
+	nodedata->font = OpenOutlineFont(font, NULL, OFF_OPEN);
+	if(!nodedata->font)
+	{
+		LOG(("Requested font not found: %s", font));
+		warn_user("CompError", font);
+		return NULL;
+	}
+
+	nodedata->bold = (char *)GetTagData(OT_BName, 0, nodedata->font->olf_OTagList);
+	if(!nodedata->bold) LOG(("Warning: No designed bold font defined for %s", font));
+	nodedata->italic = (char *)GetTagData(OT_IName, 0, nodedata->font->olf_OTagList);
+	if(!nodedata->italic) LOG(("Warning: No designed italic font defined for %s", font));
+	nodedata->bolditalic = (char *)GetTagData(OT_BIName, 0, nodedata->font->olf_OTagList);
+	if(!nodedata->bolditalic) LOG(("Warning: No designed bold/italic font defined for %s", font));
+
+	return nodedata;
+}
+
+/**
  * Open an outline font in the specified size and style
  *
  * \param fstyle font style structure
@@ -308,6 +352,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
  */
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL fallback)
 {
+	struct ami_font_node *node;
 	struct OutlineFont *ofont;
 	char *fontname;
 	ULONG ysize;
@@ -321,6 +366,32 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	if(fallback) fontfamily = NSA_UNICODE_FONT;
 		else fontfamily = fstyle->family;
 
+	switch(fontfamily)
+	{
+		case PLOT_FONT_FAMILY_SANS_SERIF:
+			fontname = option_font_sans;
+		break;
+		case PLOT_FONT_FAMILY_SERIF:
+			fontname = option_font_serif;
+		break;
+		case PLOT_FONT_FAMILY_MONOSPACE:
+			fontname = option_font_mono;
+		break;
+		case PLOT_FONT_FAMILY_CURSIVE:
+			fontname = option_font_cursive;
+		break;
+		case PLOT_FONT_FAMILY_FANTASY:
+			fontname = option_font_fantasy;
+		break;
+		case NSA_UNICODE_FONT:
+		default:
+			fontname = option_font_unicode;
+		break;
+	}
+
+	node = ami_font_open(fontname);
+	if(!node) return NULL;
+
 	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE))
 		tstyle += NSA_ITALIC;
 
@@ -330,53 +401,48 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	switch(tstyle)
 	{
 		case NSA_ITALIC:
-			if(ofi[fontfamily])
+			if(node->italic)
 			{
-				ofont = ofi[fontfamily];
+				node = ami_font_open(node->italic);
 			}
 			else
 			{
-				ofont = of[fontfamily];
 				shearsin = NSA_VALUE_SHEARSIN;
 				shearcos = NSA_VALUE_SHEARCOS;
 			}
 		break;
 
 		case NSA_BOLD:
-			if(ofb[fontfamily])
+			if(node->bold)
 			{
-				ofont = ofb[fontfamily];
+				node = ami_font_open(node->bold);
 			}
 			else
 			{
-				ofont = of[fontfamily];
 				emboldenx = NSA_VALUE_BOLDX;
 				emboldeny = NSA_VALUE_BOLDY;
 			}
 		break;
 
 		case NSA_BOLDITALIC:
-			if(ofbi[fontfamily])
+			if(node->bolditalic)
 			{
-				ofont = ofbi[fontfamily];
+				node = ami_font_open(node->bolditalic);
 			}
 			else
 			{
-				ofont = of[fontfamily];
 				emboldenx = NSA_VALUE_BOLDX;
 				emboldeny = NSA_VALUE_BOLDY;
 				shearsin = NSA_VALUE_SHEARSIN;
 				shearcos = NSA_VALUE_SHEARCOS;
 			}
 		break;
-
-		default:
-			ofont = of[fontfamily];
-		break;
 	}
 
 	/* Scale to 16.16 fixed point */
 	ysize = fstyle->size * ((1 << 16) / FONT_SIZE_SCALE);
+
+	ofont = node->font;
 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_DeviceDPI,   ami_devicedpi,
@@ -509,113 +575,20 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 void ami_init_fonts(void)
 {
-	int i;
-	char *bname,*iname,*biname;
-	char *deffont;
-
-	switch(option_font_default)
-	{
-		case PLOT_FONT_FAMILY_SANS_SERIF:
-			deffont = strdup(option_font_sans);
-		break;
-		case PLOT_FONT_FAMILY_SERIF:
-			deffont = strdup(option_font_serif);
-		break;
-		case PLOT_FONT_FAMILY_MONOSPACE:
-			deffont = strdup(option_font_mono);
-		break;
-		case PLOT_FONT_FAMILY_CURSIVE:
-			deffont = strdup(option_font_cursive);
-		break;
-		case PLOT_FONT_FAMILY_FANTASY:
-			deffont = strdup(option_font_fantasy);
-		break;
-		default:
-			deffont = strdup(option_font_sans);
-		break;
-	}
-
-	of[PLOT_FONT_FAMILY_SANS_SERIF] = OpenOutlineFont(option_font_sans,NULL,OFF_OPEN);
-	of[PLOT_FONT_FAMILY_SERIF] = OpenOutlineFont(option_font_serif,NULL,OFF_OPEN);
-	of[PLOT_FONT_FAMILY_MONOSPACE] = OpenOutlineFont(option_font_mono,NULL,OFF_OPEN);
-	of[PLOT_FONT_FAMILY_CURSIVE] = OpenOutlineFont(option_font_cursive,NULL,OFF_OPEN);
-	of[PLOT_FONT_FAMILY_FANTASY] = OpenOutlineFont(option_font_fantasy,NULL,OFF_OPEN);
-	of[NSA_UNICODE_FONT] = OpenOutlineFont(option_font_unicode,NULL,OFF_OPEN);
-
-	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=NSA_UNICODE_FONT;i++)
-	{
-		if(!of[i])
-		{
-			char *tmpfontname = NULL;
-			switch(i)
-			{
-				case PLOT_FONT_FAMILY_SANS_SERIF:
-					tmpfontname = option_font_sans;
-				break;
-				case PLOT_FONT_FAMILY_SERIF:
-					tmpfontname = option_font_serif;
-				break;
-				case PLOT_FONT_FAMILY_MONOSPACE:
-					tmpfontname = option_font_mono;
-				break;
-				case PLOT_FONT_FAMILY_CURSIVE:
-					tmpfontname = option_font_cursive;
-				break;
-				case PLOT_FONT_FAMILY_FANTASY:
-					tmpfontname = option_font_fantasy;
-				break;
-				case NSA_UNICODE_FONT:
-					tmpfontname = option_font_unicode;
-				break;
-				default:
-					/* should never get here, but just in case */
-					tmpfontname = strdup("{unknown font}");
-				break;
-			}
-			warn_user("CompError",tmpfontname);
-		}
-
-		if(bname = (char *)GetTagData(OT_BName,0,of[i]->olf_OTagList))
-		{
-			ofb[i] = OpenOutlineFont(bname,NULL,OFF_OPEN);
-		}
-		else
-		{
-			ofb[i] = NULL;
-		}
-
-		if(iname = (char *)GetTagData(OT_IName,0,of[i]->olf_OTagList))
-		{
-			ofi[i] = OpenOutlineFont(iname,NULL,OFF_OPEN);
-		}
-		else
-		{
-			ofi[i] = NULL;
-		}
-
-		if(biname = (char *)GetTagData(OT_BIName,0,of[i]->olf_OTagList))
-		{
-			ofbi[i] = OpenOutlineFont(biname,NULL,OFF_OPEN);
-		}
-		else
-		{
-			ofbi[i] = NULL;
-		}
-	}
-	if(deffont) free(deffont);
+	ami_font_list = NewObjList();
 }
 
 void ami_close_fonts(void)
 {
-	int i=0;
+	FreeObjList(ami_font_list);
+	ami_font_list = NULL;
+}
 
-	for(i=PLOT_FONT_FAMILY_SANS_SERIF;i<=NSA_UNICODE_FONT;i++)
-	{
-		if(of[i]) CloseOutlineFont(of[i],NULL);
-		if(ofb[i]) CloseOutlineFont(ofb[i],NULL);
-		if(ofi[i]) CloseOutlineFont(ofi[i],NULL);
-		if(ofbi[i]) CloseOutlineFont(ofbi[i],NULL);
-	}
+void ami_font_close(struct ami_font_node *node)
+{
+	/* Called from FreeObjList if node type is AMINS_FONT */
+
+	CloseOutlineFont(node->font, NULL);
 }
 
 void ami_font_setdevicedpi(int id)

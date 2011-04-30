@@ -19,6 +19,8 @@
 #include <proto/exec.h>
 #include <exec/lists.h>
 #include <exec/nodes.h>
+#include <memory.h>
+
 #include "amiga/object.h"
 #include "amiga/schedule.h"
 
@@ -35,7 +37,7 @@ struct MinList *NewObjList(void)
 
 }
 
-struct nsObject *AddObject(struct MinList *objlist,ULONG otype)
+struct nsObject *AddObject(struct MinList *objlist, ULONG otype)
 {
 	struct nsObject *dtzo;
 
@@ -52,6 +54,7 @@ void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 {
 	Remove((struct Node *)dtzo);
 	if(dtzo->objstruct && free_obj) FreeVec(dtzo->objstruct);
+	if(dtzo->dtz_Node.ln_Name) free(dtzo->dtz_Node.ln_Name);
 	FreeVec(dtzo);
 	dtzo = NULL;
 }
@@ -77,6 +80,7 @@ void FreeObjList(struct MinList *objlist)
 	do
 	{
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		if(node->Type == AMINS_FONT) ami_font_close(node->objstruct);
 		DelObject(node);
 	}while(node=nnode);
 
