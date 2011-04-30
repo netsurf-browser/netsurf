@@ -221,8 +221,21 @@ bool ami_add_to_clipboard(const char *text, size_t length, bool space)
 	}
 	else
 	{
-		utf8_to_local_encoding(text,length,&buffer);
-		if(buffer) WriteChunkBytes(iffh,buffer,strlen(buffer));
+		buffer = ami_to_utf8_easy(text);
+
+		if(buffer)
+		{
+			char *p;
+
+			p = text;
+
+			while(*p != '\0')
+			{
+				if(*p == 0xa0) *p = 0x20;
+				p++;
+			}
+			WriteChunkBytes(iffh, buffer, strlen(buffer));
+		}
 		ami_utf8_free(buffer);
 	}
 
