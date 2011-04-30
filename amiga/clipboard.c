@@ -330,6 +330,7 @@ void ami_drag_selection(struct selection *s)
 	struct box *text_box;
 	int x;
 	int y;
+	char *utf8text;
 	struct ami_text_selection *sel;
 	struct IFFHandle *old_iffh = iffh;
 	struct gui_window_2 *gwin = ami_window_at_pointer();
@@ -365,18 +366,22 @@ void ami_drag_selection(struct selection *s)
 		{
 			if(sel = ami_selection_to_text(gwin))
 			{
+				utf8text = ami_utf8_easy(sel->text);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_URL],
-					gwin->win, NULL, STRINGA_TextVal, sel->text, TAG_DONE);
+					gwin->win, NULL, STRINGA_TextVal, utf8text, TAG_DONE);
 				FreeVec(sel);
+				ami_utf8_free(utf8text);
 			}
 		}
 		else if(ami_gadget_hit(gwin->objects[GID_SEARCHSTRING], x, y))
 		{
 			if(sel = ami_selection_to_text(gwin))
 			{
+				utf8text = ami_utf8_easy(sel->text);
 				RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_SEARCHSTRING],
-					gwin->win, NULL, STRINGA_TextVal, sel->text, TAG_DONE);
+					gwin->win, NULL, STRINGA_TextVal, utf8text, TAG_DONE);
 				FreeVec(sel);
+				ami_utf8_free(utf8text);
 			}
 		}
 		else
