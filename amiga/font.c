@@ -334,11 +334,22 @@ struct ami_font_node *ami_font_open(const char *font)
 	}
 
 	nodedata->bold = (char *)GetTagData(OT_BName, 0, nodedata->font->olf_OTagList);
-	if(!nodedata->bold) LOG(("Warning: No designed bold font defined for %s", font));
+	if(nodedata->bold)
+		LOG(("Bold font defined for %s is %s", font, nodedata->bold));
+	else
+		LOG(("Warning: No designed bold font defined for %s", font));
+
 	nodedata->italic = (char *)GetTagData(OT_IName, 0, nodedata->font->olf_OTagList);
-	if(!nodedata->italic) LOG(("Warning: No designed italic font defined for %s", font));
+	if(nodedata->italic)
+		LOG(("Italic font defined for %s is %s", font, nodedata->italic));
+	else
+		LOG(("Warning: No designed italic font defined for %s", font));
+
 	nodedata->bolditalic = (char *)GetTagData(OT_BIName, 0, nodedata->font->olf_OTagList);
-	if(!nodedata->bolditalic) LOG(("Warning: No designed bold/italic font defined for %s", font));
+	if(nodedata->bolditalic)
+		LOG(("Bold-italic font defined for %s is %s", font, nodedata->bolditalic));
+	else
+		LOG(("Warning: No designed bold-italic font defined for %s", font));
 
 	return nodedata;
 }
