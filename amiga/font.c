@@ -404,6 +404,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 			if(node->italic)
 			{
 				node = ami_font_open(node->italic);
+				if(!node) return NULL;
 			}
 			else
 			{
@@ -416,6 +417,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 			if(node->bold)
 			{
 				node = ami_font_open(node->bold);
+				if(!node) return NULL;
 			}
 			else
 			{
@@ -428,6 +430,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 			if(node->bolditalic)
 			{
 				node = ami_font_open(node->bolditalic);
+				if(!node) return NULL;
 			}
 			else
 			{
@@ -580,6 +583,7 @@ void ami_init_fonts(void)
 
 void ami_close_fonts(void)
 {
+	LOG(("Cleaning up font cache"));
 	FreeObjList(ami_font_list);
 	ami_font_list = NULL;
 }
