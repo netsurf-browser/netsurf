@@ -34,6 +34,7 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/Picasso96API.h>
+#include <proto/timer.h>
 #include <proto/utility.h>
 
 #include <diskfont/diskfonttag.h>
@@ -62,6 +63,7 @@ struct ami_font_node
 	char *bold;
 	char *italic;
 	char *bolditalic;
+	struct TimeVal lastused;
 };
 
 struct MinList *ami_font_list = NULL;
@@ -69,7 +71,9 @@ ULONG ami_devicedpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth);
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL fallback);
+struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
+		BOOL fallback);
+static void ami_font_cleanup(struct MinList *ami_font_list);
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
 	  const char *string, size_t length,
@@ -313,7 +317,12 @@ struct ami_font_node *ami_font_open(const char *font)
 	struct ami_font_node *nodedata;
 
 	node = (struct nsObject *)FindIName((struct List *)ami_font_list, font);
-	if(node) return node->objstruct;
+	if(node)
+	{
+		nodedata = node->objstruct;
+		GetSysTime(&nodedata->lastused);
+		return nodedata;
+	}
 
 	LOG(("Font cache miss: %s", font));
 
@@ -350,6 +359,8 @@ struct ami_font_node *ami_font_open(const char *font)
 		LOG(("Bold-italic font defined for %s is %s", font, nodedata->bolditalic));
 	else
 		LOG(("Warning: No designed bold-italic font defined for %s", font));
+
+	GetSysTime(&nodedata->lastused);
 
 	return nodedata;
 }
@@ -590,6 +601,9 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 void ami_init_fonts(void)
 {
 	ami_font_list = NewObjList();
+
+	/* run first cleanup in ten minutes */
+	schedule(60000, ami_font_cleanup, ami_font_list);
 }
 
 void ami_close_fonts(void)
@@ -604,6 +618,35 @@ void ami_font_close(struct ami_font_node *node)
 	/* Called from FreeObjList if node type is AMINS_FONT */
 
 	CloseOutlineFont(node->font, NULL);
+}
+
+static void ami_font_cleanup(struct MinList *ami_font_list)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct ami_font_node *fnode;
+	struct TimeVal curtime;
+
+	if(IsMinListEmpty(ami_font_list)) return;
+
+	node = (struct nsObject *)GetHead((struct List *)ami_font_list);
+
+	do
+	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		fnode = node->objstruct;
+		GetSysTime(&curtime);
+		SubTime(&curtime, &fnode->lastused);
+		if(curtime.Seconds > 300)
+		{
+			LOG(("Freeing %s not used for %d seconds",
+				node->dtz_Node.ln_Name, curtime.Seconds));
+			DelObject(node);
+		}
+	}while(node=nnode);
+
+	/* reschedule to run in five minutes */
+	schedule(30000, ami_font_cleanup, ami_font_list);
 }
 
 void ami_font_setdevicedpi(int id)
