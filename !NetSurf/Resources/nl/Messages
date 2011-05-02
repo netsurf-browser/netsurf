@@ -1370,6 +1370,11 @@ AnimDisable:Disable animations
 None:None
 Scaled:Scaled
 
+Resolution:Resolution
+ResolutionY:Vertical resolution
+ResolutionX:Horizontal resolution
+DPI:DPI
+
 # Fonts tab
 #
 

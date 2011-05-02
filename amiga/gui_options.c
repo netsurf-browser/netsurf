@@ -97,6 +97,7 @@ enum
 	GID_OPTS_SCALEQ,
 	GID_OPTS_ANIMSPEED,
 	GID_OPTS_ANIMDISABLE,
+	GID_OPTS_DPI_Y,
 	GID_OPTS_FONT_SANS,
 	GID_OPTS_FONT_SERIF,
 	GID_OPTS_FONT_MONO,
@@ -150,6 +151,7 @@ enum
 	GRP_OPTS_FETCHING,
 	GRP_OPTS_IMAGES,
 	GRP_OPTS_ANIMS,
+	GRP_OPTS_DPI,
 	GRP_OPTS_FONTFACES,
 	GRP_OPTS_FONTSIZE,
 	GRP_OPTS_MEMCACHE,
@@ -176,6 +178,7 @@ enum
 	LAB_OPTS_PT,
 	LAB_OPTS_MB,
 	LAB_OPTS_MM,
+	LAB_OPTS_DPI,
 	LAB_OPTS_LAST
 };
 
@@ -259,6 +262,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_NATIVEBM] = (char *)ami_utf8_easy((char *)messages_get("CacheNative"));
 	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
 	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedLimit"));
+	gadlab[GID_OPTS_DPI_Y] = (char *)ami_utf8_easy((char *)messages_get("ResolutionY"));
 	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
 	gadlab[GID_OPTS_FONT_SANS] = (char *)ami_utf8_easy((char *)messages_get("FontSans"));
 	gadlab[GID_OPTS_FONT_SERIF] = (char *)ami_utf8_easy((char *)messages_get("FontSerif"));
@@ -304,6 +308,7 @@ void ami_gui_opts_setup(void)
 	gadlab[LAB_OPTS_PT] = (char *)ami_utf8_easy((char *)messages_get("Pt"));
 	gadlab[LAB_OPTS_MM] = (char *)ami_utf8_easy((char *)messages_get("MM"));
 	gadlab[LAB_OPTS_MB] = (char *)ami_utf8_easy((char *)messages_get("MBytes"));
+	gadlab[LAB_OPTS_DPI] = (char *)ami_utf8_easy((char *)messages_get("DPI"));
 
 	gadlab[GRP_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("Home"));
 	gadlab[GRP_OPTS_CONTENTBLOCKING] = (char *)ami_utf8_easy((char *)messages_get("ContentBlocking"));
@@ -317,6 +322,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_FETCHING] = (char *)ami_utf8_easy((char *)messages_get("Fetching"));
 	gadlab[GRP_OPTS_IMAGES] = (char *)ami_utf8_easy((char *)messages_get("Images"));
 	gadlab[GRP_OPTS_ANIMS] = (char *)ami_utf8_easy((char *)messages_get("Animations"));
+	gadlab[GRP_OPTS_DPI] = (char *)ami_utf8_easy((char *)messages_get("Resolution"));
 	gadlab[GRP_OPTS_FONTFACES] = (char *)ami_utf8_easy((char *)messages_get("FontFamilies"));
 	gadlab[GRP_OPTS_FONTSIZE] = (char *)ami_utf8_easy((char *)messages_get("FontSize"));
 	gadlab[GRP_OPTS_MEMCACHE] = (char *)ami_utf8_easy((char *)messages_get("CacheMemory"));
@@ -851,6 +857,30 @@ void ami_gui_opts_open(void)
             	    				CheckBoxEnd,
 								LayoutEnd, //animations
 								CHILD_WeightedHeight, 0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, gadlab[GRP_OPTS_DPI],
+									LAYOUT_AddChild, HGroupObject,
+										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_DPI_Y] = IntegerObject,
+											GA_ID, GID_OPTS_DPI_Y,
+											GA_RelVerify, TRUE,
+											INTEGER_Number, option_amiga_ydpi,
+											INTEGER_Minimum, 60,
+											INTEGER_Maximum, 150,
+											INTEGER_Arrows, TRUE,
+										IntegerEnd,
+										CHILD_WeightedWidth, 0,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[LAB_OPTS_DPI],
+										LabelEnd,
+									LayoutEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_DPI_Y],
+									LabelEnd,
+								LayoutEnd, //animations
+								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
 							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
@@ -1354,7 +1384,7 @@ void ami_gui_opts_open(void)
 
 void ami_gui_opts_use(void)
 {
-	ULONG data;
+	ULONG data, id = 0;
 	float animspeed;
 	struct TextAttr *tattr;
 	char *dot;
@@ -1401,12 +1431,12 @@ void ami_gui_opts_use(void)
 		break;
 	}
 
-	GetAttr(GETSCREENMODE_DisplayID,gow->objects[GID_OPTS_SCREENMODE],(ULONG *)&data);
-	if(data)
+	GetAttr(GETSCREENMODE_DisplayID, gow->objects[GID_OPTS_SCREENMODE], (ULONG *)&id);
+	if(id)
 	{
 		if(option_modeid) free(option_modeid);
 		option_modeid = malloc(20);
-		sprintf(option_modeid,"0x%lx",data);
+		sprintf(option_modeid,"0x%lx", id);
 	}
 
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
@@ -1463,6 +1493,9 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
 	if(data) option_animate_images = false;
 		else option_animate_images = true;
+
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&option_amiga_ydpi);
+	ami_font_setdevicedpi(id); // id set above
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SANS],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;

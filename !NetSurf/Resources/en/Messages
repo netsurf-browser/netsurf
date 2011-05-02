@@ -1371,7 +1371,7 @@ NeedRestart:These options will not take effect until the next time NetSurf is st
 # Connection tab
 #
 
-Proxy:HTTP Proxy
+Proxy:HTTP proxy
 Fetching:Fetching
 FetchesMax:Maximum fetches
 FetchesHost:Fetches per host
@@ -1389,6 +1389,11 @@ AnimDisable:Disable animations
 
 None:None
 Scaled:Scaled
+
+Resolution:Resolution
+ResolutionY:Vertical resolution
+ResolutionX:Horizontal resolution
+DPI:DPI
 
 # Fonts tab
 #
