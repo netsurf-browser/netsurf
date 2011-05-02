@@ -27,6 +27,7 @@
 #include "css/utils.h"
 #include "render/font.h"
 #include "utils/log.h"
+#include "utils/schedule.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
@@ -53,9 +54,11 @@
 #define NSA_BOLDITALIC 3
 
 #define NSA_VALUE_BOLDX (1 << 12)
-#define NSA_VALUE_BOLDY (1 << 12)
+#define NSA_VALUE_BOLDY 0
 #define NSA_VALUE_SHEARSIN (1 << 14)
 #define NSA_VALUE_SHEARCOS (1 << 16)
+
+#define NSA_FONT_EMWIDTH(s) (ULONG)(s / FONT_SIZE_SCALE) * (ami_xdpi / 72.0)
 
 struct ami_font_node
 {
@@ -68,6 +71,7 @@ struct ami_font_node
 
 struct MinList *ami_font_list = NULL;
 ULONG ami_devicedpi;
+ULONG ami_xdpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth);
@@ -123,7 +127,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	struct TextExtent extent;
 	struct TextFont *tfont;
 	uint16 *utf16 = NULL, *outf16 = NULL;
-	uint16 utf16next = NULL;
+	uint16 utf16next = 0;
 	FIXED kern = 0;
 	struct OutlineFont *ofont, *ufont = NULL;
 	struct GlyphMap *glyph;
@@ -132,7 +136,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint8 *utf8;
 	uint32 co = 0;
 	int utf16charlen;
-	ULONG emwidth = (ULONG)(fstyle->size / FONT_SIZE_SCALE);
+	ULONG emwidth = NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
 
 	len = utf8_bounded_length(string, length);
@@ -229,7 +233,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 {
 	struct TextExtent extent;
 	ULONG co;
-	char *ostr = string;
+	char *ostr = (char *)string;
 	struct TextFont *tfont;
 	uint16 *utf16 = NULL,*outf16 = NULL;
 	uint16 utf16next = 0;
@@ -241,7 +245,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	size_t len;
 	int utf8len, utf8clen = 0;
 	int32 tempx = 0;
-	ULONG emwidth = (ULONG)(fstyle->size / FONT_SIZE_SCALE);
+	ULONG emwidth = NSA_FONT_EMWIDTH(fstyle->size);
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -546,7 +550,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	uint32 x=0;
 	uint8 co = 0;
 	int32 tempx = 0;
-	ULONG emwidth = (ULONG)(fstyle->size / FONT_SIZE_SCALE);
+	ULONG emwidth = NSA_FONT_EMWIDTH(fstyle->size);
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;
@@ -603,7 +607,7 @@ void ami_init_fonts(void)
 	ami_font_list = NewObjList();
 
 	/* run first cleanup in ten minutes */
-	schedule(60000, ami_font_cleanup, ami_font_list);
+	schedule(60000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
 }
 
 void ami_close_fonts(void)
@@ -646,7 +650,7 @@ static void ami_font_cleanup(struct MinList *ami_font_list)
 	}while(node=nnode);
 
 	/* reschedule to run in five minutes */
-	schedule(30000, ami_font_cleanup, ami_font_list);
+	schedule(30000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
 }
 
 void ami_font_setdevicedpi(int id)
@@ -675,5 +679,6 @@ void ami_font_setdevicedpi(int id)
 		}
 	}
 
+	ami_xdpi = xdpi;
 	ami_devicedpi = (xdpi << 16) | ydpi;
 }
