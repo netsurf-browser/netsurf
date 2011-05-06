@@ -25,6 +25,7 @@
 #include "image/bitmap.h"
 #include "desktop/plotters.h"
 #include "utils/talloc.h"
+#include "utils/utils.h"
 
 typedef struct apple_image_content {
 	struct content base;
