@@ -27,30 +27,16 @@
 #ifdef WITH_RSVG
 
 #include <stdbool.h>
-#include <librsvg/rsvg.h>
-#include <cairo.h>
-#include "desktop/plot_style.h"
-#include "image/bitmap.h"
 
-struct content;
-struct http_parameter;
-struct rect;
+#include "utils/errors.h"
 
-struct content_rsvg_data {
-	RsvgHandle *rsvgh;	/**< Context handle for RSVG renderer */
-	cairo_surface_t *cs;	/**< The surface built inside a nsbitmap */
-	cairo_t *ct;		/**< Cairo drawing context */
-	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
-};
+nserror nsrsvg_init(void);
+void nsrsvg_fini(void);
 
-bool rsvg_create(struct content *c, const struct http_parameter *params);
-bool rsvg_process_data(struct content *c, const char *data, unsigned int size);
-bool rsvg_convert(struct content *c);
-void rsvg_destroy(struct content *c);
-bool rsvg_redraw(struct content *c, int x, int y,
-                int width, int height, const struct rect *clip,
-                float scale, colour background_colour);
-bool rsvg_clone(const struct content *old, struct content *new_content);
+#else
+
+#define nsrsvg_init() NSERROR_OK
+#define nsrsvg_fini() ((void) 0)
 
 #endif /* WITH_RSVG */
 

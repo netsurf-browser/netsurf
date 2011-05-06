@@ -19,19 +19,19 @@
 #ifndef NETSURF_AMIGA_PLUGIN_H_
 #define NETSURF_AMIGA_PLUGIN_H_
 
+#include "utils/config.h"
+#include "utils/errors.h"
+
 #ifdef WITH_PLUGIN
 
-#include <intuition/classusr.h>
+nserror plugin_init(void);
+void plugin_fini(void);
 
-#include "desktop/plugin.h"
+#else
 
-struct content_plugin_data {
-	Object *dto;
-	int x;
-	int y;
-	int w;
-	int h;
-};
+#define plugin_init() NSERROR_OK
+#define plugin_fini() ((void) 0)
 
 #endif /* WITH_PLUGIN */
+
 #endif

@@ -33,10 +33,6 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/plotters.h"
-#include "render/box.h"
-#include "render/font.h"
-#include "render/html.h"
-#include "render/layout.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/print.h"
@@ -592,8 +588,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	saved_width = content_get_width(h);
 	saved_height = content_get_height(h);
 	if (content_get_type(h) == CONTENT_HTML)
-		/* TODO: Front end code shouldn't see contents */
-		layout_document(hlcache_handle_get_content(h), width, height);
+		content_reformat(h, width, height);
 
 	/* open printer file */
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
@@ -763,9 +758,7 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* restore document layout and redraw browser window */
 	if (content_get_type(h) == CONTENT_HTML)
-		/* TODO: Front end code shouldn't see contents */
-		layout_document(hlcache_handle_get_content(h),
-				saved_width, saved_height);
+		content_reformat(h, saved_width, saved_height);
 
 	gui_window_redraw_window(g);
 
@@ -785,9 +778,7 @@ error:
 
 	/* restore document layout */
 	if (content_get_type(h)  == CONTENT_HTML)
-		/* TODO: Front end code shouldn't see contents */
-		layout_document(hlcache_handle_get_content(h),
-				saved_width, saved_height);
+		content_reformat(h, saved_width, saved_height);
 
 	return false;
 }

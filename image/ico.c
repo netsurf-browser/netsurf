@@ -33,42 +33,164 @@
 #include "content/hlcache.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
+#include "image/bmp.h"
 #include "image/ico.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
 
-bool nsico_create(struct content *c, const struct http_parameter *params)
+typedef struct nsico_content {
+	struct content base;
+
+	struct ico_collection *ico;	/** ICO collection data */
+} nsico_content;
+
+static nserror nsico_create(const content_handler *handler, 
+		lwc_string *imime_type, const struct http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static nserror nsico_create_ico_data(nsico_content *c);
+static bool nsico_convert(struct content *c);
+static void nsico_destroy(struct content *c);
+static bool nsico_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static bool nsico_redraw_tiled(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
+static nserror nsico_clone(const struct content *old, struct content **newc);
+static content_type nsico_content_type(lwc_string *mime_type);
+
+static const content_handler nsico_content_handler = {
+	nsico_create,
+	NULL,
+	nsico_convert,
+	NULL,
+	nsico_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nsico_redraw,
+	nsico_redraw_tiled,
+	NULL,
+	NULL,
+	nsico_clone,
+	NULL,
+	nsico_content_type,
+	false
+};
+
+static const char *nsico_types[] = {
+	"application/ico",
+	"application/x-ico",
+	"image/ico",
+	"image/vnd.microsoft.icon",
+	"image/x-icon"
+};
+
+static lwc_string *nsico_mime_types[NOF_ELEMENTS(nsico_types)];
+
+nserror nsico_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(nsico_mime_types); i++) {
+		lerror = lwc_intern_string(nsico_types[i],
+				strlen(nsico_types[i]),
+				&nsico_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(nsico_mime_types[i],
+				&nsico_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nsico_fini();
+
+	return error;
+}
+
+void nsico_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nsico_mime_types); i++) {
+		if (nsico_mime_types[i] != NULL)
+			lwc_string_unref(nsico_mime_types[i]);
+	}
+}
+
+nserror nsico_create(const content_handler *handler, 
+		lwc_string *imime_type, const struct http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	nsico_content *result;
+	nserror error;
+
+	result = talloc_zero(0, nsico_content);
+	if (result == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&result->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(result);
+		return error;
+	}
+
+	error = nsico_create_ico_data(result);
+	if (error != NSERROR_OK) {
+		talloc_free(result);
+		return error;
+	}
+
+	*c = (struct content *) result;
+
+	return NSERROR_OK;
+}
+
+nserror nsico_create_ico_data(nsico_content *c)
 {
 	union content_msg_data msg_data;
-	c->data.ico.ico = calloc(sizeof(ico_collection), 1);
-	if (!c->data.ico.ico) {
+
+	c->ico = calloc(sizeof(ico_collection), 1);
+	if (c->ico == NULL) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return NSERROR_NOMEM;
 	}
-	ico_collection_create(c->data.ico.ico, &bmp_bitmap_callbacks);
-	return true;
+	ico_collection_create(c->ico, &bmp_bitmap_callbacks);
+	return NSERROR_OK;
 }
 
 
 bool nsico_convert(struct content *c)
 {
+	nsico_content *ico = (nsico_content *) c;
 	struct bmp_image *bmp;
 	bmp_result res;
-	ico_collection *ico;
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
 	char title[100];
 
 	/* set the ico data */
-	ico = c->data.ico.ico;
-
 	data = content__get_source_data(c, &size);
 
 	/* analyse the ico */
-	res = ico_analyse(ico, size, (unsigned char *) data);
+	res = ico_analyse(ico->ico, size, (unsigned char *) data);
 
 	switch (res) {
 	case BMP_OK:
@@ -85,15 +207,15 @@ bool nsico_convert(struct content *c)
 	}
 
 	/* Store our content width and description */
-	c->width = ico->width;
-	c->height = ico->height;
+	c->width = ico->ico->width;
+	c->height = ico->ico->height;
 	snprintf(title, sizeof(title), messages_get("ICOTitle"), 
 			c->width, c->height, size);
 	content__set_title(c, title);
-	c->size += (ico->width * ico->height * 4) + 16 + 44;
+	c->size += (ico->ico->width * ico->ico->height * 4) + 16 + 44;
 
 	/* exit as a success */
-	bmp = ico_find(c->data.ico.ico, 255, 255);
+	bmp = ico_find(ico->ico, 255, 255);
 	assert(bmp);
 	c->bitmap = bmp->bitmap;
 	bitmap_modified(c->bitmap);
@@ -110,7 +232,8 @@ bool nsico_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
-	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
+	nsico_content *ico = (nsico_content *) c;
+	struct bmp_image *bmp = ico_find(ico->ico, width, height);
 	if (!bmp->decoded)
 	  	if (bmp_decode(bmp) != BMP_OK)
 			return false;
@@ -119,33 +242,13 @@ bool nsico_redraw(struct content *c, int x, int y,
 			background_colour, BITMAPF_NONE);
 }
 
-/** sets the bitmap for an ico according to the dimensions */
-
-bool nsico_set_bitmap_from_size(hlcache_handle *h, int width, int height)
-{
-	struct content *c = hlcache_handle_get_content(h);
-	struct bmp_image *bmp;
-
-	assert(c != NULL);
-
-	bmp = ico_find(c->data.ico.ico, width, height);
-	if (bmp == NULL)
-		return false;
-
-	if ((bmp->decoded == false) && (bmp_decode(bmp) != BMP_OK))
-		return false;
-
-	c->bitmap = bmp->bitmap;
-
-	return true;
-}
-
 bool nsico_redraw_tiled(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
-	struct bmp_image *bmp = ico_find(c->data.ico.ico, width, height);
+	nsico_content *ico = (nsico_content *) c;
+	struct bmp_image *bmp = ico_find(ico->ico, width, height);
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (!bmp->decoded)
@@ -165,23 +268,50 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 
 void nsico_destroy(struct content *c)
 {
-	ico_finalise(c->data.ico.ico);
-	free(c->data.ico.ico);
+	nsico_content *ico = (nsico_content *) c;
+
+	ico_finalise(ico->ico);
+	free(ico->ico);
 }
 
-bool nsico_clone(const struct content *old, struct content *new_content)
+nserror nsico_clone(const struct content *old, struct content **newc)
 {
+	nsico_content *ico;
+	nserror error;
+
+	ico = talloc_zero(0, nsico_content);
+	if (ico == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &ico->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&ico->base);
+		return error;
+	}
+
 	/* Simply replay creation and conversion */
-	if (nsico_create(new_content, NULL) == false)
-		return false;
+	error = nsico_create_ico_data(ico);
+	if (error != NSERROR_OK) {
+		content_destroy(&ico->base);
+		return error;
+	}
 
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (nsico_convert(new_content) == false)
-			return false;
+		if (nsico_convert(&ico->base) == false) {
+			content_destroy(&ico->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) ico;
+
+	return NSERROR_OK;
+}
+
+content_type nsico_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif

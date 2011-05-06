@@ -27,15 +27,25 @@
 
 struct content;
 
+/**
+ * Selection context
+ */
+typedef struct nscss_select_ctx
+{
+	css_select_ctx *ctx;
+	bool quirks;
+	const char *base_url;
+} nscss_select_ctx;
+
 css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 		const char *charset, const char *url, bool allow_quirks, 
 		css_allocator_fn alloc, void *pw);
 
-css_select_results *nscss_get_style(struct content *html, xmlNode *n,
+css_select_results *nscss_get_style(nscss_select_ctx *ctx, xmlNode *n,
 		uint64_t media, const css_stylesheet *inline_style,
 		css_allocator_fn alloc, void *pw);
 
-css_computed_style *nscss_get_blank_style(struct content *html,
+css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 		const css_computed_style *parent,
 		css_allocator_fn alloc, void *pw);
 

@@ -28,10 +28,11 @@
 #define _NETSURF_RENDER_LAYOUT_H_
 
 struct box;
+struct html_content;
 
-bool layout_document(struct content *content, int width, int height);
+bool layout_document(struct html_content *content, int width, int height);
 bool layout_inline_container(struct box *box, int width,
-		struct box *cont, int cx, int cy, struct content *content);
+		struct box *cont, int cx, int cy, struct html_content *content);
 void layout_calculate_descendant_bboxes(struct box *box);
 void layout_minmax_table(struct box *table,
 		const struct font_functions *font_func);

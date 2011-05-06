@@ -209,10 +209,7 @@ void search_web_retrieve_ico(bool localdefault)
 	 */
 	return;
 #else
-	static const content_type accept[] = {
-		CONTENT_ICO,
-		CONTENT_UNKNOWN
-	};
+	content_type accept = CONTENT_IMAGE;
 	char *url;
 	nserror error;
 
@@ -284,13 +281,7 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 
 	case CONTENT_MSG_DONE:
 		LOG(("got favicon '%s'", content_get_url(ico)));
-		if (content_get_type(ico) == CONTENT_ICO) {
-			gui_window_set_search_ico(search_ico);
-		} else {
-			hlcache_handle_release(ico);
-			search_ico = NULL;
-			search_web_retrieve_ico(true);
-		}
+		gui_window_set_search_ico(search_ico);
 		break;
 
 	case CONTENT_MSG_ERROR:

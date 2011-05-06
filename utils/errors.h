@@ -39,8 +39,11 @@ typedef enum {
 
 	NSERROR_CLONE_FAILED,		/**< Failed to clone handle */
 
-	NSERROR_INIT_FAILED		/**< Initialisation failed */
+	NSERROR_INIT_FAILED,		/**< Initialisation failed */
 
+	NSERROR_MNG_ERROR,		/**< An MNG error occurred */
+
+	NSERROR_BAD_ENCODING		/**< The character set is unknown */
 } nserror;
 
 #endif

@@ -26,20 +26,19 @@
 #include "utils/config.h"
 #ifdef WITH_JPEG
 
-/* This must come first due to libpng issues */
-#include "content/content_protected.h"
-
 #include <assert.h>
 #include <setjmp.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #define JPEG_INTERNAL_OPTIONS
@@ -57,12 +56,30 @@
 
 static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
 
+typedef struct nsjpeg_content {
+	struct content base;
+} nsjpeg_content;
 
 struct nsjpeg_error_mgr {
 	struct jpeg_error_mgr pub;
 	jmp_buf setjmp_buffer;
 };
 
+static nserror nsjpeg_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static bool nsjpeg_convert(struct content *c);
+static void nsjpeg_destroy(struct content *c);
+static bool nsjpeg_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
+static nserror nsjpeg_clone(const struct content *old, struct content **newc);
+static content_type nsjpeg_content_type(lwc_string *mime_type);
 
 static void nsjpeg_error_exit(j_common_ptr cinfo);
 static void nsjpeg_init_source(j_decompress_ptr cinfo);
@@ -70,6 +87,95 @@ static boolean nsjpeg_fill_input_buffer(j_decompress_ptr cinfo);
 static void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes);
 static void nsjpeg_term_source(j_decompress_ptr cinfo);
 
+static const content_handler nsjpeg_content_handler = {
+	nsjpeg_create,
+	NULL,
+	nsjpeg_convert,
+	NULL,
+	nsjpeg_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nsjpeg_redraw,
+	nsjpeg_redraw_tiled,
+	NULL,
+	NULL,
+	nsjpeg_clone,
+	NULL,
+	nsjpeg_content_type,
+	false
+};
+
+static const char *nsjpeg_types[] = {
+	"image/jpeg",
+	"image/jpg",
+	"image/pjpeg"
+};
+
+static lwc_string *nsjpeg_mime_types[NOF_ELEMENTS(nsjpeg_types)];
+
+nserror nsjpeg_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
+		lerror = lwc_intern_string(nsjpeg_types[i],
+				strlen(nsjpeg_types[i]),
+				&nsjpeg_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(nsjpeg_mime_types[i],
+				&nsjpeg_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nsjpeg_fini();
+
+	return error;
+}
+
+void nsjpeg_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
+		if (nsjpeg_mime_types[i] != NULL)
+			lwc_string_unref(nsjpeg_mime_types[i]);
+	}
+}
+
+nserror nsjpeg_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	nsjpeg_content *jpeg;
+	nserror error;
+
+	jpeg = talloc_zero(0, nsjpeg_content);
+	if (jpeg == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&jpeg->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(jpeg);
+		return error;
+	}
+
+	*c = (struct content *) jpeg;
+
+	return NSERROR_OK;
+}
 
 /**
  * Convert a CONTENT_JPEG for display.
@@ -286,16 +392,38 @@ void nsjpeg_destroy(struct content *c)
 }
 
 
-bool nsjpeg_clone(const struct content *old, struct content *new_content)
+nserror nsjpeg_clone(const struct content *old, struct content **newc)
 {
+	nsjpeg_content *jpeg;
+	nserror error;
+
+	jpeg = talloc_zero(0, nsjpeg_content);
+	if (jpeg == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &jpeg->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&jpeg->base);
+		return error;
+	}
+
 	/* Simply replay conversion */
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (nsjpeg_convert(new_content) == false)
-			return false;
+		if (nsjpeg_convert(&jpeg->base) == false) {
+			content_destroy(&jpeg->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) jpeg;
+
+	return NSERROR_OK;
+}
+
+content_type nsjpeg_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif /* WITH_JPEG */

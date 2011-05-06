@@ -30,27 +30,13 @@
 #include <stdbool.h>
 #include <libnsgif.h>
 
-struct content;
-struct http_parameter;
-struct rect;
+nserror nsgif_init(void);
+void nsgif_fini(void);
 
-struct content_gif_data {
-	struct gif_animation *gif; /**< GIF animation data */
-	int current_frame;	   /**< current frame to display [0...(max-1)] */
-};
+#else
 
-bool nsgif_create(struct content *c, const struct http_parameter *params);
-bool nsgif_convert(struct content *c);
-void nsgif_destroy(struct content *c);
-bool nsgif_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool nsgif_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-bool nsgif_clone(const struct content *old, struct content *new_content);
-void *nsgif_bitmap_create(int width, int height);
+#define nsgif_init() NSERROR_OK
+#define nsgif_fini() ((void) 0)
 
 #endif /* WITH_GIF */
 

@@ -73,7 +73,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		break;
 		case GUI_SAVE_OBJECT_NATIVE:
 #ifdef WITH_NS_SVG
-			if(content_get_type(c) == CONTENT_SVG)
+			if(ami_mime_compare(c, "svg") == true)
 			{
 				filetype = "dr2d";
 			}
@@ -211,7 +211,7 @@ void ami_drag_save(struct Window *win)
 					SetComment(path, content_get_url(c));
 			}
 #ifdef WITH_NS_SVG
-			else if(content_get_type(c) == CONTENT_SVG)
+			else if(ami_mime_compare(c, "svg") == true)
 			{
 				if(ami_save_svg(c, path))
 					SetComment(path, content_get_url(c));

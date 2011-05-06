@@ -24,23 +24,17 @@
 #define AMIGA_ICON_H
 
 #include "utils/config.h"
+#include "utils/errors.h"
+
 #ifdef WITH_AMIGA_ICON
 
-#include <stdbool.h>
-#include "content/hlcache.h"
+nserror amiga_icon_init(void);
+void amiga_icon_fini(void);
 
-struct rect;
+#else
 
-struct content_amiga_icon_data {
-/* empty */
-};
-
-bool amiga_icon_convert(struct content *c);
-void amiga_icon_destroy(struct content *c);
-bool amiga_icon_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool amiga_icon_clone(const struct content *old, struct content *new_content);
+#define amiga_icon_init() NSERROR_OK
+#define amiga_icon_fini() ((void) 0)
 
 #endif /* WITH_AMIGA_ICON */
 

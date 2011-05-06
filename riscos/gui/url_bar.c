@@ -875,7 +875,7 @@ bool ro_gui_url_bar_test_for_text_field_keypress(struct url_bar *url_bar,
 bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 		struct hlcache_handle *h)
 {
-	content_type		type = CONTENT_OTHER;
+	content_type		type = CONTENT_NONE;
 
 	if (url_bar == NULL)
 		return false;
@@ -885,7 +885,7 @@ bool ro_gui_url_bar_set_site_favicon(struct url_bar *url_bar,
 
 	// \TODO -- Maybe test for CONTENT_ICO ???
 
-	if (type != CONTENT_OTHER && type != CONTENT_UNKNOWN) {
+	if (type == CONTENT_IMAGE) {
 		url_bar->favicon_content = h;
 		url_bar->favicon_width = content_get_width(h);
 		url_bar->favicon_height = content_get_height(h);
@@ -938,7 +938,7 @@ bool ro_gui_url_bar_set_content_favicon(struct url_bar *url_bar,
 		return false;
 
 	if (h != NULL)
-		type = ro_content_filetype_from_type(content_get_type(h));
+		type = ro_content_filetype(h);
 
 	if (type != 0) {
 		snprintf(sprite, URLBAR_FAVICON_NAME_LENGTH,

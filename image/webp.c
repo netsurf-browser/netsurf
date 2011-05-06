@@ -33,7 +33,113 @@
 #include "content/content_protected.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
+
+typedef struct webp_content
+{
+	struct content base;
+} webp_content;
+
+static nserror webp_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static bool webp_convert(struct content *c);
+static void webp_destroy(struct content *c);
+static bool webp_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static nserror webp_clone(const struct content *old, struct content **newc);
+static content_type webp_content_type(lwc_string *mime_type);
+
+static const content_handler webp_content_handler = {
+	webp_create,
+	NULL,
+	webp_convert,
+	NULL,
+	webp_destroy,
+	NULL,
+	NULL,
+	NULL,
+	webp_redraw,
+	NULL,
+	NULL,
+	NULL,
+	webp_clone,
+	NULL,
+	webp_content_type,
+	false
+};
+
+static const char *webp_types[] = {
+	"image/webp"
+};
+
+static lwc_string *webp_mime_types[NOF_ELEMENTS(webp_types)];
+
+nserror webp_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(webp_mime_types); i++) {
+		lerror = lwc_intern_string(webp_types[i],
+				strlen(webp_types[i]),
+				&webp_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(webp_mime_types[i],
+				&webp_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	webp_fini();
+
+	return error;
+}
+
+void webp_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(webp_mime_types); i++) {
+		if (webp_mime_types[i] != NULL)
+			lwc_string_unref(webp_mime_types[i]);
+	}
+}
+
+nserror webp_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	webp_content *webp;
+	nserror error;
+
+	webp = talloc_zero(0, webp_content);
+	if (webp == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&webp->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(webp);
+		return error;
+	}
+
+	*c = (struct content *) webp;
+
+	return NSERROR_OK;
+}
 
 /**
  * Convert a CONTENT_WEBP for display.
@@ -124,16 +230,38 @@ bool webp_redraw(struct content *c, int x, int y,
 }
 
 
-bool webp_clone(const struct content *old, struct content *new_content)
+nserror webp_clone(const struct content *old, struct content **newc)
 {
+	webp_content *webp;
+	nserror error;
+
+	webp = talloc_zero(0, webp_content);
+	if (webp == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &webp->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&webp->base);
+		return error;
+	}
+
 	/* Simply replay convert */
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (webp_convert(new_content) == false)
-			return false;
+		if (webp_convert(&webp->base) == false) {
+			content_destroy(&webp->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) webp;
+
+	return NSERROR_OK;
+}
+
+content_type webp_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif

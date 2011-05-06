@@ -235,13 +235,13 @@ ifeq ($(TARGET),amiga)
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # (NB: Requires NETSURF_AMIGA_USE_CAIRO)
   # Valid options: YES, NO
-  NETSURF_USE_NSSVG := NO
+  NETSURF_USE_NSSVG := YES
 
   # Enable NetSurf's use of libcairo for some plotter functions
   # This will also link NetSurf with shared objects, and
   # requires AmigaOS 4.1 or higher to run the resulting executable
   # Valid options: YES, NO
-  NETSURF_AMIGA_USE_CAIRO := NO
+  NETSURF_AMIGA_USE_CAIRO := YES
 
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized

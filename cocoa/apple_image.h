@@ -20,34 +20,18 @@
 #ifndef _NETSURF_COCOA_APPLE_IMAGE_H_
 #define _NETSURF_COCOA_APPLE_IMAGE_H_
 
+#include "utils/config.h"
+#include "utils/errors.h"
+
 #ifdef WITH_APPLE_IMAGE
 
-#ifdef WITH_JPEG
-#error "Don't define WITH_JPEG and WITH_APPLE_IMAGE"
-#endif
+nserror apple_image_init(void);
+void apple_image_fini(void);
 
-#include "utils/config.h"
-#include "desktop/plot_style.h"
+#else
 
-struct bitmap;
-struct content;
-struct rect;
-
-struct content_apple_image_data {
-};
-
-bool apple_image_convert(struct content *c);
-void apple_image_destroy(struct content *c);
-
-bool apple_image_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool apple_image_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-
-bool apple_image_clone(const struct content *old, struct content *new_content);
+#define apple_image_init() NSERROR_OK
+#define apple_image_fini() ((void) 0)
 
 #endif /* WITH_APPLE_IMAGE */
 

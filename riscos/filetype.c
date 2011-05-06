@@ -253,21 +253,68 @@ int cmp_type(const void *x, const void *y)
  */
 int ro_content_filetype(hlcache_handle *c)
 {
+	lwc_string *mime_type;
 	int file_type;
-	os_error *error;
 
 	file_type = ro_content_filetype_from_type(content_get_type(c));
 	if (file_type != 0)
 		return file_type;
 
-	error = xmimemaptranslate_mime_type_to_filetype(
-			content_get_mime_type(c), (bits *) &file_type);
-	if (error)
-		return 0xffd;
+	mime_type = content_get_mime_type(c);
+
+	file_type = ro_content_filetype_from_mime_type(mime_type);
+
+	lwc_string_unref(mime_type);
 
 	return file_type;
 }
 
+/**
+ * Determine the native RISC OS filetype to export a content as
+ *
+ * \param c  The content to examine
+ * \return Native RISC OS filetype for export
+ */
+int ro_content_native_type(hlcache_handle *c)
+{
+	switch (ro_content_filetype(c)) {
+	case 0xc85: /* jpeg */
+	case 0xf78: /* jng */
+	case 0xf83: /* mng */
+	case 0x695: /* gif */
+	case 0x69c: /* bmp */
+	case 0x132: /* ico */
+	case 0xb90: /* png */
+	case 0xff9: /* sprite */
+		return osfile_TYPE_SPRITE;
+	case 0xaad: /* svg */
+	case 0xaff: /* draw */
+		return osfile_TYPE_DRAW;
+	default:
+		break;
+	}
+
+	return osfile_TYPE_DATA;
+}
+
+/**
+ * Determine the RISC OS filetype for a MIME type
+ *
+ * \param mime_type  MIME type to consider
+ * \return Corresponding RISC OS filetype
+ */
+int ro_content_filetype_from_mime_type(lwc_string *mime_type)
+{
+	int file_type;
+	os_error *error;
+
+	error = xmimemaptranslate_mime_type_to_filetype(
+			lwc_string_data(mime_type), (bits *) &file_type);
+	if (error)
+		file_type = 0xffd;
+
+	return file_type;
+}
 
 /**
  * Determine the RISC OS filetype from a content type.
@@ -277,39 +324,10 @@ int ro_content_filetype(hlcache_handle *c)
  */
 int ro_content_filetype_from_type(content_type type) {
 	switch (type) {
-		case CONTENT_HTML:	return 0xfaf;
-		case CONTENT_TEXTPLAIN:	return 0xfff;
-		case CONTENT_CSS:	return 0xf79;
-#if defined(WITH_MNG) || defined(WITH_PNG)
-		case CONTENT_PNG:	return 0xb60;
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:	return 0xf78;
-		case CONTENT_MNG:	return 0xf84;
-#endif
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:	return 0xc85;
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:	return 0x695;
-#endif
-#ifdef WITH_BMP
-		case CONTENT_BMP:	return 0x69c;
-		case CONTENT_ICO:	return 0x132;
-#endif
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:	return 0xff9;
-#endif
-#ifdef WITH_DRAW
-		case CONTENT_DRAW:	return 0xaff;
-#endif
-#ifdef WITH_ARTWORKS
-		case CONTENT_ARTWORKS:	return 0xd94;
-#endif
-#ifdef WITH_NS_SVG
-		case CONTENT_SVG:	return 0xaad;
-#endif
-		default:		break;
+	case CONTENT_HTML:	return 0xfaf;
+	case CONTENT_TEXTPLAIN:	return 0xfff;
+	case CONTENT_CSS:	return 0xf79;
+	default:		break;
 	}
 	return 0;
 }

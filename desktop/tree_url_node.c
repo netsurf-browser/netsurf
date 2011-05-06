@@ -61,42 +61,7 @@ struct icon_entry icon_table[] = {
 	{CONTENT_HTML, NULL},
 	{CONTENT_TEXTPLAIN, NULL},
 	{CONTENT_CSS, NULL},
-#if defined(WITH_MNG) || defined(WITH_PNG)
-	{CONTENT_PNG, NULL},
-#endif
-#ifdef WITH_MNG
-	{CONTENT_JNG, NULL},
-	{CONTENT_MNG, NULL},
-#endif
-#ifdef WITH_JPEG
-	{CONTENT_JPEG, NULL},
-#endif
-#ifdef WITH_GIF
-	{CONTENT_GIF, NULL},
-#endif
-#ifdef WITH_BMP
-	{CONTENT_BMP, NULL},
-	{CONTENT_ICO, NULL},
-#endif
-#ifdef WITH_SPRITE
-	{CONTENT_SPRITE, NULL},
-#endif
-#ifdef WITH_DRAW
-	{CONTENT_DRAW, NULL},
-#endif
-#ifdef WITH_ARTWORKS
-	{CONTENT_ARTWORKS, NULL},
-#endif
-#ifdef WITH_NS_SVG
-	{CONTENT_SVG, NULL},
-#endif
-#ifdef WITH_WEBP
-	{CONTENT_WEBP, NULL},
-#endif
-#ifdef WITH_AMIGA_ICON
-	{CONTENT_AMIGA_ICON, NULL},
-#endif
- 	{CONTENT_UNKNOWN, NULL},
+	{CONTENT_IMAGE, NULL},
 
 	/* this serves as a sentinel */
 	{CONTENT_HTML, NULL}

@@ -1994,11 +1994,6 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	if (g->top_level != _g)
 		return;
 
-#ifdef WITH_BMP
-	if (icon != NULL && content_get_type(icon) == CONTENT_ICO)
-		nsico_set_bitmap_from_size(icon, 16, 16);
-#endif
-
 	icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
 
 	if (icon_bitmap != NULL) {
@@ -2038,11 +2033,6 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 	if (ico == NULL && (ico = search_web_ico()) == NULL)
 		return;
-
-#ifdef WITH_BMP
-	if (content_get_type(ico) == CONTENT_ICO)
-		nsico_set_bitmap_from_size(ico, 20, 20);
-#endif
 
 	ico_bitmap = content_get_bitmap(ico);
 	if (ico_bitmap == NULL)

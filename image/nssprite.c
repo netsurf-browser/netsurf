@@ -29,12 +29,32 @@
 #include <stdlib.h>
 #include <librosprite.h>
 #include "utils/config.h"
+#include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
-#include "content/content_protected.h"
+#include "image/nssprite.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
+
+typedef struct nssprite_content {
+	struct content base;
+
+	struct rosprite_area* sprite_area;
+} nssprite_content;
+
+static nserror nssprite_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static bool nssprite_convert(struct content *c);
+static void nssprite_destroy(struct content *c);
+static bool nssprite_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static nserror nssprite_clone(const struct content *old, struct content **newc);
+static content_type nssprite_content_type(lwc_string *mime_type);
 
 #define ERRCHK(x) do { \
 	rosprite_error err = x; \
@@ -50,6 +70,94 @@
 	} \
 } while(0)
 
+static const content_handler nssprite_content_handler = {
+	nssprite_create,
+	NULL,
+	nssprite_convert,
+	NULL,
+	nssprite_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nssprite_redraw,
+	NULL,
+	NULL,
+	NULL,
+	nssprite_clone,
+	NULL,
+	nssprite_content_type,
+	false
+};
+
+static const char *nssprite_types[] = {
+	"image/x-riscos-sprite"
+};
+
+static lwc_string *nssprite_mime_types[NOF_ELEMENTS(nssprite_types)];
+
+nserror nssprite_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(nssprite_mime_types); i++) {
+		lerror = lwc_intern_string(nssprite_types[i],
+				strlen(nssprite_types[i]),
+				&nssprite_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(nssprite_mime_types[i],
+				&nssprite_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nssprite_fini();
+
+	return error;
+}
+
+void nssprite_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nssprite_mime_types); i++) {
+		if (nssprite_mime_types[i] != NULL)
+			lwc_string_unref(nssprite_mime_types[i]);
+	}
+}
+
+nserror nssprite_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	nssprite_content *sprite;
+	nserror error;
+
+	sprite = talloc_zero(0, nssprite_content);
+	if (sprite == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&sprite->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(sprite);
+		return error;
+	}
+
+	*c = (struct content *) sprite;
+
+	return NSERROR_OK;
+}
+
 /**
  * Convert a CONTENT_SPRITE for display.
  *
@@ -58,6 +166,7 @@
 
 bool nssprite_convert(struct content *c)
 {
+	nssprite_content *nssprite = (nssprite_content *) c;
 	union content_msg_data msg_data;
 
 	struct rosprite_mem_context* ctx;
@@ -72,7 +181,7 @@ bool nssprite_convert(struct content *c)
 	struct rosprite_area* sprite_area;
 	ERRCHK(rosprite_load(rosprite_mem_reader, ctx, &sprite_area));
 	rosprite_destroy_mem_context(ctx);
-	c->data.nssprite.sprite_area = sprite_area;
+	nssprite->sprite_area = sprite_area;
 
 	assert(sprite_area->sprite_count > 0);
 
@@ -126,8 +235,10 @@ bool nssprite_convert(struct content *c)
 
 void nssprite_destroy(struct content *c)
 {
-	if (c->data.nssprite.sprite_area != NULL)
-		rosprite_destroy_sprite_area(c->data.nssprite.sprite_area);
+	nssprite_content *sprite = (nssprite_content *) c;
+
+	if (sprite->sprite_area != NULL)
+		rosprite_destroy_sprite_area(sprite->sprite_area);
 	if (c->bitmap != NULL)
 		bitmap_destroy(c->bitmap);
 }
@@ -146,16 +257,38 @@ bool nssprite_redraw(struct content *c, int x, int y,
 }
 
 
-bool nssprite_clone(const struct content *old, struct content *new_content)
+nserror nssprite_clone(const struct content *old, struct content **newc)
 {
+	nssprite_content *sprite;
+	nserror error;
+
+	sprite = talloc_zero(0, nssprite_content);
+	if (sprite == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &sprite->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&sprite->base);
+		return error;
+	}
+
 	/* Simply replay convert */
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (nssprite_convert(new_content) == false)
-			return false;
+		if (nssprite_convert(&sprite->base) == false) {
+			content_destroy(&sprite->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) sprite;
+
+	return NSERROR_OK;
+}
+
+content_type nssprite_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif

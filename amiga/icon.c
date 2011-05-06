@@ -44,6 +44,7 @@
 #include "content/content_protected.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/url.h"
 
@@ -51,6 +52,112 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 		ULONG trans, ULONG pals1, struct ColorRegister *pal1, int alpha);
 
 #ifdef WITH_AMIGA_ICON
+
+typedef struct amiga_icon_content {
+	struct content base;
+} amiga_icon_content;
+
+static nserror amiga_icon_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static bool amiga_icon_convert(struct content *c);
+static void amiga_icon_destroy(struct content *c);
+static bool amiga_icon_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static nserror amiga_icon_clone(const struct content *old, 
+		struct content **newc);
+static content_type amiga_icon_content_type(lwc_string *mime_type);
+
+static const content_handler amiga_icon_content_handler = {
+	amiga_icon_create,
+	NULL,
+	amiga_icon_convert,
+	NULL,
+	amiga_icon_destroy,
+	NULL,
+	NULL,
+	NULL,
+	amiga_icon_redraw,
+	NULL,
+	NULL,
+	NULL,
+	amiga_icon_clone,
+	NULL,
+	amiga_icon_content_type,
+	false
+};
+
+static const char *amiga_icon_types[] = {
+	"image/x-amiga-icon"
+};
+
+static lwc_string *amiga_icon_mime_types[NOF_ELEMENTS(amiga_icon_types)];
+
+nserror amiga_icon_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(amiga_icon_mime_types); i++) {
+		lerror = lwc_intern_string(amiga_icon_types[i],
+				strlen(amiga_icon_types[i]),
+				&amiga_icon_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(
+				amiga_icon_mime_types[i],
+				&amiga_icon_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	amiga_icon_fini();
+
+	return error;
+}
+
+void amiga_icon_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(amiga_icon_mime_types); i++) {
+		if (amiga_icon_mime_types[i] != NULL)
+			lwc_string_unref(amiga_icon_mime_types[i]);
+	}
+}
+
+nserror amiga_icon_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	amiga_icon_content *ai;
+	nserror error;
+
+	ai = talloc_zero(0, amiga_icon_content);
+	if (ai == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&ai->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(ai);
+		return error;
+	}
+
+	*c = (struct content *) ai;
+
+	return NSERROR_OK;
+}
 
 /**
  * Convert a CONTENT_AMIGA_ICON for display.
@@ -70,7 +177,7 @@ bool amiga_icon_convert(struct content *c)
 	int err = 0;
 	uint8 r, g, b, a;
 	ULONG offset;
-	char *url;
+	const char *url;
 	char *filename;
 	char *p;
 	ULONG trans, pals1;
@@ -119,7 +226,7 @@ bool amiga_icon_convert(struct content *c)
 		if(dobj) FreeDiskObject(dobj);
 		return false;
 	}
-	imagebuf = bitmap_get_buffer(c->bitmap);
+	imagebuf = (ULONG *) bitmap_get_buffer(c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -138,7 +245,7 @@ bool amiga_icon_convert(struct content *c)
 	    	        ICONCTRLA_GetPaletteSize1, &pals1,
     	    	    TAG_DONE);
 
-		imagebufptr = amiga_icon_convertcolouricon32((UBYTE *)imagebufptr,
+		imagebufptr = (unsigned char *) amiga_icon_convertcolouricon32((UBYTE *)imagebufptr,
 						width, height, trans, pals1, pal1, 0xff);
 	}
 
@@ -197,16 +304,38 @@ bool amiga_icon_redraw(struct content *c, int x, int y,
 }
 
 
-bool amiga_icon_clone(const struct content *old, struct content *new_content)
+nserror amiga_icon_clone(const struct content *old, struct content **newc)
 {
+	amiga_icon_content *ai;
+	nserror error;
+
+	ai = talloc_zero(0, amiga_icon_content);
+	if (ai == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &ai->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&ai->base);
+		return error;
+	}
+
 	/* Simply replay convert */
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (amiga_icon_convert(new_content) == false)
-			return false;
+		if (amiga_icon_convert(&ai->base) == false) {
+			content_destroy(&ai->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) ai;
+
+	return NSERROR_OK;
+}
+
+content_type amiga_icon_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif /* WITH_AMIGA_ICON */
@@ -317,12 +446,6 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 
 	if((format == IDFMT_DIRECTMAPPED) || (format == IDFMT_PALETTEMAPPED))
 	{
-#ifdef WITH_BMP
-		if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
-		{
-			nsico_set_bitmap_from_size(icon, 16, 16);
-		}
-#endif
 		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 		{
 			bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16, NULL);

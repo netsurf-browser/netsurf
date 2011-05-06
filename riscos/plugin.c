@@ -53,9 +53,8 @@
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
 #include "utils/config.h"
-#include "content/content.h"
+#include "content/content_protected.h"
 #include "content/fetch.h"
-#include "content/fetchcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "render/html.h"
@@ -66,9 +65,31 @@
 #include "riscos/toolbar.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
+#include "utils/talloc.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 
+struct plugin_stream;
+
+/* We have one content per instance of a plugin */
+typedef struct plugin_content {
+	struct content base;
+
+	struct browser_window *bw;	/* window containing this content */
+	struct content *page;		/* parent content */
+	struct box *box;		/* box containing this content */
+	char *taskname;			/* plugin task to launch */
+	char *filename;			/* filename of parameters file */
+	bool opened;			/* has this plugin been opened? */
+	int repeated;			/* indication of opening state */
+	unsigned int browser;		/* browser handle */
+	unsigned int plugin;		/* plugin handle */
+	unsigned int plugin_task;	/* plugin task handle */
+	bool reformat_pending;		/* is a reformat pending? */
+	int width, height;		/* reformat width & height */
+	struct plugin_stream *streams;	/* list of active streams */
+} plugin_content;
 
 typedef enum {
 	PLUGIN_PARAMETER_DATA    = 1,
@@ -96,8 +117,8 @@ struct plugin_param_item {
 struct plugin_stream {
 	struct plugin_stream *next;	/* next in list */
 
-	struct content *plugin;		/* the plugin content */
-	struct content *c;		/* the content being fetched for
+	plugin_content *plugin;		/* the plugin content */
+	plugin_content *c;		/* the content being fetched for
 					 * this stream (may be the same as
 					 * plugin iff we've been asked to
 					 * fetch the data resource for the
@@ -148,9 +169,26 @@ struct plugin_stream {
 #define HELPER_PREFIX "Alias$@HelperType_"
 #define SYSVAR_BUF_SIZE (25)		/* size of buffer to hold system variable */
 
-static bool plugin_create_sysvar(const char *mime_type, char* sysvar,
+static nserror plugin_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static nserror plugin_create_plugin_data(plugin_content *c);
+static bool plugin_convert(struct content *c);
+static void plugin_reformat(struct content *c, int width, int height);
+static void plugin_destroy(struct content *c);
+static bool plugin_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static void plugin_open(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params);
+static void plugin_close(struct content *c);
+static nserror plugin_clone(const struct content *old, struct content **newc);
+
+static bool plugin_create_sysvar(lwc_string *mime_type, char *sysvar,
 		bool helper);
-static void plugin_create_stream(struct content *plugin, struct content *c,
+static void plugin_create_stream(plugin_content *plugin, plugin_content *c,
 		const char *url);
 static bool plugin_send_stream_new(struct plugin_stream *p);
 static void plugin_write_stream(struct plugin_stream *p,
@@ -160,7 +198,7 @@ static void plugin_stream_as_file_callback(void *p);
 static void plugin_write_stream_as_file(struct plugin_stream *p);
 static void plugin_destroy_stream(struct plugin_stream *p,
 		plugin_stream_destroy_reason reason);
-static bool plugin_write_parameters_file(struct content *c,
+static bool plugin_write_parameters_file(plugin_content *c,
 		struct object_params *params, const char *base);
 static int plugin_calculate_rsize(const char* name, const char* data,
 		const char* mime);
@@ -176,32 +214,61 @@ static void plugin_stream_callback(content_msg msg, struct content *c,
 static void plugin_fetch_callback(fetch_msg msg, void *p, const void *data,
 		unsigned long size);
 
+nserror plugin_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	plugin_content *plugin;
+	nserror error;
+
+	plugin = talloc_zero(0, plugin_content);
+	if (plugin == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&plugin->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(plugin);
+		return error;
+	}
+
+	error = plugin_create_plugin_data(plugin);
+	if (error != NSERROR_OK) {
+		talloc_free(plugin);
+		return error;
+	}
+
+	*c = (struct content *) plugin;
+
+	return NSERROR_OK;
+}
+
 /**
  * Initialises plugin system in readiness for receiving object data
  *
  * \param c      The content to hold the data
- * \param params Parameters associated with the content
- * \return true on success, false otherwise
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
-bool plugin_create(struct content *c, const http_parameter *params)
+nserror plugin_create_plugin_data(plugin_content *c)
 {
 	LOG(("plugin_create"));
-	c->data.plugin.bw = 0;
-	c->data.plugin.page = 0;
-	c->data.plugin.box = 0;
-	c->data.plugin.taskname = 0;
-	c->data.plugin.filename = 0;
-	c->data.plugin.opened = false;
-	c->data.plugin.repeated = 0;
-	c->data.plugin.browser = 0;
-	c->data.plugin.plugin = 0;
-	c->data.plugin.plugin_task = 0;
-	c->data.plugin.reformat_pending = false;
-	c->data.plugin.width = 0;
-	c->data.plugin.height = 0;
-	c->data.plugin.streams = 0;
+	c->bw = 0;
+	c->page = 0;
+	c->box = 0;
+	c->taskname = 0;
+	c->filename = 0;
+	c->opened = false;
+	c->repeated = 0;
+	c->browser = 0;
+	c->plugin = 0;
+	c->plugin_task = 0;
+	c->reformat_pending = false;
+	c->width = 0;
+	c->height = 0;
+	c->streams = 0;
 
-	return true;
+	return NSERROR_OK;
 }
 
 /**
@@ -229,11 +296,13 @@ bool plugin_convert(struct content *c)
  */
 void plugin_destroy(struct content *c)
 {
+	plugin_content *plugin = (plugin_content *) c;
+
 	LOG(("plugin_destroy"));
-	if (c->data.plugin.taskname)
-		free(c->data.plugin.taskname);
-	if (c->data.plugin.filename)
-		free(c->data.plugin.filename);
+	if (plugin->taskname)
+		free(plugin->taskname);
+	if (plugin->filename)
+		free(plugin->filename);
 }
 
 /**
@@ -271,6 +340,7 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params)
 {
+	plugin_content *plugin = (plugin_content *) c;
 	bool standalone = false, helper = false;
 	const char *base;
 	char sysvar[SYSVAR_BUF_SIZE];
@@ -278,9 +348,12 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	plugin_full_message_open pmo;
 	wimp_window_state state;
 	os_error *error;
+	lwc_string *mime_type;
 
 	if (option_no_plugins)
 		return;
+
+	mime_type = content__get_mime_type(c);
 
 	if (!params) {
 		/* this is a standalone plugin, so fudge the parameters */
@@ -290,12 +363,14 @@ void plugin_open(struct content *c, struct browser_window *bw,
 			goto error;
 		}
 
-		params->data = strdup(c->url);
+		params->data = strdup(content__get_url(c));
 		if (!params->data) {
 			warn_user("NoMemory", 0);
 			goto error;
 		}
-		params->type = strdup(c->mime_type);
+
+		params->type = strndup(lwc_string_data(mime_type), 
+				lwc_string_length(mime_type));
 		if (!params->type) {
 			warn_user("NoMemory", 0);
 			goto error;
@@ -305,9 +380,9 @@ void plugin_open(struct content *c, struct browser_window *bw,
 
 	/* we only do this here because the box is needed by
 	 * write_parameters_file. Ideally it would be at the
-	 * end of this function with the other writes to c->data.plugin
+	 * end of this function with the other writes to plugin
 	 */
-	c->data.plugin.box = box;
+	plugin->box = box;
 
 	if (params->codebase)
 		base = params->codebase;
@@ -317,11 +392,11 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		base = c->url;
 
 	LOG(("writing parameters file"));
-	if (!plugin_write_parameters_file(c, params, base))
+	if (!plugin_write_parameters_file(plugin, params, base))
 		goto error;
 
 	/* get contents of Alias$@PlugInType_xxx variable */
-	if (!plugin_create_sysvar(c->mime_type, sysvar, false))
+	if (!plugin_create_sysvar(mime_type, sysvar, false))
 		goto error;
 
 	varval = getenv(sysvar);
@@ -340,14 +415,14 @@ void plugin_open(struct content *c, struct browser_window *bw,
 	}
 
 	/* The browser instance handle is the content struct pointer */
-	c->data.plugin.browser = (unsigned int)c;
+	plugin->browser = (unsigned int)c;
 
 	pmo.size = 60;
 	pmo.your_ref = 0;
 	pmo.action = message_PLUG_IN_OPEN;
 	pmo.flags = helper ? plugin_OPEN_AS_HELPER : 0;
 	pmo.reserved = 0;
-	pmo.browser = (plugin_b)c->data.plugin.browser;
+	pmo.browser = (plugin_b)plugin->browser;
 	pmo.parent_window = bw->window->window;
 
 	/* initial position/dimensions */
@@ -371,14 +446,14 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		pmo.bbox.y1 = 100;
 	}
 
-	error = xmimemaptranslate_mime_type_to_filetype(c->mime_type,
-						&pmo.file_type);
+	error = xmimemaptranslate_mime_type_to_filetype(
+			lwc_string_data(mime_type), &pmo.file_type);
 	if (error) {
 		goto error;
 	}
-	pmo.filename.pointer = c->data.plugin.filename;
+	pmo.filename.pointer = plugin->filename;
 
-	c->data.plugin.repeated = 0;
+	plugin->repeated = 0;
 
 	LOG(("sending message"));
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
@@ -389,9 +464,9 @@ void plugin_open(struct content *c, struct browser_window *bw,
 		goto error;
 	}
 
-	c->data.plugin.bw = bw;
-	c->data.plugin.page = page;
-	c->data.plugin.taskname = strdup(varval);
+	plugin->bw = bw;
+	plugin->page = page;
+	plugin->taskname = strdup(varval);
 
 error:
 	/* clean up standalone stuff */
@@ -400,6 +475,8 @@ error:
 		free(params->data);
 		free(params);
 	}
+
+	lwc_string_unref(mime_type);
 
 	LOG(("done"));
 }
@@ -412,17 +489,18 @@ error:
  */
 void plugin_close(struct content *c)
 {
+	plugin_content *plugin = (plugin_content *) c;
 	struct plugin_stream *p, *q;
 	plugin_full_message_close pmc;
 	os_error *error;
 
 	LOG(("plugin_close"));
 
-	if (!plugin_active(c) || !c->data.plugin.opened)
+	if (!plugin_active(c) || !plugin->opened)
 		return;
 
 	/* destroy all active streams */
-	for (p = c->data.plugin.streams; p; p = q) {
+	for (p = plugin->streams; p; p = q) {
 		q = p->next;
 
 		plugin_destroy_stream(p, plugin_STREAM_DESTROY_USER_REQUEST);
@@ -432,18 +510,18 @@ void plugin_close(struct content *c)
 	pmc.your_ref = 0;
 	pmc.action = message_PLUG_IN_CLOSE;
 	pmc.flags = 0;
-	pmc.browser = (plugin_b)c->data.plugin.browser;
-	pmc.plugin = (plugin_p)c->data.plugin.plugin;
+	pmc.browser = (plugin_b)plugin->browser;
+	pmc.plugin = (plugin_p)plugin->plugin;
 
 	LOG(("sending message"));
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
-		(wimp_message *)&pmc, (wimp_t)c->data.plugin.plugin_task);
+		(wimp_message *)&pmc, (wimp_t)plugin->plugin_task);
 	if (error) {
 		return;
 	}
 
 	/* delete any temporary files */
-	for (p = c->data.plugin.streams; p; p = q) {
+	for (p = plugin->streams; p; p = q) {
 		q = p->next;
 
 		assert(p->type == AS_FILE);
@@ -458,7 +536,7 @@ void plugin_close(struct content *c)
 	}
 
 	/* paranoia */
-	c->data.plugin.streams = 0;
+	plugin->streams = 0;
 }
 
 /**
@@ -470,6 +548,7 @@ void plugin_close(struct content *c)
  */
 void plugin_reformat(struct content *c, int width, int height)
 {
+	plugin_content *plugin = (plugin_content *) c;
 	plugin_full_message_reshape pmr;
 	int x, y;
 	os_error *error;
@@ -480,26 +559,26 @@ void plugin_reformat(struct content *c, int width, int height)
 		return;
 
 	/* if the plugin hasn't yet been opened, queue the reformat */
-	if (!c->data.plugin.opened) {
+	if (!plugin->opened) {
 		LOG(("queuing"));
-		c->data.plugin.reformat_pending = true;
-		c->data.plugin.width = width;
-		c->data.plugin.height = height;
+		plugin->reformat_pending = true;
+		plugin->width = width;
+		plugin->height = height;
 		return;
 	}
 
-	c->data.plugin.reformat_pending = false;
+	plugin->reformat_pending = false;
 
 	/* top left of plugin area, relative to top left of browser window */
-	if (c->data.plugin.box) {
-		box_coords(c->data.plugin.box, &x, &y);
+	if (plugin->box) {
+		box_coords(plugin->box, &x, &y);
 	}
 	else {
 		/* standalone */
 		x = 10 / 2;
 		/* avoid toolbar */
 		y = (10 + ro_toolbar_height(
-				c->data.plugin.bw->window->toolbar0)) / 2;
+				plugin->bw->window->toolbar)) / 2;
 	}
 
 	pmr.size = 52;
@@ -507,15 +586,15 @@ void plugin_reformat(struct content *c, int width, int height)
 	pmr.action = message_PLUG_IN_RESHAPE;
 	pmr.flags = 0;
 
-	pmr.plugin = (plugin_p)c->data.plugin.plugin;
-	pmr.browser = (plugin_b)c->data.plugin.browser;
-	pmr.parent_window = c->data.plugin.bw->window->window;
+	pmr.plugin = (plugin_p)plugin->plugin;
+	pmr.browser = (plugin_b)plugin->browser;
+	pmr.parent_window = plugin->bw->window->window;
 	pmr.bbox.x0 = x * 2;
 	pmr.bbox.y1 = -y * 2;
 
-	if (c->data.plugin.box) {
-		pmr.bbox.x1 = pmr.bbox.x0 + c->data.plugin.box->width * 2;
-		pmr.bbox.y0 = pmr.bbox.y1 - c->data.plugin.box->height * 2;
+	if (plugin->box) {
+		pmr.bbox.x1 = pmr.bbox.x0 + plugin->box->width * 2;
+		pmr.bbox.y0 = pmr.bbox.y1 - plugin->box->height * 2;
 	}
 	else {
 		/* standalone */
@@ -525,27 +604,46 @@ void plugin_reformat(struct content *c, int width, int height)
 
 	LOG(("sending message"));
 	error = xwimp_send_message(wimp_USER_MESSAGE, (wimp_message *) &pmr,
-				(wimp_t)c->data.plugin.plugin_task);
+				(wimp_t)plugin->plugin_task);
 	if (error) {
 		return;
 	}
 }
 
 
-bool plugin_clone(const struct content *old, struct content *new_content)
+nserror plugin_clone(const struct content *old, struct content **newc)
 {
+	plugin_content *plugin;
+	nserror error;
+
 	LOG(("plugin_clone"));
+
+	plugin = talloc_zero(0, plugin_content);
+	if (plugin == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &plugin->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&plugin->base);
+		return error;
+	}
+
 	/* We "clone" the old content by replaying creation and conversion */
-	if (plugin_create(new_content, NULL) == false)
-		return false;
+	error = plugin_create_plugin_data(plugin);
+	if (error != NSERROR_OK) {
+		content_destroy(&plugin->base);
+		return error;
+	}
 
 	if (old->status == CONTENT_STATUS_READY || 
 			old->status == CONTENT_STATUS_DONE) {
-		if (plugin_convert(new_content) == false)
-			return false;
+		if (plugin_convert(&plugin->base) == false) {
+			content_destroy(&plugin->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
 
@@ -558,12 +656,13 @@ bool plugin_clone(const struct content *old, struct content *new_content)
  * \param helper    Whether we're interested in the helper variable
  * \return true on success, false otherwise.
  */
-bool plugin_create_sysvar(const char *mime_type, char* sysvar, bool helper)
+bool plugin_create_sysvar(lwc_string *mime_type, char* sysvar, bool helper)
 {
 	unsigned int *fv;
 	os_error *e;
 
-	e = xmimemaptranslate_mime_type_to_filetype(mime_type, (bits *) &fv);
+	e = xmimemaptranslate_mime_type_to_filetype(
+			lwc_string_data(mime_type), (bits *) &fv);
 	if (e) {
 		return false;
 	}
@@ -576,65 +675,37 @@ bool plugin_create_sysvar(const char *mime_type, char* sysvar, bool helper)
 }
 
 /**
- * Determines whether a content is handleable by a plugin
- *
- * \param mime_type The mime type of the content
- * \return true if the content is handleable, false otherwise
- */
-bool plugin_handleable(const char *mime_type)
-{
-	char sysvar[SYSVAR_BUF_SIZE];
-
-	/* Look for Alias$@PluginType_xxx */
-	if (plugin_create_sysvar(mime_type, sysvar, false)) {
-		if (getenv(sysvar) != 0) {
-			return true;
-		}
-	}
-#if 0
-	/* Look for Alias$@HelperType_xxx */
-	if (plugin_create_sysvar(mime_type, sysvar, true)) {
-		if (getenv(sysvar) != 0) {
-			return true;
-		}
-	}
-#endif
-	return false;
-}
-
-
-/**
  * Handle a bounced plugin_open message
  *
  * \param message The message to handle
  */
 void plugin_open_msg(wimp_message *message)
 {
-	struct content *c;
+	plugin_content *c;
 	os_error *error;
 	plugin_message_open *pmo = (plugin_message_open *)&message->data;
 
 	/* retrieve our content */
-	c = (struct content *)pmo->browser;
+	c = (plugin_content *)pmo->browser;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!c || !plugin_active(&c->base))
 		return;
 
 	LOG(("bounced"));
 
 	/* bail if we've already tried twice */
-	if (c->data.plugin.repeated >= 1)
+	if (c->repeated >= 1)
 		return;
 
 	/* start plugin app */
-	error = xwimp_start_task((char const*)c->data.plugin.taskname, 0);
+	error = xwimp_start_task((char const*)c->taskname, 0);
 	if (error) {
 		return;
 	}
 
 	/* indicate we've already sent this message once */
-	c->data.plugin.repeated++;
+	c->repeated++;
 
 	/* and resend the message */
 	LOG(("resending"));
@@ -653,29 +724,28 @@ void plugin_open_msg(wimp_message *message)
  */
 void plugin_opening(wimp_message *message)
 {
-	struct content *c;
+	plugin_content *c;
 	plugin_message_opening *pmo =
 				(plugin_message_opening *)&message->data;
 
 	/* retrieve our content */
-	c = (struct content *)pmo->browser;
+	c = (plugin_content *)pmo->browser;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!c || !plugin_active(&c->base))
 		return;
 
-	c->data.plugin.repeated = 2; /* make sure open_msg does nothing */
-	c->data.plugin.plugin = (unsigned int)pmo->plugin;
-	c->data.plugin.plugin_task = (unsigned int)message->sender;
-	c->data.plugin.opened = true;
+	c->repeated = 2; /* make sure open_msg does nothing */
+	c->plugin = (unsigned int)pmo->plugin;
+	c->plugin_task = (unsigned int)message->sender;
+	c->opened = true;
 
 	LOG(("opening"));
 
 	/* if there's a reformat pending, do so now */
-	if (c->data.plugin.reformat_pending) {
+	if (c->reformat_pending) {
 		LOG(("do pending reformat"));
-		plugin_reformat(c, c->data.plugin.width,
-					c->data.plugin.height);
+		plugin_reformat(&c->base, c->width, c->height);
 	}
 
 	if (pmo->flags & plugin_OPENING_WANTS_DATA_FETCHING) {
@@ -686,7 +756,7 @@ void plugin_opening(wimp_message *message)
 	if (!(pmo->flags & plugin_OPENING_WILL_DELETE_PARAMETERS)) {
 		LOG(("we delete file"));
 		/* we don't care if this fails */
-		xosfile_delete(c->data.plugin.filename, 0, 0, 0, 0, 0);
+		xosfile_delete(c->filename, 0, 0, 0, 0, 0);
 	}
 }
 
@@ -709,25 +779,24 @@ void plugin_close_msg(wimp_message *message)
  */
 void plugin_closed(wimp_message *message)
 {
-	struct content *c;
+	plugin_content *c;
 	plugin_message_closed *pmc = (plugin_message_closed *)&message->data;
 
 	/* retrieve our content */
-	c = (struct content*)pmc->browser;
+	c = (plugin_content*)pmc->browser;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!c || !plugin_active(&c->base))
 		return;
 
 	LOG(("died"));
-	c->data.plugin.opened = false;
+	c->opened = false;
 
 	if (pmc->flags & plugin_CLOSED_WITH_ERROR) {
 		LOG(("plugin_closed: 0x%x: %s", pmc->error_number,
 							pmc->error_text));
 		/* not really important enough to do a warn_user */
-		gui_window_set_status(c->data.plugin.bw->window,
-					pmc->error_text);
+		gui_window_set_status(c->bw->window, pmc->error_text);
 	}
 }
 
@@ -738,16 +807,16 @@ void plugin_closed(wimp_message *message)
  */
 void plugin_reshape_request(wimp_message *message)
 {
-	struct content *c;
+	plugin_content *c;
 	struct box *b;
 	union content_msg_data data;
 	plugin_message_reshape_request *pmrr = (plugin_message_reshape_request*)&message->data;
 
 	/* retrieve our content */
-	c = (struct content *)pmrr->browser;
+	c = (plugin_content *)pmrr->browser;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!c || !plugin_active(&c->base))
 		return;
 
 	LOG(("handling reshape request"));
@@ -756,28 +825,26 @@ void plugin_reshape_request(wimp_message *message)
 	 * so we set it up here. This is ok as the content won't change
 	 * under us. However, the box may not exist (if we're standalone)
 	 */
-	if (c->data.plugin.box)
-		c->data.plugin.box->object = c;
+	if (c->box)
+		c->box->object = c;
 
 	/* should probably shift by x and y eig values here */
-	c->width = pmrr->size.x / 2;
-	c->height = pmrr->size.y / 2;
+	c->base.width = pmrr->size.x / 2;
+	c->base.height = pmrr->size.y / 2;
 
-	if (c->data.plugin.box)
+	if (c->box)
 		/* invalidate parent box widths */
-		for (b = c->data.plugin.box->parent; b; b = b->parent)
+		for (b = c->box->parent; b; b = b->parent)
 			b->max_width = UNKNOWN_MAX_WIDTH;
 
-	if (c->data.plugin.page)
+	if (c->page)
 		/* force a reformat of the parent */
-		content_reformat(c->data.plugin.page,
-				c->data.plugin.page->available_width, 0);
+		content__reformat(c->page, c->page->available_width, 0);
 
 	/* redraw the window */
-	content_broadcast(c->data.plugin.bw->current_content,
-				CONTENT_MSG_REFORMAT, data);
+	content_broadcast(c->bw->current_content, CONTENT_MSG_REFORMAT, data);
 	/* reshape the plugin */
-	plugin_reformat(c, c->width, c->height);
+	plugin_reformat(&c->base, c->base.width, c->base.height);
 }
 
 /**
@@ -787,17 +854,17 @@ void plugin_reshape_request(wimp_message *message)
  */
 void plugin_status(wimp_message *message)
 {
-	struct content *c;
+	plugin_content *c;
 	plugin_message_status *pms = (plugin_message_status*)&message->data;
 
 	/* retrieve our content */
-	c = (struct content *)pms->browser;
+	c = (plugin_content *)pms->browser;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!c || !plugin_active(&c->base))
 		return;
 
-	gui_window_set_status(c->data.plugin.bw->window,
+	gui_window_set_status(c->bw->window,
 			(const char*)plugin_get_string_value(pms->message,
 								(char*)pms));
 }
@@ -819,7 +886,7 @@ void plugin_stream_new(wimp_message *message)
 	p = (struct plugin_stream *)pmsn->browser_stream;
 
 	/* check we expect this message */
-	if (!p || !p->plugin || !plugin_active(p->plugin))
+	if (!p || !p->plugin || !plugin_active(&p->plugin->base))
 		return;
 
 	/* response to a message we sent */
@@ -884,7 +951,7 @@ void plugin_stream_written(wimp_message *message)
 	p = (struct plugin_stream *)pmsw->browser_stream;
 
 	/* check we expect this message */
-	if (!p || !p->plugin || !plugin_active(p->plugin))
+	if (!p || !p->plugin || !plugin_active(&p->plugin->base))
 		return;
 
 	LOG(("got written"));
@@ -899,7 +966,7 @@ void plugin_stream_written(wimp_message *message)
  */
 void plugin_url_access(wimp_message *message)
 {
-	struct content *c;
+	plugin_content *c;
 	plugin_full_message_notify pmn;
 	os_error *error;
 	plugin_message_url_access *pmua =
@@ -913,10 +980,10 @@ void plugin_url_access(wimp_message *message)
 	file = (pmua->flags & plugin_URL_ACCESS_POST_FILE);
 
 	/* retrieve our content */
-	c = (struct content *)pmua->browser;
+	c = (plugin_content *)pmua->browser;
 
 	/* check we expect this message */
-	if (!c || !plugin_active(c))
+	if (!c || !plugin_active(&c->base))
 		return;
 
 	/* fetch url to window */
@@ -930,7 +997,7 @@ void plugin_url_access(wimp_message *message)
 		 */
 		if (!post) { /* GET request */
 			if (strcasecmp(url,
-			    c->data.plugin.bw->current_content->url) &&
+			    c->bw->current_content->url) &&
 			    (strcasecmp(window, "_self") == 0 ||
 			    strcasecmp(window, "_parent") == 0 ||
 			    strcasecmp(window, "_top") == 0 ||
@@ -940,7 +1007,7 @@ void plugin_url_access(wimp_message *message)
 				 * end up in an infinite loop of fetching
 				 * the same page
 				 */
-				browser_window_go(c->data.plugin.bw, url, 0, true);
+				browser_window_go(c->bw, url, 0, true);
 			}
 			else if (!option_block_popups &&
 					strcasecmp(window, "_blank") == 0) {
@@ -992,13 +1059,12 @@ void plugin_url_access(wimp_message *message)
  * \param c The content being fetched, or NULL.
  * \param url The url of the resource to fetch, or NULL if content provided.
  */
-void plugin_create_stream(struct content *plugin, struct content *c,
+void plugin_create_stream(plugin_content *plugin, plugin_content *c,
 		const char *url)
 {
 	struct plugin_stream *p;
 
-	assert(plugin && plugin->type == CONTENT_PLUGIN &&
-			((c && !url) || (!c && url)));
+	assert(plugin && ((c && !url) || (!c && url)));
 
 	p = malloc(sizeof(struct plugin_stream));
 	if (!p)
@@ -1019,8 +1085,8 @@ void plugin_create_stream(struct content *plugin, struct content *c,
 	p->stream.normal.consumed = 0;
 
 	/* add to head of list */
-	p->next = plugin->data.plugin.streams;
-	plugin->data.plugin.streams = p;
+	p->next = plugin->streams;
+	plugin->streams = p;
 
 	if (url)
 		/* we'll send this later, once some data is arriving */
@@ -1044,11 +1110,11 @@ bool plugin_send_stream_new(struct plugin_stream *p)
 	pmsn.your_ref = 0;
 	pmsn.action = message_PLUG_IN_STREAM_NEW;
 	pmsn.flags = 0;
-	pmsn.plugin = (plugin_p)p->plugin->data.plugin.plugin;
-	pmsn.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsn.plugin = (plugin_p)p->plugin->plugin;
+	pmsn.browser = (plugin_b)p->plugin->browser;
 	pmsn.stream = (plugin_s)0;
 	pmsn.browser_stream = (plugin_bs)p;
-	pmsn.url.pointer = p->c->url;
+	pmsn.url.pointer = (char *) content__get_url(&p->c->base);
 	pmsn.end = p->c->total_size;
 	pmsn.last_modified_date = 0;
 	pmsn.notify_data = 0;
@@ -1058,7 +1124,7 @@ bool plugin_send_stream_new(struct plugin_stream *p)
 	LOG(("Sending message &4D548"));
 	error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
 		(wimp_message*)&pmsn,
-		(wimp_t)p->plugin->data.plugin.plugin_task);
+		(wimp_t)p->plugin->plugin_task);
 	if (error) {
 		plugin_stream_free(p);
 		return false;
@@ -1086,11 +1152,11 @@ void plugin_write_stream(struct plugin_stream *p, unsigned int consumed)
 	pmsw.your_ref = 0;
 	pmsw.action = message_PLUG_IN_STREAM_WRITE;
 	pmsw.flags = 0;
-	pmsw.plugin = (plugin_p)p->plugin->data.plugin.plugin;
-	pmsw.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsw.plugin = (plugin_p)p->plugin->plugin;
+	pmsw.browser = (plugin_b)p->plugin->browser;
 	pmsw.stream = (plugin_s)p->pluginh;
 	pmsw.browser_stream = (plugin_bs)p;
-	pmsw.url.pointer = p->c->url;
+	pmsw.url.pointer = (char *) content__get_url(&p->c->base);
 	/* end of stream is p->c->total_size
 	 * (which is conveniently 0 if unknown)
 	 */
@@ -1116,7 +1182,7 @@ void plugin_write_stream(struct plugin_stream *p, unsigned int consumed)
 		LOG(("Sending message &4D54A"));
 		error = xwimp_send_message(wimp_USER_MESSAGE_RECORDED,
 			(wimp_message *)&pmsw,
-			(wimp_t)p->plugin->data.plugin.plugin_task);
+			(wimp_t)p->plugin->plugin_task);
 		if (error) {
 			plugin_destroy_stream(p,
 					plugin_STREAM_DESTROY_ERROR);
@@ -1166,7 +1232,8 @@ void plugin_stream_as_file_callback(void *p)
 	schedule_remove(plugin_stream_as_file_callback, p);
 
 	if (s->c->source_size < s->c->total_size ||
-			s->c->status != CONTENT_STATUS_DONE) {
+			content__get_status(&s->c->base) != 
+					CONTENT_STATUS_DONE) {
 		/* not got all the data so wait some more */
 		schedule(PLUGIN_SCHEDULE_WAIT,
 				plugin_stream_as_file_callback, p);
@@ -1211,11 +1278,11 @@ void plugin_write_stream_as_file(struct plugin_stream *p)
 	pmsaf.your_ref = 0;
 	pmsaf.action = message_PLUG_IN_STREAM_AS_FILE;
 	pmsaf.flags = 0;
-	pmsaf.plugin = (plugin_p)p->plugin->data.plugin.plugin;
-	pmsaf.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsaf.plugin = (plugin_p)p->plugin->plugin;
+	pmsaf.browser = (plugin_b)p->plugin->browser;
 	pmsaf.stream = (plugin_s)p->pluginh;
 	pmsaf.browser_stream = (plugin_bs)p;
-	pmsaf.url.pointer = p->c->url;
+	pmsaf.url.pointer = (char *) content__get_url(&p->c->base);
 	pmsaf.end = p->c->total_size;
 	pmsaf.last_modified_date = 0;
 	pmsaf.notify_data = 0;
@@ -1239,7 +1306,7 @@ void plugin_write_stream_as_file(struct plugin_stream *p)
 	LOG(("Sending message &4D54C"));
 	error = xwimp_send_message(wimp_USER_MESSAGE,
 		(wimp_message *)&pmsaf,
-		(wimp_t)p->plugin->data.plugin.plugin_task);
+		(wimp_t)p->plugin->plugin_task);
 	if (error) {
 		plugin_destroy_stream(p, plugin_STREAM_DESTROY_ERROR);
 		return;
@@ -1274,11 +1341,11 @@ void plugin_destroy_stream(struct plugin_stream *p,
 	pmsd.your_ref = 0;
 	pmsd.action = message_PLUG_IN_STREAM_DESTROY;
 	pmsd.flags = 0;
-	pmsd.plugin = (plugin_p)p->plugin->data.plugin.plugin;
-	pmsd.browser = (plugin_b)p->plugin->data.plugin.browser;
+	pmsd.plugin = (plugin_p)p->plugin->plugin;
+	pmsd.browser = (plugin_b)p->plugin->browser;
 	pmsd.stream = (plugin_s)p->pluginh;
 	pmsd.browser_stream = (plugin_bs)p;
-	pmsd.url.pointer = p->c->url;
+	pmsd.url.pointer = (char *) content__get_url(&p->c->base);
 	pmsd.end = p->c->total_size;
 	pmsd.last_modified_date = 0;
 	pmsd.notify_data = 0;
@@ -1287,7 +1354,7 @@ void plugin_destroy_stream(struct plugin_stream *p,
 	LOG(("Sending message &4D549"));
 	error = xwimp_send_message(wimp_USER_MESSAGE,
 		(wimp_message *)&pmsd,
-		(wimp_t)p->plugin->data.plugin.plugin_task);
+		(wimp_t)p->plugin->plugin_task);
 	if (error) {
 		LOG(("0x%x %s", error->errnum, error->errmess));
 	}
@@ -1303,7 +1370,7 @@ void plugin_destroy_stream(struct plugin_stream *p,
  * \param  base    base URL for object
  * \return true on success, false otherwise
  */
-bool plugin_write_parameters_file(struct content *c,
+bool plugin_write_parameters_file(plugin_content *c,
 		struct object_params *params, const char *base)
 {
 	struct object_param *p;
@@ -1316,17 +1383,17 @@ bool plugin_write_parameters_file(struct content *c,
 	xosfile_create_dir("<Wimp$ScrapDir>.WWW", 77);
 	xosfile_create_dir("<Wimp$ScrapDir>.WWW.NetSurf", 77);
 	/* path + filename + terminating NUL */
-	c->data.plugin.filename =
+	c->filename =
 		calloc(strlen(getenv("Wimp$ScrapDir"))+13+10, sizeof(char));
 
-	if (!c->data.plugin.filename) {
+	if (!c->filename) {
 		LOG(("malloc failed"));
 		warn_user("NoMemory", 0);
 		return false;
 	}
-	sprintf(c->data.plugin.filename, "%s.WWW.NetSurf.p%x",
+	sprintf(c->filename, "%s.WWW.NetSurf.p%x",
 			getenv("Wimp$ScrapDir"), (unsigned int)params);
-	LOG(("filename: %s", c->data.plugin.filename));
+	LOG(("filename: %s", c->filename));
 
 	/* Write object attributes first */
 
@@ -1413,11 +1480,10 @@ bool plugin_write_parameters_file(struct content *c,
 		goto error;
 
 	/* BGCOLOR */
-	if (c->data.plugin.box && c->data.plugin.box->style &&
-			c->data.plugin.box->style->background_color
-								<= 0xFFFFFF)
+	if (c->box && c->box->style &&
+			c->box->style->background_color <= 0xFFFFFF)
 		sprintf(bgcolor, "%X00",
-		(unsigned int)c->data.plugin.box->style->background_color);
+		(unsigned int)c->box->style->background_color);
 	else
 		sprintf(bgcolor, "FFFFFF");
 	if (!plugin_add_item_to_pilist(&pilist, PLUGIN_PARAMETER_SPECIAL,
@@ -1427,7 +1493,7 @@ bool plugin_write_parameters_file(struct content *c,
 		goto error;
 
 	/* Write file */
-	fp = fopen(c->data.plugin.filename, "wb+");
+	fp = fopen(c->filename, "wb+");
 
 	while (pilist != 0) {
 		fwrite(&pilist->type, sizeof(int), 1, fp);
@@ -1481,8 +1547,8 @@ error:
 		ppi = 0;
 	}
 
-	free(c->data.plugin.filename);
-	c->data.plugin.filename = 0;
+	free(c->filename);
+	c->filename = 0;
 	return false;
 }
 
@@ -1634,14 +1700,14 @@ void plugin_stream_free(struct plugin_stream *p)
 	/* free normal stream context. file streams get freed later */
 	if (p->type == NORMAL) {
 		struct plugin_stream *q;
-		for (q = p->plugin->data.plugin.streams; q && q->next != p;
+		for (q = p->plugin->streams; q && q->next != p;
 				q = q->next)
 			/* do nothing */;
-		assert(q || p == p->plugin->data.plugin.streams);
+		assert(q || p == p->plugin->streams);
 		if (q)
 			q->next = p->next;
 		else
-			p->plugin->data.plugin.streams = p->next;
+			p->plugin->streams = p->next;
 
 		free(p);
 	}

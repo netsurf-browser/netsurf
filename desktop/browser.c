@@ -454,7 +454,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
 			parent != NULL ? &child : NULL,
-			NULL, &c);
+			CONTENT_ANY, &c);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
 		gui_launch_url(url2);
 		free(url2);

@@ -27,6 +27,7 @@
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "render/box.h"
+#include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -71,10 +72,10 @@ struct imagemap {
 	struct imagemap *next;	/**< next entry in this hash chain */
 };
 
-static bool imagemap_add(struct content *c, const char *key,
+static bool imagemap_add(html_content *c, const char *key,
 		struct mapentry *list);
-static bool imagemap_create(struct content *c);
-static bool imagemap_extract_map(xmlNode *node, struct content *c,
+static bool imagemap_create(html_content *c);
+static bool imagemap_extract_map(xmlNode *node, html_content *c,
 		struct mapentry **entry);
 static bool imagemap_addtolist(xmlNode *n, char *base_url,
 		struct mapentry **entry);
@@ -92,13 +93,12 @@ static int imagemap_point_in_poly(int num, float *xpt, float *ypt,
  * \param list List of map regions
  * \return true on succes, false otherwise
  */
-bool imagemap_add(struct content *c, const char *key, struct mapentry *list)
+bool imagemap_add(html_content *c, const char *key, struct mapentry *list)
 {
 	struct imagemap *map;
 	unsigned int slot;
 
 	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
 	assert(key != NULL);
 	assert(list != NULL);
 
@@ -119,8 +119,8 @@ bool imagemap_add(struct content *c, const char *key, struct mapentry *list)
 
 	slot = imagemap_hash(key);
 
-	map->next = c->data.html.imagemaps[slot];
-	c->data.html.imagemaps[slot] = map;
+	map->next = c->imagemaps[slot];
+	c->imagemaps[slot] = map;
 
 	return true;
 }
@@ -131,15 +131,13 @@ bool imagemap_add(struct content *c, const char *key, struct mapentry *list)
  * \param c The containing content
  * \return true on success, false otherwise
  */
-bool imagemap_create(struct content *c)
+bool imagemap_create(html_content *c)
 {
 	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
 
-	if (c->data.html.imagemaps == NULL) {
-		c->data.html.imagemaps = calloc(HASH_SIZE,
-						 sizeof(struct imagemap));
-		if (c->data.html.imagemaps == NULL) {
+	if (c->imagemaps == NULL) {
+		c->imagemaps = calloc(HASH_SIZE, sizeof(struct imagemap));
+		if (c->imagemaps == NULL) {
 			return false;
 		}
 	}
@@ -152,21 +150,20 @@ bool imagemap_create(struct content *c)
  *
  * \param c The containing content
  */
-void imagemap_destroy(struct content *c)
+void imagemap_destroy(html_content *c)
 {
 	unsigned int i;
 
 	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
 
 	/* no imagemaps -> return */
-	if (c->data.html.imagemaps == NULL)
+	if (c->imagemaps == NULL)
 		return;
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		struct imagemap *map, *next;
 
-		map = c->data.html.imagemaps[i];
+		map = c->imagemaps[i];
 		while (map != NULL) {
 			next = map->next;
 			imagemap_freelist(map->list);
@@ -176,7 +173,7 @@ void imagemap_destroy(struct content *c)
 		}
 	}
 
-	free(c->data.html.imagemaps);
+	free(c->imagemaps);
 }
 
 /**
@@ -184,23 +181,22 @@ void imagemap_destroy(struct content *c)
  *
  * \param c The containing content
  */
-void imagemap_dump(struct content *c)
+void imagemap_dump(html_content *c)
 {
 	unsigned int i;
 
 	int j;
 
 	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
 
-	if (c->data.html.imagemaps == NULL)
+	if (c->imagemaps == NULL)
 		return;
 
 	for (i = 0; i != HASH_SIZE; i++) {
 		struct imagemap *map;
 		struct mapentry *entry;
 
-		map = c->data.html.imagemaps[i];
+		map = c->imagemaps[i];
 		while (map != NULL) {
 			LOG(("Imagemap: %s", map->key));
 
@@ -248,7 +244,7 @@ void imagemap_dump(struct content *c)
  * \param c The containing content
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_extract(xmlNode *node, struct content *c)
+bool imagemap_extract(xmlNode *node, html_content *c)
 {
 	xmlNode *this_node;
 	struct mapentry *entry = NULL;
@@ -306,7 +302,7 @@ bool imagemap_extract(xmlNode *node, struct content *c)
  * \param entry List of map entries
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_extract_map(xmlNode *node, struct content *c,
+bool imagemap_extract_map(xmlNode *node, html_content *c,
 		struct mapentry **entry)
 {
 	xmlNode *this_node;
@@ -320,7 +316,7 @@ bool imagemap_extract_map(xmlNode *node, struct content *c,
 		 */
 		if (strcmp((const char *) node->name, "area") == 0 ||
 		    strcmp((const char *) node->name, "a") == 0) {
-			if (imagemap_addtolist(node, c->data.html.base_url, 
+			if (imagemap_addtolist(node, c->base_url, 
 					entry) == false)
 				return false;
 		}
@@ -641,24 +637,23 @@ const char *imagemap_get(hlcache_handle *h, const char *key,
 		unsigned long click_x, unsigned long click_y,
 		const char **target)
 {
-	struct content *c = hlcache_handle_get_content(h);
+	html_content *c = (html_content *) hlcache_handle_get_content(h);
 	unsigned int slot = 0;
 	struct imagemap *map;
 	struct mapentry *entry;
 	unsigned long cx, cy;
 
 	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
 
 	if (key == NULL)
 		return NULL;
 
-	if (c->data.html.imagemaps == NULL)
+	if (c->imagemaps == NULL)
 		return NULL;
 
 	slot = imagemap_hash(key);
 
-	for (map = c->data.html.imagemaps[slot]; map != NULL; map = map->next) {
+	for (map = c->imagemaps[slot]; map != NULL; map = map->next) {
 		if (map->key != NULL && strcasecmp(map->key, key) == 0)
 			break;
 	}

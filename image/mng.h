@@ -28,32 +28,13 @@
 
 #include <stdbool.h>
 
-struct content;
-struct http_parameter;
-struct rect;
+nserror nsmng_init(void);
+void nsmng_fini(void);
 
-struct content_mng_data {
-	bool opaque_test_pending;
-	bool read_start;
-	bool read_resume;
-	int read_size;
-	bool waiting;
-	bool displayed;
-	void *handle;
-};
+#else
 
-bool nsmng_create(struct content *c, const struct http_parameter *params);
-bool nsmng_process_data(struct content *c, const char *data, unsigned int size);
-bool nsmng_convert(struct content *c);
-void nsmng_destroy(struct content *c);
-bool nsmng_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool nsmng_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-bool nsmng_clone(const struct content *old, struct content *new_content);
+#define nsmng_init() NSERROR_OK
+#define nsmng_fini() ((void) 0)
 
 #endif /* WITH_MNG */
 

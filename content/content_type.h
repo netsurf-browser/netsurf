@@ -30,56 +30,19 @@
 
 /** The type of a content. */
 typedef enum {
-	CONTENT_HTML,
-	CONTENT_TEXTPLAIN,
-	CONTENT_CSS,
-#ifdef WITH_JPEG
-	CONTENT_JPEG,
-#endif
-#ifdef WITH_GIF
-	CONTENT_GIF,
-#endif
-#ifdef WITH_BMP
-	CONTENT_BMP,
-	CONTENT_ICO,
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-	CONTENT_PNG,
-#endif
-#ifdef WITH_MNG
-	CONTENT_JNG,
-	CONTENT_MNG,
-#endif
-#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
-	CONTENT_SPRITE,
-#endif
-#ifdef WITH_DRAW
-	CONTENT_DRAW,
-#endif
-#ifdef WITH_PLUGIN
-	CONTENT_PLUGIN,
-#endif
-#ifdef WITH_THEME_INSTALL
-	CONTENT_THEME,
-#endif
-#ifdef WITH_ARTWORKS
-	CONTENT_ARTWORKS,
-#endif
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-	CONTENT_SVG,
-#endif
-#ifdef WITH_WEBP
-	CONTENT_WEBP,
-#endif
-#ifdef WITH_AMIGA_ICON
-	CONTENT_AMIGA_ICON,
-#endif
-#ifdef WITH_APPLE_IMAGE
-	CONTENT_APPLE_IMAGE,
-#endif
-	/* these must be the last two */
-	CONTENT_OTHER,
-	CONTENT_UNKNOWN  /**< content-type not received yet */
+	CONTENT_NONE		= 0x00,
+
+	CONTENT_HTML		= 0x01,
+	CONTENT_TEXTPLAIN	= 0x02,
+	CONTENT_CSS		= 0x04,
+
+	CONTENT_IMAGE		= 0x08,
+
+	CONTENT_PLUGIN		= 0x10,
+
+	CONTENT_THEME		= 0x20,
+
+	CONTENT_ANY		= 0x3f
 } content_type;
 
 

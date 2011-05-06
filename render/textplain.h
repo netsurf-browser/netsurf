@@ -32,36 +32,8 @@ struct hlcache_handle;
 struct http_parameter;
 struct rect;
 
-struct textplain_line {
-	size_t	start;
-	size_t	length;
-};
-
-struct content_textplain_data {
-	char *encoding;
-	void *inputstream;
-	char *utf8_data;
-	size_t utf8_data_size;
-	size_t utf8_data_allocated;
-	unsigned long physical_line_count;
-	struct textplain_line *physical_line;
-	int formatted_width;
-};
-
-bool textplain_create(struct content *c, const struct http_parameter *params);
-bool textplain_process_data(struct content *c, 
-		const char *data, unsigned int size);
-bool textplain_convert(struct content *c);
-void textplain_mouse_track(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-void textplain_mouse_action(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-void textplain_reformat(struct content *c, int width, int height);
-void textplain_destroy(struct content *c);
-bool textplain_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool textplain_clone(const struct content *old, struct content *new_content);
+nserror textplain_init(void);
+void textplain_fini(void);
 
 /* access to lines for text selection and searching */
 unsigned long textplain_line_count(struct hlcache_handle *h);

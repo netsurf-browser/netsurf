@@ -50,12 +50,14 @@
 #include "amiga/history.h"
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
+#include "amiga/icon.h"
 #include "amiga/launch.h"
 #include "amiga/login.h"
 #include "amiga/menu.h"
 #include "amiga/misc.h"
 #include "amiga/options.h"
 #include "amiga/plotters.h"
+#include "amiga/plugin.h"
 #include "amiga/print.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
@@ -748,7 +750,11 @@ int main(int argc, char** argv)
 	ami_schedule_open_timer();
 	ami_schedule_create();
 
+	plugin_init();
+
 	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
+
+	amiga_icon_init();
 
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
@@ -764,6 +770,9 @@ int main(int argc, char** argv)
 	ami_arexx_execute(script);
 
 	netsurf_exit();
+
+	plugin_fini();
+	amiga_icon_fini();
 
 	return 0;
 }
@@ -3634,12 +3643,6 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	if ((icon != NULL) &&
 		(content_get_status(icon) != CONTENT_STATUS_READY) &&
 		(content_get_status(icon) != CONTENT_STATUS_DONE)) return;
-#ifdef WITH_BMP
-	if ((icon != NULL) && (content_get_type(icon) == CONTENT_ICO))
-	{
-		nsico_set_bitmap_from_size(icon, 16, 16);
-	}
-#endif
 	if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16,
@@ -3691,12 +3694,6 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	if(IsMinListEmpty(window_list))	return;
 	if(option_kiosk_mode == true) return;
 	if (ico == NULL) ico = search_web_ico();
-#ifdef WITH_BMP
-	if ((ico != NULL) && (content_get_type(ico) == CONTENT_ICO))
-	{
-		nsico_set_bitmap_from_size(ico, 16, 16);
-	}
-#endif
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);

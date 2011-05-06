@@ -36,7 +36,7 @@
 */
 
 bool save_complete_gui_save(const char *path, const char *filename,
-		size_t len, const char *sourcedata, content_type type)
+		size_t len, const char *sourcedata, lwc_string *mime_type)
 {
 	int res;
 	int namelen;

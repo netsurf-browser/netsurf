@@ -23,24 +23,19 @@
 #ifndef _NETSURF_RISCOS_SPRITE_H_
 #define _NETSURF_RISCOS_SPRITE_H_
 
-#include <stdbool.h>
-#include "oslib/osspriteop.h"
 #include "utils/config.h"
+#include "utils/errors.h"
 
 #ifdef WITH_SPRITE
-struct content;
-struct rect;
 
-struct content_sprite_data {
-	void *data;
-};
+nserror sprite_init(void);
+void sprite_fini(void);
 
-bool sprite_convert(struct content *c);
-void sprite_destroy(struct content *c);
-bool sprite_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool sprite_clone(const struct content *old, struct content *new_content);
+#else
+
+#define sprite_init() NSERROR_OK
+#define sprite_fini() ((void) 0)
+
 #endif
 
 byte sprite_bpp(const osspriteop_header *s);

@@ -28,19 +28,15 @@
 
 #include <stdbool.h>
 
-struct content;
-struct rect;
+#include "utils/errors.h"
 
-struct content_webp_data {
-/* empty */
-};
+nserror webp_init(void);
+void webp_fini(void);
 
-bool webp_convert(struct content *c);
-void webp_destroy(struct content *c);
-bool webp_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool webp_clone(const struct content *old, struct content *new_content);
+#else
+
+#define webp_init() NSERROR_OK
+#define webp_fini() ((void) 0)
 
 #endif /* WITH_WEBP */
 

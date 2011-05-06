@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#import "cocoa/apple_image.h"
 #import "cocoa/NetsurfApp.h"
 #import "cocoa/gui.h"
 #import "cocoa/plotter.h"
@@ -178,6 +179,8 @@ int main( int argc, char **argv )
 	option_ca_bundle = strdup( [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String] );
 
 	netsurf_init(&argc, &argv, options, messages);
+
+	apple_image_init();
 	
 	NSApplication *app = cocoa_prepare_app();
 	
@@ -191,6 +194,8 @@ int main( int argc, char **argv )
 	[app run];
 	
 	netsurf_exit();
+
+	apple_image_fini();
 	
 	return 0;
 }

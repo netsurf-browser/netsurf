@@ -26,7 +26,8 @@
 
 #include <stdbool.h>
 #include <libxml/HTMLtree.h>
-#include "content/content.h"
+
+#include <libwapcaplet/libwapcaplet.h>
 
 struct hlcache_handle;
 
@@ -34,7 +35,7 @@ void save_complete_init(void);
 bool save_complete(struct hlcache_handle *c, const char *path);
 
 bool save_complete_gui_save(const char *path, const char *filename,
-		size_t len, const char *sourcedata, content_type type);
+		size_t len, const char *sourcedata, lwc_string *mime_type);
 
 int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
 		xmlDocPtr cur, const char *encoding, int format);

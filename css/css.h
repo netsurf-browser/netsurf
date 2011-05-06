@@ -61,17 +61,8 @@ struct nscss_import {
 	uint64_t media;		/**< Media types that sheet applies to */
 };
 
-void css_cleanup(void);
-
-bool nscss_create(struct content *c, const struct http_parameter *params);
-
-bool nscss_process_data(struct content *c, const char *data, unsigned int size);
-
-bool nscss_convert(struct content *c);
-
-void nscss_destroy(struct content *c);
-
-bool nscss_clone(const struct content *old, struct content *new_content);
+nserror css_init(void);
+void css_fini(void);
 
 nserror nscss_create_css_data(struct content_css_data *c,
 		const char *url, const char *charset, bool quirks,
@@ -81,6 +72,7 @@ css_error nscss_process_css_data(struct content_css_data *c, const char *data,
 css_error nscss_convert_css_data(struct content_css_data *c);
 void nscss_destroy_css_data(struct content_css_data *c);
 
+css_stylesheet *nscss_get_stylesheet(struct hlcache_handle *h);
 struct nscss_import *nscss_get_imports(struct hlcache_handle *h, uint32_t *n);
 
 #endif

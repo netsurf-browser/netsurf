@@ -35,7 +35,7 @@
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
-#include "render/html.h"
+#include "render/html_internal.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
@@ -563,16 +563,12 @@ bool box_contains_point(struct box *box, int x, int y, bool *physically)
 
 struct box *box_object_at_point(hlcache_handle *h, int x, int y)
 {
-	struct content *c = hlcache_handle_get_content(h);
 	struct box *box;
 	int box_x = 0, box_y = 0;
 	hlcache_handle *content = h;
 	struct box *object_box = 0;
 
-	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
-
-	box = c->data.html.layout;
+	box = html_get_box_tree(h);
 
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
 		if (box->style && css_computed_visibility(box->style) ==
@@ -597,16 +593,12 @@ struct box *box_object_at_point(hlcache_handle *h, int x, int y)
 
 struct box *box_href_at_point(hlcache_handle *h, int x, int y)
 {
-	struct content *c = hlcache_handle_get_content(h);
 	struct box *box;
 	int box_x = 0, box_y = 0;
 	hlcache_handle *content = h;
 	struct box *href_box = 0;
 
-	assert(c != NULL);
-	assert(c->type == CONTENT_HTML);
-
-	box = c->data.html.layout;
+	box = html_get_box_tree(h);
 
 	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
 		if (box->style && css_computed_visibility(box->style) ==
@@ -804,7 +796,7 @@ struct box *box_pick_text_box(hlcache_handle *h,
 {
 	struct box *text_box = NULL;
 
-	if (h && content_get_type(h) == CONTENT_HTML) {
+	if (h != NULL && content_get_type(h) == CONTENT_HTML) {
 		struct box *box = html_get_box_tree(h);
 		int nr_xd, nr_yd;
 		int bx = box->margin[LEFT];

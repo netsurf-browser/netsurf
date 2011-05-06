@@ -2771,7 +2771,8 @@ hlcache_handle *tree_load_icon(const char *name)
 
 	/* Fetch the icon */
 	err = hlcache_handle_retrieve(icon_url, 0, 0, 0,
-				      tree_icon_callback, 0, 0, 0, &c);
+				      tree_icon_callback, 0, 0, 
+				      CONTENT_IMAGE, &c);
 
 
 	/* If we built the URL here, free it */

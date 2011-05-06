@@ -68,7 +68,6 @@
 #include "desktop/save_complete.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "desktop/plugin.h"
 #include "utils/messages.h"
 #include "utils/url.h"
 
@@ -635,7 +634,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 										SetComment(fname, content_get_url(gwin->bw->current_content));
 								}
 #ifdef WITH_NS_SVG
-								else if(content_get_type(gwin->bw->current_content) == CONTENT_SVG)
+								else if(ami_mime_compare(gwin->bw->current_content, "svg") == true)
 								{
 									if(ami_save_svg(gwin->bw->current_content,fname))
 										SetComment(fname, content_get_url(gwin->bw->current_content));
@@ -727,7 +726,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						ami_easy_clipboard_bitmap(bm);
 					}
 #ifdef WITH_NS_SVG
-					else if(content_get_type(gwin->bw->current_content) == CONTENT_SVG)
+					else if(ami_mime_compare(gwin->bw->current_content, "svg") == true)
 					{
 						ami_easy_clipboard_svg(gwin->bw->current_content);
 					}
@@ -895,13 +894,9 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 	AddPart(fname,ap->ap_Info.fib_FileName,1024);
 
   	mt = fetch_mimetype(fname);
-	ct = content_lookup(mt);
+	ct = content_factory_type_from_mime_type(mt);
 
-	if(ct != CONTENT_OTHER) ret = TRUE;
-
-#ifdef WITH_PLUGIN
-	if(ct == CONTENT_PLUGIN) ret = plugin_handleable(mt);
-#endif
+	if(ct != CONTENT_NONE) ret = TRUE;
 
 	free(mt);
 	return ret;
@@ -952,7 +947,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 		OffMenu(win,AMI_MENU_FIND);
 
 #ifdef WITH_NS_SVG
-		if(content_get_bitmap(c) || content_get_type(c) == CONTENT_SVG)
+		if(content_get_bitmap(c) || (ami_mime_compare(c, "svg") == true))
 #else
 		if(content_get_bitmap(c))
 #endif

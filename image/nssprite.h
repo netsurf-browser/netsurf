@@ -28,19 +28,13 @@
 
 #include <stdbool.h>
 
-struct content;
-struct rect;
+nserror nssprite_init(void);
+void nssprite_fini(void);
 
-struct content_nssprite_data {
-	struct rosprite_area* sprite_area;
-};
+#else
 
-bool nssprite_convert(struct content *c);
-void nssprite_destroy(struct content *c);
-bool nssprite_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool nssprite_clone(const struct content *old, struct content *new_content);
+#define nssprite_init() NSERROR_OK
+#define nssprite_fini() ((void) 0)
 
 #endif /* WITH_NSSPRITE */
 

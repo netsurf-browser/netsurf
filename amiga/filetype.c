@@ -20,7 +20,7 @@
 #include <string.h>
 #include "amiga/filetype.h"
 #include "content/fetch.h"
-#include "content/content_type.h"
+#include "content/content.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 #include <proto/icon.h>
@@ -140,54 +140,6 @@ const char *ami_content_type_to_file_type(content_type type)
 			return "css";
 		break;
 
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-			return "jpeg";
-		break;
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-			return "gif";
-		break;
-#endif
-#ifdef WITH_BMP
-		case CONTENT_BMP:
-			return "bmp";
-		break;
-
-		case CONTENT_ICO:
-			return "ico";
-		break;
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-		case CONTENT_PNG:
-			return "png";
-		break;
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-			return "jng";
-		break;
-
-		case CONTENT_MNG:
-			return "mng";
-		break;
-#endif
-#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
-		case CONTENT_SPRITE:
-			return "rosprite";
-		break;
-#endif
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-		case CONTENT_SVG:
-			return "svg";
-		break;
-#endif
-#ifdef WITH_WEBP
-		case CONTENT_WEBP:
-			return "webp";
-		break;
-#endif
 		default:
 			return "project";	
 		break;
@@ -244,4 +196,18 @@ void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype)
 			else sprintf(mimetype,"application/%s",dth->dth_BaseName);
 		break;
 	}
+}
+
+bool ami_mime_compare(struct hlcache_handle *c, const char *type)
+{
+	lwc_string *mime = content_get_mime_type(c);
+	const char *mime_string = lwc_string_data(mime);
+	size_t mime_length = lwc_string_length(mime);
+
+	if(!strncmp("svg", type, 3))
+	{
+		if(!strncmp(mime_string, "image/svg", mime_length)) return true;
+		if(!strncmp(mime_string, "image/svg+xml", mime_length)) return true;
+	}
+	else return false;
 }

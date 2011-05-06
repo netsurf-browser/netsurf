@@ -32,14 +32,15 @@
 #include "oslib/os.h"
 #include "oslib/wimp.h"
 #include "utils/config.h"
-#include "desktop/plotters.h"
 #include "content/content_protected.h"
+#include "desktop/plotters.h"
 #include "riscos/artworks.h"
 #include "riscos/gui.h"
 #include "riscos/wimputils.h"
-#include "utils/utils.h"
-#include "utils/messages.h"
 #include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/talloc.h"
+#include "utils/utils.h"
 
 #define AWRender_FileInitAddress 0x46080
 #define AWRender_RenderAddress   0x46081
@@ -53,6 +54,20 @@
 
 #define INITIAL_BLOCK_SIZE 0x1000
 
+typedef struct artworks_content {
+	struct content base;
+
+	int x0, y0, x1, y1;
+
+	void *render_routine;
+	void *render_workspace;
+
+	/* dynamically-resizable block required by
+	   ArtWorksRenderer rendering routine */
+
+	void *block;
+	size_t size;
+} artworks_content;
 
 struct awinfo_block {
 	int ditherx;
@@ -72,12 +87,12 @@ struct awinfo_block {
 
 /* Assembler routines for interfacing with the ArtworksRenderer module */
 
-os_error *awrender_init(const char **doc,
+extern os_error *awrender_init(const char **doc,
 		unsigned long *doc_size,
 		void *routine,
 		void *workspace);
 
-os_error *awrender_render(const char *doc,
+extern os_error *awrender_render(const char *doc,
 		const struct awinfo_block *info,
 		const os_trfm *trans,
 		const int *vdu_vars,
@@ -89,7 +104,105 @@ os_error *awrender_render(const char *doc,
 		void *routine,
 		void *workspace);
 
+static nserror artworks_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static bool artworks_convert(struct content *c);
+static void artworks_destroy(struct content *c);
+static bool artworks_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static nserror artworks_clone(const struct content *old, struct content **newc);
+static content_type artworks_content_type(lwc_string *mime_type);
 
+static const content_handler artworks_content_handler = {
+	artworks_create,
+	NULL,
+	artworks_convert,
+	NULL,
+	artworks_destroy,
+	NULL,
+	NULL,
+	NULL,
+	artworks_redraw,
+	NULL,
+	NULL,
+	NULL,
+	artworks_clone,
+	NULL,
+	artworks_content_type,
+	false
+};
+
+static const char *artworks_types[] = {
+	"image/x-artworks"
+};
+
+static lwc_string *artworks_mime_types[NOF_ELEMENTS(artworks_types)];
+
+nserror artworks_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(artworks_mime_types); i++) {
+		lerror = lwc_intern_string(artworks_types[i],
+				strlen(artworks_types[i]),
+				&artworks_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(artworks_mime_types[i],
+				&artworks_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	artworks_fini();
+
+	return error;
+}
+
+void artworks_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(artworks_mime_types); i++) {
+		if (artworks_mime_types[i] != NULL)
+			lwc_string_unref(artworks_mime_types[i]);
+	}
+}
+
+nserror artworks_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	artworks_content *aw;
+	nserror error;
+
+	aw = talloc_zero(0, artworks_content);
+	if (aw == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&aw->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(aw);
+		return error;
+	}
+
+	*c = (struct content *) aw;
+
+	return NSERROR_OK;
+}
 
 /**
  * Convert a CONTENT_ARTWORKS for display.
@@ -100,6 +213,7 @@ os_error *awrender_render(const char *doc,
 
 bool artworks_convert(struct content *c)
 {
+	artworks_content *aw = (artworks_content *) c;
 	union content_msg_data msg_data;
 	const char *source_data;
 	unsigned long source_size;
@@ -142,8 +256,8 @@ bool artworks_convert(struct content *c)
 	}
 
 	error = (os_error*)_swix(AWRender_RenderAddress, _OUT(0) | _OUT(1),
-				&c->data.artworks.render_routine,
-				&c->data.artworks.render_workspace);
+				&aw->render_routine,
+				&aw->render_workspace);
 	if (error) {
 		LOG(("AWRender_RenderAddress: 0x%x: %s",
 				error->errnum, error->errmess));
@@ -165,12 +279,13 @@ bool artworks_convert(struct content *c)
 		return false;
 	}
 
-	error = (os_error*)_swix(AWRender_DocBounds, _IN(0) | _OUT(2) | _OUT(3) | _OUT(4) | _OUT(5),
+	error = (os_error*)_swix(AWRender_DocBounds, 
+			_IN(0) | _OUT(2) | _OUT(3) | _OUT(4) | _OUT(5),
 			source_data,
-			&c->data.artworks.x0,
-			&c->data.artworks.y0,
-			&c->data.artworks.x1,
-			&c->data.artworks.y1);
+			&aw->x0,
+			&aw->y0,
+			&aw->x1,
+			&aw->y1);
 
 	if (error) {
 		LOG(("AWRender_DocBounds: 0x%x: %s",
@@ -180,24 +295,22 @@ bool artworks_convert(struct content *c)
 		return false;
 	}
 
-	LOG(("bounding box: %d,%d,%d,%d",
-			c->data.artworks.x0, c->data.artworks.y0,
-			c->data.artworks.x1, c->data.artworks.y1));
+	LOG(("bounding box: %d,%d,%d,%d", aw->x0, aw->y0, aw->x1, aw->y1));
 
 	/* create the resizable workspace required by the
 		ArtWorksRenderer rendering routine */
 
-	c->data.artworks.size = INITIAL_BLOCK_SIZE;
-	c->data.artworks.block = malloc(INITIAL_BLOCK_SIZE);
-	if (!c->data.artworks.block) {
+	aw->size = INITIAL_BLOCK_SIZE;
+	aw->block = malloc(INITIAL_BLOCK_SIZE);
+	if (!aw->block) {
 		LOG(("failed to create block for ArtworksRenderer"));
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
-	c->width  = (c->data.artworks.x1 - c->data.artworks.x0) / 512;
-	c->height = (c->data.artworks.y1 - c->data.artworks.y0) / 512;
+	c->width  = (aw->x1 - aw->x0) / 512;
+	c->height = (aw->y1 - aw->y0) / 512;
 
 	snprintf(title, sizeof(title), messages_get("ArtWorksTitle"), 
 			c->width, c->height, source_size);
@@ -216,7 +329,9 @@ bool artworks_convert(struct content *c)
 
 void artworks_destroy(struct content *c)
 {
-	free(c->data.artworks.block);
+	artworks_content *aw = (artworks_content *) c;
+
+	free(aw->block);
 }
 
 
@@ -236,6 +351,7 @@ bool artworks_redraw(struct content *c, int x, int y,
 			os_VDUVAR_END_LIST
 		}
 	};
+	artworks_content *aw = (artworks_content *) c;
 	struct awinfo_block info;
 	const char *source_data;
 	unsigned long source_size;
@@ -254,8 +370,8 @@ bool artworks_redraw(struct content *c, int x, int y,
 	/* pick up render addresses again in case they've changed
 	   (eg. newer AWRender module loaded since we first loaded this file) */
 	(void)_swix(AWRender_RenderAddress, _OUT(0) | _OUT(1),
-				&c->data.artworks.render_routine,
-				&c->data.artworks.render_workspace);
+				&aw->render_routine,
+				&aw->render_workspace);
 
 	/* Scaled image. Transform units (65536*OS units) */
 	matrix.entries[0][0] = width * 65536 / c->width;
@@ -264,9 +380,9 @@ bool artworks_redraw(struct content *c, int x, int y,
 	matrix.entries[1][1] = height * 65536 / c->height;
 	/* Draw units. (x,y) = bottom left */
 	matrix.entries[2][0] = ro_plot_origin_x * 256 + x * 512 -
-			c->data.artworks.x0 * width / c->width;
+			aw->x0 * width / c->width;
 	matrix.entries[2][1] = ro_plot_origin_y * 256 - (y + height) * 512 -
-			c->data.artworks.y0 * height / c->height;
+			aw->y0 * height / c->height;
 
 	info.ditherx = ro_plot_origin_x;
 	info.dithery = ro_plot_origin_y;
@@ -277,16 +393,16 @@ bool artworks_redraw(struct content *c, int x, int y,
 	clip_y1 -= y;
 
 	if (scale == 1.0) {
-		info.clip_x0 = (clip_x0 * 512) + c->data.artworks.x0 - 511;
-		info.clip_y0 = ((c->height - clip_y1) * 512) + c->data.artworks.y0 - 511;
-		info.clip_x1 = (clip_x1 * 512) + c->data.artworks.x0 + 511;
-		info.clip_y1 = ((c->height - clip_y0) * 512) + c->data.artworks.y0 + 511;
+		info.clip_x0 = (clip_x0 * 512) + aw->x0 - 511;
+		info.clip_y0 = ((c->height - clip_y1) * 512) + aw->y0 - 511;
+		info.clip_x1 = (clip_x1 * 512) + aw->x0 + 511;
+		info.clip_y1 = ((c->height - clip_y0) * 512) + aw->y0 + 511;
 	}
 	else {
-		info.clip_x0 = (clip_x0 * 512 / scale) + c->data.artworks.x0 - 511;
-		info.clip_y0 = ((c->height - (clip_y1 / scale)) * 512) + c->data.artworks.y0 - 511;
-		info.clip_x1 = (clip_x1 * 512 / scale) + c->data.artworks.x0 + 511;
-		info.clip_y1 = ((c->height - (clip_y0 / scale)) * 512) + c->data.artworks.y0 + 511;
+		info.clip_x0 = (clip_x0 * 512 / scale) + aw->x0 - 511;
+		info.clip_y0 = ((c->height - (clip_y1 / scale)) * 512) + aw->y0 - 511;
+		info.clip_x1 = (clip_x1 * 512 / scale) + aw->x0 + 511;
+		info.clip_y1 = ((c->height - (clip_y0 / scale)) * 512) + aw->y0 + 511;
 	}
 
 	info.print_lowx = 0;
@@ -314,13 +430,13 @@ bool artworks_redraw(struct content *c, int x, int y,
 			&info,
 			&matrix,
 			vals,
-			&c->data.artworks.block,
-			&c->data.artworks.size,
+			&aw->block,
+			&aw->size,
 			110,	/* fully anti-aliased */
 			0,
 			source_size,
-			c->data.artworks.render_routine,
-			c->data.artworks.render_workspace);
+			aw->render_routine,
+			aw->render_workspace);
 
 	if (error) {
 		LOG(("awrender_render: 0x%x: %s",
@@ -331,16 +447,38 @@ bool artworks_redraw(struct content *c, int x, int y,
 	return true;
 }
 
-bool artworks_clone(const struct content *old, struct content *new_content)
+nserror artworks_clone(const struct content *old, struct content **newc)
 {
+	artworks_content *aw;
+	nserror error;
+
+	aw = talloc_zero(0, artworks_content);
+	if (aw == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &aw->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&aw->base);
+		return error;
+	}
+
 	/* Simply re-run convert */
 	if (old->status == CONTENT_STATUS_READY || 
 			old->status == CONTENT_STATUS_DONE) {
-		if (artworks_convert(new_content) == false)
-			return false;
+		if (artworks_convert(&aw->base) == false) {
+			content_destroy(&aw->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) aw;
+
+	return NSERROR_OK;
+}
+
+content_type artworks_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif

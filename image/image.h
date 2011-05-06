@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 James Bursa <bursa@users.sourceforge.net>
+ * Copyright 2011 John-Mark Bell <jmb@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,28 +17,15 @@
  */
 
 /** \file
- * Content for image/svg (interface).
+ * Initialisation/finalisation of image handlers.
  */
 
-#ifndef _NETSURF_IMAGE_SVG_H_
-#define _NETSURF_IMAGE_SVG_H_
-
-#include "utils/config.h"
-
-#ifdef WITH_NS_SVG
-
-#include <stdbool.h>
+#ifndef NETSURF_IMAGE_IMAGE_H_
+#define NETSURF_IMAGE_IMAGE_H_
 
 #include "utils/errors.h"
 
-nserror svg_init(void);
-void svg_fini(void);
-
-#else
-
-#define svg_init() NSERROR_OK
-#define svg_fini() ((void) 0)
-
-#endif
+nserror image_init(void);
+void image_fini(void);
 
 #endif

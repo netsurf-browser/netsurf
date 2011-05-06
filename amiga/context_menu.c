@@ -469,7 +469,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					ami_easy_clipboard_bitmap(bm);
 				}
 #ifdef WITH_NS_SVG
-				else if(content_get_type(object) == CONTENT_SVG)
+				else if(ami_mime_compare(object, "svg") == true)
 				{
 					ami_easy_clipboard_svg(object);
 				}
@@ -529,7 +529,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 							SetComment(fname, content_get_url(object));
 					}
 #ifdef WITH_NS_SVG
-					else if(content_get_type(object) == CONTENT_SVG)
+					else if(ami_mime_compare(object, "svg") == true)
 					{
 						if(ami_save_svg(object,fname))
 							SetComment(fname, content_get_url(object));

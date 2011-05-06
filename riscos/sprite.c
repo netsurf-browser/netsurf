@@ -21,27 +21,130 @@
  *
  * No conversion is necessary: we can render RISC OS sprites directly under
  * RISC OS.
- *
- * Unfortunately we have to make a copy of the bitmap data, because sprite areas
- * need a length word at the start.
  */
 
 #include <string.h>
 #include <stdlib.h>
 #include "oslib/osspriteop.h"
 #include "utils/config.h"
-#include "desktop/plotters.h"
 #include "content/content_protected.h"
+#include "desktop/plotters.h"
 #include "riscos/gui.h"
 #include "riscos/image.h"
 #include "riscos/sprite.h"
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #ifdef WITH_SPRITE
 
+typedef struct sprite_content {
+	struct content base;
+
+	void *data;
+} sprite_content;
+
+static nserror sprite_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static bool sprite_convert(struct content *c);
+static void sprite_destroy(struct content *c);
+static bool sprite_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static nserror sprite_clone(const struct content *old, struct content **newc);
+static content_type sprite_content_type(lwc_string *mime_type);
+
+static const content_handler sprite_content_handler = {
+	sprite_create,
+	NULL,
+	sprite_convert,
+	NULL,
+	sprite_destroy,
+	NULL,
+	NULL,
+	NULL,
+	sprite_redraw,
+	NULL,
+	NULL,
+	NULL,
+	sprite_clone,
+	NULL,
+	sprite_content_type,
+	false
+};
+
+static const char *sprite_types[] = {
+	"image/x-riscos-sprite"
+};
+
+static lwc_string *sprite_mime_types[NOF_ELEMENTS(sprite_types)];
+
+nserror sprite_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(sprite_mime_types); i++) {
+		lerror = lwc_intern_string(sprite_types[i],
+				strlen(sprite_types[i]),
+				&sprite_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(sprite_mime_types[i],
+				&sprite_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	sprite_fini();
+
+	return error;
+}
+
+void sprite_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(sprite_mime_types); i++) {
+		if (sprite_mime_types[i] != NULL)
+			lwc_string_unref(sprite_mime_types[i]);
+	}
+}
+
+nserror sprite_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	sprite_content *sprite;
+	nserror error;
+
+	sprite = talloc_zero(0, sprite_content);
+	if (sprite == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&sprite->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(sprite);
+		return error;
+	}
+
+	*c = (struct content *) sprite;
+
+	return NSERROR_OK;
+}
 
 /**
  * Convert a CONTENT_SPRITE for display.
@@ -51,6 +154,7 @@
 
 bool sprite_convert(struct content *c)
 {
+	sprite_content *sprite = (sprite_content *) c;
 	os_error *error;
 	int w, h;
 	union content_msg_data msg_data;
@@ -63,7 +167,7 @@ bool sprite_convert(struct content *c)
 
 	sprite_data = source_data - 4;
 	osspriteop_area *area = (osspriteop_area*) sprite_data;
-	c->data.sprite.data = area;
+	sprite->data = area;
 
 	/* check for bad data */
 	if ((int)source_size + 4 != area->used) {
@@ -116,10 +220,12 @@ bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
+	sprite_content *sprite = (sprite_content *) c;
+
 	if (plot.flush && !plot.flush())
 		return false;
 
-	return image_redraw(c->data.sprite.data,
+	return image_redraw(sprite->data,
 			ro_plot_origin_x + x * 2,
 			ro_plot_origin_y - y * 2,
 			width, height,
@@ -130,16 +236,38 @@ bool sprite_redraw(struct content *c, int x, int y,
 			IMAGE_PLOT_OS);
 }
 
-bool sprite_clone(const struct content *old, struct content *new_content)
+nserror sprite_clone(const struct content *old, struct content **newc)
 {
+	sprite_content *sprite;
+	nserror error;
+
+	sprite = talloc_zero(0, sprite_content);
+	if (sprite == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &sprite->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&sprite->base);
+		return error;
+	}
+
 	/* Simply rerun convert */
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (sprite_convert(new_content) == false)
-			return false;
+		if (sprite_convert(&sprite->base) == false) {
+			content_destroy(&sprite->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) sprite;
+
+	return NSERROR_OK;
+}
+
+content_type sprite_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif

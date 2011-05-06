@@ -421,7 +421,7 @@ bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 	char *source_data;
 	ULONG source_size;
 
-	if(content_get_type(c) != CONTENT_SVG) return false;
+	if(ami_mime_compare(c, "svg") == false) return false;
 	if((source_data = content_get_source_data(c, &source_size)) == NULL) return false;
 
 	if(!(OpenIFF(iffh,IFFF_WRITE)))

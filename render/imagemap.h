@@ -21,12 +21,12 @@
 
 #include <libxml/HTMLtree.h>
 
-struct content;
+struct html_content;
 struct hlcache_handle;
 
-void imagemap_destroy(struct content *c);
-void imagemap_dump(struct content *c);
-bool imagemap_extract(xmlNode *node, struct content *c);
+void imagemap_destroy(struct html_content *c);
+void imagemap_dump(struct html_content *c);
+bool imagemap_extract(xmlNode *node, struct html_content *c);
 
 const char *imagemap_get(struct hlcache_handle *h, const char *key,
 		unsigned long x, unsigned long y,

@@ -26,67 +26,52 @@
 #ifndef _NETSURF_CONTENT_CONTENT_PROTECTED_H_
 #define _NETSURF_CONTENT_CONTENT_PROTECTED_H_
 
-/* Irritatingly this must come first, or odd include errors
- * will occur to do with setjmp.h.
- */
-#ifdef WITH_PNG
-#include "image/png.h"
-#endif
-
 #include <stdint.h>
 #include <time.h>
 #include "utils/config.h"
 #include "content/content.h"
+#include "content/content_factory.h"
 #include "content/llcache.h"
-#include "css/css.h"
-#include "render/html.h"
-#include "render/textplain.h"
-#ifdef WITH_JPEG
-#include "image/jpeg.h"
-#endif
-#ifdef WITH_GIF
-#include "image/gif.h"
-#endif
-#ifdef WITH_BMP
-#include "image/bmp.h"
-#include "image/ico.h"
-#endif
-#ifdef WITH_PLUGIN
-#include "desktop/plugin.h"
-#endif
-#ifdef WITH_MNG
-#include "image/mng.h"
-#endif
-#ifdef WITH_SPRITE
-#include "riscos/sprite.h"
-#endif
-#ifdef WITH_NSSPRITE
-#include "image/nssprite.h"
-#endif
-#ifdef WITH_DRAW
-#include "riscos/draw.h"
-#endif
-#ifdef WITH_ARTWORKS
-#include "riscos/artworks.h"
-#endif
-#ifdef WITH_NS_SVG
-#include "image/svg.h"
-#endif
-#ifdef WITH_RSVG
-#include "image/rsvg.h"
-#endif
-#ifdef WITH_WEBP
-#include "image/webp.h"
-#endif
-#ifdef WITH_AMIGA_ICON
-#include "amiga/icon.h"
-#endif
-#ifdef WITH_APPLE_IMAGE
-#include "cocoa/apple_image.h"
-#endif
+#include "utils/errors.h"
 
 struct bitmap;
 struct content;
+
+struct content_handler {
+	nserror (*create)(const content_handler *handler,
+			lwc_string *imime_type, const http_parameter *params,
+			llcache_handle *llcache, 
+			const char *fallback_charset, bool quirks, 
+			struct content **c);
+
+	bool (*process_data)(struct content *c, 
+			const char *data, unsigned int size);
+	bool (*convert)(struct content *c);
+	void (*reformat)(struct content *c, int width, int height);
+	void (*destroy)(struct content *c);
+	void (*stop)(struct content *c);
+	void (*mouse_track)(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
+	void (*mouse_action)(struct content *c, struct browser_window *bw,
+			browser_mouse_state mouse, int x, int y);
+	bool (*redraw)(struct content *c, int x, int y,
+			int width, int height, const struct rect *clip,
+			float scale, colour background_colour);
+	bool (*redraw_tiled)(struct content *c, int x, int y,
+			int width, int height, const struct rect *clip,
+			float scale, colour background_colour,
+			bool repeat_x, bool repeat_y);
+	void (*open)(struct content *c, struct browser_window *bw,
+			struct content *page,
+			struct box *box,
+			struct object_params *params);
+	void (*close)(struct content *c);
+	nserror (*clone)(const struct content *old, struct content **newc);
+	bool (*matches_quirks)(const struct content *c, bool quirks);
+	content_type (*type)(lwc_string *mime_type);
+	/** There must be one content per user for this type. */
+	bool no_share;
+};
 
 /** Linked list of users of a content. */
 struct content_user
@@ -102,8 +87,9 @@ struct content_user
 struct content {
 	llcache_handle *llcache;	/**< Low-level cache object */
 
-	content_type type;	/**< Type of content. */
-	char *mime_type;	/**< Original MIME type of data, or 0. */
+	lwc_string *mime_type;	/**< Original MIME type of data */
+
+	const content_handler *handler;	/**< Handler for content */
 
 	content_status status;	/**< Current status. */
 
@@ -112,59 +98,6 @@ struct content {
 
 	bool quirks;		/**< Content is in quirks mode */
 	char *fallback_charset;	/**< Fallback charset, or NULL */
-
-	/** Data dependent on type. */
-	union {
-		struct content_html_data html;
-		struct content_textplain_data textplain;
-		struct content_css_data css;
-#ifdef WITH_JPEG
-		struct content_jpeg_data jpeg;
-#endif
-#ifdef WITH_GIF
-		struct content_gif_data gif;
-#endif
-#ifdef WITH_BMP
-		struct content_bmp_data bmp;
-		struct content_ico_data ico;
-#endif
-#ifdef WITH_MNG
-		struct content_mng_data mng;
-#endif
-#ifdef WITH_SPRITE
-		struct content_sprite_data sprite;
-#endif
-#ifdef WITH_NSSPRITE
-		struct content_nssprite_data nssprite;
-#endif
-#ifdef WITH_DRAW
-		struct content_draw_data draw;
-#endif
-#ifdef WITH_PLUGIN
-		struct content_plugin_data plugin;
-#endif
-#ifdef WITH_ARTWORKS
-		struct content_artworks_data artworks;
-#endif
-#ifdef WITH_NS_SVG
-		struct content_svg_data svg;
-#endif
-#ifdef WITH_RSVG
-		struct content_rsvg_data rsvg;
-#endif
-#ifdef WITH_PNG
-                struct content_png_data png;
-#endif
-#ifdef WITH_WEBP
-                struct content_webp_data webp;
-#endif
-#ifdef WITH_AMIGA_ICON
-                struct content_amiga_icon_data amiga_icon;
-#endif
-#ifdef WITH_APPLE_IMAGE
-		struct content_apple_image_data apple_image;
-#endif
-	} data;
 
 	/**< URL for refresh request, in standard form as from url_join. */
 	char *refresh;
@@ -208,6 +141,12 @@ struct content {
 extern const char * const content_type_name[];
 extern const char * const content_status_name[];
 
+nserror content__init(struct content *c, const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		struct llcache_handle *llcache, const char *fallback_charset,
+		bool quirks);
+nserror content__clone(const struct content *c, struct content *nc);
+
 void content_set_ready(struct content *c);
 void content_set_done(struct content *c);
 void content_set_status(struct content *c, const char *status_message, ...);
@@ -220,8 +159,7 @@ void content__reformat(struct content *c, int width, int height);
 
 bool content__set_title(struct content *c, const char *title);
 
-content_type content__get_type(struct content *c);
-const char *content__get_mime_type(struct content *c);
+lwc_string *content__get_mime_type(struct content *c);
 const char *content__get_url(struct content *c);
 const char *content__get_title(struct content *c);
 const char *content__get_status_message(struct content *c);

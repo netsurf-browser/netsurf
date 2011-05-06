@@ -45,16 +45,6 @@ struct plotters;
 struct scroll;
 struct scroll_msg_data;
 
-/* entries in stylesheet_content */
-#define STYLESHEET_BASE		0	/* base style sheet */
-#define STYLESHEET_QUIRKS	1	/* quirks mode stylesheet */
-#define STYLESHEET_ADBLOCK	2	/* adblocking stylesheet */
-#define STYLESHEET_START	3	/* start of document stylesheets */
-
-extern char *default_stylesheet_url;
-extern char *adblock_stylesheet_url;
-extern char *quirks_stylesheet_url;
-
 /**
  * Container for stylesheets used by an HTML document
  */
@@ -90,9 +80,8 @@ struct content_html_object {
 
 	struct hlcache_handle *content;  /**< Content, or 0. */
 	struct box *box;  /**< Node in box tree containing it. */
-	/** Pointer to array of permitted content_type, terminated by
-	 *  CONTENT_UNKNOWN, or 0 if any type is acceptable. */
-	const content_type *permitted_types;
+	/** Bitmap of acceptable content types */
+	content_type permitted_types;
 	bool background;  /**< This object is a background image. */
 };
 
@@ -134,92 +123,24 @@ struct content_html_iframe {
  	struct content_html_iframe *next;
 };
 
-/** Data specific to CONTENT_HTML. */
-struct content_html_data {
-	void *parser_binding;
-	xmlDoc *document;
-	binding_quirks_mode quirks; /**< Quirkyness of document */
+/* entries in stylesheet_content */
+#define STYLESHEET_BASE		0	/* base style sheet */
+#define STYLESHEET_QUIRKS	1	/* quirks mode stylesheet */
+#define STYLESHEET_ADBLOCK	2	/* adblocking stylesheet */
+#define STYLESHEET_START	3	/* start of document stylesheets */
 
-	char *encoding;	/**< Encoding of source, 0 if unknown. */
-	binding_encoding_source encoding_source;
-				/**< Source of encoding information. */
-
-	char *base_url;	/**< Base URL (may be a copy of content->url). */
-	char *base_target;	/**< Base target */
-
-	struct box *layout;  /**< Box tree, or 0. */
-	colour background_colour;  /**< Document background colour. */
-	const struct font_functions *font_func;
-
-	struct hlcache_handle *favicon; /**< the favicon for the page */
-	
-	/** Number of entries in stylesheet_content. */
-	unsigned int stylesheet_count;
-	/** Stylesheets. Each may be 0. */
-	struct html_stylesheet *stylesheets;
-	/**< Style selection context */
-	css_select_ctx *select_ctx;
-
-	/** Number of entries in object_list. */
-	unsigned int num_objects;
-	/** List of objects. */
-	struct content_html_object *object_list;
-	/** Forms, in reverse order to document. */
-	struct form *forms;
-	/** Hash table of imagemaps. */
-	struct imagemap **imagemaps;
-
-	/** Browser window containing this document, or 0 if not open. */
-	struct browser_window *bw;
-
-	/** Frameset information */
-	struct content_html_frames *frameset;
-
-	/** Inline frame information */
-	struct content_html_iframe *iframe;
-
-	/** Content of type CONTENT_HTML containing this, or 0 if not an object
-	 * within a page. */
-	struct content *page;
-	/** Box containing this, or 0 if not an object. */
-	struct box *box;
-};
+extern char *default_stylesheet_url;
+extern char *adblock_stylesheet_url;
+extern char *quirks_stylesheet_url;
 
 /** Render padding and margin box outlines in html_redraw(). */
 extern bool html_redraw_debug;
 
-
-bool html_create(struct content *c, const struct http_parameter *params);
-bool html_process_data(struct content *c, const char *data, unsigned int size);
-bool html_convert(struct content *c);
-void html_reformat(struct content *c, int width, int height);
-void html_destroy(struct content *c);
-bool html_clone(const struct content *old, struct content *new_content);
-bool html_fetch_object(struct content *c, const char *url, struct box *box,
-		const content_type *permitted_types,
-		int available_width, int available_height,
-		bool background);
-void html_stop(struct content *c);
-void html_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params);
-void html_close(struct content *c);
-void html_set_status(struct content *c, const char *extra);
+nserror html_init(void);
+void html_fini(void);
 
 void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
 
-/* in render/html_redraw.c */
-bool html_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-
-/* in render/html_interaction.c */
-void html_mouse_track(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-void html_mouse_action(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-void html_overflow_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data);
 void html_overflow_scroll_drag_end(struct scroll *scroll,
 		browser_mouse_state mouse, int x, int y);
 size_t html_selection_drag_end(struct hlcache_handle *h,

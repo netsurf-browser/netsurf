@@ -47,6 +47,7 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
+#include "render/html_internal.h"
 #include "render/layout.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -114,6 +115,7 @@ bool html_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
+	html_content *html = (html_content *) c;
 	struct box *box;
 	bool result = true;
 	bool select, select_only;
@@ -122,7 +124,7 @@ bool html_redraw(struct content *c, int x, int y,
 		.fill_colour = background_colour,
 	};
 
-	box = c->data.html.layout;
+	box = html->layout;
 	assert(box);
 
 	/* The select menu needs special treating because, when opened, it
@@ -145,9 +147,8 @@ bool html_redraw(struct content *c, int x, int y,
 		/* clear to background colour */
 		result = plot.clip(clip);
 	
-		if (c->data.html.background_colour != NS_TRANSPARENT)
-			pstyle_fill_bg.fill_colour =
-					c->data.html.background_colour;
+		if (html->background_colour != NS_TRANSPARENT)
+			pstyle_fill_bg.fill_colour = html->background_colour;
 	
 		result &= plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
 				&pstyle_fill_bg);

@@ -99,7 +99,7 @@ struct box;
 struct column;
 struct object_params;
 struct object_param;
-
+struct html_content;
 
 #define UNKNOWN_WIDTH INT_MAX
 #define UNKNOWN_MAX_WIDTH INT_MAX
@@ -332,8 +332,8 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
-bool xml_to_box(xmlNode *n, struct content *c);
+bool xml_to_box(xmlNode *n, struct html_content *c);
 
-bool box_normalise_block(struct box *block, struct content *c);
+bool box_normalise_block(struct box *block, struct html_content *c);
 
 #endif

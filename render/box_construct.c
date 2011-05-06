@@ -42,7 +42,7 @@
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
-#include "render/html.h"
+#include "render/html_internal.h"
 #include "desktop/gui.h"
 #include "utils/locale.h"
 #include "utils/log.h"
@@ -52,45 +52,7 @@
 #include "utils/utils.h"
 
 
-static const content_type image_types[] = {
-#ifdef WITH_JPEG
-	CONTENT_JPEG,
-#endif
-#ifdef WITH_GIF
-	CONTENT_GIF,
-#endif
-#ifdef WITH_BMP
-	CONTENT_BMP,
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-	CONTENT_PNG,
-#endif
-#ifdef WITH_MNG
-	CONTENT_JNG,
-	CONTENT_MNG,
-#endif
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-	CONTENT_SVG,
-#endif
-#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
-	CONTENT_SPRITE,
-#endif
-#ifdef WITH_DRAW
-	CONTENT_DRAW,
-#endif
-#ifdef WITH_ARTWORKS
-	CONTENT_ARTWORKS,
-#endif
-#ifdef WITH_WEBP
-	CONTENT_WEBP,
-#endif
-#ifdef WITH_AMIGA_ICON
-	CONTENT_AMIGA_ICON,
-#endif
-#ifdef WITH_APPLE_IMAGE
-	CONTENT_APPLE_IMAGE,
-#endif
-	CONTENT_UNKNOWN };
+static const content_type image_types = CONTENT_IMAGE;
 
 /* the strings are not important, since we just compare the pointers */
 const char *TARGET_SELF = "_self";
@@ -98,25 +60,25 @@ const char *TARGET_PARENT = "_parent";
 const char *TARGET_TOP = "_top";
 const char *TARGET_BLANK = "_blank";
 
-static bool convert_xml_to_box(xmlNode *n, struct content *content,
+static bool convert_xml_to_box(xmlNode *n, html_content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
-bool box_construct_element(xmlNode *n, struct content *content,
+bool box_construct_element(xmlNode *n, html_content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
-void box_construct_generate(xmlNode *n, struct content *content,
+void box_construct_generate(xmlNode *n, html_content *content,
 		struct box *box, const css_computed_style *style);
-bool box_construct_text(xmlNode *n, struct content *content,
+bool box_construct_text(xmlNode *n, html_content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title);
-static css_select_results * box_get_style(struct content *c,
+static css_select_results * box_get_style(html_content *c,
 		const css_computed_style *parent_style, xmlNode *n);
 static void box_text_transform(char *s, unsigned int len,
 		enum css_text_transform_e tt);
-#define BOX_SPECIAL_PARAMS xmlNode *n, struct content *content, \
+#define BOX_SPECIAL_PARAMS xmlNode *n, html_content *content, \
 		struct box *box, bool *convert_children
 static bool box_a(BOX_SPECIAL_PARAMS);
 static bool box_body(BOX_SPECIAL_PARAMS);
@@ -129,7 +91,7 @@ static bool box_input_text(BOX_SPECIAL_PARAMS, bool password);
 static bool box_button(BOX_SPECIAL_PARAMS);
 static bool box_frameset(BOX_SPECIAL_PARAMS);
 static bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
-		struct content *content);
+		html_content *content);
 static bool box_select_add_option(struct form_control *control, xmlNode *n);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
@@ -173,12 +135,10 @@ static const struct element_entry element_table[] = {
  * \return  true on success, false on memory exhaustion
  */
 
-bool xml_to_box(xmlNode *n, struct content *c)
+bool xml_to_box(xmlNode *n, html_content *c)
 {
 	struct box root;
 	struct box *inline_container = NULL;
-
-	assert(c->type == CONTENT_HTML);
 
 	root.type = BOX_BLOCK;
 	root.style = NULL;
@@ -198,8 +158,8 @@ bool xml_to_box(xmlNode *n, struct content *c)
 	if (!box_normalise_block(&root, c))
 		return false;
 
-	c->data.html.layout = root.children;
-	c->data.html.layout->parent = NULL;
+	c->layout = root.children;
+	c->layout->parent = NULL;
 
 	return true;
 }
@@ -243,7 +203,7 @@ static const box_type box_map[] = {
  * \return  true on success, false on memory exhaustion
  */
 
-bool convert_xml_to_box(xmlNode *n, struct content *content,
+bool convert_xml_to_box(xmlNode *n, html_content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title)
@@ -277,7 +237,7 @@ bool convert_xml_to_box(xmlNode *n, struct content *content,
  * \return  true on success, false on memory exhaustion
  */
 
-bool box_construct_element(xmlNode *n, struct content *content,
+bool box_construct_element(xmlNode *n, html_content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title)
@@ -543,7 +503,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				if (!html_fetch_object(content,
 						lwc_string_data(image_uri),
 						marker, image_types,
-						content->available_width,
+						content->base.available_width,
 						1000, false))
 					return false;
 			}
@@ -607,7 +567,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
 				bgimage_uri != NULL) {
 		if (!html_fetch_object(content,
 				lwc_string_data(bgimage_uri),
-				box, image_types, content->available_width,
+				box, image_types, content->base.available_width,
 				1000, true))
 			return false;
 	}
@@ -645,7 +605,7 @@ bool box_construct_element(xmlNode *n, struct content *content,
  * We don't actually support generated content yet.
  */
 
-void box_construct_generate(xmlNode *n, struct content *content,
+void box_construct_generate(xmlNode *n, html_content *content,
 		struct box *box, const css_computed_style *style)
 {
 	struct box *gen = NULL;
@@ -694,7 +654,7 @@ void box_construct_generate(xmlNode *n, struct content *content,
  * \return  true on success, false on memory exhaustion
  */
 
-bool box_construct_text(xmlNode *n, struct content *content,
+bool box_construct_text(xmlNode *n, html_content *content,
 		const css_computed_style *parent_style,
 		struct box *parent, struct box **inline_container,
 		char *href, const char *target, char *title)
@@ -915,7 +875,7 @@ bool box_construct_text(xmlNode *n, struct content *content,
  * \param  n		   node in xml tree
  * \return  the new style, or NULL on memory exhaustion
  */
-css_select_results *box_get_style(struct content *c,
+css_select_results *box_get_style(html_content *c,
 		const css_computed_style *parent_style, xmlNode *n)
 {
 	char *s;
@@ -923,13 +883,14 @@ css_select_results *box_get_style(struct content *c,
 	css_error error;
 	css_stylesheet *inline_style = NULL;
 	css_select_results *styles;
+	nscss_select_ctx ctx;
 
 	/* Firstly, construct inline stylesheet, if any */
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
-				c->data.html.encoding, content__get_url(c), 
-				c->data.html.quirks != BINDING_QUIRKS_MODE_NONE,
+				c->encoding, content__get_url(&c->base), 
+				c->quirks != BINDING_QUIRKS_MODE_NONE,
 				box_style_alloc, NULL);
 
 		xmlFree(s);
@@ -938,8 +899,13 @@ css_select_results *box_get_style(struct content *c,
 			return NULL;
 	}
 
+	/* Populate selection context */
+	ctx.ctx = c->select_ctx;
+	ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+	ctx.base_url = c->base_url;
+
 	/* Select partial style for element */
-	styles = nscss_get_style(c, n, CSS_MEDIA_SCREEN, inline_style,
+	styles = nscss_get_style(&ctx, n, CSS_MEDIA_SCREEN, inline_style,
 			box_style_alloc, NULL);
 
 	/* No longer need inline style */
@@ -1066,9 +1032,9 @@ bool box_body(BOX_SPECIAL_PARAMS)
 
 	css_computed_background_color(box->style, &color);
 	if (nscss_color_is_transparent(color))
-		content->data.html.background_colour = NS_TRANSPARENT;
+		content->background_colour = NS_TRANSPARENT;
 	else
-		content->data.html.background_colour = nscss_color_to_ns(color);
+		content->background_colour = nscss_color_to_ns(color);
 
 	return true;
 }
@@ -1106,7 +1072,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 	if ((s = xmlGetProp(n, (const xmlChar *) "href"))) {
 		ok = box_extract_link((const char *) s,
-				content->data.html.base_url, &url);
+				content->base_url, &url);
 		xmlFree(s);
 		if (!ok)
 			return false;
@@ -1191,7 +1157,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	/* get image URL */
 	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, content->data.html.base_url, &url))
+	if (!box_extract_link((char *) src, content->base_url, &url))
 		return false;
 	xmlFree(src);
 	if (!url)
@@ -1199,7 +1165,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 	/* start fetch */
 	ok = html_fetch_object(content, url, box, image_types,
-			content->available_width, 1000, false);
+			content->base.available_width, 1000, false);
 	free(url);
 
 	wtype = css_computed_width(box->style, &value, &wunit);
@@ -1250,13 +1216,13 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * (codebase is the base for the other two) */
 	if ((codebase = xmlGetProp(n, (const xmlChar *) "codebase"))) {
 		if (!box_extract_link((char *) codebase,
-				content->data.html.base_url,
+				content->base_url,
 				&params->codebase))
 			return false;
 		xmlFree(codebase);
 	}
 	if (!params->codebase)
-		params->codebase = content->data.html.base_url;
+		params->codebase = content->base_url;
 
 	if ((classid = xmlGetProp(n, (const xmlChar *) "classid"))) {
 		if (!box_extract_link((char *) classid, params->codebase,
@@ -1277,14 +1243,10 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* Don't include ourself */
-	if (params->classid &&
-			strcmp(content->data.html.base_url,
-				params->classid) == 0)
+	if (params->classid && strcmp(content->base_url, params->classid) == 0)
 		return true;
 
-	if (params->data &&
-			strcmp(content->data.html.base_url,
-				params->data) == 0)
+	if (params->data && strcmp(content->base_url, params->data) == 0)
 		return true;
 
 	/* codetype and type are MIME types */
@@ -1298,12 +1260,14 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * !classid && !data => invalid; ignored */
 
 	if (params->classid && !params->data && params->codetype &&
-			content_lookup(params->codetype) == CONTENT_OTHER)
+			content_factory_type_from_mime_type(params->codetype) ==
+			CONTENT_NONE)
 		/* can't handle this MIME type */
 		return true;
 
 	if (params->data && params->type &&
-			content_lookup(params->type) == CONTENT_OTHER)
+			content_factory_type_from_mime_type(params->type) == 
+			CONTENT_NONE)
 		/* can't handle this MIME type */
 		return true;
 
@@ -1349,7 +1313,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	/* start fetch (MIME type is ok or not specified) */
 	if (!html_fetch_object(content,
 			params->data ? params->data : params->classid,
-			box, 0, content->available_width, 1000, false))
+			box, CONTENT_ANY, content->base.available_width, 1000, 
+			false))
 		return false;
 
 	*convert_children = false;
@@ -1503,7 +1468,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 {
 	bool ok;
 
-	if (content->data.html.frameset) {
+	if (content->frameset) {
 		LOG(("Error: multiple framesets in document."));
 		/* Don't convert children */
 		if (convert_children)
@@ -1513,12 +1478,11 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 		return true;
 	}
 
-	content->data.html.frameset = talloc_zero(content,
-						struct content_html_frames);
-	if (!content->data.html.frameset)
+	content->frameset = talloc_zero(content, struct content_html_frames);
+	if (!content->frameset)
 		return false;
 
-	ok = box_create_frameset(content->data.html.frameset, n, content);
+	ok = box_create_frameset(content->frameset, n, content);
 	if (ok)
 		box->type = BOX_NONE;
 
@@ -1528,7 +1492,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 }
 
 bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
-		struct content *content) {
+		html_content *content) {
 	unsigned int row, col, index, i;
 	unsigned int rows = 1, cols = 1;
 	char *s, *url;
@@ -1645,15 +1609,14 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			url = NULL;
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
-				box_extract_link(s, content->data.html.base_url,
-									&url);
+				box_extract_link(s, content->base_url, &url);
 				xmlFree(s);
 			}
 
 			/* copy url */
 			if (url) {
 			  	/* no self-references */
-			  	if (strcmp(content->data.html.base_url, url))
+			  	if (strcmp(content->base_url, url))
 					frame->url = talloc_strdup(content,
 									url);
 				free(url);
@@ -1738,7 +1701,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	if (!(s = (char *) xmlGetProp(n,
 			(const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link(s, content->data.html.base_url, &url)) {
+	if (!box_extract_link(s, content->base_url, &url)) {
 		xmlFree(s);
 		return false;
 	}
@@ -1747,7 +1710,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* don't include ourself */
-	if (strcmp(content->data.html.base_url, url) == 0) {
+	if (strcmp(content->base_url, url) == 0) {
 		free(url);
 		return true;
 	}
@@ -1767,17 +1730,15 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	iframe->border = true;
 
 	/* Add this iframe to the linked list of iframes */
-	iframe->next = content->data.html.iframe;
-	content->data.html.iframe = iframe;
+	iframe->next = content->iframe;
+	content->iframe = iframe;
 
 	/* fill in specified values */
-	if ((s = (char *) xmlGetProp(n,
-			(const xmlChar *) "name"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
 		iframe->name = talloc_strdup(content, s);
 		xmlFree(s);
 	}
-	if ((s = (char *) xmlGetProp(n,
-			(const xmlChar *) "frameborder"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "frameborder"))) {
 		i = atoi(s);
 		iframe->border = (i != 0);
 		xmlFree(s);
@@ -1790,21 +1751,18 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 		xmlFree(s);
 	}
-	if ((s = (char *) xmlGetProp(n,
-			(const xmlChar *) "scrolling"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "scrolling"))) {
 		if (!strcasecmp(s, "yes"))
 			iframe->scrolling = SCROLLING_YES;
 		else if (!strcasecmp(s, "no"))
 			iframe->scrolling = SCROLLING_NO;
 		xmlFree(s);
 	}
-	if ((s = (char *) xmlGetProp(n,
-			(const xmlChar *) "marginwidth"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "marginwidth"))) {
 		iframe->margin_width = atoi(s);
 		xmlFree(s);
 	}
-	if ((s = (char *) xmlGetProp(n,
-			(const xmlChar *) "marginheight"))) {
+	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "marginheight"))) {
 		iframe->margin_height = atoi(s);
 		xmlFree(s);
 	}
@@ -1835,8 +1793,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 
-	gadget = binding_get_control_for_node(content->data.html.parser_binding,
-			n);
+	gadget = binding_get_control_for_node(content->parser_binding, n);
 	if (!gadget)
 		goto no_memory;
 	box->gadget = gadget;
@@ -1901,8 +1858,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				n->parent == NULL) != CSS_DISPLAY_NONE) {
 			if ((s = (char *) xmlGetProp(n,
 					(const xmlChar*) "src"))) {
-				res = url_join(s,
-					content->data.html.base_url, &url);
+				res = url_join(s, content->base_url, &url);
 				xmlFree(s);
 				/* if url is equivalent to the parent's url,
 				 * we've got infinite inclusion. stop it here
@@ -1910,11 +1866,10 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				 */
 				if (res == URL_FUNC_OK &&
 						strcasecmp(url,
-						content->data.
-						html.base_url) != 0) {
+						content->base_url) != 0) {
 					if (!html_fetch_object(content, url,
 							box, image_types,
-							content->
+							content->base.
 							available_width,
 							1000, false)) {
 						free(url);
@@ -1997,8 +1952,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 {
 	struct form_control *gadget;
 
-	gadget = binding_get_control_for_node(content->data.html.parser_binding,
-			n);
+	gadget = binding_get_control_for_node(content->parser_binding, n);
 	if (!gadget)
 		return false;
 
@@ -2024,8 +1978,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	struct form_control *gadget;
 	xmlNode *c, *c2;
 
-	gadget = binding_get_control_for_node(content->data.html.parser_binding,
-			n);
+	gadget = binding_get_control_for_node(content->parser_binding, n);
 	if (!gadget)
 		return false;
 
@@ -2171,8 +2124,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	size_t len;
 
 	box->type = BOX_INLINE_BLOCK;
-	box->gadget = binding_get_control_for_node(
-			content->data.html.parser_binding, n);
+	box->gadget = binding_get_control_for_node(content->parser_binding, n);
 	if (!box->gadget)
 		return false;
 	box->gadget->box = box;
@@ -2301,15 +2253,14 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	/* src is a URL */
 	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, content->data.html.base_url,
-			&params->data))
+	if (!box_extract_link((char *) src, content->base_url, &params->data))
 		return false;
 	xmlFree(src);
 	if (!params->data)
 		return true;
 
 	/* Don't include ourself */
-	if (strcmp(content->data.html.base_url, params->data) == 0)
+	if (strcmp(content->base_url, params->data) == 0)
 		return true;
 
 	/* add attributes as parameters to linked list */
@@ -2339,8 +2290,8 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	box->object_params = params;
 
 	/* start fetch */
-	return html_fetch_object(content, params->data, box, 0,
-			content->available_width, 1000, false);
+	return html_fetch_object(content, params->data, box, CONTENT_ANY,
+			content->base.available_width, 1000, false);
 }
 
 /**

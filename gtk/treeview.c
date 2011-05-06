@@ -98,35 +98,7 @@ void tree_icon_name_from_content_type(char *buffer, content_type type)
 		case CONTENT_HTML:
 		case CONTENT_TEXTPLAIN:
 		case CONTENT_CSS:
-#if defined(WITH_MNG) || defined(WITH_PNG)
-		case CONTENT_PNG:
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-		case CONTENT_MNG:
-#endif
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-		case CONTENT_BMP:
-		case CONTENT_ICO:
-#endif
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-#endif
-#ifdef WITH_DRAW
-		case CONTENT_DRAW:
-#endif
-#ifdef WITH_ARTWORKS
-		case CONTENT_ARTWORKS:
-#endif
-#ifdef WITH_NS_SVG
-		case CONTENT_SVG:
-#endif
+		case CONTENT_IMAGE:
 		default:
 			sprintf(buffer, tree_content_icon_name);
 			break;

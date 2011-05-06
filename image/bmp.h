@@ -31,29 +31,15 @@
 #include <libnsbmp.h>
 #include "image/bitmap.h"
 
-struct content;
-struct bitmap;
-struct http_parameter;
-struct rect;
-
-struct content_bmp_data {
-	bmp_image *bmp;	/** BMP image data */
-};
-
 extern bmp_bitmap_callback_vt bmp_bitmap_callbacks; /** Only to be used by ICO code.  */
 
-bool nsbmp_create(struct content *c, const struct http_parameter *params);
-bool nsbmp_convert(struct content *c);
-void nsbmp_destroy(struct content *c);
-bool nsbmp_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool nsbmp_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-bool nsbmp_clone(const struct content *old, struct content *new_content);
-void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state);
+nserror nsbmp_init(void);
+void nsbmp_fini(void);
+
+#else
+
+#define nsbmp_init() NSERROR_OK
+#define nsbmp_fini() ((void) 0)
 
 #endif /* WITH_BMP */
 

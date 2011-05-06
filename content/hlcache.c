@@ -48,7 +48,7 @@ struct hlcache_retrieval_ctx {
 
 	uint32_t flags;			/**< Retrieval flags */
 
-	const content_type *accepted_types;	/**< Accepted types, or NULL */
+	content_type accepted_types;	/**< Accepted types */
 
 	hlcache_child_context child;	/**< Child context */	
 };
@@ -80,8 +80,7 @@ static void hlcache_clean(void *ignored);
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
 static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
-		const content_type *accepted_types, 
-		content_type *computed_type);
+		content_type accepted_types, content_type *computed_type);
 static nserror hlcache_find_content(hlcache_retrieval_ctx *ctx);
 static void hlcache_content_callback(struct content *c,
 		content_msg msg, union content_msg_data data, void *pw);
@@ -124,7 +123,7 @@ void hlcache_finalise(void)
 		num_contents++;
 	}
 
-	LOG(("%d contents to before cache drain", num_contents));
+	LOG(("%d contents remain before cache drain", num_contents));
 	
 	/* Drain cache */
 	do {
@@ -189,7 +188,7 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		const char *referer, llcache_post_data *post,
 		hlcache_handle_callback cb, void *pw,
 		hlcache_child_context *child, 
-		const content_type *accepted_types, hlcache_handle **result)
+		content_type accepted_types, hlcache_handle **result)
 {
 	hlcache_retrieval_ctx *ctx;
 	nserror error;
@@ -449,7 +448,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 	switch (event->type) {
 	case LLCACHE_EVENT_HAD_HEADERS:
 	{
-		content_type type = CONTENT_UNKNOWN;
+		content_type type = 0;
 		
 		/* Unlink the context to prevent recursion */
 		RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
@@ -472,8 +471,8 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 				free(ctx);
 				return error;
 			}
-		} else if (type == CONTENT_OTHER && 
-				ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD) {
+		} else if (type == CONTENT_NONE && 
+				(ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD)) {
 			/* Unknown type, and we can download, so convert */
 			llcache_handle_force_stream(handle);
 
@@ -539,14 +538,13 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
  * \return True if the type is acceptable, false otherwise
  */
 bool hlcache_type_is_acceptable(llcache_handle *llcache, 
-		const content_type *accepted_types, content_type *computed_type)
+		content_type accepted_types, content_type *computed_type)
 {
 	const char *content_type_header;
 	char *mime_type;
 	http_parameter *params;
 	content_type type;
 	nserror error;
-	bool acceptable;
 
 	content_type_header = 
 			llcache_handle_get_header(llcache, "Content-Type");
@@ -558,27 +556,14 @@ bool hlcache_type_is_acceptable(llcache_handle *llcache,
 	if (error != NSERROR_OK)
 		return false;
 
-	type = content_lookup(mime_type);
+	type = content_factory_type_from_mime_type(mime_type);
 
 	free(mime_type);
 	http_parameter_list_destroy(params);
 
-	if (accepted_types == NULL) {
-		acceptable = type != CONTENT_OTHER;
-	} else {
-		while (*accepted_types != CONTENT_UNKNOWN) {
-			if (*accepted_types == type)
-				break;
-
-			accepted_types++;
-		}
-
-		acceptable = *accepted_types == type;
-	}
-
 	*computed_type = type;
 
-	return acceptable;
+	return ((accepted_types & type) != 0);
 }
 
 /**
@@ -614,7 +599,7 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 			continue;
 
 		/* Ensure that quirks mode is acceptable */
-		if (content_matches_quirks(entry->content, 
+		if (content_matches_quirks(entry->content,
 				ctx->child.quirks) == false)
 			continue;
 
@@ -634,7 +619,7 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 			return NSERROR_NOMEM;
 
 		/* Create content using llhandle */
-		entry->content = content_create(ctx->llcache, 
+		entry->content = content_factory_create_content(ctx->llcache, 
 				ctx->child.charset, ctx->child.quirks);
 		if (entry->content == NULL) {
 			free(entry);

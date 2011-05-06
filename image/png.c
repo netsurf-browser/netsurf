@@ -23,8 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* Ugh -- setjmp.h weirdness ensues if this isn't first... */
-#include "image/png.h"
+#include <png.h>
 
 #include "utils/config.h"
 
@@ -33,14 +32,16 @@
 #include "content/content_protected.h"
 
 #include "image/bitmap.h"
+#include "image/png.h"
 
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #ifdef WITH_PNG
 
-/* accomodate for old versions of libpng (beware security holes!) */
+/* accommodate for old versions of libpng (beware security holes!) */
 
 #ifndef png_jmpbuf
 #warning you have an antique libpng
@@ -51,72 +52,190 @@
 #define png_set_expand_gray_1_2_4_to_8(png) png_set_gray_1_2_4_to_8(png)
 #endif
 
-/* libpng uses names starting png_, so use nspng_ here to avoid clashes */
+typedef struct nspng_content {
+	struct content base;
+
+	png_structp png;
+	png_infop info;
+	int interlace;
+        struct bitmap *bitmap;	/**< Created NetSurf bitmap */
+        size_t rowstride, bpp; /**< Bitmap rowstride and bpp */
+        size_t rowbytes; /**< Number of bytes per row */
+} nspng_content;
+
+static nserror nspng_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static nserror nspng_create_png_data(nspng_content *c);
+static bool nspng_process_data(struct content *c, const char *data, 
+		unsigned int size);
+static bool nspng_convert(struct content *c);
+static void nspng_destroy(struct content *c);
+static bool nspng_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static bool nspng_redraw_tiled(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
+static nserror nspng_clone(const struct content *old, struct content **newc);
+static content_type nspng_content_type(lwc_string *mime_type);
 
 static void info_callback(png_structp png, png_infop info);
 static void row_callback(png_structp png, png_bytep new_row,
 		png_uint_32 row_num, int pass);
 static void end_callback(png_structp png, png_infop info);
 
+static const content_handler nspng_content_handler = {
+	nspng_create,
+	nspng_process_data,
+	nspng_convert,
+	NULL,
+	nspng_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nspng_redraw,
+	nspng_redraw_tiled,
+	NULL,
+	NULL,
+	nspng_clone,
+	NULL,
+	nspng_content_type,
+	false
+};
 
-bool nspng_create(struct content *c, const struct http_parameter *params)
+static const char *nspng_types[] = {
+	"image/png"
+};
+
+static lwc_string *nspng_mime_types[NOF_ELEMENTS(nspng_types)];
+
+nserror nspng_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(nspng_mime_types); i++) {
+		lerror = lwc_intern_string(nspng_types[i],
+				strlen(nspng_types[i]),
+				&nspng_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(nspng_mime_types[i],
+				&nspng_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nspng_fini();
+
+	return error;
+}
+
+void nspng_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nspng_mime_types); i++) {
+		if (nspng_mime_types[i] != NULL)
+			lwc_string_unref(nspng_mime_types[i]);
+	}
+}
+
+nserror nspng_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	nspng_content *png;
+	nserror error;
+
+	png = talloc_zero(0, nspng_content);
+	if (png == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&png->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(png);
+		return error;
+	}
+
+	error = nspng_create_png_data(png);
+	if (error != NSERROR_OK) {
+		talloc_free(png);
+		return error;
+	}
+
+	*c = (struct content *) png;
+
+	return NSERROR_OK;
+}
+
+nserror nspng_create_png_data(nspng_content *c)
 {
 	union content_msg_data msg_data;
 
-        c->data.png.bitmap = NULL;
+        c->bitmap = NULL;
 
-	c->data.png.png = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-                                                 0, 0, 0);
-	if (c->data.png.png == NULL) {
+	c->png = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
+	if (c->png == NULL) {
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		warn_user("NoMemory", 0);
-		return false;
+		return NSERROR_NOMEM;
 	}
 
-	c->data.png.info = png_create_info_struct(c->data.png.png);
-	if (c->data.png.info == NULL) {
-		png_destroy_read_struct(&c->data.png.png,
-				&c->data.png.info, 0);
+	c->info = png_create_info_struct(c->png);
+	if (c->info == NULL) {
+		png_destroy_read_struct(&c->png, &c->info, 0);
 
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		warn_user("NoMemory", 0);
-		return false;
+		return NSERROR_NOMEM;
 	}
 
-	if (setjmp(png_jmpbuf(c->data.png.png))) {
-		png_destroy_read_struct(&c->data.png.png,
-				&c->data.png.info, 0);
+	if (setjmp(png_jmpbuf(c->png))) {
+		png_destroy_read_struct(&c->png, &c->info, 0);
 		LOG(("Failed to set callbacks"));
-		c->data.png.png = NULL;
-		c->data.png.info = NULL;
+		c->png = NULL;
+		c->info = NULL;
 
 		msg_data.error = messages_get("PNGError");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return NSERROR_NOMEM;
 	}
 
-	png_set_progressive_read_fn(c->data.png.png, c,
+	png_set_progressive_read_fn(c->png, c,
 			info_callback, row_callback, end_callback);
 
-	return true;
+	return NSERROR_OK;
 }
 
 
 bool nspng_process_data(struct content *c, const char *data, unsigned int size)
 {
+	nspng_content *png = (nspng_content *) c;
 	union content_msg_data msg_data;
 
-	if (setjmp(png_jmpbuf(c->data.png.png))) {
-		png_destroy_read_struct(&c->data.png.png,
-				&c->data.png.info, 0);
+	if (setjmp(png_jmpbuf(png->png))) {
+		png_destroy_read_struct(&png->png, &png->info, 0);
 		LOG(("Failed to process data"));
-		c->data.png.png = NULL;
-		c->data.png.info = NULL;
-                if (c->data.png.bitmap != NULL) {
-                        bitmap_destroy(c->data.png.bitmap);
-                        c->data.png.bitmap = NULL;
+		png->png = NULL;
+		png->info = NULL;
+                if (png->bitmap != NULL) {
+                        bitmap_destroy(png->bitmap);
+                        png->bitmap = NULL;
                 }
 
 		msg_data.error = messages_get("PNGError");
@@ -124,8 +243,7 @@ bool nspng_process_data(struct content *c, const char *data, unsigned int size)
 		return false;
 	}
 
-	png_process_data(c->data.png.png, c->data.png.info,
-			(uint8_t *) data, size);
+	png_process_data(png->png, png->info, (uint8_t *) data, size);
 
 	return true;
 }
@@ -141,21 +259,21 @@ void info_callback(png_structp png, png_infop info)
 	int bit_depth, color_type, interlace, intent;
 	double gamma;
 	png_uint_32 width, height;
-	struct content *c = png_get_progressive_ptr(png);
+	nspng_content *c = png_get_progressive_ptr(png);
 
 	/* Read the PNG details */
 	png_get_IHDR(png, info, &width, &height, &bit_depth,
 			&color_type, &interlace, 0, 0);
 
 	/* Claim the required memory for the converted PNG */
-        c->data.png.bitmap = bitmap_create(width, height, BITMAP_NEW);
-	if (c->data.png.bitmap == NULL) {
+        c->bitmap = bitmap_create(width, height, BITMAP_NEW);
+	if (c->bitmap == NULL) {
 		/* Failed -- bail out */
 		longjmp(png_jmpbuf(png), 1);
 	}
 
-        c->data.png.rowstride = bitmap_get_rowstride(c->data.png.bitmap);
-        c->data.png.bpp = bitmap_get_bpp(c->data.png.bitmap);
+        c->rowstride = bitmap_get_rowstride(c->bitmap);
+        c->bpp = bitmap_get_bpp(c->bitmap);
 
         /* Set up our transformations */
 	if (color_type == PNG_COLOR_TYPE_PALETTE)
@@ -187,13 +305,13 @@ void info_callback(png_structp png, png_infop info)
 
 	png_read_update_info(png, info);
 
-	c->data.png.rowbytes = png_get_rowbytes(png, info);
-	c->data.png.interlace = (interlace == PNG_INTERLACE_ADAM7);
-	c->width = width;
-	c->height = height;
+	c->rowbytes = png_get_rowbytes(png, info);
+	c->interlace = (interlace == PNG_INTERLACE_ADAM7);
+	c->base.width = width;
+	c->base.height = height;
 
 	LOG(("size %li * %li, bpp %i, rowbytes %zu", (unsigned long)width,
-	     (unsigned long)height, bit_depth, c->data.png.rowbytes));
+	     (unsigned long)height, bit_depth, c->rowbytes));
 }
 
 
@@ -205,13 +323,13 @@ static unsigned int interlace_row_step[8] = {8, 8, 8, 4, 4, 2, 2};
 void row_callback(png_structp png, png_bytep new_row,
 		png_uint_32 row_num, int pass)
 {
-	struct content *c = png_get_progressive_ptr(png);
-	unsigned long i, j, rowbytes = c->data.png.rowbytes;
+	nspng_content *c = png_get_progressive_ptr(png);
+	unsigned long i, j, rowbytes = c->rowbytes;
 	unsigned int start, step;
 	unsigned char *buffer, *row;
 
 	/* Give up if there's no bitmap */
-	if (c->data.png.bitmap == NULL)
+	if (c->bitmap == NULL)
 		return;
 
 	/* Abort if we've not got any data */
@@ -219,17 +337,17 @@ void row_callback(png_structp png, png_bytep new_row,
 		return;
 
 	/* Get bitmap buffer */
-	buffer = bitmap_get_buffer(c->data.png.bitmap);
+	buffer = bitmap_get_buffer(c->bitmap);
 	if (buffer == NULL) {
 		/* No buffer, bail out */
 		longjmp(png_jmpbuf(png), 1);
 	}
 
 	/* Calculate address of row start */
-        row = buffer + (c->data.png.rowstride * row_num);
+        row = buffer + (c->rowstride * row_num);
 
 	/* Handle interlaced sprites using the Adam7 algorithm */
-	if (c->data.png.interlace) {
+	if (c->interlace) {
 		start = interlace_start[pass];
 		step = interlace_step[pass];
 		row_num = interlace_row_start[pass] +
@@ -237,7 +355,7 @@ void row_callback(png_structp png, png_bytep new_row,
 
 		/* Copy the data to our current row taking interlacing
 		 * into consideration */
-		row = buffer + (c->data.png.rowstride * row_num);
+		row = buffer + (c->rowstride * row_num);
 
 		for (j = 0, i = start; i < rowbytes; i += step) {
 			row[i++] = new_row[j++];
@@ -260,14 +378,15 @@ void end_callback(png_structp png, png_infop info)
 
 bool nspng_convert(struct content *c)
 {
+	nspng_content *png = (nspng_content *) c;
 	const char *data;
 	unsigned long size;
 	char title[100];
 
-	assert(c->data.png.png != NULL);
-	assert(c->data.png.info != NULL);
+	assert(png->png != NULL);
+	assert(png->info != NULL);
 
-	if (c->data.png.bitmap == NULL) {
+	if (png->bitmap == NULL) {
 		union content_msg_data msg_data;
 
 		msg_data.error = messages_get("PNGError");
@@ -278,7 +397,7 @@ bool nspng_convert(struct content *c)
 
 	data = content__get_source_data(c, &size);
 
-	png_destroy_read_struct(&c->data.png.png, &c->data.png.info, 0);
+	png_destroy_read_struct(&png->png, &png->info, 0);
 
 	snprintf(title, sizeof(title), messages_get("PNGTitle"),
                          c->width, c->height, size);
@@ -286,7 +405,7 @@ bool nspng_convert(struct content *c)
 
 	c->size += (c->width * c->height * 4);
 
-	c->bitmap = c->data.png.bitmap;
+	c->bitmap = png->bitmap;
 	bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
 	bitmap_modified(c->bitmap);
 	content_set_ready(c);
@@ -299,9 +418,11 @@ bool nspng_convert(struct content *c)
 
 void nspng_destroy(struct content *c)
 {
-        if (c->data.png.bitmap != NULL) {
-                bitmap_destroy(c->data.png.bitmap);
-        }
+	nspng_content *png = (nspng_content *) c;
+
+	if (png->bitmap != NULL) {
+		bitmap_destroy(png->bitmap);
+	}
 }
 
 
@@ -333,28 +454,54 @@ bool nspng_redraw_tiled(struct content *c, int x, int y,
 				background_colour, flags);
 }
 
-bool nspng_clone(const struct content *old, struct content *new_content)
+nserror nspng_clone(const struct content *old, struct content **newc)
 {
+	nspng_content *png;
+	nserror error;
 	const char *data;
 	unsigned long size;
 
-	/* Simply replay create/process/convert */
-	if (nspng_create(new_content, NULL) == false)
-		return false;
+	png = talloc_zero(0, nspng_content);
+	if (png == NULL)
+		return NSERROR_NOMEM;
 
-	data = content__get_source_data(new_content, &size);
+	error = content__clone(old, &png->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&png->base);
+		return error;
+	}
+
+	/* Simply replay create/process/convert */
+	error = nspng_create_png_data(png);
+	if (error != NSERROR_OK) {
+		content_destroy(&png->base);
+		return error;
+	}
+
+	data = content__get_source_data(&png->base, &size);
 	if (size > 0) {
-		if (nspng_process_data(new_content, data, size) == false)
-			return false;
+		if (nspng_process_data(&png->base, data, size) == false) {
+			content_destroy(&png->base);
+			return NSERROR_NOMEM;
+		}
 	}
 
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (nspng_convert(new_content) == false)
-			return false;
+		if (nspng_convert(&png->base) == false) {
+			content_destroy(&png->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) png;
+
+	return NSERROR_OK;
+}
+
+content_type nspng_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
 }
 
 #endif

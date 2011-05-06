@@ -2128,7 +2128,7 @@ void textarea_reflow(struct browser_window *bw, struct box *textarea,
 	assert(c != NULL);
 
 	if (!layout_inline_container(inline_container, width,
-			textarea, 0, 0, c))
+			textarea, 0, 0, (struct html_content *) c))
 		warn_user("NoMemory", 0);
 	textarea->width = width;
 	textarea->height = height;

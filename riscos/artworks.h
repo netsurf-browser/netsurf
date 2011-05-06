@@ -23,27 +23,19 @@
 #ifndef _NETSURF_RISCOS_ARTWORKS_H_
 #define _NETSURF_RISCOS_ARTWORKS_H_
 
-struct content;
-struct rect;
+#include "utils/config.h"
+#include "utils/errors.h"
 
-struct content_artworks_data {
-	int x0, y0, x1, y1;
+#ifdef WITH_ARTWORKS
 
-	void *render_routine;
-	void *render_workspace;
+nserror artworks_init(void);
+void artworks_fini(void);
 
-	/* dunamically-resizable block required by
-		ArtWorksRenderer rendering routine */
+#else
 
-	void *block;
-	size_t size;
-};
+#define artworks_init() NSERROR_OK
+#define artworks_fini() ((void) 0)
 
-bool artworks_convert(struct content *c);
-void artworks_destroy(struct content *c);
-bool artworks_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool artworks_clone(const struct content *old, struct content *new_content);
+#endif
 
 #endif

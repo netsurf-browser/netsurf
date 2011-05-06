@@ -99,7 +99,7 @@ static bool parse_dimension(const char *data, bool strict,
 static bool parse_number(const char *data, bool non_negative, bool real,
 		css_fixed *value, size_t *consumed);
 
-static css_computed_style *nscss_get_initial_style(struct content *html,
+static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx,
 		css_allocator_fn, void *pw);
 
 static bool isWhitespace(char c);
@@ -211,7 +211,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 /**
  * Get a style selection results (partial computed styles) for an element
  *
- * \param html            HTML document
+ * \param ctx             CSS selection context
  * \param n               Element to select for
  * \param media           Permitted media types
  * \param inline_style    Inline style associated with element, or NULL
@@ -220,17 +220,15 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
  * \return Pointer to selection results (containing partial computed styles),
  *         or NULL on failure
  */
-css_select_results *nscss_get_style(struct content *html, xmlNode *n,
+css_select_results *nscss_get_style(nscss_select_ctx *ctx, xmlNode *n,
 		uint64_t media, const css_stylesheet *inline_style,
 		css_allocator_fn alloc, void *pw)
 {
 	css_select_results *styles;
 	css_error error;
 
-	assert(html->type == CONTENT_HTML);
-
-	error = css_select_style(html->data.html.select_ctx, n, media,
-			inline_style, &selection_handler, html, &styles);
+	error = css_select_style(ctx->ctx, n, media, inline_style, 
+			&selection_handler, ctx, &styles);
 	if (error != CSS_OK) {
 		return NULL;
 	}
@@ -241,24 +239,22 @@ css_select_results *nscss_get_style(struct content *html, xmlNode *n,
 /**
  * Get an initial style
  *
- * \param html   HTML document
+ * \param ctx    CSS selection context
  * \param alloc  Memory allocation function
  * \param pw     Private word for allocator
  * \return Pointer to partial computed style, or NULL on failure
  */
-css_computed_style *nscss_get_initial_style(struct content *html,
+css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx,
 		css_allocator_fn alloc, void *pw)
 {
 	css_computed_style *style;
 	css_error error;
 
-	assert(html->type == CONTENT_HTML);
-
 	error = css_computed_style_create(alloc, pw, &style);
 	if (error != CSS_OK)
 		return NULL;
 
-	error = css_computed_style_initialise(style, &selection_handler, html);
+	error = css_computed_style_initialise(style, &selection_handler, ctx);
 	if (error != CSS_OK) {
 		css_computed_style_destroy(style);
 		return NULL;
@@ -270,22 +266,20 @@ css_computed_style *nscss_get_initial_style(struct content *html,
 /**
  * Get a blank style
  *
- * \param html    HTML document
+ * \param ctx     CSS selection context
  * \param parent  Parent style to cascade inherited properties from
  * \param alloc   Memory allocation function
  * \param pw      Private word for allocator
  * \return Pointer to blank style, or NULL on failure
  */
-css_computed_style *nscss_get_blank_style(struct content *html,
+css_computed_style *nscss_get_blank_style(nscss_select_ctx *ctx,
 		const css_computed_style *parent,
 		css_allocator_fn alloc, void *pw)
 {
 	css_computed_style *partial;
 	css_error error;
 
-	assert(html->type == CONTENT_HTML);
-
-	partial = nscss_get_initial_style(html, alloc, pw);
+	partial = nscss_get_initial_style(ctx, alloc, pw);
 	if (partial == NULL)
 		return NULL;
 
@@ -877,7 +871,7 @@ css_error node_has_name(void *pw, void *node,
 css_error node_has_class(void *pw, void *node,
 		lwc_string *name, bool *match)
 {
-	struct content *html = pw;
+	nscss_select_ctx *ctx = pw;
 	xmlNode *n = node;
 	xmlAttr *class;
 	xmlChar *value = NULL;
@@ -888,7 +882,7 @@ css_error node_has_class(void *pw, void *node,
 	int (*cmp)(const char *, const char *, size_t);
 
 	/* Class names are case insensitive in quirks mode */
-	if (html->data.html.quirks == BINDING_QUIRKS_MODE_FULL)
+	if (ctx->quirks)
 		cmp = strncasecmp;
 	else
 		cmp = strncmp;
@@ -1418,7 +1412,7 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 	/** \todo Implement visted check in a more performant way */
 
 #ifdef SUPPORT_VISITED
-	struct content *html = pw;
+	nscss_select_ctx *ctx = pw;
 	xmlNode *n = node;
 
 	if (strcasecmp((const char *) n->name, "a") == 0) {
@@ -1430,8 +1424,7 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 			return CSS_OK;
 
 		/* Make href absolute */
-		res = url_join((const char *) href,
-				html->data.html.base_url, &url);
+		res = url_join((const char *) href, ctx->base_url, &url);
 
 		xmlFree(href);
 
@@ -1632,7 +1625,7 @@ css_error node_is_lang(void *pw, void *node,
 css_error node_presentational_hint(void *pw, void *node,
 		uint32_t property, css_hint *hint)
 {
-	struct content *html = pw;
+	nscss_select_ctx *ctx = pw;
 	xmlNode *n = node;
 
 	if (property == CSS_PROP_BACKGROUND_IMAGE) {
@@ -1644,8 +1637,7 @@ css_error node_presentational_hint(void *pw, void *node,
 			return CSS_PROPERTY_NOT_SET;
 
 
-		res = url_join((const char *) bg,
-				html->data.html.base_url, &url);
+		res = url_join((const char *) bg, ctx->base_url, &url);
 
 		xmlFree(bg);
 
@@ -1707,7 +1699,7 @@ css_error node_presentational_hint(void *pw, void *node,
 		css_error error;
 		bool is_link, is_visited;
 
-		error = node_is_link(html, n, &is_link);
+		error = node_is_link(ctx, n, &is_link);
 		if (error != CSS_OK)
 			return error;
 
@@ -1720,7 +1712,7 @@ css_error node_presentational_hint(void *pw, void *node,
 					break;
 			}
 
-			error = node_is_visited(html, n, &is_visited);
+			error = node_is_visited(ctx, n, &is_visited);
 			if (error != CSS_OK)
 				return error;
 

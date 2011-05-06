@@ -22,29 +22,9 @@
 #include "utils/config.h"
 #ifdef WITH_PLUGIN
 
-#include "desktop/plugin.h"
 #include <stdbool.h>
 #include "oslib/plugin.h"
 #include "oslib/wimp.h"
-
-struct plugin_stream;
-
-/* We have one content per instance of a plugin */
-struct content_plugin_data {
-	struct browser_window *bw;	/* window containing this content */
-	struct content *page;		/* parent content */
-	struct box *box;		/* box containing this content */
-	char *taskname;			/* plugin task to launch */
-	char *filename;			/* filename of parameters file */
-	bool opened;			/* has this plugin been opened? */
-	int repeated;			/* indication of opening state */
-	unsigned int browser;		/* browser handle */
-	unsigned int plugin;		/* plugin handle */
-	unsigned int plugin_task;	/* plugin task handle */
-	bool reformat_pending;		/* is a reformat pending? */
-	int width, height;		/* reformat width & height */
-	struct plugin_stream *streams;	/* list of active streams */
-};
 
 /* message handlers */
 void plugin_open_msg(wimp_message *message);

@@ -37,7 +37,7 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
-#include "render/html.h"
+#include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

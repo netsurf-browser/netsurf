@@ -40,52 +40,6 @@
 #include "desktop/options.h"
 #include "render/html.h"
 #include "render/textplain.h"
-#ifdef WITH_JPEG
-#include "image/jpeg.h"
-#endif
-#ifdef WITH_MNG
-#include "image/mng.h"
-#endif
-#ifdef WITH_GIF
-#include "image/gif.h"
-#endif
-#ifdef WITH_BMP
-#include "image/bmp.h"
-#include "image/ico.h"
-#endif
-#ifdef WITH_NS_SVG
-#include "image/svg.h"
-#endif
-#ifdef WITH_RSVG
-#include "image/rsvg.h"
-#endif
-#ifdef WITH_SPRITE
-#include "riscos/sprite.h"
-#endif
-#ifdef WITH_NSSPRITE
-#include "image/nssprite.h"
-#endif
-#ifdef WITH_DRAW
-#include "riscos/draw.h"
-#endif
-#ifdef WITH_PLUGIN
-#include "desktop/plugin.h"
-#endif
-#ifdef WITH_ARTWORKS
-#include "riscos/artworks.h"
-#endif
-#ifdef WITH_PNG
-#include "image/png.h"
-#endif
-#ifdef WITH_WEBP
-#include "image/webp.h"
-#endif
-#ifdef WITH_AMIGA_ICON
-#include "amiga/icon.h"
-#endif
-#ifdef WITH_APPLE_IMAGE
-#include "cocoa/apple_image.h"
-#endif
 
 #include "utils/http.h"
 #include "utils/log.h"
@@ -94,318 +48,12 @@
 #include "utils/utils.h"
 
 
-/** An entry in mime_map. */
-struct mime_entry {
-	char mime_type[40];
-	content_type type;
-};
-/** A map from MIME type to ::content_type. Must be sorted by mime_type. */
-static const struct mime_entry mime_map[] = {
-#ifdef WITH_BMP
-	{"application/bmp", CONTENT_BMP},
-#endif
-#ifdef WITH_DRAW
-	{"application/drawfile", CONTENT_DRAW},
-#endif
-#ifdef WITH_BMP
-	{"application/ico", CONTENT_ICO},
-	{"application/preview", CONTENT_BMP},
-	{"application/x-bmp", CONTENT_BMP},
-#endif
-#ifdef WITH_DRAW
-	{"application/x-drawfile", CONTENT_DRAW},
-#endif
-#ifdef WITH_BMP
-	{"application/x-ico", CONTENT_ICO},
-#endif
-#ifdef WITH_THEME_INSTALL
-	{"application/x-netsurf-theme", CONTENT_THEME},
-#endif
-#ifdef WITH_BMP
-	{"application/x-win-bitmap", CONTENT_BMP},
-#endif
-	{"application/xhtml+xml", CONTENT_HTML},
-#ifdef WITH_BMP
-	{"image/bmp", CONTENT_BMP},
-#endif
-#ifdef WITH_DRAW
-	{"image/drawfile", CONTENT_DRAW},
-#endif
-#ifdef WITH_GIF
-	{"image/gif", CONTENT_GIF},
-#endif
-#ifdef WITH_BMP
-	{"image/ico", CONTENT_ICO},
-#endif
-#ifdef WITH_MNG
-	{"image/jng", CONTENT_JNG},
-#endif
-#ifdef WITH_JPEG
-	{"image/jpeg", CONTENT_JPEG},
-	{"image/jpg", CONTENT_JPEG},
-#endif
-#ifdef WITH_APPLE_IMAGE
-	{"image/jpeg", CONTENT_APPLE_IMAGE},
-	{"image/jpg", CONTENT_APPLE_IMAGE},
-#endif
-#ifdef WITH_MNG
-	{"image/mng", CONTENT_MNG},
-#endif
-#ifdef WITH_BMP
-	{"image/ms-bmp", CONTENT_BMP},
-#endif
-#ifdef WITH_JPEG
-	{"image/pjpeg", CONTENT_JPEG},
-#endif
-#ifdef WITH_APPLE_IMAGE
-	{"image/pjpeg", CONTENT_APPLE_IMAGE},
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-	{"image/png", CONTENT_PNG},
-#endif
-#if defined(WITH_NS_SVG) || defined (WITH_RSVG)
-	{"image/svg", CONTENT_SVG},
-	{"image/svg+xml", CONTENT_SVG},
-#endif
-#ifdef WITH_BMP
-	{"image/vnd.microsoft.icon", CONTENT_ICO},
-#endif
-#ifdef WITH_WEBP
-	{"image/webp", CONTENT_WEBP},
-#endif
-#ifdef WITH_AMIGA_ICON
-	{"image/x-amiga-icon", CONTENT_AMIGA_ICON},
-#endif
-#ifdef WITH_ARTWORKS
-	{"image/x-artworks", CONTENT_ARTWORKS},
-#endif
-#ifdef WITH_BMP
-	{"image/x-bitmap", CONTENT_BMP},
-	{"image/x-bmp", CONTENT_BMP},
-#endif
-#ifdef WITH_DRAW
-	{"image/x-drawfile", CONTENT_DRAW},
-#endif
-#ifdef WITH_BMP
-	{"image/x-icon", CONTENT_ICO},
-#endif
-#ifdef WITH_MNG
-	{"image/x-jng", CONTENT_JNG},
-	{"image/x-mng", CONTENT_MNG},
-#endif
-#ifdef WITH_BMP
-	{"image/x-ms-bmp", CONTENT_BMP},
-#endif
-#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
-	{"image/x-riscos-sprite", CONTENT_SPRITE},
-#endif
-#ifdef WITH_BMP
-	{"image/x-win-bitmap", CONTENT_BMP},
-	{"image/x-windows-bmp", CONTENT_BMP},
-	{"image/x-xbitmap", CONTENT_BMP},
-#endif
-	{"text/css", CONTENT_CSS},
-	{"text/html", CONTENT_HTML},
-	{"text/plain", CONTENT_TEXTPLAIN},
-#ifdef WITH_MNG
-	{"video/mng", CONTENT_MNG},
-	{"video/x-mng", CONTENT_MNG},
-#endif
-};
-#define MIME_MAP_COUNT (sizeof(mime_map) / sizeof(mime_map[0]))
-
-const char * const content_type_name[] = {
-	"HTML",
-	"TEXTPLAIN",
-	"CSS",
-#ifdef WITH_JPEG
-	"JPEG",
-#endif
-#ifdef WITH_GIF
-	"GIF",
-#endif
-#ifdef WITH_BMP
-	"BMP",
-	"ICO",
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-	"PNG",
-#endif
-#ifdef WITH_MNG
-	"JNG",
-	"MNG",
-#endif
-#if defined(WITH_SPRITE) || defined(WITH_NSSPRITE)
-	"SPRITE",
-#endif
-#ifdef WITH_DRAW
-	"DRAW",
-#endif
-#ifdef WITH_PLUGIN
-	"PLUGIN",
-#endif
-	"DIRECTORY",
-#ifdef WITH_THEME_INSTALL
-	"THEME",
-#endif
-#ifdef WITH_ARTWORKS
-	"ARTWORKS",
-#endif
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-	"SVG",
-#endif
-#ifdef WITH_WEBP
-	"WEBP",
-#endif
-#ifdef WITH_AMIGA_ICON
-	"AMIGA_ICON",
-#endif
-#ifdef WITH_APPLE_IMAGE
-	"APPLE_IMAGE",
-#endif
-	"OTHER",
-	"UNKNOWN"
-};
-
 const char * const content_status_name[] = {
 	"LOADING",
 	"READY",
 	"DONE",
 	"ERROR"
 };
-
-/** An entry in handler_map. */
-struct handler_entry {
-	bool (*create)(struct content *c, const http_parameter *params);
-	bool (*process_data)(struct content *c, 
-			const char *data, unsigned int size);
-	bool (*convert)(struct content *c);
-	void (*reformat)(struct content *c, int width, int height);
-	void (*destroy)(struct content *c);
-	void (*stop)(struct content *c);
-	void (*mouse_track)(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-	void (*mouse_action)(struct content *c, struct browser_window *bw,
-			browser_mouse_state mouse, int x, int y);
-	bool (*redraw)(struct content *c, int x, int y,
-			int width, int height, const struct rect *clip,
-			float scale, colour background_colour);
-	bool (*redraw_tiled)(struct content *c, int x, int y,
-			int width, int height, const struct rect *clip,
-			float scale, colour background_colour,
-			bool repeat_x, bool repeat_y);
-	void (*open)(struct content *c, struct browser_window *bw,
-			struct content *page,
-			struct box *box,
-			struct object_params *params);
-	void (*close)(struct content *c);
-	bool (*clone)(const struct content *old, struct content *new_content);
-	/** There must be one content per user for this type. */
-	bool no_share;
-};
-/** A table of handler functions, indexed by ::content_type.
- * Must be ordered as enum ::content_type. */
-static const struct handler_entry handler_map[] = {
-	{html_create, html_process_data, html_convert,
-		html_reformat, html_destroy, html_stop, html_mouse_track,
-		html_mouse_action, html_redraw, 0, html_open, html_close,
-		html_clone, true},
-	{textplain_create, textplain_process_data, textplain_convert,
-		textplain_reformat, textplain_destroy, 0, textplain_mouse_track,
-		textplain_mouse_action, textplain_redraw, 0, 0, 0,
-		textplain_clone, true},
-	{nscss_create, nscss_process_data, nscss_convert, 0, nscss_destroy, 
-		0, 0, 0, 0, 0, 0, 0, nscss_clone, false},
-#ifdef WITH_JPEG
-	{0, 0, nsjpeg_convert, 0, nsjpeg_destroy, 0, 0, 0,
-		nsjpeg_redraw, nsjpeg_redraw_tiled, 0, 0, nsjpeg_clone, false},
-#endif
-#ifdef WITH_GIF
-	{nsgif_create, 0, nsgif_convert, 0, nsgif_destroy, 0, 0, 0,
-		nsgif_redraw, nsgif_redraw_tiled, 0, 0, nsgif_clone, false},
-#endif
-#ifdef WITH_BMP
-	{nsbmp_create, 0, nsbmp_convert, 0, nsbmp_destroy, 0, 0, 0,
-		nsbmp_redraw, nsbmp_redraw_tiled, 0, 0, nsbmp_clone, false},
-	{nsico_create, 0, nsico_convert, 0, nsico_destroy, 0, 0, 0,
-		nsico_redraw, nsico_redraw_tiled, 0, 0, nsico_clone, false},
-#endif
-
-#ifdef WITH_PNG
-	{nspng_create, nspng_process_data, nspng_convert,
-		0, nspng_destroy, 0, 0, 0, nspng_redraw, nspng_redraw_tiled,
-		0, 0, nspng_clone, false},
-#else
-#ifdef WITH_MNG
-	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, 0, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, nsmng_clone, false},
-#endif
-#endif
-#ifdef WITH_MNG
-	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, 0, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, nsmng_clone, false},
-	{nsmng_create, nsmng_process_data, nsmng_convert,
-		0, nsmng_destroy, 0, 0, 0, nsmng_redraw, nsmng_redraw_tiled,
-		0, 0, nsmng_clone, false},
-#endif
-#ifdef WITH_SPRITE
-	{0, 0, sprite_convert,
-		0, sprite_destroy, 0, 0, 0, sprite_redraw, 0, 
-		0, 0, sprite_clone, false},
-#endif
-#ifdef WITH_NSSPRITE
-	{0, 0, nssprite_convert,
-		0, nssprite_destroy, 0, 0, 0, nssprite_redraw, 0, 
-		0, 0, nssprite_clone, false},
-#endif
-#ifdef WITH_DRAW
-	{0, 0, draw_convert,
-		0, draw_destroy, 0, 0, 0, draw_redraw, 0, 0, 0, draw_clone,
-		false},
-#endif
-#ifdef WITH_PLUGIN
-	{plugin_create, 0, plugin_convert,
-		plugin_reformat, plugin_destroy, 0, 0, 0, plugin_redraw, 0,
-		plugin_open, plugin_close, plugin_clone,
-		true},
-#endif
-#ifdef WITH_THEME_INSTALL
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false},
-#endif
-#ifdef WITH_ARTWORKS
-	{0, 0, artworks_convert,
-		0, artworks_destroy, 0, 0, 0, artworks_redraw, 0, 
-		0, 0, artworks_clone, false},
-#endif
-#ifdef WITH_NS_SVG
-	{svg_create, 0, svg_convert,
-		svg_reformat, svg_destroy, 0, 0, 0, svg_redraw, 0, 
-		0, 0, svg_clone, true},
-#endif
-#ifdef WITH_RSVG
-	{rsvg_create, rsvg_process_data, rsvg_convert,
-		0, rsvg_destroy, 0, 0, 0, rsvg_redraw, 0, 0, 0, rsvg_clone,
-		false},
-#endif
-#ifdef WITH_WEBP
-	{0, 0, webp_convert,
-		0, webp_destroy, 0, 0, 0, webp_redraw, 0, 
-		0, 0, webp_clone, false},
-#endif
-#ifdef WITH_AMIGA_ICON
-	{0, 0, amiga_icon_convert,
-		0, amiga_icon_destroy, 0, 0, 0, amiga_icon_redraw, 0, 
-		0, 0, amiga_icon_clone, false},
-#endif
-#ifdef WITH_APPLE_IMAGE
-	{0, 0, apple_image_convert, 0, apple_image_destroy, 0, 0, 0,
-		apple_image_redraw, apple_image_redraw_tiled, 0, 0, apple_image_clone, false},
-#endif
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false}
-};
-#define HANDLER_MAP_COUNT (sizeof(handler_map) / sizeof(handler_map[0]))
 
 static nserror content_llcache_callback(llcache_handle *llcache,
 		const llcache_event *event, void *pw);
@@ -414,95 +62,41 @@ static void content_update_status(struct content *c);
 
 
 /**
- * Convert a MIME type to a content_type.
+ * Initialise a new content structure.
  *
- * The returned ::content_type will always be suitable for content_create().
+ * \param c                 Content to initialise (allocated with talloc)
+ * \param handler           Content handler
+ * \param imime_type        MIME type of content
+ * \param params            HTTP parameters
+ * \param llcache           Source data handle
+ * \param fallback_charset  Fallback charset
+ * \param quirks            Quirkiness of content
+ * \return NSERROR_OK on success, appropriate error otherwise
  */
 
-content_type content_lookup(const char *mime_type)
+nserror content__init(struct content *c, const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset, 
+		bool quirks)
 {
-	struct mime_entry *m;
-	m = bsearch(mime_type, mime_map, MIME_MAP_COUNT, sizeof(mime_map[0]),
-			(int (*)(const void *, const void *)) strcasecmp);
-	if (m == 0) {
-#ifdef WITH_PLUGIN
-		if (plugin_handleable(mime_type))
-			return CONTENT_PLUGIN;
-#endif
-		return CONTENT_OTHER;
-	}
-	return m->type;
-}
-
-
-/**
- * Create a new content structure.
- *
- * \param  url	URL of content, copied
- * \return  the new content structure, or 0 on memory exhaustion
- */
-
-struct content * content_create(llcache_handle *llcache,
-		const char *fallback_charset, bool quirks)
-{
-	struct content *c;
 	struct content_user *user_sentinel;
-	const char *content_type_header;
-	content_type type;
-	char *mime_type;
-	http_parameter *params;
 	nserror error;
 	
-	content_type_header = 
-			llcache_handle_get_header(llcache, "Content-Type");
-	if (content_type_header == NULL)
-		content_type_header = "text/plain";
-
-	error = http_parse_content_type(content_type_header, &mime_type,
-			&params);
-	if (error != NSERROR_OK)
-		return NULL;
-
-	type = content_lookup(mime_type);
-
-	c = talloc_zero(0, struct content);
-	if (c == NULL) {
-		http_parameter_list_destroy(params);
-		free(mime_type);
-		return NULL;
-	}
-
 	LOG(("url %s -> %p", llcache_handle_get_url(llcache), c));
 
 	user_sentinel = talloc(c, struct content_user);
 	if (user_sentinel == NULL) {
-		talloc_free(c);
-		http_parameter_list_destroy(params);
-		free(mime_type);
-		return NULL;
+		return NSERROR_NOMEM;
 	}
 
 	c->fallback_charset = talloc_strdup(c, fallback_charset);
 	if (fallback_charset != NULL && c->fallback_charset == NULL) {
-		talloc_free(c);
-		http_parameter_list_destroy(params);
-		free(mime_type);
-		return NULL;
+		return NSERROR_NOMEM;
 	}
-
-	c->mime_type = talloc_strdup(c, mime_type);
-	if (c->mime_type == NULL) {
-		talloc_free(c);
-		http_parameter_list_destroy(params);
-		free(mime_type);
-		return NULL;
-	}
-
-	/* No longer require mime_type */
-	free(mime_type);
 
 	c->llcache = llcache;
-	c->type = type;
+	c->mime_type = lwc_string_ref(imime_type);
+	c->handler = handler;
 	c->status = CONTENT_STATUS_LOADING;
 	c->width = 0;
 	c->height = 0;
@@ -526,24 +120,15 @@ struct content * content_create(llcache_handle *llcache,
 
 	content_set_status(c, messages_get("Loading"));
 
-	if (handler_map[type].create) {
-		if (handler_map[type].create(c, params) == false) {
-			talloc_free(c);
-			http_parameter_list_destroy(params);
-			return NULL;
-		}
-	}
-
-	http_parameter_list_destroy(params);
-
 	/* Finally, claim low-level cache events */
-	if (llcache_handle_change_callback(llcache, 
-			content_llcache_callback, c) != NSERROR_OK) {
-		talloc_free(c);
-		return NULL;
+	error = llcache_handle_change_callback(llcache, 
+			content_llcache_callback, c);
+	if (error != NSERROR_OK) {
+		lwc_string_unref(c->mime_type);
+		return error;
 	}
 
-	return c;
+	return NSERROR_OK;
 }
 
 /**
@@ -566,8 +151,8 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		/* Will never happen: handled in hlcache */
 		break;
 	case LLCACHE_EVENT_HAD_DATA:
-		if (handler_map[c->type].process_data) {
-			if (handler_map[c->type].process_data(c, 
+		if (c->handler->process_data != NULL) {
+			if (c->handler->process_data(c, 
 					(const char *) event->data.data.buf, 
 					event->data.data.len) == false) {
 				llcache_handle_abort(c->llcache);
@@ -618,7 +203,7 @@ bool content_can_reformat(hlcache_handle *h)
 	if (c == NULL)
 		return false;
 
-	return (handler_map[c->type].reformat != NULL);
+	return (c->handler->reformat != NULL);
 }
 
 
@@ -687,7 +272,6 @@ void content_update_status(struct content *c)
 void content_convert(struct content *c)
 {
 	assert(c);
-	assert(c->type < HANDLER_MAP_COUNT);
 	assert(c->status == CONTENT_STATUS_LOADING ||
 			c->status == CONTENT_STATUS_ERROR);
 
@@ -699,9 +283,9 @@ void content_convert(struct content *c)
 	
 	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
 
-	if (handler_map[c->type].convert) {
+	if (c->handler->convert != NULL) {
 		c->locked = true;
-		if (handler_map[c->type].convert(c) == false) {
+		if (c->handler->convert(c) == false) {
 			c->locked = false;
 			c->status = CONTENT_STATUS_ERROR;
 		}
@@ -766,8 +350,8 @@ void content__reformat(struct content *c, int width, int height)
 	LOG(("%p %s", c, llcache_handle_get_url(c->llcache)));
 	c->locked = true;
 	c->available_width = width;
-	if (handler_map[c->type].reformat) {
-		handler_map[c->type].reformat(c, width, height);
+	if (c->handler->reformat != NULL) {
+		c->handler->reformat(c, width, height);
 		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
 	}
 	c->locked = false;
@@ -786,11 +370,13 @@ void content_destroy(struct content *c)
 	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
 	assert(c->locked == false);
 
-	if (c->type < HANDLER_MAP_COUNT && handler_map[c->type].destroy)
-		handler_map[c->type].destroy(c);
+	if (c->handler->destroy != NULL)
+		c->handler->destroy(c);
 
 	llcache_handle_release(c->llcache);
 	c->llcache = NULL;
+
+	lwc_string_unref(c->mime_type);
 
 	talloc_free(c);
 }
@@ -812,8 +398,9 @@ void content_mouse_track(hlcache_handle *h, struct browser_window *bw,
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != NULL);
 
-	if (handler_map[c->type].mouse_track)
-		handler_map[c->type].mouse_track(c, bw, mouse, x, y);
+	if (c->handler->mouse_track != NULL)
+		c->handler->mouse_track(c, bw, mouse, x, y);
+
 	return;
 }
 
@@ -840,8 +427,9 @@ void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != NULL);
 
-	if (handler_map[c->type].mouse_action)
-		handler_map[c->type].mouse_action(c, bw, mouse, x, y);
+	if (c->handler->mouse_action != NULL)
+		c->handler->mouse_action(c, bw, mouse, x, y);
+
 	return;
 }
 
@@ -925,11 +513,11 @@ bool content_redraw(hlcache_handle *h, int x, int y,
 		return true;
 	}
 
-	if (handler_map[c->type].redraw == NULL) {
+	if (c->handler->redraw == NULL) {
 		return true;
 	}
 
-	return handler_map[c->type].redraw(c, x, y, width, height,
+	return c->handler->redraw(c, x, y, width, height,
 			clip, scale, background_colour);
 }
 
@@ -956,18 +544,19 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 	if (c->locked)
 		/* not safe to attempt redraw */
 		return true;
-	if (handler_map[c->type].redraw_tiled) {
-		return handler_map[c->type].redraw_tiled(c, x, y, width, height,
+
+	if (c->handler->redraw_tiled != NULL) {
+		return c->handler->redraw_tiled(c, x, y, width, height,
 				clip, scale, background_colour,
 				repeat_x, repeat_y);
 	} else {
 		/* ensure we have a redrawable content */
-		if ((!handler_map[c->type].redraw) || (width == 0) ||
+		if ((c->handler->redraw == NULL) || (width == 0) ||
 				(height == 0))
 			return true;
 		/* simple optimisation for no repeat (common for backgrounds) */
 		if ((!repeat_x) && (!repeat_y))
-			return handler_map[c->type].redraw(c, x, y, width,
+			return c->handler->redraw(c, x, y, width,
 				height, clip, scale, background_colour);
 		/* find the redraw boundaries to loop within*/
 		x0 = x;
@@ -987,7 +576,7 @@ bool content_redraw_tiled(hlcache_handle *h, int x, int y,
 		/* repeatedly plot our content */
 		for (y = y0; y < y1; y += height)
 			for (x = x0; x < x1; x += width)
-				if (!handler_map[c->type].redraw(c, x, y,
+				if (!c->handler->redraw(c, x, y,
 						width, height, clip,
 						scale, background_colour))
 					return false;
@@ -1086,11 +675,10 @@ uint32_t content_count_users(struct content *c)
  */
 bool content_matches_quirks(struct content *c, bool quirks)
 {
-	/* If the content isn't CSS, we don't care about quirks */
-	if (c->type != CONTENT_CSS)
+	if (c->handler->matches_quirks == NULL)
 		return true;
 
-	return c->quirks == quirks;
+	return c->handler->matches_quirks(c, quirks);
 }
 
 /**
@@ -1101,7 +689,7 @@ bool content_matches_quirks(struct content *c, bool quirks)
  */
 bool content_is_shareable(struct content *c)
 {
-	return handler_map[c->type].no_share == false;
+	return c->handler->no_share == false;
 }
 
 /**
@@ -1141,10 +729,9 @@ void content_open(hlcache_handle *h, struct browser_window *bw,
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
-	if (handler_map[c->type].open)
-		handler_map[c->type].open(c, bw, page, box, params);
+	if (c->handler->open != NULL)
+		c->handler->open(c, bw, page, box, params);
 }
 
 
@@ -1158,10 +745,9 @@ void content_close(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	assert(c->type < CONTENT_UNKNOWN);
 	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
-	if (handler_map[c->type].close)
-		handler_map[c->type].close(c);
+	if (c->handler->close != NULL)
+		c->handler->close(c);
 }
 
 
@@ -1185,41 +771,38 @@ bool content__set_title(struct content *c, const char *title)
 }
 
 /**
- * Retrieve type of content
+ * Retrieve computed type of content
  *
  * \param c  Content to retrieve type of
- * \return Content type
+ * \return Computed content type
  */
 content_type content_get_type(hlcache_handle *h)
 {
-	return content__get_type(hlcache_handle_get_content(h));
-}
+	struct content *c = hlcache_handle_get_content(h);
 
-content_type content__get_type(struct content *c)
-{
 	if (c == NULL)
-		return CONTENT_UNKNOWN;
+		return CONTENT_NONE;
 
-	return c->type;
+	return c->handler->type(c->mime_type);
 }
 
 /**
  * Retrieve mime-type of content
  *
  * \param c  Content to retrieve mime-type of
- * \return Pointer to mime-type, or NULL if not found.
+ * \return Pointer to referenced mime-type, or NULL if not found.
  */
-const char *content_get_mime_type(hlcache_handle *h)
+lwc_string *content_get_mime_type(hlcache_handle *h)
 {
 	return content__get_mime_type(hlcache_handle_get_content(h));
 }
 
-const char *content__get_mime_type(struct content *c)
+lwc_string *content__get_mime_type(struct content *c)
 {
 	if (c == NULL)
 		return NULL;
 
-	return c->mime_type;
+	return lwc_string_ref(c->mime_type);
 }
 
 /**
@@ -1501,29 +1084,37 @@ const llcache_handle *content_get_llcache_handle(struct content *c)
  */
 struct content *content_clone(struct content *c)
 {
-	struct content *nc = talloc_zero(0, struct content);
+	struct content *nc;
+	nserror error;
 
-	if (nc == NULL) {
+	error = c->handler->clone(c, &nc);
+	if (error != NSERROR_OK)
 		return NULL;
-	}
-	
-	if (llcache_handle_clone(c->llcache, &(nc->llcache)) != NSERROR_OK) {
-		content_destroy(nc);
-		return NULL;
+
+	return nc;
+};
+
+/**
+ * Clone a content's data members
+ *
+ * \param c   Content to clone
+ * \param nc  Content to populate (allocated with talloc)
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror content__clone(const struct content *c, struct content *nc)
+{
+	nserror error;
+
+	error = llcache_handle_clone(c->llcache, &(nc->llcache));
+	if (error != NSERROR_OK) {
+		return error;
 	}
 	
 	llcache_handle_change_callback(nc->llcache, 
 			content_llcache_callback, nc);
-	
-	nc->type = c->type;
 
-	if (c->mime_type != NULL) {
-		nc->mime_type = talloc_strdup(nc, c->mime_type);	
-		if (nc->mime_type == NULL) {
-			content_destroy(nc);
-			return NULL;
-		}
-	}
+	nc->mime_type = lwc_string_ref(c->mime_type);
+	nc->handler = c->handler;
 
 	nc->status = c->status;
 	
@@ -1535,16 +1126,14 @@ struct content *content_clone(struct content *c)
 	if (c->fallback_charset != NULL) {
 		nc->fallback_charset = talloc_strdup(nc, c->fallback_charset);
 		if (nc->fallback_charset == NULL) {
-			content_destroy(nc);
-			return NULL;
+			return NSERROR_NOMEM;
 		}
 	}
 	
 	if (c->refresh != NULL) {
 		nc->refresh = talloc_strdup(nc, c->refresh);
 		if (nc->refresh == NULL) {
-			content_destroy(nc);
-			return NULL;
+			return NSERROR_NOMEM;
 		}
 	}
 
@@ -1556,8 +1145,7 @@ struct content *content_clone(struct content *c)
 	if (c->title != NULL) {
 		nc->title = talloc_strdup(nc, c->title);
 		if (nc->title == NULL) {
-			content_destroy(nc);
-			return NULL;
+			return NSERROR_NOMEM;
 		}
 	}
 	
@@ -1570,15 +1158,7 @@ struct content *content_clone(struct content *c)
 	nc->total_size = c->total_size;
 	nc->http_code = c->http_code;
 	
-	/* Duplicate the data member (and bitmap, if appropriate) */
-	if (handler_map[nc->type].clone != NULL) {
-		if (handler_map[nc->type].clone(c, nc) == false) {
-			content_destroy(nc);
-			return NULL;
-		}
-	}
-	
-	return nc;
+	return NSERROR_OK;
 }
 
 /**
@@ -1592,13 +1172,8 @@ nserror content_abort(struct content *c)
 	LOG(("Aborting %p", c));
 	
 	if (c->status == CONTENT_STATUS_READY) {
-		switch (c->type) {
-		case CONTENT_HTML:
-			html_stop(c);
-			break;
-		default:
-			LOG(("Unable to abort sub-parts for type %d", c->type));
-		}
+		if (c->handler->stop != NULL)
+			c->handler->stop(c);
 	}
 	
 	/* And for now, abort our llcache object */

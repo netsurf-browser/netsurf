@@ -49,6 +49,7 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
+#include "render/html_internal.h"
 #include "render/layout.h"
 #include "render/table.h"
 #include "utils/log.h"
@@ -66,7 +67,7 @@
 
 
 static bool layout_block_context(struct box *block, int viewport_height,
-		struct content *content);
+		html_content *content);
 static void layout_minmax_block(struct box *block,
 		const struct font_functions *font_func);
 static struct box* layout_next_margin_block(struct box *box, struct box *block,
@@ -99,16 +100,16 @@ static int line_height(const css_computed_style *style);
 static bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
-		struct content *content, struct box **next_box);
+		html_content *content, struct box **next_box);
 static struct box *layout_minmax_line(struct box *first, int *min, int *max,
 		bool first_line, bool *line_has_height,
 		const struct font_functions *font_func);
 static int layout_text_indent(const css_computed_style *style, int width);
-static bool layout_float(struct box *b, int width, struct content *content);
+static bool layout_float(struct box *b, int width, html_content *content);
 static void place_float_below(struct box *c, int width, int cx, int y,
 		struct box *cont);
 static bool layout_table(struct box *box, int available_width,
-		struct content *content);
+		html_content *content);
 static void layout_move_children(struct box *box, int x, int y);
 static void calculate_mbp_width(const css_computed_style *style,
 		unsigned int side, bool margin, bool border, bool padding,
@@ -121,10 +122,10 @@ static void layout_compute_relative_offset(struct box *box, int *x, int *y);
 static bool layout_position_absolute(struct box *box,
 		struct box *containing_block,
 		int cx, int cy,
-		struct content *content);
+		html_content *content);
 static bool layout_absolute(struct box *box, struct box *containing_block,
 		int cx, int cy,
-		struct content *content);
+		html_content *content);
 static void layout_compute_offsets(struct box *box,
 		struct box *containing_block,
 		int *top, int *right, int *bottom, int *left);
@@ -139,13 +140,11 @@ static void layout_compute_offsets(struct box *box,
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_document(struct content *content, int width, int height)
+bool layout_document(html_content *content, int width, int height)
 {
 	bool ret;
-	struct box *doc = content->data.html.layout;
-	const struct font_functions *font_func = content->data.html.font_func;
-
-	assert(content->type == CONTENT_HTML);
+	struct box *doc = content->layout;
+	const struct font_functions *font_func = content->font_func;
 
 	layout_minmax_block(doc, font_func);
 
@@ -202,7 +201,7 @@ bool layout_document(struct content *content, int width, int height)
  */
 
 bool layout_block_context(struct box *block, int viewport_height,
-		struct content *content)
+		html_content *content)
 {
 	struct box *box;
 	int cx, cy;  /**< current coordinates */
@@ -1264,8 +1263,8 @@ void layout_block_add_scrollbar(struct box *box, int which)
 	overflow = css_computed_overflow(box->style);
 
 	if (overflow == CSS_OVERFLOW_SCROLL || overflow == CSS_OVERFLOW_AUTO ||
-			(box->object &&
-			content_get_type(box->object) == CONTENT_HTML)) {
+			(box->object && content_get_type(box->object) ==
+					CONTENT_HTML)) {
 		/* make space for scrollbars, unless height/width are AUTO */
 		if (which == BOTTOM && box->height != AUTO &&
 				(overflow == CSS_OVERFLOW_SCROLL ||
@@ -1987,7 +1986,7 @@ void find_sides(struct box *fl, int y0, int y1,
  */
 
 bool layout_inline_container(struct box *inline_container, int width,
-		struct box *cont, int cx, int cy, struct content *content)
+		struct box *cont, int cx, int cy, html_content *content)
 {
 	bool first_line = true;
 	bool has_text_children;
@@ -2141,13 +2140,13 @@ int line_height(const css_computed_style *style)
  * containing the text after new_length excluding the initial space character.
  */
 
-static bool layout_text_box_split(struct content *content,
+static bool layout_text_box_split(html_content *content,
 		plot_font_style_t *fstyle, struct box *split_box,
 		size_t new_length, int new_width)
 {
 	int space_width = split_box->space;
 	struct box *c2;
-	const struct font_functions *font_func = content->data.html.font_func;
+	const struct font_functions *font_func = content->font_func;
 
 	if (space_width == 0) {
 		/* Currently split_box has no space. */
@@ -2226,7 +2225,7 @@ static bool layout_text_box_split(struct content *content,
 bool layout_line(struct box *first, int *width, int *y,
 		int cx, int cy, struct box *cont, bool indent,
 		bool has_text_children,
-		struct content *content, struct box **next_box)
+		html_content *content, struct box **next_box)
 {
 	int height, used_height;
 	int x0 = 0;
@@ -2244,7 +2243,7 @@ bool layout_line(struct box *first, int *width, int *y,
 	int space_before = 0, space_after = 0;
 	unsigned int inline_count = 0;
 	unsigned int i;
-	const struct font_functions *font_func = content->data.html.font_func;
+	const struct font_functions *font_func = content->font_func;
 	plot_font_style_t fstyle;
 
 #ifdef LAYOUT_DEBUG
@@ -3233,7 +3232,7 @@ int layout_text_indent(const css_computed_style *style, int width)
  * \return  true on success, false on memory exhaustion
  */
 
-bool layout_float(struct box *b, int width, struct content *content)
+bool layout_float(struct box *b, int width, html_content *content)
 {
 	assert(b->type == BOX_TABLE || b->type == BOX_BLOCK ||
 			b->type == BOX_INLINE_BLOCK);
@@ -3313,7 +3312,7 @@ void place_float_below(struct box *c, int width, int cx, int y,
  */
 
 bool layout_table(struct box *table, int available_width,
-		struct content *content)
+		html_content *content)
 {
 	unsigned int columns = table->columns;  /* total columns */
 	unsigned int i;
@@ -4363,7 +4362,7 @@ void layout_compute_relative_offset(struct box *box, int *x, int *y)
 bool layout_position_absolute(struct box *box,
 		struct box *containing_block,
 		int cx, int cy,
-		struct content *content)
+		html_content *content)
 {
 	struct box *c;
 
@@ -4430,7 +4429,7 @@ bool layout_position_absolute(struct box *box,
 
 bool layout_absolute(struct box *box, struct box *containing_block,
 		int cx, int cy,
-		struct content *content)
+		html_content *content)
 {
 	int static_left, static_top;  /* static position */
 	int top, right, bottom, left;

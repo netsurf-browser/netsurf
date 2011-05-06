@@ -3893,46 +3893,20 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 	if (export_sprite != NULL)
 		*export_sprite = false;
 
-	if (h != NULL) {
-		switch (content_get_type(h)) {
-		/* bitmap types (Sprite export possible) */
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-		case CONTENT_MNG:
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-		case CONTENT_BMP:
-		case CONTENT_ICO:
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-		case CONTENT_PNG:
-#endif
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-#endif
+	if (h != NULL && content_get_type(h) == CONTENT_IMAGE) {
+		switch (ro_content_native_type(h)) {
+		case osfile_TYPE_SPRITE:
+			/* bitmap types (Sprite export possible) */
 			found_type = true;
 			if (export_sprite != NULL)
 				*export_sprite = true;
 			break;
-
-		/* vector types (Draw export possible) */
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-		case CONTENT_SVG:
-#endif
-#ifdef WITH_DRAW
-		case CONTENT_DRAW:
-#endif
+		case osfile_TYPE_DRAW:
+			/* vector types (Draw export possible) */
 			found_type = true;
 			if (export_draw != NULL)
 				*export_draw = true;
 			break;
-
 		default:
 			break;
 		}
@@ -3988,7 +3962,8 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 	char enc_buf[40];
 	char enc_token[10] = "Encoding0";
 	const char *icon = icon_buf;
-	const char *title, *url, *mime;
+	const char *title, *url;
+	lwc_string *mime;
 	const char *enc = "-";
 
 	assert(h);
@@ -4000,8 +3975,6 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 	if (url == NULL)
 		url = "-";
 	mime = content_get_mime_type(h);
-	if (mime == NULL)
-		mime = "-";
 
 	sprintf(icon_buf, "file_%x", ro_content_filetype(h));
 	if (!ro_gui_wimp_sprite_exists(icon_buf))
@@ -4028,7 +4001,9 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_ENC,
 			enc, true);
 	ro_gui_set_icon_string(dialog_pageinfo, ICON_PAGEINFO_TYPE,
-			mime, true);
+			lwc_string_data(mime), true);
+
+	lwc_string_unref(mime);
 }
 
 
@@ -4042,7 +4017,8 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 {
 	char icon_buf[20] = "file_xxx";
-	const char *url, *mime;
+	const char *url;
+	lwc_string *mime;
 	const char *target = "-";
 
 	sprintf(icon_buf, "file_%.3x",
@@ -4054,8 +4030,6 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 	if (url == NULL)
 		url = "-";
 	mime = content_get_mime_type(object);
-	if (mime == NULL)
-		mime = "-";
 
 	if (href)
 		target = href;
@@ -4067,7 +4041,9 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TARGET,
 			target, true);
 	ro_gui_set_icon_string(dialog_objinfo, ICON_OBJINFO_TYPE,
-			mime, true);
+			lwc_string_data(mime), true);
+
+	lwc_string_unref(mime);
 }
 
 

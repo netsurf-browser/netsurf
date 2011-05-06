@@ -18,9 +18,13 @@
 
 #ifndef AMIGA_FILETYPE_H
 #define AMIGA_FILETYPE_H
+#include <stdbool.h>
 #include "content/content_type.h"
 #include <datatypes/datatypes.h>
 
+struct hlcache_handle;
+
 const char *ami_content_type_to_file_type(content_type type);
 void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype);
+bool ami_mime_compare(struct hlcache_handle *c, const char *type);
 #endif

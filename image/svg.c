@@ -33,29 +33,145 @@
 #include "desktop/plotters.h"
 #include "image/svg.h"
 #include "utils/messages.h"
+#include "utils/talloc.h"
 #include "utils/utils.h"
 
+typedef struct svg_content {
+	struct content base;
+
+	struct svgtiny_diagram *diagram;
+	bool done_parse;
+} svg_content;
+
+static nserror svg_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c);
+static nserror svg_create_svg_data(svg_content *c);
+static bool svg_convert(struct content *c);
+static void svg_destroy(struct content *c);
+static void svg_reformat(struct content *c, int width, int height);
+static bool svg_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour);
+static nserror svg_clone(const struct content *old, struct content **newc);
+static content_type svg_content_type(lwc_string *mime_type);
+
+static const content_handler svg_content_handler = {
+	svg_create,
+	NULL,
+	svg_convert,
+	svg_reformat,
+	svg_destroy,
+	NULL,
+	NULL,
+	NULL,
+	svg_redraw,
+	NULL,
+	NULL,
+	NULL,
+	svg_clone,
+	NULL,
+	svg_content_type,
+	false
+};
+
+static const char *svg_types[] = {
+	"image/svg",
+	"image/svg+xml"
+};
+
+static lwc_string *svg_mime_types[NOF_ELEMENTS(svg_types)];
+
+nserror svg_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(svg_mime_types); i++) {
+		lerror = lwc_intern_string(svg_types[i],
+				strlen(svg_types[i]),
+				&svg_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(svg_mime_types[i],
+				&svg_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	svg_fini();
+
+	return error;
+}
+
+void svg_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(svg_mime_types); i++) {
+		if (svg_mime_types[i] != NULL)
+			lwc_string_unref(svg_mime_types[i]);
+	}
+}
 
 /**
  * Create a CONTENT_SVG.
  */
 
-bool svg_create(struct content *c, const struct http_parameter *params)
+nserror svg_create(const content_handler *handler,
+		lwc_string *imime_type, const http_parameter *params,
+		llcache_handle *llcache, const char *fallback_charset,
+		bool quirks, struct content **c)
+{
+	svg_content *svg;
+	nserror error;
+
+	svg = talloc_zero(0, svg_content);
+	if (svg == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&svg->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		talloc_free(svg);
+		return error;
+	}
+
+	error = svg_create_svg_data(svg);
+	if (error != NSERROR_OK) {
+		talloc_free(svg);
+		return error;
+	}
+
+	*c = (struct content *) svg;
+
+	return NSERROR_OK;
+}
+
+nserror svg_create_svg_data(svg_content *c)
 {
 	union content_msg_data msg_data;
 
-	c->data.svg.diagram = svgtiny_create();
-	if (!c->data.svg.diagram)
+	c->diagram = svgtiny_create();
+	if (c->diagram == NULL)
 		goto no_memory;
 
-	c->data.svg.done_parse = false;
+	c->done_parse = false;
 
-	return true;
+	return NSERROR_OK;
 
 no_memory:
 	msg_data.error = messages_get("NoMemory");
-	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-	return false;
+	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	return NSERROR_NOMEM;
 }
 
 
@@ -84,22 +200,23 @@ bool svg_convert(struct content *c)
 
 void svg_reformat(struct content *c, int width, int height)
 {
+	svg_content *svg = (svg_content *) c;
 	const char *source_data;
 	unsigned long source_size;
 
-	assert(c->data.svg.diagram);
+	assert(svg->diagram);
 
-	if (c->data.svg.done_parse == false) {
+	if (svg->done_parse == false) {
 		source_data = content__get_source_data(c, &source_size);
 
-		svgtiny_parse(c->data.svg.diagram, source_data, source_size,
+		svgtiny_parse(svg->diagram, source_data, source_size,
 				content__get_url(c), width, height);
 
-		c->data.svg.done_parse = true;
+		svg->done_parse = true;
 	}
 
-	c->width = c->data.svg.diagram->width;
-	c->height = c->data.svg.diagram->height;
+	c->width = svg->diagram->width;
+	c->height = svg->diagram->height;
 }
 
 
@@ -111,8 +228,9 @@ bool svg_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
+	svg_content *svg = (svg_content *) c;
 	float transform[6];
-	struct svgtiny_diagram *diagram = c->data.svg.diagram;
+	struct svgtiny_diagram *diagram = svg->diagram;
 	bool ok;
 	int px, py;
 	unsigned int i;
@@ -173,25 +291,51 @@ bool svg_redraw(struct content *c, int x, int y,
 
 void svg_destroy(struct content *c)
 {
-	if (c->data.svg.diagram)
-		svgtiny_free(c->data.svg.diagram);
+	svg_content *svg = (svg_content *) c;
+
+	if (svg->diagram != NULL)
+		svgtiny_free(svg->diagram);
 }
 
 
-bool svg_clone(const struct content *old, struct content *new_content)
+nserror svg_clone(const struct content *old, struct content **newc)
 {
+	svg_content *svg;
+	nserror error;
+
+	svg = talloc_zero(0, svg_content);
+	if (svg == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__clone(old, &svg->base);
+	if (error != NSERROR_OK) {
+		content_destroy(&svg->base);
+		return error;
+	}
+
 	/* Simply replay create/convert */
-	if (svg_create(new_content, NULL) == false)
-		return false;
+	error = svg_create_svg_data(svg);
+	if (error != NSERROR_OK) {
+		content_destroy(&svg->base);
+		return error;
+	}
 
 	if (old->status == CONTENT_STATUS_READY ||
 			old->status == CONTENT_STATUS_DONE) {
-		if (svg_convert(new_content) == false)
-			return false;
+		if (svg_convert(&svg->base) == false) {
+			content_destroy(&svg->base);
+			return NSERROR_CLONE_FAILED;
+		}
 	}
 
-	return true;
+	*newc = (struct content *) svg;
+
+	return NSERROR_OK;
 }
 
+content_type svg_content_type(lwc_string *mime_type)
+{
+	return CONTENT_IMAGE;
+}
 
 #endif /* WITH_NS_SVG */

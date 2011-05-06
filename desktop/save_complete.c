@@ -138,6 +138,7 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 		int source_len;
 		struct nscss_import *imports;
 		uint32_t import_count;
+		lwc_string *type;
 
 		if (sheets[i].type == HTML_STYLESHEET_INTERNAL) {
 			if (save_imported_sheets(
@@ -176,9 +177,19 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 			warn_user("NoMemory", 0);
 			return false;
 		}
+
+		type = content_get_mime_type(css);
+		if (type == NULL) {
+			free(source);
+			return false;
+		}
+
 		res = save_complete_gui_save(path, filename, source_len,
-				source, CONTENT_CSS);
+				source, type);
+
+		lwc_string_unref(type);
 		free(source);
+
 		if (res == false)
 			return false;
 	}
@@ -190,8 +201,9 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 		hlcache_handle *obj = object->content;
 		const char *obj_data;
 		unsigned long obj_size;
+		lwc_string *type;
 
-		if (obj == NULL || content_get_type(obj) >= CONTENT_OTHER)
+		if (obj == NULL || content_get_type(obj) == CONTENT_NONE)
 			continue;
 
 		obj_data = content_get_source_data(obj, &obj_size);
@@ -214,8 +226,16 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 		}
 
 		snprintf(filename, sizeof filename, "%p", obj);
+
+		type = content_get_mime_type(obj);
+		if (type == NULL)
+			return false;
+
 		res = save_complete_gui_save(path, filename, 
-				obj_size, obj_data, content_get_type(obj));
+				obj_size, obj_data, type);
+
+		lwc_string_unref(type);
+
 		if(res == false)
 			return false;
 	}
@@ -282,6 +302,7 @@ bool save_imported_sheets(struct nscss_import *imports, uint32_t count,
 		unsigned long css_size;
 		struct nscss_import *child_imports;
 		uint32_t child_import_count;
+		lwc_string *type;
 
 		if (css == NULL)
 			continue;
@@ -310,9 +331,19 @@ bool save_imported_sheets(struct nscss_import *imports, uint32_t count,
 			return false;
 		}
 
+		if (lwc_intern_string("text/css", SLEN("text/css"), &type) !=
+				lwc_error_ok) {
+			free(source);
+			warn_user("NoMemory", 0);
+			return false;
+		}
+
 		res = save_complete_gui_save(path, filename, source_len,
-				source, CONTENT_CSS);
+				source, type);
+
+		lwc_string_unref(type);
 		free(source);
+
 		if (res == false)
 			return false;
 	}

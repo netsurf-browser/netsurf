@@ -67,10 +67,12 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/html.h"
+#include "riscos/artworks.h"
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
+#include "riscos/draw.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/help.h"
@@ -86,6 +88,7 @@
 #include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
+#include "riscos/sprite.h"
 #include "riscos/system_colour.h"
 #include "riscos/textselection.h"
 #include "riscos/theme.h"
@@ -774,6 +777,10 @@ int main(int argc, char** argv)
 
 	netsurf_init(&argc, &argv, "NetSurf:Choices", NULL);
 
+	artworks_init();
+	draw_init();
+	sprite_init();
+
 	/* Choose the interface language to use */
 	ro_gui_choose_language();
 
@@ -792,6 +799,10 @@ int main(int argc, char** argv)
 	netsurf_main_loop();
 
 	netsurf_exit();
+
+	sprite_fini();
+	draw_fini();
+	artworks_fini();
 
 	return 0;
 }

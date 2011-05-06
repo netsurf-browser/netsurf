@@ -24,23 +24,17 @@
 #define _NETSURF_RISCOS_DRAW_H_
 
 #include "utils/config.h"
+#include "utils/errors.h"
+
 #ifdef WITH_DRAW
 
-#include <stdbool.h>
+nserror draw_init(void);
+void draw_fini(void);
 
-struct content;
-struct rect;
+#else
 
-struct content_draw_data {
-	int x0, y0;
-};
-
-bool draw_convert(struct content *c);
-void draw_destroy(struct content *c);
-bool draw_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool draw_clone(const struct content *old, struct content *new_content);
+#define draw_init() NSERROR_OK
+#define draw_fini() ((void) 0)
 
 #endif /* WITH_DRAW */
 

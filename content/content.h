@@ -28,8 +28,12 @@
 
 #include <stdbool.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "utils/errors.h"
+#include "utils/http.h"
+#include "content/content_factory.h"
 #include "content/content_type.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
@@ -88,11 +92,7 @@ union content_msg_data {
 	struct llcache_handle *download;
 };
 
-
 /* The following are for hlcache */
-content_type content_lookup(const char *mime_type);
-struct content *content_create(struct llcache_handle *llcache, 
-		const char *fallback_charset, bool quirks);
 void content_destroy(struct content *c);
 
 bool content_add_user(struct content *h,
@@ -138,7 +138,7 @@ void content_close(struct hlcache_handle *h);
 
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);
-const char *content_get_mime_type(struct hlcache_handle *c);
+lwc_string *content_get_mime_type(struct hlcache_handle *c);
 const char *content_get_url(struct hlcache_handle *c);
 const char *content_get_title(struct hlcache_handle *c);
 content_status content_get_status(struct hlcache_handle *c);

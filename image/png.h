@@ -24,37 +24,17 @@
 
 #ifdef WITH_PNG
 
-#include "desktop/plot_style.h"
-
 #include <stdbool.h>
-#include <png.h>
 
-struct content;
-struct bitmap;
-struct http_parameter;
-struct rect;
+#include "utils/errors.h"
 
-struct content_png_data {
-	png_structp png;
-	png_infop info;
-	int interlace;
-        struct bitmap *bitmap;	/**< Created NetSurf bitmap */
-        size_t rowstride, bpp; /**< Bitmap rowstride and bpp */
-        size_t rowbytes; /**< Number of bytes per row */
-};
+nserror nspng_init(void);
+void nspng_fini(void);
 
-bool nspng_create(struct content *c, const struct http_parameter *params);
-bool nspng_process_data(struct content *c, const char *data, unsigned int size);
-bool nspng_convert(struct content *c);
-void nspng_destroy(struct content *c);
-bool nspng_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-bool nspng_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-bool nspng_clone(const struct content *old, struct content *new_content);
+#else
+
+#define nspng_init() NSERROR_OK
+#define nspng_fini() ((void) 0)
 
 #endif
 

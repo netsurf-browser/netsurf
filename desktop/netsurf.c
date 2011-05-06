@@ -36,12 +36,15 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
+#include "image/image.h"
 #include "desktop/netsurf.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/searchweb.h"
+#include "render/html.h"
+#include "render/textplain.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
@@ -94,6 +97,7 @@ nserror netsurf_init(int *pargc,
 		     const char *options, 
 		     const char *messages)
 {
+	nserror error;
 	struct utsname utsname;
 	nserror ret = NSERROR_OK;
 
@@ -133,6 +137,22 @@ nserror netsurf_init(int *pargc,
 	options_read(options);
 
 	messages_load(messages);
+
+	error = css_init();
+	if (error != NSERROR_OK)
+		return error;
+
+	error = html_init();
+	if (error != NSERROR_OK)
+		return error;
+
+	error = image_init();
+	if (error != NSERROR_OK)
+		return error;
+
+	error = textplain_init();
+	if (error != NSERROR_OK)
+		return error;
 
 	url_init();
 
@@ -176,9 +196,6 @@ void netsurf_exit(void)
 	LOG(("Closing GUI"));
 	gui_quit();
 
-	/* Clean up after CSS */
-	css_cleanup();
-
 	LOG(("Closing search and related resources"));
 	search_web_cleanup();
 
@@ -190,6 +207,12 @@ void netsurf_exit(void)
 
 	LOG(("Closing fetches"));
 	fetch_quit();
+
+	/* Clean up after content handlers */
+	textplain_fini();
+	image_fini();
+	html_fini();
+	css_fini();
 
 	LOG(("Closing utf8"));
 	utf8_finalise();

@@ -1733,7 +1733,7 @@ save_complete_gui_save(const char *path,
 		       const char *filename,
 		       size_t len,
 		       const char *sourcedata,
-		       content_type type)
+		       lwc_string *mime_type)
 {
 	return false;
 }

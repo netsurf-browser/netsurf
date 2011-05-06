@@ -171,6 +171,8 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer);
 
 /* in filetype.c */
 int ro_content_filetype(struct hlcache_handle *c);
+int ro_content_native_type(struct hlcache_handle *c);
+int ro_content_filetype_from_mime_type(lwc_string *mime_type);
 int ro_content_filetype_from_type(content_type type);
 bits ro_filetype_from_unix_path(const char *unix_path);
 

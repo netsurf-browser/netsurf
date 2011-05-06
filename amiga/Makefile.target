@@ -23,7 +23,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
   $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
   $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
-  $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon        ))
+  $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
   $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,DataTypes images))
 
   CFLAGS += -I /SDK/local/common/include/libpng12
@@ -42,6 +42,8 @@ else
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG))
   $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,NSSVG))
+  $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
+  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,DataTypes images))
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
   CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libcurl libcares openssl)

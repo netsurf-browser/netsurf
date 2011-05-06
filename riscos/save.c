@@ -1013,7 +1013,7 @@ void ro_gui_save_done(void)
 */
 
 bool save_complete_gui_save(const char *path, const char *filename, size_t len,
-		const char *sourcedata, content_type type)
+		const char *sourcedata, lwc_string *mime_type)
 {
 	char *fullpath;
 	os_error *error;
@@ -1025,7 +1025,7 @@ bool save_complete_gui_save(const char *path, const char *filename, size_t len,
 		return false;
 	}
 	snprintf(fullpath, namelen, "%s.%s", path, filename);
-	rotype = ro_content_filetype_from_type(type);
+	rotype = ro_content_filetype_from_mime_type(mime_type);
 	error = xosfile_save_stamped(fullpath, rotype, (byte *) sourcedata, 
 			(byte *) sourcedata + len);
 	free(fullpath);
@@ -1162,63 +1162,43 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 
 bool ro_gui_save_object_native(hlcache_handle *h, char *path)
 {
-	const char *source_data;
-	unsigned long source_size;
+	int file_type = ro_content_filetype(h);
 
-	switch (content_get_type(h)) {
-#ifdef WITH_JPEG
-		case CONTENT_JPEG:
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-		case CONTENT_PNG:
-#endif
-#ifdef WITH_MNG
-		case CONTENT_JNG:
-		case CONTENT_MNG:
-#endif
-#ifdef WITH_GIF
-		case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-		case CONTENT_BMP:
-		case CONTENT_ICO:
-#endif
+	if (file_type == osfile_TYPE_SPRITE || file_type == osfile_TYPE_DRAW) {
+		/* Native sprite or drawfile */
+		const char *source_data;
+		unsigned long source_size;
+		os_error *error;
+
+		source_data = content_get_source_data(h, &source_size);
+		error = xosfile_save_stamped(path, file_type,
+				(byte *) source_data,
+				(byte *) source_data + source_size);
+		if (error != NULL) {
+			LOG(("xosfile_save_stamped: 0x%x: %s",
+					error->errnum, error->errmess));
+			warn_user("SaveError", error->errmess);
+			return false;
+		}
+	} else {
+		/* Non-native type: export */
+		switch (ro_content_native_type(h)) {
+		case osfile_TYPE_SPRITE:
 		{
 			unsigned flags = (os_version == 0xA9) ?
 					BITMAP_SAVE_FULL_ALPHA : 0;
 			bitmap_save(content_get_bitmap(h), path, flags);
-			return true;
 		}
-		break;
-#ifdef WITH_SPRITE
-		case CONTENT_SPRITE:
-#endif
-#ifdef WITH_DRAW
-		case CONTENT_DRAW:
-#endif
-		{
-			os_error *error;
-			source_data = content_get_source_data(h, &source_size);
-			error = xosfile_save_stamped(path,
-					ro_content_filetype(h),
-					(byte *) source_data,
-					(byte *) source_data + source_size);
-			if (error) {
-				LOG(("xosfile_save_stamped: 0x%x: %s",
-						error->errnum, error->errmess));
-				warn_user("SaveError", error->errmess);
-				return false;
-			}
-			return true;
-		}
-		break;
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-		case CONTENT_SVG:
+			break;
+		case osfile_TYPE_DRAW:
+			/* Must be SVG */
 			return save_as_draw(h, path);
-#endif
 		default:
 			return false;
+		}
 	}
+
+	return true;
 }
 
 
@@ -1306,40 +1286,15 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	gui_save_filetype = gui_save_table[save_type].filetype;
 	if (!gui_save_filetype && h) {
 		if (save_type == GUI_SAVE_OBJECT_NATIVE) {
-			switch (content_get_type(h)) {
-				/* bitmap images */
-#ifdef WITH_JPEG
-				case CONTENT_JPEG:
-#endif
-#if defined(WITH_MNG) || defined(WITH_PNG)
-				case CONTENT_PNG:
-#endif
-#ifdef WITH_MNG
-				case CONTENT_JNG:
-				case CONTENT_MNG:
-#endif
-#ifdef WITH_GIF
-				case CONTENT_GIF:
-#endif
-#ifdef WITH_BMP
-				case CONTENT_BMP:
-				case CONTENT_ICO:
-#endif
-					gui_save_filetype = osfile_TYPE_SPRITE;
-					break;
-				/* vector formats */
-#if defined(WITH_NS_SVG) || defined(WITH_RSVG)
-				case CONTENT_SVG:
-					gui_save_filetype = osfile_TYPE_DRAW;
-					break;
-#endif
-#ifdef WITH_DRAW
-				case CONTENT_DRAW:
-					gui_save_filetype = osfile_TYPE_DRAW;
-					break;
-#endif
-				default:
-					break;
+			switch (ro_content_native_type(h)) {
+			case osfile_TYPE_SPRITE:
+				gui_save_filetype = osfile_TYPE_SPRITE;
+				break;
+			case osfile_TYPE_DRAW:
+				gui_save_filetype = osfile_TYPE_DRAW;
+				break;
+			default:
+				break;
 			}
 		}
 		if (!gui_save_filetype)

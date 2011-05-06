@@ -1466,7 +1466,6 @@ void form_submit(hlcache_handle *h, struct browser_window *target,
 	url_func_result res;
 
 	assert(form != NULL);
-	assert(content_get_type(h) == CONTENT_HTML);
 
 	if (form_successful_controls(form, submit_button, &success) == false) {
 		warn_user("NoMemory", 0);

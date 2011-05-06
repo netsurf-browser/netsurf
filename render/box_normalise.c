@@ -28,6 +28,7 @@
 #include "css/css.h"
 #include "css/select.h"
 #include "render/box.h"
+#include "render/html_internal.h"
 #include "render/table.h"
 #include "desktop/gui.h"
 #include "utils/log.h"
@@ -61,19 +62,19 @@ struct columns {
 };
 
 
-static bool box_normalise_table(struct box *table, struct content *c);
+static bool box_normalise_table(struct box *table, html_content *c);
 static bool box_normalise_table_spans(struct box *table, 
-		struct span_info *spans, struct content *c);
+		struct span_info *spans, html_content *c);
 static bool box_normalise_table_row_group(struct box *row_group,
 		struct columns *col_info,
-		struct content *c);
+		html_content *c);
 static bool box_normalise_table_row(struct box *row,
 		struct columns *col_info,
-		struct content *c);
+		html_content *c);
 static bool calculate_table_row(struct columns *col_info,
 		unsigned int col_span, unsigned int row_span,
 		unsigned int *start_column);
-static bool box_normalise_inline_container(struct box *cont, struct content *c);
+static bool box_normalise_inline_container(struct box *cont, html_content *c);
 
 /**
  * Ensure the box tree is correctly nested by adding and removing nodes.
@@ -96,12 +97,13 @@ static bool box_normalise_inline_container(struct box *cont, struct content *c);
  * \endcode
  */
 
-bool box_normalise_block(struct box *block, struct content *c)
+bool box_normalise_block(struct box *block, html_content *c)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *table;
 	css_computed_style *style;
+	nscss_select_ctx ctx;
 
 	assert(block != NULL);
 
@@ -152,7 +154,11 @@ bool box_normalise_block(struct box *block, struct content *c)
 			/* insert implied table */
 			assert(block->style != NULL);
 
-			style = nscss_get_blank_style(c, block->style,
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+
+			style = nscss_get_blank_style(&ctx, block->style,
 					box_style_alloc, NULL);
 			if (style == NULL)
 				return false;
@@ -203,13 +209,14 @@ bool box_normalise_block(struct box *block, struct content *c)
 }
 
 
-bool box_normalise_table(struct box *table, struct content * c)
+bool box_normalise_table(struct box *table, html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *row_group;
 	css_computed_style *style;
 	struct columns col_info;
+	nscss_select_ctx ctx;
 
 	assert(table != NULL);
 	assert(table->type == BOX_TABLE);
@@ -248,7 +255,11 @@ bool box_normalise_table(struct box *table, struct content * c)
 			/* insert implied table row group */
 			assert(table->style != NULL);
 
-			style = nscss_get_blank_style(c, table->style,
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+
+			style = nscss_get_blank_style(&ctx, table->style,
 					box_style_alloc, NULL);
 			if (style == NULL) {
 				free(col_info.spans);
@@ -330,7 +341,11 @@ bool box_normalise_table(struct box *table, struct content * c)
 
 		assert(table->style != NULL);
 
-		style = nscss_get_blank_style(c, table->style, 
+		ctx.ctx = c->select_ctx;
+		ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+		ctx.base_url = c->base_url;
+
+		style = nscss_get_blank_style(&ctx, table->style, 
 				box_style_alloc, NULL);
 		if (style == NULL) {
 			free(col_info.spans);
@@ -346,7 +361,7 @@ bool box_normalise_table(struct box *table, struct content * c)
 		}
 		row_group->type = BOX_TABLE_ROW_GROUP;
 
-		style = nscss_get_blank_style(c, row_group->style, 
+		style = nscss_get_blank_style(&ctx, row_group->style, 
 				box_style_alloc, NULL);
 		if (style == NULL) {
 			box_free(row_group);
@@ -402,13 +417,14 @@ bool box_normalise_table(struct box *table, struct content * c)
  */
 
 bool box_normalise_table_spans(struct box *table, struct span_info *spans,
-		struct content *c)
+		html_content *c)
 {
 	struct box *table_row_group;
 	struct box *table_row;
 	struct box *table_cell;
 	unsigned int rows_left = table->rows;
 	unsigned int col;
+	nscss_select_ctx ctx;
 
 	/* Clear span data */
 	memset(spans, 0, table->columns * sizeof(struct span_info));
@@ -459,7 +475,12 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 						col++;
 					}
 
-					style = nscss_get_blank_style(c, 
+					ctx.ctx = c->select_ctx;
+					ctx.quirks = (c->quirks == 
+						BINDING_QUIRKS_MODE_FULL);
+					ctx.base_url = c->base_url;
+
+					style = nscss_get_blank_style(&ctx, 
 							table_row->style,
 							box_style_alloc, NULL);
 					if (style == NULL)
@@ -531,12 +552,13 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 
 bool box_normalise_table_row_group(struct box *row_group,
 		struct columns *col_info,
-		struct content * c)
+		html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *row;
 	css_computed_style *style;
+	nscss_select_ctx ctx;
 
 	assert(row_group != 0);
 	assert(row_group->type == BOX_TABLE_ROW_GROUP);
@@ -563,7 +585,11 @@ bool box_normalise_table_row_group(struct box *row_group,
 			/* insert implied table row */
 			assert(row_group->style != NULL);
 
-			style = nscss_get_blank_style(c, row_group->style,
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+
+			style = nscss_get_blank_style(&ctx, row_group->style,
 					box_style_alloc, NULL);
 			if (style == NULL)
 				return false;
@@ -633,7 +659,11 @@ bool box_normalise_table_row_group(struct box *row_group,
 
 		assert(row_group->style != NULL);
 
-		style = nscss_get_blank_style(c, row_group->style, 
+		ctx.ctx = c->select_ctx;
+		ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+		ctx.base_url = c->base_url;
+
+		style = nscss_get_blank_style(&ctx, row_group->style, 
 				box_style_alloc, NULL);
 		if (style == NULL) {
 			return false;
@@ -664,13 +694,14 @@ bool box_normalise_table_row_group(struct box *row_group,
 
 bool box_normalise_table_row(struct box *row,
 		struct columns *col_info,
-		struct content * c)
+		html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
 	struct box *cell = NULL;
 	css_computed_style *style;
 	unsigned int i;
+	nscss_select_ctx ctx;
 
 	assert(row != NULL);
 	assert(row->type == BOX_TABLE_ROW);
@@ -697,7 +728,11 @@ bool box_normalise_table_row(struct box *row,
 			/* insert implied table cell */
 			assert(row->style != NULL);
 
-			style = nscss_get_blank_style(c, row->style, 
+			ctx.ctx = c->select_ctx;
+			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.base_url = c->base_url;
+
+			style = nscss_get_blank_style(&ctx, row->style, 
 					box_style_alloc, NULL);
 			if (style == NULL)
 				return false;
@@ -856,7 +891,7 @@ bool calculate_table_row(struct columns *col_info,
 }
 
 
-bool box_normalise_inline_container(struct box *cont, struct content * c)
+bool box_normalise_inline_container(struct box *cont, html_content * c)
 {
 	struct box *child;
 	struct box *next_child;
