@@ -17,6 +17,11 @@
   # shut up zconf.h and zlib.h
   #CFLAGS += -D_LARGEFILE64_SOURCE=1
 
+ifneq ($(WITH_MACPORTS),)
+  LDFLAGS += -L/opt/local/lib
+  CFLAGS += -I/opt/local/include
+endif
+
   # for timerisset()
   CFLAGS += -D_DARWIN_C_SOURCE
 
