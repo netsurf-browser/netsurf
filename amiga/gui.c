@@ -42,6 +42,7 @@
 #include "amiga/clipboard.h"
 #include "amiga/context_menu.h"
 #include "amiga/cookies.h"
+#include "amiga/datatypes.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
 #include "amiga/font.h"
@@ -57,7 +58,6 @@
 #include "amiga/misc.h"
 #include "amiga/options.h"
 #include "amiga/plotters.h"
-#include "amiga/plugin.h"
 #include "amiga/print.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
@@ -750,7 +750,7 @@ int main(int argc, char** argv)
 	ami_schedule_open_timer();
 	ami_schedule_create();
 
-	plugin_init();
+	amiga_datatypes_init();
 
 	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
 
@@ -771,7 +771,7 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
-	plugin_fini();
+	amiga_datatypes_fini();
 	amiga_icon_fini();
 
 	return 0;

@@ -17,13 +17,13 @@
  */
 
 /** \file
- * Temporary "plugin" to pass unknown MIME types to DataTypes (implementation)
+ * DataTypes picture handler (implementation)
 */
 
-#ifdef WITH_PLUGIN
+#ifdef WITH_AMIGA_DATATYPES
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
-#include "amiga/plugin.h"
+#include "amiga/datatypes.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
@@ -37,7 +37,7 @@
 #include <datatypes/pictureclass.h>
 #include <intuition/classusr.h>
 
-typedef struct plugin_content {
+typedef struct amiga_dt_picture_content {
 	struct content base;
 
 	Object *dto;
@@ -45,45 +45,45 @@ typedef struct plugin_content {
 	int y;
 	int w;
 	int h;
-} plugin_content;
+} amiga_dt_picture_content;
 
-static nserror plugin_create(const content_handler *handler,
+static nserror amiga_dt_picture_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
-static bool plugin_convert(struct content *c);
-static void plugin_reformat(struct content *c, int width, int height);
-static void plugin_destroy(struct content *c);
-static bool plugin_redraw(struct content *c, int x, int y,
+static bool amiga_dt_picture_convert(struct content *c);
+static void amiga_dt_picture_reformat(struct content *c, int width, int height);
+static void amiga_dt_picture_destroy(struct content *c);
+static bool amiga_dt_picture_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour);
-static void plugin_open(struct content *c, struct browser_window *bw,
+static void amiga_dt_picture_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
-static void plugin_close(struct content *c);
-static nserror plugin_clone(const struct content *old, struct content **newc);
-static content_type plugin_content_type(lwc_string *mime_type);
+static void amiga_dt_picture_close(struct content *c);
+static nserror amiga_dt_picture_clone(const struct content *old, struct content **newc);
+static content_type amiga_dt_picture_content_type(lwc_string *mime_type);
 
-static const content_handler plugin_content_handler = {
-	plugin_create,
+static const content_handler amiga_dt_picture_content_handler = {
+	amiga_dt_picture_create,
 	NULL,
-	plugin_convert,
-	plugin_reformat,
-	plugin_destroy,
+	amiga_dt_picture_convert,
+	amiga_dt_picture_reformat,
+	amiga_dt_picture_destroy,
 	NULL,
 	NULL,
 	NULL,
-	plugin_redraw,
+	amiga_dt_picture_redraw,
 	NULL,
-	plugin_open,
-	plugin_close,
-	plugin_clone,
+	amiga_dt_picture_open,
+	amiga_dt_picture_close,
+	amiga_dt_picture_clone,
 	NULL,
-	plugin_content_type,
+	amiga_dt_picture_content_type,
 	false
 };
 
-nserror plugin_init(void)
+nserror amiga_dt_picture_init(void)
 {
 	char dt_mime[50];
 	struct DataType *dt, *prevdt = NULL;
@@ -107,7 +107,7 @@ nserror plugin_init(void)
 			return NSERROR_NOMEM;
 
 		error = content_factory_register_handler(type, 
-				&plugin_content_handler);
+				&amiga_dt_picture_content_handler);
 
 		lwc_string_unref(type);
 
@@ -121,20 +121,20 @@ nserror plugin_init(void)
 	return NSERROR_OK;
 }
 
-void plugin_fini(void)
+void amiga_dt_picture_fini(void)
 {
 	/* Nothing to do */
 }
 
-nserror plugin_create(const content_handler *handler,
+nserror amiga_dt_picture_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
-	plugin_content *plugin;
+	amiga_dt_picture_content *plugin;
 	nserror error;
 
-	plugin = talloc_zero(0, plugin_content);
+	plugin = talloc_zero(0, amiga_dt_picture_content);
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 
@@ -150,11 +150,11 @@ nserror plugin_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
-bool plugin_convert(struct content *c)
+bool amiga_dt_picture_convert(struct content *c)
 {
-	LOG(("plugin_convert"));
+	LOG(("amiga_dt_picture_convert"));
 
-	plugin_content *plugin = (plugin_content *) c;
+	amiga_dt_picture_content *plugin = (amiga_dt_picture_content *) c;
 	union content_msg_data msg_data;
 	int width, height;
 	char title[100];
@@ -218,11 +218,11 @@ bool plugin_convert(struct content *c)
 	return true;
 }
 
-void plugin_destroy(struct content *c)
+void amiga_dt_picture_destroy(struct content *c)
 {
-	plugin_content *plugin = (plugin_content *) c;
+	amiga_dt_picture_content *plugin = (amiga_dt_picture_content *) c;
 
-	LOG(("plugin_destroy"));
+	LOG(("amiga_dt_picture_destroy"));
 
 	if (c->bitmap != NULL)
 		bitmap_destroy(c->bitmap);
@@ -232,11 +232,11 @@ void plugin_destroy(struct content *c)
 	return;
 }
 
-bool plugin_redraw(struct content *c, int x, int y,
+bool amiga_dt_picture_redraw(struct content *c, int x, int y,
 	int width, int height, const struct rect *clip,
 	float scale, colour background_colour)
 {
-	LOG(("plugin_redraw"));
+	LOG(("amiga_dt_picture_redraw"));
 
 	return plot.bitmap(x, y, width, height,
 			c->bitmap, background_colour, BITMAPF_NONE);
@@ -252,35 +252,35 @@ bool plugin_redraw(struct content *c, int x, int y,
  * \param  box     box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  */
-void plugin_open(struct content *c, struct browser_window *bw,
+void amiga_dt_picture_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct box *box,
 	struct object_params *params)
 {
-	LOG(("plugin_open"));
+	LOG(("amiga_dt_picture_open"));
 
 	return;
 }
 
-void plugin_close(struct content *c)
+void amiga_dt_picture_close(struct content *c)
 {
-	LOG(("plugin_close"));
+	LOG(("amiga_dt_picture_close"));
 	return;
 }
 
-void plugin_reformat(struct content *c, int width, int height)
+void amiga_dt_picture_reformat(struct content *c, int width, int height)
 {
-	LOG(("plugin_reformat"));
+	LOG(("amiga_dt_picture_reformat"));
 	return;
 }
 
-nserror plugin_clone(const struct content *old, struct content **newc)
+nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
 {
-	plugin_content *plugin;
+	amiga_dt_picture_content *plugin;
 	nserror error;
 
-	LOG(("plugin_clone"));
+	LOG(("amiga_dt_picture_clone"));
 
-	plugin = talloc_zero(0, plugin_content);
+	plugin = talloc_zero(0, amiga_dt_picture_content);
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 
@@ -293,7 +293,7 @@ nserror plugin_clone(const struct content *old, struct content **newc)
 	/* We "clone" the old content by replaying conversion */
 	if (old->status == CONTENT_STATUS_READY || 
 			old->status == CONTENT_STATUS_DONE) {
-		if (plugin_convert(&plugin->base) == false) {
+		if (amiga_dt_picture_convert(&plugin->base) == false) {
 			content_destroy(&plugin->base);
 			return NSERROR_CLONE_FAILED;
 		}
@@ -304,7 +304,7 @@ nserror plugin_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type plugin_content_type(lwc_string *mime_type)
+content_type amiga_dt_picture_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
 }

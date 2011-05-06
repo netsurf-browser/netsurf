@@ -24,7 +24,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
   $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
-  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,DataTypes images))
+  $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I /SDK/local/common/include/libpng12
   LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -lregex -lauto -lpbl
@@ -43,7 +43,7 @@ else
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG))
   $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,NSSVG))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
-  $(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,DataTypes images))
+  $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
   CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libcurl libcares openssl)
@@ -67,12 +67,13 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_AMIGA are sources purely for the Amiga build
-S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c plugin.c		\
+S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c		\
 	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
 	cookies.c context_menu.c clipboard.c save_complete.c		\
 	launch.c search.c history_local.c download.c iff_dr2d.c 	\
 	sslcert.c gui_options.c print.c	theme.c	drag.c icon.c system_colour.c \
+	datatypes.c dt_picture.c	\
 	stringview/stringview.c stringview/urlhistory.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 

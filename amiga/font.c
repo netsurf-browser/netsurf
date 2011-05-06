@@ -58,7 +58,7 @@
 #define NSA_VALUE_SHEARSIN (1 << 14)
 #define NSA_VALUE_SHEARCOS (1 << 16)
 
-#define NSA_FONT_EMWIDTH(s) (ULONG)(s / FONT_SIZE_SCALE) * (ami_xdpi / 72.0)
+#define NSA_FONT_EMWIDTH(s) (s / FONT_SIZE_SCALE) * (ami_xdpi / 72.0)
 
 struct ami_font_node
 {
@@ -136,7 +136,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	uint8 *utf8;
 	uint32 co = 0;
 	int utf16charlen;
-	ULONG emwidth = NSA_FONT_EMWIDTH(fstyle->size);
+	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 	int32 tempx;
 
 	len = utf8_bounded_length(string, length);
@@ -245,7 +245,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	size_t len;
 	int utf8len, utf8clen = 0;
 	int32 tempx = 0;
-	ULONG emwidth = NSA_FONT_EMWIDTH(fstyle->size);
+	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
@@ -550,7 +550,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	uint32 x=0;
 	uint8 co = 0;
 	int32 tempx = 0;
-	ULONG emwidth = NSA_FONT_EMWIDTH(fstyle->size);
+	ULONG emwidth = (ULONG)NSA_FONT_EMWIDTH(fstyle->size);
 
 	if(!string || string[0]=='\0') return 0;
 	if(!length) return 0;

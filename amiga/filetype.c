@@ -178,6 +178,10 @@ void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype)
 			{
 				strcpy(mimetype,"image/x-riscos-sprite");
 			}
+			if(strcmp("mng",dth->dth_BaseName)==0)
+			{
+				strcpy(mimetype,"video/mng");
+			}
 		break;
 		case GID_ANIMATION:
 		case GID_MOVIE:

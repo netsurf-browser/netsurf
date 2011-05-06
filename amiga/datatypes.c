@@ -16,22 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_AMIGA_PLUGIN_H_
-#define NETSURF_AMIGA_PLUGIN_H_
+#ifdef WITH_AMIGA_DATATYPES
+#include "amiga/datatypes.h"
 
-#include "utils/config.h"
-#include "utils/errors.h"
+nserror amiga_datatypes_init(void)
+{
+	nserror err = NSERROR_OK;
 
-#ifdef WITH_PLUGIN
+	err = amiga_dt_picture_init();
+	if(err != NSERROR_OK) return err;
 
-nserror plugin_init(void);
-void plugin_fini(void);
+	return NSERROR_OK;
+}
 
-#else
-
-#define plugin_init() NSERROR_OK
-#define plugin_fini() ((void) 0)
-
-#endif /* WITH_PLUGIN */
-
+void amiga_datatypes_fini(void)
+{
+	amiga_dt_picture_fini();
+}
 #endif
