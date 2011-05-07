@@ -33,6 +33,7 @@
 #include "utils/talloc.h"
 
 #include <proto/datatypes.h>
+#include <proto/DOS.h>
 #include <proto/intuition.h>
 #include <datatypes/pictureclass.h>
 #include <intuition/classusr.h>
@@ -90,6 +91,7 @@ nserror amiga_dt_picture_init(void)
 	lwc_string *type;
 	lwc_error lerror;
 	nserror error;
+	BPTR fh = 0;
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,
 			DTA_DataType, prevdt,
@@ -118,6 +120,28 @@ nserror amiga_dt_picture_init(void)
 
 	ReleaseDataType(prevdt);
 
+	if(fh = FOpen("PROGDIR:Resources/MIME/dt.picture", MODE_OLDFILE, 0))
+	{
+		while(FGets(fh, &dt_mime, 50) != 0)
+		{
+			dt_mime[strlen(dt_mime) - 1] = '\0';
+			if((dt_mime[0] == '\0') || (dt_mime[0] == '#'))
+				continue; /* Skip blank lines and comments */
+
+			lerror = lwc_intern_string(dt_mime, strlen(dt_mime), &type);
+			if (lerror != lwc_error_ok)
+				return NSERROR_NOMEM;
+
+			error = content_factory_register_handler(type, 
+					&amiga_dt_picture_content_handler);
+
+			lwc_string_unref(type);
+
+			if (error != NSERROR_OK)
+				return error;
+		}
+		FClose(fh);
+	}
 	return NSERROR_OK;
 }
 
