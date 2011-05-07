@@ -131,7 +131,7 @@ EXETARGET := NetSurf
 S_XIBS := MainMenu.xib Browser.xib BrowserWindow.xib DownloadWindow.xib SearchWindow.xib PreferencesWindow.xib \
 		HistoryWindow.xib BookmarksWindow.xib LocalHistoryPanel.xib
 
-R_RESOURCES := default.css adblock.css quirks.css NetSurf.icns HomeTemplate.pdf Icons ca-bundle
+R_RESOURCES := default.css adblock.css internal.css quirks.css NetSurf.icns HomeTemplate.pdf Icons ca-bundle
 R_RESOURCES := $(addprefix cocoa/res/,$(R_RESOURCES))
 
 LANGUAGES := de en fr it nl
