@@ -922,10 +922,11 @@ void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *se
 			warn_user("IOError", strerror(err));
 			return;
 		}
-		const char *mime = content_get_mime_type(content);
+		lwc_string *mime = content_get_mime_type(content);
+		const char *mime_string = lwc_string_data(mime);
 		if (mime)
 			file.WriteAttr("BEOS:TYPE", B_MIME_STRING_TYPE, 0LL, 
-				mime, strlen(mime) + 1);
+				mime_string, lwc_string_length(mime) + 1);
 		
 	}
 
