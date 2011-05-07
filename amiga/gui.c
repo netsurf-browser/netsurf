@@ -160,6 +160,8 @@ ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULO
 void ami_try_quit(void);
 void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 		int x0, int y0, int x1, int y1);
+Object *ami_gui_splash_open(void);
+void ami_gui_splash_close(Object *win_obj);
 
 STRPTR ami_locale_langs(void)
 {
@@ -743,6 +745,8 @@ int main(int argc, char** argv)
 	setbuf(stderr, NULL);
 	char messages[100];
 	char script[1024];
+	
+	Object *splash_window = ami_gui_splash_open();
 
 	if(ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
@@ -758,6 +762,8 @@ int main(int argc, char** argv)
 
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
+
+	ami_gui_splash_close(splash_window);
 
 	strncpy(script, option_arexx_dir, 1024);
 	AddPart(script, option_arexx_startup, 1024);
@@ -3954,4 +3960,37 @@ BOOL ami_gadget_hit(Object *obj, int x, int y)
 	if((x >= left) && (x <= (left + width)) && (y >= top) && (y <= (top + height)))
 		return TRUE;
 	else return FALSE;
+}
+
+Object *ami_gui_splash_open(void)
+{
+	Object *win_obj;
+	struct Window *win;
+	struct Screen *wbscreen = LockPubScreen("Workbench");
+
+	win_obj = WindowObject,
+				WA_Title, "Initialising...",
+				WA_ToolBox, TRUE,
+				WA_BusyPointer, TRUE,
+				WINDOW_Position, WPOS_CENTERSCREEN,
+				WINDOW_LockWidth, TRUE,
+				WINDOW_LockHeight, TRUE,
+				WINDOW_ParentGroup, VGroupObject,
+					LAYOUT_AddImage, BitMapObject,
+						BITMAP_SourceFile, "PROGDIR:Resources/netsurf.png",
+						BITMAP_Screen, wbscreen,
+					BitMapEnd,
+				LayoutEnd,
+			EndWindow;
+
+	win = RA_OpenWindow(win_obj);
+
+	UnlockPubScreen(NULL, wbscreen);
+
+	return win_obj;
+}
+
+void ami_gui_splash_close(Object *win_obj)
+{
+	if(win_obj) DisposeObject(win_obj);
 }
