@@ -27,6 +27,8 @@ resource(204, "messages") #'data' import "res/messages";
 /* resource(210, "netsurf.xpm") #'data' import "res/netsurf.xpm"; */
 resource(205, "netsurf.png") #'data' import "res/netsurf.png";
 resource(206, "internal.css") #'data' import "res/internal.css";
+resource(207, "Icons/directory.png") #'data' import "res/Icons/directory.png";
+resource(208, "Icons/content.png") #'data' import "res/Icons/content.png";
 
 /* throbber */
 resource(400, "throbber0.png") #'data' import "res/throbber/throbber0.png";
