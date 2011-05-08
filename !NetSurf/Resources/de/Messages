@@ -761,15 +761,14 @@ OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde überschr
 #
 Progress:%s von %s
 ProgressU:%s
-Loading:Seite öffnen...
 RecPercent:Empfangen %s (%u%%)
 Received:Empfangen %s
-Converting:Konvertiere %lu Bytes
-Complete:Seite komplett (%gs)
 Redirecting:Umleiten...
-Processing:Dokument auswerten
-Formatting:Dokument formatieren
-Done:Dokument fertiggestellt
+Loading:Loading
+Fetching:Fetching data
+Processing:Auswerten
+Formatting:Formatieren
+Done:Fertiggestellt
 Stopped:Stopped
 
 # Fetch warning/error messages - displayed in status bar

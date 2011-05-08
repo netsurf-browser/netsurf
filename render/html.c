@@ -1918,13 +1918,7 @@ void html_set_status(html_content *c, const char *extra)
 		stylesheets = c->stylesheet_count;
 		objects = c->num_objects - c->base.active;
 	}
-	content_set_status(&c->base, "%u/%u %s %u/%u %s  %s",
-			stylesheets, c->stylesheet_count,
-			messages_get((c->stylesheet_count == 1) ?
-					"styl" : "styls"),
-			objects, c->num_objects,
-			messages_get((c->num_objects == 1) ? "obj" : "objs"),
-			extra);
+	content_set_status(&c->base, "%s", extra);
 }
 
 

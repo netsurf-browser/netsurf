@@ -761,15 +761,14 @@ OverwriteFile:Un fichier portant ce nom existe déjà et serait perdu.
 #
 Progress:%s reçus de %s
 ProgressU:%s
-Loading:Ouverture de la page...
 RecPercent:%s (%u%%)
 Received:%s reçus
-Converting:Conversion de %lu octets
-Complete:Page terminée (%gs)
 Redirecting:Redirection en cours...
-Processing:Traitement du document
-Formatting:Formatage du document
-Done:Document terminé
+Loading:Loading
+Fetching:Fetching data
+Processing:Traitement
+Formatting:Formatage
+Done:Terminé
 Stopped:Stopped
 
 # Fetch warning/error messages - displayed in status bar

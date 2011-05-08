@@ -762,14 +762,13 @@ OverwriteFile:Een bestand met deze naam bestaat al en zal verloren gaan.
 #
 Progress:%s van %s
 ProgressU:%s
-Loading:pagina ophalen...
 RecPercent:ontvangen %s (%u%%)
 Received:ontvangen %s
-Converting:converteren van %lu bytes
-Complete:pagina verwerkt (%gs)
 Redirecting:doorverwijzen...
-Processing:verwerking van document
-Formatting:document opmaken
+Loading:Loading
+Fetching:Fetching data
+Processing:verwerking
+Formatting:opmaken
 Done:klaar
 Stopped:Stopped
 

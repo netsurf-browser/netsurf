@@ -169,7 +169,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 
 		source = llcache_handle_get_source_data(llcache, &source_size);
 
-		content_set_status(c, messages_get("Converting"), source_size);
+		content_set_status(c, messages_get("Processing"), source_size);
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 
 		content_convert(c);
@@ -233,24 +233,19 @@ void content_set_status(struct content *c, const char *status_message, ...)
 
 void content_update_status(struct content *c)
 {
-	char token[20];
-	const char *status;
-	unsigned int time;
-
-	snprintf(token, sizeof token, "HTTP%li", c->http_code);
-	status = messages_get(token);
-	if (status == token)
-		status = token + 4;
-
 	if (c->status == CONTENT_STATUS_LOADING ||
-			c->status == CONTENT_STATUS_READY)
-		time = wallclock() - c->time;
-	else
-		time = c->time;
+			c->status == CONTENT_STATUS_READY) {
+		/* Not done yet */
+		snprintf(c->status_message, sizeof (c->status_message),
+				"%s%s%s", messages_get("Fetching"),
+				c->sub_status ? ", " : " ", c->sub_status);
+	} else {
+		unsigned int time = c->time;
+		snprintf(c->status_message, sizeof (c->status_message),
+				"%s (%.1fs) %s", messages_get("Done"),
+				(float) time / 100, c->sub_status);
+	}
 
-	snprintf(c->status_message, sizeof (c->status_message),
-			"%s (%.1fs) %s", status,
-			(float) time / 100, c->sub_status);
 	/* LOG(("%s", c->status_message)); */
 }
 

@@ -766,15 +766,14 @@ OverwriteFile:Un file con questo nome è già esistente, continuare comporterà 
 #
 Progress:%s di %s
 ProgressU:%s
-Loading:Apertura della pagina in corso...
 RecPercent:Ricevuti %s (%u%%)
 Received:Ricevuti %s
-Converting:Conversione di %lu byte
-Complete:Pagina completata (%gs)
 Redirecting:Redirezione in corso...
-Processing:Elaborazione del documento in corso...
-Formatting:Formattazione del documento in corso...
-Done:Documento completato
+Loading:Loading
+Fetching:Fetching data
+Processing:Elaborazione
+Formatting:Formattazione
+Done:Completato
 Stopped:Interrotto
 
 # Fetch warning/error messages - displayed in status bar
