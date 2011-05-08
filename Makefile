@@ -427,7 +427,6 @@ endif
 
 ifeq ($(TARGET),beos)
 $(RDEF_IMP_BEOS): $(RDEP_BEOS)
-	echo $(RDEF_IMP_BEOS)
 	$(VQ)echo "     GEN: $@"
 	$(Q)n=5000; for f in $^; do echo "resource($$n,\"$${f#beos/res/}\") #'data' import \"$${f#beos/}\";"; n=$$(($$n+1)); done > $@
 
