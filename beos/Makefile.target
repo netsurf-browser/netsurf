@@ -91,11 +91,18 @@ S_BEOS := beos_about.cpp beos_bitmap.cpp beos_fetch_rsrc.cpp		\
 	beos_thumbnail.cpp beos_treeview.cpp beos_throbber.cpp		\
 	beos_window.cpp system_colour.cpp
 S_BEOS := $(addprefix beos/,$(S_BEOS))
+
 RDEF_BEOS := beos_res.rdef
 RDEF_BEOS := $(addprefix beos/,$(RDEF_BEOS))
-RDEP_BEOS := adblock.css beosdefault.css default.css ca-bundle.txt	\
-	messages
+
+RDEF_IMP_BEOS := beos_res_import.rdef
+RDEF_IMP_BEOS := $(addprefix $(OBJROOT)/,$(subst /,_,$(RDEF_IMP_BEOS)))
+
+RDEP_BEOS := \
+	adblock.css beosdefault.css default.css internal.css quirks.css	\
+	netsurf.png ca-bundle.txt messages
 RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
+	$(wildcard beos/res/Icons/*.png)				\
 	$(wildcard beos/res/throbber/throbber*.png)
 
 

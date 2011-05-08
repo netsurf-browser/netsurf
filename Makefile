@@ -426,9 +426,14 @@ ifeq ($(TARGET),beos)
 endif
 
 ifeq ($(TARGET),beos)
-$(RSRC_BEOS): $(RDEF_BEOS) $(RDEP_BEOS)
+$(RDEF_IMP_BEOS): $(RDEP_BEOS)
+	echo $(RDEF_IMP_BEOS)
+	$(VQ)echo "     GEN: $@"
+	$(Q)n=5000; for f in $^; do echo "resource($$n,\"$${f#beos/res/}\") #'data' import \"$${f#beos/}\";"; n=$$(($$n+1)); done > $@
+
+$(RSRC_BEOS): $(RDEF_BEOS) $(RDEF_IMP_BEOS)
 	$(VQ)echo "      RC: $<"
-	$(Q)$(BEOS_RC) -o $@ $<
+	$(Q)$(BEOS_RC) -I beos -o $@ $^
 endif
 
 ifeq ($(TARGET),riscos)

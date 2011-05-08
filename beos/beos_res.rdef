@@ -18,18 +18,6 @@
 
 #include "beos_res.h"
 
-resource(200, "default.css") #'data' import "res/default.css";
-resource(201, "beosdefault.css") #'data' import "res/beosdefault.css";
-resource(202, "adblock.css") #'data' import "res/adblock.css";
-resource(203, "ca-bundle.txt") #'data' import "res/ca-bundle.txt";
-resource(204, "messages") #'data' import "res/messages";
-/* resource(206, "about.en.html") #'data' import "res/about.en.html"; */
-/* resource(210, "netsurf.xpm") #'data' import "res/netsurf.xpm"; */
-resource(205, "netsurf.png") #'data' import "res/netsurf.png";
-resource(206, "internal.css") #'data' import "res/internal.css";
-resource(207, "Icons/directory.png") #'data' import "res/Icons/directory.png";
-resource(208, "Icons/content.png") #'data' import "res/Icons/content.png";
-
 /* throbber */
 resource(400, "throbber0.png") #'data' import "res/throbber/throbber0.png";
 resource(401, "throbber1.png") #'data' import "res/throbber/throbber1.png";
