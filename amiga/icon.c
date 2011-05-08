@@ -65,7 +65,8 @@ static bool amiga_icon_convert(struct content *c);
 static void amiga_icon_destroy(struct content *c);
 static bool amiga_icon_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror amiga_icon_clone(const struct content *old, 
 		struct content **newc);
 static content_type amiga_icon_content_type(lwc_string *mime_type);
@@ -80,7 +81,6 @@ static const content_handler amiga_icon_content_handler = {
 	NULL,
 	NULL,
 	amiga_icon_redraw,
-	NULL,
 	NULL,
 	NULL,
 	amiga_icon_clone,
@@ -297,10 +297,18 @@ void amiga_icon_destroy(struct content *c)
 
 bool amiga_icon_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
 {
+	bitmap_flags_t flags = BITMAPF_NONE;
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
+			c->bitmap, background_colour, flags);
 }
 
 

@@ -22,7 +22,6 @@
 
 #ifdef WITH_AMIGA_DATATYPES
 #include "amiga/filetype.h"
-#include "amiga/gui.h"
 #include "amiga/datatypes.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
@@ -33,7 +32,7 @@
 #include "utils/talloc.h"
 
 #include <proto/datatypes.h>
-#include <proto/DOS.h>
+#include <proto/dos.h>
 #include <proto/intuition.h>
 #include <datatypes/pictureclass.h>
 #include <intuition/classusr.h>
@@ -53,15 +52,11 @@ static nserror amiga_dt_picture_create(const content_handler *handler,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_dt_picture_convert(struct content *c);
-static void amiga_dt_picture_reformat(struct content *c, int width, int height);
 static void amiga_dt_picture_destroy(struct content *c);
 static bool amiga_dt_picture_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-static void amiga_dt_picture_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params);
-static void amiga_dt_picture_close(struct content *c);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror amiga_dt_picture_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_picture_content_type(lwc_string *mime_type);
 
@@ -69,15 +64,14 @@ static const content_handler amiga_dt_picture_content_handler = {
 	amiga_dt_picture_create,
 	NULL,
 	amiga_dt_picture_convert,
-	amiga_dt_picture_reformat,
+	NULL,
 	amiga_dt_picture_destroy,
 	NULL,
 	NULL,
 	NULL,
 	amiga_dt_picture_redraw,
 	NULL,
-	amiga_dt_picture_open,
-	amiga_dt_picture_close,
+	NULL,
 	amiga_dt_picture_clone,
 	NULL,
 	amiga_dt_picture_content_type,
@@ -122,7 +116,7 @@ nserror amiga_dt_picture_init(void)
 
 	if(fh = FOpen("PROGDIR:Resources/MIME/dt.picture", MODE_OLDFILE, 0))
 	{
-		while(FGets(fh, &dt_mime, 50) != 0)
+		while(FGets(fh, (UBYTE *)&dt_mime, 50) != 0)
 		{
 			dt_mime[strlen(dt_mime) - 1] = '\0';
 			if((dt_mime[0] == '\0') || (dt_mime[0] == '#'))
@@ -258,43 +252,19 @@ void amiga_dt_picture_destroy(struct content *c)
 
 bool amiga_dt_picture_redraw(struct content *c, int x, int y,
 	int width, int height, const struct rect *clip,
-	float scale, colour background_colour)
+	float scale, colour background_colour,
+	bool repeat_x, bool repeat_y)
 {
 	LOG(("amiga_dt_picture_redraw"));
+	bitmap_flags_t flags = BITMAPF_NONE;
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
 
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
-}
-
-/**
- * Handle a window containing a CONTENT_PLUGIN being opened.
- *
- * \param  c       content that has been opened
- * \param  bw      browser window containing the content
- * \param  page    content of type CONTENT_HTML containing c, or 0 if not an
- *                 object within a page
- * \param  box     box containing c, or 0 if not an object
- * \param  params  object parameters, or 0 if not an object
- */
-void amiga_dt_picture_open(struct content *c, struct browser_window *bw,
-	struct content *page, struct box *box,
-	struct object_params *params)
-{
-	LOG(("amiga_dt_picture_open"));
-
-	return;
-}
-
-void amiga_dt_picture_close(struct content *c)
-{
-	LOG(("amiga_dt_picture_close"));
-	return;
-}
-
-void amiga_dt_picture_reformat(struct content *c, int width, int height)
-{
-	LOG(("amiga_dt_picture_reformat"));
-	return;
+			c->bitmap, background_colour, flags);
 }
 
 nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
