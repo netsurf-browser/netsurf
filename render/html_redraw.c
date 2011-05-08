@@ -113,7 +113,8 @@ bool html_redraw_debug = false;
 
 bool html_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour, 
+		bool repeat_x, bool repeat_y)
 {
 	html_content *html = (html_content *) c;
 	struct box *box;
@@ -655,7 +656,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 				x_scrolled + padding_left,
 				y_scrolled + padding_top,
 				width, height, &r, scale,
-				current_background_color))
+				current_background_color, 
+				false, false))
 			return false;
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
@@ -2169,7 +2171,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if ((r.x0 < r.x1) && (r.y0 < r.y1)) {
 				if (!plot.clip(&r))
 					return false;
-				if (!content_redraw_tiled(
+				if (!content_redraw(
 						background->background, x, y,
 						ceilf(width * scale),
 						ceilf(height * scale), &r,
@@ -2310,7 +2312,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		if ((r.x0 < r.x1) && (r.y0 < r.y1)) {
 			if (!plot.clip(&r))
 				return false;
-			if (!content_redraw_tiled(box->background, x, y,
+			if (!content_redraw(box->background, x, y,
 					ceilf(width * scale),
 					ceilf(height * scale), &r,
 					scale, *background_colour,

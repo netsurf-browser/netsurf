@@ -39,6 +39,12 @@
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
+  # The GTK build can also enable the following deprication flags
+  # -DG_DISABLE_SINGLE_INCLUDES -DG_DISABLE_DEPRECATED
+  # -DGTK_DISABLE_SINGLE_INCLUDES  -DPANGO_DISABLE_DEPRECATED 
+  # -DGDK_PIXBUF_DISABLE_DEPRECATED -DGDK_DISABLE_DEPRECATED 
+  # -DGTK_DISABLE_DEPRECATED -DGTK_MULTIHEAD_SAFE
+
   GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
 
   CFLAGS += $(GTKCFLAGS)

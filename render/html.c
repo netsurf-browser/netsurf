@@ -111,7 +111,6 @@ static const content_handler html_content_handler = {
 	html_mouse_track,
 	html_mouse_action,
 	html_redraw,
-	NULL,
 	html_open,
 	html_close,
 	html_clone,

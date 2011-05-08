@@ -104,7 +104,8 @@ static void textplain_reformat(struct content *c, int width, int height);
 static void textplain_destroy(struct content *c);
 static bool textplain_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour, 
+		bool redraw_x, bool redraw_y);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -129,7 +130,6 @@ static const content_handler textplain_content_handler = {
 	textplain_mouse_track,
 	textplain_mouse_action,
 	textplain_redraw,
-	NULL,
 	NULL,
 	NULL,
 	textplain_clone,
@@ -687,7 +687,8 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 
 bool textplain_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour, 
+		bool repeat_x, bool repeat_y)
 {
 	textplain_content *text = (textplain_content *) c;
 	struct browser_window *bw = current_redraw_browser;

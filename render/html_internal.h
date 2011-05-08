@@ -97,7 +97,8 @@ void html_set_status(html_content *c, const char *extra);
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 
 /* in render/html_interaction.c */
 void html_mouse_track(struct content *c, struct browser_window *bw,

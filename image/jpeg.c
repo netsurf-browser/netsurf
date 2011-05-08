@@ -275,21 +275,9 @@ static void nsjpeg_destroy(struct content *c)
 
 
 /**
- * Redraw a CONTENT_JPEG.
- */
-static bool nsjpeg_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
-{
-	return plot.bitmap(x, y, width, height,
-			   c->bitmap, background_colour, BITMAPF_NONE);
-}
-
-
-/**
  * Redraw a CONTENT_JPEG with appropriate tiling.
  */
-static bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
+static bool nsjpeg_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
@@ -356,7 +344,6 @@ static const content_handler nsjpeg_content_handler = {
 	NULL,
 	NULL,
 	nsjpeg_redraw,
-	nsjpeg_redraw_tiled,
 	NULL,
 	NULL,
 	nsjpeg_clone,

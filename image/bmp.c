@@ -46,54 +46,8 @@ typedef struct nsbmp_content {
 	bmp_image *bmp;	/** BMP image data */
 } nsbmp_content;
 
-static nserror nsbmp_create(const content_handler *handler,
-		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c);
-static nserror nsbmp_create_bmp_data(nsbmp_content *bmp);
-static bool nsbmp_convert(struct content *c);
-static void nsbmp_destroy(struct content *c);
-static bool nsbmp_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-static bool nsbmp_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-static nserror nsbmp_clone(const struct content *old, struct content **newc);
-static content_type nsbmp_content_type(lwc_string *mime_type);
 
-static void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state);
 
-/* The Bitmap callbacks function table;
- * necessary for interaction with nsbmplib.
- */
-bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
-	.bitmap_create = nsbmp_bitmap_create,
-	.bitmap_destroy = bitmap_destroy,
-	.bitmap_set_suspendable = bitmap_set_suspendable,
-	.bitmap_get_buffer = bitmap_get_buffer,
-	.bitmap_get_bpp = bitmap_get_bpp
-};
-
-static const content_handler nsbmp_content_handler = {
-	nsbmp_create,
-	NULL,
-	nsbmp_convert,
-	NULL,
-	nsbmp_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsbmp_redraw,
-	nsbmp_redraw_tiled,
-	NULL,
-	NULL,
-	nsbmp_clone,
-	NULL,
-	nsbmp_content_type,
-	false
-};
 
 static const char *nsbmp_types[] = {
 	"application/bmp",
@@ -112,46 +66,24 @@ static const char *nsbmp_types[] = {
 
 static lwc_string *nsbmp_mime_types[NOF_ELEMENTS(nsbmp_types)];
 
-nserror nsbmp_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
+{	
+	union content_msg_data msg_data;
 
-	for (i = 0; i < NOF_ELEMENTS(nsbmp_mime_types); i++) {
-		lerror = lwc_intern_string(nsbmp_types[i],
-				strlen(nsbmp_types[i]),
-				&nsbmp_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nsbmp_mime_types[i],
-				&nsbmp_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
+	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
+	if (bmp->bmp == NULL) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&bmp->base, CONTENT_MSG_ERROR, msg_data);
+		return NSERROR_NOMEM;
 	}
+
+	bmp_create(bmp->bmp, &bmp_bitmap_callbacks);
 
 	return NSERROR_OK;
-
-error:
-	nsbmp_fini();
-
-	return error;
 }
 
-void nsbmp_fini(void)
-{
-	uint32_t i;
 
-	for (i = 0; i < NOF_ELEMENTS(nsbmp_mime_types); i++) {
-		if (nsbmp_mime_types[i] != NULL)
-			lwc_string_unref(nsbmp_mime_types[i]);
-	}
-}
-
-nserror nsbmp_create(const content_handler *handler,
+static nserror nsbmp_create(const content_handler *handler,
 		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
@@ -181,23 +113,39 @@ nserror nsbmp_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
-nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
-{	
-	union content_msg_data msg_data;
+/**
+ * Callback for libnsbmp; forwards the call to bitmap_create()
+ *
+ * \param  width   width of image in pixels
+ * \param  height  width of image in pixels
+ * \param  state   a flag word indicating the initial state
+ * \return an opaque struct bitmap, or NULL on memory exhaustion
+ */
+static void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
+{
+	unsigned int bitmap_state = BITMAP_NEW;
 
-	bmp->bmp = calloc(sizeof(struct bmp_image), 1);
-	if (bmp->bmp == NULL) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&bmp->base, CONTENT_MSG_ERROR, msg_data);
-		return NSERROR_NOMEM;
-	}
+	/* set bitmap state based on bmp state */
+	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
+	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
+			BITMAP_CLEAR_MEMORY : 0;
 
-	bmp_create(bmp->bmp, &bmp_bitmap_callbacks);
-
-	return NSERROR_OK;
+	/* return the created bitmap */
+	return bitmap_create(width, height, bitmap_state);
 }
 
-bool nsbmp_convert(struct content *c)
+/* The Bitmap callbacks function table;
+ * necessary for interaction with nsbmplib.
+ */
+bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
+	.bitmap_create = nsbmp_bitmap_create,
+	.bitmap_destroy = bitmap_destroy,
+	.bitmap_set_suspendable = bitmap_set_suspendable,
+	.bitmap_get_buffer = bitmap_get_buffer,
+	.bitmap_get_bpp = bitmap_get_bpp
+};
+
+static bool nsbmp_convert(struct content *c)
 {
 	nsbmp_content *bmp = (nsbmp_content *) c;
 	bmp_result res;
@@ -249,25 +197,7 @@ bool nsbmp_convert(struct content *c)
 	return true;
 }
 
-
-bool nsbmp_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
-{
-	nsbmp_content *bmp = (nsbmp_content *) c;
-
-	if (bmp->bmp->decoded == false)
-	  	if (bmp_decode(bmp->bmp) != BMP_OK)
-			return false;
-
-	c->bitmap = bmp->bmp->bitmap;
-
- 	return plot.bitmap(x, y, width, height,	c->bitmap,
- 			background_colour, BITMAPF_NONE);
-}
-
-
-bool nsbmp_redraw_tiled(struct content *c, int x, int y,
+static bool nsbmp_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
@@ -291,7 +221,7 @@ bool nsbmp_redraw_tiled(struct content *c, int x, int y,
 }
 
 
-void nsbmp_destroy(struct content *c)
+static void nsbmp_destroy(struct content *c)
 {
 	nsbmp_content *bmp = (nsbmp_content *) c;
 
@@ -300,7 +230,7 @@ void nsbmp_destroy(struct content *c)
 }
 
 
-nserror nsbmp_clone(const struct content *old, struct content **newc)
+static nserror nsbmp_clone(const struct content *old, struct content **newc)
 {
 	nsbmp_content *new_bmp;
 	nserror error;
@@ -335,30 +265,67 @@ nserror nsbmp_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type nsbmp_content_type(lwc_string *mime_type)
+static content_type nsbmp_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
 }
 
-/**
- * Callback for libnsbmp; forwards the call to bitmap_create()
- *
- * \param  width   width of image in pixels
- * \param  height  width of image in pixels
- * \param  state   a flag word indicating the initial state
- * \return an opaque struct bitmap, or NULL on memory exhaustion
- */
-void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
+
+static const content_handler nsbmp_content_handler = {
+	nsbmp_create,
+	NULL,
+	nsbmp_convert,
+	NULL,
+	nsbmp_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nsbmp_redraw,
+	NULL,
+	NULL,
+	nsbmp_clone,
+	NULL,
+	nsbmp_content_type,
+	false
+};
+
+nserror nsbmp_init(void)
 {
-	unsigned int bitmap_state = BITMAP_NEW;
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
 
-	/* set bitmap state based on bmp state */
-	bitmap_state |= (bmp_state & BMP_OPAQUE) ? BITMAP_OPAQUE : 0;
-	bitmap_state |= (bmp_state & BMP_CLEAR_MEMORY) ?
-			BITMAP_CLEAR_MEMORY : 0;
+	for (i = 0; i < NOF_ELEMENTS(nsbmp_mime_types); i++) {
+		lerror = lwc_intern_string(nsbmp_types[i],
+				strlen(nsbmp_types[i]),
+				&nsbmp_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
 
-	/* return the created bitmap */
-	return bitmap_create(width, height, bitmap_state);
+		error = content_factory_register_handler(nsbmp_mime_types[i],
+				&nsbmp_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nsbmp_fini();
+
+	return error;
+}
+
+void nsbmp_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nsbmp_mime_types); i++) {
+		if (nsbmp_mime_types[i] != NULL)
+			lwc_string_unref(nsbmp_mime_types[i]);
+	}
 }
 
 #endif

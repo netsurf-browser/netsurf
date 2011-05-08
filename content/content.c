@@ -464,119 +464,34 @@ void content_request_redraw(struct hlcache_handle *h,
 }
 
 /**
- * Display content on screen.
- *
- * Calls the redraw function for the content, if it exists.
- *
- * \param  h		     content
- * \param  x		     coordinate for top-left of redraw
- * \param  y		     coordinate for top-left of redraw
- * \param  width	     render width (not used for HTML redraw)
- * \param  height	     render height (not used for HTML redraw)
- * \param  clip		     clip rectangle
- * \param  scale	     scale for redraw
- * \param  background_colour the background colour
- * \return true if successful, false otherwise
- *
- * x, y and clip are coordinates from the top left of the canvas area.
- *
- * The top left corner of the clip rectangle is (x0, y0) and
- * the bottom right corner of the clip rectangle is (x1, y1).
- * Units for x, y and clip are pixels.
- *
- * Content scaling is handled differently for contents with and without
- * intrinsic dimensions.
- *
- * Content without intrinsic dimensions, e.g. HTML:
- *   The scale value is applied (the content having been reformatted
- *   appropriately beforehand).  The width and height are not used.
- *
- * Content with intrinsic dimensions, e.g. images:
- *   The scale value is not used.  The content is scaled from its own
- *   intrinsic dimensions to the passed render width and height.
- */
-
-bool content_redraw(hlcache_handle *h, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
-{
-	struct content *c = hlcache_handle_get_content(h);
-	assert(c != 0);
-
-	if (c->locked) {
-		/* not safe to attempt redraw */
-		return true;
-	}
-
-	if (c->handler->redraw == NULL) {
-		return true;
-	}
-
-	return c->handler->redraw(c, x, y, width, height,
-			clip, scale, background_colour);
-}
-
-
-/**
  * Display content on screen with optional tiling.
  *
  * Calls the redraw_tile function for the content, or emulates it with the
  * redraw function if it doesn't exist.
  */
 
-bool content_redraw_tiled(hlcache_handle *h, int x, int y,
+bool content_redraw(hlcache_handle *h, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
 {
 	struct content *c = hlcache_handle_get_content(h);
-	int x0, y0, x1, y1;
 
-	assert(c != 0);
+	assert(c != NULL);
 
-//	LOG(("%p %s", c, c->url));
-
-	if (c->locked)
+	if (c->locked) {
 		/* not safe to attempt redraw */
 		return true;
-
-	if (c->handler->redraw_tiled != NULL) {
-		return c->handler->redraw_tiled(c, x, y, width, height,
-				clip, scale, background_colour,
-				repeat_x, repeat_y);
-	} else {
-		/* ensure we have a redrawable content */
-		if ((c->handler->redraw == NULL) || (width == 0) ||
-				(height == 0))
-			return true;
-		/* simple optimisation for no repeat (common for backgrounds) */
-		if ((!repeat_x) && (!repeat_y))
-			return c->handler->redraw(c, x, y, width,
-				height, clip, scale, background_colour);
-		/* find the redraw boundaries to loop within*/
-		x0 = x;
-		if (repeat_x) {
-			for (; x0 > clip->x0; x0 -= width);
-			x1 = clip->x1;
-		} else {
-			x1 = x + 1;
-		}
-		y0 = y;
-		if (repeat_y) {
-			for (; y0 > clip->y0; y0 -= height);
-			y1 = clip->y1;
-		} else {
-			y1 = y + 1;
-		}
-		/* repeatedly plot our content */
-		for (y = y0; y < y1; y += height)
-			for (x = x0; x < x1; x += width)
-				if (!c->handler->redraw(c, x, y,
-						width, height, clip,
-						scale, background_colour))
-					return false;
 	}
-	return true;
+
+	/* ensure we have a redrawable content */
+	if (c->handler->redraw == NULL) {
+		return true;
+	}
+
+	return c->handler->redraw(c, x, y, width, height,
+			clip, scale, background_colour,
+			repeat_x, repeat_y);
 }
 
 

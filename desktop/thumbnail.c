@@ -88,7 +88,7 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 
 	/* Render the content */
 	plot_ok &= content_redraw(content, 0, 0, width, height, &clip, scale,
-			0xFFFFFF);
+				  0xFFFFFF, false, false);
 	
 	if (plot.option_knockout)
 		knockout_plot_end();

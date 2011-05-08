@@ -56,42 +56,7 @@ typedef struct rsvg_content {
 	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } rsvg_content;
 
-static nserror rsvg_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c);
-static nserror rsvg_create_svg_data(rsvg_content *c);
-static bool rsvg_process_data(struct content *c, const char *data, 
-		unsigned int size);
-static bool rsvg_convert(struct content *c);
-static void rsvg_destroy(struct content *c);
-static bool rsvg_redraw(struct content *c, int x, int y,
-                int width, int height, const struct rect *clip,
-                float scale, colour background_colour);
-static nserror rsvg_clone(const struct content *old, struct content **newc);
-static content_type rsvg_content_type(lwc_string *mime_type);
 
-static inline void rsvg_argb_to_abgr(uint8_t *pixels, 
-		int width, int height, size_t rowstride);
-
-static const content_handler rsvg_content_handler = {
-	rsvg_create,
-	rsvg_process_data,
-	rsvg_convert,
-	NULL,
-	rsvg_destroy,
-	NULL,
-	NULL,
-	NULL,
-	rsvg_redraw,
-	NULL,
-	NULL,
-	NULL,
-	rsvg_clone,
-	NULL,
-	rsvg_content_type,
-	false
-};
 
 static const char *rsvg_types[] = {
 	"image/svg",
@@ -100,46 +65,28 @@ static const char *rsvg_types[] = {
 
 static lwc_string *rsvg_mime_types[NOF_ELEMENTS(rsvg_types)];
 
-nserror nsrsvg_init(void)
+
+static nserror rsvg_create_svg_data(rsvg_content *c)
 {
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+	union content_msg_data msg_data;
 
-	for (i = 0; i < NOF_ELEMENTS(rsvg_mime_types); i++) {
-		lerror = lwc_intern_string(rsvg_types[i],
-				strlen(rsvg_types[i]),
-				&rsvg_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
+	c->rsvgh = NULL;
+	c->cs = NULL;
+	c->ct = NULL;
+	c->bitmap = NULL;
 
-		error = content_factory_register_handler(rsvg_mime_types[i],
-				&rsvg_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
+	if ((c->rsvgh = rsvg_handle_new()) == NULL) {
+		LOG(("rsvg_handle_new() returned NULL."));
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return NSERROR_NOMEM;
 	}
 
 	return NSERROR_OK;
-
-error:
-	nsrsvg_fini();
-
-	return error;
 }
 
-void nsrsvg_fini(void)
-{
-	uint32_t i;
 
-	for (i = 0; i < NOF_ELEMENTS(rsvg_mime_types); i++) {
-		if (rsvg_mime_types[i] != NULL)
-			lwc_string_unref(rsvg_mime_types[i]);
-	}
-}
-
-nserror rsvg_create(const content_handler *handler,
+static nserror rsvg_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
@@ -169,26 +116,8 @@ nserror rsvg_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
-nserror rsvg_create_svg_data(rsvg_content *c)
-{
-	union content_msg_data msg_data;
 
-	c->rsvgh = NULL;
-	c->cs = NULL;
-	c->ct = NULL;
-	c->bitmap = NULL;
-
-	if ((c->rsvgh = rsvg_handle_new()) == NULL) {
-		LOG(("rsvg_handle_new() returned NULL."));
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		return NSERROR_NOMEM;
-	}
-
-	return NSERROR_OK;
-}
-
-bool rsvg_process_data(struct content *c, const char *data,
+static bool rsvg_process_data(struct content *c, const char *data,
 			unsigned int size)
 {
 	rsvg_content *d = (rsvg_content *) c;
@@ -235,7 +164,7 @@ static inline void rsvg_argb_to_abgr(uint8_t *pixels,
 	}
 }
 
-bool rsvg_convert(struct content *c)
+static bool rsvg_convert(struct content *c)
 {
 	rsvg_content *d = (rsvg_content *) c;
 	union content_msg_data msg_data;
@@ -300,15 +229,25 @@ bool rsvg_convert(struct content *c)
 	return true;
 }
 
-bool rsvg_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+static bool rsvg_redraw(struct content *c, int x, int y,
+			       int width, int height, const struct rect *clip,
+			       float scale, colour background_colour,
+			       bool repeat_x, bool repeat_y)
 {
-	plot.bitmap(x, y, width, height, c->bitmap, background_colour, BITMAPF_NONE);
-	return true;
+	bitmap_flags_t flags = BITMAPF_NONE;
+
+	assert(c->bitmap != NULL);
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
+	return plot.bitmap(x, y, width, height, 
+			   c->bitmap, background_colour, flags);
 }
 
-void rsvg_destroy(struct content *c)
+static void rsvg_destroy(struct content *c)
 {
 	rsvg_content *d = (rsvg_content *) c;
 
@@ -320,7 +259,7 @@ void rsvg_destroy(struct content *c)
 	return;
 }
 
-nserror rsvg_clone(const struct content *old, struct content **newc)
+static nserror rsvg_clone(const struct content *old, struct content **newc)
 {
 	rsvg_content *svg;
 	nserror error;
@@ -365,9 +304,66 @@ nserror rsvg_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type rsvg_content_type(lwc_string *mime_type)
+static content_type rsvg_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
+}
+
+static const content_handler rsvg_content_handler = {
+	rsvg_create,
+	rsvg_process_data,
+	rsvg_convert,
+	NULL,
+	rsvg_destroy,
+	NULL,
+	NULL,
+	NULL,
+	rsvg_redraw,
+	NULL,
+	NULL,
+	rsvg_clone,
+	NULL,
+	rsvg_content_type,
+	false
+};
+
+nserror nsrsvg_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(rsvg_mime_types); i++) {
+		lerror = lwc_intern_string(rsvg_types[i],
+				strlen(rsvg_types[i]),
+				&rsvg_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(rsvg_mime_types[i],
+				&rsvg_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nsrsvg_fini();
+
+	return error;
+}
+
+void nsrsvg_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(rsvg_mime_types); i++) {
+		if (rsvg_mime_types[i] != NULL)
+			lwc_string_unref(rsvg_mime_types[i]);
+	}
 }
 
 #endif /* WITH_RSVG */

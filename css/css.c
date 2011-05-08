@@ -90,7 +90,6 @@ static const content_handler css_content_handler = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,
 	nscss_clone,
 	nscss_matches_quirks,
 	nscss_content_type,

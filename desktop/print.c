@@ -137,7 +137,7 @@ bool print_draw_next_page(const struct printer *printer,
 	printer->print_next_page();
 	if (!content_redraw(printed_content, 0, -done_height,
 			0, 0,
-			&clip, settings->scale, 0xffffff))
+			&clip, settings->scale, 0xffffff, false, false))
 		return false;
 
 	done_height += page_content_height -

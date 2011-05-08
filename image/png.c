@@ -344,24 +344,12 @@ static void nspng_destroy(struct content *c)
 
 
 static bool nspng_redraw(struct content *c, int x, int y,
-			 int width, int height, const struct rect *clip,
-			 float scale, colour background_colour)
-{
-	nspng_content *png_c = (nspng_content *) c;
-
-	assert(png_c->bitmap != NULL);
-
-	return plot.bitmap(x, y, width, height, png_c->bitmap,
-			   background_colour, BITMAPF_NONE);	
-}
-
-static bool nspng_redraw_tiled(struct content *c, int x, int y,
 			       int width, int height, const struct rect *clip,
 			       float scale, colour background_colour,
 			       bool repeat_x, bool repeat_y)
 {
 	nspng_content *png_c = (nspng_content *) c;
-	bitmap_flags_t flags = 0;
+	bitmap_flags_t flags = BITMAPF_NONE;
 
 	assert(png_c->bitmap != NULL);
 
@@ -434,7 +422,6 @@ static const content_handler nspng_content_handler = {
 	NULL,
 	NULL,
 	nspng_redraw,
-	nspng_redraw_tiled,
 	NULL,
 	NULL,
 	nspng_clone,

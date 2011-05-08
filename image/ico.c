@@ -46,42 +46,6 @@ typedef struct nsico_content {
 	struct ico_collection *ico;	/** ICO collection data */
 } nsico_content;
 
-static nserror nsico_create(const content_handler *handler, 
-		lwc_string *imime_type, const struct http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c);
-static nserror nsico_create_ico_data(nsico_content *c);
-static bool nsico_convert(struct content *c);
-static void nsico_destroy(struct content *c);
-static bool nsico_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-static bool nsico_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-static nserror nsico_clone(const struct content *old, struct content **newc);
-static content_type nsico_content_type(lwc_string *mime_type);
-
-static const content_handler nsico_content_handler = {
-	nsico_create,
-	NULL,
-	nsico_convert,
-	NULL,
-	nsico_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsico_redraw,
-	nsico_redraw_tiled,
-	NULL,
-	NULL,
-	nsico_clone,
-	NULL,
-	nsico_content_type,
-	false
-};
-
 static const char *nsico_types[] = {
 	"application/ico",
 	"application/x-ico",
@@ -92,46 +56,23 @@ static const char *nsico_types[] = {
 
 static lwc_string *nsico_mime_types[NOF_ELEMENTS(nsico_types)];
 
-nserror nsico_init(void)
+
+static nserror nsico_create_ico_data(nsico_content *c)
 {
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+	union content_msg_data msg_data;
 
-	for (i = 0; i < NOF_ELEMENTS(nsico_mime_types); i++) {
-		lerror = lwc_intern_string(nsico_types[i],
-				strlen(nsico_types[i]),
-				&nsico_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nsico_mime_types[i],
-				&nsico_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
+	c->ico = calloc(sizeof(ico_collection), 1);
+	if (c->ico == NULL) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return NSERROR_NOMEM;
 	}
-
+	ico_collection_create(c->ico, &bmp_bitmap_callbacks);
 	return NSERROR_OK;
-
-error:
-	nsico_fini();
-
-	return error;
 }
 
-void nsico_fini(void)
-{
-	uint32_t i;
 
-	for (i = 0; i < NOF_ELEMENTS(nsico_mime_types); i++) {
-		if (nsico_mime_types[i] != NULL)
-			lwc_string_unref(nsico_mime_types[i]);
-	}
-}
-
-nserror nsico_create(const content_handler *handler, 
+static nserror nsico_create(const content_handler *handler, 
 		lwc_string *imime_type, const struct http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
@@ -161,22 +102,9 @@ nserror nsico_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
-nserror nsico_create_ico_data(nsico_content *c)
-{
-	union content_msg_data msg_data;
-
-	c->ico = calloc(sizeof(ico_collection), 1);
-	if (c->ico == NULL) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		return NSERROR_NOMEM;
-	}
-	ico_collection_create(c->ico, &bmp_bitmap_callbacks);
-	return NSERROR_OK;
-}
 
 
-bool nsico_convert(struct content *c)
+static bool nsico_convert(struct content *c)
 {
 	nsico_content *ico = (nsico_content *) c;
 	struct bmp_image *bmp;
@@ -228,21 +156,8 @@ bool nsico_convert(struct content *c)
 	return true;
 }
 
-bool nsico_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
-{
-	nsico_content *ico = (nsico_content *) c;
-	struct bmp_image *bmp = ico_find(ico->ico, width, height);
-	if (!bmp->decoded)
-	  	if (bmp_decode(bmp) != BMP_OK)
-			return false;
-	c->bitmap = bmp->bitmap;
-	return plot.bitmap(x, y, width, height, c->bitmap,
-			background_colour, BITMAPF_NONE);
-}
 
-bool nsico_redraw_tiled(struct content *c, int x, int y,
+static bool nsico_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
@@ -266,7 +181,7 @@ bool nsico_redraw_tiled(struct content *c, int x, int y,
 }
 
 
-void nsico_destroy(struct content *c)
+static void nsico_destroy(struct content *c)
 {
 	nsico_content *ico = (nsico_content *) c;
 
@@ -274,7 +189,7 @@ void nsico_destroy(struct content *c)
 	free(ico->ico);
 }
 
-nserror nsico_clone(const struct content *old, struct content **newc)
+static nserror nsico_clone(const struct content *old, struct content **newc)
 {
 	nsico_content *ico;
 	nserror error;
@@ -309,9 +224,67 @@ nserror nsico_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type nsico_content_type(lwc_string *mime_type)
+static content_type nsico_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
+}
+
+static const content_handler nsico_content_handler = {
+	nsico_create,
+	NULL,
+	nsico_convert,
+	NULL,
+	nsico_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nsico_redraw,
+	NULL,
+	NULL,
+	nsico_clone,
+	NULL,
+	nsico_content_type,
+	false
+};
+
+
+nserror nsico_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(nsico_mime_types); i++) {
+		lerror = lwc_intern_string(nsico_types[i],
+				strlen(nsico_types[i]),
+				&nsico_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(nsico_mime_types[i],
+				&nsico_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nsico_fini();
+
+	return error;
+}
+
+void nsico_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nsico_mime_types); i++) {
+		if (nsico_mime_types[i] != NULL)
+			lwc_string_unref(nsico_mime_types[i]);
+	}
 }
 
 #endif

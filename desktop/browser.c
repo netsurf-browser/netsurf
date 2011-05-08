@@ -131,7 +131,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
  
 	/* Render the content */
 	plot_ok &= content_redraw(bw->current_content, x, y, width, height,
-			clip, bw->scale, 0xFFFFFF);
+				  clip, bw->scale, 0xFFFFFF, false, false);
 	
 	if (plot.option_knockout)
 		knockout_plot_end();
