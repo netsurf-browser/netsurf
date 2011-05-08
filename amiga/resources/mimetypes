@@ -1,0 +1,7 @@
+; mimetypes
+; this file is parsed using readargs
+;
+image/mng   DTPICTURE
+image/x-mng DTPICTURE
+video/mng   DTPICTURE
+video/x-mng DTPICTURE

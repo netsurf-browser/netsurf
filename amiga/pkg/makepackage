@@ -11,7 +11,6 @@ delete ram:netsurf/resources/cookies
 delete ram:netsurf/resources/urls
 delete ram:netsurf/resources/options
 copy resources/Pointers/~(.svn) ram:NetSurf/Resources/Pointers
-copy resources/MIME/~(.svn) ram:NetSurf/Resources/MIME
 copy (COPYING|ChangeLog) ram:NetSurf/
 copy NetSurf ram:NetSurf/NetSurf
 copy NetSurf-Cairo ram:NetSurf/NetSurf-Cairo

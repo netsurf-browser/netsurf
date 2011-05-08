@@ -19,4 +19,4 @@ makelink Pointers /amiga/resources/Pointers soft
 makelink quirks.css /!NetSurf/Resources/Quirks,f79 soft
 makelink SearchEngines /amiga/resources/SearchEngines soft
 makelink Themes /amiga/resources/Themes soft
-makelink MIME /amiga/resources/MIME soft
+makelink mimetypes /amiga/resources/mimetypes soft

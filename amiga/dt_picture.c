@@ -78,6 +78,73 @@ static const content_handler amiga_dt_picture_content_handler = {
 	false
 };
 
+nserror amiga_dt_picture_init_from_mime(void)
+{
+	lwc_string *type;
+	lwc_error lerror;
+	nserror error;
+	char buffer[256];
+	BPTR fh = 0;
+	struct RDArgs *rargs = NULL;
+	STRPTR template = "MIMETYPE/A,DEFICON/K,DTPICTURE/S,DTANIM/S,PLUGINCMD/K";
+	long rarray[] = {0,0,0,0,0};
+
+	enum
+	{
+		A_MIMETYPE,
+		A_DEFICON,
+		A_DTPICTURE,
+		A_DTANIM,
+		A_PLUGINCMD
+	};
+
+	rargs = AllocDosObjectTags(DOS_RDARGS,TAG_DONE);
+
+	if(fh = FOpen("PROGDIR:Resources/mimetypes", MODE_OLDFILE, 0))
+	{
+		while(FGets(fh, (UBYTE *)&buffer, 256) != 0)
+		{
+			rargs->RDA_Source.CS_Buffer = (char *)&buffer;
+			rargs->RDA_Source.CS_Length = 256;
+			rargs->RDA_Source.CS_CurChr = 0;
+
+			rargs->RDA_DAList = NULL;
+			rargs->RDA_Buffer = NULL;
+			rargs->RDA_BufSiz = 0;
+			rargs->RDA_ExtHelp = NULL;
+			rargs->RDA_Flags = 0;
+
+			rarray[A_DTPICTURE] = 0;
+
+printf("buffer = %s\n", buffer);
+			if(ReadArgs(template, rarray, rargs))
+			{
+				if(rarray[A_DTPICTURE])
+				{
+printf("mime = %s\n", rarray[A_MIMETYPE]);
+
+					lerror = lwc_intern_string((char *)rarray[A_MIMETYPE],
+								strlen((char *)rarray[A_MIMETYPE]), &type);
+					if (lerror != lwc_error_ok)
+						return NSERROR_NOMEM;
+
+					error = content_factory_register_handler(type, 
+							&amiga_dt_picture_content_handler);
+
+					lwc_string_unref(type);
+
+					if (error != NSERROR_OK)
+						return error;
+				}
+			}
+		}
+		FClose(fh);
+	}
+
+	return NSERROR_OK;
+}
+
+
 nserror amiga_dt_picture_init(void)
 {
 	char dt_mime[50];
@@ -114,28 +181,10 @@ nserror amiga_dt_picture_init(void)
 
 	ReleaseDataType(prevdt);
 
-	if(fh = FOpen("PROGDIR:Resources/MIME/dt.picture", MODE_OLDFILE, 0))
-	{
-		while(FGets(fh, (UBYTE *)&dt_mime, 50) != 0)
-		{
-			dt_mime[strlen(dt_mime) - 1] = '\0';
-			if((dt_mime[0] == '\0') || (dt_mime[0] == '#'))
-				continue; /* Skip blank lines and comments */
+	error = amiga_dt_picture_init_from_mime();
+	if (error != NSERROR_OK)
+		return error;
 
-			lerror = lwc_intern_string(dt_mime, strlen(dt_mime), &type);
-			if (lerror != lwc_error_ok)
-				return NSERROR_NOMEM;
-
-			error = content_factory_register_handler(type, 
-					&amiga_dt_picture_content_handler);
-
-			lwc_string_unref(type);
-
-			if (error != NSERROR_OK)
-				return error;
-		}
-		FClose(fh);
-	}
 	return NSERROR_OK;
 }
 
