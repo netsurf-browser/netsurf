@@ -57,53 +57,12 @@
 static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
 
 typedef struct nsjpeg_content {
-	struct content base;
+	struct content base; /**< base content */
 } nsjpeg_content;
 
 struct nsjpeg_error_mgr {
 	struct jpeg_error_mgr pub;
 	jmp_buf setjmp_buffer;
-};
-
-static nserror nsjpeg_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c);
-static bool nsjpeg_convert(struct content *c);
-static void nsjpeg_destroy(struct content *c);
-static bool nsjpeg_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-static bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
-static nserror nsjpeg_clone(const struct content *old, struct content **newc);
-static content_type nsjpeg_content_type(lwc_string *mime_type);
-
-static void nsjpeg_error_exit(j_common_ptr cinfo);
-static void nsjpeg_init_source(j_decompress_ptr cinfo);
-static boolean nsjpeg_fill_input_buffer(j_decompress_ptr cinfo);
-static void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes);
-static void nsjpeg_term_source(j_decompress_ptr cinfo);
-
-static const content_handler nsjpeg_content_handler = {
-	nsjpeg_create,
-	NULL,
-	nsjpeg_convert,
-	NULL,
-	nsjpeg_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsjpeg_redraw,
-	nsjpeg_redraw_tiled,
-	NULL,
-	NULL,
-	nsjpeg_clone,
-	NULL,
-	nsjpeg_content_type,
-	false
 };
 
 static const char *nsjpeg_types[] = {
@@ -114,46 +73,12 @@ static const char *nsjpeg_types[] = {
 
 static lwc_string *nsjpeg_mime_types[NOF_ELEMENTS(nsjpeg_types)];
 
-nserror nsjpeg_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static unsigned char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
 
-	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
-		lerror = lwc_intern_string(nsjpeg_types[i],
-				strlen(nsjpeg_types[i]),
-				&nsjpeg_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nsjpeg_mime_types[i],
-				&nsjpeg_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nsjpeg_fini();
-
-	return error;
-}
-
-void nsjpeg_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
-		if (nsjpeg_mime_types[i] != NULL)
-			lwc_string_unref(nsjpeg_mime_types[i]);
-	}
-}
-
-nserror nsjpeg_create(const content_handler *handler,
+/**
+ * Content create entry point.
+ */
+static nserror nsjpeg_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
@@ -166,7 +91,7 @@ nserror nsjpeg_create(const content_handler *handler,
 		return NSERROR_NOMEM;
 
 	error = content__init(&jpeg->base, handler, imime_type, params,
-			llcache, fallback_charset, quirks);
+			      llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
 		talloc_free(jpeg);
 		return error;
@@ -178,17 +103,75 @@ nserror nsjpeg_create(const content_handler *handler,
 }
 
 /**
- * Convert a CONTENT_JPEG for display.
+ * JPEG data source manager: initialize source.
+ */
+static void nsjpeg_init_source(j_decompress_ptr cinfo)
+{
+}
+
+
+/**
+ * JPEG data source manager: fill the input buffer.
+ *
+ * This can only occur if the JPEG data was truncated or corrupted. Insert a
+ * fake EOI marker to allow the decompressor to output as much as possible.
+ */
+static boolean nsjpeg_fill_input_buffer(j_decompress_ptr cinfo)
+{
+	cinfo->src->next_input_byte = nsjpeg_eoi;
+	cinfo->src->bytes_in_buffer = 2;
+ 	return TRUE;
+}
+
+
+/**
+ * JPEG data source manager: skip num_bytes worth of data.
  */
 
-bool nsjpeg_convert(struct content *c)
+static void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
+{
+	if ((long) cinfo->src->bytes_in_buffer < num_bytes) {
+		cinfo->src->next_input_byte = 0;
+		cinfo->src->bytes_in_buffer = 0;
+	} else {
+		cinfo->src->next_input_byte += num_bytes;
+		cinfo->src->bytes_in_buffer -= num_bytes;
+	}
+}
+
+
+/**
+ * JPEG data source manager: terminate source.
+ */
+static void nsjpeg_term_source(j_decompress_ptr cinfo)
+{
+}
+
+
+/**
+ * Fatal error handler for JPEG library.
+ *
+ * This prevents jpeglib calling exit() on a fatal error.
+ */
+static void nsjpeg_error_exit(j_common_ptr cinfo)
+{
+	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
+	err->pub.format_message(cinfo, nsjpeg_error_buffer);
+	longjmp(err->setjmp_buffer, 1);
+}
+
+
+/**
+ * Convert a CONTENT_JPEG for display.
+ */
+static bool nsjpeg_convert(struct content *c)
 {
 	struct jpeg_decompress_struct cinfo;
 	struct nsjpeg_error_mgr jerr;
 	struct jpeg_source_mgr source_mgr = { 0, 0,
-			nsjpeg_init_source, nsjpeg_fill_input_buffer,
-			nsjpeg_skip_input_data, jpeg_resync_to_restart,
-			nsjpeg_term_source };
+		nsjpeg_init_source, nsjpeg_fill_input_buffer,
+		nsjpeg_skip_input_data, jpeg_resync_to_restart,
+		nsjpeg_term_source };
 	unsigned int height;
 	unsigned int width;
 	struct bitmap * volatile bitmap = NULL;
@@ -245,7 +228,7 @@ bool nsjpeg_convert(struct content *c)
 		JSAMPROW scanlines[1];
 
 		scanlines[0] = (JSAMPROW) (pixels +
-				rowstride * cinfo.output_scanline);
+					   rowstride * cinfo.output_scanline);
 		jpeg_read_scanlines(&cinfo, scanlines, 1);
 
 #if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
@@ -270,7 +253,7 @@ bool nsjpeg_convert(struct content *c)
 	c->height = height;
 	c->bitmap = bitmap;
 	snprintf(title, sizeof(title), messages_get("JPEGTitle"),
-			width, height, size);
+		 width, height, size);
 	content__set_title(c, title);
 	c->size += height * rowstride;
 	content_set_ready(c);
@@ -282,88 +265,31 @@ bool nsjpeg_convert(struct content *c)
 
 
 /**
- * Fatal error handler for JPEG library.
- *
- * This prevents jpeglib calling exit() on a fatal error.
+ * Destroy a CONTENT_JPEG and free all resources it owns.
  */
-
-void nsjpeg_error_exit(j_common_ptr cinfo)
+static void nsjpeg_destroy(struct content *c)
 {
-	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
-	err->pub.format_message(cinfo, nsjpeg_error_buffer);
-	longjmp(err->setjmp_buffer, 1);
-}
-
-
-/**
- * JPEG data source manager: initialize source.
- */
-
-void nsjpeg_init_source(j_decompress_ptr cinfo)
-{
-}
-
-
-static unsigned char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
-
-/**
- * JPEG data source manager: fill the input buffer.
- *
- * This can only occur if the JPEG data was truncated or corrupted. Insert a
- * fake EOI marker to allow the decompressor to output as much as possible.
- */
-
-boolean nsjpeg_fill_input_buffer(j_decompress_ptr cinfo)
-{
-	cinfo->src->next_input_byte = nsjpeg_eoi;
-	cinfo->src->bytes_in_buffer = 2;
- 	return TRUE;
-}
-
-
-/**
- * JPEG data source manager: skip num_bytes worth of data.
- */
-
-void nsjpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
-{
-	if ((long) cinfo->src->bytes_in_buffer < num_bytes) {
-		cinfo->src->next_input_byte = 0;
-		cinfo->src->bytes_in_buffer = 0;
-	} else {
-		cinfo->src->next_input_byte += num_bytes;
-		cinfo->src->bytes_in_buffer -= num_bytes;
-	}
-}
-
-
-/**
- * JPEG data source manager: terminate source.
- */
-
-void nsjpeg_term_source(j_decompress_ptr cinfo)
-{
+	if (c->bitmap)
+		bitmap_destroy(c->bitmap);
 }
 
 
 /**
  * Redraw a CONTENT_JPEG.
  */
-
-bool nsjpeg_redraw(struct content *c, int x, int y,
+static bool nsjpeg_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour)
 {
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
+			   c->bitmap, background_colour, BITMAPF_NONE);
 }
 
 
 /**
  * Redraw a CONTENT_JPEG with appropriate tiling.
  */
-
-bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
+static bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
@@ -376,54 +302,107 @@ bool nsjpeg_redraw_tiled(struct content *c, int x, int y,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour,
-			flags);
+			   c->bitmap, background_colour,
+			   flags);
 }
+
 
 
 /**
- * Destroy a CONTENT_JPEG and free all resources it owns.
+ * Clone content.
  */
-
-void nsjpeg_destroy(struct content *c)
+static nserror nsjpeg_clone(const struct content *old, struct content **newc)
 {
-	if (c->bitmap)
-		bitmap_destroy(c->bitmap);
-}
-
-
-nserror nsjpeg_clone(const struct content *old, struct content **newc)
-{
-	nsjpeg_content *jpeg;
+	nsjpeg_content *jpeg_c;
 	nserror error;
 
-	jpeg = talloc_zero(0, nsjpeg_content);
-	if (jpeg == NULL)
+	jpeg_c = talloc_zero(0, nsjpeg_content);
+	if (jpeg_c == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__clone(old, &jpeg->base);
+	error = content__clone(old, &jpeg_c->base);
 	if (error != NSERROR_OK) {
-		content_destroy(&jpeg->base);
+		content_destroy(&jpeg_c->base);
 		return error;
 	}
 
-	/* Simply replay conversion */
-	if (old->status == CONTENT_STATUS_READY ||
-			old->status == CONTENT_STATUS_DONE) {
-		if (nsjpeg_convert(&jpeg->base) == false) {
-			content_destroy(&jpeg->base);
+	/* re-convert if the content is ready */
+	if ((old->status == CONTENT_STATUS_READY) ||
+	    (old->status == CONTENT_STATUS_DONE)) {
+		if (nsjpeg_convert(&jpeg_c->base) == false) {
+			content_destroy(&jpeg_c->base);
 			return NSERROR_CLONE_FAILED;
 		}
 	}
 
-	*newc = (struct content *) jpeg;
+	*newc = (struct content *)jpeg_c;
 
 	return NSERROR_OK;
 }
 
-content_type nsjpeg_content_type(lwc_string *mime_type)
+
+static content_type nsjpeg_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
+}
+
+static const content_handler nsjpeg_content_handler = {
+	nsjpeg_create,
+	NULL,
+	nsjpeg_convert,
+	NULL,
+	nsjpeg_destroy,
+	NULL,
+	NULL,
+	NULL,
+	nsjpeg_redraw,
+	nsjpeg_redraw_tiled,
+	NULL,
+	NULL,
+	nsjpeg_clone,
+	NULL,
+	nsjpeg_content_type,
+	false
+};
+
+nserror nsjpeg_init(void)
+{
+	uint32_t i;
+	lwc_error lerror;
+	nserror error;
+
+	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
+		lerror = lwc_intern_string(nsjpeg_types[i],
+				strlen(nsjpeg_types[i]),
+				&nsjpeg_mime_types[i]);
+		if (lerror != lwc_error_ok) {
+			error = NSERROR_NOMEM;
+			goto error;
+		}
+
+		error = content_factory_register_handler(nsjpeg_mime_types[i],
+				&nsjpeg_content_handler);
+		if (error != NSERROR_OK)
+			goto error;
+	}
+
+	return NSERROR_OK;
+
+error:
+	nsjpeg_fini();
+
+	return error;
+}
+
+void nsjpeg_fini(void)
+{
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
+		if (nsjpeg_mime_types[i] != NULL) {
+			lwc_string_unref(nsjpeg_mime_types[i]);
+		}
+	}
 }
 
 #endif /* WITH_JPEG */

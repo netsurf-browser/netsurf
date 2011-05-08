@@ -53,7 +53,7 @@
 #endif
 
 typedef struct nspng_content {
-	struct content base;
+	struct content base; /**< base content type */
 
 	png_structp png;
 	png_infop info;
@@ -322,6 +322,8 @@ static bool nspng_convert(struct content *c)
 
 	bitmap_set_opaque(png_c->bitmap, bitmap_test_opaque(png_c->bitmap));
 	bitmap_modified(png_c->bitmap);
+
+	c->bitmap = png_c->bitmap; /* this needs to go */
 
 	content_set_ready(c);
 	content_set_done(c);
