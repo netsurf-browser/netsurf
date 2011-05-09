@@ -224,10 +224,9 @@ void svg_reformat(struct content *c, int width, int height)
  * Redraw a CONTENT_SVG.
  */
 
-bool svg_redraw(struct content *c, int x, int y,
+static bool svg_redraw_internal(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+		float scale, colour background_colour)
 {
 	svg_content *svg = (svg_content *) c;
 	float transform[6];
@@ -284,6 +283,62 @@ bool svg_redraw(struct content *c, int x, int y,
         }
 
 #undef BGR
+
+	return true;
+}
+
+
+/**
+ * Redraw a CONTENT_SVG.
+ */
+
+bool svg_redraw(struct content *c, int x, int y,
+		int width, int height, const struct rect *clip,
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
+{
+	if ((width <= 0) && (height <= 0)) {
+		/* No point trying to plot SVG if it does not occupy a valid
+		 * area */
+		return true;
+	}
+
+	if ((repeat_x == false) && (repeat_y == false)) {
+		/* Simple case: SVG is not tiled */
+		return svg_redraw_internal(c, x, y, width, height,
+				clip, scale, background_colour);
+	} else {
+		/* Tiled redraw required.  SVG repeats to extents of clip
+		 * rectangle, in x, y or both directions */
+		int x0, y0, x1, y1;
+
+		/* Find the redraw boundaries to loop within */
+		x0 = x;
+		if (repeat_x) {
+			for (; x0 > clip->x0; x0 -= width);
+			x1 = clip->x1;
+		} else {
+			x1 = x + 1;
+		}
+		y0 = y;
+		if (repeat_y) {
+			for (; y0 > clip->y0; y0 -= height);
+			y1 = clip->y1;
+		} else {
+			y1 = y + 1;
+		}
+
+		/* Repeatedly plot the SVG across the area */
+		for (y = y0; y < y1; y += height) {
+			for (x = x0; x < x1; x += width) {
+				if (!svg_redraw_internal(c, x, y,
+						width, height, clip, scale,
+						background_colour)) {
+					return false;
+				}
+			}
+		}
+	}
 
 	return true;
 }
