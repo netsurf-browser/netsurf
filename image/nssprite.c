@@ -52,7 +52,8 @@ static bool nssprite_convert(struct content *c);
 static void nssprite_destroy(struct content *c);
 static bool nssprite_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror nssprite_clone(const struct content *old, struct content **newc);
 static content_type nssprite_content_type(lwc_string *mime_type);
 
@@ -80,7 +81,6 @@ static const content_handler nssprite_content_handler = {
 	NULL,
 	NULL,
 	nssprite_redraw,
-	NULL,
 	NULL,
 	NULL,
 	nssprite_clone,
@@ -250,10 +250,18 @@ void nssprite_destroy(struct content *c)
 
 bool nssprite_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
 {
+	bitmap_flags_t flags = BITMAPF_NONE;
+
+	if (repeat_x)
+		flags |= BITMAPF_REPEAT_X;
+	if (repeat_y)
+		flags |= BITMAPF_REPEAT_Y;
+
 	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
+			c->bitmap, background_colour, flags);
 }
 
 
