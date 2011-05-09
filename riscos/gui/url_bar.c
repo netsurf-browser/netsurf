@@ -604,7 +604,7 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 				(url_bar->favicon_offset.y -
 					url_bar->favicon_extent.y1) / 2,
 				url_bar->favicon_width, url_bar->favicon_height,
-				&clip, 1, 0);
+				&clip, 1, 0, false, false);
 	}
 }
 
