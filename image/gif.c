@@ -360,7 +360,8 @@ static bool nsgif_redraw(struct content *c, int x, int y,
 	if (repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(x, y, width, height, c->bitmap, background_colour, flags);
+	return plot.bitmap(x, y, width, height, c->bitmap,
+			background_colour, flags);
 }
 
 
