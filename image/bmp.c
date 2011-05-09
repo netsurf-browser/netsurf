@@ -272,21 +272,13 @@ static content_type nsbmp_content_type(lwc_string *mime_type)
 
 
 static const content_handler nsbmp_content_handler = {
-	nsbmp_create,
-	NULL,
-	nsbmp_convert,
-	NULL,
-	nsbmp_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsbmp_redraw,
-	NULL,
-	NULL,
-	nsbmp_clone,
-	NULL,
-	nsbmp_content_type,
-	false
+	.create = nsbmp_create,
+	.data_complete = nsbmp_convert,
+	.destroy = nsbmp_destroy,
+	.redraw = nsbmp_redraw,
+	.clone = nsbmp_clone,
+	.type = nsbmp_content_type,
+	.no_share = false,
 };
 
 nserror nsbmp_init(void)

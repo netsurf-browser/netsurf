@@ -96,21 +96,14 @@ static void nsmng_free(mng_ptr p, mng_size_t n);
 #endif
 
 static const content_handler nsmng_content_handler = {
-	nsmng_create,
-	nsmng_process_data,
-	nsmng_convert,
-	NULL,
-	nsmng_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsmng_redraw,
-	NULL,
-	NULL,
-	nsmng_clone,
-	NULL,
-	nsmng_content_type,
-	false
+	.create = nsmng_create,
+	.process_data = nsmng_process_data,
+	.data_complete = nsmng_convert,
+	.destroy = nsmng_destroy,
+	.redraw = nsmng_redraw,
+	.clone = nsmng_clone,
+	.type = nsmng_content_type,
+	.no_share = false,
 };
 
 static const char *jng_types[] = {

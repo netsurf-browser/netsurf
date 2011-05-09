@@ -58,21 +58,13 @@ static nserror draw_clone(const struct content *old, struct content **newc);
 static content_type draw_content_type(lwc_string *mime_type);
 
 static const content_handler draw_content_handler = {
-	draw_create,
-	NULL,
-	draw_convert,
-	NULL,
-	draw_destroy,
-	NULL,
-	NULL,
-	NULL,
-	draw_redraw,
-	NULL,
-	NULL,
-	draw_clone,
-	NULL,
-	draw_content_type,
-	false
+	.create = draw_create,
+	.data_complete = draw_convert,
+	.destroy = draw_destroy,
+	.redraw = draw_redraw,
+	.clone = draw_clone,
+	.type = draw_content_type,
+	.no_share = false,
 };
 
 static const char *draw_types[] = {

@@ -72,21 +72,13 @@ static nserror amiga_icon_clone(const struct content *old,
 static content_type amiga_icon_content_type(lwc_string *mime_type);
 
 static const content_handler amiga_icon_content_handler = {
-	amiga_icon_create,
-	NULL,
-	amiga_icon_convert,
-	NULL,
-	amiga_icon_destroy,
-	NULL,
-	NULL,
-	NULL,
-	amiga_icon_redraw,
-	NULL,
-	NULL,
-	amiga_icon_clone,
-	NULL,
-	amiga_icon_content_type,
-	false
+	.create = amiga_icon_create,
+	.data_complete = amiga_icon_convert,
+	.destroy = amiga_icon_destroy,
+	.redraw = amiga_icon_redraw,
+	.clone = amiga_icon_clone,
+	.type = amiga_icon_content_type,
+	.no_share = false,
 };
 
 static const char *amiga_icon_types[] = {

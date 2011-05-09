@@ -61,21 +61,13 @@ static nserror amiga_dt_picture_clone(const struct content *old, struct content 
 static content_type amiga_dt_picture_content_type(lwc_string *mime_type);
 
 static const content_handler amiga_dt_picture_content_handler = {
-	amiga_dt_picture_create,
-	NULL,
-	amiga_dt_picture_convert,
-	NULL,
-	amiga_dt_picture_destroy,
-	NULL,
-	NULL,
-	NULL,
-	amiga_dt_picture_redraw,
-	NULL,
-	NULL,
-	amiga_dt_picture_clone,
-	NULL,
-	amiga_dt_picture_content_type,
-	false
+	.create = amiga_dt_picture_create,
+	.data_complete = amiga_dt_picture_convert,
+	.destroy = amiga_dt_picture_destroy,
+	.redraw = amiga_dt_picture_redraw,
+	.clone = amiga_dt_picture_clone,
+	.type = amiga_dt_picture_content_type,
+	.no_share = false,
 };
 
 nserror amiga_dt_picture_init_from_mime(void)

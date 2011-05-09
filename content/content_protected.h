@@ -46,7 +46,7 @@ struct content_handler {
 
 	bool (*process_data)(struct content *c, 
 			const char *data, unsigned int size);
-	bool (*convert)(struct content *c);
+	bool (*data_complete)(struct content *c);
 	void (*reformat)(struct content *c, int width, int height);
 	void (*destroy)(struct content *c);
 	void (*stop)(struct content *c);

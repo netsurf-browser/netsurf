@@ -55,21 +55,13 @@ static nserror webp_clone(const struct content *old, struct content **newc);
 static content_type webp_content_type(lwc_string *mime_type);
 
 static const content_handler webp_content_handler = {
-	webp_create,
-	NULL,
-	webp_convert,
-	NULL,
-	webp_destroy,
-	NULL,
-	NULL,
-	NULL,
-	webp_redraw,
-	NULL,
-	NULL,
-	webp_clone,
-	NULL,
-	webp_content_type,
-	false
+	.create = webp_create,
+	.data_complete = webp_convert,
+	.destroy = webp_destroy,
+	.redraw = webp_redraw,
+	.clone = webp_clone,
+	.type = webp_content_type,
+	.no_share = false,
 };
 
 static const char *webp_types[] = {

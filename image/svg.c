@@ -59,21 +59,14 @@ static nserror svg_clone(const struct content *old, struct content **newc);
 static content_type svg_content_type(lwc_string *mime_type);
 
 static const content_handler svg_content_handler = {
-	svg_create,
-	NULL,
-	svg_convert,
-	svg_reformat,
-	svg_destroy,
-	NULL,
-	NULL,
-	NULL,
-	svg_redraw,
-	NULL,
-	NULL,
-	svg_clone,
-	NULL,
-	svg_content_type,
-	false
+	.create = svg_create,
+	.data_complete = svg_convert,
+	.reformat = svg_reformat,
+	.destroy = svg_destroy,
+	.redraw = svg_redraw,
+	.clone = svg_clone,
+	.type = svg_content_type,
+	.no_share = false,
 };
 
 static const char *svg_types[] = {

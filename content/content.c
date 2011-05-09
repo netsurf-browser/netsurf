@@ -278,9 +278,9 @@ void content_convert(struct content *c)
 	
 	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
 
-	if (c->handler->convert != NULL) {
+	if (c->handler->data_complete != NULL) {
 		c->locked = true;
-		if (c->handler->convert(c) == false) {
+		if (c->handler->data_complete(c) == false) {
 			c->locked = false;
 			c->status = CONTENT_STATUS_ERROR;
 		}

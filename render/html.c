@@ -102,21 +102,20 @@ static void html_dump_frameset(struct content_html_frames *frame,
 #endif
 
 static const content_handler html_content_handler = {
-	html_create,
-	html_process_data,
-	html_convert,
-	html_reformat,
-	html_destroy,
-	html_stop,
-	html_mouse_track,
-	html_mouse_action,
-	html_redraw,
-	html_open,
-	html_close,
-	html_clone,
-	NULL,
-	html_content_type,
-	true
+	.create = html_create,
+	.process_data = html_process_data,
+	.data_complete = html_convert,
+	.reformat = html_reformat,
+	.destroy = html_destroy,
+	.stop = html_stop,
+	.mouse_track = html_mouse_track,
+	.mouse_action = html_mouse_action,
+	.redraw = html_redraw,
+	.open = html_open,
+	.close = html_close,
+	.clone = html_clone,
+	.type = html_content_type,
+	.no_share = true,
 };
 
 static const char empty_document[] =

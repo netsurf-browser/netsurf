@@ -121,21 +121,17 @@ static int textplain_coord_from_offset(const char *text, size_t offset,
 static float textplain_line_height(void);
 
 static const content_handler textplain_content_handler = {
-	textplain_create,
-	textplain_process_data,
-	textplain_convert,
-	textplain_reformat,
-	textplain_destroy,
-	NULL,
-	textplain_mouse_track,
-	textplain_mouse_action,
-	textplain_redraw,
-	NULL,
-	NULL,
-	textplain_clone,
-	NULL,
-	textplain_content_type,
-	true
+	.create = textplain_create,
+	.process_data = textplain_process_data,
+	.data_complete = textplain_convert,
+	.reformat = textplain_reformat,
+	.destroy = textplain_destroy,
+	.mouse_track = textplain_mouse_track,
+	.mouse_action = textplain_mouse_action,
+	.redraw = textplain_redraw,
+	.clone = textplain_clone,
+	.type = textplain_content_type,
+	.no_share = true,
 };
 
 static lwc_string *textplain_mime_type;

@@ -79,21 +79,14 @@ static css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import);
 
 static const content_handler css_content_handler = {
-	nscss_create,
-	nscss_process_data,
-	nscss_convert,
-	NULL,
-	nscss_destroy,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	nscss_clone,
-	nscss_matches_quirks,
-	nscss_content_type,
-	false
+	.create = nscss_create,
+	.process_data = nscss_process_data,
+	.data_complete = nscss_convert,
+	.destroy = nscss_destroy,
+	.clone = nscss_clone,
+	.matches_quirks = nscss_matches_quirks,
+	.type = nscss_content_type,
+	.no_share = false,
 };
 
 static lwc_string *css_mime_type;

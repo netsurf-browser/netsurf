@@ -413,21 +413,14 @@ static content_type nspng_content_type(lwc_string *mime_type)
 }
 
 static const content_handler nspng_content_handler = {
-	nspng_create,
-	nspng_process_data,
-	nspng_convert,
-	NULL,
-	nspng_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nspng_redraw,
-	NULL,
-	NULL,
-	nspng_clone,
-	NULL,
-	nspng_content_type,
-	false
+	.create = nspng_create,
+	.process_data = nspng_process_data,
+	.data_complete = nspng_convert,
+	.destroy = nspng_destroy,
+	.redraw = nspng_redraw,
+	.clone = nspng_clone,
+	.type = nspng_content_type,
+	.no_share = false,
 };
 
 nserror nspng_init(void)

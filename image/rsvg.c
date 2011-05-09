@@ -310,21 +310,14 @@ static content_type rsvg_content_type(lwc_string *mime_type)
 }
 
 static const content_handler rsvg_content_handler = {
-	rsvg_create,
-	rsvg_process_data,
-	rsvg_convert,
-	NULL,
-	rsvg_destroy,
-	NULL,
-	NULL,
-	NULL,
-	rsvg_redraw,
-	NULL,
-	NULL,
-	rsvg_clone,
-	NULL,
-	rsvg_content_type,
-	false
+	.create = rsvg_create,
+	.process_data = rsvg_process_data,
+	.data_complete = rsvg_convert,
+	.destroy = rsvg_destroy,
+	.redraw = rsvg_redraw,
+	.clone = rsvg_clone,
+	.type = rsvg_content_type,
+	.no_share = false,
 };
 
 nserror nsrsvg_init(void)

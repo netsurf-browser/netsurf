@@ -60,21 +60,13 @@ static nserror sprite_clone(const struct content *old, struct content **newc);
 static content_type sprite_content_type(lwc_string *mime_type);
 
 static const content_handler sprite_content_handler = {
-	sprite_create,
-	NULL,
-	sprite_convert,
-	NULL,
-	sprite_destroy,
-	NULL,
-	NULL,
-	NULL,
-	sprite_redraw,
-	NULL,
-	NULL,
-	sprite_clone,
-	NULL,
-	sprite_content_type,
-	false
+	.create = sprite_create,
+	.data_complete = sprite_convert,
+	.destroy = sprite_destroy,
+	.redraw = sprite_redraw,
+	.clone = sprite_clone,
+	.type = sprite_content_type,
+	.no_share = false,
 };
 
 static const char *sprite_types[] = {

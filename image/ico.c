@@ -230,21 +230,13 @@ static content_type nsico_content_type(lwc_string *mime_type)
 }
 
 static const content_handler nsico_content_handler = {
-	nsico_create,
-	NULL,
-	nsico_convert,
-	NULL,
-	nsico_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsico_redraw,
-	NULL,
-	NULL,
-	nsico_clone,
-	NULL,
-	nsico_content_type,
-	false
+	.create = nsico_create,
+	.data_complete = nsico_convert,
+	.destroy = nsico_destroy,
+	.redraw = nsico_redraw,
+	.clone = nsico_clone,
+	.type = nsico_content_type,
+	.no_share = false,
 };
 
 

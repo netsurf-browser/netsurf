@@ -335,21 +335,13 @@ static content_type nsjpeg_content_type(lwc_string *mime_type)
 }
 
 static const content_handler nsjpeg_content_handler = {
-	nsjpeg_create,
-	NULL,
-	nsjpeg_convert,
-	NULL,
-	nsjpeg_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsjpeg_redraw,
-	NULL,
-	NULL,
-	nsjpeg_clone,
-	NULL,
-	nsjpeg_content_type,
-	false
+	.create = nsjpeg_create,
+	.data_complete = nsjpeg_convert,
+	.destroy = nsjpeg_destroy,
+	.redraw = nsjpeg_redraw,
+	.clone = nsjpeg_clone,
+	.type = nsjpeg_content_type,
+	.no_share = false,
 };
 
 nserror nsjpeg_init(void)

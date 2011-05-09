@@ -418,21 +418,13 @@ static content_type nsgif_content_type(lwc_string *mime_type)
 
 
 static const content_handler nsgif_content_handler = {
-	nsgif_create,
-	NULL,
-	nsgif_convert,
-	NULL,
-	nsgif_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nsgif_redraw,
-	NULL,
-	NULL,
-	nsgif_clone,
-	NULL,
-	nsgif_content_type,
-	false
+	.create = nsgif_create,
+	.data_complete = nsgif_convert,
+	.destroy = nsgif_destroy,
+	.redraw = nsgif_redraw,
+	.clone = nsgif_clone,
+	.type = nsgif_content_type,
+	.no_share = false,
 };
 
 nserror nsgif_init(void)

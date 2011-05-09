@@ -72,21 +72,13 @@ static content_type nssprite_content_type(lwc_string *mime_type);
 } while(0)
 
 static const content_handler nssprite_content_handler = {
-	nssprite_create,
-	NULL,
-	nssprite_convert,
-	NULL,
-	nssprite_destroy,
-	NULL,
-	NULL,
-	NULL,
-	nssprite_redraw,
-	NULL,
-	NULL,
-	nssprite_clone,
-	NULL,
-	nssprite_content_type,
-	false
+	.create = nssprite_create,
+	.data_complete = nssprite_convert,
+	.destroy = nssprite_destroy,
+	.redraw = nssprite_redraw,
+	.clone = nssprite_clone,
+	.type = nssprite_content_type,
+	.no_share = false,
 };
 
 static const char *nssprite_types[] = {

@@ -118,21 +118,13 @@ static nserror artworks_clone(const struct content *old, struct content **newc);
 static content_type artworks_content_type(lwc_string *mime_type);
 
 static const content_handler artworks_content_handler = {
-	artworks_create,
-	NULL,
-	artworks_convert,
-	NULL,
-	artworks_destroy,
-	NULL,
-	NULL,
-	NULL,
-	artworks_redraw,
-	NULL,
-	NULL,
-	artworks_clone,
-	NULL,
-	artworks_content_type,
-	false
+	.create = artworks_create,
+	.data_complete = artworks_convert,
+	.destroy = artworks_destroy,
+	.redraw = artworks_redraw,
+	.clone = artworks_clone,
+	.type = artworks_content_type,
+	.no_share = false,
 };
 
 static const char *artworks_types[] = {
