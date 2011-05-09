@@ -16,25 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifdef WITH_AMIGA_DATATYPES
-#include "amiga/datatypes.h"
+#ifndef NETSURF_AMIGA_PLUGIN_HACK_H_
+#define NETSURF_AMIGA_PLUGIN_HACK_H_
 
-nserror amiga_datatypes_init(void)
-{
-	nserror err = NSERROR_OK;
+#include "utils/config.h"
+#include "utils/errors.h"
 
-	err = amiga_dt_picture_init();
-	if(err != NSERROR_OK) return err;
+#ifdef WITH_AMIGA_PLUGIN_HACK
 
-	err = amiga_dt_anim_init();
-	if(err != NSERROR_OK) return err;
+nserror amiga_plugin_hack_init(void);
+void amiga_plugin_hack_fini(void);
 
-	return NSERROR_OK;
-}
+#else
 
-void amiga_datatypes_fini(void)
-{
-	amiga_dt_picture_fini();
-	amiga_dt_anim_fini();
-}
+#define amiga_plugin_hack_init() NSERROR_OK
+#define amiga_plugin_hack_fini() ((void) 0)
+
+#endif /* WITH_AMIGA_DATATYPES */
+
 #endif

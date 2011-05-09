@@ -30,13 +30,13 @@ void amiga_datatypes_fini(void);
 nserror amiga_dt_picture_init(void);
 void amiga_dt_picture_fini(void);
 
+nserror amiga_dt_anim_init(void);
+void amiga_dt_anim_fini(void);
+
 #else
 
 #define amiga_datatypes_init() NSERROR_OK
 #define amiga_datatypes_fini() ((void) 0)
-
-#define amiga_dt_picture_init() NSERROR_OK
-#define amiga_dt_picture_fini() ((void) 0)
 
 #endif /* WITH_AMIGA_DATATYPES */
 
