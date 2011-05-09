@@ -53,6 +53,7 @@ void DelObjectInternal(struct nsObject *dtzo, BOOL free_obj)
 {
 	Remove((struct Node *)dtzo);
 	if(dtzo->Type == AMINS_FONT) ami_font_close(dtzo->objstruct);
+	if(dtzo->Type == AMINS_MIME) ami_mime_entry_free(dtzo->objstruct);
 	if(dtzo->objstruct && free_obj) FreeVec(dtzo->objstruct);
 	if(dtzo->dtz_Node.ln_Name) free(dtzo->dtz_Node.ln_Name);
 	FreeVec(dtzo);

@@ -58,6 +58,7 @@
 #include "amiga/misc.h"
 #include "amiga/options.h"
 #include "amiga/plotters.h"
+#include "amiga/plugin_hack.h"
 #include "amiga/print.h"
 #include "amiga/schedule.h"
 #include "amiga/search.h"
@@ -751,9 +752,11 @@ int main(int argc, char** argv)
 	if(ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
 
+	ami_mime_init("PROGDIR:Resources/mimetypes");
 	ami_schedule_open_timer();
 	ami_schedule_create();
 
+	amiga_plugin_hack_init();
 	amiga_datatypes_init();
 
 	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
@@ -777,8 +780,11 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
+	amiga_plugin_hack_fini();
 	amiga_datatypes_fini();
 	amiga_icon_fini();
+
+	ami_mime_free();
 
 	return 0;
 }

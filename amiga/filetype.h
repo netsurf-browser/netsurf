@@ -19,10 +19,20 @@
 #ifndef AMIGA_FILETYPE_H
 #define AMIGA_FILETYPE_H
 #include <stdbool.h>
+#include <libwapcaplet/libwapcaplet.h>
 #include "content/content_type.h"
+#include "utils/errors.h"
 #include <datatypes/datatypes.h>
 
 struct hlcache_handle;
+struct ami_mime_entry;
+
+nserror ami_mime_init(const char *mimefile);
+void ami_mime_free(void);
+void ami_mime_entry_free(struct ami_mime_entry *mimeentry);
+
+struct Node *ami_mime_from_datatype(struct DataType *dt,
+		lwc_string **mimetype, struct Node *start_node);
 
 const char *ami_content_type_to_file_type(content_type type);
 void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype);

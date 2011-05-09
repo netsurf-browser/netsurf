@@ -1,7 +1,70 @@
-; mimetypes
-; this file is parsed using readargs
+; This file contains a list of MIME types that can be handled by NetSurf,
+; mapping them to DataType and DefIcons format names.
+; It is parsed by ReadArgs with the following template:
+; MIMETYPE/A,DT=DATATYPE/K,TYPE=DEFICON/K,CMD=PLUGINCMD/K
+
+; BMP
+application/bmp            DT=BMP      TYPE=bmp
+application/preview        DT=BMP      TYPE=bmp
+application/x-bmp          DT=BMP      TYPE=bmp
+application/x-win-bitmap   DT=BMP      TYPE=bmp
+image/bmp                  DT=BMP      TYPE=bmp
+image/ms-bmp               DT=BMP      TYPE=bmp
+image/x-bitmap             DT=BMP      TYPE=bmp
+image/x-bmp                DT=BMP      TYPE=bmp
+image/x-ms-bmp             DT=BMP      TYPE=bmp
+image/x-win-bitmap         DT=BMP      TYPE=bmp
+image/x-windows-bmp        DT=BMP      TYPE=bmp
+image/x-xbitmap            DT=BMP      TYPE=bmp
+
+; GIF
+; Expect problems with GIF anims if GIFANIM datatype installed
+image/gif                  DT=GIF      TYPE=gif
+;image/gif                  DT=GIFANIM  TYPE=gif
+
+; ICO
+application/ico            DT=ICO      TYPE=ico
+application/x-ico          DT=ICO      TYPE=ico
+image/ico                  DT=ICO      TYPE=ico
+image/vnd.microsoft.icon   DT=ICO      TYPE=ico
+image/x-icon               DT=ICO      TYPE=ico
+
+; .info
+image/x-amiga-icon         DT=INFO
+
+; JNG
+image/jng                  DT=JNG      TYPE=jng
+image/x-jng                DT=JNG      TYPE=jng
+
+; JPEG
+image/jpeg                 DT=JPEG     TYPE=jpeg
+image/jpg                  DT=JPEG     TYPE=jpeg
+image/pjpeg                DT=JPEG     TYPE=jpeg
+
+; JPEG2000
+image/jp2                  DT=JP2      TYPE=jp2
+image/jpeg2000             DT=JP2      TYPE=jp2
+
+; MNG
+image/mng                  DT=MNG      TYPE=mng
+image/x-mng                DT=MNG      TYPE=mng
+video/mng                  DT=MNG      TYPE=mng
+video/x-mng                DT=MNG      TYPE=mng
+
+; PNG
+image/png                  DT=PNG      TYPE=png
+
+; RISC OS Sprite
+image/x-riscos-sprite      DT=Sprite   TYPE=rosprite
+
+; SVG
+image/svg                  DT=SVG      TYPE=svg
+image/svg+xml              DT=SVG      TYPE=svg
+
+; WebP
+image/webp                 DT=WebP     TYPE=webp
+
 ;
-image/mng   DTPICTURE
-image/x-mng DTPICTURE
-video/mng   DTPICTURE
-video/x-mng DTPICTURE
+; Experimental
+;
+application/x-shockwave-flash   CMD=gnash:aos4-gnash
