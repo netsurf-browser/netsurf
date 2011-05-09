@@ -699,7 +699,7 @@ bool print_document(struct gui_window *g, const char *filename)
 					content_get_height(h),
 					&clip,
 					print_scale,
-					0xFFFFFF)) {
+					0xFFFFFF, false, false)) {
 				error_message = "redraw error";
 				goto error;
 			}
@@ -809,7 +809,7 @@ const char *print_declare_fonts(hlcache_handle *h)
 	plot = print_fonts_plotters;
 	if (!content_redraw(h, 0, 0, content_get_width(h),
 			content_get_height(h),
-			&clip, 1, 0xffffff)) {
+			&clip, 1, 0xffffff, false, false)) {
 		if (print_fonts_error)
 			return print_fonts_error;
 		return "Declaring fonts failed.";
