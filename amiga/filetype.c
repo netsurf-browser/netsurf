@@ -340,7 +340,7 @@ void ami_mime_entry_free(struct ami_mime_entry *mimeentry)
 struct Node *ami_mime_from_datatype(struct DataType *dt,
 		lwc_string **mimetype, struct Node *start_node)
 {
-	struct DataTypeHeader *dth = dt->dtn_Header;
+	struct DataTypeHeader *dth;
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct ami_mime_entry *mimeentry;
@@ -349,7 +349,9 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 	bool ret = false;
 
 	if(IsMinListEmpty(ami_mime_list)) return NULL;
+	if(dt == NULL) return NULL;
 
+	dth = dt->dtn_Header;
 	lerror = lwc_intern_string(dth->dth_Name, strlen(dth->dth_Name), &dt_name);
 	if (lerror != lwc_error_ok)
 		return NULL;

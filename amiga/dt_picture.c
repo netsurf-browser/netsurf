@@ -79,7 +79,7 @@ nserror amiga_dt_picture_init(void)
 	lwc_error lerror;
 	nserror error;
 	BPTR fh = 0;
-	struct Node *node;
+	struct Node *node = NULL;
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,
 			DTA_DataType, prevdt,
