@@ -112,7 +112,8 @@ static bool artworks_convert(struct content *c);
 static void artworks_destroy(struct content *c);
 static bool artworks_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror artworks_clone(const struct content *old, struct content **newc);
 static content_type artworks_content_type(lwc_string *mime_type);
 
@@ -126,7 +127,6 @@ static const content_handler artworks_content_handler = {
 	NULL,
 	NULL,
 	artworks_redraw,
-	NULL,
 	NULL,
 	NULL,
 	artworks_clone,
@@ -341,7 +341,8 @@ void artworks_destroy(struct content *c)
 
 bool artworks_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
 {
 	static const ns_os_vdu_var_list vars = {
 		os_MODEVAR_XEIG_FACTOR,
