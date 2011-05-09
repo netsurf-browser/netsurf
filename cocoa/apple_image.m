@@ -55,52 +55,79 @@ static const content_handler apple_image_content_handler = {
 	.no_share = false
 };
 
-static const char *apple_image_types[] = {
-	"image/jpeg",
-	"image/jpg",
-	"image/pjpeg"
-};
+static lwc_string **apple_image_mime_types = NULL;
+static size_t types_count = 0;
+static size_t types_capacity = 0;
 
-static lwc_string *apple_image_mime_types[NOF_ELEMENTS(apple_image_types)];
+
+static bool reserve( size_t count )
+{
+	if (types_count + count <= types_capacity) return true;
+	
+	if (types_count == 0) {
+		types_capacity = count;
+	} else {
+		while (types_count + count > types_capacity) {
+			types_capacity *= 2;
+		}
+	}
+	apple_image_mime_types = (lwc_string **)realloc( apple_image_mime_types, types_capacity * sizeof( lwc_string * ) );
+
+	return apple_image_mime_types != NULL;
+}
+
+static nserror register_for_type( NSString *mime )
+{
+	if (!reserve( 1 )) return NSERROR_NOMEM;
+	
+	const char *type = [mime UTF8String];
+	lwc_error lerror = lwc_intern_string( type, strlen( type ), &apple_image_mime_types[types_count] );
+	if (lerror != lwc_error_ok) return NSERROR_NOMEM;
+
+
+	nserror error = content_factory_register_handler( apple_image_mime_types[types_count], &apple_image_content_handler );
+
+	if (error != NSERROR_OK) return error;
+	
+	++types_count;
+	
+	return NSERROR_OK;
+}
 
 nserror apple_image_init(void)
 {
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
-
-	for (i = 0; i < NOF_ELEMENTS(apple_image_mime_types); i++) {
-		lerror = lwc_intern_string(apple_image_types[i],
-				strlen(apple_image_types[i]),
-				&apple_image_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
+	NSArray *utis = [NSBitmapImageRep imageTypes];
+	for (NSString *uti in utis) {
+		NSDictionary *declaration = [(NSDictionary *)UTTypeCopyDeclaration( (CFStringRef)uti ) autorelease];
+		id mimeTypes = [[declaration objectForKey: (NSString *)kUTTypeTagSpecificationKey] objectForKey: (NSString *)kUTTagClassMIMEType];
+		
+		if (mimeTypes == nil) continue;
+		
+		if (![mimeTypes isKindOfClass: [NSArray class]]) {
+			mimeTypes = [NSArray arrayWithObject: mimeTypes];
 		}
-
-		error = content_factory_register_handler(
-				apple_image_mime_types[i],
-				&apple_image_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
+		
+		for (NSString *mime in mimeTypes) {
+			NSLog( @"registering mime type %@", mime );
+			nserror error = register_for_type( mime );
+			if (error != NSERROR_OK) {
+				apple_image_fini();
+				return error;
+			}
+			
+		} 
 	}
-
+	
 	return NSERROR_OK;
-
-error:
-	apple_image_fini();
-
-	return error;
 }
 
 void apple_image_fini(void)
 {
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(apple_image_mime_types); i++) {
-		if (apple_image_mime_types[i] != NULL)
-			lwc_string_unref(apple_image_mime_types[i]);
+	for (size_t i = 0; i < types_count; i++) {
+		lwc_string_unref( apple_image_mime_types[i] );
 	}
+	
+	free( apple_image_mime_types );
 }
 
 nserror apple_image_create(const content_handler *handler,
