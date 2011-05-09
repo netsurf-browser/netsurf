@@ -69,7 +69,6 @@ static const content_handler svg_content_handler = {
 	svg_redraw,
 	NULL,
 	NULL,
-	NULL,
 	svg_clone,
 	NULL,
 	svg_content_type,
@@ -226,7 +225,8 @@ void svg_reformat(struct content *c, int width, int height)
 
 bool svg_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
 {
 	svg_content *svg = (svg_content *) c;
 	float transform[6];
