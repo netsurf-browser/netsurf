@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.7/3.0 Development (Revision 12071)
+# Italian messages for NetSurf 2.7/3.0 Development (Revision 12313)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 16.03.2011
+# 10.05.2011
 # =========================================================================
 #
 # Description
@@ -22,6 +22,9 @@
 # ignored.
 #
 
+# Globals
+NetSurf:NetSurf
+NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
 
 # Menus
 # =====
@@ -31,7 +34,6 @@
 
 # Iconbar menu
 #
-NetSurf:NetSurf
 Info:Info
 AppHelp:Aiuto...  F1
 Open:Apri
@@ -769,10 +771,10 @@ ProgressU:%s
 RecPercent:Ricevuti %s (%u%%)
 Received:Ricevuti %s
 Redirecting:Redirezione in corso...
-Loading:Loading
-Fetching:Fetching data
-Processing:Elaborazione
-Formatting:Formattazione
+Loading:Caricamento...
+Fetching:Prelevamento dati...
+Processing:Elaborazione del documento in corso...
+Formatting:Formattazione del documento in corso...
 Done:Completato
 Stopped:Interrotto
 
@@ -1329,8 +1331,8 @@ HomePageURL:URL
 HomePageDefault:Usa pagina predefinita
 HomePageCurrent:Usa pagina corrente
 HomePageBlank:Usa pagina vuota
-ContentBlocking:Blocca contenuti
-BlockAds:Nascondi annunci
+ContentBlocking:Blocca contenuti (AdBlock)
+BlockAds:Nascondi messaggi/banner
 ContentLanguage:Lingua contenuti
 LocaleLang:Ottieni da preferenze localizzazione
 HistoryAge:Conserva cronologia per
@@ -1374,9 +1376,9 @@ AnimDisable:Disattiva animazioni
 None:Nessuna
 Scaled:Scalate
 
-Resolution:Resolution
-ResolutionY:Vertical resolution
-ResolutionX:Horizontal resolution
+Resolution:Risoluzione
+ResolutionY:Verticale
+ResolutionX:Orizzontale
 DPI:DPI
 
 # Fonts tab
