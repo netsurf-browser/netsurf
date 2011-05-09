@@ -46,21 +46,13 @@ static nserror apple_image_clone(const struct content *old,
 static content_type apple_image_content_type(lwc_string *mime_type);
 
 static const content_handler apple_image_content_handler = {
-	apple_image_create,
-	NULL,
-	apple_image_convert,
-	NULL,
-	apple_image_destroy,
-	NULL,
-	NULL,
-	NULL,
-	apple_image_redraw,
-	NULL,
-	NULL,
-	apple_image_clone,
-	NULL,
-	apple_image_content_type,
-	false
+	.create = apple_image_create,
+	.data_complete = apple_image_convert,
+	.destroy = apple_image_destroy,
+	.redraw = apple_image_redraw,
+	.clone = apple_image_clone,
+	.type = apple_image_content_type,
+	.no_share = false
 };
 
 static const char *apple_image_types[] = {
