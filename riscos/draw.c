@@ -52,7 +52,8 @@ static bool draw_convert(struct content *c);
 static void draw_destroy(struct content *c);
 static bool draw_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror draw_clone(const struct content *old, struct content **newc);
 static content_type draw_content_type(lwc_string *mime_type);
 
@@ -66,7 +67,6 @@ static const content_handler draw_content_handler = {
 	NULL,
 	NULL,
 	draw_redraw,
-	NULL,
 	NULL,
 	NULL,
 	draw_clone,
@@ -218,7 +218,8 @@ void draw_destroy(struct content *c)
 
 bool draw_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
 {
 	draw_content *draw = (draw_content *) c;
 	os_trfm matrix;
