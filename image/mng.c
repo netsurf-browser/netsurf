@@ -69,9 +69,6 @@ static bool nsmng_convert(struct content *c);
 static void nsmng_destroy(struct content *c);
 static bool nsmng_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-static bool nsmng_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 static nserror nsmng_clone(const struct content *old, struct content **newc);
@@ -108,7 +105,6 @@ static const content_handler nsmng_content_handler = {
 	NULL,
 	NULL,
 	nsmng_redraw,
-	nsmng_redraw_tiled,
 	NULL,
 	NULL,
 	nsmng_clone,
@@ -699,33 +695,6 @@ void nsmng_destroy(struct content *c)
 
 
 bool nsmng_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
-{
-	nsmng_content *mng = (nsmng_content *) c;
-	bool ret;
-
-	/* mark image as having been requested to display */
-	mng->displayed = true;
-
-	if ((c->bitmap) && (mng->opaque_test_pending)) {
-		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
-		mng->opaque_test_pending = false;
-	}
-
-	ret = plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
-
-	/*	Check if we need to restart the animation
-	*/
-	if ((mng->waiting) && (option_animate_images))
-		nsmng_animate(c);
-
-	return ret;
-}
-
-
-bool nsmng_redraw_tiled(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
