@@ -72,7 +72,7 @@
 #include "riscos/options.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
-#include "riscos/sprite.h"
+#include "riscos/content-handlers/sprite.h"
 #include "riscos/toolbar.h"
 #include "riscos/thumbnail.h"
 #include "riscos/url_complete.h"

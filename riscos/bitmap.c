@@ -41,7 +41,7 @@
 #include "riscos/image.h"
 #include "riscos/options.h"
 #include "riscos/palettes.h"
-#include "riscos/sprite.h"
+#include "riscos/content-handlers/sprite.h"
 #include "riscos/tinct.h"
 #include "utils/filename.h"
 #include "utils/log.h"

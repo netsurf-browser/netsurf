@@ -31,7 +31,7 @@
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
-#include "riscos/draw.h"
+#include "riscos/content-handlers/draw.h"
 #include "riscos/gui.h"
 #include "utils/log.h"
 #include "utils/messages.h"

@@ -65,16 +65,17 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_RISCOS are sources purely for the RISC OS build
-S_RISCOS := 401login.c artworks.c assert.c awrender.s bitmap.c buffer.c	\
-	cookies.c configure.c debugwin.c dialog.c download.c draw.c	\
-	filetype.c font.c global_history.c gui.c help.c history.c	\
-	hotlist.c iconbar.c image.c menus.c message.c palettes.c	\
-	plotters.c plugin.c print.c query.c save.c save_draw.c		\
-	save_pdf.c schedule.c search.c searchweb.c sprite.c sslcert.c	\
-	system_colour.c textarea.c textselection.c theme.c		\
-	theme_install.c thumbnail.c toolbar.c treeview.c ucstables.c	\
-	uri.c url_complete.c url_protocol.c url_suggest.c wimp.c	\
-	wimp_event.c window.c						\
+S_RISCOS := 401login.c assert.c bitmap.c buffer.c cookies.c configure.c	\
+	debugwin.c dialog.c download.c filetype.c font.c		\
+	global_history.c gui.c help.c history.c hotlist.c iconbar.c	\
+	image.c menus.c message.c palettes.c plotters.c plugin.c	\
+	print.c query.c save.c save_draw.c save_pdf.c schedule.c	\
+	search.c searchweb.c sslcert.c system_colour.c textarea.c	\
+	textselection.c theme.c theme_install.c thumbnail.c toolbar.c	\
+	treeview.c ucstables.c uri.c url_complete.c url_protocol.c	\
+	url_suggest.c wimp.c wimp_event.c window.c			\
+	$(addprefix content-handlers/,artworks.c awrender.s draw.c	\
+	sprite.c)							\
 	$(addprefix gui/,button_bar.c progress_bar.c status_bar.c	\
 	throbber.c url_bar.c)						\
 	$(addprefix configure/,con_cache.c con_connect.c con_content.c	\
