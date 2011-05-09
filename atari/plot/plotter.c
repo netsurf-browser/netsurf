@@ -710,8 +710,8 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set)
 		prev_vdi_clip[3] = vdiflags[48];
 		newclip[0] = CURFB(self).x + MAX(c->x0, 0);
 		newclip[1] = CURFB(self).y + MAX(c->y0, 0);
-		newclip[2] = newclip[0] + MIN(CURFB(self).vis_w, c->x1 - c->x0)-1;
-		newclip[3] = newclip[1] + MIN(CURFB(self).vis_h, c->y1 - c->y0)-1;
+		newclip[2] = MIN(CURFB(self).x+CURFB(self).w, newclip[0] + (c->x1 - c->x0) )-1;
+		newclip[3] = MIN(CURFB(self).y+CURFB(self).h, newclip[1] + (c->y1 - c->y0) )-1;
 		vs_clip( self->vdi_handle, 1, (short*)&newclip );
 	} else {
 		vs_clip( self->vdi_handle, 1, (short *)&prev_vdi_clip );	

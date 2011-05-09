@@ -601,7 +601,6 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 	else 
 		assert( n < vdi_sysinfo.maxintin ); 
 */
-	/* test this:  */
 	plotter_vdi_clip( self, 1);
 	vsf_interior( self->vdi_handle, FIS_SOLID );
 	vsf_style( self->vdi_handle, 1);
