@@ -111,7 +111,7 @@ struct browser_window {
 
 	/** Scroll capturing all mouse events, updated to any active HTML
 	 *  scrollbar, or NULL when no scrollbar drags active */
-	struct scroll *scroll;
+	struct scrollbar *scrollbar;
 
 	/** Current fetch is download */
 	bool download;
@@ -184,7 +184,7 @@ struct browser_window {
 	int status_miss; /**< Number of times status was really updated. */
 };
 
-struct browser_scroll_data {
+struct browser_scrollbar_data {
 	struct browser_window *bw;
 	struct box *box;
 };

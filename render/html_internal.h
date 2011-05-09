@@ -106,7 +106,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 void html_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 void html_overflow_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data);
+		struct scrollbar_msg_data *scrollbar_data);
 
 #endif
 

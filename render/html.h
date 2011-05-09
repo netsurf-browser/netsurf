@@ -42,8 +42,8 @@ struct http_parameter;
 struct imagemap;
 struct object_params;
 struct plotters;
-struct scroll;
-struct scroll_msg_data;
+struct scrollbar;
+struct scrollbar_msg_data;
 
 /**
  * Container for stylesheets used by an HTML document
@@ -141,7 +141,7 @@ void html_fini(void);
 
 void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
 
-void html_overflow_scroll_drag_end(struct scroll *scroll,
+void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 		browser_mouse_state mouse, int x, int y);
 size_t html_selection_drag_end(struct hlcache_handle *h,
 		browser_mouse_state mouse, int x, int y, int dir);

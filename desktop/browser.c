@@ -539,7 +539,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		browser_window_remove_caret(bw);
 
-		bw->scroll = NULL;
+		bw->scrollbar = NULL;
 
 		gui_window_new_content(bw->window);
 
@@ -618,7 +618,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		else if (c == bw->current_content) {
 			bw->current_content = NULL;
 			browser_window_remove_caret(bw);
-			bw->scroll = NULL;
+			bw->scrollbar = NULL;
 			selection_init(bw->sel, NULL);
 		}
 
@@ -1509,8 +1509,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		return;
 	}
 	
-	if (bw->scroll != NULL) {
-		html_overflow_scroll_drag_end(bw->scroll, mouse, x, y);
+	if (bw->scrollbar != NULL) {
+		html_overflow_scroll_drag_end(bw->scrollbar, mouse, x, y);
 		return;
 	}
 	

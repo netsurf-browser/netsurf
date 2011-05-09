@@ -31,7 +31,7 @@
 #include "content/hlcache.h"
 #include "css/css.h"
 #include "css/dump.h"
-#include "desktop/scroll.h"
+#include "desktop/scrollbar.h"
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
@@ -277,9 +277,9 @@ void box_free_box(struct box *box)
 		if (box->gadget)
 			form_free_control(box->gadget);
 		if (box->scroll_x != NULL)
-			scroll_destroy(box->scroll_x);
+			scrollbar_destroy(box->scroll_x);
 		if (box->scroll_y != NULL)
-			scroll_destroy(box->scroll_y);
+			scrollbar_destroy(box->scroll_y);
 		if (box->styles != NULL)
 			css_select_results_destroy(box->styles);
 	}
@@ -307,8 +307,8 @@ void box_coords(struct box *box, int *x, int *y)
 			} while (!box->float_children);
 		} else
 			box = box->parent;
-		*x += box->x - scroll_get_offset(box->scroll_x);
-		*y += box->y - scroll_get_offset(box->scroll_y);
+		*x += box->x - scrollbar_get_offset(box->scroll_x);
+		*y += box->y - scrollbar_get_offset(box->scroll_y);
 	}
 }
 
@@ -388,9 +388,9 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 	for (child = box->float_children; child; child = child->next_float) {
 		if (box_contains_point(child, x - bx, y - by, &physically)) {
 			*box_x = bx + child->x -
-					scroll_get_offset(child->scroll_x);
+					scrollbar_get_offset(child->scroll_x);
 			*box_y = by + child->y -
-					scroll_get_offset(child->scroll_y);
+					scrollbar_get_offset(child->scroll_y);
 
 			if (physically)
 				return child;
@@ -407,9 +407,9 @@ non_float_children:
 			continue;
 		if (box_contains_point(child, x - bx, y - by, &physically)) {
 			*box_x = bx + child->x -
-					scroll_get_offset(child->scroll_x);
+					scrollbar_get_offset(child->scroll_x);
 			*box_y = by + child->y -
-					scroll_get_offset(child->scroll_y);
+					scrollbar_get_offset(child->scroll_y);
 
 			if (physically)
 				return child;
@@ -433,17 +433,17 @@ siblings:
 	/* siblings and siblings of ancestors */
 	while (box) {
 		if (box_is_float(box)) {
-			bx -= box->x - scroll_get_offset(box->scroll_x);
-			by -= box->y - scroll_get_offset(box->scroll_y);
+			bx -= box->x - scrollbar_get_offset(box->scroll_x);
+			by -= box->y - scrollbar_get_offset(box->scroll_y);
 			for (sibling = box->next_float; sibling;
 					sibling = sibling->next_float) {
 				if (box_contains_point(sibling,
 						x - bx, y - by, &physically)) {
 					*box_x = bx + sibling->x -
-							scroll_get_offset(
+							scrollbar_get_offset(
 							sibling->scroll_x);
 					*box_y = by + sibling->y -
-							scroll_get_offset(
+							scrollbar_get_offset(
 							sibling->scroll_y);
 
 					if (physically)
@@ -463,8 +463,8 @@ siblings:
 			goto non_float_children;
 
 		} else {
-			bx -= box->x - scroll_get_offset(box->scroll_x);
-			by -= box->y - scroll_get_offset(box->scroll_y);
+			bx -= box->x - scrollbar_get_offset(box->scroll_x);
+			by -= box->y - scrollbar_get_offset(box->scroll_y);
 			for (sibling = box->next; sibling;
 					sibling = sibling->next) {
 				if (box_is_float(sibling))
@@ -472,10 +472,10 @@ siblings:
 				if (box_contains_point(sibling, x - bx, y - by,
 						&physically)) {
 					*box_x = bx + sibling->x -
-							scroll_get_offset(
+							scrollbar_get_offset(
 							sibling->scroll_x);
 					*box_y = by + sibling->y -
-							scroll_get_offset(
+							scrollbar_get_offset(
 							sibling->scroll_y);
 
 					if (physically)
@@ -735,14 +735,14 @@ bool box_nearest_text_box(struct box *box, int bx, int by,
 		if (child->type == BOX_FLOAT_LEFT ||
 				child->type == BOX_FLOAT_RIGHT) {
 			c_bx = fx + child->x -
-					scroll_get_offset(child->scroll_x);
+					scrollbar_get_offset(child->scroll_x);
 			c_by = fy + child->y -
-					scroll_get_offset(child->scroll_y);
+					scrollbar_get_offset(child->scroll_y);
 		} else {
 			c_bx = bx + child->x -
-					scroll_get_offset(child->scroll_x);
+					scrollbar_get_offset(child->scroll_x);
 			c_by = by + child->y -
-					scroll_get_offset(child->scroll_y);
+					scrollbar_get_offset(child->scroll_y);
 		}
 		if (child->float_children) {
 			c_fx = c_bx;
@@ -1004,22 +1004,22 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 		bool bottom, bool right)
 {
-	struct browser_scroll_data *data;
+	struct browser_scrollbar_data *data;
 	int padding_width, padding_height;
 	
 	padding_width = box->width + box->padding[RIGHT] + box->padding[LEFT];
 	padding_height = box->height + box->padding[TOP] + box->padding[BOTTOM];
 	
 	if (!bottom && box->scroll_x != NULL) {
-		data = scroll_get_data(box->scroll_x);
-		scroll_destroy(box->scroll_x);
+		data = scrollbar_get_data(box->scroll_x);
+		scrollbar_destroy(box->scroll_x);
 		free(data);
 		box->scroll_x = NULL;
 	}
 	
 	if (!right && box->scroll_y != NULL) {
-		data = scroll_get_data(box->scroll_y);
-		scroll_destroy(box->scroll_y);
+		data = scrollbar_get_data(box->scroll_y);
+		scrollbar_destroy(box->scroll_y);
 		free(data);
 		box->scroll_y = NULL;
 	}
@@ -1029,7 +1029,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 	
 	if (right) {
 		if (box->scroll_y == NULL) {
-			data = malloc(sizeof(struct browser_scroll_data));
+			data = malloc(sizeof(struct browser_scrollbar_data));
 			if (data == NULL) {
 				LOG(("malloc failed"));
 				warn_user("NoMemory", 0);
@@ -1037,7 +1037,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			}
 			data->bw = bw;
 			data->box = box;
-			if (!scroll_create(false,
+			if (!scrollbar_create(false,
 					padding_height,
 					box->descendant_y1 - box->padding[TOP],
      					box->height,
@@ -1046,14 +1046,14 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 					&(box->scroll_y)))
 				return false;
 		} else 
-			scroll_set_extents(box->scroll_y,
+			scrollbar_set_extents(box->scroll_y,
 					padding_height, box->height,
      					box->descendant_y1 -
 					box->padding[TOP]);
 	}
 	if (bottom) {
 		if (box->scroll_x == NULL) {
-			data = malloc(sizeof(struct browser_scroll_data));
+			data = malloc(sizeof(struct browser_scrollbar_data));
 			if (data == NULL) {
 				LOG(("malloc failed"));
 				warn_user("NoMemory", 0);
@@ -1061,7 +1061,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			}
 			data->bw = bw;
 			data->box = box;
-			if (!scroll_create(true,
+			if (!scrollbar_create(true,
 					padding_width -
 					(right ? SCROLLBAR_WIDTH : 0),
 					box->descendant_x1 - box->padding[LEFT],
@@ -1071,7 +1071,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 					&box->scroll_x))
 				return false;
 		} else
-			scroll_set_extents(box->scroll_x,
+			scrollbar_set_extents(box->scroll_x,
 					padding_width -
 					(right ? SCROLLBAR_WIDTH : 0),
 					box->width,
@@ -1080,7 +1080,7 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 	}
 	
 	if (right && bottom)
-		scroll_make_pair(box->scroll_x, box->scroll_y);
+		scrollbar_make_pair(box->scroll_x, box->scroll_y);
 	
 	return true;
 }

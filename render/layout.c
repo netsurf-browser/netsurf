@@ -45,7 +45,7 @@
 #include "content/content_protected.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
-#include "desktop/scroll.h"
+#include "desktop/scrollbar.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"

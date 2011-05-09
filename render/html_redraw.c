@@ -42,7 +42,7 @@
 #include "desktop/options.h"
 #include "desktop/print.h"
 #include "desktop/search.h"
-#include "desktop/scroll.h"
+#include "desktop/scrollbar.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -650,8 +650,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 
 	if (box->object && width != 0 && height != 0) {
-		x_scrolled = x - scroll_get_offset(box->scroll_x) * scale;
-		y_scrolled = y - scroll_get_offset(box->scroll_y) * scale;
+		x_scrolled = x - scrollbar_get_offset(box->scroll_x) * scale;
+		y_scrolled = y - scrollbar_get_offset(box->scroll_y) * scale;
 		if (!content_redraw(box->object,
 				x_scrolled + padding_left,
 				y_scrolled + padding_top,
@@ -693,9 +693,9 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	if (box->list_marker)
 		if (!html_redraw_box(box->list_marker,
 				x_parent + box->x -
-				scroll_get_offset(box->scroll_x),
+				scrollbar_get_offset(box->scroll_x),
 				y_parent + box->y -
-				scroll_get_offset(box->scroll_y),
+				scrollbar_get_offset(box->scroll_y),
 				clip, scale, current_background_color))
 			return false;
 
@@ -716,13 +716,13 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 		
 		if (box->scroll_x != NULL)
-			scroll_redraw(box->scroll_x,
+			scrollbar_redraw(box->scroll_x,
 					x_parent + box->x,
      					y_parent + box->y + box->padding[TOP] +
 					box->height + box->padding[BOTTOM] -
 					SCROLLBAR_WIDTH, clip, scale);
 		if (box->scroll_y != NULL)
-			scroll_redraw(box->scroll_y,
+			scrollbar_redraw(box->scroll_y,
 					x_parent + box->x + box->padding[LEFT] +
 					box->width + box->padding[RIGHT] -
 					SCROLLBAR_WIDTH,
@@ -761,18 +761,18 @@ bool html_redraw_box_children(struct box *box, int x_parent, int y_parent,
 		if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
 			if (!html_redraw_box(c,
 					x_parent + box->x -
-					scroll_get_offset(box->scroll_x),
+					scrollbar_get_offset(box->scroll_x),
 					y_parent + box->y -
-					scroll_get_offset(box->scroll_y),
+					scrollbar_get_offset(box->scroll_y),
 					clip, scale, current_background_color))
 				return false;
 	}
 	for (c = box->float_children; c; c = c->next_float)
 		if (!html_redraw_box(c,
 				x_parent + box->x -
-				scroll_get_offset(box->scroll_x),
+				scrollbar_get_offset(box->scroll_x),
 				y_parent + box->y -
-				scroll_get_offset(box->scroll_y),
+				scrollbar_get_offset(box->scroll_y),
 				clip, scale, current_background_color))
 			return false;
 

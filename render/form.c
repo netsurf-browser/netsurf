@@ -41,7 +41,7 @@
 #include "desktop/knockout.h"
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
-#include "desktop/scroll.h"
+#include "desktop/scrollbar.h"
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
@@ -62,7 +62,7 @@
 struct form_select_menu {
 	int line_height;
 	int width, height;
-	struct scroll *scroll;
+	struct scrollbar *scrollbar;
 	int f_size;
 	bool scroll_capture;
 	select_menu_redraw_callback callback;
@@ -90,7 +90,7 @@ static char *form_encode_item(const char *item, const char *charset,
 static void form_select_menu_clicked(struct form_control *control,
 		int x, int y);
 static void form_select_menu_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data);
+		struct scrollbar_msg_data *scrollbar_data);
 
 /**
  * Create a struct form.
@@ -932,13 +932,13 @@ bool form_open_select_menu(void *client_data,
 		}
 		menu->client_data = client_data;
 		menu->callback = callback;
-		if (!scroll_create(false,
+		if (!scrollbar_create(false,
 				menu->height,
     				total_height,
 				menu->height,
 				control,
 				form_select_menu_scroll_callback,
-				&(menu->scroll))) {
+				&(menu->scrollbar))) {
 			free(menu);
 			return false;
 		}
@@ -960,8 +960,8 @@ bool form_open_select_menu(void *client_data,
  */
 void form_free_select_menu(struct form_control *control)
 {
-	if (control->data.select.menu->scroll != NULL)
-		scroll_destroy(control->data.select.menu->scroll);
+	if (control->data.select.menu->scrollbar != NULL)
+		scrollbar_destroy(control->data.select.menu->scrollbar);
 	free(control->data.select.menu);
 	control->data.select.menu = NULL;
 }
@@ -1006,7 +1006,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	
 	line_height_with_spacing = line_height +
 			line_height * SELECT_LINE_SPACING;
-	scroll = scroll_get_offset(menu->scroll);
+	scroll = scrollbar_get_offset(menu->scrollbar);
 	
 	if (scale != 1.0) {
 		x *= scale;
@@ -1090,7 +1090,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 		option = option->next;
 	}
 		
-	if (!scroll_redraw(menu->scroll,
+	if (!scrollbar_redraw(menu->scrollbar,
 			x_cp + menu->width - SCROLLBAR_WIDTH,
       			y_cp,
 			clip, scale))
@@ -1148,7 +1148,7 @@ void form_select_menu_clicked(struct form_control *control, int x, int y)
 	int item_bottom_y;
 	int scroll, i;
 	
-	scroll = scroll_get_offset(menu->scroll);
+	scroll = scrollbar_get_offset(menu->scrollbar);
 	
 	line_height = menu->line_height;
 	line_height_with_spacing = line_height +
@@ -1200,7 +1200,7 @@ const char *form_select_mouse_action(struct form_control *control,
 		 * event is taking place on the scrollbar widget area
 		 */
 		x -= scrollbar_x;
-		return scroll_mouse_action(menu->scroll,
+		return scrollbar_mouse_action(menu->scrollbar,
 				    mouse, x, y);
 	}
 	
@@ -1255,7 +1255,7 @@ void form_select_mouse_drag_end(struct form_control *control,
 
 	if (menu->scroll_capture) {
 		x -= menu->width - SCROLLBAR_WIDTH;
-		scroll_mouse_drag_end(menu->scroll, mouse, x, y);
+		scrollbar_mouse_drag_end(menu->scrollbar, mouse, x, y);
 		return;
 	}
 	
@@ -1274,33 +1274,33 @@ void form_select_mouse_drag_end(struct form_control *control,
  * Callback for the select menus scroll
  */
 void form_select_menu_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data)
+		struct scrollbar_msg_data *scrollbar_data)
 {
 	struct form_control *control = client_data;
 	struct form_select_menu *menu = control->data.select.menu;
 	
-	switch (scroll_data->msg) {
-		case SCROLL_MSG_REDRAW:
+	switch (scrollbar_data->msg) {
+		case SCROLLBAR_MSG_REDRAW:
 			menu->callback(menu->client_data,
 				       	menu->width -
-					SCROLLBAR_WIDTH + scroll_data->x0,
-     					scroll_data->y0,
-					scroll_data->x1 - scroll_data->x0,
-					scroll_data->y1 - scroll_data->y0);
+					SCROLLBAR_WIDTH + scrollbar_data->x0,
+     					scrollbar_data->y0,
+					scrollbar_data->x1 - scrollbar_data->x0,
+					scrollbar_data->y1 - scrollbar_data->y0);
 			break;
-		case SCROLL_MSG_MOVED:
+		case SCROLLBAR_MSG_MOVED:
 			menu->callback(menu->client_data,
 				    	0, 0,
 					menu->width - SCROLLBAR_WIDTH,
      					menu->height);
 			break;
-		case SCROLL_MSG_SCROLL_START:
+		case SCROLLBAR_MSG_SCROLL_START:
 			menu->scroll_capture = true;
 			gui_window_box_scroll_start(menu->bw->window,
-					scroll_data->x0, scroll_data->y0,
-     					scroll_data->x1, scroll_data->y1);
+					scrollbar_data->x0, scrollbar_data->y0,
+     					scrollbar_data->x1, scrollbar_data->y1);
 			break;
-		case SCROLL_MSG_SCROLL_FINISHED:
+		case SCROLLBAR_MSG_SCROLL_FINISHED:
 			menu->scroll_capture = false;
 			break;
 		default:

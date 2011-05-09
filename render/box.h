@@ -191,8 +191,8 @@ struct box {
 	int padding[4];  /**< Padding: TOP, RIGHT, BOTTOM, LEFT. */
 	struct box_border border[4];   /**< Border: TOP, RIGHT, BOTTOM, LEFT. */
 
-	struct scroll *scroll_x;  /**< Horizontal scroll. */
-	struct scroll *scroll_y;  /**< Vertical scroll. */
+	struct scrollbar *scroll_x;  /**< Horizontal scroll. */
+	struct scrollbar *scroll_y;  /**< Vertical scroll. */
 
 	/** Width of box taking all line breaks (including margins etc). Must
 	 * be non-negative. */

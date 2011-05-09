@@ -31,7 +31,7 @@
 #include "desktop/frames.h"
 #include "desktop/mouse.h"
 #include "desktop/options.h"
-#include "desktop/scroll.h"
+#include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
@@ -137,7 +137,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	hlcache_handle *object = NULL;
 	struct box *next_box;
 	struct box *drag_candidate = NULL;
-	struct scroll *scroll = NULL;
+	struct scrollbar *scrollbar = NULL;
 	plot_font_style_t fstyle;
 	int scroll_mouse_x = 0, scroll_mouse_y = 0;
 	int padding_left, padding_right, padding_top, padding_bottom;
@@ -164,24 +164,25 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 		return;
 	}
-	
-	if (bw->scroll != NULL) {
-		struct browser_scroll_data *data = scroll_get_data(bw->scroll);
+
+	if (bw->scrollbar != NULL) {
+		struct browser_scrollbar_data *data =
+				scrollbar_get_data(bw->scrollbar);
 		box = data->box;
 		box_coords(box, &box_x, &box_y);
-		if (scroll_is_horizontal(bw->scroll)) {
+		if (scrollbar_is_horizontal(bw->scrollbar)) {
 			scroll_mouse_x = x - box_x ;
 			scroll_mouse_y = y - (box_y + box->padding[TOP] +
 					box->height + box->padding[BOTTOM] -
 					SCROLLBAR_WIDTH);
-			status = scroll_mouse_action(bw->scroll, mouse,
+			status = scrollbar_mouse_action(bw->scrollbar, mouse,
 					scroll_mouse_x, scroll_mouse_y);
 		} else {
 			scroll_mouse_x = x - (box_x + box->padding[LEFT] +
 					box->width + box->padding[RIGHT] -
 					SCROLLBAR_WIDTH);
 			scroll_mouse_y = y - box_y;
-			status = scroll_mouse_action(bw->scroll, mouse, 
+			status = scrollbar_mouse_action(bw->scrollbar, mouse, 
 					scroll_mouse_x, scroll_mouse_y);
 		}
 		
@@ -251,10 +252,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			drag_candidate = box;
 		
 		if (box->scroll_y != NULL || box->scroll_x != NULL) {
-			padding_left = box_x + scroll_get_offset(box->scroll_x);
+			padding_left = box_x +
+					scrollbar_get_offset(box->scroll_x);
 			padding_right = padding_left + box->padding[LEFT] +
 					box->width + box->padding[RIGHT];
-			padding_top = box_y + scroll_get_offset(box->scroll_y);
+			padding_top = box_y +
+					scrollbar_get_offset(box->scroll_y);
 			padding_bottom = padding_top + box->padding[TOP] +
 					box->height + box->padding[BOTTOM];
 			
@@ -266,7 +269,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						SCROLLBAR_WIDTH) {
 					/* mouse above vertical box scroll */
 					
-					scroll = box->scroll_y;
+					scrollbar = box->scroll_y;
 					scroll_mouse_x = x - (padding_right -
 							     SCROLLBAR_WIDTH);
 					scroll_mouse_y = y - padding_top;
@@ -277,7 +280,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						SCROLLBAR_WIDTH) {
 					/* mouse above horizontal box scroll */
 							
-					scroll = box->scroll_x;
+					scrollbar = box->scroll_x;
 					scroll_mouse_x = x - padding_left;
 					scroll_mouse_y = y - (padding_bottom -
 							SCROLLBAR_WIDTH);
@@ -295,8 +298,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	/* use of box_x, box_y, or content below this point is probably a
 	 * mistake; they will refer to the last box returned by box_at_point */
 
-	if (scroll) {
-		status = scroll_mouse_action(scroll, mouse,
+	if (scrollbar) {
+		status = scrollbar_mouse_action(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
 		pointer = GUI_POINTER_DEFAULT;
 	} else if (gadget) {
@@ -731,48 +734,49 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
  * Callback for in-page scrolls.
  */
 void html_overflow_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data)
+		struct scrollbar_msg_data *scrollbar_data)
 {
-	struct browser_scroll_data *data = client_data;
+	struct browser_scrollbar_data *data = client_data;
 	struct browser_window *bw = data->bw;
 	struct box *box = data->box;
 	int x, y, box_x, box_y, diff_x, diff_y;
 	
 	
-	switch(scroll_data->msg) {
-		case SCROLL_MSG_REDRAW:
+	switch(scrollbar_data->msg) {
+		case SCROLLBAR_MSG_REDRAW:
 			diff_x = box->padding[LEFT] + box->width +
 					box->padding[RIGHT] - SCROLLBAR_WIDTH;
 			diff_y = box->padding[TOP] + box->height +
 					box->padding[BOTTOM] - SCROLLBAR_WIDTH;
 	
 			box_coords(box, &box_x, &box_y);
-			if (scroll_is_horizontal(scroll_data->scroll)) {
-				x = box_x + scroll_get_offset(box->scroll_x);
-				y = box_y + scroll_get_offset(box->scroll_y) +
+			if (scrollbar_is_horizontal(
+					scrollbar_data->scrollbar)) {
+				x = box_x + scrollbar_get_offset(box->scroll_x);
+				y = box_y + scrollbar_get_offset(box->scroll_y) +
 						diff_y;
 			} else {
-				x = box_x + scroll_get_offset(box->scroll_x) +
+				x = box_x + scrollbar_get_offset(box->scroll_x) +
 						diff_x;
-				y = box_y + scroll_get_offset(box->scroll_y);
+				y = box_y + scrollbar_get_offset(box->scroll_y);
 			}
 			browser_window_redraw_rect(bw,
-					x + scroll_data->x0,
-					y + scroll_data->y0,
-     					scroll_data->x1 - scroll_data->x0,
-					scroll_data->y1 - scroll_data->y0);
+					x + scrollbar_data->x0,
+					y + scrollbar_data->y0,
+     					scrollbar_data->x1 - scrollbar_data->x0,
+					scrollbar_data->y1 - scrollbar_data->y0);
 			break;
-		case SCROLL_MSG_MOVED:
+		case SCROLLBAR_MSG_MOVED:
 			html_redraw_a_box(bw->current_content, box);
 			break;
-		case SCROLL_MSG_SCROLL_START:
-			bw->scroll = scroll_data->scroll;
+		case SCROLLBAR_MSG_SCROLL_START:
+			bw->scrollbar = scrollbar_data->scrollbar;
 			gui_window_box_scroll_start(bw->window,
-					scroll_data->x0, scroll_data->y0,
-     					scroll_data->x1, scroll_data->y1);
+					scrollbar_data->x0, scrollbar_data->y0,
+     					scrollbar_data->x1, scrollbar_data->y1);
 			break;
-		case SCROLL_MSG_SCROLL_FINISHED:
-			bw->scroll = NULL;
+		case SCROLLBAR_MSG_SCROLL_FINISHED:
+			bw->scrollbar = NULL;
 			
 			browser_window_set_pointer(bw->window,
 					GUI_POINTER_DEFAULT);
@@ -789,29 +793,29 @@ void html_overflow_scroll_callback(void *client_data,
  * \param  x	   coordinate of mouse
  * \param  y	   coordinate of mouse
  */
-void html_overflow_scroll_drag_end(struct scroll *scroll,
+void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 		browser_mouse_state mouse, int x, int y)
 {
 	int scroll_mouse_x, scroll_mouse_y, box_x, box_y;
-	struct browser_scroll_data *data = scroll_get_data(scroll);
+	struct browser_scrollbar_data *data = scrollbar_get_data(scrollbar);
 	struct box *box;
 
 	box = data->box;
 	box_coords(box, &box_x, &box_y);
 
-	if (scroll_is_horizontal(scroll)) {
+	if (scrollbar_is_horizontal(scrollbar)) {
 		scroll_mouse_x = x - box_x;
 		scroll_mouse_y = y - (box_y + box->padding[TOP] +
 				box->height + box->padding[BOTTOM] -
 				SCROLLBAR_WIDTH);
-		scroll_mouse_drag_end(scroll, mouse,
+		scrollbar_mouse_drag_end(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
 	} else {
 		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
 				box->width + box->padding[RIGHT] -
 				SCROLLBAR_WIDTH);
 		scroll_mouse_y = y - box_y;
-		scroll_mouse_drag_end(scroll, mouse,
+		scrollbar_mouse_drag_end(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
 	}
 }
@@ -868,7 +872,7 @@ void html_box_drag_start(struct box *box, int x, int y)
 		scroll_mouse_y = y - (box_y + box->padding[TOP] +
 				box->height + box->padding[BOTTOM] -
 				SCROLLBAR_WIDTH);
-		scroll_start_content_drag(box->scroll_x,
+		scrollbar_start_content_drag(box->scroll_x,
 				scroll_mouse_x, scroll_mouse_y);
 	} else if (box->scroll_y != NULL) {
 		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
@@ -876,7 +880,7 @@ void html_box_drag_start(struct box *box, int x, int y)
 				SCROLLBAR_WIDTH);
 		scroll_mouse_y = y - box_y;
 		
-		scroll_start_content_drag(box->scroll_y,
+		scrollbar_start_content_drag(box->scroll_y,
 				scroll_mouse_x, scroll_mouse_y);
 	}
 }
