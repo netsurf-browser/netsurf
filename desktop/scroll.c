@@ -72,9 +72,6 @@ colour scroll_widget_fg_colour = 0x00d9d9d9; /* light grey */
 colour scroll_widget_bg_colour = 0x006b6b6b; /* mid grey */
 colour scroll_widget_arrow_colour = 0x00444444; /* dark grey */
 
-static void scroll_drag_start_internal(struct scroll *scroll, int x, int y,
-		bool reverse, bool pair);
-
 
 /**
  * Create a scroll.
@@ -512,6 +509,65 @@ bool scroll_is_horizontal(struct scroll *scroll)
 }
 
 /**
+ * Internal procedure used for staring a drag scroll for a scrollbar.
+ *
+ * \param scroll	the scroll to start the drag for
+ * \param x		the X coordinate of the drag start
+ * \param y		the Y coordinate of the drag start
+ * \param reverse	whether this should be a reverse drag(used when the user
+ * 			drags the content and the scrolls have to adjust)
+ * \param pair		whether the drag should start for the pair scroll too
+ */
+static void scroll_drag_start_internal(struct scroll *scroll, int x, int y,
+		bool reverse, bool pair)
+{
+	struct scroll_msg_data msg;
+
+	scroll->drag_start_coord = scroll->horizontal ? x : y;
+	scroll->drag_start_bar_off = scroll->bar_off;
+
+	scroll->dragging = true;
+	scroll->reverse = reverse;
+
+	msg.scroll = scroll;
+
+	/* \todo - some proper numbers please! */
+	if (scroll->horizontal) {
+		msg.x0 = -1024;
+		msg.x1 = 1024;
+		msg.y0 = 0;
+		msg.y1 = 0;
+	} else {
+		msg.x0 = 0;
+		msg.x1 = 0;
+		msg.y0 = -1024;
+		msg.y1 = 1024;
+	}
+
+	if (pair && scroll->pair != NULL) {
+		scroll->pair_drag = true;
+
+		scroll->pair->drag_start_coord =
+				scroll->pair->horizontal ? x : y;
+
+		scroll->pair->drag_start_bar_off = scroll->pair->bar_off;
+
+		scroll->pair->dragging = true;
+		scroll->pair->reverse = reverse;
+
+		if (scroll->pair->horizontal) {
+			msg.x0 = -1024;
+			msg.x1 = 1024;
+		} else {
+			msg.y0 = -1024;
+			msg.y1 = 1024;
+		}
+	}
+	msg.msg = SCROLL_MSG_SCROLL_START;
+	scroll->client_callback(scroll->client_data, &msg);
+}
+
+/**
  * Handle mouse actions other then drag ends.
  *
  * \param scroll	the scroll which gets the mouse action
@@ -638,65 +694,6 @@ const char *scroll_mouse_action(struct scroll *scroll,
 				true : false);
 
 	return status;
-}
-
-/**
- * Internal procedure used for staring a drag scroll for a scrollbar.
- *
- * \param scroll	the scroll to start the drag for
- * \param x		the X coordinate of the drag start
- * \param y		the Y coordinate of the drag start
- * \param reverse	whether this should be a reverse drag(used when the user
- * 			drags the content and the scrolls have to adjust)
- * \param pair		whether the drag should start for the pair scroll too
- */
-void scroll_drag_start_internal(struct scroll *scroll, int x, int y,
-		bool reverse, bool pair)
-{
-	struct scroll_msg_data msg;
-
-	scroll->drag_start_coord = scroll->horizontal ? x : y;
-	scroll->drag_start_bar_off = scroll->bar_off;
-
-	scroll->dragging = true;
-	scroll->reverse = reverse;
-
-	msg.scroll = scroll;
-
-	/* \todo - some proper numbers please! */
-	if (scroll->horizontal) {
-		msg.x0 = -1024;
-		msg.x1 = 1024;
-		msg.y0 = 0;
-		msg.y1 = 0;
-	} else {
-		msg.x0 = 0;
-		msg.x1 = 0;
-		msg.y0 = -1024;
-		msg.y1 = 1024;
-	}
-
-	if (pair && scroll->pair != NULL) {
-		scroll->pair_drag = true;
-
-		scroll->pair->drag_start_coord =
-				scroll->pair->horizontal ? x : y;
-
-		scroll->pair->drag_start_bar_off = scroll->pair->bar_off;
-
-		scroll->pair->dragging = true;
-		scroll->pair->reverse = reverse;
-
-		if (scroll->pair->horizontal) {
-			msg.x0 = -1024;
-			msg.x1 = 1024;
-		} else {
-			msg.y0 = -1024;
-			msg.y1 = 1024;
-		}
-	}
-	msg.msg = SCROLL_MSG_SCROLL_START;
-	scroll->client_callback(scroll->client_data, &msg);
 }
 
 /**
