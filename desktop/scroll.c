@@ -33,6 +33,7 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
+
 struct scroll {
 	bool horizontal;	/* Horizontal scroll if true, vertical if false
 				 */
@@ -61,6 +62,7 @@ struct scroll {
 				   also the pair scroll */
 };
 
+
 /** Overflow scrollbar colours
  *
  * Overflow scrollbar colours can be set by front end code to try to match
@@ -88,6 +90,7 @@ colour scroll_widget_arrow_colour = 0x00444444; /* dark grey */
  * \return			true if the scroll has been created succesfully
  *				or false on memory exhaustion
  */
+
 bool scroll_create(bool horizontal, int length,
 		int scrolled_dimension, int scrolled_visible,
   		void *client_data, scroll_client_callback client_callback,
@@ -127,17 +130,20 @@ bool scroll_create(bool horizontal, int length,
 	return true;
 }
 
+
 /**
  * Destroy a scroll.
  *
  * \param scroll	the scroll to be destroyed
  */
+
 void scroll_destroy(struct scroll *scroll)
 {
 	if (scroll->pair != NULL)
 		scroll->pair->pair = NULL;
 	free(scroll);
 }
+
 
 /**
  * Draw an outline rectangle common to a few of scroll elements.
@@ -151,6 +157,7 @@ void scroll_destroy(struct scroll *scroll)
  * \param inset true for inset outline, false for an outset one
  * \return
  */
+
 static inline bool scroll_redraw_scrollbar_rectangle(
 		int x0, int y0, int x1, int y1, colour c, bool inset)
 {
@@ -187,6 +194,7 @@ static inline bool scroll_redraw_scrollbar_rectangle(
 	return true;
 }
 
+
 /**
  * Redraw a part of the scroll.
  *
@@ -197,6 +205,7 @@ static inline bool scroll_redraw_scrollbar_rectangle(
  * \param scale		scale for the redraw
  * \return		true on succes false otherwise
  */
+
 bool scroll_redraw(struct scroll *scroll, int x, int y, 
 		const struct rect *clip, float scale)
 {
@@ -397,6 +406,7 @@ bool scroll_redraw(struct scroll *scroll, int x, int y,
 	return true;
 }
 
+
 /**
  * Set the value of the scroll.
  *
@@ -405,6 +415,7 @@ bool scroll_redraw(struct scroll *scroll, int x, int y,
  * \param bar		true if the value is for the scroll indication bar
  *			offset, false if it is for the scrolled area one
  */
+
 void scroll_set(struct scroll *scroll, int scroll_val, bool bar)
 {
 	int well_length;
@@ -453,12 +464,14 @@ void scroll_set(struct scroll *scroll, int scroll_val, bool bar)
 	scroll->client_callback(scroll->client_data, &msg);
 }
 
+
 /**
  * Get the scroll offset for the visible part of the scrolled area.
  *
  * \param scroll	the scroll to get the value from
  * \return		scroll offset for the scrolled area
  */
+
 int scroll_get_offset(struct scroll *scroll)
 {
 	if (scroll == NULL)
@@ -477,6 +490,7 @@ int scroll_get_offset(struct scroll *scroll)
  * 				scrolled area to be set
  * \param scrolled_dimension	-1 or the new dimension of the scrolled content
  */
+
 void scroll_set_extents(struct scroll *scroll, int length,
 		int scrolled_visible, int scrolled_dimension)
 {
@@ -497,16 +511,19 @@ void scroll_set_extents(struct scroll *scroll, int length,
 			scroll->scrolled_d;
 }
 
+
 /**
  * Check the orientation of the scroll.
  *
  * \param scroll	the scroll to check the orientation of
  * \return		true for a horizontal scroll, false for a vertical one
  */
+
 bool scroll_is_horizontal(struct scroll *scroll)
 {
 	return scroll->horizontal;
 }
+
 
 /**
  * Internal procedure used for staring a drag scroll for a scrollbar.
@@ -518,6 +535,7 @@ bool scroll_is_horizontal(struct scroll *scroll)
  * 			drags the content and the scrolls have to adjust)
  * \param pair		whether the drag should start for the pair scroll too
  */
+
 static void scroll_drag_start_internal(struct scroll *scroll, int x, int y,
 		bool reverse, bool pair)
 {
@@ -567,6 +585,7 @@ static void scroll_drag_start_internal(struct scroll *scroll, int x, int y,
 	scroll->client_callback(scroll->client_data, &msg);
 }
 
+
 /**
  * Handle mouse actions other then drag ends.
  *
@@ -576,6 +595,7 @@ static void scroll_drag_start_internal(struct scroll *scroll, int x, int y,
  * \param y		Y coordinate of the mouse
  * \return		message for the status bar or NULL on failure
  */
+
 const char *scroll_mouse_action(struct scroll *scroll,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -696,6 +716,7 @@ const char *scroll_mouse_action(struct scroll *scroll,
 	return status;
 }
 
+
 /**
  * Handle end of mouse drags.
  *
@@ -704,6 +725,7 @@ const char *scroll_mouse_action(struct scroll *scroll,
  * \param x		X coordinate of the mouse
  * \param y		Y coordinate of the mouse
  */
+
 void scroll_mouse_drag_end(struct scroll *scroll, browser_mouse_state mouse,
 		int x, int y)
 {
@@ -740,6 +762,7 @@ void scroll_mouse_drag_end(struct scroll *scroll, browser_mouse_state mouse,
 	scroll->client_callback(scroll->client_data, &msg);
 }
 
+
 /**
  * Called when the content, which is scrolled with some scrolls, is being
  * dragged so the scrolls have to adjust properly. If the content has both
@@ -750,10 +773,12 @@ void scroll_mouse_drag_end(struct scroll *scroll, browser_mouse_state mouse,
  * \param x		X coordinate of mouse during drag start
  * \param y		Y coordinate of mouse during drag start
  */
+
 void scroll_start_content_drag(struct scroll *scroll, int x, int y)
 {
 	scroll_drag_start_internal(scroll, x, y, true, true);
 }
+
 
 /**
  * Connect a horizontal and a vertical scroll into a pair so that they
@@ -762,6 +787,7 @@ void scroll_start_content_drag(struct scroll *scroll, int x, int y)
  * \param horizontal_scroll	the scroll used for horizontal scrolling
  * \param vertical_scroll	the scroll used for vertical scrolling
  */
+
 void scroll_make_pair(struct scroll *horizontal_scroll,
 		struct scroll *vertical_scroll)
 {
@@ -771,7 +797,9 @@ void scroll_make_pair(struct scroll *horizontal_scroll,
 	vertical_scroll->pair = horizontal_scroll;
 }
 
+
 void *scroll_get_data(struct scroll *scroll)
 {
 	return scroll->client_data;
 }
+
