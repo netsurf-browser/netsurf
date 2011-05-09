@@ -17,8 +17,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
-
-#import "desktop/browser.h"
+#import "utils/schedule.h"
 
 @interface ScheduledCallback : NSObject {
 	void (*callback)( void *userData );
