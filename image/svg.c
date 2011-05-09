@@ -53,7 +53,8 @@ static void svg_destroy(struct content *c);
 static void svg_reformat(struct content *c, int width, int height);
 static bool svg_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror svg_clone(const struct content *old, struct content **newc);
 static content_type svg_content_type(lwc_string *mime_type);
 
