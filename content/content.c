@@ -242,8 +242,8 @@ void content_update_status(struct content *c)
 	} else {
 		unsigned int time = c->time;
 		snprintf(c->status_message, sizeof (c->status_message),
-				"%s (%.1fs) %s", messages_get("Done"),
-				(float) time / 100, c->sub_status);
+				"%s (%.1fs)", messages_get("Done"),
+				(float) time / 100);
 	}
 
 	/* LOG(("%s", c->status_message)); */
