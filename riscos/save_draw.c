@@ -108,9 +108,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	plot = ro_save_draw_plotters;
 	if (!content_redraw(h, 0, -ro_save_draw_height,
 			ro_save_draw_width, ro_save_draw_height,
-			&clip,
-			1,
-			0xFFFFFF))
+			&clip, 1, 0xFFFFFF, false, false))
 	{
 		pencil_free(ro_save_draw_diagram);
 		return false;
