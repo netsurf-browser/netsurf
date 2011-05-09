@@ -39,9 +39,6 @@ static bool apple_image_convert(struct content *c);
 static void apple_image_destroy(struct content *c);
 static bool apple_image_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
-static bool apple_image_redraw_tiled(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y);
 static nserror apple_image_clone(const struct content *old, 
@@ -58,7 +55,6 @@ static const content_handler apple_image_content_handler = {
 	NULL,
 	NULL,
 	apple_image_redraw,
-	apple_image_redraw_tiled,
 	NULL,
 	NULL,
 	apple_image_clone,
@@ -214,23 +210,10 @@ content_type apple_image_content_type(lwc_string *mime_type)
 }
 
 /**
- * Redraw a CONTENT_APPLE_IMAGE.
- */
-
-bool apple_image_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
-{
-	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
-}
-
-
-/**
  * Redraw a CONTENT_APPLE_IMAGE with appropriate tiling.
  */
 
-bool apple_image_redraw_tiled(struct content *c, int x, int y,
+bool apple_image_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
 		float scale, colour background_colour,
 		bool repeat_x, bool repeat_y)
