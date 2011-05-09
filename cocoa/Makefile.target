@@ -182,6 +182,7 @@ NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) NetSurf.app/Contents/I
 	$(VQ)echo Assembling NetSurf.app bundle
 	$(Q)mkdir -p NetSurf.app/Contents/MacOS
 	$(Q)cp NetSurf NetSurf.app/Contents/MacOS
+	$(Q)rm -rf NetSurf.app/Contents/Resources
 	$(Q)mkdir -p NetSurf.app/Contents/Resources
 	$(Q)cp -pLR $(R_RESOURCES) NetSurf.app/Contents/Resources
 	$(Q)echo 'APPL????' > NetSurf.app/Contents/PkgInfo
