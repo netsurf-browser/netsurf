@@ -54,7 +54,8 @@ static bool sprite_convert(struct content *c);
 static void sprite_destroy(struct content *c);
 static bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour);
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y);
 static nserror sprite_clone(const struct content *old, struct content **newc);
 static content_type sprite_content_type(lwc_string *mime_type);
 
@@ -68,7 +69,6 @@ static const content_handler sprite_content_handler = {
 	NULL,
 	NULL,
 	sprite_redraw,
-	NULL,
 	NULL,
 	NULL,
 	sprite_clone,
@@ -218,7 +218,8 @@ void sprite_destroy(struct content *c)
 
 bool sprite_redraw(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		float scale, colour background_colour,
+		bool repeat_x, bool repeat_y)
 {
 	sprite_content *sprite = (sprite_content *) c;
 
