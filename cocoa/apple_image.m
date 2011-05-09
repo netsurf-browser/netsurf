@@ -86,6 +86,7 @@ static nserror register_for_type( NSString *mime )
 	if (strcmp(type, "image/gif") == 0)
 		return NSERROR_OK;
 #endif
+	NSLog( @"registering mime type %@", mime );
 
 	lwc_error lerror = lwc_intern_string( type, strlen( type ), &apple_image_mime_types[types_count] );
 	if (lerror != lwc_error_ok) return NSERROR_NOMEM;
@@ -114,7 +115,6 @@ nserror apple_image_init(void)
 		}
 		
 		for (NSString *mime in mimeTypes) {
-			NSLog( @"registering mime type %@", mime );
 			nserror error = register_for_type( mime );
 			if (error != NSERROR_OK) {
 				apple_image_fini();
