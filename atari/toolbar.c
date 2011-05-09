@@ -40,6 +40,7 @@
 #include "atari/gui.h"
 #include "atari/toolbar.h"
 #include "atari/browser_win.h"
+#include "atari/browser.h"
 #include "atari/clipboard.h"
 #include "atari/misc.h"
 #include "atari/global_evnt.h"

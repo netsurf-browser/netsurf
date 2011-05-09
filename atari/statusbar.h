@@ -19,6 +19,19 @@
 #ifndef NS_ATARI_STATUSBAR
 #define NS_ATARI_STATUSBAR
 
+#define STATUSBAR_HEIGHT 16
+#define STATUSBAR_MAX_SLEN 255
+#define MOVER_WH 16
+
+struct s_statusbar
+{
+	COMPONENT * comp;
+	char text[STATUSBAR_MAX_SLEN+1];
+	size_t textlen;
+	bool attached;
+};
+
+
 CMP_STATUSBAR sb_create( struct gui_window * gw );
 void sb_destroy( CMP_STATUSBAR s );
 void sb_set_text( CMP_STATUSBAR sb , char * text );

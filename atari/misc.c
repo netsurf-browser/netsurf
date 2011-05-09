@@ -33,6 +33,7 @@
 #include "content/fetch.h"
 #include "atari/gui.h"
 #include "atari/toolbar.h"
+#include "atari/browser.h"
 #include "atari/misc.h"
 
 extern void * h_gem_rsrc;

@@ -116,8 +116,6 @@ char * gemdos_realpath(const char * path, char * rpath)
 	char * work_ptr;
 	size_t l;
 
-	printf("gdos rpath in: %s\n", path);
-
 	if( rpath == NULL ){
 		return( NULL );
 	}
@@ -125,6 +123,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 		return( realpath(path, rpath) );
 	}
 
+	LOG(("gdos rpath in: %s\n", path));
 	memset( rpath, 0, PATH_MAX );
 	
 	/* first, absolutize relative path: */
@@ -186,7 +185,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 		strcpy( rpath, work_ptr );
 	}
 	l = strlen( rpath );
-	printf("gdos rpath out: %s\n", rpath);
+	LOG(("gdos rpath out: %s\n", rpath));
 	return( rpath );
 }
 

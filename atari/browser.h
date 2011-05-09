@@ -24,7 +24,19 @@
  which cosnist mainly of an WinDom COMPONENT.
 */ 
 
-#define BROWSER_SCROLL_SVAL 64  /* The small scroll inc. value */
+/* 
+	BROWSER_SCROLL_SVAL
+	The small scroll inc. value (used by scroll-wheel, arrow click): 
+*/
+#define BROWSER_SCROLL_SVAL 64 
+
+/* 
+	MAX_REDRW_SLOTS
+	This is the number of redraw requests that an browser window can queue. 
+	If a redraw is scheduled and all slots are used, the rectangle will
+	be merged to one of the existing slots.
+ */
+#define MAX_REDRW_SLOTS			32	
 
 enum browser_type 
 {
@@ -42,6 +54,56 @@ enum browser_rect
 	BR_VSLIDER = 4
 };
 
+
+/* 
+	This struct contains info of current browser viewport scroll 
+	and the scroll which is requested. If a scroll is requested,
+  the field required is set to true. 
+*/
+struct s_scroll_info
+{
+	POINT requested;
+	POINT current;
+	bool required;
+};
+
+/*
+	This struct holds information of the cursor within the browser
+	viewport. 
+*/
+struct s_caret
+{
+	GRECT requested;
+	GRECT current;
+	bool redraw;
+};
+
+/*
+	This struct holds scheduled redraw requests.
+*/
+struct s_browser_redrw_info
+{
+	BBOX areas[MAX_REDRW_SLOTS];
+	short areas_used;
+	BBOX area;		/* used for clipping of content redraw */
+};
+
+/* 
+	This is the actual browser widget, containings GUI elements and 
+	the current state of the browser widget. 
+*/
+struct s_browser
+{
+	int type;
+	COMPONENT * comp;
+	WINDOW * compwin;
+	struct browser_window * bw;
+	struct s_scroll_info scroll;
+	struct s_browser_redrw_info redraw; 
+	struct s_caret caret;
+	bool attached;
+};
+
 struct s_browser * browser_create( struct gui_window * gw, struct browser_window * clone, struct browser_window *bw, enum browser_type, int lt,  int w, int flex );
 bool browser_destroy( struct s_browser * b );
 void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out);
@@ -53,6 +115,18 @@ bool browser_attach_frame( struct gui_window * container, struct gui_window * fr
 struct gui_window * browser_find_root( struct gui_window * gw );
 static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 bool browser_redraw_required( struct gui_window * gw);
+
+/*
+	This queues an redraw to one of the slots.
+	The following strategy is used: 
+	1. It checks if the rectangle to be scheduled is within one of the
+		already queued bboxes. If yes, it will return. 
+	2. It checks for an intersection, and it will merge the rectangle to 
+		already queued rectangle where it fits best.
+	3. it tries to put the rectangle into one available slot. 
+	4. if no slot is available, it will search for the nearest rectangle
+		and summarize it within that slot.  		 	
+*/
 void browser_redraw_caret( struct gui_window * gw, GRECT * area );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff );
 

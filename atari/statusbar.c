@@ -58,7 +58,6 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 	if( sb == NULL )
 		return;
 
-	assert( sb->attached != false );
 	if( sb->attached == false )
 		return;
 

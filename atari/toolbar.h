@@ -19,10 +19,60 @@
 #ifndef NS_ATARI_TOOLBAR_H
 #define NS_ATARI_TOOLBAR_H
 
+#define TB_BUTTON_WIDTH 32
+#define TB_BUTTON_HEIGHT 21 /* includes 1px 3d effect */
+#define TOOLBAR_HEIGHT 25
+#define THROBBER_WIDTH 32
 #define THROBBER_MIN_INDEX 1
 #define THROBBER_MAX_INDEX 12
 #define THROBBER_INACTIVE_INDEX 13
+#define URLBOX_HEIGHT 21
+/*
+ URL Widget Block size: size of memory block to allocated
+ when input takes more memory than currently allocated:
+*/
+#define URL_WIDGET_BSIZE 64
+#define URL_WIDGET_MAX_MEM 60000
 
+struct s_tb_button
+{
+	short rsc_id;
+	void (*cb_click)(struct gui_window * gw);
+	COMPONENT * comp;
+};
+
+
+struct s_url_widget
+{
+	short selection_len;	/* len & direction of selection */
+	short caret_pos;	 	/* cursor pos */
+	short char_size;	 	/* size of one character (width & hight) */
+	short scrollx;  	 	/* current scroll position */
+	bool redraw;		 	/* widget is only redrawn when this flag is set */
+	char * text;			/* dynamicall allocated URL string */
+	unsigned short allocated;
+	unsigned short used; 	/* memory used by URL (strlen + 1) */
+	COMPONENT * comp;
+};
+
+struct s_throbber_widget
+{
+	COMPONENT * comp;
+	short index;
+	short max_index;
+	bool running;
+};
+
+struct s_toolbar
+{
+	COMPONENT * comp;
+	struct gui_window * owner;
+	struct s_url_widget url;
+	struct s_throbber_widget throbber;
+	GRECT btdim; /* size & location of buttons */
+	struct s_tb_button * buttons;
+	int btcnt;
+};
 
 CMP_TOOLBAR tb_create( struct gui_window * gw );
 void tb_destroy( CMP_TOOLBAR tb );

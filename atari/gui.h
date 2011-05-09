@@ -68,28 +68,6 @@ struct s_gem_cursors {
 	MFORM_EX arrow;
 } gem_cursors;
 
-/* maybe its better to have an linked
-	list of redraw areas, so that there
-	is no such an overhead when 2 (or more)
-	SMALL rectangles far away from each other
-	need an redraw!
-	Currently these rects get summarized into
-	one big redraw area!
-*/
-struct s_browser_redrw_info
-{
-	BBOX area;		/* this is an box which describes the area to redraw */
-								/* from netsurfs point of view */
-	bool required;
-};
-
-struct s_scroll_info
-{
-	POINT requested;
-	POINT current;
-	bool required;
-};
-
 enum focus_element_type {
 	WIDGET_NONE=0,
 	URL_WIDGET,
@@ -113,101 +91,28 @@ struct s_gui_input_state {
 } prev_inp_state;
 */
 
-#define TB_BUTTON_WIDTH 32
-#define TB_BUTTON_HEIGHT 21 /* includes 1px 3d effect */
-#define TOOLBAR_HEIGHT 25
-#define URLBOX_HEIGHT 21
-#define STATUSBAR_HEIGHT 16
-#define STATUSBAR_MAX_SLEN 255
-#define MOVER_WH 16
-#define THROBBER_WIDTH 32
-
-
 /* defines for data attached to components: */
 #define CDT_OBJECT		0x004f424aUL
 #define CDT_OWNER 		0x03UL
 #define CDT_ICON 			0x04UL
 #define CDT_ICON_TYPE	0x05UL
 
-/*
- URL Widget Block size: size of memory block to allocated
- when input takes more memory than currently allocated:
-*/
-#define URL_WIDGET_BSIZE 64
-#define URL_WIDGET_MAX_MEM 60000
-struct s_url_widget
-{
-	short selection_len;	/* len & direction of selection */
-	short caret_pos;	 	/* cursor pos */
-	short char_size;	 	/* size of one character (width & hight) */
-	short scrollx;  	 	/* current scroll position */
-	bool redraw;		 	/* widget is only redrawn when this flag is set */
-	char * text;			/* dynamicall allocated URL string*/
-	unsigned short allocated;
-	unsigned short used; 	/* memory used by URL (strlen + 1) */
-	COMPONENT * comp;
-};
-
-struct s_throbber_widget
-{
-	COMPONENT * comp;
-	short index;
-	short max_index;
-	bool running;
-};
 
 struct gui_window;
-
-struct s_tb_button
-{
-    short rsc_id;
-	void (*cb_click)(struct gui_window * gw);
-    COMPONENT * comp;
-};
-
-struct s_toolbar
-{
-	COMPONENT * comp;
-	struct gui_window * owner;
-	struct s_url_widget url;
-	struct s_throbber_widget throbber;
-	GRECT btdim; /* size & location of buttons */
-	struct s_tb_button * buttons;
-	int btcnt;
-	/* buttons are defined in toolbar.c */
-};
-
-struct s_statusbar
-{
-	COMPONENT * comp;
-	char text[STATUSBAR_MAX_SLEN+1];
-	size_t textlen;
-	bool attached;
-};
-
-struct s_caret
-{
-	GRECT requested;
-	GRECT current;
-	bool redraw;
-};
-
-struct s_browser
-{
-	int type;
-	COMPONENT * comp;
-	WINDOW * compwin;
-	struct browser_window * bw;
-	struct s_scroll_info scroll;
-	struct s_browser_redrw_info redraw; 
-	struct s_caret caret;
-	bool attached;
-};
+struct s_browser;
+struct s_statusbar;
+struct s_toolbar;
 
 typedef struct s_toolbar * CMP_TOOLBAR;
 typedef struct s_statusbar * CMP_STATUSBAR;
 typedef struct s_browser * CMP_BROWSER;
 
+/* 
+	This is the "main" window. It can consist of several components 
+	and also holds information shared by several frames within
+	the window. Each frame, no matter how deep nested, 
+	knows about it's root (GEM window).
+*/
 struct s_gui_win_root
 {
 	WINDOW * handle;
@@ -222,6 +127,13 @@ struct s_gui_win_root
 	GRECT loc;	/* current size of window on screen */
 };
 
+/* 
+	This is the part of the gui which is known by netsurf core. 
+	You must implement it. Altough, you are free how to do it. 
+	Each of the browser "viewports" managed by netsurf are bound 
+	to this structure. gui_window does not mean that it is an 
+	comple window - also frames own an gui_window. 
+*/
 struct gui_window {
 	struct s_gui_win_root * root;
 	CMP_BROWSER browser;
@@ -232,6 +144,5 @@ struct gui_window {
 extern struct gui_window *window_list;
 
 #define MOUSE_IS_DRAGGING() (mouse_hold_start[0] || mouse_hold_start[1])
-
 
 #endif
