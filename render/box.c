@@ -1005,28 +1005,38 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 		bool bottom, bool right)
 {
 	struct browser_scrollbar_data *data;
-	int padding_width, padding_height;
-	
-	padding_width = box->width + box->padding[RIGHT] + box->padding[LEFT];
-	padding_height = box->height + box->padding[TOP] + box->padding[BOTTOM];
-	
+	int visible_width, visible_height;
+	int full_width, full_height;
+
 	if (!bottom && box->scroll_x != NULL) {
 		data = scrollbar_get_data(box->scroll_x);
 		scrollbar_destroy(box->scroll_x);
 		free(data);
 		box->scroll_x = NULL;
 	}
-	
+
 	if (!right && box->scroll_y != NULL) {
 		data = scrollbar_get_data(box->scroll_y);
 		scrollbar_destroy(box->scroll_y);
 		free(data);
 		box->scroll_y = NULL;
 	}
-	
+
 	if (!bottom && !right)
 		return true;
-	
+
+	visible_width = box->width + box->padding[RIGHT] + box->padding[LEFT];
+	visible_height = box->height + box->padding[TOP] + box->padding[BOTTOM];
+
+	full_width = ((box->descendant_x1 - box->border[RIGHT].width) >
+			visible_width) ?
+			box->descendant_x1 + box->padding[RIGHT] :
+			visible_width;
+	full_height = ((box->descendant_y1 - box->border[BOTTOM].width) >
+			visible_height) ?
+			box->descendant_y1 + box->padding[BOTTOM] :
+			visible_height;
+
 	if (right) {
 		if (box->scroll_y == NULL) {
 			data = malloc(sizeof(struct browser_scrollbar_data));
@@ -1037,19 +1047,15 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			}
 			data->bw = bw;
 			data->box = box;
-			if (!scrollbar_create(false,
-					padding_height,
-					box->descendant_y1 - box->padding[TOP],
-     					box->height,
-					data,
-     					html_overflow_scroll_callback,
+			if (!scrollbar_create(false, visible_height,
+					full_height, visible_height,
+					data, html_overflow_scroll_callback,
 					&(box->scroll_y)))
 				return false;
-		} else 
-			scrollbar_set_extents(box->scroll_y,
-					padding_height, box->height,
-     					box->descendant_y1 -
-					box->padding[TOP]);
+		} else  {
+			scrollbar_set_extents(box->scroll_y, visible_height,
+					visible_height, full_height);
+		}
 	}
 	if (bottom) {
 		if (box->scroll_x == NULL) {
@@ -1062,21 +1068,18 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 			data->bw = bw;
 			data->box = box;
 			if (!scrollbar_create(true,
-					padding_width -
+					visible_width -
 					(right ? SCROLLBAR_WIDTH : 0),
-					box->descendant_x1 - box->padding[LEFT],
-     					box->width,
-					data,
-     					html_overflow_scroll_callback,
+					full_width, visible_width,
+					data, html_overflow_scroll_callback,
 					&box->scroll_x))
 				return false;
-		} else
+		} else {
 			scrollbar_set_extents(box->scroll_x,
-					padding_width -
+					visible_width -
 					(right ? SCROLLBAR_WIDTH : 0),
-					box->width,
-     					box->descendant_x1 -
-					box->padding[LEFT]);
+					visible_width, full_width);
+		}
 	}
 	
 	if (right && bottom)
