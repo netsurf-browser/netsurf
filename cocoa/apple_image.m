@@ -153,9 +153,9 @@ bool apple_image_convert(struct content *c)
 	c->width = [image pixelsWide];
 	c->height = [image pixelsHigh];
 
-	char title[100];
-	snprintf( title, sizeof title, "Image (%dx%d)", c->width, c->height );
-	content__set_title(c, title );
+	NSString *url = [NSString stringWithUTF8String: llcache_handle_get_url( content_get_llcache_handle( c ) )];
+	NSString *title = [NSString stringWithFormat: @"%@ (%dx%d)", [url lastPathComponent], c->width, c->height];
+	content__set_title(c, [title UTF8String] );
 	
 	content_set_ready(c);
 	content_set_done(c);
