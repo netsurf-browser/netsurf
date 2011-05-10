@@ -44,6 +44,14 @@ struct ami_mime_entry
 	lwc_string *plugincmd;
 };
 
+enum
+{
+	AMI_MIME_MIMETYPE,
+	AMI_MIME_DATATYPE,
+	AMI_MIME_FILETYPE,
+	AMI_MIME_PLUGINCMD
+};
+
 const char *fetch_filetype(const char *unix_path)
 {
 	static char mimetype[50];
@@ -214,20 +222,6 @@ void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype)
 	}
 }
 
-bool ami_mime_compare(struct hlcache_handle *c, const char *type)
-{
-	lwc_string *mime = content_get_mime_type(c);
-	const char *mime_string = lwc_string_data(mime);
-	size_t mime_length = lwc_string_length(mime);
-
-	if(!strncmp("svg", type, 3))
-	{
-		if(!strncmp(mime_string, "image/svg", mime_length)) return true;
-		if(!strncmp(mime_string, "image/svg+xml", mime_length)) return true;
-	}
-	else return false;
-}
-
 nserror ami_mime_init(const char *mimefile)
 {
 	lwc_string *type;
@@ -240,14 +234,6 @@ nserror ami_mime_init(const char *mimefile)
 	long rarray[] = {0,0,0,0};
 	struct nsObject *node;
 	struct ami_mime_entry *mimeentry;
-
-	enum
-	{
-		A_MIMETYPE,
-		A_DATATYPE,
-		A_FILETYPE,
-		A_PLUGINCMD
-	};
 
 	ami_mime_list = NewObjList();
 
@@ -267,10 +253,10 @@ nserror ami_mime_init(const char *mimefile)
 			rargs->RDA_ExtHelp = NULL;
 			rargs->RDA_Flags = 0;
 
-			rarray[A_MIMETYPE] = 0;
-			rarray[A_DATATYPE] = 0;
-			rarray[A_FILETYPE] = 0;
-			rarray[A_PLUGINCMD] = 0;
+			rarray[AMI_MIME_MIMETYPE] = 0;
+			rarray[AMI_MIME_DATATYPE] = 0;
+			rarray[AMI_MIME_FILETYPE] = 0;
+			rarray[AMI_MIME_PLUGINCMD] = 0;
 
 			if(ReadArgs(template, rarray, rargs))
 			{
@@ -278,34 +264,34 @@ nserror ami_mime_init(const char *mimefile)
 				mimeentry = AllocVec(sizeof(struct ami_mime_entry), MEMF_PRIVATE | MEMF_CLEAR);
 				node->objstruct = mimeentry;
 
-				if(rarray[A_MIMETYPE])
+				if(rarray[AMI_MIME_MIMETYPE])
 				{
-					lerror = lwc_intern_string((char *)rarray[A_MIMETYPE],
-								strlen((char *)rarray[A_MIMETYPE]), &mimeentry->mimetype);
+					lerror = lwc_intern_string((char *)rarray[AMI_MIME_MIMETYPE],
+								strlen((char *)rarray[AMI_MIME_MIMETYPE]), &mimeentry->mimetype);
 					if (lerror != lwc_error_ok)
 						return NSERROR_NOMEM;
 				}
 
-				if(rarray[A_DATATYPE])
+				if(rarray[AMI_MIME_DATATYPE])
 				{
-					lerror = lwc_intern_string((char *)rarray[A_DATATYPE],
-								strlen((char *)rarray[A_DATATYPE]), &mimeentry->datatype);
+					lerror = lwc_intern_string((char *)rarray[AMI_MIME_DATATYPE],
+								strlen((char *)rarray[AMI_MIME_DATATYPE]), &mimeentry->datatype);
 					if (lerror != lwc_error_ok)
 						return NSERROR_NOMEM;
 				}
 
-				if(rarray[A_FILETYPE])
+				if(rarray[AMI_MIME_FILETYPE])
 				{
-					lerror = lwc_intern_string((char *)rarray[A_FILETYPE],
-								strlen((char *)rarray[A_FILETYPE]), &mimeentry->filetype);
+					lerror = lwc_intern_string((char *)rarray[AMI_MIME_FILETYPE],
+								strlen((char *)rarray[AMI_MIME_FILETYPE]), &mimeentry->filetype);
 					if (lerror != lwc_error_ok)
 						return NSERROR_NOMEM;
 				}
 
-				if(rarray[A_PLUGINCMD])
+				if(rarray[AMI_MIME_PLUGINCMD])
 				{
-					lerror = lwc_intern_string((char *)rarray[A_PLUGINCMD],
-								strlen((char *)rarray[A_PLUGINCMD]), &mimeentry->plugincmd);
+					lerror = lwc_intern_string((char *)rarray[AMI_MIME_PLUGINCMD],
+								strlen((char *)rarray[AMI_MIME_PLUGINCMD]), &mimeentry->plugincmd);
 					if (lerror != lwc_error_ok)
 						return NSERROR_NOMEM;
 				}
@@ -328,6 +314,86 @@ void ami_mime_entry_free(struct ami_mime_entry *mimeentry)
 	if(mimeentry->plugincmd) lwc_string_unref(mimeentry->plugincmd);
 }
 
+
+/**
+ * Return next matching MIME entry
+ *
+ * \param search lwc_string to search for
+ * \param type of value being searched for (AMI_MIME_#?)
+ * \param start_node node to continue search (updated on exit)
+ * \return entry or NULL if no match
+ */
+
+struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
+		int type, struct Node **start_node)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct ami_mime_entry *mimeentry;
+	lwc_error lerror;
+	bool ret = false;
+
+	if(IsMinListEmpty(ami_mime_list)) return NULL;
+
+	if(*start_node)
+	{
+		node = (struct nsObject *)GetSucc(*start_node);
+		if(node == NULL) return NULL;
+	}
+	else
+	{
+		node = (struct nsObject *)GetHead((struct List *)ami_mime_list);
+	}
+
+	do
+	{
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		mimeentry = node->objstruct;
+
+		lerror = lwc_error_ok;
+
+		switch(type)
+		{
+			case AMI_MIME_MIMETYPE:
+				if(search != NULL)
+					lerror = lwc_string_isequal(mimeentry->mimetype, search, &ret);
+				else if(mimeentry->mimetype != NULL)
+					ret = true;
+			break;
+
+			case AMI_MIME_DATATYPE:
+				if(search != NULL)
+					lerror = lwc_string_isequal(mimeentry->datatype, search, &ret);
+				else if(mimeentry->datatype != NULL)
+					ret = true;
+			break;
+
+			case AMI_MIME_FILETYPE:
+				if(search != NULL)
+					lerror = lwc_string_isequal(mimeentry->filetype, search, &ret);
+				else if(mimeentry->filetype != NULL)
+					ret = true;
+			break;
+
+			case AMI_MIME_PLUGINCMD:
+				if(search != NULL)
+					lerror = lwc_string_isequal(mimeentry->plugincmd, search, &ret);
+				else if(mimeentry->plugincmd != NULL)
+					ret = true;
+			break;
+		}
+
+		if((lerror == lwc_error_ok) && (ret == true))
+			break;
+
+	}while(node=nnode);
+
+	*start_node = (struct Node *)node;
+
+	if(ret == true) return mimeentry;
+		else return NULL;
+}
+
 /**
  * Return a MIME Type matching a DataType
  *
@@ -341,12 +407,10 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 		lwc_string **mimetype, struct Node *start_node)
 {
 	struct DataTypeHeader *dth;
-	struct nsObject *node;
-	struct nsObject *nnode;
+	struct Node *node;
 	struct ami_mime_entry *mimeentry;
 	lwc_string *dt_name;
 	lwc_error lerror;
-	bool ret = false;
 
 	if(IsMinListEmpty(ami_mime_list)) return NULL;
 	if(dt == NULL) return NULL;
@@ -356,32 +420,73 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 	if (lerror != lwc_error_ok)
 		return NULL;
 
-	if(start_node)
-	{
-		node = (struct nsObject *)GetSucc(start_node);
-		if(node == NULL) return NULL;
-	}
-	else
-	{
-		node = (struct nsObject *)GetHead((struct List *)ami_mime_list);
-	}
-
-	do
-	{
-		nnode=(struct nsObject *)GetSucc((struct Node *)node);
-		mimeentry = node->objstruct;
-		lerror = lwc_string_isequal(mimeentry->datatype, dt_name, &ret);
-
-		if((lerror == lwc_error_ok) && (ret == true))
-		{
-			*mimetype = mimeentry->mimetype;
-			break;
-		}
-
-	}while(node=nnode);
+	node = start_node;
+	mimeentry = ami_mime_entry_locate(dt_name, AMI_MIME_DATATYPE, &node);
 
 	lwc_string_unref(dt_name);
 
-	if(ret == true) return (struct Node *)node;
-		else return NULL;
+	if(mimeentry != NULL)
+	{
+		*mimetype = mimeentry->mimetype;
+		return (struct Node *)node;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+/**
+ * Return the DefIcons type matching a MIME type
+ *
+ * \param mimetype lwc_string MIME type
+ * \param filetype ptr to lwc_string to hold DefIcons type
+ * \param start_node node to feed back in to continue search
+ * \return node or NULL if no match
+ */
+
+struct Node *ami_mime_to_filetype(lwc_string *mimetype,
+		lwc_string **filetype, struct Node *start_node)
+{
+	struct Node *node;
+	struct ami_mime_entry *mimeentry;
+
+	if(IsMinListEmpty(ami_mime_list)) return NULL;
+
+	node = start_node;
+	mimeentry = ami_mime_entry_locate(mimetype, AMI_MIME_MIMETYPE, &node);
+
+	if(mimeentry != NULL)
+	{
+		*filetype = mimeentry->filetype;
+		return (struct Node *)node;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+/**
+ * Compare the MIME type of an hlcache_handle to a DefIcons type
+ */
+
+bool ami_mime_compare(struct hlcache_handle *c, const char *type)
+{
+	bool ret = false;
+	lwc_error lerror;
+	lwc_string *filetype;
+	lwc_string *mime = content_get_mime_type(c);
+
+	lerror = lwc_intern_string(type, strlen(type), &filetype);
+	if (lerror != lwc_error_ok)
+		return false;
+
+	lerror = lwc_string_isequal(filetype, mime, &ret);
+	if (lerror != lwc_error_ok)
+		return false;
+
+	lwc_string_unref(filetype);
+
+	return ret;
 }
