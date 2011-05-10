@@ -46,7 +46,7 @@ typedef enum {
 struct scrollbar_msg_data {
 	struct scrollbar *scrollbar;
 	scrollbar_msg msg;
-	int new_scroll;
+	int scroll_offset;
 	int x0, y0, x1, y1;
 };
 

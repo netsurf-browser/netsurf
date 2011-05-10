@@ -421,7 +421,7 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 
 	msg.scrollbar = s;
 	msg.msg = SCROLLBAR_MSG_MOVED;
-	msg.new_scroll = s->offset;
+	msg.scroll_offset = s->offset;
 	s->client_callback(s->client_data, &msg);
 
 	msg.msg = SCROLLBAR_MSG_REDRAW;
