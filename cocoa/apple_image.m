@@ -60,31 +60,8 @@ static const content_handler apple_image_content_handler = {
 static NSBitmapImageRep *ImageRepForContent( struct content *c );
 static NSData *DataForContent( struct content * c);
 
-static lwc_string **apple_image_mime_types = NULL;
-static size_t types_count = 0;
-static size_t types_capacity = 0;
-
-
-static bool reserve( size_t count )
-{
-	if (types_count + count <= types_capacity) return true;
-	
-	if (types_count == 0) {
-		types_capacity = count;
-	} else {
-		while (types_count + count > types_capacity) {
-			types_capacity *= 2;
-		}
-	}
-	apple_image_mime_types = (lwc_string **)realloc( apple_image_mime_types, types_capacity * sizeof( lwc_string * ) );
-
-	return apple_image_mime_types != NULL;
-}
-
 static nserror register_for_type( NSString *mime )
 {
-	if (!reserve( 1 )) return NSERROR_NOMEM;
-	
 	const char *type = [mime UTF8String];
 	/* nsgif has priority since it supports animated GIF */
 #ifdef WITH_GIF
@@ -92,15 +69,14 @@ static nserror register_for_type( NSString *mime )
 		return NSERROR_OK;
 #endif
 
-	lwc_error lerror = lwc_intern_string( type, strlen( type ), &apple_image_mime_types[types_count] );
+	lwc_string *string = NULL;
+	lwc_error lerror = lwc_intern_string( type, strlen( type ), &string );
 	if (lerror != lwc_error_ok) return NSERROR_NOMEM;
 
-
-	nserror error = content_factory_register_handler( apple_image_mime_types[types_count], &apple_image_content_handler );
+	nserror error = content_factory_register_handler( string, &apple_image_content_handler );
+	lwc_string_unref( string );
 
 	if (error != NSERROR_OK) return error;
-	
-	++types_count;
 	
 	return NSERROR_OK;
 }
@@ -120,11 +96,7 @@ nserror apple_image_init(void)
 		
 		for (NSString *mime in mimeTypes) {
 			nserror error = register_for_type( mime );
-			if (error != NSERROR_OK) {
-				apple_image_fini();
-				return error;
-			}
-			
+			if (error != NSERROR_OK) return error;
 		} 
 	}
 	
@@ -133,11 +105,6 @@ nserror apple_image_init(void)
 
 void apple_image_fini(void)
 {
-	for (size_t i = 0; i < types_count; i++) {
-		lwc_string_unref( apple_image_mime_types[i] );
-	}
-	
-	free( apple_image_mime_types );
 }
 
 nserror apple_image_create(const content_handler *handler,
