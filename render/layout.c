@@ -4918,9 +4918,12 @@ static void layout_update_descendant_bbox(struct box *box, struct box *child,
 	int child_x = child->x - off_x;
 	int child_y = child->y - off_y;
 
+	bool html_object = (child->object &&
+			content_get_type(child->object) == CONTENT_HTML);
+
 	if (child->style == NULL ||
 			(child->style && css_computed_overflow(child->style) ==
-			CSS_OVERFLOW_VISIBLE)) {
+			CSS_OVERFLOW_VISIBLE && html_object == false)) {
 		/* get child's descendant bbox relative to box */
 		child_desc_x0 = child_x + child->descendant_x0;
 		child_desc_y0 = child_y + child->descendant_y0;
