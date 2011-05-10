@@ -96,7 +96,7 @@ nserror amiga_dt_anim_init(void)
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,
 			DTA_DataType, prevdt,
-			DTA_GroupID, GID_PICTURE, // we only support images for now
+			DTA_GroupID, GID_ANIMATION,
 			TAG_DONE)) != NULL)
 	{
 		ReleaseDataType(prevdt);
