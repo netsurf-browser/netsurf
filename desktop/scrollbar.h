@@ -53,43 +53,43 @@ struct scrollbar_msg_data {
 /**
  * Client callback for the scrollbar.
  * 
- * \param client_data	user data passed at scroll creation
- * \param scrollbar_data	struct all necessary message data
+ * \param client_data		user data passed at scroll creation
+ * \param scrollbar_data	scrollbar message data
  */
 typedef void(*scrollbar_client_callback)(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
 
 
-bool scrollbar_create(bool horizontal, int length,
-		int scrolled_dimension, int scrolled_visible,
-  		void *client_data, scrollbar_client_callback client_callback,
-    		struct scrollbar **scrollbar);
+bool scrollbar_create(bool horizontal, int length, int full_size,
+		int visible_size, void *client_data,
+		scrollbar_client_callback client_callback,
+		struct scrollbar **s);
 
-void scrollbar_destroy(struct scrollbar *scrollbar);
+void scrollbar_destroy(struct scrollbar *s);
 
-bool scrollbar_redraw(struct scrollbar *scrollbar, int x, int y,
+bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		const struct rect *clip, float scale);
 		
-void scrollbar_set(struct scrollbar *scrollbar, int scrollbar_val, bool bar);
+void scrollbar_set(struct scrollbar *s, int value, bool bar_pos);
 
-int scrollbar_get_offset(struct scrollbar *scrollbar);
+int scrollbar_get_offset(struct scrollbar *s);
 
-void scrollbar_set_extents(struct scrollbar *scrollbar, int length,
-		int scrolled_visible, int scrolled_dimension);
+void scrollbar_set_extents(struct scrollbar *s, int length,
+		int visible_size, int full_size);
 
-bool scrollbar_is_horizontal(struct scrollbar *scrollbar);
+bool scrollbar_is_horizontal(struct scrollbar *s);
 
-const char *scrollbar_mouse_action(struct scrollbar *scrollbar,
+const char *scrollbar_mouse_action(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y);
 
-void scrollbar_mouse_drag_end(struct scrollbar *scrollbar,
+void scrollbar_mouse_drag_end(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y);
 
-void scrollbar_start_content_drag(struct scrollbar *scrollbar, int x, int y);
+void scrollbar_start_content_drag(struct scrollbar *s, int x, int y);
 
-void scrollbar_make_pair(struct scrollbar *horizontal_scrollbar,
-		struct scrollbar *vertical_scrollbar);
+void scrollbar_make_pair(struct scrollbar *horizontal,
+		struct scrollbar *vertical);
 
-void *scrollbar_get_data(struct scrollbar *scrollbar);
+void *scrollbar_get_data(struct scrollbar *s);
 
 #endif
