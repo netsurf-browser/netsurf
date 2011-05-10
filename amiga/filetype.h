@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2010 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -33,8 +33,16 @@ void ami_mime_entry_free(struct ami_mime_entry *mimeentry);
 
 struct Node *ami_mime_from_datatype(struct DataType *dt,
 		lwc_string **mimetype, struct Node *start_node);
+struct Node *ami_mime_to_filetype(lwc_string *mimetype,
+		lwc_string **filetype, struct Node *start_node);
+struct Node *ami_mime_to_plugincmd(lwc_string *mimetype,
+		lwc_string **plugincmd, struct Node *start_node);
 
+struct Node *ami_mime_has_cmd(lwc_string **mimetype, struct Node *start_node);
+
+bool ami_mime_compare(struct hlcache_handle *c, const char *type);
+
+/* deprecated */
 const char *ami_content_type_to_file_type(content_type type);
 void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype);
-bool ami_mime_compare(struct hlcache_handle *c, const char *type);
 #endif

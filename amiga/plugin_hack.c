@@ -39,12 +39,6 @@
 
 typedef struct amiga_plugin_hack_content {
 	struct content base;
-
-	Object *dto;
-	int x;
-	int y;
-	int w;
-	int h;
 } amiga_plugin_hack_content;
 
 static nserror amiga_plugin_hack_create(const content_handler *handler,
@@ -83,35 +77,26 @@ static const content_handler amiga_plugin_hack_content_handler = {
 
 nserror amiga_plugin_hack_init(void)
 {
-	char dt_mime[50];
-	struct DataType *dt, *prevdt = NULL;
+	struct Node *node = NULL;
 	lwc_string *type;
-	lwc_error lerror;
 	nserror error;
-	BPTR fh = 0;
 
-	if(fh = FOpen("PROGDIR:Resources/MIME/pluginhack", MODE_OLDFILE, 0))
-	{
-		while(FGets(fh, (UBYTE *)&dt_mime, 50) != 0)
+	do {
+		node = ami_mime_has_cmd(&type, node);
+
+		if(node)
 		{
-			dt_mime[strlen(dt_mime) - 1] = '\0';
-			if((dt_mime[0] == '\0') || (dt_mime[0] == '#'))
-				continue; /* Skip blank lines and comments */
-
-			lerror = lwc_intern_string(dt_mime, strlen(dt_mime), &type);
-			if (lerror != lwc_error_ok)
-				return NSERROR_NOMEM;
+			printf("plugin_hack registered %s\n",lwc_string_data(type));
 
 			error = content_factory_register_handler(type, 
-					&amiga_plugin_hack_content_handler);
-
-			lwc_string_unref(type);
+				&amiga_plugin_hack_content_handler);
 
 			if (error != NSERROR_OK)
 				return error;
 		}
-		FClose(fh);
-	}
+
+	}while (node != NULL);
+
 	return NSERROR_OK;
 }
 

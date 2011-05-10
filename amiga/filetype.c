@@ -318,7 +318,7 @@ void ami_mime_entry_free(struct ami_mime_entry *mimeentry)
 /**
  * Return next matching MIME entry
  *
- * \param search lwc_string to search for
+ * \param search lwc_string to search for (or NULL for all)
  * \param type of value being searched for (AMI_MIME_#?)
  * \param start_node node to continue search (updated on exit)
  * \return entry or NULL if no match
@@ -412,7 +412,6 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 	lwc_string *dt_name;
 	lwc_error lerror;
 
-	if(IsMinListEmpty(ami_mime_list)) return NULL;
 	if(dt == NULL) return NULL;
 
 	dth = dt->dtn_Header;
@@ -451,14 +450,68 @@ struct Node *ami_mime_to_filetype(lwc_string *mimetype,
 	struct Node *node;
 	struct ami_mime_entry *mimeentry;
 
-	if(IsMinListEmpty(ami_mime_list)) return NULL;
-
 	node = start_node;
 	mimeentry = ami_mime_entry_locate(mimetype, AMI_MIME_MIMETYPE, &node);
 
 	if(mimeentry != NULL)
 	{
 		*filetype = mimeentry->filetype;
+		return (struct Node *)node;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+/**
+ * Return all MIME types containing a plugincmd
+ *
+ * \param mimetype ptr to lwc_string MIME type
+ * \param start_node node to feed back in to continue search
+ * \return node or NULL if no match
+ */
+
+struct Node *ami_mime_has_cmd(lwc_string **mimetype, struct Node *start_node)
+{
+	struct Node *node;
+	struct ami_mime_entry *mimeentry;
+
+	node = start_node;
+	mimeentry = ami_mime_entry_locate(NULL, AMI_MIME_PLUGINCMD, &node);
+
+	if(mimeentry != NULL)
+	{
+		*mimetype = mimeentry->mimetype;
+		return (struct Node *)node;
+	}
+	else
+	{
+		return NULL;
+	}
+}
+
+/**
+ * Return the plugincmd matching a MIME type
+ *
+ * \param mimetype lwc_string MIME type
+ * \param plugincmd ptr to lwc_string to hold plugincmd
+ * \param start_node node to feed back in to continue search
+ * \return node or NULL if no match
+ */
+
+struct Node *ami_mime_to_plugincmd(lwc_string *mimetype,
+		lwc_string **plugincmd, struct Node *start_node)
+{
+	struct Node *node;
+	struct ami_mime_entry *mimeentry;
+
+	node = start_node;
+	mimeentry = ami_mime_entry_locate(mimetype, AMI_MIME_MIMETYPE, &node);
+
+	if(mimeentry != NULL)
+	{
+		*plugincmd = mimeentry->plugincmd;
 		return (struct Node *)node;
 	}
 	else

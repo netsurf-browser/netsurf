@@ -92,17 +92,18 @@ nserror amiga_dt_anim_init(void)
 	lwc_error lerror;
 	nserror error;
 	BPTR fh = 0;
+	struct Node *node = NULL;
 
 	while((dt = ObtainDataType(DTST_RAM, NULL,
 			DTA_DataType, prevdt,
-			DTA_GroupID, GID_ANIMATION,
+			DTA_GroupID, GID_PICTURE, // we only support images for now
 			TAG_DONE)) != NULL)
 	{
 		ReleaseDataType(prevdt);
 		prevdt = dt;
 		ami_datatype_to_mimetype(dt, dt_mime);
 
-		LOG(("Guessed MIME from DT: %s", dt_mime));
+		LOG(("Guessed MIME from anim DT: %s", dt_mime));
 
 		lerror = lwc_intern_string(dt_mime, strlen(dt_mime), &type);
 		if (lerror != lwc_error_ok)
@@ -116,32 +117,24 @@ nserror amiga_dt_anim_init(void)
 		if (error != NSERROR_OK)
 			return error;
 
+		do {
+			node = ami_mime_from_datatype(dt, &type, node);
+
+			if(node)
+			{
+				error = content_factory_register_handler(type, 
+					&amiga_dt_anim_content_handler);
+
+				if (error != NSERROR_OK)
+					return error;
+			}
+
+		}while (node != NULL);
+
 	}
 
 	ReleaseDataType(prevdt);
 
-	if(fh = FOpen("PROGDIR:Resources/MIME/dt.animation", MODE_OLDFILE, 0))
-	{
-		while(FGets(fh, (UBYTE *)&dt_mime, 50) != 0)
-		{
-			dt_mime[strlen(dt_mime) - 1] = '\0';
-			if((dt_mime[0] == '\0') || (dt_mime[0] == '#'))
-				continue; /* Skip blank lines and comments */
-
-			lerror = lwc_intern_string(dt_mime, strlen(dt_mime), &type);
-			if (lerror != lwc_error_ok)
-				return NSERROR_NOMEM;
-
-			error = content_factory_register_handler(type, 
-					&amiga_dt_anim_content_handler);
-
-			lwc_string_unref(type);
-
-			if (error != NSERROR_OK)
-				return error;
-		}
-		FClose(fh);
-	}
 	return NSERROR_OK;
 }
 
