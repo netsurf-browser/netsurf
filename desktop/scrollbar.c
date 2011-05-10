@@ -76,22 +76,9 @@ colour scrollbar_widget_bg_colour = 0x006b6b6b; /* mid grey */
 colour scrollbar_widget_arrow_colour = 0x00444444; /* dark grey */
 
 
-/**
- * Create a scrollbar.
- *
- * \param horizontal		true for a horizontal scrollbar false for a
- * 				vertical one
- * \param length		length of scrollbar widget
- * \param full_size		length of contained scrollable area
- * \param visible_size		length of visible part of scrollable area
- * \param client_data		data for the client callback
- * \param client_callback	client callback for scrollbar events
- * \param s			gets updated to point at the newly created
- * 				scrollbar
- * \return			true if scrollbar has been created succesfully
- *				or false on memory exhaustion
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 bool scrollbar_create(bool horizontal, int length, int full_size,
 		int visible_size, void *client_data,
 		scrollbar_client_callback client_callback,
@@ -132,12 +119,9 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 }
 
 
-/**
- * Destroy a scrollbar.
- *
- * \param s	the scrollbar to be destroyed
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 void scrollbar_destroy(struct scrollbar *s)
 {
 	if (s->pair != NULL)
@@ -198,17 +182,9 @@ static inline bool scrollbar_redraw_scrollbar_rectangle(int x0, int y0,
 }
 
 
-/**
- * Redraw a part of the scrollbar.
- *
- * \param s	the scrollbar to be redrawn
- * \param x	the X coordinate to draw the scrollbar at
- * \param y	the Y coordinate to draw the scrollbar at
- * \param clip	the clipping rectangle
- * \param scale	scale for the redraw
- * \return	true on succes false otherwise
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 bool scrollbar_redraw(struct scrollbar *s, int x, int y, 
 		const struct rect *clip, float scale)
 {
@@ -410,15 +386,9 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 }
 
 
-/**
- * Set the value of the scrollbar.
- *
- * \param s		the scrollbar to have the value set
- * \param value		the new value to be set
- * \param bar_pos	true if the value is for the scrollbar indication bar
- *			position, false if it is for the scrolled area offset
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 {
 	int well_length;
@@ -466,13 +436,9 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 }
 
 
-/**
- * Get the current scroll offset to the visible part of the full area.
- *
- * \param s	the scrollbar to get the scroll offset value from
- * \return	current scroll offset
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 int scrollbar_get_offset(struct scrollbar *s)
 {
 	if (s == NULL)
@@ -481,16 +447,9 @@ int scrollbar_get_offset(struct scrollbar *s)
 }
 
 
-/**
- * Set the length of the scrollbar widget, the size of the visible area, and the
- * size of the full area.
- *
- * \param s		the scrollbar to set the values for
- * \param length	-1 or the new scrollbar widget length
- * \param visible_size	-1 or the new size of the visible area
- * \param full_size	-1 or the new size of the full contained area
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 void scrollbar_set_extents(struct scrollbar *s, int length,
 		int visible_size, int full_size)
 {
@@ -512,13 +471,9 @@ void scrollbar_set_extents(struct scrollbar *s, int length,
 }
 
 
-/**
- * Check orientation of the scrollbar.
- *
- * \param s	the scrollbar to check the orientation of
- * \return	true for a horizontal scrollbar, else false (vertical)
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 bool scrollbar_is_horizontal(struct scrollbar *s)
 {
 	return s->horizontal;
@@ -586,16 +541,9 @@ static void scrollbar_drag_start_internal(struct scrollbar *s, int x, int y,
 }
 
 
-/**
- * Handle mouse actions other then drag ends.
- *
- * \param s	the scrollbar which gets the mouse action
- * \param mouse	mouse state
- * \param x	X coordinate of the mouse
- * \param y	Y coordinate of the mouse
- * \return	message for the status bar or NULL on failure
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 const char *scrollbar_mouse_action(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -708,15 +656,9 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 }
 
 
-/**
- * Handle end of mouse drags.
- *
- * \param s	the scrollbar for which the drag ends
- * \param mouse	mouse state
- * \param x	X coordinate of the mouse
- * \param y	Y coordinate of the mouse
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 void scrollbar_mouse_drag_end(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y)
 {
@@ -757,31 +699,18 @@ void scrollbar_mouse_drag_end(struct scrollbar *s,
 }
 
 
-/**
- * Called when the content is being dragged to the scrollbars have to adjust.
- * If the content has both scrollbars, and scrollbar_make_pair has beed called
- * before, only the one scroll which will receive further mouse events has to be
- * passed.
- *
- * \param s	one of the the scrollbars owned by the dragged content
- * \param x	X coordinate of mouse during drag start
- * \param y	Y coordinate of mouse during drag start
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 void scrollbar_start_content_drag(struct scrollbar *s, int x, int y)
 {
 	scrollbar_drag_start_internal(s, x, y, true, true);
 }
 
 
-/**
- * Connect a horizontal and a vertical scrollbar into a pair so that they
- * co-operate during 2D drags.
- *
- * \param horizontal	the scrollbar used for horizontal scrolling
- * \param vertical	the scrollbar used for vertical scrolling
+/*
+ * Exported function.  Documented in scrollbar.h
  */
-
 void scrollbar_make_pair(struct scrollbar *horizontal,
 		struct scrollbar *vertical)
 {
@@ -793,6 +722,9 @@ void scrollbar_make_pair(struct scrollbar *horizontal,
 }
 
 
+/*
+ * Exported function.  Documented in scrollbar.h
+ */
 void *scrollbar_get_data(struct scrollbar *s)
 {
 	return s->client_data;

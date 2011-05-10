@@ -60,36 +60,133 @@ typedef void(*scrollbar_client_callback)(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
 
 
+/**
+ * Create a scrollbar.
+ *
+ * \param horizontal		true = horizontal scrollbar, false = vertical
+ * \param length		length of scrollbar widget
+ * \param full_size		length of contained scrollable area
+ * \param visible_size		length of visible part of scrollable area
+ * \param client_data		data for the client callback
+ * \param client_callback	client callback for scrollbar events
+ * \param s			updated to point at the newly created scrollbar
+ * \return	true if scrollbar has been created succesfully or false on
+ *		memory exhaustion
+ */
 bool scrollbar_create(bool horizontal, int length, int full_size,
 		int visible_size, void *client_data,
 		scrollbar_client_callback client_callback,
 		struct scrollbar **s);
 
+/**
+ * Destroy a scrollbar.
+ *
+ * \param s	the scrollbar to be destroyed
+ */
 void scrollbar_destroy(struct scrollbar *s);
 
+/**
+ * Redraw a part of the scrollbar.
+ *
+ * \param s	the scrollbar to be redrawn
+ * \param x	the X coordinate to draw the scrollbar at
+ * \param y	the Y coordinate to draw the scrollbar at
+ * \param clip	the clipping rectangle
+ * \param scale	scale for the redraw
+ * \return	true on succes false otherwise
+ */
 bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		const struct rect *clip, float scale);
-		
+
+/**
+ * Set the scroll value of the scrollbar.
+ *
+ * \param s		the scrollbar to have the value set
+ * \param value		the new value to be set
+ * \param bar_pos	true if the value is for the scrollbar indication bar
+ *			position, false if it is for the scrolled area offset
+ */
 void scrollbar_set(struct scrollbar *s, int value, bool bar_pos);
 
+/**
+ * Get the current scroll offset to the visible part of the full area.
+ *
+ * \param s	the scrollbar to get the scroll offset value from
+ * \return	current scroll offset
+ */
 int scrollbar_get_offset(struct scrollbar *s);
 
+/**
+ * Set the length of the scrollbar widget, the size of the visible area, and the
+ * size of the full area.
+ *
+ * \param s		the scrollbar to set the values for
+ * \param length	-1 or the new scrollbar widget length
+ * \param visible_size	-1 or the new size of the visible area
+ * \param full_size	-1 or the new size of the full contained area
+ */
 void scrollbar_set_extents(struct scrollbar *s, int length,
 		int visible_size, int full_size);
 
+/**
+ * Check orientation of the scrollbar.
+ *
+ * \param s	the scrollbar to check the orientation of
+ * \return	true for a horizontal scrollbar, else false (vertical)
+ */
 bool scrollbar_is_horizontal(struct scrollbar *s);
 
+/**
+ * Handle mouse actions other then drag ends.
+ *
+ * \param s	the scrollbar which gets the mouse action
+ * \param mouse	mouse state
+ * \param x	X coordinate of the mouse
+ * \param y	Y coordinate of the mouse
+ * \return	message for the status bar or NULL on failure
+ */
 const char *scrollbar_mouse_action(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y);
 
+/**
+ * Handle end of mouse drags.
+ *
+ * \param s	the scrollbar for which the drag ends
+ * \param mouse	mouse state
+ * \param x	X coordinate of the mouse
+ * \param y	Y coordinate of the mouse
+ */
 void scrollbar_mouse_drag_end(struct scrollbar *s,
 		browser_mouse_state mouse, int x, int y);
 
+/**
+ * Called when the content is being dragged to the scrollbars have to adjust.
+ * If the content has both scrollbars, and scrollbar_make_pair has beed called
+ * before, only the one scroll which will receive further mouse events has to be
+ * passed.
+ *
+ * \param s	one of the the scrollbars owned by the dragged content
+ * \param x	X coordinate of mouse during drag start
+ * \param y	Y coordinate of mouse during drag start
+ */
 void scrollbar_start_content_drag(struct scrollbar *s, int x, int y);
 
+/**
+ * Connect a horizontal and a vertical scrollbar into a pair so that they
+ * co-operate during 2D drags.
+ *
+ * \param horizontal	the scrollbar used for horizontal scrolling
+ * \param vertical	the scrollbar used for vertical scrolling
+ */
 void scrollbar_make_pair(struct scrollbar *horizontal,
 		struct scrollbar *vertical);
 
+/**
+ * Get the scrollbar's client data
+ *
+ * \param s	the scrollbar to get the client data from
+ * \return	client data
+ */
 void *scrollbar_get_data(struct scrollbar *s);
 
 #endif
