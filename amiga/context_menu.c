@@ -267,7 +267,8 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				menuhascontent = true;
 			}
 
-			if(no_obj && curbox->object)
+			if(no_obj && curbox->object &&
+				(content_get_type(curbox->object) == CONTENT_IMAGE))
 			{
 				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,
