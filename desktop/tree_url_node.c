@@ -62,6 +62,7 @@ struct icon_entry icon_table[] = {
 	{CONTENT_TEXTPLAIN, NULL},
 	{CONTENT_CSS, NULL},
 	{CONTENT_IMAGE, NULL},
+	{CONTENT_NONE, NULL},
 
 	/* this serves as a sentinel */
 	{CONTENT_HTML, NULL}
