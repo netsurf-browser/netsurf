@@ -20,22 +20,19 @@
  * DataTypes picture handler (implementation)
 */
 
-#ifdef WITH_AMIGA_PLUGIN_HACK
 #include "amiga/filetype.h"
 #include "amiga/plugin_hack.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
-#include "image/bitmap.h"
 #include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
 
-#include <proto/datatypes.h>
 #include <proto/dos.h>
+#include <proto/exec.h>
 #include <proto/intuition.h>
-#include <datatypes/pictureclass.h>
-#include <intuition/classusr.h>
+#include <proto/utility.h>
 
 typedef struct amiga_plugin_hack_content {
 	struct content base;
@@ -58,15 +55,12 @@ static void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 static void amiga_plugin_hack_close(struct content *c);
 static nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc);
 static content_type amiga_plugin_hack_content_type(lwc_string *mime_type);
-static void amiga_plugin_hack_mouse_action(struct content *c,
-		struct browser_window *bw, browser_mouse_state mouse, int x, int y);
 
 static const content_handler amiga_plugin_hack_content_handler = {
 	.create = amiga_plugin_hack_create,
 	.data_complete = amiga_plugin_hack_convert,
 	.reformat = amiga_plugin_hack_reformat,
 	.destroy = amiga_plugin_hack_destroy,
-	.mouse_action = amiga_plugin_hack_mouse_action,
 	.redraw = amiga_plugin_hack_redraw,
 	.open = amiga_plugin_hack_open,
 	.close = amiga_plugin_hack_close,
@@ -133,6 +127,11 @@ bool amiga_plugin_hack_convert(struct content *c)
 {
 	LOG(("amiga_plugin_hack_convert"));
 
+	content_set_ready(c);
+	content_set_done(c);
+
+	content_set_status(c, "");
+
 	return true;
 }
 
@@ -145,22 +144,19 @@ void amiga_plugin_hack_destroy(struct content *c)
 	return;
 }
 
-static void amiga_plugin_hack_mouse_action(struct content *c,
-		struct browser_window *bw, browser_mouse_state mouse, int x, int y)
-{
-	printf("action %ld for object %s\n", mouse, content__get_url(c));
-	return;
-}
-
 bool amiga_plugin_hack_redraw(struct content *c, int x, int y,
 	int width, int height, const struct rect *clip,
 	float scale, colour background_colour,
 	bool repeat_x, bool repeat_y)
 {
+	static plot_style_t pstyle;
+
 	LOG(("amiga_plugin_hack_redraw"));
 
-	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, BITMAPF_NONE);
+	plot.rectangle(x, y, x + width, y + height, plot_style_fill_red);
+	return plot.text(x, y+20, lwc_string_data(content__get_mime_type(c)),
+		lwc_string_length(content__get_mime_type(c)), plot_style_font);
+
 }
 
 /**
@@ -177,9 +173,10 @@ void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct box *box,
 	struct object_params *params)
 {
-	LOG(("amiga_plugin_hack_open"));
+	LOG(("amiga_plugin_hack_open %s", content__get_url(c)));
 
-printf("open %s\n",content__get_url(c));
+	c->width = box->width;
+	c->height = box->height;
 
 	return;
 }
@@ -193,6 +190,10 @@ void amiga_plugin_hack_close(struct content *c)
 void amiga_plugin_hack_reformat(struct content *c, int width, int height)
 {
 	LOG(("amiga_plugin_hack_reformat"));
+
+	c->width = width;
+	c->height = height;
+
 	return;
 }
 
@@ -232,4 +233,39 @@ content_type amiga_plugin_hack_content_type(lwc_string *mime_type)
 	return CONTENT_PLUGIN;
 }
 
-#endif
+void amiga_plugin_hack_execute(struct hlcache_handle *c)
+{
+	lwc_string *mimetype;
+	lwc_string *plugincmd;
+	struct Node *node;
+	char *full_cmd;
+	BPTR in, out;
+
+	if(c == NULL) return;
+
+	mimetype = content_get_mime_type(c);
+	node = ami_mime_to_plugincmd(mimetype, &plugincmd, NULL);
+
+	if(node && plugincmd)
+	{
+		full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), content_get_url(c));
+
+		if(full_cmd)
+		{
+			LOG(("Attempting to execute %s", full_cmd));
+
+			in = Open("NIL:", MODE_OLDFILE);
+			out = Open("NIL:", MODE_NEWFILE);
+
+			SystemTags(full_cmd,
+				SYS_Input, in,
+				SYS_Output, out,
+				SYS_Error, out,
+				SYS_Asynch, TRUE,
+				NP_Name, "NetSurf External Process",
+				TAG_DONE);
+
+			FreeVec(full_cmd);
+		}
+	}
+}

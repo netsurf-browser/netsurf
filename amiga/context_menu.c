@@ -33,6 +33,7 @@
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/options.h"
+#include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
 #include "desktop/textinput.h"
@@ -70,6 +71,7 @@ enum {
 	CMID_SELCOPY,
 	CMID_SELPASTE,
 	CMID_SELSEARCH,
+	CMID_PLUGINCMD,
 	CMSUB_OBJECT,
 	CMSUB_URL,
 	CMSUB_SEL,
@@ -106,6 +108,8 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_SELALL] = ami_utf8_easy((char *)messages_get("SelectAllNS"));
 	ctxmenulab[CMID_SELCLEAR] = ami_utf8_easy((char *)messages_get("ClearNS"));
 	ctxmenulab[CMID_SELSEARCH] = ami_utf8_easy((char *)messages_get("SearchWeb"));
+
+	ctxmenulab[CMID_PLUGINCMD] = ami_utf8_easy((char *)messages_get("ExternalApp"));
 
 	ctxmenulab[CMSUB_OBJECT] = ami_utf8_easy((char *)messages_get("Object"));
 	ctxmenulab[CMSUB_URL] = ami_utf8_easy((char *)messages_get("Link"));
@@ -360,6 +364,19 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				menuhascontent = true;
 			}
 
+			if(curbox->object &&
+				(content_get_type(curbox->object) == CONTENT_PLUGIN))
+			{
+				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+					NewObject(POPUPMENU_GetItemClass(), NULL,
+						PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
+						PMIA_ID, CMID_PLUGINCMD,
+						PMIA_UserData, curbox->object,
+						TAG_DONE),
+					~0);
+
+				menuhascontent = true;
+			}
 			if (curbox->gadget)
 			{
 				switch (curbox->gadget->type)
@@ -538,6 +555,10 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 #endif
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 				}
+			break;
+
+			case CMID_PLUGINCMD:
+				amiga_plugin_hack_execute((struct hlcache_handle *)userdata);
 			break;
 
 			case CMID_HISTORY:

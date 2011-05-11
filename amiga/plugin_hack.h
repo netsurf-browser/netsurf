@@ -22,16 +22,10 @@
 #include "utils/config.h"
 #include "utils/errors.h"
 
-#ifdef WITH_AMIGA_PLUGIN_HACK
+struct hlcache_handle;
 
 nserror amiga_plugin_hack_init(void);
 void amiga_plugin_hack_fini(void);
 
-#else
-
-#define amiga_plugin_hack_init() NSERROR_OK
-#define amiga_plugin_hack_fini() ((void) 0)
-
-#endif /* WITH_AMIGA_DATATYPES */
-
+void amiga_plugin_hack_execute(struct hlcache_handle *c);
 #endif
