@@ -506,15 +506,15 @@ static void scrollbar_drag_start_internal(struct scrollbar *s, int x, int y,
 
 	/* \todo - some proper numbers please! */
 	if (s->horizontal) {
-		msg.x0 = -1024;
-		msg.x1 = 1024;
+		msg.x0 = -2048;
+		msg.x1 = 2048;
 		msg.y0 = 0;
 		msg.y1 = 0;
 	} else {
 		msg.x0 = 0;
 		msg.x1 = 0;
-		msg.y0 = -1024;
-		msg.y1 = 1024;
+		msg.y0 = -2048;
+		msg.y1 = 2048;
 	}
 
 	if (pair && s->pair != NULL) {
@@ -530,11 +530,11 @@ static void scrollbar_drag_start_internal(struct scrollbar *s, int x, int y,
 		s->pair->drag_content = content_drag;
 
 		if (s->pair->horizontal) {
-			msg.x0 = -1024;
-			msg.x1 = 1024;
+			msg.x0 = -2048;
+			msg.x1 = 2048;
 		} else {
-			msg.y0 = -1024;
-			msg.y1 = 1024;
+			msg.y0 = -2048;
+			msg.y1 = 2048;
 		}
 	}
 	msg.msg = SCROLLBAR_MSG_SCROLL_START;
