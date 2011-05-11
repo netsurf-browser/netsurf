@@ -689,6 +689,11 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 	}
 
+	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+			box->type == BOX_TABLE_CELL || box->type == BOX_INLINE)
+		if (!plot.clip(clip))
+			return false;
+
 	/* list marker */
 	if (box->list_marker)
 		if (!html_redraw_box(box->list_marker,
