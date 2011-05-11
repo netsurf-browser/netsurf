@@ -53,10 +53,10 @@ struct scrollbar {
 
 	bool dragging;		/* Flag indicating drag at progess */
 	int drag_start_coord;	/* Coordinate value at drag start */
-	int drag_start_bar_pos;	/* Scrollbar offset at drag start */
-	bool reverse;		/* Flag indicating that the scrollbar moves
-				 * in the opposite direction to the mouse
-				 */
+	int drag_start_pos;	/* Scrollbar offset or bar_pos at drag start */
+	bool drag_content;	/* Flag indicating that the drag corresponds to
+				 * a dragged content area, rather than a dragged
+				 * scrollbar. */
 
 	struct scrollbar *pair;	/* Parpendicular scrollbar, or NULL */
 	bool pair_drag;		/* Flag indicating that the current drag affects
@@ -101,7 +101,6 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 	scrollbar->visible_size = visible_size;
 	scrollbar->offset = 0;
 	scrollbar->bar_pos = 0;
-	scrollbar->reverse = false;
 	scrollbar->pair = NULL;
 	scrollbar->pair_drag = false;
 
@@ -112,6 +111,7 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 	scrollbar->client_data = client_data;
 
 	scrollbar->dragging = false;
+	scrollbar->drag_content = false;
 
 	*s = scrollbar;
 
@@ -486,21 +486,21 @@ bool scrollbar_is_horizontal(struct scrollbar *s)
  * \param s		the scrollbar to start the drag for
  * \param x		the X coordinate of the drag start
  * \param y		the Y coordinate of the drag start
- * \param reverse	whether this should be a reverse drag (used when the
+ * \param content_drag	whether this should be a reverse drag (used when the
  * 			user drags the content area, rather than the scrollbar)
  * \param pair		whether the drag is a '2D' scroll
  */
 
 static void scrollbar_drag_start_internal(struct scrollbar *s, int x, int y,
-		bool reverse, bool pair)
+		bool content_drag, bool pair)
 {
 	struct scrollbar_msg_data msg;
 
 	s->drag_start_coord = s->horizontal ? x : y;
-	s->drag_start_bar_pos = s->bar_pos;
+	s->drag_start_pos = (content_drag) ? s->offset : s->bar_pos;
 
 	s->dragging = true;
-	s->reverse = reverse;
+	s->drag_content = content_drag;
 
 	msg.scrollbar = s;
 
@@ -523,10 +523,11 @@ static void scrollbar_drag_start_internal(struct scrollbar *s, int x, int y,
 		s->pair->drag_start_coord =
 				s->pair->horizontal ? x : y;
 
-		s->pair->drag_start_bar_pos = s->pair->bar_pos;
+		s->pair->drag_start_pos = (content_drag) ? s->pair->offset :
+				s->pair->bar_pos;
 
 		s->pair->dragging = true;
-		s->pair->reverse = reverse;
+		s->pair->drag_content = content_drag;
 
 		if (s->pair->horizontal) {
 			msg.x0 = -1024;
@@ -584,10 +585,11 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 
 	if (s->dragging) {
 		val -= s->drag_start_coord;
-		if (s->reverse)
+		if (s->drag_content)
 			val = -val;
 		if (val != 0)
-			scrollbar_set(s, s->drag_start_bar_pos + val, true);
+			scrollbar_set(s, s->drag_start_pos + val,
+					!(s->drag_content));
 		if (s->pair_drag) {
 			scrollbar_mouse_action(s->pair, mouse, x, y);
 			status = messages_get("ScrollBoth");
@@ -667,30 +669,31 @@ void scrollbar_mouse_drag_end(struct scrollbar *s,
 
 	assert(s->dragging);
 
-	drag_start_pos = s->drag_start_bar_pos;
+	drag_start_pos = s->drag_start_pos;
 	val = (s->horizontal ? x : y) - s->drag_start_coord;
 
-	if (s->reverse)
+	if (s->drag_content)
 		val = -val;
 	if (val != 0)
-		scrollbar_set(s, drag_start_pos + val, true);
+		scrollbar_set(s, drag_start_pos + val, !(s->drag_content));
 
 	s->dragging = false;
-	s->reverse = false;
+	s->drag_content = false;
 
 	if (s->pair_drag) {
 		s->pair_drag = false;
 
-		drag_start_pos = s->pair->drag_start_bar_pos;
+		drag_start_pos = s->pair->drag_start_pos;
 		val = (s->pair->horizontal ? x : y) - s->pair->drag_start_coord;
 
-		if (s->pair->reverse)
+		if (s->pair->drag_content)
 			val = -val;
 		if (val != 0)
-			scrollbar_set(s->pair, drag_start_pos + val, true);
+			scrollbar_set(s->pair, drag_start_pos + val,
+					!(s->pair->drag_content));
 
 		s->pair->dragging = false;
-		s->pair->reverse = false;
+		s->pair->drag_content = false;
 	}
 
 	msg.scrollbar = s;

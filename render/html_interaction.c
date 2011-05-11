@@ -863,7 +863,8 @@ size_t html_selection_drag_end(hlcache_handle *h, browser_mouse_state mouse,
 
 void html_box_drag_start(struct box *box, int x, int y)
 {
-	int box_x, box_y, scroll_mouse_x, scroll_mouse_y;
+	int box_x, box_y;
+	int scroll_mouse_x, scroll_mouse_y;
 	
 	box_coords(box, &box_x, &box_y);
 	
