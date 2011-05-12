@@ -559,6 +559,8 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 						 action: @selector(reloadPage:) keyEquivalent: @""];
 	[popupMenu addItemWithTitle: NSLocalizedString( @"Forward", @"Context menu" )
 						 action: @selector(goForward:) keyEquivalent: @""];
+	[popupMenu addItemWithTitle: NSLocalizedString( @"View Source", @"Context menu" )
+						 action: @selector(viewSource:) keyEquivalent: @""];
 	
 	[NSMenu popUpContextMenu: popupMenu withEvent: event forView: self];
 	

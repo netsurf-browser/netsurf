@@ -67,6 +67,8 @@ struct browser_window;
 - (IBAction) zoomOut: (id) sender;
 - (IBAction) zoomOriginal: (id) sender;
 
+- (IBAction) viewSource: (id) sender;
+
 - (void) buildBackMenu: (NSMenu *)menu;
 - (void) buildForwardMenu: (NSMenu *)menu;
 

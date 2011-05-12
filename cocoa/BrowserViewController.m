@@ -16,7 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/BrowserView.h"
 #import "cocoa/BrowserWindowController.h"
@@ -26,6 +25,9 @@
 #import "desktop/textinput.h"
 #import "desktop/options.h"
 #import "desktop/selection.h"
+
+#import "utils/filename.h"
+#import "utils/url.h"
 
 
 @implementation BrowserViewController
@@ -123,6 +125,67 @@
 - (IBAction) stopLoading: (id) sender;
 {
 	browser_window_stop( browser );
+}
+
+- (IBAction) viewSource: (id) sender;
+{
+	struct hlcache_handle *content;
+	size_t size;
+	const char *source;
+	const char *path = NULL;
+
+	if (browser == NULL)
+		return;
+	content = browser->current_content;
+	if (content == NULL)
+		return;
+	source = content_get_source_data(content, &size);
+	if (source == NULL)
+		return;
+
+	/* try to load local files directly. */
+	char *scheme;
+	if (url_scheme(content_get_url(content), &scheme) != URL_FUNC_OK)
+		return;
+	if (strcmp(scheme, "file") == 0)
+		path = url_to_path(content_get_url(content));
+	free(scheme);
+
+	if (path == NULL) {
+		/* We cannot release the requested filename until after it
+		 * has finished being used. As we can't easily find out when
+		 * this is, we simply don't bother releasing it and simply
+		 * allow it to be re-used next time NetSurf is started. The
+		 * memory overhead from doing this is under 1 byte per
+		 * filename. */
+		const char *filename = filename_request();
+		const char *extension = "txt";
+		fprintf(stderr, "filename '%p'\n", filename);
+		if (filename == NULL)
+			return;
+		lwc_string *str = content_get_mime_type(content);
+		if (str) {
+			NSString *mime = [NSString stringWithUTF8String:lwc_string_data(str)];
+			NSString *uti = (NSString *)UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (CFStringRef)mime, NULL);
+			NSString *ext = (NSString *)UTTypeCopyPreferredTagWithClass((CFStringRef)uti, kUTTagClassFilenameExtension);
+			extension = [ext UTF8String];
+			lwc_string_unref(str);
+		}
+
+		NSURL *dataUrl = [NSURL URLWithString:[NSString stringWithFormat:@"%s.%s", filename, extension]
+			relativeToURL:[NSURL fileURLWithPath:@TEMP_FILENAME_PREFIX]];
+
+
+		NSData *data = [NSData dataWithBytes:source length:size];
+		[data writeToURL:dataUrl atomically:NO];
+		path = [[dataUrl path] UTF8String];
+	}
+
+	if (path) {
+		NSString * p = [NSString stringWithUTF8String: path];
+		NSWorkspace * ws = [NSWorkspace sharedWorkspace];
+		[ws openFile:p withApplication:@"Xcode"];	
+	}
 }
 
 static inline bool compare_float( float a, float b )

@@ -37,6 +37,7 @@
 #import "desktop/tree.h"
 #import "render/html.h"
 #import "utils/url.h"
+#import "utils/filename.h"
 #import "utils/log.h"
 #import "utils/messages.h"
 #import "utils/utils.h"
@@ -179,6 +180,9 @@ int main( int argc, char **argv )
 	option_ca_bundle = strdup( [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String] );
 
 	netsurf_init(&argc, &argv, options, messages);
+
+	/* Initialise filename allocator */
+	filename_initialise();
 
 	apple_image_init();
 	
