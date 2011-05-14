@@ -145,6 +145,7 @@ static bool fetch_about_credits_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+
 static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 {
 	/* content is going to return redirect */
@@ -373,6 +374,17 @@ fetch_about_testament_handler_aborted:
 	return false;
 }
 
+static bool fetch_about_logo_handler(struct fetch_about_context *ctx)
+{
+	/* content is going to return redirect */
+	fetch_set_http_code(ctx->fetchh, 302);
+
+	fetch_about_send_callback(FETCH_REDIRECT, ctx, "resource:netsurf.png",
+			0, FETCH_ERROR_NO_ERROR);
+
+	return true;
+}
+
 /* Forward declaration because this handler requires the handler table. */
 static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
@@ -390,6 +402,7 @@ struct about_handlers about_handler_list[] = {
 	{ "Choices", fetch_about_choices_handler, false },
 	{ "testament", fetch_about_testament_handler, false },
 	{ "about", fetch_about_about_handler, true },
+	{ "logo", fetch_about_logo_handler, true },
 	{ "blank", fetch_about_blank_handler, true } /* The default */
 };
 
