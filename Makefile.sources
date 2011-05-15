@@ -7,7 +7,7 @@
 S_CONTENT := content.c content_factory.c dirlist.c fetch.c hlcache.c	\
 	llcache.c urldb.c
 
-S_FETCHERS := curl.c data.c file.c about.c resource.c
+S_FETCHERS := curl.c data.c doi.c file.c about.c resource.c
 
 S_CSS := css.c dump.c internal.c select.c utils.c
 

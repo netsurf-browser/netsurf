@@ -42,6 +42,7 @@
 #include "content/fetchers/about.h"
 #include "content/fetchers/curl.h"
 #include "content/fetchers/data.h"
+#include "content/fetchers/doi.h"
 #include "content/fetchers/file.h"
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
@@ -112,6 +113,7 @@ void fetch_init(void)
 {
 	fetch_curl_register();
 	fetch_data_register();
+	fetch_doi_register();
 	fetch_file_register();
 	fetch_resource_register();
 	fetch_about_register();
