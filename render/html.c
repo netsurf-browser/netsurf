@@ -1909,13 +1909,6 @@ nserror html_clone(const struct content *old, struct content **newc)
 
 void html_set_status(html_content *c, const char *extra)
 {
-	unsigned int stylesheets = 0, objects = 0;
-	if (c->num_objects == 0)
-		stylesheets = c->stylesheet_count - c->base.active;
-	else {
-		stylesheets = c->stylesheet_count;
-		objects = c->num_objects - c->base.active;
-	}
 	content_set_status(&c->base, "%s", extra);
 }
 
