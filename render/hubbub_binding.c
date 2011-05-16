@@ -468,12 +468,12 @@ hubbub_error ref_node(void *ctx, void *node)
 		xmlDoc *n = (xmlDoc *) node;
 		uintptr_t count = (uintptr_t) n->_private;
 
-		n->_private = (void *) ++count;
+		n->_private = (void *) (++count);
 	} else {
 		xmlNode *n = (xmlNode *) node;
 		uintptr_t count = (uintptr_t) n->_private;
 
-		n->_private = (void *) ++count;
+		n->_private = (void *) (++count);
 	}
 
 	return HUBBUB_OK;
@@ -489,14 +489,14 @@ hubbub_error unref_node(void *ctx, void *node)
 
 		assert(count != 0 && "Node has refcount of zero");
 
-		n->_private = (void *) --count;
+		n->_private = (void *) (--count);
 	} else {
 		xmlNode *n = (xmlNode *) node;
 		uintptr_t count = (uintptr_t) n->_private;
 
 		assert(count != 0 && "Node has refcount of zero");
 
-		n->_private = (void *) --count;
+		n->_private = (void *) (--count);
 
 		if (count == 0 && n->parent == NULL) {
 			xmlFreeNode(n);
