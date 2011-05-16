@@ -1969,10 +1969,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 		event.type = LLCACHE_EVENT_ERROR;
 		event.data.msg = messages_get("BadRedirect");
 		
-		error = llcache_send_event_to_users(object, &event);
-		
-		/** \todo Should this be 'return error' ? */
-		return NSERROR_OK;
+		return llcache_send_event_to_users(object, &event);
 	}
 #undef REDIRECT_LIMIT
 
