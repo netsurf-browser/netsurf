@@ -454,9 +454,6 @@ nserror llcache_handle_abort(llcache_handle *handle)
 		/* Add new object to uncached list */
 		llcache_object_add_to_list(newobject, 
 				&llcache_uncached_objects);
-		
-		/* And use it from now on. */
-		object = newobject;
 	} else {
 		/* We're the only user, so abort any fetch in progress */
 		if (object->fetch.fetch != NULL) {
