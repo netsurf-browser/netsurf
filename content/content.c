@@ -164,10 +164,9 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		break;
 	case LLCACHE_EVENT_DONE:
 	{
-		const uint8_t *source;
 		size_t source_size;
 
-		source = llcache_handle_get_source_data(llcache, &source_size);
+		(void) llcache_handle_get_source_data(llcache, &source_size);
 
 		content_set_status(c, messages_get("Processing"), source_size);
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
