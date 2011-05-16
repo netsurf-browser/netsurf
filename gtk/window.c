@@ -527,14 +527,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	g->careth = 0;
 
-	if (bw->parent != NULL)
+	if (bw->parent != NULL) {
 		/* Find our parent's scaffolding */
 		g->scaffold = bw->parent->window->scaffold;
-	else if (new_tab)
+	} else if (new_tab) {
+		assert(clone != NULL);
 		g->scaffold = clone->window->scaffold;
-	else
+	} else {
 		/* Now construct and attach a scaffold */
 		g->scaffold = nsgtk_new_scaffolding(g);
+	}
+
 	if (g->scaffold == NULL) {
 		warn_user("NoMemory", 0);
 		free(g);
