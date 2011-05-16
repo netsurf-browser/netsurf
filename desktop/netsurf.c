@@ -32,6 +32,7 @@
 
 #include "utils/config.h"
 #include "utils/utsname.h"
+#include "content/content_factory.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -213,6 +214,8 @@ void netsurf_exit(void)
 	image_fini();
 	html_fini();
 	css_fini();
+
+	content_factory_fini();
 
 	LOG(("Closing utf8"));
 	utf8_finalise();

@@ -45,6 +45,24 @@ typedef struct content_handler_entry {
 static content_handler_entry *content_handlers;
 
 /**
+ * Clean up after the content factory
+ */
+void content_factory_fini(void)
+{
+	content_handler_entry *victim;
+
+	while (content_handlers != NULL) {
+		victim = content_handlers;
+
+		content_handlers = content_handlers->next;
+
+		lwc_string_unref(victim->mime_type);
+
+		free(victim);
+	}
+}
+
+/**
  * Register a handler with the content factory
  *
  * \param mime_type  MIME type to handle

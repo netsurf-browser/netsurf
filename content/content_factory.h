@@ -31,6 +31,8 @@ struct llcache_handle;
 
 typedef struct content_handler content_handler;
 
+void content_factory_fini(void);
+
 nserror content_factory_register_handler(lwc_string *mime_type,
 		const content_handler *handler);
 
