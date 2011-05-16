@@ -497,12 +497,18 @@ void fetch_curl_cache_handle(CURL *handle, char *host)
 		 * memory (except the hostname) and without removing the entry from the
 		 * ring and then re-inserting it, in order to be as efficient as we can.
 		 */
-		h = curl_handle_ring;
-		curl_handle_ring = h->r_next;
-		curl_easy_cleanup(h->handle);
-		h->handle = handle;
-		free(h->host);
-		h->host = strdup(host);
+		if (curl_handle_ring != NULL) {
+			h = curl_handle_ring;
+			curl_handle_ring = h->r_next;
+			curl_easy_cleanup(h->handle);
+			h->handle = handle;
+			free(h->host);
+			h->host = strdup(host);
+		} else {
+			/* Actually, we don't want to cache any handles */
+			curl_easy_cleanup(handle);
+		}
+
 		return;
 	}
 	/* The table isn't full yet, so make a shiny new handle to add to the ring */
