@@ -153,7 +153,8 @@ void browser_window_recalculate_iframes(struct browser_window *bw) {
 						  rect.x0, rect.y0,
 						  rect.x1, rect.y1);
 		} else {
-			LOG(("Bad IFrame window=%p, box=%p",window,window->box));
+			LOG(("Bad IFrame window=%p, box=%p", window, 
+				window->box != NULL ? window->box : NULL));
 		}
 	}
 }
