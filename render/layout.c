@@ -706,7 +706,7 @@ void layout_minmax_block(struct box *block,
 	enum css_width_e wtype = CSS_WIDTH_AUTO;
 	css_fixed width = 0;
 	css_unit wunit = CSS_UNIT_PX;
-	enum css_width_e htype = CSS_HEIGHT_AUTO;
+	enum css_height_e htype = CSS_HEIGHT_AUTO;
 	css_fixed height = 0;
 	css_unit hunit = CSS_UNIT_PX;
 	bool child_has_height = false;
@@ -840,7 +840,8 @@ void layout_minmax_block(struct box *block,
 		min = max = FIXTOINT(nscss_len2px(width, wunit, block->style));
 	}
 
-	if (height > 0 && hunit != CSS_UNIT_PCT) {
+	if (htype == CSS_HEIGHT_SET && hunit != CSS_UNIT_PCT &&
+			height > INTTOFIX(0)) {
 		block->flags |= MAKE_HEIGHT;
 		block->flags |= HAS_HEIGHT;
 	}
