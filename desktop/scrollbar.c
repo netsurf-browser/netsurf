@@ -189,7 +189,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		const struct rect *clip, float scale)
 {
 	int w = SCROLLBAR_WIDTH;
-	int well_length, bar_pos, bar_c0, bar_c1;
+	int bar_pos, bar_c0, bar_c1;
 	int v[6]; /* array of triangle vertices */
 	int x0, y0, x1, y1;
 
@@ -206,7 +206,6 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		.fill_colour = scrollbar_widget_arrow_colour,
 	};
 
-	well_length = s->length - 2 * SCROLLBAR_WIDTH;
 	x0 = x;
 	y0 = y;
 	x1 = x + (s->horizontal ? s->length : SCROLLBAR_WIDTH) - 1;
@@ -217,7 +216,6 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 
 	if (scale != 1.0) {
 		w *= scale;
-		well_length *= scale;
 		x0 *= scale;
 		y0 *= scale;
 		x1 *= scale;
