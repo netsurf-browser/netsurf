@@ -96,7 +96,6 @@ static bool box_select_add_option(struct form_control *control, xmlNode *n);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
 static bool box_pre(BOX_SPECIAL_PARAMS);
-/*static bool box_applet(BOX_SPECIAL_PARAMS);*/
 static bool box_iframe(BOX_SPECIAL_PARAMS);
 static bool box_get_attribute(xmlNode *n, const char *attribute,
 		void *context, char **value);
@@ -110,7 +109,6 @@ struct element_entry {
 };
 static const struct element_entry element_table[] = {
 	{"a", box_a},
-/*	{"applet", box_applet},*/
 	{"body", box_body},
 	{"br", box_br},
 	{"button", box_button},
@@ -1320,144 +1318,6 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	*convert_children = false;
 	return true;
 }
-
-
-#if 0 /**
- * "Java applet" [13.4].
- *
- * \todo This needs reworking to be compliant to the spec
- * For now, we simply ignore all applet tags.
- */
-
-struct box_result box_applet(xmlNode *n, struct box_status *status,
-		struct css_style *style)
-{
-	struct box *box;
-	struct object_params *po;
-	struct object_param *pp = NULL;
-	char *s;
-	xmlNode *c;
-
-	po = calloc(1, sizeof(struct object_params));
-	if (!po)
-		return (struct box_result) {0, false, true};
-
-	box = box_create(style, false, status->href, 0, status->id,
-			status->content->data.html.box_pool);
-	if (!box) {
-		free(po);
-		return (struct box_result) {0, false, true};
-	}
-
-	/* archive */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "archive")) != NULL) {
-		/** \todo tokenise this comma separated list */
-		LOG(("archive '%s'", s));
-		po->data = strdup(s);
-		xmlFree(s);
-		if (!po->data)
-			goto no_memory;
-	}
-	/* code */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "code")) != NULL) {
-		LOG(("applet '%s'", s));
-		po->classid = strdup(s);
-		xmlFree(s);
-		if (!po->classid)
-			goto no_memory;
-	}
-
-	/* object codebase */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "codebase")) != NULL) {
-		po->codebase = strdup(s);
-		LOG(("codebase: %s", s));
-		xmlFree(s);
-		if (!po->codebase)
-			goto no_memory;
-	}
-
-	/* parameters
-	 * parameter data is stored in a singly linked list.
-	 * po->params points to the head of the list.
-	 * new parameters are added to the head of the list.
-	 */
-	for (c = n->children; c != 0; c = c->next) {
-		if (c->type != XML_ELEMENT_NODE)
-			continue;
-
-		if (strcmp((const char *) c->name, "param") == 0) {
-			pp = calloc(1, sizeof(struct object_param));
-			if (!pp)
-				goto no_memory;
-
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "name")) != NULL) {
-				pp->name = strdup(s);
-				xmlFree(s);
-				if (!pp->name)
-					goto no_memory;
-			}
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "value")) != NULL) {
-				pp->value = strdup(s);
-				xmlFree(s);
-				if (!pp->value)
-					goto no_memory;
-			}
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "type")) != NULL) {
-				pp->type = strdup(s);
-				xmlFree(s);
-				if (!pp->type)
-					goto no_memory;
-			}
-			if ((s = (char *) xmlGetProp(c, (const xmlChar *)
-							"valuetype")) != NULL) {
-				pp->valuetype = strdup(s);
-				xmlFree(s);
-				if (!pp->valuetype)
-					goto no_memory;
-			} else {
-				pp->valuetype = strdup("data");
-				if (!pp->valuetype)
-					goto no_memory;
-			}
-
-			pp->next = po->params;
-			po->params = pp;
-		} else {
-				 /* The first non-param child is the start
-				  * of the alt html. Therefore, we should
-				  * break out of this loop.
-				  */
-				break;
-		}
-	}
-
-	box->object_params = po;
-
-	/* start fetch */
-	if (plugin_decode(status->content, box))
-		return (struct box_result) {box, false, false};
-
-	return (struct box_result) {box, true, false};
-
-no_memory:
-	if (pp && pp != po->params) {
-		/* ran out of memory creating parameter struct */
-		free(pp->name);
-		free(pp->value);
-		free(pp->type);
-		free(pp->valuetype);
-		free(pp);
-	}
-
-	box_free_object_params(po);
-	box_free_box(box);
-
-	return (struct box_result) {0, false, true};
-}
-#endif
 
 
 /**
