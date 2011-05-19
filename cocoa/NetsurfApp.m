@@ -187,7 +187,7 @@ int main( int argc, char **argv )
 	/* Initialise filename allocator */
 	filename_initialise();
 
-	apple_image_init();
+	(void)apple_image_init();
 	
 	NSApplication *app = cocoa_prepare_app();
 	
