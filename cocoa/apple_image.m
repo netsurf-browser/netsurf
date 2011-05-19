@@ -26,9 +26,13 @@
 #include "desktop/plotters.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
+#include "utils/schedule.h"
 
 typedef struct apple_image_content {
 	struct content base;
+    NSUInteger frames;
+    NSUInteger currentFrame;
+    int *frameTimes;
 } apple_image_content;
 
 static nserror apple_image_create(const content_handler *handler,
@@ -126,6 +130,28 @@ nserror apple_image_create(const content_handler *handler,
 	return NSERROR_OK;
 }
 
+
+static void animate_image_cb( void *ptr )
+{
+    struct apple_image_content *ai = ptr;
+    ++ai->currentFrame;
+    if (ai->currentFrame >= ai->frames) ai->currentFrame = 0;
+    
+    [(NSBitmapImageRep *)ai->base.bitmap setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: ai->currentFrame]];
+    bitmap_modified( ai->base.bitmap );
+    
+    union content_msg_data data;
+    data.redraw.full_redraw = true;
+    data.redraw.x = data.redraw.object_x = 0;
+    data.redraw.y = data.redraw.object_y = 0;
+    data.redraw.width = data.redraw.object_width = ai->base.width;
+    data.redraw.height = data.redraw.object_height = ai->base.height;
+	data.redraw.object = &ai->base;
+    content_broadcast( &ai->base, CONTENT_MSG_REDRAW, data );
+
+    schedule( ai->frameTimes[ai->currentFrame], animate_image_cb, ai );
+}
+
 /**
  * Convert a CONTENT_APPLE_IMAGE for display.
  */
@@ -156,6 +182,20 @@ bool apple_image_convert(struct content *c)
 	content_set_ready(c);
 	content_set_done(c);
 	content_set_status(c, "");
+    
+    struct apple_image_content *ai = (struct apple_image_content *)c;
+    NSUInteger frames = [[image valueForProperty: NSImageFrameCount] unsignedIntegerValue];
+    if (frames > 1) {
+        ai->frames = frames;
+        ai->currentFrame = 0;
+        ai->frameTimes = talloc_zero_array( ai, int, ai->frames );
+        for (NSUInteger i = 0; i < frames; i++) {
+            [image setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: i]];
+            ai->frameTimes[i] = 100 * [[image valueForProperty: NSImageCurrentFrameDuration] floatValue];
+        }
+        [image setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: 0]];
+        schedule( ai->frameTimes[0], animate_image_cb, ai );
+    }
 	
 	return true;
 }
@@ -165,6 +205,7 @@ void apple_image_destroy(struct content *c)
 {
 	[(id)c->bitmap release];
 	c->bitmap = NULL;
+    schedule_remove( animate_image_cb, c );
 }
 
 
