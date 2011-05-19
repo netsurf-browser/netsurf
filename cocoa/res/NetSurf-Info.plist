@@ -5,7 +5,22 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleDocumentTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array/>
+			<key>CFBundleTypeMIMETypes</key>
+			<array/>
+			<key>CFBundleTypeName</key>
+			<string>HTML</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.html</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>

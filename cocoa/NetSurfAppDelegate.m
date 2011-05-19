@@ -122,5 +122,12 @@
                          forEventClass:kInternetEventClass andEventID:kAEGetURL];
 }
 
+- (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
+{
+    NSURL *url = [NSURL fileURLWithPath: filename];
+    browser_window_create( [[url absoluteString] UTF8String], NULL, NULL, true, false );
+    return YES;
+}
+
 
 @end
