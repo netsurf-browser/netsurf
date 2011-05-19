@@ -44,21 +44,16 @@ static bool apple_image_redraw(struct content *c, int x, int y,
 static nserror apple_image_clone(const struct content *old, 
 		struct content **newc);
 static content_type apple_image_content_type(lwc_string *mime_type);
-static bool apple_image_process_data(struct content *c,	const char *data, unsigned int size);
 
 static const content_handler apple_image_content_handler = {
 	.create = apple_image_create,
 	.data_complete = apple_image_convert,
-	.process_data = apple_image_process_data,
 	.destroy = apple_image_destroy,
 	.redraw = apple_image_redraw,
 	.clone = apple_image_clone,
 	.type = apple_image_content_type,
 	.no_share = false
 };
-
-static NSBitmapImageRep *ImageRepForContent( struct content *c );
-static NSData *DataForContent( struct content * c);
 
 static nserror register_for_type( NSString *mime )
 {
@@ -137,21 +132,22 @@ nserror apple_image_create(const content_handler *handler,
 
 bool apple_image_convert(struct content *c)
 {
-	NSBitmapImageRep *image = ImageRepForContent( c );
-	if (image == nil) return false;
-	
-	NSData *data = DataForContent( c );
-		
-	NSInteger rc = [image incrementalLoadFromData: data complete: YES];
-	if (rc != NSImageRepLoadStatusCompleted) {
+	unsigned long size;
+	const char *bytes = content__get_source_data(c, &size);
+
+	NSData *data = [NSData dataWithBytesNoCopy: (char *)bytes length: size freeWhenDone: NO];
+	NSBitmapImageRep *image = [[NSBitmapImageRep imageRepWithData: data] retain];
+
+	if (image == nil) {
 		union content_msg_data msg_data;
-		msg_data.error = "invalid image data";
+		msg_data.error = "cannot decode image";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 	
 	c->width = [image pixelsWide];
 	c->height = [image pixelsHigh];
+	c->bitmap = (void *)image;
 
 	NSString *url = [NSString stringWithUTF8String: llcache_handle_get_url( content_get_llcache_handle( c ) )];
 	NSString *title = [NSString stringWithFormat: @"%@ (%dx%d)", [url lastPathComponent], c->width, c->height];
@@ -224,46 +220,5 @@ bool apple_image_redraw(struct content *c, int x, int y,
 			c->bitmap, background_colour,
 			flags);
 }
-
-bool apple_image_process_data(struct content *c,	const char *newData, unsigned int newSize)
-{
-	NSBitmapImageRep *image = ImageRepForContent( c );
-	if (image == nil) return false;
-	
-	NSData *data = DataForContent( c );
-	
-	NSInteger rc = [image incrementalLoadFromData: data complete: NO];
-	if (rc == NSImageRepLoadStatusInvalidData) {
-		union content_msg_data msg_data;
-		msg_data.error = "invalid data";
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
-	}
-	
-	return true;
-}
-
-NSData *DataForContent( struct content * c) 
-{
-	unsigned long sz = 0;
-	const char *bytes = content__get_source_data(c, &sz );
-	return  [NSData dataWithBytesNoCopy: (char *)bytes length: sz freeWhenDone: NO];
-}
-
-NSBitmapImageRep *ImageRepForContent( struct content *c )
-{
-	NSBitmapImageRep *image = (NSBitmapImageRep *)c->bitmap;	
-	if (image == nil) {
-		image = [[NSBitmapImageRep alloc] initForIncrementalLoad];
-		if (image == nil) {
-			union content_msg_data msg_data;
-			msg_data.error = "not enough memory for image";
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		}
-		c->bitmap = (void *)image;
-	}
-	return image;
-}
-
 
 #endif /* WITH_APPLE_IMAGE */
