@@ -21,6 +21,7 @@
 
 #import "desktop/download.h"
 #import "desktop/gui.h"
+#import "utils/log.h"
 
 @interface DownloadWindowController ()
 
@@ -103,6 +104,17 @@ static void cocoa_register_download( DownloadWindowController *download );
 	NSString *path = [targetURL path];
 	
 	[[NSFileManager defaultManager] createFileAtPath: path contents: nil attributes: nil];
+	
+	FSRef ref;
+	if (CFURLGetFSRef( (CFURLRef)targetURL, &ref )) {
+		NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
+			url, (NSString *)kLSQuarantineDataURLKey,
+			(NSString *)kLSQuarantineTypeWebDownload, (NSString *)kLSQuarantineTypeKey,
+			nil];
+		LSSetItemAttribute( &ref, kLSRolesAll, kLSItemQuarantineProperties, (CFDictionaryRef)attributes );
+		LOG(("Set quarantine attributes on file %s", [path UTF8String]));
+	}
+	
 	[self setOutputFile: [NSFileHandle fileHandleForWritingAtPath: path]];
 	[self setSaveURL: targetURL];
 	
