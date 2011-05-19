@@ -121,7 +121,7 @@ static NSString *cocoa_get_preferences_path( void )
 	BOOL exists = [fm fileExistsAtPath: netsurfPath isDirectory: &isDirectory];
 	
 	if (!exists) {
-		exists = [fm createDirectoryAtPath: netsurfPath attributes: nil];
+		exists = [fm createDirectoryAtPath: netsurfPath withIntermediateDirectories: YES attributes: nil error: NULL];
 		isDirectory = YES;
 	}
 	if (!(exists && isDirectory)) {
