@@ -200,10 +200,14 @@ void fetch_curl_register(void)
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
 	SETOPT(CURLOPT_CONNECTTIMEOUT, 30L);
 
-	if (option_ca_bundle && strcmp(option_ca_bundle, ""))
+	if (option_ca_bundle && strcmp(option_ca_bundle, "")) {
+		LOG(("option_ca_bundle: '%s'", option_ca_bundle));
 		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
-	if (option_ca_path && strcmp(option_ca_path, ""))
+	}
+	if (option_ca_path && strcmp(option_ca_path, "")) {
+		LOG(("option_ca_path: '%s'", option_ca_path));
 		SETOPT(CURLOPT_CAPATH, option_ca_path);
+	}
 
 	/* Detect whether the SSL CTX function API works */
 	curl_with_openssl = true;
