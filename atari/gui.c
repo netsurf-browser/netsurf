@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <windom.h>
-#include <cflib.h>
 #include <hubbub/hubbub.h>
 
 #include "content/urldb.h"
@@ -75,6 +74,7 @@
 #include "atari/clipboard.h"
 #include "atari/osspec.h"
 #include "atari/search.h"
+#include "atari/nkcc.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 
@@ -93,6 +93,7 @@ int mouse_click_time[3] = { INT_MAX, INT_MAX, INT_MAX };
 int mouse_hold_start[3];
 short last_drag_x;
 short last_drag_y;
+long next_poll;
 browser_mouse_state bmstate;
 
 /* Comandline / Options: */
@@ -121,15 +122,13 @@ void gui_poll(bool active)
 	short aestop;
 
 	evnt.timer = schedule_run(); 
-	if ( active || browser_reformat_pending )
-		evnt.timer = 0;
 
 	wind_get( 0, WF_TOP, &aestop, &winloc[1], &winloc[2], &winloc[3]);
 	if( winloc[1] != _AESapid ){
 		aestop = 0;
 	}
 
-	if(aestop > 0) {
+	if( (aestop > 0) && !active ) {
 		flags |= MU_M1;
 		wind_get( aestop, WF_WORKXYWH, &winloc[0],
 			&winloc[1], &winloc[2], &winloc[3] );
@@ -152,10 +151,18 @@ void gui_poll(bool active)
 
 	/*printf("time: %d, active: %d, pending: %d\n", evnt.timer, 
 		active, browser_reformat_pending );*/
-	if( evnt.timer > 0 ) {
+	if( active ) {
+		if( clock() >= next_poll ) {
+			evnt.timer = 0;
+			flags |= MU_TIMER;
+			EvntWindom( flags );
+			next_poll = clock() + CLOCKS_PER_SEC;
+		}
+	} else {
 		flags |= MU_TIMER;
-		EvntWindom( flags );
+		EvntWindom( flags );	
 	}
+
 	struct gui_window * g;
 	for( g = window_list; g != NULL; g=g->next ) {
 		if( browser_redraw_required( g ) ){

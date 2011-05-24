@@ -24,7 +24,6 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <windom.h>
-#include <cflib.h>
 
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -46,6 +45,7 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/search.h"
 #include "atari/options.h"
+#include "atari/nkcc.h"
 
 extern const char * cfg_homepage_url;
 extern struct gui_window *input_window;

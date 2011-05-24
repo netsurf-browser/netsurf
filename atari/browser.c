@@ -24,7 +24,6 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <windom.h>
-#include <cflib.h>
 
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -44,6 +43,7 @@
 #include "atari/plot/plotter.h"
 #include "atari/plot.h"
 #include "atari/font.h"
+#include "atari/nkcc.h"
 
 extern browser_mouse_state bmstate;
 extern int mouse_click_time[3];
@@ -908,9 +908,14 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	));
 
 	current_redraw_browser = b->bw;
-
+   struct rect a;
+   a.x0 = b->redraw.area.x0;
+   a.y0 = b->redraw.area.y0;
+   a.x1 = b->redraw.area.x1;
+   a.y1 = b->redraw.area.y1;
+   
 	browser_window_redraw( b->bw, -b->scroll.current.x,
-			-b->scroll.current.y, &b->redraw.area );
+			-b->scroll.current.y, &a );
 
 	current_redraw_browser = NULL;
 }

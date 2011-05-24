@@ -22,7 +22,6 @@
 #include <string.h>
 #include <time.h>
 #include <windom.h>
-#include <cflib.h>
 
 #include "content/urldb.h"
 #include "desktop/browser.h"
@@ -38,6 +37,7 @@
 #include "atari/treeview.h"
 #include "atari/plot.h"
 #include "atari/misc.h"
+#include "atari/nkcc.h"
 
 extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;

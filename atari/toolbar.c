@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <windom.h>
-#include <cflib.h>
 #include <assert.h>
 #include <math.h>
 
@@ -44,6 +43,7 @@
 #include "atari/clipboard.h"
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
+#include "atari/nkcc.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plotter.h"
 
