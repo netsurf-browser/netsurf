@@ -45,5 +45,4 @@ bool ami_mime_compare(struct hlcache_handle *c, const char *type);
 
 /* deprecated */
 const char *ami_content_type_to_file_type(content_type type);
-void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype);
 #endif

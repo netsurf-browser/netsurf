@@ -60,6 +60,7 @@ const char *fetch_filetype(const char *unix_path)
 	BPTR lock = 0;
 	struct DataType *dtn;
 	BOOL found = FALSE;
+	lwc_string *lwc_mimetype;
 
 	/* First, check if we appear to have an icon.
 	   We'll just do a filename check here for quickness, although the
@@ -91,9 +92,7 @@ const char *fetch_filetype(const char *unix_path)
 		}
 	}
 
-	/* If that didn't work, have a go at guessing it using datatypes.library.  This isn't
-		accurate - the base names differ from those used by MIME and it relies on the
-		user having a datatype installed which can handle the file. */
+	/* If that didn't work, use the MIME file and DataTypes */
 
 	if(!found)
 	{
@@ -101,9 +100,13 @@ const char *fetch_filetype(const char *unix_path)
 		{
 			if (dtn = ObtainDataTypeA (DTST_FILE, (APTR)lock, NULL))
 			{
-				ami_datatype_to_mimetype(dtn, &mimetype);
-				found = TRUE;
-				ReleaseDataType(dtn);
+				if(ami_mime_from_datatype(dtn, &lwc_mimetype, NULL))
+				{
+					strcpy(mimetype, lwc_string_data(lwc_mimetype));
+					lwc_string_unref(lwc_mimetype);
+					found = TRUE;
+					ReleaseDataType(dtn);
+				}
 			}
 			UnLock(lock);
 		}
@@ -168,61 +171,6 @@ const char *ami_content_type_to_file_type(content_type type)
 	}
 }
 
-void ami_datatype_to_mimetype(struct DataType *dtn, char *mimetype)
-{
-	struct DataTypeHeader *dth = dtn->dtn_Header;
-
-	switch(dth->dth_GroupID)
-	{
-		case GID_TEXT:
-		case GID_DOCUMENT:
-			if(strcmp("ascii",dth->dth_BaseName)==0)
-			{
-				strcpy(mimetype,"text/plain");
-			}
-			else if(strcmp("simplehtml",dth->dth_BaseName)==0)
-			{
-				strcpy(mimetype,"text/html");
-			}
-			else
-			{
-				sprintf(mimetype,"text/%s",dth->dth_BaseName);
-			}
-		break;
-		case GID_SOUND:
-		case GID_INSTRUMENT:
-		case GID_MUSIC:
-			sprintf(mimetype,"audio/%s",dth->dth_BaseName);
-		break;
-		case GID_PICTURE:
-			sprintf(mimetype,"image/%s",dth->dth_BaseName);
-			if(strcmp("sprite",dth->dth_BaseName)==0)
-			{
-				strcpy(mimetype,"image/x-riscos-sprite");
-			}
-			if(strcmp("mng",dth->dth_BaseName)==0)
-			{
-				strcpy(mimetype,"video/mng");
-			}
-		break;
-		case GID_ANIMATION:
-		case GID_MOVIE:
-			sprintf(mimetype,"video/%s",dth->dth_BaseName);
-		break;
-		case GID_SYSTEM:
-		default:
-			if(strcmp("directory",dth->dth_BaseName)==0)
-			{
-				strcpy(mimetype,"application/x-netsurf-directory");
-			}
-			else if(strcmp("binary",dth->dth_BaseName)==0)
-			{
-				strcpy(mimetype,"application/octet-stream");
-			}
-			else sprintf(mimetype,"application/%s",dth->dth_BaseName);
-		break;
-	}
-}
 
 nserror ami_mime_init(const char *mimefile)
 {
