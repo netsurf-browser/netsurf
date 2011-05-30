@@ -103,7 +103,6 @@ const char *fetch_filetype(const char *unix_path)
 				if(ami_mime_from_datatype(dtn, &lwc_mimetype, NULL))
 				{
 					strcpy(mimetype, lwc_string_data(lwc_mimetype));
-					lwc_string_unref(lwc_mimetype);
 					found = TRUE;
 					ReleaseDataType(dtn);
 				}
