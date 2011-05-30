@@ -529,13 +529,17 @@ bool ami_mime_compare(struct hlcache_handle *c, const char *type)
 	bool ret = false;
 	lwc_error lerror;
 	lwc_string *filetype;
+	lwc_string *mime_filetype;
 	lwc_string *mime = content_get_mime_type(c);
+
+	if(ami_mime_to_filetype(mime, &mime_filetype, NULL) == NULL)
+		return false;
 
 	lerror = lwc_intern_string(type, strlen(type), &filetype);
 	if (lerror != lwc_error_ok)
 		return false;
 
-	lerror = lwc_string_isequal(filetype, mime, &ret);
+	lerror = lwc_string_isequal(filetype, mime_filetype, &ret);
 	if (lerror != lwc_error_ok)
 		return false;
 
