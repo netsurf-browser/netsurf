@@ -589,10 +589,11 @@ static void gui_init2(int argc, char** argv)
 	struct RDArgs *args;
 	STRPTR temp_homepage_url = NULL;
 	BOOL notalreadyrunning;
-	STRPTR template = "URL/K,FORCE/S";
-	long rarray[] = {0,0};
+	STRPTR template = "NSOPTS/M,URL/K,FORCE/S";
+	long rarray[] = {0,0,0};
 	enum
 	{
+		A_NSOPTS, /* ignored */
 		A_URL,
 		A_FORCE
 	};
