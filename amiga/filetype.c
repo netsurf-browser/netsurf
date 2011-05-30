@@ -146,6 +146,8 @@ char *fetch_mimetype(const char *ro_path)
 
 const char *ami_content_type_to_file_type(content_type type)
 {
+	/* TODO: Can we pass MIME types to this function instead? */
+
 	switch(type)
 	{
 		case CONTENT_HTML:
@@ -394,6 +396,93 @@ struct ami_mime_entry *ami_mime_entry_locate(lwc_string *search,
 		else return NULL;
 }
 
+
+APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
+{
+	struct nsObject *node;
+	char mimetype[100];
+	char *dt_name_lwr;
+	struct ami_mime_entry *mimeentry;
+	lwc_error lerror;
+	struct DataTypeHeader *dth = dt->dtn_Header;
+	char *p;
+
+	node = AddObject(ami_mime_list, AMINS_MIME);
+	mimeentry = AllocVec(sizeof(struct ami_mime_entry), MEMF_PRIVATE | MEMF_CLEAR);
+	node->objstruct = mimeentry;
+
+	lerror = lwc_intern_string(dth->dth_Name, strlen(dth->dth_Name), &mimeentry->datatype);
+	if (lerror != lwc_error_ok)
+		return NULL;
+
+	dt_name_lwr = strlwr(dth->dth_Name);
+	p = dt_name_lwr;
+
+	while(*p != '\0')
+	{
+		if(*p == ' ') *p = '-';
+		p++;
+	}
+
+	switch(dth->dth_GroupID)
+	{
+		case GID_TEXT:
+		case GID_DOCUMENT:
+			if(strcmp("ascii", dt_name_lwr)==0)
+			{
+				strcpy(mimetype,"text/plain");
+			}
+			else
+			{
+				sprintf(mimetype,"text/%s", dt_name_lwr);
+			}
+		break;
+		case GID_SOUND:
+		case GID_INSTRUMENT:
+		case GID_MUSIC:
+			sprintf(mimetype,"audio/%s", dt_name_lwr);
+		break;
+		case GID_PICTURE:
+			if(strcmp("sprite", dt_name_lwr)==0)
+			{
+				strcpy(mimetype,"image/x-riscos-sprite");
+			}
+			else
+			{
+				sprintf(mimetype,"image/%s", dt_name_lwr);
+			}
+		break;
+		case GID_ANIMATION:
+		case GID_MOVIE:
+			sprintf(mimetype,"video/%s", dt_name_lwr);
+		break;
+		case GID_SYSTEM:
+		default:
+			if(strcmp("directory", dt_name_lwr)==0)
+			{
+				strcpy(mimetype,"application/x-netsurf-directory");
+			}
+			else if(strcmp("binary", dt_name_lwr)==0)
+			{
+				strcpy(mimetype,"application/octet-stream");
+			}
+			else sprintf(mimetype,"application/%s", dt_name_lwr);
+		break;
+	}
+
+	lerror = lwc_intern_string(mimetype, strlen(mimetype), &mimeentry->mimetype);
+	if (lerror != lwc_error_ok)
+		return NULL;
+
+	*lwc_mimetype = mimeentry->mimetype;
+
+	lerror = lwc_intern_string(dt_name_lwr, strlen(dt_name_lwr), &mimeentry->filetype);
+	if (lerror != lwc_error_ok)
+		return NULL;
+
+	return node;
+}
+
 /**
  * Return a MIME Type matching a DataType
  *
@@ -421,7 +510,6 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 
 	node = start_node;
 	mimeentry = ami_mime_entry_locate(dt_name, AMI_MIME_DATATYPE, &node);
-
 	lwc_string_unref(dt_name);
 
 	if(mimeentry != NULL)
@@ -431,7 +519,15 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 	}
 	else
 	{
-		return NULL;
+		if(start_node == NULL)
+		{
+			/* If there are no matching entries in the file, guess */
+			return ami_mime_guess_add_datatype(dt, mimetype);
+		}
+		else
+		{
+			return NULL;
+		}
 	}
 }
 
@@ -546,4 +642,20 @@ bool ami_mime_compare(struct hlcache_handle *c, const char *type)
 	lwc_string_unref(filetype);
 
 	return ret;
+}
+
+
+void ami_mime_dump(void)
+{
+	struct Node *node;
+	struct ami_mime_entry *mimeentry;
+
+	while(mimeentry = ami_mime_entry_locate(NULL, AMI_MIME_MIMETYPE, &node))
+	{
+		LOG(("%s DT=%s TYPE=%s CMD=%s",
+			mimeentry->mimetype ? lwc_string_data(mimeentry->mimetype) : "",
+			mimeentry->datatype ? lwc_string_data(mimeentry->datatype) : "",
+			mimeentry->filetype ? lwc_string_data(mimeentry->filetype) : "",
+			mimeentry->plugincmd ? lwc_string_data(mimeentry->plugincmd) : ""));
+	};
 }

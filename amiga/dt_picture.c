@@ -88,21 +88,6 @@ nserror amiga_dt_picture_init(void)
 	{
 		ReleaseDataType(prevdt);
 		prevdt = dt;
-		ami_datatype_to_mimetype(dt, dt_mime);
-
-		LOG(("Guessed MIME from DT: %s", dt_mime));
-
-		lerror = lwc_intern_string(dt_mime, strlen(dt_mime), &type);
-		if (lerror != lwc_error_ok)
-			return NSERROR_NOMEM;
-
-		error = content_factory_register_handler(type, 
-				&amiga_dt_picture_content_handler);
-
-		lwc_string_unref(type);
-
-		if (error != NSERROR_OK)
-			return error;
 
 		do {
 			node = ami_mime_from_datatype(dt, &type, node);

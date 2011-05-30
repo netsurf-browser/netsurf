@@ -30,6 +30,7 @@ struct ami_mime_entry;
 nserror ami_mime_init(const char *mimefile);
 void ami_mime_free(void);
 void ami_mime_entry_free(struct ami_mime_entry *mimeentry);
+void ami_mime_dump(void);
 
 struct Node *ami_mime_from_datatype(struct DataType *dt,
 		lwc_string **mimetype, struct Node *start_node);
