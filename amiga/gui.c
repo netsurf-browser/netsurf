@@ -125,6 +125,12 @@
 #include <math.h>
 #include <string.h>
 
+/* Extra mouse button defines to match those in intuition/intuition.h */
+#define SIDEUP    (IECODE_4TH_BUTTON)
+#define SIDEDOWN  (IECODE_4TH_BUTTON | IECODE_UP_PREFIX)
+#define EXTRAUP   (IECODE_5TH_BUTTON)
+#define EXTRADOWN (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
+
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
 char *adblock_stylesheet_url;
@@ -790,6 +796,22 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+void ami_gui_history(struct gui_window_2 *gwin, bool back)
+{
+	if(back == true)
+	{
+		if(browser_window_back_available(gwin->bw))
+			history_back(gwin->bw, gwin->bw->history);
+	}
+	else
+	{
+		if(browser_window_forward_available(gwin->bw))
+			history_forward(gwin->bw, gwin->bw->history);
+	}
+
+	ami_update_buttons(gwin);
+}
+
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 {
 	int nskey = 0, chars;
@@ -1264,6 +1286,14 @@ void ami_handle_msg(void)
 							}
 							gwin->mouse_state=0;
 						break;
+
+						case SIDEUP:
+							ami_gui_history(gwin, true);
+						break;
+
+						case SIDEDOWN:
+							ami_gui_history(gwin, false);
+						break;
 					}
 
 					if(drag_save_data && !gwin->mouse_state)
@@ -1350,21 +1380,11 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_BACK:
-							if(browser_window_back_available(gwin->bw))
-							{
-								history_back(gwin->bw,gwin->bw->history);
-							}
-	
-							ami_update_buttons(gwin);
+							ami_gui_history(gwin, true);
 						break;
 
 						case GID_FORWARD:
-							if(browser_window_forward_available(gwin->bw))
-							{
-								history_forward(gwin->bw,gwin->bw->history);
-							}
-
-							ami_update_buttons(gwin);
+							ami_gui_history(gwin, false);
 						break;
 
 						default:
