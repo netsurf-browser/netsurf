@@ -23,7 +23,6 @@
 #include "amiga/gui.h"
 #include "amiga/options.h"
 #include "desktop/browser.h"
-#include "desktop/history_core.h"
 #include "utils/testament.h"
 
 #include <string.h>
@@ -431,13 +430,7 @@ STATIC VOID rx_back(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw)
-	{
-		if(browser_window_back_available(bw))
-		{
-			history_back(bw, bw->history);
-		}
-	}
+	if(bw) ami_gui_history(bw->window->shared, true);
 }
 
 STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -449,13 +442,8 @@ STATIC VOID rx_forward(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw)
-	{
-		if(browser_window_forward_available(bw))
-		{
-			history_forward(bw, bw->history);
-		}
-	}
+	if(bw) ami_gui_history(bw->window->shared, false);
+
 }
 
 STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))

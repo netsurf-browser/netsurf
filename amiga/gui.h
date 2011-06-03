@@ -138,6 +138,7 @@ STRPTR ami_locale_langs(void);
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
 BOOL ami_gadget_hit(Object *obj, int x, int y);
+void ami_gui_history(struct gui_window_2 *gwin, bool back);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;
