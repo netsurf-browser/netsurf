@@ -102,12 +102,13 @@ cp $src"atari/doc" $dst -R
 cp $src"ns.prg" $dst
 chmod +x $dst"ns.prg"
 strip $dst"ns.prg"
-stack -S 1000k $dst"ns.prg"
+stack -S 256k $dst"ns.prg"
 
 cp $src"atari/res/" $dst -rL
 cp $src"\!NetSurf/Resources/AdBlock,f79" $dst"res/adblock.css" -rL
 cp $src"\!NetSurf/Resources/CSS,f79" $dst"res/default.css" -rL
-cp $src"\!NetSurf/Resources/CSS,f79" $dst"res/quirks.css" -rL
+cp $src"\!NetSurf/Resources/Quirks,f79" $dst"res/quirks.css" -rL
+cp $src"\!NetSurf/Resources/internal.css,f79" $dst"res/internal.css" -rL
 cp $src"\!NetSurf/Resources/SearchEngines" $dst"res/search" -rL
 cp $src"\!NetSurf/Resources/ca-bundle" $dst"res/cabundle" -rL
 cp $src"\!NetSurf/Resources/en/Messages" $dst"res/messages" -rL
