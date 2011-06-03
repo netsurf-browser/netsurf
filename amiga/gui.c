@@ -126,10 +126,10 @@
 #include <string.h>
 
 /* Extra mouse button defines to match those in intuition/intuition.h */
-#define SIDEUP    (IECODE_4TH_BUTTON)
-#define SIDEDOWN  (IECODE_4TH_BUTTON | IECODE_UP_PREFIX)
-#define EXTRAUP   (IECODE_5TH_BUTTON)
-#define EXTRADOWN (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
+#define SIDEDOWN  (IECODE_4TH_BUTTON)
+#define SIDEUP    (IECODE_4TH_BUTTON | IECODE_UP_PREFIX)
+#define EXTRADOWN (IECODE_5TH_BUTTON)
+#define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
 
 char *default_stylesheet_url;
 char *quirks_stylesheet_url;
