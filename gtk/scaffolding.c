@@ -527,7 +527,13 @@ static void nsgtk_openfile_open(const char *filename)
 MULTIHANDLER(newwindow)
 {
 	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
-	const char *url = gtk_entry_get_text(GTK_ENTRY(g->url_bar));
+	const char *url = option_homepage_url;
+
+	if ((url != NULL) && (url[0] == '\0'))
+		url = NULL;
+
+	if (url == NULL)
+		url = NETSURF_HOMEPAGE;
 
 	browser_window_create(url, bw, NULL, false, false);
 
