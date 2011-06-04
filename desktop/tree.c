@@ -42,6 +42,8 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
+#define TREE_NOISY_DEBUG 1
+
 #define MAXIMUM_URL_LENGTH 1024
 
 #define TREE_TEXT_SIZE_PT 11
@@ -473,8 +475,12 @@ static void tree_recalculate_node_sizes(struct tree *tree, struct node *node,
 	if (node->expanded) {
 		for (element = &node->data; element != NULL;
 		     element = element->next) {
-			if (recalculate_sizes)
+			if (recalculate_sizes) {
+				#ifdef TREE_NOISY_DEBUG
+					if(element->text) LOG(("%s", element->text));
+				#endif
 				tree_recalculate_node_element(tree, element);
+			}
 			node->box.width = (node->box.width > element->box.x +
 					   element->box.width - node->box.x) ?
 				node->box.width :
@@ -485,10 +491,13 @@ static void tree_recalculate_node_sizes(struct tree *tree, struct node *node,
 	} else {
 		if (recalculate_sizes)
 			for (element = &node->data; element != NULL;
-			     element = element->next)
+			     element = element->next) {
+				#ifdef TREE_NOISY_DEBUG
+					if(element->text) LOG(("%s", element->text));
+				#endif
 				tree_recalculate_node_element(tree, element);
-		else
-			tree_recalculate_node_element(tree, &node->data);
+			}
+
 		node->box.width = node->data.box.width;
 		node->box.height = node->data.box.height;
 	}
@@ -823,6 +832,9 @@ static void tree_handle_node_element_changed(struct tree *tree,
 
 	width = element->box.width;
 	height = element->box.height;
+	#ifdef TREE_NOISY_DEBUG
+		if(element->text) LOG(("%s", element->text));
+	#endif
 	tree_recalculate_node_element(tree, element);
 
 	if (element->box.height != height) {
@@ -1454,6 +1466,11 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 			if (response != NODE_CALLBACK_HANDLED)
 				free(element->bitmap);
 		}
+		else {
+			/* Increase the box width to accomodate the new icon */
+			element->box.width += NODE_INSTEP;
+		}
+
 		element->bitmap = bitmap;
 	}
 
