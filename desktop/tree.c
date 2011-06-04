@@ -42,7 +42,7 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
-#define TREE_NOISY_DEBUG 1
+#undef TREE_NOISY_DEBUG
 
 #define MAXIMUM_URL_LENGTH 1024
 
