@@ -824,7 +824,7 @@ void tree_link_node(struct tree *tree, struct node *link, struct node *node,
  * \param element  the node element to update
  */
 static void tree_handle_node_element_changed(struct tree *tree,
-		struct node_element *element)
+		struct node_element *element, bool text_changed)
 {
 	int width, height;
 
@@ -832,10 +832,13 @@ static void tree_handle_node_element_changed(struct tree *tree,
 
 	width = element->box.width;
 	height = element->box.height;
-	#ifdef TREE_NOISY_DEBUG
-		if(element->text) LOG(("%s", element->text));
-	#endif
-	tree_recalculate_node_element(tree, element);
+
+	if(text_changed == true) {
+		#ifdef TREE_NOISY_DEBUG
+			if(element->text) LOG(("%s", element->text));
+		#endif
+		tree_recalculate_node_element(tree, element);
+	}
 
 	if (element->box.height != height) {
 		tree_recalculate_node_sizes(tree, element->parent, false);
@@ -936,7 +939,7 @@ static void tree_stop_edit(struct tree *tree, bool keep_changes)
 	if (text != NULL)
 		tree_update_node_element(tree, element, text, NULL);
 	else
-		tree_handle_node_element_changed(tree, element);
+		tree_handle_node_element_changed(tree, element, true);
 
 
 	tree_recalculate_size(tree);
@@ -1423,6 +1426,7 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 {
 	node_callback_resp response;
 	struct node_msg_data msg_data;
+	bool text_changed = false;
 
 	assert(element != NULL);
 
@@ -1432,6 +1436,8 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 	if (text != NULL && (element->type == NODE_ELEMENT_TEXT ||
 			     element->type == NODE_ELEMENT_TEXT_PLUS_ICON)) {
 		if (element->text != NULL) {
+			if(strcmp(element->text, text) == 0) text_changed = true;
+
 			response = NODE_CALLBACK_NOT_HANDLED;
 			if (!element->editable &&
 			    element->parent->user_callback !=
@@ -1474,7 +1480,7 @@ void tree_update_node_element(struct tree *tree, struct node_element *element,
 		element->bitmap = bitmap;
 	}
 
-	tree_handle_node_element_changed(tree, element);
+	tree_handle_node_element_changed(tree, element, text_changed);
 }
 
 
@@ -2324,7 +2330,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 			tree_set_node_selected(tree, tree->root->child, true,
 					       false);
 			node->selected = true;
-			tree_handle_node_element_changed(tree, &node->data);
+			tree_handle_node_element_changed(tree, &node->data, false);
 		}
 		return true;
 	}
@@ -2334,7 +2340,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 		if (tree->flags & TREE_NO_SELECT)
 			return true;
 		node->selected = !node->selected;
-		tree_handle_node_element_changed(tree, &node->data);
+		tree_handle_node_element_changed(tree, &node->data, false);
 		return true;
 	}
 
@@ -2348,7 +2354,7 @@ bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse, int x,
 			tree_set_node_selected(tree, tree->root->child, true,
 					       false);
 			node->selected = true;
-			tree_handle_node_element_changed(tree, &node->data);
+			tree_handle_node_element_changed(tree, &node->data, false);
 		}
 
 		if (tree->flags & TREE_MOVABLE)
@@ -2412,11 +2418,11 @@ static void tree_handle_selection_area_node(struct tree *tree,
 				if (invert) {
 					node->selected = !node->selected;
 					tree_handle_node_element_changed(tree,
-							&node->data);
+							&node->data, false);
 				} else if (!node->selected) {
 					node->selected = true;
 					tree_handle_node_element_changed(tree,
-							&node->data);
+							&node->data, false);
 				}
 			}
 		}
@@ -2721,7 +2727,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 	}
 	textarea_set_text(tree->textarea, element->text);
 
-	tree_handle_node_element_changed(tree, element);
+	tree_handle_node_element_changed(tree, element, true);
 	tree_recalculate_size(tree);
 	tree->callbacks->scroll_visible(element->box.y, element->box.height,
 					tree->client_data);
