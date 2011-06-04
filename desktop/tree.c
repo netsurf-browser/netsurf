@@ -273,6 +273,8 @@ static void tree_recalculate_node_element(struct tree *tree,
 {
 	struct bitmap *bitmap = NULL;
 	int width, height;
+	static char *cache_text = NULL;
+	static int cache_size = 0;
 
 	assert(element != NULL);
 
@@ -286,10 +288,20 @@ static void tree_recalculate_node_element(struct tree *tree,
 			textarea_get_dimensions(tree->textarea,
 						&element->box.width, NULL);
 		} else {
-			nsfont.font_width(&plot_fstyle,
-					  element->text,
-					  strlen(element->text),
-					  &element->box.width);
+			if ((cache_text != NULL) &&
+				(strcmp(cache_text, element->text) == 0)) {
+				element->box.width = cache_size;
+				#ifdef TREE_NOISY_DEBUG
+					LOG(("Tree font width cache hit"));
+				#endif
+			} else {
+				nsfont.font_width(&plot_fstyle,
+						  element->text,
+						  strlen(element->text),
+						  &cache_size);
+				element->box.width = cache_size;
+				cache_text = strdup(element->text);
+			}
 		}
 
 		element->box.width += 8;
