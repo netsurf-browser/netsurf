@@ -121,7 +121,6 @@ void browser_window_create_iframes(struct browser_window *bw,
 void browser_window_recalculate_iframes(struct browser_window *bw) {
 	struct browser_window *window;
 	struct rect rect;
-	int bw_width, bw_height;
 	int index;
 
 #ifdef nsamiga
@@ -136,14 +135,6 @@ void browser_window_recalculate_iframes(struct browser_window *bw) {
 	assert(bw->window != NULL);
 
 	/* update window dimensions */
-	gui_window_get_dimensions(bw->window, &bw_width, &bw_height, false);
-	if (!bw->parent) {
-		bw->x0 = 0;
-		bw->y0 = 0;
-		bw->x1 = bw_width;
-		bw->y1 = bw_height;
-	}
-
 	for (index = 0; index < bw->iframe_count; index++) {
 		window = &(bw->iframes[index]);
 		
