@@ -388,7 +388,7 @@ bool cookies_initialise(struct tree *tree, const char* folder_icon_name, const c
 	user_delete = false;
 	urldb_iterate_cookies(cookies_schedule_update);
 	tree_set_node_expanded(cookies_tree, cookies_tree_root,
-			       true, true, true);
+			       false, true, true);
 
 	return true;
 }
