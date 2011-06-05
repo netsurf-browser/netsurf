@@ -24,3 +24,4 @@ static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VE
 const char * const versvn = "SVN " WT_REVID;
 const char * const verdate = WT_COMPILEDATE;
 const char * const verarexx = NETSURF_VERSION_MAJOR "." WT_REVID;
+const char * const wt_revid = WT_REVID;

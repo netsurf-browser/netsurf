@@ -23,7 +23,6 @@
 #include "amiga/gui.h"
 #include "amiga/options.h"
 #include "desktop/browser.h"
-#include "utils/testament.h"
 
 #include <string.h>
 #include <math.h>
@@ -35,10 +34,11 @@
 #include <gadgets/clicktab.h>
 #include <reaction/reaction_macros.h>
 
-const char * const verarexx;
-const char * const netsurf_version;
-const int netsurf_version_major;
-const int netsurf_version_minor;
+extern const char * const verarexx;
+extern const char * const netsurf_version;
+extern const char * const wt_revid;
+extern const int netsurf_version_major;
+extern const int netsurf_version_minor;
 
 enum
 {
@@ -376,7 +376,7 @@ STATIC VOID rx_version(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((
 	{
 		if(cmd->ac_ArgList[1])
 		{
-			if((netsurf_version_major > *(ULONG *)cmd->ac_ArgList[0]) || ((atoi(WT_REVID) >= *(ULONG *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(ULONG *)cmd->ac_ArgList[0])))
+			if((netsurf_version_major > *(ULONG *)cmd->ac_ArgList[0]) || ((atoi(wt_revid) >= *(ULONG *)cmd->ac_ArgList[1]) && (netsurf_version_major == *(ULONG *)cmd->ac_ArgList[0])))
 			{
 				strcpy(result,"1");
 			}
