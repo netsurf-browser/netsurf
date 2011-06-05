@@ -73,7 +73,7 @@ S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c		\
 	cookies.c context_menu.c clipboard.c save_complete.c		\
 	launch.c search.c history_local.c download.c iff_dr2d.c 	\
 	sslcert.c gui_options.c print.c	theme.c	drag.c icon.c system_colour.c \
-	datatypes.c dt_picture.c dt_anim.c plugin_hack.c	\
+	datatypes.c dt_picture.c dt_anim.c dt_sound.c plugin_hack.c	\
 	stringview/stringview.c stringview/urlhistory.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
