@@ -80,7 +80,7 @@ nserror amiga_plugin_hack_init(void)
 
 		if(node)
 		{
-			printf("plugin_hack registered %s\n",lwc_string_data(type));
+			LOG(("plugin_hack registered %s\n",lwc_string_data(type)));
 
 			error = content_factory_register_handler(type, 
 				&amiga_plugin_hack_content_handler);
@@ -149,11 +149,16 @@ bool amiga_plugin_hack_redraw(struct content *c, int x, int y,
 	float scale, colour background_colour,
 	bool repeat_x, bool repeat_y)
 {
-	static plot_style_t pstyle;
+	plot_style_t pstyle = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = 0xffffff,
+		.stroke_colour = 0x000000,
+		.stroke_width = 1,
+	};
 
 	LOG(("amiga_plugin_hack_redraw"));
 
-	plot.rectangle(x, y, x + width, y + height, plot_style_fill_red);
+	plot.rectangle(x, y, x + width, y + height, &pstyle);
 	return plot.text(x, y+20, lwc_string_data(content__get_mime_type(c)),
 		lwc_string_length(content__get_mime_type(c)), plot_style_font);
 
