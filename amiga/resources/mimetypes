@@ -1,13 +1,27 @@
 ; This file contains a list of MIME types that can be handled by NetSurf,
 ; mapping them to DataType and DefIcons format names.
+;
 ; It is parsed by ReadArgs with the following template:
 ; MIMETYPE/A,DT=DATATYPE/K,TYPE=DEFICON/K,CMD=PLUGINCMD/K
+;
+; Note: DataType name is case sensitive and is the name MultiView
+; displays in the "About" window, *not* the filename of the DataType
+; descriptor.
+;
+; The first entry for a type is the one which will be used for reverse
+; lookups (ie. translating from DataTypes to MIME)
+;
+; Any DataTypes installed that are not present in this list will be
+; assigned a MIME type constructed from the DataTypes superclass
+; and a lowercase version of the full format name (eg. ILBM becomes
+; image/ilbm)
+
+
+;
+; Image types
+;
 
 ; BMP
-application/bmp            DT=BMP      TYPE=bmp
-application/preview        DT=BMP      TYPE=bmp
-application/x-bmp          DT=BMP      TYPE=bmp
-application/x-win-bitmap   DT=BMP      TYPE=bmp
 image/bmp                  DT=BMP      TYPE=bmp
 image/ms-bmp               DT=BMP      TYPE=bmp
 image/x-bitmap             DT=BMP      TYPE=bmp
@@ -16,6 +30,10 @@ image/x-ms-bmp             DT=BMP      TYPE=bmp
 image/x-win-bitmap         DT=BMP      TYPE=bmp
 image/x-windows-bmp        DT=BMP      TYPE=bmp
 image/x-xbitmap            DT=BMP      TYPE=bmp
+application/bmp            DT=BMP      TYPE=bmp
+application/preview        DT=BMP      TYPE=bmp
+application/x-bmp          DT=BMP      TYPE=bmp
+application/x-win-bitmap   DT=BMP      TYPE=bmp
 
 ; GIF
 ; Expect problems with GIF anims if GIFANIM datatype installed
@@ -23,11 +41,11 @@ image/gif                  DT=GIF      TYPE=gif
 ;image/gif                  DT=GIFANIM  TYPE=gif
 
 ; ICO
-application/ico            DT=ICO      TYPE=ico
-application/x-ico          DT=ICO      TYPE=ico
 image/ico                  DT=ICO      TYPE=ico
 image/vnd.microsoft.icon   DT=ICO      TYPE=ico
 image/x-icon               DT=ICO      TYPE=ico
+application/ico            DT=ICO      TYPE=ico
+application/x-ico          DT=ICO      TYPE=ico
 
 ; .info
 image/x-amiga-icon         DT=INFO
@@ -64,7 +82,24 @@ image/svg+xml              DT=SVG      TYPE=svg
 ; WebP
 image/webp                 DT=WebP     TYPE=webp
 
+
+;
+; Audio types
+;
+
+; RIFF WAVE
+audio/x-wav                DT=WAVE        TYPE=wav
+
+; MP3
+audio/mpeg                 DT=MPEG Audio  TYPE=mp3
+
+
 ;
 ; Experimental
 ;
 application/x-shockwave-flash   CMD=gnash:aos4-gnash
+
+; video/mpeg                      CMD=APPDIR:MPlayer
+; video/quicktime                 CMD=APPDIR:MPlayer
+; video/x-msvideo                 CMD=APPDIR:MPlayer
+; video/x-ms-wmv                  CMD=APPDIR:MPlayer
