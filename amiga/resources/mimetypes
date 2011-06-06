@@ -88,10 +88,10 @@ image/webp                 DT=WebP     TYPE=webp
 ;
 
 ; RIFF WAVE
-audio/x-wav                DT=WAVE        TYPE=wav
+audio/x-wav                DT=WAVE          TYPE=wav
 
 ; MP3
-audio/mpeg                 DT=MPEG Audio  TYPE=mp3
+audio/mpeg                 DT="MPEG Audio"  TYPE=mp3
 
 
 ;
