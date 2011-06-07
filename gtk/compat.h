@@ -33,5 +33,8 @@ gboolean nsgtk_widget_get_mapped(GtkWidget *widget);
 gboolean nsgtk_widget_is_drawable(GtkWidget *widget);
 GtkStateType nsgtk_widget_get_state(GtkWidget *widget);
 void nsgtk_dialog_set_has_separator(GtkDialog *dialog, gboolean setting);
+GtkWidget *nsgtk_combo_box_text_new(void);
+void nsgtk_combo_box_text_append_text(GtkWidget *combo_box, const gchar *text);
+gchar *nsgtk_combo_box_text_get_active_text(GtkWidget *combo_box);
 
 #endif /* NETSURF_GTK_COMPAT_H */

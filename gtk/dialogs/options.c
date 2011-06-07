@@ -30,6 +30,8 @@
 #include "desktop/options.h"
 #include "desktop/print.h"
 #include "desktop/searchweb.h"
+
+#include "gtk/compat.h"
 #include "gtk/options.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
@@ -297,7 +299,7 @@ void nsgtk_options_load(void)
 
 	/* Create combobox */
 	box = GTK_BOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
-	comboLanguage = gtk_combo_box_new_text();
+	comboLanguage = nsgtk_combo_box_text_new();
 
 	/* Populate combobox from languages file */
 	if ((languages_file_location != NULL) && 
@@ -311,7 +313,7 @@ void nsgtk_options_load(void)
 			/* Remove trailing \n */
 			buf[strlen(buf) - 1] = '\0';
 
-			gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), buf);
+			nsgtk_combo_box_text_append_text(comboLanguage, buf);
 
 			if (strcmp(buf, default_accept_language) == 0)
 				active_language = combo_row_count;
@@ -323,7 +325,7 @@ void nsgtk_options_load(void)
 	} else {
 		LOG(("Failed opening languages file"));
 		warn_user("FileError", languages_file_location);
-		gtk_combo_box_append_text(GTK_COMBO_BOX(comboLanguage), "en");
+		nsgtk_combo_box_text_append_text(comboLanguage, "en");
 	}
 
 
@@ -450,9 +452,11 @@ static void nsgtk_options_theme_combo(void) {
 /* populate theme combo from themelist file */
 	GtkBox *box = GTK_BOX(glade_xml_get_widget(gladeFile, "themehbox"));
 	char buf[50];
-	combotheme = gtk_combo_box_new_text();
 	size_t len = SLEN("themelist") + strlen(res_dir_location) + 1;
 	char themefile[len];
+
+	combotheme = nsgtk_combo_box_text_new();
+
 	if ((combotheme == NULL) || (box == NULL)) {
 		warn_user(messages_get("NoMemory"), 0);
 		return;
@@ -472,7 +476,7 @@ static void nsgtk_options_theme_combo(void) {
 		/* Remove trailing \n */
 		buf[strlen(buf) - 1] = '\0';
 		
-		gtk_combo_box_append_text(GTK_COMBO_BOX(combotheme), buf);
+		nsgtk_combo_box_text_append_text(combotheme, buf);
 	}
 	fclose(fp);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combotheme), 
@@ -485,7 +489,7 @@ bool nsgtk_options_combo_theme_add(const char *themename)
 {
 	if (wndPreferences == NULL)
 		return false;
-	gtk_combo_box_append_text(GTK_COMBO_BOX(combotheme), themename);
+	nsgtk_combo_box_text_append_text(combotheme, themename);
 	return true;
 }
 	
@@ -547,17 +551,17 @@ bool nsgtk_options_combo_theme_add(const char *themename)
 
 static gboolean on_comboLanguage_changed(GtkWidget *widget, gpointer data)
 {
-	char *old_lang = option_accept_language;
-	gchar *lang = 
-		gtk_combo_box_get_active_text(GTK_COMBO_BOX(comboLanguage));
+	gchar *lang; 
+
+	lang = nsgtk_combo_box_text_get_active_text(comboLanguage);
 	if (lang == NULL)
 		return FALSE;
 
-	option_accept_language = strdup((const char *) lang);
-	if (option_accept_language == NULL)
-		option_accept_language = old_lang;
-	else
-		free(old_lang);
+	if (option_accept_language != NULL) {
+		free(option_accept_language);
+	}
+
+	option_accept_language = lang;
 
 	g_free(lang);
 	
@@ -810,18 +814,17 @@ COMBO_CHANGED(combotheme, option_current_theme)
 	if (option_current_theme != 0) {
 		if (nsgtk_theme_name() != NULL)
 			free(nsgtk_theme_name());
-		name = strdup(gtk_combo_box_get_active_text(
-				GTK_COMBO_BOX(combotheme)));
-		if (name == NULL) {
-			warn_user(messages_get("NoMemory"), 0);
-			continue;
+		name = nsgtk_combo_box_text_get_active_text(combotheme);
+		if (name != NULL) {
+			nsgtk_theme_set_name(name);
+			nsgtk_theme_prepare();
+			/* possible name leak */
 		}
-		nsgtk_theme_set_name(name);
-		nsgtk_theme_prepare();
 	} else if (nsgtk_theme_name() != NULL) {
 		free(nsgtk_theme_name());
 		nsgtk_theme_set_name(NULL);
 	}
+
 	while (current)	{
 		nsgtk_theme_implement(current);
 		current = nsgtk_scaffolding_iterate(current);

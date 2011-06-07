@@ -97,3 +97,30 @@ void nsgtk_dialog_set_has_separator(GtkDialog *dialog, gboolean setting)
   #endif
 }
 
+GtkWidget *nsgtk_combo_box_text_new(void)
+{
+  #if GTK_CHECK_VERSION(2,24,0)
+	return gtk_combo_box_text_new(); 
+  #else
+	return gtk_combo_box_new_text();
+  #endif
+}
+
+void nsgtk_combo_box_text_append_text(GtkWidget *combo_box, const gchar *text)
+{
+  #if GTK_CHECK_VERSION(2,24,0)
+	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo_box), text);
+  #else
+        gtk_combo_box_append_text(GTK_COMBO_BOX(combo_box), text);
+  #endif
+
+}
+
+gchar *nsgtk_combo_box_text_get_active_text(GtkWidget *combo_box)
+{
+  #if GTK_CHECK_VERSION(2,24,0)
+	return gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(combo_box));
+  #else
+	return gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_box));
+  #endif
+}
