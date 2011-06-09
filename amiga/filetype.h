@@ -36,9 +36,8 @@ struct Node *ami_mime_from_datatype(struct DataType *dt,
 		lwc_string **mimetype, struct Node *start_node);
 struct Node *ami_mime_to_filetype(lwc_string *mimetype,
 		lwc_string **filetype, struct Node *start_node);
-struct Node *ami_mime_to_plugincmd(lwc_string *mimetype,
-		lwc_string **plugincmd, struct Node *start_node);
 
+lwc_string *ami_mime_content_to_cmd(struct hlcache_handle *c);
 struct Node *ami_mime_has_cmd(lwc_string **mimetype, struct Node *start_node);
 
 bool ami_mime_compare(struct hlcache_handle *c, const char *type);

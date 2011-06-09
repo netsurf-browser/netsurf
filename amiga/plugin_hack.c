@@ -240,29 +240,25 @@ content_type amiga_plugin_hack_content_type(lwc_string *mime_type)
 
 void amiga_plugin_hack_execute(struct hlcache_handle *c)
 {
-	lwc_string *mimetype;
 	lwc_string *plugincmd;
-	struct Node *node;
 	char *full_cmd;
 	BPTR in, out;
 
 	if(c == NULL) return;
 
-	mimetype = content_get_mime_type(c);
-	node = ami_mime_to_plugincmd(mimetype, &plugincmd, NULL);
+	plugincmd = ami_mime_content_to_cmd(c);
+	if(plugincmd == NULL) return;
 
-	if(node && plugincmd)
+	full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), content_get_url(c));
+
+	if(full_cmd)
 	{
-		full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), content_get_url(c));
+		LOG(("Attempting to execute %s", full_cmd));
 
-		if(full_cmd)
-		{
-			LOG(("Attempting to execute %s", full_cmd));
+		in = Open("NIL:", MODE_OLDFILE);
+		out = Open("NIL:", MODE_NEWFILE);
 
-			in = Open("NIL:", MODE_OLDFILE);
-			out = Open("NIL:", MODE_NEWFILE);
-
-			SystemTags(full_cmd,
+		SystemTags(full_cmd,
 				SYS_Input, in,
 				SYS_Output, out,
 				SYS_Error, out,
@@ -270,7 +266,6 @@ void amiga_plugin_hack_execute(struct hlcache_handle *c)
 				NP_Name, "NetSurf External Process",
 				TAG_DONE);
 
-			FreeVec(full_cmd);
-		}
+		FreeVec(full_cmd);
 	}
 }

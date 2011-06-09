@@ -367,15 +367,18 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			if(curbox->object &&
 				(content_get_type(curbox->object) == CONTENT_PLUGIN))
 			{
-				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
-					NewObject(POPUPMENU_GetItemClass(), NULL,
-						PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
-						PMIA_ID, CMID_PLUGINCMD,
-						PMIA_UserData, curbox->object,
-						TAG_DONE),
-					~0);
+				if(ami_mime_content_to_cmd(curbox->object))
+				{
+					IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+						NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
+							PMIA_ID, CMID_PLUGINCMD,
+							PMIA_UserData, curbox->object,
+							TAG_DONE),
+						~0);
 
-				menuhascontent = true;
+					menuhascontent = true;
+				}
 			}
 			if (curbox->gadget)
 			{

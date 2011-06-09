@@ -564,6 +564,21 @@ struct Node *ami_mime_to_plugincmd(lwc_string *mimetype,
 	}
 }
 
+lwc_string *ami_mime_content_to_cmd(struct hlcache_handle *c)
+{
+	struct Node *node;
+	lwc_string *plugincmd;
+	lwc_string *mimetype;
+
+	mimetype = content_get_mime_type(c);
+
+	node = ami_mime_to_plugincmd(mimetype,
+		&plugincmd, NULL);
+
+	if(node && (plugincmd != NULL)) return plugincmd;
+		else return NULL;
+}
+
 /**
  * Compare the MIME type of an hlcache_handle to a DefIcons type
  */
@@ -595,7 +610,7 @@ bool ami_mime_compare(struct hlcache_handle *c, const char *type)
 
 void ami_mime_dump(void)
 {
-	struct Node *node;
+	struct Node *node = NULL;
 	struct ami_mime_entry *mimeentry;
 
 	while(mimeentry = ami_mime_entry_locate(NULL, AMI_MIME_MIMETYPE, &node))
