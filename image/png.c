@@ -75,6 +75,23 @@ static unsigned int interlace_row_start[8] = {0, 0, 4, 0, 2, 0, 1};
 static unsigned int interlace_row_step[8] = {8, 8, 8, 4, 4, 2, 2};
 
 /**
+ * nspng_warning -- callback for libpng warnings
+ */
+void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
+{
+	LOG(("%s", warning_message));
+}
+
+/**
+ * nspng_error -- callback for libpng errors
+ */
+void nspng_error(png_structp png_ptr, png_const_charp error_message)
+{
+	LOG(("%s", error_message));
+	longjmp(png_ptr->jmpbuf, 1);
+}
+
+/**
  * info_callback -- PNG header has been completely received, prepare to process
  * image data
  */
@@ -208,6 +225,8 @@ static nserror nspng_create_png_data(nspng_content *png_c)
 		warn_user("NoMemory", 0);
 		return NSERROR_NOMEM;
 	}
+
+	png_set_error_fn(png_c->png, NULL, nspng_error, nspng_warning);
 
 	png_c->info = png_create_info_struct(png_c->png);
 	if (png_c->info == NULL) {
