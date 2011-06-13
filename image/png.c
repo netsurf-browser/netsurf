@@ -77,7 +77,7 @@ static unsigned int interlace_row_step[8] = {8, 8, 8, 4, 4, 2, 2};
 /**
  * nspng_warning -- callback for libpng warnings
  */
-void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
+static void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
 {
 	LOG(("%s", warning_message));
 }
@@ -85,7 +85,7 @@ void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
 /**
  * nspng_error -- callback for libpng errors
  */
-void nspng_error(png_structp png_ptr, png_const_charp error_message)
+static void nspng_error(png_structp png_ptr, png_const_charp error_message)
 {
 	LOG(("%s", error_message));
 	longjmp(png_ptr->jmpbuf, 1);
