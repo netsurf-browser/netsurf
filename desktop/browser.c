@@ -606,7 +606,8 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		bw->scrollbar = NULL;
 
-		gui_window_new_content(bw->window);
+		if (bw->window)
+			gui_window_new_content(bw->window);
 
 		browser_window_refresh_url_bar(bw,
 				content_get_url(bw->current_content),
