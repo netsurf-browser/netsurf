@@ -83,6 +83,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->no_resize = true;
 		window->margin_width = cur->margin_width;
 		window->margin_height = cur->margin_height;
+		window->sel = bw->sel;
 		if (cur->name) {
 			window->name = strdup(cur->name);
 			if (!window->name)
@@ -92,22 +93,22 @@ void browser_window_create_iframes(struct browser_window *bw,
 		/* linking */
 		window->box = cur->box;
 		window->parent = bw;
-
-		/* gui window */
-		window->window = gui_create_browser_window(window, bw, false);
+		window->box->iframe = window;
 	}
 
 	/* calculate dimensions */
-	gui_window_update_extent(bw->window);
+	browser_window_update_extent(bw);
 	browser_window_recalculate_iframes(bw);
 
 	index = 0;
 	for (cur = iframe; cur; cur = cur->next) {
 		window = &(bw->iframes[index++]);
-		if (cur->url)
+		if (cur->url) {
+			/* fetch iframe's content */
 			browser_window_go_unverifiable(window, cur->url,
 					content_get_url(bw->current_content),
 					false, bw->current_content);
+		}
 	}
 }
 
@@ -118,36 +119,10 @@ void browser_window_create_iframes(struct browser_window *bw,
  * \param  bw	    The browser window to reposition iframes for
  */
 
-void browser_window_recalculate_iframes(struct browser_window *bw) {
-	struct browser_window *window;
-	struct rect rect;
-	int index;
-
-#ifdef nsamiga
-	/* In the Amiga frontend we can switch off IFrames because they
-	 * turn into pop-up hell due to broken frames implementation.
-	 * This stops NetSurf asserting in this specific instance.
-	 */
-	if(bw && bw->window == NULL) return;
-#endif
-
-	assert(bw != NULL);
-	assert(bw->window != NULL);
-
-	/* update window dimensions */
-	for (index = 0; index < bw->iframe_count; index++) {
-		window = &(bw->iframes[index]);
-		
-		if ((window != NULL) && (window->box != NULL)) {
-			box_bounds(window->box, &rect);
-			gui_window_position_frame(window->window, 
-						  rect.x0, rect.y0,
-						  rect.x1, rect.y1);
-		} else {
-			LOG(("Bad IFrame window=%p, box=%p", window, 
-				window != NULL ? window->box : NULL));
-		}
-	}
+void browser_window_recalculate_iframes(struct browser_window *bw)
+{
+	/* TODO: decide if this is still needed after scrollbars are
+	 * implemented */
 }
 
 
@@ -206,6 +181,10 @@ void browser_window_create_frameset(struct browser_window *bw,
 					warn_user("NoMemory", 0);
 			}
 
+			/* TODO: when framesets are handled in the core, remove
+			 * the following line. */
+			window->sel = selection_create();
+
 			/* linking */
 			window->parent = bw;
 
@@ -220,7 +199,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 	}
 
 	/* 2. Calculate dimensions */
-	gui_window_update_extent(bw->window);
+	browser_window_update_extent(bw);
 	browser_window_recalculate_frameset(bw);
 
 	/* 3. Recurse for grandchildren */

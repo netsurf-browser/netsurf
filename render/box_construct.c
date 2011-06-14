@@ -1631,8 +1631,8 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	free(url);
 
 	/* box */
-	box->type = BOX_INLINE_BLOCK;
 	assert(box->style);
+	box->flags |= IFRAME;
 
 	/* Showing iframe, so don't show alternate content */
 	if (convert_children)

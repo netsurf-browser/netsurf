@@ -661,7 +661,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 	if (status != NULL)
 		browser_window_set_status(bw, status);
 
-	browser_window_set_pointer(bw->window, pointer);
+	browser_window_set_pointer(bw, pointer);
 }
 
 

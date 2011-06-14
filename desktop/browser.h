@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <time.h>
 
+#include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/shape.h"
@@ -169,6 +170,9 @@ struct browser_window {
 	int iframe_count;
 	struct browser_window *iframes;
 
+	/** browser window child of root browser window which has input focus */
+	struct browser_window *focus;
+
 	/** Last time a link was followed in this window */
 	unsigned int last_action;
 
@@ -207,9 +211,13 @@ void browser_window_go_post(struct browser_window *bw,
 void browser_window_go_unverifiable(struct browser_window *bw,
 		const char *url, const char *referrer, bool history_add,
 		struct hlcache_handle *parent);
+void browser_window_get_dimensions(struct browser_window *bw,
+		int *width, int *height, bool scaled);
 void browser_window_download(struct browser_window *bw,
 		const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
+void browser_window_update_box(struct browser_window *bw,
+		const union content_msg_data *data);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
@@ -244,7 +252,8 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 		int width, int height);
 
 void browser_window_set_status(struct browser_window *bw, const char *text);
-void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape);
+void browser_window_set_pointer(struct browser_window *bw,
+		gui_pointer_shape shape);
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
 bool browser_window_back_available(struct browser_window *bw);
@@ -282,6 +291,27 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
  * \return true if browser window is ready for redraw
  */
 bool browser_window_redraw_ready(struct browser_window *bw);
+
+/*
+ * Update the extent of the inside of a browser window to that of the current
+ * content
+ *
+ * \param  bw	browser_window to update the extent of
+ */
+void browser_window_update_extent(struct browser_window *bw);
+
+/*
+ * Get the position of the current browser window with respect to the root or
+ * parent browser window
+ *
+ * \param  bw     browser window to get the position of
+ * \param  root   true if we want position wrt root bw, false if wrt parent bw
+ * \param  pos_x  updated to x position of bw
+ * \param  pos_y  updated to y position of bw
+ */
+void browser_window_get_position(struct browser_window *bw, bool root,
+		int *pos_x, int *pos_y);
+
 
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct hlcache_handle *c);

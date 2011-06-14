@@ -430,7 +430,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			bg_box->type != BOX_TEXT &&
 			bg_box->type != BOX_INLINE_END &&
 			(bg_box->type != BOX_INLINE || bg_box->object ||
-			box->flags & REPLACE_DIM)) {
+			bg_box->flags & IFRAME || box->flags & REPLACE_DIM)) {
 		/* find intersection of clip box and border edge */
 		struct rect p;
 		p.x0 = x - border_left < r.x0 ? r.x0 : x - border_left;
@@ -475,7 +475,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 	if (box->style && box->type != BOX_TEXT &&
 			box->type != BOX_INLINE_END &&
 			(box->type != BOX_INLINE || box->object ||
-			box->flags & REPLACE_DIM) &&
+			box->flags & IFRAME || box->flags & REPLACE_DIM) &&
 			(border_top || border_right ||
 			 border_bottom || border_left)) {
 		if (!html_redraw_borders(box, x_parent, y_parent,
@@ -622,8 +622,9 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 
 	/* clip to the padding edge for objects, or boxes with overflow hidden
 	 * or scroll */
-	if (box->object || (box->style && css_computed_overflow(box->style) != 
-			CSS_OVERFLOW_VISIBLE)) {
+	if ((box->style && css_computed_overflow(box->style) != 
+			CSS_OVERFLOW_VISIBLE) || box->object ||
+			box->flags & IFRAME) {
 		r.x0 = x;
 		r.y0 = y;
 		r.x1 = x + padding_width;
@@ -659,6 +660,10 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 				current_background_color, 
 				false, false))
 			return false;
+
+	} else if (box->flags & IFRAME) {
+		browser_window_redraw(box->iframe,
+				x + padding_left, y + padding_top, &r);
 
 	} else if (box->gadget && box->gadget->type == GADGET_CHECKBOX) {
 		if (!html_redraw_checkbox(x + padding_left, y + padding_top,

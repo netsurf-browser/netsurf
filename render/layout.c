@@ -273,6 +273,12 @@ bool layout_block_context(struct box *block, int viewport_height,
 		return true;
 	}
 
+	/* special case if the block contains an iframe */
+	if (block->iframe) {
+		browser_window_reformat(block->iframe, block->width,
+				block->height == AUTO ? 0 : block->height);
+	}
+
 	/* special case if the block contains an radio button or checkbox */
 	if (block->gadget && (block->gadget->type == GADGET_RADIO ||
 			block->gadget->type == GADGET_CHECKBOX)) {
@@ -360,8 +366,10 @@ bool layout_block_context(struct box *block, int viewport_height,
 		 * left and right margins to avoid any floats. */
 		lm = rm = 0;
 
-		if (box->type == BOX_BLOCK || box->object) {
-			if (!box->object && !(box->flags & REPLACE_DIM) &&
+		if (box->type == BOX_BLOCK || box->object ||
+				box->flags & IFRAME) {
+			if (!box->object && !(box->flags & IFRAME) &&
+					!(box->flags & REPLACE_DIM) &&
 					box->style &&
 					css_computed_overflow(box->style) !=
 					CSS_OVERFLOW_VISIBLE) {
@@ -388,7 +396,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 			}
 			layout_block_find_dimensions(box->parent->width,
 					viewport_height, lm, rm, box);
-			if (box->type == BOX_BLOCK) {
+			if (box->type == BOX_BLOCK && !(box->flags & IFRAME)) {
 				layout_block_add_scrollbar(box, RIGHT);
 				layout_block_add_scrollbar(box, BOTTOM);
 			}
@@ -503,11 +511,18 @@ bool layout_block_context(struct box *block, int viewport_height,
 		if (box->object) {
 			if (!layout_block_object(box))
 				return false;
+
+		} else if (box->iframe) {
+			browser_window_reformat(box->iframe, box->width,
+					box->height == AUTO ?
+							0 : box->height);
+
 		} else if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
 			if (!layout_inline_container(box, box->width, block,
 					cx, cy, content))
 				return false;
+
 		} else if (box->type == BOX_TABLE) {
 			/* Move down to avoid floats if necessary. */
 			int x0, x1;
@@ -549,7 +564,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 		}
 
 		/* Advance to next box. */
-		if (box->type == BOX_BLOCK && !box->object && box->children) {
+		if (box->type == BOX_BLOCK && !box->object && !(box->iframe) &&
+				box->children) {
 			/* Down into children. */
 
 			if (box == margin_collapse) {
@@ -563,7 +579,8 @@ bool layout_block_context(struct box *block, int viewport_height,
 			box->y = y;
 			cy += y;
 			continue;
-		} else if (box->type == BOX_BLOCK || box->object)
+		} else if (box->type == BOX_BLOCK || box->object ||
+				box->flags & IFRAME)
 			cy += box->padding[TOP];
 
 		if (box->type == BOX_BLOCK && box->height == AUTO) {
@@ -776,6 +793,10 @@ void layout_minmax_block(struct box *block,
 			min = max = content_get_width(block->object);
 		}
 
+		block->flags |= HAS_HEIGHT;
+	} else if (block->flags & IFRAME) {
+		/** TODO: do we need to know the min/max width of the iframe's
+		 * content? */
 		block->flags |= HAS_HEIGHT;
 	} else {
 		/* recurse through children */
@@ -2016,8 +2037,9 @@ bool layout_inline_container(struct box *inline_container, int width,
 				whitespace == CSS_WHITE_SPACE_PRE_WRAP);
 		}
 
-		if ((!c->object && !(c->flags & REPLACE_DIM) && c->text &&
-				(c->length || is_pre)) ||
+		if ((!c->object && !(c->flags & REPLACE_DIM) &&
+				!(c->flags & IFRAME) &&
+				c->text && (c->length || is_pre)) ||
 				c->type == BOX_BR)
 			has_text_children = true;
 	}
@@ -2369,7 +2391,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			continue;
 		}
 
-		if (!b->object && !b->gadget &&
+		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
 				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
 			b->height = line_height(b->style ? b->style :
@@ -2468,6 +2490,19 @@ bool layout_line(struct box *first, int *width, int *y,
 		if (b->object && !(b->flags & REPLACE_DIM)) {
 			layout_get_object_dimensions(b, &b->width, &b->height,
 					true, true);
+		} else if (b->flags & IFRAME) {
+			/* TODO: should we look at the content dimensions? */
+			if (b->width == AUTO)
+				b->width = 400;
+			if (b->height == AUTO)
+				b->height = 300;
+
+			/* If the iframe's bw is in place, reformat it to the
+			 * new box size */
+			if (b->iframe) {
+				browser_window_reformat(b->iframe,
+						b->width, b->height);
+			}
 		} else {
 			/* form control with no object */
 			if (b->width == AUTO)
@@ -2478,6 +2513,7 @@ bool layout_line(struct box *first, int *width, int *y,
 						CSS_UNIT_EM, b->style));
 		}
 
+		/* Reformat object to new box size */
 		if (b->object && content_get_type(b->object) == CONTENT_HTML &&
 				b->width != 
 				content_get_available_width(b->object)) {
@@ -2558,7 +2594,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 
 			space_before = space_after;
-			if (b->object || b->flags & REPLACE_DIM)
+			if (b->object || b->flags & REPLACE_DIM ||
+					b->flags & IFRAME)
 				space_after = 0;
 			else if (b->text || b->type == BOX_INLINE_END) {
 				if (b->space == UNKNOWN_WIDTH) {
@@ -2713,6 +2750,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				split_box->type == BOX_TEXT) &&
 				!split_box->object &&
 				!(split_box->flags & REPLACE_DIM) &&
+				!(split_box->flags & IFRAME) &&
 				!split_box->gadget && split_box->text) {
 			/* skip leading spaces, otherwise code gets fooled into
 			 * thinking it's all one long word */
@@ -2867,6 +2905,7 @@ bool layout_line(struct box *first, int *width, int *y,
 			continue;
 		} else if ((d->type == BOX_INLINE &&
 				((d->object || d->gadget) == false) &&
+				!(d->flags & IFRAME) &&
 				!(d->flags & REPLACE_DIM)) ||
 				d->type == BOX_BR ||
 				d->type == BOX_TEXT ||
@@ -3022,7 +3061,8 @@ struct box *layout_minmax_line(struct box *first,
 		font_plot_style_from_css(b->style, &fstyle);
 
 		if (b->type == BOX_INLINE && !b->object &&
-				!(b->flags & REPLACE_DIM)) {
+				!(b->flags & REPLACE_DIM) &&
+				!(b->flags & IFRAME)) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
 					&fixed, &frac);
@@ -3050,7 +3090,7 @@ struct box *layout_minmax_line(struct box *first,
 			continue;
 		}
 
-		if (!b->object && !b->gadget &&
+		if (!b->object && !(b->flags & IFRAME) && !b->gadget &&
 				!(b->flags & REPLACE_DIM)) {
 			/* inline non-replaced, 10.3.1 and 10.6.1 */
 			if (!b->text)
@@ -3157,6 +3197,15 @@ struct box *layout_minmax_line(struct box *first,
 						true, false);
 			}
 
+			fixed = frac = 0;
+			calculate_mbp_width(b->style, LEFT, true, true, true,
+					&fixed, &frac);
+			calculate_mbp_width(b->style, RIGHT, true, true, true,
+					&fixed, &frac);
+
+			if (0 < width + fixed)
+				width += fixed;
+		} else if (b->flags & IFRAME) {
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
 					&fixed, &frac);
@@ -4668,7 +4717,7 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 	box->height = height;
 
 	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
-			box->object) {
+			box->object || box->flags & IFRAME) {
 		if (!layout_block_context(box, -1, content))
 			return false;
 	} else if (box->type == BOX_TABLE) {

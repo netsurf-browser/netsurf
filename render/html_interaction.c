@@ -135,6 +135,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	hlcache_handle *gadget_content = h;
 	struct form_control *gadget = 0;
 	hlcache_handle *object = NULL;
+	struct browser_window *iframe = NULL;
 	struct box *next_box;
 	struct box *drag_candidate = NULL;
 	struct scrollbar *scrollbar = NULL;
@@ -213,6 +214,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 		if (box->object)
 			object = box->object;
+
+		if (box->iframe)
+			iframe = box->iframe;
 
 		if (box->href) {
 			url = box->href;
@@ -464,6 +468,18 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		/* \todo should have a drag-saving object msg */
 		status = content_get_status_message(h);
 
+	} else if (iframe) {
+		int pos_x, pos_y;
+		browser_window_get_position(iframe, false, &pos_x, &pos_y);
+
+		if (mouse & BROWSER_MOUSE_CLICK_1 ||
+				mouse & BROWSER_MOUSE_CLICK_2) {
+			browser_window_mouse_click(iframe, mouse,
+					x - pos_x, y - pos_y);
+		} else {
+			browser_window_mouse_track(iframe, mouse,
+					x - pos_x, y - pos_y);
+		}
 	} else if (url) {
 		if (title) {
 			snprintf(status_buffer, sizeof status_buffer, "%s: %s",
@@ -601,7 +617,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	if (status != NULL)
 		browser_window_set_status(bw, status);
 
-	browser_window_set_pointer(bw->window, pointer);
+	if (!iframe)
+		browser_window_set_pointer(bw, pointer);
 
 	/* deferred actions that can cause this browser_window to be destroyed
 	 * and must therefore be done after set_status/pointer
@@ -778,8 +795,7 @@ void html_overflow_scroll_callback(void *client_data,
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
 			bw->scrollbar = NULL;
 			
-			browser_window_set_pointer(bw->window,
-					GUI_POINTER_DEFAULT);
+			browser_window_set_pointer(bw, GUI_POINTER_DEFAULT);
 			break;
 	}
 }

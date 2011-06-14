@@ -644,7 +644,8 @@ void search_show_all(bool all, struct search_context *context)
 			}
 		}
 		if (add && !a->sel) {
-			a->sel = selection_create(context->bw);
+			a->sel = selection_create();
+			selection_set_browser_window(a->sel, context->bw);
 			if (a->sel) {
 				hlcache_handle *c = context->bw->
 						current_content;

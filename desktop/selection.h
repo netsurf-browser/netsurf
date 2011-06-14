@@ -59,11 +59,14 @@ typedef bool (*seln_traverse_handler)(const char *text, size_t length,
 		size_t whitespace_length);
 
 
-struct selection *selection_create(struct browser_window *bw);
+struct selection *selection_create(void);
 void selection_destroy(struct selection *s);
 
 void selection_init(struct selection *s, struct box *root);
 void selection_reinit(struct selection *s, struct box *root);
+
+void selection_set_browser_window(struct selection *s,
+		struct browser_window *bw);
 
 /* struct box *selection_root(struct selection *s); */
 #define selection_root(s) ((s)->root)

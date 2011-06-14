@@ -112,7 +112,8 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	}
 
 	/* Browser window has content */
-	if (plot.option_knockout)
+	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
+			plot.option_knockout)
 		knockout_plot_start(&plot);
 
 	plot.clip(clip);
@@ -133,7 +134,8 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	plot_ok &= content_redraw(bw->current_content, x, y, width, height,
 				  clip, bw->scale, 0xFFFFFF, false, false);
 	
-	if (plot.option_knockout)
+	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
+			plot.option_knockout)
 		knockout_plot_end();
 
 	return plot_ok;
@@ -153,8 +155,60 @@ bool browser_window_redraw_ready(struct browser_window *bw)
 	return true;
 }
 
+/* exported interface, documented in browser.h */
+void browser_window_update_extent(struct browser_window *bw)
+{
+	switch (bw->browser_window_type) {
+	default:
+		/* Fall through until core frame(set)s are implemented */
+	case BROWSER_WINDOW_NORMAL:
+		gui_window_update_extent(bw->window);
+		break;
+	case BROWSER_WINDOW_IFRAME:
+		/* TODO */
+		break;
+	}
+}
+
+/* exported interface, documented in browser.h */
+void browser_window_get_position(struct browser_window *bw, bool root,
+		int *pos_x, int *pos_y)
+{
+	int x, y;
+	*pos_x = 0;
+	*pos_y = 0;
+
+	assert(bw != NULL);
+
+	while (bw) {
+		switch (bw->browser_window_type) {
+		default:
+			/* fall through to NORMAL until frame(set)s are handled
+			 * in the core */
+		case BROWSER_WINDOW_NORMAL:
+			/* There is no offset to the root browser window */
+			break;
+		case BROWSER_WINDOW_IFRAME:
+			/* offset comes from its box position in parent bw */
+			box_coords(bw->box, &x, &y);
+
+			*pos_x += x;
+			*pos_y += y;
+			break;
+		}
+
+		bw = bw->parent;
+
+		if (!root) {
+			/* return if we just wanted the position in the parent
+			 * browser window. */
+			return;
+		}
+	}
+}
+
 /**
- * Create and open a new browser window with the given page.
+ * Create and open a new root browser window with the given page.
  *
  * \param  url	    URL to start fetching in the new window (copied)
  * \param  clone    The browser window to clone
@@ -166,6 +220,7 @@ struct browser_window *browser_window_create(const char *url,
 		const char *referer, bool history_add, bool new_tab)
 {
 	struct browser_window *bw;
+	struct browser_window *top;
 
 	assert(clone || history_add);
 
@@ -183,10 +238,18 @@ struct browser_window *browser_window_create(const char *url,
 	bw->border = true;
 	bw->no_resize = true;
 	bw->last_action = wallclock();
-
-	bw->window = gui_create_browser_window(bw, clone, new_tab);
+	bw->sel = selection_create();
 
 	/* gui window */
+	/* from the front end's pov, it clones the top level browser window,
+	 * so find that. */
+	top = clone;
+	while (top && !top->window && top->parent) {
+		top = top->parent;
+	}
+
+	bw->window = gui_create_browser_window(bw, top, new_tab);
+
 	if (bw->window == NULL) {
 		browser_window_destroy(bw);
 		return NULL;
@@ -217,12 +280,14 @@ void browser_window_initialise_common(struct browser_window *bw,
 		bw->history = history_clone(clone->history);
 
 	/* window characteristics */
-	bw->sel = selection_create(bw);
+	bw->sel = NULL;
 	bw->refresh_interval = -1;
 
 	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
 	bw->scale = (float) option_scale / 100.0;
+
+	bw->focus = NULL;
 
 	/* initialise status text cache */
 	bw->status_text = NULL;
@@ -534,7 +599,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		bw->loading_content = NULL;
 
 		/* Format the new content to the correct dimensions */
-		gui_window_get_dimensions(bw->window, &width, &height, true);
+		browser_window_get_dimensions(bw, &width, &height, true);
 		content_reformat(c, width, height);
 
 		browser_window_remove_caret(bw);
@@ -568,9 +633,11 @@ nserror browser_window_callback(hlcache_handle *c,
 		}
 		
 		/* favicon preload */
-		if (content_get_type(c) == CONTENT_HTML)
+		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL &&
+				content_get_type(c) == CONTENT_HTML) {
 			gui_window_set_icon(bw->window, 
-					    html_get_favicon(bw->current_content));
+					html_get_favicon(bw->current_content));
+		}
 		
 		/* text selection */
 		if (content_get_type(c) == CONTENT_HTML)
@@ -651,7 +718,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_REDRAW:
-		gui_window_update_box(bw->window, &event->data);
+		browser_window_update_box(bw, &event->data);
 		break;
 
 	case CONTENT_MSG_REFRESH:
@@ -660,7 +727,10 @@ nserror browser_window_callback(hlcache_handle *c,
 		
 	case CONTENT_MSG_FAVICON_REFRESH:
 		/* Cause the GUI to update */
-		gui_window_set_icon(bw->window, html_get_favicon(bw->current_content));
+		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+			gui_window_set_icon(bw->window,
+					html_get_favicon(bw->current_content));
+		}
 		break;
 
 	default:
@@ -668,6 +738,41 @@ nserror browser_window_callback(hlcache_handle *c,
 	}
 
 	return NSERROR_OK;
+}
+
+
+/*
+ * Get the dimensions of the area a browser window occupies
+ *
+ * \param  bw      The browser window to get dimensions of
+ * \param  width   Updated to the browser window viewport width
+ * \param  height  Updated to the browser window viewport height
+ * \param  scaled  Whether we want the height with scale applied
+ */
+
+void browser_window_get_dimensions(struct browser_window *bw,
+		int *width, int *height, bool scaled)
+{
+	struct rect rect;
+
+	switch (bw->browser_window_type) {
+	case BROWSER_WINDOW_IFRAME:
+		/* browser window is size of associated box */
+		box_bounds(bw->box, &rect);
+		/* TODO: Handle scale */
+		*width = rect.x1 - rect.x0;
+		*height = rect.y1 - rect.y0;
+		break;
+
+	case BROWSER_WINDOW_FRAME:
+	case BROWSER_WINDOW_FRAMESET:
+	case BROWSER_WINDOW_NORMAL:
+		/* root window (or frame(set), currently); browser window is
+		 * size of gui window viewport */
+		assert(bw->window);
+		gui_window_get_dimensions(bw->window, width, height, scaled);
+		break;
+	}
 }
 
 
@@ -833,22 +938,75 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 	if (bw->current_content == NULL)
 		return;
 
-	gui_window_set_title(bw->window, 
-			content_get_title(bw->current_content));
+	switch (bw->browser_window_type) {
+	default:
+		/* Fall through to normal
+		 * (frame(set)s aren't handled by the core yet) */
+	case BROWSER_WINDOW_NORMAL:
+		/* Root browser window, constituting a front end window/tab */
+		gui_window_set_title(bw->window, 
+				content_get_title(bw->current_content));
 
-	gui_window_update_extent(bw->window);
+		browser_window_update_extent(bw);
 
-	if (scroll_to_top)
-		gui_window_set_scroll(bw->window, 0, 0);
+		if (scroll_to_top)
+			gui_window_set_scroll(bw->window, 0, 0);
 
-	/** \todo don't do this if the user has scrolled */
-	/* if frag_id exists, then try to scroll to it */
-	if (bw->frag_id && html_get_id_offset(bw->current_content, bw->frag_id,
-			&x, &y)) {
-		gui_window_set_scroll(bw->window, x, y);
+		/* if frag_id exists, then try to scroll to it */
+		/** \TODO don't do this if the user has scrolled */
+		if (bw->frag_id && html_get_id_offset(bw->current_content,
+				bw->frag_id, &x, &y)) {
+			gui_window_set_scroll(bw->window, x, y);
+		}
+
+		gui_window_redraw_window(bw->window);
+
+		break;
+	case BROWSER_WINDOW_IFRAME:
+		/* Internal iframe browser window */
+
+		/** \TODO handle scrollbar extents, scroll offset */
+
+		html_redraw_a_box(bw->parent->current_content, bw->box);
+		break;
 	}
+}
 
-	gui_window_redraw_window(bw->window);
+
+void browser_window_update_box(struct browser_window *bw,
+		const union content_msg_data *data)
+{
+	int pos_x;
+	int pos_y;
+	union content_msg_data data_copy = *data;
+	struct browser_window *top;
+
+	switch (bw->browser_window_type) {
+	default:
+		/* fall through for frame(set)s,
+		 * until they are handled by core */
+	case BROWSER_WINDOW_NORMAL:
+		gui_window_update_box(bw->window, data);
+		break;
+
+	case BROWSER_WINDOW_IFRAME:
+		browser_window_get_position(bw, true, &pos_x, &pos_y);
+
+		top = bw;
+		while (top && !top->window && top->parent) {
+			top = top->parent;
+		}
+
+		/* TODO: update gui_window_update_box so it takes a struct rect
+		 * instead of msg data. */
+		data_copy.redraw.x += pos_x;
+		data_copy.redraw.y += pos_y;
+		data_copy.redraw.object_x += pos_x;
+		data_copy.redraw.object_y += pos_y;
+
+		gui_window_update_box(top->window, &data_copy);
+		break;
+	}
 }
 
 
@@ -993,9 +1151,19 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
  * \param  shape    shape to use
  */
 
-void browser_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
+void browser_window_set_pointer(struct browser_window *bw,
+		gui_pointer_shape shape)
 {
-	gui_window_set_pointer(g, shape);
+	struct browser_window *root = bw;
+
+	while (root && !root->window && root->parent) {
+		root = root->parent;
+	}
+
+	assert(root);
+	assert(root->window);
+
+	gui_window_set_pointer(root->window, shape);
 }
 
 
@@ -1061,12 +1229,27 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 	schedule_remove(browser_window_refresh, bw);
 
+	/* If this brower window is not the root window, and has focus, unset
+	 * the root browser window's focus pointer. */
+	if (!bw->window) {
+		struct browser_window *top = bw;
+
+		while (top && !top->window && top->parent)
+			top = top->parent;
+
+		if (top->focus == bw)
+			top->focus = NULL;
+	}
+
 	/* Destruction order is important: we must ensure that the frontend 
 	 * destroys any window(s) associated with this browser window before 
 	 * we attempt any destructive cleanup. 
 	 */
 
-	gui_window_destroy(bw->window);
+	if (bw->window) {
+		/* Only the root window has a GUI window */
+		gui_window_destroy(bw->window);
+	}
 
 	if (bw->loading_content != NULL) {
 		hlcache_handle_release(bw->loading_content);
@@ -1083,8 +1266,18 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		bw->current_content = NULL;
 	}
 
+	if (bw->box != NULL) {
+		bw->box->iframe = NULL;
+		bw->box = NULL;
+	}
+
+	/* TODO: After core FRAMES are done, should be
+	 * if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) */
+	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME) {
+		selection_destroy(bw->sel);
+	}
+
 	/* These simply free memory, so are safe here */
-	selection_destroy(bw->sel);
 	history_destroy(bw->history);
 
 	free(bw->name);
@@ -1211,6 +1404,11 @@ void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 	assert(url);
 	
 	bw->visible_select_menu = NULL;
+
+	if (bw->parent != NULL) {
+		/* Not root window; don't set a URL in GUI URL bar */
+		return;
+	}
 
 	if (frag == NULL) {
 		/* With no fragment, we may as well pass url straight through
@@ -1425,6 +1623,10 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
 
+	if (bw->drag_type != DRAGGING_NONE) {
+		selection_set_browser_window(bw->sel, bw);
+	}
+
 	if (bw->drag_type == DRAGGING_FRAME) {
 		browser_window_resize_frame(bw, bw->x0 + x, bw->y0 + y);
 	} else if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
@@ -1439,7 +1641,17 @@ void browser_window_mouse_track(struct browser_window *bw,
 		bw->drag_start_scroll_x = scrollx;
 		bw->drag_start_scroll_y = scrolly;
 
-		gui_window_set_scroll(bw->window, scrollx, scrolly);
+		switch (bw->browser_window_type) {
+		default:
+			/* Fall through to normal, until frame(set)s are
+			 * handled in the core */
+		case BROWSER_WINDOW_NORMAL:
+			gui_window_set_scroll(bw->window, scrollx, scrolly);
+			break;
+		case BROWSER_WINDOW_IFRAME:
+			/* TODO */
+			break;
+		}
 	} else {
 		assert(c != NULL);
 		content_mouse_track(c, bw, mouse, x, y);
@@ -1460,9 +1672,18 @@ void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	hlcache_handle *c = bw->current_content;
+	struct browser_window *top;
 
 	if (!c)
 		return;
+
+	/* Set focus browser window */
+	top = bw;
+	while (top && !top->window && top->parent)
+		top = top->parent;
+	top->focus = bw;
+
+	selection_set_browser_window(bw->sel, bw);
 
 	switch (content_get_type(c)) {
 	case CONTENT_HTML:
@@ -1481,7 +1702,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
 				BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
-			browser_window_set_pointer(bw->window, GUI_POINTER_MOVE);
+			browser_window_set_pointer(bw, GUI_POINTER_MOVE);
 		}
 		break;
 	}
@@ -1495,9 +1716,9 @@ void browser_window_mouse_click(struct browser_window *bw,
  * \param  mouse  state of mouse buttons and modifier keys
  * \param  x	  coordinate of mouse
  * \param  y	  coordinate of mouse
+ *
+ * TODO: MOVE content specific stuff out
  */
-
-// TODO: MOVE content specific stuff out
 
 void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
@@ -1581,10 +1802,19 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 	bw->drag_start_x = x;
 	bw->drag_start_y = y;
 
-	gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x,
-			&bw->drag_start_scroll_y);
+	switch (bw->browser_window_type) {
+	default:
+		/* fall through until frame(set)s are handled in core */
+	case BROWSER_WINDOW_NORMAL:
+		gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x,
+				&bw->drag_start_scroll_y);
 
-	gui_window_scroll_start(bw->window);
+		gui_window_scroll_start(bw->window);
+		break;
+	case BROWSER_WINDOW_IFRAME:
+		/* TODO */
+		break;
+	}
 }
 
 

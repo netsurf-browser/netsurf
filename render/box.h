@@ -127,7 +127,8 @@ typedef enum {
 	HAS_HEIGHT  = 1 << 6,	/* box has height (perhaps due to children) */
 	MAKE_HEIGHT = 1 << 7,	/* box causes its own height */
 	NEED_MIN    = 1 << 8,	/* minimum width is required for layout */
-	REPLACE_DIM = 1 << 9	/* replaced element has given dimensions */
+	REPLACE_DIM = 1 << 9,	/* replaced element has given dimensions */
+	IFRAME      = 1 << 10	/* box contains an iframe */
 } box_flags;
 
 /* Sides of a box */
@@ -257,6 +258,9 @@ struct box {
 	struct hlcache_handle* object;
 	/** Parameters for the object, or 0. */
 	struct object_params *object_params;
+
+	/** Iframe's browser_window, or NULL if none */
+	struct browser_window *iframe;
 };
 
 /** Table column data. */

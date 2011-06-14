@@ -165,6 +165,7 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->background = NULL;
 	box->object = NULL;
 	box->object_params = NULL;
+	box->iframe = NULL;
 
 	return box;
 }
@@ -931,6 +932,9 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	if (box->object) {
 		fprintf(stream, "(object '%s') ", 
 				content_get_url(box->object));
+	}
+	if (box->iframe) {
+		fprintf(stream, "(iframe) ");
 	}
 	if (box->gadget)
 		fprintf(stream, "(gadget) ");

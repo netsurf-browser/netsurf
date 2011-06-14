@@ -1173,7 +1173,29 @@ void browser_window_place_caret(struct browser_window *bw,
 		browser_move_callback move_cb,
 		void *p)
 {
-	gui_window_place_caret(bw->window, x, y, height);
+	struct browser_window *root_bw;
+	int pos_x = 0;
+	int pos_y = 0;
+
+	/* Find top level browser window */
+	root_bw = bw;
+	while (root_bw && !root_bw->window && root_bw->parent) {
+		switch (root_bw->browser_window_type) {
+			default:
+				/* TODO: Frame(set)s */
+			case BROWSER_WINDOW_NORMAL:
+				break;
+			case BROWSER_WINDOW_IFRAME:
+				box_coords(root_bw->box, &pos_x, &pos_y);
+				x += pos_x;
+				y += pos_y;
+				break;
+		}
+
+		root_bw = root_bw->parent;
+	}
+
+	gui_window_place_caret(root_bw->window, x, y, height);
 	bw->caret_callback = caret_cb;
 	bw->paste_callback = paste_cb;
 	bw->move_callback = move_cb;
@@ -1188,7 +1210,16 @@ void browser_window_place_caret(struct browser_window *bw,
  */
 void browser_window_remove_caret(struct browser_window *bw)
 {
-	gui_window_remove_caret(bw->window);
+	struct browser_window *root_bw;
+
+	/* Find top level browser window */
+	root_bw = bw;
+	while (root_bw && !root_bw->window && root_bw->parent) {
+		root_bw = root_bw->parent;
+	}
+
+	gui_window_remove_caret(root_bw->window);
+
 	bw->caret_callback = NULL;
 	bw->paste_callback = NULL;
 	bw->move_callback = NULL;
@@ -1245,29 +1276,31 @@ size_t get_form_offset(struct box* input, struct box* text_box,
 /**
  * Handle key presses in a browser window.
  *
- * \param bw   The browser window with input focus
+ * \param bw   The root browser window
  * \param key  The UCS4 character codepoint
  * \return true if key handled, false otherwise
  */
 bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 {
+	struct browser_window *focus = bw->focus;
+
 	/* keys that take effect wherever the caret is positioned */
 	switch (key) {
 		case KEY_SELECT_ALL:
-			selection_select_all(bw->sel);
+			selection_select_all(focus->sel);
 			return true;
 
 		case KEY_COPY_SELECTION:
-			gui_copy_to_clipboard(bw->sel);
+			gui_copy_to_clipboard(focus->sel);
 			return true;
 
 		case KEY_CLEAR_SELECTION:
-			selection_clear(bw->sel, true);
+			selection_clear(focus->sel, true);
 			return true;
 
 		case KEY_ESCAPE:
-			if (selection_defined(bw->sel)) {
-				selection_clear(bw->sel, true);
+			if (selection_defined(focus->sel)) {
+				selection_clear(focus->sel, true);
 				return true;
 			}
 			/* if there's no selection,
@@ -1276,10 +1309,10 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 	}
 
 	/* pass on to the appropriate field */
-	if (!bw->caret_callback)
+	if (!focus->caret_callback)
 		return false;
 
-	return bw->caret_callback(bw, key, bw->caret_p);
+	return focus->caret_callback(focus, key, focus->caret_p);
 }
 
 
