@@ -2497,12 +2497,8 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (b->height == AUTO)
 				b->height = 300;
 
-			/* If the iframe's bw is in place, reformat it to the
-			 * new box size */
-			if (b->iframe) {
-				browser_window_reformat(b->iframe,
-						b->width, b->height);
-			}
+			/* We reformat the iframe browser window to new
+			 * dimensions in pass 2 */
 		} else {
 			/* form control with no object */
 			if (b->width == AUTO)
@@ -2734,6 +2730,14 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 			b->next_float = cont->float_children;
 			cont->float_children = b;
+
+			/* If the iframe's bw is in place, reformat it to the
+			 * new box size */
+			if (b->iframe) {
+				browser_window_reformat(b->iframe,
+						b->width, b->height);
+			}
+
 			split_box = 0;
 		}
 	}
