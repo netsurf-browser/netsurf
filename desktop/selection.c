@@ -707,7 +707,6 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 			rdw.inited = true;
 		}
 	}
-	LOG(("browser window type: %s", s->bw->browser_window_type == BROWSER_WINDOW_NORMAL ? "NORMAL" : "IFRAME"));
 
 	if (rdw.inited)
 		browser_window_redraw_rect(s->bw, rdw.r.x0, rdw.r.y0,
