@@ -1329,10 +1329,11 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
 		unsigned utf8_len, bool last)
 {
-	if (!bw->paste_callback)
+	if (!bw->focus || !bw->focus->paste_callback)
 		return false;
 
-	return bw->paste_callback(bw, utf8, utf8_len, last, bw->caret_p);
+	return bw->focus->paste_callback(bw->focus, utf8, utf8_len, last,
+			bw->focus->caret_p);
 }
 
 
