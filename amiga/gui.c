@@ -2335,8 +2335,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char addtab[100],addtab_s[100],addtab_g[100];
 	char tabthrobber[100];
 
-	if((bw->browser_window_type == BROWSER_WINDOW_IFRAME) && option_no_iframes) return NULL;
-
 	if(!scrn) ami_openscreenfirst();
 
 	if(option_kiosk_mode) new_tab = false;

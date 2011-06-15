@@ -40,7 +40,6 @@ The options file is stored in @{"Resources/Options" link Resources/Options/Main}
 There are a couple of Amiga-specific options which can only be changed directly in the file.  These are:
 
 @{b}kiosk_mode@{ub} No gadgets
-@{b}no_iframes@{ub} Disable IFrames
 @{b}printer_unit@{ub} Specifies which printer.device unit to print to
 @{b}drag_save_icons@{ub} Enables displaying Workbench-style transparent icons under the pointer when performing drag saves (ctrl-drag of objects available if NetSurf is running on the Workbench screen) and text selection drags.  If set to 0 the pointer style will change instead.  OS 4.0 users may want to set this to 0 as icons will appear opaque and obscure the drop position.
 @{b}cairo_renderer@{ub} Set rendering engine (SObjs version only). 0 = graphics.library, 1 = Cairo/graphics.library mixed (recommended), 2 = Full Cairo.

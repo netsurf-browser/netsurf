@@ -26,7 +26,6 @@ extern char *option_use_pubscreen;
 extern char *option_modeid;
 extern int option_cache_bitmaps;
 extern char *option_theme;
-extern bool option_no_iframes;
 extern bool option_utf8_clipboard;
 extern bool option_context_menu;
 extern bool option_sticky_context_menu;
@@ -74,7 +73,6 @@ char *option_use_pubscreen = 0; \
 char *option_modeid = 0; \
 int option_cache_bitmaps = 0; \
 char *option_theme = 0; \
-bool option_no_iframes = true; \
 bool option_utf8_clipboard = false; \
 bool option_context_menu = true; \
 bool option_sticky_context_menu = false; \
@@ -122,7 +120,6 @@ int option_amiga_ydpi = 72; \
 { "screen_modeid",	OPTION_STRING,	&option_modeid}, \
 { "cache_bitmaps",	OPTION_INTEGER,	&option_cache_bitmaps}, \
 { "theme",		OPTION_STRING,	&option_theme}, \
-{ "no_iframes",	OPTION_BOOL,	&option_no_iframes}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
 { "context_menu",	OPTION_BOOL,	&option_context_menu}, \
 { "sticky_context_menu",	OPTION_BOOL,	&option_sticky_context_menu}, \
