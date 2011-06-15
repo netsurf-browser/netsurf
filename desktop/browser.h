@@ -243,8 +243,6 @@ bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
 		unsigned utf8_len, bool last);
 void browser_redraw_box(struct hlcache_handle *c, struct box *box);
 
-void browser_scroll_callback(void *client_data,
-		struct scroll_msg_data *scroll_data);
 void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 
