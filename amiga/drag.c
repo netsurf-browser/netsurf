@@ -66,7 +66,7 @@ void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 	{
 		case GUI_SAVE_OBJECT_ORIG: // object
 		case GUI_SAVE_SOURCE:
-			filetype = ami_content_type_to_file_type(content_get_type(c));
+			filetype = ami_mime_content_to_filetype(c);
 		break;
 		case GUI_SAVE_COMPLETE:
 			filetype = "drawer";

@@ -148,8 +148,6 @@ char *fetch_mimetype(const char *ro_path)
 
 const char *ami_content_type_to_file_type(content_type type)
 {
-	/* TODO: Can we pass MIME types to this function instead? */
-
 	switch(type)
 	{
 		case CONTENT_HTML:
@@ -162,6 +160,10 @@ const char *ami_content_type_to_file_type(content_type type)
 
 		case CONTENT_CSS:
 			return "css";
+		break;
+
+		case CONTENT_IMAGE:
+			return "picture";
 		break;
 
 		default:
@@ -252,6 +254,7 @@ nserror ami_mime_init(const char *mimefile)
 
 void ami_mime_free(void)
 {
+	ami_mime_dump();
 	FreeObjList(ami_mime_list);
 }
 
@@ -506,6 +509,22 @@ struct Node *ami_mime_to_filetype(lwc_string *mimetype,
 	{
 		return NULL;
 	}
+}
+
+const char *ami_mime_content_to_filetype(struct hlcache_handle *c)
+{
+	struct Node *node;
+	lwc_string *filetype;
+	lwc_string *mimetype;
+
+	mimetype = content_get_mime_type(c);
+
+	node = ami_mime_to_filetype(mimetype, &filetype, NULL);
+
+	if(node && (filetype != NULL))
+		return lwc_string_data(filetype);
+	else
+		return ami_content_type_to_file_type(content_get_type(c));
 }
 
 /**
