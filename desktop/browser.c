@@ -192,8 +192,8 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 			/* offset comes from its box position in parent bw */
 			box_coords(bw->box, &x, &y);
 
-			*pos_x += x;
-			*pos_y += y;
+			*pos_x += x * bw->scale;
+			*pos_y += y * bw->scale;
 			break;
 		}
 
@@ -760,7 +760,7 @@ void browser_window_get_dimensions(struct browser_window *bw,
 	case BROWSER_WINDOW_IFRAME:
 		/* browser window is size of associated box */
 		box_bounds(bw->box, &rect);
-		/* TODO: Handle scale */
+LOG(("SCALED: %s", scaled ? "yes" : "no"));
 		*width = rect.x1 - rect.x0;
 		*height = rect.y1 - rect.y0;
 		break;
@@ -1334,7 +1334,13 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
 	if (c == NULL)
 		return;
 
-	content_reformat(c, width / bw->scale, height / bw->scale);
+	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME) {
+		/* Iframe dimensions are already scaled in parent's layout */
+		width /= bw->scale;
+		height /= bw->scale;
+	}
+
+	content_reformat(c, width, height);
 }
 
 
