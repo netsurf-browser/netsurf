@@ -238,7 +238,9 @@ struct browser_window *browser_window_create(const char *url,
 	bw->border = true;
 	bw->no_resize = true;
 	bw->last_action = wallclock();
+
 	bw->sel = selection_create();
+	selection_set_browser_window(bw->sel, bw);
 
 	/* gui window */
 	/* from the front end's pov, it clones the top level browser window,
