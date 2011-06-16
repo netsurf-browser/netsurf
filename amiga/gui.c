@@ -30,6 +30,7 @@
 #include "desktop/tree.h"
 #include "image/ico.h"
 #include "render/form.h"
+#include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
@@ -145,6 +146,7 @@ Class *urlStringClass;
 
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
+ULONG screen_signal = -1;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 
@@ -310,6 +312,8 @@ void ami_open_resources(void)
 							ASLFR_RejectIcons,TRUE,
 							ASLFR_InitialDrawer,option_download_dir,
 							TAG_DONE);
+
+	screen_signal = AllocSignal(-1);
 }
 
 void ami_set_options(void)
@@ -546,6 +550,7 @@ void ami_openscreen(void)
 					SA_Type,CUSTOMSCREEN,
 					SA_PubName,"NetSurf",
 					SA_LikeWorkbench,TRUE,
+					SA_PubSig, screen_signal,
 					TAG_DONE);
 
 		if(scrn)
@@ -1652,7 +1657,8 @@ void ami_handle_msg(void)
 //							WINDOW_Icon, dobj,
 							TAG_DONE);
 					RA_Iconify(gwin->objects[OID_MAIN]);
-					screen_closed = CloseScreen(scrn);
+					if(locked_screen == FALSE)
+						screen_closed = CloseScreen(scrn);
 				}
 				break;
 
@@ -2109,7 +2115,8 @@ void ami_try_quit(void)
 	}
 	else
 	{
-		if(CloseScreen(scrn)) scrn = NULL;
+		if(locked_screen == FALSE)
+			if(CloseScreen(scrn)) scrn = NULL;
 	}
 }
 
@@ -2149,6 +2156,17 @@ void ami_quit_netsurf(void)
 	}
 }
 
+void ami_gui_close_screen(struct Screen *scrn)
+{
+	ULONG scrnsig = 1 << screen_signal;
+
+	if(CloseScreen(scrn)) return;
+
+	LOG(("Waiting for visitor windows to close..."));
+	Wait(scrnsig);
+	CloseScreen(scrn);
+}
+
 void gui_quit(void)
 {
 	int i;
@@ -2172,9 +2190,9 @@ void gui_quit(void)
 
 	ami_close_fonts();
 
-	/* Have a go at closing the public screen, apparently this is OK to do
-	 even if it isn't our screen (ie. locked_screen != NULL) */
-	CloseScreen(scrn);
+	/* If it is our public screen, close it or wait until the visitor windows leave */
+	if(locked_screen == FALSE) ami_gui_close_screen(scrn);
+	FreeSignal(screen_signal);
 
 	FreeVec(nsscreentitle);
 
