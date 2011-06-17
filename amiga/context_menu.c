@@ -29,6 +29,7 @@
 #include "amiga/context_menu.h"
 #include "amiga/clipboard.h"
 #include "amiga/bitmap.h"
+#include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
@@ -363,7 +364,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				no_sel = false;
 				menuhascontent = true;
 			}
-
 			if(curbox->object &&
 				(content_get_type(curbox->object) == CONTENT_PLUGIN))
 			{
