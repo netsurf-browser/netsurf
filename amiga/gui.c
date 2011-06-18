@@ -502,7 +502,7 @@ void gui_init(int argc, char** argv)
 
 	plot=amiplot;
 
-	if(option_context_menu) ami_context_menu_init();
+	ami_context_menu_init();
 
 	window_list = NewObjList();
 
@@ -952,7 +952,7 @@ void ami_handle_msg(void)
 	struct IBox *bbox;
 	struct nsObject *node;
 	struct nsObject *nnode;
-	struct gui_window_2 *gwin,*destroywin=NULL;
+	struct gui_window_2 *gwin = NULL;
 	struct MenuItem *item;
 	struct InputEvent *ie;
 	struct Node *tabnode;
@@ -2196,7 +2196,7 @@ void gui_quit(void)
 
 	FreeVec(nsscreentitle);
 
-	if(option_context_menu) ami_context_menu_free();
+	ami_context_menu_free();
 
 	ami_mouse_pointers_free();
 	ami_clipboard_free();
