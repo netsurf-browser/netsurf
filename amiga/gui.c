@@ -545,11 +545,11 @@ void ami_openscreen(void)
 		}
 
 		scrn = OpenScreenTags(NULL,
-					SA_DisplayID,id,
-					SA_Title,nsscreentitle,
-					SA_Type,CUSTOMSCREEN,
-					SA_PubName,"NetSurf",
-					SA_LikeWorkbench,TRUE,
+					SA_DisplayID, id,
+					SA_Title, nsscreentitle,
+					SA_Type, PUBLICSCREEN,
+					SA_PubName, "NetSurf",
+					SA_LikeWorkbench, TRUE,
 					SA_PubSig, screen_signal,
 					TAG_DONE);
 
