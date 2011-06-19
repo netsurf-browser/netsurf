@@ -572,14 +572,13 @@ void ami_openscreen(void)
 
 	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
 	{
-		if(scrn = LockPubScreen(option_use_pubscreen))
-		{
-			locked_screen = TRUE;
-		}
-		else
+		scrn = LockPubScreen(option_use_pubscreen);
+
+		if(scrn == NULL)
 		{
 			scrn = LockPubScreen("Workbench");
 		}
+		locked_screen = TRUE;
 	}
 	dri = GetScreenDrawInfo(scrn);
 	ami_font_setdevicedpi(id);
@@ -705,6 +704,7 @@ static void gui_init2(int argc, char** argv)
 		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
 		IDoMethod(arexx_obj,AM_EXECUTE,"TOFRONT","NETSURF",NULL,NULL,NULL,NULL);
 		FreeVec(sendcmd);
+
 		netsurf_quit=true;
 		return;
 	}
@@ -2160,6 +2160,7 @@ void ami_gui_close_screen(struct Screen *scrn)
 {
 	ULONG scrnsig = 1 << screen_signal;
 
+	if(scrn == NULL) return;
 	if(CloseScreen(scrn)) return;
 
 	LOG(("Waiting for visitor windows to close..."));
