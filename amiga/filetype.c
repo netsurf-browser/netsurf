@@ -372,6 +372,7 @@ APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
 	while(*p != '\0')
 	{
 		if(*p == ' ') *p = '-';
+		if(*p == '/') *p = '-';
 		p++;
 	}
 
@@ -634,7 +635,7 @@ void ami_mime_dump(void)
 
 	while(mimeentry = ami_mime_entry_locate(NULL, AMI_MIME_MIMETYPE, &node))
 	{
-		LOG(("%s DT=%s TYPE=%s CMD=%s",
+		LOG(("%s DT=\"%s\" TYPE=\"%s\" CMD=\"%s\"",
 			mimeentry->mimetype ? lwc_string_data(mimeentry->mimetype) : "",
 			mimeentry->datatype ? lwc_string_data(mimeentry->datatype) : "",
 			mimeentry->filetype ? lwc_string_data(mimeentry->filetype) : "",
