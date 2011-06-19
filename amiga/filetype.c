@@ -366,6 +366,8 @@ APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
 		return NULL;
 
 	dt_name_lwr = strdup(dth->dth_Name);
+	if(dt_name_lwr == NULL) return NULL;
+
 	strlwr(dt_name_lwr);
 	p = dt_name_lwr;
 
@@ -432,6 +434,7 @@ APTR ami_mime_guess_add_datatype(struct DataType *dt, lwc_string **lwc_mimetype)
 	if (lerror != lwc_error_ok)
 		return NULL;
 
+	free(dt_name_lwr);
 	return node;
 }
 
