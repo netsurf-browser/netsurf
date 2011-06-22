@@ -635,13 +635,6 @@ nserror browser_window_callback(hlcache_handle *c,
 			}
 		}
 		
-		/* favicon preload */
-		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL &&
-				content_get_type(c) == CONTENT_HTML) {
-			gui_window_set_icon(bw->window, 
-					html_get_favicon(bw->current_content));
-		}
-		
 		/* text selection */
 		if (content_get_type(c) == CONTENT_HTML)
 			selection_init(bw->sel,
