@@ -238,6 +238,7 @@ struct browser_window *browser_window_create(const char *url,
 	bw->border = true;
 	bw->no_resize = true;
 	bw->last_action = wallclock();
+	bw->focus = bw;
 
 	bw->sel = selection_create();
 	selection_set_browser_window(bw->sel, bw);
@@ -1234,7 +1235,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 			top = top->parent;
 
 		if (top->focus == bw)
-			top->focus = NULL;
+			top->focus = top;
 	}
 
 	/* Destruction order is important: we must ensure that the frontend 
