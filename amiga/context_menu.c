@@ -53,7 +53,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 static bool ami_context_menu_history(const struct history *history, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
 
-uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
+static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved);
 
 enum {
 	CMID_SELECTFILE,
@@ -82,7 +82,9 @@ enum {
 
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
-char *ctxmenulab[CMID_LAST];
+static char *ctxmenulab[CMID_LAST];
+static Object *ctxmenuobj = NULL;
+static struct Hook ctxmenuhook;
 
 void ami_context_menu_init(void)
 {
@@ -123,6 +125,8 @@ void ami_context_menu_init(void)
 void ami_context_menu_free(void)
 {
 	int i;
+
+	if(ctxmenuobj) DisposeObject(ctxmenuobj);
 
 	for(i=0;i<CMID_LAST;i++)
 	{
@@ -173,13 +177,14 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	if(!cc) return;
 	if(content_get_type(cc) != CONTENT_HTML) return;
 
-	if(gwin->objects[OID_MENU]) DisposeObject(gwin->objects[OID_MENU]);
+	if(ctxmenuobj) DisposeObject(ctxmenuobj);
 
-	gwin->popuphook.h_Entry = ami_context_menu_hook;
-	gwin->popuphook.h_Data = gwin;
+	ctxmenuhook.h_Entry = ami_context_menu_hook;
+	ctxmenuhook.h_SubEntry = NULL;
+	ctxmenuhook.h_Data = gwin;
 
-    gwin->objects[OID_MENU] = NewObject( POPUPMENU_GetClass(), NULL,
-                        PMA_MenuHandler, &gwin->popuphook,
+    ctxmenuobj = NewObject( POPUPMENU_GetClass(), NULL,
+                        PMA_MenuHandler, &ctxmenuhook,
 						TAG_DONE);
 
 	if(gwin->bw && gwin->bw->history &&
@@ -189,13 +194,13 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		gwin->temp = 0;
 		history_enumerate_back(gwin->bw->history, ami_context_menu_history, gwin);
 
-		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, ~0,
 			TAG_DONE),
 		~0);
 
-		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, (ULONG)ctxmenulab[CMID_HISTORY],
 				PMIA_ID, CMID_HISTORY,
@@ -212,13 +217,13 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		gwin->temp = 0;
 		history_enumerate_forward(gwin->bw->history, ami_context_menu_history, gwin);
 
-		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, ~0,
 			TAG_DONE),
 		~0);
 
-		IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, (ULONG)ctxmenulab[CMID_HISTORY],
 				PMIA_ID, CMID_HISTORY,
@@ -240,7 +245,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 
 			if(no_url && curbox->href)
 			{
-				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+				IDoMethod(ctxmenuobj,PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,
 						PMIA_Title, (ULONG)ctxmenulab[CMSUB_URL],
 						PMSIMPLESUB,
@@ -275,7 +280,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			if(no_obj && curbox->object &&
 				(content_get_type(curbox->object) == CONTENT_IMAGE))
 			{
-				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+				IDoMethod(ctxmenuobj,PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,
 						PMIA_Title, (ULONG)ctxmenulab[CMSUB_OBJECT],
 						PMSIMPLESUB,
@@ -320,7 +325,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				BOOL disabled_readonly = selection_read_only(gwin->bw->sel);
 				BOOL disabled_noselection = !selection_defined(gwin->bw->sel);
 
-				IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+				IDoMethod(ctxmenuobj,PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,
 						PMIA_Title, (ULONG)ctxmenulab[CMSUB_SEL],
 						PMIA_SubMenu, NewObject(POPUPMENU_GetClass(), NULL,
@@ -369,7 +374,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			{
 				if(ami_mime_content_to_cmd(curbox->object))
 				{
-					IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+					IDoMethod(ctxmenuobj,PM_INSERT,
 						NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
 							PMIA_ID, CMID_PLUGINCMD,
@@ -385,7 +390,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				switch (curbox->gadget->type)
 				{
 					case GADGET_FILE:
-						IDoMethod(gwin->objects[OID_MENU],PM_INSERT,
+						IDoMethod(ctxmenuobj,PM_INSERT,
 							NewObject(POPUPMENU_GetItemClass(), NULL,
 								PMIA_Title, (ULONG)ctxmenulab[CMID_SELECTFILE],
 								PMIA_ID,CMID_SELECTFILE,
@@ -403,7 +408,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	if(!menuhascontent) return;
 
 	gui_window_set_pointer(gwin->bw->window,GUI_POINTER_DEFAULT);
-	IDoMethod(gwin->objects[OID_MENU],PM_OPEN,gwin->win);
+	IDoMethod(ctxmenuobj,PM_OPEN,gwin->win);
 }
 
 static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved)
@@ -626,7 +631,7 @@ static bool ami_context_menu_history(const struct history *history, int x0, int 
 	gwin->temp++;
 	if(gwin->temp > 10) return false;
 
-	IDoMethod(gwin->objects[OID_MENU], PM_INSERT,
+	IDoMethod(ctxmenuobj, PM_INSERT,
 		NewObject(POPUPMENU_GetItemClass(), NULL,
 			PMIA_Title, (ULONG)history_entry_get_title(entry),
 			PMIA_ID, CMID_HISTORY,
@@ -637,7 +642,7 @@ static bool ami_context_menu_history(const struct history *history, int x0, int 
 	return true;
 }
 
-uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
+static uint32 ami_popup_hook(struct Hook *hook,Object *item,APTR reserved)
 {
 	int32 itemid = 0;
 	struct gui_window *gwin = hook->h_Data;
@@ -662,19 +667,20 @@ void gui_create_form_select_menu(struct browser_window *bw,
 	struct form_option *opt = control->data.select.items;
 	ULONG i = 0;
 
-	if(gwin->shared->objects[OID_MENU]) DisposeObject(gwin->shared->objects[OID_MENU]);
+	if(ctxmenuobj) DisposeObject(ctxmenuobj);
 
-	gwin->shared->popuphook.h_Entry = ami_popup_hook;
-	gwin->shared->popuphook.h_Data = gwin;
+	ctxmenuhook.h_Entry = ami_popup_hook;
+	ctxmenuhook.h_SubEntry = NULL;
+	ctxmenuhook.h_Data = gwin;
 
 	gwin->shared->control = control;
 
-    gwin->shared->objects[OID_MENU] = PMMENU(ami_utf8_easy(control->name)),
-                        PMA_MenuHandler, &gwin->shared->popuphook, End;
+    ctxmenuobj = PMMENU(ami_utf8_easy(control->name)),
+                        PMA_MenuHandler, &ctxmenuhook, End;
 
 	while(opt)
 	{
-		IDoMethod(gwin->shared->objects[OID_MENU], PM_INSERT,
+		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject( POPUPMENU_GetItemClass(), NULL,
 				PMIA_Title, (ULONG)ami_utf8_easy(opt->text),
 				PMIA_ID, i,
@@ -689,7 +695,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 
 	gui_window_set_pointer(gwin, GUI_POINTER_DEFAULT); // Clear the menu-style pointer
 
-	IDoMethod(gwin->shared->objects[OID_MENU], PM_OPEN, gwin->shared->win);
+	IDoMethod(ctxmenuobj, PM_OPEN, gwin->shared->win);
 }
 
 #else

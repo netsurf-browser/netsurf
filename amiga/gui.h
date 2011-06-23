@@ -34,7 +34,6 @@ enum
     OID_MAIN = 0,
 	OID_VSCROLL,
 	OID_HSCROLL,
-	OID_MENU,
 	OID_LAST, /* for compatibility */
 	GID_MAIN,
 	GID_TABLAYOUT,
@@ -87,7 +86,6 @@ struct gui_window_2 {
 	ULONG tabs;
 	ULONG next_tab;
 	struct Hook scrollerhook;
-	struct Hook popuphook;
 	struct form_control *control;
 	browser_mouse_state mouse_state;
 	browser_mouse_state key_state;
