@@ -1427,8 +1427,6 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 	 	}
 	}
 
-	gui_window_set_scale(bw->window, scale);
-
 	for (i = 0; i < (bw->cols * bw->rows); i++)
 		browser_window_set_scale_internal(&bw->children[i], scale);
 	for (i = 0; i < bw->iframe_count; i++)

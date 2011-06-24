@@ -1551,19 +1551,6 @@ void gui_window_save_link(struct gui_window *g, const char *url,
 
 
 /**
- * Set the scale setting of a window
- *
- * \param  g	  gui window
- * \param  scale  scale value (1.0 == normal scale)
- */
-
-void gui_window_set_scale(struct gui_window *g, float scale)
-{
-	ro_gui_dialog_update_zoom(g);
-}
-
-
-/**
  * Updates a windows extent.
  *
  * \param  g  the gui_window to update
