@@ -498,7 +498,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			window.title_fg = 0xff;
 			break;
 		case BROWSER_WINDOW_IFRAME:
-			window.flags |= wimp_WINDOW_NO_BOUNDS;
+			assert(0);
+			break;
 		case BROWSER_WINDOW_FRAME:
 			if (bw->scrolling == SCROLLING_NO)
 				window.flags &= ~(wimp_WINDOW_VSCROLL |
@@ -982,10 +983,7 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 
 	/* store position for children */
 	if (parent->browser_window_type == BROWSER_WINDOW_IFRAME) {
-		bw->x0 = x0;
-		bw->y0 = y0;
-		bw->x1 = x1;
-		bw->y1 = y1;
+		assert(0);
 	} else {
 		bw->x0 = x0 = parent->x0 + x0;
 		bw->y0 = y0 = parent->y0 + y0;
@@ -994,8 +992,9 @@ void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int
 	}
 
 	/* only scale iframe locations */
-	if (bw->browser_window_type == BROWSER_WINDOW_IFRAME)
-	  	scale = g->bw->scale;
+	if (bw->browser_window_type == BROWSER_WINDOW_IFRAME) {
+		assert(0);
+	}
 
 	/* get the position of the top level window */
 	state.w = top->window->window;
