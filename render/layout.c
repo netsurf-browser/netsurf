@@ -273,12 +273,6 @@ bool layout_block_context(struct box *block, int viewport_height,
 		return true;
 	}
 
-	/* special case if the block contains an iframe */
-	if (block->iframe) {
-		browser_window_reformat(block->iframe, block->width,
-				block->height == AUTO ? 0 : block->height);
-	}
-
 	/* special case if the block contains an radio button or checkbox */
 	if (block->gadget && (block->gadget->type == GADGET_RADIO ||
 			block->gadget->type == GADGET_CHECKBOX)) {
@@ -511,11 +505,6 @@ bool layout_block_context(struct box *block, int viewport_height,
 		if (box->object) {
 			if (!layout_block_object(box))
 				return false;
-
-		} else if (box->iframe) {
-			browser_window_reformat(box->iframe, box->width,
-					box->height == AUTO ?
-							0 : box->height);
 
 		} else if (box->type == BOX_INLINE_CONTAINER) {
 			box->width = box->parent->width;
@@ -1045,7 +1034,7 @@ bool layout_block_object(struct box *block)
 #endif
 
 	if (content_get_type(block->object) == CONTENT_HTML) {
-		content_reformat(block->object, block->width, 1);
+		content_reformat(block->object, false, block->width, 1);
 	} else {
 		/* Non-HTML objects */
 		/* this case handled already in
@@ -2515,7 +2504,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				content_get_available_width(b->object)) {
 			htype = css_computed_height(b->style, &value, &unit);
 
-			content_reformat(b->object, b->width, b->height);
+			content_reformat(b->object, false, b->width, b->height);
 
 			if (htype == CSS_HEIGHT_AUTO)
 				b->height = content_get_height(b->object);
@@ -2730,13 +2719,6 @@ bool layout_line(struct box *first, int *width, int *y,
 			}
 			b->next_float = cont->float_children;
 			cont->float_children = b;
-
-			/* If the iframe's bw is in place, reformat it to the
-			 * new box size */
-			if (b->iframe) {
-				browser_window_reformat(b->iframe,
-						b->width, b->height);
-			}
 
 			split_box = 0;
 		}
@@ -5007,7 +4989,8 @@ static void layout_update_descendant_bbox(struct box *box, struct box *child,
 
 
 /**
- * Recursively calculate the descendant_[xy][01] values for a laid-out box tree.
+ * Recursively calculate the descendant_[xy][01] values for a laid-out box tree
+ * and inform iframe browser windows of their size and position.
  *
  * \param  box  tree of boxes to update
  */
@@ -5029,6 +5012,17 @@ void layout_calculate_descendant_bboxes(struct box *box)
 			box->descendant_x1 = content_get_width(box->object);
 		if (box->descendant_y1 < content_get_height(box->object))
 			box->descendant_y1 = content_get_height(box->object);
+	}
+
+	if (box->iframe != NULL) {
+		int x, y;
+		box_coords(box, &x, &y);
+
+		browser_window_set_position(box->iframe, x, y);
+		browser_window_set_dimensions(box->iframe,
+				box->width, box->height);
+		browser_window_reformat(box->iframe, true,
+				box->width, box->height);
 	}
 
 	if (box->type == BOX_INLINE || box->type == BOX_TEXT)

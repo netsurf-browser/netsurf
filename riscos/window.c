@@ -4426,7 +4426,7 @@ void ro_gui_window_process_reformats(void)
 		if (!g->bw->reformat_pending)
 			continue;
 		g->bw->reformat_pending = false;
-		browser_window_reformat(g->bw,
+		browser_window_reformat(g->bw, false,
 				g->old_width / 2,
 				g->old_height / 2);
 	}

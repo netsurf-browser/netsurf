@@ -189,7 +189,7 @@ bool print_apply_settings(hlcache_handle *content,
 			FIXTOFLT(FSUB(settings->margins[MARGINTOP],
 			settings->margins[MARGINBOTTOM]))) / settings->scale;
 	
-	content_reformat(content, page_content_width, 0);
+	content_reformat(content, false, page_content_width, 0);
 
 	LOG(("New layout applied.New height = %d ; New width = %d ",
 			content_get_height(content), 

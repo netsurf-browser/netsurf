@@ -203,7 +203,7 @@ nsws_drawable_hscroll(struct gui_window *gw, HWND hwnd, WPARAM wparam)
 static LRESULT
 nsws_drawable_resize(struct gui_window *gw)
 {
-	browser_window_reformat(gw->bw, gw->width, gw->height);
+	browser_window_reformat(gw->bw, false, gw->width, gw->height);
 	return 0;
 }
 

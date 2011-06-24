@@ -3343,7 +3343,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 	if(g->bw->reformat_pending)
 	{
-		browser_window_reformat(g->bw,width,height);
+		browser_window_reformat(g->bw,false,width,height);
 		g->bw->reformat_pending = false;
 		g->redraw_scroll = false;
 	}

@@ -58,6 +58,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 		struct content_html_iframe *iframe) {
 	struct browser_window *window;
 	struct content_html_iframe *cur;
+	struct rect rect;
 	int iframes = 0;
 	int index;
 
@@ -94,6 +95,13 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->box = cur->box;
 		window->parent = bw;
 		window->box->iframe = window;
+
+		/* iframe dimensions */
+		box_bounds(window->box, &rect);
+
+		browser_window_set_position(window, rect.x0, rect.y0);
+		browser_window_set_dimensions(window, rect.x1 - rect.x0,
+				rect.y1 - rect.y0);
 	}
 
 	/* calculate dimensions */

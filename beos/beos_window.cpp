@@ -1273,6 +1273,7 @@ void nsbeos_window_process_reformats(void)
 		view->UnlockLooper();
 #warning XXX why - 1 & - 2 !???
 		browser_window_reformat(g->bw,
+				false,
 				bounds.Width() + 1 /* - 2*/,
 				bounds.Height() + 1);
 	}
@@ -1285,6 +1286,7 @@ void nsbeos_window_process_reformats(void)
 			continue;
 		g->bw->reformat_pending = false;
 		browser_window_reformat(g->bw,
+				false,
 				widget->allocation.width - 2,
 				widget->allocation.height);
 	}

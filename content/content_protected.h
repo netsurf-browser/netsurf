@@ -152,7 +152,8 @@ void content_broadcast(struct content *c, content_msg msg,
 void content_add_error(struct content *c, const char *token,
 		unsigned int line);
 
-void content__reformat(struct content *c, int width, int height);
+void content__reformat(struct content *c, bool background,
+		int width, int height);
 
 bool content__set_title(struct content *c, const char *title);
 

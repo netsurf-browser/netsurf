@@ -174,7 +174,6 @@ void browser_window_update_extent(struct browser_window *bw)
 void browser_window_get_position(struct browser_window *bw, bool root,
 		int *pos_x, int *pos_y)
 {
-	int x, y;
 	*pos_x = 0;
 	*pos_y = 0;
 
@@ -189,11 +188,9 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 			/* There is no offset to the root browser window */
 			break;
 		case BROWSER_WINDOW_IFRAME:
-			/* offset comes from its box position in parent bw */
-			box_coords(bw->box, &x, &y);
 
-			*pos_x += x * bw->scale;
-			*pos_y += y * bw->scale;
+			*pos_x += bw->x * bw->scale;
+			*pos_y += bw->y * bw->scale;
 			break;
 		}
 
@@ -204,6 +201,26 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 			 * browser window. */
 			return;
 		}
+	}
+}
+
+/* exported interface, documented in browser.h */
+void browser_window_set_position(struct browser_window *bw, int x, int y)
+{
+	assert(bw != NULL);
+
+	switch (bw->browser_window_type) {
+	default:
+		/* fall through to NORMAL until frame(set)s are handled
+		 * in the core */
+	case BROWSER_WINDOW_NORMAL:
+		/* TODO: Not implemented yet */
+		break;
+	case BROWSER_WINDOW_IFRAME:
+
+		bw->x = x;
+		bw->y = y;
+		break;
 	}
 }
 
@@ -603,7 +620,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		/* Format the new content to the correct dimensions */
 		browser_window_get_dimensions(bw, &width, &height, true);
-		content_reformat(c, width, height);
+		content_reformat(c, false, width, height);
 
 		browser_window_remove_caret(bw);
 
@@ -711,7 +728,10 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (bw->move_callback)
 			bw->move_callback(bw, bw->caret_p);
 
-		browser_window_update(bw, false);
+		if (!(event->data.background)) {
+			/* Reformatted content should be redrawn */
+			browser_window_update(bw, false);
+		}
 		break;
 
 	case CONTENT_MSG_REDRAW:
@@ -750,15 +770,12 @@ nserror browser_window_callback(hlcache_handle *c,
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled)
 {
-	struct rect rect;
+	assert(bw);
 
 	switch (bw->browser_window_type) {
 	case BROWSER_WINDOW_IFRAME:
-		/* browser window is size of associated box */
-		box_bounds(bw->box, &rect);
-LOG(("SCALED: %s", scaled ? "yes" : "no"));
-		*width = rect.x1 - rect.x0;
-		*height = rect.y1 - rect.y0;
+		*width = bw->width;
+		*height = bw->height;
 		break;
 
 	case BROWSER_WINDOW_FRAME:
@@ -768,6 +785,34 @@ LOG(("SCALED: %s", scaled ? "yes" : "no"));
 		 * size of gui window viewport */
 		assert(bw->window);
 		gui_window_get_dimensions(bw->window, width, height, scaled);
+		break;
+	}
+}
+
+
+/*
+ * Set the dimensions of the area a browser window occupies
+ *
+ * \param  bw      The browser window to set dimensions of
+ * \param  width   Width in pixels
+ * \param  height  Height in pixels
+ */
+
+void browser_window_set_dimensions(struct browser_window *bw,
+		int width, int height)
+{
+	assert(bw);
+
+	switch (bw->browser_window_type) {
+	case BROWSER_WINDOW_IFRAME:
+		bw->width = width;
+		bw->height = height;
+		break;
+
+	case BROWSER_WINDOW_FRAME:
+	case BROWSER_WINDOW_FRAMESET:
+	case BROWSER_WINDOW_NORMAL:
+		/* TODO: Not implemented yet */
 		break;
 	}
 }
@@ -1323,7 +1368,8 @@ struct browser_window *browser_window_owner(struct browser_window *bw)
  * \param  height  new height
  */
 
-void browser_window_reformat(struct browser_window *bw, int width, int height)
+void browser_window_reformat(struct browser_window *bw, bool background,
+		int width, int height)
 {
 	hlcache_handle *c = bw->current_content;
 
@@ -1336,7 +1382,7 @@ void browser_window_reformat(struct browser_window *bw, int width, int height)
 		height /= bw->scale;
 	}
 
-	content_reformat(c, width, height);
+	content_reformat(c, background, width, height);
 }
 
 

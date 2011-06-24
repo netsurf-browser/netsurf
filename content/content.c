@@ -329,12 +329,15 @@ void content_set_done(struct content *c)
  * Calls the reformat function for the content.
  */
 
-void content_reformat(hlcache_handle *h, int width, int height)
+void content_reformat(hlcache_handle *h, bool background,
+		int width, int height)
 {
-	content__reformat(hlcache_handle_get_content(h), width, height);
+	content__reformat(hlcache_handle_get_content(h), background,
+			width, height);
 }
 
-void content__reformat(struct content *c, int width, int height)
+void content__reformat(struct content *c, bool background,
+		int width, int height)
 {
 	union content_msg_data data;
 	assert(c != 0);
@@ -346,6 +349,7 @@ void content__reformat(struct content *c, int width, int height)
 	c->available_width = width;
 	if (c->handler->reformat != NULL) {
 		c->handler->reformat(c, width, height);
+		data.background = background;
 		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
 	}
 	c->locked = false;

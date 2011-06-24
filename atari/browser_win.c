@@ -771,7 +771,7 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8] )
 		browser_update_rects( gw );
 		browser_get_rect( gw, BR_CONTENT, &rect );
 		if( gw->browser->bw->current_content != NULL )
-			browser_window_reformat(gw->browser->bw, rect.g_w, rect.g_h );
+			browser_window_reformat(gw->browser->bw, false, rect.g_w, rect.g_h );
 		gw->root->toolbar->url.scrollx = 0;	
 		window_redraw_controls(gw, 0);
 		/* TODO: recalculate scroll position, istead of zeroing? */

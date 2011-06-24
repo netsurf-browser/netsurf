@@ -486,7 +486,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 - (void) reformat;
 {
 	NSRect size = [[self superview] frame];
-	browser_window_reformat( browser, cocoa_pt_to_px( NSWidth( size ) ), cocoa_pt_to_px( NSHeight( size ) ) );
+	browser_window_reformat( browser, false, cocoa_pt_to_px( NSWidth( size ) ), cocoa_pt_to_px( NSHeight( size ) ) );
 }
 
 + (void)reformatTimerFired: (NSTimer *) timer;

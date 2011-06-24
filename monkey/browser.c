@@ -70,6 +70,7 @@ monkey_window_process_reformats(void)
       RING_ITERATE_STOP(gw_ring, c_ring);
     if (c_ring->bw->reformat_pending) {
       browser_window_reformat(c_ring->bw,
+                              false,
                               c_ring->width,
                               c_ring->height);
     }

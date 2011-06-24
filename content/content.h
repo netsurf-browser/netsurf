@@ -88,6 +88,8 @@ union content_msg_data {
 		int object_width, object_height;
 	} redraw;
 	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
+	/** Reformat should not cause a redraw, for CONTENT_MSG_REFORMAT */
+	bool background;
 	/** Low-level cache handle, for CONTENT_MSG_DOWNLOAD */
 	struct llcache_handle *download;
 };
@@ -117,7 +119,8 @@ nserror content_abort(struct content *c);
 
 /* Client functions */
 bool content_can_reformat(struct hlcache_handle *h);
-void content_reformat(struct hlcache_handle *h, int width, int height);
+void content_reformat(struct hlcache_handle *h, bool background,
+		int width, int height);
 void content_request_redraw(struct hlcache_handle *h,
 		int x, int y, int width, int height);
 void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,

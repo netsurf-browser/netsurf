@@ -1480,7 +1480,7 @@ nserror html_object_callback(hlcache_handle *object,
 			html_object_done(box, object, o->background);
 			if (c->base.status == CONTENT_STATUS_READY ||
 					c->base.status == CONTENT_STATUS_DONE)
-				content__reformat(&c->base,
+				content__reformat(&c->base, false,
 						c->base.available_width,
 						c->base.height);
 		}
@@ -1581,7 +1581,7 @@ nserror html_object_callback(hlcache_handle *object,
 			event->type == CONTENT_MSG_DONE ||
 			event->type == CONTENT_MSG_ERROR)) {
 		/* all objects have arrived */
-		content__reformat(&c->base, c->base.available_width, 
+		content__reformat(&c->base, false, c->base.available_width, 
 				c->base.height);
 		html_set_status(c, "");
 		content_set_done(&c->base);
@@ -1601,7 +1601,7 @@ nserror html_object_callback(hlcache_handle *object,
 			(c->base.status == CONTENT_STATUS_READY ||
 			 c->base.status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->base.reformat_time)) {
-		content__reformat(&c->base, c->base.available_width, 
+		content__reformat(&c->base, false, c->base.available_width, 
 				c->base.height);
 	}
 

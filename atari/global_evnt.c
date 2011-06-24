@@ -192,7 +192,7 @@ static void __CDECL menu_debug_render(WINDOW *win, int item, int title, void *da
 		if ( input_window->browser != NULL && input_window->browser->bw != NULL) {
 			LGRECT rect;
 			browser_get_rect( input_window, BR_CONTENT, &rect );
-			browser_window_reformat(input_window->browser->bw, rect.g_w, rect.g_h );
+			browser_window_reformat(input_window->browser->bw, false, rect.g_w, rect.g_h );
 		}
 	}
 }

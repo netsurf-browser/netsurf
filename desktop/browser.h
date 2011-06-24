@@ -123,11 +123,17 @@ struct browser_window {
 	/** Window has been resized, and content needs reformatting. */
 	bool reformat_pending;
 
-	/** Window dimensions */
+	/** Window dimensions (to be phased out) */
 	int x0;
 	int y0;
 	int x1;
 	int y1;
+
+	/** Window dimensions */
+	int x;
+	int y;
+	int width;
+	int height;
 
 	/** scale of window contents */
 	float scale;
@@ -213,6 +219,8 @@ void browser_window_go_unverifiable(struct browser_window *bw,
 		struct hlcache_handle *parent);
 void browser_window_get_dimensions(struct browser_window *bw,
 		int *width, int *height, bool scaled);
+void browser_window_set_dimensions(struct browser_window *bw,
+		int width, int height);
 void browser_window_download(struct browser_window *bw,
 		const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
@@ -222,7 +230,8 @@ void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
 struct browser_window * browser_window_owner(struct browser_window *bw);
-void browser_window_reformat(struct browser_window *bw, int width, int height);
+void browser_window_reformat(struct browser_window *bw, bool background,
+		int width, int height);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
 void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
@@ -309,6 +318,16 @@ void browser_window_update_extent(struct browser_window *bw);
  */
 void browser_window_get_position(struct browser_window *bw, bool root,
 		int *pos_x, int *pos_y);
+
+/*
+ * Set the position of the current browser window with respect to the parent
+ * browser window
+ *
+ * \param  bw     browser window to get the position of
+ * \param  x      x position of bw
+ * \param  y      y position of bw
+ */
+void browser_window_set_position(struct browser_window *bw, int x, int y);
 
 
 /* In platform specific hotlist.c. */

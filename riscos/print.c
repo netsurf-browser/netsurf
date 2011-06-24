@@ -588,7 +588,7 @@ bool print_document(struct gui_window *g, const char *filename)
 	saved_width = content_get_width(h);
 	saved_height = content_get_height(h);
 	if (content_get_type(h) == CONTENT_HTML)
-		content_reformat(h, width, height);
+		content_reformat(h, false, width, height);
 
 	/* open printer file */
 	error = xosfind_openoutw(osfind_NO_PATH | osfind_ERROR_IF_DIR |
@@ -758,7 +758,7 @@ bool print_document(struct gui_window *g, const char *filename)
 
 	/* restore document layout and redraw browser window */
 	if (content_get_type(h) == CONTENT_HTML)
-		content_reformat(h, saved_width, saved_height);
+		content_reformat(h, false, saved_width, saved_height);
 
 	gui_window_redraw_window(g);
 
@@ -778,7 +778,7 @@ error:
 
 	/* restore document layout */
 	if (content_get_type(h)  == CONTENT_HTML)
-		content_reformat(h, saved_width, saved_height);
+		content_reformat(h, false, saved_width, saved_height);
 
 	return false;
 }

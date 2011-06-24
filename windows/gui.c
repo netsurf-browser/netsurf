@@ -858,7 +858,7 @@ nsws_window_command(HWND hwnd,
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
 			browser_window_set_scale(gw->bw, gw->bw->scale * 1.1, true);
-			browser_window_reformat(gw->bw, gw->width, gw->height);
+			browser_window_reformat(gw->bw, false, gw->width, gw->height);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -871,7 +871,7 @@ nsws_window_command(HWND hwnd,
 		if (gw->bw != NULL) {
 			browser_window_set_scale(gw->bw,
 						 gw->bw->scale * 0.9, true);
-			browser_window_reformat(gw->bw, gw->width, gw->height);
+			browser_window_reformat(gw->bw, false, gw->width, gw->height);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -883,7 +883,7 @@ nsws_window_command(HWND hwnd,
 		gui_window_get_scroll(gw, &x, &y);
 		if (gw->bw != NULL) {
 			browser_window_set_scale(gw->bw, 1.0, true);
-			browser_window_reformat(gw->bw, gw->width, gw->height);
+			browser_window_reformat(gw->bw, false, gw->width, gw->height);
 		}
 		gui_window_redraw_window(gw);
 		gui_window_set_scroll(gw, x, y);
@@ -948,7 +948,9 @@ nsws_window_command(HWND hwnd,
 	case IDM_VIEW_TOGGLE_DEBUG_RENDERING:
 		html_redraw_debug = !html_redraw_debug;
 		if (gw->bw != NULL) {
-			browser_window_reformat(gw->bw, gw->width, gw->height);
+			/* TODO: This should only redraw, not reformat.
+			 * (Layout doesn't change, so reformat is a waste of time) */
+			browser_window_reformat(gw->bw, false, gw->width, gw->height);
 		}
 		break;
 
