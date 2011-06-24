@@ -85,6 +85,7 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window->margin_width = cur->margin_width;
 		window->margin_height = cur->margin_height;
 		window->sel = bw->sel;
+		window->scale = bw->scale;
 		if (cur->name) {
 			window->name = strdup(cur->name);
 			if (!window->name)
