@@ -2310,10 +2310,6 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 			scale = scale_snap_to[SCALE_SNAP_TO_SIZE - 1];
 		if (g->bw->scale != scale) {
 			browser_window_set_scale(g->bw, scale, true);
-//			g->reformat_pending = true;
-//			if ((h) && (content_get_type(h) != CONTENT_HTML))
-//				browser_window_update(g->bw, false);
-//			browser_reformat_pending = true;
 		}
 		return true;
 
