@@ -109,7 +109,6 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 bool gui_window_frame_resize_start(struct gui_window *g);
 void gui_window_save_link(struct gui_window *g, const char *url, 
 		const char *title);
-void gui_window_set_scale(struct gui_window *g, float scale);
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *parent);

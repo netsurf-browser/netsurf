@@ -275,12 +275,6 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 }
 
 void
-gui_window_set_scale(struct gui_window *g, float scale)
-{
-  fprintf(stdout, "WINDOW SET_SCALE WIN %u SCALE %f\n", g->win_num, scale);
-}
-
-void
 gui_window_set_url(struct gui_window *g, const char *url)
 {
   fprintf(stdout, "WINDOW SET_URL WIN %u URL %s\n", g->win_num, url);

@@ -3879,12 +3879,6 @@ bool gui_window_frame_resize_start(struct gui_window *g)
 	return true;
 }
 
-void gui_window_set_scale(struct gui_window *g, float scale)
-{
-	g->shared->new_content = true;
-	g->shared->redraw_required = true;
-}
-
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid,x,y;

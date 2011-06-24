@@ -1484,18 +1484,6 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 }
 
 
-/**
- * Set the scale setting of a window
- *
- * \param  g	  gui window
- * \param  scale  scale value (1.0 == normal scale)
- */
-
-void gui_window_set_scale(struct gui_window *g, float scale)
-{
-}
-
-
 void gui_window_update_extent(struct gui_window *g)
 {
 	CALLED();

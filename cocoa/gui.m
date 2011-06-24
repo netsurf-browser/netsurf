@@ -316,11 +316,6 @@ void gui_window_save_link(struct gui_window *g, const char *url,
 	UNIMPL();
 }
 
-void gui_window_set_scale(struct gui_window *g, float scale)
-{
-	gui_window_redraw_window( g );
-}
-
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 						  struct gui_window *g)
 {

@@ -700,15 +700,6 @@ void gui_window_save_link(struct gui_window *g, const char *url,
 	TODO();
 }
 
-void gui_window_set_scale(struct gui_window *w, float scale)
-{
-	if (w == NULL)
-		return;
-	w->browser->bw->scale = scale;
-	LOG(("%.2f\n", scale));
-	/* TODO schedule redraw */
-}
-
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 			  struct gui_window *w)
 {
