@@ -471,8 +471,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	} else if (iframe) {
 		int pos_x, pos_y;
 		browser_window_get_position(iframe, false, &pos_x, &pos_y);
-		pos_x /= bw-> scale;
-		pos_y /= bw-> scale;
+		pos_x /= bw->scale;
+		pos_y /= bw->scale;
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 ||
 				mouse & BROWSER_MOUSE_CLICK_2) {
