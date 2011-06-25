@@ -74,8 +74,10 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8])
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
-	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
-
+	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) {
+		LOG(("useless button_redraw"));
+		return;
+	}
 	pxy[0] = clip.g_x;
 	pxy[1] = clip.g_y;
 	pxy[2] = clip.g_w + clip.g_x;
@@ -95,7 +97,10 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8])
 	pxy[3] = MIN( (short)buff[5] + buff[7], work.g_y + work.g_h - 2);
 	vswr_mode( vdih, MD_REPLACE);
 	v_bar( vdih, (short*)&pxy );
-	mt_objc_draw( tree, 0, 8, clip.g_x, clip.g_y, clip.g_w, clip.g_h, app.aes_global );
+	/* mt_objc_draw( tree, 0, 8, clip.g_x, clip.g_y, clip.g_w, clip.g_h, app.aes_global ); */
+	/* The above seems to have problems with some AES, so we try this: */
+	int err = ObjcDrawParent(OC_OBJC, tree, 0, 0, 1|OC_MSG );
+	LOG(("ObjcDrawParent: %d", err ));
 	if( gw->root->toolbar->buttons[0].comp ==  c && work.g_x == buff[4] ){
 		vsl_color( vdih, LWHITE );
 		pxy[0] = (short)buff[4];
