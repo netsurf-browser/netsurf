@@ -124,8 +124,8 @@ bool browser_redraw_required( struct gui_window * gw);
 	2. It checks for an intersection, and it will merge the rectangle to 
 		already queued rectangle where it fits best.
 	3. it tries to put the rectangle into one available slot. 
-	4. if no slot is available, it will search for the nearest rectangle
-		and summarize it within that slot.  		 	
+	4. if no slot is available, it will simply merge the new rectangle with 
+   	the last available slot.  		 	
 */
 void browser_redraw_caret( struct gui_window * gw, GRECT * area );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff );
