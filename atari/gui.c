@@ -74,7 +74,7 @@
 #include "atari/clipboard.h"
 #include "atari/osspec.h"
 #include "atari/search.h"
-#include "atari/nkcc.h"
+#include "cflib.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 

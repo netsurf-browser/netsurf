@@ -43,7 +43,7 @@
 #include "atari/plot/plotter.h"
 #include "atari/plot.h"
 #include "atari/font.h"
-#include "atari/nkcc.h"
+#include "cflib.h"
 
 extern browser_mouse_state bmstate;
 extern int mouse_click_time[3];

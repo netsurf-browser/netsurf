@@ -45,7 +45,7 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/search.h"
 #include "atari/options.h"
-#include "atari/nkcc.h"
+#include "cflib.h"
 
 extern const char * cfg_homepage_url;
 extern struct gui_window *input_window;

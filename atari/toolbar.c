@@ -43,7 +43,7 @@
 #include "atari/clipboard.h"
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
-#include "atari/nkcc.h"
+#include "cflib.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plotter.h"
 

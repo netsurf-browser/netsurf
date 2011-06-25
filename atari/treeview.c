@@ -37,7 +37,7 @@
 #include "atari/treeview.h"
 #include "atari/plot.h"
 #include "atari/misc.h"
-#include "atari/nkcc.h"
+#include "cflib.h"
 
 extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
