@@ -275,7 +275,7 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 		short vqw[4];
 		char t[2];
 		short cw = 0;
-
+		t[0]=tb->url.text[0];
 		t[1]=0;
 		if( atari_sysinfo.sfont_monospaced ) {
 			vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
