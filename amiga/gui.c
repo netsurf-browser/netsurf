@@ -1581,6 +1581,10 @@ void ami_handle_msg(void)
 									ami_change_tab(gwin, -1);
 								break;
 
+								case KEY_DELETE_LEFT: // backspace
+									ami_gui_history(gwin, true);
+								break;
+
 								case RAWKEY_F5: // reload
 									if(browser_window_reload_available(gwin->bw))
 										browser_window_reload(gwin->bw,false);
