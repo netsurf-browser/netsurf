@@ -224,6 +224,13 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 	}
 }
 
+/* exported interface, documented in browser.h */
+void browser_window_set_drag_type(struct browser_window *bw,
+		browser_drag_type type)
+{
+	bw->drag_type = type;
+}
+
 /**
  * Create and open a new root browser window with the given page.
  *
@@ -1770,20 +1777,9 @@ void browser_window_mouse_click(struct browser_window *bw,
 void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
-	
-	if (bw->visible_select_menu != NULL) {
-		form_select_mouse_drag_end(bw->visible_select_menu, mouse,
-				x, y);
-		return;
-	}
-	
-	if (bw->scrollbar != NULL) {
-		html_overflow_scroll_drag_end(bw->scrollbar, mouse, x, y);
-		return;
-	}
-	
 	switch (bw->drag_type) {
-	case DRAGGING_SELECTION: {
+	case DRAGGING_SELECTION:
+	{
 		hlcache_handle *h = bw->current_content;
 		if (h) {
 			int dir = -1;
@@ -1807,7 +1803,20 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		}
 		selection_drag_end(bw->sel);
 	}
-	break;
+		break;
+
+	case DRAGGING_OTHER:
+
+		if (bw->visible_select_menu != NULL) {
+			form_select_mouse_drag_end(bw->visible_select_menu,
+					mouse, x, y);
+		}
+
+		if (bw->scrollbar != NULL) {
+			html_overflow_scroll_drag_end(bw->scrollbar,
+					mouse, x, y);
+		}
+		break;
 
 	default:
 		break;

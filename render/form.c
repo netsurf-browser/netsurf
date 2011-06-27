@@ -1295,6 +1295,8 @@ void form_select_menu_scroll_callback(void *client_data,
      					menu->height);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
+			browser_window_set_drag_type(menu->bw, DRAGGING_OTHER);
+
 			menu->scroll_capture = true;
 			gui_window_box_scroll_start(menu->bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,

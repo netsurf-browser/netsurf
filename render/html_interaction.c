@@ -789,6 +789,8 @@ void html_overflow_scroll_callback(void *client_data,
 			html_redraw_a_box(bw->current_content, box);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
+			browser_window_set_drag_type(bw, DRAGGING_OTHER);
+
 			bw->scrollbar = scrollbar_data->scrollbar;
 			gui_window_box_scroll_start(bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,

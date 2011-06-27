@@ -55,6 +55,15 @@ typedef void (*browser_move_callback)(struct browser_window *bw,
 		void *p);
 
 
+typedef enum {
+	DRAGGING_NONE,
+	DRAGGING_SELECTION,
+	DRAGGING_PAGE_SCROLL,
+	DRAGGING_FRAME,
+	DRAGGING_OTHER
+} browser_drag_type;
+
+
 
 /** Browser window data. */
 struct browser_window {
@@ -91,12 +100,7 @@ struct browser_window {
 	char *frag_id;
 
 	/** Current drag status. */
-	enum {
-		DRAGGING_NONE,
-		DRAGGING_SELECTION,
-		DRAGGING_PAGE_SCROLL,
-		DRAGGING_FRAME
-	} drag_type;
+	browser_drag_type drag_type;
 
 	/** Mouse position at start of current scroll drag. */
 	int drag_start_x;
@@ -323,11 +327,21 @@ void browser_window_get_position(struct browser_window *bw, bool root,
  * Set the position of the current browser window with respect to the parent
  * browser window
  *
- * \param  bw     browser window to get the position of
+ * \param  bw     browser window to set the position of
  * \param  x      x position of bw
  * \param  y      y position of bw
  */
 void browser_window_set_position(struct browser_window *bw, int x, int y);
+
+/*
+ * Set the position of the current browser window with respect to the parent
+ * browser window
+ *
+ * \param  bw     browser window to set the type of the current drag for
+ * \param  type   drag type
+ */
+void browser_window_set_drag_type(struct browser_window *bw,
+		browser_drag_type type);
 
 
 /* In platform specific hotlist.c. */
