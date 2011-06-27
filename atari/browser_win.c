@@ -158,7 +158,8 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 					LOG(("Drag for %d ended", i));
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
 					if( within ) {
-						browser_window_mouse_drag_end( 
+						/* drag end */
+						browser_window_mouse_track( 
 							gw->browser->bw, 0, nx, ny
 						);
 					}
@@ -167,7 +168,8 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 ) ;
 					LOG(("Drag for %d ended", i));
 					if( within ) {
-						browser_window_mouse_drag_end( 
+						/* drag end */
+						browser_window_mouse_track( 
 							gw->browser->bw, 0, nx, ny
 						);
 					}

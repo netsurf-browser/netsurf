@@ -1251,7 +1251,7 @@ void ami_handle_msg(void)
 							}
 							else
 							{
-								browser_window_mouse_drag_end(gwin->bw, 0, x, y);
+								browser_window_mouse_track(gwin->bw, 0, x, y);
 							}
 							gwin->mouse_state=0;
 						break;
@@ -1287,7 +1287,7 @@ void ami_handle_msg(void)
 							}
 							else
 							{
-								browser_window_mouse_drag_end(gwin->bw, 0, x, y);
+								browser_window_mouse_track(gwin->bw, 0, x, y);
 							}
 							gwin->mouse_state=0;
 						break;

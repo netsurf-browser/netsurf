@@ -867,7 +867,7 @@ void nsbeos_dispatch_event(BMessage *message)
 					where.x / gui->bw->scale,
 					where.y / gui->bw->scale);
 			else 
-				browser_window_mouse_drag_end(gui->bw, (browser_mouse_state)0, 
+				browser_window_mouse_track(gui->bw, (browser_mouse_state)0, 
 					where.x, where.y);
 
 			gui->mouse.state = 0;

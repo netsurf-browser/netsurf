@@ -323,7 +323,7 @@ static gboolean nsgtk_window_button_release_event(GtkWidget *widget,
 				event->x / g->bw->scale,
 				event->y / g->bw->scale);
 	} else {
-		browser_window_mouse_drag_end(g->bw, 0, event->x / g->bw->scale,
+		browser_window_mouse_track(g->bw, 0, event->x / g->bw->scale,
 				event->y / g->bw->scale);
 	}
 

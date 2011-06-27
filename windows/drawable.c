@@ -371,10 +371,10 @@ nsws_drawable_mouseup(struct gui_window *gw,
 					   (x + gw->scrollx) / gw->bw->scale,
 					   (y + gw->scrolly) / gw->bw->scale);
 	} else {
-		browser_window_mouse_drag_end(gw->bw,
-					      0,
-					      (x + gw->scrollx) / gw->bw->scale,
-					      (y + gw->scrolly) / gw->bw->scale);
+		browser_window_mouse_track(gw->bw,
+					   0,
+					   (x + gw->scrollx) / gw->bw->scale,
+					   (y + gw->scrolly) / gw->bw->scale);
 	}
 
 	gw->mouse->state = 0;

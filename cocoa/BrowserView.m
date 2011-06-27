@@ -241,7 +241,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	
 	if (isDragging) {
 		isDragging = NO;
-		browser_window_mouse_drag_end( browser, modifierFlags, location.x, location.y );
+		browser_window_mouse_track( browser, (browser_mouse_state)0, location.x, location.y );
 	} else {
 		modifierFlags |= BROWSER_MOUSE_CLICK_1;
 		if ([theEvent clickCount] == 2) modifierFlags |= BROWSER_MOUSE_DOUBLE_CLICK;
