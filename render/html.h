@@ -85,6 +85,11 @@ struct content_html_object {
 	bool background;  /**< This object is a background image. */
 };
 
+struct html_scrollbar_data {
+	struct content *c;
+	struct box *box;
+};
+
 /** Frame tree (<frameset>, <frame>) */
 struct content_html_frames {
 	int cols;	/** number of columns in frameset */

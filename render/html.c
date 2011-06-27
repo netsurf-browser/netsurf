@@ -242,6 +242,7 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->page = NULL;
 	c->box = NULL;
 	c->font_func = &nsfont;
+	c->scrollbar = NULL;
 
 	nerror = http_parameter_list_find_item(params, "charset", &charset);
 	if (nerror == NSERROR_OK) {

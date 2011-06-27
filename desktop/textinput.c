@@ -37,6 +37,7 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
+#include "render/html_internal.h"
 #include "render/layout.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
@@ -2168,7 +2169,7 @@ void textarea_reflow(struct browser_window *bw, struct box *textarea,
 	textarea->width = width;
 	textarea->height = height;
 	layout_calculate_descendant_bboxes(textarea);
-	box_handle_scrollbars(bw, textarea,
+	box_handle_scrollbars(c, textarea,
 			box_hscrollbar_present(textarea),
 			box_vscrollbar_present(textarea));
 }
@@ -2263,6 +2264,8 @@ bool word_right(const char *text, size_t len, size_t *poffset, size_t *pchars)
 
 bool ensure_caret_visible(struct browser_window *bw, struct box *textarea)
 {
+	html_content *html = (html_content *)
+			hlcache_handle_get_content(bw->current_content);
 	int cx, cy;
 	int scrollx, scrolly;
 
@@ -2302,14 +2305,14 @@ bool ensure_caret_visible(struct browser_window *bw, struct box *textarea)
 		return false;
 
 	if (textarea->scroll_x != NULL)	{
-		bw->scrollbar = textarea->scroll_x;
+		html->scrollbar = textarea->scroll_x;
 		scrollbar_set(textarea->scroll_x, scrollx, false);
-		bw->scrollbar = NULL;
+		html->scrollbar = NULL;
 	}
 	if (textarea->scroll_y != NULL) {
-		bw->scrollbar = textarea->scroll_x;
+		html->scrollbar = textarea->scroll_x;
 		scrollbar_set(textarea->scroll_y, scrolly, false);
-		bw->scrollbar = NULL;
+		html->scrollbar = NULL;
 	}
 
 	return true;

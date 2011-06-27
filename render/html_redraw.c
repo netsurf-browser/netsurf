@@ -723,7 +723,9 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 		has_x_scroll = box_hscrollbar_present(box);
 		has_y_scroll = box_vscrollbar_present(box);
 
-		if (!box_handle_scrollbars(current_redraw_browser, box,
+		/* TODO: pass content down, so we don't need
+		 * current_redraw_browser here */
+		if (!box_handle_scrollbars(hlcache_handle_get_content(current_redraw_browser->current_content), box,
 				has_x_scroll, has_y_scroll))
 			return false;
 		

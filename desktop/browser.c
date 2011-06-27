@@ -633,8 +633,6 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		browser_window_remove_caret(bw);
 
-		bw->scrollbar = NULL;
-
 		if (bw->window)
 			gui_window_new_content(bw->window);
 
@@ -708,7 +706,6 @@ nserror browser_window_callback(hlcache_handle *c,
 		else if (c == bw->current_content) {
 			bw->current_content = NULL;
 			browser_window_remove_caret(bw);
-			bw->scrollbar = NULL;
 			selection_init(bw->sel, NULL);
 		}
 
@@ -1803,6 +1800,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		}
 		selection_drag_end(bw->sel);
 	}
+		bw->drag_type = DRAGGING_NONE;
 		break;
 
 	case DRAGGING_OTHER:
@@ -1810,19 +1808,14 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		if (bw->visible_select_menu != NULL) {
 			form_select_mouse_drag_end(bw->visible_select_menu,
 					mouse, x, y);
-		}
-
-		if (bw->scrollbar != NULL) {
-			html_overflow_scroll_drag_end(bw->scrollbar,
-					mouse, x, y);
+			bw->drag_type = DRAGGING_NONE;
 		}
 		break;
 
 	default:
+		bw->drag_type = DRAGGING_NONE;
 		break;
 	}
-
-	bw->drag_type = DRAGGING_NONE;
 }
 
 

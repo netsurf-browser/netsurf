@@ -114,10 +114,6 @@ struct browser_window {
 	unsigned int drag_resize_up : 1;
 	unsigned int drag_resize_down : 1;
 
-	/** Scroll capturing all mouse events, updated to any active HTML
-	 *  scrollbar, or NULL when no scrollbar drags active */
-	struct scrollbar *scrollbar;
-
 	/** Current fetch is download */
 	bool download;
 
@@ -196,11 +192,6 @@ struct browser_window {
 	int status_text_len; /**< Length of the ::status_text buffer. */
 	int status_match; /**< Number of times an idempotent status-set operation was performed. */
 	int status_miss; /**< Number of times status was really updated. */
-};
-
-struct browser_scrollbar_data {
-	struct browser_window *bw;
-	struct box *box;
 };
 
 extern struct browser_window *current_redraw_browser;

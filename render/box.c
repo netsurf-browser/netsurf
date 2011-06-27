@@ -999,16 +999,16 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
  * Applies the given scroll setup to a box. This includes scroll
  * creation/deletion as well as scroll dimension updates.
  *
- * \param bw		browser window in which the box is located
+ * \param c		content in which the box is located
  * \param box		the box to handle the scrolls for
  * \param bottom	whether the horizontal scrollbar should be present
  * \param right		whether the vertical scrollbar should be present
  * \return		true on success false otherwise
  */
-bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
+bool box_handle_scrollbars(struct content *c, struct box *box,
 		bool bottom, bool right)
 {
-	struct browser_scrollbar_data *data;
+	struct html_scrollbar_data *data;
 	int visible_width, visible_height;
 	int full_width, full_height;
 
@@ -1043,13 +1043,13 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 
 	if (right) {
 		if (box->scroll_y == NULL) {
-			data = malloc(sizeof(struct browser_scrollbar_data));
+			data = malloc(sizeof(struct html_scrollbar_data));
 			if (data == NULL) {
 				LOG(("malloc failed"));
 				warn_user("NoMemory", 0);
 				return false;
 			}
-			data->bw = bw;
+			data->c = c;
 			data->box = box;
 			if (!scrollbar_create(false, visible_height,
 					full_height, visible_height,
@@ -1063,13 +1063,13 @@ bool box_handle_scrollbars(struct browser_window *bw, struct box *box,
 	}
 	if (bottom) {
 		if (box->scroll_x == NULL) {
-			data = malloc(sizeof(struct browser_scrollbar_data));
+			data = malloc(sizeof(struct html_scrollbar_data));
 			if (data == NULL) {
 				LOG(("malloc failed"));
 				warn_user("NoMemory", 0);
 				return false;
 			}
-			data->bw = bw;
+			data->c = c;
 			data->box = box;
 			if (!scrollbar_create(true,
 					visible_width -

@@ -84,6 +84,10 @@ typedef struct html_content {
 	struct html_content *page;
 	/** Box containing this, or NULL if not an object. */
 	struct box *box;
+
+	/** Scrollbar capturing all mouse events, updated to any active HTML
+	 *  scrollbar, or NULL when no scrollbar drags active */
+	struct scrollbar *scrollbar;
 } html_content;
 
 
