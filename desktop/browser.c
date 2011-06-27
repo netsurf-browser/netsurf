@@ -1672,9 +1672,6 @@ void browser_window_mouse_track(struct browser_window *bw,
 	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
 		return;
 
-	/* detect end of drag operation in case the platform-specific code
-	   doesn't call browser_mouse_drag_end() (RISC OS code does) */
-
 	if (bw->drag_type != DRAGGING_NONE && !mouse) {
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
