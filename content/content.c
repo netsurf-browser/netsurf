@@ -435,7 +435,7 @@ void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
 /**
  * Request a redraw of an area of a content
  *
- * \param h	  Content handle
+ * \param h	  high-level cache handle
  * \param x	  x co-ord of left edge
  * \param y	  y co-ord of top edge
  * \param width	  Width of rectangle
@@ -444,7 +444,23 @@ void content_mouse_action(hlcache_handle *h, struct browser_window *bw,
 void content_request_redraw(struct hlcache_handle *h,
 		int x, int y, int width, int height)
 {
-	struct content *c = hlcache_handle_get_content(h);
+	content__request_redraw(hlcache_handle_get_content(h),
+			x, y, width, height);
+}
+
+
+/**
+ * Request a redraw of an area of a content
+ *
+ * \param c	  Content
+ * \param x	  x co-ord of left edge
+ * \param y	  y co-ord of top edge
+ * \param width	  Width of rectangle
+ * \param height  Height of rectangle
+ */
+void content__request_redraw(struct content *c,
+		int x, int y, int width, int height)
+{
 	union content_msg_data data;
 
 	if (c == NULL)

@@ -154,6 +154,8 @@ void content_add_error(struct content *c, const char *token,
 
 void content__reformat(struct content *c, bool background,
 		int width, int height);
+void content__request_redraw(struct content *c,
+		int x, int y, int width, int height);
 
 bool content__set_title(struct content *c, const char *title);
 
