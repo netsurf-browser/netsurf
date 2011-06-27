@@ -3636,10 +3636,7 @@ void ro_gui_window_scroll_end(struct gui_window *g, wimp_dragged *drag)
 	}
 
 	if (ro_gui_window_to_window_pos(g, drag->final.x0, drag->final.y0, &pos))
-		browser_window_mouse_drag_end(g->bw,
-				ro_gui_mouse_click_state(pointer.buttons,
-				wimp_BUTTON_CLICK_DRAG),
-				pos.x, pos.y);
+		browser_window_mouse_drag_end(g->bw, 0, pos.x, pos.y);
 }
 
 
