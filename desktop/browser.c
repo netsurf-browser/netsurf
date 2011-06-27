@@ -89,6 +89,8 @@ static void browser_window_set_scale_internal(struct browser_window *bw,
 static void browser_window_find_target_internal(struct browser_window *bw,
 		const char *target, int depth, struct browser_window *page,
 		int *rdepth, struct browser_window **bw_target);
+static void browser_window_mouse_drag_end(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y);
 
 /* exported interface, documented in browser.h */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
@@ -1654,7 +1656,7 @@ void browser_window_find_target_internal(struct browser_window *bw,
 
 
 /**
- * Handle mouse movements in a browser window.
+ * Handle non-click mouse action in a browser window. (drag ends, movements)
  *
  * \param  bw	  browser window
  * \param  mouse  state of mouse buttons and modifier keys
@@ -1771,7 +1773,8 @@ void browser_window_mouse_click(struct browser_window *bw,
  * \param  x	  coordinate of mouse
  * \param  y	  coordinate of mouse
  *
- * TODO: MOVE content specific stuff out
+ * TODO: Remove this function, once these things are associated with content,
+ *       rather than bw.
  */
 
 void browser_window_mouse_drag_end(struct browser_window *bw,

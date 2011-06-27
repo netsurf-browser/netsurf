@@ -245,8 +245,6 @@ void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
-void browser_window_mouse_drag_end(struct browser_window *bw,
-		browser_mouse_state mouse, int x, int y);
 struct browser_window *browser_window_find_target(
 		struct browser_window *bw, const char *target,
 		browser_mouse_state mouse);
