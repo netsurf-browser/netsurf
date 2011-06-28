@@ -330,6 +330,14 @@ void browser_window_set_position(struct browser_window *bw, int x, int y);
 void browser_window_set_drag_type(struct browser_window *bw,
 		browser_drag_type type);
 
+/*
+ * Get the root level browser window
+ *
+ * \param  bw     browser window to set the type of the current drag for
+ * \return  root browser window
+ */
+struct browser_window * browser_window_get_root(struct browser_window *bw);
+
 
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct hlcache_handle *c);

@@ -244,6 +244,15 @@ void browser_window_set_drag_type(struct browser_window *bw,
 	bw->drag_type = type;
 }
 
+/* exported interface, documented in browser.h */
+struct browser_window * browser_window_get_root(struct browser_window *bw)
+{
+	while (bw && !bw->window && bw->parent) {
+		bw = bw->parent;
+	}
+	return bw;
+}
+
 /**
  * Create and open a new root browser window with the given page.
  *
@@ -283,10 +292,7 @@ struct browser_window *browser_window_create(const char *url,
 	/* gui window */
 	/* from the front end's pov, it clones the top level browser window,
 	 * so find that. */
-	top = clone;
-	while (top && !top->window && top->parent) {
-		top = top->parent;
-	}
+	top = browser_window_get_root(clone);
 
 	bw->window = gui_create_browser_window(bw, top, new_tab);
 
@@ -1051,10 +1057,7 @@ void browser_window_update_box(struct browser_window *bw,
 	case BROWSER_WINDOW_IFRAME:
 		browser_window_get_position(bw, true, &pos_x, &pos_y);
 
-		top = bw;
-		while (top && !top->window && top->parent) {
-			top = top->parent;
-		}
+		top = browser_window_get_root(bw);
 
 		/* TODO: update gui_window_update_box so it takes a struct rect
 		 * instead of msg data. */
@@ -1213,11 +1216,7 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 void browser_window_set_pointer(struct browser_window *bw,
 		gui_pointer_shape shape)
 {
-	struct browser_window *root = bw;
-
-	while (root && !root->window && root->parent) {
-		root = root->parent;
-	}
+	struct browser_window *root = browser_window_get_root(bw);
 
 	assert(root);
 	assert(root->window);
@@ -1291,10 +1290,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	/* If this brower window is not the root window, and has focus, unset
 	 * the root browser window's focus pointer. */
 	if (!bw->window) {
-		struct browser_window *top = bw;
-
-		while (top && !top->window && top->parent)
-			top = top->parent;
+		struct browser_window *top = browser_window_get_root(bw);
 
 		if (top->focus == bw)
 			top->focus = top;
@@ -1737,9 +1733,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 		return;
 
 	/* Set focus browser window */
-	top = bw;
-	while (top && !top->window && top->parent)
-		top = top->parent;
+	top = browser_window_get_root(bw);
 	top->focus = bw;
 
 	selection_set_browser_window(bw->sel, bw);
