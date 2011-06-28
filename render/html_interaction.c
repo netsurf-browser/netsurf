@@ -197,8 +197,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		browser_window_set_status(bw, status);
 		return;
 	}
-	
-	bw->drag_type = DRAGGING_NONE;
+
+	/* Content related drags handled by now */
+	browser_window_set_drag_type(bw, DRAGGING_NONE);
 
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars */
