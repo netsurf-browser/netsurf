@@ -3192,6 +3192,10 @@ struct box *layout_minmax_line(struct box *first,
 			if (0 < width + fixed)
 				width += fixed;
 		} else if (b->flags & IFRAME) {
+			/* TODO: handle percentage widths properly */
+			if (width == AUTO)
+				width = 400;
+
 			fixed = frac = 0;
 			calculate_mbp_width(b->style, LEFT, true, true, true,
 					&fixed, &frac);
@@ -3231,7 +3235,8 @@ struct box *layout_minmax_line(struct box *first,
 #endif
 
 	assert(b != first);
-	assert(0 <= *line_min && *line_min <= *line_max);
+	assert(0 <= *line_min);
+	assert(*line_min <= *line_max);
 	return b;
 }
 
