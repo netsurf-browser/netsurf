@@ -122,6 +122,7 @@ bool print_draw_next_page(const struct printer *printer,
 		struct print_settings *settings)
 {
 	struct rect clip;
+	struct content_redraw_data data;
 	
 	plot = *(printer->plotter);
 	html_redraw_printing_top_cropped = INT_MAX;
@@ -130,14 +131,21 @@ bool print_draw_next_page(const struct printer *printer,
 	clip.y0 = 0;
 	clip.x1 = page_content_width * settings->scale;
 	clip.y1 = page_content_height  * settings->scale;
-	
+
+	data.x = 0;
+	data.y = -done_height;
+	data.width = 0;
+	data.height = 0;
+	data.background_colour = 0xFFFFFF;
+	data.scale = settings->scale;
+	data.repeat_x = false;
+	data.repeat_y = false;
+
 	html_redraw_printing = true;
 	html_redraw_printing_border = clip.y1;
-	
+
 	printer->print_next_page();
-	if (!content_redraw(printed_content, 0, -done_height,
-			0, 0,
-			&clip, settings->scale, 0xffffff, false, false))
+	if (!content_redraw(printed_content, &data, &clip))
 		return false;
 
 	done_height += page_content_height -

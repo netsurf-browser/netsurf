@@ -60,6 +60,7 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 		int width, int height)
 {
 	struct rect clip;
+	struct content_redraw_data data;
 	float scale;
 	bool plot_ok = true;
 
@@ -86,9 +87,19 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 	/* Find the scale we're using */
 	scale = thumbnail_get_redraw_scale(content, width);
 
+	/* Set up content redraw data */
+	data.x = 0;
+	data.y = 0;
+	data.width = width;
+	data.height = height;
+
+	data.background_colour = 0xFFFFFF;
+	data.scale = scale;
+	data.repeat_x = false;
+	data.repeat_y = false;
+
 	/* Render the content */
-	plot_ok &= content_redraw(content, 0, 0, width, height, &clip, scale,
-				  0xFFFFFF, false, false);
+	plot_ok &= content_redraw(content, &data, &clip);
 	
 	if (plot.option_knockout)
 		knockout_plot_end();

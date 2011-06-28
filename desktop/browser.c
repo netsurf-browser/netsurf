@@ -100,6 +100,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	int height = 0;
 	bool plot_ok = true;
 	content_type content_type;
+	struct content_redraw_data data;
 
 	if (bw == NULL) {
 		LOG(("NULL browser window"));
@@ -131,10 +132,20 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		plot_ok &= plot.rectangle(clip->x0, clip->y0,
 				clip->x1, clip->y1, plot_style_fill_white);
 	}
+
+	/* Set up content redraw data */
+	data.x = x;
+	data.y = y;
+	data.width = width;
+	data.height = height;
+
+	data.background_colour = 0xFFFFFF;
+	data.scale = bw->scale;
+	data.repeat_x = false;
+	data.repeat_y = false;
  
 	/* Render the content */
-	plot_ok &= content_redraw(bw->current_content, x, y, width, height,
-				  clip, bw->scale, 0xFFFFFF, false, false);
+	plot_ok &= content_redraw(bw->current_content, &data, clip);
 	
 	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
 			plot.option_knockout)

@@ -97,23 +97,16 @@ bool html_redraw_debug = false;
 /**
  * Draw a CONTENT_HTML using the current set of plotters (plot).
  *
- * \param  c		     content of type CONTENT_HTML
- * \param  x		     coordinate for top-left of redraw
- * \param  y		     coordinate for top-left of redraw
- * \param  width	     available width (not used for HTML redraw)
- * \param  height	     available height (not used for HTML redraw)
- * \param  clip		     clip rectangle
- * \param  scale	     scale for redraw
- * \param  background_colour the background colour
+ * \param  c	 content of type CONTENT_HTML
+ * \param  data	 redraw data for this content redraw
+ * \param  clip	 current clip region
  * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in target coordinates.
  */
 
-bool html_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour, 
-		bool repeat_x, bool repeat_y)
+bool html_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	html_content *html = (html_content *) c;
 	struct box *box;
@@ -121,7 +114,7 @@ bool html_redraw(struct content *c, int x, int y,
 	bool select, select_only;
 	plot_style_t pstyle_fill_bg = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
-		.fill_colour = background_colour,
+		.fill_colour = data->background_colour,
 	};
 
 	box = html->layout;
@@ -138,8 +131,8 @@ bool html_redraw(struct content *c, int x, int y,
 		select = true;
 		/* check if the redraw rectangle is completely inside of the
 		   select menu */
-		select_only = form_clip_inside_select_menu(control, scale,
-				clip);
+		select_only = form_clip_inside_select_menu(control,
+				data->scale, clip);
 	}
 	
 	if (!select_only) {
@@ -152,8 +145,8 @@ bool html_redraw(struct content *c, int x, int y,
 		result &= plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
 				&pstyle_fill_bg);
 	
-		result &= html_redraw_box(html, box, x, y, clip,
-				scale, pstyle_fill_bg.fill_colour);
+		result &= html_redraw_box(html, box, data->x, data->y, clip,
+				data->scale, pstyle_fill_bg.fill_colour);
 	}
 
 	if (select) {
@@ -165,8 +158,8 @@ bool html_redraw(struct content *c, int x, int y,
 		menu_y += box->height + box->border[BOTTOM].width +
 				box->padding[BOTTOM] + box->padding[TOP];
 		result &= form_redraw_select_menu(html->visible_select_menu,
-				x + menu_x, y + menu_y,
-    				current_redraw_browser->scale, clip);
+				data->x + menu_x, data->y + menu_y,
+				data->scale, clip);
 	}
 
 	return result;
@@ -650,14 +643,21 @@ bool html_redraw_box(html_content *html, struct box *box,
 			return false;
 
 	if (box->object && width != 0 && height != 0) {
+		struct content_redraw_data obj_data;
+
 		x_scrolled = x - scrollbar_get_offset(box->scroll_x) * scale;
 		y_scrolled = y - scrollbar_get_offset(box->scroll_y) * scale;
-		if (!content_redraw(box->object,
-				x_scrolled + padding_left,
-				y_scrolled + padding_top,
-				width, height, &r, scale,
-				current_background_color, 
-				false, false))
+
+		obj_data.x = x_scrolled + padding_left;
+		obj_data.y = y_scrolled + padding_top;
+		obj_data.width = width;
+		obj_data.height = height;
+		obj_data.background_colour = current_background_color;
+		obj_data.scale = scale;
+		obj_data.repeat_x = false;
+		obj_data.repeat_y = false;
+
+		if (!content_redraw(box->object, &obj_data, &r))
 			return false;
 
 	} else if (box->iframe) {
@@ -2182,14 +2182,22 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			}
 			/* valid clipping rectangles only */
 			if ((r.x0 < r.x1) && (r.y0 < r.y1)) {
+				struct content_redraw_data bg_data;
+
 				if (!plot.clip(&r))
 					return false;
-				if (!content_redraw(
-						background->background, x, y,
-						ceilf(width * scale),
-						ceilf(height * scale), &r,
-						scale, *background_colour,
-						repeat_x, repeat_y))
+
+				bg_data.x = x;
+				bg_data.y = y;
+				bg_data.width = ceilf(width * scale);
+				bg_data.height = ceilf(height * scale);
+				bg_data.background_colour = *background_colour;
+				bg_data.scale = scale;
+				bg_data.repeat_x = repeat_x;
+				bg_data.repeat_y = repeat_y;
+
+				if (!content_redraw(background->background,
+						&bg_data, &r))
 					return false;
 			}
 		}
@@ -2323,13 +2331,21 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		}
 		/* valid clipping rectangles only */
 		if ((r.x0 < r.x1) && (r.y0 < r.y1)) {
+			struct content_redraw_data bg_data;
+
 			if (!plot.clip(&r))
 				return false;
-			if (!content_redraw(box->background, x, y,
-					ceilf(width * scale),
-					ceilf(height * scale), &r,
-					scale, *background_colour,
-					repeat_x, repeat_y))
+
+			bg_data.x = x;
+			bg_data.y = y;
+			bg_data.width = ceilf(width * scale);
+			bg_data.height = ceilf(height * scale);
+			bg_data.background_colour = *background_colour;
+			bg_data.scale = scale;
+			bg_data.repeat_x = repeat_x;
+			bg_data.repeat_y = repeat_y;
+
+			if (!content_redraw(box->background, &bg_data, &r))
 				return false;
 		}
 	}

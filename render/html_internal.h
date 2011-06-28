@@ -103,10 +103,8 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 void html_set_status(html_content *c, const char *extra);
 
 /* in render/html_redraw.c */
-bool html_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+bool html_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip);
 
 /* in render/html_interaction.c */
 void html_mouse_track(struct content *c, struct browser_window *bw,

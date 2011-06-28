@@ -50,10 +50,8 @@ static nserror draw_create(const content_handler *handler,
 		bool quirks, struct content **c);
 static bool draw_convert(struct content *c);
 static void draw_destroy(struct content *c);
-static bool draw_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool draw_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip);
 static nserror draw_clone(const struct content *old, struct content **newc);
 static content_type draw_content_type(lwc_string *mime_type);
 
@@ -208,16 +206,14 @@ void draw_destroy(struct content *c)
  * Redraw a CONTENT_DRAW.
  */
 
-bool draw_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+bool draw_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	draw_content *draw = (draw_content *) c;
 	os_trfm matrix;
 	const char *source_data;
 	unsigned long source_size;
-	const void *data;
+	const void *src_data;
 	os_error *error;
 
 	if (plot.flush && !plot.flush())
@@ -227,20 +223,21 @@ bool draw_redraw(struct content *c, int x, int y,
 		return false;
 
 	source_data = content__get_source_data(c, &source_size);
-	data = source_data;
+	src_data = source_data;
 
 	/* Scaled image. Transform units (65536*OS units) */
-	matrix.entries[0][0] = width * 65536 / c->width;
+	matrix.entries[0][0] = data->width * 65536 / c->width;
 	matrix.entries[0][1] = 0;
 	matrix.entries[1][0] = 0;
-	matrix.entries[1][1] = height * 65536 / c->height;
+	matrix.entries[1][1] = data->height * 65536 / c->height;
 	/* Draw units. (x,y) = bottom left */
-	matrix.entries[2][0] = ro_plot_origin_x * 256 + x * 512 -
-			draw->x0 * width / c->width;
-	matrix.entries[2][1] = ro_plot_origin_y * 256 - (y + height) * 512 -
-			draw->y0 * height / c->height;
+	matrix.entries[2][0] = ro_plot_origin_x * 256 + data->x * 512 -
+			draw->x0 * data->width / c->width;
+	matrix.entries[2][1] = ro_plot_origin_y * 256 -
+			(data->y + data->height) * 512 -
+			draw->y0 * data->height / c->height;
 
-	error = xdrawfile_render(0, (drawfile_diagram *) data,
+	error = xdrawfile_render(0, (drawfile_diagram *) src_data,
 			(int) source_size, &matrix, 0, 0);
 	if (error) {
 		LOG(("xdrawfile_render: 0x%x: %s",

@@ -1655,10 +1655,21 @@ static void tree_draw_node_element(struct tree *tree,
 
 			if (c.x1 > c.x0 && c.y1 > c.y0) {
 				/* Valid clip rectangles only */
+				struct content_redraw_data data;
+
 				plot.clip(&c);
-				content_redraw(icon , x, y + icon_inset,
-						TREE_ICON_SIZE, TREE_ICON_SIZE,
-					       &c, 1, 0, false, false);
+
+				data.x = x;
+				data.y = y + icon_inset;
+				data.width = TREE_ICON_SIZE;
+				data.height = TREE_ICON_SIZE;
+
+				data.background_colour = 0xFFFFFF;
+				data.scale = 1;
+				data.repeat_x = false;
+				data.repeat_y = false;
+
+				content_redraw(icon, &data, &c);
 
 				/* Restore previous clipping area */
 				plot.clip(clip);

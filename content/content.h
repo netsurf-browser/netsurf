@@ -94,6 +94,27 @@ union content_msg_data {
 	struct llcache_handle *download;
 };
 
+
+struct content_redraw_data {
+	int x;			/** coordinate for top-left of redraw */
+	int y;			/** coordinate for top-left of redraw */
+
+	/** dimensions to render content at
+	 *  (for scaling contents with intrinsic dimensions) */
+	int width;		/* horizontal */
+	int height;		/* vertical */
+
+	/** the background colour */
+	colour background_colour;
+
+	/** Scale for redraw
+	 *  (for scaling contents without intrinsic dimensions) */
+	float scale;		/* scale factor */
+
+	bool repeat_x;		/* whether content is tiled in x direction */
+	bool repeat_y;		/* whether content is tiled in y direction */
+};
+
 /* The following are for hlcache */
 void content_destroy(struct content *c);
 
@@ -127,10 +148,8 @@ void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
-bool content_redraw(struct hlcache_handle *h, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+bool content_redraw(struct hlcache_handle *h, struct content_redraw_data *data,
+		const struct rect *clip);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct box *box, 
 		struct object_params *params);

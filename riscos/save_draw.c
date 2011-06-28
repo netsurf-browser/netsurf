@@ -90,6 +90,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	pencil_code code;
 	char *drawfile_buffer;
 	struct rect clip;
+	struct content_redraw_data data;
 	size_t drawfile_size;
 	os_error *error;
 
@@ -105,11 +106,17 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	clip.x0 = clip.y0 = INT_MIN;
 	clip.x1 = clip.y1 = INT_MAX;
 
+	data.x = 0;
+	data.y = -ro_save_draw_height;
+	data.width = ro_save_draw_width;
+	data.height = ro_save_draw_height;
+	data.background_colour = 0xFFFFFF;
+	data.scale = 1;
+	data.repeat_x = false;
+	data.repeat_y = false;
+
 	plot = ro_save_draw_plotters;
-	if (!content_redraw(h, 0, -ro_save_draw_height,
-			ro_save_draw_width, ro_save_draw_height,
-			&clip, 1, 0xFFFFFF, false, false))
-	{
+	if (!content_redraw(h, &data, &clip)) {
 		pencil_free(ro_save_draw_diagram);
 		return false;
 	}

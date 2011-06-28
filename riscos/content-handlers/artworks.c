@@ -110,10 +110,8 @@ static nserror artworks_create(const content_handler *handler,
 		bool quirks, struct content **c);
 static bool artworks_convert(struct content *c);
 static void artworks_destroy(struct content *c);
-static bool artworks_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool artworks_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip);
 static nserror artworks_clone(const struct content *old, struct content **newc);
 static content_type artworks_content_type(lwc_string *mime_type);
 
@@ -331,10 +329,8 @@ void artworks_destroy(struct content *c)
  * Redraw a CONTENT_ARTWORKS.
  */
 
-bool artworks_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+bool artworks_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	static const ns_os_vdu_var_list vars = {
 		os_MODEVAR_XEIG_FACTOR,
@@ -367,15 +363,16 @@ bool artworks_redraw(struct content *c, int x, int y,
 				&aw->render_workspace);
 
 	/* Scaled image. Transform units (65536*OS units) */
-	matrix.entries[0][0] = width * 65536 / c->width;
+	matrix.entries[0][0] = data->width * 65536 / c->width;
 	matrix.entries[0][1] = 0;
 	matrix.entries[1][0] = 0;
-	matrix.entries[1][1] = height * 65536 / c->height;
+	matrix.entries[1][1] = data->height * 65536 / c->height;
 	/* Draw units. (x,y) = bottom left */
-	matrix.entries[2][0] = ro_plot_origin_x * 256 + x * 512 -
-			aw->x0 * width / c->width;
-	matrix.entries[2][1] = ro_plot_origin_y * 256 - (y + height) * 512 -
-			aw->y0 * height / c->height;
+	matrix.entries[2][0] = ro_plot_origin_x * 256 + data->x * 512 -
+			aw->x0 * data->width / c->width;
+	matrix.entries[2][1] = ro_plot_origin_y * 256 -
+			(data->y + data->height) * 512 -
+			aw->y0 * data->height / c->height;
 
 	info.ditherx = ro_plot_origin_x;
 	info.dithery = ro_plot_origin_y;
@@ -392,16 +389,18 @@ bool artworks_redraw(struct content *c, int x, int y,
 		info.clip_y1 = ((c->height - clip_y0) * 512) + aw->y0 + 511;
 	}
 	else {
-		info.clip_x0 = (clip_x0 * 512 / scale) + aw->x0 - 511;
-		info.clip_y0 = ((c->height - (clip_y1 / scale)) * 512) + aw->y0 - 511;
-		info.clip_x1 = (clip_x1 * 512 / scale) + aw->x0 + 511;
-		info.clip_y1 = ((c->height - (clip_y0 / scale)) * 512) + aw->y0 + 511;
+		info.clip_x0 = (clip_x0 * 512 / data->scale) + aw->x0 - 511;
+		info.clip_y0 = ((c->height - (clip_y1 / data->scale)) * 512) +
+				aw->y0 - 511;
+		info.clip_x1 = (clip_x1 * 512 / data->scale) + aw->x0 + 511;
+		info.clip_y1 = ((c->height - (clip_y0 / data->scale)) * 512) +
+				aw->y0 + 511;
 	}
 
 	info.print_lowx = 0;
 	info.print_lowy = 0;
 	info.print_handle = 0;
-	info.bgcolour = 0x20000000 | background_colour;
+	info.bgcolour = 0x20000000 | data->background_colour;
 
 	error = xos_read_vdu_variables(PTR_OS_VDU_VAR_LIST(&vars), vals);
 	if (error) {

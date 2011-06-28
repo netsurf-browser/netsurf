@@ -277,21 +277,18 @@ static void nsjpeg_destroy(struct content *c)
 /**
  * Redraw a CONTENT_JPEG with appropriate tiling.
  */
-static bool nsjpeg_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+static bool nsjpeg_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (repeat_x)
+	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
-	if (repeat_y)
+	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(x, y, width, height,
-			   c->bitmap, background_colour,
-			   flags);
+	return plot.bitmap(data->x, data->y, data->width, data->height,
+			c->bitmap, data->background_colour, flags);
 }
 
 

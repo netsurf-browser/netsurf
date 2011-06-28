@@ -338,10 +338,8 @@ static gif_result nsgif_get_frame(struct content *c)
 	return res;
 }
 
-static bool nsgif_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	nsgif_content *gif = (nsgif_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
@@ -352,16 +350,16 @@ static bool nsgif_redraw(struct content *c, int x, int y,
 
 	c->bitmap = gif->gif->frame_image;
 
-	if ((width == -1) && (height == -1))
+	if ((data->width == -1) && (data->height == -1))
 		return true;
             
-	if (repeat_x)
+	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
-	if (repeat_y)
+	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(x, y, width, height, c->bitmap,
-			background_colour, flags);
+	return plot.bitmap(data->x, data->y, data->width, data->height,
+			c->bitmap, data->background_colour, flags);
 }
 
 

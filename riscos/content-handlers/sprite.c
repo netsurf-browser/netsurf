@@ -52,10 +52,8 @@ static nserror sprite_create(const content_handler *handler,
 		bool quirks, struct content **c);
 static bool sprite_convert(struct content *c);
 static void sprite_destroy(struct content *c);
-static bool sprite_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool sprite_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip);
 static nserror sprite_clone(const struct content *old, struct content **newc);
 static content_type sprite_content_type(lwc_string *mime_type);
 
@@ -208,10 +206,8 @@ void sprite_destroy(struct content *c)
  * Redraw a CONTENT_SPRITE.
  */
 
-bool sprite_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+bool sprite_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	sprite_content *sprite = (sprite_content *) c;
 
@@ -219,12 +215,12 @@ bool sprite_redraw(struct content *c, int x, int y,
 		return false;
 
 	return image_redraw(sprite->data,
-			ro_plot_origin_x + x * 2,
-			ro_plot_origin_y - y * 2,
-			width, height,
+			ro_plot_origin_x + data->x * 2,
+			ro_plot_origin_y - data->y * 2,
+			data->width, data->height,
 			c->width,
 			c->height,
-			background_colour,
+			data->background_colour,
 			false, false, false,
 			IMAGE_PLOT_OS);
 }

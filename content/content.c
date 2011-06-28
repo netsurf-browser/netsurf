@@ -489,10 +489,8 @@ void content__request_redraw(struct content *c,
  * redraw function if it doesn't exist.
  */
 
-bool content_redraw(hlcache_handle *h, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	struct content *c = hlcache_handle_get_content(h);
 
@@ -508,9 +506,7 @@ bool content_redraw(hlcache_handle *h, int x, int y,
 		return true;
 	}
 
-	return c->handler->redraw(c, x, y, width, height,
-			clip, scale, background_colour,
-			repeat_x, repeat_y);
+	return c->handler->redraw(c, data, clip);
 }
 
 

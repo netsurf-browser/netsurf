@@ -102,10 +102,8 @@ static void textplain_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 static void textplain_reformat(struct content *c, int width, int height);
 static void textplain_destroy(struct content *c);
-static bool textplain_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour, 
-		bool redraw_x, bool redraw_y);
+static bool textplain_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -668,33 +666,28 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 /**
  * Draw a CONTENT_TEXTPLAIN using the current set of plotters (plot).
  *
- * \param  c		     content of type CONTENT_TEXTPLAIN
- * \param  x		     coordinate for top-left of redraw
- * \param  y		     coordinate for top-left of redraw
- * \param  width	     available width
- * \param  height	     available height
- * \param  clip		     clip rectangle
- * \param  scale	     scale for redraw
- * \param  background_colour the background colour
+ * \param  c	 content of type CONTENT_TEXTPLAIN
+ * \param  data	 redraw data for this content redraw
+ * \param  clip	 current clip region
  * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in target coordinates.
  */
 
-bool textplain_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour, 
-		bool repeat_x, bool repeat_y)
+bool textplain_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	textplain_content *text = (textplain_content *) c;
 	struct browser_window *bw = current_redraw_browser;
 	char *utf8_data = text->utf8_data;
 	long lineno;
+	int x = data->x;
+	int y = data->y;
 	unsigned long line_count = text->physical_line_count;
 	float line_height = textplain_line_height();
-	float scaled_line_height = line_height * scale;
-	long line0 = (clip->y0 - y * scale) / scaled_line_height - 1;
-	long line1 = (clip->y1 - y * scale) / scaled_line_height + 1;
+	float scaled_line_height = line_height * data->scale;
+	long line0 = (clip->y0 - y * data->scale) / scaled_line_height - 1;
+	long line1 = (clip->y1 - y * data->scale) / scaled_line_height + 1;
 	struct textplain_line *line = text->physical_line;
 	size_t length;
 	plot_style_t *plot_style_highlight;
@@ -718,19 +711,19 @@ bool textplain_redraw(struct content *c, int x, int y,
 		return true;
 
 	/* choose a suitable background colour for any highlighted text */
-	if ((background_colour & 0x808080) == 0x808080)
+	if ((data->background_colour & 0x808080) == 0x808080)
 		plot_style_highlight = plot_style_fill_black;
 	else
 		plot_style_highlight = plot_style_fill_white;
 
 	/* Set up font plot style */
-	textplain_style.background = background_colour;
+	textplain_style.background = data->background_colour;
 
-	x = (x + MARGIN) * scale;
-	y = (y + MARGIN) * scale;
+	x = (x + MARGIN) * data->scale;
+	y = (y + MARGIN) * data->scale;
 	for (lineno = line0; lineno != line1; lineno++) {
 		const char *text = utf8_data + line[lineno].start;
-		int tab_width = textplain_tab_width * scale;
+		int tab_width = textplain_tab_width * data->scale;
 		size_t offset = 0;
 		int tx = x;
 
@@ -752,7 +745,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 					line[lineno].start + offset, 0,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
-					clip, line_height, scale, false))
+					clip, line_height, data->scale, false))
 				return false;
 
 			if (next_offset >= length)
@@ -761,7 +754,7 @@ bool textplain_redraw(struct content *c, int x, int y,
 			/* locate end of string and align to next tab position */
 			if (nsfont.font_width(&textplain_style, &text[offset],
 					next_offset - offset, &width))
-				tx += (int)(width * scale);
+				tx += (int)(width * data->scale);
 
 			ntx = x + ((1 + (tx - x) / tab_width) * tab_width);
 

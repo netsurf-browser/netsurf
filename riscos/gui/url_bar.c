@@ -581,6 +581,8 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 
 		xwimp_plot_icon(&icon);
 	} else {
+		struct content_redraw_data data;
+
 		xwimp_set_colour(wimp_COLOUR_WHITE);
 		xos_plot(os_MOVE_TO,
 				(redraw->box.x0 - redraw->xscroll) +
@@ -598,13 +600,18 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 		clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 		clip.y1 = (ro_plot_origin_y - redraw->clip.y1) / 2;
 
-		content_redraw(url_bar->favicon_content,
-				(url_bar->favicon_extent.x0 +
-					url_bar->favicon_offset.x) / 2,
-				(url_bar->favicon_offset.y -
-					url_bar->favicon_extent.y1) / 2,
-				url_bar->favicon_width, url_bar->favicon_height,
-				&clip, 1, 0, false, false);
+		data.x = (url_bar->favicon_extent.x0 +
+				url_bar->favicon_offset.x) / 2;
+		data.y = (url_bar->favicon_offset.y -
+					url_bar->favicon_extent.y1) / 2;
+		data.width = url_bar->favicon_width;
+		data.height = url_bar->favicon_height;
+		data.background_colour = 0xFFFFFF;
+		data.scale = 1;
+		data.repeat_x = false;
+		data.repeat_y = false;
+
+		content_redraw(url_bar->favicon_content, &data, &clip);
 	}
 }
 

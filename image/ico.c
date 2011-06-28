@@ -157,13 +157,11 @@ static bool nsico_convert(struct content *c)
 }
 
 
-static bool nsico_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	nsico_content *ico = (nsico_content *) c;
-	struct bmp_image *bmp = ico_find(ico->ico, width, height);
+	struct bmp_image *bmp = ico_find(ico->ico, data->width, data->height);
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (!bmp->decoded)
@@ -172,12 +170,13 @@ static bool nsico_redraw(struct content *c, int x, int y,
 
 	c->bitmap = bmp->bitmap;
 
-	if (repeat_x)
+	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
-	if (repeat_y)
+	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(x, y, width, height, c->bitmap, background_colour, flags);
+	return plot.bitmap(data->x, data->y, data->width, data->height,
+			c->bitmap, data->background_colour, flags);
 }
 
 

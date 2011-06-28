@@ -54,10 +54,8 @@ struct content_handler {
 			browser_mouse_state mouse, int x, int y);
 	void (*mouse_action)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
-	bool (*redraw)(struct content *c, int x, int y,
-			int width, int height, const struct rect *clip,
-			float scale, colour background_colour,
-			bool repeat_x, bool repeat_y);
+	bool (*redraw)(struct content *c, struct content_redraw_data *data,
+			const struct rect *clip);
 	void (*open)(struct content *c, struct browser_window *bw,
 			struct content *page,
 			struct box *box,

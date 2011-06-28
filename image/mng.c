@@ -67,10 +67,8 @@ static bool nsmng_process_data(struct content *c, const char *data,
 		unsigned int size);
 static bool nsmng_convert(struct content *c);
 static void nsmng_destroy(struct content *c);
-static bool nsmng_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool nsmng_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip);
 static nserror nsmng_clone(const struct content *old, struct content **newc);
 static content_type nsmng_content_type(lwc_string *mime_type);
 
@@ -687,10 +685,8 @@ void nsmng_destroy(struct content *c)
 }
 
 
-bool nsmng_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y)
+bool nsmng_redraw(struct content *c, struct content_redraw_data *data,
+		const struct rect *clip)
 {
 	nsmng_content *mng = (nsmng_content *) c;
 	bool ret;
@@ -704,14 +700,13 @@ bool nsmng_redraw(struct content *c, int x, int y,
 		mng->opaque_test_pending = false;
 	}
 
-	if (repeat_x)
+	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
-	if (repeat_y)
+	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	ret = plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour,
-			flags);
+	ret = plot.bitmap(data->x, data->y, data->width, data->height,
+			c->bitmap, data->background_colour, flags);
 
 	/*	Check if we need to restart the animation
 	*/
