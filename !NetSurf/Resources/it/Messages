@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.7/3.0 Development (Revision 12313)
+# Italian messages for NetSurf 2.7/3.0 Development (Revision 12464)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 10.05.2011
+# 27.06.2011
 # =========================================================================
 #
 # Description
@@ -305,7 +305,7 @@ SaveAs:Salva come...
 SaveIFF:Salva come IFF...
 ObjShow:Mostra oggetto
 SelectFile:Seleziona file...
-ExternalApp:Open in external application
+ExternalApp:Apri con un'applicazione esterna
 
 # Treeview interface tokens
 # =========================
