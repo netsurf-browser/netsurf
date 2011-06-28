@@ -377,12 +377,12 @@ bool artworks_redraw(struct content *c, struct content_redraw_data *data,
 	info.ditherx = ro_plot_origin_x;
 	info.dithery = ro_plot_origin_y;
 
-	clip_x0 -= x;
-	clip_y0 -= y;
-	clip_x1 -= x;
-	clip_y1 -= y;
+	clip_x0 -= data->x;
+	clip_y0 -= data->y;
+	clip_x1 -= data->x;
+	clip_y1 -= data->y;
 
-	if (scale == 1.0) {
+	if (data->scale == 1.0) {
 		info.clip_x0 = (clip_x0 * 512) + aw->x0 - 511;
 		info.clip_y0 = ((c->height - clip_y1) * 512) + aw->y0 - 511;
 		info.clip_x1 = (clip_x1 * 512) + aw->x0 + 511;
