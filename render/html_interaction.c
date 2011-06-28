@@ -774,6 +774,7 @@ void html_overflow_scroll_callback(void *client_data,
 	html_content *html = (html_content *)data->c;
 	struct box *box = data->box;
 	int x, y, box_x, box_y, diff_x, diff_y;
+	struct browser_window *root_bw;
 	
 	
 	switch(scrollbar_data->msg) {
@@ -807,7 +808,9 @@ void html_overflow_scroll_callback(void *client_data,
 			browser_window_set_drag_type(html->bw, DRAGGING_OTHER);
 
 			html->scrollbar = scrollbar_data->scrollbar;
-			gui_window_box_scroll_start(html->bw->window,
+
+			root_bw = browser_window_get_root(html->bw);
+			gui_window_box_scroll_start(root_bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,
      					scrollbar_data->x1, scrollbar_data->y1);
 			break;

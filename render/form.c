@@ -1286,6 +1286,7 @@ void form_select_menu_scroll_callback(void *client_data,
 	struct form_control *control = client_data;
 	struct form_select_menu *menu = control->data.select.menu;
 	html_content *html = (html_content *)menu->c;
+	struct browser_window *root_bw;
 	
 	switch (scrollbar_data->msg) {
 		case SCROLLBAR_MSG_REDRAW:
@@ -1306,7 +1307,9 @@ void form_select_menu_scroll_callback(void *client_data,
 			browser_window_set_drag_type(html->bw, DRAGGING_OTHER);
 
 			menu->scroll_capture = true;
-			gui_window_box_scroll_start(html->bw->window,
+
+			root_bw = browser_window_get_root(html->bw);
+			gui_window_box_scroll_start(root_bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,
      					scrollbar_data->x1, scrollbar_data->y1);
 			break;
