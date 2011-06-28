@@ -92,8 +92,8 @@
 #include <libxml/HTMLparser.h>
 
 #include "desktop/browser.h"
-#include "desktop/shape.h"
 #include "css/css.h"
+#include "utils/types.h"
 
 struct box;
 struct column;

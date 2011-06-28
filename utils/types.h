@@ -17,11 +17,11 @@
  */
 
 /** \file
- * Core shapes.
+ * Core types.
  */
 
-#ifndef _NETSURF_DESKTOP_SHAPE_H_
-#define _NETSURF_DESKTOP_SHAPE_H_
+#ifndef _NETSURF_UTILS_TYPES_H_
+#define _NETSURF_UTILS_TYPES_H_
 
 /* Rectangle coordinates */
 struct rect {

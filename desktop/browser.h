@@ -31,8 +31,8 @@
 #include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
-#include "desktop/shape.h"
 #include "render/html.h"
+#include "utils/types.h"
 
 struct box;
 struct hlcache_handle;

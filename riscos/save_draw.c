@@ -32,11 +32,11 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/plotters.h"
-#include "desktop/shape.h"
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
 #include "riscos/save_draw.h"
 #include "utils/log.h"
+#include "utils/types.h"
 #include "utils/utils.h"
 
 static bool ro_save_draw_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style);

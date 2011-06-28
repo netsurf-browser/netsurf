@@ -27,7 +27,7 @@
 #include "css/css.h"
 #include "content/content.h"
 #include "desktop/plot_style.h"
-#include "desktop/shape.h"
+#include "utils/types.h"
 
 struct bitmap;
 
