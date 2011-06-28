@@ -54,10 +54,10 @@
 #include "utils/utils.h"
 
 
-static bool html_redraw_box(struct box *box, int x, int y,
+static bool html_redraw_box(html_content *html, struct box *box, int x, int y,
 		const struct rect *clip, float scale,
 		colour current_background_color);
-static bool html_redraw_box_children(struct box *box,
+static bool html_redraw_box_children(html_content *html, struct box *box,
 		int x_parent, int y_parent, const struct rect *clip,
 		float scale, colour current_background_color);
 static bool html_redraw_text_box(struct box *box, int x, int y,
@@ -154,7 +154,7 @@ bool html_redraw(struct content *c, int x, int y,
 		result &= plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
 				&pstyle_fill_bg);
 	
-		result &= html_redraw_box(box, x, y, clip,
+		result &= html_redraw_box(html, box, x, y, clip,
 				scale, pstyle_fill_bg.fill_colour);
 	}
 
@@ -244,6 +244,7 @@ static struct box *html_redraw_find_bg_box(struct box *box)
 /**
  * Recursively draw a box.
  *
+ * \param  html	     html content
  * \param  box	     box to draw
  * \param  x_parent  coordinate of parent box
  * \param  y_parent  coordinate of parent box
@@ -256,7 +257,8 @@ static struct box *html_redraw_find_bg_box(struct box *box)
  * x, y, clip_[xy][01] are in target coordinates.
  */
 
-bool html_redraw_box(struct box *box, int x_parent, int y_parent,
+bool html_redraw_box(html_content *html, struct box *box,
+		int x_parent, int y_parent,
 		const struct rect *clip, float scale,
 		colour current_background_color)
 {
@@ -387,7 +389,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			CSS_VISIBILITY_HIDDEN) {
 		if ((plot.group_start) && (!plot.group_start("hidden box")))
 			return false;
-		if (!html_redraw_box_children(box, x_parent, y_parent,
+		if (!html_redraw_box_children(html, box, x_parent, y_parent,
 				&r, scale, current_background_color))
 			return false;
 		return ((!plot.group_end) || (plot.group_end()));
@@ -691,7 +693,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 			return false;
 
 	} else {
-		if (!html_redraw_box_children(box, x_parent, y_parent, &r,
+		if (!html_redraw_box_children(html, box, x_parent, y_parent, &r,
 				scale, current_background_color))
 			return false;
 	}
@@ -703,7 +705,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 
 	/* list marker */
 	if (box->list_marker)
-		if (!html_redraw_box(box->list_marker,
+		if (!html_redraw_box(html, box->list_marker,
 				x_parent + box->x -
 				scrollbar_get_offset(box->scroll_x),
 				y_parent + box->y -
@@ -723,10 +725,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 		has_x_scroll = box_hscrollbar_present(box);
 		has_y_scroll = box_vscrollbar_present(box);
 
-		/* TODO: pass content down, so we don't need
-		 * current_redraw_browser here */
-		if (!box_handle_scrollbars(hlcache_handle_get_content(current_redraw_browser->current_content), box,
-				has_x_scroll, has_y_scroll))
+		if (!box_handle_scrollbars((struct content *)html,
+				box, has_x_scroll, has_y_scroll))
 			return false;
 		
 		if (box->scroll_x != NULL)
@@ -755,6 +755,7 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
 /**
  * Draw the various children of a box.
  *
+ * \param  html	     html content
  * \param  box	     box to draw children of
  * \param  x_parent  coordinate of parent box
  * \param  y_parent  coordinate of parent box
@@ -764,7 +765,8 @@ bool html_redraw_box(struct box *box, int x_parent, int y_parent,
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_box_children(struct box *box, int x_parent, int y_parent,
+bool html_redraw_box_children(html_content *html, struct box *box,
+		int x_parent, int y_parent,
 		const struct rect *clip, float scale,
 		colour current_background_color)
 {
@@ -773,7 +775,7 @@ bool html_redraw_box_children(struct box *box, int x_parent, int y_parent,
 	for (c = box->children; c; c = c->next) {
 
 		if (c->type != BOX_FLOAT_LEFT && c->type != BOX_FLOAT_RIGHT)
-			if (!html_redraw_box(c,
+			if (!html_redraw_box(html, c,
 					x_parent + box->x -
 					scrollbar_get_offset(box->scroll_x),
 					y_parent + box->y -
@@ -782,7 +784,7 @@ bool html_redraw_box_children(struct box *box, int x_parent, int y_parent,
 				return false;
 	}
 	for (c = box->float_children; c; c = c->next_float)
-		if (!html_redraw_box(c,
+		if (!html_redraw_box(html, c,
 				x_parent + box->x -
 				scrollbar_get_offset(box->scroll_x),
 				y_parent + box->y -
