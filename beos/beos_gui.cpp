@@ -1006,14 +1006,6 @@ void gui_launch_url(const char *url)
 }
 
 
-bool gui_search_term_highlighted(struct gui_window *g,
-		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx)
-{
-	return false;
-}
-
-
 /**
  * Display a warning for a serious problem (eg memory exhaustion).
  *
