@@ -88,4 +88,9 @@ bool search_create_context(struct browser_window *bw,
 		struct search_callbacks *callbacks, void *p);
 void search_show_all(bool all, struct search_context *context);
 
+bool search_term_highlighted(struct browser_window *bw,
+		unsigned start_offset, unsigned end_offset,
+		unsigned *start_idx, unsigned *end_idx,
+		struct search_context *context);
+
 #endif

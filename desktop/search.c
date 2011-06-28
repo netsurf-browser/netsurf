@@ -598,7 +598,7 @@ bool find_occurrences_text(const char *pattern, int p_len,
  * Determines whether any portion of the given text box should be
  * selected because it matches the current search string.
  *
- * \param  g             gui window
+ * \param  bw            browser window
  * \param  start_offset  byte offset within text of string to be checked
  * \param  end_offset    byte offset within text
  * \param  start_idx     byte offset within string of highlight start
@@ -606,12 +606,12 @@ bool find_occurrences_text(const char *pattern, int p_len,
  * \return true iff part of the box should be highlighted
  */
 
-bool gui_search_term_highlighted(struct gui_window *g,
+bool search_term_highlighted(struct browser_window *bw,
 		unsigned start_offset, unsigned end_offset,
 		unsigned *start_idx, unsigned *end_idx,
 		struct search_context *context)
 {
-	if (g == context->bw->window) {
+	if (bw == context->bw) {
 		struct list_entry *a;
 		for(a = context->found->next; a; a = a->next)
 			if (a->sel && selection_defined(a->sel) &&

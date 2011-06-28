@@ -35,7 +35,6 @@
 #include "content/content_protected.h"
 #include "css/css.h"
 #include "css/utils.h"
-#include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
@@ -877,8 +876,8 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		/* what about the current search operation, if any? */
 		if (!highlighted && (current_redraw_browser->search_context
 				!= NULL) && 
-				gui_search_term_highlighted(
-						current_redraw_browser->window,
+				search_term_highlighted(
+						current_redraw_browser,
 						offset, offset + len,
 						&start_idx, &end_idx,
 						current_redraw_browser->
