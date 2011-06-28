@@ -185,8 +185,6 @@ struct browser_window {
 	/** search context for free text search */
 	struct search_context *search_context;
 
-	struct form_control *visible_select_menu;
-
 	/** cache of the currently displayed status text. */
 	char *status_text; /**< Current status bar text. */
 	int status_text_len; /**< Length of the ::status_text buffer. */

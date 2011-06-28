@@ -156,7 +156,7 @@ char *form_url_encode(struct form *form,
 bool form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback redraw_callback,
-  		struct browser_window *bw);
+  		struct content *c);
 void form_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 void form_free_select_menu(struct form_control *control);

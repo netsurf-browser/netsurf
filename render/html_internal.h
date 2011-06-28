@@ -88,6 +88,10 @@ typedef struct html_content {
 	/** Scrollbar capturing all mouse events, updated to any active HTML
 	 *  scrollbar, or NULL when no scrollbar drags active */
 	struct scrollbar *scrollbar;
+
+	/** Open core-handled form SELECT menu,
+	 *  or NULL if none currently open. */
+	struct form_control *visible_select_menu;
 } html_content;
 
 

@@ -134,9 +134,8 @@ bool html_redraw(struct content *c, int x, int y,
 	select = false;
 	select_only = false;
 	if (current_redraw_browser != NULL &&
-			current_redraw_browser->visible_select_menu != NULL) {
-		struct form_control *control =
-				current_redraw_browser->visible_select_menu;
+			html->visible_select_menu != NULL) {
+		struct form_control *control = html->visible_select_menu;
 		select = true;
 		/* check if the redraw rectangle is completely inside of the
 		   select menu */
@@ -160,14 +159,13 @@ bool html_redraw(struct content *c, int x, int y,
 
 	if (select) {
 		int menu_x, menu_y;
-		box = current_redraw_browser->visible_select_menu->box;
+		box = html->visible_select_menu->box;
 		box_coords(box, &menu_x, &menu_y);
 	
 		menu_x -= box->border[LEFT].width;
 		menu_y += box->height + box->border[BOTTOM].width +
 				box->padding[BOTTOM] + box->padding[TOP];
-		result &= form_redraw_select_menu(
-				current_redraw_browser->visible_select_menu,
+		result &= form_redraw_select_menu(html->visible_select_menu,
 				x + menu_x, y + menu_y,
     				current_redraw_browser->scale, clip);
 	}

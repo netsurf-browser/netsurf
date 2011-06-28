@@ -1455,8 +1455,6 @@ void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 
 	assert(bw);
 	assert(url);
-	
-	bw->visible_select_menu = NULL;
 
 	if (bw->parent != NULL) {
 		/* Not root window; don't set a URL in GUI URL bar */
@@ -1804,12 +1802,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		break;
 
 	case DRAGGING_OTHER:
-
-		if (bw->visible_select_menu != NULL) {
-			form_select_mouse_drag_end(bw->visible_select_menu,
-					mouse, x, y);
-			bw->drag_type = DRAGGING_NONE;
-		}
+		/* Drag handled by content handler */
 		break;
 
 	default:

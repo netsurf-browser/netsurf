@@ -46,6 +46,7 @@
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html.h"
+#include "render/html_internal.h"
 #include "render/layout.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -67,7 +68,7 @@ struct form_select_menu {
 	bool scroll_capture;
 	select_menu_redraw_callback callback;
 	void *client_data;
-	struct browser_window *bw;
+	struct content *c;
 };
 
 static plot_style_t plot_style_fill_selected = {
@@ -868,7 +869,7 @@ char *form_encode_item(const char *item, const char *charset,
 bool form_open_select_menu(void *client_data,
 		struct form_control *control,
 		select_menu_redraw_callback callback,
-		struct browser_window *bw)
+		struct content *c)
 {
 	int i, line_height_with_spacing, scroll;
 	struct form_option *option;
@@ -876,45 +877,48 @@ bool form_open_select_menu(void *client_data,
 	plot_font_style_t fstyle;
 	int total_height;
 	struct form_select_menu *menu;
-		
+
 
 	/* if the menu is opened for the first time */
 	if (control->data.select.menu == NULL) {
-		
+
 		menu = calloc(1, sizeof (struct form_select_menu));
 		if (menu == NULL) {
 			warn_user("NoMemory", 0);
 			return false;
 		}
-		
+
 		control->data.select.menu = menu;
-				
+
 		box = control->box;
 
 		menu->width = box->width +
 				box->border[RIGHT].width +
 				box->border[LEFT].width +
 				box->padding[RIGHT] + box->padding[LEFT];
-		
+
 		font_plot_style_from_css(control->box->style,
 				&fstyle);
 		menu->f_size = fstyle.size;
-		
-		menu->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2), FMUL(nscss_screen_dpi, INTTOFIX((fstyle.size / FONT_SIZE_SCALE))))), F_72));
-		
+
+		menu->line_height = FIXTOINT(FDIV((FMUL(FLTTOFIX(1.2),
+				FMUL(nscss_screen_dpi,
+				INTTOFIX(fstyle.size / FONT_SIZE_SCALE)))),
+				F_72));
+
 		line_height_with_spacing = menu->line_height +
 				menu->line_height *
 				SELECT_LINE_SPACING;
-		
+
 		total_height = control->data.select.num_items *
 				line_height_with_spacing;
 		menu->height = total_height;
-	
+
 		scroll = 0;
 		if (menu->height > MAX_SELECT_HEIGHT) {
-			
+
 			menu->height = MAX_SELECT_HEIGHT;
-			
+
 			if (control->data.select.num_selected > 0) {
 				i = 0;
 				option = control->data.select.items;
@@ -922,7 +926,7 @@ bool form_open_select_menu(void *client_data,
 					option = option->next;
 					i++;
 				}
-				
+
 				if ((i + 1) * line_height_with_spacing >
 						MAX_SELECT_HEIGHT)
 					scroll = (i + 1) *
@@ -942,12 +946,12 @@ bool form_open_select_menu(void *client_data,
 			free(menu);
 			return false;
 		}
-		menu->bw = bw;
+		menu->c = c;
 	}
 	else menu = control->data.select.menu;
-		
+
 	menu->callback(client_data, 0, 0, menu->width, menu->height);
-	
+
 	return true;
 }
 
@@ -1143,7 +1147,8 @@ bool form_clip_inside_select_menu(struct form_control *control, float scale,
 void form_select_menu_clicked(struct form_control *control, int x, int y)
 {	
 	struct form_select_menu *menu = control->data.select.menu;
-	struct form_option *option;	
+	struct form_option *option;
+	html_content *html = (html_content *)menu->c;
 	int line_height, line_height_with_spacing;	
 	int item_bottom_y;
 	int scroll, i;
@@ -1163,9 +1168,11 @@ void form_select_menu_clicked(struct form_control *control, int x, int y)
 		i++;
 	}
 	
-	if (option != NULL)
-		form_select_process_selection(menu->bw->current_content,
+	if (option != NULL) {
+		/* TODO: going via the bw to get a hlcache_handle is nasty */
+		form_select_process_selection(html->bw->current_content,
 				control, i);
+	}
 	
 	menu->callback(menu->client_data, 0, 0, menu->width, menu->height);
 }
@@ -1278,6 +1285,7 @@ void form_select_menu_scroll_callback(void *client_data,
 {
 	struct form_control *control = client_data;
 	struct form_select_menu *menu = control->data.select.menu;
+	html_content *html = (html_content *)menu->c;
 	
 	switch (scrollbar_data->msg) {
 		case SCROLLBAR_MSG_REDRAW:
@@ -1295,10 +1303,10 @@ void form_select_menu_scroll_callback(void *client_data,
      					menu->height);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
-			browser_window_set_drag_type(menu->bw, DRAGGING_OTHER);
+			browser_window_set_drag_type(html->bw, DRAGGING_OTHER);
 
 			menu->scroll_capture = true;
-			gui_window_box_scroll_start(menu->bw->window,
+			gui_window_box_scroll_start(html->bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,
      					scrollbar_data->x1, scrollbar_data->y1);
 			break;
@@ -1399,18 +1407,18 @@ void form_select_process_selection(hlcache_handle *h,
 void form_select_menu_callback(void *client_data,
 		int x, int y, int width, int height)
 {
-	struct browser_window *bw = client_data;
+	html_content *html = client_data;
 	int menu_x, menu_y;
 	struct box *box;
 	
-	box = bw->visible_select_menu->box;
+	box = html->visible_select_menu->box;
 	box_coords(box, &menu_x, &menu_y);
 		
 	menu_x -= box->border[LEFT].width;
 	menu_y += box->height + box->border[BOTTOM].width +
 			box->padding[BOTTOM] +
 			box->padding[TOP];
-	browser_window_redraw_rect(bw, menu_x + x, menu_y + y,
+	content__request_redraw((struct content *)html, menu_x + x, menu_y + y,
 			width, height);
 }
 

@@ -145,22 +145,29 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	html_content *html = (html_content *) c;
 	
 
-	if (bw->visible_select_menu != NULL) {
-		box = bw->visible_select_menu->box;
+	if (bw->drag_type != DRAGGING_NONE && !mouse &&
+			html->visible_select_menu != NULL) {
+		/* drag end: select menu */
+		form_select_mouse_drag_end(html->visible_select_menu,
+				mouse, x, y);
+	}
+
+	if (html->visible_select_menu != NULL) {
+		box = html->visible_select_menu->box;
 		box_coords(box, &box_x, &box_y);
 
 		box_x -= box->border[LEFT].width;
 		box_y += box->height + box->border[BOTTOM].width +
 				box->padding[BOTTOM] + box->padding[TOP];
-		status = form_select_mouse_action(bw->visible_select_menu,
+		status = form_select_mouse_action(html->visible_select_menu,
 				mouse, x - box_x, y - box_y);
 		if (status != NULL)
 			browser_window_set_status(bw, status);
 		else {
 			int width, height;
-			form_select_get_dimensions(bw->visible_select_menu,
+			form_select_get_dimensions(html->visible_select_menu,
 					&width, &height);
-			bw->visible_select_menu = NULL;
+			html->visible_select_menu = NULL;
 			browser_window_redraw_rect(bw, box_x, box_y,
 					width, height);					
 		}
@@ -169,7 +176,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	if (bw->drag_type != DRAGGING_NONE && !mouse &&
 			html->scrollbar != NULL) {
-		/* Scrollbar drag end */
+		/* drag end: scrollbar */
 		html_overflow_scroll_drag_end(html->scrollbar, mouse, x, y);
 	}
 
@@ -321,10 +328,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			pointer = GUI_POINTER_MENU;
 			if (mouse & BROWSER_MOUSE_CLICK_1 &&
 					option_core_select_menu) {
-				bw->visible_select_menu = gadget;
-				form_open_select_menu(bw, gadget,
+				html->visible_select_menu = gadget;
+				form_open_select_menu(c, gadget,
 						form_select_menu_callback,
-						bw);
+						c);
 				pointer =  GUI_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1)
 				gui_create_form_select_menu(bw, gadget);
