@@ -1083,18 +1083,18 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		i++;
 
 		if (i < (int) size) {
-			free(f->realm);
-			f->realm = malloc(size - i + 1);
-			if (f->realm != NULL) {
-				strncpy(f->realm, data + i, size - i);
-				f->realm[size - i] = '\0';
-				for (i = size - i - 1; i >= 0 &&
-						(f->realm[i] == ' ' ||
-						f->realm[i] == '"' ||
-						f->realm[i] == '\t' ||
-						f->realm[i] == '\r' ||
-						f->realm[i] == '\n'); --i)
-					f->realm[i] = '\0';
+			size_t end = i;
+
+			while (end < size && data[end] != '"')
+				++end;
+
+			if (end < size) {
+				free(f->realm);
+				f->realm = malloc(end - i + 1);
+				if (f->realm != NULL) {
+					strncpy(f->realm, data + i, end - i);
+					f->realm[end - i] = '\0';
+				}
 			}
 		}
 	} else if (11 < size && strncasecmp(data, "Set-Cookie:", 11) == 0) {
