@@ -45,10 +45,8 @@ static nserror amiga_plugin_hack_create(const content_handler *handler,
 static bool amiga_plugin_hack_convert(struct content *c);
 static void amiga_plugin_hack_reformat(struct content *c, int width, int height);
 static void amiga_plugin_hack_destroy(struct content *c);
-static bool amiga_plugin_hack_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool amiga_plugin_hack_redraw(struct content *c,
+		struct content_redraw_data *data, const struct rect *clip);
 static void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
@@ -144,10 +142,8 @@ void amiga_plugin_hack_destroy(struct content *c)
 	return;
 }
 
-bool amiga_plugin_hack_redraw(struct content *c, int x, int y,
-	int width, int height, const struct rect *clip,
-	float scale, colour background_colour,
-	bool repeat_x, bool repeat_y)
+bool amiga_plugin_hack_redraw(struct content *c,
+		struct content_redraw_data *data, const struct rect *clip)
 {
 	plot_style_t pstyle = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
@@ -158,10 +154,13 @@ bool amiga_plugin_hack_redraw(struct content *c, int x, int y,
 
 	LOG(("amiga_plugin_hack_redraw"));
 
-	plot.rectangle(x, y, x + width, y + height, &pstyle);
-	return plot.text(x, y+20, lwc_string_data(content__get_mime_type(c)),
-		lwc_string_length(content__get_mime_type(c)), plot_style_font);
+	plot.rectangle(data->x, data->y, data->x + data->width,
+			data->y + data->height, &pstyle);
 
+	return plot.text(data->x, data->y+20,
+			lwc_string_data(content__get_mime_type(c)),
+			lwc_string_length(content__get_mime_type(c)),
+			plot_style_font);
 }
 
 /**

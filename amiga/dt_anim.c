@@ -60,10 +60,8 @@ static nserror amiga_dt_anim_create(const content_handler *handler,
 static bool amiga_dt_anim_convert(struct content *c);
 static void amiga_dt_anim_reformat(struct content *c, int width, int height);
 static void amiga_dt_anim_destroy(struct content *c);
-static bool amiga_dt_anim_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool amiga_dt_anim_redraw(struct content *c,
+		struct content_redraw_data *data, const struct rect *clip);
 static void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
@@ -251,10 +249,8 @@ void amiga_dt_anim_destroy(struct content *c)
 	return;
 }
 
-bool amiga_dt_anim_redraw(struct content *c, int x, int y,
-	int width, int height, const struct rect *clip,
-	float scale, colour background_colour,
-	bool repeat_x, bool repeat_y)
+bool amiga_dt_anim_redraw(struct content *c,
+		struct content_redraw_data *data, const struct rect *clip)
 {
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 
@@ -262,13 +258,13 @@ bool amiga_dt_anim_redraw(struct content *c, int x, int y,
 
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (repeat_x)
+	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
-	if (repeat_y)
+	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, flags);
+	return plot.bitmap(data->x, data->y, data->width, data->height,
+			c->bitmap, data->background_colour, flags);
 }
 
 /**

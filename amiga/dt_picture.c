@@ -53,10 +53,8 @@ static nserror amiga_dt_picture_create(const content_handler *handler,
 		bool quirks, struct content **c);
 static bool amiga_dt_picture_convert(struct content *c);
 static void amiga_dt_picture_destroy(struct content *c);
-static bool amiga_dt_picture_redraw(struct content *c, int x, int y,
-		int width, int height, const struct rect *clip,
-		float scale, colour background_colour,
-		bool repeat_x, bool repeat_y);
+static bool amiga_dt_picture_redraw(struct content *c,
+		struct content_redraw_data *data, const struct rect *clip);
 static nserror amiga_dt_picture_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_picture_content_type(lwc_string *mime_type);
 
@@ -221,21 +219,19 @@ void amiga_dt_picture_destroy(struct content *c)
 	return;
 }
 
-bool amiga_dt_picture_redraw(struct content *c, int x, int y,
-	int width, int height, const struct rect *clip,
-	float scale, colour background_colour,
-	bool repeat_x, bool repeat_y)
+bool amiga_dt_picture_redraw(struct content *c,
+		struct content_redraw_data *data, const struct rect *clip)
 {
 	LOG(("amiga_dt_picture_redraw"));
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (repeat_x)
+	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
-	if (repeat_y)
+	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(x, y, width, height,
-			c->bitmap, background_colour, flags);
+	return plot.bitmap(data->x, data->y, data->width, data->height,
+			c->bitmap, data->background_colour, flags);
 }
 
 nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
