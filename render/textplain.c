@@ -66,6 +66,7 @@ typedef struct textplain_content {
 	unsigned long physical_line_count;
 	struct textplain_line *physical_line;
 	int formatted_width;
+	struct browser_window *bw;
 } textplain_content;
 
 
@@ -104,6 +105,9 @@ static void textplain_reformat(struct content *c, int width, int height);
 static void textplain_destroy(struct content *c);
 static bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
+static void textplain_open(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -127,6 +131,7 @@ static const content_handler textplain_content_handler = {
 	.mouse_track = textplain_mouse_track,
 	.mouse_action = textplain_mouse_action,
 	.redraw = textplain_redraw,
+	.open = textplain_open,
 	.clone = textplain_clone,
 	.type = textplain_content_type,
 	.no_share = true,
@@ -259,6 +264,7 @@ nserror textplain_create_internal(textplain_content *c, const char *encoding)
 	c->physical_line = 0;
 	c->physical_line_count = 0;
 	c->formatted_width = 0;
+	c->bw = NULL;
 
 	return NSERROR_OK;
 
@@ -679,7 +685,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	textplain_content *text = (textplain_content *) c;
-	struct browser_window *bw = current_redraw_browser;
+	struct browser_window *bw = text->bw;
 	const struct plotter_table *plot = ctx->plot;
 	char *utf8_data = text->utf8_data;
 	long lineno;
@@ -803,6 +809,20 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 	}
 
 	return true;
+}
+
+
+/**
+ * Handle a window containing a CONTENT_TEXTPLAIN being opened.
+ */
+
+void textplain_open(struct content *c, struct browser_window *bw,
+		struct content *page, struct box *box,
+		struct object_params *params)
+{
+	textplain_content *textplain = (textplain_content *) c;
+
+	textplain->bw = bw;
 }
 
 /**
