@@ -29,6 +29,7 @@ struct hlcache_handle;
 struct history;
 struct browser_window;
 struct history_entry;
+struct redraw_context;
 
 struct history *history_create(void);
 struct history *history_clone(struct history *history);

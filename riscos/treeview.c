@@ -317,8 +317,6 @@ void ro_treeview_redraw_request(int x, int y, int width, int height,
 		wimp_draw		update;
 		osbool			more;
 
-		plot = ro_plotters;
-
 		update.w = tv->w;
 		update.box.x0 = (2 * x) + tv->origin.x;
 		update.box.y0 = (-2 * (y + height)) + tv->origin.y;
@@ -404,7 +402,7 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 			clip.y0 = (ro_plot_origin_y - redraw->clip.y1) / 2;
 			clip.x1 = (redraw->clip.x1 - ro_plot_origin_x) / 2;
 			clip.y1 = (ro_plot_origin_y - redraw->clip.y0) / 2;
-			plot.clip(&clip);
+			ro_plotters.clip(&clip);
 	 	}
 
 		error = xwimp_get_rectangle(redraw, &more);

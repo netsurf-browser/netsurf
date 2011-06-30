@@ -449,7 +449,6 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 	assert(sb);
 
 	/* initialise the plotters */
-	plot = ro_plotters;
 	ro_plot_origin_x = 0;
 	ro_plot_origin_y = 0;
 
@@ -487,7 +486,7 @@ void ro_gui_status_bar_redraw(wimp_draw *redraw)
 		}
 
 		/* separate the widget from the text with a line */
-		plot.rectangle((redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1,
+		ro_plotters.rectangle((redraw->box.x0 + sb->width - WIDGET_WIDTH - 2) >> 1,
 				-redraw->box.y0 >> 1,
 				(redraw->box.x0 + sb->width - WIDGET_WIDTH) >> 1,
 				-redraw->box.y1 >> 1,

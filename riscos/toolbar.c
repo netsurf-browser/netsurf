@@ -1011,8 +1011,6 @@ void ro_toolbar_redraw(wimp_draw *redraw)
 
 	assert(toolbar != NULL);
 
-	plot = ro_plotters;
-
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
 		LOG(("xwimp_redraw_window: 0x%x: %s",

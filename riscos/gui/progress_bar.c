@@ -473,7 +473,6 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 	int progress_ymid;
 
 	/* initialise the plotters */
-	plot = ro_plotters;
   	ro_plot_origin_x = 0;
   	ro_plot_origin_y = 0;
 
@@ -502,14 +501,14 @@ void ro_gui_progress_bar_redraw_window(wimp_draw *redraw,
 					redraw->box.y0 + pb->visible.y0) >> 1;
 		  	if ((clip.x0 < clip.x1) && (clip.y0 < clip.y1)) {
 				if (progress_icon) {
-			  		plot.clip(&clip);
+			  		ro_plotters.clip(&clip);
 					_swix(Tinct_Plot, _IN(2) | _IN(3) | _IN(4) | _IN(7),
 							progress_icon,
 							redraw->box.x0 - pb->offset,
 							progress_ymid - progress_height,
 							tinct_FILL_HORIZONTALLY);
 				} else {
-				  	plot.rectangle(clip.x0, clip.y0, 
+				  	ro_plotters.rectangle(clip.x0, clip.y0, 
 						       clip.x1, clip.y1,
 						       plot_style_fill_red);
 			  	}
