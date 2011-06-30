@@ -46,6 +46,7 @@
 #include "amiga/datatypes.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
+#include "amiga/filetype.h"
 #include "amiga/font.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
@@ -499,8 +500,6 @@ void gui_init(int argc, char** argv)
 
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
 	ami_init_fonts();
-
-	plot=amiplot;
 
 	ami_context_menu_init();
 
