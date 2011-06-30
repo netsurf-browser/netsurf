@@ -846,7 +846,7 @@ static bool path(const float *p, unsigned int n, colour fill, float width,
 	return true;
 }
 
-struct plotter_table plot = {
+const struct plotter_table win_plotters = {
 	.rectangle = rectangle,
 	.line = line,
 	.polygon = polygon,

@@ -307,6 +307,10 @@ fb_redraw(fbtk_widget_t *widget,
 	int x;
 	int y;
 	struct rect clip;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &fb_plotters
+	};
 
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
@@ -336,7 +340,7 @@ fb_redraw(fbtk_widget_t *widget,
 	browser_window_redraw(bw,
 			(x - bwidget->scrollx) / bw->scale,
 			(y - bwidget->scrolly) / bw->scale,
-			&clip);
+			&clip, &ctx);
 
 	current_redraw_browser = NULL;
 

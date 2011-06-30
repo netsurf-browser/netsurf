@@ -36,6 +36,8 @@
 
 struct bitmap;
 struct content;
+struct rect;
+struct redraw_context;
 
 struct content_handler {
 	nserror (*create)(const content_handler *handler,
@@ -55,7 +57,8 @@ struct content_handler {
 	void (*mouse_action)(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 	bool (*redraw)(struct content *c, struct content_redraw_data *data,
-			const struct rect *clip);
+			const struct rect *clip,
+			const struct redraw_context *ctx);
 	void (*open)(struct content *c, struct browser_window *bw,
 			struct content *page,
 			struct box *box,

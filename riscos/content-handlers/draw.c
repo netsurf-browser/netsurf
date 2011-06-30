@@ -51,7 +51,7 @@ static nserror draw_create(const content_handler *handler,
 static bool draw_convert(struct content *c);
 static void draw_destroy(struct content *c);
 static bool draw_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 static nserror draw_clone(const struct content *old, struct content **newc);
 static content_type draw_content_type(lwc_string *mime_type);
 
@@ -207,7 +207,7 @@ void draw_destroy(struct content *c)
  */
 
 bool draw_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	draw_content *draw = (draw_content *) c;
 	os_trfm matrix;
@@ -216,7 +216,7 @@ bool draw_redraw(struct content *c, struct content_redraw_data *data,
 	const void *src_data;
 	os_error *error;
 
-	if (plot.flush && !plot.flush())
+	if (ctx->plot->flush && !ctx->plot->flush())
 		return false;
 
 	if (!c->width || !c->height)

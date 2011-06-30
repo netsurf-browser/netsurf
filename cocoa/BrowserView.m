@@ -147,6 +147,11 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
 	current_redraw_browser = browser;
+
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &cocoa_plotters
+	};
 	
 	const NSRect *rects = NULL;
 	NSInteger count = 0;
@@ -160,7 +165,7 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 			.y1 = cocoa_pt_to_px( NSMaxY( rects[i] ) )
 		};
 
-		browser_window_redraw(browser, 0, 0, &clip);
+		browser_window_redraw(browser, 0, 0, &clip, &ctx);
 	}
 	current_redraw_browser = NULL;
 

@@ -3194,6 +3194,10 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	struct rect clip;
 	struct RastPort *temprp;
 	int posx, posy;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &amiplot
+	};
 
 	if(!g) return;
 	if(browser_window_redraw_ready(bw) == false) return;
@@ -3228,7 +3232,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	if((x1-x0)+(xoffset+x0-sx)>(width)) x1 = (width-(x0-sx)+x0);
 	if((y1-y0)+(yoffset+y0-sy)>(height)) y1 = (height-(y0-sy)+y0);
 
-	plot = amiplot;
 	glob = &browserglob;
 
 	if(option_direct_render == false)
@@ -3252,7 +3255,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 		posy = bbox->Top - sy;
 	}
 
-	if(browser_window_redraw(bw, posx, posy, &clip))
+	if(browser_window_redraw(bw, posx, posy, &clip, &ctx))
 	{
 		ami_clearclipreg(&browserglob);
 
@@ -3404,8 +3407,11 @@ void ami_do_redraw(struct gui_window_2 *g)
 	else
 	{
 		struct rect clip;
+		struct redraw_context ctx = {
+			.interactive = true,
+			.plot = &amiplot
+		};
 
-		plot = amiplot;
 		glob = &browserglob;
 
 		if(option_direct_render == false)
@@ -3425,7 +3431,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 			clip.y1 = bbox->Top + bbox->Height;
 		}
 
-		if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip))
+		if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
 		{
 			ami_clearclipreg(&browserglob);
 

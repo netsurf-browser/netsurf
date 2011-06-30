@@ -57,8 +57,9 @@ static float thumbnail_get_redraw_scale(struct hlcache_handle *content,
 
 /* exported interface, documented in thumbnail.h */
 bool thumbnail_redraw(struct hlcache_handle *content,
-		int width, int height)
+		int width, int height, const struct redraw_context *ctx)
 {
+	struct redraw_context new_ctx = *ctx;
 	struct rect clip;
 	struct content_redraw_data data;
 	float scale;
@@ -66,8 +67,8 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 
 	assert(content);
 
-	if (plot.option_knockout)
-		knockout_plot_start(&plot);
+	if (ctx->plot->option_knockout)
+		knockout_plot_start(ctx, &new_ctx);
 
 	/* No selection */
 	current_redraw_browser = NULL;
@@ -78,10 +79,10 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 	clip.x1 = width;
 	clip.y1 = height;
 
-	plot.clip(&clip);
+	new_ctx.plot->clip(&clip);
 
 	/* Plot white background */
-	plot_ok &= plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+	plot_ok &= new_ctx.plot->rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
 			plot_style_fill_white);
 
 	/* Find the scale we're using */
@@ -99,9 +100,9 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 	data.repeat_y = false;
 
 	/* Render the content */
-	plot_ok &= content_redraw(content, &data, &clip);
+	plot_ok &= content_redraw(content, &data, &clip, &new_ctx);
 	
-	if (plot.option_knockout)
+	if (ctx->plot->option_knockout)
 		knockout_plot_end();
 
 	return plot_ok;

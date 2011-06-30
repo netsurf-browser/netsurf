@@ -34,6 +34,7 @@
 #include "render/box.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
+#include "utils/types.h"
 
 /* Default print settings */
 #define DEFAULT_PAGE_WIDTH 595
@@ -123,8 +124,11 @@ bool print_draw_next_page(const struct printer *printer,
 {
 	struct rect clip;
 	struct content_redraw_data data;
-	
-	plot = *(printer->plotter);
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = printer->plotter
+	};
+
 	html_redraw_printing_top_cropped = INT_MAX;
 
 	clip.x0 = 0;
@@ -145,7 +149,7 @@ bool print_draw_next_page(const struct printer *printer,
 	html_redraw_printing_border = clip.y1;
 
 	printer->print_next_page();
-	if (!content_redraw(printed_content, &data, &clip))
+	if (!content_redraw(printed_content, &data, &clip, &ctx))
 		return false;
 
 	done_height += page_content_height -

@@ -47,7 +47,7 @@ int textarea_get_text(struct text_area *ta, char *buf, unsigned int len);
 bool textarea_set_caret(struct text_area *ta, int caret);
 int textarea_get_caret(struct text_area *ta);
 void textarea_redraw(struct text_area *ta, int x, int y,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 bool textarea_keypress(struct text_area *ta, uint32_t key);
 bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 		int x, int y);

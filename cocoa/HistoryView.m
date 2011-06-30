@@ -56,10 +56,15 @@
 {
 	[[NSColor clearColor] set];
 	[NSBezierPath fillRect: rect];
+
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &cocoa_plotters
+	};
 	
 	cocoa_set_clip( rect );
 	
-	history_redraw( browser->history );
+	history_redraw( browser->history, &ctx );
 }
 
 - (void) mouseUp: (NSEvent *)theEvent;

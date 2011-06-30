@@ -33,6 +33,7 @@
 #include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/http.h"
+#include "utils/types.h"
 #include "content/content_factory.h"
 #include "content/content_type.h"
 #include "desktop/mouse.h"
@@ -45,6 +46,8 @@ struct llcache_handle;
 struct hlcache_handle;
 struct object_params;
 struct rect;
+struct redraw_context;
+
 
 /** Status of a content */
 typedef enum {
@@ -149,7 +152,7 @@ void content_mouse_track(struct hlcache_handle *h, struct browser_window *bw,
 void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 bool content_redraw(struct hlcache_handle *h, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct box *box, 
 		struct object_params *params);

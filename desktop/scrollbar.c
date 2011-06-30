@@ -139,13 +139,17 @@ void scrollbar_destroy(struct scrollbar *s)
  * \param y1	bottom border of the outline
  * \param c	base colour of the outline, the other colours are created by
  * 		lightening or darkening this one
+ * \param ctx	current redraw context
  * \param inset true for inset outline, false for an outset one
  * \return
  */
 
 static inline bool scrollbar_redraw_scrollbar_rectangle(int x0, int y0,
-		int x1, int y1, colour c, bool inset)
+		int x1, int y1, colour c, bool inset,
+		const struct redraw_context *ctx)
 {
+	const struct plotter_table *plot = ctx->plot;
+
 	static plot_style_t c0 = {
 		.stroke_type = PLOT_OP_TYPE_SOLID,
 		.stroke_width = 1,
@@ -171,12 +175,12 @@ static inline bool scrollbar_redraw_scrollbar_rectangle(int x0, int y0,
 	c2.stroke_colour = blend_colour(c0.stroke_colour, c1.stroke_colour);
 
 	/* Plot the outline */
-	if (!plot.line(x0, y0, x1, y0, &c0)) return false;
-	if (!plot.line(x1, y0, x1, y1 + 1, &c1)) return false;
-	if (!plot.line(x1, y0, x1, y0 + 1, &c2)) return false;
-	if (!plot.line(x1, y1, x0, y1, &c1)) return false;
-	if (!plot.line(x0, y1, x0, y0, &c0)) return false;
-	if (!plot.line(x0, y1, x0, y1 + 1, &c2)) return false;
+	if (!plot->line(x0, y0, x1, y0, &c0)) return false;
+	if (!plot->line(x1, y0, x1, y1 + 1, &c1)) return false;
+	if (!plot->line(x1, y0, x1, y0 + 1, &c2)) return false;
+	if (!plot->line(x1, y1, x0, y1, &c1)) return false;
+	if (!plot->line(x0, y1, x0, y0, &c0)) return false;
+	if (!plot->line(x0, y1, x0, y1 + 1, &c2)) return false;
 
 	return true;
 }
@@ -186,8 +190,10 @@ static inline bool scrollbar_redraw_scrollbar_rectangle(int x0, int y0,
  * Exported function.  Documented in scrollbar.h
  */
 bool scrollbar_redraw(struct scrollbar *s, int x, int y, 
-		const struct rect *clip, float scale)
+		const struct rect *clip, float scale,
+		const struct redraw_context *ctx)
 {
+	const struct plotter_table *plot = ctx->plot;
 	int w = SCROLLBAR_WIDTH;
 	int bar_pos, bar_c0, bar_c1;
 	int v[6]; /* array of triangle vertices */
@@ -237,17 +243,17 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		
 		/* scrollbar outline */
 		if (!scrollbar_redraw_scrollbar_rectangle(x0, y0, x1, y1,
-				scrollbar_widget_bg_colour, true))
+				scrollbar_widget_bg_colour, true, ctx))
 			return false;
 		/* left arrow icon border */
 		if (!scrollbar_redraw_scrollbar_rectangle(x0 + 1,
 		     		y0 + 1,
 				x0 + w - 2,
     				y1 - 1,
-				scrollbar_widget_fg_colour, false))
+				scrollbar_widget_fg_colour, false, ctx))
 			return false;
 		/* left arrow icon background */
-		if (!plot.rectangle(x0 + 2,
+		if (!plot->rectangle(x0 + 2,
 		     		y0 + 2,
 				x0 + w - 2,
     				y1 - 1,
@@ -260,10 +266,10 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		v[3] = y0 + w / 4;
 		v[4] = x0 + w * 3 / 4;
 		v[5] = y0 + w * 3 / 4;
-		if (!plot.polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
+		if (!plot->polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
 			return false;
 		/* scrollbar well background */
-		if (!plot.rectangle(x0 + w - 1,
+		if (!plot->rectangle(x0 + w - 1,
 		     		y0 + 1,
 	 			x1 - w + 2,
     				y1,
@@ -274,9 +280,9 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 				y0 + 1,
 				bar_c1,
 				y1 - 1,
-				scrollbar_widget_fg_colour, false))
+				scrollbar_widget_fg_colour, false, ctx))
 			return false;
-		if (!plot.rectangle(bar_c0 + 1,
+		if (!plot->rectangle(bar_c0 + 1,
 		     		y0 + 2,
 				bar_c1,
     				y1 - 1,
@@ -287,10 +293,10 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 				y0 + 1,
 				x1 - 1,
 				y1 - 1,
-				scrollbar_widget_fg_colour, false))
+				scrollbar_widget_fg_colour, false, ctx))
 			return false;
 		/* right arrow icon background */
-		if (!plot.rectangle(x1 - w + 3,
+		if (!plot->rectangle(x1 - w + 3,
 		     		y0 + 2,
 				x1 - 1,
     				y1 - 1,
@@ -303,7 +309,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		v[3] = y0 + w / 4;
 		v[4] = x1 - w * 3 / 4 + 1;
 		v[5] = y0 + w * 3 / 4;
-		if (!plot.polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
+		if (!plot->polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
 			return false;
 	} else {
 		/* scrollbar is vertical */
@@ -311,7 +317,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		/* outline */
 		if (!scrollbar_redraw_scrollbar_rectangle(x0, y0, x1, y1,
 				scrollbar_widget_bg_colour,
-				true))
+				true, ctx))
 			return false;
  		/* top arrow background */
 		if (!scrollbar_redraw_scrollbar_rectangle(x0 + 1,
@@ -319,9 +325,9 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 				x1 - 1,
 				y0 + w - 2,
 				scrollbar_widget_fg_colour,
-				false))
+				false, ctx))
 			return false;
-		if (!plot.rectangle(x0 + 2,
+		if (!plot->rectangle(x0 + 2,
 				y0 + 2,
 				x1 - 1,
 				y0 + w - 2,
@@ -334,10 +340,10 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		v[3] = y0 + w * 3 / 4;
 		v[4] = x0 + w * 3 / 4;
 		v[5] = y0 + w * 3 / 4;
-		if (!plot.polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
+		if (!plot->polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
 			return false;
 		/* scrollbar well background */
-		if (!plot.rectangle(x0 + 1,
+		if (!plot->rectangle(x0 + 1,
 				y0 + w - 1,
 				x1,
 				y1 - w + 2,
@@ -348,9 +354,9 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 				bar_c0,
 				x1 - 1,
 				bar_c1,
-				scrollbar_widget_fg_colour, false))
+				scrollbar_widget_fg_colour, false, ctx))
 			return false;
-		if (!plot.rectangle(x0 + 2,
+		if (!plot->rectangle(x0 + 2,
 				bar_c0 + 1,
 				x1 - 1,
 				bar_c1,
@@ -361,9 +367,9 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 				y1 - w + 2,
 				x1 - 1,
 				y1 - 1,
-				scrollbar_widget_fg_colour, false))
+				scrollbar_widget_fg_colour, false, ctx))
 			return false;
-		if (!plot.rectangle(x0 + 2,
+		if (!plot->rectangle(x0 + 2,
 				y1 - w + 3,
 				x1 - 1,
 				y1 - 1,
@@ -376,7 +382,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 		v[3] = y1 - w * 3 / 4 + 1;
 		v[4] = x0 + w * 3 / 4;
 		v[5] = y1 - w * 3 / 4 + 1;
-		if (!plot.polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
+		if (!plot->polygon(v, 3, &pstyle_scrollbar_widget_arrow_colour))
 			return false;
 	}
 

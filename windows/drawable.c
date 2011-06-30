@@ -305,6 +305,10 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 {
 	struct rect clip;
 	PAINTSTRUCT ps;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &win_plotters
+	};
 
 	BeginPaint(hwnd, &ps);
 
@@ -319,7 +323,7 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 		browser_window_redraw(gw->bw,
 				      -gw->scrollx / gw->bw->scale,
 				      -gw->scrolly / gw->bw->scale,
-				      &clip);
+				      &clip, &ctx);
 	}
 
 	EndPaint(hwnd, &ps);

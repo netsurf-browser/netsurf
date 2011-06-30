@@ -50,7 +50,8 @@ static nserror amiga_dt_sound_create(const content_handler *handler,
 static bool amiga_dt_sound_convert(struct content *c);
 static void amiga_dt_sound_destroy(struct content *c);
 static bool amiga_dt_sound_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip);
+		struct content_redraw_data *data, const struct rect *clip,
+		const struct redraw_context *ctx);
 static void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
@@ -193,7 +194,8 @@ void amiga_dt_sound_destroy(struct content *c)
 }
 
 bool amiga_dt_sound_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip)
+		struct content_redraw_data *data, const struct rect *clip,
+		const struct redraw_context *ctx)
 {
 	plot_style_t pstyle = {
 		.fill_type = PLOT_OP_TYPE_SOLID,
@@ -206,10 +208,10 @@ bool amiga_dt_sound_redraw(struct content *c,
 
 	/* this should be some sort of play/stop control */
 
-	plot.rectangle(data->x, data->y, data->x + data->width,
+	ctx->plot->rectangle(data->x, data->y, data->x + data->width,
 			data->y + data->height, &pstyle);
 
-	return plot.text(data->x, data->y+20,
+	return ctx->plot->text(data->x, data->y+20,
 			lwc_string_data(content__get_mime_type(c)),
 			lwc_string_length(content__get_mime_type(c)),
 			plot_style_font);

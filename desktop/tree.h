@@ -177,7 +177,8 @@ struct node *tree_node_get_child(struct node *node);
 struct node *tree_node_get_next(struct node *node);
 
 void tree_draw(struct tree *tree, int x, int y,
-		int clip_x, int clip_y, int clip_width, int clip_height);
+		int clip_x, int clip_y, int clip_width, int clip_height,
+		const struct redraw_context *ctx);
 
 struct node_element *tree_node_find_element(struct node *node,
 		unsigned int flag, struct node_element *after);

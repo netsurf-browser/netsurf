@@ -30,7 +30,6 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "desktop/plotters.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
@@ -342,7 +341,7 @@ framebuffer_plot_clip(const struct rect *clip)
 	return nsfb_plot_set_clip(nsfb, &nsfb_clip);
 }
 
-struct plotter_table plot = {
+const struct plotter_table fb_plotters = {
 	.clip = framebuffer_plot_clip,
 	.arc = framebuffer_plot_arc,
 	.disc = framebuffer_plot_disc,

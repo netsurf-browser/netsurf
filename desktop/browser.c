@@ -94,8 +94,9 @@ static void browser_window_mouse_drag_end(struct browser_window *bw,
 
 /* exported interface, documented in browser.h */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
+	struct redraw_context new_ctx = *ctx;
 	int width = 0;
 	int height = 0;
 	bool plot_ok = true;
@@ -109,17 +110,20 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 	if (bw->current_content == NULL) {
 		/* Browser window has no content, render blank fill */
-		plot.clip(clip);
-		return plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
+		ctx->plot->clip(clip);
+		return ctx->plot->rectangle(clip->x0, clip->y0,
+				clip->x1, clip->y1,
 				plot_style_fill_white);
 	}
 
-	/* Browser window has content */
 	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
-			plot.option_knockout)
-		knockout_plot_start(&plot);
+			ctx->plot->option_knockout) {
+		knockout_plot_start(ctx, &new_ctx);
+	}
 
-	plot.clip(clip);
+	/* Browser window has content */
+
+	new_ctx.plot->clip(clip);
 
 	content_type = content_get_type(bw->current_content);
 	if (content_type != CONTENT_HTML && content_type != CONTENT_TEXTPLAIN) {
@@ -129,7 +133,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 		/* Non-HTML may not fill viewport to extents, so plot white
 		 * background fill */
-		plot_ok &= plot.rectangle(clip->x0, clip->y0,
+		plot_ok &= new_ctx.plot->rectangle(clip->x0, clip->y0,
 				clip->x1, clip->y1, plot_style_fill_white);
 	}
 
@@ -145,11 +149,12 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	data.repeat_y = false;
  
 	/* Render the content */
-	plot_ok &= content_redraw(bw->current_content, &data, clip);
+	plot_ok &= content_redraw(bw->current_content, &data, clip, &new_ctx);
 	
 	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
-			plot.option_knockout)
+			ctx->plot->option_knockout) {
 		knockout_plot_end();
+	}
 
 	return plot_ok;
 }

@@ -618,8 +618,6 @@ bool print_document(struct gui_window *g, const char *filename)
 			goto error;
 	}
 
-	plot = ro_plotters;
-	plot.option_knockout = false;
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = NULL;  /* we don't want to print the
 	                                  selection */
@@ -689,6 +687,11 @@ bool print_document(struct gui_window *g, const char *filename)
 
 		while (more) {
 			struct content_redraw_data data;
+			/* TODO: turn knockout off for print */
+			struct redraw_context ctx = {
+				.interactive = false,
+				.plot = &ro_plotters
+			};
 
 			LOG(("redrawing area: [(%d, %d), (%d, %d)]",
 					b.x0, b.y0, b.x1, b.y1));
@@ -706,7 +709,7 @@ bool print_document(struct gui_window *g, const char *filename)
 			data.repeat_x = false;
 			data.repeat_y = false;
 
-			if (!content_redraw(h, &data, &clip)) {
+			if (!content_redraw(h, &data, &clip, &ctx)) {
 				error_message = "redraw error";
 				goto error;
 			}
@@ -805,6 +808,10 @@ const char *print_declare_fonts(hlcache_handle *h)
 	struct content_redraw_data data;
 	const char *error_message = 0;
 	os_error *error;
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &print_fonts_plotters
+	};
 
 	free(print_fonts_list);
 	print_fonts_list = 0;
@@ -823,8 +830,7 @@ const char *print_declare_fonts(hlcache_handle *h)
 	data.repeat_x = false;
 	data.repeat_y = false;
 
-	plot = print_fonts_plotters;
-	if (!content_redraw(h, &data, &clip)) {
+	if (!content_redraw(h, &data, &clip, &ctx)) {
 		if (print_fonts_error)
 			return print_fonts_error;
 		return "Declaring fonts failed.";

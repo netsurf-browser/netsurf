@@ -61,6 +61,11 @@ localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	struct gui_localhistory *glh = cbi->context;
 	nsfb_bbox_t rbox;
 
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &fb_plotters
+	};
+
 	rbox.x0 = fbtk_get_absx(widget);
 	rbox.y0 = fbtk_get_absy(widget);
 
@@ -76,7 +81,7 @@ localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				 glh->scrolly,
 				 fbtk_get_width(widget) + glh->scrollx,
 				 fbtk_get_height(widget) + glh->scrolly,
-				 0, 0);
+				 0, 0, &ctx);
 
 	nsfb_update(fbtk_get_nsfb(widget), &rbox);
 

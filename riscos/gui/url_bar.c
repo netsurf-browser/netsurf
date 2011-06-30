@@ -582,6 +582,10 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 		xwimp_plot_icon(&icon);
 	} else {
 		struct content_redraw_data data;
+		struct redraw_context ctx = {
+			.interactive = true,
+			.plot = &ro_plotters
+		};
 
 		xwimp_set_colour(wimp_COLOUR_WHITE);
 		xos_plot(os_MOVE_TO,
@@ -611,7 +615,7 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 		data.repeat_x = false;
 		data.repeat_y = false;
 
-		content_redraw(url_bar->favicon_content, &data, &clip);
+		content_redraw(url_bar->favicon_content, &data, &clip, &ctx);
 	}
 }
 

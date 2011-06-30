@@ -42,6 +42,10 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	struct BitScaleArgs bsa;
 	int plot_width;
 	int plot_height;
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &amiplot
+	};
 
 	plot_width = MIN(content_get_width(content), 1024);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
@@ -55,9 +59,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	bitmap->nativebmheight = bitmap->height;
 	ami_clearclipreg(&browserglob);
 	current_redraw_browser = curbw;
-	plot = amiplot;
 
-	thumbnail_redraw(content, plot_width, plot_height);
+	thumbnail_redraw(content, plot_width, plot_height, &ctx);
 
 	current_redraw_browser = NULL;
 

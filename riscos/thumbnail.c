@@ -86,6 +86,10 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	osspriteop_area *sprite_area = NULL;
 	osspriteop_header *sprite_header = NULL;
 	_kernel_oserror *error;
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &ro_plotters
+	};
 
 	assert(content);
 	assert(bitmap);
@@ -110,7 +114,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	}
 
 	/* set up the plotters */
-	plot = ro_plotters;
 	ro_plot_origin_x = 0;
 	ro_plot_origin_y = bitmap->height * 2;
 
@@ -125,7 +128,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	colourtrans_set_gcol(os_COLOUR_WHITE, colourtrans_SET_BG_GCOL,
 			os_ACTION_OVERWRITE, 0);
 
-	thumbnail_redraw(content, bitmap->width, bitmap->height);
+	thumbnail_redraw(content, bitmap->width, bitmap->height, &ctx);
 
 	thumbnail_restore_output(save_area);
 	rufl_invalidate_cache();

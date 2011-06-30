@@ -238,7 +238,7 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 
 
 
-struct plotter_table plot = {
+const struct plotter_table atari_plotter = {
 	.rectangle = plot_rectangle,
 	.line = plot_line,
 	.polygon = plot_polygon,

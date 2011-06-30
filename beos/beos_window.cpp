@@ -920,6 +920,11 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	float scale = g->bw->scale;
 	struct rect clip;
 
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &nsbeos_plotters
+	};
+
 	assert(g);
 	assert(g->bw);
 
@@ -947,7 +952,6 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	if (view->Window())
 		view->Window()->BeginViewTransaction();
 
-	plot = nsbeos_plotters;
 	current_redraw_browser = g->bw;
 
 	clip.x0 = (int)updateRect.left;
@@ -955,7 +959,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	clip.x1 = (int)updateRect.right + 1;
 	clip.y1 = (int)updateRect.bottom + 1;
 
-	browser_window_redraw(g->bw, 0, 0, &clip);
+	browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
 
 	current_redraw_browser = NULL;
 

@@ -1235,6 +1235,10 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	struct treeview_window *twin = data;
 	struct IBox *bbox;
 	int pos_x, pos_y;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &amiplot
+	};
 
 	if(!twin->win) return;
 //	if(tree_get_redraw(twin->tree) == false) return;
@@ -1249,7 +1253,7 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
 	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
 
-	tree_draw(twin->tree, -pos_x, -pos_y, x, y, width, height);
+	tree_draw(twin->tree, -pos_x, -pos_y, x, y, width, height, &ctx);
 
 	BltBitMapRastPort(twin->globals.bm, x - pos_x, y - pos_y, twin->win->RPort,
 		bbox->Left + x - pos_x, bbox->Top + y - pos_y, width, height, 0x0C0);

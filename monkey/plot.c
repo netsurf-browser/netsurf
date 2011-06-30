@@ -83,7 +83,7 @@ monkey_plot_clip(const struct rect *clip)
   return true;
 }
 
-struct plotter_table plot = {
+const struct plotter_table monkey_plotters = {
 	.clip = monkey_plot_clip,
 	.arc = monkey_plot_arc,
 	.disc = monkey_plot_disc,

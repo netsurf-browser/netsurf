@@ -52,7 +52,7 @@ static bool svg_convert(struct content *c);
 static void svg_destroy(struct content *c);
 static void svg_reformat(struct content *c, int width, int height);
 static bool svg_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 static nserror svg_clone(const struct content *old, struct content **newc);
 static content_type svg_content_type(lwc_string *mime_type);
 
@@ -217,7 +217,8 @@ void svg_reformat(struct content *c, int width, int height)
 
 static bool svg_redraw_internal(struct content *c, int x, int y,
 		int width, int height, const struct rect *clip,
-		float scale, colour background_colour)
+		const struct redraw_context *ctx, float scale,
+		colour background_colour)
 {
 	svg_content *svg = (svg_content *) c;
 	float transform[6];
@@ -243,7 +244,7 @@ static bool svg_redraw_internal(struct content *c, int x, int y,
 
 	for (i = 0; i != diagram->shape_count; i++) {
 		if (diagram->shape[i].path) {
-			ok = plot.path(diagram->shape[i].path,
+			ok = ctx->plot->path(diagram->shape[i].path,
 					diagram->shape[i].path_length,
 					BGR(diagram->shape[i].fill),
 					diagram->shape[i].stroke_width,
@@ -264,7 +265,7 @@ static bool svg_redraw_internal(struct content *c, int x, int y,
 			fstyle.foreground = 0x000000;
 			fstyle.size = (8 * FONT_SIZE_SCALE) * scale;
 
-			ok = plot.text(px, py,
+			ok = ctx->plot->text(px, py,
 					diagram->shape[i].text,
 					strlen(diagram->shape[i].text),
 					&fstyle);
@@ -284,7 +285,7 @@ static bool svg_redraw_internal(struct content *c, int x, int y,
  */
 
 bool svg_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	int x = data->x;
 	int y = data->y;
@@ -297,8 +298,10 @@ bool svg_redraw(struct content *c, struct content_redraw_data *data,
 
 	if ((data->repeat_x == false) && (data->repeat_y == false)) {
 		/* Simple case: SVG is not tiled */
-		return svg_redraw_internal(c, x, y, data->width, data->height,
-				clip, data->scale, data->background_colour);
+		return svg_redraw_internal(c, x, y,
+				data->width, data->height,
+				clip, ctx, data->scale,
+				data->background_colour);
 	} else {
 		/* Tiled redraw required.  SVG repeats to extents of clip
 		 * rectangle, in x, y or both directions */
@@ -325,7 +328,7 @@ bool svg_redraw(struct content *c, struct content_redraw_data *data,
 			for (x = x0; x < x1; x += data->width) {
 				if (!svg_redraw_internal(c, x, y,
 						data->width, data->height,
-						clip, data->scale,
+						clip, ctx, data->scale,
 						data->background_colour)) {
 					return false;
 				}

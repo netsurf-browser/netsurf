@@ -23,10 +23,23 @@
 #ifndef _NETSURF_UTILS_TYPES_H_
 #define _NETSURF_UTILS_TYPES_H_
 
+struct plotter_table;
+
 /* Rectangle coordinates */
 struct rect {
 	int x0, y0; /* Top left */
 	int x1, y1; /* Bottom right */
+};
+
+
+/* Redraw context */
+struct redraw_context {
+	/** Redraw to show interactive features, such as active selections
+	 *  etc.  Should be off for printing. */
+	bool interactive;
+
+	/** Current plotters, must be assigned before use. */
+	const struct plotter_table *plot;
 };
 
 #endif

@@ -158,6 +158,10 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	struct gui_window *g = data;
 	struct gui_window *z;
 	struct rect clip;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &nsgtk_plotters
+	};
 
 	assert(g);
 	assert(g->bw);
@@ -175,7 +179,6 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 
-	plot = nsgtk_plotters;
 	current_redraw_browser = g->bw;
 
 	clip.x0 = event->area.x;
@@ -183,7 +186,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
 
-	browser_window_redraw(g->bw, 0, 0, &clip);
+	browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
 
 	current_redraw_browser = NULL;
 

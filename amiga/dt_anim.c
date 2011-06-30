@@ -61,7 +61,8 @@ static bool amiga_dt_anim_convert(struct content *c);
 static void amiga_dt_anim_reformat(struct content *c, int width, int height);
 static void amiga_dt_anim_destroy(struct content *c);
 static bool amiga_dt_anim_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip);
+		struct content_redraw_data *data, const struct rect *clip,
+		const struct redraw_context *ctx);
 static void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
@@ -250,7 +251,8 @@ void amiga_dt_anim_destroy(struct content *c)
 }
 
 bool amiga_dt_anim_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip)
+		struct content_redraw_data *data, const struct rect *clip,
+		const struct redraw_context *ctx)
 {
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
 
@@ -263,7 +265,7 @@ bool amiga_dt_anim_redraw(struct content *c,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(data->x, data->y, data->width, data->height,
+	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
 			c->bitmap, data->background_colour, flags);
 }
 

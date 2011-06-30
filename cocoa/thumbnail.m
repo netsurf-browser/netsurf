@@ -30,6 +30,12 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 {
 	int bwidth = bitmap_get_width( bitmap );
 	int bheight = bitmap_get_height( bitmap );
+
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &cocoa_plotters
+	};
+
 	CGColorSpaceRef cspace = CGColorSpaceCreateWithName( kCGColorSpaceGenericRGB );
 	CGContextRef bitmapContext = CGBitmapContextCreate( bitmap_get_buffer( bitmap ), 
 													   bwidth, bheight, 
@@ -46,7 +52,7 @@ bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
 
 	[NSGraphicsContext setCurrentContext: [NSGraphicsContext graphicsContextWithGraphicsPort: bitmapContext flipped: YES]];
 
-	thumbnail_redraw( content, width, height );
+	thumbnail_redraw( content, width, height, &ctx );
 
 	[NSGraphicsContext setCurrentContext: nil];
 	CGContextRelease( bitmapContext );

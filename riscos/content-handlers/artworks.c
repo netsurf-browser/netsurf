@@ -111,7 +111,7 @@ static nserror artworks_create(const content_handler *handler,
 static bool artworks_convert(struct content *c);
 static void artworks_destroy(struct content *c);
 static bool artworks_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 static nserror artworks_clone(const struct content *old, struct content **newc);
 static content_type artworks_content_type(lwc_string *mime_type);
 
@@ -330,7 +330,7 @@ void artworks_destroy(struct content *c)
  */
 
 bool artworks_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	static const ns_os_vdu_var_list vars = {
 		os_MODEVAR_XEIG_FACTOR,
@@ -353,7 +353,7 @@ bool artworks_redraw(struct content *c, struct content_redraw_data *data,
 	int clip_x1 = clip->x1;
 	int clip_y1 = clip->y1;
 
-	if (plot.flush && !plot.flush())
+	if (ctx->plot->flush && !ctx->plot->flush())
 		return false;
 
 	/* pick up render addresses again in case they've changed

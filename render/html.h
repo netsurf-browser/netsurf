@@ -158,7 +158,8 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		const struct rect *clip,
 		int height,
 		float scale,
-		bool excluded);
+		bool excluded,
+		const struct redraw_context *ctx);
 
 xmlDoc *html_get_document(struct hlcache_handle *h);
 struct box *html_get_box_tree(struct hlcache_handle *h);

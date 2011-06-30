@@ -78,7 +78,11 @@ static void nsws_localhistory_scroll_check(struct nsws_localhistory *l, struct g
 
 static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window *gw)
 {
-	HDC tmp_hdc; 
+	HDC tmp_hdc;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &win_plotters
+	};
 
 	LOG(("gui window %p", gw));
 
@@ -90,7 +94,7 @@ static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window 
 		tmp_hdc = plot_hdc;
 		plot_hdc = GetDC(l->hwnd);
 
-		history_redraw(gw->bw->history);
+		history_redraw(gw->bw->history, &ctx);
 
 		ReleaseDC(l->hwnd, plot_hdc);
 
@@ -268,6 +272,11 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 	case WM_PAINT: {
 		PAINTSTRUCT ps;
 		HDC hdc, tmp_hdc;
+		struct redraw_context ctx = {
+			.interactive = true,
+			.plot = &win_plotters
+		};
+
 		hdc = BeginPaint(hwnd, &ps);
 		if (gw->bw != NULL) {
 			/* set global HDC for the plotters */
@@ -280,7 +289,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 				 gw->localhistory->hscroll + (ps.rcPaint.right - ps.rcPaint.left),
 				 gw->localhistory->vscroll + (ps.rcPaint.bottom - ps.rcPaint.top),
 				 ps.rcPaint.left,
-				 ps.rcPaint.top);
+				 ps.rcPaint.top, &ctx);
 
 			plot_hdc = tmp_hdc;
 

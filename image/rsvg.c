@@ -230,7 +230,7 @@ static bool rsvg_convert(struct content *c)
 }
 
 static bool rsvg_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	bitmap_flags_t flags = BITMAPF_NONE;
 
@@ -241,7 +241,7 @@ static bool rsvg_redraw(struct content *c, struct content_redraw_data *data,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(data->x, data->y, data->width, data->height, 
+	return ctx->plot->bitmap(data->x, data->y, data->width, data->height, 
 			c->bitmap, data->background_colour, flags);
 }
 

@@ -1507,21 +1507,25 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	struct browser_window *bw =
 			gui_window_get_browser_window(hw->g->top_level);
 
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &nsgtk_plotters
+	};
+
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
-	plot = nsgtk_plotters;
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
-	plot.clip(&clip);
+	ctx.plot->clip(&clip);
 
-	history_redraw(bw->history);
+	history_redraw(bw->history, &ctx);
 
 	current_widget = NULL;
 	g_object_unref(current_gc);

@@ -24,6 +24,7 @@
 #define _NETSURF_DESKTOP_THUMBNAIL_H_
 
 #include <stdbool.h>
+#include "utils/types.h"
 
 struct hlcache_handle;
 struct bitmap;
@@ -37,6 +38,7 @@ struct bitmap;
  * \param  content  The content to redraw for thumbnail
  * \param  width    The thumbnail width
  * \param  height   The thumbnail height
+ * \param  ctx      current redraw context
  * \return true if successful, false otherwise
  *
  * The thumbnail is guaranteed to be filled to its width/height extents, so
@@ -45,7 +47,7 @@ struct bitmap;
  * Units for width and height are pixels.
  */
 bool thumbnail_redraw(struct hlcache_handle *content,
-		int width, int height);
+		int width, int height, const struct redraw_context *ctx);
 
 
 /* In platform specific thumbnail.c. */

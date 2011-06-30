@@ -26,7 +26,8 @@
 #include "desktop/plotters.h"
 
 
-bool knockout_plot_start(struct plotter_table *plotter);
+bool knockout_plot_start(const struct redraw_context *ctx,
+		struct redraw_context *knk_ctx);
 bool knockout_plot_end(void);
 
 extern const struct plotter_table knockout_plotters;

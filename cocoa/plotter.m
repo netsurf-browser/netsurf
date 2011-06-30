@@ -296,7 +296,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	return true;
 }
 
-struct plotter_table plot = {
+const struct plotter_table cocoa_plotters = {
 	.clip = plot_clip,
 	.arc = plot_arc,
 	.disc = plot_disc,

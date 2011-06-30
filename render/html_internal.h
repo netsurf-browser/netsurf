@@ -104,7 +104,7 @@ void html_set_status(html_content *c, const char *extra);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 
 /* in render/html_interaction.c */
 void html_mouse_track(struct content *c, struct browser_window *bw,

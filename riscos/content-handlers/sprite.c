@@ -53,7 +53,7 @@ static nserror sprite_create(const content_handler *handler,
 static bool sprite_convert(struct content *c);
 static void sprite_destroy(struct content *c);
 static bool sprite_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 static nserror sprite_clone(const struct content *old, struct content **newc);
 static content_type sprite_content_type(lwc_string *mime_type);
 
@@ -207,11 +207,11 @@ void sprite_destroy(struct content *c)
  */
 
 bool sprite_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	sprite_content *sprite = (sprite_content *) c;
 
-	if (plot.flush && !plot.flush())
+	if (ctx->plot->flush && !ctx->plot->flush())
 		return false;
 
 	return image_redraw(sprite->data,

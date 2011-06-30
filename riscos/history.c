@@ -139,8 +139,10 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 {
 	osbool more;
 	os_error *error;
-
-	plot = ro_plotters;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &ro_plotters
+	};
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
@@ -152,7 +154,7 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 	while (more) {
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
 		ro_plot_origin_y = redraw->box.y1 - redraw->yscroll;
-		history_redraw(history_current);
+		history_redraw(history_current, &ctx);
 		error = xwimp_get_rectangle(redraw, &more);
 		if (error) {
 			LOG(("xwimp_get_rectangle: 0x%x: %s",

@@ -103,7 +103,7 @@ static void textplain_mouse_action(struct content *c, struct browser_window *bw,
 static void textplain_reformat(struct content *c, int width, int height);
 static void textplain_destroy(struct content *c);
 static bool textplain_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -669,16 +669,18 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
  * \param  c	 content of type CONTENT_TEXTPLAIN
  * \param  data	 redraw data for this content redraw
  * \param  clip	 current clip region
+ * \param  ctx	 current redraw context
  * \return true if successful, false otherwise
  *
  * x, y, clip_[xy][01] are in target coordinates.
  */
 
 bool textplain_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	textplain_content *text = (textplain_content *) c;
 	struct browser_window *bw = current_redraw_browser;
+	const struct plotter_table *plot = ctx->plot;
 	char *utf8_data = text->utf8_data;
 	long lineno;
 	int x = data->x;
@@ -703,7 +705,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 	if (line1 < line0)
 		line1 = line0;
 
-	if (!plot.rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
+	if (!plot->rectangle(clip->x0, clip->y0, clip->x1, clip->y1,
 			plot_style_fill_white))
 		return false;
 
@@ -745,7 +747,8 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 					line[lineno].start + offset, 0,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
-					clip, line_height, data->scale, false))
+					clip, line_height, data->scale, false,
+					ctx))
 				return false;
 
 			if (next_offset >= length)
@@ -787,7 +790,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 
 				if (highlighted) {
 					int sy = y + (lineno * scaled_line_height);
-					if (!plot.rectangle(tx, sy, 
+					if (!plot->rectangle(tx, sy, 
 							    ntx, sy + scaled_line_height,
 							    plot_style_highlight))
 						return false;

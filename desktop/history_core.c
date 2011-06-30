@@ -89,7 +89,7 @@ static int history_layout_subtree(struct history *history,
 static bool history_redraw_entry(struct history *history,
 		struct history_entry *entry,
 		int x0, int y0, int x1, int y1,
-		int x, int y, bool clip);
+		int x, int y, bool clip, const struct redraw_context *ctx);
 static struct history_entry *history_find_position(struct history_entry *entry,
 		int x, int y);
 static bool history_enumerate_entry(const struct history *history, 
@@ -558,40 +558,39 @@ void history_size(struct history *history, int *width, int *height)
 /**
  * Redraw a history.
  *
- * \param  history  history to render
- *
- * The current plotter is used.
+ * \param history	history to render
+ * \param ctx		current redraw context
  */
 
-bool history_redraw(struct history *history)
+bool history_redraw(struct history *history, const struct redraw_context *ctx)
 {
 	if (!history->start)
 		return true;
-	return history_redraw_entry(history, history->start, 0, 0, 0, 0, 0, 0, false);
+	return history_redraw_entry(history, history->start, 0, 0, 0, 0, 0, 0,
+			false, ctx);
 }
 
 /**
  * Redraw part of a history.
  *
- * \param  history  history to render
- * \param  x0       left X co-ordinate of redraw area
- * \param  y0       top Y co-ordinate of redraw area
- * \param  x1       right X co-ordinate of redraw area
- * \param  y1       lower Y co-ordinate of redraw area
- * \param  x        start X co-ordinate on plot canvas
- * \param  y        start Y co-ordinate on plot canvas
- *
- * The current plotter is used.
+ * \param  history	history to render
+ * \param  x0		left X co-ordinate of redraw area
+ * \param  y0		top Y co-ordinate of redraw area
+ * \param  x1		right X co-ordinate of redraw area
+ * \param  y1		lower Y co-ordinate of redraw area
+ * \param  x		start X co-ordinate on plot canvas
+ * \param  y		start Y co-ordinate on plot canvas
+ * \param ctx		current redraw context
  */
 
 bool history_redraw_rectangle(struct history *history,
 	int x0, int y0, int x1, int y1,
-	int x, int y)
+	int x, int y, const struct redraw_context *ctx)
 {
 	if (!history->start)
 		return true;
 	return history_redraw_entry(history, history->start,
-		x0, y0, x1, y1, x, y, true);
+		x0, y0, x1, y1, x, y, true, ctx);
 }
 
 /**
@@ -599,13 +598,15 @@ bool history_redraw_rectangle(struct history *history,
  *
  * \param  history        history containing the entry
  * \param  history_entry  entry to render
+ * \param ctx		  current redraw context
  */
 
 bool history_redraw_entry(struct history *history,
 		struct history_entry *entry,
 		int x0, int y0, int x1, int y1,
-		int x, int y, bool clip)
+		int x, int y, bool clip, const struct redraw_context *ctx)
 {
+	const struct plotter_table *plot = ctx->plot;
 	size_t char_offset;
 	int actual_x;
 	struct history_entry *child;
@@ -626,14 +627,14 @@ bool history_redraw_entry(struct history *history,
 		rect.y0 = y0 + yoffset;
 		rect.x1 = x1 + xoffset;
 		rect.y1 = y1 + yoffset;
-		if(!plot.clip(&rect))
+		if(!plot->clip(&rect))
 			return false;
 	}
 
-	if (!plot.bitmap(entry->x + xoffset, entry->y + yoffset, WIDTH, HEIGHT,
+	if (!plot->bitmap(entry->x + xoffset, entry->y + yoffset, WIDTH, HEIGHT,
 			entry->bitmap, 0xffffff, 0))
 		return false;
-	if (!plot.rectangle(entry->x - 1 + xoffset, 
+	if (!plot->rectangle(entry->x - 1 + xoffset, 
                             entry->y - 1 + yoffset,
                             entry->x + xoffset + WIDTH, 
                             entry->y + yoffset + HEIGHT,
@@ -649,29 +650,30 @@ bool history_redraw_entry(struct history *history,
 	fstyle.foreground = c;
 	fstyle.weight = entry == history->current ? 900 : 400;
 
-	if (!plot.text(entry->x + xoffset, entry->y + HEIGHT + 12 + yoffset,
+	if (!plot->text(entry->x + xoffset, entry->y + HEIGHT + 12 + yoffset,
 			entry->page.title, char_offset, &fstyle))
 		return false;
 
 	for (child = entry->forward; child; child = child->next) {
-		if (!plot.line(entry->x + WIDTH + xoffset,
+		if (!plot->line(entry->x + WIDTH + xoffset,
 				entry->y + HEIGHT / 2 + yoffset,
 		      	entry->x + WIDTH + tailsize + xoffset,
 				entry->y + HEIGHT / 2 + yoffset, 
 			       plot_style_stroke_history))
 			return false;
-		if (!plot.line(entry->x + WIDTH + tailsize + xoffset,
+		if (!plot->line(entry->x + WIDTH + tailsize + xoffset,
 			       entry->y + HEIGHT / 2 + yoffset,
 			       child->x - tailsize +xoffset,
 			       child->y + HEIGHT / 2 + yoffset,
 			       plot_style_stroke_history))
 			return false;
-		if (!plot.line(child->x - tailsize + xoffset,
+		if (!plot->line(child->x - tailsize + xoffset,
 			       child->y + HEIGHT / 2 + yoffset,
 			       child->x + xoffset, child->y + HEIGHT / 2 + yoffset,
 			       plot_style_stroke_history))
 			return false;
-		if (!history_redraw_entry(history, child, x0, y0, x1, y1, x, y, clip))
+		if (!history_redraw_entry(history, child, x0, y0, x1, y1, x, y,
+				clip, ctx))
 			return false;
 	}
 

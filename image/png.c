@@ -363,7 +363,7 @@ static void nspng_destroy(struct content *c)
 
 
 static bool nspng_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	nspng_content *png_c = (nspng_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
@@ -375,7 +375,7 @@ static bool nspng_redraw(struct content *c, struct content_redraw_data *data,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(data->x, data->y, data->width, data->height, 
+	return ctx->plot->bitmap(data->x, data->y, data->width, data->height, 
 			png_c->bitmap, data->background_colour, flags);
 }
 

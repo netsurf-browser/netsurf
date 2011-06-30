@@ -27,7 +27,6 @@
 #include "css/css.h"
 #include "content/content.h"
 #include "desktop/plot_style.h"
-#include "utils/types.h"
 
 struct bitmap;
 
@@ -136,9 +135,6 @@ struct plotter_table {
         /* flags */
 	bool option_knockout;	/**< set if knockout rendering is required */
 };
-
-/** Current plotters, must be assigned before use. */
-extern struct plotter_table plot;
 
 enum path_command {
 	PLOTTER_PATH_MOVE,

@@ -27,6 +27,7 @@
 #include "utils/log.h"
 
 #include "monkey/browser.h"
+#include "monkey/plot.h"
 
 static uint32_t win_ctr = 0;
 
@@ -466,6 +467,10 @@ monkey_window_handle_redraw(int argc, char **argv)
 {
   struct gui_window *gw;
   struct rect clip;
+  struct redraw_context ctx = {
+    .interactive = true,
+    .plot = &monkey_plotters
+  };
   
   if (argc != 3 && argc != 7) {
     fprintf(stdout, "ERROR WINDOW REDRAW ARGS BAD");
@@ -492,7 +497,7 @@ monkey_window_handle_redraw(int argc, char **argv)
   }
   
   LOG(("Issue redraw"));
-  browser_window_redraw(gw->bw, gw->scrollx, gw->scrolly, &clip);  
+  browser_window_redraw(gw->bw, gw->scrollx, gw->scrolly, &clip, &ctx);  
 }
 
 static void

@@ -19,6 +19,7 @@
 #import "cocoa/Tree.h"
 #import "cocoa/coordinates.h"
 #import "cocoa/font.h"
+#import "cocoa/plotter.h"
 
 #import "desktop/tree.h"
 
@@ -124,8 +125,13 @@ static void tree_get_window_dimensions( int *width, int *height, void *data )
 
 - (void) drawRect: (NSRect) rect inView: (NSView *) view;
 {
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &cocoa_plotters
+	};
+
 	tree_draw( tree, 0, 0, cocoa_pt_to_px( NSMinX( rect ) ), cocoa_pt_to_px( NSMinY( rect )), 
-			  cocoa_pt_to_px( NSWidth( rect ) ), cocoa_pt_to_px( NSHeight( rect ) ) );
+			  cocoa_pt_to_px( NSWidth( rect ) ), cocoa_pt_to_px( NSHeight( rect ) ), &ctx );
 }
 
 - (void) mouseAction: (browser_mouse_state)state atPoint: (NSPoint)point;

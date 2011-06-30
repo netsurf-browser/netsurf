@@ -490,7 +490,7 @@ void content__request_redraw(struct content *c,
  */
 
 bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
 	struct content *c = hlcache_handle_get_content(h);
 
@@ -506,7 +506,7 @@ bool content_redraw(hlcache_handle *h, struct content_redraw_data *data,
 		return true;
 	}
 
-	return c->handler->redraw(c, data, clip);
+	return c->handler->redraw(c, data, clip, ctx);
 }
 
 

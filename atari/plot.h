@@ -24,6 +24,8 @@
 
 struct rect;
 
+extern const struct plotter_table atari_plotters;
+
 int atari_plotter_init( char*, char * );
 int atari_plotter_finalise( void );
 void plot_set_knockout( int set );

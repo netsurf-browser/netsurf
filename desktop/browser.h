@@ -268,6 +268,7 @@ bool browser_window_stop_available(struct browser_window *bw);
  * \param  x     coordinate for top-left of redraw
  * \param  y     coordinate for top-left of redraw
  * \param  clip  clip rectangle coordinates
+ * \param  ctx   redraw context
  * \return true if successful, false otherwise
  *
  * The clip rectangle is guaranteed to be filled to its extents, so there is
@@ -280,7 +281,7 @@ bool browser_window_stop_available(struct browser_window *bw);
  * Units for x, y and clip are pixels.
  */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
-		const struct rect *clip);
+		const struct rect *clip, const struct redraw_context *ctx);
 
 /**
  * Check whether browser window is ready for redraw

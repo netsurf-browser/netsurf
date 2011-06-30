@@ -29,10 +29,10 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
-#include "desktop/plotters.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
+#include "framebuffer/framebuffer.h"
 #include "framebuffer/image_data.h"
 
 #include "widget.h"
@@ -109,7 +109,7 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		 * system for the baseline is to the "higher value
 		 * pixel co-ordinate" due to this the + 1 is neccessary.
 		 */
-		plot.text(bbox.x0 + padding,
+		fb_plotters.text(bbox.x0 + padding,
 			  bbox.y0 + (((fh * 3) + 3)/4) + padding + 1,
 			  widget->u.text.text,
 			  strlen(widget->u.text.text),
@@ -207,7 +207,7 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		 * system for the baseline is to the "higher value
 		 * pixel co-ordinate" due to this the + 1 is neccessary.
 		 */
-		plot.text(bbox.x0 + border,
+		fb_plotters.text(bbox.x0 + border,
 			  bbox.y0 + (((fh * 3) + 3)/4) + border + 1,
 			  widget->u.text.text,
 			  strlen(widget->u.text.text),

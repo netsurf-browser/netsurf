@@ -1384,6 +1384,11 @@ gboolean nsbeos_history_expose_event(beosWidget *widget,
 	struct beos_history_window *hw = (struct beos_history_window *)g;
 	struct browser_window *bw = nsbeos_get_browser_for_gui(hw->g->top_level);
 
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &nsbeos_plotters
+	};
+
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
@@ -1392,7 +1397,7 @@ gboolean nsbeos_history_expose_event(beosWidget *widget,
 #endif
 	plot = nsbeos_plotters;
 
-	history_redraw(bw->history);
+	history_redraw(bw->history, &ctx);
 
 	g_object_unref(current_gc);
 #ifdef CAIRO_VERSION

@@ -357,8 +357,6 @@ void ro_treeview_redraw(wimp_draw *redraw)
 		 */
 	}
 
-	plot = ro_plotters;
-
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
 		LOG(("xwimp_redraw_window: 0x%x: %s",
@@ -380,7 +378,11 @@ void ro_treeview_redraw(wimp_draw *redraw)
 
 void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 {
-	os_error		*error;
+	os_error *error;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &ro_plotters
+	};
 
 	while (more) {
 		ro_plot_origin_x = redraw->box.x0 - redraw->xscroll;
@@ -394,7 +396,8 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 					((ro_plot_origin_y+tv->origin.y)
 					-redraw->clip.y1)/2,
 					(redraw->clip.x1 - redraw->clip.x0)/2,
-					(redraw->clip.y1 - redraw->clip.y0)/2);
+					(redraw->clip.y1 - redraw->clip.y0)/2,
+					&ctx);
 
 			/* Put the graphcis window back how the Wimp set it. */
 			clip.x0 = (redraw->clip.x0 - ro_plot_origin_x) / 2;

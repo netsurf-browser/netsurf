@@ -61,6 +61,11 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	GdkPixbuf *big;
 	double scale;
 
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &nsgtk_plotters
+	};
+
 	assert(content);
 	assert(bitmap);
 
@@ -95,9 +100,6 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	gdk_drawable_set_colormap(pixmap, gdk_colormap_get_system());
 
-	/* set the plotting functions up */
-	plot = nsgtk_plotters;
-
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
 	current_gc = gdk_gc_new(current_drawable);
@@ -106,7 +108,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 #endif
 
 	/* render the content */
-	thumbnail_redraw(content, cwidth, cheight);
+	thumbnail_redraw(content, cwidth, cheight, &ctx);
 
 	/* get the pixbuf we rendered the content into */
 	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,

@@ -54,7 +54,8 @@ static nserror amiga_dt_picture_create(const content_handler *handler,
 static bool amiga_dt_picture_convert(struct content *c);
 static void amiga_dt_picture_destroy(struct content *c);
 static bool amiga_dt_picture_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip);
+		struct content_redraw_data *data, const struct rect *clip,
+		const struct redraw_context *ctx);
 static nserror amiga_dt_picture_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_picture_content_type(lwc_string *mime_type);
 
@@ -220,7 +221,8 @@ void amiga_dt_picture_destroy(struct content *c)
 }
 
 bool amiga_dt_picture_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip)
+		struct content_redraw_data *data, const struct rect *clip,
+		const struct redraw_context *ctx)
 {
 	LOG(("amiga_dt_picture_redraw"));
 	bitmap_flags_t flags = BITMAPF_NONE;
@@ -230,7 +232,7 @@ bool amiga_dt_picture_redraw(struct content *c,
 	if (data->repeat_y)
 		flags |= BITMAPF_REPEAT_Y;
 
-	return plot.bitmap(data->x, data->y, data->width, data->height,
+	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
 			c->bitmap, data->background_colour, flags);
 }
 

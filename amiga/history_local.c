@@ -157,6 +157,10 @@ void ami_history_redraw(struct history_window *hw)
 {
 	struct IBox *bbox;
 	ULONG xs,ys;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &amiplot
+	};
 
 	GetAttr(SPACE_AreaBox,hw->objects[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top,hw->objects[OID_HSCROLL],(ULONG *)&xs);
@@ -168,7 +172,7 @@ void ami_history_redraw(struct history_window *hw)
 	RectFill(glob->rp, 0, 0, bbox->Width - 1, bbox->Height - 1);
 
 	history_redraw_rectangle(history_current, xs, ys,
-		bbox->Width + xs, bbox->Height + ys, 0, 0);
+			bbox->Width + xs, bbox->Height + ys, 0, 0, &ctx);
 
 	glob = &browserglob;
 

@@ -312,6 +312,11 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 			GRECT work;
 			WindGetGrect( tv->window, WF_WORKXYWH, &work );
 
+			struct redraw_context ctx = {
+				.interactive = true,
+				.plot = &atari_plotters
+			};
+
 			plotter->resize(plotter, work.g_w, work.g_h);
 			plotter->move(plotter, work.g_x, work.g_y );
 
@@ -339,7 +344,7 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
 						tree_draw(tv->tree, -tv->window->xpos*16, -tv->window->ypos*16, 
-							todo[0], todo[1], todo[2], todo[3] 
+							todo[0], todo[1], todo[2], todo[3], &ctx
 						);
 					}
 					if (wind_get(tv->window->handle, WF_NEXTXYWH, 

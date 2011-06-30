@@ -1665,6 +1665,10 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	osbool more;
 	struct gui_window *g = (struct gui_window *)ro_gui_wimp_event_get_user_data(redraw->w);
 	os_error *error;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &ro_plotters
+	};
 
 	/* We can't render locked contents.  If the browser window is not
 	 * ready for redraw, do nothing.  Else, in the case of buffered
@@ -1672,7 +1676,6 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 	if (!browser_window_redraw_ready(g->bw))
 		return;
 
-	plot = ro_plotters;
 	ro_gui_current_redraw_gui = g;
 	current_redraw_browser = g->bw;
 
@@ -1705,7 +1708,7 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_open(redraw);
 
-		browser_window_redraw(g->bw, 0, 0, &clip);
+		browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
 
 		if (ro_gui_current_redraw_gui->option.buffer_everything)
 			ro_gui_buffer_close();
@@ -4317,6 +4320,10 @@ void ro_gui_window_update_boxes(void)
 	struct update_box *cur;
 	struct gui_window *g;
 	const union content_msg_data *data;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &ro_plotters
+	};
 
 	for (cur = pending_updates; cur != NULL; cur = cur->next) {
 		g = cur->g;
@@ -4344,7 +4351,6 @@ void ro_gui_window_update_boxes(void)
 		ro_gui_current_redraw_gui = g;
 		current_redraw_browser = g->bw;
 
-		plot = ro_plotters;
 		ro_plot_origin_x = update.box.x0 - update.xscroll;
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
 
@@ -4357,7 +4363,7 @@ void ro_gui_window_update_boxes(void)
 			if (use_buffer)
 				ro_gui_buffer_open(&update);
 
-			browser_window_redraw(g->bw, 0, 0, &clip);
+			browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
 
 			if (use_buffer)
 				ro_gui_buffer_close();

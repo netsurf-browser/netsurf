@@ -38,6 +38,10 @@ thumbnail_create(hlcache_handle *content,
 	int width;
 	int height;
 	HDC hdc, bufferdc, minidc;
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &win_plotters
+	};
 
 	struct bitmap *fsbitmap;
 
@@ -67,7 +71,7 @@ thumbnail_create(hlcache_handle *content,
 
 	hdc = plot_hdc;
 	plot_hdc = bufferdc;
-	thumbnail_redraw(content, width, height);
+	thumbnail_redraw(content, width, height, &ctx);
 	plot_hdc = hdc;
 	
 	/* scale bitmap bufferbm into minibm */

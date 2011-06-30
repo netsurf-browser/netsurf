@@ -23,6 +23,8 @@
 #import "desktop/plot_style.h"
 #import "cocoa/coordinates.h"
 
+extern const struct plotter_table cocoa_plotters;
+
 NSColor *cocoa_convert_colour( colour clr );
 
 void cocoa_update_scale_factor( void );

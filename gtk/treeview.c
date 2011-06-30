@@ -168,6 +168,10 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 		GdkEventExpose *event, gpointer g)
 {
 	struct tree *tree = (struct tree *) g;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &nsgtk_plotters
+	};
 	int x, y, width, height;
 	
 	x = event->area.x;
@@ -181,17 +185,15 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
-	plot = nsgtk_plotters;
 	current_widget = widget;
 	current_drawable = widget->window;
 	current_gc = gdk_gc_new(current_drawable);
 #ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
-	plot = nsgtk_plotters;
 	
 	tree_set_redraw(tree, true);
-	tree_draw(tree, 0, 0, x, y, width, height);
+	tree_draw(tree, 0, 0, x, y, width, height, &ctx);
 	
 	current_widget = NULL;
 	g_object_unref(current_gc);

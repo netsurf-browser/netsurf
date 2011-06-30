@@ -1570,14 +1570,17 @@ struct node *tree_node_get_next(struct node *node)
 /**
  * Draws an element's expansion icon
  *
- * \param tree	   the tree to draw the expansion for
- * \param element  the element to draw the expansion for
+ * \param tree		the tree to draw the expansion for
+ * \param element	the element to draw the expansion for
  * \param tree_x	X coordinate of the tree
  * \param tree_y	Y coordinate of the tree
+ * \param ctx		current redraw context
  */
 static void tree_draw_node_expansion_toggle(struct tree *tree,
-		struct node *node, int tree_x, int tree_y)
+		struct node *node, int tree_x, int tree_y,
+		const struct redraw_context *ctx)
 {
+	const struct plotter_table *plot = ctx->plot;
 	int x, y;
 
 	assert(tree != NULL);
@@ -1586,15 +1589,15 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
 	if ((node->child != NULL) || (node->data.next != NULL)) {
 		x = tree_x + node->box.x - (NODE_INSTEP / 2) - 4;
 		y = tree_y + node->box.y + (TREE_LINE_HEIGHT - 9) / 2;
-		plot.rectangle(x, y, x + 9, y + 9,
+		plot->rectangle(x, y, x + 9, y + 9,
 				&plot_style_fill_tree_furniture);
-		plot.rectangle(x , y, x + 8, y + 8,
-			       &plot_style_stroke_tree_furniture);
-		plot.line(x + 2, y + 4, x + 7, y + 4,
-			  &plot_style_stroke_tree_furniture);
+		plot->rectangle(x , y, x + 8, y + 8,
+				&plot_style_stroke_tree_furniture);
+		plot->line(x + 2, y + 4, x + 7, y + 4,
+				&plot_style_stroke_tree_furniture);
 		if (!node->expanded)
-			plot.line(x + 4, y + 2, x + 4, y + 7,
-				  &plot_style_stroke_tree_furniture);
+			plot->line(x + 4, y + 2, x + 4, y + 7,
+					&plot_style_stroke_tree_furniture);
 
 	}
 
@@ -1609,12 +1612,13 @@ static void tree_draw_node_expansion_toggle(struct tree *tree,
  * \param tree_x	X coordinate to draw the tree at (wrt plot origin)
  * \param tree_y	Y coordinate to draw the tree at (wrt plot origin)
  * \param clip		clipping rectangle (wrt plot origin)
+ * \param ctx		current redraw context
  */
 static void tree_draw_node_element(struct tree *tree,
 		struct node_element *element, int tree_x, int tree_y,
-		const struct rect *clip)
+		const struct rect *clip, const struct redraw_context *ctx)
 {
-
+	const struct plotter_table *plot = ctx->plot;
 	struct bitmap *bitmap = NULL;
 	int x, y, width;
 	bool selected = false;
@@ -1657,7 +1661,7 @@ static void tree_draw_node_element(struct tree *tree,
 				/* Valid clip rectangles only */
 				struct content_redraw_data data;
 
-				plot.clip(&c);
+				plot->clip(&c);
 
 				data.x = x;
 				data.y = y + icon_inset;
@@ -1669,10 +1673,10 @@ static void tree_draw_node_element(struct tree *tree,
 				data.repeat_x = false;
 				data.repeat_y = false;
 
-				content_redraw(icon, &data, &c);
+				content_redraw(icon, &data, &c, ctx);
 
 				/* Restore previous clipping area */
-				plot.clip(clip);
+				plot->clip(clip);
 			}
 		}
 
@@ -1689,14 +1693,14 @@ static void tree_draw_node_element(struct tree *tree,
 
 		if (selected) {
 			fstyle = &plot_fstyle_selected;
-			plot.rectangle(x, y, x + width,
+			plot->rectangle(x, y, x + width,
 				       y + element->box.height,
 				       &plot_style_fill_tree_selected);
 		} else {
 			fstyle = &plot_fstyle;
 		}
 
-		plot.text(x + 4, y + (TREE_LINE_HEIGHT * 3 + 2) / 4,
+		plot->text(x + 4, y + (TREE_LINE_HEIGHT * 3 + 2) / 4,
 				element->text, strlen(element->text),
 				fstyle);
 		break;
@@ -1704,11 +1708,11 @@ static void tree_draw_node_element(struct tree *tree,
 		bitmap = element->bitmap;
 		if (bitmap == NULL)
 			break;
-		plot.bitmap(x, y, element->box.width - 1,
+		plot->bitmap(x, y, element->box.width - 1,
 			    element->box.height - 2,
 			    bitmap, 0xFFFFFF, BITMAPF_NONE);
 		if (!(tree->flags & TREE_NO_FURNITURE))
-			plot.rectangle(x, y, x + element->box.width - 1,
+			plot->rectangle(x, y, x + element->box.width - 1,
 				       y + element->box.height - 3,
 				       &plot_style_stroke_tree_furniture);
 
@@ -1726,10 +1730,13 @@ static void tree_draw_node_element(struct tree *tree,
  * \param tree_x	X coordinate to draw the tree at (wrt plot origin)
  * \param tree_y	Y coordinate to draw the tree at (wrt plot origin)
  * \param clip		clipping rectangle (wrt plot origin)
+ * \param ctx		current redraw context
  */
 static void tree_draw_node(struct tree *tree, struct node *node,
-		int tree_x, int tree_y, struct rect clip)
+		int tree_x, int tree_y, struct rect clip,
+		const struct redraw_context *ctx)
 {
+	const struct plotter_table *plot = ctx->plot;
 	struct node_element *element;
 	struct node *parent;
 	int x0, y0, x1, y1;
@@ -1766,7 +1773,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 	}
 
 	/* Set up the clipping area */
-	plot.clip(&clip);
+	plot->clip(&clip);
 
 	/* Draw node's furniture */
 	if (!(tree->flags & TREE_NO_FURNITURE)) {
@@ -1777,7 +1784,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
 			y0 = tree_y + node->previous->box.y;
 			y1 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
-			plot.line(x0, y0, x1, y1,
+			plot->line(x0, y0, x1, y1,
 					&plot_style_stroke_tree_furniture);
 		}
 		if (node->next != NULL) {
@@ -1786,7 +1793,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 			x0 = x1 = tree_x + node->box.x - (NODE_INSTEP / 2);
 			y0 = tree_y + node->box.y + (TREE_LINE_HEIGHT / 2);
 			y1 = tree_y + node->next->box.y;
-			plot.line(x0, y0, x1, y1,
+			plot->line(x0, y0, x1, y1,
 					&plot_style_stroke_tree_furniture);
 		}
 
@@ -1798,7 +1805,7 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 			y0 = tree_y + parent->data.box.y +
 					parent->data.box.height;
 			y1 = y0 + (TREE_LINE_HEIGHT / 2);
-			plot.line(x0, y0, x1, y1,
+			plot->line(x0, y0, x1, y1,
 					&plot_style_stroke_tree_furniture);
 		}
 		/* Line from expansion toggle to icon */
@@ -1806,9 +1813,10 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 		x1 = x0 + (NODE_INSTEP / 2) - 2;
 		y0 = y1 = tree_y + node->data.box.y + node->data.box.height -
 				(TREE_LINE_HEIGHT / 2);
-		plot.line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
+		plot->line(x0, y0, x1, y1, &plot_style_stroke_tree_furniture);
 
-		tree_draw_node_expansion_toggle(tree, node, tree_x, tree_y);
+		tree_draw_node_expansion_toggle(tree, node,
+				tree_x, tree_y, ctx);
 	}
 
 	/* Draw node's element(s)
@@ -1818,12 +1826,12 @@ static void tree_draw_node(struct tree *tree, struct node *node,
 				element = element->next) {
 			/* Draw each element of expanded node */
 			tree_draw_node_element(tree, element, tree_x, tree_y,
-					&clip);
+					&clip, ctx);
 		}
 	} else {
 		/* Draw main title element of node */
 		tree_draw_node_element(tree, &node->data, tree_x, tree_y,
-				&clip);
+				&clip, ctx);
 	}
 }
 
@@ -1836,9 +1844,11 @@ static void tree_draw_node(struct tree *tree, struct node *node,
  * \param tree_x	X coordinate to draw the tree at (wrt plot origin)
  * \param tree_y	Y coordinate to draw the tree at (wrt plot origin)
  * \param clip		clipping rectangle (wrt plot origin)
+ * \param ctx		current redraw context
  */
 static void tree_draw_tree(struct tree *tree, struct node *node,
-		int tree_x, int tree_y, struct rect clip)
+		int tree_x, int tree_y, struct rect clip,
+		const struct redraw_context *ctx)
 {
 	struct node *child;
 
@@ -1858,11 +1868,11 @@ static void tree_draw_tree(struct tree *tree, struct node *node,
 			return;
 
 		/* Draw current child */
-		tree_draw_node(tree, child, tree_x, tree_y, clip);
+		tree_draw_node(tree, child, tree_x, tree_y, clip, ctx);
 		/* And its children */
 		if ((child->child != NULL) && (child->expanded)) {
 			/* Child has children and they are visible */
-			tree_draw_tree(tree, child, tree_x, tree_y, clip);
+			tree_draw_tree(tree, child, tree_x, tree_y, clip, ctx);
 		}
 	}
 }
@@ -1878,35 +1888,38 @@ static void tree_draw_tree(struct tree *tree, struct node *node,
  * \param clip_y	minimum y of the clipping rectangle (wrt tree origin)
  * \param clip_width	width of the clipping rectangle
  * \param clip_height	height of the clipping rectangle
+ * \param ctx		current redraw context
  */
 void tree_draw(struct tree *tree, int x, int y,
-	       int clip_x, int clip_y, int clip_width, int clip_height)
+		int clip_x, int clip_y, int clip_width, int clip_height,
+		const struct redraw_context *ctx)
 {
+	struct redraw_context new_ctx = *ctx;
 	struct rect clip;
 
 	assert(tree != NULL);
 	assert(tree->root != NULL);
 
 	/* Start knockout rendering if it's available for this plotter */
-	if (plot.option_knockout)
-		knockout_plot_start(&plot);
+	if (ctx->plot->option_knockout)
+		knockout_plot_start(ctx, &new_ctx);
 
 	/* Set up clip rectangle */
 	clip.x0 = x + clip_x;
 	clip.y0 = y + clip_y;
 	clip.x1 = clip.x0 + clip_width;
 	clip.y1 = clip.y0 + clip_height;
-	plot.clip(&clip);
+	new_ctx.plot->clip(&clip);
 
 	/* Flat fill extents of clipping area */
-	plot.rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
+	new_ctx.plot->rectangle(clip.x0, clip.y0, clip.x1, clip.y1,
 		       &plot_style_fill_tree_background);
 
 	/* don't draw empty trees or trees with redraw flag set to false */
 	if (tree->root->child != NULL && tree->redraw) {
 
 		/* Draw the tree */
-		tree_draw_tree(tree, tree->root, x, y, clip);
+		tree_draw_tree(tree, tree->root, x, y, clip, &new_ctx);
 
 		/* Draw textarea, if present */
 		if (tree->editing != NULL) {
@@ -1914,12 +1927,12 @@ void tree_draw(struct tree *tree, int x, int y,
 			y = y + tree->editing->box.y;
 			if (tree->editing->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 				x += NODE_INSTEP;
-			textarea_redraw(tree->textarea, x, y, &clip);
+			textarea_redraw(tree->textarea, x, y, &clip, &new_ctx);
 		}
 	}
 
 	/* Rendering complete */
-	if (plot.option_knockout)
+	if (ctx->plot->option_knockout)
 		knockout_plot_end();
 }
 

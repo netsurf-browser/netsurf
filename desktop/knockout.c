@@ -80,7 +80,6 @@ struct knockout_box;
 struct knockout_entry;
 
 
-static void knockout_set_plotters(void);
 static void knockout_calculate(int x0, int y0, int x1, int y1, struct knockout_box *box);
 static bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_style);
 static bool knockout_plot_bitmap_recursive(struct knockout_box *box,
@@ -228,15 +227,18 @@ static int nested_depth = 0;
 /**
  * Start a knockout plotting session
  *
- * \param  plotter  the plotter to use
+ * \param ctx		the redraw context with real plotter table
+ * \param knk_ctx	updated to copy of ctx, with plotter table replaced
  * \return  true on success, false otherwise
  */
-bool knockout_plot_start(struct plotter_table *plotter)
+bool knockout_plot_start(const struct redraw_context *ctx,
+		struct redraw_context *knk_ctx)
 {
 	/* check if we're recursing */
 	if (nested_depth++ > 0) {
 		/* we should already have the knockout renderer as default */
-		assert(plotter->rectangle == knockout_plotters.rectangle);
+		assert(ctx->plot->rectangle == knockout_plotters.rectangle);
+		*knk_ctx = *ctx;
 		return true;
 	}
 
@@ -244,9 +246,12 @@ bool knockout_plot_start(struct plotter_table *plotter)
 	if (knockout_entry_cur > 0)
 		knockout_plot_end();
 
-	/* take over the plotter */
-	real_plot = *plotter;
-	knockout_set_plotters();
+	/* get copy of real plotter table */
+	real_plot = *(ctx->plot);
+
+	/* set up knockout rendering context */
+	*knk_ctx = *ctx;
+	knk_ctx->plot = &knockout_plotters;
 	return true;
 }
 
@@ -286,13 +291,10 @@ bool knockout_plot_flush(void)
 			knockout_polygon_cur, KNOCKOUT_POLYGONS));
 #endif
 
-	/* release our plotter */
-	plot = real_plot;
-
 	for (i = 0; i < knockout_entry_cur; i++) {
 		switch (knockout_entries[i].type) {
 		case KNOCKOUT_PLOT_RECTANGLE:
-                        success &= plot.rectangle(
+                        success &= real_plot.rectangle(
                                 knockout_entries[i].data.rectangle.x0,
                                 knockout_entries[i].data.rectangle.y0,
                                 knockout_entries[i].data.rectangle.x1,
@@ -300,7 +302,7 @@ bool knockout_plot_flush(void)
                                 &knockout_entries[i].data.rectangle.plot_style);
 			break;
 		case KNOCKOUT_PLOT_LINE:
-			success &= plot.line(
+			success &= real_plot.line(
 					knockout_entries[i].data.line.x0,
 					knockout_entries[i].data.line.y0,
 					knockout_entries[i].data.line.x1,
@@ -308,7 +310,7 @@ bool knockout_plot_flush(void)
 					&knockout_entries[i].data.line.plot_style);
 			break;
 		case KNOCKOUT_PLOT_POLYGON:
-			success &= plot.polygon(
+			success &= real_plot.polygon(
 					knockout_entries[i].data.polygon.p,
 					knockout_entries[i].data.polygon.n,
 					&knockout_entries[i].data.polygon.plot_style);
@@ -319,7 +321,7 @@ bool knockout_plot_flush(void)
 				success &= knockout_plot_fill_recursive(box,
 						&knockout_entries[i].data.fill.plot_style);
 			else if (!knockout_entries[i].box->deleted)
-				success &= plot.rectangle(
+				success &= real_plot.rectangle(
 						knockout_entries[i].data.fill.x0,
 						knockout_entries[i].data.fill.y0,
 						knockout_entries[i].data.fill.x1,
@@ -327,11 +329,11 @@ bool knockout_plot_flush(void)
 						&knockout_entries[i].data.fill.plot_style);
 			break;
 		case KNOCKOUT_PLOT_CLIP:
-			success &= plot.clip(
+			success &= real_plot.clip(
 					&knockout_entries[i].data.clip);
 			break;
 		case KNOCKOUT_PLOT_TEXT:
-			success &= plot.text(
+			success &= real_plot.text(
 					knockout_entries[i].data.text.x,
 					knockout_entries[i].data.text.y,
 					knockout_entries[i].data.text.text,
@@ -339,14 +341,14 @@ bool knockout_plot_flush(void)
 					&knockout_entries[i].data.text.font_style);
 			break;
 		case KNOCKOUT_PLOT_DISC:
-			success &= plot.disc(
+			success &= real_plot.disc(
 					knockout_entries[i].data.disc.x,
 					knockout_entries[i].data.disc.y,
 					knockout_entries[i].data.disc.radius,
 					&knockout_entries[i].data.disc.plot_style);
 			break;
 		case KNOCKOUT_PLOT_ARC:
-			success &= plot.arc(
+			success &= real_plot.arc(
 					knockout_entries[i].data.arc.x,
 					knockout_entries[i].data.arc.y,
 					knockout_entries[i].data.arc.radius,
@@ -360,7 +362,7 @@ bool knockout_plot_flush(void)
 				success &= knockout_plot_bitmap_recursive(box,
 						&knockout_entries[i]);
 			} else if (!knockout_entries[i].box->deleted) {
-				success &= plot.bitmap(
+				success &= real_plot.bitmap(
 						knockout_entries[i].data.
 								bitmap.x,
 						knockout_entries[i].data.
@@ -378,11 +380,11 @@ bool knockout_plot_flush(void)
 			}
 			break;
 		case KNOCKOUT_PLOT_GROUP_START:
-			success &= plot.group_start(
+			success &= real_plot.group_start(
 					knockout_entries[i].data.group_start.name);
 			break;
 		case KNOCKOUT_PLOT_GROUP_END:
-			success &= plot.group_end();
+			success &= real_plot.group_end();
 			break;
 		}
 	}
@@ -392,23 +394,7 @@ bool knockout_plot_flush(void)
 	knockout_polygon_cur = 0;
 	knockout_list = NULL;
 
-	/* re-instate knockout plotters if we are still active */
-	if (nested_depth > 0)
-		knockout_set_plotters();
 	return success;
-}
-
-
-/**
- * Override the current plotters with the knockout plotters
- */
-void knockout_set_plotters(void)
-{
-	plot = knockout_plotters;
-	if (!real_plot.group_start)
-		plot.group_start = NULL;
-	if (!real_plot.group_end)
-		plot.group_end = NULL;
 }
 
 
@@ -548,7 +534,7 @@ bool knockout_plot_fill_recursive(struct knockout_box *box, plot_style_t *plot_s
 		if (parent->child)
 			knockout_plot_fill_recursive(parent->child, plot_style);
 		else
-			success &= plot.rectangle(parent->bbox.x0,
+			success &= real_plot.rectangle(parent->bbox.x0,
                                                   parent->bbox.y0,
                                                   parent->bbox.x1,
                                                   parent->bbox.y1,
@@ -570,8 +556,8 @@ bool knockout_plot_bitmap_recursive(struct knockout_box *box,
 		if (parent->child)
 			knockout_plot_bitmap_recursive(parent->child, entry);
 		else {
-			success &= plot.clip(&parent->bbox);
-			success &= plot.bitmap(entry->data.bitmap.x,
+			success &= real_plot.clip(&parent->bbox);
+			success &= real_plot.bitmap(entry->data.bitmap.x,
 					entry->data.bitmap.y,
 					entry->data.bitmap.width,
 					entry->data.bitmap.height,
@@ -810,6 +796,10 @@ bool knockout_plot_bitmap(int x, int y, int width, int height,
 
 bool knockout_plot_group_start(const char *name)
 {
+	if (real_plot.group_start == NULL) {
+		return true;
+	}
+
 	knockout_entries[knockout_entry_cur].data.group_start.name = name;
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_GROUP_START;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
@@ -819,6 +809,10 @@ bool knockout_plot_group_start(const char *name)
 
 bool knockout_plot_group_end(void)
 {
+	if (real_plot.group_end == NULL) {
+		return true;
+	}
+
 	knockout_entries[knockout_entry_cur].type = KNOCKOUT_PLOT_GROUP_END;
 	if (++knockout_entry_cur >= KNOCKOUT_ENTRIES)
 		knockout_plot_flush();

@@ -903,6 +903,11 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	CMP_BROWSER b = gw->browser;
 	struct rect clip;
 
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &atari_plotters
+	};
+
 	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0, 
 		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
 	));
@@ -915,7 +920,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
    a.y1 = b->redraw.area.y1;
    
 	browser_window_redraw( b->bw, -b->scroll.current.x,
-			-b->scroll.current.y, &a );
+			-b->scroll.current.y, &a, &ctx );
 
 	current_redraw_browser = NULL;
 }

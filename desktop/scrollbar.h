@@ -93,10 +93,12 @@ void scrollbar_destroy(struct scrollbar *s);
  * \param y	the Y coordinate to draw the scrollbar at
  * \param clip	the clipping rectangle
  * \param scale	scale for the redraw
+ * \param ctx	current redraw context
  * \return	true on succes false otherwise
  */
 bool scrollbar_redraw(struct scrollbar *s, int x, int y,
-		const struct rect *clip, float scale);
+		const struct rect *clip, float scale,
+		const struct redraw_context *ctx);
 
 /**
  * Set the scroll value of the scrollbar.

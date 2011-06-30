@@ -93,6 +93,10 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	struct content_redraw_data data;
 	size_t drawfile_size;
 	os_error *error;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.plot = &ro_plotters
+	};
 
 	ro_save_draw_diagram = pencil_create();
 	if (!ro_save_draw_diagram) {
@@ -115,8 +119,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	data.repeat_x = false;
 	data.repeat_y = false;
 
-	plot = ro_save_draw_plotters;
-	if (!content_redraw(h, &data, &clip)) {
+	if (!content_redraw(h, &data, &clip, &ctx)) {
 		pencil_free(ro_save_draw_diagram);
 		return false;
 	}

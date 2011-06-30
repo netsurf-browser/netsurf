@@ -71,6 +71,11 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	int big_height;
 	int depth;
 
+	struct redraw_context ctx = {
+		.interactive = false,
+		.plot = &nsbeos_plotters
+	};
+
 	assert(content);
 	assert(bitmap);
 
@@ -116,10 +121,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	/* impose our view on the content... */
 	nsbeos_current_gc_set(view);
 
-	plot = nsbeos_plotters;
-
 	/* render the content */
-	thumbnail_redraw(content, big_width, big_height);
+	thumbnail_redraw(content, big_width, big_height, &ctx);
 
 	view->Sync();
 	view->UnlockLooper();

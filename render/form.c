@@ -977,15 +977,15 @@ void form_free_select_menu(struct form_control *control)
  * \param x		the X coordinate to draw the menu at
  * \param x		the Y coordinate to draw the menu at
  * \param scale		current redraw scale
- * \param clip_x0	minimum x of clipping rectangle
- * \param clip_y0	minimum y of clipping rectangle
- * \param clip_x1	maximum x of clipping rectangle
- * \param clip_y1	maximum y of clipping rectangle
+ * \param clip		clipping rectangle
+ * \param ctx		current redraw context
  * \return		true on success, false otherwise
  */
 bool form_redraw_select_menu(struct form_control *control, int x, int y,
-		float scale, const struct rect *clip)
+		float scale, const struct rect *clip,
+		const struct redraw_context *ctx)
 {
+	const struct plotter_table *plot = ctx->plot;
 	struct box *box;
 	struct form_select_menu *menu = control->data.select.menu;
 	struct form_option *option;
@@ -1038,9 +1038,9 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	r.y0 = y0;
 	r.x1 = x1 + 1;
 	r.y1 = y1 + 1;
-	if (!plot.clip(&r))
+	if (!plot->clip(&r))
 		return false;
-	if (!plot.rectangle(x0, y0, x1, y1 ,plot_style_stroke_darkwbasec))
+	if (!plot->rectangle(x0, y0, x1, y1 ,plot_style_stroke_darkwbasec))
 		return false;
 		
 	
@@ -1054,9 +1054,9 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	r.y0 = y0;
 	r.x1 = x1 + 1;
 	r.y1 = y1 + 1;
-	if (!plot.clip(&r))
+	if (!plot->clip(&r))
 		return false;
-	if (!plot.rectangle(x0, y0, x1 + 1, y1 + 1,
+	if (!plot->rectangle(x0, y0, x1 + 1, y1 + 1,
 			plot_style_fill_lightwbasec))
 		return false;
 	option = control->data.select.items;
@@ -1078,7 +1078,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
  		if (option->selected) {
  			y2 = y + item_y - scroll;
  			y3 = y + item_y + line_height_with_spacing - scroll;
- 			if (!plot.rectangle(x0, (y0 > y2 ? y0 : y2),
+ 			if (!plot->rectangle(x0, (y0 > y2 ? y0 : y2),
 					scrollbar_x + 1,
      					(y3 < y1 + 1 ? y3 : y1 + 1),
 					&plot_style_fill_selected))
@@ -1086,7 +1086,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
  		}
 		
 		y2 = text_pos_offset + item_y;
-		if (!plot.text(text_x, y2, option->text,
+		if (!plot->text(text_x, y2, option->text,
 				strlen(option->text), &plot_fstyle_entry))
 			return false;
 		
@@ -1097,7 +1097,7 @@ bool form_redraw_select_menu(struct form_control *control, int x, int y,
 	if (!scrollbar_redraw(menu->scrollbar,
 			x_cp + menu->width - SCROLLBAR_WIDTH,
       			y_cp,
-			clip, scale))
+			clip, scale, ctx))
 		return false;
 	
 	return true;
