@@ -90,29 +90,30 @@ int atari_plotter_finalise( void )
 }
 
 void plot_set_knockout( int set ){
+	bool * x = (bool*)&atari_plotters.option_knockout;
 	if( set == 0 ) {
-		plot.option_knockout = false;		
+		*x = false;
 	} else {
-		plot.option_knockout = true;
+		*x = true;
 	}
 }
 
-bool plot_rectangle( int x0, int y0, int x1, int y1,
-							const plot_style_t *style )
+bool plot_rectangle( int x0, int y0, int x1, int y1, 
+			const plot_style_t *style )
 {
 	plotter->rectangle( plotter, x0, y0, x1, y1, style );
 	return ( true );
 }
 
-static bool plot_line( int x0, int y0, int x1, int y1,
-											const plot_style_t *style )
+static bool plot_line( int x0, int y0, int x1, int y1, 
+			const plot_style_t *style )
 {
 	plotter->line( plotter, x0, y0, x1, y1, style );
 	return ( true );
 }
 
 static bool plot_polygon(const int *p, unsigned int n,
-													const plot_style_t *style)
+				const plot_style_t *style)
 {
 	plotter->polygon( plotter, p, n, style );
 	return ( true );
@@ -238,7 +239,7 @@ static bool plot_path(const float *p, unsigned int n, colour fill, float width,
 
 
 
-const struct plotter_table atari_plotter = {
+const struct plotter_table atari_plotters = {
 	.rectangle = plot_rectangle,
 	.line = plot_line,
 	.polygon = plot_polygon,
