@@ -100,22 +100,6 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-#define IS_TOPLEVEL_BROWSER_WIN( gw ) (gw->root->handle == win && gw->parent == NULL )
-struct gui_window * find_root_gui_window( WINDOW * win )
-{
-
-	struct gui_window * gw;
-	gw = window_list;
-	while( gw != NULL ) {
-		if( IS_TOPLEVEL_BROWSER_WIN( gw )  ) {
-			return( gw );
-		}
-		else
-			gw = gw->next;
-	}
-	return( NULL );
-}
-
 
 struct gui_window * find_cmp_window( COMPONENT * c )
 {

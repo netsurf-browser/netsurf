@@ -207,34 +207,28 @@ gui_create_browser_window(struct browser_window *bw,
 			}
 		break;
 
+/*
 		case BROWSER_WINDOW_FRAME:
 			gwroot = bw->parent->window;
 			LOG(("create frame: %p, clone: %p\n", bw, clone));
-			gw->parent = gwroot;
 			gw->root = gwroot->root;
-			gw->browser = browser_create( gw, bw, clone, BT_FRAME, CLT_VERTICAL, 1, 1);
-			/*browser_attach_frame( gwroot, gw );*/
+			gw->browser = browser_create( gw, bw, clone, CLT_VERTICAL, 1, 1);
 		break;
 
 		case BROWSER_WINDOW_FRAMESET:
 			LOG(("frameset: %p, clone: %p\n", bw, clone));
 			gwroot = bw->parent->window;
-			gw->parent = gwroot;
 			gw->root = gwroot->root;
-			gw->browser = browser_create( gw, bw, clone, BT_FRAME, CLT_VERTICAL, 1, 1);
-			/*browser_attach_frame( gwroot, gw );*/
+			gw->browser = browser_create( gw, bw, clone, CLT_VERTICAL, 1, 1);
 		break;
 
 		case BROWSER_WINDOW_IFRAME:
 			LOG(("iframe: %p, clone: %p\n", bw, clone));
-			/* just dummy code here! */
 			gwroot = bw->parent->window;
-			gw->parent = gwroot;
 			gw->root = bw->parent->window->root;
-			gw->browser = browser_create( gw, bw, NULL, BT_FRAME, CLT_VERTICAL, 1, 1);
-			/*browser_attach_frame( gwroot, gw );*/
+			gw->browser = browser_create( gw, bw, NULL, CLT_VERTICAL, 1, 1);
 		break;
-
+*/
 		default:
 			LOG(("unhandled type!"));
 	}
@@ -267,13 +261,13 @@ void gui_window_destroy(struct gui_window *w)
 
 	input_window = NULL;
 
-	LGRECT dbg;
-	struct gui_window * root = browser_find_root( w );
-	browser_get_rect( root, BR_CONTENT, &dbg );
 	switch(w->browser->bw->browser_window_type) {
+
 		case BROWSER_WINDOW_NORMAL:
 			window_destroy( w );
 			break;
+
+/*
 		case BROWSER_WINDOW_FRAME:
 			browser_destroy( w->browser );
 			break;
@@ -283,10 +277,9 @@ void gui_window_destroy(struct gui_window *w)
 			break;
 
 		case BROWSER_WINDOW_IFRAME:
-			/* just dummy code here: */
 			window_destroy( w );
 			break;
-
+*/
 		default:
 			LOG(("Unhandled type!"));
 			assert( 1 == 0 );
@@ -323,8 +316,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 {
 	if (gw == NULL)
 		return;
-	/* TODO: query AES for max. title length */
-	if( gw->root && gw->parent == NULL ){
+	if( gw->root ){
 		strncpy(gw->root->title, title, atari_sysinfo.aes_max_win_title_len);
 		gw->root->title[atari_sysinfo.aes_max_win_title_len] = 0;
 		WindSetStr( gw->root->handle, WF_NAME, gw->root->title );
@@ -417,8 +409,8 @@ void gui_window_position_frame(struct gui_window *gw, int x0, int y0, int x1, in
 	LGRECT pardim;
 	int width = x1 - x0 + 2, height = y1 - y0 + 2;
 	/* get available width/height: */
-	if( gw->parent ) {
-		browser_get_rect( gw->parent, BR_CONTENT, &pardim );
+	if( gw ) {
+		browser_get_rect( gw, BR_CONTENT, &pardim );
 		LOG(("posframe %s: x0,y0: %d/%d, x1,y1: %d/%d, w: %d, h: %d \n",gw->browser->bw->name, x0,y0, x1,y1, width, height));
 	}
 }
@@ -923,9 +915,7 @@ void gui_quit(void)
 
 	while( gw ) {
 		tmp = gw->next;
-		if( gw->parent == NULL ) {
-			browser_window_destroy(gw->browser->bw);
-		}
+		browser_window_destroy(gw->browser->bw);
 		gw = tmp;
 	}
 

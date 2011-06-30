@@ -624,8 +624,6 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 	char code = (nkc & 0xFF);
 
 	assert( gw != NULL );
-	/* make sure we navigate within the root window on enter: */
-	assert( gw->parent == NULL );
 
 	if( (code == NK_LEFT) && !shift ){
 		/* TODO: recognize shift + click */

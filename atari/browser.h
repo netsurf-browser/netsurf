@@ -19,32 +19,24 @@
 #ifndef NS_ATARI_BROWSER_H
 #define NS_ATARI_BROWSER_H
 
-/* 
+/*
  Each browser_window in the Atari Port is represented by an  struct s_browser,
  which cosnist mainly of an WinDom COMPONENT.
-*/ 
-
-/* 
-	BROWSER_SCROLL_SVAL
-	The small scroll inc. value (used by scroll-wheel, arrow click): 
 */
-#define BROWSER_SCROLL_SVAL 64 
 
-/* 
+/*
+	BROWSER_SCROLL_SVAL
+	The small scroll inc. value (used by scroll-wheel, arrow click):
+*/
+#define BROWSER_SCROLL_SVAL 64
+
+/*
 	MAX_REDRW_SLOTS
-	This is the number of redraw requests that an browser window can queue. 
+	This is the number of redraw requests that an browser window can queue.
 	If a redraw is scheduled and all slots are used, the rectangle will
 	be merged to one of the existing slots.
  */
-#define MAX_REDRW_SLOTS			32	
-
-enum browser_type 
-{
-	BT_ROOT=1,
-	BT_FRAME=2,
-	BT_FRAMESET=3,
-	BT_IFRAME=4
-};
+#define MAX_REDRW_SLOTS	32
 
 enum browser_rect
 {
@@ -55,10 +47,10 @@ enum browser_rect
 };
 
 
-/* 
-	This struct contains info of current browser viewport scroll 
-	and the scroll which is requested. If a scroll is requested,
-  the field required is set to true. 
+/*
+  This struct contains info of current browser viewport scroll
+  and the scroll which is requested. If a scroll is requested,
+  the field required is set to true.
 */
 struct s_scroll_info
 {
@@ -88,9 +80,9 @@ struct s_browser_redrw_info
 	BBOX area;		/* used for clipping of content redraw */
 };
 
-/* 
-	This is the actual browser widget, containings GUI elements and 
-	the current state of the browser widget. 
+/*
+	This is the actual browser widget, containings GUI elements and
+	the current state of the browser widget.
 */
 struct s_browser
 {
@@ -104,7 +96,7 @@ struct s_browser
 	bool attached;
 };
 
-struct s_browser * browser_create( struct gui_window * gw, struct browser_window * clone, struct browser_window *bw, enum browser_type, int lt,  int w, int flex );
+struct s_browser * browser_create( struct gui_window * gw, struct browser_window * clone, struct browser_window *bw, int lt,  int w, int flex );
 bool browser_destroy( struct s_browser * b );
 void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out);
 bool browser_input( struct gui_window * gw, unsigned short nkc ) ;
@@ -118,14 +110,14 @@ bool browser_redraw_required( struct gui_window * gw);
 
 /*
 	This queues an redraw to one of the slots.
-	The following strategy is used: 
+	The following strategy is used:
 	1. It checks if the rectangle to be scheduled is within one of the
-		already queued bboxes. If yes, it will return. 
-	2. It checks for an intersection, and it will merge the rectangle to 
+		already queued bboxes. If yes, it will return.
+	2. It checks for an intersection, and it will merge the rectangle to
 		already queued rectangle where it fits best.
-	3. it tries to put the rectangle into one available slot. 
-	4. if no slot is available, it will simply merge the new rectangle with 
-   	the last available slot.  		 	
+	3. it tries to put the rectangle into one available slot.
+	4. if no slot is available, it will simply merge the new rectangle with
+   	the last available slot.
 */
 void browser_redraw_caret( struct gui_window * gw, GRECT * area );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff );

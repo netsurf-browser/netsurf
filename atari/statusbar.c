@@ -169,7 +169,7 @@ static void __CDECL evnt_sb_click( COMPONENT *c, long buff[8] )
 				sbuff[5] = g->root->loc.g_y;
 				sbuff[6] = g->root->loc.g_w;
 				sbuff[7] = g->root->loc.g_h;
-				evnt_window_resize( g->root->handle, sbuff );
+				evnt_window_resize( g->root->handle, sbuff, g );
 			}
 		}
 	}

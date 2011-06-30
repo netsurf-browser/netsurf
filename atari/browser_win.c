@@ -174,13 +174,13 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 						);
 					}
 				}
-			} 
-		} 
+			}
+		}
 	}
 }
 
 
-static void __CDECL evnt_window_m1( WINDOW * win, short buff[8])
+static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 {
 	struct gui_window * gw = input_window;
 	static bool prev_url = false;
@@ -253,7 +253,7 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8])
 			} 
 		}
 	} else {
-		/* set input window? */ 	
+		/* set input window? */
 	}
 }
 
@@ -267,7 +267,7 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	sb = (inflags & WIDGET_STATUSBAR); 
 	short w,h, wx, wy, wh, ww;
 	int flags = CLOSER | MOVER | NAME | FULLER | SMALLER ;
-	gw->parent = NULL;
+
 	gw->root = malloc( sizeof(struct s_gui_win_root) );
 	if( gw->root == NULL )
 		return( -1 );
@@ -286,12 +286,12 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 		gw->root->toolbar = tb_create( gw );
 		assert( gw->root->toolbar );
 		mt_CompAttach( &app, gw->root->cmproot, gw->root->toolbar->comp );
-		
+
 	} else {
 		gw->root->toolbar = NULL;
 	}
 
-	gw->browser = browser_create( gw, bw, NULL, BT_ROOT, CLT_HORIZONTAL, 1, 1 );
+	gw->browser = browser_create( gw, bw, NULL, CLT_HORIZONTAL, 1, 1 );
 	mt_CompAttach( &app, gw->root->cmproot,  gw->browser->comp );
 
 	if( sb ) {
@@ -302,28 +302,28 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	}
 
 	WindSetStr(gw->root->handle, WF_ICONTITLE, (char*)"NetSurf");
-	
+
 	/* Event Handlers: */
-	EvntDataAttach( gw->root->handle, WM_CLOSED, evnt_window_close, NULL );
+	EvntDataAttach( gw->root->handle, WM_CLOSED, evnt_window_close, gw );
 	/* capture resize/move events so we can handle that manually */
 	if( !cfg_rt_resize ) {
-		EvntAttach( gw->root->handle, WM_SIZED, evnt_window_resize);
+		EvntDataAttach( gw->root->handle, WM_SIZED, evnt_window_resize, gw );
 	} else {
-		EvntAdd( gw->root->handle, WM_SIZED, evnt_window_rt_resize, EV_BOT );
+		EvntDataAdd( gw->root->handle, WM_SIZED, evnt_window_rt_resize, gw, EV_BOT );
 	}
 	if( !cfg_rt_move ) {
-		EvntAttach( gw->root->handle, WM_MOVED, evnt_window_move );
+		EvntDataAttach( gw->root->handle, WM_MOVED, evnt_window_move, gw );
 	} else {
-		EvntAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, EV_BOT );
+		EvntDataAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, gw, EV_BOT );
 	}
-	EvntAttach( gw->root->handle, WM_FORCE_MOVE, evnt_window_rt_resize );
+	EvntDataAttach( gw->root->handle, WM_FORCE_MOVE, evnt_window_rt_resize, gw );
 	EvntDataAttach( gw->root->handle, AP_DRAGDROP, evnt_window_dd, gw );
-	EvntDataAdd( gw->root->handle, WM_DESTROY,evnt_window_destroy, NULL, EV_TOP );
-	EvntDataAdd( gw->root->handle, WM_ARROWED,evnt_window_arrowed, NULL, EV_TOP );
-	EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, &evnt_data, EV_BOT);
-	EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, &evnt_data, EV_BOT);
+	EvntDataAdd( gw->root->handle, WM_DESTROY,evnt_window_destroy, gw, EV_TOP );
+	EvntDataAdd( gw->root->handle, WM_ARROWED,evnt_window_arrowed, gw, EV_TOP );
+	EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, gw, EV_BOT);
+	EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, gw, EV_BOT);
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
-	EvntAttach( gw->root->handle, WM_XM1, evnt_window_m1 );
+	EvntDataAttach( gw->root->handle, WM_XM1, evnt_window_m1, gw );
 
 	/*
 	OBJECT * tbut;
@@ -339,13 +339,6 @@ int window_destroy( struct gui_window * gw)
 {
 	short buff[8];
 	int err = 0;
-
-	if( gw->browser->type != BT_ROOT ) {
-		return(0);
-	}
-	
-	/* test this with frames: */
-	/* assert( gw->parent == NULL); */
 
 	search_destroy( gw );
 
@@ -366,7 +359,6 @@ int window_destroy( struct gui_window * gw)
 	if( gw->browser )
 		browser_destroy( gw->browser );
 
-	
 
 	/* destroy the icon: */
 	/*window_set_icon(gw, NULL, false );*/
@@ -455,7 +447,7 @@ static void window_redraw_controls(struct gui_window *gw, uint32_t flags)
 	browser_get_rect( gw, BR_VSLIDER, &rect);
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
-	
+
 	browser_get_rect( gw, BR_HSLIDER, &rect);
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
@@ -633,8 +625,8 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 			}
 		}
 	}
-error:	
-	ddclose( dd_hdl);	
+error:
+	ddclose( dd_hdl);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -650,7 +642,7 @@ static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data 
 
 static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data )
 {
-	struct gui_window * gw = find_root_gui_window( win );
+	struct gui_window * gw = (struct gui_window *) data ;
 	if( gw != NULL ) {
 		browser_window_destroy( gw->browser->bw );
 	}
@@ -659,7 +651,7 @@ static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data )
 
 static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data )
 {
-	input_window = find_root_gui_window( win );
+	input_window = (struct gui_window *) data;
 	LOG(("newtop: iw: %p, win: %p", input_window, win ));
 	assert( input_window != NULL );
 
@@ -684,7 +676,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 
 	WindClear( win);
 	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h);
-	
+
 	if( has_favicon == false ) {
 		OBJECT * tree;
 		RsrcGaddr( h_gem_rsrc, R_TREE, ICONIFY , &tree );
@@ -696,7 +688,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 	}
 }
 
-static void __CDECL evnt_window_move( WINDOW *win, short buff[8] )
+static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
 {
 	short mx,my, mb, ks;
 	short wx, wy, wh, ww, nx, ny;
@@ -704,7 +696,7 @@ static void __CDECL evnt_window_move( WINDOW *win, short buff[8] )
 	short xoff, yoff;
 	if( cfg_rt_move  ) {
 		std_mvd( win, buff, &app );
-		evnt_window_rt_resize( win, buff );
+		evnt_window_rt_resize( win, buff, data );
 	} else { 
 		wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
 		if( graf_dragbox( ww, wh, wx, wy, app.x-ww, app.y, app.w+ww, app.h+wh, &nx, &ny )){
@@ -713,12 +705,12 @@ static void __CDECL evnt_window_move( WINDOW *win, short buff[8] )
 			buff[6] = ww;
 			buff[7] = wh;
 			std_mvd( win, buff, &app );
-			evnt_window_rt_resize( win, buff );
+			evnt_window_rt_resize( win, buff, data );
 		}
 	}
 }
 
-void __CDECL evnt_window_resize( WINDOW *win, short buff[8] )
+void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data )
 {
 	short mx,my, mb, ks;
 	short wx, wy, wh, ww, nw, nh;
@@ -726,7 +718,7 @@ void __CDECL evnt_window_resize( WINDOW *win, short buff[8] )
 	graf_mkstate( &mx, &my, &mb,  &ks ); 
 	if( cfg_rt_resize  ) {
 		std_szd( win, buff, &app );
-		evnt_window_rt_resize( win, buff );
+		evnt_window_rt_resize( win, buff, data );
 	} else { 
 		wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
 		r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
@@ -737,26 +729,26 @@ void __CDECL evnt_window_resize( WINDOW *win, short buff[8] )
 		buff[6] = nw;
 		buff[7] = nh;
 		std_szd( win, buff, &app );
-		evnt_window_rt_resize( win, buff );
+		evnt_window_rt_resize( win, buff, data );
 	}
 }
 
 /* perform the actual resize */
-static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8] )
+static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * data )
 {
 	short x,y,w,h;
 	struct gui_window * gw;
 	LGRECT rect;
 	bool resized;
 	bool moved;
-	
+
 	if(buff[0] == WM_FORCE_MOVE ) {
 		std_mvd(win, buff, &app);
 		std_szd(win, buff, &app);
 	}
 
 	wind_get( win->handle, WF_WORKXYWH, &x, &y, &w, &h );
-	gw = find_root_gui_window( win );
+	gw = (struct gui_window *)data;
 
 	assert( gw != NULL );
 

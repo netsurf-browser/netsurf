@@ -81,20 +81,10 @@ struct s_focus_info
 	void * element;
 };
 
-/*
-struct s_gui_input_state {
-	short mbut;
-	short mkstat;
-	short mx;
-	short my;
-	browser_mouse_state bms;
-} prev_inp_state;
-*/
-
 /* defines for data attached to components: */
-#define CDT_OBJECT		0x004f424aUL
-#define CDT_OWNER 		0x03UL
-#define CDT_ICON 			0x04UL
+#define CDT_OBJECT	0x004f424aUL
+#define CDT_OWNER 	0x03UL
+#define CDT_ICON 	0x04UL
 #define CDT_ICON_TYPE	0x05UL
 
 
@@ -107,10 +97,10 @@ typedef struct s_toolbar * CMP_TOOLBAR;
 typedef struct s_statusbar * CMP_STATUSBAR;
 typedef struct s_browser * CMP_BROWSER;
 
-/* 
-	This is the "main" window. It can consist of several components 
+/*
+	This is the "main" window. It can consist of several components
 	and also holds information shared by several frames within
-	the window. Each frame, no matter how deep nested, 
+	the window. Each frame, no matter how deep nested,
 	knows about it's root (GEM window).
 */
 struct s_gui_win_root
@@ -127,17 +117,16 @@ struct s_gui_win_root
 	GRECT loc;	/* current size of window on screen */
 };
 
-/* 
-	This is the part of the gui which is known by netsurf core. 
-	You must implement it. Altough, you are free how to do it. 
-	Each of the browser "viewports" managed by netsurf are bound 
-	to this structure. gui_window does not mean that it is an 
-	comple window - also frames own an gui_window. 
+/*
+	This is the part of the gui which is known by netsurf core.
+	You must implement it. Altough, you are free how to do it.
+	Each of the browser "viewports" managed by netsurf are bound
+	to this structure. gui_window does not mean that it is an
+	comple window - also frames own an gui_window.
 */
 struct gui_window {
 	struct s_gui_win_root * root;
 	CMP_BROWSER browser;
-	struct gui_window * parent;
 	struct gui_window *next, *prev;
 };
 

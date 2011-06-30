@@ -30,7 +30,6 @@
 	lbuf[7] = (long)sbuf[7];
 
 
-struct gui_window * find_root_gui_window( WINDOW * win );
 struct gui_window * find_cmp_window( COMPONENT * c );
 OBJECT *get_tree( int idx );
 char *get_rsc_string( int idx );

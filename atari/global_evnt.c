@@ -326,7 +326,7 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 		kstate |= K_LSHIFT|K_RSHIFT;
 	if( window_url_widget_has_focus( gw ) ) {
 		/* make sure we report for the root window and report...: */
- 		done = tb_url_input(  browser_find_root(gw),  nkc );
+ 		done = tb_url_input( gw,  nkc );
 		if( done ) return;
 	} else  {
 		gw_tmp = window_list;

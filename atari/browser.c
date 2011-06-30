@@ -62,11 +62,13 @@ static bool frameinit = true;
 
 
 /* create an browser component */
-struct s_browser * browser_create(  struct gui_window * gw, 
-									struct browser_window *bw, 
-									struct browser_window * clone, 
-									enum browser_type type, 
-									int lt, int w, int flex )
+struct s_browser * browser_create
+(
+	struct gui_window * gw,
+	struct browser_window *bw,
+	struct browser_window * clone,
+	int lt, int w, int flex 
+)
 {
 	LGRECT cwork;
 	COMPONENT * scrollv, * scrollh, * drawable;
@@ -80,7 +82,6 @@ struct s_browser * browser_create(  struct gui_window * gw,
 	if( bnew )
 	{
 		memset(bnew, 0, sizeof(struct s_browser) );
-		bnew->type = type;
 		bnew->bw = bw;
 		bnew->attached = false;
 		if(clone)
@@ -126,27 +127,13 @@ struct s_browser * browser_create(  struct gui_window * gw,
 
 bool browser_destroy( struct s_browser * b )
 {
-	short type = BT_ROOT;
-	LGRECT restore;
-	/* only free the components if it is an root browser,
-		this should delete all attached COMPONENTS... 
-	*/
 
-	LOG(("%s (%s)\n", b->bw->name,  (b->type == BT_ROOT) ? "ROOT" : "FRAME"));
+	LOG(("%s\n", b->bw->name ));
 	assert( b != NULL );
 	assert( b->comp != NULL );
 	assert( b->bw != NULL );
-	struct gui_window * rootgw = browser_find_root( b->bw->window );
 
-	if( b->type == BT_ROOT ) {
-		
-	} else if( BT_FRAME ){
-		type = BT_FRAME;
-	} else {
-		assert( 1 == 0 ); 
-	}
-
-	if( b->compwin != NULL ){
+	if( b->compwin != NULL ) {
 		COMPONENT * old = b->comp;
 		WINDOW * oldwin = b->compwin;
 		b->comp = NULL;
@@ -158,10 +145,6 @@ bool browser_destroy( struct s_browser * b )
 		/* listRemove( (LINKABLE*) old ); */
 		WindDelete( oldwin );
 		mt_CompDelete(&app,  old );	
-	}
-
-	if( type == BT_FRAME ) {
-		/* TODO: restore the remaining frameset (rebuild???) */
 	}
 	return( true );
 }
@@ -185,19 +168,6 @@ bool browser_attach_frame( struct gui_window * container, struct gui_window * fr
 	mt_CompAttach( &app,  container->browser->comp, frame->browser->comp );
 	browser_update_rects( container );
 	frame->browser->attached = true;	
-}
-
-/* find the root of an frame ( or just return gw if is already the root) */
-struct gui_window * browser_find_root( struct gui_window * gw )
-{
-	if( gw->parent == NULL )
-		return( gw ); 
-	struct gui_window * g;
-	for( g=window_list; g; g=g->next){
-		if( g->root == gw->root && g->parent == NULL )
-			return( g );
-	}
-	return( NULL );
 }
 
 void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out)
@@ -274,13 +244,12 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 {
 	struct s_browser * b = (struct s_browser*)data;
 	struct gui_window * gw = b->bw->window;
-	LOG(("%s: %s (%s)\n", __FUNCTION__ ,gw->browser->bw->name, ( gw->browser->type ==BT_FRAME) ? "FRAME" : "NOFRAME"));
-	
+	LOG(("%s\n",gw->browser->bw->name));
+
 	assert( b != NULL );
 	assert( gw != NULL );
-	/* TODO: inspect why this assert fails with frames / iframes
-	/* this should have been happened alrdy */
-	/* assert( b->comp == NULL ); */
+
+	assert( b->comp == NULL );
 
 	free( b );
 	gw->browser = NULL;
@@ -306,7 +275,7 @@ static void __CDECL browser_evnt_arrowed( WINDOW *win, short buff[8], void * dat
 		case WA_RTPAGE:
 				value = cwork.g_w;
 			break;
-		
+
 		default: 
 			break;
 	}
@@ -623,7 +592,7 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
 			case 'A':
 				r = browser_window_key_press(gw->browser->bw, KEY_SELECT_ALL);
 			break;
-	
+
 			case 'C':
 				r = browser_window_key_press(gw->browser->bw, KEY_COPY_SELECTION);
 			break;
@@ -631,14 +600,14 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
 			case 'X':
 				r = browser_window_key_press(gw->browser->bw, KEY_CUT_SELECTION);
 			break;
-	
+
 			case 'V':
 				r = browser_window_key_press(gw->browser->bw, KEY_PASTE);
 			break;
 
 			default:
-			break;		
-		}		
+			break;
+		}
 	}
 	if( (nkc & NKF_SHIFT) != 0 ) {
 		switch( ascii ) {
@@ -777,26 +746,13 @@ static void __CDECL browser_evnt_redraw_x( WINDOW * c, short buf[8], void * data
 bool browser_redraw_required( struct gui_window * gw) 
 {
 	bool ret = true;
-	int frames = 0;
 	CMP_BROWSER b = gw->browser;
 
 	if( b->bw->current_content == NULL )
 		return ( false );
 
-	{	
-		/* don't do redraws if we have subframes */
-		/* iframes will be an special case and must be handled special... */
-		struct gui_window * g;
-		for( g=window_list; g; g=g->next ) {
-			if ( g != gw && g->parent == gw ) {
-				if( g->browser->type == BT_FRAME ) {
-					frames++;
-				}
-			}
-		}
-	}
-	ret = ( ((b->redraw.areas_used > 0) && frames == 0) 
-			|| b->scroll.required 
+	ret = ( ((b->redraw.areas_used > 0) )
+			|| b->scroll.required
 			|| b->caret.redraw );
 	return( ret );
 }
@@ -1071,34 +1027,41 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	WINDOW * w;
 	struct gui_window * gw = (struct gui_window *) data;
 	CMP_BROWSER b = gw->browser;
-	struct gui_window * rgw = browser_find_root( gw );
 	LGRECT work, lclip, rwork;
+
+	// TODO: maybe implement something like validate_gw()
+	// to fetch spurious redraw events? the function should
+	// traverse all gui_windows and see if gw  exists in the list
+
 	int xoff,yoff,width,heigth;
 	short cw, ch, cellw, cellh;
 	/* use that instead of browser_find_root() ? */
 	w = (WINDOW*)mt_CompGetPtr( &app, c, CF_WINDOW );
 	browser_get_rect( gw, BR_CONTENT, &work );
-	browser_get_rect( rgw, BR_CONTENT, &rwork );
 	lclip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &lclip ) ) return;
-	 
+ 
 	if( b->bw->current_content == NULL )
 		return;
+
 	/* convert redraw coords to framebuffer coords: */
 	lclip.g_x -= work.g_x;
 	lclip.g_y -= work.g_y;
+
 	if( lclip.g_x < 0 ) {
 		lclip.g_w = work.g_w + lclip.g_x;
 		lclip.g_x = 0;
 	}
+
 	if( lclip.g_y < 0 ) {
 		lclip.g_h = work.g_h + lclip.g_y;
 		lclip.g_y = 0;
 	}
-	if( lclip.g_h > 0 && lclip.g_w > 0 ) { 
-		browser_schedule_redraw( gw, lclip.g_x, lclip.g_y, 
-			lclip.g_x + lclip.g_w, lclip.g_y + lclip.g_h 
-		);	
+
+	if( lclip.g_h > 0 && lclip.g_w > 0 ) {
+		browser_schedule_redraw( gw, lclip.g_x, lclip.g_y,
+			lclip.g_x + lclip.g_w, lclip.g_y + lclip.g_h
+		);
 	}
 
 	return;
