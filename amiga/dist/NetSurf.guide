@@ -214,27 +214,27 @@ The Installer script will set the MIMETYPE tooltype on basic relevant default fi
 @node Keyboard Controls "Keyboard"
 This is a list of keyboard shortcuts used on NetSurf
 
-- RAmiga-R or F5           (reload the current page)
+- RAmiga + R or F5         (reload the current page)
 - PageUp/Down or Home/End  (scroll the page)
-- RAmiga-U                 (activate the URL bar)
-- Alt+Left/Right           (keyboard navigation of tabs)
+- RAmiga + U               (activate the URL bar)
+- Alt + Left/Right         (keyboard navigation of tabs)
 - Backspace                (go back one page in history)
 
-Keyboard shortcuts used on NetSurf GUI
+Keyboard shortcuts used in NetSurf GUI
 
-- RAmiga-T (open a new tab)
-- RAmiga-O (open a local file)
-- RAmiga-P (print a page)
-- RAmiga-? (about NetSurf)
-- RAmiga-Q (quit NetSurf)
-- RAmiga-X (cut)
-- RAmiga-C (copy)
-- RAmiga-V (paste)
-- RAmiga-Z (clear selection)
-- RAmiga-F (find a string/text)
-- RAmiga-- (decrease font)
-- RAmiga-= (normal font)
-- RAmiga-+ (increase font)
+- RAmiga + T  (open a new tab)
+- RAmiga + O  (open a local file)
+- RAmiga + P  (print a page)
+- RAmiga + ?  (about NetSurf)
+- RAmiga + Q  (quit NetSurf)
+- RAmiga + X  (cut)
+- RAmiga + C  (copy)
+- RAmiga + V  (paste)
+- RAmiga + Z  (clear selection)
+- RAmiga + F  (find a string/text)
+- RAmiga + -  (decrease font)
+- RAmiga + =  (normal font)
+- RAmiga + +  (increase font)
 
 @endnode
 
