@@ -34,6 +34,7 @@
 #include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "desktop/selection.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -1929,6 +1930,8 @@ void html_open(struct content *c, struct browser_window *bw,
 	html->page = (html_content *) page;
 	html->box = box;
 
+	selection_set_browser_window(bw->sel, bw);
+
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
 
@@ -1954,6 +1957,9 @@ void html_close(struct content *c)
 {
 	html_content *html = (html_content *) c;
 	struct content_html_object *object, *next;
+
+	if (html->bw && html->bw->sel)
+		selection_set_browser_window(html->bw->sel, NULL);
 
 	html->bw = NULL;
 

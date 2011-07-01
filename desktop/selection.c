@@ -94,21 +94,6 @@ static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
  * \param  bw   browser window
  */
 
-void selection_set_browser_window(struct selection *s,
-		struct browser_window *bw)
-{
-	assert(s);
-
-	s->bw = bw;
-}
-
-/**
- * Set the browser window that contains the selection within a selection
- * object.
- *
- * \param  bw   browser window
- */
-
 struct selection *selection_create(void)
 {
 	struct selection *s = calloc(1, sizeof(struct selection));
@@ -119,6 +104,21 @@ struct selection *selection_create(void)
 		selection_clear(s, false);
 	}
 	return s;
+}
+
+/**
+ * Set the browser window that contains the selection within a selection
+ * object.
+ *
+ * \param  bw   browser window
+ */
+
+void selection_set_browser_window(struct selection *s,
+		struct browser_window *bw)
+{
+	assert(s);
+
+	s->bw = bw;
 }
 
 
@@ -277,7 +277,10 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 	browser_mouse_state modkeys =
 			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
-	struct browser_window *bw;
+	struct browser_window *top;
+
+	assert(s->bw);
+	top = browser_window_get_root(s->bw);
 
 	if (!SAME_SPACE(s, idx))
 		return false;	/* not our problem */
@@ -295,13 +298,8 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		((mouse & BROWSER_MOUSE_DRAG_1) ||
 		 (modkeys && (mouse & BROWSER_MOUSE_DRAG_2)))) {
 		/* drag-saving selection */
-		assert(s->bw);
 
-		bw = s->bw;
-		while (bw && !bw->window && bw->parent)
-			bw = bw->parent;
-
-		gui_drag_save_selection(s, bw->window);
+		gui_drag_save_selection(s, top->window);
 	}
 	else if (!modkeys) {
 		if (pos && (mouse & BROWSER_MOUSE_PRESS_1))
@@ -317,11 +315,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 
 			s->drag_state = DRAG_END;
 
-			bw = s->bw;
-			while (bw && !bw->window && bw->parent)
-				bw = bw->parent;
-
-			gui_start_selection(bw->window);
+			gui_start_selection(top->window);
 		}
 		else if (mouse & BROWSER_MOUSE_DRAG_2) {
 
@@ -340,11 +334,7 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 				s->drag_state = DRAG_START;
 			}
 
-			bw = s->bw;
-			while (bw && !bw->window && bw->parent)
-				bw = bw->parent;
-
-			gui_start_selection(bw->window);
+			gui_start_selection(top->window);
 		}
 		/* Selection should be cleared when button is released but in
 		 * the RO interface click is the same as press */
@@ -605,16 +595,18 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 	if (!selection_defined(s))
 		return true;	/* easy case, nothing to do */
 
-	if (s->root)
+	if (s->root) {
+		/* HTML */
 		return traverse_tree(s->root, s->start_idx, s->end_idx,
 				NUMBER_SPACE(s->max_idx), handler, handle,
 				&before, &first, false);
+	}
 
+	/* Text */
 	c = s->bw->current_content;
 	if (!c) return true;
 
-	text = textplain_get_raw_data(c, s->start_idx,
-							s->end_idx, &length);
+	text = textplain_get_raw_data(c, s->start_idx, s->end_idx, &length);
 
 	if (text && !handler(text, length, NULL, handle, NULL, 0))
 		return false;
@@ -726,7 +718,7 @@ void selection_clear(struct selection *s, bool redraw)
 {
 	int old_start, old_end;
 	bool was_defined;
-	struct browser_window *bw;
+	struct browser_window *top;
 
 	assert(s);
 	was_defined = selection_defined(s);
@@ -740,11 +732,9 @@ void selection_clear(struct selection *s, bool redraw)
 	if (!s->bw)
 		return;
 
-	bw = s->bw;
-	while (bw && !bw->window && bw->parent)
-		bw = bw->parent;
+	top = browser_window_get_root(s->bw);
 
-	gui_clear_selection(bw->window);
+	gui_clear_selection(top->window);
 
 	if (redraw && was_defined)
 		selection_redraw(s, old_start, old_end);

@@ -292,7 +292,6 @@ struct browser_window *browser_window_create(const char *url,
 	bw->focus = bw;
 
 	bw->sel = selection_create();
-	selection_set_browser_window(bw->sel, bw);
 
 	/* gui window */
 	/* from the front end's pov, it clones the top level browser window,
@@ -1683,10 +1682,6 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
 
-	if (bw->drag_type != DRAGGING_NONE) {
-		selection_set_browser_window(bw->sel, bw);
-	}
-
 	if (bw->drag_type == DRAGGING_FRAME) {
 		browser_window_resize_frame(bw, bw->x0 + x, bw->y0 + y);
 	} else if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
@@ -1740,8 +1735,6 @@ void browser_window_mouse_click(struct browser_window *bw,
 	/* Set focus browser window */
 	top = browser_window_get_root(bw);
 	top->focus = bw;
-
-	selection_set_browser_window(bw->sel, bw);
 
 	switch (content_get_type(c)) {
 	case CONTENT_HTML:

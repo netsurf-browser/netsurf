@@ -108,6 +108,7 @@ static bool textplain_redraw(struct content *c, struct content_redraw_data *data
 static void textplain_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
+void textplain_close(struct content *c);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -132,6 +133,7 @@ static const content_handler textplain_content_handler = {
 	.mouse_action = textplain_mouse_action,
 	.redraw = textplain_redraw,
 	.open = textplain_open,
+	.close = textplain_close,
 	.clone = textplain_clone,
 	.type = textplain_content_type,
 	.no_share = true,
@@ -820,9 +822,24 @@ void textplain_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params)
 {
-	textplain_content *textplain = (textplain_content *) c;
+	textplain_content *text = (textplain_content *) c;
 
-	textplain->bw = bw;
+	text->bw = bw;
+}
+
+
+/**
+ * Handle a window containing a CONTENT_TEXTPLAIN being closed.
+ */
+
+void textplain_close(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	if (text->bw && text->bw->sel)
+		selection_set_browser_window(text->bw->sel, NULL);
+
+	text->bw = NULL;
 }
 
 /**
