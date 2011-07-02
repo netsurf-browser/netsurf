@@ -1427,6 +1427,7 @@ DownloadDir:Initial download location
 TabbedBrowsing:Tabbed browsing
 TabActive:Open new tabs in background
 TabMiddle:Middle mouse button opens tabs
+TabLast:Open new tabs after all existing tabs
 DownloadNotify:Notify on completion
 SearchWeb:Web search
 SearchURL:Search from URL bar

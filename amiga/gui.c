@@ -2411,7 +2411,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								TNA_CloseGadget, TRUE,
 								TAG_DONE);
 
-		AddTail(&gwin->shared->tab_list,gwin->tab_node);
+		if(option_new_tab_last)
+		{
+			AddTail(&gwin->shared->tab_list, gwin->tab_node);
+		}
+		else
+		{
+			Insert(&gwin->shared->tab_list, gwin->tab_node, clone->window->tab_node);
+		}
 
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],
 							gwin->shared->win, NULL,

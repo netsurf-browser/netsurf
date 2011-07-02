@@ -1406,6 +1406,7 @@ DownloadDir:Downloadverzeichnis
 TabbedBrowsing:Registernavigation (Tabs)
 TabActive:Neuen Tab im Hintergrund öffnen
 TabMiddle:Mittlere Maustaste öffnet Tab
+TabLast:Open new tabs after all existing tabs
 DownloadNotify:Downloadende melden
 SearchWeb:Websuche
 SearchURL:Suche über URL Leiste

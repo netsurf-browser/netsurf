@@ -1414,6 +1414,7 @@ DownloadDir:Percorso predefinito per i trasferimenti
 TabbedBrowsing:Navigazione a schede
 TabActive:Apri in sottofondo le nuove schede aperte da un link
 TabMiddle:Tasto centrale del mouse per l'apertura delle schede (Tab)
+TabLast:Open new tabs after all existing tabs
 DownloadNotify:Notifica al completamento (Ringhio)
 SearchWeb:Ricerca nel Web
 SearchURL:Ricerca da barra URL

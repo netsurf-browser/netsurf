@@ -32,6 +32,7 @@ extern bool option_sticky_context_menu;
 extern bool option_truecolour_mouse_pointers;
 extern bool option_use_os_pointers;
 extern bool option_new_tab_active;
+extern bool option_new_tab_last;
 extern bool option_kiosk_mode;
 extern char *option_search_engines_file;
 extern char *option_search_ico_file;
@@ -79,6 +80,7 @@ bool option_sticky_context_menu = false; \
 bool option_truecolour_mouse_pointers = false; \
 bool option_use_os_pointers = true; \
 bool option_new_tab_active = false; \
+bool option_new_tab_last = true; \
 bool option_kiosk_mode = false; \
 char *option_search_engines_file = 0; \
 char *option_search_ico_file = 0; \
@@ -126,6 +128,7 @@ int option_amiga_ydpi = 72; \
 { "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
 { "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
 { "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \
+{ "new_tab_last",	OPTION_BOOL,	&option_new_tab_last}, \
 { "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
 { "search_engines_file",		OPTION_STRING,	&option_search_engines_file }, \
 { "search_ico_file",		OPTION_STRING,	&option_search_ico_file }, \

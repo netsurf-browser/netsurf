@@ -114,6 +114,7 @@ enum
 	GID_OPTS_DLDIR,
 	GID_OPTS_TAB_ACTIVE,
 	GID_OPTS_TAB_2,
+	GID_OPTS_TAB_LAST,
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CMENU_ENABLE,
@@ -280,6 +281,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_DLDIR] = (char *)ami_utf8_easy((char *)messages_get("DownloadDir"));
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
+	gadlab[GID_OPTS_TAB_LAST] = (char *)ami_utf8_easy((char *)messages_get("TabLast"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
@@ -1111,6 +1113,12 @@ void ami_gui_opts_open(void)
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
   				      		            	GA_Selected, !option_new_tab_active,
             	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_LAST,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
+  				      			            GA_Selected, option_new_tab_last,
+            	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_2,
          	           						GA_RelVerify, TRUE,
@@ -1118,10 +1126,11 @@ void ami_gui_opts_open(void)
   				      			            GA_Selected, option_button_2_tab,
             	    					CheckBoxEnd,
 									LayoutEnd, // tabbed browsing
+									LAYOUT_AddChild,VGroupObject, // temp extra group
+										LAYOUT_BevelStyle, BVS_GROUP, // stolen from below
+										LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU], // and this
 									LAYOUT_AddChild,VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
-										LAYOUT_BevelStyle, BVS_GROUP, 
-										LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
 		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
         	 	           					GA_RelVerify, TRUE,
@@ -1136,6 +1145,8 @@ void ami_gui_opts_open(void)
   					      		            GA_Selected, option_sticky_context_menu,
 	            	    				CheckBoxEnd,
 									LayoutEnd, // context menus
+									CHILD_WeightedHeight, 0,
+									LayoutEnd, // temp extra group for spacing
 								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, HGroupObject,
@@ -1562,6 +1573,10 @@ void ami_gui_opts_use(void)
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
 	if(data) option_new_tab_active = false;
 		else option_new_tab_active = true;
+
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_LAST],(ULONG *)&data);
+	if(data) option_new_tab_last = true;
+		else option_new_tab_last = false;
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_2],(ULONG *)&data);
 	if(data) option_button_2_tab = true;
