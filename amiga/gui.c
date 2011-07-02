@@ -2068,6 +2068,9 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	struct Node *tabnode;
 	struct IBox *bbox;
 
+	/* Clear the last new tab list */
+	gwin->bw->window->last_new_tab = NULL;
+
 	if(gwin->tabs == 0) return;
 
 	gui_window_get_scroll(gwin->bw->window,&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
@@ -2417,7 +2420,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		}
 		else
 		{
-			Insert(&gwin->shared->tab_list, gwin->tab_node, clone->window->tab_node);
+			struct Node *insert_after = clone->window->tab_node;
+
+			if(clone->window->last_new_tab)
+				insert_after = clone->window->last_new_tab;
+			Insert(&gwin->shared->tab_list, gwin->tab_node, insert_after);
+			clone->window->last_new_tab = gwin->tab_node;
 		}
 
 		RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],
