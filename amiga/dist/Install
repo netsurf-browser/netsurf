@@ -304,18 +304,23 @@
 (set #icon-exists (exists (tackon @default-dest "NetSurf.info")))
 (set osver (getversion))
 (set osver (/ osver 65536))
+(set #versions-available 0)
 
-(if (>= osver 53)
+(if (exists "NetSurf")
 	(
-		(if (= #AutoInstall 0)
-			(
-				(set #cairo-name "Shared objects/part-Cairo")
-			)
-			;else
-			(
-				(set #cairo-name "")
-			)
-		)
+		(set #static-name "Static/graphics.library")
+		(set #versions-available (+ #versions-available 1))
+	)
+	; else
+	(
+		(set #static-name "")
+	)
+)
+
+(if (AND (>= osver 53) (exists "NetSurf-Cairo"))
+	(
+		(set #cairo-name "Shared objects/part-Cairo")
+		(set #versions-available (+ #versions-available 1))
 		(set #cairo-version 1)
 	)
 	; else
@@ -325,18 +330,19 @@
 	)
 )
 
+(transcript "Versions avaiable for install: " #versions-available "  " #static-name "  " #cairo-name)
+
 (complete 10)
 
-(if (AND (> @user-level 0) (<> #cairo-name ""))
+(if (AND (> @user-level 0) (> #versions-available 1))
 	(
 		(set #cairo-version
 			(askchoice
 				(prompt "Which version of NetSurf would you like to install?")
 				(help "The Cairo/shared objects version has better rendering "
-					"of some graphical elements, and supports SVG.  However, "
-					"some users report problems with the use of shared objects.\n\n"
+					"of some graphical elements, and supports SVG.\n\n"
 					@askchoice-help)
-				(choices "Static/graphics.library" #cairo-name)
+				(choices #static-name #cairo-name)
 				(default #cairo-version)
 			)
 		)
