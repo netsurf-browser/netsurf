@@ -145,7 +145,6 @@ void ami_theme_throbber_setup(void)
 		{
 			throbber_width = throbber_bmh->bmh_Width / throbber_frames;
 			throbber_height = throbber_bmh->bmh_Height;
-			throbber_bmh->bmh_Masking = mskHasAlpha;
 
 			InitRastPort(&throbber_rp);
 

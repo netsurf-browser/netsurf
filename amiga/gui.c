@@ -3749,13 +3749,29 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	struct nsObject *node;
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
+	char fname[100];
+	struct bitmap *nsbm;
+	bool free_bm = false;
 
 	if(IsMinListEmpty(window_list))	return;
 	if(option_kiosk_mode == true) return;
+/* disabled, as at the moment, favicon/search icons don't work
 	if (ico == NULL) ico = search_web_ico();
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);
+	}
+*/
+
+	/* generic search image */
+	if(bm == NULL)
+	{
+		ami_get_theme_filename(&fname, "theme_search", false);
+		if(nsbm = ami_bitmap_from_datatype(fname))
+		{
+			bm = ami_getcachenativebm(nsbm, 16, 16, NULL);
+		}
+		free_bm = true;
 	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
@@ -3794,6 +3810,8 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 			}
 		}
 	} while(node = nnode);
+
+	if(bm && free_bm) bitmap_destroy(nsbm);
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)

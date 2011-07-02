@@ -306,6 +306,36 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 	return dto;
 }
 
+/* Quick way to get an object on disk into a struct bitmap */
+struct bitmap *ami_bitmap_from_datatype(char *filename)
+{
+	Object *dto;
+	struct bitmap *bm;
+
+	if(dto = NewDTObject(filename,
+					DTA_GroupID, GID_PICTURE,
+					PDTA_DestMode, PMODE_V43,
+					TAG_DONE))
+	{
+		struct BitMapHeader *bmh;
+		struct RastPort rp;
+
+		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
+		{
+			bm = bitmap_create(bmh->bmh_Width, bmh->bmh_Height, 0);
+
+			IDoMethod(dto, PDTM_READPIXELARRAY, bitmap_get_buffer(bm),
+				PBPAFMT_RGBA, bitmap_get_rowstride(bm), 0, 0,
+				bmh->bmh_Width, bmh->bmh_Height);
+		}
+		DisposeDTObject(dto);
+	}
+
+	return bm;
+}
+
+
+
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
 	struct RenderInfo ri;
