@@ -825,6 +825,8 @@ void textplain_open(struct content *c, struct browser_window *bw,
 	textplain_content *text = (textplain_content *) c;
 
 	text->bw = bw;
+
+	selection_set_browser_window(bw->sel, bw);
 }
 
 
