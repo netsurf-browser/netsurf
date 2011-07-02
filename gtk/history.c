@@ -258,6 +258,6 @@ MENUHANDLER(collapse_addresses)
 
 MENUHANDLER(launch)
 {
-	history_global_launch_selected();
+	history_global_launch_selected(true);
 	return TRUE;
 }

@@ -217,7 +217,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		hotlist_launch_selected();
+		hotlist_launch_selected(false);
 		break;
 
 	case TOOLBAR_BUTTON_CREATE:
@@ -365,7 +365,7 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		hotlist_edit_selected();
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		hotlist_launch_selected();
+		hotlist_launch_selected(false);
 		return true;
 	case TREE_SELECTION_DELETE:
 		hotlist_delete_selected();

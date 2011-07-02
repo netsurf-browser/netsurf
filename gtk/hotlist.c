@@ -274,6 +274,6 @@ MENUHANDLER(collapse_addresses)
 
 MENUHANDLER(launch)
 {
-	hotlist_launch_selected();
+	hotlist_launch_selected(true);
 	return TRUE;
 }

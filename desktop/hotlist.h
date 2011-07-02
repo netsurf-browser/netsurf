@@ -57,6 +57,6 @@ void hotlist_add_folder(void);
 void hotlist_add_entry(void);
 void hotlist_add_page(const char *url);
 void hotlist_add_page_xy(const char *url, int x, int y);
-void hotlist_launch_selected(void);
+void hotlist_launch_selected(bool tabs);
 		
 #endif

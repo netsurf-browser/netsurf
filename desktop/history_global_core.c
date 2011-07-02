@@ -452,8 +452,10 @@ void history_global_collapse_addresses(void)
 
 /**
  * Open the selected entries in seperate browser windows.
+ *
+ * \param  tabs  open multiple entries in tabs in the new window
  */
-void history_global_launch_selected(void)
+void history_global_launch_selected(bool tabs)
 {
-	tree_launch_selected(global_history_tree);
+	tree_launch_selected(global_history_tree, tabs);
 }

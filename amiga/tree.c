@@ -765,7 +765,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							ami_tree_close(twin);
 							return TRUE;
 						}
-						else tree_launch_selected(twin->tree);
+						else tree_launch_selected(twin->tree, true);
 					break;
 
 					case GID_CANCEL:

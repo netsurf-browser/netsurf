@@ -383,8 +383,13 @@ node_callback_resp tree_url_node_callback(void *user_data,
 						 TREE_ELEMENT_URL, NULL);
 		if (element != NULL) {
 			text = tree_node_element_get_text(element);
-			browser_window_create(text, NULL, 0,
-					      true, false);
+			if (msg_data->flag == TREE_ELEMENT_LAUNCH_IN_TABS) {
+				msg_data->data.bw = browser_window_create(text,
+							msg_data->data.bw, 0, true, true);
+			} else {
+				browser_window_create(text, NULL, 0,
+						      true, false);
+			}
 			return NODE_CALLBACK_HANDLED;
 		}
 		break;

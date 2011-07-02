@@ -454,8 +454,10 @@ void hotlist_add_page_xy(const char *url, int x, int y)
 
 /**
  * Open the selected entries in separate browser windows.
+ *
+ * \param  tabs  open multiple entries in tabs in the new window
  */
-void hotlist_launch_selected(void)
+void hotlist_launch_selected(bool tabs)
 {
-	tree_launch_selected(hotlist_tree);
+	tree_launch_selected(hotlist_tree, tabs);
 }

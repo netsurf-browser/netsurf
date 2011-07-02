@@ -39,6 +39,6 @@ void history_global_expand_addresses(void);
 void history_global_collapse_all(void);
 void history_global_collapse_directories(void);
 void history_global_collapse_addresses(void);
-void history_global_launch_selected(void);
+void history_global_launch_selected(bool tabs);
 
 #endif

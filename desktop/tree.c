@@ -2152,20 +2152,29 @@ struct node *tree_get_link_details(struct tree *tree, int x, int y,
  *
  * \param tree	the tree for which all nodes will be launched
  * \param node	the node which will be checked together with its children
+ * \param tabs	launch node in a new tab instead of a new window
  */
-static void tree_launch_selected_internal(struct tree *tree, struct node *node)
+static void tree_launch_selected_internal(struct tree *tree, struct node *node,
+		bool tabs)
 {
 	struct node_msg_data msg_data;
+
+	msg_data.data.bw = NULL;
 
 	for (; node != NULL; node = node->next) {
 		if (node->selected && node->user_callback != NULL) {
 			msg_data.msg = NODE_LAUNCH;
-			msg_data.flag = TREE_ELEMENT_TITLE;
+			if (tabs == true) {
+				msg_data.flag = TREE_ELEMENT_LAUNCH_IN_TABS;
+			} else {
+				msg_data.flag = TREE_ELEMENT_TITLE;
+			}
+
 			msg_data.node = node;
 			node->user_callback(node->callback_data, &msg_data);
 		}
 		if (node->child != NULL)
-			tree_launch_selected_internal(tree, node->child);
+			tree_launch_selected_internal(tree, node->child, tabs);
 	}
 }
 
@@ -2174,11 +2183,12 @@ static void tree_launch_selected_internal(struct tree *tree, struct node *node)
  * Launches all the selected nodes of the tree
  *
  * \param tree	the tree for which all nodes will be launched
+ * \param tabs	launch nodes in new tabs instead of new windows
  */
-void tree_launch_selected(struct tree *tree)
+void tree_launch_selected(struct tree *tree, bool tabs)
 {
 	if (tree->root->child != NULL)
-		tree_launch_selected_internal(tree, tree->root->child);
+		tree_launch_selected_internal(tree, tree->root->child, tabs);
 }
 
 

@@ -213,7 +213,7 @@ void ro_gui_global_history_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_LAUNCH:
-		history_global_launch_selected();
+		history_global_launch_selected(false);
 		break;
 
 	default:
@@ -352,7 +352,7 @@ bool ro_gui_global_history_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		history_global_collapse_addresses();
 		return true;
 	case TREE_SELECTION_LAUNCH:
-		history_global_launch_selected();
+		history_global_launch_selected(false);
 		return true;
 	case TREE_SELECTION_DELETE:
 		history_global_delete_selected();

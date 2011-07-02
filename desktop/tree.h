@@ -54,6 +54,7 @@ enum tree_flags {
  * to indicate teh type of data a node element contains.
  */
 #define TREE_ELEMENT_TITLE	0x00
+#define TREE_ELEMENT_LAUNCH_IN_TABS	0x05 /* Launch in tabs instead of windows */
 
 struct tree;
 struct node;
@@ -102,6 +103,7 @@ struct node_msg_data {
 	union {
 		char *text; /**< textural data. */
 		void *bitmap; /**< bitmap data. */
+		struct browser_window *bw; /**< clone browser_window. */
 	} data; /**< The message data. */
 };
 
@@ -186,7 +188,7 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node);
 struct node *tree_get_selected_node(struct node *node);
 struct node *tree_get_link_details(struct tree *tree, int x, int y,
 		bool *before);
-void tree_launch_selected(struct tree *tree);
+void tree_launch_selected(struct tree *tree, bool tabs);
 
 bool tree_mouse_action(struct tree *tree, browser_mouse_state mouse,
 		int x, int y);
