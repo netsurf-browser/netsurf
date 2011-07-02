@@ -279,8 +279,8 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
 	struct browser_window *top;
 
-	assert(s->bw);
-	top = browser_window_get_root(s->bw);
+	if (s->bw == NULL)
+		return false; /* not our problem */
 
 	if (!SAME_SPACE(s, idx))
 		return false;	/* not our problem */
@@ -293,6 +293,8 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 				pos = 1;
 		}
 	}
+
+	top = browser_window_get_root(s->bw);
 
 	if (!pos &&
 		((mouse & BROWSER_MOUSE_DRAG_1) ||
