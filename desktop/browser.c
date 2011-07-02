@@ -257,6 +257,20 @@ struct browser_window * browser_window_get_root(struct browser_window *bw)
 	}
 	return bw;
 }
+/* exported interface, documented in browser.h */
+bool browser_window_has_selection(struct browser_window *bw)
+{
+	assert(bw->window);
+
+	/* TODO: handle selections in (i)frames */
+
+	if (bw->current_content != NULL && bw->sel != NULL &&
+			selection_defined(bw->sel)) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 /**
  * Create and open a new root browser window with the given page.

@@ -2577,21 +2577,21 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 			/* make menu available if there's anything that /could/
 			 * be selected */
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_SAVE, h == NULL ||
-			bw->sel == NULL || !selection_defined(bw->sel));
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_SAVE,
+			!browser_window_has_selection(bw));
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_COPY, h == NULL ||
-			bw->sel == NULL || !selection_defined(bw->sel));
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_COPY,
+			!browser_window_has_selection(bw));
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CUT, h == NULL ||
-			bw->sel == NULL || !selection_defined(bw->sel) ||
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CUT,
+			!browser_window_has_selection(bw) ||
 			selection_read_only(bw->sel));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_PASTE,
 			h == NULL || bw->paste_callback == NULL);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CLEAR, h == NULL ||
-			bw->sel == NULL || !selection_defined(bw->sel));
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CLEAR,
+			!browser_window_has_selection(bw));
 
 
 	/* Navigate Submenu */
@@ -2729,7 +2729,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 
 	case BROWSER_SELECTION_SAVE:
-		if (bw->sel != NULL && selection_defined(bw->sel))
+		if (browser_window_has_selection(bw))
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
 					bw->sel, NULL, NULL);
 		break;

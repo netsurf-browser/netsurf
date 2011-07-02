@@ -339,6 +339,14 @@ void browser_window_set_drag_type(struct browser_window *bw,
  */
 struct browser_window * browser_window_get_root(struct browser_window *bw);
 
+/**
+ * Check whether browser window contains a selection
+ *
+ * \param  bw    The browser window
+ * \return true if browser window contains a selection
+ */
+bool browser_window_has_selection(struct browser_window *bw);
+
 
 /* In platform specific hotlist.c. */
 void hotlist_visited(struct hlcache_handle *c);
