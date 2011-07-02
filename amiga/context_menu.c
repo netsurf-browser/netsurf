@@ -323,7 +323,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 				(curbox->gadget->type == GADGET_PASSWORD))))
 			{
 				BOOL disabled_readonly = selection_read_only(gwin->bw->sel);
-				BOOL disabled_noselection = !selection_defined(gwin->bw->sel);
+				BOOL disabled_noselection = !browser_window_has_selection(gwin->bw);
 
 				IDoMethod(ctxmenuobj,PM_INSERT,
 					NewObject(POPUPMENU_GetItemClass(), NULL,

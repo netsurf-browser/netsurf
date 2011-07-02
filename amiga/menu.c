@@ -921,7 +921,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 #ifdef WITH_PDF_EXPORT
 		OnMenu(win,AMI_MENU_SAVEAS_PDF);
 #endif
-		if(selection_defined(g->shared->bw->sel))
+		if(browser_window_has_selection(g->shared->bw))
 		{
 			OnMenu(win,AMI_MENU_COPY);
 			OnMenu(win,AMI_MENU_CLEAR);
