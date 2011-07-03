@@ -494,6 +494,7 @@ void gui_init(int argc, char** argv)
 
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
 
+	/* Some defaults, these are overridden later in gui_system_colour_init */
 	scrollbar_widget_fg_colour = 0x00aaaaaa;
 	scrollbar_widget_bg_colour = 0x00833c3c;
 	scrollbar_widget_arrow_colour = 0x00d6d6d6;
