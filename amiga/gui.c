@@ -1634,6 +1634,7 @@ void ami_handle_msg(void)
 					struct bitmap *bm;
 
 					bm = urldb_get_thumbnail(content_get_url(gwin->bw->current_content));
+					if(!bm) bm = content_get_bitmap(gwin->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
 					HideWindow(gwin->win);
 					gwin->appicon = AddAppIcon(gwin->objects[OID_MAIN], NULL,

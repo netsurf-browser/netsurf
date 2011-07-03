@@ -48,6 +48,9 @@
 #include "utils/utils.h"
 #include "utils/url.h"
 
+#define THUMBNAIL_WIDTH 100 /* Icon sizes for thumbnails, usually the same as */
+#define THUMBNAIL_HEIGHT 86 /* WIDTH/HEIGHT in desktop/thumbnail.c */
+
 ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height,
 		ULONG trans, ULONG pals1, struct ColorRegister *pal1, int alpha);
 
@@ -500,32 +503,39 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 	struct DiskObject *dobj;
 	struct BitMap *bitmap;
 
-	bitmap = ami_getcachenativebm(bm, bitmap_get_width(bm),
-								bitmap_get_height(bm), NULL);
-	bm->icondata = AllocVec(bitmap_get_rowstride(bm) * bitmap_get_height(bm),
-						MEMF_CLEAR);
+	if(bm)
+	{
+		bitmap = ami_getcachenativebm(bm, THUMBNAIL_WIDTH,
+									THUMBNAIL_HEIGHT, NULL);
+		bm->icondata = AllocVec(THUMBNAIL_WIDTH * 4 * THUMBNAIL_HEIGHT,
+									MEMF_CLEAR);
 
-	BltBitMapTags(BLITA_Width, bitmap_get_width(bm),
-					BLITA_Height, bitmap_get_height(bm),
+		BltBitMapTags(BLITA_Width, THUMBNAIL_WIDTH,
+					BLITA_Height, THUMBNAIL_HEIGHT,
 					BLITA_SrcType, BLITT_BITMAP,
 					BLITA_Source, bitmap,
 					BLITA_DestType, BLITT_ARGB32,
-					BLITA_DestBytesPerRow, bitmap_get_rowstride(bm),
+					BLITA_DestBytesPerRow, THUMBNAIL_WIDTH * 4,
 					BLITA_Dest, bm->icondata,
 					TAG_DONE);
+	}
 
-	dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT, TAG_DONE);
-	//dobj = NewDiskObject(WBPROJECT);
+	dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT,
+						ICONGETA_GetDefaultName, "iconify",
+						TAG_DONE);
 
-	IconControl(dobj,
+	if(bm)
+	{
+		IconControl(dobj,
 			ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
-			ICONCTRLA_SetWidth, bitmap_get_width(bm),
-			ICONCTRLA_SetHeight, bitmap_get_height(bm),
+			ICONCTRLA_SetWidth, THUMBNAIL_WIDTH,
+			ICONCTRLA_SetHeight, THUMBNAIL_HEIGHT,
 			ICONCTRLA_SetImageData1, bm->icondata,
 			ICONCTRLA_SetImageData2, NULL,
 			TAG_DONE);
 
-	dobj->do_Gadget.UserData = bm;
+		dobj->do_Gadget.UserData = bm;
+	}
 
 	LayoutIconA(dobj, (struct Screen *)~0UL, NULL);
 
@@ -537,5 +547,5 @@ void amiga_icon_free(struct DiskObject *dobj)
 	struct bitmap *bm = dobj->do_Gadget.UserData;
 
 	FreeDiskObject(dobj);
-	FreeVec(bm->icondata);
+	if(bm) FreeVec(bm->icondata);
 }
