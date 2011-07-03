@@ -533,9 +533,9 @@ struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
 			ICONCTRLA_SetImageData1, bm->icondata,
 			ICONCTRLA_SetImageData2, NULL,
 			TAG_DONE);
-
-		dobj->do_Gadget.UserData = bm;
 	}
+
+	dobj->do_Gadget.UserData = bm;
 
 	LayoutIconA(dobj, (struct Screen *)~0UL, NULL);
 
