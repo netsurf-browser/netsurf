@@ -494,3 +494,48 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 	}
 
 }
+
+struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)
+{
+	struct DiskObject *dobj;
+	struct BitMap *bitmap;
+
+	bitmap = ami_getcachenativebm(bm, bitmap_get_width(bm),
+								bitmap_get_height(bm), NULL);
+	bm->icondata = AllocVec(bitmap_get_rowstride(bm) * bitmap_get_height(bm),
+						MEMF_CLEAR);
+
+	BltBitMapTags(BLITA_Width, bitmap_get_width(bm),
+					BLITA_Height, bitmap_get_height(bm),
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_Source, bitmap,
+					BLITA_DestType, BLITT_ARGB32,
+					BLITA_DestBytesPerRow, bitmap_get_rowstride(bm),
+					BLITA_Dest, bm->icondata,
+					TAG_DONE);
+
+	dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT, TAG_DONE);
+	//dobj = NewDiskObject(WBPROJECT);
+
+	IconControl(dobj,
+			ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
+			ICONCTRLA_SetWidth, bitmap_get_width(bm),
+			ICONCTRLA_SetHeight, bitmap_get_height(bm),
+			ICONCTRLA_SetImageData1, bm->icondata,
+			ICONCTRLA_SetImageData2, NULL,
+			TAG_DONE);
+
+	dobj->do_Gadget.UserData = bm;
+
+	LayoutIconA(dobj, (struct Screen *)~0UL, NULL);
+
+	return dobj;
+}
+
+void amiga_icon_free(struct DiskObject *dobj)
+{
+	struct bitmap *bm = dobj->do_Gadget.UserData;
+
+	FreeDiskObject(dobj);
+	FreeVec(bm->icondata);
+}

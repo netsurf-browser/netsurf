@@ -107,6 +107,8 @@ struct gui_window_2 {
 	char *helphints[GID_LAST];
 	struct timeval lastclick;
 	BOOL rmbtrapped;
+	struct AppIcon *appicon; /* iconify appicon */
+	struct DiskObject *dobj; /* iconify appicon */
 };
 
 struct gui_window

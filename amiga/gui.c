@@ -1630,38 +1630,15 @@ void ami_handle_msg(void)
 
 				case WMHI_ICONIFY:
 				{
-/*
 					struct DiskObject *dobj;
 					struct bitmap *bm;
-					ULONG *argb;
 
-					bm = urldb_get_thumbnail(gwin->bw->current_content->url);
-					argb = AllocVec(bm->nativebmwidth * bm->nativebmheight, MEMF_CLEAR);
-					BltBitMapTags(BLITA_Width, bm->nativebmwidth,
-								BLITA_Height, bm->nativebmheight,
-								BLITA_SrcType, BLITT_BITMAP,
-								BLITA_Source, bm->nativebm,
-								BLITA_DestType, BLITT_ARGB32,
-								BLITA_Dest, argb,
-								TAG_DONE);
-
-			//		dobj = NewDiskObject(WBPROJECT);
-					dobj = GetIconTags(NULL, ICONGETA_GetDefaultType, WBPROJECT, TAG_DONE);
-					IconControl(dobj,
-							ICONCTRLA_SetWidth, bm->nativebmwidth,
-							ICONCTRLA_SetHeight, bm->nativebmheight,
-							ICONCTRLA_SetImageDataFormat, IDFMT_DIRECTMAPPED,
-							ICONCTRLA_SetImageData1, argb,
-							ICONCTRLA_SetImageData2, argb,
-							TAG_DONE);
-*/
-					SetAttrs(gwin->objects[OID_MAIN],
-							WINDOW_IconTitle, gwin->win->Title,
-//							WINDOW_Icon, dobj,
-							TAG_DONE);
-					RA_Iconify(gwin->objects[OID_MAIN]);
-					if(locked_screen == FALSE)
-						screen_closed = CloseScreen(scrn);
+					bm = urldb_get_thumbnail(content_get_url(gwin->bw->current_content));
+					gwin->dobj = amiga_icon_from_bitmap(bm);
+					HideWindow(gwin->win);
+					gwin->appicon = AddAppIcon(gwin->objects[OID_MAIN], NULL,
+											gwin->win->Title, appport, NULL,
+											gwin->dobj, NULL);
 				}
 				break;
 
@@ -1723,6 +1700,16 @@ void ami_handle_msg(void)
 	} while(node = nnode);
 }
 
+void ami_gui_appicon_remove(struct gui_window_2 *gwin)
+{
+	if(gwin->appicon)
+	{
+		RemoveAppIcon(gwin->appicon);
+		amiga_icon_free(gwin->dobj);
+		gwin->appicon = NULL;
+	}
+}
+
 void ami_handle_appmsg(void)
 {
 	struct AppMessage *appmsg;
@@ -1741,22 +1728,12 @@ void ami_handle_appmsg(void)
 	{
 		GetAttr(WINDOW_UserData, (Object *)appmsg->am_ID, (ULONG *)&gwin);
 
-/* AppIcons are for iconified windows - we don't have iconify yet.
 		if(appmsg->am_Type == AMTYPE_APPICON)
 		{
-			if(screen_closed)
-			{
-				ami_openscreen();
-				screen_closed = FALSE;
-			}
-			gwin->win = (struct Window *)RA_OpenWindow(gwin->objects[OID_MAIN]);
-			gwin->redraw_required = true;
-			ScreenToFront(scrn);
-			WindowToFront(gwin->win);
+			ami_gui_appicon_remove(gwin);
+			ShowWindow(gwin->win, WINDOW_FRONTMOST);
 		}
-		else
- */
-		if(appmsg->am_Type == AMTYPE_APPWINDOW)
+		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
 			GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 				(ULONG *)&bbox);
@@ -2525,7 +2502,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			if(!option_kiosk_mode)
 			{
 				ULONG addtabclosegadget = TAG_IGNORE;
+				ULONG iconifygadget = FALSE;
 
+				if(option_use_pubscreen && (locked_screen == TRUE) &&
+					(strcmp(option_use_pubscreen,"Workbench") == 0))
+						iconifygadget = TRUE;
 				ami_create_menu(bw->browser_window_type, gwin->shared, dri);
 
 				NewList(&gwin->shared->tab_list);
@@ -2651,6 +2632,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 								IDCMP_ACTIVEWINDOW | // IDCMP_INTUITICKS |
 								IDCMP_EXTENDEDMOUSE,
+					WINDOW_IconifyGadget, iconifygadget,
 					WINDOW_NewMenu, gwin->shared->menu,
 					WINDOW_VertProp,1,
 					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
@@ -3100,6 +3082,7 @@ void gui_window_destroy(struct gui_window *g)
 	}
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
+	ami_gui_appicon_remove(g->shared);
 
 	/* These aren't freed by the above.
 	 * TODO: nav_west etc need freeing too */

@@ -37,6 +37,7 @@ struct bitmap {
 	int nativebmheight;
 	char *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
+	ULONG *icondata; /* for appicons */
 };
 
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm);
