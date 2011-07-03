@@ -30,7 +30,10 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/Picasso96API.h>
+#include <intuition/gui.h>
 #include <intuition/screens.h>
+
+#define AMINS_SCROLLERPEN NUMDRIPENS
 
 struct gui_system_colour_ctx {
 	const char *name;
@@ -180,7 +183,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 		SLEN("Scrollbar"), 
 		0xffaaaaaa, 
 		&option_sys_colour_Scrollbar, 
-		FOREGROUNDPEN, /* or FILLPEN, see GetGUIAttrs() */
+		AMINS_SCROLLERPEN,
 		NULL 
 	}, {
 		"ThreeDDarkShadow", 
@@ -253,13 +256,26 @@ extern colour scrollbar_widget_arrow_colour;
 
 css_color ami_css_colour_from_pen(struct Screen *screen, UWORD pen);
 
+UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
+{
+	LONG scrollerfillpen = FALSE;
+
+	GetGUIAttrs(NULL, drinfo, GUIA_PropKnobColor, &scrollerfillpen, TAG_DONE);
+
+	if(scrollerfillpen) return FILLPEN;
+		else return FOREGROUNDPEN;
+}
+
 void ami_system_colour_scrollbar_widget(void)
 {
 	if(scrn == NULL) return;
 
-	scrollbar_widget_fg_colour = p96EncodeColor(RGBFB_A8B8G8R8, ami_css_colour_from_pen(scrn, FOREGROUNDPEN)); /* or FILLPEN */
-	scrollbar_widget_bg_colour = p96EncodeColor(RGBFB_A8B8G8R8, ami_css_colour_from_pen(scrn, FILLSHADOWPEN));
-	scrollbar_widget_arrow_colour = p96EncodeColor(RGBFB_A8B8G8R8, ami_css_colour_from_pen(scrn, SHINEPEN));
+	scrollbar_widget_fg_colour = p96EncodeColor(RGBFB_A8B8G8R8,
+			ami_css_colour_from_pen(scrn, AMINS_SCROLLERPEN));
+	scrollbar_widget_bg_colour = p96EncodeColor(RGBFB_A8B8G8R8,
+			ami_css_colour_from_pen(scrn, FILLSHADOWPEN));
+	scrollbar_widget_arrow_colour = p96EncodeColor(RGBFB_A8B8G8R8,
+			ami_css_colour_from_pen(scrn, SHINEPEN));
 }
 
 bool gui_system_colour_init(void)
@@ -347,6 +363,8 @@ css_color ami_css_colour_from_pen(struct Screen *screen, UWORD pen)
 	struct DrawInfo *drinfo = GetScreenDrawInfo(screen);
 
 	if(drinfo == NULL) return 0x00000000;
+
+	if(pen == AMINS_SCROLLERPEN) pen = ami_system_colour_scrollbar_fgpen(drinfo);
 
 	/* Get the colour of the pen being used for "pen" */
 	GetRGB32(screen->ViewPort.ColorMap, drinfo->dri_Pens[pen], 1, (ULONG *)&colour);

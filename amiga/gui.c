@@ -153,9 +153,6 @@ ULONG applibsig = 0;
 
 const char tree_directory_icon_name[] = "def_drawer.info";
 const char tree_content_icon_name[] = "def_project.info";
-extern colour scrollbar_widget_fg_colour;
-extern colour scrollbar_widget_bg_colour;
-extern colour scrollbar_widget_arrow_colour;
 
 static struct DrawInfo *dri;
 
@@ -493,11 +490,6 @@ void gui_init(int argc, char** argv)
 	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
-
-	/* Some defaults, these are overridden later in gui_system_colour_init */
-	scrollbar_widget_fg_colour = 0x00aaaaaa;
-	scrollbar_widget_bg_colour = 0x00833c3c;
-	scrollbar_widget_arrow_colour = 0x00d6d6d6;
 
 	ami_amiupdate(); /* set env-vars for AmiUpdate */
 	ami_init_fonts();
