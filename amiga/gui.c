@@ -1639,6 +1639,8 @@ void ami_handle_msg(void)
 					gwin->appicon = AddAppIcon(gwin->objects[OID_MAIN], NULL,
 											gwin->win->Title, appport, NULL,
 											gwin->dobj, NULL);
+
+					curbw = NULL;
 				}
 				break;
 
@@ -1732,6 +1734,7 @@ void ami_handle_appmsg(void)
 		{
 			ami_gui_appicon_remove(gwin);
 			ShowWindow(gwin->win, WINDOW_FRONTMOST);
+			ActivateWindow(gwin->win);
 		}
 		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
