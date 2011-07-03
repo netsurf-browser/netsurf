@@ -95,7 +95,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	os_error *error;
 	struct redraw_context ctx = {
 		.interactive = true,
-		.plot = &ro_plotters
+		.plot = &ro_save_draw_plotters
 	};
 
 	ro_save_draw_diagram = pencil_create();
