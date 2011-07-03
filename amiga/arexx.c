@@ -22,6 +22,8 @@
 #include "amiga/download.h"
 #include "amiga/gui.h"
 #include "amiga/options.h"
+#include "amiga/theme.h"
+
 #include "desktop/browser.h"
 
 #include <string.h>
@@ -185,7 +187,7 @@ int ami_find_tab_bw(struct gui_window_2 *gwin, struct browser_window *bw)
 		if(tbw == bw) return tabs;
 	} while(ctab=ntab);
 
-	return NULL;
+	return 0;
 }
 
 struct browser_window *ami_find_tab(int window, int tab)
@@ -231,7 +233,7 @@ STATIC VOID rx_open(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 		dln->filename = strdup((char *)cmd->ac_ArgList[3]);
 		dln->node.ln_Name = strdup((char *)cmd->ac_ArgList[0]);
 		dln->node.ln_Type = NT_USER;
-		AddTail(&bw->window->dllist,dln);
+		AddTail(&bw->window->dllist, (struct Node *)dln);
 		if(!bw->download) browser_window_download(curbw,(char *)cmd->ac_ArgList[0],NULL);
 	}
 	else if(cmd->ac_ArgList[2])
@@ -259,7 +261,7 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 {
 	BPTR fh = 0;
 	ULONG source_size;
-	char *source_data;
+	const char *source_data;
 	struct browser_window *bw = curbw;
 
 	cmd->ac_RC = 0;
@@ -270,13 +272,13 @@ STATIC VOID rx_save(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	if(!bw) return;
 
 	ami_update_pointer(bw->window->shared->win,GUI_POINTER_WAIT);
-	if(fh = FOpen(cmd->ac_ArgList[0],MODE_NEWFILE,0))
+	if(fh = FOpen((char *)cmd->ac_ArgList[0], MODE_NEWFILE, 0))
 	{
 		if(source_data = content_get_source_data(bw->current_content, &source_size))
 			FWrite(fh, source_data, 1, source_size);
 
 		FClose(fh);
-		SetComment(cmd->ac_ArgList[0], content_get_url(bw->current_content));
+		SetComment((char *)cmd->ac_ArgList[0], content_get_url(bw->current_content));
 	}
 
 	ami_update_pointer(bw->window->shared->win,GUI_POINTER_DEFAULT);
@@ -326,10 +328,10 @@ STATIC VOID rx_gettitle(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__(
 
 	if(bw)
 	{
-		if(bw->window->tabtitle)
-			strcpy(result,bw->window->tabtitle);
+		if(bw->window->shared->tabs > 1)
+			strcpy(result, bw->window->tabtitle);
 		else
-			strcpy(result,bw->window->shared->win->Title);
+			strcpy(result, bw->window->shared->wintitle);
 	}
 	else
 	{
