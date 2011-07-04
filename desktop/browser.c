@@ -1741,14 +1741,9 @@ void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	hlcache_handle *c = bw->current_content;
-	struct browser_window *top;
 
 	if (!c)
 		return;
-
-	/* Set focus browser window */
-	top = browser_window_get_root(bw);
-	top->focus = bw;
 
 	switch (content_get_type(c)) {
 	case CONTENT_HTML:

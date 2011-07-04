@@ -1201,6 +1201,9 @@ void browser_window_place_caret(struct browser_window *bw,
 	bw->paste_callback = paste_cb;
 	bw->move_callback = move_cb;
 	bw->caret_p = p;
+
+	/* Set focus browser window */
+	root_bw->focus = bw;
 }
 
 
