@@ -38,4 +38,15 @@ bool browser_window_resize_frames(struct browser_window *bw,
 		gui_pointer_shape *pointer, const char **status, bool *action);
 void browser_window_resize_frame(struct browser_window *bw, int x, int y);
 
+void browser_window_scroll_callback(void *client_data,
+		struct scrollbar_msg_data *scrollbar_data);
+
+
+/**
+ * Create, remove, and update browser window scrollbars
+ *
+ * \param  bw    The browser window
+ */
+void browser_window_handle_scrollbars(struct browser_window *bw);
+
 #endif

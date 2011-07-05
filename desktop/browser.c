@@ -50,6 +50,7 @@
 #include "desktop/gui.h"
 #include "desktop/knockout.h"
 #include "desktop/options.h"
+#include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
@@ -92,6 +93,46 @@ static void browser_window_find_target_internal(struct browser_window *bw,
 static void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);
 
+
+/**
+ * Get position of scrollbar widget within browser window.
+ *
+ * \param  bw		The browser window
+ * \param  horizontal	Whether to get position of horizontal scrollbar
+ * \param  x		Updated to x-coord of top left of scrollbar widget
+ * \param  y		Updated to y-coord of top left of scrollbar widget
+ */
+
+static inline void browser_window_get_scrollbar_pos(struct browser_window *bw,
+		bool horizontal, int *x, int *y)
+{
+	if (horizontal) {
+		*x = 0;
+		*y = bw->height - SCROLLBAR_WIDTH;
+	} else {
+		*x = bw->width - SCROLLBAR_WIDTH;
+		*y = 0;
+	}
+}
+
+
+/**
+ * Get browser window scrollbar widget length
+ *
+ * \param  bw		The browser window
+ * \param  horizontal	Whether to get length of horizontal scrollbar
+ * \return the scrollbar's length
+ */
+
+static inline int browser_window_get_scrollbar_len(struct browser_window *bw,
+		bool horizontal)
+{
+	if (horizontal)
+		return bw->width - (bw->scroll_y != NULL ? SCROLLBAR_WIDTH : 0);
+	else
+		return bw->height;
+}
+
 /* exported interface, documented in browser.h */
 bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx)
@@ -102,6 +143,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	bool plot_ok = true;
 	content_type content_type;
 	struct content_redraw_data data;
+	struct rect content_clip;
 
 	if (bw == NULL) {
 		LOG(("NULL browser window"));
@@ -138,8 +180,8 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	}
 
 	/* Set up content redraw data */
-	data.x = x;
-	data.y = y;
+	data.x = x - scrollbar_get_offset(bw->scroll_x);
+	data.y = y - scrollbar_get_offset(bw->scroll_y);
 	data.width = width;
 	data.height = height;
 
@@ -147,9 +189,48 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 	data.scale = bw->scale;
 	data.repeat_x = false;
 	data.repeat_y = false;
+
+	content_clip = *clip;
+
+	if (!bw->window) {
+		int x0 = x * bw->scale;
+		int y0 = y * bw->scale;
+		int x1 = (x + bw->width - ((bw->scroll_y != NULL) ?
+				SCROLLBAR_WIDTH : 0)) * bw->scale;
+		int y1 = (y + bw->height - ((bw->scroll_x != NULL) ?
+				SCROLLBAR_WIDTH : 0)) * bw->scale;
+
+		if (content_clip.x0 < x0) content_clip.x0 = x0;
+		if (content_clip.y0 < y0) content_clip.y0 = y0;
+		if (x1 < content_clip.x1) content_clip.x1 = x1;
+		if (y1 < content_clip.y1) content_clip.y1 = y1;
+	}
  
 	/* Render the content */
-	plot_ok &= content_redraw(bw->current_content, &data, clip, &new_ctx);
+	plot_ok &= content_redraw(bw->current_content, &data,
+			&content_clip, &new_ctx);
+
+	/* Back to full clip rect */
+	new_ctx.plot->clip(clip);
+
+	if (!bw->window) {
+		/* Render scrollbars */
+		int off_x, off_y;
+		if (bw->scroll_x != NULL) {
+			browser_window_get_scrollbar_pos(bw, true,
+					&off_x, &off_y);
+			plot_ok &= scrollbar_redraw(bw->scroll_x,
+					x + off_x, y + off_y, clip,
+					bw->scale, &new_ctx);
+		}
+		if (bw->scroll_y != NULL) {
+			browser_window_get_scrollbar_pos(bw, false,
+					&off_x, &off_y);
+			plot_ok &= scrollbar_redraw(bw->scroll_y,
+					x + off_x, y + off_y, clip,
+					bw->scale, &new_ctx);
+		}
+	}
 	
 	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
 			ctx->plot->option_knockout) {
@@ -183,7 +264,7 @@ void browser_window_update_extent(struct browser_window *bw)
 		gui_window_update_extent(bw->window);
 		break;
 	case BROWSER_WINDOW_IFRAME:
-		/* TODO */
+		browser_window_handle_scrollbars(bw);
 		break;
 	}
 }
@@ -207,8 +288,8 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 			break;
 		case BROWSER_WINDOW_IFRAME:
 
-			*pos_x += bw->x * bw->scale;
-			*pos_y += bw->y * bw->scale;
+			*pos_x += (bw->x - scrollbar_get_offset(bw->scroll_x)) * bw->scale;
+			*pos_y += (bw->y - scrollbar_get_offset(bw->scroll_y)) * bw->scale;
 			break;
 		}
 
@@ -257,6 +338,7 @@ struct browser_window * browser_window_get_root(struct browser_window *bw)
 	}
 	return bw;
 }
+
 /* exported interface, documented in browser.h */
 bool browser_window_has_selection(struct browser_window *bw)
 {
@@ -269,6 +351,26 @@ bool browser_window_has_selection(struct browser_window *bw)
 		return true;
 	} else {
 		return false;
+	}
+}
+
+/**
+ * Set scroll offsets for a browser window.
+ *
+ * \param  bw	    The browser window
+ * \param  x	    The x scroll offset to set
+ * \param  y	    The y scroll offset to set
+ */
+
+static void browser_window_set_scroll(struct browser_window *bw, int x, int y)
+{
+	if (bw->window != NULL) {
+		gui_window_set_scroll(bw->window, x, y);
+	} else {
+		if (bw->scroll_x != NULL)
+			scrollbar_set(bw->scroll_x, x, false);
+		if (bw->scroll_y != NULL)
+			scrollbar_set(bw->scroll_y, y, false);
 	}
 }
 
@@ -350,6 +452,9 @@ void browser_window_initialise_common(struct browser_window *bw,
 	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
 	bw->scale = (float) option_scale / 100.0;
+
+	bw->scroll_x = NULL;
+	bw->scroll_y = NULL;
 
 	bw->focus = NULL;
 
@@ -716,6 +821,14 @@ nserror browser_window_callback(hlcache_handle *c,
 	case CONTENT_MSG_DONE:
 		assert(bw->current_content == c);
 
+		if (bw->window == NULL) {
+			/* Updated browser window's scrollbars.
+			 * TODO: do this before CONTENT_MSG_DONE */
+			browser_window_reformat(bw, true,
+					bw->width, bw->height);
+			browser_window_handle_scrollbars(bw);
+		}
+
 		browser_window_update(bw, false);
 		browser_window_set_status(bw, content_get_status_message(c));
 		browser_window_stop_throbber(bw);
@@ -1033,13 +1146,13 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		browser_window_update_extent(bw);
 
 		if (scroll_to_top)
-			gui_window_set_scroll(bw->window, 0, 0);
+			browser_window_set_scroll(bw, 0, 0);
 
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
 				bw->frag_id, &x, &y)) {
-			gui_window_set_scroll(bw->window, x, y);
+			browser_window_set_scroll(bw, x, y);
 		}
 
 		gui_window_redraw_window(bw->window);
@@ -1048,7 +1161,17 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 	case BROWSER_WINDOW_IFRAME:
 		/* Internal iframe browser window */
 
-		/** \TODO handle scrollbar extents, scroll offset */
+		browser_window_update_extent(bw);
+
+		if (scroll_to_top)
+			browser_window_set_scroll(bw, 0, 0);
+
+		/* if frag_id exists, then try to scroll to it */
+		/** \TODO don't do this if the user has scrolled */
+		if (bw->frag_id && html_get_id_offset(bw->current_content,
+				bw->frag_id, &x, &y)) {
+			browser_window_set_scroll(bw, x, y);
+		}
 
 		html_redraw_a_box(bw->parent->current_content, bw->box);
 		break;
@@ -1409,8 +1532,14 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 
 	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME) {
 		/* Iframe dimensions are already scaled in parent's layout */
-		width /= bw->scale;
+		width  /= bw->scale;
 		height /= bw->scale;
+	} else {
+		width  -= bw->scroll_y ? SCROLLBAR_WIDTH : 0;
+		height -= bw->scroll_x ? SCROLLBAR_WIDTH : 0;
+
+		width  = width  > 0 ? width  : 0;
+		height = height > 0 ? height : 0;
 	}
 
 	content_reformat(c, background, width, height);
@@ -1688,12 +1817,59 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	hlcache_handle *c = bw->current_content;
+	const char *status = NULL;
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 
 	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
 		return;
 
 	if (bw->drag_type != DRAGGING_NONE && !mouse) {
 		browser_window_mouse_drag_end(bw, mouse, x, y);
+	}
+
+	if (bw->scroll_x != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		if ((scr_x > 0 && scr_x < browser_window_get_scrollbar_len(bw,
+						true) &&
+				scr_y > 0 && scr_y < SCROLLBAR_WIDTH) ||
+				bw->drag_type == DRAGGING_SCR_X) {
+			status = scrollbar_mouse_action(bw->scroll_x, mouse,
+					scr_x, scr_y);
+			pointer = GUI_POINTER_DEFAULT;
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
+
+	if (bw->scroll_y != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		if ((scr_y > 0 && scr_y < browser_window_get_scrollbar_len(bw,
+						false) &&
+				scr_x > 0 && scr_x < SCROLLBAR_WIDTH) ||
+				bw->drag_type == DRAGGING_SCR_Y) {
+
+			status = scrollbar_mouse_action(bw->scroll_y, mouse,
+					scr_x, scr_y);
+			pointer = GUI_POINTER_DEFAULT;
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
 	}
 
 	if (bw->drag_type == DRAGGING_FRAME) {
@@ -1710,17 +1886,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 		bw->drag_start_scroll_x = scrollx;
 		bw->drag_start_scroll_y = scrolly;
 
-		switch (bw->browser_window_type) {
-		default:
-			/* Fall through to normal, until frame(set)s are
-			 * handled in the core */
-		case BROWSER_WINDOW_NORMAL:
-			gui_window_set_scroll(bw->window, scrollx, scrolly);
-			break;
-		case BROWSER_WINDOW_IFRAME:
-			/* TODO */
-			break;
-		}
+		browser_window_set_scroll(bw, scrollx, scrolly);
 	} else {
 		assert(c != NULL);
 		content_mouse_track(c, bw, mouse, x, y);
@@ -1741,9 +1907,53 @@ void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	hlcache_handle *c = bw->current_content;
+	const char *status = NULL;
+	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 
 	if (!c)
 		return;
+
+	if (bw->scroll_x != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
+		scr_x = x - scr_x;
+		scr_y = y - scr_y;
+
+		if (scr_x > 0 && scr_x < browser_window_get_scrollbar_len(bw,
+						true) &&
+				scr_y > 0 && scr_y < SCROLLBAR_WIDTH) {
+			status = scrollbar_mouse_action(bw->scroll_x, mouse,
+					scr_x, scr_y);
+			pointer = GUI_POINTER_DEFAULT;
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
+
+	if (bw->scroll_y != NULL) {
+		int scr_x, scr_y;
+		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
+		scr_x = x - scr_x;
+		scr_y = y - scr_y;
+
+		if (scr_y > 0 && scr_y < browser_window_get_scrollbar_len(bw,
+						false) &&
+				scr_x > 0 && scr_x < SCROLLBAR_WIDTH) {
+			status = scrollbar_mouse_action(bw->scroll_y, mouse,
+					scr_x, scr_y);
+			pointer = GUI_POINTER_DEFAULT;
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
+
+			browser_window_set_pointer(bw, pointer);
+			return;
+		}
+	}
 
 	switch (content_get_type(c)) {
 	case CONTENT_HTML:
@@ -1784,6 +1994,8 @@ void browser_window_mouse_click(struct browser_window *bw,
 void browser_window_mouse_drag_end(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
+	int scr_x, scr_y;
+
 	switch (bw->drag_type) {
 	case DRAGGING_SELECTION:
 	{
@@ -1815,6 +2027,30 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 
 	case DRAGGING_OTHER:
 		/* Drag handled by content handler */
+		break;
+
+	case DRAGGING_SCR_X:
+
+		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
+
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		scrollbar_mouse_drag_end(bw->scroll_x, mouse, scr_x, scr_y);
+
+		bw->drag_type = DRAGGING_NONE;
+		break;
+
+	case DRAGGING_SCR_Y:
+
+		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
+
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
+
+		scrollbar_mouse_drag_end(bw->scroll_y, mouse, scr_x, scr_y);
+
+		bw->drag_type = DRAGGING_NONE;
 		break;
 
 	default:

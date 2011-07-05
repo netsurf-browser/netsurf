@@ -60,6 +60,8 @@ typedef enum {
 	DRAGGING_SELECTION,
 	DRAGGING_PAGE_SCROLL,
 	DRAGGING_FRAME,
+	DRAGGING_SCR_X,
+	DRAGGING_SCR_Y,
 	DRAGGING_OTHER
 } browser_drag_type;
 
@@ -134,6 +136,9 @@ struct browser_window {
 	int y;
 	int width;
 	int height;
+
+	struct scrollbar *scroll_x;  /**< Horizontal scroll. */
+	struct scrollbar *scroll_y;  /**< Vertical scroll. */
 
 	/** scale of window contents */
 	float scale;

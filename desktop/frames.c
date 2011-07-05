@@ -34,6 +34,7 @@
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
 #include "desktop/gui.h"
+#include "desktop/scrollbar.h"
 #include "desktop/selection.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -48,6 +49,121 @@ static bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 
 
 /**
+ * Callback for (i)frame scrollbars.
+ */
+void browser_window_scroll_callback(void *client_data,
+		struct scrollbar_msg_data *scrollbar_data)
+{
+	struct browser_window *bw = client_data;
+
+	switch(scrollbar_data->msg) {
+	case SCROLLBAR_MSG_REDRAW:
+		/* TODO: Is this needed? */
+		break;
+	case SCROLLBAR_MSG_MOVED:
+		html_redraw_a_box(bw->parent->current_content, bw->box);
+		break;
+	case SCROLLBAR_MSG_SCROLL_START:
+		if (scrollbar_is_horizontal(scrollbar_data->scrollbar))
+			browser_window_set_drag_type(bw, DRAGGING_SCR_X);
+		else
+			browser_window_set_drag_type(bw, DRAGGING_SCR_Y);
+
+		break;
+	case SCROLLBAR_MSG_SCROLL_FINISHED:
+		browser_window_set_drag_type(bw, DRAGGING_NONE);
+		
+		browser_window_set_pointer(bw, GUI_POINTER_DEFAULT);
+		break;
+	}
+}
+
+/* exported interface, documented in browser.h */
+void browser_window_handle_scrollbars(struct browser_window *bw)
+{
+	hlcache_handle *h = bw->current_content;
+	bool scroll_x;
+	bool scroll_y;
+	int c_width = 0;
+	int c_height = 0;
+
+	assert(!bw->window); /* Core-handled windows only */
+
+	if (h != NULL) {
+		c_width  = content_get_width(h);
+		c_height = content_get_height(h);
+	}
+
+	if (bw->scrolling == SCROLLING_YES) {
+		scroll_x = true;
+		scroll_y = true;
+	} else if (bw->scrolling == SCROLLING_AUTO &&
+			bw->current_content) {
+		int bw_width = bw->width;
+		int bw_height = bw->height;
+
+		/* subtract existing scrollbar width */
+		bw_width -= bw->scroll_y ? SCROLLBAR_WIDTH : 0;
+		bw_height -= bw->scroll_x ? SCROLLBAR_WIDTH : 0;
+
+		scroll_y = (c_height > bw_height) ? true : false;
+		scroll_x = (c_width > bw_width) ? true : false;
+	} else {
+		/* No scrollbars */
+		scroll_x = false;
+		scroll_y = false;
+	}
+
+	if (!scroll_x && bw->scroll_x != NULL) {
+		scrollbar_destroy(bw->scroll_x);
+		bw->scroll_x = NULL;
+	}
+
+	if (!scroll_y && bw->scroll_y != NULL) {
+		scrollbar_destroy(bw->scroll_y);
+		bw->scroll_y = NULL;
+	}
+
+	if (scroll_y) {
+		int length = bw->height;
+		int visible = bw->height - (scroll_x ? SCROLLBAR_WIDTH : 0);
+
+		if (bw->scroll_y == NULL) {
+			/* create vertical scrollbar */
+			if (!scrollbar_create(false, length, c_height, visible,
+					bw, browser_window_scroll_callback,
+					&(bw->scroll_y)))
+				return;
+		} else {
+			/* update vertical scrollbar */
+			scrollbar_set_extents(bw->scroll_y, length,
+					visible, c_height);
+		}
+	}
+
+	if (scroll_x) {
+		int length = bw->width - (scroll_y ? SCROLLBAR_WIDTH : 0);
+		int visible = length;
+
+		if (bw->scroll_x == NULL) {
+			/* create horizontal scrollbar */
+			if (!scrollbar_create(true, length, c_width, visible,
+					bw, browser_window_scroll_callback,
+					&(bw->scroll_x)))
+				return;
+		} else {
+			/* update horizontal scrollbar */
+			scrollbar_set_extents(bw->scroll_x, length,
+					visible, c_width);
+		}
+	}
+
+	if (scroll_x && scroll_y)
+		scrollbar_make_pair(bw->scroll_x, bw->scroll_y);
+}
+
+
+/**
  * Create and open a iframes for a browser window.
  *
  * \param  bw	    The browser window to create iframes for
@@ -55,7 +171,8 @@ static bool browser_window_resolve_frame_dimension(struct browser_window *bw,
  */
 
 void browser_window_create_iframes(struct browser_window *bw,
-		struct content_html_iframe *iframe) {
+		struct content_html_iframe *iframe)
+{
 	struct browser_window *window;
 	struct content_html_iframe *cur;
 	struct rect rect;
@@ -130,8 +247,16 @@ void browser_window_create_iframes(struct browser_window *bw,
 
 void browser_window_recalculate_iframes(struct browser_window *bw)
 {
-	/* TODO: decide if this is still needed after scrollbars are
-	 * implemented */
+	struct browser_window *window;
+	int index;
+
+	for (index = 0; index < bw->iframe_count; index++) {
+		window = &(bw->iframes[index]);
+
+		if (window != NULL) {
+			browser_window_handle_scrollbars(window);
+		}
+	}
 }
 
 
