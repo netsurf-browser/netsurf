@@ -1202,10 +1202,10 @@ void browser_window_update_box(struct browser_window *bw,
 
 		/* TODO: update gui_window_update_box so it takes a struct rect
 		 * instead of msg data. */
-		data_copy.redraw.x += pos_x;
-		data_copy.redraw.y += pos_y;
-		data_copy.redraw.object_x += pos_x;
-		data_copy.redraw.object_y += pos_y;
+		data_copy.redraw.x += pos_x / bw->scale;
+		data_copy.redraw.y += pos_y / bw->scale;
+		data_copy.redraw.object_x += pos_x / bw->scale;
+		data_copy.redraw.object_y += pos_y / bw->scale;
 
 		gui_window_update_box(top->window, &data_copy);
 		break;
