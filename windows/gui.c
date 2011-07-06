@@ -1424,8 +1424,7 @@ void gui_window_redraw_window(struct gui_window *gw)
 	RedrawWindow(gw->drawingarea, NULL, NULL, RDW_INVALIDATE | RDW_NOERASE);
 }
 
-void gui_window_update_box(struct gui_window *gw,
-			   const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
 	/* LOG(("gw:%p %f,%f %f,%f", gw, data->redraw.x, data->redraw.y, data->redraw.width, data->redraw.height)); */
 
@@ -1434,10 +1433,10 @@ void gui_window_update_box(struct gui_window *gw,
 
 	RECT redrawrect;
 
-	redrawrect.left = (long)data->redraw.x - (gw->scrollx / gw->bw->scale);
-	redrawrect.top = (long)data->redraw.y - (gw->scrolly / gw->bw->scale);
-	redrawrect.right =(long)(data->redraw.x + data->redraw.width);
-	redrawrect.bottom = (long)(data->redraw.y + data->redraw.height);
+	redrawrect.left = (long)rect->x0 - (gw->scrollx / gw->bw->scale);
+	redrawrect.top = (long)rect->y0 - (gw->scrolly / gw->bw->scale);
+	redrawrect.right =(long)rect->x1;
+	redrawrect.bottom = (long)rect->y1;
 
 	RedrawWindow(gw->drawingarea, &redrawrect, NULL, RDW_INVALIDATE | RDW_NOERASE);
 
