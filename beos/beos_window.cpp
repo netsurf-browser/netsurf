@@ -1392,8 +1392,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	g->view->UnlockLooper();
 }
 
-void gui_window_update_box(struct gui_window *g,
-			   const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	hlcache_handle *c = g->bw->current_content;
 
@@ -1408,9 +1407,8 @@ void gui_window_update_box(struct gui_window *g,
 	nsbeos_current_gc_set(g->view);
 
 //XXX +1 ??
-	g->view->Invalidate(BRect(data->redraw.x, data->redraw.y,
-				   data->redraw.x + data->redraw.width - 1, 
-				   data->redraw.y + data->redraw.height - 1));
+	g->view->Invalidate(BRect(rect->x0, rect->y0,
+				   rect->x1 - 1, rect->y1 - 1));
 
 	nsbeos_current_gc_set(NULL);
 	g->view->UnlockLooper();
