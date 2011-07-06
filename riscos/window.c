@@ -753,8 +753,7 @@ void gui_window_redraw_window(struct gui_window *g)
  * \param  data  content_msg_data union with filled in redraw data
  */
 
-void gui_window_update_box(struct gui_window *g,
-		const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	hlcache_handle *h = g->bw->current_content;
 	bool use_buffer;
@@ -764,10 +763,10 @@ void gui_window_update_box(struct gui_window *g,
 	if (!h)
 		return;
 
-	x0 = floorf(data->redraw.x * 2 * g->bw->scale);
-	y0 = -ceilf((data->redraw.y + data->redraw.height) * 2 * g->bw->scale);
-	x1 = ceilf((data->redraw.x + data->redraw.width) * 2 * g->bw->scale) + 1;
-	y1 = -floorf(data->redraw.y * 2 * g->bw->scale) + 1;
+	x0 = floorf(rect->x0 * 2 * g->bw->scale);
+	y0 = -ceilf(rect->y1 * 2 * g->bw->scale);
+	x1 = ceilf(rect->x1 * 2 * g->bw->scale) + 1;
+	y1 = -floorf(rect->y0 * 2 * g->bw->scale) + 1;
 	use_buffer =
 		(g->option.buffer_everything || g->option.buffer_animations);
 
