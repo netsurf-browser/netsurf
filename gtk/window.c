@@ -840,8 +840,7 @@ void gui_window_redraw_window(struct gui_window *g)
 	gtk_widget_queue_draw(GTK_WIDGET(g->layout));
 }
 
-void gui_window_update_box(struct gui_window *g,
-			   const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	int sx, sy;
 	hlcache_handle *c = g->bw->current_content;
@@ -852,10 +851,10 @@ void gui_window_update_box(struct gui_window *g,
 	gui_window_get_scroll(g, &sx, &sy);
 
 	gtk_widget_queue_draw_area(GTK_WIDGET(g->layout),
-				   data->redraw.x * g->bw->scale - sx,
-				   data->redraw.y * g->bw->scale - sy,
-				   data->redraw.width * g->bw->scale,
-				   data->redraw.height * g->bw->scale);
+				   rect->x0 * g->bw->scale - sx,
+				   rect->y0 * g->bw->scale - sy,
+				   (rect->x1 - rect->x0) * g->bw->scale,
+				   (rect->y1 - rect->y0) * g->bw->scale);
 }
 
 void gui_window_set_status(struct gui_window *g, const char *text)
