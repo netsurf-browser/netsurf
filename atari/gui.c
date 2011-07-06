@@ -328,6 +328,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
  */
 void gui_window_set_status(struct gui_window *w, const char *text)
 {
+
 	if (w == NULL || text == NULL )
 		return;
 	window_set_stauts( w , (char*)text );
@@ -344,8 +345,7 @@ void gui_window_redraw_window(struct gui_window *gw)
 	browser_schedule_redraw( gw, 0, 0, rect.g_w, rect.g_h );
 }
 
-void gui_window_update_box(struct gui_window *gw,
-			   const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
 	LGRECT work;
 	CMP_BROWSER b;
@@ -353,11 +353,11 @@ void gui_window_update_box(struct gui_window *gw,
 		return;
 	b = gw->browser;
 	/* the box values are actually floats */
-	int x0 = data->redraw.x - b->scroll.current.x;
-	int y0 = data->redraw.y - b->scroll.current.y;
+	int x0 = rect->x0 - b->scroll.current.x;
+	int y0 = rect->y0 - b->scroll.current.y;
 	int w,h;
-	w = data->redraw.width;
-	h = data->redraw.height;
+	w = rect->x1 - rect->x0;
+	h = rect->y1 - rect->y0;
  	browser_schedule_redraw_rect( gw, x0, y0, w,h);
 }
 
