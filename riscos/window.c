@@ -226,7 +226,6 @@ struct update_box {
 	int y1;
 	bool use_buffer;
 	struct gui_window *g;
-	union content_msg_data data;
 	struct update_box *next;
 };
 
@@ -800,7 +799,6 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 	pending_updates = cur;
 	cur->g = g;
 	cur->use_buffer = use_buffer;
-	cur->data = *data;
 }
 
 
@@ -4318,7 +4316,6 @@ void ro_gui_window_update_boxes(void)
 	os_error *error;
 	struct update_box *cur;
 	struct gui_window *g;
-	const union content_msg_data *data;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.plot = &ro_plotters
@@ -4329,7 +4326,6 @@ void ro_gui_window_update_boxes(void)
 		if (!g)
 			continue;
 
-		data = &cur->data;
 		use_buffer = cur->use_buffer;
 
 		update.w = g->window;
