@@ -1179,22 +1179,11 @@ void browser_window_place_caret(struct browser_window *bw,
 	int pos_y = 0;
 
 	/* Find top level browser window */
-	root_bw = bw;
-	while (root_bw && !root_bw->window && root_bw->parent) {
-		switch (root_bw->browser_window_type) {
-			default:
-				/* TODO: Frame(set)s */
-			case BROWSER_WINDOW_NORMAL:
-				break;
-			case BROWSER_WINDOW_IFRAME:
-				box_coords(root_bw->box, &pos_x, &pos_y);
-				x += pos_x;
-				y += pos_y;
-				break;
-		}
+	root_bw = browser_window_get_root(bw);
+	browser_window_get_position(bw, true, &pos_x, &pos_y);
 
-		root_bw = root_bw->parent;
-	}
+	x = x * bw->scale + pos_x;
+	y = y * bw->scale + pos_y;
 
 	gui_window_place_caret(root_bw->window, x, y, height);
 	bw->caret_callback = caret_cb;
