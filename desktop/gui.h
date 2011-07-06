@@ -82,7 +82,7 @@ void gui_window_destroy(struct gui_window *g);
 void gui_window_set_title(struct gui_window *g, const char *title);
 void gui_window_redraw_window(struct gui_window *g);
 void gui_window_update_box(struct gui_window *g,
-		const union content_msg_data *data);
+		const struct rect *rect);
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
