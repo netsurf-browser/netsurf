@@ -134,12 +134,11 @@ void gui_window_redraw_window(struct gui_window *g)
 	[[(BrowserViewController *)g browserView] setNeedsDisplay: YES];
 }
 
-void gui_window_update_box(struct gui_window *g,
-						   const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	const NSRect rect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
-											 data->redraw.object_x, data->redraw.object_y, 
-											 data->redraw.object_width, data->redraw.object_height );
+											 rect->x0, rect->y0, 
+											 rect->x1 - rect->x0, rect->y1 - rect->y0 );
 	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
 }
 
