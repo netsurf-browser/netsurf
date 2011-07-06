@@ -889,7 +889,15 @@ nserror browser_window_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_REDRAW:
-		browser_window_update_box(bw, &event->data);
+	{
+		struct rect rect = {
+			.x0 = event->data.redraw.x,
+			.y0 = event->data.redraw.y,
+			.x1 = event->data.redraw.x + event->data.redraw.width,
+			.y1 = event->data.redraw.y + event->data.redraw.height
+		};
+		browser_window_update_box(bw, &rect);
+	}
 		break;
 
 	case CONTENT_MSG_REFRESH:
@@ -1179,25 +1187,18 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 }
 
 
-void browser_window_update_box(struct browser_window *bw,
-		const union content_msg_data *data)
+void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 {
 	int pos_x;
 	int pos_y;
-	struct rect rect;
 	struct browser_window *top;
-
-	rect.x0 = data->redraw.x;
-	rect.y0 = data->redraw.y;
-	rect.x1 = data->redraw.x + data->redraw.width;
-	rect.y1 = data->redraw.y + data->redraw.height;
 
 	switch (bw->browser_window_type) {
 	default:
 		/* fall through for frame(set)s,
 		 * until they are handled by core */
 	case BROWSER_WINDOW_NORMAL:
-		gui_window_update_box(bw->window, &rect);
+		gui_window_update_box(bw->window, rect);
 		break;
 
 	case BROWSER_WINDOW_IFRAME:
@@ -1205,12 +1206,12 @@ void browser_window_update_box(struct browser_window *bw,
 
 		top = browser_window_get_root(bw);
 
-		rect.x0 += pos_x / bw->scale;
-		rect.y0 += pos_y / bw->scale;
-		rect.x1 += pos_x / bw->scale;
-		rect.y1 += pos_y / bw->scale;
+		rect->x0 += pos_x / bw->scale;
+		rect->y0 += pos_y / bw->scale;
+		rect->x1 += pos_x / bw->scale;
+		rect->y1 += pos_y / bw->scale;
 
-		gui_window_update_box(top->window, &rect);
+		gui_window_update_box(top->window, rect);
 		break;
 	}
 }

@@ -222,8 +222,7 @@ void browser_window_set_dimensions(struct browser_window *bw,
 void browser_window_download(struct browser_window *bw,
 		const char *url, const char *referrer);
 void browser_window_update(struct browser_window *bw, bool scroll_to_top);
-void browser_window_update_box(struct browser_window *bw,
-		const union content_msg_data *data);
+void browser_window_update_box(struct browser_window *bw, struct rect *rect);
 void browser_window_stop(struct browser_window *bw);
 void browser_window_reload(struct browser_window *bw, bool all);
 void browser_window_destroy(struct browser_window *bw);
