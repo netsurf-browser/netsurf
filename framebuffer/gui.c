@@ -1320,16 +1320,14 @@ gui_window_redraw_window(struct gui_window *g)
 }
 
 void
-gui_window_update_box(struct gui_window *g, const union content_msg_data *data)
+gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
 	fb_queue_redraw(g->browser,
-			data->redraw.x - bwidget->scrollx,
-			data->redraw.y - bwidget->scrolly,
-			data->redraw.x - bwidget->scrollx +
-			data->redraw.width,
-			data->redraw.y - bwidget->scrolly +
-			data->redraw.height);
+			rect->x0 - bwidget->scrollx,
+			rect->y0 - bwidget->scrolly,
+			rect->x1 - bwidget->scrollx,
+			rect->y1 - bwidget->scrolly);
 }
 
 bool
