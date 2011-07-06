@@ -3303,17 +3303,15 @@ void gui_window_redraw_window(struct gui_window *g)
 		g->shared->redraw_required = true;
 }
 
-void gui_window_update_box(struct gui_window *g,
-		const union content_msg_data *data)
+void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
 	ULONG sx,sy;
 
 	if(!g) return;
 
 	ami_do_redraw_limits(g, g->shared->bw,
-			data->redraw.x,data->redraw.y,
-			data->redraw.width+data->redraw.x,
-			data->redraw.height+data->redraw.y);
+			rect->x0, rect->y0,
+			rect->x1, rect->y1);
 }
 
 void ami_do_redraw(struct gui_window_2 *g)
