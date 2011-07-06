@@ -179,12 +179,11 @@ gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 }
 
 void
-gui_window_update_box(struct gui_window *g,
-                      const union content_msg_data *data)
+gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
   fprintf(stdout, "WINDOW UPDATE_BOX WIN %u X %d Y %d WIDTH %d HEIGHT %d\n",
-          g->win_num, data->redraw.x, data->redraw.y,
-          data->redraw.width, data->redraw.height);
+          g->win_num, rect->x0, rect->y0,
+          (rect->x1 - rect->x0), (rect->y1 - rect->y0));
   
 }
 
