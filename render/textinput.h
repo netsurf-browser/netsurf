@@ -28,26 +28,8 @@
 
 #include <stdbool.h>
 
-
-struct browser_window;
 struct box;
 struct content;
-
-
-struct caret
-{
-	bool defined;
-
-	struct browser_window *bw;
-
-	struct box *text_box;
-	size_t	char_offset;
-
-	/* document co-ordinates of bottom left of caret */
-	int	x;
-	int	y;
-	int	height;
-};
 
 
 void textinput_textarea_click(struct content *c, browser_mouse_state mouse,
