@@ -88,7 +88,7 @@ static void nspng_warning(png_structp png_ptr, png_const_charp warning_message)
 static void nspng_error(png_structp png_ptr, png_const_charp error_message)
 {
 	LOG(("%s", error_message));
-	longjmp(png_ptr->jmpbuf, 1);
+	longjmp(png_jmpbuf(png_ptr), 1);
 }
 
 /**
