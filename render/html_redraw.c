@@ -47,7 +47,6 @@
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
-#include "render/textinput.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
