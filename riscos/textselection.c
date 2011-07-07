@@ -552,10 +552,6 @@ void ro_gui_selection_dragging(wimp_message *message)
 	g = ro_gui_window_lookup(drag->w);
 
 	if ((drag->flags & wimp_DRAGGING_TERMINATE_DRAG) || !g) {
-		if (drag_claimed) {
-			/* make sure that we erase the ghost caret */
-			caret_remove(&ghost_caret);
-		}
 
 		drag_claimed = false;
 		return;
@@ -587,29 +583,12 @@ void ro_gui_selection_dragging(wimp_message *message)
 	}
 
 	if (textarea) {
-		struct box *text_box = NULL;
-		int pixel_offset;
-		int char_offset;
-
 		/* draw/move the ghost caret */
-		if (drag_claimed)
-			caret_remove(&ghost_caret);
-		else
+		if (!drag_claimed)
 			gui_window_set_pointer(g, GUI_POINTER_CARET);
-
-		text_box = textarea_get_position(textarea, pos.x - gadget_box_x,
-					pos.y - gadget_box_y,
-					&char_offset, &pixel_offset);
-
-		caret_set_position(&ghost_caret, bw, text_box,
-				char_offset, pixel_offset);
 
 		drag_claimed = true;
 	} else {
-		if (drag_claimed) {
-			/* make sure that we erase the ghost caret */
-			caret_remove(&ghost_caret);
-		}
 		drag_claimed = false;
 	}
 
@@ -645,7 +624,6 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 void ro_gui_selection_drag_reset(void)
 {
-	caret_remove(&ghost_caret);
 	drag_claimed = false;
 }
 
