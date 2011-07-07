@@ -880,7 +880,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		}
 
 		if (bw->move_callback)
-			bw->move_callback(bw, bw->caret_p);
+			bw->move_callback(bw, bw->caret_p1, bw->caret_p2);
 
 		if (!(event->data.background)) {
 			/* Reformatted content should be redrawn */

@@ -39,6 +39,7 @@
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"
+#include "render/textinput.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 
@@ -379,7 +380,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						gadget_box)
 					selection_init(bw->sel, gadget_box);
 
-				browser_window_textarea_click(bw,
+				textinput_textarea_click(c,
 						mouse,
 						gadget_box,
 						gadget_box_x,
@@ -422,7 +423,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
 					BROWSER_MOUSE_MOD_2))) {
-				browser_window_input_click(bw,
+				textinput_input_click(c,
 						gadget_box,
 						gadget_box_x,
 						gadget_box_y,

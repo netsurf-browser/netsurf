@@ -47,12 +47,13 @@ struct bitmap;
 struct scroll_msg_data;
 struct fetch_multipart_data;
 
-typedef bool (*browser_caret_callback)(struct browser_window *bw,
-		uint32_t key, void *p);
-typedef bool (*browser_paste_callback)(struct browser_window *bw,
-		const char *utf8, unsigned utf8_len, bool last, void *p);
+typedef bool (*browser_caret_callback)(struct browser_window *bw, uint32_t key,
+		void *p1, void *p2);
 typedef void (*browser_move_callback)(struct browser_window *bw,
-		void *p);
+		void *p1, void *p2);
+typedef bool (*browser_paste_callback)(struct browser_window *bw,
+		const char *utf8, unsigned utf8_len, bool last,
+		void *p1, void *p2);
 
 
 typedef enum {
@@ -87,8 +88,10 @@ struct browser_window {
 	/** Handler for repositioning caret, or 0. */
 	browser_move_callback move_callback;
 
-	/** User parameter for caret_callback and paste_callback */
-	void *caret_p;
+	/** User parameters for caret_callback, paste_callback, and
+	 *  move_callback */
+	void *caret_p1;
+	void *caret_p2;
 
 	/** Platform specific window data. */
 	struct gui_window *window;
@@ -242,9 +245,6 @@ struct browser_window *browser_window_find_target(
 		struct browser_window *bw, const char *target,
 		browser_mouse_state mouse);
 
-bool browser_window_key_press(struct browser_window *bw, uint32_t key);
-bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
-		unsigned utf8_len, bool last);
 void browser_redraw_box(struct hlcache_handle *c, struct box *box);
 
 void browser_select_menu_callback(void *client_data,
@@ -262,6 +262,20 @@ bool browser_window_back_available(struct browser_window *bw);
 bool browser_window_forward_available(struct browser_window *bw);
 bool browser_window_reload_available(struct browser_window *bw);
 bool browser_window_stop_available(struct browser_window *bw);
+
+
+/* In desktop/textinput.c */
+void browser_window_place_caret(struct browser_window *bw,
+		int x, int y, int height,
+		browser_caret_callback caret_cb,
+		browser_paste_callback paste_cb,
+		browser_move_callback move_cb,
+		void *p1, void *p2);
+void browser_window_remove_caret(struct browser_window *bw);
+bool browser_window_key_press(struct browser_window *bw, uint32_t key);
+bool browser_window_paste_text(struct browser_window *bw, const char *utf8,
+		unsigned utf8_len, bool last);
+
 
 /**
  * Redraw an area of a window

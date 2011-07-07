@@ -102,6 +102,8 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 
 void html_set_status(html_content *c, const char *extra);
 
+void html__redraw_a_box(struct content *c, struct box *box);
+
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);

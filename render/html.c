@@ -1768,6 +1768,25 @@ void html_redraw_a_box(hlcache_handle *h, struct box *box)
 
 
 /**
+ * Redraw a box.
+ *
+ * \param  h	content containing the box, of type CONTENT_HTML
+ * \param  box  box to redraw
+ */
+
+void html__redraw_a_box(struct content *c, struct box *box)
+{
+	int x, y;
+
+	box_coords(box, &x, &y);
+
+	content__request_redraw(c, x, y,
+			box->padding[LEFT] + box->width + box->padding[RIGHT],
+			box->padding[TOP] + box->height + box->padding[BOTTOM]);
+}
+
+
+/**
  * Destroy a CONTENT_HTML and free all resources it owns.
  */
 
