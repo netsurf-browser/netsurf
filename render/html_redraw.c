@@ -65,9 +65,6 @@ static bool html_redraw_text_box(struct box *box, int x, int y,
 		const struct rect *clip, float scale,
 		colour current_background_color,
 		const struct redraw_context *ctx);
-static bool html_redraw_caret(struct caret *caret,
-		colour current_background_color, float scale,
-		const struct redraw_context *ctx);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
 		int p_width, int p_height, const struct rect *clip,
 		float scale, const struct redraw_context *ctx);
@@ -838,19 +835,12 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 			clip, box->height, scale, excluded, ctx))
 		return false;
 
-	/* does this textbox contain the ghost caret? */
-	if (ghost_caret.defined && box == ghost_caret.text_box) {
-
-		if (!html_redraw_caret(&ghost_caret, current_background_color,
-				scale, ctx))
-			return false;
-	}
 	return true;
 }
 
 /**
  * Redraw a short text string, complete with highlighting
- * (for selection/search) and ghost caret
+ * (for selection/search)
  *
  * \param  utf8_text  pointer to UTF-8 text string
  * \param  utf8_len   length of string, in bytes
@@ -1022,36 +1012,6 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 			return false;
 	}
 	return true;
-}
-
-
-/**
- * Draw text caret.
- *
- * \param  c	  structure describing text caret
- * \param  current_background_color	background colour under the caret
- * \param  scale  current scale setting (1.0 = 100%)
- * \param  ctx	  current redraw context
- * \return true iff successful and redraw should proceed
- */
-
-bool html_redraw_caret(struct caret *c, colour current_background_color,
-		float scale, const struct redraw_context *ctx)
-{
-	const struct plotter_table *plot = ctx->plot;
-	int xc = c->x, y = c->y;
-	int h = c->height - 1;
-	int w = (h + 7) / 8;
-
-	return (plot->line(xc * scale, y * scale,
-				xc * scale, (y + h) * scale,
-				plot_style_caret) &&
-			plot->line((xc - w) * scale, y * scale,
-				(xc + w) * scale, y * scale,
-				plot_style_caret) &&
-			plot->line((xc - w) * scale, (y + h) * scale,
-				(xc + w) * scale, (y + h) * scale,
-				plot_style_caret));
 }
 
 

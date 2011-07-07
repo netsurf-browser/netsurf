@@ -48,10 +48,6 @@
 /* Define to enable textinput debug */
 #undef TEXTINPUT_DEBUG
 
-/** ghost caret used to indicate the insertion point when dragging text
-    into a textarea/input field */
-struct caret ghost_caret;
-
 
 static bool textbox_delete(struct browser_window *bw, struct box *text_box,
 		unsigned char_offset, unsigned utf8_len);
@@ -76,59 +72,6 @@ static bool textinput_input_paste_text(struct browser_window *bw,
 
 #define SPACE_LEN(b) ((b->space == 0) ? 0 : 1)
 
-/**
- * Remove the given text caret from the window by invalidating it
- * and causing its former position to be redrawn.
- *
- * \param c  structure describing text caret
- */
-
-void caret_remove(struct caret *c)
-{
-	if (c->defined) {
-		int w = (c->height + 7) / 8;
-		int xc = c->x;
-		c->defined = false;
-		browser_window_redraw_rect(c->bw,
-				xc - w, c->y, 2 * w, c->height);
-	}
-}
-
-
-/**
- * Set the given text caret's position within the window (text box
- * and byte/pixel offsets within the UTF-8 content of that text box)
- * and draw it.
- *
- * \param  c    structure describing text caret
- * \param  bw   browser window containing caret
- * \param  box  TEXT box containing caret
- * \param  char_offset   byte offset within UTF-8 representation
- * \param  pixel_offset  from left side of box
- */
-
-void caret_set_position(struct caret *c, struct browser_window *bw,
-		struct box *text_box, int char_offset, int pixel_offset)
-{
-	struct rect r;
-	int xc;
-	int w;
-
-	box_bounds(text_box, &r);
-
-	c->bw = bw;
-	c->text_box = text_box;
-	c->char_offset = char_offset;
-
-	c->x = xc = r.x0 + pixel_offset;
-	c->y = r.y0;
-	c->height = r.y1 - r.y0;
-	w = (c->height + 7) / 8;
-
-	c->defined = true;
-
-	browser_window_redraw_rect(c->bw, xc - w, c->y, w * 2, c->height);
-}
 
 
 /**
@@ -145,7 +88,7 @@ void caret_set_position(struct caret *c, struct browser_window *bw,
  * \return pointer to TEXT box
  */
 
-struct box *textarea_get_position(struct box *textarea, int x, int y,
+static struct box *textarea_get_position(struct box *textarea, int x, int y,
 		int *pchar_offset, int *ppixel_offset)
 {
 	/* A textarea is an INLINE_BLOCK containing a single

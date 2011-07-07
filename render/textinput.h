@@ -31,7 +31,6 @@
 
 struct browser_window;
 struct box;
-struct content;
 
 
 struct caret
@@ -39,7 +38,6 @@ struct caret
 	bool defined;
 
 	struct browser_window *bw;
-	struct content *c;
 
 	struct box *text_box;
 	size_t	char_offset;
@@ -49,21 +47,6 @@ struct caret
 	int	y;
 	int	height;
 };
-
-
-/** There's a single ghost caret used to implement
- *  drag-and-drop of text into text areas and input fields.
- */
-
-extern struct caret ghost_caret;
-
-
-void caret_set_position(struct caret *c, struct browser_window *bw,
-		struct box *text_box, int char_offset, int pixel_offset);
-void caret_remove(struct caret *c);
-
-struct box *textarea_get_position(struct box *textarea, int x, int y,
-		int *pchar_offset, int *ppixel_offset);
 
 
 void textinput_textarea_click(struct content *c, browser_mouse_state mouse,
