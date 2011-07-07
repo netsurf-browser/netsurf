@@ -31,6 +31,7 @@
 
 struct browser_window;
 struct box;
+struct content;
 
 
 struct caret
