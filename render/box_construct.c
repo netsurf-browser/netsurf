@@ -1257,17 +1257,44 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * (classid || !classid) && data => data is used (consult type)
 	 * !classid && !data => invalid; ignored */
 
-	if (params->classid && !params->data && params->codetype &&
-			content_factory_type_from_mime_type(params->codetype) ==
-			CONTENT_NONE)
-		/* can't handle this MIME type */
-		return true;
+	if (params->classid != NULL && params->data == NULL && 
+			params->codetype != NULL) {
+		lwc_string *icodetype;
+		lwc_error lerror;
 
-	if (params->data && params->type &&
-			content_factory_type_from_mime_type(params->type) == 
-			CONTENT_NONE)
-		/* can't handle this MIME type */
-		return true;
+		lerror = lwc_intern_string(params->codetype, 
+				strlen(params->codetype), &icodetype);
+		if (lerror != lwc_error_ok)
+			return false;
+
+		if (content_factory_type_from_mime_type(icodetype) ==
+				CONTENT_NONE) {
+			/* can't handle this MIME type */
+			lwc_string_unref(icodetype);
+			return true;
+		}
+
+		lwc_string_unref(icodetype);
+	}
+
+	if (params->data != NULL && params->type != NULL) {
+		lwc_string *itype;
+		lwc_error lerror;
+
+		lerror = lwc_intern_string(params->type, strlen(params->type),
+				&itype);
+		if (lerror != lwc_error_ok)
+			return false;
+
+		if (content_factory_type_from_mime_type(itype) == 
+				CONTENT_NONE) {
+			/* can't handle this MIME type */
+			lwc_string_unref(itype);
+			return true;
+		}
+
+		lwc_string_unref(itype);
+	}
 
 	/* add parameters to linked list */
 	for (c = n->children; c; c = c->next) {

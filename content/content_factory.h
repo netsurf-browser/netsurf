@@ -39,6 +39,6 @@ nserror content_factory_register_handler(lwc_string *mime_type,
 struct content *content_factory_create_content(struct llcache_handle *llcache, 
 		const char *fallback_charset, bool quirks);
 
-content_type content_factory_type_from_mime_type(const char *mime_type);
+content_type content_factory_type_from_mime_type(lwc_string *mime_type);
 
 #endif

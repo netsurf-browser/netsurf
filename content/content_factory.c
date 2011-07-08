@@ -128,23 +128,15 @@ static const content_handler *content_lookup(lwc_string *mime_type)
  * \param mime_type  MIME type to consider
  * \return Generic content type
  */
-content_type content_factory_type_from_mime_type(const char *mime_type)
+content_type content_factory_type_from_mime_type(lwc_string *mime_type)
 {
 	const content_handler *handler;
-	lwc_string *imime_type;
-	lwc_error lerror;
 	content_type type = CONTENT_NONE;
 
-	lerror = lwc_intern_string(mime_type, strlen(mime_type), &imime_type);
-	if (lerror != lwc_error_ok)
-		return CONTENT_NONE;
-
-	handler = content_lookup(imime_type);
+	handler = content_lookup(mime_type);
 	if (handler != NULL) {
-		type = handler->type(imime_type);
+		type = handler->type(mime_type);
 	}
-
-	lwc_string_unref(imime_type);
 
 	return type;
 }
@@ -163,10 +155,7 @@ struct content *content_factory_create_content(llcache_handle *llcache,
 	struct content *c;
 	const char *content_type_header;
 	const content_handler *handler;
-	char *mime_type;
-	http_parameter *params;
-	lwc_string *imime_type;
-	lwc_error lerr;
+	http_content_type *ct;
 	nserror error;
 
 	content_type_header = 
@@ -174,39 +163,26 @@ struct content *content_factory_create_content(llcache_handle *llcache,
 	if (content_type_header == NULL)
 		content_type_header = "text/plain";
 
-	error = http_parse_content_type(content_type_header, &mime_type,
-			&params);
+	error = http_parse_content_type(content_type_header, &ct);
 	if (error != NSERROR_OK)
 		return NULL;
 
-	lerr = lwc_intern_string(mime_type, strlen(mime_type), &imime_type);
-	if (lerr != lwc_error_ok) {
-		http_parameter_list_destroy(params);
-		free(mime_type);
-		return NULL;
-	}
-
-	free(mime_type);
-
-	handler = content_lookup(imime_type);
+	handler = content_lookup(ct->media_type);
 	if (handler == NULL) {
-		lwc_string_unref(imime_type);
-		http_parameter_list_destroy(params);
+		http_content_type_destroy(ct);
 		return NULL;
 	}
 
 	assert(handler->create != NULL);
 
-	error = handler->create(handler, imime_type, params, llcache, 
-			fallback_charset, quirks, &c);
+	error = handler->create(handler, ct->media_type, ct->parameters, 
+			llcache, fallback_charset, quirks, &c);
 	if (error != NSERROR_OK) {
-		lwc_string_unref(imime_type);
-		http_parameter_list_destroy(params);
+		http_content_type_destroy(ct);
 		return NULL;
 	}
 
-	lwc_string_unref(imime_type);
-	http_parameter_list_destroy(params);
+	http_content_type_destroy(ct);
 
 	return c;
 }

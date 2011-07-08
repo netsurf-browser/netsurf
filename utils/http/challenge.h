@@ -16,20 +16,32 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * HTTP header parsing functions
- */
-
-#ifndef NETSURF_UTILS_HTTP_H_
-#define NETSURF_UTILS_HTTP_H_
+#ifndef NETSURF_UTILS_HTTP_CHALLENGE_H_
+#define NETSURF_UTILS_HTTP_CHALLENGE_H_
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/errors.h"
+#include "utils/http/parameter.h"
 
-#include "utils/http/content-disposition.h"
-#include "utils/http/content-type.h"
-#include "utils/http/www-authenticate.h"
+typedef struct http_challenge http_challenge;
+
+/**
+ * Iterate over a challenge list
+ *
+ * \param cur         Pointer to current iteration position, list head to start
+ * \param scheme      Pointer to location to receive challenge scheme
+ * \param parameters  Pointer to location to receive challenge parameters
+ * \return Pointer to next iteration position, or NULL for end of iteration
+ */
+const http_challenge *http_challenge_list_iterate(const http_challenge *cur,
+		lwc_string **scheme, http_parameter **parameters);
+
+/**
+ * Destroy a list of HTTP challenges
+ *
+ * \param list  List to destroy
+ */
+void http_challenge_list_destroy(http_challenge *list);
 
 #endif
 

@@ -138,12 +138,19 @@ static const char *html_types[] = {
 };
 
 static lwc_string *html_mime_types[NOF_ELEMENTS(html_types)];
+static lwc_string *html_charset;
 
 nserror html_init(void)
 {
 	uint32_t i;
 	lwc_error lerror;
 	nserror error;
+
+	lerror = lwc_intern_string("charset", SLEN("charset"), &html_charset);
+	if (lerror != lwc_error_ok) {
+		error = NSERROR_NOMEM;
+		goto error;
+	}
 
 	for (i = 0; i < NOF_ELEMENTS(html_mime_types); i++) {
 		lerror = lwc_intern_string(html_types[i],
@@ -176,6 +183,9 @@ void html_fini(void)
 		if (html_mime_types[i] != NULL)
 			lwc_string_unref(html_mime_types[i]);
 	}
+
+	if (html_charset != NULL)
+		lwc_string_unref(html_charset);
 }
 
 /**
@@ -217,7 +227,7 @@ nserror html_create(const content_handler *handler,
 
 nserror html_create_html_data(html_content *c, const http_parameter *params)
 {
-	const char *charset;
+	lwc_string *charset;
 	union content_msg_data msg_data;
 	binding_error error;
 	nserror nerror;
@@ -245,10 +255,13 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
 
-	nerror = http_parameter_list_find_item(params, "charset", &charset);
+	nerror = http_parameter_list_find_item(params, html_charset, &charset);
 	if (nerror == NSERROR_OK) {
-		c->encoding = talloc_strdup(c, charset);
-		if (!c->encoding) {
+		c->encoding = talloc_strdup(c, lwc_string_data(charset));
+
+		lwc_string_unref(charset);
+
+		if (c->encoding == NULL) {
 			error = BINDING_NOMEM;
 			goto error;
 		}

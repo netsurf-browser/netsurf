@@ -16,20 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * HTTP header parsing functions
- */
-
-#ifndef NETSURF_UTILS_HTTP_H_
-#define NETSURF_UTILS_HTTP_H_
+#ifndef NETSURF_UTILS_HTTP_PRIMITIVES_H_
+#define NETSURF_UTILS_HTTP_PRIMITIVES_H_
 
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/errors.h"
 
-#include "utils/http/content-disposition.h"
-#include "utils/http/content-type.h"
-#include "utils/http/www-authenticate.h"
+void http__skip_LWS(const char **input);
+
+nserror http__parse_token(const char **input, lwc_string **value);
+
+nserror http__parse_quoted_string(const char **input, lwc_string **value);
 
 #endif
-

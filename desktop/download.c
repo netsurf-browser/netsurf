@@ -28,6 +28,7 @@
 #include "desktop/gui.h"
 #include "utils/http.h"
 #include "utils/url.h"
+#include "utils/utils.h"
 
 /**
  * A context for a download
@@ -36,7 +37,7 @@ struct download_context {
 	llcache_handle *llcache;		/**< Low-level cache handle */
 	struct gui_window *parent;		/**< Parent window */
 
-	char *mime_type;			/**< MIME type of download */
+	lwc_string *mime_type;			/**< MIME type of download */
 	unsigned long total_length;		/**< Length of data, in bytes */
 	char *filename;				/**< Suggested filename */
 
@@ -87,8 +88,7 @@ static char *download_default_filename(const char *url)
 static nserror download_context_process_headers(download_context *ctx)
 {
 	const char *http_header;
-	char *mime_type;
-	http_parameter *params;
+	http_content_type *content_type;
 	unsigned long length;
 	nserror error;
 
@@ -97,12 +97,9 @@ static nserror download_context_process_headers(download_context *ctx)
 	if (http_header == NULL)
 		http_header = "text/plain";
 
-	error = http_parse_content_type(http_header, &mime_type, &params);
+	error = http_parse_content_type(http_header, &content_type);
 	if (error != NSERROR_OK)
 		return error;
-
-	/* Don't care about parameters */
-	http_parameter_list_destroy(params);
 
 	/* Retrieve and parse Content-Length */
 	http_header = llcache_handle_get_header(ctx->llcache, "Content-Length");
@@ -115,35 +112,46 @@ static nserror download_context_process_headers(download_context *ctx)
 	http_header = llcache_handle_get_header(ctx->llcache, 
 			"Content-Disposition");
 	if (http_header != NULL) {
-		const char *filename;
-		char *disposition;
+		lwc_string *filename;
+		lwc_string *filename_value;
+		http_content_disposition *disposition;
+
+		if (lwc_intern_string("filename", SLEN("filename"),
+				&filename) != lwc_error_ok) {
+			http_content_type_destroy(content_type);
+			return NSERROR_NOMEM;
+		}
 
 		error = http_parse_content_disposition(http_header, 
-				&disposition, &params);
+				&disposition);
 		if (error != NSERROR_OK) {
-			free(mime_type);
+			lwc_string_unref(filename);
+			http_content_type_destroy(content_type);
 			return error;
 		}
 
-		free(disposition);
-
-		error = http_parameter_list_find_item(params, 
-				"filename", &filename);
+		error = http_parameter_list_find_item(disposition->parameters, 
+				filename, &filename_value);
 		if (error == NSERROR_OK)
-			ctx->filename = download_parse_filename(filename);
+			ctx->filename = download_parse_filename(
+					lwc_string_data(filename_value));
 
-		http_parameter_list_destroy(params);
+		http_content_disposition_destroy(disposition);
+		lwc_string_unref(filename_value);
+		lwc_string_unref(filename);
 	}
 
-	ctx->mime_type = mime_type;
+	ctx->mime_type = lwc_string_ref(content_type->media_type);
 	ctx->total_length = length;
 	if (ctx->filename == NULL) {
 		ctx->filename = download_default_filename(
 				llcache_handle_get_url(ctx->llcache));
 	}
 
+	http_content_type_destroy(content_type);
+
 	if (ctx->filename == NULL) {
-		free(ctx->mime_type);
+		lwc_string_unref(ctx->mime_type);
 		ctx->mime_type = NULL;
 		return NSERROR_NOMEM;
 	}
@@ -152,9 +160,7 @@ static nserror download_context_process_headers(download_context *ctx)
 	ctx->window = gui_download_window_create(ctx, ctx->parent);
 	if (ctx->window == NULL) {
 		free(ctx->filename);
-		ctx->filename = NULL;
-		free(ctx->mime_type);
-		ctx->mime_type = NULL;
+		lwc_string_unref(ctx->mime_type);
 		return NSERROR_NOMEM;
 	}
 
@@ -259,7 +265,7 @@ void download_context_destroy(download_context *ctx)
 {
 	llcache_handle_release(ctx->llcache);
 
-	free(ctx->mime_type);
+	lwc_string_unref(ctx->mime_type);
 
 	free(ctx->filename);
 
@@ -283,7 +289,7 @@ const char *download_context_get_url(const download_context *ctx)
 /* See download.h for documentation */
 const char *download_context_get_mime_type(const download_context *ctx)
 {
-	return ctx->mime_type;
+	return lwc_string_data(ctx->mime_type);
 }
 
 /* See download.h for documentation */

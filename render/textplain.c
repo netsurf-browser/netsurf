@@ -58,7 +58,7 @@ struct textplain_line {
 typedef struct textplain_content {
 	struct content base;
 
-	char *encoding;
+	lwc_string *encoding;
 	void *inputstream;
 	char *utf8_data;
 	size_t utf8_data_size;
@@ -93,7 +93,7 @@ static nserror textplain_create(const content_handler *handler,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static nserror textplain_create_internal(textplain_content *c, 
-		const char *charset);
+		lwc_string *charset);
 static bool textplain_process_data(struct content *c, 
 		const char *data, unsigned int size);
 static bool textplain_convert(struct content *c);
@@ -140,6 +140,8 @@ static const content_handler textplain_content_handler = {
 };
 
 static lwc_string *textplain_mime_type;
+static lwc_string *textplain_charset;
+static lwc_string *textplain_default_charset;
 
 /**
  * Initialise the text content handler
@@ -154,10 +156,28 @@ nserror textplain_init(void)
 	if (lerror != lwc_error_ok)
 		return NSERROR_NOMEM;
 
+	lerror = lwc_intern_string("charset", SLEN("charset"),
+			&textplain_charset);
+	if (lerror != lwc_error_ok) {
+		lwc_string_unref(textplain_mime_type);
+		return NSERROR_NOMEM;
+	}
+
+	lerror = lwc_intern_string("Windows-1252", SLEN("Windows-1252"),
+			&textplain_default_charset);
+	if (lerror != lwc_error_ok) {
+		lwc_string_unref(textplain_charset);
+		lwc_string_unref(textplain_mime_type);
+		return NSERROR_NOMEM;
+	}
+
 	error = content_factory_register_handler(textplain_mime_type, 
 			&textplain_content_handler);
-	if (error != NSERROR_OK)
+	if (error != NSERROR_OK) {
+		lwc_string_unref(textplain_default_charset);
+		lwc_string_unref(textplain_charset);
 		lwc_string_unref(textplain_mime_type);
+	}
 
 	return error;
 }
@@ -167,6 +187,8 @@ nserror textplain_init(void)
  */
 void textplain_fini(void)
 {
+	lwc_string_unref(textplain_default_charset);
+	lwc_string_unref(textplain_charset);
 	lwc_string_unref(textplain_mime_type);
 }
 
@@ -181,7 +203,7 @@ nserror textplain_create(const content_handler *handler,
 {
 	textplain_content *text;
 	nserror error;
-	const char *encoding;
+	lwc_string *encoding;
 
 	text = talloc_zero(0, textplain_content);
 	if (text == NULL)
@@ -194,16 +216,20 @@ nserror textplain_create(const content_handler *handler,
 		return error;
 	}
 
-	error = http_parameter_list_find_item(params, "charset", &encoding);
+	error = http_parameter_list_find_item(params, textplain_charset, 
+			&encoding);
 	if (error != NSERROR_OK) {
-		encoding = "Windows-1252";
+		encoding = lwc_string_ref(textplain_default_charset);
 	}
 
 	error = textplain_create_internal(text, encoding);
 	if (error != NSERROR_OK) {
+		lwc_string_unref(encoding);
 		talloc_free(text);
 		return error;
 	}
+
+	lwc_string_unref(encoding);
 
 	*c = (struct content *) text;
 
@@ -226,7 +252,7 @@ parserutils_error textplain_charset_hack(const uint8_t *data, size_t len,
 	return PARSERUTILS_OK;
 } 
 
-nserror textplain_create_internal(textplain_content *c, const char *encoding)
+nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 {
 	char *utf8_data;
 	parserutils_inputstream *stream;
@@ -239,7 +265,7 @@ nserror textplain_create_internal(textplain_content *c, const char *encoding)
 	if (utf8_data == NULL)
 		goto no_memory;
 
-	error = parserutils_inputstream_create(encoding, 0, 
+	error = parserutils_inputstream_create(lwc_string_data(encoding), 0, 
 			textplain_charset_hack, ns_realloc, NULL, &stream);
 	if (error == PARSERUTILS_BADENCODING) {
 		/* Fall back to Windows-1252 */
@@ -252,13 +278,7 @@ nserror textplain_create_internal(textplain_content *c, const char *encoding)
 		goto no_memory;
 	}
 	
-	c->encoding = strdup(encoding);
-	if (c->encoding == NULL) {
-		talloc_free(utf8_data);
-		parserutils_inputstream_destroy(stream);
-		goto no_memory;
-	}
-		
+	c->encoding = lwc_string_ref(encoding);
 	c->inputstream = stream;
 	c->utf8_data = utf8_data;
 	c->utf8_data_size = 0;
@@ -527,8 +547,7 @@ void textplain_destroy(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
 
-	if (text->encoding != NULL)
-		free(text->encoding);
+	lwc_string_unref(text->encoding);
 
 	if (text->inputstream != NULL)
 		parserutils_inputstream_destroy(text->inputstream);

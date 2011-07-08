@@ -541,8 +541,7 @@ bool hlcache_type_is_acceptable(llcache_handle *llcache,
 		content_type accepted_types, content_type *computed_type)
 {
 	const char *content_type_header;
-	char *mime_type;
-	http_parameter *params;
+	http_content_type *ct;
 	content_type type;
 	nserror error;
 
@@ -551,15 +550,13 @@ bool hlcache_type_is_acceptable(llcache_handle *llcache,
 	if (content_type_header == NULL)
 		content_type_header = "text/plain";
 
-	error = http_parse_content_type(content_type_header, &mime_type, 
-			&params);
+	error = http_parse_content_type(content_type_header, &ct);
 	if (error != NSERROR_OK)
 		return false;
 
-	type = content_factory_type_from_mime_type(mime_type);
+	type = content_factory_type_from_mime_type(ct->media_type);
 
-	free(mime_type);
-	http_parameter_list_destroy(params);
+	http_content_type_destroy(ct);
 
 	*computed_type = type;
 

@@ -16,20 +16,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * HTTP header parsing functions
- */
-
-#ifndef NETSURF_UTILS_HTTP_H_
-#define NETSURF_UTILS_HTTP_H_
+#ifndef NETSURF_UTILS_HTTP_CONTENT_TYPE_H_
+#define NETSURF_UTILS_HTTP_CONTENT_TYPE_H_
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/errors.h"
+#include "utils/http/parameter.h"
 
-#include "utils/http/content-disposition.h"
-#include "utils/http/content-type.h"
-#include "utils/http/www-authenticate.h"
+typedef struct http_content_type {
+	lwc_string *media_type;
+	http_parameter *parameters;
+} http_content_type;
+
+/**
+ * Parse an HTTP Content-Type header value
+ *
+ * \param header_value  Header value to parse
+ * \param result        Pointer to location to receive result
+ * \return NSERROR_OK on success,
+ *         NSERROR_NOMEM on memory exhaustion
+ */
+nserror http_parse_content_type(const char *header_value, 
+		http_content_type **result);
+
+/**
+ * Destroy a content type object
+ *
+ * \param victim  Object to destroy
+ */
+void http_content_type_destroy(http_content_type *victim);
 
 #endif
-

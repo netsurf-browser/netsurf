@@ -90,6 +90,7 @@ static const content_handler css_content_handler = {
 };
 
 static lwc_string *css_mime_type;
+static lwc_string *css_charset;
 static css_stylesheet *blank_import;
 
 /**
@@ -105,10 +106,18 @@ nserror css_init(void)
 	if (lerror != lwc_error_ok)
 		return NSERROR_NOMEM;
 
+	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
+	if (lerror != lwc_error_ok) {
+		lwc_string_unref(css_mime_type);
+		return NSERROR_NOMEM;
+	}
+
 	error = content_factory_register_handler(css_mime_type, 
 			&css_content_handler);
-	if (error != NSERROR_OK)
+	if (error != NSERROR_OK) {
+		lwc_string_unref(css_charset);
 		lwc_string_unref(css_mime_type);
+	}
 
 	return error;
 }
@@ -118,6 +127,8 @@ nserror css_init(void)
  */
 void css_fini(void)
 {
+	lwc_string_unref(css_charset);
+
 	lwc_string_unref(css_mime_type);
 
 	if (blank_import != NULL)
@@ -138,6 +149,7 @@ nserror nscss_create(const content_handler *handler,
 {
 	nscss_content *result;
 	const char *charset = NULL;
+	lwc_string *charset_value = NULL;
 	union content_msg_data msg_data;
 	nserror error;
 
@@ -153,11 +165,14 @@ nserror nscss_create(const content_handler *handler,
 	}
 
 	/* Find charset specified on HTTP layer, if any */
-	error = http_parameter_list_find_item(params, "charset", &charset);
-	if (error != NSERROR_OK || *charset == '\0') {
+	error = http_parameter_list_find_item(params, css_charset, 
+			&charset_value);
+	if (error != NSERROR_OK || lwc_string_length(charset_value) == 0) {
 		/* No charset specified, use fallback, if any */
 		/** \todo libcss will take this as gospel, which is wrong */
 		charset = fallback_charset;
+	} else {
+		charset = lwc_string_data(charset_value);
 	}
 
 	error = nscss_create_css_data(&result->data, 
@@ -167,9 +182,14 @@ nserror nscss_create(const content_handler *handler,
 	if (error != NSERROR_OK) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&result->base, CONTENT_MSG_ERROR, msg_data);
+		if (charset_value != NULL)
+			lwc_string_unref(charset_value);
 		talloc_free(result);
 		return error;
 	}
+
+	if (charset_value != NULL)
+		lwc_string_unref(charset_value);
 
 	*c = (struct content *) result;
 

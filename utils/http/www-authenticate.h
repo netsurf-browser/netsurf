@@ -16,20 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * HTTP header parsing functions
- */
-
-#ifndef NETSURF_UTILS_HTTP_H_
-#define NETSURF_UTILS_HTTP_H_
+#ifndef NETSURF_UTILS_HTTP_WWW_AUTHENTICATE_H_
+#define NETSURF_UTILS_HTTP_WWW_AUTHENTICATE_H_
 
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/errors.h"
+#include "utils/http/challenge.h"
 
-#include "utils/http/content-disposition.h"
-#include "utils/http/content-type.h"
-#include "utils/http/www-authenticate.h"
+typedef struct http_www_authenticate {
+	http_challenge *challenges;
+} http_www_authenticate;
+
+/**
+ * Parse an HTTP WWW-Authenticate header value
+ *
+ * \param header_value  Header value to parse
+ * \param result        Pointer to location to receive result
+ * \return NSERROR_OK on success,
+ *         NSERROR_NOMEM on memory exhaustion
+ */
+nserror http_parse_www_authenticate(const char *header_value, 
+		http_www_authenticate **result);
+
+/**
+ * Destroy a www authenticate object
+ *
+ * \param victim  Object to destroy
+ */
+void http_www_authenticate_destroy(http_www_authenticate *victim);
 
 #endif
-

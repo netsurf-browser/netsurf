@@ -16,20 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * HTTP header parsing functions
- */
-
-#ifndef NETSURF_UTILS_HTTP_H_
-#define NETSURF_UTILS_HTTP_H_
-
-#include <libwapcaplet/libwapcaplet.h>
+#ifndef NETSURF_UTILS_HTTP_PARAMETER_INTERNAL_H_
+#define NETSURF_UTILS_HTTP_PARAMETER_INTERNAL_H_
 
 #include "utils/errors.h"
+#include "utils/http/parameter.h"
 
-#include "utils/http/content-disposition.h"
-#include "utils/http/content-type.h"
-#include "utils/http/www-authenticate.h"
+nserror http__parse_parameter(const char **input, http_parameter **parameter);
 
 #endif
-
