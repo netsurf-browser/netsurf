@@ -79,7 +79,7 @@ void browser_window_place_caret(struct browser_window *bw,
 	x = x * bw->scale + pos_x;
 	y = y * bw->scale + pos_y;
 
-	gui_window_place_caret(root_bw->window, x, y, height);
+	gui_window_place_caret(root_bw->window, x, y, height * bw->scale);
 	bw->caret_callback = caret_cb;
 	bw->paste_callback = paste_cb;
 	bw->move_callback = move_cb;
