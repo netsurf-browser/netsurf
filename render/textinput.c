@@ -258,8 +258,8 @@ static bool textinput_textbox_insert(struct content *c,
 	struct box *input = text_box->parent->parent;
 	bool hide;
 
-	if (html->bw && html->bw->sel->defined)
-		textinput_delete_selection(c, html->bw->sel);
+	if (html->bw && html->sel.defined)
+		textinput_delete_selection(c, &html->sel);
 
 	/* insert into form gadget (text and password inputs only) */
 	if (input->gadget && (input->gadget->type == GADGET_TEXTBOX ||
@@ -402,8 +402,8 @@ bool textinput_textbox_delete(struct content *c, struct box *text_box,
 	unsigned next_offset = char_offset + utf8_len;
 	struct box *form = text_box->parent->parent;
 
-	if (html->bw && html->bw->sel->defined) {
-		textinput_delete_selection(c, html->bw->sel);
+	if (html->bw && html->sel.defined) {
+		textinput_delete_selection(c, &html->sel);
 		return true;
 	}
 
@@ -1113,7 +1113,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 	char utf8[6];
 	unsigned int utf8_len;
 	bool scrolled, reflow = false;
-	bool selection_exists = html->bw->sel->defined;
+	bool selection_exists = html->sel.defined;
 	plot_font_style_t fstyle;
 
 	/* box_dump(textarea, 0); */
@@ -1192,7 +1192,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 		/* Clear the selection, if one exists */
 		if (selection_exists)
-			selection_clear(html->bw->sel, false);
+			selection_clear(&html->sel, false);
 
 		textinput_textarea_cut(c, start_box, 0, text_box,
 				char_offset, false);
@@ -1208,7 +1208,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 		/* Clear the selection, if one exists */
 		if (selection_exists)
-			selection_clear(html->bw->sel, false);
+			selection_clear(&html->sel, false);
 
 		if (end_box != text_box ||
 			char_offset < text_box->length + SPACE_LEN(text_box)) {
@@ -1293,7 +1293,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 		/* Clear the selection, if one exists */
 		if (selection_exists)
-			selection_clear(html->bw->sel, false);
+			selection_clear(&html->sel, false);
 
 		textinput_textarea_cut(c, start_box, 0, end_box,
 				end_box->length, false);
@@ -1317,11 +1317,11 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 	{
 		size_t start_idx, end_idx;
 		struct box *start_box =
-				selection_get_start(html->bw->sel, &start_idx);
-		struct box *end_box = selection_get_end(html->bw->sel, &end_idx);
+				selection_get_start(&html->sel, &start_idx);
+		struct box *end_box = selection_get_end(&html->sel, &end_idx);
 
 		if (start_box && end_box) {
-			selection_clear(html->bw->sel, false);
+			selection_clear(&html->sel, false);
 			textinput_textarea_cut(c, start_box, start_idx,
 					end_box, end_idx, true);
 			text_box = start_box;
@@ -1334,7 +1334,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 	case KEY_RIGHT:
 		if (selection_exists) {
 			/* In selection, move caret to end */
-			text_box = selection_get_end(html->bw->sel, &char_offset);
+			text_box = selection_get_end(&html->sel, &char_offset);
 		} else if (char_offset < text_box->length) {
 			/* Within-box movement */
 			char_offset = utf8_next(text_box->text,
@@ -1355,7 +1355,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 	case KEY_LEFT:
 		if (selection_exists) {
 			/* In selection, move caret to start */
-			text_box = selection_get_start(html->bw->sel, &char_offset);
+			text_box = selection_get_start(&html->sel, &char_offset);
 		} else if (char_offset > 0) {
 			/* Within-box movement */
 			char_offset = utf8_prev(text_box->text, char_offset);
@@ -1373,7 +1373,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 		break;
 
 	case KEY_UP:
-		selection_clear(html->bw->sel, true);
+		selection_clear(&html->sel, true);
 		textinput_textarea_click(c, BROWSER_MOUSE_CLICK_1,
 				textarea,
 				box_x, box_y,
@@ -1382,7 +1382,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 		return true;
 
 	case KEY_DOWN:
-		selection_clear(html->bw->sel, true);
+		selection_clear(&html->sel, true);
 		textinput_textarea_click(c, BROWSER_MOUSE_CLICK_1,
 				textarea,
 				box_x, box_y,
@@ -1458,7 +1458,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 		bool in_word;
 		/* if there is a selection, caret should move to the end */
 		if (selection_exists) {
-			text_box = selection_get_end(html->bw->sel, &char_offset);
+			text_box = selection_get_end(&html->sel, &char_offset);
 			break;
 		}
 
@@ -1572,7 +1572,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 
 	nsfont.font_width(&fstyle, text_box->text, char_offset, &pixel_offset);
 
-	selection_clear(html->bw->sel, true);
+	selection_clear(&html->sel, true);
 
 	textarea->gadget->caret_inline_container = inline_container;
 	textarea->gadget->caret_text_box = text_box;
@@ -1804,7 +1804,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 	char utf8[6];
 	unsigned int utf8_len;
 	bool to_textarea = false;
-	bool selection_exists = html->bw->sel->defined;
+	bool selection_exists = html->sel.defined;
 
 	input->gadget->caret_form_offset =
 			textinput_get_form_offset(input, text_box, box_offset);
@@ -1813,7 +1813,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 	input->gadget->caret_form_offset =
 			textinput_get_form_offset(input, text_box, box_offset);
 
-	selection_get_end(html->bw->sel, &end_offset);
+	selection_get_end(&html->sel, &end_offset);
 
 	box_coords(input, &box_x, &box_y);
 
@@ -1905,7 +1905,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_NL:
 	case KEY_CR:	/* Return/Enter hit */
-		selection_clear(html->bw->sel, true);
+		selection_clear(&html->sel, true);
 
 		if (form)
 			form_submit(bw->current_content, bw, form, 0);
@@ -1936,7 +1936,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 	case KEY_CUT_LINE:
 		/* Clear the selection, if one exists */
 		if (selection_exists)
-			selection_clear(html->bw->sel, false);
+			selection_clear(&html->sel, false);
 
 		textinput_textarea_cut(c, text_box, 0, text_box,
 				text_box->length, false);
@@ -1957,11 +1957,11 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 	{
 		size_t start_idx, end_idx;
 		struct box *start_box =
-				selection_get_start(html->bw->sel, &start_idx);
-		struct box *end_box = selection_get_end(html->bw->sel, &end_idx);
+				selection_get_start(&html->sel, &start_idx);
+		struct box *end_box = selection_get_end(&html->sel, &end_idx);
 
 		if (start_box && end_box) {
-			selection_clear(html->bw->sel, false);
+			selection_clear(&html->sel, false);
 			textinput_textarea_cut(c, start_box, start_idx,
 					end_box, end_idx, true);
 
@@ -2026,7 +2026,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_DELETE_LINE_START:
 		if (selection_exists)
-			selection_clear(html->bw->sel, true);
+			selection_clear(&html->sel, true);
 
 		if (box_offset == 0)
 			return true;
@@ -2040,7 +2040,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 
 	case KEY_DELETE_LINE_END:
 		if (selection_exists)
-			selection_clear(html->bw->sel, true);
+			selection_clear(&html->sel, true);
 
 		if (box_offset >= text_box->length)
 			return true;
@@ -2055,7 +2055,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 		return false;
 	}
 
-	selection_clear(html->bw->sel, true);
+	selection_clear(&html->sel, true);
 	textinput_input_update_display(c, input, box_offset,
 			to_textarea, changed);
 

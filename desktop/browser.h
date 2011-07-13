@@ -78,9 +78,6 @@ struct browser_window {
 	/** Window history structure. */
 	struct history *history;
 
-	/** Selection state */
-	struct selection *sel;
-
 	/** Handler for keyboard input, or 0. */
 	browser_caret_callback caret_callback;
 	/** Handler for pasting text, or 0. */
@@ -192,6 +189,9 @@ struct browser_window {
 
 	/** search context for free text search */
 	struct search_context *search_context;
+
+	/** Content with current selection, or NULL if none */
+	struct selection *cur_sel;
 
 	/** cache of the currently displayed status text. */
 	char *status_text; /**< Current status bar text. */
@@ -364,6 +364,23 @@ struct browser_window * browser_window_get_root(struct browser_window *bw);
  * \return true if browser window contains a selection
  */
 bool browser_window_has_selection(struct browser_window *bw);
+
+/**
+ * Set pointer to current selection.  Clears any existing selection.
+ *
+ * \param  bw    The browser window
+ * \param  s     The new selection
+ */
+void browser_window_set_selection(struct browser_window *bw,
+		struct selection *s);
+
+/**
+ * Get the current selection context from a root browser window
+ *
+ * \param  bw    The browser window
+ * \return the selection context, or NULL
+ */
+struct selection *browser_window_get_selection(struct browser_window *bw);
 
 
 /* In platform specific hotlist.c. */

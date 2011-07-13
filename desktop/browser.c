@@ -344,14 +344,38 @@ bool browser_window_has_selection(struct browser_window *bw)
 {
 	assert(bw->window);
 
-	/* TODO: handle selections in (i)frames */
-
-	if (bw->current_content != NULL && bw->sel != NULL &&
-			selection_defined(bw->sel)) {
+	if (bw->cur_sel != NULL && selection_defined(bw->cur_sel)) {
 		return true;
 	} else {
 		return false;
 	}
+}
+
+/* exported interface, documented in browser.h */
+void browser_window_set_selection(struct browser_window *bw,
+		struct selection *s)
+{
+	assert(bw->window);
+
+	if (bw->cur_sel != s && bw->cur_sel != NULL) {
+		/* Clear any existing selection */
+		selection_clear(bw->cur_sel, true);
+	}
+
+	/* Replace current selection pointer */
+	if (s == NULL && bw->current_content != NULL) {
+		bw->cur_sel = content_get_selection(bw->current_content);
+	} else {
+		bw->cur_sel = s;
+	}
+}
+
+/* exported interface, documented in browser.h */
+struct selection *browser_window_get_selection(struct browser_window *bw)
+{
+	assert(bw->window);
+
+	return bw->cur_sel;
 }
 
 /**
@@ -407,8 +431,6 @@ struct browser_window *browser_window_create(const char *url,
 	bw->last_action = wallclock();
 	bw->focus = bw;
 
-	bw->sel = selection_create();
-
 	/* gui window */
 	/* from the front end's pov, it clones the top level browser window,
 	 * so find that. */
@@ -446,7 +468,7 @@ void browser_window_initialise_common(struct browser_window *bw,
 		bw->history = history_clone(clone->history);
 
 	/* window characteristics */
-	bw->sel = NULL;
+	bw->cur_sel = NULL;
 	bw->refresh_interval = -1;
 
 	bw->reformat_pending = false;
@@ -799,13 +821,11 @@ nserror browser_window_callback(hlcache_handle *c,
 				global_history_add(urldb_get_url(url));
 			}
 		}
-		
-		/* text selection */
-		if (content_get_type(c) == CONTENT_HTML)
-			selection_init(bw->sel,
-					html_get_box_tree(bw->current_content));
-		if (content_get_type(c) == CONTENT_TEXTPLAIN)
-			selection_init(bw->sel, NULL);
+
+		if (bw->window != NULL) {
+			browser_window_set_selection(bw,
+					content_get_selection(c));
+		}
 
 		/* frames */
 		if (content_get_type(c) == CONTENT_HTML && 
@@ -854,7 +874,6 @@ nserror browser_window_callback(hlcache_handle *c,
 		else if (c == bw->current_content) {
 			bw->current_content = NULL;
 			browser_window_remove_caret(bw);
-			selection_init(bw->sel, NULL);
 		}
 
 		hlcache_handle_release(c);
@@ -875,8 +894,6 @@ nserror browser_window_callback(hlcache_handle *c,
 			/* reflow iframe positions */
 			if (html_get_iframe(c) != NULL)
 				browser_window_recalculate_iframes(bw);
-			/* box tree may have changed, need to relabel */
-			selection_reinit(bw->sel, html_get_box_tree(c));
 		}
 
 		if (bw->move_callback)
@@ -1439,6 +1456,12 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 		if (top->focus == bw)
 			top->focus = top;
+
+		if (bw->current_content != NULL &&
+				top->cur_sel == content_get_selection(
+						bw->current_content)) {
+			browser_window_set_selection(top, NULL);
+		}
 	}
 
 	/* Destruction order is important: we must ensure that the frontend 
@@ -1469,12 +1492,6 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	if (bw->box != NULL) {
 		bw->box->iframe = NULL;
 		bw->box = NULL;
-	}
-
-	/* TODO: After core FRAMES are done, should be
-	 * if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) */
-	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME) {
-		selection_destroy(bw->sel);
 	}
 
 	/* These simply free memory, so are safe here */
@@ -1831,6 +1848,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_window_mouse_drag_end(bw, mouse, x, y);
 	}
 
+	/* Browser window's horizontal scrollbar */
 	if (bw->scroll_x != NULL) {
 		int scr_x, scr_y;
 		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
@@ -1853,6 +1871,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 		}
 	}
 
+	/* Browser window's vertical scrollbar */
 	if (bw->scroll_y != NULL) {
 		int scr_x, scr_y;
 		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
@@ -2002,31 +2021,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 
 	switch (bw->drag_type) {
 	case DRAGGING_SELECTION:
-	{
-		hlcache_handle *h = bw->current_content;
-		if (h) {
-			int dir = -1;
-			size_t idx;
-
-			if (selection_dragging_start(bw->sel))
-				dir = 1;
-
-			if (content_get_type(h) == CONTENT_HTML) {
-				idx = html_selection_drag_end(h, mouse, x, y,
-						dir);
-				if (idx != 0)
-					selection_track(bw->sel, mouse, idx);
-			} else {
-				assert(content_get_type(h) ==
-						CONTENT_TEXTPLAIN);
-				idx = textplain_offset_from_coords(h, x, y,
-						dir);
-				selection_track(bw->sel, mouse, idx);
-			}
-		}
-		selection_drag_end(bw->sel);
-	}
-		bw->drag_type = DRAGGING_NONE;
+		/* Drag handled by content handler */
 		break;
 
 	case DRAGGING_OTHER:

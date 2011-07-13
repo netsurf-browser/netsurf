@@ -61,7 +61,23 @@ static void html_box_drag_start(struct box *box, int x, int y);
 void html_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
+	html_content *html = (html_content*) c;
 	hlcache_handle *h = bw->current_content;
+
+	if (bw->drag_type == DRAGGING_SELECTION && !mouse) {
+		int dir = -1;
+		size_t idx;
+
+		if (selection_dragging_start(&html->sel))
+			dir = 1;
+
+		idx = html_selection_drag_end(h, mouse, x, y, dir);
+
+		if (idx != 0)
+			selection_track(&html->sel, mouse, idx);
+
+		browser_window_set_drag_type(bw, DRAGGING_NONE);
+	}
 
 	switch (bw->drag_type) {
 		case DRAGGING_SELECTION: {
@@ -69,10 +85,11 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 			int dir = -1;
 			int dx, dy;
 
-			if (selection_dragging_start(bw->sel)) dir = 1;
+			if (selection_dragging_start(&html->sel))
+				dir = 1;
 
-			box = box_pick_text_box(h, x, y, dir,
-					&dx, &dy);
+			box = box_pick_text_box(h, x, y, dir, &dx, &dy);
+
 			if (box) {
 				int pixel_offset;
 				size_t idx;
@@ -84,7 +101,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 						box->text, box->length,
 						dx, &idx, &pixel_offset);
 
-				selection_track(bw->sel, mouse,
+				selection_track(&html->sel, mouse,
 						box->byte_offset + idx);
 			}
 		}
@@ -116,6 +133,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 void html_mouse_action(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
+	html_content *html = (html_content *) c;
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
 	char *title = 0;
 	const char *url = 0;
@@ -143,8 +161,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	plot_font_style_t fstyle;
 	int scroll_mouse_x = 0, scroll_mouse_y = 0;
 	int padding_left, padding_right, padding_top, padding_bottom;
-	html_content *html = (html_content *) c;
-	
 
 	if (bw->drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
@@ -376,12 +392,11 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 			if (mouse & (BROWSER_MOUSE_PRESS_1 |
 					BROWSER_MOUSE_PRESS_2)) {
-				if (text_box && selection_root(bw->sel) !=
+				if (text_box && selection_root(&html->sel) !=
 						gadget_box)
-					selection_init(bw->sel, gadget_box);
+					selection_init(&html->sel, gadget_box);
 
-				textinput_textarea_click(c,
-						mouse,
+				textinput_textarea_click(c, mouse,
 						gadget_box,
 						gadget_box_x,
 						gadget_box_y,
@@ -403,17 +418,17 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_click(bw->sel, mouse,
+				selection_click(&html->sel, mouse,
 						text_box->byte_offset + idx);
 
-				if (selection_dragging(bw->sel)) {
+				if (selection_dragging(&html->sel)) {
 					bw->drag_type = DRAGGING_SELECTION;
 					status = messages_get("Selecting");
 				} else
 					status = content_get_status_message(h);
 			}
 			else if (mouse & BROWSER_MOUSE_PRESS_1)
-				selection_clear(bw->sel, true);
+				selection_clear(&html->sel, true);
 			break;
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
@@ -436,7 +451,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 				if (mouse & (BROWSER_MOUSE_DRAG_1 |
 						BROWSER_MOUSE_DRAG_2))
-					selection_init(bw->sel, gadget_box);
+					selection_init(&html->sel, gadget_box);
 
 				font_plot_style_from_css(text_box->style,
 						&fstyle);
@@ -448,14 +463,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				selection_click(bw->sel, mouse,
+				selection_click(&html->sel, mouse,
 						text_box->byte_offset + idx);
 
-				if (selection_dragging(bw->sel))
+				if (selection_dragging(&html->sel))
 					bw->drag_type = DRAGGING_SELECTION;
 			}
 			else if (mouse & BROWSER_MOUSE_PRESS_1)
-				selection_clear(bw->sel, true);
+				selection_clear(&html->sel, true);
 			break;
 		case GADGET_HIDDEN:
 			/* not possible: no box generated */
@@ -538,11 +553,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		if (!done) {
 			struct box *layout = html_get_box_tree(h);
 
-			if (text_box &&
-				(mouse & (BROWSER_MOUSE_CLICK_1 |
-						BROWSER_MOUSE_CLICK_2)) &&
-					selection_root(bw->sel) != layout)
-				selection_init(bw->sel, layout);
+			if (mouse && (mouse < BROWSER_MOUSE_MOD_1) &&
+					selection_root(&html->sel) != layout) {
+				selection_init(&html->sel, layout);
+			}
 
 			if (text_box) {
 				int pixel_offset;
@@ -558,13 +572,13 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					&idx,
 					&pixel_offset);
 
-				if (selection_click(bw->sel, mouse,
+				if (selection_click(&html->sel, mouse,
 						text_box->byte_offset + idx)) {
 					/* key presses must be directed at the
 					 * main browser window, paste text
 					 * operations ignored */
 
-					if (selection_dragging(bw->sel)) {
+					if (selection_dragging(&html->sel)) {
 						bw->drag_type =
 							DRAGGING_SELECTION;
 						status =
@@ -576,7 +590,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				}
 			}
 			else if (mouse & BROWSER_MOUSE_PRESS_1)
-				selection_clear(bw->sel, true);
+				selection_clear(&html->sel, true);
 		}
 
 		if (!done) {
@@ -621,8 +635,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				}
 			}
 		}
-		if ((mouse & BROWSER_MOUSE_CLICK_1) &&
-				!selection_defined(bw->sel)) {
+		if (mouse && mouse < BROWSER_MOUSE_MOD_1) {
 			/* ensure key presses still act on the browser window */
 			browser_window_remove_caret(bw);
 		}

@@ -100,11 +100,7 @@ void browser_window_remove_caret(struct browser_window *bw)
 {
 	struct browser_window *root_bw;
 
-	/* Find top level browser window */
-	root_bw = bw;
-	while (root_bw && !root_bw->window && root_bw->parent) {
-		root_bw = root_bw->parent;
-	}
+	root_bw = browser_window_get_root(bw);
 
 	gui_window_remove_caret(root_bw->window);
 
@@ -113,8 +109,6 @@ void browser_window_remove_caret(struct browser_window *bw)
 	bw->move_callback = NULL;
 	bw->caret_p1 = NULL;
 	bw->caret_p2 = NULL;
-
-	selection_clear(bw->sel, true);
 }
 
 
@@ -129,23 +123,25 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 {
 	struct browser_window *focus = bw->focus;
 
+	assert(bw->window != NULL);
+
 	/* keys that take effect wherever the caret is positioned */
 	switch (key) {
 		case KEY_SELECT_ALL:
-			selection_select_all(focus->sel);
+			selection_select_all(bw->cur_sel);
 			return true;
 
 		case KEY_COPY_SELECTION:
-			gui_copy_to_clipboard(focus->sel);
+			gui_copy_to_clipboard(bw->cur_sel);
 			return true;
 
 		case KEY_CLEAR_SELECTION:
-			selection_clear(focus->sel, true);
+			selection_clear(bw->cur_sel, true);
 			return true;
 
 		case KEY_ESCAPE:
-			if (selection_defined(focus->sel)) {
-				selection_clear(focus->sel, true);
+			if (selection_defined(bw->cur_sel)) {
+				selection_clear(bw->cur_sel, true);
 				return true;
 			}
 			/* if there's no selection,

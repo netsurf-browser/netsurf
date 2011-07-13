@@ -52,16 +52,16 @@
 #include "utils/utils.h"
 
 
-static bool html_redraw_box(html_content *html, struct box *box, int x, int y,
-		const struct rect *clip, float scale,
+static bool html_redraw_box(const html_content *html, struct box *box,
+		int x, int y, const struct rect *clip, float scale,
 		colour current_background_color,
 		const struct redraw_context *ctx);
-static bool html_redraw_box_children(html_content *html, struct box *box,
+static bool html_redraw_box_children(const html_content *html, struct box *box,
 		int x_parent, int y_parent, const struct rect *clip,
 		float scale, colour current_background_color,
 		const struct redraw_context *ctx);
-static bool html_redraw_text_box(struct box *box, int x, int y,
-		const struct rect *clip, float scale,
+static bool html_redraw_text_box(const html_content *html, struct box *box,
+		int x, int y, const struct rect *clip, float scale,
 		colour current_background_color,
 		const struct redraw_context *ctx);
 static bool html_redraw_borders(struct box *box, int x_parent, int y_parent,
@@ -253,7 +253,7 @@ static struct box *html_redraw_find_bg_box(struct box *box)
  * x, y, clip_[xy][01] are in target coordinates.
  */
 
-bool html_redraw_box(html_content *html, struct box *box,
+bool html_redraw_box(const html_content *html, struct box *box,
 		int x_parent, int y_parent,
 		const struct rect *clip, float scale,
 		colour current_background_color,
@@ -692,7 +692,7 @@ bool html_redraw_box(html_content *html, struct box *box,
 			return false;
 
 	} else if (box->text) {
-		if (!html_redraw_text_box(box, x, y, &r, scale,
+		if (!html_redraw_text_box(html, box, x, y, &r, scale,
 				current_background_color, ctx))
 			return false;
 
@@ -770,7 +770,7 @@ bool html_redraw_box(html_content *html, struct box *box,
  * \return true if successful, false otherwise
  */
 
-bool html_redraw_box_children(html_content *html, struct box *box,
+bool html_redraw_box_children(const html_content *html, struct box *box,
 		int x_parent, int y_parent,
 		const struct rect *clip, float scale,
 		colour current_background_color,
@@ -818,8 +818,8 @@ bool html_redraw_box_children(html_content *html, struct box *box,
  * \return true iff successful and redraw should proceed
  */
 
-bool html_redraw_text_box(struct box *box, int x, int y,
-		const struct rect *clip, float scale,
+bool html_redraw_text_box(const html_content *html, struct box *box,
+		int x, int y, const struct rect *clip, float scale,
 		colour current_background_color,
 		const struct redraw_context *ctx)
 {
@@ -831,7 +831,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
 			box->space, &fstyle, x, y,
-			clip, box->height, scale, excluded, ctx))
+			clip, box->height, scale, excluded, &html->sel, ctx))
 		return false;
 
 	return true;
@@ -859,7 +859,7 @@ bool html_redraw_text_box(struct box *box, int x, int y,
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, int space, const plot_font_style_t *fstyle,
 		int x, int y, const struct rect *clip, int height,
-		float scale, bool excluded,
+		float scale, bool excluded, const struct selection *sel,
 		const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
@@ -876,9 +876,9 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		unsigned end_idx;
 
 		/* first try the browser window's current selection */
-		if (selection_defined(current_redraw_browser->sel) &&
-			selection_highlighted(current_redraw_browser->sel,
-				offset, offset + len, &start_idx, &end_idx)) {
+		if (selection_defined(sel) && selection_highlighted(sel,
+					offset, offset + len,
+					&start_idx, &end_idx)) {
 			highlighted = true;
 		}
 

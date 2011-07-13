@@ -90,20 +90,34 @@ static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
 /**
  * Creates a new selection object associated with a browser window.
  *
- * \param  s    selection object
- * \param  bw   browser window
+ * \return new selection context
  */
 
 struct selection *selection_create(void)
 {
 	struct selection *s = calloc(1, sizeof(struct selection));
 	if (s) {
+		selection_prepare(s);
+	}
+	return s;
+}
+
+/**
+ * Prepare a newly created selection object for use.
+ *
+ * \param  s    selection object
+ * \param  bw   browser window
+ */
+
+void selection_prepare(struct selection *s)
+{
+	if (s) {
 		s->bw = NULL;
 		s->root = NULL;
 		s->drag_state = DRAG_NONE;
+		s->max_idx = 0;
 		selection_clear(s, false);
 	}
-	return s;
 }
 
 /**
@@ -304,12 +318,16 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 		gui_drag_save_selection(s, top->window);
 	}
 	else if (!modkeys) {
-		if (pos && (mouse & BROWSER_MOUSE_PRESS_1))
+		if (pos && (mouse & BROWSER_MOUSE_PRESS_1)) {
 		/* Clear the selection if mouse is pressed outside the selection,
 		 * Otherwise clear on release (to allow for drags) */
+			browser_window_set_selection(top, s);
+
 			selection_clear(s, true);
-		else if (mouse & BROWSER_MOUSE_DRAG_1) {
+		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
 			/* start new selection drag */
+			browser_window_set_selection(top, s);
+
 			selection_clear(s, true);
 			
 			selection_set_start(s, idx);
@@ -324,6 +342,8 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 			/* adjust selection, but only if there is one */
 			if (!selection_defined(s))
 				return false;	/* ignore Adjust drags */
+
+			browser_window_set_selection(top, s);
 
 			if (pos >= 0) {
 				selection_set_end(s, idx);
@@ -384,6 +404,10 @@ void selection_track(struct selection *s, browser_mouse_state mouse,
 {
 	if (!SAME_SPACE(s, idx))
 		return;
+
+	if (!mouse) {
+		s->drag_state = DRAG_NONE;
+	}
 
 	switch (s->drag_state) {
 
@@ -902,7 +926,8 @@ struct box *selection_get_end(struct selection *s, size_t *pidx)
  * \return true iff part of the given box lies within the selection
  */
 
-bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
+bool selection_highlighted(const struct selection *s,
+		unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx)
 {
 	/* caller should have checked first for efficiency */

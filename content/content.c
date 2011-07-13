@@ -676,6 +676,22 @@ void content_close(hlcache_handle *h)
 }
 
 
+/**
+ * Find this content's selection context, if it has one.
+ */
+
+struct selection *content_get_selection(hlcache_handle *h)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->get_selection != NULL)
+		return c->handler->get_selection(c);
+	else
+		return NULL;
+}
+
+
 void content_add_error(struct content *c, const char *token,
 		unsigned int line)
 {

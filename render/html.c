@@ -74,6 +74,7 @@ static void html_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
 static void html_close(struct content *c);
+struct selection *html_get_selection(struct content *c);
 static nserror html_clone(const struct content *old, struct content **newc);
 static content_type html_content_type(lwc_string *mime_type);
 
@@ -114,6 +115,7 @@ static const content_handler html_content_handler = {
 	.redraw = html_redraw,
 	.open = html_open,
 	.close = html_close,
+	.get_selection = html_get_selection,
 	.clone = html_clone,
 	.type = html_content_type,
 	.no_share = true,
@@ -254,6 +256,8 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->box = NULL;
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
+
+	selection_prepare(&c->sel);
 
 	nerror = http_parameter_list_find_item(params, html_charset, &charset);
 	if (nerror == NSERROR_OK) {
@@ -1754,6 +1758,8 @@ void html_reformat(struct content *c, int width, int height)
 	if (c->height < layout->y + layout->descendant_y1)
 		c->height = layout->y + layout->descendant_y1;
 
+	selection_reinit(&htmlc->sel, htmlc->layout);
+
 	time_taken = wallclock() - time_before;
 	c->reformat_time = wallclock() +
 			((time_taken * 3 < option_min_reflow_period ?
@@ -1962,7 +1968,9 @@ void html_open(struct content *c, struct browser_window *bw,
 	html->page = (html_content *) page;
 	html->box = box;
 
-	selection_set_browser_window(bw->sel, bw);
+	/* text selection */
+	selection_init(&html->sel, html->layout);
+	selection_set_browser_window(&html->sel, bw);
 
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
@@ -1990,8 +1998,7 @@ void html_close(struct content *c)
 	html_content *html = (html_content *) c;
 	struct content_html_object *object, *next;
 
-	if (html->bw && html->bw->sel)
-		selection_set_browser_window(html->bw->sel, NULL);
+	selection_set_browser_window(&html->sel, NULL);
 
 	html->bw = NULL;
 
@@ -2009,6 +2016,18 @@ void html_close(struct content *c)
 
                	content_close(object->content);
 	}
+}
+
+
+/**
+ * Return an HTML content's selection context
+ */
+
+struct selection *html_get_selection(struct content *c)
+{
+	html_content *html = (html_content *) c;
+
+	return &html->sel;
 }
 
 #if ALWAYS_DUMP_FRAMESET

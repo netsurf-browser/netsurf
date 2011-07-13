@@ -381,7 +381,7 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 	} else {
 		struct browser_window *bw =
 				gui_window_get_browser_window(g->top_level);
-		has_selection = bw->sel->defined;
+		has_selection = browser_window_has_selection(bw);
 
 		g->buttons[COPY_BUTTON]->sensitivity = has_selection;
 		g->buttons[CUT_BUTTON]->sensitivity = (has_selection &&
@@ -959,7 +959,7 @@ MULTIHANDLER(copy)
 	if (GTK_IS_EDITABLE (focused))
 		gtk_editable_copy_clipboard(GTK_EDITABLE(g->url_bar));
 	else
-		gui_copy_to_clipboard(bw->sel);
+		gui_copy_to_clipboard(browser_window_get_selection(bw));
 
 	return TRUE;
 }
@@ -999,7 +999,7 @@ MULTIHANDLER(selectall)
 		gtk_editable_select_region(GTK_EDITABLE(g->url_bar), 0, -1);
 	} else {
 		LOG(("Selecting all document text"));
-		selection_select_all(bw->sel);
+		selection_select_all(browser_window_get_selection(bw));
 	}
 
 	return TRUE;

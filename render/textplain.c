@@ -67,6 +67,8 @@ typedef struct textplain_content {
 	struct textplain_line *physical_line;
 	int formatted_width;
 	struct browser_window *bw;
+
+	struct selection sel;	/** Selection state */
 } textplain_content;
 
 
@@ -109,6 +111,7 @@ static void textplain_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
 void textplain_close(struct content *c);
+struct selection *textplain_get_selection(struct content *c);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -134,6 +137,7 @@ static const content_handler textplain_content_handler = {
 	.redraw = textplain_redraw,
 	.open = textplain_open,
 	.close = textplain_close,
+	.get_selection = textplain_get_selection,
 	.clone = textplain_clone,
 	.type = textplain_content_type,
 	.no_share = true,
@@ -287,6 +291,8 @@ nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	c->physical_line_count = 0;
 	c->formatted_width = 0;
 	c->bw = NULL;
+
+	selection_prepare(&c->sel);
 
 	return NSERROR_OK;
 
@@ -616,6 +622,22 @@ content_type textplain_content_type(lwc_string *mime_type)
 void textplain_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
+	textplain_content *text = (textplain_content *) c;
+	hlcache_handle *h = bw->current_content;
+
+	if (bw->drag_type == DRAGGING_SELECTION && !mouse) {
+		int dir = -1;
+		size_t idx;
+
+		if (selection_dragging_start(&text->sel))
+			dir = 1;
+
+		idx = textplain_offset_from_coords(h, x, y, dir);
+		selection_track(&text->sel, mouse, idx);
+
+		browser_window_set_drag_type(bw, DRAGGING_NONE);
+	}
+
 	switch (bw->drag_type) {
 
 		case DRAGGING_SELECTION: {
@@ -623,10 +645,10 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 			int dir = -1;
 			size_t idx;
 
-			if (selection_dragging_start(bw->sel)) dir = 1;
+			if (selection_dragging_start(&text->sel)) dir = 1;
 
 			idx = textplain_offset_from_coords(h, x, y, dir);
-			selection_track(bw->sel, mouse, idx);
+			selection_track(&text->sel, mouse, idx);
 		}
 		break;
 
@@ -650,20 +672,19 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 void textplain_mouse_action(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
+	textplain_content *text = (textplain_content *) c;
 	hlcache_handle *h = bw->current_content;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	const char *status = 0;
 	size_t idx;
 	int dir = 0;
 
-	bw->drag_type = DRAGGING_NONE;
-
-	if (!bw->sel) return;
+	browser_window_set_drag_type(bw, DRAGGING_NONE);
 
 	idx = textplain_offset_from_coords(h, x, y, dir);
-	if (selection_click(bw->sel, mouse, idx)) {
+	if (selection_click(&text->sel, mouse, idx)) {
 
-		if (selection_dragging(bw->sel)) {
+		if (selection_dragging(&text->sel)) {
 			bw->drag_type = DRAGGING_SELECTION;
 			status = messages_get("Selecting");
 		}
@@ -751,7 +772,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 	x = (x + MARGIN) * data->scale;
 	y = (y + MARGIN) * data->scale;
 	for (lineno = line0; lineno != line1; lineno++) {
-		const char *text = utf8_data + line[lineno].start;
+		const char *text_d = utf8_data + line[lineno].start;
 		int tab_width = textplain_tab_width * data->scale;
 		size_t offset = 0;
 		int tx = x;
@@ -767,22 +788,22 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 			int width;
 			int ntx;
 
-			while (next_offset < length && text[next_offset] != '\t')
-				next_offset = utf8_next(text, length, next_offset);
+			while (next_offset < length && text_d[next_offset] != '\t')
+				next_offset = utf8_next(text_d, length, next_offset);
 
-			if (!text_redraw(text + offset, next_offset - offset,
+			if (!text_redraw(text_d + offset, next_offset - offset,
 					line[lineno].start + offset, 0,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
 					clip, line_height, data->scale, false,
-					ctx))
+					&text->sel, ctx))
 				return false;
 
 			if (next_offset >= length)
 				break;
 
 			/* locate end of string and align to next tab position */
-			if (nsfont.font_width(&textplain_style, &text[offset],
+			if (nsfont.font_width(&textplain_style, &text_d[offset],
 					next_offset - offset, &width))
 				tx += (int)(width * data->scale);
 
@@ -794,7 +815,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 
 			if (bw) {
 				unsigned tab_ofst = line[lineno].start + next_offset;
-				struct selection *sel = bw->sel;
+				struct selection *sel = &text->sel;
 				bool highlighted = false;
 
 				if (selection_defined(sel)) {
@@ -845,7 +866,9 @@ void textplain_open(struct content *c, struct browser_window *bw,
 
 	text->bw = bw;
 
-	selection_set_browser_window(bw->sel, bw);
+	/* text selection */
+	selection_set_browser_window(&text->sel, bw);
+	selection_init(&text->sel, NULL);
 }
 
 
@@ -857,10 +880,21 @@ void textplain_close(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
 
-	if (text->bw && text->bw->sel)
-		selection_set_browser_window(text->bw->sel, NULL);
+	selection_set_browser_window(&text->sel, NULL);
 
 	text->bw = NULL;
+}
+
+
+/**
+ * Return an textplain content's selection context
+ */
+
+struct selection *textplain_get_selection(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	return &text->sel;
 }
 
 /**

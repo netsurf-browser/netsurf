@@ -157,6 +157,7 @@ void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct content *page, struct box *box, 
 		struct object_params *params);
 void content_close(struct hlcache_handle *h);
+struct selection *content_get_selection(struct hlcache_handle *h);
 
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);

@@ -24,6 +24,7 @@
 #define NETSURF_RENDER_HTML_INTERNAL_H_
 
 #include "content/content_protected.h"
+#include "desktop/selection.h"
 #include "render/html.h"
 
 /** Data specific to CONTENT_HTML. */
@@ -92,6 +93,9 @@ typedef struct html_content {
 	/** Open core-handled form SELECT menu,
 	 *  or NULL if none currently open. */
 	struct form_control *visible_select_menu;
+
+	/** Selection state */
+	struct selection sel;
 } html_content;
 
 

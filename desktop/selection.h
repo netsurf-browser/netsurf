@@ -60,6 +60,7 @@ typedef bool (*seln_traverse_handler)(const char *text, size_t length,
 
 
 struct selection *selection_create(void);
+void selection_prepare(struct selection *s);
 void selection_destroy(struct selection *s);
 
 void selection_init(struct selection *s, struct box *root);
@@ -103,7 +104,8 @@ void selection_track(struct selection *s, browser_mouse_state mouse,
 bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 		void *handle);
 
-bool selection_highlighted(struct selection *s, unsigned start, unsigned end,
+bool selection_highlighted(const struct selection *s,
+		unsigned start, unsigned end,
 		unsigned *start_idx, unsigned *end_idx);
 
 bool selection_save_text(struct selection *s, const char *path);

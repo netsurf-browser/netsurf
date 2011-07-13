@@ -64,6 +64,7 @@ struct content_handler {
 			struct box *box,
 			struct object_params *params);
 	void (*close)(struct content *c);
+	struct selection * (*get_selection)(struct content *c);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	content_type (*type)(lwc_string *mime_type);

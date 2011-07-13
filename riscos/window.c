@@ -2580,7 +2580,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CUT,
 			!browser_window_has_selection(bw) ||
-			selection_read_only(bw->sel));
+			selection_read_only(browser_window_get_selection(bw)));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_PASTE,
 			h == NULL || bw->paste_callback == NULL);
@@ -2726,7 +2726,8 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_SELECTION_SAVE:
 		if (browser_window_has_selection(bw))
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
-					bw->sel, NULL, NULL);
+					browser_window_get_selection(bw),
+					NULL, NULL);
 		break;
 
 	case BROWSER_SAVE_URL_URI:
@@ -3069,7 +3070,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_SELECTION_SAVE:
 		if (h != NULL) {
 			ro_gui_save_prepare(GUI_SAVE_TEXT_SELECTION, NULL,
-					bw->sel, NULL, NULL);
+					browser_window_get_selection(bw),
+					NULL, NULL);
 			ro_gui_dialog_open_persistent(g->window, dialog_saveas,
 					false);
 		}
