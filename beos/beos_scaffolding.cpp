@@ -777,7 +777,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		}
 		case B_COPY:
-			gui_copy_to_clipboard(bw->sel);
+			gui_copy_to_clipboard(browser_window_get_selection(bw));
 			break;
 		case B_CUT:
 			browser_window_key_press(bw, 24);
@@ -787,7 +787,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			break;
 		case B_SELECT_ALL:
 			LOG(("Selecting all text"));
-			selection_select_all(bw->sel);
+			selection_select_all(browser_window_get_selection(bw));
 			break;
 		case B_NETPOSITIVE_BACK:
 		case BROWSER_NAVIGATE_BACK:
@@ -916,7 +916,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		{
 			if (!bw || !bw->current_content)
 				break;
-			nsbeos_gui_view_source(bw->current_content, bw->sel);
+			nsbeos_gui_view_source(bw->current_content,
+					browser_window_get_selection(bw));
 			break;
 		}
 		case BROWSER_OBJECT:
