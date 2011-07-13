@@ -718,7 +718,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			return false;
 
 	/* scrollbars */
-	if (current_redraw_browser && ((box->style && box->type != BOX_BR &&
+	if (((box->style && box->type != BOX_BR &&
 			box->type != BOX_TABLE && box->type != BOX_INLINE &&
 			(css_computed_overflow(box->style) == 
 				CSS_OVERFLOW_SCROLL ||
