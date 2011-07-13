@@ -358,6 +358,7 @@ static void nsws_window_update_forward_back(struct gui_window *w)
 static void nsws_update_edit(struct gui_window *w)
 {
 	bool paste, copy, del;
+	bool sel = (w->bw != NULL && browser_window_has_selection(w->bw));
 	if (GetFocus() == w->urlbar) {
 		DWORD i, ii;
 		SendMessage(w->urlbar, EM_GETSEL, (WPARAM)&i, (LPARAM)&ii);
@@ -365,11 +366,10 @@ static void nsws_update_edit(struct gui_window *w)
 		copy = (i != ii);
 		del = (i != ii);
 
-	} else if ((w->bw != NULL) && (w->bw->sel != NULL)){
+	} else if (sel){
 		paste = (w->bw->paste_callback != NULL);
-		copy = w->bw->sel->defined;
-		del = ((w->bw->sel->defined) &&
-		       (w->bw->caret_callback != NULL));
+		copy = sel;
+		del = (sel && (w->bw->caret_callback != NULL));
 	} else {
 		paste = false;
 		copy = false;
@@ -777,7 +777,8 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar) {
 			SendMessage(gw->urlbar, WM_COPY, 0, 0);
 		} else if (gw->bw != NULL) {
-			gui_copy_to_clipboard(gw->bw->sel);
+			gui_copy_to_clipboard(
+					browser_window_get_selection(gw->bw));
 		}
 		break;
 
@@ -808,7 +809,8 @@ nsws_window_command(HWND hwnd,
 		if (GetFocus() == gw->urlbar)
 			SendMessage(gw->urlbar, EM_SETSEL, 0, -1);
 		else
-			selection_select_all(gw->bw->sel);
+			selection_select_all(
+					browser_window_get_selection(gw->bw));
 		break;
 
 	case IDM_EDIT_SEARCH:
