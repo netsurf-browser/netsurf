@@ -90,7 +90,7 @@ void gui_start_selection(struct gui_window *g)
 	OnMenu(g->shared->win, AMI_MENU_CLEAR);
 	OnMenu(g->shared->win, AMI_MENU_COPY);
 
-	if(selection_read_only(g->shared->bw->sel) == false)
+	if(selection_read_only(browser_window_get_selection(g->shared->bw)) == false)
 		OnMenu(g->shared->win, AMI_MENU_CUT);
 }
 
@@ -302,7 +302,7 @@ struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
 	sel = AllocVec(sizeof(struct ami_text_selection),
 			MEMF_PRIVATE | MEMF_CLEAR);
 
-	if(sel) selection_traverse(gwin->bw->sel, ami_copy_selection, sel);
+	if(sel) selection_traverse(browser_window_get_selection(gwin->bw), ami_copy_selection, sel);
 
 	return sel;
 }

@@ -926,7 +926,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 			OnMenu(win,AMI_MENU_COPY);
 			OnMenu(win,AMI_MENU_CLEAR);
 
-			if(selection_read_only(g->shared->bw->sel) == false)
+			if(selection_read_only(browser_window_get_selection(g->shared->bw)) == false)
 				OnMenu(win,AMI_MENU_CUT);
 		}
 		if(g->c_h) OnMenu(win,AMI_MENU_PASTE);
