@@ -378,15 +378,32 @@ struct selection *browser_window_get_selection(struct browser_window *bw)
 	return bw->cur_sel;
 }
 
-/**
- * Set scroll offsets for a browser window.
- *
- * \param  bw	    The browser window
- * \param  x	    The x scroll offset to set
- * \param  y	    The y scroll offset to set
- */
+/* exported interface, documented in browser.h */
+void browser_window_scroll_visible(struct browser_window *bw,
+		const struct rect *rect)
+{
+	assert(bw != NULL);
 
-static void browser_window_set_scroll(struct browser_window *bw, int x, int y)
+	switch (bw->browser_window_type) {
+	default:
+		/* fall through to NORMAL until frame(set)s are handled
+		 * in the core */
+	case BROWSER_WINDOW_NORMAL:
+		gui_window_scroll_visible(bw->window,
+				rect->x0, rect->y0, rect->x1, rect->y1);
+		break;
+
+	case BROWSER_WINDOW_IFRAME:
+		if (bw->scroll_x != NULL)
+			scrollbar_set(bw->scroll_x, rect->x0, false);
+		if (bw->scroll_y != NULL)
+			scrollbar_set(bw->scroll_y, rect->y0, false);
+		break;
+	}
+}
+
+/* exported interface, documented in browser.h */
+void browser_window_set_scroll(struct browser_window *bw, int x, int y)
 {
 	if (bw->window != NULL) {
 		gui_window_set_scroll(bw->window, x, y);

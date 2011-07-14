@@ -340,6 +340,27 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 void browser_window_set_position(struct browser_window *bw, int x, int y);
 
 /*
+ * Scroll the browser window to display the passed area
+ *
+ * \param  bw		browser window to scroll
+ * \param  rect		area to display
+ */
+void browser_window_scroll_visible(struct browser_window *bw,
+		const struct rect *rect);
+
+/**
+ * Set scroll offsets for a browser window.
+ *
+ * \param  bw	    The browser window
+ * \param  x	    The x scroll offset to set
+ * \param  y	    The y scroll offset to set
+ *
+ * TODO -- Do we really need this and browser_window_scroll_visible?
+ *         Ditto for gui_window_* variants.
+ */
+void browser_window_set_scroll(struct browser_window *bw, int x, int y);
+
+/*
  * Set the position of the current browser window with respect to the parent
  * browser window
  *

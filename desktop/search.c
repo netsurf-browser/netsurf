@@ -193,7 +193,7 @@ void search_step(struct search_context *context, search_flags_t flags,
 			context->callbacks->back_state(false, context->p);
 		if (context->callbacks->forward_state != NULL)
 			context->callbacks->forward_state(false, context->p);
-		gui_window_set_scroll(context->bw->window, 0, 0);
+		browser_window_set_scroll(context->bw, 0, 0);
 		return;
 	}
 	search_text(string, string_len, context, flags);
@@ -367,8 +367,7 @@ void search_text(const char *string, int string_len,
 			break;
 	}
 
-	gui_window_scroll_visible(context->bw->window,
-			bounds.x0, bounds.y0, bounds.x1, bounds.y1);
+	browser_window_scroll_visible(context->bw, &bounds);
 }
 
 /**
