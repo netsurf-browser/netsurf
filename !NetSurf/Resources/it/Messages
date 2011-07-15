@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.7/3.0 Development (Revision 12464)
+# Italian messages for NetSurf 2.7/3.0 Development (Revision 12559)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 27.06.2011
+# 13.07.2011
 # =========================================================================
 #
 # Description
@@ -772,10 +772,11 @@ ProgressU:%s
 RecPercent:Ricevuti %s (%u%%)
 Received:Ricevuti %s
 Redirecting:Redirezione in corso...
-Loading:Caricamento...
+Loading:Caricamento della pagina...
 Fetching:Prelevamento dati...
 Processing:Elaborazione del documento in corso...
 Formatting:Formattazione del documento in corso...
+Converting:Conversione del documento in corso...
 Done:Completato
 Stopped:Interrotto
 
@@ -783,10 +784,10 @@ Stopped:Interrotto
 #
 BadRedirect:Errata redirezione dell'URL
 FetchFailed:Impossibile ottenere il documento
-NotCSS:Attenzione: La dicitura "Foglio di stile" non ha nulla a che spartire con i CSS
+NotCSS:Attenzione: La dicitura "Foglio di stile" non ha nulla a che vedere con i CSS
 NotFavIco:Favicon non supportata
-BadObject:Attenzione: errato tipo di oggetto
-ObjError:Errore di caricamento dell'oggetto: %s
+BadObject:Errore nell'analisi del tipo di oggetto
+ObjError:Errore nel caricamento dell'oggetto: %s
 ParsingFail:Analisi del documento fallita.
 BadGIF:Lettura del file GIF fallita.
 BadBMP:Lettura del file BMP fallita.
@@ -1414,7 +1415,7 @@ DownloadDir:Percorso predefinito per i trasferimenti
 TabbedBrowsing:Navigazione a schede
 TabActive:Apri in sottofondo le nuove schede aperte da un link
 TabMiddle:Tasto centrale del mouse per l'apertura delle schede (Tab)
-TabLast:Open new tabs after all existing tabs
+TabLast:Apri nuove schede a fianco di quelle correnti
 DownloadNotify:Notifica al completamento (Ringhio)
 SearchWeb:Ricerca nel Web
 SearchURL:Ricerca da barra URL
