@@ -1,6 +1,6 @@
 # Italian messages for NetSurf 2.7/3.0 Development (Revision 12559)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 13.07.2011
+# 16.07.2011
 # =========================================================================
 #
 # Description
@@ -769,14 +769,14 @@ OverwriteFile:Un file con questo nome è già esistente, continuare comporterà 
 #
 Progress:%s di %s
 ProgressU:%s
-RecPercent:Ricevuti %s (%u%%)
-Received:Ricevuti %s
-Redirecting:Redirezione in corso...
+RecPercent:ricevuti %s (%u%%)
+Received:ricevuti %s
+Redirecting:redirezione in corso...
 Loading:Caricamento della pagina...
-Fetching:Prelevamento dati...
-Processing:Elaborazione del documento in corso...
-Formatting:Formattazione del documento in corso...
-Converting:Conversione del documento in corso...
+Fetching:prelevamento dati in corso...
+Processing:elaborazione del documento in corso...
+Formatting:formattazione del documento in corso...
+Converting:conversione del documento in corso...
 Done:Completato
 Stopped:Interrotto
 
@@ -1360,10 +1360,10 @@ NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf
 #
 
 Proxy:Proxy HTTP
-Fetching:Connessioni ottenibili
-FetchesMax:Massime ottenibili
-FetchesHost:Ottenibili per host
-FetchesCached:Connessioni su cache
+Fetching:Ricezione
+FetchesMax:Ricezione massima
+FetchesHost:Ricevuti per host
+FetchesCached:Ricevuti su cache
 
 # Rendering tab
 #
@@ -1462,3 +1462,4 @@ AnimImg:Animazioni
 DitherImg:Immagini Dither
 FilterImg:Immagini Smooth
 RenderText:Sfuma testo di sfondo
+Initialising:Inizia...
