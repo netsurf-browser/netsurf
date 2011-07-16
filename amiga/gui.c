@@ -3673,6 +3673,8 @@ void gui_window_set_url(struct gui_window *g, const char *url)
 		RefreshSetGadgetAttrs((struct Gadget *)g->shared->objects[GID_URL],
 			g->shared->win, NULL, STRINGA_TextVal, url, TAG_DONE);
 	}
+
+	ami_update_buttons(g->shared);
 }
 
 /**
