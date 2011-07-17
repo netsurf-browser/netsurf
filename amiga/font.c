@@ -657,7 +657,6 @@ void ami_font_setdevicedpi(int id)
 {
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
-	Point dinfo_res;
 	ULONG ydpi = option_amiga_ydpi;
 	ULONG xdpi = option_amiga_ydpi;
 
@@ -670,11 +669,21 @@ void ami_font_setdevicedpi(int id)
 			if(GetDisplayInfoData(dih, &dinfo, sizeof(struct DisplayInfo),
 				DTAG_DISP, 0))
 			{
-				dinfo_res = dinfo.Resolution;
-				xdpi = (dinfo_res.x / dinfo_res.y) * ydpi;
+				int xres = dinfo.Resolution.x;
+				int yres = dinfo.Resolution.y;
 
-				LOG(("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld)",
-					xdpi, ydpi, dinfo_res.x , dinfo_res.y));
+				if(option_widescreen)
+				{
+					/* AmigaOS sees 4:3 modes as square in the DisplayInfo database,
+					 * so we correct 16:10 modes to square for widescreen displays. */
+					xres = (xres * 16) / 4;
+					yres = (yres * 10) / 3;
+				}
+
+				xdpi = (yres * ydpi) / xres;
+
+				LOG(("XDPI = %ld, YDPI = %ld (DisplayInfo resolution %ld x %ld, corrected %ld x %ld)",
+					xdpi, ydpi, dinfo.Resolution.x, dinfo.Resolution.y, xres, yres));
 			}
 		}
 	}

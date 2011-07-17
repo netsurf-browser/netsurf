@@ -66,6 +66,7 @@ extern int option_cookies_window_ysize;
 extern int option_cairo_renderer;
 extern bool option_direct_render;
 extern int option_amiga_ydpi;
+extern bool option_widescreen;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -114,6 +115,7 @@ int option_cookies_window_ysize = 0; \
 int option_cairo_renderer = 1; \
 bool option_direct_render = false; \
 int option_amiga_ydpi = 72; \
+bool option_widescreen = false; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -161,5 +163,6 @@ int option_amiga_ydpi = 72; \
 { "cookies_window_ysize",	OPTION_INTEGER,	&option_cookies_window_ysize}, \
 { "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&option_direct_render}, \
-{ "amiga_ydpi",	OPTION_INTEGER,	&option_amiga_ydpi},
+{ "amiga_ydpi",	OPTION_INTEGER,	&option_amiga_ydpi}, \
+{ "widescreen",	OPTION_BOOL,	&option_widescreen},
 #endif
