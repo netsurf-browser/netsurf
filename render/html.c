@@ -1729,6 +1729,26 @@ void html_stop(struct content *c)
 
 	switch (c->status) {
 	case CONTENT_STATUS_LOADING:
+		/* Clear up objects if we were stopped after queuing up some 
+		 * fetches within xml_to_box (i.e. gui_multitask is somewhere 
+		 * in our call stack) */
+		for (object = htmlc->object_list; object != NULL; 
+				object = object->next) {
+			if (object->content == NULL)
+				continue;
+
+			/* If there's a content already associated with our 
+			 * handle, something's gone very wrong */
+			assert(content_get_status(object->content) == 
+					CONTENT_STATUS_ERROR);
+			
+			hlcache_handle_abort(object->content);
+			hlcache_handle_release(object->content);
+			object->content = NULL;
+
+			c->active--;
+		}
+
 		/* Still loading; simply flag that we've been aborted
 		 * html_convert/html_finish_conversion will do the rest */
 		htmlc->aborted = true;
@@ -1745,12 +1765,25 @@ void html_stop(struct content *c)
 			else if (content_get_status(object->content) == 
 					CONTENT_STATUS_READY)
 				hlcache_handle_abort(object->content);
+				/* Active count will be updated when 
+				 * html_object_callback receives
+ 				 * CONTENT_MSG_DONE from this object */
 			else {
+				hlcache_handle_abort(object->content);
 				hlcache_handle_release(object->content);
 				object->content = NULL;
+
+				c->active--;
 			}
 		}
-		c->status = CONTENT_STATUS_DONE;
+
+		/* If there are no further active fetches and we're still
+ 		 * in the READY state, transition to the DONE state. */
+		if (c->status == CONTENT_STATUS_READY && c->active == 0) {
+			html_set_status(htmlc, "");
+			content_set_done(c);
+		}
+
 		break;
 	case CONTENT_STATUS_DONE:
 		/* Nothing to do */
@@ -1908,9 +1941,9 @@ void html_destroy(struct content *c)
 	while (html->object_list != NULL) {
 		struct content_html_object *victim = html->object_list;
 
-		LOG(("object %p", victim->content));
-
 		if (victim->content != NULL) {
+			LOG(("object %p", victim->content));
+
 			if (content_get_type(victim->content) == CONTENT_HTML)
 				schedule_remove(html_object_refresh, victim);
 
