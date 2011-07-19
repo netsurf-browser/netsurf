@@ -240,6 +240,7 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->encoding = NULL;
 	c->base_url = (char *) content__get_url(&c->base);
 	c->base_target = NULL;
+	c->aborted = false;
 	c->layout = NULL;
 	c->background_colour = NS_TRANSPARENT;
 	c->stylesheet_count = 0;
@@ -482,11 +483,11 @@ bool html_convert(struct content *c)
 		return false;
 	}
 
-	htmlc->document =binding_get_document(htmlc->parser_binding,
+	htmlc->document = binding_get_document(htmlc->parser_binding,
 					&htmlc->quirks);
 	/*xmlDebugDumpDocument(stderr, htmlc->document);*/
 
-	if (!htmlc->document) {
+	if (htmlc->document == NULL) {
 		LOG(("Parsing failed"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -506,32 +507,39 @@ bool html_convert(struct content *c)
 		}
 	}
 
+	/* Give up processing if we've been aborted */
+	if (htmlc->aborted) {
+		msg_data.error = messages_get("Stopped");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
+
 	/* locate html and head elements */
 	html = xmlDocGetRootElement(htmlc->document);
-	if (html == 0 || strcmp((const char *) html->name, "html") != 0) {
+	if (html == NULL || strcmp((const char *) html->name, "html") != 0) {
 		LOG(("html element not found"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 	for (head = html->children;
-			head != 0 && head->type != XML_ELEMENT_NODE;
+			head != NULL && head->type != XML_ELEMENT_NODE;
 			head = head->next)
 		;
 	if (head && strcmp((const char *) head->name, "head") != 0) {
-		head = 0;
+		head = NULL;
 		LOG(("head element not found"));
 	}
 
-	if (head) {
-		if (!html_head(htmlc, head)) {
+	if (head != NULL) {
+		if (html_head(htmlc, head) == false) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
 		}
 
 		/* handle meta refresh */
-		if (!html_meta_refresh(htmlc, head))
+		if (html_meta_refresh(htmlc, head) == false)
 			return false;
 	}
 
@@ -572,7 +580,7 @@ bool html_convert(struct content *c)
 	}
 
 	/* get stylesheets */
-	if (!html_find_stylesheets(htmlc, html))
+	if (html_find_stylesheets(htmlc, html) == false)
 		return false;
 
 	return true;
@@ -590,6 +598,14 @@ void html_finish_conversion(html_content *c)
 	uint32_t i;
 	css_error error;
 
+	/* Bail out if we've been aborted */
+	if (c->aborted) {
+		msg_data.error = messages_get("Stopped");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		c->base.status = CONTENT_STATUS_ERROR;
+		return;
+	}
+
 	html = xmlDocGetRootElement(c->document);
 	assert(html != NULL);
 
@@ -606,7 +622,7 @@ void html_finish_conversion(html_content *c)
 	if (error != CSS_OK) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		c->base.status = CONTENT_MSG_ERROR;
+		c->base.status = CONTENT_STATUS_ERROR;
 		return;
 	}
 
@@ -1703,7 +1719,7 @@ void html_object_refresh(void *p)
 }
 
 /**
- * Stop loading a CONTENT_HTML in state READY.
+ * Stop loading a CONTENT_HTML.
  */
 
 void html_stop(struct content *c)
@@ -1711,24 +1727,38 @@ void html_stop(struct content *c)
 	html_content *htmlc = (html_content *) c;
 	struct content_html_object *object;
 
-	assert(c->status == CONTENT_STATUS_READY);
+	switch (c->status) {
+	case CONTENT_STATUS_LOADING:
+		/* Still loading; simply flag that we've been aborted
+		 * html_convert/html_finish_conversion will do the rest */
+		htmlc->aborted = true;
+		break;
+	case CONTENT_STATUS_READY:
+		for (object = htmlc->object_list; object != NULL; 
+				object = object->next) {
+			if (object->content == NULL)
+				continue;
 
-	for (object = htmlc->object_list; object != NULL; 
-			object = object->next) {
-		if (object->content == NULL)
-			continue;
-
-		if (content_get_status(object->content) == CONTENT_STATUS_DONE)
-			; /* already loaded: do nothing */
-		else if (content_get_status(object->content) == 
-				CONTENT_STATUS_READY)
-			hlcache_handle_abort(object->content);
-		else {
-			hlcache_handle_release(object->content);
-			object->content = NULL;
+			if (content_get_status(object->content) == 
+					CONTENT_STATUS_DONE)
+				; /* already loaded: do nothing */
+			else if (content_get_status(object->content) == 
+					CONTENT_STATUS_READY)
+				hlcache_handle_abort(object->content);
+			else {
+				hlcache_handle_release(object->content);
+				object->content = NULL;
+			}
 		}
+		c->status = CONTENT_STATUS_DONE;
+		break;
+	case CONTENT_STATUS_DONE:
+		/* Nothing to do */
+		break;
+	default:
+		LOG(("Unexpected status %d", c->status));
+		assert(0);
 	}
-	c->status = CONTENT_STATUS_DONE;
 }
 
 

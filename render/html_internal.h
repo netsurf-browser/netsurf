@@ -48,6 +48,9 @@ typedef struct html_content {
 	/** Base target */
 	char *base_target;
 
+	/** Content has been aborted in the LOADING state */
+	bool aborted;
+
 	/** Box tree, or NULL. */
 	struct box *layout;
 	/** Document background colour. */

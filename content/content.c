@@ -1112,10 +1112,8 @@ nserror content_abort(struct content *c)
 {
 	LOG(("Aborting %p", c));
 	
-	if (c->status == CONTENT_STATUS_READY) {
-		if (c->handler->stop != NULL)
-			c->handler->stop(c);
-	}
+	if (c->handler->stop != NULL)
+		c->handler->stop(c);
 	
 	/* And for now, abort our llcache object */
 	return llcache_handle_abort(c->llcache);
