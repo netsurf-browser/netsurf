@@ -1483,6 +1483,9 @@ nserror html_object_callback(hlcache_handle *object,
 	int x, y;
 	struct box *box;
 
+	assert(c->base.status == CONTENT_STATUS_READY ||
+			c->base.status == CONTENT_STATUS_DONE);
+
 	box = o->box;
 
 	switch (event->type) {
@@ -1509,10 +1512,7 @@ nserror html_object_callback(hlcache_handle *object,
 		c->base.active--;
 		html_object_done(box, object, o->background);
 
-		if (c->base.status != CONTENT_STATUS_LOADING &&
-				box->flags & REPLACE_DIM) {
-			/* Redraw newly available object if parent content is
-			 * displayable, and the object's box size is known */
+		if (box->flags & REPLACE_DIM) {
 			union content_msg_data data;
 
 			if (!box_visible(box))
