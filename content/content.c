@@ -280,8 +280,7 @@ void content_convert(struct content *c)
 	if (c->handler->data_complete != NULL) {
 		c->locked = true;
 		if (c->handler->data_complete(c) == false) {
-			c->locked = false;
-			c->status = CONTENT_STATUS_ERROR;
+			content_set_error(c);
 		}
 		/* Conversion to the READY state will unlock the content */
 	} else {
@@ -322,6 +321,17 @@ void content_set_done(struct content *c)
 	content_broadcast(c, CONTENT_MSG_DONE, msg_data);
 }
 
+/**
+ * Put a content in status CONTENT_STATUS_ERROR and unlock the content.
+ *
+ * \note We expect the caller to broadcast an error report if needed.
+ */
+
+void content_set_error(struct content *c)
+{
+	c->locked = false;
+	c->status = CONTENT_STATUS_ERROR;
+}
 
 /**
  * Reformat to new size.

@@ -148,6 +148,8 @@ nserror content__clone(const struct content *c, struct content *nc);
 
 void content_set_ready(struct content *c);
 void content_set_done(struct content *c);
+void content_set_error(struct content *c);
+
 void content_set_status(struct content *c, const char *status_message, ...);
 void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data);

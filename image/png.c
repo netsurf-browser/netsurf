@@ -325,7 +325,6 @@ static bool nspng_convert(struct content *c)
 
 		msg_data.error = messages_get("PNGError");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		c->status = CONTENT_STATUS_ERROR;
 		return false;
 	}
 

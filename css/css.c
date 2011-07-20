@@ -302,7 +302,6 @@ bool nscss_convert(struct content *c)
 	if (error != CSS_OK) {
 		msg_data.error = "?";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		c->status = CONTENT_STATUS_ERROR;
 		return false;
 	}
 
@@ -508,7 +507,7 @@ void nscss_content_done(struct content_css_data *css, void *pw)
 	if (error != CSS_OK) {
 		msg_data.error = "?";
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		c->status = CONTENT_STATUS_ERROR;
+		content_set_error(c);
 		return;
 	}
 	c->size += size;

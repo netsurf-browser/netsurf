@@ -602,7 +602,7 @@ void html_finish_conversion(html_content *c)
 	if (c->aborted) {
 		msg_data.error = messages_get("Stopped");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		c->base.status = CONTENT_STATUS_ERROR;
+		content_set_error(&c->base);
 		return;
 	}
 
@@ -613,7 +613,7 @@ void html_finish_conversion(html_content *c)
 	if (c->stylesheets[STYLESHEET_BASE].data.external == NULL) {
 		msg_data.error = "Base stylesheet failed to load";
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		c->base.status = CONTENT_STATUS_ERROR;
+		content_set_error(&c->base);
 		return;
 	}
 
@@ -622,7 +622,7 @@ void html_finish_conversion(html_content *c)
 	if (error != CSS_OK) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		c->base.status = CONTENT_STATUS_ERROR;
+		content_set_error(&c->base);
 		return;
 	}
 
@@ -652,7 +652,7 @@ void html_finish_conversion(html_content *c)
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(&c->base, CONTENT_MSG_ERROR, 
 						msg_data);
-				c->base.status = CONTENT_STATUS_ERROR;
+				content_set_error(&c->base);
 				return;
 			}
 		}
@@ -665,7 +665,7 @@ void html_finish_conversion(html_content *c)
 	if (!xml_to_box(html, c)) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		c->base.status = CONTENT_STATUS_ERROR;
+		content_set_error(&c->base);
 		return;
 	}
 #if ALWAYS_DUMP_BOX
@@ -681,7 +681,7 @@ void html_finish_conversion(html_content *c)
 		LOG(("imagemap extraction failed"));
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		c->base.status = CONTENT_STATUS_ERROR;
+		content_set_error(&c->base);
 		return;
 	}
 	/*imagemap_dump(c);*/
@@ -1733,7 +1733,7 @@ void html_stop(struct content *c)
 
 	switch (c->status) {
 	case CONTENT_STATUS_LOADING:
-		/* Clear up objects if we were stopped after queuing up some 
+		/* Clean up objects if we were stopped after queuing up some 
 		 * fetches within xml_to_box (i.e. gui_multitask is somewhere 
 		 * in our call stack) */
 		for (object = htmlc->object_list; object != NULL; 
