@@ -1382,6 +1382,10 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	url_func_result res;
 	nserror error;
 
+	/* If we've already been aborted, don't bother attempting the fetch */
+	if (c->aborted)
+		return true;
+
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
 
