@@ -100,7 +100,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 			ASLFR_InitialFile, download_context_get_filename(ctx),
 			TAG_DONE))
 		{
-			strlcpy(&dw->fname,savereq->fr_Drawer,1024);
+			strlcpy(dw->fname, savereq->fr_Drawer, 1024);
 			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
 			if(!ami_download_check_overwrite(dw->fname, gui->shared->win))
 			{
@@ -110,7 +110,8 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		}
 		else
 		{
-
+			FreeVec(dw);
+			return NULL;
 		}
 	}
 
@@ -191,18 +192,18 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 
 	if(dw->size)
 	{
-		RefreshSetGadgetAttrs(dw->objects[GID_STATUS],dw->win,NULL,
-						FUELGAUGE_Level,dw->downloaded,
-						GA_Text,messages_get("amiDownload"),
-						FUELGAUGE_VarArgs,va,
+		RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
+						FUELGAUGE_Level,   dw->downloaded,
+						GA_Text,           messages_get("amiDownload"),
+						FUELGAUGE_VarArgs, va,
 						TAG_DONE);
 	}
 	else
 	{
-		RefreshSetGadgetAttrs(dw->objects[GID_STATUS],dw->win,NULL,
-						FUELGAUGE_Level,dw->downloaded,
-						GA_Text,messages_get("amiDownloadU"),
-						FUELGAUGE_VarArgs,va,
+		RefreshSetGadgetAttrs((struct Gadget *)dw->objects[GID_STATUS], dw->win, NULL,
+						FUELGAUGE_Level,   dw->downloaded,
+						GA_Text,           messages_get("amiDownloadU"),
+						FUELGAUGE_VarArgs, va,
 						TAG_DONE);
 	}
 
@@ -322,7 +323,7 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 		ASLFR_InitialFile,linkname,
 		TAG_DONE))
 	{
-		strlcpy(&fname,savereq->fr_Drawer,1024);
+		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname,savereq->fr_File,1024);
 		ami_update_pointer(g->shared->win,GUI_POINTER_WAIT);
 
