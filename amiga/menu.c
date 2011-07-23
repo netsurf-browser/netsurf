@@ -43,6 +43,7 @@
 #include "amiga/clipboard.h"
 #include "amiga/cookies.h"
 #include "amiga/download.h"
+#include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "amiga/history.h"
@@ -475,7 +476,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	subnum = SUBNUM(code);
 	char *temp, *temp2;
 	BPTR lock = 0;
-	char *source_data;
+	const char *source_data;
 	ULONG source_size;
 	struct bitmap *bm;
 	int sel = 0;
@@ -530,7 +531,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
-								strlcpy(&fname,savereq->fr_Drawer,1024);
+								strlcpy(fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
@@ -556,7 +557,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
-								strlcpy(&fname,savereq->fr_Drawer,1024);
+								strlcpy(fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
@@ -576,7 +577,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
-								strlcpy(&fname,savereq->fr_Drawer,1024);
+								strlcpy(fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if(ami_download_check_overwrite(fname, gwin->win))
@@ -623,13 +624,13 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
 								TAG_DONE))
 							{
-								strlcpy(&fname,savereq->fr_Drawer,1024);
+								strlcpy(fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if((bm = content_get_bitmap(gwin->bw->current_content)))
 								{
-									bm->url = content_get_url(gwin->bw->current_content);
-									bm->title = content_get_title(gwin->bw->current_content);
+									bm->url = (char *)content_get_url(gwin->bw->current_content);
+									bm->title = (char *)content_get_title(gwin->bw->current_content);
 									if(bitmap_save(bm, fname, 0))
 										SetComment(fname, content_get_url(gwin->bw->current_content));
 								}
@@ -721,8 +722,8 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					}
 					else if(bm = content_get_bitmap(gwin->bw->current_content))
 					{
-						bm->url = content_get_url(gwin->bw->current_content);
-						bm->title = content_get_title(gwin->bw->current_content);
+						bm->url = (char *)content_get_url(gwin->bw->current_content);
+						bm->title = (char *)content_get_title(gwin->bw->current_content);
 						ami_easy_clipboard_bitmap(bm);
 					}
 #ifdef WITH_NS_SVG
@@ -886,6 +887,8 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 	char fname[1024];
 	BOOL ret = FALSE;
 	char *mt = NULL;
+	lwc_string *lwc_mt = NULL;
+	lwc_error lerror;
 	content_type ct;
 
 	if(ap->ap_Info.fib_DirEntryType > 0) return(TRUE);
@@ -894,7 +897,12 @@ static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,st
 	AddPart(fname,ap->ap_Info.fib_FileName,1024);
 
   	mt = fetch_mimetype(fname);
-	ct = content_factory_type_from_mime_type(mt);
+	lerror = lwc_intern_string(mt, strlen(mt), &lwc_mt);
+	if (lerror != lwc_error_ok)
+		return FALSE;
+
+	ct = content_factory_type_from_mime_type(lwc_mt);
+	lwc_string_unref(lwc_mt);
 
 	if(ct != CONTENT_NONE) ret = TRUE;
 
