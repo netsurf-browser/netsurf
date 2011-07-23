@@ -160,7 +160,9 @@ static nserror download_context_process_headers(download_context *ctx)
 	ctx->window = gui_download_window_create(ctx, ctx->parent);
 	if (ctx->window == NULL) {
 		free(ctx->filename);
+		ctx->filename = NULL;
 		lwc_string_unref(ctx->mime_type);
+		ctx->mime_type = NULL;
 		return NSERROR_NOMEM;
 	}
 
@@ -265,7 +267,8 @@ void download_context_destroy(download_context *ctx)
 {
 	llcache_handle_release(ctx->llcache);
 
-	lwc_string_unref(ctx->mime_type);
+	if (ctx->mime_type != NULL)
+		lwc_string_unref(ctx->mime_type);
 
 	free(ctx->filename);
 
