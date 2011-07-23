@@ -156,7 +156,7 @@ void ami_drag_save(struct Window *win)
 			BPTR fh = 0;
 			AddPart(path, content_get_title(c), 1024);
 
-			if(!ami_download_check_overwrite(path, win))
+			if(!ami_download_check_overwrite(path, win, 0))
 				break;
 
 			if(fh = FOpen(path,MODE_NEWFILE,0))
@@ -172,7 +172,7 @@ void ami_drag_save(struct Window *win)
 
 		case GUI_SAVE_TEXT_SELECTION: // selection
 			AddPart(path,"netsurf_text_file",1024);
-			if(!ami_download_check_overwrite(path, win))
+			if(!ami_download_check_overwrite(path, win, 0))
 				break;
 			selection_save_text((struct selection *)drag_save_data,path);
 		break;
@@ -183,7 +183,7 @@ void ami_drag_save(struct Window *win)
 			BPTR lock = 0;
 
 			AddPart(path, content_get_title(c), 1024);
-			if(!ami_download_check_overwrite(path, win))
+			if(!ami_download_check_overwrite(path, win, 0))
 				break;
 
 			if(lock = CreateDir(path))

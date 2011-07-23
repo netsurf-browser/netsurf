@@ -412,6 +412,11 @@ amiDownload:%ld di %ld byte scaricati
 amiDownloadU:%ld byte scaricati
 amiDownloadComplete:NetSurf: Download completato
 
+# Requesters
+#
+amiSizeExisting:Existing file size:
+amiSizeNew:New file size:
+
 # GTK download window tokens
 #
 # This section contains tokens which are used in the gtk

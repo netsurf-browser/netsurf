@@ -308,7 +308,7 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
 	const char *source_data;
 	ULONG source_size;
 
-	if(!ami_download_check_overwrite(filename, NULL)) return false;
+	if(!ami_download_check_overwrite(filename, NULL, 0)) return false;
 
 	if(iffh = AllocIFF())
 	{

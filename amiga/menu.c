@@ -535,7 +535,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
-								if(ami_download_check_overwrite(fname, gwin->win))
+								if(ami_download_check_overwrite(fname, gwin->win, 0))
 								{
 									if(fh = FOpen(fname,MODE_NEWFILE,0))
 									{
@@ -561,7 +561,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
-								if(ami_download_check_overwrite(fname, gwin->win))
+								if(ami_download_check_overwrite(fname, gwin->win, 0))
 								{
 									save_as_text(gwin->bw->current_content,fname);
 									SetComment(fname,content_get_url(gwin->bw->current_content));
@@ -580,7 +580,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								strlcpy(fname,savereq->fr_Drawer,1024);
 								AddPart(fname,savereq->fr_File,1024);
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if(ami_download_check_overwrite(fname, gwin->win))
+								if(ami_download_check_overwrite(fname, gwin->win, 0))
 								{
 									if(lock = CreateDir(fname))
 									{

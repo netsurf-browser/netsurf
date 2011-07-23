@@ -517,7 +517,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					AddPart(fname,savereq->fr_File,1024);
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
-					if(ami_download_check_overwrite(fname, gwin->win))
+					if(ami_download_check_overwrite(fname, gwin->win, 0))
 					{
 						if(fh = FOpen(fname,MODE_NEWFILE,0))
 						{

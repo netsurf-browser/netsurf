@@ -102,7 +102,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		{
 			strlcpy(dw->fname, savereq->fr_Drawer, 1024);
 			AddPart((STRPTR)&dw->fname,savereq->fr_File,1024);
-			if(!ami_download_check_overwrite(dw->fname, gui->shared->win))
+			if(!ami_download_check_overwrite(dw->fname, gui->shared->win, total_size))
 			{
 				FreeVec(dw);
 				return NULL;
@@ -327,7 +327,7 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 		AddPart(fname,savereq->fr_File,1024);
 		ami_update_pointer(g->shared->win,GUI_POINTER_WAIT);
 
-		if(ami_download_check_overwrite(fname, g->shared->win))
+		if(ami_download_check_overwrite(fname, g->shared->win, 0))
 		{
 			if(fh = FOpen(fname,MODE_NEWFILE,0))
 			{
@@ -356,11 +356,14 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 	}
 }
 
-BOOL ami_download_check_overwrite(const char *file, struct Window *win)
+BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG size)
 {
 	/* Return TRUE if file can be (over-)written */
 	int res = 0;
 	BPTR lock = 0;
+	BPTR fh = 0;
+	int64 oldsize = 0;
+	char *overwritetext;
 
 	if(option_ask_overwrite == false) return TRUE;
 
@@ -368,9 +371,23 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win)
 
 	if(lock)
 	{
-		UnLock(lock);
+		if(size) {
+			if(fh = OpenFromLock(lock)) {
+				oldsize = GetFileSize(fh);
+				Close(fh);
+			}
+			overwritetext = ASPrintf("%s\n\n%s %lu %s\n%s %lu %s",
+				messages_get("OverwriteFile"),
+				messages_get("amiSizeExisting"), (ULONG)oldsize, messages_get("Bytes"),
+				messages_get("amiSizeNew"), size, messages_get("Bytes"));
+		} else {
+			UnLock(lock);
+			overwritetext = ASPrintf(messages_get("OverwriteFile"));
+		}
 
-		char *utf8text = ami_utf8_easy(messages_get("OverwriteFile"));
+		char *utf8text = ami_utf8_easy(overwritetext);
+		FreeVec(overwritetext);
+
 		char *utf8gadget1 = ami_utf8_easy(messages_get("DontReplace"));
 		char *utf8gadget2 = ami_utf8_easy(messages_get("Replace"));
 		char *utf8gadgets = ASPrintf("%s|%s", utf8gadget1, utf8gadget2);

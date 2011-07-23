@@ -30,7 +30,7 @@ void ami_utf8_free(char *ptr)
 	if(ptr) free(ptr);
 }
 
-char *ami_utf8_easy(char *string)
+char *ami_utf8_easy(const char *string)
 {
 	char *localtext;
 
@@ -44,7 +44,7 @@ char *ami_utf8_easy(char *string)
 	}
 }
 
-char *ami_to_utf8_easy(char *string)
+char *ami_to_utf8_easy(const char *string)
 {
 	char *localtext;
 

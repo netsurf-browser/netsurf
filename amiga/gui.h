@@ -135,6 +135,8 @@ void ami_get_msg(void);
 void ami_close_all_tabs(struct gui_window_2 *gwin);
 void ami_quit_netsurf(void);
 void ami_do_redraw(struct gui_window_2 *g);
+void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
+		int x0, int y0, int x1, int y1);
 STRPTR ami_locale_langs(void);
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
