@@ -1492,6 +1492,7 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	}
 
 	if (bw->loading_content != NULL) {
+		hlcache_handle_abort(bw->loading_content);
 		hlcache_handle_release(bw->loading_content);
 		bw->loading_content = NULL;
 	}
