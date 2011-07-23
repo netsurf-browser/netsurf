@@ -418,7 +418,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 	APTR userdata = NULL;
 	struct browser_window *bw;
 	struct hlcache_handle *object;
-	char *source_data;
+	const char *source_data;
 	ULONG source_size;
 	struct bitmap *bm;
 
@@ -440,7 +440,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					char fname[1024];
 					int x,y;
 
-					strlcpy(&fname,filereq->fr_Drawer,1024);
+					strlcpy(fname,filereq->fr_Drawer,1024);
 					AddPart(fname,filereq->fr_File,1024);
 
 					if(utf8_from_local_encoding(fname,0,&utf8_fn) != UTF8_CONVERT_OK)
@@ -490,8 +490,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				object = (struct hlcache_handle *)userdata;
 				if((bm = content_get_bitmap(object)))
 				{
-					bm->url = content_get_url(object);
-					bm->title = content_get_title(object);
+					bm->url = (char *)content_get_url(object);
+					bm->title = (char *)content_get_title(object);
 					ami_easy_clipboard_bitmap(bm);
 				}
 #ifdef WITH_NS_SVG
@@ -513,7 +513,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				{
 					BPTR fh = 0;
 					char fname[1024];
-					strlcpy(&fname,savereq->fr_Drawer,1024);
+					strlcpy(fname,savereq->fr_Drawer,1024);
 					AddPart(fname,savereq->fr_File,1024);
 					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 
@@ -545,12 +545,12 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					BPTR fh = 0;
 					char fname[1024];
 
-					strlcpy(&fname,savereq->fr_Drawer,1024);
+					strlcpy(fname,savereq->fr_Drawer,1024);
 					AddPart(fname,savereq->fr_File,1024);
 					if((bm = content_get_bitmap(object)))
 					{
-						bm->url = content_get_url(object);
-						bm->title = content_get_title(object);
+						bm->url = (char *)content_get_url(object);
+						bm->title = (char *)content_get_title(object);
 						if(bitmap_save(bm, fname, 0))
 							SetComment(fname, content_get_url(object));
 					}

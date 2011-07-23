@@ -165,8 +165,6 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 void ami_try_quit(void);
-void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
-		int x0, int y0, int x1, int y1);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
 
@@ -207,7 +205,7 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
-bool ami_locate_resource(char *lang, char *file)
+bool ami_locate_resource(char *lang, const char *file)
 {
 	struct Locale *locale;
 	int i;
@@ -622,7 +620,7 @@ static void gui_init2(int argc, char** argv)
 
 			if(rarray[A_URL])
 			{
-				temp_homepage_url = (char *)strdup(rarray[A_URL]);
+				temp_homepage_url = (char *)strdup((char *)rarray[A_URL]);
 
 				if(notalreadyrunning)
 				{
@@ -1331,7 +1329,7 @@ void ami_handle_msg(void)
 								(ULONG *)&storage);
 							if(search_is_url((char *)storage) == false)
 							{
-								storage = (ULONG *)search_web_from_term((char *)storage);
+								storage = (ULONG)search_web_from_term((char *)storage);
 							}
 
 							browser_window_go(gwin->bw,(char *)storage, NULL, true);
@@ -1346,7 +1344,7 @@ void ami_handle_msg(void)
 							GetAttr(STRINGA_TextVal,
 								(Object *)gwin->objects[GID_SEARCHSTRING],
 								(ULONG *)&storage);
-							storage = (ULONG *)search_web_from_term((char *)storage);
+							storage = (ULONG)search_web_from_term((char *)storage);
 
 							browser_window_go(gwin->bw,(char *)storage, NULL, true);
 						break;
@@ -1630,8 +1628,8 @@ void ami_handle_msg(void)
 					if(!bm) bm = content_get_bitmap(gwin->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
 					HideWindow(gwin->win);
-					gwin->appicon = AddAppIcon(gwin->objects[OID_MAIN], NULL,
-											gwin->win->Title, appport, NULL,
+					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN], 0,
+											gwin->win->Title, appport, 0,
 											gwin->dobj, NULL);
 
 					curbw = NULL;
@@ -1889,7 +1887,8 @@ void ami_handle_applib(void)
 
 			case APPLIBMT_OpenDoc:
 			{
-				struct ApplicationOpenPrintDocMsg *applibopdmsg = applibmsg;
+				struct ApplicationOpenPrintDocMsg *applibopdmsg =
+					(struct ApplicationOpenPrintDocMsg *)applibmsg;
 				char *tempurl;
 
 				tempurl = path_to_url(applibopdmsg->fileName);
@@ -1923,7 +1922,8 @@ void ami_handle_applib(void)
 
 			case APPLIBMT_CustomMsg:
 			{
-				struct ApplicationCustomMsg *applibcustmsg = applibmsg;
+				struct ApplicationCustomMsg *applibcustmsg =
+					(struct ApplicationCustomMsg *)applibmsg;
 		//		STRPTR tempmsg;
 		//		if(tempmsg = ASPrintf("\"%s\"",applibcustmsg->customMsg))
 		//		{
@@ -1970,9 +1970,9 @@ void ami_get_msg(void)
 
 	if(signal & schedulesig)
 	{
-		if(timermsg = GetMsg(msgport))
+		if(timermsg = (struct TimerRequest *)GetMsg(msgport))
 		{
-			ReplyMsg(timermsg);
+			ReplyMsg((struct Message *)timermsg);
 			schedule_run(FALSE);
 		}
 	}
@@ -2868,7 +2868,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		sz = ami_get_border_gadget_balance(gwin->shared,
 				(ULONG *)&size1, (ULONG *)&size2);
 
-		gwin->shared->objects[GID_HSCROLL] = (struct Gadget *)NewObject(
+		gwin->shared->objects[GID_HSCROLL] = NewObject(
 				NULL,
 				"scrollergclass",
 				GA_ID, GID_HSCROLL,
@@ -2885,7 +2885,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		GetAttr(GA_Height, (Object *)gwin->shared->objects[GID_HSCROLL],
 				(ULONG *)&sz);
 
-		gwin->shared->objects[GID_STATUS] = (struct Gadget *)NewObject(
+		gwin->shared->objects[GID_STATUS] = NewObject(
 				NULL,
 				"frbuttonclass",
 				GA_ID, GID_STATUS,
@@ -3761,7 +3761,7 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	/* generic search image */
 	if(bm == NULL)
 	{
-		ami_get_theme_filename(&fname, "theme_search", false);
+		ami_get_theme_filename(fname, "theme_search", false);
 		if(nsbm = ami_bitmap_from_datatype(fname))
 		{
 			bm = ami_getcachenativebm(nsbm, 16, 16, NULL);

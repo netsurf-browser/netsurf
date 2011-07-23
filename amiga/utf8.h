@@ -18,7 +18,7 @@
 
 #ifndef AMIGA_UTF8_H
 #define AMIGA_UTF8_H
-char *ami_utf8_easy(char *string);
+char *ami_utf8_easy(const char *string);
 void ami_utf8_free(char *ptr);
-char *ami_to_utf8_easy(char *string);
+char *ami_to_utf8_easy(const char *string);
 #endif

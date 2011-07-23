@@ -284,7 +284,7 @@ void ami_init_mouse_pointers(void)
 
 		if(option_truecolour_mouse_pointers)
 		{
-			ami_get_theme_filename(&ptrfname,ptrs32[i], false);
+			ami_get_theme_filename((char *)&ptrfname,ptrs32[i], false);
 			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
 			{
 				if(IconControl(dobj, ICONCTRLA_GetImageDataFormat, &format, TAG_DONE))

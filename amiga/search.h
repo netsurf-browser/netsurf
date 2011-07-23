@@ -24,8 +24,7 @@
 struct find_window {
 	struct nsObject *node;
 	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
+	Object *objects[GID_LAST];
 	struct gui_window *gwin;
 };
 

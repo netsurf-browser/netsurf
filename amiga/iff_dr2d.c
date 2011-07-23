@@ -65,7 +65,8 @@ void addcolour(ULONG newcol)
 	}
 }
 
-bool ami_svg_to_dr2d(struct IFFHandle *iffh,char *buffer, uint32 size, char *url)
+bool ami_svg_to_dr2d(struct IFFHandle *iffh, const char *buffer,
+		uint32 size, const char *url)
 {
 	struct svgtiny_diagram *diagram;
 	svgtiny_code code;
@@ -304,7 +305,7 @@ bool ami_svg_to_dr2d(struct IFFHandle *iffh,char *buffer, uint32 size, char *url
 bool ami_save_svg(struct hlcache_handle *c,char *filename)
 {
 	struct IFFHandle *iffh;
-	char *source_data;
+	const char *source_data;
 	ULONG source_size;
 
 	if(!ami_download_check_overwrite(filename, NULL)) return false;

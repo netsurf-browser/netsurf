@@ -58,7 +58,7 @@ BOOL drag_in_progress = FALSE;
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g)
 {
-	char *filetype;
+	const char *filetype;
 
 	if(strcmp(option_use_pubscreen,"Workbench")) return;
 
@@ -105,7 +105,7 @@ void ami_drag_save(struct Window *win)
 {
 	ULONG which = WBO_NONE,type;
 	char path[1025],dpath[1025];
-	char *source_data;
+	const char *source_data;
 	ULONG source_size;
 
 	ami_drag_icon_close(NULL);
@@ -205,8 +205,8 @@ void ami_drag_save(struct Window *win)
 			AddPart(path, content_get_title(c), 1024);
 			if(bm = content_get_bitmap(c))
 			{
-				bm->url = content_get_url(c);
-				bm->title = content_get_title(c);
+				bm->url = (char *)content_get_url(c);
+				bm->title = (char *)content_get_title(c);
 				if(bitmap_save(bm, path, 0))
 					SetComment(path, content_get_url(c));
 			}
@@ -230,7 +230,7 @@ void ami_drag_save(struct Window *win)
 	ami_update_pointer(win,GUI_POINTER_DEFAULT);
 }
 
-void ami_drag_icon_show(struct Window *win, char *type)
+void ami_drag_icon_show(struct Window *win, const char *type)
 {
 	struct DiskObject *dobj = NULL;
 	ULONG *icondata1;

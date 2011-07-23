@@ -21,15 +21,16 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 
-#include "amiga/clipboard.h"
-#include "amiga/iff_cset.h"
-#include "amiga/options.h"
-#include "amiga/gui.h"
-#include "amiga/utf8.h"
 #include "amiga/bitmap.h"
+#include "amiga/clipboard.h"
+#include "amiga/drag.h"
+#include "amiga/filetype.h"
+#include "amiga/gui.h"
+#include "amiga/iff_cset.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
-#include "amiga/drag.h"
+#include "amiga/options.h"
+#include "amiga/utf8.h"
 
 #include <proto/iffparse.h>
 #include <proto/intuition.h>
@@ -146,7 +147,8 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 				else
 				{
 					utf8_from_enc(readbuf,
-						ObtainCharsetInfo(DFCS_NUMBER, cset.CodeSet, DFCS_MIMENAME),
+						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
+										cset.CodeSet, DFCS_MIMENAME),
 						rlen, &clip);
 				}
 
@@ -346,7 +348,7 @@ void ami_drag_selection(struct selection *s)
 	x = gwin->win->MouseX;
 	y = gwin->win->MouseY;
 
-	if(text_box = ami_text_box_at_point(gwin, &x, &y))
+	if(text_box = ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
 	{
 		ami_utf8_clipboard = true;
 
@@ -419,7 +421,7 @@ bool ami_easy_clipboard_bitmap(struct bitmap *bitmap)
 #ifdef WITH_NS_SVG
 bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 {
-	char *source_data;
+	const char *source_data;
 	ULONG source_size;
 
 	if(ami_mime_compare(c, "svg") == false) return false;

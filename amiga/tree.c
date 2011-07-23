@@ -65,8 +65,8 @@
 
 struct treeview_window {
 	struct Window *win;
-	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
+	Object *objects[GID_LAST];
+//	struct Gadget *gadgets[GID_LAST];
 	struct nsObject *node;
 	int type;
 	struct NewMenu *menu;
@@ -140,7 +140,7 @@ void ami_tree_resized(struct tree *tree, int width, int height, void *data)
 
 	if(twin->win)
 	{
-		GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+		GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 
 		RefreshSetGadgetAttrs((APTR)twin->objects[OID_VSCROLL], twin->win, NULL,
 			SCROLLER_Total, height,
@@ -166,7 +166,7 @@ void ami_tree_get_window_dimensions(int *width, int *height, void *data)
 	struct treeview_window *twin = data;
 	struct IBox *bbox;
 
-	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 
 	if(width) *width = bbox->Width;
 	if(height) *height = bbox->Height;
@@ -198,7 +198,7 @@ void ami_tree_scroll_visible(int y, int height, void *data)
 	struct treeview_window *twin = data;
 
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&sy);
-	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 
 	if((y > sy) && ((y + height) < (sy + bbox->Height))) return;
 
@@ -242,7 +242,7 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 {
 	const char *type = "project";
 	const char *url;
-	struct url_data *data;
+	const struct url_data *data;
 	struct node *node = NULL;
 
 	if((tree_drag_status(twin->tree) == TREE_NO_DRAG) ||
@@ -453,7 +453,7 @@ void ami_tree_update_buttons(struct treeview_window *twin)
 		OnMenu(twin->win, AMI_TREE_MENU_DELETE);
 		OnMenu(twin->win, AMI_TREE_MENU_CLEAR);
 
-		RefreshSetGadgetAttrs((struct Gadget *)twin->gadgets[GID_DEL],
+		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_DEL],
 			twin->win, NULL,
 			GA_Disabled, FALSE,
 			TAG_DONE);
@@ -466,7 +466,7 @@ void ami_tree_update_buttons(struct treeview_window *twin)
 		OffMenu(twin->win, AMI_TREE_MENU_DELETE);
 		OffMenu(twin->win, AMI_TREE_MENU_CLEAR);
 
-		RefreshSetGadgetAttrs((struct Gadget *)twin->gadgets[GID_DEL],
+		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_DEL],
 			twin->win, NULL,
 			GA_Disabled, TRUE,
 			TAG_DONE);
@@ -476,7 +476,7 @@ void ami_tree_update_buttons(struct treeview_window *twin)
 
 	if(twin->type != AMI_TREE_COOKIES)
 	{
-		RefreshSetGadgetAttrs((struct Gadget *)twin->gadgets[GID_OPEN],
+		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_OPEN],
 			twin->win, NULL,
 			GA_Disabled, launch_disable,
 			TAG_DONE);
@@ -551,22 +551,22 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			/* WINDOW_NewMenu, twin->menu,   -> No menu for SSL Cert */
 			WINDOW_IconifyGadget, FALSE,
 			WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
+			WINDOW_ParentGroup, twin->objects[GID_MAIN] = VGroupObject,
 				LAYOUT_AddImage, LabelObject,
 					LABEL_Text, messages_get("SSLError"),
 				LabelEnd,
-				LAYOUT_AddChild, twin->gadgets[GID_BROWSER] = SpaceObject,
+				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObject,
 					GA_ID, GID_BROWSER,
 					SPACE_Transparent,TRUE,
 					SPACE_BevelStyle, BVS_DISPLAY,
        			SpaceEnd,
 				LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, twin->gadgets[GID_OPEN] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_OPEN] = ButtonObject,
 						GA_ID,GID_OPEN,
 						GA_Text,messages_get("Accept"),
 						GA_RelVerify,TRUE,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_CANCEL] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_CANCEL] = ButtonObject,
 						GA_ID,GID_CANCEL,
 						GA_Text,messages_get("Reject"),
 						GA_RelVerify,TRUE,
@@ -631,32 +631,32 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WINDOW_NewMenu, twin->menu,
 			WINDOW_IconifyGadget, FALSE,
 //			WINDOW_Position, WPOS_CENTERSCREEN,
-			WINDOW_ParentGroup, twin->gadgets[GID_MAIN] = VGroupObject,
-				LAYOUT_AddChild, twin->gadgets[GID_BROWSER] = SpaceObject,
+			WINDOW_ParentGroup, twin->objects[GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObject,
 					GA_ID, GID_BROWSER,
 					SPACE_Transparent,TRUE,
 					SPACE_BevelStyle, BVS_DISPLAY,
        			SpaceEnd,
 				LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, twin->gadgets[GID_OPEN] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_OPEN] = ButtonObject,
 						GA_ID,GID_OPEN,
 						GA_Text,messages_get("TreeLaunch"),
 						GA_RelVerify,TRUE,
 						GA_Disabled,launchdisable,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_NEWF] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_NEWF] = ButtonObject,
 						GA_ID,GID_NEWF,
 						BUTTON_AutoButton,BAG_POPDRAWER,
 						GA_RelVerify,TRUE,
 						GA_Disabled,nothl,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_NEWB] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_NEWB] = ButtonObject,
 						GA_ID,GID_NEWB,
 						BUTTON_AutoButton,BAG_POPFILE,
 						GA_RelVerify,TRUE,
 						GA_Disabled,nothl,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->gadgets[GID_DEL] = ButtonObject,
+					LAYOUT_AddChild, twin->objects[GID_DEL] = ButtonObject,
 						GA_ID,GID_DEL,
 						GA_Text,messages_get("TreeDelete"),
 						GA_RelVerify,TRUE,
@@ -803,7 +803,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				drag_x_move = 0;
 				drag_y_move = 0;
 
-				GetAttr(SPACE_AreaBox, twin->gadgets[GID_BROWSER], (ULONG *)&bbox);
+				GetAttr(SPACE_AreaBox, twin->objects[GID_BROWSER], (ULONG *)&bbox);
 
 				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
 				x = twin->win->MouseX - bbox->Left + xs;
@@ -860,7 +860,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 			break;
 
 			case WMHI_MOUSEBUTTONS:
-				GetAttr(SPACE_AreaBox, twin->gadgets[GID_BROWSER], (ULONG *)&bbox);	
+				GetAttr(SPACE_AreaBox, twin->objects[GID_BROWSER], (ULONG *)&bbox);	
 				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
 				x = twin->win->MouseX - bbox->Left + xs;
 				GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&ys);
@@ -1225,7 +1225,7 @@ void ami_tree_draw(struct treeview_window *twin)
 
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&y);
-	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 
 	ami_tree_redraw_request(x, y, bbox->Width, bbox->Height, twin);
 }
@@ -1246,7 +1246,7 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
 	glob = &twin->globals;
 
-	GetAttr(SPACE_AreaBox,twin->gadgets[GID_BROWSER],(ULONG *)&bbox);
+	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
 	GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&pos_x);
 	GetAttr(SCROLLER_Top, twin->objects[OID_VSCROLL], (ULONG *)&pos_y);
 

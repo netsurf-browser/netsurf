@@ -238,7 +238,7 @@ BOOL ami_history_event(struct history_window *hw)
 	ULONG class,result,relevent = 0;
 	uint16 code;
 	struct MenuItem *item;
-	char *url;
+	const char *url;
 	struct IBox *bbox;
 	ULONG xs, ys;
 
