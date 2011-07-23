@@ -376,10 +376,10 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 				oldsize = GetFileSize(fh);
 				Close(fh);
 			}
-			overwritetext = ASPrintf("%s\n\n%s %lu %s\n%s %lu %s",
+			overwritetext = ASPrintf("%s\n\n%s %s\n%s %s",
 				messages_get("OverwriteFile"),
-				messages_get("amiSizeExisting"), (ULONG)oldsize, messages_get("Bytes"),
-				messages_get("amiSizeNew"), size, messages_get("Bytes"));
+				messages_get("amiSizeExisting"), human_friendly_bytesize((ULONG)oldsize),
+				messages_get("amiSizeNew"), human_friendly_bytesize(size));
 		} else {
 			UnLock(lock);
 			overwritetext = ASPrintf(messages_get("OverwriteFile"));
