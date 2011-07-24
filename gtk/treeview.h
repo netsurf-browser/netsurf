@@ -47,7 +47,7 @@ gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
 gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer g);
 gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
-		GdkEventButton *event, gpointer g);
+		GdkEventMotion *event, gpointer g);
 gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 		gpointer g);
 

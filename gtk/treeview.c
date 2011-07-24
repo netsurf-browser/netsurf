@@ -40,6 +40,7 @@ struct nsgtk_treeview {
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
+	bool mouse_pressed;
 	int mouse_pressed_x;
 	int mouse_pressed_y;
 	int last_x, last_y;
@@ -220,8 +221,8 @@ gboolean nsgtk_tree_window_button_press_event(GtkWidget *widget,
 	struct tree *tree = tw->tree;
 	
 	gtk_widget_grab_focus(GTK_WIDGET(tw->drawing_area));
-	
-	
+
+	tw->mouse_pressed = true;	
 	tw->mouse_pressed_x = event->x;
 	tw->mouse_pressed_y = event->y;
 
@@ -279,41 +280,44 @@ gboolean nsgtk_tree_window_button_release_event(GtkWidget *widget,
 		tw->mouse_state ^= (BROWSER_MOUSE_PRESS_2 |
 				BROWSER_MOUSE_CLICK_2);
 	
-		/* Handle modifiers being removed */
-		if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
-			tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
-		if (tw->mouse_state & BROWSER_MOUSE_MOD_2 && !ctrl)
-			tw->mouse_state ^= BROWSER_MOUSE_MOD_2;
-		if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
-			tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
+	/* Handle modifiers being removed */
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_1 && !shift)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_1;
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_2 && !ctrl)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_2;
+	if (tw->mouse_state & BROWSER_MOUSE_MOD_3 && !alt)
+		tw->mouse_state ^= BROWSER_MOUSE_MOD_3;
 
 	
-		if (tw->mouse_state &
-				  (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2
-				  | BROWSER_MOUSE_DOUBLE_CLICK))
-			tree_mouse_action(tree, tw->mouse_state,
-					event->x, event->y);
-		else
-			tree_drag_end(tree, tw->mouse_state,
-					tw->mouse_pressed_x,
-					tw->mouse_pressed_y,
-     					event->x, event->y);
+	if (tw->mouse_state &
+			  (BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_CLICK_2
+			  | BROWSER_MOUSE_DOUBLE_CLICK))
+		tree_mouse_action(tree, tw->mouse_state,
+				event->x, event->y);
+	else
+		tree_drag_end(tree, tw->mouse_state,
+				tw->mouse_pressed_x,
+				tw->mouse_pressed_y,
+				event->x, event->y);
 	
 		
-		tw->mouse_state = 0;
-
+	tw->mouse_state = 0;
+	tw->mouse_pressed = false;
 				
-		return TRUE;	
+	return TRUE;	
 }
 
 gboolean nsgtk_tree_window_motion_notify_event(GtkWidget *widget,
-		GdkEventButton *event, gpointer g)
+		GdkEventMotion *event, gpointer g)
 {
 	bool shift = event->state & GDK_SHIFT_MASK;
 	bool ctrl = event->state & GDK_CONTROL_MASK;
 	bool alt = event->state & GDK_MOD1_MASK;
 	struct nsgtk_treeview *tw = (struct nsgtk_treeview *) g;
 	struct tree *tree = tw->tree;
+
+	if (tw->mouse_pressed == false)
+		return TRUE;
 
 	if ((abs(event->x - tw->last_x) < 5) &&
 			(abs(event->y - tw->last_y) < 5)) {
@@ -503,6 +507,7 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 	tv->drawing_area = drawing_area;
 	tv->tree = tree_create(flags, &nsgtk_tree_callbacks, tv);
 	tv->mouse_state = 0;
+	tv->mouse_pressed = false;
 	
 	gtk_widget_modify_bg(GTK_WIDGET(drawing_area), GTK_STATE_NORMAL,
 			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
