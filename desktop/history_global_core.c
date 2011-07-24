@@ -146,7 +146,7 @@ static bool global_history_add_internal(const char *url,
 		node = history_global_find(url);
 		if (node != NULL) {
 			tree_update_URL_node(global_history_tree,
-					     node, url, data, true);
+					     node, url, data);
 			tree_delink_node(global_history_tree, node);
 			tree_link_node(global_history_tree, parent, node,
 				       false);
@@ -155,7 +155,7 @@ static bool global_history_add_internal(const char *url,
 	}
 
 	/* Add the node at the bottom */
-	node = tree_create_URL_node_shared(global_history_tree,
+	node = tree_create_URL_node_readonly(global_history_tree,
 					   parent, url, data,
 					   tree_url_node_callback, NULL);
 

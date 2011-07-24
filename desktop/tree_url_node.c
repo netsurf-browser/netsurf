@@ -176,35 +176,38 @@ struct node *tree_create_URL_node(struct tree *tree, struct node *parent,
 
 
 /**
- * Creates a tree entry for a URL, and links it into the tree.
- *
- * All information is used directly from the url_data, and as such cannot be
- * edited and should never be freed.
+ * Creates a read only tree entry for a URL, and links it into the tree.
  *
  * \param parent      the node to link to
  * \param url         the URL
  * \param data	      the URL data to use
  * \return the node created, or NULL for failure
  */
-struct node *tree_create_URL_node_shared(struct tree *tree, struct node *parent,
-		const char *url, const struct url_data *data,
+struct node *tree_create_URL_node_readonly(struct tree *tree, 
+		struct node *parent, const char *url, 
+		const struct url_data *data, 
 		tree_node_user_callback user_callback, void *callback_data)
 {
 	struct node *node;
 	struct node_element *element;
-	const char *title;
+	char *title;
 
 	assert(url && data);
 
 	if (data->title != NULL) {
-		title = data->title;
+		title = strdup(data->title);
 	} else {
-		title = url;
+		title = strdup(url);
 	}
 
-	node = tree_create_leaf_node(tree, parent, title, false, false, false);
-	if (node == NULL)
+	if (title == NULL)
 		return NULL;
+
+	node = tree_create_leaf_node(tree, parent, title, false, false, false);
+	if (node == NULL) {
+		free(title);
+		return NULL;
+	}
 
 	if (user_callback != NULL) {
 		tree_set_node_user_callback(node, user_callback,
@@ -223,7 +226,8 @@ struct node *tree_create_URL_node_shared(struct tree *tree, struct node *parent,
 		tree_update_node_element(tree, element, url, NULL);
 	}
 
-	tree_update_URL_node(tree, node, url, data, true);
+	tree_update_URL_node(tree, node, url, data);
+
 	return node;
 }
 
@@ -234,7 +238,7 @@ struct node *tree_create_URL_node_shared(struct tree *tree, struct node *parent,
  * \param node  the node to update
  */
 void tree_update_URL_node(struct tree *tree, struct node *node,
-		const char *url, const struct url_data *data, bool shared)
+		const char *url, const struct url_data *data)
 {
 	struct node_element *element;
 	struct bitmap *bitmap = NULL;
@@ -256,18 +260,14 @@ void tree_update_URL_node(struct tree *tree, struct node *node,
 
 		element = tree_node_find_element(node, TREE_ELEMENT_TITLE,
 						 NULL);
-		if (shared)
-			tree_update_node_element(tree, element, data->title,
-						 NULL);
-		else {
-			text_cp = strdup(data->title);
-			if (text_cp == NULL) {
-				LOG(("malloc failed"));
-				warn_user("NoMemory", 0);
-				return;
-			}
-			tree_update_node_element(tree, element,	text_cp, NULL);
+			
+		text_cp = strdup(data->title);
+		if (text_cp == NULL) {
+			LOG(("malloc failed"));
+			warn_user("NoMemory", 0);
+			return;
 		}
+		tree_update_node_element(tree, element,	text_cp, NULL);
 	} else {
 		data = urldb_get_url_data(url);
 		if (data == NULL)
@@ -423,7 +423,7 @@ node_callback_resp tree_url_node_callback(void *user_data,
 			}
 			tree = user_data;
 			tree_update_URL_node(tree, msg_data->node,
-					     norm_text, NULL, false);
+					     norm_text, NULL);
 		}
 		else if (msg_data->flag == TREE_ELEMENT_TITLE) {
 			while (isspace(*text))
@@ -552,7 +552,7 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
  		/** \todo why isn't this fatal? */
  		warn_user("NoMemory", 0);
  	} else {
-		tree_update_URL_node(tree, entry, url, data, false);
+		tree_update_URL_node(tree, entry, url, data);
 	}
 
 

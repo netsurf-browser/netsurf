@@ -179,7 +179,7 @@ bool hotlist_initialise(struct tree *tree, const char *hotlist_path, const char*
 					hotlist_node_callback, NULL);
 			tree_update_URL_node(hotlist_tree, node,
 					hotlist_default_entries[hlst_loop].url,
-					url_data, false);
+					url_data);
 		}
 	}
 
@@ -234,7 +234,7 @@ static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
 			text = tree_url_node_get_url(node);
 			if (strcmp(text, url) == 0) {
 				tree_update_URL_node(hotlist_tree, node,
-						     url, NULL, false);
+						     url, NULL);
 			}
 		}
 		child = tree_node_get_child(node);
@@ -423,7 +423,7 @@ void hotlist_add_page(const char *url)
 
 	node = tree_create_URL_node(hotlist_tree, hotlist_tree_root, url, NULL,
 				    hotlist_node_callback, NULL);
-	tree_update_URL_node(hotlist_tree, node, url, data, false);
+	tree_update_URL_node(hotlist_tree, node, url, data);
 }
 
 /**
