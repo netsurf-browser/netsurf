@@ -288,9 +288,21 @@ url_func_result url_normalize(const char *url, char **result)
 
 	/* make host lower-case */
 	if (match[URL_RE_AUTHORITY].rm_so != -1) {
+		/* Find @ delimiting credentials from host, if any */
 		for (i = match[URL_RE_AUTHORITY].rm_so;
-				(regoff_t) i != match[URL_RE_AUTHORITY].rm_eo; 
+				(regoff_t) i != match[URL_RE_AUTHORITY].rm_eo;
 				i++) {
+			if (norm[i] == '@') {
+				i++;
+				break;
+			}
+		}
+
+		/* No credentials; transform entire host */
+		if ((regoff_t) i == match[URL_RE_AUTHORITY].rm_eo)
+			i = match[URL_RE_AUTHORITY].rm_so;
+
+		for (; (regoff_t) i != match[URL_RE_AUTHORITY].rm_eo; i++) {
 			if (norm[i] == ':' && (i + 3) < len) {
 				if (http && norm[i + 1] == '8' &&
 						norm[i + 2] == '0' &&
