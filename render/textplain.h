@@ -36,17 +36,17 @@ nserror textplain_init(void);
 void textplain_fini(void);
 
 /* access to lines for text selection and searching */
-unsigned long textplain_line_count(struct hlcache_handle *h);
-size_t textplain_size(struct hlcache_handle *h);
+unsigned long textplain_line_count(struct content *c);
+size_t textplain_size(struct content *c);
 
-size_t textplain_offset_from_coords(struct hlcache_handle *h, int x, int y, 
-		int dir);
-void textplain_coords_from_range(struct hlcache_handle *h,
+size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir);
+void textplain_coords_from_range(struct content *c,
 		unsigned start, unsigned end, struct rect *r);
-char *textplain_get_line(struct hlcache_handle *h, unsigned lineno,
+char *textplain_get_line(struct content *c, unsigned lineno,
 		size_t *poffset, size_t *plen);
-int textplain_find_line(struct hlcache_handle *h, unsigned offset);
-char *textplain_get_raw_data(struct hlcache_handle *h,
+int textplain_find_line(struct content *c, unsigned offset);
+char *textplain_get_raw_data(struct content *c,
 		unsigned start, unsigned end, size_t *plen);
+struct browser_window *textplain_get_browser_window(struct content *c);
 
 #endif

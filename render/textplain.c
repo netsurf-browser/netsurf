@@ -292,7 +292,7 @@ nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	c->formatted_width = 0;
 	c->bw = NULL;
 
-	selection_prepare(&c->sel);
+	selection_prepare(&c->sel, (struct content *)c, false);
 
 	return NSERROR_OK;
 
@@ -623,7 +623,6 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	textplain_content *text = (textplain_content *) c;
-	hlcache_handle *h = bw->current_content;
 
 	if (bw->drag_type == DRAGGING_SELECTION && !mouse) {
 		int dir = -1;
@@ -632,7 +631,7 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 		if (selection_dragging_start(&text->sel))
 			dir = 1;
 
-		idx = textplain_offset_from_coords(h, x, y, dir);
+		idx = textplain_offset_from_coords(c, x, y, dir);
 		selection_track(&text->sel, mouse, idx);
 
 		browser_window_set_drag_type(bw, DRAGGING_NONE);
@@ -641,13 +640,12 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 	switch (bw->drag_type) {
 
 		case DRAGGING_SELECTION: {
-			hlcache_handle *h = bw->current_content;
 			int dir = -1;
 			size_t idx;
 
 			if (selection_dragging_start(&text->sel)) dir = 1;
 
-			idx = textplain_offset_from_coords(h, x, y, dir);
+			idx = textplain_offset_from_coords(c, x, y, dir);
 			selection_track(&text->sel, mouse, idx);
 		}
 		break;
@@ -673,7 +671,6 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	textplain_content *text = (textplain_content *) c;
-	hlcache_handle *h = bw->current_content;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 	const char *status = 0;
 	size_t idx;
@@ -681,7 +678,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 
 	browser_window_set_drag_type(bw, DRAGGING_NONE);
 
-	idx = textplain_offset_from_coords(h, x, y, dir);
+	idx = textplain_offset_from_coords(c, x, y, dir);
 	if (selection_click(&text->sel, mouse, idx)) {
 
 		if (selection_dragging(&text->sel)) {
@@ -689,14 +686,14 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 			status = messages_get("Selecting");
 		}
 		else
-			status = content_get_status_message(h);
+			status = content__get_status_message(c);
 	}
 	else {
 		if (bw->loading_content)
 			status = content_get_status_message(
 					bw->loading_content);
 		else
-			status = content_get_status_message(h);
+			status = content__get_status_message(c);
 
 		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
@@ -867,7 +864,6 @@ void textplain_open(struct content *c, struct browser_window *bw,
 	text->bw = bw;
 
 	/* text selection */
-	selection_set_browser_window(&text->sel, bw);
 	selection_init(&text->sel, NULL);
 }
 
@@ -879,8 +875,6 @@ void textplain_open(struct content *c, struct browser_window *bw,
 void textplain_close(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
-
-	selection_set_browser_window(&text->sel, NULL);
 
 	text->bw = NULL;
 }
@@ -903,14 +897,13 @@ struct selection *textplain_get_selection(struct content *c)
  * \param h  Content to retrieve line count from
  * \return Number of lines
  */
-unsigned long textplain_line_count(hlcache_handle *h)
+unsigned long textplain_line_count(struct content *c)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *text = (textplain_content *) c;
 
 	assert(c != NULL);
 
-	return c->physical_line_count;
+	return text->physical_line_count;
 }
 
 /**
@@ -919,14 +912,13 @@ unsigned long textplain_line_count(hlcache_handle *h)
  * \param h  Content to retrieve size of
  * \return Size, in bytes, of data
  */
-size_t textplain_size(hlcache_handle *h)
+size_t textplain_size(struct content *c)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *text = (textplain_content *) c;
 
 	assert(c != NULL);
 
-	return c->utf8_data_size;
+	return text->utf8_data_size;
 }
 
 /**
@@ -942,10 +934,9 @@ size_t textplain_size(hlcache_handle *h)
  * \return byte offset of character containing (or nearest to) point
  */
 
-size_t textplain_offset_from_coords(hlcache_handle *h, int x, int y, int dir)
+size_t textplain_offset_from_coords(struct content *c, int x, int y, int dir)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *textc = (textplain_content *) c;
 	float line_height = textplain_line_height();
 	struct textplain_line *line;
 	const char *text;
@@ -958,7 +949,7 @@ size_t textplain_offset_from_coords(hlcache_handle *h, int x, int y, int dir)
 	y = (int)((float)(y - MARGIN) / line_height);
 	x -= MARGIN;
 
-	nlines = c->physical_line_count;
+	nlines = textc->physical_line_count;
 	if (!nlines)
 		return 0;
 
@@ -966,8 +957,8 @@ size_t textplain_offset_from_coords(hlcache_handle *h, int x, int y, int dir)
 	else if ((unsigned)y >= nlines)
 		y = nlines - 1;
 
-	line = &c->physical_line[y];
-	text = c->utf8_data + line->start;
+	line = &textc->physical_line[y];
+	text = textc->utf8_data + line->start;
 	length = line->length;
 	idx = 0;
 
@@ -1016,25 +1007,24 @@ size_t textplain_offset_from_coords(hlcache_handle *h, int x, int y, int dir)
  * Given a byte offset within the text, return the line number
  * of the line containing that offset (or -1 if offset invalid)
  *
- * \param  h       content of type CONTENT_TEXTPLAIN
+ * \param  c       content of type CONTENT_TEXTPLAIN
  * \param  offset  byte offset within textual representation
  * \return line number, or -1 if offset invalid (larger than size)
  */
 
-int textplain_find_line(hlcache_handle *h, unsigned offset)
+int textplain_find_line(struct content *c, unsigned offset)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *text = (textplain_content *) c;
 	struct textplain_line *line;
 	int nlines;
 	int lineno = 0;
 
 	assert(c != NULL);
 
-	line = c->physical_line;
-	nlines = c->physical_line_count;
+	line = text->physical_line;
+	nlines = text->physical_line_count;
 
-	if (offset > c->utf8_data_size)
+	if (offset > text->utf8_data_size)
 		return -1;
 
 /* \todo - implement binary search here */
@@ -1097,11 +1087,10 @@ int textplain_coord_from_offset(const char *text, size_t offset, size_t length)
  * \param  r      rectangle to be completed
  */
 
-void textplain_coords_from_range(hlcache_handle *h, unsigned start, 
+void textplain_coords_from_range(struct content *c, unsigned start, 
 		unsigned end, struct rect *r)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *text = (textplain_content *) c;
 	float line_height = textplain_line_height();
 	char *utf8_data;
 	struct textplain_line *line;
@@ -1110,14 +1099,14 @@ void textplain_coords_from_range(hlcache_handle *h, unsigned start,
 
 	assert(c != NULL);
 	assert(start <= end);
-	assert(end <= c->utf8_data_size);
+	assert(end <= text->utf8_data_size);
 
-	utf8_data = c->utf8_data;
-	nlines = c->physical_line_count;
-	line = c->physical_line;
+	utf8_data = text->utf8_data;
+	nlines = text->physical_line_count;
+	line = text->physical_line;
 
 	/* find start */
-	lineno = textplain_find_line(h, start);
+	lineno = textplain_find_line(c, start);
 
 	r->y0 = (int)(MARGIN + lineno * line_height);
 
@@ -1126,10 +1115,10 @@ void textplain_coords_from_range(hlcache_handle *h, unsigned start,
 			forwards most of the time */
 
 		/* find end */
-		lineno = textplain_find_line(h, end);
+		lineno = textplain_find_line(c, end);
 
 		r->x0 = 0;
-		r->x1 = c->formatted_width;
+		r->x1 = text->formatted_width;
 	}
 	else {
 		/* single line */
@@ -1156,22 +1145,21 @@ void textplain_coords_from_range(hlcache_handle *h, unsigned start,
  * \return pointer to text, or NULL if invalid line number
  */
 
-char *textplain_get_line(hlcache_handle *h, unsigned lineno,
+char *textplain_get_line(struct content *c, unsigned lineno,
 		size_t *poffset, size_t *plen)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *text = (textplain_content *) c;
 	struct textplain_line *line;
 
 	assert(c != NULL);
 
-	if (lineno >= c->physical_line_count)
+	if (lineno >= text->physical_line_count)
 		return NULL;
-	line = &c->physical_line[lineno];
+	line = &text->physical_line[lineno];
 
 	*poffset = line->start;
 	*plen = line->length;
-	return c->utf8_data + line->start;
+	return text->utf8_data + line->start;
 }
 
 
@@ -1187,16 +1175,15 @@ char *textplain_get_line(hlcache_handle *h, unsigned lineno,
  * \return pointer to text, or NULL if no text
  */
 
-char *textplain_get_raw_data(hlcache_handle *h, unsigned start, unsigned end,
+char *textplain_get_raw_data(struct content *c, unsigned start, unsigned end,
 		size_t *plen)
 {
-	textplain_content *c = 
-			(textplain_content *) hlcache_handle_get_content(h);
+	textplain_content *text = (textplain_content *) c;
 	size_t utf8_size;
 
 	assert(c != NULL);
 
-	utf8_size = c->utf8_data_size;
+	utf8_size = text->utf8_data_size;
 
 	/* any text at all? */
 	if (!utf8_size) return NULL;
@@ -1207,7 +1194,7 @@ char *textplain_get_raw_data(hlcache_handle *h, unsigned start, unsigned end,
 
 	*plen = end - start;
 
-	return c->utf8_data + start;
+	return text->utf8_data + start;
 }
 
 /**
@@ -1222,5 +1209,21 @@ float textplain_line_height(void)
 	 */
 	return FIXTOFLT(FDIV((FMUL(FLTTOFIX(1.2), FMUL(nscss_screen_dpi, 
 		INTTOFIX((textplain_style.size / FONT_SIZE_SCALE))))), F_72));
+}
+
+/**
+ * Get the browser window containing a textplain content
+ *
+ * \param  c	text/plain content
+ * \return the browser window
+ */
+struct browser_window *textplain_get_browser_window(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	assert(c != NULL);
+	assert(c->handler == &textplain_content_handler);
+
+	return text->bw;
 }
 

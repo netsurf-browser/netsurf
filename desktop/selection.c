@@ -27,7 +27,6 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "content/hlcache.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/plotters.h"
@@ -36,6 +35,7 @@
 #include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
+#include "render/html_internal.h"
 #include "render/textplain.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
@@ -87,52 +87,56 @@ static bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 		bool do_marker);
 static struct box *get_box(struct box *b, unsigned offset, size_t *pidx);
 
+
+/**
+ * Get the browser window containing the content a selection object belongs to.
+ *
+ * \param  s	selection object
+ * \return the browser window
+ */
+static struct browser_window * selection_get_browser_window(struct selection *s)
+{
+	if (s->is_html)
+		return html_get_browser_window(s->c);
+	else
+		return textplain_get_browser_window(s->c);
+}
+
+
 /**
  * Creates a new selection object associated with a browser window.
  *
  * \return new selection context
  */
 
-struct selection *selection_create(void)
+struct selection *selection_create(struct content *c, bool is_html)
 {
 	struct selection *s = calloc(1, sizeof(struct selection));
 	if (s) {
-		selection_prepare(s);
+		selection_prepare(s, c, is_html);
 	}
+
 	return s;
 }
 
 /**
  * Prepare a newly created selection object for use.
  *
- * \param  s    selection object
- * \param  bw   browser window
+ * \param  s		selection object
+ * \param  c		content
+ * \param  is_html	true if content is html false if content is textplain
  */
 
-void selection_prepare(struct selection *s)
+void selection_prepare(struct selection *s, struct content *c, bool is_html)
 {
 	if (s) {
-		s->bw = NULL;
+		s->c = c;
+		s->is_html = is_html;
 		s->root = NULL;
 		s->drag_state = DRAG_NONE;
 		s->max_idx = 0;
 		selection_clear(s, false);
 	}
-}
-
-/**
- * Set the browser window that contains the selection within a selection
- * object.
- *
- * \param  bw   browser window
- */
-
-void selection_set_browser_window(struct selection *s,
-		struct browser_window *bw)
-{
-	assert(s);
-
-	s->bw = bw;
 }
 
 
@@ -188,11 +192,9 @@ void selection_reinit(struct selection *s, struct box *root)
 	s->root = root;
 	if (root) {
 		s->max_idx = selection_label_subtree(root, root_idx);
-	}
-	else {
-		hlcache_handle *c = s->bw->current_content;
-		if (c && content_get_type(c) == CONTENT_TEXTPLAIN)
-			s->max_idx = textplain_size(c);
+	} else {
+		if (s->is_html == false)
+			s->max_idx = textplain_size(s->c);
 		else
 			s->max_idx = 0;
 	}
@@ -291,10 +293,12 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 	browser_mouse_state modkeys =
 			(mouse & (BROWSER_MOUSE_MOD_1 | BROWSER_MOUSE_MOD_2));
 	int pos = -1;  /* 0 = inside selection, 1 = after it */
-	struct browser_window *top;
+	struct browser_window *top = selection_get_browser_window(s);
 
-	if (s->bw == NULL)
+	if (top == NULL)
 		return false; /* not our problem */
+
+	top = browser_window_get_root(top);
 
 	if (!SAME_SPACE(s, idx))
 		return false;	/* not our problem */
@@ -307,8 +311,6 @@ bool selection_click(struct selection *s, browser_mouse_state mouse,
 				pos = 1;
 		}
 	}
-
-	top = browser_window_get_root(s->bw);
 
 	if (!pos &&
 		((mouse & BROWSER_MOUSE_DRAG_1) ||
@@ -612,7 +614,6 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
 bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 		void *handle)
 {
-	hlcache_handle *c;
 	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
 	const char *text;
@@ -629,10 +630,7 @@ bool selection_traverse(struct selection *s, seln_traverse_handler handler,
 	}
 
 	/* Text */
-	c = s->bw->current_content;
-	if (!c) return true;
-
-	text = textplain_get_raw_data(c, s->start_idx, s->end_idx, &length);
+	text = textplain_get_raw_data(s->c, s->start_idx, s->end_idx, &length);
 
 	if (text && !handler(text, length, NULL, handle, NULL, 0))
 		return false;
@@ -717,17 +715,15 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 			return;
 	}
 	else {
-		hlcache_handle *c = s->bw->current_content;
-		if (c && content_get_type(c) == CONTENT_TEXTPLAIN && 
-				end_idx > start_idx) {
-			textplain_coords_from_range(c, start_idx,
+		if (s->is_html == false && end_idx > start_idx) {
+			textplain_coords_from_range(s->c, start_idx,
 							end_idx, &rdw.r);
 			rdw.inited = true;
 		}
 	}
 
 	if (rdw.inited)
-		browser_window_redraw_rect(s->bw, rdw.r.x0, rdw.r.y0,
+		content__request_redraw(s->c, rdw.r.x0, rdw.r.y0,
 				rdw.r.x1 - rdw.r.x0, rdw.r.y1 - rdw.r.y0);
 }
 
@@ -744,7 +740,7 @@ void selection_clear(struct selection *s, bool redraw)
 {
 	int old_start, old_end;
 	bool was_defined;
-	struct browser_window *top;
+	struct browser_window *top = selection_get_browser_window(s);
 
 	assert(s);
 	was_defined = selection_defined(s);
@@ -755,10 +751,10 @@ void selection_clear(struct selection *s, bool redraw)
 	s->start_idx = 0;
 	s->end_idx = 0;
 
-	if (!s->bw)
+	if (!top)
 		return;
 
-	top = browser_window_get_root(s->bw);
+	top = browser_window_get_root(top);
 
 	gui_clear_selection(top->window);
 
@@ -1015,13 +1011,10 @@ bool save_handler(const char *text, size_t length, struct box *box,
 
 bool selection_save_text(struct selection *s, const char *path)
 {
-	hlcache_handle *c = s->bw->current_content;
 	struct save_text_state sv = { NULL, 0, 0 };
 	utf8_convert_ret ret;
 	char *result;
 	FILE *out;
-
-	assert(c);
 
 	if (!selection_traverse(s, save_handler, &sv)) {
 		free(sv.block);

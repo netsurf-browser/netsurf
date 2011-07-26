@@ -258,7 +258,7 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
 
-	selection_prepare(&c->sel);
+	selection_prepare(&c->sel, (struct content *)c, true);
 
 	nerror = http_parameter_list_find_item(params, html_charset, &charset);
 	if (nerror == NSERROR_OK) {
@@ -2040,7 +2040,6 @@ void html_open(struct content *c, struct browser_window *bw,
 
 	/* text selection */
 	selection_init(&html->sel, html->layout);
-	selection_set_browser_window(&html->sel, bw);
 
 	for (object = html->object_list; object != NULL; object = next) {
 		next = object->next;
@@ -2067,8 +2066,6 @@ void html_close(struct content *c)
 {
 	html_content *html = (html_content *) c;
 	struct content_html_object *object, *next;
-
-	selection_set_browser_window(&html->sel, NULL);
 
 	html->bw = NULL;
 
@@ -2365,5 +2362,21 @@ bool html_get_id_offset(hlcache_handle *h, const char *frag_id, int *x, int *y)
 content_type html_content_type(lwc_string *mime_type)
 {
 	return CONTENT_HTML;
+}
+
+/**
+ * Get the browser window containing an HTML content
+ *
+ * \param  c	HTML content
+ * \return the browser window
+ */
+struct browser_window *html_get_browser_window(struct content *c)
+{
+	html_content *html = (html_content *) c;
+
+	assert(c != NULL);
+	assert(c->handler == &html_content_handler);
+
+	return html->bw;
 }
 

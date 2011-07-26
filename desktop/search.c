@@ -81,7 +81,7 @@ static bool find_occurrences_html(const char *pattern, int p_len,
 		struct box *cur, bool case_sens,
 		struct search_context *context);
 static bool find_occurrences_text(const char *pattern, int p_len,
-		hlcache_handle *c, bool case_sens,
+		struct content *c, bool case_sens,
 		struct search_context *context);
 static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
 		struct search_context *context);
@@ -236,7 +236,7 @@ void search_text(const char *string, int string_len,
 		struct search_context *context, search_flags_t flags)
 {
 	struct rect bounds;
-	hlcache_handle *c;
+	hlcache_handle *h;
 	struct box *box = NULL;
 	bool case_sensitive, forwards, showall;
 	
@@ -247,15 +247,15 @@ void search_text(const char *string, int string_len,
 
 	if (context->bw == NULL)
 		return;
-	c = context->bw->current_content;
+	h = context->bw->current_content;
 
 	/* only handle html contents */
-	if ((!c) || (content_get_type(c) != CONTENT_HTML &&
-			content_get_type(c) != CONTENT_TEXTPLAIN))
+	if ((!h) || (content_get_type(h) != CONTENT_HTML &&
+			content_get_type(h) != CONTENT_TEXTPLAIN))
 		return;
         
-	if (content_get_type(c) == CONTENT_HTML) {
-		box = html_get_box_tree(c);
+	if (content_get_type(h) == CONTENT_HTML) {
+		box = html_get_box_tree(h);
 
 		if (!box)
 			return;
@@ -284,13 +284,14 @@ void search_text(const char *string, int string_len,
 				(context->callbacks->hourglass != NULL))
 			context->callbacks->hourglass(true, context->p);
 
-		if (content_get_type(c) == CONTENT_HTML)
+		if (content_get_type(h) == CONTENT_HTML)
 			res = find_occurrences_html(string, string_len,
 					box, case_sensitive, context);
 		else {
-			assert(content_get_type(c) == CONTENT_TEXTPLAIN);
+			assert(content_get_type(h) == CONTENT_TEXTPLAIN);
 			res = find_occurrences_text(string, string_len,
-					c, case_sensitive, context);
+					hlcache_handle_get_content(h),
+					case_sensitive, context);
 		}
 
 		if (!res) {
@@ -343,7 +344,7 @@ void search_text(const char *string, int string_len,
 	if (context->current == NULL)
 		return;
 
-	switch (content_get_type(c)) {
+	switch (content_get_type(h)) {
 		case CONTENT_HTML:
 			/* get box position and jump to it */
 			box_coords(context->current->start_box,
@@ -357,8 +358,9 @@ void search_text(const char *string, int string_len,
 			break;
 
 		default:
-			assert(content_get_type(c) == CONTENT_TEXTPLAIN);
-			textplain_coords_from_range(c,
+			assert(content_get_type(h) == CONTENT_TEXTPLAIN);
+			textplain_coords_from_range(
+					hlcache_handle_get_content(h),
 					context->current->start_idx,
 					context->current->end_idx, &bounds);
 			break;
@@ -551,7 +553,7 @@ bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
  */
 
 bool find_occurrences_text(const char *pattern, int p_len,
-		hlcache_handle *c, bool case_sens,
+		struct content *c, bool case_sens,
 		struct search_context *context)
 {
 	int nlines = textplain_line_count(c);
@@ -640,25 +642,30 @@ void search_show_all(bool all, struct search_context *context)
 			}
 		}
 		if (add && !a->sel) {
-			a->sel = selection_create();
-			selection_set_browser_window(a->sel, context->bw);
-			if (a->sel) {
-				hlcache_handle *c = context->bw->
-						current_content;
-				switch (content_get_type(c)) {
-					case CONTENT_HTML:
-						selection_init(a->sel,
-							html_get_box_tree(c));
-						break;
-					default:
-						assert(content_get_type(c) ==
-							CONTENT_TEXTPLAIN);
-						selection_init(a->sel, NULL);
-						break;
-				}
-				selection_set_start(a->sel, a->start_idx);
-				selection_set_end(a->sel, a->end_idx);
+			hlcache_handle *h = context->bw->current_content;
+			struct content *c = hlcache_handle_get_content(h);
+
+			switch (content_get_type(h)) {
+			case CONTENT_HTML:
+				a->sel = selection_create(c, true);
+				if (!a->sel)
+					continue;
+
+				selection_init(a->sel, html_get_box_tree(h));
+				break;
+			default:
+				assert(content_get_type(h) ==
+						CONTENT_TEXTPLAIN);
+				a->sel = selection_create(c, false);
+				if (!a->sel)
+					continue;
+
+				selection_init(a->sel, NULL);
+				break;
 			}
+
+			selection_set_start(a->sel, a->start_idx);
+			selection_set_end(a->sel, a->end_idx);
 		}
 	}
 }

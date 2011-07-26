@@ -40,7 +40,7 @@ typedef enum {
 
 struct selection
 {
-	struct browser_window *bw;
+	struct content *c;
 	struct box *root;
 
 	unsigned max_idx;  /* total bytes in text representation */
@@ -49,6 +49,7 @@ struct selection
 	unsigned end_idx;
 
 	bool defined;
+	bool is_html;
 
 	seln_drag_state drag_state;
 };
@@ -59,15 +60,12 @@ typedef bool (*seln_traverse_handler)(const char *text, size_t length,
 		size_t whitespace_length);
 
 
-struct selection *selection_create(void);
-void selection_prepare(struct selection *s);
+struct selection *selection_create(struct content *c, bool is_html);
+void selection_prepare(struct selection *s, struct content *c, bool is_html);
 void selection_destroy(struct selection *s);
 
 void selection_init(struct selection *s, struct box *root);
 void selection_reinit(struct selection *s, struct box *root);
-
-void selection_set_browser_window(struct selection *s,
-		struct browser_window *bw);
 
 /* struct box *selection_root(struct selection *s); */
 #define selection_root(s) ((s)->root)
