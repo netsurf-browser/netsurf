@@ -444,7 +444,6 @@ bool nsmng_convert(struct content *c)
 {
 	nsmng_content *mng = (nsmng_content *) c;
 	mng_retcode status;
-	const char *data;
 	unsigned long size;
 	lwc_string *content_type;
 	bool match;
@@ -454,7 +453,7 @@ bool nsmng_convert(struct content *c)
 
 	assert(c != NULL);
 
-	data = content__get_source_data(c, &size);
+	content__get_source_data(c, &size);
 
 	/* by this point, the png should have been parsed
 	 * and the bitmap created, so ensure that's the case

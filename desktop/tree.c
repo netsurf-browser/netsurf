@@ -476,11 +476,10 @@ static void tree_recalculate_node_sizes(struct tree *tree, struct node *node,
 		bool recalculate_sizes)
 {
 	struct node_element *element;
-	int width, height;
+	int height;
 
 	assert(node != NULL);
 
-	width = node->box.width;
 	height = node->box.height;
 	node->box.width = 0;
 	node->box.height = 0;

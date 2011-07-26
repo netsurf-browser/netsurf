@@ -871,8 +871,7 @@ bool form_open_select_menu(void *client_data,
 		select_menu_redraw_callback callback,
 		struct content *c)
 {
-	int i, line_height_with_spacing, scroll;
-	struct form_option *option;
+	int line_height_with_spacing;
 	struct box *box;
 	plot_font_style_t fstyle;
 	int total_height;
@@ -914,25 +913,9 @@ bool form_open_select_menu(void *client_data,
 				line_height_with_spacing;
 		menu->height = total_height;
 
-		scroll = 0;
 		if (menu->height > MAX_SELECT_HEIGHT) {
 
 			menu->height = MAX_SELECT_HEIGHT;
-
-			if (control->data.select.num_selected > 0) {
-				i = 0;
-				option = control->data.select.items;
-				while (!option->selected) {
-					option = option->next;
-					i++;
-				}
-
-				if ((i + 1) * line_height_with_spacing >
-						MAX_SELECT_HEIGHT)
-					scroll = (i + 1) *
-							line_height_with_spacing
-							- MAX_SELECT_HEIGHT;
-			}
 		}
 		menu->client_data = client_data;
 		menu->callback = callback;

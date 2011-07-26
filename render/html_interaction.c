@@ -236,8 +236,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
 			NULL) {
-		enum css_overflow_e overflow = CSS_OVERFLOW_VISIBLE;
-
 		box = next_box;
 
 		if (box->style && css_computed_visibility(box->style) == 
@@ -279,9 +277,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			title = box->title;
 
 		pointer = get_pointer_shape(bw, box, false);
-
-		if (box->style)
-			overflow = css_computed_overflow(box->style);
 
 		if ((box->scroll_x != NULL || box->scroll_y != NULL) &&
 				   drag_candidate == NULL)
