@@ -62,7 +62,6 @@ struct list_entry {
 
 struct search_context {
 	struct browser_window 		*bw;
-	hlcache_handle 			*content;
 	char 				*string;
 	bool 				prev_case_sens;
 	bool 				newsearch;
@@ -128,7 +127,6 @@ bool search_create_context(struct browser_window *bw,
 	
 	context->found = search_head;
 	context->current = NULL;
-	context->content = NULL;
 	context->string = NULL;
 	context->prev_case_sens = false;
 	context->newsearch = true;
@@ -307,8 +305,7 @@ void search_text(const char *string, int string_len,
 		if ((context->callbacks != NULL) && 
 				(context->callbacks->hourglass != NULL))
 			context->callbacks->hourglass(false, context->p);
-		
-		context->content = c;
+
 		context->prev_case_sens = case_sensitive;
 /* LOG(("%d %p %p (%p, %p)", new, search_data.found->next, search_data.current,
 		search_data.current->prev, search_data.current->next)); */
