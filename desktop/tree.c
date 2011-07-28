@@ -1681,7 +1681,7 @@ static void tree_draw_node_element(struct tree *tree,
 		}
 
 		x += NODE_INSTEP;
-//		width -= NODE_INSTEP;
+		width -= NODE_INSTEP;
 
 		/* fall through */
 	case NODE_ELEMENT_TEXT:
