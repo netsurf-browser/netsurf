@@ -295,6 +295,7 @@ static void tree_recalculate_node_element(struct tree *tree,
 					LOG(("Tree font width cache hit"));
 				#endif
 			} else {
+				if(cache_text != NULL) free(cache_text);
 				nsfont.font_width(&plot_fstyle,
 						  element->text,
 						  strlen(element->text),
@@ -1680,7 +1681,7 @@ static void tree_draw_node_element(struct tree *tree,
 		}
 
 		x += NODE_INSTEP;
-		width -= NODE_INSTEP;
+//		width -= NODE_INSTEP;
 
 		/* fall through */
 	case NODE_ELEMENT_TEXT:
