@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.7/3.0 Development (Revision 12559)
+# Italian messages for NetSurf 2.7/3.0 Development (Revision 12618)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 16.07.2011
+# 27.07.2011
 # =========================================================================
 #
 # Description
@@ -414,8 +414,8 @@ amiDownloadComplete:NetSurf: Download completato
 
 # Requesters
 #
-amiSizeExisting:Existing file size:
-amiSizeNew:New file size:
+amiSizeExisting:Dimensione del file esistente:
+amiSizeNew:Nuova dimensione del file:
 
 # GTK download window tokens
 #
@@ -1467,4 +1467,4 @@ AnimImg:Animazioni
 DitherImg:Immagini Dither
 FilterImg:Immagini Smooth
 RenderText:Sfuma testo di sfondo
-Initialising:Inizia...
+Initialising:Inizializzazione...
