@@ -150,6 +150,21 @@ static void nsjpeg_term_source(j_decompress_ptr cinfo)
 
 
 /**
+ * Error output handler for JPEG library.
+ *
+ * This logs to NetSurf log instead of stderr.
+ * Warnings only - fatal errors are trapped by nsjpeg_error_exit
+ *                 and do not call the output handler.
+ */
+static void nsjpeg_error_log(j_common_ptr cinfo)
+{
+	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
+	err->pub.format_message(cinfo, nsjpeg_error_buffer);
+	LOG(("%s", nsjpeg_error_buffer));
+}
+
+
+/**
  * Fatal error handler for JPEG library.
  *
  * This prevents jpeglib calling exit() on a fatal error.
@@ -187,6 +202,7 @@ static bool nsjpeg_convert(struct content *c)
 
 	cinfo.err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = nsjpeg_error_exit;
+	jerr.pub.output_message = nsjpeg_error_log;
 	if (setjmp(jerr.setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
 		if (bitmap)
