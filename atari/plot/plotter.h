@@ -188,13 +188,17 @@ struct s_gem_plotter
 	int vdi_handle;
 	struct s_vdi_sysinfo * scr;
 	void * priv_data;
-	int bpp_virt;     	/* bit depth of framebuffer */
+	/* bit depth of framebuffers: */
+	int bpp_virt;     	
 	struct rect clipping;
 	struct s_frame_buf fbuf[MAX_FRAMEBUFS];
-	int cfbi; 			/* current framebuffer index */
+	/* current framebuffer index: */
+	int cfbi; 			
 
 	FONT_PLOTTER font_plotter;
+	/* set new dimensions (realloc memory): */
 	_pmf_resize resize;
+	/* set drawing origin: */
 	_pmf_move move;
 	_pmf_lock lock;
 	_pmf_unlock unlock;
@@ -212,8 +216,11 @@ struct s_gem_plotter
 	_pmf_rectangle rectangle;
 	_pmf_polygon polygon;
 	_pmf_path path;
+	/* scale an netsurf bitmap: */
 	_pmf_bitmap_resize bitmap_resize;
+	/* plot an netsurf bitmap into the buffer / screen: */
 	_pmf_bitmap bitmap;
+	/* plot an mfdb into the buffer / screen: */
 	_pmf_plot_mfdb plot_mfdb;
 	_pmf_text text;
 	_pmf_dtor dtor;
