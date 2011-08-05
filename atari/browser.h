@@ -103,7 +103,6 @@ bool browser_input( struct gui_window * gw, unsigned short nkc ) ;
 void browser_redraw( struct gui_window * gw );
 void browser_set_content_size(struct gui_window * gw, int w, int h);
 void browser_scroll( struct gui_window * gw, short MODE, int value, bool abs );
-bool browser_attach_frame( struct gui_window * container, struct gui_window * frame );
 struct gui_window * browser_find_root( struct gui_window * gw );
 static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 bool browser_redraw_required( struct gui_window * gw);

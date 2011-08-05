@@ -149,27 +149,6 @@ bool browser_destroy( struct s_browser * b )
 	return( true );
 }
 
-bool browser_attach_frame( struct gui_window * container, struct gui_window * frame )
-{
-	struct browser_window * cbw = container->browser->bw;
-	int lt = CLT_STACK;
-	if (cbw->rows >= cbw->cols)
-		lt = CLT_VERTICAL;
-	else 
-		lt = CLT_HORIZONTAL;
-
-	printf("attaching frame as: %s\n", (lt == CLT_VERTICAL) ? "CLT_VERTICAL" : "CLT_HORIZONTAL" );
-	/* todo: if first frame, remove compwin, or something like that, because it is still occupiying space */
-	container->browser->compwin->h_max = 0;
-	container->browser->compwin->w_max = 0;
-	container->browser->comp->flex = 0;
-	container->browser->comp->size = 300;
-	container->browser->comp->type = lt;
-	mt_CompAttach( &app,  container->browser->comp, frame->browser->comp );
-	browser_update_rects( container );
-	frame->browser->attached = true;	
-}
-
 void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out)
 {
 	GRECT work;
@@ -351,7 +330,7 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 				if( i == 2 ) {
 					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_2,sx,sy);
 					bmstate |= BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_ON;
-				}				
+				}
 			} else {
 				if( i == 1 ) {
 					bmstate |= BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON;
@@ -383,7 +362,6 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_1,sx,sy);
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_CLICK_1);
 				}
-					
 				if( i == 2 ) {
 					LOG(("Click within %s at %d / %d", gw->browser->bw->name, mx, my ));
 					browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);

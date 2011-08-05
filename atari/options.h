@@ -26,6 +26,7 @@ extern int option_atari_font_monochrom;
 extern int option_atari_dither;
 extern int option_atari_transparency;
 extern int option_atari_knockout;
+extern int option_atari_realtime_move;
 extern char *option_atari_face_sans_serif; /* default sans face */
 extern char *option_atari_face_sans_serif_bold; /* bold sans face */
 extern char *option_atari_face_sans_serif_italic; /* bold sans face */
@@ -49,13 +50,14 @@ int option_atari_font_monochrom = 0;\
 int option_atari_dither = 1;\
 int option_atari_transparency = 1;\
 int option_atari_knockout = 0;\
-char *option_atari_face_sans_serif;		\
-char *option_atari_face_sans_serif_bold;		\
-char *option_atari_face_sans_serif_italic;		\
-char *option_atari_face_sans_serif_italic_bold;	\
-char *option_atari_face_monospace;			\
-char *option_atari_face_monospace_bold; \
-char *option_atari_face_serif;			\
+int option_atari_realtime_move = 0; \
+char *option_atari_face_sans_serif;\
+char *option_atari_face_sans_serif_bold;\
+char *option_atari_face_sans_serif_italic;\
+char *option_atari_face_sans_serif_italic_bold;\
+char *option_atari_face_monospace;\
+char *option_atari_face_monospace_bold;\
+char *option_atari_face_serif;\
 char *option_atari_face_serif_bold; \
 char *option_atari_face_cursive; \
 char *option_atari_face_fantasy; \
@@ -71,6 +73,7 @@ char *option_tree_icons_path = (char*)"./res/icons";
 	{ "atari_transparency", OPTION_INTEGER, &option_atari_transparency },\
 	{ "atari_knockout", OPTION_INTEGER, &option_atari_knockout },\
 	{ "atari_dither", OPTION_INTEGER, &option_atari_dither },\
+	{ "atari_realtime_move", OPTION_INTEGER, &option_atari_realtime_move },\
 	{ "font_face_sans_serif", OPTION_STRING, &option_atari_face_sans_serif },\
 	{ "font_face_sans_serif_bold", OPTION_STRING, &option_atari_face_sans_serif_bold },\
 	{ "font_face_sans_serif_italic", OPTION_STRING, &option_atari_face_sans_serif_italic },\

@@ -100,8 +100,7 @@ typedef struct s_browser * CMP_BROWSER;
 /*
 	This is the "main" window. It can consist of several components
 	and also holds information shared by several frames within
-	the window. Each frame, no matter how deep nested,
-	knows about it's root (GEM window).
+	the window.
 */
 struct s_gui_win_root
 {
@@ -121,8 +120,7 @@ struct s_gui_win_root
 	This is the part of the gui which is known by netsurf core.
 	You must implement it. Altough, you are free how to do it.
 	Each of the browser "viewports" managed by netsurf are bound
-	to this structure. gui_window does not mean that it is an
-	comple window - also frames own an gui_window.
+	to this structure.
 */
 struct gui_window {
 	struct s_gui_win_root * root;

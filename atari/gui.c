@@ -838,8 +838,7 @@ gui_selection_traverse_handler(const char *text,
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	bool ret = false;
-	if( (s->defined) && (s->bw != NULL) && (s->bw->window != NULL) &&
-		(s->bw->window->root != NULL )) {
+	if( s->defined ) {
 		gui_empty_clipboard();
 		if(selection_traverse(s, gui_selection_traverse_handler, NULL)){
 			ret = gui_commit_clipboard();
@@ -1089,7 +1088,7 @@ static void gui_init(int argc, char** argv)
 	option_gui_colour_fg_2 = 0x000000; /** Foreground selected (bbggrr) */
 }
 
-static char *theapp = "NetSurf";
+static char *theapp = (char*)"NetSurf";
 static void gui_init2(int argc, char** argv)
 {
 	struct browser_window *bw;
