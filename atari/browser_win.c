@@ -57,9 +57,6 @@
 #include "atari/search.h"
 #include "atari/osspec.h"
 
-
-bool cfg_rt_resize = false;
-bool cfg_rt_move = false;
 extern void * h_gem_rsrc;
 extern struct gui_window *input_window;
 extern GEM_PLOTTER plotter;
@@ -82,11 +79,11 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 	bool abs = false;
 	LGRECT cwork;
 	int value = BROWSER_SCROLL_SVAL;
-	
+
 	if( input_window == NULL ) {
 		return;
 	}
-	
+
 	browser_get_rect( input_window, BR_CONTENT, &cwork );
 
 	switch( buff[4] ) {
@@ -100,22 +97,22 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 		case WA_RTPAGE:
 				value = cwork.g_w;
 			break;
-					
-		default: 
+
+		default:
 			break;
 	}
 	browser_scroll( input_window, buff[4], value, abs );
 }
 
-/* 	
-	this gets called at end of gui poll to track the mouse state and 
-	finally checks for released buttons. 
+/*
+	this gets called at end of gui poll to track the mouse state and
+	finally checks for released buttons.
  */
 static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, short my, short mbut, short mkstate ){
 	int i = 0;
-	int nx, ny; 
+	int nx, ny;
 	struct gui_window * gw = input_window;
-	
+
 	if( !gw ) {
 		bmstate = 0;
 		mouse_hold_start[0] = 0;
@@ -159,7 +156,7 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
 					if( within ) {
 						/* drag end */
-						browser_window_mouse_track( 
+						browser_window_mouse_track(
 							gw->browser->bw, 0, nx, ny
 						);
 					}
@@ -169,7 +166,7 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 					LOG(("Drag for %d ended", i));
 					if( within ) {
 						/* drag end */
-						browser_window_mouse_track( 
+						browser_window_mouse_track(
 							gw->browser->bw, 0, nx, ny
 						);
 					}
@@ -195,15 +192,15 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 	if( gw == NULL)
 		return;
 
-	graf_mkstate(&mx, &my, &mbut, &mkstate); 
+	graf_mkstate(&mx, &my, &mbut, &mkstate);
 
-	browser_get_rect( gw, BR_CONTENT, &bwbox ); 
+	browser_get_rect( gw, BR_CONTENT, &bwbox );
 	if( gw->root->toolbar )
 		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
 	if( gw->root->statusbar )
 		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
 
-	if( mx > bwbox.g_x && mx < bwbox.g_x + bwbox.g_w && 
+	if( mx > bwbox.g_x && mx < bwbox.g_x + bwbox.g_w &&
 		my > bwbox.g_y &&  my < bwbox.g_y + bwbox.g_h ){
 		within = true;
 	}
@@ -224,12 +221,14 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 				my >= sbbox.g_y + (sbbox.g_h-MOVER_WH) && my <= sbbox.g_y + sbbox.g_h ) {
 				/* mouse within sizer box ( bottom right ) */
 				prev_sb = a =  true;
-				gem_set_cursor( &gem_cursors.sizenwse ); 
+				gem_set_cursor( &gem_cursors.sizenwse );
 			}
 		}
 		if( !a ) {
+			if( prev_sb )
+				gw->root->statusbar->resize_init = true;
 			if( prev_url || prev_sb ) {
-				gem_set_cursor( &gem_cursors.arrow ); 
+				gem_set_cursor( &gem_cursors.arrow );
 				prev_url = false;
 				prev_sb = false;
 			}
@@ -237,12 +236,12 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 			if( within ){
 				nx = mx - bwbox.g_x;
 				ny = my - bwbox.g_y;
-				if( ( abs(mx-last_drag_x)>5 || abs(mx-last_drag_y)>5 ) || 
+				if( ( abs(mx-last_drag_x)>5 || abs(mx-last_drag_y)>5 ) ||
 					!MOUSE_IS_DRAGGING() ){
-					browser_window_mouse_track( 
-						input_window->browser->bw, 
-						bmstate, 
-						nx + gw->browser->scroll.current.x, 
+					browser_window_mouse_track(
+						input_window->browser->bw,
+						bmstate,
+						nx + gw->browser->scroll.current.x,
 						ny + gw->browser->scroll.current.y
 					);
 					if( MOUSE_IS_DRAGGING() ){
@@ -250,7 +249,7 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 						last_drag_y = my;
 					}
 				}
-			} 
+			}
 		}
 	} else {
 		/* set input window? */
@@ -306,12 +305,8 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	/* Event Handlers: */
 	EvntDataAttach( gw->root->handle, WM_CLOSED, evnt_window_close, gw );
 	/* capture resize/move events so we can handle that manually */
-	if( !cfg_rt_resize ) {
-		EvntDataAttach( gw->root->handle, WM_SIZED, evnt_window_resize, gw );
-	} else {
-		EvntDataAdd( gw->root->handle, WM_SIZED, evnt_window_rt_resize, gw, EV_BOT );
-	}
-	if( !cfg_rt_move ) {
+	EvntDataAttach( gw->root->handle, WM_SIZED, evnt_window_resize, gw );
+	if( !option_atari_realtime_move ) {
 		EvntDataAttach( gw->root->handle, WM_MOVED, evnt_window_move, gw );
 	} else {
 		EvntDataAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, gw, EV_BOT );
@@ -385,6 +380,7 @@ int window_destroy( struct gui_window * gw)
 void window_open( struct gui_window * gw)
 {
 	LGRECT br;
+	GRECT dim;
 	WindOpen(gw->root->handle, 20, 20, app.w/2, app.h/2 );
 	WindSetStr( gw->root->handle, WF_NAME, (char *)"" );
 	/* apply focus to the root frame: */
@@ -392,6 +388,7 @@ void window_open( struct gui_window * gw)
 	mt_CompEvntExec( gl_appvar, gw->browser->comp, lfbuff );
 	/* recompute the nested component sizes and positions: */
 	browser_update_rects( gw );
+	mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
 	browser_get_rect( gw, BR_CONTENT, &br );
 	plotter->move( plotter, br.g_x, br.g_y );
 	plotter->resize( plotter, br.g_w, br.g_h );
@@ -694,7 +691,7 @@ static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
 	short wx, wy, wh, ww, nx, ny;
 	short r;
 	short xoff, yoff;
-	if( cfg_rt_move  ) {
+	if( option_atari_realtime_move  ) {
 		std_mvd( win, buff, &app );
 		evnt_window_rt_resize( win, buff, data );
 	} else { 
@@ -712,25 +709,21 @@ static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
 
 void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data )
 {
-	short mx,my, mb, ks;
+	//short mx,my, mb, ks;
 	short wx, wy, wh, ww, nw, nh;
 	short r;
-	graf_mkstate( &mx, &my, &mb,  &ks ); 
-	if( cfg_rt_resize  ) {
-		std_szd( win, buff, &app );
-		evnt_window_rt_resize( win, buff, data );
-	} else { 
-		wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
-		r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
-		if( nw < 40 && nw < 40 )
-			return;
-		buff[4] = wx;
-		buff[5] = wy;
-		buff[6] = nw;
-		buff[7] = nh;
-		std_szd( win, buff, &app );
-		evnt_window_rt_resize( win, buff, data );
-	}
+
+	// graf_mkstate( &mx, &my, &mb,  &ks );
+	wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
+	r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
+	if( nw < 40 && nw < 40 )
+		return;
+	buff[4] = wx;
+	buff[5] = wy;
+	buff[6] = nw;
+	buff[7] = nh;
+	std_szd( win, buff, &app );
+	evnt_window_rt_resize( win, buff, data );
 }
 
 /* perform the actual resize */
@@ -739,35 +732,30 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 	short x,y,w,h;
 	struct gui_window * gw;
 	LGRECT rect;
-	bool resized;
-	bool moved;
 
 	if(buff[0] == WM_FORCE_MOVE ) {
 		std_mvd(win, buff, &app);
 		std_szd(win, buff, &app);
 	}
 
-	wind_get( win->handle, WF_WORKXYWH, &x, &y, &w, &h );
+	wind_get( win->handle, WF_CURRXYWH, &x, &y, &w, &h );
 	gw = (struct gui_window *)data;
 
 	assert( gw != NULL );
 
-	if(gw->root->loc.g_x != x || gw->root->loc.g_y != y ){
-		moved = true;
-		gw->root->loc.g_x = x;
-		gw->root->loc.g_y = y;
-		browser_update_rects( gw );
-	}
-
 	if(gw->root->loc.g_w != w || gw->root->loc.g_h != h ){
-		resized = true;
 		/* report resize to component interface: */
 		browser_update_rects( gw );
+		mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
 		browser_get_rect( gw, BR_CONTENT, &rect );
 		if( gw->browser->bw->current_content != NULL )
 			browser_window_reformat(gw->browser->bw, false, rect.g_w, rect.g_h );
-		gw->root->toolbar->url.scrollx = 0;	
+		gw->root->toolbar->url.scrollx = 0;
 		window_redraw_controls(gw, 0);
-		/* TODO: recalculate scroll position, istead of zeroing? */
+		/* TODO: recalculate scroll position, instead of zeroing? */
+	} else {
+		if(gw->root->loc.g_x != x || gw->root->loc.g_y != y ){
+       			mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
+        	}
 	}
 }

@@ -29,6 +29,9 @@ struct s_statusbar
 	char text[STATUSBAR_MAX_SLEN+1];
 	size_t textlen;
 	bool attached;
+	bool resize_init;
+	short resize_delta_x;
+	short resize_delta_y;
 };
 
 
