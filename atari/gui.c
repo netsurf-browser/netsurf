@@ -314,10 +314,19 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 
 void gui_window_set_title(struct gui_window *gw, const char *title)
 {
+	int l;
+	char * conv;
+
 	if (gw == NULL)
 		return;
 	if( gw->root ){
-		strncpy(gw->root->title, title, atari_sysinfo.aes_max_win_title_len);
+		l = strlen(title);
+		if( utf8_to_local_encoding(title, l, &conv) == UTF8_CONVERT_OK ){
+			strncpy(gw->root->title, conv, atari_sysinfo.aes_max_win_title_len);
+                	free( conv );
+		} else {
+			strncpy(gw->root->title, title, atari_sysinfo.aes_max_win_title_len);
+		}
 		gw->root->title[atari_sysinfo.aes_max_win_title_len] = 0;
 		WindSetStr( gw->root->handle, WF_NAME, gw->root->title );
 	}
