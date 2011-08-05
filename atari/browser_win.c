@@ -709,11 +709,9 @@ static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
 
 void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data )
 {
-	//short mx,my, mb, ks;
 	short wx, wy, wh, ww, nw, nh;
 	short r;
 
-	// graf_mkstate( &mx, &my, &mb,  &ks );
 	wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
 	r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
 	if( nw < 40 && nw < 40 )
@@ -756,6 +754,7 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 	} else {
 		if(gw->root->loc.g_x != x || gw->root->loc.g_y != y ){
        			mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
+			browser_update_rects( gw );
         	}
 	}
 }
