@@ -96,6 +96,7 @@ static void html_object_done(struct box *box, hlcache_handle *object,
 static void html_object_failed(struct box *box, html_content *content,
 		bool background);
 static void html_object_refresh(void *p);
+static void html_destroy_objects(html_content *html);
 static void html_destroy_frameset(struct content_html_frames *frameset);
 static void html_destroy_iframe(struct content_html_iframe *iframe);
 #if ALWAYS_DUMP_FRAMESET
@@ -662,7 +663,8 @@ void html_finish_conversion(html_content *c)
 	LOG(("XML to box"));
 	content_set_status(&c->base, messages_get("Processing"));
 	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
-	if (!xml_to_box(html, c)) {
+	if (xml_to_box(html, c) == false) {
+		html_destroy_objects(c);
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
@@ -677,8 +679,9 @@ void html_finish_conversion(html_content *c)
 #endif
 
 	/* extract image maps - can't do this sensibly in xml_to_box */
-	if (!imagemap_extract(html, c)) {
+	if (imagemap_extract(html, c) == false) {
 		LOG(("imagemap extraction failed"));
+		html_destroy_objects(c);
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
@@ -1942,6 +1945,11 @@ void html_destroy(struct content *c)
 	}
 
 	/* Free objects */
+	html_destroy_objects(html);
+}
+
+void html_destroy_objects(html_content *html)
+{
 	while (html->object_list != NULL) {
 		struct content_html_object *victim = html->object_list;
 
@@ -1959,7 +1967,8 @@ void html_destroy(struct content *c)
 	}
 }
 
-void html_destroy_frameset(struct content_html_frames *frameset) {
+void html_destroy_frameset(struct content_html_frames *frameset)
+{
 	int i;
 
 	if (frameset->name) {
@@ -1988,7 +1997,8 @@ void html_destroy_frameset(struct content_html_frames *frameset) {
 	}
 }
 
-void html_destroy_iframe(struct content_html_iframe *iframe) {
+void html_destroy_iframe(struct content_html_iframe *iframe)
+{
 	struct content_html_iframe *next;
 	next = iframe;
 	while ((iframe = next) != NULL) {
