@@ -587,13 +587,22 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 
 	/* Create content */
 	c->imports[c->import_count].media = media;
-	nerror = hlcache_handle_retrieve(lwc_string_data(url),
-			0, referer, NULL, nscss_import, ctx,
-			&child, accept,
-			&c->imports[c->import_count].c);
-	if (nerror != NSERROR_OK) {
+
+	/* Avoid importing ourself */
+	if (strcmp(lwc_string_data(url), referer) == 0) {
+		c->imports[c->import_count].c = NULL;
+		/* No longer require context as we're not fetching anything */
 		free(ctx);
-		return CSS_NOMEM;
+		ctx = NULL;
+	} else {
+		nerror = hlcache_handle_retrieve(lwc_string_data(url),
+				0, referer, NULL, nscss_import, ctx,
+				&child, accept,
+				&c->imports[c->import_count].c);
+		if (nerror != NSERROR_OK) {
+			free(ctx);
+			return CSS_NOMEM;
+		}
 	}
 
 #ifdef NSCSS_IMPORT_TRACE
