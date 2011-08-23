@@ -5050,6 +5050,10 @@ void layout_calculate_descendant_bboxes(struct box *box)
 		return;
 	}
 
+	if (box->flags & REPLACE_DIM)
+		/* Box's children aren't displayed if the box is replaced */
+		return;
+
 	for (child = box->children; child; child = child->next) {
 		if (child->type == BOX_FLOAT_LEFT ||
 				child->type == BOX_FLOAT_RIGHT)
