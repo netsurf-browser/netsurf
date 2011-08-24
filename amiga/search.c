@@ -100,23 +100,15 @@ static struct search_callbacks ami_search_callbacks = {
  */
 void ami_search_open(struct gui_window *gwin)
 {
-	struct hlcache_handle *c = gwin->shared->bw->current_content;
-
-	/* only handle html/textplain contents */
-	if ((!c) || (content_get_type(c) != CONTENT_HTML &&
-			content_get_type(c) != CONTENT_TEXTPLAIN))
+	if (browser_window_search_create_context(gwin->shared->bw,
+			&ami_search_callbacks, NULL) == false)
 		return;
 
-	if (gwin->shared->bw->search_context == NULL)
-		search_create_context(gwin->shared->bw,
-				&ami_search_callbacks, NULL);
 	search_insert = true;
 
 	if(fwin)
 	{
-		if(fwin->gwin->shared->bw->search_context != NULL)
-			search_destroy_context(fwin->gwin->shared->bw->
-					search_context);
+		browser_window_search_destroy_context(fwin->gwin->shared->bw);
 		ami_search_set_forward_state(true, NULL);
 		ami_search_set_back_state(true, NULL);
 		fwin->gwin->shared->searchwin = NULL;
@@ -200,8 +192,7 @@ void ami_search_open(struct gui_window *gwin)
 
 void ami_search_close(void)
 {
-	if (fwin->gwin->shared->bw->search_context != NULL)
-		search_destroy_context(fwin->gwin->shared->bw->search_context);
+	browser_window_search_destroy_context(fwin->gwin->shared->bw);
 	ami_search_set_forward_state(true, NULL);
 	ami_search_set_back_state(true, NULL);
 	fwin->gwin->shared->searchwin = NULL;
@@ -229,10 +220,11 @@ BOOL ami_search_event(void)
 				search_insert = true;
 				flags = SEARCH_FLAG_FORWARDS |
 					ami_search_flags();
-				if (search_verify_new(
+				if (browser_window_search_verify_new(
 						fwin->gwin->shared->bw,
 						&ami_search_callbacks, NULL))
-					search_step(fwin->gwin->shared->bw->search_context,
+					browser_window_search_step(
+							fwin->gwin->shared->bw,
 							flags,
 							ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
@@ -242,23 +234,19 @@ BOOL ami_search_event(void)
 				search_insert = true;
 				flags = ~SEARCH_FLAG_FORWARDS &
 					ami_search_flags();
-				if (search_verify_new(
+				if (browser_window_search_verify_new(
 						fwin->gwin->shared->bw,
 						&ami_search_callbacks, NULL))
-					search_step(fwin->gwin->shared->bw->search_context,
-						flags,
-						ami_search_string());
+					browser_window_search_step(
+							fwin->gwin->shared->bw,
+							flags,
+							ami_search_string());
 				ActivateWindow(fwin->gwin->shared->win);
 				break;
 
 			case GID_SEARCHSTRING:
-				if (fwin->gwin->shared->
-					bw->search_context 
-					!= NULL)
-					search_destroy_context(
-						fwin->gwin->
-						shared->bw->
-						search_context);
+				browser_window_search_destroy_context(
+						fwin->gwin->shared->bw);
 				ami_search_set_forward_state(
 					true, NULL);
 				ami_search_set_back_state(
