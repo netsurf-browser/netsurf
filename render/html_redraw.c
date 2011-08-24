@@ -873,7 +873,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 	plot_fstyle.size *= scale;
 
 	/* is this box part of a selection? */
-	if (!excluded && current_redraw_browser) {
+	if (!excluded && ctx->interactive == true) {
 		unsigned len = utf8_len + (space ? 1 : 0);
 		unsigned start_idx;
 		unsigned end_idx;
