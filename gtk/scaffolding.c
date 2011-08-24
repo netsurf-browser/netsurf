@@ -1297,8 +1297,8 @@ MULTIHANDLER(reload)
 		return TRUE;
 
 	/* clear potential search effects */
-	if (bw->search_context != NULL)
-		search_destroy_context(bw->search_context);
+	browser_window_search_destroy_context(bw);
+
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
@@ -1316,8 +1316,8 @@ MULTIHANDLER(back)
 		return TRUE;
 
 	/* clear potential search effects */
-	if (bw->search_context != NULL)
-		search_destroy_context(bw->search_context);
+	browser_window_search_destroy_context(bw);
+
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
@@ -1336,8 +1336,8 @@ MULTIHANDLER(forward)
 		return TRUE;
 
 	/* clear potential search effects */
-	if (bw->search_context != NULL)
-		search_destroy_context(bw->search_context);
+	browser_window_search_destroy_context(bw);
+
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
@@ -2223,8 +2223,8 @@ void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
 			gui_window_get_browser_window(g->top_level);
 	g_object_get(G_OBJECT(g->search->bar), "visible", &vis, NULL);
 	if (vis) {
-		if ((bw != NULL) && (bw->search_context != NULL))
-			search_destroy_context(bw->search_context);
+		if (bw != NULL)
+			browser_window_search_destroy_context(bw);
 		nsgtk_search_set_forward_state(true, bw);
 		nsgtk_search_set_back_state(true, bw);
 		gtk_widget_hide(GTK_WIDGET(g->search->bar));
@@ -2251,8 +2251,7 @@ void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 	nsgtk_window_update_back_forward(nsgtk_get_scaffold(gw));
 
 	/* clear effects of potential searches */
-	if (bw->search_context != NULL)
-		search_destroy_context(bw->search_context);
+	browser_window_search_destroy_context(bw);
 
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);

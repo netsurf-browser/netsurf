@@ -194,8 +194,9 @@ void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 	struct browser_window *bw = gui_window_get_browser_window(gw);
 	if (bw == NULL)
 		return;
-	if (bw->search_context != NULL)
-		search_destroy_context(bw->search_context);
+
+	browser_window_search_destroy_context(bw);
+
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 	nsgtk_scaffolding_set_top_level(gw);

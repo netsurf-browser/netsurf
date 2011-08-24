@@ -70,8 +70,9 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
-	if (search_verify_new(bw, &nsgtk_search_callbacks, (void *)bw))
-		search_step(bw->search_context, flags, gtk_entry_get_text(
+	if (browser_window_search_verify_new(bw, &nsgtk_search_callbacks,
+			(void *)bw))
+		browser_window_search_step(bw, flags, gtk_entry_get_text(
 				nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -91,8 +92,9 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
-	if (search_verify_new(bw, &nsgtk_search_callbacks, (void *)bw))
-		search_step(bw->search_context, flags, gtk_entry_get_text(
+	if (browser_window_search_verify_new(bw, &nsgtk_search_callbacks,
+			(void *)bw))
+		browser_window_search_step(bw, flags, gtk_entry_get_text(
 				nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
@@ -131,8 +133,10 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
 	struct browser_window *bw = gui_window_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
-	if ((bw != NULL) && (bw->search_context != NULL))
-		search_destroy_context(bw->search_context);
+
+	if (bw != NULL)
+		browser_window_search_destroy_context(bw);
+
 	nsgtk_search_set_forward_state(true, (void *)bw);
 	nsgtk_search_set_back_state(true, (void *)bw);
 	return TRUE;
@@ -153,8 +157,10 @@ gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->checkAll)) ?
 			SEARCH_FLAG_SHOWALL : 0);
-	if (search_verify_new(bw, &nsgtk_search_callbacks, (void *)bw))
-		search_step(bw->search_context, flags, gtk_entry_get_text(
+
+	if (browser_window_search_verify_new(bw, &nsgtk_search_callbacks,
+			(void *)bw))
+		browser_window_search_step(bw, flags, gtk_entry_get_text(
 				nsgtk_scaffolding_search(g)->entry));
 	return FALSE;
 }
