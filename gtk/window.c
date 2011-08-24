@@ -179,16 +179,12 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	current_cr = gdk_cairo_create(current_drawable);
 #endif
 
-	current_redraw_browser = g->bw;
-
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
 
 	browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
-
-	current_redraw_browser = NULL;
 
 	if (g->careth != 0)
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
