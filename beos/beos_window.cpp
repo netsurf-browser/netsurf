@@ -952,16 +952,12 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	if (view->Window())
 		view->Window()->BeginViewTransaction();
 
-	current_redraw_browser = g->bw;
-
 	clip.x0 = (int)updateRect.left;
 	clip.y0 = (int)updateRect.top;
 	clip.x1 = (int)updateRect.right + 1;
 	clip.y1 = (int)updateRect.bottom + 1;
 
 	browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
-
-	current_redraw_browser = NULL;
 
 	if (g->careth != 0)
 		nsbeos_plot_caret(g->caretx, g->carety, g->careth);
