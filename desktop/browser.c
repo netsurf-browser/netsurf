@@ -1866,7 +1866,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 
 	if (bw->window != NULL) {
 		/* root browser window */
-		if (bw->drag_window) {
+		if (bw->drag_window && bw != bw->drag_window) {
 			/* There's an active drag in a sub window.
 			 * Pass the mouse action straight on to that bw. */
 			int off_x = 0;
