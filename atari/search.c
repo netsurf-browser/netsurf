@@ -187,11 +187,8 @@ static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void
 	search_flags_t flags = 0;
 
 	ObjcChange( OC_FORM, win, index, ~SELECTED , TRUE);
-	if( s->bw->search_context == NULL || form_changed(win) ){
-		if( s->bw->search_context != NULL ) {
-			search_destroy_context(s->bw->search_context);
-			s->bw->search_context = NULL;
-		}
+	if( form_changed(win) ){
+		browser_window_search_destroy_context(s->bw);
 		apply_form( win, &s->state );
 	} else {
 		/* get search direction manually: */
@@ -200,8 +197,8 @@ static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void
 		 else 
 			s->state.flags &= (~SEARCH_FLAG_FORWARDS);
 	}
-	if( search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
-		search_step(s->bw->search_context, s->state.flags,  ObjcString( obj, SEARCH_TB_SRCH, NULL ) ); 
+	if( browser_window_search_verify_new(s->bw, &nsatari_search_callbacks, s) ){
+		browser_window_search_step(s->bw, s->state.flags,  ObjcString( obj, SEARCH_TB_SRCH, NULL ) ); 
 	}
 
 }
