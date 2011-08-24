@@ -70,9 +70,6 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 	if (ctx->plot->option_knockout)
 		knockout_plot_start(ctx, &new_ctx);
 
-	/* No selection */
-	current_redraw_browser = NULL;
-
 	/* Set clip rectangle to required thumbnail size */
 	clip.x0 = 0;
 	clip.y0 = 0;
