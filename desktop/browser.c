@@ -2142,7 +2142,8 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 		gui_window_scroll_start(bw->window);
 		break;
 	case BROWSER_WINDOW_IFRAME:
-		/* TODO */
+		bw->drag_start_scroll_x = scrollbar_get_offset(bw->scroll_x);
+		bw->drag_start_scroll_y = scrollbar_get_offset(bw->scroll_y);
 		break;
 	}
 }
