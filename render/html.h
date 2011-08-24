@@ -159,7 +159,9 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		int height,
 		float scale,
 		bool excluded,
+		struct content *c,
 		const struct selection *sel,
+		struct search_context *search,
 		const struct redraw_context *ctx);
 
 xmlDoc *html_get_document(struct hlcache_handle *h);

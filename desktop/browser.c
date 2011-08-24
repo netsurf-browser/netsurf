@@ -486,6 +486,7 @@ void browser_window_initialise_common(struct browser_window *bw,
 
 	/* window characteristics */
 	bw->cur_sel = NULL;
+	bw->cur_search = NULL;
 	bw->refresh_interval = -1;
 
 	bw->reformat_pending = false;

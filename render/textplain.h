@@ -48,5 +48,6 @@ int textplain_find_line(struct content *c, unsigned offset);
 char *textplain_get_raw_data(struct content *c,
 		unsigned start, unsigned end, size_t *plen);
 struct browser_window *textplain_get_browser_window(struct content *c);
+void textplain_set_search(struct content *c, struct search_context *s);
 
 #endif

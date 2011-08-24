@@ -42,6 +42,7 @@
 #include "desktop/selection.h"
 #include "render/box.h"
 #include "render/font.h"
+#include "render/search.h"
 #include "render/textplain.h"
 #include "utils/http.h"
 #include "utils/log.h"
@@ -69,6 +70,9 @@ typedef struct textplain_content {
 	struct browser_window *bw;
 
 	struct selection sel;	/** Selection state */
+
+	/** Context for free text search, or NULL if none */
+	struct search_context *search;
 } textplain_content;
 
 
@@ -112,6 +116,7 @@ static void textplain_open(struct content *c, struct browser_window *bw,
 		struct object_params *params);
 void textplain_close(struct content *c);
 struct selection *textplain_get_selection(struct content *c);
+struct search_context *textplain_get_search(struct content *c);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
 static content_type textplain_content_type(lwc_string *mime_type);
@@ -793,7 +798,8 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 					&textplain_style,
 					tx, y + (lineno * scaled_line_height),
 					clip, line_height, data->scale, false,
-					&text->sel, ctx))
+					(struct content *)text, &text->sel,
+					text->search, ctx))
 				return false;
 
 			if (next_offset >= length)
@@ -823,13 +829,12 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 						highlighted = true;
 				}
 
-				if (!highlighted && (bw->search_context 
-						!= NULL)) {
+				if (!highlighted && (text->search != NULL)) {
 					unsigned start_idx, end_idx;
-					if (search_term_highlighted(bw,
+					if (search_term_highlighted(c,
 							tab_ofst, tab_ofst + 1,
 							&start_idx, &end_idx,
-							bw->search_context))
+							text->search))
 						highlighted = true;
 				}
 
@@ -876,6 +881,9 @@ void textplain_close(struct content *c)
 {
 	textplain_content *text = (textplain_content *) c;
 
+	if (text->search != NULL)
+		search_destroy_context(text->search);
+
 	text->bw = NULL;
 }
 
@@ -889,6 +897,36 @@ struct selection *textplain_get_selection(struct content *c)
 	textplain_content *text = (textplain_content *) c;
 
 	return &text->sel;
+}
+
+
+/**
+ * Set an TEXTPLAIN content's search context
+ *
+ * \param c	content of type text
+ * \param s	search context, or NULL if none
+ */
+
+void textplain_set_search(struct content *c, struct search_context *s)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	text->search = s;
+}
+
+
+/**
+ * Return an TEXTPLAIN content's search context
+ *
+ * \param c	content of type text
+ * \return content's search context, or NULL if none
+ */
+
+struct search_context *textplain_get_search(struct content *c)
+{
+	textplain_content *text = (textplain_content *) c;
+
+	return text->search;
 }
 
 /**

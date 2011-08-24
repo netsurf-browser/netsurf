@@ -29,11 +29,6 @@ typedef enum {
 	SEARCH_FLAG_FORWARDS = (1 << 1),
 	SEARCH_FLAG_SHOWALL = (1 << 2)
 } search_flags_t;
-		
-/**
- * called to clear the context; 'renews' the search too
- */
-void search_destroy_context(struct search_context *context);
 
 /**
  * Change the displayed search status.
@@ -80,17 +75,14 @@ struct search_callbacks {
 	search_add_recent_callback 	add_recent;
 };
 
-bool search_verify_new(struct browser_window *bw,
-			struct search_callbacks *callbacks, void *p);
-void search_step(struct search_context *context, search_flags_t flags,
-		const char * string);
-bool search_create_context(struct browser_window *bw, 
-		struct search_callbacks *callbacks, void *p);
-void search_show_all(bool all, struct search_context *context);
 
-bool search_term_highlighted(struct browser_window *bw,
-		unsigned start_offset, unsigned end_offset,
-		unsigned *start_idx, unsigned *end_idx,
-		struct search_context *context);
+bool browser_window_search_create_context(struct browser_window *bw, 
+		struct search_callbacks *callbacks, void *p);
+void browser_window_search_destroy_context(struct browser_window *bw);
+bool browser_window_search_verify_new(struct browser_window *bw,
+		struct search_callbacks *callbacks, void *p);
+void browser_window_search_step(struct browser_window *bw,
+		search_flags_t flags, const char *string);
+void browser_window_search_show_all(bool all, struct browser_window *bw);
 
 #endif

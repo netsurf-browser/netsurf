@@ -99,6 +99,9 @@ typedef struct html_content {
 
 	/** Selection state */
 	struct selection sel;
+
+	/** Context for free text search, or NULL if none */
+	struct search_context *search;
 } html_content;
 
 
@@ -112,6 +115,7 @@ void html_set_status(html_content *c, const char *extra);
 void html__redraw_a_box(struct content *c, struct box *box);
 
 struct browser_window *html_get_browser_window(struct content *c);
+void html_set_search(struct content *c, struct search_context *s);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, struct content_redraw_data *data,

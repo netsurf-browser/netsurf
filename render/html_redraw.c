@@ -39,7 +39,6 @@
 #include "desktop/selection.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
-#include "desktop/search.h"
 #include "desktop/scrollbar.h"
 #include "image/bitmap.h"
 #include "render/box.h"
@@ -47,6 +46,7 @@
 #include "render/form.h"
 #include "render/html_internal.h"
 #include "render/layout.h"
+#include "render/search.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -831,7 +831,9 @@ bool html_redraw_text_box(const html_content *html, struct box *box,
 
 	if (!text_redraw(box->text, box->length, box->byte_offset,
 			box->space, &fstyle, x, y,
-			clip, box->height, scale, excluded, &html->sel, ctx))
+			clip, box->height, scale, excluded,
+			(struct content *)html, &html->sel,
+			html->search, ctx))
 		return false;
 
 	return true;
@@ -859,7 +861,8 @@ bool html_redraw_text_box(const html_content *html, struct box *box,
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, int space, const plot_font_style_t *fstyle,
 		int x, int y, const struct rect *clip, int height,
-		float scale, bool excluded, const struct selection *sel,
+		float scale, bool excluded, struct content *c,
+		const struct selection *sel, struct search_context *search,
 		const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
@@ -883,14 +886,11 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 		}
 
 		/* what about the current search operation, if any? */
-		if (!highlighted && (current_redraw_browser->search_context
-				!= NULL) && 
-				search_term_highlighted(
-						current_redraw_browser,
+		if (!highlighted && (search != NULL) &&
+				search_term_highlighted(c,
 						offset, offset + len,
 						&start_idx, &end_idx,
-						current_redraw_browser->
-						search_context)) {
+						search)) {
 			highlighted = true;
 		}
 

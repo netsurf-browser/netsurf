@@ -42,6 +42,7 @@
 #include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "render/layout.h"
+#include "render/search.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -75,6 +76,7 @@ static void html_open(struct content *c, struct browser_window *bw,
 		struct object_params *params);
 static void html_close(struct content *c);
 struct selection *html_get_selection(struct content *c);
+struct search_context *html_get_search(struct content *c);
 static nserror html_clone(const struct content *old, struct content **newc);
 static content_type html_content_type(lwc_string *mime_type);
 
@@ -2077,6 +2079,9 @@ void html_close(struct content *c)
 	html_content *html = (html_content *) c;
 	struct content_html_object *object, *next;
 
+	if (html->search != NULL)
+		search_destroy_context(html->search);
+
 	html->bw = NULL;
 
 	for (object = html->object_list; object != NULL; object = next) {
@@ -2106,6 +2111,37 @@ struct selection *html_get_selection(struct content *c)
 
 	return &html->sel;
 }
+
+
+/**
+ * Set an HTML content's search context
+ *
+ * \param c	content of type html
+ * \param s	search context, or NULL if none
+ */
+
+void html_set_search(struct content *c, struct search_context *s)
+{
+	html_content *html = (html_content *) c;
+
+	html->search = s;
+}
+
+
+/**
+ * Return an HTML content's search context
+ *
+ * \param c	content of type html
+ * \return content's search context, or NULL if none
+ */
+
+struct search_context *html_get_search(struct content *c)
+{
+	html_content *html = (html_content *) c;
+
+	return html->search;
+}
+
 
 #if ALWAYS_DUMP_FRAMESET
 /**

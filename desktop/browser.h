@@ -187,11 +187,11 @@ struct browser_window {
 	/** Last time a link was followed in this window */
 	unsigned int last_action;
 
-	/** search context for free text search */
-	struct search_context *search_context;
-
-	/** Content with current selection, or NULL if none */
+	/** Current selection, or NULL if none */
 	struct selection *cur_sel;
+
+	/** Current context for free text search, or NULL if none */
+	struct search_context *cur_search;
 
 	/** cache of the currently displayed status text. */
 	char *status_text; /**< Current status bar text. */
