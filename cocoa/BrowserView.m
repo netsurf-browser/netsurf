@@ -146,8 +146,6 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-	current_redraw_browser = browser;
-
 	struct redraw_context ctx = {
 		.interactive = true,
 		.plot = &cocoa_plotters
@@ -167,7 +165,6 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 
 		browser_window_redraw(browser, 0, 0, &clip, &ctx);
 	}
-	current_redraw_browser = NULL;
 
 	NSRect caretRect = cocoa_get_caret_rect( self );
 	if (hasCaret && caretVisible && [self needsToDrawRect: caretRect]) {
