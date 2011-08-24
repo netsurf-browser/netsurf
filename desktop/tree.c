@@ -1269,11 +1269,12 @@ void tree_set_node_selected(struct tree *tree, struct node *node, bool all,
 		if (node->selected != selected) {
 			node->selected = selected;
 			if (tree != NULL && tree->redraw)
-				tree->callbacks->redraw_request(node->box.x,
-								node->box.y,
-								node->box.width,
-								node->data.box.height,
-								tree->client_data);
+				tree->callbacks->redraw_request(
+						node->data.box.x,
+						node->data.box.y,
+						node->data.box.width,
+						node->data.box.height,
+						tree->client_data);
 		}
 		if (all && (node->child != NULL) && (node->expanded))
 			tree_set_node_selected(tree, node->child, all,
