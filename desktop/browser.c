@@ -1890,7 +1890,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 	}
 
 	/* Browser window's horizontal scrollbar */
-	if (bw->scroll_x != NULL) {
+	if (bw->scroll_x != NULL && bw->drag_type != DRAGGING_SCR_Y) {
 		int scr_x, scr_y;
 		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
 		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
@@ -1898,8 +1898,10 @@ void browser_window_mouse_track(struct browser_window *bw,
 
 		if ((scr_x > 0 && scr_x < browser_window_get_scrollbar_len(bw,
 						true) &&
-				scr_y > 0 && scr_y < SCROLLBAR_WIDTH) ||
+				scr_y > 0 && scr_y < SCROLLBAR_WIDTH &&
+				bw->drag_type == DRAGGING_NONE) ||
 				bw->drag_type == DRAGGING_SCR_X) {
+			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_action(bw->scroll_x, mouse,
 					scr_x, scr_y);
 			pointer = GUI_POINTER_DEFAULT;
@@ -1921,9 +1923,10 @@ void browser_window_mouse_track(struct browser_window *bw,
 
 		if ((scr_y > 0 && scr_y < browser_window_get_scrollbar_len(bw,
 						false) &&
-				scr_x > 0 && scr_x < SCROLLBAR_WIDTH) ||
+				scr_x > 0 && scr_x < SCROLLBAR_WIDTH &&
+				bw->drag_type == DRAGGING_NONE) ||
 				bw->drag_type == DRAGGING_SCR_Y) {
-
+			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_action(bw->scroll_y, mouse,
 					scr_x, scr_y);
 			pointer = GUI_POINTER_DEFAULT;
