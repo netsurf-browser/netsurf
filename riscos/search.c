@@ -124,9 +124,10 @@ bool ro_gui_search_next(wimp_w w)
 	search_data.search_insert = true;
 	search_flags_t flags = SEARCH_FLAG_FORWARDS |
 			ro_gui_search_update_flags();
-	if (search_verify_new(search_data.search_window,
+	if (browser_window_search_verify_new(search_data.search_window,
 			&ro_gui_search_callbacks, NULL))
-		search_step(search_data.search_window->search_context, flags,
+		browser_window_search_step(
+				search_data.search_window, flags,
 				ro_gui_get_icon_string(dialog_search,
 				ICON_SEARCH_TEXT));
 	return false;
@@ -166,10 +167,12 @@ bool ro_gui_search_click(wimp_pointer *pointer)
 			search_data.search_insert = true;
 			flags = ~SEARCH_FLAG_FORWARDS &
 					ro_gui_search_update_flags();
-			if (search_verify_new(search_data.search_window,
+			if (browser_window_search_verify_new(
+					search_data.search_window,
 					&ro_gui_search_callbacks, NULL))
-				search_step(search_data.search_window->
-						search_context, flags,
+				browser_window_search_step(
+						search_data.search_window,
+						flags,
 						ro_gui_get_icon_string(
 						dialog_search,
 						ICON_SEARCH_TEXT));
@@ -177,20 +180,22 @@ bool ro_gui_search_click(wimp_pointer *pointer)
 		case ICON_SEARCH_CASE_SENSITIVE:
 			flags = SEARCH_FLAG_FORWARDS |
 					ro_gui_search_update_flags();
-			if (search_verify_new(search_data.search_window,
+			if (browser_window_search_verify_new(
+					search_data.search_window,
 					&ro_gui_search_callbacks, NULL))
-				search_step(search_data.search_window->
-						search_context, flags,
+				browser_window_search_step(
+						search_data.search_window,
+						flags,
 						ro_gui_get_icon_string(
 						dialog_search,
 						ICON_SEARCH_TEXT));
 			return true;
 		case ICON_SEARCH_SHOW_ALL:
-			if (search_data.search_window->search_context != NULL)
-				search_show_all(ro_gui_get_icon_selected_state(
-						pointer->w, pointer->i),
-						search_data.search_window->
-						search_context);
+			/* TODO: call browser_window_search_verify_new() ? */
+			browser_window_search_show_all(
+					ro_gui_get_icon_selected_state(
+					pointer->w, pointer->i),
+					search_data.search_window);
 			return true;
 	}
 	return false;
@@ -297,7 +302,8 @@ void ro_gui_search_prepare(struct browser_window *bw)
 	ro_gui_search_set_forward_state(true, bw);
 	ro_gui_search_set_back_state(true, bw);
 
-	search_create_context(bw, &ro_gui_search_callbacks, NULL);
+	browser_window_search_create_context(bw,
+			&ro_gui_search_callbacks, NULL);
 
 	search_data.search_window = bw;
 
@@ -330,9 +336,9 @@ bool ro_gui_search_keypress(wimp_key *key)
 					ICON_SEARCH_SHOW_ALL);
 			ro_gui_set_icon_selected_state(key->w,
 					ICON_SEARCH_SHOW_ALL, sel);
-			if (search_data.search_window->search_context != NULL)
-				search_show_all(sel,
-						search_data.search_window->search_context);
+			/* TODO: call browser_window_search_verify_new() ? */
+			browser_window_search_show_all(sel,
+						search_data.search_window);
 		}
 		break;
 		case 9: /* ctrl i */
@@ -342,10 +348,12 @@ bool ro_gui_search_keypress(wimp_key *key)
 					ICON_SEARCH_CASE_SENSITIVE, !state);
 			flags = SEARCH_FLAG_FORWARDS |
 					ro_gui_search_update_flags();
-			if (search_verify_new(search_data.search_window,
+			if (browser_window_search_verify_new(
+					search_data.search_window,
 					&ro_gui_search_callbacks, NULL))
-				search_step(search_data.search_window->
-						search_context, flags,
+				browser_window_search_step(
+						search_data.search_window,
+						flags,
 						ro_gui_get_icon_string(
 						dialog_search,
 						ICON_SEARCH_TEXT));
@@ -354,10 +362,12 @@ bool ro_gui_search_keypress(wimp_key *key)
 			search_data.search_insert = true;
 			flags = ~SEARCH_FLAG_FORWARDS &
 					ro_gui_search_update_flags();
-			if (search_verify_new(search_data.search_window,
+			if (browser_window_search_verify_new(
+					search_data.search_window,
 					&ro_gui_search_callbacks, NULL))
-				search_step(search_data.search_window->
-						search_context, flags,
+				browser_window_search_step(
+						search_data.search_window,
+						flags,
 						ro_gui_get_icon_string(
 						dialog_search,
 						ICON_SEARCH_TEXT));
@@ -366,10 +376,12 @@ bool ro_gui_search_keypress(wimp_key *key)
 			search_data.search_insert = true;
 			flags = SEARCH_FLAG_FORWARDS |
 					ro_gui_search_update_flags();
-			if (search_verify_new(search_data.search_window,
+			if (browser_window_search_verify_new(
+					search_data.search_window,
 					&ro_gui_search_callbacks, NULL))
-				search_step(search_data.search_window->
-						search_context, flags,
+				browser_window_search_step(
+						search_data.search_window,
+						flags,
 						ro_gui_get_icon_string(
 						dialog_search,
 						ICON_SEARCH_TEXT));
@@ -379,11 +391,8 @@ bool ro_gui_search_keypress(wimp_key *key)
 			if (key->c == 21) {
 				/* ctrl+u means the user's starting
 				 * a new search */
-				if (search_data.search_window->search_context != NULL)
-					search_destroy_context(
-							search_data.
-							search_window->
-							search_context);
+				browser_window_search_destroy_context(
+						search_data.search_window);
 				ro_gui_search_set_forward_state(true,
 						search_data.search_window);
 				ro_gui_search_set_back_state(true,
@@ -395,21 +404,20 @@ bool ro_gui_search_keypress(wimp_key *key)
 			    (key->c >= 0x20 && key->c <= 0x7f)) {
 				flags = SEARCH_FLAG_FORWARDS |
 						ro_gui_search_update_flags();
-				if (search_data.search_window->search_context
-						!= NULL)
-					search_destroy_context(
-							search_data.
-							search_window->
-							search_context);
+				browser_window_search_destroy_context(
+						search_data.search_window);
 				ro_gui_search_set_forward_state(true,
 						search_data.search_window);
 				ro_gui_search_set_back_state(true,
 						search_data.search_window);
-				if (search_verify_new(search_data.search_window,
+				if (browser_window_search_verify_new(
+						search_data.search_window,
 						&ro_gui_search_callbacks,
 						NULL))
-					search_step(search_data.search_window->
-							search_context, flags,
+					browser_window_search_step(
+							search_data.
+							search_window,
+							flags,
 							ro_gui_get_icon_string(
 							dialog_search,
 							ICON_SEARCH_TEXT));
@@ -427,9 +435,7 @@ bool ro_gui_search_keypress(wimp_key *key)
  */
 void ro_gui_search_end(wimp_w w)
 {
-	if (search_data.search_window->search_context != NULL)
-		search_destroy_context(search_data.search_window->
-				search_context);
+	browser_window_search_destroy_context(search_data.search_window);
 	ro_gui_search_set_forward_state(true, search_data.search_window);
 	ro_gui_search_set_back_state(true, search_data.search_window);
 }
