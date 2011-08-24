@@ -3209,8 +3209,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
-	current_redraw_browser = bw;
-
 	width=bbox->Width / bw->scale;
 	height=bbox->Height / bw->scale;
 	xoffset=bbox->Left;
@@ -3286,8 +3284,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	 		browserglob.rp = temprp;
 		}
 	}
-
-	current_redraw_browser = NULL;
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -3332,8 +3328,6 @@ void ami_do_redraw(struct gui_window_2 *g)
 	ami_get_vscroll_pos(g, (ULONG *)&vcurrent);
 
 	c = g->bw->current_content;
-
-	current_redraw_browser = g->bw;
 
 	width=bbox->Width;
 	height=bbox->Height;
@@ -3447,8 +3441,6 @@ void ami_do_redraw(struct gui_window_2 *g)
 			}
 		}
 	}
-
-	current_redraw_browser = NULL;
 
 	ami_update_buttons(g);
 
