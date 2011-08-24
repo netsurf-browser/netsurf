@@ -846,7 +846,6 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
 	));
 
-	current_redraw_browser = b->bw;
    struct rect a;
    a.x0 = b->redraw.area.x0;
    a.y0 = b->redraw.area.y0;
@@ -856,7 +855,6 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 	browser_window_redraw( b->bw, -b->scroll.current.x,
 			-b->scroll.current.y, &a, &ctx );
 
-	current_redraw_browser = NULL;
 }
 
 
