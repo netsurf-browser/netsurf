@@ -200,7 +200,6 @@ struct browser_window {
 	int status_miss; /**< Number of times status was really updated. */
 };
 
-extern struct browser_window *current_redraw_browser;
 extern bool browser_reformat_pending;
 
 struct browser_window * browser_window_create(const char *url,

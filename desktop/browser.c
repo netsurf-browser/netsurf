@@ -65,9 +65,6 @@
 #include "utils/utils.h"
 #include "utils/utf8.h"
 
-/** browser window which is being redrawn. Valid only during redraw. */
-struct browser_window *current_redraw_browser;
-
 /** one or more windows require a reformat */
 bool browser_reformat_pending;
 
