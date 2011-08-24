@@ -104,6 +104,9 @@ struct browser_window {
 	/** Current drag status. */
 	browser_drag_type drag_type;
 
+	/** Current drag's browser window, when not in root bw. */
+	struct browser_window *drag_window;
+
 	/** Mouse position at start of current scroll drag. */
 	int drag_start_x;
 	int drag_start_y;

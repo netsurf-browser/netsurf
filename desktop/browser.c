@@ -324,6 +324,13 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 void browser_window_set_drag_type(struct browser_window *bw,
 		browser_drag_type type)
 {
+	struct browser_window *top_bw = browser_window_get_root(bw);
+
+	if (type == DRAGGING_NONE)
+		top_bw->drag_window = NULL;
+	else
+		top_bw->drag_window = bw;
+
 	bw->drag_type = type;
 }
 
@@ -1856,6 +1863,24 @@ void browser_window_mouse_track(struct browser_window *bw,
 	hlcache_handle *c = bw->current_content;
 	const char *status = NULL;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+
+	if (bw->window != NULL) {
+		/* root browser window */
+		if (bw->drag_window) {
+			/* There's an active drag in a sub window.
+			 * Pass the mouse action straight on to that bw. */
+			int off_x = 0;
+			int off_y = 0;
+
+			browser_window_get_position(bw->drag_window, true,
+					&off_x, &off_y);
+
+			browser_window_mouse_track(bw->drag_window, mouse,
+					x - off_x / bw->scale,
+					y - off_y / bw->scale);
+			return;
+		}
+	}
 
 	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
 		return;
