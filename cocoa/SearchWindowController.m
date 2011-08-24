@@ -76,18 +76,15 @@ static struct search_callbacks cocoa_search_callbacks = {
 	if (selectAll) flags |= SEARCH_FLAG_SHOWALL;
 
 	struct browser_window *bw = [browser browser];
-	if (bw != NULL && search_verify_new( bw, &cocoa_search_callbacks, self )) {
-		search_step( bw->search_context, flags, [searchString UTF8String] );
+	if (bw != NULL && browser_window_search_verify_new( bw, &cocoa_search_callbacks, self )) {
+		browser_window_search_step( bw, flags, [searchString UTF8String] );
 	}
 }
 
 - (IBAction) searchStringDidChange: (id) sender;
 {
 	struct browser_window *bw = [browser browser];
-	if (bw != NULL && bw->search_context != NULL) {
-		search_destroy_context( bw->search_context );
-		bw->search_context = NULL;
-	}
+	browser_window_search_destroy_context( bw );
 	
 	[self setCanGoBack: YES];
 	[self setCanGoForward: YES];
