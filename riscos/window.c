@@ -1672,7 +1672,6 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 		return;
 
 	ro_gui_current_redraw_gui = g;
-	current_redraw_browser = g->bw;
 
 	error = xwimp_redraw_window(redraw, &more);
 	if (error) {
@@ -1723,12 +1722,10 @@ void ro_gui_window_redraw(wimp_draw *redraw)
 					error->errnum, error->errmess));
 			warn_user("WimpError", error->errmess);
 			ro_gui_current_redraw_gui = NULL;
-			current_redraw_browser = NULL;
 			return;
 		}
 	}
 	ro_gui_current_redraw_gui = NULL;
-	current_redraw_browser = NULL;
 }
 
 
@@ -4344,7 +4341,6 @@ void ro_gui_window_update_boxes(void)
 
 		/* Set the current redraw gui_window to get options from */
 		ro_gui_current_redraw_gui = g;
-		current_redraw_browser = g->bw;
 
 		ro_plot_origin_x = update.box.x0 - update.xscroll;
 		ro_plot_origin_y = update.box.y1 - update.yscroll;
@@ -4375,7 +4371,6 @@ void ro_gui_window_update_boxes(void)
 						error->errnum, error->errmess));
 				warn_user("WimpError", error->errmess);
 				ro_gui_current_redraw_gui = NULL;
-				current_redraw_browser = NULL;
 				continue;
 			}
 		}
@@ -4383,7 +4378,6 @@ void ro_gui_window_update_boxes(void)
 		/* Reset the current redraw gui_window to prevent
 		 * thumbnails from retaining options */
 		ro_gui_current_redraw_gui = NULL;
-		current_redraw_browser = NULL;
 	}
 	while (pending_updates) {
 		cur = pending_updates;

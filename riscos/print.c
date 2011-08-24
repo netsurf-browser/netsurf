@@ -619,8 +619,6 @@ bool print_document(struct gui_window *g, const char *filename)
 	}
 
 	ro_gui_current_redraw_gui = g;
-	current_redraw_browser = NULL;  /* we don't want to print the
-	                                  selection */
 
 	/* print is now active */
 	print_active = true;
