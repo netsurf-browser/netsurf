@@ -132,12 +132,13 @@ static nserror download_context_process_headers(download_context *ctx)
 
 		error = http_parameter_list_find_item(disposition->parameters, 
 				filename, &filename_value);
-		if (error == NSERROR_OK)
+		if (error == NSERROR_OK) {
 			ctx->filename = download_parse_filename(
 					lwc_string_data(filename_value));
+			lwc_string_unref(filename_value);
+		}
 
 		http_content_disposition_destroy(disposition);
-		lwc_string_unref(filename_value);
 		lwc_string_unref(filename);
 	}
 
