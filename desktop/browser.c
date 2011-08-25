@@ -1983,8 +1983,8 @@ void browser_window_mouse_click(struct browser_window *bw,
 	if (bw->scroll_x != NULL) {
 		int scr_x, scr_y;
 		browser_window_get_scrollbar_pos(bw, true, &scr_x, &scr_y);
-		scr_x = x - scr_x;
-		scr_y = y - scr_y;
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
 
 		if (scr_x > 0 && scr_x < browser_window_get_scrollbar_len(bw,
 						true) &&
@@ -2004,8 +2004,8 @@ void browser_window_mouse_click(struct browser_window *bw,
 	if (bw->scroll_y != NULL) {
 		int scr_x, scr_y;
 		browser_window_get_scrollbar_pos(bw, false, &scr_x, &scr_y);
-		scr_x = x - scr_x;
-		scr_y = y - scr_y;
+		scr_x = x - scr_x - scrollbar_get_offset(bw->scroll_x);
+		scr_y = y - scr_y - scrollbar_get_offset(bw->scroll_y);
 
 		if (scr_y > 0 && scr_y < browser_window_get_scrollbar_len(bw,
 						false) &&
