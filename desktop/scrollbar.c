@@ -610,9 +610,9 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 		
 		status = messages_get(h ? "ScrollLeft" : "ScrollUp");
 		if (but1)
-			scrollbar_set(s, s->bar_pos - SCROLLBAR_WIDTH, true);
+			scrollbar_set(s, s->offset - SCROLLBAR_WIDTH, false);
 		else if (but2)
-			scrollbar_set(s, s->bar_pos + SCROLLBAR_WIDTH, true);
+			scrollbar_set(s, s->offset + SCROLLBAR_WIDTH, false);
 
 	} else if (val < SCROLLBAR_WIDTH + s->bar_pos) {
 		/* well between left/up arrow and bar */
@@ -630,9 +630,9 @@ const char *scrollbar_mouse_action(struct scrollbar *s,
 		status = messages_get(h ? "ScrollRight" : "ScrollDown");
 
 		if (but1)
-			scrollbar_set(s, s->bar_pos + SCROLLBAR_WIDTH, true);
+			scrollbar_set(s, s->offset + SCROLLBAR_WIDTH, false);
 		else if (but2)
-			scrollbar_set(s, s->bar_pos - SCROLLBAR_WIDTH, true);
+			scrollbar_set(s, s->offset - SCROLLBAR_WIDTH, false);
 
 	} else if (val > SCROLLBAR_WIDTH + s->bar_pos +
 			s->bar_len) {
