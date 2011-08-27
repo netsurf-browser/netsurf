@@ -63,12 +63,6 @@ typedef struct nspng_content {
 	size_t rowbytes; /**< Number of bytes per row */
 } nspng_content;
 
-static const char *nspng_types[] = {
-	"image/png"
-};
-
-static lwc_string *nspng_mime_types[NOF_ELEMENTS(nspng_types)];
-
 static unsigned int interlace_start[8] = {0, 16, 0, 8, 0, 4, 0};
 static unsigned int interlace_step[8] = {28, 28, 12, 12, 4, 4, 0};
 static unsigned int interlace_row_start[8] = {0, 0, 4, 0, 2, 0, 1};
@@ -439,43 +433,10 @@ static const content_handler nspng_content_handler = {
 	.no_share = false,
 };
 
-nserror nspng_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static const char *nspng_types[] = {
+	"image/png"
+};
 
-	for (i = 0; i < NOF_ELEMENTS(nspng_mime_types); i++) {
-		lerror = lwc_intern_string(nspng_types[i],
-				strlen(nspng_types[i]),
-				&nspng_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nspng_mime_types[i],
-				&nspng_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nspng_fini();
-
-	return error;
-}
-
-void nspng_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(nspng_mime_types); i++) {
-		if (nspng_mime_types[i] != NULL)
-			lwc_string_unref(nspng_mime_types[i]);
-	}
-}
+CONTENT_FACTORY_REGISTER_TYPES(nspng, nspng_types, nspng_content_handler);
 
 #endif

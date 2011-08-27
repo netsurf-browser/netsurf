@@ -30,11 +30,15 @@
 
 nserror nsmng_init(void);
 void nsmng_fini(void);
+nserror nsjpng_init(void);
+void nsjpng_fini(void);
 
 #else
 
 #define nsmng_init() NSERROR_OK
 #define nsmng_fini() ((void) 0)
+#define nsjpng_init() NSERROR_OK
+#define nsjpng_fini() ((void) 0)
 
 #endif /* WITH_MNG */
 

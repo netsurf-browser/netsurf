@@ -54,8 +54,12 @@ nserror image_init(void)
 	if (error != NSERROR_OK)
 		return error;
 
-	/* Prefer libpng over libmng for pngs */
 	error = nsmng_init();
+	if (error != NSERROR_OK)
+		return error;
+
+	/* Prefer libpng over libmng for pngs by registering later */
+	error = nsjpng_init();
 	if (error != NSERROR_OK)
 		return error;
 	error = nspng_init();
@@ -91,6 +95,7 @@ void image_fini(void)
 	nsico_fini();
 	nsjpeg_fini();
 	nsmng_fini();
+	nsjpng_fini();
 	nssprite_fini();
 	nspng_fini();
 	nsrsvg_fini();

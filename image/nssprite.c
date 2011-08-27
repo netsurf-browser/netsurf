@@ -44,16 +44,6 @@ typedef struct nssprite_content {
 	struct rosprite_area* sprite_area;
 } nssprite_content;
 
-static nserror nssprite_create(const content_handler *handler,
-		lwc_string *imime_type, const http_parameter *params,
-		llcache_handle *llcache, const char *fallback_charset,
-		bool quirks, struct content **c);
-static bool nssprite_convert(struct content *c);
-static void nssprite_destroy(struct content *c);
-static bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx);
-static nserror nssprite_clone(const struct content *old, struct content **newc);
-static content_type nssprite_content_type(lwc_string *mime_type);
 
 #define ERRCHK(x) do { \
 	rosprite_error err = x; \
@@ -69,62 +59,10 @@ static content_type nssprite_content_type(lwc_string *mime_type);
 	} \
 } while(0)
 
-static const content_handler nssprite_content_handler = {
-	.create = nssprite_create,
-	.data_complete = nssprite_convert,
-	.destroy = nssprite_destroy,
-	.redraw = nssprite_redraw,
-	.clone = nssprite_clone,
-	.type = nssprite_content_type,
-	.no_share = false,
-};
 
-static const char *nssprite_types[] = {
-	"image/x-riscos-sprite"
-};
 
-static lwc_string *nssprite_mime_types[NOF_ELEMENTS(nssprite_types)];
 
-nserror nssprite_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
-
-	for (i = 0; i < NOF_ELEMENTS(nssprite_mime_types); i++) {
-		lerror = lwc_intern_string(nssprite_types[i],
-				strlen(nssprite_types[i]),
-				&nssprite_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nssprite_mime_types[i],
-				&nssprite_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nssprite_fini();
-
-	return error;
-}
-
-void nssprite_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(nssprite_mime_types); i++) {
-		if (nssprite_mime_types[i] != NULL)
-			lwc_string_unref(nssprite_mime_types[i]);
-	}
-}
-
-nserror nssprite_create(const content_handler *handler,
+static nserror nssprite_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
@@ -154,7 +92,7 @@ nserror nssprite_create(const content_handler *handler,
  * No conversion is necessary. We merely read the sprite dimensions.
  */
 
-bool nssprite_convert(struct content *c)
+static bool nssprite_convert(struct content *c)
 {
 	nssprite_content *nssprite = (nssprite_content *) c;
 	union content_msg_data msg_data;
@@ -223,7 +161,7 @@ bool nssprite_convert(struct content *c)
  * Destroy a CONTENT_SPRITE and free all resources it owns.
  */
 
-void nssprite_destroy(struct content *c)
+static void nssprite_destroy(struct content *c)
 {
 	nssprite_content *sprite = (nssprite_content *) c;
 
@@ -238,7 +176,7 @@ void nssprite_destroy(struct content *c)
  * Redraw a CONTENT_SPRITE.
  */
 
-bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
+static bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	bitmap_flags_t flags = BITMAPF_NONE;
@@ -253,7 +191,7 @@ bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
 }
 
 
-nserror nssprite_clone(const struct content *old, struct content **newc)
+static nserror nssprite_clone(const struct content *old, struct content **newc)
 {
 	nssprite_content *sprite;
 	nserror error;
@@ -282,9 +220,25 @@ nserror nssprite_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type nssprite_content_type(lwc_string *mime_type)
+static content_type nssprite_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
 }
+
+static const content_handler nssprite_content_handler = {
+	.create = nssprite_create,
+	.data_complete = nssprite_convert,
+	.destroy = nssprite_destroy,
+	.redraw = nssprite_redraw,
+	.clone = nssprite_clone,
+	.type = nssprite_content_type,
+	.no_share = false,
+};
+
+static const char *nssprite_types[] = {
+	"image/x-riscos-sprite"
+};
+
+CONTENT_FACTORY_REGISTER_TYPES(nssprite, nssprite_types, nssprite_content_handler);
 
 #endif

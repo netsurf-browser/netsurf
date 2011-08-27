@@ -56,11 +56,6 @@ typedef struct nsgif_content {
 	int current_frame;	   /**< current frame to display [0...(max-1)] */
 } nsgif_content;
 
-static const char *nsgif_types[] = {
-	"image/gif"
-};
-
-static lwc_string *nsgif_mime_types[NOF_ELEMENTS(nsgif_types)];
 
 /**
  * Callback for libnsgif; forwards the call to bitmap_create()
@@ -425,43 +420,10 @@ static const content_handler nsgif_content_handler = {
 	.no_share = false,
 };
 
-nserror nsgif_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static const char *nsgif_types[] = {
+	"image/gif"
+};
 
-	for (i = 0; i < NOF_ELEMENTS(nsgif_mime_types); i++) {
-		lerror = lwc_intern_string(nsgif_types[i],
-				strlen(nsgif_types[i]),
-				&nsgif_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nsgif_mime_types[i],
-				&nsgif_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nsgif_fini();
-
-	return error;
-}
-
-void nsgif_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(nsgif_mime_types); i++) {
-		if (nsgif_mime_types[i] != NULL)
-			lwc_string_unref(nsgif_mime_types[i]);
-	}
-}
+CONTENT_FACTORY_REGISTER_TYPES(nsgif, nsgif_types, nsgif_content_handler);
 
 #endif

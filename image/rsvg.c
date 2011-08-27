@@ -56,16 +56,6 @@ typedef struct rsvg_content {
 	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } rsvg_content;
 
-
-
-static const char *rsvg_types[] = {
-	"image/svg",
-	"image/svg+xml"
-};
-
-static lwc_string *rsvg_mime_types[NOF_ELEMENTS(rsvg_types)];
-
-
 static nserror rsvg_create_svg_data(rsvg_content *c)
 {
 	union content_msg_data msg_data;
@@ -318,43 +308,12 @@ static const content_handler rsvg_content_handler = {
 	.no_share = false,
 };
 
-nserror nsrsvg_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static const char *rsvg_types[] = {
+	"image/svg",
+	"image/svg+xml"
+};
 
-	for (i = 0; i < NOF_ELEMENTS(rsvg_mime_types); i++) {
-		lerror = lwc_intern_string(rsvg_types[i],
-				strlen(rsvg_types[i]),
-				&rsvg_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
+CONTENT_FACTORY_REGISTER_TYPES(nsrsvg, rsvg_types, rsvg_content_handler);
 
-		error = content_factory_register_handler(rsvg_mime_types[i],
-				&rsvg_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nsrsvg_fini();
-
-	return error;
-}
-
-void nsrsvg_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(rsvg_mime_types); i++) {
-		if (rsvg_mime_types[i] != NULL)
-			lwc_string_unref(rsvg_mime_types[i]);
-	}
-}
 
 #endif /* WITH_RSVG */

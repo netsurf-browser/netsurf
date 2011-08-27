@@ -26,6 +26,51 @@
 #include "content/content_type.h"
 #include "utils/errors.h"
 
+#define CONTENT_FACTORY_REGISTER_TYPES(HNAME, HTYPELIST, HHANDLER)	\
+									\
+static lwc_string *HNAME##_mime_types[NOF_ELEMENTS(HTYPELIST)];	        \
+									\
+nserror HNAME##_init(void)						\
+{									\
+	uint32_t i;							\
+	lwc_error lerror;						\
+	nserror error;							\
+									\
+	for (i = 0; i < NOF_ELEMENTS(HNAME##_mime_types); i++) {	\
+		lerror = lwc_intern_string(HTYPELIST[i],		\
+					   strlen(HTYPELIST[i]),	\
+					   &HNAME##_mime_types[i]);	\
+		if (lerror != lwc_error_ok) {				\
+			error = NSERROR_NOMEM;				\
+			goto error;					\
+		}							\
+									\
+		error = content_factory_register_handler(		\
+			HNAME##_mime_types[i],				\
+			&HHANDLER);					\
+		if (error != NSERROR_OK)				\
+			goto error;					\
+	}								\
+									\
+	return NSERROR_OK;						\
+									\
+error:									\
+	HNAME##_fini();							\
+									\
+	return error;							\
+}									\
+									\
+void HNAME##_fini(void)							\
+{									\
+	uint32_t i;							\
+									\
+	for (i = 0; i < NOF_ELEMENTS(HNAME##_mime_types); i++) {	\
+		if (HNAME##_mime_types[i] != NULL) {			\
+			lwc_string_unref(HNAME##_mime_types[i]);	\
+		}							\
+	}								\
+}
+
 struct content;
 struct llcache_handle;
 

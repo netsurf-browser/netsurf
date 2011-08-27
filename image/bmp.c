@@ -46,26 +46,6 @@ typedef struct nsbmp_content {
 	bmp_image *bmp;	/** BMP image data */
 } nsbmp_content;
 
-
-
-
-static const char *nsbmp_types[] = {
-	"application/bmp",
-	"application/preview",
-	"application/x-bmp",
-	"application/x-win-bitmap",
-	"image/bmp",
-	"image/ms-bmp",
-	"image/x-bitmap",
-	"image/x-bmp",
-	"image/x-ms-bmp",
-	"image/x-win-bitmap",
-	"image/x-windows-bmp",
-	"image/x-xbitmap"
-};
-
-static lwc_string *nsbmp_mime_types[NOF_ELEMENTS(nsbmp_types)];
-
 static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
 {	
 	union content_msg_data msg_data;
@@ -279,43 +259,21 @@ static const content_handler nsbmp_content_handler = {
 	.no_share = false,
 };
 
-nserror nsbmp_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static const char *nsbmp_types[] = {
+	"application/bmp",
+	"application/preview",
+	"application/x-bmp",
+	"application/x-win-bitmap",
+	"image/bmp",
+	"image/ms-bmp",
+	"image/x-bitmap",
+	"image/x-bmp",
+	"image/x-ms-bmp",
+	"image/x-win-bitmap",
+	"image/x-windows-bmp",
+	"image/x-xbitmap"
+};
 
-	for (i = 0; i < NOF_ELEMENTS(nsbmp_mime_types); i++) {
-		lerror = lwc_intern_string(nsbmp_types[i],
-				strlen(nsbmp_types[i]),
-				&nsbmp_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nsbmp_mime_types[i],
-				&nsbmp_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nsbmp_fini();
-
-	return error;
-}
-
-void nsbmp_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(nsbmp_mime_types); i++) {
-		if (nsbmp_mime_types[i] != NULL)
-			lwc_string_unref(nsbmp_mime_types[i]);
-	}
-}
+CONTENT_FACTORY_REGISTER_TYPES(nsbmp, nsbmp_types, nsbmp_content_handler);
 
 #endif

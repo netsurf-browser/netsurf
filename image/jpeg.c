@@ -66,14 +66,6 @@ struct nsjpeg_error_mgr {
 	jmp_buf setjmp_buffer;
 };
 
-static const char *nsjpeg_types[] = {
-	"image/jpeg",
-	"image/jpg",
-	"image/pjpeg"
-};
-
-static lwc_string *nsjpeg_mime_types[NOF_ELEMENTS(nsjpeg_types)];
-
 static unsigned char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
 
 /**
@@ -358,44 +350,12 @@ static const content_handler nsjpeg_content_handler = {
 	.no_share = false,
 };
 
-nserror nsjpeg_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
+static const char *nsjpeg_types[] = {
+	"image/jpeg",
+	"image/jpg",
+	"image/pjpeg"
+};
 
-	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
-		lerror = lwc_intern_string(nsjpeg_types[i],
-				strlen(nsjpeg_types[i]),
-				&nsjpeg_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(nsjpeg_mime_types[i],
-				&nsjpeg_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	nsjpeg_fini();
-
-	return error;
-}
-
-void nsjpeg_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(nsjpeg_mime_types); i++) {
-		if (nsjpeg_mime_types[i] != NULL) {
-			lwc_string_unref(nsjpeg_mime_types[i]);
-		}
-	}
-}
+CONTENT_FACTORY_REGISTER_TYPES(nsjpeg, nsjpeg_types, nsjpeg_content_handler);
 
 #endif /* WITH_JPEG */
