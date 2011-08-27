@@ -105,7 +105,8 @@ bool scrollbar_create(bool horizontal, int length, int full_size,
 	scrollbar->pair_drag = false;
 
 	well_length = length - 2 * SCROLLBAR_WIDTH;
-	scrollbar->bar_len = (well_length * visible_size) / full_size;
+	scrollbar->bar_len = (full_size == 0) ? 0 :
+			((well_length * visible_size) / full_size);
 
 	scrollbar->client_callback = client_callback;
 	scrollbar->client_data = client_data;
@@ -467,8 +468,13 @@ void scrollbar_set_extents(struct scrollbar *s, int length,
 	if (full_size != -1)
 		s->full_size = full_size;
 
+	if (s->full_size < s->visible_size)
+		s->full_size = s->visible_size;
+
 	/* Update scroll offset (scaled in proportion with change in excess) */
-	s->offset = (s->full_size - s->visible_size) * s->offset / cur_excess;
+	s->offset = (cur_excess < 1) ? 0 :
+			((s->full_size - s->visible_size) * s->offset /
+			cur_excess);
 
 	well_length = s->length - 2 * SCROLLBAR_WIDTH;
 
