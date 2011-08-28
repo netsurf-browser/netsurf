@@ -149,6 +149,8 @@ endif
 
 S_FRAMEBUFFER := $(addprefix framebuffer/,$(S_FRAMEBUFFER)) $(addprefix framebuffer/fbtk/,$(S_FRAMEBUFFER_FBTK))
 
-# complete source file list
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_FRAMEBUFFER) $(S_IMAGES)
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_FRAMEBUFFER) $(S_IMAGES)
 EXETARGET := nsfb$(SUBTARGET)

@@ -37,9 +37,19 @@ S_COMMON := $(addprefix content/,$(S_CONTENT))				\
 	$(addprefix desktop/,$(S_DESKTOP))
 
 # S_IMAGE are sources related to image management
-S_IMAGE := bmp.c gif.c ico.c image.c jpeg.c mng.c nssprite.c png.c	\
-	svg.c rsvg.c webp.c
-S_IMAGE := $(addprefix image/,$(S_IMAGE))
+S_IMAGE_YES := image.c
+S_IMAGE_NO :=
+S_IMAGE_$(NETSURF_USE_BMP) += bmp.c ico.c
+S_IMAGE_$(NETSURF_USE_GIF) += gif.c
+S_IMAGE_$(NETSURF_USE_JPEG) += jpeg.c
+S_IMAGE_$(NETSURF_USE_MNG) += mng.c
+S_IMAGE_$(NETSURF_USE_NSSPRITE) += nssprite.c
+S_IMAGE_$(NETSURF_USE_PNG) += png.c
+S_IMAGE_$(NETSURF_USE_NSSVG) += svg.c
+S_IMAGE_$(NETSURF_USE_RSVG) += rsvg.c
+S_IMAGE_$(NETSURF_USE_WEBP) += webp.c
+
+S_IMAGE := $(addprefix image/,$(S_IMAGE_YES))
 
 # S_PDF are sources of the pdf plotter + the ones for paged-printing
 S_PDF := pdf_plotters.c font_haru.c

@@ -23,9 +23,6 @@
  * This implementation uses the IJG JPEG library.
  */
 
-#include "utils/config.h"
-#ifdef WITH_JPEG
-
 #include <assert.h>
 #include <setjmp.h>
 #include <string.h>
@@ -357,5 +354,3 @@ static const char *nsjpeg_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nsjpeg, nsjpeg_types, nsjpeg_content_handler);
-
-#endif /* WITH_JPEG */

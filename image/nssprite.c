@@ -21,9 +21,6 @@
  *
  */
 
-#include "utils/config.h"
-#ifdef WITH_NSSPRITE
-
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -240,5 +237,3 @@ static const char *nssprite_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nssprite, nssprite_types, nssprite_content_handler);
-
-#endif

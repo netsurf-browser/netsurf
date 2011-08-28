@@ -21,24 +21,23 @@
  * Content for image/bmp (implementation)
  */
 
-#include "utils/config.h"
-#ifdef WITH_BMP
-
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <libnsbmp.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "desktop/plotters.h"
-#include "image/bitmap.h"
-#include "image/bmp.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
+
+#include "image/bitmap.h"
+#include "image/bmp.h"
 
 typedef struct nsbmp_content {
 	struct content base;
@@ -275,5 +274,3 @@ static const char *nsbmp_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nsbmp, nsbmp_types, nsbmp_content_handler);
-
-#endif

@@ -28,9 +28,6 @@
  * [rjw] - Sun 4th April 2004
  */
 
-#include "utils/config.h"
-#ifdef WITH_GIF
-
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
@@ -425,5 +422,3 @@ static const char *nsgif_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nsgif, nsgif_types, nsgif_content_handler);
-
-#endif

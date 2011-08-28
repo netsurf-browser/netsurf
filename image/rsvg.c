@@ -27,9 +27,6 @@
  * function to render it for redraw requests.
  */
 
-#include "utils/config.h"
-#ifdef WITH_RSVG
-
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
@@ -38,7 +35,6 @@
 #include <librsvg/rsvg.h>
 #include <librsvg/rsvg-cairo.h>
 
-#include "image/rsvg.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
@@ -46,6 +42,8 @@
 #include "utils/utils.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
+
+#include "image/rsvg.h"
 
 typedef struct rsvg_content {
 	struct content base;
@@ -315,5 +313,3 @@ static const char *rsvg_types[] = {
 
 CONTENT_FACTORY_REGISTER_TYPES(nsrsvg, rsvg_types, rsvg_content_handler);
 
-
-#endif /* WITH_RSVG */

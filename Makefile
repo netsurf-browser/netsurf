@@ -302,10 +302,12 @@ define pkg_config_find_and_add
       LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(2)) $$(NETSURF_FEATURE_$(1)_LDFLAGS)
       ifneq ($(MAKECMDGOALS),clean)
         $$(info M.CONFIG: $(3) ($(2))	auto-enabled  (NETSURF_USE_$(1) := AUTO))
+	NETSURF_USE_$(1) := YES
       endif
     else
       ifneq ($(MAKECMDGOALS),clean)
         $$(info M.CONFIG: $(3) ($(2))	auto-disabled (NETSURF_USE_$(1) := AUTO))
+	NETSURF_USE_$(1) := NO
       endif
     endif
   else ifeq ($$(NETSURF_USE_$(1)),NO)
@@ -373,20 +375,23 @@ CLEANS := clean-target clean-testament
 POSTEXES :=
 
 # ----------------------------------------------------------------------------
-# General source file setup
-# ----------------------------------------------------------------------------
-
-include Makefile.sources
-
-# ----------------------------------------------------------------------------
 # Target specific setup
 # ----------------------------------------------------------------------------
 
 include $(TARGET)/Makefile.target
 
 # ----------------------------------------------------------------------------
+# General source file setup
+# ----------------------------------------------------------------------------
+
+include Makefile.sources
+
+# ----------------------------------------------------------------------------
 # Source file setup
 # ----------------------------------------------------------------------------
+
+# Force exapnsion of source file list
+SOURCES := $(SOURCES)
 
 ifeq ($(SOURCES),)
 $(error Unable to build NetSurf, could not determine set of sources to build)

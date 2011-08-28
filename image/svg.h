@@ -23,22 +23,7 @@
 #ifndef _NETSURF_IMAGE_SVG_H_
 #define _NETSURF_IMAGE_SVG_H_
 
-#include "utils/config.h"
-
-#ifdef WITH_NS_SVG
-
-#include <stdbool.h>
-
-#include "utils/errors.h"
-
 nserror svg_init(void);
 void svg_fini(void);
-
-#else
-
-#define svg_init() NSERROR_OK
-#define svg_fini() ((void) 0)
-
-#endif
 
 #endif

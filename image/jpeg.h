@@ -23,21 +23,7 @@
 #ifndef _NETSURF_IMAGE_JPEG_H_
 #define _NETSURF_IMAGE_JPEG_H_
 
-#include "utils/config.h"
-#ifdef WITH_JPEG
-
-#include <stdbool.h>
-
-#include "utils/errors.h"
-
 nserror nsjpeg_init(void);
 void nsjpeg_fini(void);
-
-#else
-
-#define nsjpeg_init() NSERROR_OK
-#define nsjpeg_fini() ((void) 0)
-
-#endif /* WITH_JPEG */
 
 #endif

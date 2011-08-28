@@ -23,19 +23,7 @@
 #ifndef _NETSURF_NS_SPRITE_H_
 #define _NETSURF_NS_SPRITE_H_
 
-#include "utils/config.h"
-#ifdef WITH_NSSPRITE
-
-#include <stdbool.h>
-
 nserror nssprite_init(void);
 void nssprite_fini(void);
-
-#else
-
-#define nssprite_init() NSERROR_OK
-#define nssprite_fini() ((void) 0)
-
-#endif /* WITH_NSSPRITE */
 
 #endif

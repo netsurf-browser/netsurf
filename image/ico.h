@@ -23,22 +23,7 @@
 #ifndef _NETSURF_IMAGE_ICO_H_
 #define _NETSURF_IMAGE_ICO_H_
 
-#include "utils/config.h"
-#ifdef WITH_BMP
-
-#include <stdbool.h>
-#include <libnsbmp.h>
-
-#include "utils/errors.h"
-
 nserror nsico_init(void);
 void nsico_fini(void);
-
-#else
-
-#define nsico_init() NSERROR_OK
-#define nsico_fini() ((void) 0)
-
-#endif /* WITH_BMP */
 
 #endif

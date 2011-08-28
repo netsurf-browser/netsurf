@@ -23,21 +23,7 @@
 #ifndef _NETSURF_IMAGE_RSVG_H_
 #define _NETSURF_IMAGE_RSVG_H_
 
-#include "utils/config.h"
-#ifdef WITH_RSVG
-
-#include <stdbool.h>
-
-#include "utils/errors.h"
-
 nserror nsrsvg_init(void);
 void nsrsvg_fini(void);
-
-#else
-
-#define nsrsvg_init() NSERROR_OK
-#define nsrsvg_fini() ((void) 0)
-
-#endif /* WITH_RSVG */
 
 #endif

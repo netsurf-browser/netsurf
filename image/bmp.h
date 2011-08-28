@@ -24,23 +24,13 @@
 #ifndef _NETSURF_IMAGE_BMP_H_
 #define _NETSURF_IMAGE_BMP_H_
 
-#include "utils/config.h"
-#ifdef WITH_BMP
-
-#include <stdbool.h>
 #include <libnsbmp.h>
+
 #include "image/bitmap.h"
 
 extern bmp_bitmap_callback_vt bmp_bitmap_callbacks; /** Only to be used by ICO code.  */
 
 nserror nsbmp_init(void);
 void nsbmp_fini(void);
-
-#else
-
-#define nsbmp_init() NSERROR_OK
-#define nsbmp_fini() ((void) 0)
-
-#endif /* WITH_BMP */
 
 #endif

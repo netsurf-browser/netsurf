@@ -24,20 +24,7 @@
 #ifndef _NETSURF_IMAGE_GIF_H_
 #define _NETSURF_IMAGE_GIF_H_
 
-#include "utils/config.h"
-#ifdef WITH_GIF
-
-#include <stdbool.h>
-#include <libnsgif.h>
-
 nserror nsgif_init(void);
 void nsgif_fini(void);
-
-#else
-
-#define nsgif_init() NSERROR_OK
-#define nsgif_fini() ((void) 0)
-
-#endif /* WITH_GIF */
 
 #endif

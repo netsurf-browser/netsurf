@@ -20,9 +20,6 @@
  * Content for image/mng, image/png, and image/jng (implementation).
  */
 
-#include "utils/config.h"
-#ifdef WITH_MNG
-
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
@@ -811,5 +808,3 @@ static const char *nsjpng_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nsjpng, nsjpng_types, nsjpng_content_handler);
-
-#endif

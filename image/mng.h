@@ -23,23 +23,10 @@
 #ifndef _NETSURF_IMAGE_MNG_H_
 #define _NETSURF_IMAGE_MNG_H_
 
-#include "utils/config.h"
-#ifdef WITH_MNG
-
-#include <stdbool.h>
-
 nserror nsmng_init(void);
-void nsmng_fini(void);
 nserror nsjpng_init(void);
+
+void nsmng_fini(void);
 void nsjpng_fini(void);
-
-#else
-
-#define nsmng_init() NSERROR_OK
-#define nsmng_fini() ((void) 0)
-#define nsjpng_init() NSERROR_OK
-#define nsjpng_fini() ((void) 0)
-
-#endif /* WITH_MNG */
 
 #endif

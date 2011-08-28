@@ -72,5 +72,8 @@ S_GTK := font_pango.c bitmap.c gui.c schedule.c thumbnail.c plotters.c	\
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # code in utils/container.ch is non-universal it seems
 
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK)
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK)
 EXETARGET := nsgtk

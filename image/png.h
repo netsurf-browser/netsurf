@@ -20,22 +20,7 @@
 #ifndef _NETSURF_RISCOS_PNG_H_
 #define _NETSURF_RISCOS_PNG_H_
 
-#include "utils/config.h"
-
-#ifdef WITH_PNG
-
-#include <stdbool.h>
-
-#include "utils/errors.h"
-
 nserror nspng_init(void);
 void nspng_fini(void);
-
-#else
-
-#define nspng_init() NSERROR_OK
-#define nspng_fini() ((void) 0)
-
-#endif
 
 #endif

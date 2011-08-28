@@ -16,8 +16,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "image/image.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
+#include "utils/errors.h"
+
+#include "image/image.h"
 #include "image/bmp.h"
 #include "image/gif.h"
 #include "image/ico.h"
@@ -29,6 +34,8 @@
 #include "image/svg.h"
 #include "image/webp.h"
 
+#include "utils/config.h"
+
 /**
  * Initialise image content handlers
  *
@@ -38,49 +45,70 @@ nserror image_init(void)
 {
 	nserror error;
 
+#ifdef WITH_BMP
 	error = nsbmp_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
+#ifdef WITH_GIF
 	error = nsgif_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
+#ifdef WITH_BMP
 	error = nsico_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
+#ifdef WITH_JPEG
 	error = nsjpeg_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
+#ifdef WITH_MNG
 	error = nsmng_init();
 	if (error != NSERROR_OK)
 		return error;
 
-	/* Prefer libpng over libmng for pngs by registering later */
 	error = nsjpng_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
+
+#ifdef WITH_PNG
+	/* Prefer libpng over libmng for pngs by registering later */
 	error = nspng_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
+#ifdef WITH_NSSPRITE
 	error = nssprite_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
 	/* Prefer rsvg over libsvgtiny for svgs */
+#ifdef WITH_NS_SVG
 	error = svg_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
+#ifdef WITH_RSVG
 	error = nsrsvg_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif
 
+#ifdef WITH_WEBP
 	error = webp_init();
 	if (error != NSERROR_OK)
 		return error;
+#endif /* WITH_WEBP */
 
 	return NSERROR_OK;
 }
@@ -90,16 +118,45 @@ nserror image_init(void)
  */
 void image_fini(void)
 {
+#ifdef WITH_BMP
 	nsbmp_fini();
+#endif
+
+#ifdef WITH_GIF
 	nsgif_fini();
+#endif
+
+#ifdef WITH_BMP
 	nsico_fini();
+#endif
+
+#ifdef WITH_JPEG
 	nsjpeg_fini();
+#endif
+
+#ifdef WITH_MNG
 	nsmng_fini();
 	nsjpng_fini();
+#endif
+
+#ifdef WITH_NSSPRITE
 	nssprite_fini();
+#endif
+
+#ifdef WITH_PNG
 	nspng_fini();
+#endif
+
+#ifdef WITH_RSVG
 	nsrsvg_fini();
+#endif
+
+#ifdef WITH_NS_SVG
 	svg_fini();
+#endif
+
+#ifdef WITH_WEBP
 	webp_fini();
+#endif 
 }
 

@@ -20,9 +20,6 @@
  * Content for image/svg (implementation).
  */
 
-#include "utils/config.h"
-#ifdef WITH_NS_SVG
-
 #include <assert.h>
 #include <string.h>
 
@@ -346,4 +343,4 @@ static const char *svg_types[] = {
 
 CONTENT_FACTORY_REGISTER_TYPES(svg, svg_types, svg_content_handler);
 
-#endif /* WITH_NS_SVG */
+

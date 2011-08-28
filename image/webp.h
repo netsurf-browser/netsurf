@@ -23,21 +23,7 @@
 #ifndef _NETSURF_WEBP_H_
 #define _NETSURF_WEBP_H_
 
-#include "utils/config.h"
-#ifdef WITH_WEBP
-
-#include <stdbool.h>
-
-#include "utils/errors.h"
-
 nserror webp_init(void);
 void webp_fini(void);
-
-#else
-
-#define webp_init() NSERROR_OK
-#define webp_fini() ((void) 0)
-
-#endif /* WITH_WEBP */
 
 #endif

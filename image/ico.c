@@ -20,9 +20,6 @@
  * Content for image/ico (implementation)
  */
 
-#include "utils/config.h"
-#ifdef WITH_BMP
-
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
@@ -237,5 +234,3 @@ static const char *nsico_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nsico, nsico_types, nsico_content_handler);
-
-#endif

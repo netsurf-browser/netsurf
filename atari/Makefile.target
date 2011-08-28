@@ -42,8 +42,10 @@ S_ATARI := gui.c findfile.c filetype.c misc.c bitmap.c schedule.c \
 	global_evnt.c osspec.c dragdrop.c system_colour.c
 S_ATARI := $(addprefix atari/,$(S_ATARI))
 
-
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_ATARI)
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_ATARI)
 EXETARGET := ns$(SUBTARGET).prg
 
 

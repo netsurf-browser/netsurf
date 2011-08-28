@@ -21,9 +21,6 @@
  *
  */
 
-#include "utils/config.h"
-#ifdef WITH_WEBP
-
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -211,4 +208,3 @@ static const char *webp_types[] = {
 
 CONTENT_FACTORY_REGISTER_TYPES(webp, webp_types, webp_content_handler);
 
-#endif

@@ -61,5 +61,8 @@ S_MONKEY := main.c utils.c filetype.c schedule.c system_colour.c	\
 
 S_MONKEY := $(addprefix monkey/,$(S_MONKEY))
 
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_MONKEY)
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_MONKEY)
 EXETARGET := nsmonkey

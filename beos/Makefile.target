@@ -106,6 +106,8 @@ RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 	$(wildcard beos/res/throbber/throbber*.png)
 
 
-# complete source file list
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_BEOS)
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_BEOS)
 EXETARGET := NetSurf

@@ -77,5 +77,7 @@ S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c		\
 	stringview/stringview.c stringview/urlhistory.c
 S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 
-# complete source file list
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)

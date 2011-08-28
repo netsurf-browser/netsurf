@@ -25,8 +25,6 @@
 
 #include <png.h>
 
-#include "utils/config.h"
-
 #include "desktop/plotters.h"
 
 #include "content/content_protected.h"
@@ -38,8 +36,6 @@
 #include "utils/messages.h"
 #include "utils/talloc.h"
 #include "utils/utils.h"
-
-#ifdef WITH_PNG
 
 /* accommodate for old versions of libpng (beware security holes!) */
 
@@ -438,5 +434,3 @@ static const char *nspng_types[] = {
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nspng, nspng_types, nspng_content_handler);
-
-#endif

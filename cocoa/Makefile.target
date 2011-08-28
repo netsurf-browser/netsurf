@@ -118,9 +118,10 @@ S_TABBAR := \
 S_COCOA := $(addprefix cocoa/,$(S_COCOA))
 S_TABBAR := $(addprefix cocoa/PSMTabBarControl/,$(S_TABBAR))
 
-# complete source file list
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA) $(S_TABBAR)
-SOURCES := $(addprefix $(shell pwd)/,$(SOURCES))
+# This is the final source build list
+# Note this is deliberately *not* expanded here as common and image
+#   are not yet available
+SOURCES = $(addprefix $(shell pwd)/,$(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_COCOA) $(S_TABBAR))
 
 # Since we prefix the sources with the pwd, also create a special
 # prefixed rule so that the testament is run
@@ -169,7 +170,7 @@ $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(1) $$(OBJROOT)/created
 	$(VQ)echo Compiling XIB $(1) for language $(2)
 	$(Q)mkdir -p $$(OBJROOT)/$(2).lproj
 	$(Q)cocoa/compile-xib.sh $(DEVELOPER_PATH) cocoa/res/$(1) $(2) $$@
-	
+
 ifeq ($(wildcard cocoa/res/$(2).lproj/$(1).strings),cocoa/res/$(2).lproj/$(1).strings)
 $$(OBJROOT)/$(2).lproj/$(1:.xib=.nib): cocoa/res/$(2).lproj/$(1).strings
 endif
