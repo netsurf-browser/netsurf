@@ -26,8 +26,10 @@ nserror amiga_datatypes_init(void)
 	err = amiga_dt_picture_init();
 	if(err != NSERROR_OK) return err;
 
+/* Don't initialise DT anim handler as it is buggy
 	err = amiga_dt_anim_init();
 	if(err != NSERROR_OK) return err;
+*/
 
 	err = amiga_dt_sound_init();
 	if(err != NSERROR_OK) return err;
