@@ -457,12 +457,12 @@ gui_init(int argc, char** argv)
 	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	if (option_cookie_file == NULL) {
-		option_cookie_file = filepath_find(respaths, "Cookies");
+		option_cookie_file = strdup("~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookies file", option_cookie_file));
 	}
 
 	if (option_cookie_jar == NULL) {
-		option_cookie_jar = filepath_find(respaths, "Cookies");
+		option_cookie_jar = strdup("~/.netsurf/Cookies");
 		LOG(("Using '%s' as Cookie Jar file", option_cookie_jar));
 	}
 
