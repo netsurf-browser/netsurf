@@ -73,11 +73,13 @@ struct s_caret
 /*
 	This struct holds scheduled redraw requests.
 */
+struct rect;
 struct s_browser_redrw_info
 {
-	BBOX areas[MAX_REDRW_SLOTS];
+	struct rect areas[MAX_REDRW_SLOTS];
 	short areas_used;
-	BBOX area;		/* used for clipping of content redraw */
+	/* used for clipping of content redraw: */
+	struct rect area;
 };
 
 /*

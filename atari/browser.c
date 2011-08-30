@@ -472,7 +472,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 	GRECT src;
 	GRECT dst;
 	short h,w;
-	
+
 	if( gw->browser->bw->current_content == NULL )
 		return;
 
@@ -496,7 +496,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		src.g_w = bwrect.g_w;
 		src.g_h = bwrect.g_h - h;
 		dst.g_x = 0;
-		dst.g_y = h;	
+		dst.g_y = h;
 		dst.g_w = src.g_w;
 		dst.g_h = src.g_h;
 		plotter->copy_rect( plotter, src, dst );
@@ -710,18 +710,18 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
             r = browser_window_key_press(gw->browser->bw, ucs4 );
 		}
 	}
-	return( r );	
+	return( r );
 }
 
 static void __CDECL browser_evnt_redraw_x( WINDOW * c, short buf[8], void * data)
-{	
-	/* just an stub to prevent wndclear */ 
-	/* Probably the browser redraw is better placed here? dunno! */ 
+{
+	/* just an stub to prevent wndclear */
+	/* Probably the browser redraw is better placed here? dunno! */
 	return;
 }
 
 /* determines if a browser window needs redraw */
-bool browser_redraw_required( struct gui_window * gw) 
+bool browser_redraw_required( struct gui_window * gw)
 {
 	bool ret = true;
 	CMP_BROWSER b = gw->browser;
@@ -747,29 +747,29 @@ void browser_schedule_redraw_rect(struct gui_window * gw, short x, short y, shor
 
 	if( y < 0 ) {
 		h += y;
-		y = 0;	
+		y = 0;
 	}
 	browser_schedule_redraw( gw, x, y, x+w, y+h );
 }
 
-static inline bool bbox_intersect(BBOX * box1, BBOX * box2)
+static inline bool rect_intersect( struct rect * box1, struct rect * box2 )
 {
-    if (box2->x1 < box1->x0)
-        return false;
+	if (box2->x1 < box1->x0)
+ 	       return false;
 
-    if (box2->y1 < box1->y0)
-        return false;
+	if (box2->y1 < box1->y0)
+        	return false;
 
-    if (box2->x0 > box1->x1)
-        return false;
+	if (box2->x0 > box1->x1)
+        	return false;
 
-    if (box2->y0 > box1->y1)
-        return false;
+	if (box2->y0 > box1->y1)
+        	return false;
 
-    return true;
+	return true;
 }
 
-/* 
+/*
 	schedule a redraw of content, coords are relative to the framebuffer
 */
 void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x1, short y1)
@@ -777,6 +777,7 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 	assert( gw != NULL );
 	CMP_BROWSER b = gw->browser;
 	int i;
+	struct rect area;
 	LGRECT work;
 
 	if( y1 < 0 || x1 < 0 )
@@ -788,20 +789,20 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 	if( y0 > work.g_h )
 		return;
 
+	area.x0 = x0;
+	area.y0 = y0;
+	area.x1 = x1;
+	area.y1 = y1;
+
 	for( i=0; i<b->redraw.areas_used; i++) {
-		if(    b->redraw.areas[i].x0 <= x0 
+		if( b->redraw.areas[i].x0 <= x0
 			&& b->redraw.areas[i].x1 >= x1
-			&& b->redraw.areas[i].y0 <= y0 
+			&& b->redraw.areas[i].y0 <= y0
 			&& b->redraw.areas[i].y1 >= y1 ){
 			/* the area is already queued for redraw */
 			return;
 		} else {
-			BBOX area;
-			area.x0 = x0;
-			area.y0 = y0;
-			area.x1 = x1;
-			area.y1 = y1;
-			if( bbox_intersect(&b->redraw.areas[i], &area ) ){
+			if( rect_intersect(&b->redraw.areas[i], &area ) ){
 				b->redraw.areas[i].x0 = MIN(b->redraw.areas[i].x0, x0);
 				b->redraw.areas[i].y0 = MIN(b->redraw.areas[i].y0, y0);
 				b->redraw.areas[i].x1 = MAX(b->redraw.areas[i].x1, x1);
@@ -818,7 +819,7 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 		b->redraw.areas[b->redraw.areas_used].y1 = y1;
 		b->redraw.areas_used++;
 	} else {
-		/* 	
+		/*
 			we are out of available slots, merge box with last slot
 			this is dumb... but also a very rare case.
 		*/
@@ -827,7 +828,7 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 		b->redraw.areas[MAX_REDRW_SLOTS-1].x1 = MAX(b->redraw.areas[i].x1, x1);
 		b->redraw.areas[MAX_REDRW_SLOTS-1].y1 = MAX(b->redraw.areas[i].y1, y1);
 	}
-done: 
+done:
 	return;
 }
 
@@ -835,25 +836,19 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 {
 	LGRECT work;
 	CMP_BROWSER b = gw->browser;
-	struct rect clip;
 
 	struct redraw_context ctx = {
 		.interactive = true,
 		.plot = &atari_plotters
 	};
 
-	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0, 
+	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0,
 		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
 	));
 
-   struct rect a;
-   a.x0 = b->redraw.area.x0;
-   a.y0 = b->redraw.area.y0;
-   a.x1 = b->redraw.area.x1;
-   a.y1 = b->redraw.area.y1;
-   
+
 	browser_window_redraw( b->bw, -b->scroll.current.x,
-			-b->scroll.current.y, &a, &ctx );
+			-b->scroll.current.y, &b->redraw.area, &ctx );
 
 }
 
@@ -890,7 +885,7 @@ void browser_redraw_caret( struct gui_window * gw, GRECT * area )
 }
 
 void browser_redraw( struct gui_window * gw ) 
-{	
+{
 	LGRECT bwrect;
 	struct s_browser * b = gw->browser;
 	short todo[4];
@@ -921,17 +916,16 @@ void browser_redraw( struct gui_window * gw )
 			int i;
 			GRECT area;
 			GRECT fbwork;
-			BBOX cliporg;
 			todo[0] = bwrect.g_x;
 			todo[1] = bwrect.g_y;
 			todo[2] = todo[0] + bwrect.g_w-1;
 			todo[3] = todo[1] + bwrect.g_h-1;
 			vs_clip(plotter->vdi_handle, 1, (short*)&todo[0]);
-			if( wind_get(gw->root->handle->handle, WF_FIRSTXYWH, 
+			if( wind_get(gw->root->handle->handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
 				while (todo[2] && todo[3]) {
 					/* convert screen to framebuffer coords: */
-					fbwork.g_x = todo[0] - bwrect.g_x;					
+					fbwork.g_x = todo[0] - bwrect.g_x;
 					fbwork.g_y = todo[1] - bwrect.g_y;
 					if( fbwork.g_x < 0 ){
 						fbwork.g_w = todo[2] + todo[0];
@@ -952,21 +946,20 @@ void browser_redraw( struct gui_window * gw )
 						area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
 						area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0; 
 						if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
-							
-							b->redraw.area.x0 = area.g_x; //todo[0];
-							b->redraw.area.y0 = area.g_y; //todo[1];
-							b->redraw.area.x1 = area.g_x + area.g_w; //todo[0] + todo[2];
-							b->redraw.area.y1 = area.g_y + area.g_h; //todo[1] + todo[3];
+							b->redraw.area.x0 = area.g_x;
+							b->redraw.area.y0 = area.g_y;
+							b->redraw.area.x1 = area.g_x + area.g_w;
+							b->redraw.area.y1 = area.g_y + area.g_h;
 							browser_redraw_content( gw, 0, 0 );
 						} else {
-							/* 
+							/*
 								the area should be kept scheduled for later redraw, but because this
-								is onscreen plotter, it doesn't make much sense anyway... 
-							*/ 
+								is onscreen plotter, it doesn't make much sense anyway...
+							*/
 						}
 
 					}
-					if (wind_get(gw->root->handle->handle, WF_NEXTXYWH, 
+					if (wind_get(gw->root->handle->handle, WF_NEXTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
 						break;
 					}
@@ -998,7 +991,7 @@ void browser_redraw( struct gui_window * gw )
 }
 
 static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data)
-{	
+{
 	short pxy[8];
 	WINDOW * w;
 	struct gui_window * gw = (struct gui_window *) data;
@@ -1016,7 +1009,7 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	browser_get_rect( gw, BR_CONTENT, &work );
 	lclip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &lclip ) ) return;
- 
+
 	if( b->bw->current_content == NULL )
 		return;
 
