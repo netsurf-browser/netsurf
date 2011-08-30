@@ -26,10 +26,10 @@ nserror amiga_datatypes_init(void)
 	err = amiga_dt_picture_init();
 	if(err != NSERROR_OK) return err;
 
-/* Don't initialise DT anim handler as it is buggy
+#ifdef WITH_DTANIM
 	err = amiga_dt_anim_init();
 	if(err != NSERROR_OK) return err;
-*/
+#endif
 
 	err = amiga_dt_sound_init();
 	if(err != NSERROR_OK) return err;
@@ -40,7 +40,9 @@ nserror amiga_datatypes_init(void)
 void amiga_datatypes_fini(void)
 {
 	amiga_dt_picture_fini();
+#ifdef WITH_DTANIM
 	amiga_dt_anim_fini();
+#endif
 	amiga_dt_sound_fini();
 }
 #endif
