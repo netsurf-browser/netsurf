@@ -207,28 +207,6 @@ gui_create_browser_window(struct browser_window *bw,
 			}
 		break;
 
-/*
-		case BROWSER_WINDOW_FRAME:
-			gwroot = bw->parent->window;
-			LOG(("create frame: %p, clone: %p\n", bw, clone));
-			gw->root = gwroot->root;
-			gw->browser = browser_create( gw, bw, clone, CLT_VERTICAL, 1, 1);
-		break;
-
-		case BROWSER_WINDOW_FRAMESET:
-			LOG(("frameset: %p, clone: %p\n", bw, clone));
-			gwroot = bw->parent->window;
-			gw->root = gwroot->root;
-			gw->browser = browser_create( gw, bw, clone, CLT_VERTICAL, 1, 1);
-		break;
-
-		case BROWSER_WINDOW_IFRAME:
-			LOG(("iframe: %p, clone: %p\n", bw, clone));
-			gwroot = bw->parent->window;
-			gw->root = bw->parent->window->root;
-			gw->browser = browser_create( gw, bw, NULL, CLT_VERTICAL, 1, 1);
-		break;
-*/
 		default:
 			LOG(("unhandled type!"));
 	}
@@ -266,20 +244,6 @@ void gui_window_destroy(struct gui_window *w)
 		case BROWSER_WINDOW_NORMAL:
 			window_destroy( w );
 			break;
-
-/*
-		case BROWSER_WINDOW_FRAME:
-			browser_destroy( w->browser );
-			break;
-
-		case BROWSER_WINDOW_FRAMESET:
-			browser_destroy( w->browser );
-			break;
-
-		case BROWSER_WINDOW_IFRAME:
-			window_destroy( w );
-			break;
-*/
 		default:
 			LOG(("Unhandled type!"));
 			assert( 1 == 0 );
@@ -930,10 +894,6 @@ void gui_quit(void)
 	hotlist_destroy();
 
 	/* send WM_DESTROY to windows purely managed by windom: */
-	while( wglb.first ) {
-		ApplWrite( _AESapid, WM_DESTROY, wglb.first->handle, 0, 0, 0, 0);
-		EvntWindom( MU_MESAG );
-	}
 
 	urldb_save_cookies(option_cookie_file);
 	urldb_save(option_url_file);	
