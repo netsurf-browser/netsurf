@@ -412,8 +412,9 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 		else
 			s->bar_pos = value;
 
-		s->offset = ((s->full_size - s->visible_size) * (s->bar_pos)) /
-				(well_length - s->bar_len);
+		s->offset = ((well_length - s->bar_len) < 1) ? 0 :
+				(((s->full_size - s->visible_size) *
+				s->bar_pos) / (well_length - s->bar_len));
 
 	} else {
 		if (value > s->full_size - s->visible_size)
@@ -421,7 +422,8 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 		else
 			s->offset = value;
 
-		s->bar_pos = (well_length * s->offset) / s->full_size;
+		s->bar_pos = (s->full_size < 1) ? 0 :
+				((well_length * s->offset) / s->full_size);
 	}
 
 	msg.scrollbar = s;
@@ -478,8 +480,13 @@ void scrollbar_set_extents(struct scrollbar *s, int length,
 
 	well_length = s->length - 2 * SCROLLBAR_WIDTH;
 
-	s->bar_len = (well_length * s->visible_size) / s->full_size;
-	s->bar_pos = (well_length * s->offset) / s->full_size;
+	if (s->full_size < 1) {
+		s->bar_len = well_length;
+		s->bar_pos = 0;
+	} else {
+		s->bar_len = (well_length * s->visible_size) / s->full_size;
+		s->bar_pos = (well_length * s->offset) / s->full_size;
+	}
 }
 
 
