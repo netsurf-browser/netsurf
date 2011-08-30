@@ -336,7 +336,6 @@ int window_destroy( struct gui_window * gw)
 	int err = 0;
 
 	search_destroy( gw );
-
 	if( input_window == gw )
 		input_window = NULL;
 
@@ -632,9 +631,6 @@ error:
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data )
 {
 	LOG(("%s\n", __FUNCTION__ ));
-
-	if( data )
-		free( data  );
 }
 
 static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data )
