@@ -44,6 +44,8 @@
 typedef struct amiga_dt_anim_content {
 	struct content base;
 
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
+
 	Object *dto;
 	int x;
 	int y;
@@ -70,6 +72,13 @@ static void amiga_dt_anim_close(struct content *c);
 static nserror amiga_dt_anim_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_anim_content_type(lwc_string *mime_type);
 
+static void *amiga_dt_anim_get_internal(const struct content *c, void *context)
+{
+	amiga_dt_anim_content *adta_c = (amiga_dt_anim_content *)c;
+
+	return adta_c->bitmap;
+}
+
 static const content_handler amiga_dt_anim_content_handler = {
 	.create = amiga_dt_anim_create,
 	.data_complete = amiga_dt_anim_convert,
@@ -79,6 +88,7 @@ static const content_handler amiga_dt_anim_content_handler = {
 	.open = amiga_dt_anim_open,
 	.close = amiga_dt_anim_close,
 	.clone = amiga_dt_anim_clone,
+	.get_internal = amiga_dt_anim_get_internal,
 	.type = amiga_dt_anim_content_type,
 	.no_share = false,
 };
@@ -183,14 +193,14 @@ bool amiga_dt_anim_convert(struct content *c)
 			width = (int)bmh->bmh_Width;
 			height = (int)bmh->bmh_Height;
 
-			c->bitmap = bitmap_create(width, height, bm_flags);
-			if (!c->bitmap) {
+			plugin->bitmap = bitmap_create(width, height, bm_flags);
+			if (!plugin->bitmap) {
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 				return false;
 			}
 
-			bm_buffer = bitmap_get_buffer(c->bitmap);
+			bm_buffer = bitmap_get_buffer(plugin->bitmap);
 
 			adt_frame.MethodID = ADTM_LOADFRAME;
 			adt_frame.alf_TimeStamp = 0;
@@ -227,7 +237,7 @@ bool amiga_dt_anim_convert(struct content *c)
 	content__set_title(c, title);
 */
 
-	bitmap_modified(c->bitmap);
+	bitmap_modified(plugin->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -242,8 +252,8 @@ void amiga_dt_anim_destroy(struct content *c)
 
 	LOG(("amiga_dt_anim_destroy"));
 
-	if (c->bitmap != NULL)
-		bitmap_destroy(c->bitmap);
+	if (plugin->bitmap != NULL)
+		bitmap_destroy(plugin->bitmap);
 
 	DisposeDTObject(plugin->dto);
 
@@ -255,10 +265,9 @@ bool amiga_dt_anim_redraw(struct content *c,
 		const struct redraw_context *ctx)
 {
 	amiga_dt_anim_content *plugin = (amiga_dt_anim_content *) c;
+	bitmap_flags_t flags = BITMAPF_NONE;
 
 	LOG(("amiga_dt_anim_redraw"));
-
-	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
@@ -266,7 +275,7 @@ bool amiga_dt_anim_redraw(struct content *c,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			plugin->bitmap, data->background_colour, flags);
 }
 
 /**

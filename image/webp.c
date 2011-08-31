@@ -36,6 +36,8 @@
 typedef struct webp_content
 {
 	struct content base;
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } webp_content;
 
 
@@ -71,6 +73,7 @@ static nserror webp_create(const content_handler *handler,
 
 static bool webp_convert(struct content *c)
 {
+	webp_content *webp = (webp_content *)c;
 	union content_msg_data msg_data;
 	const uint8_t *data;
 	unsigned char *imagebuf = NULL;
@@ -89,20 +92,20 @@ static bool webp_convert(struct content *c)
 		return false;
 	}
 
-	c->bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
-	if (!c->bitmap) {
+	webp->bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
+	if (!webp->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
-	imagebuf = bitmap_get_buffer(c->bitmap);
+	imagebuf = bitmap_get_buffer(webp->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	unsigned int row_width = bitmap_get_rowstride(c->bitmap);
+	unsigned int row_width = bitmap_get_rowstride(webp->bitmap);
 
 	res_p = WebPDecodeRGBAInto(data, size, imagebuf,
 				row_width * height, row_width);
@@ -118,7 +121,7 @@ static bool webp_convert(struct content *c)
 		width, height, size);
 	content__set_title(c, title);
 
-	bitmap_modified(c->bitmap);
+	bitmap_modified(webp->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -134,8 +137,10 @@ static bool webp_convert(struct content *c)
 
 static void webp_destroy(struct content *c)
 {
-	if (c->bitmap != NULL)
-		bitmap_destroy(c->bitmap);
+	webp_content *webp = (webp_content *)c;
+
+	if (webp->bitmap != NULL)
+		bitmap_destroy(webp->bitmap);
 }
 
 
@@ -146,6 +151,7 @@ static void webp_destroy(struct content *c)
 static bool webp_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
+	webp_content *webp = (webp_content *)c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (data->repeat_x)
@@ -154,7 +160,7 @@ static bool webp_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			webp->bitmap, data->background_colour, flags);
 }
 
 
@@ -187,6 +193,13 @@ static nserror webp_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *webp_get_internal(const struct content *c, void *context)
+{
+	webp_content *webp = (webp_content *)c;
+
+	return webp->bitmap;
+}
+
 static content_type webp_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
@@ -198,6 +211,7 @@ static const content_handler webp_content_handler = {
 	.destroy = webp_destroy,
 	.redraw = webp_redraw,
 	.clone = webp_clone,
+	.get_internal = webp_get_internal,
 	.type = webp_content_type,
 	.no_share = false,
 };

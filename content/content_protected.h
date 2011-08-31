@@ -68,6 +68,10 @@ struct content_handler {
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	content_type (*type)(lwc_string *mime_type);
+
+        /** handler dependant content sensitive internal data interface. */
+	void * (*get_internal)(const struct content *c, void *context);
+
 	/** There must be one content per user for this type. */
 	bool no_share;
 };
@@ -98,11 +102,8 @@ struct content {
 	bool quirks;		/**< Content is in quirks mode */
 	char *fallback_charset;	/**< Fallback charset, or NULL */
 
-	/**< URL for refresh request, in standard form as from url_join. */
+	/** URL for refresh request, in standard form as from url_join. */
 	char *refresh;
-
-	/** Bitmap, for various image contents. */
-	struct bitmap *bitmap;
 
 	unsigned int time;		/**< Creation time,
 					  if LOADING or READY,
@@ -174,6 +175,7 @@ const char *content__get_source_data(struct content *c, unsigned long *size);
 void content__invalidate_reuse_data(struct content *c);
 const char *content__get_refresh_url(struct content *c);
 struct bitmap *content__get_bitmap(struct content *c);
+bool content__get_opaque(struct content *c);
 
 bool content__is_locked(struct content *c);
 

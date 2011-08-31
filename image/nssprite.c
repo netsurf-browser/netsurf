@@ -37,6 +37,7 @@
 
 typedef struct nssprite_content {
 	struct content base;
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 
 	struct rosprite_area* sprite_area;
 } nssprite_content;
@@ -112,19 +113,19 @@ static bool nssprite_convert(struct content *c)
 
 	struct rosprite* sprite = sprite_area->sprites[0];
 
-	c->bitmap = bitmap_create(sprite->width, sprite->height, BITMAP_NEW);
-	if (!c->bitmap) {
+	nssprite->bitmap = bitmap_create(sprite->width, sprite->height, BITMAP_NEW);
+	if (!nssprite->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	unsigned char* imagebuf = bitmap_get_buffer(c->bitmap);
+	unsigned char* imagebuf = bitmap_get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	unsigned int row_width = bitmap_get_rowstride(c->bitmap);
+	unsigned int row_width = bitmap_get_rowstride(nssprite->bitmap);
 
 	memcpy(imagebuf, sprite->image, row_width * sprite->height); // TODO: avoid copying entire image buffer
 
@@ -145,7 +146,7 @@ static bool nssprite_convert(struct content *c)
 
 	c->width = sprite->width;
 	c->height = sprite->height;
-	bitmap_modified(c->bitmap);
+	bitmap_modified(nssprite->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -160,12 +161,12 @@ static bool nssprite_convert(struct content *c)
 
 static void nssprite_destroy(struct content *c)
 {
-	nssprite_content *sprite = (nssprite_content *) c;
+	nssprite_content *nssprite = (nssprite_content *) c;
 
-	if (sprite->sprite_area != NULL)
-		rosprite_destroy_sprite_area(sprite->sprite_area);
-	if (c->bitmap != NULL)
-		bitmap_destroy(c->bitmap);
+	if (nssprite->sprite_area != NULL)
+		rosprite_destroy_sprite_area(nssprite->sprite_area);
+	if (nssprite->bitmap != NULL)
+		bitmap_destroy(nssprite->bitmap);
 }
 
 
@@ -176,6 +177,7 @@ static void nssprite_destroy(struct content *c)
 static bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
+	nssprite_content *nssprite = (nssprite_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (data->repeat_x)
@@ -184,7 +186,7 @@ static bool nssprite_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			nssprite->bitmap, data->background_colour, flags);
 }
 
 
@@ -217,10 +219,18 @@ static nserror nssprite_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *nssprite_get_internal(const struct content *c, void *context)
+{
+	nssprite_content *nssprite = (nssprite_content *) c;
+
+	return nssprite->bitmap;
+}
+
 static content_type nssprite_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
 }
+
 
 static const content_handler nssprite_content_handler = {
 	.create = nssprite_create,
@@ -228,6 +238,7 @@ static const content_handler nssprite_content_handler = {
 	.destroy = nssprite_destroy,
 	.redraw = nssprite_redraw,
 	.clone = nssprite_clone,
+	.get_internal = nssprite_get_internal,
 	.type = nssprite_content_type,
 	.no_share = false,
 };

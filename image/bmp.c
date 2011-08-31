@@ -43,6 +43,8 @@ typedef struct nsbmp_content {
 	struct content base;
 
 	bmp_image *bmp;	/** BMP image data */
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsbmp_content;
 
 static nserror nsbmp_create_bmp_data(nsbmp_content *bmp)
@@ -165,8 +167,8 @@ static bool nsbmp_convert(struct content *c)
 	c->size += (swidth * bmp->bmp->height) + 16 + 44;
 
 	/* exit as a success */
-	c->bitmap = bmp->bmp->bitmap;
-	bitmap_modified(c->bitmap);
+	bmp->bitmap = bmp->bmp->bitmap;
+	bitmap_modified(bmp->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -186,7 +188,7 @@ static bool nsbmp_redraw(struct content *c, struct content_redraw_data *data,
 		if (bmp_decode(bmp->bmp) != BMP_OK)
 			return false;
 
-	c->bitmap = bmp->bmp->bitmap;
+	bmp->bitmap = bmp->bmp->bitmap;
 
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
@@ -194,7 +196,7 @@ static bool nsbmp_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			bmp->bitmap, data->background_colour, flags);
 }
 
 
@@ -242,6 +244,13 @@ static nserror nsbmp_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *nsbmp_get_internal(const struct content *c, void *context)
+{
+	nsbmp_content *bmp = (nsbmp_content *)c;
+
+	return bmp->bitmap;
+}
+
 static content_type nsbmp_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
@@ -254,6 +263,7 @@ static const content_handler nsbmp_content_handler = {
 	.destroy = nsbmp_destroy,
 	.redraw = nsbmp_redraw,
 	.clone = nsbmp_clone,
+	.get_internal = nsbmp_get_internal,
 	.type = nsbmp_content_type,
 	.no_share = false,
 };

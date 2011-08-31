@@ -53,6 +53,8 @@ typedef struct nsmng_content
 	bool waiting;
 	bool displayed;
 	void *handle;
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsmng_content;
 
 
@@ -166,8 +168,8 @@ static mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width,
 	c = (nsmng_content *) mng_get_userdata(mng);
 	assert(c != NULL);
 
-	c->base.bitmap = bitmap_create(width, height, BITMAP_NEW);
-	if (c->base.bitmap == NULL) {
+	c->bitmap = bitmap_create(width, height, BITMAP_NEW);
+	if (c->bitmap == NULL) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		LOG(("Insufficient memory to create canvas."));
@@ -176,7 +178,7 @@ static mng_bool nsmng_processheader(mng_handle mng, mng_uint32 width,
 
 	/* Get the buffer to ensure that it is allocated and the calls in
 	 * nsmng_getcanvasline() succeed. */
-	buffer = bitmap_get_buffer(c->base.bitmap);
+	buffer = bitmap_get_buffer(c->bitmap);
 	if (buffer == NULL) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
@@ -254,8 +256,8 @@ static mng_ptr nsmng_getcanvasline(mng_handle mng, mng_uint32 line)
 
 	/*	Calculate the address
 	*/
-	return bitmap_get_buffer(c->base.bitmap) +
-			bitmap_get_rowstride(c->base.bitmap) * line;
+	return bitmap_get_buffer(c->bitmap) +
+			bitmap_get_rowstride(c->bitmap) * line;
 }
 
 static mng_bool nsmng_refresh(mng_handle mng, mng_uint32 x, mng_uint32 y, 
@@ -329,8 +331,8 @@ static void nsmng_animate(void *p)
  		c->waiting = false;
  		mng_display_resume(c->handle);
 		c->opaque_test_pending = true;
-		if (c->base.bitmap)
-			bitmap_modified(c->base.bitmap);
+		if (c->bitmap)
+			bitmap_modified(c->bitmap);
  	}
 }
 
@@ -549,7 +551,7 @@ static bool nsmng_convert(struct content *c)
 	/* by this point, the png should have been parsed
 	 * and the bitmap created, so ensure that's the case
 	 */
-	if (content__get_bitmap(c) == NULL) {
+	if (mng->bitmap == NULL) {
 		return nsmng_broadcast_error(mng, -1) == NSERROR_OK;
 	}
 
@@ -585,7 +587,7 @@ static bool nsmng_convert(struct content *c)
 		LOG(("Unable to start display (%i)", status));
 		return nsmng_broadcast_error(mng, status) == NSERROR_OK;
 	}
-	bitmap_modified(c->bitmap);
+	bitmap_modified(mng->bitmap);
 
 	/* Optimise the plotting of MNG */
 	mng->opaque_test_pending = false;
@@ -607,7 +609,7 @@ static bool nsjpng_convert(struct content *c)
 	/* by this point, the png should have been parsed
 	 * and the bitmap created, so ensure that's the case
 	 */
-	if (content__get_bitmap(c) == NULL) {
+	if (mng->bitmap == NULL) {
 		return nsmng_broadcast_error(mng, -1) == NSERROR_OK;
 	}
 
@@ -642,12 +644,12 @@ static bool nsjpng_convert(struct content *c)
 		LOG(("Unable to start display (%i)", status));
 		return nsmng_broadcast_error(mng, status) == NSERROR_OK;
 	}
-	bitmap_modified(c->bitmap);
+	bitmap_modified(mng->bitmap);
 
 	/*	Optimise the plotting of JNG/PNGs
 	*/
 	mng->opaque_test_pending = true;
-	bitmap_set_opaque(c->bitmap, false);
+	bitmap_set_opaque(mng->bitmap, false);
 
 	/* free associated memory */
 
@@ -678,8 +680,9 @@ static void nsmng_destroy(struct content *c)
 		mng->handle = NULL;
 	}
 
-	if (c->bitmap)
-		bitmap_destroy(c->bitmap);
+	if (mng->bitmap) {
+		bitmap_destroy(mng->bitmap);
+	}
 }
 
 
@@ -693,8 +696,9 @@ static bool nsmng_redraw(struct content *c, struct content_redraw_data *data,
 	/* mark image as having been requested to display */
 	mng->displayed = true;
 
-	if ((c->bitmap) && (mng->opaque_test_pending)) {
-		bitmap_set_opaque(c->bitmap, bitmap_test_opaque(c->bitmap));
+	if ((mng->bitmap) && 
+	    (mng->opaque_test_pending)) {
+		bitmap_set_opaque(mng->bitmap, bitmap_test_opaque(mng->bitmap));
 		mng->opaque_test_pending = false;
 	}
 
@@ -704,7 +708,7 @@ static bool nsmng_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	ret = ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			mng->bitmap, data->background_colour, flags);
 
 	/* Check if we need to restart the animation */
 	if ((mng->waiting) && (option_animate_images))
@@ -759,6 +763,13 @@ static nserror nsmng_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *nsmng_get_internal(const struct content *c, void *context)
+{
+	nsmng_content *mng = (nsmng_content *)c;
+
+	return mng->bitmap;
+}
+
 static content_type nsmng_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
@@ -772,6 +783,7 @@ static const content_handler nsmng_content_handler = {
 	.destroy = nsmng_destroy,
 	.redraw = nsmng_redraw,
 	.clone = nsmng_clone,
+	.get_internal = nsmng_get_internal,
 	.type = nsmng_content_type,
 	.no_share = false,
 };
@@ -794,6 +806,7 @@ static const content_handler nsjpng_content_handler = {
 	.destroy = nsmng_destroy,
 	.redraw = nsmng_redraw,
 	.clone = nsmng_clone,
+	.get_internal = nsmng_get_internal,
 	.type = nsmng_content_type,
 	.no_share = false,
 };

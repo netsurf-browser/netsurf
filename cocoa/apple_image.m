@@ -30,6 +30,9 @@
 
 typedef struct apple_image_content {
 	struct content base;
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
+
     NSUInteger frames;
     NSUInteger currentFrame;
     int *frameTimes;
@@ -47,12 +50,20 @@ static nserror apple_image_clone(const struct content *old,
 		struct content **newc);
 static content_type apple_image_content_type(lwc_string *mime_type);
 
+static void *apple_image_get_internal(const struct content *c, void *context)
+{
+	apple_image_content *ai_c = (apple_image_content *)c;
+
+	return ai_c->bitmap;
+}
+
 static const content_handler apple_image_content_handler = {
 	.create = apple_image_create,
 	.data_complete = apple_image_convert,
 	.destroy = apple_image_destroy,
 	.redraw = apple_image_redraw,
 	.clone = apple_image_clone,
+	.get_internal = apple_image_get_internal,
 	.type = apple_image_content_type,
 	.no_share = false
 };
@@ -156,6 +167,7 @@ static void animate_image_cb( void *ptr )
 
 bool apple_image_convert(struct content *c)
 {
+	apple_image_content *ai_c = (apple_image_content *)c;
 	unsigned long size;
 	const char *bytes = content__get_source_data(c, &size);
 
@@ -171,7 +183,7 @@ bool apple_image_convert(struct content *c)
 	
 	c->width = [image pixelsWide];
 	c->height = [image pixelsHigh];
-	c->bitmap = (void *)image;
+	ai_c->bitmap = (void *)image;
 
 	NSString *url = [NSString stringWithUTF8String: llcache_handle_get_url( content_get_llcache_handle( c ) )];
 	NSString *title = [NSString stringWithFormat: @"%@ (%dx%d)", [url lastPathComponent], c->width, c->height];
@@ -201,8 +213,10 @@ bool apple_image_convert(struct content *c)
 
 void apple_image_destroy(struct content *c)
 {
-	[(id)c->bitmap release];
-	c->bitmap = NULL;
+	apple_image_content *ai_c = (apple_image_content *)c;
+
+	[(id)ai_c->bitmap release];
+	ai_c->bitmap = NULL;
     schedule_remove( animate_image_cb, c );
 }
 
@@ -246,6 +260,7 @@ content_type apple_image_content_type(lwc_string *mime_type)
 bool apple_image_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
+	apple_image_content *ai_c = (apple_image_content *)c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (data->repeat_x)
@@ -254,7 +269,7 @@ bool apple_image_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			ai_c->bitmap, data->background_colour, flags);
 }
 
 #endif /* WITH_APPLE_IMAGE */

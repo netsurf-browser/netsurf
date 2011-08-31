@@ -207,8 +207,7 @@ static bool rsvg_convert(struct content *c)
 				c->width, c->height,
 				bitmap_get_rowstride(d->bitmap));
 
-	c->bitmap = d->bitmap;
-	bitmap_modified(c->bitmap);
+	bitmap_modified(d->bitmap);
 	content_set_ready(c);
 	content_set_done(c);
 	/* Done: update status bar */
@@ -220,9 +219,10 @@ static bool rsvg_convert(struct content *c)
 static bool rsvg_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
+	rsvg_content *rsvgcontent = (rsvg_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	assert(c->bitmap != NULL);
+	assert(rsvgcontent->bitmap != NULL);
 
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
@@ -230,7 +230,7 @@ static bool rsvg_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height, 
-			c->bitmap, data->background_colour, flags);
+			rsvgcontent->bitmap, data->background_colour, flags);
 }
 
 static void rsvg_destroy(struct content *c)
@@ -290,6 +290,13 @@ static nserror rsvg_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *rsvg_get_internal(const struct content *c, void *context)
+{
+	rsvg_content *d = (rsvg_content *) c;
+
+	return d->bitmap;
+}
+
 static content_type rsvg_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
@@ -302,6 +309,7 @@ static const content_handler rsvg_content_handler = {
 	.destroy = rsvg_destroy,
 	.redraw = rsvg_redraw,
 	.clone = rsvg_clone,
+	.get_internal = rsvg_get_internal,
 	.type = rsvg_content_type,
 	.no_share = false,
 };

@@ -51,6 +51,7 @@ typedef struct nsgif_content {
 
 	struct gif_animation *gif; /**< GIF animation data */
 	int current_frame;	   /**< current frame to display [0...(max-1)] */
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsgif_content;
 
 
@@ -297,9 +298,11 @@ static bool nsgif_convert(struct content *c)
 				nsgif_invalidate);
 
 	/* Exit as a success */
-	c->bitmap = gif->gif->frame_image;
+	gif->bitmap = gif->gif->frame_image;
+
 	content_set_ready(c);
 	content_set_done(c);
+
 	/* Done: update status bar */
 	content_set_status(c, "");
 	return true;
@@ -340,7 +343,7 @@ static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
 		if (nsgif_get_frame(c) != GIF_OK)
 			return false;
 
-	c->bitmap = gif->gif->frame_image;
+	gif->bitmap = gif->gif->frame_image;
 
 	if ((data->width == -1) && (data->height == -1))
 		return true;
@@ -351,7 +354,7 @@ static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			gif->bitmap, data->background_colour, flags);
 }
 
 
@@ -401,11 +404,17 @@ static nserror nsgif_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *nsgif_get_internal(const struct content *c, void *context)
+{
+	nsgif_content *gif = (nsgif_content *) c;
+
+	return gif->bitmap;
+}
+
 static content_type nsgif_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
 }
-
 
 static const content_handler nsgif_content_handler = {
 	.create = nsgif_create,
@@ -413,6 +422,7 @@ static const content_handler nsgif_content_handler = {
 	.destroy = nsgif_destroy,
 	.redraw = nsgif_redraw,
 	.clone = nsgif_clone,
+	.get_internal = nsgif_get_internal,
 	.type = nsgif_content_type,
 	.no_share = false,
 };

@@ -103,7 +103,6 @@ nserror content__init(struct content *c, const content_handler *handler,
 	c->available_width = 0;
 	c->quirks = quirks;
 	c->refresh = 0;
-	c->bitmap = NULL;
 	c->time = wallclock();
 	c->size = 0;
 	c->title = NULL;
@@ -959,6 +958,7 @@ const char *content__get_refresh_url(struct content *c)
 	return c->refresh;
 }
 
+
 /**
  * Retrieve the bitmap contained in an image content
  *
@@ -972,10 +972,56 @@ struct bitmap *content_get_bitmap(hlcache_handle *h)
 
 struct bitmap *content__get_bitmap(struct content *c)
 {
-	if (c == NULL)
-		return NULL;
+	struct bitmap *bitmap = NULL;
 
-	return c->bitmap;
+	if ((c != NULL) && 
+	    (c->handler != NULL) && 
+	    (c->handler->type != NULL) && 
+	    (c->handler->type(NULL) == CONTENT_IMAGE) &&
+	    (c->handler->get_internal != NULL) ) {
+		bitmap = c->handler->get_internal(c, NULL);
+	}
+
+	return bitmap;
+}
+
+
+/**
+ * Determine if a content is opaque from handle
+ *
+ * \param h high level cache handle to retrieve opacity from.
+ * \return false if the content is not opaque or information is not
+ *         known else true.
+ */
+bool content_get_opaque(hlcache_handle *h)
+{
+	return content__get_opaque(hlcache_handle_get_content(h));
+}
+
+/**
+ * Determine if a content is opaque
+ *
+ * \param c Content to retrieve opacity from
+ * \return false if the content is not opaque or information is not
+ *         known else true.
+ */
+bool content__get_opaque(struct content *c)
+{
+	bool opaque = false;
+
+	if ((c != NULL) && 
+	    (c->handler != NULL) && 
+	    (c->handler->type != NULL) && 
+	    (c->handler->type(NULL) == CONTENT_IMAGE) &&
+	    (c->handler->get_internal != NULL) ) {
+		struct bitmap *bitmap = NULL;
+		bitmap = c->handler->get_internal(c, NULL);
+		if (bitmap != NULL) { 
+			opaque = bitmap_get_opaque(bitmap);
+		}
+	}
+
+	return opaque;
 }
 
 

@@ -58,6 +58,8 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 
 typedef struct amiga_icon_content {
 	struct content base;
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } amiga_icon_content;
 
 static nserror amiga_icon_create(const content_handler *handler,
@@ -73,12 +75,20 @@ static nserror amiga_icon_clone(const struct content *old,
 		struct content **newc);
 static content_type amiga_icon_content_type(lwc_string *mime_type);
 
+static void *amiga_icon_get_internal(const struct content *c, void *context)
+{
+	amiga_icon_content *icon_c = (amiga_icon_content *)c;
+
+	return icon_c->bitmap;
+}
+
 static const content_handler amiga_icon_content_handler = {
 	.create = amiga_icon_create,
 	.data_complete = amiga_icon_convert,
 	.destroy = amiga_icon_destroy,
 	.redraw = amiga_icon_redraw,
 	.clone = amiga_icon_clone,
+	.get_internal = amiga_icon_get_internal,
 	.type = amiga_icon_content_type,
 	.no_share = false,
 };
@@ -134,21 +144,21 @@ nserror amiga_icon_create(const content_handler *handler,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
-	amiga_icon_content *ai;
+	amiga_icon_content *ai_content;
 	nserror error;
 
-	ai = talloc_zero(0, amiga_icon_content);
-	if (ai == NULL)
+	ai_content = talloc_zero(0, amiga_icon_content);
+	if (ai_content == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__init(&ai->base, handler, imime_type, params,
+	error = content__init(&ai_content->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(ai);
+		talloc_free(ai_content);
 		return error;
 	}
 
-	*c = (struct content *) ai;
+	*c = (struct content *)ai_content;
 
 	return NSERROR_OK;
 }
@@ -161,6 +171,7 @@ nserror amiga_icon_create(const content_handler *handler,
 
 bool amiga_icon_convert(struct content *c)
 {
+	amiga_icon_content *icon_c = (amiga_icon_content *)c;	
 	union content_msg_data msg_data;
 	struct DiskObject *dobj;
 	ULONG *imagebuf;
@@ -213,8 +224,8 @@ bool amiga_icon_convert(struct content *c)
 		return false;
 	}
 
-	c->bitmap = bitmap_create(width, height, BITMAP_NEW);
-	if (!c->bitmap) {
+	icon_c->bitmap = bitmap_create(width, height, BITMAP_NEW);
+	if (!icon_c->bitmap) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		if(dobj) FreeDiskObject(dobj);
@@ -260,7 +271,7 @@ bool amiga_icon_convert(struct content *c)
 	c->width = width;
 	c->height = height;
 
-	bitmap_modified(c->bitmap);
+	bitmap_modified(icon_c->bitmap);
 	content_set_ready(c);
 	content_set_done(c);
 	content_set_status(c, "");
@@ -280,8 +291,10 @@ bool amiga_icon_convert(struct content *c)
 
 void amiga_icon_destroy(struct content *c)
 {
-	if (c->bitmap != NULL)
-		bitmap_destroy(c->bitmap);
+	amiga_icon_content *icon_c = (amiga_icon_content *)c;	
+
+	if (icon_c->bitmap != NULL)
+		bitmap_destroy(icon_c->bitmap);
 }
 
 
@@ -293,6 +306,7 @@ bool amiga_icon_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx)
 {
+	amiga_icon_content *icon_c = (amiga_icon_content *)c;	
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (data->repeat_x)
@@ -301,7 +315,7 @@ bool amiga_icon_redraw(struct content *c,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			icon_c->bitmap, data->background_colour, flags);
 }
 
 

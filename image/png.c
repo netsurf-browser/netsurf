@@ -331,8 +331,6 @@ static bool nspng_convert(struct content *c)
 	bitmap_set_opaque(png_c->bitmap, bitmap_test_opaque(png_c->bitmap));
 	bitmap_modified(png_c->bitmap);
 
-	c->bitmap = png_c->bitmap; /* this needs to go */
-
 	content_set_ready(c);
 	content_set_done(c);
 	content_set_status(c, "");
@@ -413,6 +411,13 @@ static nserror nspng_clone(const struct content *old_c, struct content **new_c)
 	return NSERROR_OK;
 }
 
+static void *nspng_get_internal(const struct content *c, void *context)
+{
+	nspng_content *png_c = (nspng_content *) c;
+
+	return png_c->bitmap;
+}
+
 static content_type nspng_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
@@ -425,6 +430,7 @@ static const content_handler nspng_content_handler = {
 	.destroy = nspng_destroy,
 	.redraw = nspng_redraw,
 	.clone = nspng_clone,
+	.get_internal = nspng_get_internal,
 	.type = nspng_content_type,
 	.no_share = false,
 };

@@ -2060,24 +2060,23 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		/* handle background-repeat */
 		switch (css_computed_background_repeat(background->style)) {
 		case CSS_BACKGROUND_REPEAT_REPEAT:
-		{
-			struct bitmap *bmp = content_get_bitmap(
-					background->background);
 			repeat_x = repeat_y = true;
 			/* optimisation: only plot the colour if
 			 * bitmap is not opaque */
-			if (bmp != NULL)
-				plot_colour = !bitmap_get_opaque(bmp);
-		}
+			plot_colour = !content_get_opaque(background->background);
 			break;
+
 		case CSS_BACKGROUND_REPEAT_REPEAT_X:
 			repeat_x = true;
 			break;
+
 		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
 			repeat_y = true;
 			break;
+
 		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
 			break;
+
 		default:
 			break;
 		}
@@ -2126,8 +2125,6 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 	for (; clip_box; clip_box = clip_box->next) {
 		/* clip to child boxes if needed */
 		if (clip_to_children) {
-			struct bitmap *bmp = NULL;
-
 			assert(clip_box->type == BOX_TABLE_CELL);
 
 			/* update clip.* to the child cell */
@@ -2145,16 +2142,17 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			if (r.x1 > clip->x1) r.x1 = clip->x1;
 			if (r.y1 > clip->y1) r.y1 = clip->y1;
 
-			if (clip_box->background != NULL)
-				bmp = content_get_bitmap(clip_box->background);
-
 			css_computed_background_color(clip_box->style, &bgcol);
 
 			/* <td> attributes override <tr> */
-			if ((r.x0 >= r.x1) || (r.y0 >= r.y1) ||
-					(nscss_color_is_transparent(bgcol) ==
-						false) ||
-					(bmp != NULL && bitmap_get_opaque(bmp)))
+			/* if the background content is opaque there
+			 * is no need to plot underneath it.
+			 */
+			if ((r.x0 >= r.x1) || 
+			    (r.y0 >= r.y1) ||
+			    (nscss_color_is_transparent(bgcol) == false) ||
+			    ((clip_box->background != NULL) && 
+			     content_get_opaque(clip_box->background)))
 				continue;
 		}
 
@@ -2259,24 +2257,24 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 		/* handle background-repeat */
 		switch (css_computed_background_repeat(box->style)) {
 		case CSS_BACKGROUND_REPEAT_REPEAT:
-		{
-			struct bitmap *bmp = 
-					content_get_bitmap(box->background);
 			repeat_x = repeat_y = true;
 			/* optimisation: only plot the colour if
-			 * bitmap is not opaque */
-			if (bmp != NULL)
-				plot_colour = !bitmap_get_opaque(bmp);
-		}
+			 * bitmap is not opaque 
+			 */
+			plot_colour = !content_get_opaque(box->background);
 			break;
+
 		case CSS_BACKGROUND_REPEAT_REPEAT_X:
 			repeat_x = true;
 			break;
+
 		case CSS_BACKGROUND_REPEAT_REPEAT_Y:
 			repeat_y = true;
 			break;
+
 		case CSS_BACKGROUND_REPEAT_NO_REPEAT:
 			break;
+
 		default:
 			break;
 		}

@@ -41,6 +41,8 @@ typedef struct nsico_content {
 	struct content base;
 
 	struct ico_collection *ico;	/** ICO collection data */
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsico_content;
 
 
@@ -132,8 +134,8 @@ static bool nsico_convert(struct content *c)
 	/* exit as a success */
 	bmp = ico_find(ico->ico, 255, 255);
 	assert(bmp);
-	c->bitmap = bmp->bitmap;
-	bitmap_modified(c->bitmap);
+	ico->bitmap = bmp->bitmap;
+	bitmap_modified(ico->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -155,7 +157,7 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 		if (bmp_decode(bmp) != BMP_OK)
 			return false;
 
-	c->bitmap = bmp->bitmap;
+	ico->bitmap = bmp->bitmap;
 
 	if (data->repeat_x)
 		flags |= BITMAPF_REPEAT_X;
@@ -163,7 +165,7 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			ico->bitmap, data->background_colour, flags);
 }
 
 
@@ -210,6 +212,13 @@ static nserror nsico_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *nsico_get_internal(const struct content *c, void *context)
+{
+	nsico_content *ico = (nsico_content *) c;
+
+	return ico->bitmap;
+}
+
 static content_type nsico_content_type(lwc_string *mime_type)
 {
 	return CONTENT_IMAGE;
@@ -221,6 +230,7 @@ static const content_handler nsico_content_handler = {
 	.destroy = nsico_destroy,
 	.redraw = nsico_redraw,
 	.clone = nsico_clone,
+	.get_internal = nsico_get_internal,
 	.type = nsico_content_type,
 	.no_share = false,
 };

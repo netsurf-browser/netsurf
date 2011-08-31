@@ -56,6 +56,8 @@ static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
 
 typedef struct nsjpeg_content {
 	struct content base; /**< base content */
+
+	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsjpeg_content;
 
 struct nsjpeg_error_mgr {
@@ -171,6 +173,7 @@ static void nsjpeg_error_exit(j_common_ptr cinfo)
  */
 static bool nsjpeg_convert(struct content *c)
 {
+	struct nsjpeg_content *jpeg_content = (nsjpeg_content *)c;
 	struct jpeg_decompress_struct cinfo;
 	struct nsjpeg_error_mgr jerr;
 	struct jpeg_source_mgr source_mgr = { 0, 0,
@@ -257,7 +260,7 @@ static bool nsjpeg_convert(struct content *c)
 
 	c->width = width;
 	c->height = height;
-	c->bitmap = bitmap;
+	jpeg_content->bitmap = bitmap;
 	snprintf(title, sizeof(title), messages_get("JPEGTitle"),
 		 width, height, size);
 	content__set_title(c, title);
@@ -275,8 +278,11 @@ static bool nsjpeg_convert(struct content *c)
  */
 static void nsjpeg_destroy(struct content *c)
 {
-	if (c->bitmap)
-		bitmap_destroy(c->bitmap);
+	struct nsjpeg_content *jpeg_content = (nsjpeg_content *)c;
+
+	if (jpeg_content->bitmap) {
+		bitmap_destroy(jpeg_content->bitmap);
+	}
 }
 
 
@@ -286,6 +292,7 @@ static void nsjpeg_destroy(struct content *c)
 static bool nsjpeg_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
+	struct nsjpeg_content *jpeg_content = (nsjpeg_content *)c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (data->repeat_x)
@@ -294,7 +301,7 @@ static bool nsjpeg_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			c->bitmap, data->background_colour, flags);
+			jpeg_content->bitmap, data->background_colour, flags);
 }
 
 
@@ -331,6 +338,12 @@ static nserror nsjpeg_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
+static void *nsjpeg_get_internal(const struct content *c, void *context)
+{
+	nsjpeg_content *jpeg_c = (nsjpeg_content *)c;
+
+	return jpeg_c->bitmap;
+}
 
 static content_type nsjpeg_content_type(lwc_string *mime_type)
 {
@@ -343,6 +356,7 @@ static const content_handler nsjpeg_content_handler = {
 	.destroy = nsjpeg_destroy,
 	.redraw = nsjpeg_redraw,
 	.clone = nsjpeg_clone,
+	.get_internal = nsjpeg_get_internal,
 	.type = nsjpeg_content_type,
 	.no_share = false,
 };
