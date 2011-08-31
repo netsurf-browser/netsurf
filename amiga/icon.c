@@ -231,7 +231,7 @@ bool amiga_icon_convert(struct content *c)
 		if(dobj) FreeDiskObject(dobj);
 		return false;
 	}
-	imagebuf = (ULONG *) bitmap_get_buffer(c->bitmap);
+	imagebuf = (ULONG *) bitmap_get_buffer(icon_c->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
