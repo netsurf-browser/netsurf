@@ -202,11 +202,11 @@ static inline bool compare_float( float a, float b )
 	SEL action = [item action];
 	
 	if (action == @selector(copy:)) {
-		return selection_defined( browser->sel );
+		return browser_window_has_selection( browser );
 	}
 	
 	if (action == @selector(cut:)) {
-		return selection_defined( browser->sel ) && browser->caret_callback != NULL;
+		return browser_window_has_selection( browser ) && browser->caret_callback != NULL;
 	}
 	
 	if (action == @selector(paste:)) {
