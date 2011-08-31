@@ -2237,25 +2237,25 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 		}
 	}
 
-	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],gwin->win,NULL,
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],gwin->win,NULL,
 		GA_Disabled,back,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],gwin->win,NULL,
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],gwin->win,NULL,
 		GA_Disabled,forward,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],gwin->win,NULL,
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],gwin->win,NULL,
 		GA_Disabled,reload,
 		TAG_DONE);
 
-	RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],gwin->win,NULL,
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],gwin->win,NULL,
 		GA_Disabled,stop,
 		TAG_DONE);
 
 	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
 	{
-		RefreshSetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],gwin->win,NULL,
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],gwin->win,NULL,
 			GA_Disabled,tabclose,
 			TAG_DONE);
 	}
