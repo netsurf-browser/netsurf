@@ -198,3 +198,13 @@ NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.tar
 	    -e 's/$${NETSURF_VERSION}/$(VERSION_FULL)/' \
 		-e 's/$${NETSURF_SHORT_VERSION}/$(VERSION_MAJ).$(VERSION_MIN)/' \
 	   < cocoa/res/NetSurf-Info.plist > NetSurf.app/Contents/Info.plist
+
+NetSurf.tmp.dmg: NetSurf.app
+	hdiutil create -size 8m -fs HFS+ -volname "NetSurf" $@
+	hdiutil attach $@
+	cp -a $^ /Volumes/NetSurf/
+	hdiutil detach $$(echo $$(hdiutil attach $@ | cut -f 1)  | cut -f 1 -d ' ')
+
+NetSurf.dmg: NetSurf.tmp.dmg
+	hdiutil convert $^ -format UDZO -o $@
+
