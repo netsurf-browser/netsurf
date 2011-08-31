@@ -397,6 +397,7 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 {
 	int well_length;
+	int old_offset = s->offset;
 	struct scrollbar_msg_data msg;
 
 	if (value < 0)
@@ -425,6 +426,10 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 		s->bar_pos = (s->full_size < 1) ? 0 :
 				((well_length * s->offset) / s->full_size);
 	}
+
+	if (s->offset == old_offset)
+		/* Nothing happened */
+		return;
 
 	msg.scrollbar = s;
 	msg.msg = SCROLLBAR_MSG_MOVED;
