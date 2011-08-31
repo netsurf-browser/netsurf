@@ -136,10 +136,10 @@ void gui_window_redraw_window(struct gui_window *g)
 
 void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
-	const NSRect rect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
+	const NSRect nsrect = cocoa_scaled_rect_wh( [(BrowserViewController *)g browser]->scale, 
 											 rect->x0, rect->y0, 
 											 rect->x1 - rect->x0, rect->y1 - rect->y0 );
-	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: rect];
+	[[(BrowserViewController *)g browserView] setNeedsDisplayInRect: nsrect];
 }
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
