@@ -146,8 +146,8 @@ static void animate_image_cb( void *ptr )
     ++ai->currentFrame;
     if (ai->currentFrame >= ai->frames) ai->currentFrame = 0;
     
-    [(NSBitmapImageRep *)ai->base.bitmap setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: ai->currentFrame]];
-    bitmap_modified( ai->base.bitmap );
+    [(NSBitmapImageRep *)ai->bitmap setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: ai->currentFrame]];
+    bitmap_modified( ai->bitmap );
     
     union content_msg_data data;
     data.redraw.full_redraw = true;
@@ -224,6 +224,7 @@ void apple_image_destroy(struct content *c)
 nserror apple_image_clone(const struct content *old, struct content **newc)
 {
 	apple_image_content *ai;
+	apple_image_content *ai_old = (apple_image_content *)old;
 	nserror error;
 
 	ai = talloc_zero(0, apple_image_content);
@@ -240,7 +241,7 @@ nserror apple_image_clone(const struct content *old, struct content **newc)
 		old->status == CONTENT_STATUS_DONE) {
 		ai->base.width = old->width;
 		ai->base.height = old->height;
-		ai->base.bitmap = (void *)[(id)old->bitmap retain];
+		ai->bitmap = (void *)[(id)ai_old->bitmap retain];
 	}
 
 	*newc = (struct content *) ai;
