@@ -148,8 +148,6 @@ void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
 
 void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 		browser_mouse_state mouse, int x, int y);
-size_t html_selection_drag_end(struct hlcache_handle *h,
-		browser_mouse_state mouse, int x, int y, int dir);
 
 bool text_redraw(const char *utf8_text, size_t utf8_len,
 		size_t offset, int space,

@@ -784,7 +784,7 @@ bool box_nearest_text_box(struct box *box, int bx, int by,
  * the mouse pointer, or nearest in the given direction if the pointer is
  * not over a text box.
  *
- * \param h	html content's high level cache handle
+ * \param html	an HTML content
  * \param x	coordinate of mouse
  * \param y	coordinate of mouse
  * \param dir	direction to search (-1 = above-left, +1 = below-right)
@@ -792,46 +792,50 @@ bool box_nearest_text_box(struct box *box, int bx, int by,
  * \param dy	receives y ordinate of mouse relative to text box
  */
 
-struct box *box_pick_text_box(hlcache_handle *h,
+struct box *box_pick_text_box(struct html_content *html,
 		int x, int y, int dir, int *dx, int *dy)
 {
 	struct box *text_box = NULL;
+	struct box *box;
+	int nr_xd, nr_yd;
+	int bx, by;
+	int fx, fy;
+	int tx, ty;
 
-	if (h != NULL && content_get_type(h) == CONTENT_HTML) {
-		struct box *box = html_get_box_tree(h);
-		int nr_xd, nr_yd;
-		int bx = box->margin[LEFT];
-		int by = box->margin[TOP];
-		int fx = bx;
-		int fy = by;
-		int tx, ty;
+	if (html == NULL)
+		return NULL;
 
-		if (!box_nearest_text_box(box, bx, by, fx, fy, x, y,
-				dir, &text_box, &tx, &ty, &nr_xd, &nr_yd)) {
-			if (text_box && text_box->text && !text_box->object) {
-				int w = (text_box->padding[LEFT] +
-						text_box->width +
-						text_box->padding[RIGHT]);
-				int h = (text_box->padding[TOP] +
-						text_box->height +
-						text_box->padding[BOTTOM]);
-				int x1, y1;
+	box = html->layout;
+	bx = box->margin[LEFT];
+	by = box->margin[TOP];
+	fx = bx;
+	fy = by;
 
-				y1 = ty + h;
-				x1 = tx + w;
+	if (!box_nearest_text_box(box, bx, by, fx, fy, x, y,
+			dir, &text_box, &tx, &ty, &nr_xd, &nr_yd)) {
+		if (text_box && text_box->text && !text_box->object) {
+			int w = (text_box->padding[LEFT] +
+					text_box->width +
+					text_box->padding[RIGHT]);
+			int h = (text_box->padding[TOP] +
+					text_box->height +
+					text_box->padding[BOTTOM]);
+			int x1, y1;
 
-				/* ensure point lies within the text box */
-				if (x < tx) x = tx;
-				if (y < ty) y = ty;
-				if (y > y1) y = y1;
-				if (x > x1) x = x1;
-			}
+			y1 = ty + h;
+			x1 = tx + w;
+
+			/* ensure point lies within the text box */
+			if (x < tx) x = tx;
+			if (y < ty) y = ty;
+			if (y > y1) y = y1;
+			if (x > x1) x = x1;
 		}
-
-		/* return coordinates relative to box */
-		*dx = x - tx;
-		*dy = y - ty;
 	}
+
+	/* return coordinates relative to box */
+	*dx = x - tx;
+	*dy = y - ty;
 
 	return text_box;
 }

@@ -48,6 +48,39 @@ static gui_pointer_shape get_pointer_shape(struct browser_window *bw,
 		struct box *box, bool imagemap);
 static void html_box_drag_start(struct box *box, int x, int y);
 
+
+/**
+ * End overflow scroll scrollbar drags
+ *
+ * \param  h      html content's high level cache entry
+ * \param  mouse  state of mouse buttons and modifier keys
+ * \param  x	  coordinate of mouse
+ * \param  y	  coordinate of mouse
+ */
+static size_t html_selection_drag_end(struct html_content *html,
+		browser_mouse_state mouse, int x, int y, int dir)
+{
+	int pixel_offset;
+	struct box *box;
+	int dx, dy;
+	size_t idx = 0;
+
+	box = box_pick_text_box(html, x, y, dir, &dx, &dy);
+	if (box) {
+		plot_font_style_t fstyle;
+
+		font_plot_style_from_css(box->style, &fstyle);
+
+		nsfont.font_position_in_string(&fstyle, box->text, box->length,
+				dx, &idx, &pixel_offset);
+
+		idx += box->byte_offset;
+	}
+
+	return idx;
+}
+
+
 /**
  * Handle mouse tracking (including drags) in an HTML content window.
  *
@@ -62,7 +95,6 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	html_content *html = (html_content*) c;
-	hlcache_handle *h = bw->current_content;
 
 	if (bw->drag_type == DRAGGING_SELECTION && !mouse) {
 		int dir = -1;
@@ -71,7 +103,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		if (selection_dragging_start(&html->sel))
 			dir = 1;
 
-		idx = html_selection_drag_end(h, mouse, x, y, dir);
+		idx = html_selection_drag_end(html, mouse, x, y, dir);
 
 		if (idx != 0)
 			selection_track(&html->sel, mouse, idx);
@@ -88,7 +120,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 			if (selection_dragging_start(&html->sel))
 				dir = 1;
 
-			box = box_pick_text_box(h, x, y, dir, &dx, &dy);
+			box = box_pick_text_box(html, x, y, dir, &dx, &dy);
 
 			if (box) {
 				int pixel_offset;
@@ -866,38 +898,6 @@ void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 		scrollbar_mouse_drag_end(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
 	}
-}
-
-
-/**
- * End overflow scroll scrollbar drags
- *
- * \param  h      html content's high level cache entry
- * \param  mouse  state of mouse buttons and modifier keys
- * \param  x	  coordinate of mouse
- * \param  y	  coordinate of mouse
- */
-size_t html_selection_drag_end(hlcache_handle *h, browser_mouse_state mouse,
-		int x, int y, int dir)
-{
-	int pixel_offset;
-	struct box *box;
-	int dx, dy;
-	size_t idx = 0;
-
-	box = box_pick_text_box(h, x, y, dir, &dx, &dy);
-	if (box) {
-		plot_font_style_t fstyle;
-
-		font_plot_style_from_css(box->style, &fstyle);
-
-		nsfont.font_position_in_string(&fstyle, box->text, box->length,
-				dx, &idx, &pixel_offset);
-
-		idx += box->byte_offset;
-	}
-
-	return idx;
 }
 
 
