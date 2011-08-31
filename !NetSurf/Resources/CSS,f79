@@ -103,21 +103,6 @@ small { font-size: .83em; }
 strike, s { text-decoration: line-through; }
 u { text-decoration: underline; }
 
-font[size="1"] { font-size: x-small; }
-font[size="2"] { font-size: small; }
-font[size="3"] { font-size: medium; }
-font[size="4"] { font-size: large; }
-font[size="5"] { font-size: x-large; }
-font[size="6"] { font-size: xx-large; }
-font[size="7"] { font-size: xx-large; }
-/* And now, some hackery for relative font size */
-font[size="-1"] { font-size: small }
-font[size="-2"] { font-size: x-small } 
-font[size="+1"] { font-size: large }
-font[size="+2"] { font-size: x-large }
-font[size="+3"] { font-size: xx-large }
-font[size="+4"] { font-size: xx-large }
-
 hr {	display: block; background-color: #000; height: 1px;
 	margin: 4px auto; border: 1px #d9d9d9 inset; }
 hr[noshade] { background-color: #888; height: 2px; border: none; }

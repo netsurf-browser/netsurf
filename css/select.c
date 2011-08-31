@@ -98,6 +98,8 @@ static bool parse_dimension(const char *data, bool strict,
 		css_fixed *length, css_unit *unit);
 static bool parse_number(const char *data, bool non_negative, bool real,
 		css_fixed *value, size_t *consumed);
+static bool parse_font_size(const char *size, uint8_t *val, 
+		css_fixed *len, css_unit *unit);
 
 static css_computed_style *nscss_get_initial_style(nscss_select_ctx *ctx,
 		css_allocator_fn, void *pw);
@@ -1768,6 +1770,27 @@ css_error node_presentational_hint(void *pw, void *node,
 		xmlFree(align);
 
 		return CSS_OK;
+	} else if (property == CSS_PROP_FONT_SIZE) {
+		xmlChar *size;
+
+		if (strcmp((const char *) n->name, "font") == 0)
+			size = xmlGetProp(n, (const xmlChar *) "size");
+		else
+			size = NULL;
+
+		if (size == NULL)
+			return CSS_PROPERTY_NOT_SET;
+
+		if (parse_font_size((const char *) size, &hint->status,
+				&hint->data.length.value,
+				&hint->data.length.unit) == false) {
+			xmlFree(size);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		xmlFree(size);
+
+		return CSS_OK;
 	} else if (property == CSS_PROP_HEIGHT) {
 		xmlChar *height;
 
@@ -2717,6 +2740,80 @@ bool parse_number(const char *data, bool maybe_negative, bool real,
 	*value = (intpart << 10) | fracpart;
 
 	*consumed = ptr - (const uint8_t *) data;
+
+	return true;
+}
+
+/**
+ * Parse a font @size attribute
+ *
+ * \param size  Data to parse (NUL-terminated)
+ * \param val   Pointer to location to receive enum value
+ * \param len   Pointer to location to receive length
+ * \param unit  Pointer to location to receive unit
+ * \return True on success, false on failure
+ */
+bool parse_font_size(const char *size, uint8_t *val, 
+		css_fixed *len, css_unit *unit)
+{
+	static const uint8_t size_map[] = {
+		CSS_FONT_SIZE_XX_SMALL,
+		CSS_FONT_SIZE_SMALL,
+		CSS_FONT_SIZE_MEDIUM,
+		CSS_FONT_SIZE_LARGE,
+		CSS_FONT_SIZE_X_LARGE,
+		CSS_FONT_SIZE_XX_LARGE,
+		CSS_FONT_SIZE_DIMENSION	/* xxx-large (see below) */
+	};
+
+	const char *p = size;
+	char mode;
+	int value = 0;
+
+	/* Skip whitespace */
+	while (*p != '\0' && isWhitespace(*p))
+		p++;
+
+	mode = *p;
+
+	/* Skip +/- */
+	if (mode == '+' || mode == '-')
+		p++;
+
+	/* Need at least one digit */
+	if (*p < '0' || *p > '9') {
+		return false;
+	}
+
+	/* Consume digits, computing value */
+	while ('0' <= *p && *p <= '9') {
+		value = value * 10 + (*p - '0');
+		p++;
+	}
+
+	/* Resolve relative sizes */
+	if (mode == '+')
+		value += 3;
+	else if (mode == '-')
+		value = 3 - value;
+
+	/* Clamp to range [1,7] */
+	if (value < 1)
+		value = 1;
+	else if (value > 7)
+		value = 7;
+
+	if (value == 7) {
+		/* Manufacture xxx-large */
+		*len = FDIV(FMUL(INTTOFIX(3), INTTOFIX(option_font_size)), 
+				F_10);
+	} else {
+		/* Len is irrelevant */
+		*len = 0;
+	}
+
+	*unit = CSS_UNIT_PT;
+	*val = size_map[value - 1];
 
 	return true;
 }
