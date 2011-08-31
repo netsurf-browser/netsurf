@@ -22,6 +22,7 @@
 #import "desktop/plotters.h"
 #import "desktop/thumbnail.h"
 #import "content/urldb.h"
+#import "cocoa/plotter.h"
 #import "image/bitmap.h"
 
 /* In platform specific thumbnail.c. */
