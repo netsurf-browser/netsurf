@@ -754,13 +754,9 @@ void gui_window_redraw_window(struct gui_window *g)
 
 void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
-	hlcache_handle *h = g->bw->current_content;
 	bool use_buffer;
 	int x0, y0, x1, y1;
 	struct update_box *cur;
-
-	if (!h)
-		return;
 
 	x0 = floorf(rect->x0 * 2 * g->bw->scale);
 	y0 = -ceilf(rect->y1 * 2 * g->bw->scale);
