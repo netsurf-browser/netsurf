@@ -28,7 +28,6 @@ extern int option_cache_bitmaps;
 extern char *option_theme;
 extern bool option_utf8_clipboard;
 extern bool option_context_menu;
-extern bool option_sticky_context_menu;
 extern bool option_truecolour_mouse_pointers;
 extern bool option_use_os_pointers;
 extern bool option_new_tab_active;
@@ -76,8 +75,7 @@ char *option_modeid = 0; \
 int option_cache_bitmaps = 0; \
 char *option_theme = 0; \
 bool option_utf8_clipboard = false; \
-bool option_context_menu = false; \
-bool option_sticky_context_menu = false; \
+bool option_context_menu = true; \
 bool option_truecolour_mouse_pointers = false; \
 bool option_use_os_pointers = true; \
 bool option_new_tab_active = false; \
@@ -126,7 +124,6 @@ bool option_widescreen = false; \
 { "theme",		OPTION_STRING,	&option_theme}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
 { "context_menu",	OPTION_BOOL,	&option_context_menu}, \
-{ "sticky_context_menu",	OPTION_BOOL,	&option_sticky_context_menu}, \
 { "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
 { "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
 { "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \

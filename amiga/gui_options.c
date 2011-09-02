@@ -118,7 +118,6 @@ enum
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CMENU_ENABLE,
-	GID_OPTS_CMENU_STICKY,
 	GID_OPTS_STARTUP_NO_WIN,
 	GID_OPTS_CLOSE_NO_QUIT,
 	GID_OPTS_DOCKY,
@@ -285,7 +284,6 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
-	gadlab[GID_OPTS_CMENU_STICKY] = (char *)ami_utf8_easy((char *)messages_get("Sticky"));
 	gadlab[GID_OPTS_STARTUP_NO_WIN] = (char *)ami_utf8_easy((char *)messages_get("OptionNoWindow"));
 	gadlab[GID_OPTS_CLOSE_NO_QUIT] = (char *)ami_utf8_easy((char *)messages_get("OptionNoQuit"));
 	gadlab[GID_OPTS_DOCKY] = (char *)ami_utf8_easy((char *)messages_get("OptionDocky"));
@@ -1137,13 +1135,6 @@ void ami_gui_opts_open(void)
     	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
 	  				      		            GA_Selected, option_context_menu,
             	    					CheckBoxEnd,
-		                				LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_STICKY] = CheckBoxObject,
-      	            	  					GA_ID, GID_OPTS_CMENU_STICKY,
-         	    	       					GA_RelVerify, TRUE,
-											GA_Disabled, !option_context_menu,
-        	 	           					GA_Text, gadlab[GID_OPTS_CMENU_STICKY],
-  					      		            GA_Selected, option_sticky_context_menu,
-	            	    				CheckBoxEnd,
 									LayoutEnd, // context menus
 									CHILD_WeightedHeight, 0,
 									LayoutEnd, // temp extra group for spacing
@@ -1594,10 +1585,6 @@ void ami_gui_opts_use(void)
 	if(data) option_context_menu = true;
 		else option_context_menu = false;
 
-	GetAttr(GA_Selected,gow->objects[GID_OPTS_CMENU_STICKY],(ULONG *)&data);
-	if(data) option_sticky_context_menu = true;
-		else option_sticky_context_menu = false;
-
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);
 	if(data) option_startup_no_window = true;
 		else option_startup_no_window = false;
@@ -1828,11 +1815,6 @@ BOOL ami_gui_opts_event(void)
 					case GID_OPTS_DLDIR:
 						IDoMethod(gow->objects[GID_OPTS_DLDIR],
 						GFILE_REQUEST,gow->win);
-					break;
-
-					case GID_OPTS_CMENU_ENABLE:
-						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CMENU_STICKY],
-							gow->win, NULL, GA_Disabled, !code, TAG_DONE);
 					break;
 				}
 			break;

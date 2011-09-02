@@ -173,6 +173,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	int box_y=0;
 	bool menuhascontent = false;
 	bool no_url = true, no_obj = true, no_sel = true;
+	ULONG ret = 0;
 
 	if(!cc) return;
 	if(content_get_type(cc) != CONTENT_HTML) return;
@@ -408,6 +409,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	if(!menuhascontent) return;
 
 	gui_window_set_pointer(gwin->bw->window,GUI_POINTER_DEFAULT);
+
 	IDoMethod(ctxmenuobj,PM_OPEN,gwin->win);
 }
 

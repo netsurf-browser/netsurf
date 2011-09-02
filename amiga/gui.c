@@ -147,7 +147,6 @@ Class *urlStringClass;
 
 BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
-ULONG screen_signal = -1;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 
@@ -308,8 +307,6 @@ void ami_open_resources(void)
 							ASLFR_RejectIcons,TRUE,
 							ASLFR_InitialDrawer,option_download_dir,
 							TAG_DONE);
-
-	screen_signal = AllocSignal(-1);
 }
 
 void ami_set_options(void)
@@ -540,7 +537,6 @@ void ami_openscreen(void)
 					SA_Type, PUBLICSCREEN,
 					SA_PubName, "NetSurf",
 					SA_LikeWorkbench, TRUE,
-					SA_PubSig, screen_signal,
 					TAG_DONE);
 
 		if(scrn)
@@ -1201,13 +1197,7 @@ void ami_handle_msg(void)
 					switch(code)
 					{
 						case MENUDOWN:
-							if(!option_sticky_context_menu)
-								ami_context_menu_show(gwin,x,y);
-						break;
-
-						case MENUUP:
-							if(option_sticky_context_menu)
-								ami_context_menu_show(gwin,x,y);
+							ami_context_menu_show(gwin,x,y);
 						break;
 
 						case SELECTUP:
@@ -2138,14 +2128,27 @@ void ami_quit_netsurf(void)
 
 void ami_gui_close_screen(struct Screen *scrn)
 {
+	ULONG screen_signal = AllocSignal(-1);
 	ULONG scrnsig = 1 << screen_signal;
 
-	if(scrn == NULL) return;
-	if(CloseScreen(scrn)) return;
+	SetScreenAttr(scrn, SA_PubSig, screen_signal, sizeof(ULONG));
+
+	if(scrn == NULL)
+	{
+		FreeSignal(screen_signal);
+		return;
+	}
+
+	if(CloseScreen(scrn))
+	{
+		FreeSignal(screen_signal);
+		return;
+	}
 
 	LOG(("Waiting for visitor windows to close..."));
 	Wait(scrnsig);
 	CloseScreen(scrn);
+	FreeSignal(screen_signal);
 }
 
 void gui_quit(void)
@@ -2173,7 +2176,6 @@ void gui_quit(void)
 
 	/* If it is our public screen, close it or wait until the visitor windows leave */
 	if(locked_screen == FALSE) ami_gui_close_screen(scrn);
-	FreeSignal(screen_signal);
 
 	FreeVec(nsscreentitle);
 
