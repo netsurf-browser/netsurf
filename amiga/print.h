@@ -26,7 +26,7 @@ struct ami_print_window {
 	struct nsObject *node;
 	struct Window *win;
 	Object *objects[OID_LAST];
-	struct Gadget *gadgets[GID_LAST];
+	Object *gadgets[GID_LAST];
 	struct hlcache_handle *c;
 };
 

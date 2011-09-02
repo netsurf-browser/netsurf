@@ -70,7 +70,7 @@ const struct printer amiprinter = {
 struct ami_printer_info
 {
 	struct gui_globals *gg;
-	struct IODRPReq *PReq;
+	struct IODRPTagsReq *PReq;
 	struct PrinterData *PD;
 	struct PrinterExtendedData *PED;
 	struct MsgPort *msgport;
@@ -78,8 +78,8 @@ struct ami_printer_info
 	struct print_settings *ps;
 	int page;
 	int pages;
-	struct Gadget *gadgets[GID_LAST];
-	struct Object *objects[OID_LAST];
+	Object *gadgets[GID_LAST];
+	Object *objects[OID_LAST];
 	struct Window *win;
 };
 
@@ -101,10 +101,10 @@ static LONG IFFPrefChunks[] =
 	ID_PREF, ID_PDEV,
 };
 
-struct ami_printer_info ami_print_info;
+static struct ami_printer_info ami_print_info;
 
-CONST_STRPTR gadlab[PGID_LAST];
-CONST_STRPTR printers[11];
+static CONST_STRPTR gadlab[PGID_LAST];
+static STRPTR printers[11];
 
 void ami_print_ui_setup(void)
 {
@@ -123,7 +123,7 @@ void ami_print_ui_free(void)
 		if(gadlab[i]) FreeVec((APTR)gadlab[i]);
 
 	for(i = 0; i++; i < 10)
-		if(printers[i]) FreeVec((APTR)printers[i]);
+		if(printers[i]) FreeVec(printers[i]);
 }
 
 BOOL ami_print_readunit(CONST_STRPTR filename, char name[],
@@ -225,9 +225,9 @@ void ami_print_ui(struct hlcache_handle *c)
 	{
 		filename[15] = '0' + i;
 		printers[i] = AllocVec(50, MEMF_PRIVATE | MEMF_CLEAR);
-		if(!ami_print_readunit(filename, (void *)printers[i], 50, i))
+		if(!ami_print_readunit(filename, printers[i], 50, i))
 		{
-			FreeVec((void *)printers[i]);
+			FreeVec(printers[i]);
 			printers[i] = NULL;
 			break;
 		}
@@ -473,7 +473,7 @@ bool ami_print_next_page(void)
 {
 	ami_print_info.page++;
 
-	RefreshSetGadgetAttrs(ami_print_info.gadgets[GID_STATUS],
+	RefreshSetGadgetAttrs((struct Gadget *)ami_print_info.gadgets[GID_STATUS],
 				ami_print_info.win, NULL,
 				FUELGAUGE_Level, ami_print_info.page,
 				TAG_DONE);
@@ -492,7 +492,7 @@ void ami_print_end(void)
 
 void ami_print_close_device(void)
 {
-	CloseDevice(ami_print_info.PReq);
+	CloseDevice((struct IORequest *)ami_print_info.PReq);
 	FreeSysObject(ASOT_IOREQUEST,ami_print_info.PReq);
 }
 
@@ -501,7 +501,7 @@ bool ami_print_dump(void)
 	ami_print_info.PReq->io_Command = PRD_DUMPRPORT;
 	ami_print_info.PReq->io_Flags = 0;
 	ami_print_info.PReq->io_Error = 0;
-	ami_print_info.PReq->io_RastPort = &ami_print_info.gg->rp;
+	ami_print_info.PReq->io_RastPort = ami_print_info.gg->rp;
 	ami_print_info.PReq->io_ColorMap = NULL;
 	ami_print_info.PReq->io_Modes = 0;
 	ami_print_info.PReq->io_SrcX = 0;
@@ -512,7 +512,7 @@ bool ami_print_dump(void)
 	ami_print_info.PReq->io_DestRows = ami_print_info.PED->ped_MaxYDots;
 	ami_print_info.PReq->io_Special = 0;
 
-	DoIO(ami_print_info.PReq); /* SendIO for async printing */
+	DoIO((struct IORequest *)ami_print_info.PReq); /* SendIO for async printing */
 
 	return true;
 }
