@@ -140,7 +140,7 @@ void gui_launch_url(const char *url)
 				else ami_openurl_add_protocol(url);
 		}
 		else if(IOpenURL)
-			URL_OpenA(url,NULL);
+			URL_OpenA((STRPTR)url,NULL);
 
 		FreeVec(launchurl);
 	}

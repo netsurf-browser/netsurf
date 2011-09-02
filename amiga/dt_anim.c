@@ -204,7 +204,7 @@ bool amiga_dt_anim_convert(struct content *c)
 
 			adt_frame.MethodID = ADTM_LOADFRAME;
 			adt_frame.alf_TimeStamp = 0;
-			IDoMethodA(plugin->dto, &adt_frame);
+			IDoMethodA(plugin->dto, (Msg)&adt_frame);
 
 			clut = ami_colormap_to_clut(adt_frame.alf_CMap);
 
@@ -222,7 +222,7 @@ bool amiga_dt_anim_convert(struct content *c)
 				FreeVec(clut);
 
 				adt_frame.MethodID = ADTM_UNLOADFRAME;
-				IDoMethodA(plugin->dto, &adt_frame);
+				IDoMethodA(plugin->dto, (Msg)&adt_frame);
 		}
 		else return false;
 	}

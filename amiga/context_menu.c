@@ -159,7 +159,7 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 
 	if(gwin->rmbtrapped == trap) return trap;
 
-	SetWindowAttr(gwin->win, WA_RMBTrap, trap, 1);
+	SetWindowAttr(gwin->win, WA_RMBTrap, (APTR)(ULONG)trap, sizeof(BOOL));
 	gwin->rmbtrapped = trap;
 
 	return trap;

@@ -2131,7 +2131,7 @@ void ami_gui_close_screen(struct Screen *scrn)
 	ULONG screen_signal = AllocSignal(-1);
 	ULONG scrnsig = 1 << screen_signal;
 
-	SetScreenAttr(scrn, SA_PubSig, screen_signal, sizeof(ULONG));
+	SetScreenAttr(scrn, SA_PubSig, (APTR)screen_signal, sizeof(ULONG));
 
 	if(scrn == NULL)
 	{

@@ -358,7 +358,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 
 				do
 				{
-					cont = ExAll(lock,buffer,1024,ED_COMMENT,ctrl);
+					cont = ExAll(lock,(struct ExAllData *)buffer,1024,ED_COMMENT,ctrl);
 					if((!cont) && (IoErr() != ERROR_NO_MORE_ENTRIES)) break;
 					if(!ctrl->eac_Entries) continue;
 
