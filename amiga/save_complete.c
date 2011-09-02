@@ -42,8 +42,7 @@
 bool save_complete_gui_save(const char *path, const char *filename, size_t len,
 		const char *sourcedata, lwc_string *mime_type)
 {
-	content_type type = content_factory_type_from_mime_type(
-			lwc_string_data(mime_type));
+	content_type type = content_factory_type_from_mime_type(mime_type);
 	int res;
 	int namelen;
 	char deftype[5];
