@@ -20,6 +20,7 @@
 #include <exec/lists.h>
 #include <exec/nodes.h>
 
+#include "amiga/filetype.h"
 #include "amiga/font.h"
 #include "amiga/object.h"
 
