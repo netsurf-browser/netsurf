@@ -770,7 +770,7 @@ static void *nsmng_get_internal(const struct content *c, void *context)
 	return mng->bitmap;
 }
 
-static content_type nsmng_content_type(lwc_string *mime_type)
+static content_type nsmng_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

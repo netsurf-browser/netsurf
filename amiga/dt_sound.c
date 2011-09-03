@@ -56,7 +56,7 @@ static void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
 		struct content *page, struct box *box,
 		struct object_params *params);
 static nserror amiga_dt_sound_clone(const struct content *old, struct content **newc);
-static content_type amiga_dt_sound_content_type(lwc_string *mime_type);
+static content_type amiga_dt_sound_content_type(void);
 
 static const content_handler amiga_dt_sound_content_handler = {
 	.create = amiga_dt_sound_create,
@@ -281,7 +281,7 @@ nserror amiga_dt_sound_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type amiga_dt_sound_content_type(lwc_string *mime_type)
+content_type amiga_dt_sound_content_type(void)
 {
 	return CONTENT_PLUGIN;
 }

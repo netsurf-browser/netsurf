@@ -345,7 +345,7 @@ static void *nsjpeg_get_internal(const struct content *c, void *context)
 	return jpeg_c->bitmap;
 }
 
-static content_type nsjpeg_content_type(lwc_string *mime_type)
+static content_type nsjpeg_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

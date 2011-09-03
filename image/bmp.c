@@ -251,7 +251,7 @@ static void *nsbmp_get_internal(const struct content *c, void *context)
 	return bmp->bitmap;
 }
 
-static content_type nsbmp_content_type(lwc_string *mime_type)
+static content_type nsbmp_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

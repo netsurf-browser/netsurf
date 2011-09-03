@@ -119,7 +119,7 @@ struct selection *textplain_get_selection(struct content *c);
 struct search_context *textplain_get_search(struct content *c);
 static nserror textplain_clone(const struct content *old, 
 		struct content **newc);
-static content_type textplain_content_type(lwc_string *mime_type);
+static content_type textplain_content_type(void);
 
 static parserutils_error textplain_charset_hack(const uint8_t *data, size_t len,
 		uint16_t *mibenum, uint32_t *source);
@@ -609,7 +609,7 @@ nserror textplain_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type textplain_content_type(lwc_string *mime_type)
+content_type textplain_content_type(void)
 {
 	return CONTENT_TEXTPLAIN;
 }

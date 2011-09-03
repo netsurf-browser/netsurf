@@ -319,7 +319,7 @@ static nserror svg_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-static content_type svg_content_type(lwc_string *mime_type)
+static content_type svg_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

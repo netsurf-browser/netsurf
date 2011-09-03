@@ -55,7 +55,7 @@ static void sprite_destroy(struct content *c);
 static bool sprite_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
 static nserror sprite_clone(const struct content *old, struct content **newc);
-static content_type sprite_content_type(lwc_string *mime_type);
+static content_type sprite_content_type(void);
 
 static const content_handler sprite_content_handler = {
 	.create = sprite_create,
@@ -254,7 +254,7 @@ nserror sprite_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type sprite_content_type(lwc_string *mime_type)
+content_type sprite_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

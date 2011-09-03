@@ -135,7 +135,7 @@ content_type content_factory_type_from_mime_type(lwc_string *mime_type)
 
 	handler = content_lookup(mime_type);
 	if (handler != NULL) {
-		type = handler->type(mime_type);
+		type = handler->type();
 	}
 
 	return type;

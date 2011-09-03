@@ -53,7 +53,7 @@ static void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 		struct object_params *params);
 static void amiga_plugin_hack_close(struct content *c);
 static nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc);
-static content_type amiga_plugin_hack_content_type(lwc_string *mime_type);
+static content_type amiga_plugin_hack_content_type(void);
 
 static const content_handler amiga_plugin_hack_content_handler = {
 	.create = amiga_plugin_hack_create,
@@ -234,7 +234,7 @@ nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc
 	return NSERROR_OK;
 }
 
-content_type amiga_plugin_hack_content_type(lwc_string *mime_type)
+content_type amiga_plugin_hack_content_type(void)
 {
 	return CONTENT_PLUGIN;
 }

@@ -297,7 +297,7 @@ static void *rsvg_get_internal(const struct content *c, void *context)
 	return d->bitmap;
 }
 
-static content_type rsvg_content_type(lwc_string *mime_type)
+static content_type rsvg_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

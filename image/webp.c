@@ -200,7 +200,7 @@ static void *webp_get_internal(const struct content *c, void *context)
 	return webp->bitmap;
 }
 
-static content_type webp_content_type(lwc_string *mime_type)
+static content_type webp_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

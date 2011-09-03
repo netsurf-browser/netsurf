@@ -78,7 +78,7 @@ static void html_close(struct content *c);
 struct selection *html_get_selection(struct content *c);
 struct search_context *html_get_search(struct content *c);
 static nserror html_clone(const struct content *old, struct content **newc);
-static content_type html_content_type(lwc_string *mime_type);
+static content_type html_content_type(void);
 
 static void html_finish_conversion(html_content *c);
 static nserror html_convert_css_callback(hlcache_handle *css,
@@ -2402,10 +2402,9 @@ bool html_get_id_offset(hlcache_handle *h, const char *frag_id, int *x, int *y)
 /**
  * Compute the type of a content
  *
- * \param c  Content to consider
  * \return CONTENT_HTML
  */
-content_type html_content_type(lwc_string *mime_type)
+content_type html_content_type(void)
 {
 	return CONTENT_HTML;
 }

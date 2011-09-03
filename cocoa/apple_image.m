@@ -48,7 +48,7 @@ static bool apple_image_redraw(struct content *c, struct content_redraw_data *da
 		const struct rect *clip, const struct redraw_context *ctx);
 static nserror apple_image_clone(const struct content *old, 
 		struct content **newc);
-static content_type apple_image_content_type(lwc_string *mime_type);
+static content_type apple_image_content_type(void);
 
 static void *apple_image_get_internal(const struct content *c, void *context)
 {
@@ -249,7 +249,7 @@ nserror apple_image_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type apple_image_content_type(lwc_string *mime_type)
+content_type apple_image_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

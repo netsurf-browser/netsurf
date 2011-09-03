@@ -65,7 +65,7 @@ static bool nscss_convert(struct content *c);
 static void nscss_destroy(struct content *c);
 static nserror nscss_clone(const struct content *old, struct content **newc);
 static bool nscss_matches_quirks(const struct content *c, bool quirks);
-static content_type nscss_content_type(lwc_string *mime_type);
+static content_type nscss_content_type(void);
 
 static void nscss_content_done(struct content_css_data *css, void *pw);
 static css_error nscss_handle_import(void *pw, css_stylesheet *parent, 
@@ -476,10 +476,9 @@ struct nscss_import *nscss_get_imports(hlcache_handle *h, uint32_t *n)
 /**
  * Compute the type of a content
  *
- * \param mime_type  MIME type
  * \return CONTENT_CSS
  */
-content_type nscss_content_type(lwc_string *mime_type)
+content_type nscss_content_type(void)
 {
 	return CONTENT_CSS;
 }

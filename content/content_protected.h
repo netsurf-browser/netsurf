@@ -67,7 +67,7 @@ struct content_handler {
 	struct selection * (*get_selection)(struct content *c);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
-	content_type (*type)(lwc_string *mime_type);
+	content_type (*type)(void);
 
         /** handler dependant content sensitive internal data interface. */
 	void * (*get_internal)(const struct content *c, void *context);

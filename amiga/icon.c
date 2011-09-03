@@ -73,7 +73,7 @@ static bool amiga_icon_redraw(struct content *c,
 		const struct redraw_context *ctx);
 static nserror amiga_icon_clone(const struct content *old, 
 		struct content **newc);
-static content_type amiga_icon_content_type(lwc_string *mime_type);
+static content_type amiga_icon_content_type(void);
 
 static void *amiga_icon_get_internal(const struct content *c, void *context)
 {
@@ -348,7 +348,7 @@ nserror amiga_icon_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type amiga_icon_content_type(lwc_string *mime_type)
+content_type amiga_icon_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

@@ -411,7 +411,7 @@ static void *nsgif_get_internal(const struct content *c, void *context)
 	return gif->bitmap;
 }
 
-static content_type nsgif_content_type(lwc_string *mime_type)
+static content_type nsgif_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

@@ -53,7 +53,7 @@ static void draw_destroy(struct content *c);
 static bool draw_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
 static nserror draw_clone(const struct content *old, struct content **newc);
-static content_type draw_content_type(lwc_string *mime_type);
+static content_type draw_content_type(void);
 
 static const content_handler draw_content_handler = {
 	.create = draw_create,
@@ -281,7 +281,7 @@ nserror draw_clone(const struct content *old, struct content **newc)
 	return NSERROR_OK;
 }
 
-content_type draw_content_type(lwc_string *mime_type)
+content_type draw_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

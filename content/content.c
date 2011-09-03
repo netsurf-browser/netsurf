@@ -733,7 +733,7 @@ content_type content_get_type(hlcache_handle *h)
 	if (c == NULL)
 		return CONTENT_NONE;
 
-	return c->handler->type(c->mime_type);
+	return c->handler->type();
 }
 
 /**
@@ -977,7 +977,7 @@ struct bitmap *content__get_bitmap(struct content *c)
 	if ((c != NULL) && 
 	    (c->handler != NULL) && 
 	    (c->handler->type != NULL) && 
-	    (c->handler->type(NULL) == CONTENT_IMAGE) &&
+	    (c->handler->type() == CONTENT_IMAGE) &&
 	    (c->handler->get_internal != NULL) ) {
 		bitmap = c->handler->get_internal(c, NULL);
 	}
@@ -1012,7 +1012,7 @@ bool content__get_opaque(struct content *c)
 	if ((c != NULL) && 
 	    (c->handler != NULL) && 
 	    (c->handler->type != NULL) && 
-	    (c->handler->type(NULL) == CONTENT_IMAGE) &&
+	    (c->handler->type() == CONTENT_IMAGE) &&
 	    (c->handler->get_internal != NULL) ) {
 		struct bitmap *bitmap = NULL;
 		bitmap = c->handler->get_internal(c, NULL);

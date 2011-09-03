@@ -226,7 +226,7 @@ static void *nssprite_get_internal(const struct content *c, void *context)
 	return nssprite->bitmap;
 }
 
-static content_type nssprite_content_type(lwc_string *mime_type)
+static content_type nssprite_content_type(void)
 {
 	return CONTENT_IMAGE;
 }

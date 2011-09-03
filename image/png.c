@@ -418,7 +418,7 @@ static void *nspng_get_internal(const struct content *c, void *context)
 	return png_c->bitmap;
 }
 
-static content_type nspng_content_type(lwc_string *mime_type)
+static content_type nspng_content_type(void)
 {
 	return CONTENT_IMAGE;
 }
