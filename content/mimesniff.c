@@ -399,8 +399,10 @@ static nserror mimesniff__compute_image(lwc_string *official_type,
 
 	const struct it_s *it;
 
-	if (data == NULL)
+	if (data == NULL) {
+		lwc_string_unref(official_type);
 		return NSERROR_NEED_DATA;
+	}
 
 	for (it = image_types; it->sig != NULL; it++) {
 		if (it->len <= len && memcmp(data, it->sig, it->len) == 0) {
