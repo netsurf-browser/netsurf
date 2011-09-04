@@ -392,13 +392,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->iconise_icon = -1;
 
 	/* Set the window position */
-	if (bw->parent) {
-		window.visible.x0 = 0;
-		window.visible.x1 = 64;
-		window.visible.y0 = 0;
-		window.visible.y1 = 64;
-		open_centred = false;
-	} else if (clone && clone->window && option_window_size_clone) {
+	if (clone && clone->window && option_window_size_clone) {
 		for (top = clone; top->parent; top = top->parent);
 		state.w = top->window->window;
 		error = xwimp_get_window_state(&state);
@@ -489,41 +483,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window.title_data.indirected_text.size = 255;
 	window.icon_count = 0;
 
-	/* Add in flags for our window type */
-	switch (bw->browser_window_type) {
-		case BROWSER_WINDOW_FRAMESET:
-			window.flags &= ~(wimp_WINDOW_VSCROLL |
-					wimp_WINDOW_HSCROLL);
-			window.title_fg = 0xff;
-			break;
-		case BROWSER_WINDOW_IFRAME:
-			assert(0);
-			break;
-		case BROWSER_WINDOW_FRAME:
-			if (bw->scrolling == SCROLLING_NO)
-				window.flags &= ~(wimp_WINDOW_VSCROLL |
-						wimp_WINDOW_HSCROLL);
-			if (bw->scrolling == SCROLLING_AUTO)
-				window.flags &= ~wimp_WINDOW_HSCROLL;
-			if (!bw->border)
-				window.title_fg = 0xff;
-			else {
-				/* set the correct border colour */
-				unsigned int col;
-				col = bw->border_colour & 0xffffff;
-				sprintf(g->validation, "C%.6x", col);
-				window.extra_flags |= wimp_WINDOW_USE_TITLE_VALIDATION_STRING;
-				window.title_data.indirected_text.validation = g->validation;
-			}
-			break;
-		case BROWSER_WINDOW_NORMAL:
-			window.flags |=	wimp_WINDOW_SIZE_ICON |
-					wimp_WINDOW_BACK_ICON |
-					wimp_WINDOW_CLOSE_ICON |
-					wimp_WINDOW_TITLE_ICON |
-					wimp_WINDOW_TOGGLE_ICON;
-			break;
-	}
+	/* Add in flags */
+	window.flags |=	wimp_WINDOW_SIZE_ICON |
+			wimp_WINDOW_BACK_ICON |
+			wimp_WINDOW_CLOSE_ICON |
+			wimp_WINDOW_TITLE_ICON |
+			wimp_WINDOW_TOGGLE_ICON;
 
 	if (open_centred) {
 		scroll_width = ro_get_vscroll_width(NULL);
@@ -548,22 +513,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	window_count++;
 
 	/* Add in a toolbar and status bar */
-	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-		g->status_bar = ro_gui_status_bar_create(g->window, option_toolbar_status_width);
-		g->toolbar = ro_toolbar_create(NULL, g->window,
-				THEME_STYLE_BROWSER_TOOLBAR, TOOLBAR_FLAGS_NONE,
-				&ro_gui_window_toolbar_callbacks, g,
-				"HelpToolbar");
-		if (g->toolbar != NULL) {
-			ro_toolbar_add_buttons(g->toolbar,
+	g->status_bar = ro_gui_status_bar_create(g->window,
+			option_toolbar_status_width);
+	g->toolbar = ro_toolbar_create(NULL, g->window,
+			THEME_STYLE_BROWSER_TOOLBAR, TOOLBAR_FLAGS_NONE,
+			&ro_gui_window_toolbar_callbacks, g,
+			"HelpToolbar");
+	if (g->toolbar != NULL) {
+		ro_toolbar_add_buttons(g->toolbar,
 				brower_toolbar_buttons,
 				option_toolbar_browser);
-			ro_toolbar_add_url(g->toolbar);
-			ro_toolbar_add_throbber(g->toolbar);
-			ro_toolbar_rebuild(g->toolbar);
-		}
-	} else {
-		g->toolbar = NULL;
+		ro_toolbar_add_url(g->toolbar);
+		ro_toolbar_add_throbber(g->toolbar);
+		ro_toolbar_rebuild(g->toolbar);
 	}
 
 	/* Register event handlers.  Do this quickly, as some of the things
@@ -603,30 +565,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	state.next = wimp_TOP;
-	if (bw->parent) {
-		top = browser_window_owner(bw);
-		error = xwimp_open_window_nested(PTR_WIMP_OPEN(&state),
-				top->window->window,
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_XORIGIN_SHIFT |
-				wimp_CHILD_LINKS_PARENT_WORK_AREA
-						<< wimp_CHILD_YORIGIN_SHIFT);
-		if (error) {
-			LOG(("xwimp_open_window_nested: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	}
 
 	ro_gui_window_open(PTR_WIMP_OPEN(&state));
 
-	/* Claim the caret for top-level windows */
-	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-		if (ro_toolbar_take_caret(g->toolbar))
-			ro_gui_url_complete_start(g->toolbar);
-		else
-			gui_window_place_caret(g, -100, -100, 0);
-	}
+	/* Claim the caret */
+	if (ro_toolbar_take_caret(g->toolbar))
+		ro_gui_url_complete_start(g->toolbar);
+	else
+		gui_window_place_caret(g, -100, -100, 0);
+
 	return g;
 }
 
