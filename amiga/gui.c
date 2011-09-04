@@ -2422,348 +2422,348 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->scrollerhook.h_Data = gwin->shared;
 
 
-			if(!option_kiosk_mode)
-			{
-				ULONG addtabclosegadget = TAG_IGNORE;
-				ULONG iconifygadget = FALSE;
+	if(!option_kiosk_mode)
+	{
+		ULONG addtabclosegadget = TAG_IGNORE;
+		ULONG iconifygadget = FALSE;
 
-				if(option_use_pubscreen && (locked_screen == TRUE) &&
-					(strcmp(option_use_pubscreen,"Workbench") == 0))
-						iconifygadget = TRUE;
-				ami_create_menu(bw->browser_window_type, gwin->shared, dri);
+		if(option_use_pubscreen && (locked_screen == TRUE) &&
+			(strcmp(option_use_pubscreen,"Workbench") == 0))
+				iconifygadget = TRUE;
+		ami_create_menu(bw->browser_window_type, gwin->shared, dri);
 
-				NewList(&gwin->shared->tab_list);
-				gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
-													TNA_Number, 0,
-													TNA_UserData, bw,
-													TNA_CloseGadget, TRUE,
-													TAG_DONE);
-				AddTail(&gwin->shared->tab_list,gwin->tab_node);
+		NewList(&gwin->shared->tab_list);
+		gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),
+											TNA_Number, 0,
+											TNA_UserData, bw,
+											TNA_CloseGadget, TRUE,
+											TAG_DONE);
+		AddTail(&gwin->shared->tab_list,gwin->tab_node);
 
-				gwin->shared->tabs=1;
-				gwin->shared->next_tab=1;
+		gwin->shared->tabs=1;
+		gwin->shared->next_tab=1;
 
-				gwin->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
+		gwin->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
 
-				gwin->shared->helphints[GID_BACK] =
-					remove_escape_chars(messages_get("HelpToolbar0"), true);
-				gwin->shared->helphints[GID_FORWARD] =
-					remove_escape_chars(messages_get("HelpToolbar1"), true);
-				gwin->shared->helphints[GID_STOP] =
-					remove_escape_chars(messages_get("HelpToolbar2"), true);
-				gwin->shared->helphints[GID_RELOAD] =
-					remove_escape_chars(messages_get("HelpToolbar3"), true);
-				gwin->shared->helphints[GID_HOME] =
-					remove_escape_chars(messages_get("HelpToolbar4"), true);
-				gwin->shared->helphints[GID_URL] =
-					remove_escape_chars(messages_get("HelpToolbar14"), true);
-				gwin->shared->helphints[GID_SEARCHSTRING] =
-					remove_escape_chars(messages_get("HelpWebSearch"), true);
-				gwin->shared->helphints[GID_ADDTAB] =
-					remove_escape_chars(messages_get("HelpAddTab"), true);
+		gwin->shared->helphints[GID_BACK] =
+			remove_escape_chars(messages_get("HelpToolbar0"), true);
+		gwin->shared->helphints[GID_FORWARD] =
+			remove_escape_chars(messages_get("HelpToolbar1"), true);
+		gwin->shared->helphints[GID_STOP] =
+			remove_escape_chars(messages_get("HelpToolbar2"), true);
+		gwin->shared->helphints[GID_RELOAD] =
+			remove_escape_chars(messages_get("HelpToolbar3"), true);
+		gwin->shared->helphints[GID_HOME] =
+			remove_escape_chars(messages_get("HelpToolbar4"), true);
+		gwin->shared->helphints[GID_URL] =
+			remove_escape_chars(messages_get("HelpToolbar14"), true);
+		gwin->shared->helphints[GID_SEARCHSTRING] =
+			remove_escape_chars(messages_get("HelpWebSearch"), true);
+		gwin->shared->helphints[GID_ADDTAB] =
+			remove_escape_chars(messages_get("HelpAddTab"), true);
 
-				ami_get_theme_filename(nav_west,"theme_nav_west",false);
-				ami_get_theme_filename(nav_west_s,"theme_nav_west_s",false);
-				ami_get_theme_filename(nav_west_g,"theme_nav_west_g",false);
-				ami_get_theme_filename(nav_east,"theme_nav_east",false);
-				ami_get_theme_filename(nav_east_s,"theme_nav_east_s",false);
-				ami_get_theme_filename(nav_east_g,"theme_nav_east_g",false);
-				ami_get_theme_filename(stop,"theme_stop",false);
-				ami_get_theme_filename(stop_s,"theme_stop_s",false);
-				ami_get_theme_filename(stop_g,"theme_stop_g",false);
-				ami_get_theme_filename(reload,"theme_reload",false);
-				ami_get_theme_filename(reload_s,"theme_reload_s",false);
-				ami_get_theme_filename(reload_g,"theme_reload_g",false);
-				ami_get_theme_filename(home,"theme_home",false);
-				ami_get_theme_filename(home_s,"theme_home_s",false);
-				ami_get_theme_filename(home_g,"theme_home_g",false);
-				ami_get_theme_filename(closetab,"theme_closetab",false);
-				ami_get_theme_filename(closetab_s,"theme_closetab_s",false);
-				ami_get_theme_filename(closetab_g,"theme_closetab_g",false);
-				ami_get_theme_filename(addtab,"theme_addtab",false);
-				ami_get_theme_filename(addtab_s,"theme_addtab_s",false);
-				ami_get_theme_filename(addtab_g,"theme_addtab_g",false);
-				ami_get_theme_filename(tabthrobber,"theme_tab_loading",false);
+		ami_get_theme_filename(nav_west,"theme_nav_west",false);
+		ami_get_theme_filename(nav_west_s,"theme_nav_west_s",false);
+		ami_get_theme_filename(nav_west_g,"theme_nav_west_g",false);
+		ami_get_theme_filename(nav_east,"theme_nav_east",false);
+		ami_get_theme_filename(nav_east_s,"theme_nav_east_s",false);
+		ami_get_theme_filename(nav_east_g,"theme_nav_east_g",false);
+		ami_get_theme_filename(stop,"theme_stop",false);
+		ami_get_theme_filename(stop_s,"theme_stop_s",false);
+		ami_get_theme_filename(stop_g,"theme_stop_g",false);
+		ami_get_theme_filename(reload,"theme_reload",false);
+		ami_get_theme_filename(reload_s,"theme_reload_s",false);
+		ami_get_theme_filename(reload_g,"theme_reload_g",false);
+		ami_get_theme_filename(home,"theme_home",false);
+		ami_get_theme_filename(home_s,"theme_home_s",false);
+		ami_get_theme_filename(home_g,"theme_home_g",false);
+		ami_get_theme_filename(closetab,"theme_closetab",false);
+		ami_get_theme_filename(closetab_s,"theme_closetab_s",false);
+		ami_get_theme_filename(closetab_g,"theme_closetab_g",false);
+		ami_get_theme_filename(addtab,"theme_addtab",false);
+		ami_get_theme_filename(addtab_s,"theme_addtab_s",false);
+		ami_get_theme_filename(addtab_g,"theme_addtab_g",false);
+		ami_get_theme_filename(tabthrobber,"theme_tab_loading",false);
 
-				gwin->shared->objects[GID_ADDTAB_BM] = BitMapObject,
-							BITMAP_SourceFile, addtab,
-							BITMAP_SelectSourceFile, addtab_s,
-							BITMAP_DisabledSourceFile, addtab_g,
-							BITMAP_Screen, scrn,
-							BITMAP_Masking, TRUE,
-							BitMapEnd;
+		gwin->shared->objects[GID_ADDTAB_BM] = BitMapObject,
+					BITMAP_SourceFile, addtab,
+					BITMAP_SelectSourceFile, addtab_s,
+					BITMAP_DisabledSourceFile, addtab_g,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
 
-				gwin->shared->objects[GID_CLOSETAB_BM] = BitMapObject,
-							BITMAP_SourceFile, closetab,
-							BITMAP_SelectSourceFile, closetab_s,
-							BITMAP_DisabledSourceFile, closetab_g,
-							BITMAP_Screen, scrn,
-							BITMAP_Masking, TRUE,
-							BitMapEnd;
+		gwin->shared->objects[GID_CLOSETAB_BM] = BitMapObject,
+					BITMAP_SourceFile, closetab,
+					BITMAP_SelectSourceFile, closetab_s,
+					BITMAP_DisabledSourceFile, closetab_g,
+					BITMAP_Screen, scrn,
+					BITMAP_Masking, TRUE,
+					BitMapEnd;
 
-				if(ClickTabBase->lib_Version < 53)
-				{
-					addtabclosegadget = LAYOUT_AddChild;
-					gwin->shared->objects[GID_CLOSETAB] = ButtonObject,
-							GA_ID, GID_CLOSETAB,
-							GA_RelVerify, TRUE,
-							BUTTON_RenderImage, gwin->shared->objects[GID_CLOSETAB_BM],
-							ButtonEnd;
+		if(ClickTabBase->lib_Version < 53)
+		{
+			addtabclosegadget = LAYOUT_AddChild;
+			gwin->shared->objects[GID_CLOSETAB] = ButtonObject,
+					GA_ID, GID_CLOSETAB,
+					GA_RelVerify, TRUE,
+					BUTTON_RenderImage, gwin->shared->objects[GID_CLOSETAB_BM],
+					ButtonEnd;
 
-					gwin->shared->objects[GID_TABS] = ClickTabObject,
-							GA_ID,GID_TABS,
-							GA_RelVerify,TRUE,
-							GA_Underscore,13, // disable kb shortcuts
-							CLICKTAB_Labels,&gwin->shared->tab_list,
-							CLICKTAB_LabelTruncate,TRUE,
-							ClickTabEnd;
+			gwin->shared->objects[GID_TABS] = ClickTabObject,
+					GA_ID,GID_TABS,
+					GA_RelVerify,TRUE,
+					GA_Underscore,13, // disable kb shortcuts
+					CLICKTAB_Labels,&gwin->shared->tab_list,
+					CLICKTAB_LabelTruncate,TRUE,
+					ClickTabEnd;
 
-					gwin->shared->objects[GID_ADDTAB] = ButtonObject,
-							GA_ID, GID_ADDTAB,
-							GA_RelVerify, TRUE,
-							GA_Text, "+",
-							BUTTON_RenderImage, gwin->shared->objects[GID_ADDTAB_BM],
-							ButtonEnd;
-				}
-				else
-				{
-					gwin->shared->objects[GID_TABS_FLAG] = BitMapObject,
-							BITMAP_SourceFile, tabthrobber,
+			gwin->shared->objects[GID_ADDTAB] = ButtonObject,
+					GA_ID, GID_ADDTAB,
+					GA_RelVerify, TRUE,
+					GA_Text, "+",
+					BUTTON_RenderImage, gwin->shared->objects[GID_ADDTAB_BM],
+					ButtonEnd;
+		}
+		else
+		{
+			gwin->shared->objects[GID_TABS_FLAG] = BitMapObject,
+					BITMAP_SourceFile, tabthrobber,
+					BITMAP_Screen,scrn,
+					BITMAP_Masking,TRUE,
+					BitMapEnd;
+		}
+
+		gwin->shared->objects[OID_MAIN] = WindowObject,
+       	    WA_ScreenTitle,nsscreentitle,
+       	   	WA_Activate, TRUE,
+           	WA_DepthGadget, TRUE,
+           	WA_DragBar, TRUE,
+       	   	WA_CloseGadget, TRUE,
+           	WA_SizeGadget, TRUE,
+			WA_Top,cury,
+			WA_Left,curx,
+			WA_Width,curw,
+			WA_Height,curh,
+			WA_CustomScreen,scrn,
+			WA_ReportMouse,TRUE,
+			WA_SmartRefresh,TRUE,
+			WA_SizeBBottom, TRUE,
+       	   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
+						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+						IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
+						IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
+						IDCMP_ACTIVEWINDOW | // IDCMP_INTUITICKS |
+						IDCMP_EXTENDEDMOUSE,
+			WINDOW_IconifyGadget, iconifygadget,
+			WINDOW_NewMenu, gwin->shared->menu,
+			WINDOW_VertProp,1,
+			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
+						IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
+       	    WINDOW_AppPort, appport,
+			WINDOW_AppWindow,TRUE,
+			WINDOW_SharedPort,sport,
+			WINDOW_BuiltInScroll,TRUE,
+			WINDOW_GadgetHelp, TRUE,
+			WINDOW_UserData,gwin->shared,
+           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
+               	LAYOUT_SpaceOuter, TRUE,
+				LAYOUT_AddChild, gwin->shared->objects[GID_TOOLBARLAYOUT] = HGroupObject,
+					LAYOUT_VertAlignment, LALIGN_CENTER,
+					LAYOUT_AddChild, gwin->shared->objects[GID_BACK] = ButtonObject,
+						GA_ID,GID_BACK,
+						GA_RelVerify,TRUE,
+						GA_Disabled,TRUE,
+						GA_HintInfo, gwin->shared->helphints[GID_BACK],
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,nav_west,
+							BITMAP_SelectSourceFile,nav_west_s,
+							BITMAP_DisabledSourceFile,nav_west_g,
 							BITMAP_Screen,scrn,
 							BITMAP_Masking,TRUE,
-							BitMapEnd;
-				}
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_FORWARD] = ButtonObject,
+						GA_ID,GID_FORWARD,
+						GA_RelVerify,TRUE,
+						GA_Disabled,TRUE,
+						GA_HintInfo, gwin->shared->helphints[GID_FORWARD],
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,nav_east,
+							BITMAP_SelectSourceFile,nav_east_s,
+							BITMAP_DisabledSourceFile,nav_east_g,
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_STOP] = ButtonObject,
+						GA_ID,GID_STOP,
+						GA_RelVerify,TRUE,
+						GA_HintInfo, gwin->shared->helphints[GID_STOP],
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,stop,
+							BITMAP_SelectSourceFile,stop_s,
+							BITMAP_DisabledSourceFile,stop_g,
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_RELOAD] = ButtonObject,
+						GA_ID,GID_RELOAD,
+						GA_RelVerify,TRUE,
+						GA_HintInfo, gwin->shared->helphints[GID_RELOAD],
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,reload,
+							BITMAP_SelectSourceFile,reload_s,
+							BITMAP_DisabledSourceFile,reload_g,
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_HOME] = ButtonObject,
+						GA_ID,GID_HOME,
+						GA_RelVerify,TRUE,
+						GA_HintInfo, gwin->shared->helphints[GID_HOME],
+						BUTTON_RenderImage,BitMapObject,
+							BITMAP_SourceFile,home,
+							BITMAP_SelectSourceFile,home_s,
+							BITMAP_DisabledSourceFile,home_g,
+							BITMAP_Screen,scrn,
+							BITMAP_Masking,TRUE,
+						BitMapEnd,
+					ButtonEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_ICON] = SpaceObject,
+						GA_ID, GID_ICON,
+						SPACE_MinWidth, 16,
+						SPACE_MinHeight, 16,
+						SPACE_Transparent, TRUE,
+					SpaceEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_URL] =
+						NewObject(urlStringClass, NULL,
+                  				STRINGA_MaxChars, 2000,
+                  				GA_ID, GID_URL,
+                  				GA_RelVerify, TRUE,
+							GA_HintInfo, gwin->shared->helphints[GID_URL],
+                  				GA_TabCycle, TRUE,
+                  				STRINGA_Buffer, gwin->shared->svbuffer,
+                  				STRINGVIEW_Header, URLHistory_GetList(),
+              			StringEnd,
 
-				gwin->shared->objects[OID_MAIN] = WindowObject,
-		       	    WA_ScreenTitle,nsscreentitle,
-        		   	WA_Activate, TRUE,
-		           	WA_DepthGadget, TRUE,
-		           	WA_DragBar, TRUE,
-        		   	WA_CloseGadget, TRUE,
-		           	WA_SizeGadget, TRUE,
-					WA_Top,cury,
-					WA_Left,curx,
-					WA_Width,curw,
-					WA_Height,curh,
-					WA_CustomScreen,scrn,
-					WA_ReportMouse,TRUE,
-					WA_SmartRefresh,TRUE,
-					WA_SizeBBottom, TRUE,
-        		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
-								IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-								IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
-								IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-								IDCMP_ACTIVEWINDOW | // IDCMP_INTUITICKS |
-								IDCMP_EXTENDEDMOUSE,
-					WINDOW_IconifyGadget, iconifygadget,
-					WINDOW_NewMenu, gwin->shared->menu,
-					WINDOW_VertProp,1,
-					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
-								IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
-        		    WINDOW_AppPort, appport,
-					WINDOW_AppWindow,TRUE,
-					WINDOW_SharedPort,sport,
-					WINDOW_BuiltInScroll,TRUE,
-					WINDOW_GadgetHelp, TRUE,
-					WINDOW_UserData,gwin->shared,
-		           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
-		               	LAYOUT_SpaceOuter, TRUE,
-						LAYOUT_AddChild, gwin->shared->objects[GID_TOOLBARLAYOUT] = HGroupObject,
-							LAYOUT_VertAlignment, LALIGN_CENTER,
-							LAYOUT_AddChild, gwin->shared->objects[GID_BACK] = ButtonObject,
-								GA_ID,GID_BACK,
-								GA_RelVerify,TRUE,
-								GA_Disabled,TRUE,
-								GA_HintInfo, gwin->shared->helphints[GID_BACK],
-								BUTTON_RenderImage,BitMapObject,
-									BITMAP_SourceFile,nav_west,
-									BITMAP_SelectSourceFile,nav_west_s,
-									BITMAP_DisabledSourceFile,nav_west_g,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ButtonEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_FORWARD] = ButtonObject,
-								GA_ID,GID_FORWARD,
-								GA_RelVerify,TRUE,
-								GA_Disabled,TRUE,
-								GA_HintInfo, gwin->shared->helphints[GID_FORWARD],
-								BUTTON_RenderImage,BitMapObject,
-									BITMAP_SourceFile,nav_east,
-									BITMAP_SelectSourceFile,nav_east_s,
-									BITMAP_DisabledSourceFile,nav_east_g,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ButtonEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_STOP] = ButtonObject,
-								GA_ID,GID_STOP,
-								GA_RelVerify,TRUE,
-								GA_HintInfo, gwin->shared->helphints[GID_STOP],
-								BUTTON_RenderImage,BitMapObject,
-									BITMAP_SourceFile,stop,
-									BITMAP_SelectSourceFile,stop_s,
-									BITMAP_DisabledSourceFile,stop_g,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ButtonEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_RELOAD] = ButtonObject,
-								GA_ID,GID_RELOAD,
-								GA_RelVerify,TRUE,
-								GA_HintInfo, gwin->shared->helphints[GID_RELOAD],
-								BUTTON_RenderImage,BitMapObject,
-									BITMAP_SourceFile,reload,
-									BITMAP_SelectSourceFile,reload_s,
-									BITMAP_DisabledSourceFile,reload_g,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ButtonEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_HOME] = ButtonObject,
-								GA_ID,GID_HOME,
-								GA_RelVerify,TRUE,
-								GA_HintInfo, gwin->shared->helphints[GID_HOME],
-								BUTTON_RenderImage,BitMapObject,
-									BITMAP_SourceFile,home,
-									BITMAP_SelectSourceFile,home_s,
-									BITMAP_DisabledSourceFile,home_g,
-									BITMAP_Screen,scrn,
-									BITMAP_Masking,TRUE,
-								BitMapEnd,
-							ButtonEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_ICON] = SpaceObject,
-								GA_ID, GID_ICON,
-								SPACE_MinWidth, 16,
-								SPACE_MinHeight, 16,
-								SPACE_Transparent, TRUE,
-							SpaceEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_URL] =
-								NewObject(urlStringClass, NULL,
-                    				STRINGA_MaxChars, 2000,
-                    				GA_ID, GID_URL,
-                    				GA_RelVerify, TRUE,
-									GA_HintInfo, gwin->shared->helphints[GID_URL],
-                    				GA_TabCycle, TRUE,
-                    				STRINGA_Buffer, gwin->shared->svbuffer,
-                    				STRINGVIEW_Header, URLHistory_GetList(),
-                			StringEnd,
-
-						//	GA_ID, GID_TOOLBARLAYOUT,
-						//	GA_RelVerify, TRUE,
-						//	LAYOUT_RelVerify, TRUE,
-							LAYOUT_WeightBar, TRUE,
-							LAYOUT_AddChild, HGroupObject,
-								LAYOUT_VertAlignment, LALIGN_CENTER,
-								LAYOUT_AddChild, gwin->shared->objects[GID_SEARCH_ICON] = SpaceObject,
-									GA_ID, GID_SEARCH_ICON,
-									SPACE_MinWidth, 16,
-									SPACE_MinHeight, 16,
-									SPACE_Transparent, TRUE,
-								SpaceEnd,
-								CHILD_WeightedWidth,0,
-								CHILD_WeightedHeight,0,
-								LAYOUT_AddChild, gwin->shared->objects[GID_SEARCHSTRING] =StringObject,
-									GA_ID,GID_SEARCHSTRING,
-                   					STRINGA_TextVal, NULL,
-									GA_RelVerify,TRUE,
-									GA_HintInfo, gwin->shared->helphints[GID_SEARCHSTRING],
-								StringEnd,
-							LayoutEnd,
-							CHILD_WeightedWidth, 0,
-							LAYOUT_AddChild, gwin->shared->objects[GID_THROBBER] = SpaceObject,
-								GA_ID,GID_THROBBER,
-								SPACE_MinWidth,throbber_width,
-								SPACE_MinHeight,throbber_height,
-								SPACE_Transparent,TRUE,
-							SpaceEnd,
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-						LayoutEnd,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddImage, BevelObject,
-							BEVEL_Style, BVS_SBAR_VERT,
-						BevelEnd,
-						CHILD_WeightedHeight, 0,
-						LAYOUT_AddChild, gwin->shared->objects[GID_TABLAYOUT] = HGroupObject,
-							LAYOUT_SpaceInner,FALSE,
-							addtabclosegadget, gwin->shared->objects[GID_CLOSETAB],
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-
-							addtabclosegadget, gwin->shared->objects[GID_TABS],
-							CHILD_CacheDomain,FALSE,
-
-							addtabclosegadget, gwin->shared->objects[GID_ADDTAB],
-							CHILD_WeightedWidth,0,
-							CHILD_WeightedHeight,0,
-						LayoutEnd,
-						CHILD_WeightedHeight,0,
-						LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
-							GA_ID,GID_BROWSER,
-							SPACE_Transparent,TRUE,
+				//	GA_ID, GID_TOOLBARLAYOUT,
+				//	GA_RelVerify, TRUE,
+				//	LAYOUT_RelVerify, TRUE,
+					LAYOUT_WeightBar, TRUE,
+					LAYOUT_AddChild, HGroupObject,
+						LAYOUT_VertAlignment, LALIGN_CENTER,
+						LAYOUT_AddChild, gwin->shared->objects[GID_SEARCH_ICON] = SpaceObject,
+							GA_ID, GID_SEARCH_ICON,
+							SPACE_MinWidth, 16,
+							SPACE_MinHeight, 16,
+							SPACE_Transparent, TRUE,
 						SpaceEnd,
-					EndGroup,
-				EndWindow;
-			}
-			else
-			{
-				/* borderless kiosk mode window */
-				gwin->tab = 0;
-				gwin->shared->tabs = 0;
-				gwin->tab_node = NULL;
+						CHILD_WeightedWidth,0,
+						CHILD_WeightedHeight,0,
+						LAYOUT_AddChild, gwin->shared->objects[GID_SEARCHSTRING] =StringObject,
+							GA_ID,GID_SEARCHSTRING,
+                 					STRINGA_TextVal, NULL,
+							GA_RelVerify,TRUE,
+							GA_HintInfo, gwin->shared->helphints[GID_SEARCHSTRING],
+						StringEnd,
+					LayoutEnd,
+					CHILD_WeightedWidth, 0,
+					LAYOUT_AddChild, gwin->shared->objects[GID_THROBBER] = SpaceObject,
+						GA_ID,GID_THROBBER,
+						SPACE_MinWidth,throbber_width,
+						SPACE_MinHeight,throbber_height,
+						SPACE_Transparent,TRUE,
+					SpaceEnd,
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+				LayoutEnd,
+				CHILD_WeightedHeight,0,
+				LAYOUT_AddImage, BevelObject,
+					BEVEL_Style, BVS_SBAR_VERT,
+				BevelEnd,
+				CHILD_WeightedHeight, 0,
+				LAYOUT_AddChild, gwin->shared->objects[GID_TABLAYOUT] = HGroupObject,
+					LAYOUT_SpaceInner,FALSE,
+					addtabclosegadget, gwin->shared->objects[GID_CLOSETAB],
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
 
-				gwin->shared->objects[OID_MAIN] = WindowObject,
-    		   	    WA_ScreenTitle,nsscreentitle,
-		           	WA_Activate, TRUE,
-		           	WA_DepthGadget, FALSE,
-        		   	WA_DragBar, FALSE,
-		           	WA_CloseGadget, FALSE,
-					WA_Borderless,TRUE,
-					WA_RMBTrap,TRUE,
-					WA_Top,0,
-					WA_Left,0,
-					WA_Width, scrn->Width,
-					WA_Height, scrn->Height,
-		           	WA_SizeGadget, FALSE,
-					WA_CustomScreen,scrn,
-					WA_ReportMouse,TRUE,
-        		   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
-							IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-							IDCMP_RAWKEY | // IDCMP_INTUITICKS |
-							IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-							IDCMP_EXTENDEDMOUSE,
-					WINDOW_HorizProp,1,
-					WINDOW_VertProp,1,
-					WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-					WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
-		            WINDOW_AppPort, appport,
-					WINDOW_AppWindow,TRUE,
-					WINDOW_SharedPort,sport,
-					WINDOW_UserData,gwin->shared,
-					WINDOW_BuiltInScroll,TRUE,
-		           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
-		               	LAYOUT_SpaceOuter, TRUE,
-						LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
-							GA_ID,GID_BROWSER,
-							SPACE_Transparent,TRUE,
-						SpaceEnd,
-					EndGroup,
-				EndWindow;
-			}
+					addtabclosegadget, gwin->shared->objects[GID_TABS],
+					CHILD_CacheDomain,FALSE,
+
+					addtabclosegadget, gwin->shared->objects[GID_ADDTAB],
+					CHILD_WeightedWidth,0,
+					CHILD_WeightedHeight,0,
+				LayoutEnd,
+				CHILD_WeightedHeight,0,
+				LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
+					GA_ID,GID_BROWSER,
+					SPACE_Transparent,TRUE,
+				SpaceEnd,
+			EndGroup,
+		EndWindow;
+	}
+	else
+	{
+		/* borderless kiosk mode window */
+		gwin->tab = 0;
+		gwin->shared->tabs = 0;
+		gwin->tab_node = NULL;
+
+		gwin->shared->objects[OID_MAIN] = WindowObject,
+       	    WA_ScreenTitle,nsscreentitle,
+           	WA_Activate, TRUE,
+           	WA_DepthGadget, FALSE,
+       	   	WA_DragBar, FALSE,
+           	WA_CloseGadget, FALSE,
+			WA_Borderless,TRUE,
+			WA_RMBTrap,TRUE,
+			WA_Top,0,
+			WA_Left,0,
+			WA_Width, scrn->Width,
+			WA_Height, scrn->Height,
+           	WA_SizeGadget, FALSE,
+			WA_CustomScreen,scrn,
+			WA_ReportMouse,TRUE,
+       	   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
+					IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
+					IDCMP_RAWKEY | // IDCMP_INTUITICKS |
+					IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
+					IDCMP_EXTENDEDMOUSE,
+			WINDOW_HorizProp,1,
+			WINDOW_VertProp,1,
+			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
+			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
+            WINDOW_AppPort, appport,
+			WINDOW_AppWindow,TRUE,
+			WINDOW_SharedPort,sport,
+			WINDOW_UserData,gwin->shared,
+			WINDOW_BuiltInScroll,TRUE,
+           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
+               	LAYOUT_SpaceOuter, TRUE,
+				LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
+					GA_ID,GID_BROWSER,
+					SPACE_Transparent,TRUE,
+				SpaceEnd,
+			EndGroup,
+		EndWindow;
+	}
 
 	gwin->shared->win = (struct Window *)RA_OpenWindow(gwin->shared->objects[OID_MAIN]);
 
