@@ -1266,29 +1266,11 @@ gui_create_browser_window(struct browser_window *bw,
 	 */
 	gw->bw = bw;
 
+	create_normal_browser_window(gw, option_fb_furniture_size);
+	gw->localhistory = fb_create_localhistory(bw, fbtk, option_fb_furniture_size);
 
-	switch(bw->browser_window_type) {
-	case BROWSER_WINDOW_NORMAL:
-		create_normal_browser_window(gw, option_fb_furniture_size);
-		gw->localhistory = fb_create_localhistory(bw, fbtk, option_fb_furniture_size);
-
-		/* map and request redraw of gui window */
-		fbtk_set_mapping(gw->window, true);
-
-		break;
-
-	case BROWSER_WINDOW_FRAME:
-		gw->window = fbtk_create_window(bw->parent->window->window, 0, 0, 0, 0, 0);
-		create_browser_widget(gw, 0, 0);
-		LOG(("create frame"));
-		break;
-
-	default:
-		gw->window = fbtk_create_window(bw->parent->window->window, 0, 0, 0, 0, 0);
-		create_browser_widget(gw, 0, 0);
-		LOG(("unhandled type"));
-
-	}
+	/* map and request redraw of gui window */
+	fbtk_set_mapping(gw->window, true);
 
 	return gw;
 }
