@@ -2430,7 +2430,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		if(option_use_pubscreen && (locked_screen == TRUE) &&
 			(strcmp(option_use_pubscreen,"Workbench") == 0))
 				iconifygadget = TRUE;
-		ami_create_menu(bw->browser_window_type, gwin->shared, dri);
+		ami_create_menu(gwin->shared);
 
 		NewList(&gwin->shared->tab_list);
 		gwin->tab_node = AllocClickTabNode(TNA_Text,messages_get("NetSurf"),

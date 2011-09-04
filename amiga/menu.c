@@ -124,7 +124,7 @@ void ami_free_menulabs(struct gui_window_2 *gwin)
 	gwin->menu = NULL;
 }
 
-void ami_init_menulabs(struct gui_window_2 *gwin, struct DrawInfo *dri)
+void ami_init_menulabs(struct gui_window_2 *gwin)
 {
 	int i;
 
@@ -272,7 +272,7 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 			TAG_DONE);
 
 	ami_free_menulabs(gwin);
-	ami_create_menu(BROWSER_WINDOW_NORMAL, gwin);
+	ami_create_menu(gwin);
 
 	SetAttrs(gwin->objects[OID_MAIN],
 			WINDOW_NewMenu, gwin->menu,
@@ -282,18 +282,12 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 }
 */
 
-struct NewMenu *ami_create_menu(ULONG type, struct gui_window_2 *gwin, struct DrawInfo *dri)
+struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
 	int i;
-	ULONG menuflags = 0;
 
-	ami_init_menulabs(gwin, dri);
+	ami_init_menulabs(gwin);
 	gwin->menu = AllocVec(sizeof(struct NewMenu) * (AMI_MENU_AREXX_MAX + 1), MEMF_CLEAR);
-
-	if(type != BROWSER_WINDOW_NORMAL)
-	{
-		menuflags = NM_ITEMDISABLED;
-	}
 
 	for(i=0;i<=AMI_MENU_AREXX_MAX;i++)
 	{
@@ -303,10 +297,10 @@ struct NewMenu *ami_create_menu(ULONG type, struct gui_window_2 *gwin, struct Dr
 		gwin->menu[i].nm_Flags = 0;
 	}
 
-	gwin->menu[1].nm_Flags = menuflags;
-	gwin->menu[2].nm_Flags = menuflags;
-	gwin->menu[12].nm_Flags = menuflags;
-	gwin->menu[13].nm_Flags = menuflags;
+	gwin->menu[1].nm_Flags = 0;
+	gwin->menu[2].nm_Flags = 0;
+	gwin->menu[12].nm_Flags = 0;
+	gwin->menu[13].nm_Flags = 0;
 
 #ifndef WITH_PDF_EXPORT
 	gwin->menu[9].nm_Flags = NM_ITEMDISABLED;
