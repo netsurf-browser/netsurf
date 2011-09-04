@@ -908,7 +908,6 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 {
 	struct Window *win = g->shared->win;
 
-	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL) return;
 	if(option_kiosk_mode == true) return;
 
 	OffMenu(win,AMI_MENU_CUT);

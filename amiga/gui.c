@@ -3681,8 +3681,7 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 		nnode=(struct nsObject *)GetSucc((struct Node *)node);
 		gwin = node->objstruct;
 
-		if((node->Type == AMINS_WINDOW) &&
-			(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+		if(node->Type == AMINS_WINDOW)
 		{
 			GetAttr(SPACE_AreaBox, gwin->objects[GID_SEARCH_ICON], (ULONG *)&bbox);
 

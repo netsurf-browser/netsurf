@@ -143,8 +143,7 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 
 	if(option_context_menu == false) return FALSE;
 
-	if((option_kiosk_mode == false) && (trap == FALSE) &&
-		(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+	if((option_kiosk_mode == false) && (trap == FALSE))
 	{
 		if(browser_window_back_available(gwin->bw) &&
 				ami_gadget_hit(gwin->objects[GID_BACK],
