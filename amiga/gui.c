@@ -1406,22 +1406,19 @@ void ami_handle_msg(void)
 						switch(nskey)
 						{
 							case 'n':
-								if((option_kiosk_mode == false) &&
-									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+								if((option_kiosk_mode == false))
 									browser_window_create(option_homepage_url, NULL,
 										0, true, false);
 							break;
 
 							case 't':
-								if((option_kiosk_mode == false) &&
-									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+								if((option_kiosk_mode == false))
 									browser_window_create(option_homepage_url,
 										gwin->bw, 0, true, true);
 							break;
 
 							case 'k':
-								if((option_kiosk_mode == false) &&
-									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+								if((option_kiosk_mode == false))
 									browser_window_destroy(gwin->bw);
 							break;
 
@@ -1430,8 +1427,7 @@ void ami_handle_msg(void)
 							break;
 
 							case 'q':
-								if((option_kiosk_mode == false) &&
-									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+								if((option_kiosk_mode == false))
 									ami_quit_netsurf();
 							break;
 
@@ -1461,8 +1457,7 @@ void ami_handle_msg(void)
 							break;
 
 							case 'h':
-								if((option_kiosk_mode == false) &&
-									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+								if((option_kiosk_mode == false))
 									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 							break;
 
@@ -1474,8 +1469,7 @@ void ami_handle_msg(void)
 							break;
 
 							case 'u': // open url
-								if((option_kiosk_mode == false) &&
-									(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+								if((option_kiosk_mode == false))
 									ActivateGadget((struct Gadget *)gwin->objects[GID_URL],
 										gwin->win, NULL);
 							break;
@@ -2210,9 +2204,6 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 {
 	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
 
-	if(gwin->bw->browser_window_type != BROWSER_WINDOW_NORMAL)
-		return;
-
 	if(!browser_window_back_available(gwin->bw))
 		back=TRUE;
 
@@ -2225,8 +2216,7 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	if(!browser_window_reload_available(gwin->bw))
 		reload=TRUE;
 
-	if(gwin->bw->browser_window_type == BROWSER_WINDOW_NORMAL &&
-		option_kiosk_mode == false)
+	if(option_kiosk_mode == false)
 	{
 		if(gwin->tabs <= 1)
 		{
@@ -2362,16 +2352,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	NewList(&gwin->dllist);
 
-/*
-	if(bw->browser_window_type == BROWSER_WINDOW_IFRAME)
-	{
-		gwin->shared = bw->parent->window->shared;
-		gwin->bw = bw;
-		return gwin;
-	}
-*/
-
-	if(new_tab && clone && (bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+	if(new_tab && clone)
 	{
 		gwin->shared = clone->window->shared;
 		gwin->tab = gwin->shared->next_tab;
@@ -2440,64 +2421,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	gwin->shared->scrollerhook.h_Data = gwin->shared;
 
-	switch(bw->browser_window_type)
-	{
-        case BROWSER_WINDOW_IFRAME:
-        case BROWSER_WINDOW_FRAMESET:
-        case BROWSER_WINDOW_FRAME:
 
-			gwin->tab = 0;
-			gwin->shared->tabs = 0;
-			gwin->tab_node = NULL;
-
-			gwin->shared->objects[OID_MAIN] = WindowObject,
-       	    WA_ScreenTitle,nsscreentitle,
-//           	WA_Title, messages_get("NetSurf"),
-           	WA_Activate, FALSE,
-           	WA_DepthGadget, TRUE,
-           	WA_DragBar, TRUE,
-           	WA_CloseGadget, FALSE,
-			WA_Top,cury,
-			WA_Left,curx,
-			WA_Width,curw,
-			WA_Height,curh,
-           	WA_SizeGadget, TRUE,
-			WA_CustomScreen,scrn,
-			WA_ReportMouse,TRUE,
-			WA_SmartRefresh,TRUE,
-           	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS |
-				IDCMP_NEWSIZE | IDCMP_RAWKEY | IDCMP_GADGETUP | IDCMP_SIZEVERIFY |
-				IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE, // | IDCMP_INTUITICKS,
-//			WINDOW_IconifyGadget, TRUE,
-//			WINDOW_NewMenu,menu,
-			WINDOW_HorizProp,1,
-			WINDOW_VertProp,1,
-			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_SIZEVERIFY,
-            WINDOW_AppPort, appport,
-			WINDOW_AppWindow,TRUE,
-			WINDOW_BuiltInScroll,TRUE,
-			WINDOW_SharedPort,sport,
-			WINDOW_UserData,gwin->shared,
-//         	WINDOW_Position, WPOS_CENTERSCREEN,
-//			WINDOW_CharSet,106,
-           	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
-//				LAYOUT_CharSet,106,
-               	LAYOUT_SpaceOuter, TRUE,
-				LAYOUT_AddChild, gwin->shared->objects[GID_BROWSER] = SpaceObject,
-					GA_ID,GID_BROWSER,
-					SPACE_Transparent,TRUE,
-/*
-					GA_RelVerify,TRUE,
-					GA_Immediate,TRUE,
-					GA_FollowMouse,TRUE,
-*/
-				SpaceEnd,
-			EndGroup,
-		EndWindow;
-
-		break;
-        case BROWSER_WINDOW_NORMAL:
 			if(!option_kiosk_mode)
 			{
 				ULONG addtabclosegadget = TAG_IGNORE;
@@ -2840,8 +2764,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					EndGroup,
 				EndWindow;
 			}
-		break;
-	}
 
 	gwin->shared->win = (struct Window *)RA_OpenWindow(gwin->shared->objects[OID_MAIN]);
 
@@ -2862,8 +2784,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			ICA_TARGET, ICTARGET_IDCMP,
 			TAG_DONE);
 
-	if(bw->browser_window_type == BROWSER_WINDOW_NORMAL &&
-				option_kiosk_mode == false)
+	if(option_kiosk_mode == false)
 	{
 		ULONG sz, size1, size2;
 
@@ -3674,7 +3595,6 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 	if(option_kiosk_mode == true) return;
 	if(!g) return;
-	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL) return;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
 						g->shared->objects[GID_TABS],
@@ -3827,8 +3747,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	g->c_y = y;
 	g->c_h = height;
 
-	if((option_kiosk_mode == false) &&
-		(g->shared->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+	if((option_kiosk_mode == false))
 		OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
@@ -3840,8 +3759,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	if(!g) return;
 	if(g->c_h == 0) return;
 
-	if((option_kiosk_mode == false) &&
-		(g->shared->bw->browser_window_type == BROWSER_WINDOW_NORMAL))
+	if((option_kiosk_mode == false))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
 	ami_do_redraw_limits(g, g->shared->bw, g->c_x, g->c_y,
