@@ -615,32 +615,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		break;
 	}
 
-	switch (bw->browser_window_type) {
-	case BROWSER_WINDOW_FRAMESET:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       GTK_POLICY_NEVER,
-						       GTK_POLICY_NEVER);
-		break;
-	case BROWSER_WINDOW_FRAME:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       scrollpolicy,
-						       scrollpolicy);
-		break;
-	case BROWSER_WINDOW_NORMAL:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       scrollpolicy,
-						       scrollpolicy);
-		break;
-	case BROWSER_WINDOW_IFRAME:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       scrollpolicy,
-						       scrollpolicy);
-		break;
-	}
+	gtk_scrolled_window_set_policy(g->scrolledwindow,
+			scrollpolicy, scrollpolicy);
 
 	/* Attach ourselves to the list (push_top) */
 	if (window_list)
