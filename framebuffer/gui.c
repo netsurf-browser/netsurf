@@ -1356,34 +1356,6 @@ gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 }
 
 void
-gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	struct gui_window *parent;
-	int px, py;
-	int w, h;
-	LOG(("%s: %d, %d, %d, %d", g->bw->name, x0, y0, x1, y1));
-	parent = g->bw->parent->window;
-
-	if (parent->window == NULL)
-		return; /* doesnt have an fbtk widget */
-
-	px = fbtk_get_absx(parent->browser) + x0;
-	py = fbtk_get_absy(parent->browser) + y0;
-	w = x1 - x0;
-	h = y1 - y0;
-	if (w > (fbtk_get_width(parent->browser) - px))
-		w = fbtk_get_width(parent->browser) - px;
-
-	if (h > (fbtk_get_height(parent->browser) - py))
-		h = fbtk_get_height(parent->browser) - py;
-
-	fbtk_set_pos_and_size(g->window, px, py , w , h);
-
-	fbtk_request_redraw(parent->browser);
-
-}
-
-void
 gui_window_get_dimensions(struct gui_window *g,
 			  int *width,
 			  int *height,

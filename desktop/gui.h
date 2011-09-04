@@ -87,8 +87,6 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy);
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy);
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1);
-void gui_window_position_frame(struct gui_window *g, int x0, int y0,
-		int x1, int y1);
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		bool scaled);
 void gui_window_update_extent(struct gui_window *g);

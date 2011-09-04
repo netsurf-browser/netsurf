@@ -305,14 +305,6 @@ gui_window_scroll_start(struct gui_window *g)
   return true;
 }
 
-void
-gui_window_position_frame(struct gui_window *g, int x0, int y0,
-                          int x1, int y1)
-{
-  fprintf(stdout, "WINDOW POSITION_FRAME WIN %u X0 %d Y0 %d X1 %d Y1 %d\n",
-          g->win_num, x0, y0, x1, y1);
-}
-
 bool
 gui_window_frame_resize_start(struct gui_window *g)
 {

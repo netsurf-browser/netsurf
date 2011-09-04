@@ -591,65 +591,6 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 	gui_window_set_scroll(g, x0, y0);
 }
 
-void gui_window_position_frame(struct gui_window *g, int x0, int y0, int x1, int y1)
-{
-	CALLED();
-
-	/* g is a child frame, we need to place it relative to its parent */
-#warning XXX: BScrollView ?
-	BView *view = g->view;
-	BView *parent = g->bw->parent->window->view;
-	assert(view);
-	assert(parent);
-	LOG(("%s: %d,%d  %dx%d", g->bw->name, x0, y0, x1-x0+2, y1-y0+2));
-
-	/* if the window has not changed position or size, do not bother
-	 * moving/resising it.
-	 */
-
-	if (!parent->LockLooper())
-		return;
-
-	LOG(("  current: %d,%d  %dx%d",
-		view->Frame().left, view->Frame().top,
-		view->Frame().Width() + 1, view->Frame().Height() + 1));
-
-	if (view->Frame().left != x0 || view->Frame().top != y0 || 
-		view->Frame().Width() + 1 != x1 - x0 + 2 || 
-		view->Frame().Height() + 1 != y1 - y0 + 2) {
-	  	LOG(("  frame has moved/resized."));
-	  	view->MoveTo(x0, y0);
-		view->ResizeTo(x1 - x0 + 2 - 1, y1 - y0 + 2 - 1);
-	}
-
-	parent->UnlockLooper();
-#warning WRITEME
-#if 0 /* GTK */
-	/* g is a child frame, we need to place it relative to its parent */
-	GtkWidget *w = GTK_WIDGET(g->scrolledwindow);
-	GtkFixed *f = g->bw->parent->window->fixed;
-	assert(w);
-	assert(f);
-	LOG(("%s: %d,%d  %dx%d", g->bw->name, x0, y0, x1-x0+2, y1-y0+2));
-
-	/* if the window has not changed position or size, do not bother
-	 * moving/resising it.
-	 */
-
-	LOG(("  current: %d,%d  %dx%d",
-	      	w->allocation.x, w->allocation.y,
-		w->allocation.width, w->allocation.height));
-
-	if (w->allocation.x != x0 || w->allocation.y != y0 ||
-		w->allocation.width != x1 - x0 + 2 ||
-		w->allocation.height != y1 - y0 + 2) {
-	  	LOG(("  frame has moved/resized."));
-		gtk_fixed_move(f, w, x0, y0);
-		gtk_widget_set_size_request(w, x1 - x0 + 2, y1 - y0 + 2);
-	}
-#endif
-}
-
 void nsbeos_dispatch_event(BMessage *message)
 {
 	struct gui_window *gui = NULL;

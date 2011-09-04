@@ -163,13 +163,6 @@ void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 	gui_window_set_scroll( g, x0, y0 );
 }
 
-void gui_window_position_frame(struct gui_window *g, int x0, int y0,
-							   int x1, int y1)
-{
-	const NSRect rect = cocoa_rect( x0, y0, x1, y1 );
-	[[(BrowserViewController *)g view] setFrame: rect];
-}
-
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 							   bool scaled)
 {

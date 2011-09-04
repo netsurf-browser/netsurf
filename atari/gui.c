@@ -375,19 +375,6 @@ void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int
 	browser_schedule_redraw_rect( w, 0, 0, x1-x0,y1-y0);
 }
 
-void gui_window_position_frame(struct gui_window *gw, int x0, int y0, int x1, int y1)
-{
-	TODO();
-	struct browser_window * bw = gw->browser->bw;
-	LGRECT pardim;
-	int width = x1 - x0 + 2, height = y1 - y0 + 2;
-	/* get available width/height: */
-	if( gw ) {
-		browser_get_rect( gw, BR_CONTENT, &pardim );
-		LOG(("posframe %s: x0,y0: %d/%d, x1,y1: %d/%d, w: %d, h: %d \n",gw->browser->bw->name, x0,y0, x1,y1, width, height));
-	}
-}
-
 
 /* It seems this method is called when content size got adjusted,
 	so that we can adjust scroll info. We also have to call it when tab

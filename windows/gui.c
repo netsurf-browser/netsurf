@@ -1524,16 +1524,6 @@ void gui_window_scroll_visible(struct gui_window *w, int x0, int y0,
 	LOG(("scroll visible (%p, %d, %d, %d, %d)", w, x0, y0, x1, y1));
 }
 
-void gui_window_position_frame(struct gui_window *w, int x0, int y0,
-			       int x1, int y1)
-{
-	if (w == NULL)
-		return;
-	LOG(("position frame %s: %d, %d, %d, %d", w->bw->name,
-	     x0, y0, x1, y1));
-	MoveWindow(w->drawingarea, x0, y0, x1-x0, y1-y0, true);
-}
-
 void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 			       bool scaled)
 {
