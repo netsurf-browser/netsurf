@@ -61,7 +61,18 @@ void browser_window_scroll_callback(void *client_data,
 		/* TODO: Is this needed? */
 		break;
 	case SCROLLBAR_MSG_MOVED:
-		html_redraw_a_box(bw->parent->current_content, bw->box);
+		if (bw->browser_window_type == BROWSER_WINDOW_IFRAME) {
+			html_redraw_a_box(bw->parent->current_content, bw->box);
+		} else {
+			struct rect rect;
+
+			rect.x0 = 0;
+			rect.y0 = 0;
+			rect.x1 = bw->width;
+			rect.y1 = bw->height;
+
+			browser_window_update_box(bw, &rect);
+		}
 		break;
 	case SCROLLBAR_MSG_SCROLL_START:
 		if (scrollbar_is_horizontal(scrollbar_data->scrollbar))
@@ -315,14 +326,11 @@ void browser_window_create_frameset(struct browser_window *bw,
 					warn_user("NoMemory", 0);
 			}
 
-			/* TODO: When frames are handled in core:
-			 *		window->cur_sel = bw->cur_sel; */
+			window->cur_sel = bw->cur_sel;
+			window->scale = bw->scale;
 
 			/* linking */
 			window->parent = bw;
-
-			/* gui window */
-			window->window = gui_create_browser_window(window, bw, false);
 
 			if (window->name)
 				LOG(("Created frame '%s'", window->name));
@@ -393,19 +401,20 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 	float relative;
 	int size, extent;
 	int x, y;
+	int new_width, new_height;
 
 	assert(bw);
 
 	/* window dimensions */
 	if (!bw->parent) {
-		gui_window_get_dimensions(bw->window, &bw_width, &bw_height, false);
-		bw->x0 = 0;
-		bw->y0 = 0;
-		bw->x1 = bw_width;
-		bw->y1 = bw_height;
+		browser_window_get_dimensions(bw, &bw_width, &bw_height, true);
+		bw->x = 0;
+		bw->y = 0;
+		bw->width = bw_width;
+		bw->height = bw_height;
 	} else {
-		bw_width = bw->x1 - bw->x0;
-		bw_height = bw->y1 - bw->y0;
+		bw_width = bw->width;
+		bw_height = bw->height;
 	}
 	bw_width++;
 	bw_height++;
@@ -471,8 +480,6 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 					widths[col][row] = bw_width;
 				} else {
 					size = bw_width * widths[col][row] / extent;
-					bw_width -= size;
-					extent -= widths[col][row];
 					widths[col][row] = size;
 				}
 			}
@@ -543,8 +550,6 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 					heights[col][row] = bw_height;
 				} else {
 					size = bw_height * heights[col][row] / extent;
-					bw_height -= size;
-					extent -= heights[col][row];
 					heights[col][row] = size;
 				}
 			}
@@ -561,10 +566,27 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			y = 0;
 			for (row2 = 0; row2 < row; row2++)
 				y+= heights[col][row2];
-			gui_window_position_frame(window->window, x, y,
-					x + widths[col][row] - 1,
-					y + heights[col][row] - 1);
+
+			window->x = x;
+			window->y = y;
+
+			new_width = widths[col][row] - 1;
+			new_height = heights[col][row] - 1;
+
+			if (window->width != new_width ||
+					window->height != new_height) {
+				/* Change in frame size */
+				browser_window_reformat(window, false,
+						new_width * bw->scale,
+						new_height * bw->scale);
+				window->width = new_width;
+				window->height = new_height;
+
+				browser_window_handle_scrollbars(window);
+			}
+
 			x += widths[col][row];
+
 			if (window->children)
 				browser_window_recalculate_frameset(window);
 		}
@@ -827,7 +849,9 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 				bw->drag_resize_right = right;
 				bw->drag_resize_up = up;
 				bw->drag_resize_down = down;
-				gui_window_frame_resize_start(bw->window);
+
+				/* TODO: sort this out:
+				gui_window_frame_resize_start(bw->window); */
 
 				*status = messages_get("FrameDrag");
 				*action = true;

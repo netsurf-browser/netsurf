@@ -147,7 +147,7 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		return false;
 	}
 
-	if (bw->current_content == NULL) {
+	if (bw->current_content == NULL && bw->children == NULL) {
 		/* Browser window has no content, render blank fill */
 		ctx->plot->clip(clip);
 		return ctx->plot->rectangle(clip->x0, clip->y0,
@@ -155,14 +155,72 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 				plot_style_fill_white);
 	}
 
-	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
-			ctx->plot->option_knockout) {
+	/* Browser window has content OR children (frames) */
+
+	if (bw->window != NULL && ctx->plot->option_knockout) {
+		/* Root browser window: start knockout */
 		knockout_plot_start(ctx, &new_ctx);
 	}
 
-	/* Browser window has content */
-
 	new_ctx.plot->clip(clip);
+
+	/* Handle redraw of any browser window children */
+	if (bw->children) {
+		struct browser_window *child;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		if (bw->window != NULL)
+			/* Root browser window; start with blank fill */
+			plot_ok &= new_ctx.plot->rectangle(clip->x0, clip->y0,
+					clip->x1, clip->y1,
+					plot_style_fill_white);
+
+		/* Loop through all children of bw */
+		for (cur_child = 0; cur_child < children; cur_child++) {
+			/* Set current child */
+			child = &bw->children[cur_child];
+
+			/* Get frame edge box in global coordinates */
+			content_clip.x0 = (x + child->x) * child->scale;
+			content_clip.y0 = (y + child->y) * child->scale;
+			content_clip.x1 = content_clip.x0 +
+					child->width * child->scale;
+			content_clip.y1 = content_clip.y0 +
+					child->height * child->scale;
+
+			/* Intersect it with clip rectangle */
+			if (content_clip.x0 < clip->x0)
+				content_clip.x0 = clip->x0;
+			if (content_clip.y0 < clip->y0)
+				content_clip.y0 = clip->y0;
+			if (clip->x1 < content_clip.x1)
+				content_clip.x1 = clip->x1;
+			if (clip->y1 < content_clip.y1)
+				content_clip.y1 = clip->y1;
+
+			/* Skip this frame if it lies outside clip rectangle */
+			if (content_clip.x0 >= content_clip.x1 ||
+					content_clip.y0 >= content_clip.y1)
+				continue;
+
+			/* Redraw frame */
+			plot_ok &= browser_window_redraw(child,
+					x + child->x, y + child->y,
+					&content_clip, &new_ctx);
+		}
+
+		/* Nothing else to redraw for browser windows with children;
+		 * cleanup and return */
+		if (bw->window != NULL && ctx->plot->option_knockout) {
+			/* Root browser window: knockout end */
+			knockout_plot_end();
+		}
+
+		return plot_ok;
+	}
+
+	/* Handle browser windows with content to redraw */
 
 	content_type = content_get_type(bw->current_content);
 	if (content_type != CONTENT_HTML && content_type != CONTENT_TEXTPLAIN) {
@@ -229,8 +287,8 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 		}
 	}
 	
-	if (bw->browser_window_type != BROWSER_WINDOW_IFRAME &&
-			ctx->plot->option_knockout) {
+	if (bw->window != NULL && ctx->plot->option_knockout) {
+		/* Root browser window: end knockout */
 		knockout_plot_end();
 	}
 
@@ -254,16 +312,12 @@ bool browser_window_redraw_ready(struct browser_window *bw)
 /* exported interface, documented in browser.h */
 void browser_window_update_extent(struct browser_window *bw)
 {
-	switch (bw->browser_window_type) {
-	default:
-		/* Fall through until core frame(set)s are implemented */
-	case BROWSER_WINDOW_NORMAL:
+	if (bw->window != NULL)
+		/* Front end window */
 		gui_window_update_extent(bw->window);
-		break;
-	case BROWSER_WINDOW_IFRAME:
+	else
+		/* Core-managed browser window */
 		browser_window_handle_scrollbars(bw);
-		break;
-	}
 }
 
 /* exported interface, documented in browser.h */
@@ -277,16 +331,22 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 
 	while (bw) {
 		switch (bw->browser_window_type) {
-		default:
-			/* fall through to NORMAL until frame(set)s are handled
-			 * in the core */
+
+		case BROWSER_WINDOW_FRAME:
+		case BROWSER_WINDOW_FRAMESET:
+			*pos_x += bw->x * bw->scale;
+			*pos_y += bw->y * bw->scale;
+			break;
+
 		case BROWSER_WINDOW_NORMAL:
 			/* There is no offset to the root browser window */
 			break;
-		case BROWSER_WINDOW_IFRAME:
 
-			*pos_x += (bw->x - scrollbar_get_offset(bw->scroll_x)) * bw->scale;
-			*pos_y += (bw->y - scrollbar_get_offset(bw->scroll_y)) * bw->scale;
+		case BROWSER_WINDOW_IFRAME:
+			*pos_x += (bw->x - scrollbar_get_offset(bw->scroll_x)) *
+					bw->scale;
+			*pos_y += (bw->y - scrollbar_get_offset(bw->scroll_y)) *
+					bw->scale;
 			break;
 		}
 
@@ -305,18 +365,13 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 {
 	assert(bw != NULL);
 
-	switch (bw->browser_window_type) {
-	default:
-		/* fall through to NORMAL until frame(set)s are handled
-		 * in the core */
-	case BROWSER_WINDOW_NORMAL:
-		/* TODO: Not implemented yet */
-		break;
-	case BROWSER_WINDOW_IFRAME:
-
+	if (bw->window == NULL) {
+		/* Core managed browser window */
 		bw->x = x;
 		bw->y = y;
-		break;
+	} else {
+		LOG(("Asked to set position of front end window."));
+		assert(0);
 	}
 }
 
@@ -388,21 +443,16 @@ void browser_window_scroll_visible(struct browser_window *bw,
 {
 	assert(bw != NULL);
 
-	switch (bw->browser_window_type) {
-	default:
-		/* fall through to NORMAL until frame(set)s are handled
-		 * in the core */
-	case BROWSER_WINDOW_NORMAL:
+	if (bw->window != NULL) {
+		/* Front end window */
 		gui_window_scroll_visible(bw->window,
 				rect->x0, rect->y0, rect->x1, rect->y1);
-		break;
-
-	case BROWSER_WINDOW_IFRAME:
+	} else {
+		/* Core managed browser window */
 		if (bw->scroll_x != NULL)
 			scrollbar_set(bw->scroll_x, rect->x0, false);
 		if (bw->scroll_y != NULL)
 			scrollbar_set(bw->scroll_y, rect->y0, false);
-		break;
 	}
 }
 
@@ -936,6 +986,14 @@ nserror browser_window_callback(hlcache_handle *c,
 			.x1 = event->data.redraw.x + event->data.redraw.width,
 			.y1 = event->data.redraw.y + event->data.redraw.height
 		};
+
+		if (bw->browser_window_type == BROWSER_WINDOW_FRAME) {
+			rect.x0 -= scrollbar_get_offset(bw->scroll_x);
+			rect.y0 -= scrollbar_get_offset(bw->scroll_y);
+			rect.x1 -= scrollbar_get_offset(bw->scroll_x);
+			rect.y1 -= scrollbar_get_offset(bw->scroll_y);
+		}
+
 		browser_window_update_box(bw, &rect);
 	}
 		break;
@@ -974,20 +1032,13 @@ void browser_window_get_dimensions(struct browser_window *bw,
 {
 	assert(bw);
 
-	switch (bw->browser_window_type) {
-	case BROWSER_WINDOW_IFRAME:
+	if (bw->window == NULL) {
+		/* Core managed browser window */
 		*width = bw->width;
 		*height = bw->height;
-		break;
-
-	case BROWSER_WINDOW_FRAME:
-	case BROWSER_WINDOW_FRAMESET:
-	case BROWSER_WINDOW_NORMAL:
-		/* root window (or frame(set), currently); browser window is
-		 * size of gui window viewport */
-		assert(bw->window);
+	} else {
+		/* Front end window */
 		gui_window_get_dimensions(bw->window, width, height, scaled);
-		break;
 	}
 }
 
@@ -1005,17 +1056,13 @@ void browser_window_set_dimensions(struct browser_window *bw,
 {
 	assert(bw);
 
-	switch (bw->browser_window_type) {
-	case BROWSER_WINDOW_IFRAME:
+	if (bw->window == NULL) {
+		/* Core managed browser window */
 		bw->width = width;
 		bw->height = height;
-		break;
-
-	case BROWSER_WINDOW_FRAME:
-	case BROWSER_WINDOW_FRAMESET:
-	case BROWSER_WINDOW_NORMAL:
-		/* TODO: Not implemented yet */
-		break;
+	} else {
+		LOG(("Asked to set dimensions of front end window."));
+		assert(0);
 	}
 }
 
@@ -1183,9 +1230,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		return;
 
 	switch (bw->browser_window_type) {
-	default:
-		/* Fall through to normal
-		 * (frame(set)s aren't handled by the core yet) */
+
 	case BROWSER_WINDOW_NORMAL:
 		/* Root browser window, constituting a front end window/tab */
 		gui_window_set_title(bw->window, 
@@ -1206,6 +1251,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		gui_window_redraw_window(bw->window);
 
 		break;
+
 	case BROWSER_WINDOW_IFRAME:
 		/* Internal iframe browser window */
 
@@ -1223,6 +1269,35 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 		html_redraw_a_box(bw->parent->current_content, bw->box);
 		break;
+
+	case BROWSER_WINDOW_FRAME:
+	{
+		struct rect rect;
+		browser_window_update_extent(bw);
+
+		if (scroll_to_top)
+			browser_window_set_scroll(bw, 0, 0);
+
+		/* if frag_id exists, then try to scroll to it */
+		/** \TODO don't do this if the user has scrolled */
+		if (bw->frag_id && html_get_id_offset(bw->current_content,
+				bw->frag_id, &x, &y)) {
+			browser_window_set_scroll(bw, x, y);
+		}
+
+		rect.x0 = 0;
+		rect.y0 = 0;
+		rect.x1 = bw->width;
+		rect.y1 = bw->height;
+
+		browser_window_update_box(bw, &rect);
+	}
+		break;
+
+	default:
+	case BROWSER_WINDOW_FRAMESET:
+		/* Nothing to do */
+		break;
 	}
 }
 
@@ -1233,15 +1308,13 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 	int pos_y;
 	struct browser_window *top;
 
-	switch (bw->browser_window_type) {
-	default:
-		/* fall through for frame(set)s,
-		 * until they are handled by core */
-	case BROWSER_WINDOW_NORMAL:
-		gui_window_update_box(bw->window, rect);
-		break;
+	assert(bw);
 
-	case BROWSER_WINDOW_IFRAME:
+	if (bw->window != NULL) {
+		/* Front end window */
+		gui_window_update_box(bw->window, rect);
+	} else {
+		/* Core managed browser window */
 		browser_window_get_position(bw, true, &pos_x, &pos_y);
 
 		top = browser_window_get_root(bw);
@@ -1252,7 +1325,6 @@ void browser_window_update_box(struct browser_window *bw, struct rect *rect)
 		rect->y1 += pos_y / bw->scale;
 
 		gui_window_update_box(top->window, rect);
-		break;
 	}
 }
 
@@ -1535,6 +1607,8 @@ void browser_window_destroy_internal(struct browser_window *bw)
  *
  * \param  bw	The browser window to find the owner of
  * \return the browser window's owner
+ *
+ * TODO: REMOVE THIS FUNCTION
  */
 
 struct browser_window *browser_window_owner(struct browser_window *bw)
@@ -1579,7 +1653,10 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 		/* Iframe dimensions are already scaled in parent's layout */
 		width  /= bw->scale;
 		height /= bw->scale;
-	} else {
+	}
+
+	if (bw->window == NULL) {
+		/* Core managed browser window; subtract scrollbar width */
 		width  -= bw->scroll_y ? SCROLLBAR_WIDTH : 0;
 		height -= bw->scroll_x ? SCROLLBAR_WIDTH : 0;
 
@@ -1865,22 +1942,64 @@ void browser_window_mouse_track(struct browser_window *bw,
 	const char *status = NULL;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
 
-	if (bw->window != NULL) {
-		/* root browser window */
-		if (bw->drag_window && bw != bw->drag_window) {
-			/* There's an active drag in a sub window.
-			 * Pass the mouse action straight on to that bw. */
-			int off_x = 0;
-			int off_y = 0;
+	if (bw->window != NULL && bw->drag_window && bw != bw->drag_window) {
+		/* This is the root browser window and there's an active drag
+		 * in a sub window.
+		 * Pass the mouse action straight on to that bw. */
+		struct browser_window *drag_bw = bw->drag_window;
+		int off_x = 0;
+		int off_y = 0;
 
-			browser_window_get_position(bw->drag_window, true,
-					&off_x, &off_y);
+		browser_window_get_position(drag_bw, true, &off_x, &off_y);
 
-			browser_window_mouse_track(bw->drag_window, mouse,
+		if (drag_bw->browser_window_type == BROWSER_WINDOW_FRAME) {
+			off_x -= scrollbar_get_offset(drag_bw->scroll_x);
+			off_y -= scrollbar_get_offset(drag_bw->scroll_y);
+
+			browser_window_mouse_track(drag_bw, mouse,
+					x - off_x, y - off_y);
+
+		} else if (drag_bw->browser_window_type ==
+				BROWSER_WINDOW_IFRAME) {
+			browser_window_mouse_track(drag_bw, mouse,
 					x - off_x / bw->scale,
 					y - off_y / bw->scale);
+		}
+		return;
+	}
+
+	if (bw->children) {
+		/* Browser window has children (frames) */
+		struct browser_window *child;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		for (cur_child = 0; cur_child < children; cur_child++) {
+
+			child = &bw->children[cur_child];
+
+			if (x < child->x || y < child->y ||
+					child->x + child->width < x ||
+					child->y + child->height < y) {
+				/* Click not in this child */
+				continue;
+			}
+
+			/* It's this child that contains the mouse; pass
+			 * mouse action on to child */
+			browser_window_mouse_track(child, mouse,
+					x - child->x + scrollbar_get_offset(
+							child->scroll_x),
+					y - child->y + scrollbar_get_offset(
+							child->scroll_y));
+
+			/* Mouse action was for this child, we're done */
 			return;
 		}
+
+		/* Odd if we reached here, but nothing else can use the click
+		 * when there are children. */
+		return;
 	}
 
 	if (c == NULL && bw->drag_type != DRAGGING_FRAME)
@@ -1977,6 +2096,38 @@ void browser_window_mouse_click(struct browser_window *bw,
 	hlcache_handle *c = bw->current_content;
 	const char *status = NULL;
 	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+
+	if (bw->children) {
+		/* Browser window has children (frames) */
+		struct browser_window *child;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		for (cur_child = 0; cur_child < children; cur_child++) {
+
+			child = &bw->children[cur_child];
+
+			if (x < child->x || y < child->y ||
+					child->x + child->width < x ||
+					child->y + child->height < y) {
+				/* Click not in this child */
+				continue;
+			}
+
+			/* It's this child that contains the click; pass it
+			 * on to child. */
+			browser_window_mouse_click(child, mouse,
+					x - child->x + scrollbar_get_offset(
+							child->scroll_x),
+					y - child->y + scrollbar_get_offset(
+							child->scroll_y));
+
+			/* Mouse action was for this child, we're done */
+			return;
+		}
+
+		return;
+	}
 
 	if (!c)
 		return;
@@ -2136,19 +2287,16 @@ void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 	bw->drag_start_x = x;
 	bw->drag_start_y = y;
 
-	switch (bw->browser_window_type) {
-	default:
-		/* fall through until frame(set)s are handled in core */
-	case BROWSER_WINDOW_NORMAL:
+	if (bw->window != NULL) {
+		/* Front end window */
 		gui_window_get_scroll(bw->window, &bw->drag_start_scroll_x,
 				&bw->drag_start_scroll_y);
 
 		gui_window_scroll_start(bw->window);
-		break;
-	case BROWSER_WINDOW_IFRAME:
+	} else {
+		/* Core managed browser window */
 		bw->drag_start_scroll_x = scrollbar_get_offset(bw->scroll_x);
 		bw->drag_start_scroll_y = scrollbar_get_offset(bw->scroll_y);
-		break;
 	}
 }
 
