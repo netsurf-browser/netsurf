@@ -1437,8 +1437,7 @@ void gui_window_set_extent(struct gui_window *g, int width, int height)
 	/* the top-level framed window is a total pain. to get it to maximise
 	 * to the top of the screen we need to fake it having a suitably large
 	 * extent */
-	if (g->bw->children &&
-			(g->bw->browser_window_type == BROWSER_WINDOW_NORMAL)) {
+	if (g->bw->children) {
 		ro_gui_screen_size(&screen_width, &height);
 		if (g->toolbar)
 			height -= ro_toolbar_full_height(g->toolbar);
