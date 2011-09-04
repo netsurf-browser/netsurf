@@ -31,7 +31,7 @@
 
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
-#include "image/bitmap.h"
+#include "image/image_cache.h"
 
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -43,6 +43,11 @@
 #include "jpeglib.h"
 #include "image/jpeg.h"
 
+/** absolute minimum size of a jpeg below which it is not even worth
+ * trying to read header data
+ */
+#define MIN_JPEG_SIZE 20
+
 #ifdef riscos
 /* We prefer the library to be configured with these options to save
  * copying data during decoding. */
@@ -53,12 +58,6 @@
 #endif
 
 static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
-
-typedef struct nsjpeg_content {
-	struct content base; /**< base content */
-
-	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
-} nsjpeg_content;
 
 struct nsjpeg_error_mgr {
 	struct jpeg_error_mgr pub;
@@ -75,21 +74,21 @@ static nserror nsjpeg_create(const content_handler *handler,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
-	nsjpeg_content *jpeg;
+	struct content *jpeg;
 	nserror error;
 
-	jpeg = talloc_zero(0, nsjpeg_content);
+	jpeg = talloc_zero(0, struct content);
 	if (jpeg == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__init(&jpeg->base, handler, imime_type, params,
+	error = content__init(jpeg, handler, imime_type, params,
 			      llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
 		talloc_free(jpeg);
 		return error;
 	}
 
-	*c = (struct content *) jpeg;
+	*c = jpeg;
 
 	return NSERROR_OK;
 }
@@ -164,32 +163,140 @@ static void nsjpeg_error_exit(j_common_ptr cinfo)
 {
 	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
 	err->pub.format_message(cinfo, nsjpeg_error_buffer);
+	LOG(("%s", nsjpeg_error_buffer));
+
 	longjmp(err->setjmp_buffer, 1);
 }
 
+static struct bitmap *
+jpeg_cache_convert(struct content *c)
+{
+	uint8_t *source_data; /* Jpeg source data */
+	unsigned long source_size; /* length of Jpeg source data */
+	struct jpeg_decompress_struct cinfo;
+	struct nsjpeg_error_mgr jerr;
+	unsigned int height;
+	unsigned int width;
+	struct bitmap * volatile bitmap = NULL;
+	uint8_t * volatile pixels = NULL;
+	size_t rowstride;
+	struct jpeg_source_mgr source_mgr = {
+		0,
+		0,
+		nsjpeg_init_source,
+		nsjpeg_fill_input_buffer,
+		nsjpeg_skip_input_data,
+		jpeg_resync_to_restart,
+		nsjpeg_term_source };
+
+	/* obtain jpeg source data and perfom minimal sanity checks */
+	source_data = (uint8_t *)content__get_source_data(c, &source_size);
+
+	if ((source_data == NULL) ||
+	    (source_size < MIN_JPEG_SIZE)) {
+		return NULL;
+	}
+
+	/* setup a JPEG library error handler */
+	cinfo.err = jpeg_std_error(&jerr.pub);
+	jerr.pub.error_exit = nsjpeg_error_exit;
+	jerr.pub.output_message = nsjpeg_error_log;
+
+	/* handler for fatal errors during decompression */
+	if (setjmp(jerr.setjmp_buffer)) {
+		jpeg_destroy_decompress(&cinfo);
+		return bitmap;
+	}
+
+	jpeg_create_decompress(&cinfo);
+
+	/* setup data source */
+	source_mgr.next_input_byte = source_data;
+	source_mgr.bytes_in_buffer = source_size;
+	cinfo.src = &source_mgr;
+
+	/* read JPEG header information */
+	jpeg_read_header(&cinfo, TRUE);
+
+	/* set output processing parameters */
+	cinfo.out_color_space = JCS_RGB;
+	cinfo.dct_method = JDCT_ISLOW;
+
+	/* commence the decompression, output parameters now valid */
+	jpeg_start_decompress(&cinfo);
+
+	width = cinfo.output_width;
+	height = cinfo.output_height;
+
+	/* create opaque bitmap (jpegs cannot be transparent) */
+	bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
+	if (bitmap == NULL) {
+		/* empty bitmap could not be created */
+		jpeg_destroy_decompress(&cinfo);
+		return NULL;
+	}
+
+	pixels = bitmap_get_buffer(bitmap);
+	if (pixels == NULL) {
+		/* bitmap with no buffer available */
+		bitmap_destroy(bitmap);
+		jpeg_destroy_decompress(&cinfo);
+		return NULL;
+	}
+
+	/* Convert scanlines from jpeg into bitmap */
+	rowstride = bitmap_get_rowstride(bitmap);
+	do {
+		JSAMPROW scanlines[1];
+#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
+		int i;
+
+		scanlines[0] = (JSAMPROW) (pixels +
+					   rowstride * cinfo.output_scanline);
+		jpeg_read_scanlines(&cinfo, scanlines, 1);
+
+		/* expand to RGBA */
+		for (i = width - 1; 0 <= i; i--) {
+			int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
+			int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
+			int b = scanlines[0][i * RGB_PIXELSIZE + RGB_BLUE];
+			scanlines[0][i * 4 + 0] = r;
+			scanlines[0][i * 4 + 1] = g;
+			scanlines[0][i * 4 + 2] = b;
+			scanlines[0][i * 4 + 3] = 0xff;
+		}
+#else
+		scanlines[0] = (JSAMPROW) (pixels +
+					   rowstride * cinfo.output_scanline);
+		jpeg_read_scanlines(&cinfo, scanlines, 1);
+
+#endif
+	} while (cinfo.output_scanline != cinfo.output_height);
+	bitmap_modified(bitmap);
+
+	jpeg_finish_decompress(&cinfo);
+	jpeg_destroy_decompress(&cinfo);
+
+	return bitmap;
+}
 
 /**
  * Convert a CONTENT_JPEG for display.
  */
 static bool nsjpeg_convert(struct content *c)
 {
-	struct nsjpeg_content *jpeg_content = (nsjpeg_content *)c;
 	struct jpeg_decompress_struct cinfo;
 	struct nsjpeg_error_mgr jerr;
 	struct jpeg_source_mgr source_mgr = { 0, 0,
 		nsjpeg_init_source, nsjpeg_fill_input_buffer,
 		nsjpeg_skip_input_data, jpeg_resync_to_restart,
 		nsjpeg_term_source };
-	unsigned int height;
-	unsigned int width;
-	struct bitmap * volatile bitmap = NULL;
-	uint8_t * volatile pixels = NULL;
-	size_t rowstride;
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
 	char title[100];
 
+	/* check image header is valid and get width/height */
 	data = content__get_source_data(c, &size);
 
 	cinfo.err = jpeg_std_error(&jerr.pub);
@@ -197,8 +304,6 @@ static bool nsjpeg_convert(struct content *c)
 	jerr.pub.output_message = nsjpeg_error_log;
 	if (setjmp(jerr.setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
-		if (bitmap)
-			bitmap_destroy(bitmap);
 
 		msg_data.error = nsjpeg_error_buffer;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -211,97 +316,26 @@ static bool nsjpeg_convert(struct content *c)
 	jpeg_read_header(&cinfo, TRUE);
 	cinfo.out_color_space = JCS_RGB;
 	cinfo.dct_method = JDCT_ISLOW;
-	jpeg_start_decompress(&cinfo);
 
-	width = cinfo.output_width;
-	height = cinfo.output_height;
+	jpeg_calc_output_dimensions(&cinfo);
 
-	bitmap = bitmap_create(width, height, BITMAP_NEW | BITMAP_OPAQUE);
-	if (bitmap)
-		pixels = bitmap_get_buffer(bitmap);
-	if ((!bitmap) || (!pixels)) {
-		jpeg_destroy_decompress(&cinfo);
-		if (bitmap)
-			bitmap_destroy(bitmap);
+	c->width = cinfo.output_width;
+	c->height = cinfo.output_height;
+	c->size = c->width * c->height * 4;
 
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
-	}
-
-	rowstride = bitmap_get_rowstride(bitmap);
-	do {
-#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
-		int i;
-#endif
-		JSAMPROW scanlines[1];
-
-		scanlines[0] = (JSAMPROW) (pixels +
-					   rowstride * cinfo.output_scanline);
-		jpeg_read_scanlines(&cinfo, scanlines, 1);
-
-#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
-		/* expand to RGBA */
-		for (i = width - 1; 0 <= i; i--) {
-			int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
-			int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
-			int b = scanlines[0][i * RGB_PIXELSIZE + RGB_BLUE];
-			scanlines[0][i * 4 + 0] = r;
-			scanlines[0][i * 4 + 1] = g;
-			scanlines[0][i * 4 + 2] = b;
-			scanlines[0][i * 4 + 3] = 0xff;
-		}
-#endif
-	} while (cinfo.output_scanline != cinfo.output_height);
-	bitmap_modified(bitmap);
-
-	jpeg_finish_decompress(&cinfo);
 	jpeg_destroy_decompress(&cinfo);
 
-	c->width = width;
-	c->height = height;
-	jpeg_content->bitmap = bitmap;
-	snprintf(title, sizeof(title), messages_get("JPEGTitle"),
-		 width, height, size);
+	image_cache_add(c, NULL, jpeg_cache_convert);
+
+	snprintf(title, sizeof(title), messages_get("JPEGTitle"), 
+		 c->width, c->height, size);
 	content__set_title(c, title);
-	c->size += height * rowstride;
+
 	content_set_ready(c);
-	content_set_done(c);
-	/* Done: update status bar */
-	content_set_status(c, "");
+	content_set_done(c);	
+	content_set_status(c, ""); /* Done: update status bar */
+
 	return true;
-}
-
-
-/**
- * Destroy a CONTENT_JPEG and free all resources it owns.
- */
-static void nsjpeg_destroy(struct content *c)
-{
-	struct nsjpeg_content *jpeg_content = (nsjpeg_content *)c;
-
-	if (jpeg_content->bitmap) {
-		bitmap_destroy(jpeg_content->bitmap);
-	}
-}
-
-
-/**
- * Redraw a CONTENT_JPEG with appropriate tiling.
- */
-static bool nsjpeg_redraw(struct content *c, struct content_redraw_data *data,
-		const struct rect *clip, const struct redraw_context *ctx)
-{
-	struct nsjpeg_content *jpeg_content = (nsjpeg_content *)c;
-	bitmap_flags_t flags = BITMAPF_NONE;
-
-	if (data->repeat_x)
-		flags |= BITMAPF_REPEAT_X;
-	if (data->repeat_y)
-		flags |= BITMAPF_REPEAT_Y;
-
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			jpeg_content->bitmap, data->background_colour, flags);
 }
 
 
@@ -311,53 +345,41 @@ static bool nsjpeg_redraw(struct content *c, struct content_redraw_data *data,
  */
 static nserror nsjpeg_clone(const struct content *old, struct content **newc)
 {
-	nsjpeg_content *jpeg_c;
+	struct content *jpeg_c;
 	nserror error;
 
-	jpeg_c = talloc_zero(0, nsjpeg_content);
+	jpeg_c = talloc_zero(0, struct content);
 	if (jpeg_c == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__clone(old, &jpeg_c->base);
+	error = content__clone(old, jpeg_c);
 	if (error != NSERROR_OK) {
-		content_destroy(&jpeg_c->base);
+		content_destroy(jpeg_c);
 		return error;
 	}
 
 	/* re-convert if the content is ready */
 	if ((old->status == CONTENT_STATUS_READY) ||
 	    (old->status == CONTENT_STATUS_DONE)) {
-		if (nsjpeg_convert(&jpeg_c->base) == false) {
-			content_destroy(&jpeg_c->base);
+		if (nsjpeg_convert(jpeg_c) == false) {
+			content_destroy(jpeg_c);
 			return NSERROR_CLONE_FAILED;
 		}
 	}
 
-	*newc = (struct content *)jpeg_c;
+	*newc = jpeg_c;
 
 	return NSERROR_OK;
-}
-
-static void *nsjpeg_get_internal(const struct content *c, void *context)
-{
-	nsjpeg_content *jpeg_c = (nsjpeg_content *)c;
-
-	return jpeg_c->bitmap;
-}
-
-static content_type nsjpeg_content_type(void)
-{
-	return CONTENT_IMAGE;
 }
 
 static const content_handler nsjpeg_content_handler = {
 	.create = nsjpeg_create,
 	.data_complete = nsjpeg_convert,
-	.destroy = nsjpeg_destroy,
-	.redraw = nsjpeg_redraw,
+	.destroy = image_cache_destroy,
+	.redraw = image_cache_redraw,
 	.clone = nsjpeg_clone,
-	.get_internal = nsjpeg_get_internal,
-	.type = nsjpeg_content_type,
+	.get_internal = image_cache_get_internal,
+	.type = image_cache_content_type,
 	.no_share = false,
 };
 

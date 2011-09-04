@@ -33,6 +33,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <libnsgif.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/hlcache.h"

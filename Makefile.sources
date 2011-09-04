@@ -37,7 +37,7 @@ S_COMMON := $(addprefix content/,$(S_CONTENT))				\
 	$(addprefix desktop/,$(S_DESKTOP))
 
 # S_IMAGE are sources related to image management
-S_IMAGE_YES := image.c
+S_IMAGE_YES := image.c image_cache.c
 S_IMAGE_NO :=
 S_IMAGE_$(NETSURF_USE_BMP) += bmp.c ico.c
 S_IMAGE_$(NETSURF_USE_GIF) += gif.c

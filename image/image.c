@@ -16,6 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -23,6 +24,7 @@
 #include "utils/errors.h"
 
 #include "image/image.h"
+#include "image/image_cache.h"
 #include "image/bmp.h"
 #include "image/gif.h"
 #include "image/ico.h"
@@ -44,6 +46,10 @@
 nserror image_init(void)
 {
 	nserror error;
+
+	error = image_cache_init();
+	if (error != NSERROR_OK)
+		return error;
 
 #ifdef WITH_BMP
 	error = nsbmp_init();
@@ -158,5 +164,8 @@ void image_fini(void)
 #ifdef WITH_WEBP
 	webp_fini();
 #endif 
+
+	/* dump any remaining cache entries */
+	image_cache_fini();
 }
 
