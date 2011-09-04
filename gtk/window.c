@@ -615,8 +615,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		break;
 	}
 
-	gtk_scrolled_window_set_policy(g->scrolledwindow,
-			scrollpolicy, scrollpolicy);
+	if (g->scrolledwindow)
+		gtk_scrolled_window_set_policy(g->scrolledwindow,
+				scrollpolicy, scrollpolicy);
 
 	/* Attach ourselves to the list (push_top) */
 	if (window_list)
