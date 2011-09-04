@@ -1414,8 +1414,9 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	object->permitted_types = permitted_types;
 	object->background = background;
  
-	error = hlcache_handle_retrieve(url2, 0, content__get_url(&c->base), 
-			NULL, html_object_callback, object, &child, 
+	error = hlcache_handle_retrieve(url2, HLCACHE_RETRIEVE_SNIFF_TYPE, 
+			content__get_url(&c->base), NULL, 
+			html_object_callback, object, &child, 
 			permitted_types, &object->content);
 
 	/* No longer need normalized url */
@@ -1477,8 +1478,9 @@ bool html_replace_object(struct content_html_object *object, const char *url)
 		return res != URL_FUNC_NOMEM;
 
 	/* initialise fetch */
-	error = hlcache_handle_retrieve(url2, 0, content__get_url(&c->base), 
-			NULL, html_object_callback, object, &child,
+	error = hlcache_handle_retrieve(url2, HLCACHE_RETRIEVE_SNIFF_TYPE, 
+			content__get_url(&c->base), NULL, 
+			html_object_callback, object, &child,
 			object->permitted_types,
 			&object->content);
 

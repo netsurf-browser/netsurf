@@ -60,7 +60,9 @@ enum hlcache_retrieve_flag {
 	 * To avoid confusion, high-level flags are allocated from bit 31 down. 
 	 */
 	/** It's permitted to convert this request into a download */
-	HLCACHE_RETRIEVE_MAY_DOWNLOAD = (1 << 31)
+	HLCACHE_RETRIEVE_MAY_DOWNLOAD = (1 << 31),
+	/* Permit content-type sniffing */
+	HLCACHE_RETRIEVE_SNIFF_TYPE   = (1 << 30)
 };
 
 /**

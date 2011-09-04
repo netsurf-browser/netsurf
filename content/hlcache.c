@@ -26,6 +26,7 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "content/mimesniff.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -50,7 +51,7 @@ struct hlcache_retrieval_ctx {
 
 	content_type accepted_types;	/**< Accepted types */
 
-	hlcache_child_context child;	/**< Child context */	
+	hlcache_child_context child;	/**< Child context */
 };
 
 /** High-level cache handle */
@@ -79,9 +80,12 @@ static void hlcache_clean(void *ignored);
 
 static nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw);
-static bool hlcache_type_is_acceptable(llcache_handle *llcache, 
+static nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
+		lwc_string *effective_type);
+static bool hlcache_type_is_acceptable(lwc_string *mime_type, 
 		content_type accepted_types, content_type *computed_type);
-static nserror hlcache_find_content(hlcache_retrieval_ctx *ctx);
+static nserror hlcache_find_content(hlcache_retrieval_ctx *ctx,
+		lwc_string *effective_type);
 static void hlcache_content_callback(struct content *c,
 		content_msg msg, union content_msg_data data, void *pw);
 
@@ -441,77 +445,55 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		const llcache_event *event, void *pw)
 {
 	hlcache_retrieval_ctx *ctx = pw;
+	lwc_string *effective_type = NULL;
 	nserror error;
 
 	assert(ctx->llcache == handle);
 
 	switch (event->type) {
 	case LLCACHE_EVENT_HAD_HEADERS:
-	{
-		content_type type = 0;
-		
-		/* Unlink the context to prevent recursion */
-		RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
-		
-		if (hlcache_type_is_acceptable(handle, 
-				ctx->accepted_types, &type)) {
-			error = hlcache_find_content(ctx);
-			if (error != NSERROR_OK) {
-				hlcache_event hlevent;
+		error = mimesniff_compute_effective_type(handle, NULL, 0,
+				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE, 
+				&effective_type);
+		if (error == NSERROR_OK || error == NSERROR_NOT_FOUND) {
+			/* If the sniffer was successful or failed to find 
+			 * a Content-Type header when sniffing was 
+			 * prohibited, we must migrate the retrieval context. */
+			error = hlcache_migrate_ctx(ctx, effective_type);
 
-				hlevent.type = CONTENT_MSG_ERROR;
-				hlevent.data.error = messages_get("MiscError");
-
-				ctx->handle->cb(ctx->handle, &hlevent, 
-						ctx->handle->pw);
-				
-				llcache_handle_abort(handle);
-				llcache_handle_release(handle);
-				free((char *) ctx->child.charset);
-				free(ctx);
-				return error;
-			}
-		} else if (type == CONTENT_NONE && 
-				(ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD)) {
-			/* Unknown type, and we can download, so convert */
-			llcache_handle_force_stream(handle);
-
-			if (ctx->handle->cb != NULL) {
-				hlcache_event hlevent;
-
-				hlevent.type = CONTENT_MSG_DOWNLOAD;
-				hlevent.data.download = handle;
-
-				ctx->handle->cb(ctx->handle, &hlevent,
-						ctx->handle->pw);
-			}
-		} else {
-			/* Unacceptable type: abort fetch and report error */
-			llcache_handle_abort(handle);
-			llcache_handle_release(handle);
-
-			if (ctx->handle->cb != NULL) {
-				hlcache_event hlevent;
-
-				hlevent.type = CONTENT_MSG_ERROR;
-				hlevent.data.error = messages_get("BadType");
-
-				ctx->handle->cb(ctx->handle, &hlevent, 
-						ctx->handle->pw);
-			}
+			if (effective_type != NULL)
+				lwc_string_unref(effective_type);
 		}
 
-		/* No longer require retrieval context */
-		free((char *) ctx->child.charset);
-		free(ctx);
-	}
+		/* No need to report that we need data: 
+		 * we'll get some anyway if there is any */
+		if (error == NSERROR_NEED_DATA)
+			error = NSERROR_OK;
+
+		return error;
+
 		break;
 	case LLCACHE_EVENT_HAD_DATA:
-		/* fall through */
-	case LLCACHE_EVENT_DONE:
-		/* should never happen: the handler must be changed */
-		assert(0 && "Unexpected llcache event");
+		error = mimesniff_compute_effective_type(handle, 
+				event->data.data.buf, event->data.data.len,
+				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE,
+				&effective_type);
+		if (error != NSERROR_OK) {
+			assert(0 && "MIME sniff failed with data");
+		}
+
+		error = hlcache_migrate_ctx(ctx, effective_type);
+
+		lwc_string_unref(effective_type);
+
+		return error;
+
 		break;
+	case LLCACHE_EVENT_DONE:
+		/* DONE event before we could determine the effective MIME type.
+		 * Treat this as an error.
+		 */
+		/* Fall through */
 	case LLCACHE_EVENT_ERROR:
 		if (ctx->handle->cb != NULL) {
 			hlcache_event hlevent;
@@ -530,33 +512,93 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 }
 
 /**
- * Determine if the type of a low-level cache object is acceptable
+ * Migrate a retrieval context into its final destination content
  *
- * \param llcache	  Low-level cache object to consider
+ * \param ctx             Context to migrate
+ * \param effective_type  The effective MIME type of the content, or NULL
+ * \return NSERROR_OK on success, 
+ *         NSERROR_NEED_DATA on success where data is needed,
+ *         appropriate error otherwise
+ */
+nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx, 
+		lwc_string *effective_type)
+{
+	content_type type = CONTENT_NONE;
+	nserror error = NSERROR_OK;
+
+	/* Unlink the context to prevent recursion */
+	RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
+		
+	if (effective_type != NULL && 
+			hlcache_type_is_acceptable(effective_type,
+			ctx->accepted_types, &type)) {
+		error = hlcache_find_content(ctx, effective_type);
+		if (error != NSERROR_OK && error != NSERROR_NEED_DATA) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_ERROR;
+			hlevent.data.error = messages_get("MiscError");
+
+			ctx->handle->cb(ctx->handle, &hlevent, 
+					ctx->handle->pw);
+			
+			llcache_handle_abort(ctx->llcache);
+			llcache_handle_release(ctx->llcache);
+		}
+	} else if (type == CONTENT_NONE && 
+			(ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD)) {
+		/* Unknown type, and we can download, so convert */
+		llcache_handle_force_stream(ctx->llcache);
+
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_DOWNLOAD;
+			hlevent.data.download = ctx->llcache;
+
+			ctx->handle->cb(ctx->handle, &hlevent,
+					ctx->handle->pw);
+		}
+
+		/* Ensure caller knows we need data */
+		error = NSERROR_NEED_DATA;
+	} else {
+		/* Unacceptable type: abort fetch and report error */
+		llcache_handle_abort(ctx->llcache);
+		llcache_handle_release(ctx->llcache);
+
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_ERROR;
+			hlevent.data.error = messages_get("BadType");
+
+			ctx->handle->cb(ctx->handle, &hlevent, 
+					ctx->handle->pw);
+		}
+	}
+
+	/* No longer require retrieval context */
+	free((char *) ctx->child.charset);
+	free(ctx);
+
+	return error;
+}
+
+/**
+ * Determine if the specified MIME type is acceptable
+ *
+ * \param mime_type       MIME type to consider
  * \param accepted_types  Array of acceptable types, or NULL for any
  * \param computed_type	  Pointer to location to receive computed type of object
  * \return True if the type is acceptable, false otherwise
  */
-bool hlcache_type_is_acceptable(llcache_handle *llcache, 
+bool hlcache_type_is_acceptable(lwc_string *mime_type,
 		content_type accepted_types, content_type *computed_type)
 {
-	const char *content_type_header;
-	http_content_type *ct;
 	content_type type;
-	nserror error;
 
-	content_type_header = 
-			llcache_handle_get_header(llcache, "Content-Type");
-	if (content_type_header == NULL)
-		content_type_header = "text/plain";
-
-	error = http_parse_content_type(content_type_header, &ct);
-	if (error != NSERROR_OK)
-		return false;
-
-	type = content_factory_type_from_mime_type(ct->media_type);
-
-	http_content_type_destroy(ct);
+	type = content_factory_type_from_mime_type(mime_type);
 
 	*computed_type = type;
 
@@ -566,18 +608,23 @@ bool hlcache_type_is_acceptable(llcache_handle *llcache,
 /**
  * Find a content for the high-level cache handle
  *
- * \param ctx	High-level cache retrieval context
- * \return NSERROR_OK on success, appropriate error otherwise
+ * \param ctx             High-level cache retrieval context
+ * \param effective_type  Effective MIME type of content
+ * \return NSERROR_OK on success, 
+ *         NSERROR_NEED_DATA on success where data is needed,
+ *         appropriate error otherwise
  *
  * \pre handle::state == HLCACHE_HANDLE_NEW
  * \pre Headers must have been received for associated low-level handle
  * \post Low-level handle is either released, or associated with new content
  * \post High-level handle is registered with content
  */
-nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
+nserror hlcache_find_content(hlcache_retrieval_ctx *ctx,
+		lwc_string *effective_type)
 {
 	hlcache_entry *entry;
 	hlcache_event event;
+	nserror error = NSERROR_OK;
 
 	/* Search list of cached contents for a suitable one */
 	for (entry = hlcache_content_list; entry != NULL; entry = entry->next) {
@@ -617,7 +664,8 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 
 		/* Create content using llhandle */
 		entry->content = content_factory_create_content(ctx->llcache, 
-				ctx->child.charset, ctx->child.quirks);
+				ctx->child.charset, ctx->child.quirks,
+				effective_type);
 		if (entry->content == NULL) {
 			free(entry);
 			return NSERROR_NOMEM;
@@ -629,6 +677,9 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 		if (hlcache_content_list != NULL)
 			hlcache_content_list->prev = entry;
 		hlcache_content_list = entry;
+
+		/* Signal to caller that we created a content */
+		error = NSERROR_NEED_DATA;
 	} else {
 		/* Found a suitable content: no longer need low-level handle */
 		llcache_handle_release(ctx->llcache);	
@@ -676,7 +727,7 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx)
 		}
 	}
 
-	return NSERROR_OK;
+	return error;
 }
 
 /**

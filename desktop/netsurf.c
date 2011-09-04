@@ -35,6 +35,7 @@
 #include "content/content_factory.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
+#include "content/mimesniff.h"
 #include "content/urldb.h"
 #include "css/css.h"
 #include "image/image.h"
@@ -155,6 +156,10 @@ nserror netsurf_init(int *pargc,
 	if (error != NSERROR_OK)
 		return error;
 
+	error = mimesniff_init();
+	if (error != NSERROR_OK)
+		return error;
+
 	url_init();
 
 	setlocale(LC_ALL, "C");
@@ -208,6 +213,8 @@ void netsurf_exit(void)
 
 	LOG(("Closing fetches"));
 	fetch_quit();
+
+	mimesniff_fini();
 
 	/* Clean up after content handlers */
 	textplain_fini();

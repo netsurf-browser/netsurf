@@ -82,7 +82,8 @@ nserror content_factory_register_handler(lwc_string *mime_type,
 		const content_handler *handler);
 
 struct content *content_factory_create_content(struct llcache_handle *llcache, 
-		const char *fallback_charset, bool quirks);
+		const char *fallback_charset, bool quirks,
+		lwc_string *effective_type);
 
 content_type content_factory_type_from_mime_type(lwc_string *mime_type);
 

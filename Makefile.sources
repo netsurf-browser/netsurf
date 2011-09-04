@@ -5,7 +5,7 @@
 #
 
 S_CONTENT := content.c content_factory.c dirlist.c fetch.c hlcache.c	\
-	llcache.c urldb.c
+	llcache.c mimesniff.c urldb.c
 
 S_FETCHERS := curl.c data.c file.c about.c resource.c
 

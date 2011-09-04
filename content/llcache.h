@@ -89,12 +89,10 @@ enum llcache_retrieve_flag {
 	LLCACHE_RETRIEVE_FORCE_FETCH    = (1 << 0), 
 	/** Requested URL was verified */
 	LLCACHE_RETRIEVE_VERIFIABLE     = (1 << 1), 
-	/** Permit content-type sniffing */
-	LLCACHE_RETRIEVE_SNIFF_TYPE     = (1 << 2), 
 	/**< No error pages */
-	LLCACHE_RETRIEVE_NO_ERROR_PAGES = (1 << 3),
+	LLCACHE_RETRIEVE_NO_ERROR_PAGES = (1 << 2),
 	/**< Stream data (implies that object is not cacheable) */
-	LLCACHE_RETRIEVE_STREAM_DATA    = (1 << 4)
+	LLCACHE_RETRIEVE_STREAM_DATA    = (1 << 3)
 };
 
 /** Low-level cache query types */

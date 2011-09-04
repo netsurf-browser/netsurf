@@ -147,42 +147,43 @@ content_type content_factory_type_from_mime_type(lwc_string *mime_type)
  * \param llcache           Underlying source data handle
  * \param fallback_charset  Character set to fall back to if none specified
  * \param quirks            Quirkiness of containing document
+ * \param effective_type    Effective MIME type of content
  * \return Pointer to content object, or NULL on failure
  */
 struct content *content_factory_create_content(llcache_handle *llcache,
-		const char *fallback_charset, bool quirks)
+		const char *fallback_charset, bool quirks,
+		lwc_string *effective_type)
 {
 	struct content *c;
 	const char *content_type_header;
 	const content_handler *handler;
-	http_content_type *ct;
+	http_content_type *ct = NULL;
 	nserror error;
 
-	content_type_header = 
-			llcache_handle_get_header(llcache, "Content-Type");
-	if (content_type_header == NULL)
-		content_type_header = "text/plain";
-
-	error = http_parse_content_type(content_type_header, &ct);
-	if (error != NSERROR_OK)
+	handler = content_lookup(effective_type);
+	if (handler == NULL)
 		return NULL;
-
-	handler = content_lookup(ct->media_type);
-	if (handler == NULL) {
-		http_content_type_destroy(ct);
-		return NULL;
-	}
 
 	assert(handler->create != NULL);
 
-	error = handler->create(handler, ct->media_type, ct->parameters, 
-			llcache, fallback_charset, quirks, &c);
-	if (error != NSERROR_OK) {
-		http_content_type_destroy(ct);
-		return NULL;
+	/* Use the parameters from the declared Content-Type header */
+	content_type_header = 
+			llcache_handle_get_header(llcache, "Content-Type");
+	if (content_type_header != NULL) {
+		/* We don't care if this fails */
+		http_parse_content_type(content_type_header, &ct);
 	}
 
-	http_content_type_destroy(ct);
+	error = handler->create(handler, effective_type, 
+			ct != NULL ? ct->parameters : NULL, 
+			llcache, fallback_charset, quirks, 
+			&c);
+
+	if (ct != NULL)
+		http_content_type_destroy(ct);
+
+	if (error != NSERROR_OK)
+		return NULL;
 
 	return c;
 }

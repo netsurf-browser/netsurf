@@ -727,7 +727,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	bw->history_add = add_to_history;
 
 	error = hlcache_handle_retrieve(url2,
-			fetch_flags | HLCACHE_RETRIEVE_MAY_DOWNLOAD, 
+			fetch_flags | HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
+					HLCACHE_RETRIEVE_SNIFF_TYPE, 
 			referer,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,

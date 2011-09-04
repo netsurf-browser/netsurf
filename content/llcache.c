@@ -1455,6 +1455,8 @@ nserror llcache_object_notify_users(llcache_object *object)
 		if (handle->state == LLCACHE_FETCH_DATA &&
 				objstate >= LLCACHE_FETCH_DATA &&
 				object->source_len > handle->bytes) {
+			size_t orig_handle_read;
+
 			/* Construct HAD_DATA event */
 			event.type = LLCACHE_EVENT_HAD_DATA;
 			event.data.data.buf = 
@@ -1466,9 +1468,13 @@ nserror llcache_object_notify_users(llcache_object *object)
 			if (object->fetch.flags & 
 					LLCACHE_RETRIEVE_STREAM_DATA) {
 				/* Streaming, so reset to zero to 
-				 * minimise amount of cached source data */
+				 * minimise amount of cached source data.
+				 * Additionally, we don't support replay
+				 * when streaming. */
+				orig_handle_read = 0;
 				handle->bytes = object->source_len = 0;
 			} else {
+				orig_handle_read = handle->bytes;
 				handle->bytes = object->source_len;
 			}
 
@@ -1482,6 +1488,15 @@ nserror llcache_object_notify_users(llcache_object *object)
 				if (error != NSERROR_OK)
 					return error;
 
+				continue;
+			} else if (error == NSERROR_NEED_DATA) {
+				/* User requested replay */
+				handle->bytes = orig_handle_read;
+
+				/* Continue with the next user -- we'll 
+				 * reemit the data next time round */
+				user->iterator_target = false;
+				next_user = user->next;
 				continue;
 			} else if (error != NSERROR_OK) {
 				user->iterator_target = false;

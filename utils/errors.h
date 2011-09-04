@@ -43,7 +43,9 @@ typedef enum {
 
 	NSERROR_MNG_ERROR,		/**< An MNG error occurred */
 
-	NSERROR_BAD_ENCODING		/**< The character set is unknown */
+	NSERROR_BAD_ENCODING,		/**< The character set is unknown */
+
+	NSERROR_NEED_DATA		/**< More data needed */
 } nserror;
 
 #endif
