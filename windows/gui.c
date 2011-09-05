@@ -1856,16 +1856,18 @@ gui_selection_traverse_handler(const char *text,
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
-	if ((s->defined) && (s->bw != NULL) && (s->bw->window != NULL) &&
-	    (s->bw->window->main != NULL)) {
-		OpenClipboard(s->bw->window->main);
+	if (selection_defined(s)) {
+		/* TODO: Fix this, so it's not looking inside selection
+		 *       object */
+
+/*		OpenClipboard(s->bw->window->main);
 		EmptyClipboard();
 		if (selection_traverse(s, gui_selection_traverse_handler,
 				       NULL)) {
 			CloseClipboard();
 			return true;
 		}
-	}
+*/	}
 	return false;
 }
 
