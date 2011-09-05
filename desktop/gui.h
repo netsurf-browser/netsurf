@@ -77,7 +77,6 @@ void gui_quit(void);
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab);
-struct browser_window *gui_window_get_browser_window(struct gui_window *g);
 void gui_window_destroy(struct gui_window *g);
 void gui_window_set_title(struct gui_window *g, const char *title);
 void gui_window_redraw_window(struct gui_window *g);

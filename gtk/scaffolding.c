@@ -322,7 +322,7 @@ void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g)
 static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 {
 	int width, height;
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	g->buttons[BACK_BUTTON]->sensitivity =
 			history_back_available(bw->history);
@@ -380,7 +380,7 @@ static guint nsgtk_scaffolding_update_edit_actions_sensitivity(
 		g->buttons[PASTE_BUTTON]->sensitivity = true;
 	} else {
 		struct browser_window *bw =
-				gui_window_get_browser_window(g->top_level);
+				nsgtk_get_browser_window(g->top_level);
 		has_selection = browser_window_has_selection(bw);
 
 		g->buttons[COPY_BUTTON]->sensitivity = has_selection;
@@ -448,7 +448,7 @@ static gboolean nsgtk_window_popup_menu_hidden(GtkWidget *widget,
 gboolean nsgtk_window_url_activate_event(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = data;
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	char *url;
 	if (search_is_url(gtk_entry_get_text(GTK_ENTRY(g->url_bar)))
 			== false)
@@ -512,7 +512,7 @@ static void nsgtk_window_tabs_num_changed(GtkNotebook *notebook,
  */
 static void nsgtk_openfile_open(const char *filename)
 {
-	struct browser_window *bw = gui_window_get_browser_window(
+	struct browser_window *bw = nsgtk_get_browser_window(
 			current_model->top_level);
 	char url[strlen(filename) + FILE_SCHEME_PREFIX_LEN + 1];
 
@@ -526,7 +526,7 @@ static void nsgtk_openfile_open(const char *filename)
 
 MULTIHANDLER(newwindow)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	const char *url = option_homepage_url;
 
 	if ((url != NULL) && (url[0] == '\0'))
@@ -542,7 +542,7 @@ MULTIHANDLER(newwindow)
 
 MULTIHANDLER(newtab)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	if (option_new_blank) {
 		browser_window_create(NULL, bw, NULL, false, true);
@@ -597,7 +597,7 @@ static gboolean nsgtk_filter_directory(const GtkFileFilterInfo *info,
 
 MULTIHANDLER(savepage)
 {
-	if (gui_window_get_browser_window(g->top_level)->current_content
+	if (nsgtk_get_browser_window(g->top_level)->current_content
 			== NULL)
 		return FALSE;
 
@@ -617,7 +617,7 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
 
-	res = url_nice(content_get_url(gui_window_get_browser_window(
+	res = url_nice(content_get_url(nsgtk_get_browser_window(
 			g->top_level)->current_content), &path, false);
 	if (res != URL_FUNC_OK) {
 		path = strdup(messages_get("SaveText"));
@@ -654,7 +654,7 @@ MULTIHANDLER(savepage)
 	}
 	closedir(d);
 	save_complete_init();
-	save_complete(gui_window_get_browser_window(
+	save_complete(nsgtk_get_browser_window(
 			g->top_level)->current_content, path);
 	g_free(path);
 
@@ -669,7 +669,7 @@ MULTIHANDLER(pdf)
 #ifdef WITH_PDF_EXPORT
 
 	GtkWidget *save_dialog;
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	struct print_settings *settings;
 	char filename[PATH_MAX];
 	char dirname[PATH_MAX];
@@ -739,7 +739,7 @@ MULTIHANDLER(pdf)
 
 MULTIHANDLER(plaintext)
 {
-	if (gui_window_get_browser_window(g->top_level)->current_content
+	if (nsgtk_get_browser_window(g->top_level)->current_content
 			== NULL)
 		return FALSE;
 
@@ -752,7 +752,7 @@ MULTIHANDLER(plaintext)
 	char *filename;
 	url_func_result res;
 
-	res = url_nice(content_get_url(gui_window_get_browser_window(
+	res = url_nice(content_get_url(nsgtk_get_browser_window(
 			g->top_level)->current_content), &filename, false);
 	if (res != URL_FUNC_OK) {
 		filename = strdup(messages_get("SaveText"));
@@ -770,7 +770,7 @@ MULTIHANDLER(plaintext)
 
 	if (gtk_dialog_run(GTK_DIALOG(fc)) == GTK_RESPONSE_ACCEPT) {
 		filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(fc));
-		save_as_text(gui_window_get_browser_window(
+		save_as_text(nsgtk_get_browser_window(
 				g->top_level)->current_content, filename);
 		g_free(filename);
 	}
@@ -797,7 +797,7 @@ MULTIHANDLER(printpreview)
 
 MULTIHANDLER(print)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	GtkPrintOperation *print_op;
 	GtkPageSetup *page_setup;
@@ -886,7 +886,7 @@ MENUHANDLER(savelink)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
-	struct browser_window *bw = gui_window_get_browser_window(gui);
+	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
 	if (!current_menu_link_box)
 		return FALSE;
@@ -904,7 +904,7 @@ MENUHANDLER(link_openwin)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
-	struct browser_window *bw = gui_window_get_browser_window(gui);
+	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
 	if (current_menu_link_box == NULL)
 		return FALSE;
@@ -921,7 +921,7 @@ MENUHANDLER(link_opentab)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *) data;
 	struct gui_window *gui = g->top_level;
-	struct browser_window *bw = gui_window_get_browser_window(gui);
+	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
 	temp_open_background = 1;
 
@@ -938,7 +938,7 @@ MENUHANDLER(link_opentab)
 
 MULTIHANDLER(cut)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	GtkWidget *focused = gtk_window_get_focus(g->window);
 
 	/* If the url bar has focus, let gtk handle it */
@@ -952,7 +952,7 @@ MULTIHANDLER(cut)
 
 MULTIHANDLER(copy)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	GtkWidget *focused = gtk_window_get_focus(g->window);
 
 	/* If the url bar has focus, let gtk handle it */
@@ -992,7 +992,7 @@ MENUHANDLER(customize)
 
 MULTIHANDLER(selectall)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	if (nsgtk_widget_has_focus(GTK_WIDGET(g->url_bar))) {
 		LOG(("Selecting all URL bar text"));
@@ -1013,7 +1013,7 @@ MULTIHANDLER(find)
 
 MULTIHANDLER(preferences)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	if (g->preferences_dialog == NULL)
 		g->preferences_dialog = nsgtk_options_init(bw, g->window);
 	else
@@ -1024,7 +1024,7 @@ MULTIHANDLER(preferences)
 
 MULTIHANDLER(zoomplus)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	float old_scale = nsgtk_get_scale_for_gui(g->top_level);
 
 	browser_window_set_scale(bw, old_scale + 0.05, true);
@@ -1034,7 +1034,7 @@ MULTIHANDLER(zoomplus)
 
 MULTIHANDLER(zoomnormal)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	browser_window_set_scale(bw, 1.0, true);
 
@@ -1043,7 +1043,7 @@ MULTIHANDLER(zoomnormal)
 
 MULTIHANDLER(zoomminus)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	float old_scale = nsgtk_get_scale_for_gui(g->top_level);
 
 	browser_window_set_scale(bw, old_scale - 0.05, true);
@@ -1067,7 +1067,7 @@ MULTIHANDLER(fullscreen)
 MULTIHANDLER(viewsource)
 {
 	nsgtk_source_dialog_init(g->window,
-			gui_window_get_browser_window(g->top_level));
+			nsgtk_get_browser_window(g->top_level));
 	return TRUE;
 }
 
@@ -1209,7 +1209,7 @@ MULTIHANDLER(saveboxtree)
 				"Unable to open file for writing.");
 		} else {
 			struct browser_window *bw;
-			bw = gui_window_get_browser_window(g->top_level);
+			bw = nsgtk_get_browser_window(g->top_level);
 
 			if (bw->current_content &&
 					content_get_type(bw->current_content) ==
@@ -1258,7 +1258,7 @@ MULTIHANDLER(savedomtree)
 				"Unable to open file for writing.");
 		} else {
 			struct browser_window *bw;
-			bw = gui_window_get_browser_window(g->top_level);
+			bw = nsgtk_get_browser_window(g->top_level);
 
 			if (bw->current_content &&
 					content_get_type(bw->current_content) ==
@@ -1282,7 +1282,7 @@ MULTIHANDLER(savedomtree)
 MULTIHANDLER(stop)
 {
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 
 	browser_window_stop(bw);
 
@@ -1292,7 +1292,7 @@ MULTIHANDLER(stop)
 MULTIHANDLER(reload)
 {
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 	if (bw == NULL)
 		return TRUE;
 
@@ -1310,7 +1310,7 @@ MULTIHANDLER(reload)
 MULTIHANDLER(back)
 {
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 
 	if ((bw == NULL) || (!history_back_available(bw->history)))
 		return TRUE;
@@ -1330,7 +1330,7 @@ MULTIHANDLER(back)
 MULTIHANDLER(forward)
 {
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 
 	if ((bw == NULL) || (!history_forward_available(bw->history)))
 		return TRUE;
@@ -1351,7 +1351,7 @@ MULTIHANDLER(home)
 {
 	static const char *addr = NETSURF_HOMEPAGE;
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 
 	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
 		addr = option_homepage_url;
@@ -1364,7 +1364,7 @@ MULTIHANDLER(home)
 MULTIHANDLER(localhistory)
 {
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 
 	int x,y, width, height, mainwidth, mainheight, margin = 20;
 	/* if entries of the same url but different frag_ids have been added
@@ -1402,7 +1402,7 @@ MULTIHANDLER(globalhistory)
 
 MULTIHANDLER(addbookmarks)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	if (bw == NULL || bw->current_content == NULL ||
 			content_get_url(bw->current_content) == NULL)
@@ -1457,7 +1457,7 @@ MULTIHANDLER(closetab)
 
 MULTIHANDLER(contents)
 {
-	browser_window_go(gui_window_get_browser_window(g->top_level), 
+	browser_window_go(nsgtk_get_browser_window(g->top_level), 
 			  "http://www.netsurf-browser.org/documentation/", 0, true);
 
 	return TRUE;
@@ -1465,7 +1465,7 @@ MULTIHANDLER(contents)
 
 MULTIHANDLER(guide)
 {
-	browser_window_go(gui_window_get_browser_window(g->top_level), 
+	browser_window_go(nsgtk_get_browser_window(g->top_level), 
 			  "http://www.netsurf-browser.org/documentation/guide", 0, true);
 
 	return TRUE;
@@ -1473,7 +1473,7 @@ MULTIHANDLER(guide)
 
 MULTIHANDLER(info)
 {
-	browser_window_go(gui_window_get_browser_window(g->top_level), 
+	browser_window_go(nsgtk_get_browser_window(g->top_level), 
 			  "http://www.netsurf-browser.org/documentation/info", 0, true);
 
 	return TRUE;
@@ -1482,7 +1482,7 @@ MULTIHANDLER(info)
 MULTIHANDLER(about)
 {
 	nsgtk_about_dialog_init(g->window,
-			gui_window_get_browser_window(g->top_level),
+			nsgtk_get_browser_window(g->top_level),
 			netsurf_version);
 	return TRUE;
 }
@@ -1505,7 +1505,7 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	struct rect clip;
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
 	struct browser_window *bw =
-			gui_window_get_browser_window(hw->g->top_level);
+			nsgtk_get_browser_window(hw->g->top_level);
 
 	struct redraw_context ctx = {
 		.interactive = true,
@@ -1541,7 +1541,7 @@ static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 {
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
 	struct browser_window *bw =
-			gui_window_get_browser_window(hw->g->top_level);
+			nsgtk_get_browser_window(hw->g->top_level);
 
 	LOG(("X=%g, Y=%g", event->x, event->y));
 
@@ -2220,7 +2220,7 @@ void nsgtk_scaffolding_toggle_search_bar_visibility(nsgtk_scaffolding *g)
 {
 	gboolean vis;
 	struct browser_window *bw =
-			gui_window_get_browser_window(g->top_level);
+			nsgtk_get_browser_window(g->top_level);
 	g_object_get(G_OBJECT(g->search->bar), "visible", &vis, NULL);
 	if (vis) {
 		if (bw != NULL)
@@ -2243,7 +2243,7 @@ struct gui_window *nsgtk_scaffolding_top_level(nsgtk_scaffolding *g)
 void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 {
 	nsgtk_get_scaffold(gw)->top_level = gw;
-	struct browser_window *bw = gui_window_get_browser_window(gw);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 
 	assert(bw != NULL);
 
@@ -2334,7 +2334,7 @@ void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g)
  */
 static bool is_menu_over_link(struct gtk_scaffolding *g, gdouble x, gdouble y)
 {
-	struct browser_window *bw = gui_window_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 	current_menu_link_box = NULL;
 
 	if ((bw->current_content != NULL) &&

@@ -33,6 +33,8 @@ typedef enum nsgtk_window_signals {
 extern struct gui_window *window_list;
 extern int temp_open_background;
 
+
+struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
 void nsgtk_reflow_all_windows(void);
 void nsgtk_window_process_reformats(void);

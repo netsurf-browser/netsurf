@@ -96,7 +96,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
  	text = gtk_clipboard_wait_for_text (clipboard);
  	/* clipboard_wait... converts the string to utf8 for us */
  	if (text != NULL)
-		browser_window_paste_text(gui_window_get_browser_window(g), 
+		browser_window_paste_text(nsgtk_get_browser_window(g), 
 				text, strlen(text), true);
 	g_free(text);
 }

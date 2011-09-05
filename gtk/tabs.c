@@ -78,7 +78,7 @@ void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool back
 				"blankpage", NULL); */
 		/* segfaults 
 		struct browser_window *bw =
-				gui_window_get_browser_window(window);
+				nsgtk_get_browser_window(window);
 		browser_window_go(bw, blankpage, 0, true); */
 		/* free(blankpage); */
 	}
@@ -191,7 +191,7 @@ void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 			"gui_window");
 	if (gw == NULL)
 		return;
-	struct browser_window *bw = gui_window_get_browser_window(gw);
+	struct browser_window *bw = nsgtk_get_browser_window(gw);
 	if (bw == NULL)
 		return;
 

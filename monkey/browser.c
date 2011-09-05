@@ -110,12 +110,6 @@ gui_create_browser_window(struct browser_window *bw,
   return ret;
 }
 
-struct browser_window *
-gui_window_get_browser_window(struct gui_window *g)
-{
-  return g->bw;
-}
-
 void
 gui_window_destroy(struct gui_window *g)
 {

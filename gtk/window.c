@@ -101,7 +101,7 @@ nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 	return g->scaffold;
 }
 
-struct browser_window *gui_window_get_browser_window(struct gui_window *g)
+struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
 {
 	return g->bw;
 }

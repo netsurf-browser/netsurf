@@ -60,7 +60,7 @@ static struct search_callbacks nsgtk_search_callbacks = {
 gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-	struct browser_window *bw = gui_window_get_browser_window(
+	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
 	nsgtk_search_init(g);
 	search_flags_t flags = SEARCH_FLAG_FORWARDS |
@@ -82,7 +82,7 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
-	struct browser_window *bw = gui_window_get_browser_window(
+	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
 	nsgtk_search_init(g);
 	search_flags_t flags = 0 |(gtk_toggle_button_get_active(
@@ -105,10 +105,10 @@ void nsgtk_search_init(struct gtk_scaffolding *g)
 {
 	hlcache_handle *c;
 
-	assert(gui_window_get_browser_window(nsgtk_scaffolding_top_level(g))
+	assert(nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g))
 			!= NULL);
 
-	c = gui_window_get_browser_window(nsgtk_scaffolding_top_level(g))->
+	c = nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g))->
 			current_content;
 
 	if ((!c) || (content_get_type(c) != CONTENT_HTML && 
@@ -131,7 +131,7 @@ gboolean nsgtk_search_close_button_clicked(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 {
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
-	struct browser_window *bw = gui_window_get_browser_window(
+	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
 
 	if (bw != NULL)
@@ -147,7 +147,7 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 {
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
-	struct browser_window *bw = gui_window_get_browser_window(
+	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
 	nsgtk_search_init(g);
 	search_flags_t flags = SEARCH_FLAG_FORWARDS |
@@ -183,7 +183,7 @@ gboolean nsgtk_websearch_activate(GtkWidget *widget, gpointer data)
 {
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 	temp_open_background = 0;
-	search_web_new_window(gui_window_get_browser_window(
+	search_web_new_window(nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g)),
 			(char *)gtk_entry_get_text(GTK_ENTRY(
 			nsgtk_scaffolding_websearch(g))));

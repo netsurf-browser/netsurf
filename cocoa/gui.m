@@ -105,11 +105,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return (struct gui_window *)result;
 }
 
-struct browser_window *gui_window_get_browser_window(struct gui_window *g)
-{
-	return [(BrowserViewController *)g browser];
-}
-
 void gui_window_destroy(struct gui_window *g)
 {
 	BrowserViewController *vc = (BrowserViewController *)g;

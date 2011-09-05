@@ -410,19 +410,19 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_REDRAW));
-		if ((gui_window_get_browser_window(nsgtk_scaffolding_top_level(
+		if ((nsgtk_get_browser_window(nsgtk_scaffolding_top_level(
 				list))->current_content	!= NULL) &&
-				(content_get_url(gui_window_get_browser_window(
+				(content_get_url(nsgtk_get_browser_window(
 				nsgtk_scaffolding_top_level(list))->
 				current_content) != NULL))
 			browser_window_refresh_url_bar(
-					gui_window_get_browser_window(
+					nsgtk_get_browser_window(
 					nsgtk_scaffolding_top_level(list)),
 					content_get_url(
-					gui_window_get_browser_window(
+					nsgtk_get_browser_window(
 					nsgtk_scaffolding_top_level(list))->
 					current_content),
-					gui_window_get_browser_window(
+					nsgtk_get_browser_window(
 					nsgtk_scaffolding_top_level(list))->
 					frag_id);
 
