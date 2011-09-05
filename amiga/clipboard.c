@@ -85,7 +85,6 @@ void gui_start_selection(struct gui_window *g)
 {
 	if(!g) return;
 	if(!g->shared->win) return;
-	if(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL) return;
 	if(option_kiosk_mode == true) return;
 
 	OnMenu(g->shared->win, AMI_MENU_CLEAR);
@@ -99,8 +98,6 @@ void gui_clear_selection(struct gui_window *g)
 {
 	if(!g) return;
 	if(!g->shared->win) return;
-	if((g->shared->bw) &&
-		(g->shared->bw->browser_window_type != BROWSER_WINDOW_NORMAL)) return;
 	if(option_kiosk_mode == true) return;
 
 	OffMenu(g->shared->win, AMI_MENU_CLEAR);
