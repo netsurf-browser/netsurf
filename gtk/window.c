@@ -526,10 +526,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	g->careth = 0;
 
-	if (bw->parent != NULL) {
-		/* Find our parent's scaffolding */
-		g->scaffold = bw->parent->window->scaffold;
-	} else if (new_tab) {
+	if (new_tab) {
 		assert(clone != NULL);
 		g->scaffold = clone->window->scaffold;
 	} else {
@@ -544,63 +541,45 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	}
 
 	/* Construct our primary elements */
-	if (bw->parent == NULL) {
-		/* top-level document (not a frame) => create a new tab */
-		GladeXML *xml = glade_xml_new(glade_netsurf_file_location, "tabContents", NULL);
-		if (!xml) {
-			warn_user("MiscError", "Failed to create tab contents");
-			free(g);
-			return 0;
-		}
 
-		GtkWidget *tab_contents = glade_xml_get_widget(xml, "tabContents");
-		g->layout = GTK_LAYOUT(glade_xml_get_widget(xml, "layout"));
-		g->status_bar = GTK_LABEL(glade_xml_get_widget(xml, "status_bar"));
-		g->paned = GTK_PANED(glade_xml_get_widget(xml, "hpaned1"));
-
-		/* connect the scrollbars to the layout widget */
-		gtk_layout_set_hadjustment(g->layout,
-				gtk_range_get_adjustment(GTK_RANGE(
-				glade_xml_get_widget(xml, "hscrollbar"))));
-		gtk_layout_set_vadjustment(g->layout,
-				gtk_range_get_adjustment(GTK_RANGE(
-				glade_xml_get_widget(xml, "vscrollbar"))));
-
-		/* add the tab to the scaffold */
-		bool tempback = true;
-		switch (temp_open_background) {
-		case -1:
-			tempback = !(option_focus_new);
-			break;
-		case 0:
-			tempback = false;
-			break;
-		case 1:
-			tempback = true;
-			break;
-		}
-		g_object_set_data(G_OBJECT(tab_contents), "gui_window", g);
-		nsgtk_tab_add(g, tab_contents, tempback);
-
-		g_object_unref(xml);
-
-	} else {
-		/* frame or iframe => create a child layout */
-		g->layout = GTK_LAYOUT(gtk_layout_new(NULL, NULL));
-		gtk_container_set_border_width(GTK_CONTAINER(g->layout), 0);
-
-		g->scrolledwindow = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
-		g_object_set_data(G_OBJECT(g->scrolledwindow), "gui_window", g);
-		gtk_container_add(GTK_CONTAINER(g->scrolledwindow), GTK_WIDGET(g->layout));
-		gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
-						    GTK_SHADOW_NONE);
-		g->tab = NULL;
-
-		/* Attach ourselves into our parent at the right point */
-		nsgtk_gui_window_attach_child(bw->parent->window, g);
-
-		gtk_widget_show(GTK_WIDGET(g->scrolledwindow));
+	/* top-level document (not a frame) => create a new tab */
+	GladeXML *xml = glade_xml_new(glade_netsurf_file_location, "tabContents", NULL);
+	if (!xml) {
+		warn_user("MiscError", "Failed to create tab contents");
+		free(g);
+		return 0;
 	}
+
+	GtkWidget *tab_contents = glade_xml_get_widget(xml, "tabContents");
+	g->layout = GTK_LAYOUT(glade_xml_get_widget(xml, "layout"));
+	g->status_bar = GTK_LABEL(glade_xml_get_widget(xml, "status_bar"));
+	g->paned = GTK_PANED(glade_xml_get_widget(xml, "hpaned1"));
+
+	/* connect the scrollbars to the layout widget */
+	gtk_layout_set_hadjustment(g->layout,
+			gtk_range_get_adjustment(GTK_RANGE(
+			glade_xml_get_widget(xml, "hscrollbar"))));
+	gtk_layout_set_vadjustment(g->layout,
+			gtk_range_get_adjustment(GTK_RANGE(
+			glade_xml_get_widget(xml, "vscrollbar"))));
+
+	/* add the tab to the scaffold */
+	bool tempback = true;
+	switch (temp_open_background) {
+	case -1:
+		tempback = !(option_focus_new);
+		break;
+	case 0:
+		tempback = false;
+		break;
+	case 1:
+		tempback = true;
+		break;
+	}
+	g_object_set_data(G_OBJECT(tab_contents), "gui_window", g);
+	nsgtk_tab_add(g, tab_contents, tempback);
+
+	g_object_unref(xml);
 
 	switch(bw->scrolling) {
 	case SCROLLING_NO:
