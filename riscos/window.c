@@ -1630,9 +1630,7 @@ void ro_gui_window_open(wimp_open *open)
 	if ((g->bw->scrolling == SCROLLING_AUTO) ||
 			(g->bw->scrolling == SCROLLING_YES)) {
 		/* windows lose scrollbars when containing a frameset */
-		no_hscroll = (g->bw->children &&
-				(g->bw->browser_window_type !=
-				BROWSER_WINDOW_NORMAL));
+		no_hscroll = false;
 		no_vscroll = g->bw->children;
 
 		/* hscroll */
@@ -1642,14 +1640,7 @@ void ro_gui_window_open(wimp_open *open)
 		fheight = height;
 		if (state.flags & wimp_WINDOW_HSCROLL)
 			fheight += size;
-		if ((!no_hscroll) &&
-				((fheight > size) ||
-					(g->bw->browser_window_type ==
-					BROWSER_WINDOW_NORMAL)) &&
-				((h && width < content_get_width(h) *
-						2 * g->bw->scale) ||
-					(g->bw->browser_window_type ==
-					BROWSER_WINDOW_NORMAL))) {
+		if (!no_hscroll) {
 			if (!(state.flags & wimp_WINDOW_HSCROLL)) {
 				height -= size;
 				state.visible.y0 += size;
@@ -1678,13 +1669,7 @@ void ro_gui_window_open(wimp_open *open)
 		fwidth = width;
 		if (state.flags & wimp_WINDOW_VSCROLL)
 			fwidth += size;
-		if ((!no_vscroll) &&
-				((fwidth > size) ||
-					(g->bw->browser_window_type ==
-					BROWSER_WINDOW_NORMAL)) &&
-				((h && height < content_get_height(h) *
-						2 * g->bw->scale) ||
-					(g->bw->scrolling == SCROLLING_YES))) {
+		if (!no_vscroll) {
 			if (!(state.flags & wimp_WINDOW_VSCROLL)) {
 				width -= size;
 				state.visible.x1 -= size;
