@@ -1209,46 +1209,18 @@ gui_create_browser_window(struct browser_window *bw,
 	gw->next = window_list;
 	window_list = gw;
 
-	switch(bw->browser_window_type) {
-	case BROWSER_WINDOW_NORMAL:
-		gw->main = nsws_window_create(gw);
-		gw->toolbar = nsws_window_create_toolbar(gw, gw->main);
-		gw->statusbar = nsws_window_create_statusbar(gw);
-		gw->drawingarea = nsws_window_create_drawable(hInstance, gw->main, gw);
+	gw->main = nsws_window_create(gw);
+	gw->toolbar = nsws_window_create_toolbar(gw, gw->main);
+	gw->statusbar = nsws_window_create_statusbar(gw);
+	gw->drawingarea = nsws_window_create_drawable(hInstance, gw->main, gw);
 
-		LOG(("BROWSER_WINDOW_NORMAL: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
+	LOG(("new window: main:%p toolbar:%p statusbar %p drawingarea %p",
+			gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
 
-		font_hwnd = gw->drawingarea;
-		input_window = gw;
-		open_windows++;
-		ShowWindow(gw->main, SW_SHOWNORMAL);
-		break;
-
-	case BROWSER_WINDOW_FRAME:
-		gw->drawingarea = nsws_window_create_drawable(hInstance, bw->parent->window->drawingarea, gw);
-
-		ShowWindow(gw->drawingarea, SW_SHOWNORMAL);
-
-		LOG(("BROWSER_WINDOW_FRAME: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
-
-		break;
-
-	case BROWSER_WINDOW_FRAMESET:
-		LOG(("create frameset"));
-		break;
-
-	case BROWSER_WINDOW_IFRAME:
-		gw->drawingarea = nsws_window_create_drawable(hInstance, bw->parent->window->drawingarea, gw);
-
-		ShowWindow(gw->drawingarea, SW_SHOWNORMAL);
-
-		LOG(("BROWSER_WINDOW_IFRAME: main:%p toolbar:%p statusbar %p drawingarea %p", gw->main, gw->toolbar, gw->statusbar, gw->drawingarea));
-
-		break;
-
-	default:
-		LOG(("unhandled type"));
-	}
+	font_hwnd = gw->drawingarea;
+	input_window = gw;
+	open_windows++;
+	ShowWindow(gw->main, SW_SHOWNORMAL);
 
 	return gw;
 }
