@@ -96,17 +96,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];
 
-	if (bw->parent == NULL) {
-		if (!new_tab || nil == window) {
-			window = [[[BrowserWindowController alloc] init] autorelease];
-			[[window window] makeKeyAndOrderFront: nil];
-		}
-		[window addTab: result];
-	} else {
-		BrowserViewController *parent = (BrowserViewController *)bw->parent->window;
-		NSCParameterAssert( parent != nil );
-		[[parent browserView] addSubview: [result view]];
+	if (!new_tab || nil == window) {
+		window = [[[BrowserWindowController alloc] init] autorelease];
+		[[window window] makeKeyAndOrderFront: nil];
 	}
+	[window addTab: result];
 	
 	return (struct gui_window *)result;
 }
