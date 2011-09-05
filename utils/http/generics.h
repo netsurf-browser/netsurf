@@ -48,7 +48,9 @@ nserror http___item_list_parse(const char **input,
 		http__itemparser itemparser, http__item *first, 
 		http__item **items);
 #define http__item_list_parse(i, p, f, r) \
-		http___item_list_parse((i), (http__itemparser) (p), \
-				(http__item *) (f), (http__item **) (r))
+		http___item_list_parse((i), \
+				(http__itemparser) (p), \
+				(http__item *) (f), \
+				(http__item **) (void *) (r))
 
 #endif
