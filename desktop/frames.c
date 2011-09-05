@@ -850,8 +850,14 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 				bw->drag_resize_up = up;
 				bw->drag_resize_down = down;
 
-				/* TODO: sort this out:
-				gui_window_frame_resize_start(bw->window); */
+				/* TODO: Tell the front end the valid pointer
+				 *       movement range for the drag, so that
+				 *       they can clamp pointer.
+				 *
+				 *       Probably need a general function for
+				 *       this, to be used by all core-managed
+				 *       drag ops.
+				 */
 
 				*status = messages_get("FrameDrag");
 				*action = true;

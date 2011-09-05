@@ -299,12 +299,6 @@ gui_window_scroll_start(struct gui_window *g)
   return true;
 }
 
-bool
-gui_window_frame_resize_start(struct gui_window *g)
-{
-  return true;
-}
-
 void
 gui_window_set_search_ico(hlcache_handle *ico)
 {

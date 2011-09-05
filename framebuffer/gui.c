@@ -1511,13 +1511,6 @@ gui_window_box_scroll_start(struct gui_window *g,
 	return true;
 }
 
-bool
-gui_window_frame_resize_start(struct gui_window *g)
-{
-	LOG(("resize frame\n"));
-	return true;
-}
-
 void
 gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 {

@@ -3798,12 +3798,6 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 	return true;
 }
 
-bool gui_window_frame_resize_start(struct gui_window *g)
-{
-	DebugPrintF("resize frame\n");
-	return true;
-}
-
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid,x,y;

@@ -1773,7 +1773,3 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	}
 }
 
-bool gui_window_frame_resize_start(struct gui_window *g)
-{
-	return true;
-}
