@@ -395,15 +395,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->prev = NULL;
 	window_list = g;
 
-	if (bw->parent != NULL) {
-		/* Find our parent's scaffolding */
-		g->scaffold = bw->parent->window->scaffold;
-	} else {
-		/* Now construct and attach a scaffold */
-		g->scaffold = nsbeos_new_scaffolding(g);
-		if (!g->scaffold)
-			return NULL;
-	}
+	/* Now construct and attach a scaffold */
+	g->scaffold = nsbeos_new_scaffolding(g);
+	if (!g->scaffold)
+		return NULL;
 
 	/* Construct our primary elements */
 	BRect frame(0,0,-1,-1); // will be resized later
