@@ -68,5 +68,5 @@ S_WINDOWS := $(addprefix windows/,$(S_WINDOWS))
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
-SOURCES := $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_WINDOWS) $(S_RESOURCES)
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_WINDOWS) $(S_RESOURCES)
 EXETARGET := NetSurf.exe
