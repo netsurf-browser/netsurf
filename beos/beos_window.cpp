@@ -430,19 +430,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 */
 #endif
 
-	if (bw->parent != NULL ) {
-		g->toplevel = false;
-		// XXX handle scrollview later
-		//g->scrollview = new BScrollView(g->view);
 
-		/* Attach ourselves into our parent at the right point */
-		nsbeos_gui_window_attach_child(bw->parent->window, g);
-	} else {
-		g->toplevel = true;
+	g->toplevel = true;
 
-		/* Attach our viewport into the scaffold */
-		nsbeos_attach_toplevel_view(g->scaffold, g->view);
-	}
+	/* Attach our viewport into the scaffold */
+	nsbeos_attach_toplevel_view(g->scaffold, g->view);
 
 #warning WRITEME
 #if 0 /* GTK */
@@ -494,32 +486,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		break;
 	};
 
-	switch(bw->browser_window_type) {
-	case BROWSER_WINDOW_FRAMESET:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       GTK_POLICY_NEVER,
-						       GTK_POLICY_NEVER);
-		break;
-	case BROWSER_WINDOW_FRAME:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       scrollpolicy,
-						       scrollpolicy);
-		break;
-	case BROWSER_WINDOW_NORMAL:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       scrollpolicy,
-						       scrollpolicy);
-		break;
-	case BROWSER_WINDOW_IFRAME:
-		if (g->scrolledwindow)
-			gtk_scrolled_window_set_policy(g->scrolledwindow,
-						       scrollpolicy,
-						       scrollpolicy);
-		break;
-	}
+
+	if (g->scrolledwindow)
+		gtk_scrolled_window_set_policy(g->scrolledwindow,
+				scrollpolicy, scrollpolicy);
 
 	/* set the events we're interested in receiving from the browser's
 	 * drawing area.
