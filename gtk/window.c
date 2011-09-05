@@ -137,21 +137,6 @@ float nsgtk_get_scale_for_gui(struct gui_window *g)
 	return g->bw->scale;
 }
 
-/** Attaches the child gui_window (frame) into the parent.
- *
- * The window will be resized later.
- *
- * \param parent The parent gui window.
- * \param child The gui window to attach to the parent.
- */
-static void nsgtk_gui_window_attach_child(struct gui_window *parent,
-					  struct gui_window *child)
-{
-	GtkLayout *parent_layout = parent->layout;
-	GtkWidget *child_widget = GTK_WIDGET(child->scrolledwindow);
-	gtk_layout_put(parent_layout, child_widget, 0, 0);
-}
-
 static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 				   GdkEventExpose *event, gpointer data)
 {
