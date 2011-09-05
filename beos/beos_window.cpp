@@ -113,8 +113,6 @@ static struct gui_window *window_list = 0;	/**< first entry in win list*/
 static BString current_selection;
 static BList current_selection_textruns;
 
-static void nsbeos_gui_window_attach_child(struct gui_window *parent,
-					  struct gui_window *child);
 /* Methods which apply only to a gui_window */
 static void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message);
 static void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event);
@@ -512,37 +510,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	return g;
 }
 
-static void nsbeos_gui_window_attach_child(struct gui_window *parent,
-					  struct gui_window *child)
-{
-	/* Attach the child gui_window (frame) into the parent.
-	 * It will be resized later on.
-	 */
-	if (parent->view == NULL || child->view == NULL)
-		return;
-	if (!parent->view->LockLooper())
-		return;
-
-	//if (child->scrollview)
-	//	parent->view->AddChild(child->scrollview);
-	//else
-	parent->view->AddChild(child->view);
-
-	// non-top-level views shouldn't resize automatically (?)
-	child->view->SetResizingMode(B_FOLLOW_NONE);
-
-	parent->view->UnlockLooper();
-
-#warning WRITEME
-#if 0 /* GTK */
-	/* Attach the child gui_window (frame) into the parent.
-	 * It will be resized later on.
-	 */
-	GtkFixed *parent_fixed = parent->fixed;
-	GtkWidget *child_widget = GTK_WIDGET(child->scrolledwindow);
-	gtk_fixed_put(parent_fixed, child_widget, 0, 0);
-#endif
-}
 
 void gui_window_scroll_visible(struct gui_window *g, int x0, int y0,
 		int x1, int y1)
