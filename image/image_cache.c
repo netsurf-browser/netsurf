@@ -47,11 +47,13 @@ struct image_cache_entry_s {
 	image_cache_convert_fn *convert;
 
 	/* Statistics for replacement algorithm */
-	
+
 	unsigned int redraw_count; /**< number of times object has been drawn */
 	cache_age redraw_age; /**< Age of last redraw */
 	size_t bitmap_size; /**< size if storage occupied by bitmap */
 	cache_age bitmap_age; /**< Age of last conversion to a bitmap by cache*/
+
+	int conversion_count; /**< Number of times image has been converted */
 };
 
 /** Current state of the cache. 
@@ -84,6 +86,11 @@ struct image_cache_s {
 	int fail_count; /* bitmap was not available at plot time, required conversion which failed */
 
 	int total_unrendered; /* bitmap was freed without ever being required for redraw */
+
+	int total_extra_conversions; /* counts total number of conversions of images, after the first */
+	int total_extra_conversions_count; /* counts total number of images with more than one conversion */
+	int peak_conversions; /* bitmap with most conversions was converted this many times */
+	unsigned int peak_conversions_size; /* bitmap with most conversions this size */
 };
 
 static struct image_cache_s *image_cache = NULL;
@@ -121,6 +128,7 @@ static struct image_cache_entry_s *image_cache__find(const struct content *c)
 static void image_cache_stats_bitmap_add(struct image_cache_entry_s *centry)
 {
 	centry->bitmap_age = image_cache->current_age;
+	centry->conversion_count++;
 
 	image_cache->total_bitmap_size += centry->bitmap_size;
 	image_cache->bitmap_count++;
@@ -134,6 +142,23 @@ static void image_cache_stats_bitmap_add(struct image_cache_entry_s *centry)
 	if (image_cache->bitmap_count > image_cache->max_bitmap_count) {
 		image_cache->max_bitmap_count = image_cache->bitmap_count; 
 		image_cache->max_bitmap_count_size = image_cache->total_bitmap_size;
+	}
+
+	centry->conversion_count++;
+
+	if (centry->conversion_count == 2) {
+		image_cache->total_extra_conversions_count++;
+	}
+
+	if (centry->conversion_count > 1) {
+		image_cache->total_extra_conversions++;
+	}
+
+	if ((centry->conversion_count > image_cache->peak_conversions) ||
+	    (centry->conversion_count == image_cache->peak_conversions &&
+	     centry->bitmap_size > image_cache->peak_conversions_size)) {
+		image_cache->peak_conversions = centry->conversion_count;
+		image_cache->peak_conversions_size = centry->bitmap_size;
 	}
 }
 
@@ -323,6 +348,12 @@ nserror image_cache_fini(void)
 	LOG(("Total images never rendered: %d (includes %d that were converted)",
 	     image_cache->total_unrendered,
 	     image_cache->specultive_miss_count));
+	LOG(("Total number of excessive conversions: %d (from %d images converted more than once)",
+	     image_cache->total_extra_conversions,
+	     image_cache->total_extra_conversions_count));
+	LOG(("Bitmap of size %d had most (%d) conversions",
+	     image_cache->peak_conversions_size,
+	     image_cache->peak_conversions));
 	free(image_cache);
 
 	return NSERROR_OK;
