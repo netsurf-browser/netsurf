@@ -1603,37 +1603,6 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 
 /**
- * Returns the browser window that is responsible for the child.
- *
- * \param  bw	The browser window to find the owner of
- * \return the browser window's owner
- *
- * TODO: REMOVE THIS FUNCTION
- */
-
-struct browser_window *browser_window_owner(struct browser_window *bw)
-{
-  	/* an iframe's parent is just the parent window */
-  	if (bw->browser_window_type == BROWSER_WINDOW_IFRAME)
-  		return bw->parent;
-
-  	/* the parent of a frameset is either a NORMAL window or an IFRAME */
-	while (bw->parent != NULL) {
-		switch (bw->browser_window_type) {
- 		case BROWSER_WINDOW_NORMAL:
-  		case BROWSER_WINDOW_IFRAME:
-  			return bw;
-		case BROWSER_WINDOW_FRAME:
- 		case BROWSER_WINDOW_FRAMESET:
-  			bw = bw->parent;
-			break;
-		}
-	}
-	return bw;
-}
-
-
-/**
  * Reformat a browser window contents to a new width or height.
  *
  * \param  bw      the browser window to reformat
