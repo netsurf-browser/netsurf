@@ -446,23 +446,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gtk_fixed_put(g->fixed, GTK_WIDGET(g->drawing_area), 0, 0);
 	gtk_container_set_border_width(GTK_CONTAINER(g->fixed), 0);
 
-	if (bw->parent != NULL ) {
-		g->scrolledwindow = GTK_SCROLLED_WINDOW(gtk_scrolled_window_new(NULL, NULL));
-		gtk_scrolled_window_add_with_viewport(g->scrolledwindow,
-						      GTK_WIDGET(g->fixed));
-		gtk_scrolled_window_set_shadow_type(g->scrolledwindow,
-						    GTK_SHADOW_NONE);
-		g->viewport = GTK_VIEWPORT(gtk_bin_get_child(GTK_BIN(g->scrolledwindow)));
-		/* Attach ourselves into our parent at the right point */
-		nsbeos_gui_window_attach_child(bw->parent->window, g);
-	} else {
-		g->scrolledwindow = 0;
-		g->viewport = GTK_VIEWPORT(gtk_viewport_new(NULL, NULL)); /* Need to attach adjustments */
-		gtk_container_add(GTK_CONTAINER(g->viewport), GTK_WIDGET(g->fixed));
+	g->scrolledwindow = 0;
+	g->viewport = GTK_VIEWPORT(gtk_viewport_new(NULL, NULL)); /* Need to attach adjustments */
+	gtk_container_add(GTK_CONTAINER(g->viewport), GTK_WIDGET(g->fixed));
 
-		/* Attach our viewport into the scaffold */
-		nsbeos_attach_toplevel_viewport(g->scaffold, g->viewport);
-	}
+	/* Attach our viewport into the scaffold */
+	nsbeos_attach_toplevel_viewport(g->scaffold, g->viewport);
 
 	gtk_container_set_border_width(GTK_CONTAINER(g->viewport), 0);
 	gtk_viewport_set_shadow_type(g->viewport, GTK_SHADOW_NONE);
