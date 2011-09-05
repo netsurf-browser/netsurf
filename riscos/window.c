@@ -656,10 +656,6 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	} else {
 		strncpy(g->title, title, sizeof g->title);
 	}
-
-	/* only top-level parents have titlebars */
-	if (!g->bw->parent)
-		ro_gui_set_window_title(g->window, g->title);
 }
 
 
@@ -965,8 +961,6 @@ void gui_window_update_extent(struct gui_window *g)
 	}
 	if (flags == (state.flags & (wimp_WINDOW_HSCROLL | wimp_WINDOW_VSCROLL)))
 		g->bw->reformat_pending = update;
-	if ((scroll != 0) && (g->bw->children))
-		browser_window_recalculate_frameset(g->bw);
 }
 
 
@@ -1696,7 +1690,6 @@ void ro_gui_window_open(wimp_open *open)
 	if ((h) && (g->old_width != width || g->old_height != height)) {
 	  	/* Ctrl-resize of a top-level window scales the content size */
 		if ((g->old_width > 0) && (g->old_width != width) &&
-				(!g->bw->parent) &&
 				(ro_gui_ctrl_pressed()))
 			new_scale = (g->bw->scale * width) / g->old_width;
 		g->bw->reformat_pending = true;
@@ -4254,9 +4247,7 @@ void ro_gui_window_quit(void)
 		cur = window_list;
 		window_list = window_list->next;
 
-		/* framesets and iframes are destroyed by their parents */
-		if (!cur->bw->parent)
-			browser_window_destroy(cur->bw);
+		browser_window_destroy(cur->bw);
 	}
 }
 
