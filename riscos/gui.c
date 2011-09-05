@@ -1500,10 +1500,6 @@ void ro_msg_dataload(wimp_message *message)
 	if (g) {
 		if (ro_gui_window_dataload(g, message))
 			return;
-
-		/* Get top-level window for loading into */
-		while (g->bw->parent)
-			g = g->bw->parent->window;
 	}
 	else {
 		g = ro_gui_toolbar_lookup(message->data.data_xfer.w);
