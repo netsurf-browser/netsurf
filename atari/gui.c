@@ -183,8 +183,8 @@ gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *gw=NULL;
 	struct gui_window * gwroot ;
 	short winloc[4];
-	LOG(( "gw: %p, BW: %p, clone %p, tab: %d, type: %d\n" , gw,  bw, clone, 
-		(int)new_tab, bw->browser_window_type 
+	LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone, 
+		(int)new_tab
 	));
 
 	gw = malloc( sizeof(struct gui_window) );
@@ -192,23 +192,15 @@ gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	memset( gw, 0, sizeof(struct gui_window) );
 
-	switch(bw->browser_window_type) {
-		case BROWSER_WINDOW_NORMAL:
-
-			LOG(("normal browser window: %p, bw: %p\n", gw, bw));
-			window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR );
-			if( gw->root->handle ) {
-				window_open( gw );
-				/* Recalculate windows browser area now */
-				browser_update_rects( gw );
-				tb_update_buttons( gw );
-				input_window = gw;
-				/* TODO:... this line: placeholder to create a local history widget ... */
-			}
-		break;
-
-		default:
-			LOG(("unhandled type!"));
+	LOG(("new window: %p, bw: %p\n", gw, bw));
+	window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR );
+	if( gw->root->handle ) {
+		window_open( gw );
+		/* Recalculate windows browser area now */
+		browser_update_rects( gw );
+		tb_update_buttons( gw );
+		input_window = gw;
+		/* TODO:... this line: placeholder to create a local history widget ... */
 	}
 
 	/* add the window to the window list: */
@@ -239,16 +231,8 @@ void gui_window_destroy(struct gui_window *w)
 
 	input_window = NULL;
 
-	switch(w->browser->bw->browser_window_type) {
+	window_destroy( w );
 
-		case BROWSER_WINDOW_NORMAL:
-			window_destroy( w );
-			break;
-		default:
-			LOG(("Unhandled type!"));
-			assert( 1 == 0 );
-			break;
-	}
 	/* unlink the window: */
 	if(w->prev != NULL ) {
 		w->prev->next = w->next;
