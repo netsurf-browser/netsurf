@@ -82,6 +82,8 @@ struct image_cache_s {
 	int specultive_miss_count; /* bitmap was available but never actually required conversion */
 	int hit_count; /* bitmap was available at plot time required no conversion */
 	int fail_count; /* bitmap was not available at plot time, required conversion which failed */
+
+	int total_unrendered; /* bitmap was freed without ever being required for redraw */
 };
 
 static struct image_cache_s *image_cache = NULL;
@@ -190,6 +192,10 @@ static void image_cache__free_bitmap(struct image_cache_entry_s *centry)
 static void image_cache__free_entry(struct image_cache_entry_s *centry)
 {
 	LOG(("freeing %p ", centry));
+
+	if (centry->redraw_count == 0) {
+		image_cache->total_unrendered++;
+	}
 
 	image_cache__free_bitmap(centry);
 
@@ -314,6 +320,9 @@ nserror image_cache_fini(void)
 	     (image_cache->miss_count * 100) / op_count,
 	     (image_cache->specultive_miss_count * 100) / op_count,
 	     (image_cache->fail_count * 100) / op_count));
+	LOG(("Total images never rendered: %d (includes %d that were converted)",
+	     image_cache->total_unrendered,
+	     image_cache->specultive_miss_count));
 	free(image_cache);
 
 	return NSERROR_OK;
