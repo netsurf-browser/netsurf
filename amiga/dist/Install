@@ -574,6 +574,10 @@
 	)
 	(
 		(p_failedsobjs)
-		(exit)
+		(exit "If you are on a low memory system, you may like to use the version of "
+			"parserutils.library in the archive under ParserUtils_lowmem.\n\n"
+			"The low memory version does not use iconv.library so can save "
+			"~1MB of RAM, at the expense of reduced character set support. "
+			"Simply replace the version in LIBS: with that in ParserUtils_lowmem.")
 	)
 )
