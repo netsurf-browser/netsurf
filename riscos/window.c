@@ -2124,15 +2124,15 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 {
 	struct gui_window	*g;
 	struct browser_window	*bw;
-	hlcache_handle		*h;
 	struct toolbar		*toolbar;
+	struct contextual_content cont;
+	hlcache_handle		*h = NULL;
 	bool			export_sprite, export_draw;
 	os_coord		pos;
 
 	g = (struct gui_window *) ro_gui_wimp_event_get_user_data(w);
 	toolbar = g->toolbar;
 	bw = g->bw;
-	h = bw->current_content;
 
 	/* If this is the form select menu, handle it now and then exit.
 	 * Otherwise, carry on to the main browser window menu.
@@ -2156,25 +2156,14 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 		current_menu_object = NULL;
 		current_menu_url = NULL;
 
-		if (h != NULL &&
-				ro_gui_window_to_window_pos(g, pointer->pos.x,
+		if (ro_gui_window_to_window_pos(g, pointer->pos.x,
 				pointer->pos.y, &pos)) {
-			switch (content_get_type(h)) {
-			case CONTENT_HTML: {
-				struct box *box;
-				box = box_object_at_point(h, pos.x, pos.y);
-				current_menu_object = box ? box->object : NULL;
-				box = box_href_at_point(h, pos.x, pos.y);
-				current_menu_url = box ? box->href : NULL;
-				}
-				break;
-			case CONTENT_TEXTPLAIN:
-				/* no object, no url */
-				break;
-			default:
-				current_menu_object = h;
-				break;
-			}
+			browser_window_get_contextual_content(bw,
+					pos.x, pos.y, &cont);
+			h = cont.main;
+
+			current_menu_object = cont.object;
+			current_menu_url = cont.link_url;
 		}
 	}
 
