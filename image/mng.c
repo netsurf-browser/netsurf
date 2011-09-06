@@ -601,6 +601,7 @@ static bool nsjpng_convert(struct content *c)
 	mng_retcode status;
 	unsigned long size;
 	char title[100];
+	mng_handle handle;
 
 	assert(c != NULL);
 
@@ -653,7 +654,7 @@ static bool nsjpng_convert(struct content *c)
 
 	/* free associated memory */
 
-	mng_handle handle = mng->handle;
+	handle = mng->handle;
 
 	mng_cleanup(&handle);
 
