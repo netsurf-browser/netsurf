@@ -2203,6 +2203,7 @@ void gui_quit(void)
 void ami_update_buttons(struct gui_window_2 *gwin)
 {
 	BOOL back=FALSE,forward=TRUE,tabclose=FALSE,stop=FALSE,reload=FALSE;
+	uint32 storage = 0;
 
 	if(!browser_window_back_available(gwin->bw))
 		back=TRUE;
@@ -2229,27 +2230,32 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 		}
 	}
 
-	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],gwin->win,NULL,
-		GA_Disabled,back,
-		TAG_DONE);
+	GetAttr(GA_Disabled, gwin->objects[GID_BACK], &storage);
+	if(storage != back)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_BACK],
+			gwin->win, NULL, GA_Disabled, back, TAG_DONE);
 
-	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],gwin->win,NULL,
-		GA_Disabled,forward,
-		TAG_DONE);
+	GetAttr(GA_Disabled, gwin->objects[GID_FORWARD], &storage);
+	if(storage != forward)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_FORWARD],
+			gwin->win, NULL, GA_Disabled, forward, TAG_DONE);
 
-	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],gwin->win,NULL,
-		GA_Disabled,reload,
-		TAG_DONE);
+	GetAttr(GA_Disabled, gwin->objects[GID_RELOAD], &storage);
+	if(storage != reload)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_RELOAD],
+			gwin->win, NULL, GA_Disabled, reload, TAG_DONE);
 
-	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],gwin->win,NULL,
-		GA_Disabled,stop,
-		TAG_DONE);
+	GetAttr(GA_Disabled, gwin->objects[GID_STOP], &storage);
+	if(storage != stop)
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_STOP],
+			gwin->win, NULL, GA_Disabled, stop, TAG_DONE);
 
 	if((gwin->tabs) && (ClickTabBase->lib_Version < 53))
 	{
-		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],gwin->win,NULL,
-			GA_Disabled,tabclose,
-			TAG_DONE);
+		GetAttr(GA_Disabled, gwin->objects[GID_CLOSETAB], &storage);
+		if(storage != tabclose)
+			SetGadgetAttrs((struct Gadget *)gwin->objects[GID_CLOSETAB],
+				gwin->win, NULL, GA_Disabled, tabclose, TAG_DONE);
 	}
 }
 
@@ -3932,7 +3938,7 @@ Object *ami_gui_splash_open(void)
 				WINDOW_Position, WPOS_CENTERSCREEN,
 				WINDOW_LockWidth, TRUE,
 				WINDOW_LockHeight, TRUE,
-				WINDOW_ParentGroup, VGroupObject,
+				WINDOW_ParentGroup, LayoutObject,
 					LAYOUT_AddImage, BitMapObject,
 						BITMAP_SourceFile, "PROGDIR:Resources/netsurf.png",
 						BITMAP_Screen, wbscreen,
