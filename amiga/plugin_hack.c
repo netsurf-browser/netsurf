@@ -181,8 +181,11 @@ void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 {
 	LOG(("amiga_plugin_hack_open %s", content__get_url(c)));
 
-	c->width = box->width;
-	c->height = box->height;
+	if(c && box)
+	{
+		c->width = box->width;
+		c->height = box->height;
+	}
 
 	return;
 }
