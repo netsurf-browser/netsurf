@@ -517,7 +517,7 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 	NSPoint point = [self convertMousePoint: event];
 	
 	struct box *box = NULL;
-	if ((box = box = box_object_at_point( browser->current_content, point.x, point.y )) != NULL) {
+	if ((box = box_object_at_point( browser->current_content, point.x, point.y )) != NULL) {
 		NSString *imageURL = [NSString stringWithUTF8String: content_get_url( box->object )];
 		
 		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new tab", @"Context menu" )
