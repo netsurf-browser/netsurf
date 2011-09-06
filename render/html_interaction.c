@@ -287,7 +287,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 
 		if (box->usemap) {
-			url = imagemap_get(content, box->usemap,
+			url = imagemap_get(html, box->usemap,
 					box_x, box_y, x, y, &target);
 			if (url) {
 				imagemap = true;

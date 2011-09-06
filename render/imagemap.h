@@ -28,7 +28,7 @@ void imagemap_destroy(struct html_content *c);
 void imagemap_dump(struct html_content *c);
 bool imagemap_extract(xmlNode *node, struct html_content *c);
 
-const char *imagemap_get(struct hlcache_handle *h, const char *key,
+const char *imagemap_get(struct html_content *c, const char *key,
 		unsigned long x, unsigned long y,
 		unsigned long click_x, unsigned long click_y,
 		const char **target);

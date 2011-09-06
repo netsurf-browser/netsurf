@@ -632,12 +632,11 @@ void imagemap_freelist(struct mapentry *list)
  * \param target   Pointer to location to receive target pointer (if any)
  * \return The url associated with this area, or NULL if not found
  */
-const char *imagemap_get(hlcache_handle *h, const char *key,
+const char *imagemap_get(struct html_content *c, const char *key,
 		unsigned long x, unsigned long y,
 		unsigned long click_x, unsigned long click_y,
 		const char **target)
 {
-	html_content *c = (html_content *) hlcache_handle_get_content(h);
 	unsigned int slot = 0;
 	struct imagemap *map;
 	struct mapentry *entry;
