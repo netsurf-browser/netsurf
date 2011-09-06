@@ -652,24 +652,24 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 	/* extend/shrink the box to the pointer */
 	if (width) {
 		if (bw->drag_resize_left)
-			bw_dimension = bw->x1 - x;
+			bw_dimension = bw->x + bw->width - x;
 		else
-			bw_dimension = x - bw->x0;
-		bw_pixels = (bw->x1 - bw->x0);
-		sibling_pixels = (sibling->x1 - sibling->x0);
+			bw_dimension = x - bw->x;
+		bw_pixels = bw->width;
+		sibling_pixels = sibling->width;
 		bw_d = &bw->frame_width;
 		sibling_d = &sibling->frame_width;
-		frame_size = bw->parent->x1 - bw->parent->x0;
+		frame_size = bw->parent->width;
 	} else {
 		if (bw->drag_resize_up)
-			bw_dimension = bw->y1 - y;
+			bw_dimension = bw->y + bw->height - y;
 		else
-			bw_dimension = y - bw->y0;
-		bw_pixels = (bw->y1 - bw->y0);
-		sibling_pixels = (sibling->y1 - sibling->y0);
+			bw_dimension = y - bw->y;
+		bw_pixels = bw->height;
+		sibling_pixels = sibling->height;
 		bw_d = &bw->frame_height;
 		sibling_d = &sibling->frame_height;
-		frame_size = bw->parent->y1 - bw->parent->y0;
+		frame_size = bw->parent->height;
 	}
 	sibling_dimension = bw_pixels + sibling_pixels - bw_dimension;
 
@@ -761,21 +761,22 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 	bool left, right, up, down;
 	int i, resize_margin;
 
-	if ((x < bw->x0) || (x > bw->x1) || (y < bw->y0) || (y > bw->y1))
+	if ((x < bw->x) || (x > bw->x + bw->width) ||
+			(y < bw->y) || (y > bw->y + bw->height))
 		return false;
 
 	parent = bw->parent;
 	if ((!bw->no_resize) && parent) {
 		resize_margin = FRAME_RESIZE;
-		if (resize_margin * 2 > (bw->x1 - bw->x0))
-			resize_margin = (bw->x1 - bw->x0) / 2;
-		left = (x < bw->x0 + resize_margin);
-		right = (x > bw->x1 - resize_margin);
+		if (resize_margin * 2 > bw->width)
+			resize_margin = bw->width / 2;
+		left = (x < bw->x + resize_margin);
+		right = (x > bw->x + bw->width - resize_margin);
 		resize_margin = FRAME_RESIZE;
-		if (resize_margin * 2 > (bw->y1 - bw->y0))
-			resize_margin = (bw->y1 - bw->y0) / 2;
-		up = (y < bw->y0 + resize_margin);
-		down = (y > bw->y1 - resize_margin);
+		if (resize_margin * 2 > bw->height)
+			resize_margin = bw->height / 2;
+		up = (y < bw->y + resize_margin);
+		down = (y > bw->y + bw-> height - resize_margin);
 
 		/* check if the edges can actually be moved */
 		if (left || right || up || down) {
