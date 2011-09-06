@@ -158,6 +158,8 @@ void content_open(struct hlcache_handle *h, struct browser_window *bw,
 		struct object_params *params);
 void content_close(struct hlcache_handle *h);
 struct selection *content_get_selection(struct hlcache_handle *h);
+void content_get_contextual_content(struct hlcache_handle *h,
+		int x, int y, struct contextual_content *data);
 
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);

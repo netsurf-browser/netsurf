@@ -24,6 +24,7 @@
 #define _NETSURF_UTILS_TYPES_H_
 
 struct plotter_table;
+struct hlcache_handle;
 
 /* Rectangle coordinates */
 struct rect {
@@ -40,6 +41,14 @@ struct redraw_context {
 
 	/** Current plotters, must be assigned before use. */
 	const struct plotter_table *plot;
+};
+
+
+/* Content located at a specific spatial location */
+struct contextual_content {
+	const char *link_url;
+	struct hlcache_handle *object;
+	struct hlcache_handle *main;
 };
 
 #endif

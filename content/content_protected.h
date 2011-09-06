@@ -65,6 +65,8 @@ struct content_handler {
 			struct object_params *params);
 	void (*close)(struct content *c);
 	struct selection * (*get_selection)(struct content *c);
+	void (*get_contextual_content)(struct content *c, int x, int y,
+				struct contextual_content *data);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	content_type (*type)(void);

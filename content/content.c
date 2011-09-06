@@ -701,6 +701,22 @@ struct selection *content_get_selection(hlcache_handle *h)
 }
 
 
+void content_get_contextual_content(struct hlcache_handle *h,
+		int x, int y, struct contextual_content *data)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->get_contextual_content != NULL) {
+		c->handler->get_contextual_content(c, x, y, data);
+		return;
+	} else {
+		data->object = h;
+		return;
+	}
+}
+
+
 void content_add_error(struct content *c, const char *token,
 		unsigned int line)
 {
