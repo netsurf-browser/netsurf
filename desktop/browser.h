@@ -128,12 +128,6 @@ struct browser_window {
 	/** Window has been resized, and content needs reformatting. */
 	bool reformat_pending;
 
-	/** Window dimensions (to be phased out) */
-	int x0;
-	int y0;
-	int x1;
-	int y1;
-
 	/** Window dimensions */
 	int x;
 	int y;
