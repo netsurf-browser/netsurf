@@ -475,6 +475,10 @@ void browser_window_set_scroll(struct browser_window *bw, int x, int y)
 static void browser_window__get_contextual_content(struct browser_window *bw,
 		int x, int y, struct contextual_content *data)
 {
+	/* Handle (i)frame scroll offset (core-managed browser windows only) */
+	x += scrollbar_get_offset(bw->scroll_x);
+	y += scrollbar_get_offset(bw->scroll_y);
+
 	if (bw->children) {
 		/* Browser window has children, so pass request on to
 		 * appropriate child */
