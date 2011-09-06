@@ -169,8 +169,10 @@ static struct gtk_scaffolding *current_model;
 /** global list for interface changes */
 nsgtk_scaffolding *scaf_list = NULL;
 
-/** The box containing a link under the mouse, or 0 if none */
-static struct box *current_menu_link_box;
+/** holds the context data for what's under the pointer, when the contextual
+ *  menu is opened. */
+static struct contextual_content current_menu_ctx = { NULL, NULL, NULL };
+
 
 /**
  * Helper to hide popup menu entries by grouping
@@ -888,11 +890,11 @@ MENUHANDLER(savelink)
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
-	if (!current_menu_link_box)
+	if (current_menu_ctx.link_url == NULL)
 		return FALSE;
 
-	browser_window_download(bw, current_menu_link_box->href,
-		content_get_url(bw->current_content));
+	browser_window_download(bw, current_menu_ctx.link_url,
+			current_menu_ctx.link_url);
 
 	return TRUE;
 }
@@ -906,10 +908,10 @@ MENUHANDLER(link_openwin)
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
-	if (current_menu_link_box == NULL)
+	if (current_menu_ctx.link_url == NULL)
 		return FALSE;
 
-	browser_window_create(current_menu_link_box->href, bw, NULL, true, false);
+	browser_window_create(current_menu_ctx.link_url, bw, NULL, true, false);
 
 	return TRUE;
 }
@@ -923,13 +925,11 @@ MENUHANDLER(link_opentab)
 	struct gui_window *gui = g->top_level;
 	struct browser_window *bw = nsgtk_get_browser_window(gui);
 
-	temp_open_background = 1;
-
-	if (current_menu_link_box == NULL)
+	if (current_menu_ctx.link_url == NULL)
 		return FALSE;
 
-	browser_window_create(current_menu_link_box->href, bw, NULL, true,
-			true);
+	temp_open_background = 1;
+	browser_window_create(current_menu_ctx.link_url, bw, NULL, true, true);
 	temp_open_background = -1;
 
 	return TRUE;
@@ -2330,19 +2330,19 @@ void nsgtk_scaffolding_initial_sensitivity(struct gtk_scaffolding *g)
 /**
  * Checks if a location is over a link.
  *
- * Side effect of this function is to set the global current_menu_link_box
+ * Side effect of this function is to set the global current_menu_ctx
  */
 static bool is_menu_over_link(struct gtk_scaffolding *g, gdouble x, gdouble y)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	current_menu_link_box = NULL;
 
 	if ((bw->current_content != NULL) &&
 	    (content_get_type(bw->current_content) == CONTENT_HTML)) {
-		current_menu_link_box = box_href_at_point(bw->current_content, x, y);
+		browser_window_get_contextual_content(bw, x, y,
+				&current_menu_ctx);
 	}
 
-	if (current_menu_link_box == NULL)
+	if (current_menu_ctx.link_url == NULL)
 		return false;
 
 	return true;
