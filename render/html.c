@@ -76,6 +76,8 @@ static void html_open(struct content *c, struct browser_window *bw,
 		struct object_params *params);
 static void html_close(struct content *c);
 struct selection *html_get_selection(struct content *c);
+static void html_get_contextual_content(struct content *c,
+		int x, int y, struct contextual_content *data);
 struct search_context *html_get_search(struct content *c);
 static nserror html_clone(const struct content *old, struct content **newc);
 static content_type html_content_type(void);
@@ -119,6 +121,7 @@ static const content_handler html_content_handler = {
 	.open = html_open,
 	.close = html_close,
 	.get_selection = html_get_selection,
+	.get_contextual_content = html_get_contextual_content,
 	.clone = html_clone,
 	.type = html_content_type,
 	.no_share = true,
@@ -2112,6 +2115,53 @@ struct selection *html_get_selection(struct content *c)
 	html_content *html = (html_content *) c;
 
 	return &html->sel;
+}
+
+
+/**
+ * Get access to any content, link URLs and objects (images) currently
+ * at the given (x, y) coordinates.
+ *
+ * \param c	html content to look inside
+ * \param x	x-coordinate of point of interest
+ * \param y	y-coordinate of point of interest
+ * \param data	pointer to contextual_content struct.  Its fields are updated
+ *		with pointers to any relevent content, or set to NULL if none.
+ */
+void html_get_contextual_content(struct content *c,
+		int x, int y, struct contextual_content *data)
+{
+	html_content *html = (html_content *) c;
+
+	struct box *box = html->layout;
+	struct box *next;
+	int box_x = 0, box_y = 0;
+	hlcache_handle *containing_content = NULL;
+
+	while ((next = box_at_point(box, x, y, &box_x, &box_y,
+			&containing_content)) != NULL) {
+		box = next;
+
+		if (box->style && css_computed_visibility(box->style) == 
+				CSS_VISIBILITY_HIDDEN)
+			continue;
+
+		if (box->iframe)
+			browser_window_get_contextual_content(box->iframe,
+					x - box_x, y - box_y, data);
+
+		if (box->object)
+			data->object = box->object;
+
+		if (box->href)
+			data->link_url = box->href;
+
+		if (box->usemap) {
+			const char *target = NULL;
+			data->link_url = imagemap_get(html, box->usemap,
+					box_x, box_y, x, y, &target);
+		}
+	}
 }
 
 
