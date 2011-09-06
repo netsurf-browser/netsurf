@@ -2029,7 +2029,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 	}
 
 	if (bw->drag_type == DRAGGING_FRAME) {
-		browser_window_resize_frame(bw, bw->x0 + x, bw->y0 + y);
+		browser_window_resize_frame(bw, bw->x + x, bw->y + y);
 	} else if (bw->drag_type == DRAGGING_PAGE_SCROLL) {
 		/* mouse movement since drag started */
 		int scrollx = bw->drag_start_x - x;
