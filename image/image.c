@@ -38,6 +38,22 @@
 
 #include "utils/config.h"
 
+/** low water mark for speculative pre-conversion */
+
+/* Experimenting by visiting every page from default page in order and
+ * then netsurf homepage
+ *
+ * 0    : Cache hit/miss/speculative miss/fail 604/147/  0/0 (80%/19%/ 0%/ 0%)
+ * 2048 : Cache hit/miss/speculative miss/fail 622/119/ 17/0 (82%/15%/ 2%/ 0%)
+ * 4096 : Cache hit/miss/speculative miss/fail 656/109/ 25/0 (83%/13%/ 3%/ 0%)
+ * 8192 : Cache hit/miss/speculative miss/fail 648/104/ 40/0 (81%/13%/ 5%/ 0%)
+ * ALL  : Cache hit/miss/speculative miss/fail 775/  0/161/0 (82%/ 0%/17%/ 0%)
+*/
+#define SPECULATE_SMALL 4096
+
+/* the time between cache clean runs in ms */
+#define CACHE_CLEAN_TIME (10 * 1000)
+
 /**
  * Initialise image content handlers
  *
@@ -46,8 +62,14 @@
 nserror image_init(void)
 {
 	nserror error;
+	struct image_cache_parameters image_cache_parameters = {
+		.bg_clean_time = CACHE_CLEAN_TIME,
+		.limit = (8 * 1024 * 1024),
+		.hysteresis = (2 * 1024 * 1024),
+		.speculative_small = SPECULATE_SMALL
+	};
 
-	error = image_cache_init();
+	error = image_cache_init(&image_cache_parameters);
 	if (error != NSERROR_OK)
 		return error;
 

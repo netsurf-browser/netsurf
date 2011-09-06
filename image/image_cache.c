@@ -64,52 +64,60 @@ struct image_cache_entry_s {
  * sensibly.
  */
 struct image_cache_s {
-	cache_age current_age; /** the "age" of the current operation */
-	struct image_cache_entry_s *entries; /* cache objects */
+	/** Cache parameters */
+	struct image_cache_parameters params;
 
-	/* Statistics for replacement algorithm */
+	/** The "age" of the current operation */
+	cache_age current_age; 
+
+	/* The objects the cache holds */
+	struct image_cache_entry_s *entries; 
+
+
+	/* Statistics for management algorithm */
 
 	/** total size of bitmaps currently allocated */
 	size_t total_bitmap_size; 
 
-	/** Max size of bitmaps allocated at any one time */
+	/** Total count of bitmaps currently allocated */
+	int bitmap_count;
+
+	/** Maximum size of bitmaps allocated at any one time */
 	size_t max_bitmap_size;
+	/** The number of objects when maximum bitmap usage occoured */
 	int max_bitmap_size_count;
 
-	int bitmap_count;
+	/** Maximum count of bitmaps allocated at any one time */
 	int max_bitmap_count;
+	/** The size of the bitmaps when teh max count occoured */
 	size_t max_bitmap_count_size;
 
-	int miss_count; /* bitmap was not available at plot time required conversion */
-	int specultive_miss_count; /* bitmap was available but never actually required conversion */
-	int hit_count; /* bitmap was available at plot time required no conversion */
-	int fail_count; /* bitmap was not available at plot time, required conversion which failed */
+	/** Bitmap was not available at plot time required conversion */
+	int miss_count; 
+	/** Bitmap was available at plot time required no conversion */
+	int hit_count;
+	/** Bitmap was not available at plot time and required
+	 * conversion which failed.
+	 */ 
+	int fail_count; 
 
-	int total_unrendered; /* bitmap was freed without ever being required for redraw */
+	/* Cache entry freed without ever being redrawn */
+	int total_unrendered; 
+	/** Bitmap was available but never required - wasted conversions */
+	int specultive_miss_count; 
 
-	int total_extra_conversions; /* counts total number of conversions of images, after the first */
-	int total_extra_conversions_count; /* counts total number of images with more than one conversion */
-	int peak_conversions; /* bitmap with most conversions was converted this many times */
-	unsigned int peak_conversions_size; /* bitmap with most conversions this size */
+	/** Total number of additional (after the first) conversions */
+	int total_extra_conversions;
+	/** counts total number of images with more than one conversion */
+	int total_extra_conversions_count; 
+
+	/** Bitmap with most conversions was converted this many times */
+	int peak_conversions; 
+	/** Size of bitmap with most conversions */
+	unsigned int peak_conversions_size; 
 };
 
 static struct image_cache_s *image_cache = NULL;
-
-/** low water mark for speculative pre-conversion */
-
-/* Experimenting by visiting every page from default page in order and
- * then netsurf homepage
- *
- * 0    : Cache hit/miss/speculative miss/fail 604/147/  0/0 (80%/19%/ 0%/ 0%)
- * 2048 : Cache hit/miss/speculative miss/fail 622/119/ 17/0 (82%/15%/ 2%/ 0%)
- * 4096 : Cache hit/miss/speculative miss/fail 656/109/ 25/0 (83%/13%/ 3%/ 0%)
- * 8192 : Cache hit/miss/speculative miss/fail 648/104/ 40/0 (81%/13%/ 5%/ 0%)
- * ALL  : Cache hit/miss/speculative miss/fail 775/  0/161/0 (82%/ 0%/17%/ 0%)
-*/
-#define SPECULATE_SMALL 4096
-
-/* the time between cache clean runs in ms */
-#define CACHE_CLEAN_TIME (10 * 1000)
 
 
 /** Find the cache entry for a content
@@ -229,6 +237,42 @@ static void image_cache__free_entry(struct image_cache_entry_s *centry)
 	free(centry);
 }
 
+/** Cache cleaner */
+static void image_cache__clean(struct image_cache_s *icache)
+{
+	struct image_cache_entry_s *centry = icache->entries;
+
+	while (centry != NULL) {
+		if ((icache->current_age - centry->redraw_age) > 
+		    icache->params.bg_clean_time) {
+			/* only consider older entries, avoids active entries */
+			if ((icache->total_bitmap_size > 
+			     (icache->params.limit - icache->params.hysteresis)) && 
+			    (random() > (RAND_MAX / 2))) {
+				image_cache__free_bitmap(centry);
+			}
+		}
+		centry=centry->next;
+	}
+}
+
+/** Cache background scheduled callback. */
+static void image_cache__background_update(void *p)
+{
+	struct image_cache_s *icache = p;
+	
+	/* increment current cache age */
+	icache->current_age += icache->params.bg_clean_time;
+	
+	LOG(("Cache age %ds", icache->current_age / 1000));
+
+	image_cache__clean(icache);
+
+	schedule((icache->params.bg_clean_time / 10), 
+		 image_cache__background_update, 
+		 icache);
+}
+
 /* exported interface documented in image_cache.h */
 struct bitmap *image_cache_get_bitmap(struct content *c)
 {
@@ -262,12 +306,20 @@ bool image_cache_speculate(struct content *c)
 {
 	bool decision = false;
 
-	if (c->size <= SPECULATE_SMALL) {
+	/* If the cache is below its target usage and the bitmap is
+	 * small enough speculate.
+	 */	
+	if ((image_cache->total_bitmap_size < image_cache->params.limit) && 
+	    (c->size <= image_cache->params.speculative_small)) {
+#ifdef IMAGE_CACHE_VERBOSE
 		LOG(("content size (%d) is smaller than minimum (%d)", c->size, SPECULATE_SMALL));
+#endif
 		decision = true;
 	}
 
+#ifdef IMAGE_CACHE_VERBOSE
 	LOG(("returning %d", decision));
+#endif
 	return decision;
 }
 
@@ -284,33 +336,20 @@ struct bitmap *image_cache_find_bitmap(struct content *c)
 	return centry->bitmap;
 }
 
-static void image_cache__clean(void *p)
-{
-	struct image_cache_s *icache = p;
-	struct image_cache_entry_s *centry = icache->entries;
-	
-	/* increment current cache age */
-	icache->current_age += CACHE_CLEAN_TIME;
-	
-	LOG(("Running cache clean at cache age %ds", icache->current_age / 1000));
-
-	LOG(("Brain dead cache cleaner removing all bitmaps not redraw in last %ds", CACHE_CLEAN_TIME / 1000));
-	while (centry != NULL) {
-		if ((icache->current_age - centry->redraw_age) > CACHE_CLEAN_TIME) {
-			image_cache__free_bitmap(centry);
-		}
-		centry=centry->next;
-	}
-
-	schedule((CACHE_CLEAN_TIME / 10), image_cache__clean, icache);
-}
-
 /* exported interface documented in image_cache.h */
-nserror image_cache_init(void)
+nserror 
+image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 {
 	image_cache = calloc(1, sizeof(struct image_cache_s));
+	if (image_cache == NULL) {
+		return NSERROR_NOMEM;
+	}
 
-	schedule((CACHE_CLEAN_TIME / 10), image_cache__clean, image_cache);
+	image_cache->params = *image_cache_parameters;
+
+	schedule((image_cache->params.bg_clean_time / 10), 
+		 image_cache__background_update, 
+		 image_cache);
 
 	return NSERROR_OK;
 }
@@ -320,7 +359,7 @@ nserror image_cache_fini(void)
 {
 	int op_count;
 
-	schedule_remove(image_cache__clean, image_cache);
+	schedule_remove(image_cache__background_update, image_cache);
 
 	op_count = image_cache->hit_count + 
 		image_cache->miss_count + 

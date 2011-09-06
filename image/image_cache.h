@@ -43,8 +43,25 @@
 
 typedef struct bitmap * (image_cache_convert_fn) (struct content *content);
 
-/** Initialise the image cache */
-nserror image_cache_init(void);
+struct image_cache_parameters {
+	/** How frequently the background cache clean process is run (ms) */
+	unsigned int bg_clean_time;
+
+	/** The target upper bound for the image cache size */
+	size_t limit;
+
+	/** The hysteresis allowed round the target size */
+	size_t hysteresis;
+
+	/** The speculative conversion "small" size */
+	size_t speculative_small;
+};
+
+/** Initialise the image cache 
+ *
+ * @param image_cache_parameters The control parameters for the image cache
+ */
+nserror image_cache_init(const struct image_cache_parameters *image_cache_parameters);
 nserror image_cache_fini(void);
 
 /** adds an image content to be cached. 
