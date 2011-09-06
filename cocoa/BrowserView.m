@@ -515,10 +515,13 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 
 	NSMenu *popupMenu = [[NSMenu alloc] initWithTitle: @""];
 	NSPoint point = [self convertMousePoint: event];
-	
-	struct box *box = NULL;
-	if ((box = box_object_at_point( browser->current_content, point.x, point.y )) != NULL) {
-		NSString *imageURL = [NSString stringWithUTF8String: content_get_url( box->object )];
+
+	struct contextual_content cont;
+
+	browser_window_get_contextual_content( browser, point.x, point.y, &cont);
+
+	if (cont.object != NULL) {
+		NSString *imageURL = [NSString stringWithUTF8String: content_get_url( cont.object )];
 		
 		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open image in new tab", @"Context menu" )
 							  action: @selector(cmOpenURLInTab:) 
@@ -531,13 +534,13 @@ static browser_mouse_state cocoa_mouse_flags_for_event( NSEvent *evt )
 					   keyEquivalent: @""] setRepresentedObject: imageURL];
 		[[popupMenu addItemWithTitle: NSLocalizedString( @"Copy image", @"Context menu" )
 							  action: @selector(cmImageCopy:) 
-					   keyEquivalent: @""] setRepresentedObject: (id)content_get_bitmap( box->object )];
+					   keyEquivalent: @""] setRepresentedObject: (id)content_get_bitmap( cont.object )];
 		
 		[popupMenu addItem: [NSMenuItem separatorItem]];
 	}
 	
-	if ((box = box_href_at_point( browser->current_content, point.x, point.y )) != NULL) {
-		NSString *target = [NSString stringWithUTF8String: box->href];
+	if (cont.link_url != NULL) {
+		NSString *target = [NSString stringWithUTF8String: cont.link_url];
 		
 		[[popupMenu addItemWithTitle: NSLocalizedString( @"Open link in new tab", @"Context menu" )
 							  action: @selector(cmOpenURLInTab:) 
