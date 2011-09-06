@@ -470,6 +470,60 @@ void browser_window_set_scroll(struct browser_window *bw, int x, int y)
 }
 
 /**
+ * Internal helper for browser_window_get_contextual_content
+ */
+static void browser_window__get_contextual_content(struct browser_window *bw,
+		int x, int y, struct contextual_content *data)
+{
+	if (bw->children) {
+		/* Browser window has children, so pass request on to
+		 * appropriate child */
+		struct browser_window *bwc;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		/* Loop through all children of bw */
+		for (cur_child = 0; cur_child < children; cur_child++) {
+			/* Set current child */
+			bwc = &bw->children[cur_child];
+
+			/* Skip this frame if (x, y) coord lies outside */
+			if (x < bwc->x || bwc->x + bwc->width < x ||
+					y < bwc->y || bwc->y + bwc->height < y)
+				continue;
+
+			/* Pass request into this child */
+			browser_window__get_contextual_content(bwc,
+					(x - bwc->x), (y - bwc->y), data);
+			return;
+		}
+
+		/* Coordinate not contained by any frame */
+		return;
+	}
+
+	if (bw->current_content == NULL)
+		/* No content; nothing to set */
+		return;
+
+	/* Pass request to content */
+	content_get_contextual_content(bw->current_content, x, y, data);
+	data->main = bw->current_content;
+}
+
+/* exported interface, documented in browser.h */
+void browser_window_get_contextual_content(struct browser_window *bw,
+		int x, int y, struct contextual_content *data)
+{
+	data->link_url = NULL;
+	data->object = NULL;
+	data->main = NULL;
+
+	browser_window__get_contextual_content(bw, x, y, data);
+}
+
+
+/**
  * Create and open a new root browser window with the given page.
  *
  * \param  url	    URL to start fetching in the new window (copied)

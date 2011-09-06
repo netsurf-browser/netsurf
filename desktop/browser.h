@@ -229,6 +229,19 @@ void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 
+/**
+ * Get access to any content, link URLs and objects (images) currently
+ * at the given (x, y) coordinates.
+ *
+ * \param bw	browser window to look inside
+ * \param x	x-coordinate of point of interest
+ * \param y	y-coordinate of point of interest
+ * \param data	pointer to contextual_content struct.  Its fields are updated
+ *		with pointers to any relevent content, or set to NULL if none.
+ */
+void browser_window_get_contextual_content(struct browser_window *bw,
+		int x, int y, struct contextual_content *data);
+
 void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 		const char *frag);
 
