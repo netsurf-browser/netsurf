@@ -1124,20 +1124,32 @@ void ami_gui_opts_open(void)
   				      			            GA_Selected, option_button_2_tab,
             	    					CheckBoxEnd,
 									LayoutEnd, // tabbed browsing
-									LAYOUT_AddChild,VGroupObject, // temp extra group
-										LAYOUT_BevelStyle, BVS_GROUP, // stolen from below
-										LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU], // and this
-									LAYOUT_AddChild,VGroupObject,
+
+									LAYOUT_AddChild, VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
-		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
-      	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_BEHAVIOUR],
+			                			LAYOUT_AddChild, gow->objects[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
+    	  	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
         	 	           					GA_RelVerify, TRUE,
-    	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
-	  				      		            GA_Selected, option_context_menu,
-            	    					CheckBoxEnd,
-									LayoutEnd, // context menus
+											GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
+  						      	            GA_Selected, option_startup_no_window,
+            		    				CheckBoxEnd,
+		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
+      		              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
+											GA_RelVerify, TRUE,
+											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
+											GA_Selected, option_close_no_quit,
+	        	        				CheckBoxEnd,
+		                				LAYOUT_AddChild, gow->objects[GID_OPTS_DOCKY] = CheckBoxObject,
+											GA_ID, GID_OPTS_DOCKY,
+        	 	           					GA_RelVerify, TRUE,
+         		           					GA_Text, gadlab[GID_OPTS_DOCKY],
+  					      		            GA_Selected, !option_hide_docky_icon,
+	            		    			CheckBoxEnd,
+									LayoutEnd, // behaviour
 									CHILD_WeightedHeight, 0,
-									LayoutEnd, // temp extra group for spacing
+
 								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild, HGroupObject,
@@ -1172,32 +1184,20 @@ void ami_gui_opts_open(void)
 									CHILD_WeightedHeight, 0,
 								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
+
 								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_BevelStyle, BVS_GROUP,
+									LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
 									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_BEHAVIOUR],
-									LAYOUT_AddChild, HGroupObject,
-			                			LAYOUT_AddChild, gow->objects[GID_OPTS_STARTUP_NO_WIN] = CheckBoxObject,
-    	  	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
-        	 	           					GA_RelVerify, TRUE,
-											GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
-  						      	            GA_Selected, option_startup_no_window,
-            		    				CheckBoxEnd,
-		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
-      		              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
-											GA_RelVerify, TRUE,
-											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
-											GA_Selected, option_close_no_quit,
-	        	        				CheckBoxEnd,
-									LayoutEnd,
-	                				LAYOUT_AddChild, gow->objects[GID_OPTS_DOCKY] = CheckBoxObject,
-										GA_ID, GID_OPTS_DOCKY,
-         	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_DOCKY],
-  				      		            GA_Selected, !option_hide_docky_icon,
-	            	    			CheckBoxEnd,
-								LayoutEnd, // behaviour
+	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
+   	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
+       	 	           					GA_RelVerify, TRUE,
+   	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
+  				      		            GA_Selected, option_context_menu,
+           	    					CheckBoxEnd,
+								LayoutEnd, // context menus
 								CHILD_WeightedHeight, 0,
+
 							LayoutEnd, // page vgroup
 							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
