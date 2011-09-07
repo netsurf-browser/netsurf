@@ -18,5 +18,6 @@ makelink nl /!NetSurf/Resources/nl soft
 makelink Pointers /amiga/resources/Pointers soft
 makelink quirks.css /!NetSurf/Resources/Quirks,f79 soft
 makelink SearchEngines /amiga/resources/SearchEngines soft
+makelink splash.png /amiga/resources/splash.png soft
 makelink Themes /amiga/resources/Themes soft
 makelink mimetypes /amiga/resources/mimetypes soft

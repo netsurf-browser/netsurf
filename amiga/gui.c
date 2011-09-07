@@ -155,6 +155,9 @@ const char tree_content_icon_name[] = "def_project.info";
 
 static struct DrawInfo *dri;
 
+const char * const versvn;
+const char * const verdate;
+
 void ami_update_buttons(struct gui_window_2 *);
 void ami_scroller_hook(struct Hook *,Object *,struct IntuiMessage *);
 void ami_switch_tab(struct gui_window_2 *gwin,bool redraw);
@@ -3927,26 +3930,48 @@ BOOL ami_gadget_hit(Object *obj, int x, int y)
 
 Object *ami_gui_splash_open(void)
 {
-	Object *win_obj;
+	Object *win_obj, *bm_obj;
 	struct Window *win;
 	struct Screen *wbscreen = LockPubScreen("Workbench");
+	uint32 top = 0, left = 0;
+	STRPTR ver_string;
 
 	win_obj = WindowObject,
-				WA_Title, "Initialising...",
+				WA_Borderless, TRUE,
 				WA_ToolBox, TRUE,
 				WA_BusyPointer, TRUE,
 				WINDOW_Position, WPOS_CENTERSCREEN,
 				WINDOW_LockWidth, TRUE,
 				WINDOW_LockHeight, TRUE,
 				WINDOW_ParentGroup, LayoutObject,
-					LAYOUT_AddImage, BitMapObject,
-						BITMAP_SourceFile, "PROGDIR:Resources/netsurf.png",
+					LAYOUT_AddImage, bm_obj = BitMapObject,
+						BITMAP_SourceFile, "PROGDIR:Resources/splash.png",
 						BITMAP_Screen, wbscreen,
 					BitMapEnd,
 				LayoutEnd,
 			EndWindow;
 
 	win = RA_OpenWindow(win_obj);
+
+	GetAttrs(bm_obj, IA_Top, &top,
+				IA_Left, &left,
+				TAG_DONE);
+
+	SetDrMd(win->RPort, LEVELS);
+
+	Move(win->RPort, left + 5, top + 20);
+	Text(win->RPort, "Initialising...", strlen("Initialising..."));
+
+#ifdef NDEBUG
+	ver_string = ASPrintf("NetSurf %s", netsurf_version);
+#else
+	ver_string = ASPrintf("NetSurf %s (%s)", versvn, verdate);
+#endif
+
+	Move(win->RPort, left + 185, top + 220);
+	Text(win->RPort, ver_string, strlen(ver_string));
+
+	FreeVec(ver_string);
 
 	UnlockPubScreen(NULL, wbscreen);
 
