@@ -39,6 +39,7 @@
 #include "content/urldb.h"
 #include "css/css.h"
 #include "image/image.h"
+#include "image/image_cache.h"
 #include "desktop/netsurf.h"
 #include "desktop/401login.h"
 #include "desktop/browser.h"
@@ -52,6 +53,22 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
+
+/** speculative pre-conversion small image size
+ *
+ * Experimenting by visiting every page from default page in order and
+ * then netsurf homepage
+ *
+ * 0    : Cache hit/miss/speculative miss/fail 604/147/  0/0 (80%/19%/ 0%/ 0%)
+ * 2048 : Cache hit/miss/speculative miss/fail 622/119/ 17/0 (82%/15%/ 2%/ 0%)
+ * 4096 : Cache hit/miss/speculative miss/fail 656/109/ 25/0 (83%/13%/ 3%/ 0%)
+ * 8192 : Cache hit/miss/speculative miss/fail 648/104/ 40/0 (81%/13%/ 5%/ 0%)
+ * ALL  : Cache hit/miss/speculative miss/fail 775/  0/161/0 (82%/ 0%/17%/ 0%)
+*/
+#define SPECULATE_SMALL 4096
+
+/* the time between cache clean runs in ms */
+#define IMAGE_CACHE_CLEAN_TIME (10 * 1000)
 
 bool netsurf_quit = false;
 bool verbose_log = false;
@@ -102,6 +119,12 @@ nserror netsurf_init(int *pargc,
 	nserror error;
 	struct utsname utsname;
 	nserror ret = NSERROR_OK;
+	struct image_cache_parameters image_cache_parameters = {
+		.bg_clean_time = IMAGE_CACHE_CLEAN_TIME,
+		.limit = (8 * 1024 * 1024),
+		.hysteresis = (2 * 1024 * 1024),
+		.speculative_small = SPECULATE_SMALL
+	};
 
 #ifdef HAVE_SIGPIPE
 	/* Ignore SIGPIPE - this is necessary as OpenSSL can generate these
@@ -140,6 +163,12 @@ nserror netsurf_init(int *pargc,
 
 	messages_load(messages);
 
+	/* image handler bitmap cache */
+	error = image_cache_init(&image_cache_parameters);
+	if (error != NSERROR_OK)
+		return error;
+
+	/* content handler initialisation */
 	error = css_init();
 	if (error != NSERROR_OK)
 		return error;
@@ -155,6 +184,7 @@ nserror netsurf_init(int *pargc,
 	error = textplain_init();
 	if (error != NSERROR_OK)
 		return error;
+
 
 	error = mimesniff_init();
 	if (error != NSERROR_OK)
@@ -221,6 +251,9 @@ void netsurf_exit(void)
 	image_fini();
 	html_fini();
 	css_fini();
+
+	/* dump any remaining cache entries */
+	image_cache_fini();
 
 	content_factory_fini();
 

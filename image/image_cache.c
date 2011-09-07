@@ -94,12 +94,15 @@ struct image_cache_s {
 
 	/** Bitmap was not available at plot time required conversion */
 	int miss_count; 
+	size_t miss_size; 
 	/** Bitmap was available at plot time required no conversion */
 	int hit_count;
+	size_t hit_size; 
 	/** Bitmap was not available at plot time and required
 	 * conversion which failed.
 	 */ 
 	int fail_count; 
+	size_t fail_size; 
 
 	/* Cache entry freed without ever being redrawn */
 	int total_unrendered; 
@@ -291,11 +294,14 @@ struct bitmap *image_cache_get_bitmap(struct content *c)
 		if (centry->bitmap != NULL) {
 			image_cache_stats_bitmap_add(centry);
 			image_cache->miss_count++;
+			image_cache->miss_size += centry->bitmap_size;
 		} else {
 			image_cache->fail_count++;
+			image_cache->fail_size += centry->bitmap_size;
 		}
 	} else {
 		image_cache->hit_count++;
+		image_cache->hit_size += centry->bitmap_size;
 	}
 
 	return centry->bitmap;
@@ -358,32 +364,43 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 nserror image_cache_fini(void)
 {
 	int op_count;
+	size_t op_size;
 
 	schedule_remove(image_cache__background_update, image_cache);
 
-	op_count = image_cache->hit_count + 
-		image_cache->miss_count + 
-		image_cache->specultive_miss_count + 
-		image_cache->fail_count;
-
-	LOG(("Destroying Remaining Image cache entries"));
+	LOG(("Size at finish %d (in %d)", image_cache->total_bitmap_size, image_cache->bitmap_count));
 
 	while (image_cache->entries != NULL) {
 		image_cache__free_entry(image_cache->entries);
 	}
 
-	LOG(("Image cache size at finish %d (in %d)", image_cache->total_bitmap_size, image_cache->bitmap_count));
+	op_count = image_cache->hit_count + 
+		image_cache->miss_count + 
+		image_cache->fail_count;
+
+	op_size = image_cache->hit_size + 
+		image_cache->miss_size + 
+		image_cache->fail_size;
+
+	LOG(("Age %ds", image_cache->current_age / 1000));
 	LOG(("Peak size %d (in %d)", image_cache->max_bitmap_size, image_cache->max_bitmap_size_count ));
 	LOG(("Peak image count %d (size %d)", image_cache->max_bitmap_count, image_cache->max_bitmap_count_size));
-	LOG(("Cache hit/miss/speculative miss/fail %d/%d/%d/%d (%d%%/%d%%/%d%%/%d%%)", 
+	LOG(("Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+	     op_count,
 	     image_cache->hit_count, 
 	     image_cache->miss_count,
-	     image_cache->specultive_miss_count,
 	     image_cache->fail_count,
 	     (image_cache->hit_count * 100) / op_count, 
 	     (image_cache->miss_count * 100) / op_count,
-	     (image_cache->specultive_miss_count * 100) / op_count,
 	     (image_cache->fail_count * 100) / op_count));
+	LOG(("Cache total/hit/miss/fail (size) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+	     op_size,
+	     image_cache->hit_size, 
+	     image_cache->miss_size,
+	     image_cache->fail_size,
+	     (image_cache->hit_size * 100) / op_size, 
+	     (image_cache->miss_size * 100) / op_size,
+	     (image_cache->fail_size * 100) / op_size));
 	LOG(("Total images never rendered: %d (includes %d that were converted)",
 	     image_cache->total_unrendered,
 	     image_cache->specultive_miss_count));
@@ -495,12 +512,15 @@ bool image_cache_redraw(struct content *c,
 		if (centry->bitmap != NULL) {
 			image_cache_stats_bitmap_add(centry);
 			image_cache->miss_count++;
+			image_cache->miss_size += centry->bitmap_size;
 		} else {
 			image_cache->fail_count++;
+			image_cache->fail_size += centry->bitmap_size;
 			return false;
 		}
 	} else {
 		image_cache->hit_count++;
+		image_cache->hit_size += centry->bitmap_size;
 	}
 
 
