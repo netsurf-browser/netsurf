@@ -2276,7 +2276,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		break;
 
 	default:
-		bw->drag_type = DRAGGING_NONE;
+		browser_window_set_drag_type(bw, DRAGGING_NONE);
 		break;
 	}
 }

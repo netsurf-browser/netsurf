@@ -83,7 +83,7 @@ void browser_window_scroll_callback(void *client_data,
 		break;
 	case SCROLLBAR_MSG_SCROLL_FINISHED:
 		browser_window_set_drag_type(bw, DRAGGING_NONE);
-		
+
 		browser_window_set_pointer(bw, GUI_POINTER_DEFAULT);
 		break;
 	}
@@ -843,7 +843,7 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 				*pointer = GUI_POINTER_DOWN;
 			}
 			if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
-				bw->drag_type = DRAGGING_FRAME;
+				browser_window_set_drag_type(bw, DRAGGING_FRAME);
 				bw->drag_start_x = x;
 				bw->drag_start_y = y;
 				bw->drag_resize_left = left;
