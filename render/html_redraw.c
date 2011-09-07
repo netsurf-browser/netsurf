@@ -724,7 +724,8 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				CSS_OVERFLOW_SCROLL ||
 			css_computed_overflow(box->style) == 
 				CSS_OVERFLOW_AUTO)) || (box->object &&
-			content_get_type(box->object) == CONTENT_HTML))) {
+			content_get_type(box->object) == CONTENT_HTML)) &&
+			box->parent != NULL) {
 
 		has_x_scroll = box_hscrollbar_present(box);
 		has_y_scroll = box_vscrollbar_present(box);
