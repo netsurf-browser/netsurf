@@ -691,3 +691,16 @@ void ami_font_setdevicedpi(int id)
 	ami_xdpi = xdpi;
 	ami_devicedpi = (xdpi << 16) | ydpi;
 }
+
+/* The below are simple font routines which should not be used for page rendering */
+
+struct TextFont *ami_font_open_disk_font(struct TextAttr *tattr)
+{
+	struct TextFont *tfont = OpenDiskFont(tattr);
+	return tfont;
+}
+
+void ami_font_close_disk_font(struct TextFont *tfont)
+{
+	CloseFont(tfont);
+}

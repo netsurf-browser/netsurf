@@ -3935,6 +3935,8 @@ Object *ami_gui_splash_open(void)
 	struct Screen *wbscreen = LockPubScreen("Workbench");
 	uint32 top = 0, left = 0;
 	STRPTR ver_string;
+	struct TextAttr tattr;
+	struct TextFont *tfont;
 
 	win_obj = WindowObject,
 				WA_Borderless, TRUE,
@@ -3957,10 +3959,29 @@ Object *ami_gui_splash_open(void)
 				IA_Left, &left,
 				TAG_DONE);
 
-	SetDrMd(win->RPort, LEVELS);
+	SetRPAttrs(win->RPort, RPTAG_APenColor, 0x003F6DFE, TAG_DONE);
+	SetDrMd(win->RPort, JAM1);
 
-	Move(win->RPort, left + 5, top + 20);
+	tattr.ta_Name = "DejaVu Serif Oblique.font";
+	tattr.ta_YSize = 24;
+	tattr.ta_Style = 0;
+	tattr.ta_Flags = 0;
+
+	if(tfont = ami_font_open_disk_font(&tattr))
+		SetFont(win->RPort, tfont);
+
+	Move(win->RPort, left + 5, top + 25);
 	Text(win->RPort, "Initialising...", strlen("Initialising..."));
+
+	if(tfont) ami_font_close_disk_font(tfont);
+
+	tattr.ta_Name = "DejaVu Sans.font";
+	tattr.ta_YSize = 16;
+	tattr.ta_Style = 0;
+	tattr.ta_Flags = 0;
+
+	if(tfont = ami_font_open_disk_font(&tattr))
+		SetFont(win->RPort, tfont);
 
 #ifdef NDEBUG
 	ver_string = ASPrintf("NetSurf %s", netsurf_version);
@@ -3971,7 +3992,8 @@ Object *ami_gui_splash_open(void)
 	Move(win->RPort, left + 185, top + 220);
 	Text(win->RPort, ver_string, strlen(ver_string));
 
-	FreeVec(ver_string);
+	if(ver_string) FreeVec(ver_string);
+	if(tfont) ami_font_close_disk_font(tfont);
 
 	UnlockPubScreen(NULL, wbscreen);
 

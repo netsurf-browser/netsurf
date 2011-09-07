@@ -21,6 +21,7 @@
 
 #include "desktop/plotters.h"
 #include <graphics/rastport.h>
+#include <graphics/text.h>
 
 struct ami_font_node;
 
@@ -30,4 +31,8 @@ void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
 void ami_font_close(struct ami_font_node *node);
+
+/* Simple diskfont functions for graphics.library use (not page rendering) */
+struct TextFont *ami_font_open_disk_font(struct TextAttr *tattr);
+void ami_font_close_disk_font(struct TextFont *tfont);
 #endif
