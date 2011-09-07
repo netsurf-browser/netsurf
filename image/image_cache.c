@@ -251,7 +251,7 @@ static void image_cache__clean(struct image_cache_s *icache)
 			/* only consider older entries, avoids active entries */
 			if ((icache->total_bitmap_size > 
 			     (icache->params.limit - icache->params.hysteresis)) && 
-			    (random() > (RAND_MAX / 2))) {
+			    (rand() > (RAND_MAX / 2))) {
 				image_cache__free_bitmap(centry);
 			}
 		}
