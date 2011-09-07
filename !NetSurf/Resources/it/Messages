@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.7/3.0 Development (Revision 12618)
+# Italian messages for NetSurf 2.8/3.0 Development (Revision 12773)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture)
-# 27.07.2011
+# 7.09.2011
 # =========================================================================
 #
 # Description
@@ -1367,8 +1367,8 @@ NeedRestart:Queste modifiche avranno effetto al prossimo riavvio di NetSurf
 Proxy:Proxy HTTP
 Fetching:Ricezione
 FetchesMax:Ricezione massima
-FetchesHost:Ricevuti per host
-FetchesCached:Ricevuti su cache
+FetchesHost:Ricezione per host
+FetchesCached:Ricezione su cache
 
 # Rendering tab
 #
@@ -1420,12 +1420,12 @@ DownloadDir:Percorso predefinito per i trasferimenti
 TabbedBrowsing:Navigazione a schede
 TabActive:Apri in sottofondo le nuove schede aperte da un link
 TabMiddle:Tasto centrale del mouse per l'apertura delle schede (Tab)
-TabLast:Apri nuove schede a fianco di quelle correnti
+TabLast:Apri nuove schede dopo tutte quelle correntemente aperte
 DownloadNotify:Notifica al completamento (Ringhio)
 SearchWeb:Ricerca nel Web
 SearchURL:Ricerca da barra URL
 SearchProvider:Ricerca su provider
-OptionDocky:Mostra su AmiDock
+OptionDocky:Mostra icona su AmiDock
 Clipboard:Clipboard
 ClipboardUTF8:Scrivi testo come UTF-8
 ContextMenu:Menu contestuali
