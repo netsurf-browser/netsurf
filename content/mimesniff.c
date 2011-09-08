@@ -186,11 +186,12 @@ static nserror mimesniff__match_unknown_ws(const uint8_t *data, size_t len,
 			break;
 
 		data++;
-		len--;
 	}
 
 	if (data == end)
 		return NSERROR_NOT_FOUND;
+
+	len = end - data;
 
 	for (it = ws_exact_match_types; it->sig != NULL; it++) {
 		if (it->len <= len && memcmp(data, it->sig, it->len) == 0) {
