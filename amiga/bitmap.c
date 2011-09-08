@@ -311,7 +311,7 @@ Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap)
 struct bitmap *ami_bitmap_from_datatype(char *filename)
 {
 	Object *dto;
-	struct bitmap *bm;
+	struct bitmap *bm = NULL;
 
 	if(dto = NewDTObject(filename,
 					DTA_GroupID, GID_PICTURE,
