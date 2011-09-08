@@ -70,11 +70,25 @@ struct hlcache_entry {
 	hlcache_entry *prev;		/**< Previous sibling */
 };
 
-/** List of cached content objects */
-static hlcache_entry *hlcache_content_list;
+/** Current state of the cache. 
+ *
+ * Global state of the cache.
+ */
+struct hlcache_s {
+	struct hlcache_parameters params;
 
-/** Ring of retrieval contexts */
-static hlcache_retrieval_ctx *hlcache_retrieval_ctx_ring;
+	/** List of cached content objects */
+	hlcache_entry *content_list;
+
+	/** Ring of retrieval contexts */
+	hlcache_retrieval_ctx *retrieval_ctx_ring;
+
+	/* statsistics */
+};
+
+/** high level cache state */
+static struct hlcache_s *hlcache = NULL;
+
 
 static void hlcache_clean(void *ignored);
 
@@ -94,15 +108,27 @@ static void hlcache_content_callback(struct content *c,
  ******************************************************************************/
 
 nserror
-hlcache_initialise(llcache_query_callback cb, void *pw)
+hlcache_initialise(const struct hlcache_parameters *hlcache_parameters)
 {
-	nserror ret = llcache_initialise(cb, pw);
-	
-	if (ret != NSERROR_OK)
+	nserror ret;
+
+	hlcache = calloc(1, sizeof(struct hlcache_s));
+	if (hlcache == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	ret = llcache_initialise(hlcache_parameters->cb, 
+				 hlcache_parameters->cb_ctx);	
+	if (ret != NSERROR_OK) {
+		free(hlcache);
+		hlcache = NULL;
 		return ret;
+	}
+
+	hlcache->params = *hlcache_parameters;
 	
-	/* Schedule the cache cleanup for 5 seconds time */
-	schedule(500, hlcache_clean, NULL);
+	/* Schedule the cache cleanup */
+	schedule(hlcache->params.bg_clean_time / 10, hlcache_clean, NULL);
 	
 	return NSERROR_OK;
 }
@@ -122,7 +148,7 @@ void hlcache_finalise(void)
 	hlcache_retrieval_ctx *ctx, *next;
 	
 	/* Obtain initial count of contents remaining */
-	for (num_contents = 0, entry = hlcache_content_list; 
+	for (num_contents = 0, entry = hlcache->content_list; 
 			entry != NULL; entry = entry->next) {
 		num_contents++;
 	}
@@ -135,14 +161,14 @@ void hlcache_finalise(void)
 
 		hlcache_clean(NULL);
 
-		for (num_contents = 0, entry = hlcache_content_list; 
+		for (num_contents = 0, entry = hlcache->content_list; 
 				entry != NULL; entry = entry->next) {
 			num_contents++;
 		}
 	} while (num_contents > 0 && num_contents != prev_contents);
 
 	LOG(("%d contents remaining:", num_contents));
-	for (entry = hlcache_content_list; entry != NULL; entry = entry->next) {
+	for (entry = hlcache->content_list; entry != NULL; entry = entry->next) {
 		hlcache_handle entry_handle = { entry, NULL, NULL };
 
 		if (entry->content != NULL) {
@@ -154,8 +180,8 @@ void hlcache_finalise(void)
 	}
 
 	/* Clean up retrieval contexts */
-	if (hlcache_retrieval_ctx_ring != NULL) {
-		ctx = hlcache_retrieval_ctx_ring;
+	if (hlcache->retrieval_ctx_ring != NULL) {
+		ctx = hlcache->retrieval_ctx_ring;
 
 		do {
 			next = ctx->r_next;
@@ -172,10 +198,14 @@ void hlcache_finalise(void)
 			free(ctx);
 
 			ctx = next;
-		} while (ctx != hlcache_retrieval_ctx_ring);
+		} while (ctx != hlcache->retrieval_ctx_ring);
 
-		hlcache_retrieval_ctx_ring = NULL;
+		hlcache->retrieval_ctx_ring = NULL;
 	}
+
+	free(hlcache);
+	hlcache = NULL;
+
 }
 
 /* See hlcache.h for documentation */
@@ -237,7 +267,7 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 		return error;
 	}
 	
-	RING_INSERT(hlcache_retrieval_ctx_ring, ctx);
+	RING_INSERT(hlcache->retrieval_ctx_ring, ctx);
 	
 	*result = ctx->handle;
 
@@ -252,7 +282,7 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 				hlcache_content_callback, handle);
 	} else {
 		RING_ITERATE_START(struct hlcache_retrieval_ctx,
-				   hlcache_retrieval_ctx_ring,
+				   hlcache->retrieval_ctx_ring,
 				   ictx) {
 			if (ictx->handle == handle) {
 				/* This is the nascent context for us, 
@@ -260,15 +290,15 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 				llcache_handle_abort(ictx->llcache);
 				llcache_handle_release(ictx->llcache);
 				/* Remove us from the ring */
-				RING_REMOVE(hlcache_retrieval_ctx_ring, ictx);
+				RING_REMOVE(hlcache->retrieval_ctx_ring, ictx);
 				/* Throw us away */
 				free((char *) ictx->child.charset);
 				free(ictx);
 				/* And stop */
-				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, 
+				RING_ITERATE_STOP(hlcache->retrieval_ctx_ring, 
 						ictx);
 			}
-		} RING_ITERATE_END(hlcache_retrieval_ctx_ring, ictx);
+		} RING_ITERATE_END(hlcache->retrieval_ctx_ring, ictx);
 	}
 
 	handle->cb = NULL;
@@ -303,7 +333,7 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 		 * created. */
 		
 		RING_ITERATE_START(struct hlcache_retrieval_ctx,
-				   hlcache_retrieval_ctx_ring,
+				   hlcache->retrieval_ctx_ring,
 				   ictx) {
 			if (ictx->handle == handle) {
 				/* This is the nascent context for us, 
@@ -311,15 +341,15 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 				llcache_handle_abort(ictx->llcache);
 				llcache_handle_release(ictx->llcache);
 				/* Remove us from the ring */
-				RING_REMOVE(hlcache_retrieval_ctx_ring, ictx);
+				RING_REMOVE(hlcache->retrieval_ctx_ring, ictx);
 				/* Throw us away */
 				free((char *) ictx->child.charset);
 				free(ictx);
 				/* And stop */
-				RING_ITERATE_STOP(hlcache_retrieval_ctx_ring, 
+				RING_ITERATE_STOP(hlcache->retrieval_ctx_ring, 
 						ictx);
 			}
-		} RING_ITERATE_END(hlcache_retrieval_ctx_ring, ictx);
+		} RING_ITERATE_END(hlcache->retrieval_ctx_ring, ictx);
 		
 		return NSERROR_OK;
 	}
@@ -352,10 +382,10 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 		entry->content = clone;
 		handle->entry = entry;
 		entry->prev = NULL;
-		entry->next = hlcache_content_list;
-		if (hlcache_content_list != NULL)
-			hlcache_content_list->prev = entry;
-		hlcache_content_list = entry;
+		entry->next = hlcache->content_list;
+		if (hlcache->content_list != NULL)
+			hlcache->content_list->prev = entry;
+		hlcache->content_list = entry;
 		
 		c = clone;
 	}
@@ -390,7 +420,7 @@ void hlcache_clean(void *ignored)
 {
 	hlcache_entry *entry, *next;
 
-	for (entry = hlcache_content_list; entry != NULL; entry = next) {
+	for (entry = hlcache->content_list; entry != NULL; entry = next) {
 		next = entry->next;
 
 		if (entry->content == NULL)
@@ -412,7 +442,7 @@ void hlcache_clean(void *ignored)
 
 		/* Remove entry from cache */
 		if (entry->prev == NULL)
-			hlcache_content_list = entry->next;
+			hlcache->content_list = entry->next;
 		else
 			entry->prev->next = entry->next;
 
@@ -429,8 +459,8 @@ void hlcache_clean(void *ignored)
 	/* Attempt to clean the llcache */
 	llcache_clean();
 	
-	/* Re-schedule ourselves for 5 seconds time */
-	schedule(500, hlcache_clean, NULL);
+	/* Re-schedule ourselves */
+	schedule(hlcache->params.bg_clean_time / 10, hlcache_clean, NULL);
 }
 
 /**
@@ -544,7 +574,7 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 	nserror error = NSERROR_OK;
 
 	/* Unlink the context to prevent recursion */
-	RING_REMOVE(hlcache_retrieval_ctx_ring, ctx);
+	RING_REMOVE(hlcache->retrieval_ctx_ring, ctx);
 		
 	if (effective_type != NULL && 
 			hlcache_type_is_acceptable(effective_type,
@@ -644,7 +674,7 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx,
 	nserror error = NSERROR_OK;
 
 	/* Search list of cached contents for a suitable one */
-	for (entry = hlcache_content_list; entry != NULL; entry = entry->next) {
+	for (entry = hlcache->content_list; entry != NULL; entry = entry->next) {
 		hlcache_handle entry_handle = { entry, NULL, NULL };
 		const llcache_handle *entry_llcache;
 
@@ -690,10 +720,10 @@ nserror hlcache_find_content(hlcache_retrieval_ctx *ctx,
 
 		/* Insert into cache */
 		entry->prev = NULL;
-		entry->next = hlcache_content_list;
-		if (hlcache_content_list != NULL)
-			hlcache_content_list->prev = entry;
-		hlcache_content_list = entry;
+		entry->next = hlcache->content_list;
+		if (hlcache->content_list != NULL)
+			hlcache->content_list->prev = entry;
+		hlcache->content_list = entry;
 
 		/* Signal to caller that we created a content */
 		error = NSERROR_NEED_DATA;

@@ -42,6 +42,21 @@ typedef struct {
 	union content_msg_data data;	/**< Event data */
 } hlcache_event;
 
+struct hlcache_parameters {
+	llcache_query_callback cb; /**< Query handler for llcache */
+	void *cb_ctx; /**< Pointer to llcache query handler data */
+
+	/** How frequently the background cache clean process is run (ms) */
+	unsigned int bg_clean_time;
+
+	/** The target upper bound for the cache size */
+	size_t limit;
+
+	/** The hysteresis allowed round the target size */
+	size_t hysteresis;
+
+};
+
 /**
  * Client callback for high-level cache events
  *
@@ -68,11 +83,10 @@ enum hlcache_retrieve_flag {
 /**
  * Initialise the high-level cache, preparing the llcache also.
  *
- * \param cb  Query handler for llcache
- * \param pw  Pointer to llcache query handler data
+ * \param hlcache_parameters Settings to initialise cache with  
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-nserror hlcache_initialise(llcache_query_callback cb, void *pw);
+nserror hlcache_initialise(const struct hlcache_parameters *hlcache_parameters);
 
 /**
  * Stop the high-level cache periodic functionality so that the

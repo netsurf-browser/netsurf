@@ -143,13 +143,13 @@
 			do {				\
 			
 #define RING_ITERATE_STOP(ring, iteratorptr)	\
-	goto iteration_end_##ring##_##iteratorptr
+	goto iteration_end_ring##_##iteratorptr
 
 #define RING_ITERATE_END(ring, iteratorptr)		\
 			} while (false);		\
 			iteratorptr = iteratorptr->r_next;	\
 		} while (iteratorptr != ring);		\
 	}						\
-	iteration_end_##ring##_##iteratorptr:
+	iteration_end_ring##_##iteratorptr:
 
 #endif

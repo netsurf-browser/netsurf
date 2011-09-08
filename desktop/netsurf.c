@@ -70,6 +70,8 @@
 /* the time between cache clean runs in ms */
 #define IMAGE_CACHE_CLEAN_TIME (10 * 1000)
 
+#define HL_CACHE_CLEAN_TIME (5 * 1000)
+
 bool netsurf_quit = false;
 bool verbose_log = false;
 
@@ -119,6 +121,10 @@ nserror netsurf_init(int *pargc,
 	nserror error;
 	struct utsname utsname;
 	nserror ret = NSERROR_OK;
+	struct hlcache_parameters hlcache_parameters = {
+		.bg_clean_time = HL_CACHE_CLEAN_TIME,
+		.cb = netsurf_llcache_query_handler,
+	}; 
 	struct image_cache_parameters image_cache_parameters = {
 		.bg_clean_time = IMAGE_CACHE_CLEAN_TIME,
 		.limit = (8 * 1024 * 1024),
@@ -197,7 +203,7 @@ nserror netsurf_init(int *pargc,
 	fetch_init();
 	
 	/* Initialise the hlcache and allow it to init the llcache for us */
-	hlcache_initialise(netsurf_llcache_query_handler, NULL);
+	hlcache_initialise(&hlcache_parameters);
 
 	/* Initialize system colours */
 	gui_system_colour_init();
