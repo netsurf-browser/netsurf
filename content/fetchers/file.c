@@ -304,7 +304,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		goto fetch_file_process_aborted;
 
 	/* main data loop */
-	do {
+	while (tot_read < fdstat->st_size) {
 		res = read(fd, buf, buf_size);
 		if (res == -1) {
 			fetch_file_send_callback(FETCH_ERROR, ctx, 
@@ -325,8 +325,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		if (fetch_file_send_callback(FETCH_DATA, ctx, buf, res, 
 				FETCH_ERROR_NO_ERROR))
 			break;
-
-	} while (tot_read < fdstat->st_size);
+	}
 
 	if (ctx->aborted == false)
 		fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
