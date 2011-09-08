@@ -1445,6 +1445,15 @@ nserror llcache_object_notify_users(llcache_object *object)
 					return error;
 
 				continue;
+			} else if (error == NSERROR_NEED_DATA) {
+				/* User requested replay */
+				handle->state = LLCACHE_FETCH_HEADERS;
+
+				/* Continue with the next user -- we'll 
+				 * reemit the event next time round */
+				user->iterator_target = false;
+				next_user = user->next;
+				continue;
 			} else if (error != NSERROR_OK) {
 				user->iterator_target = false;
 				return error;
@@ -1521,6 +1530,15 @@ nserror llcache_object_notify_users(llcache_object *object)
 				if (error != NSERROR_OK)
 					return error;
 
+				continue;
+			} else if (error == NSERROR_NEED_DATA) {
+				/* User requested replay */
+				handle->state = LLCACHE_FETCH_DATA;
+
+				/* Continue with the next user -- we'll 
+				 * reemit the event next time round */
+				user->iterator_target = false;
+				next_user = user->next;
 				continue;
 			} else if (error != NSERROR_OK) {
 				user->iterator_target = false;

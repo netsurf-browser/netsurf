@@ -491,9 +491,26 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		break;
 	case LLCACHE_EVENT_DONE:
 		/* DONE event before we could determine the effective MIME type.
-		 * Treat this as an error.
 		 */
-		/* Fall through */
+		error = mimesniff_compute_effective_type(handle,
+				NULL, 0, false, &effective_type);
+		if (error == NSERROR_OK) {
+			error = hlcache_migrate_ctx(ctx, effective_type);
+
+			lwc_string_unref(effective_type);
+
+			return error;
+		}
+
+		if (ctx->handle->cb != NULL) {
+			hlcache_event hlevent;
+
+			hlevent.type = CONTENT_MSG_ERROR;
+			hlevent.data.error = messages_get("BadType");
+
+			ctx->handle->cb(ctx->handle, &hlevent, ctx->handle->pw);
+		}
+		break;
 	case LLCACHE_EVENT_ERROR:
 		if (ctx->handle->cb != NULL) {
 			hlcache_event hlevent;
