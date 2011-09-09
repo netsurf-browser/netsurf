@@ -225,7 +225,7 @@ static void __CDECL evnt_close( WINDOW *win, short buff[8])
 void search_destroy( struct gui_window * gw )
 {
 	LOG(("search_destroy %p / %p", gw, current ));
-	if( current != NULL ){
+	if( current != NULL && current->formwind != NULL ){
 		ApplWrite( _AESapid, WM_CLOSED, current->formwind->handle, 0,0,0,0);
 		/* Handle Close event */
 		EvntWindom( MU_MESAG );
