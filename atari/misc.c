@@ -100,6 +100,23 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
+struct gui_window * find_gui_window( WINDOW * win ){
+
+       struct gui_window * gw;
+        gw = window_list;
+
+	if( win == NULL )
+		return( NULL );
+
+        while( gw != NULL) {
+                if( gw->root->handle == win ) {
+                        return( gw );
+                }
+                else
+                        gw = gw->next;
+        }
+        return( NULL );
+}
 
 struct gui_window * find_cmp_window( COMPONENT * c )
 {

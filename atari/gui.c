@@ -136,11 +136,27 @@ void gui_poll(bool active)
 		/* this can be improved a lot under XaAES - there is an event for mouse move */
 		if( mx >= winloc[0] && mx <= winloc[0] + winloc[2] &&
 			my >= winloc[1] && my <= winloc[1] + winloc[3] ){
+			/* Mouse is within the top window area */
 			evnt.m1_flag = MO_LEAVE;
 			evnt.m1_w = evnt.m1_h = 1;
 			evnt.m1_x = mx;
 			evnt.m1_y = my;
 		} else {
+			/* Mouse is outside of top window area. */
+			if( evnt.m1_flag == MO_LEAVE ) {
+				/* Previous move was inside the top window area */
+				struct gui_window * gw = input_window;
+				if(gw != NULL && gw->browser != NULL && gw->browser->bw != NULL ){
+					/* reset mouse state */
+					/* you could also track further, without reset, but */
+					/* when the mouse moves into native scroller area, the mouse is */
+					/* the native scroll bar code gets in between.. */
+                			mouse_hold_start[0] = 0;
+                			mouse_hold_start[1] = 0;
+					bmstate = 0;
+					browser_window_mouse_track( gw->browser->bw, bmstate, mx, my );
+				}
+			}
 			evnt.m1_flag = MO_ENTER;
 			evnt.m1_w = winloc[2];
 			evnt.m1_h = winloc[3];
@@ -149,8 +165,7 @@ void gui_poll(bool active)
 		}
 	}
 
-	/*printf("time: %d, active: %d, pending: %d\n", evnt.timer, 
-		active, browser_reformat_pending );*/
+	/*printf("time: %d, active: %d\n", evnt.timer, active );*/
 	if( active ) {
 		if( clock() >= next_poll ) {
 			evnt.timer = 0;
@@ -160,7 +175,7 @@ void gui_poll(bool active)
 		}
 	} else {
 		flags |= MU_TIMER;
-		EvntWindom( flags );	
+		EvntWindom( flags );
 	}
 
 	struct gui_window * g;

@@ -105,7 +105,7 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 }
 
 /*
-	this gets called at end of gui poll to track the mouse state and
+	track the mouse state and
 	finally checks for released buttons.
  */
 static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, short my, short mbut, short mkstate ){
@@ -150,7 +150,6 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 		if( !(mbut & i) ) {
 			if( mouse_hold_start[i-1] > 0 ) {
 				mouse_hold_start[i-1] = 0;
-				/* TODO: not just use the input window browser, find the right one by component! */
 				if( i==1 ) {
 					LOG(("Drag for %d ended", i));
 					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
@@ -191,6 +190,10 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 
 	if( gw == NULL)
 		return;
+
+	if( gw != input_window ){
+		return;
+	}
 
 	graf_mkstate(&mx, &my, &mbut, &mkstate);
 

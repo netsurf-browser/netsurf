@@ -242,6 +242,10 @@ static void __CDECL browser_evnt_arrowed( WINDOW *win, short buff[8], void * dat
 	int value = BROWSER_SCROLL_SVAL;
 	struct gui_window * gw = data;
 	LGRECT cwork;
+
+	if( input_window == NULL || input_window != gw ) {
+		return;
+	}
 	browser_get_rect( gw, BR_CONTENT, &cwork );
 
 	switch( buff[4] ) {
@@ -265,10 +269,14 @@ void __CDECL browser_evnt_slider( WINDOW *win, short buff[8], void * data)
 {
 	int dx = buff[4];
 	int dy = buff[5];
-	struct gui_window * gw = data;
 	GRECT work, screen;
+	struct gui_window * gw = data;
 
 	if (!dx && !dy) return;
+
+	if( input_window == NULL || input_window != gw ) {
+		return;
+	}
 
 	/* update the sliders _before_ we call redraw (which might depend on the slider possitions) */
 	mt_WindSlider( &app, win, (dx?HSLIDER:0) | (dy?VSLIDER:0) );
@@ -291,7 +299,9 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 	uint32_t tnow = clock()*1000 / CLOCKS_PER_SEC;
 	LGRECT cwork;
 	struct gui_window * gw = data;
-	input_window = gw;
+	if( input_window != gw ) {
+		return;
+	}
 	window_set_focus( gw, BROWSER, (void*)gw->browser );
 	browser_get_rect( gw, BR_CONTENT, &cwork );
 	mx = evnt.mx - cwork.g_x; 
