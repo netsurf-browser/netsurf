@@ -2125,27 +2125,13 @@ void ami_quit_netsurf(void)
 
 void ami_gui_close_screen(struct Screen *scrn)
 {
-	ULONG screen_signal = AllocSignal(-1);
-	ULONG scrnsig = 1 << screen_signal;
-
-	SetScreenAttr(scrn, SA_PubSig, (APTR)screen_signal, sizeof(ULONG));
-
-	if(scrn == NULL)
-	{
-		FreeSignal(screen_signal);
-		return;
-	}
-
-	if(CloseScreen(scrn))
-	{
-		FreeSignal(screen_signal);
-		return;
-	}
+	if(scrn == NULL) return;
+	if(CloseScreen(scrn)) return;
 
 	LOG(("Waiting for visitor windows to close..."));
-	Wait(scrnsig);
-	CloseScreen(scrn);
-	FreeSignal(screen_signal);
+	do {
+		Delay(50);
+	} while (CloseScreen(scrn) == FALSE);
 }
 
 void gui_quit(void)
