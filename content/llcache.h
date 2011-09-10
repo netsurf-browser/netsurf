@@ -156,7 +156,7 @@ typedef nserror (*llcache_query_callback)(const llcache_query *query, void *pw,
  * \param pw  Pointer to query handler data
  * \return NSERROR_OK on success, appropriate error otherwise.
  */
-nserror llcache_initialise(llcache_query_callback cb, void *pw);
+nserror llcache_initialise(llcache_query_callback cb, void *pw, uint32_t llcache_limit);
 
 /**
  * Finalise the low-level cache

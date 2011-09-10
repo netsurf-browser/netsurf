@@ -29,7 +29,6 @@
 #include "content/fetch.h"
 #include "content/llcache.h"
 #include "content/urldb.h"
-#include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -142,15 +141,23 @@ struct llcache_object {
 	size_t num_headers;		/**< Number of fetch headers */
 };
 
-/** Handler for fetch-related queries */
-static llcache_query_callback query_cb;
-/** Data for fetch-related query handler */
-static void *query_cb_pw;
+struct llcache_s {
+	/** Handler for fetch-related queries */
+	llcache_query_callback query_cb;
+	/** Data for fetch-related query handler */
+	void *query_cb_pw;
 
-/** Head of the low-level cached object list */
-static llcache_object *llcache_cached_objects;
-/** Head of the low-level uncached object list */
-static llcache_object *llcache_uncached_objects;
+	/** Head of the low-level cached object list */
+	llcache_object *cached_objects;
+
+	/** Head of the low-level uncached object list */
+	llcache_object *uncached_objects;
+
+	uint32_t limit;
+};
+
+/** low level cache state */
+static struct llcache_s *llcache = NULL;
 
 static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 		llcache_object_user **user);
@@ -246,10 +253,19 @@ static inline void llcache_invalidate_cache_control_data(llcache_object *object)
  ******************************************************************************/
 
 /* See llcache.h for documentation */
-nserror llcache_initialise(llcache_query_callback cb, void *pw)
+nserror 
+llcache_initialise(llcache_query_callback cb, void *pw, uint32_t llcache_limit)
 {
-	query_cb = cb;
-	query_cb_pw = pw;
+	llcache = calloc(1, sizeof(struct llcache_s));
+	if (llcache == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	llcache->query_cb = cb;
+	llcache->query_cb_pw = pw;
+	llcache->limit = llcache_limit;
+
+	LOG(("llcache initialised with a limit of %d bytes", llcache_limit));
 
 	return NSERROR_OK;
 }
@@ -260,7 +276,7 @@ void llcache_finalise(void)
 	llcache_object *object, *next;
 
 	/* Clean uncached objects */
-	for (object = llcache_uncached_objects; object != NULL; object = next) {
+	for (object = llcache->uncached_objects; object != NULL; object = next) {
 		llcache_object_user *user, *next_user;
 
 		next = object->next;
@@ -281,7 +297,7 @@ void llcache_finalise(void)
 	}
 
 	/* Clean cached objects */
-	for (object = llcache_cached_objects; object != NULL; object = next) {
+	for (object = llcache->cached_objects; object != NULL; object = next) {
 		llcache_object_user *user, *next_user;
 
 		next = object->next;
@@ -300,6 +316,9 @@ void llcache_finalise(void)
 
 		llcache_object_destroy(object);
 	}
+
+	free(llcache);
+	llcache = NULL;
 }
 
 /* See llcache.h for documentation */
@@ -310,12 +329,12 @@ nserror llcache_poll(void)
 	fetch_poll();
 	
 	/* Catch new users up with state of objects */
-	for (object = llcache_cached_objects; object != NULL; 
+	for (object = llcache->cached_objects; object != NULL; 
 			object = object->next) {
 		llcache_object_notify_users(object);
 	}
 
-	for (object = llcache_uncached_objects; object != NULL;
+	for (object = llcache->uncached_objects; object != NULL;
 			object = object->next) {
 		llcache_object_notify_users(object);
 	}
@@ -453,7 +472,7 @@ nserror llcache_handle_abort(llcache_handle *handle)
 		
 		/* Add new object to uncached list */
 		llcache_object_add_to_list(newobject, 
-				&llcache_uncached_objects);
+				&llcache->uncached_objects);
 	} else {
 		/* We're the only user, so abort any fetch in progress */
 		if (object->fetch.fetch != NULL) {
@@ -481,10 +500,10 @@ nserror llcache_handle_force_stream(llcache_handle *handle)
 		return NSERROR_OK;
 
 	/* Forcibly uncache this object */
-	if (llcache_object_in_list(object, llcache_cached_objects)) {
+	if (llcache_object_in_list(object, llcache->cached_objects)) {
 		llcache_object_remove_from_list(object, 
-				&llcache_cached_objects);
-		llcache_object_add_to_list(object, &llcache_uncached_objects);
+				&llcache->cached_objects);
+		llcache_object_add_to_list(object, &llcache->uncached_objects);
 	}
 
 	object->fetch.flags |= LLCACHE_RETRIEVE_STREAM_DATA;
@@ -717,7 +736,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 		}
 
 		/* Add new object to uncached list */
-		llcache_object_add_to_list(obj, &llcache_uncached_objects);
+		llcache_object_add_to_list(obj, &llcache->uncached_objects);
 	} else {
 		error = llcache_object_retrieve_from_cache(defragmented_url, flags, referer,
 				post, redirect_count, &obj);
@@ -765,7 +784,7 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 #endif
 
 	/* Search for the most recently fetched matching object */
-	for (obj = llcache_cached_objects; obj != NULL; obj = obj->next) {
+	for (obj = llcache->cached_objects; obj != NULL; obj = obj->next) {
 		bool match;
 
 		if ((newest == NULL || 
@@ -821,7 +840,7 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 		}
 
 		/* Add new object to cache */
-		llcache_object_add_to_list(obj, &llcache_cached_objects);
+		llcache_object_add_to_list(obj, &llcache->cached_objects);
 	} else {
 		/* No object found; create a new one */
 		/* Create new object */
@@ -842,7 +861,7 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 		}
 
 		/* Add new object to cache */
-		llcache_object_add_to_list(obj, &llcache_cached_objects);
+		llcache_object_add_to_list(obj, &llcache->cached_objects);
 	}
 
 	*result = obj;
@@ -1643,7 +1662,7 @@ void llcache_clean(void)
 	 */
 
 	/* 1) Uncacheable objects with no users or fetches */
-	for (object = llcache_uncached_objects; object != NULL; object = next) {
+	for (object = llcache->uncached_objects; object != NULL; object = next) {
 		next = object->next;
 
 		/* The candidate count of uncacheable objects is always 0 */
@@ -1654,7 +1673,7 @@ void llcache_clean(void)
 			LOG(("Found victim %p", object));
 #endif
 			llcache_object_remove_from_list(object, 
-					&llcache_uncached_objects);
+					&llcache->uncached_objects);
 			llcache_object_destroy(object);
 		} else {
 			llcache_size += object->source_len + sizeof(*object);
@@ -1662,7 +1681,7 @@ void llcache_clean(void)
 	}
 
 	/* 2) Stale cacheable objects with no users or pending fetches */
-	for (object = llcache_cached_objects; object != NULL; object = next) {
+	for (object = llcache->cached_objects; object != NULL; object = next) {
 		next = object->next;
 
 		if (object->users == NULL && object->candidate_count == 0 &&
@@ -1673,17 +1692,17 @@ void llcache_clean(void)
 			LOG(("Found victim %p", object));
 #endif
 			llcache_object_remove_from_list(object,
-					&llcache_cached_objects);
+					&llcache->cached_objects);
 			llcache_object_destroy(object);
 		} else {
 			llcache_size += object->source_len + sizeof(*object);
 		}
 	}
 
-	if ((uint32_t) option_memory_cache_size < llcache_size) {
+	if (llcache->limit < llcache_size) {
 		/* 3) Fresh cacheable objects with 
 		 *    no users or pending fetches */
-		for (object = llcache_cached_objects; object != NULL; 
+		for (object = llcache->cached_objects; object != NULL; 
 				object = next) {
 			next = object->next;
 
@@ -1699,7 +1718,7 @@ void llcache_clean(void)
 					object->source_len + sizeof(*object);
 
 				llcache_object_remove_from_list(object,
-						&llcache_cached_objects);
+						&llcache->cached_objects);
 				llcache_object_destroy(object);
 			}
 		}
@@ -2459,7 +2478,7 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 		/* No authentication details, or tried what we had, so ask */
 		object->fetch.tried_with_auth = false;
 
-		if (query_cb != NULL) {
+		if (llcache->query_cb != NULL) {
 			llcache_query query;
 
 			/* Emit query for authentication details */
@@ -2469,7 +2488,7 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 
 			object->fetch.outstanding_query = true;
 
-			error = query_cb(&query, query_cb_pw, 
+			error = llcache->query_cb(&query, llcache->query_cb_pw, 
 					llcache_query_handle_response, object);
 		} else {
 			llcache_event event;
@@ -2513,7 +2532,7 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 	/* Invalidate cache-control data */
 	llcache_invalidate_cache_control_data(object);
 
-	if (query_cb != NULL) {
+	if (llcache->query_cb != NULL) {
 		llcache_query query;
 
 		/* Emit query for TLS */
@@ -2524,7 +2543,7 @@ nserror llcache_fetch_cert_error(llcache_object *object,
 
 		object->fetch.outstanding_query = true;
 
-		error = query_cb(&query, query_cb_pw,
+		error = llcache->query_cb(&query, llcache->query_cb_pw,
 				llcache_query_handle_response, object);
 	} else {
 		llcache_event event;

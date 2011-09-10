@@ -70,7 +70,7 @@
 /* the time between cache clean runs in ms */
 #define IMAGE_CACHE_CLEAN_TIME (10 * 1000)
 
-#define HL_CACHE_CLEAN_TIME (5 * 1000)
+#define HL_CACHE_CLEAN_TIME (2 * IMAGE_CACHE_CLEAN_TIME)
 
 bool netsurf_quit = false;
 bool verbose_log = false;
@@ -109,6 +109,8 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 	return NSERROR_OK;
 }
 
+#define MINIMUM_MEMORY_CACHE_SIZE (2 * 1024 * 1024)
+
 /**
  * Initialise components used by gui NetSurf.
  */
@@ -127,11 +129,9 @@ nserror netsurf_init(int *pargc,
 	}; 
 	struct image_cache_parameters image_cache_parameters = {
 		.bg_clean_time = IMAGE_CACHE_CLEAN_TIME,
-		.limit = (8 * 1024 * 1024),
-		.hysteresis = (2 * 1024 * 1024),
 		.speculative_small = SPECULATE_SMALL
 	};
-
+	
 #ifdef HAVE_SIGPIPE
 	/* Ignore SIGPIPE - this is necessary as OpenSSL can generate these
 	 * and the default action is to terminate the app. There's no easy
@@ -168,6 +168,24 @@ nserror netsurf_init(int *pargc,
 	options_read(options);
 
 	messages_load(messages);
+
+	/* set up cache limits based on the memory cache size option */
+	hlcache_parameters.limit = option_memory_cache_size;
+
+	if (hlcache_parameters.limit < MINIMUM_MEMORY_CACHE_SIZE) {
+		hlcache_parameters.limit = MINIMUM_MEMORY_CACHE_SIZE;
+		LOG(("Setting minimum memory cache size to %d",
+		     hlcache_parameters.limit));
+	} 
+
+	/* image cache is 25% of total memory cache size */
+	image_cache_parameters.limit = (hlcache_parameters.limit * 25) / 100;
+
+	/* image cache hysteresis is 20% of teh image cache size */
+	image_cache_parameters.hysteresis = (image_cache_parameters.limit * 20) / 100;
+
+	/* account for image cache use from total */
+	hlcache_parameters.limit -= image_cache_parameters.limit;
 
 	/* image handler bitmap cache */
 	error = image_cache_init(&image_cache_parameters);
@@ -243,9 +261,6 @@ void netsurf_exit(void)
 
 	LOG(("Finalising high-level cache"));
 	hlcache_finalise();
-
-	LOG(("Finalising low-level cache"));
-	llcache_finalise();
 
 	LOG(("Closing fetches"));
 	fetch_quit();

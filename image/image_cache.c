@@ -89,20 +89,20 @@ struct image_cache_s {
 
 	/** Maximum count of bitmaps allocated at any one time */
 	int max_bitmap_count;
-	/** The size of the bitmaps when teh max count occoured */
+	/** The size of the bitmaps when the max count occoured */
 	size_t max_bitmap_count_size;
 
 	/** Bitmap was not available at plot time required conversion */
 	int miss_count; 
-	size_t miss_size; 
+	uint64_t miss_size; 
 	/** Bitmap was available at plot time required no conversion */
 	int hit_count;
-	size_t hit_size; 
+	uint64_t hit_size; 
 	/** Bitmap was not available at plot time and required
 	 * conversion which failed.
 	 */ 
 	int fail_count; 
-	size_t fail_size; 
+	uint64_t fail_size; 
 
 	/* Cache entry freed without ever being redrawn */
 	int total_unrendered; 
@@ -120,6 +120,7 @@ struct image_cache_s {
 	unsigned int peak_conversions_size; 
 };
 
+/** image cache state */
 static struct image_cache_s *image_cache = NULL;
 
 
@@ -356,6 +357,9 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 	schedule((image_cache->params.bg_clean_time / 10), 
 		 image_cache__background_update, 
 		 image_cache);
+
+	LOG(("Image cache initilised with a limit of %d hysteresis of %d", 
+	     image_cache->params.limit, image_cache->params.hysteresis));
 
 	return NSERROR_OK;
 }
