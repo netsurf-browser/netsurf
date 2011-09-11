@@ -65,7 +65,7 @@ If the font NetSurf is trying to use does not contain a specific character used 
 (a) Contains as complete a Unicode character set as possible or
 (b) Is complete for the pages you are likely to visit (eg. if you visit a lot of Japanese pages, set the Unicode fallback font to one with a complete Japanese character set)
 
-For most users, installing and selecting @{"Code2000" rxs "address netsurf 'open http://www.code2000.net'"} or @{"Bitstream Cyberbit" rxs "address netsurf 'open http://ftp.netscape.com/pub/communicator/extras/fonts/windows/'"} is the best option.
+For most users, installing and selecting @{"Code2000" rxs "address netsurf 'open http://code2000.sf.net'"} or @{"Bitstream Cyberbit" rxs "address netsurf 'open http://ftp.netscape.com/pub/communicator/extras/fonts/windows/'"} is the best option.
 
 @{b}Font sizes@{ub}
 
