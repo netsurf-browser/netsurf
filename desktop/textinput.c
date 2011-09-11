@@ -140,7 +140,7 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 			return true;
 
 		case KEY_ESCAPE:
-			if (selection_defined(bw->cur_sel)) {
+			if (bw->cur_sel && selection_defined(bw->cur_sel)) {
 				selection_clear(bw->cur_sel, true);
 				return true;
 			}
