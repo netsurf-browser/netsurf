@@ -375,7 +375,7 @@ void ami_gui_opts_open(void)
 	ULONG proxytype = 0;
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
-	BOOL disableanims, animspeeddisabled = FALSE;
+	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
 	BOOL scaleselected = option_scale_quality, scaledisabled = FALSE;
 	BOOL download_notify_disabled = FALSE;
 	char animspeed[10];
@@ -432,6 +432,11 @@ void ami_gui_opts_open(void)
 		disableanims = TRUE;
 		animspeeddisabled = TRUE;
 	}
+
+	if(option_accept_lang_locale)
+		acceptlangdisabled = TRUE;
+	else
+		acceptlangdisabled = FALSE;
 
 	if(GfxBase->LibNode.lib_Version < 53)
 	{
@@ -554,13 +559,15 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_CONTENTLANG] = StringObject,
 											GA_ID, GID_OPTS_CONTENTLANG,
 											GA_RelVerify, TRUE,
+											GA_Disabled, acceptlangdisabled,
 											STRINGA_TextVal, option_accept_language,
 											STRINGA_BufferPos,0,
 										StringEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_FROMLOCALE] = ButtonObject,
-											GA_ID,GID_OPTS_FROMLOCALE,
-											GA_Text,gadlab[GID_OPTS_FROMLOCALE],
-											GA_RelVerify,TRUE,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FROMLOCALE] = CheckBoxObject,
+											GA_ID, GID_OPTS_FROMLOCALE,
+											GA_Text, gadlab[GID_OPTS_FROMLOCALE],
+											GA_RelVerify, TRUE,
+											GA_Selected, option_accept_lang_locale,
 										ButtonEnd,
 									//	CHILD_WeightedWidth, 0,
 									LayoutEnd, // content language
@@ -1399,6 +1406,10 @@ void ami_gui_opts_use(void)
 	if(option_accept_language) free(option_accept_language);
 	option_accept_language = (char *)strdup((char *)data);
 
+	GetAttr(GA_Selected, gow->objects[GID_OPTS_FROMLOCALE],(ULONG *)&data);
+	if(data) option_accept_lang_locale = true;
+		else option_accept_lang_locale = false;
+
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_HIDEADS],(ULONG *)&data);
 	if(data) option_block_ads = true;
 		else option_block_ads = false;
@@ -1690,10 +1701,13 @@ BOOL ami_gui_opts_event(void)
 					break;
 
 					case GID_OPTS_FROMLOCALE:
-						if(text = ami_locale_langs())
+						RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CONTENTLANG],
+							gow->win, NULL, GA_Disabled, code, TAG_DONE);
+
+						if(code && (text = ami_locale_langs()))
 						{
 							RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_CONTENTLANG],
-								gow->win,NULL,STRINGA_TextVal, text, TAG_DONE);
+								gow->win, NULL, STRINGA_TextVal, text, TAG_DONE);
 							FreeVec(text);
 						}
 					break;

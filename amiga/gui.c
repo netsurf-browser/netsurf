@@ -329,7 +329,8 @@ void ami_set_options(void)
 	option_cairo_renderer = 0;
 	#endif
 
-	if((!option_accept_language) || (option_accept_language[0] == '\0'))
+	if((!option_accept_language) || (option_accept_language[0] == '\0') ||
+		(option_accept_lang_locale == true))
 	{
 		if(tempacceptlangs = ami_locale_langs())
 		{
