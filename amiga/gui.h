@@ -109,6 +109,7 @@ struct gui_window_2 {
 	BOOL rmbtrapped;
 	struct AppIcon *appicon; /* iconify appicon */
 	struct DiskObject *dobj; /* iconify appicon */
+	struct Hook search_ico_hook;
 };
 
 struct gui_window

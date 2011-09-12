@@ -149,6 +149,7 @@ BOOL locked_screen = FALSE;
 BOOL screen_closed = FALSE;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
+BOOL refresh_search_ico = FALSE;
 
 const char tree_directory_icon_name[] = "def_drawer.info";
 const char tree_content_icon_name[] = "def_project.info";
@@ -169,6 +170,8 @@ ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULO
 void ami_try_quit(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
+static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
+	struct gpRender *msg);
 
 STRPTR ami_locale_langs(void)
 {
@@ -1682,6 +1685,12 @@ void ami_handle_msg(void)
 			}
 		}
 	} while(node = nnode);
+
+	if(refresh_search_ico)
+	{
+		gui_window_set_search_ico(NULL);
+		refresh_search_ico = FALSE;
+	}
 }
 
 void ami_gui_appicon_remove(struct gui_window_2 *gwin)
@@ -2419,6 +2428,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	gwin->shared->scrollerhook.h_Data = gwin->shared;
 
+	gwin->shared->search_ico_hook.h_Entry = (void *)ami_set_search_ico_render_hook;
+	gwin->shared->search_ico_hook.h_Data = gwin->shared;
+
 
 	if(!option_kiosk_mode)
 	{
@@ -2671,6 +2683,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							SPACE_MinWidth, 16,
 							SPACE_MinHeight, 16,
 							SPACE_Transparent, TRUE,
+							SPACE_RenderHook, &gwin->shared->search_ico_hook,
 						SpaceEnd,
 						CHILD_WeightedWidth,0,
 						CHILD_WeightedHeight,0,
@@ -3710,6 +3723,13 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	} while(node = nnode);
 
 	if(bm && free_bm) bitmap_destroy(nsbm);
+}
+
+static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
+	struct gpRender *msg)
+{
+	refresh_search_ico = TRUE;
+	return 0;
 }
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
