@@ -811,6 +811,7 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 {
 	int nskey = 0, chars;
 	UBYTE buffer[20];
+	char *utf8 = NULL;
 
 	if(keycode >= IECODE_UP_PREFIX) return 0;
 
@@ -903,7 +904,8 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie)
 		default:
 			if((chars = MapRawKey(ie,buffer,20,NULL)) > 0)
 			{
-				nskey = buffer[0];
+				utf8_from_local_encoding(buffer, chars, &utf8);
+				nskey = utf8_to_ucs4(utf8, utf8_char_byte_length(utf8));
 			}
 		break;
 	}
