@@ -381,6 +381,13 @@ void ami_gui_opts_open(void)
 	char animspeed[10];
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy, fontunicode;
 
+	if(gow && gow->win)
+	{
+		WindowToFront(gow->win);
+		ActivateWindow(gow->win);
+		return;
+	}
+
 	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
 	{
 		if(strcmp(option_use_pubscreen,"Workbench") == 0)
