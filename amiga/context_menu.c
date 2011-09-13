@@ -173,6 +173,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	bool menuhascontent = false;
 	bool no_url = true, no_obj = true, no_sel = true;
 	ULONG ret = 0;
+	struct contextual_content ccdata;
 
 	if(!cc) return;
 	if(content_get_type(cc) != CONTENT_HTML) return;
@@ -235,6 +236,82 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	}
 	else
 	{
+		browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
+
+		if(no_url && ccdata.link_url)
+		{
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_URL],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENWIN],
+							PMIA_ID, CMID_URLOPENWIN,
+							PMIA_UserData, ccdata.link_url,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENTAB],
+							PMIA_ID, CMID_URLOPENTAB,
+							PMIA_UserData, ccdata.link_url,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYURL],
+							PMIA_ID, CMID_COPYURL,
+							PMIA_UserData, ccdata.link_url,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEURL],
+							PMIA_ID, CMID_SAVEURL,
+							PMIA_UserData, ccdata.link_url,
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+
+			no_url = false;
+			menuhascontent = true;
+		}
+
+		if(no_obj && ccdata.object &&
+			(content_get_type(ccdata.object) == CONTENT_IMAGE))
+		{
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_OBJECT],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SHOWOBJ],
+							PMIA_ID, CMID_SHOWOBJ,
+							PMIA_UserData, content_get_url(ccdata.object),
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
+							PMIA_ID, CMID_COPYOBJ,
+							PMIA_UserData, content_get_url(ccdata.object),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
+							PMIA_ID, CMID_CLIPOBJ,
+							PMIA_UserData, ccdata.object,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
+							PMIA_ID, CMID_SAVEOBJ,
+							PMIA_UserData, ccdata.object,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEIFFOBJ],
+							PMIA_ID, CMID_SAVEIFFOBJ,
+							PMIA_UserData, ccdata.object,
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+
+			no_obj = false;
+			menuhascontent = true;
+		}
+
 		curbox = html_get_box_tree(gwin->bw->current_content);
 
 		while(curbox = box_at_point(curbox,x,y,&box_x,&box_y,&cc))
@@ -242,80 +319,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			if (curbox->style &&
 				css_computed_visibility(curbox->style) == CSS_VISIBILITY_HIDDEN)
 			continue;
-
-			if(no_url && curbox->href)
-			{
-				IDoMethod(ctxmenuobj,PM_INSERT,
-					NewObject(POPUPMENU_GetItemClass(), NULL,
-						PMIA_Title, (ULONG)ctxmenulab[CMSUB_URL],
-						PMSIMPLESUB,
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENWIN],
-								PMIA_ID,CMID_URLOPENWIN,
-								PMIA_UserData,curbox->href,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENTAB],
-								PMIA_ID,CMID_URLOPENTAB,
-								PMIA_UserData,curbox->href,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_COPYURL],
-								PMIA_ID,CMID_COPYURL,
-								PMIA_UserData,curbox->href,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEURL],
-								PMIA_ID,CMID_SAVEURL,
-								PMIA_UserData,curbox->href,
-							TAG_DONE),
-						TAG_DONE),
-					TAG_DONE),
-				~0);
-
-				no_url = false;
-				menuhascontent = true;
-			}
-
-			if(no_obj && curbox->object &&
-				(content_get_type(curbox->object) == CONTENT_IMAGE))
-			{
-				IDoMethod(ctxmenuobj,PM_INSERT,
-					NewObject(POPUPMENU_GetItemClass(), NULL,
-						PMIA_Title, (ULONG)ctxmenulab[CMSUB_OBJECT],
-						PMSIMPLESUB,
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SHOWOBJ],
-								PMIA_ID,CMID_SHOWOBJ,
-								PMIA_UserData, content_get_url(curbox->object),
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
-								PMIA_ID,CMID_COPYOBJ,
-								PMIA_UserData, content_get_url(curbox->object),
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
-								PMIA_ID,CMID_CLIPOBJ,
-								PMIA_UserData,curbox->object,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
-								PMIA_ID,CMID_SAVEOBJ,
-								PMIA_UserData,curbox->object,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEIFFOBJ],
-								PMIA_ID,CMID_SAVEIFFOBJ,
-								PMIA_UserData,curbox->object,
-							TAG_DONE),
-						TAG_DONE),
-					TAG_DONE),
-				~0);
-
-				no_obj = false;
-				menuhascontent = true;
-			}
 
 			if(no_sel && (curbox->text) ||
 				(curbox->gadget && ((curbox->gadget->type == GADGET_TEXTBOX) ||
