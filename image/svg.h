@@ -24,6 +24,5 @@
 #define _NETSURF_IMAGE_SVG_H_
 
 nserror svg_init(void);
-void svg_fini(void);
 
 #endif

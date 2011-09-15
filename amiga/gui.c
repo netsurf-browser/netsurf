@@ -785,10 +785,6 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
-	amiga_plugin_hack_fini();
-	amiga_datatypes_fini();
-	amiga_icon_fini();
-
 	ami_mime_free();
 
 	return 0;

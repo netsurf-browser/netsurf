@@ -33,7 +33,6 @@ struct http_parameter;
 struct rect;
 
 nserror textplain_init(void);
-void textplain_fini(void);
 
 /* access to lines for text selection and searching */
 unsigned long textplain_line_count(struct content *c);

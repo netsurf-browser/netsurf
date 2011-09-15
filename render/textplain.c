@@ -94,6 +94,7 @@ static plot_font_style_t textplain_style = {
 
 static int textplain_tab_width = 256;  /* try for a sensible default */
 
+static void textplain_fini(void);
 static nserror textplain_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
@@ -132,6 +133,7 @@ static int textplain_coord_from_offset(const char *text, size_t offset,
 static float textplain_line_height(void);
 
 static const content_handler textplain_content_handler = {
+	.fini = textplain_fini,
 	.create = textplain_create,
 	.process_data = textplain_process_data,
 	.data_complete = textplain_convert,

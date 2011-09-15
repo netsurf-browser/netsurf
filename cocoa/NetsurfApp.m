@@ -201,8 +201,6 @@ int main( int argc, char **argv )
 	[app run];
 	
 	netsurf_exit();
-
-	apple_image_fini();
 	
 	return 0;
 }

@@ -59,6 +59,7 @@
 #define ALWAYS_DUMP_FRAMESET 0
 #define ALWAYS_DUMP_BOX 0
 
+static void html_fini(void);
 static nserror html_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
@@ -109,6 +110,7 @@ static void html_dump_frameset(struct content_html_frames *frame,
 #endif
 
 static const content_handler html_content_handler = {
+	.fini = html_fini,
 	.create = html_create,
 	.process_data = html_process_data,
 	.data_complete = html_convert,

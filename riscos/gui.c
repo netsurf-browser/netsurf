@@ -800,10 +800,6 @@ int main(int argc, char** argv)
 
 	netsurf_exit();
 
-	sprite_fini();
-	draw_fini();
-	artworks_fini();
-
 	return 0;
 }
 

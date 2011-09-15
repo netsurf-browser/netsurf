@@ -29,12 +29,10 @@
 #ifdef WITH_DRAW
 
 nserror draw_init(void);
-void draw_fini(void);
 
 #else
 
 #define draw_init() NSERROR_OK
-#define draw_fini() ((void) 0)
 
 #endif /* WITH_DRAW */
 

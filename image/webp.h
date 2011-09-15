@@ -24,6 +24,5 @@
 #define _NETSURF_WEBP_H_
 
 nserror webp_init(void);
-void webp_fini(void);
 
 #endif

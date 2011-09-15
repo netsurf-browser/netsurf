@@ -26,7 +26,4 @@
 nserror nsmng_init(void);
 nserror nsjpng_init(void);
 
-void nsmng_fini(void);
-void nsjpng_fini(void);
-
 #endif

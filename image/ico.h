@@ -24,6 +24,5 @@
 #define _NETSURF_IMAGE_ICO_H_
 
 nserror nsico_init(void);
-void nsico_fini(void);
 
 #endif

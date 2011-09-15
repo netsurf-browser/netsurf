@@ -117,11 +117,6 @@ nserror amiga_dt_sound_init(void)
 	return NSERROR_OK;
 }
 
-void amiga_dt_sound_fini(void)
-{
-	/* Nothing to do */
-}
-
 nserror amiga_dt_sound_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,

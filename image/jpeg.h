@@ -24,6 +24,5 @@
 #define _NETSURF_IMAGE_JPEG_H_
 
 nserror nsjpeg_init(void);
-void nsjpeg_fini(void);
 
 #endif

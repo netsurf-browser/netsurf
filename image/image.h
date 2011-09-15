@@ -26,6 +26,5 @@
 #include "utils/errors.h"
 
 nserror image_init(void);
-void image_fini(void);
 
 #endif

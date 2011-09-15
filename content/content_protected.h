@@ -40,6 +40,8 @@ struct rect;
 struct redraw_context;
 
 struct content_handler {
+	void (*fini)(void);
+
 	nserror (*create)(const content_handler *handler,
 			lwc_string *imime_type, const http_parameter *params,
 			llcache_handle *llcache, 

@@ -56,6 +56,9 @@ void content_factory_fini(void)
 
 		content_handlers = content_handlers->next;
 
+		if (victim->handler->fini != NULL)
+			victim->handler->fini();
+
 		lwc_string_unref(victim->mime_type);
 
 		free(victim);

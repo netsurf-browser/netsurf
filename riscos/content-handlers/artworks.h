@@ -29,12 +29,10 @@
 #ifdef WITH_ARTWORKS
 
 nserror artworks_init(void);
-void artworks_fini(void);
 
 #else
 
 #define artworks_init() NSERROR_OK
-#define artworks_fini() ((void) 0)
 
 #endif
 

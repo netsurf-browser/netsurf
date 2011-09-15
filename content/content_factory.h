@@ -31,26 +31,17 @@
 nserror HNAME##_init(void)						\
 {									\
 	uint32_t i;							\
-	nserror error;							\
+	nserror error = NSERROR_OK;					\
 									\
 	for (i = 0; i < NOF_ELEMENTS(HTYPELIST); i++) {			\
 		error = content_factory_register_handler(		\
 			HTYPELIST[i],					\
 			&HHANDLER);					\
 		if (error != NSERROR_OK)				\
-			goto error;					\
+			break;						\
 	}								\
 									\
-	return NSERROR_OK;						\
-									\
-error:									\
-	HNAME##_fini();							\
-									\
 	return error;							\
-}									\
-/* Pointless */								\
-void HNAME##_fini(void)							\
-{									\
 }
 
 struct content;

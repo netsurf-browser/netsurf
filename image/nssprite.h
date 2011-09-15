@@ -24,6 +24,5 @@
 #define _NETSURF_NS_SPRITE_H_
 
 nserror nssprite_init(void);
-void nssprite_fini(void);
 
 #endif

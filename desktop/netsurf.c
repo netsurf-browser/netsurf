@@ -193,7 +193,7 @@ nserror netsurf_init(int *pargc,
 		return error;
 
 	/* content handler initialisation */
-	error = css_init();
+	error = nscss_init();
 	if (error != NSERROR_OK)
 		return error;
 
@@ -267,15 +267,10 @@ void netsurf_exit(void)
 
 	mimesniff_fini();
 
-	/* Clean up after content handlers */
-	textplain_fini();
-	image_fini();
-	html_fini();
-	css_fini();
-
 	/* dump any remaining cache entries */
 	image_cache_fini();
 
+	/* Clean up after content handlers */
 	content_factory_fini();
 
 	LOG(("Closing utf8"));

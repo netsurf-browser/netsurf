@@ -29,12 +29,10 @@
 #ifdef WITH_SPRITE
 
 nserror sprite_init(void);
-void sprite_fini(void);
 
 #else
 
 #define sprite_init() NSERROR_OK
-#define sprite_fini() ((void) 0)
 
 #endif
 

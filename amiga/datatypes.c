@@ -37,12 +37,4 @@ nserror amiga_datatypes_init(void)
 	return NSERROR_OK;
 }
 
-void amiga_datatypes_fini(void)
-{
-	amiga_dt_picture_fini();
-#ifdef WITH_DTANIM
-	amiga_dt_anim_fini();
-#endif
-	amiga_dt_sound_fini();
-}
 #endif

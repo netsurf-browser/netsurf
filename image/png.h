@@ -21,6 +21,5 @@
 #define _NETSURF_RISCOS_PNG_H_
 
 nserror nspng_init(void);
-void nspng_fini(void);
 
 #endif

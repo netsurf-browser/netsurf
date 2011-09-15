@@ -142,7 +142,6 @@ extern char *quirks_stylesheet_url;
 extern bool html_redraw_debug;
 
 nserror html_init(void);
-void html_fini(void);
 
 void html_redraw_a_box(struct hlcache_handle *h, struct box *box);
 

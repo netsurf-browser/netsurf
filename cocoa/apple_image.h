@@ -26,12 +26,10 @@
 #ifdef WITH_APPLE_IMAGE
 
 nserror apple_image_init(void);
-void apple_image_fini(void);
 
 #else
 
 #define apple_image_init() NSERROR_OK
-#define apple_image_fini() ((void) 0)
 
 #endif /* WITH_APPLE_IMAGE */
 

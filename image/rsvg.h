@@ -24,6 +24,5 @@
 #define _NETSURF_IMAGE_RSVG_H_
 
 nserror nsrsvg_init(void);
-void nsrsvg_fini(void);
 
 #endif

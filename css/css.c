@@ -55,6 +55,7 @@ typedef struct {
 						 *   imports array */
 } nscss_import_ctx;
 
+static void nscss_fini(void);
 static nserror nscss_create(const content_handler *handler, 
 		lwc_string *imime_type,	const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
@@ -79,6 +80,7 @@ static css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import);
 
 static const content_handler css_content_handler = {
+	.fini = nscss_fini,
 	.create = nscss_create,
 	.process_data = nscss_process_data,
 	.data_complete = nscss_convert,
@@ -95,7 +97,7 @@ static css_stylesheet *blank_import;
 /**
  * Initialise the CSS content handler
  */
-nserror css_init(void)
+nserror nscss_init(void)
 {
 	lwc_error lerror;
 	nserror error;
@@ -117,7 +119,7 @@ nserror css_init(void)
 /**
  * Clean up after the CSS content handler
  */
-void css_fini(void)
+void nscss_fini(void)
 {
 	if (css_charset != NULL) {
 		lwc_string_unref(css_charset);

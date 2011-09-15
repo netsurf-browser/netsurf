@@ -25,6 +25,5 @@
 #define _NETSURF_IMAGE_GIF_H_
 
 nserror nsgif_init(void);
-void nsgif_fini(void);
 
 #endif

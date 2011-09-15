@@ -61,8 +61,7 @@ struct nscss_import {
 	uint64_t media;		/**< Media types that sheet applies to */
 };
 
-nserror css_init(void);
-void css_fini(void);
+nserror nscss_init(void);
 
 nserror nscss_create_css_data(struct content_css_data *c,
 		const char *url, const char *charset, bool quirks,

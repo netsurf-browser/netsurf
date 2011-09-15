@@ -25,7 +25,6 @@
 struct hlcache_handle;
 
 nserror amiga_plugin_hack_init(void);
-void amiga_plugin_hack_fini(void);
 
 void amiga_plugin_hack_execute(struct hlcache_handle *c);
 #endif
