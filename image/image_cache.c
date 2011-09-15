@@ -208,12 +208,13 @@ static void image_cache__unlink(struct image_cache_entry_s *centry)
 static void image_cache__free_bitmap(struct image_cache_entry_s *centry) 
 {
 	if (centry->bitmap != NULL) {
+#ifdef IMAGE_CACHE_VERBOSE
 		LOG(("Freeing bitmap %p size %d age %d redraw count %d", 
 		     centry->bitmap,
 		     centry->bitmap_size,
 		     image_cache->current_age - centry->bitmap_age,
 		     centry->redraw_count));
-
+#endif
 		bitmap_destroy(centry->bitmap);
 		centry->bitmap = NULL;
 		image_cache->total_bitmap_size -= centry->bitmap_size;
@@ -228,7 +229,9 @@ static void image_cache__free_bitmap(struct image_cache_entry_s *centry)
 /* free cache entry */
 static void image_cache__free_entry(struct image_cache_entry_s *centry)
 {
+#ifdef IMAGE_CACHE_VERBOSE
 	LOG(("freeing %p ", centry));
+#endif
 
 	if (centry->redraw_count == 0) {
 		image_cache->total_unrendered++;
@@ -268,7 +271,9 @@ static void image_cache__background_update(void *p)
 	/* increment current cache age */
 	icache->current_age += icache->params.bg_clean_time;
 	
+#ifdef IMAGE_CACHE_VERBOSE
 	LOG(("Cache age %ds", icache->current_age / 1000));
+#endif
 
 	image_cache__clean(icache);
 
@@ -367,12 +372,13 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 /* exported interface documented in image_cache.h */
 nserror image_cache_fini(void)
 {
-	int op_count;
-	size_t op_size;
+	unsigned int op_count;
 
 	schedule_remove(image_cache__background_update, image_cache);
 
-	LOG(("Size at finish %d (in %d)", image_cache->total_bitmap_size, image_cache->bitmap_count));
+	LOG(("Size at finish %d (in %d)", 
+	     image_cache->total_bitmap_size, 
+	     image_cache->bitmap_count));
 
 	while (image_cache->entries != NULL) {
 		image_cache__free_entry(image_cache->entries);
@@ -382,38 +388,51 @@ nserror image_cache_fini(void)
 		image_cache->miss_count + 
 		image_cache->fail_count;
 
-	op_size = image_cache->hit_size + 
-		image_cache->miss_size + 
-		image_cache->fail_size;
-
 	LOG(("Age %ds", image_cache->current_age / 1000));
-	LOG(("Peak size %d (in %d)", image_cache->max_bitmap_size, image_cache->max_bitmap_size_count ));
-	LOG(("Peak image count %d (size %d)", image_cache->max_bitmap_count, image_cache->max_bitmap_count_size));
-	LOG(("Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
-	     op_count,
-	     image_cache->hit_count, 
-	     image_cache->miss_count,
-	     image_cache->fail_count,
-	     (image_cache->hit_count * 100) / op_count, 
-	     (image_cache->miss_count * 100) / op_count,
-	     (image_cache->fail_count * 100) / op_count));
-	LOG(("Cache total/hit/miss/fail (size) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
-	     op_size,
-	     image_cache->hit_size, 
-	     image_cache->miss_size,
-	     image_cache->fail_size,
-	     (image_cache->hit_size * 100) / op_size, 
-	     (image_cache->miss_size * 100) / op_size,
-	     (image_cache->fail_size * 100) / op_size));
+	LOG(("Peak size %d (in %d)", 
+	     image_cache->max_bitmap_size, 
+	     image_cache->max_bitmap_size_count ));
+	LOG(("Peak image count %d (size %d)", 
+	     image_cache->max_bitmap_count, 
+	     image_cache->max_bitmap_count_size));
+
+	if (op_count > 0) {
+		uint64_t op_size;
+
+		op_size = image_cache->hit_size + 
+			image_cache->miss_size + 
+			image_cache->fail_size;
+
+		LOG(("Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+		     op_count,
+		     image_cache->hit_count, 
+		     image_cache->miss_count,
+		     image_cache->fail_count,
+		     (image_cache->hit_count * 100) / op_count, 
+		     (image_cache->miss_count * 100) / op_count,
+		     (image_cache->fail_count * 100) / op_count));
+		LOG(("Cache total/hit/miss/fail (size) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+		     op_size,
+		     image_cache->hit_size, 
+		     image_cache->miss_size,
+		     image_cache->fail_size,
+		     (image_cache->hit_size * 100) / op_size, 
+		     (image_cache->miss_size * 100) / op_size,
+		     (image_cache->fail_size * 100) / op_size));
+	}
+
 	LOG(("Total images never rendered: %d (includes %d that were converted)",
 	     image_cache->total_unrendered,
 	     image_cache->specultive_miss_count));
+
 	LOG(("Total number of excessive conversions: %d (from %d images converted more than once)",
 	     image_cache->total_extra_conversions,
 	     image_cache->total_extra_conversions_count));
+
 	LOG(("Bitmap of size %d had most (%d) conversions",
 	     image_cache->peak_conversions_size,
 	     image_cache->peak_conversions));
+
 	free(image_cache);
 
 	return NSERROR_OK;
