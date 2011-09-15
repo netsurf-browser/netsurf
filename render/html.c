@@ -145,7 +145,6 @@ static const char *html_types[] = {
 	"text/html"
 };
 
-static lwc_string *html_mime_types[NOF_ELEMENTS(html_types)];
 static lwc_string *html_charset;
 
 nserror html_init(void)
@@ -160,16 +159,8 @@ nserror html_init(void)
 		goto error;
 	}
 
-	for (i = 0; i < NOF_ELEMENTS(html_mime_types); i++) {
-		lerror = lwc_intern_string(html_types[i],
-				strlen(html_types[i]),
-				&html_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(html_mime_types[i],
+	for (i = 0; i < NOF_ELEMENTS(html_types); i++) {
+		error = content_factory_register_handler(html_types[i],
 				&html_content_handler);
 		if (error != NSERROR_OK)
 			goto error;
@@ -185,15 +176,10 @@ error:
 
 void html_fini(void)
 {
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(html_mime_types); i++) {
-		if (html_mime_types[i] != NULL)
-			lwc_string_unref(html_mime_types[i]);
-	}
-
-	if (html_charset != NULL)
+	if (html_charset != NULL) {
 		lwc_string_unref(html_charset);
+		html_charset = NULL;
+	}
 }
 
 /**

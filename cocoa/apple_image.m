@@ -77,13 +77,7 @@ static nserror register_for_type( NSString *mime )
 		return NSERROR_OK;
 #endif
 
-	lwc_string *string = NULL;
-	lwc_error lerror = lwc_intern_string( type, strlen( type ), &string );
-	if (lerror != lwc_error_ok) return NSERROR_NOMEM;
-
-	nserror error = content_factory_register_handler( string, &apple_image_content_handler );
-	lwc_string_unref( string );
-
+	nserror error = content_factory_register_handler( type, &apple_image_content_handler );
 	if (error != NSERROR_OK) return error;
 	
 	return NSERROR_OK;

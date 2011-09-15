@@ -71,14 +71,20 @@ void content_factory_fini(void)
  *
  * \note Latest registration for a MIME type wins
  */
-nserror content_factory_register_handler(lwc_string *mime_type,
+nserror content_factory_register_handler(const char *mime_type,
 		const content_handler *handler)
 {
+	lwc_string *imime_type;
+	lwc_error lerror;
 	content_handler_entry *entry;
 	bool match;
 
+	lerror = lwc_intern_string(mime_type, strlen(mime_type), &imime_type);
+	if (lerror != lwc_error_ok)
+		return NSERROR_NOMEM;
+
 	for (entry = content_handlers; entry != NULL; entry = entry->next) {
-		if (lwc_string_caseless_isequal(mime_type, entry->mime_type,
+		if (lwc_string_caseless_isequal(imime_type, entry->mime_type,
 				&match) == lwc_error_ok && match)
 			break;
 	}
@@ -91,7 +97,9 @@ nserror content_factory_register_handler(lwc_string *mime_type,
 		entry->next = content_handlers;
 		content_handlers = entry;
 
-		entry->mime_type = lwc_string_ref(mime_type);
+		entry->mime_type = imime_type;
+	} else {
+		lwc_string_unref(imime_type);
 	}
 
 	entry->handler = handler;

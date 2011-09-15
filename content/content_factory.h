@@ -28,25 +28,14 @@
 
 #define CONTENT_FACTORY_REGISTER_TYPES(HNAME, HTYPELIST, HHANDLER)	\
 									\
-static lwc_string *HNAME##_mime_types[NOF_ELEMENTS(HTYPELIST)];	        \
-									\
 nserror HNAME##_init(void)						\
 {									\
 	uint32_t i;							\
-	lwc_error lerror;						\
 	nserror error;							\
 									\
-	for (i = 0; i < NOF_ELEMENTS(HNAME##_mime_types); i++) {	\
-		lerror = lwc_intern_string(HTYPELIST[i],		\
-					   strlen(HTYPELIST[i]),	\
-					   &HNAME##_mime_types[i]);	\
-		if (lerror != lwc_error_ok) {				\
-			error = NSERROR_NOMEM;				\
-			goto error;					\
-		}							\
-									\
+	for (i = 0; i < NOF_ELEMENTS(HTYPELIST); i++) {			\
 		error = content_factory_register_handler(		\
-			HNAME##_mime_types[i],				\
+			HTYPELIST[i],					\
 			&HHANDLER);					\
 		if (error != NSERROR_OK)				\
 			goto error;					\
@@ -59,16 +48,9 @@ error:									\
 									\
 	return error;							\
 }									\
-									\
+/* Pointless */								\
 void HNAME##_fini(void)							\
 {									\
-	uint32_t i;							\
-									\
-	for (i = 0; i < NOF_ELEMENTS(HNAME##_mime_types); i++) {	\
-		if (HNAME##_mime_types[i] != NULL) {			\
-			lwc_string_unref(HNAME##_mime_types[i]);	\
-		}							\
-	}								\
 }
 
 struct content;
@@ -78,7 +60,7 @@ typedef struct content_handler content_handler;
 
 void content_factory_fini(void);
 
-nserror content_factory_register_handler(lwc_string *mime_type,
+nserror content_factory_register_handler(const char *mime_type,
 		const content_handler *handler);
 
 struct content *content_factory_create_content(struct llcache_handle *llcache, 

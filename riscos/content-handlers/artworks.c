@@ -129,46 +129,8 @@ static const char *artworks_types[] = {
 	"image/x-artworks"
 };
 
-static lwc_string *artworks_mime_types[NOF_ELEMENTS(artworks_types)];
-
-nserror artworks_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
-
-	for (i = 0; i < NOF_ELEMENTS(artworks_mime_types); i++) {
-		lerror = lwc_intern_string(artworks_types[i],
-				strlen(artworks_types[i]),
-				&artworks_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(artworks_mime_types[i],
-				&artworks_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	artworks_fini();
-
-	return error;
-}
-
-void artworks_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(artworks_mime_types); i++) {
-		if (artworks_mime_types[i] != NULL)
-			lwc_string_unref(artworks_mime_types[i]);
-	}
-}
+CONTENT_FACTORY_REGISTER_TYPES(artworks, artworks_types, 
+		artworks_content_handler)
 
 nserror artworks_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,

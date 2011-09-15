@@ -72,46 +72,7 @@ static const char *draw_types[] = {
 	"image/x-drawfile"
 };
 
-static lwc_string *draw_mime_types[NOF_ELEMENTS(draw_types)];
-
-nserror draw_init(void)
-{
-	uint32_t i;
-	lwc_error lerror;
-	nserror error;
-
-	for (i = 0; i < NOF_ELEMENTS(draw_mime_types); i++) {
-		lerror = lwc_intern_string(draw_types[i],
-				strlen(draw_types[i]),
-				&draw_mime_types[i]);
-		if (lerror != lwc_error_ok) {
-			error = NSERROR_NOMEM;
-			goto error;
-		}
-
-		error = content_factory_register_handler(draw_mime_types[i],
-				&draw_content_handler);
-		if (error != NSERROR_OK)
-			goto error;
-	}
-
-	return NSERROR_OK;
-
-error:
-	draw_fini();
-
-	return error;
-}
-
-void draw_fini(void)
-{
-	uint32_t i;
-
-	for (i = 0; i < NOF_ELEMENTS(draw_mime_types); i++) {
-		if (draw_mime_types[i] != NULL)
-			lwc_string_unref(draw_mime_types[i]);
-	}
-}
+CONTENT_FACTORY_REGISTER_TYPES(draw, draw_types, draw_content_handler)
 
 nserror draw_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,

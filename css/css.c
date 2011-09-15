@@ -89,7 +89,6 @@ static const content_handler css_content_handler = {
 	.no_share = false,
 };
 
-static lwc_string *css_mime_type;
 static lwc_string *css_charset;
 static css_stylesheet *blank_import;
 
@@ -101,22 +100,15 @@ nserror css_init(void)
 	lwc_error lerror;
 	nserror error;
 
-	lerror = lwc_intern_string("text/css", SLEN("text/css"), 
-			&css_mime_type);
-	if (lerror != lwc_error_ok)
-		return NSERROR_NOMEM;
-
 	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
 	if (lerror != lwc_error_ok) {
-		lwc_string_unref(css_mime_type);
 		return NSERROR_NOMEM;
 	}
 
-	error = content_factory_register_handler(css_mime_type, 
+	error = content_factory_register_handler("text/css", 
 			&css_content_handler);
 	if (error != NSERROR_OK) {
 		lwc_string_unref(css_charset);
-		lwc_string_unref(css_mime_type);
 	}
 
 	return error;
@@ -127,12 +119,15 @@ nserror css_init(void)
  */
 void css_fini(void)
 {
-	lwc_string_unref(css_charset);
+	if (css_charset != NULL) {
+		lwc_string_unref(css_charset);
+		css_charset = NULL;
+	}
 
-	lwc_string_unref(css_mime_type);
-
-	if (blank_import != NULL)
+	if (blank_import != NULL) {
 		css_stylesheet_destroy(blank_import);
+		blank_import = NULL;
+	}
 }
 
 /**

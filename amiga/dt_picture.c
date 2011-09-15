@@ -103,7 +103,8 @@ nserror amiga_dt_picture_init(void)
 
 			if(node)
 			{
-				error = content_factory_register_handler(type, 
+				error = content_factory_register_handler(
+					lwc_string_data(type), 
 					&amiga_dt_picture_content_handler);
 
 				if (error != NSERROR_OK)
