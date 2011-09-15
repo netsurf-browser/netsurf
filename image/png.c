@@ -319,7 +319,7 @@ static bool nspng_process_data(struct content *c, const char *data,
 {
 	nspng_content *png_c = (nspng_content *)c;
 	union content_msg_data msg_data;
-	bool ret = true;
+	volatile bool ret = true;
 
 	if (png_c->no_process_data) {
 		return ret;
@@ -427,10 +427,10 @@ png_cache_convert(struct content *c)
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_infop end_info;
-	struct bitmap *bitmap = NULL;
+	volatile struct bitmap *bitmap = NULL;
 	struct png_cache_read_data_s png_cache_read_data;
 	png_uint_32 width, height;
-	png_bytep *row_pointers = NULL;
+	volatile png_bytep *row_pointers = NULL;
 
 	png_cache_read_data.data = 
 		content__get_source_data(c, &png_cache_read_data.size);
@@ -485,10 +485,10 @@ png_cache_convert(struct content *c)
 		goto png_cache_convert_error;
 	}
 
-	row_pointers = calc_row_pointers(bitmap);
+	row_pointers = calc_row_pointers((struct bitmap *) bitmap);
 
 	if (row_pointers != NULL) {
-		png_read_image(png_ptr, row_pointers);
+		png_read_image(png_ptr, (png_bytep *) row_pointers);
 	}
 
 png_cache_convert_error:
@@ -496,9 +496,9 @@ png_cache_convert_error:
 	/* cleanup png read */
 	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
 
-	free(row_pointers);
+	free((png_bytep *) row_pointers);
 
-	return bitmap;
+	return (struct bitmap *) bitmap;
 }
 
 static bool nspng_convert(struct content *c)
