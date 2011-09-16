@@ -51,8 +51,7 @@ typedef struct nsgif_content {
 	struct content base;
 
 	struct gif_animation *gif; /**< GIF animation data */
-	int current_frame;	   /**< current frame to display [0...(max-1)] */
-	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
+	int current_frame;   /**< current frame to display [0...(max-1)] */
 } nsgif_content;
 
 
@@ -299,8 +298,6 @@ static bool nsgif_convert(struct content *c)
 				nsgif_invalidate);
 
 	/* Exit as a success */
-	gif->bitmap = gif->gif->frame_image;
-
 	content_set_ready(c);
 	content_set_done(c);
 
@@ -315,21 +312,23 @@ static bool nsgif_convert(struct content *c)
  *
  * \param c  the content to update
  */
-static gif_result nsgif_get_frame(struct content *c)
+static gif_result nsgif_get_frame(nsgif_content *gif)
 {
-	nsgif_content *gif = (nsgif_content *) c;
 	int previous_frame, current_frame, frame;
 	gif_result res = GIF_OK;
 
 	current_frame = gif->current_frame;
 	if (!option_animate_images)
 		current_frame = 0;
+
 	if (current_frame < gif->gif->decoded_frame)
 		previous_frame = 0;
 	else
 		previous_frame = gif->gif->decoded_frame + 1;
-	for (frame = previous_frame; frame <= current_frame; frame++)
+
+	for (frame = previous_frame; frame <= current_frame; frame++) {
 		res = gif_decode_frame(gif->gif, frame);
+	}
 
 	return res;
 }
@@ -340,11 +339,11 @@ static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
 	nsgif_content *gif = (nsgif_content *) c;
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (gif->current_frame != gif->gif->decoded_frame)
-		if (nsgif_get_frame(c) != GIF_OK)
+	if (gif->current_frame != gif->gif->decoded_frame) {
+		if (nsgif_get_frame(gif) != GIF_OK) {
 			return false;
-
-	gif->bitmap = gif->gif->frame_image;
+		}
+	}
 
 	if ((data->width == -1) && (data->height == -1))
 		return true;
@@ -355,7 +354,7 @@ static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
 		flags |= BITMAPF_REPEAT_Y;
 
 	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			gif->bitmap, data->background_colour, flags);
+			gif->gif->frame_image, data->background_colour, flags);
 }
 
 
@@ -409,7 +408,7 @@ static void *nsgif_get_internal(const struct content *c, void *context)
 {
 	nsgif_content *gif = (nsgif_content *) c;
 
-	return gif->bitmap;
+	return gif->gif->frame_image;
 }
 
 static content_type nsgif_content_type(void)
