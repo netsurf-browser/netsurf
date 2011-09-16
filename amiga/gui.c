@@ -1596,8 +1596,7 @@ void ami_handle_msg(void)
 									bw->reformat_pending = true;
 								} while(tab=ntab);
 							}
-							// fall through
-						case AMINS_FRAME:
+
 							gwin->bw->reformat_pending = true;
 							gwin->redraw_required = true;
 						break;
@@ -1666,7 +1665,7 @@ void ami_handle_msg(void)
 //	ReplyMsg((struct Message *)message);
 		}
 
-		if((node->Type == AMINS_WINDOW) || (node->Type == AMINS_FRAME))
+		if(node->Type == AMINS_WINDOW)
 		{
 			if(gwin->redraw_required || gwin->bw->reformat_pending)
 				ami_do_redraw(gwin);
