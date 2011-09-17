@@ -354,14 +354,16 @@ void content__reformat(struct content *c, bool background,
 			c->status == CONTENT_STATUS_DONE);
 	assert(c->locked == false);
 	LOG(("%p %s", c, llcache_handle_get_url(c->llcache)));
-	c->locked = true;
 	c->available_width = width;
 	if (c->handler->reformat != NULL) {
+
+		c->locked = true;
 		c->handler->reformat(c, width, height);
+		c->locked = false;
+
 		data.background = background;
 		content_broadcast(c, CONTENT_MSG_REFORMAT, data);
 	}
-	c->locked = false;
 }
 
 
