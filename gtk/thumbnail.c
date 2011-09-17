@@ -102,10 +102,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	/* set to plot to pixmap */
 	current_drawable = pixmap;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
-#endif
 
 	/* render the content */
 	thumbnail_redraw(content, cwidth, cheight, &ctx);
@@ -129,10 +126,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	bitmap_modified(bitmap);
 
-	g_object_unref(current_gc);
-#ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);
-#endif
+
 	g_object_unref(pixmap);
 	g_object_unref(big);
 

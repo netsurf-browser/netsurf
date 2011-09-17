@@ -159,10 +159,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 
 	current_widget = (GtkWidget *)g->layout;
 	current_drawable = g->layout->bin_window;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
-#endif
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
@@ -175,10 +172,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
 
 	current_widget = NULL;
-	g_object_unref(current_gc);
-#ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);
-#endif
 
 	return FALSE;
 }

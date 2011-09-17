@@ -182,25 +182,17 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 	
 	current_widget = widget;
 	current_drawable = widget->window;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
-#endif
+
 	current_widget = widget;
 	current_drawable = widget->window;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
 	current_cr = gdk_cairo_create(current_drawable);
-#endif
 	
 	tree_set_redraw(tree, true);
 	tree_draw(tree, 0, 0, x, y, width, height, &ctx);
 	
 	current_widget = NULL;
-	g_object_unref(current_gc);
-#ifdef CAIRO_VERSION
 	cairo_destroy(current_cr);
-#endif
 	
 	return FALSE;
 }

@@ -1514,10 +1514,8 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 
 	current_widget = widget;
 	current_drawable = widget->window;
-	current_gc = gdk_gc_new(current_drawable);
-#ifdef CAIRO_VERSION
+
 	current_cr = gdk_cairo_create(current_drawable);
-#endif
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
@@ -1528,10 +1526,9 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	history_redraw(bw->history, &ctx);
 
 	current_widget = NULL;
-	g_object_unref(current_gc);
-#ifdef CAIRO_VERSION
+
 	cairo_destroy(current_cr);
-#endif
+
 	return FALSE;
 }
 

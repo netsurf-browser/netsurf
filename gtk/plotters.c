@@ -41,13 +41,8 @@
 #include "gtk/options.h"
 #include "gtk/bitmap.h"
 
-#ifndef CAIRO_VERSION
-#error "nsgtk requires cairo"
-#endif
-
 GtkWidget *current_widget;
 GdkDrawable *current_drawable;
-GdkGC *current_gc;
 cairo_t *current_cr;
 
 static GdkRectangle cliprect;
@@ -57,44 +52,11 @@ struct plotter_table plot;
 /** Set cairo context colour to nsgtk colour. */
 void nsgtk_set_colour(colour c)
 {
-	int r, g, b;
-	GdkColor colour;
-
-	r = c & 0xff;
-	g = (c & 0xff00) >> 8;
-	b = (c & 0xff0000) >> 16;
-
-	colour.red = r | (r << 8);
-	colour.green = g | (g << 8);
-	colour.blue = b | (b << 8);
-	colour.pixel = (r << 16) | (g << 8) | b;
-
-	gdk_colormap_alloc_color(gdk_colormap_get_system(), &colour, true, true);
-	gdk_gc_set_foreground(current_gc, &colour);
-
-	cairo_set_source_rgba(current_cr, r / 255.0,
-			      g / 255.0, b / 255.0, 1.0);
-}
-
-/** Plot a caret.
- *
- * @note It is assumed that the plotters have been set up.
- */
-void nsgtk_plot_caret(int x, int y, int h)
-{
-	GdkColor colour;
-
-	colour.red = 0;
-	colour.green = 0;
-	colour.blue = 0;
-	colour.pixel = 0;
-	gdk_colormap_alloc_color(gdk_colormap_get_system(),
-				 &colour, true, true);
-	gdk_gc_set_foreground(current_gc, &colour);
-
-	gdk_draw_line(current_drawable, current_gc,
-		      x, y,
-		      x, y + h - 1);
+	cairo_set_source_rgba(current_cr, 
+			      (c & 0xff) / 255.0, 
+			      ((c & 0xff00) >> 8) / 255.0, 
+			      ((c & 0xff0000) >> 16) / 255.0, 
+			      1.0);
 }
 
 /** Set cairo context to solid plot operation. */
@@ -130,7 +92,6 @@ static bool nsgtk_plot_clip(const struct rect *clip)
 	cliprect.y = clip->y0;
 	cliprect.width = clip->x1 - clip->x0;
 	cliprect.height = clip->y1 - clip->y0;
-	gdk_gc_set_clip_rectangle(current_gc, &cliprect);
 
 	return true;
 }
@@ -192,9 +153,9 @@ static bool nsgtk_plot_disc(int x, int y, int radius, const plot_style_t *style)
 	return true;
 }
 
-static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
+static bool 
+nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-
 	nsgtk_set_colour(style->stroke_colour);
 
 	switch (style->stroke_type) {
@@ -232,6 +193,22 @@ static bool nsgtk_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *
 	return true;
 }
 
+/** Plot a caret.
+ *
+ * @note It is assumed that the plotters have been set up.
+ */
+void nsgtk_plot_caret(int x, int y, int h)
+{
+	nsgtk_set_solid(); /* solid line */
+	nsgtk_set_colour(0); /* black */
+	cairo_set_line_width(current_cr, 1); /* thin line */
+
+	/* core expects horizontal and vertical lines to be on pixels, not
+	 * between pixels */
+	cairo_move_to(current_cr, x + 0.5, y);
+	cairo_line_to(current_cr, x + 0.5, y + h - 1);
+	cairo_stroke(current_cr);
+}
 
 static bool nsgtk_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
@@ -367,9 +344,9 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	    gdk_pixbuf_get_height(pixbuf) == height) {
 		/* Bitmap is not scaled */
 		/* Plot the bitmap */
-		gdk_draw_pixbuf(current_drawable, current_gc, pixbuf,
-				dsrcx, dsrcy, x, y, dwidth, dheight,
-				GDK_RGB_DITHER_MAX, 0, 0);
+		gdk_cairo_set_source_pixbuf(current_cr, pixbuf, x - dsrcx, y -dsrcy);
+		cairo_rectangle(current_cr, x , y , dwidth, dheight);
+		cairo_fill(current_cr);
 
 	} else {
 		/* Bitmap is scaled */
@@ -391,9 +368,9 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 			return false;
 
 		/* Plot the scaled bitmap */
-		gdk_draw_pixbuf(current_drawable, current_gc, scaled,
-				0, 0, x, y, dwidth, dheight,
-				GDK_RGB_DITHER_MAX, 0, 0);
+		gdk_cairo_set_source_pixbuf(current_cr, scaled, x, y);
+		cairo_rectangle(current_cr, x , y , dwidth, dheight);
+		cairo_fill(current_cr);
 
 		g_object_unref(scaled);
 	}
