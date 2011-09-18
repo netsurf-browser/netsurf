@@ -1118,7 +1118,13 @@ struct content *content_clone(struct content *c)
  */
 nserror content__clone(const struct content *c, struct content *nc)
 {
+	struct content_user *user_sentinel;
 	nserror error;
+
+	user_sentinel = talloc_zero(c, struct content_user);
+	if (user_sentinel == NULL) {
+		return NSERROR_NOMEM;
+	}
 
 	error = llcache_handle_clone(c->llcache, &(nc->llcache));
 	if (error != NSERROR_OK) {
@@ -1165,6 +1171,8 @@ nserror content__clone(const struct content *c, struct content *nc)
 	}
 	
 	nc->active = c->active;
+
+	nc->user_list = user_sentinel;
 	
 	memcpy(&(nc->status_message), &(c->status_message), 120);
 	memcpy(&(nc->sub_status), &(c->sub_status), 80);
