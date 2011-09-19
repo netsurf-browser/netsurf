@@ -43,7 +43,7 @@ void window_snd_redraw(struct gui_window * gw, short x, short y, short w, short 
 /* Update Shade / Unshade state of the fwd/back buttons*/
 void window_update_back_forward(struct gui_window * gw);
 /* set root browser component: */
-void window_attach_browser( struct gui_window * gw, CMP_BROWSER b); 
+void window_attach_browser( struct gui_window * gw, CMP_BROWSER b);
 
 /* set focus element */
 void window_set_focus( struct gui_window * gw, enum focus_element_type type, void * element );
@@ -55,7 +55,7 @@ bool window_url_widget_has_focus( struct gui_window * gw );
 void window_set_url( struct gui_window * gw, const char * text);
 void window_set_stauts( struct gui_window * gw , char * text );
 void window_center(struct gui_window * gw);
-//void window_set_icon(struct gui_window * gw, void * data, bool is_rsc );
+void window_set_icon(struct gui_window * gw, struct bitmap * bmp );
 
 
 /* -------------------------------------------------------------------------- */

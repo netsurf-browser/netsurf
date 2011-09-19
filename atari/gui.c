@@ -121,7 +121,7 @@ void gui_poll(bool active)
 	short mx, my, dummy;
 	short aestop;
 
-	evnt.timer = schedule_run(); 
+	evnt.timer = schedule_run();
 
 	wind_get( 0, WF_TOP, &aestop, &winloc[1], &winloc[2], &winloc[3]);
 	if( winloc[1] != _AESapid ){
@@ -185,7 +185,7 @@ void gui_poll(bool active)
 		}
 	}
 	if( evnt.timer != 0 && !active ){
-		/* this suits for stuff with lower priority */ 
+		/* this suits for stuff with lower priority */
 		hotlist_redraw();
 	}
 }
@@ -198,7 +198,7 @@ gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *gw=NULL;
 	struct gui_window * gwroot ;
 	short winloc[4];
-	LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone, 
+	LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone,
 		(int)new_tab
 	));
 
@@ -363,7 +363,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 			browser_scroll(w, WA_DNLINE, abs(sy), true );
 		}
 	}
-	return; 
+	return;
 
 }
 
@@ -385,7 +385,7 @@ void gui_window_update_extent(struct gui_window *gw)
 	oldx = gw->browser->scroll.current.x;
 	oldy = gw->browser->scroll.current.y;
 	if( gw->browser->bw->current_content != NULL ) {
-		browser_set_content_size( gw, 
+		browser_set_content_size( gw,
 			content_get_width(gw->browser->bw->current_content),
 			content_get_height(gw->browser->bw->current_content)
 		);
@@ -395,7 +395,7 @@ void gui_window_update_extent(struct gui_window *gw)
 
 void gui_clear_selection(struct gui_window *g)
 {
-	
+
 }
 
 
@@ -540,21 +540,21 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 	if (w == NULL)
 		return;
 	CMP_BROWSER b = w->browser;
-	if( w->browser->caret.current.g_w > 0 ) 
+	if( w->browser->caret.current.g_w > 0 )
 		gui_window_remove_caret( w );
-	
+
 	w->browser->caret.requested.g_x = x;
 	w->browser->caret.requested.g_y = y;
 	w->browser->caret.requested.g_w = 2;
 	w->browser->caret.requested.g_h = height;
 	w->browser->caret.redraw = true;
-	browser_schedule_redraw_rect( 
-		w, 
-		x - b->scroll.current.x, 
-		y - b->scroll.current.y, 
-		w->browser->caret.requested.g_w, 
-		w->browser->caret.requested.g_h 
-	);	
+	browser_schedule_redraw_rect(
+		w,
+		x - b->scroll.current.x,
+		y - b->scroll.current.y,
+		w->browser->caret.requested.g_w,
+		w->browser->caret.requested.g_h
+	);
 	return;
 }
 
@@ -581,7 +581,16 @@ gui_window_remove_caret(struct gui_window *w)
 void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
-	TODO();
+	/* Untestet, favicon support has been dropped, so this is dead code. */
+
+/*
+	struct bitmap *icon_bitmap;
+    icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+    if (icon_bitmap != NULL) {
+        window_set_icon( g, icon_bitmap );
+	}
+*/
+
 }
 
 void
@@ -702,7 +711,7 @@ bool gui_add_to_clipboard(const char *text_utf8, size_t length_utf8, bool space)
 	size_t newlen = 0;
 	char * text = NULL;
 	char * text2 = NULL;
-	bool retval; 
+	bool retval;
 	int length = 0;
 	if( length_utf8 > 0 && text_utf8 != NULL ) {
 		utf8_to_local_encoding(text_utf8,length_utf8,&text);
@@ -719,7 +728,7 @@ bool gui_add_to_clipboard(const char *text_utf8, size_t length_utf8, bool space)
 		text = malloc(length + 2);
 		if( text == NULL ) {
 			goto error;
-		} 
+		}
 		text2 = text;
 		text[length+1] = 0;
 		memset(text, ' ', length+1);
@@ -727,7 +736,7 @@ bool gui_add_to_clipboard(const char *text_utf8, size_t length_utf8, bool space)
 	length = strlen(text);
 	if( tmp_clipboard != NULL ) {
 		oldlen = strlen( tmp_clipboard );
-	} 
+	}
 	newlen = oldlen + length + 1;
 	if( tmp_clipboard == NULL){
 		tmp_clipboard = malloc(newlen);
@@ -753,7 +762,7 @@ success:
 	retval = true;
 
 fin:
-	if( text2 != NULL ) 
+	if( text2 != NULL )
 		free( text2 );
 	return(retval);
 
@@ -762,7 +771,7 @@ fin:
 bool gui_commit_clipboard(void)
 {
 	int r = scrap_txt_write(&app, tmp_clipboard);
-	return( (r>0)?true:false );	
+	return( (r>0)?true:false );
 }
 
 
@@ -796,8 +805,8 @@ bool gui_copy_to_clipboard(struct selection *s)
 		if(selection_traverse(s, gui_selection_traverse_handler, NULL)){
 			ret = gui_commit_clipboard();
 		}
-	} 
-	gui_empty_clipboard();		
+	}
+	gui_empty_clipboard();
 	return ret;
 }
 
@@ -839,7 +848,7 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	LOG((""));
-	
+
 	bool bres;
 	/*bres = verify_ssl_form_do(url, certs, num);
 	if( bres )
@@ -876,7 +885,7 @@ void gui_quit(void)
 	/* send WM_DESTROY to windows purely managed by windom: */
 
 	urldb_save_cookies(option_cookie_file);
-	urldb_save(option_url_file);	
+	urldb_save(option_url_file);
 
 	RsrcXtype( 0, rsc_trindex, rsc_ntree);
 	unbind_global_events();
@@ -957,7 +966,7 @@ char* gui_get_resource_url(const char *filename)
 	char buf[PATH_MAX];
 	int len;
 	char * ret;
-	atari_find_resource((char*)&buf, filename, filename); 
+	atari_find_resource((char*)&buf, filename, filename);
 	/* TODO: handle failure? */
 	len = strlen( (char*)&buf ) + 1;
 	return( path_to_url((char*)&buf) );
@@ -1016,12 +1025,12 @@ static void gui_init(int argc, char** argv)
 	atari_find_resource(buf, "quirks.css", "./res/quirks.css");
 	quirks_stylesheet_url = path_to_url(buf);
 
-	if( strlen(option_url_file) ){	
+	if( strlen(option_url_file) ){
 		urldb_load(option_url_file);
 	}
 	if( strlen(option_cookie_file) ){
 		urldb_load_cookies(option_cookie_file);
-		LOG(("Loading cookies from: %s", option_cookie_file ));		
+		LOG(("Loading cookies from: %s", option_cookie_file ));
 	}
 
 	if (process_cmdline(argc,argv) != true)
@@ -1085,7 +1094,7 @@ int main(int argc, char** argv)
 
 	LOG(("ApplExit"));
 	ApplExit();
-#ifdef WITH_DBG_LOGFILE	
+#ifdef WITH_DBG_LOGFILE
 	fclose(stdout);
 	fclose(stderr);
 #endif

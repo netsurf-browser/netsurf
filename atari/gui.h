@@ -82,10 +82,13 @@ struct s_focus_info
 };
 
 /* defines for data attached to components: */
-#define CDT_OBJECT	0x004f424aUL
-#define CDT_OWNER 	0x03UL
-#define CDT_ICON 	0x04UL
-#define CDT_ICON_TYPE	0x05UL
+#define CDT_OBJECT	            0x004f424aUL
+#define CDT_OWNER 	            0x03UL
+#define CDT_ICON 	            0x04UL
+#define CDT_ICON_TYPE	        0x05UL
+#define CDT_ICON_TYPE_NONE      0x00UL
+#define CDT_ICON_TYPE_OBJECT    0x01UL
+#define CDT_ICON_TYPE_BITMAP    0x02UL
 
 
 struct gui_window;
@@ -125,6 +128,8 @@ struct s_gui_win_root
 struct gui_window {
 	struct s_gui_win_root * root;
 	CMP_BROWSER browser;
+    /* icon to be drawn when iconified, or NULL for default resource. */
+	struct bitmap * icon;
 	struct gui_window *next, *prev;
 };
 

@@ -266,7 +266,7 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	int err = 0;
 	bool tb, sb;
 	tb = (inflags & WIDGET_TOOLBAR );
-	sb = (inflags & WIDGET_STATUSBAR); 
+	sb = (inflags & WIDGET_STATUSBAR);
 	short w,h, wx, wy, wh, ww;
 	int flags = CLOSER | MOVER | NAME | FULLER | SMALLER ;
 
@@ -342,6 +342,8 @@ int window_destroy( struct gui_window * gw)
 	if( input_window == gw )
 		input_window = NULL;
 
+    window_set_icon( gw, NULL );
+
 	if( gw->root ) {
 		if( gw->root->toolbar )
 			tb_destroy( gw->root->toolbar );
@@ -365,7 +367,7 @@ int window_destroy( struct gui_window * gw)
 	if( gw->root ) {
 		/* TODO: check if no other browser is bound to this root window! */
 		if( gw->root->title )
-			free( gw->root->title ); 
+			free( gw->root->title );
 		if( gw->root->cmproot )
 			mt_CompDelete( &app, gw->root->cmproot );
 		ApplWrite( _AESapid, WM_DESTROY, gw->root->handle->handle, 0, 0, 0, 0);
@@ -401,35 +403,16 @@ void window_open( struct gui_window * gw)
 	snd_rdw( gw->root->handle );
 }
 
-/*
-TODO
-void window_set_icon(struct gui_window * gw, void * data, bool is_rsc )
+
+void window_set_icon(struct gui_window * gw, struct bitmap * bmp )
 {
-	#define CDT_ICON_TYPE_OBJECT 1UL
-	#define CDT_ICON_TYPE_BITMAP 2UL
-	void * prev_type;
-	void * ico = DataSearch(&app, gw->root->handle, CDT_ICON );
-	if(ico != NULL) {
-		prev_type = DataSearch(&app, gw->root->handle, CDT_ICON_TYPE );
-		if( prev_type == (void*)CDT_ICON_TYPE_OBJECT ){
-			mt_ObjcFree( &app, (OBJECT*)ico );
-		}
-		if( prev_type == (void*)CDT_ICON_TYPE_BITMAP ){
-			bitmap_destroy(ico);
-		}
-	}
-	if( data != NULL ) {
-		DataAttach( &app, gw->root->handle, CDT_ICON, data);
-		if(is_rsc) {
-			DataAttach( &app, gw->root->handle, CDT_ICON_TYPE, CDT_ICON_TYPE_OBJECT);
-		} else {
-			DataAttach( &app, gw->root->handle, CDT_ICON_TYPE, CDT_ICON_TYPE_BITMAP);
-		}
-	}
-	#undef CDT_ICON_TYPE_OBJECT
-	#undef CDT_ICON_TYPE_BITMAP
+    if( gw->icon != NULL ){
+        bitmap_destroy( gw->icon );
+        gw->icon = NULL;
+    }
+    gw->icon = bmp;
 }
-*/
+
 
 
 /* update back forward buttons (see tb_update_buttons (bug) ) */
@@ -455,7 +438,7 @@ static void window_redraw_controls(struct gui_window *gw, uint32_t flags)
 	mt_CompGetLGrect(&app, gw->root->toolbar->comp, WF_WORKXYWH, &rect);
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
-	mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &rect);	
+	mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &rect);
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
 }
@@ -509,7 +492,7 @@ bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t,
 	return( ( element == gw->root->focus.element && t == gw->root->focus.type) );
 }
 
-static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) 
+static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 {
 	struct gui_window * gw = (struct gui_window *)data;
 	char file[DD_NAMEMAX];
@@ -533,7 +516,7 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 	memset( ext, 0, 32);
 	strcpy( ext, "ARGS");
 	dd_msg = ddsexts( dd_hdl, ext);
-	if( dd_msg<0) 
+	if( dd_msg<0)
 		goto error;
 	dd_msg = ddrtry( dd_hdl, (char*)&name[0], (char*)&file[0], (char*)&ext[0], &size);
 	if( size+1 >= PATH_MAX )
@@ -544,13 +527,13 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 		buff = (char*)alloca(sizeof(char)*(size+1));
 		if( buff != NULL )
 		{
-			if( Fread(dd_hdl, size, buff ) == size) 
+			if( Fread(dd_hdl, size, buff ) == size)
 			{
 				buff[size] = 0;
 			}
-			LOG(("file: %s, ext: %s, size: %d dropped at: %d,%d\n", 
-				(char*)buff, (char*)&ext, 
-				size, mx, my 
+			LOG(("file: %s, ext: %s, size: %d dropped at: %d,%d\n",
+				(char*)buff, (char*)&ext,
+				size, mx, my
 			));
 			{
 				int posx, posy;
@@ -572,13 +555,13 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 				box_x = box->margin[LEFT];
 				box_y = box->margin[TOP];
 
-				while ((box = box_at_point(box, mx+gw->browser->scroll.current.x, my+gw->browser->scroll.current.y, &box_x, &box_y, &h))) 
+				while ((box = box_at_point(box, mx+gw->browser->scroll.current.x, my+gw->browser->scroll.current.y, &box_x, &box_y, &h)))
 				{
 					if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
 						continue;
-					if (box->gadget) 
+					if (box->gadget)
 					{
-						switch (box->gadget->type) 
+						switch (box->gadget->type)
 						{
 							case GADGET_FILE:
 								file_box = box;
@@ -615,8 +598,8 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 					file_box->gadget->value = utf8_fn;
 					/* Redraw box. */
 					box_coords(file_box, &posx, &posy);
-					browser_schedule_redraw(bw->window, 
-						posx - gw->browser->scroll.current.x, 
+					browser_schedule_redraw(bw->window,
+						posx - gw->browser->scroll.current.x,
 						posy - gw->browser->scroll.current.y,
 						posx - gw->browser->scroll.current.x + file_box->width,
 						posy - gw->browser->scroll.current.y + file_box->height);
@@ -668,12 +651,12 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 {
 	short x,y,w,h;
 	struct gui_window * gw = (struct gui_window*)data;
-	bool has_favicon = false;
+
+    LOG((""));
 
 	WindClear( win);
 	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h);
-
-	if( has_favicon == false ) {
+	if( gw->icon == NULL ) {
 		OBJECT * tree;
 		RsrcGaddr( h_gem_rsrc, R_TREE, ICONIFY , &tree );
 		tree->ob_x = x;
@@ -681,6 +664,12 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 		tree->ob_width = w;
 		tree->ob_height = h;
 		mt_objc_draw( tree, 0, 8, buff[4], buff[5], buff[6], buff[7], app.aes_global );
+	} else {
+	    struct rect clip = { 0,0,w,h };
+        plotter->move( plotter, x, y );
+        plotter->resize( plotter, w, h );
+        plotter->clip(plotter, &clip );
+        plotter->bitmap( plotter, gw->icon, 0, 0, 0xffffff, BITMAPF_NONE );
 	}
 }
 
@@ -693,7 +682,7 @@ static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
 	if( option_atari_realtime_move  ) {
 		std_mvd( win, buff, &app );
 		evnt_window_rt_resize( win, buff, data );
-	} else { 
+	} else {
 		wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
 		if( graf_dragbox( ww, wh, wx, wy, app.x-ww, app.y, app.w+ww, app.h+wh, &nx, &ny )){
 			buff[4] = nx;

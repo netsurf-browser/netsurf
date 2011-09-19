@@ -224,6 +224,8 @@ static void __CDECL menu_home(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_lhistory(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	if( input_window == NULL )
+		return;
 }
 
 static void __CDECL menu_ghistory(WINDOW *win, int item, int title, void *data)
@@ -320,7 +322,7 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 		return;
 	kstate = evnt.mkstate;
 	kcode = evnt.keybd;
-	nkc= gem_to_norm( (short)kstate, (short)kcode ); 
+	nkc= gem_to_norm( (short)kstate, (short)kcode );
 	nks = (nkc & 0xFF00);
 	if( kstate & (K_LSHIFT|K_RSHIFT))
 		kstate |= K_LSHIFT|K_RSHIFT;
@@ -354,11 +356,11 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 			} else {
 				/* the accel code hides in the keycode: */
 				if( menu_evnt_tbl[i].accel.keycode != 0) {
-					if( menu_evnt_tbl[i].accel.keycode == (nkc & 0xFF) && 
-						kstate == menu_evnt_tbl[i].accel.mod && 
+					if( menu_evnt_tbl[i].accel.keycode == (nkc & 0xFF) &&
+						kstate == menu_evnt_tbl[i].accel.mod &&
 						menu_evnt_tbl[i].menu_func != NULL) {
-							menu_evnt_tbl[i].menu_func( NULL, 
-								menu_evnt_tbl[i].rid, 
+							menu_evnt_tbl[i].menu_func( NULL,
+								menu_evnt_tbl[i].rid,
 								MAINMENU, buff
 							);
 							done = true;
@@ -372,7 +374,7 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 }
 
 /*
-	mode = 0 -> return string ptr 
+	mode = 0 -> return string ptr
 				(build from accel definition in s_accelerator accel)
 	mode = 1 -> return ptr to (untranslated) NS accel string, if any
 */
@@ -572,10 +574,10 @@ void bind_global_events( void )
 			spare[1]=' ';
 			if( u != NULL && t != NULL ) {
 				LOG(("Menu Item %s: found NS accelerator, ascii: %c, scancode: %x, mod: %x",
-					m, 
-					menu_evnt_tbl[i].accel.ascii, 
-					menu_evnt_tbl[i].accel.keycode, 
-					menu_evnt_tbl[i].accel.mod 
+					m,
+					menu_evnt_tbl[i].accel.ascii,
+					menu_evnt_tbl[i].accel.keycode,
+					menu_evnt_tbl[i].accel.mod
 				));
 				/* Accelerator is defined in menu string: */
 				memcpy((char*)&spare[2], m, u-m-1);
@@ -583,10 +585,10 @@ void bind_global_events( void )
 			}
 			else if( t != NULL && u == NULL) {
 				LOG(("Menu Item %s: found RSC accelerator, ascii: %c, scancode: %x, mod: %x",
-					m, 
-					menu_evnt_tbl[i].accel.ascii, 
-					menu_evnt_tbl[i].accel.keycode, 
-					menu_evnt_tbl[i].accel.mod 
+					m,
+					menu_evnt_tbl[i].accel.ascii,
+					menu_evnt_tbl[i].accel.keycode,
+					menu_evnt_tbl[i].accel.mod
 				));
 				/* Accelerator is defined in struct: */
 				memcpy( (char*)&spare[2], m, strlen(m) );
