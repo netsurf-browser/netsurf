@@ -8,6 +8,7 @@ Date: 15.02.2011
 03.) WHEN I WANT TO RUN NETSURF IT SAYS: "SOCKET NOT CONNECTED".
 04.) I'M GETTING "INSUFFICENT MEMORY" MESSAGES WHEN RUNNING NETSURF.
 05.) A PAGE CRASHES - WHAT CAN I DO?
+06.) SSL DOES NOT WORK - WHAT'S WRONG? 
 
 1.) Question:
     CAN NETSURF ALSO BE RUN WITHIN AN TOS ENVIRONMENT?
@@ -64,3 +65,9 @@ Date: 15.02.2011
     FAQ entry.
  
 
+6.) Question:
+    SSL DOES NOT WORK - WHAT TO DO?
+
+    Answer:
+    Try to move the shipped cabundle.crt file to the path where NetSurf
+    looks for the SSL certificates (Displayed within statusbar).

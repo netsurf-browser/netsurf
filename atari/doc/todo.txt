@@ -2,36 +2,27 @@ TODO's (no priority order)
 
  - Optimize remove / redraw of caret, use pixbuffer instead?
  - Optimize drawing of bitmaps on Low-Memory machines
- - Optimize Clipping for Plotters ( use OS clipping instead of own clipping )
-   ( partially done, needs improvement? )
  - Restore the Palette when Windows get's the Focus
    -> only needed for <= 256 colors 
  - Make drawing of tiled bitmaps optional ( they are slooow )
    -> already optimized, still needed? 
- - Implement TreeView 
- - Implement TreeView Hotlits
+ - Implement PopUp Context Menu ( + "Open link in new Window" )
  - Implement TreeView History
  - Implement TreeView SSL Dialog
  - Implement Native Select Menu
- - Implement Frames (?)
- - Implement IFrames
  - Implement offscreen plotter
  - Implement Options Dialog
  - Implement Favicon Display
- - Optimize behaviour when windows gets the newtop,
-   set focus to the frame where the click occured, 
-   not just the frame container.
+ - Implement SystemColors
  - Replace RSC strings with string from messages file. 
  - Implement Selection within URL Widget by depressing SHIFT + Mouse Click
  - Implement Home / End Cursors within the URL Widget
- - Test pages that use a refferer.
+ - Implement Offscreen plotter.
+ - Test more pages that use a refferer.
  - Optimize Offscreen Plotter: Save inactive framebuffers to disk?
  - Ensure that a font-face is set to the default font when it couldn't be loaded.
  - Loose focus for browser / url widget etc. when changing focus 
    ( at best, implement callback for this...)
- - Yahoo.de / .com etc. still crashes - this is probably not an Atari-Version
-   fault, but applies to all other netsurf versions. 
-   -> this is caused by regex stack exhaust within mintlib
  - Have browser_window specific cursor, window specifc cursor 
  - When minimized (not iconyfied) NetSurf doesn't recognize that.
  - complete Iconify (webpage favicon )
@@ -41,5 +32,4 @@ path2url in: ./res/icons/dir.png
 path2url out: file:///./res/icons/dir.png
 url2path in: file:///./res/icons/dir.png
  - loesung fuer kompletten tree icons path finden
- - schauen warum download_path nicht verwendet wird.
  

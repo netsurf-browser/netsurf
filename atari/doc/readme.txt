@@ -9,7 +9,7 @@
                   Version 3.0 (Development Version)
 
 Ported by:     m0n0
-Release date:  20.02.2011
+Release date:  09.09.2011
 Contact:       ole@monochrom.net
 WWW:           http://netsurf-browser.org
 
@@ -59,11 +59,9 @@ Missing Features:
 
  This section describes Features that NetSurf-Core offers but which are not
  handled by the GEM frontend currently. 
- 
-- Frames 
-- Hotlist / Bookmarks 
-- Configuration dialog (use texteditor instead)
-- Grapical website history dialog 
+
+ - Configuration dialog (use texteditor instead)
+ - Grapical website history dialog 
 
 
 Installation Notes:
@@ -77,15 +75,6 @@ Installation Notes:
  ./ns.prg -v 
 
  that makes it possible, that you can identify the problem.
-
-
-Things to test:
----------------
-
- - Navigate to a lot of pages, note the ones that crashed, please don't report pages that you visited 
-   after visiting pages with frames... Make sure you don't call pages with frames. I know that it's not working,
-   and I know that it can cause BUGS.  
- - Have a look at the memory usage... 
 
 
 Additional Notes
@@ -113,33 +102,14 @@ Additional Notes
 Known Bugs
 ----------
 
- - Redraw artefacts/fale clipping when moving other applications above 
+ - Redraw artefacts/false clipping when moving other applications above 
    NetSurf.
- - Visiting frames results in unknown behavior
-   (Some pages containing iframes still display, 
-    but there are problems with focusing the correct window, 
-    which results in missing redraws - clicking the mouse within 
-    the window or scrolling resolves the problem).
  - Double Redraws when used with classic TOS systems.
  - Window can not be moved out of the desktop area to the right
- - When leaving the search dialog open and navigate to another 
-   page, the behavior is unknown. 
-   As a solution: always close the search before you visit another page 
-   or click on a link.
 
 
 Technical info & outlook
 ------------------------
-
- 1. There is an stack excess lurking withing mintlibs regex implementation.
-    Some pages can trigger that excess, therefore the initial stack space 
-    is set to an very large default value - around 3 MB. You are free to 
-    lower that value  with freemint stack tool - most pages even work fine
-    with 64k stack space! Yahoo & dict.leo.org are known to trigger the 
-    stack excess.   
-    Last minute note: because the default maximum TPA value within MINT.CNF
-    I had to adjust the stack value down to 1000k. If you encounter crashes
-    during page rendering - please increase the stack size (SEE FAQ)
 
 
 Greetings & Thanks
@@ -156,8 +126,4 @@ Greetings & Thanks
 
 
 ----
-M0N0 - 19.02.2011
-
-
-
- 
+M0N0 - 09.09.2011
