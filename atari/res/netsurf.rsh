@@ -121,3 +121,14 @@
 #define DOWNLOAD_CB_CLOSE_RDY 9  /* BUTTON in tree DOWNLOAD */
 
 #define ABOUT 12  /* form/dial */
+
+#define POP_CTX 13  /* form/dial */
+#define POP_CTX_CUT_SEL 1  /* TEXT in tree POP_CTX */
+#define POP_CTX_COPY_SEL 2  /* TEXT in tree POP_CTX */
+#define POP_CTX_PASTE_SEL 3  /* TEXT in tree POP_CTX */
+#define POP_CTX_SELECT_ALL 4  /* TEXT in tree POP_CTX */
+#define POP_CTX_OPEN_NEW 6  /* TEXT in tree POP_CTX */
+#define POP_CTX_COPY_LINK 7  /* TEXT in tree POP_CTX */
+#define POP_CTX_COPY_URL 8  /* TEXT in tree POP_CTX */
+#define POP_CTX_SAVE_AS 9  /* TEXT in tree POP_CTX */
+#define POP_CTX_VIEW_SOURCE 10  /* TEXT in tree POP_CTX */
