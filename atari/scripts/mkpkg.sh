@@ -3,29 +3,29 @@
 # this is an small build script to create an package for nsgem
 # invoke: mkpkg.sh [-s,-d,-8,-fonts]
 #
-# Parameters: 
-# 
+# Parameters:
+#
 # -8
 # Description: The package will be build for 8.3 filesystems
 #              This also defines the -fonts parameter
 #
 # -fonts
-# Description: The package will include the DejaVu fonts package 
+# Description: The package will include the DejaVu fonts package
 #              ( 8.3 compatible names )
 #
 # -fpath
 # Description: Set path to dejavu Fonts
 #
 # -s (srcpath)
-# Description: use it like: -s "path to netsurf root" to configure from which 
-# 	            directory the package files are taken. 
+# Description: use it like: -s "path to netsurf root" to configure from which
+# 	            directory the package files are taken.
 #              The Path must have trailing slash!
-# 
+#
 # -d (dstpath)
 # Description: use it like: -d "path to dir where the package will be placed"
-#              to configure the output path of this script. 
+#              to configure the output path of this script.
 #              The path mus have trailing slash!
-# 
+#
 
 # config variable, set default values
 src="/f/netsurf/netsurf/"
@@ -43,33 +43,33 @@ do					# Process the next one
 		shortfs="1"
 		shift
 	;;
-	
-   -fonts)	
+
+   -fonts)
     	inc_short_fonts="1"
 		shift
 	;;
-	
+
 	-fpath)
 		shift
 		font_src=$1
 		shift
 	;;
-		
+
 	-d)
 		shift
 		dst=$1
 		shift
 	;;
-	
+
 	-s)
 		shift
 		src=$1
 		shift
 	;;
-	
+
 	*)	echo "Option [$1] not one of  [-8,-fonts,-d,-s,-fpath]";
 	exit;;
-	
+
   esac
 done
 
@@ -77,12 +77,12 @@ echo "Building from: "$src
 echo "Building in: "$dst
 echo "Building for short fs: "$shortfs
 
-if [ "$shortfs" = "1" ] 
+if [ "$shortfs" = "1" ]
 then
 		inc_short_fonts=1
 fi
 
-if [ -d "$font_src" ] 
+if [ -d "$font_src" ]
 then
 	echo "Found fonts in $font_src"
 else
@@ -115,13 +115,13 @@ cp $src"\!NetSurf/Resources/en/Messages" $dst"res/messages" -rL
 cp $src"\!NetSurf/Resources/Icons/content.png" $dst"res/icons/content.png" -rL
 cp $src"\!NetSurf/Resources/Icons/directory.png" $dst"res/icons/dir.png" -rL
 
-#remove uneeded files: 
+#remove uneeded files:
 rm $dst"res/netsurf.rsm"
 rm $dst"res/netsurf.rsh"
 
 
 if [ "$inc_short_fonts" = "1" ]
-then 
+then
 	cp $font_src"DejaVuSans.ttf" $dst"res/fonts/ss.ttf"
 	cp $font_src"DejaVuSans-Bold.ttf" $dst"res/fonts/ssb.ttf"
 	cp $font_src"DejaVuSans-Oblique.ttf" $dst"res/fonts/ssi.ttf"
@@ -134,8 +134,8 @@ then
 	cp $font_src"DejaVuSerifCondensed-Bold.ttf" $dst"res/fonts/fantasy.ttf"
 fi
 
-#create an simple startup script: 
-if [ "$framebuffer" = "1" ] 
+#create an simple startup script:
+if [ "$framebuffer" = "1" ]
 then
 echo "NETSURFRES=./res/
 export NETSURFRES
@@ -148,6 +148,9 @@ atari_screen_driver:vdi
 # select font driver, available values: freetype, internal, vdi
 atari_font_driver:freetype
 atari_transparency:1
+atari_knockout:1
+atari_realtime_move:1
+atari_editor:/path/to/editor.app
 homepage_url:file://./res/blank
 http_proxy:0
 http_proxy_host:
@@ -168,7 +171,7 @@ ca_bundle:./res/cabundle
 ca_path:./res/certs
 cookie_file:./res/cookies
 url_file:./res/url.db
-tree_icons_dir:./res/icons
+tree_icons_path:./res/icons
 downloads_directory:./download
 hotlist_path:./res/hotlist
 incremental_reflow:1
