@@ -35,8 +35,9 @@ extern char *option_atari_face_monospace; /* monospace face */
 extern char *option_atari_face_monospace_bold; /* monospace face */
 extern char *option_atari_face_serif; /* serif face */
 extern char *option_atari_face_serif_bold; /* bold serif face */
-extern char *option_atari_face_cursive; 
+extern char *option_atari_face_cursive;
 extern char *option_atari_face_fantasy;
+extern char *option_atari_editor;
 extern char *option_downloads_path;
 extern char *option_url_file;
 extern char *option_hotlist_file;
@@ -61,6 +62,7 @@ char *option_atari_face_serif;\
 char *option_atari_face_serif_bold; \
 char *option_atari_face_cursive; \
 char *option_atari_face_fantasy; \
+char *option_atari_editor;\
 char *option_downloads_path = (char*)"./"; \
 char *option_url_file = (char*)"url.db";\
 char *option_hotlist_file = (char*)"hotlist";\
@@ -74,6 +76,7 @@ char *option_tree_icons_path = (char*)"./res/icons";
 	{ "atari_knockout", OPTION_INTEGER, &option_atari_knockout },\
 	{ "atari_dither", OPTION_INTEGER, &option_atari_dither },\
 	{ "atari_realtime_move", OPTION_INTEGER, &option_atari_realtime_move },\
+	{ "atari_editor", OPTION_STRING, &option_atari_editor },\
 	{ "font_face_sans_serif", OPTION_STRING, &option_atari_face_sans_serif },\
 	{ "font_face_sans_serif_bold", OPTION_STRING, &option_atari_face_sans_serif_bold },\
 	{ "font_face_sans_serif_italic", OPTION_STRING, &option_atari_face_sans_serif_italic },\

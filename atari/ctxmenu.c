@@ -44,6 +44,7 @@
 #include "atari/browser_win.h"
 #include "atari/misc.h"
 #include "atari/clipboard.h"
+#include "atari/options.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/ctxmenu.h"
 
@@ -92,6 +93,7 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	}
 
 	ctxinfo.flags |= CNT_BROWSER;
+	memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
 	browser_window_get_contextual_content(
 		gw->browser->bw, mx, my,
 		(struct contextual_content*)&ctxinfo.ccdata
@@ -99,10 +101,11 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	if( ctxinfo.ccdata.link_url ){
 		ctxinfo.flags |= CNT_HREF;
 	}
-	if( ctxinfo.ccdata.object && (content_get_type(ccdata.object) == CONTENT_IMAGE)) {
-		ctxinfo.flags |= CNT_IMG;
+	if( ctxinfo.ccdata.object) {
+		if( content_get_type(ctxinfo.ccdata.object) == CONTENT_IMAGE ){
+			ctxinfo.flags |= CNT_IMG;
+		}
 	}
-
 
 	box = html_get_box_tree(h);
 	box_x = box->margin[LEFT];
@@ -138,6 +141,11 @@ void context_popup( struct gui_window * gw, short x, short y )
     OBJECT * pop;
     int choice;
     struct s_context_info * ctx;
+	unsigned long size;
+	char * data;
+	FILE * fp_tmpfile;
+	char * tempfile;
+	int err = 0;
 
     pop = get_tree( POP_CTX );
     if( pop == NULL )
@@ -196,6 +204,24 @@ void context_popup( struct gui_window * gw, short x, short y )
 			browser_window_key_press( gw->browser->bw, KEY_SELECT_ALL );
 		break;
 
+		case POP_CTX_SAVE_AS:
+			if( content_get_url(ctx->ccdata.object) != NULL ){
+				browser_window_download(
+					gw->browser->bw,
+					content_get_url(ctx->ccdata.object),
+					content_get_url(gw->browser->bw->current_content)
+				);
+			}
+		break;
+
+		case POP_CTX_COPY_URL:
+			if( (ctx->flags & CNT_IMG) && (ctx->ccdata.object != NULL) ){
+				if( content_get_url(ctx->ccdata.object) != NULL ){
+					scrap_txt_write(&app,  (char*)content_get_url(ctx->ccdata.object) );
+				}
+			}
+		break;
+
 		case POP_CTX_COPY_LINK:
 			if( (ctx->flags & CNT_HREF) && ctx->ccdata.link_url != NULL ){
 				scrap_txt_write(&app, (char*)ctx->ccdata.link_url);
@@ -203,7 +229,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 		break;
 
 		case POP_CTX_OPEN_NEW:
-			if( (ctx->flags & CNT_HREF) && ctx->ccdata.link_url){
+			if( (ctx->flags & CNT_HREF) && ctx->ccdata.link_url) {
 				browser_window_create(
 					ctx->ccdata.link_url,
 					gw->browser->bw,
@@ -211,7 +237,22 @@ void context_popup( struct gui_window * gw, short x, short y )
 					true, false
 				);
 			}
+		break;
 
+		case POP_CTX_VIEW_SOURCE:
+			if( option_atari_editor != NULL ) {
+				data = content_get_source_data( gw->browser->bw->current_content, &size );
+				if( size > 0 && data != NULL ){
+					tempfile = tmpnam( NULL );
+					fp_tmpfile = fopen( tempfile, "w" );
+					if( fp_tmpfile ){
+						fwrite( data, size, 1, fp_tmpfile );
+						fclose( fp_tmpfile );
+						err = ShelWrite( option_atari_editor, tempfile , NULL, 1, 0);
+						LOG(("launched: %s %s (%d)\n", option_atari_editor, tempfile, err ));
+					}
+				}
+			}
 		break;
 
 		default: break;
