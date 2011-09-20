@@ -70,14 +70,16 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8])
 	OBJECT *tree = (OBJECT*)mt_CompDataSearch( &app, c, CDT_OBJECT );
 	struct gui_window * gw = mt_CompDataSearch( &app, c, CDT_OWNER );
 	LGRECT work,clip;
+	GRECT todo,crect;
 	short pxy[4];
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
+	/* return if component and redraw region does not intersect: */
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) {
-		LOG(("useless button_redraw"));
 		return;
 	}
+	/* clip contains intersecting part: */
 	pxy[0] = clip.g_x;
 	pxy[1] = clip.g_y;
 	pxy[2] = clip.g_w + clip.g_x;
@@ -97,10 +99,24 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8])
 	pxy[3] = MIN( (short)buff[5] + buff[7], work.g_y + work.g_h - 2);
 	vswr_mode( vdih, MD_REPLACE);
 	v_bar( vdih, (short*)&pxy );
-	/* mt_objc_draw( tree, 0, 8, clip.g_x, clip.g_y, clip.g_w, clip.g_h, app.aes_global ); */
-	/* The above seems to have problems with some AES, so we try this: */
-	int err = ObjcDrawParent(OC_OBJC, tree, 0, 0, 1|OC_MSG );
-	LOG(("ObjcDrawParent: %d", err ));
+
+	/* go through the rectangle list, using classic AES methods. */
+	/* Windom ComGetLGrect is buggy for WF_FIRST/NEXTXYWH	     */
+	crect.g_x = clip.g_x;
+	crect.g_y = clip.g_y;
+	crect.g_w = clip.g_w;
+	crect.g_h = clip.g_h;
+	wind_get(gw->root->handle->handle, WF_FIRSTXYWH,
+							&todo.g_x, &todo.g_y, &todo.g_w, &todo.g_h );
+	while( (todo.g_w > 0) && (todo.g_h > 0) ){
+
+		if( rc_intersect(&crect, &todo) ){
+			objc_draw( tree, 0, 0, todo.g_x, todo.g_y, todo.g_w, todo.g_h );
+		}
+		wind_get(gw->root->handle->handle, WF_NEXTXYWH,
+							&todo.g_x, &todo.g_y, &todo.g_w, &todo.g_h );
+	}
+
 	if( gw->root->toolbar->buttons[0].comp ==  c && work.g_x == buff[4] ){
 		vsl_color( vdih, LWHITE );
 		pxy[0] = (short)buff[4];
@@ -170,14 +186,14 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	short pxy[4];
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
 	if( gw->root->toolbar->throbber.running == false ) {
-		idx = THROBBER_INACTIVE_INDEX;	
+		idx = THROBBER_INACTIVE_INDEX;
 	} else {
 		idx = gw->root->toolbar->throbber.index;
 		if( idx > THROBBER_MAX_INDEX || idx < THROBBER_MIN_INDEX ) {
 			idx = THROBBER_MIN_INDEX;
 		}
 	}
-	
+
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
@@ -185,7 +201,7 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	vsf_interior( vdih , 1 );
 	if(app.nplanes > 2 )
 		vsf_color( vdih, LWHITE );
-	else 
+	else
 		vsf_color( vdih, WHITE );
 	pxy[0] = (short)buff[4];
 	pxy[1] = (short)buff[5];
@@ -266,7 +282,7 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	/* draw white txt box: */
 	pxy[0] = pxy[0] + 1;
 	pxy[1] = pxy[1] + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2) - 1;
-	pxy[2] = pxy[2] - 1; 
+	pxy[2] = pxy[2] - 1;
 	pxy[3] = work.g_y + ((TOOLBAR_HEIGHT - URLBOX_HEIGHT)/2)  + URLBOX_HEIGHT ;
 	vsf_color( vdih, WHITE);
 	v_bar( vdih, pxy );
@@ -293,7 +309,7 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 			}
 		}
 	}
-	
+
 	if( window_url_widget_has_focus( gw ) ) {
 		/* draw caret: */
 		pxy[0] = 3 + work.g_x + ((tb->url.caret_pos - tb->url.scrollx) * tb->url.char_size);
@@ -321,7 +337,7 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 	short pxy[4];
 	short mx, my, mb, kstat;
 	int old;
-	graf_mkstate( &mx, &my, &mb,  &kstat ); 
+	graf_mkstate( &mx, &my, &mb,  &kstat );
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
 	assert( gw != NULL );
 	CMP_TOOLBAR tb = gw->root->toolbar;
@@ -344,7 +360,7 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 				tb->url.selection_len = strlen(tb->url.text) - tb->url.caret_pos;
 			if( old == tb->url.selection_len )
 				/* avoid redraw when nothing changed */
-				return; 
+				return;
 		} else {
 			/* TODO: recognize click + shift key */
 			tb->url.selection_len = 0;
@@ -368,14 +384,14 @@ static void __CDECL evnt_toolbar_redraw( COMPONENT *c, long buff[8], void *data 
 
 	if( work.g_y + work.g_h != clip.g_y + clip.g_h )	return;
 
-	vswr_mode( vdih, MD_REPLACE ); 
+	vswr_mode( vdih, MD_REPLACE );
 	vsl_color( vdih, BLACK );
 	vsl_type( vdih, 1 );
-	vsl_width( vdih, 1 );	
+	vsl_width( vdih, 1 );
 	pxy[0] = clip.g_x;
 	pxy[1] = pxy[3] = work.g_y + work.g_h-1 ;
 	pxy[2] = clip.g_x + clip.g_w;
-	v_pline( vdih, 2, (short*)&pxy );	
+	v_pline( vdih, 2, (short*)&pxy );
 }
 
 
@@ -532,7 +548,7 @@ void tb_url_set( struct gui_window * gw, char * text )
 	int newsize;
 
 	if( gw->root->toolbar == NULL )
-		return; 
+		return;
 
 	if( gw->browser->attached == false )
 		return;
@@ -650,7 +666,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 			tmp[len] = 0;
 			int r = scrap_txt_write(&app, (char*)&tmp);
 			ret = true;
-		}		
+		}
 	}
 	else if(  (ctrl && code == 'V') || code == NK_INS  ) {
 		char * clip = scrap_txt_read( &app );
@@ -674,7 +690,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 					tb_url_place_caret( gw, tb->url.selection_len, false );
 				} else {
 					strcpy(
-						&tb->url.text[tb->url.caret_pos], 
+						&tb->url.text[tb->url.caret_pos],
 						&tb->url.text[tb->url.caret_pos+tb->url.selection_len]
 					);
 				}
@@ -682,7 +698,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 		} else  {
 			if( tb->url.caret_pos < tb->url.used -1) {
 				strcpy(
-					&tb->url.text[tb->url.caret_pos+tb->url.selection_len], 
+					&tb->url.text[tb->url.caret_pos+tb->url.selection_len],
 					&tb->url.text[tb->url.caret_pos+1]
 				);
 				tb->url.used--;
@@ -691,7 +707,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 		tb->url.selection_len = 0;
 	}
 	else if( code == NK_BS ) {
-		if( tb->url.caret_pos > 0 && 
+		if( tb->url.caret_pos > 0 &&
 			tb->url.selection_len != 0 ) {
 				if( tb->url.selection_len < 0 ) {
 					strcpy(&tb->url.text[tb->url.caret_pos+tb->url.selection_len], &tb->url.text[tb->url.caret_pos]);
@@ -718,9 +734,9 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 		tb_url_place_caret( gw, 0, true );
 	}
 	else if( code == NK_M_END ) {
-		tb_url_place_caret( gw, 
-			strlen((char*)&tb->url.text)-1, 
-			true 
+		tb_url_place_caret( gw,
+			strlen((char*)&tb->url.text)-1,
+			true
 		);
 	}
 	else if( code == NK_ENTER || code == NK_RET ) {
