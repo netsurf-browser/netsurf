@@ -186,7 +186,8 @@ void gui_poll(bool active)
 	}
 	if( evnt.timer != 0 && !active ){
 		/* this suits for stuff with lower priority */
-		hotlist_redraw();
+		//hotlist_redraw();
+		atari_treeview_redraw( hl.tv );
 	}
 }
 
@@ -257,11 +258,18 @@ void gui_window_destroy(struct gui_window *w)
 	if( w->next != NULL ) {
 		w->next->prev = w->prev;
 	}
-	if( input_window == w ) {
-		input_window = window_list;
-	}
 	free(w);
 	w = NULL;
+
+	w = window_list;
+	int dummy=0;
+	while( w != NULL ) {
+		if( w->root ) {
+			input_window = w;
+			break;
+		}
+		w = w->next;
+	}
 }
 
 void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
