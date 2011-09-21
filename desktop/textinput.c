@@ -76,8 +76,15 @@ void browser_window_place_caret(struct browser_window *bw,
 	root_bw = browser_window_get_root(bw);
 	browser_window_get_position(bw, true, &pos_x, &pos_y);
 
-	x = x * bw->scale + pos_x;
-	y = y * bw->scale + pos_y;
+	if (bw->browser_window_type == BROWSER_WINDOW_FRAME) {
+		x = (x - scrollbar_get_offset(bw->scroll_x)) * bw->scale;
+		y = (y - scrollbar_get_offset(bw->scroll_y)) * bw->scale;
+		x += pos_x;
+		y += pos_y;
+	} else {
+		x = x * bw->scale + pos_x;
+		y = y * bw->scale + pos_y;
+	}
 
 	gui_window_place_caret(root_bw->window, x, y, height * bw->scale);
 	bw->caret_callback = caret_cb;
