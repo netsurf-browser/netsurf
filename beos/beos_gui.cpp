@@ -91,7 +91,6 @@ void gui_init(int argc, char** argv);
 // enable using resources instead of files
 #define USE_RESOURCES 1
 
-bool gui_in_multitask = false;
 bool replicated = false; /**< if we are running as a replicant */
 
 char *default_stylesheet_url;
@@ -756,17 +755,6 @@ void gui_poll(bool active)
 
 	if (browser_reformat_pending)
 		nsbeos_window_process_reformats();
-}
-
-
-void gui_multitask(void)
-{
-	gui_in_multitask = true;
-#if 0 /* GTK */
-	while (beos_events_pending())
-		beos_main_iteration();
-#endif
-	gui_in_multitask = false;
 }
 
 

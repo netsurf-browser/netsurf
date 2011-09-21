@@ -57,11 +57,6 @@ char* gui_get_resource_url(const char *filename)
 	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
 }
 
-void gui_multitask(void)
-{
-	// nothing to do
-}
-
 void gui_poll(bool active)
 {
 	cocoa_autorelease();

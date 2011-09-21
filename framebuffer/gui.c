@@ -529,13 +529,6 @@ main(int argc, char** argv)
 
 
 void
-gui_multitask(void)
-{
-	/* LOG(("gui_multitask")); */
-}
-
-
-void
 gui_poll(bool active)
 {
 	nsfb_event_t event;

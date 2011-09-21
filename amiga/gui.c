@@ -1972,17 +1972,6 @@ void ami_get_msg(void)
 	}
 }
 
-void gui_multitask(void)
-{
-	/* This seems a bit topsy-turvy to me, but in this function, NetSurf is doing
-	   stuff and we need to poll for user events */
-
-	ami_handle_msg();
-	ami_handle_appmsg();
-	ami_handle_applib();
-	ami_arexx_handle();
-}
-
 void gui_poll(bool active)
 {
 	/* However, down here we are waiting for the user to do something or for a
@@ -1994,7 +1983,10 @@ void gui_poll(bool active)
 
 	if(active)
 	{
-		gui_multitask();
+		ami_handle_msg();
+		ami_handle_appmsg();
+		ami_handle_applib();
+		ami_arexx_handle();
 		schedule_run(TRUE);
 	}
 	else

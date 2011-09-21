@@ -248,8 +248,6 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 	fwrite( data , size, sizeof(unsigned char),dw->fd );
 	dw->size_downloaded += size;
 
-	gui_multitask();
-
 	/* Update the progress bar... */
 	if( tnow - dw->lastrdw > 1 ) {
 		dw->lastrdw = tnow;

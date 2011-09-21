@@ -72,11 +72,6 @@ static const char windowclassname_main[] = "nswsmainwindow";
 
 static struct nsws_pointers nsws_pointer;
 
-void gui_multitask(void)
-{
-/*	LOG(("gui_multitask")); */
-}
-
 void gui_poll(bool active)
 {
 	MSG Msg; /* message from system */

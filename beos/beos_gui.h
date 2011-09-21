@@ -29,7 +29,6 @@
 
 #define CALLED() fprintf(stderr, "%s()\n", __FUNCTION__);
 
-extern bool gui_in_multitask;
 extern bool replicated;
 
 #if 0 /* GTK */

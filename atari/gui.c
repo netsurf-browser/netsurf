@@ -104,14 +104,6 @@ const char * cfg_homepage_url;
 
 extern GEM_PLOTTER plotter;
 
-void gui_multitask(void)
-{
-	short winloc[4];
-	short mx, my, dummy, aestop;
-	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON | MU_TIMER;
-	evnt.timer = 0;
-	EvntWindom( flags );
-}
 
 void gui_poll(bool active)
 {

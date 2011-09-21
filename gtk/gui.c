@@ -563,13 +563,6 @@ void gui_poll(bool active)
 }
 
 
-void gui_multitask(void)
-{
-	while (gtk_events_pending())
-		gtk_main_iteration();
-}
-
-
 void gui_quit(void)
 {
 	nsgtk_download_destroy();

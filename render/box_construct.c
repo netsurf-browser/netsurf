@@ -38,12 +38,10 @@
 #include "css/css.h"
 #include "css/utils.h"
 #include "css/select.h"
-#include "desktop/browser.h"
 #include "desktop/options.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html_internal.h"
-#include "desktop/gui.h"
 #include "utils/locale.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -256,8 +254,6 @@ bool box_construct_element(xmlNode *n, html_content *content,
 	assert(n->type == XML_ELEMENT_NODE);
 	assert(parent);
 	assert(inline_container);
-
-	gui_multitask();
 
 	/* In case the parent is a pre block, we clear the
 	 * PRE_STRIP flag since it is not used if we

@@ -30,7 +30,6 @@
 #include "render/box.h"
 #include "render/html_internal.h"
 #include "render/table.h"
-#include "desktop/gui.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
 
@@ -113,8 +112,6 @@ bool box_normalise_block(struct box *block, html_content *c)
 
 	assert(block->type == BOX_BLOCK || block->type == BOX_INLINE_BLOCK ||
 			block->type == BOX_TABLE_CELL);
-
-	gui_multitask();
 
 	for (child = block->children; child != NULL; child = next_child) {
 #ifdef BOX_NORMALISE_DEBUG

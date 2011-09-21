@@ -32,7 +32,6 @@
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"
-#include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "image/bitmap.h"
@@ -301,36 +300,16 @@ error:
 
 /**
  * Process data for CONTENT_HTML.
- *
- * The data is parsed in chunks of size CHUNK, multitasking in between.
  */
 
 bool html_process_data(struct content *c, const char *data, unsigned int size)
 {
 	html_content *html = (html_content *) c;
-	unsigned long x;
 	binding_error err;
 	const char *encoding;
 
-	for (x = 0; x + CHUNK <= size; x += CHUNK) {
-		err = binding_parse_chunk(html->parser_binding,
-				(const uint8_t *) data + x, CHUNK);
-		if (err == BINDING_ENCODINGCHANGE) {
-			goto encoding_change;
-		} else if (err != BINDING_OK) {
-			union content_msg_data msg_data;
-
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-
-			return false;
-		}
-
-		gui_multitask();
-	}
-
 	err = binding_parse_chunk(html->parser_binding,
-			(const uint8_t *) data + x, (size - x));
+			(const uint8_t *) data, size);
 	if (err == BINDING_ENCODINGCHANGE) {
 		goto encoding_change;
 	} else if (err != BINDING_OK) {
@@ -404,8 +383,8 @@ encoding_change:
 
 		source_data = content__get_source_data(c, &source_size);
 
-		/* Recurse to reprocess all that data.  This is safe because
-		 * the encoding is now specified at parser-start which means
+		/* Recurse to reprocess all the data.  This is safe because
+		 * the encoding is now specified at parser start which means
 		 * it cannot be changed again. */
 		return html_process_data(c, source_data, source_size);
 	}
@@ -1731,26 +1710,6 @@ void html_stop(struct content *c)
 
 	switch (c->status) {
 	case CONTENT_STATUS_LOADING:
-		/* Clean up objects if we were stopped after queuing up some 
-		 * fetches within xml_to_box (i.e. gui_multitask is somewhere 
-		 * in our call stack) */
-		for (object = htmlc->object_list; object != NULL; 
-				object = object->next) {
-			if (object->content == NULL)
-				continue;
-
-			/* If there's a content already associated with our 
-			 * handle, something's gone very wrong */
-			assert(content_get_status(object->content) == 
-					CONTENT_STATUS_ERROR);
-			
-			hlcache_handle_abort(object->content);
-			hlcache_handle_release(object->content);
-			object->content = NULL;
-
-			c->active--;
-		}
-
 		/* Still loading; simply flag that we've been aborted
 		 * html_convert/html_finish_conversion will do the rest */
 		htmlc->aborted = true;

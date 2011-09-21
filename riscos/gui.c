@@ -1081,30 +1081,6 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 
 
 /**
- * Check for important events and yield CPU (RISC OS).
- *
- * Required on RISC OS for cooperative multitasking.
- */
-
-void gui_multitask(void)
-{
-	wimp_event_no event;
-	wimp_block block;
-
-	if (clock() < gui_last_poll + 10)
-		return;
-
-	xhourglass_off();
-	event = wimp_poll(wimp_MASK_LOSE | wimp_MASK_GAIN | wimp_SAVE_FP,
-			&block, 0);
-	xhourglass_on();
-	gui_last_poll = clock();
-
-	ro_gui_handle_event(event, &block);
-}
-
-
-/**
  * Handle Null_Reason_Code events.
  */
 

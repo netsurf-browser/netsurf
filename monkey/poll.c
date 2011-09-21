@@ -158,8 +158,3 @@ gui_poll(bool active)
     monkey_window_process_reformats();
 }
 
-
-void gui_multitask(void)
-{
-  g_main_context_iteration(g_main_context_default(), false);
-}
