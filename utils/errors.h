@@ -45,7 +45,9 @@ typedef enum {
 
 	NSERROR_BAD_ENCODING,		/**< The character set is unknown */
 
-	NSERROR_NEED_DATA		/**< More data needed */
+	NSERROR_NEED_DATA,		/**< More data needed */
+
+	NSERROR_BAD_URL			/**< More data needed */
 } nserror;
 
 #endif

@@ -1,0 +1,130 @@
+/*
+ * Copyright 2011 Michael Drake <tlsa@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** \file
+ * NetSurf URL handling (interface).
+ */
+
+#ifndef _NETSURF_UTILS_NSURL_H_
+#define _NETSURF_UTILS_NSURL_H_
+
+#include "utils/errors.h"
+
+
+/** NetSurf URL object */
+typedef struct nsurl nsurl;
+
+
+typedef enum nsurl_component {
+	NSURL_SCHEME		= (1 << 0),
+	NSURL_USERNAME		= (1 << 1),
+	NSURL_PASSWORD		= (1 << 2),
+	NSURL_CREDENTIALS	= NSURL_USERNAME | NSURL_PASSWORD,
+	NSURL_HOST		= (1 << 3),
+	NSURL_PORT		= (1 << 4),
+	NSURL_AUTHORITY		= NSURL_CREDENTIALS | NSURL_HOST | NSURL_PORT,
+	NSURL_PATH		= (1 << 5),
+	NSURL_QUERY		= (1 << 6),
+	NSURL_COMPLETE		= NSURL_SCHEME | NSURL_AUTHORITY |
+				  NSURL_PATH | NSURL_QUERY,
+	NSURL_FRAGMENT		= (1 << 7),
+	NSURL_WITH_FRAGMENT	= NSURL_COMPLETE | NSURL_FRAGMENT
+} nsurl_component;
+
+
+/**
+ * Create a NetSurf URL object from a URL string
+ *
+ * \param url_s	  String to create NetSurf URL from
+ * \param url	  Returns a NetSurf URL
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in url.
+ *
+ * It is up to the client to call nsurl_destroy when they are finished with
+ * the created object.
+ */
+nserror nsurl_create(const char const *url_s, nsurl **url);
+
+
+/**
+ * Destroy a NetSurf URL object
+ *
+ * \param url	  NetSurf URL to destroy
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+nserror nsurl_destroy(nsurl *url);
+
+
+/**
+ * Compare two URLs
+ *
+ * \param url1	  First NetSurf URL
+ * \param url2	  Second NetSurf URL
+ * \param parts	  The URL components to be compared
+ * \param match	  Returns true if url1 and url2 matched, else false
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, match will be false.
+ */
+nserror nsurl_compare(const nsurl *url1, const nsurl *url2,
+		nsurl_component parts, bool *match);
+
+
+/**
+ * Get URL (section) as a string, from a NetSurf URL object
+ *
+ * \param url	  NetSurf URL
+ * \param parts	  The required URL components.
+ * \param url_s	  Returns a url string
+ * \param url_l	  Returns length of url_s
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in url_s or url_l.
+ *
+ * The string returned in url_s is owned by the client and it is up to them
+ * to free it.  It includes a trailing '\0'.
+ *
+ * The length returned in url_l excludes the trailing '\0'.
+ *
+ * That the required URL components be consecutive is not enforced, however,
+ * non-consecutive URL components generally make no sense.  The exception
+ * is removal of credentials from a URL, such as for display in browser
+ * window URL bar.  'NSURL_COMPLETE &~ NSURL_PASSWORD' would remove the
+ * password from a complete URL.
+ */
+nserror nsurl_get(const nsurl *url, nsurl_component parts,
+		char **url_s, size_t *url_l);
+
+
+/**
+ * Join a base url to a relative link part, creating a new NetSurf URL object
+ *
+ * \param base	  NetSurf URL containing the base to join rel to
+ * \param rel	  String containing the relative link part
+ * \param joined  Returns joined NetSurf URL
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in join.
+ *
+ * It is up to the client to call nsurl_destroy when they are finished with
+ * the created object.
+ */
+nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined);
+
+#endif
