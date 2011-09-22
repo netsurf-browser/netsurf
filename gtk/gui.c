@@ -346,19 +346,23 @@ static void gui_init(int argc, char** argv, char **respath)
 	/* check user options */
 	check_options(respath);
 
+	/* find the languages file */	
+	languages_file_location = filepath_find(respath, "languages");
+	if ((languages_file_location == NULL) || 
+	    (strlen(languages_file_location) < 10)) {
+		die("Unable to find resources.\n");		
+	}
+
 	/* Obtain resources path location. 
 	 *
 	 * Uses the directory the languages file was found in,
-	 * previously the location of the glade files was used,
-	 * however these may be translated which breaks things
-	 * relying on res_dir_location.
-	 */	
-	resource_filename = filepath_find(respath, "languages");
-	resource_filename[strlen(resource_filename) - 9] = 0;
-	res_dir_location = resource_filename;
-
-	/* languages file */
-	languages_file_location = filepath_find(respath, "languages");
+	 * @todo find and slaughter all references to this!
+	 */
+	res_dir_location = calloc(1, strlen(languages_file_location) - 8);
+	memcpy(res_dir_location, 
+	       languages_file_location, 
+	       strlen(languages_file_location) - 9);
+	LOG(("Using '%s' for resource path", res_dir_location));
 
 	/* initialise the glade templates */
 	nsgtk_init_glade(respath);
