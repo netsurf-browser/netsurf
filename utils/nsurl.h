@@ -128,21 +128,15 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
  * Access a URL (section) as a string, from a NetSurf URL object
  *
  * \param url	  NetSurf URL to retrieve a string pointer for.
- * \param parts	  The required URL components.
  * \param url_l	  Returns length of returned string
  * \return the required string
  *
- * If return value != NSERROR_OK, nothing will be returned in url_s or url_l.
- *
- * The string returned in is owned by the NetSurf URL object.  It will die
+ * The returned string is owned by the NetSurf URL object.  It will die
  * with the NetSurf URL object.  Keep a reference to the URL if you need it.
  *
- * Required URL components must be consecutive.  Only when NSURL_WITH_FRAGMENT
- * is passed as the parts param is a trailing '\0' guaranteed.
- *
- * The length returned in url_l excludes any trailing '\0'.
+ * The length returned in url_l excludes the trailing '\0'.
  */
-char *nsurl_access(const nsurl *url, nsurl_component parts, size_t *url_l);
+char *nsurl_access(const nsurl *url, size_t *url_l);
 
 
 /**

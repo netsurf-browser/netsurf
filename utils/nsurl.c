@@ -42,14 +42,19 @@
  * [scheme]://[username][:password]@[host]:[port][/path][?query][#fragment]
  */
 struct nsurl {
-	lwc_string *scheme;	/**< may be NULL */
-	lwc_string *username;	/**< may be NULL */
-	lwc_string *password;	/**< may be NULL */
-	lwc_string *host;	/**< may be NULL */
-	lwc_string *port;	/**< may be NULL */
-	lwc_string *path;	/**< may be NULL */
-	lwc_string *query;	/**< may be NULL */
-	lwc_string *fragment;	/**< may be NULL */
+	lwc_string *scheme;
+	lwc_string *username;
+	lwc_string *password;
+	lwc_string *host;
+	lwc_string *port;
+	lwc_string *path;
+	lwc_string *query;
+	lwc_string *fragment;
+
+	int count;	/* Number of references to NetSurf URL object */
+
+	char *string;	/* Full URL as a string */
+	size_t length;	/* Length of string */
 };
 
 
@@ -828,7 +833,7 @@ nserror nsurl_create(const char const *url_s, nsurl **url)
 	/* Allocate enough memory to url escape the longest section */
 	buff = malloc(length * 3 + 1);
 	if (buff == NULL) {
-		nsurl_destroy(*url);
+		free(*url);
 		return NSERROR_NOMEM;
 	}
 
@@ -843,13 +848,42 @@ nserror nsurl_create(const char const *url_s, nsurl **url)
 	/* Finished with buffer */
 	free(buff);
 
-	return (e == NSERROR_OK) ? NSERROR_OK : NSERROR_NOMEM;
+	if (e != NSERROR_OK) {
+		free(*url);
+		return NSERROR_NOMEM;
+	}
+
+	/* Get the complete URL string */
+	if (nsurl_get(*url, NSURL_WITH_FRAGMENT, &((*url)->string),
+			&((*url)->length)) != NSERROR_OK) {
+		free(*url);
+		return NSERROR_NOMEM;
+	}
+
+	/* Give the URL a reference */
+	(*url)->count = 1;
+
+	return NSERROR_OK;
 }
 
 
 /* exported interface, documented in nsurl.h */
-nserror nsurl_destroy(nsurl *url)
+nsurl *nsurl_ref(nsurl *url)
 {
+	assert(url != NULL);
+
+	url->count++;
+
+	return url;
+}
+
+
+/* exported interface, documented in nsurl.h */
+void nsurl_unref(nsurl *url)
+{
+	if (--url->count > 0)
+		return;
+
 	assert(url != NULL);
 
 #ifdef NSURL_DEBUG
@@ -881,10 +915,10 @@ nserror nsurl_destroy(nsurl *url)
 	if (url->fragment)
 		lwc_string_unref(url->fragment);
 
+	free(url->string);
+
 	/* Free the NetSurf URL */
 	free(url);
-
-	return NSERROR_OK;
 }
 
 
@@ -1148,6 +1182,16 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /* exported interface, documented in nsurl.h */
+char *nsurl_access(const nsurl *url, size_t *url_l)
+{
+	assert(url != NULL);
+
+	*url_l = url->length;
+	return url->string;
+}
+
+
+/* exported interface, documented in nsurl.h */
 nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 {
 	struct url_markers m;
@@ -1225,7 +1269,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	length += (m.query - m.path) + lwc_string_length(base->path);
 	buff = malloc(length + 5);
 	if (buff == NULL) {
-		nsurl_destroy(*joined);
+		free(*joined);
 		return NSERROR_NOMEM;
 	}
 
@@ -1333,6 +1377,21 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	/* Free temporary buffer */
 	free(buff);
 
-	return (error == NSERROR_OK) ? NSERROR_OK : NSERROR_NOMEM;
+	if (error != NSERROR_OK) {
+		free(*joined);
+		return NSERROR_NOMEM;
+	}
+
+	/* Get the complete URL string */
+	if (nsurl_get(*joined, NSURL_WITH_FRAGMENT, &((*joined)->string),
+			&((*joined)->length)) != NSERROR_OK) {
+		free(*joined);
+		return NSERROR_NOMEM;
+	}
+
+	/* Give the URL a reference */
+	(*joined)->count = 1;
+
+	return NSERROR_OK;
 }
 
