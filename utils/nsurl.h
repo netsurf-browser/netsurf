@@ -63,12 +63,24 @@ nserror nsurl_create(const char const *url_s, nsurl **url);
 
 
 /**
- * Destroy a NetSurf URL object
+ * Increment the reference count to a NetSurf URL object
  *
- * \param url	  NetSurf URL to destroy
- * \return NSERROR_OK on success, appropriate error otherwise
+ * \param url	  NetSurf URL to create another reference to
+ * \return The NetSurf URL pointer to use as the copy
+ *
+ * Use this when copying a NetSurf URL into a persistent data structure.
  */
-nserror nsurl_destroy(nsurl *url);
+nsurl *nsurl_ref(nsurl *url);
+
+
+/**
+ * Drop a reference to a NetSurf URL object
+ *
+ * \param url	  NetSurf URL to drop reference to
+ *
+ * When the reference count reaches zero then the NetSurf URL will be destroyed
+ */
+void nsurl_unref(nsurl *url);
 
 
 /**
@@ -110,6 +122,27 @@ nserror nsurl_compare(const nsurl *url1, const nsurl *url2,
  */
 nserror nsurl_get(const nsurl *url, nsurl_component parts,
 		char **url_s, size_t *url_l);
+
+
+/**
+ * Access a URL (section) as a string, from a NetSurf URL object
+ *
+ * \param url	  NetSurf URL to retrieve a string pointer for.
+ * \param parts	  The required URL components.
+ * \param url_l	  Returns length of returned string
+ * \return the required string
+ *
+ * If return value != NSERROR_OK, nothing will be returned in url_s or url_l.
+ *
+ * The string returned in is owned by the NetSurf URL object.  It will die
+ * with the NetSurf URL object.  Keep a reference to the URL if you need it.
+ *
+ * Required URL components must be consecutive.  Only when NSURL_WITH_FRAGMENT
+ * is passed as the parts param is a trailing '\0' guaranteed.
+ *
+ * The length returned in url_l excludes any trailing '\0'.
+ */
+char *nsurl_access(const nsurl *url, nsurl_component parts, size_t *url_l);
 
 
 /**
