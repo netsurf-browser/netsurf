@@ -2256,8 +2256,6 @@ bool layout_line(struct box *first, int *width, int *y,
 #endif
 
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
-		enum css_width_e wtype;
-		enum css_height_e htype;
 		css_fixed value = 0;
 		css_unit unit = CSS_UNIT_PX;
 
@@ -2414,27 +2412,9 @@ bool layout_line(struct box *first, int *width, int *y,
 		/* inline replaced, 10.3.2 and 10.6.2 */
 		assert(b->style);
 
-		/* calculate box width */
-		wtype = css_computed_width(b->style, &value, &unit);
-		if (wtype == CSS_WIDTH_SET) {
-			if (unit == CSS_UNIT_PCT) {
-				b->width = FPCT_OF_INT_TOINT(value, *width);
-			} else {
-				b->width = FIXTOINT(nscss_len2px(value, unit,
-						b->style));
-			}
-		} else {
-			b->width = AUTO;
-		}
-
-		/* height */
-		htype = css_computed_height(b->style, &value, &unit);
-		if (htype == CSS_HEIGHT_SET) {
-			b->height = FIXTOINT(nscss_len2px(value, unit,
-					b->style));
-		} else {
-			b->height = AUTO;
-		}
+		layout_find_dimensions(*width, -1, b, b->style,
+				&b->width, &b->height, NULL, NULL,
+				NULL, NULL, NULL);
 
 		if (b->object && !(b->flags & REPLACE_DIM)) {
 			layout_get_object_dimensions(b, &b->width, &b->height,
@@ -2462,7 +2442,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		if (b->object && content_get_type(b->object) == CONTENT_HTML &&
 				b->width != 
 				content_get_available_width(b->object)) {
-			htype = css_computed_height(b->style, &value, &unit);
+			enum css_height_e htype = css_computed_height(b->style,
+					&value, &unit);
 
 			content_reformat(b->object, false, b->width, b->height);
 
