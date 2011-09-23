@@ -1527,8 +1527,8 @@ void layout_find_dimensions(int available_width, int viewport_height,
 
 		if (wtype == CSS_WIDTH_SET) {
 			if (unit == CSS_UNIT_PCT) {
-				*width = (FIXTOFLT(value) * available_width)
-						/ 100;
+				*width = FPCT_OF_INT_TOINT(
+						value, available_width);
 			} else {
 				*width = FIXTOINT(nscss_len2px(value, unit,
 						style));
