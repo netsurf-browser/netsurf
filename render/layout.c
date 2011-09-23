@@ -73,8 +73,7 @@ static struct box* layout_next_margin_block(struct box *box, struct box *block,
 		int viewport_height, int *max_pos_margin, int *max_neg_margin);
 static bool layout_block_object(struct box *block);
 static void layout_get_object_dimensions(struct box *box,
-		int *width, int *height,
-		bool update_width, bool update_height);
+		int *width, int *height);
 static void layout_block_find_dimensions(int available_width,
 		int viewport_height, int lm, int rm,
 		struct box *box);
@@ -224,10 +223,11 @@ bool layout_block_context(struct box *block, int viewport_height,
 
 	/* special case if the block contains an object */
 	if (block->object) {
+		int temp_width = block->width;
 		if (!layout_block_object(block))
 			return false;
-		layout_get_object_dimensions(block, &block->width,
-				&block->height, false, true);
+		layout_get_object_dimensions(block, &temp_width,
+				&block->height);
 		return true;
 	} else if (block->flags & REPLACE_DIM) {
 		return true;
@@ -1012,26 +1012,21 @@ bool layout_block_object(struct box *block)
  * \param  box     Box with object
  * \param  width   Width value in px or AUTO.  If AUTO, updated to value in px.
  * \param  height  Height value in px or AUTO. If AUTO, updated to value in px.
- * \param  uppate_width   Whether to update the width.
- * \param  update_height  Whether to update the height.
  *
  * See CSS 2.1 sections 10.3 and 10.6.
  */
 
-void layout_get_object_dimensions(struct box *box, int *width, int *height,
-		bool update_width, bool update_height)
+void layout_get_object_dimensions(struct box *box, int *width, int *height)
 {
 	assert(box->object != NULL);
 	assert(width != NULL && height != NULL);
 
 	if (*width == AUTO && *height == AUTO) {
 		/* No given dimensions; use intrinsic dimensions */
-		if (update_width)
-			*width = content_get_width(box->object);
-		if (update_height)
-			*height = content_get_height(box->object);
+		*width = content_get_width(box->object);
+		*height = content_get_height(box->object);
 
-	} else if (update_width && *width == AUTO) {
+	} else if (*width == AUTO) {
 		/* Have given height; width is calculated from the given height
 		 * and ratio of intrinsic dimensions */
 		int intrinsic_width = content_get_width(box->object);
@@ -1043,7 +1038,7 @@ void layout_get_object_dimensions(struct box *box, int *width, int *height,
 		else
 			*width = intrinsic_width;
 
-	} else if (update_height && *height == AUTO) {
+	} else if (*height == AUTO) {
 		/* Have given width; height is calculated from the given width
 		 * and ratio of intrinsic dimensions */
 		int intrinsic_width = content_get_width(box->object);
@@ -1091,8 +1086,7 @@ void layout_block_find_dimensions(int available_width, int viewport_height,
 	if (box->object && !(box->flags & REPLACE_DIM) &&
 			content_get_type(box->object) != CONTENT_HTML) {
 		/* block-level replaced element, see 10.3.4 and 10.6.2 */
-		layout_get_object_dimensions(box, &width, &height,
-				true, true);
+		layout_get_object_dimensions(box, &width, &height);
 	}
 
 	box->width = layout_solve_width(box, available_width, width, lm, rm,
@@ -1410,8 +1404,7 @@ void layout_float_find_dimensions(int available_width,
 			content_get_type(box->object) != CONTENT_HTML) {
 		/* Floating replaced element, with intrinsic width or height.
 		 * See 10.3.6 and 10.6.2 */
-		layout_get_object_dimensions(box, &width, &height,
-				true, true);
+		layout_get_object_dimensions(box, &width, &height);
 	} else if (box->gadget && (box->gadget->type == GADGET_TEXTBOX ||
 			box->gadget->type == GADGET_PASSWORD ||
 			box->gadget->type == GADGET_FILE ||
@@ -2417,8 +2410,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				NULL, NULL, NULL);
 
 		if (b->object && !(b->flags & REPLACE_DIM)) {
-			layout_get_object_dimensions(b, &b->width, &b->height,
-					true, true);
+			layout_get_object_dimensions(b, &b->width, &b->height);
 		} else if (b->flags & IFRAME) {
 			/* TODO: should we look at the content dimensions? */
 			if (b->width == AUTO)
@@ -3120,8 +3112,9 @@ struct box *layout_minmax_line(struct box *first,
 
 		if (b->object || (b->flags & REPLACE_DIM)) {
 			if (b->object) {
-				layout_get_object_dimensions(b, &width, &height,
-						true, false);
+				int temp_height = height;
+				layout_get_object_dimensions(b,
+						&width, &temp_height);
 			}
 
 			fixed = frac = 0;
