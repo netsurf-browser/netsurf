@@ -881,10 +881,10 @@ nsurl *nsurl_ref(nsurl *url)
 /* exported interface, documented in nsurl.h */
 void nsurl_unref(nsurl *url)
 {
+	assert(url != NULL);
+
 	if (--url->count > 0)
 		return;
-
-	assert(url != NULL);
 
 #ifdef NSURL_DEBUG
 	nsurl__dump(url);
