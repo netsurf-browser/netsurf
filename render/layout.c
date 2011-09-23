@@ -1012,6 +1012,8 @@ bool layout_block_object(struct box *block)
  * \param  box     Box with object
  * \param  width   Width value in px or AUTO.  If AUTO, updated to value in px.
  * \param  height  Height value in px or AUTO. If AUTO, updated to value in px.
+ * \param  min_width  Box's min width, as given by layout_find_dimensions.
+ * \param  max_width  Box's max width, as given by layout_find_dimensions.
  *
  * See CSS 2.1 sections 10.3 and 10.6.
  */
