@@ -2249,8 +2249,6 @@ bool layout_line(struct box *first, int *width, int *y,
 #endif
 
 	for (x = 0, b = first; x <= x1 - x0 && b != 0; b = b->next) {
-		css_fixed value = 0;
-		css_unit unit = CSS_UNIT_PX;
 
 		assert(b->type == BOX_INLINE || b->type == BOX_INLINE_BLOCK ||
 				b->type == BOX_FLOAT_LEFT ||
@@ -2434,6 +2432,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		if (b->object && content_get_type(b->object) == CONTENT_HTML &&
 				b->width != 
 				content_get_available_width(b->object)) {
+			css_fixed value = 0;
+			css_unit unit = CSS_UNIT_PX;
 			enum css_height_e htype = css_computed_height(b->style,
 					&value, &unit);
 
