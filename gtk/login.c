@@ -78,7 +78,7 @@ void create_login_window(const char *url, const char *host, const char *realm,
 	 * the widgets we're interested in.
 	 */
 
-	GladeXML *x = glade_xml_new(glade_login_file_location, NULL, NULL);
+	GladeXML *x = glade_xml_new(glade_file_location->login, NULL, NULL);
 	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndLogin"));
 	GtkLabel *lhost, *lrealm;
 	GtkEntry *euser, *epass;

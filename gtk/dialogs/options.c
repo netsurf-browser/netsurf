@@ -139,7 +139,7 @@ DECLARE(setDefaultExportOptions);
 
 GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 {
-	gladeFile = glade_xml_new(glade_options_file_location, NULL, NULL);
+	gladeFile = glade_xml_new(glade_file_location->options, NULL, NULL);
 	if (gladeFile == NULL)
 		return NULL;
 	

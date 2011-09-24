@@ -522,7 +522,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* Construct our primary elements */
 
 	/* top-level document (not a frame) => create a new tab */
-	GladeXML *xml = glade_xml_new(glade_netsurf_file_location, "tabContents", NULL);
+	GladeXML *xml = glade_xml_new(glade_file_location->netsurf, 
+				"tabContents", NULL);
 	if (!xml) {
 		warn_user("MiscError", "Failed to create tab contents");
 		free(g);

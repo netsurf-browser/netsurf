@@ -1644,7 +1644,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* load the window template from the glade xml file, and extract
 	 * widget references from it for later use.
 	 */
-	g->xml = glade_xml_new(glade_netsurf_file_location,
+	g->xml = glade_xml_new(glade_file_location->netsurf,
 			"wndBrowser", NULL);
 	glade_xml_signal_autoconnect(g->xml);
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));

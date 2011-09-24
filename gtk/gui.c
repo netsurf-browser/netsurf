@@ -90,18 +90,7 @@ char *res_dir_location;
 char *print_options_file_location;
 char *languages_file_location;
 
-char *glade_netsurf_file_location;
-char *glade_password_file_location;
-char *glade_warning_file_location;
-char *glade_login_file_location;
-char *glade_ssl_file_location;
-char *glade_toolbar_file_location;
-char *glade_options_file_location;
-
-static char *glade_downloads_file_location;
-static char *glade_history_file_location;
-static char *glade_hotlist_file_location;
-static char *glade_cookies_file_location;
+struct glade_file_location_s *glade_file_location;
 
 static GtkWindow *nsgtk_warning_window;
 GtkWidget *widWarning;
@@ -226,18 +215,23 @@ nsgtk_init_glade(char **respath)
 
 	glade_init();
 
-	glade_netsurf_file_location = nsgtk_new_glade(respath, "netsurf", NULL);
-	glade_password_file_location = nsgtk_new_glade(respath, "password", NULL);
-	glade_login_file_location = nsgtk_new_glade(respath, "login", NULL);
-	glade_ssl_file_location = nsgtk_new_glade(respath, "ssl", NULL);
-	glade_toolbar_file_location = nsgtk_new_glade(respath, "toolbar", NULL);
-	glade_downloads_file_location = nsgtk_new_glade(respath, "downloads", NULL);
-	glade_history_file_location = nsgtk_new_glade(respath, "history", NULL);
-	glade_options_file_location = nsgtk_new_glade(respath, "options", NULL);
-	glade_hotlist_file_location = nsgtk_new_glade(respath, "hotlist", NULL);
-	glade_cookies_file_location = nsgtk_new_glade(respath, "cookies", NULL);
+	glade_file_location = calloc(1, sizeof(struct glade_file_location_s));
+	if (glade_file_location == NULL) {
+		die("Unable to allocate glade file locations");
+	}
 
-	glade_warning_file_location = nsgtk_new_glade(respath, "warning", &gladeWarning);
+	glade_file_location->netsurf = nsgtk_new_glade(respath, "netsurf", NULL);
+	glade_file_location->password = nsgtk_new_glade(respath, "password", NULL);
+	glade_file_location->login = nsgtk_new_glade(respath, "login", NULL);
+	glade_file_location->ssl = nsgtk_new_glade(respath, "ssl", NULL);
+	glade_file_location->toolbar = nsgtk_new_glade(respath, "toolbar", NULL);
+	glade_file_location->downloads = nsgtk_new_glade(respath, "downloads", NULL);
+	glade_file_location->history = nsgtk_new_glade(respath, "history", NULL);
+	glade_file_location->options = nsgtk_new_glade(respath, "options", NULL);
+	glade_file_location->hotlist = nsgtk_new_glade(respath, "hotlist", NULL);
+	glade_file_location->cookies = nsgtk_new_glade(respath, "cookies", NULL);
+
+	glade_file_location->warning = nsgtk_new_glade(respath, "warning", &gladeWarning);
 	nsgtk_warning_window = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
 	widWarning = glade_xml_get_widget(gladeWarning, "labelWarning");
 }
@@ -418,21 +412,22 @@ static void gui_init(int argc, char** argv, char **respath)
 					    gdk_screen_get_default()));
 	LOG(("Set CSS DPI to %f", FIXTOFLT(nscss_screen_dpi)));
 
-	if (nsgtk_history_init(glade_history_file_location) == false)
+	if (nsgtk_history_init(glade_file_location->history) == false)
 		die("Unable to initialise history window.\n");
 
-	if (nsgtk_download_init(glade_downloads_file_location) == false)
+	if (nsgtk_download_init(glade_file_location->downloads) == false)
 		die("Unable to initialise download window.\n");
 
-	if (nsgtk_cookies_init(glade_cookies_file_location) == false)
+	if (nsgtk_cookies_init(glade_file_location->cookies) == false)
 		die("Unable to initialise cookies window.\n");
 
-	if (nsgtk_hotlist_init(glade_hotlist_file_location) == false)
+	if (nsgtk_hotlist_init(glade_file_location->hotlist) == false)
 		die("Unable to initialise hotlist window.\n");
 
 	sslcert_init(tree_content_icon_name);
 
-        if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
+        if ((option_homepage_url != NULL) && 
+	    (option_homepage_url[0] != '\0'))
                 addr = option_homepage_url;
 
 	if (2 <= argc)
@@ -592,10 +587,6 @@ void gui_quit(void)
 
 
 
-
-
-
-
 static void nsgtk_select_menu_clicked(GtkCheckMenuItem *checkmenuitem,
 					gpointer user_data)
 {
@@ -682,7 +673,7 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 {	
 	static struct nsgtk_treeview *ssl_window;	
 	struct sslcert_session_data *data;
-	GladeXML *x = glade_xml_new(glade_ssl_file_location, NULL, NULL);
+	GladeXML *x = glade_xml_new(glade_file_location->ssl, NULL, NULL);
 	GtkButton *accept, *reject;
 	void **session = calloc(sizeof(void *), 3);
 	GtkWindow *window;

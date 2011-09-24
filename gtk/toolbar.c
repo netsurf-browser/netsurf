@@ -193,7 +193,7 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		return;
 	}
-	window->glade = glade_xml_new(glade_toolbar_file_location,
+	window->glade = glade_xml_new(glade_file_location->toolbar,
 			"toolbarwindow", NULL);
 	if (window->glade == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
