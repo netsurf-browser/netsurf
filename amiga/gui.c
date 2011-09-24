@@ -1281,7 +1281,7 @@ void ami_handle_msg(void)
 							ami_gui_history(gwin, true);
 						break;
 
-						case SIDEDOWN:
+						case EXTRAUP:
 							ami_gui_history(gwin, false);
 						break;
 					}
