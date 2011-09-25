@@ -302,6 +302,11 @@ CopyClip:Copy to clipboard
 SaveAs:Save as...
 SaveIFF:Save as IFF...
 ObjShow:Show object
+Frame:Frame
+FrameNewWin:Show in new window
+FrameNewTab:Show in new tab
+FrameOnly:Show only this frame
+
 SelectFile:Select file...
 ExternalApp:Open in external application
 

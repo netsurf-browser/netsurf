@@ -300,6 +300,11 @@ CopyClip:Inhalt ins Clipboard
 SaveAs:Speichern als...
 SaveIFF:Speichern als IFF...
 ObjShow:Zeige Objekt
+Frame:Frame
+FrameNewWin:Show in new window
+FrameNewTab:Show in new tab
+FrameOnly:Show only this frame
+
 SelectFile:Datei auswählen...
 ExternalApp:Open in external application
 

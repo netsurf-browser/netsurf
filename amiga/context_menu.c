@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-9 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -66,16 +66,25 @@ enum {
 	CMID_CLIPOBJ,
 	CMID_SAVEOBJ,
 	CMID_SAVEIFFOBJ,
+	CMID_RELOADOBJ,
 	CMID_SELALL,
 	CMID_SELCLEAR,
 	CMID_SELCUT,
 	CMID_SELCOPY,
 	CMID_SELPASTE,
 	CMID_SELSEARCH,
+	CMID_FRAMEWIN,
+	CMID_FRAMETAB,
+	CMID_FRAMESHOW,
+	CMID_FRAMERELOAD,
+	CMID_FRAMECOPYURL,
+	CMID_FRAMESAVE,
 	CMID_PLUGINCMD,
 	CMSUB_OBJECT,
 	CMSUB_URL,
 	CMSUB_SEL,
+	CMSUB_PAGE,
+	CMSUB_FRAME,
 	CMID_HISTORY,
 	CMID_LAST
 };
@@ -96,10 +105,15 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_SELECTFILE] = ami_utf8_easy((char *)messages_get("SelectFile"));
 	ctxmenulab[CMID_COPYURL] = ami_utf8_easy((char *)messages_get("CopyURL"));
 	ctxmenulab[CMID_SHOWOBJ] = ami_utf8_easy((char *)messages_get("ObjShow"));
+	ctxmenulab[CMID_RELOADOBJ] = ami_utf8_easy((char *)messages_get("ObjReload"));
 	ctxmenulab[CMID_COPYOBJ] = ami_utf8_easy((char *)messages_get("CopyURL"));
 	ctxmenulab[CMID_CLIPOBJ] = ami_utf8_easy((char *)messages_get("CopyClip"));
 	ctxmenulab[CMID_SAVEOBJ] = ami_utf8_easy((char *)messages_get("SaveAs"));
 	ctxmenulab[CMID_SAVEIFFOBJ] = ami_utf8_easy((char *)messages_get("SaveIFF"));
+
+	ctxmenulab[CMID_FRAMEWIN] = ami_utf8_easy((char *)messages_get("FrameNewWin"));
+	ctxmenulab[CMID_FRAMETAB] = ami_utf8_easy((char *)messages_get("FrameNewTab"));
+	ctxmenulab[CMID_FRAMESHOW] = ami_utf8_easy((char *)messages_get("FrameOnly"));
 
 	ctxmenulab[CMID_SAVEURL] = ami_utf8_easy((char *)messages_get("LinkDload"));
 	ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
@@ -114,6 +128,7 @@ void ami_context_menu_init(void)
 
 	ctxmenulab[CMID_PLUGINCMD] = ami_utf8_easy((char *)messages_get("ExternalApp"));
 
+	ctxmenulab[CMSUB_FRAME] = ami_utf8_easy((char *)messages_get("Frame"));
 	ctxmenulab[CMSUB_OBJECT] = ami_utf8_easy((char *)messages_get("Object"));
 	ctxmenulab[CMSUB_URL] = ami_utf8_easy((char *)messages_get("Link"));
 	ctxmenulab[CMSUB_SEL] = ami_utf8_easy((char *)messages_get("Selection"));
@@ -171,7 +186,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	int box_x=0;
 	int box_y=0;
 	bool menuhascontent = false;
-	bool no_url = true, no_obj = true, no_sel = true;
+	bool no_url = true, no_obj = true, no_sel = true, no_frame = true;
 	ULONG ret = 0;
 	struct contextual_content ccdata;
 
@@ -238,6 +253,59 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	{
 		browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
 
+		if(no_frame && (ccdata.main != gwin->bw->current_content))
+		{
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_FRAME],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMEWIN],
+							PMIA_ID, CMID_FRAMEWIN,
+							PMIA_UserData, content_get_url(ccdata.main),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMETAB],
+							PMIA_ID, CMID_FRAMETAB,
+							PMIA_UserData, content_get_url(ccdata.main),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMESHOW],
+							PMIA_ID, CMID_FRAMESHOW,
+							PMIA_UserData, ccdata.main,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_RELOADOBJ],
+							PMIA_ID, CMID_FRAMERELOAD,
+							PMIA_UserData, ccdata.main,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
+							PMIA_ID, CMID_FRAMECOPYURL,
+							PMIA_UserData, content_get_url(ccdata.main),
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
+							PMIA_ID, CMID_FRAMESAVE,
+							PMIA_UserData, content_get_url(ccdata.main),
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+
+			no_frame = false;
+			menuhascontent = true;
+		}
+
 		if(no_url && ccdata.link_url)
 		{
 			IDoMethod(ctxmenuobj,PM_INSERT,
@@ -254,10 +322,16 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 							PMIA_ID, CMID_URLOPENTAB,
 							PMIA_UserData, ccdata.link_url,
 						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYURL],
 							PMIA_ID, CMID_COPYURL,
 							PMIA_UserData, ccdata.link_url,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
 						TAG_DONE),
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEURL],
@@ -282,7 +356,15 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SHOWOBJ],
 							PMIA_ID, CMID_SHOWOBJ,
-							PMIA_UserData, content_get_url(ccdata.object),
+							PMIA_UserData, ccdata.object,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_RELOADOBJ],
+							PMIA_ID, CMID_RELOADOBJ,
+							PMIA_UserData, ccdata.object,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
@@ -293,6 +375,9 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
 							PMIA_ID, CMID_CLIPOBJ,
 							PMIA_UserData, ccdata.object,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
 						TAG_DONE),
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
@@ -465,29 +550,41 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				}
 			break;
 
+			case CMID_FRAMECOPYURL:
 			case CMID_COPYURL:
 			case CMID_COPYOBJ:
 				ami_easy_clipboard((char *)userdata);
 			break;
 
+			case CMID_FRAMEWIN:
 			case CMID_URLOPENWIN:
 				bw = browser_window_create(userdata, gwin->bw,
 					content_get_url(gwin->bw->current_content), true, false);
 			break;
 
+			case CMID_FRAMETAB:
 			case CMID_URLOPENTAB:
 				bw = browser_window_create(userdata, gwin->bw,
 					content_get_url(gwin->bw->current_content), true, true);
 			break;
 
+			case CMID_FRAMESAVE:
 			case CMID_SAVEURL:
 				browser_window_download(gwin->bw, userdata,
 					content_get_url(gwin->bw->current_content));
 			break;
 
+			case CMID_FRAMESHOW:
 			case CMID_SHOWOBJ:
-				browser_window_go(gwin->bw, userdata,
+				browser_window_go(gwin->bw, content_get_url(userdata),
 					content_get_url(gwin->bw->current_content), true);
+			break;
+
+			case CMID_FRAMERELOAD:
+			case CMID_RELOADOBJ:
+				object = (struct hlcache_handle *)userdata;
+				content_invalidate_reuse_data(object);
+				browser_window_reload(gwin->bw, false);
 			break;
 
 			case CMID_CLIPOBJ:
