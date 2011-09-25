@@ -203,7 +203,7 @@ Will look something like the following within the menu:
 @node mimetypes "Local MIME Types"
 NetSurf determines the MIME types of local files primarily by checking the icon of the file.  If the icon is not found it will check the default icon for the file type.
 
-It looks for a tooltype MIMETYPE and, if found, will use the contents as the filetype of the file.  If not found it makes a guess at the MIME type using datatypes.library, however this will not be very accurate.
+It looks for a tooltype MIMETYPE and, if found, will use the contents as the filetype of the file.  If not found it will use datatypes.library and do a reverse lookup based on the contents of Resources/mimetypes[.user]
 
 The Installer script will set the MIMETYPE tooltype on basic relevant default filetype icons.  If you get problems:
 * If the file has a real icon, add MIMETYPE=<MIME type of file> to the tooltypes.

@@ -34,7 +34,7 @@
  * filetype -- determine the MIME type of a local file
  */
 
-struct MinList *ami_mime_list;
+struct MinList *ami_mime_list = NULL;
 
 struct ami_mime_entry
 {
@@ -186,7 +186,8 @@ nserror ami_mime_init(const char *mimefile)
 	struct nsObject *node;
 	struct ami_mime_entry *mimeentry;
 
-	ami_mime_list = NewObjList();
+	if(ami_mime_list == NULL)
+		ami_mime_list = NewObjList();
 
 	rargs = AllocDosObjectTags(DOS_RDARGS,TAG_DONE);
 

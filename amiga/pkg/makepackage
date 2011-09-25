@@ -10,6 +10,7 @@ delete ram:netsurf/resources/#?hotlist#?
 delete ram:netsurf/resources/cookies
 delete ram:netsurf/resources/urls
 delete ram:netsurf/resources/options
+delete ram:netsurf/resources/#?.user
 copy resources/Pointers/~(.svn) ram:NetSurf/Resources/Pointers
 copy (COPYING|ChangeLog) ram:NetSurf/
 copy NetSurf ram:NetSurf/NetSurf

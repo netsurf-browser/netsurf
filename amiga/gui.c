@@ -760,6 +760,7 @@ int main(int argc, char** argv)
 		die("Cannot open Messages file");
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
+	ami_mime_init("PROGDIR:Resources/mimetypes.user");
 	ami_schedule_open_timer();
 	ami_schedule_create();
 
