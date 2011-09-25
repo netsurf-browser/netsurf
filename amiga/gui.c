@@ -127,6 +127,8 @@
 #include <math.h>
 #include <string.h>
 
+#define NSA_KBD_SCROLL_PX 10
+
 /* Extra mouse button defines to match those in intuition/intuition.h */
 #define SIDEDOWN  (IECODE_4TH_BUTTON)
 #define SIDEUP    (IECODE_4TH_BUTTON | IECODE_UP_PREFIX)
@@ -1497,24 +1499,24 @@ void ami_handle_msg(void)
 								case KEY_UP:
 									gui_window_set_scroll(gwin->bw->window,
 										gwin->bw->window->scrollx,
-										gwin->bw->window->scrolly - 5);
+										gwin->bw->window->scrolly - NSA_KBD_SCROLL_PX);
 								break;
 
 								case KEY_DOWN:
 									gui_window_set_scroll(gwin->bw->window,
 										gwin->bw->window->scrollx,
-										gwin->bw->window->scrolly + 5);
+										gwin->bw->window->scrolly + NSA_KBD_SCROLL_PX);
 								break;
 
 								case KEY_LEFT:
 									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx - 5,
+										gwin->bw->window->scrollx - NSA_KBD_SCROLL_PX,
 										gwin->bw->window->scrolly);
 								break;
 
 								case KEY_RIGHT:
 									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx + 5,
+										gwin->bw->window->scrollx + NSA_KBD_SCROLL_PX,
 										gwin->bw->window->scrolly);
 								break;
 
