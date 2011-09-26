@@ -362,8 +362,10 @@ failed:
 void fetch_dispatch_jobs(void)
 {
 	int all_active, all_queued;
+#ifdef DEBUG_FETCH_VERBOSE
 	struct fetch *q;
 	struct fetch *f;
+#endif
 
 	if (!queue_ring)
 		return; /* Nothing to do, the queue is empty */
@@ -372,26 +374,22 @@ void fetch_dispatch_jobs(void)
 
 #ifdef DEBUG_FETCH_VERBOSE
 	LOG(("queue_ring %i, fetch_ring %i", all_queued, all_active));
-#endif
 
 	q = queue_ring;
 	if (q) {
 		do {
-#ifdef DEBUG_FETCH_VERBOSE
 			LOG(("queue_ring: %s", q->url));
-#endif
 			q = q->r_next;
 		} while (q != queue_ring);
 	}
 	f = fetch_ring;
 	if (f) {
 		do {
-#ifdef DEBUG_FETCH_VERBOSE
 			LOG(("fetch_ring: %s", f->url));
-#endif
 			f = f->r_next;
 		} while (f != fetch_ring);
 	}
+#endif
 
 	while ( all_queued && all_active < option_max_fetchers ) {
 		/*LOG(("%d queued, %d fetching", all_queued, all_active));*/
