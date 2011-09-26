@@ -125,6 +125,28 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /**
+ * Enquire about the existence of componenets in a given URL
+ *
+ * \param url	  NetSurf URL object
+ * \param part	  The URL components confirm existence of
+ * \return true iff the component in question exists in url
+ *
+ * The valid values for the part parameter are:
+ *    NSURL_SCHEME
+ *    NSURL_USERNAME
+ *    NSURL_PASSWORD
+ *    NSURL_CREDENTIALS
+ *    NSURL_HOST
+ *    NSURL_PORT
+ *    NSURL_AUTHORITY
+ *    NSURL_PATH
+ *    NSURL_QUERY
+ *    NSURL_FRAGMENT
+ */
+bool nsurl_enquire(const nsurl *url, nsurl_component part);
+
+
+/**
  * Access a NetSurf URL object as a string
  *
  * \param url	  NetSurf URL to retrieve a string pointer for.

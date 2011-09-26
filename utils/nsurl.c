@@ -1182,6 +1182,65 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /* exported interface, documented in nsurl.h */
+bool nsurl_enquire(const nsurl *url, nsurl_component part)
+{
+	assert(url != NULL);
+
+	if (part == NSURL_SCHEME) {
+		if (url->scheme != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_QUERY) {
+		if (url->query != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_USERNAME || part == NSURL_CREDENTIALS) {
+		if (url->username != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_PASSWORD) {
+		if (url->password != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_HOST) {
+		if (url->host != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_PORT) {
+		if (url->port != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_PATH) {
+		if (url->path != NULL)
+			return true;
+		else
+			return false;
+
+	} else if (part == NSURL_FRAGMENT) {
+		if (url->fragment != NULL)
+			return true;
+		else
+			return false;
+	}
+
+	LOG(("Unsupported value passed to part param."));
+	assert(0);
+}
+
+
+/* exported interface, documented in nsurl.h */
 const char *nsurl_access(const nsurl *url)
 {
 	assert(url != NULL);
