@@ -393,7 +393,7 @@ ifeq ($(TARGET),cocoa)
 
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # Valid options: YES, NO, AUTO
-  NETSURF_USE_NSSVG := YES
+  NETSURF_USE_NSSVG := AUTO
   
   NETSURF_USE_MNG := NO
   NETSURF_USE_BMP := NO
