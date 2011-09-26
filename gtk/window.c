@@ -630,8 +630,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 void nsgtk_reflow_all_windows(void)
 {
 	for (struct gui_window *g = window_list; g; g = g->next) {
-		nsgtk_tab_options_changed(GTK_WIDGET(
-				nsgtk_scaffolding_notebook(g->scaffold)));
+		nsgtk_tab_options_changed(
+				nsgtk_scaffolding_notebook(g->scaffold));
 		g->bw->reformat_pending = true;
 	}
 

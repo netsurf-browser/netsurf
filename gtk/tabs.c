@@ -31,88 +31,33 @@
 
 #define TAB_WIDTH_N_CHARS 15
 
-static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window);
-static void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
-		 guint page);
+/** callback to update sizes when style-set gtk signal */
 static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
-		GtkWidget *close_button);
-
-static void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
-		gint page_num);
-
-void nsgtk_tab_options_changed(GtkWidget *tabs)
+		GtkWidget *close_button)
 {
-        nsgtk_tab_visibility_update(GTK_NOTEBOOK(tabs), NULL, 0);
+	PangoFontMetrics *metrics;
+	PangoContext *context;
+	int char_width, h, w;
+
+	context = gtk_widget_get_pango_context(hbox);
+	metrics = pango_context_get_metrics(context, hbox->style->font_desc,
+			pango_context_get_language(context));
+
+	char_width = pango_font_metrics_get_approximate_digit_width(metrics);
+	pango_font_metrics_unref(metrics);
+
+	gtk_icon_size_lookup_for_settings(gtk_widget_get_settings (hbox),
+			GTK_ICON_SIZE_MENU, &w, &h);
+
+	gtk_widget_set_size_request(hbox,
+			TAB_WIDTH_N_CHARS * PANGO_PIXELS(char_width) + 2 * w,
+			-1);
+
+	gtk_widget_set_size_request(close_button, w + 4, h + 4);
 }
 
-void nsgtk_tab_init(GtkWidget *tabs)
-{
-	g_signal_connect(tabs, "switch-page",
-                         G_CALLBACK(nsgtk_tab_page_changed), NULL);
-
-	g_signal_connect(tabs, "page-removed",
-                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);
-	g_signal_connect(tabs, "page-added",
-                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);
-        nsgtk_tab_options_changed(tabs);
-}
-
-void nsgtk_tab_add(struct gui_window *window, GtkWidget *tab_contents, bool background)
-{
-	GtkWidget *tabs = GTK_WIDGET(nsgtk_scaffolding_notebook(
-			nsgtk_get_scaffold(window)));
-	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
-	gint remember = gtk_notebook_get_current_page(GTK_NOTEBOOK(tabs));
-	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), tab_contents, tabBox);
-	/*causes gtk errors can't set a parent */
-	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(tabs), 
-			tab_contents,
-			true);
-	gtk_widget_show_all(tab_contents);
-	gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), 
-			gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabs)) - 1);
-	if (option_new_blank) {
-		/*char *blankpage = malloc(strlen(res_dir_location) +  
-				SLEN("file:///blankpage") + 1);
-		blankpage = g_strconcat("file:///", res_dir_location, 
-				"blankpage", NULL); */
-		/* segfaults 
-		struct browser_window *bw =
-				nsgtk_get_browser_window(window);
-		browser_window_go(bw, blankpage, 0, true); */
-		/* free(blankpage); */
-	}
-	if (background)
-		gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), remember);
-	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
-			nsgtk_get_scaffold(window))));
-}
-
-void nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child,
-		guint page)
-{
-	gint num_pages = gtk_notebook_get_n_pages(notebook);
-        if (option_show_single_tab == true || num_pages > 1)
-                gtk_notebook_set_show_tabs(notebook, TRUE);
-        else
-                gtk_notebook_set_show_tabs(notebook, FALSE);
-}
-
-void nsgtk_tab_set_title(struct gui_window *g, const char *title)
-{
-	GtkWidget *label;
-	GtkWidget *tab;
-	tab = nsgtk_window_get_tab(g);
-	gboolean is_top_level = (tab != NULL);
-
-	if (is_top_level) {
-		label = g_object_get_data(G_OBJECT(tab), "label");
-		gtk_label_set_text(GTK_LABEL(label), title);
-		gtk_widget_set_tooltip_text(tab, title);
-	}
-}
-
-GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
+/** Create a notebook tab label */
+static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 {
 	GtkWidget *hbox, *label, *button, *close;
 	GtkRcStyle *rcstyle;
@@ -159,31 +104,8 @@ GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	return hbox;
 }
 
-void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
-		GtkWidget *close_button)
-{
-	PangoFontMetrics *metrics;
-	PangoContext *context;
-	int char_width, h, w;
-
-	context = gtk_widget_get_pango_context(hbox);
-	metrics = pango_context_get_metrics(context, hbox->style->font_desc,
-			pango_context_get_language(context));
-
-	char_width = pango_font_metrics_get_approximate_digit_width(metrics);
-	pango_font_metrics_unref(metrics);
-
-	gtk_icon_size_lookup_for_settings(gtk_widget_get_settings (hbox),
-			GTK_ICON_SIZE_MENU, &w, &h);
-
-	gtk_widget_set_size_request(hbox,
-			TAB_WIDTH_N_CHARS * PANGO_PIXELS(char_width) + 2 * w,
-			-1);
-
-	gtk_widget_set_size_request(close_button, w + 4, h + 4);
-}
-
-void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
+/** callback when page is switched */
+static void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 		gint page_num)
 {
 	GtkWidget *window = gtk_notebook_get_nth_page(notebook, page_num);
@@ -202,6 +124,89 @@ void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 	nsgtk_scaffolding_set_top_level(gw);
 }
 
+/** callback to alter tab visibility when pages are added or removed */
+static void 
+nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
+{
+	gint num_pages = gtk_notebook_get_n_pages(notebook);
+        if (option_show_single_tab == true || num_pages > 1) {
+                gtk_notebook_set_show_tabs(notebook, TRUE);
+	} else {
+                gtk_notebook_set_show_tabs(notebook, FALSE);
+	}
+}
+
+/* exported interface documented in gtk/tabs.h */
+void nsgtk_tab_options_changed(GtkNotebook *notebook)
+{
+        nsgtk_tab_visibility_update(notebook, NULL, 0);
+}
+
+/* exported interface documented in gtk/tabs.h */
+void nsgtk_tab_init(GtkNotebook *notebook)
+{
+	g_signal_connect(notebook, "switch-page",
+                         G_CALLBACK(nsgtk_tab_page_changed), NULL);
+
+	g_signal_connect(notebook, "page-removed",
+                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);
+	g_signal_connect(notebook, "page-added",
+                         G_CALLBACK(nsgtk_tab_visibility_update), NULL);
+
+        nsgtk_tab_options_changed(notebook);
+}
+
+/* exported interface documented in gtk/tabs.h */
+void nsgtk_tab_add(struct gui_window *window, 
+		GtkWidget *tab_contents, bool background)
+{
+	GtkWidget *tabs = GTK_WIDGET(nsgtk_scaffolding_notebook(
+			nsgtk_get_scaffold(window)));
+	GtkWidget *tabBox = nsgtk_tab_label_setup(window);
+	gint remember = gtk_notebook_get_current_page(GTK_NOTEBOOK(tabs));
+
+	gtk_notebook_append_page(GTK_NOTEBOOK(tabs), tab_contents, tabBox);
+	/*causes gtk errors can't set a parent */
+	gtk_notebook_set_tab_reorderable(GTK_NOTEBOOK(tabs), 
+			tab_contents,
+			true);
+	gtk_widget_show_all(tab_contents);
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), 
+			gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabs)) - 1);
+	if (option_new_blank) {
+		/*char *blankpage = malloc(strlen(res_dir_location) +  
+				SLEN("file:///blankpage") + 1);
+		blankpage = g_strconcat("file:///", res_dir_location, 
+				"blankpage", NULL); */
+		/* segfaults 
+		struct browser_window *bw =
+				nsgtk_get_browser_window(window);
+		browser_window_go(bw, blankpage, 0, true); */
+		/* free(blankpage); */
+	}
+	if (background) {
+		gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), remember);
+	}
+	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
+			nsgtk_get_scaffold(window))));
+}
+
+/* exported interface documented in gtk/tabs.h */
+void nsgtk_tab_set_title(struct gui_window *g, const char *title)
+{
+	GtkWidget *label;
+	GtkWidget *tab;
+	tab = nsgtk_window_get_tab(g);
+	gboolean is_top_level = (tab != NULL);
+
+	if (is_top_level) {
+		label = g_object_get_data(G_OBJECT(tab), "label");
+		gtk_label_set_text(GTK_LABEL(label), title);
+		gtk_widget_set_tooltip_text(tab, title);
+	}
+}
+
+/* exported interface documented in gtk/tabs.h */
 void nsgtk_tab_close_current(GtkNotebook *notebook)
 {
 	gint curr_page = gtk_notebook_get_current_page(notebook);

@@ -1776,7 +1776,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	gtk_toolbar_set_show_arrow(g->tool_bar, TRUE);
 	gtk_widget_show_all(GTK_WIDGET(g->tool_bar));
-	nsgtk_tab_init(GTK_WIDGET(g->notebook));
+	nsgtk_tab_init(g->notebook);
 
 	gtk_widget_set_size_request(GTK_WIDGET(
 			g->buttons[HISTORY_BUTTON]->button), 20, -1);
