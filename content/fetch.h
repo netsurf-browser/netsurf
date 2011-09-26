@@ -120,6 +120,18 @@ typedef void (*fetcher_free_fetch)(void *);
 typedef void (*fetcher_poll_fetcher)(lwc_string *);
 typedef void (*fetcher_finalise)(lwc_string *);
 
+/** Register a fetcher for a scheme
+ *
+ * \param scheme	scheme fetcher is for (caller relinquishes ownership)
+ * \param initialiser	fetcher initialiser
+ * \param setup_fetch	fetcher fetch setup function
+ * \param start_fetch	fetcher fetch start function
+ * \param abort_fetch	fetcher fetch abort function
+ * \param free_fetch	fetcher fetch free function
+ * \param poll_fetcher	fetcher poll function
+ * \param finaliser	fetcher finaliser
+ * \return true iff success
+ */
 bool fetch_add_fetcher(lwc_string *scheme,
                        fetcher_initialise initialiser,
                        fetcher_setup_fetch setup_fetch,
