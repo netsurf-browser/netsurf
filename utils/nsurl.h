@@ -94,8 +94,7 @@ void nsurl_unref(nsurl *url);
  *
  * If return value != NSERROR_OK, match will be false.
  */
-nserror nsurl_compare(const nsurl *url1, const nsurl *url2,
-		nsurl_component parts, bool *match);
+bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts);
 
 
 /**

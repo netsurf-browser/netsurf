@@ -923,76 +923,77 @@ void nsurl_unref(nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
-nserror nsurl_compare(const nsurl *url1, const nsurl *url2,
-		nsurl_component parts, bool *match)
+bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts)
 {
+	bool match = true;
+
 	assert(url1 != NULL);
 	assert(url2 != NULL);
-
-	*match = true;
 
 	/* Compare URL components */
 
 	/* Path, host and query first, since they're most likely to differ */
 
 	if (parts & NSURL_PATH) {
-		nsurl__component_compare(url1->path, url2->path, match);
+		nsurl__component_compare(url1->path, url2->path, &match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_HOST) {
-		nsurl__component_compare(url1->host, url2->host, match);
+		nsurl__component_compare(url1->host, url2->host, &match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_QUERY) {
-		nsurl__component_compare(url1->query, url2->query, match);
+		nsurl__component_compare(url1->query, url2->query, &match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_SCHEME) {
-		nsurl__component_compare(url1->scheme, url2->scheme, match);
+		nsurl__component_compare(url1->scheme, url2->scheme, &match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_USERNAME) {
-		nsurl__component_compare(url1->username, url2->username, match);
+		nsurl__component_compare(url1->username, url2->username,
+				&match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_PASSWORD) {
-		nsurl__component_compare(url1->password, url2->password, match);
+		nsurl__component_compare(url1->password, url2->password,
+				&match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_PORT) {
-		nsurl__component_compare(url1->port, url2->port, match);
+		nsurl__component_compare(url1->port, url2->port, &match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
 	if (parts & NSURL_FRAGMENT) {
-		nsurl__component_compare(url1->fragment, url2->fragment, match);
+		nsurl__component_compare(url1->fragment, url2->fragment,
+				&match);
 
-		if (*match == false)
-			return NSERROR_OK;
+		if (match == false)
+			return false;
 	}
 
-	*match = true;
-	return NSERROR_OK;
+	return true;
 }
 
 
