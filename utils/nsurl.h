@@ -138,7 +138,6 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
  *    NSURL_CREDENTIALS
  *    NSURL_HOST
  *    NSURL_PORT
- *    NSURL_AUTHORITY
  *    NSURL_PATH
  *    NSURL_QUERY
  *    NSURL_FRAGMENT
