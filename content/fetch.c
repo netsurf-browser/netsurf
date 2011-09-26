@@ -333,6 +333,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 
 	/* these aren't needed past here */
 	free(scheme);
+	free(host);
 	free(ref_scheme);
 
 	/* Dump us in the queue and ask the queue to run. */
