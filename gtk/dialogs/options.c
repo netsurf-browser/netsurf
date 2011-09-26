@@ -70,7 +70,6 @@ DECLARE(checkHoverURLs);
 DECLARE(checkDisplayRecentURLs);
 DECLARE(comboLanguage);
 DECLARE(checkSendReferer);
-DECLARE(checkShowSingleTab);
 
 DECLARE(comboProxyType);
 DECLARE(entryProxyHost);
@@ -103,8 +102,12 @@ DECLARE(spinDiscCacheAge);
 DECLARE(checkClearDownloads);
 DECLARE(checkRequestOverwrite);
 DECLARE(fileChooserDownloads);
+/* Tabs */
+DECLARE(checkShowSingleTab);
 DECLARE(checkFocusNew);
 DECLARE(checkNewBlank);
+DECLARE(comboTabPosition);
+
 DECLARE(checkUrlSearch);
 DECLARE(comboSearch);
 DECLARE(combotheme);
@@ -198,6 +201,8 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 	CONNECT(fontPreview, "clicked");
 	
 	CONNECT(comboButtonType, "changed");
+
+	CONNECT(comboTabPosition, "changed");
 
 	CONNECT(spinMemoryCacheSize, "value-changed");
 	CONNECT(spinDiscCacheAge, "value-changed");
@@ -395,6 +400,8 @@ void nsgtk_options_load(void)
 	SET_BUTTON(fontPreview);
 	
 	SET_COMBO(comboButtonType, option_button_type -1);
+
+	SET_COMBO(comboTabPosition, option_position_tab);
 
 	SET_SPIN(spinMemoryCacheSize, option_memory_cache_size >> 20);
 	SET_SPIN(spinDiscCacheAge, option_disc_cache_age);
@@ -754,6 +761,19 @@ COMBO_CHANGED(comboButtonType, option_button_type)
 		default:
 			break;
 		}
+		current = nsgtk_scaffolding_iterate(current);
+	}
+END_HANDLER
+
+COMBO_CHANGED(comboTabPosition, option_position_tab)
+	nsgtk_scaffolding *current = scaf_list;
+	option_button_type++;
+	/* value of 0 is reserved for 'unset' */
+	while (current)	{
+		nsgtk_scaffolding_reset_offset(current);
+
+		nsgtk_reflow_all_windows();
+
 		current = nsgtk_scaffolding_iterate(current);
 	}
 END_HANDLER

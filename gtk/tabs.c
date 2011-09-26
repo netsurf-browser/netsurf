@@ -124,6 +124,29 @@ static void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 	nsgtk_scaffolding_set_top_level(gw);
 }
 
+static void
+nsgtk_tab_orientation(GtkNotebook *notebook)
+{
+	switch (option_position_tab) {
+	case 0:
+		gtk_notebook_set_tab_pos(notebook, GTK_POS_TOP);
+		break;
+
+	case 1:
+		gtk_notebook_set_tab_pos(notebook, GTK_POS_LEFT);
+		break;
+
+	case 2:
+		gtk_notebook_set_tab_pos(notebook, GTK_POS_RIGHT);
+		break;
+
+	case 3:
+		gtk_notebook_set_tab_pos(notebook, GTK_POS_BOTTOM);
+		break;
+
+	}
+}
+
 /** callback to alter tab visibility when pages are added or removed */
 static void 
 nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
@@ -139,6 +162,7 @@ nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
 /* exported interface documented in gtk/tabs.h */
 void nsgtk_tab_options_changed(GtkNotebook *notebook)
 {
+	nsgtk_tab_orientation(notebook);
         nsgtk_tab_visibility_update(notebook, NULL, 0);
 }
 

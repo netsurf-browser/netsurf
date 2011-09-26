@@ -37,6 +37,7 @@ extern bool option_new_blank;
 extern char *option_hotlist_path;
 extern bool option_source_tab;
 extern int option_current_theme;
+extern int option_position_tab;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_render_resample = true; \
@@ -54,7 +55,8 @@ bool option_focus_new = false; \
 bool option_new_blank = false; \
 char *option_hotlist_path = NULL; \
 bool option_source_tab = false;\
-int option_current_theme = 0;
+int option_current_theme = 0;\
+int option_position_tab = 0;
 
 #define EXTRA_OPTION_TABLE \
 { "render_resample",	OPTION_BOOL,	&option_render_resample }, \
@@ -72,6 +74,7 @@ int option_current_theme = 0;
 { "new_blank",		OPTION_BOOL,	&option_new_blank}, \
 { "hotlist_path",	OPTION_STRING,  &option_hotlist_path}, \
 { "source_tab",		OPTION_BOOL,	&option_source_tab},\
-{ "current_theme",	OPTION_INTEGER,	&option_current_theme}
+{ "current_theme",	OPTION_INTEGER,	&option_current_theme}, \
+{ "position_tab",	OPTION_INTEGER,	&option_position_tab}
 
 #endif
