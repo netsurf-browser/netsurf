@@ -39,6 +39,8 @@
 #include <limits.h>
 #include <stdarg.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "content/dirlist.h"
 #include "content/fetch.h"
@@ -486,13 +488,13 @@ fetch_about_config_handler_aborted:
 
 
 /** callback to initialise the about fetcher. */
-static bool fetch_about_initialise(const char *scheme)
+static bool fetch_about_initialise(lwc_string *scheme)
 {
 	return true;
 }
 
 /** callback to initialise the about fetcher. */
-static void fetch_about_finalise(const char *scheme)
+static void fetch_about_finalise(lwc_string *scheme)
 {
 }
 
@@ -561,7 +563,7 @@ static void fetch_about_abort(void *ctx)
 
 
 /** callback to poll for additional about fetch contents */
-static void fetch_about_poll(const char *scheme)
+static void fetch_about_poll(lwc_string *scheme)
 {
 	struct fetch_about_context *c, *next;
 
@@ -603,7 +605,15 @@ static void fetch_about_poll(const char *scheme)
 
 void fetch_about_register(void)
 {
-	fetch_add_fetcher("about",
+	lwc_string *scheme;
+
+	if (lwc_intern_string("about", SLEN("about"),
+			&scheme) != lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"about\").");
+	}
+
+	fetch_add_fetcher(scheme,
 		fetch_about_initialise,
 		fetch_about_setup,
 		fetch_about_start,

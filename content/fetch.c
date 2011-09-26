@@ -59,7 +59,7 @@ bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
 
 /** Information about a fetcher for a given scheme. */
 typedef struct scheme_fetcher_s {
-	char *scheme_name;		/**< The scheme. */
+	lwc_string *scheme_name;		/**< The scheme. */
 	fetcher_setup_fetch setup_fetch;	/**< Set up a fetch. */
 	fetcher_start_fetch start_fetch;	/**< Start a fetch. */
 	fetcher_abort_fetch abort_fetch;	/**< Abort a fetch. */
@@ -129,7 +129,7 @@ void fetch_quit(void)
 	while (fetchers != NULL) {
 		if (fetchers->refcount != 1) {
 			LOG(("Fetcher for scheme %s still active?!",
-					fetchers->scheme_name));
+					lwc_string_data(fetchers->scheme_name)));
 			/* We shouldn't do this, but... */
 			fetchers->refcount = 1;
 		}
@@ -138,7 +138,7 @@ void fetch_quit(void)
 }
 
 
-bool fetch_add_fetcher(const char *scheme,
+bool fetch_add_fetcher(lwc_string *scheme,
 		  fetcher_initialise initialiser,
 		  fetcher_setup_fetch setup_fetch,
 		  fetcher_start_fetch start_fetch,
@@ -155,12 +155,7 @@ bool fetch_add_fetcher(const char *scheme,
 		finaliser(scheme);
 		return false;
 	}
-	new_fetcher->scheme_name = strdup(scheme);
-	if (new_fetcher->scheme_name == NULL) {
-		free(new_fetcher);
-		finaliser(scheme);
-		return false;
-	}
+	new_fetcher->scheme_name = scheme;
 	new_fetcher->refcount = 0;
 	new_fetcher->setup_fetch = setup_fetch;
 	new_fetcher->start_fetch = start_fetch;
@@ -179,7 +174,7 @@ void fetch_unref_fetcher(scheme_fetcher *fetcher)
 {
 	if (--fetcher->refcount == 0) {
 		fetcher->finaliser(fetcher->scheme_name);
-		free(fetcher->scheme_name);
+		lwc_string_unref(fetcher->scheme_name);
 		if (fetcher == fetchers) {
 			fetchers = fetcher->next_fetcher;
 			if (fetchers)
@@ -310,7 +305,8 @@ struct fetch * fetch_start(const char *url, const char *referer,
 
 	/* Pick the scheme ops */
 	while (fetcher) {
-		if (strcmp(fetcher->scheme_name, scheme) == 0) {
+		if (strcmp(lwc_string_data(fetcher->scheme_name),
+				scheme) == 0) {
 			fetch->ops = fetcher;
 			break;
 		}
@@ -508,7 +504,8 @@ void fetch_poll(void)
 	if (!fetch_active)
 		return; /* No point polling, there's no fetch active. */
 	while (fetcher != NULL) {
-		/* LOG(("Polling fetcher for %s", fetcher->scheme_name)); */
+		/* LOG(("Polling fetcher for %s",
+				lwc_string_data(fetcher->scheme_name))); */
 		next_fetcher = fetcher->next_fetcher;
 		fetcher->poll_fetcher(fetcher->scheme_name);
 		fetcher = next_fetcher;
@@ -528,17 +525,26 @@ bool fetch_can_fetch(const char *url)
 	const char *semi;
 	size_t len;
 	scheme_fetcher *fetcher = fetchers;
+	lwc_string *scheme;
+	bool match;
 
 	if ((semi = strchr(url, ':')) == NULL)
 		return false;
 	len = semi - url;
 
+	if (lwc_intern_string(url, len, &scheme) != lwc_error_ok)
+		return false;
+
 	while (fetcher != NULL) {
-		if (strlen(fetcher->scheme_name) == len &&
-		    strncmp(fetcher->scheme_name, url, len) == 0)
+		lwc_string_isequal(fetcher->scheme_name, scheme, &match);
+		if (match == true) {
+			lwc_string_unref(scheme);
 			return true;
+		}
 		fetcher = fetcher->next_fetcher;
 	}
+
+	lwc_string_unref(scheme);
 
 	return false;
 }

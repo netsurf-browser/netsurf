@@ -37,6 +37,8 @@
 #include <time.h>
 #include <sys/stat.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include <openssl/ssl.h>
 #include "content/fetch.h"
@@ -105,8 +107,8 @@ static bool curl_with_openssl;
 static char fetch_error_buffer[CURL_ERROR_SIZE]; /**< Error buffer for cURL. */
 static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
-static bool fetch_curl_initialise(const char *scheme);
-static void fetch_curl_finalise(const char *scheme);
+static bool fetch_curl_initialise(lwc_string *scheme);
+static void fetch_curl_finalise(lwc_string *scheme);
 static void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -122,7 +124,7 @@ static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx,
 static void fetch_curl_abort(void *vf);
 static void fetch_curl_stop(struct curl_fetch_info *f);
 static void fetch_curl_free(void *f);
-static void fetch_curl_poll(const char *scheme_ignored);
+static void fetch_curl_poll(lwc_string *scheme_ignored);
 static void fetch_curl_done(CURL *curl_handle, CURLcode result);
 static int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 		double ultotal, double ulnow);
@@ -155,6 +157,7 @@ void fetch_curl_register(void)
 	CURLcode code;
 	curl_version_info_data *data;
 	int i;
+	lwc_string *scheme;
 
 	LOG(("curl_version %s", curl_version()));
 
@@ -224,19 +227,33 @@ void fetch_curl_register(void)
 	data = curl_version_info(CURLVERSION_NOW);
 
 	for (i = 0; data->protocols[i]; i++) {
-		/* Ignore non-http(s) protocols */
-		if (strcmp(data->protocols[i], "http") != 0 &&
-				strcmp(data->protocols[i], "https") != 0)
-			continue;
+		if (strcmp(data->protocols[i], "http") == 0) {
+			if (lwc_intern_string("http", SLEN("http"),
+					&scheme) != lwc_error_ok) {
+				die("Failed to initialise the fetch module "
+						"(couldn't intern \"http\").");
+			}
 
-		if (!fetch_add_fetcher(data->protocols[i],
-				       fetch_curl_initialise,
-				       fetch_curl_setup,
-				       fetch_curl_start,
-				       fetch_curl_abort,
-				       fetch_curl_free,
-				       fetch_curl_poll,
-				       fetch_curl_finalise)) {
+		} else if (strcmp(data->protocols[i], "https") == 0) {
+			if (lwc_intern_string("https", SLEN("https"),
+					&scheme) != lwc_error_ok) {
+				die("Failed to initialise the fetch module "
+						"(couldn't intern \"https\").");
+			}
+
+		} else {
+			/* Ignore non-http(s) protocols */
+			continue;
+		}
+
+		if (!fetch_add_fetcher(scheme,
+				fetch_curl_initialise,
+				fetch_curl_setup,
+				fetch_curl_start,
+				fetch_curl_abort,
+				fetch_curl_free,
+				fetch_curl_poll,
+				fetch_curl_finalise)) {
 			LOG(("Unable to register cURL fetcher for %s",
 					data->protocols[i]));
 		}
@@ -253,9 +270,9 @@ curl_easy_setopt_failed:
  * Initialise a cURL fetcher.
  */
 
-bool fetch_curl_initialise(const char *scheme)
+bool fetch_curl_initialise(lwc_string *scheme)
 {
-	LOG(("Initialise cURL fetcher for %s", scheme));
+	LOG(("Initialise cURL fetcher for %s", lwc_string_data(scheme)));
 	curl_fetchers_registered++;
 	return true; /* Always succeeds */
 }
@@ -265,10 +282,10 @@ bool fetch_curl_initialise(const char *scheme)
  * Finalise a cURL fetcher
  */
 
-void fetch_curl_finalise(const char *scheme)
+void fetch_curl_finalise(lwc_string *scheme)
 {
 	curl_fetchers_registered--;
-	LOG(("Finalise cURL fetcher %s", scheme));
+	LOG(("Finalise cURL fetcher %s", lwc_string_data(scheme)));
 	if (curl_fetchers_registered == 0) {
 		CURLMcode codem;
 		/* All the fetchers have been finalised. */
@@ -716,7 +733,7 @@ void fetch_curl_free(void *vf)
  * Must be called regularly to make progress on fetches.
  */
 
-void fetch_curl_poll(const char *scheme_ignored)
+void fetch_curl_poll(lwc_string *scheme_ignored)
 {
 	int running, queue;
 	CURLMcode codem;

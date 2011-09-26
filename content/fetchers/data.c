@@ -27,6 +27,8 @@
 
 #include <curl/curl.h>		/* for URL unescaping functions */
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "content/fetch.h"
 #include "content/fetchers/data.h"
@@ -58,18 +60,18 @@ static struct fetch_data_context *ring = NULL;
 
 static CURL *curl;
 
-static bool fetch_data_initialise(const char *scheme)
+static bool fetch_data_initialise(lwc_string *scheme)
 {
-	LOG(("fetch_data_initialise called for %s", scheme));
+	LOG(("fetch_data_initialise called for %s", lwc_string_data(scheme)));
 	if ( (curl = curl_easy_init()) == NULL)
 		return false;
 	else
 		return true;
 }
 
-static void fetch_data_finalise(const char *scheme)
+static void fetch_data_finalise(lwc_string *scheme)
 {
-	LOG(("fetch_data_finalise called for %s", scheme));
+	LOG(("fetch_data_finalise called for %s", lwc_string_data(scheme)));
 	curl_easy_cleanup(curl);
 }
 
@@ -226,7 +228,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	return true;
 }
 
-static void fetch_data_poll(const char *scheme)
+static void fetch_data_poll(lwc_string *scheme)
 {
 	struct fetch_data_context *c, *next;
 	
@@ -306,7 +308,14 @@ static void fetch_data_poll(const char *scheme)
 
 void fetch_data_register(void)
 {
-	fetch_add_fetcher("data",
+	lwc_string *scheme;
+
+	if (lwc_intern_string("data", SLEN("data"), &scheme) != lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"data\").");
+	}
+
+	fetch_add_fetcher(scheme,
 		fetch_data_initialise,
 		fetch_data_setup,
 		fetch_data_start,

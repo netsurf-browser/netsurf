@@ -34,6 +34,8 @@
 #include <limits.h>
 #include <stdarg.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "content/dirlist.h"
 #include "content/fetch.h"
@@ -149,13 +151,13 @@ fetch_resource_notfound_handler_aborted:
 
 
 /** callback to initialise the resource fetcher. */
-static bool fetch_resource_initialise(const char *scheme)
+static bool fetch_resource_initialise(lwc_string *scheme)
 {
 	return true;
 }
 
 /** callback to initialise the resource fetcher. */
-static void fetch_resource_finalise(const char *scheme)
+static void fetch_resource_finalise(lwc_string *scheme)
 {
 }
 
@@ -225,7 +227,7 @@ static void fetch_resource_abort(void *ctx)
 
 
 /** callback to poll for additional resource fetch contents */
-static void fetch_resource_poll(const char *scheme)
+static void fetch_resource_poll(lwc_string *scheme)
 {
 	struct fetch_resource_context *c, *next;
 
@@ -267,7 +269,15 @@ static void fetch_resource_poll(const char *scheme)
 
 void fetch_resource_register(void)
 {
-	fetch_add_fetcher("resource",
+	lwc_string *scheme;
+
+	if (lwc_intern_string("resource", SLEN("resource"),
+			&scheme) != lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"resource\").");
+	}
+
+	fetch_add_fetcher(scheme,
 		fetch_resource_initialise,
 		fetch_resource_setup,
 		fetch_resource_start,

@@ -34,6 +34,8 @@
 #include <limits.h>
 #include <stdarg.h>
 
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 #include "content/dirlist.h"
 #include "content/fetch.h"
@@ -98,13 +100,13 @@ static bool fetch_file_send_header(struct fetch_file_context *ctx,
 }
 
 /** callback to initialise the file fetcher. */
-static bool fetch_file_initialise(const char *scheme)
+static bool fetch_file_initialise(lwc_string *scheme)
 {
 	return true;
 }
 
 /** callback to initialise the file fetcher. */
-static void fetch_file_finalise(const char *scheme)
+static void fetch_file_finalise(lwc_string *scheme)
 {
 }
 
@@ -589,7 +591,7 @@ static void fetch_file_process(struct fetch_file_context *ctx)
 }
 
 /** callback to poll for additional file fetch contents */
-static void fetch_file_poll(const char *scheme)
+static void fetch_file_poll(lwc_string *scheme)
 {
 	struct fetch_file_context *c, *next;
 
@@ -631,7 +633,14 @@ static void fetch_file_poll(const char *scheme)
 
 void fetch_file_register(void)
 {
-	fetch_add_fetcher("file",
+	lwc_string *scheme;
+
+	if (lwc_intern_string("file", SLEN("file"), &scheme) != lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"file\").");
+	}
+
+	fetch_add_fetcher(scheme,
 		fetch_file_initialise,
 		fetch_file_setup,
 		fetch_file_start,

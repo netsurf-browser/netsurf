@@ -24,6 +24,9 @@
 #define _NETSURF_DESKTOP_FETCH_H_
 
 #include <stdbool.h>
+
+#include <libwapcaplet/libwapcaplet.h>
+
 #include "utils/config.h"
 
 typedef enum {
@@ -106,7 +109,7 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 
 /* API for fetchers themselves */
 
-typedef bool (*fetcher_initialise)(const char *);
+typedef bool (*fetcher_initialise)(lwc_string *);
 typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
                                      bool, const char *,
                                      const struct fetch_multipart_data *,
@@ -114,10 +117,10 @@ typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
 typedef bool (*fetcher_start_fetch)(void *);
 typedef void (*fetcher_abort_fetch)(void *);
 typedef void (*fetcher_free_fetch)(void *);
-typedef void (*fetcher_poll_fetcher)(const char *);
-typedef void (*fetcher_finalise)(const char *);
+typedef void (*fetcher_poll_fetcher)(lwc_string *);
+typedef void (*fetcher_finalise)(lwc_string *);
 
-bool fetch_add_fetcher(const char *scheme,
+bool fetch_add_fetcher(lwc_string *scheme,
                        fetcher_initialise initialiser,
                        fetcher_setup_fetch setup_fetch,
                        fetcher_start_fetch start_fetch,
