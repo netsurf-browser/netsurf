@@ -14,7 +14,7 @@ delete ram:netsurf/resources/#?.user
 copy resources/Pointers/~(.svn) ram:NetSurf/Resources/Pointers
 copy (COPYING|ChangeLog) ram:NetSurf/
 copy NetSurf ram:NetSurf/NetSurf
-copy NetSurf-Cairo ram:NetSurf/NetSurf-Cairo
+;copy NetSurf-Static ram:NetSurf/NetSurf-Cairo
 copy amiga/dist/AutoInstall ram:
 copy amiga/dist/~(.svn|AutoInstall) ram:NetSurf/
 copy amiga/pkg/drawer.info ram:NetSurf.info

@@ -3,7 +3,7 @@ Uploader:     chris@unsatisfactorysoftware.co.uk (Chris Young)
 Author:       NetSurf contributors (OS4 port by Chris Young)
 Type:         comm/www
 Version:      3.0 development (SVN 10866)
-Architecture: ppc-amigaos >= 4.0.0
+Architecture: ppc-amigaos >= 4.1.0
 
 Install manually with Installer script only -
 INTENTIONALLY NOT AVAILABLE VIA AMIUPDATE

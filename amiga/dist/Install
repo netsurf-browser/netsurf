@@ -306,7 +306,7 @@
 (set osver (/ osver 65536))
 (set #versions-available 0)
 
-(if (exists "NetSurf")
+(if (exists "NetSurf-Static")
 	(
 		(set #static-name "Static/graphics.library")
 		(set #versions-available (+ #versions-available 1))
@@ -317,7 +317,7 @@
 	)
 )
 
-(if (AND (>= osver 53) (exists "NetSurf-Cairo"))
+(if (AND (>= osver 53) (exists "NetSurf"))
 	(
 		(set #cairo-name "Shared objects/part-Cairo")
 		(set #versions-available (+ #versions-available 1))
@@ -406,7 +406,7 @@
 
 (complete 20)
 
-(set #netsurf-name (select #cairo-version "NetSurf" "NetSurf-Cairo"))
+(set #netsurf-name (select #cairo-version "NetSurf-Static" "NetSurf"))
 
 (if (= #AutoInstall 0)
 	(
