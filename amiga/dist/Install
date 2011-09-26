@@ -332,6 +332,13 @@
 
 (transcript "Versions avaiable for install: " #versions-available "  " #static-name "  " #cairo-name)
 
+(if (= #versions-available 0)
+	(
+		(abort "Did not find any compatible versions of NetSurf to install!\n\n"
+			"NetSurf requires AmigaOS 4.1 or higher.")
+	)
+)
+
 (complete 10)
 
 (if (AND (> @user-level 0) (> #versions-available 1))
