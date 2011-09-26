@@ -81,7 +81,6 @@ struct fetch {
 	bool send_referer;	/**< Valid to send the referer */
 	bool verifiable;	/**< Transaction is verifiable */
 	void *p;		/**< Private data for callback. */
-	char *host;		/**< Host part of URL. */
         lwc_string *lwc_host;	/**< Host part of URL, interned */
 	long http_code;		/**< HTTP response code, or 0. */
 	scheme_fetcher *ops;	/**< Fetcher operations for this fetch,
@@ -269,7 +268,6 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->url = strdup(url);
 	fetch->verifiable = verifiable;
 	fetch->p = p;
-	fetch->host = host;
 	fetch->http_code = 0;
 	fetch->r_prev = NULL;
 	fetch->r_next = NULL;
@@ -487,7 +485,6 @@ void fetch_free(struct fetch *f)
 	f->ops->free_fetch(f->fetcher_handle);
 	fetch_unref_fetcher(f->ops);
 	free(f->url);
-	free(f->host);
 	if (f->referer)
 		free(f->referer);
 	if (f->lwc_host != NULL)
