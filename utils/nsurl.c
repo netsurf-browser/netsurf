@@ -1182,11 +1182,10 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /* exported interface, documented in nsurl.h */
-const char *nsurl_access(const nsurl *url, size_t *url_l)
+const char *nsurl_access(const nsurl *url)
 {
 	assert(url != NULL);
 
-	*url_l = url->length;
 	return url->string;
 }
 

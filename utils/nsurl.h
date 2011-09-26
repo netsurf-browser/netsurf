@@ -125,18 +125,17 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /**
- * Access a URL (section) as a string, from a NetSurf URL object
+ * Access a NetSurf URL object as a string
  *
  * \param url	  NetSurf URL to retrieve a string pointer for.
- * \param url_l	  Returns length of returned string
  * \return the required string
  *
  * The returned string is owned by the NetSurf URL object.  It will die
  * with the NetSurf URL object.  Keep a reference to the URL if you need it.
  *
- * The length returned in url_l excludes the trailing '\0'.
+ * The returned string has a trailing '\0'.
  */
-const char *nsurl_access(const nsurl *url, size_t *url_l);
+const char *nsurl_access(const nsurl *url);
 
 
 /**
