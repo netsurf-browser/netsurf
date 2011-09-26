@@ -23,6 +23,7 @@
 #ifndef _NETSURF_UTILS_NSURL_H_
 #define _NETSURF_UTILS_NSURL_H_
 
+#include <libwapcaplet/libwapcaplet.h>
 #include "utils/errors.h"
 
 
@@ -121,6 +122,29 @@ bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts);
  */
 nserror nsurl_get(const nsurl *url, nsurl_component parts,
 		char **url_s, size_t *url_l);
+
+
+/**
+ * Get part of a URL as a lwc_string, from a NetSurf URL object
+ *
+ * \param url	  NetSurf URL object
+ * \param part	  The URL component required
+ * \return the required component as an lwc_string, or NULL
+ *
+ * The caller owns the returned lwc_string and should call lwc_string_unref
+ * when they are done with it.
+ *
+ * The valid values for the part parameter are:
+ *    NSURL_SCHEME
+ *    NSURL_USERNAME
+ *    NSURL_PASSWORD
+ *    NSURL_HOST
+ *    NSURL_PORT
+ *    NSURL_PATH
+ *    NSURL_QUERY
+ *    NSURL_FRAGMENT
+ */
+lwc_string *nsurl_get_lwc(const nsurl *url, nsurl_component part);
 
 
 /**

@@ -1183,6 +1183,51 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /* exported interface, documented in nsurl.h */
+lwc_string *nsurl_get_lwc(const nsurl *url, nsurl_component part)
+{
+	assert(url != NULL);
+
+	switch (part) {
+	case NSURL_SCHEME:
+		return (url->scheme != NULL) ?
+				lwc_string_ref(url->scheme) : NULL;
+
+	case NSURL_USERNAME:
+		return (url->username != NULL) ?
+				lwc_string_ref(url->username) : NULL;
+
+	case NSURL_PASSWORD:
+		return (url->password != NULL) ?
+				lwc_string_ref(url->password) : NULL;
+
+	case NSURL_HOST:
+		return (url->host != NULL) ?
+				lwc_string_ref(url->host) : NULL;
+
+	case NSURL_PORT:
+		return (url->port != NULL) ?
+				lwc_string_ref(url->port) : NULL;
+
+	case NSURL_PATH:
+		return (url->path != NULL) ?
+				lwc_string_ref(url->path) : NULL;
+
+	case NSURL_QUERY:
+		return (url->query != NULL) ?
+				lwc_string_ref(url->query) : NULL;
+
+	case NSURL_FRAGMENT:
+		return (url->fragment != NULL) ?
+				lwc_string_ref(url->fragment) : NULL;
+
+	default:
+		LOG(("Unsupported value passed to part param."));
+		assert(0);
+	}
+}
+
+
+/* exported interface, documented in nsurl.h */
 bool nsurl_enquire(const nsurl *url, nsurl_component part)
 {
 	assert(url != NULL);
