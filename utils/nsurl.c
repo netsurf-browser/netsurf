@@ -1186,57 +1186,62 @@ bool nsurl_enquire(const nsurl *url, nsurl_component part)
 {
 	assert(url != NULL);
 
-	if (part == NSURL_SCHEME) {
+	switch (part) {
+	case NSURL_SCHEME:
 		if (url->scheme != NULL)
 			return true;
 		else
 			return false;
 
-	} else if (part == NSURL_QUERY) {
-		if (url->query != NULL)
-			return true;
-		else
-			return false;
-
-	} else if (part == NSURL_USERNAME || part == NSURL_CREDENTIALS) {
+	case NSURL_CREDENTIALS:
+		/* Only username required for credentials section */
+		/* Fall through */
+	case NSURL_USERNAME:
 		if (url->username != NULL)
 			return true;
 		else
 			return false;
 
-	} else if (part == NSURL_PASSWORD) {
+	case NSURL_PASSWORD:
 		if (url->password != NULL)
 			return true;
 		else
 			return false;
 
-	} else if (part == NSURL_HOST) {
+	case NSURL_HOST:
 		if (url->host != NULL)
 			return true;
 		else
 			return false;
 
-	} else if (part == NSURL_PORT) {
+	case NSURL_PORT:
 		if (url->port != NULL)
 			return true;
 		else
 			return false;
 
-	} else if (part == NSURL_PATH) {
+	case NSURL_PATH:
 		if (url->path != NULL)
 			return true;
 		else
 			return false;
 
-	} else if (part == NSURL_FRAGMENT) {
+	case NSURL_QUERY:
+		if (url->query != NULL)
+			return true;
+		else
+			return false;
+
+	case NSURL_FRAGMENT:
 		if (url->fragment != NULL)
 			return true;
 		else
 			return false;
-	}
 
-	LOG(("Unsupported value passed to part param."));
-	assert(0);
+	default:
+		LOG(("Unsupported value passed to part param."));
+		assert(0);
+	}
 }
 
 
