@@ -65,7 +65,7 @@ bool search_web_new_window(struct browser_window *bw, const char *searchterm)
 		return false;
 	url = search_web_get_url(encsearchterm);
 	free(encsearchterm);
-	browser_window_create(url, bw, NULL, false, true);
+	browser_window_create(url, bw, NULL, true, true);
 	free(url);
 	return true;
 }
