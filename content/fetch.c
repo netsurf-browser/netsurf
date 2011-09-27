@@ -48,7 +48,7 @@
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 
@@ -76,12 +76,12 @@ static scheme_fetcher *fetchers = NULL;
 /** Information for a single fetch. */
 struct fetch {
 	fetch_callback callback;/**< Callback function. */
-	char *url;		/**< URL. */
-	char *referer;		/**< Referer URL. */
+	nsurl *url;		/**< URL. */
+	nsurl *referer;		/**< Referer URL. */
 	bool send_referer;	/**< Valid to send the referer */
 	bool verifiable;	/**< Transaction is verifiable */
 	void *p;		/**< Private data for callback. */
-        lwc_string *lwc_host;	/**< Host part of URL, interned */
+	lwc_string *host;	/**< Host part of URL, interned */
 	long http_code;		/**< HTTP response code, or 0. */
 	scheme_fetcher *ops;	/**< Fetcher operations for this fetch,
 				     NULL if not set. */
@@ -100,6 +100,10 @@ static void fetch_dispatch_jobs(void);
 static bool fetch_choose_and_dispatch(void);
 static bool fetch_dispatch_job(struct fetch *fetch);
 
+/* Static lwc_strings */
+static lwc_string *fetch_http_lwc;
+static lwc_string *fetch_https_lwc;
+
 
 /**
  * Initialise the fetcher.
@@ -115,6 +119,18 @@ void fetch_init(void)
 	fetch_resource_register();
 	fetch_about_register();
 	fetch_active = false;
+
+	if (lwc_intern_string("http", SLEN("http"), &fetch_http_lwc) !=
+			lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"http\").");
+	}
+
+	if (lwc_intern_string("https", SLEN("https"), &fetch_https_lwc) !=
+			lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"https\").");
+	}
 }
 
 
@@ -135,6 +151,9 @@ void fetch_quit(void)
 		}
 		fetch_unref_fetcher(fetchers);
 	}
+
+	lwc_string_unref(fetch_http_lwc);
+	lwc_string_unref(fetch_https_lwc);
 }
 
 
@@ -211,56 +230,33 @@ void fetch_unref_fetcher(scheme_fetcher *fetcher)
  *
  */
 
-struct fetch * fetch_start(const char *url, const char *referer,
+struct fetch * fetch_start(nsurl *url, nsurl *referer,
 			   fetch_callback callback,
 			   void *p, bool only_2xx, const char *post_urlenc,
 			   const struct fetch_multipart_data *post_multipart,
 			   bool verifiable, const char *headers[])
 {
-	char *host;
 	struct fetch *fetch;
-	url_func_result res;
-	char *scheme = NULL, *ref_scheme = NULL;
 	scheme_fetcher *fetcher = fetchers;
+	lwc_string *scheme;
+	bool match;
 
 	fetch = malloc(sizeof (*fetch));
 	if (fetch == NULL)
 		return NULL;
 
-	res = url_host(url, &host);
-	if (res != URL_FUNC_OK) {
-		/* we only fail memory exhaustion */
-		if (res == URL_FUNC_NOMEM)
-			goto failed;
-
-		host = strdup("");
-		if (host == NULL)
-			goto failed;
-	}
-
 	/* The URL we're fetching must have a scheme */
-	res = url_scheme(url, &scheme);
-	if (res != URL_FUNC_OK)
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	if (scheme == NULL)
 		goto failed;
 
-	if (referer) {
-		res = url_scheme(referer, &ref_scheme);
-		if (res != URL_FUNC_OK) {
-			/* we only fail memory exhaustion */
-			if (res == URL_FUNC_NOMEM)
-				goto failed;
-
-			ref_scheme = NULL;
-		}
-	}
-
 #ifdef DEBUG_FETCH_VERBOSE
-	LOG(("fetch %p, url '%s'", fetch, url));
+	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
 #endif
 
 	/* construct a new fetch structure */
 	fetch->callback = callback;
-	fetch->url = strdup(url);
+	fetch->url = nsurl_ref(url);
 	fetch->verifiable = verifiable;
 	fetch->p = p;
 	fetch->http_code = 0;
@@ -271,15 +267,14 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch->fetcher_handle = NULL;
 	fetch->ops = NULL;
 	fetch->fetch_is_active = false;
-        fetch->lwc_host = NULL;
-        
-        if (lwc_intern_string(host, strlen(host), &fetch->lwc_host) != lwc_error_ok)
-                goto failed;
+	fetch->host = nsurl_get_component(url, NSURL_HOST);
         
 	if (referer != NULL) {
-		fetch->referer = strdup(referer);
-		if (fetch->referer == NULL)
-			goto failed;
+		lwc_string *ref_scheme;
+		fetch->referer = nsurl_ref(referer);
+
+		ref_scheme = nsurl_get_component(referer, NSURL_SCHEME);
+		/* Not a problem if referer has no scheme */
 
 		/* Determine whether to send the Referer header */
 		if (option_send_referer && ref_scheme != NULL) {
@@ -293,11 +288,16 @@ struct fetch * fetch_start(const char *url, const char *referer,
 			 * request from a page served over http. The inverse
 			 * (https -> http) should not send the referer (15.1.3)
 			 */
-			if (strcasecmp(scheme, ref_scheme) == 0 ||
-					(strcasecmp(scheme, "https") == 0 &&
-					strcasecmp(ref_scheme, "http") == 0))
+			bool match1;
+			bool match2;
+			lwc_string_isequal(scheme, ref_scheme, &match);
+			lwc_string_isequal(scheme, fetch_https_lwc, &match1);
+			lwc_string_isequal(ref_scheme, fetch_http_lwc, &match2);
+			if (match == true || (match1 == true && match2 == true))
 				fetch->send_referer = true;
 		}
+		if (ref_scheme != NULL)
+			lwc_string_unref(ref_scheme);
 	}
 
 	if (fetch->url == NULL)
@@ -305,8 +305,8 @@ struct fetch * fetch_start(const char *url, const char *referer,
 
 	/* Pick the scheme ops */
 	while (fetcher) {
-		if (strcmp(lwc_string_data(fetcher->scheme_name),
-				scheme) == 0) {
+		lwc_string_isequal(fetcher->scheme_name, scheme, &match);
+		if (match == true) {
 			fetch->ops = fetcher;
 			break;
 		}
@@ -318,7 +318,8 @@ struct fetch * fetch_start(const char *url, const char *referer,
 
 	/* Got a scheme fetcher, try and set up the fetch */
 	fetch->fetcher_handle =
-		fetch->ops->setup_fetch(fetch, url, only_2xx, post_urlenc,
+		fetch->ops->setup_fetch(fetch, nsurl_access(url),
+					only_2xx, post_urlenc,
 					post_multipart, headers);
 
 	if (fetch->fetcher_handle == NULL)
@@ -328,9 +329,7 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	fetch_ref_fetcher(fetch->ops);
 
 	/* these aren't needed past here */
-	free(scheme);
-	free(host);
-	free(ref_scheme);
+	lwc_string_unref(scheme);
 
 	/* Dump us in the queue and ask the queue to run. */
 	RING_INSERT(queue_ring, fetch);
@@ -339,13 +338,16 @@ struct fetch * fetch_start(const char *url, const char *referer,
 	return fetch;
 
 failed:
-	free(host);
-	free(ref_scheme);
-	free(scheme);
-	free(fetch->url);
-	free(fetch->referer);
-        if (fetch->lwc_host != NULL)
-                lwc_string_unref(fetch->lwc_host);
+	if (scheme != NULL)
+		lwc_string_unref(scheme);
+
+	if (fetch->host != NULL)
+		lwc_string_unref(fetch->host);
+	if (fetch->url != NULL)
+		nsurl_unref(fetch->url);
+	if (fetch->referer != NULL)
+		nsurl_unref(fetch->referer);
+
 	free(fetch);
 
 	return NULL;
@@ -422,7 +424,7 @@ bool fetch_choose_and_dispatch(void)
 		 */
 		int countbyhost;
 		RING_COUNTBYLWCHOST(struct fetch, fetch_ring, countbyhost,
-				queueitem->lwc_host);
+				queueitem->host);
 		if (countbyhost < option_max_fetchers_per_host) {
 			/* We can dispatch this item in theory */
 			return fetch_dispatch_job(queueitem);
@@ -441,7 +443,7 @@ bool fetch_dispatch_job(struct fetch *fetch)
 	RING_REMOVE(queue_ring, fetch);
 #ifdef DEBUG_FETCH_VERBOSE
 	LOG(("Attempting to start fetch %p, fetcher %p, url %s", fetch,
-	     fetch->fetcher_handle, fetch->url));
+			fetch->fetcher_handle, nsurl_access(fetch->url)));
 #endif
 	if (!fetch->ops->start_fetch(fetch->fetcher_handle)) {
 		RING_INSERT(queue_ring, fetch); /* Put it back on the end of the queue */
@@ -462,7 +464,8 @@ void fetch_abort(struct fetch *f)
 {
 	assert(f);
 #ifdef DEBUG_FETCH_VERBOSE
-	LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle, f->url));
+	LOG(("fetch %p, fetcher %p, url '%s'", f, f->fetcher_handle,
+			nsurl_access(f->url)));
 #endif
 	f->ops->abort_fetch(f->fetcher_handle);
 }
@@ -479,11 +482,11 @@ void fetch_free(struct fetch *f)
 #endif
 	f->ops->free_fetch(f->fetcher_handle);
 	fetch_unref_fetcher(f->ops);
-	free(f->url);
-	if (f->referer)
-		free(f->referer);
-	if (f->lwc_host != NULL)
-                lwc_string_unref(f->lwc_host);
+	nsurl_unref(f->url);
+	if (f->referer != NULL)
+		nsurl_unref(f->referer);
+	if (f->host != NULL)
+		lwc_string_unref(f->host);
         free(f);
 }
 
@@ -520,20 +523,11 @@ void fetch_poll(void)
  * \return  true if the scheme is supported
  */
 
-bool fetch_can_fetch(const char *url)
+bool fetch_can_fetch(nsurl *url)
 {
-	const char *semi;
-	size_t len;
 	scheme_fetcher *fetcher = fetchers;
-	lwc_string *scheme;
 	bool match;
-
-	if ((semi = strchr(url, ':')) == NULL)
-		return false;
-	len = semi - url;
-
-	if (lwc_intern_string(url, len, &scheme) != lwc_error_ok)
-		return false;
+	lwc_string *scheme = nsurl_get_component(url, NSURL_SCHEME);
 
 	while (fetcher != NULL) {
 		lwc_string_isequal(fetcher->scheme_name, scheme, &match);
@@ -571,20 +565,6 @@ void fetch_change_callback(struct fetch *fetch,
 long fetch_http_code(struct fetch *fetch)
 {
 	return fetch->http_code;
-}
-
-
-/**
- * Get the referer
- *
- * \param fetch  fetch to retrieve referer from
- * \return Pointer to referer string, or NULL if none.
- */
-const char *fetch_get_referer(struct fetch *fetch)
-{
-	assert(fetch);
-
-	return fetch->referer;
 }
 
 /**
@@ -718,11 +698,10 @@ fetch_set_http_code(struct fetch *fetch, long http_code)
 	fetch->http_code = http_code;
 }
 
-const char *
-fetch_get_referer_to_send(struct fetch *fetch)
+const char *fetch_get_referer_to_send(struct fetch *fetch)
 {
 	if (fetch->send_referer)
-		return fetch->referer;
+		return nsurl_access(fetch->referer);
 	return NULL;
 }
 
@@ -738,7 +717,7 @@ fetch_set_cookie(struct fetch *fetch, const char *data)
 		/* If the transaction's verifiable, we don't require
 		 * that the request uri and the parent domain match,
 		 * so don't pass in any referer/parent in this case. */
-		urldb_set_cookie(data, fetch->url, NULL);
+		urldb_set_cookie(data, nsurl_access(fetch->url), NULL);
 	} else if (fetch->referer != NULL) {
 		/* Permit the cookie to be set if the fetch is unverifiable
 		 * and the fetch URI domain matches the referer. */
@@ -747,7 +726,8 @@ fetch_set_cookie(struct fetch *fetch, const char *data)
 		 * where a nested object requests a fetch, the origin URI
 		 * is the nested object's parent URI, whereas the referer
 		 * for the fetch will be the nested object's URI. */
-		urldb_set_cookie(data, fetch->url, fetch->referer);
+		urldb_set_cookie(data, nsurl_access(fetch->url),
+				nsurl_access(fetch->referer));
 	}
 }
 

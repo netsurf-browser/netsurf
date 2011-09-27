@@ -28,6 +28,7 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
+#include "utils/nsurl.h"
 
 typedef enum {
               FETCH_PROGRESS,
@@ -84,7 +85,7 @@ typedef void (*fetch_callback)(fetch_msg msg, void *p, const void *data,
 
 
 void fetch_init(void);
-struct fetch * fetch_start(const char *url, const char *referer,
+struct fetch * fetch_start(nsurl *url, nsurl *referer,
 		fetch_callback callback,
 		void *p, bool only_2xx, const char *post_urlenc,
 		const struct fetch_multipart_data *post_multipart,
@@ -95,12 +96,11 @@ void fetch_poll(void);
 void fetch_quit(void);
 const char *fetch_filetype(const char *unix_path);
 char *fetch_mimetype(const char *ro_path);
-bool fetch_can_fetch(const char *url);
+bool fetch_can_fetch(nsurl *url);
 void fetch_change_callback(struct fetch *fetch,
                            fetch_callback callback,
                            void *p);
 long fetch_http_code(struct fetch *fetch);
-const char *fetch_get_referer(struct fetch *fetch);
 bool fetch_get_verifiable(struct fetch *fetch);
 
 void fetch_multipart_data_destroy(struct fetch_multipart_data *list);

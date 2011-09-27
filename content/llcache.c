@@ -351,10 +351,19 @@ nserror llcache_handle_retrieve(const char *url, uint32_t flags,
 	nserror error;
 	llcache_object_user *user;
 	llcache_object *object;
+	nsurl *nsurl;
+
+	/* make a nsurl */
+	error = nsurl_create(url, &nsurl);
+	if (error != NSERROR_OK)
+		return error;
 
 	/* Can we fetch this URL at all? */
-	if (fetch_can_fetch(url) == false)
+	if (fetch_can_fetch(nsurl) == false)
 		return NSERROR_NO_FETCH_HANDLER;
+
+	/* done with nsurl */
+	nsurl_unref(nsurl);
 
 	/* Create a new object user */
 	error = llcache_object_user_new(cb, pw, &user);
@@ -1051,6 +1060,8 @@ nserror llcache_object_refetch(llcache_object *object)
 	struct fetch_multipart_data *multipart = NULL;
 	char **headers = NULL;
 	int header_idx = 0;
+	nsurl*nsurl, *nsurl_ref;
+	nserror error;
 
 	if (object->fetch.post != NULL) {
 		if (object->fetch.post->type == LLCACHE_POST_URL_ENCODED)
@@ -1109,13 +1120,34 @@ nserror llcache_object_refetch(llcache_object *object)
 	LOG(("Refetching %p", object));
 #endif
 
+	/* make nsurls */
+	error = nsurl_create(object->url, &nsurl);
+	if (error != NSERROR_OK) {
+		free(headers);
+		return error;
+	}
+	if (object->fetch.referer != NULL) {
+		error = nsurl_create(object->fetch.referer, &nsurl_ref);
+		if (error != NSERROR_OK) {
+			nsurl_unref(nsurl);
+			free(headers);
+			return error;
+		}
+	} else {
+		nsurl_ref = NULL;
+	}
+
 	/* Kick off fetch */
-	object->fetch.fetch = fetch_start(object->url, object->fetch.referer,
+	object->fetch.fetch = fetch_start(nsurl, nsurl_ref,
 			llcache_fetch_callback, object,
 			object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
 			urlenc, multipart,
 			object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
 			(const char **) headers);
+
+	nsurl_unref(nsurl);
+	if (nsurl_ref != NULL)
+		nsurl_unref(nsurl_ref);
 
 	/* Clean up cache-control headers */
 	while (--header_idx >= 0)
@@ -2000,6 +2032,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	url_func_result result;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
+	nsurl *nsurl;
 
 	/* Abort fetch for this object */
 	fetch_abort(object->fetch.fetch);
@@ -2074,11 +2107,20 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	free(scheme);
 	free(object_scheme);
 
-	/* Bail out if we've no way of handling this URL */
-	if (fetch_can_fetch(url) == false) {
+	/* make a nsurl */
+	error = nsurl_create(url, &nsurl);
+	if (error != NSERROR_OK) {
 		free(url);
+		return error;
+	}
+
+	/* Bail out if we've no way of handling this URL */
+	if (fetch_can_fetch(nsurl) == false) {
+		free(url);
+		nsurl_unref(nsurl);
 		return NSERROR_OK;
 	}
+	nsurl_unref(nsurl);
 
 	if (http_code == 301 || http_code == 302 || http_code == 303) {
 		/* 301, 302, 303 redirects are all unconditional GET requests */

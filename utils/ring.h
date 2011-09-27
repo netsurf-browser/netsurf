@@ -113,10 +113,10 @@
 		ringtype *p = ring; \
 		sizevar = 0; \
 		do { \
-                        bool matches = false; \
-			if (lwc_string_caseless_isequal(p->lwc_host, \
-                                                        lwc_hostname, \
-                                                        &matches) == lwc_error_ok) \
+			bool matches = false; \
+			/* nsurl guarantees lowercase host */ \
+			if (lwc_string_isequal(p->host, lwc_hostname, \
+					&matches) == lwc_error_ok) \
                 		if (matches) \
 					sizevar++; \
 			p = p->r_next; \
