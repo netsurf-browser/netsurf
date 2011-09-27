@@ -523,7 +523,7 @@ void fetch_poll(void)
  * \return  true if the scheme is supported
  */
 
-bool fetch_can_fetch(nsurl *url)
+bool fetch_can_fetch(const nsurl *url)
 {
 	scheme_fetcher *fetcher = fetchers;
 	bool match;

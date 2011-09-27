@@ -96,7 +96,7 @@ void fetch_poll(void);
 void fetch_quit(void);
 const char *fetch_filetype(const char *unix_path);
 char *fetch_mimetype(const char *ro_path);
-bool fetch_can_fetch(nsurl *url);
+bool fetch_can_fetch(const nsurl *url);
 void fetch_change_callback(struct fetch *fetch,
                            fetch_callback callback,
                            void *p);
