@@ -18,6 +18,8 @@
 
 /** \file
  * MIME type sniffer (implementation)
+ *
+ * Spec version: 2011-09-26
  */
 
 #include<string.h>
@@ -27,6 +29,13 @@
 #include "content/mimesniff.h"
 #include "utils/http.h"
 #include "utils/utils.h"
+
+struct map_s {
+	const uint8_t *sig;
+	size_t len;
+	bool safe;
+	lwc_string **type;
+};
 
 static lwc_string *unknown_unknown;
 static lwc_string *application_unknown;
@@ -44,7 +53,7 @@ static lwc_string *image_vnd_microsoft_icon;
 static lwc_string *image_webp;
 static lwc_string *application_rss_xml;
 static lwc_string *application_atom_xml;
-static lwc_string *audio_x_wave;
+static lwc_string *audio_wave;
 static lwc_string *application_ogg;
 static lwc_string *video_webm;
 static lwc_string *application_x_rar_compressed;
@@ -52,6 +61,7 @@ static lwc_string *application_zip;
 static lwc_string *application_x_gzip;
 static lwc_string *application_postscript;
 static lwc_string *application_pdf;
+static lwc_string *video_mp4;
 
 nserror mimesniff_init(void)
 {
@@ -78,7 +88,7 @@ nserror mimesniff_init(void)
 	SINIT(image_webp,                   "image/webp");
 	SINIT(application_rss_xml,          "application/rss+xml");
 	SINIT(application_atom_xml,         "application/atom+xml");
-	SINIT(audio_x_wave,                 "audio/x-wave");
+	SINIT(audio_wave,                   "audio/wave");
 	SINIT(application_ogg,              "application/ogg");
 	SINIT(video_webm,                   "video/webm");
 	SINIT(application_x_rar_compressed, "application/x-rar-compressed");
@@ -86,6 +96,7 @@ nserror mimesniff_init(void)
 	SINIT(application_x_gzip,           "application/x-gzip");
 	SINIT(application_postscript,       "application/postscript");
 	SINIT(application_pdf,              "application/pdf");
+	SINIT(video_mp4,                    "video/mp4");
 #undef SINIT
 
 	return NSERROR_OK;
@@ -93,6 +104,7 @@ nserror mimesniff_init(void)
 
 void mimesniff_fini(void)
 {
+	lwc_string_unref(video_mp4);
 	lwc_string_unref(application_pdf);
 	lwc_string_unref(application_postscript);
 	lwc_string_unref(application_x_gzip);
@@ -100,7 +112,7 @@ void mimesniff_fini(void)
 	lwc_string_unref(application_x_rar_compressed);
 	lwc_string_unref(video_webm);
 	lwc_string_unref(application_ogg);
-	lwc_string_unref(audio_x_wave);
+	lwc_string_unref(audio_wave);
 	lwc_string_unref(application_atom_xml);
 	lwc_string_unref(application_rss_xml);
 	lwc_string_unref(image_webp);
@@ -137,12 +149,66 @@ static bool mimesniff__has_binary_octets(const uint8_t *data, size_t len)
 	return data != end;
 }
 
-struct map_s {
-	const uint8_t *sig;
-	size_t len;
-	bool safe;
-	lwc_string **type;
-};
+static nserror mimesniff__match_mp4(const uint8_t *data, size_t len,
+		lwc_string **effective_type)
+{
+	size_t box_size, i;
+
+	/* ISO/IEC 14496-12:2008 $4.3 says (effectively):
+	 *
+	 * struct ftyp_box {
+	 *   uint32_t size; (in octets, including size+type words)
+	 *   uint32_t type; (== 'ftyp')
+	 *   uint32_t major_brand;
+	 *   uint32_t minor_version;
+	 *   uint32_t compatible_brands[];
+	 * }
+	 *
+	 * Note 1: A size of 0 implies that the length of the box is designated 
+	 * by the remaining input data (and thus may only occur in the last 
+	 * box in the input). We'll reject this below, as it's pointless 
+	 * sniffing input that contains no boxes other than 'ftyp'.
+	 *
+	 * Note 2: A size of 1 implies an additional uint64_t field after 
+	 * the type which contains the extended box size. We'll reject this, 
+	 * too, as it implies a minimum of (2^32 - 24) / 4 compatible brands, 
+	 * which is decidely unlikely.
+	 */
+
+	/* Sniffing spec says 4; we use 12, as this is the minimum number of
+	 * octets needed to sniff useful information out of an 'ftyp' box
+	 * (i.e. the size, type, and major_brand words). */
+	if (len < 12)
+		return NSERROR_NOT_FOUND;
+
+	/* Box size is big-endian */
+	box_size = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+
+	/* Require that we can read the entire box, and reject bad box sizes */
+	if (len < box_size || box_size % 4 != 0)
+		return NSERROR_NOT_FOUND;
+
+	/* Ensure this is an 'ftyp' box */
+	if (data[5] != 'f' || data[6] != 't' || 
+			data[7] != 'y' || data[8] != 'p')
+		return NSERROR_NOT_FOUND;
+
+	/* Check if major brand begins with 'mp4' */
+	if (data[9] == 'm' && data[10] == 'p' && data[11] == '4') {
+		*effective_type = lwc_string_ref(video_mp4);
+		return NSERROR_OK;
+	}
+
+	/* Search each compatible brand in the box for "mp4" */
+	for (i = 16; i <= box_size - 4; i += 4) {
+		if (data[i] == 'm' && data[i+1] == 'p' && data[i+2] == '4') {
+			*effective_type = lwc_string_ref(video_mp4);
+			return NSERROR_OK;
+		}
+	}
+
+	return NSERROR_NOT_FOUND;
+}
 
 static nserror mimesniff__match_unknown_ws(const uint8_t *data, size_t len,
 		lwc_string **effective_type)
@@ -245,8 +311,8 @@ static nserror mimesniff__match_unknown_riff(const uint8_t *data, size_t len,
 {
 #define SIG(t, s, x) { (const uint8_t *) s, SLEN(s), x, t }
 	static const struct map_s riff_match_types[] = {
-		SIG(&image_webp,   "WEBPVP", true),
-		SIG(&audio_x_wave, "WAVE",   true),
+		SIG(&image_webp, "WEBPVP", true),
+		SIG(&audio_wave, "WAVE",   true),
 		{ NULL, 0, false, NULL }
 	};
 #undef SIG
@@ -319,6 +385,9 @@ static nserror mimesniff__match_unknown(const uint8_t *data, size_t len,
 
 	if (mimesniff__match_unknown_ws(data, len,
 			effective_type) == NSERROR_OK)
+		return NSERROR_OK;
+
+	if (mimesniff__match_mp4(data, len, effective_type) == NSERROR_OK)
 		return NSERROR_OK;
 
 	return NSERROR_NOT_FOUND;

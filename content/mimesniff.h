@@ -32,7 +32,7 @@ struct llcache_handle;
 
 /**
  * Compute the effective MIME type for an object using the sniffing
- * algorithm described in draft-abarth-mime-sniff-06.
+ * algorithm described in http://mimesniff.spec.whatwg.org/
  *
  * \param handle          Source data handle to sniff
  * \param data            First data chunk, or NULL
