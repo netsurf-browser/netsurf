@@ -39,6 +39,7 @@
 #include "riscos/uri.h"
 #include "riscos/url_protocol.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 /**
@@ -52,6 +53,7 @@ void ro_url_message_received(wimp_message *message)
 	inetsuite_message_open_url *url_message =
 			(inetsuite_message_open_url*) &message->data;
 	os_error *error;
+	nsurl *nsurl;
 
 	/* If the url_message->indirect.tag is non-zero,
 	 * then the message data is contained within the message block.
@@ -98,10 +100,18 @@ void ro_url_message_received(wimp_message *message)
 		url[i] = 0;
 	}
 
-	if (!fetch_can_fetch(url)) {
+	if (nsurl_create(url, &nsurl) != NSERROR_OK) {
 		free(url);
 		return;
 	}
+
+	if (!fetch_can_fetch(nsurl)) {
+		nsurl_unref(nsurl);
+		free(url);
+		return;
+	}
+
+	nsurl_unref(nsurl);
 
 	/* send ack */
 	message->your_ref = message->my_ref;

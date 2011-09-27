@@ -32,6 +32,7 @@
 #include "riscos/uri.h"
 #include "riscos/url_protocol.h"
 #include "utils/log.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 void ro_uri_message_received(wimp_message *msg)
@@ -40,10 +41,20 @@ void ro_uri_message_received(wimp_message *msg)
 	uri_h uri_handle;
 	char* uri_requested;
 	int uri_length;
+	nsurl *nsurl;
 
 	uri_handle = uri_message->handle;
 
-	if (!fetch_can_fetch(uri_message->uri)) return;
+	if (nsurl_create(uri_message->uri, &nsurl) != NSERROR_OK) {
+		return;
+	}
+
+	if (!fetch_can_fetch(nsurl)) {
+		nsurl_unref(nsurl);
+		return;
+	}
+
+	nsurl_unref(nsurl);
 
 	uri_message->your_ref = uri_message->my_ref;
 	uri_message->action = message_URI_PROCESS_ACK;
