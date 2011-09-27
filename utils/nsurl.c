@@ -459,8 +459,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 		nsurl *url)
 {
 	int ascii_offset;
-	int start;
-	int end;
+	int start = 0;
+	int end = 0;
 	const char *pos;
 	const char *pos_url_s;
 	char *norm_start = pos_norm;
@@ -657,7 +657,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 
 	case URL_HOST:
 		if (length != 0) {
-			size_t colon;
+			size_t colon = 0;
 			char *sec_start = norm_start;
 			if (pegs->at < pegs->colon_first &&
 					pegs->colon_last == pegs->authority) {
@@ -1001,14 +1001,14 @@ bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts)
 nserror nsurl_get(const nsurl *url, nsurl_component parts,
 		char **url_s, size_t *url_l)
 {
-	size_t scheme;
-	size_t username;
-	size_t password;
-	size_t host;
-	size_t port;
-	size_t path;
-	size_t query;
-	size_t fragment;
+	size_t scheme = 0;
+	size_t username = 0;
+	size_t password = 0;
+	size_t host = 0;
+	size_t port = 0;
+	size_t path = 0;
+	size_t query = 0;
+	size_t fragment = 0;
 	char *pos;
 	enum {
 		NSURL_F_SCHEME			= (1 << 0),
