@@ -1183,7 +1183,7 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 
 
 /* exported interface, documented in nsurl.h */
-lwc_string *nsurl_get_lwc(const nsurl *url, nsurl_component part)
+lwc_string *nsurl_get_component(const nsurl *url, nsurl_component part)
 {
 	assert(url != NULL);
 
