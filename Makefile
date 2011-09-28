@@ -238,8 +238,12 @@ else
           PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config
         endif
       else
-        # Building for GTK, Framebuffer, Atari
-        PKG_CONFIG := pkg-config
+        ifeq ($(TARGET),cocoa)
+          PKG_CONFIG := PKG_CONFIG_PATH="$(PKG_CONFIG_PATH):/usr/local/lib/pkgconfig" pkg-config
+        else
+          # Building for GTK, Framebuffer, Atari
+          PKG_CONFIG := pkg-config
+        endif
       endif
     endif
   endif
