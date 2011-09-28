@@ -1504,3 +1504,35 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	return NSERROR_OK;
 }
 
+
+/* exported interface, documented in nsurl.h */
+nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
+{
+	/* Create NetSurf URL object */
+	*no_frag = calloc(1, sizeof(nsurl));
+	if (*no_frag == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* Get the complete URL string */
+	if (nsurl_get(url, NSURL_COMPLETE, &((*no_frag)->string),
+			&((*no_frag)->length)) != NSERROR_OK) {
+		free(*no_frag);
+		return NSERROR_NOMEM;
+	}
+
+	/* Copy components */
+	(*no_frag)->scheme = nsurl__component_copy(url->scheme);
+	(*no_frag)->username = nsurl__component_copy(url->username);
+	(*no_frag)->password = nsurl__component_copy(url->password);
+	(*no_frag)->host = nsurl__component_copy(url->host);
+	(*no_frag)->port = nsurl__component_copy(url->port);
+	(*no_frag)->path = nsurl__component_copy(url->path);
+	(*no_frag)->query = nsurl__component_copy(url->query);
+
+	/* Give the URL a reference */
+	(*no_frag)->count = 1;
+
+	return NSERROR_OK;
+}
+

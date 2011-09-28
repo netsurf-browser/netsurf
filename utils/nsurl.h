@@ -197,4 +197,19 @@ const char *nsurl_access(const nsurl *url);
  */
 nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined);
 
+
+/**
+ * Create a NetSurf URL object without a fragment from a NetSurf URL
+ *
+ * \param base	  NetSurf URL to create new NetSurf URL from
+ * \param no_frag Returns new NetSurf URL without fragment
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in no_frag.
+ *
+ * It is up to the client to call nsurl_destroy when they are finished with
+ * the created object.
+ */
+nserror nsurl_defragment(const nsurl *url, nsurl **no_frag);
+
 #endif
