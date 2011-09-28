@@ -31,7 +31,7 @@
 #include "content/urldb.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/url.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 /** Define to enable tracing of llcache operations. */
@@ -73,7 +73,7 @@ typedef struct llcache_object_user {
 /** Low-level cache object fetch context */
 typedef struct {
 	uint32_t flags;			/**< Fetch flags */
-	char *referer;			/**< Referring URL, or NULL if none */
+	nsurl *referer;			/**< Referring URL, or NULL if none */
 	llcache_post_data *post;	/**< POST data, or NULL for GET */	
 
 	struct fetch *fetch;		/**< Fetch handle for this object */
@@ -119,7 +119,7 @@ struct llcache_object {
 	llcache_object *prev;		/**< Previous in list */
 	llcache_object *next;		/**< Next in list */
 
-	char *url;			/**< Post-redirect URL for object */
+	nsurl *url;			/**< Post-redirect URL for object */
 	bool has_query;			/**< URL has a query segment */
   
 	/** \todo We need a generic dynamic buffer object */
@@ -159,15 +159,21 @@ struct llcache_s {
 /** low level cache state */
 static struct llcache_s *llcache = NULL;
 
+/* Static lwc_strings */
+static lwc_string *llcache_file_lwc;
+static lwc_string *llcache_about_lwc;
+static lwc_string *llcache_resource_lwc;
+
+
 static nserror llcache_object_user_new(llcache_handle_callback cb, void *pw,
 		llcache_object_user **user);
 static nserror llcache_object_user_destroy(llcache_object_user *user);
 
-static nserror llcache_object_retrieve(const char *url, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+static nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
+		nsurl *referer, const llcache_post_data *post,
 		uint32_t redirect_count, llcache_object **result);
-static nserror llcache_object_retrieve_from_cache(const char *url, 
-		uint32_t flags, const char *referer, 
+static nserror llcache_object_retrieve_from_cache(nsurl *url, 
+		uint32_t flags, nsurl *referer, 
 		const llcache_post_data *post, uint32_t redirect_count,
 		llcache_object **result);
 static bool llcache_object_is_fresh(const llcache_object *object);
@@ -175,11 +181,11 @@ static nserror llcache_object_cache_update(llcache_object *object);
 static nserror llcache_object_clone_cache_data(llcache_object *source,
 		llcache_object *destination, bool deep);
 static nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+		nsurl *referer, const llcache_post_data *post,
 		uint32_t redirect_count);
 static nserror llcache_object_refetch(llcache_object *object);
 
-static nserror llcache_object_new(const char *url, llcache_object **result);
+static nserror llcache_object_new(nsurl *url, llcache_object **result);
 static nserror llcache_object_destroy(llcache_object *object);
 static nserror llcache_object_add_user(llcache_object *object,
 		llcache_object_user *user);
@@ -265,6 +271,19 @@ llcache_initialise(llcache_query_callback cb, void *pw, uint32_t llcache_limit)
 	llcache->query_cb_pw = pw;
 	llcache->limit = llcache_limit;
 
+	/* Create static scheme strings */
+	if (lwc_intern_string("file", SLEN("file"),
+			&llcache_file_lwc) != lwc_error_ok)
+		return NSERROR_NOMEM;
+
+	if (lwc_intern_string("about", SLEN("about"),
+			&llcache_about_lwc) != lwc_error_ok)
+		return NSERROR_NOMEM;
+
+	if (lwc_intern_string("resource", SLEN("resource"),
+			&llcache_resource_lwc) != lwc_error_ok)
+		return NSERROR_NOMEM;
+
 	LOG(("llcache initialised with a limit of %d bytes", llcache_limit));
 
 	return NSERROR_OK;
@@ -317,6 +336,11 @@ void llcache_finalise(void)
 		llcache_object_destroy(object);
 	}
 
+	/* Unref static scheme lwc strings */
+	lwc_string_unref(llcache_file_lwc);
+	lwc_string_unref(llcache_about_lwc);
+	lwc_string_unref(llcache_resource_lwc);
+
 	free(llcache);
 	llcache = NULL;
 }
@@ -343,27 +367,18 @@ nserror llcache_poll(void)
 }
 
 /* See llcache.h for documentation */
-nserror llcache_handle_retrieve(const char *url, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
+		nsurl *referer, const llcache_post_data *post,
 		llcache_handle_callback cb, void *pw,
 		llcache_handle **result)
 {
 	nserror error;
 	llcache_object_user *user;
 	llcache_object *object;
-	nsurl *nsurl;
-
-	/* make a nsurl */
-	error = nsurl_create(url, &nsurl);
-	if (error != NSERROR_OK)
-		return error;
 
 	/* Can we fetch this URL at all? */
-	if (fetch_can_fetch(nsurl) == false)
+	if (fetch_can_fetch(url) == false)
 		return NSERROR_NO_FETCH_HANDLER;
-
-	/* done with nsurl */
-	nsurl_unref(nsurl);
 
 	/* Create a new object user */
 	error = llcache_object_user_new(cb, pw, &user);
@@ -535,7 +550,9 @@ nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
 /* See llcache.h for documentation */
 const char *llcache_handle_get_url(const llcache_handle *handle)
 {
-	return handle->object != NULL ? handle->object->url : NULL;
+	/* TODO: return a nsurl? */
+	return handle->object != NULL ?
+			nsurl_access(handle->object->url) : NULL;
 }
 
 /* See llcache.h for documentation */
@@ -689,16 +706,14 @@ static nserror llcache_send_event_to_users(llcache_object *object,
  * \param result	  Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror llcache_object_retrieve(const char *url, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
+		nsurl *referer, const llcache_post_data *post,
 		uint32_t redirect_count, llcache_object **result)
 {
 	nserror error;
 	llcache_object *obj;
 	bool has_query;
-	url_func_result res;
-	struct url_components components;
-	char *defragmented_url;
+	nsurl *defragmented_url;
 
 #ifdef LLCACHE_TRACE
 	LOG(("Retrieve %s (%x, %s, %p)", url, flags, referer, post));
@@ -712,26 +727,17 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 	 */
 
 	/* Look for a query segment */
-	res = url_get_components(url, &components);
-	if (res == URL_FUNC_NOMEM)
-		return NSERROR_NOMEM;
+	has_query = nsurl_enquire(url, NSURL_QUERY);
 
-	has_query = (components.query != NULL);
-	
-	components.fragment = NULL;
-
-	defragmented_url = url_reform_components(&components);
-
-	url_destroy_components(&components);
-
-	if (defragmented_url == NULL)
-		return NSERROR_NOMEM;
+	error = nsurl_defragment(url, &defragmented_url);
+	if (error != NSERROR_OK)
+		return error;
 
 	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || post != NULL) {
 		/* Create new object */
 		error = llcache_object_new(defragmented_url, &obj);
 		if (error != NSERROR_OK) {
-			free(defragmented_url);
+			nsurl_unref(defragmented_url);
 			return error;
 		}
 
@@ -740,7 +746,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 				redirect_count);
 		if (error != NSERROR_OK) {
 			llcache_object_destroy(obj);
-			free(defragmented_url);
+			nsurl_unref(defragmented_url);
 			return error;
 		}
 
@@ -750,7 +756,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 		error = llcache_object_retrieve_from_cache(defragmented_url, flags, referer,
 				post, redirect_count, &obj);
 		if (error != NSERROR_OK) {
-			free(defragmented_url);
+			nsurl_unref(defragmented_url);
 			return error;
 		}
 
@@ -765,7 +771,7 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
 	
 	*result = obj;
 	
-	free(defragmented_url);
+	nsurl_unref(defragmented_url);
 	
 	return NSERROR_OK;
 }
@@ -781,8 +787,8 @@ nserror llcache_object_retrieve(const char *url, uint32_t flags,
  * \param result	  Pointer to location to recieve retrieved object
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+nserror llcache_object_retrieve_from_cache(nsurl *url, uint32_t flags,
+		nsurl *referer, const llcache_post_data *post,
 		uint32_t redirect_count, llcache_object **result)
 {
 	nserror error;
@@ -794,13 +800,11 @@ nserror llcache_object_retrieve_from_cache(const char *url, uint32_t flags,
 
 	/* Search for the most recently fetched matching object */
 	for (obj = llcache->cached_objects; obj != NULL; obj = obj->next) {
-		bool match;
 
 		if ((newest == NULL || 
 				obj->cache.req_time > newest->cache.req_time) &&
-				url_compare(obj->url, url, true, 
-					&match) == URL_FUNC_OK &&
-				match == true) {
+				nsurl_compare(obj->url, url,
+						NSURL_COMPLETE) == true) {
 			newest = obj;
 		}
 	}
@@ -1013,30 +1017,25 @@ nserror llcache_object_clone_cache_data(llcache_object *source,
  * \pre There must not be a fetch in progress for \a object
  */
 nserror llcache_object_fetch(llcache_object *object, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+		nsurl *referer, const llcache_post_data *post,
 		uint32_t redirect_count)
 {
 	nserror error;
-	char *referer_clone = NULL;
+	nsurl *referer_clone = NULL;
 	llcache_post_data *post_clone = NULL;
 
 #ifdef LLCACHE_TRACE
 	LOG(("Starting fetch for %p", object));
 #endif
 
-	if (referer != NULL) {
-		referer_clone = strdup(referer);
-		if (referer_clone == NULL)
-			return NSERROR_NOMEM;
-	}
-
 	if (post != NULL) {
 		error = llcache_post_data_clone(post, &post_clone);
-		if (error != NSERROR_OK) {
-			free(referer_clone);
+		if (error != NSERROR_OK)
 			return error;
-		}
 	}
+
+	if (referer != NULL)
+		referer_clone = nsurl_ref(referer);
 
 	object->fetch.flags = flags;
 	object->fetch.referer = referer_clone;
@@ -1060,8 +1059,6 @@ nserror llcache_object_refetch(llcache_object *object)
 	struct fetch_multipart_data *multipart = NULL;
 	char **headers = NULL;
 	int header_idx = 0;
-	nsurl*nsurl, *nsurl_ref;
-	nserror error;
 
 	if (object->fetch.post != NULL) {
 		if (object->fetch.post->type == LLCACHE_POST_URL_ENCODED)
@@ -1120,34 +1117,13 @@ nserror llcache_object_refetch(llcache_object *object)
 	LOG(("Refetching %p", object));
 #endif
 
-	/* make nsurls */
-	error = nsurl_create(object->url, &nsurl);
-	if (error != NSERROR_OK) {
-		free(headers);
-		return error;
-	}
-	if (object->fetch.referer != NULL) {
-		error = nsurl_create(object->fetch.referer, &nsurl_ref);
-		if (error != NSERROR_OK) {
-			nsurl_unref(nsurl);
-			free(headers);
-			return error;
-		}
-	} else {
-		nsurl_ref = NULL;
-	}
-
 	/* Kick off fetch */
-	object->fetch.fetch = fetch_start(nsurl, nsurl_ref,
+	object->fetch.fetch = fetch_start(object->url, object->fetch.referer,
 			llcache_fetch_callback, object,
 			object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
 			urlenc, multipart,
 			object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
 			(const char **) headers);
-
-	nsurl_unref(nsurl);
-	if (nsurl_ref != NULL)
-		nsurl_unref(nsurl_ref);
 
 	/* Clean up cache-control headers */
 	while (--header_idx >= 0)
@@ -1168,21 +1144,17 @@ nserror llcache_object_refetch(llcache_object *object)
  * \param result  Pointer to location to receive result
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror llcache_object_new(const char *url, llcache_object **result)
+nserror llcache_object_new(nsurl *url, llcache_object **result)
 {
 	llcache_object *obj = calloc(1, sizeof(llcache_object));
 	if (obj == NULL)
 		return NSERROR_NOMEM;
 
 #ifdef LLCACHE_TRACE
-	LOG(("Created object %p (%s)", obj, url));
+	LOG(("Created object %p (%s)", obj, nsurl_access(url)));
 #endif
 
-	obj->url = strdup(url);
-	if (obj->url == NULL) {
-		free(obj);
-		return NSERROR_NOMEM;
-	}
+	obj->url = nsurl_ref(url);
 
 	*result = obj;
 
@@ -1207,7 +1179,7 @@ nserror llcache_object_destroy(llcache_object *object)
 	LOG(("Destroying object %p", object));
 #endif
 
-	free(object->url);
+	nsurl_unref(object->url);
 	free(object->source_data);
 
 	if (object->fetch.fetch != NULL) {
@@ -1215,7 +1187,8 @@ nserror llcache_object_destroy(llcache_object *object)
 		object->fetch.fetch = NULL;
 	}
 
-	free(object->fetch.referer);
+	if (object->fetch.referer != NULL)
+		nsurl_unref(object->fetch.referer);
 
 	if (object->fetch.post != NULL) {
 		if (object->fetch.post->type == LLCACHE_POST_URL_ENCODED) {
@@ -2026,13 +1999,12 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 	llcache_object *dest;
 	llcache_object_user *user, *next;
 	const llcache_post_data *post = object->fetch.post;
-	char *url, *absurl;
-	char *scheme;
-	char *object_scheme;
-	url_func_result result;
+	nsurl *url;
+	lwc_string *scheme;
+	lwc_string *object_scheme;
+	bool match;
 	/* Extract HTTP response code from the fetch object */
 	long http_code = fetch_http_code(object->fetch.fetch);
-	nsurl *nsurl;
 
 	/* Abort fetch for this object */
 	fetch_abort(object->fetch.fetch);
@@ -2059,75 +2031,50 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 #undef REDIRECT_LIMIT
 
 	/* Make target absolute */
-	result = url_join(target, object->url, &absurl);
-	if (result != URL_FUNC_OK) {
-		return NSERROR_NOMEM;
-	}
-
-	/* Ensure target is normalised */
-	result = url_normalize(absurl, &url);
-
-	/* No longer require absolute url */
-	free(absurl);
-
-	if (result != URL_FUNC_OK) {
-		return NSERROR_NOMEM;
-	}
+	error = nsurl_join(object->url, target, &url);
+	if (error != NSERROR_OK)
+		return error;
 
 	/* Reject attempts to redirect from unvalidated to validated schemes
 	 * A "validated" scheme is one over which we have some guarantee that
 	 * the source is trustworthy. */
-	result = url_scheme(object->url, &object_scheme);
-	if (result != URL_FUNC_OK) {
-		free(url);
-		return NSERROR_NOMEM;
-	}
-
-	result = url_scheme(url, &scheme);
-	if (result != URL_FUNC_OK) {
-		free(object_scheme);
-		free(url);
-		return NSERROR_NOMEM;
-	}
+	object_scheme = nsurl_get_component(object->url, NSURL_SCHEME);
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
 
 	/* resource: and about: are allowed to redirect anywhere */
-	if ((strcasecmp(object_scheme, "resource") != 0) &&
-	    (strcasecmp(object_scheme, "about") != 0)) {
+	if ((lwc_string_isequal(object_scheme, llcache_resource_lwc,
+			&match) == lwc_error_ok && match == false) &&
+	    (lwc_string_isequal(object_scheme, llcache_about_lwc,
+			&match) == lwc_error_ok && match == false)) {
 		/* file, about and resource are not valid redirect targets */
-		if ((strcasecmp(scheme, "file") == 0) ||
-		    (strcasecmp(scheme, "about") == 0) ||
-		    (strcasecmp(scheme, "resource") == 0)) {
-			free(object_scheme);
-			free(scheme);
-			free(url);
+		if ((lwc_string_isequal(object_scheme, llcache_file_lwc,
+				&match) == lwc_error_ok && match == true) ||
+		    (lwc_string_isequal(object_scheme, llcache_about_lwc,
+				&match) == lwc_error_ok && match == true) ||
+		    (lwc_string_isequal(object_scheme, llcache_resource_lwc,
+				&match) == lwc_error_ok && match == true)) {
+			lwc_string_unref(object_scheme);
+			lwc_string_unref(scheme);
+			nsurl_unref(url);
 			return NSERROR_OK;
 		}
 	}
 
-	free(scheme);
-	free(object_scheme);
-
-	/* make a nsurl */
-	error = nsurl_create(url, &nsurl);
-	if (error != NSERROR_OK) {
-		free(url);
-		return error;
-	}
+	lwc_string_unref(scheme);
+	lwc_string_unref(object_scheme);
 
 	/* Bail out if we've no way of handling this URL */
-	if (fetch_can_fetch(nsurl) == false) {
-		free(url);
-		nsurl_unref(nsurl);
+	if (fetch_can_fetch(url) == false) {
+		nsurl_unref(url);
 		return NSERROR_OK;
 	}
-	nsurl_unref(nsurl);
 
 	if (http_code == 301 || http_code == 302 || http_code == 303) {
 		/* 301, 302, 303 redirects are all unconditional GET requests */
 		post = NULL;
 	} else if (http_code != 307 || post != NULL) {
 		/** \todo 300, 305, 307 with POST */
-		free(url);
+		nsurl_unref(url);
 		return NSERROR_OK;
 	}
 
@@ -2137,7 +2084,7 @@ nserror llcache_fetch_redirect(llcache_object *object, const char *target,
 			object->fetch.redirect_count + 1, &dest);
 
 	/* No longer require url */
-	free(url);
+	nsurl_unref(url);
 
 	if (error != NSERROR_OK)
 		return error;
@@ -2512,9 +2459,9 @@ nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	/* If there was no realm, then default to the URL */
 	/** \todo If there was no WWW-Authenticate header, use response body */
 	if (realm == NULL)
-		realm = object->url;
+		realm = nsurl_access(object->url);
 
-	auth = urldb_get_auth_details(object->url, realm);
+	auth = urldb_get_auth_details(nsurl_access(object->url), realm);
 
 	if (auth == NULL || object->fetch.tried_with_auth == true) {
 		/* No authentication details, or tried what we had, so ask */

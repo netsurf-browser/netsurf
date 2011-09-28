@@ -233,6 +233,8 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 {
 	hlcache_retrieval_ctx *ctx;
 	nserror error;
+	nsurl *nsref = NULL;
+	nsurl *nsurl;
 
 	assert(cb != NULL);
 
@@ -264,15 +266,41 @@ nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
 	ctx->handle->cb = cb;
 	ctx->handle->pw = pw;
 
-	error = llcache_handle_retrieve(url, flags, referer, post,
-			hlcache_llcache_callback, ctx,
-			&ctx->llcache);
+	error = nsurl_create(url, &nsurl);
 	if (error != NSERROR_OK) {
 		free((char *) ctx->child.charset);
 		free(ctx->handle);
 		free(ctx);
 		return error;
 	}
+
+	if (referer != NULL) {
+		error = nsurl_create(referer, &nsref);
+		if (error != NSERROR_OK) {
+			free((char *) ctx->child.charset);
+			free(ctx->handle);
+			free(ctx);
+			nsurl_unref(nsurl);
+			return error;
+		}
+	}
+
+	error = llcache_handle_retrieve(nsurl, flags, nsref, post,
+			hlcache_llcache_callback, ctx,
+			&ctx->llcache);
+	if (error != NSERROR_OK) {
+		nsurl_unref(nsurl);
+		if (nsref != NULL)
+			nsurl_unref(nsref);
+		free((char *) ctx->child.charset);
+		free(ctx->handle);
+		free(ctx);
+		return error;
+	}
+
+	nsurl_unref(nsurl);
+	if (nsref != NULL)
+		nsurl_unref(nsref);
 
 	RING_INSERT(hlcache->retrieval_ctx_ring, ctx);
 

@@ -28,6 +28,7 @@
 #include <stdint.h>
 
 #include "utils/errors.h"
+#include "utils/nsurl.h"
 
 struct ssl_cert_info;
 struct fetch_multipart_data;
@@ -106,7 +107,7 @@ typedef enum {
 typedef struct {
 	llcache_query_type type;	/**< Type of query */
 
-	const char *url;		/**< URL being fetched */
+	nsurl *url;			/**< URL being fetched */
 
 	union {
 		struct {
@@ -189,8 +190,8 @@ void llcache_clean(void);
  * \param result   Pointer to location to recieve cache handle
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror llcache_handle_retrieve(const char *url, uint32_t flags,
-		const char *referer, const llcache_post_data *post,
+nserror llcache_handle_retrieve(nsurl *url, uint32_t flags,
+		nsurl *referer, const llcache_post_data *post,
 		llcache_handle_callback cb, void *pw,
 		llcache_handle **result);
 

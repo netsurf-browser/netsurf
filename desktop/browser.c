@@ -60,6 +60,7 @@
 #include "render/textplain.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -752,11 +753,28 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	/* Get download out of the way */
 	if (download) {
 		llcache_handle *l;
+		nsurl *nsref = NULL;
+		nsurl *nsurl;
+
+		error = nsurl_create(url2, &nsurl);
+		if (error != NSERROR_OK) {
+			free(url2);
+			return;
+		}
+
+		if (referer != NULL) {
+			error = nsurl_create(referer, &nsref);
+			if (error != NSERROR_OK) {
+				free(url2);
+				nsurl_unref(nsurl);
+				return;
+			}
+		}
 
 		fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
 		fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
 
-		error = llcache_handle_retrieve(url2, fetch_flags, referer, 
+		error = llcache_handle_retrieve(nsurl, fetch_flags, nsref, 
 				fetch_is_post ? &post : NULL,
 				NULL, NULL, &l);
 		if (error == NSERROR_NO_FETCH_HANDLER) {
@@ -774,6 +792,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		}
 
 		free(url2);
+		nsurl_unref(nsurl);
+		if (nsref != NULL)
+			nsurl_unref(nsref);
 
 		return;
 	}
