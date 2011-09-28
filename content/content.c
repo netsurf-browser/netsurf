@@ -82,7 +82,7 @@ nserror content__init(struct content *c, const content_handler *handler,
 	struct content_user *user_sentinel;
 	nserror error;
 	
-	LOG(("url %s -> %p", llcache_handle_get_url(llcache), c));
+	LOG(("url %s -> %p", nsurl_access(llcache_handle_get_url(llcache)), c));
 
 	user_sentinel = talloc(c, struct content_user);
 	if (user_sentinel == NULL) {
@@ -274,7 +274,8 @@ void content_convert(struct content *c)
 	if (c->locked == true)
 		return;
 	
-	LOG(("content %s (%p)", llcache_handle_get_url(c->llcache), c));
+	LOG(("content %s (%p)",
+			nsurl_access(llcache_handle_get_url(c->llcache)), c));
 
 	if (c->handler->data_complete != NULL) {
 		c->locked = true;
@@ -353,7 +354,7 @@ void content__reformat(struct content *c, bool background,
 	assert(c->status == CONTENT_STATUS_READY ||
 			c->status == CONTENT_STATUS_DONE);
 	assert(c->locked == false);
-	LOG(("%p %s", c, llcache_handle_get_url(c->llcache)));
+	LOG(("%p %s", c, nsurl_access(llcache_handle_get_url(c->llcache))));
 	c->available_width = width;
 	if (c->handler->reformat != NULL) {
 
@@ -376,7 +377,8 @@ void content__reformat(struct content *c, bool background,
 void content_destroy(struct content *c)
 {
 	assert(c);
-	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
+	LOG(("content %p %s", c,
+			nsurl_access(llcache_handle_get_url(c->llcache))));
 	assert(c->locked == false);
 
 	if (c->handler->destroy != NULL)
@@ -541,7 +543,8 @@ bool content_add_user(struct content *c,
 	struct content_user *user;
 
 	LOG(("content %s (%p), user %p %p",
-			llcache_handle_get_url(c->llcache), c, callback, pw));
+			nsurl_access(llcache_handle_get_url(c->llcache)),
+			c, callback, pw));
 	user = talloc(c, struct content_user);
 	if (!user)
 		return false;
@@ -568,7 +571,8 @@ void content_remove_user(struct content *c,
 {
 	struct content_user *user, *next;
 	LOG(("content %s (%p), user %p %p",
-			llcache_handle_get_url(c->llcache), c, callback, pw));
+			nsurl_access(llcache_handle_get_url(c->llcache)), c,
+			callback, pw));
 
 	/* user_list starts with a sentinel */
 	for (user = c->user_list; user->next != 0 &&
@@ -665,7 +669,8 @@ void content_open(hlcache_handle *h, struct browser_window *bw,
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
+	LOG(("content %p %s", c,
+			nsurl_access(llcache_handle_get_url(c->llcache))));
 	if (c->handler->open != NULL)
 		c->handler->open(c, bw, page, box, params);
 }
@@ -681,7 +686,8 @@ void content_close(hlcache_handle *h)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
-	LOG(("content %p %s", c, llcache_handle_get_url(c->llcache)));
+	LOG(("content %p %s", c,
+			nsurl_access(llcache_handle_get_url(c->llcache))));
 	if (c->handler->close != NULL)
 		c->handler->close(c);
 }
@@ -789,7 +795,7 @@ const char *content__get_url(struct content *c)
 	if (c == NULL)
 		return NULL;
 
-	return llcache_handle_get_url(c->llcache);
+	return nsurl_access(llcache_handle_get_url(c->llcache));
 }
 
 /**
@@ -808,7 +814,8 @@ const char *content__get_title(struct content *c)
 	if (c == NULL)
 		return NULL;
 
-	return c->title != NULL ? c->title : llcache_handle_get_url(c->llcache);
+	return c->title != NULL ? c->title :
+			nsurl_access(llcache_handle_get_url(c->llcache));
 }
 
 /**

@@ -146,7 +146,8 @@ static nserror download_context_process_headers(download_context *ctx)
 	ctx->total_length = length;
 	if (ctx->filename == NULL) {
 		ctx->filename = download_default_filename(
-				llcache_handle_get_url(ctx->llcache));
+				nsurl_access(
+				llcache_handle_get_url(ctx->llcache)));
 	}
 
 	http_content_type_destroy(content_type);
@@ -287,7 +288,7 @@ void download_context_abort(download_context *ctx)
 /* See download.h for documentation */
 const char *download_context_get_url(const download_context *ctx)
 {
-	return llcache_handle_get_url(ctx->llcache);
+	return nsurl_access(llcache_handle_get_url(ctx->llcache));
 }
 
 /* See download.h for documentation */

@@ -548,11 +548,9 @@ nserror llcache_handle_invalidate_cache_data(llcache_handle *handle)
 }
 
 /* See llcache.h for documentation */
-const char *llcache_handle_get_url(const llcache_handle *handle)
+nsurl *llcache_handle_get_url(const llcache_handle *handle)
 {
-	/* TODO: return a nsurl? */
-	return handle->object != NULL ?
-			nsurl_access(handle->object->url) : NULL;
+	return handle->object != NULL ? handle->object->url : NULL;
 }
 
 /* See llcache.h for documentation */

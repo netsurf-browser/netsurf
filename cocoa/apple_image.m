@@ -175,7 +175,7 @@ bool apple_image_convert(struct content *c)
 	c->height = [image pixelsHigh];
 	ai_c->bitmap = (void *)image;
 
-	NSString *url = [NSString stringWithUTF8String: llcache_handle_get_url( content_get_llcache_handle( c ) )];
+	NSString *url = [NSString stringWithUTF8String: nsurl_access(llcache_handle_get_url( content_get_llcache_handle( c )) )];
 	NSString *title = [NSString stringWithFormat: @"%@ (%dx%d)", [url lastPathComponent], c->width, c->height];
 	content__set_title(c, [title UTF8String] );
 	
