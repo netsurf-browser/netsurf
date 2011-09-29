@@ -1475,12 +1475,13 @@ void ami_handle_msg(void)
 								if(browser_window_reload_available(gwin->bw))
 									browser_window_reload(gwin->bw,false);
 							break;
-
+/*
 							case 'u': // open url
 								if((option_kiosk_mode == false))
 									ActivateGadget((struct Gadget *)gwin->objects[GID_URL],
 										gwin->win, NULL);
 							break;
+*/
 						}
 					}
 					else
