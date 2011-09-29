@@ -61,7 +61,7 @@ struct fetch_file_context {
 	bool aborted; /**< Flag indicating fetch has been aborted */
 	bool locked; /**< Flag indicating entry is already entered */
 
-	char *url; /**< The full url the fetch refers to */
+	nsurl *url; /**< The full url the fetch refers to */
 	char *path; /**< The actual path to be used with open() */
 
 	time_t file_etag; /**< Request etag for file (previous st.m_time) */
@@ -113,7 +113,7 @@ static void fetch_file_finalise(lwc_string *scheme)
 /** callback to set up a file fetch context. */
 static void *
 fetch_file_setup(struct fetch *fetchh,
-		 const char *url,
+		 nsurl *url,
 		 bool only_2xx,
 		 const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -126,18 +126,13 @@ fetch_file_setup(struct fetch *fetchh,
 	if (ctx == NULL)
 		return NULL;
 
-	ctx->path = url_to_path(url);
+	ctx->path = url_to_path(nsurl_access(url));
 	if (ctx->path == NULL) {
 		free(ctx);
 		return NULL;
 	}
 
-	ctx->url = strdup(url);
-	if (ctx->url == NULL) {
-		free(ctx->path);
-		free(ctx);
-		return NULL;
-	}
+	ctx->url = nsurl_ref(url);
 
 	/* Scan request headers looking for If-None-Match */
 	for (i = 0; headers[i] != NULL; i++) {
@@ -167,7 +162,7 @@ fetch_file_setup(struct fetch *fetchh,
 static void fetch_file_free(void *ctx)
 {
 	struct fetch_file_context *c = ctx;
-	free(c->url);
+	nsurl_unref(c->url);
 	free(c->path);
 	RING_REMOVE(ring, c);
 	free(ctx);
@@ -226,7 +221,7 @@ static void fetch_file_process_error(struct fetch_file_context *ctx, int code)
 	snprintf(buffer, sizeof buffer, "<html><head><title>%s</title></head>"
 			"<body><h1>%s</h1>"
 			"<p>Error %d while fetching file %s</p></body></html>",
-			title, title, code, ctx->url);
+			title, title, code, nsurl_access(ctx->url));
 
 	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
 			FETCH_ERROR_NO_ERROR))
@@ -445,9 +440,9 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 		goto fetch_file_process_dir_aborted;
 
 	/* Print parent directory link */
-	res = url_parent(ctx->url, &up);
+	res = url_parent(nsurl_access(ctx->url), &up);
 	if (res == URL_FUNC_OK) {
-		res = url_compare(ctx->url, up, false, &compare);
+		res = url_compare(nsurl_access(ctx->url), up, false, &compare);
 		if ((res == URL_FUNC_OK) && compare == false) {
 			dirlist_generate_parent_link(up, buffer, sizeof buffer);
 

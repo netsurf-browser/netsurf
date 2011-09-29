@@ -109,7 +109,7 @@ static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
 static bool fetch_curl_initialise(lwc_string *scheme);
 static void fetch_curl_finalise(lwc_string *scheme);
-static void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
+static void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers);
@@ -324,7 +324,7 @@ void fetch_curl_finalise(lwc_string *scheme)
  * callbacks will contain this.
  */
 
-void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
+void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
@@ -341,7 +341,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 
 	fetch->fetch_handle = parent_fetch;
 
-	res = url_host(url, &host);
+	res = url_host(nsurl_access(url), &host);
 	if (res != URL_FUNC_OK) {
 		/* we only fail memory exhaustion */
 		if (res == URL_FUNC_NOMEM)
@@ -360,7 +360,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, const char *url,
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
-	fetch->url = strdup(url);
+	fetch->url = strdup(nsurl_access(url));
 	fetch->headers = 0;
 	fetch->host = host;
 	fetch->location = 0;

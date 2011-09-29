@@ -75,7 +75,7 @@ static void fetch_data_finalise(lwc_string *scheme)
 	curl_easy_cleanup(curl);
 }
 
-static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
+static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
@@ -86,7 +86,8 @@ static void *fetch_data_setup(struct fetch *parent_fetch, const char *url,
 		return NULL;
 		
 	ctx->parent_fetch = parent_fetch;
-	ctx->url = strdup(url);
+	/* TODO: keep as nsurl to avoid copy */
+	ctx->url = strdup(nsurl_access(url));
 	
 	if (ctx->url == NULL) {
 		free(ctx);

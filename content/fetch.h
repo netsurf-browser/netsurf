@@ -110,7 +110,7 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 /* API for fetchers themselves */
 
 typedef bool (*fetcher_initialise)(lwc_string *);
-typedef void* (*fetcher_setup_fetch)(struct fetch *, const char *,
+typedef void* (*fetcher_setup_fetch)(struct fetch *, nsurl *,
                                      bool, const char *,
                                      const struct fetch_multipart_data *,
                                      const char **);

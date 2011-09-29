@@ -317,8 +317,7 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 		goto failed;
 
 	/* Got a scheme fetcher, try and set up the fetch */
-	fetch->fetcher_handle =
-		fetch->ops->setup_fetch(fetch, nsurl_access(url),
+	fetch->fetcher_handle = fetch->ops->setup_fetch(fetch, url,
 					only_2xx, post_urlenc,
 					post_multipart, headers);
 

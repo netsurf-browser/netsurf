@@ -68,7 +68,7 @@ struct fetch_about_context {
 	bool aborted; /**< Flag indicating fetch has been aborted */
 	bool locked; /**< Flag indicating entry is already entered */
 
-	char *url; /**< The full url the fetch refers to */
+	nsurl *url; /**< The full url the fetch refers to */
 
 	fetch_about_handler handler;
 };
@@ -396,6 +396,7 @@ struct about_handlers {
 	bool hidden; /* Flag indicating if entry should be show in listing */
 };
 
+/* TODO: lwc_string identifiers, since they're compared to an lwc_string */
 struct about_handlers about_handler_list[] = { 
 	{ "credits", fetch_about_credits_handler, false },
 	{ "licence", fetch_about_licence_handler, false },
@@ -501,7 +502,7 @@ static void fetch_about_finalise(lwc_string *scheme)
 /** callback to set up a about fetch context. */
 static void *
 fetch_about_setup(struct fetch *fetchh,
-		 const char *url,
+		 nsurl *url,
 		 bool only_2xx,
 		 const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -509,25 +510,27 @@ fetch_about_setup(struct fetch *fetchh,
 {
 	struct fetch_about_context *ctx;
 	unsigned int handler_loop;
-	struct url_components urlcomp;
+	lwc_string *path;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
-	url_get_components(url, &urlcomp);
+	path = nsurl_get_component(url, NSURL_PATH);
 
 	for (handler_loop = 0; 
 	     handler_loop < about_handler_list_len; 
 	     handler_loop++) {
 		ctx->handler = about_handler_list[handler_loop].handler;
-		if (strcmp(about_handler_list[handler_loop].name, urlcomp.path) == 0)
+		if (strcmp(about_handler_list[handler_loop].name,
+				lwc_string_data(path)) == 0)
 			break;
 	}
 
-	url_destroy_components(&urlcomp);
+	lwc_string_unref(path);
 
 	ctx->fetchh = fetchh;
+	ctx->url = nsurl_ref(url);
 
 	RING_INSERT(ring, ctx);
 
@@ -538,7 +541,7 @@ fetch_about_setup(struct fetch *fetchh,
 static void fetch_about_free(void *ctx)
 {
 	struct fetch_about_context *c = ctx;
-	free(c->url);
+	nsurl_unref(c->url);
 	RING_REMOVE(ring, c);
 	free(ctx);
 }

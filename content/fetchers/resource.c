@@ -164,7 +164,7 @@ static void fetch_resource_finalise(lwc_string *scheme)
 /** callback to set up a resource fetch context. */
 static void *
 fetch_resource_setup(struct fetch *fetchh,
-		 const char *url,
+		 nsurl *url,
 		 bool only_2xx,
 		 const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -177,7 +177,7 @@ fetch_resource_setup(struct fetch *fetchh,
 	if (ctx == NULL)
 		return NULL;
 
-	url_get_components(url, &urlcomp);
+	url_get_components(nsurl_access(url), &urlcomp);
 
 	ctx->redirect_url = gui_get_resource_url(urlcomp.path);
 	if (ctx->redirect_url == NULL) {
@@ -186,7 +186,7 @@ fetch_resource_setup(struct fetch *fetchh,
 		ctx->handler = fetch_resource_redirect_handler;
 	}
 
-	ctx->url = strdup(url);
+	ctx->url = strdup(nsurl_access(url));
 
 	url_destroy_components(&urlcomp);
 
