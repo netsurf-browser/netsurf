@@ -83,6 +83,7 @@ static nserror html_clone(const struct content *old, struct content **newc);
 static content_type html_content_type(void);
 
 static void html_finish_conversion(html_content *c);
+static void html_box_convert_done(html_content *c, bool success);
 static nserror html_convert_css_callback(hlcache_handle *css,
 		const hlcache_event *event, void *pw);
 static bool html_meta_refresh(html_content *c, xmlNode *head);
@@ -91,6 +92,7 @@ static bool html_find_stylesheets(html_content *c, xmlNode *html);
 static bool html_process_style_element(html_content *c, unsigned int *index,
 		xmlNode *style);
 static void html_inline_style_done(struct content_css_data *css, void *pw);
+static bool html_fetch_objects(html_content *c);
 static bool html_replace_object(struct content_html_object *object,
 		const char *url);
 static nserror html_object_callback(hlcache_handle *object,
@@ -632,16 +634,46 @@ void html_finish_conversion(html_content *c)
 	}
 
 	/* convert xml tree to box tree */
-	LOG(("XML to box"));
+	LOG(("XML to box (%p)", c));
 	content_set_status(&c->base, messages_get("Processing"));
 	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
-	if (xml_to_box(html, c) == false) {
+	if (xml_to_box(html, c, html_box_convert_done) == false) {
 		html_destroy_objects(c);
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
 		return;
 	}
+}
+
+/**
+ * Perform post-box-creation conversion of a document
+ *
+ * \param c        HTML content to complete conversion of
+ * \param success  Whether box tree construction was successful
+ */
+void html_box_convert_done(html_content *c, bool success)
+{
+	union content_msg_data msg_data;
+	xmlNode *html;
+
+	LOG(("Done XML to box (%p)", c));
+
+	/* Clean up and report error if unsuccessful or aborted */
+	if (success == false || c->aborted) {
+		html_destroy_objects(c);
+		if (success == false)
+			msg_data.error = messages_get("NoMemory");
+		else
+			msg_data.error = messages_get("Stopped");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+	html = xmlDocGetRootElement(c->document);
+	assert(html != NULL);
+
 #if ALWAYS_DUMP_BOX
 	box_dump(stderr, c->layout->children, 0);
 #endif
@@ -664,6 +696,9 @@ void html_finish_conversion(html_content *c)
 	/* Destroy the parser binding */
 	binding_destroy_tree(c->parser_binding);
 	c->parser_binding = NULL;
+
+	/* Spawn object fetches */
+	html_fetch_objects(c);
 
 	content_set_ready(&c->base);
 
@@ -1334,7 +1369,7 @@ nserror html_convert_css_callback(hlcache_handle *css,
 
 
 /**
- * Start a fetch for an object required by a page.
+ * Queue a fetch for an object required by a page.
  *
  * \param  c                 content of type CONTENT_HTML
  * \param  url               URL of object to fetch (copied)
@@ -1352,17 +1387,12 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 		bool background)
 {
 	struct content_html_object *object;
-	hlcache_child_context child;
 	char *url2;
 	url_func_result res;
-	nserror error;
 
 	/* If we've already been aborted, don't bother attempting the fetch */
 	if (c->aborted)
 		return true;
-
-	child.charset = c->encoding;
-	child.quirks = c->base.quirks;
 
 	/* Normalize the URL */
 	res = url_normalize(url, &url2);
@@ -1383,28 +1413,43 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	object->box = box;
 	object->permitted_types = permitted_types;
 	object->background = background;
+	object->url = url2;
  
-	error = hlcache_handle_retrieve(url2, HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			content__get_url(&c->base), NULL, 
-			html_object_callback, object, &child, 
-			permitted_types, &object->content);
-
-	/* No longer need normalized url */
-	free(url2);
-
-        if (error != NSERROR_OK) {
-		talloc_free(object);
-		return error != NSERROR_NOMEM;
-	}
-
 	/* add to object list */
 	object->next = c->object_list;
 	c->object_list = object;
 
 	c->num_objects++;
-	c->base.active++;
 
-	return error != NSERROR_NOMEM;
+	return true;
+}
+
+/**
+ * Start fetches for objects requested by a page
+ *
+ * \param c  Content object
+ * \return true on success, false otherwise
+ */
+bool html_fetch_objects(html_content *c)
+{
+	struct content_html_object *object;
+	hlcache_child_context child;
+	nserror error;
+
+	child.charset = c->encoding;
+	child.quirks = c->base.quirks;
+
+	for (object = c->object_list; object != NULL; object = object->next) {
+		error = hlcache_handle_retrieve(object->url, 
+				HLCACHE_RETRIEVE_SNIFF_TYPE, 
+				content__get_url(&c->base), NULL, 
+				html_object_callback, object, &child, 
+				object->permitted_types, &object->content);
+        	if (error == NSERROR_OK)
+			c->base.active++;
+	}
+
+	return c->base.active == c->num_objects;
 }
 
 
@@ -1857,7 +1902,7 @@ void html_destroy(struct content *c)
 		binding_destroy_tree(html->parser_binding);
 
 	if (html->document != NULL)
-		xmlFreeDoc(html->document);
+		binding_destroy_document(html->document);
 
 	/* Free base target */
 	if (html->base_target != NULL) {
@@ -1915,6 +1960,8 @@ void html_destroy_objects(html_content *html)
 
 			hlcache_handle_release(victim->content);
 		}
+
+		free(victim->url);
 
 		html->object_list = victim->next;
 		talloc_free(victim);

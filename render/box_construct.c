@@ -45,10 +45,44 @@
 #include "utils/locale.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
 #include "utils/talloc.h"
 #include "utils/url.h"
 #include "utils/utils.h"
 
+/**
+ * Context for box tree construction
+ */
+struct box_construct_ctx {
+	html_content *content;		/**< Content we're constructing for */
+
+	xmlNode *n;			/**< Current node to process */
+
+	struct box *root_box;		/**< Root box in the tree */
+
+	box_construct_complete_cb cb;	/**< Callback to invoke on completion */
+};
+
+/**
+ * Transient properties for construction of current node
+ */
+struct box_construct_props {
+	/** Style from which to inherit, or NULL if none */
+	const css_computed_style *parent_style;
+	/** Current link target, or NULL if none */
+	const char *href;
+	/** Current frame target, or NULL if none */
+	const char *target;
+	/** Current title attribute, or NULL if none */
+	const char *title;
+	/** Identity of the current block-level container */
+	struct box *containing_block;
+	/** Current container for inlines, or NULL if none
+	 * \note If non-NULL, will be the last child of containing_block */
+	struct box *inline_container;
+	/** Whether the current node is the root of the DOM tree */
+	bool node_is_root;
+};
 
 static const content_type image_types = CONTENT_IMAGE;
 
@@ -58,20 +92,11 @@ const char *TARGET_PARENT = "_parent";
 const char *TARGET_TOP = "_top";
 const char *TARGET_BLANK = "_blank";
 
-static bool convert_xml_to_box(xmlNode *n, html_content *content,
-		const css_computed_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title);
-bool box_construct_element(xmlNode *n, html_content *content,
-		const css_computed_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title);
-void box_construct_generate(xmlNode *n, html_content *content,
-		struct box *box, const css_computed_style *style);
-bool box_construct_text(xmlNode *n, html_content *content,
-		const css_computed_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title);
+static void convert_xml_to_box(struct box_construct_ctx *ctx);
+static bool box_construct_element(struct box_construct_ctx *ctx,
+		bool *convert_children);
+static void box_construct_element_after(xmlNode *n, html_content *content);
+static bool box_construct_text(struct box_construct_ctx *ctx);
 static css_select_results * box_get_style(html_content *c,
 		const css_computed_style *parent_style, xmlNode *n);
 static void box_text_transform(char *s, unsigned int len,
@@ -126,40 +151,29 @@ static const struct element_entry element_table[] = {
 /**
  * Construct a box tree from an xml tree and stylesheets.
  *
- * \param  n  xml tree
- * \param  c  content of type CONTENT_HTML to construct box tree in
+ * \param n   xml tree
+ * \param c   content of type CONTENT_HTML to construct box tree in
+ * \param cb  callback to report conversion completion
  * \return  true on success, false on memory exhaustion
  */
 
-bool xml_to_box(xmlNode *n, html_content *c)
+bool xml_to_box(xmlNode *n, html_content *c, box_construct_complete_cb cb)
 {
-	struct box root;
-	struct box *inline_container = NULL;
+	struct box_construct_ctx *ctx;
 
-	root.type = BOX_BLOCK;
-	root.style = NULL;
-	root.next = NULL;
-	root.prev = NULL;
-	root.children = NULL;
-	root.last = NULL;
-	root.parent = NULL;
-	root.float_children = NULL;
-	root.next_float = NULL;
-
-	/* The root box's style */
-	if (!convert_xml_to_box(n, c, NULL, &root,
-			&inline_container, 0, 0, 0))
+	ctx = malloc(sizeof(*ctx));
+	if (ctx == NULL)
 		return false;
 
-	if (!box_normalise_block(&root, c))
-		return false;
+	ctx->content = c;
+	ctx->n = n;
+	ctx->root_box = NULL;
+	ctx->cb = cb;
 
-	c->layout = root.children;
-	c->layout->parent = NULL;
+	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
 
 	return true;
 }
-
 
 /* mapping from CSS display to box type
  * this table must be in sync with libcss' css_display enum */
@@ -183,400 +197,218 @@ static const box_type box_map[] = {
 	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
+static inline struct box *box_for_node(const xmlNode *n)
+{
+	return ((binding_private *) n->_private)->box;
+}
+
+static inline bool box_is_root(const xmlNode *n)
+{
+	return n->parent == NULL || n->parent->type == XML_HTML_DOCUMENT_NODE;
+}
 
 /**
- * Recursively construct a box tree from an xml tree and stylesheets.
+ * Find the next node in the DOM tree, completing 
+ * element construction where appropriate.
  *
- * \param  n		 fragment of xml tree
- * \param  content	 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree, or NULL for root box
- * \param  parent	 parent in box tree
- * \param  inline_container  current inline container box, or 0, updated to
- *			 new current inline container on exit
- * \param  href		 current link URL, or 0 if not in a link
- * \param  target	 current link target, or 0 if none
- * \param  title	 current title, or 0 if none
- * \return  true on success, false on memory exhaustion
+ * \param n                 Current node
+ * \param content           Containing content
+ * \param convert_children  Whether to consider children of \a n
+ * \return Next node to process, or NULL if complete
  */
-
-bool convert_xml_to_box(xmlNode *n, html_content *content,
-		const css_computed_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title)
+static xmlNode *next_node(xmlNode *n, html_content *content,
+		bool convert_children)
 {
-	switch (n->type) {
-	case XML_ELEMENT_NODE:
-		return box_construct_element(n, content, parent_style, parent,
-				inline_container, href, target, title);
-	case XML_TEXT_NODE:
-		return box_construct_text(n, content, parent_style, parent,
-				inline_container, href, target, title);
-	default:
-		/* not an element or text node: ignore it (eg. comment) */
-		return true;
+	xmlNode *next = NULL;
+
+	if (convert_children && n->children != NULL) {
+		next = n->children;
+	} else if (n->next != NULL) {
+		if (box_for_node(n) != NULL)
+			box_construct_element_after(n, content);
+
+		next = n->next;
+	} else {
+		if (box_for_node(n) != NULL)
+			box_construct_element_after(n, content);
+
+		while (box_is_root(n) == false && n->parent->next == NULL) {
+			n = n->parent;
+
+			if (box_for_node(n) != NULL)
+				box_construct_element_after(n, content);
+		}
+
+		if (box_is_root(n) == false) {
+			if (box_for_node(n->parent) != NULL) {
+				box_construct_element_after(n->parent, content);
+			}
+
+			next = n->parent->next;
+		}
+	}
+
+	return next;
+}
+
+/**
+ * Convert an ELEMENT node to a box tree fragment, 
+ * then schedule conversion of the next ELEMENT node
+ */
+void convert_xml_to_box(struct box_construct_ctx *ctx)
+{
+	xmlNode *next;
+	bool convert_children = true;
+
+	assert(ctx->n != NULL);
+	assert(ctx->n->type == XML_ELEMENT_NODE);
+
+	if (box_construct_element(ctx, &convert_children) == false) {
+		ctx->cb(ctx->content, false);
+		free(ctx);
+		return;
+	}
+
+	/* Find next element to process, converting text nodes as we go */
+	next = next_node(ctx->n, ctx->content, convert_children);
+	while (next != NULL && next->type != XML_ELEMENT_NODE) {
+		if (next->type == XML_TEXT_NODE) {
+			ctx->n = next;
+			if (box_construct_text(ctx) == false) {
+				ctx->cb(ctx->content, false);
+				free(ctx);
+				return;
+			}
+		}
+
+		next = next_node(next, ctx->content, true);
+	}
+
+	ctx->n = next;
+
+	if (next != NULL) {
+		/* More work to do: schedule a continuation */
+		schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
+	} else {
+		/* Conversion complete */
+		struct box root;
+
+		memset(&root, 0, sizeof(root));
+
+		root.type = BOX_BLOCK;
+		root.children = root.last = ctx->root_box;
+		root.children->parent = &root;
+
+		/** \todo Remove box_normalise_block */
+		if (box_normalise_block(&root, ctx->content) == false) {
+			ctx->cb(ctx->content, false);
+		} else {
+			ctx->content->layout = root.children;
+			ctx->content->layout->parent = NULL;
+
+			ctx->cb(ctx->content, true);
+		}
+
+		free(ctx);
 	}
 }
 
-
 /**
- * Construct the box tree for an XML element.
+ * Construct a list marker box
  *
- * \param  n		 XML node of type XML_ELEMENT_NODE
- * \param  content	 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree, or NULL for root node
- * \param  parent	 parent in box tree
- * \param  inline_container  current inline container box, or 0, updated to
- *			 new current inline container on exit
- * \param  href		 current link URL, or 0 if not in a link
- * \param  target	 current link target, or 0 if none
- * \param  title	 current title, or 0 if none
- * \return  true on success, false on memory exhaustion
+ * \param box      Box to attach marker to
+ * \param title    Current title attribute
+ * \param content  Containing content
+ * \param parent   Current block-level container
+ * \return True on success, false on memory exhaustion
  */
-
-bool box_construct_element(xmlNode *n, html_content *content,
-		const css_computed_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title)
+static bool box_construct_marker(struct box *box, const char *title, 
+		html_content *content, struct box *parent)
 {
-	bool convert_children = true;
-	char *id = 0;
-	char *s;
-	struct box *box = 0;
-	struct box *inline_container_c;
-	struct box *inline_end;
-	css_select_results *styles = NULL;
-	struct element_entry *element;
-	xmlChar *title0;
-	xmlNode *c;
-	lwc_string *bgimage_uri;
+	lwc_string *image_uri;
+	struct box *marker;
 
-	assert(n);
-	assert(n->type == XML_ELEMENT_NODE);
-	assert(parent);
-	assert(inline_container);
-
-	/* In case the parent is a pre block, we clear the
-	 * PRE_STRIP flag since it is not used if we
-	 * follow the pre with a tag
-	 */
-	parent->flags &= ~PRE_STRIP;
-
-	styles = box_get_style(content, parent_style, n);
-	if (!styles)
+	marker = box_create(NULL, box->style, false, NULL, NULL, title, 
+			NULL, content);
+	if (marker == false)
 		return false;
 
-	/* extract title attribute, if present */
-	if ((title0 = xmlGetProp(n, (const xmlChar *) "title"))) {
-		char *title1 = squash_whitespace((char *) title0);
+	marker->type = BOX_BLOCK;
 
-		xmlFree(title0);
+	/** \todo marker content (list-style-type) */
+	switch (css_computed_list_style_type(box->style)) {
+	case CSS_LIST_STYLE_TYPE_DISC:
+		/* 2022 BULLET */
+		marker->text = (char *) "\342\200\242";
+		marker->length = 3;
+		break;
+	case CSS_LIST_STYLE_TYPE_CIRCLE:
+		/* 25CB WHITE CIRCLE */
+		marker->text = (char *) "\342\227\213";
+		marker->length = 3;
+		break;
+	case CSS_LIST_STYLE_TYPE_SQUARE:
+		/* 25AA BLACK SMALL SQUARE */
+		marker->text = (char *) "\342\226\252";
+		marker->length = 3;
+		break;
+	case CSS_LIST_STYLE_TYPE_DECIMAL:
+	case CSS_LIST_STYLE_TYPE_LOWER_ALPHA:
+	case CSS_LIST_STYLE_TYPE_LOWER_ROMAN:
+	case CSS_LIST_STYLE_TYPE_UPPER_ALPHA:
+	case CSS_LIST_STYLE_TYPE_UPPER_ROMAN:
+	default:
+		if (parent->last) {
+			struct box *last = parent->last;
 
-		if (!title1)
-			return false;
+			/* Drill down into last child of parent
+			 * to find the list marker (if any)
+			 *
+			 * Floated list boxes end up as:
+			 *
+			 * parent
+			 *   BOX_INLINE_CONTAINER
+			 *     BOX_FLOAT_{LEFT,RIGHT}
+			 *       BOX_BLOCK <-- list box
+			 *        ...
+			 */
+			while (last != NULL) {
+				if (last->list_marker != NULL)
+					break;
 
-		title = talloc_strdup(content, title1);
-
-		free(title1);
-
-		if (!title)
-			return false;
-	}
-
-	/* extract id attribute, if present */
-	if (!box_get_attribute(n, "id", content, &id))
-		return false;
-
-	/* create box for this element */
-	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
-			href, target, title, id, content);
-	if (!box)
-		return false;
-	/* set box type from computed display */
-	if ((css_computed_position(box->style) == CSS_POSITION_ABSOLUTE ||
-			css_computed_position(box->style) ==
-					CSS_POSITION_FIXED) &&
-			(css_computed_display_static(box->style) == 
-					CSS_DISPLAY_INLINE ||
-			 css_computed_display_static(box->style) == 
-					CSS_DISPLAY_INLINE_BLOCK ||
-			 css_computed_display_static(box->style) == 
-					CSS_DISPLAY_INLINE_TABLE)) {
-		/* Special case for absolute positioning: make absolute inlines
-		 * into inline block so that the boxes are constructed in an 
-		 * inline container as if they were not absolutely positioned. 
-		 * Layout expects and handles this. */
-		box->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
-	} else {
-		/* Normal mapping */
-		box->type = box_map[css_computed_display(box->style, 
-				n->parent == NULL)];
-	}
-
-	/* handle the :before pseudo element */
-
-	/* TODO: Replace with true implementation.
-	 * Currently we only implement enough of this to support the
-	 * 'clearfix' hack, which is in widespread use and the layout
-	 * of many sites depend on. As such, only bother if box is a
-	 * block for now. */
-	if (box->type == BOX_BLOCK) {
-		box_construct_generate(n, content, box,
-				box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
-	}
-
-	/* special elements */
-	element = bsearch((const char *) n->name, element_table,
-			ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
-			(int (*)(const void *, const void *)) strcmp);
-	if (element) {
-		/* a special convert function exists for this element */
-		if (!element->convert(n, content, box, &convert_children))
-			return false;
-
-		href = box->href;
-		target = box->target;
-	}
-
-	if (box->type == BOX_NONE || css_computed_display(box->style, 
-			n->parent == NULL) == CSS_DISPLAY_NONE) {
-		/* Free style and invalidate box's style pointer */
-		css_select_results_destroy(styles);
-		box->styles = NULL;
-		box->style = NULL;
-
-		/* If this box has an associated gadget, invalidate the
-		 * gadget's box pointer and our pointer to the gadget. */
-		if (box->gadget) {
-			box->gadget->box = NULL;
-			box->gadget = NULL;
-		}
-
-		/* We can't do this, as it will destroy any gadget
-		 * associated with the box, thus making any form usage
-		 * access freed memory. The box is in the talloc context,
-		 * anyway, so will get cleaned up with the content. */
-		/* box_free_box(box); */
-		return true;
-	}
-
-	if (!*inline_container &&
-			(box->type == BOX_INLINE ||
-			box->type == BOX_BR ||
-			box->type == BOX_INLINE_BLOCK ||
-			css_computed_float(box->style) == CSS_FLOAT_LEFT ||
-			css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
-		/* this is the first inline in a block: make a container */
-		*inline_container = box_create(NULL, 0, false, 0, 0, 0, 0,
-				content);
-		if (!*inline_container)
-			return false;
-
-		(*inline_container)->type = BOX_INLINE_CONTAINER;
-
-		box_add_child(parent, *inline_container);
-	}
-
-	if (box->type == BOX_INLINE || box->type == BOX_BR) {
-		/* inline box: add to tree and recurse */
-		box_add_child(*inline_container, box);
-
-		if (convert_children && n->children) {
-			for (c = n->children; c; c = c->next)
-				if (!convert_xml_to_box(c, content, box->style,
-						parent, inline_container,
-						href, target, title))
-					return false;
-
-			inline_end = box_create(NULL, box->style, false, href,
-					target, title, id, content);
-			if (!inline_end)
-				return false;
-
-			inline_end->type = BOX_INLINE_END;
-
-			if (*inline_container)
-				box_add_child(*inline_container, inline_end);
-			else
-				box_add_child(box->parent, inline_end);
-
-			box->inline_end = inline_end;
-			inline_end->inline_end = box;
-		}
-	} else if (box->type == BOX_INLINE_BLOCK) {
-		/* inline block box: add to tree and recurse */
-		box_add_child(*inline_container, box);
-
-		inline_container_c = 0;
-
-		for (c = n->children; convert_children && c; c = c->next)
-			if (!convert_xml_to_box(c, content, box->style, box,
-					&inline_container_c,
-					href, target, title))
-				return false;
-	} else {
-		/* list item: compute marker, then treat as non-inline box */
-		if (css_computed_display(box->style, n->parent == NULL) == 
-				CSS_DISPLAY_LIST_ITEM) {
-			lwc_string *image_uri;
-			struct box *marker;
-
-			marker = box_create(NULL, box->style, false, 0, 0,
-					title, 0, content);
-			if (!marker)
-				return false;
-
-			marker->type = BOX_BLOCK;
-
-			/** \todo marker content (list-style-type) */
-			switch (css_computed_list_style_type(box->style)) {
-			case CSS_LIST_STYLE_TYPE_DISC:
-				/* 2022 BULLET */
-				marker->text = (char *) "\342\200\242";
-				marker->length = 3;
-				break;
-			case CSS_LIST_STYLE_TYPE_CIRCLE:
-				/* 25CB WHITE CIRCLE */
-				marker->text = (char *) "\342\227\213";
-				marker->length = 3;
-				break;
-			case CSS_LIST_STYLE_TYPE_SQUARE:
-				/* 25AA BLACK SMALL SQUARE */
-				marker->text = (char *) "\342\226\252";
-				marker->length = 3;
-				break;
-			case CSS_LIST_STYLE_TYPE_DECIMAL:
-			case CSS_LIST_STYLE_TYPE_LOWER_ALPHA:
-			case CSS_LIST_STYLE_TYPE_LOWER_ROMAN:
-			case CSS_LIST_STYLE_TYPE_UPPER_ALPHA:
-			case CSS_LIST_STYLE_TYPE_UPPER_ROMAN:
-			default:
-				if (parent->last) {
-					struct box *last = parent->last;
-
-					/* Drill down into last child of parent
-					 * to find the list marker (if any)
-					 *
-					 * Floated list boxes end up as:
-					 *
-					 * parent
-					 *   BOX_INLINE_CONTAINER
-					 *     BOX_FLOAT_{LEFT,RIGHT}
-					 *       BOX_BLOCK <-- list box
-					 *        ...
-					 */
-					while (last != NULL) {
-						if (last->list_marker != NULL)
-							break;
-
-						last = last->last;
-					}
-
-					if (last && last->list_marker) {
-						marker->rows = last->
-							list_marker->rows + 1;
-					}
-				}
-
-				marker->text = talloc_array(content, char, 20);
-				if (!marker->text)
-					return false;
-
-				snprintf(marker->text, 20, "%u.", marker->rows);
-				marker->length = strlen(marker->text);
-				break;
-			case CSS_LIST_STYLE_TYPE_NONE:
-				marker->text = 0;
-				marker->length = 0;
-				break;
+				last = last->last;
 			}
 
-			if (css_computed_list_style_image(box->style,
-					&image_uri) ==
-					CSS_LIST_STYLE_IMAGE_URI && 
-					image_uri != NULL) {
-				if (!html_fetch_object(content,
-						lwc_string_data(image_uri),
-						marker, image_types,
-						content->base.available_width,
-						1000, false))
-					return false;
+			if (last && last->list_marker) {
+				marker->rows = last->list_marker->rows + 1;
 			}
-
-			box->list_marker = marker;
-			marker->parent = box;
 		}
 
-		/* float: insert a float box between the parent and
-		 * current node. Note: new parent will be the float */
-		if (css_computed_float(box->style) == CSS_FLOAT_LEFT ||
-				css_computed_float(box->style) ==
-				CSS_FLOAT_RIGHT) {
-			parent = box_create(NULL, 0, false, href, target, title,
-					0, content);
-			if (!parent)
-				return false;
+		marker->text = talloc_array(content, char, 20);
+		if (marker->text == NULL)
+			return false;
 
-			if (css_computed_float(box->style) == CSS_FLOAT_LEFT)
-				parent->type = BOX_FLOAT_LEFT;
-			else
-				parent->type = BOX_FLOAT_RIGHT;
-
-			box_add_child(*inline_container, parent);
-		}
-
-		/* non-inline box: add to tree and recurse */
-		box_add_child(parent, box);
-
-		inline_container_c = 0;
-
-		for (c = n->children; convert_children && c; c = c->next)
-			if (!convert_xml_to_box(c, content, box->style, box,
-					&inline_container_c,
-					href, target, title))
-				return false;
-
-		if (css_computed_float(box->style) == CSS_FLOAT_NONE)
-			/* new inline container unless this is a float */
-			*inline_container = 0;
+		snprintf(marker->text, 20, "%u.", marker->rows);
+		marker->length = strlen(marker->text);
+		break;
+	case CSS_LIST_STYLE_TYPE_NONE:
+		marker->text = 0;
+		marker->length = 0;
+		break;
 	}
 
-	/* misc. attributes that can't be handled in box_get_style() */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "colspan"))) {
-	  	if (isdigit(s[0])) {
-			box->columns = strtol(s, NULL, 10);
-		}
-		xmlFree(s);
-	}
-
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rowspan"))) {
-	  	if (isdigit(s[0])) {
-			box->rows = strtol(s, NULL, 10);
-		}
-		xmlFree(s);
-	}
-
-	/* fetch any background image for this box */
-	if (css_computed_background_image(box->style, &bgimage_uri) ==
-				CSS_BACKGROUND_IMAGE_IMAGE &&
-				bgimage_uri != NULL) {
-		if (!html_fetch_object(content,
-				lwc_string_data(bgimage_uri),
-				box, image_types, content->base.available_width,
-				1000, true))
+	if (css_computed_list_style_image(box->style, &image_uri) ==
+			CSS_LIST_STYLE_IMAGE_URI && image_uri != NULL) {
+		if (html_fetch_object(content,
+				lwc_string_data(image_uri),
+				marker, image_types,
+				content->base.available_width,
+				1000, false) == false)
 			return false;
 	}
 
-	/* handle the :after pseudo element */
-
-	/* TODO: Replace with true implementation.
-	 * Currently we only implement enough of this to support the
-	 * 'clearfix' hack, which is in widespread use and the layout
-	 * of many sites depend on. As such, only bother if box is a
-	 * block for now. */
-	if (box->type == BOX_BLOCK) {
-		box_construct_generate(n, content, box,
-				box->styles->styles[CSS_PSEUDO_ELEMENT_AFTER]);
-	}
+	box->list_marker = marker;
+	marker->parent = box;
 
 	return true;
 }
@@ -584,27 +416,28 @@ bool box_construct_element(xmlNode *n, html_content *content,
 /**
  * Construct the box required for a generated element.
  *
- * \param  n		XML node of type XML_ELEMENT_NODE
- * \param  content	content of type CONTENT_HTML that is being processed
- * \param  box		box which may have generated content
- * \param  style	complete computed style for pseudo element
+ * \param n        XML node of type XML_ELEMENT_NODE
+ * \param content  Content of type CONTENT_HTML that is being processed
+ * \param box      Box which may have generated content
+ * \param style    Complete computed style for pseudo element, or NULL
  *
  * TODO:
  * This is currently incomplete. It just does enough to support the clearfix
  * hack. ( http://www.positioniseverything.net/easyclearing.html )
- *
- * To determine if an element has a pseudo element, we select for it and test to
- * see if the returned style's content property is set to normal.
- *
- * We don't actually support generated content yet.
  */
-
-void box_construct_generate(xmlNode *n, html_content *content,
+static void box_construct_generate(xmlNode *n, html_content *content,
 		struct box *box, const css_computed_style *style)
 {
 	struct box *gen = NULL;
 	const css_computed_content_item *c_item;
 
+	/* Nothing to generate if the parent box is not a block */
+	if (box->type != BOX_BLOCK)
+		return;
+
+	/* To determine if an element has a pseudo element, we select 
+	 * for it and test to see if the returned style's content 
+	 * property is set to normal. */
 	if (style == NULL ||
 			css_computed_content(style, &c_item) ==
 			CSS_CONTENT_NORMAL) {
@@ -613,9 +446,8 @@ void box_construct_generate(xmlNode *n, html_content *content,
 	}
 
 	/* create box for this element */
-	if (css_computed_display(style, n->parent == NULL) ==
-			CSS_DISPLAY_BLOCK) {
-		/* currently only support block level after elements */
+	if (css_computed_display(style, box_is_root(n)) == CSS_DISPLAY_BLOCK) {
+		/* currently only support block level elements */
 
 		/** \todo Not wise to drop const from the computed style */ 
 		gen = box_create(NULL, (css_computed_style *) style,
@@ -626,64 +458,383 @@ void box_construct_generate(xmlNode *n, html_content *content,
 
 		/* set box type from computed display */
 		gen->type = box_map[css_computed_display(
-				style, n->parent == NULL)];
+				style, box_is_root(n))];
 
 		box_add_child(box, gen);
 	}
 }
 
+/**
+ * Extract transient construction properties
+ *
+ * \param n      Current DOM node to convert
+ * \param props  Property object to populate
+ */
+static void box_extract_properties(const xmlNode *n, 
+		struct box_construct_props *props)
+{
+	memset(props, 0, sizeof(*props));
+
+	props->node_is_root = box_is_root(n);
+
+	/* Extract properties from containing DOM node */
+	if (props->node_is_root == false) {
+		struct box *parent_box;
+
+		/* Find ancestor node containing parent box */
+		while (n->parent != NULL && box_for_node(n->parent) == NULL)
+			n = n->parent;
+
+		parent_box = box_for_node(n->parent);
+
+		props->parent_style = parent_box->style;
+		props->href = parent_box->href;
+		props->target = parent_box->target;
+		props->title = parent_box->title;
+
+		/* Find containing block (may be parent) */
+		for (n = n->parent; n != NULL; n = n->parent) {
+			struct box *b = box_for_node(n);
+
+			/* Children of nodes that created an inline box
+			 * will generate boxes which are attached as
+			 * _siblings_ of the box generated for their 
+			 * parent node. Note, however, that we'll still
+			 * use the parent node's styling as the parent
+			 * style, above. */
+			if (b != NULL && b->type != BOX_INLINE && 
+					b->type != BOX_BR) {
+				props->containing_block = b;
+				break;
+			}
+		}
+	}
+
+	/* Compute current inline container, if any */
+	if (props->containing_block != NULL && 
+			props->containing_block->last != NULL &&
+			props->containing_block->last->type == 
+				BOX_INLINE_CONTAINER)
+		props->inline_container = props->containing_block->last;
+}
+
+/**
+ * Construct the box tree for an XML element.
+ *
+ * \param ctx               Tree construction context
+ * \param convert_children  Whether to convert children
+ * \return  true on success, false on memory exhaustion
+ */
+
+bool box_construct_element(struct box_construct_ctx *ctx,
+		bool *convert_children)
+{
+	xmlChar *title0, *s;
+	char *id = NULL;
+	struct box *box = NULL;
+	css_select_results *styles = NULL;
+	struct element_entry *element;
+	lwc_string *bgimage_uri;
+	struct box_construct_props props;
+
+	assert(ctx->n != NULL);
+	assert(ctx->n->type == XML_ELEMENT_NODE);
+
+	box_extract_properties(ctx->n, &props);
+
+	if (props.containing_block != NULL) {
+		/* In case the containing block is a pre block, we clear 
+ 		 * the PRE_STRIP flag since it is not used if we follow 
+ 		 * the pre with a tag */
+		props.containing_block->flags &= ~PRE_STRIP;
+	}
+
+	styles = box_get_style(ctx->content, props.parent_style, ctx->n);
+	if (styles == NULL)
+		return false;
+
+	/* Extract title attribute, if present */
+	if ((title0 = xmlGetProp(ctx->n, (const xmlChar *) "title")) != NULL) {
+		char *t = squash_whitespace((char *) title0);
+
+		xmlFree(title0);
+
+		if (t == NULL)
+			return false;
+
+		props.title = talloc_strdup(ctx->content, t);
+
+		free(t);
+
+		if (props.title == NULL)
+			return false;
+	}
+
+	/* Extract id attribute, if present */
+	if (box_get_attribute(ctx->n, "id", ctx->content, &id) == false)
+		return false;
+
+	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
+			props.href, props.target, props.title, id, 
+			ctx->content);
+	if (box == NULL)
+		return false;
+
+	/* If this is the root box, add it to the context */
+	if (props.node_is_root)
+		ctx->root_box = box;
+
+	/* Deal with colspan/rowspan */
+	if ((s = xmlGetProp(ctx->n, (const xmlChar *) "colspan")) != NULL) {
+		if ('0' <= s[0] && s[0] <= '9')
+			box->columns = strtol((char *) s, NULL, 10);
+
+		xmlFree(s);
+	}
+
+	if ((s = xmlGetProp(ctx->n, (const xmlChar *) "rowspan")) != NULL) {
+		if ('0' <= s[0] && s[0] <= '9')
+			box->rows = strtol((char *) s, NULL, 10);
+
+		xmlFree(s);
+	}
+
+	/* Set box type from computed display */
+	if ((css_computed_position(box->style) == CSS_POSITION_ABSOLUTE ||
+			css_computed_position(box->style) ==
+					CSS_POSITION_FIXED) &&
+			(css_computed_display_static(box->style) ==
+					CSS_DISPLAY_INLINE ||
+			 css_computed_display_static(box->style) ==
+					CSS_DISPLAY_INLINE_BLOCK ||
+			 css_computed_display_static(box->style) ==
+					CSS_DISPLAY_INLINE_TABLE)) {
+		/* Special case for absolute positioning: make absolute inlines
+		 * into inline block so that the boxes are constructed in an
+		 * inline container as if they were not absolutely positioned.
+		 * Layout expects and handles this. */
+		box->type = box_map[CSS_DISPLAY_INLINE_BLOCK];
+	} else {
+		/* Normal mapping */
+		box->type = box_map[css_computed_display(box->style, 
+				props.node_is_root)];
+	}
+
+	/* Handle the :before pseudo element */
+	box_construct_generate(ctx->n, ctx->content, box,
+			box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
+
+	/* Special elements */
+	element = bsearch((const char *) ctx->n->name, element_table,
+			ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
+			(int (*)(const void *, const void *)) strcmp);
+	if (element != NULL) {
+		/* A special convert function exists for this element */
+		if (element->convert(ctx->n, ctx->content, box, 
+				convert_children) == false)
+			return false;
+	}
+
+	if (box->type == BOX_NONE || css_computed_display(box->style, 
+			props.node_is_root) == CSS_DISPLAY_NONE) {
+		css_select_results_destroy(styles);
+		box->styles = NULL;
+		box->style = NULL;
+
+		/* Invalidate associated gadget, if any */
+		if (box->gadget != NULL) {
+			box->gadget->box = NULL;
+			box->gadget = NULL;
+		}
+
+		/* Can't do this, because the lifetimes of boxes and gadgets
+		 * are inextricably linked. Fortunately, talloc will save us
+		 * (for now) */
+		/* box_free_box(box); */
+
+		*convert_children = false;
+
+		return true;
+	}
+
+	/* Attach box to DOM node */
+	((binding_private *) ctx->n->_private)->box = box;
+
+	if (props.inline_container == NULL &&
+			(box->type == BOX_INLINE ||
+			 box->type == BOX_BR ||
+			 box->type == BOX_INLINE_BLOCK ||
+			 css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+			 css_computed_float(box->style) == CSS_FLOAT_RIGHT)) {
+		/* Found an inline child of a block without a current container
+		 * (i.e. this box is the first child of its parent, or was
+		 * preceded by block-level siblings) */
+		assert(props.containing_block != NULL && 
+				"Root box must not be inline or floated");
+
+		props.inline_container = box_create(NULL, NULL, false, NULL, 
+				NULL, NULL, NULL, ctx->content);
+		if (props.inline_container == NULL)
+			return false;
+
+		props.inline_container->type = BOX_INLINE_CONTAINER;
+
+		box_add_child(props.containing_block, props.inline_container);
+	}
+
+	/* Kick off fetch for any background image */
+	if (css_computed_background_image(box->style, &bgimage_uri) == 
+			CSS_BACKGROUND_IMAGE_IMAGE && bgimage_uri != NULL) {
+		if (html_fetch_object(ctx->content,
+				lwc_string_data(bgimage_uri),
+				box, image_types,
+				ctx->content->base.available_width, 1000,
+				true) == false)
+			return false;
+	}
+
+	if (*convert_children)
+		box->flags |= CONVERT_CHILDREN;
+
+	if (box->type == BOX_INLINE || box->type == BOX_BR || 
+			box->type == BOX_INLINE_BLOCK) {
+		/* Inline container must exist, as we'll have 
+		 * created it above if it didn't */
+		assert(props.inline_container != NULL);
+
+		box_add_child(props.inline_container, box);
+	} else {
+		if (css_computed_display(box->style, props.node_is_root) ==
+				CSS_DISPLAY_LIST_ITEM) {
+			/* List item: compute marker */
+			if (box_construct_marker(box, props.title, ctx->content,
+					props.containing_block) == false)
+				return false;
+		}
+
+		if (css_computed_float(box->style) == CSS_FLOAT_LEFT ||
+				css_computed_float(box->style) == 
+				CSS_FLOAT_RIGHT) {
+			/* Float: insert a float between the parent and box. */
+			struct box *flt = box_create(NULL, NULL, false,
+					props.href, props.target, props.title, 
+					NULL, ctx->content);
+			if (flt == NULL)
+				return false;
+
+			if (css_computed_float(box->style) == CSS_FLOAT_LEFT)
+				flt->type = BOX_FLOAT_LEFT;
+			else
+				flt->type = BOX_FLOAT_RIGHT;
+
+			box_add_child(props.inline_container, flt);
+			box_add_child(flt, box);
+		} else {
+			/* Non-floated block-level box: add to containing block
+			 * if there is one. If we're the root box, then there
+			 * won't be. */
+			if (props.containing_block != NULL)
+				box_add_child(props.containing_block, box);
+		}
+	}
+
+	return true;
+}
+
+/**
+ * Complete construction of the box tree for an element.
+ *
+ * \param n        DOM node to construct for
+ * \param content  Containing document
+ *
+ * This will be called after all children of an element have been processed
+ */
+void box_construct_element_after(xmlNode *n, html_content *content)
+{
+	struct box_construct_props props;
+	struct box *box = box_for_node(n);
+
+	assert(box != NULL);
+
+	box_extract_properties(n, &props);
+
+	if (box->type == BOX_INLINE || box->type == BOX_BR) {
+		/* Insert INLINE_END into containing block */
+		struct box *inline_end;
+
+		if (n->children == NULL || 
+				(box->flags & CONVERT_CHILDREN) == 0) {
+			/* No children, or didn't want children converted */
+			return;
+		}
+
+		if (props.inline_container == NULL) {
+			/* Create inline container if we don't have one */
+			props.inline_container = box_create(NULL, NULL, false, 
+					NULL, NULL, NULL, NULL, content);
+			if (props.inline_container == NULL)
+				return;
+
+			props.inline_container->type = BOX_INLINE_CONTAINER;
+
+			box_add_child(props.containing_block, 
+					props.inline_container);
+		}
+
+		inline_end = box_create(NULL, box->style, false,
+				box->href, box->target, box->title, 
+				box->id, content);
+		if (inline_end != NULL) {
+			inline_end->type = BOX_INLINE_END;
+
+			assert(props.inline_container != NULL);
+
+			box_add_child(props.inline_container, inline_end);
+
+			box->inline_end = inline_end;
+			inline_end->inline_end = box;
+		}
+	} else {
+		/* Handle the :after pseudo element */
+		box_construct_generate(n, content, box,
+				box->styles->styles[CSS_PSEUDO_ELEMENT_AFTER]);
+	}
+}
 
 /**
  * Construct the box tree for an XML text node.
  *
- * \param  n		 XML node of type XML_TEXT_NODE
- * \param  content	 content of type CONTENT_HTML that is being processed
- * \param  parent_style  style at this point in xml tree
- * \param  parent	 parent in box tree
- * \param  inline_container  current inline container box, or 0, updated to
- *			 new current inline container on exit
- * \param  href		 current link URL, or 0 if not in a link
- * \param  target	 current link target, or 0 if none
- * \param  title	 current title, or 0 if none
+ * \param  ctx  Tree construction context
  * \return  true on success, false on memory exhaustion
  */
 
-bool box_construct_text(xmlNode *n, html_content *content,
-		const css_computed_style *parent_style,
-		struct box *parent, struct box **inline_container,
-		char *href, const char *target, char *title)
+bool box_construct_text(struct box_construct_ctx *ctx)
 {
-	struct box *box = 0;
+	struct box_construct_props props;
+	struct box *box = NULL;
 
-	assert(n);
-	assert(n->type == XML_TEXT_NODE);
-	assert(parent_style);
-	assert(parent);
-	assert(inline_container);
+	assert(ctx->n != NULL);
+	assert(ctx->n->type == XML_TEXT_NODE);
 
-	if (css_computed_white_space(parent_style) == CSS_WHITE_SPACE_NORMAL ||
-			css_computed_white_space(parent_style) == 
+	box_extract_properties(ctx->n, &props);
+
+	assert(props.containing_block != NULL);
+
+	if (css_computed_white_space(props.parent_style) == 
+			CSS_WHITE_SPACE_NORMAL ||
+			css_computed_white_space(props.parent_style) == 
 			CSS_WHITE_SPACE_NOWRAP) {
-		char *text = squash_whitespace((char *) n->content);
-		if (!text)
+		char *text = squash_whitespace((char *) ctx->n->content);
+		if (text == NULL)
 			return false;
 
 		/* if the text is just a space, combine it with the preceding
 		 * text node, if any */
 		if (text[0] == ' ' && text[1] == 0) {
-			if (*inline_container) {
-				if ((*inline_container)->last == 0) {
-					LOG(("empty inline_container %p",
-							*inline_container));
-					while (parent->parent &&
-							parent->parent->parent)
-						parent = parent->parent;
-					box_dump(stderr, parent, 0);
-				}
+			if (props.inline_container != NULL) {
+				assert(props.inline_container->last != NULL);
 
-				assert((*inline_container)->last != 0);
-
-				(*inline_container)->last->space =
+				props.inline_container->last->space =
 						UNKNOWN_WIDTH;
 			}
 
@@ -692,33 +843,38 @@ bool box_construct_text(xmlNode *n, html_content *content,
 			return true;
 		}
 
-		if (!*inline_container) {
-			/* this is the first inline node: make a container */
-			*inline_container = box_create(NULL, 0, false, 0, 0, 0,
-					0, content);
-			if (!*inline_container) {
+		if (props.inline_container == NULL) {
+			/* Child of a block without a current container
+			 * (i.e. this box is the first child of its parent, or 
+			 * was preceded by block-level siblings) */
+			props.inline_container = box_create(NULL, NULL, false, 
+					NULL, NULL, NULL, NULL, ctx->content);
+			if (props.inline_container == NULL) {
 				free(text);
 				return false;
 			}
 
-			(*inline_container)->type = BOX_INLINE_CONTAINER;
+			props.inline_container->type = BOX_INLINE_CONTAINER;
 
-			box_add_child(parent, *inline_container);
+			box_add_child(props.containing_block, 
+					props.inline_container);
 		}
 
 		/** \todo Dropping const here is not clever */ 
-		box = box_create(NULL, (css_computed_style *) parent_style,
-				false, href, target, title, 0, content);
-		if (!box) {
+		box = box_create(NULL, 
+				(css_computed_style *) props.parent_style,
+				false, props.href, props.target, props.title, 
+				NULL, ctx->content);
+		if (box == NULL) {
 			free(text);
 			return false;
 		}
 
 		box->type = BOX_TEXT;
 
-		box->text = talloc_strdup(content, text);
+		box->text = talloc_strdup(ctx->content, text);
 		free(text);
-		if (!box->text)
+		if (box->text == NULL)
 			return false;
 
 		box->length = strlen(box->text);
@@ -729,12 +885,13 @@ bool box_construct_text(xmlNode *n, html_content *content,
 			box->length--;
 		}
 
-		if (css_computed_text_transform(parent_style) != 
+		if (css_computed_text_transform(props.parent_style) != 
 				CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(box->text, box->length,
-				css_computed_text_transform(parent_style));
+				css_computed_text_transform(
+					props.parent_style));
 
-		if (css_computed_white_space(parent_style) == 
+		if (css_computed_white_space(props.parent_style) == 
 				CSS_WHITE_SPACE_NOWRAP) {
 			unsigned int i;
 
@@ -755,7 +912,7 @@ bool box_construct_text(xmlNode *n, html_content *content,
 			}
 		}
 
-		box_add_child(*inline_container, box);
+		box_add_child(props.inline_container, box);
 
 		if (box->text[0] == ' ') {
 			box->length--;
@@ -765,40 +922,42 @@ bool box_construct_text(xmlNode *n, html_content *content,
 			if (box->prev != NULL)
 				box->prev->space = UNKNOWN_WIDTH;
 		}
-
 	} else {
 		/* white-space: pre */
-		char *text = cnv_space2nbsp((char *) n->content);
+		char *text = cnv_space2nbsp((char *) ctx->n->content);
 		char *current;
 		enum css_white_space_e white_space =
-				css_computed_white_space(parent_style);
+				css_computed_white_space(props.parent_style);
 
 		/* note: pre-wrap/pre-line are unimplemented */
 		assert(white_space == CSS_WHITE_SPACE_PRE ||
 				white_space == CSS_WHITE_SPACE_PRE_LINE ||
 				white_space == CSS_WHITE_SPACE_PRE_WRAP);
 
-		if (!text)
+		if (text == NULL)
 			return false;
 
-		if (css_computed_text_transform(parent_style) != 
+		if (css_computed_text_transform(props.parent_style) != 
 				CSS_TEXT_TRANSFORM_NONE)
 			box_text_transform(text, strlen(text),
-				css_computed_text_transform(parent_style));
+				css_computed_text_transform(
+						props.parent_style));
 
 		current = text;
 
 		/* swallow a single leading new line */
-		if (parent->flags & PRE_STRIP) {
+		if (props.containing_block->flags & PRE_STRIP) {
 			switch (*current) {
 			case '\n':
-				current++; break;
+				current++;
+				break;
 			case '\r':
 				current++;
-				if (*current == '\n') current++;
+				if (*current == '\n')
+					current++;
 				break;
 			}
-			parent->flags &= ~PRE_STRIP;
+			props.containing_block->flags &= ~PRE_STRIP;
 		}
 
 		do {
@@ -807,40 +966,47 @@ bool box_construct_text(xmlNode *n, html_content *content,
 
 			current[len] = 0;
 
-			if (!*inline_container) {
-				*inline_container = box_create(NULL, 0, false,
-						0, 0, 0, 0, content);
-				if (!*inline_container) {
+			if (props.inline_container == NULL) {
+				/* Child of a block without a current container
+				 * (i.e. this box is the first child of its 
+				 * parent, or was preceded by block-level 
+				 * siblings) */
+				props.inline_container = box_create(NULL, NULL,
+						false, NULL, NULL, NULL, NULL, 
+						ctx->content);
+				if (props.inline_container == NULL) {
 					free(text);
 					return false;
 				}
 
-				(*inline_container)->type =
+				props.inline_container->type = 
 						BOX_INLINE_CONTAINER;
 
-				box_add_child(parent, *inline_container);
+				box_add_child(props.containing_block, 
+						props.inline_container);
 			}
 
 			/** \todo Dropping const isn't clever */
 			box = box_create(NULL,
-					(css_computed_style *) parent_style,
-					false, href, target, title, 0, content);
-			if (!box) {
+				(css_computed_style *) props.parent_style,
+				false, props.href, props.target, props.title, 
+				NULL, ctx->content);
+			if (box == NULL) {
 				free(text);
 				return false;
 			}
 
 			box->type = BOX_TEXT;
 
-			box->text = talloc_strdup(content, current);
-			if (!box->text) {
+			box->text = talloc_strdup(ctx->content, current);
+			if (box->text == NULL) {
 				free(text);
 				return false;
 			}
 
 			box->length = strlen(box->text);
 
-			box_add_child(*inline_container, box);
+			box_add_child(props.inline_container, box);
 
 			current[len] = old;
 
@@ -848,10 +1014,10 @@ bool box_construct_text(xmlNode *n, html_content *content,
 
 			if (current[0] == '\r' && current[1] == '\n') {
 				current += 2;
-				*inline_container = 0;
+				props.inline_container = NULL;
 			} else if (current[0] != 0) {
 				current++;
-				*inline_container = 0;
+				props.inline_container = NULL;
 			}
 		} while (*current);
 

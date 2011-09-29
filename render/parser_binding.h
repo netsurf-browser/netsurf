@@ -23,8 +23,16 @@
 
 #include <libxml/tree.h>
 
+struct box;
 struct form;
 struct form_control;
+
+/**
+ * Private data attached to each DOM node
+ */
+typedef struct binding_private {
+	struct box *box; /**< Root box if ELEMENT node, or NULL */
+} binding_private;
 
 typedef enum binding_error {
 	BINDING_OK,
@@ -56,6 +64,8 @@ xmlDocPtr binding_get_document(void *ctx, binding_quirks_mode *quirks);
 
 struct form *binding_get_forms(void *ctx);
 struct form_control *binding_get_control_for_node(void *ctx, xmlNodePtr node);
+
+void binding_destroy_document(xmlDocPtr doc);
 
 #endif
 

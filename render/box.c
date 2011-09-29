@@ -109,8 +109,8 @@ free_box_style(struct box *b)
  */
 
 struct box * box_create(css_select_results *styles, css_computed_style *style,
-		bool style_owned, char *href, const char *target, char *title,
-		char *id, void *context)
+		bool style_owned, const char *href, const char *target, 
+		const char *title, char *id, void *context)
 {
 	unsigned int i;
 	struct box *box;

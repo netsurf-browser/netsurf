@@ -104,6 +104,7 @@ struct html_content;
 #define UNKNOWN_WIDTH INT_MAX
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
+typedef void (*box_construct_complete_cb)(struct html_content *c, bool success);
 
 /** Type of a struct box. */
 typedef enum {
@@ -128,7 +129,8 @@ typedef enum {
 	MAKE_HEIGHT = 1 << 7,	/* box causes its own height */
 	NEED_MIN    = 1 << 8,	/* minimum width is required for layout */
 	REPLACE_DIM = 1 << 9,	/* replaced element has given dimensions */
-	IFRAME      = 1 << 10	/* box contains an iframe */
+	IFRAME      = 1 << 10,	/* box contains an iframe */
+	CONVERT_CHILDREN = 1 << 11  /* wanted children converting */
 } box_flags;
 
 /* Sides of a box */
@@ -211,9 +213,9 @@ struct box {
 	/** Width of space after current text (depends on font and size). */
 	int space;
 
-	char *href;   /**< Link, or 0. */
+	const char *href;   /**< Link, or 0. */
 	const char *target;  /**< Link target, or 0. */
-	char *title;  /**< Title, or 0. */
+	const char *title;  /**< Title, or 0. */
 
 	unsigned int columns;  /**< Number of columns for TABLE / TABLE_CELL. */
 	unsigned int rows;     /**< Number of rows for TABLE only. */
@@ -310,8 +312,8 @@ extern const char *TARGET_BLANK;
 
 void *box_style_alloc(void *ptr, size_t len, void *pw);
 struct box * box_create(css_select_results *styles, css_computed_style *style,
-		bool style_owned, char *href, const char *target, char *title,
-		char *id, void *context);
+		bool style_owned, const char *href, const char *target, 
+		const char *title, char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_unlink_and_free(struct box *box);
@@ -336,7 +338,8 @@ bool box_handle_scrollbars(struct content *c, struct box *box,
 bool box_vscrollbar_present(const struct box *box);
 bool box_hscrollbar_present(const struct box *box);
 
-bool xml_to_box(xmlNode *n, struct html_content *c);
+bool xml_to_box(xmlNode *n, struct html_content *c, 
+		box_construct_complete_cb cb);
 
 bool box_normalise_block(struct box *block, struct html_content *c);
 

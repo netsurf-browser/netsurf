@@ -167,7 +167,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 {
 	html_content *html = (html_content *) c;
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
-	char *title = 0;
+	const char *title = 0;
 	const char *url = 0;
 	const char *target = 0;
 	char status_buffer[200];

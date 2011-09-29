@@ -34,6 +34,15 @@
 #include "utils/log.h"
 #include "utils/talloc.h"
 
+/**
+ * Private data attached to each DOM node
+ */
+typedef struct hubbub_private {
+	binding_private base;
+
+	uint32_t refcnt;
+} hubbub_private;
+
 typedef struct hubbub_ctx {
 	hubbub_parser *parser;
 
@@ -69,6 +78,7 @@ static struct {
 	{ "xmlns", "http://www.w3.org/2000/xmlns/" }
 };
 
+static hubbub_private *create_private(uint32_t refcnt);
 static inline char *c_string_from_hubbub_string(hubbub_ctx *ctx, 
 		const hubbub_string *str);
 static void create_namespaces(hubbub_ctx *ctx, xmlNode *root);
@@ -168,7 +178,13 @@ binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
 		free(c);
 		return BINDING_NOMEM;
 	}
-	c->document->_private = (void *) 0;
+	c->document->_private = create_private(0);
+	if (c->document->_private == NULL) {
+		xmlFreeDoc(c->document);
+		hubbub_parser_destroy(c->parser);
+		free(c);
+		return BINDING_NOMEM;
+	}
 
 	for (i = 0; i < sizeof(c->namespaces) / sizeof(c->namespaces[0]); i++) {
 		c->namespaces[i] = NULL;
@@ -200,7 +216,7 @@ binding_error binding_destroy_tree(void *ctx)
 		hubbub_parser_destroy(c->parser);
 
 	if (c->owns_doc)
-		xmlFreeDoc(c->document);
+		binding_destroy_document(c->document);
 
 	c->parser = NULL;
 	c->encoding = NULL;
@@ -290,7 +306,42 @@ struct form_control *binding_get_control_for_node(void *ctx, xmlNodePtr node)
 	return ctl;
 }
 
+void binding_destroy_document(xmlDocPtr doc)
+{
+	xmlNode *n = (xmlNode *) doc;
+
+	while (n != NULL) {
+		free(n->_private);
+
+		if (n->children != NULL) {
+			n = n->children;
+		} else if (n->next != NULL) {
+			n = n->next;
+		} else {
+			while (n->parent != NULL && n->parent->next == NULL)
+				n = n->parent;
+
+			if (n->parent != NULL)
+				n = n->parent->next;
+			else
+				n = NULL;
+		}
+	}
+
+	xmlFreeDoc(doc);
+}
+
 /*****************************************************************************/
+
+hubbub_private *create_private(uint32_t refcnt)
+{
+	hubbub_private *pvt = calloc(1, sizeof(*pvt));
+
+	if (pvt != NULL)
+		pvt->refcnt = refcnt;
+
+	return pvt;
+}
 
 char *c_string_from_hubbub_string(hubbub_ctx *ctx, const hubbub_string *str)
 {
@@ -328,7 +379,12 @@ hubbub_error create_comment(void *ctx, const hubbub_string *data, void **result)
 		free(content);
 		return HUBBUB_NOMEM;
 	}
-	n->_private = (void *) (uintptr_t) 1;
+	n->_private = create_private(1);
+	if (n->_private == NULL) {
+		xmlFreeNode(n);
+		free(content);
+		return HUBBUB_NOMEM;
+	}
 
 	free(content);
 
@@ -374,7 +430,14 @@ hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype,
 		free(name);
 		return HUBBUB_NOMEM;
 	}
-	n->_private = (void *) (uintptr_t) 1;
+	n->_private = create_private(1);
+	if (n->_private == NULL) {
+		xmlFreeDtd(n);
+		free(system);
+		free(public);
+		free(name);
+		return HUBBUB_NOMEM;
+	}
 
 	*result = (void *) n;
 
@@ -413,10 +476,16 @@ hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 		free(name);
 		return HUBBUB_NOMEM;
 	}
-	n->_private = (void *) (uintptr_t) 1;
+	n->_private = create_private(1);
+	if (n->_private == NULL) {
+		xmlFreeNode(n);
+		free(name);
+		return HUBBUB_NOMEM;
+	}
 
 	if (tag->n_attributes > 0 && add_attributes(ctx, (void *) n, 
 			tag->attributes, tag->n_attributes) != HUBBUB_OK) {
+		free(n->_private);
 		xmlFreeNode(n);
 		free(name);
 		return HUBBUB_NOMEM;
@@ -427,6 +496,7 @@ hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 
 		/* Memory exhaustion */
 		if (form == NULL) {
+			free(n->_private);
 			xmlFreeNode(n);
 			free(name);
 			return HUBBUB_NOMEM;
@@ -453,7 +523,11 @@ hubbub_error create_text(void *ctx, const hubbub_string *data, void **result)
 	if (n == NULL) {
 		return HUBBUB_NOMEM;
 	}
-	n->_private = (void *) (uintptr_t) 1;
+	n->_private = create_private(1);
+	if (n->_private == NULL) {
+		xmlFreeNode(n);
+		return HUBBUB_NOMEM;
+	}
 
 	*result = (void *) n;
 
@@ -463,17 +537,18 @@ hubbub_error create_text(void *ctx, const hubbub_string *data, void **result)
 hubbub_error ref_node(void *ctx, void *node)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
+	hubbub_private *pvt;
 
 	if (node == c->document) {
 		xmlDoc *n = (xmlDoc *) node;
-		uintptr_t count = (uintptr_t) n->_private;
+		pvt = n->_private;
 
-		n->_private = (void *) (++count);
+		pvt->refcnt++;
 	} else {
 		xmlNode *n = (xmlNode *) node;
-		uintptr_t count = (uintptr_t) n->_private;
+		pvt = n->_private;
 
-		n->_private = (void *) (++count);
+		pvt->refcnt++;
 	}
 
 	return HUBBUB_OK;
@@ -482,23 +557,25 @@ hubbub_error ref_node(void *ctx, void *node)
 hubbub_error unref_node(void *ctx, void *node)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
+	hubbub_private *pvt;
 
 	if (node == c->document) {
 		xmlDoc *n = (xmlDoc *) node;
-		uintptr_t count = (uintptr_t) n->_private;
+		pvt = n->_private;
 
-		assert(count != 0 && "Node has refcount of zero");
+		assert(pvt->refcnt != 0 && "Node has refcount of zero");
 
-		n->_private = (void *) (--count);
+		pvt->refcnt--;
 	} else {
 		xmlNode *n = (xmlNode *) node;
-		uintptr_t count = (uintptr_t) n->_private;
+		pvt = n->_private;
 
-		assert(count != 0 && "Node has refcount of zero");
+		assert(pvt->refcnt != 0 && "Node has refcount of zero");
 
-		n->_private = (void *) (--count);
+		pvt->refcnt--;
 
-		if (count == 0 && n->parent == NULL) {
+		if (pvt->refcnt == 0 && n->parent == NULL) {
+			free(pvt);
 			xmlFreeNode(n);
 		}
 	}
@@ -585,13 +662,18 @@ hubbub_error remove_child(void *ctx, void *parent, void *child, void **result)
 hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 {
 	xmlNode *n = (xmlNode *) node;
+	xmlNode *copy = xmlCopyNode(n, deep ? 1 : 2);
 
-	*result = xmlCopyNode(n, deep ? 1 : 2);
-
-	if (*result == NULL)
+	if (copy == NULL)
 		return HUBBUB_NOMEM;
 
-	((xmlNode *)(*result))->_private = (void *) (uintptr_t) 1;
+	copy->_private = create_private(1);
+	if (copy->_private == NULL) {
+		xmlFreeNode(copy);
+		return HUBBUB_NOMEM;
+	}
+
+	*result = copy;
 
 	return HUBBUB_OK;
 }
