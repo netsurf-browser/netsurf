@@ -81,6 +81,25 @@
 		if (!found) element = 0; \
 	} else element = 0
 
+/** Find the element (by hostname) in the given ring, leave it in the
+ * provided element variable
+ */
+#define RING_FINDBYLWCHOST(ring, element, lwc_hostname) \
+	/*LOG(("RING_FINDBYHOST(%s, %s)", #ring, hostname));*/ \
+	if (ring) { \
+		bool found = false; \
+		element = ring; \
+		do { \
+			if (lwc_string_isequal(element->host, lwc_hostname, \
+					&found) == lwc_error_ok && \
+					found == true) { \
+				break; \
+			} \
+			element = element->r_next; \
+		} while (element != ring); \
+		if (!found) element = 0; \
+	} else element = 0
+
 /** Measure the size of a ring and put it in the supplied variable */
 #define RING_GETSIZE(ringtype, ring, sizevar) \
 	/*LOG(("RING_GETSIZE(%s)", #ring));*/ \
