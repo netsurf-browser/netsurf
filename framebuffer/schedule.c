@@ -61,8 +61,6 @@ void schedule(int cs_ival, void (*callback)(void *p), void *p)
 
 	nscb = calloc(1, sizeof(struct nscallback));
 
-	LOG(("adding callback %p for  %p(%p) at %d cs", nscb, callback, p, cs_ival));
-
 	gettimeofday(&nscb->tv, NULL);
 	timeradd(&nscb->tv, &tv, &nscb->tv);
 
@@ -162,9 +160,6 @@ schedule_run(void)
                                 prev_nscb->next = unlnk_nscb->next;
                         }
 
-                        LOG(("callback entry %p running %p(%p)",
-                             unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
-                        /* call callback */
                         unlnk_nscb->callback(unlnk_nscb->p);
 
                         free(unlnk_nscb);
