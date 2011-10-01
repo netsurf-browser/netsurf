@@ -75,7 +75,7 @@ struct curl_fetch_info {
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
 	nsurl *url;		/**< URL of this fetch. */
-	char *host;		/**< The hostname of this fetch. */
+	lwc_string *host;	/**< The hostname of this fetch. */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *location;		/**< Response Location header, or 0. */
 	unsigned long content_length;	/**< Response Content-Length, or 0. */
@@ -91,7 +91,7 @@ struct curl_fetch_info {
 
 struct cache_handle {
 	CURL *handle; /**< The cached cURL handle */
-	char *host;	   /**< The host for which this handle is cached */
+	lwc_string *host;   /**< The host for which this handle is cached */
 
 	struct cache_handle *r_prev; /**< Previous cached handle in ring. */
 	struct cache_handle *r_next; /**< Next cached handle in ring. */
@@ -116,8 +116,8 @@ static void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 static bool fetch_curl_start(void *vfetch);
 static bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch,
 		CURL *handle);
-static CURL *fetch_curl_get_handle(char *host);
-static void fetch_curl_cache_handle(CURL *handle, char *hostname);
+static CURL *fetch_curl_get_handle(lwc_string *host);
+static void fetch_curl_cache_handle(CURL *handle, lwc_string *host);
 static CURLcode fetch_curl_set_options(struct curl_fetch_info *f);
 static CURLcode fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx,
 				     void *p);
@@ -284,6 +284,8 @@ bool fetch_curl_initialise(lwc_string *scheme)
 
 void fetch_curl_finalise(lwc_string *scheme)
 {
+	struct cache_handle *h;
+
 	curl_fetchers_registered--;
 	LOG(("Finalise cURL fetcher %s", lwc_string_data(scheme)));
 	if (curl_fetchers_registered == 0) {
@@ -298,6 +300,13 @@ void fetch_curl_finalise(lwc_string *scheme)
 			LOG(("curl_multi_cleanup failed: ignoring"));
 
 		curl_global_cleanup();
+	}
+
+	/* Free anything remaining in the cached curl handle ring */
+	while (curl_handle_ring != NULL) {
+		h = curl_handle_ring;
+		RING_REMOVE(curl_handle_ring, h);
+		lwc_string_unref(h->host);
 	}
 }
 
@@ -329,10 +338,8 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
 {
-	char *host;
 	struct curl_fetch_info *fetch;
 	struct curl_slist *slist;
-	url_func_result res;
 	int i;
 
 	fetch = malloc(sizeof (*fetch));
@@ -340,18 +347,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		return 0;
 
 	fetch->fetch_handle = parent_fetch;
-	fetch->url = nsurl_ref(url);
-
-	res = url_host(nsurl_access(url), &host);
-	if (res != URL_FUNC_OK) {
-		/* we only fail memory exhaustion */
-		if (res == URL_FUNC_NOMEM)
-			goto failed;
-
-		host = strdup("");
-		if (!host)
-			goto failed;
-	}
 
 	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
 
@@ -362,7 +357,8 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
 	fetch->headers = 0;
-	fetch->host = host;
+	fetch->url = nsurl_ref(url);
+	fetch->host = nsurl_get_component(url, NSURL_HOST);
 	fetch->location = 0;
 	fetch->content_length = 0;
 	fetch->http_code = 0;
@@ -419,7 +415,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	return fetch;
 
 failed:
-	free(host);
+	lwc_string_unref(fetch->host);
 	nsurl_unref(fetch->url);
 	free(fetch->post_urlenc);
 	if (fetch->post_multipart)
@@ -478,14 +474,14 @@ bool fetch_curl_initiate_fetch(struct curl_fetch_info *fetch, CURL *handle)
  * Find a CURL handle to use to dispatch a job
  */
 
-CURL *fetch_curl_get_handle(char *host)
+CURL *fetch_curl_get_handle(lwc_string *host)
 {
 	struct cache_handle *h;
 	CURL *ret;
-	RING_FINDBYHOST(curl_handle_ring, h, host);
+	RING_FINDBYLWCHOST(curl_handle_ring, h, host);
 	if (h) {
 		ret = h->handle;
-		free(h->host);
+		lwc_string_unref(h->host);
 		RING_REMOVE(curl_handle_ring, h);
 		free(h);
 	} else {
@@ -499,11 +495,11 @@ CURL *fetch_curl_get_handle(char *host)
  * Cache a CURL handle for the provided host (if wanted)
  */
 
-void fetch_curl_cache_handle(CURL *handle, char *host)
+void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 {
 	struct cache_handle *h = 0;
 	int c;
-	RING_FINDBYHOST(curl_handle_ring, h, host);
+	RING_FINDBYLWCHOST(curl_handle_ring, h, host);
 	if (h) {
 		/* Already have a handle cached for this hostname */
 		curl_easy_cleanup(handle);
@@ -522,8 +518,8 @@ void fetch_curl_cache_handle(CURL *handle, char *host)
 			curl_handle_ring = h->r_next;
 			curl_easy_cleanup(h->handle);
 			h->handle = handle;
-			free(h->host);
-			h->host = strdup(host);
+			lwc_string_unref(h->host);
+			h->host = lwc_string_ref(host);
 		} else {
 			/* Actually, we don't want to cache any handles */
 			curl_easy_cleanup(handle);
@@ -534,7 +530,7 @@ void fetch_curl_cache_handle(CURL *handle, char *host)
 	/* The table isn't full yet, so make a shiny new handle to add to the ring */
 	h = (struct cache_handle*)malloc(sizeof(struct cache_handle));
 	h->handle = handle;
-	h->host = strdup(host);
+	h->host = lwc_string_ref(host);
 	RING_INSERT(curl_handle_ring, h);
 }
 
@@ -706,7 +702,7 @@ void fetch_curl_free(void *vf)
 	if (f->curl_handle)
 		curl_easy_cleanup(f->curl_handle);
 	nsurl_unref(f->url);
-	free(f->host);
+	lwc_string_unref(f->host);
 	free(f->location);
 	free(f->cookie_string);
 	free(f->realm);
