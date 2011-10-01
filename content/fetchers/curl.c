@@ -352,7 +352,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 			goto failed;
 	}
 
-	LOG(("fetch %p, url '%s'", fetch, url));
+	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
 
 	/* construct a new fetch structure */
 	fetch->curl_handle = 0;
