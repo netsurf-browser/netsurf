@@ -74,7 +74,7 @@ struct curl_fetch_info {
 	bool abort;		/**< Abort requested. */
 	bool stopped;		/**< Download stopped on purpose. */
 	bool only_2xx;		/**< Only HTTP 2xx responses acceptable. */
-	char *url;		/**< URL of this fetch. */
+	nsurl *url;		/**< URL of this fetch. */
 	char *host;		/**< The hostname of this fetch. */
 	struct curl_slist *headers;	/**< List of request headers. */
 	char *location;		/**< Response Location header, or 0. */
@@ -340,6 +340,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		return 0;
 
 	fetch->fetch_handle = parent_fetch;
+	fetch->url = nsurl_ref(url);
 
 	res = url_host(nsurl_access(url), &host);
 	if (res != URL_FUNC_OK) {
@@ -360,7 +361,6 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
-	fetch->url = strdup(nsurl_access(url));
 	fetch->headers = 0;
 	fetch->host = host;
 	fetch->location = 0;
@@ -378,8 +378,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
 	fetch->last_progress_update = 0;
 
-	if (!fetch->url ||
-	    (post_urlenc && !fetch->post_urlenc) ||
+	if ((post_urlenc && !fetch->post_urlenc) ||
 	    (post_multipart && !fetch->post_multipart))
 		goto failed;
 
@@ -421,7 +420,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 
 failed:
 	free(host);
-	free(fetch->url);
+	nsurl_unref(fetch->url);
 	free(fetch->post_urlenc);
 	if (fetch->post_multipart)
 		curl_formfree(fetch->post_multipart);
@@ -557,7 +556,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		return code;					\
 	}
 
-	SETOPT(CURLOPT_URL, f->url);
+	SETOPT(CURLOPT_URL, nsurl_access(f->url));
 	SETOPT(CURLOPT_PRIVATE, f);
 	SETOPT(CURLOPT_WRITEDATA, f);
 	SETOPT(CURLOPT_WRITEHEADER, f);
@@ -578,14 +577,14 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 
-	f->cookie_string = urldb_get_cookie(f->url);
+	f->cookie_string = urldb_get_cookie(nsurl_access(f->url));
 	if (f->cookie_string) {
 		SETOPT(CURLOPT_COOKIE, f->cookie_string);
 	} else {
 		SETOPT(CURLOPT_COOKIE, NULL);
 	}
 
-	if ((auth = urldb_get_auth_details(f->url, NULL)) != NULL) {
+	if ((auth = urldb_get_auth_details(nsurl_access(f->url), NULL)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		SETOPT(CURLOPT_USERPWD, auth);
 	} else {
@@ -593,7 +592,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 	}
 
 	if (option_http_proxy && option_http_proxy_host &&
-			strncmp(f->url, "file:", 5) != 0) {
+			strncmp(nsurl_access(f->url), "file:", 5) != 0) {
 		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
 		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
 		if (option_http_proxy_auth != OPTION_HTTP_PROXY_AUTH_NONE) {
@@ -613,7 +612,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_PROXY, NULL);
 	}
 
-	if (urldb_get_cert_permissions(f->url)) {
+	if (urldb_get_cert_permissions(nsurl_access(f->url))) {
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
@@ -658,7 +657,7 @@ void fetch_curl_abort(void *vf)
 {
 	struct curl_fetch_info *f = (struct curl_fetch_info *)vf;
 	assert(f);
-	LOG(("fetch %p, url '%s'", f, f->url));
+	LOG(("fetch %p, url '%s'", f, nsurl_access(f->url)));
 	if (f->curl_handle) {
 		f->abort = true;
 	} else {
@@ -679,7 +678,7 @@ void fetch_curl_stop(struct curl_fetch_info *f)
 	CURLMcode codem;
 
 	assert(f);
-	LOG(("fetch %p, url '%s'", f, f->url));
+	LOG(("fetch %p, url '%s'", f, nsurl_access(f->url)));
 
 	if (f->curl_handle) {
 		/* remove from curl multi handle */
@@ -706,7 +705,7 @@ void fetch_curl_free(void *vf)
 
 	if (f->curl_handle)
 		curl_easy_cleanup(f->curl_handle);
-	free(f->url);
+	nsurl_unref(f->url);
 	free(f->host);
 	free(f->location);
 	free(f->cookie_string);
@@ -795,7 +794,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	assert(code == CURLE_OK);
 
 	abort_fetch = f->abort;
-	LOG(("done %s", f->url));
+	LOG(("done %s", nsurl_access(f->url)));
 
 	if (abort_fetch == false && result == CURLE_OK) {
 		/* fetch completed normally */
@@ -1171,7 +1170,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 	}
 
 	/* handle HTTP errors (non 2xx response codes) */
-	if (f->only_2xx && strncmp(f->url, "http", 4) == 0 &&
+	if (f->only_2xx && strncmp(nsurl_access(f->url), "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
 		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
 				messages_get("Not2xx"), 0, 
