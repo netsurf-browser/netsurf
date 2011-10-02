@@ -137,6 +137,220 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_HISTORY] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
 }
 
+void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdata)
+{
+	/*
+	 * CMSUB_FRAME     - userdata = hlcache_object *
+	 * CMSUB_URL       - userdata = char *
+	 * CMSUB_OBJECT    - userdata = hlcache_object *
+	 * CMSUB_SEL       - userdata = browser_window *
+	 * CMID_PLUGINCMD  - userdata = hlcache_object *
+	 * CMID_SELECTFILE - userdata = box *
+	 */
+
+	struct browser_window *bw = NULL;
+
+	switch(cmsub)
+	{
+		case CMSUB_FRAME:
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_FRAME],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMEWIN],
+							PMIA_ID, CMID_FRAMEWIN,
+							PMIA_UserData, content_get_url(userdata),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMETAB],
+							PMIA_ID, CMID_FRAMETAB,
+							PMIA_UserData, content_get_url(userdata),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMESHOW],
+							PMIA_ID, CMID_FRAMESHOW,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_RELOADOBJ],
+							PMIA_ID, CMID_FRAMERELOAD,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
+							PMIA_ID, CMID_FRAMECOPYURL,
+							PMIA_UserData, content_get_url(userdata),
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
+							PMIA_ID, CMID_FRAMESAVE,
+							PMIA_UserData, content_get_url(userdata),
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+		break;
+
+		case CMSUB_URL:
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_URL],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENWIN],
+							PMIA_ID, CMID_URLOPENWIN,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENTAB],
+							PMIA_ID, CMID_URLOPENTAB,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYURL],
+							PMIA_ID, CMID_COPYURL,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEURL],
+							PMIA_ID, CMID_SAVEURL,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+		break;
+
+		case CMSUB_OBJECT:
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_OBJECT],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SHOWOBJ],
+							PMIA_ID, CMID_SHOWOBJ,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_RELOADOBJ],
+							PMIA_ID, CMID_RELOADOBJ,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
+							PMIA_ID, CMID_COPYOBJ,
+							PMIA_UserData, content_get_url(userdata),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
+							PMIA_ID, CMID_CLIPOBJ,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
+							PMIA_ID, CMID_SAVEOBJ,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEIFFOBJ],
+							PMIA_ID, CMID_SAVEIFFOBJ,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+		break;
+
+		case CMSUB_SEL:
+			bw = userdata;
+			BOOL disabled_readonly = selection_read_only(browser_window_get_selection(bw));
+			BOOL disabled_noselection = !browser_window_has_selection(bw);
+
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_SEL],
+					PMIA_SubMenu, NewObject(POPUPMENU_GetClass(), NULL,
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCUT],
+							PMIA_ID,CMID_SELCUT,
+							PMIA_Disabled, disabled_noselection && disabled_readonly,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCOPY],
+							PMIA_ID,CMID_SELCOPY,
+							PMIA_Disabled, disabled_noselection,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELPASTE],
+							PMIA_ID,CMID_SELPASTE,
+							PMIA_Disabled, (bw->window->c_h == 0),
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELALL],
+							PMIA_ID,CMID_SELALL,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELCLEAR],
+							PMIA_ID,CMID_SELCLEAR,
+							PMIA_Disabled, disabled_noselection,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_SELSEARCH],
+							PMIA_ID,CMID_SELSEARCH,
+							PMIA_Disabled, disabled_noselection,
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+		break;
+
+		case CMID_PLUGINCMD:
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
+					PMIA_ID, CMID_PLUGINCMD,
+					PMIA_UserData, userdata,
+				TAG_DONE),
+			~0);
+		break;
+
+		case CMID_SELECTFILE:
+			IDoMethod(ctxmenuobj,PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMID_SELECTFILE],
+					PMIA_ID, CMID_SELECTFILE,
+					PMIA_UserData, userdata,
+				TAG_DONE),
+			~0);
+		break;
+	}
+}
+
 void ami_context_menu_free(void)
 {
 	int i;
@@ -185,14 +399,12 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	struct box *curbox;
 	int box_x=0;
 	int box_y=0;
+	bool no_sel = true;
 	bool menuhascontent = false;
-	bool no_url = true, no_obj = true, no_sel = true, no_frame = true;
 	ULONG ret = 0;
 	struct contextual_content ccdata;
 
 	if(!cc) return;
-	if(content_get_type(cc) != CONTENT_HTML) return;
-
 	if(ctxmenuobj) DisposeObject(ctxmenuobj);
 
 	ctxmenuhook.h_Entry = ami_context_menu_hook;
@@ -253,241 +465,58 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	{
 		browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
 
-		if(no_frame && (ccdata.main != gwin->bw->current_content))
+		if(ccdata.main && (ccdata.main != cc))
 		{
-			IDoMethod(ctxmenuobj,PM_INSERT,
-				NewObject(POPUPMENU_GetItemClass(), NULL,
-					PMIA_Title, (ULONG)ctxmenulab[CMSUB_FRAME],
-					PMSIMPLESUB,
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMEWIN],
-							PMIA_ID, CMID_FRAMEWIN,
-							PMIA_UserData, content_get_url(ccdata.main),
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMETAB],
-							PMIA_ID, CMID_FRAMETAB,
-							PMIA_UserData, content_get_url(ccdata.main),
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_FRAMESHOW],
-							PMIA_ID, CMID_FRAMESHOW,
-							PMIA_UserData, ccdata.main,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_RELOADOBJ],
-							PMIA_ID, CMID_FRAMERELOAD,
-							PMIA_UserData, ccdata.main,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
-							PMIA_ID, CMID_FRAMECOPYURL,
-							PMIA_UserData, content_get_url(ccdata.main),
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
-							PMIA_ID, CMID_FRAMESAVE,
-							PMIA_UserData, content_get_url(ccdata.main),
-						TAG_DONE),
-					TAG_DONE),
-				TAG_DONE),
-			~0);
-
-			no_frame = false;
+			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_FRAME, ccdata.main);
 			menuhascontent = true;
 		}
 
-		if(no_url && ccdata.link_url)
+		if(ccdata.link_url)
 		{
-			IDoMethod(ctxmenuobj,PM_INSERT,
-				NewObject(POPUPMENU_GetItemClass(), NULL,
-					PMIA_Title, (ULONG)ctxmenulab[CMSUB_URL],
-					PMSIMPLESUB,
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENWIN],
-							PMIA_ID, CMID_URLOPENWIN,
-							PMIA_UserData, ccdata.link_url,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_URLOPENTAB],
-							PMIA_ID, CMID_URLOPENTAB,
-							PMIA_UserData, ccdata.link_url,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYURL],
-							PMIA_ID, CMID_COPYURL,
-							PMIA_UserData, ccdata.link_url,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEURL],
-							PMIA_ID, CMID_SAVEURL,
-							PMIA_UserData, ccdata.link_url,
-						TAG_DONE),
-					TAG_DONE),
-				TAG_DONE),
-			~0);
-
-			no_url = false;
+			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_URL, (char *)ccdata.link_url);
 			menuhascontent = true;
 		}
 
-		if(no_obj && ccdata.object &&
-			(content_get_type(ccdata.object) == CONTENT_IMAGE))
+		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_IMAGE))
 		{
-			IDoMethod(ctxmenuobj, PM_INSERT,
-				NewObject(POPUPMENU_GetItemClass(), NULL,
-					PMIA_Title, (ULONG)ctxmenulab[CMSUB_OBJECT],
-					PMSIMPLESUB,
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_SHOWOBJ],
-							PMIA_ID, CMID_SHOWOBJ,
-							PMIA_UserData, ccdata.object,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_RELOADOBJ],
-							PMIA_ID, CMID_RELOADOBJ,
-							PMIA_UserData, ccdata.object,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
-							PMIA_ID, CMID_COPYOBJ,
-							PMIA_UserData, content_get_url(ccdata.object),
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
-							PMIA_ID, CMID_CLIPOBJ,
-							PMIA_UserData, ccdata.object,
-						TAG_DONE),
-						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, ~0,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
-							PMIA_ID, CMID_SAVEOBJ,
-							PMIA_UserData, ccdata.object,
-						TAG_DONE),
-						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEIFFOBJ],
-							PMIA_ID, CMID_SAVEIFFOBJ,
-							PMIA_UserData, ccdata.object,
-						TAG_DONE),
-					TAG_DONE),
-				TAG_DONE),
-			~0);
-
-			no_obj = false;
+			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_OBJECT, ccdata.object);
 			menuhascontent = true;
 		}
 
-		curbox = html_get_box_tree(gwin->bw->current_content);
-
-		while(curbox = box_at_point(curbox,x,y,&box_x,&box_y,&cc))
+		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_PLUGIN))
 		{
-			if (curbox->style &&
-				css_computed_visibility(curbox->style) == CSS_VISIBILITY_HIDDEN)
-			continue;
+			ami_context_menu_add_submenu(ctxmenuobj, CMID_PLUGINCMD, ccdata.object);
+			menuhascontent = true;
+		}
 
-			if(no_sel && (curbox->text) ||
-				(curbox->gadget && ((curbox->gadget->type == GADGET_TEXTBOX) ||
-				(curbox->gadget->type == GADGET_TEXTAREA) ||
-				(curbox->gadget->type == GADGET_PASSWORD))))
+		if(content_get_type(cc) == CONTENT_HTML)
+		{
+			curbox = html_get_box_tree(gwin->bw->current_content);
+
+			while(curbox = box_at_point(curbox,x,y,&box_x,&box_y,&cc))
 			{
-				BOOL disabled_readonly = selection_read_only(browser_window_get_selection(gwin->bw));
-				BOOL disabled_noselection = !browser_window_has_selection(gwin->bw);
+				if (curbox->style &&
+					css_computed_visibility(curbox->style) == CSS_VISIBILITY_HIDDEN)
+				continue;
 
-				IDoMethod(ctxmenuobj,PM_INSERT,
-					NewObject(POPUPMENU_GetItemClass(), NULL,
-						PMIA_Title, (ULONG)ctxmenulab[CMSUB_SEL],
-						PMIA_SubMenu, NewObject(POPUPMENU_GetClass(), NULL,
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELCUT],
-								PMIA_ID,CMID_SELCUT,
-								PMIA_Disabled, disabled_noselection && disabled_readonly,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELCOPY],
-								PMIA_ID,CMID_SELCOPY,
-								PMIA_Disabled, disabled_noselection,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELPASTE],
-								PMIA_ID,CMID_SELPASTE,
-								PMIA_Disabled, (gwin->bw->window->c_h == 0),
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELALL],
-								PMIA_ID,CMID_SELALL,
-								//PMIA_UserData,curbox->href,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELCLEAR],
-								PMIA_ID,CMID_SELCLEAR,
-								PMIA_Disabled, disabled_noselection,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, ~0,
-							TAG_DONE),
-							PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELSEARCH],
-								PMIA_ID,CMID_SELSEARCH,
-								PMIA_Disabled, disabled_noselection,
-							TAG_DONE),
-						TAG_DONE),
-					TAG_DONE),
-				~0);
-
-				no_sel = false;
-				menuhascontent = true;
-			}
-			if(curbox->object &&
-				(content_get_type(curbox->object) == CONTENT_PLUGIN))
-			{
-				if(ami_mime_content_to_cmd(curbox->object))
+				if(no_sel && (curbox->text) ||
+					(curbox->gadget && ((curbox->gadget->type == GADGET_TEXTBOX) ||
+					(curbox->gadget->type == GADGET_TEXTAREA) ||
+					(curbox->gadget->type == GADGET_PASSWORD))))
 				{
-					IDoMethod(ctxmenuobj,PM_INSERT,
-						NewObject(POPUPMENU_GetItemClass(), NULL,
-							PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
-							PMIA_ID, CMID_PLUGINCMD,
-							PMIA_UserData, curbox->object,
-							TAG_DONE),
-						~0);
-
+					ami_context_menu_add_submenu(ctxmenuobj, CMSUB_SEL, gwin->bw);
+					no_sel = false;
 					menuhascontent = true;
 				}
-			}
-			if (curbox->gadget)
-			{
-				switch (curbox->gadget->type)
+				if (curbox->gadget)
 				{
-					case GADGET_FILE:
-						IDoMethod(ctxmenuobj,PM_INSERT,
-							NewObject(POPUPMENU_GetItemClass(), NULL,
-								PMIA_Title, (ULONG)ctxmenulab[CMID_SELECTFILE],
-								PMIA_ID,CMID_SELECTFILE,
-								PMIA_UserData,curbox,
-								TAG_DONE),
-							~0);
-
-						menuhascontent = true;
-					break;
+					switch (curbox->gadget->type)
+					{
+						case GADGET_FILE:
+							ami_context_menu_add_submenu(ctxmenuobj, CMID_SELECTFILE, curbox);
+							menuhascontent = true;
+						break;
+					}
 				}
 			}
 		}
