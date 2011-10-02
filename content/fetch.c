@@ -415,6 +415,7 @@ void fetch_dispatch_jobs(void)
  */
 bool fetch_choose_and_dispatch(void)
 {
+	bool same_host;
 	struct fetch *queueitem;
 	queueitem = queue_ring;
 	do {
@@ -427,6 +428,15 @@ bool fetch_choose_and_dispatch(void)
 		if (countbyhost < option_max_fetchers_per_host) {
 			/* We can dispatch this item in theory */
 			return fetch_dispatch_job(queueitem);
+		}
+		/* skip over other items with the same host */
+		same_host = true;
+		while (same_host == true && queueitem->r_next != queue_ring) {
+			if (lwc_string_isequal(queueitem->host,
+					queueitem->r_next->host, &same_host) ==
+					lwc_error_ok && same_host == true) {
+				queueitem = queueitem->r_next;
+			}
 		}
 		queueitem = queueitem->r_next;
 	} while (queueitem != queue_ring);
