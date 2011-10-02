@@ -489,6 +489,12 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			menuhascontent = true;
 		}
 
+		if(content_get_type(cc) == CONTENT_TEXTPLAIN)
+		{
+			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_SEL, gwin->bw);
+			menuhascontent = true;
+		}
+
 		if(content_get_type(cc) == CONTENT_HTML)
 		{
 			curbox = html_get_box_tree(gwin->bw->current_content);
