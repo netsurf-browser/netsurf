@@ -1977,7 +1977,7 @@ void html_destroy_frameset(struct content_html_frames *frameset)
 				frameset->children[i].name = NULL;
 			}
 			if (frameset->children[i].url) {
-				talloc_free(frameset->children[i].url);
+				nsurl_unref(frameset->children[i].url);
 				frameset->children[i].url = NULL;
 			}
 		  	if (frameset->children[i].children)
@@ -1997,7 +1997,7 @@ void html_destroy_iframe(struct content_html_iframe *iframe)
 		if (iframe->name)
 			talloc_free(iframe->name);
 		if (iframe->url)
-			talloc_free(iframe->url);
+			nsurl_unref(iframe->url);
 		talloc_free(iframe);
 	}
 }
