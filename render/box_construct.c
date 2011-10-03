@@ -1578,6 +1578,21 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 	return ok;
 }
 
+
+/**
+ * Destructor for content_html_frames, for <frame> elements
+ *
+ * \param b	The frame params being destroyed.
+ * \return 0 to allow talloc to continue destroying the tree.
+ */
+static int box_frames_talloc_destructor(struct content_html_frames *f)
+{
+	if (f->url != NULL)
+		nsurl_unref(f->url);
+	
+	return 0;
+}
+
 bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 		html_content *content) {
 	unsigned int row, col, index, i;
@@ -1646,6 +1661,9 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 	f->scrolling = SCROLLING_NO;
 	f->children = talloc_array(content, struct content_html_frames,
 								(rows * cols));
+
+	talloc_set_destructor(f->children, box_frames_talloc_destructor);
+
 	for (row = 0; row < rows; row++) {
 		for (col = 0; col < cols; col++) {
 			index = (row * cols) + col;
@@ -1705,9 +1723,9 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			if (url) {
 			  	/* no self-references */
 			  	if (nsurl_compare(content->base_url, url,
-						NSURL_COMPLETE))
+						NSURL_COMPLETE) == false)
 					frame->url = url;
-					url = NULL;
+				url = NULL;
 			}
 
 			/* fill in specified values */
@@ -1764,6 +1782,21 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 
 
 /**
+ * Destructor for content_html_iframe, for <iframe> elements
+ *
+ * \param b	The iframe params being destroyed.
+ * \return 0 to allow talloc to continue destroying the tree.
+ */
+static int box_iframes_talloc_destructor(struct content_html_iframe *f)
+{
+	if (f->url != NULL)
+		nsurl_unref(f->url);
+	
+	return 0;
+}
+
+
+/**
  * Inline subwindow [16.5].
  */
 
@@ -1809,6 +1842,9 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		nsurl_unref(url);
 		return false;
 	}
+
+	talloc_set_destructor(iframe, box_iframes_talloc_destructor);
+
 	iframe->box = box;
 	iframe->margin_width = 0;
 	iframe->margin_height = 0;
@@ -1854,9 +1890,6 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		iframe->margin_height = atoi(s);
 		xmlFree(s);
 	}
-
-	/* release temporary memory */
-	free(url);
 
 	/* box */
 	assert(box->style);
@@ -2334,6 +2367,9 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	params = talloc(content, struct object_params);
 	if (!params)
 		return false;
+
+	talloc_set_destructor(params, box_object_talloc_destructor);
+
 	params->data = 0;
 	params->type = 0;
 	params->codetype = 0;
