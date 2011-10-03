@@ -78,7 +78,6 @@ struct content_html_object {
 	struct content *parent;		/**< Parent document */
 	struct content_html_object *next; /**< Next in chain */
 
-	nsurl *url; /**< URL of content */
 	struct hlcache_handle *content;  /**< Content, or 0. */
 	struct box *box;  /**< Node in box tree containing it. */
 	/** Bitmap of acceptable content types */

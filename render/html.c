@@ -92,7 +92,6 @@ static bool html_find_stylesheets(html_content *c, xmlNode *html);
 static bool html_process_style_element(html_content *c, unsigned int *index,
 		xmlNode *style);
 static void html_inline_style_done(struct content_css_data *css, void *pw);
-static bool html_fetch_objects(html_content *c);
 static bool html_replace_object(struct content_html_object *object,
 		nsurl *url);
 static nserror html_object_callback(hlcache_handle *object,
@@ -697,9 +696,6 @@ void html_box_convert_done(html_content *c, bool success)
 	/* Destroy the parser binding */
 	binding_destroy_tree(c->parser_binding);
 	c->parser_binding = NULL;
-
-	/* Spawn object fetches */
-	html_fetch_objects(c);
 
 	content_set_ready(&c->base);
 
@@ -1380,7 +1376,7 @@ nserror html_convert_css_callback(hlcache_handle *css,
 
 
 /**
- * Queue a fetch for an object required by a page.
+ * Start a fetch for an object required by a page.
  *
  * \param  c                 content of type CONTENT_HTML
  * \param  url               URL of object to fetch (copied)
@@ -1398,13 +1394,16 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 		bool background)
 {
 	struct content_html_object *object;
+	hlcache_child_context child;
 	nserror error;
 	nsurl *object_url;
-	struct content_html_object *ins_object; /* the object to insert after */
 
 	/* If we've already been aborted, don't bother attempting the fetch */
 	if (c->aborted)
 		return true;
+
+	child.charset = c->encoding;
+	child.quirks = c->base.quirks;
 
 	error = nsurl_create(url, &object_url);
 	if (error != NSERROR_OK) {
@@ -1424,57 +1423,29 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	object->box = box;
 	object->permitted_types = permitted_types;
 	object->background = background;
-	object->url = object_url;
  
-	/* add to content object list, this list determines fetch order */
-	if (c->object_list == NULL) {
-		/* no other objects */
-		object->next = c->object_list;
-		c->object_list = object;
-	} else {
-		/* insert at end */
-		ins_object = c->object_list;
-		while (ins_object->next != NULL) {
-			ins_object = ins_object->next;
-		}
-		ins_object->next = object;
+	error = hlcache_handle_retrieve(object_url, 
+			HLCACHE_RETRIEVE_SNIFF_TYPE, 
+			content__get_url(&c->base), NULL, 
+			html_object_callback, object, &child, 
+			object->permitted_types, &object->content);
+       	if (error != NSERROR_OK) {
+		talloc_free(object);
+		nsurl_unref(object_url);
+		return error != NSERROR_NOMEM;
 	}
 
+	nsurl_unref(object_url);
+
+	/* add to content object list */
+	object->next = c->object_list;
+	c->object_list = object;
+
 	c->num_objects++;
+	c->base.active++;
 
 	return true;
 }
-
-/**
- * Start fetches for objects requested by a page
- *
- * \param c  Content object
- * \return true on success, false otherwise
- */
-bool html_fetch_objects(html_content *c)
-{
-	struct content_html_object *object;
-	hlcache_child_context child;
-	nserror error;
-
-	child.charset = c->encoding;
-	child.quirks = c->base.quirks;
-
-	for (object = c->object_list; object != NULL; object = object->next) {
-
-		error = hlcache_handle_retrieve(object->url, 
-				HLCACHE_RETRIEVE_SNIFF_TYPE, 
-				content__get_url(&c->base), NULL, 
-				html_object_callback, object, &child, 
-				object->permitted_types, &object->content);
-
-        	if (error == NSERROR_OK)
-			c->base.active++;
-	}
-
-	return c->base.active == c->num_objects;
-}
-
 
 /**
  * Start a fetch for an object required by a page, replacing an existing object.
@@ -1540,14 +1511,13 @@ nserror html_object_callback(hlcache_handle *object,
 	int x, y;
 	struct box *box;
 
-	assert(c->base.status == CONTENT_STATUS_READY ||
-			c->base.status == CONTENT_STATUS_DONE);
+	assert(c->base.status != CONTENT_STATUS_ERROR);
 
 	box = o->box;
 
 	switch (event->type) {
 	case CONTENT_MSG_LOADING:
-		if (c->bw != NULL)
+		if (c->base.status != CONTENT_STATUS_LOADING && c->bw != NULL)
 			content_open(object,
 					c->bw, &c->base,
 					box,
@@ -1569,7 +1539,8 @@ nserror html_object_callback(hlcache_handle *object,
 		c->base.active--;
 		html_object_done(box, object, o->background);
 
-		if (box->flags & REPLACE_DIM) {
+		if (c->base.status != CONTENT_STATUS_LOADING &&
+				box->flags & REPLACE_DIM) {
 			union content_msg_data data;
 
 			if (!box_visible(box))
@@ -1609,37 +1580,37 @@ nserror html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_REDRAW:
-	{
-		union content_msg_data data = event->data;
+		if (c->base.status != CONTENT_STATUS_LOADING) {
+			union content_msg_data data = event->data;
 
-		if (!box_visible(box))
-			break;
+			if (!box_visible(box))
+				break;
 
-		box_coords(box, &x, &y);
+			box_coords(box, &x, &y);
 
-		if (hlcache_handle_get_content(object) == 
-				event->data.redraw.object) {
-			data.redraw.x = data.redraw.x *
+			if (hlcache_handle_get_content(object) == 
+					event->data.redraw.object) {
+				data.redraw.x = data.redraw.x *
 					box->width / content_get_width(object);
-			data.redraw.y = data.redraw.y *
+				data.redraw.y = data.redraw.y *
 					box->height / 
 					content_get_height(object);
-			data.redraw.width = data.redraw.width *
+				data.redraw.width = data.redraw.width *
 					box->width / content_get_width(object);
-			data.redraw.height = data.redraw.height *
+				data.redraw.height = data.redraw.height *
 					box->height / 
 					content_get_height(object);
-			data.redraw.object_width = box->width;
-			data.redraw.object_height = box->height;
+				data.redraw.object_width = box->width;
+				data.redraw.object_height = box->height;
+			}
+
+			data.redraw.x += x + box->padding[LEFT];
+			data.redraw.y += y + box->padding[TOP];
+			data.redraw.object_x += x + box->padding[LEFT];
+			data.redraw.object_y += y + box->padding[TOP];
+
+			content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
 		}
-
-		data.redraw.x += x + box->padding[LEFT];
-		data.redraw.y += y + box->padding[TOP];
-		data.redraw.object_x += x + box->padding[LEFT];
-		data.redraw.object_y += y + box->padding[TOP];
-
-		content_broadcast(&c->base, CONTENT_MSG_REDRAW, data);
-	}
 		break;
 
 	case CONTENT_MSG_REFRESH:
@@ -1981,8 +1952,6 @@ void html_destroy_objects(html_content *html)
 
 			hlcache_handle_release(victim->content);
 		}
-
-		nsurl_unref(victim->url);
 
 		html->object_list = victim->next;
 		talloc_free(victim);
