@@ -199,7 +199,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 	if (*pos != '\0' &&
 			((joining == false && is_http == true && *pos != '/') ||
 			(*pos == '/' && *(pos + 1) == '/'))) {
-		/* Skip over leading slashes */LOG(("test c: %c", *pos));
+		/* Skip over leading slashes */
 		if (is_http == false) {
 			if (*pos == '/') pos++;
 			if (*pos == '/') pos++;
