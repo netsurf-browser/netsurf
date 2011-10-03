@@ -2807,6 +2807,7 @@ hlcache_handle *tree_load_icon(const char *name)
 	int len;
 	hlcache_handle *c;
 	nserror err;
+	nsurl *icon_nsurl;
 
 	/** @todo something like bitmap_from_disc is needed here */
 
@@ -2839,11 +2840,19 @@ hlcache_handle *tree_load_icon(const char *name)
 		icon_url = url;
 	}
 
+	err = nsurl_create(icon_url, &icon_nsurl);
+	if (err != NSERROR_OK) {
+		if (url != NULL)
+			free(url);
+		return NULL;
+	}
+
 	/* Fetch the icon */
-	err = hlcache_handle_retrieve(icon_url, 0, 0, 0,
+	err = hlcache_handle_retrieve(icon_nsurl, 0, 0, 0,
 				      tree_icon_callback, 0, 0, 
 				      CONTENT_IMAGE, &c);
 
+	nsurl_unref(icon_nsurl);
 
 	/* If we built the URL here, free it */
 	if (url != NULL)

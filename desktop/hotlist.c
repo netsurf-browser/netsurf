@@ -227,7 +227,8 @@ static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
 	    hotlist_tree == NULL)
 		return;
 
-	url = content_get_url(content);
+	/* TODO: do this with a nsurl instead */
+	url = nsurl_access(content_get_url(content));
 
 	for (; node; node = tree_node_get_next(node)) {
 		if (!tree_node_is_folder(node)) {

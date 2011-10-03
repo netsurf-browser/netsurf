@@ -94,7 +94,7 @@ static bool html_process_style_element(html_content *c, unsigned int *index,
 static void html_inline_style_done(struct content_css_data *css, void *pw);
 static bool html_fetch_objects(html_content *c);
 static bool html_replace_object(struct content_html_object *object,
-		const char *url);
+		nsurl *url);
 static nserror html_object_callback(hlcache_handle *object,
 		const hlcache_event *event, void *pw);
 static void html_object_done(struct box *box, hlcache_handle *object,
@@ -233,7 +233,7 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->document = NULL;
 	c->quirks = BINDING_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
-	c->base_url = (char *) content__get_url(&c->base);
+	c->base_url = nsurl_ref(content__get_url(&c->base));
 	c->base_target = NULL;
 	c->aborted = false;
 	c->layout = NULL;
@@ -527,10 +527,11 @@ bool html_convert(struct content *c)
 		/* Make all actions absolute */
 		if (f->action == NULL || f->action[0] == '\0') {
 			/* HTML5 4.10.22.3 step 11 */
-			res = url_join(content__get_url(c), 
-					htmlc->base_url, &action);
+			res = url_join(nsurl_access(content__get_url(c)), 
+					nsurl_access(htmlc->base_url), &action);
 		} else {
-			res = url_join(f->action, htmlc->base_url, &action);
+			res = url_join(f->action, nsurl_access(htmlc->base_url),
+					&action);
 		}
 
 		if (res != URL_FUNC_OK) {
@@ -749,12 +750,13 @@ bool html_head(html_content *c, xmlNode *head)
 			char *href = (char *) xmlGetProp(node,
 					(const xmlChar *) "href");
 			if (href) {
-				char *url;
-				url_func_result res;
-				res = url_normalize(href, &url);
-				if (res == URL_FUNC_OK) {
-					c->base_url = talloc_strdup(c, url);
-					free(url);
+				nsurl *url;
+				nserror error;
+				error = nsurl_create(href, &url);
+				if (error == NSERROR_OK) {
+					if (c->base_url != NULL)
+						nsurl_unref(c->base_url);
+					c->base_url = url;
 				}
 				xmlFree(href);
 			}
@@ -800,7 +802,8 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 	xmlChar *equiv, *content;
 	union content_msg_data msg_data;
 	char *url, *end, *refresh = NULL, quote = 0;
-	url_func_result res;
+	nsurl *nsurl;
+	nserror error;
 
 	for (n = head == 0 ? 0 : head->children; n; n = n->next) {
 		if (n->type != XML_ELEMENT_NODE)
@@ -881,14 +884,8 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 			/* Just delay specified, so refresh current page */
 			xmlFree(content);
 
-			c->base.refresh = talloc_strdup(c, 
+			c->base.refresh = nsurl_ref(
 					content__get_url(&c->base));
-			if (!c->base.refresh) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(&c->base,
-					CONTENT_MSG_ERROR, msg_data);
-				return false;
-			}
 
 			content_broadcast(&c->base, CONTENT_MSG_REFRESH, 
 					msg_data);
@@ -954,30 +951,17 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 		if (url < end)
 			*url = '\0';
 
-		res = url_join(refresh, c->base_url, &refresh);
+		error = nsurl_join(c->base_url, refresh, &nsurl);
+		if (error != NSERROR_OK) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
+					msg_data);
+			return false;
+		}
 
 		xmlFree(content);
 
-		if (res == URL_FUNC_NOMEM) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
-					msg_data);
-			return false;
-		} else if (res == URL_FUNC_FAILED) {
-			/* This isn't fatal so carry on looking */
-			continue;
-		}
-
-		c->base.refresh = talloc_strdup(c, refresh);
-
-		free(refresh);
-
-		if (!c->base.refresh) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
-					msg_data);
-			return false;
-		}
+		c->base.refresh = nsurl;
 
 		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
 	}
@@ -1000,13 +984,18 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 {
 	content_type accept = CONTENT_CSS;
 	xmlNode *node;
-	char *rel, *type, *media, *href, *url, *url2;
+	char *rel, *type, *media, *href;
 	unsigned int i = STYLESHEET_START;
 	union content_msg_data msg_data;
-	url_func_result res;
 	struct html_stylesheet *stylesheets;
 	hlcache_child_context child;
 	nserror ns_error;
+
+	nsurl *html_default_css = NULL;
+	nsurl *html_quirks_css = NULL;
+	nsurl *html_adblock_css = NULL;
+
+	nsurl *joined;
 
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
@@ -1028,7 +1017,11 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 	c->base.active = 0;
 
-	ns_error = hlcache_handle_retrieve(default_stylesheet_url, 0,
+	ns_error = nsurl_create(default_stylesheet_url, &html_default_css);
+	if (ns_error != NSERROR_OK)
+		goto no_memory;
+
+	ns_error = hlcache_handle_retrieve(html_default_css, 0,
 			content__get_url(&c->base), NULL,
 			html_convert_css_callback, c, &child, accept,
 			&c->stylesheets[STYLESHEET_BASE].data.external);
@@ -1038,7 +1031,12 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	c->base.active++;
 
 	if (c->quirks == BINDING_QUIRKS_MODE_FULL) {
-		ns_error = hlcache_handle_retrieve(quirks_stylesheet_url, 0,
+
+		ns_error = nsurl_create(quirks_stylesheet_url, &html_quirks_css);
+		if (ns_error != NSERROR_OK)
+			goto no_memory;
+
+		ns_error = hlcache_handle_retrieve(html_quirks_css, 0,
 				content__get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
 				&c->stylesheets[STYLESHEET_QUIRKS].
@@ -1050,7 +1048,12 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	}
 
 	if (option_block_ads) {
-		ns_error = hlcache_handle_retrieve(adblock_stylesheet_url, 0,
+
+		ns_error = nsurl_create(adblock_stylesheet_url, &html_adblock_css);
+		if (ns_error != NSERROR_OK)
+			goto no_memory;
+
+		ns_error = hlcache_handle_retrieve(html_adblock_css, 0,
 				content__get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
 				&c->stylesheets[STYLESHEET_ADBLOCK].
@@ -1060,6 +1063,13 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 		c->base.active++;
 	}
+
+	if (html_default_css != NULL)
+		nsurl_unref(html_default_css);
+	if (html_adblock_css != NULL)
+		nsurl_unref(html_adblock_css);
+	if (html_quirks_css != NULL)
+		nsurl_unref(html_quirks_css);
 
 	node = html;
 
@@ -1128,42 +1138,35 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 			 * those with a title attribute) should be loaded
 			 * (see HTML4 14.3) */
 
-			res = url_join(href, c->base_url, &url);
-			xmlFree(href);
-			if (res != URL_FUNC_OK)
-				continue;
-
-			LOG(("linked stylesheet %i '%s'", i, url));
-
-			res = url_normalize(url, &url2);
-
-			free(url);
-
-			if (res != URL_FUNC_OK) {
-				if (res == URL_FUNC_NOMEM)
-					goto no_memory;
-				continue;
+			ns_error = nsurl_join(c->base_url, href, &joined);
+			if (ns_error != NSERROR_OK) {
+				xmlFree(href);
+				goto no_memory;
 			}
+			xmlFree(href);
+
+			LOG(("linked stylesheet %i '%s'", i,
+					nsurl_access(joined)));
 
 			/* start fetch */
 			stylesheets = talloc_realloc(c,
 					c->stylesheets,
 					struct html_stylesheet, i + 1);
 			if (stylesheets == NULL) {
-				free(url2);
+				nsurl_unref(joined);
 				goto no_memory;
 			}
 
 			c->stylesheets = stylesheets;
 			c->stylesheet_count++;
 			c->stylesheets[i].type = HTML_STYLESHEET_EXTERNAL;
-			ns_error = hlcache_handle_retrieve(url2, 0,
+			ns_error = hlcache_handle_retrieve(joined, 0,
 					content__get_url(&c->base), NULL,
 					html_convert_css_callback, c, &child,
 					accept,
 					&c->stylesheets[i].data.external);
 
-			free(url2);
+			nsurl_unref(joined);
 
 			if (ns_error != NSERROR_OK)
 				goto no_memory;
@@ -1182,6 +1185,13 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	return true;
 
 no_memory:
+	if (html_default_css != NULL)
+		nsurl_unref(html_default_css);
+	if (html_adblock_css != NULL)
+		nsurl_unref(html_adblock_css);
+	if (html_quirks_css != NULL)
+		nsurl_unref(html_quirks_css);
+
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 	return false;
@@ -1247,7 +1257,7 @@ bool html_process_style_element(html_content *c, unsigned int *index,
 	}
 
 	error = nscss_create_css_data(sheet,
-		c->base_url, NULL, c->quirks,
+		nsurl_access(c->base_url), NULL, c->quirks,
 		html_inline_style_done, c);
 	if (error != NSERROR_OK) {
 		c->stylesheet_count--;
@@ -1338,13 +1348,14 @@ nserror html_convert_css_callback(hlcache_handle *css,
 		break;
 
 	case CONTENT_MSG_DONE:
-		LOG(("got stylesheet '%s'", content_get_url(css)));
+		LOG(("got stylesheet '%s'", nsurl_access(content_get_url(css))));
 		parent->base.active--;
 		break;
 
 	case CONTENT_MSG_ERROR:
-		LOG(("stylesheet %s failed: %s", 
-				content_get_url(css), event->data.error));
+		LOG(("stylesheet %s failed: %s",
+				nsurl_access(content_get_url(css)),
+				event->data.error));
 		hlcache_handle_release(css);
 		s->data.external = NULL;
 		parent->base.active--;
@@ -1387,24 +1398,23 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 		bool background)
 {
 	struct content_html_object *object;
+	nserror error;
+	nsurl *object_url;
 	struct content_html_object *ins_object; /* the object to insert after */
-	char *url2;
-	url_func_result res;
 
 	/* If we've already been aborted, don't bother attempting the fetch */
 	if (c->aborted)
 		return true;
 
-	/* Normalize the URL */
-	res = url_normalize(url, &url2);
-	if (res != URL_FUNC_OK) {
+	error = nsurl_create(url, &object_url);
+	if (error != NSERROR_OK) {
 		LOG(("failed to normalize url '%s'", url));
-		return res != URL_FUNC_NOMEM;
+		return false;
 	}
 
 	object = talloc(c, struct content_html_object);
 	if (object == NULL) {
-		free(url2);
+		nsurl_unref(object_url);
 		return false;
 	}
 
@@ -1414,7 +1424,7 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	object->box = box;
 	object->permitted_types = permitted_types;
 	object->background = background;
-	object->url = url2;
+	object->url = object_url;
  
 	/* add to content object list, this list determines fetch order */
 	if (c->object_list == NULL) {
@@ -1451,11 +1461,13 @@ bool html_fetch_objects(html_content *c)
 	child.quirks = c->base.quirks;
 
 	for (object = c->object_list; object != NULL; object = object->next) {
+
 		error = hlcache_handle_retrieve(object->url, 
 				HLCACHE_RETRIEVE_SNIFF_TYPE, 
 				content__get_url(&c->base), NULL, 
 				html_object_callback, object, &child, 
 				object->permitted_types, &object->content);
+
         	if (error == NSERROR_OK)
 			c->base.active++;
 	}
@@ -1472,13 +1484,11 @@ bool html_fetch_objects(html_content *c)
  * \return  true on success, false on memory exhaustion
  */
 
-bool html_replace_object(struct content_html_object *object, const char *url)
+bool html_replace_object(struct content_html_object *object, nsurl *url)
 {
 	html_content *c;
 	hlcache_child_context child;
 	html_content *page;
-	char *url2;
-	url_func_result res;
 	nserror error;
 
 	assert(object != NULL);
@@ -1499,18 +1509,12 @@ bool html_replace_object(struct content_html_object *object, const char *url)
 		object->box->object = NULL;
 	}
 
-	res = url_normalize(url, &url2);
-	if (res != URL_FUNC_OK)
-		return res != URL_FUNC_NOMEM;
-
 	/* initialise fetch */
-	error = hlcache_handle_retrieve(url2, HLCACHE_RETRIEVE_SNIFF_TYPE, 
+	error = hlcache_handle_retrieve(url, HLCACHE_RETRIEVE_SNIFF_TYPE, 
 			content__get_url(&c->base), NULL, 
 			html_object_callback, object, &child,
 			object->permitted_types,
 			&object->content);
-
-	free(url2);
 
 	if (error != NSERROR_OK)
 		return false;
@@ -1737,7 +1741,7 @@ void html_object_failed(struct box *box, html_content *content,
 void html_object_refresh(void *p)
 {
 	struct content_html_object *object = p;
-	const char *refresh_url;
+	nsurl *refresh_url;
 
 	assert(content_get_type(object->content) == CONTENT_HTML);
 
@@ -1909,6 +1913,12 @@ void html_destroy(struct content *c)
 
 	imagemap_destroy(html);
 
+	if (c->refresh)
+		nsurl_unref(c->refresh);
+
+	if (html->base_url)
+		nsurl_unref(html->base_url);
+
 	if (html->parser_binding != NULL)
 		binding_destroy_tree(html->parser_binding);
 
@@ -1972,7 +1982,7 @@ void html_destroy_objects(html_content *html)
 			hlcache_handle_release(victim->content);
 		}
 
-		free(victim->url);
+		nsurl_unref(victim->url);
 
 		html->object_list = victim->next;
 		talloc_free(victim);
@@ -2352,7 +2362,7 @@ struct content_html_iframe *html_get_iframe(hlcache_handle *h)
  * \param h  Content to retrieve base target from
  * \return Pointer to URL
  */
-const char *html_get_base_url(hlcache_handle *h)
+nsurl *html_get_base_url(hlcache_handle *h)
 {
 	html_content *c = (html_content *) hlcache_handle_get_content(h);
 

@@ -44,7 +44,7 @@ typedef struct html_content {
 	binding_encoding_source encoding_source;
 
 	/** Base URL (may be a copy of content->url). */
-	char *base_url;
+	nsurl *base_url;
 	/** Base target */
 	char *base_target;
 

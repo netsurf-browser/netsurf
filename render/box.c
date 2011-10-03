@@ -72,11 +72,10 @@ void *box_style_alloc(void *ptr, size_t len, void *pw)
 /**
  * Destructor for box nodes which own styles
  *
- * @param b The box being destroyed.
- * @return 0 to allow talloc to continue destroying the tree.
+ * \param b The box being destroyed.
+ * \return 0 to allow talloc to continue destroying the tree.
  */
-static int
-free_box_style(struct box *b)
+static int box_talloc_destructor(struct box *b)
 {
 	if ((b->flags & STYLE_OWNED) && b->style != NULL) {
 		css_computed_style_destroy(b->style);
@@ -119,10 +118,9 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	if (!box) {
 		return 0;
 	}
-	
-	if (style_owned == true || styles != NULL)
-		talloc_set_destructor(box, free_box_style);
-	
+
+	talloc_set_destructor(box, box_talloc_destructor);
+
 	box->type = BOX_INLINE;
 	box->flags = 0;
 	box->flags = style_owned ? (box->flags | STYLE_OWNED) : box->flags;
@@ -935,7 +933,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		fprintf(stream, "space ");
 	if (box->object) {
 		fprintf(stream, "(object '%s') ", 
-				content_get_url(box->object));
+				nsurl_access(content_get_url(box->object)));
 	}
 	if (box->iframe) {
 		fprintf(stream, "(iframe) ");

@@ -41,6 +41,7 @@
 #include "content/fetch.h"
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
+#include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "utils/log.h"

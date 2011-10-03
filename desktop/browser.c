@@ -703,9 +703,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		bool verifiable, hlcache_handle *parent)
 {
 	hlcache_handle *c;
-	char *url2;
-	char *fragment;
-	url_func_result res;
 	int depth = 0;
 	struct browser_window *cur;
 	uint32_t fetch_flags = 0;
@@ -713,6 +710,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	llcache_post_data post;
 	hlcache_child_context child;
 	nserror error;
+
+	nsurl *nsref = NULL;
+	nsurl *nsurl;
 
 	LOG(("bw %p, url %s", bw, url));
 	assert(bw);
@@ -743,33 +743,22 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		child.quirks = content_get_quirks(parent);
 	}
 
-	/* Normalize the request URL */
-	res = url_normalize(url, &url2);
-	if (res != URL_FUNC_OK) {
-		LOG(("failed to normalize url %s", url));
+	error = nsurl_create(url, &nsurl);
+	if (error != NSERROR_OK) {
 		return;
+	}
+
+	if (referer != NULL) {
+		error = nsurl_create(referer, &nsref);
+		if (error != NSERROR_OK) {
+			nsurl_unref(nsurl);
+			return;
+		}
 	}
 
 	/* Get download out of the way */
 	if (download) {
 		llcache_handle *l;
-		nsurl *nsref = NULL;
-		nsurl *nsurl;
-
-		error = nsurl_create(url2, &nsurl);
-		if (error != NSERROR_OK) {
-			free(url2);
-			return;
-		}
-
-		if (referer != NULL) {
-			error = nsurl_create(referer, &nsref);
-			if (error != NSERROR_OK) {
-				free(url2);
-				nsurl_unref(nsurl);
-				return;
-			}
-		}
 
 		fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
 		fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
@@ -778,7 +767,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 				fetch_is_post ? &post : NULL,
 				NULL, NULL, &l);
 		if (error == NSERROR_NO_FETCH_HANDLER) {
-			gui_launch_url(url2);
+			gui_launch_url(nsurl_access(nsurl));
 		} else if (error != NSERROR_OK) {
 			LOG(("Failed to fetch download: %d", error));
 		} else {
@@ -791,7 +780,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			}
 		}
 
-		free(url2);
 		nsurl_unref(nsurl);
 		if (nsref != NULL)
 			nsurl_unref(nsref);
@@ -802,37 +790,40 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	free(bw->frag_id);
 	bw->frag_id = NULL;
 
-	/* find any fragment identifier on end of URL */
-	res = url_fragment(url2, &fragment);
-	if (res == URL_FUNC_NOMEM) {
-		free(url2);
-		warn_user("NoMemory", 0);
-		return;
-	} else if (res == URL_FUNC_OK) {
+	if (nsurl_enquire(nsurl, NSURL_FRAGMENT)) {
+		lwc_string *lwc_frag;
 		bool same_url = false;
 
-		bw->frag_id = fragment;
+		lwc_frag = nsurl_get_component(nsurl, NSURL_FRAGMENT);
+
+		bw->frag_id = strdup(lwc_string_data(lwc_frag));
+
+		if (bw->frag_id == NULL) {
+			nsurl_unref(nsurl);
+			if (nsref != NULL)
+				nsurl_unref(nsref);
+			lwc_string_unref(lwc_frag);
+			warn_user("NoMemory", 0);
+			return;
+		}
+		lwc_string_unref(lwc_frag);
 
 		/* Compare new URL with existing one (ignoring fragments) */
 		if (bw->current_content != NULL && 
 				content_get_url(bw->current_content) != NULL) {
-			res = url_compare(content_get_url(bw->current_content),
-					url2, true, &same_url);
-			if (res == URL_FUNC_NOMEM) {
-				free(url2);
-				warn_user("NoMemory", 0);
-				return;
-			} else if (res == URL_FUNC_FAILED) {
-				same_url = false;
-			}
+			same_url = nsurl_compare(nsurl,
+					content_get_url(bw->current_content),
+					NSURL_COMPLETE);
 		}
 
 		/* if we're simply moving to another ID on the same page,
 		 * don't bother to fetch, just update the window.
 		 */
 		if (same_url && fetch_is_post == false && 
-				strchr(url2, '?') == 0) {
-			free(url2);
+				nsurl_enquire(nsurl, NSURL_QUERY) == false) {
+			nsurl_unref(nsurl);
+			if (nsref != NULL)
+				nsurl_unref(nsref);
 			if (add_to_history)
 				history_add(bw->history, bw->current_content,
 						bw->frag_id);
@@ -850,35 +841,41 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_remove_caret(bw);
 	browser_window_destroy_children(bw);
 
-	LOG(("Loading '%s'", url2));
+	LOG(("Loading '%s'", nsurl_access(nsurl)));
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
 
-	error = hlcache_handle_retrieve(url2,
+	error = hlcache_handle_retrieve(nsurl,
 			fetch_flags | HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
 					HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			referer,
+			nsref,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
 			parent != NULL ? &child : NULL,
 			CONTENT_ANY, &c);
 	if (error == NSERROR_NO_FETCH_HANDLER) {
-		gui_launch_url(url2);
-		free(url2);
+		gui_launch_url(nsurl_access(nsurl));
+		nsurl_unref(nsurl);
+		if (nsref != NULL)
+			nsurl_unref(nsref);
 		return;
 	} else if (error != NSERROR_OK) {
-		free(url2);
+		nsurl_unref(nsurl);
+		if (nsref != NULL)
+			nsurl_unref(nsref);
 		browser_window_set_status(bw, messages_get("NoMemory"));
 		warn_user("NoMemory", 0);
 		return;
 	}
 
-	free(url2);
-
 	bw->loading_content = c;
 	browser_window_start_throbber(bw);
-	browser_window_refresh_url_bar(bw, url, NULL);
+	browser_window_refresh_url_bar(bw, nsurl, NULL);
+
+	nsurl_unref(nsurl);
+	if (nsref != NULL)
+		nsurl_unref(nsref);
 }
 
 
@@ -898,8 +895,8 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_convert_to_download(bw, event->data.download);
 
 		if (bw->current_content != NULL) {
-			browser_window_refresh_url_bar(bw,
-				content_get_url(bw->current_content),
+			browser_window_refresh_url_bar(bw, content_get_url(
+						bw->current_content),
 				bw->frag_id);
 		}
 		break;
@@ -961,7 +958,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		/* history */
 		if (bw->history_add && bw->history) {
-			const char *url = content_get_url(c);
+			const char *url = nsurl_access(content_get_url(c));
 
 			history_add(bw->history, c, bw->frag_id);
 			if (urldb_add_url(url)) {
@@ -1192,14 +1189,14 @@ void browser_window_refresh(void *p)
 
 	/* Ignore if the refresh URL has gone
 	 * (may happen if a fetch error occurred) */
-	refresh = content_get_refresh_url(bw->current_content);
+	refresh = nsurl_access(content_get_refresh_url(bw->current_content));
 	if (refresh == NULL)
 		return;
 
 	/* mark this content as invalid so it gets flushed from the cache */
 	content_invalidate_reuse_data(bw->current_content);
 
-	url = content_get_url(bw->current_content);
+	url = nsurl_access(content_get_url(bw->current_content));
 	if (url != NULL && strcmp(url, refresh) == 0)
 		history_add = false;
 
@@ -1448,7 +1445,8 @@ void browser_window_stop(struct browser_window *bw)
 
 	if (bw->current_content != NULL) {
 		browser_window_refresh_url_bar(bw, 
-				content_get_url(bw->current_content), bw->frag_id);
+				content_get_url(bw->current_content),
+				bw->frag_id);
 	}
 
 	browser_window_stop_throbber(bw);
@@ -1499,7 +1497,8 @@ void browser_window_reload(struct browser_window *bw, bool all)
 
 	content_invalidate_reuse_data(bw->current_content);
 
-	browser_window_go(bw, content_get_url(bw->current_content), 0, false);
+	browser_window_go(bw, nsurl_access(
+			content_get_url(bw->current_content)), 0, false);
 }
 
 
@@ -1772,7 +1771,7 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
  * \param frag	Additional fragment. May be NULL if none.
  */
 
-void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
+void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		const char *frag)
 {
 	char *url_buf;
@@ -1789,15 +1788,15 @@ void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
 		/* With no fragment, we may as well pass url straight through
 		 * saving a malloc, copy, free cycle.
 		 */
-		gui_window_set_url(bw->window, url);
+		gui_window_set_url(bw->window, nsurl_access(url));
 	} else {
-		url_buf = malloc(strlen(url) + 1 /* # */ +
+		url_buf = malloc(strlen(nsurl_access(url)) + 1 /* # */ +
 				strlen(frag) + 1 /* \0 */);
 		if (url_buf != NULL) {
 			/* This sprintf is safe because of the above size
 			 * calculation, thus we don't need snprintf
 			 */
-			sprintf(url_buf, "%s#%s", url, frag);
+			sprintf(url_buf, "%s#%s", nsurl_access(url), frag);
 			gui_window_set_url(bw->window, url_buf);
 			free(url_buf);
 		} else {

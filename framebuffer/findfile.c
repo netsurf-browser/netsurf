@@ -28,7 +28,7 @@
 #include "utils/filepath.h"
 #include "utils/log.h"
 #include "utils/url.h"
-#include "content/fetchers/resource.h"
+#include "desktop/gui.h"
 
 #include "framebuffer/findfile.h"
 

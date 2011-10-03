@@ -242,7 +242,7 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 void browser_window_get_contextual_content(struct browser_window *bw,
 		int x, int y, struct contextual_content *data);
 
-void browser_window_refresh_url_bar(struct browser_window *bw, const char *url,
+void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		const char *frag);
 
 void browser_window_mouse_click(struct browser_window *bw,

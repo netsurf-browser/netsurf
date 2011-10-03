@@ -37,17 +37,4 @@
  */
 void fetch_resource_register(void);
 
-/**
- * Callback to translate resource to full url.
- *
- * Transforms a resource: filename into a full URL. The returned URL
- * is used as the target for a redirect. The caller takes ownership of
- * the returned string including freeing it when finished with it.
- *
- * \param filename The filename of the resource to locate.
- * \return A string containing the full URL of the target object or
- *         NULL if no suitable resource can be found.
- */
-char* gui_get_resource_url(const char *filename);
-
 #endif

@@ -33,6 +33,7 @@
 #include "utils/config.h"
 #include "utils/errors.h"
 #include "utils/http.h"
+#include "utils/nsurl.h"
 #include "utils/types.h"
 #include "content/content_factory.h"
 #include "content/content_type.h"
@@ -164,7 +165,7 @@ void content_get_contextual_content(struct hlcache_handle *h,
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);
 lwc_string *content_get_mime_type(struct hlcache_handle *c);
-const char *content_get_url(struct hlcache_handle *c);
+nsurl *content_get_url(struct hlcache_handle *c);
 const char *content_get_title(struct hlcache_handle *c);
 content_status content_get_status(struct hlcache_handle *c);
 const char *content_get_status_message(struct hlcache_handle *c);
@@ -174,7 +175,7 @@ int content_get_available_width(struct hlcache_handle *c);
 const char *content_get_source_data(struct hlcache_handle *c, 
 		unsigned long *size);
 void content_invalidate_reuse_data(struct hlcache_handle *c);
-const char *content_get_refresh_url(struct hlcache_handle *c);
+nsurl *content_get_refresh_url(struct hlcache_handle *c);
 struct bitmap *content_get_bitmap(struct hlcache_handle *c);
 bool content_get_opaque(struct hlcache_handle *h);
 bool content_get_quirks(struct hlcache_handle *c);

@@ -785,17 +785,17 @@ lwc_string *content__get_mime_type(struct content *c)
  * \param c  Content to retrieve URL from
  * \return Pointer to URL, or NULL if not found.
  */
-const char *content_get_url(hlcache_handle *h)
+nsurl *content_get_url(hlcache_handle *h)
 {
 	return content__get_url(hlcache_handle_get_content(h));
 }
 
-const char *content__get_url(struct content *c)
+nsurl *content__get_url(struct content *c)
 {
 	if (c == NULL)
 		return NULL;
 
-	return nsurl_access(llcache_handle_get_url(c->llcache));
+	return llcache_handle_get_url(c->llcache);
 }
 
 /**
@@ -970,12 +970,12 @@ void content__invalidate_reuse_data(struct content *c)
  * \param c  Content to retrieve refresh URL from
  * \return Pointer to URL, or NULL if none
  */
-const char *content_get_refresh_url(hlcache_handle *h)
+nsurl *content_get_refresh_url(hlcache_handle *h)
 {
 	return content__get_refresh_url(hlcache_handle_get_content(h));
 }
 
-const char *content__get_refresh_url(struct content *c)
+nsurl *content__get_refresh_url(struct content *c)
 {
 	if (c == NULL)
 		return NULL;
@@ -1159,7 +1159,7 @@ nserror content__clone(const struct content *c, struct content *nc)
 	}
 	
 	if (c->refresh != NULL) {
-		nc->refresh = talloc_strdup(nc, c->refresh);
+		nc->refresh = nsurl_ref(c->refresh);
 		if (nc->refresh == NULL) {
 			return NSERROR_NOMEM;
 		}

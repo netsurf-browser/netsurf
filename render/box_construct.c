@@ -1049,7 +1049,8 @@ css_select_results *box_get_style(html_content *c,
 	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
-				c->encoding, content__get_url(&c->base), 
+				c->encoding,
+				nsurl_access(content__get_url(&c->base)), 
 				c->quirks != BINDING_QUIRKS_MODE_NONE,
 				box_style_alloc, NULL);
 
@@ -1232,7 +1233,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 
 	if ((s = xmlGetProp(n, (const xmlChar *) "href"))) {
 		ok = box_extract_link((const char *) s,
-				content->base_url, &url);
+				nsurl_access(content->base_url), &url);
 		xmlFree(s);
 		if (!ok)
 			return false;
@@ -1317,7 +1318,8 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	/* get image URL */
 	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, content->base_url, &url))
+	if (!box_extract_link((char *) src, nsurl_access(content->base_url),
+			&url))
 		return false;
 	xmlFree(src);
 	if (!url)
@@ -1376,13 +1378,16 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	 * (codebase is the base for the other two) */
 	if ((codebase = xmlGetProp(n, (const xmlChar *) "codebase"))) {
 		if (!box_extract_link((char *) codebase,
-				content->base_url,
+				nsurl_access(content->base_url),
 				&params->codebase))
 			return false;
 		xmlFree(codebase);
 	}
 	if (!params->codebase)
-		params->codebase = content->base_url;
+		params->codebase = strdup(nsurl_access(content->base_url));
+
+	if (!params->codebase)
+		return false;
 
 	if ((classid = xmlGetProp(n, (const xmlChar *) "classid"))) {
 		if (!box_extract_link((char *) classid, params->codebase,
@@ -1403,10 +1408,12 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* Don't include ourself */
-	if (params->classid && strcmp(content->base_url, params->classid) == 0)
+	if (params->classid && strcmp(nsurl_access(content->base_url),
+			params->classid) == 0)
 		return true;
 
-	if (params->data && strcmp(content->base_url, params->data) == 0)
+	if (params->data && strcmp(nsurl_access(content->base_url),
+			params->data) == 0)
 		return true;
 
 	/* codetype and type are MIME types */
@@ -1658,14 +1665,17 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			url = NULL;
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
-				box_extract_link(s, content->base_url, &url);
+				box_extract_link(s,
+						nsurl_access(content->base_url),
+						&url);
 				xmlFree(s);
 			}
 
 			/* copy url */
 			if (url) {
 			  	/* no self-references */
-			  	if (strcmp(content->base_url, url))
+			  	if (strcmp(nsurl_access(content->base_url),
+						url))
 					frame->url = talloc_strdup(content,
 									url);
 				free(url);
@@ -1750,7 +1760,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	if (!(s = (char *) xmlGetProp(n,
 			(const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link(s, content->base_url, &url)) {
+	if (!box_extract_link(s, nsurl_access(content->base_url), &url)) {
 		xmlFree(s);
 		return false;
 	}
@@ -1759,7 +1769,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* don't include ourself */
-	if (strcmp(content->base_url, url) == 0) {
+	if (strcmp(nsurl_access(content->base_url), url) == 0) {
 		free(url);
 		return true;
 	}
@@ -1907,7 +1917,9 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				n->parent == NULL) != CSS_DISPLAY_NONE) {
 			if ((s = (char *) xmlGetProp(n,
 					(const xmlChar*) "src"))) {
-				res = url_join(s, content->base_url, &url);
+				res = url_join(s,
+						nsurl_access(content->base_url),
+						&url);
 				xmlFree(s);
 				/* if url is equivalent to the parent's url,
 				 * we've got infinite inclusion. stop it here
@@ -1915,7 +1927,8 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				 */
 				if (res == URL_FUNC_OK &&
 						strcasecmp(url,
-						content->base_url) != 0) {
+						nsurl_access(
+						content->base_url)) != 0) {
 					if (!html_fetch_object(content, url,
 							box, image_types,
 							content->base.
@@ -2302,14 +2315,15 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	/* src is a URL */
 	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, content->base_url, &params->data))
+	if (!box_extract_link((char *) src, nsurl_access(content->base_url),
+			&params->data))
 		return false;
 	xmlFree(src);
 	if (!params->data)
 		return true;
 
 	/* Don't include ourself */
-	if (strcmp(content->base_url, params->data) == 0)
+	if (strcmp(nsurl_access(content->base_url), params->data) == 0)
 		return true;
 
 	/* add attributes as parameters to linked list */

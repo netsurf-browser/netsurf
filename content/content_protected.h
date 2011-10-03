@@ -106,8 +106,7 @@ struct content {
 	bool quirks;		/**< Content is in quirks mode */
 	char *fallback_charset;	/**< Fallback charset, or NULL */
 
-	/** URL for refresh request, in standard form as from url_join. */
-	char *refresh;
+	nsurl *refresh;		/**< URL for refresh request */
 
 	unsigned int time;		/**< Creation time,
 					  if LOADING or READY,
@@ -169,7 +168,7 @@ void content__request_redraw(struct content *c,
 bool content__set_title(struct content *c, const char *title);
 
 lwc_string *content__get_mime_type(struct content *c);
-const char *content__get_url(struct content *c);
+nsurl *content__get_url(struct content *c);
 const char *content__get_title(struct content *c);
 const char *content__get_status_message(struct content *c);
 int content__get_width(struct content *c);
@@ -177,7 +176,7 @@ int content__get_height(struct content *c);
 int content__get_available_width(struct content *c);
 const char *content__get_source_data(struct content *c, unsigned long *size);
 void content__invalidate_reuse_data(struct content *c);
-const char *content__get_refresh_url(struct content *c);
+nsurl *content__get_refresh_url(struct content *c);
 struct bitmap *content__get_bitmap(struct content *c);
 bool content__get_opaque(struct content *c);
 

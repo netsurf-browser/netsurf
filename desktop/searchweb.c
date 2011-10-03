@@ -212,6 +212,7 @@ void search_web_retrieve_ico(bool localdefault)
 	content_type accept = CONTENT_IMAGE;
 	char *url;
 	nserror error;
+	nsurl *icon_nsurl;
 
 	if (localdefault) {
 		if (search_default_ico_location == NULL)
@@ -233,9 +234,19 @@ void search_web_retrieve_ico(bool localdefault)
 		return;
 	}
 
-	error = hlcache_handle_retrieve(url, 0, NULL, NULL,
+	error = nsurl_create(url, &icon_nsurl);
+	if (error != NSERROR_OK) {
+		free(url);
+		search_ico = NULL;
+		return;
+	}
+
+	error = hlcache_handle_retrieve(icon_nsurl, 0, NULL, NULL,
 			search_web_ico_callback, NULL, NULL, accept,
 			&search_ico);
+
+	nsurl_unref(icon_nsurl);
+
 	if (error != NSERROR_OK)
 		search_ico = NULL;
 
@@ -280,13 +291,14 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 		break;
 
 	case CONTENT_MSG_DONE:
-		LOG(("got favicon '%s'", content_get_url(ico)));
+		LOG(("got favicon '%s'", nsurl_access(content_get_url(ico))));
 		gui_window_set_search_ico(search_ico);
 		break;
 
 	case CONTENT_MSG_ERROR:
 		LOG(("favicon %s error: %s",
-				content_get_url(ico), event->data.error));
+				nsurl_access(content_get_url(ico)),
+				event->data.error));
 		hlcache_handle_release(search_ico);
 		search_ico = NULL;
 		search_web_retrieve_ico(true);

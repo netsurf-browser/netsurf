@@ -129,8 +129,8 @@ nserror hlcache_poll(void);
  *
  * \todo Is there any way to sensibly reduce the number of parameters here?
  */
-nserror hlcache_handle_retrieve(const char *url, uint32_t flags,
-		const char *referer, llcache_post_data *post,
+nserror hlcache_handle_retrieve(nsurl *url, uint32_t flags,
+		nsurl *referer, llcache_post_data *post,
 		hlcache_handle_callback cb, void *pw,
 		hlcache_child_context *child, 
 		content_type accepted_types, hlcache_handle **result);

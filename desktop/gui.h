@@ -136,6 +136,19 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 		unsigned long num, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw);
 
+/**
+ * Callback to translate resource to full url.
+ *
+ * Transforms a resource: filename into a full URL. The returned URL
+ * is used as the target for a redirect. The caller takes ownership of
+ * the returned nsurl including unrefing it when finished with it.
+ *
+ * \param filename The filename of the resource to locate.
+ * \return A string containing the full URL of the target object or
+ *         NULL if no suitable resource can be found.
+ */
+char* gui_get_resource_url(const char *filename);
+
 /** css callback to obtain named system colours from a frontend. */
 css_error gui_system_colour(void *pw, lwc_string *name, css_color *color);
 

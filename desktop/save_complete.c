@@ -171,7 +171,7 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 		css_data = content_get_source_data(css, &css_size);
 
 		source = rewrite_stylesheet_urls(css_data, css_size, 
-				&source_len, content_get_url(css),
+				&source_len, nsurl_access(content_get_url(css)),
 				*list);
 		if (!source) {
 			warn_user("NoMemory", 0);
@@ -250,7 +250,8 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 	}
 
 	/* rewrite all urls we know about */
-	if (!rewrite_document_urls(doc, html_get_base_url(c), *list)) {
+	if (!rewrite_document_urls(doc, nsurl_access(html_get_base_url(c)),
+			*list)) {
 		xmlFreeDoc(doc);
 		warn_user("NoMemory", 0);
 		return false;
@@ -324,7 +325,7 @@ bool save_imported_sheets(struct nscss_import *imports, uint32_t count,
 		css_data = content_get_source_data(css, &css_size);
 
 		source = rewrite_stylesheet_urls(css_data, css_size, 
-				&source_len, content_get_url(css), 
+				&source_len, nsurl_access(content_get_url(css)), 
 				*list);
 		if (!source) {
 			warn_user("NoMemory", 0);
@@ -745,7 +746,8 @@ hlcache_handle * save_complete_list_find(const char *url,
 {
 	struct save_complete_entry *entry;
 	for (entry = list; entry; entry = entry->next)
-		if (strcmp(url, content_get_url(entry->content)) == 0)
+		if (strcmp(url, nsurl_access(
+				content_get_url(entry->content))) == 0)
 			return entry->content;
 	return 0;
 }
@@ -811,7 +813,7 @@ bool save_complete_inventory(const char *path,
 
 	for (entry = list; entry; entry = entry->next) {
 		fprintf(fp, "%p %s\n", entry->content, 
-				content_get_url(entry->content));
+				nsurl_access(content_get_url(entry->content)));
 	}
 
 	fclose(fp);

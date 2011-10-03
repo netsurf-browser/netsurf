@@ -77,7 +77,7 @@ static bool imagemap_add(html_content *c, const char *key,
 static bool imagemap_create(html_content *c);
 static bool imagemap_extract_map(xmlNode *node, html_content *c,
 		struct mapentry **entry);
-static bool imagemap_addtolist(xmlNode *n, char *base_url,
+static bool imagemap_addtolist(xmlNode *n, const char *base_url,
 		struct mapentry **entry);
 static void imagemap_freelist(struct mapentry *list);
 static unsigned int imagemap_hash(const char *key);
@@ -316,7 +316,7 @@ bool imagemap_extract_map(xmlNode *node, html_content *c,
 		 */
 		if (strcmp((const char *) node->name, "area") == 0 ||
 		    strcmp((const char *) node->name, "a") == 0) {
-			if (imagemap_addtolist(node, c->base_url, 
+			if (imagemap_addtolist(node, nsurl_access(c->base_url), 
 					entry) == false)
 				return false;
 		}
@@ -341,7 +341,8 @@ bool imagemap_extract_map(xmlNode *node, html_content *c,
  * \param entry Pointer to list of entries
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_addtolist(xmlNode *n, char *base_url, struct mapentry **entry)
+bool imagemap_addtolist(xmlNode *n, const char *base_url,
+		struct mapentry **entry)
 {
 	char *shape, *coords = NULL, *href, *target = NULL;
 	struct mapentry *new_map, *temp;

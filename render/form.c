@@ -1500,7 +1500,8 @@ void form_submit(hlcache_handle *h, struct browser_window *target,
 
 		url_destroy_components(&components);
 
-		browser_window_go(target, url, content_get_url(h), true);
+		browser_window_go(target, url, nsurl_access(content_get_url(h)),
+				true);
 		break;
 
 	case method_POST_URLENC:
@@ -1512,13 +1513,13 @@ void form_submit(hlcache_handle *h, struct browser_window *target,
 		}
 
 		browser_window_go_post(target, form->action, data, 0,
-				true,  content_get_url(h),
+				true,  nsurl_access(content_get_url(h)),
 				false, true, 0);
 		break;
 
 	case method_POST_MULTIPART:
 		browser_window_go_post(target, form->action, 0,
-				success, true, content_get_url(h),
+				success, true, nsurl_access(content_get_url(h)),
 				false, true, 0);
 		break;
 	}

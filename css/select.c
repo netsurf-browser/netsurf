@@ -1639,7 +1639,8 @@ css_error node_presentational_hint(void *pw, void *node,
 			return CSS_PROPERTY_NOT_SET;
 
 
-		res = url_join((const char *) bg, ctx->base_url, &url);
+		res = url_join((const char *) bg, nsurl_access(ctx->base_url),
+				&url);
 
 		xmlFree(bg);
 

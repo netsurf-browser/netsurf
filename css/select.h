@@ -24,6 +24,7 @@
 #include <libxml/tree.h>
 
 #include "css/css.h"
+#include "utils/nsurl.h"
 
 struct content;
 
@@ -34,7 +35,7 @@ typedef struct nscss_select_ctx
 {
 	css_select_ctx *ctx;
 	bool quirks;
-	const char *base_url;
+	nsurl *base_url;
 } nscss_select_ctx;
 
 css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,

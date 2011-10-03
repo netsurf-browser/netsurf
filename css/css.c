@@ -173,7 +173,7 @@ nserror nscss_create(const content_handler *handler,
 	}
 
 	error = nscss_create_css_data(&result->data, 
-			content__get_url(&result->base),
+			nsurl_access(content__get_url(&result->base)),
 			charset, result->base.quirks, 
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
@@ -401,7 +401,7 @@ nserror nscss_clone(const struct content *old, struct content **newc)
 
 	/* Simply replay create/process/convert */
 	error = nscss_create_css_data(&new_css->data,
-			content__get_url(&new_css->base),
+			nsurl_access(content__get_url(&new_css->base)),
 			old_css->data.charset, 
 			new_css->base.quirks,
 			nscss_content_done, new_css);
@@ -550,6 +550,9 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 	css_error error;
 	nserror nerror;
 
+	nsurl *ns_url;
+	nsurl *ns_ref;
+
 	assert(parent == c->sheet);
 
 	error = css_stylesheet_get_url(c->sheet, &referer);
@@ -584,15 +587,30 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 	/* Create content */
 	c->imports[c->import_count].media = media;
 
+	/* TODO: Why aren't we getting a relative url part, to join? */
+	nerror = nsurl_create(lwc_string_data(url), &ns_url);
+	if (nerror != NSERROR_OK) {
+		free(ctx);
+		return CSS_NOMEM;
+	}
+
+	/* TODO: Constructing nsurl for referer here is silly, avoid */
+	nerror = nsurl_create(referer, &ns_ref);
+	if (nerror != NSERROR_OK) {
+		nsurl_unref(ns_url);
+		free(ctx);
+		return CSS_NOMEM;
+	}
+
 	/* Avoid importing ourself */
-	if (strcmp(lwc_string_data(url), referer) == 0) {
+	if (nsurl_compare(ns_url, ns_ref, NSURL_COMPLETE)) {
 		c->imports[c->import_count].c = NULL;
 		/* No longer require context as we're not fetching anything */
 		free(ctx);
 		ctx = NULL;
 	} else {
-		nerror = hlcache_handle_retrieve(lwc_string_data(url),
-				0, referer, NULL, nscss_import, ctx,
+		nerror = hlcache_handle_retrieve(ns_url,
+				0, ns_ref, NULL, nscss_import, ctx,
 				&child, accept,
 				&c->imports[c->import_count].c);
 		if (nerror != NSERROR_OK) {
@@ -600,6 +618,9 @@ css_error nscss_handle_import(void *pw, css_stylesheet *parent,
 			return CSS_NOMEM;
 		}
 	}
+
+	nsurl_unref(ns_url);
+	nsurl_unref(ns_ref);
 
 #ifdef NSCSS_IMPORT_TRACE
 	LOG(("Import %d '%s' -> (handle: %p ctx: %p)", 

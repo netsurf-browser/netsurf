@@ -20,7 +20,7 @@
 
 #include "css/internal.h"
 
-#include "utils/url.h"
+#include "utils/nsurl.h"
 
 /**
  * URL resolution callback for libcss
@@ -37,33 +37,36 @@ css_error nscss_resolve_url(void *pw, const char *base,
 		lwc_string *rel, lwc_string **abs)
 {
 	lwc_error lerror;
-	char *abs_url, *norm_url;
-	url_func_result res;
+	nserror error;
+	nsurl *nsbase;
+	nsurl *nsabs;
+
+	/* Create nsurl from base */
+	/* TODO: avoid this */
+	error = nsurl_create(base, &nsbase);
+	if (error != NSERROR_OK) {
+		return error == NSERROR_NOMEM ? CSS_NOMEM : CSS_INVALID;
+	}
 
 	/* Resolve URI */
-	res = url_join(lwc_string_data(rel), base, &abs_url);
-	if (res != URL_FUNC_OK) {
-		return res == URL_FUNC_NOMEM ? CSS_NOMEM : CSS_INVALID;
+	error = nsurl_join(nsbase, lwc_string_data(rel), &nsabs);
+	if (error != NSERROR_OK) {
+		nsurl_unref(nsbase);
+		return error == NSERROR_NOMEM ? CSS_NOMEM : CSS_INVALID;
 	}
 
-	/* Normalise it */
-	res = url_normalize(abs_url, &norm_url);
-	if (res != URL_FUNC_OK) {
-		free(abs_url);
-		return res == URL_FUNC_NOMEM ? CSS_NOMEM : CSS_INVALID;
-	}
-
-	free(abs_url);
+	nsurl_unref(nsbase);
 
 	/* Intern it */
-	lerror = lwc_intern_string(norm_url, strlen(norm_url), abs);
+	lerror = lwc_intern_string(nsurl_access(nsabs),
+			strlen(nsurl_access(nsabs)), abs);
 	if (lerror != lwc_error_ok) {
 		*abs = NULL;
-		free(norm_url);
+		nsurl_unref(nsabs);
 		return lerror == lwc_error_oom ? CSS_NOMEM : CSS_INVALID;
 	}
 
-	free(norm_url);
+	nsurl_unref(nsabs);
 
 	return CSS_OK;
 }

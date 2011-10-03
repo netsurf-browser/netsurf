@@ -78,7 +78,7 @@ struct content_html_object {
 	struct content *parent;		/**< Parent document */
 	struct content_html_object *next; /**< Next in chain */
 
-	char *url; /**< URL of content */
+	nsurl *url; /**< URL of content */
 	struct hlcache_handle *content;  /**< Content, or 0. */
 	struct box *box;  /**< Node in box tree containing it. */
 	/** Bitmap of acceptable content types */
@@ -168,7 +168,7 @@ const char *html_get_encoding(struct hlcache_handle *h);
 binding_encoding_source html_get_encoding_source(struct hlcache_handle *h);
 struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
-const char *html_get_base_url(struct hlcache_handle *h);
+nsurl *html_get_base_url(struct hlcache_handle *h);
 const char *html_get_base_target(struct hlcache_handle *h);
 struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h, 
 		unsigned int *n);

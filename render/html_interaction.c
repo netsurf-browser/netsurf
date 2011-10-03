@@ -554,7 +554,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
 			browser_window_go_post(bw, url, 0, 0, false,
-					content_get_url(h), true, true, 0);
+					nsurl_access(content_get_url(h)),
+					true, true, 0);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 				gui_window_save_link(bw->window, url, title);
@@ -689,7 +690,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		break;
 	case ACTION_GO:
 		browser_window_go(browser_window_find_target(bw, target, mouse),
-				url, content_get_url(h), true);
+				url, nsurl_access(content_get_url(h)), true);
 		break;
 	case ACTION_NONE:
 		break;

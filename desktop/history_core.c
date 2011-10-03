@@ -226,11 +226,12 @@ struct history_entry *history_clone_entry(struct history *history,
 void history_add(struct history *history, hlcache_handle *content,
 		char *frag_id)
 {
-	url_func_result res;
 	struct history_entry *entry;
 	char *url;
 	char *title;
 	struct bitmap *bitmap;
+	nserror error;
+	size_t url_len;
 
 	assert(history);
 	assert(content);
@@ -240,8 +241,10 @@ void history_add(struct history *history, hlcache_handle *content,
 	if (entry == NULL)
 		return;
 
-	res = url_normalize(content_get_url(content), &url);
-	if (res != URL_FUNC_OK) {
+	/* TODO: use a nsurl? */
+	error = nsurl_get(content_get_url(content), NSURL_WITH_FRAGMENT,
+			&url, &url_len);
+	if (error != NSERROR_OK) {
 		warn_user("NoMemory", 0);
 		free(entry);
 		return;
