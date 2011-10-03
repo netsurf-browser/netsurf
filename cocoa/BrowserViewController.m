@@ -145,10 +145,10 @@
 
 	/* try to load local files directly. */
 	char *scheme;
-	if (url_scheme(content_get_url(content), &scheme) != URL_FUNC_OK)
+	if (url_scheme(nsurl_access(content_get_url(content)), &scheme) != URL_FUNC_OK)
 		return;
 	if (strcmp(scheme, "file") == 0)
-		path = url_to_path(content_get_url(content));
+		path = url_to_path(nsurl_access(content_get_url(content)));
 	free(scheme);
 
 	if (path == NULL) {
