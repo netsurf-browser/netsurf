@@ -319,7 +319,6 @@ void box_insert_sibling(struct box *box, struct box *new_box);
 void box_unlink_and_free(struct box *box);
 void box_free(struct box *box);
 void box_free_box(struct box *box);
-void box_free_object_params(struct object_params *op);
 void box_bounds(struct box *box, struct rect *r);
 void box_coords(struct box *box, int *x, int *y);
 struct box *box_at_point(struct box *box, const int x, const int y,
