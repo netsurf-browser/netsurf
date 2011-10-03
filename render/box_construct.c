@@ -1587,8 +1587,10 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
  */
 static int box_frames_talloc_destructor(struct content_html_frames *f)
 {
-	if (f->url != NULL)
+	if (f->url != NULL) {
 		nsurl_unref(f->url);
+		f->url = NULL;
+	}
 	
 	return 0;
 }
@@ -1789,8 +1791,10 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
  */
 static int box_iframes_talloc_destructor(struct content_html_iframe *f)
 {
-	if (f->url != NULL)
+	if (f->url != NULL) {
 		nsurl_unref(f->url);
+		f->url = NULL;
+	}
 	
 	return 0;
 }
