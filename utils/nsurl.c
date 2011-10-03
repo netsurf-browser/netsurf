@@ -235,6 +235,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 		} while (*(++pos) != '\0');
 
 		marker.path = pos - url_s;
+
 	}
 
 	/* Get path
@@ -502,7 +503,9 @@ static nserror nsurl__create_from_section(const char const *url_s,
 		break;
 
 	case URL_FRAGMENT:
-		start = pegs->fragment;
+		start = (*(url_s + pegs->fragment) != '#') ?
+				pegs->fragment :
+				pegs->fragment + 1;
 		end = pegs->end;
 		break;
 	}
@@ -1025,7 +1028,8 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 							NSURL_F_PORT),
 		NSURL_F_PATH			= (1 << 8),
 		NSURL_F_QUERY			= (1 << 9),
-		NSURL_F_FRAGMENT		= (1 << 10)
+		NSURL_F_FRAGMENT_PUNCTUATION	= (1 << 10),
+		NSURL_F_FRAGMENT		= (1 << 11)
 	} flags = 0;
 
 	/* Intersection of required parts and available parts gives
@@ -1056,6 +1060,8 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	if ((flags & (NSURL_F_USERNAME | NSURL_F_PASSWORD)) &&
 				flags & NSURL_F_HOST)
 		flags |= NSURL_F_CREDENTIALS_PUNCTUATION;
+	if ((flags & ~NSURL_F_FRAGMENT) && (flags & NSURL_F_FRAGMENT))
+		flags |= NSURL_F_FRAGMENT_PUNCTUATION;
 
 	/* Get total output length */
 	*url_l = 0;
@@ -1105,6 +1111,9 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	}
 
 	if (flags & NSURL_F_FRAGMENT) {
+		if (flags & NSURL_F_FRAGMENT_PUNCTUATION)
+			*url_l += SLEN("#");
+
 		fragment = lwc_string_length(url->fragment);
 		*url_l += fragment;
 	}
@@ -1172,6 +1181,8 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	}
 
 	if (flags & NSURL_F_FRAGMENT) {
+		if (flags & NSURL_F_FRAGMENT_PUNCTUATION)
+			*(pos++) = '#';
 		memcpy(pos, lwc_string_data(url->fragment), fragment);
 		pos += fragment;
 	}
