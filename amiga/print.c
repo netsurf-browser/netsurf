@@ -393,7 +393,7 @@ void ami_print(struct hlcache_handle *c, int copies)
 	ami_print_info.PD = (struct PrinterData *)ami_print_info.PReq->io_Device;
 	ami_print_info.PED = &ami_print_info.PD->pd_SegmentData->ps_PED;
 
-	ami_print_info.ps = print_make_settings(PRINT_DEFAULT, content_get_url(c), &nsfont);
+	ami_print_info.ps = print_make_settings(PRINT_DEFAULT, nsurl_access(content_get_url(c)), &nsfont);
 	ami_print_info.ps->page_width = ami_print_info.PED->ped_MaxXDots;
 	ami_print_info.ps->page_height = ami_print_info.PED->ped_MaxYDots;
 	ami_print_info.ps->scale = scale;

@@ -1698,7 +1698,7 @@ BOOL ami_gui_opts_event(void)
 					case GID_OPTS_HOMEPAGE_CURRENT:
 						if(curbw) RefreshSetGadgetAttrs((struct Gadget *)gow->objects[GID_OPTS_HOMEPAGE],
 							gow->win, NULL, STRINGA_TextVal,
-							content_get_url(curbw->current_content), TAG_DONE);
+							nsurl_access(content_get_url(curbw->current_content)), TAG_DONE);
 					break;
 
 					case GID_OPTS_HOMEPAGE_BLANK:

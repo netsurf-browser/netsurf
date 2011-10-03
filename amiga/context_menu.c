@@ -258,7 +258,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_COPYOBJ],
 							PMIA_ID, CMID_COPYOBJ,
-							PMIA_UserData, content_get_url(userdata),
+							PMIA_UserData, nsurl_access(content_get_url(userdata)),
 						TAG_DONE),
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
@@ -594,25 +594,25 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			case CMID_FRAMEWIN:
 			case CMID_URLOPENWIN:
 				bw = browser_window_create(userdata, gwin->bw,
-					content_get_url(gwin->bw->current_content), true, false);
+					nsurl_access(content_get_url(gwin->bw->current_content)), true, false);
 			break;
 
 			case CMID_FRAMETAB:
 			case CMID_URLOPENTAB:
 				bw = browser_window_create(userdata, gwin->bw,
-					content_get_url(gwin->bw->current_content), true, true);
+					nsurl_access(content_get_url(gwin->bw->current_content)), true, true);
 			break;
 
 			case CMID_FRAMESAVE:
 			case CMID_SAVEURL:
 				browser_window_download(gwin->bw, userdata,
-					content_get_url(gwin->bw->current_content));
+					nsurl_access(content_get_url(gwin->bw->current_content)));
 			break;
 
 			case CMID_FRAMESHOW:
 			case CMID_SHOWOBJ:
-				browser_window_go(gwin->bw, content_get_url(userdata),
-					content_get_url(gwin->bw->current_content), true);
+				browser_window_go(gwin->bw, nsurl_access(content_get_url(userdata)),
+					nsurl_access(content_get_url(gwin->bw->current_content)), true);
 			break;
 
 			case CMID_FRAMERELOAD:
@@ -626,7 +626,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				object = (struct hlcache_handle *)userdata;
 				if((bm = content_get_bitmap(object)))
 				{
-					bm->url = (char *)content_get_url(object);
+					bm->url = (char *)nsurl_access(content_get_url(object));
 					bm->title = (char *)content_get_title(object);
 					ami_easy_clipboard_bitmap(bm);
 				}
@@ -644,7 +644,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				if(AslRequestTags(savereq,
 							ASLFR_TitleText,messages_get("NetSurf"),
 							ASLFR_Screen,scrn,
-							ASLFR_InitialFile,FilePart(content_get_url(object)),
+							ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(object))),
 							TAG_DONE))
 				{
 					BPTR fh = 0;
@@ -662,7 +662,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 									FWrite(fh, source_data, 1, source_size);
 
 							FClose(fh);
-							SetComment(fname, content_get_url(object));
+							SetComment(fname, nsurl_access(content_get_url(object)));
 						}
 					}
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
@@ -675,7 +675,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 				if(AslRequestTags(savereq,
 							ASLFR_TitleText,messages_get("NetSurf"),
 							ASLFR_Screen,scrn,
-							ASLFR_InitialFile,FilePart(content_get_url(object)),
+							ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(object))),
 							TAG_DONE))
 				{
 					BPTR fh = 0;
@@ -685,16 +685,16 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					AddPart(fname,savereq->fr_File,1024);
 					if((bm = content_get_bitmap(object)))
 					{
-						bm->url = (char *)content_get_url(object);
+						bm->url = (char *)nsurl_access(content_get_url(object));
 						bm->title = (char *)content_get_title(object);
 						if(bitmap_save(bm, fname, 0))
-							SetComment(fname, content_get_url(object));
+							SetComment(fname, nsurl_access(content_get_url(object)));
 					}
 #ifdef WITH_NS_SVG
 					else if(ami_mime_compare(object, "svg") == true)
 					{
 						if(ami_save_svg(object,fname))
-							SetComment(fname, content_get_url(object));
+							SetComment(fname, nsurl_access(content_get_url(object)));
 					}
 #endif
 					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);

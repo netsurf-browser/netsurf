@@ -426,7 +426,7 @@ bool ami_easy_clipboard_svg(struct hlcache_handle *c)
 
 	if(!(OpenIFF(iffh,IFFF_WRITE)))
 	{
-		ami_svg_to_dr2d(iffh, source_data, source_size, content_get_url(c));
+		ami_svg_to_dr2d(iffh, source_data, source_size, nsurl_access(content_get_url(c)));
 		CloseIFF(iffh);
 	}
 

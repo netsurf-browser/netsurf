@@ -522,7 +522,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
+								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
 								TAG_DONE))
 							{
 								strlcpy(fname,savereq->fr_Drawer,1024);
@@ -537,7 +537,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 											content_get_source_data(gwin->bw->current_content, &source_size)))
 												FWrite(fh,source_data, 1, source_size);
 										FClose(fh);
-										SetComment(fname, content_get_url(gwin->bw->current_content));
+										SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
 									}
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
@@ -548,7 +548,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
+								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
 								TAG_DONE))
 							{
 								strlcpy(fname,savereq->fr_Drawer,1024);
@@ -558,7 +558,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								if(ami_download_check_overwrite(fname, gwin->win, 0))
 								{
 									save_as_text(gwin->bw->current_content,fname);
-									SetComment(fname,content_get_url(gwin->bw->current_content));
+									SetComment(fname,nsurl_access(content_get_url(gwin->bw->current_content)));
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
 							}
@@ -568,7 +568,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
+								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
 								TAG_DONE))
 							{
 								strlcpy(fname,savereq->fr_Drawer,1024);
@@ -580,7 +580,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 									{
 										UnLock(lock);
 										save_complete(gwin->bw->current_content,fname);
-										SetComment(fname,content_get_url(gwin->bw->current_content));
+										SetComment(fname,nsurl_access(content_get_url(gwin->bw->current_content)));
 										ami_superimpose_favicon(fname,
 											gwin->bw->window->favicon, NULL);
 									}
@@ -594,7 +594,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
+								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
 								TAG_DONE))
 							{
 								strlcpy(&fname,savereq->fr_Drawer,1024);
@@ -602,7 +602,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if(save_as_pdf(gwin->bw->current_content,fname))
 								{
-									SetComment(fname, content_get_url(gwin->bw->current_content));
+									SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
 									ami_superimpose_favicon(fname,
 										gwin->bw->window->favicon, "pdf");
 								}
@@ -615,7 +615,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 							if(AslRequestTags(savereq,
 								ASLFR_TitleText,messages_get("NetSurf"),
 								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(content_get_url(gwin->bw->current_content)),
+								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
 								TAG_DONE))
 							{
 								strlcpy(fname,savereq->fr_Drawer,1024);
@@ -623,16 +623,16 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
 								if((bm = content_get_bitmap(gwin->bw->current_content)))
 								{
-									bm->url = (char *)content_get_url(gwin->bw->current_content);
+									bm->url = (char *)nsurl_access(content_get_url(gwin->bw->current_content));
 									bm->title = (char *)content_get_title(gwin->bw->current_content);
 									if(bitmap_save(bm, fname, 0))
-										SetComment(fname, content_get_url(gwin->bw->current_content));
+										SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
 								}
 #ifdef WITH_NS_SVG
 								else if(ami_mime_compare(gwin->bw->current_content, "svg") == true)
 								{
 									if(ami_save_svg(gwin->bw->current_content,fname))
-										SetComment(fname, content_get_url(gwin->bw->current_content));
+										SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
 								}
 #endif
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
@@ -716,7 +716,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					}
 					else if(bm = content_get_bitmap(gwin->bw->current_content))
 					{
-						bm->url = (char *)content_get_url(gwin->bw->current_content);
+						bm->url = (char *)nsurl_access(content_get_url(gwin->bw->current_content));
 						bm->title = (char *)content_get_title(gwin->bw->current_content);
 						ami_easy_clipboard_bitmap(bm);
 					}
@@ -798,10 +798,10 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 					if (bw == NULL ||
 						bw->current_content == NULL ||
-						content_get_url(bw->current_content) == NULL)
+						nsurl_access(content_get_url(bw->current_content)) == NULL)
 					break;
 
-					hotlist_add_page(content_get_url(bw->current_content));
+					hotlist_add_page(nsurl_access(content_get_url(bw->current_content)));
 				break;
 
 				case 1: // show

@@ -322,7 +322,7 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
 	if((OpenIFF(iffh,IFFF_WRITE))) return false;
 
 	if((source_data = content_get_source_data(c, &source_size)))
-		ami_svg_to_dr2d(iffh, source_data, source_size, content_get_url(c));
+		ami_svg_to_dr2d(iffh, source_data, source_size, nsurl_access(content_get_url(c)));
 
 	if(iffh) CloseIFF(iffh);
 	if(iffh->iff_Stream) Close((BPTR)iffh->iff_Stream);

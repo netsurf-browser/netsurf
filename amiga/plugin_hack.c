@@ -249,7 +249,7 @@ void amiga_plugin_hack_execute(struct hlcache_handle *c)
 	plugincmd = ami_mime_content_to_cmd(c);
 	if(plugincmd == NULL) return;
 
-	full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), content_get_url(c));
+	full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), nsurl_access(content_get_url(c)));
 
 	if(full_cmd)
 	{

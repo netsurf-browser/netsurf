@@ -165,7 +165,7 @@ void ami_drag_save(struct Window *win)
 					FWrite(fh, source_data, 1, source_size);
 
 				FClose(fh);
-				SetComment(path, content_get_url(c));
+				SetComment(path, nsurl_access(content_get_url(c)));
 			}
 		}
 		break;
@@ -190,7 +190,7 @@ void ami_drag_save(struct Window *win)
 			{
 				UnLock(lock);
 				save_complete(c,path);
-				SetComment(path, content_get_url(c));
+				SetComment(path, nsurl_access(content_get_url(c)));
 			}
 			ami_superimpose_favicon(path,
 				drag_save_gui->favicon, NULL);
@@ -205,16 +205,16 @@ void ami_drag_save(struct Window *win)
 			AddPart(path, content_get_title(c), 1024);
 			if(bm = content_get_bitmap(c))
 			{
-				bm->url = (char *)content_get_url(c);
+				bm->url = (char *)nsurl_access(content_get_url(c));
 				bm->title = (char *)content_get_title(c);
 				if(bitmap_save(bm, path, 0))
-					SetComment(path, content_get_url(c));
+					SetComment(path, nsurl_access(content_get_url(c)));
 			}
 #ifdef WITH_NS_SVG
 			else if(ami_mime_compare(c, "svg") == true)
 			{
 				if(ami_save_svg(c, path))
-					SetComment(path, content_get_url(c));
+					SetComment(path, nsurl_access(content_get_url(c)));
 			}
 #endif
 		}
