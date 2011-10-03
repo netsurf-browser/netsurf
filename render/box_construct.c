@@ -1344,6 +1344,24 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 
 /**
+ * Destructor for object_params, for <object> elements
+ *
+ * \param b	The object params being destroyed.
+ * \return 0 to allow talloc to continue destroying the tree.
+ */
+static int box_object_talloc_destructor(struct object_params *o)
+{
+	if (o->codebase != NULL)
+		nsurl_unref(o->codebase);
+	if (o->classid != NULL)
+		nsurl_unref(o->classid);
+	if (o->data != NULL)
+		nsurl_unref(o->data);
+	
+	return 0;
+}
+
+/**
  * Generic embedded object [13.3].
  */
 
@@ -1366,6 +1384,9 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	params = talloc(content, struct object_params);
 	if (!params)
 		return false;
+
+	talloc_set_destructor(params, box_object_talloc_destructor);
+
 	params->data = 0;
 	params->type = 0;
 	params->codetype = 0;
