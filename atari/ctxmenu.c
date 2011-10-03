@@ -208,8 +208,8 @@ void context_popup( struct gui_window * gw, short x, short y )
 			if( content_get_url(ctx->ccdata.object) != NULL ){
 				browser_window_download(
 					gw->browser->bw,
-					content_get_url(ctx->ccdata.object),
-					content_get_url(gw->browser->bw->current_content)
+					nsurl_access(content_get_url(ctx->ccdata.object)),
+					nsurl_access(content_get_url(gw->browser->bw->current_content))
 				);
 			}
 		break;
@@ -217,7 +217,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 		case POP_CTX_COPY_URL:
 			if( (ctx->flags & CNT_IMG) && (ctx->ccdata.object != NULL) ){
 				if( content_get_url(ctx->ccdata.object) != NULL ){
-					scrap_txt_write(&app,  (char*)content_get_url(ctx->ccdata.object) );
+					scrap_txt_write(&app,  (char*)nsurl_access(content_get_url(ctx->ccdata.object)) );
 				}
 			}
 		break;
@@ -233,7 +233,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 				browser_window_create(
 					ctx->ccdata.link_url,
 					gw->browser->bw,
-					content_get_url(gw->browser->bw->current_content),
+					nsurl_access(content_get_url(gw->browser->bw->current_content)),
 					true, false
 				);
 			}
