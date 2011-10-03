@@ -236,6 +236,8 @@ static void nsurl__get_string_markers(const char const *url_s,
 
 		marker.path = pos - url_s;
 
+	} else if (*pos == '\0' && joining == false && is_http == true) {
+		marker.path = pos - url_s;
 	}
 
 	/* Get path
