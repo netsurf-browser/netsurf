@@ -892,6 +892,7 @@ nsurl *nsurl_ref(nsurl *url)
 void nsurl_unref(nsurl *url)
 {
 	assert(url != NULL);
+	assert(url->count > 0);
 
 	if (--url->count > 0)
 		return;
