@@ -1996,8 +1996,10 @@ void html_destroy_iframe(struct content_html_iframe *iframe)
 		next = iframe->next;
 		if (iframe->name)
 			talloc_free(iframe->name);
-		if (iframe->url)
+		if (iframe->url) {
 			nsurl_unref(iframe->url);
+			iframe->url = NULL;
+		}
 		talloc_free(iframe);
 	}
 }
