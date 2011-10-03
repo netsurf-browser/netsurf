@@ -2195,7 +2195,7 @@ void ro_gui_view_source(hlcache_handle *c)
 	}
 
 	/* try to load local files directly. */
-	temp_name = url_to_path(content_get_url(c));
+	temp_name = url_to_path(nsurl_access(content_get_url(c)));
 	if (temp_name) {
 		error = xosfile_read_no_path(temp_name, &objtype, 0, 0, 0, 0);
 		if ((!error) && (objtype == osfile_IS_FILE)) {
