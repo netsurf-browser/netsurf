@@ -196,9 +196,10 @@ static void nsurl__get_string_markers(const char const *url_s,
 	 * If this URL is not getting joined, we are less strict in the case of
 	 * http(s) and will accept any number of slashes, including 0.
 	 */
-	if (*pos != '\0' && ((joining == false && is_http == true) ||
+	if (*pos != '\0' &&
+			((joining == false && is_http == true && *pos != '/') ||
 			(*pos == '/' && *(pos + 1) == '/'))) {
-		/* Skip over leading slashes */
+		/* Skip over leading slashes */LOG(("test c: %c", *pos));
 		if (is_http == false) {
 			if (*pos == '/') pos++;
 			if (*pos == '/') pos++;
@@ -236,7 +237,8 @@ static void nsurl__get_string_markers(const char const *url_s,
 
 		marker.path = pos - url_s;
 
-	} else if (*pos == '\0' && joining == false && is_http == true) {
+	} else if ((*pos == '\0' || *pos == '/') &&
+			joining == false && is_http == true) {
 		marker.path = pos - url_s;
 	}
 
