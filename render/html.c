@@ -1387,6 +1387,7 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 		bool background)
 {
 	struct content_html_object *object;
+	struct content_html_object *ins_object; /* the object to insert after */
 	char *url2;
 	url_func_result res;
 
@@ -1415,9 +1416,19 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	object->background = background;
 	object->url = url2;
  
-	/* add to object list */
-	object->next = c->object_list;
-	c->object_list = object;
+	/* add to content object list, this list determines fetch order */
+	if (c->object_list == NULL) {
+		/* no other objects */
+		object->next = c->object_list;
+		c->object_list = object;
+	} else {
+		/* insert at end */
+		ins_object = c->object_list;
+		while (ins_object->next != NULL) {
+			ins_object = ins_object->next;
+		}
+		ins_object->next = object;
+	}
 
 	c->num_objects++;
 
