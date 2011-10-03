@@ -2037,12 +2037,13 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 	if(gwin->tabs == 0) return;
 
-	gui_window_get_scroll(gwin->bw->window,&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
+	gui_window_get_scroll(gwin->bw->window,
+		&gwin->bw->window->scrollx, &gwin->bw->window->scrolly);
 
 	GetAttr(CLICKTAB_CurrentNode, (Object *)gwin->objects[GID_TABS],
 				(ULONG *)&tabnode);
 	GetClickTabNodeAttrs(tabnode,
-						TNA_UserData,&gwin->bw,
+						TNA_UserData, &gwin->bw,
 						TAG_DONE);
 	curbw = gwin->bw;
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
@@ -2064,15 +2065,17 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 	{
 		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
 
-		p96RectFill(gwin->win->RPort,bbox->Left,bbox->Top,bbox->Width+bbox->Left,bbox->Height+bbox->Top,0xffffffff);
+		p96RectFill(gwin->win->RPort, bbox->Left, bbox->Top,
+			bbox->Width+bbox->Left, bbox->Height+bbox->Top, 0xffffffff);
 
-		browser_window_update(gwin->bw,false);
+		browser_window_update(gwin->bw, false);
 
-		gui_window_set_scroll(gwin->bw->window,gwin->bw->window->scrollx,gwin->bw->window->scrolly);
+		gui_window_set_scroll(gwin->bw->window,
+			gwin->bw->window->scrollx, gwin->bw->window->scrolly);
 		gwin->redraw_scroll = false;
 
 		browser_window_refresh_url_bar(gwin->bw,
-			nsurl_access(content_get_url(gwin->bw->current_content)), gwin->bw->frag_id);
+			content_get_url(gwin->bw->current_content), gwin->bw->frag_id);
 	}
 }
 
