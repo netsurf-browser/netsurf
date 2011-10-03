@@ -877,7 +877,7 @@ void nsbeos_gui_view_source(struct hlcache_handle *content, struct selection *se
 	}
 
 	/* try to load local files directly. */
-	temp_name = url_to_path(content_get_url(content));
+	temp_name = url_to_path(nsurl_access(content_get_url(content)));
 	if (temp_name) {
 		path.SetTo(temp_name);
 		BEntry entry;
