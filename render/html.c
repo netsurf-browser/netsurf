@@ -2169,12 +2169,13 @@ void html_get_contextual_content(struct content *c,
 			data->object = box->object;
 
 		if (box->href)
-			data->link_url = box->href;
+			data->link_url = nsurl_access(box->href);
 
 		if (box->usemap) {
 			const char *target = NULL;
-			data->link_url = imagemap_get(html, box->usemap,
-					box_x, box_y, x, y, &target);
+			data->link_url = nsurl_access(imagemap_get(html,
+					box->usemap, box_x, box_y, x, y,
+					&target));
 		}
 	}
 }

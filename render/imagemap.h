@@ -21,6 +21,8 @@
 
 #include <libxml/HTMLtree.h>
 
+#include "utils/nsurl.h"
+
 struct html_content;
 struct hlcache_handle;
 
@@ -28,7 +30,7 @@ void imagemap_destroy(struct html_content *c);
 void imagemap_dump(struct html_content *c);
 bool imagemap_extract(xmlNode *node, struct html_content *c);
 
-const char *imagemap_get(struct html_content *c, const char *key,
+nsurl *imagemap_get(struct html_content *c, const char *key,
 		unsigned long x, unsigned long y,
 		unsigned long click_x, unsigned long click_y,
 		const char **target);

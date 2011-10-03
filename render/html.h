@@ -102,7 +102,7 @@ struct content_html_frames {
 	int margin_height;	/** frame margin height */
 
 	char *name;	/** frame name (for targetting) */
-	char *url;	/** frame url */
+	nsurl *url;	/** frame url */
 
 	bool no_resize;	/** frame is not resizable */
 	frame_scrolling scrolling;	/** scrolling characteristics */
@@ -120,7 +120,7 @@ struct content_html_iframe {
 	int margin_height;	/** frame margin height */
 
 	char *name;	/** frame name (for targetting) */
-	char *url;	/** frame url */
+	nsurl *url;	/** frame url */
 
 	frame_scrolling scrolling;	/** scrolling characteristics */
 	bool border;	/** frame has a border */

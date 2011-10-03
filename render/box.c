@@ -86,6 +86,9 @@ static int box_talloc_destructor(struct box *b)
 		css_select_results_destroy(b->styles);
 		b->styles = NULL;
 	}
+
+	if (b->href != NULL)
+		nsurl_unref(b->href);
 	
 	return 0;
 }
@@ -96,7 +99,7 @@ static int box_talloc_destructor(struct box *b)
  * \param  styles       selection results for the box, or NULL
  * \param  style        computed style for the box (not copied), or 0
  * \param  style_owned  whether style is owned by this box
- * \param  href         href for the box (not copied), or 0
+ * \param  href         href for the box (copied), or 0
  * \param  target       target for the box (not copied), or 0
  * \param  title        title for the box (not copied), or 0
  * \param  id           id for the box (not copied), or 0
@@ -108,7 +111,7 @@ static int box_talloc_destructor(struct box *b)
  */
 
 struct box * box_create(css_select_results *styles, css_computed_style *style,
-		bool style_owned, const char *href, const char *target, 
+		bool style_owned, nsurl *href, const char *target, 
 		const char *title, char *id, void *context)
 {
 	unsigned int i;
@@ -140,7 +143,7 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->text = NULL;
 	box->length = 0;
 	box->space = 0;
-	box->href = href;
+	box->href = (href == NULL) ? NULL : nsurl_ref(href);
 	box->target = target;
 	box->title = title;
 	box->columns = 1;
@@ -943,7 +946,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	if (box->style)
 		nscss_dump_computed_style(stream, box->style);
 	if (box->href)
-		fprintf(stream, " -> '%s'", box->href);
+		fprintf(stream, " -> '%s'", nsurl_access(box->href));
 	if (box->target)
 		fprintf(stream, " |%s|", box->target);
 	if (box->title)

@@ -168,7 +168,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	html_content *html = (html_content *) c;
 	enum { ACTION_NONE, ACTION_SUBMIT, ACTION_GO } action = ACTION_NONE;
 	const char *title = 0;
-	const char *url = 0;
+	nsurl *url = 0;
 	const char *target = 0;
 	char status_buffer[200];
 	const char *status = 0;
@@ -543,22 +543,23 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	} else if (url) {
 		if (title) {
 			snprintf(status_buffer, sizeof status_buffer, "%s: %s",
-					url, title);
+					nsurl_access(url), title);
 			status = status_buffer;
 		} else
-			status = url;
+			status = nsurl_access(url);
 
 		pointer = get_pointer_shape(bw, url_box, imagemap);
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
-			browser_window_go_post(bw, url, 0, 0, false,
-					nsurl_access(content_get_url(h)),
+			browser_window_go_post(bw, nsurl_access(url), 0, 0,
+					false, nsurl_access(content_get_url(h)),
 					true, true, 0);
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
-				gui_window_save_link(bw->window, url, title);
+				gui_window_save_link(bw->window,
+						nsurl_access(url), title);
 		} else if (mouse & (BROWSER_MOUSE_CLICK_1 |
 				BROWSER_MOUSE_CLICK_2))
 			action = ACTION_GO;
@@ -690,7 +691,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		break;
 	case ACTION_GO:
 		browser_window_go(browser_window_find_target(bw, target, mouse),
-				url, nsurl_access(content_get_url(h)), true);
+				nsurl_access(url),
+				nsurl_access(content_get_url(h)), true);
 		break;
 	case ACTION_NONE:
 		break;

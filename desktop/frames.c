@@ -242,7 +242,8 @@ void browser_window_create_iframes(struct browser_window *bw,
 		window = &(bw->iframes[index++]);
 		if (cur->url) {
 			/* fetch iframe's content */
-			browser_window_go_unverifiable(window, cur->url,
+			browser_window_go_unverifiable(window,
+					nsurl_access(cur->url),
 					nsurl_access(content_get_url(
 							bw->current_content)),
 					false, bw->current_content);
@@ -376,7 +377,7 @@ void browser_window_create_frameset(struct browser_window *bw,
 
 			if (frame->url) {
 				browser_window_go_unverifiable(window,
-						frame->url,
+						nsurl_access(frame->url),
 						nsurl_access(content_get_url(
 								parent)),
 						true,

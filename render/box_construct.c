@@ -70,7 +70,7 @@ struct box_construct_props {
 	/** Style from which to inherit, or NULL if none */
 	const css_computed_style *parent_style;
 	/** Current link target, or NULL if none */
-	const char *href;
+	nsurl *href;
 	/** Current frame target, or NULL if none */
 	const char *target;
 	/** Current title attribute, or NULL if none */
@@ -575,7 +575,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		return false;
 
 	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
-			props.href, props.target, props.title, id, 
+			props.href, props.target, props.title, id,
 			ctx->content);
 	if (box == NULL)
 		return false;
@@ -1228,20 +1228,19 @@ bool box_pre(BOX_SPECIAL_PARAMS)
 bool box_a(BOX_SPECIAL_PARAMS)
 {
 	bool ok;
-	char *url;
+	nsurl *url;
 	xmlChar *s;
 
 	if ((s = xmlGetProp(n, (const xmlChar *) "href"))) {
 		ok = box_extract_link((const char *) s,
-				nsurl_access(content->base_url), &url);
+				content->base_url, &url);
 		xmlFree(s);
 		if (!ok)
 			return false;
 		if (url) {
-			box->href = talloc_strdup(content, url);
-			free(url);
-			if (!box->href)
-				return false;
+			if (box->href != NULL)
+				nsurl_unref(box->href);
+			box->href = url;
 		}
 	}
 
@@ -1284,7 +1283,8 @@ bool box_a(BOX_SPECIAL_PARAMS)
 bool box_image(BOX_SPECIAL_PARAMS)
 {
 	bool ok;
-	char *s, *url;
+	char *s;
+	nsurl *url;
 	xmlChar *alt, *src;
 	enum css_width_e wtype;
 	enum css_height_e htype;
@@ -1318,17 +1318,16 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	/* get image URL */
 	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, nsurl_access(content->base_url),
-			&url))
+	if (!box_extract_link((char *) src, content->base_url, &url))
 		return false;
 	xmlFree(src);
 	if (!url)
 		return true;
 
 	/* start fetch */
-	ok = html_fetch_object(content, url, box, image_types,
+	ok = html_fetch_object(content, nsurl_access(url), box, image_types,
 			content->base.available_width, 1000, false);
-	free(url);
+	nsurl_unref(url);
 
 	wtype = css_computed_width(box->style, &value, &wunit);
 	htype = css_computed_height(box->style, &value, &hunit);
@@ -1377,17 +1376,13 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	/* codebase, classid, and data are URLs
 	 * (codebase is the base for the other two) */
 	if ((codebase = xmlGetProp(n, (const xmlChar *) "codebase"))) {
-		if (!box_extract_link((char *) codebase,
-				nsurl_access(content->base_url),
+		if (!box_extract_link((char *) codebase, content->base_url,
 				&params->codebase))
 			return false;
 		xmlFree(codebase);
 	}
 	if (!params->codebase)
-		params->codebase = strdup(nsurl_access(content->base_url));
-
-	if (!params->codebase)
-		return false;
+		params->codebase = nsurl_ref(content->base_url);
 
 	if ((classid = xmlGetProp(n, (const xmlChar *) "classid"))) {
 		if (!box_extract_link((char *) classid, params->codebase,
@@ -1408,12 +1403,12 @@ bool box_object(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* Don't include ourself */
-	if (params->classid && strcmp(nsurl_access(content->base_url),
-			params->classid) == 0)
+	if (params->classid && nsurl_compare(content->base_url,
+			params->classid, NSURL_COMPLETE))
 		return true;
 
-	if (params->data && strcmp(nsurl_access(content->base_url),
-			params->data) == 0)
+	if (params->data && nsurl_compare(content->base_url,
+			params->data, NSURL_COMPLETE))
 		return true;
 
 	/* codetype and type are MIME types */
@@ -1506,7 +1501,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	/* start fetch (MIME type is ok or not specified) */
 	if (!html_fetch_object(content,
-			params->data ? params->data : params->classid,
+			params->data ? nsurl_access(params->data) :
+			nsurl_access(params->classid),
 			box, CONTENT_ANY, content->base.available_width, 1000, 
 			false))
 		return false;
@@ -1551,7 +1547,8 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 		html_content *content) {
 	unsigned int row, col, index, i;
 	unsigned int rows = 1, cols = 1;
-	char *s, *url;
+	char *s;
+	nsurl *url;
 	struct frame_dimension *row_height = 0, *col_width = 0;
 	xmlNode *c;
 	struct content_html_frames *frame;
@@ -1665,21 +1662,17 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 			url = NULL;
 			if ((s = (char *) xmlGetProp(c,
 					(const xmlChar *) "src"))) {
-				box_extract_link(s,
-						nsurl_access(content->base_url),
-						&url);
+				box_extract_link(s, content->base_url, &url);
 				xmlFree(s);
 			}
 
 			/* copy url */
 			if (url) {
 			  	/* no self-references */
-			  	if (strcmp(nsurl_access(content->base_url),
-						url))
-					frame->url = talloc_strdup(content,
-									url);
-				free(url);
-				url = NULL;
+			  	if (nsurl_compare(content->base_url, url,
+						NSURL_COMPLETE))
+					frame->url = url;
+					url = NULL;
 			}
 
 			/* fill in specified values */
@@ -1741,7 +1734,8 @@ bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
 
 bool box_iframe(BOX_SPECIAL_PARAMS)
 {
-	char *url, *s;
+	nsurl *url;
+	char *s;
 	struct content_html_iframe *iframe;
 	int i;
 
@@ -1760,7 +1754,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	if (!(s = (char *) xmlGetProp(n,
 			(const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link(s, nsurl_access(content->base_url), &url)) {
+	if (!box_extract_link(s, content->base_url, &url)) {
 		xmlFree(s);
 		return false;
 	}
@@ -1769,22 +1763,22 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* don't include ourself */
-	if (strcmp(nsurl_access(content->base_url), url) == 0) {
-		free(url);
+	if (nsurl_compare(content->base_url, url, NSURL_COMPLETE)) {
+		nsurl_unref(url);
 		return true;
 	}
 
 	/* create a new iframe */
 	iframe = talloc(content, struct content_html_iframe);
 	if (!iframe) {
-		free(url);
+		nsurl_unref(url);
 		return false;
 	}
 	iframe->box = box;
 	iframe->margin_width = 0;
 	iframe->margin_height = 0;
 	iframe->name = NULL;
-	iframe->url = talloc_strdup(content, url);
+	iframe->url = url;
 	iframe->scrolling = SCROLLING_AUTO;
 	iframe->border = true;
 
@@ -2315,15 +2309,14 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	/* src is a URL */
 	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
 		return true;
-	if (!box_extract_link((char *) src, nsurl_access(content->base_url),
-			&params->data))
+	if (!box_extract_link((char *) src, content->base_url, &params->data))
 		return false;
 	xmlFree(src);
 	if (!params->data)
 		return true;
 
 	/* Don't include ourself */
-	if (strcmp(nsurl_access(content->base_url), params->data) == 0)
+	if (nsurl_compare(content->base_url, params->data, NSURL_COMPLETE))
 		return true;
 
 	/* add attributes as parameters to linked list */
@@ -2353,8 +2346,9 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	box->object_params = params;
 
 	/* start fetch */
-	return html_fetch_object(content, params->data, box, CONTENT_ANY,
-			content->base.available_width, 1000, false);
+	return html_fetch_object(content, nsurl_access(params->data), box,
+			CONTENT_ANY, content->base.available_width, 1000,
+			false);
 }
 
 /**
@@ -2399,11 +2393,11 @@ bool box_get_attribute(xmlNode *n, const char *attribute,
  * \return  true on success, false on memory exhaustion
  */
 
-bool box_extract_link(const char *rel, const char *base, char **result)
+bool box_extract_link(const char *rel, nsurl *base, nsurl **result)
 {
 	char *s, *s1, *apos0 = 0, *apos1 = 0, *quot0 = 0, *quot1 = 0;
 	unsigned int i, j, end;
-	url_func_result res;
+	nserror error;
 
 	s1 = s = malloc(3 * strlen(rel) + 1);
 	if (!s)
@@ -2445,12 +2439,12 @@ bool box_extract_link(const char *rel, const char *base, char **result)
 	}
 
 	/* construct absolute URL */
-	res = url_join(s1, base, result);
+	error = nsurl_join(base, s1, result);
 	free(s);
-	if (res == URL_FUNC_NOMEM)
+	if (error != NSERROR_OK) {
+		*result = NULL;
 		return false;
-	else if (res == URL_FUNC_FAILED)
-		return true;
+	}
 
 	return true;
 }

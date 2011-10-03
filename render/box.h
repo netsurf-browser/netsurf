@@ -213,7 +213,7 @@ struct box {
 	/** Width of space after current text (depends on font and size). */
 	int space;
 
-	const char *href;   /**< Link, or 0. */
+	nsurl *href;   /**< Link, or 0. */
 	const char *target;  /**< Link target, or 0. */
 	const char *title;  /**< Title, or 0. */
 
@@ -284,11 +284,11 @@ struct column {
 
 /** Parameters for <object> and similar elements. */
 struct object_params {
-	char *data;
+	nsurl *data;
 	char *type;
 	char *codetype;
-	char *codebase;
-	char *classid;
+	nsurl *codebase;
+	nsurl *classid;
 	struct object_param *params;
 };
 
@@ -312,7 +312,7 @@ extern const char *TARGET_BLANK;
 
 void *box_style_alloc(void *ptr, size_t len, void *pw);
 struct box * box_create(css_select_results *styles, css_computed_style *style,
-		bool style_owned, const char *href, const char *target, 
+		bool style_owned, nsurl *href, const char *target, 
 		const char *title, char *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
@@ -331,7 +331,7 @@ struct box *box_pick_text_box(struct html_content *html,
 struct box *box_find_by_id(struct box *box, const char *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth);
-bool box_extract_link(const char *rel, const char *base, char **result);
+bool box_extract_link(const char *rel, nsurl *base, nsurl **result);
 
 bool box_handle_scrollbars(struct content *c, struct box *box,
 		bool bottom, bool right);

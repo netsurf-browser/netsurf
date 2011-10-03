@@ -839,6 +839,7 @@ nserror nsurl_create(const char const *url_s, nsurl **url)
 	buff = malloc(length * 3 + 1);
 	if (buff == NULL) {
 		free(*url);
+		*url = NULL;
 		return NSERROR_NOMEM;
 	}
 
@@ -855,6 +856,7 @@ nserror nsurl_create(const char const *url_s, nsurl **url)
 
 	if (e != NSERROR_OK) {
 		free(*url);
+		*url = NULL;
 		return NSERROR_NOMEM;
 	}
 
@@ -862,6 +864,7 @@ nserror nsurl_create(const char const *url_s, nsurl **url)
 	if (nsurl_get(*url, NSURL_WITH_FRAGMENT, &((*url)->string),
 			&((*url)->length)) != NSERROR_OK) {
 		free(*url);
+		*url = NULL;
 		return NSERROR_NOMEM;
 	}
 
@@ -1392,6 +1395,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	buff = malloc(length + 5);
 	if (buff == NULL) {
 		free(*joined);
+		*joined = NULL;
 		return NSERROR_NOMEM;
 	}
 
@@ -1501,6 +1505,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 	if (error != NSERROR_OK) {
 		free(*joined);
+		*joined = NULL;
 		return NSERROR_NOMEM;
 	}
 
@@ -1508,6 +1513,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	if (nsurl_get(*joined, NSURL_WITH_FRAGMENT, &((*joined)->string),
 			&((*joined)->length)) != NSERROR_OK) {
 		free(*joined);
+		*joined = NULL;
 		return NSERROR_NOMEM;
 	}
 

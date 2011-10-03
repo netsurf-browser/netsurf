@@ -43,7 +43,7 @@ typedef enum {
 
 struct mapentry {
 	imagemap_entry_type type;	/**< type of shape */
-	char *url;			/**< absolute url to go to */
+	nsurl *url;			/**< absolute url to go to */
 	char *target;			/**< target frame (if any) */
 	union {
 		struct {
@@ -77,7 +77,7 @@ static bool imagemap_add(html_content *c, const char *key,
 static bool imagemap_create(html_content *c);
 static bool imagemap_extract_map(xmlNode *node, html_content *c,
 		struct mapentry **entry);
-static bool imagemap_addtolist(xmlNode *n, const char *base_url,
+static bool imagemap_addtolist(xmlNode *n, nsurl *base_url,
 		struct mapentry **entry);
 static void imagemap_freelist(struct mapentry *list);
 static unsigned int imagemap_hash(const char *key);
@@ -203,11 +203,12 @@ void imagemap_dump(html_content *c)
 			for (entry = map->list; entry; entry = entry->next) {
 				switch (entry->type) {
 				case IMAGEMAP_DEFAULT:
-					LOG(("\tDefault: %s", entry->url));
+					LOG(("\tDefault: %s", nsurl_access(
+							entry->url)));
 					break;
 				case IMAGEMAP_RECT:
 					LOG(("\tRectangle: %s: [(%d,%d),(%d,%d)]",
-						entry->url,
+						nsurl_access(entry->url),
 						entry->bounds.rect.x0,
 						entry->bounds.rect.y0,
 						entry->bounds.rect.x1,
@@ -215,13 +216,14 @@ void imagemap_dump(html_content *c)
 					break;
 				case IMAGEMAP_CIRCLE:
 					LOG(("\tCircle: %s: [(%d,%d),%d]",
-						entry->url,
+						nsurl_access(entry->url),
 						entry->bounds.circle.x,
 						entry->bounds.circle.y,
 						entry->bounds.circle.r));
 					break;
 				case IMAGEMAP_POLY:
-					LOG(("\tPolygon: %s:", entry->url));
+					LOG(("\tPolygon: %s:", nsurl_access(
+							entry->url)));
 					for (j = 0; j != entry->bounds.poly.num;
 							j++) {
 						fprintf(stderr, "(%d,%d) ",
@@ -316,7 +318,7 @@ bool imagemap_extract_map(xmlNode *node, html_content *c,
 		 */
 		if (strcmp((const char *) node->name, "area") == 0 ||
 		    strcmp((const char *) node->name, "a") == 0) {
-			if (imagemap_addtolist(node, nsurl_access(c->base_url), 
+			if (imagemap_addtolist(node, c->base_url, 
 					entry) == false)
 				return false;
 		}
@@ -341,7 +343,7 @@ bool imagemap_extract_map(xmlNode *node, html_content *c,
  * \param entry Pointer to list of entries
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_addtolist(xmlNode *n, const char *base_url,
+bool imagemap_addtolist(xmlNode *n, nsurl *base_url,
 		struct mapentry **entry)
 {
 	char *shape, *coords = NULL, *href, *target = NULL;
@@ -447,7 +449,7 @@ bool imagemap_addtolist(xmlNode *n, const char *base_url,
 	if (target) {
 		new_map->target = strdup(target);
 		if (new_map->target == NULL) {
-			free(new_map->url);
+			nsurl_unref(new_map->url);
 			free(new_map);
 			xmlFree(target);
 			xmlFree(href);
@@ -529,7 +531,7 @@ bool imagemap_addtolist(xmlNode *n, const char *base_url,
 					free(new_map->bounds.poly.ycoords);
 					free(new_map->bounds.poly.xcoords);
 					free(new_map->target);
-					free(new_map->url);
+					nsurl_unref(new_map->url);
 					free(new_map);
 					xmlFree(href);
 					xmlFree(shape);
@@ -544,7 +546,7 @@ bool imagemap_addtolist(xmlNode *n, const char *base_url,
 					free(new_map->bounds.poly.ycoords);
 					free(new_map->bounds.poly.xcoords);
 					free(new_map->target);
-					free(new_map->url);
+					nsurl_unref(new_map->url);
 					free(new_map);
 					xmlFree(href);
 					xmlFree(shape);
@@ -606,7 +608,7 @@ void imagemap_freelist(struct mapentry *list)
 	while (entry != NULL) {
 		prev = entry;
 
-		free(entry->url);
+		nsurl_unref(entry->url);
 
 		if (entry->target)
 			free(entry->target);
@@ -633,7 +635,7 @@ void imagemap_freelist(struct mapentry *list)
  * \param target   Pointer to location to receive target pointer (if any)
  * \return The url associated with this area, or NULL if not found
  */
-const char *imagemap_get(struct html_content *c, const char *key,
+nsurl *imagemap_get(struct html_content *c, const char *key,
 		unsigned long x, unsigned long y,
 		unsigned long click_x, unsigned long click_y,
 		const char **target)
