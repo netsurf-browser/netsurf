@@ -1012,12 +1012,26 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 			current += len;
 
-			if (current[0] == '\r' && current[1] == '\n') {
-				current += 2;
-				props.inline_container = NULL;
-			} else if (current[0] != 0) {
-				current++;
-				props.inline_container = NULL;
+			if (current[0] != '\0') {
+				/* Linebreak: create new inline container */
+				props.inline_container = box_create(NULL, NULL,
+						false, NULL, NULL, NULL, NULL, 
+						ctx->content);
+				if (props.inline_container == NULL) {
+					free(text);
+					return false;
+				}
+
+				props.inline_container->type = 
+						BOX_INLINE_CONTAINER;
+
+				box_add_child(props.containing_block, 
+						props.inline_container);
+
+				if (current[0] == '\r' && current[1] == '\n')
+					current += 2;
+				else
+					current++;
 			}
 		} while (*current);
 
