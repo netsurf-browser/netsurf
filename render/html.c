@@ -1388,7 +1388,7 @@ nserror html_convert_css_callback(hlcache_handle *css,
  * \return  true on success, false on memory exhaustion
  */
 
-bool html_fetch_object(html_content *c, const char *url, struct box *box,
+bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 		content_type permitted_types,
 		int available_width, int available_height,
 		bool background)
@@ -1396,7 +1396,6 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	struct content_html_object *object;
 	hlcache_child_context child;
 	nserror error;
-	nsurl *object_url;
 
 	/* If we've already been aborted, don't bother attempting the fetch */
 	if (c->aborted)
@@ -1405,15 +1404,8 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
 
-	error = nsurl_create(url, &object_url);
-	if (error != NSERROR_OK) {
-		LOG(("failed to normalize url '%s'", url));
-		return false;
-	}
-
 	object = talloc(c, struct content_html_object);
 	if (object == NULL) {
-		nsurl_unref(object_url);
 		return false;
 	}
 
@@ -1424,18 +1416,15 @@ bool html_fetch_object(html_content *c, const char *url, struct box *box,
 	object->permitted_types = permitted_types;
 	object->background = background;
  
-	error = hlcache_handle_retrieve(object_url, 
+	error = hlcache_handle_retrieve(url, 
 			HLCACHE_RETRIEVE_SNIFF_TYPE, 
 			content__get_url(&c->base), NULL, 
 			html_object_callback, object, &child, 
 			object->permitted_types, &object->content);
        	if (error != NSERROR_OK) {
 		talloc_free(object);
-		nsurl_unref(object_url);
 		return error != NSERROR_NOMEM;
 	}
-
-	nsurl_unref(object_url);
 
 	/* add to content object list */
 	object->next = c->object_list;

@@ -399,12 +399,24 @@ static bool box_construct_marker(struct box *box, const char *title,
 
 	if (css_computed_list_style_image(box->style, &image_uri) ==
 			CSS_LIST_STYLE_IMAGE_URI && image_uri != NULL) {
-		if (html_fetch_object(content,
-				lwc_string_data(image_uri),
-				marker, image_types,
-				content->base.available_width,
-				1000, false) == false)
+		nsurl *url;
+		nserror error;
+
+		/* TODO: we get a url out of libcss as a lwc string, but
+		 *       earlier we already had it as a nsurl after we
+		 *       nsurl_joined it.  Can this be improved?
+		 *       For now, just making another nsurl. */
+		error = nsurl_create(lwc_string_data(image_uri), &url);
+		if (error != NSERROR_OK)
 			return false;
+
+		if (html_fetch_object(content, url, marker, image_types,
+				content->base.available_width, 1000, false) ==
+				false) {
+			nsurl_unref(url);
+			return false;
+		}
+		nsurl_unref(url);
 	}
 
 	box->list_marker = marker;
@@ -685,12 +697,24 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	/* Kick off fetch for any background image */
 	if (css_computed_background_image(box->style, &bgimage_uri) == 
 			CSS_BACKGROUND_IMAGE_IMAGE && bgimage_uri != NULL) {
-		if (html_fetch_object(ctx->content,
-				lwc_string_data(bgimage_uri),
-				box, image_types,
-				ctx->content->base.available_width, 1000,
-				true) == false)
+		nsurl *url;
+		nserror error;
+
+		/* TODO: we get a url out of libcss as a lwc string, but
+		 *       earlier we already had it as a nsurl after we
+		 *       nsurl_joined it.  Can this be improved?
+		 *       For now, just making another nsurl. */
+		error = nsurl_create(lwc_string_data(bgimage_uri), &url);
+		if (error != NSERROR_OK)
 			return false;
+
+		if (html_fetch_object(ctx->content, url, box, image_types,
+				ctx->content->base.available_width, 1000,
+				true) == false) {
+			nsurl_unref(url);
+			return false;
+		}
+		nsurl_unref(url);
 	}
 
 	if (*convert_children)
@@ -1339,7 +1363,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* start fetch */
-	ok = html_fetch_object(content, nsurl_access(url), box, image_types,
+	ok = html_fetch_object(content, url, box, image_types,
 			content->base.available_width, 1000, false);
 	nsurl_unref(url);
 
@@ -1536,9 +1560,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 
 	/* start fetch (MIME type is ok or not specified) */
 	if (!html_fetch_object(content,
-			params->data ? nsurl_access(params->data) :
-			nsurl_access(params->classid),
-			box, CONTENT_ANY, content->base.available_width, 1000, 
+			params->data ? params->data : params->classid,
+			box, CONTENT_ANY, content->base.available_width, 1000,
 			false))
 		return false;
 
@@ -1913,8 +1936,9 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 bool box_input(BOX_SPECIAL_PARAMS)
 {
 	struct form_control *gadget = NULL;
-	char *s, *type, *url;
-	url_func_result res;
+	char *s, *type;
+	nsurl *url;
+	nserror error;
 
 	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
 
@@ -1983,28 +2007,26 @@ bool box_input(BOX_SPECIAL_PARAMS)
 				n->parent == NULL) != CSS_DISPLAY_NONE) {
 			if ((s = (char *) xmlGetProp(n,
 					(const xmlChar*) "src"))) {
-				res = url_join(s,
-						nsurl_access(content->base_url),
-						&url);
+				error = nsurl_join(content->base_url, s, &url);
 				xmlFree(s);
+				if (error != NSERROR_OK)
+					goto no_memory;
+
 				/* if url is equivalent to the parent's url,
 				 * we've got infinite inclusion. stop it here
-				 * also bail if url_join failed.
 				 */
-				if (res == URL_FUNC_OK &&
-						strcasecmp(url,
-						nsurl_access(
-						content->base_url)) != 0) {
+				if (nsurl_compare(url, content->base_url,
+						NSURL_COMPLETE) == false) {
 					if (!html_fetch_object(content, url,
 							box, image_types,
 							content->base.
 							available_width,
 							1000, false)) {
-						free(url);
+						nsurl_unref(url);
 						goto no_memory;
 					}
 				}
-				free(url);
+				nsurl_unref(url);
 			}
 		}
 	} else {
@@ -2421,9 +2443,8 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	box->object_params = params;
 
 	/* start fetch */
-	return html_fetch_object(content, nsurl_access(params->data), box,
-			CONTENT_ANY, content->base.available_width, 1000,
-			false);
+	return html_fetch_object(content, params->data, box, CONTENT_ANY,
+			content->base.available_width, 1000, false);
 }
 
 /**

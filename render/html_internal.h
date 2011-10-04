@@ -105,7 +105,7 @@ typedef struct html_content {
 } html_content;
 
 
-bool html_fetch_object(html_content *c, const char *url, struct box *box,
+bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 		content_type permitted_types,
 		int available_width, int available_height,
 		bool background);
