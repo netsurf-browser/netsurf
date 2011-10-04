@@ -175,7 +175,7 @@ void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct box *box,
 	struct object_params *params)
 {
-	LOG(("amiga_plugin_hack_open %s", content__get_url(c)));
+	LOG(("amiga_plugin_hack_open %s", nsurl_access(content__get_url(c))));
 
 	if(c && box)
 	{
