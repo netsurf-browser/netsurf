@@ -35,6 +35,23 @@
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
+/* From RFC3986 section 2.2 (reserved characters) 
+ *      reserved    = gen-delims / sub-delims
+ *
+ *      gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+ *
+ *      sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+ *                  / "*" / "+" / "," / ";" / "="
+ */
+#define URL_RESERVED_S ":/?#[]@!$&'()*+,;="
+ 
+/* From RFC3986 section 2.3 (unreserved characters) 
+ *      unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+ */
+#define URL_UNRESERVED_S "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+
+/* The characters which should not be percent escaped */
+#define URL_NO_ESCAPE URL_RESERVED_S URL_UNRESERVED_S
 
 /**
  * NetSurf URL object
@@ -528,10 +545,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 			ascii_offset = nsurl__get_ascii_offset(*(pos + 1),
 					*(pos + 2));
 
-			if (ascii_offset <= 0x20 ||
-					strchr(";/?:@&=+$,<>#%\"{}|\\^[]`",
-							ascii_offset) ||
-					ascii_offset >= 0x7f) {
+			
+			if (strchr(URL_UNRESERVED_S, ascii_offset) == NULL) {
 				/* This character should be escaped after all,
 				 * just let it get copied */
 				copy_len += 3;
@@ -553,20 +568,20 @@ static nserror nsurl__create_from_section(const char const *url_s,
 
 			length -= 2;
 
-		} else if (isspace(*pos)) {
-			/* This whitespace needs to be escaped */
+		} else if (strchr(URL_NO_ESCAPE, (*pos)) == NULL) {
 
+			/* This needs to be escaped */
 			if (copy_len > 0) {
 				/* Copy up to here */
 				memcpy(pos_norm, pos_url_s, copy_len);
 				pos_norm += copy_len;
 				copy_len = 0;
 			}
-			/* escape */
 
+			/* escape */
 			*(pos_norm++) = '%';
-			*(pos_norm++) = digit2lowcase_hex(*pos >> 4);
-			*(pos_norm++) = digit2lowcase_hex(*pos & 0xf);
+			*(pos_norm++) = digit2uppercase_hex(((unsigned char)*pos) >> 4);
+			*(pos_norm++) = digit2uppercase_hex(((unsigned char)*pos) & 0xf);
 			pos_url_s = pos + 1;
 
 			length += 2;

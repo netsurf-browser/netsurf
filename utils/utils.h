@@ -151,6 +151,16 @@ inline static char digit2lowcase_hex(unsigned char digit) {
 	return "0123456789abcdef"[digit];
 }
 
+/**
+ * Return a hex digit for the given numerical value.
+ *
+ * \return character in range 0-9A-F
+ */
+inline static char digit2uppercase_hex(unsigned char digit) {
+	assert(digit < 16);
+	return "0123456789ABCDEF"[digit];
+}
+
 
 /* Platform specific functions */
 void die(const char * const error);
