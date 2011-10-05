@@ -35,23 +35,155 @@
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
-/* From RFC3986 section 2.2 (reserved characters) 
- *      reserved    = gen-delims / sub-delims
- *
- *      gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
- *
- *      sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
- *                  / "*" / "+" / "," / ";" / "="
- */
-#define URL_RESERVED_S ":/?#[]@!$&'()*+,;="
- 
-/* From RFC3986 section 2.3 (unreserved characters) 
- *      unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
- */
-#define URL_UNRESERVED_S "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+static bool isgendelim(unsigned char c)
+{
+	/* From RFC3986 section 2.2 (reserved characters) 
+	 *
+	 *      gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+	 *
+	 */
+	static const bool gendelim[256] = {
+		false, false, false, false, false, false, false, false, /* 00 */
+		false, false, false, false, false, false, false, false, /* 08 */
+		false, false, false, false, false, false, false, false, /* 10 */
+		false, false, false, false, false, false, false, false, /* 18 */
+		false, false, false, true,  false, false, false, false, /* 20 */
+		false, false, false, false, false, false, false, true,  /* 28 */
+		false, false, false, false, false, false, false, false, /* 30 */
+		false, false, true,  false, false, false, false, true,  /* 38 */
+		true,  false, false, false, false, false, false, false, /* 40 */
+		false, false, false, false, false, false, false, false, /* 48 */
+		false, false, false, false, false, false, false, false, /* 50 */
+		false, false, false, true,  false, true,  false, false, /* 58 */
+		false, false, false, false, false, false, false, false, /* 60 */
+		false, false, false, false, false, false, false, false, /* 68 */
+		false, false, false, false, false, false, false, false, /* 70 */
+		false, false, false, false, false, false, false, false, /* 78 */
+		false, false, false, false, false, false, false, false, /* 80 */
+		false, false, false, false, false, false, false, false, /* 88 */
+		false, false, false, false, false, false, false, false, /* 90 */
+		false, false, false, false, false, false, false, false, /* 98 */
+		false, false, false, false, false, false, false, false, /* A0 */
+		false, false, false, false, false, false, false, false, /* A8 */
+		false, false, false, false, false, false, false, false, /* B0 */
+		false, false, false, false, false, false, false, false, /* B8 */
+		false, false, false, false, false, false, false, false, /* C0 */
+		false, false, false, false, false, false, false, false, /* C8 */
+		false, false, false, false, false, false, false, false, /* D0 */
+		false, false, false, false, false, false, false, false, /* D8 */
+		false, false, false, false, false, false, false, false, /* E0 */
+		false, false, false, false, false, false, false, false, /* E8 */
+		false, false, false, false, false, false, false, false, /* F0 */
+		false, false, false, false, false, false, false, false  /* F8 */
+	};
+	return gendelim[c];
+}
 
-/* The characters which should not be percent escaped */
-#define URL_NO_ESCAPE URL_RESERVED_S URL_UNRESERVED_S
+static bool issubdelim(unsigned char c)
+{
+	/* From RFC3986 section 2.2 (reserved characters) 
+	 *
+	 *      sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+	 *                  / "*" / "+" / "," / ";" / "="
+	 *
+	 */
+	static const bool subdelim[256] = {
+		false, false, false, false, false, false, false, false, /* 00 */
+		false, false, false, false, false, false, false, false, /* 08 */
+		false, false, false, false, false, false, false, false, /* 10 */
+		false, false, false, false, false, false, false, false, /* 18 */
+		false, true,  false, false, true,  false, true,  true,  /* 20 */
+		true,  true,  true,  true,  true,  false, false, false, /* 28 */
+		false, false, false, false, false, false, false, false, /* 30 */
+		false, false, false, true,  false, true,  false, false, /* 38 */
+		false, false, false, false, false, false, false, false, /* 40 */
+		false, false, false, false, false, false, false, false, /* 48 */
+		false, false, false, false, false, false, false, false, /* 50 */
+		false, false, false, false, false, false, false, false, /* 58 */
+		false, false, false, false, false, false, false, false, /* 60 */
+		false, false, false, false, false, false, false, false, /* 68 */
+		false, false, false, false, false, false, false, false, /* 70 */
+		false, false, false, false, false, false, false, false, /* 78 */
+		false, false, false, false, false, false, false, false, /* 80 */
+		false, false, false, false, false, false, false, false, /* 88 */
+		false, false, false, false, false, false, false, false, /* 90 */
+		false, false, false, false, false, false, false, false, /* 98 */
+		false, false, false, false, false, false, false, false, /* A0 */
+		false, false, false, false, false, false, false, false, /* A8 */
+		false, false, false, false, false, false, false, false, /* B0 */
+		false, false, false, false, false, false, false, false, /* B8 */
+		false, false, false, false, false, false, false, false, /* C0 */
+		false, false, false, false, false, false, false, false, /* C8 */
+		false, false, false, false, false, false, false, false, /* D0 */
+		false, false, false, false, false, false, false, false, /* D8 */
+		false, false, false, false, false, false, false, false, /* E0 */
+		false, false, false, false, false, false, false, false, /* E8 */
+		false, false, false, false, false, false, false, false, /* F0 */
+		false, false, false, false, false, false, false, false  /* F8 */
+	};
+	return subdelim[c];
+}
+
+static bool isreserved(unsigned char c)
+{
+	/* From RFC3986 section 2.3 (unreserved characters) 
+	 *
+	 *      reserved    = gen-delims / sub-delims
+	 *
+	 */
+	return isgendelim(c) | issubdelim(c);
+}
+
+
+static bool isunreserved(unsigned char c)
+{
+	/* From RFC3986 section 2.3 (unreserved characters) 
+	 *
+	 *      unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	 *
+	 */
+	static const bool unreserved[256] = {
+		false, false, false, false, false, false, false, false, /* 00 */
+		false, false, false, false, false, false, false, false, /* 08 */
+		false, false, false, false, false, false, false, false, /* 10 */
+		false, false, false, false, false, false, false, false, /* 18 */
+		false, false, false, false, false, false, false, false, /* 20 */
+		false, false, false, false, false, true,  true,  false, /* 28 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 30 */
+		true,  true,  false, false, false, false, false, false, /* 38 */
+		false, true,  true,  true,  true,  true,  true,  true,  /* 40 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 48 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 50 */
+		true,  true,  true,  false, false, false, false, true,  /* 58 */
+		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
+		true,  true,  true,  false, false, false, true, false,  /* 78 */
+		false, false, false, false, false, false, false, false, /* 80 */
+		false, false, false, false, false, false, false, false, /* 88 */
+		false, false, false, false, false, false, false, false, /* 90 */
+		false, false, false, false, false, false, false, false, /* 98 */
+		false, false, false, false, false, false, false, false, /* A0 */
+		false, false, false, false, false, false, false, false, /* A8 */
+		false, false, false, false, false, false, false, false, /* B0 */
+		false, false, false, false, false, false, false, false, /* B8 */
+		false, false, false, false, false, false, false, false, /* C0 */
+		false, false, false, false, false, false, false, false, /* C8 */
+		false, false, false, false, false, false, false, false, /* D0 */
+		false, false, false, false, false, false, false, false, /* D8 */
+		false, false, false, false, false, false, false, false, /* E0 */
+		false, false, false, false, false, false, false, false, /* E8 */
+		false, false, false, false, false, false, false, false, /* F0 */
+		false, false, false, false, false, false, false, false  /* F8 */
+	};
+	return unreserved[c];
+}
+
+/* The ASCII codes which should not be percent escaped */
+static bool isurlnoescape(unsigned char c)
+{
+	return isreserved(c) | isunreserved(c);
+}
 
 /**
  * NetSurf URL object
@@ -545,8 +677,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 			ascii_offset = nsurl__get_ascii_offset(*(pos + 1),
 					*(pos + 2));
 
-			
-			if (strchr(URL_UNRESERVED_S, ascii_offset) == NULL) {
+			if (isunreserved(ascii_offset) == false) {
 				/* This character should be escaped after all,
 				 * just let it get copied */
 				copy_len += 3;
@@ -568,7 +699,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 
 			length -= 2;
 
-		} else if (strchr(URL_NO_ESCAPE, (*pos)) == NULL) {
+		} else if (isurlnoescape(*pos) == false) {
 
 			/* This needs to be escaped */
 			if (copy_len > 0) {
