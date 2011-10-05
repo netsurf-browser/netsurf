@@ -319,6 +319,10 @@ nsurl *gui_get_resource_url(const char *path)
 
 		/* Add filename to URL */
 		memcpy(ptr, path, path_len);
+		ptr += path_len;
+
+		/* Terminate string */
+		*ptr = '\0';
 
 		nsurl_create(raw, &url);
 		free(raw);
