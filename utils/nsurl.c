@@ -35,7 +35,7 @@
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
-static bool isgendelim(unsigned char c)
+static bool nsurl__is_gen_delim(unsigned char c)
 {
 	/* From RFC3986 section 2.2 (reserved characters) 
 	 *
@@ -79,7 +79,7 @@ static bool isgendelim(unsigned char c)
 	return gendelim[c];
 }
 
-static bool issubdelim(unsigned char c)
+static bool nsurl__is_sub_delim(unsigned char c)
 {
 	/* From RFC3986 section 2.2 (reserved characters) 
 	 *
@@ -124,18 +124,18 @@ static bool issubdelim(unsigned char c)
 	return subdelim[c];
 }
 
-static bool isreserved(unsigned char c)
+static bool nsurl__is_reserved(unsigned char c)
 {
 	/* From RFC3986 section 2.3 (unreserved characters) 
 	 *
 	 *      reserved    = gen-delims / sub-delims
 	 *
 	 */
-	return isgendelim(c) | issubdelim(c);
+	return nsurl__is_gen_delim(c) | nsurl__is_sub_delim(c);
 }
 
 
-static bool isunreserved(unsigned char c)
+static bool nsurl__is_unreserved(unsigned char c)
 {
 	/* From RFC3986 section 2.3 (unreserved characters) 
 	 *
@@ -180,9 +180,9 @@ static bool isunreserved(unsigned char c)
 }
 
 /* The ASCII codes which should not be percent escaped */
-static bool isurlnoescape(unsigned char c)
+static bool nsurl__is_no_escape(unsigned char c)
 {
-	return isreserved(c) | isunreserved(c);
+	return nsurl__is_reserved(c) | nsurl__is_unreserved(c);
 }
 
 /**
@@ -687,7 +687,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 				continue;
 			}
 
-			if (isunreserved(ascii_offset) == false) {
+			if (nsurl__is_unreserved(ascii_offset) == false) {
 				/* This character should be escaped after all,
 				 * just let it get copied */
 				copy_len += 3;
@@ -709,7 +709,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 
 			length -= 2;
 
-		} else if (isurlnoescape(*pos) == false) {
+		} else if (nsurl__is_no_escape(*pos) == false) {
 
 			/* This needs to be escaped */
 			if (copy_len > 0) {
@@ -721,8 +721,10 @@ static nserror nsurl__create_from_section(const char const *url_s,
 
 			/* escape */
 			*(pos_norm++) = '%';
-			*(pos_norm++) = digit2uppercase_hex(((unsigned char)*pos) >> 4);
-			*(pos_norm++) = digit2uppercase_hex(((unsigned char)*pos) & 0xf);
+			*(pos_norm++) = digit2uppercase_hex(
+					((unsigned char)*pos) >> 4);
+			*(pos_norm++) = digit2uppercase_hex(
+					((unsigned char)*pos) & 0xf);
 			pos_url_s = pos + 1;
 
 			length += 2;
