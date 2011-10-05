@@ -3,10 +3,10 @@
 makedir Resources
 cd Resources
 makelink AdBlock.css /!NetSurf/Resources/AdBlock,f79 soft
-makelink amiga.css /amiga/resources/amiga.css soft
+makelink default.css /amiga/resources/default.css soft
 makelink ca-bundle /!NetSurf/Resources/ca-bundle soft
 makelink de /!NetSurf/Resources/de soft
-makelink default.css /!NetSurf/Resources/CSS,f79 soft
+makelink nsdefault.css /!NetSurf/Resources/CSS,f79 soft
 makelink default.ico /!NetSurf/Resources/default.ico soft
 makelink en /!NetSurf/Resources/en soft
 makelink fr /!NetSurf/Resources/fr soft
