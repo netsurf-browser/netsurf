@@ -78,9 +78,6 @@
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
 
-char *default_stylesheet_url;
-char *adblock_stylesheet_url;
-char *quirks_stylesheet_url;
 char *tmp_clipboard;
 struct gui_window *input_window = NULL;
 struct gui_window *window_list = NULL;
@@ -961,15 +958,20 @@ static inline void create_cursor(int flags, short mode, void * form, MFORM_EX * 
 	}
 }
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	int len;
-	char * ret;
-	atari_find_resource((char*)&buf, filename, filename);
-	/* TODO: handle failure? */
-	len = strlen( (char*)&buf ) + 1;
-	return( path_to_url((char*)&buf) );
+	char *raw;
+	nsurl *url = NULL;
+
+	atari_find_resource((char*)&buf, path, path);
+	raw = path_to_url((char*)&buf);
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
 }
 
 static void gui_init(int argc, char** argv)
@@ -1017,13 +1019,6 @@ static void gui_init(int argc, char** argv)
 
 	LOG(("Enabling core select menu"));
 	option_core_select_menu = true;
-
-	atari_find_resource(buf, "default.css", "./res/default.css");
-	default_stylesheet_url = path_to_url(buf);
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-	atari_find_resource(buf, "quirks.css", "./res/quirks.css");
-	quirks_stylesheet_url = path_to_url(buf);
 
 	if( strlen(option_url_file) ){
 		urldb_load(option_url_file);

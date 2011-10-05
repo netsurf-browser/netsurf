@@ -169,10 +169,6 @@ extern int __dynamic_num;
 
 const char * NETSURF_DIR;
 
-char *default_stylesheet_url;
-char *quirks_stylesheet_url;
-char *adblock_stylesheet_url;
-
 static const char *task_name = "NetSurf";
 #define CHOICES_PREFIX "<Choices$Write>.WWW.NetSurf."
 
@@ -285,31 +281,50 @@ static void ro_msg_save_desktop(wimp_message *message);
 static void ro_msg_window_info(wimp_message *message);
 static void ro_gui_view_source_bounce(wimp_message *message);
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
-	const char base_url[] = "file:///NetSurf:/Resources/";
-	size_t filename_len = strlen(filename);
+	static const char base_url[] = "file:///NetSurf:/Resources/";
+	size_t path_len, length;
+	char *raw;
+	nsurl *url = NULL;
+
+	/* Map paths first */
+	if (strcmp(path, "adblock.css") == 0)
+		path = "AdBlock";
+	else if (strcmp(path, "default.css") == 0)
+		path = "CSS";
+	else if (strcmp(path, "quirks.css") == 0)
+		path = "Quirks";
+
+	path_len = strlen(path);
 
 	/* Find max URL length */
-	size_t length = SLEN(base_url) + SLEN("xx/") + filename_len + 1;
+	length = SLEN(base_url) + SLEN("xx/") + path_len + 1;
 
-	/* Allocate memory for URL (will be owned and freed by the core) */
-	char *resource_url = malloc(length);
-	if (resource_url == NULL)
-		return NULL;
+	raw = malloc(length);
+	if (raw != NULL) {
+		/* Insert base URL */
+		char *ptr = memcpy(raw, base_url, SLEN(base_url));
+		ptr += SLEN(base_url);
 
-	/* Insert base URL */
-	resource_url = strcpy(resource_url, base_url);
+		/* Add language directory to URL, for translated files */
+		/* TODO: handle non-en langauages
+		 *       handle non-html translated files */
+		if (path_len > SLEN(".html") &&
+				strncmp(path + path_len - SLEN(".html"),
+					".html", SLEN(".html")) == 0) {
+			memcpy(ptr, "en/", SLEN("en/"));
+			ptr += SLEN("en/");
+		}
 
-	/* Add language directory to URL, for translated files */
-	/* TODO: handle non-en langauages
-	 *       handle non-html translated files */
-	if (strncmp(filename + filename_len - 5, ".html", 5) == 0) {
-		resource_url = strcat(resource_url, "en/");
+		/* Add filename to URL */
+		memcpy(ptr, path, path_len);
+
+		nsurl_create(raw, &url);
+		free(raw);
 	}
 
-	/* Add filename to URL */
-	return strcat(resource_url, filename);
+	return url;
 }
 
 /**
@@ -428,14 +443,6 @@ static void gui_init(int argc, char** argv)
 	NETSURF_DIR = strdup(nsdir_temp);
 	if (!NETSURF_DIR)
 		die("Failed duplicating NetSurf directory string");
-
-	/* Initialise stylesheet URLs */
-	default_stylesheet_url = strdup("resource:CSS");
-	quirks_stylesheet_url = strdup("resource:Quirks");
-	adblock_stylesheet_url = strdup("resource:AdBlock");
-	if (!default_stylesheet_url || !quirks_stylesheet_url ||
-			!adblock_stylesheet_url)
-		die("Failed initialising string constants.");
 
 	/* Initialise filename allocator */
 	filename_initialise();
@@ -823,9 +830,6 @@ void gui_quit(void)
 	rufl_quit();
 	free(gui_sprites);
 	xwimp_close_down(task_handle);
- 	free(default_stylesheet_url);
-	free(quirks_stylesheet_url);
-	free(adblock_stylesheet_url);
 	xhourglass_off();
 }
 

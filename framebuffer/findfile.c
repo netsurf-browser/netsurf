@@ -98,10 +98,19 @@ char *url_to_path(const char *url)
 	return respath;
 }
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	return path_to_url(filepath_sfind(respaths, buf, filename));
+	char *raw;
+	nsurl *url = NULL;
+
+	raw = path_to_url(filepath_sfind(respaths, buf, path));
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
 }
 
 /*

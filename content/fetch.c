@@ -107,8 +107,6 @@ static lwc_string *fetch_https_lwc;
 
 /**
  * Initialise the fetcher.
- *
- * Must be called once before any other function.
  */
 
 void fetch_init(void)

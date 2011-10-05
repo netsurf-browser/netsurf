@@ -81,9 +81,6 @@
 #include "utils/utf8.h"
 #include "utils/utils.h"
 
-char *default_stylesheet_url;
-char *quirks_stylesheet_url;
-char *adblock_stylesheet_url;
 char *options_file_location;
 char *toolbar_indices_file_location;
 char *res_dir_location;
@@ -320,10 +317,23 @@ static void check_options(char **respath)
 
 }
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	return path_to_url(filepath_sfind(respaths, buf, filename));
+	char *raw;
+	nsurl *url = NULL;
+
+	/* default.css -> gtkdefault.css */
+	if (strcmp(path, "default.css") == 0)
+		path = "gtkdefault.css";
+
+	raw = path_to_url(filepath_sfind(respaths, buf, path));
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
 }
 
 
@@ -389,16 +399,6 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
-
-	/* set up stylesheet urls */
-	default_stylesheet_url = strdup("resource:gtkdefault.css");
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-	quirks_stylesheet_url = strdup("resource:quirks.css");
-	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
-
-	adblock_stylesheet_url = strdup("resource:adblock.css");
-	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
@@ -571,9 +571,6 @@ void gui_quit(void)
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
 	sslcert_cleanup();
-	free(default_stylesheet_url);
-	free(quirks_stylesheet_url);
-	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);
 	free(print_options_file_location);

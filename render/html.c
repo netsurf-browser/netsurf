@@ -149,6 +149,10 @@ static const char *html_types[] = {
 
 static lwc_string *html_charset;
 
+static nsurl *html_default_stylesheet_url;
+static nsurl *html_adblock_stylesheet_url;
+static nsurl *html_quirks_stylesheet_url;
+
 nserror html_init(void)
 {
 	uint32_t i;
@@ -160,6 +164,21 @@ nserror html_init(void)
 		error = NSERROR_NOMEM;
 		goto error;
 	}
+
+	error = nsurl_create("resource:default.css", 
+			&html_default_stylesheet_url);
+	if (error != NSERROR_OK)
+		goto error;
+
+	error = nsurl_create("resource:adblock.css",
+			&html_adblock_stylesheet_url);
+	if (error != NSERROR_OK)
+		goto error;
+
+	error = nsurl_create("resource:quirks.css",
+			&html_quirks_stylesheet_url);
+	if (error != NSERROR_OK)
+		goto error;
 
 	for (i = 0; i < NOF_ELEMENTS(html_types); i++) {
 		error = content_factory_register_handler(html_types[i],
@@ -178,6 +197,21 @@ error:
 
 void html_fini(void)
 {
+	if (html_quirks_stylesheet_url != NULL) {
+		nsurl_unref(html_quirks_stylesheet_url);
+		html_quirks_stylesheet_url = NULL;
+	}
+
+	if (html_adblock_stylesheet_url != NULL) {
+		nsurl_unref(html_adblock_stylesheet_url);
+		html_adblock_stylesheet_url = NULL;
+	}
+
+	if (html_default_stylesheet_url != NULL) {
+		nsurl_unref(html_default_stylesheet_url);
+		html_default_stylesheet_url = NULL;
+	}
+
 	if (html_charset != NULL) {
 		lwc_string_unref(html_charset);
 		html_charset = NULL;
@@ -986,11 +1020,6 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	struct html_stylesheet *stylesheets;
 	hlcache_child_context child;
 	nserror ns_error;
-
-	nsurl *html_default_css = NULL;
-	nsurl *html_quirks_css = NULL;
-	nsurl *html_adblock_css = NULL;
-
 	nsurl *joined;
 
 	child.charset = c->encoding;
@@ -1013,11 +1042,7 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 	c->base.active = 0;
 
-	ns_error = nsurl_create(default_stylesheet_url, &html_default_css);
-	if (ns_error != NSERROR_OK)
-		goto no_memory;
-
-	ns_error = hlcache_handle_retrieve(html_default_css, 0,
+	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
 			content__get_url(&c->base), NULL,
 			html_convert_css_callback, c, &child, accept,
 			&c->stylesheets[STYLESHEET_BASE].data.external);
@@ -1027,13 +1052,8 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	c->base.active++;
 
 	if (c->quirks == BINDING_QUIRKS_MODE_FULL) {
-
-		ns_error = nsurl_create(quirks_stylesheet_url, &html_quirks_css);
-		if (ns_error != NSERROR_OK)
-			goto no_memory;
-
-		ns_error = hlcache_handle_retrieve(html_quirks_css, 0,
-				content__get_url(&c->base), NULL,
+		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url, 
+				0, content__get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
 				&c->stylesheets[STYLESHEET_QUIRKS].
 						data.external);
@@ -1044,13 +1064,8 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	}
 
 	if (option_block_ads) {
-
-		ns_error = nsurl_create(adblock_stylesheet_url, &html_adblock_css);
-		if (ns_error != NSERROR_OK)
-			goto no_memory;
-
-		ns_error = hlcache_handle_retrieve(html_adblock_css, 0,
-				content__get_url(&c->base), NULL,
+		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
+				0, content__get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
 				&c->stylesheets[STYLESHEET_ADBLOCK].
 						data.external);
@@ -1059,13 +1074,6 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 		c->base.active++;
 	}
-
-	if (html_default_css != NULL)
-		nsurl_unref(html_default_css);
-	if (html_adblock_css != NULL)
-		nsurl_unref(html_adblock_css);
-	if (html_quirks_css != NULL)
-		nsurl_unref(html_quirks_css);
 
 	node = html;
 
@@ -1181,13 +1189,6 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	return true;
 
 no_memory:
-	if (html_default_css != NULL)
-		nsurl_unref(html_default_css);
-	if (html_adblock_css != NULL)
-		nsurl_unref(html_adblock_css);
-	if (html_quirks_css != NULL)
-		nsurl_unref(html_quirks_css);
-
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 	return false;

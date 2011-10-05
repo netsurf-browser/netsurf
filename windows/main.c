@@ -35,16 +35,21 @@
 
 static char **respaths; /** resource search path vector. */
 
-char *default_stylesheet_url;
-char *adblock_stylesheet_url;
-char *quirks_stylesheet_url;
-
 char *options_file_location;
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	return path_to_url(filepath_sfind(respaths, buf, filename));
+	char *raw;
+	nsurl *url = NULL;
+
+	raw = path_to_url(filepath_sfind(respaths, buf, path));
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
 }
 
 void gui_launch_url(const char *url)
@@ -121,16 +126,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	netsurf_init(&argc, &argv, options_file_location, messages);
 
 	free(messages);
-
-	/* set up stylesheet urls */
-	default_stylesheet_url = strdup("resource:default.css");
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-	quirks_stylesheet_url = strdup("resource:quirks.css");
-	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
-
-	adblock_stylesheet_url = strdup("resource:adblock.css");
-	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	ret = nsws_create_main_class(hInstance);
 	ret = nsws_create_drawable_class(hInstance);

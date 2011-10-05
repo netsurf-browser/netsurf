@@ -34,10 +34,6 @@
 #include "utils/filepath.h"
 #include "utils/url.h"
 
-char *default_stylesheet_url = NULL;
-char *quirks_stylesheet_url = NULL;
-char *adblock_stylesheet_url = NULL;
-
 static char **respaths; /** resource search path vector */
 
 /* Stolen from gtk/gui.c */
@@ -64,18 +60,24 @@ void gui_quit(void)
   urldb_save_cookies(option_cookie_jar);
   urldb_save(option_url_file);
   sslcert_cleanup();
-  free(default_stylesheet_url);
-  free(quirks_stylesheet_url);
-  free(adblock_stylesheet_url);
   free(option_cookie_file);
   free(option_cookie_jar);
   gtk_fetch_filetype_fin();
 }
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
 	char buf[PATH_MAX];
-	return path_to_url(filepath_sfind(respaths, buf, filename));
+	char *raw;
+	nsurl *url = NULL;
+
+	raw = path_to_url(filepath_sfind(respaths, buf, path));
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
 }
 
 void
@@ -114,10 +116,6 @@ main(int argc, char **argv)
     
   filepath_sfinddef(respaths, buf, "mime.types", "/etc/");
   gtk_fetch_filetype_init(buf);
-  
-  default_stylesheet_url = strdup("resource:gtkdefault.css");
-  quirks_stylesheet_url = strdup("resource:quirks.css");
-  adblock_stylesheet_url = strdup("resource:adblock.css");
   
   urldb_load(option_url_file);
   urldb_load_cookies(option_cookie_file);

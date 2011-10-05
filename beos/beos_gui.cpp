@@ -93,9 +93,6 @@ void gui_init(int argc, char** argv);
 
 bool replicated = false; /**< if we are running as a replicant */
 
-char *default_stylesheet_url;
-char *quirks_stylesheet_url;
-char *adblock_stylesheet_url;
 char *options_file_location;
 char *glade_file_location;
 
@@ -421,12 +418,17 @@ static int32 bapp_thread(void *arg)
 	return 0;
 }
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
+	nsurl *url = NULL;
 	BString u("rsrc:/");
-	u << filename;
-	fprintf(stderr, "%s(%s) -> '%s'\n", __FUNCTION__, filename, u.String());
-	return strdup(u.String());
+	if (strcmp(path, "default.css") == 0)
+		u << "beosdefault.css";
+	else
+		u << path;
+	fprintf(stderr, "%s(%s) -> '%s'\n", __FUNCTION__, path, u.String());
+	nsurl_create(u.String(), &url);
+	return url;
 }
 
 static void gui_init2(int argc, char** argv)
@@ -612,33 +614,6 @@ void gui_init(int argc, char** argv)
 	//find_resource(buf, "mime.types", "/etc/mime.types");
 	beos_fetch_filetype_init();
 
-	/* set up stylesheet urls */
-
-#ifdef USE_RESOURCES
-	default_stylesheet_url = strdup("rsrc:/beosdefault.css");
-#else
-	find_resource(buf, "beosdefault.css", "./beos/res/beosdefault.css");
-	default_stylesheet_url = path_to_url(buf);
-#endif
-	//default_stylesheet_url = generate_default_css();
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-#ifdef USE_RESOURCES
-	quirks_stylesheet_url = strdup("rsrc:/quirks.css");
-#else
-	find_resource(buf, "quirks.css", "./beos/res/quirks.css");
-	default_stylesheet_url = path_to_url(buf);
-#endif
-
-
-#ifdef USE_RESOURCES
-	adblock_stylesheet_url = strdup("rsrc:/adblock.css");
-#else
-	find_resource(buf, "adblock.css", "./beos/res/adblock.css");
-	adblock_stylesheet_url = path_to_url(buf);
-#endif
-	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
-
 	urldb_load(option_url_file);
 	urldb_load_cookies(option_cookie_file);
 
@@ -765,9 +740,6 @@ void gui_quit(void)
 	urldb_save(option_url_file);
 	//options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
 
-	free(default_stylesheet_url);
-	free(quirks_stylesheet_url);
-	free(adblock_stylesheet_url);
 	free(option_cookie_file);
 	free(option_cookie_jar);
 	beos_fetch_filetype_fin();

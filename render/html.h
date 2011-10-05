@@ -134,10 +134,6 @@ struct content_html_iframe {
 #define STYLESHEET_ADBLOCK	2	/* adblocking stylesheet */
 #define STYLESHEET_START	3	/* start of document stylesheets */
 
-extern char *default_stylesheet_url;
-extern char *adblock_stylesheet_url;
-extern char *quirks_stylesheet_url;
-
 /** Render padding and margin box outlines in html_redraw(). */
 extern bool html_redraw_debug;
 

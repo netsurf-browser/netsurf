@@ -36,10 +36,6 @@
 #import "image/ico.h"
 #import "content/fetchers/resource.h"
 
-char *default_stylesheet_url = (char *)"resource:default.css";
-char *adblock_stylesheet_url = (char *)"resource:adblock.css";
-char *quirks_stylesheet_url = (char *)"resource:quirks.css";
-
 NSString * const kCookiesFileOption = @"CookiesFile";
 NSString * const kURLsFileOption = @"URLsFile";
 NSString * const kHotlistFileOption = @"Hotlist";
@@ -50,11 +46,13 @@ NSString * const kAlwaysCloseMultipleTabs = @"AlwaysCloseMultipleTabs";
 
 #define UNIMPL() NSLog( @"Function '%s' unimplemented", __func__ )
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
-	NSString *path = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: filename] ofType: @""];
-	if (path == nil) return NULL;
-	return strdup( [[[NSURL fileURLWithPath: path] absoluteString] UTF8String] );
+	nsurl *url = NULL;
+	NSString *nspath = [[NSBundle mainBundle] pathForResource: [NSString stringWithUTF8String: path] ofType: @""];
+	if (nspath == nil) return NULL;
+	nsurl_create([[[NSURL fileURLWithPath: nspath] absoluteString] UTF8String], &url);
+	return url;
 }
 
 void gui_poll(bool active)

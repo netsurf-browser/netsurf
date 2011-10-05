@@ -62,10 +62,6 @@
 
 #define NSFB_TOOLBAR_DEFAULT_LAYOUT "blfsrut"
 
-char *default_stylesheet_url;
-char *quirks_stylesheet_url;
-char *adblock_stylesheet_url;
-
 fbtk_widget_t *fbtk;
 
 struct gui_window *input_window = NULL;
@@ -445,16 +441,6 @@ gui_init(int argc, char** argv)
 	nsfb_t *nsfb;
 
 	option_core_select_menu = true;
-
-	/* set up stylesheet urls */
-	default_stylesheet_url = strdup("resource:default.css");
-	LOG(("Using '%s' as Default CSS URL", default_stylesheet_url));
-
-	quirks_stylesheet_url = strdup("resource:quirks.css");
-	LOG(("Using '%s' as quirks CSS URL", quirks_stylesheet_url));
-
-	adblock_stylesheet_url = strdup("resource:adblock.css");
-	LOG(("Using '%s' as AdBlock CSS URL", adblock_stylesheet_url));
 
 	if (option_cookie_file == NULL) {
 		option_cookie_file = strdup("~/.netsurf/Cookies");

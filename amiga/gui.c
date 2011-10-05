@@ -135,10 +135,6 @@
 #define EXTRADOWN (IECODE_5TH_BUTTON)
 #define EXTRAUP   (IECODE_5TH_BUTTON | IECODE_UP_PREFIX)
 
-char *default_stylesheet_url;
-char *quirks_stylesheet_url;
-char *adblock_stylesheet_url;
-
 struct MsgPort *appport;
 struct Library  *KeymapBase = NULL;
 struct KeymapIFace *IKeymap = NULL;
@@ -450,21 +446,23 @@ void ami_amiupdate(void)
 	}
 }
 
-char* gui_get_resource_url(const char *filename)
+nsurl *gui_get_resource_url(const char *path)
 {
-	char path[1024];
-	char filename2[1024];
+	char buf[1024];
+	char path2[1024];
+	char *raw;
+	nsurl *url = NULL;
 
-	if(ami_locate_resource(path, filename) == false)
+	if(ami_locate_resource(buf, path) == false)
 	{
-		if((strncmp(filename + strlen(filename) - 4, ".htm", 4) == 0) ||
-			(strncmp(filename + strlen(filename) - 5, ".html", 5) == 0))
+		if((strncmp(path + strlen(path) - SLEN(".htm"), ".htm", SLEN(".htm")) == 0) ||
+			(strncmp(path + strlen(path) - SLEN(".html"), ".html", SLEN(".html")) == 0))
 		{
 			/* Try with RISC OS HTML filetype, might work */
-			strcpy(filename2, filename);
-			strcat(filename2, ",faf");
+			strcpy(path2, path);
+			strcat(path2, ",faf");
 
-			if(ami_locate_resource(path, filename2) == false)
+			if(ami_locate_resource(buf, path2) == false)
 			{
 				return NULL;
 			}
@@ -472,7 +470,13 @@ char* gui_get_resource_url(const char *filename)
 		else return NULL;
 	}
 
-	return path_to_url(path);
+	raw = path_to_url(buf);
+	if (raw != NULL) {
+		nsurl_create(raw, &url);
+		free(raw);
+	}
+
+	return url;
 }
 
 void gui_init(int argc, char** argv)
@@ -488,10 +492,6 @@ void gui_init(int argc, char** argv)
 
 	win_destroyed = false;
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
-
-	default_stylesheet_url = "file:///PROGDIR:Resources/amiga.css";
-	quirks_stylesheet_url = "file:///PROGDIR:Resources/quirks.css";
-	adblock_stylesheet_url = "file:///PROGDIR:Resources/adblock.css";
 
 	ami_font_setdevicedpi(0); /* for early font requests, eg treeview init */
 

@@ -42,7 +42,6 @@
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "desktop/gui.h"
-#include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -63,13 +62,28 @@ struct fetch_resource_context {
 	bool aborted; /**< Flag indicating fetch has been aborted */
 	bool locked; /**< Flag indicating entry is already entered */
 
-	char *url;
-	char *redirect_url; /**< The url the fetch redirects to */
+	nsurl *url;
+	nsurl *redirect_url; /**< The url the fetch redirects to */
 
 	fetch_resource_handler handler;
 };
 
 static struct fetch_resource_context *ring = NULL;
+
+/** Valid resource paths */
+static const char *fetch_resource_paths[] = {
+	"adblock.css",
+	"default.css",
+	"internal.css",
+	"quirks.css",
+	"credits.html",
+	"licence.html",
+	"netsurf.png"
+};
+static struct fetch_resource_map_entry {
+	lwc_string *path;
+	nsurl *url;
+} fetch_resource_map[NOF_ELEMENTS(fetch_resource_paths)];
 
 /** issue fetch callbacks with locking */
 static inline bool fetch_resource_send_callback(fetch_msg msg,
@@ -109,7 +123,8 @@ static bool fetch_resource_redirect_handler(struct fetch_resource_context *ctx)
 	/* content is going to return redirect */
 	fetch_set_http_code(ctx->fetchh, 302);
 
-	fetch_resource_send_callback(FETCH_REDIRECT, ctx, ctx->redirect_url, 0,
+	fetch_resource_send_callback(FETCH_REDIRECT, ctx, 
+			nsurl_access(ctx->redirect_url), 0,
 			FETCH_ERROR_NO_ERROR);
 
 	return true;
@@ -136,7 +151,7 @@ static bool fetch_resource_notfound_handler(struct fetch_resource_context *ctx)
 	snprintf(buffer, sizeof buffer, "<html><head><title>%s</title></head>"
 			"<body><h1>%s</h1>"
 			"<p>Error %d while fetching file %s</p></body></html>",
-			title, title, code, ctx->url);
+			title, title, code, nsurl_access(ctx->url));
 
 	if (fetch_resource_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
 			FETCH_ERROR_NO_ERROR))
@@ -154,12 +169,48 @@ fetch_resource_notfound_handler_aborted:
 /** callback to initialise the resource fetcher. */
 static bool fetch_resource_initialise(lwc_string *scheme)
 {
+	struct fetch_resource_map_entry *e;
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(fetch_resource_paths); i++) {
+		e = &fetch_resource_map[i];
+
+		if (lwc_intern_string(fetch_resource_paths[i],
+				strlen(fetch_resource_paths[i]),
+				&e->path) != lwc_error_ok) {
+			while (i > 0) {
+				i--;
+				lwc_string_unref(fetch_resource_map[i].path);
+				nsurl_unref(fetch_resource_map[i].url);
+			}
+		}
+
+		e->url = gui_get_resource_url(fetch_resource_paths[i]);
+		if (e->url == NULL) {
+			lwc_string_unref(e->path);
+
+			while (i > 0) {
+				i--;
+				lwc_string_unref(fetch_resource_map[i].path);
+				nsurl_unref(fetch_resource_map[i].url);
+			}
+
+			return false;
+		}
+	}
+
 	return true;
 }
 
-/** callback to initialise the resource fetcher. */
+/** callback to finalise the resource fetcher. */
 static void fetch_resource_finalise(lwc_string *scheme)
 {
+	uint32_t i;
+
+	for (i = 0; i < NOF_ELEMENTS(fetch_resource_map); i++) {
+		lwc_string_unref(fetch_resource_map[i].path);
+		nsurl_unref(fetch_resource_map[i].url);
+	}
 }
 
 /** callback to set up a resource fetch context. */
@@ -172,24 +223,35 @@ fetch_resource_setup(struct fetch *fetchh,
 		 const char **headers)
 {
 	struct fetch_resource_context *ctx;
-	struct url_components urlcomp;
+	lwc_string *path;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
 		return NULL;
 
-	url_get_components(nsurl_access(url), &urlcomp);
+	ctx->handler = fetch_resource_notfound_handler;
 
-	ctx->redirect_url = gui_get_resource_url(urlcomp.path);
-	if (ctx->redirect_url == NULL) {
-		ctx->handler = fetch_resource_notfound_handler;
-	} else {
-		ctx->handler = fetch_resource_redirect_handler;
+	if ((path = nsurl_get_component(url, NSURL_PATH)) != NULL) {
+		uint32_t i;
+		bool match;
+
+		/* Ensure requested path is valid */
+		for (i = 0; i < NOF_ELEMENTS(fetch_resource_map); i++) {
+			if (lwc_string_isequal(path, 
+					fetch_resource_map[i].path, 
+					&match) == lwc_error_ok && match) {
+				ctx->redirect_url = 
+					nsurl_ref(fetch_resource_map[i].url);
+				ctx->handler =
+					fetch_resource_redirect_handler;
+				break;
+			}
+		}
+
+		lwc_string_unref(path);
 	}
 
-	ctx->url = strdup(nsurl_access(url));
-
-	url_destroy_components(&urlcomp);
+	ctx->url = nsurl_ref(url);
 
 	ctx->fetchh = fetchh;
 
@@ -202,8 +264,10 @@ fetch_resource_setup(struct fetch *fetchh,
 static void fetch_resource_free(void *ctx)
 {
 	struct fetch_resource_context *c = ctx;
-	free(c->redirect_url);
-	free(c->url);
+	if (c->redirect_url != NULL)
+		nsurl_unref(c->redirect_url);
+	if (c->url != NULL)
+		nsurl_unref(c->url);
 	RING_REMOVE(ring, c);
 	free(ctx);
 }
