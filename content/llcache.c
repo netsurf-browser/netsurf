@@ -727,9 +727,14 @@ nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	/* Look for a query segment */
 	has_query = nsurl_enquire(url, NSURL_QUERY);
 
-	error = nsurl_defragment(url, &defragmented_url);
-	if (error != NSERROR_OK)
-		return error;
+	/* Get rid of any url fragment */
+	if (nsurl_enquire(url, NSURL_FRAGMENT)) {
+		error = nsurl_defragment(url, &defragmented_url);
+		if (error != NSERROR_OK)
+			return error;
+	} else {
+		defragmented_url = nsurl_ref(url);
+	}
 
 	if (flags & LLCACHE_RETRIEVE_FORCE_FETCH || post != NULL) {
 		/* Create new object */
@@ -751,8 +756,8 @@ nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 		/* Add new object to uncached list */
 		llcache_object_add_to_list(obj, &llcache->uncached_objects);
 	} else {
-		error = llcache_object_retrieve_from_cache(defragmented_url, flags, referer,
-				post, redirect_count, &obj);
+		error = llcache_object_retrieve_from_cache(defragmented_url,
+				flags, referer, post, redirect_count, &obj);
 		if (error != NSERROR_OK) {
 			nsurl_unref(defragmented_url);
 			return error;
