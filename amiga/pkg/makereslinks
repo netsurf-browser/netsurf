@@ -1,5 +1,6 @@
 ; Create Resources dir to allow NetSurf to run from build tree
 
+failat 50
 makedir Resources
 cd Resources
 makelink AdBlock.css /!NetSurf/Resources/AdBlock,f79 soft
