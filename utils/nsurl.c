@@ -1698,6 +1698,7 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 	if (nsurl_get(url, NSURL_COMPLETE, &((*no_frag)->string),
 			&((*no_frag)->length)) != NSERROR_OK) {
 		free(*no_frag);
+		*no_frag = NULL;
 		return NSERROR_NOMEM;
 	}
 
