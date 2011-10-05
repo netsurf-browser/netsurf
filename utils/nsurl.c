@@ -443,7 +443,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 	/* Use 1st char as most significant hex digit */
 	if (isdigit(c1))
 		offset = 16 * (c1 - '0');
-	else if (c1 >= 'a' && c1 <= 'f')
+	else if ((c1 >= 'a' && c1 <= 'f') || (c1 >= 'A' && c1 <= 'F'))
 		offset = 16 * (c1 - 'a' + 10);
 	else
 		/* TODO: return something special to indicate error? */
@@ -452,7 +452,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 	/* Use 2nd char as least significant hex digit and sum */
 	if (isdigit(c2))
 		offset += c2 - '0';
-	else if (c2 >= 'a' && c2 <= 'f')
+	else if ((c2 >= 'a' && c2 <= 'f') || (c2 >= 'A' && c2 <= 'F'))
 		offset += c2 - 'a' + 10;
 	else
 		/* TODO: return something special to indicate error? */
