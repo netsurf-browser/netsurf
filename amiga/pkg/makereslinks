@@ -22,3 +22,7 @@ makelink SearchEngines /amiga/resources/SearchEngines soft
 makelink splash.png /amiga/resources/splash.png soft
 makelink Themes /amiga/resources/Themes soft
 makelink mimetypes /amiga/resources/mimetypes soft
+
+delete /amiga/resources/nsdefault.css
+cd /amiga/resources
+makelink nsdefault.css //!NetSurf/Resources/CSS,f79 soft
