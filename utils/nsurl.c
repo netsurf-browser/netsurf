@@ -586,9 +586,9 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
 	/* Use 2nd char as least significant hex digit and sum */
 	if (isdigit(c2))
 		offset += c2 - '0';
-	else if (c2 >= 'a' && c2 <= 'f'))
+	else if (c2 >= 'a' && c2 <= 'f')
 		offset += c2 - 'a' + 10;
-	else if (c2 >= 'A' && c2 <= 'F'))
+	else if (c2 >= 'A' && c2 <= 'F')
 		offset += c2 - 'A' + 10;
 	else
 		/* Not valid hex */
@@ -680,6 +680,12 @@ static nserror nsurl__create_from_section(const char const *url_s,
 			/* Find which character which was escaped */
 			ascii_offset = nsurl__get_ascii_offset(*(pos + 1),
 					*(pos + 2));
+
+			if (ascii_offset < 0) {
+				/* % with invalid hex digits. */
+				copy_len++;
+				continue;
+			}
 
 			if (isunreserved(ascii_offset) == false) {
 				/* This character should be escaped after all,
