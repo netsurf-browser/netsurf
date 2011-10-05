@@ -35,105 +35,6 @@
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
-static bool nsurl__is_gen_delim(unsigned char c)
-{
-	/* From RFC3986 section 2.2 (reserved characters) 
-	 *
-	 *      gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
-	 *
-	 */
-	static const bool gendelim[256] = {
-		false, false, false, false, false, false, false, false, /* 00 */
-		false, false, false, false, false, false, false, false, /* 08 */
-		false, false, false, false, false, false, false, false, /* 10 */
-		false, false, false, false, false, false, false, false, /* 18 */
-		false, false, false, true,  false, false, false, false, /* 20 */
-		false, false, false, false, false, false, false, true,  /* 28 */
-		false, false, false, false, false, false, false, false, /* 30 */
-		false, false, true,  false, false, false, false, true,  /* 38 */
-		true,  false, false, false, false, false, false, false, /* 40 */
-		false, false, false, false, false, false, false, false, /* 48 */
-		false, false, false, false, false, false, false, false, /* 50 */
-		false, false, false, true,  false, true,  false, false, /* 58 */
-		false, false, false, false, false, false, false, false, /* 60 */
-		false, false, false, false, false, false, false, false, /* 68 */
-		false, false, false, false, false, false, false, false, /* 70 */
-		false, false, false, false, false, false, false, false, /* 78 */
-		false, false, false, false, false, false, false, false, /* 80 */
-		false, false, false, false, false, false, false, false, /* 88 */
-		false, false, false, false, false, false, false, false, /* 90 */
-		false, false, false, false, false, false, false, false, /* 98 */
-		false, false, false, false, false, false, false, false, /* A0 */
-		false, false, false, false, false, false, false, false, /* A8 */
-		false, false, false, false, false, false, false, false, /* B0 */
-		false, false, false, false, false, false, false, false, /* B8 */
-		false, false, false, false, false, false, false, false, /* C0 */
-		false, false, false, false, false, false, false, false, /* C8 */
-		false, false, false, false, false, false, false, false, /* D0 */
-		false, false, false, false, false, false, false, false, /* D8 */
-		false, false, false, false, false, false, false, false, /* E0 */
-		false, false, false, false, false, false, false, false, /* E8 */
-		false, false, false, false, false, false, false, false, /* F0 */
-		false, false, false, false, false, false, false, false  /* F8 */
-	};
-	return gendelim[c];
-}
-
-static bool nsurl__is_sub_delim(unsigned char c)
-{
-	/* From RFC3986 section 2.2 (reserved characters) 
-	 *
-	 *      sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
-	 *                  / "*" / "+" / "," / ";" / "="
-	 *
-	 */
-	static const bool subdelim[256] = {
-		false, false, false, false, false, false, false, false, /* 00 */
-		false, false, false, false, false, false, false, false, /* 08 */
-		false, false, false, false, false, false, false, false, /* 10 */
-		false, false, false, false, false, false, false, false, /* 18 */
-		false, true,  false, false, true,  false, true,  true,  /* 20 */
-		true,  true,  true,  true,  true,  false, false, false, /* 28 */
-		false, false, false, false, false, false, false, false, /* 30 */
-		false, false, false, true,  false, true,  false, false, /* 38 */
-		false, false, false, false, false, false, false, false, /* 40 */
-		false, false, false, false, false, false, false, false, /* 48 */
-		false, false, false, false, false, false, false, false, /* 50 */
-		false, false, false, false, false, false, false, false, /* 58 */
-		false, false, false, false, false, false, false, false, /* 60 */
-		false, false, false, false, false, false, false, false, /* 68 */
-		false, false, false, false, false, false, false, false, /* 70 */
-		false, false, false, false, false, false, false, false, /* 78 */
-		false, false, false, false, false, false, false, false, /* 80 */
-		false, false, false, false, false, false, false, false, /* 88 */
-		false, false, false, false, false, false, false, false, /* 90 */
-		false, false, false, false, false, false, false, false, /* 98 */
-		false, false, false, false, false, false, false, false, /* A0 */
-		false, false, false, false, false, false, false, false, /* A8 */
-		false, false, false, false, false, false, false, false, /* B0 */
-		false, false, false, false, false, false, false, false, /* B8 */
-		false, false, false, false, false, false, false, false, /* C0 */
-		false, false, false, false, false, false, false, false, /* C8 */
-		false, false, false, false, false, false, false, false, /* D0 */
-		false, false, false, false, false, false, false, false, /* D8 */
-		false, false, false, false, false, false, false, false, /* E0 */
-		false, false, false, false, false, false, false, false, /* E8 */
-		false, false, false, false, false, false, false, false, /* F0 */
-		false, false, false, false, false, false, false, false  /* F8 */
-	};
-	return subdelim[c];
-}
-
-static bool nsurl__is_reserved(unsigned char c)
-{
-	/* From RFC3986 section 2.3 (unreserved characters) 
-	 *
-	 *      reserved    = gen-delims / sub-delims
-	 *
-	 */
-	return nsurl__is_gen_delim(c) | nsurl__is_sub_delim(c);
-}
-
 
 static bool nsurl__is_unreserved(unsigned char c)
 {
@@ -182,7 +83,41 @@ static bool nsurl__is_unreserved(unsigned char c)
 /* The ASCII codes which should not be percent escaped */
 static bool nsurl__is_no_escape(unsigned char c)
 {
-	return nsurl__is_reserved(c) | nsurl__is_unreserved(c);
+	static const bool no_escape[256] = {
+		false, false, false, false, false, false, false, false, /* 00 */
+		false, false, false, false, false, false, false, false, /* 08 */
+		false, false, false, false, false, false, false, false, /* 10 */
+		false, false, false, false, false, false, false, false, /* 18 */
+		false, true,  false, true,  true,  false, true,  true,  /* 20 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 28 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 30 */
+		true,  true,  true,  true,  false, true,  false, true,  /* 38 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 40 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 48 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 50 */
+		true,  true,  true,  true,  false, true,  false, true,  /* 58 */
+		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
+		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
+		true,  true,  true,  false, false, false, true,  false, /* 78 */
+		false, false, false, false, false, false, false, false, /* 80 */
+		false, false, false, false, false, false, false, false, /* 88 */
+		false, false, false, false, false, false, false, false, /* 90 */
+		false, false, false, false, false, false, false, false, /* 98 */
+		false, false, false, false, false, false, false, false, /* A0 */
+		false, false, false, false, false, false, false, false, /* A8 */
+		false, false, false, false, false, false, false, false, /* B0 */
+		false, false, false, false, false, false, false, false, /* B8 */
+		false, false, false, false, false, false, false, false, /* C0 */
+		false, false, false, false, false, false, false, false, /* C8 */
+		false, false, false, false, false, false, false, false, /* D0 */
+		false, false, false, false, false, false, false, false, /* D8 */
+		false, false, false, false, false, false, false, false, /* E0 */
+		false, false, false, false, false, false, false, false, /* E8 */
+		false, false, false, false, false, false, false, false, /* F0 */
+		false, false, false, false, false, false, false, false, /* F8 */
+	};
+	return no_escape[c];
 }
 
 /**
