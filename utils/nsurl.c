@@ -367,6 +367,15 @@ static void nsurl__get_string_markers(const char const *url_s,
 		pos--;
 	marker.end = pos + 1 - url_s;
 
+	/* Ensure last url section doesn't pass end */
+	if (marker.fragment   > marker.end) marker.fragment   = marker.end;
+	if (marker.query      > marker.end) marker.query      = marker.end;
+	if (marker.path       > marker.end) marker.path       = marker.end;
+	if (marker.colon_last > marker.end) marker.colon_last = marker.end;
+	if (marker.at         > marker.end) marker.at         = marker.end;
+	if (marker.colon_last > marker.end) marker.colon_last = marker.end;
+	if (marker.fragment   > marker.end) marker.fragment   = marker.end;
+
 	/* Got all the URL components pegged out now */
 	*markers = marker;
 }
