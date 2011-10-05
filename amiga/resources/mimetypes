@@ -44,11 +44,11 @@ image/gif                  DT=GIF      TYPE=gif
 ;image/gif                  DT=GIFANIM  TYPE=gif
 
 ; ICO
-image/ico                  DT=ICO      TYPE=ico
-image/vnd.microsoft.icon   DT=ICO      TYPE=ico
-image/x-icon               DT=ICO      TYPE=ico
-application/ico            DT=ICO      TYPE=ico
-application/x-ico          DT=ICO      TYPE=ico
+image/ico                  DT="Windows ICO"      TYPE=ico
+image/vnd.microsoft.icon   DT="Windows ICO"      TYPE=ico
+image/x-icon               DT="Windows ICO"      TYPE=ico
+application/ico            DT="Windows ICO"      TYPE=ico
+application/x-ico          DT="Windows ICO"      TYPE=ico
 
 ; .info
 image/x-amiga-icon         DT="AmigaOS Icon"
@@ -91,6 +91,7 @@ image/webp                 DT=WebP     TYPE=webp
 ;
 
 ; RIFF WAVE
+audio/wave                 DT=WAVE          TYPE=wav
 audio/x-wav                DT=WAVE          TYPE=wav
 
 ; MP3
