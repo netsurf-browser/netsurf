@@ -1418,41 +1418,31 @@ css_error node_is_visited(void *pw, void *node, bool *match)
 	xmlNode *n = node;
 
 	if (strcasecmp((const char *) n->name, "a") == 0) {
-		char *url, *nurl;
-		url_func_result res;
+		nsurl *url;
+		nserror error;
+		const struct url_data *data;
 		xmlChar *href = xmlGetProp(n, (const xmlChar *) "href");
 
 		if (href == NULL)
 			return CSS_OK;
 
 		/* Make href absolute */
-		res = url_join((const char *) href, ctx->base_url, &url);
+		/* TODO: this duplicates what we do for box->href */
+		error = nsurl_join(ctx->base_url, (const char *)href, &url);
 
 		xmlFree(href);
-
-		if (res == URL_FUNC_NOMEM) {
+		if (error != NSERROR_OK) {
 			return CSS_NOMEM;
-		} else if (res == URL_FUNC_OK) {
-			/* Normalize it */
-			res = url_normalize(url, &nurl);
-
-			free(url);
-
-			if (res == URL_FUNC_NOMEM) {
-				return CSS_NOMEM;
-			} else if (res == URL_FUNC_OK) {
-				const struct url_data *data;
-
-				data = urldb_get_url_data(nurl);
-
-				/* Visited if in the db and has
-				 * non-zero visit count */
-				if (data != NULL && data->visits > 0)
-					*match = true;
-
-				free(nurl);
-			}
 		}
+
+		data = urldb_get_url_data(nsurl_access(url));
+
+		/* Visited if in the db and has
+		 * non-zero visit count */
+		if (data != NULL && data->visits > 0)
+			*match = true;
+
+		nsurl_unref(url);
 	}
 #endif
 
