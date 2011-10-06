@@ -706,13 +706,12 @@ void ro_gui_dialog_update_zoom(struct gui_window *g) {
 
 
 bool ro_gui_dialog_openurl_apply(wimp_w w) {
-	url_func_result res;
 	const char *url;
 	char *url2;
 
 	url = ro_gui_get_icon_string(w, ICON_OPENURL_URL);
-	res = url_normalize(url, &url2);
-	if (res == URL_FUNC_OK) {
+	url2 = strdup(url);
+	if (url2 != NULL) {
 		browser_window_create(url2, 0, 0, true, false);
 		free(url2);
 		return true;
