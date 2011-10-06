@@ -3766,15 +3766,15 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 
 void ro_gui_window_launch_url(struct gui_window *g, const char *url)
 {
-	url_func_result res;
-	char *url_norm;
+	char *url2;
 
 	ro_gui_url_complete_close();
-	res = url_normalize(url, &url_norm);
-	if (res == URL_FUNC_OK) {
-		gui_window_set_url(g, url_norm);
-		browser_window_go(g->bw, url_norm, 0, true);
-		free(url_norm);
+
+	url2 = strdup(url);
+	if (url2 != NULL) {
+		gui_window_set_url(g, url2);
+		browser_window_go(g->bw, url2, 0, true);
+		free(url2);
 	}
 }
 
