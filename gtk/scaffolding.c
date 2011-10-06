@@ -2254,14 +2254,9 @@ void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
 
-	/* Ensure the window's title bar as well as favicon are updated */
+	/* Ensure the window's title bar is updated */
 	if (bw->current_content != NULL) {
-		gui_window_set_title(gw,
-				content_get_title(bw->current_content));
-
-		if (content_get_type(bw->current_content) == CONTENT_HTML)
-			gui_window_set_icon(gw,
-					html_get_favicon(bw->current_content));
+		gui_window_set_title(gw, content_get_title(bw->current_content));
 	}
 }
 

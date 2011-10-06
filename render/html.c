@@ -810,6 +810,35 @@ bool html_head(html_content *c, xmlNode *head)
 				}
 				xmlFree(s);
 			}
+		} else if (strcmp((const char *) node->name, "link") == 0) {
+			union content_msg_data msg_data;
+			char *href; 
+			nserror error;
+
+			href = (char *) xmlGetProp(node, (const xmlChar *) "href");
+			if (href) {
+				error = nsurl_join(c->base_url, href, &msg_data.rfc5988_link.url);
+
+				xmlFree(href);
+			}
+
+			msg_data.rfc5988_link.rel = (char *)xmlGetProp(node, 
+								       (const xmlChar *)"rel");
+			msg_data.rfc5988_link.type = (char *)xmlGetProp(node, 
+									(const xmlChar *)"type");
+
+			content_broadcast(&c->base, CONTENT_MSG_LINK, msg_data);
+
+			if (error == NSERROR_OK) {
+				nsurl_unref(msg_data.rfc5988_link.url);
+			}
+			if (msg_data.rfc5988_link.rel) {
+				xmlFree(msg_data.rfc5988_link.rel);
+			}
+			if (msg_data.rfc5988_link.type) {
+				xmlFree(msg_data.rfc5988_link.type);
+			}
+			
 		}
 	}
 	return true;
@@ -2383,22 +2412,6 @@ struct content_html_object *html_get_objects(hlcache_handle *h, unsigned int *n)
 
 	return c->object_list;
 }
-
-/**
- * Retrieve favicon associated with an HTML document
- *
- * \param h  HTML document to retrieve favicon from
- * \return Pointer to favicon, or NULL if none
- */
-hlcache_handle *html_get_favicon(hlcache_handle *h)
-{
-	html_content *c = (html_content *) hlcache_handle_get_content(h);
-
-	assert(c != NULL);
-
-	return NULL;
-}
-
 
 /**
  * Retrieve layout coordinates of box with given id

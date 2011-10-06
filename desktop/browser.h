@@ -75,6 +75,9 @@ struct browser_window {
 	/** Page being loaded, or 0. */
 	struct hlcache_handle *loading_content;
 
+	/** Page Favicon */
+	struct hlcache_handle *favicon;
+
 	/** Window history structure. */
 	struct history *history;
 

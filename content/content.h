@@ -72,7 +72,7 @@ typedef enum {
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
 	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
-	CONTENT_MSG_FAVICON_REFRESH, /**< favicon has been refreshed (eg. new animation frame) */
+	CONTENT_MSG_LINK,      /**< RFC5988 link */
 } content_msg;
 
 /** Extra data for some content_msg messages. */
@@ -96,6 +96,12 @@ union content_msg_data {
 	bool background;
 	/** Low-level cache handle, for CONTENT_MSG_DOWNLOAD */
 	struct llcache_handle *download;
+	/** rfc5988 link data  CONTENT_MSG_RFC5988_LINK */
+	struct {
+		nsurl *url;
+		char *rel;
+		char *type;
+	} rfc5988_link;
 };
 
 

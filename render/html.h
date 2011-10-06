@@ -169,7 +169,6 @@ struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h,
 		unsigned int *n);
 struct content_html_object *html_get_objects(struct hlcache_handle *h, 
 		unsigned int *n);
-struct hlcache_handle *html_get_favicon(struct hlcache_handle *h);
 bool html_get_id_offset(struct hlcache_handle *h, const char *frag_id,
 		int *x, int *y);
 

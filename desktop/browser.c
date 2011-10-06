@@ -80,7 +80,6 @@ static void browser_window_convert_to_download(struct browser_window *bw,
 		llcache_handle *stream);
 static void browser_window_start_throbber(struct browser_window *bw);
 static void browser_window_stop_throbber(struct browser_window *bw);
-static void browser_window_set_icon(struct browser_window *bw);
 static void browser_window_destroy_children(struct browser_window *bw);
 static void browser_window_destroy_internal(struct browser_window *bw);
 static void browser_window_set_scale_internal(struct browser_window *bw,
@@ -878,6 +877,34 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		nsurl_unref(nsref);
 }
 
+/**
+ * Callback for fetchcache() for browser window favicon fetches.
+ */
+
+static nserror browser_window_favicon_callback(hlcache_handle *c,
+		const hlcache_event *event, void *pw)
+{
+	struct browser_window *bw = pw;
+
+	switch (event->type) {
+	case CONTENT_MSG_DONE:
+		LOG(("favicon contents for %p done!", bw));
+		/* content_get_bitmap on the bw->favicon should give 
+		   us the favicon at this point
+		*/
+		if (bw->window != NULL) {
+			gui_window_set_icon(bw->window, bw->favicon); 		
+		} else {
+			LOG(("null browser window on favicon!"));
+		}
+		break;
+
+	default:
+		LOG(("favicon unhandled event"));
+		break;
+	}
+	return NSERROR_OK;
+}
 
 /**
  * Callback for fetchcache() for browser window fetches.
@@ -933,6 +960,18 @@ nserror browser_window_callback(hlcache_handle *c,
 				content_close(bw->current_content);
 
 			hlcache_handle_release(bw->current_content);
+		}
+
+		if (bw->favicon != NULL) {
+			content_status status = 
+					content_get_status(bw->favicon);
+
+			if (status == CONTENT_STATUS_READY ||
+					status == CONTENT_STATUS_DONE)
+				content_close(bw->favicon);
+
+			hlcache_handle_release(bw->favicon);
+			bw->favicon = NULL;
 		}
 
 		bw->current_content = c;
@@ -1001,7 +1040,32 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_update(bw, false);
 		browser_window_set_status(bw, content_get_status_message(c));
 		browser_window_stop_throbber(bw);
-		browser_window_set_icon(bw);
+		if (bw->favicon == NULL) {
+			/* no favicon via link - try for the default location - bletch */
+			nsurl *nsref = NULL;
+			nsurl *nsurl;
+			nserror error;
+
+			error = nsurl_join(content_get_url(c), "/favicon.ico", &nsurl);
+			if (error == NSERROR_OK) {
+
+
+			hlcache_handle_retrieve(nsurl,
+						HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
+						HLCACHE_RETRIEVE_SNIFF_TYPE, 
+						nsref,
+						NULL,
+						browser_window_favicon_callback, 
+						bw,
+						NULL,
+						CONTENT_IMAGE, 
+						&bw->favicon);
+
+			nsurl_unref(nsurl);
+
+			}
+
+		}
 
 		history_update(bw->history, c);
 		hotlist_visited(c);
@@ -1078,12 +1142,27 @@ nserror browser_window_callback(hlcache_handle *c,
 		bw->refresh_interval = event->data.delay * 100;
 		break;
 		
-	case CONTENT_MSG_FAVICON_REFRESH:
-		/* Cause the GUI to update */
-		if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
-			gui_window_set_icon(bw->window,
-					html_get_favicon(bw->current_content));
+	case CONTENT_MSG_LINK: /* content has an rfc5988 link element */
+	{
+		nsurl *nsref = NULL;
+		if ((bw->favicon == NULL) && 
+		    (strstr(event->data.rfc5988_link.rel, "icon") != NULL)) {
+			/* its a favicon start a fetch for it */
+			LOG(("fetching favicon rel:%s '%s'", 
+			     event->data.rfc5988_link.rel, 
+			     nsurl_access(event->data.rfc5988_link.url)));
+			hlcache_handle_retrieve(event->data.rfc5988_link.url,
+					HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
+						HLCACHE_RETRIEVE_SNIFF_TYPE, 
+					nsref,
+					NULL,
+					browser_window_favicon_callback, 
+					bw,
+					NULL,
+					CONTENT_IMAGE, 
+					&bw->favicon);
 		}
+	}
 		break;
 
 	default:
@@ -1271,24 +1350,6 @@ bool browser_window_check_throbber(struct browser_window *bw)
 		}
 	}
 	return false;
-}
-
-/**
- * when ready, set icon at top level
- * \param bw browser_window
- * current implementation ignores lower-levels' link rels completely
- */
-void browser_window_set_icon(struct browser_window *bw)
-{
-	while (bw->parent)
-		bw = bw->parent;
-
-	if (bw->current_content != NULL && 
-			content_get_type(bw->current_content) == CONTENT_HTML)
-		gui_window_set_icon(bw->window,
-				html_get_favicon(bw->current_content));
-	else
-		gui_window_set_icon(bw->window, NULL);
 }
 
 /**
@@ -1661,6 +1722,18 @@ void browser_window_destroy_internal(struct browser_window *bw)
 
 		hlcache_handle_release(bw->current_content);
 		bw->current_content = NULL;
+	}
+
+	if (bw->favicon != NULL) {
+		content_status status = 
+			content_get_status(bw->favicon);
+
+		if (status == CONTENT_STATUS_READY ||
+		    status == CONTENT_STATUS_DONE)
+			content_close(bw->favicon);
+
+		hlcache_handle_release(bw->favicon);
+		bw->favicon = NULL;
 	}
 
 	if (bw->box != NULL) {
