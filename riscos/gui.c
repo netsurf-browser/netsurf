@@ -82,9 +82,6 @@
 #include "riscos/menus.h"
 #include "riscos/message.h"
 #include "riscos/options.h"
-#ifdef WITH_PLUGIN
-#include "riscos/plugin.h"
-#endif
 #include "riscos/print.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
