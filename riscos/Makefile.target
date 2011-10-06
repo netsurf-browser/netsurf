@@ -16,7 +16,6 @@ $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
 $(eval $(call feature_enabled,DRAW,-DWITH_DRAW,,Drawfile rendering))
 $(eval $(call feature_enabled,SPRITE,-DWITH_SPRITE,,Sprite rendering))
 $(eval $(call feature_enabled,ARTWORKS,-DWITH_ARTWORKS,,ArtWorks rendering))
-$(eval $(call feature_enabled,PLUGINS,-DWITH_PLUGIN,,Plugin protocol))
 $(eval $(call feature_enabled,DRAW_EXPORT,-DWITH_DRAW_EXPORT,-lpencil,Drawfile export))
 ifeq ($(HOST),riscos)
   $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
@@ -68,7 +67,7 @@ endif
 S_RISCOS := 401login.c assert.c bitmap.c buffer.c cookies.c configure.c	\
 	debugwin.c dialog.c download.c filetype.c font.c		\
 	global_history.c gui.c help.c history.c hotlist.c iconbar.c	\
-	image.c menus.c message.c palettes.c plotters.c plugin.c	\
+	image.c menus.c message.c palettes.c plotters.c			\
 	print.c query.c save.c save_draw.c save_pdf.c schedule.c	\
 	search.c searchweb.c sslcert.c system_colour.c textarea.c	\
 	textselection.c theme.c theme_install.c thumbnail.c toolbar.c	\
