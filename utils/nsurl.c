@@ -192,6 +192,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 {
 	const char *pos = url_s; /** current position in url_s */
 	bool is_http = false;
+	bool trailing_whitespace = false;
 
 	/* Initialise marker set */
 	struct url_markers marker = { 0, 0, 0,   0, 0, 0,   0, 0, 0,   0 };
@@ -363,18 +364,31 @@ static void nsurl__get_string_markers(const char const *url_s,
 	/* We got to the end of url_s.
 	 * Need to skip back over trailing whitespace to find end of URL */
 	pos--;
-	while (isspace(*pos))
-		pos--;
+	if (isspace(*pos)) {
+		trailing_whitespace = true;
+		while (isspace(*pos))
+			pos--;
+	}
+
 	marker.end = pos + 1 - url_s;
 
-	/* Ensure last url section doesn't pass end */
-	if (marker.fragment   > marker.end) marker.fragment   = marker.end;
-	if (marker.query      > marker.end) marker.query      = marker.end;
-	if (marker.path       > marker.end) marker.path       = marker.end;
-	if (marker.colon_last > marker.end) marker.colon_last = marker.end;
-	if (marker.at         > marker.end) marker.at         = marker.end;
-	if (marker.colon_last > marker.end) marker.colon_last = marker.end;
-	if (marker.fragment   > marker.end) marker.fragment   = marker.end;
+	if (trailing_whitespace == true) {
+		/* Ensure last url section doesn't pass end */
+		if (marker.fragment > marker.end)
+			marker.fragment = marker.end;
+		if (marker.query > marker.end)
+			marker.query = marker.end;
+		if (marker.path > marker.end)
+			marker.path = marker.end;
+		if (marker.colon_last > marker.end)
+			marker.colon_last = marker.end;
+		if (marker.at > marker.end)
+			marker.at = marker.end;
+		if (marker.colon_last > marker.end)
+			marker.colon_last = marker.end;
+		if (marker.fragment > marker.end)
+			marker.fragment = marker.end;
+	}
 
 	/* Got all the URL components pegged out now */
 	*markers = marker;
