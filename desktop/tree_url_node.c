@@ -351,7 +351,8 @@ node_callback_resp tree_url_node_callback(void *user_data,
 {
 	struct tree *tree;
 	struct node_element *element;
-	url_func_result res;
+	nsurl *nsurl;
+	nserror error;
 	const char *text;
 	char *norm_text;
 	const struct url_data *data;
@@ -398,18 +399,20 @@ node_callback_resp tree_url_node_callback(void *user_data,
 		text = msg_data->data.text;
 
 		if (msg_data->flag == TREE_ELEMENT_URL) {
-			res = url_normalize(text, &norm_text);
-			if (res != URL_FUNC_OK) {
-				if (res == URL_FUNC_FAILED) {
-					warn_user("NoURLError", 0);
-					return NODE_CALLBACK_CONTINUE;
-				}
-				else {
-					warn_user("NoMemory", 0);
-					return NODE_CALLBACK_REJECT;
-				}
-
+			size_t len;
+			error = nsurl_create(text, &nsurl);
+			if (error != NSERROR_OK) {
+				warn_user("NoMemory", 0);
+				return NODE_CALLBACK_REJECT;
 			}
+			error = nsurl_get(nsurl, NSURL_WITH_FRAGMENT,
+					&norm_text, &len);
+			nsurl_unref(nsurl);
+			if (error != NSERROR_OK) {
+				warn_user("NoMemory", 0);
+				return NODE_CALLBACK_REJECT;
+			}
+
 			msg_data->data.text = norm_text;
 
 			data = urldb_get_url_data(norm_text);
@@ -484,12 +487,13 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 		struct node *directory, tree_node_user_callback callback,
 		void *callback_data)
 {
-	char *url = NULL, *url1 = NULL;
+	char *url1 = NULL;
 	char *title = NULL;
 	struct node *entry;
 	xmlNode *xmlnode;
 	const struct url_data *data;
-	url_func_result res;
+	nsurl *url;
+	nserror error;
 
 	for (xmlnode = li->children; xmlnode; xmlnode = xmlnode->next) {
 		/* The li must contain an "a" element */
@@ -507,14 +511,13 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	}
 
 	/* We're loading external input.
-	 * This may be garbage, so attempt to normalise
+	 * This may be garbage, so attempt to normalise via nsurl
 	 */
-	res = url_normalize(url1, &url);
-	if (res != URL_FUNC_OK) {
+	error = nsurl_create(url1, &url);
+	if (error != NSERROR_OK) {
 		LOG(("Failed normalising '%s'", url1));
 
-		if (res == URL_FUNC_NOMEM)
-			warn_user("NoMemory", NULL);
+		warn_user("NoMemory", NULL);
 
 		xmlFree(url1);
 		xmlFree(title);
@@ -525,39 +528,39 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	/* No longer need this */
 	xmlFree(url1);
 
-	data = urldb_get_url_data(url);
+	data = urldb_get_url_data(nsurl_access(url));
 	if (data == NULL) {
 		/* No entry in database, so add one */
-		urldb_add_url(url);
+		urldb_add_url(nsurl_access(url));
 		/* now attempt to get url data */
-		data = urldb_get_url_data(url);
+		data = urldb_get_url_data(nsurl_access(url));
 	}
 	if (data == NULL) {
 		xmlFree(title);
-		free(url);
+		nsurl_unref(url);
 
 		return;
 	}
 
 	/* Make this URL persistent */
-	urldb_set_url_persistence(url, true);
+	urldb_set_url_persistence(nsurl_access(url), true);
 
 	/* Force the title in the hotlist */
-	urldb_set_url_title(url, title);
+	urldb_set_url_title(nsurl_access(url), title);
 
-	entry = tree_create_URL_node(tree, directory, url, title,
+	entry = tree_create_URL_node(tree, directory, nsurl_access(url), title,
 				     callback, callback_data);
 
  	if (entry == NULL) {
  		/** \todo why isn't this fatal? */
  		warn_user("NoMemory", 0);
  	} else {
-		tree_update_URL_node(tree, entry, url, data);
+		tree_update_URL_node(tree, entry, nsurl_access(url), data);
 	}
 
 
 	xmlFree(title);
-	free(url);
+	nsurl_unref(url);
 }
 
 /**
