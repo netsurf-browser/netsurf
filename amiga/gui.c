@@ -3658,13 +3658,12 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 	if(IsMinListEmpty(window_list))	return;
 	if(option_kiosk_mode == true) return;
-/* disabled, as at the moment, favicon/search icons don't work*/
+
 	if (ico == NULL) ico = search_web_ico();
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);
 	}
-/**/
 
 	/* generic search image */
 	if(bm == NULL)
