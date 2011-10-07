@@ -973,8 +973,32 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	}
 
 	if (link == NULL) {
-		/* no favicon via link, try for the default location - bletch */
-		error = nsurl_join(content_get_url(c), "/favicon.ico", &nsurl);
+		lwc_string *scheme;
+
+		lwc_string *http_str;
+		lwc_string *https_str;
+		bool http_match = false;
+		bool https_match = false;
+
+		nsurl = content_get_url(c);
+
+		scheme = nsurl_get_component(nsurl, NSURL_SCHEME);
+
+		lwc_intern_string("http", SLEN("http"), &http_str);
+		lwc_intern_string("https", SLEN("https"), &https_str);
+		lwc_string_caseless_isequal(scheme, http_str, &http_match);
+		lwc_string_caseless_isequal(scheme, https_str, &https_match);
+		lwc_string_unref(http_str);
+		lwc_string_unref(https_str);
+
+		lwc_string_unref(scheme);
+
+		if (http_match || https_match) {
+			/* no favicon via link, try for the default location */
+			error = nsurl_join(nsurl, "/favicon.ico", &nsurl);
+		} else {
+			error = nsurl_create("resource:favicon.png", &nsurl);
+		}
 		if (error != NSERROR_OK) {
 			LOG(("Unable to create default location url"));
 			return;
