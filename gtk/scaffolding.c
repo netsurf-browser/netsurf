@@ -2006,8 +2006,10 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 
 	if (icon_bitmap != NULL) {
 		GdkPixbuf *pb = gtk_bitmap_get_primary(icon_bitmap);
-		if (pb != NULL && gdk_pixbuf_get_width(pb) > 0 &&
-			gdk_pixbuf_get_height(pb) > 0) {
+
+		if ((pb != NULL) && 
+		    (gdk_pixbuf_get_width(pb) > 0) &&
+		    (gdk_pixbuf_get_height(pb) > 0)) {
 			pb = gdk_pixbuf_scale_simple(pb, 16, 16, GDK_INTERP_HYPER);
 			iconImage = GTK_IMAGE(gtk_image_new_from_pixbuf(pb));
 		}

@@ -906,6 +906,9 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		bw->current_favicon = c;
 		bw->loading_favicon = NULL;
 
+		LOG(("Content ended up with mime type of '%s'", 
+		     lwc_string_data((content_get_mime_type(c)))));
+
 		/* content_get_bitmap on the hlcache_handle should give 
 		 *   us the favicon bitmap at this point
 		 */
