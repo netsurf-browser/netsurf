@@ -108,6 +108,8 @@ struct content {
 
 	nsurl *refresh;		/**< URL for refresh request */
 
+	struct content_rfc5988_link *links; /**< list of metadata links */
+
 	unsigned int time;		/**< Creation time,
 					  if LOADING or READY,
 					  otherwise total time. */
@@ -159,6 +161,11 @@ void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data);
 void content_add_error(struct content *c, const char *token,
 		unsigned int line);
+
+bool content__add_rfc5988_link(struct content *c, 
+		const struct content_rfc5988_link *link);
+struct content_rfc5988_link *content__free_rfc5988_link(
+		struct content_rfc5988_link *link);
 
 void content__reformat(struct content *c, bool background,
 		int width, int height);

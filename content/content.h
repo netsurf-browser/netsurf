@@ -75,6 +75,18 @@ typedef enum {
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
 } content_msg;
 
+/** RFC5988 metadata link */
+struct content_rfc5988_link {
+	struct content_rfc5988_link *next; /**< next rfc5988_link in list */
+
+	lwc_string *rel; /**< the link relationship - must be present */
+	nsurl *href; /* the link href - must be present */
+	lwc_string *hreflang;
+	lwc_string *type;
+	lwc_string *media;
+	lwc_string *sizes;
+};
+
 /** Extra data for some content_msg messages. */
 union content_msg_data {
 	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
@@ -97,11 +109,7 @@ union content_msg_data {
 	/** Low-level cache handle, for CONTENT_MSG_DOWNLOAD */
 	struct llcache_handle *download;
 	/** rfc5988 link data  CONTENT_MSG_RFC5988_LINK */
-	struct {
-		nsurl *url;
-		char *rel;
-		char *type;
-	} rfc5988_link;
+	struct content_rfc5988_link *rfc5988_link;
 };
 
 
@@ -167,6 +175,8 @@ void content_close(struct hlcache_handle *h);
 struct selection *content_get_selection(struct hlcache_handle *h);
 void content_get_contextual_content(struct hlcache_handle *h,
 		int x, int y, struct contextual_content *data);
+struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
+		lwc_string *rel);
 
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);

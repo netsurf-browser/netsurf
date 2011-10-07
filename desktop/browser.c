@@ -877,6 +877,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		nsurl_unref(nsref);
 }
 
+
+
 /**
  * Callback for fetchcache() for browser window favicon fetches.
  */
@@ -889,14 +891,45 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 	switch (event->type) {
 	case CONTENT_MSG_DONE:
 		LOG(("favicon contents for %p done!", bw));
-		/* content_get_bitmap on the bw->favicon should give 
-		   us the favicon at this point
-		*/
+
+		if (bw->current_favicon != NULL) {
+			content_status status = 
+					content_get_status(bw->current_favicon);
+
+			if ((status == CONTENT_STATUS_READY) ||
+			    (status == CONTENT_STATUS_DONE))
+				content_close(bw->current_favicon);
+
+			hlcache_handle_release(bw->current_favicon);
+		}
+
+		bw->current_favicon = c;
+		bw->loading_favicon = NULL;
+
+		/* content_get_bitmap on the hlcache_handle should give 
+		 *   us the favicon bitmap at this point
+		 */
 		if (bw->window != NULL) {
-			gui_window_set_icon(bw->window, bw->favicon); 		
+			gui_window_set_icon(bw->window, c); 		
 		} else {
 			LOG(("null browser window on favicon!"));
 		}
+		break;
+
+	case CONTENT_MSG_ERROR:
+
+		/* clean up after ourselves */
+		if (c == bw->loading_favicon)
+			bw->loading_favicon = NULL;
+		else if (c == bw->current_favicon) {
+			bw->current_favicon = NULL;
+		}
+
+		hlcache_handle_release(c);
+
+		/** @todo if this was not the default
+		 * resource:favicon.png start a fetch for it.
+		 */
 		break;
 
 	default:
@@ -904,6 +937,57 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		break;
 	}
 	return NSERROR_OK;
+}
+
+static void browser_window_update_favicon(hlcache_handle *c,
+		struct browser_window *bw)
+{
+	lwc_string *icon_str;
+	struct content_rfc5988_link *link;
+		nsurl *nsref = NULL;
+		nsurl *nsurl;
+		nserror error;
+
+	/* already fetching the favicon - use that */
+	if (bw->loading_favicon != NULL) 
+		return;
+
+	/* look for favicon metadata link */
+	lwc_intern_string("icon", SLEN("icon"), &icon_str);
+	link = content_find_rfc5988_link(c, icon_str);	
+	lwc_string_unref(icon_str);
+
+	if (link == NULL) {
+		lwc_intern_string("shortcut icon", SLEN("shortcut_icon"), 
+				&icon_str);	
+		link = content_find_rfc5988_link(c, icon_str);	
+		lwc_string_unref(icon_str);
+	}
+
+	if (link == NULL) {
+		/* no favicon via link, try for the default location - bletch */
+		error = nsurl_join(content_get_url(c), "/favicon.ico", &nsurl);
+		if (error != NSERROR_OK) {
+			LOG(("Unable to create default location url"));
+			return;
+		}
+	} else {
+		nsurl = link->href;
+		nsurl_ref(nsurl);
+	}
+
+	hlcache_handle_retrieve(nsurl,
+				HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
+				HLCACHE_RETRIEVE_SNIFF_TYPE, 
+				nsref,
+				NULL,
+				browser_window_favicon_callback, 
+				bw,
+				NULL,
+				CONTENT_IMAGE, 
+				&bw->loading_favicon);
+
+	nsurl_unref(nsurl);
 }
 
 /**
@@ -960,18 +1044,6 @@ nserror browser_window_callback(hlcache_handle *c,
 				content_close(bw->current_content);
 
 			hlcache_handle_release(bw->current_content);
-		}
-
-		if (bw->favicon != NULL) {
-			content_status status = 
-					content_get_status(bw->favicon);
-
-			if (status == CONTENT_STATUS_READY ||
-					status == CONTENT_STATUS_DONE)
-				content_close(bw->favicon);
-
-			hlcache_handle_release(bw->favicon);
-			bw->favicon = NULL;
 		}
 
 		bw->current_content = c;
@@ -1040,32 +1112,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_update(bw, false);
 		browser_window_set_status(bw, content_get_status_message(c));
 		browser_window_stop_throbber(bw);
-		if (bw->favicon == NULL) {
-			/* no favicon via link - try for the default location - bletch */
-			nsurl *nsref = NULL;
-			nsurl *nsurl;
-			nserror error;
-
-			error = nsurl_join(content_get_url(c), "/favicon.ico", &nsurl);
-			if (error == NSERROR_OK) {
-
-
-			hlcache_handle_retrieve(nsurl,
-						HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
-						HLCACHE_RETRIEVE_SNIFF_TYPE, 
-						nsref,
-						NULL,
-						browser_window_favicon_callback, 
-						bw,
-						NULL,
-						CONTENT_IMAGE, 
-						&bw->favicon);
-
-			nsurl_unref(nsurl);
-
-			}
-
-		}
+		browser_window_update_favicon(c, bw);
 
 		history_update(bw->history, c);
 		hotlist_visited(c);
@@ -1145,13 +1192,26 @@ nserror browser_window_callback(hlcache_handle *c,
 	case CONTENT_MSG_LINK: /* content has an rfc5988 link element */
 	{
 		nsurl *nsref = NULL;
-		if ((bw->favicon == NULL) && 
-		    (strstr(event->data.rfc5988_link.rel, "icon") != NULL)) {
-			/* its a favicon start a fetch for it */
-			LOG(("fetching favicon rel:%s '%s'", 
-			     event->data.rfc5988_link.rel, 
-			     nsurl_access(event->data.rfc5988_link.url)));
-			hlcache_handle_retrieve(event->data.rfc5988_link.url,
+		lwc_string *icon_str;
+		lwc_string *shortcut_icon_str;
+		bool icon_match;
+		bool shortcut_icon_match;
+
+		lwc_intern_string("icon", SLEN("icon"), &icon_str);
+		lwc_intern_string("shortcut icon", SLEN("shortcut_icon"), &shortcut_icon_str);
+		lwc_string_caseless_isequal(event->data.rfc5988_link->rel, icon_str, &icon_match);
+		lwc_string_caseless_isequal(event->data.rfc5988_link->rel, shortcut_icon_str, &shortcut_icon_match);
+		lwc_string_unref(icon_str);
+		lwc_string_unref(shortcut_icon_str);
+
+		if ((bw->loading_favicon == NULL) && 
+		    (icon_match || shortcut_icon_match)) {
+			/* its a favicon and we are not already fetching one 
+			   start a fetch for it */
+			LOG(("fetching favicon rel:%p '%s'", 
+			     event->data.rfc5988_link->rel, 
+			     nsurl_access(event->data.rfc5988_link->href)));
+			hlcache_handle_retrieve(event->data.rfc5988_link->href,
 					HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
 						HLCACHE_RETRIEVE_SNIFF_TYPE, 
 					nsref,
@@ -1160,7 +1220,7 @@ nserror browser_window_callback(hlcache_handle *c,
 					bw,
 					NULL,
 					CONTENT_IMAGE, 
-					&bw->favicon);
+					&bw->loading_favicon);
 		}
 	}
 		break;
@@ -1724,16 +1784,21 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		bw->current_content = NULL;
 	}
 
-	if (bw->favicon != NULL) {
-		content_status status = 
-			content_get_status(bw->favicon);
+	if (bw->loading_favicon != NULL) {
+		hlcache_handle_abort(bw->loading_favicon);
+		hlcache_handle_release(bw->loading_favicon);
+		bw->loading_favicon = NULL;
+	}
+
+	if (bw->current_favicon != NULL) {
+		content_status status = content_get_status(bw->current_favicon);
 
 		if (status == CONTENT_STATUS_READY ||
 		    status == CONTENT_STATUS_DONE)
-			content_close(bw->favicon);
+			content_close(bw->current_favicon);
 
-		hlcache_handle_release(bw->favicon);
-		bw->favicon = NULL;
+		hlcache_handle_release(bw->current_favicon);
+		bw->current_favicon = NULL;
 	}
 
 	if (bw->box != NULL) {

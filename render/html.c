@@ -740,6 +740,78 @@ void html_box_convert_done(html_content *c, bool success)
 }
 
 
+/** process link node */
+static bool html_process_link(html_content *c, xmlNode *node)
+{
+	struct content_rfc5988_link *link;
+	char *xmlstr;
+	nserror error;
+	lwc_string *rel;
+	nsurl *href;
+
+	/* check that the relation exists - w3c spec says must be present */
+	xmlstr = (char *)xmlGetProp(node, (const xmlChar *)"rel");
+	if (xmlstr == NULL) {
+		return false;
+	}
+	lwc_intern_string(xmlstr, strlen(xmlstr), &rel);
+	xmlFree(xmlstr);
+		
+	/* check that the href exists - w3c spec says must be present */
+	xmlstr = (char *)xmlGetProp(node, (const xmlChar *) "href");
+	if (xmlstr == NULL) {
+		return false;
+	}
+	error = nsurl_join(c->base_url, xmlstr, &href);
+	xmlFree(xmlstr);
+	if (error != NSERROR_OK) {
+		lwc_string_unref(rel);		
+		return false;
+	}
+
+	link = calloc(1, sizeof(struct content_rfc5988_link));
+	if (link == NULL) {
+		lwc_string_unref(rel);
+		nsurl_unref(href);
+		return false;
+	}
+	link->rel = rel;
+	link->href = href;
+
+	/* look for optional properties */
+	xmlstr = (char *)xmlGetProp(node, (const xmlChar *) "hreflang");
+	if (xmlstr != NULL) {
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link->hreflang);
+		xmlFree(xmlstr);
+	}
+
+	xmlstr = (char *) xmlGetProp(node, (const xmlChar *) "type");
+	if (xmlstr != NULL) {
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link->type);
+		xmlFree(xmlstr);
+	}
+
+	xmlstr = (char *) xmlGetProp(node, (const xmlChar *) "media");
+	if (xmlstr != NULL) {
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link->media);
+		xmlFree(xmlstr);
+	}
+
+	xmlstr = (char *) xmlGetProp(node, (const xmlChar *) "sizes");
+	if (xmlstr != NULL) {
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link->sizes);
+		xmlFree(xmlstr);
+	}
+
+	/* add to content */
+	content__add_rfc5988_link(&c->base, link);
+
+	/* release this copy */
+	content__free_rfc5988_link(link);
+
+	return true;
+}
+
 /**
  * Process elements in <head>.
  *
@@ -811,34 +883,7 @@ bool html_head(html_content *c, xmlNode *head)
 				xmlFree(s);
 			}
 		} else if (strcmp((const char *) node->name, "link") == 0) {
-			union content_msg_data msg_data;
-			char *href; 
-			nserror error;
-
-			href = (char *) xmlGetProp(node, (const xmlChar *) "href");
-			if (href) {
-				error = nsurl_join(c->base_url, href, &msg_data.rfc5988_link.url);
-
-				xmlFree(href);
-			}
-
-			msg_data.rfc5988_link.rel = (char *)xmlGetProp(node, 
-								       (const xmlChar *)"rel");
-			msg_data.rfc5988_link.type = (char *)xmlGetProp(node, 
-									(const xmlChar *)"type");
-
-			content_broadcast(&c->base, CONTENT_MSG_LINK, msg_data);
-
-			if (error == NSERROR_OK) {
-				nsurl_unref(msg_data.rfc5988_link.url);
-			}
-			if (msg_data.rfc5988_link.rel) {
-				xmlFree(msg_data.rfc5988_link.rel);
-			}
-			if (msg_data.rfc5988_link.type) {
-				xmlFree(msg_data.rfc5988_link.type);
-			}
-			
+			html_process_link(c, node);
 		}
 	}
 	return true;

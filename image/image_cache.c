@@ -283,7 +283,7 @@ static void image_cache__background_update(void *p)
 }
 
 /* exported interface documented in image_cache.h */
-struct bitmap *image_cache_get_bitmap(struct content *c)
+struct bitmap *image_cache_get_bitmap(const struct content *c)
 {
 	struct image_cache_entry_s *centry;
 
@@ -576,14 +576,7 @@ void image_cache_destroy(struct content *content)
 
 void *image_cache_get_internal(const struct content *c, void *context)
 {
-	struct image_cache_entry_s *centry;
-
-	centry = image_cache__find(c);
-	if (centry == NULL) {
-		return NULL;
-	}
-
-	return centry->bitmap;
+	return image_cache_get_bitmap(c);
 }
 
 content_type image_cache_content_type(void)

@@ -376,6 +376,8 @@ void content__reformat(struct content *c, bool background,
 
 void content_destroy(struct content *c)
 {
+	struct content_rfc5988_link *link;
+
 	assert(c);
 	LOG(("content %p %s", c,
 			nsurl_access(llcache_handle_get_url(c->llcache))));
@@ -388,6 +390,12 @@ void content_destroy(struct content *c)
 	c->llcache = NULL;
 
 	lwc_string_unref(c->mime_type);
+
+	/* release metadata links */
+	link = c->links;
+	while (link != NULL) {
+		link = content__free_rfc5988_link(link);
+	}
 
 	talloc_free(c);
 }
@@ -740,6 +748,97 @@ bool content__set_title(struct content *c, const char *title)
 		talloc_free(c->title);
 
 	c->title = new_title;
+
+	return true;
+}
+
+struct content_rfc5988_link *
+content_find_rfc5988_link(hlcache_handle *h, lwc_string *rel)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	struct content_rfc5988_link *link = c->links;
+	bool rel_match = false;
+
+	while (link != NULL) {
+		lwc_string_caseless_isequal(link->rel, rel, &rel_match);
+		if (rel_match) {
+			break;
+		}
+		link = link->next;
+	}
+	return link;
+}
+
+struct content_rfc5988_link *
+content__free_rfc5988_link(struct content_rfc5988_link *link) 
+{
+	struct content_rfc5988_link *next;
+
+	next = link->next;
+
+	lwc_string_unref(link->rel);
+	nsurl_unref(link->href);
+	if (link->hreflang != NULL) {
+		lwc_string_unref(link->hreflang);
+	}
+	if (link->type != NULL) {
+		lwc_string_unref(link->type);
+	}
+	if (link->media != NULL) {
+		lwc_string_unref(link->media);
+	}
+	if (link->sizes != NULL) {
+		lwc_string_unref(link->sizes);
+	}
+	free(link);
+
+	return next;
+}
+
+bool content__add_rfc5988_link(struct content *c, 
+		const struct content_rfc5988_link *link)
+{
+	struct content_rfc5988_link *newlink;	
+	union content_msg_data msg_data;
+
+	/* a link relation must be present for it to be a link */
+	if (link->rel == NULL) {
+		return false;
+	}
+
+	/* a link href must be present for it to be a link */
+	if (link->href == NULL) {
+		return false;
+	}
+
+	newlink = calloc(1, sizeof(struct content_rfc5988_link));
+	if (newlink == NULL) {
+		return false; 
+	}
+
+	/* copy values */
+	newlink->rel = lwc_string_ref(link->rel);
+	newlink->href = nsurl_ref(link->href);
+	if (link->hreflang != NULL) {
+		newlink->hreflang = lwc_string_ref(link->hreflang);
+	}
+	if (link->type != NULL) {
+		newlink->type = lwc_string_ref(link->type);
+	}
+	if (link->media != NULL) {
+		newlink->media = lwc_string_ref(link->media);
+	}
+	if (link->sizes != NULL) {
+		newlink->sizes = lwc_string_ref(link->sizes);
+	}
+
+	/* add to metadata link to list */
+	newlink->next = c->links;
+	c->links = newlink;
+
+	/* broadcast the data */
+	msg_data.rfc5988_link = newlink;
+	content_broadcast(c, CONTENT_MSG_LINK, msg_data);
 
 	return true;
 }

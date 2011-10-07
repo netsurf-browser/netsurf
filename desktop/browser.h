@@ -76,7 +76,9 @@ struct browser_window {
 	struct hlcache_handle *loading_content;
 
 	/** Page Favicon */
-	struct hlcache_handle *favicon;
+	struct hlcache_handle *current_favicon;
+	/** handle for favicon which we started loading early */
+	struct hlcache_handle *loading_favicon;
 
 	/** Window history structure. */
 	struct history *history;

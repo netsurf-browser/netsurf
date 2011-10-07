@@ -79,7 +79,7 @@ nserror image_cache_remove(struct content *content);
 
 
 /** Obtain a bitmap from a content converting from source if neccessary. */
-struct bitmap *image_cache_get_bitmap(struct content *c);
+struct bitmap *image_cache_get_bitmap(const struct content *c);
 
 /** Obtain a bitmap from a content with no conversion */
 struct bitmap *image_cache_find_bitmap(struct content *c);
