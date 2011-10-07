@@ -1621,28 +1621,28 @@ css_error node_presentational_hint(void *pw, void *node,
 	xmlNode *n = node;
 
 	if (property == CSS_PROP_BACKGROUND_IMAGE) {
-		char *url;
-		url_func_result res;
+		nsurl *url;
+		nserror error;
 		xmlChar *bg = xmlGetProp(n, (const xmlChar *) "background");
 
 		if (bg == NULL)
 			return CSS_PROPERTY_NOT_SET;
 
 
-		res = url_join((const char *) bg, nsurl_access(ctx->base_url),
-				&url);
+		error = nsurl_join(ctx->base_url, (const char *) bg, &url);
 
 		xmlFree(bg);
 
-		if (res == URL_FUNC_NOMEM) {
+		if (error != NSERROR_OK) {
 			return CSS_NOMEM;
-		} else if (res == URL_FUNC_OK) {
+		} else {
 			lwc_string *iurl;
 			lwc_error lerror;
 
-			lerror = lwc_intern_string(url, strlen(url), &iurl);
+			lerror = lwc_intern_string(nsurl_access(url),
+					strlen(nsurl_access(url)), &iurl);
 
-			free(url);
+			nsurl_unref(url);
 
 			if (lerror == lwc_error_oom) {
 				return CSS_NOMEM;
