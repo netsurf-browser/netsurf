@@ -104,6 +104,9 @@ nsurl *gui_get_resource_url(const char *path)
 	char *raw;
 	nsurl *url = NULL;
 
+	if (strcmp(path, "favicon.ico") == 0)
+		path = "favicon.png";
+
 	raw = path_to_url(filepath_sfind(respaths, buf, path));
 	if (raw != NULL) {
 		nsurl_create(raw, &url);
