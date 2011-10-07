@@ -40,7 +40,8 @@ void amiga_icon_fini(void);
 
 struct hlcache_handle;
 
-void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type);
+void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type);
+void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct DiskObject *dobj);
 struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm);
 void amiga_icon_free(struct DiskObject *dobj);
 #endif

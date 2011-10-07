@@ -581,7 +581,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 										UnLock(lock);
 										save_complete(gwin->bw->current_content,fname);
 										SetComment(fname,nsurl_access(content_get_url(gwin->bw->current_content)));
-										ami_superimpose_favicon(fname,
+										amiga_icon_superimpose_favicon(fname, 
 											gwin->bw->window->favicon, NULL);
 									}
 								}
@@ -603,7 +603,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 								if(save_as_pdf(gwin->bw->current_content,fname))
 								{
 									SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
-									ami_superimpose_favicon(fname,
+									amiga_icon_superimpose_favicon(fname,
 										gwin->bw->window->favicon, "pdf");
 								}
 								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);

@@ -1619,6 +1619,8 @@ void ami_handle_msg(void)
 					bm = urldb_get_thumbnail(nsurl_access(content_get_url(gwin->bw->current_content)));
 					if(!bm) bm = content_get_bitmap(gwin->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
+					amiga_icon_superimpose_favicon_internal(gwin->bw->window->favicon,
+						gwin->dobj);
 					HideWindow(gwin->win);
 					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN], 0,
 											gwin->win->Title, appport, 0,

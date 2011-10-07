@@ -360,7 +360,65 @@ ULONG *amiga_icon_convertcolouricon32(UBYTE *icondata, ULONG width, ULONG height
 
 }
 
-void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
+void amiga_icon_superimpose_favicon_internal(struct hlcache_handle *icon, struct DiskObject *dobj)
+{
+	struct BitMap *bm = NULL;
+	ULONG *icondata1, *icondata2;
+	ULONG width, height;
+	long format = 0;
+	int err = 0;
+
+	if(dobj == NULL) return;
+
+	err = IconControl(dobj,
+                  ICONCTRLA_GetImageDataFormat,&format,
+                  ICONCTRLA_GetImageData1,&icondata1,
+                  ICONCTRLA_GetImageData2,&icondata2,
+                  ICONCTRLA_GetWidth,&width,
+                  ICONCTRLA_GetHeight,&height,
+                  TAG_DONE);
+
+	if(format != IDFMT_DIRECTMAPPED) return;
+	{
+		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
+		{
+			bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16, NULL);
+		}
+
+		if(bm)
+		{
+			BltBitMapTags(BLITA_SrcX, 0,
+						BLITA_SrcY, 0,
+						BLITA_DestX, width - 16,
+						BLITA_DestY, height - 16,
+						BLITA_Width, 16,
+						BLITA_Height, 16,
+						BLITA_Source, bm,
+						BLITA_Dest, icondata1,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_DestType, BLITT_ARGB32,
+						BLITA_DestBytesPerRow, width * 4,
+						BLITA_UseSrcAlpha, TRUE,
+						TAG_DONE);
+
+			BltBitMapTags(BLITA_SrcX, 0,
+						BLITA_SrcY, 0,
+						BLITA_DestX, width - 16,
+						BLITA_DestY, height - 16,
+						BLITA_Width, 16,
+						BLITA_Height, 16,
+						BLITA_Source, bm,
+						BLITA_Dest, icondata2,
+						BLITA_SrcType, BLITT_BITMAP,
+						BLITA_DestType, BLITT_ARGB32,
+						BLITA_DestBytesPerRow, width * 4,
+						BLITA_UseSrcAlpha, TRUE,
+						TAG_DONE);
+		}
+	}
+}
+
+void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type)
 {
 	struct DiskObject *dobj = NULL;
 	struct BitMap *bm = NULL;
@@ -421,43 +479,7 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 	}
 
 	if((format == IDFMT_DIRECTMAPPED) || (format == IDFMT_PALETTEMAPPED))
-	{
-		if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
-		{
-			bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16, NULL);
-		}
-
-		if(bm)
-		{
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, width - 16,
-						BLITA_DestY, height - 16,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, icondata1,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_ARGB32,
-						BLITA_DestBytesPerRow, width * 4,
-						BLITA_UseSrcAlpha, TRUE,
-						TAG_DONE);
-
-			BltBitMapTags(BLITA_SrcX, 0,
-						BLITA_SrcY, 0,
-						BLITA_DestX, width - 16,
-						BLITA_DestY, height - 16,
-						BLITA_Width, 16,
-						BLITA_Height, 16,
-						BLITA_Source, bm,
-						BLITA_Dest, icondata2,
-						BLITA_SrcType, BLITT_BITMAP,
-						BLITA_DestType, BLITT_ARGB32,
-						BLITA_DestBytesPerRow, width * 4,
-						BLITA_UseSrcAlpha, TRUE,
-						TAG_DONE);
-		}
-	}
+		amiga_icon_superimpose_favicon_internal(icon, dobj);
 
 	PutIconTags(path, dobj,
 			ICONPUTA_NotifyWorkbench, TRUE, TAG_DONE);
@@ -470,7 +492,6 @@ void ami_superimpose_favicon(char *path, struct hlcache_handle *icon, char *type
 		FreeVec(icondata1);
 		FreeVec(icondata2);
 	}
-
 }
 
 struct DiskObject *amiga_icon_from_bitmap(struct bitmap *bm)

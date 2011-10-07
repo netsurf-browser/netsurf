@@ -192,8 +192,7 @@ void ami_drag_save(struct Window *win)
 				save_complete(c,path);
 				SetComment(path, nsurl_access(content_get_url(c)));
 			}
-			ami_superimpose_favicon(path,
-				drag_save_gui->favicon, NULL);
+			amiga_icon_superimpose_favicon(path, drag_save_gui->favicon, NULL);
 		}
 		break;
 
