@@ -997,7 +997,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 			/* no favicon via link, try for the default location */
 			error = nsurl_join(nsurl, "/favicon.ico", &nsurl);
 		} else {
-			error = nsurl_create("resource:favicon.png", &nsurl);
+			error = nsurl_create("resource:favicon.ico", &nsurl);
 		}
 		if (error != NSERROR_OK) {
 			LOG(("Unable to create default location url"));

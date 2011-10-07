@@ -78,7 +78,7 @@ static const char *fetch_resource_paths[] = {
 	"quirks.css",
 	"credits.html",
 	"licence.html",
-	"favicon.png",
+	"favicon.ico",
 	"netsurf.png"
 };
 static struct fetch_resource_map_entry {

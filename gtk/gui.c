@@ -327,6 +327,10 @@ nsurl *gui_get_resource_url(const char *path)
 	if (strcmp(path, "default.css") == 0)
 		path = "gtkdefault.css";
 
+	/* favicon.ico -> favicon.png */
+	if (strcmp(path, "favicon.ico") == 0)
+		path = "favicon.png";	
+
 	raw = path_to_url(filepath_sfind(respaths, buf, path));
 	if (raw != NULL) {
 		nsurl_create(raw, &url);
