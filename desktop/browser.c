@@ -1008,8 +1008,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 			return;
 		}
 	} else {
-		nsurl = link->href;
-		nsurl_ref(nsurl);
+		nsurl = nsurl_ref(link->href);
 	}
 
 	if (link == NULL) {
