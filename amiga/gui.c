@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -366,7 +366,7 @@ void ami_set_options(void)
 	search_engines_file_location = option_search_engines_file;
 
 	if((!option_search_ico_file) || (option_search_ico_file[0] == '\0'))
-		option_search_ico_file = (char *)strdup("PROGDIR:Resources/default.ico");
+		option_search_ico_file = (char *)strdup("PROGDIR:Resources/favicon.ico");
 
 	search_default_ico_location = option_search_ico_file;
 
