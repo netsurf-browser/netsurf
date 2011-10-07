@@ -3605,9 +3605,6 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 						g->shared->objects[GID_TABS],
 						(ULONG *)&cur_tab);
 
-	if ((icon != NULL) &&
-		(content_get_status(icon) != CONTENT_STATUS_READY) &&
-		(content_get_status(icon) != CONTENT_STATUS_DONE)) return;
 	if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16,
@@ -3661,13 +3658,13 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 	if(IsMinListEmpty(window_list))	return;
 	if(option_kiosk_mode == true) return;
-/* disabled, as at the moment, favicon/search icons don't work
+/* disabled, as at the moment, favicon/search icons don't work*/
 	if (ico == NULL) ico = search_web_ico();
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);
 	}
-*/
+/**/
 
 	/* generic search image */
 	if(bm == NULL)
