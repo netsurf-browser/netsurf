@@ -890,8 +890,6 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 
 	switch (event->type) {
 	case CONTENT_MSG_DONE:
-		LOG(("favicon contents for %p done!", bw));
-
 		if (bw->current_favicon != NULL) {
 			content_status status = 
 					content_get_status(bw->current_favicon);
@@ -905,9 +903,6 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 
 		bw->current_favicon = c;
 		bw->loading_favicon = NULL;
-
-		LOG(("Content ended up with mime type of '%s'", 
-		     lwc_string_data((content_get_mime_type(c)))));
 
 		/* content_get_bitmap on the hlcache_handle should give 
 		 *   us the favicon bitmap at this point
@@ -955,7 +950,6 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		break;
 
 	default:
-		LOG(("favicon unhandled event"));
 		break;
 	}
 	return NSERROR_OK;
