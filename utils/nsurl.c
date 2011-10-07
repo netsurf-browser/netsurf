@@ -1506,11 +1506,13 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	 * space for path merging (if required). */
 	if (joined_parts & NSURL_F_MERGED_PATH) {
 		/* Need to merge paths */
-		length += lwc_string_length(base->path);
+		length += (base->path != NULL) ?
+				lwc_string_length(base->path) : 0;
 	}
 	length *= 4;
 	/* Plus space for removing dots from path */
-	length += (m.query - m.path) + lwc_string_length(base->path);
+	length += (m.query - m.path) + ((base->path != NULL) ?
+			lwc_string_length(base->path) : 0);
 	buff = malloc(length + 5);
 	if (buff == NULL) {
 		free(*joined);
