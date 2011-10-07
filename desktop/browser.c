@@ -940,22 +940,27 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 }
 
 static void browser_window_update_favicon(hlcache_handle *c,
-		struct browser_window *bw)
+					  struct browser_window *bw, 
+					  struct content_rfc5988_link *link)
 {
 	lwc_string *icon_str;
-	struct content_rfc5988_link *link;
-		nsurl *nsref = NULL;
-		nsurl *nsurl;
-		nserror error;
+	nsurl *nsref = NULL;
+	nsurl *nsurl;
+	nserror error;
 
+	assert(c != NULL);
+	assert(bw !=NULL);
+	
 	/* already fetching the favicon - use that */
 	if (bw->loading_favicon != NULL) 
 		return;
 
-	/* look for favicon metadata link */
-	lwc_intern_string("icon", SLEN("icon"), &icon_str);
-	link = content_find_rfc5988_link(c, icon_str);	
-	lwc_string_unref(icon_str);
+	if (link == NULL) {
+		/* look for favicon metadata link */
+		lwc_intern_string("icon", SLEN("icon"), &icon_str);
+		link = content_find_rfc5988_link(c, icon_str);	
+		lwc_string_unref(icon_str);
+	}
 
 	if (link == NULL) {
 		lwc_intern_string("shortcut icon", SLEN("shortcut_icon"), 
@@ -974,6 +979,15 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	} else {
 		nsurl = link->href;
 		nsurl_ref(nsurl);
+	}
+
+	if (link == NULL) {
+		LOG(("fetching general favicon from '%s'", 
+		     nsurl_access(nsurl)));
+	} else {
+		LOG(("fetching favicon rel:%s '%s'", 
+		     lwc_string_data(link->rel), 
+		     nsurl_access(nsurl)));
 	}
 
 	hlcache_handle_retrieve(nsurl,
@@ -1112,7 +1126,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		browser_window_update(bw, false);
 		browser_window_set_status(bw, content_get_status_message(c));
 		browser_window_stop_throbber(bw);
-		browser_window_update_favicon(c, bw);
+		browser_window_update_favicon(c, bw, NULL);
 
 		history_update(bw->history, c);
 		hotlist_visited(c);
@@ -1191,7 +1205,6 @@ nserror browser_window_callback(hlcache_handle *c,
 		
 	case CONTENT_MSG_LINK: /* content has an rfc5988 link element */
 	{
-		nsurl *nsref = NULL;
 		lwc_string *icon_str;
 		lwc_string *shortcut_icon_str;
 		bool icon_match;
@@ -1204,23 +1217,10 @@ nserror browser_window_callback(hlcache_handle *c,
 		lwc_string_unref(icon_str);
 		lwc_string_unref(shortcut_icon_str);
 
-		if ((bw->loading_favicon == NULL) && 
-		    (icon_match || shortcut_icon_match)) {
-			/* its a favicon and we are not already fetching one 
-			   start a fetch for it */
-			LOG(("fetching favicon rel:%p '%s'", 
-			     event->data.rfc5988_link->rel, 
-			     nsurl_access(event->data.rfc5988_link->href)));
-			hlcache_handle_retrieve(event->data.rfc5988_link->href,
-					HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
-						HLCACHE_RETRIEVE_SNIFF_TYPE, 
-					nsref,
-					NULL,
-					browser_window_favicon_callback, 
-					bw,
-					NULL,
-					CONTENT_IMAGE, 
-					&bw->loading_favicon);
+		if (icon_match || shortcut_icon_match) {
+			/* its a favicon perhaps start a fetch for it */
+			browser_window_update_favicon(c, bw, event->data.rfc5988_link);
+		
 		}
 	}
 		break;
