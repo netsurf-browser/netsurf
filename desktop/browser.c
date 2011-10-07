@@ -912,11 +912,7 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 		/* content_get_bitmap on the hlcache_handle should give 
 		 *   us the favicon bitmap at this point
 		 */
-		if (bw->window != NULL) {
-			gui_window_set_icon(bw->window, c); 		
-		} else {
-			LOG(("null browser window on favicon!"));
-		}
+		gui_window_set_icon(bw->window, c); 		
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -930,9 +926,32 @@ static nserror browser_window_favicon_callback(hlcache_handle *c,
 
 		hlcache_handle_release(c);
 
-		/** @todo if this was not the default
-		 * resource:favicon.png start a fetch for it.
-		 */
+		if (bw->failed_favicon == false) {
+			nsurl *nsref = NULL;
+			nsurl *nsurl;
+			nserror error;
+
+			bw->failed_favicon = true;
+
+			error = nsurl_create("resource:favicon.ico", &nsurl);
+			if (error != NSERROR_OK) {
+				LOG(("Unable to create default location url"));
+			} else {
+
+				hlcache_handle_retrieve(nsurl,
+						HLCACHE_RETRIEVE_SNIFF_TYPE, 
+						nsref,
+						NULL,
+						browser_window_favicon_callback, 
+						bw,
+						NULL,
+						CONTENT_IMAGE, 
+						&bw->loading_favicon);
+
+				nsurl_unref(nsurl);
+			}
+
+		}
 		break;
 
 	default:
@@ -961,6 +980,8 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	/* already fetching the favicon - use that */
 	if (bw->loading_favicon != NULL) 
 		return;
+
+	bw->failed_favicon = false;
 
 	if (link == NULL) {
 		/* look for favicon metadata link */
@@ -1001,6 +1022,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 			/* no favicon via link, try for the default location */
 			error = nsurl_join(nsurl, "/favicon.ico", &nsurl);
 		} else {
+			bw->failed_favicon = true;
 			error = nsurl_create("resource:favicon.ico", &nsurl);
 		}
 		if (error != NSERROR_OK) {
