@@ -215,7 +215,9 @@ static nserror nsico_clone(const struct content *old, struct content **newc)
 static void *nsico_get_internal(const struct content *c, void *context)
 {
 	nsico_content *ico = (nsico_content *) c;
-	struct bmp_image *bmp = ico_find(ico->ico, 255, 255);
+	/* TODO: Pick best size for purpose.
+	 *       Currently assumes it's for a URL bar. */
+	struct bmp_image *bmp = ico_find(ico->ico, 16, 16);
 
 	if (!bmp->decoded)
 		if (bmp_decode(bmp) != BMP_OK)
