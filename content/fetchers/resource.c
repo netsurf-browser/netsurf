@@ -86,6 +86,8 @@ static struct fetch_resource_map_entry {
 	nsurl *url;
 } fetch_resource_map[NOF_ELEMENTS(fetch_resource_paths)];
 
+static uint32_t fetch_resource_path_count;
+
 /** issue fetch callbacks with locking */
 static inline bool fetch_resource_send_callback(fetch_msg msg,
 		struct fetch_resource_context *ctx, const void *data,
@@ -173,8 +175,10 @@ static bool fetch_resource_initialise(lwc_string *scheme)
 	struct fetch_resource_map_entry *e;
 	uint32_t i;
 
+	fetch_resource_path_count = 0;
+
 	for (i = 0; i < NOF_ELEMENTS(fetch_resource_paths); i++) {
-		e = &fetch_resource_map[i];
+		e = &fetch_resource_map[fetch_resource_path_count];
 
 		if (lwc_intern_string(fetch_resource_paths[i],
 				strlen(fetch_resource_paths[i]),
@@ -189,14 +193,8 @@ static bool fetch_resource_initialise(lwc_string *scheme)
 		e->url = gui_get_resource_url(fetch_resource_paths[i]);
 		if (e->url == NULL) {
 			lwc_string_unref(e->path);
-
-			while (i > 0) {
-				i--;
-				lwc_string_unref(fetch_resource_map[i].path);
-				nsurl_unref(fetch_resource_map[i].url);
-			}
-
-			return false;
+		} else {
+			fetch_resource_path_count++;
 		}
 	}
 
@@ -208,7 +206,7 @@ static void fetch_resource_finalise(lwc_string *scheme)
 {
 	uint32_t i;
 
-	for (i = 0; i < NOF_ELEMENTS(fetch_resource_map); i++) {
+	for (i = 0; i < fetch_resource_path_count; i++) {
 		lwc_string_unref(fetch_resource_map[i].path);
 		nsurl_unref(fetch_resource_map[i].url);
 	}
@@ -237,7 +235,7 @@ fetch_resource_setup(struct fetch *fetchh,
 		bool match;
 
 		/* Ensure requested path is valid */
-		for (i = 0; i < NOF_ELEMENTS(fetch_resource_map); i++) {
+		for (i = 0; i < fetch_resource_path_count; i++) {
 			if (lwc_string_isequal(path, 
 					fetch_resource_map[i].path, 
 					&match) == lwc_error_ok && match) {
