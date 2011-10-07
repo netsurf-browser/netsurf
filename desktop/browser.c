@@ -953,6 +953,10 @@ static void browser_window_update_favicon(hlcache_handle *c,
 
 	assert(c != NULL);
 	assert(bw !=NULL);
+
+	if (bw->window == NULL)
+		/* Not top-level browser window; not interested */
+		return;
 	
 	/* already fetching the favicon - use that */
 	if (bw->loading_favicon != NULL) 
