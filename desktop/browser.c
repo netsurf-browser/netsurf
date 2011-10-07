@@ -991,7 +991,6 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	}
 
 	hlcache_handle_retrieve(nsurl,
-				HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
 				HLCACHE_RETRIEVE_SNIFF_TYPE, 
 				nsref,
 				NULL,
