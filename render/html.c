@@ -743,7 +743,7 @@ void html_box_convert_done(html_content *c, bool success)
 /** process link node */
 static bool html_process_link(html_content *c, xmlNode *node)
 {
-	struct content_rfc5988_link *link;
+	struct content_rfc5988_link link;
 	char *xmlstr;
 	nserror error;
 	lwc_string *rel;
@@ -754,7 +754,10 @@ static bool html_process_link(html_content *c, xmlNode *node)
 	if (xmlstr == NULL) {
 		return false;
 	}
-	lwc_intern_string(xmlstr, strlen(xmlstr), &rel);
+	if (lwc_intern_string(xmlstr, strlen(xmlstr), &rel) != lwc_error_ok) {
+		xmlFree(xmlstr);
+		return false;
+	}
 	xmlFree(xmlstr);
 		
 	/* check that the href exists - w3c spec says must be present */
@@ -769,45 +772,38 @@ static bool html_process_link(html_content *c, xmlNode *node)
 		return false;
 	}
 
-	link = calloc(1, sizeof(struct content_rfc5988_link));
-	if (link == NULL) {
-		lwc_string_unref(rel);
-		nsurl_unref(href);
-		return false;
-	}
-	link->rel = rel;
-	link->href = href;
+	memset(&link, 0, sizeof(struct content_rfc5988_link));
 
-	/* look for optional properties */
+	link.rel = rel;
+	link.href = href;
+
+	/* look for optional properties -- we don't care if internment fails */
 	xmlstr = (char *)xmlGetProp(node, (const xmlChar *) "hreflang");
 	if (xmlstr != NULL) {
-		lwc_intern_string(xmlstr, strlen(xmlstr), &link->hreflang);
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link.hreflang);
 		xmlFree(xmlstr);
 	}
 
 	xmlstr = (char *) xmlGetProp(node, (const xmlChar *) "type");
 	if (xmlstr != NULL) {
-		lwc_intern_string(xmlstr, strlen(xmlstr), &link->type);
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link.type);
 		xmlFree(xmlstr);
 	}
 
 	xmlstr = (char *) xmlGetProp(node, (const xmlChar *) "media");
 	if (xmlstr != NULL) {
-		lwc_intern_string(xmlstr, strlen(xmlstr), &link->media);
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link.media);
 		xmlFree(xmlstr);
 	}
 
 	xmlstr = (char *) xmlGetProp(node, (const xmlChar *) "sizes");
 	if (xmlstr != NULL) {
-		lwc_intern_string(xmlstr, strlen(xmlstr), &link->sizes);
+		lwc_intern_string(xmlstr, strlen(xmlstr), &link.sizes);
 		xmlFree(xmlstr);
 	}
 
 	/* add to content */
-	content__add_rfc5988_link(&c->base, link);
-
-	/* release this copy */
-	content__free_rfc5988_link(link);
+	content__add_rfc5988_link(&c->base, &link);
 
 	return true;
 }
