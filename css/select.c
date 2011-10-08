@@ -28,6 +28,7 @@
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "render/parser_binding.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -455,24 +456,15 @@ bool nscss_parse_colour(const char *data, css_color *result)
 css_error node_name(void *pw, void *node, css_qname *qname)
 {
 	xmlNode *n = node;
-	lwc_error lerror;
+	binding_private *p = n->_private;
 
 	qname->ns = NULL;
 
-	lerror = lwc_intern_string((const char *) n->name,
-			strlen((const char *) n->name), 
-			&qname->name);
-	switch (lerror) {
-	case lwc_error_oom:
-		return CSS_NOMEM;
-	case lwc_error_range:
-		assert(0);
-	default:
-		break;
-	}
+	assert(p != NULL && p->localname != NULL);
+
+	qname->name = lwc_string_ref(p->localname);
 
 	return CSS_OK;
-
 }
 
 /**
@@ -493,93 +485,27 @@ css_error node_classes(void *pw, void *node,
 		lwc_string ***classes, uint32_t *n_classes)
 {
 	xmlNode *n = node;
-	xmlAttr *class;
-	xmlChar *value = NULL;
-	const char *p;
-	const char *start;
-	lwc_string **result = NULL;
-	uint32_t items = 0;
-	lwc_error lerror;
-	css_error error = CSS_OK;
+	binding_private *p = n->_private;
 
 	*classes = NULL;
 	*n_classes = 0;
 
-	/* See if there is a class attribute on this node */
-	class = xmlHasProp(n, (const xmlChar *) "class");
-	if (class == NULL)
-		return CSS_OK;
+	if (p->nclasses > 0) {
+		lwc_string **result;
+		uint32_t items;
 
-	/* We have a class attribute -- extract its value */
-	if (class->children != NULL && class->children->next == NULL &&
-			class->children->children == NULL) {
-		/* Simple case -- no XML entities */
-		start = (const char *) class->children->content;
-	} else {
-		/* Awkward case -- fall back to string copying */
-		value = xmlGetProp(n, (const xmlChar *) "class");
-		if (value == NULL)
-			return CSS_OK;
+		result = malloc(p->nclasses * sizeof(lwc_string *));
+		if (result == NULL)
+			return CSS_NOMEM;
 
-		start = (const char *) value;
+		for (items = 0; items < p->nclasses; items++)
+			result[items] = lwc_string_ref(p->classes[items]);
+
+		*classes = result;
+		*n_classes = p->nclasses;
 	}
-
-	/* The class attribute is a space separated list of tokens. */
-	do {
-		lwc_string **temp;
-
-		/* Find next space or end of string */
-		p = strchrnul(start, ' ');
-
-		temp = realloc(result, (items + 1) * sizeof(lwc_string *));
-		if (temp == NULL) {
-			error = CSS_NOMEM;
-			goto cleanup;
-		}
-		result = temp;
-
-		lerror = lwc_intern_string(start, p - start, &result[items]);
-		switch (lerror) {
-		case lwc_error_oom:
-			error = CSS_NOMEM;
-			goto cleanup;
-		case lwc_error_range:
-			assert(0);
-		default:
-			break;
-		}
-
-		items++;
-
-		/* Move to start of next token in string */
-		start = p + 1;
-	} while (*p != '\0');
-
-	/* Clean up, if necessary */
-	if (value != NULL) {
-		xmlFree(value);
-	}
-
-	*classes = result;
-	*n_classes = items;
 
 	return CSS_OK;
-
-cleanup:
-	if (result != NULL) {
-		uint32_t i;
-
-		for (i = 0; i < items; i++)
-			lwc_string_unref(result[i]);
-
-		free(result);
-	}
-
-	if (value != NULL) {
-		xmlFree(value);
-	}
-
-	return error;
 }
 
 /**
@@ -594,52 +520,14 @@ cleanup:
 css_error node_id(void *pw, void *node, lwc_string **id)
 {
 	xmlNode *n = node;
-	xmlAttr *attr;
-	xmlChar *value = NULL;
-	const char *start;
-	lwc_error lerror;
-	css_error error = CSS_OK;
+	binding_private *p = n->_private;
 
 	*id = NULL;
 
-	/* See if there's an id attribute on this node */
-	attr = xmlHasProp(n, (const xmlChar *) "id");
-	if (attr == NULL)
-		return CSS_OK;
+	if (p->id != NULL)
+		*id = lwc_string_ref(p->id);
 
-	/* We have an id attribute -- extract its value */
-	if (attr->children != NULL && attr->children->next == NULL &&
-			attr->children->children == NULL) {
-		/* Simple case -- no XML entities */
-		start = (const char *) attr->children->content;
-	} else {
-		/* Awkward case -- fall back to string copying */
-		value = xmlGetProp(n, (const xmlChar *) "id");
-		if (value == NULL)
-			return CSS_OK;
-
-		start = (const char *) value;
-	}
-
-	/* Intern value */
-	lerror = lwc_intern_string(start, strlen(start), id);
-	switch (lerror) {
-	case lwc_error_oom:
-		error = CSS_NOMEM;
-		break;
-	case lwc_error_range:
-		assert(0);
-		break;
-	default:
-		break;
-	}
-
-	/* Clean up if necessary */
-	if (value != NULL) {
-		xmlFree(value);
-	}
-
-	return error;
+	return CSS_OK;
 }
 
 /**
@@ -657,8 +545,8 @@ css_error named_ancestor_node(void *pw, void *node,
 		const css_qname *qname, void **ancestor)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(qname->name);
-	const char *data = lwc_string_data(qname->name);
+	binding_private *p;
+	bool match;
 
 	*ancestor = NULL;
 
@@ -666,9 +554,11 @@ css_error named_ancestor_node(void *pw, void *node,
 		if (n->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strlen((const char *) n->name) == len &&
-				strncasecmp((const char *) n->name,
-					data, len) == 0) {
+		p = n->_private;
+
+		if (lwc_string_caseless_isequal(qname->name, 
+				p->localname, &match) == lwc_error_ok && 
+				match) {
 			*ancestor = (void *) n;
 			break;
 		}
@@ -692,8 +582,8 @@ css_error named_parent_node(void *pw, void *node,
 		const css_qname *qname, void **parent)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(qname->name);
-	const char *data = lwc_string_data(qname->name);
+	binding_private *p;
+	bool match;
 
 	*parent = NULL;
 
@@ -703,9 +593,13 @@ css_error named_parent_node(void *pw, void *node,
 			break;
 	}
 
-	if (n != NULL && strlen((const char *) n->name) == len &&
-			strncasecmp((const char *) n->name,
-				data, len) == 0)
+	if (n == NULL)
+		return CSS_OK;
+
+	p = n->_private;
+
+	if (lwc_string_caseless_isequal(qname->name, p->localname,
+			&match) == lwc_error_ok && match)
 		*parent = (void *) n;
 
 	return CSS_OK;
@@ -726,8 +620,8 @@ css_error named_sibling_node(void *pw, void *node,
 		const css_qname *qname, void **sibling)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(qname->name);
-	const char *data = lwc_string_data(qname->name);
+	binding_private *p;
+	bool match;
 
 	*sibling = NULL;
 
@@ -737,9 +631,13 @@ css_error named_sibling_node(void *pw, void *node,
 			break;
 	}
 
-	if (n != NULL && strlen((const char *) n->name) == len &&
-			strncasecmp((const char *) n->name,
-				data, len) == 0)
+	if (n == NULL)
+		return CSS_OK;
+
+	p = n->_private;
+
+	if (lwc_string_caseless_isequal(qname->name, p->localname,
+			&match) == lwc_error_ok && match)
 		*sibling = (void *) n;
 
 	return CSS_OK;
@@ -760,8 +658,8 @@ css_error named_generic_sibling_node(void *pw, void *node,
 		const css_qname *qname, void **sibling)
 {
 	xmlNode *n = node;
-	size_t len = lwc_string_length(qname->name);
-	const char *data = lwc_string_data(qname->name);
+	binding_private *p;
+	bool match;
 
 	*sibling = NULL;
 
@@ -769,9 +667,11 @@ css_error named_generic_sibling_node(void *pw, void *node,
 		if (n->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strlen((const char *) n->name) == len &&
-				strncasecmp((const char *) n->name,
-					data, len) == 0) {
+		p = n->_private;
+
+		if (lwc_string_caseless_isequal(qname->name,
+				p->localname, &match) == lwc_error_ok &&
+				match) {
 			*sibling = (void *) n;
 			break;
 		}
@@ -844,17 +744,16 @@ css_error sibling_node(void *pw, void *node, void **sibling)
 css_error node_has_name(void *pw, void *node,
 		const css_qname *qname, bool *match)
 {
+	nscss_select_ctx *ctx = pw;
 	xmlNode *n = node;
-	size_t len = lwc_string_length(qname->name);
-	const char *data = lwc_string_data(qname->name);
+	binding_private *p = n->_private;
+	lwc_string *name = qname->name;
 
-	if (len == 1 && data[0] == '*') {
-		*match = true;
-	} else {
+	lwc_string_isequal(name, ctx->universal, match);
+	if (*match == false) {
 		/* Element names are case insensitive in HTML */
-		*match = strlen((const char *) n->name) == len &&
-			strncasecmp((const char *) n->name, data, len) == 0;
-	}
+		lwc_string_caseless_isequal(p->localname, name, match);
+	} 
 
 	return CSS_OK;
 }
@@ -875,65 +774,24 @@ css_error node_has_class(void *pw, void *node,
 {
 	nscss_select_ctx *ctx = pw;
 	xmlNode *n = node;
-	xmlAttr *class;
-	xmlChar *value = NULL;
-	const char *p;
-	const char *start;
-	const char *data;
-	size_t len;
-	int (*cmp)(const char *, const char *, size_t);
-
-	/* Class names are case insensitive in quirks mode */
-	if (ctx->quirks)
-		cmp = strncasecmp;
-	else
-		cmp = strncmp;
+	binding_private *p = n->_private;
+	uint32_t count;
 
 	*match = false;
 
-	/* See if there is a class attribute on this node */
-	class = xmlHasProp(n, (const xmlChar *) "class");
-	if (class == NULL)
-		return CSS_OK;
-
-	/* We have a class attribute -- extract its value */
-	if (class->children != NULL && class->children->next == NULL &&
-			class->children->children == NULL) {
-		/* Simple case -- no XML entities */
-		start = (const char *) class->children->content;
-	} else {
-		/* Awkward case -- fall back to string copying */
-		value = xmlGetProp(n, (const xmlChar *) "class");
-		if (value == NULL)
-			return CSS_OK;
-
-		start = (const char *) value;
-	}
-
-	/* Extract expected class name data */
-	data = lwc_string_data(name);
-	len = lwc_string_length(name);
-
-	/* The class attribute is a space separated list of tokens.
-	 * Search it for the one we're looking for.
-	 */
-	do {
-		/* Find next space or end of string */
-		p = strchrnul(start, ' ');
-
-		/* Does it match? */
-		if ((size_t) (p - start) == len && cmp(start, data, len) == 0) {
-			*match = true;
-			break;
+	/* Class names are case insensitive in quirks mode */
+	if (ctx->quirks) {
+		for (count = 0; count < p->nclasses; count++) {
+			if (lwc_string_caseless_isequal(name, p->classes[count], 
+					match) == lwc_error_ok && *match)
+				break;
 		}
-
-		/* Move to start of next token in string */
-		start = p + 1;
-	} while (*p != '\0');
-
-	/* Clean up, if necessary */
-	if (value != NULL) {
-		xmlFree(value);
+	} else {
+		for (count = 0; count < p->nclasses; count++) {
+			if (lwc_string_isequal(name, p->classes[count], 
+					match) == lwc_error_ok && *match)
+				break;
+		}
 	}
 
 	return CSS_OK;
@@ -954,44 +812,12 @@ css_error node_has_id(void *pw, void *node,
 		lwc_string *name, bool *match)
 {
 	xmlNode *n = node;
-	xmlAttr *id;
-	xmlChar *value = NULL;
-	const char *start;
-	const char *data;
-	size_t len;
+	binding_private *p = n->_private;
 
 	*match = false;
 
-	/* See if there's an id attribute on this node */
-	id = xmlHasProp(n, (const xmlChar *) "id");
-	if (id == NULL)
-		return CSS_OK;
-
-	/* We have an id attribute -- extract its value */
-	if (id->children != NULL && id->children->next == NULL &&
-			id->children->children == NULL) {
-		/* Simple case -- no XML entities */
-		start = (const char *) id->children->content;
-	} else {
-		/* Awkward case -- fall back to string copying */
-		value = xmlGetProp(n, (const xmlChar *) "id");
-		if (value == NULL)
-			return CSS_OK;
-
-		start = (const char *) value;
-	}
-
-	/* Extract expected id data */
-	len = lwc_string_length(name);
-	data = lwc_string_data(name);
-
-	/* Compare */
-	*match = strlen(start) == len && strncmp(start, data, len) == 0;
-
-	/* Clean up if necessary */
-	if (value != NULL) {
-		xmlFree(value);
-	}
+	if (p->id != NULL)
+		lwc_string_isequal(name, p->id, match);
 
 	return CSS_OK;
 }
@@ -1018,7 +844,6 @@ css_error node_has_attribute(void *pw, void *node,
 	*match = attr != NULL;
 
 	return CSS_OK;
-
 }
 
 /**
@@ -1328,21 +1153,43 @@ css_error node_count_siblings(void *pw, void *node, bool same_name,
 		bool after, int32_t *count)
 {
 	xmlNode *n = node;
-	const char *name = (char *) n->name;
 	int32_t cnt = 0;
 
-	do {
-		n = after ? n->next : n->prev;
+	if (same_name) {
+		binding_private *p = n->_private;
+		lwc_string *name = p->localname;
+		bool match;
 
-		if (n != NULL && n->type == XML_ELEMENT_NODE) {
-			if (same_name) {
-				if (strcasecmp(name, (char *) n->name) == 0)
+		do {
+			n = after ? n->next : n->prev;
+
+			if (n != NULL && n->type == XML_ELEMENT_NODE) {
+				p = n->_private;
+
+				if (lwc_string_caseless_isequal(p->localname, 
+					name, &match) == lwc_error_ok && 
+						match) {
 					cnt++;
-			} else {
+				}
+			}
+		} while (n != NULL);
+	} else if (after) {
+		do {
+			n = n->next;
+
+			if (n != NULL && n->type == XML_ELEMENT_NODE) {
 				cnt++;
 			}
-		}
-	} while (n != NULL);
+		} while (n != NULL);
+	} else {
+		do {
+			n = n->prev;
+
+			if (n != NULL && n->type == XML_ELEMENT_NODE) {
+				cnt++;
+			}
+		} while (n != NULL);
+	}
 
 	*count = cnt;
 

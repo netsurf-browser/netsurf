@@ -33,6 +33,7 @@
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/talloc.h"
+#include "utils/utils.h"
 
 /**
  * Private data attached to each DOM node
@@ -79,6 +80,8 @@ static struct {
 };
 
 static hubbub_private *create_private(uint32_t refcnt);
+static hubbub_private *copy_private(const hubbub_private *p, uint32_t refcnt);
+static void destroy_private(hubbub_private *p);
 static inline char *c_string_from_hubbub_string(hubbub_ctx *ctx, 
 		const hubbub_string *str);
 static void create_namespaces(hubbub_ctx *ctx, xmlNode *root);
@@ -311,7 +314,7 @@ void binding_destroy_document(xmlDocPtr doc)
 	xmlNode *n = (xmlNode *) doc;
 
 	while (n != NULL) {
-		free(n->_private);
+		destroy_private(n->_private);
 
 		if (n->children != NULL) {
 			n = n->children;
@@ -341,6 +344,55 @@ hubbub_private *create_private(uint32_t refcnt)
 		pvt->refcnt = refcnt;
 
 	return pvt;
+}
+
+hubbub_private *copy_private(const hubbub_private *p, uint32_t refcnt)
+{
+	hubbub_private *pvt = calloc(1, sizeof(*pvt));
+
+	if (pvt != NULL) {
+		pvt->refcnt = refcnt;
+
+		if (p->base.nclasses > 0) {
+			pvt->base.classes = 
+				malloc(p->base.nclasses * sizeof(lwc_string *));
+			if (pvt->base.classes == NULL) {
+				free(pvt);
+				return NULL;
+			}
+
+			while (pvt->base.nclasses < p->base.nclasses) {
+				pvt->base.classes[pvt->base.nclasses] =
+					lwc_string_ref(p->base.classes[
+							pvt->base.nclasses]);
+			}
+		}
+
+		if (p->base.localname != NULL)
+			pvt->base.localname = lwc_string_ref(p->base.localname);
+
+		if (p->base.id != NULL)
+			pvt->base.id = lwc_string_ref(p->base.id);
+	}	
+
+	return pvt;
+}
+
+void destroy_private(hubbub_private *p)
+{
+	if (p->base.localname != NULL)
+		lwc_string_unref(p->base.localname);
+
+	if (p->base.id != NULL)
+		lwc_string_unref(p->base.id);
+
+	while (p->base.nclasses > 0)
+		lwc_string_unref(p->base.classes[--p->base.nclasses]);
+
+	if (p->base.classes != NULL)
+		free(p->base.classes);
+
+	free(p);
 }
 
 char *c_string_from_hubbub_string(hubbub_ctx *ctx, const hubbub_string *str)
@@ -451,18 +503,20 @@ hubbub_error create_doctype(void *ctx, const hubbub_doctype *doctype,
 hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
-	char *name;
+	lwc_string *iname;
 	xmlNodePtr n;
 
-	name = c_string_from_hubbub_string(c, &tag->name);
-	if (name == NULL)
+	if (lwc_intern_string((const char *) tag->name.ptr, tag->name.len, 
+			&iname) != lwc_error_ok) {
 		return HUBBUB_NOMEM;
+	}
 
 	if (c->namespaces[0] != NULL) {
 		n = xmlNewDocNode(c->document, c->namespaces[tag->ns - 1], 
-				BAD_CAST name, NULL);
+				BAD_CAST lwc_string_data(iname), NULL);
 	} else {
-		n = xmlNewDocNode(c->document, NULL, BAD_CAST name, NULL);
+		n = xmlNewDocNode(c->document, NULL, 
+				BAD_CAST lwc_string_data(iname), NULL);
 
 		/* We're creating the root node of the document. Therefore,
 		 * create the namespaces and set this node's namespace */
@@ -473,32 +527,33 @@ hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 		}
 	}
 	if (n == NULL) {
-		free(name);
+		lwc_string_unref(iname);
 		return HUBBUB_NOMEM;
 	}
 	n->_private = create_private(1);
 	if (n->_private == NULL) {
 		xmlFreeNode(n);
-		free(name);
+		lwc_string_unref(iname);
 		return HUBBUB_NOMEM;
 	}
 
 	if (tag->n_attributes > 0 && add_attributes(ctx, (void *) n, 
 			tag->attributes, tag->n_attributes) != HUBBUB_OK) {
-		free(n->_private);
+		destroy_private(n->_private);
 		xmlFreeNode(n);
-		free(name);
+		lwc_string_unref(iname);
 		return HUBBUB_NOMEM;
 	}
 
-	if (strcasecmp(name, "form") == 0) {
+	if (lwc_string_length(iname) == SLEN("form") &&
+			strcasecmp(lwc_string_data(iname), "form") == 0) {
 		struct form *form = parse_form_element(n, c->encoding);
 
 		/* Memory exhaustion */
 		if (form == NULL) {
-			free(n->_private);
+			destroy_private(n->_private);
 			xmlFreeNode(n);
-			free(name);
+			lwc_string_unref(iname);
 			return HUBBUB_NOMEM;
 		}
 
@@ -507,9 +562,9 @@ hubbub_error create_element(void *ctx, const hubbub_tag *tag, void **result)
 		c->forms = form;
 	}
 
-	*result = (void *) n;
+	((binding_private *) n->_private)->localname = iname;
 
-	free(name);
+	*result = (void *) n;
 
 	return HUBBUB_OK;
 }
@@ -575,7 +630,7 @@ hubbub_error unref_node(void *ctx, void *node)
 		pvt->refcnt--;
 
 		if (pvt->refcnt == 0 && n->parent == NULL) {
-			free(pvt);
+			destroy_private(pvt);
 			xmlFreeNode(n);
 		}
 	}
@@ -662,20 +717,88 @@ hubbub_error remove_child(void *ctx, void *parent, void *child, void **result)
 hubbub_error clone_node(void *ctx, void *node, bool deep, void **result)
 {
 	xmlNode *n = (xmlNode *) node;
-	xmlNode *copy = xmlCopyNode(n, deep ? 1 : 2);
+	xmlNode *clonedtree;
 
-	if (copy == NULL)
+	/* Shallow clone node */
+	clonedtree = xmlCopyNode(n, 2);
+	if (clonedtree == NULL)
 		return HUBBUB_NOMEM;
 
-	copy->_private = create_private(1);
-	if (copy->_private == NULL) {
-		xmlFreeNode(copy);
+	clonedtree->_private = copy_private(n->_private, 1);
+	if (clonedtree->_private == NULL) {
+		xmlFreeNode(clonedtree);
 		return HUBBUB_NOMEM;
 	}
 
-	*result = copy;
+	/* Iteratively clone children too, if required */
+	if (deep && n->children != NULL) {
+		xmlNode *parent = clonedtree, *copy;
+
+		n = n->children;
+
+		while (n != node) {
+			copy = xmlCopyNode(n, 2);
+			if (copy == NULL)
+				goto error;
+
+			copy->_private = copy_private(n->_private, 0);
+			if (copy->_private == NULL) {
+				xmlFreeNode(copy);
+				goto error;
+			}
+
+			xmlAddChild(parent, copy);
+
+			if (n->children != NULL) {
+				parent = copy;
+				n = n->children;
+			} else if (n->next != NULL) {
+				n = n->next;
+			} else {
+				while (n->parent != node && 
+						n->parent->next == NULL) {
+					parent = parent->parent;
+					n = n->parent;
+				}
+
+				if (n->parent != node) {
+					parent = parent->parent;
+					n = n->parent->next;
+				} else
+					n = node;
+			}
+		}
+	}
+
+	*result = clonedtree;
 
 	return HUBBUB_OK;
+
+error:
+	n = clonedtree;
+
+	while (n != NULL) {
+		destroy_private(n->_private);
+
+		if (n->children != NULL) {
+			n = n->children;
+		} else if (n->next != NULL) {
+			n = n->next;
+		} else {
+			while (n->parent != NULL && n->parent->next == NULL) {
+				n = n->parent;
+			}
+
+			if (n->parent != NULL)
+				n = n->parent->next;
+			else
+				n = NULL;
+		}
+	}
+
+	xmlFreeNode(clonedtree);
+
+	return HUBBUB_NOMEM;
 }
 
 hubbub_error reparent_children(void *ctx, void *node, void *new_parent)
@@ -787,24 +910,81 @@ hubbub_error form_associate(void *ctx, void *form, void *node)
 	return HUBBUB_OK;
 }
 
+static hubbub_error parse_class_attr(lwc_string *value, 
+		lwc_string ***classes, uint32_t *nclasses)
+{
+	const char *pv;
+	lwc_string **cls = NULL;
+	uint32_t count = 0;
+
+	/* Count number of classes */
+	for (pv = lwc_string_data(value); *pv != '\0'; ) {
+		if (*pv != ' ') {
+			while (*pv != ' ' && *pv != '\0')
+				pv++;
+			count++;
+		} else {
+			while (*pv == ' ')
+				pv++;
+		}
+	}
+
+	/* If there are some, unpack them */
+	if (count > 0) {
+		cls = malloc(count * sizeof(lwc_string *));
+		if (cls == NULL)
+			return HUBBUB_NOMEM;
+
+		for (pv = lwc_string_data(value), count = 0; *pv != '\0'; ) {
+			if (*pv != ' ') {
+				const char *s = pv;
+				while (*pv != ' ' && *pv != '\0')
+					pv++;
+				if (lwc_intern_string(s, pv - s, 
+						&cls[count]) != lwc_error_ok)
+					goto error;
+				count++;
+			} else {
+				while (*pv == ' ')
+					pv++;
+			}
+		}
+	}
+
+	*classes = cls;
+	*nclasses = count;
+
+	return HUBBUB_OK;
+error:
+	while (count > 0)
+		lwc_string_unref(cls[--count]);
+
+	free(cls);
+		
+	return HUBBUB_NOMEM;
+}
+
 hubbub_error add_attributes(void *ctx, void *node, 
 		const hubbub_attribute *attributes, uint32_t n_attributes)
 {
 	hubbub_ctx *c = (hubbub_ctx *) ctx;
 	xmlNode *n = (xmlNode *) node;
+	binding_private *p = n->_private;
 	uint32_t attr;
 
 	for (attr = 0; attr < n_attributes; attr++) {
 		xmlAttr *prop;
-		char *name, *value;
+		lwc_string *name, *value;
 
-		name = c_string_from_hubbub_string(c, &attributes[attr].name);
-		if (name == NULL)
+		if (lwc_intern_string((const char *) attributes[attr].name.ptr,
+				attributes[attr].name.len, 
+				&name) != lwc_error_ok)
 			return HUBBUB_NOMEM;
 
-		value = c_string_from_hubbub_string(c, &attributes[attr].value);
-		if (value == NULL) {
-			free(name);
+		if (lwc_intern_string((const char *) attributes[attr].value.ptr,
+				attributes[attr].value.len, 
+				&value) != lwc_error_ok) {
+			lwc_string_unref(name);
 			return HUBBUB_NOMEM;
 		}
 
@@ -812,18 +992,38 @@ hubbub_error add_attributes(void *ctx, void *node,
 				c->namespaces[0] != NULL) {
 			prop = xmlNewNsProp(n, 
 					c->namespaces[attributes[attr].ns - 1],
-					BAD_CAST name, BAD_CAST value);
+					BAD_CAST lwc_string_data(name), 
+					BAD_CAST lwc_string_data(value));
 		} else {
-			prop = xmlNewProp(n, BAD_CAST name, BAD_CAST value);
-		}
-		if (prop == NULL) {
-			free(value);
-			free(name);
-			return HUBBUB_NOMEM;
+			prop = xmlNewProp(n, BAD_CAST lwc_string_data(name), 
+					BAD_CAST lwc_string_data(value));
 		}
 
-		free(value);
-		free(name);
+		/* Handle @id / @class */
+		if (p->id == NULL && lwc_string_length(name) == SLEN("id") &&
+				strcasecmp(lwc_string_data(name), "id") == 0) {
+			p->id = lwc_string_ref(value);
+		} else if (p->nclasses == 0 && 
+				lwc_string_length(name) == SLEN("class") && 
+				strcasecmp(lwc_string_data(name), 
+						"class") == 0) {
+			hubbub_error error;
+
+			error = parse_class_attr(value, &p->classes, 
+					&p->nclasses);
+			if (error != HUBBUB_OK) {
+				lwc_string_unref(value);
+				lwc_string_unref(name);
+				return error;
+			}
+		}
+
+		lwc_string_unref(value);
+		lwc_string_unref(name);
+
+		if (prop == NULL) {
+			return HUBBUB_NOMEM;
+		}
 	}
 
 	return HUBBUB_OK;

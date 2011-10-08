@@ -31,7 +31,13 @@ struct form_control;
  * Private data attached to each DOM node
  */
 typedef struct binding_private {
+	/* All the following only apply to ELEMENT nodes */
+
 	struct box *box; /**< Root box if ELEMENT node, or NULL */
+	lwc_string *localname; /**< Local name of node */
+	lwc_string *id; /**< Value of id attribute, or NULL */
+	lwc_string **classes; /**< Pre-parsed class names, or NULL */
+	uint32_t nclasses; /**< Number of class names */
 } binding_private;
 
 typedef enum binding_error {

@@ -274,6 +274,7 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->stylesheet_count = 0;
 	c->stylesheets = NULL;
 	c->select_ctx = NULL;
+	c->universal = NULL;
 	c->num_objects = 0;
 	c->object_list = NULL;
 	c->forms = NULL;
@@ -285,6 +286,11 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->box = NULL;
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
+
+	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
+		error = BINDING_NOMEM;
+		goto error;
+	}
 
 	selection_prepare(&c->sel, (struct content *)c, true);
 
@@ -328,6 +334,16 @@ error:
 	}
 
 	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+
+	if (c->universal != NULL) {
+		lwc_string_unref(c->universal);
+		c->universal = NULL;
+	}
+
+	if (c->base_url != NULL) {
+		nsurl_unref(c->base_url);
+		c->base_url = NULL;
+	}
 
 	return nerror;
 }
@@ -1977,6 +1993,11 @@ void html_destroy(struct content *c)
 	if (html->select_ctx != NULL) {
 		css_select_ctx_destroy(html->select_ctx);
 		html->select_ctx = NULL;
+	}
+
+	if (html->universal != NULL) {
+		lwc_string_unref(html->universal);
+		html->universal = NULL;
 	}
 
 	/* Free stylesheets */

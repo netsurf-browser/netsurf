@@ -64,6 +64,8 @@ typedef struct html_content {
 	struct html_stylesheet *stylesheets;
 	/**< Style selection context */
 	css_select_ctx *select_ctx;
+	/**< Universal selector */
+	lwc_string *universal;
 
 	/** Number of entries in object_list. */
 	unsigned int num_objects;

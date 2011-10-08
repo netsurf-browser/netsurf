@@ -154,6 +154,7 @@ bool box_normalise_block(struct box *block, html_content *c)
 			ctx.ctx = c->select_ctx;
 			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
 
 			style = nscss_get_blank_style(&ctx, block->style,
 					box_style_alloc, NULL);
@@ -255,6 +256,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 			ctx.ctx = c->select_ctx;
 			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
 
 			style = nscss_get_blank_style(&ctx, table->style,
 					box_style_alloc, NULL);
@@ -341,6 +343,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		ctx.ctx = c->select_ctx;
 		ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 		ctx.base_url = c->base_url;
+		ctx.universal = c->universal;
 
 		style = nscss_get_blank_style(&ctx, table->style, 
 				box_style_alloc, NULL);
@@ -476,6 +479,7 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 					ctx.quirks = (c->quirks == 
 						BINDING_QUIRKS_MODE_FULL);
 					ctx.base_url = c->base_url;
+					ctx.universal = c->universal;
 
 					style = nscss_get_blank_style(&ctx, 
 							table_row->style,
@@ -585,6 +589,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 			ctx.ctx = c->select_ctx;
 			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
 
 			style = nscss_get_blank_style(&ctx, row_group->style,
 					box_style_alloc, NULL);
@@ -659,6 +664,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		ctx.ctx = c->select_ctx;
 		ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 		ctx.base_url = c->base_url;
+		ctx.universal = c->universal;
 
 		style = nscss_get_blank_style(&ctx, row_group->style, 
 				box_style_alloc, NULL);
@@ -728,6 +734,7 @@ bool box_normalise_table_row(struct box *row,
 			ctx.ctx = c->select_ctx;
 			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
+			ctx.universal = c->universal;
 
 			style = nscss_get_blank_style(&ctx, row->style, 
 					box_style_alloc, NULL);

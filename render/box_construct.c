@@ -1102,6 +1102,7 @@ css_select_results *box_get_style(html_content *c,
 	ctx.ctx = c->select_ctx;
 	ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
 	ctx.base_url = c->base_url;
+	ctx.universal = c->universal;
 
 	/* Select partial style for element */
 	styles = nscss_get_style(&ctx, n, CSS_MEDIA_SCREEN, inline_style,
@@ -1118,7 +1119,6 @@ css_select_results *box_get_style(html_content *c,
 	/* If there's a parent style, compose with partial to obtain 
 	 * complete computed style for element */
 	if (parent_style != NULL) {
-
 		/* Complete the computed style, by composing with the parent
 		 * element's style */
 		error = css_computed_style_compose(parent_style,
