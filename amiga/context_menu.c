@@ -159,7 +159,6 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 	 * CMSUB_OBJECT    - userdata = hlcache_object *
 	 * CMSUB_SEL       - userdata = browser_window *
 	 * CMSUB_NAVIGATE  - userdata = browser_window * (only for menu construction)
-	 * CMID_PLUGINCMD  - userdata = hlcache_object *
 	 * CMID_SELECTFILE - userdata = box *
 	 */
 
@@ -318,6 +317,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_CLIPOBJ],
 							PMIA_ID, CMID_CLIPOBJ,
 							PMIA_UserData, userdata,
+							PMIA_Disabled, (content_get_type(userdata) != CONTENT_IMAGE),
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, ~0,
@@ -331,6 +331,16 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEIFFOBJ],
 							PMIA_ID, CMID_SAVEIFFOBJ,
 							PMIA_UserData, userdata,
+							PMIA_Disabled, (content_get_type(userdata) != CONTENT_IMAGE),
+						TAG_DONE),
+						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, ~0,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
+							PMIA_ID, CMID_PLUGINCMD,
+							PMIA_UserData, userdata,
+							PMIA_Disabled, !ami_mime_content_to_cmd(userdata),
 						TAG_DONE),
 					TAG_DONE),
 				TAG_DONE),
@@ -379,16 +389,6 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Disabled, disabled_noselection,
 						TAG_DONE),
 					TAG_DONE),
-				TAG_DONE),
-			~0);
-		break;
-
-		case CMID_PLUGINCMD:
-			IDoMethod(ctxmenuobj,PM_INSERT,
-				NewObject(POPUPMENU_GetItemClass(), NULL,
-					PMIA_Title, (ULONG)ctxmenulab[CMID_PLUGINCMD],
-					PMIA_ID, CMID_PLUGINCMD,
-					PMIA_UserData, userdata,
 				TAG_DONE),
 			~0);
 		break;
@@ -519,13 +519,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	{
 		browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
 
-		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_PLUGIN))
-		{
-			ami_context_menu_add_submenu(ctxmenuobj, CMID_PLUGINCMD, ccdata.object);
-			menuhascontent = true;
-			add_nav_menu = false;
-		}
-
 		if(ccdata.main && (ccdata.main != cc))
 		{
 			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_FRAME, ccdata.main);
@@ -538,11 +531,14 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			menuhascontent = true;
 		}
 
-		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_IMAGE))
+		if(ccdata.object)
 		{
 			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_OBJECT, ccdata.object);
 			menuhascontent = true;
 		}
+
+		ami_context_menu_add_submenu(ctxmenuobj, CMSUB_NAVIGATE, gwin->bw);
+		menuhascontent = true;
 
 		if(content_get_type(cc) == CONTENT_TEXTPLAIN)
 		{
@@ -581,12 +577,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 					}
 				}
 			}
-		}
-
-		if(add_nav_menu == true)
-		{
-			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_NAVIGATE, gwin->bw);
-			menuhascontent = true;
 		}
 	}
 
