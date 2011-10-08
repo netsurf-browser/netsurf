@@ -979,40 +979,43 @@ static void browser_window_update_favicon(hlcache_handle *c,
 
 	if (link == NULL) {
 		/* look for favicon metadata link */
-		lwc_intern_string("icon", SLEN("icon"), &icon_str);
-		link = content_find_rfc5988_link(c, icon_str);	
-		lwc_string_unref(icon_str);
+		if (lwc_intern_string("icon", SLEN("icon"), 
+				&icon_str) == lwc_error_ok) {
+			link = content_find_rfc5988_link(c, icon_str);
+			lwc_string_unref(icon_str);
+		}
 	}
 
 	if (link == NULL) {
-		lwc_intern_string("shortcut icon", SLEN("shortcut_icon"), 
-				&icon_str);	
-		link = content_find_rfc5988_link(c, icon_str);	
-		lwc_string_unref(icon_str);
+		if (lwc_intern_string("shortcut icon", SLEN("shortcut icon"), 
+				&icon_str) == lwc_error_ok) {
+			link = content_find_rfc5988_link(c, icon_str);	
+			lwc_string_unref(icon_str);
+		}
 	}
 
 	if (link == NULL) {
 		lwc_string *scheme;
-
-		lwc_string *http_str;
-		lwc_string *https_str;
-		bool http_match = false;
-		bool https_match = false;
+		bool speculative_default = false;
 
 		nsurl = content_get_url(c);
 
 		scheme = nsurl_get_component(nsurl, NSURL_SCHEME);
 
-		lwc_intern_string("http", SLEN("http"), &http_str);
-		lwc_intern_string("https", SLEN("https"), &https_str);
-		lwc_string_caseless_isequal(scheme, http_str, &http_match);
-		lwc_string_caseless_isequal(scheme, https_str, &https_match);
-		lwc_string_unref(http_str);
-		lwc_string_unref(https_str);
+		/* If the document was fetched over http(s), then speculate 
+		 * that there's a favicon living at /favicon.ico */
+		if ((lwc_string_length(scheme) == SLEN("HTTP") &&
+				strcasecmp(lwc_string_data(scheme), 
+						"http") == 0) ||
+		    (lwc_string_length(scheme) == SLEN("HTTPS") &&
+				strcasecmp(lwc_string_data(scheme), 
+						"https") == 0)) {
+			speculative_default = true;
+		}
 
 		lwc_string_unref(scheme);
 
-		if (http_match || https_match) {
+		if (speculative_default) {
 			/* no favicon via link, try for the default location */
 			error = nsurl_join(nsurl, "/favicon.ico", &nsurl);
 		} else {
@@ -1252,20 +1255,29 @@ nserror browser_window_callback(hlcache_handle *c,
 	{
 		lwc_string *icon_str;
 		lwc_string *shortcut_icon_str;
-		bool icon_match;
-		bool shortcut_icon_match;
+		bool icon_match = false;
+		bool shortcut_icon_match = false;
 
-		lwc_intern_string("icon", SLEN("icon"), &icon_str);
-		lwc_intern_string("shortcut icon", SLEN("shortcut_icon"), &shortcut_icon_str);
-		lwc_string_caseless_isequal(event->data.rfc5988_link->rel, icon_str, &icon_match);
-		lwc_string_caseless_isequal(event->data.rfc5988_link->rel, shortcut_icon_str, &shortcut_icon_match);
-		lwc_string_unref(icon_str);
-		lwc_string_unref(shortcut_icon_str);
+		if (lwc_intern_string("icon", SLEN("icon"), 
+				&icon_str) == lwc_error_ok) {
+			lwc_string_caseless_isequal(
+					event->data.rfc5988_link->rel, 
+					icon_str, &icon_match);
+			lwc_string_unref(icon_str);
+		}
+
+		if (lwc_intern_string("shortcut icon", SLEN("shortcut icon"), 
+				&shortcut_icon_str) == lwc_error_ok) {
+			lwc_string_caseless_isequal(
+					event->data.rfc5988_link->rel, 
+					shortcut_icon_str, 
+					&shortcut_icon_match);
+			lwc_string_unref(shortcut_icon_str);
+		}
 
 		if (icon_match || shortcut_icon_match) {
-			/* its a favicon perhaps start a fetch for it */
+			/* it's a favicon perhaps start a fetch for it */
 			browser_window_update_favicon(c, bw, event->data.rfc5988_link);
-		
 		}
 	}
 		break;
