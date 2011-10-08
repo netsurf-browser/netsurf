@@ -1487,7 +1487,7 @@ css_error node_presentational_hint(void *pw, void *node,
 			lwc_error lerror;
 
 			lerror = lwc_intern_string(nsurl_access(url),
-					strlen(nsurl_access(url)), &iurl);
+					nsurl_length(url), &iurl);
 
 			nsurl_unref(url);
 

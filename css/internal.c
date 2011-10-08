@@ -59,7 +59,7 @@ css_error nscss_resolve_url(void *pw, const char *base,
 
 	/* Intern it */
 	lerror = lwc_intern_string(nsurl_access(nsabs),
-			strlen(nsurl_access(nsabs)), abs);
+			nsurl_length(nsabs), abs);
 	if (lerror != lwc_error_ok) {
 		*abs = NULL;
 		nsurl_unref(nsabs);
