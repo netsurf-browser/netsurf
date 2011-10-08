@@ -153,9 +153,10 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 	struct bmp_image *bmp = ico_find(ico->ico, data->width, data->height);
 	bitmap_flags_t flags = BITMAPF_NONE;
 
-	if (!bmp->decoded)
+	if (bmp->decoded == false) {
 		if (bmp_decode(bmp) != BMP_OK)
 			return false;
+	}
 
 	ico->bitmap = bmp->bitmap;
 
@@ -219,9 +220,10 @@ static void *nsico_get_internal(const struct content *c, void *context)
 	 *       Currently assumes it's for a URL bar. */
 	struct bmp_image *bmp = ico_find(ico->ico, 16, 16);
 
-	if (!bmp->decoded)
+	if (bmp->decoded == false) {
 		if (bmp_decode(bmp) != BMP_OK)
 			return NULL;
+	}
 
 	ico->bitmap = bmp->bitmap;
 
