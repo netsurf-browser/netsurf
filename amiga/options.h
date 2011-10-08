@@ -34,7 +34,6 @@ extern bool option_new_tab_active;
 extern bool option_new_tab_last;
 extern bool option_kiosk_mode;
 extern char *option_search_engines_file;
-extern char *option_search_ico_file;
 extern char *option_arexx_dir;
 extern char *option_arexx_startup;
 extern char *option_arexx_shutdown;
@@ -83,7 +82,6 @@ bool option_new_tab_active = false; \
 bool option_new_tab_last = false; \
 bool option_kiosk_mode = false; \
 char *option_search_engines_file = 0; \
-char *option_search_ico_file = 0; \
 char *option_arexx_dir = 0; \
 char *option_arexx_startup = 0; \
 char *option_arexx_shutdown = 0; \
@@ -132,7 +130,6 @@ bool option_accept_lang_locale = true; \
 { "new_tab_last",	OPTION_BOOL,	&option_new_tab_last}, \
 { "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
 { "search_engines_file",		OPTION_STRING,	&option_search_engines_file }, \
-{ "search_ico_file",		OPTION_STRING,	&option_search_ico_file }, \
 { "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
 { "arexx_startup",		OPTION_STRING,	&option_arexx_startup }, \
 { "arexx_shutdown",		OPTION_STRING,	&option_arexx_shutdown }, \

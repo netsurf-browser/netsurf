@@ -365,11 +365,6 @@ void ami_set_options(void)
 
 	search_engines_file_location = option_search_engines_file;
 
-	if((!option_search_ico_file) || (option_search_ico_file[0] == '\0'))
-		option_search_ico_file = (char *)strdup("PROGDIR:Resources/favicon.ico");
-
-	search_default_ico_location = option_search_ico_file;
-
 	if((!option_font_sans) || (option_font_sans[0] == '\0'))
 		option_font_sans = (char *)strdup("DejaVu Sans");
 
@@ -3665,17 +3660,6 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
 		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);
-	}
-
-	/* generic search image */
-	if(bm == NULL)
-	{
-		ami_get_theme_filename(fname, "theme_search", false);
-		if(nsbm = ami_bitmap_from_datatype(fname))
-		{
-			bm = ami_getcachenativebm(nsbm, 16, 16, NULL);
-		}
-		free_bm = true;
 	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
