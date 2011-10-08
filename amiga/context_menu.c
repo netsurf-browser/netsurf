@@ -80,11 +80,18 @@ enum {
 	CMID_FRAMECOPYURL,
 	CMID_FRAMESAVE,
 	CMID_PLUGINCMD,
+	CMID_NAVHOME,
+	CMID_NAVBACK,
+	CMID_NAVFORWARD,
+	CMID_NAVRELOAD,
+	CMID_NAVSTOP,
+
 	CMSUB_OBJECT,
 	CMSUB_URL,
 	CMSUB_SEL,
 	CMSUB_PAGE,
 	CMSUB_FRAME,
+	CMSUB_NAVIGATE,
 	CMID_HISTORY,
 	CMID_LAST
 };
@@ -119,6 +126,12 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_URLOPENWIN] = ami_utf8_easy((char *)messages_get("LinkNewWin"));
 	ctxmenulab[CMID_URLOPENTAB] = ami_utf8_easy((char *)messages_get("LinkNewTab"));
 
+	ctxmenulab[CMID_NAVHOME] = ami_utf8_easy((char *)messages_get("Home"));
+	ctxmenulab[CMID_NAVBACK] = ami_utf8_easy((char *)messages_get("Back"));
+	ctxmenulab[CMID_NAVFORWARD] = ami_utf8_easy((char *)messages_get("Forward"));
+	ctxmenulab[CMID_NAVRELOAD] = ami_utf8_easy((char *)messages_get("ObjReload"));
+	ctxmenulab[CMID_NAVSTOP] = ami_utf8_easy((char *)messages_get("Stop"));
+
 	ctxmenulab[CMID_SELCUT] = ami_utf8_easy((char *)messages_get("CutNS"));
 	ctxmenulab[CMID_SELCOPY] = ami_utf8_easy((char *)messages_get("CopyNS"));
 	ctxmenulab[CMID_SELPASTE] = ami_utf8_easy((char *)messages_get("PasteNS"));
@@ -130,6 +143,7 @@ void ami_context_menu_init(void)
 
 	ctxmenulab[CMSUB_FRAME] = ami_utf8_easy((char *)messages_get("Frame"));
 	ctxmenulab[CMSUB_OBJECT] = ami_utf8_easy((char *)messages_get("Object"));
+	ctxmenulab[CMSUB_NAVIGATE] = ami_utf8_easy((char *)messages_get("Navigate"));
 	ctxmenulab[CMSUB_URL] = ami_utf8_easy((char *)messages_get("Link"));
 	ctxmenulab[CMSUB_SEL] = ami_utf8_easy((char *)messages_get("Selection"));
 
@@ -144,6 +158,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 	 * CMSUB_URL       - userdata = char *
 	 * CMSUB_OBJECT    - userdata = hlcache_object *
 	 * CMSUB_SEL       - userdata = browser_window *
+	 * CMSUB_NAVIGATE  - userdata = browser_window * (only for menu construction)
 	 * CMID_PLUGINCMD  - userdata = hlcache_object *
 	 * CMID_SELECTFILE - userdata = box *
 	 */
@@ -195,6 +210,45 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_SAVEOBJ],
 							PMIA_ID, CMID_FRAMESAVE,
 							PMIA_UserData, content_get_url(userdata),
+						TAG_DONE),
+					TAG_DONE),
+				TAG_DONE),
+			~0);
+		break;
+
+		case CMSUB_NAVIGATE:
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, (ULONG)ctxmenulab[CMSUB_NAVIGATE],
+					PMSIMPLESUB,
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_NAVHOME],
+							PMIA_ID, CMID_NAVHOME,
+							PMIA_UserData, userdata,
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_NAVBACK],
+							PMIA_ID, CMID_NAVBACK,
+							PMIA_UserData, userdata,
+							PMIA_Disabled, !browser_window_back_available(userdata),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_NAVFORWARD],
+							PMIA_ID, CMID_NAVFORWARD,
+							PMIA_UserData, userdata,
+							PMIA_Disabled, !browser_window_forward_available(userdata),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_NAVRELOAD],
+							PMIA_ID, CMID_NAVRELOAD,
+							PMIA_UserData, userdata,
+							PMIA_Disabled, !browser_window_reload_available(userdata),
+						TAG_DONE),
+						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
+							PMIA_Title, (ULONG)ctxmenulab[CMID_NAVSTOP],
+							PMIA_ID, CMID_NAVSTOP,
+							PMIA_UserData, userdata,
+							PMIA_Disabled, !browser_window_stop_available(userdata),
 						TAG_DONE),
 					TAG_DONE),
 				TAG_DONE),
@@ -399,7 +453,7 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	struct box *curbox;
 	int box_x=0;
 	int box_y=0;
-	bool no_sel = true;
+	bool no_sel = true, add_nav_menu = true;
 	bool menuhascontent = false;
 	ULONG ret = 0;
 	struct contextual_content ccdata;
@@ -465,6 +519,13 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	{
 		browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
 
+		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_PLUGIN))
+		{
+			ami_context_menu_add_submenu(ctxmenuobj, CMID_PLUGINCMD, ccdata.object);
+			menuhascontent = true;
+			add_nav_menu = false;
+		}
+
 		if(ccdata.main && (ccdata.main != cc))
 		{
 			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_FRAME, ccdata.main);
@@ -480,12 +541,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_IMAGE))
 		{
 			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_OBJECT, ccdata.object);
-			menuhascontent = true;
-		}
-
-		if(ccdata.object &&	(content_get_type(ccdata.object) == CONTENT_PLUGIN))
-		{
-			ami_context_menu_add_submenu(ctxmenuobj, CMID_PLUGINCMD, ccdata.object);
 			menuhascontent = true;
 		}
 
@@ -521,10 +576,17 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 						case GADGET_FILE:
 							ami_context_menu_add_submenu(ctxmenuobj, CMID_SELECTFILE, curbox);
 							menuhascontent = true;
+							add_nav_menu = false;
 						break;
 					}
 				}
 			}
+		}
+
+		if(add_nav_menu == true)
+		{
+			ami_context_menu_add_submenu(ctxmenuobj, CMSUB_NAVIGATE, gwin->bw);
+			menuhascontent = true;
 		}
 	}
 
@@ -715,6 +777,28 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					history_go(gwin->bw, gwin->bw->history,
 						(struct history_entry *)userdata, false);
 				}
+			break;
+
+			case CMID_NAVHOME:
+				browser_window_go(gwin->bw, option_homepage_url, NULL, true);
+			break;
+
+			case CMID_NAVBACK:
+				ami_gui_history(gwin, true);
+			break;
+
+			case CMID_NAVFORWARD:
+				ami_gui_history(gwin, false);
+			break;
+
+			case CMID_NAVSTOP:
+				if(browser_window_stop_available(gwin->bw))
+					browser_window_stop(gwin->bw);
+			break;
+
+			case CMID_NAVRELOAD:
+				if(browser_window_reload_available(gwin->bw))
+					browser_window_reload(gwin->bw, true);
 			break;
 
 			case CMID_SELCUT:
