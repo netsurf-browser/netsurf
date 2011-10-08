@@ -1976,7 +1976,7 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		 */
 		gui_window_set_url(bw->window, nsurl_access(url));
 	} else {
-		url_buf = malloc(strlen(nsurl_access(url)) + 1 /* # */ +
+		url_buf = malloc(nsurl_length(url) + 1 /* # */ +
 				strlen(frag) + 1 /* \0 */);
 		if (url_buf != NULL) {
 			/* This sprintf is safe because of the above size
