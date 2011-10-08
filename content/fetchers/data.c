@@ -86,13 +86,14 @@ static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
 		return NULL;
 		
 	ctx->parent_fetch = parent_fetch;
+
 	/* TODO: keep as nsurl to avoid copy */
-	ctx->url = strdup(nsurl_access(url));
-	
+	ctx->url = malloc(nsurl_length(url) + 1);
 	if (ctx->url == NULL) {
 		free(ctx);
 		return NULL;
 	}
+	memcpy(ctx->url, nsurl_access(url), nsurl_length(url) + 1);
 
 	RING_INSERT(ring, ctx);
 	
