@@ -821,6 +821,18 @@ static bool html_process_link(html_content *c, xmlNode *node)
 	/* add to content */
 	content__add_rfc5988_link(&c->base, &link);
 
+	if (link.sizes != NULL)
+		lwc_string_unref(link.sizes);
+	if (link.media != NULL)
+		lwc_string_unref(link.media);
+	if (link.type != NULL)
+		lwc_string_unref(link.type);
+	if (link.hreflang != NULL)
+		lwc_string_unref(link.hreflang);
+
+	nsurl_unref(link.href);
+	lwc_string_unref(link.rel);
+
 	return true;
 }
 
