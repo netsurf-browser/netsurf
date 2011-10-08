@@ -1436,6 +1436,15 @@ const char *nsurl_access(const nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
+size_t nsurl_length(const nsurl *url)
+{
+	assert(url != NULL);
+
+	return url->length;
+}
+
+
+/* exported interface, documented in nsurl.h */
 nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 {
 	struct url_markers m;

@@ -183,6 +183,17 @@ const char *nsurl_access(const nsurl *url);
 
 
 /**
+ * Find the length of a NetSurf URL object's URL, as returned by nsurl_access
+ *
+ * \param url	  NetSurf URL to find length of.
+ * \return the required string
+ *
+ * The returned length excludes the trailing '\0'.
+ */
+size_t nsurl_length(const nsurl *url);
+
+
+/**
  * Join a base url to a relative link part, creating a new NetSurf URL object
  *
  * \param base	  NetSurf URL containing the base to join rel to
