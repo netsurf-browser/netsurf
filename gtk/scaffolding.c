@@ -316,6 +316,8 @@ void nsgtk_scaffolding_destroy(nsgtk_scaffolding *g)
 	if (g->being_destroyed) return;
 	g->being_destroyed = 1;
 	nsgtk_window_close(g);
+	/* We're now unlinked, so let's finally destroy ourselves */
+	nsgtk_window_destroy_browser(g->top_level);
 }
 
 /**

@@ -496,7 +496,11 @@ int main(int argc, char** argv)
 	gui_init(argc, argv, respaths);
 
 	netsurf_main_loop();
-
+	
+	/* Ensure all scaffoldings are destroyed before we go into exit */
+	while (scaf_list != NULL)
+		nsgtk_scaffolding_destroy(scaf_list);
+	
 	netsurf_exit();
 
 	return 0;
