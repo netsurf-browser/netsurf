@@ -258,59 +258,66 @@ static xmlNode *next_node(xmlNode *n, html_content *content,
 void convert_xml_to_box(struct box_construct_ctx *ctx)
 {
 	xmlNode *next;
-	bool convert_children = true;
+	bool convert_children;
+	uint32_t num_processed = 0;
+	const uint32_t max_processed_before_yield = 10;
 
-	assert(ctx->n != NULL);
-	assert(ctx->n->type == XML_ELEMENT_NODE);
+	do {
+		convert_children = true;
 
-	if (box_construct_element(ctx, &convert_children) == false) {
-		ctx->cb(ctx->content, false);
-		free(ctx);
-		return;
-	}
+		assert(ctx->n != NULL);
+		assert(ctx->n->type == XML_ELEMENT_NODE);
 
-	/* Find next element to process, converting text nodes as we go */
-	next = next_node(ctx->n, ctx->content, convert_children);
-	while (next != NULL && next->type != XML_ELEMENT_NODE) {
-		if (next->type == XML_TEXT_NODE) {
-			ctx->n = next;
-			if (box_construct_text(ctx) == false) {
-				ctx->cb(ctx->content, false);
-				free(ctx);
-				return;
-			}
-		}
-
-		next = next_node(next, ctx->content, true);
-	}
-
-	ctx->n = next;
-
-	if (next != NULL) {
-		/* More work to do: schedule a continuation */
-		schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
-	} else {
-		/* Conversion complete */
-		struct box root;
-
-		memset(&root, 0, sizeof(root));
-
-		root.type = BOX_BLOCK;
-		root.children = root.last = ctx->root_box;
-		root.children->parent = &root;
-
-		/** \todo Remove box_normalise_block */
-		if (box_normalise_block(&root, ctx->content) == false) {
+		if (box_construct_element(ctx, &convert_children) == false) {
 			ctx->cb(ctx->content, false);
-		} else {
-			ctx->content->layout = root.children;
-			ctx->content->layout->parent = NULL;
-
-			ctx->cb(ctx->content, true);
+			free(ctx);
+			return;
 		}
 
-		free(ctx);
-	}
+		/* Find next element to process, converting text nodes as we go */
+		next = next_node(ctx->n, ctx->content, convert_children);
+		while (next != NULL && next->type != XML_ELEMENT_NODE) {
+			if (next->type == XML_TEXT_NODE) {
+				ctx->n = next;
+				if (box_construct_text(ctx) == false) {
+					ctx->cb(ctx->content, false);
+					free(ctx);
+					return;
+				}
+			}
+
+			next = next_node(next, ctx->content, true);
+		}
+
+		ctx->n = next;
+
+		if (next == NULL) {
+			/* Conversion complete */
+			struct box root;
+
+			memset(&root, 0, sizeof(root));
+
+			root.type = BOX_BLOCK;
+			root.children = root.last = ctx->root_box;
+			root.children->parent = &root;
+
+			/** \todo Remove box_normalise_block */
+			if (box_normalise_block(&root, ctx->content) == false) {
+				ctx->cb(ctx->content, false);
+			} else {
+				ctx->content->layout = root.children;
+				ctx->content->layout->parent = NULL;
+
+				ctx->cb(ctx->content, true);
+			}
+
+			free(ctx);
+			return;
+		}
+	} while (++num_processed < max_processed_before_yield);
+
+	/* More work to do: schedule a continuation */
+	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
 }
 
 /**
