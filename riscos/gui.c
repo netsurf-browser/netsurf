@@ -292,6 +292,8 @@ nsurl *gui_get_resource_url(const char *path)
 		path = "CSS";
 	else if (strcmp(path, "quirks.css") == 0)
 		path = "Quirks";
+	else if (strcmp(path, "favicon.ico") == 0)
+		path = "Icons/content.png";
 
 	path_len = strlen(path);
 
