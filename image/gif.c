@@ -408,6 +408,11 @@ static void *nsgif_get_internal(const struct content *c, void *context)
 {
 	nsgif_content *gif = (nsgif_content *) c;
 
+	if (gif->current_frame != gif->gif->decoded_frame) {
+		if (nsgif_get_frame(gif) != GIF_OK)
+			return NULL;
+	}
+
 	return gif->gif->frame_image;
 }
 
