@@ -176,7 +176,7 @@ void hlcache_finalise(void)
 
 		if (entry->content != NULL) {
 			LOG(("	%p : %s (%d users)", entry,
-			     content_get_url(&entry_handle), content_count_users(entry->content)));
+			     nsurl_access(content_get_url(&entry_handle)), content_count_users(entry->content)));
 		} else {
 			LOG(("	%p", entry));
 		}
