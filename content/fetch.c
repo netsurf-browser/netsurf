@@ -514,10 +514,12 @@ void fetch_poll(void)
 	if (!fetch_active)
 		return; /* No point polling, there's no fetch active. */
 	while (fetcher != NULL) {
-		/* LOG(("Polling fetcher for %s",
-				lwc_string_data(fetcher->scheme_name))); */
 		next_fetcher = fetcher->next_fetcher;
-		fetcher->poll_fetcher(fetcher->scheme_name);
+		if (fetcher->poll_fetcher != NULL) {
+			/* LOG(("Polling fetcher for %s",
+			   lwc_string_data(fetcher->scheme_name))); */
+			fetcher->poll_fetcher(fetcher->scheme_name);
+		}
 		fetcher = next_fetcher;
 	}
 }

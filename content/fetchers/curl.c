@@ -60,6 +60,10 @@
  */
 #include <desktop/browser.h>
 
+/* uncomment this to use scheduler based calling
+#define FETCHER_CURLL_SCHEDULED 1
+*/
+
 /** SSL certificate info */
 struct cert_info {
 	X509 *cert;		/**< Pointer to certificate */
@@ -252,7 +256,11 @@ void fetch_curl_register(void)
 				fetch_curl_start,
 				fetch_curl_abort,
 				fetch_curl_free,
+#ifdef FETCHER_CURLL_SCHEDULED
+				       NULL,
+#else
 				fetch_curl_poll,
+#endif
 				fetch_curl_finalise)) {
 			LOG(("Unable to register cURL fetcher for %s",
 					data->protocols[i]));
@@ -758,10 +766,12 @@ void fetch_curl_poll(lwc_string *scheme_ignored)
 		}
 		curl_msg = curl_multi_info_read(fetch_curl_multi, &queue);
 	}
-	
+
+#ifdef FETCHER_CURLL_SCHEDULED
 	if (running != 0) {
-		schedule(10, (schedule_callback_fn)fetch_curl_poll, fetch_curl_poll);
+		schedule(1, (schedule_callback_fn)fetch_curl_poll, fetch_curl_poll);
 	}
+#endif
 }
 
 
