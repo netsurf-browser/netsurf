@@ -239,6 +239,7 @@ static ns_wimp_message_list task_messages = {
 		message_PRINT_SAVE,
 		message_PRINT_ERROR,
 		message_PRINT_TYPE_ODD,
+		message_HOTLIST_CHANGED,
 		0
 	}
 };
@@ -1436,7 +1437,9 @@ void ro_gui_user_message(wimp_event_no event, wimp_message *message)
 		case message_PRINT_TYPE_ODD:
 			ro_print_type_odd(message);
 			break;
-
+		case message_HOTLIST_CHANGED:
+			ro_gui_hotlist_add_cleanup();
+			break;
 		case message_QUIT:
 			netsurf_quit = true;
 			break;

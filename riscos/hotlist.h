@@ -24,6 +24,16 @@
 #ifndef _NETSURF_RISCOS_HOTLIST_H_
 #define _NETSURF_RISCOS_HOTLIST_H_
 
+/* Hotlist Protocol Messages, which are currently not in OSLib. */
+
+#ifndef message_HOTLIST_ADD_URL
+#define message_HOTLIST_ADD_URL 0x4af81
+#endif
+
+#ifndef message_HOTLIST_CHANGED
+#define message_HOTLIST_CHANGED 0x4af82
+#endif
+
 #include "riscos/menus.h"
 
 void ro_gui_hotlist_preinitialise(void);
@@ -32,6 +42,8 @@ void ro_gui_hotlist_open(void);
 void ro_gui_hotlist_save(void);
 bool ro_gui_hotlist_check_window(wimp_w window);
 bool ro_gui_hotlist_check_menu(wimp_menu *menu);
+void ro_gui_hotlist_add_page(const char *url);
+void ro_gui_hotlist_add_cleanup(void);
 
 #endif
 

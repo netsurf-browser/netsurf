@@ -3964,7 +3964,7 @@ void ro_gui_window_action_add_bookmark(struct gui_window *g)
 			content_get_url(g->bw->current_content) == NULL)
 		return;
 
-	hotlist_add_page(nsurl_access(content_get_url(g->bw->current_content)));
+	ro_gui_hotlist_add_page(nsurl_access(content_get_url(g->bw->current_content)));
 }
 
 

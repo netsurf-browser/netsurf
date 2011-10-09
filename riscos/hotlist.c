@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "oslib/osfile.h"
+#include "oslib/osmodule.h"
 #include "oslib/wimp.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -37,6 +38,7 @@
 #include "riscos/dialog.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
+#include "riscos/message.h"
 #include "riscos/options.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
@@ -57,6 +59,7 @@ static void ro_gui_hotlist_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 static bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action);
 static void ro_gui_hotlist_toolbar_click(button_bar_action action);
+static void ro_gui_hotlist_addurl_bounce(wimp_message *message);
 
 struct ro_treeview_callbacks ro_hotlist_treeview_callbacks = {
 	ro_gui_hotlist_toolbar_click,
@@ -64,13 +67,29 @@ struct ro_treeview_callbacks ro_hotlist_treeview_callbacks = {
 	ro_gui_hotlist_toolbar_save_buttons
 };
 
+/* Hotlist Protocol Message Blocks, which are currently not in OSLib. */
+
+struct ro_hotlist_message_hotlist_addurl {
+	wimp_MESSAGE_HEADER_MEMBERS	/**< The standard message header. */
+	char		*url;		/**< Pointer to the URL in RMA.   */
+	char		*title;		/**< Pointer to the title in RMA. */
+	char		appname[32];	/**< The application name.        */
+};
+
+struct ro_hotlist_message_hotlist_changed {
+	wimp_MESSAGE_HEADER_MEMBERS	/**< The standard message header. */
+};
+
+static char	*hotlist_url = NULL;    /**< URL area claimed from RMA.   */
+static char	*hotlist_title = NULL;	/**< Title area claimed from RMA. */
+
 /* The RISC OS hotlist window, toolbar and treeview data. */
 
 static struct ro_hotlist {
-	wimp_w		window;		/*< The hotlist RO window handle. */
-	struct toolbar	*toolbar;	/*< The hotlist toolbar handle.   */
-	ro_treeview	*tv;		/*< The hotlist treeview handle.  */
-	wimp_menu	*menu;		/*< The hotlist window menu.      */
+	wimp_w		window;		/**< The hotlist RO window handle. */
+	struct toolbar	*toolbar;	/**< The hotlist toolbar handle.   */
+	ro_treeview	*tv;		/**< The hotlist treeview handle.  */
+	wimp_menu	*menu;		/**< The hotlist window menu.      */
 } hotlist_window;
 
 /**
@@ -419,6 +438,106 @@ bool ro_gui_hotlist_check_menu(wimp_menu *menu)
 	else
 		return false;
 }
+
+
+/**
+ * Add a URL to the hotlist.  This will be passed on to the core hotlist, then
+ * Message_HotlistAddURL will broadcast to any bookmark applications via the
+ * Hotlist Protocol.
+ *
+ * \param *url			The URL to be added.
+ */
+
+void ro_gui_hotlist_add_page(const char *url)
+{
+	const struct url_data				*data;
+	wimp_message					message;
+	struct ro_hotlist_message_hotlist_addurl	*add_url =
+			(struct ro_hotlist_message_hotlist_addurl *) &message;
+
+	if (url == NULL)
+		return;
+
+	/* First pass the page to NetSurf's own hotlist. */
+
+	hotlist_add_page(url);
+
+	/* Then pass it on to any helper applications that might be
+	 * interested.
+	 *
+	 * The RMA storage is freed on receipt of a Message_HotlistChanged or
+	 * a bounce from Message_HotlistAddURL.  Some clients don't seem to
+	 * bother sending back a Message_HotlistChanged, so in this case the
+	 * strings are left in situ in RMA and cleared the next time we need
+	 * to send a message.
+	 */
+
+	if (hotlist_url != NULL || hotlist_title != NULL)
+		ro_gui_hotlist_add_cleanup();
+
+	if (!option_external_hotlists)
+		return;
+
+	data = urldb_get_url_data(url);
+	if (data == NULL)
+		return;
+
+	hotlist_url = osmodule_alloc(strlen(url) + 1);
+	hotlist_title = osmodule_alloc(strlen(data->title) + 1);
+
+	if (hotlist_url == NULL || hotlist_title == NULL) {
+		ro_gui_hotlist_add_cleanup();
+		return;
+	}
+
+	strcpy(hotlist_url, url);
+	strcpy(hotlist_title, data->title);
+
+	add_url->size = 60;
+	add_url->your_ref = 0;
+	add_url->action = message_HOTLIST_ADD_URL;
+	add_url->url = hotlist_url;
+	add_url->title = hotlist_title;
+	strcpy(add_url->appname, "NetSurf");
+
+	if (!ro_message_send_message(wimp_USER_MESSAGE_RECORDED, &message, 0,
+			ro_gui_hotlist_addurl_bounce))
+		ro_gui_hotlist_add_cleanup();
+}
+
+
+/**
+ * Handle bounced Message_HotlistAddURL, so that RMA storage can be freed.
+ *
+ * \param *message		The bounced message content.
+ */
+
+static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
+{
+	LOG(("Hotlist AddURL Bounced"));
+	ro_gui_hotlist_add_cleanup();
+}
+
+
+/**
+ * Clean up RMA storage used by the Message_HotlistAddURL protocol.
+ */
+
+void ro_gui_hotlist_add_cleanup(void)
+{
+	LOG(("Clean up RMA"));
+
+	if (hotlist_url != NULL) {
+		osmodule_free(hotlist_url);
+		hotlist_url = NULL;
+	}
+
+	if (hotlist_title != NULL) {
+		osmodule_free(hotlist_title);
+		hotlist_title = NULL;
+	}
+}
+
 
 #if 0
 /**
