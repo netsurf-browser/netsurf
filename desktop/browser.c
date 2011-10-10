@@ -845,9 +845,12 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
 
+	/* Only permit requests for root contents to become downloads */
+	if (bw->window != NULL)
+		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
+
 	error = hlcache_handle_retrieve(nsurl,
-			fetch_flags | HLCACHE_RETRIEVE_MAY_DOWNLOAD | 
-					HLCACHE_RETRIEVE_SNIFF_TYPE, 
+			fetch_flags | HLCACHE_RETRIEVE_SNIFF_TYPE,
 			nsref,
 			fetch_is_post ? &post : NULL,
 			browser_window_callback, bw,
