@@ -54,6 +54,7 @@
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/testament.h"
+#include "image/image_cache.h"
 
 struct fetch_about_context;
 
@@ -159,7 +160,88 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+/** Handler to generate about:cache page.
+ *
+ * Shows details of current iamge cache
+ *
+ */
+static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
+{
+	char buffer[1024]; /* output buffer */
+	int code = 200;
+	int slen;
+	unsigned int cent_loop = 0;
+	int res = 0;
 
+	/* content is going to return ok */
+	fetch_set_http_code(ctx->fetchh, code);
+
+	/* content type */
+	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
+		goto fetch_about_imagecache_handler_aborted;
+
+	slen = snprintf(buffer, sizeof buffer, 
+			"<html>\n<head>\n"
+			"<title>NetSurf Browser Image Cache Status</title>\n"
+			"<link rel=\"stylesheet\" type=\"text/css\" "
+			"href=\"resource:internal.css\">\n"
+			"</head>\n"
+			"<body id =\"cachelist\">\n"
+			"<p class=\"banner\">"
+			"<a href=\"http://www.netsurf-browser.org/\">"
+			"<img src=\"resource:netsurf.png\" alt=\"NetSurf\"></a>"
+			"</p>\n"
+			"<h1>NetSurf Browser Image Cache Status</h1>\n"	);
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
+				      slen, FETCH_ERROR_NO_ERROR))
+		goto fetch_about_imagecache_handler_aborted;
+
+	slen = image_cache_snsummaryf(buffer, sizeof(buffer), NULL);
+
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
+				      slen, FETCH_ERROR_NO_ERROR))
+		goto fetch_about_imagecache_handler_aborted;
+
+	slen = snprintf(buffer, sizeof buffer, 
+			"<table class=\"config\">\n"
+			"<tr><th>Entry</th><th>Content Key</th><th>Redraw Count</th><th>Conversion Count</th><th>Last Redraw</th><th>Bitmap Age</th><th>Bitmap Size</th></tr>\n");
+	do {
+		res = image_cache_snentryf(buffer + slen, sizeof buffer - slen,
+				cent_loop,
+				"<tr><td>%e</td><td>%k</td><td>%r</td><td>%c</td><td>%a</td><td>%g</td><td>%s</td></tr>\n");
+		if (res <= 0) 
+			break; /* last option */
+
+		if (res >= (int) (sizeof buffer - slen)) {
+			/* last entry would not fit in buffer, submit buffer */
+			if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
+					slen, FETCH_ERROR_NO_ERROR))
+				goto fetch_about_imagecache_handler_aborted;
+			slen = 0;
+		} else {
+			/* normal addition */
+			slen += res;
+			cent_loop++;
+		}
+	} while (res > 0);
+
+	slen += snprintf(buffer + slen, sizeof buffer - slen, 
+			 "</table>\n</body>\n</html>\n");
+
+	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, slen,
+			FETCH_ERROR_NO_ERROR))
+		goto fetch_about_imagecache_handler_aborted;
+
+	fetch_about_send_callback(FETCH_FINISHED, ctx, 0, 0,
+			FETCH_ERROR_NO_ERROR);
+
+	return true;
+
+fetch_about_imagecache_handler_aborted:
+	return false;
+}
+
+/** Handler to generate about:config page */
 static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 {
 	char buffer[1024];
@@ -225,6 +307,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 fetch_about_config_handler_aborted:
 	return false;
 }
+
 
 /** Generate the text of a Choices file which represents the current
  * in use options. 
@@ -408,7 +491,9 @@ struct about_handlers about_handler_list[] = {
 	{ "testament", SLEN("testament"), NULL, fetch_about_testament_handler, false },
 	{ "about", SLEN("about"), NULL, fetch_about_about_handler, true },
 	{ "logo", SLEN("logo"), NULL, fetch_about_logo_handler, true },
-	/* The default */
+	/* details about the cache */
+	{ "imagecache", SLEN("iamgecache"), NULL, fetch_about_imagecache_handler, true },
+	/* The default blank page */
 	{ "blank", SLEN("blank"), NULL, fetch_about_blank_handler, true } 
 };
 

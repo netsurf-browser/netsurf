@@ -96,7 +96,30 @@ struct bitmap *image_cache_find_bitmap(struct content *c);
  */
 bool image_cache_speculate(struct content *c);
 
-/* Image content handler generic cache callbacks */
+/**
+ * Fill a buffer with an option using a format.
+ *
+ * The format string is copied into the output buffer with the
+ * following replaced:
+ * %e - The entry number
+ * %k - The content key
+ * %r - The number of redraws of this bitmap
+ * %c - The number of times this bitmap has been converted
+ * %s - The size of the current bitmap allocation
+ *
+ * \param string  The buffer in which to place the results.
+ * \param size    The size of the string buffer.
+ * \param entryn  The opaque entry number.
+ * \param fmt     The format string.
+ * \return The number of bytes written to \a string or -1 on error
+ */
+int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
+			 const char *fmt);
+
+/** cache summary */
+int image_cache_snsummaryf(char *string, size_t size, const char *fmt);
+
+/********* Image content handler generic cache callbacks ************/
 
 /** Generic content redraw callback
  *

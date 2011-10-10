@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "utils/errors.h"
+#include "utils/utils.h"
 #include "utils/log.h"
 #include "utils/config.h"
 #include "utils/schedule.h"
@@ -123,6 +124,20 @@ struct image_cache_s {
 /** image cache state */
 static struct image_cache_s *image_cache = NULL;
 
+
+/** Find the nth cache entry 
+ */
+static struct image_cache_entry_s *image_cache__findn(int entryn)
+{
+	struct image_cache_entry_s *found;
+
+	found = image_cache->entries;
+	while ((found != NULL) && (entryn > 0)) {
+		entryn--;
+		found = found->next;
+	}
+	return found;
+}
 
 /** Find the cache entry for a content
  */
@@ -510,6 +525,158 @@ nserror image_cache_remove(struct content *content)
 
 	return NSERROR_OK;
 }
+
+/* exported interface documented in image_cache.h */
+int image_cache_snsummaryf(char *string, size_t size, const char *fmt)
+{
+	size_t slen = 0; /* current output string length */
+	unsigned int op_count;
+
+	slen += snprintf(string + slen, size - slen, 
+		 "<p>Configured limit of %ld hysteresis of %ld", 
+		 image_cache->params.limit, image_cache->params.hysteresis);
+
+	slen += snprintf(string + slen, size - slen, 
+		 "<p>Total bitmap size in use %ld (in %d)",
+			 image_cache->total_bitmap_size, 
+			 image_cache->bitmap_count);
+
+	op_count = image_cache->hit_count + 
+		image_cache->miss_count + 
+		image_cache->fail_count;
+
+	slen += snprintf(string + slen, size - slen, 
+			 "<p>Age %ds", image_cache->current_age / 1000);
+
+	slen += snprintf(string + slen, size - slen, 
+	"<p>Peak size %ld (in %d)", 
+	     image_cache->max_bitmap_size, 
+	     image_cache->max_bitmap_size_count );
+	slen += snprintf(string + slen, size - slen, 
+	"<p>Peak image count %d (size %ld)", 
+	     image_cache->max_bitmap_count, 
+	     image_cache->max_bitmap_count_size);
+
+	if (op_count > 0) {
+		uint64_t op_size;
+
+		op_size = image_cache->hit_size + 
+			image_cache->miss_size + 
+			image_cache->fail_size;
+
+	slen += snprintf(string + slen, size - slen, 
+		"<p>Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+		     op_count,
+		     image_cache->hit_count, 
+		     image_cache->miss_count,
+		     image_cache->fail_count,
+		     (image_cache->hit_count * 100) / op_count, 
+		     (image_cache->miss_count * 100) / op_count,
+			 (image_cache->fail_count * 100) / op_count);
+
+	slen += snprintf(string + slen, size - slen, 
+		"<p>Cache total/hit/miss/fail (size) %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64" (100%%/%"PRIu64"%%/%"PRIu64"%%/%"PRIu64"%%)", 
+		     op_size,
+		     image_cache->hit_size, 
+		     image_cache->miss_size,
+		     image_cache->fail_size,
+		     (image_cache->hit_size * 100) / op_size, 
+		     (image_cache->miss_size * 100) / op_size,
+		     (image_cache->fail_size * 100) / op_size);
+	}
+
+	slen += snprintf(string + slen, size - slen, 
+	"<p>Total images never rendered: %d (includes %d that were converted)",
+	     image_cache->total_unrendered,
+	     image_cache->specultive_miss_count);
+
+	slen += snprintf(string + slen, size - slen, 
+	"<p>Total number of excessive conversions: %d (from %d images converted more than once)",
+	     image_cache->total_extra_conversions,
+	     image_cache->total_extra_conversions_count);
+
+	slen += snprintf(string + slen, size - slen, 
+	"<p>Bitmap of size %d had most (%d) conversions",
+	     image_cache->peak_conversions_size,
+	     image_cache->peak_conversions);
+
+	return slen;
+}
+
+/* exported interface documented in image_cache.h */
+int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
+		const char *fmt)
+{
+	struct image_cache_entry_s *centry;
+	size_t slen = 0; /* current output string length */
+	int fmtc = 0; /* current index into format string */
+
+	centry = image_cache__findn(entryn);
+	if (centry == NULL)
+		return -1;
+
+	while((slen < size) && (fmt[fmtc] != 0)) {
+		if (fmt[fmtc] == '%') {
+			fmtc++;
+			switch (fmt[fmtc]) {
+			case 'e':
+				slen += snprintf(string + slen, size - slen,
+						"%d", entryn);
+				break;
+
+			case 'r':
+				slen += snprintf(string + slen, size - slen,
+						"%u", centry->redraw_count);
+				break;
+
+			case 'a':
+				slen += snprintf(string + slen, size - slen,
+						 "%.2f", (float)((image_cache->current_age -  centry->redraw_age)) / 1000);
+				break;
+				
+				
+			case 'c':
+				slen += snprintf(string + slen, size - slen,
+						"%d", centry->conversion_count);
+				break;
+
+			case 'g':
+				slen += snprintf(string + slen, size - slen,
+						"%.2f", (float)((image_cache->current_age -  centry->bitmap_age)) / 1000);
+				break;
+
+			case 'k':
+				slen += snprintf(string + slen, size - slen,
+						"%p", centry->content);
+				break;
+
+			case 's':
+				if (centry->bitmap != NULL) {
+					slen += snprintf(string + slen, 
+							 size - slen,
+							 "%ld", 
+							 centry->bitmap_size);
+				} else {
+					slen += snprintf(string + slen, 
+							 size - slen,
+							 "0");
+				}
+				break;
+			}
+			fmtc++;
+		} else {
+			string[slen] = fmt[fmtc];
+			slen++;
+			fmtc++;
+		}
+	}
+
+	/* Ensure that we NUL-terminate the output */
+	string[min(slen, size - 1)] = '\0';
+
+	return slen;
+}
+
 
 /* exported interface documented in image_cache.h */
 bool image_cache_redraw(struct content *c, 
