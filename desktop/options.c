@@ -88,7 +88,7 @@ char *option_accept_language = 0;
 /** Accept-Charset header. */
 char *option_accept_charset = 0;
 /** Preferred maximum size of memory cache / bytes. */
-int option_memory_cache_size = 2 * 1024 * 1024;
+int option_memory_cache_size = 12 * 1024 * 1024;
 /** Preferred expiry age of disc cache / days. */
 int option_disc_cache_age = 28;
 /** Whether to block advertisements */
