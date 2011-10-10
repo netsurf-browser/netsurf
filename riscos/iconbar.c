@@ -137,8 +137,6 @@ bool ro_gui_iconbar_click(wimp_pointer *pointer)
 		xosbyte1(osbyte_SCAN_KEYBOARD, 0 ^ 0x80, 0, &key_down);
 		if (key_down == 0)
 			ro_gui_hotlist_open();
-		else
-			ro_gui_debugwin_open();
 		break;
 	}
 

@@ -181,9 +181,6 @@ extern bool sched_active;
 extern os_t sched_time;
 bool schedule_run(void);
 
-/* in debugwin.c */
-void ro_gui_debugwin_open(void);
-
 /* in search.c */
 void ro_gui_search_init(void);
 void ro_gui_search_prepare(struct browser_window *g);
