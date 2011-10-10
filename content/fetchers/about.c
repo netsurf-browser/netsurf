@@ -392,21 +392,24 @@ static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
 struct about_handlers {
 	const char *name; /**< name to match in url */
+	int name_len;
+	lwc_string *lname; /**< Interned name */
 	fetch_about_handler handler; /* handler for the url */
 	bool hidden; /* Flag indicating if entry should be show in listing */
 };
 
-/* TODO: lwc_string identifiers, since they're compared to an lwc_string */
+/** List of about paths and their handlers */
 struct about_handlers about_handler_list[] = { 
-	{ "credits", fetch_about_credits_handler, false },
-	{ "licence", fetch_about_licence_handler, false },
-	{ "license", fetch_about_licence_handler, true },
-	{ "config", fetch_about_config_handler, false },
-	{ "Choices", fetch_about_choices_handler, false },
-	{ "testament", fetch_about_testament_handler, false },
-	{ "about", fetch_about_about_handler, true },
-	{ "logo", fetch_about_logo_handler, true },
-	{ "blank", fetch_about_blank_handler, true } /* The default */
+	{ "credits", SLEN("credits"), NULL, fetch_about_credits_handler, false },
+	{ "licence", SLEN("licence"), NULL, fetch_about_licence_handler, false },
+	{ "license", SLEN("license"), NULL, fetch_about_licence_handler, true },
+	{ "config", SLEN("config"), NULL, fetch_about_config_handler, false },
+	{ "Choices", SLEN("Choices"), NULL, fetch_about_choices_handler, false },
+	{ "testament", SLEN("testament"), NULL, fetch_about_testament_handler, false },
+	{ "about", SLEN("about"), NULL, fetch_about_about_handler, true },
+	{ "logo", SLEN("logo"), NULL, fetch_about_logo_handler, true },
+	/* The default */
+	{ "blank", SLEN("blank"), NULL, fetch_about_blank_handler, true } 
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) / sizeof(struct about_handlers))
@@ -491,12 +494,25 @@ fetch_about_config_handler_aborted:
 /** callback to initialise the about fetcher. */
 static bool fetch_about_initialise(lwc_string *scheme)
 {
+	unsigned int abt_loop = 0;
+	lwc_error error;
+
+	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
+		error = lwc_intern_string(about_handler_list[abt_loop].name, 
+					about_handler_list[abt_loop].name_len, 
+					&about_handler_list[abt_loop].lname);
+	}
+
 	return true;
 }
 
-/** callback to initialise the about fetcher. */
+/** callback to finalise the about fetcher. */
 static void fetch_about_finalise(lwc_string *scheme)
 {
+	unsigned int abt_loop = 0;
+	for (abt_loop = 0; abt_loop < about_handler_list_len; abt_loop++) {
+		lwc_string_unref(about_handler_list[abt_loop].lname);
+	}
 }
 
 /** callback to set up a about fetch context. */
@@ -511,6 +527,7 @@ fetch_about_setup(struct fetch *fetchh,
 	struct fetch_about_context *ctx;
 	unsigned int handler_loop;
 	lwc_string *path;
+	bool match;
 
 	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
@@ -522,9 +539,11 @@ fetch_about_setup(struct fetch *fetchh,
 	     handler_loop < about_handler_list_len; 
 	     handler_loop++) {
 		ctx->handler = about_handler_list[handler_loop].handler;
-		if (strcmp(about_handler_list[handler_loop].name,
-				lwc_string_data(path)) == 0)
+		if (lwc_string_isequal(path, 
+				       about_handler_list[handler_loop].lname, 
+				       &match) == lwc_error_ok && match) {
 			break;
+		}		
 	}
 
 	lwc_string_unref(path);
