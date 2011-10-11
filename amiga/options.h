@@ -64,7 +64,8 @@ extern int option_cookies_window_ysize;
 extern int option_cairo_renderer;
 extern bool option_direct_render;
 extern int option_amiga_ydpi;
-extern bool option_widescreen;
+extern int option_monitor_aspect_x;
+extern int option_monitor_aspect_y;
 extern bool option_accept_lang_locale;
 
 #define EXTRA_OPTION_DEFINE \
@@ -112,7 +113,8 @@ int option_cookies_window_ysize = 0; \
 int option_cairo_renderer = 1; \
 bool option_direct_render = false; \
 int option_amiga_ydpi = 72; \
-bool option_widescreen = false; \
+int option_monitor_aspect_x = 4; \
+int option_monitor_aspect_y = 3; \
 bool option_accept_lang_locale = true; \
 
 #define EXTRA_OPTION_TABLE \
@@ -160,6 +162,7 @@ bool option_accept_lang_locale = true; \
 { "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&option_direct_render}, \
 { "amiga_ydpi",	OPTION_INTEGER,	&option_amiga_ydpi}, \
-{ "widescreen",	OPTION_BOOL,	&option_widescreen}, \
+{ "monitor_aspect_x",	OPTION_INTEGER,	&option_monitor_aspect_x}, \
+{ "monitor_aspect_y",	OPTION_INTEGER,	&option_monitor_aspect_y}, \
 { "accept_lang_locale",	OPTION_BOOL,	&option_accept_lang_locale},
 #endif

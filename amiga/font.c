@@ -662,7 +662,7 @@ void ami_font_setdevicedpi(int id)
 
 	nscss_screen_dpi = INTTOFIX(option_amiga_ydpi);
 
-	if(id)
+	if(id && (option_monitor_aspect_x != 0) && (option_monitor_aspect_y != 0))
 	{
 		if(dih = FindDisplayInfo(id))
 		{
@@ -672,12 +672,12 @@ void ami_font_setdevicedpi(int id)
 				int xres = dinfo.Resolution.x;
 				int yres = dinfo.Resolution.y;
 
-				if(option_widescreen)
+				if((option_monitor_aspect_x != 4) || (option_monitor_aspect_y != 3))
 				{
 					/* AmigaOS sees 4:3 modes as square in the DisplayInfo database,
-					 * so we correct 16:10 modes to square for widescreen displays. */
-					xres = (xres * 16) / 4;
-					yres = (yres * 10) / 3;
+					 * so we correct other modes to "4:3 equiv" here. */
+					xres = (xres * option_monitor_aspect_x) / 4;
+					yres = (yres * option_monitor_aspect_y) / 3;
 				}
 
 				xdpi = (yres * ydpi) / xres;
