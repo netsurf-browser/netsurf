@@ -204,7 +204,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 	/* Record start point */
 	marker.start = pos - url_s;
 
-	marker.authority = marker.colon_first = marker.at =
+	marker.scheme_end = marker.authority = marker.colon_first = marker.at =
 			marker.colon_last = marker.path = marker.start;
 
 	/* Get scheme */
