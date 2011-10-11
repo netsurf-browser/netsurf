@@ -180,6 +180,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	if (fetch_about_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_about_imagecache_handler_aborted;
 
+	/* page head */
 	slen = snprintf(buffer, sizeof buffer, 
 			"<html>\n<head>\n"
 			"<title>NetSurf Browser Image Cache Status</title>\n"
@@ -196,12 +197,17 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 				      slen, FETCH_ERROR_NO_ERROR))
 		goto fetch_about_imagecache_handler_aborted;
 
+	/* image cache summary */
 	slen = image_cache_snsummaryf(buffer, sizeof(buffer), NULL);
+	if (slen >= (int) (sizeof(buffer))) 
+		goto fetch_about_imagecache_handler_aborted; /* overflow */
 
 	if (fetch_about_send_callback(FETCH_DATA, ctx, buffer, 
 				      slen, FETCH_ERROR_NO_ERROR))
 		goto fetch_about_imagecache_handler_aborted;
 
+
+	/* image cache entry table */
 	slen = snprintf(buffer, sizeof buffer, 
 			"<table class=\"config\">\n"
 			"<tr><th>Entry</th><th>Content Key</th><th>Redraw Count</th><th>Conversion Count</th><th>Last Redraw</th><th>Bitmap Age</th><th>Bitmap Size</th></tr>\n");
