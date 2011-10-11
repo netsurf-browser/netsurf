@@ -103,7 +103,7 @@ char *option_theme_path = 0; \
 char *option_theme_save = 0; \
 bool option_thumbnail_iconise = true; \
 bool option_interactive_help = true; \
-bool option_external_hotlists = true;
+bool option_external_hotlists = false;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
