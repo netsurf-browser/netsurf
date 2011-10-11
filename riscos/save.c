@@ -110,7 +110,8 @@ static void ro_gui_save_bounced(wimp_message *message);
 static bool ro_gui_save_object_native(hlcache_handle *h, char *path);
 static bool ro_gui_save_link(const char *url, const char *title, link_format format, char *path);
 static void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
-		const char *url, char *leaf_buf, char *icon_buf);
+		const char *url, char *leaf_buf, size_t leaf_len,
+		char *icon_buf, size_t icon_len);
 static bool ro_gui_save_create_thumbnail(hlcache_handle *h, const char *name);
 static void ro_gui_save_overwrite_confirmed(query_id, enum query_response res, void *p);
 static void ro_gui_save_overwrite_cancelled(query_id, enum query_response res, void *p);
@@ -271,7 +272,8 @@ void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
 
 	ro_gui_save_set_state(h, save_type,
 			h ? nsurl_access(content_get_url(h)) : url,
-			name_buf + leaf_offset, icon_buf);
+			name_buf + leaf_offset, FILENAME_MAX - leaf_offset,
+			icon_buf, sizeof(icon_buf));
 
 	ro_gui_set_icon_sprite(dialog_saveas, ICON_SAVE_ICON, saveas_area,
 			icon_buf);
@@ -375,7 +377,8 @@ void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
 	}
 
 	ro_gui_save_set_state(c, save_type, nsurl_access(content_get_url(c)),
-			save_leafname, icon_buf);
+			save_leafname, LEAFNAME_MAX,
+			icon_buf, sizeof(icon_buf));
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
@@ -414,8 +417,9 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 
 	gui_save_selection = s;
 
-	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, NULL, save_leafname,
-			icon_buf);
+	ro_gui_save_set_state(NULL, GUI_SAVE_TEXT_SELECTION, NULL,
+			save_leafname, LEAFNAME_MAX,
+			icon_buf, sizeof(icon_buf));
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
@@ -458,7 +462,8 @@ void ro_gui_drag_save_link(gui_save_type save_type, const char *url,
 		return;
 	}
 
-	ro_gui_save_set_state(NULL, save_type, url, save_leafname, icon_buf);
+	ro_gui_save_set_state(NULL, save_type, url, save_leafname, LEAFNAME_MAX,
+			icon_buf, sizeof(icon_buf));
 
 	gui_current_drag_type = GUI_DRAG_SAVE;
 
@@ -1027,7 +1032,7 @@ bool save_complete_gui_save(const char *path, const char *filename, size_t len,
 	}
 	snprintf(fullpath, namelen, "%s.%s", path, filename);
 	rotype = ro_content_filetype_from_mime_type(mime_type);
-	error = xosfile_save_stamped(fullpath, rotype, (byte *) sourcedata, 
+	error = xosfile_save_stamped(fullpath, rotype, (byte *) sourcedata,
 			(byte *) sourcedata + len);
 	free(fullpath);
 	if (error) {
@@ -1040,11 +1045,11 @@ bool save_complete_gui_save(const char *path, const char *filename, size_t len,
 }
 
 /**
-* wrapper for lib function htmlSaveFileFormat; front sets path from 
+* wrapper for lib function htmlSaveFileFormat; front sets path from
 * path + filename in a filesystem-specific way
 */
 
-int save_complete_htmlSaveFileFormat(const char *path, const char *filename, 
+int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
 		xmlDocPtr cur, const char *encoding, int format)
 {
 	os_error *error;
@@ -1263,13 +1268,15 @@ bool ro_gui_save_link(const char *url, const char *title, link_format format,
  * \param  h          content being saved
  * \param  save_type  type of save operation being performed
  * \param  url        used to determine leafname
- * \param  leaf_buf   buffer to receive suggested leafname, length at least
- *                    LEAFNAME_MAX
- * \param  icon_buf   buffer to receive sprite name, length at least 13
+ * \param  leaf_buf   buffer to receive suggested leafname.
+ * \param  leaf_len   size of buffer to receive suggested leafname.
+ * \param  icon_buf   buffer to receive sprite name.
+ * \param  icon_len   size of buffer to receive icon name.
  */
 
 void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
-		const char *url, char *leaf_buf, char *icon_buf)
+		const char *url, char *leaf_buf, size_t leaf_len,
+		char *icon_buf, size_t icon_len)
 {
 	/* filename */
 	const char *name = gui_save_table[save_type].name;
@@ -1278,6 +1285,8 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	utf8_convert_ret err;
 	char *local_name;
 	size_t i;
+
+	assert(icon_len >= 13);
 
 	/* parameters that we need to remember */
 	gui_save_current_type = save_type;
@@ -1318,8 +1327,8 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	}
 
 	/* filename is utf8 */
-	strncpy(leaf_buf, name, LEAFNAME_MAX);
-	leaf_buf[LEAFNAME_MAX - 1] = 0;
+	strncpy(leaf_buf, name, leaf_len);
+	leaf_buf[leaf_len - 1] = 0;
 
 	err = utf8_to_local_encoding(name, 0, &local_name);
 	if (err != UTF8_CONVERT_OK) {
