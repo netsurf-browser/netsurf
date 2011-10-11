@@ -586,6 +586,12 @@ static bool fetch_about_initialise(lwc_string *scheme)
 		error = lwc_intern_string(about_handler_list[abt_loop].name, 
 					about_handler_list[abt_loop].name_len, 
 					&about_handler_list[abt_loop].lname);
+		if (error != lwc_error_ok) {
+			while (abt_loop-- != 0) {
+				lwc_string_unref(about_handler_list[abt_loop].lname);
+			}
+			return false;
+		}
 	}
 
 	return true;
