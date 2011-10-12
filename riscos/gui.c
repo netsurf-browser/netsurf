@@ -181,16 +181,6 @@ wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */
 
-/** Previously registered signal handlers */
-static struct {
-	void (*sigabrt)(int);
-	void (*sigfpe)(int);
-	void (*sigill)(int);
-	void (*sigint)(int);
-	void (*sigsegv)(int);
-	void (*sigterm)(int);
-} prev_sigs;
-
 /** Accepted wimp user messages. */
 static ns_wimp_message_list task_messages = {
 	message_HELP_REQUEST,
@@ -337,6 +327,14 @@ nsurl *gui_get_resource_url(const char *path)
 
 static void gui_init(int argc, char** argv)
 {
+	struct {
+		void (*sigabrt)(int);
+		void (*sigfpe)(int);
+		void (*sigill)(int);
+		void (*sigint)(int);
+		void (*sigsegv)(int);
+		void (*sigterm)(int);
+	} prev_sigs;
 	char path[40];
 	os_error *error;
 	int length;
@@ -844,108 +842,66 @@ void gui_quit(void)
 
 void ro_gui_signal(int sig)
 {
-	void (*prev_handler)(int);
 	static const os_error error = { 1, "NetSurf has detected a serious "
 			"error and must exit. Please submit a bug report, "
 			"attaching the browser log file." };
+	os_colour old_sand, old_glass;
 
 	ro_gui_cleanup();
 
-	/* Get previous handler of this signal */
-	switch (sig) {
-		case SIGABRT:
-			prev_handler = prev_sigs.sigabrt;
-			break;
-		case SIGFPE:
-			prev_handler = prev_sigs.sigfpe;
-			break;
-		case SIGILL:
-			prev_handler = prev_sigs.sigill;
-			break;
-		case SIGINT:
-			prev_handler = prev_sigs.sigint;
-			break;
-		case SIGSEGV:
-			prev_handler = prev_sigs.sigsegv;
-			break;
-		case SIGTERM:
-			prev_handler = prev_sigs.sigterm;
-			break;
-		default:
-			/* Unexpected signal - force to default so we exit
-			 * cleanly */
-			prev_handler = SIG_DFL;
-			break;
-	}
-
-	if (prev_handler != SIG_IGN && prev_handler != SIG_DFL) {
-		/* User-registered handler, so call it direct */
-		prev_handler(sig);
-	} else if (prev_handler == SIG_DFL) {
-		/* Previous handler would be the default. However, if we
-		 * get here, it's going to be fatal, anyway, so bail,
-		 * after writing context to the log and informing the
-		 * user */
-
-		os_colour old_sand, old_glass;
-
-		xwimp_report_error_by_category(&error,
-				wimp_ERROR_BOX_GIVEN_CATEGORY |
-				wimp_ERROR_BOX_CATEGORY_ERROR <<
-					wimp_ERROR_BOX_CATEGORY_SHIFT,
-				"NetSurf", "!netsurf",
-				(osspriteop_area *) 1, "Quit", 0);
-		xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
-		xhourglass_on();
-		xhourglass_colours(0x0000ffff, 0x000000ff,
-				&old_sand, &old_glass);
-		options_dump(stderr);
-		/*rufl_dump_state();*/
+	xhourglass_on();
+	xhourglass_colours(0x0000ffff, 0x000000ff, &old_sand, &old_glass);
+	options_dump(stderr);
+	/*rufl_dump_state();*/
 
 #ifndef __ELF__
-		/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
-		int used;
-		xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
-		if (used) {
-			int curr_slot;
-			xwimp_slot_size(-1, -1, &curr_slot, 0, 0);
-			LOG(("saving WimpSlot, size 0x%x", curr_slot));
-			xosfile_save("$.NetSurf_Slot", 0x8000, 0,
-					(byte *) 0x8000,
-					(byte *) 0x8000 + curr_slot);
+	/* save WimpSlot and DA to files if NetSurf$CoreDump exists */
+	int used;
+	xos_read_var_val_size("NetSurf$CoreDump", 0, 0, &used, 0, 0);
+	if (used) {
+		int curr_slot;
+		xwimp_slot_size(-1, -1, &curr_slot, 0, 0);
+		LOG(("saving WimpSlot, size 0x%x", curr_slot));
+		xosfile_save("$.NetSurf_Slot", 0x8000, 0,
+				(byte *) 0x8000,
+				(byte *) 0x8000 + curr_slot);
 
-			if (__dynamic_num != -1) {
-				int size;
-				byte *base_address;
-				xosdynamicarea_read(__dynamic_num, &size,
-						&base_address, 0, 0, 0, 0, 0);
-				LOG(("saving DA %i, base %p, size 0x%x",
-						__dynamic_num,
-						base_address, size));
-				xosfile_save("$.NetSurf_DA",
-						(bits) base_address, 0,
-						base_address,
-						base_address + size);
-			}
+		if (__dynamic_num != -1) {
+			int size;
+			byte *base_address;
+			xosdynamicarea_read(__dynamic_num, &size,
+					&base_address, 0, 0, 0, 0, 0);
+			LOG(("saving DA %i, base %p, size 0x%x",
+					__dynamic_num,
+					base_address, size));
+			xosfile_save("$.NetSurf_DA",
+					(bits) base_address, 0,
+					base_address,
+					base_address + size);
 		}
+	}
 #else
-		/* Save WimpSlot and UnixLib managed DAs when UnixEnv$coredump
-		 * defines a coredump directory.  */
-		_kernel_oserror *err = __unixlib_write_coredump (NULL);
-		if (err != NULL)
-			LOG(("Coredump failed: %s", err->errmess));
+	/* Save WimpSlot and UnixLib managed DAs when UnixEnv$coredump
+	 * defines a coredump directory.  */
+	_kernel_oserror *err = __unixlib_write_coredump (NULL);
+	if (err != NULL)
+		LOG(("Coredump failed: %s", err->errmess));
 #endif
 
-		xhourglass_colours(old_sand, old_glass, 0, 0);
-		xhourglass_off();
+	xhourglass_colours(old_sand, old_glass, 0, 0);
+	xhourglass_off();
 
-		__write_backtrace(sig);
+	__write_backtrace(sig);
 
-		abort();
-	}
-	/* If we reach here, previous handler was either SIG_IGN or
-	 * the user-defined handler returned. In either case, we have
-	 * nothing to do */
+	xwimp_report_error_by_category(&error,
+			wimp_ERROR_BOX_GIVEN_CATEGORY |
+			wimp_ERROR_BOX_CATEGORY_ERROR <<
+				wimp_ERROR_BOX_CATEGORY_SHIFT,
+			"NetSurf", "!netsurf",
+			(osspriteop_area *) 1, "Quit", 0);
+	xos_cli("Filer_Run <Wimp$ScrapDir>.WWW.NetSurf.Log");
+
+	_Exit(sig);
 }
 
 
