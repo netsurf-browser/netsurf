@@ -97,7 +97,7 @@ struct bitmap *image_cache_find_bitmap(struct content *c);
 bool image_cache_speculate(struct content *c);
 
 /**
- * Fill a buffer with an option using a format.
+ * Fill a buffer with information about a cache entry using a format.
  *
  * The format string is copied into the output buffer with the
  * following replaced:
@@ -116,7 +116,54 @@ bool image_cache_speculate(struct content *c);
 int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 			 const char *fmt);
 
-/** cache summary */
+/**
+ * Fill a buffer with information about the image cache using a format.
+ *
+ * The format string is copied into the output buffer with the
+ * following replaced:
+ *
+ * a Configured cache limit size
+ * b Configured cache hysteresis size
+ * c Current caches total consumed size
+ * d Number of images currently in the cache
+ * e The age of the cache
+ * f The largest amount of space the cache has occupied since initialisation
+ * g The number of objetcs when the cache was at its largest
+ * h The largest number of images in the cache since initialisation
+ * i The size of the cache when the largest number of objects occoured
+ * j The total number of read operations performed on the cache
+ * k The total number of read operations satisfied from the cache without 
+ *     conversion.
+ * l The total number of read operations satisfied from the cache which 
+ *     required a conversion.
+ * m The total number of read operations which could not be sucessfully 
+ *     returned. ie. not available in cache and conversion failed.
+ * n The total size  of read operations performed on the cache
+ * o The total size of read operations satisfied from the cache without 
+ *     conversion.
+ * q The total size of read operations satisfied from the cache which 
+ *     required a conversion.
+ * r The total size of read operations which could not be sucessfully 
+ *     returned. ie. not available in cache and conversion failed.
+ * s The number of images which were placed in the cache but never read.
+ * t The number of images that were converted on insertion into teh cache which were subsequently never used.
+ * u The number of times an image was converted after the first
+ * v The number of images that had extra conversions performed.
+ * w Size of the image that was converted (read missed cache) highest number 
+ *     of times.
+ * x The number of times the image that was converted (read missed cache) 
+ *     highest number of times.
+ *
+ * format modifiers:
+ * A p before the value modifies the replacement to be a percentage.
+ *
+ *
+ * \param string  The buffer in which to place the results.
+ * \param size    The size of the string buffer.
+ * \param fmt     The format string.
+ * \return The number of bytes written to \a string or -1 on error
+ */
+
 int image_cache_snsummaryf(char *string, size_t size, const char *fmt);
 
 /********* Image content handler generic cache callbacks ************/

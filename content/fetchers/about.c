@@ -198,7 +198,21 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 		goto fetch_about_imagecache_handler_aborted;
 
 	/* image cache summary */
-	slen = image_cache_snsummaryf(buffer, sizeof(buffer), NULL);
+	slen = image_cache_snsummaryf(buffer, sizeof(buffer), 
+		"<p>Configured limit of %a hysteresis of %b"
+		"<p>Total bitmap size in use %c (in %d)"
+		"<p>Age %es"
+		"<p>Peak size %f (in %g)"
+		"<p>Peak image count %h (size %i)"
+		"<p>Cache total/hit/miss/fail (counts) %j/%k/%l/%m "
+				"(%pj%%/%pk%%/%pl%%/%pm%%)"
+		"<p>Cache total/hit/miss/fail (size) %n/%o/%q/%r "
+				"(%pn%%/%po%%/%pq%%/%pr%%)" 
+		"<p>Total images never rendered: %s "
+				"(includes %t that were converted)"
+		"<p>Total number of excessive conversions: %u "
+				"(from %v images converted more than once)"
+		"<p>Bitmap of size %w had most (%x) conversions");
 	if (slen >= (int) (sizeof(buffer))) 
 		goto fetch_about_imagecache_handler_aborted; /* overflow */
 
@@ -210,7 +224,13 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	/* image cache entry table */
 	slen = snprintf(buffer, sizeof buffer, 
 			"<table class=\"config\">\n"
-			"<tr><th>Entry</th><th>Content Key</th><th>Redraw Count</th><th>Conversion Count</th><th>Last Redraw</th><th>Bitmap Age</th><th>Bitmap Size</th></tr>\n");
+			"<tr><th>Entry</th>"
+			"<th>Content Key</th>"
+			"<th>Redraw Count</th>"
+			"<th>Conversion Count</th>"
+			"<th>Last Redraw</th>"
+			"<th>Bitmap Age</th>"
+			"<th>Bitmap Size</th></tr>\n");
 	do {
 		res = image_cache_snentryf(buffer + slen, sizeof buffer - slen,
 				cent_loop,

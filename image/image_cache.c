@@ -36,7 +36,7 @@
  */
 typedef unsigned int cache_age;
 
-/** Image cache entry 
+/** Image cache entry
  */
 struct image_cache_entry_s {
 	struct image_cache_entry_s *next; /* next cache entry in list */
@@ -57,7 +57,7 @@ struct image_cache_entry_s {
 	int conversion_count; /**< Number of times image has been converted */
 };
 
-/** Current state of the cache. 
+/** Current state of the cache.
  *
  * Global state of the cache. entries "age" is determined based on a
  * monotonically incrementing operation count. This avoids issues with
@@ -69,16 +69,16 @@ struct image_cache_s {
 	struct image_cache_parameters params;
 
 	/** The "age" of the current operation */
-	cache_age current_age; 
+	cache_age current_age;
 
 	/* The objects the cache holds */
-	struct image_cache_entry_s *entries; 
+	struct image_cache_entry_s *entries;
 
 
 	/* Statistics for management algorithm */
 
 	/** total size of bitmaps currently allocated */
-	size_t total_bitmap_size; 
+	size_t total_bitmap_size;
 
 	/** Total count of bitmaps currently allocated */
 	int bitmap_count;
@@ -94,38 +94,38 @@ struct image_cache_s {
 	size_t max_bitmap_count_size;
 
 	/** Bitmap was not available at plot time required conversion */
-	int miss_count; 
-	uint64_t miss_size; 
+	int miss_count;
+	uint64_t miss_size;
 	/** Bitmap was available at plot time required no conversion */
 	int hit_count;
-	uint64_t hit_size; 
+	uint64_t hit_size;
 	/** Bitmap was not available at plot time and required
 	 * conversion which failed.
-	 */ 
-	int fail_count; 
-	uint64_t fail_size; 
+	 */
+	int fail_count;
+	uint64_t fail_size;
 
 	/* Cache entry freed without ever being redrawn */
-	int total_unrendered; 
+	int total_unrendered;
 	/** Bitmap was available but never required - wasted conversions */
-	int specultive_miss_count; 
+	int specultive_miss_count;
 
 	/** Total number of additional (after the first) conversions */
 	int total_extra_conversions;
 	/** counts total number of images with more than one conversion */
-	int total_extra_conversions_count; 
+	int total_extra_conversions_count;
 
 	/** Bitmap with most conversions was converted this many times */
-	int peak_conversions; 
+	int peak_conversions;
 	/** Size of bitmap with most conversions */
-	unsigned int peak_conversions_size; 
+	unsigned int peak_conversions_size;
 };
 
 /** image cache state */
 static struct image_cache_s *image_cache = NULL;
 
 
-/** Find the nth cache entry 
+/** Find the nth cache entry
  */
 static struct image_cache_entry_s *image_cache__findn(int entryn)
 {
@@ -161,17 +161,15 @@ static void image_cache_stats_bitmap_add(struct image_cache_entry_s *centry)
 	image_cache->bitmap_count++;
 
 	if (image_cache->total_bitmap_size > image_cache->max_bitmap_size) {
-		image_cache->max_bitmap_size = image_cache->total_bitmap_size; 
+		image_cache->max_bitmap_size = image_cache->total_bitmap_size;
 		image_cache->max_bitmap_size_count = image_cache->bitmap_count;
-			
+
 	}
 
 	if (image_cache->bitmap_count > image_cache->max_bitmap_count) {
-		image_cache->max_bitmap_count = image_cache->bitmap_count; 
+		image_cache->max_bitmap_count = image_cache->bitmap_count;
 		image_cache->max_bitmap_count_size = image_cache->total_bitmap_size;
 	}
-
-	centry->conversion_count++;
 
 	if (centry->conversion_count == 2) {
 		image_cache->total_extra_conversions_count++;
@@ -209,22 +207,22 @@ static void image_cache__unlink(struct image_cache_entry_s *centry)
 			image_cache->entries = centry->next;
 		} else {
 			/* empty list */
-			image_cache->entries = NULL; 
+			image_cache->entries = NULL;
 		}
 	} else {
 		centry->prev->next = centry->next;
 
 		if (centry->next != NULL) {
 			centry->next->prev = centry->prev;
-		} 
+		}
 	}
 }
 
-static void image_cache__free_bitmap(struct image_cache_entry_s *centry) 
+static void image_cache__free_bitmap(struct image_cache_entry_s *centry)
 {
 	if (centry->bitmap != NULL) {
 #ifdef IMAGE_CACHE_VERBOSE
-		LOG(("Freeing bitmap %p size %d age %d redraw count %d", 
+		LOG(("Freeing bitmap %p size %d age %d redraw count %d",
 		     centry->bitmap,
 		     centry->bitmap_size,
 		     image_cache->current_age - centry->bitmap_age,
@@ -265,11 +263,11 @@ static void image_cache__clean(struct image_cache_s *icache)
 	struct image_cache_entry_s *centry = icache->entries;
 
 	while (centry != NULL) {
-		if ((icache->current_age - centry->redraw_age) > 
+		if ((icache->current_age - centry->redraw_age) >
 		    icache->params.bg_clean_time) {
 			/* only consider older entries, avoids active entries */
-			if ((icache->total_bitmap_size > 
-			     (icache->params.limit - icache->params.hysteresis)) && 
+			if ((icache->total_bitmap_size >
+			     (icache->params.limit - icache->params.hysteresis)) &&
 			    (rand() > (RAND_MAX / 2))) {
 				image_cache__free_bitmap(centry);
 			}
@@ -282,18 +280,18 @@ static void image_cache__clean(struct image_cache_s *icache)
 static void image_cache__background_update(void *p)
 {
 	struct image_cache_s *icache = p;
-	
+
 	/* increment current cache age */
 	icache->current_age += icache->params.bg_clean_time;
-	
+
 #ifdef IMAGE_CACHE_VERBOSE
 	LOG(("Cache age %ds", icache->current_age / 1000));
 #endif
 
 	image_cache__clean(icache);
 
-	schedule((icache->params.bg_clean_time / 10), 
-		 image_cache__background_update, 
+	schedule((icache->params.bg_clean_time / 10),
+		 image_cache__background_update,
 		 icache);
 }
 
@@ -310,7 +308,7 @@ struct bitmap *image_cache_get_bitmap(const struct content *c)
 	if (centry->bitmap == NULL) {
 		if (centry->convert != NULL) {
 			centry->bitmap = centry->convert(centry->content);
-		} 
+		}
 
 		if (centry->bitmap != NULL) {
 			image_cache_stats_bitmap_add(centry);
@@ -335,8 +333,8 @@ bool image_cache_speculate(struct content *c)
 
 	/* If the cache is below its target usage and the bitmap is
 	 * small enough speculate.
-	 */	
-	if ((image_cache->total_bitmap_size < image_cache->params.limit) && 
+	 */
+	if ((image_cache->total_bitmap_size < image_cache->params.limit) &&
 	    (c->size <= image_cache->params.speculative_small)) {
 #ifdef IMAGE_CACHE_VERBOSE
 		LOG(("content size (%d) is smaller than minimum (%d)", c->size, SPECULATE_SMALL));
@@ -364,7 +362,7 @@ struct bitmap *image_cache_find_bitmap(struct content *c)
 }
 
 /* exported interface documented in image_cache.h */
-nserror 
+nserror
 image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 {
 	image_cache = calloc(1, sizeof(struct image_cache_s));
@@ -374,11 +372,11 @@ image_cache_init(const struct image_cache_parameters *image_cache_parameters)
 
 	image_cache->params = *image_cache_parameters;
 
-	schedule((image_cache->params.bg_clean_time / 10), 
-		 image_cache__background_update, 
+	schedule((image_cache->params.bg_clean_time / 10),
+		 image_cache__background_update,
 		 image_cache);
 
-	LOG(("Image cache initilised with a limit of %d hysteresis of %d", 
+	LOG(("Image cache initilised with a limit of %d hysteresis of %d",
 	     image_cache->params.limit, image_cache->params.hysteresis));
 
 	return NSERROR_OK;
@@ -391,47 +389,47 @@ nserror image_cache_fini(void)
 
 	schedule_remove(image_cache__background_update, image_cache);
 
-	LOG(("Size at finish %d (in %d)", 
-	     image_cache->total_bitmap_size, 
+	LOG(("Size at finish %d (in %d)",
+	     image_cache->total_bitmap_size,
 	     image_cache->bitmap_count));
 
 	while (image_cache->entries != NULL) {
 		image_cache__free_entry(image_cache->entries);
 	}
 
-	op_count = image_cache->hit_count + 
-		image_cache->miss_count + 
+	op_count = image_cache->hit_count +
+		image_cache->miss_count +
 		image_cache->fail_count;
 
 	LOG(("Age %ds", image_cache->current_age / 1000));
-	LOG(("Peak size %d (in %d)", 
-	     image_cache->max_bitmap_size, 
+	LOG(("Peak size %d (in %d)",
+	     image_cache->max_bitmap_size,
 	     image_cache->max_bitmap_size_count ));
-	LOG(("Peak image count %d (size %d)", 
-	     image_cache->max_bitmap_count, 
+	LOG(("Peak image count %d (size %d)",
+	     image_cache->max_bitmap_count,
 	     image_cache->max_bitmap_count_size));
 
 	if (op_count > 0) {
 		uint64_t op_size;
 
-		op_size = image_cache->hit_size + 
-			image_cache->miss_size + 
+		op_size = image_cache->hit_size +
+			image_cache->miss_size +
 			image_cache->fail_size;
 
-		LOG(("Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+		LOG(("Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)",
 		     op_count,
-		     image_cache->hit_count, 
+		     image_cache->hit_count,
 		     image_cache->miss_count,
 		     image_cache->fail_count,
-		     (image_cache->hit_count * 100) / op_count, 
+		     (image_cache->hit_count * 100) / op_count,
 		     (image_cache->miss_count * 100) / op_count,
 		     (image_cache->fail_count * 100) / op_count));
-		LOG(("Cache total/hit/miss/fail (size) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
+		LOG(("Cache total/hit/miss/fail (size) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)",
 		     op_size,
-		     image_cache->hit_size, 
+		     image_cache->hit_size,
 		     image_cache->miss_size,
 		     image_cache->fail_size,
-		     (image_cache->hit_size * 100) / op_size, 
+		     (image_cache->hit_size * 100) / op_size,
 		     (image_cache->miss_size * 100) / op_size,
 		     (image_cache->fail_size * 100) / op_size));
 	}
@@ -454,14 +452,14 @@ nserror image_cache_fini(void)
 }
 
 /* exported interface documented in image_cache.h */
-nserror image_cache_add(struct content *content, 
-			struct bitmap *bitmap, 
+nserror image_cache_add(struct content *content,
+			struct bitmap *bitmap,
 			image_cache_convert_fn *convert)
 {
 	struct image_cache_entry_s *centry;
 
 	/* bump the cache age by a ms to ensure multiple items are not
-	 * added at exactly the same time 
+	 * added at exactly the same time
 	 */
 	image_cache->current_age++;
 
@@ -492,7 +490,7 @@ nserror image_cache_add(struct content *content,
 		centry->bitmap = bitmap;
 	} else {
 		/* no bitmap, check to see if we should speculatively convert */
-		if ((centry->convert != NULL) && 
+		if ((centry->convert != NULL) &&
 		    (image_cache_speculate(content) == true)) {
 			centry->bitmap = centry->convert(centry->content);
 
@@ -530,75 +528,104 @@ nserror image_cache_remove(struct content *content)
 int image_cache_snsummaryf(char *string, size_t size, const char *fmt)
 {
 	size_t slen = 0; /* current output string length */
+	int fmtc = 0; /* current index into format string */
+	bool pct;
 	unsigned int op_count;
+	uint64_t op_size;
 
-	slen += snprintf(string + slen, size - slen, 
-		 "<p>Configured limit of %ld hysteresis of %ld", 
-		 image_cache->params.limit, image_cache->params.hysteresis);
-
-	slen += snprintf(string + slen, size - slen, 
-		 "<p>Total bitmap size in use %ld (in %d)",
-			 image_cache->total_bitmap_size, 
-			 image_cache->bitmap_count);
-
-	op_count = image_cache->hit_count + 
-		image_cache->miss_count + 
+	op_count = image_cache->hit_count +
+		image_cache->miss_count +
 		image_cache->fail_count;
 
-	slen += snprintf(string + slen, size - slen, 
-			 "<p>Age %ds", image_cache->current_age / 1000);
+	op_size = image_cache->hit_size +
+		image_cache->miss_size +
+		image_cache->fail_size;
 
-	slen += snprintf(string + slen, size - slen, 
-	"<p>Peak size %ld (in %d)", 
-	     image_cache->max_bitmap_size, 
-	     image_cache->max_bitmap_size_count );
-	slen += snprintf(string + slen, size - slen, 
-	"<p>Peak image count %d (size %ld)", 
-	     image_cache->max_bitmap_count, 
-	     image_cache->max_bitmap_count_size);
+	while((slen < size) && (fmt[fmtc] != 0)) {
+		if (fmt[fmtc] == '%') {
+			fmtc++;
 
-	if (op_count > 0) {
-		uint64_t op_size;
+			/* check for percentage modifier */
+			if (fmt[fmtc] == 'p') {
+				fmtc++;
+				pct = true;
+			} else {
+				pct = false;
+			}
 
-		op_size = image_cache->hit_size + 
-			image_cache->miss_size + 
-			image_cache->fail_size;
+#define FMTCHR(chr,fmt,var) case chr : \
+slen += snprintf(string + slen, size - slen, "%"#fmt, image_cache->var); break
 
-	slen += snprintf(string + slen, size - slen, 
-		"<p>Cache total/hit/miss/fail (counts) %d/%d/%d/%d (100%%/%d%%/%d%%/%d%%)", 
-		     op_count,
-		     image_cache->hit_count, 
-		     image_cache->miss_count,
-		     image_cache->fail_count,
-		     (image_cache->hit_count * 100) / op_count, 
-		     (image_cache->miss_count * 100) / op_count,
-			 (image_cache->fail_count * 100) / op_count);
+#define FMTPCHR(chr,fmt,var,div) \
+case chr :					\
+	if (pct) {							\
+		if (div > 0) {						\
+			slen += snprintf(string + slen, size - slen, "%zd", (uint64_t)((image_cache->var * 100) / div)); \
+		} else {						\
+			slen += snprintf(string + slen, size - slen, "100"); \
+		}							\
+	} else {							\
+		slen += snprintf(string + slen, size - slen, "%"#fmt, image_cache->var); \
+	} break
 
-	slen += snprintf(string + slen, size - slen, 
-		"<p>Cache total/hit/miss/fail (size) %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64" (100%%/%"PRIu64"%%/%"PRIu64"%%/%"PRIu64"%%)", 
-		     op_size,
-		     image_cache->hit_size, 
-		     image_cache->miss_size,
-		     image_cache->fail_size,
-		     (image_cache->hit_size * 100) / op_size, 
-		     (image_cache->miss_size * 100) / op_size,
-		     (image_cache->fail_size * 100) / op_size);
+
+			switch (fmt[fmtc]) {
+			case '%':
+				string[slen] = '%';
+				slen++;
+				break;
+
+			FMTCHR('a', zd, params.limit);
+			FMTCHR('b', zd, params.hysteresis);
+			FMTCHR('c', zd, total_bitmap_size);
+			FMTCHR('d', d, bitmap_count);
+			FMTCHR('e', d, current_age / 1000);
+			FMTCHR('f', zd, max_bitmap_size);
+			FMTCHR('g', d, max_bitmap_size_count);
+			FMTCHR('h', d, max_bitmap_count);
+			FMTCHR('i', zd, max_bitmap_count_size);
+
+
+			case 'j':
+				slen += snprintf(string + slen, size - slen,
+						 "%d", pct?100:op_count);
+				break;
+
+			FMTPCHR('k', d, hit_count, op_count);
+			FMTPCHR('l', d, miss_count, op_count);
+			FMTPCHR('m', d, fail_count, op_count);
+
+			case 'n':
+				slen += snprintf(string + slen, size - slen,
+						 "%zd", pct?100:op_size);
+				break;
+
+			FMTPCHR('o', zd, hit_size, op_size);
+			FMTPCHR('q', zd, miss_size, op_size);
+			FMTPCHR('r', zd, fail_size, op_size);
+
+			FMTCHR('s', d, total_unrendered);
+			FMTCHR('t', d, specultive_miss_count);
+			FMTCHR('u', d, total_extra_conversions);
+			FMTCHR('v', d, total_extra_conversions_count);
+			FMTCHR('w', d, peak_conversions_size);
+			FMTCHR('x', d, peak_conversions);
+
+
+			}
+#undef FMTCHR
+#undef FMTPCHR
+
+			fmtc++;
+		} else {
+			string[slen] = fmt[fmtc];
+			slen++;
+			fmtc++;
+		}
 	}
 
-	slen += snprintf(string + slen, size - slen, 
-	"<p>Total images never rendered: %d (includes %d that were converted)",
-	     image_cache->total_unrendered,
-	     image_cache->specultive_miss_count);
-
-	slen += snprintf(string + slen, size - slen, 
-	"<p>Total number of excessive conversions: %d (from %d images converted more than once)",
-	     image_cache->total_extra_conversions,
-	     image_cache->total_extra_conversions_count);
-
-	slen += snprintf(string + slen, size - slen, 
-	"<p>Bitmap of size %d had most (%d) conversions",
-	     image_cache->peak_conversions_size,
-	     image_cache->peak_conversions);
+	/* Ensure that we NUL-terminate the output */
+	string[min(slen, size - 1)] = '\0';
 
 	return slen;
 }
@@ -633,8 +660,8 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 				slen += snprintf(string + slen, size - slen,
 						 "%.2f", (float)((image_cache->current_age -  centry->redraw_age)) / 1000);
 				break;
-				
-				
+
+
 			case 'c':
 				slen += snprintf(string + slen, size - slen,
 						"%d", centry->conversion_count);
@@ -652,12 +679,12 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 
 			case 's':
 				if (centry->bitmap != NULL) {
-					slen += snprintf(string + slen, 
+					slen += snprintf(string + slen,
 							 size - slen,
-							 "%ld", 
+							 "%ld",
 							 centry->bitmap_size);
 				} else {
-					slen += snprintf(string + slen, 
+					slen += snprintf(string + slen,
 							 size - slen,
 							 "0");
 				}
@@ -679,9 +706,9 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 
 
 /* exported interface documented in image_cache.h */
-bool image_cache_redraw(struct content *c, 
+bool image_cache_redraw(struct content *c,
 			struct content_redraw_data *data,
-			const struct rect *clip, 
+			const struct rect *clip,
 			const struct redraw_context *ctx)
 {
 	bitmap_flags_t flags = BITMAPF_NONE;
@@ -697,7 +724,7 @@ bool image_cache_redraw(struct content *c,
 	if (centry->bitmap == NULL) {
 		if (centry->convert != NULL) {
 			centry->bitmap = centry->convert(centry->content);
-		} 
+		}
 
 		if (centry->bitmap != NULL) {
 			image_cache_stats_bitmap_add(centry);
@@ -715,7 +742,7 @@ bool image_cache_redraw(struct content *c,
 
 
 	/* update statistics */
-	centry->redraw_count++; 
+	centry->redraw_count++;
 	centry->redraw_age = image_cache->current_age;
 
 	/* do the plot */
@@ -750,4 +777,3 @@ content_type image_cache_content_type(void)
 {
 	return CONTENT_IMAGE;
 }
-
