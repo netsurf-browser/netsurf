@@ -133,14 +133,12 @@ static bool nssprite_convert(struct content *c)
 	for (uint32_t y = 0; y < sprite->height; y++) {
 		for (uint32_t x = 0; x < sprite->width; x++) {
 			int offset = 4 * (y * sprite->width + x);
-			uint32_t r = imagebuf[offset+3];
-			uint32_t g = imagebuf[offset+2];
-			uint32_t b = imagebuf[offset+1];
-			uint32_t a = imagebuf[offset];
-			imagebuf[offset] = r;
-			imagebuf[offset+1] = g;
-			imagebuf[offset+2] = b;
-			imagebuf[offset+3] = a;
+			uint32_t rgba = 0;
+
+			rgba |= imagebuf[offset] << 24;
+			rgba |= imagebuf[offset + 1] << 16;
+			rgba |= imagebuf[offset + 2] << 8;
+			rgba |= imagebuf[offset + 3];
 		}
 	}
 
