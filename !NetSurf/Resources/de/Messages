@@ -1258,6 +1258,7 @@ HelpInterfaceConfig10:Beim verkleinernden Ablegen eines Browserfensters auf dem 
 HelpInterfaceConfig11:Stellt die Standardeinstellungen wieder her.
 HelpInterfaceConfig12:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 HelpInterfaceConfig13:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
+HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 
 HelpLanguageConfig:Konfigurationsfenster für die Spracheinstellungen
 HelpLanguageConfig3:Das ist die aktuell eingestellte Sprache für die Bedienoberfläche.|MDiese Sprache wird genutzt, um NetSurf's Meldungen und die Texte der Dialogboxen und Menüs darzustellen.

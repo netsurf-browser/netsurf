@@ -833,7 +833,7 @@ wimp_window {
 
 wimp_window {
   template_name:"con_inter"
-  visible:136,384,880,968
+  visible:1212,764,1956,1472
   xscroll:0
   yscroll:0
   next:wimp_TOP
@@ -846,7 +846,7 @@ wimp_window {
   scroll_inner:wimp_COLOUR_VERY_LIGHT_GREY
   highlight_bg:wimp_COLOUR_CREAM
   extra_flags:
-  extent:0,-584,744,0
+  extent:0,-708,744,0
   title_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | 0x27000000
   work_flags:
   sprite_area:&1
@@ -964,7 +964,7 @@ wimp_window {
     text_and_sprite.validation:"Soptoff,opton"
   }
   wimp_icon {
-    extent:24,-552,188,-500
+    extent:24,-676,188,-624
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -974,7 +974,7 @@ wimp_window {
     text.validation:"R5,3"
   }
   wimp_icon {
-    extent:360,-552,524,-500
+    extent:360,-676,524,-624
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -984,7 +984,7 @@ wimp_window {
     text.validation:"R5,3"
   }
   wimp_icon {
-    extent:540,-560,724,-492
+    extent:540,-684,724,-616
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -992,6 +992,36 @@ wimp_window {
     text.text:"Instellen"
     text.size:*
     text.validation:"R6,3"
+  }
+  wimp_icon {
+    extent:16,-592,728,-496
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
+    text.text:""
+    text.size:*
+    text.validation:"R4"
+  }
+  wimp_icon {
+    extent:36,-524,240,-480
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
+    text_and_sprite.text:"Hotlist"
+    text_and_sprite.size:23
+    text_and_sprite.validation:""
+  }
+  wimp_icon {
+    extent:32,-576,728,-532
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_SPRITE | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_BUTTON_RADIO
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
+    text_and_sprite.text:"Use external hotlist apps when available"
+    text_and_sprite.size:*
+    text_and_sprite.validation:"Soptoff,opton"
   }
 }
 
@@ -2798,7 +2828,7 @@ wimp_window {
   xscroll:0
   yscroll:0
   next:wimp_TOP
-  window_flags:wimp_WINDOW_MOVEABLE | wimp_WINDOW_SCROLL_REPEAT | wimp_WINDOW_IGNORE_XEXTENT | wimp_WINDOW_IGNORE_YEXTENT | wimp_WINDOW_BOUNDED_ONCE | wimp_WINDOW_BACK_ICON | wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_VSCROLL | wimp_WINDOW_HSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_NEW_FORMAT
+  window_flags:wimp_WINDOW_MOVEABLE | wimp_WINDOW_SCROLL_REPEAT | wimp_WINDOW_IGNORE_XEXTENT | wimp_WINDOW_IGNORE_YEXTENT | wimp_WINDOW_BOUNDED_ONCE | wimp_WINDOW_BACK_ICON | wimp_WINDOW_CLOSE_ICON | wimp_WINDOW_TITLE_ICON | wimp_WINDOW_TOGGLE_ICON | wimp_WINDOW_VSCROLL | wimp_WINDOW_SIZE_ICON | wimp_WINDOW_HSCROLL | wimp_WINDOW_NEW_FORMAT
   title_fg:wimp_COLOUR_BLACK
   title_bg:wimp_COLOUR_LIGHT_GREY
   work_fg:wimp_COLOUR_BLACK

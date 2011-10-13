@@ -34,6 +34,7 @@
 #define INTERFACE_DEFAULT_BUTTON 11
 #define INTERFACE_CANCEL_BUTTON 12
 #define INTERFACE_OK_BUTTON 13
+#define INTERFACE_USE_EXTERNAL_HOTLIST 16
 
 
 static void ro_gui_options_interface_default(wimp_pointer *pointer);
@@ -52,6 +53,8 @@ bool ro_gui_options_interface_initialise(wimp_w w)
 			option_history_tooltip);
 	ro_gui_set_icon_selected_state(w, INTERFACE_THUMBNAIL_ICONISE_OPTION,
 			option_thumbnail_iconise);
+	ro_gui_set_icon_selected_state(w, INTERFACE_USE_EXTERNAL_HOTLIST,
+			option_external_hotlists);
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_button(w, INTERFACE_DEFAULT_BUTTON,
@@ -77,6 +80,8 @@ void ro_gui_options_interface_default(wimp_pointer *pointer)
 			INTERFACE_HISTORY_TOOLTIP_OPTION, true);
 	ro_gui_set_icon_selected_state(pointer->w,
 			INTERFACE_THUMBNAIL_ICONISE_OPTION, true);
+	ro_gui_set_icon_selected_state(pointer->w,
+			INTERFACE_USE_EXTERNAL_HOTLIST, false);
 }
 
 bool ro_gui_options_interface_ok(wimp_w w)
@@ -91,6 +96,8 @@ bool ro_gui_options_interface_ok(wimp_w w)
 			INTERFACE_HISTORY_TOOLTIP_OPTION);
 	option_thumbnail_iconise = ro_gui_get_icon_selected_state(w,
 			INTERFACE_THUMBNAIL_ICONISE_OPTION);
+	option_external_hotlists = ro_gui_get_icon_selected_state(w,
+			INTERFACE_USE_EXTERNAL_HOTLIST);
 
 	ro_gui_save_options();
 	return true;

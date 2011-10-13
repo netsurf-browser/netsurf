@@ -1264,6 +1264,7 @@ HelpInterfaceConfig10:Ceci indique si Netsurf doit utiliser une miniature lors d
 HelpInterfaceConfig11:\Srevenir aux valeurs par défaut des options d'Interface.
 HelpInterfaceConfig12:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options d'Interface précédemment sauvegardées.
 HelpInterfaceConfig13:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
+HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 
 HelpLanguageConfig:\Tfenêtre de configuration de langue.
 HelpLanguageConfig3:\Tla langue d'interface sélectionnée actuellement.|MLa langue d'interface est la langue utilisée pour les messages et les boîtes de dialogue de Netsurf.

@@ -1267,6 +1267,7 @@ HelpInterfaceConfig10:This indicates whether NetSurf will use a thumbnail when i
 HelpInterfaceConfig11:\Sreset the Interface options back to their default values.
 HelpInterfaceConfig12:\Sclose this \w without saving changes.|M\Areturn the interface options to the last saved configuration.
 HelpInterfaceConfig13:\Ssave these settings and close the \w.|M\Asave these settings without closing the \w.
+HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
 
 HelpLanguageConfig:\Tlanguage configuration \w
 HelpLanguageConfig3:\Tcurrently selected interface language.|MThe interface language is the language used for NetSurf's messages and dialogue boxes.
