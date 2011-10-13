@@ -67,7 +67,7 @@ struct s_context_info ctxinfo;
 
 static struct s_context_info * get_context_info( struct gui_window * gw, short mx, short my )
 {
-    int posx, posy;
+	int posx, posy;
 	struct box *box;
 	struct box *file_box = 0;
 	hlcache_handle *h;
@@ -79,9 +79,9 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 
 	ctxinfo.flags = 0;
 
-    browser_get_rect( gw, BR_CONTENT, &bwrect );
-	mx = mx - bwrect.g_x;
-	my = my - bwrect.g_y;
+	browser_get_rect( gw, BR_CONTENT, &bwrect );
+	mx -= bwrect.g_x;
+	my -= bwrect.g_y;
 	if( (mx < 0 || mx > bwrect.g_w) || (my < 0 || my > bwrect.g_h) ){
 		// TODO: check for urlinput location
 		// and set CNT_URLINPUT
@@ -89,13 +89,15 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	}
 
 	if (!bw->current_content || content_get_type(h) != CONTENT_HTML){
-        return(&ctxinfo);
+		return(&ctxinfo);
 	}
 
 	ctxinfo.flags |= CNT_BROWSER;
 	memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
 	browser_window_get_contextual_content(
-		gw->browser->bw, mx, my,
+		gw->browser->bw,
+		mx+gw->browser->scroll.current.x, 
+		my+gw->browser->scroll.current.y,
 		(struct contextual_content*)&ctxinfo.ccdata
 	);
 	if( ctxinfo.ccdata.link_url ){
@@ -112,11 +114,11 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	box_y = box->margin[TOP];
 
 	while ((box = box_at_point(box, mx+gw->browser->scroll.current.x, my+gw->browser->scroll.current.y, &box_x, &box_y, &h)))
-    {
-        if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
+	{
+		if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
 			continue;
 		if (box->gadget)
-        {
+        	{
 			switch (box->gadget->type)
 			{
 				case GADGET_TEXTBOX:
@@ -129,65 +131,67 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 
 				default: break;
 			}
-         }
-    }
-    return( &ctxinfo );
+         	}
+    	}
+	return( &ctxinfo );
 }
 
 void context_popup( struct gui_window * gw, short x, short y )
 {
-	#define POP_FIRST_ITEM POP_CTX_CUT_SEL
-	#define POP_LAST_ITEM POP_CTX_VIEW_SOURCE
-    OBJECT * pop;
-    int choice;
-    struct s_context_info * ctx;
+
+#define POP_FIRST_ITEM POP_CTX_CUT_SEL
+#define POP_LAST_ITEM POP_CTX_VIEW_SOURCE
+
+	OBJECT * pop;
+	int choice;
+	struct s_context_info * ctx;
 	unsigned long size;
 	char * data;
 	FILE * fp_tmpfile;
 	char * tempfile;
 	int err = 0;
 
-    pop = get_tree( POP_CTX );
-    if( pop == NULL )
-        return;
+	pop = get_tree( POP_CTX );
+	if( pop == NULL )
+        	return;
 	ctx = get_context_info( gw, x, y );
 
     /*
         Disable all items by default:
     */
-    for( choice = POP_FIRST_ITEM; choice<=POP_LAST_ITEM; choice++ ){
+	for( choice = POP_FIRST_ITEM; choice<=POP_LAST_ITEM; choice++ ){
 		SET_BIT(pop[ choice ].ob_state, DISABLED, 1);
-    }
+	}
 
-    if( ctx->flags & CNT_INTERACTIVE ){
-        SET_BIT(pop[ POP_CTX_PASTE_SEL ].ob_state, DISABLED, 0);
-    }
+	if( ctx->flags & CNT_INTERACTIVE ){
+        	SET_BIT(pop[ POP_CTX_PASTE_SEL ].ob_state, DISABLED, 0);
+    	}
 
 	if( (ctx->flags & CNT_BROWSER) ){
 		SET_BIT(pop[ POP_CTX_SELECT_ALL ].ob_state, DISABLED, 0);
 		SET_BIT(pop[ POP_CTX_COPY_SEL ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_VIEW_SOURCE ].ob_state, DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_VIEW_SOURCE ].ob_state, DISABLED, 0);
 	}
 
-    if( ctx->flags & CNT_HREF ){
-        SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_COPY_LINK ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
-    }
+	if( ctx->flags & CNT_HREF ){
+		SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
+        	SET_BIT(pop[ POP_CTX_COPY_LINK ].ob_state, DISABLED, 0);
+        	SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
+    	}
 
-    if( ctx->flags & CNT_IMG ){
-        SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_COPY_URL ].ob_state, DISABLED, 0);
-        SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
-    }
+	if( ctx->flags & CNT_IMG ){
+		SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_COPY_URL ].ob_state, DISABLED, 0);
+		SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
+	}
 
-    choice = MenuPopUp(
-        pop, x, y,
-        -1, -1, -1,
-        P_WNDW + P_CHCK
-    );
+	choice = MenuPopUp(
+		pop, x, y,
+		-1, -1, -1,
+		P_WNDW + P_CHCK
+	);
 
-    switch( choice ){
+	switch( choice ){
 		case POP_CTX_COPY_SEL:
 			browser_window_key_press( gw->browser->bw, KEY_COPY_SELECTION );
 		break;
@@ -256,7 +260,9 @@ void context_popup( struct gui_window * gw, short x, short y )
 		break;
 
 		default: break;
-    }
+	}
+
 #undef POP_FIRST_ITEM
 #undef POP_LAST_ITEM
+
 }
