@@ -229,6 +229,7 @@ static ns_wimp_message_list task_messages = {
 		message_PRINT_SAVE,
 		message_PRINT_ERROR,
 		message_PRINT_TYPE_ODD,
+		message_HOTLIST_ADD_URL,
 		message_HOTLIST_CHANGED,
 		0
 	}

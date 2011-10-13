@@ -47,6 +47,7 @@
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
 #include "utils/utils.h"
 #include "utils/url.h"
 
@@ -60,6 +61,7 @@ static bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action);
 static void ro_gui_hotlist_toolbar_click(button_bar_action action);
 static void ro_gui_hotlist_addurl_bounce(wimp_message *message);
+static void ro_gui_hotlist_scheduled_callback(void *p);
 
 struct ro_treeview_callbacks ro_hotlist_treeview_callbacks = {
 	ro_gui_hotlist_toolbar_click,
@@ -458,25 +460,23 @@ void ro_gui_hotlist_add_page(const char *url)
 	if (url == NULL)
 		return;
 
-	/* First pass the page to NetSurf's own hotlist. */
-
-	hotlist_add_page(url);
-
-	/* Then pass it on to any helper applications that might be
-	 * interested.
-	 *
-	 * The RMA storage is freed on receipt of a Message_HotlistChanged or
-	 * a bounce from Message_HotlistAddURL.  Some clients don't seem to
-	 * bother sending back a Message_HotlistChanged, so in this case the
-	 * strings are left in situ in RMA and cleared the next time we need
-	 * to send a message.
+	/* If we're not using external hotlists, add the page to NetSurf's
+	 * own hotlist and return...
 	 */
 
-	if (hotlist_url != NULL || hotlist_title != NULL)
-		ro_gui_hotlist_add_cleanup();
-
-	if (!option_external_hotlists)
+	if (!option_external_hotlists) {
+		hotlist_add_page(url);
 		return;
+	}
+
+	/* ...otherwise try broadcasting the details to any other
+	 * interested parties.  If no-one answers, we'll fall back to
+	 * NetSurf's hotlist anyway when the message bounces.
+	 */
+
+	ro_gui_hotlist_add_cleanup();
+
+	LOG(("Sending Hotlist AddURL to potential hotlist clients."));
 
 	data = urldb_get_url_data(url);
 	if (data == NULL)
@@ -503,6 +503,12 @@ void ro_gui_hotlist_add_page(const char *url)
 	if (!ro_message_send_message(wimp_USER_MESSAGE_RECORDED, &message, 0,
 			ro_gui_hotlist_addurl_bounce))
 		ro_gui_hotlist_add_cleanup();
+
+	/* Listen for the next Null poll, as an indication that the
+	 * message didn't bounce.
+	 */
+
+	schedule(0, ro_gui_hotlist_scheduled_callback, NULL);
 }
 
 
@@ -515,6 +521,30 @@ void ro_gui_hotlist_add_page(const char *url)
 static void ro_gui_hotlist_addurl_bounce(wimp_message *message)
 {
 	LOG(("Hotlist AddURL Bounced"));
+
+	if (hotlist_url != NULL)
+		hotlist_add_page(hotlist_url);
+
+	ro_gui_hotlist_add_cleanup();
+
+	/* There's no longer any need to listen for the next Null poll. */
+
+	schedule_remove(ro_gui_hotlist_scheduled_callback, NULL);
+}
+
+
+/**
+ * Callback to schedule for the next available Null poll, by which point
+ * a hotlist client will have claimed the Message_HotlistAddURL and any
+ * details in RMA can safely be discarded.
+ *
+ * \param *p			Unused data pointer.
+ */
+
+static void ro_gui_hotlist_scheduled_callback(void *p)
+{
+	LOG(("Hotlist AddURL was claimed by something."));
+
 	ro_gui_hotlist_add_cleanup();
 }
 
