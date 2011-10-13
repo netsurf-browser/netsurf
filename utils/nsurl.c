@@ -815,10 +815,14 @@ static nserror nsurl__create_from_section(const char const *url_s,
 
 			if (!(flags & NSURL_F_NO_PORT)) {
 				/* There's a port */
-				sec_start = norm_start + colon - pegs->at + 1;
+				size_t skip = (pegs->at == pegs->authority) ?
+						1 : 0;
+				sec_start = norm_start + colon - pegs->at +
+						skip;
 				if (flags & NSURL_F_IS_HTTP &&
 						length -
-						(colon - pegs->at + 1) == 2 &&
+						(colon - pegs->at + skip) ==
+						2 &&
 						*sec_start == '8' &&
 						*(sec_start + 1) == '0') {
 					/* Scheme is http, and port is default
@@ -833,16 +837,19 @@ static nserror nsurl__create_from_section(const char const *url_s,
 				}
 
 				/* Add non-redundant ports to NetSurf URL */
-				sec_start = norm_start + colon - pegs->at + 1;
+				sec_start = norm_start + colon - pegs->at +
+						skip;
 				if (!(flags & NSURL_F_NO_PORT) &&
 						lwc_intern_string(sec_start,
-						length - (colon - pegs->at + 1),
+						length -
+						(colon - pegs->at + skip),
 						&url->port) != lwc_error_ok) {
 					return NSERROR_NOMEM;
 				}
 
 				/* update length for host */
-				length = colon - pegs->at;
+				skip = (pegs->at == pegs->authority) ? 0 : 1;
+				length = colon - pegs->at - skip;
 			}
 
 			/* host */
@@ -1004,6 +1011,7 @@ void nsurl__test(void)
 	int index = 0;
 	char *string;
 	size_t len;
+	const char *url;
 
 	/* Create base URL */
 	if (nsurl_create("http://a/b/c/d;p?q", &base) != NSERROR_OK) {
@@ -1046,6 +1054,44 @@ void nsurl__test(void)
 			}
 
 		} while (tests[++index].test != NULL);
+
+		nsurl_unref(base);
+	}
+
+	/* Other tests */
+
+	url = "http://www.netsurf-browser.org:8080/";
+	if (nsurl_create(url, &base) != NSERROR_OK) {
+		LOG(("Failed to create URL:\n\t\t%s.", url));
+
+	} else {
+		if (strcmp(nsurl_access(base), url) != 0)
+			LOG(("FAIL:\n\t\t%s\n\t\t--> %s",
+					url, nsurl_access(base)));
+
+		nsurl_unref(base);
+	}
+
+	url = "http://user@www.netsurf-browser.org:8080/hello";
+	if (nsurl_create(url, &base) != NSERROR_OK) {
+		LOG(("Failed to create URL:\n\t\t%s.", url));
+
+	} else {
+		if (strcmp(nsurl_access(base), url) != 0)
+			LOG(("FAIL:\n\t\t%s\n\t\t--> %s",
+					url, nsurl_access(base)));
+
+		nsurl_unref(base);
+	}
+
+	url = "http://user:password@www.netsurf-browser.org:8080/hello";
+	if (nsurl_create(url, &base) != NSERROR_OK) {
+		LOG(("Failed to create URL:\n\t\t%s.", url));
+
+	} else {
+		if (strcmp(nsurl_access(base), url) != 0)
+			LOG(("FAIL:\n\t\t%s\n\t\t--> %s",
+					url, nsurl_access(base)));
 
 		nsurl_unref(base);
 	}
