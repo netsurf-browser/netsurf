@@ -539,7 +539,6 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 	CMP_BROWSER b = w->browser;
 	if( w->browser->caret.current.g_w > 0 )
 		gui_window_remove_caret( w );
-
 	w->browser->caret.requested.g_x = x;
 	w->browser->caret.requested.g_y = y;
 	w->browser->caret.requested.g_w = 2;
@@ -579,14 +578,12 @@ void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	/* Untestet, favicon support has been dropped, so this is dead code. */
-
-/*
+	LOG((""));
 	struct bitmap *icon_bitmap;
-    icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
-    if (icon_bitmap != NULL) {
-        window_set_icon( g, icon_bitmap );
+	icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+	if (icon_bitmap != NULL) {
+        	window_set_icon( g, icon_bitmap );
 	}
-*/
 
 }
 

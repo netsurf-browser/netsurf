@@ -342,9 +342,8 @@ int window_destroy( struct gui_window * gw)
 	if( input_window == gw )
 		input_window = NULL;
 
-    window_set_icon( gw, NULL );
-
 	if( gw->root ) {
+		window_set_icon( gw, NULL );
 		if( gw->root->toolbar )
 			tb_destroy( gw->root->toolbar );
 
@@ -406,10 +405,11 @@ void window_open( struct gui_window * gw)
 
 void window_set_icon(struct gui_window * gw, struct bitmap * bmp )
 {
+	/*
     if( gw->icon != NULL ){
         bitmap_destroy( gw->icon );
         gw->icon = NULL;
-    }
+    }*/
     gw->icon = bmp;
 }
 
@@ -634,7 +634,7 @@ static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data )
 	LOG(("newtop: iw: %p, win: %p", input_window, win ));
 	assert( input_window != NULL );
 
-	window_redraw_controls(input_window, 0);
+	/* window_redraw_controls(input_window, 0); */
 }
 
 static void __CDECL evnt_window_shaded( WINDOW *win, short buff[8], void *data )
@@ -652,7 +652,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 	short x,y,w,h;
 	struct gui_window * gw = (struct gui_window*)data;
 
-    LOG((""));
+	LOG((""));
 
 	WindClear( win);
 	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h);
@@ -669,7 +669,12 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
         plotter->move( plotter, x, y );
         plotter->resize( plotter, w, h );
         plotter->clip(plotter, &clip );
-        plotter->bitmap( plotter, gw->icon, 0, 0, 0xffffff, BITMAPF_NONE );
+        plotter->bitmap_resize( plotter,  gw->icon, w, h  );
+        plotter->bitmap(
+			plotter,
+			( gw->icon->resized ) ? gw->icon->resized : gw->icon,
+			0, 0, 0xffffff, BITMAPF_NONE
+		);
 	}
 }
 
