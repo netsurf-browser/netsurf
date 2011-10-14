@@ -32,7 +32,12 @@ static const struct test_pairs create_tests[] = {
 	{ "http:",		"http:" },
 	{ "http:/",		"http:" },
 	{ "http://",		"http:" },
+	{ "http:a",		"http://a/" },
+	{ "http:a/",		"http://a/" },
+	{ "http:a/b",		"http://a/b" },
+	{ "http:/a",		"http://a/" },
 	{ "http:/a/b",		"http://a/b" },
+	{ "http://a",		"http://a/" },
 	{ "http://a/b",		"http://a/b" },
 
 	{ "http://www.netsurf-browser.org:8080/",
