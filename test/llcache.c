@@ -7,7 +7,10 @@
 #include "content/fetch.h"
 #include "content/llcache.h"
 #include "utils/ring.h"
+#include "utils/nsurl.h"
+#include "utils/schedule.h"
 #include "utils/url.h"
+#include "utils/utils.h"
 
 /******************************************************************************
  * Things that we'd reasonably expect to have to implement                    *
@@ -42,6 +45,16 @@ char *filename_from_path(char *path)
 		leafname += 1;
 
 	return strdup(leafname);
+}
+
+/* utils/schedule.h */
+void schedule(int t, schedule_callback_fn cb, void *pw)
+{
+}
+
+/* utils/schedule.h */
+void schedule_remove(schedule_callback_fn cb, void *pw)
+{
 }
 
 /* content/fetch.h */
@@ -93,6 +106,7 @@ char *url_to_path(const char *url)
  ******************************************************************************/
 
 #include "desktop/cookies.h"
+#include "desktop/gui.h"
 #include "desktop/tree.h"
 
 /* desktop/cookies.h -- used by urldb 
@@ -129,6 +143,12 @@ void fetch_file_register(void)
 {
 }
 
+/* desktop/gui.h -- used by image_cache through about: handler */
+nsurl* gui_get_resource_url(const char *path)
+{
+	return NULL;
+}
+
 /******************************************************************************
  * test: protocol handler                                                     *
  ******************************************************************************/
@@ -145,18 +165,18 @@ typedef struct test_context {
 
 static test_context *ring;
 
-bool test_initialise(const char *scheme)
+bool test_initialise(lwc_string *scheme)
 {
 	/* Nothing to do */
 	return true;
 }
 
-void test_finalise(const char *scheme)
+void test_finalise(lwc_string *scheme)
 {
 	/* Nothing to do */
 }
 
-void *test_setup_fetch(struct fetch *parent, const char *url, bool only_2xx, 
+void *test_setup_fetch(struct fetch *parent, nsurl *url, bool only_2xx, 
 		const char *post_urlenc, 
 		const struct fetch_multipart_data *post_multipart, 
 		const char **headers)
@@ -200,7 +220,7 @@ void test_process(test_context *ctx)
 	/** \todo Implement */
 }
 
-void test_poll(const char *scheme)
+void test_poll(lwc_string *scheme)
 {
 	test_context *ctx, *next;
 
@@ -259,24 +279,36 @@ int main(int argc, char **argv)
 	nserror error;
 	llcache_handle *handle;
 	llcache_handle *handle2;
+	lwc_string *scheme;
+	nsurl *url;
 	bool done = false;
 
 	/* Initialise subsystems */
-	url_init();
 	fetch_init();
-	fetch_add_fetcher("test", test_initialise, test_setup_fetch, 
+
+	if (lwc_intern_string("test", SLEN("test"), &scheme) != lwc_error_ok) {
+		fprintf(stderr, "Failed to intern \"test\"\n");
+		return 1;
+	}
+
+	fetch_add_fetcher(scheme, test_initialise, test_setup_fetch, 
 			test_start_fetch, test_abort_fetch, test_free_fetch, 
 			test_poll, test_finalise);
 
 	/* Initialise low-level cache */
-	error = llcache_initialise(query_handler, NULL);
+	error = llcache_initialise(query_handler, NULL, 1024 * 1024);
 	if (error != NSERROR_OK) {
 		fprintf(stderr, "llcache_initialise: %d\n", error);
 		return 1;
 	}
 
+	if (nsurl_create("http://www.netsurf-browser.org", &url) != NSERROR_OK) {
+		fprintf(stderr, "Failed creating url\n");
+		return 1;
+	}
+
 	/* Retrieve an URL from the low-level cache (may trigger fetch) */
-	error = llcache_handle_retrieve("http://www.netsurf-browser.org/",
+	error = llcache_handle_retrieve(url, 
 			LLCACHE_RETRIEVE_VERIFIABLE, NULL, NULL,
 			event_handler, &done, &handle);
 	if (error != NSERROR_OK) {
@@ -286,12 +318,11 @@ int main(int argc, char **argv)
 
 	/* Poll relevant components */
 	while (done == false) {
-		fetch_poll();
 		llcache_poll();
 	}
 
 	done = false;
-	error = llcache_handle_retrieve("http://www.netsurf-browser.org/",
+	error = llcache_handle_retrieve(url,
 			LLCACHE_RETRIEVE_VERIFIABLE, NULL, NULL,
 			event_handler, &done, &handle2);
 	if (error != NSERROR_OK) {
@@ -300,7 +331,6 @@ int main(int argc, char **argv)
 	}
 
 	while (done == false) {
-		fetch_poll();
 		llcache_poll();
 	}
 

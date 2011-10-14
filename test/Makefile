@@ -5,10 +5,12 @@ LDFLAGS := `pkg-config --libs libxml-2.0 libcurl`
 llcache_CFLAGS := `pkg-config --cflags libparserutils libwapcaplet`
 llcache_LDFLAGS := `pkg-config --libs libparserutils libwapcaplet`
 
-llcache_SRCS := content/fetch.c content/fetchers/fetch_curl.c \
-		content/fetchers/fetch_data.c content/llcache.c \
+llcache_SRCS := content/fetch.c content/fetchers/curl.c \
+		content/fetchers/about.c content/fetchers/data.c \
+		content/fetchers/resource.c content/llcache.c \
 		content/urldb.c desktop/options.c desktop/version.c \
-		utils/base64.c utils/hashtable.c utils/log.c \
+		image/image_cache.c \
+		utils/base64.c utils/hashtable.c utils/log.c utils/nsurl.c \
 		utils/messages.c utils/url.c utils/useragent.c utils/utf8.c \
 		utils/utils.c test/llcache.c
 
@@ -19,9 +21,13 @@ urldbtest_SRCS := content/urldb.c utils/url.c utils/utils.c utils/log.c \
 urldbtest_CFLAGS := -O2
 urldbtest_LDFLAGS :=
 
+nsurl_SRCS := utils/hashtable.c utils/log.c utils/messages.c utils/nsurl.c utils/utils.c test/nsurl.c
+nsurl_CFLAGS := `pkg-config --cflags libwapcaplet`
+nsurl_LDFLAGS := `pkg-config --libs libwapcaplet`
+
 .PHONY: all
 
-all: llcache urldbtest
+all: llcache urldbtest nsurl
 
 llcache: $(addprefix ../,$(llcache_SRCS))
 	$(CC) $(CFLAGS) $(llcache_CFLAGS) $^ -o $@ $(LDFLAGS) $(llcache_LDFLAGS)
@@ -29,7 +35,10 @@ llcache: $(addprefix ../,$(llcache_SRCS))
 urldbtest: $(addprefix ../,$(urldbtest_SRCS))
 	$(CC) $(CFLAGS) $(urldbtest_CFLAGS) $^ -o $@ $(LDFLAGS) $(urldbtest_LDFLAGS)
 
+nsurl: $(addprefix ../,$(nsurl_SRCS))
+	$(CC) $(CFLAGS) $(nsurl_CFLAGS) $^ -o $@ $(LDFLAGS) $(nsurl_LDFLAGS)
+
 .PHONY: clean
 
 clean:
-	$(RM) llcache urldbtest
+	$(RM) llcache urldbtest nsurl

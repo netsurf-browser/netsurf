@@ -35,10 +35,6 @@
 /* Define to enable NSURL debugging */
 #undef NSURL_DEBUG
 
-/* Define to enable NSURL testing */
-#undef NSURL_TEST
-
-
 static bool nsurl__is_unreserved(unsigned char c)
 {
 	/* From RFC3986 section 2.3 (unreserved characters) 
@@ -215,7 +211,6 @@ static void nsurl__get_string_markers(const char const *url_s,
 		pos++;
 
 		while (*pos != ':' && *pos != '\0') {
-
 			if (!isalnum(*pos) && *pos != '+' &&
 					*pos != '-' && *pos != '.') {
 				/* This character is not valid in the
@@ -284,10 +279,9 @@ static void nsurl__get_string_markers(const char const *url_s,
 	 * If this URL is not getting joined, we are less strict in the case of
 	 * http(s) and will accept any number of slashes, including 0.
 	 */
-	if (*pos != '\0' &&
-			((joining == false && is_http == true && *pos != '/') ||
-			(joining == true && is_http == true && *pos == '/') ||
-			(*pos == '/' && *(pos + 1) == '/'))) {
+	if ((*pos == '/' && *(pos + 1) == '/') ||
+			(is_http && ((joining && (*pos == '/')) || 
+					joining == false))) {
 		/* Skip over leading slashes */
 		if (is_http == false) {
 			if (*pos == '/') pos++;
@@ -301,7 +295,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 				marker.colon_last = marker.path = pos - url_s;
 
 		/* Need to get (or complete) the authority */
-		do {
+		while (*pos != '\0') {
 			if (*pos == '/' || *pos == '?' || *pos == '#') {
 				/* End of the authority */
 				break;
@@ -322,7 +316,9 @@ static void nsurl__get_string_markers(const char const *url_s,
 				/* Credentials @ host separator */
 				marker.at = pos - url_s;
 			}
-		} while (*(++pos) != '\0');
+
+			pos++;
+		}
 
 		marker.path = pos - url_s;
 
@@ -936,170 +932,6 @@ static void nsurl__dump(const nsurl *url)
 		LOG(("Fragment: %s", lwc_string_data(url->fragment)));
 }
 #endif
-
-
-#ifdef NSURL_TEST
-/**
- * Test nsurl
- */
-void nsurl__test(void)
-{
-	nsurl *base;
-	nsurl *joined;
-	struct test_pairs {
-		const char* test;
-		const char* res;
-	};
-
-	struct test_pairs tests[] = {
-		/* Normal Examples rfc3986 5.4.1 */
-		{ "g:h",		"g:h" },
-		{ "g",			"http://a/b/c/g" },
-		{ "./g",		"http://a/b/c/g" },
-		{ "g/",			"http://a/b/c/g/" },
-		{ "/g",			"http://a/g" },
-		{ "//g",		"http://g" /* [1] */ "/" },
-		{ "?y",			"http://a/b/c/d;p?y" },
-		{ "g?y",		"http://a/b/c/g?y" },
-		{ "#s",			"http://a/b/c/d;p?q#s" },
-		{ "g#s",		"http://a/b/c/g#s" },
-		{ "g?y#s",		"http://a/b/c/g?y#s" },
-		{ ";x",			"http://a/b/c/;x" },
-		{ "g;x",		"http://a/b/c/g;x" },
-		{ "g;x?y#s",		"http://a/b/c/g;x?y#s" },
-		{ "",			"http://a/b/c/d;p?q" },
-		{ ".",			"http://a/b/c/" },
-		{ "./",			"http://a/b/c/" },
-		{ "..",			"http://a/b/" },
-		{ "../",		"http://a/b/" },
-		{ "../g",		"http://a/b/g" },
-		{ "../..",		"http://a/" },
-		{ "../../",		"http://a/" },
-		{ "../../g",		"http://a/g" },
-
-		/* Abnormal Examples rfc3986 5.4.2 */
-		{ "../../../g",		"http://a/g" },
-		{ "../../../../g",	"http://a/g" },
-
-		{ "/./g",		"http://a/g" },
-		{ "/../g",		"http://a/g" },
-		{ "g.",			"http://a/b/c/g." },
-		{ ".g",			"http://a/b/c/.g" },
-		{ "g..",		"http://a/b/c/g.." },
-		{ "..g",		"http://a/b/c/..g" },
-
-		{ "./../g",		"http://a/b/g" },
-		{ "./g/.",		"http://a/b/c/g/" },
-		{ "g/./h",		"http://a/b/c/g/h" },
-		{ "g/../h",		"http://a/b/c/h" },
-		{ "g;x=1/./y",		"http://a/b/c/g;x=1/y" },
-		{ "g;x=1/../y",		"http://a/b/c/y" },
-
-		{ "g?y/./x",		"http://a/b/c/g?y/./x" },
-		{ "g?y/../x",		"http://a/b/c/g?y/../x" },
-		{ "g#s/./x",		"http://a/b/c/g#s/./x" },
-		{ "g#s/../x",		"http://a/b/c/g#s/../x" },
-
-		{ "http:g",		"http:g" /* [2] */ },
-
-		/* Extra tests */
-		{ " g",			"http://a/b/c/g" },
-		{ " http:/b/c",		"http://b/c" },
-		/* [1] Extra slash beyond rfc3986 5.4.1 example, since we're
-		 *     testing normalisation in addition to joining */
-		/* [2] Using the strict parsers option */
-		{ NULL,			NULL }
-	};
-	int index = 0;
-	char *string;
-	size_t len;
-	const char *url;
-
-	/* Create base URL */
-	if (nsurl_create("http://a/b/c/d;p?q", &base) != NSERROR_OK) {
-		LOG(("Failed to create base URL."));
-	} else {
-		if (nsurl_get(base, NSURL_WITH_FRAGMENT, &string, &len) !=
-				NSERROR_OK) {
-			LOG(("Failed to get string"));
-		} else {
-			LOG(("Testing nsurl_join with base %s", string));
-			free(string);
-		}
-
-		do {
-			if (nsurl_join(base, tests[index].test,
-					&joined) != NSERROR_OK) {
-				LOG(("Failed to join test URL."));
-			} else {
-				if (nsurl_get(joined, NSURL_WITH_FRAGMENT,
-						&string, &len) !=
-						NSERROR_OK) {
-					LOG(("Failed to get string"));
-				} else {
-					if (strcmp(tests[index].res,
-							string) == 0) {
-						LOG(("\tPASS: \"%s\"\t--> %s",
-							tests[index].test,
-							string));
-					} else {
-						LOG(("\tFAIL: \"%s\"\t--> %s",
-							tests[index].test,
-							string));
-						LOG(("\t\tExpecting: %s",
-							tests[index].res));
-						assert(0);
-					}
-					free(string);
-				}
-				nsurl_unref(joined);
-			}
-
-		} while (tests[++index].test != NULL);
-
-		nsurl_unref(base);
-	}
-
-	/* Other tests */
-
-	url = "http://www.netsurf-browser.org:8080/";
-	if (nsurl_create(url, &base) != NSERROR_OK) {
-		LOG(("Failed to create URL:\n\t\t%s.", url));
-
-	} else {
-		if (strcmp(nsurl_access(base), url) != 0)
-			LOG(("FAIL:\n\t\t%s\n\t\t--> %s",
-					url, nsurl_access(base)));
-
-		nsurl_unref(base);
-	}
-
-	url = "http://user@www.netsurf-browser.org:8080/hello";
-	if (nsurl_create(url, &base) != NSERROR_OK) {
-		LOG(("Failed to create URL:\n\t\t%s.", url));
-
-	} else {
-		if (strcmp(nsurl_access(base), url) != 0)
-			LOG(("FAIL:\n\t\t%s\n\t\t--> %s",
-					url, nsurl_access(base)));
-
-		nsurl_unref(base);
-	}
-
-	url = "http://user:password@www.netsurf-browser.org:8080/hello";
-	if (nsurl_create(url, &base) != NSERROR_OK) {
-		LOG(("Failed to create URL:\n\t\t%s.", url));
-
-	} else {
-		if (strcmp(nsurl_access(base), url) != 0)
-			LOG(("FAIL:\n\t\t%s\n\t\t--> %s",
-					url, nsurl_access(base)));
-
-		nsurl_unref(base);
-	}
-}
-#endif
-
 
 /******************************************************************************
  * NetSurf URL Public API                                                     *
