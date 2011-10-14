@@ -351,7 +351,7 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	int i;
 
 	fetch = malloc(sizeof (*fetch));
-	if (!fetch)
+	if (fetch == NULL)
 		return 0;
 
 	fetch->fetch_handle = parent_fetch;
@@ -359,36 +359,36 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
 
 	/* construct a new fetch structure */
-	fetch->curl_handle = 0;
+	fetch->curl_handle = NULL;
 	fetch->had_headers = false;
 	fetch->abort = false;
 	fetch->stopped = false;
 	fetch->only_2xx = only_2xx;
-	fetch->headers = 0;
+	fetch->headers = NULL;
 	fetch->url = nsurl_ref(url);
 	fetch->host = nsurl_get_component(url, NSURL_HOST);
-	fetch->location = 0;
+	fetch->location = NULL;
 	fetch->content_length = 0;
 	fetch->http_code = 0;
-	fetch->cookie_string = 0;
-	fetch->realm = 0;
-	fetch->post_urlenc = 0;
-	fetch->post_multipart = 0;
+	fetch->cookie_string = NULL;
+	fetch->realm = NULL;
+	fetch->post_urlenc = NULL;
+	fetch->post_multipart = NULL;
 	if (post_urlenc)
 		fetch->post_urlenc = strdup(post_urlenc);
 	else if (post_multipart)
 		fetch->post_multipart = fetch_curl_post_convert(post_multipart);
-	fetch->http_code = 0;
 	memset(fetch->cert_data, 0, sizeof(fetch->cert_data));
 	fetch->last_progress_update = 0;
 
-	if ((post_urlenc && !fetch->post_urlenc) ||
-	    (post_multipart && !fetch->post_multipart))
+	if (fetch->host == NULL ||
+		(post_multipart != NULL && fetch->post_multipart == NULL) ||
+			(post_urlenc != NULL && fetch->post_urlenc == NULL))
 		goto failed;
 
 #define APPEND(list, value) \
 	slist = curl_slist_append(list, value);		\
-	if (!slist)					\
+	if (slist == NULL)				\
 		goto failed;				\
 	list = slist;
 
@@ -399,7 +399,8 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	 * which fails with lighttpd, so disable it (see bug 1429054) */
 	APPEND(fetch->headers, "Expect:");
 
-	if (option_accept_language && option_accept_language[0] != '\0') {
+	if (option_accept_language != NULL && 
+			option_accept_language[0] != '\0') {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
 				option_accept_language);
@@ -407,7 +408,8 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		APPEND(fetch->headers, s);
 	}
 
-	if (option_accept_charset && option_accept_charset[0] != '\0') {
+	if (option_accept_charset != NULL && 
+			option_accept_charset[0] != '\0') {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Charset: %s, *;q=0.1",
 				option_accept_charset);
@@ -416,21 +418,23 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	}
 
 	/* And add any headers specified by the caller */
-	for (i = 0; headers[i]; i++) {
+	for (i = 0; headers[i] != NULL; i++) {
 		APPEND(fetch->headers, headers[i]);
 	}
 
 	return fetch;
 
 failed:
-	lwc_string_unref(fetch->host);
+	if (fetch->host != NULL)
+		lwc_string_unref(fetch->host);
+
 	nsurl_unref(fetch->url);
 	free(fetch->post_urlenc);
 	if (fetch->post_multipart)
 		curl_formfree(fetch->post_multipart);
 	curl_slist_free_all(fetch->headers);
 	free(fetch);
-	return 0;
+	return NULL;
 }
 
 
