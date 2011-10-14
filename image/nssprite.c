@@ -119,26 +119,26 @@ static bool nssprite_convert(struct content *c)
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	unsigned char* imagebuf = bitmap_get_buffer(nssprite->bitmap);
+	uint32_t* imagebuf = (uint32_t *)bitmap_get_buffer(nssprite->bitmap);
 	if (!imagebuf) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 	unsigned int row_width = bitmap_get_rowstride(nssprite->bitmap);
-
-	memcpy(imagebuf, sprite->image, row_width * sprite->height); // TODO: avoid copying entire image buffer
+	unsigned char *spritebuf = (unsigned char *)sprite->image;
 
 	/* reverse byte order of each word */
 	for (uint32_t y = 0; y < sprite->height; y++) {
 		for (uint32_t x = 0; x < sprite->width; x++) {
 			int offset = 4 * (y * sprite->width + x);
-			uint32_t rgba = 0;
 
-			rgba |= imagebuf[offset] << 24;
-			rgba |= imagebuf[offset + 1] << 16;
-			rgba |= imagebuf[offset + 2] << 8;
-			rgba |= imagebuf[offset + 3];
+			*imagebuf = (spritebuf[offset] << 24) |
+					(spritebuf[offset + 1] << 16) |
+					(spritebuf[offset + 2] << 8) |
+					(spritebuf[offset + 3]);
+
+			imagebuf++;
 		}
 	}
 
