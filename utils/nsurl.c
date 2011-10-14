@@ -1730,7 +1730,6 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 	} else if (joined_parts & NSURL_F_MERGED_PATH) {
 		struct url_markers m_path;
-		size_t path_len;
 		size_t new_length;
 
 		if (base->host != NULL && base->path == NULL) {
@@ -1738,8 +1737,6 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 			*(buff_pos++) = '/';
 			memcpy(buff_pos, rel + m.path, m.query - m.path);
 			buff_pos += m.query - m.path;
-
-			path_len = 1 + m.query - m.path;
 
 		} else {
 			/* Append relative path to all but last segment of
@@ -1761,8 +1758,6 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 			/* Copy the relative part */
 			memcpy(buff_pos, rel + m.path, m.query - m.path);
 			buff_pos += m.query - m.path;
-
-			path_len = path_end + m.query - m.path;
 		}
 
 		/* add termination to string */
