@@ -347,7 +347,6 @@ nsurl *gui_get_resource_url(const char *path)
 static void gui_init(int argc, char** argv, char **respath)
 {
 	char buf[PATH_MAX];
-	struct browser_window *bw;
 	const char *addr = NETSURF_HOMEPAGE;
 	char *resource_filename;
 
@@ -438,7 +437,7 @@ static void gui_init(int argc, char** argv, char **respath)
 		addr = argv[1];
 
         /* Last step of initialization. Opens the main browser window. */
-	bw = browser_window_create(addr, 0, 0, true, false);
+	browser_window_create(addr, 0, 0, true, false);
 }
 
 
