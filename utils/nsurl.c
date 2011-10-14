@@ -286,6 +286,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 	 */
 	if (*pos != '\0' &&
 			((joining == false && is_http == true && *pos != '/') ||
+			(joining == true && is_http == true && *pos == '/') ||
 			(*pos == '/' && *(pos + 1) == '/'))) {
 		/* Skip over leading slashes */
 		if (is_http == false) {
@@ -1003,6 +1004,7 @@ void nsurl__test(void)
 
 		/* Extra tests */
 		{ " g",			"http://a/b/c/g" },
+		{ " http:/b/c",		"http://b/c" },
 		/* [1] Extra slash beyond rfc3986 5.4.1 example, since we're
 		 *     testing normalisation in addition to joining */
 		/* [2] Using the strict parsers option */
