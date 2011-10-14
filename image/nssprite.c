@@ -125,7 +125,6 @@ static bool nssprite_convert(struct content *c)
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
-	unsigned int row_width = bitmap_get_rowstride(nssprite->bitmap);
 	unsigned char *spritebuf = (unsigned char *)sprite->image;
 
 	/* reverse byte order of each word */
