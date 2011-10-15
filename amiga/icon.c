@@ -431,6 +431,8 @@ void amiga_icon_superimpose_favicon(char *path, struct hlcache_handle *icon, cha
 	struct ColorRegister *pal1;
 	struct ColorRegister *pal2;
 
+	if(icon == NULL) return;
+
 	if(!type)
 	{
 		dobj = GetIconTags(NULL,

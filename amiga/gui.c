@@ -1426,7 +1426,7 @@ void ami_handle_msg(void)
 							break;
 
 							case 's':
-								ami_file_save_source(gwin, gwin->bw->current_content);
+								ami_file_save_req(AMINS_SAVE_SOURCE, gwin, gwin->bw->current_content);
 							break;
 
 							case 'p':

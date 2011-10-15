@@ -31,19 +31,16 @@
 #endif
 #include <workbench/icon.h>
 
+#include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
+#include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/options.h"
-#include "amiga/icon.h"
-#include "amiga/iff_dr2d.h"
 #include "amiga/theme.h"
 
 #include "desktop/selection.h"
-#include "desktop/save_complete.h"
-
-#include "amiga/bitmap.h"
 
 #include "utils/errors.h"
 #include "utils/log.h"
@@ -156,17 +153,7 @@ void ami_drag_save(struct Window *win)
 			BPTR fh = 0;
 			AddPart(path, content_get_title(c), 1024);
 
-			if(!ami_download_check_overwrite(path, win, 0))
-				break;
-
-			if(fh = FOpen(path,MODE_NEWFILE,0))
-			{
-				if((source_data = content_get_source_data(c, &source_size)))
-					FWrite(fh, source_data, 1, source_size);
-
-				FClose(fh);
-				SetComment(path, nsurl_access(content_get_url(c)));
-			}
+			ami_file_save(AMINS_SAVE_SOURCE, path, win, c, NULL);
 		}
 		break;
 
@@ -183,39 +170,17 @@ void ami_drag_save(struct Window *win)
 			BPTR lock = 0;
 
 			AddPart(path, content_get_title(c), 1024);
-			if(!ami_download_check_overwrite(path, win, 0))
-				break;
 
-			if(lock = CreateDir(path))
-			{
-				UnLock(lock);
-				save_complete(c,path);
-				SetComment(path, nsurl_access(content_get_url(c)));
-			}
-			amiga_icon_superimpose_favicon(path, drag_save_gui->favicon, NULL);
+			ami_file_save(AMINS_SAVE_COMPLETE, path, win, c, drag_save_gui->favicon);
 		}
 		break;
 
 		case GUI_SAVE_OBJECT_NATIVE:
 		{
 			hlcache_handle *c = drag_save_data;
-			struct bitmap *bm;
-
 			AddPart(path, content_get_title(c), 1024);
-			if(bm = content_get_bitmap(c))
-			{
-				bm->url = (char *)nsurl_access(content_get_url(c));
-				bm->title = (char *)content_get_title(c);
-				if(bitmap_save(bm, path, 0))
-					SetComment(path, nsurl_access(content_get_url(c)));
-			}
-#ifdef WITH_NS_SVG
-			else if(ami_mime_compare(c, "svg") == true)
-			{
-				if(ami_save_svg(c, path))
-					SetComment(path, nsurl_access(content_get_url(c)));
-			}
-#endif
+
+			ami_file_save(AMINS_SAVE_IFF, path, win, c, NULL);
 		}
 		break;
 
