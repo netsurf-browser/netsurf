@@ -30,13 +30,15 @@ static const struct test_pairs create_tests[] = {
 	{ "http://a/b",		"http://a/b" },
 	{ "www.example.org",	"http://www.example.org/" },
 	{ "www.example.org/x",	"http://www.example.org/x" },
+	{ "about:",		"about:" },
+	{ "about:blank",	"about:blank" },
 
-	{ "http://www.netsurf-browser.org:8080/",
-		"http://www.netsurf-browser.org:8080/" },
-	{ "http://user@www.netsurf-browser.org:8080/hello", 
-		"http://user@www.netsurf-browser.org:8080/hello" },
-	{ "http://user:password@www.netsurf-browser.org:8080/hello", 
-		"http://user:password@www.netsurf-browser.org:8080/hello" },
+	{ "http://www.ns-b.org:8080/",
+		"http://www.ns-b.org:8080/" },
+	{ "http://user@www.ns-b.org:8080/hello", 
+		"http://user@www.ns-b.org:8080/hello" },
+	{ "http://user:pass@www.ns-b.org:8080/hello", 
+		"http://user:pass@www.ns-b.org:8080/hello" },
 
 	{ NULL,			NULL }
 };
@@ -94,6 +96,8 @@ static const struct test_pairs join_tests[] = {
 
 	/* Extra tests */
 	{ " g",			"http://a/b/c/g" },
+	{ "g ",			"http://a/b/c/g" },
+	{ " g ",		"http://a/b/c/g" },
 	{ "http:/b/c",		"http://b/c" },
 	{ "http://",		"http:" },
 	{ "http:/",		"http:" },
@@ -115,6 +119,8 @@ int main(void)
 	size_t len;
 	const char *url;
 	const struct test_pairs *test;
+	int passed = 0;
+	int count = 0;
 
 	/* Create base URL */
 	if (nsurl_create("http://a/b/c/d;p?q", &base) != NSERROR_OK) {
@@ -141,19 +147,19 @@ int main(void)
 					LOG(("\tPASS: \"%s\"\t--> %s",
 						test->test,
 						string));
+					passed++;
 				} else {
 					LOG(("\tFAIL: \"%s\"\t--> %s",
 						test->test,
 						string));
 					LOG(("\t\tExpecting: %s",
 						test->res));
-					assert(0);
 				}
 				free(string);
 			}
 			nsurl_unref(joined);
 		}
-
+		count++;
 	}
 
 	nsurl_unref(base);
@@ -165,16 +171,25 @@ int main(void)
 			LOG(("Failed to create URL:\n\t\t%s.", test->test));
 		} else {
 			if (strcmp(nsurl_access(base), test->res) == 0) {
-				LOG(("PASS: \"%s\"\t--> %s",
+				LOG(("\tPASS: \"%s\"\t--> %s",
 					test->test, nsurl_access(base)));
+				passed++;
 			} else {
-				LOG(("FAIL: \"%s\"\t--> %s",
+				LOG(("\tFAIL: \"%s\"\t--> %s",
 					test->test, nsurl_access(base)));
 				LOG(("\t\tExpecting %s", test->res));
 			}
 
 			nsurl_unref(base);
 		}
+		count++;
+	}
+
+	if (passed == count) {
+		LOG(("Testing complete: SUCCESS"));
+	} else {
+		LOG(("Testing complete: FAILURE"));
+		LOG(("Failed %d out of %d", count - passed, count));
 	}
 
 	return 0;
