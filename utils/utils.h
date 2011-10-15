@@ -139,7 +139,6 @@ void unicode_transliterate(unsigned int c, char **r);
 char *human_friendly_bytesize(unsigned long bytesize);
 const char *rfc1123_date(time_t t);
 unsigned int wallclock(void);
-int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y);
 
 /**
  * Return a hex digit for the given numerical value.
