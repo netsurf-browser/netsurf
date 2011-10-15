@@ -68,7 +68,7 @@ endif
 # ----------------------------------------------------------------------------
 
 # S_AMIGA are sources purely for the Amiga build
-S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c		\
+S_AMIGA := gui.c tree.c history.c hotlist.c schedule.c file.c	\
 	thumbnail.c misc.c bitmap.c font.c filetype.c utf8.c login.c	\
 	plotters.c object.c menu.c save_pdf.c arexx.c version.c		\
 	cookies.c context_menu.c clipboard.c save_complete.c		\

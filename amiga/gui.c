@@ -46,6 +46,7 @@
 #include "amiga/datatypes.h"
 #include "amiga/download.h"
 #include "amiga/drag.h"
+#include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/font.h"
 #include "amiga/gui.h"
@@ -305,12 +306,7 @@ void ami_open_resources(void)
 							ASO_NoTrack,FALSE,
 							TAG_DONE))) die(messages_get("NoMemory"));
 
-	filereq = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL);
-	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
-							ASLFR_DoSaveMode,TRUE,
-							ASLFR_RejectIcons,TRUE,
-							ASLFR_InitialDrawer,option_download_dir,
-							TAG_DONE);
+	ami_file_req_init();
 }
 
 void ami_set_options(void)
@@ -1425,6 +1421,10 @@ void ami_handle_msg(void)
 									browser_window_destroy(gwin->bw);
 							break;
 
+							case 'o':
+								ami_file_open(gwin);
+							break;
+
 							case 'p':
 								ami_print_ui(gwin->bw->current_content);
 							break;
@@ -2174,8 +2174,7 @@ void gui_quit(void)
 	FreeSysObject(ASOT_PORT,appport);
 	FreeSysObject(ASOT_PORT,sport);
 
-	FreeAslRequest(filereq);
-	FreeAslRequest(savereq);
+	ami_file_req_free();
 
 	ami_openurl_close();
     FreeStringClass(urlStringClass);

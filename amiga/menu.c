@@ -43,6 +43,7 @@
 #include "amiga/clipboard.h"
 #include "amiga/cookies.h"
 #include "amiga/download.h"
+#include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
@@ -86,7 +87,6 @@ BOOL menualreadyinit;
 const char * const netsurf_version;
 const char * const versvn;
 const char * const verdate;
-static struct Hook aslhookfunc;
 
 ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin);
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
@@ -309,15 +309,6 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), false, gwin);
 	ami_menu_arexx_scan(gwin);
 
-	if(!menualreadyinit)
-	{
-		aslhookfunc.h_Entry = (void *)&ami_asl_mime_hook;
-		aslhookfunc.h_SubEntry = NULL;
-		aslhookfunc.h_Data = NULL;
-
-		menualreadyinit = TRUE;
-	}
-
 /*	Set up scheduler to refresh the hotlist menu
 	Disabled as it causes everything to slow down to a halt after
 	several iterations
@@ -489,27 +480,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				break;
 
 				case 3: // open local file
-					if(AslRequestTags(filereq,
-						ASLFR_TitleText,messages_get("NetSurf"),
-						ASLFR_Screen,scrn,
-						ASLFR_DoSaveMode,FALSE,
-						ASLFR_RejectIcons,TRUE,
-						ASLFR_FilterFunc,&aslhookfunc,
-//						ASLFR_DoPatterns,TRUE,
-//						ASLFR_InitialPattern,"~(#?.info)",
-						TAG_DONE))
-					{
-						if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
-						{
-							char *temp2;
-							strlcpy(temp,filereq->fr_Drawer,1024);
-							AddPart(temp,filereq->fr_File,1024);
-							temp2 = path_to_url(temp);
-							browser_window_go(gwin->bw,temp2,NULL, true);
-							free(temp2);
-							FreeVec(temp);
-						}
-					}
+					ami_file_open(gwin);
 				break;
 
 				case 4: // save
@@ -872,36 +843,6 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			}
 		break;
 	}
-}
-
-static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,struct AnchorPathOld *ap)
-{
-	BPTR file = 0;
-	char buffer[10];
-	char fname[1024];
-	BOOL ret = FALSE;
-	char *mt = NULL;
-	lwc_string *lwc_mt = NULL;
-	lwc_error lerror;
-	content_type ct;
-
-	if(ap->ap_Info.fib_DirEntryType > 0) return(TRUE);
-
-	strcpy(fname,fr->fr_Drawer);
-	AddPart(fname,ap->ap_Info.fib_FileName,1024);
-
-  	mt = fetch_mimetype(fname);
-	lerror = lwc_intern_string(mt, strlen(mt), &lwc_mt);
-	if (lerror != lwc_error_ok)
-		return FALSE;
-
-	ct = content_factory_type_from_mime_type(lwc_mt);
-	lwc_string_unref(lwc_mt);
-
-	if(ct != CONTENT_NONE) ret = TRUE;
-
-	free(mt);
-	return ret;
 }
 
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)

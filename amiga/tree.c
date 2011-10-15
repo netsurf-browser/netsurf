@@ -23,41 +23,45 @@
 #include <proto/space.h>
 #include <proto/label.h>
 #include <proto/scroller.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/button.h>
+#include <proto/bitmap.h>
+#include <proto/graphics.h>
+#include <proto/asl.h>
+#include <proto/utility.h>
+#include <proto/dos.h>
+
+#include <libraries/gadtools.h>
+#include <gadgets/button.h>
 #include <classes/window.h>
 #include <gadgets/space.h>
 #include <images/label.h>
+#include <images/bitmap.h>
 #include <gadgets/layout.h>
 #include <gadgets/scroller.h>
 #include <reaction/reaction_macros.h>
-#include "amiga/gui.h"
-#include "content/urldb.h"
-#include <proto/exec.h>
-#include <assert.h>
-#include <proto/intuition.h>
-#include "amiga/tree.h"
-#include <proto/button.h>
-#include <gadgets/button.h>
-#include <string.h>
-#include "utils/messages.h"
-#include <proto/bitmap.h>
-#include <images/bitmap.h>
-#include <proto/graphics.h>
 #include <intuition/icclass.h>
-#include <proto/asl.h>
-#include <proto/utility.h>
-#include <libraries/gadtools.h>
-#include <proto/dos.h>
+
+#include "amiga/file.h"
+#include "amiga/gui.h"
+#include "amiga/tree.h"
 #include "amiga/utf8.h"
-#include "desktop/cookies.h"
-#include "desktop/history_global_core.h"
-#include "desktop/hotlist.h"
-#include "desktop/tree_url_node.h"
 #include "amiga/sslcert.h"
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
 #include "amiga/options.h"
+#include "content/urldb.h"
+#include "desktop/cookies.h"
+#include "desktop/history_global_core.h"
+#include "desktop/hotlist.h"
+#include "desktop/tree_url_node.h"
 #include "utils/utils.h"
+#include "utils/messages.h"
+
+#include <assert.h>
+#include <string.h>
 
 #define AMI_TREE_MENU_ITEMS 21
 #define AMI_TREE_MENU_DELETE FULLMENUNUM(1,0,0)

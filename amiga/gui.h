@@ -148,8 +148,6 @@ struct TextFont *origrpfont;
 struct MinList *window_list;
 struct Screen *scrn;
 STRPTR nsscreentitle;
-struct FileRequester *filereq;
-struct FileRequester *savereq;
 struct MsgPort *sport;
 bool win_destroyed;
 struct browser_window *curbw;

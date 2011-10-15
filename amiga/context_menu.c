@@ -29,6 +29,7 @@
 #include "amiga/context_menu.h"
 #include "amiga/clipboard.h"
 #include "amiga/bitmap.h"
+#include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
@@ -190,11 +191,13 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_PAGEOPEN],
 							PMIA_ID, CMID_PAGEOPEN,
 							PMIA_UserData, userdata,
+							PMIA_CommKey, "O",
 						TAG_DONE),
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_PAGESAVE],
 							PMIA_ID, CMID_PAGESAVE,
 							PMIA_UserData, userdata,
+							PMIA_CommKey, "S",
 						TAG_DONE),
 						PMA_AddItem, NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, (ULONG)ctxmenulab[CMID_PAGESAVECOMPLETE],
@@ -208,6 +211,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_PAGECLOSE],
 							PMIA_ID, CMID_PAGECLOSE,
 							PMIA_UserData, userdata,
+							PMIA_CommKey, "K",
 						TAG_DONE),
 						PMA_AddItem,NewObject(POPUPMENU_GetItemClass(), NULL,
 							PMIA_Title, ~0,
@@ -216,6 +220,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 							PMIA_Title, (ULONG)ctxmenulab[CMID_PAGEHOTLIST],
 							PMIA_ID, CMID_PAGEHOTLIST,
 							PMIA_UserData, nsurl_access(content_get_url(userdata)),
+							PMIA_CommKey, "B",
 						TAG_DONE),
 					TAG_DONE),
 				TAG_DONE),
@@ -705,6 +710,10 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 						x + box->width,
 						y + box->height);
 				}
+			break;
+
+			case CMID_PAGEOPEN:
+				ami_file_open(gwin);
 			break;
 
 			case CMID_FRAMECOPYURL:

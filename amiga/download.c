@@ -39,6 +39,7 @@
 #include "amiga/iff_dr2d.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
+#include "amiga/file.h"
 
 #include "desktop/download.h"
 #include "desktop/selection.h"
