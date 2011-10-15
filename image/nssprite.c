@@ -99,6 +99,7 @@ static bool nssprite_convert(struct content *c)
 
 	const char *data;
 	unsigned long size;
+	char title[100];
 
 	data = content__get_source_data(c, &size);
 
@@ -143,10 +144,16 @@ static bool nssprite_convert(struct content *c)
 
 	c->width = sprite->width;
 	c->height = sprite->height;
+
+	snprintf(title, sizeof(title), messages_get("SpriteTitle"), 
+		 c->width, c->height, size);
+	content__set_title(c, title);
+
 	bitmap_modified(nssprite->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
+	content_set_status(c, ""); /* Done: update status bar */
 
 	return true;
 }

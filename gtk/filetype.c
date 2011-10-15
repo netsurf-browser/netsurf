@@ -170,6 +170,8 @@ const char *fetch_filetype(const char *unix_path)
 		return "text/html";
 	} else if ((3 < l) && (strcasecmp(unix_path + l - 4, ",b60") == 0)) {
 		return "image/png";
+	} else if ((3 < l) && (strcasecmp(unix_path + l - 4, ",ff9") == 0)) {
+		return "image/x-riscos-sprite";
 	}
 
 	if (strchr(unix_path, '.') == NULL) {
