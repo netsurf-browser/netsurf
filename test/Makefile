@@ -21,7 +21,7 @@ urldbtest_SRCS := content/urldb.c utils/url.c utils/utils.c utils/log.c \
 urldbtest_CFLAGS := -O2
 urldbtest_LDFLAGS :=
 
-nsurl_SRCS := utils/log.c utils/nsurl.c utils/utils.c test/nsurl.c
+nsurl_SRCS := utils/log.c utils/nsurl.c test/nsurl.c
 nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet)
 nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet)
 
