@@ -1,9 +1,9 @@
 CFLAGS := -std=c99 -g -O0 -D_BSD_SOURCE -D_POSIX_C_SOURCE -I.. \
-		`pkg-config --cflags libxml-2.0 libcurl`
-LDFLAGS := `pkg-config --libs libxml-2.0 libcurl`
+		$(shell pkg-config --cflags libxml-2.0 libcurl)
+LDFLAGS := $(shell pkg-config --libs libxml-2.0 libcurl) -lz
 
-llcache_CFLAGS := `pkg-config --cflags libparserutils libwapcaplet`
-llcache_LDFLAGS := `pkg-config --libs libparserutils libwapcaplet`
+llcache_CFLAGS := $(shell pkg-config --cflags libparserutils libwapcaplet)
+llcache_LDFLAGS := $(shell pkg-config --libs libparserutils libwapcaplet)
 
 llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		content/fetchers/about.c content/fetchers/data.c \
@@ -22,8 +22,8 @@ urldbtest_CFLAGS := -O2
 urldbtest_LDFLAGS :=
 
 nsurl_SRCS := utils/hashtable.c utils/log.c utils/messages.c utils/nsurl.c utils/utils.c test/nsurl.c
-nsurl_CFLAGS := `pkg-config --cflags libwapcaplet`
-nsurl_LDFLAGS := `pkg-config --libs libwapcaplet`
+nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet)
+nsurl_LDFLAGS := $(shell pkg-config --libs libwapcaplet)
 
 .PHONY: all
 
