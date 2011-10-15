@@ -776,66 +776,15 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 
 			case CMID_SAVEOBJ:
 			case CMID_PAGESAVE:
-				object = (struct hlcache_handle *)userdata;
+				ami_file_save_req(AMINS_SAVE_SOURCE, gwin, (struct hlcache_handle *)userdata);
+			break;
 
-				if(AslRequestTags(savereq,
-							ASLFR_TitleText,messages_get("NetSurf"),
-							ASLFR_Screen,scrn,
-							ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(object))),
-							TAG_DONE))
-				{
-					BPTR fh = 0;
-					char fname[1024];
-					strlcpy(fname,savereq->fr_Drawer,1024);
-					AddPart(fname,savereq->fr_File,1024);
-					ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-
-					if(ami_download_check_overwrite(fname, gwin->win, 0))
-					{
-						if(fh = FOpen(fname,MODE_NEWFILE,0))
-						{
-							if((source_data =
-								content_get_source_data(object, &source_size)))
-									FWrite(fh, source_data, 1, source_size);
-
-							FClose(fh);
-							SetComment(fname, nsurl_access(content_get_url(object)));
-						}
-					}
-					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-				}
+			case CMID_PAGESAVECOMPLETE:
+				ami_file_save_req(AMINS_SAVE_COMPLETE, gwin, (struct hlcache_handle *)userdata);
 			break;
 
 			case CMID_SAVEIFFOBJ:
-				object = (struct hlcache_handle *)userdata;
-
-				if(AslRequestTags(savereq,
-							ASLFR_TitleText,messages_get("NetSurf"),
-							ASLFR_Screen,scrn,
-							ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(object))),
-							TAG_DONE))
-				{
-					BPTR fh = 0;
-					char fname[1024];
-
-					strlcpy(fname,savereq->fr_Drawer,1024);
-					AddPart(fname,savereq->fr_File,1024);
-					if((bm = content_get_bitmap(object)))
-					{
-						bm->url = (char *)nsurl_access(content_get_url(object));
-						bm->title = (char *)content_get_title(object);
-						if(bitmap_save(bm, fname, 0))
-							SetComment(fname, nsurl_access(content_get_url(object)));
-					}
-#ifdef WITH_NS_SVG
-					else if(ami_mime_compare(object, "svg") == true)
-					{
-						if(ami_save_svg(object,fname))
-							SetComment(fname, nsurl_access(content_get_url(object)));
-					}
-#endif
-					ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-				}
+				ami_file_save_req(AMINS_SAVE_IFF, gwin, (struct hlcache_handle *)userdata);
 			break;
 
 			case CMID_PLUGINCMD:

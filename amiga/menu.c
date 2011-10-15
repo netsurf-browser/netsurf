@@ -42,7 +42,6 @@
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"
 #include "amiga/cookies.h"
-#include "amiga/download.h"
 #include "amiga/file.h"
 #include "amiga/filetype.h"
 #include "amiga/gui.h"
@@ -50,28 +49,20 @@
 #include "amiga/history.h"
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
-#include "amiga/icon.h"
-#include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
 #include "amiga/options.h"
 #include "amiga/print.h"
-#include "amiga/save_pdf.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
-#include "content/fetch.h"
 #include "desktop/tree_url_node.h"
 #include "desktop/hotlist.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
-#include "desktop/save_text.h"
-#include "desktop/save_pdf/pdf_plotters.h"
-#include "desktop/save_complete.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "utils/messages.h"
-#include "utils/url.h"
 
 #define IMAGE_MENU_ITEM(n, i, t) \
 	gwin->menulab[n] = LabelObject, \
@@ -92,7 +83,6 @@ ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin);
 void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		ULONG *item, bool count, struct gui_window_2 *gwin);
 void ami_menu_arexx_scan(struct gui_window_2 *gwin);
-static const ULONG ami_asl_mime_hook(struct Hook *mh,struct FileRequester *fr,struct AnchorPathOld *ap);
 
 
 void ami_free_menulabs(struct gui_window_2 *gwin)
@@ -460,11 +450,8 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 	itemnum = ITEMNUM(code);
 	subnum = SUBNUM(code);
 	char *temp, *temp2;
-	BPTR lock = 0;
-	const char *source_data;
-	ULONG source_size;
-	struct bitmap *bm;
 	int sel = 0;
+	struct bitmap *bm = NULL;
 
 	switch(menunum)
 	{
@@ -486,128 +473,24 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				case 4: // save
 					switch(subnum)
 					{
-						BPTR fh=0;
-						char fname[1024];
-
 						case 0:
-							if(AslRequestTags(savereq,
-								ASLFR_TitleText,messages_get("NetSurf"),
-								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
-								TAG_DONE))
-							{
-								strlcpy(fname,savereq->fr_Drawer,1024);
-								AddPart(fname,savereq->fr_File,1024);
-								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-
-								if(ami_download_check_overwrite(fname, gwin->win, 0))
-								{
-									if(fh = FOpen(fname,MODE_NEWFILE,0))
-									{
-										if((source_data =
-											content_get_source_data(gwin->bw->current_content, &source_size)))
-												FWrite(fh,source_data, 1, source_size);
-										FClose(fh);
-										SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
-									}
-								}
-								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-							}
+							ami_file_save_req(AMINS_SAVE_SOURCE, gwin, gwin->bw->current_content);
 						break;
 
 						case 1:
-							if(AslRequestTags(savereq,
-								ASLFR_TitleText,messages_get("NetSurf"),
-								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
-								TAG_DONE))
-							{
-								strlcpy(fname,savereq->fr_Drawer,1024);
-								AddPart(fname,savereq->fr_File,1024);
-								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-
-								if(ami_download_check_overwrite(fname, gwin->win, 0))
-								{
-									save_as_text(gwin->bw->current_content,fname);
-									SetComment(fname,nsurl_access(content_get_url(gwin->bw->current_content)));
-								}
-								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-							}
+							ami_file_save_req(AMINS_SAVE_TEXT, gwin, gwin->bw->current_content);
 						break;
 
 						case 2:
-							if(AslRequestTags(savereq,
-								ASLFR_TitleText,messages_get("NetSurf"),
-								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
-								TAG_DONE))
-							{
-								strlcpy(fname,savereq->fr_Drawer,1024);
-								AddPart(fname,savereq->fr_File,1024);
-								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if(ami_download_check_overwrite(fname, gwin->win, 0))
-								{
-									if(lock = CreateDir(fname))
-									{
-										UnLock(lock);
-										save_complete(gwin->bw->current_content,fname);
-										SetComment(fname,nsurl_access(content_get_url(gwin->bw->current_content)));
-										amiga_icon_superimpose_favicon(fname, 
-											gwin->bw->window->favicon, NULL);
-									}
-								}
-								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-							}
+							ami_file_save_req(AMINS_SAVE_COMPLETE, gwin, gwin->bw->current_content);
 						break;
 
 						case 3:
-#ifdef WITH_PDF_EXPORT
-							if(AslRequestTags(savereq,
-								ASLFR_TitleText,messages_get("NetSurf"),
-								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
-								TAG_DONE))
-							{
-								strlcpy(&fname,savereq->fr_Drawer,1024);
-								AddPart(fname,savereq->fr_File,1024);
-								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if(save_as_pdf(gwin->bw->current_content,fname))
-								{
-									SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
-									amiga_icon_superimpose_favicon(fname,
-										gwin->bw->window->favicon, "pdf");
-								}
-								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-							}
-#endif
+							ami_file_save_req(AMINS_SAVE_PDF, gwin, gwin->bw->current_content);
 						break;
 
 						case 4: // iff
-							if(AslRequestTags(savereq,
-								ASLFR_TitleText,messages_get("NetSurf"),
-								ASLFR_Screen,scrn,
-								ASLFR_InitialFile,FilePart(nsurl_access(content_get_url(gwin->bw->current_content))),
-								TAG_DONE))
-							{
-								strlcpy(fname,savereq->fr_Drawer,1024);
-								AddPart(fname,savereq->fr_File,1024);
-								ami_update_pointer(gwin->win,GUI_POINTER_WAIT);
-								if((bm = content_get_bitmap(gwin->bw->current_content)))
-								{
-									bm->url = (char *)nsurl_access(content_get_url(gwin->bw->current_content));
-									bm->title = (char *)content_get_title(gwin->bw->current_content);
-									if(bitmap_save(bm, fname, 0))
-										SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
-								}
-#ifdef WITH_NS_SVG
-								else if(ami_mime_compare(gwin->bw->current_content, "svg") == true)
-								{
-									if(ami_save_svg(gwin->bw->current_content,fname))
-										SetComment(fname, nsurl_access(content_get_url(gwin->bw->current_content)));
-								}
-#endif
-								ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
-							}
+							ami_file_save_req(AMINS_SAVE_IFF, gwin, gwin->bw->current_content);
 						break;
 					}
 				break;

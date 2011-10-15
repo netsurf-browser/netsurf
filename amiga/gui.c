@@ -1425,6 +1425,10 @@ void ami_handle_msg(void)
 								ami_file_open(gwin);
 							break;
 
+							case 's':
+								ami_file_save_source(gwin, gwin->bw->current_content);
+							break;
+
 							case 'p':
 								ami_print_ui(gwin->bw->current_content);
 							break;
