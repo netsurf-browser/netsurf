@@ -263,6 +263,8 @@ static void nsurl__get_string_markers(const char const *url_s,
 
 		} else {
 			/* Not found a scheme  */
+			pos = url_s + marker.start;
+
 			if (joining == false) {
 				/* Assuming no scheme == http */
 				is_http = true;
