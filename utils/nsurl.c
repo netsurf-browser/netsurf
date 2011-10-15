@@ -263,8 +263,6 @@ static void nsurl__get_string_markers(const char const *url_s,
 
 		} else {
 			/* Not found a scheme  */
-			pos = url_s + marker.start;
-
 			if (joining == false) {
 				/* Assuming no scheme == http */
 				is_http = true;
@@ -274,27 +272,31 @@ static void nsurl__get_string_markers(const char const *url_s,
 
 	/* Get authority
 	 *
-	 * If this is a relative url that is to be joined onto a base URL, we
-	 * require two slashes to be certain we correctly handle a missing
-	 * authority.
+	 * Two slashes always indicates the start of an authority.
 	 *
-	 * If this URL is not getting joined, we are less strict in the case of
-	 * http(s) and will accept any number of slashes, including 0.
+	 * We are more relaxed in the case of http:
+	 *   a. when joining, one or more slashes indicates start of authority
+	 *   b. when not joining, we assume authority if no scheme was present
 	 */
 	if ((*pos == '/' && *(pos + 1) == '/') ||
-			(is_http && ((joining && (*pos == '/')) || 
-					joining == false))) {
-		/* Skip over leading slashes */
-		if (is_http == false) {
-			if (*pos == '/') pos++;
-			if (*pos == '/') pos++;
-		} else {
-			while (*pos == '/')
-				pos++;
-		}
+			(is_http && ((joining && *pos == '/') || 
+					(joining == false &&
+					marker.scheme_end != marker.start)))) {
 
-		marker.authority = marker.colon_first = marker.at =
-				marker.colon_last = marker.path = pos - url_s;
+		/* Skip over leading slashes */
+		if (*pos == '/') {
+			if (is_http == false) {
+				if (*pos == '/') pos++;
+				if (*pos == '/') pos++;
+			} else {
+				while (*pos == '/')
+					pos++;
+			}
+
+			marker.authority = marker.colon_first = marker.at =
+					marker.colon_last = marker.path =
+					pos - url_s;
+		}
 
 		/* Need to get (or complete) the authority */
 		while (*pos != '\0') {
