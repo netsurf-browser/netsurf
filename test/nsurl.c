@@ -6,8 +6,9 @@
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "desktop/netsurf.h"
-#include "utils/nsurl.h"
 #include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 /* desktop/netsurf.h */
@@ -21,6 +22,12 @@ void die(const char * const error)
 /* utils/utils.h */
 void warn_user(const char *warning, const char *detail)
 {
+}
+
+/* utils/messages.h */
+const char *messages_get(const char *key)
+{
+	return key;
 }
 
 struct test_pairs {
