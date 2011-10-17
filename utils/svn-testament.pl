@@ -30,9 +30,9 @@ sub gather_output {
    my $tmpfile = File::Temp::tmpnam();
    local $/ = undef();
    system("$cmd > $tmpfile");
-   open CMDH, "<", $tmpfile;
-   my $ret = <CMDH>;
-   close CMDH;
+   open(my $CMDH, "<", $tmpfile);
+   my $ret = <$CMDH>;
+   close($CMDH);
    unlink($tmpfile);
    return $ret;
 }
@@ -137,22 +137,22 @@ use Digest::MD5 qw(md5_hex);
 
 my $oldcsum = "";
 if ( -e $targetfile ) {
-   open OLDVALUES, "<", $targetfile;
-   foreach my $line (readline(OLDVALUES)) {
+   open(my $OLDVALUES, "<", $targetfile);
+   foreach my $line (readline($OLDVALUES)) {
       if ($line =~ /MD5:([0-9a-f]+)/) {
          $oldcsum = $1;
       }
    }
-   close OLDVALUES;
+   close($OLDVALUES);
 }
 
 my $newcsum = md5_hex($testament);
 
 if ($oldcsum ne $newcsum) {
    print "TESTMENT: $targetfile\n";
-   open NEWVALUES, ">", $targetfile or die "$!";
-   print NEWVALUES "/* ", $targetfile,"\n";
-   print NEWVALUES <<'EOS';
+   open(my $NEWVALUES, ">", $targetfile) or die "$!";
+   print $NEWVALUES "/* ", $targetfile,"\n";
+   print $NEWVALUES <<'EOS';
  * 
  * Revision testament.
  *
@@ -163,14 +163,14 @@ if ($oldcsum ne $newcsum) {
 
 EOS
 
-   print NEWVALUES "#ifndef NETSURF_REVISION_TESTAMENT\n";
-   print NEWVALUES "#define NETSURF_REVISION_TESTAMENT \"$newcsum\"\n\n";
-   print NEWVALUES "/* Revision testament checksum:\n";
-   print NEWVALUES " * MD5:", $newcsum,"\n */\n\n";
-   print NEWVALUES "/* Revision testament: */\n";
-   print NEWVALUES $testament;
-   print NEWVALUES "\n#endif\n";
-   close NEWVALUES;
+   print $NEWVALUES "#ifndef NETSURF_REVISION_TESTAMENT\n";
+   print $NEWVALUES "#define NETSURF_REVISION_TESTAMENT \"$newcsum\"\n\n";
+   print $NEWVALUES "/* Revision testament checksum:\n";
+   print $NEWVALUES " * MD5:", $newcsum,"\n */\n\n";
+   print $NEWVALUES "/* Revision testament: */\n";
+   print $NEWVALUES $testament;
+   print $NEWVALUES "\n#endif\n";
+   close($NEWVALUES);
      foreach my $unwanted (@ARGV) {
         next unless(-e $unwanted);
         print "TESTAMENT: Removing $unwanted\n";
