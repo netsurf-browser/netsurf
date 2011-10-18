@@ -4315,7 +4315,11 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 		return true;  /* was for us, but it didn't work! */
 	}
 
-	buf = malloc(size);
+	/* Allocate one byte more than needed to ensure that the buffer is
+	 * always terminated, regardless of file contents.
+	 */
+
+	buf = calloc(size + 1, sizeof(char));
 	if (!buf) {
 		warn_user("NoMemory", NULL);
 		return true;
@@ -4323,6 +4327,7 @@ bool ro_gui_window_import_text(struct gui_window *g, const char *filename,
 
 	error = xosfile_load_stamped(filename, (byte*)buf,
 			NULL, NULL, NULL, NULL, NULL);
+
 	if (error) {
 		LOG(("xosfile_load_stamped: 0x%x:%s",
 			error->errnum, error->errmess));
