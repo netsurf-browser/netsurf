@@ -17,6 +17,7 @@
  */
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -554,18 +555,18 @@ int image_cache_snsummaryf(char *string, size_t size, const char *fmt)
 			}
 
 #define FMTCHR(chr,fmt,var) case chr : \
-slen += snprintf(string + slen, size - slen, "%"#fmt, image_cache->var); break
+slen += snprintf(string + slen, size - slen, "%"fmt, image_cache->var); break
 
 #define FMTPCHR(chr,fmt,var,div) \
 case chr :					\
 	if (pct) {							\
 		if (div > 0) {						\
-			slen += snprintf(string + slen, size - slen, "%zd", (uint64_t)((image_cache->var * 100) / div)); \
+			slen += snprintf(string + slen, size - slen, "%"PRId64, (uint64_t)((image_cache->var * 100) / div)); \
 		} else {						\
 			slen += snprintf(string + slen, size - slen, "100"); \
 		}							\
 	} else {							\
-		slen += snprintf(string + slen, size - slen, "%"#fmt, image_cache->var); \
+		slen += snprintf(string + slen, size - slen, "%"fmt, image_cache->var); \
 	} break
 
 
@@ -575,15 +576,15 @@ case chr :					\
 				slen++;
 				break;
 
-			FMTCHR('a', zd, params.limit);
-			FMTCHR('b', zd, params.hysteresis);
-			FMTCHR('c', zd, total_bitmap_size);
-			FMTCHR('d', d, bitmap_count);
-			FMTCHR('e', d, current_age / 1000);
-			FMTCHR('f', zd, max_bitmap_size);
-			FMTCHR('g', d, max_bitmap_size_count);
-			FMTCHR('h', d, max_bitmap_count);
-			FMTCHR('i', zd, max_bitmap_count_size);
+			FMTCHR('a', "zd", params.limit);
+			FMTCHR('b', "zd", params.hysteresis);
+			FMTCHR('c', "zd", total_bitmap_size);
+			FMTCHR('d', "d", bitmap_count);
+			FMTCHR('e', "d", current_age / 1000);
+			FMTCHR('f', "zd", max_bitmap_size);
+			FMTCHR('g', "d", max_bitmap_size_count);
+			FMTCHR('h', "d", max_bitmap_count);
+			FMTCHR('i', "zd", max_bitmap_count_size);
 
 
 			case 'j':
@@ -591,25 +592,25 @@ case chr :					\
 						 "%d", pct?100:op_count);
 				break;
 
-			FMTPCHR('k', d, hit_count, op_count);
-			FMTPCHR('l', d, miss_count, op_count);
-			FMTPCHR('m', d, fail_count, op_count);
+			FMTPCHR('k', "d", hit_count, op_count);
+			FMTPCHR('l', "d", miss_count, op_count);
+			FMTPCHR('m', "d", fail_count, op_count);
 
 			case 'n':
 				slen += snprintf(string + slen, size - slen,
-						 "%zd", pct?100:op_size);
+						 "%"PRId64, pct?100:op_size);
 				break;
 
-			FMTPCHR('o', zd, hit_size, op_size);
-			FMTPCHR('q', zd, miss_size, op_size);
-			FMTPCHR('r', zd, fail_size, op_size);
+			FMTPCHR('o', PRId64, hit_size, op_size);
+			FMTPCHR('q', PRId64, miss_size, op_size);
+			FMTPCHR('r', PRId64, fail_size, op_size);
 
-			FMTCHR('s', d, total_unrendered);
-			FMTCHR('t', d, specultive_miss_count);
-			FMTCHR('u', d, total_extra_conversions);
-			FMTCHR('v', d, total_extra_conversions_count);
-			FMTCHR('w', d, peak_conversions_size);
-			FMTCHR('x', d, peak_conversions);
+			FMTCHR('s', "d", total_unrendered);
+			FMTCHR('t', "d", specultive_miss_count);
+			FMTCHR('u', "d", total_extra_conversions);
+			FMTCHR('v', "d", total_extra_conversions_count);
+			FMTCHR('w', "d", peak_conversions_size);
+			FMTCHR('x', "d", peak_conversions);
 
 
 			}
