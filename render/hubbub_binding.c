@@ -365,6 +365,7 @@ hubbub_private *copy_private(const hubbub_private *p, uint32_t refcnt)
 				pvt->base.classes[pvt->base.nclasses] =
 					lwc_string_ref(p->base.classes[
 							pvt->base.nclasses]);
+				pvt->base.nclasses++;
 			}
 		}
 
