@@ -705,6 +705,9 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	InstallLayerHook(glob->rp->Layer,bfh);
 
+	if(xm == xf) xf += 1;
+	if(ym == yf) yf += 1;
+
 	EraseRect(glob->rp,xm,ym,xf,yf);
 
 	InstallLayerHook(glob->rp->Layer,LAYERS_NOBACKFILL);
