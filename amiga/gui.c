@@ -3229,8 +3229,6 @@ void gui_window_redraw_window(struct gui_window *g)
 
 void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 {
-	ULONG sx,sy;
-
 	if(!g) return;
 
 	ami_do_redraw_limits(g, g->shared->bw,
@@ -3292,9 +3290,9 @@ void ami_do_redraw(struct gui_window_2 *g)
 		if(vcurrent>oldv)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent, (height / g->bw->scale) + oldv,
+					hcurrent, (height / g->bw->scale) + oldv - 1,
 					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale));
+					vcurrent + (height / g->bw->scale) + 1);
 		}
 		else if(vcurrent<oldv)
 		{
