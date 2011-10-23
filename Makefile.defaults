@@ -218,7 +218,7 @@ ifeq ($(TARGET),amiga)
 
   # Enable NetSurf's use of librosprite for displaying RISC OS Sprites
   # Valid options: YES, NO, AUTO
-  NETSURF_USE_ROSPRITE := YES
+  NETSURF_USE_ROSPRITE := NO
 
   # Enable NetSurf's use of libmng for displaying MNGs, JNGs and PNGs
   # Valid options: YES, NO	  (at least one of PNG/MNG/DT highly recommended)
