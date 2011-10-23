@@ -19,6 +19,7 @@
 #include "amiga/gui.h"
 
 struct hlcache_object;
+struct selection;
 
 struct FileRequester *filereq;
 struct FileRequester *savereq;
@@ -29,6 +30,7 @@ enum {
 	AMINS_SAVE_COMPLETE,
 	AMINS_SAVE_PDF,
 	AMINS_SAVE_IFF,
+	AMINS_SAVE_SELECTION,
 };
 
 
@@ -37,6 +39,7 @@ void ami_file_req_free(void);
 
 void ami_file_open(struct gui_window_2 *gwin);
 void ami_file_save_req(int type, struct gui_window_2 *gwin,
-		struct hlcache_handle *object);
+		struct hlcache_handle *object, struct selection *sel);
 void ami_file_save(int type, char *fname, struct Window *win,
-		struct hlcache_handle *object, struct hlcache_handle *favicon);
+		struct hlcache_handle *object, struct hlcache_handle *favicon,
+		struct selection *sel);

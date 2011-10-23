@@ -34,6 +34,7 @@
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/save_text.h"
+#include "desktop/selection.h"
 
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -100,7 +101,8 @@ void ami_file_open(struct gui_window_2 *gwin)
 }
 
 void ami_file_save(int type, char *fname, struct Window *win,
-		struct hlcache_handle *object, struct hlcache_handle *favicon)
+		struct hlcache_handle *object, struct hlcache_handle *favicon,
+		struct selection *sel)
 {
 	BPTR lock = 0;
 	const char *source_data;
@@ -157,29 +159,34 @@ void ami_file_save(int type, char *fname, struct Window *win,
 						}
 #endif
 					break;
+
+					case AMINS_SAVE_SELECTION:
+						selection_save_text(sel, fname);
+					break;
 				}
 				FClose(fh);
 			}
-			SetComment(fname, nsurl_access(content_get_url(object)));
+			if(object) SetComment(fname, nsurl_access(content_get_url(object)));
 		}
 	}
 	ami_update_pointer(win, GUI_POINTER_DEFAULT);
 }
 
-void ami_file_save_req(int type, struct gui_window_2 *gwin, struct hlcache_handle *object)
+void ami_file_save_req(int type, struct gui_window_2 *gwin,
+		struct hlcache_handle *object, struct selection *sel)
 {
 	char *fname = AllocVec(1024, MEMF_CLEAR | MEMF_PRIVATE);
 
 	if(AslRequestTags(savereq,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
-			ASLFR_InitialFile, FilePart(nsurl_access(content_get_url(object))),
+			ASLFR_InitialFile, object ? FilePart(nsurl_access(content_get_url(object))) : "",
 			TAG_DONE))
 	{
 		strlcpy(fname, savereq->fr_Drawer, 1024);
 		AddPart(fname, savereq->fr_File, 1024);
 
-		ami_file_save(type, fname, gwin->win, object, gwin->bw->window->favicon);
+		ami_file_save(type, fname, gwin->win, object, gwin->bw->window->favicon, sel);
 	}
 
 	if(fname) FreeVec(fname);

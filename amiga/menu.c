@@ -474,23 +474,28 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					switch(subnum)
 					{
 						case 0:
-							ami_file_save_req(AMINS_SAVE_SOURCE, gwin, gwin->bw->current_content);
+							ami_file_save_req(AMINS_SAVE_SOURCE, gwin,
+								gwin->bw->current_content, NULL);
 						break;
 
 						case 1:
-							ami_file_save_req(AMINS_SAVE_TEXT, gwin, gwin->bw->current_content);
+							ami_file_save_req(AMINS_SAVE_TEXT, gwin,
+								gwin->bw->current_content, NULL);
 						break;
 
 						case 2:
-							ami_file_save_req(AMINS_SAVE_COMPLETE, gwin, gwin->bw->current_content);
+							ami_file_save_req(AMINS_SAVE_COMPLETE, gwin,
+								gwin->bw->current_content, NULL);
 						break;
 
 						case 3:
-							ami_file_save_req(AMINS_SAVE_PDF, gwin, gwin->bw->current_content);
+							ami_file_save_req(AMINS_SAVE_PDF, gwin,
+								gwin->bw->current_content, NULL);
 						break;
 
 						case 4: // iff
-							ami_file_save_req(AMINS_SAVE_IFF, gwin, gwin->bw->current_content);
+							ami_file_save_req(AMINS_SAVE_IFF, gwin,
+								gwin->bw->current_content, NULL);
 						break;
 					}
 				break;

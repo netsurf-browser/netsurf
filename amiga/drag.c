@@ -153,15 +153,13 @@ void ami_drag_save(struct Window *win)
 			BPTR fh = 0;
 			AddPart(path, content_get_title(c), 1024);
 
-			ami_file_save(AMINS_SAVE_SOURCE, path, win, c, NULL);
+			ami_file_save(AMINS_SAVE_SOURCE, path, win, c, NULL, NULL);
 		}
 		break;
 
 		case GUI_SAVE_TEXT_SELECTION: // selection
 			AddPart(path,"netsurf_text_file",1024);
-			if(!ami_download_check_overwrite(path, win, 0))
-				break;
-			selection_save_text((struct selection *)drag_save_data,path);
+			ami_file_save(AMINS_SAVE_SELECTION, path, win, NULL, NULL, NULL);
 		break;
 
 		case GUI_SAVE_COMPLETE:
@@ -171,7 +169,7 @@ void ami_drag_save(struct Window *win)
 
 			AddPart(path, content_get_title(c), 1024);
 
-			ami_file_save(AMINS_SAVE_COMPLETE, path, win, c, drag_save_gui->favicon);
+			ami_file_save(AMINS_SAVE_COMPLETE, path, win, c, drag_save_gui->favicon, NULL);
 		}
 		break;
 
@@ -180,7 +178,7 @@ void ami_drag_save(struct Window *win)
 			hlcache_handle *c = drag_save_data;
 			AddPart(path, content_get_title(c), 1024);
 
-			ami_file_save(AMINS_SAVE_IFF, path, win, c, NULL);
+			ami_file_save(AMINS_SAVE_IFF, path, win, c, NULL, NULL);
 		}
 		break;
 
