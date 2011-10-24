@@ -1,7 +1,6 @@
 #!/usr/bin/perl -w
 
 use strict;
-use File::Temp;
 
 =head1
 
@@ -25,9 +24,33 @@ if ( -d ".svn" ) {
    $svn_present = 1;
 }
 
+sub compat_tmpnam {
+   # File::Temp was introduced in Perl 5.6.1
+   my $have_file_tmp = eval { require File::Temp };
+
+   if ( ! $have_file_tmp ) {
+     return "$$.svnt";
+   } else {
+     return File::Temp::tmpnam();
+   }
+}
+
+sub compat_md5_hex {
+   # Digest::MD5 was introduced in Perl 5.7.1
+   my $have_digest_md5 = eval { require Digest::MD5 };
+   my $have_md5 = eval { require MD5 };
+   my $data = shift;
+
+   if ( ! $have_digest_md5 ) {
+     return MD5->hexhash($data);
+   } else {
+     return Digest::MD5->new->add($data)->hexdigest;
+   }
+}
+
 sub gather_output {
    my $cmd = shift;
-   my $tmpfile = File::Temp::tmpnam();
+   my $tmpfile = compat_tmpnam();
    local $/ = undef();
    system("$cmd > $tmpfile");
    open(my $CMDH, "<", $tmpfile);
@@ -133,8 +156,6 @@ foreach my $filename (sort keys %svnstatus) {
 }
 $testament .= " \\\n}\n";
 
-use Digest::MD5 qw(md5_hex);
-
 my $oldcsum = "";
 if ( -e $targetfile ) {
    open(my $OLDVALUES, "<", $targetfile);
@@ -146,7 +167,7 @@ if ( -e $targetfile ) {
    close($OLDVALUES);
 }
 
-my $newcsum = md5_hex($testament);
+my $newcsum = compat_md5_hex($testament);
 
 if ($oldcsum ne $newcsum) {
    print "TESTMENT: $targetfile\n";
@@ -188,5 +209,6 @@ sub care_about_file {
    return 0 if ($fn =~ /\.a$/); # Don't care for extraneous archive files
    return 0 if ($fn =~ /\.md5$/); # Don't care for md5sum files
    return 0 if ($fn =~ /\.map$/); # Don't care for map files
+   return 0 if ($fn =~ /\.svnt$/); # Don't care for testament temp files
    return 1;
 }
