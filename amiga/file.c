@@ -114,61 +114,61 @@ void ami_file_save(int type, char *fname, struct Window *win,
 
 	if(ami_download_check_overwrite(fname, win, 0))
 	{
-		if(type == AMINS_SAVE_COMPLETE)
+		switch(type)
 		{
-			if(lock = CreateDir(fname))
-			{
-				UnLock(lock);
-				save_complete(object, fname);
-				amiga_icon_superimpose_favicon(fname, favicon, NULL);
-			}
-		}
-		else
-		{
-			if(fh = FOpen(fname, MODE_NEWFILE,0))
-			{
-				switch(type)
+			case AMINS_SAVE_SOURCE:
+				if((source_data = content_get_source_data(object, &source_size)))
 				{
-					case AMINS_SAVE_SOURCE:
-						if((source_data = content_get_source_data(object, &source_size)))
+					if(fh = FOpen(fname, MODE_NEWFILE,0))
+					{
 						FWrite(fh, source_data, 1, source_size);
-					break;
-
-					case AMINS_SAVE_TEXT:
-						save_as_text(object, fname);
-					break;
-
-					case AMINS_SAVE_PDF:
-#ifdef WITH_PDF_EXPORT
-						if(save_as_pdf(object, fname))
-							amiga_icon_superimpose_favicon(fname, favicon, "pdf");
-#endif
-					break;
-
-					case AMINS_SAVE_IFF:
-						if((bm = content_get_bitmap(object)))
-						{
-							bm->url = (char *)nsurl_access(content_get_url(object));
-							bm->title = (char *)content_get_title(object);
-							bitmap_save(bm, fname, 0);
-						}
-#ifdef WITH_NS_SVG
-						else if(ami_mime_compare(object, "svg") == true)
-						{
-							ami_save_svg(object, fname);
-						}
-#endif
-					break;
-
-					case AMINS_SAVE_SELECTION:
-						selection_save_text(sel, fname);
-					break;
+						FClose(fh);
+					}
 				}
-				FClose(fh);
-			}
-			if(object) SetComment(fname, nsurl_access(content_get_url(object)));
+			break;
+
+			case AMINS_SAVE_TEXT:
+				save_as_text(object, fname);
+			break;
+
+			case AMINS_SAVE_COMPLETE:
+				if(lock = CreateDir(fname))
+				{
+					UnLock(lock);
+					save_complete(object, fname);
+					amiga_icon_superimpose_favicon(fname, favicon, NULL);
+				}
+			break;
+
+			case AMINS_SAVE_PDF:
+#ifdef WITH_PDF_EXPORT
+				if(save_as_pdf(object, fname))
+					amiga_icon_superimpose_favicon(fname, favicon, "pdf");
+#endif
+			break;
+
+			case AMINS_SAVE_IFF:
+				if((bm = content_get_bitmap(object)))
+				{
+					bm->url = (char *)nsurl_access(content_get_url(object));
+					bm->title = (char *)content_get_title(object);
+					bitmap_save(bm, fname, 0);
+				}
+#ifdef WITH_NS_SVG
+				else if(ami_mime_compare(object, "svg") == true)
+				{
+					ami_save_svg(object, fname);
+				}
+#endif
+			break;
+
+			case AMINS_SAVE_SELECTION:
+				selection_save_text(sel, fname);
+			break;
 		}
+		if(object) SetComment(fname, nsurl_access(content_get_url(object)));
 	}
+
 	ami_update_pointer(win, GUI_POINTER_DEFAULT);
 }
 
