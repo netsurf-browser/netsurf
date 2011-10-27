@@ -25,6 +25,7 @@
 
 #include "content/content_type.h"
 #include "utils/errors.h"
+#include "utils/utils.h"
 
 #define CONTENT_FACTORY_REGISTER_TYPES(HNAME, HTYPELIST, HHANDLER)	\
 									\
