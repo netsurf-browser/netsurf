@@ -1963,8 +1963,6 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		const char *frag)
 {
-	char *url_buf;
-
 	assert(bw);
 	assert(url);
 
@@ -1979,18 +1977,27 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		 */
 		gui_window_set_url(bw->window, nsurl_access(url));
 	} else {
-		url_buf = malloc(nsurl_length(url) + 1 /* # */ +
-				strlen(frag) + 1 /* \0 */);
-		if (url_buf != NULL) {
-			/* This sprintf is safe because of the above size
-			 * calculation, thus we don't need snprintf
-			 */
-			sprintf(url_buf, "%s#%s", nsurl_access(url), frag);
-			gui_window_set_url(bw->window, url_buf);
-			free(url_buf);
-		} else {
+		nsurl *display_url;
+		lwc_string *lwc_frag;
+		nserror error;
+		lwc_error lerror;
+
+		lerror = lwc_intern_string(frag, strlen(frag), &lwc_frag);
+		if (lerror != lwc_error_ok) {
 			warn_user("NoMemory", 0);
+			return;
 		}
+
+		error = nsurl_refragment(url, lwc_frag, &display_url);
+		if (error != NSERROR_OK) {
+			warn_user("NoMemory", 0);
+			lwc_string_unref(lwc_frag);
+			return;
+		}
+
+		gui_window_set_url(bw->window, nsurl_access(display_url));
+		lwc_string_unref(lwc_frag);
+		nsurl_unref(display_url);
 	}
 }
 
