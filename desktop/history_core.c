@@ -224,7 +224,7 @@ struct history_entry *history_clone_entry(struct history *history,
  */
 
 void history_add(struct history *history, hlcache_handle *content,
-		char *frag_id)
+		const char *frag_id)
 {
 	struct history_entry *entry;
 	char *url;
