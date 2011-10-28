@@ -1691,3 +1691,63 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 	return NSERROR_OK;
 }
 
+
+/* exported interface, documented in nsurl.h */
+nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
+{
+	int frag_len;
+	int base_len;
+	char *pos;
+
+	assert(url != NULL);
+	assert(frag != NULL);
+
+	/* Create NetSurf URL object */
+	*new_url = malloc(sizeof(nsurl));
+	if (*new_url == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* Find the change in length from url to new_url */
+	base_len = url->length;
+	if (url->fragment != NULL) {
+		base_len -= 1 + lwc_string_length(url->fragment);
+	}
+	frag_len = lwc_string_length(frag);
+
+	/* Set new_url's length */
+	(*new_url)->length = base_len + 1 /* # */ + frag_len;
+
+	/* Create new_url's url string */
+	(*new_url)->string = malloc((*new_url)->length + 1 /* \0 */);
+	if ((*new_url)->string == NULL) {
+		free(*new_url);
+		*new_url = NULL;
+		return NSERROR_NOMEM;
+	}
+
+	/* Set string */
+	pos = (*new_url)->string;
+	memcpy(pos, url->string, base_len);
+	pos += base_len;
+	*pos = '#';
+	memcpy(++pos, lwc_string_data(frag), frag_len);
+	pos += frag_len;
+	*pos = '\0';
+
+	/* Copy components */
+	(*new_url)->scheme = nsurl__component_copy(url->scheme);
+	(*new_url)->username = nsurl__component_copy(url->username);
+	(*new_url)->password = nsurl__component_copy(url->password);
+	(*new_url)->host = nsurl__component_copy(url->host);
+	(*new_url)->port = nsurl__component_copy(url->port);
+	(*new_url)->path = nsurl__component_copy(url->path);
+	(*new_url)->query = nsurl__component_copy(url->query);
+	(*new_url)->fragment = lwc_string_ref(frag);
+
+	/* Give the URL a reference */
+	(*new_url)->count = 1;
+
+	return NSERROR_OK;
+}
+

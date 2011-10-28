@@ -212,7 +212,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined);
 /**
  * Create a NetSurf URL object without a fragment from a NetSurf URL
  *
- * \param base	  NetSurf URL to create new NetSurf URL from
+ * \param url	  NetSurf URL to create new NetSurf URL from
  * \param no_frag Returns new NetSurf URL without fragment
  * \return NSERROR_OK on success, appropriate error otherwise
  *
@@ -222,5 +222,23 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined);
  * the created object.
  */
 nserror nsurl_defragment(const nsurl *url, nsurl **no_frag);
+
+
+/**
+ * Create a NetSurf URL object, adding a fragment to an existing URL object
+ *
+ * \param url	  NetSurf URL to create new NetSurf URL from
+ * \param frag	  Fragment to add
+ * \param new_url Returns new NetSurf URL without fragment
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in new_url.
+ *
+ * It is up to the client to call nsurl_destroy when they are finished with
+ * the created object.
+ *
+ * Any fragment in url is replaced with frag in new_url.
+ */
+nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url);
 
 #endif
