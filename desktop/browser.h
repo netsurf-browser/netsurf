@@ -106,7 +106,7 @@ struct browser_window {
 	bool history_add;
 
 	/** Fragment identifier for current_content. */
-	char *frag_id;
+	lwc_string *frag_id;
 
 	/** Current drag status. */
 	browser_drag_type drag_type;
@@ -250,7 +250,7 @@ void browser_window_get_contextual_content(struct browser_window *bw,
 		int x, int y, struct contextual_content *data);
 
 void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
-		const char *frag);
+		lwc_string *frag);
 
 void browser_window_mouse_click(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y);

@@ -786,26 +786,14 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		return;
 	}
 
-	free(bw->frag_id);
+	if (bw->frag_id != NULL)
+		lwc_string_unref(bw->frag_id);
 	bw->frag_id = NULL;
 
 	if (nsurl_enquire(nsurl, NSURL_FRAGMENT)) {
-		lwc_string *lwc_frag;
 		bool same_url = false;
 
-		lwc_frag = nsurl_get_component(nsurl, NSURL_FRAGMENT);
-
-		bw->frag_id = strdup(lwc_string_data(lwc_frag));
-
-		if (bw->frag_id == NULL) {
-			nsurl_unref(nsurl);
-			if (nsref != NULL)
-				nsurl_unref(nsref);
-			lwc_string_unref(lwc_frag);
-			warn_user("NoMemory", 0);
-			return;
-		}
-		lwc_string_unref(lwc_frag);
+		bw->frag_id = nsurl_get_component(nsurl, NSURL_FRAGMENT);
 
 		/* Compare new URL with existing one (ignoring fragments) */
 		if (bw->current_content != NULL && 
@@ -825,7 +813,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 				nsurl_unref(nsref);
 			if (add_to_history)
 				history_add(bw->history, bw->current_content,
-						bw->frag_id);
+						bw->frag_id == NULL ? NULL :
+						lwc_string_data(bw->frag_id));
 			browser_window_update(bw, false);
 			if (bw->current_content != NULL) {
 				browser_window_refresh_url_bar(bw,
@@ -1063,7 +1052,7 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (bw->current_content != NULL) {
 			browser_window_refresh_url_bar(bw,
 					content_get_url(bw->current_content),
-				bw->frag_id);
+					bw->frag_id);
 		}
 		break;
 
@@ -1126,7 +1115,8 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (bw->history_add && bw->history) {
 			const char *url = nsurl_access(content_get_url(c));
 
-			history_add(bw->history, c, bw->frag_id);
+			history_add(bw->history, c, bw->frag_id == NULL ? NULL :
+					lwc_string_data(bw->frag_id));
 			if (urldb_add_url(url)) {
 				urldb_set_url_title(url, content_get_title(c));
 				urldb_update_url_visit_data(url);
@@ -1492,7 +1482,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				bw->frag_id, &x, &y)) {
+				lwc_string_data(bw->frag_id), &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
 		}
 
@@ -1511,7 +1501,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				bw->frag_id, &x, &y)) {
+				lwc_string_data(bw->frag_id), &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
 		}
 
@@ -1529,7 +1519,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				bw->frag_id, &x, &y)) {
+				lwc_string_data(bw->frag_id), &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
 		}
 
@@ -1858,14 +1848,17 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	}
 
 	/* These simply free memory, so are safe here */
+
+	if (bw->frag_id != NULL)
+		lwc_string_unref(bw->frag_id);
+
 	history_destroy(bw->history);
 
 	free(bw->name);
-	free(bw->frag_id);
 	free(bw->status_text);
 	bw->status_text = NULL;
-	LOG(("Status text cache match:miss %d:%d", 
-	     bw->status_match, bw->status_miss));
+	LOG(("Status text cache match:miss %d:%d",
+			bw->status_match, bw->status_miss));
 }
 
 
@@ -1961,7 +1954,7 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
  */
 
 void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
-		const char *frag)
+		lwc_string *frag)
 {
 	assert(bw);
 	assert(url);
@@ -1978,25 +1971,15 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		gui_window_set_url(bw->window, nsurl_access(url));
 	} else {
 		nsurl *display_url;
-		lwc_string *lwc_frag;
 		nserror error;
-		lwc_error lerror;
 
-		lerror = lwc_intern_string(frag, strlen(frag), &lwc_frag);
-		if (lerror != lwc_error_ok) {
-			warn_user("NoMemory", 0);
-			return;
-		}
-
-		error = nsurl_refragment(url, lwc_frag, &display_url);
+		error = nsurl_refragment(url, frag, &display_url);
 		if (error != NSERROR_OK) {
 			warn_user("NoMemory", 0);
-			lwc_string_unref(lwc_frag);
 			return;
 		}
 
 		gui_window_set_url(bw->window, nsurl_access(display_url));
-		lwc_string_unref(lwc_frag);
 		nsurl_unref(display_url);
 	}
 }
