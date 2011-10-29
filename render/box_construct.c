@@ -821,7 +821,8 @@ void box_construct_element_after(xmlNode *n, html_content *content)
 
 		inline_end = box_create(NULL, box->style, false,
 				box->href, box->target, box->title, 
-				box->id, content);
+				box->id == NULL ? NULL :
+				lwc_string_ref(box->id), content);
 		if (inline_end != NULL) {
 			inline_end->type = BOX_INLINE_END;
 
