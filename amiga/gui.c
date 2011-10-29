@@ -209,12 +209,29 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
-bool ami_locate_resource(char *lang, const char *file)
+bool ami_locate_resource(char *fullpath, const char *file)
 {
 	struct Locale *locale;
 	int i;
 	BPTR lock = 0;
 	bool found = false;
+
+	/* Firstly check the user's selected theme.  NB: ami_locate_resource()
+	 * gets called for Messages before options are loaded */
+
+	if(option_theme)
+	{
+		strcpy(fullpath, option_theme);
+		path_add_part(fullpath, 1024, file);
+	
+		if(lock = Lock(fullpath, ACCESS_READ))
+		{
+			UnLock(lock);
+			return true;
+		}
+	}
+
+	/* If not found, start on the user's preferred languages */
 
 	if(lock=Lock("PROGDIR:Resources/LangNames",ACCESS_READ))
 	{
@@ -226,19 +243,19 @@ bool ami_locate_resource(char *lang, const char *file)
 
 	for(i=0;i<10;i++)
 	{
-		strcpy(lang,"PROGDIR:Resources/");
+		strcpy(fullpath,"PROGDIR:Resources/");
 		if(locale->loc_PrefLanguages[i])
 		{
-			strcat(lang,messages_get(locale->loc_PrefLanguages[i]));
+			strcat(fullpath,messages_get(locale->loc_PrefLanguages[i]));
 		}
 		else
 		{
 			continue;
 		}
-		strcat(lang, "/");
-		strcat(lang, file);
+		strcat(fullpath, "/");
+		strcat(fullpath, file);
 
-		if(lock=Lock(lang,ACCESS_READ))
+		if(lock=Lock(fullpath,ACCESS_READ))
 		{
 			UnLock(lock);
 			found = true;
@@ -251,10 +268,10 @@ bool ami_locate_resource(char *lang, const char *file)
 		/* If not found yet, check in PROGDIR:Resources/en,
 		 * might not be in user's preferred languages */
 
-		strcpy(lang, "PROGDIR:Resources/en/");
-		strcat(lang, file);
+		strcpy(fullpath, "PROGDIR:Resources/en/");
+		strcat(fullpath, file);
 
-		if(lock=Lock(lang, ACCESS_READ))
+		if(lock=Lock(fullpath, ACCESS_READ))
 		{
 			UnLock(lock);
 			found = true;
@@ -268,10 +285,10 @@ bool ami_locate_resource(char *lang, const char *file)
 	{
 		/* Lastly check directly in PROGDIR:Resources */
 
-		strcpy(lang, "PROGDIR:Resources/");
-		strcat(lang, file);
+		strcpy(fullpath, "PROGDIR:Resources/");
+		strcat(fullpath, file);
 
-		if(lock=Lock(lang, ACCESS_READ))
+		if(lock=Lock(fullpath, ACCESS_READ))
 		{
 			UnLock(lock);
 			found = true;
