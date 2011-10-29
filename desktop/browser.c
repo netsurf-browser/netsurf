@@ -1482,7 +1482,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				lwc_string_data(bw->frag_id), &x, &y)) {
+				bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
 		}
 
@@ -1501,7 +1501,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				lwc_string_data(bw->frag_id), &x, &y)) {
+				bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
 		}
 
@@ -1519,7 +1519,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 		/* if frag_id exists, then try to scroll to it */
 		/** \TODO don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
-				lwc_string_data(bw->frag_id), &x, &y)) {
+				bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
 		}
 

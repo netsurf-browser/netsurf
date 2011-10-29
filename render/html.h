@@ -169,7 +169,7 @@ struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h,
 		unsigned int *n);
 struct content_html_object *html_get_objects(struct hlcache_handle *h, 
 		unsigned int *n);
-bool html_get_id_offset(struct hlcache_handle *h, const char *frag_id,
+bool html_get_id_offset(struct hlcache_handle *h, lwc_string *frag_id,
 		int *x, int *y);
 
 #endif

@@ -549,7 +549,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		bool *convert_children)
 {
 	xmlChar *title0, *s;
-	char *id = NULL;
+	lwc_string *id = NULL;
 	struct box *box = NULL;
 	css_select_results *styles = NULL;
 	struct element_entry *element;
@@ -590,8 +590,15 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Extract id attribute, if present */
-	if (box_get_attribute(ctx->n, "id", ctx->content, &id) == false)
-		return false;
+	s = xmlGetProp(ctx->n, (const xmlChar *) "id");
+	if (s) {
+		lwc_error lerror = lwc_intern_string((const char *) s,
+				strlen((const char *) s), &id);
+		xmlFree(s);
+
+		if (lerror != lwc_error_ok)
+			id = NULL;
+	}
 
 	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
 			props.href, props.target, props.title, id,
@@ -1290,8 +1297,24 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	}
 
 	/* name and id share the same namespace */
-	if (!box_get_attribute(n, "name", content, &box->id))
-		return false;
+	s = xmlGetProp(n, (const xmlChar *) "name");
+	if (s) {
+		lwc_error lerror;
+		lwc_string *lwc_name;
+
+		lerror = lwc_intern_string((const char *) s,
+				strlen((const char *) s), &lwc_name);
+		xmlFree(s);
+
+		if (lerror == lwc_error_ok) {
+			/* name replaces existing id
+			 * TODO: really? */
+			if (box->id != NULL)
+				lwc_string_unref(box->id);
+
+			box->id = lwc_name;
+		}
+	}
 
 	/* target frame [16.3] */
 	if ((s = xmlGetProp(n, (const xmlChar *) "target"))) {

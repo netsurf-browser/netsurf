@@ -89,6 +89,9 @@ static int box_talloc_destructor(struct box *b)
 
 	if (b->href != NULL)
 		nsurl_unref(b->href);
+
+	if (b->id != NULL)
+		lwc_string_unref(b->id);
 	
 	return 0;
 }
@@ -112,7 +115,7 @@ static int box_talloc_destructor(struct box *b)
 
 struct box * box_create(css_select_results *styles, css_computed_style *style,
 		bool style_owned, nsurl *href, const char *target, 
-		const char *title, char *id, void *context)
+		const char *title, lwc_string *id, void *context)
 {
 	unsigned int i;
 	struct box *box;
@@ -850,11 +853,14 @@ struct box *box_pick_text_box(struct html_content *html,
  * \return  the box or 0 if not found
  */
 
-struct box *box_find_by_id(struct box *box, const char *id)
+struct box *box_find_by_id(struct box *box, lwc_string *id)
 {
 	struct box *a, *b;
+	bool m;
 
-	if (box->id != NULL && strcmp(id, box->id) == 0)
+	if (box->id != NULL &&
+			lwc_string_isequal(id, box->id, &m) == lwc_error_ok &&
+			m == true)
 		return box;
 
 	for (a = box->children; a; a = a->next) {
@@ -952,7 +958,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 	if (box->title)
 		fprintf(stream, " [%s]", box->title);
 	if (box->id)
-		fprintf(stream, " <%s>", box->id);
+		fprintf(stream, " <%s>", lwc_string_data(box->id));
 	if (box->type == BOX_INLINE || box->type == BOX_INLINE_END)
 		fprintf(stream, " inline_end %p", box->inline_end);
 	if (box->float_children)

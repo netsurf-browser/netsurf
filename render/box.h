@@ -251,7 +251,7 @@ struct box {
 	struct form_control* gadget;
 
 	char *usemap; /** (Image)map to use with this object, or 0 if none */
-	char *id; /**<  value of id attribute (or name for anchors) */
+	lwc_string *id; /**<  value of id attribute (or name for anchors) */
 
 	/** Background image for this box, or 0 if none */
 	struct hlcache_handle *background;
@@ -313,7 +313,7 @@ extern const char *TARGET_BLANK;
 void *box_style_alloc(void *ptr, size_t len, void *pw);
 struct box * box_create(css_select_results *styles, css_computed_style *style,
 		bool style_owned, nsurl *href, const char *target, 
-		const char *title, char *id, void *context);
+		const char *title, lwc_string *id, void *context);
 void box_add_child(struct box *parent, struct box *child);
 void box_insert_sibling(struct box *box, struct box *new_box);
 void box_unlink_and_free(struct box *box);
@@ -327,7 +327,7 @@ struct box *box_object_at_point(struct hlcache_handle *h, int x, int y);
 struct box *box_href_at_point(struct hlcache_handle *h, int x, int y);
 struct box *box_pick_text_box(struct html_content *html,
 		int x, int y, int dir, int *dx, int *dy);
-struct box *box_find_by_id(struct box *box, const char *id);
+struct box *box_find_by_id(struct box *box, lwc_string *id);
 bool box_visible(struct box *box);
 void box_dump(FILE *stream, struct box *box, unsigned int depth);
 bool box_extract_link(const char *rel, nsurl *base, nsurl **result);

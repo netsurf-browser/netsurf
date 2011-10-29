@@ -2496,7 +2496,7 @@ struct content_html_object *html_get_objects(hlcache_handle *h, unsigned int *n)
  * \param y        Updated to global y coord iff id found
  * \return  true iff id found
  */
-bool html_get_id_offset(hlcache_handle *h, const char *frag_id, int *x, int *y)
+bool html_get_id_offset(hlcache_handle *h, lwc_string *frag_id, int *x, int *y)
 {
 	struct box *pos;
 	struct box *layout;
