@@ -650,7 +650,6 @@ static int
 fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_window *gw = cbi->context;
-	int res = 0;
 	static uint8_t modifier = 0;
 	int ucs4 = -1;
 
@@ -702,7 +701,7 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			ucs4 = fbtk_keycode_to_ucs4(cbi->event->value.keycode,
 						    modifier);
 			if (ucs4 != -1)
-				res = browser_window_key_press(gw->bw, ucs4);
+				browser_window_key_press(gw->bw, ucs4);
 			break;
 		}
 		break;
