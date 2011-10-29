@@ -171,12 +171,15 @@ Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
 static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg);
+bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
+	const char *map);
 
 STRPTR ami_locale_langs(void)
 {
 	struct Locale *locale;
 	STRPTR acceptlangs = NULL, acceptlangs2 = NULL;
 	int i;
+	char *remapped;
 
 	if(locale = OpenLocale(NULL))
 	{
@@ -184,18 +187,19 @@ STRPTR ami_locale_langs(void)
 		{
 			if(locale->loc_PrefLanguages[i])
 			{
-				if(messages_get(locale->loc_PrefLanguages[i]) != locale->loc_PrefLanguages[i])
+				if(ami_gui_map_filename(&remapped, "PROGDIR:Resources",
+					locale->loc_PrefLanguages[i], "LangNames"))
 				{
 					if(acceptlangs)
 					{
 						acceptlangs2 = acceptlangs;
-						acceptlangs = ASPrintf("%s, %s",acceptlangs2,messages_get(locale->loc_PrefLanguages[i]));
+						acceptlangs = ASPrintf("%s, %s",acceptlangs2, remapped);
 						FreeVec(acceptlangs2);
 						acceptlangs2 = NULL;
 					}
 					else
 					{
-						acceptlangs = ASPrintf("%s",messages_get(locale->loc_PrefLanguages[i]));
+						acceptlangs = ASPrintf("%s", remapped);
 					}
 				}
 			}
@@ -230,7 +234,7 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 
 			if(realfname = strchr(buffer, ':'))
 			{
-				if(strncmp(buffer, file, (realfname - buffer)) == 0)
+				if(strncmp(buffer, file, strlen(file)) == 0)
 				{
 					if(realfname[strlen(realfname)-1] == '\n')
 						realfname[strlen(realfname)-1] = '\0';
