@@ -244,7 +244,7 @@ bool ami_gui_map_filename(char **remapped, const char *path, const char *file, c
 	}
 
 	if(found == false) *remapped = strdup(file);
-	LOG(("Remapped %s to %s in path %s", file, *remapped, path));
+		else LOG(("Remapped %s to %s in path %s using %s", file, *remapped, path, map));
 
 	return found;
 }
@@ -256,7 +256,7 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 	char *remapped;
 	BPTR lock = 0;
 
-	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map"))
+	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map");
 	path_add_part(fullpath, 1024, remapped);
 
 	if(lock = Lock(fullpath, ACCESS_READ))
@@ -265,7 +265,7 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 		found = true;
 	}
 
-	LOG(("Checking for %s : result %ld", fullpath, found));
+	if(found) LOG(("Found %s", fullpath));
 	free(remapped);
 
 	return found;
@@ -277,6 +277,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	int i;
 	BPTR lock = 0;
 	bool found = false;
+	char *remapped;
 
 	/* Firstly check the user's selected theme.  NB: ami_locate_resource()
 	 * gets called for Messages before options are loaded */
@@ -290,12 +291,6 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 	/* If not found, start on the user's preferred languages */
 
-	if(lock=Lock("PROGDIR:Resources/LangNames",ACCESS_READ))
-	{
-		UnLock(lock);
-		messages_load("PROGDIR:Resources/LangNames");
-	}
-
 	locale = OpenLocale(NULL);
 
 	for(i=0;i<10;i++)
@@ -304,7 +299,10 @@ bool ami_locate_resource(char *fullpath, const char *file)
 
 		if(locale->loc_PrefLanguages[i])
 		{
-			strcat(fullpath,messages_get(locale->loc_PrefLanguages[i]));
+			ami_gui_map_filename(&remapped, "PROGDIR:Resources",
+				locale->loc_PrefLanguages[i], "LangNames");
+			path_add_part(fullpath, 1024, remapped);
+
 			found = ami_gui_check_resource(fullpath, file);
 		}
 		else
