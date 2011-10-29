@@ -209,7 +209,7 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
-bool ami_gui_locate_resource_map(char **remapped, const char *path, const char *file)
+bool ami_gui_map_filename(char **remapped, const char *path, const char *file, const char *map)
 {
 	BPTR fh = 0;
 	char mapfile[1024];
@@ -218,7 +218,7 @@ bool ami_gui_locate_resource_map(char **remapped, const char *path, const char *
 	bool found = false;
 
 	strcpy(mapfile, path);
-	path_add_part(mapfile, 1024, "Resource.map");
+	path_add_part(mapfile, 1024, map);
 
 	if(fh = FOpen(mapfile, MODE_OLDFILE, 0))
 	{
@@ -256,10 +256,8 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 	char *remapped;
 	BPTR lock = 0;
 
-	if(free_rmap = ami_gui_locate_resource_map(&remapped, fullpath, file))
-		path_add_part(fullpath, 1024, remapped);
-	else
-		path_add_part(fullpath, 1024, file);
+	ami_gui_map_filename(&remapped, fullpath, file, "Resource.map"))
+	path_add_part(fullpath, 1024, remapped);
 
 	if(lock = Lock(fullpath, ACCESS_READ))
 	{
@@ -267,9 +265,8 @@ bool ami_gui_check_resource(char *fullpath, const char *file)
 		found = true;
 	}
 
-	if(free_rmap) free(remapped);
-
 	LOG(("Checking for %s : result %ld", fullpath, found));
+	free(remapped);
 
 	return found;
 }
