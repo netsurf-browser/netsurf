@@ -209,6 +209,71 @@ STRPTR ami_locale_langs(void)
 	return acceptlangs;
 }
 
+bool ami_gui_locate_resource_map(char **remapped, const char *path, const char *file)
+{
+	BPTR fh = 0;
+	char mapfile[1024];
+	char buffer[1024];
+	char *realfname;
+	bool found = false;
+
+	strcpy(mapfile, path);
+	path_add_part(mapfile, 1024, "Resource.map");
+
+	if(fh = FOpen(mapfile, MODE_OLDFILE, 0))
+	{
+		while(FGets(fh, buffer, 1024) != 0)
+		{
+			if((buffer[0] == '#') ||
+				(buffer[0] == '\n') ||
+				(buffer[0] == '\0')) continue;
+
+			if(realfname = strchr(buffer, ':'))
+			{
+				if(strncmp(buffer, file, (realfname - buffer)) == 0)
+				{
+					if(realfname[strlen(realfname)-1] == '\n')
+						realfname[strlen(realfname)-1] = '\0';
+					*remapped = strdup(realfname + 1);
+					found = true;
+					break;
+				}
+			}
+		}
+		FClose(fh);
+	}
+
+	if(found == false) *remapped = strdup(file);
+	LOG(("Remapped %s to %s in path %s", file, *remapped, path));
+
+	return found;
+}
+
+bool ami_gui_check_resource(char *fullpath, const char *file)
+{
+	bool free_rmap = false;
+	bool found = false;
+	char *remapped;
+	BPTR lock = 0;
+
+	if(free_rmap = ami_gui_locate_resource_map(&remapped, fullpath, file))
+		path_add_part(fullpath, 1024, remapped);
+	else
+		path_add_part(fullpath, 1024, file);
+
+	if(lock = Lock(fullpath, ACCESS_READ))
+	{
+		UnLock(lock);
+		found = true;
+	}
+
+	if(free_rmap) free(remapped);
+
+	LOG(("Checking for %s : result %ld", fullpath, found));
+
+	return found;
+}
+
 bool ami_locate_resource(char *fullpath, const char *file)
 {
 	struct Locale *locale;
@@ -222,13 +287,8 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	if(option_theme)
 	{
 		strcpy(fullpath, option_theme);
-		path_add_part(fullpath, 1024, file);
-	
-		if(lock = Lock(fullpath, ACCESS_READ))
-		{
-			UnLock(lock);
-			return true;
-		}
+		found = ami_gui_check_resource(fullpath, file);
+		if(found) return true;
 	}
 
 	/* If not found, start on the user's preferred languages */
@@ -244,23 +304,18 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	for(i=0;i<10;i++)
 	{
 		strcpy(fullpath,"PROGDIR:Resources/");
+
 		if(locale->loc_PrefLanguages[i])
 		{
 			strcat(fullpath,messages_get(locale->loc_PrefLanguages[i]));
+			found = ami_gui_check_resource(fullpath, file);
 		}
 		else
 		{
 			continue;
 		}
-		strcat(fullpath, "/");
-		strcat(fullpath, file);
 
-		if(lock=Lock(fullpath,ACCESS_READ))
-		{
-			UnLock(lock);
-			found = true;
-			break;
-		}
+		if(found) break;
 	}
 
 	if(!found)
@@ -269,14 +324,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 		 * might not be in user's preferred languages */
 
 		strcpy(fullpath, "PROGDIR:Resources/en/");
-		strcat(fullpath, file);
-
-		if(lock=Lock(fullpath, ACCESS_READ))
-		{
-			UnLock(lock);
-			found = true;
-		}
-		else found = false;
+		found = ami_gui_check_resource(fullpath, file);
 	}
 
 	CloseLocale(locale);
@@ -286,14 +334,7 @@ bool ami_locate_resource(char *fullpath, const char *file)
 		/* Lastly check directly in PROGDIR:Resources */
 
 		strcpy(fullpath, "PROGDIR:Resources/");
-		strcat(fullpath, file);
-
-		if(lock=Lock(fullpath, ACCESS_READ))
-		{
-			UnLock(lock);
-			found = true;
-		}
-		else found = false;
+		found = ami_gui_check_resource(fullpath, file);
 	}
 
 	return found;
