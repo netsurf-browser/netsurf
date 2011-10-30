@@ -59,11 +59,6 @@
 
 static char nsjpeg_error_buffer[JMSG_LENGTH_MAX];
 
-struct nsjpeg_error_mgr {
-	struct jpeg_error_mgr pub;
-	jmp_buf setjmp_buffer;
-};
-
 static unsigned char nsjpeg_eoi[] = { 0xff, JPEG_EOI };
 
 /**
@@ -148,8 +143,7 @@ static void nsjpeg_term_source(j_decompress_ptr cinfo)
  */
 static void nsjpeg_error_log(j_common_ptr cinfo)
 {
-	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
-	err->pub.format_message(cinfo, nsjpeg_error_buffer);
+	cinfo->err->format_message(cinfo, nsjpeg_error_buffer);
 	LOG(("%s", nsjpeg_error_buffer));
 }
 
@@ -161,11 +155,12 @@ static void nsjpeg_error_log(j_common_ptr cinfo)
  */
 static void nsjpeg_error_exit(j_common_ptr cinfo)
 {
-	struct nsjpeg_error_mgr *err = (struct nsjpeg_error_mgr *) cinfo->err;
-	err->pub.format_message(cinfo, nsjpeg_error_buffer);
+	jmp_buf *setjmp_buffer = (jmp_buf *) cinfo->client_data;
+
+	cinfo->err->format_message(cinfo, nsjpeg_error_buffer);
 	LOG(("%s", nsjpeg_error_buffer));
 
-	longjmp(err->setjmp_buffer, 1);
+	longjmp(*setjmp_buffer, 1);
 }
 
 static struct bitmap *
@@ -174,7 +169,8 @@ jpeg_cache_convert(struct content *c)
 	uint8_t *source_data; /* Jpeg source data */
 	unsigned long source_size; /* length of Jpeg source data */
 	struct jpeg_decompress_struct cinfo;
-	struct nsjpeg_error_mgr jerr;
+	struct jpeg_error_mgr jerr;
+	jmp_buf setjmp_buffer;
 	unsigned int height;
 	unsigned int width;
 	struct bitmap * volatile bitmap = NULL;
@@ -198,17 +194,18 @@ jpeg_cache_convert(struct content *c)
 	}
 
 	/* setup a JPEG library error handler */
-	cinfo.err = jpeg_std_error(&jerr.pub);
-	jerr.pub.error_exit = nsjpeg_error_exit;
-	jerr.pub.output_message = nsjpeg_error_log;
+	cinfo.err = jpeg_std_error(&jerr);
+	jerr.error_exit = nsjpeg_error_exit;
+	jerr.output_message = nsjpeg_error_log;
 
 	/* handler for fatal errors during decompression */
-	if (setjmp(jerr.setjmp_buffer)) {
+	if (setjmp(setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
 		return bitmap;
 	}
 
 	jpeg_create_decompress(&cinfo);
+	cinfo.client_data = &setjmp_buffer;
 
 	/* setup data source */
 	source_mgr.next_input_byte = source_data;
@@ -286,7 +283,8 @@ jpeg_cache_convert(struct content *c)
 static bool nsjpeg_convert(struct content *c)
 {
 	struct jpeg_decompress_struct cinfo;
-	struct nsjpeg_error_mgr jerr;
+	struct jpeg_error_mgr jerr;
+	jmp_buf setjmp_buffer;
 	struct jpeg_source_mgr source_mgr = { 0, 0,
 		nsjpeg_init_source, nsjpeg_fill_input_buffer,
 		nsjpeg_skip_input_data, jpeg_resync_to_restart,
@@ -299,17 +297,20 @@ static bool nsjpeg_convert(struct content *c)
 	/* check image header is valid and get width/height */
 	data = content__get_source_data(c, &size);
 
-	cinfo.err = jpeg_std_error(&jerr.pub);
-	jerr.pub.error_exit = nsjpeg_error_exit;
-	jerr.pub.output_message = nsjpeg_error_log;
-	if (setjmp(jerr.setjmp_buffer)) {
+	cinfo.err = jpeg_std_error(&jerr);
+	jerr.error_exit = nsjpeg_error_exit;
+	jerr.output_message = nsjpeg_error_log;
+
+	if (setjmp(setjmp_buffer)) {
 		jpeg_destroy_decompress(&cinfo);
 
 		msg_data.error = nsjpeg_error_buffer;
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+
 	jpeg_create_decompress(&cinfo);
+	cinfo.client_data = &setjmp_buffer;
 	source_mgr.next_input_byte = (unsigned char *) data;
 	source_mgr.bytes_in_buffer = size;
 	cinfo.src = &source_mgr;
