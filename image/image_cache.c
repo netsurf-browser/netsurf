@@ -682,7 +682,7 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 				if (centry->bitmap != NULL) {
 					slen += snprintf(string + slen,
 							 size - slen,
-							 "%ld",
+							 "%zd",
 							 centry->bitmap_size);
 				} else {
 					slen += snprintf(string + slen,
