@@ -854,7 +854,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 				sec_start = norm_start + colon - pegs->at +
 						skip;
 				if (url->scheme != NULL && length -
-						(colon - pegs->at + 1) == 2 &&
+						(colon - pegs->at + skip) == 2 &&
 						*sec_start == '8' &&
 						*(sec_start + 1) == '0' &&
 						strncmp(lwc_string_data(
@@ -865,7 +865,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 					flags |= NSURL_F_NO_PORT;
 				}
 
-				if (length - (colon - pegs->at + 1) <= 0) {
+				if (length - (colon - pegs->at + skip) <= 0) {
 					/* No space for a port after the colon
 					 */
 					flags |= NSURL_F_NO_PORT;
