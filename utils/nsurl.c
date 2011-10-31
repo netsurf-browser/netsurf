@@ -857,6 +857,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 						strncmp(lwc_string_data(
 							url->scheme), "http",
 						SLEN("http")) == 0 &&
+						length -
+						(colon - pegs->at + 1) == 2 &&
 						*sec_start == '8' &&
 						*(sec_start + 1) == '0') {
 					/* Scheme is http, and port is default
