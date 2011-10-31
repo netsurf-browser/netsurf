@@ -1736,13 +1736,14 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 /* exported interface, documented in nsurl.h */
 nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 {
-	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
-	enum nsurl_string_flags str_flags = 0;
 	size_t length;
+	char *pos;
 
-	/* Get the string length and find which parts of url are present */
-	nsurl__get_string_data(&(url->components), NSURL_COMPLETE, &length,
-			&str_len, &str_flags);
+	/* Find the change in length from url to new_url */
+	length = url->length;
+	if (url->components.fragment != NULL) {
+		length -= 1 + lwc_string_length(url->components.fragment);
+	}
 
 	/* Create NetSurf URL object */
 	*no_frag = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
@@ -1770,8 +1771,10 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 	(*no_frag)->length = length;
 
 	/* Fill out the url string */
-	nsurl_get_string(&((*no_frag)->components), (*no_frag)->string,
-			&str_len, str_flags);
+	pos = (*no_frag)->string;
+	memcpy(pos, url->string, length);
+	pos += length;
+	*pos = '\0';
 
 	/* Give the URL a reference */
 	(*no_frag)->count = 1;
