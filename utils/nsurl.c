@@ -626,9 +626,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 	size_t copy_len;
 	size_t length;
 	enum {
-		NSURL_F_IS_HTTP		= (1 << 0),
-		NSURL_F_IS_HTTPS	= (1 << 1),
-		NSURL_F_NO_PORT		= (1 << 2)
+		NSURL_F_NO_PORT		= (1 << 0)
 	} flags = 0;
 
 	switch (section) {
@@ -762,16 +760,6 @@ static nserror nsurl__create_from_section(const char const *url_s,
 	/* Stage 2: Create the URL components for the required section */
 	switch (section) {
 	case URL_SCHEME:
-		if (length == 0 || (length == SLEN("http") &&
-				strncmp(norm_start, "http",
-						SLEN("http")) == 0)) {
-			flags |= NSURL_F_IS_HTTP;
-		} else if (length == SLEN("https") &&
-				strncmp(norm_start, "https",
-						SLEN("https")) == 0) {
-			flags |= NSURL_F_IS_HTTPS;
-		}
-
 		if (length == 0) {
 			/* No scheme, assuming http, and add to URL */
 			if (lwc_intern_string("http", SLEN("http"),
@@ -865,10 +853,10 @@ static nserror nsurl__create_from_section(const char const *url_s,
 						1 : 0;
 				sec_start = norm_start + colon - pegs->at +
 						skip;
-				if (flags & NSURL_F_IS_HTTP &&
-						length -
-						(colon - pegs->at + skip) ==
-						2 &&
+				if (url->scheme != NULL &&
+						strncmp(lwc_string_data(
+							url->scheme), "http",
+						SLEN("http")) == 0 &&
 						*sec_start == '8' &&
 						*(sec_start + 1) == '0') {
 					/* Scheme is http, and port is default
