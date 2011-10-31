@@ -961,88 +961,87 @@ static void nsurl__get_string_data(const struct nsurl_components *url,
 
 	/* Intersection of required parts and available parts gives
 	 * the output parts */
-	if (url->scheme && parts & NSURL_SCHEME)
+	if (url->scheme && parts & NSURL_SCHEME) {
 		flags |= NSURL_F_SCHEME;
-	if (url->username && parts & NSURL_USERNAME)
-		flags |= NSURL_F_USERNAME;
-	if (url->password && parts & NSURL_PASSWORD)
-		flags |= NSURL_F_PASSWORD;
-	if (url->host && parts & NSURL_HOST)
-		flags |= NSURL_F_HOST;
-	if (url->port && parts & NSURL_PORT)
-		flags |= NSURL_F_PORT;
-	if (url->path && parts & NSURL_PATH)
-		flags |= NSURL_F_PATH;
-	if (url->query && parts & NSURL_QUERY)
-		flags |= NSURL_F_QUERY;
-	if (url->fragment && parts & NSURL_FRAGMENT)
-		flags |= NSURL_F_FRAGMENT;
 
-	/* Turn on any spanned punctuation */
-	if ((flags & NSURL_F_SCHEME) && (parts > NSURL_SCHEME))
-		flags |= NSURL_F_SCHEME_PUNCTUATION;
-	if ((flags & NSURL_F_SCHEME) && (flags > NSURL_F_SCHEME) &&
-			url->path && lwc_string_data(url->path)[0] == '/')
-		flags |= NSURL_F_AUTHORITY_PUNCTUATION;
-	if ((flags & (NSURL_F_USERNAME | NSURL_F_PASSWORD)) &&
-				flags & NSURL_F_HOST)
-		flags |= NSURL_F_CREDENTIALS_PUNCTUATION;
-	if ((flags & ~NSURL_F_FRAGMENT) && (flags & NSURL_F_FRAGMENT))
-		flags |= NSURL_F_FRAGMENT_PUNCTUATION;
-
-	/* Get total output length */
-	*url_l = 0;
-
-	if (flags & NSURL_F_SCHEME) {
 		lengths->scheme = lwc_string_length(url->scheme);
 		*url_l += lengths->scheme;
 	}
 
-	if (flags & NSURL_F_SCHEME_PUNCTUATION)
-		*url_l += SLEN(":");
+	if (url->username && parts & NSURL_USERNAME) {
+		flags |= NSURL_F_USERNAME;
 
-	if (flags & NSURL_F_AUTHORITY_PUNCTUATION)
-		*url_l += SLEN("//");
-
-	if (flags & NSURL_F_USERNAME) {
 		lengths->username = lwc_string_length(url->username);
 		*url_l += lengths->username;
 	}
 
-	if (flags & NSURL_F_PASSWORD) {
+	if (url->password && parts & NSURL_PASSWORD) {
+		flags |= NSURL_F_PASSWORD;
+
 		lengths->password = lwc_string_length(url->password);
 		*url_l += SLEN(":") + lengths->password;
 	}
 
-	if (flags & NSURL_F_CREDENTIALS_PUNCTUATION)
-		*url_l += SLEN("@");
+	if (url->host && parts & NSURL_HOST) {
+		flags |= NSURL_F_HOST;
 
-	if (flags & NSURL_F_HOST) {
 		lengths->host = lwc_string_length(url->host);
 		*url_l += lengths->host;
 	}
 
-	if (flags & NSURL_F_PORT) {
+	if (url->port && parts & NSURL_PORT) {
+		flags |= NSURL_F_PORT;
+
 		lengths->port = lwc_string_length(url->port);
 		*url_l += SLEN(":") + lengths->port;
 	}
 
-	if (flags & NSURL_F_PATH) {
+	if (url->path && parts & NSURL_PATH) {
+		flags |= NSURL_F_PATH;
+
 		lengths->path = lwc_string_length(url->path);
 		*url_l += lengths->path;
 	}
 
-	if (flags & NSURL_F_QUERY) {
+	if (url->query && parts & NSURL_QUERY) {
+		flags |= NSURL_F_QUERY;
+
 		lengths->query = lwc_string_length(url->query);
 		*url_l += lengths->query;
 	}
 
-	if (flags & NSURL_F_FRAGMENT) {
-		if (flags & NSURL_F_FRAGMENT_PUNCTUATION)
-			*url_l += SLEN("#");
+	if (url->fragment && parts & NSURL_FRAGMENT) {
+		flags |= NSURL_F_FRAGMENT;
 
 		lengths->fragment = lwc_string_length(url->fragment);
 		*url_l += lengths->fragment;
+	}
+
+	/* Turn on any spanned punctuation */
+	if ((flags & NSURL_F_SCHEME) && (parts > NSURL_SCHEME)) {
+		flags |= NSURL_F_SCHEME_PUNCTUATION;
+
+		*url_l += SLEN(":");
+	}
+
+	if ((flags & NSURL_F_SCHEME) && (flags > NSURL_F_SCHEME) &&
+			url->path && lwc_string_data(url->path)[0] == '/') {
+		flags |= NSURL_F_AUTHORITY_PUNCTUATION;
+
+		*url_l += SLEN("//");
+	}
+
+	if ((flags & (NSURL_F_USERNAME | NSURL_F_PASSWORD)) &&
+				flags & NSURL_F_HOST) {
+		flags |= NSURL_F_CREDENTIALS_PUNCTUATION;
+
+		*url_l += SLEN("@");
+	}
+
+	if ((flags & ~NSURL_F_FRAGMENT) && (flags & NSURL_F_FRAGMENT)) {
+		flags |= NSURL_F_FRAGMENT_PUNCTUATION;
+
+		*url_l += SLEN("#");
 	}
 
 	*pflags = flags;
