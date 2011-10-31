@@ -119,12 +119,8 @@ static bool nsurl__is_no_escape(unsigned char c)
 	return no_escape[c];
 }
 
-/**
- * NetSurf URL object
- *
- * [scheme]://[username][:password]@[host]:[port][/path][?query][#fragment]
- */
-struct nsurl {
+/** nsurl components */
+struct nsurl_components {
 	lwc_string *scheme;
 	lwc_string *username;
 	lwc_string *password;
@@ -133,11 +129,20 @@ struct nsurl {
 	lwc_string *path;
 	lwc_string *query;
 	lwc_string *fragment;
+};
+
+/**
+ * NetSurf URL object
+ *
+ * [scheme]://[username][:password]@[host]:[port][/path][?query][#fragment]
+ */
+struct nsurl {
+	struct nsurl_components components;
 
 	int count;	/* Number of references to NetSurf URL object */
 
-	char *string;	/* Full URL as a string */
 	size_t length;	/* Length of string */
+	char string[];	/* Full URL as a string */
 };
 
 
@@ -156,6 +161,40 @@ struct url_markers {
 	size_t fragment;
 
 	size_t end; /** end of URL */
+};
+
+
+/** Marker set, indicating positions of sections within a URL string */
+struct nsurl_component_lengths {
+	size_t scheme;
+	size_t username;
+	size_t password;
+	size_t host;
+	size_t port;
+	size_t path;
+	size_t query;
+	size_t fragment;
+};
+
+
+/** Flags indicating which parts of a URL string are required for a nsurl */
+enum nsurl_string_flags {
+	NSURL_F_SCHEME			= (1 << 0),
+	NSURL_F_SCHEME_PUNCTUATION	= (1 << 1),
+	NSURL_F_AUTHORITY_PUNCTUATION	= (1 << 2),
+	NSURL_F_USERNAME		= (1 << 3),
+	NSURL_F_PASSWORD		= (1 << 4),
+	NSURL_F_CREDENTIALS_PUNCTUATION	= (1 << 5),
+	NSURL_F_HOST			= (1 << 6),
+	NSURL_F_PORT			= (1 << 7),
+	NSURL_F_AUTHORITY		= (NSURL_F_USERNAME |
+						NSURL_F_PASSWORD |
+						NSURL_F_HOST |
+						NSURL_F_PORT),
+	NSURL_F_PATH			= (1 << 8),
+	NSURL_F_QUERY			= (1 << 9),
+	NSURL_F_FRAGMENT_PUNCTUATION	= (1 << 10),
+	NSURL_F_FRAGMENT		= (1 << 11)
 };
 
 
@@ -576,7 +615,7 @@ static nserror nsurl__create_from_section(const char const *url_s,
 		const enum url_sections section,
 		const struct url_markers *pegs,
 		char *pos_norm,
-		nsurl *url)
+		struct nsurl_components *url)
 {
 	int ascii_offset;
 	int start = 0;
@@ -750,6 +789,9 @@ static nserror nsurl__create_from_section(const char const *url_s,
 		break;
 
 	case URL_CREDENTIALS:
+		url->username = NULL;
+		url->password = NULL;
+
 		if (length != 0 && *norm_start != ':') {
 			char *sec_start = norm_start;
 			if (pegs->colon_first != pegs->authority &&
@@ -783,6 +825,9 @@ static nserror nsurl__create_from_section(const char const *url_s,
 		break;
 
 	case URL_HOST:
+		url->host = NULL;
+		url->port = NULL;
+
 		if (length != 0) {
 			size_t colon = 0;
 			char *sec_start = norm_start;
@@ -874,6 +919,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 					&url->path) != lwc_error_ok) {
 				return NSERROR_NOMEM;
 			}
+		} else {
+			url->path = NULL;
 		}
 
 		break;
@@ -884,6 +931,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 					&url->query) != lwc_error_ok) {
 				return NSERROR_NOMEM;
 			}
+		} else {
+			url->query = NULL;
 		}
 
 		break;
@@ -894,6 +943,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 					&url->fragment) != lwc_error_ok) {
 				return NSERROR_NOMEM;
 			}
+		} else {
+			url->fragment = NULL;
 		}
 
 		break;
@@ -903,268 +954,22 @@ static nserror nsurl__create_from_section(const char const *url_s,
 }
 
 
-#ifdef NSURL_DEBUG
 /**
- * Dump a NetSurf URL's internal components
+ * Get nsurl string info; total length, component lengths, & components present
  *
- * \param url	The NetSurf URL to dump components of
+ * \param url		NetSurf URL components
+ * \param parts		Which parts of the URL are required in the string
+ * \param url_l		Updated to total string length
+ * \param lengths	Updated with individual component lengths
+ * \param pflags	Updated to contain relevant string flags
  */
-static void nsurl__dump(const nsurl *url)
+static void nsurl__get_string_data(const struct nsurl_components *url,
+		nsurl_component parts, size_t *url_l,
+		struct nsurl_component_lengths *lengths,
+		enum nsurl_string_flags *pflags)
 {
-	if (url->scheme)
-		LOG(("  Scheme: %s", lwc_string_data(url->scheme)));
-
-	if (url->username)
-		LOG(("Username: %s", lwc_string_data(url->username)));
-
-	if (url->password)
-		LOG(("Password: %s", lwc_string_data(url->password)));
-
-	if (url->host)
-		LOG(("    Host: %s", lwc_string_data(url->host)));
-
-	if (url->port)
-		LOG(("    Port: %s", lwc_string_data(url->port)));
-
-	if (url->path)
-		LOG(("    Path: %s", lwc_string_data(url->path)));
-
-	if (url->query)
-		LOG(("   Query: %s", lwc_string_data(url->query)));
-
-	if (url->fragment)
-		LOG(("Fragment: %s", lwc_string_data(url->fragment)));
-}
-#endif
-
-/******************************************************************************
- * NetSurf URL Public API                                                     *
- ******************************************************************************/
-
-/* exported interface, documented in nsurl.h */
-nserror nsurl_create(const char const *url_s, nsurl **url)
-{
-	struct url_markers m;
-	size_t length;
-	char *buff;
-	nserror e = NSERROR_OK;
-
-	assert(url_s != NULL);
-
-	/* Peg out the URL sections */
-	nsurl__get_string_markers(url_s, &m, false);
-
-	/* Get the length of the longest section */
-	length = nsurl__get_longest_section(&m);
-
-	/* Create NetSurf URL object */
-	*url = calloc(1, sizeof(nsurl));
-	if (*url == NULL) {
-		return NSERROR_NOMEM;
-	}
-
-	/* Allocate enough memory to url escape the longest section */
-	buff = malloc(length * 3 + 1);
-	if (buff == NULL) {
-		free(*url);
-		*url = NULL;
-		return NSERROR_NOMEM;
-	}
-
-	/* Build NetSurf URL object from sections */
-	e |= nsurl__create_from_section(url_s, URL_SCHEME, &m, buff, *url);
-	e |= nsurl__create_from_section(url_s, URL_CREDENTIALS, &m, buff, *url);
-	e |= nsurl__create_from_section(url_s, URL_HOST, &m, buff, *url);
-	e |= nsurl__create_from_section(url_s, URL_PATH, &m, buff, *url);
-	e |= nsurl__create_from_section(url_s, URL_QUERY, &m, buff, *url);
-	e |= nsurl__create_from_section(url_s, URL_FRAGMENT, &m, buff, *url);
-
-	/* Finished with buffer */
-	free(buff);
-
-	if (e != NSERROR_OK) {
-		free(*url);
-		*url = NULL;
-		return NSERROR_NOMEM;
-	}
-
-	/* Get the complete URL string */
-	if (nsurl_get(*url, NSURL_WITH_FRAGMENT, &((*url)->string),
-			&((*url)->length)) != NSERROR_OK) {
-		free(*url);
-		*url = NULL;
-		return NSERROR_NOMEM;
-	}
-
-	/* Give the URL a reference */
-	(*url)->count = 1;
-
-	return NSERROR_OK;
-}
-
-
-/* exported interface, documented in nsurl.h */
-nsurl *nsurl_ref(nsurl *url)
-{
-	assert(url != NULL);
-
-	url->count++;
-
-	return url;
-}
-
-
-/* exported interface, documented in nsurl.h */
-void nsurl_unref(nsurl *url)
-{
-	assert(url != NULL);
-	assert(url->count > 0);
-
-	if (--url->count > 0)
-		return;
-
-#ifdef NSURL_DEBUG
-	nsurl__dump(url);
-#endif
-
-	/* Release lwc strings */
-	if (url->scheme)
-		lwc_string_unref(url->scheme);
-
-	if (url->username)
-		lwc_string_unref(url->username);
-
-	if (url->password)
-		lwc_string_unref(url->password);
-
-	if (url->host)
-		lwc_string_unref(url->host);
-
-	if (url->port)
-		lwc_string_unref(url->port);
-
-	if (url->path)
-		lwc_string_unref(url->path);
-
-	if (url->query)
-		lwc_string_unref(url->query);
-
-	if (url->fragment)
-		lwc_string_unref(url->fragment);
-
-	free(url->string);
-
-	/* Free the NetSurf URL */
-	free(url);
-}
-
-
-/* exported interface, documented in nsurl.h */
-bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts)
-{
-	bool match = true;
-
-	assert(url1 != NULL);
-	assert(url2 != NULL);
-
-	/* Compare URL components */
-
-	/* Path, host and query first, since they're most likely to differ */
-
-	if (parts & NSURL_PATH) {
-		nsurl__component_compare(url1->path, url2->path, &match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_HOST) {
-		nsurl__component_compare(url1->host, url2->host, &match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_QUERY) {
-		nsurl__component_compare(url1->query, url2->query, &match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_SCHEME) {
-		nsurl__component_compare(url1->scheme, url2->scheme, &match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_USERNAME) {
-		nsurl__component_compare(url1->username, url2->username,
-				&match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_PASSWORD) {
-		nsurl__component_compare(url1->password, url2->password,
-				&match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_PORT) {
-		nsurl__component_compare(url1->port, url2->port, &match);
-
-		if (match == false)
-			return false;
-	}
-
-	if (parts & NSURL_FRAGMENT) {
-		nsurl__component_compare(url1->fragment, url2->fragment,
-				&match);
-
-		if (match == false)
-			return false;
-	}
-
-	return true;
-}
-
-
-/* exported interface, documented in nsurl.h */
-nserror nsurl_get(const nsurl *url, nsurl_component parts,
-		char **url_s, size_t *url_l)
-{
-	size_t scheme = 0;
-	size_t username = 0;
-	size_t password = 0;
-	size_t host = 0;
-	size_t port = 0;
-	size_t path = 0;
-	size_t query = 0;
-	size_t fragment = 0;
-	char *pos;
-	enum {
-		NSURL_F_SCHEME			= (1 << 0),
-		NSURL_F_SCHEME_PUNCTUATION	= (1 << 1),
-		NSURL_F_AUTHORITY_PUNCTUATION	= (1 << 2),
-		NSURL_F_USERNAME		= (1 << 3),
-		NSURL_F_PASSWORD		= (1 << 4),
-		NSURL_F_CREDENTIALS_PUNCTUATION	= (1 << 5),
-		NSURL_F_HOST			= (1 << 6),
-		NSURL_F_PORT			= (1 << 7),
-		NSURL_F_AUTHORITY		= (NSURL_F_USERNAME |
-							NSURL_F_PASSWORD |
-							NSURL_F_HOST |
-							NSURL_F_PORT),
-		NSURL_F_PATH			= (1 << 8),
-		NSURL_F_QUERY			= (1 << 9),
-		NSURL_F_FRAGMENT_PUNCTUATION	= (1 << 10),
-		NSURL_F_FRAGMENT		= (1 << 11)
-	} flags = 0;
+	enum nsurl_string_flags flags = *pflags;
+	*url_l = 0;
 
 	/* Intersection of required parts and available parts gives
 	 * the output parts */
@@ -1201,8 +1006,8 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	*url_l = 0;
 
 	if (flags & NSURL_F_SCHEME) {
-		scheme = lwc_string_length(url->scheme);
-		*url_l += scheme;
+		lengths->scheme = lwc_string_length(url->scheme);
+		*url_l += lengths->scheme;
 	}
 
 	if (flags & NSURL_F_SCHEME_PUNCTUATION)
@@ -1212,61 +1017,70 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 		*url_l += SLEN("//");
 
 	if (flags & NSURL_F_USERNAME) {
-		username = lwc_string_length(url->username);
-		*url_l += username;
+		lengths->username = lwc_string_length(url->username);
+		*url_l += lengths->username;
 	}
 
 	if (flags & NSURL_F_PASSWORD) {
-		password = lwc_string_length(url->password);
-		*url_l += SLEN(":") + password;
+		lengths->password = lwc_string_length(url->password);
+		*url_l += SLEN(":") + lengths->password;
 	}
 
 	if (flags & NSURL_F_CREDENTIALS_PUNCTUATION)
 		*url_l += SLEN("@");
 
 	if (flags & NSURL_F_HOST) {
-		host = lwc_string_length(url->host);
-		*url_l += host;
+		lengths->host = lwc_string_length(url->host);
+		*url_l += lengths->host;
 	}
 
 	if (flags & NSURL_F_PORT) {
-		port = lwc_string_length(url->port);
-		*url_l += SLEN(":") + port;
+		lengths->port = lwc_string_length(url->port);
+		*url_l += SLEN(":") + lengths->port;
 	}
 
 	if (flags & NSURL_F_PATH) {
-		path = lwc_string_length(url->path);
-		*url_l += path;
+		lengths->path = lwc_string_length(url->path);
+		*url_l += lengths->path;
 	}
 
 	if (flags & NSURL_F_QUERY) {
-		query = lwc_string_length(url->query);
-		*url_l += query;
+		lengths->query = lwc_string_length(url->query);
+		*url_l += lengths->query;
 	}
 
 	if (flags & NSURL_F_FRAGMENT) {
 		if (flags & NSURL_F_FRAGMENT_PUNCTUATION)
 			*url_l += SLEN("#");
 
-		fragment = lwc_string_length(url->fragment);
-		*url_l += fragment;
+		lengths->fragment = lwc_string_length(url->fragment);
+		*url_l += lengths->fragment;
 	}
 
-	if (*url_l == 0)
-		return NSERROR_BAD_URL;
+	*pflags = flags;
+}
 
-	/* Allocate memory for url string */
-	*url_s = malloc(*url_l + 1); /* adding 1 for '\0' */
-	if (*url_s == NULL) {
-		return NSERROR_NOMEM;
-	}
+
+/**
+ * Get nsurl string info; total length, component lengths, & components present
+ *
+ * \param url		NetSurf URL components
+ * \param url_s		Updated to contain the string
+ * \param l		Individual component lengths
+ * \param flags		String flags
+ */
+static void nsurl_get_string(const struct nsurl_components *url, char *url_s,
+		struct nsurl_component_lengths *l,
+		enum nsurl_string_flags flags)
+{
+	char *pos;
 
 	/* Copy the required parts into the url string */
-	pos = *url_s;
+	pos = url_s;
 
 	if (flags & NSURL_F_SCHEME) {
-		memcpy(pos, lwc_string_data(url->scheme), scheme);
-		pos += scheme;
+		memcpy(pos, lwc_string_data(url->scheme), l->scheme);
+		pos += l->scheme;
 	}
 
 	if (flags & NSURL_F_SCHEME_PUNCTUATION) {
@@ -1279,14 +1093,14 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	}
 
 	if (flags & NSURL_F_USERNAME) {
-		memcpy(pos, lwc_string_data(url->username), username);
-		pos += username;
+		memcpy(pos, lwc_string_data(url->username), l->username);
+		pos += l->username;
 	}
 
 	if (flags & NSURL_F_PASSWORD) {
 		*(pos++) = ':';
-		memcpy(pos, lwc_string_data(url->password), password);
-		pos += password;
+		memcpy(pos, lwc_string_data(url->password), l->password);
+		pos += l->password;
 	}
 
 	if (flags & NSURL_F_CREDENTIALS_PUNCTUATION) {
@@ -1294,34 +1108,292 @@ nserror nsurl_get(const nsurl *url, nsurl_component parts,
 	}
 
 	if (flags & NSURL_F_HOST) {
-		memcpy(pos, lwc_string_data(url->host), host);
-		pos += host;
+		memcpy(pos, lwc_string_data(url->host), l->host);
+		pos += l->host;
 	}
 
 	if (flags & NSURL_F_PORT) {
 		*(pos++) = ':';
-		memcpy(pos, lwc_string_data(url->port), port);
-		pos += port;
+		memcpy(pos, lwc_string_data(url->port), l->port);
+		pos += l->port;
 	}
 
 	if (flags & NSURL_F_PATH) {
-		memcpy(pos, lwc_string_data(url->path), path);
-		pos += path;
+		memcpy(pos, lwc_string_data(url->path), l->path);
+		pos += l->path;
 	}
 
 	if (flags & NSURL_F_QUERY) {
-		memcpy(pos, lwc_string_data(url->query), query);
-		pos += query;
+		memcpy(pos, lwc_string_data(url->query), l->query);
+		pos += l->query;
 	}
 
 	if (flags & NSURL_F_FRAGMENT) {
 		if (flags & NSURL_F_FRAGMENT_PUNCTUATION)
 			*(pos++) = '#';
-		memcpy(pos, lwc_string_data(url->fragment), fragment);
-		pos += fragment;
+		memcpy(pos, lwc_string_data(url->fragment), l->fragment);
+		pos += l->fragment;
 	}
 
 	*pos = '\0';
+}
+
+
+#ifdef NSURL_DEBUG
+/**
+ * Dump a NetSurf URL's internal components
+ *
+ * \param url	The NetSurf URL to dump components of
+ */
+static void nsurl__dump(const nsurl *url)
+{
+	if (url->components.scheme)
+		LOG(("  Scheme: %s", lwc_string_data(url->scheme)));
+
+	if (url->components.username)
+		LOG(("Username: %s", lwc_string_data(url->username)));
+
+	if (url->components.password)
+		LOG(("Password: %s", lwc_string_data(url->password)));
+
+	if (url->components.host)
+		LOG(("    Host: %s", lwc_string_data(url->host)));
+
+	if (url->components.port)
+		LOG(("    Port: %s", lwc_string_data(url->port)));
+
+	if (url->components.path)
+		LOG(("    Path: %s", lwc_string_data(url->path)));
+
+	if (url->components.query)
+		LOG(("   Query: %s", lwc_string_data(url->query)));
+
+	if (url->components.fragment)
+		LOG(("Fragment: %s", lwc_string_data(url->fragment)));
+}
+#endif
+
+/******************************************************************************
+ * NetSurf URL Public API                                                     *
+ ******************************************************************************/
+
+/* exported interface, documented in nsurl.h */
+nserror nsurl_create(const char const *url_s, nsurl **url)
+{
+	struct url_markers m;
+	struct nsurl_components c;
+	size_t length;
+	char *buff;
+	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
+	enum nsurl_string_flags str_flags = 0;
+	nserror e = NSERROR_OK;
+
+	assert(url_s != NULL);
+
+	/* Peg out the URL sections */
+	nsurl__get_string_markers(url_s, &m, false);
+
+	/* Get the length of the longest section */
+	length = nsurl__get_longest_section(&m);
+
+	/* Allocate enough memory to url escape the longest section */
+	buff = malloc(length * 3 + 1);
+	if (buff == NULL)
+		return NSERROR_NOMEM;
+
+	/* Build NetSurf URL object from sections */
+	e |= nsurl__create_from_section(url_s, URL_SCHEME, &m, buff, &c);
+	e |= nsurl__create_from_section(url_s, URL_CREDENTIALS, &m, buff, &c);
+	e |= nsurl__create_from_section(url_s, URL_HOST, &m, buff, &c);
+	e |= nsurl__create_from_section(url_s, URL_PATH, &m, buff, &c);
+	e |= nsurl__create_from_section(url_s, URL_QUERY, &m, buff, &c);
+	e |= nsurl__create_from_section(url_s, URL_FRAGMENT, &m, buff, &c);
+
+	/* Finished with buffer */
+	free(buff);
+
+	if (e != NSERROR_OK)
+		return NSERROR_NOMEM;
+
+	/* Get the string length and find which parts of url are present */
+	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
+			&str_len, &str_flags);
+
+	/* Create NetSurf URL object */
+	*url = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
+	if (*url == NULL)
+		return NSERROR_NOMEM;
+
+	(*url)->components = c;
+	(*url)->length = length;
+
+	/* Fill out the url string */
+	nsurl_get_string(&c, (*url)->string, &str_len, str_flags);
+
+	/* Give the URL a reference */
+	(*url)->count = 1;
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface, documented in nsurl.h */
+nsurl *nsurl_ref(nsurl *url)
+{
+	assert(url != NULL);
+
+	url->count++;
+
+	return url;
+}
+
+
+/* exported interface, documented in nsurl.h */
+void nsurl_unref(nsurl *url)
+{
+	assert(url != NULL);
+	assert(url->count > 0);
+
+	if (--url->count > 0)
+		return;
+
+#ifdef NSURL_DEBUG
+	nsurl__dump(url);
+#endif
+
+	/* Release lwc strings */
+	if (url->components.scheme)
+		lwc_string_unref(url->components.scheme);
+
+	if (url->components.username)
+		lwc_string_unref(url->components.username);
+
+	if (url->components.password)
+		lwc_string_unref(url->components.password);
+
+	if (url->components.host)
+		lwc_string_unref(url->components.host);
+
+	if (url->components.port)
+		lwc_string_unref(url->components.port);
+
+	if (url->components.path)
+		lwc_string_unref(url->components.path);
+
+	if (url->components.query)
+		lwc_string_unref(url->components.query);
+
+	if (url->components.fragment)
+		lwc_string_unref(url->components.fragment);
+
+	/* Free the NetSurf URL */
+	free(url);
+}
+
+
+/* exported interface, documented in nsurl.h */
+bool nsurl_compare(const nsurl *url1, const nsurl *url2, nsurl_component parts)
+{
+	bool match = true;
+
+	assert(url1 != NULL);
+	assert(url2 != NULL);
+
+	/* Compare URL components */
+
+	/* Path, host and query first, since they're most likely to differ */
+
+	if (parts & NSURL_PATH) {
+		nsurl__component_compare(url1->components.path,
+				url2->components.path, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_HOST) {
+		nsurl__component_compare(url1->components.host,
+				url2->components.host, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_QUERY) {
+		nsurl__component_compare(url1->components.query,
+				url2->components.query, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_SCHEME) {
+		nsurl__component_compare(url1->components.scheme,
+				url2->components.scheme, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_USERNAME) {
+		nsurl__component_compare(url1->components.username,
+				url2->components.username, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_PASSWORD) {
+		nsurl__component_compare(url1->components.password,
+				url2->components.password, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_PORT) {
+		nsurl__component_compare(url1->components.port,
+				url2->components.port, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	if (parts & NSURL_FRAGMENT) {
+		nsurl__component_compare(url1->components.fragment,
+				url2->components.fragment, &match);
+
+		if (match == false)
+			return false;
+	}
+
+	return true;
+}
+
+
+/* exported interface, documented in nsurl.h */
+nserror nsurl_get(const nsurl *url, nsurl_component parts,
+		char **url_s, size_t *url_l)
+{
+	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
+	enum nsurl_string_flags str_flags = 0;
+
+	/* Get the string length and find which parts of url need copied */
+	nsurl__get_string_data(&(url->components), parts, url_l,
+			&str_len, &str_flags);
+
+	if (*url_l == 0) {
+		return NSERROR_BAD_URL;
+	}
+
+	/* Allocate memory for url string */
+	*url_s = malloc(*url_l + 1); /* adding 1 for '\0' */
+	if (*url_s == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* Copy the required parts into the url string */
+	nsurl_get_string(&(url->components), *url_s, &str_len, str_flags);
 
 	return NSERROR_OK;
 }
@@ -1334,36 +1406,36 @@ lwc_string *nsurl_get_component(const nsurl *url, nsurl_component part)
 
 	switch (part) {
 	case NSURL_SCHEME:
-		return (url->scheme != NULL) ?
-				lwc_string_ref(url->scheme) : NULL;
+		return (url->components.scheme != NULL) ?
+				lwc_string_ref(url->components.scheme) : NULL;
 
 	case NSURL_USERNAME:
-		return (url->username != NULL) ?
-				lwc_string_ref(url->username) : NULL;
+		return (url->components.username != NULL) ?
+				lwc_string_ref(url->components.username) : NULL;
 
 	case NSURL_PASSWORD:
-		return (url->password != NULL) ?
-				lwc_string_ref(url->password) : NULL;
+		return (url->components.password != NULL) ?
+				lwc_string_ref(url->components.password) : NULL;
 
 	case NSURL_HOST:
-		return (url->host != NULL) ?
-				lwc_string_ref(url->host) : NULL;
+		return (url->components.host != NULL) ?
+				lwc_string_ref(url->components.host) : NULL;
 
 	case NSURL_PORT:
-		return (url->port != NULL) ?
-				lwc_string_ref(url->port) : NULL;
+		return (url->components.port != NULL) ?
+				lwc_string_ref(url->components.port) : NULL;
 
 	case NSURL_PATH:
-		return (url->path != NULL) ?
-				lwc_string_ref(url->path) : NULL;
+		return (url->components.path != NULL) ?
+				lwc_string_ref(url->components.path) : NULL;
 
 	case NSURL_QUERY:
-		return (url->query != NULL) ?
-				lwc_string_ref(url->query) : NULL;
+		return (url->components.query != NULL) ?
+				lwc_string_ref(url->components.query) : NULL;
 
 	case NSURL_FRAGMENT:
-		return (url->fragment != NULL) ?
-				lwc_string_ref(url->fragment) : NULL;
+		return (url->components.fragment != NULL) ?
+				lwc_string_ref(url->components.fragment) : NULL;
 
 	default:
 		LOG(("Unsupported value passed to part param."));
@@ -1379,7 +1451,7 @@ bool nsurl_enquire(const nsurl *url, nsurl_component part)
 
 	switch (part) {
 	case NSURL_SCHEME:
-		if (url->scheme != NULL)
+		if (url->components.scheme != NULL)
 			return true;
 		else
 			return false;
@@ -1388,43 +1460,43 @@ bool nsurl_enquire(const nsurl *url, nsurl_component part)
 		/* Only username required for credentials section */
 		/* Fall through */
 	case NSURL_USERNAME:
-		if (url->username != NULL)
+		if (url->components.username != NULL)
 			return true;
 		else
 			return false;
 
 	case NSURL_PASSWORD:
-		if (url->password != NULL)
+		if (url->components.password != NULL)
 			return true;
 		else
 			return false;
 
 	case NSURL_HOST:
-		if (url->host != NULL)
+		if (url->components.host != NULL)
 			return true;
 		else
 			return false;
 
 	case NSURL_PORT:
-		if (url->port != NULL)
+		if (url->components.port != NULL)
 			return true;
 		else
 			return false;
 
 	case NSURL_PATH:
-		if (url->path != NULL)
+		if (url->components.path != NULL)
 			return true;
 		else
 			return false;
 
 	case NSURL_QUERY:
-		if (url->query != NULL)
+		if (url->components.query != NULL)
 			return true;
 		else
 			return false;
 
 	case NSURL_FRAGMENT:
-		if (url->fragment != NULL)
+		if (url->components.fragment != NULL)
 			return true;
 		else
 			return false;
@@ -1458,10 +1530,13 @@ size_t nsurl_length(const nsurl *url)
 nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 {
 	struct url_markers m;
+	struct nsurl_components c;
 	size_t length;
 	char *buff;
 	char *buff_pos;
 	char *buff_start;
+	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
+	enum nsurl_string_flags str_flags = 0;
 	nserror error = 0;
 	enum {
 		NSURL_F_REL		=  0,
@@ -1515,60 +1590,53 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		}
 	}
 
-	/* Create NetSurf URL object */
-	*joined = calloc(1, sizeof(nsurl));
-	if (*joined == NULL) {
-		return NSERROR_NOMEM;
-	}
-
 	/* Allocate enough memory to url escape the longest section, plus
 	 * space for path merging (if required). */
 	if (joined_parts & NSURL_F_MERGED_PATH) {
 		/* Need to merge paths */
-		length += (base->path != NULL) ?
-				lwc_string_length(base->path) : 0;
+		length += (base->components.path != NULL) ?
+				lwc_string_length(base->components.path) : 0;
 	}
 	length *= 4;
 	/* Plus space for removing dots from path */
-	length += (m.query - m.path) + ((base->path != NULL) ?
-			lwc_string_length(base->path) : 0);
+	length += (m.query - m.path) + ((base->components.path != NULL) ?
+			lwc_string_length(base->components.path) : 0);
+
 	buff = malloc(length + 5);
-	if (buff == NULL) {
-		free(*joined);
-		*joined = NULL;
+	if (buff == NULL)
 		return NSERROR_NOMEM;
-	}
 
 	buff_start = buff_pos = buff;
 
 	/* Form joined URL from base or rel components, as appropriate */
 
 	if (joined_parts & NSURL_F_BASE_SCHEME)
-		(*joined)->scheme = nsurl__component_copy(base->scheme);
+		c.scheme = nsurl__component_copy(base->components.scheme);
 	else
 		error |= nsurl__create_from_section(rel, URL_SCHEME, &m,
-				buff, *joined);
+				buff, &c);
 
 	if (joined_parts & NSURL_F_BASE_AUTHORITY) {
-		(*joined)->username = nsurl__component_copy(base->username);
-		(*joined)->password = nsurl__component_copy(base->password);
-		(*joined)->host = nsurl__component_copy(base->host);
-		(*joined)->port = nsurl__component_copy(base->port);
+		c.username = nsurl__component_copy(base->components.username);
+		c.password = nsurl__component_copy(base->components.password);
+		c.host = nsurl__component_copy(base->components.host);
+		c.port = nsurl__component_copy(base->components.port);
 	} else {
 		error |= nsurl__create_from_section(rel, URL_CREDENTIALS, &m,
-				buff, *joined);
+				buff, &c);
 		error |= nsurl__create_from_section(rel, URL_HOST, &m,
-				buff, *joined);
+				buff, &c);
 	}
 
 	if (joined_parts & NSURL_F_BASE_PATH) {
-		(*joined)->path = nsurl__component_copy(base->path);
+		c.path = nsurl__component_copy(base->components.path);
 
 	} else if (joined_parts & NSURL_F_MERGED_PATH) {
 		struct url_markers m_path;
 		size_t new_length;
 
-		if (base->host != NULL && base->path == NULL) {
+		if (base->components.host != NULL &&
+					base->components.path == NULL) {
 			/* Append relative path to "/". */
 			*(buff_pos++) = '/';
 			memcpy(buff_pos, rel + m.path, m.query - m.path);
@@ -1577,8 +1645,10 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 		} else {
 			/* Append relative path to all but last segment of
 			 * base path. */
-			size_t path_end = lwc_string_length(base->path);
-			const char *path = lwc_string_data(base->path);
+			size_t path_end = lwc_string_length(
+					base->components.path);
+			const char *path = lwc_string_data(
+					base->components.path);
 
 			while (*(path + path_end) != '/' &&
 					path_end != 0) {
@@ -1606,7 +1676,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 		buff_start = buff_pos + new_length;
 		error |= nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
-				buff_start, *joined);
+				buff_start, &c);
 
 	} else {
 		struct url_markers m_path;
@@ -1623,34 +1693,38 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 		buff_start = buff_pos + new_length;
 		error |= nsurl__create_from_section(buff_pos, URL_PATH, &m_path,
-				buff_start, *joined);
+				buff_start, &c);
 	}
 
 	if (joined_parts & NSURL_F_BASE_QUERY)
-		(*joined)->query = nsurl__component_copy(base->query);
+		c.query = nsurl__component_copy(base->components.query);
 	else
 		error |= nsurl__create_from_section(rel, URL_QUERY, &m,
-				buff, *joined);
+				buff, &c);
 
 	error |= nsurl__create_from_section(rel, URL_FRAGMENT, &m,
-			buff, *joined);
+			buff, &c);
 
 	/* Free temporary buffer */
 	free(buff);
 
-	if (error != NSERROR_OK) {
-		free(*joined);
-		*joined = NULL;
+	if (error != NSERROR_OK)
 		return NSERROR_NOMEM;
-	}
 
-	/* Get the complete URL string */
-	if (nsurl_get(*joined, NSURL_WITH_FRAGMENT, &((*joined)->string),
-			&((*joined)->length)) != NSERROR_OK) {
-		free(*joined);
-		*joined = NULL;
+	/* Get the string length and find which parts of url are present */
+	nsurl__get_string_data(&c, NSURL_WITH_FRAGMENT, &length,
+			&str_len, &str_flags);
+
+	/* Create NetSurf URL object */
+	*joined = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
+	if (*joined == NULL)
 		return NSERROR_NOMEM;
-	}
+
+	(*joined)->components = c;
+	(*joined)->length = length;
+
+	/* Fill out the url string */
+	nsurl_get_string(&c, (*joined)->string, &str_len, str_flags);
 
 	/* Give the URL a reference */
 	(*joined)->count = 1;
@@ -1662,28 +1736,42 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 /* exported interface, documented in nsurl.h */
 nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 {
+	struct nsurl_component_lengths str_len = { 0, 0, 0, 0,  0, 0, 0, 0 };
+	enum nsurl_string_flags str_flags = 0;
+	size_t length;
+
+	/* Get the string length and find which parts of url are present */
+	nsurl__get_string_data(&(url->components), NSURL_COMPLETE, &length,
+			&str_len, &str_flags);
+
 	/* Create NetSurf URL object */
-	*no_frag = calloc(1, sizeof(nsurl));
+	*no_frag = malloc(sizeof(nsurl) + length + 1); /* Add 1 for \0 */
 	if (*no_frag == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	/* Get the complete URL string */
-	if (nsurl_get(url, NSURL_COMPLETE, &((*no_frag)->string),
-			&((*no_frag)->length)) != NSERROR_OK) {
-		free(*no_frag);
-		*no_frag = NULL;
-		return NSERROR_NOMEM;
-	}
-
 	/* Copy components */
-	(*no_frag)->scheme = nsurl__component_copy(url->scheme);
-	(*no_frag)->username = nsurl__component_copy(url->username);
-	(*no_frag)->password = nsurl__component_copy(url->password);
-	(*no_frag)->host = nsurl__component_copy(url->host);
-	(*no_frag)->port = nsurl__component_copy(url->port);
-	(*no_frag)->path = nsurl__component_copy(url->path);
-	(*no_frag)->query = nsurl__component_copy(url->query);
+	(*no_frag)->components.scheme =
+			nsurl__component_copy(url->components.scheme);
+	(*no_frag)->components.username =
+			nsurl__component_copy(url->components.username);
+	(*no_frag)->components.password =
+			nsurl__component_copy(url->components.password);
+	(*no_frag)->components.host =
+			nsurl__component_copy(url->components.host);
+	(*no_frag)->components.port =
+			nsurl__component_copy(url->components.port);
+	(*no_frag)->components.path =
+			nsurl__component_copy(url->components.path);
+	(*no_frag)->components.query =
+			nsurl__component_copy(url->components.query);
+	(*no_frag)->components.fragment = NULL;
+
+	(*no_frag)->length = length;
+
+	/* Fill out the url string */
+	nsurl_get_string(&((*no_frag)->components), (*no_frag)->string,
+			&str_len, str_flags);
 
 	/* Give the URL a reference */
 	(*no_frag)->count = 1;
@@ -1698,33 +1786,28 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 	int frag_len;
 	int base_len;
 	char *pos;
+	size_t len;
 
 	assert(url != NULL);
 	assert(frag != NULL);
 
-	/* Create NetSurf URL object */
-	*new_url = malloc(sizeof(nsurl));
-	if (*new_url == NULL) {
-		return NSERROR_NOMEM;
-	}
-
 	/* Find the change in length from url to new_url */
 	base_len = url->length;
-	if (url->fragment != NULL) {
-		base_len -= 1 + lwc_string_length(url->fragment);
+	if (url->components.fragment != NULL) {
+		base_len -= 1 + lwc_string_length(url->components.fragment);
 	}
 	frag_len = lwc_string_length(frag);
 
 	/* Set new_url's length */
-	(*new_url)->length = base_len + 1 /* # */ + frag_len;
+	len = base_len + 1 /* # */ + frag_len;
 
-	/* Create new_url's url string */
-	(*new_url)->string = malloc((*new_url)->length + 1 /* \0 */);
-	if ((*new_url)->string == NULL) {
-		free(*new_url);
-		*new_url = NULL;
+	/* Create NetSurf URL object */
+	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
+	if (*new_url == NULL) {
 		return NSERROR_NOMEM;
 	}
+
+	(*new_url)->length = len;
 
 	/* Set string */
 	pos = (*new_url)->string;
@@ -1736,14 +1819,22 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 	*pos = '\0';
 
 	/* Copy components */
-	(*new_url)->scheme = nsurl__component_copy(url->scheme);
-	(*new_url)->username = nsurl__component_copy(url->username);
-	(*new_url)->password = nsurl__component_copy(url->password);
-	(*new_url)->host = nsurl__component_copy(url->host);
-	(*new_url)->port = nsurl__component_copy(url->port);
-	(*new_url)->path = nsurl__component_copy(url->path);
-	(*new_url)->query = nsurl__component_copy(url->query);
-	(*new_url)->fragment = lwc_string_ref(frag);
+	(*new_url)->components.scheme =
+			nsurl__component_copy(url->components.scheme);
+	(*new_url)->components.username =
+			nsurl__component_copy(url->components.username);
+	(*new_url)->components.password =
+			nsurl__component_copy(url->components.password);
+	(*new_url)->components.host =
+			nsurl__component_copy(url->components.host);
+	(*new_url)->components.port =
+			nsurl__component_copy(url->components.port);
+	(*new_url)->components.path =
+			nsurl__component_copy(url->components.path);
+	(*new_url)->components.query =
+			nsurl__component_copy(url->components.query);
+	(*new_url)->components.fragment =
+			lwc_string_ref(frag);
 
 	/* Give the URL a reference */
 	(*new_url)->count = 1;
