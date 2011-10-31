@@ -853,14 +853,13 @@ static nserror nsurl__create_from_section(const char const *url_s,
 						1 : 0;
 				sec_start = norm_start + colon - pegs->at +
 						skip;
-				if (url->scheme != NULL &&
-						strncmp(lwc_string_data(
-							url->scheme), "http",
-						SLEN("http")) == 0 &&
-						length -
+				if (url->scheme != NULL && length -
 						(colon - pegs->at + 1) == 2 &&
 						*sec_start == '8' &&
-						*(sec_start + 1) == '0') {
+						*(sec_start + 1) == '0' &&
+						strncmp(lwc_string_data(
+							url->scheme), "http",
+						SLEN("http")) == 0) {
 					/* Scheme is http, and port is default
 					 * (80) */
 					flags |= NSURL_F_NO_PORT;
