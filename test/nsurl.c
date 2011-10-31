@@ -40,6 +40,20 @@ static const struct test_pairs create_tests[] = {
 	{ "http://user:pass@www.ns-b.org:8080/hello", 
 		"http://user:pass@www.ns-b.org:8080/hello" },
 
+	{ "http://www.ns-b.org:80/",
+		"http://www.ns-b.org/" },
+	{ "http://user@www.ns-b.org:80/hello", 
+		"http://user@www.ns-b.org/hello" },
+	{ "http://user:pass@www.ns-b.org:80/hello", 
+		"http://user:pass@www.ns-b.org/hello" },
+
+	{ "http://www.ns-b.org:/",
+		"http://www.ns-b.org/" },
+	{ "http://u@www.ns-b.org:/hello", 
+		"http://u@www.ns-b.org/hello" },
+	{ "http://u:p@www.ns-b.org:/hello", 
+		"http://u:p@www.ns-b.org/hello" },
+
 	{ NULL,			NULL }
 };
 
