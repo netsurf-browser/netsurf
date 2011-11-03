@@ -119,6 +119,17 @@ static bool nsurl__is_no_escape(unsigned char c)
 	return no_escape[c];
 }
 
+
+/** nsurl scheme type */
+enum scheme_type {
+	NSURL_SCHEME_OTHER,
+	NSURL_SCHEME_HTTP,
+	NSURL_SCHEME_HTTPS,
+	NSURL_SCHEME_FTP,
+	NSURL_SCHEME_MAILTO
+};
+
+
 /** nsurl components */
 struct nsurl_components {
 	lwc_string *scheme;
@@ -129,7 +140,10 @@ struct nsurl_components {
 	lwc_string *path;
 	lwc_string *query;
 	lwc_string *fragment;
+
+	enum scheme_type scheme_type;
 };
+
 
 /**
  * NetSurf URL object
@@ -161,6 +175,8 @@ struct url_markers {
 	size_t fragment;
 
 	size_t end; /** end of URL */
+
+	enum scheme_type scheme_type;
 };
 
 
@@ -233,7 +249,8 @@ static void nsurl__get_string_markers(const char const *url_s,
 	bool trailing_whitespace = false;
 
 	/* Initialise marker set */
-	struct url_markers marker = { 0, 0, 0,   0, 0, 0,   0, 0, 0,   0 };
+	struct url_markers marker = { 0, 0, 0,   0, 0, 0,
+				      0, 0, 0,   0, NSURL_SCHEME_OTHER };
 
 	/* Skip any leading whitespace in url_s */
 	while (isspace(*pos))
@@ -267,7 +284,8 @@ static void nsurl__get_string_markers(const char const *url_s,
 
 			off = marker.scheme_end - marker.start;
 
-			/* Detect http(s) for scheme specifc normalisation */
+			/* Detect http(s) and mailto for scheme specifc
+			 * normalisation */
 			if (off == SLEN("http") &&
 					(((*(pos - off + 0) == 'h') ||
 					  (*(pos - off + 0) == 'H')) &&
@@ -277,6 +295,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 					  (*(pos - off + 2) == 'T')) &&
 					 ((*(pos - off + 3) == 'p') ||
 					  (*(pos - off + 3) == 'P')))) {
+				marker.scheme_type = NSURL_SCHEME_HTTP;
 				is_http = true;
 			} else if (off == SLEN("https") &&
 					(((*(pos - off + 0) == 'h') ||
@@ -287,9 +306,32 @@ static void nsurl__get_string_markers(const char const *url_s,
 					  (*(pos - off + 2) == 'T')) &&
 					 ((*(pos - off + 3) == 'p') ||
 					  (*(pos - off + 3) == 'P')) &&
-					 ((*(pos - off + 3) == 's') ||
-					  (*(pos - off + 3) == 'S')))) {
+					 ((*(pos - off + 4) == 's') ||
+					  (*(pos - off + 4) == 'S')))) {
+				marker.scheme_type = NSURL_SCHEME_HTTPS;
 				is_http = true;
+			} else if (off == SLEN("https") &&
+					(((*(pos - off + 0) == 'f') ||
+					  (*(pos - off + 0) == 'F')) &&
+					 ((*(pos - off + 1) == 't') ||
+					  (*(pos - off + 1) == 'T')) &&
+					 ((*(pos - off + 2) == 'p') ||
+					  (*(pos - off + 2) == 'P')))) {
+				marker.scheme_type = NSURL_SCHEME_FTP;
+			} else if (off == SLEN("mailto") &&
+					(((*(pos - off + 0) == 'm') ||
+					  (*(pos - off + 0) == 'M')) &&
+					 ((*(pos - off + 1) == 'a') ||
+					  (*(pos - off + 1) == 'A')) &&
+					 ((*(pos - off + 2) == 'i') ||
+					  (*(pos - off + 2) == 'I')) &&
+					 ((*(pos - off + 3) == 'l') ||
+					  (*(pos - off + 3) == 'L')) &&
+					 ((*(pos - off + 4) == 't') ||
+					  (*(pos - off + 4) == 'T')) &&
+					 ((*(pos - off + 5) == 'o') ||
+					  (*(pos - off + 5) == 'O')))) {
+				marker.scheme_type = NSURL_SCHEME_MAILTO;
 			}
 
 			/* Skip over colon */
@@ -304,6 +346,7 @@ static void nsurl__get_string_markers(const char const *url_s,
 			/* Not found a scheme  */
 			if (joining == false) {
 				/* Assuming no scheme == http */
+				marker.scheme_type = NSURL_SCHEME_HTTP;
 				is_http = true;
 			}
 		}
@@ -316,11 +359,13 @@ static void nsurl__get_string_markers(const char const *url_s,
 	 * We are more relaxed in the case of http:
 	 *   a. when joining, one or more slashes indicates start of authority
 	 *   b. when not joining, we assume authority if no scheme was present
+	 * and in the case of mailto: when we assume there is an authority.
 	 */
 	if ((*pos == '/' && *(pos + 1) == '/') ||
 			(is_http && ((joining && *pos == '/') || 
 					(joining == false &&
-					marker.scheme_end != marker.start)))) {
+					marker.scheme_end != marker.start))) ||
+			marker.scheme_type == NSURL_SCHEME_MAILTO) {
 
 		/* Skip over leading slashes */
 		if (*pos == '/') {
@@ -853,13 +898,13 @@ static nserror nsurl__create_from_section(const char const *url_s,
 						1 : 0;
 				sec_start = norm_start + colon - pegs->at +
 						skip;
-				if (url->scheme != NULL && length -
+				if (url->scheme != NULL &&
+						url->scheme_type ==
+						NSURL_SCHEME_HTTP &&
+						length -
 						(colon - pegs->at + skip) == 2 &&
 						*sec_start == '8' &&
-						*(sec_start + 1) == '0' &&
-						strncmp(lwc_string_data(
-							url->scheme), "http",
-						SLEN("http")) == 0) {
+						*(sec_start + 1) == '0') {
 					/* Scheme is http, and port is default
 					 * (80) */
 					flags |= NSURL_F_NO_PORT;
@@ -902,7 +947,8 @@ static nserror nsurl__create_from_section(const char const *url_s,
 					&url->path) != lwc_error_ok) {
 				return NSERROR_NOMEM;
 			}
-		} else if (url->host != NULL) {
+		} else if (url->host != NULL &&
+				url->scheme_type != NSURL_SCHEME_MAILTO) {
 			/* Set empty path to "/", if there's a host */
 			if (lwc_intern_string("/", SLEN("/"),
 					&url->path) != lwc_error_ok) {
@@ -1188,6 +1234,9 @@ nserror nsurl_create(const char const *url_s, nsurl **url)
 	buff = malloc(length * 3 + 1);
 	if (buff == NULL)
 		return NSERROR_NOMEM;
+
+	/* Set scheme type */
+	c.scheme_type = m.scheme_type;
 
 	/* Build NetSurf URL object from sections */
 	e |= nsurl__create_from_section(url_s, URL_SCHEME, &m, buff, &c);
@@ -1598,11 +1647,16 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 
 	/* Form joined URL from base or rel components, as appropriate */
 
-	if (joined_parts & NSURL_F_BASE_SCHEME)
+	if (joined_parts & NSURL_F_BASE_SCHEME) {
+		c.scheme_type = base->components.scheme_type;
+
 		c.scheme = nsurl__component_copy(base->components.scheme);
-	else
+	} else {
+		c.scheme_type = m.scheme_type;
+
 		error |= nsurl__create_from_section(rel, URL_SCHEME, &m,
 				buff, &c);
+	}
 
 	if (joined_parts & NSURL_F_BASE_AUTHORITY) {
 		c.username = nsurl__component_copy(base->components.username);
@@ -1756,6 +1810,8 @@ nserror nsurl_defragment(const nsurl *url, nsurl **no_frag)
 			nsurl__component_copy(url->components.query);
 	(*no_frag)->components.fragment = NULL;
 
+	(*no_frag)->components.scheme_type = url->components.scheme_type;
+
 	(*no_frag)->length = length;
 
 	/* Fill out the url string */
@@ -1826,6 +1882,8 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 			nsurl__component_copy(url->components.query);
 	(*new_url)->components.fragment =
 			lwc_string_ref(frag);
+
+	(*new_url)->components.scheme_type = url->components.scheme_type;
 
 	/* Give the URL a reference */
 	(*new_url)->count = 1;
