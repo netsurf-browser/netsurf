@@ -54,6 +54,14 @@ static const struct test_pairs create_tests[] = {
 	{ "http://u:p@www.ns-b.org:/hello", 
 		"http://u:p@www.ns-b.org/hello" },
 
+	{ "http:a/",		"http://a/" },
+	{ "http:/a/",		"http://a/" },
+	{ "http://u@a",		"http://u@a/" },
+	{ "http://@a",		"http://a/" },
+
+	{ "mailto:u@a",		"mailto:u@a" },
+	{ "mailto:@a",		"mailto:a" },
+
 	{ NULL,			NULL }
 };
 
