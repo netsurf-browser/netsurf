@@ -14,6 +14,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Module Description:
+ *
+ * This WinDom compo
+ *
+ *
  */
 
 #include <limits.h>
@@ -64,10 +70,19 @@ extern short last_drag_y;
 static void __CDECL browser_evnt_wdestroy( WINDOW * c, short buff[8], void * data);
 COMPONENT *comp_widget_create( APPvar *app, WINDOW *win, int size, int flex );
 
+/*
+The component window interface needs frame API init,
+keep track of frame API init:
+*/
 static bool frameinit = true;
 
 
-/* create an browser component */
+/*
+	Create an browser component window (undcomented WinDom structure).
+	Currently, this area is the area which is used to display HTML content.
+	However, it could also contains other areas, these need to be handled within
+	"browser_get_rect" function.
+*/
 struct s_browser * browser_create
 (
 	struct gui_window * gw,
@@ -107,6 +122,8 @@ struct s_browser * browser_create
 			free(bnew);
 			return(NULL);
 		}
+
+		/* Attach events to the component: */
 		mt_EvntDataAdd( &app, bnew->compwin, WM_XBUTTON,
 							browser_evnt_mbutton, (void*)gw, EV_BOT );
 		mt_CompEvntDataAttach( &app, bnew->comp, WM_REDRAW,
@@ -122,6 +139,8 @@ struct s_browser * browser_create
 		mt_EvntDataAttach( &app, bnew->compwin, WM_DESTROY,
 								browser_evnt_wdestroy, (void*)bnew );
 
+		/* Set the gui_window owner. */
+		/* it is an link to the netsurf window system */
 		mt_CompDataAttach( &app, bnew->comp, CDT_OWNER, gw );
 		bnew->scroll.requested.y = 0;
 		bnew->scroll.requested.x = 0;
@@ -140,21 +159,21 @@ bool browser_destroy( struct s_browser * b )
 	assert( b->bw != NULL );
 
 	if( b->compwin != NULL ) {
+		/* TODO: Only do this when it's the last browser viewport within the root win: */
 		COMPONENT * old = b->comp;
 		WINDOW * oldwin = b->compwin;
 		b->comp = NULL;
 		b->compwin = NULL;
-		/* Im not sure if this is the right thing to do (after compdelete above,... */
-		/* listRemove should be used when we just remove an frame... */
-		/* (I encountered spurious events when not doing that...) */
-		/* listRemove( (LINKABLE*) oldwin ); */
-		/* listRemove( (LINKABLE*) old ); */
+		/* I'm not sure about the correct order of these 2 calls: */
 		WindDelete( oldwin );
 		mt_CompDelete(&app,  old );
 	}
 	return( true );
 }
 
+/*
+	Query the browser component for widget rectangles.
+*/
 void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out)
 {
 	GRECT work;
@@ -164,7 +183,12 @@ void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * 
 	int slider_h_w = 20;
 	int slider_h_h = 22;
 
+	/* Query component for it's current size: */
 	WindGetGrect( gw->browser->compwin, WF_WORKXYWH, &work);
+
+	/* And extract the different widget dimensions: */
+
+	/* Redraw area of html content: */
 	if( type == BR_CONTENT ){
 		out->g_w = work.g_w;
 		out->g_h = work.g_h;
@@ -173,6 +197,7 @@ void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * 
 		return;
 	}
 
+	/* Horizontal scroller: */
 	LGRECT cur;
 	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &cur);
 	if( type == BR_HSLIDER ){
@@ -182,6 +207,7 @@ void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * 
 		out->g_w = cur.g_w;
 	}
 
+	/* Vertical  scroller: */
 	if( type == BR_VSLIDER ){
 		out->g_x = cur.g_x + work.g_w;
 		out->g_y = cur.g_y;
@@ -297,6 +323,10 @@ void __CDECL browser_evnt_slider( WINDOW *win, short buff[8], void * data)
 		browser_scroll( gw, WA_LFPAGE, abs(dx), false );
 }
 
+/*
+	Mouse Button handler for browser component.
+*/
+
 static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data)
 {
 	long lbuff[8];
@@ -314,6 +344,7 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 	my = evnt.my - cwork.g_y;
 	LOG(("mevent (%d) within %s at %d / %d\n", evnt.nb_click, gw->browser->bw->name, mx, my ));
 
+	/* Translate GEM key state to netsurf mouse modifier */
 	if( evnt.mkstate & (K_RSHIFT | K_LSHIFT) ){
 		bmstate |= BROWSER_MOUSE_MOD_1;
 	} else {
@@ -332,6 +363,7 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 	int sx = (mx + gw->browser->scroll.current.x);
 	int sy = (my + gw->browser->scroll.current.y);
 
+	/* Detect left mouse button state and compare with event state: */
 	graf_mkstate(&dummy, &dummy, &mbut, &dummy);
 	if( (mbut & 1) && (evnt.mbut & 1) ) {
 		if( mouse_hold_start[0] == 0 ) {
@@ -364,12 +396,16 @@ static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data
 		mouse_hold_start[0] = 0;
 	}
 
+	/* Right button pressed? */
 	if( (evnt.mbut & 2 ) ) {
 		context_popup( gw, evnt.mx, evnt.my );
 	}
 
 }
 
+/*
+	Report scroll event to the browser component.
+*/
 void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 {
 	LGRECT work;
@@ -552,7 +588,13 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 	mt_WindSlider( &app, gw->browser->compwin, HSLIDER|VSLIDER);
 }
 
-
+/*
+	Report keypress to browser component.
+	The browser component doesn't list for keyinput by itself.
+	parameter:
+		- gui_window ( compocnent owner ).
+		- unsigned short nkc ( CFLIB normalised key code )
+*/
 bool browser_input( struct gui_window * gw, unsigned short nkc )
 {
 	LGRECT work;
