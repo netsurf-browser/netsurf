@@ -97,7 +97,6 @@ struct s_browser
 {
 	int type;
 	COMPONENT * comp;
-	WINDOW * compwin;
 	struct browser_window * bw;
 	struct s_scroll_info scroll;
 	struct s_browser_redrw_info redraw;
@@ -137,9 +136,7 @@ void browser_schedule_redraw(struct gui_window * gw, short x, short y, short w, 
 static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8], void * data);
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data);
 static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data);
-static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data);
-static void __CDECL browser_evnt_arrowed( WINDOW *win, short buff[8], void * data);
-static void __CDECL browser_evnt_slider( WINDOW *win, short buff[8], void * data);
-static void __CDECL browser_evnt_redraw_x( WINDOW * c, short buff[8], void * data);
+static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * data);
+
 
 #endif

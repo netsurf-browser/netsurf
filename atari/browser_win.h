@@ -24,6 +24,8 @@
 
 #define WIDGET_STATUSBAR  0x1
 #define WIDGET_TOOLBAR    0x2
+#define WIDGET_SCROLL	  0x4
+#define WIDGET_RESIZE	  0x8
 
 /* WinDom & Custom bindings for gui window */
 
@@ -79,5 +81,6 @@ static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data 
 static void __CDECL evnt_window_keybd(WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_mbutton(WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data);
-
+static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
+static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
 #endif

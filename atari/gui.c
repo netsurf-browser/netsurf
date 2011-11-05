@@ -198,7 +198,7 @@ gui_create_browser_window(struct browser_window *bw,
 	memset( gw, 0, sizeof(struct gui_window) );
 
 	LOG(("new window: %p, bw: %p\n", gw, bw));
-	window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR );
+	window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE|WIDGET_SCROLL );
 	if( gw->root->handle ) {
 		window_open( gw );
 		/* Recalculate windows browser area now */

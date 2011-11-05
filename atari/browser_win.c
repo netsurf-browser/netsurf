@@ -74,36 +74,6 @@ void __CDECL std_mvd( WINDOW * win, short buff[8], void * );
 /* -------------------------------------------------------------------------- */
 
 
-static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data )
-{
-	bool abs = false;
-	LGRECT cwork;
-	int value = BROWSER_SCROLL_SVAL;
-
-	if( input_window == NULL ) {
-		return;
-	}
-
-	browser_get_rect( input_window, BR_CONTENT, &cwork );
-
-	switch( buff[4] ) {
-		case WA_UPPAGE:
-		case WA_DNPAGE:
-				value = cwork.g_h;
-			break;
-
-
-		case WA_LFPAGE:
-		case WA_RTPAGE:
-				value = cwork.g_w;
-			break;
-
-		default:
-			break;
-	}
-	browser_scroll( input_window, buff[4], value, abs );
-}
-
 /*
 	track the mouse state and
 	finally checks for released buttons.
@@ -175,100 +145,26 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 	}
 }
 
-
-static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
-{
-	struct gui_window * gw = input_window;
-	static bool prev_url = false;
-	static bool prev_sb = false;
-	short mx, my, mbut, mkstate;
-	bool a = false;	/* flags if mouse is within controls or browser canvas */
-	bool within = false;
-	LGRECT urlbox, bwbox, sbbox;
-	int nx, ny; 	/* relative mouse position */
-
-
-	if( gw == NULL)
-		return;
-
-	if( gw != input_window ){
-		return;
-	}
-
-	graf_mkstate(&mx, &my, &mbut, &mkstate);
-
-	browser_get_rect( gw, BR_CONTENT, &bwbox );
-	if( gw->root->toolbar )
-		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
-	if( gw->root->statusbar )
-		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
-
-	if( mx > bwbox.g_x && mx < bwbox.g_x + bwbox.g_w &&
-		my > bwbox.g_y &&  my < bwbox.g_y + bwbox.g_h ){
-		within = true;
-	}
-
-	if( evnt.m1_flag == MO_LEAVE ) {
-		if( MOUSE_IS_DRAGGING() ){
-			window_track_mouse_state( &bwbox, within, mx, my, mbut, mkstate );
-		}
-		if( gw->root->toolbar && within == false ) {
-			if( (mx > urlbox.g_x && mx < urlbox.g_x + urlbox.g_w ) &&
-			 	(my > urlbox.g_y && my < + urlbox.g_y + urlbox.g_h )) {
-				gem_set_cursor( &gem_cursors.ibeam );
-				prev_url = a = true;
-			}
-		}
-		if( gw->root->statusbar && within == false /* && a == false */ ) {
-			if( mx >= sbbox.g_x + (sbbox.g_w-MOVER_WH) && mx <= sbbox.g_x + sbbox.g_w &&
-				my >= sbbox.g_y + (sbbox.g_h-MOVER_WH) && my <= sbbox.g_y + sbbox.g_h ) {
-				/* mouse within sizer box ( bottom right ) */
-				prev_sb = a =  true;
-				gem_set_cursor( &gem_cursors.sizenwse );
-			}
-		}
-		if( !a ) {
-			if( prev_sb )
-				gw->root->statusbar->resize_init = true;
-			if( prev_url || prev_sb ) {
-				gem_set_cursor( &gem_cursors.arrow );
-				prev_url = false;
-				prev_sb = false;
-			}
-			/* report mouse move in the browser window */
-			if( within ){
-				nx = mx - bwbox.g_x;
-				ny = my - bwbox.g_y;
-				if( ( abs(mx-last_drag_x)>5 || abs(mx-last_drag_y)>5 ) ||
-					!MOUSE_IS_DRAGGING() ){
-					browser_window_mouse_track(
-						input_window->browser->bw,
-						bmstate,
-						nx + gw->browser->scroll.current.x,
-						ny + gw->browser->scroll.current.y
-					);
-					if( MOUSE_IS_DRAGGING() ){
-						last_drag_x = mx;
-						last_drag_y = my;
-					}
-				}
-			}
-		}
-	} else {
-		/* set input window? */
-	}
-}
-
 int window_create( struct gui_window * gw, struct browser_window * bw, unsigned long inflags)
 {
 	short buff[8];
 	OBJECT * tbtree;
 	int err = 0;
 	bool tb, sb;
-	tb = (inflags & WIDGET_TOOLBAR );
-	sb = (inflags & WIDGET_STATUSBAR);
+	short sc;
 	short w,h, wx, wy, wh, ww;
-	int flags = CLOSER | MOVER | NAME | FULLER | SMALLER ;
+	int flags;
+
+	tb = (inflags & WIDGET_TOOLBAR );
+	sb = (inflags & WIDGET_STATUSBAR );
+
+	flags = CLOSER | MOVER | NAME | FULLER | SMALLER;
+	if( inflags & WIDGET_SCROLL ){
+		flags |= (UPARROW | DNARROW | LFARROW | RTARROW | VSLIDE | HSLIDE);
+	}
+	if( inflags & WIDGET_RESIZE ){
+		flags |= ( SIZER );
+	}
 
 	gw->root = malloc( sizeof(struct s_gui_win_root) );
 	if( gw->root == NULL )
@@ -281,9 +177,16 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 		free( gw->root );
 		return( -1 );
 	}
+
+	/* set scroll / content granularity ( 1 unit ) */
+	gw->root->handle->w_u = 1;
+	gw->root->handle->h_u = 1;
+
+	/* Create Root component: */
 	gw->root->cmproot = mt_CompCreate(&app, CLT_VERTICAL, 1, 1);
 	WindSetPtr( gw->root->handle, WF_COMPONENT, gw->root->cmproot, NULL);
 
+	/* create toolbar component: */
 	if( tb ) {
 		gw->root->toolbar = tb_create( gw );
 		assert( gw->root->toolbar );
@@ -293,9 +196,11 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 		gw->root->toolbar = NULL;
 	}
 
+	/* create browser component: */
 	gw->browser = browser_create( gw, bw, NULL, CLT_HORIZONTAL, 1, 1 );
 	mt_CompAttach( &app, gw->root->cmproot,  gw->browser->comp );
 
+	/* create statusbar component: */
 	if( sb ) {
 		gw->root->statusbar = sb_create( gw );
 		mt_CompAttach( &app, gw->root->cmproot, gw->root->statusbar->comp );
@@ -322,9 +227,11 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, gw, EV_BOT);
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
 	EvntDataAttach( gw->root->handle, WM_XM1, evnt_window_m1, gw );
+	EvntDataAttach( gw->root->handle, WM_SLIDEXY, evnt_window_slider, gw );
 
 	/* TODO: check if window is openend as "foreground" window... */
 	window_set_focus( gw, BROWSER, gw->browser);
+
 	return (err);
 }
 
@@ -347,12 +254,10 @@ int window_destroy( struct gui_window * gw)
 
 	search_destroy( gw );
 
-	LOG(("Freeing browser window"));
 	if( gw->browser )
 		browser_destroy( gw->browser );
 
 	/* needed? */ /*listRemove( (LINKABLE*)gw->root->cmproot ); */
-	LOG(("Freeing root window"));
 	if( gw->root ) {
 		/* TODO: check if no other browser is bound to this root window! */
 		if( gw->root->title )
@@ -374,11 +279,15 @@ void window_open( struct gui_window * gw)
 {
 	LGRECT br;
 	GRECT dim;
+
 	WindOpen(gw->root->handle, 20, 20, app.w/2, app.h/2 );
+	WindClear( gw->root->handle );
 	WindSetStr( gw->root->handle, WF_NAME, (char *)"" );
+
 	/* apply focus to the root frame: */
 	long lfbuff[8] = { CM_GETFOCUS };
 	mt_CompEvntExec( gl_appvar, gw->browser->comp, lfbuff );
+
 	/* recompute the nested component sizes and positions: */
 	browser_update_rects( gw );
 	mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
@@ -389,7 +298,7 @@ void window_open( struct gui_window * gw)
 	if( gw->root->statusbar != NULL ){
 		gw->root->statusbar->attached = true;
 	}
-	snd_rdw( gw->root->handle );
+	/*TBD: get already present content and set size? */
 }
 
 
@@ -398,28 +307,6 @@ void window_open( struct gui_window * gw)
 void window_update_back_forward( struct gui_window * gw)
 {
 	tb_update_buttons( gw );
-}
-
-static void window_redraw_controls(struct gui_window *gw, uint32_t flags)
-{
-	LGRECT rect;
-	/* redraw sliders manually, dunno why this is needed (mt_WindSlider should do the job anytime)!*/
-
-	browser_get_rect( gw, BR_VSLIDER, &rect);
-	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
-
-	browser_get_rect( gw, BR_HSLIDER, &rect);
-	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
-
-	/* send redraw to toolbar & statusbar & scrollbars: */
-	mt_CompGetLGrect(&app, gw->root->toolbar->comp, WF_WORKXYWH, &rect);
-	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
-	mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &rect);
-	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-		rect.g_x, rect.g_y, rect.g_w, rect.g_h );
 }
 
 void window_set_stauts( struct gui_window * gw , char * text )
@@ -469,6 +356,40 @@ bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t,
 	}
 	assert( gw->root != NULL );
 	return( ( element == gw->root->focus.element && t == gw->root->focus.type) );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Event Handlers:                                                            */
+/* -------------------------------------------------------------------------- */
+
+static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data )
+{
+	bool abs = false;
+	LGRECT cwork;
+	int value = BROWSER_SCROLL_SVAL;
+
+	if( input_window == NULL ) {
+		return;
+	}
+
+	browser_get_rect( input_window, BR_CONTENT, &cwork );
+
+	switch( buff[4] ) {
+		case WA_UPPAGE:
+		case WA_DNPAGE:
+				value = cwork.g_h;
+			break;
+
+
+		case WA_LFPAGE:
+		case WA_RTPAGE:
+				value = cwork.g_w;
+			break;
+
+		default:
+			break;
+	}
+	browser_scroll( input_window, buff[4], value, abs );
 }
 
 static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
@@ -590,9 +511,90 @@ error:
 	ddclose( dd_hdl);
 }
 
-/* -------------------------------------------------------------------------- */
-/* Non Public Modul event handlers:                                           */
-/* -------------------------------------------------------------------------- */
+
+static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
+{
+	struct gui_window * gw = input_window;
+	static bool prev_url = false;
+	static bool prev_sb = false;
+	short mx, my, mbut, mkstate;
+	bool a = false;				//flags if mouse is within controls or browser
+	bool within = false;
+	LGRECT urlbox, bwbox, sbbox;
+	int nx, ny;					// relative mouse position
+
+
+	if( gw == NULL)
+		return;
+
+	if( gw != input_window ){
+		return;
+	}
+
+	graf_mkstate(&mx, &my, &mbut, &mkstate);
+
+	browser_get_rect( gw, BR_CONTENT, &bwbox );
+	if( gw->root->toolbar )
+		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
+	if( gw->root->statusbar )
+		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
+
+	if( mx > bwbox.g_x && mx < bwbox.g_x + bwbox.g_w &&
+		my > bwbox.g_y &&  my < bwbox.g_y + bwbox.g_h ){
+		within = true;
+	}
+
+	if( evnt.m1_flag == MO_LEAVE ) {
+		if( MOUSE_IS_DRAGGING() ){
+			window_track_mouse_state( &bwbox, within, mx, my, mbut, mkstate );
+		}
+		if( gw->root->toolbar && within == false ) {
+			if( (mx > urlbox.g_x && mx < urlbox.g_x + urlbox.g_w ) &&
+			 	(my > urlbox.g_y && my < + urlbox.g_y + urlbox.g_h )) {
+				gem_set_cursor( &gem_cursors.ibeam );
+				prev_url = a = true;
+			}
+		}
+		if( gw->root->statusbar && within == false /* && a == false */ ) {
+			if( mx >= sbbox.g_x + (sbbox.g_w-MOVER_WH) && mx <= sbbox.g_x + sbbox.g_w &&
+				my >= sbbox.g_y + (sbbox.g_h-MOVER_WH) && my <= sbbox.g_y + sbbox.g_h ) {
+				/* mouse within sizer box ( bottom right ) */
+				prev_sb = a =  true;
+				gem_set_cursor( &gem_cursors.sizenwse );
+			}
+		}
+		if( !a ) {
+			if( prev_sb )
+				gw->root->statusbar->resize_init = true;
+			if( prev_url || prev_sb ) {
+				gem_set_cursor( &gem_cursors.arrow );
+				prev_url = false;
+				prev_sb = false;
+			}
+			/* report mouse move in the browser window */
+			if( within ){
+				nx = mx - bwbox.g_x;
+				ny = my - bwbox.g_y;
+				if( ( abs(mx-last_drag_x)>5 || abs(mx-last_drag_y)>5 ) ||
+					!MOUSE_IS_DRAGGING() ){
+					browser_window_mouse_track(
+						input_window->browser->bw,
+						bmstate,
+						nx + gw->browser->scroll.current.x,
+						ny + gw->browser->scroll.current.y
+					);
+					if( MOUSE_IS_DRAGGING() ){
+						last_drag_x = mx;
+						last_drag_y = my;
+					}
+				}
+			}
+		}
+	} else {
+		/* set input window? */
+	}
+}
+
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data )
 {
 	LOG(("%s\n", __FUNCTION__ ));
@@ -612,8 +614,6 @@ static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data )
 	input_window = (struct gui_window *) data;
 	LOG(("newtop: iw: %p, win: %p", input_window, win ));
 	assert( input_window != NULL );
-
-	/* window_redraw_controls(input_window, 0); */
 }
 
 static void __CDECL evnt_window_shaded( WINDOW *win, short buff[8], void *data )
@@ -626,12 +626,37 @@ static void __CDECL evnt_window_shaded( WINDOW *win, short buff[8], void *data )
 	}
 }
 
+static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data)
+{
+	int dx = buff[4];
+	int dy = buff[5];
+	GRECT work, screen;
+	struct gui_window * gw = data;
+
+	if (!dx && !dy) return;
+
+	if( input_window == NULL || input_window != gw ) {
+		return;
+	}
+
+	/* update the sliders _before_ we call redraw (which might depend on the slider possitions) */
+	WindSlider( win, (dx?HSLIDER:0) | (dy?VSLIDER:0) );
+
+	if( dy > 0 )
+		browser_scroll( gw, WA_DNPAGE, abs(dy), false );
+	else if ( dy < 0)
+		browser_scroll( gw, WA_UPPAGE, abs(dy), false );
+	if( dx > 0 )
+		browser_scroll( gw, WA_RTPAGE, abs(dx), false );
+	else if( dx < 0 )
+		browser_scroll( gw, WA_LFPAGE, abs(dx), false );
+}
+
+
 static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * data )
 {
 	short x,y,w,h;
 	struct gui_window * gw = (struct gui_window*)data;
-
-	LOG((""));
 
 	WindClear( win);
 	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h);
@@ -720,13 +745,25 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 		browser_get_rect( gw, BR_CONTENT, &rect );
 		if( gw->browser->bw->current_content != NULL )
 			browser_window_reformat(gw->browser->bw, false, rect.g_w, rect.g_h );
+		else
+			WindClear( gw->root->handle );
 		gw->root->toolbar->url.scrollx = 0;
-		window_redraw_controls(gw, 0);
+
+		/* send complete redraw to toolbar & statusbar: */
+		mt_CompGetLGrect(&app, gw->root->toolbar->comp, WF_WORKXYWH, &rect);
+		ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
+					rect.g_x, rect.g_y, rect.g_w, rect.g_h
+		);
+		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &rect);
+		ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
+					rect.g_x, rect.g_y, rect.g_w, rect.g_h
+		);
+
 		/* TODO: recalculate scroll position, instead of zeroing? */
 	} else {
 		if(gw->root->loc.g_x != x || gw->root->loc.g_y != y ){
-       			mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
+			mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
 			browser_update_rects( gw );
-        	}
+		}
 	}
 }

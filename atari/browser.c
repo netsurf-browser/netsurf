@@ -78,7 +78,7 @@ static bool frameinit = true;
 
 
 /*
-	Create an browser component window (undcomented WinDom structure).
+	Create an browser component.
 	Currently, this area is the area which is used to display HTML content.
 	However, it could also contains other areas, these need to be handled within
 	"browser_get_rect" function.
@@ -110,42 +110,32 @@ struct s_browser * browser_create
 		else
 			bw->scale = 1;
 		bnew->redraw.areas_used = 0;
-		bnew->compwin = mt_WindCreate( &app, VSLIDE|HSLIDE, 1, 1, app.w, app.h);
-		bnew->compwin->w_u = 1;
-		bnew->compwin->h_u = 1;
-		/* needs to be adjusted when content width is known: */
-		bnew->compwin->ypos_max = w;
-		bnew->compwin->xpos_max = w;
-		mt_WindSlider( &app, bnew->compwin, HSLIDER|VSLIDER);
-		bnew->comp = (COMPONENT*)comp_widget_create( (void*)&app, (WINDOW*)bnew->compwin, 1, 1 );
+		bnew->comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL, 100, 1);
 		if( bnew->comp == NULL ) {
 			free(bnew);
 			return(NULL);
 		}
 
 		/* Attach events to the component: */
-		mt_EvntDataAdd( &app, bnew->compwin, WM_XBUTTON,
-							browser_evnt_mbutton, (void*)gw, EV_BOT );
+		mt_CompEvntDataAdd( &app, bnew->comp, WM_XBUTTON,
+						browser_evnt_mbutton, (void*)gw, EV_BOT
+		);
 		mt_CompEvntDataAttach( &app, bnew->comp, WM_REDRAW,
-								browser_evnt_redraw, (void*)gw );
-		mt_EvntDataAttach( &app, bnew->compwin , WM_REDRAW, browser_evnt_redraw_x, NULL );
-		mt_EvntDataAttach( &app, bnew->compwin, WM_SLIDEXY,
-								browser_evnt_slider, gw );
-		mt_EvntDataAttach( &app, bnew->compwin, WM_ARROWED,
-								browser_evnt_arrowed, gw );
+								browser_evnt_redraw, (void*)gw
+		);
 		mt_CompEvntDataAttach( &app, bnew->comp, WM_DESTROY,
-								browser_evnt_destroy, (void*)bnew );
-		/* just stub, as an reminder: */
-		mt_EvntDataAttach( &app, bnew->compwin, WM_DESTROY,
-								browser_evnt_wdestroy, (void*)bnew );
+								browser_evnt_destroy, (void*)bnew
+		);
 
 		/* Set the gui_window owner. */
 		/* it is an link to the netsurf window system */
 		mt_CompDataAttach( &app, bnew->comp, CDT_OWNER, gw );
+
 		bnew->scroll.requested.y = 0;
 		bnew->scroll.requested.x = 0;
 		bnew->scroll.current.x = 0;
 		bnew->scroll.current.y = 0;
+
 	}
 	return( bnew );
 }
@@ -154,19 +144,13 @@ bool browser_destroy( struct s_browser * b )
 {
 
 	LOG(("%s\n", b->bw->name ));
+
 	assert( b != NULL );
 	assert( b->comp != NULL );
 	assert( b->bw != NULL );
 
-	if( b->compwin != NULL ) {
-		/* TODO: Only do this when it's the last browser viewport within the root win: */
-		COMPONENT * old = b->comp;
-		WINDOW * oldwin = b->compwin;
-		b->comp = NULL;
-		b->compwin = NULL;
-		/* I'm not sure about the correct order of these 2 calls: */
-		WindDelete( oldwin );
-		mt_CompDelete(&app,  old );
+	if( b->comp != NULL ){
+		mt_CompDelete(&app,  b->comp );
 	}
 	return( true );
 }
@@ -176,45 +160,21 @@ bool browser_destroy( struct s_browser * b )
 */
 void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out)
 {
-	GRECT work;
-	assert( out != NULL);
-	int slider_v_w = 20;
-	int slider_v_h = 22;
-	int slider_h_w = 20;
-	int slider_h_h = 22;
+	LGRECT cur;
 
 	/* Query component for it's current size: */
-	WindGetGrect( gw->browser->compwin, WF_WORKXYWH, &work);
 
+	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &cur);
 	/* And extract the different widget dimensions: */
 
 	/* Redraw area of html content: */
 	if( type == BR_CONTENT ){
-		out->g_w = work.g_w;
-		out->g_h = work.g_h;
-		out->g_x = work.g_x;
-		out->g_y = work.g_y;
+		out->g_w = cur.g_w;
+		out->g_h = cur.g_h;
+		out->g_x = cur.g_x;
+		out->g_y = cur.g_y;
 		return;
 	}
-
-	/* Horizontal scroller: */
-	LGRECT cur;
-	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &cur);
-	if( type == BR_HSLIDER ){
-		out->g_x = cur.g_x;
-		out->g_y = cur.g_y + work.g_h;
-		out->g_h = cur.g_h - work.g_h;
-		out->g_w = cur.g_w;
-	}
-
-	/* Vertical  scroller: */
-	if( type == BR_VSLIDER ){
-		out->g_x = cur.g_x + work.g_w;
-		out->g_y = cur.g_y;
-		out->g_w = cur.g_w - work.g_w;
-		out->g_h = work.g_h;
-	}
-
 }
 
 /* Report an resize to the COMPONENT interface */
@@ -234,8 +194,10 @@ void browser_set_content_size(struct gui_window * gw, int w, int h)
 	CMP_BROWSER b = gw->browser;
 	LGRECT work;
 	browser_get_rect( gw, BR_CONTENT, &work );
-	b->compwin->ypos_max = h;
-	b->compwin->xpos_max = w;
+
+	gw->root->handle->xpos_max = w;
+	gw->root->handle->ypos_max = h;
+
 	if( w < work.g_w + b->scroll.current.x || w < work.g_h + b->scroll.current.y ) {
 		/* let the scroll routine detect invalid scroll values... */
 		browser_scroll(gw, WA_LFLINE, b->scroll.current.x, true );
@@ -243,12 +205,6 @@ void browser_set_content_size(struct gui_window * gw, int w, int h)
 		/* force update of scrollbars: */
 		b->scroll.required = true;
 	}
-}
-
-static void __CDECL browser_evnt_wdestroy( WINDOW * c, short buff[8], void * data)
-{
-	struct s_browser * b = (struct s_browser*)data;
-	LOG((""));
 }
 
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data)
@@ -259,75 +215,16 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 
 	assert( b != NULL );
 	assert( gw != NULL );
-
-	assert( b->comp == NULL );
-
 	free( b );
 	gw->browser = NULL;
 	LOG(("evnt_destroy done!"));
-}
-
-
-static void __CDECL browser_evnt_arrowed( WINDOW *win, short buff[8], void * data)
-{
-	bool abs = false;
-	int value = BROWSER_SCROLL_SVAL;
-	struct gui_window * gw = data;
-	LGRECT cwork;
-
-	if( input_window == NULL || input_window != gw ) {
-		return;
-	}
-	browser_get_rect( gw, BR_CONTENT, &cwork );
-
-	switch( buff[4] ) {
-		case WA_UPPAGE:
-		case WA_DNPAGE:
-				value = cwork.g_h;
-			break;
-
-		case WA_LFPAGE:
-		case WA_RTPAGE:
-				value = cwork.g_w;
-			break;
-
-		default:
-			break;
-	}
-	browser_scroll( gw, buff[4], value, abs );
-}
-
-void __CDECL browser_evnt_slider( WINDOW *win, short buff[8], void * data)
-{
-	int dx = buff[4];
-	int dy = buff[5];
-	GRECT work, screen;
-	struct gui_window * gw = data;
-
-	if (!dx && !dy) return;
-
-	if( input_window == NULL || input_window != gw ) {
-		return;
-	}
-
-	/* update the sliders _before_ we call redraw (which might depend on the slider possitions) */
-	mt_WindSlider( &app, win, (dx?HSLIDER:0) | (dy?VSLIDER:0) );
-
-	if( dy > 0 )
-		browser_scroll( gw, WA_DNPAGE, abs(dy), false );
-	else if ( dy < 0)
-		browser_scroll( gw, WA_UPPAGE, abs(dy), false );
-	if( dx > 0 )
-		browser_scroll( gw, WA_RTPAGE, abs(dx), false );
-	else if( dx < 0 )
-		browser_scroll( gw, WA_LFPAGE, abs(dx), false );
 }
 
 /*
 	Mouse Button handler for browser component.
 */
 
-static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data)
+static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * data)
 {
 	long lbuff[8];
 	short mx, my, dummy, mbut;
@@ -582,10 +479,11 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 	}
 	b->scroll.requested.y = 0;
 	b->scroll.requested.x = 0;
-	gw->browser->compwin->xpos = b->scroll.current.x;
-	gw->browser->compwin->ypos = b->scroll.current.y;
 
-	mt_WindSlider( &app, gw->browser->compwin, HSLIDER|VSLIDER);
+	gw->root->handle->xpos = b->scroll.current.x;
+	gw->root->handle->ypos = b->scroll.current.y;
+
+	mt_WindSlider( &app, gw->root->handle, HSLIDER|VSLIDER );
 }
 
 /*
@@ -749,13 +647,6 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
 		}
 	}
 	return( r );
-}
-
-static void __CDECL browser_evnt_redraw_x( WINDOW * c, short buf[8], void * data)
-{
-	/* just an stub to prevent wndclear */
-	/* Probably the browser redraw is better placed here? dunno! */
-	return;
 }
 
 /* determines if a browser window needs redraw */
@@ -1031,7 +922,6 @@ void browser_redraw( struct gui_window * gw )
 static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data)
 {
 	short pxy[8];
-	WINDOW * w;
 	struct gui_window * gw = (struct gui_window *) data;
 	CMP_BROWSER b = gw->browser;
 	LGRECT work, lclip, rwork;
@@ -1043,13 +933,23 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	int xoff,yoff,width,heigth;
 	short cw, ch, cellw, cellh;
 	/* use that instead of browser_find_root() ? */
-	w = (WINDOW*)mt_CompGetPtr( &app, c, CF_WINDOW );
 	browser_get_rect( gw, BR_CONTENT, &work );
 	lclip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &lclip ) ) return;
 
-	if( b->bw->current_content == NULL )
+	if( b->bw->current_content == NULL ){
+		short pxy[4];
+		pxy[0] = lclip.g_x;
+		pxy[1] = lclip.g_y;
+		pxy[2] = lclip.g_x + lclip.g_w - 1;
+		pxy[3] = lclip.g_y + lclip.g_h - 1;
+		vsf_color( gw->root->handle->graf->handle, WHITE );
+		vsf_perimeter( gw->root->handle->graf->handle, 0);
+		vsf_interior( gw->root->handle->graf->handle, FIS_SOLID );
+		vsf_style( gw->root->handle->graf->handle, 1);
+		v_bar( gw->root->handle->graf->handle, (short*)&pxy );
 		return;
+	}
 
 	/* convert redraw coords to framebuffer coords: */
 	lclip.g_x -= work.g_x;
@@ -1064,6 +964,7 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 		lclip.g_h = work.g_h + lclip.g_y;
 		lclip.g_y = 0;
 	}
+
 
 	if( lclip.g_h > 0 && lclip.g_w > 0 ) {
 		browser_schedule_redraw( gw, lclip.g_x, lclip.g_y,
