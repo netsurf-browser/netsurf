@@ -21,7 +21,7 @@
 
 /*
  Each browser_window in the Atari Port is represented by an  struct s_browser,
- which cosnist mainly of an WinDom COMPONENT.
+ which consist mainly of an WinDom COMPONENT.
 */
 
 /*
@@ -61,7 +61,7 @@ struct s_scroll_info
 
 /*
 	This struct holds information of the cursor within the browser
-	viewport. 
+	viewport.
 */
 struct s_caret
 {
@@ -83,8 +83,15 @@ struct s_browser_redrw_info
 };
 
 /*
-	This is the actual browser widget, containings GUI elements and
-	the current state of the browser widget.
+	This is the browser content area (viewport).
+	It is redrawable and scrollable. It is based on the WinDOM
+	Component window (undocumented feature).
+
+	It's an windom component containing it's own Window controls,
+	like scrollbars, resizer, etc.
+
+	Now that the NetSurf core handles frames, the advantages of this
+	choice have probably vanished.
 */
 struct s_browser
 {
@@ -93,7 +100,7 @@ struct s_browser
 	WINDOW * compwin;
 	struct browser_window * bw;
 	struct s_scroll_info scroll;
-	struct s_browser_redrw_info redraw; 
+	struct s_browser_redrw_info redraw;
 	struct s_caret caret;
 	bool attached;
 };
@@ -106,8 +113,8 @@ void browser_redraw( struct gui_window * gw );
 void browser_set_content_size(struct gui_window * gw, int w, int h);
 void browser_scroll( struct gui_window * gw, short MODE, int value, bool abs );
 struct gui_window * browser_find_root( struct gui_window * gw );
-static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 bool browser_redraw_required( struct gui_window * gw);
+static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 
 /*
 	This queues an redraw to one of the slots.
@@ -129,10 +136,10 @@ void browser_schedule_redraw_rect(struct gui_window * gw, short x, short y, shor
 void browser_schedule_redraw(struct gui_window * gw, short x, short y, short w, short h );
 static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8], void * data);
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data);
+static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data);
 static void __CDECL browser_evnt_mbutton( WINDOW * c, short buff[8], void * data);
 static void __CDECL browser_evnt_arrowed( WINDOW *win, short buff[8], void * data);
 static void __CDECL browser_evnt_slider( WINDOW *win, short buff[8], void * data);
-static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data);
 static void __CDECL browser_evnt_redraw_x( WINDOW * c, short buff[8], void * data);
 
 #endif
