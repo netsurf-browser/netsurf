@@ -323,11 +323,6 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
 	EvntDataAttach( gw->root->handle, WM_XM1, evnt_window_m1, gw );
 
-	/*
-	OBJECT * tbut;
-	RsrcGaddr( h_gem_rsrc, R_TREE, FAVICO , &tbut );
-	window_set_icon(gw, &tbut[]);
-	*/
 	/* TODO: check if window is openend as "foreground" window... */
 	window_set_focus( gw, BROWSER, gw->browser);
 	return (err);
@@ -343,7 +338,6 @@ int window_destroy( struct gui_window * gw)
 		input_window = NULL;
 
 	if( gw->root ) {
-		window_set_icon( gw, NULL );
 		if( gw->root->toolbar )
 			tb_destroy( gw->root->toolbar );
 
@@ -356,10 +350,6 @@ int window_destroy( struct gui_window * gw)
 	LOG(("Freeing browser window"));
 	if( gw->browser )
 		browser_destroy( gw->browser );
-
-
-	/* destroy the icon: */
-	/*window_set_icon(gw, NULL, false );*/
 
 	/* needed? */ /*listRemove( (LINKABLE*)gw->root->cmproot ); */
 	LOG(("Freeing root window"));
@@ -400,17 +390,6 @@ void window_open( struct gui_window * gw)
 		gw->root->statusbar->attached = true;
 	}
 	snd_rdw( gw->root->handle );
-}
-
-
-void window_set_icon(struct gui_window * gw, struct bitmap * bmp )
-{
-	/*
-    if( gw->icon != NULL ){
-        bitmap_destroy( gw->icon );
-        gw->icon = NULL;
-    }*/
-    gw->icon = bmp;
 }
 
 
