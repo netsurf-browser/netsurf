@@ -933,13 +933,13 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 	nsurl *nsurl;
 	nserror error;
 
-	for (n = head == 0 ? 0 : head->children; n; n = n->next) {
+	for (n = head == NULL ? NULL : head->children; n; n = n->next) {
 		if (n->type != XML_ELEMENT_NODE)
 			continue;
 
 		/* Recurse into noscript elements */
 		if (strcmp((const char *) n->name, "noscript") == 0) {
-			if (!html_meta_refresh(c, n)) {
+			if (html_meta_refresh(c, n) == false) {
 				/* Some error occurred */
 				return false;
 			} else if (c->base.refresh) {
@@ -948,15 +948,15 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 			}
 		}
 
-		if (strcmp((const char *) n->name, "meta")) {
+		if (strcmp((const char *) n->name, "meta") != 0) {
 			continue;
 		}
 
 		equiv = xmlGetProp(n, (const xmlChar *) "http-equiv");
-		if (!equiv)
+		if (equiv == NULL)
 			continue;
 
-		if (strcasecmp((const char *) equiv, "refresh")) {
+		if (strcasecmp((const char *) equiv, "refresh") != 0) {
 			xmlFree(equiv);
 			continue;
 		}
@@ -964,7 +964,7 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 		xmlFree(equiv);
 
 		content = xmlGetProp(n, (const xmlChar *) "content");
-		if (!content)
+		if (content == NULL)
 			continue;
 
 		end = (char *) content + strlen((const char *) content);
@@ -980,8 +980,21 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 		 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
 		 */
 
-		/* *LWS intpart */
-		msg_data.delay = (int)strtol((char *) content, &url, 10);
+		url = (char *) content;
+
+		/* *LWS */
+		while (url < end && isspace(*url)) {
+			url++;
+		}
+
+		/* intpart */
+		if (url == end || (*url < '0' || '9' < *url)) {
+			/* Empty content, or invalid timeval */
+			xmlFree(content);
+			continue;
+		}
+
+		msg_data.delay = (int) strtol(url, &url, 10);
 		/* a very small delay and self-referencing URL can cause a loop
 		 * that grinds machines to a halt. To prevent this we set a
 		 * minimum refresh delay of 1s. */
@@ -1026,10 +1039,12 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 				url += 3;
 			} else {
 				/* Unexpected input, ignore this header */
+				xmlFree(content);
 				continue;
 			}
 		} else {
 			/* Insufficient input, ignore this header */
+			xmlFree(content);
 			continue;
 		}
 
@@ -1044,10 +1059,12 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 				url++;
 			} else {
 				/* Unexpected input, ignore this header */
+				xmlFree(content);
 				continue;
 			}
 		} else {
 			/* Insufficient input, ignore this header */
+			xmlFree(content);
 			continue;
 		}
 
@@ -1081,9 +1098,12 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 
 		error = nsurl_join(c->base_url, refresh, &nsurl);
 		if (error != NSERROR_OK) {
+			xmlFree(content);
+
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
 					msg_data);
+
 			return false;
 		}
 
