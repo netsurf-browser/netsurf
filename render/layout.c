@@ -320,8 +320,7 @@ bool layout_block_context(struct box *block, int viewport_height,
 		 * left and right margins to avoid any floats. */
 		lm = rm = 0;
 
-		if (box->type == BOX_BLOCK || box->object ||
-				box->flags & IFRAME) {
+		if (box->type == BOX_BLOCK || box->flags & IFRAME) {
 			if (!box->object && !(box->flags & IFRAME) &&
 					!(box->flags & REPLACE_DIM) &&
 					box->style &&
