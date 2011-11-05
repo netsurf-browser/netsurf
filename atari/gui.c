@@ -578,12 +578,7 @@ void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
 	/* Untestet, favicon support has been dropped, so this is dead code. */
-	LOG((""));
-	struct bitmap *icon_bitmap;
-	icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
-	if (icon_bitmap != NULL) {
-        	window_set_icon( g, icon_bitmap );
-	}
+	g->icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
 
 }
 
