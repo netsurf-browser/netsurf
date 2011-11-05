@@ -806,8 +806,16 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 	abort_fetch = f->abort;
 	LOG(("done %s", nsurl_access(f->url)));
 
-	if (abort_fetch == false && result == CURLE_OK) {
-		/* fetch completed normally */
+	if (abort_fetch == false && (result == CURLE_OK ||
+			(result == CURLE_WRITE_ERROR && f->stopped == false))) {
+		/* fetch completed normally or the server fed us a junk gzip 
+		 * stream (usually in the form of garbage at the end of the 
+		 * stream). Curl will have fed us all but the last chunk of 
+		 * decoded data, which is sad as, if we'd received the last 
+		 * chunk, too, we'd be able to render the whole object.
+		 * As is, we'll just have to accept that the end of the
+		 * object will be truncated in this case and leave it to
+		 * the content handlers to cope. */
 		if (f->stopped ||
 				(!f->had_headers &&
 					fetch_curl_process_headers(f)))
