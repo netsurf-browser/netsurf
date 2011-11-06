@@ -4677,9 +4677,13 @@ bool layout_absolute(struct box *box, struct box *containing_block,
 		if (!layout_block_context(box, -1, content))
 			return false;
 	} else if (box->type == BOX_TABLE) {
+		/* layout_table also expects the containing block to be 
+		 * stored in the float_container field */
+		box->float_container = containing_block;
 		/* \todo  layout_table considers margins etc. again */
 		if (!layout_table(box, width, content))
 			return false;
+		box->float_container = NULL;
 		layout_solve_width(box, box->parent->width, box->width, 0, 0,
 				-1, -1);
 	}
