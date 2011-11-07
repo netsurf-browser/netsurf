@@ -63,6 +63,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "utils/messages.h"
+#include "utils/schedule.h"
 
 #define IMAGE_MENU_ITEM(n, i, t) \
 	gwin->menulab[n] = LabelObject, \
@@ -254,7 +255,7 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menutype[AMI_MENU_AREXX_MAX] = NM_END;
 }
 
-/* Menu refresh for hotlist - disabled, see below.
+/* Menu refresh for hotlist */
 void ami_menu_refresh(struct gui_window_2 *gwin)
 {
 	SetAttrs(gwin->objects[OID_MAIN],
@@ -267,10 +268,7 @@ void ami_menu_refresh(struct gui_window_2 *gwin)
 	SetAttrs(gwin->objects[OID_MAIN],
 			WINDOW_NewMenu, gwin->menu,
 			TAG_DONE);
-
-	schedule(6000,(void *)ami_menu_refresh,gwin);
 }
-*/
 
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 {
@@ -299,11 +297,9 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), false, gwin);
 	ami_menu_arexx_scan(gwin);
 
-/*	Set up scheduler to refresh the hotlist menu
-	Disabled as it causes everything to slow down to a halt after
-	several iterations
-	schedule(6000,(void *)ami_menu_refresh,gwin);
-*/
+/*	Set up scheduler to refresh the hotlist menu */
+	if(option_menu_refresh > 0)
+		schedule(option_menu_refresh, (void *)ami_menu_refresh, gwin);
 
 	return(gwin->menu);
 }

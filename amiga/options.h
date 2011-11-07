@@ -67,6 +67,7 @@ extern int option_amiga_ydpi;
 extern int option_monitor_aspect_x;
 extern int option_monitor_aspect_y;
 extern bool option_accept_lang_locale;
+extern int option_menu_refresh;
 
 #define EXTRA_OPTION_DEFINE \
 char *option_url_file = 0; \
@@ -116,6 +117,7 @@ int option_amiga_ydpi = 72; \
 int option_monitor_aspect_x = 4; \
 int option_monitor_aspect_y = 3; \
 bool option_accept_lang_locale = true; \
+int option_menu_refresh = 0; \
 
 #define EXTRA_OPTION_TABLE \
 { "url_file",		OPTION_STRING,	&option_url_file }, \
@@ -164,5 +166,6 @@ bool option_accept_lang_locale = true; \
 { "amiga_ydpi",	OPTION_INTEGER,	&option_amiga_ydpi}, \
 { "monitor_aspect_x",	OPTION_INTEGER,	&option_monitor_aspect_x}, \
 { "monitor_aspect_y",	OPTION_INTEGER,	&option_monitor_aspect_y}, \
-{ "accept_lang_locale",	OPTION_BOOL,	&option_accept_lang_locale},
+{ "accept_lang_locale",	OPTION_BOOL,	&option_accept_lang_locale}, \
+{ "menu_refresh",	OPTION_INTEGER,	&option_menu_refresh},
 #endif
