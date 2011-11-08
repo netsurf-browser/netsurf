@@ -884,8 +884,6 @@ void gui_quit(void)
 	}
 	LOG(("Shutting down plotter"));
 	atari_plotter_finalise();
-	LOG(("FrameExit"));
-	mt_FrameExit( &app );
 	if( tmp_clipboard != NULL ){
 		free( tmp_clipboard );
 		tmp_clipboard = NULL;

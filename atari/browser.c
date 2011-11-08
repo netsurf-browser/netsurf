@@ -70,12 +70,6 @@ extern short last_drag_y;
 static void __CDECL browser_evnt_wdestroy( WINDOW * c, short buff[8], void * data);
 COMPONENT *comp_widget_create( APPvar *app, WINDOW *win, int size, int flex );
 
-/*
-The component window interface needs frame API init,
-keep track of frame API init:
-*/
-static bool frameinit = true;
-
 
 /*
 	Create an browser component.
@@ -93,11 +87,6 @@ struct s_browser * browser_create
 {
 	LGRECT cwork;
 	COMPONENT * scrollv, * scrollh, * drawable;
-
-	if( frameinit ) {
-		mt_FrameInit( &app );
-		frameinit = false;
-	}
 
 	CMP_BROWSER bnew = (CMP_BROWSER)malloc( sizeof(struct s_browser) );
 	if( bnew )
