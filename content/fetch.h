@@ -30,33 +30,48 @@
 #include "utils/config.h"
 #include "utils/nsurl.h"
 
-typedef enum {
-              FETCH_PROGRESS,
-              FETCH_HEADER,
-              FETCH_DATA,
-              FETCH_FINISHED,
-              FETCH_ERROR,
-              FETCH_REDIRECT,
-              FETCH_NOTMODIFIED,
-              FETCH_AUTH,
-              FETCH_CERT_ERR,
-} fetch_msg;
-
-typedef enum {
-	FETCH_ERROR_NO_ERROR,
-	FETCH_ERROR_CERT,
-	FETCH_ERROR_AUTHENTICATION,
-	FETCH_ERROR_HTTP_NOT2,
-	FETCH_ERROR_COULDNT_RESOLVE_HOST,
-	FETCH_ERROR_PARTIAL_FILE,
-	FETCH_ERROR_MEMORY,
-	FETCH_ERROR_URL,
-	FETCH_ERROR_ENCODING,
-	FETCH_ERROR_MISC
-} fetch_error_code;
-
 struct content;
 struct fetch;
+struct ssl_cert_info;
+
+typedef enum {
+	FETCH_PROGRESS,
+	FETCH_HEADER,
+	FETCH_DATA,
+	FETCH_FINISHED,
+	FETCH_ERROR,
+	FETCH_REDIRECT,
+	FETCH_NOTMODIFIED,
+	FETCH_AUTH,
+	FETCH_CERT_ERR
+} fetch_msg_type;
+
+typedef struct fetch_msg {
+	fetch_msg_type type;
+
+	union {
+		const char *progress;
+
+		struct {
+			const uint8_t *buf;
+			size_t len;
+		} header_or_data;
+
+		const char *error;
+
+		/** \todo Use nsurl */
+		const char *redirect;
+
+		struct {
+			const char *realm;
+		} auth;
+
+		struct {
+			const struct ssl_cert_info *certs;
+			size_t num_certs;
+		} cert_err;
+	} data;
+} fetch_msg;
 
 /** Fetch POST multipart data */
 struct fetch_multipart_data {
@@ -80,8 +95,7 @@ struct ssl_cert_info {
 
 extern bool fetch_active;
 
-typedef void (*fetch_callback)(fetch_msg msg, void *p, const void *data,
-                               unsigned long size, fetch_error_code errorcode);
+typedef void (*fetch_callback)(const fetch_msg *msg, void *p);
 
 
 void fetch_init(void);
@@ -141,12 +155,11 @@ bool fetch_add_fetcher(lwc_string *scheme,
                        fetcher_poll_fetcher poll_fetcher,
                        fetcher_finalise finaliser);
 
-void fetch_send_callback(fetch_msg msg, struct fetch *fetch,
-		const void *data, unsigned long size,
-		fetch_error_code errorcode);
+void fetch_send_callback(const fetch_msg *msg, struct fetch *fetch);
 void fetch_remove_from_queues(struct fetch *fetch);
 void fetch_free(struct fetch *f);
 void fetch_set_http_code(struct fetch *fetch, long http_code);
 const char *fetch_get_referer_to_send(struct fetch *fetch);
 void fetch_set_cookie(struct fetch *fetch, const char *data);
+
 #endif

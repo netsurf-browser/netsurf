@@ -70,12 +70,11 @@ struct fetch_file_context {
 static struct fetch_file_context *ring = NULL;
 
 /** issue fetch callbacks with locking */
-static inline bool fetch_file_send_callback(fetch_msg msg,
-		struct fetch_file_context *ctx, const void *data,
-		unsigned long size, fetch_error_code errorcode)
+static inline bool fetch_file_send_callback(const fetch_msg *msg,
+		struct fetch_file_context *ctx)
 {
 	ctx->locked = true;
-	fetch_send_callback(msg, ctx->fetchh, data, size, errorcode);
+	fetch_send_callback(msg, ctx->fetchh);
 	ctx->locked = false;
 
 	return ctx->aborted;
@@ -84,6 +83,7 @@ static inline bool fetch_file_send_callback(fetch_msg msg,
 static bool fetch_file_send_header(struct fetch_file_context *ctx,
 		const char *fmt, ...)
 {
+	fetch_msg msg;
 	char header[64];
 	va_list ap;
 
@@ -93,8 +93,10 @@ static bool fetch_file_send_header(struct fetch_file_context *ctx,
 
 	va_end(ap);
 
-	fetch_file_send_callback(FETCH_HEADER, ctx, header, strlen(header), 
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_HEADER;
+	msg.data.header_or_data.buf = (const uint8_t *) header;
+	msg.data.header_or_data.len = strlen(header);
+	fetch_file_send_callback(&msg, ctx);
 
 	return ctx->aborted;
 }
@@ -204,6 +206,7 @@ static int fetch_file_errno_to_http_code(int error_no)
 
 static void fetch_file_process_error(struct fetch_file_context *ctx, int code)
 {
+	fetch_msg msg;
 	char buffer[1024];
 	const char *title;
 	char key[8];
@@ -223,12 +226,14 @@ static void fetch_file_process_error(struct fetch_file_context *ctx, int code)
 			"<p>Error %d while fetching file %s</p></body></html>",
 			title, title, code, nsurl_access(ctx->url));
 
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
-			FETCH_ERROR_NO_ERROR))
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+	msg.data.header_or_data.len = strlen(buffer);
+	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_error_aborted;
 
-	fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_FINISHED;
+	fetch_file_send_callback(&msg, ctx);
 
 fetch_file_process_error_aborted:
 	return;
@@ -239,6 +244,7 @@ fetch_file_process_error_aborted:
 static void fetch_file_process_plain(struct fetch_file_context *ctx,
 				     struct stat *fdstat)
 {
+	fetch_msg msg;
 	char *buf;
 	size_t buf_size;
 
@@ -250,8 +256,8 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 	/* Check if we can just return not modified */
 	if (ctx->file_etag != 0 && ctx->file_etag == fdstat->st_mtime) {
 		fetch_set_http_code(ctx->fetchh, 304);
-		fetch_file_send_callback(FETCH_NOTMODIFIED, ctx, 0, 0,
-				FETCH_ERROR_NO_ERROR);
+		msg.type = FETCH_NOTMODIFIED;
+		fetch_file_send_callback(&msg, ctx);
 		return;
 	}
 
@@ -271,9 +277,10 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 	/* allocate the buffer storage */
 	buf = malloc(buf_size);
 	if (buf == NULL) {
-		fetch_file_send_callback(FETCH_ERROR, ctx,
-			"Unable to allocate memory for file data buffer",
-			0, FETCH_ERROR_MEMORY);
+		msg.type = FETCH_ERROR;
+		msg.data.error =
+			"Unable to allocate memory for file data buffer";
+		fetch_file_send_callback(&msg, ctx);
 		close(fd);
 		return;
 	}
@@ -304,29 +311,32 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 	while (tot_read < fdstat->st_size) {
 		res = read(fd, buf, buf_size);
 		if (res == -1) {
-			fetch_file_send_callback(FETCH_ERROR, ctx, 
-					"Error reading file", 0, 
-					FETCH_ERROR_PARTIAL_FILE);
+			msg.type = FETCH_ERROR;
+			msg.data.error = "Error reading file";
+			fetch_file_send_callback(&msg, ctx);
 			goto fetch_file_process_aborted;
 		}
 
 		if (res == 0) {
-			fetch_file_send_callback(FETCH_ERROR, ctx, 
-					"Unexpected EOF reading file", 0, 
-					FETCH_ERROR_PARTIAL_FILE);
+			msg.type = FETCH_ERROR;
+			msg.data.error = "Unexpected EOF reading file";
+			fetch_file_send_callback(&msg, ctx);
 			goto fetch_file_process_aborted;
 		}
 
 		tot_read += res;
 
-		if (fetch_file_send_callback(FETCH_DATA, ctx, buf, res, 
-				FETCH_ERROR_NO_ERROR))
+		msg.type = FETCH_DATA;
+		msg.data.header_or_data.buf = (const uint8_t *) buf;
+		msg.data.header_or_data.len = res;
+		if (fetch_file_send_callback(&msg, ctx))
 			break;
 	}
 
-	if (ctx->aborted == false)
-		fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
-				FETCH_ERROR_NO_ERROR);
+	if (ctx->aborted == false) {
+		msg.type = FETCH_FINISHED;
+		fetch_file_send_callback(&msg, ctx);
+	}
 
 fetch_file_process_aborted:
 
@@ -392,6 +402,7 @@ static char *gen_nice_title(char *path)
 static void fetch_file_process_dir(struct fetch_file_context *ctx,
 				   struct stat *fdstat)
 {
+	fetch_msg msg;
 	char buffer[1024]; /* Output buffer */
 	bool even = false; /* formatting flag */
 	char *title; /* pretty printed title */
@@ -425,18 +436,21 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	if (fetch_file_send_header(ctx, "Content-Type: text/html"))
 		goto fetch_file_process_dir_aborted;
 
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+
 	/* directory listing top */
 	dirlist_generate_top(buffer, sizeof buffer);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
-			FETCH_ERROR_NO_ERROR))
+	msg.data.header_or_data.len = strlen(buffer);
+	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_dir_aborted;
 
 	/* directory listing title */
 	title = gen_nice_title(ctx->path);
 	dirlist_generate_title(title, buffer, sizeof buffer);
 	free(title);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
-			FETCH_ERROR_NO_ERROR))
+	msg.data.header_or_data.len = strlen(buffer);
+	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_dir_aborted;
 
 	/* Print parent directory link */
@@ -446,11 +460,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 		if ((res == URL_FUNC_OK) && compare == false) {
 			dirlist_generate_parent_link(up, buffer, sizeof buffer);
 
-			fetch_file_send_callback(FETCH_DATA, ctx,
-						 buffer,
-						 strlen(buffer),
-						 FETCH_ERROR_NO_ERROR);
-
+			msg.data.header_or_data.len = strlen(buffer);
+			fetch_file_send_callback(&msg, ctx);
 		}
 		free(up);
 
@@ -461,8 +472,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 	/* directory list headings */
 	dirlist_generate_headings(buffer, sizeof buffer);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
-			FETCH_ERROR_NO_ERROR))
+	msg.data.header_or_data.len = strlen(buffer);
+	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_dir_aborted;
 
 	while ((ent = readdir(scandir)) != NULL) {
@@ -532,10 +543,8 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 		free(path);
 
-		if (fetch_file_send_callback(FETCH_DATA, ctx,
-					     buffer,
-					     strlen(buffer),
-					     FETCH_ERROR_NO_ERROR))
+		msg.data.header_or_data.len = strlen(buffer);
+		if (fetch_file_send_callback(&msg, ctx))
 			goto fetch_file_process_dir_aborted;
 
 		even = !even;
@@ -543,13 +552,12 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 
 	/* directory listing bottom */
 	dirlist_generate_bottom(buffer, sizeof buffer);
-	if (fetch_file_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
-			FETCH_ERROR_NO_ERROR))
+	msg.data.header_or_data.len = strlen(buffer);
+	if (fetch_file_send_callback(&msg, ctx))
 		goto fetch_file_process_dir_aborted;
 
-
-	fetch_file_send_callback(FETCH_FINISHED, ctx, 0, 0, 
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_FINISHED;
+	fetch_file_send_callback(&msg, ctx);
 
 fetch_file_process_dir_aborted:
 

@@ -787,9 +787,9 @@ void fetch_curl_poll(lwc_string *scheme_ignored)
 
 void fetch_curl_done(CURL *curl_handle, CURLcode result)
 {
+	fetch_msg msg;
 	bool finished = false;
 	bool error = false;
-	fetch_error_code errorcode = FETCH_ERROR_NO_ERROR;
 	bool cert = false;
 	bool abort_fetch;
 	struct curl_fetch_info *f;
@@ -830,7 +830,6 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			; /* redirect with partial body, or similar */
 		else {
 			error = true;
-			errorcode = FETCH_ERROR_PARTIAL_FILE;
 		}
 	} else if (result == CURLE_WRITE_ERROR && f->stopped)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
@@ -842,23 +841,19 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		memset(f->cert_data, 0, sizeof(f->cert_data));
 		cert = true;
 	}
-	else if (result == CURLE_COULDNT_RESOLVE_HOST) {
-		error = true;
-		errorcode = FETCH_ERROR_COULDNT_RESOLVE_HOST;
-	}
 	else {
 		LOG(("Unknown cURL response code %d", result));
 		error = true;
-		errorcode = FETCH_ERROR_MISC;
 	}
 
 	fetch_curl_stop(f);
 
 	if (abort_fetch)
 		; /* fetch was aborted: no callback */
-	else if (finished)
-		fetch_send_callback(FETCH_FINISHED, f->fetch_handle, 0, 0, errorcode);
-	else if (cert) {
+	else if (finished) {
+		msg.type = FETCH_FINISHED;
+		fetch_send_callback(&msg, f->fetch_handle);
+	} else if (cert) {
 		int i;
 		BIO *mem;
 		BUF_MEM *buf;
@@ -934,14 +929,17 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 			if (certs[i].cert->references == 0)
 				X509_free(certs[i].cert);
 		}
-		errorcode = FETCH_ERROR_CERT;
-		fetch_send_callback(FETCH_CERT_ERR, f->fetch_handle,
-				&ssl_certs, i, errorcode);
 
+		msg.type = FETCH_CERT_ERR;
+		msg.data.cert_err.certs = ssl_certs;
+		msg.data.cert_err.num_certs = i;
+		fetch_send_callback(&msg, f->fetch_handle);
+	} else if (error) {
+		msg.type = FETCH_ERROR;
+		msg.data.error = fetch_error_buffer;
+
+		fetch_send_callback(&msg, f->fetch_handle);
 	}
-	else if (error)
-		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
-				fetch_error_buffer, 0, errorcode);
 
 	fetch_free(f->fetch_handle);
 }
@@ -957,10 +955,13 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 	static char fetch_progress_buffer[256]; /**< Progress buffer for cURL */
 	struct curl_fetch_info *f = (struct curl_fetch_info *) clientp;
 	unsigned int time_now_cs;
-	double percent;
+	fetch_msg msg;
 
 	if (f->abort)
 		return 0;
+
+	msg.type = FETCH_PROGRESS;
+	msg.data.progress = fetch_progress_buffer;
 
 	/* Rate limit each fetch's progress notifications to 2 a second */
 #define UPDATES_PER_SECOND 2
@@ -973,22 +974,16 @@ int fetch_curl_progress(void *clientp, double dltotal, double dlnow,
 #undef UPDATES_PERS_SECOND
 
 	if (dltotal > 0) {
-		percent = dlnow * 100.0f / dltotal;
 		snprintf(fetch_progress_buffer, 255,
 				messages_get("Progress"),
 				human_friendly_bytesize(dlnow),
 				human_friendly_bytesize(dltotal));
-		fetch_send_callback(FETCH_PROGRESS, f->fetch_handle,
-				fetch_progress_buffer,
-				(unsigned long) percent,
-				FETCH_ERROR_NO_ERROR);
+		fetch_send_callback(&msg, f->fetch_handle);
 	} else {
 		snprintf(fetch_progress_buffer, 255,
 				messages_get("ProgressU"),
 				human_friendly_bytesize(dlnow));
-		fetch_send_callback(FETCH_PROGRESS, f->fetch_handle,
-				fetch_progress_buffer, 0,
-				FETCH_ERROR_NO_ERROR);
+		fetch_send_callback(&msg, f->fetch_handle);
 	}
 
 	return 0;
@@ -1021,6 +1016,7 @@ size_t fetch_curl_data(char *data, size_t size, size_t nmemb,
 {
 	struct curl_fetch_info *f = _f;
 	CURLcode code;
+	fetch_msg msg;
 
 	/* ensure we only have to get this information once */
 	if (!f->http_code)
@@ -1039,17 +1035,16 @@ size_t fetch_curl_data(char *data, size_t size, size_t nmemb,
 		return size * nmemb;
 	}
 
-	/*LOG(("fetch %p, size %lu", f, size * nmemb));*/
-
 	if (f->abort || (!f->had_headers && fetch_curl_process_headers(f))) {
 		f->stopped = true;
 		return 0;
 	}
 
 	/* send data to the caller */
-	/*LOG(("FETCH_DATA"));*/
-	fetch_send_callback(FETCH_DATA, f->fetch_handle, data, size * nmemb, 
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) data;
+	msg.data.header_or_data.len = size * nmemb;
+	fetch_send_callback(&msg, f->fetch_handle);
 
 	if (f->abort) {
 		f->stopped = true;
@@ -1071,6 +1066,7 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 {
 	struct curl_fetch_info *f = _f;
 	int i;
+	fetch_msg msg;
 	size *= nmemb;
 
 	if (f->abort) {
@@ -1078,8 +1074,10 @@ size_t fetch_curl_header(char *data, size_t size, size_t nmemb,
 		return 0;
 	}
 
-	fetch_send_callback(FETCH_HEADER, f->fetch_handle, data, size,
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_HEADER;
+	msg.data.header_or_data.buf = (const uint8_t *) data;
+	msg.data.header_or_data.len = size;
+	fetch_send_callback(&msg, f->fetch_handle);
 
 #define SKIP_ST(o) for (i = (o); i < (int) size && (data[i] == ' ' || data[i] == '\t'); i++)
 
@@ -1152,6 +1150,7 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 {
 	long http_code;
 	CURLcode code;
+	fetch_msg msg;
 
 	f->had_headers = true;
 
@@ -1167,32 +1166,34 @@ bool fetch_curl_process_headers(struct curl_fetch_info *f)
 
 	if (http_code == 304 && !f->post_urlenc && !f->post_multipart) {
 		/* Not Modified && GET request */
-		fetch_send_callback(FETCH_NOTMODIFIED, f->fetch_handle, 0, 0, 
-				FETCH_ERROR_NO_ERROR);
+		msg.type = FETCH_NOTMODIFIED;
+		fetch_send_callback(&msg, f->fetch_handle);
 		return true;
 	}
 
 	/* handle HTTP redirects (3xx response codes) */
 	if (300 <= http_code && http_code < 400 && f->location != 0) {
 		LOG(("FETCH_REDIRECT, '%s'", f->location));
-		fetch_send_callback(FETCH_REDIRECT, f->fetch_handle,
-				f->location, 0,	FETCH_ERROR_NO_ERROR);
+		msg.type = FETCH_REDIRECT;
+		msg.data.redirect = f->location;
+		fetch_send_callback(&msg, f->fetch_handle);
 		return true;
 	}
 
 	/* handle HTTP 401 (Authentication errors) */
 	if (http_code == 401) {
-		fetch_send_callback(FETCH_AUTH, f->fetch_handle, f->realm, 0,
-				FETCH_ERROR_AUTHENTICATION);
+		msg.type = FETCH_AUTH;
+		msg.data.auth.realm = f->realm;
+		fetch_send_callback(&msg, f->fetch_handle);
 		return true;
 	}
 
 	/* handle HTTP errors (non 2xx response codes) */
 	if (f->only_2xx && strncmp(nsurl_access(f->url), "http", 4) == 0 &&
 			(http_code < 200 || 299 < http_code)) {
-		fetch_send_callback(FETCH_ERROR, f->fetch_handle,
-				messages_get("Not2xx"), 0, 
-				FETCH_ERROR_HTTP_NOT2);
+		msg.type = FETCH_ERROR;
+		msg.data.error = messages_get("Not2xx");
+		fetch_send_callback(&msg, f->fetch_handle);
 		return true;
 	}
 

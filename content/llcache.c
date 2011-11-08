@@ -211,18 +211,17 @@ static nserror llcache_post_data_clone(const llcache_post_data *orig,
 
 static nserror llcache_query_handle_response(bool proceed, void *cbpw);
 
-static void llcache_fetch_callback(fetch_msg msg, void *p, const void *data, 
-		unsigned long size, fetch_error_code errorcode);
+static void llcache_fetch_callback(const fetch_msg *msg, void *p);
 static nserror llcache_fetch_redirect(llcache_object *object, 
 		const char *target, llcache_object **replacement);
 static nserror llcache_fetch_notmodified(llcache_object *object,
 		llcache_object **replacement);
-static nserror llcache_fetch_split_header(const char *data, size_t len, 
+static nserror llcache_fetch_split_header(const uint8_t *data, size_t len, 
 		char **name, char **value);
 static nserror llcache_fetch_parse_header(llcache_object *object,
-		const char *data, size_t len, char **name, char **value);
+		const uint8_t *data, size_t len, char **name, char **value);
 static nserror llcache_fetch_process_header(llcache_object *object, 
-		const char *data, size_t len);
+		const uint8_t *data, size_t len);
 static nserror llcache_fetch_process_data(llcache_object *object, 
 		const uint8_t *data, size_t len);
 static nserror llcache_fetch_auth(llcache_object *object,
@@ -1814,29 +1813,27 @@ nserror llcache_query_handle_response(bool proceed, void *cbpw)
 /**
  * Handler for fetch events
  *
- * \param msg	     Type of fetch event
+ * \param msg	     Fetch event
  * \param p	     Our private data
- * \param data	     Event data
- * \param size	     Length of data in bytes
- * \param errorcode  Reason for fetch error
  */
-void llcache_fetch_callback(fetch_msg msg, void *p, const void *data, 
-		unsigned long size, fetch_error_code errorcode)
+void llcache_fetch_callback(const fetch_msg *msg, void *p)
 {
 	nserror error = NSERROR_OK;
 	llcache_object *object = p;
 	llcache_event event;
 
 #ifdef LLCACHE_TRACE
-	LOG(("Fetch event %d for %p", msg, object));
+	LOG(("Fetch event %d for %p", msg->type, object));
 #endif
 
-	switch (msg) {
+	switch (msg->type) {
 	case FETCH_HEADER:
 		/* Received a fetch header */
 		object->fetch.state = LLCACHE_FETCH_HEADERS;
 
-		error = llcache_fetch_process_header(object, data, size);
+		error = llcache_fetch_process_header(object, 
+				msg->data.header_or_data.buf, 
+				msg->data.header_or_data.len);
 		break;
 
 	/* 3xx responses */
@@ -1849,7 +1846,8 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 			object->candidate = NULL;
 		}
 
-		error = llcache_fetch_redirect(object, data, &object);
+		error = llcache_fetch_redirect(object, 
+				msg->data.redirect, &object);
 		break;
 	case FETCH_NOTMODIFIED:
 		/* Conditional request determined that cached object is fresh */
@@ -1891,7 +1889,9 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 
 		object->fetch.state = LLCACHE_FETCH_DATA;
 
-		error = llcache_fetch_process_data(object, data, size);
+		error = llcache_fetch_process_data(object, 
+				msg->data.header_or_data.buf,
+				msg->data.header_or_data.len);
 		break;
 	case FETCH_FINISHED:
 		/* Finished fetching */
@@ -1933,7 +1933,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 		/** \todo Consider using errorcode for something */
 
 		event.type = LLCACHE_EVENT_ERROR;
-		event.data.msg = data;
+		event.data.msg = msg->data.error;
 		
 		error = llcache_send_event_to_users(object, &event);
 		
@@ -1941,8 +1941,8 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 	case FETCH_PROGRESS:
 		/* Progress update */
 		event.type = LLCACHE_EVENT_PROGRESS;
-		event.data.msg = data;
-		
+		event.data.msg = msg->data.progress;
+
 		error = llcache_send_event_to_users(object, &event);
 		
 		break;
@@ -1957,7 +1957,7 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 			object->candidate = NULL;
 		}
 
-		error = llcache_fetch_auth(object, data);
+		error = llcache_fetch_auth(object, msg->data.auth.realm);
 		break;
 	case FETCH_CERT_ERR:
 		/* Something went wrong when validating TLS certificates */
@@ -1968,7 +1968,9 @@ void llcache_fetch_callback(fetch_msg msg, void *p, const void *data,
 			object->candidate = NULL;
 		}
 
-		error = llcache_fetch_cert_error(object, data, size);
+		error = llcache_fetch_cert_error(object, 
+				msg->data.cert_err.certs, 
+				msg->data.cert_err.num_certs);
 		break;
 	}
 
@@ -2179,17 +2181,17 @@ nserror llcache_fetch_notmodified(llcache_object *object,
  * \param value	 Pointer to location to receive header value
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
-		char **value)
+nserror llcache_fetch_split_header(const uint8_t *data, size_t len, 
+		char **name, char **value)
 {
 	char *n, *v;
-	const char *colon;
+	const uint8_t *colon;
 
 	/* Find colon */
-	colon = strchr(data, ':');
+	colon = (const uint8_t *) strchr((const char *) data, ':');
 	if (colon == NULL) {
 		/* Failed, assume a key with no value */
-		n = strdup(data);
+		n = strdup((const char *) data);
 		if (n == NULL)
 			return NSERROR_NOMEM;
 
@@ -2213,7 +2215,7 @@ nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
 				colon[-1] == '\n'))
 			colon--;
 
-		n = strndup(data, colon - data);
+		n = strndup((const char *) data, colon - data);
 		if (n == NULL)
 			return NSERROR_NOMEM;
 
@@ -2236,7 +2238,7 @@ nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
 			len--;
 		}
 
-		v = strndup(colon, len - (colon - data));
+		v = strndup((const char *) colon, len - (colon - data));
 		if (v == NULL) {
 			free(n);
 			return NSERROR_NOMEM;
@@ -2263,8 +2265,8 @@ nserror llcache_fetch_split_header(const char *data, size_t len, char **name,
  *	 the cache control data for the object if an interesting
  *	 header is encountered
  */
-nserror llcache_fetch_parse_header(llcache_object *object, const char *data, 
-		size_t len, char **name, char **value)
+nserror llcache_fetch_parse_header(llcache_object *object, 
+		const uint8_t *data, size_t len, char **name, char **value)
 {
 	nserror error;
 
@@ -2355,8 +2357,8 @@ nserror llcache_fetch_parse_header(llcache_object *object, const char *data,
  * \param len	  Byte length of header
  * \return NSERROR_OK on success, appropriate error otherwise
  */
-nserror llcache_fetch_process_header(llcache_object *object, const char *data,
-		size_t len)
+nserror llcache_fetch_process_header(llcache_object *object, 
+		const uint8_t *data, size_t len)
 {
 	nserror error;
 	char *name, *value;
@@ -2374,7 +2376,7 @@ nserror llcache_fetch_process_header(llcache_object *object, const char *data,
 	 * that we might have computed, and start again.
 	 */
 	/** \todo Properly parse the response line */
-	if (strncmp(data, "HTTP/", SLEN("HTTP/")) == 0) {
+	if (strncmp((const char *) data, "HTTP/", SLEN("HTTP/")) == 0) {
 		time_t req_time = object->cache.req_time;
 
 		llcache_invalidate_cache_control_data(object);

@@ -127,17 +127,17 @@ static void fetch_data_abort(void *ctx)
 	c->aborted = true;
 }
 
-static void fetch_data_send_callback(fetch_msg msg, 
-		struct fetch_data_context *c, const void *data, 
-		unsigned long size, fetch_error_code errorcode)
+static void fetch_data_send_callback(const fetch_msg *msg, 
+		struct fetch_data_context *c) 
 {
 	c->locked = true;
-	fetch_send_callback(msg, c->parent_fetch, data, size, errorcode);
+	fetch_send_callback(msg, c->parent_fetch);
 	c->locked = false;
 }
 
 static bool fetch_data_process(struct fetch_data_context *c)
 {
+	fetch_msg msg;
 	char *params;
 	char *comma;
 	char *unescaped;
@@ -153,8 +153,9 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */
-		fetch_data_send_callback(FETCH_ERROR, c, 
-			"Malformed data: URL", 0, FETCH_ERROR_URL);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Malformed data: URL";
+		fetch_data_send_callback(&msg, c);
 		return false;
 	}
 	
@@ -163,8 +164,9 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	
 	/* find the comma */
 	if ( (comma = strchr(params, ',')) == NULL) {
-		fetch_data_send_callback(FETCH_ERROR, c,
-			"Malformed data: URL", 0, FETCH_ERROR_URL);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Malformed data: URL";
+		fetch_data_send_callback(&msg, c);
 		return false;
 	}
 	
@@ -177,9 +179,10 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	}
 	
 	if (c->mimetype == NULL) {
-		fetch_data_send_callback(FETCH_ERROR, c,
-			"Unable to allocate memory for mimetype in data: URL",
-			0, FETCH_ERROR_MEMORY);
+		msg.type = FETCH_ERROR;
+		msg.data.error = 
+			"Unable to allocate memory for mimetype in data: URL";
+		fetch_data_send_callback(&msg, c);
 		return false;
 	}
 	
@@ -197,9 +200,9 @@ static bool fetch_data_process(struct fetch_data_context *c)
         unescaped = curl_easy_unescape(curl, comma + 1, 0, &templen);
         c->datalen = templen;
         if (unescaped == NULL) {
-		fetch_data_send_callback(FETCH_ERROR, c,
-			"Unable to URL decode data: URL", 0,
-			FETCH_ERROR_ENCODING);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Unable to URL decode data: URL";
+		fetch_data_send_callback(&msg, c);
 		return false;
 	}
 	
@@ -207,18 +210,19 @@ static bool fetch_data_process(struct fetch_data_context *c)
 		c->data = malloc(c->datalen); /* safe: always gets smaller */
 		if (base64_decode(unescaped, c->datalen, c->data,
 				&(c->datalen)) == false) {
-			fetch_data_send_callback(FETCH_ERROR, c,
-				"Unable to Base64 decode data: URL", 0,
-				FETCH_ERROR_ENCODING);
+			msg.type = FETCH_ERROR;
+			msg.data.error = "Unable to Base64 decode data: URL";
+			fetch_data_send_callback(&msg, c);
 			curl_free(unescaped);
 			return false;
 		}
 	} else {
 		c->data = malloc(c->datalen);
 		if (c->data == NULL) {
-			fetch_data_send_callback(FETCH_ERROR, c,
-				"Unable to allocate memory for data: URL", 0,
-				FETCH_ERROR_MEMORY);
+			msg.type = FETCH_ERROR;
+			msg.data.error =
+				"Unable to allocate memory for data: URL";
+			fetch_data_send_callback(&msg, c);
 			curl_free(unescaped);
 			return false;
 		}
@@ -232,6 +236,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 
 static void fetch_data_poll(lwc_string *scheme)
 {
+	fetch_msg msg;
 	struct fetch_data_context *c, *next;
 	
 	if (ring == NULL) return;
@@ -263,27 +268,33 @@ static void fetch_data_poll(lwc_string *scheme)
 			 */
 			snprintf(header, sizeof header, "Content-Type: %s",
 					c->mimetype);
-			fetch_data_send_callback(FETCH_HEADER, c, header, 
-					strlen(header), FETCH_ERROR_NO_ERROR);
+			msg.type = FETCH_HEADER;
+			msg.data.header_or_data.buf = (const uint8_t *) header;
+			msg.data.header_or_data.len = strlen(header);
+			fetch_data_send_callback(&msg, c); 
 
 			if (c->aborted == false) {
 				snprintf(header, sizeof header, 
 					"Content-Length: %zd",
 					c->datalen);
-				fetch_data_send_callback(FETCH_HEADER, c, 
-					header, strlen(header), 
-					FETCH_ERROR_NO_ERROR);
+				msg.type = FETCH_HEADER;
+				msg.data.header_or_data.buf = 
+						(const uint8_t *) header;
+				msg.data.header_or_data.len = strlen(header);
+				fetch_data_send_callback(&msg, c);
 			}
 
 			if (c->aborted == false) {
-				fetch_data_send_callback(FETCH_DATA, 
-					c, c->data, c->datalen,
-					FETCH_ERROR_NO_ERROR);
+				msg.type = FETCH_DATA;
+				msg.data.header_or_data.buf = 
+						(const uint8_t *) c->data;
+				msg.data.header_or_data.len = c->datalen;
+				fetch_data_send_callback(&msg, c);
 			}
 
 			if (c->aborted == false) {
-				fetch_data_send_callback(FETCH_FINISHED, 
-					c, 0, 0, FETCH_ERROR_NO_ERROR);
+				msg.type = FETCH_FINISHED;
+				fetch_data_send_callback(&msg, c);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));

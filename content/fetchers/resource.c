@@ -89,12 +89,11 @@ static struct fetch_resource_map_entry {
 static uint32_t fetch_resource_path_count;
 
 /** issue fetch callbacks with locking */
-static inline bool fetch_resource_send_callback(fetch_msg msg,
-		struct fetch_resource_context *ctx, const void *data,
-		unsigned long size, fetch_error_code errorcode)
+static inline bool fetch_resource_send_callback(const fetch_msg *msg,
+		struct fetch_resource_context *ctx)
 {
 	ctx->locked = true;
-	fetch_send_callback(msg, ctx->fetchh, data, size, errorcode);
+	fetch_send_callback(msg, ctx->fetchh);
 	ctx->locked = false;
 
 	return ctx->aborted;
@@ -103,6 +102,7 @@ static inline bool fetch_resource_send_callback(fetch_msg msg,
 static bool fetch_resource_send_header(struct fetch_resource_context *ctx,
 		const char *fmt, ...)
 {
+	fetch_msg msg;
 	char header[64];
 	va_list ap;
 
@@ -112,8 +112,10 @@ static bool fetch_resource_send_header(struct fetch_resource_context *ctx,
 
 	va_end(ap);
 
-	fetch_resource_send_callback(FETCH_HEADER, ctx, header, strlen(header),
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_HEADER;
+	msg.data.header_or_data.buf = (const uint8_t *) header;
+	msg.data.header_or_data.len = strlen(header);
+	fetch_resource_send_callback(&msg, ctx);
 
 	return ctx->aborted;
 }
@@ -123,12 +125,14 @@ static bool fetch_resource_send_header(struct fetch_resource_context *ctx,
 
 static bool fetch_resource_redirect_handler(struct fetch_resource_context *ctx)
 {
+	fetch_msg msg;
+
 	/* content is going to return redirect */
 	fetch_set_http_code(ctx->fetchh, 302);
 
-	fetch_resource_send_callback(FETCH_REDIRECT, ctx, 
-			nsurl_access(ctx->redirect_url), 0,
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_REDIRECT;
+	msg.data.redirect = nsurl_access(ctx->redirect_url);
+	fetch_resource_send_callback(&msg, ctx); 
 
 	return true;
 }
@@ -136,6 +140,7 @@ static bool fetch_resource_redirect_handler(struct fetch_resource_context *ctx)
 
 static bool fetch_resource_notfound_handler(struct fetch_resource_context *ctx)
 {
+	fetch_msg msg;
 	int code = 404;
 	char buffer[1024];
 	const char *title;
@@ -156,12 +161,14 @@ static bool fetch_resource_notfound_handler(struct fetch_resource_context *ctx)
 			"<p>Error %d while fetching file %s</p></body></html>",
 			title, title, code, nsurl_access(ctx->url));
 
-	if (fetch_resource_send_callback(FETCH_DATA, ctx, buffer, strlen(buffer), 
-			FETCH_ERROR_NO_ERROR))
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buffer;
+	msg.data.header_or_data.len = strlen(buffer);
+	if (fetch_resource_send_callback(&msg, ctx))
 		goto fetch_resource_notfound_handler_aborted;
 
-	fetch_resource_send_callback(FETCH_FINISHED, ctx, 0, 0, 
-			FETCH_ERROR_NO_ERROR);
+	msg.type = FETCH_FINISHED;
+	fetch_resource_send_callback(&msg, ctx);
 
 fetch_resource_notfound_handler_aborted:
 	return false;
