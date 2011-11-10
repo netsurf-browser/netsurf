@@ -324,7 +324,7 @@ static void tree_recalculate_node_element(struct tree *tree,
 				#endif
 			} else {
 				if(cache_text != NULL) free(cache_text);
-				nsfont.font_width(&plot_fstyle,
+				nsfont.font_width(fstyle,
 						  element->text,
 						  strlen(element->text),
 						  &cache_size);
@@ -1646,9 +1646,9 @@ void tree_clear_default_folder_node(struct tree *tree)
 	def_node = tree_get_default_folder_node(tree);
 
 	if (def_node != NULL) {
-		tree_handle_node_changed(tree, def_node, true, false);
 		tree->def_folder = NULL;
 		def_node->def_folder = false;
+		tree_handle_node_changed(tree, def_node, true, false);
 	}
 }
 
