@@ -871,23 +871,25 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 					if(twin->mouse_state & BROWSER_MOUSE_PRESS_1)
 					{
-						tree_mouse_action(twin->tree,
-							BROWSER_MOUSE_DRAG_1 | twin->key_state, x, y);
-						twin->mouse_state = BROWSER_MOUSE_HOLDING_1 |
-											BROWSER_MOUSE_DRAG_ON;
-						if(twin->drag_x == 0) twin->drag_x = x;
-						if(twin->drag_y == 0) twin->drag_y = y;
-						ami_tree_drag_icon_show(twin);
+						if((abs(x - twin->drag_x) + abs(y - twin->drag_y)) > 2)
+						{
+							tree_mouse_action(twin->tree,
+								BROWSER_MOUSE_DRAG_1 | twin->key_state, x, y);
+							twin->mouse_state = BROWSER_MOUSE_HOLDING_1 |
+												BROWSER_MOUSE_DRAG_ON;
+							ami_tree_drag_icon_show(twin);
+						}
 					}
 					else if(twin->mouse_state & BROWSER_MOUSE_PRESS_2)
 					{
-						tree_mouse_action(twin->tree,
-							BROWSER_MOUSE_DRAG_2 | twin->key_state, x, y);
-						twin->mouse_state = BROWSER_MOUSE_HOLDING_2 |
-											BROWSER_MOUSE_DRAG_ON;
-						if(twin->drag_x == 0) twin->drag_x = x;
-						if(twin->drag_y == 0) twin->drag_y = y;
-						ami_tree_drag_icon_show(twin);
+						if((abs(x - twin->drag_x) + abs(y - twin->drag_y)) > 2)
+						{
+							tree_mouse_action(twin->tree,
+								BROWSER_MOUSE_DRAG_2 | twin->key_state, x, y);
+							twin->mouse_state = BROWSER_MOUSE_HOLDING_2 |
+												BROWSER_MOUSE_DRAG_ON;
+							ami_tree_drag_icon_show(twin);
+						}
 					}
 				}
 				twin->lastclick.tv_sec = 0;
@@ -910,9 +912,13 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					{
 						case SELECTDOWN:
 							twin->mouse_state = BROWSER_MOUSE_PRESS_1;
+							if(twin->drag_x == 0) twin->drag_x = x;
+							if(twin->drag_y == 0) twin->drag_y = y;
 						break;
 						case MIDDLEDOWN:
 							twin->mouse_state = BROWSER_MOUSE_PRESS_2;
+							if(twin->drag_x == 0) twin->drag_x = x;
+							if(twin->drag_y == 0) twin->drag_y = y;
 						break;
 					}
 				}
