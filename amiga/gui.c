@@ -3109,7 +3109,7 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 
 	utf8title = ami_utf8_easy((char *)title);
 
-	if(g->tab_node && (g->shared->tabs >= 1))
+	if(g->tab_node && (g->shared->tabs > 1))
 	{
 		node = g->tab_node;
 
@@ -3137,9 +3137,8 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 					g->shared->win, NULL, TRUE);
 		}
 
-		if(g->shared->tabs > 1)
-			GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
-					(ULONG *)&cur_tab);
+		GetAttr(CLICKTAB_Current, g->shared->objects[GID_TABS],
+				(ULONG *)&cur_tab);
 	}
 
 	if((cur_tab == g->tab) || (g->shared->tabs <= 1))
