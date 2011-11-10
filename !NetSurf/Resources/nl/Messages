@@ -343,6 +343,8 @@ TreeImport:Ge-importeerde URL
 TreeNewFolder:Nieuwe map
 TreeLaunch:Visit URL
 TreeDelete:Delete
+TreeDefault:Set as default
+TreeClear:Clear default
 
 # Tree export
 #

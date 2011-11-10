@@ -67,10 +67,19 @@
 #define AMI_TREE_MENU_DELETE FULLMENUNUM(1,0,0)
 #define AMI_TREE_MENU_CLEAR FULLMENUNUM(1,3,0)
 
+enum {
+	GID_OPEN = GID_LAST,
+	GID_NEWF,
+	GID_NEWB,
+	GID_DEL,
+	GID_DEFAULT,
+	GID_TREE_LAST
+};
+
+
 struct treeview_window {
 	struct Window *win;
-	Object *objects[GID_LAST];
-//	struct Gadget *gadgets[GID_LAST];
+	Object *objects[GID_TREE_LAST];
 	struct nsObject *node;
 	int type;
 	struct NewMenu *menu;
@@ -446,6 +455,7 @@ void ami_tree_menu(struct treeview_window *twin)
 void ami_tree_update_buttons(struct treeview_window *twin)
 {
 	BOOL launch_disable = FALSE;
+	BOOL set_default_disable = TRUE;
 
 	if(twin->type == AMI_TREE_SSLCERT) return;
 
@@ -463,7 +473,10 @@ void ami_tree_update_buttons(struct treeview_window *twin)
 			TAG_DONE);
 
 		if((selected_node && (tree_node_is_folder(selected_node) == true)))
+		{
 			launch_disable = TRUE;
+			set_default_disable = FALSE;
+		}
 	}
 	else
 	{
@@ -483,6 +496,14 @@ void ami_tree_update_buttons(struct treeview_window *twin)
 		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_OPEN],
 			twin->win, NULL,
 			GA_Disabled, launch_disable,
+			TAG_DONE);
+	}
+
+	if(twin->type == AMI_TREE_HOTLIST)
+	{
+		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_DEFAULT],
+			twin->win, NULL,
+			GA_Disabled, set_default_disable,
 			TAG_DONE);
 	}
 }
@@ -665,6 +686,12 @@ void ami_tree_open(struct treeview_window *twin,int type)
 						GA_Text,messages_get("TreeDelete"),
 						GA_RelVerify,TRUE,
 					ButtonEnd,
+					LAYOUT_AddChild, twin->objects[GID_DEFAULT] = ButtonObject,
+						GA_ID, GID_DEFAULT,
+						GA_Text, messages_get("TreeDefault"),
+						GA_RelVerify, TRUE,
+						GA_Disabled, TRUE,
+					ButtonEnd,
 				EndGroup,
 				CHILD_WeightedHeight,0,
 			EndGroup,
@@ -784,6 +811,10 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 					case GID_NEWB:
 						hotlist_add_entry();
+					break;
+
+					case GID_DEFAULT:
+						hotlist_set_default_folder(false);
 					break;
 
 					case GID_DEL:

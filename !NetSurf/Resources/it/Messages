@@ -346,6 +346,8 @@ TreeImport:URL importati
 TreeNewFolder:Nuova cartella
 TreeLaunch:Visita URL
 TreeDelete:Elimina
+TreeDefault:Set as default
+TreeClear:Clear default
 
 # Tree export
 #
