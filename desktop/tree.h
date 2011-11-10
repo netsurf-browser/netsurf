@@ -166,6 +166,7 @@ bool tree_get_redraw(struct tree *tree);
 bool tree_node_has_selection(struct node *node);
 bool tree_node_is_deleted(struct node *node);
 bool tree_node_is_folder(struct node *node);
+bool tree_node_is_default(struct node *node);
 void tree_update_node_element(struct tree *tree, struct node_element *element,
 		const char *text, void *bitmap);
 bool tree_update_element_text(struct tree *tree, struct node_element *element, char *text);
@@ -175,7 +176,7 @@ bool tree_is_edited(struct tree *tree);
 tree_drag_type tree_drag_status(struct tree *tree);
 
 struct node *tree_get_default_folder_node(struct tree *tree);
-bool tree_set_default_folder_node(struct tree *tree);
+bool tree_set_default_folder_node(struct tree *tree, struct node *node);
 void tree_clear_default_folder_node(struct tree *tree);
 
 /* functions for traversing the tree */

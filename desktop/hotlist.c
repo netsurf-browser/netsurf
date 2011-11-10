@@ -479,6 +479,6 @@ bool hotlist_set_default_folder(bool clear)
 		tree_clear_default_folder_node(hotlist_tree);
 		return true;
 	} else {
-		return tree_set_default_folder_node(hotlist_tree);
+		return tree_set_default_folder_node(hotlist_tree, NULL);
 	}
 }

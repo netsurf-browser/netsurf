@@ -118,6 +118,7 @@ struct node {
 	bool selected;			/**< Whether the node is selected */
 	bool expanded;			/**< Whether the node is expanded */
 	bool folder;			/**< Whether the node is a folder */
+	bool def_folder;			/**< Whether the node is the default folder */
 	bool retain_in_memory;		/**< Whether the node remains
 					   in memory after deletion */
 	bool deleted;			/**< Whether the node is currently
@@ -1397,6 +1398,18 @@ bool tree_node_is_folder(struct node *node)
 
 
 /**
+ * Returns true if the node is the default folder for a tree
+ *
+ * \param node	the node to be checked
+ * \return	true if the node is a default folder, false otherwise
+ */
+bool tree_node_is_default(struct node *node)
+{
+	return node->def_folder;
+}
+
+
+/**
  * Update the text of a node element if it has changed.
  *
  * \param element The node element to update.
@@ -1567,13 +1580,18 @@ struct node *tree_get_default_folder_node(struct tree *tree)
  * Set the default node of a tree to the selected node
  *
  * \param tree	the tree to set the default node of
+ * \param node  the node to set as default (NULL for selected node)
  * \return	success
  */
-bool tree_set_default_folder_node(struct tree *tree)
+bool tree_set_default_folder_node(struct tree *tree, struct node *node)
 {
 	struct node *sel_node;
 
-	sel_node = tree_get_selected_node(tree->root);
+	if (node == NULL) {
+		sel_node = tree_get_selected_node(tree->root);
+	} else {
+		sel_node = node;
+	}
 
 	if((sel_node == NULL) ||
 		(tree_node_is_folder(sel_node) == false)) {
@@ -1581,6 +1599,7 @@ bool tree_set_default_folder_node(struct tree *tree)
 	}
 
 	tree->def_folder = sel_node;
+	sel_node->def_folder = true;
 	return true;
 }
 
@@ -1592,7 +1611,13 @@ bool tree_set_default_folder_node(struct tree *tree)
  */
 void tree_clear_default_folder_node(struct tree *tree)
 {
-	tree->def_folder = NULL;
+	struct node *def_node = NULL;
+	def_node = tree_get_default_folder_node(tree);
+
+	if (def_node != NULL) {
+		tree->def_folder = NULL;
+		def_node->def_folder = false;
+	}
 }
 
 

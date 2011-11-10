@@ -576,6 +576,7 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 	char *title;
 	struct node *dir;
 	xmlNode *xmlnode;
+	xmlChar *id;
 
 	assert(ul != NULL);
 	assert(directory != NULL);
@@ -595,6 +596,7 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 
 		} else if (strcmp((const char *)xmlnode->name, "h4") == 0) {
 			/* directory */
+			bool dir_is_default = false;
 			title = (char *) xmlNodeGetContent(xmlnode );
 			if (!title) {
 				warn_user("TreeLoadError", "(Empty <h4> "
@@ -613,6 +615,13 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 				warn_user("TreeLoadError", "(Expected "
 					  "<ul> not present.)");
 				return;
+			} else {
+				id = xmlGetProp(xmlnode, "id");
+				if (id != NULL) {
+					if(strcmp((const char *)id, "default") == 0)
+						dir_is_default = true;
+					xmlFree(id);
+				}
 			}
 
 			dir = tree_create_folder_node(tree, directory, title,
@@ -620,6 +629,10 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 			if (dir == NULL) {
 				free(title);
 				return;
+			}
+
+			if(dir_is_default == true) {
+				tree_set_default_folder_node(tree, dir);
 			}
 
 			if (callback != NULL)
@@ -738,6 +751,8 @@ static bool tree_url_save_directory(struct node *directory, xmlNode *node)
 	ul = xmlNewChild(node, NULL, (const xmlChar *)"ul", NULL);
 	if (ul == NULL)
 		return false;
+	if (tree_node_is_default(directory) == true)
+		xmlSetProp(ul, "id", "default");
 
 	for (child = tree_node_get_child(directory); child;
 	     child = tree_node_get_next(child)) {
@@ -765,12 +780,6 @@ static bool tree_url_save_directory(struct node *directory, xmlNode *node)
 
 	return true;
 }
-
-
-
-
-
-
 
 
 /**
