@@ -159,6 +159,7 @@ struct tree {
 	const struct treeview_table *callbacks;
 	void *client_data;		/* User assigned data for the
 					   callbacks */
+	struct node *def_folder;	/* Node to be used for additions by default */
 };
 
 void tree_set_icon_dir(char *icon_dir)
@@ -1034,6 +1035,8 @@ static void tree_delete_node_internal(struct tree *tree, struct node *node,
 	parent = node->parent;
 	if (tree != NULL && parent == tree->root)
 		parent = NULL;
+	if ((tree != NULL) && (tree->def_folder == node))
+		tree->def_folder = NULL;
 	tree_delink_node(tree, node);
 	child = node->child;
 	node->child = NULL;
@@ -1541,6 +1544,55 @@ bool tree_is_edited(struct tree *tree)
 tree_drag_type tree_drag_status(struct tree *tree)
 {
 	return tree->drag;
+}
+
+
+/**
+ * Get the default node of a tree for additions
+ *
+ * \param tree	the tree to get the default node of
+ * \return	the default node
+ */
+struct node *tree_get_default_folder_node(struct tree *tree)
+{
+	if (tree->def_folder != NULL) {
+		return tree->def_folder;
+	} else {
+		return tree_get_root(tree);
+	}
+}
+
+
+/**
+ * Set the default node of a tree to the selected node
+ *
+ * \param tree	the tree to set the default node of
+ * \return	success
+ */
+bool tree_set_default_folder_node(struct tree *tree)
+{
+	struct node *sel_node;
+
+	sel_node = tree_get_selected_node(tree->root);
+
+	if((sel_node == NULL) ||
+		(tree_node_is_folder(sel_node) == false)) {
+		return false;
+	}
+
+	tree->def_folder = sel_node;
+	return true;
+}
+
+
+/**
+ * Clear the default node of a tree
+ *
+ * \param tree	the tree to clear the default node of
+ */
+void tree_clear_default_folder_node(struct tree *tree)
+{
+	tree->def_folder = NULL;
 }
 
 

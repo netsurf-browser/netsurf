@@ -174,6 +174,10 @@ struct node *tree_get_root(struct tree *tree);
 bool tree_is_edited(struct tree *tree);
 tree_drag_type tree_drag_status(struct tree *tree);
 
+struct node *tree_get_default_folder_node(struct tree *tree);
+bool tree_set_default_folder_node(struct tree *tree);
+void tree_clear_default_folder_node(struct tree *tree);
+
 /* functions for traversing the tree */
 struct node *tree_node_get_child(struct node *node);
 struct node *tree_node_get_next(struct node *node);

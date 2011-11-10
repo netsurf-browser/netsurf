@@ -370,7 +370,7 @@ void hotlist_collapse_addresses(void)
  */
 void hotlist_add_folder(void)
 {
-	struct node *node;
+	struct node *node, *parent;
 	struct node_element *element;
 	char *title = strdup("Untitled");
 
@@ -380,7 +380,9 @@ void hotlist_add_folder(void)
 		return;
 	}
 	creating_node = true;
-	node = tree_create_folder_node(hotlist_tree, hotlist_tree_root, title,
+
+	parent = tree_get_default_folder_node(hotlist_tree);
+	node = tree_create_folder_node(hotlist_tree, parent, title,
 				       true, false, false);
 	if (node == NULL) {
 		free(title);
@@ -397,9 +399,11 @@ void hotlist_add_folder(void)
  */
 void hotlist_add_entry(void)
 {
-	struct node *node;
+	struct node *node, *parent;
 	creating_node = true;
-	node = tree_create_URL_node(hotlist_tree, hotlist_tree_root, "Address",
+
+	parent = tree_get_default_folder_node(hotlist_tree);
+	node = tree_create_URL_node(hotlist_tree, parent, "Address",
 				    "Untitled", hotlist_node_callback, NULL);
 
 	if (node == NULL)
@@ -414,7 +418,7 @@ void hotlist_add_entry(void)
 void hotlist_add_page(const char *url)
 {
 	const struct url_data *data;
-	struct node *node;
+	struct node *node, *parent;
 
 	if (url == NULL)
 		return;
@@ -422,7 +426,8 @@ void hotlist_add_page(const char *url)
 	if (data == NULL)
 		return;
 
-	node = tree_create_URL_node(hotlist_tree, hotlist_tree_root, url, NULL,
+	parent = tree_get_default_folder_node(hotlist_tree);
+	node = tree_create_URL_node(hotlist_tree, parent, url, NULL,
 				    hotlist_node_callback, NULL);
 	tree_update_URL_node(hotlist_tree, node, url, data);
 }
@@ -461,4 +466,19 @@ void hotlist_add_page_xy(const char *url, int x, int y)
 void hotlist_launch_selected(bool tabs)
 {
 	tree_launch_selected(hotlist_tree, tabs);
+}
+
+/**
+ * Set the hotlist's default folder to the selected node.
+ *
+ * \param  clear  reset the default to tree root
+ */
+bool hotlist_set_default_folder(bool clear)
+{
+	if (clear == true) {
+		tree_clear_default_folder_node(hotlist_tree);
+		return true;
+	} else {
+		return tree_set_default_folder_node(hotlist_tree);
+	}
 }
