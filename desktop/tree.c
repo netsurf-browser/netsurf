@@ -62,10 +62,24 @@ static plot_font_style_t plot_fstyle = {
 	.flags = FONTF_NONE
 };
 
+static plot_font_style_t plot_fstyle_def_folder = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
+	.weight = 700,
+	.flags = FONTF_NONE
+};
+
 static plot_font_style_t plot_fstyle_selected = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
 	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
 	.weight = 400,
+	.flags = FONTF_NONE
+};
+
+static plot_font_style_t plot_fstyle_selected_def_folder = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = TREE_TEXT_SIZE_PT * FONT_SIZE_SCALE,
+	.weight = 700,
 	.flags = FONTF_NONE
 };
 
@@ -190,10 +204,14 @@ static void tree_setup_colours(void)
 	/* Text colour */
 	plot_fstyle.foreground = option_gui_colour_fg_1;
 	plot_fstyle.background = option_gui_colour_bg_1;
+	plot_fstyle_def_folder.foreground = option_gui_colour_fg_1;
+	plot_fstyle_def_folder.background = option_gui_colour_bg_1;
 
 	/* Selected text colour */
 	plot_fstyle_selected.foreground = option_gui_colour_fg_2;
 	plot_fstyle_selected.background = option_gui_colour_fg_1;
+	plot_fstyle_selected_def_folder.foreground = option_gui_colour_fg_2;
+	plot_fstyle_selected_def_folder.background = option_gui_colour_fg_1;
 }
 
 
@@ -277,8 +295,15 @@ static void tree_recalculate_node_element(struct tree *tree,
 	int width, height;
 	static char *cache_text = NULL;
 	static int cache_size = 0;
+	plot_font_style_t *fstyle;
+	static plot_font_style_t *cache_fstyle = NULL;
 
 	assert(element != NULL);
+
+	if (element->parent->def_folder)
+		fstyle = &plot_fstyle_def_folder;
+	else
+		fstyle = &plot_fstyle;
 
 	switch (element->type) {
 	case NODE_ELEMENT_TEXT_PLUS_ICON:
@@ -291,7 +316,8 @@ static void tree_recalculate_node_element(struct tree *tree,
 						&element->box.width, NULL);
 		} else {
 			if ((cache_text != NULL) &&
-				(strcmp(cache_text, element->text) == 0)) {
+				(strcmp(cache_text, element->text) == 0) &&
+				(cache_fstyle == fstyle)) {
 				element->box.width = cache_size;
 				#ifdef TREE_NOISY_DEBUG
 					LOG(("Tree font width cache hit"));
@@ -304,6 +330,7 @@ static void tree_recalculate_node_element(struct tree *tree,
 						  &cache_size);
 				element->box.width = cache_size;
 				cache_text = strdup(element->text);
+				cache_fstyle = fstyle;
 			}
 		}
 
@@ -1598,8 +1625,12 @@ bool tree_set_default_folder_node(struct tree *tree, struct node *node)
 		return false;
 	}
 
+	tree_clear_default_folder_node(tree);
+
 	tree->def_folder = sel_node;
 	sel_node->def_folder = true;
+	tree_handle_node_changed(tree, sel_node, true, false);
+
 	return true;
 }
 
@@ -1615,6 +1646,7 @@ void tree_clear_default_folder_node(struct tree *tree)
 	def_node = tree_get_default_folder_node(tree);
 
 	if (def_node != NULL) {
+		tree_handle_node_changed(tree, def_node, true, false);
 		tree->def_folder = NULL;
 		def_node->def_folder = false;
 	}
@@ -1700,6 +1732,7 @@ static void tree_draw_node_element(struct tree *tree,
 	struct bitmap *bitmap = NULL;
 	int x, y, width;
 	bool selected = false;
+	bool def_folder = false;
 	hlcache_handle *icon;
 	plot_font_style_t *fstyle;
 	const int icon_inset = (TREE_LINE_HEIGHT - TREE_ICON_SIZE) / 2;
@@ -1711,9 +1744,12 @@ static void tree_draw_node_element(struct tree *tree,
 	x = tree_x + element->box.x;
 	y = tree_y + element->box.y;
 	width = element->box.width;
-	if (&element->parent->data == element)
+	if (&element->parent->data == element) {
 		if (element->parent->selected)
 			selected = true;
+		if (element->parent->def_folder)
+			def_folder = true;
+	}
 
 	switch (element->type) {
 	case NODE_ELEMENT_TEXT_PLUS_ICON:
@@ -1770,11 +1806,18 @@ static void tree_draw_node_element(struct tree *tree,
 			return;
 
 		if (selected) {
-			fstyle = &plot_fstyle_selected;
+			if (def_folder == true)
+				fstyle = &plot_fstyle_selected_def_folder;
+			else
+				fstyle = &plot_fstyle_selected;
+
 			plot->rectangle(x, y, x + width,
 				       y + element->box.height,
 				       &plot_style_fill_tree_selected);
 		} else {
+		if (def_folder == true)
+			fstyle = &plot_fstyle_def_folder;
+		else
 			fstyle = &plot_fstyle;
 		}
 
