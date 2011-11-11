@@ -157,6 +157,7 @@ void tree_set_node_expanded(struct tree *tree, struct node *node, bool expanded,
 		bool folder, bool leaf);
 void tree_set_node_selected(struct tree *tree, struct node *node, bool all,
 		bool selected);
+void tree_set_node_selected_at(struct tree *tree, int x, int y, bool selected);
 void tree_set_node_sort_function(struct tree *tree, struct node *node,
 		int (*sort) (struct node *, struct node *));
 void tree_set_node_user_callback(struct node *node,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -95,6 +95,7 @@ struct treeview_window {
 	int max_height;
 	struct gui_globals globals;
 	struct sslcert_session_data *ssl_data;
+	BOOL rmbtrapped;
 };
 
 void ami_tree_draw(struct treeview_window *twin);
@@ -840,6 +841,26 @@ BOOL ami_tree_event(struct treeview_window *twin)
 
 				GetAttr(SPACE_AreaBox, twin->objects[GID_BROWSER], (ULONG *)&bbox);
 
+				if((twin->win->MouseX - bbox->Left >=0) &&
+					(twin->win->MouseX - bbox->Width - bbox->Left <=0) &&
+					(twin->win->MouseY - bbox->Top >=0) &&
+					(twin->win->MouseY - bbox->Height - bbox->Top <=0))
+				{
+					if(twin->rmbtrapped == FALSE)
+					{
+						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)TRUE, sizeof(BOOL));
+						twin->rmbtrapped = FALSE;
+					}
+				}
+				else
+				{
+					if(twin->rmbtrapped == TRUE)
+					{
+						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)FALSE, sizeof(BOOL));
+						twin->rmbtrapped = TRUE;
+					}
+				}
+
 				GetAttr(SCROLLER_Top, twin->objects[OID_HSCROLL], (ULONG *)&xs);
 				x = twin->win->MouseX - bbox->Left + xs;
 
@@ -919,6 +940,12 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							twin->mouse_state = BROWSER_MOUSE_PRESS_2;
 							if(twin->drag_x == 0) twin->drag_x = x;
 							if(twin->drag_y == 0) twin->drag_y = y;
+						break;
+						case MENUDOWN:
+							if(tree_node_has_selection(tree_get_root(twin->tree)) == false)
+							{
+								tree_set_node_selected_at(twin->tree, x, y, true);
+							}
 						break;
 					}
 				}

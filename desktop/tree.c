@@ -2314,6 +2314,29 @@ void tree_launch_selected(struct tree *tree, bool tabs)
 
 
 /**
+ * Updates the node at position x,y to a selected state.
+ * The required areas of the tree are redrawn.
+ *
+ * \param tree	    the tree to update nodes for, may be NULL
+ * \param x	        x position in tree
+ * \param y	        y position in tree
+ * \param selected  the selection state to set
+ */
+void tree_set_node_selected_at(struct tree *tree, int x, int y, bool selected)
+{
+	bool expansion_toggle;
+	struct node *node;
+
+	node = tree_get_node_at(tree->root, x, y, &expansion_toggle);
+
+	if ((node == NULL) || (expansion_toggle == true))
+		return;
+
+	tree_set_node_selected(tree, node, false, selected);
+}
+
+
+/**
  * Handles a mouse action for a tree
  *
  * \param tree	 the tree to handle a click for
