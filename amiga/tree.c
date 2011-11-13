@@ -883,6 +883,9 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					if((twin->win->MouseY > (bbox->Top + bbox->Height)) &&
 						((twin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
 						drag_y_move = twin->win->MouseY - (bbox->Top + bbox->Height);
+
+					tree_mouse_action(twin->tree,
+						twin->mouse_state | twin->key_state, x, y);
 				}
 
 				if((x >= xs) && (y >= ys) && (x < bbox->Width + xs) &&
