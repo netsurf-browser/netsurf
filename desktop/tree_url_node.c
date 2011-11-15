@@ -499,7 +499,8 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 		/* The li must contain an "a" element */
 		if (xmlnode->type == XML_ELEMENT_NODE &&
 		    strcmp((const char *)xmlnode->name, "a") == 0) {
-			url1 = (char *)xmlGetProp(xmlnode, (const xmlChar *) "href");
+			url1 = (char *)xmlGetProp(xmlnode,
+					(const xmlChar *) "href");
 			title = (char *)xmlNodeGetContent(xmlnode);
 		}
 	}
@@ -616,7 +617,8 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 					  "<ul> not present.)");
 				return;
 			} else {
-				id = xmlGetProp(xmlnode, "id");
+				id = xmlGetProp(xmlnode,
+						(const xmlChar *) "id");
 				if (id != NULL) {
 					if(strcmp((const char *)id, "default") == 0)
 						dir_is_default = true;
@@ -752,7 +754,8 @@ static bool tree_url_save_directory(struct node *directory, xmlNode *node)
 	if (ul == NULL)
 		return false;
 	if (tree_node_is_default(directory) == true)
-		xmlSetProp(ul, "id", "default");
+		xmlSetProp(ul, (const xmlChar *) "id",
+				(const xmlChar *) "default");
 
 	for (child = tree_node_get_child(directory); child;
 	     child = tree_node_get_next(child)) {
