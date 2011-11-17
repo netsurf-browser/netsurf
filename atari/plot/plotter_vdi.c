@@ -29,7 +29,7 @@
 #include "atari/plot/plotter_vdi.h"
 #include "atari/plot/font_vdi.h"
 
-/* assign vdi line style to dst ( netsurf type ) */ 
+/* assign vdi line style to dst ( netsurf type ) */
 #define NSLT2VDI(dst, src) \
 	dst = 0;\
 	switch( src->stroke_type ) {\
@@ -84,7 +84,7 @@ static inline void vsl_rgbcolor( short vdih, uint32_t cin )
 {
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 		unsigned short c[4];
-		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );	
+		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0] );
 		vsl_color( vdih, OFFSET_CUSTOM_COLOR );
 	} else {
@@ -99,7 +99,7 @@ static inline void vsf_rgbcolor( short vdih, uint32_t cin )
 {
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 		unsigned short c[4];
-		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );	
+		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, &c[0] );
 		vsf_color( vdih, OFFSET_CUSTOM_COLOR );
 	} else {
@@ -184,7 +184,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 					pal[i][2] = vdi_web_pal[i-OFFSET_WEB_PAL][2];
 				}
 				if( i >= OFFSET_CUST_PAL ) {
-					/* here we could define 22 additional colors... */ 
+					/* here we could define 22 additional colors... */
 				}
 				vs_color( self->vdi_handle, i, &pal[i][0] );
 			}
@@ -303,16 +303,7 @@ static int move( GEM_PLOTTER self,short x, short y )
 	CURFB(self).x = x;
 	CURFB(self).y = y;
 	update_visible_rect( self );
-
-   /*
-      for offscreen plotters:
-      copy current contents to new pos?
-      we could also copy content of our own screen buffer,
-      but only when it's unlocked
-		...nono, the user must do this manually. Because window move will already be handled by the OS
-   */
-   /*update_screen( self );*/
-   return( 1 );
+	return( 1 );
 }
 
 
@@ -424,7 +415,7 @@ static int update_screen( GEM_PLOTTER self )
 	LOG(("area: x:%d ,y:%d ,w:%d ,h:%d, from: %p (offset: %d) \n",
 		target.g_x, target.g_y,
          target.g_w, target.g_h,
-		((char*)CURFB(self).mem)+src_offset, src_offset 
+		((char*)CURFB(self).mem)+src_offset, src_offset
 	));
 
    return( 1 );
@@ -542,6 +533,7 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 		sw = 1;
 	NSLT2VDI(lt, pstyle)
 	vsl_type( self->vdi_handle, (lt&0x0F) );
+	/* if the line style is not available within VDI system,define own style: */
 	if( (lt&0x0F) == 7 ){
 		vsl_udsty(self->vdi_handle, ((lt&0xFFFF00) >> 8) );
 	}
@@ -585,7 +577,16 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 	pxy[3] = CURFB(self).y + r.g_y + r.g_h -1;
 
 	vsf_style( self->vdi_handle, 1);
-	v_bar( self->vdi_handle, (short*)&pxy );
+	if( pstyle->stroke_type != PLOT_OP_TYPE_NONE ){
+		self->line(self, x0, y0, x1, y0 , pstyle);
+		self->line(self, x1, y0, x1, y1 , pstyle);
+		self->line(self, x0, y1, x1, y1 , pstyle);
+		self->line(self, x0, y0, x0, y1 , pstyle);
+	}
+	if( pstyle->fill_type != PLOT_OP_TYPE_NONE ){
+		v_bar( self->vdi_handle, (short*)&pxy );
+	}
+
 	return ( 1 );
 }
 
@@ -596,11 +597,6 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 	short d[4];
 	if( vdi_sysinfo.maxpolycoords > 0 )
 		assert( (signed int)n < vdi_sysinfo.maxpolycoords );
-/*
-	Does this double check make sense? 
-	else 
-		assert( n < vdi_sysinfo.maxintin ); 
-*/
 	plotter_vdi_clip( self, 1);
 	vsf_interior( self->vdi_handle, FIS_SOLID );
 	vsf_style( self->vdi_handle, 1);
@@ -618,15 +614,15 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour);
 		v_pline(self->vdi_handle, n+1,  (short *)&pxy );
 	}
-	plotter_vdi_clip( self, 0); 
+	plotter_vdi_clip( self, 0);
 	return ( 1 );
 }
 
 static int path(GEM_PLOTTER self,const float *p, unsigned int n, int fill, float width,
 			int c, const float transform[6])
 {
-   LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
-   return ( 1 );
+	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
+	return ( 1 );
 }
 
 
@@ -642,7 +638,7 @@ static inline uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
     g  = ((pixel & 0x00FF00) * opacity +
     	(scrpixel & 0x00FF00) * transp) >> 8;
 
-    return ((rb & 0xFF00FF) | (g & 0xFF00)) << 8; 
+    return ((rb & 0xFF00FF) | (g & 0xFF00)) << 8;
 }
 
 static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh )
@@ -671,9 +667,9 @@ static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh 
 	}
 
 	/* allocate an converter, only for resizing */
-	err = Hermes_ConverterRequest( hermes_res_h, 
-			&DUMMY_PRIV(self)->nsfmt, 
-			&DUMMY_PRIV(self)->nsfmt 
+	err = Hermes_ConverterRequest( hermes_res_h,
+			&DUMMY_PRIV(self)->nsfmt,
+			&DUMMY_PRIV(self)->nsfmt
 	);
 	if( err == 0 ) {
 		return( -ERR_PLOTTER_NOT_AVAILABLE );
@@ -708,7 +704,7 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 
 	/* make sure the screen format is pixel packed... */
 	/* no method to convert planar screen to pixel packed ... right now */
-	assert( vdi_sysinfo.vdiformat == VDI_FORMAT_PACK  );	
+	assert( vdi_sysinfo.vdiformat == VDI_FORMAT_PACK  );
 
 	{
 		int scr_stride = MFDB_STRIDE( w );
@@ -719,7 +715,7 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 			DUMMY_PRIV(self)->size_buf_scr = scr_size;
 		} else {
 			if( scr_size > DUMMY_PRIV(self)->size_buf_scr ) {
-				DUMMY_PRIV(self)->buf_scr.fd_addr = realloc( 
+				DUMMY_PRIV(self)->buf_scr.fd_addr = realloc(
 					DUMMY_PRIV(self)->buf_scr.fd_addr, scr_size
 				);
 				DUMMY_PRIV(self)->size_buf_scr = scr_size;
@@ -732,7 +728,7 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 		DUMMY_PRIV(self)->buf_scr.fd_nplanes = vdi_sysinfo.scr_bpp;
 		DUMMY_PRIV(self)->buf_scr.fd_w = scr_stride;
 		DUMMY_PRIV(self)->buf_scr.fd_h = h;
-		DUMMY_PRIV(self)->buf_scr.fd_wdwidth = scr_stride >> 4;	
+		DUMMY_PRIV(self)->buf_scr.fd_wdwidth = scr_stride >> 4;
 		assert( DUMMY_PRIV(self)->buf_scr.fd_addr != NULL );
 	}
 
@@ -745,22 +741,23 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 	pxy[5] = 0;
 	pxy[6] = pxy[2];
 	pxy[7] = pxy[3];
-	vro_cpyfm( self->vdi_handle, S_ONLY, (short*)&pxy, 
-				&scr,  &DUMMY_PRIV(self)->buf_scr 
+	vro_cpyfm(
+			self->vdi_handle, S_ONLY, (short*)&pxy,
+			&scr,  &DUMMY_PRIV(self)->buf_scr
 	);
 
 	/* convert screen buffer to ns format: */
 	if( DUMMY_PRIV(self)->buf_scr_compat == NULL ) {
 		DUMMY_PRIV(self)->buf_scr_compat = bitmap_create(w, h, 0);
 	} else {
-		DUMMY_PRIV(self)->buf_scr_compat = bitmap_realloc( w, h, 
-			DUMMY_PRIV(self)->buf_scr_compat->bpp, 
-			w * DUMMY_PRIV(self)->buf_scr_compat->bpp, 
-			BITMAP_GROW, 
-			DUMMY_PRIV(self)->buf_scr_compat );	
+		DUMMY_PRIV(self)->buf_scr_compat = bitmap_realloc( w, h,
+			DUMMY_PRIV(self)->buf_scr_compat->bpp,
+			w * DUMMY_PRIV(self)->buf_scr_compat->bpp,
+			BITMAP_GROW,
+			DUMMY_PRIV(self)->buf_scr_compat );
 	}
-	err = Hermes_ConverterRequest( hermes_cnv_h, 
-			&DUMMY_PRIV(self)->vfmt, 
+	err = Hermes_ConverterRequest( hermes_cnv_h,
+			&DUMMY_PRIV(self)->vfmt,
 			&DUMMY_PRIV(self)->nsfmt
 	);
 	assert( err != 0 );
@@ -780,33 +777,32 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 	return( (struct bitmap * )DUMMY_PRIV(self)->buf_scr_compat );
 }
 
-static void snapshot_suspend(GEM_PLOTTER self ) 
+static void snapshot_suspend(GEM_PLOTTER self )
 {
 	if( DUMMY_PRIV(self)->size_buf_scr > CONV_KEEP_LIMIT  ) {
-		DUMMY_PRIV(self)->buf_scr.fd_addr = realloc( 
+		DUMMY_PRIV(self)->buf_scr.fd_addr = realloc(
 			DUMMY_PRIV(self)->buf_scr.fd_addr, CONV_KEEP_LIMIT
 		);
 		if( DUMMY_PRIV(self)->buf_scr.fd_addr != NULL ) {
 			DUMMY_PRIV(self)->size_buf_scr = CONV_KEEP_LIMIT;
 		} else {
 			DUMMY_PRIV(self)->size_buf_scr = 0;
-		} 
-	} 
+		}
+	}
 
 	if( bitmap_buffer_size( DUMMY_PRIV(self)->buf_scr_compat ) > CONV_KEEP_LIMIT ) {
-		int w = 0; 
+		int w = 0;
 		int h = 1;
 		w = (CONV_KEEP_LIMIT / DUMMY_PRIV(self)->buf_scr_compat->bpp);
 		assert( CONV_KEEP_LIMIT == w*DUMMY_PRIV(self)->buf_scr_compat->bpp );
-		DUMMY_PRIV(self)->buf_scr_compat = bitmap_realloc( w, h, 
-			DUMMY_PRIV(self)->buf_scr_compat->bpp, 
+		DUMMY_PRIV(self)->buf_scr_compat = bitmap_realloc( w, h,
+			DUMMY_PRIV(self)->buf_scr_compat->bpp,
 			CONV_KEEP_LIMIT, BITMAP_SHRINK, DUMMY_PRIV(self)->buf_scr_compat
 		);
-		
-	} 
+	}
 }
 
-static void snapshot_destroy( GEM_PLOTTER self ) 
+static void snapshot_destroy( GEM_PLOTTER self )
 {
 	if( DUMMY_PRIV(self)->buf_scr.fd_addr ) {
 		free( DUMMY_PRIV(self)->buf_scr.fd_addr  );
@@ -817,7 +813,7 @@ static void snapshot_destroy( GEM_PLOTTER self )
 		bitmap_destroy( DUMMY_PRIV(self)->buf_scr_compat );
 		DUMMY_PRIV(self)->buf_scr_compat = NULL;
 	}
-} 
+}
 
 /* convert bitmap to the virutal (chunked) framebuffer format */
 static int convert_bitmap( GEM_PLOTTER self,
@@ -838,18 +834,18 @@ static int convert_bitmap( GEM_PLOTTER self,
 
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
-	
+
 	bm = img;
 	bw = bitmap_get_width( img );
 
 	/* rem. if eddi xy is installed, we could directly access the screen! */
 	/* apply transparency to the image: */
-	if( (img->opaque == false) 
-		&& ( (self->flags & PLOT_FLAG_TRANS) != 0) 
-		&& ( 
-			(vdi_sysinfo.vdiformat == VDI_FORMAT_PACK ) 
-			|| 
-			( (flags & BITMAP_MONOGLYPH) != 0) 
+	if( (img->opaque == false)
+		&& ( (self->flags & PLOT_FLAG_TRANS) != 0)
+		&& (
+			(vdi_sysinfo.vdiformat == VDI_FORMAT_PACK )
+			||
+			( (flags & BITMAP_MONOGLYPH) != 0)
 		) ) {
 		uint32_t * imgpixel;
 		uint32_t * screenpixel;
@@ -860,13 +856,13 @@ static int convert_bitmap( GEM_PLOTTER self,
 		if( scrbuf != NULL ) {
 			/* copy blended pixels the new buffer (which contains screen content): */
 			int img_stride = bitmap_get_rowstride(bm);
-			int screen_stride = bitmap_get_rowstride(scrbuf); 
+			int screen_stride = bitmap_get_rowstride(scrbuf);
 			for( img_y = clip->g_y, screen_y = 0; screen_y < clip->g_h; screen_y++, img_y++) {
 				imgpixel = (uint32_t *)(bm->pixdata + (img_stride * img_y));
 				screenpixel = (uint32_t *)(scrbuf->pixdata + (screen_stride * screen_y));
-				for( img_x = clip->g_x, screen_x = 0; screen_x < clip->g_w; screen_x++, img_x++ ) {	
+				for( img_x = clip->g_x, screen_x = 0; screen_x < clip->g_w; screen_x++, img_x++ ) {
 					if( (imgpixel[img_x] & 0xFF) == 0xFF ) {
-						screenpixel[screen_x] = imgpixel[img_x]; 
+						screenpixel[screen_x] = imgpixel[img_x];
 					} else {
 						if( (imgpixel[img_x] & 0x0FF) != 0 ) {
 							screenpixel[screen_x] = ablend( imgpixel[img_x], screenpixel[screen_x]);
@@ -888,9 +884,9 @@ static int convert_bitmap( GEM_PLOTTER self,
 		if( DUMMY_PRIV(self)->buf_packed == NULL )
 			DUMMY_PRIV(self)->buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
 		 else
-			DUMMY_PRIV(self)->buf_packed =(void*)realloc( 
-													DUMMY_PRIV(self)->buf_packed, 
-													blocks * CONV_BLOCK_SIZE 
+			DUMMY_PRIV(self)->buf_packed =(void*)realloc(
+													DUMMY_PRIV(self)->buf_packed,
+													blocks * CONV_BLOCK_SIZE
 												);
 		assert( DUMMY_PRIV(self)->buf_packed );
 		if( DUMMY_PRIV(self)->buf_packed == NULL ) {
@@ -909,9 +905,9 @@ static int convert_bitmap( GEM_PLOTTER self,
 	out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
 
 	err = Hermes_ConverterRequest(
-			hermes_cnv_h, 
-			&DUMMY_PRIV(self)->nsfmt, 
-			&DUMMY_PRIV(self)->vfmt 
+			hermes_cnv_h,
+			&DUMMY_PRIV(self)->nsfmt,
+			&DUMMY_PRIV(self)->vfmt
 	);
 	assert( err != 0 );
 	/* convert image to virtual format: */
@@ -989,7 +985,7 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	pxy[6] = CURFB(self).x + loc.g_x + off.g_w-1;
 	pxy[7] = CURFB(self).y + loc.g_y + off.g_h-1;
 	if( convert_bitmap( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
-		return( true ); 
+		return( true );
 	}
 	vro_cpyfm( self->vdi_handle, S_ONLY, (short*)&pxy, &src_mf,  &scrmf);
 	convert_bitmap_done( self );
@@ -1008,27 +1004,27 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flag
 
 	plotter_get_clip_grect( self, &off );
 	if( rc_intersect(loc, &off) == 0 ){
-		return( 1 ); 
+		return( 1 );
 	}
-	
+
 	init_mfdb( 0, loc->g_w, loc->g_h, 0, &screen );
 
 	if( insrc->fd_stand ){
-		int size = init_mfdb( insrc->fd_nplanes, loc->g_w, loc->g_h, 
-			MFDB_FLAG_NOALLOC, 
-			&tran 
+		int size = init_mfdb( insrc->fd_nplanes, loc->g_w, loc->g_h,
+			MFDB_FLAG_NOALLOC,
+			&tran
 		);
 		if( DUMMY_PRIV(self)->size_buf_scr == 0 ){
 			DUMMY_PRIV(self)->buf_scr.fd_addr = malloc( size );
 			DUMMY_PRIV(self)->size_buf_scr = size;
 		} else {
 			if( size > DUMMY_PRIV(self)->size_buf_scr ) {
-				DUMMY_PRIV(self)->buf_scr.fd_addr = realloc( 
+				DUMMY_PRIV(self)->buf_scr.fd_addr = realloc(
 					DUMMY_PRIV(self)->buf_scr.fd_addr, size
 				);
 				DUMMY_PRIV(self)->size_buf_scr = size;
 			}
-		}		
+		}
 		tran.fd_addr = DUMMY_PRIV(self)->buf_scr.fd_addr;
 		vr_trnfm( self->vdi_handle, insrc, &tran );
 		src = &tran;
@@ -1049,17 +1045,17 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flag
 	if( flags & PLOT_FLAG_TRANS && src->fd_nplanes == 1){
 		vrt_cpyfm( self->vdi_handle, MD_TRANS, (short*)pxy, src, &screen, (short*)&c );
 	} else {
-		/* this method only plots transparent bitmaps, right now... */ 
+		/* this method only plots transparent bitmaps, right now... */
 	}
 
-	/* TODO: shrink conversion buffer? 
-		no, it requires time. 
-	if( insrc->fd_stand ){ 
+	/* TODO: shrink conversion buffer?
+		no, it requires time.
+	if( insrc->fd_stand ){
 
 	}
 
 	*/
-	
+
 	return( 1 );
 }
 
