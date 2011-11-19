@@ -35,8 +35,10 @@
 #define INTERFACE_CANCEL_BUTTON 12
 #define INTERFACE_OK_BUTTON 13
 #define INTERFACE_USE_EXTERNAL_HOTLIST 16
+#define INTERFACE_EXTERNAL_HOTLIST_APP 18
 
 
+static bool ro_gui_options_interface_click(wimp_pointer *pointer);
 static void ro_gui_options_interface_default(wimp_pointer *pointer);
 static bool ro_gui_options_interface_ok(wimp_w w);
 
@@ -55,8 +57,16 @@ bool ro_gui_options_interface_initialise(wimp_w w)
 			option_thumbnail_iconise);
 	ro_gui_set_icon_selected_state(w, INTERFACE_USE_EXTERNAL_HOTLIST,
 			option_external_hotlists);
+	ro_gui_set_icon_string(w, INTERFACE_EXTERNAL_HOTLIST_APP,
+			(option_external_hotlist_app) ?
+			option_external_hotlist_app : "", false);
+
+	ro_gui_set_icon_shaded_state(w, INTERFACE_EXTERNAL_HOTLIST_APP,
+			!option_external_hotlists);
 
 	/* initialise all functions for a newly created window */
+	ro_gui_wimp_event_register_mouse_click(w,
+			ro_gui_options_interface_click);
 	ro_gui_wimp_event_register_button(w, INTERFACE_DEFAULT_BUTTON,
 			ro_gui_options_interface_default);
 	ro_gui_wimp_event_register_cancel(w, INTERFACE_CANCEL_BUTTON);
@@ -67,6 +77,25 @@ bool ro_gui_options_interface_initialise(wimp_w w)
 	return true;
 
 }
+
+
+bool ro_gui_options_interface_click(wimp_pointer *pointer)
+{
+	bool	shaded;
+
+	switch (pointer->i) {
+		case INTERFACE_USE_EXTERNAL_HOTLIST:
+			shaded = !ro_gui_get_icon_selected_state(pointer->w,
+					INTERFACE_USE_EXTERNAL_HOTLIST);
+			ro_gui_set_icon_shaded_state(pointer->w,
+					INTERFACE_EXTERNAL_HOTLIST_APP, shaded);
+			return false;
+			break;
+	}
+	return false;
+}
+
+
 
 void ro_gui_options_interface_default(wimp_pointer *pointer)
 {
@@ -82,6 +111,8 @@ void ro_gui_options_interface_default(wimp_pointer *pointer)
 			INTERFACE_THUMBNAIL_ICONISE_OPTION, true);
 	ro_gui_set_icon_selected_state(pointer->w,
 			INTERFACE_USE_EXTERNAL_HOTLIST, false);
+	ro_gui_set_icon_string(pointer->w, INTERFACE_EXTERNAL_HOTLIST_APP,
+			"", false);
 }
 
 bool ro_gui_options_interface_ok(wimp_w w)
@@ -98,6 +129,11 @@ bool ro_gui_options_interface_ok(wimp_w w)
 			INTERFACE_THUMBNAIL_ICONISE_OPTION);
 	option_external_hotlists = ro_gui_get_icon_selected_state(w,
 			INTERFACE_USE_EXTERNAL_HOTLIST);
+	if (option_external_hotlist_app)
+		free(option_external_hotlist_app);
+	option_external_hotlist_app =
+			strdup(ro_gui_get_icon_string(w,
+			INTERFACE_EXTERNAL_HOTLIST_APP));
 
 	ro_gui_save_options();
 	return true;

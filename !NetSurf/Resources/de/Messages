@@ -157,7 +157,7 @@ WindowReset:Fensterposition zurücksetzen
 
 # Main -> Help menu
 #
-HelpContent:Inhalt  F1              
+HelpContent:Inhalt  F1
 HelpGuide:Handbuch
 HelpInfo:Nutzerinformation
 HelpCredits:Credits
@@ -444,10 +444,10 @@ gtkRemaining:Übrig
 # spaces necessary
 #
 
-gtkError: Fehler 
-gtkComplete: Vollständig 
-gtkCanceled: Abgebrochen 
-gtkWorking: Arbeite 
+gtkError: Fehler
+gtkComplete: Vollständig
+gtkCanceled: Abgebrochen
+gtkWorking: Arbeite
 
 # Dialogs
 #
@@ -461,7 +461,7 @@ gtkFileError:Dateifehler: %s
 gtkInfo:%s von %s ist %s in size
 gtkSave:Datei speichern unter...
 gtkSourceSave:Quelltext speichern
-gtkSourceTabError:Fehler beim behandeln der Quelldaten 
+gtkSourceTabError:Fehler beim behandeln der Quelldaten
 gtkPlainSave:Als Text speichern
 gtkFullSave:Speichern der Webseite abgeschlossen - wähle ein leeres Verzeichnis
 gtkUnknownHost:ein unbekannter Host
@@ -1135,7 +1135,7 @@ HelpGHistoryMenu3:Deselektiert alle markierten Elemente.
 
 HelpCookies:Das ist das Fenster zur Cookie-Verwaltung.
 HelpCookiesToolbar0:Dies ist der Löschschalter.|MAnklicken löscht alle markierten Einträge.
-HelpCookiesToolbar1:Dies ist der Schalter zum Expandieren der Einträge.|MKlicken mit AUSWAHL expandiert alle Cookies.|MKlicken mit SPEZIAL versteckt die Zusatzinformationen wieder.|MIn expandierten Cookies werden zusätzliche Informationen angezeigt. 
+HelpCookiesToolbar1:Dies ist der Schalter zum Expandieren der Einträge.|MKlicken mit AUSWAHL expandiert alle Cookies.|MKlicken mit SPEZIAL versteckt die Zusatzinformationen wieder.|MIn expandierten Cookies werden zusätzliche Informationen angezeigt.
 HelpCookiesToolbar2:Öffnet und schließt Verzeichnisse|MKlicken mit AUSWAHL öffnet alle Verzeichnisse der Liste.|MKlicken mit SPEZIAL schließt alle Verzeichnisse.
 
 HelpCookiesMenu0:Die gesamte Liste bearbeiten.
@@ -1187,7 +1187,7 @@ HelpConnectConfig8:Hier kann die zugehörige Portnummer eingestellt werden.
 HelpConnectConfig10:Hier kann ein Username eingegeben werden, wenn der Proxy das erfordert.
 HelpConnectConfig12:Hier kann das zum Usernamen gehörige Passwort eingegeben werden.
 HelpConnectConfig16:Das ist die Maximalzahl simultaner Fetches, die NetSurf verwenden soll.
-HelpConnectConfig17:Klicken mit AUSWAHL verringert die Maximalzahl simultaner Fetches. 
+HelpConnectConfig17:Klicken mit AUSWAHL verringert die Maximalzahl simultaner Fetches.
 HelpConnectConfig18:Klicken mit AUSWAHL vergrößert die Maximalzahl simultaner Fetches.
 HelpConnectConfig20:Das ist die Maximalzahl simultaner Fetches, die je Host von NetSurf verwendet werden.
 HelpConnectConfig21:Klicken mit AUSWAHL verringert die Maximalzahl simultaner Fetches je Host.
@@ -1250,9 +1250,9 @@ HelpImageConfig13:Klicken mit AUSWAHL verkleinert die minimale Wartezeit zwische
 HelpImageConfig14:Klicken mit AUSWAHL vergrößert die minimale Wartezeit zwischen aufeinanderfolgenden Einzelbildern einer Animation.
 HelpImageConfig16:Erlaubt das Abschalten der Animationsdarstellung auf Webseiten.|MSind die Animationen abgeschaltet, wird von NetSurf lediglich das erste Einzelbild der Animationsfolge als einfaches Bild angezeigt.
 HelpImageConfig17:Stellt die Bildoptionen zurück auf die Standardwerte.
-HelpImageConfig18:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.            
-HelpImageConfig19:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.               
-                                                                                                                                                                                            
+HelpImageConfig18:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
+HelpImageConfig19:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
+
 HelpInterfaceConfig:Fenster zur Einstellung des Programmverhaltens in ausgewählten Situationen
 HelpInterfaceConfig2:Beim Abspeichern von Dateien auf einen Datenträger werden die Dateinamenserweiterungen (Extensions) aus dem Dateinamen entfernt.
 HelpInterfaceConfig3:Beim Abspeichern wird vor dem Überschreiben namensgleicher Dateien von NetSurf nachgefragt, ob dies so erfolgen soll.
@@ -1263,6 +1263,7 @@ HelpInterfaceConfig11:Stellt die Standardeinstellungen wieder her.
 HelpInterfaceConfig12:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 HelpInterfaceConfig13:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
+HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
 
 HelpLanguageConfig:Konfigurationsfenster für die Spracheinstellungen
 HelpLanguageConfig3:Das ist die aktuell eingestellte Sprache für die Bedienoberfläche.|MDiese Sprache wird genutzt, um NetSurf's Meldungen und die Texte der Dialogboxen und Menüs darzustellen.
@@ -1283,7 +1284,7 @@ HelpMemoryConfig10:Klicken mit AUSWAHL verkleinert den Arbeitsspeicher zum Ableg
 HelpMemoryConfig11:Klicken mit AUSWAHL vergrößert den Arbeitsspeicher zum Ablegen komprimierter Bilder.
 HelpMemoryConfig13:NetSurf nimmt eine automatische intelligente Abschätzung der notwendigen Größe des Arbeitsspeichers zum Ablegen komprimierter Bilddaten vor.
 HelpMemoryConfig14:Stellt die Standardeinstellungen wieder her.
-HelpMemoryConfig15:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.                
+HelpMemoryConfig15:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
 HelpMemoryConfig16:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 
 HelpSecurityConfig:Fenster zur Konfiguration der Sicherheitseinstellungen
@@ -1292,14 +1293,14 @@ HelpSecurityConfig6:Hier kann die Zeitdauer in Tagen angegeben werden, bis zu de
 HelpSecurityConfig7:Klicken mit AUSWAHL verkürzt die Aufbewahrungszeit von Seiten in der globalen History.
 HelpSecurityConfig8:Klicken mit AUSWAHL verlängert die Aufbewahrungszeit von Seiten in der globalen History.
 HelpSecurityConfig10:Stellt die Standardeinstellungen wieder her.
-HelpSecurityConfig11:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.                                  
-HelpSecurityConfig12:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.                                     
+HelpSecurityConfig11:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
+HelpSecurityConfig12:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
 
 HelpThemeConfig:Fenster zur Auswahl des Anzeigethemas
 HelpThemeConfig2:Stellt die Standardeinstellungen wieder her.
 HelpThemeConfig3:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
-HelpThemeConfig4:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.   
-                                                                                                                                                                               
+HelpThemeConfig4:Klicken mit AUSWAHL speichert die Einstellungen und schließt das Fenster.|MKlicken mit SPEZIAL speichert die Einstellungen ohne das Fenster zu schließen.
+
 HelpThemePConfig:Dieser Dialog zeigt die verfügbaren Themen.|MDas ausgewählte Thema wird bei der Anzeige von Browserfenster, Cookieverwaltung, Hotlist und History eingesetzt.
 
 # HelpHint (tooltip) text

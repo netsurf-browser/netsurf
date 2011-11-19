@@ -3482,7 +3482,7 @@ wimp_window {
 
 wimp_window {
   template_name:"con_inter"
-  visible:264,362,1008,1066
+  visible:264,290,1008,1066
   xscroll:0
   yscroll:0
   next:wimp_TOP
@@ -3495,7 +3495,7 @@ wimp_window {
   scroll_inner:wimp_COLOUR_VERY_LIGHT_GREY
   highlight_bg:wimp_COLOUR_CREAM
   extra_flags:
-  extent:0,-772,744,0
+  extent:0,-844,744,0
   title_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | 0x27000000
   work_flags:
   sprite_area:&1
@@ -3613,7 +3613,7 @@ wimp_window {
     text_and_sprite.validation:"Soptoff,opton"
   }
   wimp_icon {
-    extent:24,-672,188,-620
+    extent:24,-744,188,-692
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -3623,7 +3623,7 @@ wimp_window {
     text.validation:"R5,3"
   }
   wimp_icon {
-    extent:360,-672,524,-620
+    extent:360,-744,524,-692
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -3633,7 +3633,7 @@ wimp_window {
     text.validation:"R5,3"
   }
   wimp_icon {
-    extent:540,-680,724,-612
+    extent:540,-752,724,-684
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_CLICK
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -3643,7 +3643,7 @@ wimp_window {
     text.validation:"R6,3"
   }
   wimp_icon {
-    extent:16,-588,728,-492
+    extent:16,-660,728,-492
     icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_HCENTRED | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
@@ -3672,6 +3672,27 @@ wimp_window {
     text_and_sprite.size:*
     text_and_sprite.validation:"Soptoff,opton"
   }
+  wimp_icon {
+    extent:28,-640,232,-588
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_VCENTRED | wimp_ICON_INDIRECTED | wimp_ICON_RJUSTIFIED
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
+    text.text:"Hotlist path"
+    text.size:*
+    text.validation:""
+  }
+  wimp_icon {
+    extent:232,-640,708,-588
+    icon_flags:wimp_ICON_TEXT | wimp_ICON_BORDER | wimp_ICON_VCENTRED | wimp_ICON_FILLED | wimp_ICON_INDIRECTED | wimp_BUTTON_WRITABLE
+    icon_esg:0
+    icon_fg:wimp_COLOUR_BLACK
+    icon_bg:wimp_COLOUR_WHITE
+    text.text:"Writable icon"
+    text.size:256
+    text.validation:"Pptr_write;Kta"
+  }
+
 }
 
 wimp_window {

@@ -444,10 +444,10 @@ gtkRemaining:Reste
 # spaces necessary
 #
 
-gtkError: Erreur 
-gtkComplete: Terniné 
-gtkCanceled: Annulé 
-gtkWorking: en cours 
+gtkError: Erreur
+gtkComplete: Terniné
+gtkCanceled: Annulé
+gtkWorking: en cours
 
 # Dialogs
 #
@@ -461,9 +461,9 @@ gtkFileError:Erreur de fichier: %s
 gtkInfo:La taille de %s de %s est de %s
 gtkSave:Enregistrer le fichier sous...
 gtkSourceSave:Enregistrer la Source
-gtkSourceTabError:Erreur de manipulation des données source 
+gtkSourceTabError:Erreur de manipulation des données source
 gtkPlainSave:Enregistrer comme texte
-gtkFullSave:Enregistrer page web complète - sélectioner un dossier vide 
+gtkFullSave:Enregistrer page web complète - sélectioner un dossier vide
 gtkUnknownHost:un hôte inconnu
 gtkUnknownFile:
 gtkUnknownSize:inconnu
@@ -1269,6 +1269,7 @@ HelpInterfaceConfig11:\Srevenir aux valeurs par défaut des options d'Interface.
 HelpInterfaceConfig12:\Sfermer cette fenêtre sans sauver les changements|M\Arevenir aux options d'Interface précédemment sauvegardées.
 HelpInterfaceConfig13:\Ssauver ces réglages et fermer la fenêtre.|M\Asauver ces réglages sans fermer la fenêtre.
 HelpInterfaceConfig16:This indicates whether NetSurf will use an external hotlist client if available, in preference to the internal hotlist.
+HelpInterfaceConfig18:\Tthe path to a hotlist application which will be used to display the hotlist.
 
 HelpLanguageConfig:\Tfenêtre de configuration de langue.
 HelpLanguageConfig3:\Tla langue d'interface sélectionnée actuellement.|MLa langue d'interface est la langue utilisée pour les messages et les boîtes de dialogue de Netsurf.
