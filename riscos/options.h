@@ -65,6 +65,7 @@ extern char *option_theme_save;
 extern bool option_thumbnail_iconise;
 extern bool option_interactive_help;
 extern bool option_external_hotlists;
+extern char *option_external_hotlist_app;
 
 #define EXTRA_OPTION_DEFINE \
 bool option_use_mouse_gestures = false;\
@@ -103,7 +104,8 @@ char *option_theme_path = 0; \
 char *option_theme_save = 0; \
 bool option_thumbnail_iconise = true; \
 bool option_interactive_help = true; \
-bool option_external_hotlists = false;
+bool option_external_hotlists = false; \
+char *option_external_hotlist_app = 0;
 
 #define EXTRA_OPTION_TABLE \
 { "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
@@ -142,6 +144,7 @@ bool option_external_hotlists = false;
 { "theme_save",             OPTION_STRING,  &option_theme_save }, \
 { "thumbnail_iconise",      OPTION_BOOL,    &option_thumbnail_iconise }, \
 { "interactive_help",       OPTION_BOOL,    &option_interactive_help }, \
-{ "external_hotlists",      OPTION_BOOL,    &option_external_hotlists }
+{ "external_hotlists",      OPTION_BOOL,    &option_external_hotlists }, \
+{ "external_hotlist_app",   OPTION_STRING,  &option_external_hotlist_app }
 
 #endif

@@ -197,6 +197,23 @@ void ro_gui_hotlist_postinitialise(void)
 
 void ro_gui_hotlist_open(void)
 {
+	os_error	*error;
+	char		command[2048];
+
+	if (option_external_hotlists && option_external_hotlist_app != NULL &&
+			*option_external_hotlist_app != '\0') {
+		snprintf(command, sizeof(command), "Filer_Run %s",
+				option_external_hotlist_app);
+		error = xos_cli(command);
+
+		if (error == NULL)
+			return;
+
+		LOG(("xos_cli: 0x%x: %s", error->errnum, error->errmess));
+		warn_user("Failed to launch external hotlist: %s",
+				error->errmess);
+	}
+
 	tree_set_redraw(ro_treeview_get_tree(hotlist_window.tv), true);
 
 	ro_gui_hotlist_toolbar_update_buttons();
