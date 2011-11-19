@@ -444,10 +444,10 @@ gtkRemaining:Reste
 # spaces necessary
 #
 
-gtkError: Erreur
-gtkComplete: Terniné
-gtkCanceled: Annulé
-gtkWorking: en cours
+gtkError: Erreur 
+gtkComplete: Terniné 
+gtkCanceled: Annulé 
+gtkWorking: en cours 
 
 # Dialogs
 #
@@ -461,9 +461,9 @@ gtkFileError:Erreur de fichier: %s
 gtkInfo:La taille de %s de %s est de %s
 gtkSave:Enregistrer le fichier sous...
 gtkSourceSave:Enregistrer la Source
-gtkSourceTabError:Erreur de manipulation des données source
+gtkSourceTabError:Erreur de manipulation des données source 
 gtkPlainSave:Enregistrer comme texte
-gtkFullSave:Enregistrer page web complète - sélectioner un dossier vide
+gtkFullSave:Enregistrer page web complète - sélectioner un dossier vide 
 gtkUnknownHost:un hôte inconnu
 gtkUnknownFile:
 gtkUnknownSize:inconnu

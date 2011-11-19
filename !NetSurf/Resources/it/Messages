@@ -447,10 +447,10 @@ gtkRemaining:Al termine
 # spaces necessary
 #
 
-gtkError: Errore
-gtkComplete: Completo
-gtkCanceled: Annullato
-gtkWorking: In corso
+gtkError: Errore 
+gtkComplete: Completo 
+gtkCanceled: Annullato 
+gtkWorking: In corso 
 
 # Dialogs
 #
@@ -466,7 +466,7 @@ gtkFileError:Errore file: %s
 gtkInfo:%s da %s è %s come dimensione
 gtkSave:Salva file come...
 gtkSourceSave:Salva sorgente
-gtkSourceTabError:Errore di modifica sul sorgente
+gtkSourceTabError:Errore di modifica sul sorgente 
 gtkPlainSave:Salva come testo
 gtkFullSave:Salva pagina web completa - seleziona una directory vuota
 gtkSaveConfirm:File salvato

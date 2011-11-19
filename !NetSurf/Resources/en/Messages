@@ -448,10 +448,10 @@ gtkRemaining:Remaining
 # spaces necessary
 #
 
-gtkError: Error
-gtkComplete: Complete
-gtkCanceled: Canceled
-gtkWorking: Working
+gtkError: Error 
+gtkComplete: Complete 
+gtkCanceled: Canceled 
+gtkWorking: Working 
 
 # Dialogs
 #
@@ -466,7 +466,7 @@ gtkFileError:File error: %s
 gtkInfo:%s from %s is %s in size
 gtkSave:Save file as…
 gtkSourceSave:Save source
-gtkSourceTabError:Error handling source data
+gtkSourceTabError:Error handling source data 
 gtkplainSave:Save plain text
 gtkcompleteSave:Save webpage complete - select an empty directory
 gtkSaveConfirm:File saved

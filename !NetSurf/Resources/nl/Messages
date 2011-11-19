@@ -444,10 +444,10 @@ gtkRemaining:Remaining
 # spaces necessary
 #
 
-gtkError: Error
-gtkComplete: Complete
-gtkCanceled: Canceled
-gtkWorking: Working
+gtkError: Error 
+gtkComplete: Complete 
+gtkCanceled: Canceled 
+gtkWorking: Working 
 
 # Dialogs
 #
@@ -461,7 +461,7 @@ gtkFileError:File error: %s
 gtkInfo:%s from %s is %s in size
 gtkSave:Save file as...
 gtkSourceSave:Save Source
-gtkSourceTabError:Error handling source data
+gtkSourceTabError:Error handling source data 
 gtkPlainSave:Save as text
 gtkFullSave:Save webpage complete - select an empty directory
 gtkUnknownHost:an unknown host
