@@ -1153,6 +1153,12 @@ bool ro_toolbar_keypress(wimp_key *key)
 	if (toolbar == NULL)
 		return false;
 
+	/* Pass the keypress on to the client and stop if they handle it. */
+
+	if (toolbar->callbacks->key_press != NULL &&
+			toolbar->callbacks->key_press(toolbar->client_data, key))
+		return true;
+
 	/* If the caret is in the URL bar, ask the URL Complete module if it
 	 * wants to handle the keypress.
 	 *
@@ -1165,11 +1171,6 @@ bool ro_toolbar_keypress(wimp_key *key)
 				toolbar->url, key) &&
 			ro_gui_url_complete_keypress(toolbar, key->c))
 		return true;
-
-	/* Otherwsie, pass the keypress on to the client. */
-
-	if (toolbar->callbacks->key_press != NULL)
-		return toolbar->callbacks->key_press(toolbar->client_data, key);
 
 	return false;
 }

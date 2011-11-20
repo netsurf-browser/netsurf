@@ -2036,9 +2036,6 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	case IS_WIMP_KEY | wimp_KEY_RIGHT:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
-		if (is_toolbar)
-			return false;
-		break;
 	case IS_WIMP_KEY + wimp_KEY_UP:
 	case IS_WIMP_KEY + wimp_KEY_DOWN:
 	case IS_WIMP_KEY + wimp_KEY_PAGE_UP:
@@ -2046,6 +2043,8 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	case wimp_KEY_HOME:
 	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
 	case IS_WIMP_KEY + wimp_KEY_END:
+		if (is_toolbar)
+			return false;
 		break;
 	default:
 		return false; /* This catches any keys we don't want to claim */
