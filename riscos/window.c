@@ -177,6 +177,8 @@ static struct form_control	*gui_form_select_control;
 static wimp_menu		*ro_gui_browser_window_menu = NULL;
 /** Menu of options for form select controls. */
 static wimp_menu		*gui_form_select_menu = NULL;
+/** Page under menu, or 0 if no page. */
+static hlcache_handle		*current_menu_page = 0;
 /** Object under menu, or 0 if no object. */
 static hlcache_handle		*current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
@@ -2129,7 +2131,6 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	struct browser_window	*bw;
 	struct toolbar		*toolbar;
 	struct contextual_content cont;
-	hlcache_handle		*h = NULL;
 	bool			export_sprite, export_draw;
 	os_coord		pos;
 
@@ -2163,8 +2164,8 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 				pointer->pos.y, &pos)) {
 			browser_window_get_contextual_content(bw,
 					pos.x, pos.y, &cont);
-			h = cont.main;
 
+			current_menu_page = cont.main;
 			current_menu_object = cont.object;
 			current_menu_url = cont.link_url;
 		}
@@ -2198,32 +2199,48 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	/* Page Submenu */
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE, h == NULL ||
-			(content_get_type(h) != CONTENT_HTML &&
-			content_get_type(h) != CONTENT_TEXTPLAIN));
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE,
+			current_menu_page == NULL ||
+			(content_get_type(current_menu_page) != CONTENT_HTML &&
+			content_get_type(current_menu_page) !=
+					CONTENT_TEXTPLAIN));
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE_INFO, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_PAGE_INFO,
+			current_menu_page == NULL);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_PRINT, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_PRINT,
+			current_menu_page == NULL);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_NEW_WINDOW, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_NEW_WINDOW,
+			current_menu_page == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_FIND_TEXT,
-			h == NULL || (content_get_type(h) != CONTENT_HTML &&
-				content_get_type(h) != CONTENT_TEXTPLAIN));
+			current_menu_page == NULL ||
+			(content_get_type(current_menu_page) != CONTENT_HTML &&
+			content_get_type(current_menu_page) !=
+					CONTENT_TEXTPLAIN));
 
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_VIEW_SOURCE, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_VIEW_SOURCE,
+			current_menu_page == NULL);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URI, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URL, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_TEXT, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URI,
+			current_menu_page == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_URL,
+			current_menu_page == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_URL_TEXT,
+			current_menu_page == NULL);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_COMPLETE, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_DRAW, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_PDF, h == NULL);
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_TEXT, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE,
+			current_menu_page == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SAVE_COMPLETE,
+			current_menu_page == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_DRAW,
+			current_menu_page == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_PDF,
+			current_menu_page == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_EXPORT_TEXT,
+			current_menu_page == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_LINK_SAVE_URI,
 			!current_menu_url);
@@ -2267,27 +2284,30 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_window_content_export_types(current_menu_object,
 				&export_draw, &export_sprite);
 	else
-		ro_gui_window_content_export_types(h,
+		ro_gui_window_content_export_types(current_menu_page,
 				&export_draw, &export_sprite);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT,
-			(h == NULL && current_menu_object == NULL)
-				|| !(export_sprite || export_draw));
+			(current_menu_page == NULL &&
+			current_menu_object == NULL)
+			|| !(export_sprite || export_draw));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT_SPRITE,
-			(h == NULL && current_menu_object == NULL)
-				|| !export_sprite);
+			(current_menu_page == NULL &&
+			current_menu_object == NULL) || !export_sprite);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_OBJECT_EXPORT_DRAW,
-			(h == NULL && current_menu_object == NULL)
-				|| !export_draw);
+			(current_menu_page == NULL &&
+			current_menu_object == NULL) || !export_draw);
 
 
 	/* Selection Submenu */
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION,
-			h == NULL || (content_get_type(h) != CONTENT_HTML &&
-				content_get_type(h) != CONTENT_TEXTPLAIN));
+			current_menu_page == NULL ||
+			(content_get_type(current_menu_page) != CONTENT_HTML &&
+			content_get_type(current_menu_page) !=
+				CONTENT_TEXTPLAIN));
 			/* make menu available if there's anything that /could/
 			 * be selected */
 
@@ -2302,7 +2322,8 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 			selection_read_only(browser_window_get_selection(bw)));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_PASTE,
-			h == NULL || bw->paste_callback == NULL);
+			current_menu_page == NULL ||
+				bw->paste_callback == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SELECTION_CLEAR,
 			!browser_window_has_selection(bw));
@@ -2346,7 +2367,8 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_BUFFER_ALL,
 			g != NULL && g->option.buffer_everything);
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_SCALE_VIEW, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, BROWSER_SCALE_VIEW,
+			current_menu_page == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_WINDOW_STAGGER,
 			option_window_screen_width == 0);
@@ -2363,11 +2385,13 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	/* Utilities Submenu */
 
-	ro_gui_menu_set_entry_shaded(menu, HOTLIST_ADD_URL, h == NULL);
+	ro_gui_menu_set_entry_shaded(menu, HOTLIST_ADD_URL,
+			current_menu_page == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, HISTORY_SHOW_LOCAL,
 			(bw == NULL || (bw->history == NULL) ||
-			!(h != NULL || history_back_available(bw->history) ||
+			!(current_menu_page != NULL ||
+			history_back_available(bw->history) ||
 			history_forward_available(bw->history))));
 
 
