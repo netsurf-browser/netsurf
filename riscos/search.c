@@ -268,14 +268,6 @@ bool ro_gui_search_prepare_menu(void)
 	recent_search_menu->entries[suggestions - 1].menu_flags |=
 			wimp_MENU_LAST;
 
-	if ((current_menu_open) && (current_menu == recent_search_menu)) {
-		error = xwimp_create_menu(current_menu, 0, 0);
-		if (error) {
-			LOG(("xwimp_create_menu: 0x%x: %s",
-					error->errnum, error->errmess));
-			warn_user("MenuError", error->errmess);
-		}
-	}
 	return true;
 }
 
