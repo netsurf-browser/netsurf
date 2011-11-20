@@ -247,7 +247,6 @@ void ro_gui_search_add_recent(const char *search, void *p)
 
 bool ro_gui_search_prepare_menu(void)
 {
-	os_error *error;
 	int i;
 	int suggestions = 0;
 
