@@ -1444,3 +1444,18 @@ void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
 	if (height != NULL)
 		*height = ta->vis_height;
 }
+
+/**
+ * Set the dimensions of a textarea, causing a reflow and 
+ * emitting a redraw request.
+ *
+ * \param width 	the new width of the textarea
+ * \param height	the new height of the textarea
+ */
+void textarea_set_dimensions(struct text_area *ta, int width, int height)
+{
+	ta->vis_width = width;
+	ta->vis_height = height;
+	textarea_reflow(ta, 0);
+	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
+}
