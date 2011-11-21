@@ -165,7 +165,7 @@ struct fbtk_widget_s {
 
 		/* bitmap */
 		struct {
-			struct bitmap *bitmap;
+			struct fbtk_bitmap *bitmap;
 		} bitmap;
 
 		/* text */

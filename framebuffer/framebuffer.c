@@ -30,11 +30,11 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
+#include "image/bitmap.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
 #include "framebuffer/framebuffer.h"
-#include "framebuffer/bitmap.h"
 #include "framebuffer/font.h"
 
 /* netsurf framebuffer library handle */
@@ -175,8 +175,10 @@ framebuffer_plot_bitmap(int x, int y,
         nsfb_bbox_t clipbox;
         bool repeat_x = (flags & BITMAPF_REPEAT_X);
         bool repeat_y = (flags & BITMAPF_REPEAT_Y);
-
-        nsfb_plot_get_clip(nsfb, &clipbox);
+	int bmwidth;
+	int bmheight;
+	unsigned char *bmptr;
+	nsfb_t *bm = (nsfb_t *)bitmap;
 
 	/* x and y define coordinate of top left of of the initial explicitly
 	 * placed tile. The width and height are the image scaling and the
@@ -191,26 +193,19 @@ framebuffer_plot_bitmap(int x, int y,
                 loc.x1 = loc.x0 + width;
                 loc.y1 = loc.y0 + height;
 
-		if ((bitmap->width == 1) && (bitmap->height == 1)) {
-			if ((*(nsfb_colour_t *)bitmap->pixdata & 0xff000000) == 0) {
-				return true;
-			}
-			return nsfb_plot_rectangle_fill(nsfb, &loc, *(nsfb_colour_t *)bitmap->pixdata);
-
-		} else {
-			return nsfb_plot_bitmap(nsfb, &loc, 
-						(nsfb_colour_t *)bitmap->pixdata, 
-						bitmap->width, bitmap->height, 
-						bitmap->width, !bitmap->opaque);
-		}
+		return nsfb_plot_copy(bm, NULL, nsfb, &loc);		
 	}
+
+        nsfb_plot_get_clip(nsfb, &clipbox);
+	nsfb_get_geometry(bm, &bmwidth, &bmheight, NULL);
+	nsfb_get_buffer(bm, &bmptr, NULL);
 
 	/* Optimise tiled plots of 1x1 bitmaps by replacing with a flat fill
 	 * of the area.  Can only be done when image is fully opaque. */
-	if ((bitmap->width == 1) && (bitmap->height == 1)) {
-		if ((*(nsfb_colour_t *)bitmap->pixdata & 0xff000000) != 0) {
+	if ((bmwidth == 1) && (bmheight == 1)) {
+		if ((*(nsfb_colour_t *)bmptr & 0xff000000) != 0) {
 			return nsfb_plot_rectangle_fill(nsfb, &clipbox,
-					*(nsfb_colour_t *)bitmap->pixdata);
+					*(nsfb_colour_t *)bmptr);
 		}
 	}
 
@@ -218,11 +213,11 @@ framebuffer_plot_bitmap(int x, int y,
 	 * a flat fill of the area.  Can only be done when image is fully
 	 * opaque. */
 	if ((width == 1) && (height == 1)) {
-		if (bitmap->opaque) {
+		if (bitmap_get_opaque(bm)) {
 			/** TODO: Currently using top left pixel. Maybe centre
 			 *        pixel or average value would be better. */
 			return nsfb_plot_rectangle_fill(nsfb, &clipbox,
-					*(nsfb_colour_t *)bitmap->pixdata);
+					*(nsfb_colour_t *)bmptr);
 		}
 	}
 
@@ -243,10 +238,8 @@ framebuffer_plot_bitmap(int x, int y,
                         loc.x1 = loc.x0 + width;
                         loc.y1 = loc.y0 + height;
 
-                        nsfb_plot_bitmap(nsfb, &loc, 
-                                        (nsfb_colour_t *)bitmap->pixdata, 
-                                        bitmap->width, bitmap->height, 
-                                        bitmap->width, !bitmap->opaque);
+			nsfb_plot_copy(bm, NULL, nsfb, &loc);		
+
 			if (!repeat_y)
 				break;
 		}
@@ -359,31 +352,63 @@ const struct plotter_table fb_plotters = {
 nsfb_t *
 framebuffer_initialise(const char *fename, int width, int height, int bpp)
 {
-    enum nsfb_frontend_e fetype;
+    enum nsfb_type_e fbtype;
+    enum nsfb_format_e fbfmt;
 
-    fetype = nsfb_frontend_from_name(fename);
-    if (fetype == NSFB_FRONTEND_NONE) {
-        LOG(("The %s frontend is not available from libnsfb\n", fename));
+    /* bpp is a proxy for the framebuffer format */
+    switch (bpp) {
+    case 32:
+	    fbfmt = NSFB_FMT_XRGB8888;
+	    break;
+
+    case 24:
+	    fbfmt = NSFB_FMT_RGB888;
+	    break;
+
+    case 16:
+	    fbfmt = NSFB_FMT_RGB565;
+	    break;
+
+    case 8:
+	    fbfmt = NSFB_FMT_I8;
+	    break;
+
+    case 4:
+	    fbfmt = NSFB_FMT_I4;
+	    break;
+
+    case 1:
+	    fbfmt = NSFB_FMT_I1;
+	    break;
+
+    default:
+        LOG(("Bad bits per pixel (%d)\n", bpp));
+        return NULL;	    
+    }
+
+    fbtype = nsfb_type_from_name(fename);
+    if (fbtype == NSFB_SURFACE_NONE) {
+        LOG(("The %s surface is not available from libnsfb\n", fename));
         return NULL;
     }
 
-    nsfb = nsfb_init(fetype);
+    nsfb = nsfb_new(fbtype);
     if (nsfb == NULL) {
-        LOG(("Unable to initialise nsfb with %s frontend\n", fename));
+        LOG(("Unable to create %s fb surface\n", fename));
         return NULL;
     }
     
-    if (nsfb_set_geometry(nsfb, width, height, bpp) == -1) {
-        LOG(("Unable to set geometry\n"));
-        nsfb_finalise(nsfb);
+    if (nsfb_set_geometry(nsfb, width, height, fbfmt) == -1) {
+        LOG(("Unable to set surface geometry\n"));
+        nsfb_free(nsfb);
         return NULL;
     }
 
     nsfb_cursor_init(nsfb);
     
-    if (nsfb_init_frontend(nsfb) == -1) {
-        LOG(("Unable to initialise nsfb frontend\n"));
-        nsfb_finalise(nsfb);
+    if (nsfb_init(nsfb) == -1) {
+        LOG(("Unable to initialise nsfb surface\n"));
+        nsfb_free(nsfb);
         return NULL;
     }
 
@@ -394,11 +419,19 @@ framebuffer_initialise(const char *fename, int width, int height, int bpp)
 void
 framebuffer_finalise(void)
 {
-    nsfb_finalise(nsfb);    
+    nsfb_free(nsfb);    
 }
 
 bool
-framebuffer_set_cursor(struct bitmap *bm)
+framebuffer_set_cursor(struct fbtk_bitmap *bm)
 {
     return nsfb_cursor_set(nsfb, (nsfb_colour_t *)bm->pixdata, bm->width, bm->height, bm->width);
 } 
+
+nsfb_t *framebuffer_set_surface(nsfb_t *new_nsfb)
+{
+	nsfb_t *old_nsfb;
+	old_nsfb = nsfb;
+	nsfb = new_nsfb;
+	return old_nsfb;
+}

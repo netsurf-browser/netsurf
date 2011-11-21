@@ -18,11 +18,12 @@
 
 #include <inttypes.h>
 #include <sys/types.h>
+#include <stdbool.h>
+#include <assert.h>
 
-#include "assert.h"
+#include <libnsfb.h>
+
 #include "image/bitmap.h"
-#include "framebuffer/bitmap.h"
-
 #include "utils/log.h"
 
 /**
@@ -36,26 +37,29 @@
 
 void *bitmap_create(int width, int height, unsigned int state)
 {
-        struct bitmap *bitmap;
+        nsfb_t *bm;
 
         LOG(("width %d, height %d, state %u",width,height,state));
 
-        bitmap = calloc(1 , sizeof(struct bitmap));
-        if (bitmap) {
-                bitmap->pixdata = calloc(4, width * height);
-                if (bitmap->pixdata != NULL) {
-                        bitmap->width = width;
-                        bitmap->height = height;
-                        bitmap->opaque = (state & BITMAP_OPAQUE) != 0;
-                } else {
-                        free(bitmap);
-                        bitmap=NULL;
-                }
-        }
+	bm = nsfb_new(NSFB_SURFACE_RAM);
+	if (bm == NULL) {
+		return NULL;
+	}
 
-        LOG(("bitmap %p", bitmap));
+	if ((state & BITMAP_OPAQUE) == 0) {
+		nsfb_set_geometry(bm, width, height, NSFB_FMT_ABGR8888);
+	} else {
+		nsfb_set_geometry(bm, width, height, NSFB_FMT_XBGR8888);
+	}
 
-        return bitmap;
+	if (nsfb_init(bm) == -1) {
+		nsfb_free(bm);
+		return NULL;		
+	}
+
+        LOG(("bitmap %p", bm));
+
+        return bm;
 }
 
 
@@ -71,14 +75,14 @@ void *bitmap_create(int width, int height, unsigned int state)
 
 unsigned char *bitmap_get_buffer(void *bitmap)
 {
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
+	unsigned char *bmpptr;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return NULL;
-        }
-                
-	return bm->pixdata;
+	assert(bm != NULL);
+
+	nsfb_get_buffer(bm, &bmpptr, NULL);
+
+	return bmpptr;
 }
 
 
@@ -91,14 +95,14 @@ unsigned char *bitmap_get_buffer(void *bitmap)
 
 size_t bitmap_get_rowstride(void *bitmap)
 {
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
+	int bmpstride;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return 0;
-        }
+	assert(bm != NULL);
 
-	return (bm->width) * 4;
+	nsfb_get_buffer(bm, NULL, &bmpstride);
+
+	return bmpstride;
 }
 
 
@@ -110,15 +114,11 @@ size_t bitmap_get_rowstride(void *bitmap)
 
 void bitmap_destroy(void *bitmap)
 {
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return;
-        }
-        
-	free(bm->pixdata);
-	free(bm);
+	assert(bm != NULL);
+
+	nsfb_free(bm);
 }
 
 
@@ -158,22 +158,24 @@ void bitmap_set_suspendable(void *bitmap, void *private_word,
 }
 
 /**
- * Sets whether a bitmap should be plotted opaque
+ * Sets wether a bitmap should be plotted opaque
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  * \param  opaque  whether the bitmap should be plotted opaque
  */
 void bitmap_set_opaque(void *bitmap, bool opaque)
 {	
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return;
-        }
+	assert(bm != NULL);
 
         LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
-        bm->opaque = opaque;
+
+	if (opaque) {
+		nsfb_set_geometry(bm, 0, 0, NSFB_FMT_XBGR8888);
+	} else {
+		nsfb_set_geometry(bm, 0, 0, NSFB_FMT_ABGR8888);
+	}
 }
 
 
@@ -186,17 +188,21 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
 bool bitmap_test_opaque(void *bitmap)
 {
         int tst;
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
+	unsigned char *bmpptr;
+	int width;
+	int height;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return false;
-        }
+	assert(bm != NULL);
 
-        tst = bm->width * bm->height;
+	nsfb_get_buffer(bm, &bmpptr, NULL);
+
+	nsfb_get_geometry(bm, &width, &height, NULL);
+
+        tst = width * height;
 
         while (tst-- > 0) {
-                if (bm->pixdata[(tst << 2) + 3] != 0xff) {
+                if (bmpptr[(tst << 2) + 3] != 0xff) {
                         LOG(("bitmap %p has transparency",bm));
                         return false;                     
                 }   
@@ -207,46 +213,50 @@ bool bitmap_test_opaque(void *bitmap)
 
 
 /**
- * Gets whether a bitmap should be plotted opaque
+ * Gets weather a bitmap should be plotted opaque
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 bool bitmap_get_opaque(void *bitmap)
 {
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
+	enum nsfb_format_e format;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return false;
-        }
+	assert(bm != NULL);
 
-	return bm->opaque;
+	nsfb_get_geometry(bm, NULL, NULL, &format);
+
+	if (format == NSFB_FMT_ABGR8888)
+		return false;
+
+	return true;
 }
 
 int bitmap_get_width(void *bitmap)
 {
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
+	int width;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return 0;
-        }
+	assert(bm != NULL);
 
-	return(bm->width);
+	nsfb_get_geometry(bm, &width, NULL, NULL);
+
+	return(width);
 }
 
 int bitmap_get_height(void *bitmap)
 {
-	struct bitmap *bm = bitmap;
+	nsfb_t *bm = bitmap;
+	int height;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return 0;
-        }
+	assert(bm != NULL);
 
-	return(bm->height);
+	nsfb_get_geometry(bm, NULL, &height, NULL);
+
+	return(height);
 }
 
+/* get bytes per pixel */
 size_t bitmap_get_bpp(void *bitmap)
 {
 	return 4;

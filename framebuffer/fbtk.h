@@ -61,6 +61,18 @@ typedef struct fbtk_callback_info {
 	fbtk_widget_t *widget;
 } fbtk_callback_info;
 
+/* structure for framebuffer toolkit bitmaps  */
+struct fbtk_bitmap {
+        int width;
+        int height;
+        uint8_t *pixdata;
+        bool opaque;
+
+        /* The following two are only used for cursors */
+        int hot_x;
+        int hot_y;
+};
+
 typedef int (*fbtk_callback)(fbtk_widget_t *widget, fbtk_callback_info *cbi);
 
 /* enter pressed on writable icon */
@@ -349,9 +361,9 @@ void *fbtk_get_userpw(fbtk_widget_t *widget);
  * @param window The window to add the bitmap widget to.
  * @return new widget handle or NULL on error.
  */
-fbtk_widget_t *fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, int width, int height, colour c,struct bitmap *image);
+fbtk_widget_t *fbtk_create_bitmap(fbtk_widget_t *window, int x, int y, int width, int height, colour c,struct fbtk_bitmap *image);
 
-void fbtk_set_bitmap(fbtk_widget_t *widget, struct bitmap *image);
+void fbtk_set_bitmap(fbtk_widget_t *widget, struct fbtk_bitmap *image);
 
 /** Create a button widget.
  *
@@ -361,7 +373,7 @@ void fbtk_set_bitmap(fbtk_widget_t *widget, struct bitmap *image);
  * @param window The window to add the button widget to.
  * @return new widget handle or NULL on error.
  */
-fbtk_widget_t *fbtk_create_button(fbtk_widget_t *window, int x, int y, int width, int height, colour c, struct bitmap *image, fbtk_callback click, void *pw);
+fbtk_widget_t *fbtk_create_button(fbtk_widget_t *window, int x, int y, int width, int height, colour c, struct fbtk_bitmap *image, fbtk_callback click, void *pw);
 
 
 

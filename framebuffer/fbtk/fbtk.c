@@ -38,7 +38,6 @@
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
-#include "framebuffer/bitmap.h"
 #include "framebuffer/image_data.h"
 
 #include "widget.h"
@@ -337,7 +336,7 @@ int
 fbtk_set_ptr(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	fbtk_widget_t *root = fbtk_get_root_widget(widget);
-	struct bitmap *bm = cbi->context;
+	struct fbtk_bitmap *bm = cbi->context;
 
 	nsfb_cursor_set(root->u.root.fb,
 			(nsfb_colour_t *)bm->pixdata,

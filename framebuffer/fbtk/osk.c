@@ -31,7 +31,6 @@
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
-#include "framebuffer/bitmap.h"
 #include "framebuffer/image_data.h"
 
 #include "widget.h"

@@ -28,7 +28,6 @@
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
-#include "framebuffer/bitmap.h"
 #include "framebuffer/image_data.h"
 
 #include "widget.h"
@@ -70,7 +69,7 @@ fb_redraw_bitmap(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 /* exported function documented in fbtk.h */
 void
-fbtk_set_bitmap(fbtk_widget_t *widget, struct bitmap *image)
+fbtk_set_bitmap(fbtk_widget_t *widget, struct fbtk_bitmap *image)
 {
 	if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_BITMAP))
 		return;
@@ -88,7 +87,7 @@ fbtk_create_bitmap(fbtk_widget_t *parent,
 		   int width,
 		   int height,
 		   colour c,
-		   struct bitmap *image)
+		   struct fbtk_bitmap *image)
 {
 	fbtk_widget_t *neww;
 
@@ -111,7 +110,7 @@ fbtk_create_button(fbtk_widget_t *parent,
 		   int width,
 		   int height,
 		   colour c,
-		   struct bitmap *image,
+		   struct fbtk_bitmap *image,
 		   fbtk_callback click,
 		   void *pw)
 {

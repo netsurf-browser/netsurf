@@ -177,7 +177,10 @@ main(int argc, char **argv)
         fprintf(f, "#include <sys/types.h>\n\n");
         fprintf(f, "#include <stdint.h>\n\n");
         fprintf(f, "#include <stdbool.h>\n\n");
-        fprintf(f, "#include \"framebuffer/bitmap.h\"\n\n");
+        fprintf(f, "#include <libnsfb.h>\n\n");
+        fprintf(f, "#include \"desktop/plot_style.h\"\n");
+        fprintf(f, "#include \"framebuffer/gui.h\"\n");
+        fprintf(f, "#include \"framebuffer/fbtk.h\"\n\n");
         
         fprintf(f, "static uint8_t %s_pixdata[] = {\n", argv[3]);
         for (y = 0; y < HEIGHT; ++y) {
@@ -197,7 +200,7 @@ main(int argc, char **argv)
         }
         fprintf(f, "};\n\n");
         
-        fprintf(f, "struct bitmap %s = {\n", argv[3]);
+        fprintf(f, "struct fbtk_bitmap %s = {\n", argv[3]);
         fprintf(f, "\t.width\t\t= %d,\n", WIDTH);
         fprintf(f, "\t.height\t\t= %d,\n", HEIGHT);
         fprintf(f, "\t.hot_x\t\t= %d,\n", HOT_X);

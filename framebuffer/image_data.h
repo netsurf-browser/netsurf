@@ -19,39 +19,39 @@
 #ifndef FB_IMAGE_DATA
 #define FB_IMAGE_DATA
 
-#include "framebuffer/bitmap.h"
+#include "framebuffer/fbtk.h"
 
-extern struct bitmap left_arrow;
-extern struct bitmap right_arrow;
-extern struct bitmap reload;
-extern struct bitmap stop_image;
-extern struct bitmap history_image;
+extern struct fbtk_bitmap left_arrow;
+extern struct fbtk_bitmap right_arrow;
+extern struct fbtk_bitmap reload;
+extern struct fbtk_bitmap stop_image;
+extern struct fbtk_bitmap history_image;
 
-extern struct bitmap left_arrow_g;
-extern struct bitmap right_arrow_g;
-extern struct bitmap reload_g;
-extern struct bitmap stop_image_g;
-extern struct bitmap history_image_g;
+extern struct fbtk_bitmap left_arrow_g;
+extern struct fbtk_bitmap right_arrow_g;
+extern struct fbtk_bitmap reload_g;
+extern struct fbtk_bitmap stop_image_g;
+extern struct fbtk_bitmap history_image_g;
 
-extern struct bitmap scrolll;
-extern struct bitmap scrollr;
-extern struct bitmap scrollu;
-extern struct bitmap scrolld;
+extern struct fbtk_bitmap scrolll;
+extern struct fbtk_bitmap scrollr;
+extern struct fbtk_bitmap scrollu;
+extern struct fbtk_bitmap scrolld;
 
-extern struct bitmap pointer_image;
-extern struct bitmap hand_image;
-extern struct bitmap caret_image;
-extern struct bitmap menu_image;
-extern struct bitmap progress_image;
+extern struct fbtk_bitmap pointer_image;
+extern struct fbtk_bitmap hand_image;
+extern struct fbtk_bitmap caret_image;
+extern struct fbtk_bitmap menu_image;
+extern struct fbtk_bitmap progress_image;
 
-extern struct bitmap throbber0;
-extern struct bitmap throbber1;
-extern struct bitmap throbber2;
-extern struct bitmap throbber3;
-extern struct bitmap throbber4;
-extern struct bitmap throbber5;
-extern struct bitmap throbber6;
-extern struct bitmap throbber7;
-extern struct bitmap throbber8;
+extern struct fbtk_bitmap throbber0;
+extern struct fbtk_bitmap throbber1;
+extern struct fbtk_bitmap throbber2;
+extern struct fbtk_bitmap throbber3;
+extern struct fbtk_bitmap throbber4;
+extern struct fbtk_bitmap throbber5;
+extern struct fbtk_bitmap throbber6;
+extern struct fbtk_bitmap throbber7;
+extern struct fbtk_bitmap throbber8;
 
 #endif /* FB_IMAGE_DATA */

@@ -74,7 +74,7 @@ endif
 
 # We make convert_image depend on fb_bitmap.h so that if we change
 # that header, we get new images built just in case.
-$(TOOLROOT)/convert_image: $(TOOLROOT)/created framebuffer/convert_image.c framebuffer/bitmap.h
+$(TOOLROOT)/convert_image: $(TOOLROOT)/created framebuffer/convert_image.c framebuffer/fbtk.h
 	$(VQ)echo " HOST CC: $@"
 	$(Q)$(HOST_CC) -o $@ framebuffer/convert_image.c -lpng
 

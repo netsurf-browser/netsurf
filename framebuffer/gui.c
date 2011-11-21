@@ -49,7 +49,6 @@
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
 #include "framebuffer/framebuffer.h"
-#include "framebuffer/bitmap.h"
 #include "framebuffer/schedule.h"
 #include "framebuffer/findfile.h"
 #include "framebuffer/image_data.h"
@@ -222,7 +221,7 @@ fb_pan(fbtk_widget_t *widget,
 		dstbox.y1 = dstbox.y0 + height + bwidget->pany;
 
 		/* move part that remains visible up */
-		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
+		nsfb_plot_copy(nsfb, &srcbox, nsfb, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
@@ -242,7 +241,7 @@ fb_pan(fbtk_widget_t *widget,
 		dstbox.y1 = dstbox.y0 + height - bwidget->pany;
 
 		/* move part that remains visible down */
-		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
+		nsfb_plot_copy(nsfb, &srcbox, nsfb, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
@@ -262,7 +261,7 @@ fb_pan(fbtk_widget_t *widget,
 		dstbox.y1 = dstbox.y0 + height;
 
 		/* move part that remains visible left */
-		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
+		nsfb_plot_copy(nsfb, &srcbox, nsfb, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
@@ -282,7 +281,7 @@ fb_pan(fbtk_widget_t *widget,
 		dstbox.y1 = dstbox.y0 + height;
 
 		/* move part that remains visible right */
-		nsfb_plot_copy(nsfb, &srcbox, &dstbox);
+		nsfb_plot_copy(nsfb, &srcbox, nsfb, &dstbox);
 
 		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
@@ -1391,7 +1390,7 @@ static void
 throbber_advance(void *pw)
 {
 	struct gui_window *g = pw;
-	struct bitmap *image;
+	struct fbtk_bitmap *image;
 
 	switch (g->throbber_index) {
 	case 0:
