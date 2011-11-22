@@ -247,6 +247,12 @@ int main(void)
 	assert(urldb_set_cookie("foo=bar; domain=.example.tld\r\n", "http://www.foo.example.tld/", "http://bar.example.tld/"));
 	assert(strcmp(urldb_get_cookie("http://www.foo.example.tld/"), "foo=bar") == 0);
 
+	/* Test expiry */
+	assert(urldb_set_cookie("foo=bar", "http://expires.com/", NULL));
+	assert(strcmp(urldb_get_cookie("http://expires.com/"), "foo=bar") == 0);
+	assert(urldb_set_cookie("foo=bar; expires=Thu, 01-Jan-1970 00:00:01 GMT\r\n", "http://expires.com/", NULL));
+	assert(urldb_get_cookie("http://expires.com/") == NULL);
+
 	urldb_dump();
 
 	printf("PASS\n");

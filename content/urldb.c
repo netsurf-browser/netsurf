@@ -120,7 +120,7 @@ struct cookie_internal_data {
 	char *domain;		/**< Domain */
 	bool path_from_set;	/**< Path came from Set-Cookie: header */
 	char *path;		/**< Path */
-	time_t expires;		/**< Expiry timestamp, or 1 for session */
+	time_t expires;		/**< Expiry timestamp, or -1 for session */
 	time_t last_used;	/**< Last used time */
 	bool secure;		/**< Only send for HTTPS requests */
 	cookie_version version;	/**< Specification compliance */
@@ -2505,7 +2505,7 @@ char *urldb_get_cookie(const char *url)
 			/* Consider all cookies associated with
 			 * this exact path */
 			for (c = q->cookies; c; c = c->next) {
-				if (c->expires != 1 && c->expires < now)
+				if (c->expires != -1 && c->expires < now)
 					/* cookie has expired => ignore */
 					continue;
 
@@ -2537,7 +2537,7 @@ char *urldb_get_cookie(const char *url)
 				continue;
 
 			for (c = q->cookies; c; c = c->next) {
-				if (c->expires != 1 && c->expires < now)
+				if (c->expires != -1 && c->expires < now)
 					/* cookie has expired => ignore */
 					continue;
 
@@ -2573,7 +2573,7 @@ char *urldb_get_cookie(const char *url)
 
 		/* Consider p itself - may be the result of Path=/foo */
 		for (c = p->cookies; c; c = c->next) {
-			if (c->expires != 1 && c->expires < now)
+			if (c->expires != -1 && c->expires < now)
 				/* cookie has expired => ignore */
 				continue;
 
@@ -2604,7 +2604,7 @@ char *urldb_get_cookie(const char *url)
 	for (h = (const struct host_part *)p; h && h != &db_root;
 			h = h->parent) {
 		for (c = h->paths.cookies; c; c = c->next) {
-			if (c->expires != 1 && c->expires < now)
+			if (c->expires != -1 && c->expires < now)
 				/* cookie has expired => ignore */
 				continue;
 
@@ -3180,9 +3180,6 @@ struct cookie_internal_data *urldb_parse_cookie(const char *url,
 		c->path = path;
 	}
 
-	if (c->expires == -1)
-		c->expires = 1;
-
 	/* Write back current position */
 	*cookie = cur;
 
@@ -3308,6 +3305,7 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 	struct cookie_internal_data *d;
 	const struct host_part *h;
 	struct path_data *p;
+	time_t now = time(NULL);
 
 	assert(c && scheme && url);
 
@@ -3355,7 +3353,7 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 	}
 
 	if (d) {
-		if (c->expires == 0) {
+		if (c->expires != -1 && c->expires < now) {
 			/* remove cookie */
 			if (d->next)
 				d->next->prev = d->prev;
@@ -3856,8 +3854,8 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 			struct cookie_internal_data *c;
 
 			for (c = p->cookies; c != NULL; c = c->next) {
-				if (c->expires < now)
-					/* Skip expired cookies */
+				if (c->expires == -1 || c->expires < now)
+					/* Skip expired & session cookies */
 					continue;
 
 				fprintf(fp, 
