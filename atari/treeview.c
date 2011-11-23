@@ -61,52 +61,25 @@ static void __CDECL evnt_tv_keybd( WINDOW *win, short buff[8], void * data )
 	bool r=false;
 	long kstate = 0;
 	long kcode = 0;
+	long ucs4;
+	long ik;
 	unsigned short nkc = 0;
 	unsigned short nks = 0;
 	unsigned char ascii;
+
 	NSTREEVIEW tv = (NSTREEVIEW) data;
 	kstate = evnt.mkstate;
 	kcode = evnt.keybd;
 	nkc= gem_to_norm( (short)kstate, (short)kcode );
 	ascii = (nkc & 0xFF);
-	nkc = (nkc & (NKF_CTRL|NKF_SHIFT|0xFF));
-	if( (nkc & (NKF_SHIFT|NKF_CTRL) ) == 0 ) {
-		switch( ascii ) {
-			case NK_BS:
-				r = tree_keypress( tv->tree, KEY_DELETE_LEFT);
-			break;
+	ik = nkc_to_input_key( nkc, &ucs4 );
 
-			case NK_DEL:
-				r = tree_keypress( tv->tree, KEY_DELETE_RIGHT);
-			break;
-
-			case NK_ENTER:
-				r = tree_keypress( tv->tree, KEY_NL);
-			break;
-
-			case NK_RET:
-				r = tree_keypress( tv->tree, KEY_CR);
-			break;
-
-			case NK_ESC:
-				r = tree_keypress( tv->tree, KEY_ESCAPE);
-			break;
-
-			case NK_RIGHT:
-				r = tree_keypress( tv->tree, KEY_RIGHT );
-			break;
-
-			case NK_LEFT:
-				r = tree_keypress( tv->tree, KEY_LEFT );
-			break;
-
-			default:
-			break;
+	if( ik == 0 ){
+		if (ascii >= 9 ) {
+            r = tree_keypress( tv->tree, ucs4 );
 		}
-	}
-	if ( r == false && ( (nkc & NKF_CTRL)==0)  ) {
-		int ucs4 = atari_to_ucs4(ascii);
-		tree_keypress( tv->tree, ucs4 );
+	} else {
+		r = tree_keypress( tv->tree, ik );
 	}
 }
 
