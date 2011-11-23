@@ -63,16 +63,5 @@ void global_track_mouse_state( LGRECT * bwrect, bool within, short, short, short
 void bind_global_events( void );
 void unbind_global_events( void );
 
-/* Global event handlers: */
 
-static void __CDECL global_evnt_apterm( WINDOW * win, short buff[8] );
-static void __CDECL global_evnt_menu( WINDOW * win, short buff[8] );
-static void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data);
-
-/* Menu event handlers: */
-static void __CDECL menu_about(WINDOW *win, int item, int title, void *data);
-
-
-static char * get_accel(int mode, char * message, struct s_accelerator * accel);
-static int parse_accel( char * message, struct s_accelerator * accel);
 #endif

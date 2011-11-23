@@ -68,6 +68,17 @@ extern short last_drag_y;
 #define NUM_MENU_TITLES 7
 static char * menu_titles[NUM_MENU_TITLES] = {NULL};
 
+/* Global event handlers: */
+static void __CDECL global_evnt_apterm( WINDOW * win, short buff[8] );
+static void __CDECL global_evnt_menu( WINDOW * win, short buff[8] );
+static void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data);
+
+/* Menu event handlers: */
+static void __CDECL menu_about(WINDOW *win, int item, int title, void *data);
+
+static char * get_accel(int mode, char * message, struct s_accelerator * accel);
+static int parse_accel( char * message, struct s_accelerator * accel);
+
 
 /* Menu event handlers: */
 static void __CDECL menu_about(WINDOW *win, int item, int title, void *data)
@@ -328,9 +339,8 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 		kstate |= K_LSHIFT|K_RSHIFT;
 	if( window_url_widget_has_focus( gw ) ) {
 		/* make sure we report for the root window and report...: */
- 		done = tb_url_input( gw,  nkc );
-		if( done ) return;
-	} else  {
+		done = tb_url_input( gw, nkc );
+	}  else  {
 		gw_tmp = window_list;
 		/* search for active browser component: */
 		while( gw_tmp != NULL && done == false ) {
