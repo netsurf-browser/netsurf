@@ -98,7 +98,7 @@ static bool nsurl__is_no_escape(unsigned char c)
 		false, true,  true,  true,  true,  true,  true,  true,  /* 60 */
 		true,  true,  true,  true,  true,  true,  true,  true,  /* 68 */
 		true,  true,  true,  true,  true,  true,  true,  true,  /* 70 */
-		true,  true,  true,  false, false, false, true,  false, /* 78 */
+		true,  true,  true,  false, true,  false, true,  false, /* 78 */
 		false, false, false, false, false, false, false, false, /* 80 */
 		false, false, false, false, false, false, false, false, /* 88 */
 		false, false, false, false, false, false, false, false, /* 90 */
