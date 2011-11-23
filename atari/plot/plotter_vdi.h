@@ -23,20 +23,33 @@
 
 struct s_vdi_priv_data {
 	short bufops;
-	void * buf_packed;		/* temp buffer for bitmap conversion */
-	int size_buf_packed;	
-	void * buf_planar;		/* temp buffer for bitmap conversion */
+	/* temp buffer for bitmap conversion: */
+	void * buf_packed;
+	int size_buf_packed;
+
+	/* temp buffer for bitmap conversion: */
+	void * buf_planar;
 	int size_buf_planar;
-	MFDB buf_scr;					/* buffer for plot operations that require device format  */
-	int size_buf_scr;  
+
+	/* buffer for plot operations that require device format, */
+	/* currently used for transparent mfdb blits: */
+	MFDB buf_scr;
+	int size_buf_scr;
 	struct bitmap * buf_scr_compat;
-	HermesFormat vfmt;		/* framebuffer format */
-												/* no screen format here, hermes may not suitable for it */
-	HermesFormat nsfmt;		/* netsurf bitmap format */
+
+	/* intermediate bitmap format */
+	HermesFormat vfmt;
+
+	/* no screen format here, hermes may not suitable for it */
+
+	/* netsurf source bitmap format */
+	HermesFormat nsfmt;
 };
 
-#define CONV_KEEP_LIMIT 512000	/* how much memory should be kept allocated for temp. conversion bitmaps? */
-#define CONV_BLOCK_SIZE	32000	/* how much memory to allocate if some is needed */
+/* how much memory should be kept allocated for temp. conversion bitmaps: */
+#define CONV_KEEP_LIMIT 512000
+/* how much memory to allocate if some is needed: */
+#define CONV_BLOCK_SIZE	32000
 
 /* this is an shortcut cast to access the members of the s_vdi_priv_data */
 #define DUMMY_PRIV(self) ((struct s_vdi_priv_data*)self->priv_data)
@@ -51,9 +64,9 @@ int ctor_plotter_vdi( GEM_PLOTTER p );
 * param y absolute screen coords
 * param w width
 * param h height
-* 
-* This creates an snapshot in RGBA format (NetSurf's native format) 
-*  
+*
+* This creates an snapshot in RGBA format (NetSurf's native format)
+*
 */
 static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, int h);
 
