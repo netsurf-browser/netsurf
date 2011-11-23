@@ -27,35 +27,39 @@
 #include "utils/log.h"
 #include "content/fetch.h"
 
-
 /**
  * filetype -- determine the MIME type of a local file
  */
 const char *fetch_filetype(const char *unix_path)
 {
 	int l;
-	LOG(("unix path %s", unix_path));
+	char * res = (char*)"text/html";
 	l = strlen(unix_path);
-	/* This line is adding for devlopment versions running from the root dir: */
+
+	LOG(("unix path: %s", unix_path));
+
+	/* This line is added for devlopment versions running from the root dir: */
 	if (2 < l && strcasecmp(unix_path + l - 3, "f79") == 0)
-		return "text/css";
-	if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
-		return "text/css";
-	if (2 < l && strcasecmp(unix_path + l - 3, "jpg") == 0)
-		return "image/jpeg";
-	if (3 < l && strcasecmp(unix_path + l - 4, "jpeg") == 0)
-		return "image/jpeg";
-	if (2 < l && strcasecmp(unix_path + l - 3, "gif") == 0)
-		return "image/gif";
-	if (2 < l && strcasecmp(unix_path + l - 3, "png") == 0)
-		return "image/png";
-	if (2 < l && strcasecmp(unix_path + l - 3, "jng") == 0)
-		return "image/jng";
-	if (2 < l && strcasecmp(unix_path + l - 3, "svg") == 0)
-		return "image/svg";
-	if (2 < l && strcasecmp(unix_path + l - 3, "txt") == 0)
-		return "text/plain";
-	return "text/html";
+		res = (char*)"text/css";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "css") == 0)
+		res = (char*)"text/css";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "jpg") == 0)
+		res = (char*)"image/jpeg";
+	else if (3 < l && strcasecmp(unix_path + l - 4, "jpeg") == 0)
+		res = (char*)"image/jpeg";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "gif") == 0)
+		res = (char*)"image/gif";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "png") == 0)
+		res = (char*)"image/png";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "jng") == 0)
+		res = (char*)"image/jng";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "svg") == 0)
+		res = (char*)"image/svg";
+	else if (2 < l && strcasecmp(unix_path + l - 3, "txt") == 0)
+		res = (char*)"text/plain";
+error:
+	LOG(("mime type: %s", res ));
+	return( res );
 }
 
 
