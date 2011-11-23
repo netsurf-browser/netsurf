@@ -54,10 +54,10 @@ static void gui_download_window_destroy( struct gui_download_window * gdw );
 
 static void __CDECL evnt_bt_abort_click
 (
- 	WINDOW *win, 
-	int index, 
-	int unused, 
-	void * data 
+ 	WINDOW *win,
+	int index,
+	int unused,
+	void * data
 )
 {
 	struct gui_download_window * dw = (struct gui_download_window *)data;
@@ -69,23 +69,26 @@ static void __CDECL evnt_bt_abort_click
 }
 
 static void __CDECL evnt_cbrdy_click
-( 
-	WINDOW *win, 
-	int index, 
-	int unused, 
+(
+	WINDOW *win,
+	int index,
+	int unused,
 	void * data
 )
 {
 	struct gui_download_window * dw = (struct gui_download_window *)data;
 	assert( dw != NULL );
+	if( dw->status == NSATARI_DOWNLOAD_COMPLETE ){
+		ApplWrite( _AESapid, WM_CLOSED, win->handle, 0,0,0,0);
+	}
 }
 
-static void __CDECL evnt_close( WINDOW *win, short buff[8], void * data) 
+static void __CDECL evnt_close( WINDOW *win, short buff[8], void * data)
 {
 	struct gui_download_window * dw = (struct gui_download_window *)data;
 	assert( dw != NULL );
 	gui_download_window_destroy( dw );
-	ApplWrite( _AESapid, WM_DESTROY, win->handle, 0,0,0,0); 
+	ApplWrite( _AESapid, WM_DESTROY, win->handle, 0,0,0,0);
 }
 
 static void gui_download_window_destroy( struct gui_download_window * gdw )
@@ -97,7 +100,7 @@ static void gui_download_window_destroy( struct gui_download_window * gdw )
 	download_context_destroy( gdw->ctx );
 	if( gdw->form != NULL ){
 		/* first destroy the form, so that it won't acces the gdw members */
-		ApplWrite( _AESapid, WM_DESTROY, gdw->form->handle, 0,0,0,0); 
+		ApplWrite( _AESapid, WM_DESTROY, gdw->form->handle, 0,0,0,0);
 		EvntWindom( MU_MESAG );
 	}
 	if( gdw->destination ) {
@@ -114,7 +117,7 @@ static void gui_download_window_destroy( struct gui_download_window * gdw )
 		gdw->fd = NULL;
 	}
 	if( gdw->fbuf != NULL ){
-		free( gdw->fbuf );	
+		free( gdw->fbuf );
 	}
 
 	free( gdw );
@@ -137,14 +140,14 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 
 	OBJECT * tree = get_tree(DOWNLOAD);
 	if( tree == NULL )
-		return( NULL ); 
-	gdw = calloc( 1, sizeof(struct gui_download_window) ); 
+		return( NULL );
+	gdw = calloc( 1, sizeof(struct gui_download_window) );
 	if( gdw == NULL )
 		return( NULL );
 	gdw->ctx = ctx;
 	gdw->abort = false;
 	gdw->start = clock() / CLOCKS_PER_SEC;
-	gdw->lastrdw = 0; 
+	gdw->lastrdw = 0;
 	gdw->status = NSATARI_DOWNLOAD_WORKING;
 	gdw->parent = parent;
 	gdw->fbufsize = MAX(BUFSIZ, 48000);
@@ -176,7 +179,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	}
 
 	char * tpath = alloca(strlen(filename) + strlen(path) + 2 );
-	char * tpath2 = alloca(PATH_MAX);	
+	char * tpath2 = alloca(PATH_MAX);
 	strcpy( tpath, path );
 	if( path[strlen(path)-1] != '/' &&  path[strlen(path)-1] != '\\' ) {
 		strcat( tpath, "/");
@@ -193,10 +196,10 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	}
 	gdw->fbuf = malloc( gdw->fbufsize+1 );
 	if( gdw->fbuf != NULL ){
-		setvbuf( gdw->fd, gdw->fbuf, _IOFBF, gdw->fbufsize ); 
+		setvbuf( gdw->fd, gdw->fbuf, _IOFBF, gdw->fbufsize );
 	}
 	gdw->form = mt_FormCreate( &app, tree, WAT_FORM,
-								NULL, (char*)"Download", 
+								NULL, (char*)"Download",
 								NULL, true, true );
 	if( gdw->form == NULL || gdw->fd == NULL ){
 		free( filename );
@@ -205,11 +208,11 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	}
 
 	tree = ObjcTree(OC_FORM, gdw->form );
-	ObjcAttachFormFunc( gdw->form, DOWNLOAD_BT_ABORT, 
-		evnt_bt_abort_click, gdw 
+	ObjcAttachFormFunc( gdw->form, DOWNLOAD_BT_ABORT,
+		evnt_bt_abort_click, gdw
 	);
-	ObjcAttachFormFunc( gdw->form, DOWNLOAD_CB_CLOSE_RDY, 
-		evnt_cbrdy_click, gdw 
+	ObjcAttachFormFunc( gdw->form, DOWNLOAD_CB_CLOSE_RDY,
+		evnt_cbrdy_click, gdw
 	);
 	EvntDataAdd( gdw->form, WM_CLOSED, evnt_close, gdw, EV_TOP);
 	strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
@@ -226,7 +229,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	return gdw;
 }
 
-nserror gui_download_window_data(struct gui_download_window *dw, 
+nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
 	uint32_t p = 0;
@@ -257,19 +260,19 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 		}
 		speed = dw->size_downloaded / sdiff;
 		tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100), DOWNLOAD_BAR_MAX ), 1);
-		if( dw->size_total > 0 ){  
-			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
-				"%lu%s", p, "%" 
+		if( dw->size_total > 0 ){
+			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
+				"%lu%s", p, "%"
 			);
 		} else {
-			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
+			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
 				"%s", "?%"
 			);
 		}
-		snprintf( (char*)&dw->lbl_speed, MAX_SLEN_LBL_SPEED, "%s/s", 
+		snprintf( (char*)&dw->lbl_speed, MAX_SLEN_LBL_SPEED, "%s/s",
 			human_friendly_bytesize(speed)
 		);
-		snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",  
+		snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",
 			human_friendly_bytesize(dw->size_downloaded),
 			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : "?"
 		);
@@ -300,10 +303,10 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 	OBJECT * tree = ObjcTree(OC_FORM, dw->form );
 	tree[DOWNLOAD_PROGRESS_DONE].ob_width = DOWNLOAD_BAR_MAX;
-	snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT, 
-		"%lu%s", 100, "%" 
+	snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
+		"%lu%s", 100, "%"
 	);
-	snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",  
+	snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",
 		human_friendly_bytesize(dw->size_downloaded),
 		(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : human_friendly_bytesize(dw->size_downloaded)
 	);
@@ -312,6 +315,6 @@ void gui_download_window_done(struct gui_download_window *dw)
 	ObjcChange( OC_FORM, dw->form, DOWNLOAD_BT_ABORT, DISABLED, FALSE);
 	snd_rdw( dw->form );
 	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
-		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0); 
+		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0);
 	}
 }
