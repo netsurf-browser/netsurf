@@ -291,7 +291,6 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 	if( ik == 0 && ( (nkc & NKF_CTRL)==0)  ) {
 		if (ascii >= 9 ) {
 			*ucs4_out = atari_to_ucs4(ascii);
-						printf("ucs4: %lu\n", ucs4_out);
 		}
 	}
 	return ( ik );
