@@ -89,12 +89,12 @@ static void __CDECL evnt_tv_keybd( WINDOW *win, short buff[8], void * data )
 			break;
 
 			case NK_ESC:
-				r = tree_keypress( tv->tree, KEY_ESCAPE);		
+				r = tree_keypress( tv->tree, KEY_ESCAPE);
 			break;
 
 			case NK_RIGHT:
 				r = tree_keypress( tv->tree, KEY_RIGHT );
-			break;	
+			break;
 
 			case NK_LEFT:
 				r = tree_keypress( tv->tree, KEY_LEFT );
@@ -107,7 +107,7 @@ static void __CDECL evnt_tv_keybd( WINDOW *win, short buff[8], void * data )
 	if ( r == false && ( (nkc & NKF_CTRL)==0)  ) {
 		int ucs4 = atari_to_ucs4(ascii);
 		tree_keypress( tv->tree, ucs4 );
-	}	
+	}
 }
 
 
@@ -130,8 +130,8 @@ static void __CDECL evnt_tv_redraw( WINDOW *win, short buff[8], void * data )
 		clip.g_h = work.g_h + clip.g_y;
 		clip.g_y = 0;
 	}
-	if( clip.g_h > 0 && clip.g_w > 0 ) { 
-		atari_treeview_request_redraw( win->xpos*win->w_u + clip.g_x, win->ypos*win->h_u + clip.g_y, 
+	if( clip.g_h > 0 && clip.g_w > 0 ) {
+		atari_treeview_request_redraw( win->xpos*win->w_u + clip.g_x, win->ypos*win->h_u + clip.g_y,
 			clip.g_w, clip.g_h, tv
 		);
 	}
@@ -191,8 +191,8 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 					gem_set_cursor(&gem_cursors.cross);
 				} else {
 					/* todo: add more isual indication (grafbox?) */
-					ignore = true;		
-					gem_set_cursor(&gem_cursors.cross);	
+					ignore = true;
+					gem_set_cursor(&gem_cursors.cross);
 				}
 			} else {
 				if( bmstate & BROWSER_MOUSE_DRAG_ON ){
@@ -201,7 +201,7 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 					gem_set_cursor(&gem_cursors.arrow);
 					ignore = true;
 				} else {
-					bmstate =  BROWSER_MOUSE_CLICK_1;	
+					bmstate =  BROWSER_MOUSE_CLICK_1;
 					mouse_hold_start[0] = 0;
 				}
 			}
@@ -210,7 +210,7 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 			tree_mouse_action(tv->tree, bmstate, rx, ry );
 		}
 		bmstate &= ~(BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1 );
-	} 
+	}
 }
 
 static void __CDECL evnt_tv_m1( WINDOW *win, short buff[8], void * data)
@@ -232,10 +232,10 @@ static void __CDECL evnt_tv_m1( WINDOW *win, short buff[8], void * data)
 			tree_drag_end(tv->tree, bmstate, tv->startdrag.x, tv->startdrag.y, rx, ry);
 			gem_set_cursor(&gem_cursors.arrow);
 		}
-	}	
+	}
 }
 
-NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win ) 
+NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
 {
 	if( win == NULL )
 		return( NULL );
@@ -252,7 +252,7 @@ NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
 
 	win->w_u = 16;
 	win->h_u = 16;
-	
+
 	EvntDataAdd( new->window, WM_XBUTTON, evnt_tv_mbutton, new, EV_BOT );
 	EvntDataAttach( new->window, WM_REDRAW, evnt_tv_redraw, new );
 	EvntDataAttach( new->window, WM_XKEYBD, evnt_tv_keybd, new );
@@ -275,7 +275,7 @@ void atari_treeview_close( NSTREEVIEW tv )
 	}
 }
 
-void atari_treeview_destroy( NSTREEVIEW tv ) 
+void atari_treeview_destroy( NSTREEVIEW tv )
 {
 	if( tv != NULL ){
 		tv->disposing = true;
@@ -319,17 +319,18 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 			plotter->resize(plotter, work.g_w, work.g_h);
 			plotter->move(plotter, work.g_x, work.g_y );
+			plotter->lock( plotter );
 
 			todo[0] = work.g_x;
 			todo[1] = work.g_y;
 			todo[2] = todo[0] + work.g_w-1;
 			todo[3] = todo[1] + work.g_h-1;
 			vs_clip(plotter->vdi_handle, 1, (short*)&todo );
-			
-			if( wind_get(tv->window->handle, WF_FIRSTXYWH, 
+
+			if( wind_get(tv->window->handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
 				while (todo[2] && todo[3]) {
-					
+
 					/* convert screen to treeview coords: */
 					todo[0] = todo[0] - work.g_x + tv->window->xpos*tv->window->w_u;
 					todo[1] = todo[1] - work.g_y + tv->window->ypos*tv->window->h_u;
@@ -343,18 +344,20 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 					}
 
 					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
-						tree_draw(tv->tree, -tv->window->xpos*16, -tv->window->ypos*16, 
+						tree_draw(tv->tree, -tv->window->xpos*16, -tv->window->ypos*16,
 							todo[0], todo[1], todo[2], todo[3], &ctx
 						);
 					}
-					if (wind_get(tv->window->handle, WF_NEXTXYWH, 
+					if (wind_get(tv->window->handle, WF_NEXTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
 						break;
 					}
 				}
 			} else {
+				plotter->unlock( plotter );
 				return;
 			}
+			plotter->unlock( plotter );
 			vs_clip(plotter->vdi_handle, 0, (short*)&todo);
 			tv->redraw = false;
 			tv->rdw_area.g_x = 65000;
@@ -395,7 +398,7 @@ void atari_treeview_request_redraw(int x, int y, int w, int h, void *pw)
 			int oldy1 = tv->rdw_area.g_y + tv->rdw_area.g_h;
 			tv->rdw_area.g_x = MIN(tv->rdw_area.g_x, x);
 			tv->rdw_area.g_y = MIN(tv->rdw_area.g_y, y);
-			tv->rdw_area.g_w = ( oldx1 > newx1 ) ? oldx1 - tv->rdw_area.g_x : newx1 - tv->rdw_area.g_x;  
+			tv->rdw_area.g_w = ( oldx1 > newx1 ) ? oldx1 - tv->rdw_area.g_x : newx1 - tv->rdw_area.g_x;
 			tv->rdw_area.g_h = ( oldy1 > newy1 ) ? oldy1 - tv->rdw_area.g_y : newy1 - tv->rdw_area.g_y;
 		}
 	}
