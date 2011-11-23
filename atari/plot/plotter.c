@@ -32,6 +32,7 @@
 #include "atari/plot/eddi.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
+#include "atari/plot/plotter_nvdi.h"
 #include "atari/plot/font_vdi.h"
 #include "atari/plot/font_internal.h"
 #include "atari/plot/font_freetype.h"
@@ -85,8 +86,7 @@ struct s_vdi_sysinfo vdi_sysinfo;
 struct s_driver_table_entry screen_driver_table[] =
 {
 	{(char*)"vdi", ctor_plotter_vdi, 0, 32},
-	{(char*)"screen.ldg", ctor_plotter_vdi, PLOT_FLAG_OFFSCREEN, 32 },
-	{(char*)"vdi_offscreen", ctor_plotter_vdi, PLOT_FLAG_OFFSCREEN, 32},
+/*	{(char*)"nvdi", ctor_plotter_vdi, PLOT_FLAG_OFFSCREEN, 32},*/
 	{(char*)NULL, NULL, 0, 0 }
 };
 
@@ -229,7 +229,7 @@ struct s_vdi_sysinfo * read_vdi_sysinfo( short vdih, struct s_vdi_sysinfo * info
 
 
 /*
-	lookup an plotter ID by name 
+	lookup an plotter ID by name
 */
 static int drvrname_idx( char * name )
 {
@@ -246,8 +246,8 @@ static int drvrname_idx( char * name )
 	}
 }
 
-/* 
-	lookup of font plotter ID by name 
+/*
+	lookup of font plotter ID by name
 */
 static int font_drvrname_idx( char * name )
 {
@@ -264,7 +264,7 @@ static int font_drvrname_idx( char * name )
 	}
 }
 
-/* 
+/*
 	Get an plotter info entry, the entry contains an pointer to ctor
 */
 struct s_driver_table_entry * get_screen_driver_entry( char * name )
@@ -276,8 +276,8 @@ struct s_driver_table_entry * get_screen_driver_entry( char * name )
 	return( &screen_driver_table[idx] );
 }
 
-/* 
-	Get an font plotter info entry, the entry contains an pointer to ctor. 
+/*
+	Get an font plotter info entry, the entry contains an pointer to ctor.
 */
 struct s_font_driver_table_entry * get_font_driver_entry( char * name )
 {
@@ -289,8 +289,8 @@ struct s_font_driver_table_entry * get_font_driver_entry( char * name )
 }
 
 
-/* 
-	Create an new text plotter object 
+/*
+	Create an new text plotter object
 */
 FONT_PLOTTER new_font_plotter( int vdihandle, char * name, unsigned long flags, int * error)
 {
@@ -334,8 +334,8 @@ FONT_PLOTTER new_font_plotter( int vdihandle, char * name, unsigned long flags, 
 static bool init=false;
 static int inst=0;
 
-/* 
-	Create an new plotter object 
+/*
+	Create an new plotter object
 */
 GEM_PLOTTER new_plotter(int vdihandle, char * name, GRECT * loc_size,
 						int virt_bpp, unsigned long flags, FONT_PLOTTER fplotter, int * error )
@@ -343,7 +343,7 @@ GEM_PLOTTER new_plotter(int vdihandle, char * name, GRECT * loc_size,
 	int res = 0-ERR_PLOTTER_NOT_AVAILABLE;
 	int i;
 	assert( fplotter != NULL );
-	
+
 	GEM_PLOTTER gemplotter = (GEM_PLOTTER)malloc( sizeof(struct s_gem_plotter) );
 	if( !gemplotter ) {
 		*error = 0-ERR_NO_MEM;
@@ -410,7 +410,7 @@ int delete_plotter( GEM_PLOTTER p )
 		p = NULL;
 		inst--;
 		if( inst == 0 ){
-			
+
 		}
 	}
 	else
@@ -444,7 +444,7 @@ int calc_chunked_buffer_size(int x, int y, int stride, int bpp)
    return( (x * (bpp >> 3)) * y );
 }
 
-/* 
+/*
 	x - x coord
 	y - y coord
 	stride - stride in bytes
@@ -485,7 +485,7 @@ void update_visible_rect( GEM_PLOTTER p )
 		CURFB(p).vis_h = common.g_h;
 		if( CURFB(p).x < screen.g_x )
 			CURFB(p).vis_x = frame.g_w - common.g_w;
-		else 
+		else
 			CURFB(p).vis_x = 0;
 		if( CURFB(p).y <screen.g_y )
 			CURFB(p).vis_y = frame.g_h - common.g_h;
@@ -494,7 +494,7 @@ void update_visible_rect( GEM_PLOTTER p )
 	} else {
 		CURFB(p).vis_w = CURFB(p).vis_h = 0;
 		CURFB(p).vis_x = CURFB(p).vis_y = 0;
-	}	
+	}
 }
 
 /*
@@ -607,8 +607,8 @@ void rgb_to_vdi1000( unsigned char * in, unsigned short * out )
 
 static short web_std_colors[6] = {0, 51, 102, 153, 204, 255};
 
-/* 
-	Convert an RGB color into an index into the 216 colors web pallette 
+/*
+	Convert an RGB color into an index into the 216 colors web pallette
 */
 short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 {
@@ -632,14 +632,17 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 	return( tval[2]*36+tval[1]*6+tval[0] );
 }
 
+/*
+	bpp: bits per pixel,
 
+*/
 int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
 {
 	int dststride;
 	dststride = MFDB_STRIDE( w );
-	int size = MFDB_SIZE( bpp, dststride, h ); 
-	if( bpp > 0 ) { 
-		if( (flags & MFDB_FLAG_NOALLOC) == 0  ) { 
+	int size = MFDB_SIZE( bpp, dststride, h );
+	if( bpp > 0 ) {
+		if( (flags & MFDB_FLAG_NOALLOC) == 0  ) {
 			out->fd_addr = malloc( size );
 			if( out->fd_addr == NULL ){
 				return( 0 );
@@ -714,7 +717,7 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set)
 		newclip[3] = MIN(CURFB(self).y+CURFB(self).h, newclip[1] + (c->y1 - c->y0) )-1;
 		vs_clip( self->vdi_handle, 1, (short*)&newclip );
 	} else {
-		vs_clip( self->vdi_handle, 1, (short *)&prev_vdi_clip );	
+		vs_clip( self->vdi_handle, 1, (short *)&prev_vdi_clip );
 	}
 }
 
