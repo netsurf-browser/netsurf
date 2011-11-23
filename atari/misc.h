@@ -19,6 +19,9 @@
 #ifndef NS_ATARI_MISC_H
 #define NS_ATARI_MISC_H
 
+#include "cflib.h"
+#include "desktop/textinput.h"
+
 #define SBUF8_TO_LBUF8(sbuf,lbuf)\
 	lbuf[0] = (long)sbuf[0];\
 	lbuf[1] = (long)sbuf[1];\
@@ -39,4 +42,5 @@ void dbg_grect( char * str, GRECT * r );
 void * ldg_open( char * name, short * global );
 void * ldg_find( char * name, short * ldg );
 int ldg_close( void * ldg, short * global );
+long nkc_to_input_key(short nkc, long * ucs4_out);
 #endif

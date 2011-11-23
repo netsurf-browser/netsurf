@@ -35,6 +35,7 @@
 #include "atari/toolbar.h"
 #include "atari/browser.h"
 #include "atari/misc.h"
+#include "cflib.h"
 
 extern void * h_gem_rsrc;
 
@@ -50,7 +51,6 @@ void warn_user(const char *warning, const char *detail)
 void die(const char *error)
 {
 	printf("%s\n", error);
-	sleep( 3 );
 	exit(1);
 }
 
@@ -154,7 +154,7 @@ OBJECT *get_tree( int idx) {
 void gem_set_cursor( MFORM_EX * cursor )
 {
 	static unsigned char flags = 255;
-	static int number = 255; 
+	static int number = 255;
 	if( flags == cursor->flags && number == cursor->number )
 		return;
 	if( cursor->flags & MFORM_EX_FLAG_USERFORM ) {
@@ -166,23 +166,155 @@ void gem_set_cursor( MFORM_EX * cursor )
 	flags = cursor->flags;
 }
 
+long nkc_to_input_key(short nkc, long * ucs4_out)
+{
+	unsigned char ascii = (nkc & 0xFF);
+	nkc = (nkc & (NKF_CTRL|NKF_SHIFT|0xFF));
+	long ik = 0;
+	*ucs4_out = 0;
+
+	/* shift + cntrl key: */
+	if( ((nkc & NKF_CTRL) == NKF_CTRL) && ((nkc & (NKF_SHIFT))!=0) ) {
+
+	}
+	/* cntrl key only: */
+	else if( (nkc & NKF_CTRL) == NKF_CTRL ) {
+		switch ( ascii ) {
+			case 'A':
+				ik = KEY_SELECT_ALL;
+			break;
+
+			case 'C':
+				ik = KEY_COPY_SELECTION;
+			break;
+
+			case 'X':
+				ik = KEY_CUT_SELECTION;
+			break;
+
+			case 'V':
+				ik = KEY_PASTE;
+			break;
+
+			default:
+			break;
+		}
+	}
+	/* shift key only: */
+	else if( (nkc & NKF_SHIFT) != 0 ) {
+		switch( ascii ) {
+			case NK_TAB:
+				ik = KEY_SHIFT_TAB;
+			break;
+
+			case NK_LEFT:
+				ik = KEY_LINE_START;
+			break;
+
+			case NK_RIGHT:
+				ik = KEY_LINE_END;
+			break;
+
+			case NK_UP:
+				ik = KEY_PAGE_UP;
+			break;
+
+			case NK_DOWN:
+				ik = KEY_PAGE_DOWN;
+			break;
+
+			default:
+			break;
+		}
+	}
+	/* No modifier keys: */
+	else {
+		switch( ascii ) {
+			case NK_BS:
+				ik = KEY_DELETE_LEFT;
+			break;
+
+			case NK_DEL:
+				ik = KEY_DELETE_RIGHT;
+			break;
+
+			case NK_TAB:
+				ik = KEY_TAB;
+			break;
+
+
+			case NK_ENTER:
+				ik = KEY_NL;
+			break;
+
+			case NK_RET:
+				ik = KEY_CR;
+			break;
+
+			case NK_ESC:
+				ik = KEY_ESCAPE;
+			break;
+
+			case NK_CLRHOME:
+				ik = KEY_TEXT_START;
+			break;
+
+			case NK_RIGHT:
+				ik = KEY_RIGHT;
+			break;
+
+			case NK_LEFT:
+				ik = KEY_LEFT;
+			break;
+
+			case NK_UP:
+				ik = KEY_UP;
+			break;
+
+			case NK_DOWN:
+				ik = KEY_DOWN;
+			break;
+
+			case NK_M_PGUP:
+				ik = KEY_PAGE_UP;
+			break;
+
+			case NK_M_PGDOWN:
+				ik = KEY_PAGE_DOWN;
+			break;
+
+			default:
+			break;
+		}
+	}
+
+	if( ik == 0 && ( (nkc & NKF_CTRL)==0)  ) {
+		if (ascii >= 9 ) {
+			*ucs4_out = atari_to_ucs4(ascii);
+						printf("ucs4: %lu\n", ucs4_out);
+		}
+	}
+	return ( ik );
+}
+
+
 void dbg_lgrect( char * str, LGRECT * r )
 {
-	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str, 
+	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
 		r->g_x, r->g_y, r->g_w, r->g_h );
 }
 
 void dbg_grect( char * str, GRECT * r )
 {
-	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str, 
+	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
 		r->g_x, r->g_y, r->g_w, r->g_h );
-} 
+}
 
 void dbg_pxy( char * str, short * pxy )
 {
-	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str, 
+	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
 		pxy[0], pxy[1], pxy[2], pxy[3] );
-} 
+}
 
 /* some LDG functions here to reduce dependencies */
 void * ldg_open( char * name, short * global )
@@ -195,7 +327,7 @@ void * ldg_find( char * name, short * ldg )
 	return( NULL );
 }
 
-int ldg_close( void * ldg, short * global ) 
+int ldg_close( void * ldg, short * global )
 {
 	return( 0 );
-} 
+}
