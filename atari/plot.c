@@ -41,7 +41,6 @@
 GEM_PLOTTER plotter = NULL;
 GEM_FONT_PLOTTER fplotter = NULL;
 
-extern APPvar * appv;
 extern short vdih;
 
 /*
@@ -57,9 +56,9 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 	struct s_driver_table_entry * drvinfo;
 	int flags = 0;
 
-	if( option_atari_dither == 1) 
+	if( option_atari_dither == 1)
 		flags |= PLOT_FLAG_DITHER;
-	if( option_atari_transparency == 1 ) 
+	if( option_atari_transparency == 1 )
 		flags |= PLOT_FLAG_TRANS;
 
 	vdih = app.graf.handle;
@@ -98,14 +97,14 @@ void plot_set_knockout( int set ){
 	}
 }
 
-bool plot_rectangle( int x0, int y0, int x1, int y1, 
+bool plot_rectangle( int x0, int y0, int x1, int y1,
 			const plot_style_t *style )
 {
 	plotter->rectangle( plotter, x0, y0, x1, y1, style );
 	return ( true );
 }
 
-static bool plot_line( int x0, int y0, int x1, int y1, 
+bool plot_line( int x0, int y0, int x1, int y1,
 			const plot_style_t *style )
 {
 	plotter->line( plotter, x0, y0, x1, y1, style );
@@ -160,33 +159,33 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 	int bmpw,bmph;
 	struct rect clip;
-	
+
 	if( option_suppress_images != 0 ) {
 		return( true );
 	}
 
-	bmpw = bitmap_get_width(bitmap);	
+	bmpw = bitmap_get_width(bitmap);
 	bmph = bitmap_get_height(bitmap);
 
-	if ( repeat_x || repeat_y ) {	
+	if ( repeat_x || repeat_y ) {
 		plotter_get_clip( plotter, &clip );
-		if( repeat_x && width == 1 && repeat_y && height == 1 ){			
+		if( repeat_x && width == 1 && repeat_y && height == 1 ){
 			width = MAX( width, clip.x1 - x );
 			height = MAX( height,  clip.y1 - y );
 		}
 		else if( repeat_x && width == 1 ){
 			width = MAX( width, clip.x1 - x);
-		} 
+		}
 		else if( repeat_y && height == 1){
 			height = MAX( height, clip.y1 - y );
-		} 		
+		}
 	}
 
 	if(  width != bmpw || height != bmph ) {
 		plotter->bitmap_resize(plotter, bitmap, width, height );
 		if( bitmap->resized )
 			bm = bitmap->resized;
-		else 
+		else
 			bm = bitmap;
 	} else {
 		bm = bitmap;
@@ -204,7 +203,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 		int xf,yf;
 		int xoff = x;
 		int yoff = y;
-		
+
 		if (yoff > clip.y0 )
 			yoff = (clip.y0 - height) + ((yoff - clip.y0) % height);
 		if (xoff > clip.x0 )
