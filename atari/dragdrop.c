@@ -20,6 +20,7 @@
 
 #include "windom.h"
 #include "dragdrop.h"
+#include "cflib.h"
 
 #ifndef EACCDN
 #define EACCDN (-36)
@@ -79,10 +80,10 @@ short ddcreate(short *pipe)
 		return(-1);
 
 	*pipe = (pipename[17] << 8) | pipename[18];
-	
+
 
 	/* Signalhandler konfigurieren */
-	
+
 	ddgetsig(&pipesig);
 
 
@@ -121,7 +122,7 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 
 
 	/* AES-Message define and post */
-	
+
 	msg[0] = AP_DRAGDROP;
 	msg[1] = _AESapid;
 	msg[2] = 0;
@@ -141,20 +142,20 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 
 
 	/* receiver reaction */
-	
+
 	fd_mask = (1L << fd);
 	i = Fselect(DD_TIMEOUT, &fd_mask, 0L, 0L);
 	if (!i || !fd_mask)
 	{
 		/* Timeout eingetreten */
-		
+
 		ddclose(fd);
 		return(-2);
 	}
 
 
 	/* le recepteur refuse (lecture du pipe) */
-	
+
 	if (Fread(fd, 1L, &c) != 1L)
 	{
 		ddclose(fd);
@@ -166,7 +167,7 @@ short ddmessage(short apid, short fd, short winid, short mx, short my, short kst
 		ddclose(fd);
 		return(-1);
 	}
-	
+
 	return(1);
 }
 
@@ -227,10 +228,10 @@ short ddstry(short fd, char *ext, char *text, char *name, long size)
 {
 	char c;
 	short hdrlen, i;
-	
+
 	/* 4 Bytes fr "ext", 4 Bytes fr "size",
 	   2 Bytes fr Stringendnullen */
-	
+
 	hdrlen = (short) (4 + 4 + strlen(text)+1 + strlen(name)+1);
 
 
@@ -249,7 +250,7 @@ short ddstry(short fd, char *ext, char *text, char *name, long size)
 
 
 	/* auf die Antwort warten */
-	
+
 	if (Fread(fd, 1L, &c) != 1L)
 		return(DD_NAK);
 
@@ -267,10 +268,10 @@ short ddstry(short fd, char *ext, char *text, char *name, long size)
 void ddclose(short fd)
 {
 	/* Signalhandler restaurieren */
-	
+
 	ddsetsig(pipesig);
-	
-	
+
+
 	Fclose(fd);
 }
 
@@ -346,10 +347,10 @@ short ddopen(short ddnam, char ddmsg)
 
 
 	/* Signalhandler konfigurieren */
-	
+
 	ddgetsig(&pipesig);
-	
-	
+
+
 	if (Fwrite((short) fd, 1L, &ddmsg) != 1L)
 	{
 		ddclose((short) fd);
@@ -426,7 +427,7 @@ short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
 
 	if (Fread(fd, 2L, &hdrlen) != 2L)
 		return(-1);
-	
+
 
 	if (hdrlen < 9)	/* il reste au minimum 11 - 2 = 9 octets a lire */
 	{
@@ -434,31 +435,31 @@ short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
 
 		return(-1);	/* erreur taille incorrecte */
 	}
-	
+
 	if (Fread(fd, 4L, whichext) != 4L)	/* lecture de l'extension */
 		return(-1);
-	
+
 	if (Fread(fd, 4L, size) != 4L)		/* lecture de la longueurs des donn‚es */
 		return(-1);
-	
+
 	hdrlen -= 8;	/* on a lu 8 octets */
-	
+
 	if (hdrlen > DD_NAMEMAX*2)
 		i = DD_NAMEMAX*2;
 	else
 		i = hdrlen;
 
 	len = i;
-	
+
 	if (Fread(fd, (long) i, buf) != (long) i)
 		return(-1);
-	
+
 	hdrlen -= i;
-	
+
 	strncpy(name, buf, DD_NAMEMAX);
-	
+
 	i = (short) strlen(name) + 1;
-	
+
 	if (len - i > 0)
 		strncpy(file, buf + i, DD_NAMEMAX);
 	else
@@ -466,15 +467,15 @@ short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
 
 
 	/* weitere Bytes im Header in den Mll */
-	
+
 	while (hdrlen > DD_NAMEMAX*2)
 	{
 		if (Fread(fd, DD_NAMEMAX*2, buf) != DD_NAMEMAX*2)
 			return(-1);
-		
+
 		hdrlen -= DD_NAMEMAX*2;
 	}
-	
+
 	if (hdrlen > 0)
 	{
 		if (Fread(fd, (long) hdrlen, buf) != (long) hdrlen)
@@ -487,7 +488,7 @@ short ddrtry(short fd, char *name, char *file, char *whichext, long *size)
 
 
 /*
-*	Sendet der Senderapplikation eine 1 Byte Antwort 
+*	Sendet der Senderapplikation eine 1 Byte Antwort
 *
 *	Eingabeparameter:
 *	fd	-	Filehandle der Pipe (von ddopen())
@@ -508,7 +509,7 @@ short ddreply(short fd, char ack)
 		ddclose(fd);
 		return(-1);
 	}
-	
+
 	return(1);
 }
 
