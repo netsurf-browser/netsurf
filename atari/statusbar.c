@@ -74,14 +74,14 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 	vsl_type( vdih, 1);
 	vsl_width( vdih, 1 );
 	vst_color(vdih, BLACK);
-	//vst_point( vdih, 9, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
-	vst_height( vdih, atari_sysinfo.medium_sfont_pxh, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );	
+
+	vst_height( vdih, atari_sysinfo.medium_sfont_pxh, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
 	vst_alignment(vdih, 0, 5, &d, &d );
 	vst_effects( vdih, 0 );
 	pxyclip[0] = lclip.g_x;
 	pxyclip[1] = lclip.g_y;
-	pxyclip[2] = lclip.g_x + lclip.g_w;
-	pxyclip[3] = lclip.g_y + lclip.g_h;
+	pxyclip[2] = lclip.g_x + lclip.g_w-1;
+	pxyclip[3] = lclip.g_y + lclip.g_h-1;
 
 	vs_clip(vdih, 1, (short*)&pxyclip );
 	vswr_mode( vdih, MD_REPLACE );
@@ -102,7 +102,7 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 
 	pxy[0] = work.g_x;
 	pxy[1] = work.g_y+1;
-	pxy[2] = work.g_x + work.g_w;
+	pxy[2] = work.g_x + work.g_w-1;
 	pxy[3] = work.g_y + work.g_h-1;
 	v_bar( vdih, pxy );
 
@@ -133,17 +133,10 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 		}
 	}
 	vswr_mode( vdih, MD_REPLACE );
-
-	pxy[0] = work.g_x + work.g_w - MOVER_WH;
-	pxy[1] = work.g_y + 1;
-	pxy[2] = work.g_x + work.g_w;
-	pxy[3] = work.g_y + work.g_h-1;
-	v_bar( vdih, pxy );
-
-	pxy[0] = work.g_x + work.g_w - MOVER_WH;
+	pxy[0] = work.g_x + work.g_w;
 	pxy[1] = work.g_y + work.g_h;
-	pxy[2] = work.g_x + work.g_w - MOVER_WH;
-	pxy[3] = work.g_y + work.g_h - MOVER_WH;
+	pxy[2] = work.g_x + work.g_w;
+	pxy[3] = work.g_y + work.g_h-work.g_h;
 	v_pline( vdih, 2, (short*)&pxy );
 
 	vs_clip(vdih, 0, (short*)&pxyclip );
@@ -156,35 +149,15 @@ static void __CDECL evnt_sb_click( COMPONENT *c, long buff[8] )
 	short sbuff[8], mx, my;
 	LGRECT work;
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
-	if( evnt.mx >= work.g_x + (work.g_w - MOVER_WH) && evnt.mx <= work.g_x + work.g_w &&
-		evnt.my >= work.g_y + (work.g_h - MOVER_WH) && evnt.my <= work.g_y + work.g_h ) {
-		/* click into the resizer region */
-		struct gui_window * g;
-		for( g = window_list; g; g=g->next ) {
-			if( g->root->statusbar->comp == c ) {
-				if( g->root->statusbar->resize_init == true ){
-					g->root->statusbar->resize_init = false;
-					g->root->statusbar->resize_delta_x = g->root->loc.g_x+g->root->loc.g_w - evnt.mx;
-					g->root->statusbar->resize_delta_y = g->root->loc.g_y+g->root->loc.g_h - evnt.my;
-				}
-				sbuff[0] = WM_SIZED;
-				sbuff[1] = (short)buff[0];
-				sbuff[2] = 0;
-				sbuff[3] = g->root->handle->handle;
-				sbuff[4] = g->root->loc.g_x;
-				sbuff[5] = g->root->loc.g_y;
-				sbuff[6] = evnt.mx - sbuff[4] + g->root->statusbar->resize_delta_x;
-				sbuff[7] = evnt.my - sbuff[5] + g->root->statusbar->resize_delta_y;
-				evnt_window_resize( g->root->handle, sbuff, g );
-			}
-		}
+	if( evnt.mx >= work.g_x + (work.g_w) && evnt.mx <= work.g_x + work.g_w &&
+		evnt.my >= work.g_y + (work.g_h) && evnt.my <= work.g_y + work.g_h ) {
+		// click within sb button
 	}
 }
 
 CMP_STATUSBAR sb_create( struct gui_window * gw )
 {
 	CMP_STATUSBAR s = malloc( sizeof(struct s_statusbar) );
-	s->resize_init = true;
 	s->attached = false;
 	s->comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL, STATUSBAR_HEIGHT, 0);
 	s->comp->rect.g_h = STATUSBAR_HEIGHT;

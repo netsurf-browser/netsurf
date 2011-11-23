@@ -21,7 +21,6 @@
 
 #define STATUSBAR_HEIGHT 16
 #define STATUSBAR_MAX_SLEN 255
-#define MOVER_WH 16
 
 struct s_statusbar
 {
@@ -29,9 +28,6 @@ struct s_statusbar
 	char text[STATUSBAR_MAX_SLEN+1];
 	size_t textlen;
 	bool attached;
-	bool resize_init;
-	short resize_delta_x;
-	short resize_delta_y;
 };
 
 
