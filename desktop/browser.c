@@ -758,6 +758,10 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	/* Get download out of the way */
 	if (download) {
 		llcache_handle *l;
+		struct browser_window *root;
+
+		root = browser_window_get_root(bw);
+		assert(root != NULL);
 
 		fetch_flags |= LLCACHE_RETRIEVE_FORCE_FETCH;
 		fetch_flags |= LLCACHE_RETRIEVE_STREAM_DATA;
@@ -770,7 +774,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		} else if (error != NSERROR_OK) {
 			LOG(("Failed to fetch download: %d", error));
 		} else {
-			error = download_context_create(l, bw->window);
+			error = download_context_create(l, root->window);
 			if (error != NSERROR_OK) {
 				LOG(("Failed creating download context: %d", 
 						error));
@@ -834,8 +838,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
 
-	/* Only permit requests for root contents to become downloads */
-	if (bw->window != NULL)
+	/* Verifiable fetches may trigger a download */
+	if (verifiable)
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
 
 	error = hlcache_handle_retrieve(nsurl,
@@ -1330,14 +1334,15 @@ void browser_window_set_dimensions(struct browser_window *bw,
 void browser_window_convert_to_download(struct browser_window *bw,
 		llcache_handle *stream)
 {
+	struct browser_window *root = browser_window_get_root(bw);
 	nserror error;
 
-	error = download_context_create(stream, bw->window);
+	assert(root != NULL);
+
+	error = download_context_create(stream, root->window);
 	if (error != NSERROR_OK) {
 		llcache_handle_abort(stream);
 		llcache_handle_release(stream);
-
-		return;
 	}
 
 	/* remove content from browser window */
