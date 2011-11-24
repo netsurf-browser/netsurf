@@ -1258,12 +1258,18 @@ void layout_block_add_scrollbar(struct box *box, int which)
 			(box->object && content_get_type(box->object) ==
 					CONTENT_HTML)) {
 		/* make space for scrollbars, unless height/width are AUTO */
+		enum css_height_e htype;
+		css_fixed height = 0;
+		css_unit hunit = CSS_UNIT_PX;
+		htype = css_computed_height(box->style, &height, &hunit);
+
 		if (which == BOTTOM && box->height != AUTO &&
 				(overflow == CSS_OVERFLOW_SCROLL ||
 				box_hscrollbar_present(box))) {
 			box->padding[BOTTOM] += SCROLLBAR_WIDTH;
 		}
 		if (which == RIGHT && box->width != AUTO &&
+				htype == CSS_HEIGHT_SET &&
 				(overflow == CSS_OVERFLOW_SCROLL ||
 				box_vscrollbar_present(box))) {
 			box->width -= SCROLLBAR_WIDTH;
