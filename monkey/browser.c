@@ -404,6 +404,7 @@ monkey_window_handle_new(int argc, char **argv)
   if (argc > 3)
     return;
   bw = browser_window_create((argc == 3) ? argv[2] : NULL, NULL, NULL, true, false);
+  (void) bw;
 }
 
 static void
