@@ -453,7 +453,7 @@ monkey_window_handle_redraw(int argc, char **argv)
   };
   
   if (argc != 3 && argc != 7) {
-    fprintf(stdout, "ERROR WINDOW REDRAW ARGS BAD");
+    fprintf(stdout, "ERROR WINDOW REDRAW ARGS BAD\n");
     return;
   }
 
@@ -477,7 +477,9 @@ monkey_window_handle_redraw(int argc, char **argv)
   }
   
   LOG(("Issue redraw"));
+  fprintf(stdout, "WINDOW REDRAW WIN %d START\n", atoi(argv[2]));
   browser_window_redraw(gw->bw, gw->scrollx, gw->scrolly, &clip, &ctx);  
+  fprintf(stdout, "WINDOW REDRAW WIN %d STOP\n", atoi(argv[2]));
 }
 
 static void
@@ -485,7 +487,7 @@ monkey_window_handle_reload(int argc, char **argv)
 {
   struct gui_window *gw;
   if (argc != 3 && argc != 4) {
-    fprintf(stdout, "ERROR WINDOW RELOAD ARGS BAD");
+    fprintf(stdout, "ERROR WINDOW RELOAD ARGS BAD\n");
   }
   
   gw = monkey_find_window_by_num(atoi(argv[2]));
@@ -514,6 +516,8 @@ monkey_window_handle_command(int argc, char **argv)
     monkey_window_handle_redraw(argc, argv);
   } else if (strcmp(argv[1], "RELOAD") == 0) {
     monkey_window_handle_reload(argc, argv);
+  } else {
+    fprintf(stdout, "ERROR WINDOW COMMAND UNKNOWN %s\n", argv[1]);
   }
   
 }

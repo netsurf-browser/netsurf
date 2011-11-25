@@ -18,6 +18,8 @@
 
 #include "desktop/plotters.h"
 
+#include <stdio.h>
+
 static bool
 monkey_plot_disc(int x, int y, int radius, const plot_style_t *style)
 {
@@ -41,7 +43,8 @@ static bool
 monkey_plot_text(int x, int y, const char *text, size_t length,
 		const plot_font_style_t *fstyle)
 {
-  return true;
+	fprintf(stdout, "PLOT TEXT X %d Y %d STR %*s\n", x, y, (int)length, text);
+	return true;
 }
 
 static bool 
@@ -50,19 +53,25 @@ monkey_plot_bitmap(int x, int y,
                         struct bitmap *bitmap, colour bg,
                         bitmap_flags_t flags)
 {
-  return true;
+	fprintf(stdout, "PLOT BITMAP X %d Y %d WIDTH %d HEIGHT %d\n",
+		x, y, width, height);
+	return true;
 }
 
 static bool 
 monkey_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-  return true;
+	fprintf(stdout, "PLOT RECT X0 %d Y0 %d X1 %d Y1 %d\n",
+		x0, y0, x1, y1);
+	return true;
 }
 
 static bool 
 monkey_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
-  return true;
+	fprintf(stdout, "PLOT LINE X0 %d Y0 %d X1 %d Y1 %d\n",
+		x0, y0, x1, y1);
+	return true;
 }
 
 
@@ -80,7 +89,9 @@ monkey_plot_path(const float *p,
 static bool 
 monkey_plot_clip(const struct rect *clip)
 {
-  return true;
+	fprintf(stdout, "PLOT CLIP X0 %d Y0 %d X1 %d Y1 %d\n",
+		clip->x0, clip->y0, clip->x1, clip->y1);
+	return true;
 }
 
 const struct plotter_table monkey_plotters = {
