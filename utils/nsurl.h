@@ -165,7 +165,7 @@ lwc_string *nsurl_get_component(const nsurl *url, nsurl_component part);
  *    NSURL_QUERY
  *    NSURL_FRAGMENT
  */
-bool nsurl_enquire(const nsurl *url, nsurl_component part);
+bool nsurl_has_component(const nsurl *url, nsurl_component part);
 
 
 /**

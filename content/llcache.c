@@ -724,10 +724,10 @@ nserror llcache_object_retrieve(nsurl *url, uint32_t flags,
 	 */
 
 	/* Look for a query segment */
-	has_query = nsurl_enquire(url, NSURL_QUERY);
+	has_query = nsurl_has_component(url, NSURL_QUERY);
 
 	/* Get rid of any url fragment */
-	if (nsurl_enquire(url, NSURL_FRAGMENT)) {
+	if (nsurl_has_component(url, NSURL_FRAGMENT)) {
 		error = nsurl_defragment(url, &defragmented_url);
 		if (error != NSERROR_OK)
 			return error;

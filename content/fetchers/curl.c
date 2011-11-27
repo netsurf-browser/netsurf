@@ -322,7 +322,7 @@ void fetch_curl_finalise(lwc_string *scheme)
 
 bool fetch_curl_can_fetch(const nsurl *url)
 {
-	return nsurl_enquire(url, NSURL_HOST);
+	return nsurl_has_component(url, NSURL_HOST);
 }
 
 /**

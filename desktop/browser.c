@@ -794,7 +794,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		lwc_string_unref(bw->frag_id);
 	bw->frag_id = NULL;
 
-	if (nsurl_enquire(nsurl, NSURL_FRAGMENT)) {
+	if (nsurl_has_component(nsurl, NSURL_FRAGMENT)) {
 		bool same_url = false;
 
 		bw->frag_id = nsurl_get_component(nsurl, NSURL_FRAGMENT);
@@ -811,7 +811,8 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		 * don't bother to fetch, just update the window.
 		 */
 		if (same_url && fetch_is_post == false && 
-				nsurl_enquire(nsurl, NSURL_QUERY) == false) {
+				nsurl_has_component(nsurl, NSURL_QUERY) ==
+						false) {
 			nsurl_unref(nsurl);
 			if (nsref != NULL)
 				nsurl_unref(nsref);
