@@ -132,7 +132,7 @@ struct node {
 	bool selected;			/**< Whether the node is selected */
 	bool expanded;			/**< Whether the node is expanded */
 	bool folder;			/**< Whether the node is a folder */
-	bool def_folder;			/**< Whether the node is the default folder */
+	bool def_folder;		/**< Whether the node is the default folder */
 	bool retain_in_memory;		/**< Whether the node remains
 					   in memory after deletion */
 	bool deleted;			/**< Whether the node is currently
@@ -1650,6 +1650,18 @@ void tree_clear_default_folder_node(struct tree *tree)
 		def_node->def_folder = false;
 		tree_handle_node_changed(tree, def_node, true, false);
 	}
+}
+
+
+/**
+ * Returns the parent of a node
+ *
+ * \param node	the node to get the parent of
+ * \return	the node's parent
+ */
+struct node *tree_node_get_parent(struct node *node)
+{
+	return node->parent;
 }
 
 

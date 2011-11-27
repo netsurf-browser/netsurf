@@ -367,10 +367,12 @@ void hotlist_collapse_addresses(void)
 
 /**
  * Add a folder node.
+ *
+ * \param selected create the folder in the currently-selected node
  */
-void hotlist_add_folder(void)
+void hotlist_add_folder(bool selected)
 {
-	struct node *node, *parent;
+	struct node *node, *parent = NULL;
 	struct node_element *element;
 	char *title = strdup("Untitled");
 
@@ -381,7 +383,17 @@ void hotlist_add_folder(void)
 	}
 	creating_node = true;
 
-	parent = tree_get_default_folder_node(hotlist_tree);
+	if (selected == true) {
+		parent = tree_get_selected_node(tree_get_root(hotlist_tree));
+		if (parent && (tree_node_is_folder == false)) {
+			parent = tree_node_get_parent(parent);
+		}
+	}
+
+	if (parent == NULL) {
+		parent = tree_get_default_folder_node(hotlist_tree);
+	}
+
 	node = tree_create_folder_node(hotlist_tree, parent, title,
 				       true, false, false);
 	if (node == NULL) {
@@ -396,13 +408,25 @@ void hotlist_add_folder(void)
 
 /**
  * Add an entry node.
+ *
+ * \param selected add the entry in the currently-selected node
  */
-void hotlist_add_entry(void)
+void hotlist_add_entry(bool selected)
 {
 	struct node *node, *parent;
 	creating_node = true;
 
-	parent = tree_get_default_folder_node(hotlist_tree);
+	if (selected == true) {
+		parent = tree_get_selected_node(tree_get_root(hotlist_tree));
+		if (parent && (tree_node_is_folder == false)) {
+			parent = tree_node_get_parent(parent);
+		}
+	}
+
+	if (parent == NULL) {
+		parent = tree_get_default_folder_node(hotlist_tree);
+	}
+
 	node = tree_create_URL_node(hotlist_tree, parent, "Address",
 				    "Untitled", hotlist_node_callback, NULL);
 
@@ -433,7 +457,7 @@ void hotlist_add_page(const char *url)
 }
 
 /**
- * Adds the currently viewed page to the hotlist at the given cooridinates
+ * Adds the currently viewed page to the hotlist at the given co-ordinates
  * \param url	url of the page
  * \param x	X cooridinate with respect to tree origin
  * \param y	Y cooridinate with respect to tree origin

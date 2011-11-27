@@ -181,6 +181,7 @@ bool tree_set_default_folder_node(struct tree *tree, struct node *node);
 void tree_clear_default_folder_node(struct tree *tree);
 
 /* functions for traversing the tree */
+struct node *tree_node_get_parent(struct node *node);
 struct node *tree_node_get_child(struct node *node);
 struct node *tree_node_get_next(struct node *node);
 
