@@ -807,11 +807,11 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					break;
 
 					case GID_NEWF:
-						hotlist_add_folder();
+						hotlist_add_folder(true);
 					break;
 
 					case GID_NEWB:
-						hotlist_add_entry();
+						hotlist_add_entry(true);
 					break;
 
 					case GID_DEFAULT:

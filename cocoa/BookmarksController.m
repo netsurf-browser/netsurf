@@ -186,7 +186,7 @@ static const char *cocoa_hotlist_path( void )
 
 - (IBAction) addFolder: (id) sender;
 {
-	hotlist_add_folder();
+	hotlist_add_folder(true);
 }
 
 @end

@@ -259,7 +259,7 @@ void ro_gui_hotlist_toolbar_click(button_bar_action action)
 		break;
 
 	case TOOLBAR_BUTTON_CREATE:
-		hotlist_add_folder();
+		hotlist_add_folder(true);
 		break;
 
 	default:
@@ -376,10 +376,10 @@ bool ro_gui_hotlist_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		ro_gui_dialog_open_persistent(w, dialog_saveas, true);
 		return true;
 	case TREE_NEW_FOLDER:
-		hotlist_add_folder();
+		hotlist_add_folder(true);
 		return true;
 	case TREE_NEW_LINK:
-		hotlist_add_entry();
+		hotlist_add_entry(true);
 		return true;
 	case TREE_EXPAND_ALL:
 		hotlist_expand_all();

@@ -49,7 +49,7 @@ static void evnt_hl_toolbar( WINDOW *win, short buff[8]) {
 	/* handle toolbar object (index in buff[4] ) */	
 	switch( buff[4] ) { 
 	case TOOLBAR_HOTLIST_CREATE_FOLDER:
-		hotlist_add_folder();
+		hotlist_add_folder(true);
 		break;
 
 	case TOOLBAR_HOTLIST_ADD:

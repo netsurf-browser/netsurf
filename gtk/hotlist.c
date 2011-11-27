@@ -200,13 +200,13 @@ MENUHANDLER(export)
 
 MENUHANDLER(new_folder)
 {
-	hotlist_add_folder();
+	hotlist_add_folder(true);
 	return TRUE;
 }
 
 MENUHANDLER(new_entry)
 {
-	hotlist_add_entry();
+	hotlist_add_entry(true);
 	return TRUE;
 }
 
