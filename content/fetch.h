@@ -124,6 +124,7 @@ struct fetch_multipart_data *fetch_multipart_data_clone(
 /* API for fetchers themselves */
 
 typedef bool (*fetcher_initialise)(lwc_string *);
+typedef bool (*fetcher_can_fetch)(const nsurl *);
 typedef void* (*fetcher_setup_fetch)(struct fetch *, nsurl *,
                                      bool, const char *,
                                      const struct fetch_multipart_data *,
@@ -138,6 +139,7 @@ typedef void (*fetcher_finalise)(lwc_string *);
  *
  * \param scheme	scheme fetcher is for (caller relinquishes ownership)
  * \param initialiser	fetcher initialiser
+ * \param can_fetch     fetcher can fetch function
  * \param setup_fetch	fetcher fetch setup function
  * \param start_fetch	fetcher fetch start function
  * \param abort_fetch	fetcher fetch abort function
@@ -148,6 +150,7 @@ typedef void (*fetcher_finalise)(lwc_string *);
  */
 bool fetch_add_fetcher(lwc_string *scheme,
                        fetcher_initialise initialiser,
+                       fetcher_can_fetch can_fetch,
                        fetcher_setup_fetch setup_fetch,
                        fetcher_start_fetch start_fetch,
                        fetcher_abort_fetch abort_fetch,

@@ -113,6 +113,7 @@ static char fetch_proxy_userpwd[100];	/**< Proxy authentication details. */
 
 static bool fetch_curl_initialise(lwc_string *scheme);
 static void fetch_curl_finalise(lwc_string *scheme);
+static bool fetch_curl_can_fetch(const nsurl *url);
 static void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -252,6 +253,7 @@ void fetch_curl_register(void)
 
 		if (!fetch_add_fetcher(scheme,
 				fetch_curl_initialise,
+				fetch_curl_can_fetch,
 				fetch_curl_setup,
 				fetch_curl_start,
 				fetch_curl_abort,
@@ -318,6 +320,10 @@ void fetch_curl_finalise(lwc_string *scheme)
 	}
 }
 
+bool fetch_curl_can_fetch(const nsurl *url)
+{
+	return nsurl_enquire(url, NSURL_HOST);
+}
 
 /**
  * Start fetching data for the given URL.

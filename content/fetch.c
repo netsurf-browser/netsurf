@@ -60,6 +60,7 @@ bool fetch_active;	/**< Fetches in progress, please call fetch_poll(). */
 /** Information about a fetcher for a given scheme. */
 typedef struct scheme_fetcher_s {
 	lwc_string *scheme_name;		/**< The scheme. */
+	fetcher_can_fetch can_fetch;		/**< Ensure an URL can be fetched. */
 	fetcher_setup_fetch setup_fetch;	/**< Set up a fetch. */
 	fetcher_start_fetch start_fetch;	/**< Start a fetch. */
 	fetcher_abort_fetch abort_fetch;	/**< Abort a fetch. */
@@ -157,6 +158,7 @@ void fetch_quit(void)
 
 bool fetch_add_fetcher(lwc_string *scheme,
 		  fetcher_initialise initialiser,
+		  fetcher_can_fetch can_fetch,
 		  fetcher_setup_fetch setup_fetch,
 		  fetcher_start_fetch start_fetch,
 		  fetcher_abort_fetch abort_fetch,
@@ -174,6 +176,7 @@ bool fetch_add_fetcher(lwc_string *scheme,
 	}
 	new_fetcher->scheme_name = scheme;
 	new_fetcher->refcount = 0;
+	new_fetcher->can_fetch = can_fetch;
 	new_fetcher->setup_fetch = setup_fetch;
 	new_fetcher->start_fetch = start_fetch;
 	new_fetcher->abort_fetch = abort_fetch;
@@ -540,16 +543,15 @@ bool fetch_can_fetch(const nsurl *url)
 
 	while (fetcher != NULL) {
 		lwc_string_isequal(fetcher->scheme_name, scheme, &match);
-		if (match == true) {
-			lwc_string_unref(scheme);
-			return true;
-		}
+		if (match == true)
+			break;
+
 		fetcher = fetcher->next_fetcher;
 	}
 
 	lwc_string_unref(scheme);
 
-	return false;
+	return fetcher == NULL ? false : fetcher->can_fetch(url);
 }
 
 

@@ -112,6 +112,11 @@ static void fetch_file_finalise(lwc_string *scheme)
 {
 }
 
+static bool fetch_file_can_fetch(const nsurl *url)
+{
+	return true;
+}
+
 /** callback to set up a file fetch context. */
 static void *
 fetch_file_setup(struct fetch *fetchh,
@@ -645,6 +650,7 @@ void fetch_file_register(void)
 
 	fetch_add_fetcher(scheme,
 		fetch_file_initialise,
+		fetch_file_can_fetch,
 		fetch_file_setup,
 		fetch_file_start,
 		fetch_file_abort,

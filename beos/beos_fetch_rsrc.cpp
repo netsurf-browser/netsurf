@@ -78,6 +78,11 @@ static void fetch_rsrc_finalise(const char *scheme)
 	LOG(("fetch_rsrc_finalise called for %s", scheme));
 }
 
+static bool fetch_rsrc_can_fetch(const nsurl *url)
+{
+	return true;
+}
+
 static void *fetch_rsrc_setup(struct fetch *parent_fetch, const char *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -340,6 +345,7 @@ void fetch_rsrc_register(void)
 	}
 	fetch_add_fetcher("rsrc",
 		fetch_rsrc_initialise,
+		fetch_rsrc_can_fetch,
 		fetch_rsrc_setup,
 		fetch_rsrc_start,
 		fetch_rsrc_abort,

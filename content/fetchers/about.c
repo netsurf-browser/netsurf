@@ -669,6 +669,11 @@ static void fetch_about_finalise(lwc_string *scheme)
 	}
 }
 
+static bool fetch_about_can_fetch(const nsurl *url)
+{
+	return true;
+}
+
 /** callback to set up a about fetch context. */
 static void *
 fetch_about_setup(struct fetch *fetchh,
@@ -792,6 +797,7 @@ void fetch_about_register(void)
 
 	fetch_add_fetcher(scheme,
 		fetch_about_initialise,
+		fetch_about_can_fetch,
 		fetch_about_setup,
 		fetch_about_start,
 		fetch_about_abort,

@@ -75,6 +75,11 @@ static void fetch_data_finalise(lwc_string *scheme)
 	curl_easy_cleanup(curl);
 }
 
+static bool fetch_data_can_fetch(const nsurl *url)
+{
+	return true;
+}
+
 static void *fetch_data_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
@@ -330,6 +335,7 @@ void fetch_data_register(void)
 
 	fetch_add_fetcher(scheme,
 		fetch_data_initialise,
+		fetch_data_can_fetch,
 		fetch_data_setup,
 		fetch_data_start,
 		fetch_data_abort,

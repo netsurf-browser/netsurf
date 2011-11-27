@@ -219,6 +219,11 @@ static void fetch_resource_finalise(lwc_string *scheme)
 	}
 }
 
+static bool fetch_resource_can_fetch(const nsurl *url)
+{
+	return true;
+}
+
 /** callback to set up a resource fetch context. */
 static void *
 fetch_resource_setup(struct fetch *fetchh,
@@ -350,6 +355,7 @@ void fetch_resource_register(void)
 
 	fetch_add_fetcher(scheme,
 		fetch_resource_initialise,
+		fetch_resource_can_fetch,
 		fetch_resource_setup,
 		fetch_resource_start,
 		fetch_resource_abort,
