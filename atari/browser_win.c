@@ -69,6 +69,26 @@ extern short last_drag_y;
 void __CDECL std_szd( WINDOW * win, short buff[8], void * );
 void __CDECL std_mvd( WINDOW * win, short buff[8], void * );
 
+
+/* -------------------------------------------------------------------------- */
+/* Static module methods follow here:                                         */
+/* -------------------------------------------------------------------------- */
+static void evnt_toolbar_click(WINDOW * win, short buf[8], void * data);
+static void __CDECL evnt_window_redraw( WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data );
+void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data );
+static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data );
+static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * date );
+static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
+static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_keybd(WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_mbutton(WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data);
+static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
+static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
+
 /* -------------------------------------------------------------------------- */
 /* Module public functions:                                                   */
 /* -------------------------------------------------------------------------- */
@@ -260,6 +280,7 @@ int window_destroy( struct gui_window * gw)
 	/* needed? */ /*listRemove( (LINKABLE*)gw->root->cmproot ); */
 	if( gw->root ) {
 		/* TODO: check if no other browser is bound to this root window! */
+		/* only needed for tabs */
 		if( gw->root->title )
 			free( gw->root->title );
 		if( gw->root->cmproot )
@@ -298,6 +319,7 @@ void window_open( struct gui_window * gw)
 	if( gw->root->statusbar != NULL ){
 		gw->root->statusbar->attached = true;
 	}
+	tb_adjust_size( gw );
 	/*TBD: get already present content and set size? */
 }
 
@@ -358,6 +380,7 @@ bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t,
 	return( ( element == gw->root->focus.element && t == gw->root->focus.type) );
 }
 
+
 /* -------------------------------------------------------------------------- */
 /* Event Handlers:                                                            */
 /* -------------------------------------------------------------------------- */
@@ -391,6 +414,7 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 	}
 	browser_scroll( input_window, buff[4], value, abs );
 }
+
 
 static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 {
@@ -516,7 +540,6 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 {
 	struct gui_window * gw = input_window;
 	static bool prev_url = false;
-	static bool prev_sb = false;
 	short mx, my, mbut, mkstate;
 	bool a = false;				//flags if mouse is within controls or browser
 	bool within = false;
@@ -555,21 +578,10 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 				prev_url = a = true;
 			}
 		}
-		if( gw->root->statusbar && within == false /* && a == false */ ) {
-			if( mx >= sbbox.g_x + (sbbox.g_w-MOVER_WH) && mx <= sbbox.g_x + sbbox.g_w &&
-				my >= sbbox.g_y + (sbbox.g_h-MOVER_WH) && my <= sbbox.g_y + sbbox.g_h ) {
-				/* mouse within sizer box ( bottom right ) */
-				prev_sb = a =  true;
-				gem_set_cursor( &gem_cursors.sizenwse );
-			}
-		}
 		if( !a ) {
-			if( prev_sb )
-				gw->root->statusbar->resize_init = true;
-			if( prev_url || prev_sb ) {
+			if( prev_url ) {
 				gem_set_cursor( &gem_cursors.arrow );
 				prev_url = false;
-				prev_sb = false;
 			}
 			/* report mouse move in the browser window */
 			if( within ){
@@ -639,7 +651,8 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
 		return;
 	}
 
-	/* update the sliders _before_ we call redraw (which might depend on the slider possitions) */
+	/* 	update the sliders _before_ we call redraw
+		(which might depend on the slider possitions) */
 	WindSlider( win, (dx?HSLIDER:0) | (dy?VSLIDER:0) );
 
 	if( dy > 0 )
@@ -650,6 +663,8 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
 		browser_scroll( gw, WA_RTPAGE, abs(dx), false );
 	else if( dx < 0 )
 		browser_scroll( gw, WA_LFPAGE, abs(dx), false );
+
+
 }
 
 
@@ -741,25 +756,23 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 	if(gw->root->loc.g_w != w || gw->root->loc.g_h != h ){
 		/* report resize to component interface: */
 		browser_update_rects( gw );
-		mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
-		browser_get_rect( gw, BR_CONTENT, &rect );
-		if( gw->browser->bw->current_content != NULL )
-			browser_window_reformat(gw->browser->bw, false, rect.g_w, rect.g_h );
-		else
+		tb_adjust_size( gw );
+		if( gw->browser->bw->current_content != NULL ){
+			/* Reformat will happen when next redraw message arrives: */
+			gw->browser->reformat_pending = true;
+			if( sys_XAAES() ){
+				if( gw->root->loc.g_w > w || gw->root->loc.g_h > h ){
+					ApplWrite( _AESapid, WM_REDRAW, gw->root->handle->handle,
+								gw->root->loc.g_x, gw->root->loc.g_y,
+								gw->root->loc.g_w, gw->root->loc.g_h );
+				}
+			}
+			mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH,
+							(GRECT*)&gw->root->loc);
+		}
+		else {
 			WindClear( gw->root->handle );
-		gw->root->toolbar->url.scrollx = 0;
-
-		/* send complete redraw to toolbar & statusbar: */
-		mt_CompGetLGrect(&app, gw->root->toolbar->comp, WF_WORKXYWH, &rect);
-		ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-					rect.g_x, rect.g_y, rect.g_w, rect.g_h
-		);
-		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &rect);
-		ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-					rect.g_x, rect.g_y, rect.g_w, rect.g_h
-		);
-
-		/* TODO: recalculate scroll position, instead of zeroing? */
+		}
 	} else {
 		if(gw->root->loc.g_x != x || gw->root->loc.g_y != y ){
 			mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);

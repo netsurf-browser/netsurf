@@ -64,23 +64,4 @@ void window_set_icon(struct gui_window * gw, struct bitmap * bmp );
 /* Public event handlers:                                                     */
 /* -------------------------------------------------------------------------- */
 
-
-/* -------------------------------------------------------------------------- */
-/* Static module methods follow here:                                         */
-/* -------------------------------------------------------------------------- */
-static void evnt_toolbar_click(WINDOW * win, short buf[8], void * data);
-static void __CDECL evnt_window_redraw( WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data );
-void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data );
-static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data );
-static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * date );
-static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
-static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_keybd(WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_mbutton(WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data);
-static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
-static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
 #endif

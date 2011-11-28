@@ -21,6 +21,7 @@
 
 void global_history_add_recent(const char *url)
 {
+
 }
 
 char **global_history_get_recent(int *count)

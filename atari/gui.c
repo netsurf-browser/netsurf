@@ -68,7 +68,7 @@
 #include "atari/hotlist.h"
 #include "atari/login.h"
 #include "atari/global_evnt.h"
-#include "atari/font.h"
+#include "atari/encoding.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/plot.h"
 #include "atari/clipboard.h"
@@ -172,10 +172,15 @@ void gui_poll(bool active)
 		if( browser_redraw_required( g ) ){
 			browser_redraw( g );
 		}
+		if( g->root->toolbar ){
+			if(g->root->toolbar->url.redraw ){
+				tb_url_redraw( g );
+			}
+		}
 	}
 	if( evnt.timer != 0 && !active ){
 		/* this suits for stuff with lower priority */
-		//hotlist_redraw();
+		/* TBD: really be spare on redraws??? */
 		atari_treeview_redraw( hl.tv );
 	}
 }
@@ -541,16 +546,9 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 		gui_window_remove_caret( w );
 	w->browser->caret.requested.g_x = x;
 	w->browser->caret.requested.g_y = y;
-	w->browser->caret.requested.g_w = 2;
+	w->browser->caret.requested.g_w = 1;
 	w->browser->caret.requested.g_h = height;
 	w->browser->caret.redraw = true;
-	browser_schedule_redraw_rect(
-		w,
-		x - b->scroll.current.x,
-		y - b->scroll.current.y,
-		w->browser->caret.requested.g_w,
-		w->browser->caret.requested.g_h
-	);
 	return;
 }
 
@@ -561,25 +559,23 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 void
 gui_window_remove_caret(struct gui_window *w)
 {
+	LGRECT rect;
 	if (w == NULL)
 		return;
 	CMP_BROWSER b = w->browser;
-	w->browser->caret.requested.g_w = 0;
-	w->browser->caret.redraw = true;
-	browser_schedule_redraw_rect( w,
-		w->browser->caret.current.g_x - b->scroll.current.x,
-		w->browser->caret.current.g_y - b->scroll.current.y,
-		w->browser->caret.current.g_w,
-		w->browser->caret.current.g_h
-	);
+
+	if( w->browser->caret.background.fd_addr != NULL ){
+		browser_restore_caret_background( w, NULL );
+		w->browser->caret.requested.g_w = 0;
+		w->browser->caret.current.g_w = 0;
+	}
+	return;
 }
 
 void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
-	/* Untestet, favicon support has been dropped, so this is dead code. */
 	g->icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
-
 }
 
 void
@@ -871,8 +867,6 @@ void gui_quit(void)
 
 	hotlist_destroy();
 
-	/* send WM_DESTROY to windows purely managed by windom: */
-
 	urldb_save_cookies(option_cookie_file);
 	urldb_save(option_url_file);
 
@@ -1025,10 +1019,6 @@ static void gui_init(int argc, char** argv)
 	atari_plotter_init( option_atari_screen_driver, option_atari_font_driver );
 	LOG(("Knockout rendering: %s\n",  option_atari_knockout ? "yes" : "no"));
 	plot_set_knockout( option_atari_knockout );
-	/* Interface colours */
-	option_gui_colour_bg_1 = 0xFFFFFF; /** Background          (bbggrr) */
-	option_gui_colour_fg_1 = 0xFF0000; /** Foreground          (bbggrr) */
-	option_gui_colour_fg_2 = 0x000000; /** Foreground selected (bbggrr) */
 }
 
 static char *theapp = (char*)"NetSurf";

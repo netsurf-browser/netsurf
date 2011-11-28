@@ -50,10 +50,11 @@
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
+#include "atari/redrawslots.h"
 #include "atari/browser.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot.h"
-#include "atari/font.h"
+#include "atari/encoding.h"
 #include "atari/ctxmenu.h"
 #include "cflib.h"
 
@@ -65,10 +66,17 @@ extern struct gui_window *input_window;
 extern short last_drag_x;
 extern short last_drag_y;
 
-
-
-static void __CDECL browser_evnt_wdestroy( WINDOW * c, short buff[8], void * data);
-COMPONENT *comp_widget_create( APPvar *app, WINDOW *win, int size, int flex );
+static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
+static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
+								struct rect * area );
+static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8],
+										void * data);
+static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8],
+										void * data);
+static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8],
+										void * data);
+static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8],
+										void * data);
 
 
 /*
@@ -98,7 +106,7 @@ struct s_browser * browser_create
 			bw->scale = clone->scale;
 		else
 			bw->scale = 1;
-		bnew->redraw.areas_used = 0;
+		redraw_slots_init( &bnew->redraw, MAX_REDRW_SLOTS );
 		bnew->comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL, 100, 1);
 		if( bnew->comp == NULL ) {
 			free(bnew);
@@ -115,6 +123,9 @@ struct s_browser * browser_create
 		mt_CompEvntDataAttach( &app, bnew->comp, WM_DESTROY,
 								browser_evnt_destroy, (void*)bnew
 		);
+		mt_CompEvntDataAttach( &app, bnew->comp, WM_SIZED,
+								browser_evnt_resize, (void*)gw
+		);
 
 		/* Set the gui_window owner. */
 		/* it is an link to the netsurf window system */
@@ -124,6 +135,7 @@ struct s_browser * browser_create
 		bnew->scroll.requested.x = 0;
 		bnew->scroll.current.x = 0;
 		bnew->scroll.current.y = 0;
+		bnew->reformat_pending = false;
 
 	}
 	return( bnew );
@@ -194,6 +206,13 @@ void browser_set_content_size(struct gui_window * gw, int w, int h)
 		/* force update of scrollbars: */
 		b->scroll.required = true;
 	}
+}
+
+static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8], void * data)
+{
+	/* Just a dummy to prevent second redraw (already handled within browser_win)*/
+	printf("browser evnt resize");
+	return;
 }
 
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data)
@@ -419,7 +438,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		dst.g_h = src.g_h;
 		plotter->copy_rect( plotter, src, dst );
 		b->scroll.current.y += b->scroll.requested.y;
-		browser_schedule_redraw( gw, 0, 0, bwrect.g_w, h ) ;
+		browser_schedule_redraw( gw, 0, 0, bwrect.g_w, h );
 	}
 
 	if( b->scroll.requested.y > 0 ) {
@@ -468,6 +487,9 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 	}
 	b->scroll.requested.y = 0;
 	b->scroll.requested.x = 0;
+	if( b->caret.requested.g_w > 0 ){
+		b->caret.redraw = true;
+	}
 
 	gw->root->handle->xpos = b->scroll.current.x;
 	gw->root->handle->ypos = b->scroll.current.y;
@@ -477,7 +499,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 
 /*
 	Report keypress to browser component.
-	The browser component doesn't list for keyinput by itself.
+	The browser component doesn't listen for keyinput by itself.
 	parameter:
 		- gui_window ( compocnent owner ).
 		- unsigned short nkc ( CFLIB normalised key code )
@@ -487,154 +509,58 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
 	LGRECT work;
 	bool r = false;
 	unsigned char ascii = (nkc & 0xFF);
-	nkc = (nkc & (NKF_CTRL|NKF_SHIFT|0xFF));
-	browser_get_rect(gw, BR_CONTENT, &work);
+	long ucs4;
+	long ik = nkc_to_input_key( nkc, &ucs4 );
 
-	if( (nkc & NKF_CTRL) != 0  ) {
-		switch ( ascii ) {
-			case 'A':
-				r = browser_window_key_press(gw->browser->bw, KEY_SELECT_ALL);
-			break;
+	// pass event to specific control?
 
-			case 'C':
-				r = browser_window_key_press(gw->browser->bw, KEY_COPY_SELECTION);
-			break;
-
-			case 'X':
-				r = browser_window_key_press(gw->browser->bw, KEY_CUT_SELECTION);
-			break;
-
-			case 'V':
-				r = browser_window_key_press(gw->browser->bw, KEY_PASTE);
-			break;
-
-			default:
-			break;
-		}
-	}
-	if( (nkc & NKF_SHIFT) != 0 ) {
-		switch( ascii ) {
-
-			case NK_TAB:
-				r = browser_window_key_press(gw->browser->bw, KEY_SHIFT_TAB);
-			break;
-
-			case NK_LEFT:
-				if( browser_window_key_press(gw->browser->bw, KEY_LINE_START) == false) {
-					browser_scroll( gw, WA_LFPAGE, work.g_w, false );
-					r = true;
-				}
-			break;
-
-			case NK_RIGHT:
-				if( browser_window_key_press(gw->browser->bw, KEY_LINE_END) == false) {
-					browser_scroll( gw, WA_RTPAGE, work.g_w, false );
-					r = true;
-				}
-			break;
-
-			case NK_UP:
-				if ( browser_window_key_press(gw->browser->bw, KEY_PAGE_UP) ==false ){
-					browser_scroll( gw, WA_UPPAGE, work.g_h, false );
-					r = true;
-				}
-			break;
-
-			case NK_DOWN:
-				if (browser_window_key_press(gw->browser->bw, KEY_PAGE_DOWN) == false) {
-					browser_scroll( gw, WA_DNPAGE, work.g_h, false );
-					r = true;
-				}
-			break;
-
-			default:
-			break;
-		}
-	}
-	if( (nkc & (NKF_SHIFT|NKF_CTRL) ) == 0 ) {
-		switch( ascii ) {
-			case NK_BS:
-				r = browser_window_key_press(gw->browser->bw, KEY_DELETE_LEFT);
-			break;
-
-			case NK_DEL:
-				r = browser_window_key_press(gw->browser->bw, KEY_DELETE_RIGHT);
-			break;
-
-			case NK_TAB:
-				r = browser_window_key_press(gw->browser->bw, KEY_TAB);
-			break;
-
-
-			case NK_ENTER:
-				r = browser_window_key_press(gw->browser->bw, KEY_NL);
-			break;
-
-			case NK_RET:
-				r = browser_window_key_press(gw->browser->bw, KEY_CR);
-			break;
-
-			case NK_ESC:
-				r = browser_window_key_press(gw->browser->bw, KEY_ESCAPE);
-			break;
-
-			case NK_CLRHOME:
-				r = browser_window_key_press(gw->browser->bw, KEY_TEXT_START);
-			break;
-
-			case NK_RIGHT:
-				if (browser_window_key_press(gw->browser->bw, KEY_RIGHT) == false){
-					browser_scroll( gw, WA_RTLINE, 16, false );
-					r = true;
-				}
-			break;
-
-			case NK_LEFT:
-				if (browser_window_key_press(gw->browser->bw, KEY_LEFT) == false) {
-					browser_scroll( gw, WA_LFLINE, 16, false );
-					r = true;
-				}
-			break;
-
-			case NK_UP:
-				if (browser_window_key_press(gw->browser->bw, KEY_UP) == false) {
-					browser_scroll( gw, WA_UPLINE, 16, false);
-					r = true;
-				}
-			break;
-
-			case NK_DOWN:
-				if (browser_window_key_press(gw->browser->bw, KEY_DOWN) == false) {
-					browser_scroll( gw, WA_DNLINE, 16, false);
-					r = true;
-				}
-			break;
-
-			case NK_M_PGUP:
-				if ( browser_window_key_press(gw->browser->bw, KEY_PAGE_UP) ==false ) {
-					browser_scroll( gw, WA_UPPAGE, work.g_h, false );
-					r = true;
-				}
-			break;
-
-			case NK_M_PGDOWN:
-				if (browser_window_key_press(gw->browser->bw, KEY_PAGE_DOWN) == false) {
-					browser_scroll( gw, WA_DNPAGE, work.g_h, false );
-					r = true;
-				}
-			break;
-
-			default:
-			break;
-		}
-	}
-
-	if( r == false && ( (nkc & NKF_CTRL)==0)  ) {
+	if( ik == 0 ){
 		if (ascii >= 9 ) {
-			int ucs4 = atari_to_ucs4(ascii);
             r = browser_window_key_press(gw->browser->bw, ucs4 );
 		}
+	} else {
+		r = browser_window_key_press(gw->browser->bw, ik );
+		if( r == false ){
+			browser_get_rect(gw, BR_CONTENT, &work);
+			switch( ik ){
+				case KEY_LINE_START:
+					browser_scroll( gw, WA_LFPAGE, work.g_w, false );
+				break;
+
+				case KEY_LINE_END:
+					browser_scroll( gw, WA_RTPAGE, work.g_w, false );
+				break;
+
+				case KEY_PAGE_UP:
+					browser_scroll( gw, WA_UPPAGE, work.g_h, false );
+				break;
+
+				case KEY_PAGE_DOWN:
+					browser_scroll( gw, WA_DNPAGE, work.g_h, false );
+				break;
+
+				case KEY_RIGHT:
+					browser_scroll( gw, WA_RTLINE, 16, false );
+				break;
+
+				case KEY_LEFT:
+					browser_scroll( gw, WA_LFLINE, 16, false );
+				break;
+
+				case KEY_UP:
+					browser_scroll( gw, WA_UPLINE, 16, false);
+				break;
+
+				case KEY_DOWN:
+					browser_scroll( gw, WA_DNLINE, 16, false);
+				break;
+
+				default:
+				break;
+			}
+		}
 	}
+
 	return( r );
 }
 
@@ -647,9 +573,13 @@ bool browser_redraw_required( struct gui_window * gw)
 	if( b->bw->current_content == NULL )
 		return ( false );
 
+	/* disable redraws when the browser awaits WM_REDRAW caused by resize */
+	if( b->reformat_pending )
+		return( false );
+
 	ret = ( ((b->redraw.areas_used > 0) )
 			|| b->scroll.required
-			|| b->caret.redraw );
+			|| b->caret.redraw);
 	return( ret );
 }
 
@@ -670,22 +600,6 @@ void browser_schedule_redraw_rect(struct gui_window * gw, short x, short y, shor
 	browser_schedule_redraw( gw, x, y, x+w, y+h );
 }
 
-static inline bool rect_intersect( struct rect * box1, struct rect * box2 )
-{
-	if (box2->x1 < box1->x0)
- 	       return false;
-
-	if (box2->y1 < box1->y0)
-        	return false;
-
-	if (box2->x0 > box1->x1)
-        	return false;
-
-	if (box2->y0 > box1->y1)
-        	return false;
-
-	return true;
-}
 
 /*
 	schedule a redraw of content, coords are relative to the framebuffer
@@ -707,50 +621,13 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 	if( y0 > work.g_h )
 		return;
 
-	area.x0 = x0;
-	area.y0 = y0;
-	area.x1 = x1;
-	area.y1 = y1;
+	redraw_slot_schedule( &b->redraw, x0, y0, x1, y1 );
 
-	for( i=0; i<b->redraw.areas_used; i++) {
-		if( b->redraw.areas[i].x0 <= x0
-			&& b->redraw.areas[i].x1 >= x1
-			&& b->redraw.areas[i].y0 <= y0
-			&& b->redraw.areas[i].y1 >= y1 ){
-			/* the area is already queued for redraw */
-			return;
-		} else {
-			if( rect_intersect(&b->redraw.areas[i], &area ) ){
-				b->redraw.areas[i].x0 = MIN(b->redraw.areas[i].x0, x0);
-				b->redraw.areas[i].y0 = MIN(b->redraw.areas[i].y0, y0);
-				b->redraw.areas[i].x1 = MAX(b->redraw.areas[i].x1, x1);
-				b->redraw.areas[i].y1 = MAX(b->redraw.areas[i].y1, y1);
-				return;
-			}
-		}
-	}
-
-	if( b->redraw.areas_used < MAX_REDRW_SLOTS ) {
-		b->redraw.areas[b->redraw.areas_used].x0 = x0;
-		b->redraw.areas[b->redraw.areas_used].x1 = x1;
-		b->redraw.areas[b->redraw.areas_used].y0 = y0;
-		b->redraw.areas[b->redraw.areas_used].y1 = y1;
-		b->redraw.areas_used++;
-	} else {
-		/*
-			we are out of available slots, merge box with last slot
-			this is dumb... but also a very rare case.
-		*/
-		b->redraw.areas[MAX_REDRW_SLOTS-1].x0 = MIN(b->redraw.areas[i].x0, x0);
-		b->redraw.areas[MAX_REDRW_SLOTS-1].y0 = MIN(b->redraw.areas[i].y0, y0);
-		b->redraw.areas[MAX_REDRW_SLOTS-1].x1 = MAX(b->redraw.areas[i].x1, x1);
-		b->redraw.areas[MAX_REDRW_SLOTS-1].y1 = MAX(b->redraw.areas[i].y1, y1);
-	}
-done:
 	return;
 }
 
-static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
+static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
+								struct rect * area )
 {
 	LGRECT work;
 	CMP_BROWSER b = gw->browser;
@@ -760,39 +637,99 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff )
 		.plot = &atari_plotters
 	};
 
-	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, b->redraw.area.x0,
-		b->redraw.area.y0, b->redraw.area.x1, b->redraw.area.y1
+	LOG(("%s : %d,%d - %d,%d\n", b->bw->name, area->x0,
+		area->y0, area->x1, area->y1
 	));
 
 
 	browser_window_redraw( b->bw, -b->scroll.current.x,
-			-b->scroll.current.y, &b->redraw.area, &ctx );
+			-b->scroll.current.y, area, &ctx );
 
 }
 
-
-void browser_redraw_caret( struct gui_window * gw, GRECT * area )
+/*
+	area: the browser canvas
+*/
+void browser_restore_caret_background( struct gui_window * gw, LGRECT * area)
 {
-	GRECT caret;
-	struct s_browser * b = gw->browser;
-	if( b->caret.redraw == true ){
+	CMP_BROWSER b = gw->browser;
+	LGRECT rect;
+	if( area == NULL ){
+		browser_get_rect( gw, BR_CONTENT, &rect );
+		area = &rect;
+	}
+	/* This call restores the background and releases the memory: */
+	// TODO: only release memory/clear flag when the caret is not clipped.
+	// TODO: apply clipping.
+	w_put_bkgr( &app,
+			area->g_x-b->scroll.current.x+b->caret.current.g_x,
+			area->g_y-b->scroll.current.y+b->caret.current.g_y,
+			gw->browser->caret.current.g_w,
+			gw->browser->caret.current.g_h,
+			&gw->browser->caret.background
+	);
+	gw->browser->caret.background.fd_addr = NULL;
+}
+
+/*
+	area: the browser canvas
+*/
+void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
+{
+	// TODO: only redraw caret when window is topped.
+	if( gw->browser->caret.redraw && gw->browser->caret.requested.g_w > 0 ){
+		LGRECT caret;
+		struct s_browser * b = gw->browser;
 		struct rect old_clip;
 		struct rect clip;
 
+		if( b->caret.current.g_w > 0 && b->caret.background.fd_addr != NULL ){
+			browser_restore_caret_background( gw, area );
+		}
+
 		caret = b->caret.requested;
-		caret.g_x -= gw->browser->scroll.current.x;
-		caret.g_y -= gw->browser->scroll.current.y;
-		clip.x0 = caret.g_x - 1;
-		clip.y0 = caret.g_y - 1;
-		clip.x1 = caret.g_x + caret.g_w + 1;
-		clip.y1 = caret.g_y + caret.g_h + 1;
+		caret.g_x -= b->scroll.current.x - area->g_x;
+		caret.g_y -= b->scroll.current.y - area->g_y;
+
+		if( !rc_lintersect( area, &caret ) ) {
+			return;
+		}
+
+		MFDB screen;
+		short pxy[8];
+
+		/* save background: */
+		//assert( b->caret.background.fd_addr == NULL );
+		init_mfdb( app.nplanes, caret.g_w, caret.g_h, 0,
+					&b->caret.background );
+		init_mfdb( 0, caret.g_w, caret.g_h, 0, &screen );
+		pxy[0] = caret.g_x;
+		pxy[1] = caret.g_y;
+		pxy[2] = caret.g_x + caret.g_w - 1;
+		pxy[3] = caret.g_y + caret.g_h - 1;
+		pxy[4] = 0;
+		pxy[5] = 0;
+		pxy[6] = caret.g_w - 1;
+		pxy[7] = caret.g_h - 1;
+		/* hide the mouse */
+		v_hide_c ( app.graf.handle);
+		/* copy screen image */
+		vro_cpyfm ( app.graf.handle, S_ONLY, pxy, &screen, &b->caret.background);
+		/* restore the mouse */
+		v_show_c ( app.graf.handle, 1);
+		/* draw caret: */
+		caret.g_x -= area->g_x;
+		caret.g_y -= area->g_y;
+		clip.x0 = caret.g_x;
+		clip.y0 = caret.g_y;
+		clip.x1 = caret.g_x + caret.g_w-1;
+		clip.y1 = caret.g_y + caret.g_h-1;
 		/* store old clip before adjusting it: */
 		plot_get_clip( &old_clip );
 		/* clip to cursor: */
 		plot_clip( &clip );
-		plot_rectangle( caret.g_x, caret.g_y,
-			caret.g_x+caret.g_w, caret.g_y+caret.g_h,
-			plot_style_caret );
+		plot_line( caret.g_x, caret.g_y, caret.g_x, caret.g_y + caret.g_h,
+					plot_style_caret );
 		/* restore old clip area: */
 		plot_clip( &old_clip );
 		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
@@ -808,6 +745,8 @@ void browser_redraw( struct gui_window * gw )
 	struct s_browser * b = gw->browser;
 	short todo[4];
 	struct rect clip;
+	/* used for clipping of content redraw: */
+	struct rect redraw_area;
 
 	if( b->attached == false || b->bw->current_content == NULL ) {
 		return;
@@ -864,11 +803,11 @@ void browser_redraw( struct gui_window * gw )
 						area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
 						area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
 						if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
-							b->redraw.area.x0 = area.g_x;
-							b->redraw.area.y0 = area.g_y;
-							b->redraw.area.x1 = area.g_x + area.g_w;
-							b->redraw.area.y1 = area.g_y + area.g_h;
-							browser_redraw_content( gw, 0, 0 );
+							redraw_area.x0 = area.g_x;
+							redraw_area.y0 = area.g_y;
+							redraw_area.x1 = area.g_x + area.g_w;
+							redraw_area.y1 = area.g_y + area.g_h;
+							browser_redraw_content( gw, 0, 0, &redraw_area );
 						} else {
 							/*
 								the area should be kept scheduled for later redraw, but because this
@@ -890,7 +829,7 @@ void browser_redraw( struct gui_window * gw )
 		b->redraw.areas_used = 0;
 	}
 	if( b->caret.redraw == true && 	b->bw->current_content != NULL ) {
-		GRECT area;
+		LGRECT area;
 		todo[0] = bwrect.g_x;
 		todo[1] = bwrect.g_y;
 		todo[2] = todo[0] + bwrect.g_w;
@@ -913,15 +852,8 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	short pxy[8];
 	struct gui_window * gw = (struct gui_window *) data;
 	CMP_BROWSER b = gw->browser;
-	LGRECT work, lclip, rwork;
+	LGRECT work, lclip;
 
-	// TODO: maybe implement something like validate_gw()
-	// to fetch spurious redraw events? the function should
-	// traverse all gui_windows and see if gw  exists in the list
-
-	int xoff,yoff,width,heigth;
-	short cw, ch, cellw, cellh;
-	/* use that instead of browser_find_root() ? */
 	browser_get_rect( gw, BR_CONTENT, &work );
 	lclip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &lclip ) ) return;
@@ -954,11 +886,22 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 		lclip.g_y = 0;
 	}
 
-
 	if( lclip.g_h > 0 && lclip.g_w > 0 ) {
-		browser_schedule_redraw( gw, lclip.g_x, lclip.g_y,
-			lclip.g_x + lclip.g_w, lclip.g_y + lclip.g_h
-		);
+
+		if( gw->browser->reformat_pending == true ){
+			LGRECT newsize;
+			gw->browser->reformat_pending = false;
+			browser_get_rect(gw, BR_CONTENT, &newsize);
+			/* this call will also schedule an redraw for the complete */
+			/* area. */
+			/* Resize must be handled here, because otherwise */
+			/* a redraw is scheduled twice (1. by the frontend, 2. by AES) */
+			browser_window_reformat(b->bw, false, newsize.g_w, newsize.g_h );
+		} else {
+			browser_schedule_redraw( gw, lclip.g_x, lclip.g_y,
+				lclip.g_x + lclip.g_w, lclip.g_y + lclip.g_h
+			);
+		}
 	}
 
 	return;

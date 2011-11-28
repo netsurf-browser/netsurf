@@ -19,6 +19,10 @@
 #ifndef NS_ATARI_TOOLBAR_H
 #define NS_ATARI_TOOLBAR_H
 
+#include "desktop/textarea.h"
+#include "desktop/textinput.h"
+#include "atari/browser.h"
+
 #define TB_BUTTON_WIDTH 32
 #define TB_BUTTON_HEIGHT 21 /* includes 1px 3d effect */
 #define TOOLBAR_HEIGHT 25
@@ -27,13 +31,13 @@
 #define THROBBER_MAX_INDEX 12
 #define THROBBER_INACTIVE_INDEX 13
 #define URLBOX_HEIGHT 21
-/*
- URL Widget Block size: size of memory block to allocated
- when input takes more memory than currently allocated:
-*/
-#define URL_WIDGET_BSIZE 64
-#define URL_WIDGET_MAX_MEM 60000
 
+#define TOOLBAR_URL_TEXT_SIZE_PT 14
+#define TOOLBAR_TEXTAREA_HEIGHT 19
+#define TOOLBAR_URL_MARGIN_LEFT 	2
+#define TOOLBAR_URL_MARGIN_RIGHT 	2
+#define TOOLBAR_URL_MARGIN_TOP		2
+#define TOOLBAR_URL_MARGIN_BOTTOM	2
 struct s_tb_button
 {
 	short rsc_id;
@@ -44,15 +48,10 @@ struct s_tb_button
 
 struct s_url_widget
 {
-	short selection_len;	/* len & direction of selection */
-	short caret_pos;	 	/* cursor pos */
-	short char_size;	 	/* size of one character (width & hight) */
-	short scrollx;  	 	/* current scroll position */
 	bool redraw;		 	/* widget is only redrawn when this flag is set */
-	char * text;			/* dynamicall allocated URL string */
-	unsigned short allocated;
-	unsigned short used; 	/* memory used by URL (strlen + 1) */
+	struct text_area *textarea;
 	COMPONENT * comp;
+	GRECT rdw_area;
 };
 
 struct s_throbber_widget
@@ -69,7 +68,8 @@ struct s_toolbar
 	struct gui_window * owner;
 	struct s_url_widget url;
 	struct s_throbber_widget throbber;
-	GRECT btdim; /* size & location of buttons */
+	GRECT btdim;
+	/* size & location of buttons: */
 	struct s_tb_button * buttons;
 	int btcnt;
 };
@@ -82,6 +82,8 @@ static void __CDECL evnt_toolbar_redraw( COMPONENT *c, long buff[8], void *data 
 //static void __CDECL evnt_toolbar_mbutton( COMPONENT *c, long buff[8], void *data );
 static void __CDECL evnt_toolbar_resize( COMPONENT *c, long buff[8], void *data );
 
+/* recalculate size/position of nested controls within the toolbar: */
+void tb_adjust_size( struct gui_window * gw );
 /* report click to toolbar, relative coords : */
 void tb_click( struct gui_window * gw, short mx, short my, short mb, short kstat );
 void tb_back_click( struct gui_window * gw );
@@ -96,10 +98,10 @@ void tb_update_buttons( struct gui_window * gw );
 void tb_url_click( struct gui_window * gw, short mx, short my, short mb, short kstat );
 /* handle keybd event while url widget has focus:*/
 bool tb_url_input( struct gui_window * gw, short keycode );
-/* place the caret and adjust scrolling position: */
-void tb_url_place_caret( struct gui_window * gw, int steps, bool abs);
 /* set the url: */
 void tb_url_set( struct gui_window * gw, char * text );
+/* perform redraw of invalidated url textinput areas: */
+void tb_url_redraw( struct gui_window * gw );
 
 struct gui_window * tb_gui_window( CMP_TOOLBAR tb );
 

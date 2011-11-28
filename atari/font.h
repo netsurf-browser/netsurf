@@ -16,16 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NS_ATARI_FT_FONT_H
-#define NS_ATARI_FT_FONT_H
+#ifndef NS_ATARI_FONT_H
+#define NS_ATARI_FONT_H
 
-#include "utils/utf8.h"
 
-utf8_convert_ret local_encoding_to_utf8(const char *string,
-				       size_t len,
-				       char **result);
-
-int atari_to_ucs4( unsigned char atarichar);
 
 #endif /* NETSURF_FB_FONT_H */
 

@@ -104,8 +104,10 @@ static void __CDECL evnt_tv_redraw( WINDOW *win, short buff[8], void * data )
 		clip.g_y = 0;
 	}
 	if( clip.g_h > 0 && clip.g_w > 0 ) {
-		atari_treeview_request_redraw( win->xpos*win->w_u + clip.g_x, win->ypos*win->h_u + clip.g_y,
-			clip.g_w, clip.g_h, tv
+		atari_treeview_request_redraw(
+										win->xpos*win->w_u + clip.g_x,
+										win->ypos*win->h_u + clip.g_y,
+										clip.g_w, clip.g_h, tv
 		);
 	}
 }
@@ -355,7 +357,7 @@ void atari_treeview_redraw( NSTREEVIEW tv)
  */
 void atari_treeview_request_redraw(int x, int y, int w, int h, void *pw)
 {
-	if (pw != NULL) {
+	if ( pw != NULL ) {
 		NSTREEVIEW tv = (NSTREEVIEW) pw;
 		if( tv->redraw == false ){
 			tv->redraw = true;

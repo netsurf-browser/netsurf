@@ -96,7 +96,7 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
 	browser_window_get_contextual_content(
 		gw->browser->bw,
-		mx+gw->browser->scroll.current.x, 
+		mx+gw->browser->scroll.current.x,
 		my+gw->browser->scroll.current.y,
 		(struct contextual_content*)&ctxinfo.ccdata
 	);
@@ -150,6 +150,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 	FILE * fp_tmpfile;
 	char * tempfile;
 	int err = 0;
+	char cmdline[128];
 
 	pop = get_tree( POP_CTX );
 	if( pop == NULL )
@@ -252,10 +253,17 @@ void context_popup( struct gui_window * gw, short x, short y )
 					if( fp_tmpfile ){
 						fwrite( data, size, 1, fp_tmpfile );
 						fclose( fp_tmpfile );
-						err = ShelWrite( option_atari_editor, tempfile , NULL, 1, 0);
+						// TODO: check if app is runnin, if not, use pexec or such.
+						/*sprintf((char*)&cmdline, "%s \"%s\"", option_atari_editor, tempfile );
+						system( (char*)&cmdline );
+						*/
+						//err = ShelWrite( option_atari_editor, tempfile , option_atari_editor, 1, 0);
 						LOG(("launched: %s %s (%d)\n", option_atari_editor, tempfile, err ));
 					}
+
 				}
+			} else {
+				LOG(("Please set option_atari_editor!"));
 			}
 		break;
 
