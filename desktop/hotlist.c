@@ -385,7 +385,7 @@ void hotlist_add_folder(bool selected)
 
 	if (selected == true) {
 		parent = tree_get_selected_node(tree_get_root(hotlist_tree));
-		if (parent && (tree_node_is_folder == false)) {
+		if (parent && (tree_node_is_folder(parent) == false)) {
 			parent = tree_node_get_parent(parent);
 		}
 	}
@@ -418,7 +418,7 @@ void hotlist_add_entry(bool selected)
 
 	if (selected == true) {
 		parent = tree_get_selected_node(tree_get_root(hotlist_tree));
-		if (parent && (tree_node_is_folder == false)) {
+		if (parent && (tree_node_is_folder(parent) == false)) {
 			parent = tree_node_get_parent(parent);
 		}
 	}
