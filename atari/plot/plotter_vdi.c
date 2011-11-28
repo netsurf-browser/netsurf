@@ -426,6 +426,8 @@ static int put_pixel(GEM_PLOTTER self, int x, int y, int color )
    return( 1 );
 }
 
+/* copy an rectangle from the plot buffer to screen */
+/* because this is an on-screen plotter, this is an screen to screen copy. */
 static int copy_rect( GEM_PLOTTER self, GRECT src, GRECT dst )
 {
 	MFDB devmf;
@@ -546,44 +548,98 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 
 static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plot_style_t * pstyle)
 {
-   short pxy[10];
-
+	short pxy[4];
 	GRECT r, rclip, sclip;
+	int sw = pstyle->stroke_width;
+	uint32_t lt;
 
+	/* current canvas clip: */
 	rclip.g_x = self->clipping.x0;
 	rclip.g_y = self->clipping.y0;
 	rclip.g_w = self->clipping.x1 - self->clipping.x0;
 	rclip.g_h = self->clipping.y1 - self->clipping.y0;
 
+	/* physical clipping: */
 	sclip.g_x = rclip.g_x;
 	sclip.g_y = rclip.g_y;
 	sclip.g_w = CURFB(self).vis_w;
 	sclip.g_h = CURFB(self).vis_h;
+
 	rc_intersect(&sclip, &rclip);
 	r.g_x = x0;
 	r.g_y = y0;
 	r.g_w = x1 - x0;
 	r.g_h = y1 - y0;
+
 	if( !rc_intersect( &rclip, &r ) ) {
 		return( 1 );
 	}
-	vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour );
-	vsf_perimeter( self->vdi_handle, 0);
-	vsf_interior( self->vdi_handle, FIS_SOLID );
-
-	pxy[0] = CURFB(self).x + r.g_x;
-	pxy[1] = CURFB(self).y + r.g_y;
-	pxy[2] = CURFB(self).x + r.g_x + r.g_w -1;
-	pxy[3] = CURFB(self).y + r.g_y + r.g_h -1;
-
-	vsf_style( self->vdi_handle, 1);
 	if( pstyle->stroke_type != PLOT_OP_TYPE_NONE ){
-		self->line(self, x0, y0, x1, y0 , pstyle);
-		self->line(self, x1, y0, x1, y1 , pstyle);
-		self->line(self, x0, y1, x1, y1 , pstyle);
-		self->line(self, x0, y0, x0, y1 , pstyle);
+		/*
+			manually draw the line, because we do not need vdi clipping
+			for vertical / horizontal line draws.
+		*/
+		if( sw == 0)
+			sw = 1;
+
+		NSLT2VDI(lt, pstyle);
+		vsl_type( self->vdi_handle, (lt&0x0F) );
+		/*
+			if the line style is not available within VDI system,
+			define own style:
+		*/
+		if( (lt&0x0F) == 7 ){
+			vsl_udsty(self->vdi_handle, ((lt&0xFFFF00) >> 8) );
+		}
+		vsl_width( self->vdi_handle, (short)sw );
+		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
+		/* top border: */
+		if( r.g_y == y0){
+			pxy[0] = CURFB(self).x + r.g_x;
+			pxy[1] = CURFB(self).y + r.g_y ;
+			pxy[2] = CURFB(self).x + r.g_x + r.g_w;
+			pxy[3] = CURFB(self).y + r.g_y;
+			v_pline(self->vdi_handle, 2, (short *)&pxy );
+		}
+
+		/* right border: */
+		if( r.g_x + r.g_w == x1 ){
+			pxy[0] = CURFB(self).x + r.g_x + r.g_w;
+			pxy[1] = CURFB(self).y + r.g_y;
+			pxy[2] = CURFB(self).x + r.g_x + r.g_w;
+			pxy[3] = CURFB(self).y + r.g_y + r.g_h;
+			v_pline(self->vdi_handle, 2, (short *)&pxy );
+		}
+
+		/* bottom border: */
+		if( r.g_y+r.g_h == y1 ){
+			pxy[0] = CURFB(self).x + r.g_x;
+			pxy[1] = CURFB(self).y + r.g_y+r.g_h;
+			pxy[2] = CURFB(self).x + r.g_x+r.g_w;
+			pxy[3] = CURFB(self).y + r.g_y+r.g_h;
+			v_pline(self->vdi_handle, 2, (short *)&pxy );
+		}
+
+		/* left border: */
+		if( r.g_x == x0 ){
+			pxy[0] = CURFB(self).x + r.g_x;
+			pxy[1] = CURFB(self).y + r.g_y;
+			pxy[2] = CURFB(self).x + r.g_x;
+			pxy[3] = CURFB(self).y + r.g_y + r.g_h;
+			v_pline(self->vdi_handle, 2, (short *)&pxy );
+		}
 	}
 	if( pstyle->fill_type != PLOT_OP_TYPE_NONE ){
+		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour );
+		vsf_perimeter( self->vdi_handle, 0);
+		vsf_interior( self->vdi_handle, FIS_SOLID );
+
+		pxy[0] = CURFB(self).x + r.g_x+pstyle->stroke_width;
+		pxy[1] = CURFB(self).y + r.g_y+pstyle->stroke_width;
+		pxy[2] = CURFB(self).x + r.g_x + r.g_w -1 - pstyle->stroke_width ;
+		pxy[3] = CURFB(self).y + r.g_y + r.g_h -1 - pstyle->stroke_width;
+
+		vsf_style( self->vdi_handle, 1);
 		v_bar( self->vdi_handle, (short*)&pxy );
 	}
 
@@ -984,6 +1040,8 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	pxy[5] = CURFB(self).y + loc.g_y;
 	pxy[6] = CURFB(self).x + loc.g_x + off.g_w-1;
 	pxy[7] = CURFB(self).y + loc.g_y + off.g_h-1;
+	/* Convert the Bitmap to native screen format - ready for output*/
+	/* This includes blending transparent pixels */
 	if( convert_bitmap( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
 		return( true );
 	}
@@ -1047,15 +1105,6 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flag
 	} else {
 		/* this method only plots transparent bitmaps, right now... */
 	}
-
-	/* TODO: shrink conversion buffer?
-		no, it requires time.
-	if( insrc->fd_stand ){
-
-	}
-
-	*/
-
 	return( 1 );
 }
 
