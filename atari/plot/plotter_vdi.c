@@ -49,7 +49,7 @@
 static int dtor( GEM_PLOTTER self );
 static int resize( GEM_PLOTTER self, int w, int h );
 static int move( GEM_PLOTTER self, short x, short y );
-static void * lock( GEM_PLOTTER self );
+static int lock( GEM_PLOTTER self );
 static int unlock( GEM_PLOTTER self );
 static int update_region( GEM_PLOTTER self, GRECT region );
 static int update_screen_region( GEM_PLOTTER self, GRECT region );
@@ -307,19 +307,25 @@ static int move( GEM_PLOTTER self,short x, short y )
 }
 
 
-static void * lock( GEM_PLOTTER self )
+static int lock( GEM_PLOTTER self )
 {
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
+	if( (self->flags & PLOT_FLAG_LOCKED) != 0 )
+		return(1);
 	self->flags |= PLOT_FLAG_LOCKED;
-	wind_update(BEG_UPDATE);
-	wind_update(BEG_MCTRL);
+	if( !wind_update(BEG_UPDATE|0x100) )
+		return(0);
+	if( !wind_update(BEG_MCTRL|0x100) )
+		return(0);
 	graf_mouse(M_OFF, NULL);
-	return( NULL );
+	return( 1 );
 }
 
 static int unlock( GEM_PLOTTER self )
 {
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
+	if( (self->flags & PLOT_FLAG_LOCKED) == 0 )
+		return(1);
 	self->flags &=  ~PLOT_FLAG_LOCKED;
 	wind_update(END_MCTRL);
 	wind_update(END_UPDATE);

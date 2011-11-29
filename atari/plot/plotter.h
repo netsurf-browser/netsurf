@@ -58,7 +58,7 @@
 #define PLOT_FLAG_TRANS		0x08		/* true if the plotter supports transparent operations */
 
 /* Flags for init_mfdb function: */
-#define MFDB_FLAG_STAND			0x01	
+#define MFDB_FLAG_STAND			0x01
 #define MFDB_FLAG_ZEROMEM		0x02
 #define MFDB_FLAG_NOALLOC		0x04
 
@@ -91,7 +91,7 @@ typedef int (*_fpmf_str_split)( FONT_PLOTTER self, const plot_font_style_t *fsty
 typedef int (*_fpmf_pixel_pos)( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 						const char *string, size_t length,
 						int x, size_t *char_offset, int *actual_x);
-typedef int (*_fpmf_text)( FONT_PLOTTER self, int x, int y, const char *text, 
+typedef int (*_fpmf_text)( FONT_PLOTTER self, int x, int y, const char *text,
 													size_t length, const plot_font_style_t *fstyle);
 typedef int (*_fpmf_dtor)( FONT_PLOTTER self );
 
@@ -156,9 +156,9 @@ struct s_frame_buf
 /* declaration of plotter member functions ( _pmf_ prefix )*/
 typedef int (*_pmf_resize)(GEM_PLOTTER self, int w, int h);
 typedef	int (*_pmf_move)(GEM_PLOTTER self, short x, short y );
-typedef	void * (*_pmf_lock)(GEM_PLOTTER self);
 typedef	void * (*_pmf_create_framebuffer)(GEM_PLOTTER self);
 typedef	void * (*_pmf_switch_to_framebuffer)(GEM_PLOTTER self);
+typedef	int (*_pmf_lock)(GEM_PLOTTER self);
 typedef	int (*_pmf_unlock)(GEM_PLOTTER self);
 typedef	int (*_pmf_update_region)(GEM_PLOTTER self, GRECT region);
 typedef	int (*_pmf_update_screen_region)( GEM_PLOTTER self, GRECT region );
@@ -189,11 +189,11 @@ struct s_gem_plotter
 	struct s_vdi_sysinfo * scr;
 	void * priv_data;
 	/* bit depth of framebuffers: */
-	int bpp_virt;     	
+	int bpp_virt;
 	struct rect clipping;
 	struct s_frame_buf fbuf[MAX_FRAMEBUFS];
 	/* current framebuffer index: */
-	int cfbi; 			
+	int cfbi;
 
 	FONT_PLOTTER font_plotter;
 	/* set new dimensions (realloc memory): */
@@ -310,19 +310,19 @@ void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
 short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
 
 /*
-	setup an MFDB struct and allocate memory for it when it is needed. 
+	setup an MFDB struct and allocate memory for it when it is needed.
 	If bpp == 0, this function assumes that the MFDB shall point to the screen
-	and will not allocate any memory (mfdb.fd_addr == 0).  
-	The function will return 0 when the memory allocation fails 
+	and will not allocate any memory (mfdb.fd_addr == 0).
+	The function will return 0 when the memory allocation fails
 	( out of memory), otherwise it returns the size of the mfdb.fd_addr
-  as number of bytes.    
+  as number of bytes.
 */
 int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out );
 
 /* shared / static methods follows */
 
 /*
-	Get clipping for current framebuffer 
+	Get clipping for current framebuffer
 */
 int plotter_get_clip( GEM_PLOTTER self, struct rect * out );
 
@@ -332,7 +332,7 @@ int plotter_get_clip( GEM_PLOTTER self, struct rect * out );
 void plotter_get_clip_grect( GEM_PLOTTER self, GRECT * out );
 
 /*
-	Get current visible coords 
+	Get current visible coords
 */
 void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out );
 
@@ -343,7 +343,7 @@ int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
 
 
 /*
-	convert framebuffer clipping to vdi clipping and activates it 
+	convert framebuffer clipping to vdi clipping and activates it
 */
 void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 
@@ -359,20 +359,20 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 /* some Well known indexes into the VDI palette */
 /* common indexes into the VDI palette */
 /* (only used when running with 256 colors or less ) */
-#define OFFSET_WEB_PAL 16		
+#define OFFSET_WEB_PAL 16
 #define OFFSET_CUST_PAL 232
 #define OFFSET_CUSTOM_COLOR 255	/* this one is used by the TC renderer */
 #define RGB_TO_VDI(c) rgb_to_666_index( (c&0xFF),(c&0xFF00)>>8,(c&0xFF0000)>>16)+OFFSET_WEB_PAL
-#define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8 
+#define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8
 
 /* calculate MFDB compatible rowstride (in number of bits) */
 #define MFDB_STRIDE( w ) (((w & 15) != 0) ? (w | 15)+1 : w)
 
-/* 
+/*
 Calculate size of an mfdb, params:
-	Bits per pixel, 
-	Word aligned rowstride (width) as returned by MFDB_STRIDE, 
-	height in pixels 
+	Bits per pixel,
+	Word aligned rowstride (width) as returned by MFDB_STRIDE,
+	height in pixels
 */
 #define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
 
