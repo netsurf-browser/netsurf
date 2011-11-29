@@ -353,14 +353,17 @@ void window_set_focus( struct gui_window * gw, enum focus_element_type type, voi
 		LOG(("Set focus: %p (%d)\n", element, type));
 		gw->root->focus.type = type;
 		gw->root->focus.element = element;
-		switch( type ){
+		if( element != NULL ){
+			switch( type ){
 
-			case URL_WIDGET:
-				textarea_keypress( ((struct s_url_widget*)(element))->textarea, KEY_SELECT_ALL );
-				break;
+				case URL_WIDGET:
+					textarea_keypress(((struct s_url_widget*)(element))->textarea,
+										KEY_SELECT_ALL );
+					break;
 
-			default: break;
+				default: break;
 
+			}
 		}
 	}
 }
