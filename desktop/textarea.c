@@ -976,7 +976,6 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 				}
 			}
 			break;
-			break;
 		case KEY_NL:
 			if (readonly)
 				break;
