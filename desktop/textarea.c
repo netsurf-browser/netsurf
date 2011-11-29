@@ -66,7 +66,7 @@ struct line_info {
 };
 
 struct text_area {
-	
+
 	int scroll_x, scroll_y;		/**< scroll offsets of the textarea
 					 * content
 					 */
@@ -726,7 +726,7 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * \param y1	bottom Y coordinate of redraw area
  * \param ctx	current redraw context
  */
-void textarea_redraw(struct text_area *ta, int x, int y, 
+void textarea_redraw(struct text_area *ta, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
@@ -961,6 +961,8 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 				     		ta->selection_start,
 						ta->selection_end, ""))
 					return false;
+
+				caret = ta->selection_start;
 				ta->selection_start = ta->selection_end = -1;
 				redraw = true;
 			} else {
@@ -1124,6 +1126,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
 						ta->selection_end, ""))
 					return false;
 
+				caret = ta->selection_start;
 				ta->selection_start = ta->selection_end = -1;
 				redraw = true;
 			} else {
@@ -1446,7 +1449,7 @@ void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
 }
 
 /**
- * Set the dimensions of a textarea, causing a reflow and 
+ * Set the dimensions of a textarea, causing a reflow and
  * emitting a redraw request.
  *
  * \param width 	the new width of the textarea
