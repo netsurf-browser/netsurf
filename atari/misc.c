@@ -35,6 +35,7 @@
 #include "atari/toolbar.h"
 #include "atari/browser.h"
 #include "atari/misc.h"
+#include "atari/encoding.h"
 #include "cflib.h"
 
 extern void * h_gem_rsrc;
@@ -230,6 +231,11 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 	/* No modifier keys: */
 	else {
 		switch( ascii ) {
+
+			case NK_INS:
+				ik = KEY_PASTE;
+				break;
+
 			case NK_BS:
 				ik = KEY_DELETE_LEFT;
 			break;
