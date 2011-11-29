@@ -294,7 +294,8 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 			plotter->resize(plotter, work.g_w, work.g_h);
 			plotter->move(plotter, work.g_x, work.g_y );
-			plotter->lock( plotter );
+			if( plotter->lock( plotter ) == 0 )
+				return;
 
 			todo[0] = work.g_x;
 			todo[1] = work.g_y;

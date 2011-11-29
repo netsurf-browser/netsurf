@@ -69,8 +69,6 @@ extern short last_drag_y;
 static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
 								struct rect * area );
-static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8],
-										void * data);
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8],
 										void * data);
 static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8],
@@ -122,9 +120,6 @@ struct s_browser * browser_create
 		);
 		mt_CompEvntDataAttach( &app, bnew->comp, WM_DESTROY,
 								browser_evnt_destroy, (void*)bnew
-		);
-		mt_CompEvntDataAttach( &app, bnew->comp, WM_SIZED,
-								browser_evnt_resize, (void*)gw
 		);
 
 		/* Set the gui_window owner. */
@@ -208,12 +203,6 @@ void browser_set_content_size(struct gui_window * gw, int w, int h)
 	}
 }
 
-static void __CDECL browser_evnt_resize( COMPONENT * c, long buff[8], void * data)
-{
-	/* Just a dummy to prevent second redraw (already handled within browser_win)*/
-	printf("browser evnt resize");
-	return;
-}
 
 static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data)
 {
@@ -761,7 +750,8 @@ void browser_redraw( struct gui_window * gw )
 	clip.x1 = bwrect.g_w;
 	clip.y1 = bwrect.g_h;
 	plotter->clip( plotter, &clip );
-	plotter->lock(plotter);
+	if( plotter->lock(plotter) == 0 )
+		return;
 
 	if( b->scroll.required == true && b->bw->current_content != NULL) {
 		browser_process_scroll( gw, bwrect );
