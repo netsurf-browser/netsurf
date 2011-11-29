@@ -451,6 +451,53 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 /*
  * Exported function.  Documented in scrollbar.h
  */
+bool scrollbar_scroll(struct scrollbar *s, int change)
+{
+	int well_length;
+	int old_offset = s->offset;
+	struct scrollbar_msg_data msg;
+
+	if (change == 0 || s->full_size <= s->visible_size)
+		/* zero scroll step, or unscrollable */
+		return false;
+
+	if (s->offset + change > s->full_size - s->visible_size)
+		s->offset = s->full_size - s->visible_size;
+	else if (s->offset + change < 0)
+		s->offset = 0;
+	else
+		s->offset += change;
+
+	if (s->offset == old_offset)
+		/* Nothing happened */
+		return false;
+
+	well_length = s->length - 2 * SCROLLBAR_WIDTH;
+	s->bar_pos = (s->full_size < 1) ? 0 :
+			((well_length * s->offset) / s->full_size);
+
+	msg.scrollbar = s;
+	msg.msg = SCROLLBAR_MSG_MOVED;
+	msg.scroll_offset = s->offset;
+	s->client_callback(s->client_data, &msg);
+
+	msg.msg = SCROLLBAR_MSG_REDRAW;
+	msg.x0 = s->horizontal ? SCROLLBAR_WIDTH - 1 : 0;
+	msg.y0 = s->horizontal ? 0 : SCROLLBAR_WIDTH - 1;
+	msg.x1 = (s->horizontal ? s->length - SCROLLBAR_WIDTH + 1 :
+			SCROLLBAR_WIDTH);
+	msg.y1 = (s->horizontal ? SCROLLBAR_WIDTH :
+			s->length - SCROLLBAR_WIDTH + 1);
+
+	s->client_callback(s->client_data, &msg);
+
+	return true;
+}
+
+
+/*
+ * Exported function.  Documented in scrollbar.h
+ */
 int scrollbar_get_offset(struct scrollbar *s)
 {
 	if (s == NULL)

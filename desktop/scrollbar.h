@@ -111,6 +111,15 @@ bool scrollbar_redraw(struct scrollbar *s, int x, int y,
 void scrollbar_set(struct scrollbar *s, int value, bool bar_pos);
 
 /**
+ * Scroll the scrollbar by given amount.
+ *
+ * \param s		the scrollbar to be scrolled
+ * \param change	the change in scroll offset required (in px)
+ * \return true iff the scrollbar was moved.
+ */
+bool scrollbar_scroll(struct scrollbar *s, int change);
+
+/**
  * Get the current scroll offset to the visible part of the full area.
  *
  * \param s	the scrollbar to get the scroll offset value from
