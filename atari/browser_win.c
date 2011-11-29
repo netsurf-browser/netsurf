@@ -57,6 +57,7 @@
 #include "atari/search.h"
 #include "atari/osspec.h"
 #include "atari/encoding.h"
+#include "atari/toolbar.h"
 
 extern void * h_gem_rsrc;
 extern struct gui_window *input_window;
@@ -352,6 +353,15 @@ void window_set_focus( struct gui_window * gw, enum focus_element_type type, voi
 		LOG(("Set focus: %p (%d)\n", element, type));
 		gw->root->focus.type = type;
 		gw->root->focus.element = element;
+		switch( type ){
+
+			case URL_WIDGET:
+				textarea_keypress( ((struct s_url_widget*)(element))->textarea, KEY_SELECT_ALL );
+				break;
+
+			default: break;
+
+		}
 	}
 }
 

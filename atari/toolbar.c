@@ -312,12 +312,10 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 	/* TODO: reset mouse state of browser window? */
 	/* select whole text when newly focused, otherwise set caret to end of text */
 	if( !window_url_widget_has_focus(gw) ) {
-		// TODO select all ( needs textarea change )
 		window_set_focus( gw, URL_WIDGET, (void*)&tb->url );
-		textarea_mouse_action( tb->url.textarea, BROWSER_MOUSE_PRESS_1, mx, my );
 	} else {
 		if( mb & 1 ) {
-			/* TODO: if the button is dragging, report draw event */
+			/* TODO: if the button is dragging, report drag event */
 		} else {
 			/* TODO: recognize click + shift key */
 			int mstate = BROWSER_MOUSE_PRESS_1;
