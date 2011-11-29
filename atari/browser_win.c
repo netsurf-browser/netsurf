@@ -56,6 +56,7 @@
 #include "atari/dragdrop.h"
 #include "atari/search.h"
 #include "atari/osspec.h"
+#include "atari/encoding.h"
 
 extern void * h_gem_rsrc;
 extern struct gui_window *input_window;
