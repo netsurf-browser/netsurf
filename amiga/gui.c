@@ -986,6 +986,36 @@ void ami_update_quals(struct gui_window_2 *gwin)
 	}
 }
 
+bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y)
+{
+	int xs, ys;
+	int ns_x, ns_y;
+	struct IBox *bbox;
+
+	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
+			(ULONG *)&bbox);
+
+	ns_x = (ULONG)(gwin->win->MouseX - bbox->Left);
+	ns_y = (ULONG)(gwin->win->MouseY - bbox->Top);
+
+	if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height))
+		return false;
+
+	ns_x /= gwin->bw->scale;
+	ns_y /= gwin->bw->scale;
+
+	ami_get_hscroll_pos(gwin, (ULONG *)&xs);
+	ami_get_vscroll_pos(gwin, (ULONG *)&ys);
+
+	ns_x += xs;
+	ns_y += ys;
+
+	*x = ns_x;
+	*y = ns_y;
+
+	return true;	
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
@@ -3853,7 +3883,8 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
-	ULONG gid,x,y;
+	ULONG gid;
+	int x, y;
 	struct gui_window_2 *gwin = hook->h_Data;
 	struct IntuiWheelData *wheel;
 	Object *reqrefresh = NULL;
@@ -3866,21 +3897,11 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		case IDCMP_IDCMPUPDATE:
 			gid = GetTagData( GA_ID, 0, msg->IAddress );
 
-/*
-			if(reqrefresh = GetTagData( LAYOUT_RequestRefresh, 0, msg->IAddress ))
-			{
-				printf("LAYOUT_RequestRefresh\n");
-			}
-*/
-
 			switch( gid ) 
 			{
 				case GID_HSCROLL:
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
-//					history_set_current_scroll(gwin->bw->history,
-//						gwin->bw->window->scrollx,gwin->bw->window->scrolly);
-
 					if(option_faster_scroll == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
 
@@ -3894,9 +3915,16 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			{
 				wheel = (struct IntuiWheelData *)msg->IAddress;
 
-				gui_window_set_scroll(gwin->bw->window,
-					gwin->bw->window->scrollx + (wheel->WheelX * 50),
-					gwin->bw->window->scrolly + (wheel->WheelY * 50));
+				if(ami_mouse_to_ns_coords(gwin, &x, &y) == true)
+				{
+					if(browser_window_scroll_at_point(gwin->bw, x, y,
+						wheel->WheelX * 50, wheel->WheelY * 50) == false)
+					{
+						gui_window_set_scroll(gwin->bw->window,
+							gwin->bw->window->scrollx + (wheel->WheelX * 50),
+							gwin->bw->window->scrolly + (wheel->WheelY * 50));
+					}
+				}
 			}
 		break;
 
