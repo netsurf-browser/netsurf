@@ -68,7 +68,9 @@ struct content_handler {
 	void (*close)(struct content *c);
 	struct selection * (*get_selection)(struct content *c);
 	void (*get_contextual_content)(struct content *c, int x, int y,
-				struct contextual_content *data);
+			struct contextual_content *data);
+	bool (*scroll_at_point)(struct content *c, int x, int y,
+			int scrx, int scry);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	content_type (*type)(void);

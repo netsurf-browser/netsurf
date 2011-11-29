@@ -733,6 +733,19 @@ void content_get_contextual_content(struct hlcache_handle *h,
 }
 
 
+bool content_scroll_at_point(struct hlcache_handle *h,
+		int x, int y, int scrx, int scry)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->scroll_at_point != NULL)
+		return c->handler->scroll_at_point(c, x, y, scrx, scry);
+
+	return false;
+}
+
+
 void content_add_error(struct content *c, const char *token,
 		unsigned int line)
 {

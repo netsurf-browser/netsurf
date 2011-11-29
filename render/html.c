@@ -34,6 +34,7 @@
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"
+#include "desktop/scrollbar.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -78,6 +79,8 @@ static void html_close(struct content *c);
 struct selection *html_get_selection(struct content *c);
 static void html_get_contextual_content(struct content *c,
 		int x, int y, struct contextual_content *data);
+static bool html_scroll_at_point(struct content *c,
+		int x, int y, int scrx, int scry);
 struct search_context *html_get_search(struct content *c);
 static nserror html_clone(const struct content *old, struct content **newc);
 static content_type html_content_type(void);
@@ -124,6 +127,7 @@ static const content_handler html_content_handler = {
 	.close = html_close,
 	.get_selection = html_get_selection,
 	.get_contextual_content = html_get_contextual_content,
+	.scroll_at_point = html_scroll_at_point,
 	.clone = html_clone,
 	.type = html_content_type,
 	.no_share = true,
@@ -2260,6 +2264,56 @@ void html_get_contextual_content(struct content *c,
 					&target));
 		}
 	}
+}
+
+
+/**
+ * Scroll deepest thing within the content which can be scrolled at given point
+ *
+ * \param c	html content to look inside
+ * \param x	x-coordinate of point of interest
+ * \param y	y-coordinate of point of interest
+ * \param scrx	x-coordinate of point of interest
+ * \param scry	y-coordinate of point of interest
+ * \return true iff scroll was consumed by something in the content
+ */
+bool html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
+{
+	html_content *html = (html_content *) c;
+
+	struct box *box = html->layout;
+	struct box *next;
+	int box_x = 0, box_y = 0;
+	hlcache_handle *containing_content = NULL;
+	bool handled_scroll = false;
+
+	/* TODO: invert order; visit deepest box first */
+
+	while ((next = box_at_point(box, x, y, &box_x, &box_y,
+			&containing_content)) != NULL) {
+		box = next;
+
+		if (box->style && css_computed_visibility(box->style) == 
+				CSS_VISIBILITY_HIDDEN)
+			continue;
+
+		/* Pass into iframe */
+		if (box->iframe && browser_window_scroll_at_point(box->iframe,
+				x - box_x, y - box_y, scrx, scry) == true)
+			return true;
+
+		/* Handle box scrollbars */
+		if (box->scroll_y && scrollbar_scroll(box->scroll_y, scry))
+			handled_scroll = true;
+
+		if (box->scroll_x && scrollbar_scroll(box->scroll_x, scrx))
+			handled_scroll = true;
+
+		if (handled_scroll == true)
+			return true;
+	}
+
+	return false;
 }
 
 

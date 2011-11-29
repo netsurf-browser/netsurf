@@ -175,6 +175,8 @@ void content_close(struct hlcache_handle *h);
 struct selection *content_get_selection(struct hlcache_handle *h);
 void content_get_contextual_content(struct hlcache_handle *h,
 		int x, int y, struct contextual_content *data);
+bool content_scroll_at_point(struct hlcache_handle *h,
+		int x, int y, int scrx, int scry);
 struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
 		lwc_string *rel);
 

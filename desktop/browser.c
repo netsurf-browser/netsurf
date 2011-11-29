@@ -557,8 +557,11 @@ bool browser_window_scroll_at_point(struct browser_window *bw,
 		}
 	}
 
-	/* TODO:
-	 * Pass scroll to content to try scrolling something at this point */
+	/* Try to scroll any current content */
+	if (bw->current_content != NULL && content_scroll_at_point(
+			bw->current_content, x, y, scrx, scry) == true)
+		/* Scroll handled by current content */
+		return true;
 
 	/* Try to scroll this window, if scroll not already handled */
 	if (handled_scroll == false) {
