@@ -322,6 +322,13 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 
 	switch (event->direction) {
 	case GDK_SCROLL_LEFT:
+		if (browser_window_scroll_at_point(g->bw,
+				event->x / g->bw->scale,
+				event->y / g->bw->scale,
+				-100, 0) == true)
+			/* Core handled it */
+			return TRUE;
+
 		scroll = hscroll;
 		value = gtk_adjustment_get_value(scroll) -
 			(scroll->step_increment * 2);
@@ -330,6 +337,13 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 		break;
 
 	case GDK_SCROLL_UP:
+		if (browser_window_scroll_at_point(g->bw,
+				event->x / g->bw->scale,
+				event->y / g->bw->scale,
+				0, -100) == true)
+			/* Core handled it */
+			return TRUE;
+
 		scroll = vscroll;
 		value = gtk_adjustment_get_value(scroll) -
 			(scroll->step_increment * 2);
@@ -338,6 +352,13 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 		break;
 
 	case GDK_SCROLL_RIGHT:
+		if (browser_window_scroll_at_point(g->bw,
+				event->x / g->bw->scale,
+				event->y / g->bw->scale,
+				100, 0) == true)
+			/* Core handled it */
+			return TRUE;
+
 		scroll = hscroll;
 		value = gtk_adjustment_get_value(scroll) +
 			(scroll->step_increment * 2);
@@ -346,12 +367,20 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 		break;
 
 	case GDK_SCROLL_DOWN:
+		if (browser_window_scroll_at_point(g->bw,
+				event->x / g->bw->scale,
+				event->y / g->bw->scale,
+				0, 100) == true)
+			/* Core handled it */
+			return TRUE;
+
 		scroll = vscroll;
 		value = gtk_adjustment_get_value(scroll) +
 			(scroll->step_increment * 2);
 		if (value > scroll->upper - alloc->height)
 			value = scroll->upper - alloc->height;
 		break;
+
 	default:
 		return TRUE;
 	}
