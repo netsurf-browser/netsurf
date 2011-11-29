@@ -585,12 +585,22 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		case NSFB_KEY_MOUSE_4:
 			/* scroll up */
-			widget_scroll_y(gw, -100, false);
+			scale = gw->bw->scale;
+			if (browser_window_scroll_at_point(gw->bw,
+					(cbi->x + bwidget->scrollx) / scale,
+					(cbi->y + bwidget->scrolly) / scale,
+					0, -100) == false)
+				widget_scroll_y(gw, -100, false);
 			break;
 
 		case NSFB_KEY_MOUSE_5:
 			/* scroll down */
-			widget_scroll_y(gw, 100, false);
+			scale = gw->bw->scale;
+			if (browser_window_scroll_at_point(gw->bw,
+					(cbi->x + bwidget->scrollx) / scale,
+					(cbi->y + bwidget->scrolly) / scale,
+					0, 100) == false)
+				widget_scroll_y(gw, 100, false);
 			break;
 
 		default:
