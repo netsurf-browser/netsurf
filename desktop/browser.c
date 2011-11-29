@@ -526,6 +526,52 @@ void browser_window_get_contextual_content(struct browser_window *bw,
 	browser_window__get_contextual_content(bw, x, y, data);
 }
 
+/* exported interface, documented in browser.h */
+bool browser_window_scroll_at_point(struct browser_window *bw,
+		int x, int y, int scrx, int scry)
+{
+	bool handled_scroll = false;
+	assert(bw != NULL);
+
+	if (bw->children) {
+		/* Browser window has children, so pass request on to
+		 * appropriate child */
+		struct browser_window *bwc;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		/* Loop through all children of bw */
+		for (cur_child = 0; cur_child < children; cur_child++) {
+			/* Set current child */
+			bwc = &bw->children[cur_child];
+
+			/* Skip this frame if (x, y) coord lies outside */
+			if (x < bwc->x || bwc->x + bwc->width < x ||
+					y < bwc->y || bwc->y + bwc->height < y)
+				continue;
+
+			/* Pass request into this child */
+			return browser_window_scroll_at_point(bwc,
+					(x - bwc->x), (y - bwc->y),
+					scrx, scry);
+		}
+	}
+
+	/* TODO:
+	 * Pass scroll to content to try scrolling something at this point */
+
+	/* Try to scroll this window, if scroll not already handled */
+	if (handled_scroll == false) {
+		if (bw->scroll_y && scrollbar_scroll(bw->scroll_y, scry))
+			handled_scroll = true;
+
+		if (bw->scroll_x && scrollbar_scroll(bw->scroll_x, scrx))
+			handled_scroll = true;
+	}
+
+	return handled_scroll;
+}
+
 
 /**
  * Create and open a new root browser window with the given page.

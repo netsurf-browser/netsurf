@@ -249,6 +249,21 @@ void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
 void browser_window_get_contextual_content(struct browser_window *bw,
 		int x, int y, struct contextual_content *data);
 
+/**
+ * Send a scroll request to a browser window at a particular point.  The
+ * 'deepest' scrollable object which can be scrolled in the requested
+ * direction at the given point will consume the scroll.
+ *
+ * \param bw	browser window to look inside
+ * \param x	x-coordinate of point of interest
+ * \param y	y-coordinate of point of interest
+ * \param scrx	number of px try to scroll something in x direction
+ * \param scry	number of px try to scroll something in y direction
+ * \return true iff scroll request has been consumed
+ */
+bool browser_window_scroll_at_point(struct browser_window *bw,
+		int x, int y, int scrx, int scry);
+
 void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		lwc_string *frag);
 
