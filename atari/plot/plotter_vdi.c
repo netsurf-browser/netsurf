@@ -315,8 +315,10 @@ static int lock( GEM_PLOTTER self )
 	self->flags |= PLOT_FLAG_LOCKED;
 	if( !wind_update(BEG_UPDATE|0x100) )
 		return(0);
-	if( !wind_update(BEG_MCTRL|0x100) )
+	if( !wind_update(BEG_MCTRL|0x100) ){
+		wind_update(END_UPDATE);
 		return(0);
+	}
 	graf_mouse(M_OFF, NULL);
 	return( 1 );
 }
