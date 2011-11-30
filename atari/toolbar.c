@@ -674,6 +674,18 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 			ret = true;
 		}
 	}
+	else if( ik == KEY_COPY_SELECTION ){
+		// copy whole text
+		char * text;
+		int len;
+		len = textarea_get_text( tb->url.textarea, NULL, 0 );
+		text = malloc( len+1 );
+		if( text ){
+			textarea_get_text( tb->url.textarea, text, len+1 );
+			scrap_txt_write( &app, text );
+			free( text );
+		}
+	}
 	else {
 		ret = textarea_keypress( tb->url.textarea, ik );
 	}
