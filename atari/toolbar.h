@@ -74,14 +74,9 @@ struct s_toolbar
 	int btcnt;
 };
 
+/* interface to the toolbar */
 CMP_TOOLBAR tb_create( struct gui_window * gw );
 void tb_destroy( CMP_TOOLBAR tb );
-
-
-static void __CDECL evnt_toolbar_redraw( COMPONENT *c, long buff[8], void *data );
-//static void __CDECL evnt_toolbar_mbutton( COMPONENT *c, long buff[8], void *data );
-static void __CDECL evnt_toolbar_resize( COMPONENT *c, long buff[8], void *data );
-
 /* recalculate size/position of nested controls within the toolbar: */
 void tb_adjust_size( struct gui_window * gw );
 /* report click to toolbar, relative coords : */
@@ -91,7 +86,6 @@ void tb_reload_click( struct gui_window * gw );
 void tb_forward_click( struct gui_window * gw );
 void tb_home_click( struct gui_window * gw );
 void tb_stop_click( struct gui_window * gw );
-
 /* enable / disable buttons etc. */
 void tb_update_buttons( struct gui_window * gw );
 /* handles clicks on url widget: */
@@ -102,7 +96,6 @@ bool tb_url_input( struct gui_window * gw, short keycode );
 void tb_url_set( struct gui_window * gw, char * text );
 /* perform redraw of invalidated url textinput areas: */
 void tb_url_redraw( struct gui_window * gw );
-
 struct gui_window * tb_gui_window( CMP_TOOLBAR tb );
 
 #endif

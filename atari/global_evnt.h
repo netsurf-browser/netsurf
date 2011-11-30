@@ -56,8 +56,6 @@ struct s_menu_item_evnt {
 */
 
 
-void snd_redraw(short x, short y, short w, short h);
-void snd_win_redraw(WINDOW * win, short x, short y, short w, short h);
 /* Call this after each call to evnt_multi, to check for states that evnt_multi doesn't: */
 void global_track_mouse_state( LGRECT * bwrect, bool within, short, short, short, short );
 void bind_global_events( void );

@@ -75,8 +75,6 @@ void __CDECL std_mvd( WINDOW * win, short buff[8], void * );
 /* -------------------------------------------------------------------------- */
 /* Static module methods follow here:                                         */
 /* -------------------------------------------------------------------------- */
-static void evnt_toolbar_click(WINDOW * win, short buf[8], void * data);
-static void __CDECL evnt_window_redraw( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data );
 void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data );
@@ -85,8 +83,6 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_keybd(WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_mbutton(WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
@@ -642,16 +638,6 @@ static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data )
 	assert( input_window != NULL );
 }
 
-static void __CDECL evnt_window_shaded( WINDOW *win, short buff[8], void *data )
-{
-	if(buff[0] == WM_SHADED){
-		LOG(("WM_SHADED, vis: %d, state: %d", GEMWIN_VISIBLE(win), win->status ));
-	}
-	if(buff[0] == WM_UNSHADED){
-
-	}
-}
-
 static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data)
 {
 	int dx = buff[4];
@@ -677,8 +663,6 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
 		browser_scroll( gw, WA_RTPAGE, abs(dx), false );
 	else if( dx < 0 )
 		browser_scroll( gw, WA_LFPAGE, abs(dx), false );
-
-
 }
 
 
