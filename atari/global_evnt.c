@@ -641,15 +641,3 @@ void unbind_global_events( void )
 	}
 }
 
-/* send redraw to all browser windows */
-void snd_redraw( short x, short y, short w, short h)
-{
-	struct gui_window * gw;
-	gw = window_list;
-	while( gw != NULL && gw->browser->type == 0 ) {
-		ApplWrite( _AESapid, WM_REDRAW, gw->root->handle->handle, x, y, w, h);
-		gw = gw->next;
-	}
-	return;
-}
-
