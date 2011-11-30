@@ -91,9 +91,6 @@ struct s_browser * browser_create
 	int lt, int w, int flex
 )
 {
-	LGRECT cwork;
-	COMPONENT * scrollv, * scrollh, * drawable;
-
 	CMP_BROWSER bnew = (CMP_BROWSER)malloc( sizeof(struct s_browser) );
 	if( bnew )
 	{
@@ -177,7 +174,6 @@ void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * 
 void browser_update_rects(struct gui_window * gw )
 {
 	short buff[8];
-	LGRECT cmprect;
 	mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&buff[4]);
 	buff[0] = CM_REFLOW;
 	buff[1] = _AESapid;
@@ -223,7 +219,6 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 
 static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * data)
 {
-	long lbuff[8];
 	short mx, my, dummy, mbut;
 	uint32_t tnow = clock()*1000 / CLOCKS_PER_SEC;
 	LGRECT cwork;
@@ -597,8 +592,6 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 {
 	assert( gw != NULL );
 	CMP_BROWSER b = gw->browser;
-	int i;
-	struct rect area;
 	LGRECT work;
 
 	if( y1 < 0 || x1 < 0 )
@@ -618,7 +611,6 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
 								struct rect * area )
 {
-	LGRECT work;
 	CMP_BROWSER b = gw->browser;
 
 	struct redraw_context ctx = {
@@ -839,7 +831,6 @@ void browser_redraw( struct gui_window * gw )
 
 static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data)
 {
-	short pxy[8];
 	struct gui_window * gw = (struct gui_window *) data;
 	CMP_BROWSER b = gw->browser;
 	LGRECT work, lclip;

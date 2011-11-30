@@ -163,14 +163,12 @@ static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, sh
 	}
 }
 
-int window_create( struct gui_window * gw, struct browser_window * bw, unsigned long inflags)
+int window_create( struct gui_window * gw,
+				struct browser_window * bw,
+				unsigned long inflags )
 {
-	short buff[8];
-	OBJECT * tbtree;
 	int err = 0;
 	bool tb, sb;
-	short sc;
-	short w,h, wx, wy, wh, ww;
 	int flags;
 
 	tb = (inflags & WIDGET_TOOLBAR );
@@ -255,7 +253,6 @@ int window_create( struct gui_window * gw, struct browser_window * bw, unsigned 
 
 int window_destroy( struct gui_window * gw)
 {
-	short buff[8];
 	int err = 0;
 
 	search_destroy( gw );
@@ -294,12 +291,11 @@ int window_destroy( struct gui_window * gw)
 
 
 
-void window_open( struct gui_window * gw)
+void window_open( struct gui_window * gw, GRECT pos )
 {
 	LGRECT br;
-	GRECT dim;
 
-	WindOpen(gw->root->handle, 20, 20, app.w/2, app.h/2 );
+	WindOpen(gw->root->handle, pos.g_x, pos.g_y, pos.g_w, pos.g_h );
 	WindClear( gw->root->handle );
 	WindSetStr( gw->root->handle, WF_NAME, (char *)"" );
 
@@ -642,7 +638,6 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
 {
 	int dx = buff[4];
 	int dy = buff[5];
-	GRECT work, screen;
 	struct gui_window * gw = data;
 
 	if (!dx && !dy) return;
@@ -697,10 +692,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 
 static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
 {
-	short mx,my, mb, ks;
 	short wx, wy, wh, ww, nx, ny;
-	short r;
-	short xoff, yoff;
 	if( option_atari_realtime_move  ) {
 		std_mvd( win, buff, &app );
 		evnt_window_rt_resize( win, buff, data );
@@ -739,7 +731,6 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 {
 	short x,y,w,h;
 	struct gui_window * gw;
-	LGRECT rect;
 
 	if(buff[0] == WM_FORCE_MOVE ) {
 		std_mvd(win, buff, &app);

@@ -476,7 +476,7 @@ static int parse_accel( char * message, struct s_accelerator * accel)
 		accel->mod |= K_CTRL;
 		s++;
 	}
-parsekey:
+
 	/* expect  F1/F10 or something like A, B, C ... : */
 	if(strlen(s) >= 2 && s[0] == 'F' ) {
 		if(s[1] >= 49 && s[1] <= 57) {

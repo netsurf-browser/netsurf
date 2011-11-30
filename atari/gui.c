@@ -205,7 +205,11 @@ gui_create_browser_window(struct browser_window *bw,
 	LOG(("new window: %p, bw: %p\n", gw, bw));
 	window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE|WIDGET_SCROLL );
 	if( gw->root->handle ) {
-		window_open( gw );
+		GRECT pos = {
+			app.w/2-(cfg_width/2), app.h/2-(cfg_height/2),
+			cfg_width, cfg_height
+		};
+		window_open( gw , pos );
 		/* Recalculate windows browser area now */
 		browser_update_rects( gw );
 		tb_update_buttons( gw );

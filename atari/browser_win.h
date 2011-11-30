@@ -34,12 +34,13 @@
 /* -------------------------------------------------------------------------- */
 
 /*	Creates an normal Browser window with [toolbar], [statusbar] */
-int window_create( struct gui_window * gw, struct browser_window * bw, unsigned long flags );
+int window_create( struct gui_window * gw,
+				struct browser_window * bw, unsigned long flags );
 /* Destroys WinDom part of gui_window */
 int window_destroy( struct gui_window * gw );
 
 /* show the window */
-void window_open( struct gui_window * gw);
+void window_open( struct gui_window * gw, GRECT pos);
 
 void window_snd_redraw(struct gui_window * gw, short x, short y, short w, short h );
 /* Update Shade / Unshade state of the fwd/back buttons*/
@@ -56,7 +57,6 @@ bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t,
 bool window_url_widget_has_focus( struct gui_window * gw );
 void window_set_url( struct gui_window * gw, const char * text);
 void window_set_stauts( struct gui_window * gw , char * text );
-void window_center(struct gui_window * gw);
 void window_set_icon(struct gui_window * gw, struct bitmap * bmp );
 
 
