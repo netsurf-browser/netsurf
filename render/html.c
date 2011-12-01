@@ -2350,6 +2350,10 @@ bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 				CSS_VISIBILITY_HIDDEN)
 			continue;
 
+		if (box->iframe)
+			return browser_window_drop_file_at_point(box->iframe,
+					x - box_x, y - box_y, file);
+
 		if (box->gadget) {
 			switch (box->gadget->type) {
 				case GADGET_FILE:
@@ -2393,7 +2397,10 @@ bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		file_box->gadget->value = utf8_fn;
 
 		/* Redraw box. */
-		html_redraw_a_box(containing_content, file_box);
+		if (containing_content == NULL)
+			html__redraw_a_box(c, file_box);
+		else
+			html_redraw_a_box(containing_content, file_box);
 
 	} else if (html->bw != NULL) {
 		/* File dropped on text input */
@@ -2404,6 +2411,7 @@ bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		char *utf8_buff;
 		utf8_convert_ret ret;
 		unsigned int size;
+		struct browser_window *bw;
 
 		/* Open file */
 		fp = fopen(file, "rb");
@@ -2462,8 +2470,10 @@ bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		browser_window_mouse_click(html->bw,
 				BROWSER_MOUSE_PRESS_1, x, y);
 
+		bw = browser_window_get_root(html->bw);
+
 		/* Paste the file as text */
-		browser_window_paste_text(html->bw, utf8_buff, size, true);
+		browser_window_paste_text(bw, utf8_buff, size, true);
 
 		free(utf8_buff);
 	}
