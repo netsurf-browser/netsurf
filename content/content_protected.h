@@ -71,6 +71,8 @@ struct content_handler {
 			struct contextual_content *data);
 	bool (*scroll_at_point)(struct content *c, int x, int y,
 			int scrx, int scry);
+	bool (*drop_file_at_point)(struct content *c, int x, int y,
+			char *file);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	content_type (*type)(void);

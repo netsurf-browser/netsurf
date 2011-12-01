@@ -49,6 +49,7 @@
 #include "utils/schedule.h"
 #include "utils/talloc.h"
 #include "utils/url.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 
 #define CHUNK 4096
@@ -81,6 +82,8 @@ static void html_get_contextual_content(struct content *c,
 		int x, int y, struct contextual_content *data);
 static bool html_scroll_at_point(struct content *c,
 		int x, int y, int scrx, int scry);
+static bool html_drop_file_at_point(struct content *c,
+		int x, int y, char *file);
 struct search_context *html_get_search(struct content *c);
 static nserror html_clone(const struct content *old, struct content **newc);
 static content_type html_content_type(void);
@@ -128,6 +131,7 @@ static const content_handler html_content_handler = {
 	.get_selection = html_get_selection,
 	.get_contextual_content = html_get_contextual_content,
 	.scroll_at_point = html_scroll_at_point,
+	.drop_file_at_point = html_drop_file_at_point,
 	.clone = html_clone,
 	.type = html_content_type,
 	.no_share = true,
@@ -2314,6 +2318,157 @@ bool html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 	}
 
 	return false;
+}
+
+
+/**
+ * Drop a file onto a content at a particular point.
+ *
+ * \param c	html content to look inside
+ * \param x	x-coordinate of point of interest
+ * \param y	y-coordinate of point of interest
+ * \param file	path to file to be dropped
+ * \return true iff file drop has been handled
+ */
+bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
+{
+	html_content *html = (html_content *) c;
+
+	struct box *box = html->layout;
+	struct box *next;
+	struct box *file_box = NULL;
+	struct box *text_box = NULL;
+	int box_x = 0, box_y = 0;
+	hlcache_handle *containing_content = NULL;
+
+	/* Scan box tree for boxes that can handle drop */
+	while ((next = box_at_point(box, x, y, &box_x, &box_y,
+			&containing_content)) != NULL) {
+		box = next;
+
+		if (box->style && css_computed_visibility(box->style) ==
+				CSS_VISIBILITY_HIDDEN)
+			continue;
+
+		if (box->gadget) {
+			switch (box->gadget->type) {
+				case GADGET_FILE:
+					file_box = box;
+				break;
+
+				case GADGET_TEXTBOX:
+				case GADGET_TEXTAREA:
+				case GADGET_PASSWORD:
+					text_box = box;
+					break;
+
+				default:	/* appease compiler */
+					break;
+			}
+		}
+	}
+
+	if (!file_box && !text_box)
+		/* No box capable of handling drop */
+		return false;
+
+	/* Handle the drop */
+	if (file_box) {
+		/* File dropped on file input */
+		utf8_convert_ret ret;
+		char *utf8_fn;
+
+		ret = utf8_from_local_encoding(file, 0,
+				&utf8_fn);
+		if (ret != UTF8_CONVERT_OK) {
+			/* A bad encoding should never happen */
+			assert(ret != UTF8_CONVERT_BADENC);
+			LOG(("utf8_from_local_encoding failed"));
+			/* Load was for us - just no memory */
+			return true;
+		}
+
+		/* Found: update form input */
+		free(file_box->gadget->value);
+		file_box->gadget->value = utf8_fn;
+
+		/* Redraw box. */
+		html_redraw_a_box(containing_content, file_box);
+
+	} else if (html->bw != NULL) {
+		/* File dropped on text input */
+
+		size_t file_len;
+		FILE *fp = NULL;
+		char *buffer;
+		char *utf8_buff;
+		utf8_convert_ret ret;
+		unsigned int size;
+
+		/* Open file */
+		fp = fopen(file, "rb");
+		if (fp == NULL) {
+			/* Couldn't open file, but drop was for us */
+			return true;
+		}
+
+		/* Get filesize */
+		fseek(fp, 0, SEEK_END);
+		file_len = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate buffer for file data */
+		buffer = malloc(file_len + 1);
+		if (buffer == NULL) {
+			/* No memory, but drop was for us */
+			fclose(fp);
+			return true;
+		}
+
+		/* Stick file into buffer */
+		if (file_len != fread(buffer, 1, file_len, fp)) {
+			/* Failed, but drop was for us */
+			free(buffer);
+			fclose(fp);
+			return true;
+		}
+
+		/* Done with file */
+		fclose(fp);
+
+		/* Ensure buffer's string termination */
+		buffer[file_len] = '\0';
+
+		/* TODO: Sniff for text? */
+
+		/* Convert to UTF-8 */
+		ret = utf8_from_local_encoding(buffer, file_len, &utf8_buff);
+		if (ret != UTF8_CONVERT_OK) {
+			/* bad encoding shouldn't happen */
+			assert(ret != UTF8_CONVERT_BADENC);
+			LOG(("utf8_from_local_encoding failed"));
+			free(buffer);
+			warn_user("NoMemory", NULL);
+			return true;
+		}
+
+		/* Done with buffer */
+		free(buffer);
+
+		/* Get new length */
+		size = strlen(utf8_buff);
+
+		/* Simulate a click over the input box, to place caret */
+		browser_window_mouse_click(html->bw,
+				BROWSER_MOUSE_PRESS_1, x, y);
+
+		/* Paste the file as text */
+		browser_window_paste_text(html->bw, utf8_buff, size, true);
+
+		free(utf8_buff);
+	}
+
+	return true;
 }
 
 
