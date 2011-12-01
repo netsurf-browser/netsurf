@@ -3060,20 +3060,8 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 {
-	struct box *box;
-	struct box *file_box = 0;
-	struct box *text_box = 0;
-	struct browser_window *bw = g->bw;
-	hlcache_handle *h;
-	int box_x, box_y;
 	os_error *error;
 	os_coord pos;
-
-	h = bw->current_content;
-
-	/* HTML content only. */
-	if (!bw->current_content || content_get_type(h) != CONTENT_HTML)
-		return false;
 
 	/* Ignore directories etc. */
 	if (0x1000 <= message->data.data_xfer.file_type)
@@ -3083,77 +3071,9 @@ bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message)
 			message->data.data_xfer.pos.y, &pos))
 		return false;
 
-	box = html_get_box_tree(h);
-
-	/* Consider the margins of the html page now */
-	box_x = box->margin[LEFT];
-	box_y = box->margin[TOP];
-
-	while ((box = box_at_point(box, pos.x, pos.y, &box_x, &box_y, &h))) {
-		if (box->style && css_computed_visibility(box->style) ==
-				CSS_VISIBILITY_HIDDEN)
-			continue;
-
-		if (box->gadget) {
-			switch (box->gadget->type) {
-				case GADGET_FILE:
-					file_box = box;
-				break;
-
-				case GADGET_TEXTBOX:
-				case GADGET_TEXTAREA:
-				case GADGET_PASSWORD:
-					text_box = box;
-					break;
-
-				default:	/* appease compiler */
-					break;
-			}
-		}
-	}
-
-	if (!file_box && !text_box)
+	if (browser_window_drop_file_at_point(g->bw, pos.x, pos.y,
+			message->data.data_xfer.file_name) == false)
 		return false;
-
-	if (file_box) {
-		utf8_convert_ret ret;
-		char *utf8_fn;
-
-		ret = utf8_from_local_encoding(
-				message->data.data_xfer.file_name, 0,
-				&utf8_fn);
-		if (ret != UTF8_CONVERT_OK) {
-			/* A bad encoding should never happen */
-			assert(ret != UTF8_CONVERT_BADENC);
-			LOG(("utf8_from_local_encoding failed"));
-			/* Load was for us - just no memory */
-			return true;
-		}
-
-		/* Found: update form input. */
-		free(file_box->gadget->value);
-		file_box->gadget->value = utf8_fn;
-
-		/* Redraw box. */
-		box_coords(file_box, &pos.x, &pos.y);
-
-		error = xwimp_force_redraw(bw->window->window,
-				pos.x * 2, -(pos.y + file_box->height) * 2,
-				(pos.x + file_box->width) * 2, -pos.y * 2);
-		if (error) {
-			LOG(("xwimp_force_redraw: 0x%x: %s",
-			     error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-	} else {
-
-		const char *filename = message->data.data_xfer.file_name;
-
-		browser_window_mouse_click(g->bw, BROWSER_MOUSE_PRESS_1, pos.x, pos.y);
-
-		if (!ro_gui_window_import_text(g, filename, false))
-			return true;  /* it was for us, it just didn't work! */
-	}
 
 	/* send DataLoadAck */
 	message->action = message_DATA_LOAD_ACK;
