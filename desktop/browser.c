@@ -575,6 +575,43 @@ bool browser_window_scroll_at_point(struct browser_window *bw,
 	return handled_scroll;
 }
 
+/* exported interface, documented in browser.h */
+bool browser_window_drop_file_at_point(struct browser_window *bw,
+		int x, int y, char *file)
+{
+	assert(bw != NULL);
+
+	if (bw->children) {
+		/* Browser window has children, so pass request on to
+		 * appropriate child */
+		struct browser_window *bwc;
+		int cur_child;
+		int children = bw->rows * bw->cols;
+
+		/* Loop through all children of bw */
+		for (cur_child = 0; cur_child < children; cur_child++) {
+			/* Set current child */
+			bwc = &bw->children[cur_child];
+
+			/* Skip this frame if (x, y) coord lies outside */
+			if (x < bwc->x || bwc->x + bwc->width < x ||
+					y < bwc->y || bwc->y + bwc->height < y)
+				continue;
+
+			/* Pass request into this child */
+			return browser_window_drop_file_at_point(bwc,
+					(x - bwc->x), (y - bwc->y), file);
+		}
+	}
+
+	/* Pass file drop on to any content */
+	if (bw->current_content != NULL)
+		return content_drop_file_at_point(bw->current_content,
+				x, y, file);
+
+	return false;
+}
+
 
 /**
  * Create and open a new root browser window with the given page.

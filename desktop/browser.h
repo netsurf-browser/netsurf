@@ -264,6 +264,18 @@ void browser_window_get_contextual_content(struct browser_window *bw,
 bool browser_window_scroll_at_point(struct browser_window *bw,
 		int x, int y, int scrx, int scry);
 
+/**
+ * Drop a file onto a browser window at a particular point.
+ *
+ * \param bw	browser window to look inside
+ * \param x	x-coordinate of point of interest
+ * \param y	y-coordinate of point of interest
+ * \param file	path to file to be dropped
+ * \return true iff file drop has been handled
+ */
+bool browser_window_drop_file_at_point(struct browser_window *bw,
+		int x, int y, char *file);
+
 void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
 		lwc_string *frag);
 
