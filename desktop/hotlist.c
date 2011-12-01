@@ -413,7 +413,8 @@ void hotlist_add_folder(bool selected)
  */
 void hotlist_add_entry(bool selected)
 {
-	struct node *node, *parent;
+	struct node *node;
+	struct node *parent = NULL;
 	creating_node = true;
 
 	if (selected == true) {
