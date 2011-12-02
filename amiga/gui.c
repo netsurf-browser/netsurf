@@ -986,17 +986,21 @@ void ami_update_quals(struct gui_window_2 *gwin)
 	}
 }
 
-bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y)
+bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
+	int mouse_x, int mouse_y)
 {
 	int xs, ys;
 	int ns_x, ns_y;
 	struct IBox *bbox;
 
+	if(mouse_x == -1) mouse_x = gwin->win->MouseX;
+	if(mouse_y == -1) mouse_y = gwin->win->MouseY;
+
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 			(ULONG *)&bbox);
 
-	ns_x = (ULONG)(gwin->win->MouseX - bbox->Left);
-	ns_y = (ULONG)(gwin->win->MouseY - bbox->Top);
+	ns_x = (ULONG)(mouse_x - bbox->Left);
+	ns_y = (ULONG)(mouse_y - bbox->Top);
 
 	if((ns_x < 0) || (ns_x > bbox->Width) || (ns_y < 0) || (ns_y > bbox->Height))
 		return false;
@@ -1795,15 +1799,11 @@ void ami_handle_appmsg(void)
 {
 	struct AppMessage *appmsg;
 	struct gui_window_2 *gwin;
-	struct IBox *bbox;
-	ULONG x,y,xs,ys,width,height,len;
+	int x, y;
 	struct WBArg *appwinargs;
 	STRPTR filename;
-	struct box *box,*file_box=0,*text_box=0;
-	hlcache_handle *content;
-	int box_x=0,box_y=0;
-	BPTR fh = 0;
-	char *utf8text,*urlfilename;
+	char *urlfilename;
+	int i = 0;
 
 	while(appmsg=(struct AppMessage *)GetMsg(appport))
 	{
@@ -1817,136 +1817,56 @@ void ami_handle_appmsg(void)
 		}
 		else if(appmsg->am_Type == AMTYPE_APPWINDOW)
 		{
-			GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
-				(ULONG *)&bbox);
-
-			ami_get_hscroll_pos(gwin, (ULONG *)&xs);
-			x = (appmsg->am_MouseX) - (bbox->Left) +xs;
-
-			ami_get_vscroll_pos(gwin, (ULONG *)&ys);
-			y = appmsg->am_MouseY - bbox->Top + ys;
-
-			width=bbox->Width;
-			height=bbox->Height;
-
-			if(appwinargs = appmsg->am_ArgList)
+			for(i = 0; i < appmsg->am_NumArgs; ++i)
 			{
-				if(filename = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
+				if(appwinargs = &appmsg->am_ArgList[i])
 				{
-					if(appwinargs->wa_Lock)
+					if(filename = AllocVec(1024, MEMF_PRIVATE | MEMF_CLEAR))
 					{
-						NameFromLock(appwinargs->wa_Lock,filename,1024);
-					}
-
-					AddPart(filename,appwinargs->wa_Name,1024);
-
-					if(((gwin->bw->current_content == NULL) ||
-						(content_get_type(gwin->bw->current_content) != CONTENT_HTML)) ||
-						(!((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))))
-					{
-						urlfilename = path_to_url(filename);
-						browser_window_go(gwin->bw,urlfilename,NULL,true);
-						free(urlfilename);
-					}
-					else
-					{
-						content = gwin->bw->current_content;
-						box = html_get_box_tree(content);
-						while ((box = box_at_point(box, x, y, &box_x, &box_y, &content)))
+						if(appwinargs->wa_Lock)
 						{
-							if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)	continue;
-
-							if (box->gadget)
-							{
-								switch (box->gadget->type)
-								{
-									case GADGET_FILE:
-										file_box = box;
-									break;
-
-									case GADGET_TEXTBOX:
-									case GADGET_TEXTAREA:
-									case GADGET_PASSWORD:
-										text_box = box;
-									break;
-
-									default:
-									break;
-								}
-							}
+							NameFromLock(appwinargs->wa_Lock, filename, 1024);
 						}
 
-						if((!file_box) && (!text_box))
+						AddPart(filename, appwinargs->wa_Name, 1024);
+
+						if(ami_mouse_to_ns_coords(gwin, &x, &y,
+							appmsg->am_MouseX, appmsg->am_MouseY) == false)
 						{
 							urlfilename = path_to_url(filename);
-							browser_window_go(gwin->bw, urlfilename, NULL, true);
-							free(urlfilename);
-							return;
-						}
 
-						if(file_box)
-						{
-							utf8_convert_ret ret;
-							char *utf8_fn;
-
-							if(utf8_from_local_encoding(filename,0,&utf8_fn) != UTF8_CONVERT_OK)
+							if(i == 0)
 							{
-								warn_user("NoMemory","");
-								return;
+								browser_window_go(gwin->bw, urlfilename, NULL, true);
+								ActivateWindow(gwin->win);
+							}
+							else
+							{
+								browser_window_create(urlfilename, gwin->bw, 0, true, true);
 							}
 
-							free(file_box->gadget->value);
-							file_box->gadget->value = utf8_fn;
-
-							box_coords(file_box, (int *)&x, (int *)&y);
-							ami_do_redraw_limits(gwin->bw->window, 
-								gwin->bw->window->shared->bw, x, y,
-								x + file_box->width,
-								y + file_box->height);
+							free(urlfilename);
 						}
 						else
 						{
-							Object *dto;
-							STRPTR buffer;
-							uint32 bufferlen;
-
-							browser_window_mouse_click(gwin->bw, BROWSER_MOUSE_PRESS_1, x, y);
-
-							if(dto = NewDTObject(filename,
-								DTA_GroupID, GID_TEXT, TAG_DONE))
+							if(browser_window_drop_file_at_point(gwin->bw, x, y, filename) == false)
 							{
-								if(GetDTAttrs(dto,
-									TDTA_Buffer, &buffer,
-									TDTA_BufferLen, &bufferlen,
-									TAG_DONE))
+								urlfilename = path_to_url(filename);
+
+								if(i == 0)
 								{
-									uint32 bufferlen2 = 256;
-									int32 blen;
-
-									blen = bufferlen;
-
-									do
-									{
-										if(blen < 256) bufferlen2 = blen;
-
-										if(utf8_from_local_encoding(buffer,
-													bufferlen2,
-													&utf8text) == UTF8_CONVERT_OK)
-										{
-											browser_window_paste_text(gwin->bw,
-												utf8text, strlen(utf8text),
-												(blen <= 256) ? true : false);
-											free(utf8text);
-										}
-										buffer += 256;
-										blen -= 256;
-									}while(blen > 0);
+									browser_window_go(gwin->bw, urlfilename, NULL, true);
+									ActivateWindow(gwin->win);
 								}
-								DisposeDTObject(dto);
+								else
+								{
+									browser_window_create(urlfilename, gwin->bw, 0, true, true);
+								}
+								free(urlfilename);
 							}
 						}
+						FreeVec(filename);
 					}
-					FreeVec(filename);
 				}
 			}
 		}
@@ -2745,13 +2665,13 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					CHILD_WeightedHeight,0,
 					LAYOUT_AddChild, gwin->shared->objects[GID_URL] =
 						NewObject(urlStringClass, NULL,
-                  				STRINGA_MaxChars, 2000,
-                  				GA_ID, GID_URL,
-                  				GA_RelVerify, TRUE,
-							GA_HintInfo, gwin->shared->helphints[GID_URL],
-                  				GA_TabCycle, TRUE,
-                  				STRINGA_Buffer, gwin->shared->svbuffer,
-                  				STRINGVIEW_Header, URLHistory_GetList(),
+								STRINGA_MaxChars, 2000,
+								GA_ID, GID_URL,
+								GA_RelVerify, TRUE,
+								GA_HintInfo, gwin->shared->helphints[GID_URL],
+								GA_TabCycle, TRUE,
+								STRINGA_Buffer, gwin->shared->svbuffer,
+								STRINGVIEW_Header, URLHistory_GetList(),
               			StringEnd,
 
 				//	GA_ID, GID_TOOLBARLAYOUT,
@@ -3915,7 +3835,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			{
 				wheel = (struct IntuiWheelData *)msg->IAddress;
 
-				if(ami_mouse_to_ns_coords(gwin, &x, &y) == true)
+				if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
 				{
 					if(browser_window_scroll_at_point(gwin->bw, x, y,
 						wheel->WheelX * 50, wheel->WheelY * 50) == false)
