@@ -1736,6 +1736,10 @@ nserror html_object_callback(hlcache_handle *object,
 
 		break;
 
+	case CONTENT_MSG_LINK:
+		/* Don't care about favicons */
+		break;
+
 	default:
 		assert(0);
 	}
