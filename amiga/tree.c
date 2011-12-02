@@ -78,9 +78,9 @@ enum {
 
 
 struct treeview_window {
+	struct nsObject *node;
 	struct Window *win;
 	Object *objects[GID_TREE_LAST];
-	struct nsObject *node;
 	int type;
 	struct NewMenu *menu;
 	char *menu_name[AMI_TREE_MENU_ITEMS];
@@ -289,12 +289,13 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 {
 	struct gui_window_2 *gwin;
+	struct treeview_window *tw;
 	struct node *selected_node;
 	BOOL drag;
 
 	if(drag = ami_drag_in_progress()) ami_drag_icon_close(twin->win);
 
-	if(drag && (gwin = ami_window_at_pointer()))
+	if(drag && (twin != ami_window_at_pointer(AMINS_TVWINDOW)))
 	{
 		selected_node = tree_get_selected_node(tree_get_root(twin->tree));
 
@@ -304,8 +305,16 @@ void ami_tree_drag_end(struct treeview_window *twin, int x, int y)
 		}
 		else
 		{
-			browser_window_go(gwin->bw, tree_url_node_get_url(selected_node),
-				NULL, true);
+			if(gwin = ami_window_at_pointer(AMINS_WINDOW))
+			{
+				browser_window_go(gwin->bw, tree_url_node_get_url(selected_node),
+					NULL, true);
+			}
+			else if((tw = ami_window_at_pointer(AMINS_TVWINDOW)) &&
+				(tw != twin) && (tw->type == AMI_TREE_HOTLIST))
+			{
+				hotlist_add_page_xy(tree_url_node_get_url(selected_node), x, y);
+			}
 		}
 		tree_drag_end(twin->tree, twin->mouse_state,
 			twin->drag_x, twin->drag_y,

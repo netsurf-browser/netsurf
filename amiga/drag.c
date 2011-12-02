@@ -276,7 +276,7 @@ BOOL ami_drag_in_progress(void)
 	return drag_in_progress;
 }
 
-struct gui_window_2 *ami_find_gwin_by_id(struct Window *win)
+void *ami_find_gwin_by_id(struct Window *win, int type)
 {
 	struct nsObject *node, *nnode;
 	struct gui_window_2 *gwin;
@@ -289,7 +289,7 @@ struct gui_window_2 *ami_find_gwin_by_id(struct Window *win)
 		{
 			nnode=(struct nsObject *)GetSucc((struct Node *)node);
 
-			if(node->Type == AMINS_WINDOW) // or frame?
+			if(node->Type == type)
 			{
 				gwin = node->objstruct;
 				if(win == gwin->win) return gwin;
@@ -299,7 +299,7 @@ struct gui_window_2 *ami_find_gwin_by_id(struct Window *win)
 	return NULL;
 }
 
-struct gui_window_2 *ami_window_at_pointer(void)
+void *ami_window_at_pointer(int type)
 {
 	struct Layer *layer;
 
@@ -309,6 +309,6 @@ struct gui_window_2 *ami_window_at_pointer(void)
 
 	UnlockLayerInfo(&scrn->LayerInfo);
 
-	if(layer) return ami_find_gwin_by_id(layer->Window);
+	if(layer) return ami_find_gwin_by_id(layer->Window, type);
 		else return NULL;
 }

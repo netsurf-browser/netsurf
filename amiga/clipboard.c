@@ -334,7 +334,7 @@ void ami_drag_selection(struct selection *s)
 	char *utf8text;
 	struct ami_text_selection *sel;
 	struct IFFHandle *old_iffh = iffh;
-	struct gui_window_2 *gwin = ami_window_at_pointer();
+	struct gui_window_2 *gwin = ami_window_at_pointer(AMINS_WINDOW);
 
 	if(!gwin)
 	{
