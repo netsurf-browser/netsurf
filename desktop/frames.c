@@ -66,10 +66,10 @@ void browser_window_scroll_callback(void *client_data,
 		} else {
 			struct rect rect;
 
-			rect.x0 = 0;
-			rect.y0 = 0;
-			rect.x1 = bw->width;
-			rect.y1 = bw->height;
+			rect.x0 = scrollbar_get_offset(bw->scroll_x);
+			rect.y0 = scrollbar_get_offset(bw->scroll_y);
+			rect.x1 = rect.x0 + bw->width;
+			rect.y1 = rect.y0 + bw->height;
 
 			browser_window_update_box(bw, &rect);
 		}

@@ -332,7 +332,6 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 	while (bw) {
 		switch (bw->browser_window_type) {
 
-		case BROWSER_WINDOW_FRAME:
 		case BROWSER_WINDOW_FRAMESET:
 			*pos_x += bw->x * bw->scale;
 			*pos_y += bw->y * bw->scale;
@@ -342,6 +341,9 @@ void browser_window_get_position(struct browser_window *bw, bool root,
 			/* There is no offset to the root browser window */
 			break;
 
+		case BROWSER_WINDOW_FRAME:
+			/* Iframe and Frame handling is identical;
+			 * fall though */
 		case BROWSER_WINDOW_IFRAME:
 			*pos_x += (bw->x - scrollbar_get_offset(bw->scroll_x)) *
 					bw->scale;
@@ -533,6 +535,10 @@ bool browser_window_scroll_at_point(struct browser_window *bw,
 	bool handled_scroll = false;
 	assert(bw != NULL);
 
+	/* Handle (i)frame scroll offset (core-managed browser windows only) */
+	x += scrollbar_get_offset(bw->scroll_x);
+	y += scrollbar_get_offset(bw->scroll_y);
+
 	if (bw->children) {
 		/* Browser window has children, so pass request on to
 		 * appropriate child */
@@ -581,6 +587,10 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 {
 	assert(bw != NULL);
 
+	/* Handle (i)frame scroll offset (core-managed browser windows only) */
+	x += scrollbar_get_offset(bw->scroll_x);
+	y += scrollbar_get_offset(bw->scroll_y);
+
 	if (bw->children) {
 		/* Browser window has children, so pass request on to
 		 * appropriate child */
@@ -600,7 +610,8 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 
 			/* Pass request into this child */
 			return browser_window_drop_file_at_point(bwc,
-					(x - bwc->x), (y - bwc->y), file);
+					(x - bwc->x), (y - bwc->y),
+					file);
 		}
 	}
 
@@ -1309,13 +1320,6 @@ nserror browser_window_callback(hlcache_handle *c,
 			.x1 = event->data.redraw.x + event->data.redraw.width,
 			.y1 = event->data.redraw.y + event->data.redraw.height
 		};
-
-		if (bw->browser_window_type == BROWSER_WINDOW_FRAME) {
-			rect.x0 -= scrollbar_get_offset(bw->scroll_x);
-			rect.y0 -= scrollbar_get_offset(bw->scroll_y);
-			rect.x1 -= scrollbar_get_offset(bw->scroll_x);
-			rect.y1 -= scrollbar_get_offset(bw->scroll_y);
-		}
 
 		browser_window_update_box(bw, &rect);
 	}
@@ -2271,9 +2275,6 @@ void browser_window_mouse_track(struct browser_window *bw,
 		browser_window_get_position(drag_bw, true, &off_x, &off_y);
 
 		if (drag_bw->browser_window_type == BROWSER_WINDOW_FRAME) {
-			off_x -= scrollbar_get_offset(drag_bw->scroll_x);
-			off_y -= scrollbar_get_offset(drag_bw->scroll_y);
-
 			browser_window_mouse_track(drag_bw, mouse,
 					x - off_x, y - off_y);
 
