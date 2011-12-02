@@ -70,6 +70,22 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 
 }
 
+utf8_convert_ret utf8_from_local_encoding(const char *string,
+					size_t len,
+					char **result)
+{
+	*result = malloc(len + 1);
+	if (*result == NULL) {
+		return UTF8_CONVERT_NOMEM;
+	}
+
+	memcpy(*result, string, len);
+
+	(*result)[len] = '\0';
+
+	return UTF8_CONVERT_OK;
+}
+
 static bool nsfont_width(const plot_font_style_t *fstyle,
                          const char *string, size_t length,
                          int *width)

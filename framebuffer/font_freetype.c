@@ -83,6 +83,22 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 	return utf8_to_enc(string, "UTF-8", len, result);
 }
 
+utf8_convert_ret utf8_from_local_encoding(const char *string,
+					size_t len,
+					char **result)
+{
+	*result = malloc(len + 1);
+	if (*result == NULL) {
+		return UTF8_CONVERT_NOMEM;
+	}
+
+	memcpy(*result, string, len);
+
+	(*result)[len] = '\0';
+
+	return UTF8_CONVERT_OK;
+}
+
 /* map cache manager handle to face id */
 static FT_Error ft_face_requester(FTC_FaceID face_id, FT_Library  library, FT_Pointer request_data, FT_Face *face )
 {
