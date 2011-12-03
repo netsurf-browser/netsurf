@@ -57,7 +57,6 @@
 #include "desktop/thumbnail.h"
 #include "desktop/tree.h"
 #include "desktop/gui.h"
-#include "render/box.h"
 #include "render/form.h"
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
