@@ -177,6 +177,8 @@ static struct form_control	*gui_form_select_control;
 static wimp_menu		*ro_gui_browser_window_menu = NULL;
 /** Menu of options for form select controls. */
 static wimp_menu		*gui_form_select_menu = NULL;
+/** Browser window associated with open select menu. */
+static struct browser_window	*ro_gui_select_menu_bw = NULL;
 /** Object under menu, or 0 if no object. */
 static hlcache_handle		*current_menu_object = 0;
 /** URL of link under menu, or 0 if no link. */
@@ -1387,6 +1389,8 @@ void gui_create_form_select_menu(struct browser_window *bw,
 		ro_gui_menu_closed();
 		return;
 	}
+
+	bw = browser_window_get_root(bw);
 
 	gui_form_select_control = control;
 	ro_gui_menu_create(gui_form_select_menu,
@@ -4394,7 +4398,7 @@ void ro_gui_window_default_options(struct browser_window *bw)
 
 /**
  * Prepare or reprepare a form select menu, setting up the menu handle
- * global in the process.
+ * globals in the process.
  *
  * \param *bw		The browser window to contain the menu.
  * \param *control	The form control needing a menu.
@@ -4419,6 +4423,8 @@ bool ro_gui_window_prepare_form_select_menu(struct browser_window *bw,
 		ro_gui_menu_closed();
 		return false;
 	}
+
+	ro_gui_select_menu_bw = bw;
 
 	if ((gui_form_select_menu) && (control != gui_form_select_control)) {
 		for (i = 0; ; i++) {
@@ -4519,7 +4525,8 @@ void ro_gui_window_process_form_select_menu(struct gui_window *g,
 	assert(g != NULL);
 
 	if (selection->items[0] >= 0)
-		form_select_process_selection(g->bw->current_content,
+		form_select_process_selection(
+				ro_gui_select_menu_bw->current_content,
 				gui_form_select_control,
 				selection->items[0]);
 }
