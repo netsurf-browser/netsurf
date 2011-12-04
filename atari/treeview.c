@@ -196,106 +196,6 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 	}
 }
 
-
-static void __CDECL evnt_tv_mbutton__( WINDOW *win, short buff[8], void * data )
-{
-	GRECT work;
-	bool ignore=false;
-	NSTREEVIEW tv = (NSTREEVIEW) data;
-	if( tv == NULL )
-		return;
-	if( evnt.mbut & 2 ) {
-		/* do not handle right click */
-		return;
-	}
-
-	WindGetGrect( tv->window, WF_WORKXYWH, &work );
-	int rx = (evnt.mx-work.g_x)+(win->xpos*win->w_u);
-	int ry = (evnt.my-work.g_y)+(win->ypos*win->h_u);
-
-	if( rx >= 0 && ry >= 0 && evnt.mx < work.g_x + work.g_w &&
-		evnt.my < work.g_y + work.g_h ){
-
-		short mx, my, dummy, mbut;
-		uint32_t tnow = clock()*1000 / CLOCKS_PER_SEC;
-
-		if( evnt.mkstate & (K_RSHIFT | K_LSHIFT) ){
-			bmstate |= BROWSER_MOUSE_MOD_1;
-		} else {
-			bmstate &= ~(BROWSER_MOUSE_MOD_1);
-		}
-		if( (evnt.mkstate & K_CTRL) ){
-			bmstate |= BROWSER_MOUSE_MOD_2;
-		} else {
-			bmstate &= ~(BROWSER_MOUSE_MOD_2);
-		}
-		if( (evnt.mkstate & K_ALT) ){
-			bmstate |= BROWSER_MOUSE_MOD_3;
-		} else {
-			bmstate &= ~(BROWSER_MOUSE_MOD_3);
-		}
-
-		graf_mkstate(&dummy, &dummy, &mbut, &dummy);
-		if( evnt.nb_click == 2 ) {
-			bmstate =  BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_DOUBLE_CLICK;
-			mouse_hold_start[0] = 0;
-		} else {
-			if( mbut & 1 ) {
-				bmstate |= BROWSER_MOUSE_DRAG_ON;
-				if( mouse_hold_start[0] == 0) {
-					// start of drag op
-					mouse_hold_start[0] = tnow;
-					tv->startdrag.x = rx;
-					tv->startdrag.y = ry;
-					bmstate |=  BROWSER_MOUSE_DRAG_1;
-					gem_set_cursor(&gem_cursors.cross);
-				} else {
-					/* todo: add more visual indication (grafbox?) */
-					ignore = true;
-					gem_set_cursor(&gem_cursors.cross);
-				}
-			} else {
-				// mouse button up event
-				if( bmstate & BROWSER_MOUSE_DRAG_ON ){
-					bmstate = 0;
-					tree_drag_end(tv->tree, bmstate, tv->startdrag.x, tv->startdrag.y, rx, ry);
-					gem_set_cursor(&gem_cursors.arrow);
-					ignore = true;
-				} else {
-					bmstate =  BROWSER_MOUSE_CLICK_1;
-					mouse_hold_start[0] = 0;
-				}
-			}
-		}
-		if( !ignore ) {
-			tree_mouse_action(tv->tree, bmstate, rx, ry );
-		}
-		bmstate &= ~(BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1 );
-	}
-}
-
-static void __CDECL evnt_tv_m1( WINDOW *win, short buff[8], void * data)
-{
-	GRECT work;
-	NSTREEVIEW tv = (NSTREEVIEW) data;
-	if( tv == NULL )
-		return;
-
-	if( bmstate & BROWSER_MOUSE_DRAG_ON ) {
-
-		short mbut, dummy;
-		graf_mkstate(&dummy, &dummy, &mbut, &dummy);
-		if( !(mbut & 1) ){
-			WindGetGrect( tv->window, WF_WORKXYWH, &work );
-			int rx = (evnt.mx-work.g_x)+(win->xpos*win->w_u);
-			int ry = (evnt.my-work.g_y)+(win->ypos*win->h_u);
-			bmstate = 0;
-			tree_drag_end(tv->tree, bmstate, tv->startdrag.x, tv->startdrag.y, rx, ry);
-			gem_set_cursor(&gem_cursors.arrow);
-		}
-	}
-}
-
 NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
 {
 	if( win == NULL )
@@ -317,7 +217,6 @@ NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
 	EvntDataAdd( new->window, WM_XBUTTON, evnt_tv_mbutton, new, EV_BOT );
 	EvntDataAttach( new->window, WM_REDRAW, evnt_tv_redraw, new );
 	EvntDataAttach( new->window, WM_XKEYBD, evnt_tv_keybd, new );
-	//EvntDataAttach( new->window, WM_XM1, evnt_tv_m1, new );
 
 	return(new);
 }
