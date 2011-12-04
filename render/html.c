@@ -1471,12 +1471,15 @@ nserror html_convert_css_callback(hlcache_handle *css,
 		break;
 
 	case CONTENT_MSG_DONE:
-		LOG(("got stylesheet '%s'", nsurl_access(hlcache_handle_get_url(css))));
+		LOG(("got stylesheet '%s'",
+				nsurl_access(hlcache_handle_get_url(css))));
 		parent->base.active--;
 		break;
 
 	case CONTENT_MSG_ERROR:
-		LOG(("stylesheet failed: %s", event->data.error));
+		LOG(("stylesheet %s failed: %s",
+				nsurl_access(hlcache_handle_get_url(css)),
+				event->data.error));
 		hlcache_handle_release(css);
 		s->data.external = NULL;
 		parent->base.active--;
