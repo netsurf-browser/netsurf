@@ -130,6 +130,14 @@ utf8_to_local_encoding(const char *string, size_t len,
   return (*result == NULL) ? UTF8_CONVERT_NOMEM : UTF8_CONVERT_OK;
 }
 
+utf8_convert_ret
+utf8_from_local_encoding(const char *string, size_t len,
+                         char **result)
+{
+  *result = strndup(string, len);
+  return (*result == NULL) ? UTF8_CONVERT_NOMEM : UTF8_CONVERT_OK;
+}
+
 bool
 save_complete_gui_save(const char *path, const char *filename,
                        size_t len, const char *sourcedata, lwc_string *mime_type)
