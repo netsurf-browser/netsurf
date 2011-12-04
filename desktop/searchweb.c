@@ -296,7 +296,9 @@ nserror search_web_ico_callback(hlcache_handle *ico,
 		break;
 
 	case CONTENT_MSG_ERROR:
-		LOG(("favicon error: %s", event->data.error));
+		LOG(("favicon %s error: %s",
+				nsurl_access(hlcache_handle_get_url(ico)),
+				event->data.error));
 		hlcache_handle_release(search_ico);
 		search_ico = NULL;
 		search_web_retrieve_ico(true);
