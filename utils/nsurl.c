@@ -241,7 +241,7 @@ enum url_sections {
  * \param markers	Updated to mark sections in the URL string
  * \param joining	True iff URL string is a relative URL for joining
  */
-static void nsurl__get_string_markers(const char const *url_s,
+static void nsurl__get_string_markers(const char * const url_s,
 		struct url_markers *markers, bool joining)
 {
 	const char *pos = url_s; /** current position in url_s */
@@ -656,7 +656,7 @@ static inline int nsurl__get_ascii_offset(char c1, char c2)
  *
  * The section of url_s is normalised appropriately.
  */
-static nserror nsurl__create_from_section(const char const *url_s,
+static nserror nsurl__create_from_section(const char * const url_s,
 		const enum url_sections section,
 		const struct url_markers *pegs,
 		char *pos_norm,
@@ -1212,7 +1212,7 @@ static void nsurl__dump(const nsurl *url)
  ******************************************************************************/
 
 /* exported interface, documented in nsurl.h */
-nserror nsurl_create(const char const *url_s, nsurl **url)
+nserror nsurl_create(const char * const url_s, nsurl **url)
 {
 	struct url_markers m;
 	struct nsurl_components c;

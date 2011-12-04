@@ -60,7 +60,7 @@ typedef enum nsurl_component {
  * It is up to the client to call nsurl_destroy when they are finished with
  * the created object.
  */
-nserror nsurl_create(const char const *url_s, nsurl **url);
+nserror nsurl_create(const char * const url_s, nsurl **url);
 
 
 /**
