@@ -87,6 +87,7 @@ OBJECT **rsc_trindex;
 short vdih;
 short rsc_ntree;
 long next_poll;
+bool rendering = false;
 
 /* Comandline / Options: */
 int cfg_width;
@@ -107,7 +108,7 @@ void gui_poll(bool active)
 
 	evnt.timer = schedule_run();
 
-	if( active ) {
+	if( active || rendering ) {
 		if( clock() >= next_poll ) {
 			evnt.timer = 0;
 			flags |= MU_TIMER;
@@ -272,6 +273,15 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 	if (w == NULL || text == NULL )
 		return;
 	window_set_stauts( w , (char*)text );
+	if( strncmp("Done", text, 4) == 0 ){
+		rendering = false;
+	} else {
+		if( !rendering
+			&&
+			( strncmp("Load", text, 4) == 0 || strncmp("Fetch", text, 5) == 0)){
+			rendering = true;
+		}
+	}
 }
 
 void gui_window_redraw_window(struct gui_window *gw)
@@ -629,7 +639,7 @@ void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
 		utf8_convert_ret ret;
 		/* Clipboard is in local encoding so
 		 * convert to UTF8 */
-		ret = local_encoding_to_utf8(clip,
+		ret = utf8_from_local_encoding(clip,
 				clip_length, &utf8);
 		if (ret == UTF8_CONVERT_OK) {
 			browser_window_paste_text(w->browser->bw, utf8,
