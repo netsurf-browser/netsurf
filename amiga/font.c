@@ -340,6 +340,7 @@ struct ami_font_node *ami_font_open(const char *font)
 	{
 		LOG(("Requested font not found: %s", font));
 		warn_user("CompError", font);
+		FreeVec(nodedata);
 		return NULL;
 	}
 
@@ -567,9 +568,89 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 	return char_advance;
 }
 
+uint16 ami_font_translate_smallcaps(uint16 utf16char)
+{
+	uint16 *p;
+	uint16 sc_table[] = {
+		0x0061, 0x1D00, /* a */
+		0x0062, 0x0299, /* b */
+		0x0063, 0x1D04, /* c */
+		0x0064, 0x1D05, /* d */
+		0x0065, 0x1D07, /* e */
+		0x0066, 0xA730, /* f */
+		0x0067, 0x0262, /* g */
+		0x0068, 0x029C, /* h */
+		0x0069, 0x026A, /* i */
+		0x006A, 0x1D0A, /* j */
+		0x006B, 0x1D0B, /* k */
+		0x006C, 0x029F, /* l */
+		0x006D, 0x1D0D, /* m */
+		0x006E, 0x0274, /* n */
+		0x006F, 0x1D0F, /* o */
+		0x0070, 0x1D18, /* p */
+		0x0072, 0x0280, /* r */
+		0x0073, 0xA731, /* s */
+		0x0074, 0x1D1B, /* t */
+		0x0075, 0x1D1C, /* u */
+		0x0076, 0x1D20, /* v */
+		0x0077, 0x1D21, /* w */
+		0x0079, 0x028F, /* y */
+		0x007A, 0x1D22, /* z */
+
+		0x00C6, 0x1D01, /* ae */
+		0x0153, 0x0276, /* oe */
+
+#if 0
+/* TODO: fill in the non-small caps character ids for these */
+		0x0000, 0x1D03, /* barred b */
+		0x0000, 0x0281, /* inverted r */
+		0x0000, 0x1D19, /* reversed r */
+		0x0000, 0x1D1A, /* turned r */
+		0x0000, 0x029B, /* g with hook */
+		0x0000, 0x1D06, /* eth Ð */
+		0x0000, 0x1D0C, /* l with stroke */
+		0x0000, 0xA7FA, /* turned m */
+		0x0000, 0x1D0E, /* reversed n */
+		0x0000, 0x1D10, /* open o */
+		0x0000, 0x1D15, /* ou */
+		0x0000, 0x1D23, /* ezh */
+		0x0000, 0x1D26, /* gamma */
+		0x0000, 0x1D27, /* lamda */
+		0x0000, 0x1D28, /* pi */
+		0x0000, 0x1D29, /* rho */
+		0x0000, 0x1D2A, /* psi */
+		0x0000, 0x1D2B, /* el */
+		0x0000, 0xA776, /* rum */
+
+		0x0000, 0x1DDB, /* combining g */
+		0x0000, 0x1DDE, /* combining l */
+		0x0000, 0x1DDF, /* combining m */
+		0x0000, 0x1DE1, /* combining n */
+		0x0000, 0x1DE2, /* combining r */
+
+		0x0000, 0x1DA6, /* modifier i */
+		0x0000, 0x1DA7, /* modifier i with stroke */
+		0x0000, 0x1DAB, /* modifier l */
+		0x0000, 0x1DB0, /* modifier n */
+		0x0000, 0x1DB8, /* modifier u */
+#endif
+		0, 0};
+
+	p = &sc_table[0];
+
+	while (*p != 0)
+	{
+		if(*p == utf16char) return p[1];
+		p++;
+	}
+
+	return utf16char;
+}
+
 ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG dx, ULONG dy)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
+	uint16 utf16charsc = 0, utf16nextsc = 0;
 	uint16 utf16next = 0;
 	int utf16charlen;
 	struct OutlineFont *ofont, *ufont = NULL;
@@ -598,7 +679,17 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 		utf16next = utf16[utf16charlen];
 
-		tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next, dx + x, dy, emwidth);
+		if(fstyle->flags & FONTF_SMALLCAPS)
+		{
+			utf16charsc = ami_font_translate_smallcaps(*utf16);
+			utf16nextsc = ami_font_translate_smallcaps(utf16next);
+
+			tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc, dx + x, dy, emwidth);
+		}
+		else tempx = 0;
+
+		if(tempx == 0)
+			tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next, dx + x, dy, emwidth);
 
 		if(tempx == 0)
 		{
