@@ -52,6 +52,8 @@
 #define NSA_ITALIC 1
 #define NSA_BOLD 2
 #define NSA_BOLDITALIC 3
+#define NSA_OBLIQUE 4
+#define NSA_BOLDOBLIQUE 6
 
 #define NSA_VALUE_BOLDX (1 << 12)
 #define NSA_VALUE_BOLDY 0
@@ -419,8 +421,11 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	node = ami_font_open(fontname);
 	if(!node) return NULL;
 
-	if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE))
-		tstyle += NSA_ITALIC;
+	if (fstyle->flags & FONTF_OBLIQUE)
+		tstyle = NSA_OBLIQUE;
+
+	if (fstyle->flags & FONTF_ITALIC)
+		tstyle = NSA_ITALIC;
 
 	if (fstyle->weight >= 700)
 		tstyle += NSA_BOLD;
@@ -440,7 +445,28 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 			}
 		break;
 
+		case NSA_OBLIQUE:
+			shearsin = NSA_VALUE_SHEARSIN;
+			shearcos = NSA_VALUE_SHEARCOS;
+		break;
+
 		case NSA_BOLD:
+			if(node->bold)
+			{
+				node = ami_font_open(node->bold);
+				if(!node) return NULL;
+			}
+			else
+			{
+				emboldenx = NSA_VALUE_BOLDX;
+				emboldeny = NSA_VALUE_BOLDY;
+			}
+		break;
+
+		case NSA_BOLDOBLIQUE:
+			shearsin = NSA_VALUE_SHEARSIN;
+			shearcos = NSA_VALUE_SHEARCOS;
+
 			if(node->bold)
 			{
 				node = ami_font_open(node->bold);
