@@ -70,6 +70,7 @@ struct ami_font_node
 };
 
 struct MinList *ami_font_list = NULL;
+struct List ami_diskfontlib_list;
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
@@ -338,7 +339,7 @@ struct ami_font_node *ami_font_open(const char *font)
 	node->objstruct = nodedata;
 	node->dtz_Node.ln_Name = strdup(font);
 
-	nodedata->font = OpenOutlineFont(font, NULL, OFF_OPEN);
+	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
 	if(!nodedata->font)
 	{
 		LOG(("Requested font not found: %s", font));
@@ -605,6 +606,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 void ami_init_fonts(void)
 {
 	ami_font_list = NewObjList();
+	NewList(&ami_diskfontlib_list);
 
 	/* run first cleanup in ten minutes */
 	schedule(60000, (schedule_callback_fn)ami_font_cleanup, ami_font_list);
@@ -621,7 +623,7 @@ void ami_font_close(struct ami_font_node *node)
 {
 	/* Called from FreeObjList if node type is AMINS_FONT */
 
-	CloseOutlineFont(node->font, NULL);
+	CloseOutlineFont(node->font, &ami_diskfontlib_list);
 }
 
 static void ami_font_cleanup(struct MinList *ami_font_list)
