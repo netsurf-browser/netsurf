@@ -16,7 +16,8 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 	return r;
 }
 
-utf8_convert_ret local_encoding_to_utf8(const char *string,
+
+utf8_convert_ret utf8_from_local_encoding(const char *string,
 				       size_t len,
 				       char **result)
 {
