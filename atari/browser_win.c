@@ -390,74 +390,30 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 				size, mx, my
 			));
 			{
-				int posx, posy;
-				struct box *box;
-				struct box *file_box = 0;
-				hlcache_handle *h;
-				int box_x, box_y;
 				LGRECT bwrect;
 				struct browser_window * bw = gw->browser->bw;
-				h = bw->current_content;
-				if (!bw->current_content || content_get_type(h) != CONTENT_HTML)
-					return;
 				browser_get_rect( gw, BR_CONTENT, &bwrect );
 				mx = mx - bwrect.g_x;
 				my = my - bwrect.g_y;
 				if( (mx < 0 || mx > bwrect.g_w) || (my < 0 || my > bwrect.g_h) )
 					return;
-				box = html_get_box_tree(h);
-				box_x = box->margin[LEFT];
-				box_y = box->margin[TOP];
 
-				while ((box = box_at_point(box, mx+gw->browser->scroll.current.x, my+gw->browser->scroll.current.y, &box_x, &box_y, &h)))
-				{
-					if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
-						continue;
-					if (box->gadget)
-					{
-						switch (box->gadget->type)
-						{
-							case GADGET_FILE:
-								file_box = box;
-							break;
-							/*
-							TODO: handle these
-							case GADGET_TEXTBOX:
-							case GADGET_TEXTAREA:
-							case GADGET_PASSWORD:
-							text_box = box;
-							break;
-							*/
-							default:
-								break;
-						}
-					}
-				} /* end While */
-				if ( !file_box )
-					return;
-				if (file_box) {
-					utf8_convert_ret ret;
-					char *utf8_fn;
+				utf8_convert_ret ret;
+				char *utf8_fn;
 
-					ret = local_encoding_to_utf8( buff, 0, &utf8_fn);
-					if (ret != UTF8_CONVERT_OK) {
+				ret = utf8_from_local_encoding( buff, 0, &utf8_fn);
+				if (ret != UTF8_CONVERT_OK) {
 						/* A bad encoding should never happen */
 						LOG(("utf8_from_local_encoding failed"));
 						assert(ret != UTF8_CONVERT_BADENC);
-						/* Load was for us - just no memory */
+						/* no memory */
 						return;
-					}
-					/* Found: update form input. */
-					free(file_box->gadget->value);
-					file_box->gadget->value = utf8_fn;
-					/* Redraw box. */
-					box_coords(file_box, &posx, &posy);
-					browser_schedule_redraw(bw->window,
-						posx - gw->browser->scroll.current.x,
-						posy - gw->browser->scroll.current.y,
-						posx - gw->browser->scroll.current.x + file_box->width,
-						posy - gw->browser->scroll.current.y + file_box->height);
 				}
+				browser_window_drop_file_at_point( gw->browser->bw,
+											mx+gw->browser->scroll.current.x,
+											my+gw->browser->scroll.current.y,
+											utf8_fn );
+				free( utf8_fn );
 			}
 		}
 	}
