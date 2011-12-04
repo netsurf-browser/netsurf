@@ -150,7 +150,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 			case AMINS_SAVE_IFF:
 				if((bm = content_get_bitmap(object)))
 				{
-					bm->url = (char *)nsurl_access(content_get_url(object));
+					bm->url = (char *)nsurl_access(hlcache_handle_get_url(object));
 					bm->title = (char *)content_get_title(object);
 					bitmap_save(bm, fname, 0);
 				}
@@ -166,7 +166,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 				selection_save_text(sel, fname);
 			break;
 		}
-		if(object) SetComment(fname, nsurl_access(content_get_url(object)));
+		if(object) SetComment(fname, nsurl_access(hlcache_handle_get_url(object)));
 	}
 
 	ami_update_pointer(win, GUI_POINTER_DEFAULT);
@@ -180,7 +180,7 @@ void ami_file_save_req(int type, struct gui_window_2 *gwin,
 	if(AslRequestTags(savereq,
 			ASLFR_TitleText, messages_get("NetSurf"),
 			ASLFR_Screen, scrn,
-			ASLFR_InitialFile, object ? FilePart(nsurl_access(content_get_url(object))) : "",
+			ASLFR_InitialFile, object ? FilePart(nsurl_access(hlcache_handle_get_url(object))) : "",
 			TAG_DONE))
 	{
 		strlcpy(fname, savereq->fr_Drawer, 1024);

@@ -176,7 +176,7 @@ void hlcache_finalise(void)
 
 		if (entry->content != NULL) {
 			LOG(("	%p : %s (%d users)", entry,
-			     nsurl_access(content_get_url(&entry_handle)), content_count_users(entry->content)));
+			     nsurl_access(hlcache_handle_get_url(&entry_handle)), content_count_users(entry->content)));
 		} else {
 			LOG(("	%p", entry));
 		}
@@ -414,6 +414,33 @@ nserror hlcache_handle_clone(hlcache_handle *handle, hlcache_handle **result)
 {
 	*result = NULL;
 	return NSERROR_CLONE_FAILED;
+}
+
+/* See hlcache.h for documentation */
+nsurl *hlcache_handle_get_url(const hlcache_handle *handle)
+{
+	nsurl *result = NULL;
+
+	assert(handle != NULL);
+
+	if (handle->entry != NULL) {
+		result = content_get_url(handle->entry->content);
+	} else {
+		RING_ITERATE_START(struct hlcache_retrieval_ctx,
+				   hlcache->retrieval_ctx_ring,
+				   ictx) {
+			if (ictx->handle == handle) {
+				/* This is the nascent context for us */
+				result = llcache_handle_get_url(ictx->llcache);
+
+				/* And stop */
+				RING_ITERATE_STOP(hlcache->retrieval_ctx_ring,
+						ictx);
+			}
+		} RING_ITERATE_END(hlcache->retrieval_ctx_ring, ictx);
+	}
+
+	return result;
 }
 
 /******************************************************************************

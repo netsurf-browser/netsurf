@@ -942,7 +942,7 @@ void box_dump(FILE *stream, struct box *box, unsigned int depth)
 		fprintf(stream, "space ");
 	if (box->object) {
 		fprintf(stream, "(object '%s') ", 
-				nsurl_access(content_get_url(box->object)));
+				nsurl_access(hlcache_handle_get_url(box->object)));
 	}
 	if (box->iframe) {
 		fprintf(stream, "(iframe) ");

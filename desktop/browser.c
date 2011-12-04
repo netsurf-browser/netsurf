@@ -898,9 +898,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 		/* Compare new URL with existing one (ignoring fragments) */
 		if (bw->current_content != NULL && 
-				content_get_url(bw->current_content) != NULL) {
+				hlcache_handle_get_url(bw->current_content) != NULL) {
 			same_url = nsurl_compare(nsurl,
-					content_get_url(bw->current_content),
+					hlcache_handle_get_url(bw->current_content),
 					NSURL_COMPLETE);
 		}
 
@@ -920,7 +920,7 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			browser_window_update(bw, false);
 			if (bw->current_content != NULL) {
 				browser_window_refresh_url_bar(bw,
-					content_get_url(bw->current_content),
+					hlcache_handle_get_url(bw->current_content),
 					bw->frag_id);
 			}
 			return;
@@ -1088,7 +1088,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 		lwc_string *scheme;
 		bool speculative_default = false;
 
-		nsurl = content_get_url(c);
+		nsurl = hlcache_handle_get_url(c);
 
 		scheme = nsurl_get_component(nsurl, NSURL_SCHEME);
 
@@ -1153,7 +1153,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		if (bw->current_content != NULL) {
 			browser_window_refresh_url_bar(bw,
-					content_get_url(bw->current_content),
+					hlcache_handle_get_url(bw->current_content),
 					bw->frag_id);
 		}
 		break;
@@ -1205,7 +1205,7 @@ nserror browser_window_callback(hlcache_handle *c,
 			gui_window_new_content(bw->window);
 
 		browser_window_refresh_url_bar(bw,
-				content_get_url(bw->current_content),
+				hlcache_handle_get_url(bw->current_content),
 				bw->frag_id);
 
 		/* new content; set scroll_to_top */
@@ -1215,7 +1215,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		/* history */
 		if (bw->history_add && bw->history) {
-			const char *url = nsurl_access(content_get_url(c));
+			const char *url = nsurl_access(hlcache_handle_get_url(c));
 
 			history_add(bw->history, c, bw->frag_id == NULL ? NULL :
 					lwc_string_data(bw->frag_id));
@@ -1472,7 +1472,7 @@ void browser_window_refresh(void *p)
 	/* mark this content as invalid so it gets flushed from the cache */
 	content_invalidate_reuse_data(bw->current_content);
 
-	url = nsurl_access(content_get_url(bw->current_content));
+	url = nsurl_access(hlcache_handle_get_url(bw->current_content));
 	if (url != NULL && strcmp(url, refresh) == 0)
 		history_add = false;
 
@@ -1703,7 +1703,7 @@ void browser_window_stop(struct browser_window *bw)
 
 	if (bw->current_content != NULL) {
 		browser_window_refresh_url_bar(bw, 
-				content_get_url(bw->current_content),
+				hlcache_handle_get_url(bw->current_content),
 				bw->frag_id);
 	}
 
@@ -1756,7 +1756,7 @@ void browser_window_reload(struct browser_window *bw, bool all)
 	content_invalidate_reuse_data(bw->current_content);
 
 	browser_window_go(bw, nsurl_access(
-			content_get_url(bw->current_content)), 0, false);
+			hlcache_handle_get_url(bw->current_content)), 0, false);
 }
 
 

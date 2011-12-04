@@ -175,7 +175,7 @@ void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
 	struct content *page, struct box *box,
 	struct object_params *params)
 {
-	LOG(("amiga_plugin_hack_open %s", nsurl_access(content__get_url(c))));
+	LOG(("amiga_plugin_hack_open %s", nsurl_access(content_get_url(c))));
 
 	if(c && box)
 	{
@@ -249,7 +249,7 @@ void amiga_plugin_hack_execute(struct hlcache_handle *c)
 	plugincmd = ami_mime_content_to_cmd(c);
 	if(plugincmd == NULL) return;
 
-	full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), nsurl_access(content_get_url(c)));
+	full_cmd = ASPrintf("%s %s", lwc_string_data(plugincmd), nsurl_access(hlcache_handle_get_url(c)));
 
 	if(full_cmd)
 	{

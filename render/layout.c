@@ -989,7 +989,7 @@ bool layout_block_object(struct box *block)
 
 #ifdef LAYOUT_DEBUG
 	LOG(("block %p, object %s, width %i", block,
-			content_get_url(block->object), block->width));
+			hlcache_handle_get_url(block->object), block->width));
 #endif
 
 	if (content_get_type(block->object) == CONTENT_HTML) {

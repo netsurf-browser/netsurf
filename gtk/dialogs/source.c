@@ -166,7 +166,7 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 		return;
 	}
 
-	thiswindow->url = strdup(nsurl_access(content_get_url(
+	thiswindow->url = strdup(nsurl_access(hlcache_handle_get_url(
 			bw->current_content)));
 	if (thiswindow->url == NULL) {
 		free(thiswindow);

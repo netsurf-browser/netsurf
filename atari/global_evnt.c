@@ -254,7 +254,7 @@ static void __CDECL menu_add_bookmark(WINDOW *win, int item, int title, void *da
 	if( input_window ) {
 		if( input_window->browser->bw->current_content != NULL ){
 			atari_hotlist_add_page(
-				nsurl_access(content_get_url( input_window->browser->bw->current_content)),
+				nsurl_access(hlcache_handle_get_url( input_window->browser->bw->current_content)),
 				NULL
 			);
 		}

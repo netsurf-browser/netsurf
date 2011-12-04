@@ -173,7 +173,7 @@ nserror nscss_create(const content_handler *handler,
 	}
 
 	error = nscss_create_css_data(&result->data, 
-			nsurl_access(content__get_url(&result->base)),
+			nsurl_access(content_get_url(&result->base)),
 			charset, result->base.quirks, 
 			nscss_content_done, result);
 	if (error != NSERROR_OK) {
@@ -401,7 +401,7 @@ nserror nscss_clone(const struct content *old, struct content **newc)
 
 	/* Simply replay create/process/convert */
 	error = nscss_create_css_data(&new_css->data,
-			nsurl_access(content__get_url(&new_css->base)),
+			nsurl_access(content_get_url(&new_css->base)),
 			old_css->data.charset, 
 			new_css->base.quirks,
 			nscss_content_done, new_css);

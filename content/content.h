@@ -151,6 +151,7 @@ bool content_is_shareable(struct content *c);
 content_status content__get_status(struct content *c);
 
 const struct llcache_handle *content_get_llcache_handle(struct content *c);
+nsurl *content_get_url(struct content *c);
 
 struct content *content_clone(struct content *c);
 
@@ -185,7 +186,6 @@ struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
 /* Member accessors */
 content_type content_get_type(struct hlcache_handle *c);
 lwc_string *content_get_mime_type(struct hlcache_handle *c);
-nsurl *content_get_url(struct hlcache_handle *c);
 const char *content_get_title(struct hlcache_handle *c);
 content_status content_get_status(struct hlcache_handle *c);
 const char *content_get_status_message(struct hlcache_handle *c);

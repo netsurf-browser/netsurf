@@ -1707,7 +1707,7 @@ void ami_handle_msg(void)
 					struct DiskObject *dobj;
 					struct bitmap *bm;
 
-					bm = urldb_get_thumbnail(nsurl_access(content_get_url(gwin->bw->current_content)));
+					bm = urldb_get_thumbnail(nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)));
 					if(!bm) bm = content_get_bitmap(gwin->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
 					amiga_icon_superimpose_favicon_internal(gwin->bw->window->favicon,
@@ -2084,7 +2084,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		gwin->redraw_scroll = false;
 
 		browser_window_refresh_url_bar(gwin->bw,
-			content_get_url(gwin->bw->current_content), gwin->bw->frag_id);
+			hlcache_handle_get_url(gwin->bw->current_content), gwin->bw->frag_id);
 	}
 }
 

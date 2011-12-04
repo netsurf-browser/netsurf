@@ -910,12 +910,7 @@ lwc_string *content__get_mime_type(struct content *c)
  * \param c  Content to retrieve URL from
  * \return Pointer to URL, or NULL if not found.
  */
-nsurl *content_get_url(hlcache_handle *h)
-{
-	return content__get_url(hlcache_handle_get_content(h));
-}
-
-nsurl *content__get_url(struct content *c)
+nsurl *content_get_url(struct content *c)
 {
 	if (c == NULL)
 		return NULL;

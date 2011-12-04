@@ -223,12 +223,12 @@ static void hotlist_visited_internal(hlcache_handle *content, struct node *node)
 	const char *url;
 
 	if (content == NULL || 
-	    content_get_url(content) == NULL ||
+	    hlcache_handle_get_url(content) == NULL ||
 	    hotlist_tree == NULL)
 		return;
 
 	/* TODO: do this with a nsurl instead */
-	url = nsurl_access(content_get_url(content));
+	url = nsurl_access(hlcache_handle_get_url(content));
 
 	for (; node; node = tree_node_get_next(node)) {
 		if (!tree_node_is_folder(node)) {

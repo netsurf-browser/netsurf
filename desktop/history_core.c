@@ -242,7 +242,7 @@ void history_add(struct history *history, hlcache_handle *content,
 		return;
 
 	/* TODO: use a nsurl? */
-	error = nsurl_get(content_get_url(content), NSURL_WITH_FRAGMENT,
+	error = nsurl_get(hlcache_handle_get_url(content), NSURL_WITH_FRAGMENT,
 			&url, &url_len);
 	if (error != NSERROR_OK) {
 		warn_user("NoMemory", 0);

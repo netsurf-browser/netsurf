@@ -1103,7 +1103,7 @@ css_select_results *box_get_style(html_content *c,
 		inline_style = nscss_create_inline_style(
 				(uint8_t *) s, strlen(s),
 				c->encoding,
-				nsurl_access(content__get_url(&c->base)), 
+				nsurl_access(content_get_url(&c->base)), 
 				c->quirks != BINDING_QUIRKS_MODE_NONE,
 				box_style_alloc, NULL);
 

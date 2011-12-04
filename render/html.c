@@ -274,7 +274,7 @@ nserror html_create_html_data(html_content *c, const http_parameter *params)
 	c->document = NULL;
 	c->quirks = BINDING_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
-	c->base_url = nsurl_ref(content__get_url(&c->base));
+	c->base_url = nsurl_ref(content_get_url(&c->base));
 	c->base_target = NULL;
 	c->aborted = false;
 	c->layout = NULL;
@@ -584,7 +584,7 @@ bool html_convert(struct content *c)
 		/* Make all actions absolute */
 		if (f->action == NULL || f->action[0] == '\0') {
 			/* HTML5 4.10.22.3 step 11 */
-			res = url_join(nsurl_access(content__get_url(c)), 
+			res = url_join(nsurl_access(content_get_url(c)), 
 					nsurl_access(htmlc->base_url), &action);
 		} else {
 			res = url_join(f->action, nsurl_access(htmlc->base_url),
@@ -1034,7 +1034,7 @@ bool html_meta_refresh(html_content *c, xmlNode *head)
 			xmlFree(content);
 
 			c->base.refresh = nsurl_ref(
-					content__get_url(&c->base));
+					content_get_url(&c->base));
 
 			content_broadcast(&c->base, CONTENT_MSG_REFRESH, 
 					msg_data);
@@ -1169,7 +1169,7 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	c->base.active = 0;
 
 	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
-			content__get_url(&c->base), NULL,
+			content_get_url(&c->base), NULL,
 			html_convert_css_callback, c, &child, accept,
 			&c->stylesheets[STYLESHEET_BASE].data.external);
 	if (ns_error != NSERROR_OK)
@@ -1179,7 +1179,7 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 	if (c->quirks == BINDING_QUIRKS_MODE_FULL) {
 		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url, 
-				0, content__get_url(&c->base), NULL,
+				0, content_get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
 				&c->stylesheets[STYLESHEET_QUIRKS].
 						data.external);
@@ -1191,7 +1191,7 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 	if (option_block_ads) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
-				0, content__get_url(&c->base), NULL,
+				0, content_get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
 				&c->stylesheets[STYLESHEET_ADBLOCK].
 						data.external);
@@ -1291,7 +1291,7 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 			c->stylesheet_count++;
 			c->stylesheets[i].type = HTML_STYLESHEET_EXTERNAL;
 			ns_error = hlcache_handle_retrieve(joined, 0,
-					content__get_url(&c->base), NULL,
+					content_get_url(&c->base), NULL,
 					html_convert_css_callback, c, &child,
 					accept,
 					&c->stylesheets[i].data.external);
@@ -1471,7 +1471,7 @@ nserror html_convert_css_callback(hlcache_handle *css,
 		break;
 
 	case CONTENT_MSG_DONE:
-		LOG(("got stylesheet '%s'", nsurl_access(content_get_url(css))));
+		LOG(("got stylesheet '%s'", nsurl_access(hlcache_handle_get_url(css))));
 		parent->base.active--;
 		break;
 
@@ -1543,7 +1543,7 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
  
 	error = hlcache_handle_retrieve(url, 
 			HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			content__get_url(&c->base), NULL, 
+			content_get_url(&c->base), NULL, 
 			html_object_callback, object, &child, 
 			object->permitted_types, &object->content);
        	if (error != NSERROR_OK) {
@@ -1596,7 +1596,7 @@ bool html_replace_object(struct content_html_object *object, nsurl *url)
 
 	/* initialise fetch */
 	error = hlcache_handle_retrieve(url, HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			content__get_url(&c->base), NULL, 
+			content_get_url(&c->base), NULL, 
 			html_object_callback, object, &child,
 			object->permitted_types,
 			&object->content);

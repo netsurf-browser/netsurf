@@ -1663,8 +1663,8 @@ void ro_gui_window_close(wimp_w w)
 		h = g->bw->current_content;
 	if (pointer.buttons & wimp_CLICK_ADJUST) {
 		destroy = !ro_gui_shift_pressed();
-		filename = (h && content_get_url(h)) ?
-				url_to_path(nsurl_access(content_get_url(h))) :
+		filename = (h && hlcache_handle_get_url(h)) ?
+				url_to_path(nsurl_access(hlcache_handle_get_url(h))) :
 				NULL;
 		if (filename) {
 			temp_name = malloc(strlen(filename) + 32);
@@ -1696,7 +1696,7 @@ void ro_gui_window_close(wimp_w w)
 			if (!destroy && g->bw != NULL &&
 					g->bw->current_content != NULL)
 				ro_gui_window_navigate_up(g->bw->window,
-						nsurl_access(content_get_url(
+						nsurl_access(hlcache_handle_get_url(
 						g->bw->current_content)));
 		}
 	}
@@ -2454,28 +2454,28 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_SAVE_URL_URI:
 		if (h != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URI, NULL, NULL,
-					nsurl_access(content_get_url(h)),
+					nsurl_access(hlcache_handle_get_url(h)),
 					content_get_title(h));
 		break;
 
 	case BROWSER_SAVE_URL_URL:
 		if (h != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL,
-					nsurl_access(content_get_url(h)),
+					nsurl_access(hlcache_handle_get_url(h)),
 					content_get_title(h));
 		break;
 
 	case BROWSER_SAVE_URL_TEXT:
 		if (h != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, NULL, NULL,
-					nsurl_access(content_get_url(h)),
+					nsurl_access(hlcache_handle_get_url(h)),
 					content_get_title(h));
 		break;
 
 	case BROWSER_OBJECT_SAVE_URL_URI:
 		if (current_menu_object != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URI, NULL, NULL,
-					nsurl_access(content_get_url(
+					nsurl_access(hlcache_handle_get_url(
 							current_menu_object)),
 					content_get_title(current_menu_object));
 		break;
@@ -2483,7 +2483,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_OBJECT_SAVE_URL_URL:
 		if (current_menu_object != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_URL, NULL, NULL,
-					nsurl_access(content_get_url(
+					nsurl_access(hlcache_handle_get_url(
 							current_menu_object)),
 					content_get_title(current_menu_object));
 		break;
@@ -2491,7 +2491,7 @@ void ro_gui_window_menu_warning(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_OBJECT_SAVE_URL_TEXT:
 		if (current_menu_object != NULL)
 			ro_gui_save_prepare(GUI_SAVE_LINK_TEXT, NULL, NULL,
-					nsurl_access(content_get_url(
+					nsurl_access(hlcache_handle_get_url(
 							current_menu_object)),
 					content_get_title(current_menu_object));
 		break;
@@ -2732,12 +2732,12 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_LINK_DOWNLOAD:
 		if (current_menu_url != NULL)
 			browser_window_download(bw, current_menu_url,
-					nsurl_access(content_get_url(h)));
+					nsurl_access(hlcache_handle_get_url(h)));
 		break;
 	case BROWSER_LINK_NEW_WINDOW:
 		if (current_menu_url != NULL)
 			browser_window_create(current_menu_url, bw,
-					nsurl_access(content_get_url(h)),
+					nsurl_access(hlcache_handle_get_url(h)),
 					true, false);
 		break;
 
@@ -2832,7 +2832,7 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_NAVIGATE_UP:
 		if (bw != NULL && h != NULL)
 			ro_gui_window_navigate_up(bw->window,
-					nsurl_access(content_get_url(h)));
+					nsurl_access(hlcache_handle_get_url(h)));
 		break;
 	case BROWSER_NAVIGATE_RELOAD_ALL:
 		if (bw != NULL)
@@ -3329,7 +3329,7 @@ void ro_gui_window_toolbar_click(void *data,
 				save_type = GUI_SAVE_LINK_TEXT;
 
 			ro_gui_drag_save_link(save_type,
-					nsurl_access(content_get_url(h)),
+					nsurl_access(hlcache_handle_get_url(h)),
 					content_get_title(h), g);
 		}
 
@@ -3421,7 +3421,7 @@ void ro_gui_window_toolbar_click(void *data,
 	case TOOLBAR_BUTTON_UP:
 		if (g->bw != NULL && g->bw->current_content != NULL)
 			ro_gui_window_navigate_up(g->bw->window,
-					nsurl_access(content_get_url(
+					nsurl_access(hlcache_handle_get_url(
 					g->bw->current_content)));
 		break;
 
@@ -3434,7 +3434,7 @@ void ro_gui_window_toolbar_click(void *data,
 			/* do it without loading the content
 			 * into the new window */
 			ro_gui_window_navigate_up(new_bw->window,
-					nsurl_access(content_get_url(h)));
+					nsurl_access(hlcache_handle_get_url(h)));
 		}
 		break;
 
@@ -3558,11 +3558,11 @@ bool ro_gui_window_up_available(struct browser_window *bw)
 	url_func_result	res;
 
 	if (bw != NULL && bw->current_content != NULL) {
-		res = url_parent(nsurl_access(content_get_url(
+		res = url_parent(nsurl_access(hlcache_handle_get_url(
 				bw->current_content)), &parent);
 
 		if (res == URL_FUNC_OK) {
-			res = url_compare(nsurl_access(content_get_url(
+			res = url_compare(nsurl_access(hlcache_handle_get_url(
 					bw->current_content)),
 					parent, false, &compare);
 			if (res == URL_FUNC_OK)
@@ -3599,7 +3599,7 @@ void ro_gui_window_prepare_pageinfo(struct gui_window *g)
 	title = content_get_title(h);
 	if (title == NULL)
 		title = "-";
-	url = nsurl_access(content_get_url(h));
+	url = nsurl_access(hlcache_handle_get_url(h));
 	if (url == NULL)
 		url = "-";
 	mime = content_get_mime_type(h);
@@ -3654,7 +3654,7 @@ void ro_gui_window_prepare_objectinfo(hlcache_handle *object, const char *href)
 	if (!ro_gui_wimp_sprite_exists(icon_buf))
 		sprintf(icon_buf, "file_xxx");
 
-	url = nsurl_access(content_get_url(object));
+	url = nsurl_access(hlcache_handle_get_url(object));
 	if (url == NULL)
 		url = "-";
 	mime = content_get_mime_type(object);
@@ -3802,7 +3802,7 @@ void ro_gui_window_action_new_window(struct gui_window *g)
 		return;
 
 	browser_window_create(nsurl_access(
-			content_get_url(g->bw->current_content)), g->bw,
+			hlcache_handle_get_url(g->bw->current_content)), g->bw,
 			0, false, false);
 }
 
@@ -3883,10 +3883,10 @@ void ro_gui_window_action_zoom(struct gui_window *g)
 void ro_gui_window_action_add_bookmark(struct gui_window *g)
 {
 	if (g == NULL || g->bw == NULL || g->bw->current_content == NULL ||
-			content_get_url(g->bw->current_content) == NULL)
+			hlcache_handle_get_url(g->bw->current_content) == NULL)
 		return;
 
-	ro_gui_hotlist_add_page(nsurl_access(content_get_url(g->bw->current_content)));
+	ro_gui_hotlist_add_page(nsurl_access(hlcache_handle_get_url(g->bw->current_content)));
 }
 
 

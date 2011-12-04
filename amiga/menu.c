@@ -571,7 +571,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					}
 					else if(bm = content_get_bitmap(gwin->bw->current_content))
 					{
-						bm->url = (char *)nsurl_access(content_get_url(gwin->bw->current_content));
+						bm->url = (char *)nsurl_access(hlcache_handle_get_url(gwin->bw->current_content));
 						bm->title = (char *)content_get_title(gwin->bw->current_content);
 						ami_easy_clipboard_bitmap(bm);
 					}
@@ -653,10 +653,10 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 
 					if (bw == NULL ||
 						bw->current_content == NULL ||
-						nsurl_access(content_get_url(bw->current_content)) == NULL)
+						nsurl_access(hlcache_handle_get_url(bw->current_content)) == NULL)
 					break;
 
-					hotlist_add_page(nsurl_access(content_get_url(bw->current_content)));
+					hotlist_add_page(nsurl_access(hlcache_handle_get_url(bw->current_content)));
 				break;
 
 				case 1: // show

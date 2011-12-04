@@ -271,7 +271,7 @@ void ro_gui_save_prepare(gui_save_type save_type, hlcache_handle *h,
 	}
 
 	ro_gui_save_set_state(h, save_type,
-			h ? nsurl_access(content_get_url(h)) : url,
+			h ? nsurl_access(hlcache_handle_get_url(h)) : url,
 			name_buf + leaf_offset, FILENAME_MAX - leaf_offset,
 			icon_buf, sizeof(icon_buf));
 
@@ -376,7 +376,7 @@ void gui_drag_save_object(gui_save_type save_type, hlcache_handle *c,
 		return;
 	}
 
-	ro_gui_save_set_state(c, save_type, nsurl_access(content_get_url(c)),
+	ro_gui_save_set_state(c, save_type, nsurl_access(hlcache_handle_get_url(c)),
 			save_leafname, LEAFNAME_MAX,
 			icon_buf, sizeof(icon_buf));
 
@@ -1159,7 +1159,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 
 	/* save URL file with original URL */
 	snprintf(buf, sizeof buf, "%s.URL", path);
-	if (!ro_gui_save_link(nsurl_access(content_get_url(h)),
+	if (!ro_gui_save_link(nsurl_access(hlcache_handle_get_url(h)),
 			content_get_title(h), LINK_ANT, buf))
 		return false;
 

@@ -412,13 +412,13 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 				NSGTK_WINDOW_SIGNAL_REDRAW));
 		if ((nsgtk_get_browser_window(nsgtk_scaffolding_top_level(
 				list))->current_content	!= NULL) &&
-				(content_get_url(nsgtk_get_browser_window(
+				(hlcache_handle_get_url(nsgtk_get_browser_window(
 				nsgtk_scaffolding_top_level(list))->
 				current_content) != NULL))
 			browser_window_refresh_url_bar(
 					nsgtk_get_browser_window(
 					nsgtk_scaffolding_top_level(list)),
-					content_get_url(
+					hlcache_handle_get_url(
 					nsgtk_get_browser_window(
 					nsgtk_scaffolding_top_level(list))->
 					current_content),

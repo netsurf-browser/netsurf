@@ -337,9 +337,9 @@ static void nsgtk_window_update_back_forward(struct gtk_scaffolding *g)
 
 	/* update the url bar, particularly necessary when tabbing */
 	if (bw->current_content != NULL &&
-			content_get_url(bw->current_content) != NULL)
+			hlcache_handle_get_url(bw->current_content) != NULL)
 		browser_window_refresh_url_bar(bw,
-				content_get_url(bw->current_content),
+				hlcache_handle_get_url(bw->current_content),
 				bw->frag_id);
 
 	/* update the local history window, as well as queuing a redraw
@@ -621,7 +621,7 @@ MULTIHANDLER(savepage)
 	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(fc), filter);
 	gtk_file_chooser_set_filter(GTK_FILE_CHOOSER(fc), filter);
 
-	res = url_nice(nsurl_access(content_get_url(nsgtk_get_browser_window(
+	res = url_nice(nsurl_access(hlcache_handle_get_url(nsgtk_get_browser_window(
 			g->top_level)->current_content)), &path, false);
 	if (res != URL_FUNC_OK) {
 		path = strdup(messages_get("SaveText"));
@@ -682,7 +682,7 @@ MULTIHANDLER(pdf)
 
 	LOG(("Print preview (generating PDF)  started."));
 
-	res = url_nice(nsurl_access(content_get_url(bw->current_content)),
+	res = url_nice(nsurl_access(hlcache_handle_get_url(bw->current_content)),
 			&url_name, true);
 	if (res != URL_FUNC_OK) {
 		warn_user(messages_get(res == URL_FUNC_NOMEM ? "NoMemory"
@@ -757,7 +757,7 @@ MULTIHANDLER(plaintext)
 	char *filename;
 	url_func_result res;
 
-	res = url_nice(nsurl_access(content_get_url(nsgtk_get_browser_window(
+	res = url_nice(nsurl_access(hlcache_handle_get_url(nsgtk_get_browser_window(
 			g->top_level)->current_content)), &filename, false);
 	if (res != URL_FUNC_OK) {
 		filename = strdup(messages_get("SaveText"));
@@ -1408,9 +1408,9 @@ MULTIHANDLER(addbookmarks)
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	if (bw == NULL || bw->current_content == NULL ||
-			content_get_url(bw->current_content) == NULL)
+			hlcache_handle_get_url(bw->current_content) == NULL)
 		return TRUE;
-	hotlist_add_page(nsurl_access(content_get_url(bw->current_content)));
+	hotlist_add_page(nsurl_access(hlcache_handle_get_url(bw->current_content)));
 	return TRUE;
 }
 

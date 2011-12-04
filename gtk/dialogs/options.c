@@ -579,7 +579,7 @@ ENTRY_CHANGED(entryHomePageURL, option_homepage_url)
 END_HANDLER
 
 BUTTON_CLICKED(setCurrentPage)
-	const gchar *url = nsurl_access(content_get_url(
+	const gchar *url = nsurl_access(hlcache_handle_get_url(
 			current_browser->current_content));
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL), url);
 	option_homepage_url = 

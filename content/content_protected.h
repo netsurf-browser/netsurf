@@ -179,7 +179,6 @@ void content__request_redraw(struct content *c,
 bool content__set_title(struct content *c, const char *title);
 
 lwc_string *content__get_mime_type(struct content *c);
-nsurl *content__get_url(struct content *c);
 const char *content__get_title(struct content *c);
 const char *content__get_status_message(struct content *c);
 int content__get_width(struct content *c);

@@ -404,7 +404,7 @@ static mng_bool nsmng_errorproc(mng_handle mng, mng_int32 code,
 	chunk[4] = '\0';
 
 	LOG(("error playing '%s' chunk %s (%d):", 
-			content__get_url(&c->base), chunk, chunkseq));
+			content_get_url(&c->base), chunk, chunkseq));
 	LOG(("code %d severity %d extra1 %d extra2 %d text:'%s'", code,
 					severity, extra1, extra2, text));
 
