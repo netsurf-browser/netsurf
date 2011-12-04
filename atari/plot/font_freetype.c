@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#ifdef WITH_FREETYPE_FONT_DRIVER
 #include <ft2build.h>
 #include FT_CACHE_H
 
@@ -46,15 +46,15 @@ static struct bitmap * fontbmp;
 static ftc_faceid_t *font_faces[FONT_FACE_COUNT];
 
 static int dtor( FONT_PLOTTER self );
-static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 
+static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle,
 						const char * str, size_t length, int * width  );
 static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,
-						const char *string, size_t length,int x, 
+						const char *string, size_t length,int x,
 						size_t *char_offset, int *actual_x );
 static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
-							const char *string, size_t length,int x, 
+							const char *string, size_t length,int x,
 							size_t *char_offset, int *actual_x );
-static int text( FONT_PLOTTER self,  int x, int y, const char *text, 
+static int text( FONT_PLOTTER self,  int x, int y, const char *text,
 					size_t length, const plot_font_style_t *fstyle );
 
 static bool init = false;
@@ -96,7 +96,6 @@ ft_new_face(const char *option, const char *resname, const char *fontfile)
 	FT_Error error;
 	FT_Face aface;
 	char buf[PATH_MAX];
-	char resname2[PATH_MAX];
 
 	newf = calloc(1, sizeof(ftc_faceid_t));
 	if (option != NULL) {
@@ -217,7 +216,7 @@ static bool ft_font_init(void)
 	error = FTC_ImageCache_New(ft_cmanager, &ft_image_cache);
 
 	font_faces[FONT_FACE_SANS_SERIF] = NULL;
-	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face( 
+	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face(
 											option_atari_face_sans_serif,
                             				"fonts/ss.ttf",
                             				DEJAVU_PATH"DejaVuSans.ttf"
@@ -274,7 +273,7 @@ static bool ft_font_init(void)
                             "fonts/fantasy.ttf",
                             DEJAVU_PATH"DejaVuSerifCondensed-Bold.ttf");
 
-        /* set the default render mode */
+	/* set the default render mode */
 	if (option_atari_font_monochrom == true)
 		ft_load_type = FT_LOAD_MONOCHROME;
 	else
@@ -382,7 +381,7 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 	x = loc->g_x;
 	y = loc->g_y;
 	w = loc->g_w;
-	h = loc->g_h; 
+	h = loc->g_h;
 
 	clip.g_x = self->plotter->clipping.x0;
 	clip.g_y = self->plotter->clipping.y0;
@@ -391,7 +390,7 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 
 	if( !rc_intersect( &clip, loc ) ){
 		return;
-	}	
+	}
 
 	assert( loc->g_w > 0 );
 	assert( loc->g_h > 0 );
@@ -409,28 +408,29 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 	assert( fontbmp );
 	assert( fontbmp->pixdata );
 	bmpstride = bitmap_get_rowstride(fontbmp);
-	for( yloop = 0; yloop < h; yloop++) { 
+	for( yloop = 0; yloop < h; yloop++) {
 		linebuf = (uint32_t *)(fontbmp->pixdata + (bmpstride * yloop));
 		for(xloop = 0; xloop < w; xloop++){
 			fontpix = (uint32_t)(pixdata[(( yoff + yloop ) * pitch) + xloop + xoff]);
 			linebuf[xloop] = (uint32_t)(colour | fontpix);
-		}						
+		}
 	}
 	self->plotter->bitmap( self->plotter, fontbmp, loc->g_x, loc->g_y, 0, 0);
 }
 
-static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, 
+static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,
 				 const plot_font_style_t *fstyle )
 {
 	uint32_t ucs4;
 	size_t nxtchr = 0;
 	FT_Glyph glyph;
 	FT_BitmapGlyph bglyph;
-	GRECT loc, clip;
+	GRECT loc;
 	uint32_t c = fstyle->foreground ;
 	/* in -> BGR */
 	/* out -> ARGB */
 	c = ABGR_TO_RGB(c);
+
 	while (nxtchr < length) {
 		ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
 		nxtchr = utf8_next(text, length, nxtchr);
@@ -450,10 +450,10 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 					assert( 1 == 0 );
 				} else {
 					if( loc.g_w > 0) {
-						draw_glyph8( self, 
-							&loc, 
-							bglyph->bitmap.buffer, 
-							bglyph->bitmap.pitch, 
+						draw_glyph8( self,
+							&loc,
+							bglyph->bitmap.buffer,
+							bglyph->bitmap.pitch,
 							c
 						);
 					}
@@ -482,12 +482,14 @@ int ctor_font_plotter_freetype( FONT_PLOTTER self )
 	}
 
 	return( 1 );
-} 
+}
 
 static int dtor( FONT_PLOTTER self )
 {
 	ft_font_finalise();
-	if( fontbmp == NULL ) 
+	if( fontbmp == NULL )
 		bitmap_destroy( fontbmp );
 	return( 1 );
 }
+
+#endif

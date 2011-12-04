@@ -27,7 +27,6 @@
 #include "atari/plot/eddi.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
-#include "atari/plot/font_vdi.h"
 
 /* assign vdi line style to dst ( netsurf type ) */
 #define NSLT2VDI(dst, src) \
@@ -68,17 +67,19 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 static int plot_mfdb( GEM_PLOTTER self, GRECT * where, MFDB * mfdb, uint32_t flags);
 static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, const plot_font_style_t *fstyle);
 
+#ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
 static unsigned short pal[256][3];     /*RGB*/
-
 extern unsigned char rgb_web_pal[126][3];
 extern unsigned short vdi_web_pal[126][3];
+int32 * hermes_pal_p;
+#endif
 extern struct s_vdi_sysinfo vdi_sysinfo;
 
 static HermesHandle hermes_pal_h; /* hermes palette handle */
 static HermesHandle hermes_cnv_h; /* hermes converter instance handle */
 static HermesHandle hermes_res_h;
-int32 * hermes_pal_p;
+
 
 static inline void vsl_rgbcolor( short vdih, uint32_t cin )
 {
@@ -169,6 +170,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	clip.y1 = FIRSTFB(self).h;
 	self->clip( self, &clip );
 	/* store system palette & setup the new (web) palette: */
+#ifdef WITH_8BPP_SUPPORT
 	i = 0;
 	if( app.nplanes <= 8 ){
 		for( i=0; i<=255; i++ ) {
@@ -192,6 +194,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	} else {
 		/* no need to change the palette - its application specific */
 	}
+#endif
 
 	unsigned char * col;
 	assert( Hermes_Init() );
@@ -253,16 +256,20 @@ static int dtor( GEM_PLOTTER self )
 			free( self->fbuf[i].mem );
 	}
 
+
+	/* close Hermes stuff: */
+	Hermes_ConverterReturn( hermes_cnv_h );
+
+#ifdef WITH_8BPP_SUPPORT
 	if( app.nplanes <= 8 ){
 		/* restore system palette */
 		for( i=0; i<=255; i++ ) {
 			vs_color( self->vdi_handle, i, &sys_pal[i][0] );
 		}
 	}
+	Hermes_PaletteReturn( hermes_pal_h );
+#endif
 
-	/* close Hermes stuff: */
-	Hermes_ConverterReturn( hermes_cnv_h );
-	/* Hermes_PaletteReturn( hermes_pal_h ); */
 	Hermes_Done();
 
 	if( self->priv_data != NULL ){
@@ -279,9 +286,9 @@ static int resize( GEM_PLOTTER self, int w, int h )
 {
 	if( w == CURFB(self).w && h == CURFB(self).h )
 		return( 1 );
+	/* todo: needed when using offscreen buffers...
 	int newsize = calc_chunked_buffer_size( w, h, w, self->bpp_virt );
 	LOG(("%s: %s, oldsize: %d\n", (char*)__FILE__, __FUNCTION__, CURFB(self).size ));
-	/* todo: needed when using offscreen buffers...
 	if( newsize > self->screen_buffer_size ) {
 		self->screen_buffer_size = newsize;
 		self->screen_buffer =realloc( self->screen_buffer , self->screen_buffer_size );
@@ -1064,7 +1071,6 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flag
 	MFDB screen, tran;
 	MFDB * src;
 	short pxy[8];
-	short pxyclip[4];
 	short c[2] = {OFFSET_CUSTOM_COLOR, WHITE};
 	GRECT off;
 

@@ -64,17 +64,8 @@
 
 /* Error codes: */
 #define ERR_BUFFERSIZE_EXCEEDS_SCREEN 1	/* The buffer allocated is larger than the screen */
-#define ERR_NO_MEM 2										/* Not enough memory for requested operation */
-#define ERR_PLOTTER_NOT_AVAILABLE 3			/* invalid plotter driver name passed */
-
-/* Error code translations: */
-static const char * plot_error_codes[] =
-{
-	"None",
-	"ERR_BUFFERSIZE_EXCEEDS_SCREEN",
-	"ERR_NO_MEM",
-	"ERR_PLOTTER_NOT_AVAILABLE"
-};
+#define ERR_NO_MEM 2					/* Not enough memory for requested operation */
+#define ERR_PLOTTER_NOT_AVAILABLE 3		/* invalid plotter driver name passed */
 
 /* Grapics & Font Plotter "Objects": */
 typedef struct s_font_plotter * FONT_PLOTTER;
@@ -246,9 +237,6 @@ struct s_font_driver_table_entry
 
 typedef struct s_driver_table_entry * PLOTTER_INFO;
 typedef struct s_font_driver_table_entry * FONT_PLOTTER_INFO;
-
-/* get index to driver in driver list by name */
-static int drvrname_idx( char * name );
 
 /* get s_driver_table_entry from driver table */
 struct s_driver_table_entry * get_screen_driver_entry(char * name);

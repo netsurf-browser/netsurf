@@ -32,15 +32,34 @@
 #include "atari/plot/eddi.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
-#include "atari/plot/plotter_nvdi.h"
-#include "atari/plot/font_vdi.h"
-#include "atari/plot/font_internal.h"
-#include "atari/plot/font_freetype.h"
+#ifdef WITH_VDI_FONT_DRIVER
+ #include "atari/plot/font_vdi.h"
+#endif
+#ifdef WITH_INTERNAL_FONT_DRIVER
+ #include "atari/plot/font_internal.h"
+#endif
+#ifdef WITH_FREETYPE_FONT_DRIVER
+ #include "atari/plot/font_freetype.h"
+#endif
 #include "atari/gui.h"
 #include "utils/log.h"
 #include "atari/misc.h"
 #include "atari/osspec.h"
 
+
+/* get index to driver in driver list by name */
+static int drvrname_idx( char * name );
+
+/* Error code translations: */
+static const char * plot_error_codes[] =
+{
+	"None",
+	"ERR_BUFFERSIZE_EXCEEDS_SCREEN",
+	"ERR_NO_MEM",
+	"ERR_PLOTTER_NOT_AVAILABLE"
+};
+
+#ifdef WITH_8BPP_SUPPORT
 unsigned short vdi_web_pal[216][3] = {
 	{0x000,0x000,0x000}, {0x0c8,0x000,0x000}, {0x190,0x000,0x000}, {0x258,0x000,0x000}, {0x320,0x000,0x000}, {0x3e8,0x000,0x000},
 	{0x000,0x0c8,0x000}, {0x0c8,0x0c8,0x000}, {0x190,0x0c8,0x000}, {0x258,0x0c8,0x000}, {0x320,0x0c8,0x000}, {0x3e8,0x0c8,0x000},
@@ -79,6 +98,7 @@ unsigned short vdi_web_pal[216][3] = {
 	{0x000,0x320,0x3e8}, {0x0c8,0x320,0x3e8}, {0x190,0x320,0x3e8}, {0x258,0x320,0x3e8}, {0x320,0x320,0x3e8}, {0x3e8,0x320,0x3e8},
 	{0x000,0x3e8,0x3e8}, {0x0c8,0x3e8,0x3e8}, {0x190,0x3e8,0x3e8}, {0x258,0x3e8,0x3e8}, {0x320,0x3e8,0x3e8}, {0x3e8,0x3e8,0x3e8}
 };
+#endif
 
 static short prev_vdi_clip[4];
 struct s_vdi_sysinfo vdi_sysinfo;
@@ -86,15 +106,20 @@ struct s_vdi_sysinfo vdi_sysinfo;
 struct s_driver_table_entry screen_driver_table[] =
 {
 	{(char*)"vdi", ctor_plotter_vdi, 0, 32},
-/*	{(char*)"nvdi", ctor_plotter_vdi, PLOT_FLAG_OFFSCREEN, 32},*/
 	{(char*)NULL, NULL, 0, 0 }
 };
 
 const struct s_font_driver_table_entry font_driver_table[] =
 {
+#ifdef WITH_VDI_FONT_DRIVER
 	{(char*)"vdi", ctor_font_plotter_vdi, 0},
+#endif
+#ifdef WITH_FREETYPE_FONT_DRIVER
 	{(char*)"freetype", ctor_font_plotter_freetype, 0},
+#endif
+#ifdef WITH_INTERNAL_FONT_DRIVER
 	{(char*)"internal", ctor_font_plotter_internal, 0},
+#endif
 	{(char*)NULL, NULL, 0}
 };
 

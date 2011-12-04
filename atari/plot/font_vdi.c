@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#ifdef WITH_VDI_FONT_DRIVER
 #include "atari/plot/plotter.h"
 #include "atari/plot/font_vdi.h"
 
@@ -31,7 +31,7 @@ static int dtor( FONT_PLOTTER self );
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 	const char * str, size_t length, int * width  );
 static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x );
-static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string, 
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,
 						size_t length,int x, size_t *char_offset, int *actual_x );
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle );
 
@@ -53,18 +53,18 @@ int ctor_font_plotter_vdi( FONT_PLOTTER self )
 	}
 	init = true;
 	return( 1 );
-} 
+}
 
 static int dtor( FONT_PLOTTER self )
 {
 	return( 1 );
 }
 
-static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const char * str, 
+static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const char * str,
 					  size_t length, int * width  )
 {
 	short cw, ch, cellw, cellh;
-	short pxsize; 
+	short pxsize;
 	short fx=0;
 	lstr = (char*)str;
 	utf8_to_enc(str, "ATARIST", length, &lstr );
@@ -76,7 +76,7 @@ static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const c
 	if( fstyle->flags & FONTF_OBLIQUE )
 		fx |= 16;
 	if( fstyle->weight > 450 )
-		fx |= 1;	
+		fx |= 1;
 	vst_effects( self->vdi_handle, fx );
 	/* TODO: replace 90 with global dpi setting */
 	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
@@ -87,11 +87,11 @@ static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const c
 	return( 0 );
 }
 
-static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const char *string, 
+static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x )
 {
 	short cw, ch, cellw, cellh;
-	short pxsize; 
+	short pxsize;
 	short fx=0;
 	int i;
 	lstr = (char*)string;
@@ -106,9 +106,9 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	if( fstyle->flags & FONTF_ITALIC )
 		fx |= 4;
 	if( fstyle->flags & FONTF_OBLIQUE )
-		fx |= 16; 
+		fx |= 16;
 	if( fstyle->weight > 450 )
-		fx |= 1;	
+		fx |= 1;
 	vst_effects( self->vdi_handle, fx );
 	pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
 	vst_height( self->vdi_handle, pxsize ,&cw, &ch, &cellw, &cellh);
@@ -119,11 +119,11 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 		if( lstr[i] == ' ' ) {
 			last_space_x = *actual_x;
 			last_space_idx = cpos;
-		} 
+		}
 		if( *actual_x > x ) {
 			*actual_x = last_space_x;
 			*char_offset = last_space_idx;
-			return true;	
+			return true;
 		}
 		*actual_x += cellw;
 		cpos++;
@@ -134,13 +134,13 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	return( 0 );
 }
 
-static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const char *string, 
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const char *string,
 						size_t length,int x, size_t *char_offset, int *actual_x )
 {
 	short cw, ch, cellw, cellh;
-	short pxsize=0; 
+	short pxsize=0;
 	short fx=0;
-	
+
 	lstr = (char*)string;
 	int i=0;
 	int curpx=0;
@@ -150,7 +150,7 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 	if( fstyle->flags & FONTF_ITALIC )
 		fx |= 4;
 	if( fstyle->flags & FONTF_OBLIQUE )
-		fx |= 16; 
+		fx |= 16;
 	if( fstyle->weight > 450 )
 		fx |= 1;
 	vst_effects( self->vdi_handle, fx );
@@ -163,7 +163,7 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const 
 		if( *actual_x > x) {
 			*actual_x -= cellw;
 			*char_offset = i;
-			break;		
+			break;
 		}
 	}
 	free( (void*)lstr );
@@ -175,7 +175,7 @@ static inline void vst_rgbcolor( short vdih, uint32_t cin )
 {
 	if( vdi_sysinfo.scr_bpp > 8 ) {
 		unsigned short c[4];
-		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );	
+		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0] );
 		vst_color( vdih, OFFSET_CUSTOM_COLOR );
 	} else {
@@ -186,12 +186,12 @@ static inline void vst_rgbcolor( short vdih, uint32_t cin )
 	}
 }
 
-static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, 
+static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,
 				 const plot_font_style_t *fstyle )
 {
 	/* todo: either limit the string to max 80 chars, or use v_ftext instead of v_gtext */
 	short cw, ch, cellw, cellh;
-	short pxsize=8; 
+	short pxsize=8;
 	short fx=0;
 	lstr = (char*)text;
 	utf8_to_enc(text, "ATARIST", length, &lstr );
@@ -206,12 +206,12 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 		if( fstyle->flags & FONTF_ITALIC )
 			fx |= 4;
 		if( fstyle->flags & FONTF_OBLIQUE )
-			fx |= 4; 
+			fx |= 4;
 		if( fstyle->weight > 450 )
-			fx |= 1;		
+			fx |= 1;
 
-		/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss), use that value
-			 pass it as arg, to reduce netsurf dependency */
+		/* TODO: netsurf uses 90 as default dpi ( somewhere defined in libcss),
+			use that value or pass it as arg, to reduce netsurf dependency */
 		pxsize = ceil( (fstyle->size/FONT_SIZE_SCALE) * 90 / 72 );
 	}
 	x += CURFB(self->plotter).x;
@@ -231,3 +231,4 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	return( 0 );
 }
 
+#endif

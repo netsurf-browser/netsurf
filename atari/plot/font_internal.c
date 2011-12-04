@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#ifdef WITH_INTERNAL_FONT_DRIVER
 #include "atari/plot/plotter.h"
 #include "atari/plot/font_internal.h"
 
@@ -31,7 +31,7 @@ static int dtor( FONT_PLOTTER self );
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 	const char * str, size_t length, int * width  );
 static int str_split( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x );
-static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string, 
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,const char *string,
 						size_t length,int x, size_t *char_offset, int *actual_x );
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle );
 
@@ -94,17 +94,17 @@ int ctor_font_plotter_internal( FONT_PLOTTER self )
 	}
 	init = true;
 	return( 1 );
-} 
+}
 
 static int dtor( FONT_PLOTTER self )
 {
 	if( tmp.fd_addr != NULL ){
-		free( tmp.fd_addr ); 
+		free( tmp.fd_addr );
 	}
 	return( 1 );
 }
 
-static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const char * str, 
+static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const char * str,
 					  size_t length, int * width  )
 {
    const struct fb_font_desc* fb_font = fb_get_font(fstyle);
@@ -112,7 +112,7 @@ static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, const c
 	return( 1 );
 }
 
-static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const char *string, 
+static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const char *string,
 					  size_t length,int x, size_t *char_offset, int *actual_x )
 {
 	const struct fb_font_desc* fb_font = fb_get_font(fstyle);
@@ -130,7 +130,7 @@ static int str_split( FONT_PLOTTER self, const plot_font_style_t * fstyle, const
 	return( 1  );
 }
 
-static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const char *string, 
+static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t * fstyle,const char *string,
 						size_t length,int x, size_t *char_offset, int *actual_x )
 {
 	const struct fb_font_desc* fb_font = fb_get_font(fstyle);
@@ -149,11 +149,11 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT *inloc, uint8_t *chrp, int pitc
 	int xloop,yloop;
 	int stride = pitch / 8;
 	uint32_t * linebuf;
-	GRECT loc = *inloc; 
+	GRECT loc = *inloc;
 
 	fontbmp = bitmap_realloc( loc.g_w, loc.g_h, fontbmp->bpp, loc.g_w * fontbmp->bpp, BITMAP_GROW, fontbmp );
 	bmpstride = bitmap_get_rowstride(fontbmp);
-	for( yloop = 0; yloop < loc.g_h; yloop++) { 
+	for( yloop = 0; yloop < loc.g_h; yloop++) {
 		uint32_t pixmask = 1 ;
 		linebuf = (uint32_t *)(fontbmp->pixdata + (bmpstride * yloop));
 		fontdata = (uint32_t*)(chrp + (stride*yloop));
@@ -165,7 +165,7 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT *inloc, uint8_t *chrp, int pitc
 	self->plotter->bitmap( self->plotter, fontbmp, loc.g_x, loc.g_y, 0, BITMAP_MONOGLYPH );
 }
 
-static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length, 
+static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,
 				 const plot_font_style_t *fstyle )
 {
     const struct fb_font_desc* fb_font = fb_get_font(fstyle);
@@ -191,11 +191,11 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	if ( blen < 1 ) {
 		return( 1 );
 	}
-	
+
 	if( self->plotter->flags & PLOT_FLAG_OFFSCREEN ){
-		/* 	when the plotter is an offscreen plotter the call to 
-			bitmap() isn't that expensive. Draw an 8 bit bitmap into the 
-			offscreen buffer. 
+		/* 	when the plotter is an offscreen plotter the call to
+			bitmap() isn't that expensive. Draw an 8 bit bitmap into the
+			offscreen buffer.
 		*/
 		c =  fstyle->foreground;
 		/* in -> BGR */
@@ -228,14 +228,14 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 			tmp.fd_addr = buf;
 			memset( tmp.fd_addr, 0, size );
 		}
-		int ypos;		
+		short ypos;
 		int rowsize = tmp.fd_wdwidth << 1;
 		char * d;
 		uint32_t * pp;
 		for (chr = 0; chr < blen; chr++) {
         	pp = (uint32_t*)fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
 			d = ((uint8_t*)tmp.fd_addr) + chr;
-			for( ypos=0; (unsigned int)ypos<loc.g_h; ypos++){
+			for( ypos=0; ypos<loc.g_h; ypos++){
 				*d = (unsigned char)*pp++;
 				d += rowsize;
 			}
@@ -243,7 +243,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 		unsigned short out[4];
 		rgb_to_vdi1000( (unsigned char*)&fstyle->foreground, (unsigned short*)&out );
 		vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
-		self->plotter->plot_mfdb( self->plotter, &loc, &tmp, PLOT_FLAG_TRANS );	
+		self->plotter->plot_mfdb( self->plotter, &loc, &tmp, PLOT_FLAG_TRANS );
 	}
 
     free(buffer);
@@ -2348,3 +2348,4 @@ const struct fb_font_desc font_regular = {
 	.encoding = "CP1252",
 	.data = fontdata_regular,
 };
+#endif
