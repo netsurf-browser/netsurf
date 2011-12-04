@@ -58,14 +58,14 @@ void *bitmap_create(int w, int h, unsigned int state)
 void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int state, void * pixdata )
 {
     struct bitmap * bitmap;
-	
+
     LOG(("width %d, height %d, state %u",w, h, state ));
 
 	if( rowstride == 0) {
 		rowstride = bpp * w;
 	}
 
-	assert( rowstride >= w * bpp ); 
+	assert( rowstride >= w * bpp );
     bitmap = calloc(1 , sizeof(struct bitmap) );
     if (bitmap) {
 		if( pixdata == NULL) {
@@ -74,7 +74,7 @@ void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int st
 		else {
 			bitmap->pixdata = pixdata;
 		}
-		
+
         if (bitmap->pixdata != NULL) {
 			bitmap->width = w;
 			bitmap->height = h;
@@ -116,7 +116,7 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 				return( NULL );
 		}
 	}
-	
+
 	bitmap->width = w;
 	bitmap->height = h;
 	bitmap->opaque = false;
@@ -128,9 +128,8 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 }
 
 void bitmap_to_mfdb(void * bitmap, MFDB * out)
-{	
+{
 	struct bitmap * bm;
-	uint32_t dstsize;
 	uint8_t * tmp;
 	size_t dststride, oldstride;
 
@@ -149,7 +148,7 @@ void bitmap_to_mfdb(void * bitmap, MFDB * out)
 		if( tmp == NULL ){
 			bm->pixdata = tmp;
 			out->fd_addr = NULL;
-			return;	
+			return;
 		}
 		bm->rowstride = dststride * bm->bpp;
 		int i=0;
@@ -190,12 +189,12 @@ unsigned char *bitmap_get_buffer(void *bitmap)
 	return bm->pixdata;
 }
 
-size_t bitmap_buffer_size( void * bitmap ) 
+size_t bitmap_buffer_size( void * bitmap )
 {
 	struct bitmap * bm = bitmap;
 	if( bm == NULL )
 		return 0;
-	return( bm->rowstride * bm->height );  
+	return( bm->rowstride * bm->height );
 }
 
 
@@ -259,7 +258,7 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
  *
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
-void bitmap_modified(void *bitmap) 
+void bitmap_modified(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
