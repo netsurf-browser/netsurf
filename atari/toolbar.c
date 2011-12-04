@@ -315,13 +315,32 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 		window_set_focus( gw, URL_WIDGET, (void*)&tb->url );
 	} else {
 		if( mb & 1 ) {
-			/* TODO: if the button is dragging, report drag event */
+			textarea_mouse_action( tb->url.textarea, BROWSER_MOUSE_DRAG_1,
+									mx, my );
+			short prev_x = mx;
+			short prev_y = my;
+			do{
+				if( abs(prev_x-mx) > 5 || abs(prev_y-my) > 5 ){
+					textarea_mouse_action( tb->url.textarea,
+										BROWSER_MOUSE_HOLDING_1, mx, my );
+					prev_x = mx;
+					prev_y = my;
+					if( tb->url.redraw ){
+						tb_url_redraw( gw );
+					}
+				}
+				graf_mkstate( &mx, &my, &mb,  &kstat );
+				mx = mx - (work.g_x + TOOLBAR_URL_MARGIN_LEFT);
+				my = my - (work.g_y + TOOLBAR_URL_MARGIN_TOP);
+			}while( mb & 1 );
+				textarea_drag_end( tb->url.textarea, 0, mx, my );
 		} else {
 			/* TODO: recognize click + shift key */
 			int mstate = BROWSER_MOUSE_PRESS_1;
 			if( (kstat & (K_LSHIFT|K_RSHIFT)) != 0 )
 				mstate = BROWSER_MOUSE_MOD_1;
-			textarea_mouse_action( tb->url.textarea, BROWSER_MOUSE_PRESS_1, mx, my );
+			textarea_mouse_action( tb->url.textarea,
+									BROWSER_MOUSE_PRESS_1, mx, my );
 		}
 	}
 	// TODO: do not send an complete redraw!
