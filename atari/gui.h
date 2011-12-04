@@ -28,14 +28,6 @@ struct point_s {
 	int y;
 };
 
-struct bbox_s {
-	int x0;
-	int y0;
-	int x1;
-	int y1;
-};
-
-typedef struct bbox_s BBOX;
 typedef struct point_s POINT;
 
 #define MFORM_EX_FLAG_USERFORM 0x01
@@ -135,7 +127,5 @@ struct gui_window {
 };
 
 extern struct gui_window *window_list;
-
-#define MOUSE_IS_DRAGGING() (mouse_hold_start[0] || mouse_hold_start[1])
 
 #endif

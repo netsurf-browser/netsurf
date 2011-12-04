@@ -112,8 +112,92 @@ static void __CDECL evnt_tv_redraw( WINDOW *win, short buff[8], void * data )
 	}
 }
 
-
 static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
+{
+	GRECT work;
+	NSTREEVIEW tv = (NSTREEVIEW) data;
+	if( tv == NULL )
+		return;
+	if( evnt.mbut & 2 ) {
+		/* do not handle right click */
+		return;
+	}
+
+	WindGetGrect( tv->window, WF_WORKXYWH, &work );
+
+	/* mouse click relative origin: */
+	short origin_rel_x = (evnt.mx-work.g_x)+(win->xpos*win->w_u);
+	short origin_rel_y = (evnt.my-work.g_y)+(win->ypos*win->h_u);
+
+	if( origin_rel_x >= 0 && origin_rel_y >= 0
+		&& evnt.mx < work.g_x + work.g_w
+		&& evnt.my < work.g_y + work.g_h )
+	{
+		int bms;
+		bool ignore=false;
+		short cur_rel_x, cur_rel_y, dummy, mbut;
+
+		if( evnt.nb_click == 2 ){
+			tree_mouse_action(tv->tree,
+							BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_DOUBLE_CLICK,
+							origin_rel_x, origin_rel_y );
+			return;
+		}
+
+		graf_mkstate(&cur_rel_x, &cur_rel_x, &mbut, &dummy);
+		if( (mbut&1) == 0 ){
+			bms = BROWSER_MOUSE_CLICK_1 | BROWSER_MOUSE_PRESS_1;
+			if( evnt.nb_click == 2 ) {
+				bms = BROWSER_MOUSE_DOUBLE_CLICK;
+			}
+			tree_mouse_action(tv->tree, bms, origin_rel_x, origin_rel_y );
+		} else {
+			/* button still pressed */
+
+			short prev_x = origin_rel_x;
+			short prev_y = origin_rel_y;
+
+			cur_rel_x = origin_rel_x;
+			cur_rel_y = origin_rel_y;
+
+			if( tree_is_edited(tv->tree) ){
+				gem_set_cursor(&gem_cursors.ibeam);
+			} else {
+				gem_set_cursor(&gem_cursors.hand);
+			}
+
+			tv->startdrag.x = origin_rel_x;
+			tv->startdrag.y = origin_rel_y;
+
+			tree_mouse_action( tv->tree,
+								BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON ,
+								cur_rel_x, cur_rel_y );
+			do{
+				if( abs(prev_x-cur_rel_x) > 5 || abs(prev_y-cur_rel_y) > 5 ){
+					tree_mouse_action( tv->tree,
+								BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON,
+								cur_rel_x, cur_rel_y);
+					prev_x = cur_rel_x;
+					prev_y = cur_rel_y;
+				}
+
+				if( tv->redraw )
+					atari_treeview_redraw( tv );
+				/* sample mouse button state: */
+				graf_mkstate(&cur_rel_x, &cur_rel_y, &mbut, &dummy);
+				cur_rel_x = (cur_rel_x-work.g_x)+(win->xpos*win->w_u);
+				cur_rel_y = (cur_rel_y-work.g_y)+(win->ypos*win->h_u);
+			} while( mbut & 1 );
+
+			tree_drag_end(tv->tree, 0, tv->startdrag.x, tv->startdrag.y,
+							cur_rel_x, cur_rel_y );
+			gem_set_cursor(&gem_cursors.arrow);
+		}
+	}
+}
+
+
+static void __CDECL evnt_tv_mbutton__( WINDOW *win, short buff[8], void * data )
 {
 	GRECT work;
 	bool ignore=false;
@@ -159,17 +243,19 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 			if( mbut & 1 ) {
 				bmstate |= BROWSER_MOUSE_DRAG_ON;
 				if( mouse_hold_start[0] == 0) {
+					// start of drag op
 					mouse_hold_start[0] = tnow;
 					tv->startdrag.x = rx;
 					tv->startdrag.y = ry;
 					bmstate |=  BROWSER_MOUSE_DRAG_1;
 					gem_set_cursor(&gem_cursors.cross);
 				} else {
-					/* todo: add more isual indication (grafbox?) */
+					/* todo: add more visual indication (grafbox?) */
 					ignore = true;
 					gem_set_cursor(&gem_cursors.cross);
 				}
 			} else {
+				// mouse button up event
 				if( bmstate & BROWSER_MOUSE_DRAG_ON ){
 					bmstate = 0;
 					tree_drag_end(tv->tree, bmstate, tv->startdrag.x, tv->startdrag.y, rx, ry);
@@ -231,7 +317,7 @@ NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
 	EvntDataAdd( new->window, WM_XBUTTON, evnt_tv_mbutton, new, EV_BOT );
 	EvntDataAttach( new->window, WM_REDRAW, evnt_tv_redraw, new );
 	EvntDataAttach( new->window, WM_XKEYBD, evnt_tv_keybd, new );
-	EvntDataAttach( new->window, WM_XM1, evnt_tv_m1, new );
+	//EvntDataAttach( new->window, WM_XM1, evnt_tv_m1, new );
 
 	return(new);
 }
@@ -415,8 +501,8 @@ void atari_treeview_resized(struct tree *tree, int width, int height, void *pw)
 
 void atari_treeview_scroll_visible(int y, int height, void *pw)
 {
-	/* we don't support dragging within the treeview */
-	/* so we don't need to implement this */
+	/* we don't support dragging outside the treeview */
+	/* so we don't need to implement this? */
 }
 
 /**

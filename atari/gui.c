@@ -86,12 +86,7 @@ OBJECT * 	h_gem_menu;
 OBJECT **rsc_trindex;
 short vdih;
 short rsc_ntree;
-int mouse_click_time[3] = { INT_MAX, INT_MAX, INT_MAX };
-int mouse_hold_start[3];
-short last_drag_x;
-short last_drag_y;
 long next_poll;
-browser_mouse_state bmstate;
 
 /* Comandline / Options: */
 int cfg_width;
@@ -112,49 +107,6 @@ void gui_poll(bool active)
 
 	evnt.timer = schedule_run();
 
-	wind_get( 0, WF_TOP, &aestop, &winloc[1], &winloc[2], &winloc[3]);
-	if( winloc[1] != _AESapid ){
-		aestop = 0;
-	}
-
-	if( (aestop > 0) && !active ) {
-		flags |= MU_M1;
-		wind_get( aestop, WF_WORKXYWH, &winloc[0],
-			&winloc[1], &winloc[2], &winloc[3] );
-		graf_mkstate( &mx, &my, &dummy, &dummy );
-		/* this can be improved a lot under XaAES - there is an event for mouse move */
-		if( mx >= winloc[0] && mx <= winloc[0] + winloc[2] &&
-			my >= winloc[1] && my <= winloc[1] + winloc[3] ){
-			/* Mouse is within the top window area */
-			evnt.m1_flag = MO_LEAVE;
-			evnt.m1_w = evnt.m1_h = 1;
-			evnt.m1_x = mx;
-			evnt.m1_y = my;
-		} else {
-			/* Mouse is outside of top window area. */
-			if( evnt.m1_flag == MO_LEAVE ) {
-				/* Previous move was inside the top window area */
-				struct gui_window * gw = input_window;
-				if(gw != NULL && gw->browser != NULL && gw->browser->bw != NULL ){
-					/* reset mouse state */
-					/* you could also track further, without reset, but */
-					/* when the mouse moves into native scroller area, the mouse is */
-					/* the native scroll bar code gets in between.. */
-                			mouse_hold_start[0] = 0;
-                			mouse_hold_start[1] = 0;
-					bmstate = 0;
-					browser_window_mouse_track( gw->browser->bw, bmstate, mx, my );
-				}
-			}
-			evnt.m1_flag = MO_ENTER;
-			evnt.m1_w = winloc[2];
-			evnt.m1_h = winloc[3];
-			evnt.m1_x = winloc[0];
-			evnt.m1_y = winloc[1];
-		}
-	}
-
-	/*printf("time: %d, active: %d\n", evnt.timer, active );*/
 	if( active ) {
 		if( clock() >= next_poll ) {
 			evnt.timer = 0;
@@ -163,6 +115,19 @@ void gui_poll(bool active)
 			next_poll = clock() + CLOCKS_PER_SEC;
 		}
 	} else {
+		if( input_window != NULL ){
+			wind_get( 0, WF_TOP, &aestop, &winloc[1], &winloc[2], &winloc[3]);
+			if( winloc[1] == _AESapid ){
+				/* only check for mouse move when netsurf is on top: */
+				// move that into m1 event handler
+				graf_mkstate( &mx, &my, &dummy, &dummy );
+				flags |= MU_M1;
+				evnt.m1_flag = MO_LEAVE;
+				evnt.m1_w = evnt.m1_h = 1;
+				evnt.m1_x = mx;
+				evnt.m1_y = my;
+			}
+		}
 		flags |= MU_TIMER;
 		EvntWindom( flags );
 	}
@@ -191,8 +156,6 @@ gui_create_browser_window(struct browser_window *bw,
 			  bool new_tab)
 {
 	struct gui_window *gw=NULL;
-	struct gui_window * gwroot ;
-	short winloc[4];
 	LOG(( "gw: %p, BW: %p, clone %p, tab: %d\n" , gw,  bw, clone,
 		(int)new_tab
 	));
@@ -260,7 +223,6 @@ void gui_window_destroy(struct gui_window *w)
 	w = NULL;
 
 	w = window_list;
-	int dummy=0;
 	while( w != NULL ) {
 		if( w->root ) {
 			input_window = w;
@@ -325,7 +287,6 @@ void gui_window_redraw_window(struct gui_window *gw)
 
 void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
-	LGRECT work;
 	CMP_BROWSER b;
 	if (gw == NULL)
 		return;
@@ -542,10 +503,8 @@ void gui_window_stop_throbber(struct gui_window *w)
 /* Place caret in window */
 void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 {
-	LGRECT work;
 	if (w == NULL)
 		return;
-	CMP_BROWSER b = w->browser;
 	if( w->browser->caret.current.g_w > 0 )
 		gui_window_remove_caret( w );
 	w->browser->caret.requested.g_x = x;
@@ -563,10 +522,8 @@ void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 void
 gui_window_remove_caret(struct gui_window *w)
 {
-	LGRECT rect;
 	if (w == NULL)
 		return;
-	CMP_BROWSER b = w->browser;
 
 	if( w->browser->caret.background.fd_addr != NULL ){
 		browser_restore_caret_background( w, NULL );
@@ -850,12 +807,6 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 	cb(bres, cbpw);
 }
 
-
-static void *myrealloc(void *ptr, size_t len, void *pw)
-{
-	return realloc(ptr, len);
-}
-
 void gui_quit(void)
 {
 	LOG((""));
@@ -964,8 +915,7 @@ nsurl *gui_get_resource_url(const char *path)
 
 static void gui_init(int argc, char** argv)
 {
-	char buf[PATH_MAX], sbuf[PATH_MAX];
-	int len;
+	char buf[PATH_MAX];
 	OBJECT * cursors;
 
 	atari_find_resource(buf, "netsurf.rsc", "./res/netsurf.rsc");
@@ -1028,8 +978,6 @@ static void gui_init(int argc, char** argv)
 static char *theapp = (char*)"NetSurf";
 static void gui_init2(int argc, char** argv)
 {
-	struct browser_window *bw;
-	const char *addr = NETSURF_HOMEPAGE;
 	MenuBar( h_gem_menu , 1 );
 	bind_global_events();
 	menu_register( -1, theapp);

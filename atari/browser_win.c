@@ -62,11 +62,6 @@
 extern void * h_gem_rsrc;
 extern struct gui_window *input_window;
 extern GEM_PLOTTER plotter;
-extern int mouse_click_time[3];
-extern int mouse_hold_start[3];
-extern browser_mouse_state bmstate;
-extern short last_drag_x;
-extern short last_drag_y;
 
 void __CDECL std_szd( WINDOW * win, short buff[8], void * );
 void __CDECL std_mvd( WINDOW * win, short buff[8], void * );
@@ -91,77 +86,6 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 /* Module public functions:                                                   */
 /* -------------------------------------------------------------------------- */
 
-
-/*
-	track the mouse state and
-	finally checks for released buttons.
- */
-static void window_track_mouse_state( LGRECT * bwrect, bool within, short mx, short my, short mbut, short mkstate ){
-	int i = 0;
-	int nx, ny;
-	struct gui_window * gw = input_window;
-
-	if( !gw ) {
-		bmstate = 0;
-		mouse_hold_start[0] = 0;
-		mouse_hold_start[1] = 0;
-		return;
-	}
-
-	/* todo: creat function find_browser_window( mx, my ) */
-	nx = (mx - bwrect->g_x + gw->browser->scroll.current.x);
-	ny = (my - bwrect->g_y + gw->browser->scroll.current.y);
-
-	if( mkstate & (K_RSHIFT | K_LSHIFT) ){
-		bmstate |= BROWSER_MOUSE_MOD_1;
-	} else {
-		bmstate &= ~(BROWSER_MOUSE_MOD_1);
-	}
-	if( (mkstate & K_CTRL) ){
-		bmstate |= BROWSER_MOUSE_MOD_2;
-	} else {
-		bmstate &= ~(BROWSER_MOUSE_MOD_2);
-	}
-	if( (mkstate & K_ALT) ){
-		bmstate |= BROWSER_MOUSE_MOD_3;
-	} else {
-		bmstate &= ~(BROWSER_MOUSE_MOD_3);
-	}
-
-	if( !(mbut&1) && !(mbut&2) ) {
-		if(bmstate & BROWSER_MOUSE_DRAG_ON )
-			bmstate &= ~( BROWSER_MOUSE_DRAG_ON );
-	}
-
-	/* todo: if we need right button click, increase loop count */
-	for( i = 1; i<2; i++ ) {
-		if( !(mbut & i) ) {
-			if( mouse_hold_start[i-1] > 0 ) {
-				mouse_hold_start[i-1] = 0;
-				if( i==1 ) {
-					LOG(("Drag for %d ended", i));
-					bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 ) ;
-					if( within ) {
-						/* drag end */
-						browser_window_mouse_track(
-							gw->browser->bw, 0, nx, ny
-						);
-					}
-				}
-				if( i==2 ) {
-					bmstate &= ~( BROWSER_MOUSE_HOLDING_2 | BROWSER_MOUSE_DRAG_2 ) ;
-					LOG(("Drag for %d ended", i));
-					if( within ) {
-						/* drag end */
-						browser_window_mouse_track(
-							gw->browser->bw, 0, nx, ny
-						);
-					}
-				}
-			}
-		}
-	}
-}
 
 int window_create( struct gui_window * gw,
 				struct browser_window * bw,
@@ -546,71 +470,47 @@ static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
 {
 	struct gui_window * gw = input_window;
 	static bool prev_url = false;
-	short mx, my, mbut, mkstate;
-	bool a = false;				//flags if mouse is within controls or browser
+	static short prev_x=0;
+	static short prev_y=0;
 	bool within = false;
 	LGRECT urlbox, bwbox, sbbox;
-	int nx, ny;					// relative mouse position
-
+	int nx, ny;
 
 	if( gw == NULL)
 		return;
 
-	if( gw != input_window ){
+	if( prev_x == evnt.mx && prev_y == evnt.my ){
 		return;
 	}
-
-	graf_mkstate(&mx, &my, &mbut, &mkstate);
-
 	browser_get_rect( gw, BR_CONTENT, &bwbox );
-	if( gw->root->toolbar )
-		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
-	if( gw->root->statusbar )
-		mt_CompGetLGrect(&app, gw->root->statusbar->comp, WF_WORKXYWH, &sbbox);
 
-	if( mx > bwbox.g_x && mx < bwbox.g_x + bwbox.g_w &&
-		my > bwbox.g_y &&  my < bwbox.g_y + bwbox.g_h ){
+	if( evnt.mx > bwbox.g_x && evnt.mx < bwbox.g_x + bwbox.g_w &&
+		evnt.my > bwbox.g_y &&  evnt.my < bwbox.g_y + bwbox.g_h ){
 		within = true;
+		browser_window_mouse_track(
+						input_window->browser->bw,
+						0,
+						evnt.mx - bwbox.g_x + gw->browser->scroll.current.x,
+						evnt.my - bwbox.g_y + gw->browser->scroll.current.y
+					);
 	}
 
-	if( evnt.m1_flag == MO_LEAVE ) {
-		if( MOUSE_IS_DRAGGING() ){
-			window_track_mouse_state( &bwbox, within, mx, my, mbut, mkstate );
-		}
-		if( gw->root->toolbar && within == false ) {
-			if( (mx > urlbox.g_x && mx < urlbox.g_x + urlbox.g_w ) &&
-			 	(my > urlbox.g_y && my < + urlbox.g_y + urlbox.g_h )) {
-				gem_set_cursor( &gem_cursors.ibeam );
-				prev_url = a = true;
-			}
-		}
-		if( !a ) {
+	if( gw->root->toolbar && within == false ) {
+		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
+		if( (evnt.mx > urlbox.g_x && evnt.mx < urlbox.g_x + urlbox.g_w ) &&
+		 	(evnt.my > urlbox.g_y && evnt.my < + urlbox.g_y + urlbox.g_h )) {
+			gem_set_cursor( &gem_cursors.ibeam );
+			prev_url = true;
+		} else {
 			if( prev_url ) {
 				gem_set_cursor( &gem_cursors.arrow );
 				prev_url = false;
 			}
-			/* report mouse move in the browser window */
-			if( within ){
-				nx = mx - bwbox.g_x;
-				ny = my - bwbox.g_y;
-				if( ( abs(mx-last_drag_x)>5 || abs(mx-last_drag_y)>5 ) ||
-					!MOUSE_IS_DRAGGING() ){
-					browser_window_mouse_track(
-						input_window->browser->bw,
-						bmstate,
-						nx + gw->browser->scroll.current.x,
-						ny + gw->browser->scroll.current.y
-					);
-					if( MOUSE_IS_DRAGGING() ){
-						last_drag_x = mx;
-						last_drag_y = my;
-					}
-				}
-			}
 		}
-	} else {
-		/* set input window? */
 	}
+
+	prev_x = evnt.mx;
+	prev_y = evnt.my;
 }
 
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data )

@@ -58,13 +58,8 @@
 #include "atari/ctxmenu.h"
 #include "cflib.h"
 
-extern browser_mouse_state bmstate;
-extern int mouse_click_time[3];
-extern int mouse_hold_start[3];
 extern GEM_PLOTTER plotter;
 extern struct gui_window *input_window;
-extern short last_drag_x;
-extern short last_drag_y;
 
 static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
@@ -156,18 +151,17 @@ void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * 
 	LGRECT cur;
 
 	/* Query component for it's current size: */
-
 	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &cur);
-	/* And extract the different widget dimensions: */
 
-	/* Redraw area of html content: */
+	/* And extract the different widget dimensions: */
 	if( type == BR_CONTENT ){
 		out->g_w = cur.g_w;
 		out->g_h = cur.g_h;
 		out->g_x = cur.g_x;
 		out->g_y = cur.g_y;
-		return;
 	}
+
+	return;
 }
 
 /* Report an resize to the COMPONENT interface */
@@ -220,18 +214,20 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * data)
 {
 	short mx, my, dummy, mbut;
-	uint32_t tnow = clock()*1000 / CLOCKS_PER_SEC;
 	LGRECT cwork;
+	browser_mouse_state bmstate = 0;
 	struct gui_window * gw = data;
 	if( input_window != gw ) {
 		return;
 	}
 
+
 	window_set_focus( gw, BROWSER, (void*)gw->browser );
 	browser_get_rect( gw, BR_CONTENT, &cwork );
+
+	/* convert screen coords to component coords: */
 	mx = evnt.mx - cwork.g_x;
 	my = evnt.my - cwork.g_y;
-	LOG(("mevent (%d) within %s at %d / %d\n", evnt.nb_click, gw->browser->bw->name, mx, my ));
 
 	/* Translate GEM key state to netsurf mouse modifier */
 	if( evnt.mkstate & (K_RSHIFT | K_LSHIFT) ){
@@ -249,48 +245,56 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * da
 	} else {
 		bmstate &= ~(BROWSER_MOUSE_MOD_3);
 	}
-	int sx = (mx + gw->browser->scroll.current.x);
-	int sy = (my + gw->browser->scroll.current.y);
+
+	/* convert component coords to scrolled content coords: */
+	int sx_origin = (mx + gw->browser->scroll.current.x);
+	int sy_origin = (my + gw->browser->scroll.current.y);
+
+	short rel_cur_x, rel_cur_y;
+	short prev_x=sx_origin, prev_y=sy_origin;
 
 	/* Detect left mouse button state and compare with event state: */
-	graf_mkstate(&dummy, &dummy, &mbut, &dummy);
-	if( (mbut & 1) && (evnt.mbut & 1) ) {
-		if( mouse_hold_start[0] == 0 ) {
-			mouse_hold_start[0] = tnow;
-			LOG(("Drag starts at %d,%d\n", sx, sy));
-			browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
-			bmstate |= BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_ON;
+	graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
+	if( (mbut & 1) && (evnt.mbut & 1) ){
+		/* Mouse still pressed, report drag */
+		rel_cur_x = (rel_cur_x - cwork.g_x) + gw->browser->scroll.current.x;
+		rel_cur_y = (rel_cur_y - cwork.g_y) + gw->browser->scroll.current.y;
+		browser_window_mouse_click( gw->browser->bw,
+									BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_DRAG_1,
+									sx_origin, sy_origin);
+		do{
+			if( abs(prev_x-rel_cur_x) > 5 || abs(prev_y-rel_cur_y) > 5 ){
+				browser_window_mouse_track( gw->browser->bw,
+									BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_HOLDING_1,
+									rel_cur_x, rel_cur_y);
+				prev_x = rel_cur_x;
+				prev_y = rel_cur_y;
+				if( browser_redraw_required( gw ) ){
+					browser_redraw( gw );
+				}
+			}
+			graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
+			rel_cur_x = (rel_cur_x - cwork.g_x) + gw->browser->scroll.current.x;
+			rel_cur_y = (rel_cur_y - cwork.g_y) + gw->browser->scroll.current.y;
+		} while( mbut & 1 );
+		browser_window_mouse_track(gw->browser->bw, 0, rel_cur_x,rel_cur_y);
+	} else {
+		/* Right button pressed? */
+		if( (evnt.mbut & 2 ) ) {
+			context_popup( gw, evnt.mx, evnt.my );
 		} else {
-                bmstate |= BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_ON;
-        }
-        if( (abs(mx-last_drag_x)>5) || (abs(mx-last_drag_y)>5) ){
-            browser_window_mouse_track(
-                gw->browser->bw,
-                bmstate,
-                sx, sy
-            );
-            last_drag_x = mx;
-            last_drag_y = my;
-        }
-
-    } else if( (evnt.mbut & 1) ) {
-		mouse_click_time[0] = tnow; /* clock in ms */
-		/* check if this event was during an drag op, only handle if it wasn't: */
-		if( mouse_hold_start[0] == 0 ) {
-			LOG(("Click within %s at %d / %d\n", gw->browser->bw->name, sx, sy ));
-			browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_PRESS_1,sx,sy);
-			browser_window_mouse_click(gw->browser->bw,BROWSER_MOUSE_CLICK_1,sx,sy);
-			bmstate &= ~( BROWSER_MOUSE_HOLDING_1 | BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_CLICK_1);
+			browser_window_mouse_click(gw->browser->bw,
+										bmstate|BROWSER_MOUSE_PRESS_1,
+										sx_origin,sy_origin);
+			browser_window_mouse_click(gw->browser->bw,
+										bmstate|BROWSER_MOUSE_CLICK_1,
+										sx_origin,sy_origin);
 		}
-		mouse_hold_start[0] = 0;
 	}
 
-	/* Right button pressed? */
-	if( (evnt.mbut & 2 ) ) {
-		context_popup( gw, evnt.mx, evnt.my );
-	}
 
 }
+
 
 /*
 	Report scroll event to the browser component.

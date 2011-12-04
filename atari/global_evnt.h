@@ -55,9 +55,6 @@ struct s_menu_item_evnt {
 	Global & Menu event handlers
 */
 
-
-/* Call this after each call to evnt_multi, to check for states that evnt_multi doesn't: */
-void global_track_mouse_state( LGRECT * bwrect, bool within, short, short, short, short );
 void bind_global_events( void );
 void unbind_global_events( void );
 

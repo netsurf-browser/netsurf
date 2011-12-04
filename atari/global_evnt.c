@@ -542,7 +542,6 @@ void bind_global_events( void )
 	EvntDataAttach( NULL, WM_XKEYBD, global_evnt_keybd, (void*)&evnt_data );
 	EvntAttach( NULL, AP_TERM, global_evnt_apterm );
 	EvntAttach( NULL, MN_SELECTED,  global_evnt_menu );
-	/* EvntDataAttach( NULL, WM_XM1, global_evnt_m1, NULL ); */
 
 	/* TODO: maybe instant redraw after this is better! */
 	set_menu_title( MAINMENU_T_FILE, "Page");
