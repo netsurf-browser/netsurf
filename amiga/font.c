@@ -334,14 +334,8 @@ struct ami_font_node *ami_font_open(const char *font)
 	LOG(("Font cache miss: %s", font));
 
 	nodedata = AllocVec(sizeof(struct ami_font_node), MEMF_PRIVATE | MEMF_CLEAR);
-
-	node = AddObject(ami_font_list, AMINS_FONT);
-	if(!node) return NULL;
-
-	node->objstruct = nodedata;
-	node->dtz_Node.ln_Name = strdup(font);
-
 	nodedata->font = OpenOutlineFont(font, &ami_diskfontlib_list, OFF_OPEN);
+
 	if(!nodedata->font)
 	{
 		LOG(("Requested font not found: %s", font));
@@ -368,6 +362,13 @@ struct ami_font_node *ami_font_open(const char *font)
 		LOG(("Warning: No designed bold-italic font defined for %s", font));
 
 	GetSysTime(&nodedata->lastused);
+
+	node = AddObject(ami_font_list, AMINS_FONT);
+	if(node)
+	{
+		node->objstruct = nodedata;
+		node->dtz_Node.ln_Name = strdup(font);
+	}
 
 	return nodedata;
 }
