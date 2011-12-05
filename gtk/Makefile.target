@@ -13,6 +13,7 @@ NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
 NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
 NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
+NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
 
 # add a line similar to below for each optional pkg-configed lib here
 $(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG))
@@ -21,6 +22,7 @@ $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
 $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
 $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
+$(eval $(call pkg_config_find_and_add,VIDEO,gstreamer-0.10,Video))
 
 # no pkg-config for this library
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
