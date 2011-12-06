@@ -607,9 +607,6 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 	content_type type = CONTENT_NONE;
 	nserror error = NSERROR_OK;
 
-	/* Unlink the context to prevent recursion */
-	RING_REMOVE(hlcache->retrieval_ctx_ring, ctx);
-
 	if (effective_type != NULL &&
 			hlcache_type_is_acceptable(effective_type,
 			ctx->accepted_types, &type)) {
@@ -623,8 +620,8 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 			ctx->handle->cb(ctx->handle, &hlevent,
 					ctx->handle->pw);
 
-			llcache_handle_abort(ctx->llcache);
-			llcache_handle_release(ctx->llcache);
+			/* ctx cleaned up by client releasing handle */
+			return error;
 		}
 	} else if (type == CONTENT_NONE &&
 			(ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD)) {
@@ -644,10 +641,7 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 		/* Ensure caller knows we need data */
 		error = NSERROR_NEED_DATA;
 	} else {
-		/* Unacceptable type: abort fetch and report error */
-		llcache_handle_abort(ctx->llcache);
-		llcache_handle_release(ctx->llcache);
-
+		/* Unacceptable type: report error */
 		if (ctx->handle->cb != NULL) {
 			hlcache_event hlevent;
 
@@ -657,9 +651,13 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 			ctx->handle->cb(ctx->handle, &hlevent,
 					ctx->handle->pw);
 		}
+
+		/* ctx cleaned up by client releasing handle */
+		return NSERROR_OK;
 	}
 
 	/* No longer require retrieval context */
+	RING_REMOVE(hlcache->retrieval_ctx_ring, ctx);
 	free((char *) ctx->child.charset);
 	free(ctx);
 
