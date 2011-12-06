@@ -81,6 +81,8 @@ static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data 
 static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
+static void __CDECL evnt_window_uniconify( WINDOW *win, short buff[8], void * data );
+static void __CDECL evnt_window_iconify( WINDOW *win, short buff[8], void * data );
 
 /* -------------------------------------------------------------------------- */
 /* Module public functions:                                                   */
@@ -165,6 +167,8 @@ int window_create( struct gui_window * gw,
 	EvntDataAdd( gw->root->handle, WM_ARROWED,evnt_window_arrowed, gw, EV_TOP );
 	EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, gw, EV_BOT);
 	EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, gw, EV_BOT);
+	EvntDataAdd( gw->root->handle, WM_ICONIFY, evnt_window_iconify, gw, EV_BOT);
+	EvntDataAdd( gw->root->handle, WM_UNICONIFY, evnt_window_uniconify, gw, EV_BOT);
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
 	EvntDataAttach( gw->root->handle, WM_XM1, evnt_window_m1, gw );
 	EvntDataAttach( gw->root->handle, WM_SLIDEXY, evnt_window_slider, gw );
@@ -321,13 +325,12 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 {
 	bool abs = false;
 	LGRECT cwork;
+	struct gui_window * gw = data;
 	int value = BROWSER_SCROLL_SVAL;
 
-	if( input_window == NULL ) {
-		return;
-	}
+	assert( gw != NULL );
 
-	browser_get_rect( input_window, BR_CONTENT, &cwork );
+	browser_get_rect( gw, BR_CONTENT, &cwork );
 
 	switch( buff[4] ) {
 		case WA_UPPAGE:
@@ -344,7 +347,7 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 		default:
 			break;
 	}
-	browser_scroll( input_window, buff[4], value, abs );
+	browser_scroll( gw, buff[4], value, abs );
 }
 
 
@@ -487,11 +490,9 @@ static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data )
 
 static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data )
 {
-	printf("oldtop: iw: %p\n", input_window);
 	input_window = (struct gui_window *) data;
-	printf("newtop: iw: %p, win: %p", input_window, win );
-	window_set_focus( input_window, BROWSER, &input_window->browser )
-	LOG(("newtop: iw: %p, win: %p", input_window, win ));
+	window_set_focus( input_window, BROWSER, input_window->browser );
+	LOG(("newtop gui window: %p, WINDOW: %p", input_window, win ));
 	assert( input_window != NULL );
 }
 
@@ -521,6 +522,22 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
 		browser_scroll( gw, WA_LFPAGE, abs(dx), false );
 }
 
+static void __CDECL evnt_window_uniconify( WINDOW *win, short buff[8], void * data )
+{
+	struct gui_window * gw = (struct gui_window *)data;
+
+	input_window = gw;
+	WindTop( gw->root->handle );
+	window_set_focus( gw, BROWSER, gw->browser );
+}
+
+static void __CDECL evnt_window_iconify( WINDOW *win, short buff[8], void * data )
+{
+	struct gui_window * gw = (struct gui_window *)data;
+	if( input_window == gw){
+		input_window = NULL;
+	}
+}
 
 static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * data )
 {
@@ -574,7 +591,7 @@ void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data )
 {
 	short wx, wy, wh, ww, nw, nh;
 	short r;
-
+	printf("fake resize\n");
 	wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
 	r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
 	if( nw < 40 && nw < 40 )
