@@ -43,4 +43,5 @@ void * ldg_open( char * name, short * global );
 void * ldg_find( char * name, short * ldg );
 int ldg_close( void * ldg, short * global );
 long nkc_to_input_key(short nkc, long * ucs4_out);
+const char * file_select( const char * title, const char * name );
 #endif

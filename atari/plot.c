@@ -71,13 +71,17 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 
 	LOG(("using plotters: %s, %s", drvrname, fdrvrname));
 	fplotter = new_font_plotter(vdih, fdrvrname, 0, &err );
-	if(err)
-		die(("Unable to load font plotter %s -> %s", fdrvrname, plotter_err_str(err) ));
+	if(err){
+		char * desc = plotter_err_str(err);
+		die(("Unable to load font plotter %s -> %s", fdrvrname, desc ));
+	}
 
 	plotter = new_plotter( vdih, drvrname, &loc_pos, drvinfo->max_bpp,
 							flags, fplotter, &err );
-	if(err)
-		die(("Unable to load graphics plotter %s -> %s", drvrname, plotter_err_str(err) ));
+	if(err){
+		char * desc = plotter_err_str(err);
+		die(("Unable to load graphics plotter %s -> %s", drvrname, desc ));
+	}
 
 	return( err );
 }

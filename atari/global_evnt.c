@@ -31,8 +31,10 @@
 #include "desktop/mouse.h"
 #include "desktop/textinput.h"
 #include "desktop/hotlist.h"
+#include "desktop/save_complete.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/url.h"
 
 #include "atari/gui.h"
 #include "atari/browser_win.h"
@@ -45,6 +47,7 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/search.h"
 #include "atari/options.h"
+#include "atari/findfile.h"
 #include "cflib.h"
 
 extern const char * cfg_homepage_url;
@@ -100,19 +103,39 @@ static void __CDECL menu_open_url(WINDOW *win, int item, int title, void *data)
 {
 	struct gui_window * gw;
 	struct browser_window * bw ;
+	LOG(("%s", __FUNCTION__));
 
 	gw = input_window;
 	if( gw == NULL ) {
 		bw = browser_window_create("", 0, 0, true, false);
 		gw = bw->window;
+
 	}
-	/* TODO: reset url? */
-	LOG(("%s", __FUNCTION__));
+	/* Loose focus: */
+	window_set_focus( gw, WIDGET_NONE, NULL );
+
+	/* trigger on-focus event (select all text): */
+	window_set_focus( gw, URL_WIDGET, &gw->root->toolbar->url );
+
+	/* delete selection: */
+	tb_url_input( gw, NK_DEL );
 }
 
 static void __CDECL menu_open_file(WINDOW *win, int item, int title, void *data)
 {
+	struct gui_window * gw;
+	struct browser_window * bw ;
+
 	LOG(("%s", __FUNCTION__));
+
+	const char * filename = file_select( messages_get("OpenFile"), "" );
+	if( filename != NULL ){
+		char * url = local_file_to_url( filename );
+		if( url ){
+			bw = browser_window_create(url, NULL, NULL, true, false);
+			free( url );
+		}
+	}
 }
 
 static void __CDECL menu_close_win(WINDOW *win, int item, int title, void *data)
@@ -126,6 +149,41 @@ static void __CDECL menu_close_win(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_save_page(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	static bool init = true;
+	bool is_folder=false;
+	const char * path;
+
+	if( !input_window )
+		return;
+
+	if( init ){
+		init = false;
+		save_complete_init();
+	}
+
+	do {
+		// TODO: localize string
+		path = file_select( "Select folder", "" );
+		if( path ) {
+			printf("testing: %s\n", path );
+			// dumb check if the selection is an folder:
+			/*FILE * fp;
+			fp = fopen( path, "r" );
+			if( !fp ){
+				is_folder = true;
+			} else {
+				fclose( fp );
+				form_alert(1, "[1][Please select an folder or abort!][OK]");
+			}
+			*/
+			is_folder = true;
+		}
+	} while( !is_folder && path != NULL );
+
+	if( path != NULL ){
+		save_complete( input_window->browser->bw->current_content, path );
+	}
+
 }
 
 static void __CDECL menu_quit(WINDOW *win, int item, int title, void *data)
@@ -516,9 +574,11 @@ static void set_menu_title(int rid, const char * nsid)
 {
 	static int count=0;
 	char * msgstr;
-  msgstr = (char*)messages_get(nsid);
+	msgstr = (char*)messages_get(nsid);
 	if(msgstr != NULL) {
 		if(msgstr[0] != 0) {
+			// TODO: modify resource tree, adjust width of menu to chars
+			// actually used.
 			assert(count < NUM_MENU_TITLES);
 			menu_titles[count] = malloc( strlen(msgstr)+3 );
 			strcpy((char*)menu_titles[count], " ");
@@ -543,7 +603,6 @@ void bind_global_events( void )
 	EvntAttach( NULL, AP_TERM, global_evnt_apterm );
 	EvntAttach( NULL, MN_SELECTED,  global_evnt_menu );
 
-	/* TODO: maybe instant redraw after this is better! */
 	set_menu_title( MAINMENU_T_FILE, "Page");
 	set_menu_title( MAINMENU_T_EDIT, "Edit" );
 	set_menu_title( MAINMENU_T_NAVIGATE, "Navigate");
@@ -618,6 +677,8 @@ void bind_global_events( void )
 	i=0;
 	while( menu_evnt_tbl[i].rid != -1 ) {
 		if( menu_evnt_tbl[i].menustr != NULL ) {
+			// TODO: modify resource tree, adjust width of menu to chars
+			// actually used.
 			MenuText( NULL, menu_evnt_tbl[i].rid, menu_evnt_tbl[i].menustr );
 		}
 		i++;

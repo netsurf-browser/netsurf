@@ -19,7 +19,7 @@ unsigned short _systype (void)
 {
 	int32_t * cptr = NULL;
 	_systype_v = SYS_TOS;
-	
+
 	cptr = Setexc(0x0168, -1L);
 	if (cptr == NULL ) {
 		return _systype_v;   /* stone old TOS without any cookie support */
@@ -77,7 +77,7 @@ void init_os_info(void)
 		if (sys_XAAES()) {
 			atari_sysinfo.aes_max_win_title_len = 200;
 		}
-	}	
+	}
 }
 
 int tos_getcookie(long tag, long * value)
@@ -105,8 +105,8 @@ int tos_getcookie(long tag, long * value)
 	return( C_NOTFOUND );
 }
 
-/* 
- a fixed version of realpath() which returns valid 
+/*
+ a fixed version of realpath() which returns valid
  paths for TOS which have no root fs. (/ , U: )
 */
 
@@ -125,7 +125,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 
 	LOG(("gdos rpath in: %s\n", path));
 	memset( rpath, 0, PATH_MAX );
-	
+
 	/* first, absolutize relative path: */
 	if( *path == '.' ){
 		char cwd[PATH_MAX+1];
@@ -144,7 +144,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 			int off = 0;
 			if( path[1] == '/' || path[1] == 0x5C ){
 				off = 2;
-			} 
+			}
 			strncat( (char*)&work, (char*)(path+off), PATH_MAX-l );
 		}
 		work_ptr = (char*)&work;
@@ -157,7 +157,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 	if( strncmp( (char*)work_ptr, "/dev/", 5) == 0 ){
 		work_ptr += 4;
 	}
-	
+
 	/* make TOS compatible path, step 1: */
 	l = strlen( work_ptr);
 	if( l > 1 ){
@@ -176,7 +176,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 		do{
 			if( *work_ptr == '/' )
 				*work_ptr = 0x5C;
-			work_ptr++; 
+			work_ptr++;
 		} while( *work_ptr != 0 );
 
 		if( rpath[l-1] == 0x5C || rpath[l-1] == '/' )

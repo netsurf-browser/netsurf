@@ -302,6 +302,36 @@ long nkc_to_input_key(short nkc, long * ucs4_out)
 	return ( ik );
 }
 
+/**
+ * Show default file selector
+ *
+ * \param title  The selector title.
+ * \param name	 Default file name
+ * \return a static char pointer or null if the user aborted the selection.
+ */
+const char * file_select( const char * title, const char * name ) {
+	static char path[PATH_MAX]=""; // First usage : current directory
+	static char fullname[PATH_MAX]="";
+	char tmpname[255];
+	char * use_title = (char*)title;
+
+	if( strlen(name)>254)
+		return( NULL );
+
+	strcpy( tmpname, name );
+
+	if( use_title == NULL ){
+		use_title = (char*)"";
+	}
+
+	if( FselInput( path, tmpname, (char*)"",  use_title, NULL, NULL)) {
+		strncpy( fullname, path, PATH_MAX-1 );
+		strncat( fullname, tmpname, PATH_MAX-strlen(fullname)-1 );
+		return( (const char*)&fullname  );
+	}
+	return( NULL );
+}
+
 
 void dbg_lgrect( char * str, LGRECT * r )
 {

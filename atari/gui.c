@@ -555,31 +555,6 @@ gui_window_set_search_ico(hlcache_handle *ico)
 	TODO();
 }
 
-bool
-save_complete_gui_save(const char *path,
-		       const char *filename,
-		       size_t len,
-		       const char *sourcedata,
-		       lwc_string *mime_type)
-{
-	TODO();
-	LOG(("%s", filename));
-	return false;
-}
-
-int
-save_complete_htmlSaveFileFormat(const char *path,
-				 const char *filename,
-				 xmlDocPtr cur,
-				 const char *encoding,
-				 int format)
-{
-	LOG(("%s", filename));
-	TODO();
-	return 0;
-}
-
-
 void gui_window_new_content(struct gui_window *w)
 {
 	w->browser->scroll.current.x = 0;
@@ -810,6 +785,7 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 	if( bres )
 		urldb_set_cert_permissions(url, true);
 	*/
+	// TODO: localize string
 	int b = form_alert(1, "[2][SSL Verify failed, continue?][Continue|Abort]");
 	bres = (b==1)? true : false;
 	LOG(("Trust: %d", bres ));

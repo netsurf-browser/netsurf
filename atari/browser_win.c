@@ -239,6 +239,8 @@ void window_open( struct gui_window * gw, GRECT pos )
 	}
 	tb_adjust_size( gw );
 	/*TBD: get already present content and set size? */
+	input_window = gw;
+	window_set_focus( gw, BROWSER, gw->browser );
 }
 
 
@@ -485,7 +487,10 @@ static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data )
 
 static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data )
 {
+	printf("oldtop: iw: %p\n", input_window);
 	input_window = (struct gui_window *) data;
+	printf("newtop: iw: %p, win: %p", input_window, win );
+	window_set_focus( input_window, BROWSER, &input_window->browser )
 	LOG(("newtop: iw: %p, win: %p", input_window, win ));
 	assert( input_window != NULL );
 }

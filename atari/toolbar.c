@@ -688,7 +688,7 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 	else if( ik == KEY_CR || ik == KEY_NL ){
 		char tmp_url[PATH_MAX];
 		if( textarea_get_text( tb->url.textarea, tmp_url, PATH_MAX) > 0 ) {
-			window_set_focus( gw, BROWSER, gw->browser->bw);
+			window_set_focus( gw, BROWSER, gw->browser);
 			browser_window_go(gw->browser->bw, (const char*)&tmp_url, 0, true);
 			ret = true;
 		}

@@ -1,0 +1,10 @@
+ - Fixed redraw of rectangle outlines.
+ - Fixed redraw of Hotlist, looks better now.
+ - Use netsurfs textarea implementation for URL, to reduce code size.
+ - Fixed several redraw glitches.
+ - Added a context menu, offering some handy functions.
+ - NetSurf core now supports frames & iframes.
+ - Debug rendering works now ( fixed redraw of rectangle outlines )
+ - process commandline parameter w (width) / h (height) for default window size
+ - improved mouse drag within treeview, browser win, toolbar.
+ - Fixed file drop in frames

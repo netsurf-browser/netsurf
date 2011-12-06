@@ -101,24 +101,28 @@ touch $dst"cookies"
 cp $src"atari/doc" $dst -R
 cp $src"ns.prg" $dst
 chmod +x $dst"ns.prg"
-strip $dst"ns.prg"
-stack -S 256k $dst"ns.prg"
+m68k-atari-mint-strip $dst"ns.prg"
+m68k-atari-mint-stack -S 256k $dst"ns.prg"
 
 cp $src"atari/res/" $dst -rL
-cp $src"\!NetSurf/Resources/AdBlock,f79" $dst"res/adblock.css" -rL
-cp $src"\!NetSurf/Resources/CSS,f79" $dst"res/default.css" -rL
-cp $src"\!NetSurf/Resources/Quirks,f79" $dst"res/quirks.css" -rL
-cp $src"\!NetSurf/Resources/internal.css,f79" $dst"res/internal.css" -rL
-cp $src"\!NetSurf/Resources/SearchEngines" $dst"res/search" -rL
-cp $src"\!NetSurf/Resources/ca-bundle" $dst"res/cabundle" -rL
-cp $src"\!NetSurf/Resources/en/Messages" $dst"res/messages" -rL
-cp $src"\!NetSurf/Resources/Icons/content.png" $dst"res/icons/content.png" -rL
-cp $src"\!NetSurf/Resources/Icons/directory.png" $dst"res/icons/dir.png" -rL
+cp $src"!NetSurf/Resources/AdBlock,f79" $dst"res/adblock.css" -rL
+cp $src"!NetSurf/Resources/CSS,f79" $dst"res/default.css" -rL
+cp $src"!NetSurf/Resources/Quirks,f79" $dst"res/quirks.css" -rL
+cp $src"!NetSurf/Resources/internal.css,f79" $dst"res/internal.css" -rL
+cp $src"!NetSurf/Resources/SearchEngines" $dst"res/search" -rL
+cp $src"!NetSurf/Resources/ca-bundle" $dst"res/cabundle" -rL
+cp $src"!NetSurf/Resources/en/Messages" $dst"res/messages" -rL
+cp $src"!NetSurf/Resources/Icons/content.png" $dst"res/icons/content.png" -rL
+cp $src"!NetSurf/Resources/Icons/directory.png" $dst"res/icons/dir.png" -rL
 
 #remove uneeded files:
 rm $dst"res/netsurf.rsm"
 rm $dst"res/netsurf.rsh"
-
+rm $dst"res/.svn" -r
+rm $dst"res/icons/.svn" -r
+rm $dst"res/fonts/.svn" -r
+rm $dst"doc/.svn" -r
+rm $dst"download/.svn" -r
 
 if [ "$inc_short_fonts" = "1" ]
 then
@@ -159,8 +163,8 @@ http_proxy_auth:0
 http_proxy_auth_user:
 http_proxy_auth_pass:
 suppress_curl_debug:1
-font_size:120
-font_min_size:110
+font_size:130
+font_min_size:120
 memory_cache_size:204800
 block_advertisements:0
 minimum_gif_delay:0
@@ -177,9 +181,9 @@ hotlist_path:./res/hotlist
 incremental_reflow:1
 min_reflow_period:350
 core_select_menu:1
-max_fetchers:6
+max_fetchers:3
 max_fetchers_per_host:2
-max_cached_fetch_handles:6
+max_cached_fetch_handles:5
 target_blank:1
 suppress_images:0
 remove_backgrounds:0

@@ -3,33 +3,29 @@ TODO's (no priority order)
  - Optimize remove / redraw of caret, use pixbuffer instead?
  - Optimize drawing of bitmaps on Low-Memory machines
  - Restore the Palette when Windows get's the Focus
-   -> only needed for <= 256 colors 
+   -> only needed for <= 256 colors
  - Make drawing of tiled bitmaps optional ( they are slooow )
-   -> already optimized, still needed? 
- - Implement PopUp Context Menu ( + "Open link in new Window" )
+   -> already optimized, still needed?
+ - only copy visible rects when copying screen rects ( during scroll ).
+ - Make context menu more stable, Bug lurking within core?
  - Implement TreeView History
  - Implement TreeView SSL Dialog
  - Implement Native Select Menu
  - Implement offscreen plotter
  - Implement Options Dialog
- - Implement Favicon Display
  - Implement SystemColors
- - Replace RSC strings with string from messages file. 
- - Implement Selection within URL Widget by depressing SHIFT + Mouse Click
- - Implement Home / End Cursors within the URL Widget
- - Implement Offscreen plotter.
- - Test more pages that use a refferer.
+ - Replace RSC strings with string from messages file.
  - Optimize Offscreen Plotter: Save inactive framebuffers to disk?
  - Ensure that a font-face is set to the default font when it couldn't be loaded.
- - Loose focus for browser / url widget etc. when changing focus 
+ - Loose focus for browser / url widget etc. when changing focus
    ( at best, implement callback for this...)
- - Have browser_window specific cursor, window specifc cursor 
+ - Have browser_window specific cursor, window specifc cursor
  - When minimized (not iconyfied) NetSurf doesn't recognize that.
- - complete Iconify (webpage favicon )
- - improve mouse tracking 
- - fix this: 
+ - Tabs? ( several tab-favicons when iconyfied?)
+ - improve mouse tracking
+ - fix this:
 path2url in: ./res/icons/dir.png
 path2url out: file:///./res/icons/dir.png
 url2path in: file:///./res/icons/dir.png
  - loesung fuer kompletten tree icons path finden
- 
+

@@ -33,8 +33,53 @@
 #include "atari/misc.h"
 #include "atari/osspec.h"
 
+char * local_file_to_url( const char * filename )
+{
+	#define BACKSLASH	0x5C
+	char * url;
+	if( strlen(filename) <= 2){
+		return( NULL );
+	}
+
+	char * fname_local = alloca( strlen(filename)+1 );
+	char * start = (char*)fname_local;
+	strcpy( start, filename );
+
+	/* if path points to unified filesystem, skip that info: */
+	if( fname_local[1] == ':' && fname_local[0] == 'U' ){
+		start = &fname_local[2];
+	}
+
+	/* if we got something like "C:\folder\file.txt", handle that: */
+	if( start[1] == ':' ){
+		start[1] = (char)tolower(start[0]);
+		start++;
+	}
+
+	/* skip leading slash, already included in file scheme: */
+	if( start[0] == (char)BACKSLASH || start[0] == '/' ){
+		start++;
+	}
+
+	/* convert backslashes: */
+	for( int i=0; i<strlen(start); i++ ){
+		if( start[i] == BACKSLASH ){
+			start[i] = '/';
+		}
+	}
+
+	// TODO: make file path absolute if it isn't yet.
+	url = malloc( strlen(start) + FILE_SCHEME_PREFIX_LEN + 1);
+	strcpy( url, FILE_SCHEME_PREFIX );
+	strcat( url, start );
+	return( url );
+	#undef BACKSLASH
+}
+
+/* convert an local path to an URL, memory for URL is allocated. */
 char *path_to_url(const char *path_in)
 {
+	#define BACKSLASH	0x5C
 	char * path_ptr=NULL;
 	char * path;
 	LOG(("path2url in: %s\n", path_in));
@@ -45,7 +90,8 @@ char *path_to_url(const char *path_in)
 	} else {
 		path = path_ptr = (char*)malloc(PATH_MAX+1);
 		gemdos_realpath(path_in, path);
-		if( *path == '/' || *path == 0x5C ) {
+
+		if( *path == '/' || *path == BACKSLASH ) {
 			path++;
 		}
 		if( sys_type() != SYS_MINT ){
@@ -63,15 +109,16 @@ char *path_to_url(const char *path_in)
 
 	int i=0;
 	while( url[i] != 0 ){
-		if( url[i] == 0x5C ){
+		if( url[i] == BACKSLASH ){
 			url[i] = '/';
 		}
 		i++;
 	}
-	if( path_ptr ) 
+	if( path_ptr )
 		free( path_ptr );
 	LOG(("path2url out: %s\n", url));
 	return url;
+	#undef BACKSLASH
 }
 
 
@@ -108,10 +155,10 @@ char *url_to_path(const char *url)
  * \return buf
  *
  * Search order is: ./, NETSURF_GEM_RESPATH, ./$HOME/.netsurf/, $NETSURFRES/ (where NETSURFRES is an
- * environment variable), 
+ * environment variable),
  */
 #ifndef NETSURF_GEM_RESPATH
-	#define NETSURF_GEM_RESPATH "./res/" 
+	#define NETSURF_GEM_RESPATH "./res/"
 #endif
 
 char * atari_find_resource(char *buf, const char *filename, const char *def)

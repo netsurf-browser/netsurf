@@ -60,14 +60,14 @@ void schedule( int cs_ival,  void (*callback)(void *p), void *p)
 	struct nscallback *nscb;
 	nscb = calloc(1, sizeof(struct nscallback));
 
-	nscb->timeout = CS_NOW() + cs_ival;	
+	nscb->timeout = CS_NOW() + cs_ival;
 	LOG(("adding callback %p for  %p(%p) at %d cs", nscb, callback, p, nscb->timeout ));
 	nscb->callback = callback;
 	nscb->p = p;
 
     /* add to list front */
 	nscb->next = schedule_list;
-	schedule_list = nscb;	
+	schedule_list = nscb;
 }
 
 
@@ -90,7 +90,9 @@ void schedule_remove(void (*callback)(void *p), void *p)
 	if (schedule_list == NULL)
 		return;
 
+#ifdef DEBUG_SCHEDULER
 	LOG(("removing %p, %p", callback, p));
+#endif
 
 	cur_nscb = schedule_list;
 	prev_nscb = NULL;
@@ -99,7 +101,9 @@ void schedule_remove(void (*callback)(void *p), void *p)
 		if ((cur_nscb->callback ==  callback) &&
                     (cur_nscb->p ==  p)) {
 			/* item to remove */
+#ifdef DEBUG_SCHEDULER
 			LOG(("callback entry %p removing  %p(%p)", cur_nscb, cur_nscb->callback, cur_nscb->p));
+#endif
 
 			/* remove callback */
 			unlnk_nscb = cur_nscb;
@@ -123,7 +127,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
  * Process events up to current time.
  */
 
-int 
+int
 schedule_run(void)
 {
 	unsigned long nexttime;
@@ -152,24 +156,28 @@ schedule_run(void)
 				prev_nscb->next = unlnk_nscb->next;
 			}
 
+#ifdef DEBUG_SCHEDULER
 			LOG(("callback entry %p running %p(%p)", unlnk_nscb, unlnk_nscb->callback, unlnk_nscb->p));
+#endif
 			/* call callback */
 			unlnk_nscb->callback(unlnk_nscb->p);
 			free(unlnk_nscb);
 
 			/* need to deal with callback modifying the list. */
 			if (schedule_list == NULL) 	{
+#ifdef DEBUG_SCHEDULER
 				LOG(("schedule_list == NULL"));
+#endif
 				return -1; /* no more callbacks scheduled */
 			}
-			
+
 			/* reset enumeration to the start of the list */
 			cur_nscb = schedule_list;
 			prev_nscb = NULL;
 			nexttime = cur_nscb->timeout;
 		} else {
 			/* if the time to the event is sooner than the
-			 * currently recorded soonest event record it 
+			 * currently recorded soonest event record it
 			 */
 			if( nexttime > cur_nscb->timeout ){
 				nexttime = cur_nscb->timeout;
@@ -182,8 +190,9 @@ schedule_run(void)
 
 	/* make rettime relative to now and convert to ms */
 	nexttime = (nexttime - now)*10;
-
-	LOG(("returning time to next event as %ldms", nexttime )); 
+#ifdef DEBUG_SCHEDULER
+	LOG(("returning time to next event as %ldms", nexttime ));
+#endif
 	/*return next event time in milliseconds (24days max wait) */
   return ( nexttime );
 }
