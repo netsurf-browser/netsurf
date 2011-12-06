@@ -217,10 +217,10 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * da
 	LGRECT cwork;
 	browser_mouse_state bmstate = 0;
 	struct gui_window * gw = data;
-	if( input_window != gw ) {
-		return;
-	}
 
+	if( input_window != gw ){
+		input_window = gw;
+	}
 
 	window_set_focus( gw, BROWSER, (void*)gw->browser );
 	browser_get_rect( gw, BR_CONTENT, &cwork );
