@@ -94,7 +94,7 @@ bool save_as_draw(hlcache_handle *h, const char *path)
 	size_t drawfile_size;
 	os_error *error;
 	struct redraw_context ctx = {
-		.interactive = true,
+		.interactive = false,
 		.plot = &ro_save_draw_plotters
 	};
 
