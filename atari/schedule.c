@@ -58,6 +58,13 @@ struct nscallback
 void schedule( int cs_ival,  void (*callback)(void *p), void *p)
 {
 	struct nscallback *nscb;
+
+	/*
+		remove any callback of this kind,
+		other frontend do this, too. framebuffer frontend doesn't do it.
+	*/
+	schedule_remove(callback, p);
+
 	nscb = calloc(1, sizeof(struct nscallback));
 
 	nscb->timeout = CS_NOW() + cs_ival;
