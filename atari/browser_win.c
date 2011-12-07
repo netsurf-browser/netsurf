@@ -591,7 +591,6 @@ void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data )
 {
 	short wx, wy, wh, ww, nw, nh;
 	short r;
-	printf("fake resize\n");
 	wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
 	r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
 	if( nw < 40 && nw < 40 )
