@@ -52,6 +52,8 @@ struct hlcache_retrieval_ctx {
 	content_type accepted_types;	/**< Accepted types */
 
 	hlcache_child_context child;	/**< Child context */
+
+	bool migrate_target;		/**< Whether this context is the migration target */
 };
 
 /** High-level cache handle */
@@ -291,7 +293,8 @@ nserror hlcache_handle_release(hlcache_handle *handle)
 		RING_ITERATE_START(struct hlcache_retrieval_ctx,
 				   hlcache->retrieval_ctx_ring,
 				   ictx) {
-			if (ictx->handle == handle) {
+			if (ictx->handle == handle && 
+					ictx->migrate_target == false) {
 				/* This is the nascent context for us,
 				 * so abort the fetch */
 				llcache_handle_abort(ictx->llcache);
@@ -342,7 +345,8 @@ nserror hlcache_handle_abort(hlcache_handle *handle)
 		RING_ITERATE_START(struct hlcache_retrieval_ctx,
 				   hlcache->retrieval_ctx_ring,
 				   ictx) {
-			if (ictx->handle == handle) {
+			if (ictx->handle == handle && 
+					ictx->migrate_target == false) {
 				/* This is the nascent context for us,
 				 * so abort the fetch */
 				llcache_handle_abort(ictx->llcache);
@@ -607,21 +611,25 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 	content_type type = CONTENT_NONE;
 	nserror error = NSERROR_OK;
 
+	ctx->migrate_target = true;
+
 	if (effective_type != NULL &&
 			hlcache_type_is_acceptable(effective_type,
 			ctx->accepted_types, &type)) {
 		error = hlcache_find_content(ctx, effective_type);
 		if (error != NSERROR_OK && error != NSERROR_NEED_DATA) {
-			hlcache_event hlevent;
+			if (ctx->handle->cb != NULL) {
+				hlcache_event hlevent;
 
-			hlevent.type = CONTENT_MSG_ERROR;
-			hlevent.data.error = messages_get("MiscError");
+				hlevent.type = CONTENT_MSG_ERROR;
+				hlevent.data.error = messages_get("MiscError");
 
-			ctx->handle->cb(ctx->handle, &hlevent,
-					ctx->handle->pw);
+				ctx->handle->cb(ctx->handle, &hlevent,
+						ctx->handle->pw);
+			}
 
-			/* ctx cleaned up by client releasing handle */
-			return error;
+			llcache_handle_abort(ctx->llcache);
+			llcache_handle_release(ctx->llcache);
 		}
 	} else if (type == CONTENT_NONE &&
 			(ctx->flags & HLCACHE_RETRIEVE_MAY_DOWNLOAD)) {
@@ -652,9 +660,11 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 					ctx->handle->pw);
 		}
 
-		/* ctx cleaned up by client releasing handle */
-		return NSERROR_OK;
+		llcache_handle_abort(ctx->llcache);
+		llcache_handle_release(ctx->llcache);
 	}
+
+	ctx->migrate_target = false;
 
 	/* No longer require retrieval context */
 	RING_REMOVE(hlcache->retrieval_ctx_ring, ctx);
