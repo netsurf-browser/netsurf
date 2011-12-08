@@ -1872,7 +1872,7 @@ void llcache_fetch_callback(const fetch_msg *msg, void *p)
 			 */
 			long http_code = fetch_http_code(object->fetch.fetch);
 
-			if ((http_code != 200 && http_code != 203) &&
+			if ((http_code != 200 && http_code != 203) ||
 				(object->has_query && 
 				(object->cache.max_age == INVALID_AGE &&
 					object->cache.expires == 0))) {
