@@ -25,7 +25,6 @@ extern char * option_atari_font_driver;
 extern int option_atari_font_monochrom;
 extern int option_atari_dither;
 extern int option_atari_transparency;
-extern int option_atari_knockout;
 extern int option_atari_realtime_move;
 extern char *option_atari_face_sans_serif; /* default sans face */
 extern char *option_atari_face_sans_serif_bold; /* bold sans face */
@@ -50,7 +49,6 @@ char * option_atari_font_driver = (char*)"vdi";\
 int option_atari_font_monochrom = 0;\
 int option_atari_dither = 1;\
 int option_atari_transparency = 1;\
-int option_atari_knockout = 0;\
 int option_atari_realtime_move = 0; \
 char *option_atari_face_sans_serif;\
 char *option_atari_face_sans_serif_bold;\
@@ -59,11 +57,11 @@ char *option_atari_face_sans_serif_italic_bold;\
 char *option_atari_face_monospace;\
 char *option_atari_face_monospace_bold;\
 char *option_atari_face_serif;\
-char *option_atari_face_serif_bold; \
+char *option_atari_face_serif_bold;\
 char *option_atari_face_cursive; \
 char *option_atari_face_fantasy; \
-char *option_atari_editor;\
-char *option_downloads_path = (char*)"./"; \
+char *option_atari_editor = (char*)"";\
+char *option_downloads_path = (char*)""; \
 char *option_url_file = (char*)"url.db";\
 char *option_hotlist_file = (char*)"hotlist";\
 char *option_tree_icons_path = (char*)"./res/icons";
@@ -73,7 +71,6 @@ char *option_tree_icons_path = (char*)"./res/icons";
 	{ "atari_font_driver", OPTION_STRING, &option_atari_font_driver },\
 	{ "atari_font_monochrom", OPTION_INTEGER, &option_atari_font_monochrom },\
 	{ "atari_transparency", OPTION_INTEGER, &option_atari_transparency },\
-	{ "atari_knockout", OPTION_INTEGER, &option_atari_knockout },\
 	{ "atari_dither", OPTION_INTEGER, &option_atari_dither },\
 	{ "atari_realtime_move", OPTION_INTEGER, &option_atari_realtime_move },\
 	{ "atari_editor", OPTION_STRING, &option_atari_editor },\

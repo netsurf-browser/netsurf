@@ -92,15 +92,6 @@ int atari_plotter_finalise( void )
 	delete_font_plotter( fplotter );
 }
 
-void plot_set_knockout( int set ){
-	bool * x = (bool*)&atari_plotters.option_knockout;
-	if( set == 0 ) {
-		*x = false;
-	} else {
-		*x = true;
-	}
-}
-
 bool plot_rectangle( int x0, int y0, int x1, int y1,
 			const plot_style_t *style )
 {
@@ -163,10 +154,6 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 	int bmpw,bmph;
 	struct rect clip;
-
-	if( option_suppress_images != 0 ) {
-		return( true );
-	}
 
 	bmpw = bitmap_get_width(bitmap);
 	bmph = bitmap_get_height(bitmap);
@@ -255,5 +242,5 @@ const struct plotter_table atari_plotters = {
 	.flush = NULL,
 	.group_start = NULL,
 	.group_end = NULL,
-	.option_knockout = false
+	.option_knockout = true
 };
