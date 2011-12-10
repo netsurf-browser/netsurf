@@ -149,13 +149,28 @@ fi
 
 echo "
 atari_screen_driver:vdi
-# select font driver, available values: freetype, internal, vdi
+# select font driver, available values: freetype, internal
 atari_font_driver:freetype
 atari_transparency:1
-atari_knockout:1
 atari_realtime_move:1
-atari_editor:/path/to/editor.app
+# uncomment the following to show source within editor:
+#atari_editor:/path/to/editor.app
+
+# url to start netsurf with ( and new windows )
 homepage_url:file://./res/blank
+
+#configure css font settings:
+font_size:130
+font_min_size:120
+
+# 2.5 MB Cache as default:
+memory_cache_size:2048512
+
+# this actually hides advertisements, it still generates network traffic:
+block_advertisements:0
+
+#network configuration:
+send_referer:1
 http_proxy:0
 http_proxy_host:
 http_proxy_port:8123
@@ -163,14 +178,12 @@ http_proxy_auth:0
 http_proxy_auth_user:
 http_proxy_auth_pass:
 suppress_curl_debug:1
-font_size:130
-font_min_size:120
-memory_cache_size:204800
-block_advertisements:0
-minimum_gif_delay:0
-send_referer:1
+
+# animation configuration ( GIF ):
+minimum_gif_delay:50
 animate_images:1
-expire_url:28
+
+# path configuration
 ca_bundle:./res/cabundle
 ca_path:./res/certs
 cookie_file:./res/cookies
@@ -178,18 +191,37 @@ url_file:./res/url.db
 tree_icons_path:./res/icons
 downloads_directory:./download
 hotlist_path:./res/hotlist
+
+# enable reflow for interactive content and during fetch:
 incremental_reflow:1
-min_reflow_period:350
+# reformat time during fetch:
+min_reflow_period:500
 core_select_menu:1
 max_fetchers:3
 max_fetchers_per_host:2
 max_cached_fetch_handles:5
+
+# uncomment to configure GUI colors
+#gui_colour_bg_1
+#gui_colour_fg_1
+#gui_colour_fg_2
+
+# allow target=_blank (link opens in new window):
 target_blank:1
-suppress_images:0
-remove_backgrounds:0
-enable_loosening:1
-render_resample:1
-hover_urls:1
+
+# options nowhere used currently follow:
+
+# suppres images when exporting pages (to PDF):
+# suppress_images:0
+# turn off backgrounds for printed content:
+#remove_backgrounds:0
+# smooth resizing:
+#render_resample:1
+# enable loosening for printed content:
+#enable_loosening:1
+# configure disc cache ( currently not implemented )
+#expire_url:28
+#hover_urls:1
 " > $dst"Choices"
 
 cd $dst
