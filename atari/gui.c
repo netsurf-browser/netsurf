@@ -113,7 +113,7 @@ void gui_poll(bool active)
 			evnt.timer = 0;
 			flags |= MU_TIMER;
 			EvntWindom( flags );
-			next_poll = clock() + CLOCKS_PER_SEC;
+			next_poll = clock() + (CLOCKS_PER_SEC>>2);
 		}
 	} else {
 		if( input_window != NULL ){
@@ -481,7 +481,7 @@ static void throbber_advance( void * data )
 		gw->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
-	schedule(50, throbber_advance, gw );
+	schedule(100, throbber_advance, gw );
 }
 
 void gui_window_start_throbber(struct gui_window *w)
@@ -957,8 +957,6 @@ static void gui_init(int argc, char** argv)
 
 	nkc_init();
 	atari_plotter_init( option_atari_screen_driver, option_atari_font_driver );
-	LOG(("Knockout rendering: %s\n",  option_atari_knockout ? "yes" : "no"));
-	plot_set_knockout( option_atari_knockout );
 }
 
 static char *theapp = (char*)"NetSurf";
