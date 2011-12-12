@@ -914,7 +914,7 @@ static void gui_init(int argc, char** argv)
 	rsc_ntree   = RsrcGhdr(h_gem_rsrc)->ntree;
 
 	RsrcGaddr( h_gem_rsrc, R_TREE, MAINMENU , &h_gem_menu );
-	RsrcXtype( RSRC_XALL, rsc_trindex, rsc_ntree);
+	RsrcXtype( RSRC_XTYPE, rsc_trindex, rsc_ntree);
 
 	create_cursor(0, POINT_HAND, NULL, &gem_cursors.hand );
 	create_cursor(0, TEXT_CRSR,  NULL, &gem_cursors.ibeam );
