@@ -48,6 +48,7 @@
 #include "atari/search.h"
 #include "atari/options.h"
 #include "atari/findfile.h"
+#include "atari/settings.h"
 #include "cflib.h"
 
 extern const char * cfg_homepage_url;
@@ -74,7 +75,8 @@ static char * menu_titles[NUM_MENU_TITLES] = {NULL};
 /* Global event handlers: */
 static void __CDECL global_evnt_apterm( WINDOW * win, short buff[8] );
 static void __CDECL global_evnt_menu( WINDOW * win, short buff[8] );
-static void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data);
+static void __CDECL global_evnt_m1( WINDOW * win, short buff[8] );
+static void __CDECL global_evnt_keybd( WINDOW * win, short buff[8],void * data);
 
 /* Menu event handlers: */
 static void __CDECL menu_about(WINDOW *win, int item, int title, void *data);
@@ -223,7 +225,9 @@ static void __CDECL menu_find(WINDOW *win, int item, int title, void *data)
 
 static void __CDECL menu_choices(WINDOW *win, int item, int title, void *data)
 {
+	static WINDOW * settings_dlg = NULL;
 	LOG(("%s", __FUNCTION__));
+	settings_dlg = open_settings();
 }
 
 static void __CDECL menu_stop(WINDOW *win, int item, int title, void *data)
@@ -376,6 +380,65 @@ void __CDECL global_evnt_apterm( WINDOW * win, short buff[8] )
 	int i = 0;
 	LOG((""));
 	netsurf_quit = true;
+}
+
+
+static void __CDECL global_evnt_m1( WINDOW * win, short buff[8] )
+{
+	struct gui_window * gw = input_window;
+	static bool prev_url = false;
+	static short prev_x=0;
+	static short prev_y=0;
+	bool within = false;
+	LGRECT urlbox, bwbox, sbbox;
+	int nx, ny;
+
+	if( gw == NULL)
+		return;
+
+	if( prev_x == evnt.mx && prev_y == evnt.my ){
+		return;
+	}
+
+	short ghandle = wind_find( evnt.mx, evnt.my );
+	if( input_window->root->handle->handle == ghandle ){
+
+		// The window found at x,y is an gui_window
+		// and it's the input window.
+
+		browser_get_rect( gw, BR_CONTENT, &bwbox );
+
+		if( evnt.mx > bwbox.g_x && evnt.mx < bwbox.g_x + bwbox.g_w &&
+			evnt.my > bwbox.g_y &&  evnt.my < bwbox.g_y + bwbox.g_h ){
+			within = true;
+			browser_window_mouse_track(
+							input_window->browser->bw,
+							0,
+							evnt.mx - bwbox.g_x + gw->browser->scroll.current.x,
+							evnt.my - bwbox.g_y + gw->browser->scroll.current.y
+						);
+		}
+
+		if( gw->root->toolbar && within == false ) {
+			mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
+			if( (evnt.mx > urlbox.g_x && evnt.mx < urlbox.g_x + urlbox.g_w ) &&
+				(evnt.my > urlbox.g_y && evnt.my < + urlbox.g_y + urlbox.g_h )) {
+				gem_set_cursor( &gem_cursors.ibeam );
+				prev_url = true;
+			} else {
+				if( prev_url ) {
+					gem_set_cursor( &gem_cursors.arrow );
+					prev_url = false;
+				}
+			}
+		}
+	} else {
+		gem_set_cursor( &gem_cursors.arrow );
+		prev_url = false;
+	}
+
+	prev_x = evnt.mx;
+	prev_y = evnt.my;
 }
 
 void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
@@ -605,6 +668,7 @@ void bind_global_events( void )
 	EvntDataAttach( NULL, WM_XKEYBD, global_evnt_keybd, (void*)&evnt_data );
 	EvntAttach( NULL, AP_TERM, global_evnt_apterm );
 	EvntAttach( NULL, MN_SELECTED,  global_evnt_menu );
+	EvntAttach( NULL, WM_XM1, global_evnt_m1 );
 
 	set_menu_title( MAINMENU_T_FILE, "Page");
 	set_menu_title( MAINMENU_T_EDIT, "Edit" );

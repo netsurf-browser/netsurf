@@ -78,7 +78,6 @@ static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * da
 static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
-static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
 static void __CDECL evnt_window_uniconify( WINDOW *win, short buff[8], void * data );
@@ -170,7 +169,6 @@ int window_create( struct gui_window * gw,
 	EvntDataAdd( gw->root->handle, WM_ICONIFY, evnt_window_iconify, gw, EV_BOT);
 	EvntDataAdd( gw->root->handle, WM_UNICONIFY, evnt_window_uniconify, gw, EV_BOT);
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
-	EvntDataAttach( gw->root->handle, WM_XM1, evnt_window_m1, gw );
 	EvntDataAttach( gw->root->handle, WM_SLIDEXY, evnt_window_slider, gw );
 
 	/* TODO: check if window is openend as "foreground" window... */
@@ -424,54 +422,6 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 	}
 error:
 	ddclose( dd_hdl);
-}
-
-
-static void __CDECL evnt_window_m1( WINDOW * win, short buff[8], void * data)
-{
-	struct gui_window * gw = input_window;
-	static bool prev_url = false;
-	static short prev_x=0;
-	static short prev_y=0;
-	bool within = false;
-	LGRECT urlbox, bwbox, sbbox;
-	int nx, ny;
-
-	if( gw == NULL)
-		return;
-
-	if( prev_x == evnt.mx && prev_y == evnt.my ){
-		return;
-	}
-	browser_get_rect( gw, BR_CONTENT, &bwbox );
-
-	if( evnt.mx > bwbox.g_x && evnt.mx < bwbox.g_x + bwbox.g_w &&
-		evnt.my > bwbox.g_y &&  evnt.my < bwbox.g_y + bwbox.g_h ){
-		within = true;
-		browser_window_mouse_track(
-						input_window->browser->bw,
-						0,
-						evnt.mx - bwbox.g_x + gw->browser->scroll.current.x,
-						evnt.my - bwbox.g_y + gw->browser->scroll.current.y
-					);
-	}
-
-	if( gw->root->toolbar && within == false ) {
-		mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
-		if( (evnt.mx > urlbox.g_x && evnt.mx < urlbox.g_x + urlbox.g_w ) &&
-		 	(evnt.my > urlbox.g_y && evnt.my < + urlbox.g_y + urlbox.g_h )) {
-			gem_set_cursor( &gem_cursors.ibeam );
-			prev_url = true;
-		} else {
-			if( prev_url ) {
-				gem_set_cursor( &gem_cursors.arrow );
-				prev_url = false;
-			}
-		}
-	}
-
-	prev_x = evnt.mx;
-	prev_y = evnt.my;
 }
 
 static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data )
