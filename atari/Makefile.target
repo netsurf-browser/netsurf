@@ -41,7 +41,7 @@ S_ATARI := gui.c findfile.c filetype.c misc.c bitmap.c schedule.c \
 	redrawslots.c encoding.c \
 	browser_win.c toolbar.c statusbar.c browser.c  \
 	global_evnt.c osspec.c dragdrop.c system_colour.c \
-	ctxmenu.c save.c
+	ctxmenu.c save.c settings.c
 S_ATARI := $(addprefix atari/,$(S_ATARI))
 
 # This is the final source build list
