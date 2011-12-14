@@ -489,11 +489,13 @@ void gui_window_start_throbber(struct gui_window *w)
 	LGRECT work;
 	if (w == NULL)
 		return;
+	if( w->root->toolbar->throbber.running == true )
+		return;
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
 						WF_WORKXYWH, &work);
 	w->root->toolbar->throbber.running = true;
 	w->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
-	schedule(50, throbber_advance, w );
+	schedule(100, throbber_advance, w );
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
 }
@@ -503,6 +505,11 @@ void gui_window_stop_throbber(struct gui_window *w)
 	LGRECT work;
 	if (w == NULL)
 		return;
+	if( w->root->toolbar->throbber.running == false )
+		return;
+
+	schedule_remove(throbber_advance, w);
+
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
 						WF_WORKXYWH, &work);
 	w->root->toolbar->throbber.running = false;
