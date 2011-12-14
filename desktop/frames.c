@@ -402,7 +402,7 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 	int row, row2, col, index;
 	struct browser_window *window;
 	float relative;
-	int size, extent;
+	int size, extent, applied;
 	int x, y;
 	int new_width, new_height;
 
@@ -462,14 +462,17 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			avail_width -= widths[col][row];
 		}
 
-		/* try to distribute remainder to relative values in preference */
+		/* distribute remainder to relative values in preference */
 		if ((relative > 0) && (avail_width > 0)) {
 			for (col = 0; col < bw->cols; col++) {
 				index = (row * bw->cols) + col;
 				window = &bw->children[index];
 
-				if (window->frame_width.unit == FRAME_DIMENSION_RELATIVE) {
-					size = avail_width * window->frame_width.value / relative;
+				if (window->frame_width.unit ==
+						FRAME_DIMENSION_RELATIVE) {
+					size = avail_width * window->
+							frame_width.value /
+							relative;
 					avail_width -= size;
 					relative -= window->frame_width.value;
 					widths[col][row] += size;
@@ -477,13 +480,23 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			}
 		} else if (bw_width != avail_width) {
 			/* proportionally distribute error */
-			extent = bw_width - avail_width;
+			extent = avail_width;
+			applied = 0;
 			for (col = 0; col < bw->cols; col++) {
 				if (col == bw->cols - 1) {
-					widths[col][row] = bw_width;
+					size = extent - applied;
+					widths[col][row] += (size > 0) ?
+							size : 0;
 				} else {
-					size = bw_width * widths[col][row] / extent;
-					widths[col][row] = size;
+					/* Intermediate step: get absolute
+					 * extent value */
+					size = extent < 0 ? -extent : extent;
+
+					/* Find size of cell adjustment */
+					size = (widths[col][row] * extent) /
+							(bw_width - size);
+					applied += size;
+					widths[col][row] += size;
 				}
 			}
 		}
@@ -538,8 +551,11 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 				index = (row * bw->cols) + col;
 				window = &bw->children[index];
 
-				if (window->frame_height.unit == FRAME_DIMENSION_RELATIVE) {
-					size = avail_height * window->frame_height.value / relative;
+				if (window->frame_height.unit ==
+						FRAME_DIMENSION_RELATIVE) {
+					size = avail_height * window->
+							frame_height.value /
+							relative;
 					avail_height -= size;
 					relative -= window->frame_height.value;
 					heights[col][row] += size;
@@ -547,13 +563,23 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			}
 		} else if (bw_height != avail_height) {
 			/* proportionally distribute error */
-			extent = bw_height - avail_height;
+			extent = avail_height;
+			applied = 0;
 			for (row = 0; row < bw->rows; row++) {
 				if (row == bw->rows - 1) {
-					heights[col][row] = bw_height;
+					size = extent - applied;
+					heights[col][row] += (size > 0) ?
+							size : 0;
 				} else {
-					size = bw_height * heights[col][row] / extent;
-					heights[col][row] = size;
+					/* Intermediate step: get absolute
+					 * extent value */
+					size = extent < 0 ? -extent : extent;
+
+					/* Find size of cell adjustment */
+					size = (heights[col][row] * extent) /
+							(bw_height - size);
+					applied += size;
+					heights[col][row] += size;
 				}
 			}
 		}
