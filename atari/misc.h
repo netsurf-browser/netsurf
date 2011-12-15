@@ -21,6 +21,7 @@
 
 #include "cflib.h"
 #include "desktop/textinput.h"
+#include "atari/gui.h"
 
 #define SBUF8_TO_LBUF8(sbuf,lbuf)\
 	lbuf[0] = (long)sbuf[0];\
@@ -33,7 +34,11 @@
 	lbuf[7] = (long)sbuf[7];
 
 
-struct gui_window * find_gui_window( WINDOW * win );
+/* Modes for find_gui_window: */
+#define BY_WINDOM_HANDLE 0x0
+#define BY_GEM_HANDLE    0x1
+
+struct gui_window * find_gui_window( unsigned long, short mode );
 struct gui_window * find_cmp_window( COMPONENT * c );
 OBJECT *get_tree( int idx );
 char *get_rsc_string( int idx );

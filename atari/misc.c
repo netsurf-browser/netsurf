@@ -101,23 +101,42 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-struct gui_window * find_gui_window( WINDOW * win ){
+/*
+ // TBD: make use of this function or remove it...
+*/
+struct gui_window * find_gui_window( unsigned long handle, short mode ){
 
-       struct gui_window * gw;
-        gw = window_list;
+	struct gui_window * gw;
+	gw = window_list;
 
-	if( win == NULL )
+	if( handle == 0 ){
 		return( NULL );
-
+	}
+	else if( mode == BY_WINDOM_HANDLE ){
+		WINDOW * win = (WINDOW*) handle;
         while( gw != NULL) {
                 if( gw->root->handle == win ) {
-                        return( gw );
+					return( gw );
                 }
                 else
-                        gw = gw->next;
+					gw = gw->next;
         }
+	}
+	else if( mode == BY_GEM_HANDLE ){
+		short ghandle = (short)handle;
+        while( gw != NULL) {
+                if( gw->root->handle != NULL
+					&& gw->root->handle->handle == ghandle ) {
+					return( gw );
+                }
+                else
+					gw = gw->next;
+        }
+	}
+
         return( NULL );
 }
+*/
 
 struct gui_window * find_cmp_window( COMPONENT * c )
 {
