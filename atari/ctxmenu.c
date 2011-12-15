@@ -253,17 +253,22 @@ void context_popup( struct gui_window * gw, short x, short y )
 					if( fp_tmpfile ){
 						fwrite( data, size, 1, fp_tmpfile );
 						fclose( fp_tmpfile );
+
 						// TODO: check if app is runnin, if not, use pexec or such.
 						/*sprintf((char*)&cmdline, "%s \"%s\"", option_atari_editor, tempfile );
 						system( (char*)&cmdline );
 						*/
-						//err = ShelWrite( option_atari_editor, tempfile , option_atari_editor, 1, 0);
-						LOG(("launched: %s %s (%d)\n", option_atari_editor, tempfile, err ));
+						err = ShelWrite( option_atari_editor, tempfile , option_atari_editor, 1, 0);
+						LOG(("Launched: %s %s (%d)\n", option_atari_editor, tempfile, err ));
+					} else {
+						printf("Could not open temp file: %s!\n", tempfile );
 					}
 
+				} else {
+					LOG(("Invalid content!"));
 				}
 			} else {
-				LOG(("Please set option_atari_editor!"));
+				printf("Please set option_atari_editor!");
 			}
 		break;
 
