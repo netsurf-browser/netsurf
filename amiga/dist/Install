@@ -260,6 +260,11 @@
 	)
 )
 
+(procedure p_chk_launch-handler #protocol
+	(run "C:Search >T:NS_Install.tmp " (tackon "ENVARC:launch-handler/URL" #protocol) " NetSurf" (safe))
+	(set #has_entry (getsize "T:NS_Install.tmp"))
+)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Script execution starts here ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -395,9 +400,7 @@
 	(
 		(set #addlaunchhandler
 			(askbool
-				(prompt "Add NetSurf to launch-handler? (recommended)\n\n"
-					"Please select \"No\" if NetSurf is already added to "
-					"launch-handler, as this avoids duplication.")
+				(prompt "Add NetSurf to launch-handler? (recommended)")
 				(help "launch-handler is part of OS4.1 which opens URLs "
 					" by launching a web browser.\n\n"
 					"The installation will update the configuration of "
@@ -559,17 +562,33 @@
 
 (complete 98)
 
-(if #addlaunchhandler
+(if (= #addlaunchhandler 1)
 	(
 ; We use fitr here so that the sections are only added once.
-; Unfortunately saving URL prefs overwrites the markers making it
-; necessary to ask whether the user wants to add NetSurf to launch-handler.
+; We also check for string "NetSurf" within the files as saving
+; the config will overwrite fitr's tags.
+; This probably needs rewriting to not use fitr as it isn't really necessary now.
+
 		(working "Adding NetSurf to launch-handler config")
-		(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"file:///%s*\"\"")
-		(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://%s*\"\"")
-		(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"https://%s*\"\"")
-		(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://www.%s*\"\"")
-;		(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"ftp://%s*\"\"")
+		(if (== (p_chk_launch-handler "FILE.LH") 0)
+			(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"file:///%s*\"\"")
+		)
+
+		(if (== (p_chk_launch-handler "HTTP.LH") 0)
+			(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://%s*\"\"")
+		)
+
+		(if (== (p_chk_launch-handler "HTTPS.LH") 0)
+			(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"https://%s*\"\"")
+		)
+
+		(if (== (p_chk_launch-handler "WWW.LH") 0)
+			(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://www.%s*\"\"")
+		)
+
+;		(if (== (p_chk_launch-handler "FTP.LH") 0)
+;			(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"ftp://%s*\"\"")
+;		)
 	)
 )
 
