@@ -89,11 +89,15 @@ short rsc_ntree;
 long next_poll;
 bool rendering = false;
 
+
 /* Comandline / Options: */
 int cfg_width;
 int cfg_height;
 
 const char * cfg_homepage_url;
+
+/* path to choices file: */
+char options[PATH_MAX];
 
 extern GEM_PLOTTER plotter;
 
@@ -821,7 +825,7 @@ void gui_quit(void)
 	RsrcXtype( 0, rsc_trindex, rsc_ntree);
 	unbind_global_events();
 	MenuBar( h_gem_menu , 0 );
-	if( h_gem_rsrc == NULL ) {
+	if( h_gem_rsrc != NULL ) {
 		RsrcXfree(h_gem_rsrc );
 	}
 	LOG(("Shutting down plotter"));
@@ -988,7 +992,6 @@ static void gui_init2(int argc, char** argv)
  */
 int main(int argc, char** argv)
 {
-	char options[PATH_MAX];
 	char messages[PATH_MAX];
 
 	setbuf(stderr, NULL);

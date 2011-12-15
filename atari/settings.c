@@ -14,6 +14,8 @@
 #include "atari/misc.h"
 #include "atari/options.h"
 
+extern char options[PATH_MAX];
+
 static OBJECT * dlgtree;
 static WINDOW * dlgwin;
 
@@ -46,7 +48,7 @@ static int buts[] = {
 	CHOICES_REG_CACHE
 };
 
-#define OBJ_SELECTED(idx) (dlgtree[idx].ob_state & SELECTED)
+#define OBJ_SELECTED(idx) ((dlgtree[idx].ob_state & SELECTED)!=0)
 #define OBJ_CHECK(idx) SET_BIT(dlgtree[idx].ob_state, SELECTED, 1);
 #define OBJ_UNCHECK(idx) SET_BIT(dlgtree[idx].ob_state, SELECTED, 0);
 
@@ -71,6 +73,7 @@ static int buts[] = {
 static void toggle_objects( void );
 static void display_settings( void );
 static void apply_settings( void );
+static void unload_settings( void );
 static void __CDECL onclose( WINDOW *win, short buff[8] );
 static void __CDECL
 	closeform( WINDOW *win, int index, int unused, void *unused2);
@@ -107,15 +110,11 @@ WINDOW * open_settings()
 		/* Connect dialog element events to generic event handler: */
 		ObjcAttachFormFunc( dlgwin, CHOICES_CB_USE_PROXY, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_CB_PROXY_AUTH, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_INC_MEM_CACHE, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_MEM_CACHE, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_INC_HISTORY_AGE, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_HISTORY_AGE, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_STR_DOWNLOAD_PATH, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_STR_HOTLIST_FILE, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_STR_CA_BUNDLE, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_STR_CA_CERTS_PATH, form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_STR_EDITOR, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_EDIT_DOWNLOAD_PATH, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_EDIT_HOTLIST_FILE, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_EDIT_CA_BUNDLE, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_EDIT_CA_CERTS_PATH, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_EDIT_EDITOR, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_INC_GIF_DELAY, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_GIF_DELAY, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_INC_INCREMENTAL_REFLOW, form_event, NULL);
@@ -130,9 +129,14 @@ WINDOW * open_settings()
 		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_DEF_FONT_SIZE, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_INC_MIN_FONT_SIZE, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_MIN_FONT_SIZE, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_INC_MEM_CACHE, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_MEM_CACHE, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_INC_HISTORY_AGE, form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_DEC_HISTORY_AGE, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_SEL_FONT_RENDERER,
 							form_event, NULL);
-
+		ObjcAttachFormFunc( dlgwin, CHOICES_BT_SEL_LOCALE,
+							form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_CLEAR_HISTORY,
 							clear_history, NULL);
 
@@ -189,6 +193,11 @@ saveform( WINDOW *win, int index, int unused, void *unused2)
 {
 	apply_settings();
 	// Save settings
+	options_write( (const char*)&options );
+	options_read( (const char*)&options );
+	close_settings();
+	ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
+	form_alert(1, "[1][Some options require an netsurf restart!][OK]");
 }
 
 static void __CDECL clear_history( WINDOW *win, int index, int unused,
@@ -202,10 +211,21 @@ form_event( WINDOW *win, int index, int unused, void *unused2)
 {
 	char spare[255];
 	bool is_button = false;
-	short checked = OBJ_SELECTED( index );
+	bool checked = OBJ_SELECTED( index );
 
 	/* For font driver popup: */
 	const char *font_driver_items[] = {"freetype", "internal" };
+	int num_font_drivers = (sizeof(font_driver_items)/sizeof(char*));
+
+	/*
+		Just a small collection of locales, each country has at least one
+		ATARI-clone user! :)
+	*/
+	const char *locales[] = {
+		"cs", "de", "de-de" , "en", "en-gb", "en-us", "es",
+		"fr", "it", "nl", "no", "pl", "ru", "sk", "sv"
+	};
+	int num_locales = (sizeof(locales)/sizeof(char*));
 	short x, y;
 	int choice;
 
@@ -244,13 +264,26 @@ form_event( WINDOW *win, int index, int unused, void *unused2)
 			break;
 
 		case CHOICES_BT_SEL_FONT_RENDERER:
-			objc_offset( FORM(win), index, &x, &y);
+			objc_offset( FORM(win), CHOICES_BT_SEL_FONT_RENDERER, &x, &y);
 			choice = MenuPopUp ( font_driver_items, x, y,
-								sizeof(font_driver_items)/sizeof(unsigned long),
+								num_font_drivers,
 								 -1, -1, P_LIST + P_WNDW + P_CHCK );
-			if( choice > 0 && choice < 3 ){
+			if( choice > 0 &&
+				choice <= num_font_drivers ){
 				ObjcStrCpy( dlgtree, CHOICES_BT_SEL_FONT_RENDERER,
 							(char*)font_driver_items[choice-1] );
+			}
+			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
+			break;
+
+		case CHOICES_BT_SEL_LOCALE:
+			objc_offset( FORM(win), CHOICES_BT_SEL_LOCALE, &x, &y);
+			choice = MenuPopUp ( locales, x, y,
+								num_locales,
+								 -1, -1, P_LIST + P_WNDW + P_CHCK );
+			if( choice > 0 && choice <= num_locales ){
+				ObjcStrCpy( dlgtree, CHOICES_BT_SEL_LOCALE,
+							(char*)locales[choice-1] );
 			}
 			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 			break;
@@ -361,8 +394,8 @@ form_event( WINDOW *win, int index, int unused, void *unused2)
 			else
 				tmp_option_font_min_size -= 1;
 
-			if( tmp_option_font_min_size > 999 )
-				tmp_option_font_min_size = 999;
+			if( tmp_option_font_min_size > 500 )
+				tmp_option_font_min_size = 500;
 			if( tmp_option_font_min_size < 10 )
 				tmp_option_font_min_size = 10;
 
@@ -382,8 +415,8 @@ form_event( WINDOW *win, int index, int unused, void *unused2)
 
 			if( tmp_option_font_size > 999 )
 				tmp_option_font_size = 999;
-			if( tmp_option_font_size < 10 )
-				tmp_option_font_size = 10;
+			if( tmp_option_font_size < 50 )
+				tmp_option_font_size = 50;
 
 			sprintf( spare, "%03d", tmp_option_font_size );
 			set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare, 3 );
@@ -428,7 +461,6 @@ static void toggle_objects( void )
 }
 
 
-
 static void display_settings( void )
 {
 	char spare[255];
@@ -454,9 +486,10 @@ static void display_settings( void )
 		OBJ_UNCHECK( CHOICES_CB_SEND_HTTP_REFERRER );
 	}
 
-	if( option_accept_language != NULL ){
-		set_text( CHOICES_BT_LOCALE, option_accept_language, INPUT_LOCALE_MAX_LEN );
-	}
+	set_text( CHOICES_BT_SEL_LOCALE,
+			option_accept_language ? option_accept_language : (char*)"en",
+			INPUT_LOCALE_MAX_LEN );
+
 	tmp_option_expire_url = option_expire_url;
 	sprintf( spare, "%02d", option_expire_url );
 	set_text( CHOICES_EDIT_HISTORY_AGE, spare, 2 );
@@ -467,15 +500,15 @@ static void display_settings( void )
 	set_text( CHOICES_STR_MAX_MEM_CACHE, spare, 5 );
 
 	/* "Paths" tab: */
-	set_text( CHOICES_STR_DOWNLOAD_PATH, option_downloads_path,
+	set_text( CHOICES_EDIT_DOWNLOAD_PATH, option_downloads_path,
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_STR_HOTLIST_FILE, option_hotlist_file,
+	set_text( CHOICES_EDIT_HOTLIST_FILE, option_hotlist_file,
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_STR_CA_BUNDLE, option_ca_bundle,
+	set_text( CHOICES_EDIT_CA_BUNDLE, option_ca_bundle,
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_STR_CA_CERTS_PATH, option_ca_path,
+	set_text( CHOICES_EDIT_CA_CERTS_PATH, option_ca_path,
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_STR_EDITOR, option_atari_editor,
+	set_text( CHOICES_EDIT_EDITOR, option_atari_editor,
 			LABEL_PATH_MAX_LEN );
 
 	/* "Rendering" tab: */
@@ -494,7 +527,6 @@ static void display_settings( void )
 			INPUT_MIN_REFLOW_PERIOD_MAX_LEN );
 
 	tmp_option_minimum_gif_delay = (float)option_minimum_gif_delay / (float)100;
-	printf("gif del: %f\n", tmp_option_minimum_gif_delay );
 	sprintf( spare, "%01.1f", tmp_option_minimum_gif_delay );
 	set_text( CHOICES_EDIT_MIN_GIF_DELAY, spare, 3 );
 
@@ -536,9 +568,6 @@ static void display_settings( void )
 	sprintf( spare, "%3d", option_font_size );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
-
-
-
 	/* Only first tab is refreshed: */
 	ObjcDraw( OC_FORM, dlgwin, CHOICES_TAB_BROWSER, 4 );
 
@@ -548,9 +577,62 @@ static void display_settings( void )
 
 static void apply_settings( void )
 {
-	printf("proxy host: %s\n",ObjcString( dlgtree, CHOICES_EDIT_HOMEPAGE, NULL));
-}
 
+
+	/* "Network" tab: */
+	option_http_proxy = OBJ_SELECTED(CHOICES_CB_USE_PROXY);
+	if( OBJ_SELECTED(CHOICES_CB_PROXY_AUTH) )
+		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
+	else
+		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+	option_http_proxy_auth_pass =
+		ObjcString( dlgtree, CHOICES_EDIT_PROXY_PASSWORD, NULL);
+	option_http_proxy_auth_user =
+		ObjcString( dlgtree, CHOICES_EDIT_PROXY_USERNAME, NULL);
+	option_http_proxy_host =
+		ObjcString( dlgtree, CHOICES_EDIT_PROXY_HOST, NULL);
+	option_http_proxy_port =
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_PROXY_PORT, NULL) );
+	option_max_fetchers_per_host =
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS_PER_HOST, NULL));
+	option_max_cached_fetch_handles =
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_CACHED_CONNECTIONS, NULL));
+	option_max_fetchers =
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS, NULL) );
+
+	/* "Style" tab: */
+	option_font_min_size = tmp_option_font_min_size;
+	option_font_size = tmp_option_font_size;
+
+	/* "Rendering" tab: */
+	option_atari_font_driver = ObjcString( dlgtree,
+										CHOICES_BT_SEL_FONT_RENDERER, NULL);
+	option_atari_transparency = OBJ_SELECTED(CHOICES_CB_TRANSPARENCY);
+	option_animate_images = OBJ_SELECTED(CHOICES_CB_ENABLE_ANIMATION);
+	option_minimum_gif_delay = (int)(tmp_option_minimum_gif_delay*100+0.5);
+	option_incremental_reflow = OBJ_SELECTED(CHOICES_CB_INCREMENTAL_REFLOW);
+	option_min_reflow_period = tmp_option_min_reflow_period;
+
+	/* "Paths" tabs: */
+	option_ca_bundle = ObjcString( dlgtree, CHOICES_EDIT_CA_BUNDLE, NULL);
+	option_ca_path = ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL);
+	option_homepage_url = ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL);
+	option_hotlist_file = ObjcString( dlgtree, CHOICES_EDIT_HOTLIST_FILE, NULL);
+	option_atari_editor = ObjcString( dlgtree, CHOICES_EDIT_EDITOR, NULL);
+	option_downloads_path = ObjcString( dlgtree, CHOICES_EDIT_DOWNLOAD_PATH, NULL);
+
+	/* "Cache" tab: */
+	option_memory_cache_size = tmp_option_memory_cache_size * 100000;
+
+	/* "Browser" tab: */
+	option_target_blank = OBJ_SELECTED(CHOICES_CB_DISABLE_POPUP_WINDOWS);
+	option_block_ads = OBJ_SELECTED(CHOICES_CB_HIDE_ADVERTISEMENT);
+	option_accept_language = ObjcString( dlgtree, CHOICES_BT_SEL_LOCALE, NULL);
+	option_expire_url = atoi(ObjcString( dlgtree, CHOICES_EDIT_HISTORY_AGE,
+										NULL));
+	option_send_referer = OBJ_SELECTED(CHOICES_CB_SEND_HTTP_REFERRER);
+	option_homepage_url = ObjcString( dlgtree, CHOICES_EDIT_HOMEPAGE, NULL);
+}
 
 #undef OBJ_SELECTED
 #undef OBJ_CHECK
