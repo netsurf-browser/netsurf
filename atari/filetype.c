@@ -76,11 +76,11 @@ const char *fetch_filetype(const char *unix_path)
 			fclose( fp );
 			if( n > 0 ){
 				if( n > 5 && strncasecmp("GIF89", buffer, 5) == 0 )
-					res = "image/gif";
+					res = (char*)"image/gif";
 				else if( n > 4 && strncasecmp("PNG", &buffer[1], 3) ==0 )
-					res = "image/png";
+					res = (char*)"image/png";
 				else if( n > 10 && strncasecmp("JFIF", &buffer[5], 4) == 0 )
-					res = "image/jpeg";
+					res = (char*)"image/jpeg";
 			}
 		}
 	}
