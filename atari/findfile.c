@@ -62,7 +62,7 @@ char * local_file_to_url( const char * filename )
 	}
 
 	/* convert backslashes: */
-	for( int i=0; i<strlen(start); i++ ){
+	for( unsigned int i=0; i<strlen(start); i++ ){
 		if( start[i] == BACKSLASH ){
 			start[i] = '/';
 		}
