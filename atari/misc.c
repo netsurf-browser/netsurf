@@ -102,7 +102,7 @@ bool path_add_part(char *path, int length, const char *newpart)
 }
 
 /*
- // TBD: make use of this function or remove it...
+  TBD: make use of this function or remove it...
 */
 struct gui_window * find_gui_window( unsigned long handle, short mode ){
 
@@ -136,7 +136,7 @@ struct gui_window * find_gui_window( unsigned long handle, short mode ){
 
         return( NULL );
 }
-*/
+
 
 struct gui_window * find_cmp_window( COMPONENT * c )
 {
