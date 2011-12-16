@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.9/3.0 Development (Revision 13076)
+# Italian messages for NetSurf 2.9/3.0 Development (Revision 13151)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture) for ATO Italia
-# 23.10.2011
+# 7.12.2011
 # ========================================================================================
 #
 # Description
@@ -47,7 +47,7 @@ OpenURL:Apri URL
 # Main menu
 #
 Page:Pagina
-Object:Oggetto
+Object:Immagine
 Navigate:Visualizza
 View:Display
 Utilities:Utilit√†
@@ -305,7 +305,7 @@ SaveAs:Salva come...
 SaveIFF:Salva come IFF...
 SaveComplete:Salva Tutto...
 Close:Chiudi
-ObjShow:Mostra oggetto
+ObjShow:Mostra immagine
 Frame:Frame
 FrameNewWin:Apri frame in nuova finestra...
 FrameNewTab:Apri frame in nuova scheda
@@ -346,8 +346,8 @@ TreeImport:URL importati
 TreeNewFolder:Nuova cartella
 TreeLaunch:Visita URL
 TreeDelete:Elimina
-TreeDefault:Set as default
-TreeClear:Clear default
+TreeDefault:Imposta come predefinito
+TreeClear:Annulla predefinito
 
 # Tree export
 #
@@ -627,7 +627,7 @@ Cancel:Annulla
 # SSL certificate verification dialog box.
 #
 SSLCerts:Certificati SSL
-SSLError:NetSurf non √® stato in grado di verificare l'autenticit√† di questo certificato SSL. Per favore verifica i dettagli presenti di seguito.
+SSLError:NetSurf non Ë stato in grado di verificare l'autenticit‡ di questo certificato SSL, per favore verifica i dettagli presenti di seguito.
 Subject:Oggetto
 Issuer:Emittente
 Version:Versione
