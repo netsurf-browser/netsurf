@@ -570,23 +570,23 @@
 ; This probably needs rewriting to not use fitr as it isn't really necessary now.
 
 		(working "Adding NetSurf to launch-handler config")
-		(if (== (p_chk_launch-handler "FILE.LH") 0)
+		(if (= (p_chk_launch-handler "FILE.LH") 0)
 			(p_fitr "ENVARC:launch-handler/URL/FILE.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"file:///%s*\"\"")
 		)
 
-		(if (== (p_chk_launch-handler "HTTP.LH") 0)
+		(if (= (p_chk_launch-handler "HTTP.LH") 0)
 			(p_fitr "ENVARC:launch-handler/URL/HTTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://%s*\"\"")
 		)
 
-		(if (== (p_chk_launch-handler "HTTPS.LH") 0)
+		(if (= (p_chk_launch-handler "HTTPS.LH") 0)
 			(p_fitr "ENVARC:launch-handler/URL/HTTPS.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"https://%s*\"\"")
 		)
 
-		(if (== (p_chk_launch-handler "WWW.LH") 0)
+		(if (= (p_chk_launch-handler "WWW.LH") 0)
 			(p_fitr "ENVARC:launch-handler/URL/WWW.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"http://www.%s*\"\"")
 		)
 
-;		(if (== (p_chk_launch-handler "FTP.LH") 0)
+;		(if (= (p_chk_launch-handler "FTP.LH") 0)
 ;			(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"ftp://%s*\"\"")
 ;		)
 	)
