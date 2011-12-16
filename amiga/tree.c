@@ -96,6 +96,10 @@ struct treeview_window {
 	struct gui_globals globals;
 	struct sslcert_session_data *ssl_data;
 	BOOL rmbtrapped;
+	char *wintitle;
+	char *sslerr;
+	char *sslaccept;
+	char *sslreject;
 };
 
 void ami_tree_draw(struct treeview_window *twin);
@@ -522,7 +526,6 @@ void ami_tree_open(struct treeview_window *twin,int type)
 {
 	BOOL msel = TRUE,nothl = TRUE,launchdisable=FALSE;
 	static WORD gen=0;
-	char *wintitle;
 	char folderclosed[100],folderopen[100],item[100];
 
 	if(twin->win)
@@ -538,20 +541,23 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	{
 		case AMI_TREE_HOTLIST:
 			nothl = FALSE;
-			wintitle = (char *)messages_get("Hotlist");
+			twin->wintitle = ami_utf8_easy((char *)messages_get("Hotlist"));
 		break;
 		case AMI_TREE_COOKIES:
 			nothl = TRUE;
 			launchdisable=TRUE;
-			wintitle = (char *)messages_get("Cookies");
+			twin->wintitle = ami_utf8_easy((char *)messages_get("Cookies"));
 		break;
 		case AMI_TREE_HISTORY:
 			nothl = TRUE;
-			wintitle = (char *)messages_get("GlobalHistory");
+			twin->wintitle = ami_utf8_easy((char *)messages_get("GlobalHistory"));
 		break;
 		case AMI_TREE_SSLCERT:
 			nothl = TRUE;
-			wintitle = (char *)messages_get("SSLCerts");
+			twin->wintitle = ami_utf8_easy((char *)messages_get("SSLCerts"));
+			twin->sslerr = ami_utf8_easy((char *)messages_get("SSLError"));
+			twin->sslaccept = ami_utf8_easy((char *)messages_get("Accept"));
+			twin->sslreject = ami_utf8_easy((char *)messages_get("Reject"));
 		break;
 	}
 
@@ -564,8 +570,8 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	if(type == AMI_TREE_SSLCERT)
 	{
 		twin->objects[OID_MAIN] = WindowObject,
-      	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title,wintitle,
+      	    WA_ScreenTitle, nsscreentitle,
+           	WA_Title, twin->wintitle,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
@@ -588,7 +594,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 			WINDOW_Position, WPOS_CENTERSCREEN,
 			WINDOW_ParentGroup, twin->objects[GID_MAIN] = VGroupObject,
 				LAYOUT_AddImage, LabelObject,
-					LABEL_Text, messages_get("SSLError"),
+					LABEL_Text, twin->sslerr,
 				LabelEnd,
 				LAYOUT_AddChild, twin->objects[GID_BROWSER] = SpaceObject,
 					GA_ID, GID_BROWSER,
@@ -598,12 +604,12 @@ void ami_tree_open(struct treeview_window *twin,int type)
 				LAYOUT_AddChild, HGroupObject,
 					LAYOUT_AddChild, twin->objects[GID_OPEN] = ButtonObject,
 						GA_ID,GID_OPEN,
-						GA_Text,messages_get("Accept"),
+						GA_Text, twin->sslaccept,
 						GA_RelVerify,TRUE,
 					ButtonEnd,
 					LAYOUT_AddChild, twin->objects[GID_CANCEL] = ButtonObject,
 						GA_ID,GID_CANCEL,
-						GA_Text,messages_get("Reject"),
+						GA_Text, twin->sslreject,
 						GA_RelVerify,TRUE,
 					ButtonEnd,
 				EndGroup,
@@ -642,7 +648,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 
 		twin->objects[OID_MAIN] = WindowObject,
       	    WA_ScreenTitle,nsscreentitle,
-           	WA_Title,wintitle,
+           	WA_Title, twin->wintitle,
            	WA_Activate, TRUE,
            	WA_DepthGadget, TRUE,
            	WA_DragBar, TRUE,
@@ -750,7 +756,14 @@ void ami_tree_close(struct treeview_window *twin)
 	}
 	FreeVec(twin->menu);
 	twin->menu = NULL;
-	if(twin->type == AMI_TREE_SSLCERT) ami_ssl_free(twin);
+	ami_utf8_free(twin->wintitle);
+	if(twin->type == AMI_TREE_SSLCERT) 
+	{
+		ami_utf8_free(twin->sslerr);
+		ami_utf8_free(twin->sslaccept);
+		ami_utf8_free(twin->sslreject);
+		ami_ssl_free(twin);
+	}
 }
 
 void ami_tree_update_quals(struct treeview_window *twin)
