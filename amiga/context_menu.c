@@ -97,6 +97,18 @@ enum {
 	CMID_PAGEHOTLIST,
 	CMID_PAGECLOSE,
 
+	CMID_TREE_EXPAND,
+	CMID_TREE_COLLAPSE,
+	CMID_TREE_LAUNCH,
+	CMID_TREE_NEWFOLDER,
+	CMID_TREE_NEWITEM,
+	CMID_TREE_SETDEFAULT,
+	CMID_TREE_CLEARDEFAULT,
+	CMID_TREE_DELETE,
+	CMID_TREE_EDITLINK,
+	CMID_TREE_EDITFOLDER,
+	CMID_TREE_ADDHOTLIST,
+
 	CMSUB_OBJECT,
 	CMSUB_URL,
 	CMSUB_SEL,
@@ -175,6 +187,20 @@ void ami_context_menu_init(void)
 
 	/* Back button */
 	ctxmenulab[CMID_HISTORY] = ami_utf8_easy((char *)messages_get("HistLocalNS"));
+
+	/* treeviews */
+	ctxmenulab[CMID_TREE_EXPAND] = ami_utf8_easy((char *)messages_get("Expand"));
+	ctxmenulab[CMID_TREE_COLLAPSE] = ami_utf8_easy((char *)messages_get("Collapse"));
+	ctxmenulab[CMID_TREE_LAUNCH] = ami_utf8_easy((char *)messages_get("TreeLaunch"));
+	ctxmenulab[CMID_TREE_NEWFOLDER] = ami_utf8_easy((char *)messages_get("TreeNewFolder"));
+	ctxmenulab[CMID_TREE_NEWITEM] = ami_utf8_easy((char *)messages_get("New"));
+	ctxmenulab[CMID_TREE_SETDEFAULT] = ami_utf8_easy((char *)messages_get("TreeDefault"));
+	ctxmenulab[CMID_TREE_CLEARDEFAULT] = ami_utf8_easy((char *)messages_get("TreeClear"));
+	ctxmenulab[CMID_TREE_DELETE] = ami_utf8_easy((char *)messages_get("TreeDelete"));
+	ctxmenulab[CMID_TREE_EDITLINK] = ami_utf8_easy((char *)messages_get("EditLink"));
+	ctxmenulab[CMID_TREE_EDITFOLDER] = ami_utf8_easy((char *)messages_get("EditFolder"));
+	ctxmenulab[CMID_TREE_ADDHOTLIST] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+
 }
 
 void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdata)
