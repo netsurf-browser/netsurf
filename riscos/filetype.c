@@ -284,7 +284,7 @@ int ro_content_native_type(hlcache_handle *c)
 	case 0x695: /* gif */
 	case 0x69c: /* bmp */
 	case 0x132: /* ico */
-	case 0xb90: /* png */
+	case 0xb60: /* png */
 	case 0xff9: /* sprite */
 		return osfile_TYPE_SPRITE;
 	case 0xaad: /* svg */
