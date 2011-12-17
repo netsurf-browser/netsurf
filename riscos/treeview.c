@@ -99,6 +99,7 @@ static void ro_treeview_get_window_dimensions(int *width, int *height,
 		void *pw);
 
 static void ro_treeview_redraw(wimp_draw *redraw);
+static void ro_treeview_scroll(wimp_scroll *scroll);
 static void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv,
 		osbool more);
 static void ro_treeview_open(wimp_open *open);
@@ -192,6 +193,7 @@ ro_treeview *ro_treeview_create(wimp_w window, struct toolbar *toolbar,
 	/* Register wimp events to handle the supplied window. */
 
 	ro_gui_wimp_event_register_redraw_window(tv->w, ro_treeview_redraw);
+	ro_gui_wimp_event_register_scroll_window(tv->w, ro_treeview_scroll);
 	ro_gui_wimp_event_register_open_window(tv->w, ro_treeview_open);
 	ro_gui_wimp_event_register_mouse_click(tv->w, ro_treeview_mouse_click);
 	ro_gui_wimp_event_register_keypress(tv->w, ro_treeview_keypress);
@@ -333,6 +335,7 @@ void ro_treeview_redraw_request(int x, int y, int width, int height,
 		ro_treeview_redraw_loop(&update, tv, more);
 	}
 }
+
 /**
  * Pass RISC OS redraw events on to the treeview widget.
  *
@@ -364,6 +367,65 @@ void ro_treeview_redraw(wimp_draw *redraw)
 	}
 
 	ro_treeview_redraw_loop(redraw, tv, more);
+}
+
+/**
+ * Handle scroll events in treeview windows.
+ *
+ * \param  *scroll		Pointer to Scroll Event block.
+ */
+
+void ro_treeview_scroll(wimp_scroll *scroll)
+{
+	os_error	*error;
+	int		x = scroll->visible.x1 - scroll->visible.x0 - 32;
+	int		y = scroll->visible.y1 - scroll->visible.y0 - 32;
+	struct toolbar	*toolbar = ro_toolbar_parent_window_lookup(scroll->w);
+
+	if (toolbar != NULL)
+		y -= ro_toolbar_full_height(toolbar);
+
+	switch (scroll->xmin) {
+	case wimp_SCROLL_PAGE_LEFT:
+		scroll->xscroll -= x;
+		break;
+	case wimp_SCROLL_COLUMN_LEFT:
+		scroll->xscroll -= 32;
+		break;
+	case wimp_SCROLL_COLUMN_RIGHT:
+		scroll->xscroll += 32;
+		break;
+	case wimp_SCROLL_PAGE_RIGHT:
+		scroll->xscroll += x;
+		break;
+	default:
+		scroll->xscroll += (x * (scroll->xmin>>2)) >> 2;
+		break;
+	}
+
+	switch (scroll->ymin) {
+	case wimp_SCROLL_PAGE_UP:
+		scroll->yscroll += y;
+		break;
+	case wimp_SCROLL_LINE_UP:
+		scroll->yscroll += 32;
+		break;
+	case wimp_SCROLL_LINE_DOWN:
+		scroll->yscroll -= 32;
+		break;
+	case wimp_SCROLL_PAGE_DOWN:
+		scroll->yscroll -= y;
+		break;
+	default:
+		scroll->yscroll += (y * (scroll->ymin>>2)) >> 2;
+		break;
+	}
+
+	error = xwimp_open_window((wimp_open *) scroll);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+	}
 }
 
 /**

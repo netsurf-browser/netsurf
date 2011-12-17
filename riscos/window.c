@@ -91,6 +91,7 @@
 static void gui_window_set_extent(struct gui_window *g, int width, int height);
 
 static void ro_gui_window_redraw(wimp_draw *redraw);
+static void ro_gui_window_scroll(wimp_scroll *scroll);
 static void ro_gui_window_open(wimp_open *open);
 static void ro_gui_window_close(wimp_w w);
 static bool ro_gui_window_click(wimp_pointer *mouse);
@@ -537,6 +538,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	ro_gui_wimp_event_register_open_window(g->window, ro_gui_window_open);
 	ro_gui_wimp_event_register_close_window(g->window, ro_gui_window_close);
 	ro_gui_wimp_event_register_redraw_window(g->window, ro_gui_window_redraw);
+	ro_gui_wimp_event_register_scroll_window(g->window, ro_gui_window_scroll);
 	ro_gui_wimp_event_register_keypress(g->window, ro_gui_window_keypress);
 	ro_gui_wimp_event_register_mouse_click(g->window, ro_gui_window_click);
 	ro_gui_wimp_event_register_menu(g->window, ro_gui_browser_window_menu,
@@ -2959,16 +2961,12 @@ void ro_gui_window_menu_close(wimp_w w, wimp_i i, wimp_menu *menu)
 
 
 /**
- * Process Scroll_Request events.
+ * Process Scroll_Request events in a browser window.
  *
- * \TODO -- This handles Scroll Events for all windows, not just browser
- *          windows.  Either it needs to move somewhere else, or the
- *          code needs to be split and Scroll Events dispatched via the
- *          Wimp_Event module.  Currently it doesn't properly handle
- *          events affecting treeview windows, anyway.
+ * \param *scroll		The wimp scroll event data block.
  */
 
-void ro_gui_scroll_request(wimp_scroll *scroll)
+void ro_gui_window_scroll(wimp_scroll *scroll)
 {
 	struct gui_window	*g = ro_gui_window_lookup(scroll->w);
 	struct toolbar		*toolbar;
@@ -2997,9 +2995,9 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 	} else {
 		int x = scroll->visible.x1 - scroll->visible.x0 - 32;
 		int y = scroll->visible.y1 - scroll->visible.y0 - 32;
+		int xstep = 0, ystep = 0;
 		os_error *error;
 
-		/* This has to handle all windows, not just browser ones. */
 		toolbar = ro_toolbar_parent_window_lookup(scroll->w);
 		assert(g == NULL || g->toolbar == NULL ||
 				g->toolbar == toolbar);
@@ -3008,44 +3006,49 @@ void ro_gui_scroll_request(wimp_scroll *scroll)
 
 		switch (scroll->xmin) {
 			case wimp_SCROLL_PAGE_LEFT:
-				scroll->xscroll -= x;
+				xstep = -x;
 				break;
 			case wimp_SCROLL_COLUMN_LEFT:
-				scroll->xscroll -= 32;
+				xstep = -32;
 				break;
 			case wimp_SCROLL_COLUMN_RIGHT:
-				scroll->xscroll += 32;
+				xstep = 32;
 				break;
 			case wimp_SCROLL_PAGE_RIGHT:
-				scroll->xscroll += x;
+				xstep = x;
 				break;
 			default:
-				scroll->xscroll += (x * (scroll->xmin>>2)) >> 2;
+				xstep = (x * (scroll->xmin>>2)) >> 2;
 				break;
 		}
 
 		switch (scroll->ymin) {
 			case wimp_SCROLL_PAGE_UP:
-				scroll->yscroll += y;
+				ystep = y;
 				break;
 			case wimp_SCROLL_LINE_UP:
-				scroll->yscroll += 32;
+				ystep = 32;
 				break;
 			case wimp_SCROLL_LINE_DOWN:
-				scroll->yscroll -= 32;
+				ystep = -32;
 				break;
 			case wimp_SCROLL_PAGE_DOWN:
-				scroll->yscroll -= y;
+				ystep = -y;
 				break;
 			default:
-				scroll->yscroll += (y * (scroll->ymin>>2)) >> 2;
+				ystep = (y * (scroll->ymin>>2)) >> 2;
 				break;
 		}
 
-		error = xwimp_open_window((wimp_open *) scroll);
-		if (error) {
-			LOG(("xwimp_open_window: 0x%x: %s",
-					error->errnum, error->errmess));
+		if (xstep != 0 || ystep != 0) {
+			scroll->xscroll += xstep;
+			scroll->yscroll += ystep;
+
+			error = xwimp_open_window((wimp_open *) scroll);
+			if (error) {
+				LOG(("xwimp_open_window: 0x%x: %s",
+						error->errnum, error->errmess));
+			}
 		}
 	}
 }

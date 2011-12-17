@@ -95,6 +95,7 @@ struct event_window {
 	void (*open_window)(wimp_open *open);
 	void (*close_window)(wimp_w w);
 	void (*redraw_window)(wimp_draw *redraw);
+	void (*scroll_window)(wimp_scroll *scroll);
 	bool (*menu_prepare)(wimp_w w, wimp_i i, wimp_menu *m,
 			wimp_pointer *p);
 	bool (*menu_selection)(wimp_w w, wimp_i i, wimp_menu *m,
@@ -1115,6 +1116,24 @@ bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw)
 
 
 /**
+ * Handle any scroll window requests
+ *
+ * \param scroll	the window scroll request
+ */
+bool ro_gui_wimp_event_scroll_window(wimp_scroll *scroll)
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_find_window(scroll->w);
+	if ((window) && (window->scroll_window)) {
+		window->scroll_window(scroll);
+		return true;
+	}
+	return false;
+}
+
+
+/**
  * Process a Menu click in a window, by checking for a registered window
  * menu and opening it if one is found.
  *
@@ -1455,6 +1474,21 @@ bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 	return true;
 }
 
+/**
+ * Register a function to be called for all window scroll requests.
+ */
+
+bool ro_gui_wimp_event_register_scroll_window(wimp_w w,
+		void (*callback)(wimp_scroll *scroll))
+{
+	struct event_window *window;
+
+	window = ro_gui_wimp_event_get_window(w);
+	if (!window)
+		return false;
+	window->scroll_window = callback;
+	return true;
+}
 
 /**
  * Register a function to be called before a menu is (re-)opened.

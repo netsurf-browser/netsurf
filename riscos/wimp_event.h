@@ -60,6 +60,7 @@ bool ro_gui_wimp_event_keypress(wimp_key *key);
 bool ro_gui_wimp_event_open_window(wimp_open *open);
 bool ro_gui_wimp_event_close_window(wimp_w w);
 bool ro_gui_wimp_event_redraw_window(wimp_draw *redraw);
+bool ro_gui_wimp_event_scroll_window(wimp_scroll *scroll);
 
 bool ro_gui_wimp_event_process_window_menu_click(wimp_pointer *pointer);
 bool ro_gui_wimp_event_prepare_menu(wimp_w w, wimp_i i, wimp_menu *menu);
@@ -90,6 +91,8 @@ bool ro_gui_wimp_event_register_close_window(wimp_w w,
 		void (*callback)(wimp_w w));
 bool ro_gui_wimp_event_register_redraw_window(wimp_w w,
 		void (*callback)(wimp_draw *redraw));
+bool ro_gui_wimp_event_register_scroll_window(wimp_w w,
+		void (*callback)(wimp_scroll *scroll));
 bool ro_gui_wimp_event_register_menu_prepare(wimp_w w,
 		bool (*callback)(wimp_w w, wimp_i i, wimp_menu *m,
 		wimp_pointer *p));

@@ -133,7 +133,6 @@ bool ro_gui_download_prequit(void);
 void ro_gui_401login_init(void);
 
 /* in window.c */
-void ro_gui_scroll_request(wimp_scroll *scroll);
 bool ro_gui_window_dataload(struct gui_window *g, wimp_message *message);
 void ro_gui_window_mouse_at(struct gui_window *g, wimp_pointer *pointer);
 void ro_gui_window_iconise(struct gui_window *g,

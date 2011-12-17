@@ -1033,7 +1033,7 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			break;
 
 		case wimp_SCROLL_REQUEST:
-			ro_gui_scroll_request(&(block->scroll));
+			ro_gui_wimp_event_scroll_window(&(block->scroll));
 			break;
 
 		case wimp_USER_MESSAGE:
