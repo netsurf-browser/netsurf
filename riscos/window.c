@@ -107,6 +107,9 @@ static bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		wimp_selection *selection, menu_action action);
 static void ro_gui_window_menu_close(wimp_w w, wimp_i i, wimp_menu *menu);
 
+static void ro_gui_window_scroll_action(struct gui_window *g,
+		int scroll_x, int scroll_y);
+
 static void ro_gui_window_toolbar_click(void *data,
 		toolbar_action_type action_type, union toolbar_action action);
 
@@ -1871,12 +1874,11 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 		bool is_toolbar)
 {
 	hlcache_handle		*h;
-	wimp_window_state	state;
-	int			y;
 	const char		*toolbar_url;
-	os_error		*error;
 	float			scale;
 	uint32_t		c = (uint32_t) key->c;
+	wimp_scroll_direction	xscroll = wimp_SCROLL_NONE;
+	wimp_scroll_direction	yscroll = wimp_SCROLL_NONE;
 
 	if (g == NULL)
 		return false;
@@ -2058,58 +2060,42 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 	/* Any keys that exit from the above switch() via break should be
 	 * processed as scroll actions in the browser window. */
 
-	state.w = g->window;
-	error = xwimp_get_window_state(&state);
-	if (error) {
-		LOG(("xwimp_get_window_state: 0x%x: %s",
-				error->errnum, error->errmess));
-		return false;
-	}
-
-	y = state.visible.y1 - state.visible.y0 - 32;
-	if (g->toolbar)
-		y -= ro_toolbar_full_height(g->toolbar);
-
 	switch (c) {
-		case IS_WIMP_KEY | wimp_KEY_LEFT:
-			state.xscroll -= 32;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_RIGHT:
-			state.xscroll += 32;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
-			state.xscroll = -0x10000000;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
-			state.xscroll = 0x10000000;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_UP:
-			state.yscroll += 32;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_DOWN:
-			state.yscroll -= 32;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
-			state.yscroll += y;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
-			state.yscroll -= y;
-			break;
-		case wimp_KEY_HOME:
-		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
-			state.yscroll = 0x10000000;
-			break;
-		case IS_WIMP_KEY | wimp_KEY_END:
-		case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
-			state.yscroll = -0x10000000;
-			break;
+	case IS_WIMP_KEY | wimp_KEY_LEFT:
+		xscroll = wimp_SCROLL_COLUMN_LEFT;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_RIGHT:
+		xscroll = wimp_SCROLL_COLUMN_RIGHT;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_LEFT:
+		xscroll = 0x80000000;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_RIGHT:
+		xscroll = 0x7fffffff;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_UP:
+		yscroll = wimp_SCROLL_LINE_UP;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_DOWN:
+		yscroll = wimp_SCROLL_LINE_DOWN;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_PAGE_UP:
+		yscroll = wimp_SCROLL_PAGE_UP;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_PAGE_DOWN:
+		yscroll = wimp_SCROLL_PAGE_DOWN;
+		break;
+	case wimp_KEY_HOME:
+	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_UP:
+		yscroll = 0x7fffffff;
+		break;
+	case IS_WIMP_KEY | wimp_KEY_END:
+	case IS_WIMP_KEY | wimp_KEY_CONTROL | wimp_KEY_DOWN:
+		yscroll = 0x80000000;
+		break;
 	}
 
-	error = xwimp_open_window(PTR_WIMP_OPEN(&state));
-	if (error) {
-		LOG(("xwimp_open_window: 0x%x: %s",
-				error->errnum, error->errmess));
-	}
+	ro_gui_window_scroll_action(g, xscroll, yscroll);
 
 	return true;
 }
@@ -2969,7 +2955,6 @@ void ro_gui_window_menu_close(wimp_w w, wimp_i i, wimp_menu *menu)
 void ro_gui_window_scroll(wimp_scroll *scroll)
 {
 	struct gui_window	*g = ro_gui_window_lookup(scroll->w);
-	struct toolbar		*toolbar;
 
 	if (g && g->bw->current_content && ro_gui_shift_pressed()) {
 		/* extended scroll request with shift held down; change zoom */
@@ -2998,88 +2983,139 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 		}
 		if (g->bw->scale != scale)
 			browser_window_set_scale(g->bw, scale, true);
-	} else {
-		int x = scroll->visible.x1 - scroll->visible.x0 - 32;
-		int y = scroll->visible.y1 - scroll->visible.y0 - 32;
-		int xstep = 0, ystep = 0;
-		os_error *error;
-		wimp_pointer pointer;
+	} else if (g != NULL) {
+		ro_gui_window_scroll_action(g, scroll->xmin, scroll->ymin);
+	}
+}
 
-		toolbar = ro_toolbar_parent_window_lookup(scroll->w);
-		assert(g == NULL || g->toolbar == NULL ||
-				g->toolbar == toolbar);
-		if (toolbar != NULL)
-			y -= ro_toolbar_full_height(toolbar);
 
-		error = xwimp_get_pointer_info(&pointer);
+/**
+ * Scroll a browser window, either via the core or directly using the
+ * normal Wimp scoll interface.
+ *
+ * Scroll steps are supplied in terms of the (extended) Scroll Event direction
+ * values returned by Wimp_Poll.  Special values of 0x7fffffff and 0x80000000
+ * are added to mean "Home" and "End".
+ *
+ * \param *g			The GUI Window to be scrolled.
+ * \param scroll_x		The X scroll step to be applied.
+ * \param scroll_y		The Y scroll step to be applied.
+ */
+
+void ro_gui_window_scroll_action(struct gui_window *g,
+		wimp_scroll_direction scroll_x, wimp_scroll_direction scroll_y)
+{
+	int			visible_x, visible_y;
+	int			step_x = 0, step_y = 0;
+	wimp_window_state	state;
+	wimp_pointer		pointer;
+	os_error		*error;
+	os_coord		pos;
+	bool			handled = false;
+	struct toolbar		*toolbar;
+
+	if (g == NULL)
+		return;
+
+	state.w = g->window;
+	error = xwimp_get_window_state(&state);
+	if (error) {
+		LOG(("xwimp_get_window_state: 0x%x: %s",
+				error->errnum, error->errmess));
+		return;
+	}
+
+	visible_x = state.visible.x1 - state.visible.x0 - 32;
+	visible_y = state.visible.y1 - state.visible.y0 - 32;
+
+	toolbar = ro_toolbar_parent_window_lookup(g->window);
+	assert(g == NULL || g->toolbar == NULL || g->toolbar == toolbar);
+
+	if (toolbar != NULL)
+		visible_y -= ro_toolbar_full_height(toolbar);
+
+	error = xwimp_get_pointer_info(&pointer);
+	if (error) {
+		LOG(("xwimp_get_pointer_info 0x%x : %s",
+				error->errnum, error->errmess));
+		warn_user("WimpError", error->errmess);
+		return;
+	}
+
+	switch (scroll_x) {
+	case wimp_SCROLL_PAGE_LEFT:
+		step_x = -visible_x;
+		break;
+	case wimp_SCROLL_AUTO_LEFT:
+	case wimp_SCROLL_COLUMN_LEFT:
+		step_x = -32;
+		break;
+	case wimp_SCROLL_AUTO_RIGHT:
+	case wimp_SCROLL_COLUMN_RIGHT:
+		step_x = 32;
+		break;
+	case wimp_SCROLL_PAGE_RIGHT:
+		step_x = visible_x;
+		break;
+	case 0x80000000:
+		break;
+	case 0x7fffffff:
+		break;
+	default:
+		step_x = (visible_x * (scroll_x>>2)) >> 2;
+		break;
+	}
+
+	switch (scroll_y) {
+	case wimp_SCROLL_PAGE_UP:
+		step_y = visible_y;
+		break;
+	case wimp_SCROLL_AUTO_UP:
+	case wimp_SCROLL_LINE_UP:
+		step_y = 32;
+		break;
+	case wimp_SCROLL_AUTO_DOWN:
+	case wimp_SCROLL_LINE_DOWN:
+		step_y = -32;
+		break;
+	case wimp_SCROLL_PAGE_DOWN:
+		step_y = -visible_y;
+		break;
+	case 0x80000000:
+		break;
+	case 0x7fffffff:
+		break;
+	default:
+		step_y = (visible_y * (scroll_y>>2)) >> 2;
+		break;
+	}
+
+	/* If no scrolling is required, there's no point trying to do any. */
+
+	if (step_x == 0 && step_y == 0)
+		return;
+
+	/* If the pointer is over the window being scrolled, then try to get
+	 * the core to do the scrolling on the object under the pointer.
+	 */
+
+	if (pointer.w == g->window &&
+			ro_gui_window_to_window_pos(g,
+			pointer.pos.x, pointer.pos.y, &pos))
+		handled = browser_window_scroll_at_point(g->bw, pos.x, pos.y,
+				step_x / 2, -step_y / 2);
+
+	/* If the core didn't do the scrolling, handle it via the Wimp. */
+
+	if (!handled) {
+		state.xscroll += step_x;
+		state.yscroll += step_y;
+
+		error = xwimp_open_window((wimp_open *) &state);
 		if (error) {
-			LOG(("xwimp_get_pointer_info 0x%x : %s",
-					error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-			return;
-		}
-
-		switch (scroll->xmin) {
-			case wimp_SCROLL_PAGE_LEFT:
-				xstep = -x;
-				break;
-			case wimp_SCROLL_AUTO_LEFT:
-			case wimp_SCROLL_COLUMN_LEFT:
-				xstep = -32;
-				break;
-			case wimp_SCROLL_AUTO_RIGHT:
-			case wimp_SCROLL_COLUMN_RIGHT:
-				xstep = 32;
-				break;
-			case wimp_SCROLL_PAGE_RIGHT:
-				xstep = x;
-				break;
-			default:
-				xstep = (x * (scroll->xmin>>2)) >> 2;
-				break;
-		}
-
-		switch (scroll->ymin) {
-			case wimp_SCROLL_PAGE_UP:
-				ystep = y;
-				break;
-			case wimp_SCROLL_AUTO_UP:
-			case wimp_SCROLL_LINE_UP:
-				ystep = 32;
-				break;
-			case wimp_SCROLL_AUTO_DOWN:
-			case wimp_SCROLL_LINE_DOWN:
-				ystep = -32;
-				break;
-			case wimp_SCROLL_PAGE_DOWN:
-				ystep = -y;
-				break;
-			default:
-				ystep = (y * (scroll->ymin>>2)) >> 2;
-				break;
-		}
-
-		if (xstep != 0 || ystep != 0) {
-			os_coord pos;
-			bool handled = false;
-
-			if (ro_gui_window_to_window_pos(g, pointer.pos.x,
-					pointer.pos.y, &pos))
-				handled = browser_window_scroll_at_point(g->bw,
-						pos.x, pos.y,
-						xstep / 2, -ystep / 2);
-
-			if (!handled) {
-				scroll->xscroll += xstep;
-				scroll->yscroll += ystep;
-
-				error = xwimp_open_window((wimp_open *) scroll);
-				if (error) {
-					LOG(("xwimp_open_window: 0x%x: %s",
-							error->errnum,
-							error->errmess));
-				}
-			}
+			LOG(("xwimp_open_window: 0x%x: %s",
+					error->errnum,
+					error->errmess));
 		}
 	}
 }
