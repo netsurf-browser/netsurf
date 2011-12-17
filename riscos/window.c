@@ -1618,6 +1618,16 @@ void ro_gui_window_open(wimp_open *open)
 	/* first resize stops any flickering by making the URL window on top */
 	ro_gui_url_complete_resize(g->toolbar, PTR_WIMP_OPEN(&state));
 
+	/* Windows containing framesets can only be scrolled via the core, which
+	 * is implementing frame scrollbars itself.  The x and y offsets are
+	 * therefore fixed.
+	 */
+
+	if (g->bw->children != NULL) {
+		state.xscroll = 0;
+		state.yscroll = toolbar_height;
+	}
+
 	error = xwimp_open_window_nested_with_flags(&state, parent, linkage);
 	if (error) {
 		LOG(("xwimp_open_window: 0x%x: %s",
@@ -3105,9 +3115,12 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 		handled = browser_window_scroll_at_point(g->bw, pos.x, pos.y,
 				step_x / 2, -step_y / 2);
 
-	/* If the core didn't do the scrolling, handle it via the Wimp. */
+	/* If the core didn't do the scrolling, handle it via the Wimp.
+	 * Windows which contain frames can only be scrolled by the core,
+	 * because it implements frame scroll bars.
+	 */
 
-	if (!handled) {
+	if (!handled && g->bw->children == NULL) {
 		state.xscroll += step_x;
 		state.yscroll += step_y;
 
