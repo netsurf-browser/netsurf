@@ -2977,7 +2977,13 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 
 		if (scroll->ymin & 3)
 			inc = 0.02;  /* RO5 sends the msg 5 times;
-				      * don't ask me why */
+				      * don't ask me why
+				      *
+				      * \TODO -- this is liable to break if
+				      * HID is configured optimally for
+				      * frame scrolling. *5 appears to be
+				      * an artifact of non-HID mode scrolling.
+				      */
 		else
 			inc = (1 << (ABS(scroll->ymin)>>2)) / 20.0F;
 
@@ -2997,6 +3003,7 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 		int y = scroll->visible.y1 - scroll->visible.y0 - 32;
 		int xstep = 0, ystep = 0;
 		os_error *error;
+		wimp_pointer pointer;
 
 		toolbar = ro_toolbar_parent_window_lookup(scroll->w);
 		assert(g == NULL || g->toolbar == NULL ||
@@ -3004,13 +3011,23 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 		if (toolbar != NULL)
 			y -= ro_toolbar_full_height(toolbar);
 
+		error = xwimp_get_pointer_info(&pointer);
+		if (error) {
+			LOG(("xwimp_get_pointer_info 0x%x : %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return;
+		}
+
 		switch (scroll->xmin) {
 			case wimp_SCROLL_PAGE_LEFT:
 				xstep = -x;
 				break;
+			case wimp_SCROLL_AUTO_LEFT:
 			case wimp_SCROLL_COLUMN_LEFT:
 				xstep = -32;
 				break;
+			case wimp_SCROLL_AUTO_RIGHT:
 			case wimp_SCROLL_COLUMN_RIGHT:
 				xstep = 32;
 				break;
@@ -3026,9 +3043,11 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 			case wimp_SCROLL_PAGE_UP:
 				ystep = y;
 				break;
+			case wimp_SCROLL_AUTO_UP:
 			case wimp_SCROLL_LINE_UP:
 				ystep = 32;
 				break;
+			case wimp_SCROLL_AUTO_DOWN:
 			case wimp_SCROLL_LINE_DOWN:
 				ystep = -32;
 				break;
@@ -3041,13 +3060,25 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 		}
 
 		if (xstep != 0 || ystep != 0) {
-			scroll->xscroll += xstep;
-			scroll->yscroll += ystep;
+			os_coord pos;
+			bool handled = false;
 
-			error = xwimp_open_window((wimp_open *) scroll);
-			if (error) {
-				LOG(("xwimp_open_window: 0x%x: %s",
-						error->errnum, error->errmess));
+			if (ro_gui_window_to_window_pos(g, pointer.pos.x,
+					pointer.pos.y, &pos))
+				handled = browser_window_scroll_at_point(g->bw,
+						pos.x, pos.y,
+						xstep / 2, -ystep / 2);
+
+			if (!handled) {
+				scroll->xscroll += xstep;
+				scroll->yscroll += ystep;
+
+				error = xwimp_open_window((wimp_open *) scroll);
+				if (error) {
+					LOG(("xwimp_open_window: 0x%x: %s",
+							error->errnum,
+							error->errmess));
+				}
 			}
 		}
 	}
