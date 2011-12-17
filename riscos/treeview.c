@@ -380,10 +380,14 @@ void ro_treeview_scroll(wimp_scroll *scroll)
 	os_error	*error;
 	int		x = scroll->visible.x1 - scroll->visible.x0 - 32;
 	int		y = scroll->visible.y1 - scroll->visible.y0 - 32;
-	struct toolbar	*toolbar = ro_toolbar_parent_window_lookup(scroll->w);
+	ro_treeview	*tv;
 
-	if (toolbar != NULL)
-		y -= ro_toolbar_full_height(toolbar);
+	tv = (ro_treeview *) ro_gui_wimp_event_get_user_data(scroll->w);
+	if (tv == NULL)
+		return;
+
+	if (tv->tb != NULL)
+		y -= ro_toolbar_full_height(tv->tb);
 
 	switch (scroll->xmin) {
 	case wimp_SCROLL_PAGE_LEFT:
