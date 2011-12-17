@@ -340,6 +340,7 @@ TreeVersion2:RFC 2965
 TreeSession:Sessie einde
 TreeUnused:Ongebruikt
 TreeImport:Ge-importeerde URL
+TreeNewLink:New address
 TreeNewFolder:Nieuwe map
 TreeLaunch:Visit URL
 TreeDelete:Delete
@@ -362,6 +363,7 @@ TreeHotlist:NetSurf bladwijzers
 #
 NewLink:Nieuw adres aanmaken
 NewFolder:Nieuwe map aanmaken
+EditTitle:Edit title
 EditLink:Bewerk adres
 EditFolder:Map hernoemen
 

@@ -43,6 +43,7 @@
 #include <reaction/reaction_macros.h>
 #include <intuition/icclass.h>
 
+#include "amiga/context_menu.h"
 #include "amiga/file.h"
 #include "amiga/gui.h"
 #include "amiga/tree.h"
@@ -69,8 +70,6 @@
 
 enum {
 	GID_OPEN = GID_LAST,
-	GID_NEWF,
-	GID_NEWB,
 	GID_DEL,
 	GID_DEFAULT,
 	GID_TREE_LAST
@@ -685,18 +684,6 @@ void ami_tree_open(struct treeview_window *twin,int type)
 						GA_RelVerify,TRUE,
 						GA_Disabled,launchdisable,
 					ButtonEnd,
-					LAYOUT_AddChild, twin->objects[GID_NEWF] = ButtonObject,
-						GA_ID,GID_NEWF,
-						BUTTON_AutoButton,BAG_POPDRAWER,
-						GA_RelVerify,TRUE,
-						GA_Disabled,nothl,
-					ButtonEnd,
-					LAYOUT_AddChild, twin->objects[GID_NEWB] = ButtonObject,
-						GA_ID,GID_NEWB,
-						BUTTON_AutoButton,BAG_POPFILE,
-						GA_RelVerify,TRUE,
-						GA_Disabled,nothl,
-					ButtonEnd,
 					LAYOUT_AddChild, twin->objects[GID_DEL] = ButtonObject,
 						GA_ID,GID_DEL,
 						GA_Text,messages_get("TreeDelete"),
@@ -826,14 +813,6 @@ BOOL ami_tree_event(struct treeview_window *twin)
 						sslcert_reject(twin->ssl_data);
 						ami_tree_close(twin);
 						return TRUE;
-					break;
-
-					case GID_NEWF:
-						hotlist_add_folder(true);
-					break;
-
-					case GID_NEWB:
-						hotlist_add_entry(true);
 					break;
 
 					case GID_DEFAULT:
@@ -971,6 +950,8 @@ BOOL ami_tree_event(struct treeview_window *twin)
 							{
 								tree_set_node_selected_at(twin->tree, x, y, true);
 							}
+							ami_context_menu_show_tree(twin->tree, twin->win, twin->type);
+
 						break;
 					}
 				}

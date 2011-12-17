@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-9, 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -20,8 +20,11 @@
 #define AMIGA_CONTEXT_MENU_H
 #include "amiga/gui.h"
 
+struct tree;
+
 void ami_context_menu_init(void);
 void ami_context_menu_free(void);
 BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap);
 void ami_context_menu_show(struct gui_window_2 *gwin, int x, int y);
+void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type);
 #endif

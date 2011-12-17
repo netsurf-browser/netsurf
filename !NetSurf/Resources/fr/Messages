@@ -340,6 +340,7 @@ TreeVersion2:RFC 2965
 TreeSession:Fin de session
 TreeUnused:Inutilisé
 TreeImport:URL importée
+TreeNewLink:New address
 TreeNewFolder:Nouv. répertoire
 TreeLaunch:Visit URL
 TreeDelete:Delete
@@ -362,6 +363,7 @@ TreeHotlist:Favoris de NetSurf
 #
 NewLink:Créer une nouvelle adresse
 NewFolder:Créer un nouveau dossier
+EditTitle:Edit title
 EditLink:Éditer l'adresse
 EditFolder:Éditer le dossier
 

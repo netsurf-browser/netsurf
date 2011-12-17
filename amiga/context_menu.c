@@ -37,6 +37,7 @@
 #include "amiga/options.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
+#include "amiga/tree.h"
 #include "amiga/utf8.h"
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
@@ -51,7 +52,8 @@
 
 #include <string.h>
 
-static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved);
+static uint32 ami_context_menu_hook(struct Hook *hook, Object *item, APTR reserved);
+static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved);
 static bool ami_context_menu_history(const struct history *history, int x0, int y0,
 	int x1, int y1, const struct history_entry *entry, void *user_data);
 
@@ -105,6 +107,7 @@ enum {
 	CMID_TREE_SETDEFAULT,
 	CMID_TREE_CLEARDEFAULT,
 	CMID_TREE_DELETE,
+	CMID_TREE_EDITTITLE,
 	CMID_TREE_EDITLINK,
 	CMID_TREE_EDITFOLDER,
 	CMID_TREE_ADDHOTLIST,
@@ -193,10 +196,11 @@ void ami_context_menu_init(void)
 	ctxmenulab[CMID_TREE_COLLAPSE] = ami_utf8_easy((char *)messages_get("Collapse"));
 	ctxmenulab[CMID_TREE_LAUNCH] = ami_utf8_easy((char *)messages_get("TreeLaunch"));
 	ctxmenulab[CMID_TREE_NEWFOLDER] = ami_utf8_easy((char *)messages_get("TreeNewFolder"));
-	ctxmenulab[CMID_TREE_NEWITEM] = ami_utf8_easy((char *)messages_get("New"));
+	ctxmenulab[CMID_TREE_NEWITEM] = ami_utf8_easy((char *)messages_get("TreeNewLink"));
 	ctxmenulab[CMID_TREE_SETDEFAULT] = ami_utf8_easy((char *)messages_get("TreeDefault"));
 	ctxmenulab[CMID_TREE_CLEARDEFAULT] = ami_utf8_easy((char *)messages_get("TreeClear"));
 	ctxmenulab[CMID_TREE_DELETE] = ami_utf8_easy((char *)messages_get("TreeDelete"));
+	ctxmenulab[CMID_TREE_EDITTITLE] = ami_utf8_easy((char *)messages_get("EditTitle"));
 	ctxmenulab[CMID_TREE_EDITLINK] = ami_utf8_easy((char *)messages_get("EditLink"));
 	ctxmenulab[CMID_TREE_EDITFOLDER] = ami_utf8_easy((char *)messages_get("EditFolder"));
 	ctxmenulab[CMID_TREE_ADDHOTLIST] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
@@ -932,6 +936,90 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
     }
 
     return itemid;
+}
+
+void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
+{
+	struct node *root = tree_get_root(tree);
+	struct node *sel_node = tree_get_selected_node(root);
+	bool has_selection = tree_node_has_selection(root);
+
+	if(ctxmenuobj) DisposeObject(ctxmenuobj);
+
+	ctxmenuhook.h_Entry = ami_context_menu_hook_tree;
+	ctxmenuhook.h_SubEntry = NULL;
+	ctxmenuhook.h_Data = tree;
+
+    ctxmenuobj = NewObject( POPUPMENU_GetClass(), NULL,
+                        PMA_MenuHandler, &ctxmenuhook,
+						TAG_DONE);
+
+	if(has_selection && (type != AMI_TREE_COOKIES) &&
+		((sel_node == NULL) ||
+		(tree_node_is_folder(sel_node) == false))) {
+		IDoMethod(ctxmenuobj, PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_LAUNCH],
+				PMIA_ID, CMID_TREE_LAUNCH,
+				PMIA_UserData, NULL,
+			TAG_DONE),
+		~0);
+	}
+
+
+	if(type == AMI_TREE_HOTLIST) {
+		IDoMethod(ctxmenuobj, PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, ~0,
+			TAG_DONE),
+		~0);
+
+		IDoMethod(ctxmenuobj, PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_NEWFOLDER],
+				PMIA_ID, CMID_TREE_NEWFOLDER,
+				PMIA_UserData, NULL,
+			TAG_DONE),
+		~0);
+
+		IDoMethod(ctxmenuobj, PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_NEWITEM],
+				PMIA_ID, CMID_TREE_NEWITEM,
+				PMIA_UserData, NULL,
+			TAG_DONE),
+		~0);
+	}
+
+	IDoMethod(ctxmenuobj, PM_OPEN, win);
+}
+
+static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved)
+{
+    int32 itemid = 0;
+	struct tree *tree = hook->h_Data;
+	APTR userdata = NULL;
+
+    if(GetAttrs(item,PMIA_ID, &itemid,
+					PMIA_UserData, &userdata,
+					TAG_DONE))
+    {
+		switch(itemid)
+		{
+			case CMID_TREE_LAUNCH:
+				tree_launch_selected(tree, true);
+			break;
+
+			case CMID_TREE_NEWFOLDER:
+				hotlist_add_folder(true);
+			break;
+
+			case CMID_TREE_NEWITEM:
+				hotlist_add_entry(true);
+			break;
+		}
+	}
+	return itemid;
 }
 
 static bool ami_context_menu_history(const struct history *history, int x0, int y0,
