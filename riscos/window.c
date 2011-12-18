@@ -3002,7 +3002,7 @@ void ro_gui_window_scroll(wimp_scroll *scroll)
 
 /**
  * Scroll a browser window, either via the core or directly using the
- * normal Wimp scoll interface.
+ * normal Wimp_OpenWindow interface.
  *
  * Scroll steps are supplied in terms of the (extended) Scroll Event direction
  * values returned by Wimp_Poll.  Special values of 0x7fffffff and 0x80000000
@@ -3029,6 +3029,8 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 	if (g == NULL)
 		return;
 
+	/* Get the current window, toolbar and pointer details. */
+
 	state.w = g->window;
 	error = xwimp_get_window_state(&state);
 	if (error) {
@@ -3052,6 +3054,10 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 		warn_user("WimpError", error->errmess);
 		return;
 	}
+
+	/* Turn the scroll requirement from Scroll Event codes into coordinates
+	 * that the core can understand.
+	 */
 
 	switch (scroll_x) {
 	case wimp_SCROLL_PAGE_LEFT:
