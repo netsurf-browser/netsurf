@@ -70,8 +70,6 @@
 
 enum {
 	GID_OPEN = GID_LAST,
-	GID_DEL,
-	GID_DEFAULT,
 	GID_TREE_LAST
 };
 
@@ -467,66 +465,22 @@ void ami_tree_menu(struct treeview_window *twin)
 
 void ami_tree_update_buttons(struct treeview_window *twin)
 {
-	BOOL launch_disable = FALSE;
-	BOOL set_default_disable = TRUE;
-
 	if(twin->type == AMI_TREE_SSLCERT) return;
 
 	if(tree_node_has_selection(tree_get_root(twin->tree)))
 	{
-		struct node *selected_node =
-			tree_get_selected_node(tree_get_root(twin->tree));
-
 		OnMenu(twin->win, AMI_TREE_MENU_DELETE);
 		OnMenu(twin->win, AMI_TREE_MENU_CLEAR);
-
-		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_DEL],
-			twin->win, NULL,
-			GA_Disabled, FALSE,
-			TAG_DONE);
-
-		if((selected_node && (tree_node_is_folder(selected_node) == true)))
-		{
-			launch_disable = TRUE;
-			set_default_disable = FALSE;
-		}
 	}
 	else
 	{
 		OffMenu(twin->win, AMI_TREE_MENU_DELETE);
 		OffMenu(twin->win, AMI_TREE_MENU_CLEAR);
-
-		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_DEL],
-			twin->win, NULL,
-			GA_Disabled, TRUE,
-			TAG_DONE);
-
-		launch_disable = TRUE;
-	}
-
-	if(twin->type != AMI_TREE_COOKIES)
-	{
-		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_OPEN],
-			twin->win, NULL,
-			GA_Disabled, launch_disable,
-			TAG_DONE);
-	}
-
-	if(twin->type == AMI_TREE_HOTLIST)
-	{
-		RefreshSetGadgetAttrs((struct Gadget *)twin->objects[GID_DEFAULT],
-			twin->win, NULL,
-			GA_Disabled, set_default_disable,
-			TAG_DONE);
 	}
 }
 
 void ami_tree_open(struct treeview_window *twin,int type)
 {
-	BOOL msel = TRUE,nothl = TRUE,launchdisable=FALSE;
-	static WORD gen=0;
-	char folderclosed[100],folderopen[100],item[100];
-
 	if(twin->win)
 	{
 		WindowToFront(twin->win);
@@ -539,20 +493,15 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	switch(twin->type)
 	{
 		case AMI_TREE_HOTLIST:
-			nothl = FALSE;
 			twin->wintitle = ami_utf8_easy((char *)messages_get("Hotlist"));
 		break;
 		case AMI_TREE_COOKIES:
-			nothl = TRUE;
-			launchdisable=TRUE;
 			twin->wintitle = ami_utf8_easy((char *)messages_get("Cookies"));
 		break;
 		case AMI_TREE_HISTORY:
-			nothl = TRUE;
 			twin->wintitle = ami_utf8_easy((char *)messages_get("GlobalHistory"));
 		break;
 		case AMI_TREE_SSLCERT:
-			nothl = TRUE;
 			twin->wintitle = ami_utf8_easy((char *)messages_get("SSLCerts"));
 			twin->sslerr = ami_utf8_easy((char *)messages_get("SSLError"));
 			twin->sslaccept = ami_utf8_easy((char *)messages_get("Accept"));
@@ -677,26 +626,6 @@ void ami_tree_open(struct treeview_window *twin,int type)
 					SPACE_Transparent,TRUE,
 					SPACE_BevelStyle, BVS_DISPLAY,
        			SpaceEnd,
-				LAYOUT_AddChild, HGroupObject,
-					LAYOUT_AddChild, twin->objects[GID_OPEN] = ButtonObject,
-						GA_ID,GID_OPEN,
-						GA_Text,messages_get("TreeLaunch"),
-						GA_RelVerify,TRUE,
-						GA_Disabled,launchdisable,
-					ButtonEnd,
-					LAYOUT_AddChild, twin->objects[GID_DEL] = ButtonObject,
-						GA_ID,GID_DEL,
-						GA_Text,messages_get("TreeDelete"),
-						GA_RelVerify,TRUE,
-					ButtonEnd,
-					LAYOUT_AddChild, twin->objects[GID_DEFAULT] = ButtonObject,
-						GA_ID, GID_DEFAULT,
-						GA_Text, messages_get("TreeDefault"),
-						GA_RelVerify, TRUE,
-						GA_Disabled, TRUE,
-					ButtonEnd,
-				EndGroup,
-				CHILD_WeightedHeight,0,
 			EndGroup,
 		EndWindow;
 	}
@@ -800,38 +729,15 @@ BOOL ami_tree_event(struct treeview_window *twin)
 				switch(result & WMHI_GADGETMASK)
 				{
 					case GID_OPEN:
-						if(twin->type == AMI_TREE_SSLCERT)
-						{
-							sslcert_accept(twin->ssl_data);
-							ami_tree_close(twin);
-							return TRUE;
-						}
-						else tree_launch_selected(twin->tree, true);
+						sslcert_accept(twin->ssl_data);
+						ami_tree_close(twin);
+						return TRUE;
 					break;
 
 					case GID_CANCEL:
 						sslcert_reject(twin->ssl_data);
 						ami_tree_close(twin);
 						return TRUE;
-					break;
-
-					case GID_DEFAULT:
-						hotlist_set_default_folder(false);
-					break;
-
-					case GID_DEL:
-						switch(twin->type)
-						{
-							case AMI_TREE_HISTORY:
-								history_global_delete_selected();
-							break;
-							case AMI_TREE_COOKIES:
-								cookies_delete_selected();
-							break;
-							case AMI_TREE_HOTLIST:
-								hotlist_delete_selected();
-							break;
-						}
 					break;
 				}
 			break;
@@ -847,10 +753,11 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					(twin->win->MouseY - bbox->Top >=0) &&
 					(twin->win->MouseY - bbox->Height - bbox->Top <=0))
 				{
-					if(twin->rmbtrapped == FALSE)
+					if((twin->type != AMI_TREE_SSLCERT) &&
+						(twin->rmbtrapped == FALSE))
 					{
 						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)TRUE, sizeof(BOOL));
-						twin->rmbtrapped = FALSE;
+						twin->rmbtrapped = TRUE;
 					}
 				}
 				else
@@ -858,7 +765,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 					if(twin->rmbtrapped == TRUE)
 					{
 						SetWindowAttr(twin->win, WA_RMBTrap, (APTR)(BOOL)FALSE, sizeof(BOOL));
-						twin->rmbtrapped = TRUE;
+						twin->rmbtrapped = FALSE;
 					}
 				}
 

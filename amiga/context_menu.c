@@ -44,6 +44,7 @@
 #include "desktop/selection.h"
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
+#include "desktop/tree_url_node.h"
 #include "render/box.h"
 #include "render/form.h"
 #include "utils/utf8.h"
@@ -943,6 +944,7 @@ void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 	struct node *root = tree_get_root(tree);
 	struct node *sel_node = tree_get_selected_node(root);
 	bool has_selection = tree_node_has_selection(root);
+	bool menu_content = false;
 
 	if(ctxmenuobj) DisposeObject(ctxmenuobj);
 
@@ -964,15 +966,61 @@ void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 				PMIA_UserData, NULL,
 			TAG_DONE),
 		~0);
+
+		menu_content = true;
 	}
 
-
 	if(type == AMI_TREE_HOTLIST) {
-		IDoMethod(ctxmenuobj, PM_INSERT,
-			NewObject(POPUPMENU_GetItemClass(), NULL,
-				PMIA_Title, ~0,
-			TAG_DONE),
-		~0);
+		if(menu_content == true) {
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, ~0,
+				TAG_DONE),
+			~0);
+
+			menu_content = false;
+		}
+
+		if(has_selection && (sel_node != NULL)) {
+			if(tree_node_is_folder(sel_node) == true) {
+				IDoMethod(ctxmenuobj, PM_INSERT,
+					NewObject(POPUPMENU_GetItemClass(), NULL,
+						PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_EDITFOLDER],
+						PMIA_ID, CMID_TREE_EDITFOLDER,
+						PMIA_UserData, NULL,
+					TAG_DONE),
+				~0);
+			}
+			else
+			{
+				IDoMethod(ctxmenuobj, PM_INSERT,
+					NewObject(POPUPMENU_GetItemClass(), NULL,
+						PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_EDITTITLE],
+						PMIA_ID, CMID_TREE_EDITTITLE,
+						PMIA_UserData, sel_node,
+					TAG_DONE),
+				~0);
+
+				IDoMethod(ctxmenuobj, PM_INSERT,
+					NewObject(POPUPMENU_GetItemClass(), NULL,
+						PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_EDITLINK],
+						PMIA_ID, CMID_TREE_EDITLINK,
+						PMIA_UserData, sel_node,
+					TAG_DONE),
+				~0);
+			}
+			menu_content = true;
+		}
+
+		if(menu_content == true) {
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, ~0,
+				TAG_DONE),
+			~0);
+
+			menu_content = false;
+		}
 
 		IDoMethod(ctxmenuobj, PM_INSERT,
 			NewObject(POPUPMENU_GetItemClass(), NULL,
@@ -989,9 +1037,84 @@ void ami_context_menu_show_tree(struct tree *tree, struct Window *win, int type)
 				PMIA_UserData, NULL,
 			TAG_DONE),
 		~0);
+
+		if(has_selection && (sel_node != NULL) &&
+			(tree_node_is_folder(sel_node) == true)) {
+
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, ~0,
+				TAG_DONE),
+			~0);
+
+			if(tree_node_is_default(sel_node) == true)
+			{
+				IDoMethod(ctxmenuobj, PM_INSERT,
+					NewObject(POPUPMENU_GetItemClass(), NULL,
+						PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_CLEARDEFAULT],
+						PMIA_ID, CMID_TREE_CLEARDEFAULT,
+						PMIA_UserData, NULL,
+					TAG_DONE),
+				~0);
+			}
+			else
+			{
+				IDoMethod(ctxmenuobj, PM_INSERT,
+					NewObject(POPUPMENU_GetItemClass(), NULL,
+						PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_SETDEFAULT],
+						PMIA_ID, CMID_TREE_SETDEFAULT,
+						PMIA_UserData, NULL,
+					TAG_DONE),
+				~0);
+			}
+		}
+
+		menu_content = true;
 	}
 
-	IDoMethod(ctxmenuobj, PM_OPEN, win);
+	if((type == AMI_TREE_HISTORY) && has_selection &&
+		(sel_node != NULL) && (tree_node_is_folder(sel_node) == false)) {
+		if(menu_content == true) {
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, ~0,
+				TAG_DONE),
+			~0);
+		}
+
+		IDoMethod(ctxmenuobj, PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_ADDHOTLIST],
+				PMIA_ID, CMID_TREE_ADDHOTLIST,
+				PMIA_UserData, sel_node,
+			TAG_DONE),
+		~0);
+
+		menu_content = true;
+	}
+
+	if(has_selection) {
+		if(menu_content == true) {
+			IDoMethod(ctxmenuobj, PM_INSERT,
+				NewObject(POPUPMENU_GetItemClass(), NULL,
+					PMIA_Title, ~0,
+				TAG_DONE),
+			~0);
+		}
+
+		IDoMethod(ctxmenuobj, PM_INSERT,
+			NewObject(POPUPMENU_GetItemClass(), NULL,
+				PMIA_Title, (ULONG)ctxmenulab[CMID_TREE_DELETE],
+				PMIA_ID, CMID_TREE_DELETE,
+				PMIA_UserData, root,
+			TAG_DONE),
+		~0);
+
+		menu_content = true;
+	}
+
+	if(menu_content == true)
+		IDoMethod(ctxmenuobj, PM_OPEN, win);
 }
 
 static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR reserved)
@@ -1010,12 +1133,40 @@ static uint32 ami_context_menu_hook_tree(struct Hook *hook, Object *item, APTR r
 				tree_launch_selected(tree, true);
 			break;
 
+			case CMID_TREE_EDITFOLDER:
+				hotlist_edit_selected();
+			break;
+
+			case CMID_TREE_EDITTITLE:
+				tree_url_node_edit_title(tree, userdata);
+			break;
+
+			case CMID_TREE_EDITLINK:
+				tree_url_node_edit_url(tree, userdata);
+			break;
+
 			case CMID_TREE_NEWFOLDER:
 				hotlist_add_folder(true);
 			break;
 
 			case CMID_TREE_NEWITEM:
 				hotlist_add_entry(true);
+			break;
+
+			case CMID_TREE_SETDEFAULT:
+				hotlist_set_default_folder(false);
+			break;
+
+			case CMID_TREE_CLEARDEFAULT:
+				hotlist_set_default_folder(true);
+			break;
+
+			case CMID_TREE_ADDHOTLIST:
+				hotlist_add_page(tree_url_node_get_url(userdata));
+			break;
+
+			case CMID_TREE_DELETE:
+				tree_delete_selected_nodes(tree, userdata);
 			break;
 		}
 	}
