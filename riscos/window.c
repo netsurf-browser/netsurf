@@ -3017,6 +3017,7 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 {
 	int			visible_x, visible_y;
 	int			step_x = 0, step_y = 0;
+	int			toolbar_y;
 	wimp_window_state	state;
 	wimp_pointer		pointer;
 	os_error		*error;
@@ -3035,14 +3036,13 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 		return;
 	}
 
-	visible_x = state.visible.x1 - state.visible.x0 - 32;
-	visible_y = state.visible.y1 - state.visible.y0 - 32;
-
 	toolbar = ro_toolbar_parent_window_lookup(g->window);
 	assert(g == NULL || g->toolbar == NULL || g->toolbar == toolbar);
 
-	if (toolbar != NULL)
-		visible_y -= ro_toolbar_full_height(toolbar);
+	toolbar_y = (toolbar == NULL) ? 0 : ro_toolbar_full_height(toolbar);
+
+	visible_x = state.visible.x1 - state.visible.x0 - 32;
+	visible_y = state.visible.y1 - state.visible.y0 - 32 - toolbar_y;
 
 	error = xwimp_get_pointer_info(&pointer);
 	if (error) {
@@ -3068,8 +3068,10 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 		step_x = visible_x;
 		break;
 	case 0x80000000:
+		step_x = -0x10000000;
 		break;
 	case 0x7fffffff:
+		step_x = 0x10000000;
 		break;
 	default:
 		step_x = (visible_x * (scroll_x>>2)) >> 2;
@@ -3092,8 +3094,10 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 		step_y = -visible_y;
 		break;
 	case 0x80000000:
+		step_y = -0x10000000;
 		break;
 	case 0x7fffffff:
+		step_y = 0x10000000;
 		break;
 	default:
 		step_y = (visible_y * (scroll_y>>2)) >> 2;
