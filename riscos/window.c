@@ -3128,42 +3128,39 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 	if (!handled && g->bw->children == NULL) {
 		switch (step_x) {
 		case SCROLL_TOP:
-			step_x = -0x10000000;
+			state.xscroll -= 0x10000000;
 			break;
 		case SCROLL_BOTTOM:
-			step_x = 0x10000000;
+			state.xscroll += 0x10000000;
 			break;
 		case SCROLL_PAGE_UP:
-			step_x = - visible_x;
+			state.xscroll -= visible_x;
 			break;
 		case SCROLL_PAGE_DOWN:
-			step_x = visible_x;
+			state.xscroll += visible_x;
 			break;
 		default:
-			step_x = 2 * step_x;
+			state.xscroll += 2 * step_x;
 			break;
 		}
 
 		switch (step_y) {
 		case SCROLL_TOP:
-			step_y = 0x10000000;
+			state.yscroll += 0x10000000;
 			break;
 		case SCROLL_BOTTOM:
-			step_y = -0x10000000;
+			state.yscroll -= 0x10000000;
 			break;
 		case SCROLL_PAGE_UP:
-			step_y = visible_y;
+			state.yscroll += visible_y;
 			break;
 		case SCROLL_PAGE_DOWN:
-			step_y = -visible_y;
+			state.yscroll -= visible_y;
 			break;
 		default:
-			step_y = -2 * step_y;
+			state.yscroll -= 2 * step_y;
 			break;
 		}
-
-		state.xscroll += step_x;
-		state.yscroll += step_y;
 
 		error = xwimp_open_window((wimp_open *) &state);
 		if (error) {
