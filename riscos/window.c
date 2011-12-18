@@ -47,6 +47,7 @@
 #include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/cookies.h"
+#include "desktop/scrollbar.h"
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
@@ -3054,24 +3055,24 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 
 	switch (scroll_x) {
 	case wimp_SCROLL_PAGE_LEFT:
-		step_x = -visible_x;
+		step_x = SCROLL_PAGE_DOWN;
 		break;
 	case wimp_SCROLL_AUTO_LEFT:
 	case wimp_SCROLL_COLUMN_LEFT:
-		step_x = -32;
+		step_x = -16;
 		break;
 	case wimp_SCROLL_AUTO_RIGHT:
 	case wimp_SCROLL_COLUMN_RIGHT:
-		step_x = 32;
+		step_x = 16;
 		break;
 	case wimp_SCROLL_PAGE_RIGHT:
-		step_x = visible_x;
+		step_x = SCROLL_PAGE_UP;
 		break;
 	case 0x80000000:
-		step_x = -0x10000000;
+		step_x = SCROLL_BOTTOM;
 		break;
 	case 0x7fffffff:
-		step_x = 0x10000000;
+		step_x = SCROLL_TOP;
 		break;
 	default:
 		step_x = (visible_x * (scroll_x>>2)) >> 2;
@@ -3080,27 +3081,27 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 
 	switch (scroll_y) {
 	case wimp_SCROLL_PAGE_UP:
-		step_y = visible_y;
+		step_y = SCROLL_PAGE_UP;
 		break;
 	case wimp_SCROLL_AUTO_UP:
 	case wimp_SCROLL_LINE_UP:
-		step_y = 32;
+		step_y = -16;
 		break;
 	case wimp_SCROLL_AUTO_DOWN:
 	case wimp_SCROLL_LINE_DOWN:
-		step_y = -32;
+		step_y = 16;
 		break;
 	case wimp_SCROLL_PAGE_DOWN:
-		step_y = -visible_y;
+		step_y = SCROLL_PAGE_DOWN;
 		break;
 	case 0x80000000:
-		step_y = -0x10000000;
+		step_y = SCROLL_BOTTOM;
 		break;
 	case 0x7fffffff:
-		step_y = 0x10000000;
+		step_y = SCROLL_TOP;
 		break;
 	default:
-		step_y = (visible_y * (scroll_y>>2)) >> 2;
+		step_y = -((visible_y * (scroll_y>>2)) >> 2);
 		break;
 	}
 
@@ -3117,7 +3118,7 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 			ro_gui_window_to_window_pos(g,
 			pointer.pos.x, pointer.pos.y, &pos))
 		handled = browser_window_scroll_at_point(g->bw, pos.x, pos.y,
-				step_x / 2, -step_y / 2);
+				step_x, step_y);
 
 	/* If the core didn't do the scrolling, handle it via the Wimp.
 	 * Windows which contain frames can only be scrolled by the core,
@@ -3125,6 +3126,42 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 	 */
 
 	if (!handled && g->bw->children == NULL) {
+		switch (step_x) {
+		case SCROLL_TOP:
+			step_x = -0x10000000;
+			break;
+		case SCROLL_BOTTOM:
+			step_x = 0x10000000;
+			break;
+		case SCROLL_PAGE_UP:
+			step_x = - visible_x;
+			break;
+		case SCROLL_PAGE_DOWN:
+			step_x = visible_x;
+			break;
+		default:
+			step_x = 2 * step_x;
+			break;
+		}
+
+		switch (step_y) {
+		case SCROLL_TOP:
+			step_y = 0x10000000;
+			break;
+		case SCROLL_BOTTOM:
+			step_y = -0x10000000;
+			break;
+		case SCROLL_PAGE_UP:
+			step_y = visible_y;
+			break;
+		case SCROLL_PAGE_DOWN:
+			step_y = -visible_y;
+			break;
+		default:
+			step_y = -2 * step_y;
+			break;
+		}
+
 		state.xscroll += step_x;
 		state.yscroll += step_y;
 
