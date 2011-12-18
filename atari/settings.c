@@ -625,7 +625,7 @@ static void apply_settings( void )
 	option_memory_cache_size = tmp_option_memory_cache_size * 100000;
 
 	/* "Browser" tab: */
-	option_target_blank = OBJ_SELECTED(CHOICES_CB_DISABLE_POPUP_WINDOWS);
+	option_target_blank = !OBJ_SELECTED(CHOICES_CB_DISABLE_POPUP_WINDOWS);
 	option_block_ads = OBJ_SELECTED(CHOICES_CB_HIDE_ADVERTISEMENT);
 	option_accept_language = ObjcString( dlgtree, CHOICES_BT_SEL_LOCALE, NULL);
 	option_expire_url = atoi(ObjcString( dlgtree, CHOICES_EDIT_HISTORY_AGE,
