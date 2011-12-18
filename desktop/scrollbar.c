@@ -461,6 +461,30 @@ bool scrollbar_scroll(struct scrollbar *s, int change)
 		/* zero scroll step, or unscrollable */
 		return false;
 
+	/* Convert named change values to appropriate pixel offset value */
+	switch (change) {
+	case SCROLL_TOP:
+		change = -s->full_size;
+		break;
+
+	case SCROLL_PAGE_UP:
+		change = -s->visible_size;
+		break;
+
+	case SCROLL_PAGE_DOWN:
+		change = s->visible_size;
+		break;
+
+	case SCROLL_BOTTOM:
+		change = s->full_size;
+		break;
+
+	default:
+		/* Change value is already a pixel offset */
+		break;
+	}
+
+	/* Get new offset */
 	if (s->offset + change > s->full_size - s->visible_size)
 		s->offset = s->full_size - s->visible_size;
 	else if (s->offset + change < 0)
@@ -472,6 +496,7 @@ bool scrollbar_scroll(struct scrollbar *s, int change)
 		/* Nothing happened */
 		return false;
 
+	/* Update scrollbar */
 	well_length = s->length - 2 * SCROLLBAR_WIDTH;
 	s->bar_pos = (s->full_size < 1) ? 0 :
 			((well_length * s->offset) / s->full_size);
