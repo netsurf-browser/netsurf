@@ -77,4 +77,7 @@ void ro_gui_wimp_update_window_furniture(wimp_w w, wimp_window_flags bic_mask,
 		wimp_window_flags xor_mask);
 bool ro_gui_wimp_check_window_furniture(wimp_w w, wimp_window_flags mask);
 
+void ro_gui_scroll(wimp_scroll *scroll);
+
 #endif
+

@@ -1032,8 +1032,13 @@ void ro_gui_handle_event(wimp_event_no event, wimp_block *block)
 			ro_gui_menu_selection(&(block->selection));
 			break;
 
+		/* Scroll requests fall back to a generic handler because we
+		 * might get these events for any window from a scroll-wheel.
+		 */
+
 		case wimp_SCROLL_REQUEST:
-			ro_gui_wimp_event_scroll_window(&(block->scroll));
+			if (!ro_gui_wimp_event_scroll_window(&(block->scroll)))
+				ro_gui_scroll(&(block->scroll));
 			break;
 
 		case wimp_USER_MESSAGE:

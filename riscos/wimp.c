@@ -1107,3 +1107,60 @@ int ro_gui_strncmp(const char *s1, const char *s2, size_t len)
 	}
 	return 0;
 }
+
+
+/**
+ * Generic window scroll event handler.
+ *
+ * \param  *scroll		Pointer to Scroll Event block.
+ */
+
+void ro_gui_scroll(wimp_scroll *scroll)
+{
+	os_error	*error;
+	int		x = scroll->visible.x1 - scroll->visible.x0 - 32;
+	int		y = scroll->visible.y1 - scroll->visible.y0 - 32;
+
+	switch (scroll->xmin) {
+	case wimp_SCROLL_PAGE_LEFT:
+		scroll->xscroll -= x;
+		break;
+	case wimp_SCROLL_COLUMN_LEFT:
+		scroll->xscroll -= 100;
+		break;
+	case wimp_SCROLL_COLUMN_RIGHT:
+		scroll->xscroll += 100;
+		break;
+	case wimp_SCROLL_PAGE_RIGHT:
+		scroll->xscroll += x;
+		break;
+	default:
+		scroll->xscroll += (x * (scroll->xmin>>2)) >> 2;
+		break;
+	}
+
+	switch (scroll->ymin) {
+	case wimp_SCROLL_PAGE_UP:
+		scroll->yscroll += y;
+		break;
+	case wimp_SCROLL_LINE_UP:
+		scroll->yscroll += 100;
+		break;
+	case wimp_SCROLL_LINE_DOWN:
+		scroll->yscroll -= 100;
+		break;
+	case wimp_SCROLL_PAGE_DOWN:
+		scroll->yscroll -= y;
+		break;
+	default:
+		scroll->yscroll += (y * (scroll->ymin>>2)) >> 2;
+		break;
+	}
+
+	error = xwimp_open_window((wimp_open *) scroll);
+	if (error) {
+		LOG(("xwimp_open_window: 0x%x: %s",
+				error->errnum, error->errmess));
+	}
+}
+
