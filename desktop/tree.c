@@ -155,9 +155,6 @@ struct node {
 };
 
 struct tree {
-	/* These coordinates are only added to the coordinates passed to the
-	   plotters. This means they are invisible to the tree, what has to be
-	   taken into account i.e in keyboard/mouse event passing */
 	struct node *root;		/* Tree root element */
 	int width;			/* Tree width */
 	int height;			/* Tree height */
