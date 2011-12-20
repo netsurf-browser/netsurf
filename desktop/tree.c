@@ -1132,7 +1132,8 @@ static void tree_delete_node_internal(struct tree *tree, struct node *node,
  */
 void tree_delete(struct tree *tree)
 {
-	tree_set_redraw(tree, false);
+	tree->redraw = false;
+
 	if (tree->root->child != NULL)
 		tree_delete_node_internal(tree, tree->root->child, true);
 
@@ -1164,11 +1165,19 @@ bool tree_get_redraw(struct tree *tree)
 void tree_delete_node(struct tree *tree, struct node *node, bool siblings)
 {
 	int y = node->box.y;
+	int height = tree->height;
+	bool redraw_setting = tree->redraw;
+
+	tree->redraw = false;
+
 	tree_delete_node_internal(tree, node, siblings);
 	tree_recalculate_node_positions(tree, tree->root);
+
+	tree->redraw = redraw_setting;
+
 	if (tree->redraw)
-		tree->callbacks->redraw_request(0, y, tree->width, tree->height,
-						tree->client_data);
+		tree->callbacks->redraw_request(0, y,
+				tree->width, height, tree->client_data);
 	tree_recalculate_size(tree);
 }
 
@@ -2107,10 +2116,22 @@ struct node_element *tree_node_find_element(struct node *node,
 void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 {
 	struct node *next;
+	int y = node->box.y;
+	int height = tree->height;
+	bool redraw_setting = tree->redraw;
+
+	tree->redraw = false;
 
 	if (node == tree->root) {
 		if (node->child != NULL)
 			tree_delete_selected_nodes(tree, node->child);
+
+		tree->redraw = redraw_setting;
+
+		if (tree->redraw)
+			tree->callbacks->redraw_request(0, y,
+					tree->width, height,
+					tree->client_data);
 		return;
 	}
 
@@ -2122,6 +2143,13 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 			tree_delete_selected_nodes(tree, node->child);
 		node = next;
 	}
+
+	tree->redraw = redraw_setting;
+
+	if (tree->redraw)
+		tree->callbacks->redraw_request(0, y,
+				tree->width, height,
+				tree->client_data);
 }
 
 
