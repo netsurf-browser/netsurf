@@ -25,7 +25,6 @@ extern char * option_atari_font_driver;
 extern int option_atari_font_monochrom;
 extern int option_atari_dither;
 extern int option_atari_transparency;
-extern int option_atari_realtime_move;
 extern char *option_atari_face_sans_serif; /* default sans face */
 extern char *option_atari_face_sans_serif_bold; /* bold sans face */
 extern char *option_atari_face_sans_serif_italic; /* bold sans face */
@@ -49,7 +48,6 @@ char * option_atari_font_driver = (char*)"vdi";\
 int option_atari_font_monochrom = 0;\
 int option_atari_dither = 1;\
 int option_atari_transparency = 1;\
-int option_atari_realtime_move = 0; \
 char *option_atari_face_sans_serif;\
 char *option_atari_face_sans_serif_bold;\
 char *option_atari_face_sans_serif_italic;\
@@ -72,7 +70,6 @@ char *option_tree_icons_path = (char*)"./res/icons";
 	{ "atari_font_monochrom", OPTION_INTEGER, &option_atari_font_monochrom },\
 	{ "atari_transparency", OPTION_INTEGER, &option_atari_transparency },\
 	{ "atari_dither", OPTION_INTEGER, &option_atari_dither },\
-	{ "atari_realtime_move", OPTION_INTEGER, &option_atari_realtime_move },\
 	{ "atari_editor", OPTION_STRING, &option_atari_editor },\
 	{ "font_face_sans_serif", OPTION_STRING, &option_atari_face_sans_serif },\
 	{ "font_face_sans_serif_bold", OPTION_STRING, &option_atari_face_sans_serif_bold },\

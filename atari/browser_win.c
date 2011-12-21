@@ -154,20 +154,16 @@ int window_create( struct gui_window * gw,
 	/* Event Handlers: */
 	EvntDataAttach( gw->root->handle, WM_CLOSED, evnt_window_close, gw );
 	/* capture resize/move events so we can handle that manually */
-	EvntDataAttach( gw->root->handle, WM_SIZED, evnt_window_resize, gw );
-	if( !option_atari_realtime_move ) {
-		EvntDataAttach( gw->root->handle, WM_MOVED, evnt_window_move, gw );
-	} else {
-		EvntDataAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, gw, EV_BOT );
-	}
-	EvntDataAttach( gw->root->handle, WM_FORCE_MOVE, evnt_window_rt_resize, gw );
-	EvntDataAttach( gw->root->handle, AP_DRAGDROP, evnt_window_dd, gw );
+	EvntDataAdd( gw->root->handle, WM_SIZED, evnt_window_rt_resize, gw, EV_BOT );
+	EvntDataAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, gw, EV_BOT );
+	EvntDataAdd( gw->root->handle, WM_FULLED, evnt_window_rt_resize, gw, EV_BOT );
 	EvntDataAdd( gw->root->handle, WM_DESTROY,evnt_window_destroy, gw, EV_TOP );
 	EvntDataAdd( gw->root->handle, WM_ARROWED,evnt_window_arrowed, gw, EV_TOP );
 	EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, gw, EV_BOT);
 	EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, gw, EV_BOT);
 	EvntDataAdd( gw->root->handle, WM_ICONIFY, evnt_window_iconify, gw, EV_BOT);
 	EvntDataAdd( gw->root->handle, WM_UNICONIFY, evnt_window_uniconify, gw, EV_BOT);
+	EvntDataAttach( gw->root->handle, AP_DRAGDROP, evnt_window_dd, gw );
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
 	EvntDataAttach( gw->root->handle, WM_SLIDEXY, evnt_window_slider, gw );
 
@@ -518,51 +514,11 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 	}
 }
 
-static void __CDECL evnt_window_move( WINDOW *win, short buff[8], void * data )
-{
-	short wx, wy, wh, ww, nx, ny;
-	if( option_atari_realtime_move  ) {
-		std_mvd( win, buff, &app );
-		evnt_window_rt_resize( win, buff, data );
-	} else {
-		wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
-		if( graf_dragbox( ww, wh, wx, wy, app.x-ww, app.y, app.w+ww, app.h+wh, &nx, &ny )){
-			buff[4] = nx;
-			buff[5] = ny;
-			buff[6] = ww;
-			buff[7] = wh;
-			std_mvd( win, buff, &app );
-			evnt_window_rt_resize( win, buff, data );
-		}
-	}
-}
-
-void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data )
-{
-	short wx, wy, wh, ww, nw, nh;
-	short r;
-	wind_get( win->handle, WF_CURRXYWH, &wx, &wy, &ww, &wh );
-	r = graf_rubberbox(wx, wy, 20, 20, &nw, &nh);
-	if( nw < 40 && nw < 40 )
-		return;
-	buff[4] = wx;
-	buff[5] = wy;
-	buff[6] = nw;
-	buff[7] = nh;
-	std_szd( win, buff, &app );
-	evnt_window_rt_resize( win, buff, data );
-}
-
 /* perform the actual resize */
 static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * data )
 {
 	short x,y,w,h;
 	struct gui_window * gw;
-
-	if(buff[0] == WM_FORCE_MOVE ) {
-		std_mvd(win, buff, &app);
-		std_szd(win, buff, &app);
-	}
 
 	wind_get( win->handle, WF_CURRXYWH, &x, &y, &w, &h );
 	gw = (struct gui_window *)data;

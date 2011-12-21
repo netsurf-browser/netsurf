@@ -21,8 +21,6 @@
 
 #include <windom.h>
 
-#define WM_FORCE_MOVE 1024 + 3
-
 struct point_s {
 	int x;
 	int y;
