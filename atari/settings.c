@@ -73,7 +73,6 @@ static int buts[] = {
 static void toggle_objects( void );
 static void display_settings( void );
 static void apply_settings( void );
-static void unload_settings( void );
 static void __CDECL onclose( WINDOW *win, short buff[8] );
 static void __CDECL
 	closeform( WINDOW *win, int index, int unused, void *unused2);
