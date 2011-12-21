@@ -99,8 +99,6 @@ const char * cfg_homepage_url;
 /* path to choices file: */
 char options[PATH_MAX];
 
-extern GEM_PLOTTER plotter;
-
 
 void gui_poll(bool active)
 {
@@ -1012,7 +1010,6 @@ int main(int argc, char** argv)
 	graf_mouse( ARROW , NULL);
 	netsurf_main_loop();
 	netsurf_exit();
-
 	LOG(("ApplExit"));
 	ApplExit();
 #ifdef WITH_DBG_LOGFILE
