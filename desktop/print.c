@@ -126,6 +126,7 @@ bool print_draw_next_page(const struct printer *printer,
 	struct content_redraw_data data;
 	struct redraw_context ctx = {
 		.interactive = false,
+		.background_images = !option_remove_backgrounds,
 		.plot = printer->plotter
 	};
 
