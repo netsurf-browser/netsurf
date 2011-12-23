@@ -19,7 +19,7 @@
 /** \file
  * MIME type sniffer (implementation)
  *
- * Spec version: 2011-09-26
+ * Spec version: 2011-11-27
  */
 
 #include<string.h>
@@ -175,9 +175,9 @@ static nserror mimesniff__match_mp4(const uint8_t *data, size_t len,
 	 * which is decidely unlikely.
 	 */
 
-	/* Sniffing spec says 4; we use 12, as this is the minimum number of
-	 * octets needed to sniff useful information out of an 'ftyp' box
-	 * (i.e. the size, type, and major_brand words). */
+	/* 12 reflects the minimum number of octets needed to sniff useful 
+	 * information out of an 'ftyp' box (i.e. the size, type, 
+	 * and major_brand words). */
 	if (len < 12)
 		return NSERROR_NOT_FOUND;
 
@@ -189,12 +189,12 @@ static nserror mimesniff__match_mp4(const uint8_t *data, size_t len,
 		return NSERROR_NOT_FOUND;
 
 	/* Ensure this is an 'ftyp' box */
-	if (data[5] != 'f' || data[6] != 't' || 
-			data[7] != 'y' || data[8] != 'p')
+	if (data[4] != 'f' || data[5] != 't' || 
+			data[6] != 'y' || data[7] != 'p')
 		return NSERROR_NOT_FOUND;
 
 	/* Check if major brand begins with 'mp4' */
-	if (data[9] == 'm' && data[10] == 'p' && data[11] == '4') {
+	if (data[8] == 'm' && data[9] == 'p' && data[10] == '4') {
 		*effective_type = lwc_string_ref(video_mp4);
 		return NSERROR_OK;
 	}
