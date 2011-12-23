@@ -2035,7 +2035,8 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 		.fill_colour = *background_colour,
 	};
 
-	if (html_redraw_printing && option_remove_backgrounds)
+	if ((html_redraw_printing && option_remove_backgrounds) ||
+			ctx->background_images == false)
 		return true;
 
 	plot_content = (background->background != NULL);
