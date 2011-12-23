@@ -193,8 +193,6 @@ void ro_gui_print_prepare(struct gui_window *g)
 		printers_exists = false;
 	}
 
-	print_bg_images = option_background_images;
-
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TO_BOTTOM,
 			true);
 
@@ -274,7 +272,7 @@ bool ro_gui_print_apply(wimp_w w)
 		print_max_sheets = sheets;
 	else
 		print_max_sheets = -1;
-	option_background_images = ro_gui_get_icon_selected_state(dialog_print,
+	print_bg_images = ro_gui_get_icon_selected_state(dialog_print,
 			ICON_PRINT_BG_IMAGES);
 
 	print_send_printsave(ro_print_current_window->bw->current_content);
@@ -521,7 +519,6 @@ void ro_print_dataload_bounce(wimp_message *m)
 
 void ro_print_cleanup(void)
 {
-	option_background_images = print_bg_images;
 	ro_print_current_window = NULL;
 	print_text_black = false;
 	print_prev_message = 0;
@@ -686,7 +683,7 @@ bool print_document(struct gui_window *g, const char *filename)
 			/* TODO: turn knockout off for print */
 			struct redraw_context ctx = {
 				.interactive = false,
-				.background_images = false,
+				.background_images = print_bg_images,
 				.plot = &ro_plotters
 			};
 
