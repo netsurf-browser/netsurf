@@ -24,6 +24,7 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
+#include "desktop/scrollbar.h"
 #include "desktop/searchweb.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
@@ -1020,6 +1021,75 @@ bool ami_mouse_to_ns_coords(struct gui_window_2 *gwin, int *x, int *y,
 	return true;	
 }
 
+void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
+{
+	struct IBox *bbox;
+	int x, y;
+
+	GetAttr(SPACE_AreaBox,
+		(Object *)gwin->objects[GID_BROWSER],
+		(ULONG *)&bbox);
+
+	if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
+	{
+		if(browser_window_scroll_at_point(gwin->bw, x, y,
+			xs, ys) == false)
+		{
+			gui_window_get_scroll(gwin->bw->window,
+				&gwin->bw->window->scrollx,
+				&gwin->bw->window->scrolly);
+
+			switch(xs)
+			{
+				case SCROLL_PAGE_UP:
+					xs = gwin->bw->window->scrollx - bbox->Width;
+				break;
+
+				case SCROLL_PAGE_DOWN:
+					xs = gwin->bw->window->scrollx + bbox->Width;
+				break;
+
+				case SCROLL_TOP:
+					xs = 0;
+				break;
+
+				case SCROLL_BOTTOM:
+					xs = content_get_width(gwin->bw->current_content);
+				break;
+
+				default:
+					xs += gwin->bw->window->scrollx;
+				break;
+			}
+
+			switch(ys)
+			{
+				case SCROLL_PAGE_UP:
+					ys = gwin->bw->window->scrolly - bbox->Height;
+				break;
+
+				case SCROLL_PAGE_DOWN:
+					ys = gwin->bw->window->scrolly + bbox->Height;
+				break;
+
+				case SCROLL_TOP:
+					ys = 0;
+				break;
+
+				case SCROLL_BOTTOM:
+					ys = content_get_height(gwin->bw->current_content);
+				break;
+
+				default:
+					ys += gwin->bw->window->scrolly;
+				break;
+			}
+
+			gui_window_set_scroll(gwin->bw->window, xs, ys);
+		}
+	}
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
@@ -1579,72 +1649,46 @@ void ami_handle_msg(void)
 					{
 						if(!browser_window_key_press(gwin->bw, nskey))
 						{
-							GetAttr(SPACE_AreaBox,
-								(Object *)gwin->objects[GID_BROWSER],
-								(ULONG *)&bbox);
-
-							gui_window_get_scroll(gwin->bw->window,
-								&gwin->bw->window->scrollx,
-								&gwin->bw->window->scrolly);
-
 							switch(nskey)
 							{
 								case KEY_UP:
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx,
-										gwin->bw->window->scrolly - NSA_KBD_SCROLL_PX);
+									ami_gui_scroll_internal(gwin, 0, -NSA_KBD_SCROLL_PX);
 								break;
 
 								case KEY_DOWN:
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx,
-										gwin->bw->window->scrolly + NSA_KBD_SCROLL_PX);
+									ami_gui_scroll_internal(gwin, 0, +NSA_KBD_SCROLL_PX);
 								break;
 
 								case KEY_LEFT:
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx - NSA_KBD_SCROLL_PX,
-										gwin->bw->window->scrolly);
+									ami_gui_scroll_internal(gwin, -NSA_KBD_SCROLL_PX, 0);
 								break;
 
 								case KEY_RIGHT:
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx + NSA_KBD_SCROLL_PX,
-										gwin->bw->window->scrolly);
+									ami_gui_scroll_internal(gwin, +NSA_KBD_SCROLL_PX, 0);
 								break;
 
 								case KEY_PAGE_UP:
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx,
-										gwin->bw->window->scrolly - bbox->Height);
+									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_UP);
 								break;
 
 								case KEY_PAGE_DOWN:
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx,
-										gwin->bw->window->scrolly + bbox->Height);
+									ami_gui_scroll_internal(gwin, 0, SCROLL_PAGE_DOWN);
 								break;
 
 								case KEY_LINE_START: // page left
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx - bbox->Width,
-										gwin->bw->window->scrolly);
+									ami_gui_scroll_internal(gwin, SCROLL_PAGE_UP, 0);
 								break;
 
 								case KEY_LINE_END: // page right
-									gui_window_set_scroll(gwin->bw->window,
-										gwin->bw->window->scrollx + bbox->Width,
-										gwin->bw->window->scrolly);
+									ami_gui_scroll_internal(gwin, SCROLL_PAGE_DOWN, 0);
 								break;
 
 								case KEY_TEXT_START: // home
-									gui_window_set_scroll(gwin->bw->window, 0, 0);
+									ami_gui_scroll_internal(gwin, SCROLL_TOP, SCROLL_TOP);
 								break;
 
 								case KEY_TEXT_END: // end
-									gui_window_set_scroll(gwin->bw->window, 
-										content_get_width(gwin->bw->current_content),
-										content_get_height(gwin->bw->current_content));
+									ami_gui_scroll_internal(gwin, SCROLL_BOTTOM, SCROLL_BOTTOM);
 								break;
 
 								case KEY_WORD_RIGHT: // alt+right
@@ -3804,13 +3848,9 @@ bool gui_window_box_scroll_start(struct gui_window *g,
 void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg) 
 {
 	ULONG gid;
-	int x, y;
 	struct gui_window_2 *gwin = hook->h_Data;
 	struct IntuiWheelData *wheel;
 	Object *reqrefresh = NULL;
-
-	gui_window_get_scroll(gwin->bw->window,
-		&gwin->bw->window->scrollx,&gwin->bw->window->scrolly);
 
 	switch(msg->Class)
 	{
@@ -3835,16 +3875,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 			{
 				wheel = (struct IntuiWheelData *)msg->IAddress;
 
-				if(ami_mouse_to_ns_coords(gwin, &x, &y, -1, -1) == true)
-				{
-					if(browser_window_scroll_at_point(gwin->bw, x, y,
-						wheel->WheelX * 50, wheel->WheelY * 50) == false)
-					{
-						gui_window_set_scroll(gwin->bw->window,
-							gwin->bw->window->scrollx + (wheel->WheelX * 50),
-							gwin->bw->window->scrolly + (wheel->WheelY * 50));
-					}
-				}
+				ami_gui_scroll_internal(gwin, wheel->WheelX * 50, wheel->WheelY * 50);
 			}
 		break;
 
