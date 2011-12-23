@@ -44,6 +44,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	int plot_height;
 	struct redraw_context ctx = {
 		.interactive = false,
+		.background_images = true,
 		.plot = &amiplot
 	};
 

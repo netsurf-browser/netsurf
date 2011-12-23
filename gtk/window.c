@@ -145,6 +145,7 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	struct rect clip;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &nsgtk_plotters
 	};
 

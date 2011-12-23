@@ -88,6 +88,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	_kernel_oserror *error;
 	struct redraw_context ctx = {
 		.interactive = false,
+		.background_images = true,
 		.plot = &ro_plotters
 	};
 

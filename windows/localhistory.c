@@ -81,6 +81,7 @@ static void nsws_localhistory_up(struct nsws_localhistory *l, struct gui_window 
 	HDC tmp_hdc;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &win_plotters
 	};
 
@@ -274,6 +275,7 @@ nsws_localhistory_event_callback(HWND hwnd, UINT msg,
 		HDC hdc, tmp_hdc;
 		struct redraw_context ctx = {
 			.interactive = true,
+			.background_images = true,
 			.plot = &win_plotters
 		};
 

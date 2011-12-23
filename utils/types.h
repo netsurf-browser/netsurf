@@ -39,6 +39,9 @@ struct redraw_context {
 	 *  etc.  Should be off for printing. */
 	bool interactive;
 
+	/** Render background images.  May want it off for printing. */
+	bool background_images;
+
 	/** Current plotters, must be assigned before use. */
 	const struct plotter_table *plot;
 };

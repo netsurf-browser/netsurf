@@ -304,6 +304,7 @@ fb_redraw(fbtk_widget_t *widget,
 	struct rect clip;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &fb_plotters
 	};
 

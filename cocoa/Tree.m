@@ -127,6 +127,7 @@ static void tree_get_window_dimensions( int *width, int *height, void *data )
 {
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &cocoa_plotters
 	};
 

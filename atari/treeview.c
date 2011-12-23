@@ -274,6 +274,7 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 			struct redraw_context ctx = {
 				.interactive = true,
+				.background_images = true,
 				.plot = &atari_plotters
 			};
 

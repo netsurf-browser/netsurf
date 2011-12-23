@@ -148,6 +148,7 @@ static inline NSRect cocoa_get_caret_rect( BrowserView *view )
 
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &cocoa_plotters
 	};
 	

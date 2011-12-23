@@ -1218,6 +1218,7 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	int pos_x, pos_y;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &amiplot
 	};
 

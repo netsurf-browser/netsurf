@@ -73,6 +73,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	struct redraw_context ctx;
 	ctx.interactive = false;
+	ctx.background_images = true;
 	ctx.plot = &nsbeos_plotters;
 
 	assert(content);

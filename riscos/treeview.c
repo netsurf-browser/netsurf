@@ -445,6 +445,7 @@ void ro_treeview_redraw_loop(wimp_draw *redraw, ro_treeview *tv, osbool more)
 	os_error *error;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &ro_plotters
 	};
 

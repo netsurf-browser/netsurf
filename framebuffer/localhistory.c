@@ -62,6 +62,7 @@ localhistory_redraw(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &fb_plotters
 	};
 

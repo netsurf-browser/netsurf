@@ -686,6 +686,7 @@ bool print_document(struct gui_window *g, const char *filename)
 			/* TODO: turn knockout off for print */
 			struct redraw_context ctx = {
 				.interactive = false,
+				.background_images = false,
 				.plot = &ro_plotters
 			};
 
@@ -806,6 +807,7 @@ const char *print_declare_fonts(hlcache_handle *h)
 	os_error *error;
 	struct redraw_context ctx = {
 		.interactive = false,
+		.background_images = false,
 		.plot = &print_fonts_plotters
 	};
 

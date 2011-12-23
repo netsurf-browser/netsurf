@@ -63,6 +63,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	struct redraw_context ctx = {
 		.interactive = false,
+		.background_images = true,
 		.plot = &nsgtk_plotters
 	};
 

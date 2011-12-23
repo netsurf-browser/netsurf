@@ -159,6 +159,7 @@ void ami_history_redraw(struct history_window *hw)
 	ULONG xs,ys;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &amiplot
 	};
 

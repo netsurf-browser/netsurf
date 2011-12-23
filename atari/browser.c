@@ -619,6 +619,7 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
 
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &atari_plotters
 	};
 

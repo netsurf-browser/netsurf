@@ -584,6 +584,7 @@ void ro_gui_url_bar_redraw(struct url_bar *url_bar, wimp_draw *redraw)
 		struct content_redraw_data data;
 		struct redraw_context ctx = {
 			.interactive = true,
+			.background_images = true,
 			.plot = &ro_plotters
 		};
 

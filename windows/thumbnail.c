@@ -40,6 +40,7 @@ thumbnail_create(hlcache_handle *content,
 	HDC hdc, bufferdc, minidc;
 	struct redraw_context ctx = {
 		.interactive = false,
+		.background_images = true,
 		.plot = &win_plotters
 	};
 

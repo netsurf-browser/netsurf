@@ -307,6 +307,7 @@ nsws_drawable_paint(struct gui_window *gw, HWND hwnd)
 	PAINTSTRUCT ps;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &win_plotters
 	};
 

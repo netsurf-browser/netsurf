@@ -1512,6 +1512,7 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &nsgtk_plotters
 	};
 

@@ -1387,6 +1387,7 @@ gboolean nsbeos_history_expose_event(beosWidget *widget,
 
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &nsbeos_plotters
 	};
 

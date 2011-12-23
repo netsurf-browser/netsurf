@@ -171,6 +171,7 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 	struct tree *tree = (struct tree *) g;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &nsgtk_plotters
 	};
 	int x, y, width, height;

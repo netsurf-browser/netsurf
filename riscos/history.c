@@ -141,6 +141,7 @@ void ro_gui_history_redraw(wimp_draw *redraw)
 	os_error *error;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &ro_plotters
 	};
 

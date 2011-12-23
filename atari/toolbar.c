@@ -419,6 +419,7 @@ void tb_url_redraw( struct gui_window * gw )
 
 			const struct redraw_context ctx = {
 				.interactive = true,
+				.background_images = true,
 				.plot = &atari_plotters
 			};
 			short todo[4];

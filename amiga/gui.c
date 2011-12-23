@@ -3170,6 +3170,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 	int posx, posy;
 	struct redraw_context ctx = {
 		.interactive = true,
+		.background_images = true,
 		.plot = &amiplot
 	};
 
@@ -3373,6 +3374,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 		struct rect clip;
 		struct redraw_context ctx = {
 			.interactive = true,
+			.background_images = true,
 			.plot = &amiplot
 		};
 

@@ -449,6 +449,7 @@ monkey_window_handle_redraw(int argc, char **argv)
   struct rect clip;
   struct redraw_context ctx = {
     .interactive = true,
+    .background_images = true,
     .plot = &monkey_plotters
   };
   

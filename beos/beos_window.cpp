@@ -783,7 +783,7 @@ void nsbeos_window_expose_event(BView *view, gui_window *g, BMessage *message)
 	float scale = g->bw->scale;
 	struct rect clip;
 
-	struct redraw_context ctx = { true, &nsbeos_plotters };
+	struct redraw_context ctx = { true, true, &nsbeos_plotters };
 
 	assert(g);
 	assert(g->bw);
