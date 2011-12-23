@@ -44,7 +44,6 @@ extern char *option_toolbar_history;
 extern char *option_toolbar_cookies;
 extern bool option_window_stagger;
 extern bool option_window_size_clone;
-extern bool option_background_images;
 extern bool option_buffer_animations;
 extern bool option_buffer_everything;
 extern bool option_open_browser_at_startup;
@@ -84,7 +83,6 @@ char *option_toolbar_history = 0; \
 char *option_toolbar_cookies = 0; \
 bool option_window_stagger = true; \
 bool option_window_size_clone = true; \
-bool option_background_images = true; \
 bool option_buffer_animations = true; \
 bool option_buffer_everything = true; \
 bool option_open_browser_at_startup = false; \
@@ -124,7 +122,6 @@ char *option_external_hotlist_app = 0;
 { "toolbar_cookies",	    OPTION_STRING,  &option_toolbar_cookies }, \
 { "window_stagger",         OPTION_BOOL,    &option_window_stagger }, \
 { "window_size_clone",      OPTION_BOOL,    &option_window_size_clone }, \
-{ "background_images",      OPTION_BOOL,    &option_background_images }, \
 { "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
 { "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
 { "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \

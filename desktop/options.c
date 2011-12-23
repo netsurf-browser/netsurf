@@ -97,6 +97,10 @@ bool option_block_ads = false;
 int option_minimum_gif_delay = 10;
 /** Whether to send the referer HTTP header */
 bool option_send_referer = true;
+/** Whether to fetch foreground images */
+bool option_foreground_images = true;
+/** Whether to fetch background images */
+bool option_background_images = true;
 /** Whether to animate images */
 bool option_animate_images = true;
 /** How many days to retain URL data for */
@@ -262,6 +266,8 @@ struct option_entry_s option_table[] = {
 	{ "block_advertisements", OPTION_BOOL,	&option_block_ads },
 	{ "minimum_gif_delay",	OPTION_INTEGER,	&option_minimum_gif_delay },
 	{ "send_referer",	OPTION_BOOL,	&option_send_referer },
+	{ "foreground_images",	OPTION_BOOL,	&option_foreground_images },
+	{ "background_images",	OPTION_BOOL,	&option_background_images },
 	{ "animate_images",	OPTION_BOOL,	&option_animate_images },
 	{ "expire_url",		OPTION_INTEGER,	&option_expire_url },
 	{ "font_default",	OPTION_INTEGER,	&option_font_default },

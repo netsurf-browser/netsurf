@@ -405,7 +405,8 @@ static bool box_construct_marker(struct box *box, const char *title,
 	}
 
 	if (css_computed_list_style_image(box->style, &image_uri) ==
-			CSS_LIST_STYLE_IMAGE_URI && image_uri != NULL) {
+			CSS_LIST_STYLE_IMAGE_URI && image_uri != NULL &&
+			option_foreground_images == true) {
 		nsurl *url;
 		nserror error;
 
@@ -710,7 +711,8 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 
 	/* Kick off fetch for any background image */
 	if (css_computed_background_image(box->style, &bgimage_uri) == 
-			CSS_BACKGROUND_IMAGE_IMAGE && bgimage_uri != NULL) {
+			CSS_BACKGROUND_IMAGE_IMAGE && bgimage_uri != NULL &&
+			option_background_images == true) {
 		nsurl *url;
 		nserror error;
 
@@ -1378,6 +1380,9 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		box->length = strlen(box->text);
 	}
 
+	if (option_foreground_images == false)
+		return true;
+
 	/* imagemap associated with this image */
 	if (!box_get_attribute(n, "usemap", content, &box->usemap))
 		return false;
@@ -2035,7 +2040,8 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		gadget->type = GADGET_IMAGE;
 
 		if (box->style && css_computed_display(box->style,
-				n->parent == NULL) != CSS_DISPLAY_NONE) {
+				n->parent == NULL) != CSS_DISPLAY_NONE &&
+				option_foreground_images == true) {
 			if ((s = (char *) xmlGetProp(n,
 					(const xmlChar*) "src"))) {
 				error = nsurl_join(content->base_url, s, &url);

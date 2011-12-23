@@ -58,6 +58,8 @@ extern int option_disc_cache_age;
 extern bool option_block_ads;
 extern int option_minimum_gif_delay;
 extern bool option_send_referer;
+extern bool option_foreground_images;
+extern bool option_background_images;
 extern bool option_animate_images;
 extern int option_expire_url;
 extern int option_font_default;		/* a css_font_family */
