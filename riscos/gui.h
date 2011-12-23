@@ -100,7 +100,6 @@ struct gui_window {
 
 	/** Options. */
 	struct {
-		bool background_images;	/**< Display background images. */
 		bool buffer_animations;	/**< Use screen buffering for animations. */
 		bool buffer_everything;	/**< Use screen buffering for everything. */
 	} option;

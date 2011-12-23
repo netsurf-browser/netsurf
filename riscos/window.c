@@ -2330,12 +2330,11 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	/* View Submenu */
 
-	ro_gui_menu_set_entry_shaded(menu, BROWSER_IMAGES_FOREGROUND, true);
-	ro_gui_menu_set_entry_ticked(menu, BROWSER_IMAGES_FOREGROUND, true);
-			/* Not yet implemented. */
+	ro_gui_menu_set_entry_ticked(menu, BROWSER_IMAGES_FOREGROUND,
+			g != NULL && option_foreground_images);
 
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_IMAGES_BACKGROUND,
-			g != NULL && g->option.background_images);
+			g != NULL && option_background_images);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_BUFFER_ANIMS,
 			g == NULL || g->option.buffer_everything);
@@ -2849,12 +2848,15 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case BROWSER_FIND_TEXT:
 		ro_gui_window_action_search(g);
 		break;
+	case BROWSER_IMAGES_FOREGROUND:
+		if (g != NULL)
+			option_foreground_images =
+					!option_foreground_images;
+		break;
 	case BROWSER_IMAGES_BACKGROUND:
-		if (g != NULL) {
-			g->option.background_images =
-					!g->option.background_images;
-			gui_window_redraw_window(g);
-		}
+		if (g != NULL)
+			option_background_images =
+					!option_background_images;
 		break;
 	case BROWSER_BUFFER_ANIMS:
 		if (g != NULL)
@@ -4447,7 +4449,6 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	*/
 	if (!old_gui) {
 		new_bw->scale = ((float)option_scale) / 100;
-		new_gui->option.background_images = option_background_images;
 		new_gui->option.buffer_animations = option_buffer_animations;
 		new_gui->option.buffer_everything = option_buffer_everything;
 	} else {

@@ -32,6 +32,7 @@
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
@@ -192,7 +193,7 @@ void ro_gui_print_prepare(struct gui_window *g)
 		printers_exists = false;
 	}
 
-	print_bg_images = g->option.background_images;
+	print_bg_images = option_background_images;
 
 	ro_gui_set_icon_selected_state(dialog_print, ICON_PRINT_TO_BOTTOM,
 			true);
@@ -273,9 +274,8 @@ bool ro_gui_print_apply(wimp_w w)
 		print_max_sheets = sheets;
 	else
 		print_max_sheets = -1;
-	ro_print_current_window->option.background_images =
-			ro_gui_get_icon_selected_state(dialog_print,
-					ICON_PRINT_BG_IMAGES);
+	option_background_images = ro_gui_get_icon_selected_state(dialog_print,
+			ICON_PRINT_BG_IMAGES);
 
 	print_send_printsave(ro_print_current_window->bw->current_content);
 
@@ -521,9 +521,7 @@ void ro_print_dataload_bounce(wimp_message *m)
 
 void ro_print_cleanup(void)
 {
-	if (ro_print_current_window)
-		ro_print_current_window->option.background_images =
-							print_bg_images;
+	option_background_images = print_bg_images;
 	ro_print_current_window = NULL;
 	print_text_black = false;
 	print_prev_message = 0;
