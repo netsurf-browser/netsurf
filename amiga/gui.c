@@ -3994,13 +3994,21 @@ Object *ami_gui_splash_open(void)
 	SetRPAttrs(win->RPort, RPTAG_APenColor, 0x003F6DFE, TAG_DONE);
 	SetDrMd(win->RPort, JAM1);
 
-	tattr.ta_Name = "DejaVu Serif Oblique.font";
+	tattr.ta_Name = "DejaVu Serif Italic.font";
 	tattr.ta_YSize = 24;
 	tattr.ta_Style = 0;
 	tattr.ta_Flags = 0;
 
 	if(tfont = ami_font_open_disk_font(&tattr))
+	{
 		SetFont(win->RPort, tfont);
+	}
+	else
+	{
+		tattr.ta_Name = "DejaVu Serif Oblique.font";
+		if(tfont = ami_font_open_disk_font(&tattr))
+			SetFont(win->RPort, tfont);
+	}
 
 	Move(win->RPort, left + 5, top + 25);
 	Text(win->RPort, "Initialising...", strlen("Initialising..."));
