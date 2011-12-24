@@ -3306,6 +3306,9 @@ void ami_do_redraw(struct gui_window_2 *g)
 	ami_get_hscroll_pos(g, (ULONG *)&hcurrent);
 	ami_get_vscroll_pos(g, (ULONG *)&vcurrent);
 
+	g->bw->window->scrollx = hcurrent;
+	g->bw->window->scrolly = vcurrent;
+
 	c = g->bw->current_content;
 
 	width=bbox->Width;
@@ -3864,6 +3867,10 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				case GID_HSCROLL:
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
+					gui_window_get_scroll(gwin->bw->window,
+						&gwin->bw->window->scrollx,
+						&gwin->bw->window->scrolly);
+
 					if(option_faster_scroll == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
 
