@@ -3867,10 +3867,6 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				case GID_HSCROLL:
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
-					gui_window_get_scroll(gwin->bw->window,
-						&gwin->bw->window->scrollx,
-						&gwin->bw->window->scrolly);
-
 					if(option_faster_scroll == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
 
