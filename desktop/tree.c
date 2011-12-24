@@ -1163,6 +1163,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings)
 {
 	int y = node->box.y;
 	int height = tree->height;
+	int width = tree->width;
 	bool redraw_setting = tree->redraw;
 
 	tree->redraw = false;
@@ -1174,7 +1175,7 @@ void tree_delete_node(struct tree *tree, struct node *node, bool siblings)
 
 	if (tree->redraw)
 		tree->callbacks->redraw_request(0, y,
-				tree->width, height, tree->client_data);
+				width, height, tree->client_data);
 	tree_recalculate_size(tree);
 }
 
@@ -2115,6 +2116,7 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 	struct node *next;
 	int y = node->box.y;
 	int height = tree->height;
+	int width = tree->width;
 	bool redraw_setting = tree->redraw;
 
 	tree->redraw = false;
@@ -2127,7 +2129,7 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 
 		if (tree->redraw)
 			tree->callbacks->redraw_request(0, y,
-					tree->width, height,
+					width, height,
 					tree->client_data);
 		return;
 	}
@@ -2145,7 +2147,7 @@ void tree_delete_selected_nodes(struct tree *tree, struct node *node)
 
 	if (tree->redraw)
 		tree->callbacks->redraw_request(0, y,
-				tree->width, height,
+				width, height,
 				tree->client_data);
 }
 
