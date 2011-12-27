@@ -50,6 +50,8 @@
 
 /*TODO: get filename from core. */
 
+extern struct gui_window * input_window;
+
 static void gui_download_window_destroy( struct gui_download_window * gdw );
 
 static void __CDECL evnt_bt_abort_click
@@ -291,6 +293,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 	strncpy((char*)&dw->lbl_file, error_msg, MAX_SLEN_LBL_FILE-1);
 	dw->status = NSATARI_DOWNLOAD_ERROR;
 	snd_rdw( dw->form );
+	gui_window_set_status(input_window, messages_get("Done") );
 }
 
 void gui_download_window_done(struct gui_download_window *dw)
@@ -317,4 +320,5 @@ void gui_download_window_done(struct gui_download_window *dw)
 	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
 		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0);
 	}
+	gui_window_set_status(input_window, messages_get("Done") );
 }
