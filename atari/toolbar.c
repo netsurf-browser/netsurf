@@ -706,6 +706,10 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 			free( text );
 		}
 	}
+	else if( ik == KEY_ESCAPE ) {
+		textarea_keypress( tb->url.textarea, KEY_SELECT_ALL );
+		textarea_keypress( tb->url.textarea, KEY_DELETE_LEFT );
+	}
 	else {
 		ret = textarea_keypress( tb->url.textarea, ik );
 	}
