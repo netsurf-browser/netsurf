@@ -25,26 +25,16 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include <gdk/gdk.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
+
+#include <cairo.h>
+#include <gtk/gtk.h>
 
 #include "content/content.h"
-#include "gtk/bitmap.h"
 #include "gtk/scaffolding.h"
+#include "gtk/bitmap.h"
 #include "image/bitmap.h"
 #include "utils/log.h"
 
-
-struct bitmap {
-  GdkPixbuf *primary;
-  GdkPixbuf *pretile_x;
-  GdkPixbuf *pretile_y;
-  GdkPixbuf *pretile_xy;
-  bool opaque;
-};
-
-#define MIN_PRETILE_WIDTH 256
-#define MIN_PRETILE_HEIGHT 256
 
 
 /**
@@ -58,18 +48,24 @@ struct bitmap {
 
 void *bitmap_create(int width, int height, unsigned int state)
 {
-        struct bitmap *bmp = malloc(sizeof(struct bitmap));
+	struct bitmap *gbitmap;
 
-	bmp->primary = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true,
-				       8, width, height);
+	gbitmap = calloc(1, sizeof(struct bitmap));
+	if (gbitmap != NULL) {
+		if ((state & BITMAP_OPAQUE) != 0) {
+			gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, width, height);
+		} else {
+			gbitmap->surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+		}
 
-	/* fill the pixbuf in with 100% transparent black, as the memory
-	 * won't have been cleared.
-	 */
-	gdk_pixbuf_fill(bmp->primary, 0);
-        bmp->pretile_x = bmp->pretile_y = bmp->pretile_xy = NULL;
-        bmp->opaque = (state & BITMAP_OPAQUE) != 0;
-	return bmp;
+		if (cairo_surface_status(gbitmap->surface) != CAIRO_STATUS_SUCCESS) {
+			cairo_surface_destroy(gbitmap->surface);
+			free(gbitmap);
+			gbitmap = NULL;
+		}
+	}
+
+	return gbitmap;
 }
 
 
@@ -81,9 +77,47 @@ void *bitmap_create(int width, int height, unsigned int state)
  */
 void bitmap_set_opaque(void *vbitmap, bool opaque)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-	bitmap->opaque = opaque;
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	cairo_format_t fmt;
+	cairo_surface_t *nsurface = NULL;
+
+	assert(gbitmap);
+
+	fmt = cairo_image_surface_get_format(gbitmap->surface);
+	if (fmt == CAIRO_FORMAT_RGB24) {
+		if (opaque == false) {
+			/* opaque to transparent */
+			nsurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 
+					cairo_image_surface_get_width(gbitmap->surface), 
+					cairo_image_surface_get_height(gbitmap->surface));
+
+		}
+		
+	} else {
+		if (opaque == true) {
+			/* transparent to opaque */
+			nsurface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, 
+					cairo_image_surface_get_width(gbitmap->surface), 
+					cairo_image_surface_get_height(gbitmap->surface));
+
+		}
+	}
+
+	if (nsurface != NULL) {
+		if (cairo_surface_status(nsurface) != CAIRO_STATUS_SUCCESS) {
+			cairo_surface_destroy(nsurface);
+		} else {
+			memcpy(cairo_image_surface_get_data(nsurface), 
+			       cairo_image_surface_get_data(gbitmap->surface), 
+			       cairo_image_surface_get_stride(gbitmap->surface) * cairo_image_surface_get_height(gbitmap->surface));
+			cairo_surface_destroy(gbitmap->surface);
+			gbitmap->surface = nsurface;
+
+			cairo_surface_mark_dirty(gbitmap->surface);
+
+		}
+
+	}	
 }
 
 
@@ -95,10 +129,25 @@ void bitmap_set_opaque(void *vbitmap, bool opaque)
  */
 bool bitmap_test_opaque(void *vbitmap)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-/* todo: test if bitmap is opaque */
-	return false;
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	unsigned char *pixels;
+	int pcount;
+	int ploop;
+
+	assert(gbitmap);
+
+	pixels = cairo_image_surface_get_data(gbitmap->surface);
+
+	pcount = cairo_image_surface_get_stride(gbitmap->surface) * 
+		cairo_image_surface_get_height(gbitmap->surface);
+
+	for (ploop = 3; ploop < pcount; ploop += 4) {
+		if (pixels[ploop] != 0xff) {
+			return false;
+		}		
+	}
+
+	return true;
 }
 
 
@@ -109,9 +158,17 @@ bool bitmap_test_opaque(void *vbitmap)
  */
 bool bitmap_get_opaque(void *vbitmap)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-	return bitmap->opaque;
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	cairo_format_t fmt;
+
+	assert(gbitmap);
+
+	fmt = cairo_image_surface_get_format(gbitmap->surface);
+	if (fmt == CAIRO_FORMAT_RGB24) {
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -127,9 +184,12 @@ bool bitmap_get_opaque(void *vbitmap)
 
 unsigned char *bitmap_get_buffer(void *vbitmap)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-	return (unsigned char *)gdk_pixbuf_get_pixels(bitmap->primary);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
+	
+	cairo_surface_flush(gbitmap->surface);
+	
+	return cairo_image_surface_get_data(gbitmap->surface);
 }
 
 
@@ -142,9 +202,10 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 
 size_t bitmap_get_rowstride(void *vbitmap)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-	return gdk_pixbuf_get_rowstride(bitmap->primary);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
+
+	return cairo_image_surface_get_stride(gbitmap->surface);
 }
 
 
@@ -157,21 +218,13 @@ size_t bitmap_get_rowstride(void *vbitmap)
 
 size_t bitmap_get_bpp(void *vbitmap)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
+
 	return 4;
 }
 
 
-static void
-gtk_bitmap_free_pretiles(struct bitmap *bitmap)
-{
-#define FREE_TILE(XY) if (bitmap->pretile_##XY) g_object_unref(bitmap->pretile_##XY); bitmap->pretile_##XY = NULL
-        FREE_TILE(x);
-        FREE_TILE(y);
-        FREE_TILE(xy);
-#undef FREE_TILE
-}
 
 /**
  * Free a bitmap.
@@ -181,11 +234,16 @@ gtk_bitmap_free_pretiles(struct bitmap *bitmap)
 
 void bitmap_destroy(void *vbitmap)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	assert(bitmap);
-        gtk_bitmap_free_pretiles(bitmap);
-	g_object_unref(bitmap->primary);
-        free(bitmap);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
+
+	if (gbitmap->surface != NULL) {
+		cairo_surface_destroy(gbitmap->surface);
+	}
+	if (gbitmap->scsurface != NULL) {
+		cairo_surface_destroy(gbitmap->scsurface);
+	}
+	free(gbitmap);
 }
 
 
@@ -200,16 +258,10 @@ void bitmap_destroy(void *vbitmap)
 
 bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
 {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	GError *err = NULL;
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
 
-	gdk_pixbuf_save(bitmap->primary, path, "png", &err, NULL);
-
-	if (err == NULL)
-		/* TODO: report an error here */
-		return false;
-
-	return true;
+	return false;
 }
 
 
@@ -219,8 +271,52 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
  * \param  bitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(void *vbitmap) {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-        gtk_bitmap_free_pretiles(bitmap);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	int pixel_loop;
+	int pixel_count; 
+	uint32_t *pixels;
+	uint32_t pixel;
+	cairo_format_t fmt;
+
+	assert(gbitmap);
+
+	fmt = cairo_image_surface_get_format(gbitmap->surface);
+
+	pixel_count = cairo_image_surface_get_width(gbitmap->surface) * 
+		cairo_image_surface_get_height(gbitmap->surface);
+	pixels = (uint32_t *)cairo_image_surface_get_data(gbitmap->surface);
+
+	if (fmt == CAIRO_FORMAT_RGB24) {
+		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+			pixel = pixels[pixel_loop];
+			pixels[pixel_loop] = (pixel & 0xff00ff00) |
+				((pixel & 0xff) << 16) | 
+				((pixel & 0xff0000) >> 16);		
+		}
+	} else {
+		uint8_t t, r, g, b;
+		for (pixel_loop=0; pixel_loop < pixel_count; pixel_loop++) {
+			pixel = pixels[pixel_loop];
+			t = (pixel & 0xff000000) >> 24;
+			if (t == 0) {
+				pixels[pixel_loop] = 0;
+			} else {
+				r = (pixel & 0xff0000) >> 16;
+				g = (pixel & 0xff00) >> 8;
+				b = pixel & 0xff;
+				
+				pixels[pixel_loop] = (t << 24) | 
+					((r * t) >> 8) | 
+					((g * t) >> 8) << 8 |
+					((b * t) >> 8) << 16;
+
+			}
+		}
+	}
+	
+	cairo_surface_mark_dirty(gbitmap->surface);
+
+	gbitmap->converted = true;
 }
 
 
@@ -236,113 +332,17 @@ void bitmap_set_suspendable(void *vbitmap, void *private_word,
 }
 
 int bitmap_get_width(void *vbitmap){
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	return gdk_pixbuf_get_width(bitmap->primary);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
+
+	return cairo_image_surface_get_width(gbitmap->surface);
 }
 
 int bitmap_get_height(void *vbitmap){
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-	return gdk_pixbuf_get_height(bitmap->primary);
+	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
+	assert(gbitmap);
+
+	return cairo_image_surface_get_height(gbitmap->surface);
 }
 
-static GdkPixbuf *
-gtk_bitmap_generate_pretile(GdkPixbuf *primary, int repeat_x, int repeat_y)
-{
-        int width = gdk_pixbuf_get_width(primary);
-        int height = gdk_pixbuf_get_height(primary);
-        size_t primary_stride = gdk_pixbuf_get_rowstride(primary);
-        GdkPixbuf *result = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
-                                           width * repeat_x, height * repeat_y);
-        char *target_buffer = (char *)gdk_pixbuf_get_pixels(result);
-        int x,y,row;
-        /* This algorithm won't work if the strides are not multiples */
-        assert((size_t)gdk_pixbuf_get_rowstride(result) ==
-		(primary_stride * repeat_x));
 
-        if (repeat_x == 1 && repeat_y == 1) {
-                g_object_ref(primary);
-                g_object_unref(result);
-                return primary;
-        }
-
-        for (y = 0; y < repeat_y; ++y) {
-                char *primary_buffer = (char *)gdk_pixbuf_get_pixels(primary);
-                for (row = 0; row < height; ++row) {
-                        for (x = 0; x < repeat_x; ++x) {
-                                memcpy(target_buffer,
-                                       primary_buffer, primary_stride);
-                                target_buffer += primary_stride;
-                        }
-                        primary_buffer += primary_stride;
-                }
-        }
-        return result;
-}
-
-/**
- * The primary image associated with this bitmap object.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-GdkPixbuf *
-gtk_bitmap_get_primary(struct bitmap *bitmap)
-{
-	if (bitmap != NULL)
- 		return bitmap->primary;
- 	else
- 		return NULL;
-}
-
-/**
- * The X-pretiled image associated with this bitmap object.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-GdkPixbuf *
-gtk_bitmap_get_pretile_x(struct bitmap* bitmap)
-{
-        if (!bitmap->pretile_x) {
-                int width = gdk_pixbuf_get_width(bitmap->primary);
-                int xmult = (MIN_PRETILE_WIDTH + width - 1)/width;
-                LOG(("Pretiling %p for X*%d", bitmap, xmult));
-                bitmap->pretile_x = gtk_bitmap_generate_pretile(bitmap->primary, xmult, 1);
-        }
-        return bitmap->pretile_x;
-
-}
-
-/**
- * The Y-pretiled image associated with this bitmap object.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-GdkPixbuf *
-gtk_bitmap_get_pretile_y(struct bitmap* bitmap)
-{
-        if (!bitmap->pretile_y) {
-                int height = gdk_pixbuf_get_height(bitmap->primary);
-                int ymult = (MIN_PRETILE_HEIGHT + height - 1)/height;
-                LOG(("Pretiling %p for Y*%d", bitmap, ymult));
-                bitmap->pretile_y = gtk_bitmap_generate_pretile(bitmap->primary, 1, ymult);
-        }
-  return bitmap->pretile_y;
-}
-
-/**
- * The XY-pretiled image associated with this bitmap object.
- *
- * \param  bitmap  a bitmap, as returned by bitmap_create()
- */
-GdkPixbuf *
-gtk_bitmap_get_pretile_xy(struct bitmap* bitmap)
-{
-        if (!bitmap->pretile_xy) {
-                int width = gdk_pixbuf_get_width(bitmap->primary);
-                int height = gdk_pixbuf_get_height(bitmap->primary);
-                int xmult = (MIN_PRETILE_WIDTH + width - 1)/width;
-                int ymult = (MIN_PRETILE_HEIGHT + height - 1)/height;
-                LOG(("Pretiling %p for X*%d Y*%d", bitmap, xmult, ymult));
-                bitmap->pretile_xy = gtk_bitmap_generate_pretile(bitmap->primary, xmult, ymult);
-        }
-  return bitmap->pretile_xy;
-}

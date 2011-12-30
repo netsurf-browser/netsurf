@@ -42,7 +42,6 @@
 #include "gtk/bitmap.h"
 
 GtkWidget *current_widget;
-GdkDrawable *current_drawable;
 cairo_t *current_cr;
 
 static GdkRectangle cliprect;
@@ -281,7 +280,7 @@ static bool nsgtk_plot_text(int x, int y, const char *text, size_t length,
 
 
 static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
-			      GdkPixbuf *pixbuf, colour bg)
+			      struct bitmap *bitmap, colour bg)
 {
 	/* XXX: This currently ignores the background colour supplied.
 	 * Does this matter?
@@ -289,6 +288,9 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 
 	int x0, y0, x1, y1;
 	int dsrcx, dsrcy, dwidth, dheight;
+	int bmwidth, bmheight;
+
+	cairo_surface_t *bmsurface = bitmap->surface;
 
 	/* Bail early if we can */
 	if (width == 0 || height == 0)
@@ -309,21 +311,20 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 	y1 = (y + height) - (cliprect.y + cliprect.height);
 
 	/* Set initial draw geometry */
-	dsrcx = dsrcy = 0;
+	dsrcx = x;
+	dsrcy = y;
 	dwidth = width;
 	dheight = height;
 
 	/* Manually clip draw coordinates to area of image to be rendered */
 	if (x0 > 0) {
 		/* Clip left */
-		dsrcx = x0;
-		x += x0;
+		dsrcx += x0;
 		dwidth -= x0;
 	}
 	if (y0 > 0) {
 		/* Clip top */
-		dsrcy = y0;
-		y += y0;
+		dsrcy += y0;
 		dheight -= y0;
 	}
 	if (x1 > 0) {
@@ -339,40 +340,58 @@ static bool nsgtk_plot_pixbuf(int x, int y, int width, int height,
 		/* Nothing to plot */
 		return true;
 
+	bmwidth = cairo_image_surface_get_width(bmsurface);
+	bmheight = cairo_image_surface_get_height(bmsurface);
+
 	/* Render the bitmap */
-	if (gdk_pixbuf_get_width(pixbuf) == width &&
-	    gdk_pixbuf_get_height(pixbuf) == height) {
+	if ((bmwidth == width) && (bmheight == height)) {
 		/* Bitmap is not scaled */
 		/* Plot the bitmap */
-		gdk_cairo_set_source_pixbuf(current_cr, pixbuf, x - dsrcx, y -dsrcy);
-		cairo_rectangle(current_cr, x , y , dwidth, dheight);
+		cairo_set_source_surface(current_cr, bmsurface, x, y);
+		cairo_rectangle(current_cr, dsrcx, dsrcy, dwidth, dheight);
 		cairo_fill(current_cr);
 
 	} else {
 		/* Bitmap is scaled */
-		/* Get scale factors */
-		double sx = (double)width / gdk_pixbuf_get_width(pixbuf);
-		double sy = (double)height / gdk_pixbuf_get_height(pixbuf);
+		if ((bitmap->scsurface != NULL) && 
+		    ((cairo_image_surface_get_width(bitmap->scsurface) != width) || 
+		     (cairo_image_surface_get_height(bitmap->scsurface) != height))){
+			cairo_surface_destroy(bitmap->scsurface);
+			bitmap->scsurface = NULL;
+		} 
 
-		/* Create bitmap for scaled image portion */
-		GdkPixbuf *scaled = gdk_pixbuf_new(GDK_COLORSPACE_RGB, true, 8,
-				dwidth, dheight);
-		/* Only scale up the portion of the bitmap that we are
-		 * interested in rendering */
-		gdk_pixbuf_scale(pixbuf, scaled,
-				0, 0, dwidth, dheight,
-				-dsrcx, -dsrcy, sx, sy,
-				option_render_resample ? GDK_INTERP_BILINEAR :
-				GDK_INTERP_NEAREST);
-		if (!scaled)
-			return false;
+		if (bitmap->scsurface == NULL) {
+			bitmap->scsurface = cairo_surface_create_similar(bmsurface,CAIRO_CONTENT_COLOR_ALPHA, width, height);
+			cairo_t *cr = cairo_create(bitmap->scsurface);
 
+			/* Scale *before* setting the source surface (1) */
+			cairo_scale(cr, (double)width / bmwidth, (double)height / bmheight);
+			cairo_set_source_surface(cr, bmsurface, 0, 0);
+
+			/* To avoid getting the edge pixels blended with 0
+			 * alpha, which would occur with the default
+			 * EXTEND_NONE. Use EXTEND_PAD for 1.2 or newer (2)
+			 */
+			cairo_pattern_set_extend(cairo_get_source(cr), 
+						 CAIRO_EXTEND_REFLECT); 
+
+			/* Replace the destination with the source instead of
+			 * overlaying 
+			 */
+			cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+
+			/* Do the actual drawing */
+			cairo_paint(cr);
+   
+			cairo_destroy(cr);
+
+		}
 		/* Plot the scaled bitmap */
-		gdk_cairo_set_source_pixbuf(current_cr, scaled, x, y);
-		cairo_rectangle(current_cr, x , y , dwidth, dheight);
+		cairo_set_source_surface(current_cr, bitmap->scsurface, x, y);
+		cairo_rectangle(current_cr, dsrcx, dsrcy, dwidth, dheight);
 		cairo_fill(current_cr);
 
-		g_object_unref(scaled);
+    
 	}
 
 	return true;
@@ -383,52 +402,46 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 			      bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
-	GdkPixbuf *primary;
-	GdkPixbuf *pretiled = NULL;
-
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-		primary = gtk_bitmap_get_primary(bitmap);
-		return nsgtk_plot_pixbuf(x, y, width, height, primary, bg);
+		return nsgtk_plot_pixbuf(x, y, width, height, bitmap, bg);
 	}
 
-	if (repeat_x && !repeat_y)
-		pretiled = gtk_bitmap_get_pretile_x(bitmap);
-	if (repeat_x && repeat_y)
-		pretiled = gtk_bitmap_get_pretile_xy(bitmap);
-	if (!repeat_x && repeat_y)
-		pretiled = gtk_bitmap_get_pretile_y(bitmap);
+	width = bitmap_get_width(bitmap);
+	height = bitmap_get_height(bitmap);
 
-	assert(pretiled != NULL);
+	/* Bail early if we can */
+	if (width == 0 || height == 0)
+		/* Nothing to plot */
+		return true;
 
-	primary = gtk_bitmap_get_primary(bitmap);
-	/* use the primary and pretiled widths to scale the w/h provided */
-	width *= gdk_pixbuf_get_width(pretiled);
-	width /= gdk_pixbuf_get_width(primary);
-	height *= gdk_pixbuf_get_height(pretiled);
-	height /= gdk_pixbuf_get_height(primary);
-
-	if (y > cliprect.y)
+	if (y > cliprect.y) {
 		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
-	else
+	} else {
 		doneheight = y;
+	}
 
 	while (doneheight < (cliprect.y + cliprect.height)) {
-		if (x > cliprect.x)
+		if (x > cliprect.x) {
 			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
-		else
+		} else {
 			donewidth = x;
+		}
+
 		while (donewidth < (cliprect.x + cliprect.width)) {
 			nsgtk_plot_pixbuf(donewidth, doneheight,
-					  width, height, pretiled, bg);
+					  width, height, bitmap, bg);
 			donewidth += width;
-			if (!repeat_x) break;
+			if (!repeat_x) 
+				break;
 		}
 		doneheight += height;
-		if (!repeat_y) break;
+
+		if (!repeat_y) 
+			break;
 	}
 
 	return true;

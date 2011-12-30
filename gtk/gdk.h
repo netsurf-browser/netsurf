@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Daniel Silverstone <dsilvers@digital-scurf.org>
+ * Copyright 2011 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -16,16 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NS_GTK_BITMAP_H
-#define NS_GTK_BITMAP_H
+/** \file
+ * GDK support functions for missing interfaces
+ */
 
-#include <cairo.h>
-#include "image/bitmap.h"
+#ifndef NETSURF_GTK_GDK_H_
+#define NETSURF_GTK_GDK_H_
 
-struct bitmap {
-	cairo_surface_t *surface; /* original cairo surface */
-	cairo_surface_t *scsurface; /* scaled surface */
-	bool converted; /** set if the surface data has been converted */
-};
+#include <gtk/gtk.h>
 
-#endif /* NS_GTK_BITMAP_H */
+/** obtain a pixbuf of the specified size from a cairo surface.
+ *
+ * This is the same as the GTK+ 3 gdk_pixbuf_get_from_surface but
+ * actually works and is available on gtk 2 
+ */
+GdkPixbuf *nsgdk_pixbuf_get_from_surface(cairo_surface_t *surface, int width, int height);
+
+#endif /* NETSURF_GTK_GDK_H */

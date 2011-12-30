@@ -182,12 +182,7 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 	height = event->area.height;
 	
 	current_widget = widget;
-	current_drawable = widget->window;
-	current_cr = gdk_cairo_create(current_drawable);
-
-	current_widget = widget;
-	current_drawable = widget->window;
-	current_cr = gdk_cairo_create(current_drawable);
+	current_cr = gdk_cairo_create(widget->window);
 	
 	tree_set_redraw(tree, true);
 	tree_draw(tree, 0, 0, x, y, width, height, &ctx);

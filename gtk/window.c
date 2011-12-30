@@ -157,10 +157,8 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 	assert(z);
 	assert(GTK_WIDGET(g->layout) == widget);
 
-
 	current_widget = (GtkWidget *)g->layout;
-	current_drawable = g->layout->bin_window;
-	current_cr = gdk_cairo_create(current_drawable);
+	current_cr = gdk_cairo_create(g->layout->bin_window);
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
@@ -169,8 +167,9 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 
 	browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
 
-	if (g->careth != 0)
+	if (g->careth != 0) {
 		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
+	}
 
 	current_widget = NULL;
 	cairo_destroy(current_cr);

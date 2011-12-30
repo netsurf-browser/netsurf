@@ -25,6 +25,19 @@
 
 #include "utils/errors.h"
 
+/** Initialise the content handlers for image types.
+ */
 nserror image_init(void);
+
+/** Common image content handler bitmap plot call.
+ *
+ * This plots the specified bitmap controlled by the redraw context
+ * and specific content redraw data. It is a helper specifically
+ * provided for image content handlers redraw callback.
+ */
+bool image_bitmap_plot(struct bitmap *bitmap,
+		       struct content_redraw_data *data, 
+		       const struct rect *clip,
+		       const struct redraw_context *ctx);
 
 #endif

@@ -76,6 +76,7 @@
 #include "gtk/options.h"
 #include "gtk/sexy_icon_entry.h"
 #include "gtk/compat.h"
+#include "gtk/gdk.h"
 #include "image/ico.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -1517,9 +1518,8 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 	};
 
 	current_widget = widget;
-	current_drawable = widget->window;
 
-	current_cr = gdk_cairo_create(current_drawable);
+	current_cr = gdk_cairo_create(widget->window);
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
@@ -1993,6 +1993,23 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
 }
 
+static GtkImage *
+nsgtk_image_new_from_surface(cairo_surface_t *surface, int w, int h) 
+{
+	GdkPixbuf *pixbuf;
+	GtkImage *image = NULL;
+
+	pixbuf = nsgdk_pixbuf_get_from_surface(surface, w, h);
+
+	if (pixbuf != NULL) {
+		image = GTK_IMAGE(gtk_image_new_from_pixbuf(pixbuf));
+	}
+
+	g_object_unref(pixbuf);
+
+	return image;
+}
+
 /**
  * set favicon
  */
@@ -2002,23 +2019,16 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	struct bitmap *icon_bitmap;
 	GtkImage *iconImage = NULL;
 
-	if (g->top_level != _g)
+	if (g->top_level != _g) {
 		return;
-
+	}
 	icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
 
 	if (icon_bitmap != NULL) {
-		GdkPixbuf *pb = gtk_bitmap_get_primary(icon_bitmap);
-
-		if ((pb != NULL) && 
-		    (gdk_pixbuf_get_width(pb) > 0) &&
-		    (gdk_pixbuf_get_height(pb) > 0)) {
-			pb = gdk_pixbuf_scale_simple(pb, 16, 16, GDK_INTERP_HYPER);
-			iconImage = GTK_IMAGE(gtk_image_new_from_pixbuf(pb));
-		}
+		iconImage = nsgtk_image_new_from_surface(icon_bitmap->surface, 16, 16);
 	}
+
 	if (iconImage == NULL) {
-		/** \todo Does pb need cleaning up? */
 		char imagepath[strlen(res_dir_location) +
 				SLEN("favicon.png") + 1];
 		sprintf(imagepath, "%sfavicon.png", res_dir_location);
@@ -2028,8 +2038,10 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	if (iconImage == NULL)
 		return;
 
-	if (g->icoFav != NULL)
+	if (g->icoFav != NULL) {
 		g_object_unref(g->icoFav);
+	}
+
 	g->icoFav = iconImage;
 
 	sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(g->url_bar),
@@ -2039,7 +2051,7 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 
 void gui_window_set_search_ico(hlcache_handle *ico)
 {
-	GdkPixbuf *pbico;
+	GdkPixbuf *pbico = NULL;
 	GtkImage *searchico;
 	struct bitmap *ico_bitmap;
 	nsgtk_scaffolding *current;
@@ -2051,16 +2063,12 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	if (ico_bitmap == NULL)
 		return;
 
-	pbico = gtk_bitmap_get_primary(ico_bitmap);
-	if (pbico != NULL && gdk_pixbuf_get_width(pbico) > 0 &&
-			gdk_pixbuf_get_height(pbico) > 0) {
-		pbico = gdk_pixbuf_scale_simple(pbico, 20, 20,
-				GDK_INTERP_HYPER);
-		searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
-	} else {
-		/** \todo Does pbico need cleaning up? */
+	pbico = nsgdk_pixbuf_get_from_surface(ico_bitmap->surface, 16, 16);
+	if (pbico == NULL) {
 		return;
 	}
+
+	searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
 
 	/* add ico to each window's toolbar */
 	for (current = scaf_list; current != NULL; current = current->next) {
@@ -2072,11 +2080,12 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 					SEXY_ICON_ENTRY_PRIMARY,
 					current->webSearchIco);
 		}
-		if (pbico != NULL)
-			searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
-		else
-			searchico = NULL;
+
+		searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
 	}
+
+	g_object_unref(pbico);
+
 }
 
 bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g)

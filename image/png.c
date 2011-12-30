@@ -498,7 +498,9 @@ png_cache_convert_error:
 
 	free((png_bytep *) row_pointers);
 
-	return (struct bitmap *) bitmap;
+	bitmap_modified((struct bitmap *)bitmap);
+
+	return (struct bitmap *)bitmap;
 }
 
 static bool nspng_convert(struct content *c)

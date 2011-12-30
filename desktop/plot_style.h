@@ -64,10 +64,15 @@
 	(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) >> 1) << 8) |	\
 	 ((((c0 & 0xff) + (c1 & 0xff)) >> 1) << 0)
 
+/* get a bitmap pixel (image/bitmap.h) into a plot colour */
+#define pixel_to_colour(b)					\
+	b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)
+
 /**
  * Colour type: XBGR
  */
 typedef uint32_t colour;
+
 /**
  * Magical transparent value
  */

@@ -67,7 +67,7 @@
   Debian-like OS:
 
       $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
-      $ apt-get install librsvg2-dev liblcms1-dev
+      $ apt-get install librsvg2-dev liblcms1-dev libjpeg-dev
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
   note that when it has not been built with OpenSSL, the SSL_CTX is not

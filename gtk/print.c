@@ -72,40 +72,6 @@ static inline void nsgtk_print_set_colour(colour c)
 			g / 255.0, b / 255.0, 1.0);
 }
 
-static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
-		GdkPixbuf *pixbuf, colour bg)
-{
-	/* XXX: This currently ignores the background colour supplied.
-	 * Does this matter?
-	 */
-
- 	if (width == 0 || height == 0)
- 		return true;
- 
- 	if (gdk_pixbuf_get_width(pixbuf) == width &&
-			gdk_pixbuf_get_height(pixbuf) == height) {
-		gdk_cairo_set_source_pixbuf(gtk_print_current_cr, pixbuf, x, y);
-		cairo_paint(gtk_print_current_cr);
-  	} else {
- 		GdkPixbuf *scaled;
-		scaled = gdk_pixbuf_scale_simple(pixbuf,
- 				width, height,
-     				/* plotting for the printer doesn't have 
-				 * to be fast so we can use always the 
-				 * interp_style that gives better quality
-				 */
- 				GDK_INTERP_BILINEAR);
- 		if (!scaled)
- 			return false;
-
-		gdk_cairo_set_source_pixbuf(gtk_print_current_cr, scaled, x, y);
-		cairo_paint(gtk_print_current_cr);
-
-		g_object_unref(scaled);
- 	}
-
-	return true;
-}
 
 
 static bool gtk_print_font_paint(int x, int y, 
@@ -368,63 +334,166 @@ static bool nsgtk_print_plot_path(const float *p, unsigned int n, colour fill,
 	return true;
 }
 
+
+static bool nsgtk_print_plot_pixbuf(int x, int y, int width, int height,
+			      struct bitmap *bitmap, colour bg)
+{
+	int x0, y0, x1, y1;
+	int dsrcx, dsrcy, dwidth, dheight;
+	int bmwidth, bmheight;
+
+	cairo_surface_t *bmsurface = bitmap->surface;
+
+	/* Bail early if we can */
+	if (width == 0 || height == 0)
+		/* Nothing to plot */
+		return true;
+	if ((x > (cliprect.x + cliprect.width)) ||
+			((x + width) < cliprect.x) ||
+			(y > (cliprect.y + cliprect.height)) ||
+			((y + height) < cliprect.y)) {
+		/* Image completely outside clip region */
+		return true;	
+	}
+
+	/* Get clip rectangle / image rectangle edge differences */
+	x0 = cliprect.x - x;
+	y0 = cliprect.y - y;
+	x1 = (x + width)  - (cliprect.x + cliprect.width);
+	y1 = (y + height) - (cliprect.y + cliprect.height);
+
+	/* Set initial draw geometry */
+	dsrcx = x;
+	dsrcy = y;
+	dwidth = width;
+	dheight = height;
+
+	/* Manually clip draw coordinates to area of image to be rendered */
+	if (x0 > 0) {
+		/* Clip left */
+		dsrcx += x0;
+		dwidth -= x0;
+	}
+	if (y0 > 0) {
+		/* Clip top */
+		dsrcy += y0;
+		dheight -= y0;
+	}
+	if (x1 > 0) {
+		/* Clip right */
+		dwidth -= x1;
+	}
+	if (y1 > 0) {
+		/* Clip bottom */
+		dheight -= y1;
+	}
+
+	if (dwidth == 0 || dheight == 0)
+		/* Nothing to plot */
+		return true;
+
+	bmwidth = cairo_image_surface_get_width(bmsurface);
+	bmheight = cairo_image_surface_get_height(bmsurface);
+
+	/* Render the bitmap */
+	if ((bmwidth == width) && (bmheight == height)) {
+		/* Bitmap is not scaled */
+		/* Plot the bitmap */
+		cairo_set_source_surface(gtk_print_current_cr, bmsurface, x, y);
+		cairo_rectangle(gtk_print_current_cr, dsrcx, dsrcy, dwidth, dheight);
+		cairo_fill(gtk_print_current_cr);
+
+	} else {
+		/* Bitmap is scaled */
+		if ((bitmap->scsurface != NULL) && 
+		    ((cairo_image_surface_get_width(bitmap->scsurface) != width) || 
+		     (cairo_image_surface_get_height(bitmap->scsurface) != height))){
+			cairo_surface_destroy(bitmap->scsurface);
+			bitmap->scsurface = NULL;
+		} 
+
+		if (bitmap->scsurface == NULL) {
+			bitmap->scsurface = cairo_surface_create_similar(bmsurface,CAIRO_CONTENT_COLOR_ALPHA, width, height);
+			cairo_t *cr = cairo_create(bitmap->scsurface);
+
+			/* Scale *before* setting the source surface (1) */
+			cairo_scale(cr, (double)width / bmwidth, (double)height / bmheight);
+			cairo_set_source_surface(cr, bmsurface, 0, 0);
+
+			/* To avoid getting the edge pixels blended with 0
+			 * alpha, which would occur with the default
+			 * EXTEND_NONE. Use EXTEND_PAD for 1.2 or newer (2)
+			 */
+			cairo_pattern_set_extend(cairo_get_source(cr), 
+						 CAIRO_EXTEND_REFLECT); 
+
+			/* Replace the destination with the source instead of
+			 * overlaying 
+			 */
+			cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+
+			/* Do the actual drawing */
+			cairo_paint(cr);
+   
+			cairo_destroy(cr);
+
+		}
+		/* Plot the scaled bitmap */
+		cairo_set_source_surface(gtk_print_current_cr, bitmap->scsurface, x, y);
+		cairo_rectangle(gtk_print_current_cr, dsrcx, dsrcy, dwidth, dheight);
+		cairo_fill(gtk_print_current_cr);
+   
+	}
+
+	return true;
+}
+
+
 static bool nsgtk_print_plot_bitmap(int x, int y, int width, int height,
 		struct bitmap *bitmap, colour bg,
 		bitmap_flags_t flags)
 {
 	int doneheight = 0, donewidth = 0;
-	GdkPixbuf *primary;
-	GdkPixbuf *pretiled = NULL;
- 
-        bool repeat_x = (flags & BITMAPF_REPEAT_X);
-        bool repeat_y = (flags & BITMAPF_REPEAT_Y);
+	bool repeat_x = (flags & BITMAPF_REPEAT_X);
+	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
-                primary = gtk_bitmap_get_primary(bitmap);
-                return nsgtk_print_plot_pixbuf(x, y, width, height, primary, bg);
+		return nsgtk_print_plot_pixbuf(x, y, width, height, bitmap, bg);
 	}
 
-	if (repeat_x && !repeat_y)
-		pretiled = gtk_bitmap_get_pretile_x(bitmap);
-	if (repeat_x && repeat_y)
-		pretiled = gtk_bitmap_get_pretile_xy(bitmap);
-	if (!repeat_x && repeat_y)
-		pretiled = gtk_bitmap_get_pretile_y(bitmap);
-	
-	assert(pretiled != NULL);
+	width = bitmap_get_width(bitmap);
+	height = bitmap_get_height(bitmap);
 
-	primary = gtk_bitmap_get_primary(bitmap);
-
-	/* use the primary and pretiled widths to scale the w/h provided */
-	width *= gdk_pixbuf_get_width(pretiled);
-	width /= gdk_pixbuf_get_width(primary);
-	height *= gdk_pixbuf_get_height(pretiled);
-	height /= gdk_pixbuf_get_height(primary);
+	/* Bail early if we can */
+	if (width == 0 || height == 0)
+		/* Nothing to plot */
+		return true;
 
 	if (y > cliprect.y) {
-		doneheight = (cliprect.y - height) + 
-				((y - cliprect.y) % height);
-	} else
+		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
+	} else {
 		doneheight = y;
+	}
 
 	while (doneheight < (cliprect.y + cliprect.height)) {
 		if (x > cliprect.x) {
-			donewidth = (cliprect.x - width) + 
-					((x - cliprect.x) % width);
-		} else
+			donewidth = (cliprect.x - width) + ((x - cliprect.x) % width);
+		} else {
 			donewidth = x;
+		}
 
 		while (donewidth < (cliprect.x + cliprect.width)) {
 			nsgtk_print_plot_pixbuf(donewidth, doneheight,
-					  width, height, pretiled, bg);
+					  width, height, bitmap, bg);
 			donewidth += width;
-			if (!repeat_x) break;
+			if (!repeat_x) 
+				break;
 		}
-
 		doneheight += height;
 
-		if (!repeat_y) break;
+		if (!repeat_y) 
+			break;
 	}
 
 	return true;

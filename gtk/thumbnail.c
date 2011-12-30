@@ -52,15 +52,11 @@
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		const char *url)
 {
-        GdkPixbuf *pixbuf;
+	cairo_surface_t *dsurface = bitmap->surface;
+	cairo_surface_t *surface;
+	cairo_t *old_cr;
+	gint dwidth, dheight;
 	int cwidth, cheight;
-	gint width;
-	gint height;
-	gint depth;
-	GdkPixmap *pixmap;
-	GdkPixbuf *big;
-	double scale;
-
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
@@ -70,11 +66,8 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	assert(content);
 	assert(bitmap);
 
-	/* Get details of required final thumbnail image */
-	pixbuf = gtk_bitmap_get_primary(bitmap);
-	width = gdk_pixbuf_get_width(pixbuf);
-	height = gdk_pixbuf_get_height(pixbuf);
-	depth = (gdk_screen_get_system_visual(gdk_screen_get_default()))->depth;
+	dwidth = cairo_image_surface_get_width(dsurface);
+	dheight = cairo_image_surface_get_height(dsurface);
 
 	/* Calculate size of buffer to render the content into */
 	/* We get the width from the content width, unless it exceeds 1024,
@@ -82,55 +75,53 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	 * large render buffers for huge contents, which would eat memory and
 	 * cripple performance. */
 	cwidth = min(content_get_width(content), 1024);
+
 	/* The height is set in proportion with the width, according to the
 	 * aspect ratio of the required thumbnail. */
-	cheight = ((cwidth * height) + (width / 2)) / width;
+	cheight = ((cwidth * dheight) + (dwidth / 2)) / dwidth;
 
-	/*  Create buffer to render into */
-	pixmap = gdk_pixmap_new(NULL, cwidth, cheight, depth);
-	
-	if (pixmap == NULL) {
-		/* the creation failed for some reason: most likely because
-		 * we've been asked to create with with at least one dimention
-		 * as zero.  The RISC OS thumbnail generator returns false
-		 * from here when it can't create a bitmap, so we assume it's
-		 * safe to do so here too.
-		 */
+	/*  Create surface to render into */
+	surface = cairo_surface_create_similar(dsurface, CAIRO_CONTENT_COLOR_ALPHA, cwidth, cheight);
+
+	if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+		cairo_surface_destroy(surface);
 		return false;
 	}
 
-	gdk_drawable_set_colormap(pixmap, gdk_colormap_get_system());
-
-	/* set to plot to pixmap */
-	current_drawable = pixmap;
-	current_cr = gdk_cairo_create(current_drawable);
+	old_cr = current_cr;
+	current_cr = cairo_create(surface);
 
 	/* render the content */
 	thumbnail_redraw(content, cwidth, cheight, &ctx);
 
-	/* get the pixbuf we rendered the content into */
-	big = gdk_pixbuf_get_from_drawable(NULL, pixmap, NULL, 0, 0, 0, 0,
-			cwidth, cheight);
+	cairo_destroy(current_cr);
+	current_cr = old_cr;
 
-	/* resample the large plot down to the size of our thumbnail */
-	scale = (double)width / (double)cwidth;
-	gdk_pixbuf_scale(big, pixbuf, 0, 0, width, height, 0, 0,
-			scale, scale, GDK_INTERP_TILES);
+	cairo_t *cr = cairo_create(dsurface);
 
-	/* As a debugging aid, try this to dump out a copy of the thumbnail as
-	 * a PNG: gdk_pixbuf_save(pixbuf, "thumbnail.png", "png", NULL, NULL);
+	/* Scale *before* setting the source surface (1) */
+	cairo_scale (cr, (double)dwidth / cwidth, (double)dheight / cheight);
+	cairo_set_source_surface (cr, surface, 0, 0);
+
+	/* To avoid getting the edge pixels blended with 0 alpha,
+	 * which would occur with the default EXTEND_NONE. Use
+	 * EXTEND_PAD for 1.2 or newer (2)
 	 */
+	cairo_pattern_set_extend (cairo_get_source(cr), CAIRO_EXTEND_REFLECT); 
+
+	/* Replace the destination with the source instead of overlaying */
+	cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+
+	/* Do the actual drawing */
+	cairo_paint(cr);
+   
+	cairo_destroy(cr);
+
+	cairo_surface_destroy(surface);
 
 	/* register the thumbnail with the URL */
 	if (url)
 	  urldb_set_thumbnail(url, bitmap);
-
-	bitmap_modified(bitmap);
-
-	cairo_destroy(current_cr);
-
-	g_object_unref(pixmap);
-	g_object_unref(big);
 
 	return true;
 }

@@ -112,25 +112,25 @@ union content_msg_data {
 	struct content_rfc5988_link *rfc5988_link;
 };
 
-
+/** parameters to content redraw */
 struct content_redraw_data {
-	int x;			/** coordinate for top-left of redraw */
-	int y;			/** coordinate for top-left of redraw */
+	int x; /**< coordinate for top-left of redraw */
+	int y; /**< coordinate for top-left of redraw */
 
 	/** dimensions to render content at
 	 *  (for scaling contents with intrinsic dimensions) */
-	int width;		/* horizontal */
-	int height;		/* vertical */
+	int width; /**< horizontal dimension */
+	int height; /**< vertical dimension */
 
-	/** the background colour */
+	/** The background colour */
 	colour background_colour;
 
 	/** Scale for redraw
 	 *  (for scaling contents without intrinsic dimensions) */
-	float scale;		/* scale factor */
+	float scale; /**< Scale factor for redraw */
 
-	bool repeat_x;		/* whether content is tiled in x direction */
-	bool repeat_y;		/* whether content is tiled in y direction */
+	bool repeat_x; /**< whether content is tiled in x direction */
+	bool repeat_y; /**< whether content is tiled in y direction */
 };
 
 /* The following are for hlcache */

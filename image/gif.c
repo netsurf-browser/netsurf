@@ -39,6 +39,7 @@
 #include "content/hlcache.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
+#include "image/image.h"
 #include "image/bitmap.h"
 #include "image/gif.h"
 #include "utils/log.h"
@@ -337,7 +338,6 @@ static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	nsgif_content *gif = (nsgif_content *) c;
-	bitmap_flags_t flags = BITMAPF_NONE;
 
 	if (gif->current_frame != gif->gif->decoded_frame) {
 		if (nsgif_get_frame(gif) != GIF_OK) {
@@ -345,16 +345,7 @@ static bool nsgif_redraw(struct content *c, struct content_redraw_data *data,
 		}
 	}
 
-	if ((data->width == -1) && (data->height == -1))
-		return true;
-            
-	if (data->repeat_x)
-		flags |= BITMAPF_REPEAT_X;
-	if (data->repeat_y)
-		flags |= BITMAPF_REPEAT_Y;
-
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			gif->gif->frame_image, data->background_colour, flags);
+	return image_bitmap_plot(gif->gif->frame_image, data, clip, ctx);
 }
 
 

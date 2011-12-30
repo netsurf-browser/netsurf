@@ -22,13 +22,12 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "utils/errors.h"
-#include "utils/utils.h"
-#include "utils/log.h"
-#include "utils/config.h"
 #include "utils/schedule.h"
+#include "utils/log.h"
 #include "content/content_protected.h"
+
 #include "image/image_cache.h"
+#include "image/image.h"
 
 /** Age of an entry within the cache
  *
@@ -712,7 +711,6 @@ bool image_cache_redraw(struct content *c,
 			const struct rect *clip,
 			const struct redraw_context *ctx)
 {
-	bitmap_flags_t flags = BITMAPF_NONE;
 	struct image_cache_entry_s *centry;
 
 	/* get the cache entry */
@@ -746,14 +744,7 @@ bool image_cache_redraw(struct content *c,
 	centry->redraw_count++;
 	centry->redraw_age = image_cache->current_age;
 
-	/* do the plot */
-	if (data->repeat_x)
-		flags |= BITMAPF_REPEAT_X;
-	if (data->repeat_y)
-		flags |= BITMAPF_REPEAT_Y;
-
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			centry->bitmap, data->background_colour, flags);
+	return image_bitmap_plot(centry->bitmap, data, clip, ctx);
 }
 
 void image_cache_destroy(struct content *content)

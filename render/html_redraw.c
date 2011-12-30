@@ -2173,6 +2173,7 @@ bool html_redraw_background(int x, int y, struct box *box, float scale,
 			width = content_get_width(background->background);
 			height = content_get_height(background->background);
 
+			/* ensure clip area only as large as required */
 			if (!repeat_x) {
 				if (r.x0 < x)
 					r.x0 = x;
