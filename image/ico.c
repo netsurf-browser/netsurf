@@ -32,6 +32,7 @@
 #include "image/bitmap.h"
 #include "image/bmp.h"
 #include "image/ico.h"
+#include "image/image.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -42,7 +43,6 @@ typedef struct nsico_content {
 
 	struct ico_collection *ico;	/** ICO collection data */
 
-	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
 } nsico_content;
 
 
@@ -131,11 +131,12 @@ static bool nsico_convert(struct content *c)
 	content__set_title(c, title);
 	c->size += (ico->ico->width * ico->ico->height * 4) + 16 + 44;
 
-	/* exit as a success */
+	/* select largest icon to ensure one can be selected */
 	bmp = ico_find(ico->ico, 255, 255);
-	assert(bmp);
-	ico->bitmap = bmp->bitmap;
-	bitmap_modified(ico->bitmap);
+	if (bmp == NULL) {
+		/* return error */
+		return false;
+	}
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -149,24 +150,23 @@ static bool nsico_convert(struct content *c)
 static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
-	nsico_content *ico = (nsico_content *) c;
-	struct bmp_image *bmp = ico_find(ico->ico, data->width, data->height);
-	bitmap_flags_t flags = BITMAPF_NONE;
+	nsico_content *ico = (nsico_content *)c;
+	struct bmp_image *bmp;
 
+	/* select most appropriate sized icon for size */
+	bmp = ico_find(ico->ico, data->width, data->height);
+
+	/* ensure its decided */
 	if (bmp->decoded == false) {
-		if (bmp_decode(bmp) != BMP_OK)
+		if (bmp_decode(bmp) != BMP_OK) {
 			return false;
+		} else {
+			bitmap_modified(bmp->bitmap);
+		}
+
 	}
 
-	ico->bitmap = bmp->bitmap;
-
-	if (data->repeat_x)
-		flags |= BITMAPF_REPEAT_X;
-	if (data->repeat_y)
-		flags |= BITMAPF_REPEAT_Y;
-
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			ico->bitmap, data->background_colour, flags);
+	return image_bitmap_plot(bmp->bitmap, data, clip, ctx);
 }
 
 
@@ -221,13 +221,14 @@ static void *nsico_get_internal(const struct content *c, void *context)
 	struct bmp_image *bmp = ico_find(ico->ico, 16, 16);
 
 	if (bmp->decoded == false) {
-		if (bmp_decode(bmp) != BMP_OK)
+		if (bmp_decode(bmp) != BMP_OK) {
 			return NULL;
+		} else {
+			bitmap_modified(bmp->bitmap);
+		}
 	}
 
-	ico->bitmap = bmp->bitmap;
-
-	return ico->bitmap;
+	return bmp->bitmap;
 }
 
 static content_type nsico_content_type(void)
