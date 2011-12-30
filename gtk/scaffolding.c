@@ -74,7 +74,6 @@
 #include "gtk/treeview.h"
 #include "gtk/window.h"
 #include "gtk/options.h"
-#include "gtk/sexy_icon_entry.h"
 #include "gtk/compat.h"
 #include "gtk/gdk.h"
 #include "image/ico.h"
@@ -135,9 +134,7 @@ struct gtk_scaffolding {
 	GtkToolbar			*tool_bar;
 	struct nsgtk_button_connect	*buttons[PLACEHOLDER_BUTTON];
 	GtkImage			*throbber;
-	GtkImage			*icoFav;
 	struct gtk_search		*search;
-	GtkImage			*webSearchIco;
 	GtkWidget			*webSearchEntry;
 	GtkPaned			*status_pane;
 
@@ -1993,22 +1990,6 @@ void gui_window_stop_throbber(struct gui_window* _g)
 	gtk_image_set_from_pixbuf(g->throbber, nsgtk_throbber->framedata[0]);
 }
 
-static GtkImage *
-nsgtk_image_new_from_surface(cairo_surface_t *surface, int w, int h) 
-{
-	GdkPixbuf *pixbuf;
-	GtkImage *image = NULL;
-
-	pixbuf = nsgdk_pixbuf_get_from_surface(surface, w, h);
-
-	if (pixbuf != NULL) {
-		image = GTK_IMAGE(gtk_image_new_from_pixbuf(pixbuf));
-	}
-
-	g_object_unref(pixbuf);
-
-	return image;
-}
 
 /**
  * set favicon
@@ -2016,76 +1997,71 @@ nsgtk_image_new_from_surface(cairo_surface_t *surface, int w, int h)
 void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 {
 	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	struct bitmap *icon_bitmap;
-	GtkImage *iconImage = NULL;
+	struct bitmap *icon_bitmap = NULL;
+	GdkPixbuf *icon_pixbuf;
 
 	if (g->top_level != _g) {
 		return;
 	}
-	icon_bitmap = (icon != NULL) ? content_get_bitmap(icon) : NULL;
 
-	if (icon_bitmap != NULL) {
-		iconImage = nsgtk_image_new_from_surface(icon_bitmap->surface, 16, 16);
-	}
+	if (icon != NULL) {
+		icon_bitmap = content_get_bitmap(icon);
+		if (icon_bitmap != NULL) {
+			icon_pixbuf = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
+		}
+	} 
 
-	if (iconImage == NULL) {
+	if (icon_pixbuf == NULL) {
 		char imagepath[strlen(res_dir_location) +
 				SLEN("favicon.png") + 1];
 		sprintf(imagepath, "%sfavicon.png", res_dir_location);
-		iconImage = GTK_IMAGE(gtk_image_new_from_file(imagepath));
+		icon_pixbuf = gdk_pixbuf_new_from_file(imagepath, NULL);
 	}
 
-	if (iconImage == NULL)
+	if (icon_pixbuf == NULL) {
 		return;
-
-	if (g->icoFav != NULL) {
-		g_object_unref(g->icoFav);
 	}
 
-	g->icoFav = iconImage;
+	nsgtk_entry_set_icon_from_pixbuf(g->url_bar, 
+					 GTK_ENTRY_ICON_PRIMARY, 
+					 icon_pixbuf);
 
-	sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(g->url_bar),
-			SEXY_ICON_ENTRY_PRIMARY, GTK_IMAGE(g->icoFav));
 	gtk_widget_show_all(GTK_WIDGET(g->buttons[URL_BAR_ITEM]->button));
+
+	g_object_unref(icon_pixbuf);
+
 }
 
 void gui_window_set_search_ico(hlcache_handle *ico)
 {
-	GdkPixbuf *pbico = NULL;
-	GtkImage *searchico;
-	struct bitmap *ico_bitmap;
+	struct bitmap *srch_bitmap;
 	nsgtk_scaffolding *current;
+	GdkPixbuf *srch_pixbuf;
 
-	if (ico == NULL && (ico = search_web_ico()) == NULL)
-		return;
-
-	ico_bitmap = content_get_bitmap(ico);
-	if (ico_bitmap == NULL)
-		return;
-
-	pbico = nsgdk_pixbuf_get_from_surface(ico_bitmap->surface, 16, 16);
-	if (pbico == NULL) {
+	if ((ico == NULL) && 
+	    (ico = search_web_ico()) == NULL) {
 		return;
 	}
 
-	searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
+	srch_bitmap = content_get_bitmap(ico);
+	if (srch_bitmap == NULL) {
+		return;
+	}
+
+	srch_pixbuf = nsgdk_pixbuf_get_from_surface(srch_bitmap->surface, 16, 16);
+
+	if (srch_pixbuf == NULL) {
+		return;
+	}
 
 	/* add ico to each window's toolbar */
 	for (current = scaf_list; current != NULL; current = current->next) {
-		if (searchico != NULL) {
-			/** \todo Are we leaking webSearchIco here? */
-			current->webSearchIco = searchico;
-			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(
-					current->webSearchEntry),
-					SEXY_ICON_ENTRY_PRIMARY,
-					current->webSearchIco);
-		}
-
-		searchico = GTK_IMAGE(gtk_image_new_from_pixbuf(pbico));
+		nsgtk_entry_set_icon_from_pixbuf(current->webSearchEntry, 
+						 GTK_ENTRY_ICON_PRIMARY,
+						 srch_pixbuf);
 	}
 
-	g_object_unref(pbico);
-
+	g_object_unref(srch_pixbuf);
 }
 
 bool nsgtk_scaffolding_is_busy(nsgtk_scaffolding *g)
@@ -2156,8 +2132,6 @@ void nsgtk_scaffolding_update_url_bar_ref(nsgtk_scaffolding *g)
 {
 	g->url_bar = GTK_WIDGET(gtk_bin_get_child(GTK_BIN(
 			nsgtk_scaffolding_button(g, URL_BAR_ITEM)->button)));
-	g->icoFav = sexy_icon_entry_get_icon(SEXY_ICON_ENTRY(g->url_bar),
-			SEXY_ICON_ENTRY_PRIMARY);
 
 	gtk_entry_set_completion(GTK_ENTRY(g->url_bar),
 			g->url_bar_completion);
@@ -2172,8 +2146,6 @@ void nsgtk_scaffolding_update_websearch_ref(nsgtk_scaffolding *g)
 {
 	g->webSearchEntry = gtk_bin_get_child(GTK_BIN(
 			g->buttons[WEBSEARCH_ITEM]->button));
-	g->webSearchIco = sexy_icon_entry_get_icon(SEXY_ICON_ENTRY(
-			g->webSearchEntry), SEXY_ICON_ENTRY_PRIMARY);
 }
 
 void nsgtk_scaffolding_set_websearch(nsgtk_scaffolding *g, const char *content)

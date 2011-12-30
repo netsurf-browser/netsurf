@@ -124,3 +124,48 @@ gchar *nsgtk_combo_box_text_get_active_text(GtkWidget *combo_box)
 	return gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo_box));
   #endif
 }
+
+GtkWidget *nsgtk_entry_new(void)
+{
+#if GTK_CHECK_VERSION(2,16,0)
+	return gtk_entry_new();
+#else
+	return GTK_WIDGET(sexy_icon_entry_new());
+#endif	
+}
+
+void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf)
+{
+#if GTK_CHECK_VERSION(2,16,0)
+	gtk_entry_set_icon_from_pixbuf(GTK_ENTRY(entry), icon_pos, pixbuf);
+#else
+	GtkImage *image = GTK_IMAGE(gtk_image_new_from_pixbuf(pixbuf));
+
+	if (image != NULL) {
+		sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
+					 (SexyIconEntryPosition)icon_pos,
+					 image);
+
+		g_object_unref(image);
+	}
+
+#endif
+}
+
+void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id)
+{
+#if GTK_CHECK_VERSION(2,16,0)
+	gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), icon_pos, stock_id);
+#else
+	GtkImage *image = GTK_IMAGE(gtk_image_new_from_stock(stock_id, 
+					GTK_ICON_SIZE_LARGE_TOOLBAR));
+
+	if (image != NULL) {
+		sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
+					 (SexyIconEntryPosition)icon_pos,
+					 image);
+		g_object_unref(image);
+	}
+
+#endif
+}

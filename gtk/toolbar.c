@@ -17,7 +17,12 @@
  */
 
 #include <gtk/gtk.h>
+
 #include "desktop/searchweb.h"
+#include "utils/log.h"
+#include "utils/messages.h"
+#include "utils/utils.h"
+
 #include "gtk/toolbar.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
@@ -25,10 +30,7 @@
 #include "gtk/theme.h"
 #include "gtk/throbber.h"
 #include "gtk/window.h"
-#include "gtk/sexy_icon_entry.h"
-#include "utils/log.h"
-#include "utils/messages.h"
-#include "utils/utils.h"
+#include "gtk/compat.h"
 
 static GtkTargetEntry entry = {(char *)"nsgtk_button_data",
 		GTK_TARGET_SAME_APP, 0};
@@ -705,9 +707,8 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 		char imagefile[strlen(res_dir_location) + SLEN("favicon.png")
 				+ 1];
 		sprintf(imagefile, "%sfavicon.png", res_dir_location);
-		GtkWidget *image = GTK_WIDGET(gtk_image_new_from_file(
-				imagefile));
-		GtkWidget *entry = GTK_WIDGET(sexy_icon_entry_new());
+		GdkPixbuf *iconbuf = gdk_pixbuf_new_from_file(imagefile, NULL);
+		GtkWidget *entry = nsgtk_entry_new();
 		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
 
 		if ((entry == NULL) || (w == NULL)) {
@@ -715,10 +716,9 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 			return NULL;
 		}
 
-		if (image != NULL)
-			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
-					SEXY_ICON_ENTRY_PRIMARY,
-					GTK_IMAGE(image));
+		if (iconbuf != NULL) {
+			nsgtk_entry_set_icon_from_pixbuf(entry, GTK_ENTRY_ICON_PRIMARY, iconbuf);
+		}
 
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);
@@ -754,9 +754,9 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 					gtk_image_new_from_stock("gtk-find",
 					GTK_ICON_SIZE_LARGE_TOOLBAR)),
 					"[websearch]"));
-		GtkWidget *image = GTK_WIDGET(gtk_image_new_from_stock(
-				"gtk-info", GTK_ICON_SIZE_LARGE_TOOLBAR));
-		GtkWidget *entry = GTK_WIDGET(sexy_icon_entry_new());
+
+		GtkWidget *entry = nsgtk_entry_new();
+
 		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
 
 		if ((entry == NULL) || (w == NULL)) {
@@ -764,12 +764,9 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 			return NULL;
 		}
 
-		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH,
-				-1);
-		if (image != NULL)
-			sexy_icon_entry_set_icon(SEXY_ICON_ENTRY(entry),
-					SEXY_ICON_ENTRY_PRIMARY,
-					GTK_IMAGE(image));
+		gtk_widget_set_size_request(entry, NSGTK_WEBSEARCH_WIDTH, -1);
+
+		nsgtk_entry_set_icon_from_stock(entry, GTK_ENTRY_ICON_PRIMARY, "gtk-info");
 
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		return w;
