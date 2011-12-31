@@ -2012,10 +2012,8 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	} 
 
 	if (icon_pixbuf == NULL) {
-		char imagepath[strlen(res_dir_location) +
-				SLEN("favicon.png") + 1];
-		sprintf(imagepath, "%sfavicon.png", res_dir_location);
-		icon_pixbuf = gdk_pixbuf_new_from_file(imagepath, NULL);
+		g_object_ref(favicon_pixbuf);
+		icon_pixbuf = favicon_pixbuf;
 	}
 
 	if (icon_pixbuf == NULL) {

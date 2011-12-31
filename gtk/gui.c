@@ -87,6 +87,8 @@ char *res_dir_location;
 char *print_options_file_location;
 char *languages_file_location;
 
+GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
+
 struct glade_file_location_s *glade_file_location;
 
 static GtkWindow *nsgtk_warning_window;
@@ -388,6 +390,17 @@ static void gui_init(int argc, char** argv, char **respath)
 	/* Default Icon */
 	search_default_ico_location = filepath_find(respath, "default.ico");
 	LOG(("Using '%s' as default search ico", search_default_ico_location));
+
+	/* Default favicon */
+	resource_filename = filepath_find(respath, "favicon.png");
+	if (resource_filename != NULL) {
+		favicon_pixbuf = gdk_pixbuf_new_from_file(resource_filename, NULL);
+		free(resource_filename);
+		if (favicon_pixbuf == NULL) {
+			favicon_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, false, 8, 16,16);
+			
+		}
+	}
 
 	/* Toolbar inicies file */
 	toolbar_indices_file_location = filepath_find(respath, "toolbarIndices");

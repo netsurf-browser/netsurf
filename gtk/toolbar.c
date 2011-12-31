@@ -704,10 +704,6 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 		return GTK_WIDGET(gtk_tool_button_new(GTK_WIDGET(
 				theme->image[HISTORY_BUTTON]), ""));
 	case URL_BAR_ITEM: {
-		char imagefile[strlen(res_dir_location) + SLEN("favicon.png")
-				+ 1];
-		sprintf(imagefile, "%sfavicon.png", res_dir_location);
-		GdkPixbuf *iconbuf = gdk_pixbuf_new_from_file(imagefile, NULL);
 		GtkWidget *entry = nsgtk_entry_new();
 		GtkWidget *w = GTK_WIDGET(gtk_tool_item_new());
 
@@ -716,9 +712,9 @@ GtkWidget *nsgtk_toolbar_make_widget(nsgtk_scaffolding *g,
 			return NULL;
 		}
 
-		if (iconbuf != NULL) {
-			nsgtk_entry_set_icon_from_pixbuf(entry, GTK_ENTRY_ICON_PRIMARY, iconbuf);
-		}
+		nsgtk_entry_set_icon_from_pixbuf(entry, 
+						 GTK_ENTRY_ICON_PRIMARY, 
+						 favicon_pixbuf);
 
 		gtk_container_add(GTK_CONTAINER(w), entry);
 		gtk_tool_item_set_expand(GTK_TOOL_ITEM(w), TRUE);

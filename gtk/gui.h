@@ -54,6 +54,8 @@ extern char *options_file_location; /**< location where user options are written
 extern char *res_dir_location;
 extern char *print_options_file_location;
 
+extern GdkPixbuf *favicon_pixbuf; /* favicon default pixbuf */
+
 uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *);
 
 #endif /* GTK_GUI_H */
