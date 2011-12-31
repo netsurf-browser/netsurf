@@ -32,9 +32,14 @@ struct s_vdi_priv_data {
 	int size_buf_planar;
 
 	/* buffer for plot operations that require device format, */
-	/* currently used for transparent mfdb blits: */
+	/* currently used for transparent mfdb blits and snapshots: */
 	MFDB buf_scr;
 	int size_buf_scr;
+
+	/* buffer for std form, used during 8bpp snapshot */
+	MFDB buf_std;
+	int size_buf_std;
+
 	struct bitmap * buf_scr_compat;
 
 	/* intermediate bitmap format */

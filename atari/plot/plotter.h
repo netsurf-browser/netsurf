@@ -164,6 +164,8 @@ typedef	int (*_pmf_rectangle)(GEM_PLOTTER self, int x0, int y0, int x1, int y1, 
 typedef	int (*_pmf_polygon)(GEM_PLOTTER self, const int *p, unsigned int n,  const plot_style_t * pstyle);
 typedef	int (*_pmf_path)(GEM_PLOTTER self, const float *p, unsigned int n, int fill, float width, int c, const float transform[6]);
 typedef	int (*_pmf_bitmap_resize) ( GEM_PLOTTER self, struct bitmap * bm, int nw, int nh );
+typedef int (*_pmf_bitmap_convert)( GEM_PLOTTER self, struct bitmap * img, int x, int y,
+				GRECT * clip, uint32_t bg, uint32_t flags, MFDB *out  );
 typedef	int (*_pmf_bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 				unsigned long bg, unsigned long flags );
 typedef int (*_pmf_plot_mfdb)(GEM_PLOTTER self, GRECT * loc, MFDB * mfdb, uint32_t flags);
@@ -209,6 +211,8 @@ struct s_gem_plotter
 	_pmf_path path;
 	/* scale an netsurf bitmap: */
 	_pmf_bitmap_resize bitmap_resize;
+	/* convert an ABGR (netsurf) bitmap to screen format, ready for vro_cpyfm */
+	_pmf_bitmap_convert bitmap_convert;
 	/* plot an netsurf bitmap into the buffer / screen: */
 	_pmf_bitmap bitmap;
 	/* plot an mfdb into the buffer / screen: */
@@ -291,6 +295,7 @@ void dump_font_drivers(void);
 void dump_plot_drivers(void);
 void dump_vdi_info(short);
 
+
 /* convert an rgb color to vdi1000 color */
 void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
 
@@ -351,6 +356,7 @@ void plotter_vdi_clip( GEM_PLOTTER self, bool set);
 #define OFFSET_CUST_PAL 232
 #define OFFSET_CUSTOM_COLOR 255	/* this one is used by the TC renderer */
 #define RGB_TO_VDI(c) rgb_to_666_index( (c&0xFF),(c&0xFF00)>>8,(c&0xFF0000)>>16)+OFFSET_WEB_PAL
+/* the name of this macro is crap - it should be named bgr_to_rgba ... or so */
 #define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8
 
 /* calculate MFDB compatible rowstride (in number of bits) */

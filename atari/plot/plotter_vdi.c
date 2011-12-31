@@ -62,17 +62,20 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot
 static int polygon(GEM_PLOTTER self,const int *p, unsigned int n, const plot_style_t * pstyle);
 static int path(GEM_PLOTTER self,const float *p, unsigned int n, int fill, float width, int c, const float transform[6]);
 static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh );
+static int bitmap_convert( GEM_PLOTTER self, struct bitmap * img, int x, int y,
+	GRECT * clip,uint32_t bg,uint32_t flags, MFDB *out  );
+static int bitmap_convert_8( GEM_PLOTTER self, struct bitmap * img,int x, int y,
+	GRECT * clip,uint32_t bg,uint32_t flags, MFDB *out  );
 static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 					unsigned long bg, unsigned long flags );
 static int plot_mfdb( GEM_PLOTTER self, GRECT * where, MFDB * mfdb, uint32_t flags);
 static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, const plot_font_style_t *fstyle);
 
+
 #ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
 static unsigned short pal[256][3];     /*RGB*/
-extern unsigned char rgb_web_pal[126][3];
 extern unsigned short vdi_web_pal[126][3];
-int32 * hermes_pal_p;
 #endif
 extern struct s_vdi_sysinfo vdi_sysinfo;
 
@@ -89,8 +92,9 @@ static inline void vsl_rgbcolor( short vdih, uint32_t cin )
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0] );
 		vsl_color( vdih, OFFSET_CUSTOM_COLOR );
 	} else {
-		if( vdi_sysinfo.scr_bpp >= 4 )
+		if( vdi_sysinfo.scr_bpp >= 4 ){
 			vsl_color( vdih, RGB_TO_VDI(cin) );
+		}
 		else
 			vsl_color( vdih, BLACK );
 	}
@@ -104,8 +108,9 @@ static inline void vsf_rgbcolor( short vdih, uint32_t cin )
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, &c[0] );
 		vsf_color( vdih, OFFSET_CUSTOM_COLOR );
 	} else {
-		if( vdi_sysinfo.scr_bpp >= 4 )
+		if( vdi_sysinfo.scr_bpp >= 4 ){
 			vsf_color( vdih, RGB_TO_VDI(cin) );
+		}
 		else
 			vsf_color( vdih, WHITE );
 	}
@@ -136,6 +141,8 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->path = path;
 	self->bitmap = bitmap;
 	self->bitmap_resize = bitmap_resize;
+	self->bitmap_convert =(app.nplanes > 8) ? bitmap_convert : bitmap_convert_8;
+	//self->bitmap_convert =bitmap_convert;
 	self->plot_mfdb = plot_mfdb;
 	self->text = text;
 	LOG(("Screen: x: %d, y: %d\n", vdi_sysinfo.scr_w, vdi_sysinfo.scr_h));
@@ -169,11 +176,19 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	clip.x1 = FIRSTFB(self).w;
 	clip.y1 = FIRSTFB(self).h;
 	self->clip( self, &clip );
+
+	assert( Hermes_Init() );
 	/* store system palette & setup the new (web) palette: */
 #ifdef WITH_8BPP_SUPPORT
 	i = 0;
+
+	unsigned char * col;
+	unsigned char rgbcol[4];
+	unsigned char graytone=0;
 	if( app.nplanes <= 8 ){
 		for( i=0; i<=255; i++ ) {
+
+			// get the current color and save it for restore:
 			vq_color(self->vdi_handle, i, 1, (unsigned short*)&sys_pal[i][0] );
 			if( i<OFFSET_WEB_PAL ) {
 				pal[i][0] = sys_pal[i][0];
@@ -184,41 +199,26 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 					pal[i][0] = vdi_web_pal[i-OFFSET_WEB_PAL][0];
 					pal[i][1] = vdi_web_pal[i-OFFSET_WEB_PAL][1];
 					pal[i][2] = vdi_web_pal[i-OFFSET_WEB_PAL][2];
+					//set the new palette color to websafe value:
+					vs_color( self->vdi_handle, i, &pal[i][0] );
 				}
-				if( i >= OFFSET_CUST_PAL ) {
-					/* here we could define 22 additional colors... */
+				if( i >= OFFSET_CUST_PAL && i<OFFSET_CUST_PAL+16 ) {
+					/* here we define 20 additional gray colors... */
+					rgbcol[1] = rgbcol[2] = rgbcol[3] = ((graytone&0x0F) << 4);
+					rgb_to_vdi1000( &rgbcol[0], &pal[i][0] );
+					printf("graytone: %d (%x), index: %d\n",rgbcol[1], rgbcol[1],i  );
+					vs_color( self->vdi_handle, i, &pal[i][0] );
+					graytone++;
 				}
-				vs_color( self->vdi_handle, i, &pal[i][0] );
+
 			}
 		}
 	} else {
 		/* no need to change the palette - its application specific */
 	}
+
+
 #endif
-
-	unsigned char * col;
-	assert( Hermes_Init() );
-/*
-	hermes_pal_h = Hermes_PaletteInstance();
-	hermes_pal_p = Hermes_PaletteGet(hermes_pal_h);
-	assert(hermes_pal_p);
-
-	for( i = 0; i<OFFSET_CUST_PAL; i++) {
-		col = (unsigned char *)(hermes_pal_p+i);
-		if( i < OFFSET_WEB_PAL ) {
-			col[0] = sys_pal[i][0];
-			col[1] = sys_pal[i][1];
-			col[2] = sys_pal[i][2];
-		}
-		if( i >= OFFSET_WEB_PAL ) {
-			col[0] = rgb_web_pal[i-OFFSET_WEB_PAL][0];
-			col[1] = rgb_web_pal[i-OFFSET_WEB_PAL][1];
-			col[2] = rgb_web_pal[i-OFFSET_WEB_PAL][2];
-		}
-		col[3] = 0;
-	}
-	Hermes_PaletteInvalidateCache(hermes_pal_h);
-*/
 
 	unsigned long flags = ( self->flags & PLOT_FLAG_DITHER ) ? HERMES_CONVERT_DITHER : 0;
 	hermes_cnv_h = Hermes_ConverterInstance( flags );
@@ -241,8 +241,8 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	DUMMY_PRIV(self)->vfmt.b = vdi_sysinfo.mask_b;
 	DUMMY_PRIV(self)->vfmt.a = vdi_sysinfo.mask_a;
 	DUMMY_PRIV(self)->vfmt.bits = self->bpp_virt;
-	DUMMY_PRIV(self)->vfmt.indexed = false;
-	DUMMY_PRIV(self)->vfmt.has_colorkey = false;
+	DUMMY_PRIV(self)->vfmt.indexed = ( app.nplanes <= 8 ) ? 1 : 0;
+	DUMMY_PRIV(self)->vfmt.has_colorkey = 0;
 
 	return( 1 );
 }
@@ -260,16 +260,6 @@ static int dtor( GEM_PLOTTER self )
 	/* close Hermes stuff: */
 	Hermes_ConverterReturn( hermes_cnv_h );
 
-#ifdef WITH_8BPP_SUPPORT
-	if( app.nplanes <= 8 ){
-		/* restore system palette */
-		for( i=0; i<=255; i++ ) {
-			vs_color( self->vdi_handle, i, &sys_pal[i][0] );
-		}
-	}
-	Hermes_PaletteReturn( hermes_pal_h );
-#endif
-
 	Hermes_Done();
 
 	if( self->priv_data != NULL ){
@@ -279,6 +269,7 @@ static int dtor( GEM_PLOTTER self )
 			free( DUMMY_PRIV(self)->buf_planar );
 		free( self->priv_data );
 	}
+	snapshot_destroy( self );
 	return( 1 );
 }
 
@@ -767,16 +758,13 @@ static int bitmap_resize( GEM_PLOTTER self, struct bitmap * img, int nw, int nh 
 	return( 0 );
 }
 
-static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, int h)
+// create snapshot, native screen format
+static MFDB * snapshot_create_native_mfdb( GEM_PLOTTER self, int x, int y, int w, int h)
 {
 	MFDB scr;
 	short pxy[8];
-	int err;
 
-	/* make sure the screen format is pixel packed... */
-	/* no method to convert planar screen to pixel packed ... right now */
-	assert( vdi_sysinfo.vdiformat == VDI_FORMAT_PACK  );
-
+	/* allocate memory for the snapshot */
 	{
 		int scr_stride = MFDB_STRIDE( w );
 		int scr_size = ( ((scr_stride >> 3) * h) * vdi_sysinfo.scr_bpp );
@@ -802,7 +790,6 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 		DUMMY_PRIV(self)->buf_scr.fd_wdwidth = scr_stride >> 4;
 		assert( DUMMY_PRIV(self)->buf_scr.fd_addr != NULL );
 	}
-
 	init_mfdb( 0, w, h, 0, &scr );
 	pxy[0] = x;
 	pxy[1] = y;
@@ -810,14 +797,81 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 	pxy[3] = pxy[1] + h-1;
 	pxy[4] = 0;
 	pxy[5] = 0;
-	pxy[6] = pxy[2];
-	pxy[7] = pxy[3];
+	pxy[6] = w-1;
+	pxy[7] = h-1;
 	vro_cpyfm(
 			self->vdi_handle, S_ONLY, (short*)&pxy,
 			&scr,  &DUMMY_PRIV(self)->buf_scr
 	);
+	dbg_pxy("ntv snap", pxy );
 
-	/* convert screen buffer to ns format: */
+/*
+Debug: output copy to screen:
+	pxy[0] = 0;
+	pxy[1] = 0;
+	pxy[2] = pxy[0] + w-1;
+	pxy[3] = pxy[1] + h-1;
+	pxy[4] = x+20;
+	pxy[5] = y;
+	pxy[6] = w-1;
+	pxy[7] = h-1;
+	vro_cpyfm(
+			self->vdi_handle, S_ONLY, (short*)&pxy,
+			&DUMMY_PRIV(self)->buf_scr,&scr
+	);
+*/
+
+	return( &DUMMY_PRIV(self)->buf_scr );
+}
+
+// create snapshot, vdi std. format
+static MFDB * snapshot_create_std_mfdb(GEM_PLOTTER self, int x, int y, int w, int h)
+{
+	/* allocate memory for the snapshot */
+	{
+		int scr_stride = MFDB_STRIDE( w );
+		int scr_size = ( ((scr_stride >> 3) * h) * app.nplanes );
+		if( DUMMY_PRIV(self)->size_buf_std == 0 ){
+			/* init screen mfdb */
+			DUMMY_PRIV(self)->buf_std.fd_addr = malloc( scr_size );
+			DUMMY_PRIV(self)->size_buf_std = scr_size;
+		} else {
+			if( scr_size > DUMMY_PRIV(self)->size_buf_std ) {
+				DUMMY_PRIV(self)->buf_std.fd_addr = realloc(
+					DUMMY_PRIV(self)->buf_std.fd_addr, scr_size
+				);
+				DUMMY_PRIV(self)->size_buf_std = scr_size;
+			}
+		}
+		if( DUMMY_PRIV(self)->buf_std.fd_addr == NULL ) {
+			DUMMY_PRIV(self)->size_buf_std = 0;
+			return( NULL );
+		}
+		DUMMY_PRIV(self)->buf_std.fd_nplanes = app.nplanes;
+		DUMMY_PRIV(self)->buf_std.fd_w = scr_stride;
+		DUMMY_PRIV(self)->buf_std.fd_h = h;
+		DUMMY_PRIV(self)->buf_std.fd_stand = 1;
+		DUMMY_PRIV(self)->buf_std.fd_wdwidth = scr_stride >> 4;
+		assert( DUMMY_PRIV(self)->buf_std.fd_addr != NULL );
+	}
+	MFDB * native = snapshot_create_native_mfdb( self, x,y,w,h );
+	assert( native );
+
+	vr_trnfm( self->vdi_handle, native, &DUMMY_PRIV(self)->buf_std );
+	return( &DUMMY_PRIV(self)->buf_std );
+}
+
+/*
+	This will create an snapshot of the screen in netsurf ABGR format
+*/
+static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, int h)
+{
+	int err;
+	MFDB * native;
+
+	native = snapshot_create_native_mfdb( self, x, y, w, h );
+
+	/* allocate buffer for result bitmap: */
 	if( DUMMY_PRIV(self)->buf_scr_compat == NULL ) {
 		DUMMY_PRIV(self)->buf_scr_compat = bitmap_create(w, h, 0);
 	} else {
@@ -827,17 +881,19 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 			BITMAP_GROW,
 			DUMMY_PRIV(self)->buf_scr_compat );
 	}
+
+	/* convert screen buffer to ns format: */
 	err = Hermes_ConverterRequest( hermes_cnv_h,
 			&DUMMY_PRIV(self)->vfmt,
 			&DUMMY_PRIV(self)->nsfmt
 	);
 	assert( err != 0 );
 	err = Hermes_ConverterCopy( hermes_cnv_h,
-		DUMMY_PRIV(self)->buf_scr.fd_addr,
+		native->fd_addr,
 		0,			/* x src coord of top left in pixel coords */
 		0,			/* y src coord of top left in pixel coords */
 		w, h,
-		DUMMY_PRIV(self)->buf_scr.fd_w * vdi_sysinfo.pixelsize, /* stride as bytes */
+		native->fd_w * vdi_sysinfo.pixelsize, /* stride as bytes */
 		DUMMY_PRIV(self)->buf_scr_compat->pixdata,
 		0,			/* x dst coord of top left in pixel coords */
 		0,			/* y dst coord of top left in pixel coords */
@@ -861,6 +917,17 @@ static void snapshot_suspend(GEM_PLOTTER self )
 		}
 	}
 
+	if( DUMMY_PRIV(self)->size_buf_std > CONV_KEEP_LIMIT  ) {
+		DUMMY_PRIV(self)->buf_std.fd_addr = realloc(
+			DUMMY_PRIV(self)->buf_std.fd_addr, CONV_KEEP_LIMIT
+		);
+		if( DUMMY_PRIV(self)->buf_std.fd_addr != NULL ) {
+			DUMMY_PRIV(self)->size_buf_std = CONV_KEEP_LIMIT;
+		} else {
+			DUMMY_PRIV(self)->size_buf_std = 0;
+		}
+	}
+
 	if( bitmap_buffer_size( DUMMY_PRIV(self)->buf_scr_compat ) > CONV_KEEP_LIMIT ) {
 		int w = 0;
 		int h = 1;
@@ -880,14 +947,188 @@ static void snapshot_destroy( GEM_PLOTTER self )
 		DUMMY_PRIV(self)->buf_scr.fd_addr = NULL;
 	}
 
+	if( DUMMY_PRIV(self)->buf_std.fd_addr ) {
+		free( DUMMY_PRIV(self)->buf_std.fd_addr  );
+		DUMMY_PRIV(self)->buf_std.fd_addr = NULL;
+	}
+
 	if( DUMMY_PRIV(self)->buf_scr_compat ) {
 		bitmap_destroy( DUMMY_PRIV(self)->buf_scr_compat );
 		DUMMY_PRIV(self)->buf_scr_compat = NULL;
 	}
 }
 
+
+void set_stdpx( MFDB * dst, int x, int y, unsigned char val )
+{
+	int p;
+	short * buf;
+	int wdplanesz = dst->fd_wdwidth*dst->fd_h;
+	short whichbit = (1<<(15-(x%16)));
+
+	buf = dst->fd_addr;
+	buf += ((dst->fd_wdwidth*(y))+(x>>4));
+	for( p=0; p<=dst->fd_nplanes-1; p++) {
+		*buf = (val&(1<<p)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+		buf += wdplanesz;
+	}
+}
+
+unsigned char get_stdpx(MFDB * dst, int x, int y )
+{
+	unsigned char ret=0;
+	int p;
+	short * buf;
+	int wdplanesz = dst->fd_wdwidth*dst->fd_h;
+	short whichbit = (1<<(15-(x%16)));
+
+	buf = dst->fd_addr;
+	buf += ((dst->fd_wdwidth*(y))+(x>>4));
+	for( p=0; p<=dst->fd_nplanes-1; p++) {
+		if( *buf & whichbit )
+			ret |= (01<<p);
+		buf += wdplanesz;
+	}
+	return( ret );
+}
+
+static int bitmap_convert_8( GEM_PLOTTER self,
+	struct bitmap * img,
+	int x,
+	int y,
+	GRECT * clip,
+	uint32_t bg,
+	uint32_t flags,
+	MFDB *out  )
+{
+
+	int dststride;						/* stride of dest. image */
+	int dstsize;						/* size of dest. in byte */
+	int err;
+	int bw;
+	struct bitmap * scrbuf = NULL;
+	struct bitmap * bm;
+
+	assert( clip->g_h > 0 );
+	assert( clip->g_w > 0 );
+
+	bm = img;
+	bw = bitmap_get_width( img );
+
+	dststride = MFDB_STRIDE( clip->g_w );
+	dstsize = ( ((dststride >> 3) * clip->g_h) * self->bpp_virt );
+
+	/* (re)allocate buffer for out image: */
+	/* altough the buffer is named "buf_packed" on 8bit systems */
+	/* it's not... */
+	if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
+		int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+		if( DUMMY_PRIV(self)->buf_packed == NULL )
+			DUMMY_PRIV(self)->buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
+		 else
+			DUMMY_PRIV(self)->buf_packed =(void*)realloc(
+													DUMMY_PRIV(self)->buf_packed,
+													blocks * CONV_BLOCK_SIZE
+												);
+		assert( DUMMY_PRIV(self)->buf_packed );
+		if( DUMMY_PRIV(self)->buf_packed == NULL ) {
+			return( 0-ERR_NO_MEM );
+		}
+		DUMMY_PRIV(self)->size_buf_packed = blocks * CONV_BLOCK_SIZE;
+	}
+
+
+	/*
+		on 8 bit systems we must convert the TC (ABGR) image
+		to vdi standard format. ( only tested for 256 colors )
+		and then convert it to native format
+	*/
+
+	// realloc mem for stdform
+	MFDB stdform;
+	if( ((self->flags & PLOT_FLAG_TRANS) != 0) || ( (flags & BITMAP_MONOGLYPH) != 0) ) {
+		// point image to snapshot buffer, otherwise allocate mem
+		MFDB * bg = snapshot_create_std_mfdb( self, x+clip->g_x,y+clip->g_y, clip->g_w, clip->g_h );
+		stdform.fd_addr = bg->fd_addr;
+	} else {
+		if( dstsize > DUMMY_PRIV(self)->size_buf_planar) {
+			int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+			if( DUMMY_PRIV(self)->buf_planar == NULL )
+				DUMMY_PRIV(self)->buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
+			 else
+				DUMMY_PRIV(self)->buf_planar =(void*)realloc(
+														DUMMY_PRIV(self)->buf_planar,
+														blocks * CONV_BLOCK_SIZE
+													);
+			assert( DUMMY_PRIV(self)->buf_planar );
+			if( DUMMY_PRIV(self)->buf_planar == NULL ) {
+				return( 0-ERR_NO_MEM );
+			}
+			DUMMY_PRIV(self)->size_buf_planar = blocks * CONV_BLOCK_SIZE;
+		}
+		stdform.fd_addr = DUMMY_PRIV(self)->buf_planar;
+	}
+	stdform.fd_w = dststride;
+	stdform.fd_h = clip->g_h;
+	stdform.fd_wdwidth = dststride >> 4;
+	stdform.fd_stand = 1;
+	stdform.fd_nplanes = (short)self->bpp_virt;
+	stdform.fd_r1 = stdform.fd_r2 = stdform.fd_r3 = 0;
+	/*printf("bpp virt: %d, bytestr:  %d, planesize %d\n",
+			self->bpp_virt, ((dststride >> 3) *  self->bpp_virt), stdform.fd_wdwidth*stdform.fd_h );
+	*/
+	// convert pixels to  std. format
+	int wdplanesz = stdform.fd_wdwidth*stdform.fd_h;
+	int bytestride = (dststride >> 3) *  self->bpp_virt;
+	unsigned long max = ((char*)stdform.fd_addr)+dstsize;
+	int img_stride = bitmap_get_rowstride(bm);
+
+	// first, get snapshot in planar buffer,
+	// then apply transparency.
+	for( y=0; y<clip->g_h; y++ ){
+			uint32_t * imgpixel;
+			imgpixel = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
+		for( x=0; x<clip->g_w; x++ ){
+			uint32_t pixel = imgpixel[x+clip->g_x];
+			unsigned long col = ABGR_TO_RGB( (pixel&0xFFFFFF00)>>8 );
+			unsigned char val = RGB_TO_VDI( col>>8 );
+			if( (pixel&0xFF) == 0 ){
+				set_stdpx( &stdform, x,y, get_stdpx( &stdform,x,y ) );
+				continue;
+			}
+
+			if( (pixel&0xFF) >=128 ){
+				set_stdpx( &stdform, x,y, val );
+			} else {
+				char rgb[4];
+				col = get_stdpx( &stdform,x,y );
+				// TBD: use lookup table!
+				vdi1000_to_rgb( &pal[col],  &rgb[0] );
+				pixel = ablend( pixel, ((rgb[2] << 16) | (rgb[1] << 8) | (rgb[0]))<<8 );
+				col = ABGR_TO_RGB( (pixel&0xFFFFFF00)>>8 );
+				val = RGB_TO_VDI( col>>8 );
+				set_stdpx( &stdform, x,y, val );
+			}
+		}
+	}
+
+	// convert into native format:
+	MFDB native;
+	native.fd_addr = DUMMY_PRIV(self)->buf_packed;
+	native.fd_w = dststride;
+	native.fd_h = clip->g_h;
+	native.fd_wdwidth = dststride >> 4;
+	native.fd_stand = 0;
+	native.fd_nplanes = (short)self->bpp_virt;
+	native.fd_r1 = native.fd_r2 = native.fd_r3 = 0;
+	vr_trnfm( self->vdi_handle, &stdform, &native );
+	*out = native;
+
+	return(0);
+}
+
 /* convert bitmap to the virutal (chunked) framebuffer format */
-static int convert_bitmap( GEM_PLOTTER self,
+static int bitmap_convert( GEM_PLOTTER self,
 	struct bitmap * img,
 	int x,
 	int y,
@@ -1057,7 +1298,7 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	pxy[7] = CURFB(self).y + loc.g_y + off.g_h-1;
 	/* Convert the Bitmap to native screen format - ready for output*/
 	/* This includes blending transparent pixels */
-	if( convert_bitmap( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
+	if( self->bitmap_convert( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
 		return( true );
 	}
 	vro_cpyfm( self->vdi_handle, S_ONLY, (short*)&pxy, &src_mf,  &scrmf);

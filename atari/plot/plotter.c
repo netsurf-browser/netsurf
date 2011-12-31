@@ -628,6 +628,16 @@ void rgb_to_vdi1000( unsigned char * in, unsigned short * out )
 	return;
 }
 
+void vdi1000_to_rgb( unsigned short * in, unsigned char * out )
+{
+	double r = ((double)in[0]/1000); /* prozentsatz red */
+	double g = ((double)in[1]/1000);	/* prozentsatz green */
+	double b = ((double)in[2]/1000);	/* prozentsatz blue */
+	out[2] = 255 * r + 0.5;
+	out[1] = 255 * g + 0.5;
+	out[0] = 255 * b + 0.5;
+	return;
+}
 
 
 static short web_std_colors[6] = {0, 51, 102, 153, 204, 255};
@@ -641,6 +651,19 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 	short i;
 	unsigned char rgb[3] = {r,g,b};
 	unsigned char tval[3];
+
+	int diff_a, diff_b, diff_c;
+	diff_a = abs(r-g);
+	diff_b = abs(r-b);
+	diff_c = abs(r-b);
+	if( diff_a < 2 && diff_b < 2 && diff_c < 2 ){
+		if( (r!=0XFF) && (g!=0XFF) && (g!=0XFF)  ){
+			if( ((r&0xF0)>>4) != 0 )
+				//printf("conv gray: %x -> %d\n", ((r&0xF0)>>4) , (OFFSET_CUST_PAL) + ((r&0xF0)>>4) );
+			return( (OFFSET_CUST_PAL - OFFSET_WEB_PAL) + ((r&0xF0)>>4) );
+		}
+	}
+
 	/* convert each 8bit color to 6bit web color: */
 	for( i=0; i<3; i++) {
 		if(0 == rgb[i] % web_std_colors[1] ) {
