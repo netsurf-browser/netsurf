@@ -197,20 +197,11 @@ void nsgtk_tab_add(struct gui_window *window,
 	gtk_widget_show_all(tab_contents);
 	gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), 
 			gtk_notebook_get_n_pages(GTK_NOTEBOOK(tabs)) - 1);
-	if (option_new_blank) {
-		/*char *blankpage = malloc(strlen(res_dir_location) +  
-				SLEN("file:///blankpage") + 1);
-		blankpage = g_strconcat("file:///", res_dir_location, 
-				"blankpage", NULL); */
-		/* segfaults 
-		struct browser_window *bw =
-				nsgtk_get_browser_window(window);
-		browser_window_go(bw, blankpage, 0, true); */
-		/* free(blankpage); */
-	}
+
 	if (background) {
 		gtk_notebook_set_current_page(GTK_NOTEBOOK(tabs), remember);
 	}
+
 	gtk_widget_grab_focus(GTK_WIDGET(nsgtk_scaffolding_urlbar(
 			nsgtk_get_scaffold(window))));
 }

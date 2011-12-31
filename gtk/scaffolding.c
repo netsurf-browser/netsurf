@@ -1998,7 +1998,7 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 {
 	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
 	struct bitmap *icon_bitmap = NULL;
-	GdkPixbuf *icon_pixbuf;
+	GdkPixbuf *icon_pixbuf = NULL;
 
 	if (g->top_level != _g) {
 		return;
@@ -2007,11 +2007,13 @@ void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
 	if (icon != NULL) {
 		icon_bitmap = content_get_bitmap(icon);
 		if (icon_bitmap != NULL) {
+			LOG(("Using %p bitmap", icon_bitmap));
 			icon_pixbuf = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
-		}
+		} 
 	} 
 
 	if (icon_pixbuf == NULL) {
+		LOG(("Using default favicon"));
 		g_object_ref(favicon_pixbuf);
 		icon_pixbuf = favicon_pixbuf;
 	}

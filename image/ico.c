@@ -135,6 +135,7 @@ static bool nsico_convert(struct content *c)
 	bmp = ico_find(ico->ico, 255, 255);
 	if (bmp == NULL) {
 		/* return error */
+		LOG(("Failed to select icon"));
 		return false;
 	}
 
@@ -155,12 +156,18 @@ static bool nsico_redraw(struct content *c, struct content_redraw_data *data,
 
 	/* select most appropriate sized icon for size */
 	bmp = ico_find(ico->ico, data->width, data->height);
+	if (bmp == NULL) {
+		/* return error */
+		LOG(("Failed to select icon"));
+		return false;
+	}
 
 	/* ensure its decided */
 	if (bmp->decoded == false) {
 		if (bmp_decode(bmp) != BMP_OK) {
 			return false;
 		} else {
+			LOG(("Decoding bitmap"));
 			bitmap_modified(bmp->bitmap);
 		}
 
@@ -218,7 +225,14 @@ static void *nsico_get_internal(const struct content *c, void *context)
 	nsico_content *ico = (nsico_content *) c;
 	/* TODO: Pick best size for purpose.
 	 *       Currently assumes it's for a URL bar. */
-	struct bmp_image *bmp = ico_find(ico->ico, 16, 16);
+	struct bmp_image *bmp; 
+
+	bmp = ico_find(ico->ico, 16, 16);
+	if (bmp == NULL) {
+		/* return error */
+		LOG(("Failed to select icon"));
+		return NULL;
+	}
 
 	if (bmp->decoded == false) {
 		if (bmp_decode(bmp) != BMP_OK) {
