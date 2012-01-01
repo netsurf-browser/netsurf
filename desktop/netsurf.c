@@ -46,6 +46,7 @@
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/searchweb.h"
+#include "desktop/js.h"
 #include "render/html.h"
 #include "render/textplain.h"
 #include "utils/log.h"
@@ -229,6 +230,8 @@ nserror netsurf_init(int *pargc,
 
 	options_commandline(pargc, *pargv);
 
+	js_initialise();
+
 	return ret;
 }
 
@@ -252,6 +255,8 @@ int netsurf_main_loop(void)
 
 void netsurf_exit(void)
 {
+	js_finalise();
+
 	hlcache_stop();
 	
 	LOG(("Closing GUI"));

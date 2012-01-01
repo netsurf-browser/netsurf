@@ -58,8 +58,15 @@ S_PDF := $(addprefix desktop/save_pdf/,$(S_PDF))
 
 # S_BROWSER are sources related to full browsers but are common
 # between RISC OS, GTK, BeOS and AmigaOS builds
-S_BROWSER := browser.c download.c frames.c history_core.c netsurf.c	\
+S_BROWSER := browser.c download.c frames.c history_core.c netsurf.c \
 	save_complete.c save_text.c selection.c textinput.c
+
+ifeq ($(NETSURF_USE_JS),YES)
+S_BROWSER += js.c
+else
+S_BROWSER += nojs.c
+endif
+
 S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
 
 # The following files depend on the testament

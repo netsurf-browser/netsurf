@@ -54,6 +54,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
+#include "desktop/js.h"
 
 #include "render/form.h"
 #include "render/html.h"
@@ -646,6 +647,8 @@ struct browser_window *browser_window_create(const char *url,
 		return NULL;
 	}
 
+	bw->jsctx = js_newcontext();
+
 	/* Initialise common parts */
 	browser_window_initialise_common(bw, clone);
 
@@ -669,8 +672,9 @@ struct browser_window *browser_window_create(const char *url,
 		return NULL;
 	}
 
-	if (url)
+	if (url) {
 		browser_window_go(bw, url, referer, history_add);
+	}
 
 	
 	return bw;
@@ -935,6 +939,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
+
+	/* fresh javascript compartment */
+	bw->jsglobal = js_newcompartment(bw->jsctx);
 
 	/* Verifiable fetches may trigger a download */
 	if (verifiable)
@@ -1941,6 +1948,10 @@ void browser_window_destroy_internal(struct browser_window *bw)
 	if (bw->box != NULL) {
 		bw->box->iframe = NULL;
 		bw->box = NULL;
+	}
+
+	if (bw->jsctx != NULL) {
+		js_destroycontext(bw->jsctx);
 	}
 
 	/* These simply free memory, so are safe here */

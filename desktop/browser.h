@@ -197,6 +197,11 @@ struct browser_window {
 	/** Current context for free text search, or NULL if none */
 	struct search_context *cur_search;
 
+	/** current javascript context */
+	struct jscontext *jsctx;
+	/** current global javascript object */
+	struct jsobject *jsglobal;
+
 	/** cache of the currently displayed status text. */
 	char *status_text; /**< Current status bar text. */
 	int status_text_len; /**< Length of the ::status_text buffer. */
