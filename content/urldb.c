@@ -2911,7 +2911,6 @@ bool urldb_set_cookie(const char *header, const char *url,
 		/* Now insert into database */
 		if (!urldb_insert_cookie(c, scheme, urlt))
 			goto error;
-		cookies_schedule_update((struct cookie_data *)c);
 	} while (cur < end);
 
 	free(host);
@@ -3393,6 +3392,8 @@ bool urldb_insert_cookie(struct cookie_internal_data *c, const char *scheme,
 		else
 			p->cookies = c;
 		p->cookies_end = c;
+
+		cookies_schedule_update((struct cookie_data *)c);
 	}
 
 	return true;
