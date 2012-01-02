@@ -68,7 +68,7 @@ static int bitmap_convert_8( GEM_PLOTTER self, struct bitmap * img,int x, int y,
 	GRECT * clip,uint32_t bg,uint32_t flags, MFDB *out  );
 static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 					unsigned long bg, unsigned long flags );
-static int plot_mfdb( GEM_PLOTTER self, GRECT * where, MFDB * mfdb, uint32_t flags);
+static int plot_mfdb( GEM_PLOTTER self, GRECT * where, MFDB * mfdb, unsigned char fgcolor, uint32_t flags);
 static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, const plot_font_style_t *fstyle);
 
 
@@ -948,36 +948,83 @@ static void snapshot_destroy( GEM_PLOTTER self )
 }
 
 
-inline void set_stdpx( MFDB * dst, int x, int y, unsigned char val )
+inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
-	int p;
 	short * buf;
-	int wdplanesz = dst->fd_wdwidth*dst->fd_h;
 	short whichbit = (1<<(15-(x%16)));
 
 	buf = dst->fd_addr;
 	buf += ((dst->fd_wdwidth*(y))+(x>>4));
-	for( p=0; p<=dst->fd_nplanes-1; p++) {
+
+	*buf = (val&1) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<1)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<2)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<3)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<4)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<5)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<6)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	buf += wdplanesz;
+	*buf = (val&(1<<7)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
+
+	/*for( p=0; p<=dst->fd_nplanes-1; p++) {
 		*buf = (val&(1<<p)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
 		buf += wdplanesz;
-	}
+	}*/
 }
 
-inline unsigned char get_stdpx(MFDB * dst, int x, int y )
+inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
 {
 	unsigned char ret=0;
-	int p;
 	short * buf;
-	int wdplanesz = dst->fd_wdwidth*dst->fd_h;
 	short whichbit = (1<<(15-(x%16)));
 
 	buf = dst->fd_addr;
 	buf += ((dst->fd_wdwidth*(y))+(x>>4));
-	for( p=0; p<=dst->fd_nplanes-1; p++) {
-		if( *buf & whichbit )
-			ret |= (01<<p);
-		buf += wdplanesz;
-	}
+
+	if( *buf & whichbit )
+		ret |= 1;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 2;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 4;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 8;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 16;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 32;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 64;
+
+	buf += wdplanesz;
+	if( *buf & whichbit )
+		ret |= 128;
+
 	return( ret );
 }
 
@@ -997,6 +1044,8 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	int bw;
 	struct bitmap * scrbuf = NULL;
 	struct bitmap * bm;
+	bool transp = ( ( (img->opaque == false) || ( (flags & BITMAP_MONOGLYPH) != 0) )
+					&& ((self->flags & PLOT_FLAG_TRANS) != 0) );
 
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
@@ -1035,27 +1084,29 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 
 	// realloc mem for stdform
 	MFDB stdform;
-	if( ((self->flags & PLOT_FLAG_TRANS) != 0) || ( (flags & BITMAP_MONOGLYPH) != 0) ) {
-		// point image to snapshot buffer, otherwise allocate mem
-		MFDB * bg = snapshot_create_std_mfdb( self, x+clip->g_x,y+clip->g_y, clip->g_w, clip->g_h );
-		stdform.fd_addr = bg->fd_addr;
-	} else {
-		if( dstsize > DUMMY_PRIV(self)->size_buf_planar) {
-			int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-			if( DUMMY_PRIV(self)->buf_planar == NULL )
-				DUMMY_PRIV(self)->buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
-			 else
-				DUMMY_PRIV(self)->buf_planar =(void*)realloc(
-														DUMMY_PRIV(self)->buf_planar,
-														blocks * CONV_BLOCK_SIZE
-													);
-			assert( DUMMY_PRIV(self)->buf_planar );
-			if( DUMMY_PRIV(self)->buf_planar == NULL ) {
-				return( 0-ERR_NO_MEM );
+	if( transp ){
+		if( ((self->flags & PLOT_FLAG_TRANS) != 0) || ( (flags & BITMAP_MONOGLYPH) != 0) ) {
+			// point image to snapshot buffer, otherwise allocate mem
+			MFDB * bg = snapshot_create_std_mfdb( self, x+clip->g_x,y+clip->g_y, clip->g_w, clip->g_h );
+			stdform.fd_addr = bg->fd_addr;
+		} else {
+			if( dstsize > DUMMY_PRIV(self)->size_buf_planar) {
+				int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+				if( DUMMY_PRIV(self)->buf_planar == NULL )
+					DUMMY_PRIV(self)->buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
+				 else
+					DUMMY_PRIV(self)->buf_planar =(void*)realloc(
+															DUMMY_PRIV(self)->buf_planar,
+															blocks * CONV_BLOCK_SIZE
+														);
+				assert( DUMMY_PRIV(self)->buf_planar );
+				if( DUMMY_PRIV(self)->buf_planar == NULL ) {
+					return( 0-ERR_NO_MEM );
+				}
+				DUMMY_PRIV(self)->size_buf_planar = blocks * CONV_BLOCK_SIZE;
 			}
-			DUMMY_PRIV(self)->size_buf_planar = blocks * CONV_BLOCK_SIZE;
+			stdform.fd_addr = DUMMY_PRIV(self)->buf_planar;
 		}
-		stdform.fd_addr = DUMMY_PRIV(self)->buf_planar;
 	}
 	stdform.fd_w = dststride;
 	stdform.fd_h = clip->g_h;
@@ -1064,45 +1115,71 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	stdform.fd_nplanes = (short)self->bpp_virt;
 	stdform.fd_r1 = stdform.fd_r2 = stdform.fd_r3 = 0;
 
-	int wdplanesz = stdform.fd_wdwidth*stdform.fd_h;
-	int bytestride = (dststride >> 3) *  self->bpp_virt;
-	unsigned long max = ((char*)stdform.fd_addr)+dstsize;
 	int img_stride = bitmap_get_rowstride(bm);
-	unsigned char rgb[4];
 	uint32_t prev_pixel = 0x12345678;
-	unsigned char prev_col = 1;
-	unsigned char col = 0;
-	unsigned long bgcol = 0;
+	unsigned long col = 0;
 	unsigned char val = 0;
+	uint32_t * row;
+	uint32_t pixel;
+	int wdplanesize = stdform.fd_wdwidth*stdform.fd_h;
+
 
 	// apply transparency.
-	for( y=0; y<clip->g_h; y++ ){
-			uint32_t * imgpixel;
-			imgpixel = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
-		for( x=0; x<clip->g_w; x++ ){
+	if( transp ){
+		unsigned long bgcol = 0;
+		unsigned char prev_col = 0x12345678;
 
-			uint32_t pixel = imgpixel[x+clip->g_x];
 
-			if( (pixel&0xFF) == 0 ){
-				continue;
-			}
+		for( y=0; y<clip->g_h; y++ ){
 
-			if( (pixel&0xFF) < 0xF0 ){
-				col = get_stdpx( &stdform,x,y );
-				if( col != prev_col )
-					bgcol = (((rgb_lookup[col][2] << 16) | (rgb_lookup[col][1] << 8) | (rgb_lookup[col][0]))<<8);
-				if( prev_col != col || prev_pixel != pixel ){
-					prev_col = col;
-					pixel = ablend( pixel, bgcol );
-					pixel = pixel >> 8;
-					/* convert pixel value to vdi color index: */
-					col = ( ((pixel&0xFF)<<16)
-								| (pixel&0xFF00)
-								| ((pixel&0xFF0000)>>16) );
-					val = RGB_TO_VDI( col );
+			row = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
+
+			for( x=0; x<clip->g_w; x++ ){
+
+				pixel = row[x+clip->g_x];
+
+				if( (pixel&0xFF) == 0 ){
+					continue;
 				}
-				set_stdpx( &stdform, x,y, val );
-			} else {
+
+				if( (pixel&0xFF) < 0xF0 ){
+					col = get_stdpx( &stdform, wdplanesize,x,y );
+					if( col != prev_col )
+						bgcol = (((rgb_lookup[col][2] << 16) | (rgb_lookup[col][1] << 8) | (rgb_lookup[col][0]))<<8);
+					if( prev_col != col || prev_pixel != pixel ){
+						prev_col = col;
+						pixel = ablend( pixel, bgcol );
+						prev_pixel = pixel;
+						pixel = pixel >> 8;
+						/* convert pixel value to vdi color index: */
+						col = ( ((pixel&0xFF)<<16)
+									| (pixel&0xFF00)
+									| ((pixel&0xFF0000)>>16) );
+						val = RGB_TO_VDI( col );
+					}
+					set_stdpx( &stdform, wdplanesize, x,y, val );
+				} else {
+					if( pixel != prev_pixel ){
+						/* convert pixel value to vdi color index: */
+						pixel = pixel >> 8;
+						col = ( ((pixel&0xFF)<<16)
+									| (pixel&0xFF00)
+									| ((pixel&0xFF0000)>>16) );
+						val = RGB_TO_VDI( col );
+						prev_pixel = pixel;
+					}
+					set_stdpx( &stdform, wdplanesize, x,y, val );
+				}
+			}
+		}
+	} else {
+		for( y=0; y<clip->g_h; y++ ){
+
+			row = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
+
+			for( x=0; x<clip->g_w; x++ ){
+
+				pixel = row[x+clip->g_x];
 				if( pixel != prev_pixel ){
 					/* convert pixel value to vdi color index: */
 					pixel = pixel >> 8;
@@ -1110,10 +1187,10 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 								| (pixel&0xFF00)
 								| ((pixel&0xFF0000)>>16) );
 					val = RGB_TO_VDI( col );
+					prev_pixel = pixel;
 				}
-				set_stdpx( &stdform, x,y, val );
+				set_stdpx( &stdform, wdplanesize, x,y, val );
 			}
-			prev_pixel = pixel;
 		}
 	}
 
@@ -1311,13 +1388,13 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	return( true );
 }
 
-static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, uint32_t flags)
+static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, unsigned char fgcolor, uint32_t flags)
 {
 
 	MFDB screen, tran;
 	MFDB * src;
 	short pxy[8];
-	short c[2] = {OFFSET_CUSTOM_COLOR, WHITE};
+	short c[2] = {fgcolor, WHITE};
 	GRECT off;
 
 	plotter_get_clip_grect( self, &off );

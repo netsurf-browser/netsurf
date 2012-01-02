@@ -168,7 +168,7 @@ typedef int (*_pmf_bitmap_convert)( GEM_PLOTTER self, struct bitmap * img, int x
 				GRECT * clip, uint32_t bg, uint32_t flags, MFDB *out  );
 typedef	int (*_pmf_bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 				unsigned long bg, unsigned long flags );
-typedef int (*_pmf_plot_mfdb)(GEM_PLOTTER self, GRECT * loc, MFDB * mfdb, uint32_t flags);
+typedef int (*_pmf_plot_mfdb)(GEM_PLOTTER self, GRECT * loc, MFDB * mfdb, unsigned char fgcolor, uint32_t flags);
 typedef	int (*_pmf_text)(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
 typedef	int (*_pmf_dtor)(GEM_PLOTTER self);
 
