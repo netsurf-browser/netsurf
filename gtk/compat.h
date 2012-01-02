@@ -37,10 +37,6 @@ GtkWidget *nsgtk_combo_box_text_new(void);
 void nsgtk_combo_box_text_append_text(GtkWidget *combo_box, const gchar *text);
 gchar *nsgtk_combo_box_text_get_active_text(GtkWidget *combo_box);
 
-GtkWidget *nsgtk_entry_new(void);
-void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
-void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
-
 #if !GTK_CHECK_VERSION(2,16,0)
 #include "gtk/sexy_icon_entry.h"
 
@@ -49,5 +45,9 @@ typedef enum {
   GTK_ENTRY_ICON_SECONDARY = SEXY_ICON_ENTRY_SECONDARY
 } GtkEntryIconPosition;
 #endif
+
+GtkWidget *nsgtk_entry_new(void);
+void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
+void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
 
 #endif /* NETSURF_GTK_COMPAT_H */
