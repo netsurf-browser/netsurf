@@ -82,7 +82,7 @@ char *tmp_clipboard;
 struct gui_window *input_window = NULL;
 struct gui_window *window_list = NULL;
 void * h_gem_rsrc;
-OBJECT * 	h_gem_menu;
+OBJECT * h_gem_menu;
 OBJECT **rsc_trindex;
 short vdih;
 short rsc_ntree;
@@ -94,6 +94,7 @@ bool rendering = false;
 int cfg_width;
 int cfg_height;
 
+/* Defaults to option_homepage_url, commandline options overwrites that value */
 const char * cfg_homepage_url;
 
 /* path to choices file: */
@@ -172,7 +173,7 @@ gui_create_browser_window(struct browser_window *bw,
 	window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE|WIDGET_SCROLL );
 	if( gw->root->handle ) {
 		GRECT pos = {
-			app.w/2-(cfg_width/2), app.h/2-(cfg_height/2),
+			app.w/2-(cfg_width/2), (app.h/2)-(cfg_height/2)+16,
 			cfg_width, cfg_height
 		};
 		window_open( gw , pos );
@@ -272,18 +273,30 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
 void gui_window_set_status(struct gui_window *w, const char *text)
 {
 
-	if (w == NULL || text == NULL )
-		return;
-	window_set_stauts( w , (char*)text );
-	if( strncmp("Done", text, 4) == 0 ){
+	static char * msg_done = NULL;
+	static char * msg_loading = NULL;
+	static char * msg_fetch = NULL;
+
+	if( msg_done == NULL ){
+		msg_done = messages_get("Done");
+		msg_loading = messages_get("Loading");
+		msg_fetch = messages_get("Fetch");
+	}
+
+	if( strncmp(msg_done, text, 4) == 0 ){
 		rendering = false;
 	} else {
 		if( !rendering
 			&&
-			( strncmp("Load", text, 4) == 0 || strncmp("Fetch", text, 5) == 0)){
+			(
+				strncmp(msg_loading, text, 4) == 0 ||
+				strncmp(msg_fetch, text, 4) == 0)) {
 			rendering = true;
 		}
 	}
+	if (w == NULL || text == NULL )
+		return;
+	window_set_stauts( w , (char*)text );
 }
 
 void gui_window_redraw_window(struct gui_window *gw)
@@ -849,8 +862,14 @@ process_cmdline(int argc, char** argv)
 		cfg_width = option_window_width;
 		cfg_height = option_window_height;
 	} else {
-		cfg_width = 600;
-		cfg_height = 360;
+		if( sys_type() == SYS_TOS ){
+			/* on single tasking OS, start as fulled window: */
+			cfg_width = app.w;
+			cfg_height = app.h;
+		} else {
+			cfg_width = 600;
+			cfg_height = 360;
+		}
 	}
 
 	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
