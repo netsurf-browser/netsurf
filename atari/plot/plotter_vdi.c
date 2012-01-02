@@ -75,6 +75,7 @@ static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, 
 #ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
 static unsigned short pal[256][3];     /*RGB*/
+static char rgb_lookup[256][4];
 extern unsigned short vdi_web_pal[126][3];
 #endif
 extern struct s_vdi_sysinfo vdi_sysinfo;
@@ -206,13 +207,14 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 					/* here we define 20 additional gray colors... */
 					rgbcol[1] = rgbcol[2] = rgbcol[3] = ((graytone&0x0F) << 4);
 					rgb_to_vdi1000( &rgbcol[0], &pal[i][0] );
-					printf("graytone: %d (%x), index: %d\n",rgbcol[1], rgbcol[1],i  );
 					vs_color( self->vdi_handle, i, &pal[i][0] );
 					graytone++;
 				}
 
 			}
+			vdi1000_to_rgb( &pal[i],  &rgb_lookup[i][0] );
 		}
+
 	} else {
 		/* no need to change the palette - its application specific */
 	}
@@ -254,6 +256,10 @@ static int dtor( GEM_PLOTTER self )
 	for( i=0; i<MAX_FRAMEBUFS; i++) {
 		if( self->fbuf[i].mem != NULL )
 			free( self->fbuf[i].mem );
+	}
+
+	for( i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++){
+		vs_color( self->vdi_handle, i, &sys_pal[i][0] );
 	}
 
 
@@ -803,23 +809,6 @@ static MFDB * snapshot_create_native_mfdb( GEM_PLOTTER self, int x, int y, int w
 			self->vdi_handle, S_ONLY, (short*)&pxy,
 			&scr,  &DUMMY_PRIV(self)->buf_scr
 	);
-	dbg_pxy("ntv snap", pxy );
-
-/*
-Debug: output copy to screen:
-	pxy[0] = 0;
-	pxy[1] = 0;
-	pxy[2] = pxy[0] + w-1;
-	pxy[3] = pxy[1] + h-1;
-	pxy[4] = x+20;
-	pxy[5] = y;
-	pxy[6] = w-1;
-	pxy[7] = h-1;
-	vro_cpyfm(
-			self->vdi_handle, S_ONLY, (short*)&pxy,
-			&DUMMY_PRIV(self)->buf_scr,&scr
-	);
-*/
 
 	return( &DUMMY_PRIV(self)->buf_scr );
 }
@@ -959,7 +948,7 @@ static void snapshot_destroy( GEM_PLOTTER self )
 }
 
 
-void set_stdpx( MFDB * dst, int x, int y, unsigned char val )
+inline void set_stdpx( MFDB * dst, int x, int y, unsigned char val )
 {
 	int p;
 	short * buf;
@@ -974,7 +963,7 @@ void set_stdpx( MFDB * dst, int x, int y, unsigned char val )
 	}
 }
 
-unsigned char get_stdpx(MFDB * dst, int x, int y )
+inline unsigned char get_stdpx(MFDB * dst, int x, int y )
 {
 	unsigned char ret=0;
 	int p;
@@ -1074,41 +1063,57 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	stdform.fd_stand = 1;
 	stdform.fd_nplanes = (short)self->bpp_virt;
 	stdform.fd_r1 = stdform.fd_r2 = stdform.fd_r3 = 0;
-	/*printf("bpp virt: %d, bytestr:  %d, planesize %d\n",
-			self->bpp_virt, ((dststride >> 3) *  self->bpp_virt), stdform.fd_wdwidth*stdform.fd_h );
-	*/
-	// convert pixels to  std. format
+
 	int wdplanesz = stdform.fd_wdwidth*stdform.fd_h;
 	int bytestride = (dststride >> 3) *  self->bpp_virt;
 	unsigned long max = ((char*)stdform.fd_addr)+dstsize;
 	int img_stride = bitmap_get_rowstride(bm);
+	unsigned char rgb[4];
+	uint32_t prev_pixel = 0x12345678;
+	unsigned char prev_col = 1;
+	unsigned char col = 0;
+	unsigned long bgcol = 0;
+	unsigned char val = 0;
 
-	// first, get snapshot in planar buffer,
-	// then apply transparency.
+	// apply transparency.
 	for( y=0; y<clip->g_h; y++ ){
 			uint32_t * imgpixel;
 			imgpixel = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
 		for( x=0; x<clip->g_w; x++ ){
+
 			uint32_t pixel = imgpixel[x+clip->g_x];
-			unsigned long col = ABGR_TO_RGB( (pixel&0xFFFFFF00)>>8 );
-			unsigned char val = RGB_TO_VDI( col>>8 );
+
 			if( (pixel&0xFF) == 0 ){
-				set_stdpx( &stdform, x,y, get_stdpx( &stdform,x,y ) );
 				continue;
 			}
 
-			if( (pixel&0xFF) >=128 ){
+			if( (pixel&0xFF) < 0xF0 ){
+				col = get_stdpx( &stdform,x,y );
+				if( col != prev_col )
+					bgcol = (((rgb_lookup[col][2] << 16) | (rgb_lookup[col][1] << 8) | (rgb_lookup[col][0]))<<8);
+				if( prev_col != col || prev_pixel != pixel ){
+					prev_col = col;
+					pixel = ablend( pixel, bgcol );
+					pixel = pixel >> 8;
+					/* convert pixel value to vdi color index: */
+					col = ( ((pixel&0xFF)<<16)
+								| (pixel&0xFF00)
+								| ((pixel&0xFF0000)>>16) );
+					val = RGB_TO_VDI( col );
+				}
 				set_stdpx( &stdform, x,y, val );
 			} else {
-				char rgb[4];
-				col = get_stdpx( &stdform,x,y );
-				// TBD: use lookup table!
-				vdi1000_to_rgb( &pal[col],  &rgb[0] );
-				pixel = ablend( pixel, ((rgb[2] << 16) | (rgb[1] << 8) | (rgb[0]))<<8 );
-				col = ABGR_TO_RGB( (pixel&0xFFFFFF00)>>8 );
-				val = RGB_TO_VDI( col>>8 );
+				if( pixel != prev_pixel ){
+					/* convert pixel value to vdi color index: */
+					pixel = pixel >> 8;
+					col = ( ((pixel&0xFF)<<16)
+								| (pixel&0xFF00)
+								| ((pixel&0xFF0000)>>16) );
+					val = RGB_TO_VDI( col );
+				}
 				set_stdpx( &stdform, x,y, val );
 			}
+			prev_pixel = pixel;
 		}
 	}
 
