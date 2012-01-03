@@ -386,8 +386,8 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 
 	clip.g_x = self->plotter->clipping.x0;
 	clip.g_y = self->plotter->clipping.y0;
-	clip.g_w = self->plotter->clipping.x1 - self->plotter->clipping.x0;
-	clip.g_h = self->plotter->clipping.y1 - self->plotter->clipping.y0;
+	clip.g_w = (self->plotter->clipping.x1 - self->plotter->clipping.x0)+1;
+	clip.g_h = (self->plotter->clipping.y1 - self->plotter->clipping.y0)+1;
 
 	if( !rc_intersect( &clip, loc ) ){
 		return;
@@ -434,8 +434,8 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 
 	clip.g_x = self->plotter->clipping.x0;
 	clip.g_y = self->plotter->clipping.y0;
-	clip.g_w = self->plotter->clipping.x1 - self->plotter->clipping.x0;
-	clip.g_h = self->plotter->clipping.y1 - self->plotter->clipping.y0;
+	clip.g_w = (self->plotter->clipping.x1 - self->plotter->clipping.x0)+1;
+	clip.g_h = (self->plotter->clipping.y1 - self->plotter->clipping.y0)+1;
 
 	if( !rc_intersect( &clip, loc ) ){
 		return;
@@ -503,7 +503,8 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	uint32_t c = fstyle->foreground ;
 	/* in -> BGR */
 	/* out -> ARGB */
-	c = ABGR_TO_RGB(c);
+	if( app.nplanes > 8 )
+		c = ABGR_TO_RGB(c);
 
 	while (nxtchr < length) {
 		ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
@@ -526,7 +527,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 						&loc,
 						bglyph->bitmap.buffer,
 						bglyph->bitmap.pitch,
-						fstyle->foreground
+						c
 					);
 				}
 		}
