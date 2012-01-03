@@ -326,8 +326,10 @@ FONT_PLOTTER new_font_plotter( int vdihandle, char * name, unsigned long flags, 
 		*error = 0-ERR_NO_MEM;
 		return( NULL );
 	}
+	memset( fplotter, 0, sizeof(FONT_PLOTTER));
 	fplotter->vdi_handle = vdihandle;
 	fplotter->name = name;
+	fplotter->flags = 0;
 	fplotter->flags |= flags;
 	for( i = 0; ; i++) {
 		if( font_driver_table[i].name == NULL ) {

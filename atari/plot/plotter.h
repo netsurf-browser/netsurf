@@ -57,6 +57,9 @@
 #define PLOT_FLAG_DITHER 	0x04		/* true if the plotter shall dither images */
 #define PLOT_FLAG_TRANS		0x08		/* true if the plotter supports transparent operations */
 
+/* Font Plotter flags: */
+#define FONTPLOT_FLAG_MONOGLYPH 0x01
+
 /* Flags for init_mfdb function: */
 #define MFDB_FLAG_STAND			0x01
 #define MFDB_FLAG_ZEROMEM		0x02
@@ -84,7 +87,11 @@ typedef int (*_fpmf_pixel_pos)( FONT_PLOTTER self, const plot_font_style_t *fsty
 						int x, size_t *char_offset, int *actual_x);
 typedef int (*_fpmf_text)( FONT_PLOTTER self, int x, int y, const char *text,
 													size_t length, const plot_font_style_t *fstyle);
+
+typedef void (*_fpmf_draw_glyph)(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata,
+						int pitch, uint32_t colour);
 typedef int (*_fpmf_dtor)( FONT_PLOTTER self );
+
 
 /* prototype of the font plotter "object" */
 struct s_font_plotter
@@ -99,6 +106,7 @@ struct s_font_plotter
 	_fpmf_str_split str_split;
 	_fpmf_pixel_pos pixel_pos;
 	_fpmf_text text;
+	_fpmf_draw_glyph draw_glyph;
 	_fpmf_dtor dtor;
 };
 
