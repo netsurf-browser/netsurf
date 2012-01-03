@@ -57,6 +57,13 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 static int text( FONT_PLOTTER self,  int x, int y, const char *text,
 					size_t length, const plot_font_style_t *fstyle );
 
+static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata,
+						int pitch, uint32_t colour);
+static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata,
+						int pitch, uint32_t colour);
+
+static MFDB tmp;
+static int tmp_mfdb_size;
 static bool init = false;
 
 
@@ -176,7 +183,6 @@ static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
                                             glyph_index,
                                             &glyph,
                                             NULL);
-
 	return glyph;
 }
 
@@ -273,12 +279,6 @@ static bool ft_font_init(void)
                             "fonts/fantasy.ttf",
                             DEJAVU_PATH"DejaVuSerifCondensed-Bold.ttf");
 
-	/* set the default render mode */
-	if (option_atari_font_monochrom == true)
-		ft_load_type = FT_LOAD_MONOCHROME;
-	else
-		ft_load_type = 0;
-
 	return true;
 }
 
@@ -369,6 +369,7 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 	return ( 1 );
 }
 
+
 static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
 {
 	GRECT clip;
@@ -418,6 +419,79 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 	self->plotter->bitmap( self->plotter, fontbmp, loc->g_x, loc->g_y, 0, 0);
 }
 
+static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
+{
+	GRECT clip;
+	int xloop,yloop,xoff,yoff;
+	int x,y,w,h;
+	uint8_t bitm;
+    const uint8_t *fntd;
+
+	x = loc->g_x;
+	y = loc->g_y;
+	w = loc->g_w;
+	h = loc->g_h;
+
+	clip.g_x = self->plotter->clipping.x0;
+	clip.g_y = self->plotter->clipping.y0;
+	clip.g_w = self->plotter->clipping.x1 - self->plotter->clipping.x0;
+	clip.g_h = self->plotter->clipping.y1 - self->plotter->clipping.y0;
+
+	if( !rc_intersect( &clip, loc ) ){
+		return;
+	}
+
+	assert( loc->g_w > 0 );
+	assert( loc->g_h > 0 );
+	xoff = loc->g_x - x;
+	yoff = loc->g_y - y;
+
+	if (h > loc->g_h)
+		h = loc->g_h;
+
+	if (w > loc->g_w)
+		w = loc->g_w;
+
+	int stride = MFDB_STRIDE( w );
+	if( tmp.fd_addr == NULL || tmp_mfdb_size < MFDB_SIZE( 1, stride, h) ){
+		tmp_mfdb_size = init_mfdb( 1, w, h,  MFDB_FLAG_STAND | MFDB_FLAG_ZEROMEM, &tmp );
+	} else {
+		void * buf = tmp.fd_addr;
+		int size = init_mfdb( 1, w, h,  MFDB_FLAG_STAND | MFDB_FLAG_NOALLOC, &tmp );
+		tmp.fd_addr = buf;
+		memset( tmp.fd_addr, 0, size );
+	}
+	short * buf;
+	for( yloop = 0; yloop < h; yloop++) {
+		fntd = pixdata + (pitch * (yloop+yoff))+(xoff>>3);
+		buf = tmp.fd_addr;
+		buf += (tmp.fd_wdwidth*yloop);
+		for ( xloop = 0, bitm = (1<<(7-(xoff%8))); xloop < w; xloop++, bitm=(bitm>>1) ) {
+				if( (*fntd & bitm) != 0 ){
+					short whichbit = (1<<(15-(xloop%16)));
+					buf[xloop>>4] = ((buf[xloop>>4])|(whichbit));
+				}
+				if( bitm == 1 ) {
+					fntd++;
+					bitm = 128;
+				}
+		}
+	}
+	if( app.nplanes > 8 ){
+		unsigned short out[4];
+		rgb_to_vdi1000( (unsigned char*)&colour, (unsigned short*)&out );
+		vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
+		self->plotter->plot_mfdb( self->plotter, loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
+	} else {
+		unsigned char c = RGB_TO_VDI(colour);
+		self->plotter->plot_mfdb( self->plotter, loc, &tmp, c, PLOT_FLAG_TRANS );
+	}
+
+}
+
+
+
+
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,
 				 const plot_font_style_t *fstyle )
 {
@@ -436,8 +510,9 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 		nxtchr = utf8_next(text, length, nxtchr);
 
 		glyph = ft_getglyph(fstyle, ucs4);
-		if (glyph == NULL)
+		if (glyph == NULL){
 			continue;
+		}
 
 		if (glyph->format == FT_GLYPH_FORMAT_BITMAP) {
 				bglyph = (FT_BitmapGlyph)glyph;
@@ -446,17 +521,13 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 				loc.g_w = bglyph->bitmap.width;
 				loc.g_h = bglyph->bitmap.rows;
 
-				if (bglyph->bitmap.pixel_mode == FT_PIXEL_MODE_MONO) {
-					assert( 1 == 0 );
-				} else {
-					if( loc.g_w > 0) {
-						draw_glyph8( self,
-							&loc,
-							bglyph->bitmap.buffer,
-							bglyph->bitmap.pitch,
-							c
-						);
-					}
+				if( loc.g_w > 0) {
+					self->draw_glyph( self,
+						&loc,
+						bglyph->bitmap.buffer,
+						bglyph->bitmap.pitch,
+						fstyle->foreground
+					);
 				}
 		}
 		x += glyph->advance.x >> 16;
@@ -473,6 +544,17 @@ int ctor_font_plotter_freetype( FONT_PLOTTER self )
 	self->str_split = str_split;
 	self->pixel_pos = pixel_pos;
 	self->text = text;
+
+	/* set the default render mode */
+	if( (self->flags & FONTPLOT_FLAG_MONOGLYPH) != 0 ){
+		ft_load_type = FT_LOAD_MONOCHROME;
+		self->draw_glyph = draw_glyph1;
+	}
+	else{
+		ft_load_type = 0;
+		self->draw_glyph = draw_glyph8;
+	}
+
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
 	if( !init ) {
 		ft_font_init();
@@ -489,6 +571,10 @@ static int dtor( FONT_PLOTTER self )
 	ft_font_finalise();
 	if( fontbmp == NULL )
 		bitmap_destroy( fontbmp );
+
+	if( tmp.fd_addr != NULL ){
+		free( tmp.fd_addr );
+	}
 	return( 1 );
 }
 
