@@ -503,7 +503,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	uint32_t c = fstyle->foreground ;
 	/* in -> BGR */
 	/* out -> ARGB */
-	if( app.nplanes > 8 )
+	if( !(self->flags & FONTPLOT_FLAG_MONOGLYPH) )
 		c = ABGR_TO_RGB(c);
 
 	while (nxtchr < length) {
