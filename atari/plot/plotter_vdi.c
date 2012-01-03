@@ -978,11 +978,6 @@ inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char va
 
 	buf += wdplanesz;
 	*buf = (val&(1<<7)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
-
-	/*for( p=0; p<=dst->fd_nplanes-1; p++) {
-		*buf = (val&(1<<p)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
-		buf += wdplanesz;
-	}*/
 }
 
 inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
