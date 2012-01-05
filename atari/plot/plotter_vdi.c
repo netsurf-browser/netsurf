@@ -641,15 +641,21 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 			v_pline(self->vdi_handle, 2, (short *)&pxy );
 		}
 	}
+
 	if( pstyle->fill_type != PLOT_OP_TYPE_NONE ){
+
+		short stroke_width = (short)(pstyle->stroke_type != PLOT_OP_TYPE_NONE) ?
+								pstyle->stroke_width : 0;
+
 		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour );
 		vsf_perimeter( self->vdi_handle, 0);
 		vsf_interior( self->vdi_handle, FIS_SOLID );
 
-		pxy[0] = CURFB(self).x + r.g_x+pstyle->stroke_width;
-		pxy[1] = CURFB(self).y + r.g_y+pstyle->stroke_width;
-		pxy[2] = CURFB(self).x + r.g_x + r.g_w -1 - pstyle->stroke_width ;
-		pxy[3] = CURFB(self).y + r.g_y + r.g_h -1 - pstyle->stroke_width;
+
+		pxy[0] = CURFB(self).x + r.g_x + stroke_width;
+		pxy[1] = CURFB(self).y + r.g_y + stroke_width;
+		pxy[2] = CURFB(self).x + r.g_x + r.g_w -1 - stroke_width ;
+		pxy[3] = CURFB(self).y + r.g_y + r.g_h -1 - stroke_width;
 
 		vsf_style( self->vdi_handle, 1);
 		v_bar( self->vdi_handle, (short*)&pxy );
