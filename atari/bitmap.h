@@ -22,6 +22,7 @@
 #define BITMAP_SHRINK	0
 #define BITMAP_GROW		0x1024
 #define BITMAP_MONOGLYPH 0x2048
+#define BITMAP_CLEAR	0x4096
 
 struct bitmap {
 	int width;

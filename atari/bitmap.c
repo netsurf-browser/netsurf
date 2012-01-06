@@ -105,6 +105,7 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 		assert( 1 == 0 );
 		/* add some buffer for bad code */
 		bitmap->pixdata = malloc( newsize + 128 );
+		bitmap->opaque = false;
 	} else {
 		int oldsize = bitmap->rowstride * bitmap->height;
 		bool doalloc = ( state == BITMAP_GROW) ? (newsize > oldsize) : (newsize != oldsize);
@@ -116,10 +117,12 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 				return( NULL );
 		}
 	}
+	if( state & BITMAP_CLEAR ){
+		memset( bitmap->pixdata, 0x00, newsize + 128  );
+	}
 
 	bitmap->width = w;
 	bitmap->height = h;
-	bitmap->opaque = false;
 	bitmap->bpp = bpp;
 	bitmap->resized = NULL;
 	bitmap->rowstride = rowstride;
