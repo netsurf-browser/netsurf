@@ -20,7 +20,7 @@ unsigned short _systype (void)
 	int32_t * cptr = NULL;
 	_systype_v = SYS_TOS;
 
-	cptr = Setexc(0x0168, -1L);
+	cptr = (int32_t *)Setexc(0x0168, -1L);
 	if (cptr == NULL ) {
 		return _systype_v;   /* stone old TOS without any cookie support */
 	}
