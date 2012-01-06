@@ -55,11 +55,14 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 	int err=0;
 	struct s_driver_table_entry * drvinfo;
 	int flags = 0;
+	unsigned long font_flags = 0;
 
 	if( option_atari_dither == 1)
 		flags |= PLOT_FLAG_DITHER;
 	if( option_atari_transparency == 1 )
 		flags |= PLOT_FLAG_TRANS;
+	if( option_atari_font_monochrom == 1 )
+		font_flags |= FONTPLOT_FLAG_MONOGLYPH;
 
 	vdih = app.graf.handle;
 	if( verbose_log ) {
@@ -70,7 +73,7 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 	drvinfo = get_screen_driver_entry( drvrname );
 
 	LOG(("using plotters: %s, %s", drvrname, fdrvrname));
-	fplotter = new_font_plotter(vdih, fdrvrname, 0, &err );
+	fplotter = new_font_plotter(vdih, fdrvrname, font_flags, &err );
 	if(err){
 		char * desc = plotter_err_str(err);
 		die(("Unable to load font plotter %s -> %s", fdrvrname, desc ));
