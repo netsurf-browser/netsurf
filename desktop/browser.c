@@ -1902,6 +1902,10 @@ void browser_window_destroy_internal(struct browser_window *bw)
 		}
 	}
 
+	/* Destroying a search context causes it to redraw any deselected,
+	 * content areas, so do this first */
+	browser_window_search_destroy_context(bw);
+
 	/* Destruction order is important: we must ensure that the frontend 
 	 * destroys any window(s) associated with this browser window before 
 	 * we attempt any destructive cleanup. 
