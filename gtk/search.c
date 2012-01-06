@@ -42,7 +42,6 @@
 #include "utils/messages.h"
 #include "utils/utils.h"
 
-static void nsgtk_search_init(struct gtk_scaffolding *g);
 static void nsgtk_search_set_status(bool found, void *p);
 static void nsgtk_search_set_hourglass(bool active, void *p);
 static void nsgtk_search_add_recent(const char *string, void *p);
@@ -62,7 +61,9 @@ gboolean nsgtk_search_forward_button_clicked(GtkWidget *widget, gpointer data)
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
-	nsgtk_search_init(g);
+
+	assert(bw);
+
 	search_flags_t flags = SEARCH_FLAG_FORWARDS |
 			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->caseSens)) ?
@@ -84,7 +85,9 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 	struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
-	nsgtk_search_init(g);
+
+	assert(bw);
+
 	search_flags_t flags = 0 |(gtk_toggle_button_get_active(
 			GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->caseSens)) ?
@@ -97,24 +100,6 @@ gboolean nsgtk_search_back_button_clicked(GtkWidget *widget, gpointer data)
 		browser_window_search_step(bw, flags, gtk_entry_get_text(
 				nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
-}
-
-/** preparatory code when the search bar is made visible initially */
-
-void nsgtk_search_init(struct gtk_scaffolding *g)
-{
-	hlcache_handle *c;
-
-	assert(nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g))
-			!= NULL);
-
-	c = nsgtk_get_browser_window(nsgtk_scaffolding_top_level(g))->
-			current_content;
-
-	if ((!c) || (content_get_type(c) != CONTENT_HTML && 
-			content_get_type(c) != CONTENT_TEXTPLAIN))
-		return;
-	
 }
 
 /** connected to the search close button */
@@ -163,7 +148,9 @@ gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 	nsgtk_scaffolding *g = (nsgtk_scaffolding *)data;
 	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
-	nsgtk_search_init(g);
+
+	assert(bw);
+
 	search_flags_t flags = SEARCH_FLAG_FORWARDS |
 			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
 			nsgtk_scaffolding_search(g)->caseSens)) ?
