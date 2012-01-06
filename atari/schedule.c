@@ -43,7 +43,8 @@ struct nscallback
 	void *p;
 };
 
-
+static int max_scheduled;
+static int cur_scheduled;
 
 /**
  * Schedule a callback.
@@ -68,13 +69,18 @@ void schedule( int cs_ival,  void (*callback)(void *p), void *p)
 	nscb = calloc(1, sizeof(struct nscallback));
 
 	nscb->timeout = CS_NOW() + cs_ival;
+#ifdef DEBUG_SCHEDULER
 	LOG(("adding callback %p for  %p(%p) at %d cs", nscb, callback, p, nscb->timeout ));
+#endif
 	nscb->callback = callback;
 	nscb->p = p;
 
     /* add to list front */
 	nscb->next = schedule_list;
 	schedule_list = nscb;
+	cur_scheduled++;
+	if( cur_scheduled > max_scheduled )
+		max_scheduled = cur_scheduled;
 }
 
 
@@ -122,6 +128,7 @@ void schedule_remove(void (*callback)(void *p), void *p)
 				prev_nscb->next = cur_nscb;
 			}
 			free (unlnk_nscb);
+			cur_scheduled--;
 		} else {
 			/* move to next element */
 			prev_nscb = cur_nscb;
@@ -169,6 +176,7 @@ schedule_run(void)
 			/* call callback */
 			unlnk_nscb->callback(unlnk_nscb->p);
 			free(unlnk_nscb);
+			cur_scheduled--;
 
 			/* need to deal with callback modifying the list. */
 			if (schedule_list == NULL) 	{
@@ -217,6 +225,7 @@ void list_schedule(void)
 		LOG(("Schedule %p at %ld", cur_nscb, cur_nscb->timeout ));
 		cur_nscb = cur_nscb->next;
 	}
+	LOG(("Maxmium callbacks scheduled: %d", max_scheduled ));
 }
 
 
