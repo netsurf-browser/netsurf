@@ -59,7 +59,7 @@ static int buts[] = {
 #define ENABLE_OBJ(idx) SET_BIT(dlgtree[idx].ob_state, DISABLED, 0); \
 						ObjcDraw( OC_FORM, dlgwin, idx, 1 )
 
-#define FORMEVENT(idx) form_event( NULL, idx, 1, NULL );
+#define FORMEVENT(idx) form_event( NULL, idx, 0, NULL );
 
 #define INPUT_HOMEPAGE_URL_MAX_LEN 44
 #define INPUT_LOCALE_MAX_LEN 6
@@ -208,7 +208,7 @@ static void __CDECL clear_history( WINDOW *win, int index, int unused,
 }
 
 static void __CDECL
-form_event( WINDOW *win, int index, int intern, void *unused2)
+form_event( WINDOW *win, int index, int external, void *unused2)
 {
 	char spare[255];
 	bool is_button = false;
@@ -266,7 +266,7 @@ form_event( WINDOW *win, int index, int intern, void *unused2)
 			break;
 
 		case CHOICES_BT_SEL_FONT_RENDERER:
-			if( !intern ){
+			if( external ){
 				objc_offset( FORM(win), CHOICES_BT_SEL_FONT_RENDERER, &x, &y);
 				choice = MenuPopUp ( font_driver_items, x, y,
 									num_font_drivers,
