@@ -8,3 +8,7 @@
  - process commandline parameter w (width) / h (height) for default window size
  - improved mouse drag within treeview, browser win, toolbar.
  - Fixed file drop in frames
+ - Implemented option dialog
+ - Improved GUI speed by fixing throbber code.
+ - Implemented "Save as" ( no improvements where made to core-functions ).
+ - Implemented settings dialog

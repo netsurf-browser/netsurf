@@ -17,12 +17,12 @@ WWW:           http://netsurf-browser.org
 Table of Contents:
 ------------------
 
-0x01 - What is it? 
-0x02 - System Requirements 
+0x01 - What is it?
+0x02 - System Requirements
 0x03 - Features
-0x04 - Missing features 
+0x04 - Missing features
 0x05 - Things to test
-0x06 - Additional Notes 
+0x06 - Additional Notes
 0x07 - Known bugs
 0x08 - Technical information
 
@@ -30,9 +30,9 @@ Table of Contents:
 What is it? A web browser!
 --------------------------
 
- NetSurf is a multi-platform web browser which is written with 
- portability and speed in mind. 
- This is the native Port for the FreeMiNT OS.  
+ NetSurf is a multi-platform web browser which is written with
+ portability and speed in mind.
+ This is the native Port for the FreeMiNT OS.
  More info at project website: www.netsurf-browser.org
 
 
@@ -41,16 +41,16 @@ Minimum System Requirements:
 
  - 32 MB RAM ( 48 MB recommended for demanding websites )
  - 32 MHz ( 60 Mhz recommended )
- - At least 15 Bit Graphics card. 
+ - At least 15 Bit Graphics card.
  - FreeMiNT 1.17.0 release kernel (Please look at FAQ to read
    about TOS support) for full & correct network support.
-   
+
 
 Main Features:
 --------------
 
  - Very good HTML 4 & CSS 2.1 rendering
- - HTTPS 
+ - HTTPS
  - Freetype2 font rendering
 
 
@@ -58,30 +58,29 @@ Missing Features:
 -----------------
 
  This section describes Features that NetSurf-Core offers but which are not
- handled by the GEM frontend currently. 
+ handled by the GEM frontend currently.
 
- - Configuration dialog (use texteditor instead)
- - Grapical website history dialog 
+ - Grapical website history dialog
 
 
 Installation Notes:
 -------------------
 
- Unpack the compressed archive that you downloaded, 
+ Unpack the compressed archive that you downloaded,
  change into the new directory and run ns.prg.
- If something isn't working - run ns.prg within an console and 
+ If something isn't working - run ns.prg within an console and
  enable logging:
 
- ./ns.prg -v 
+ ./ns.prg -v
 
  that makes it possible, that you can identify the problem.
 
 
 Additional Notes
 ----------------
- 
- If you would like to see the above mentioned features or 
- can't run NetSurf because you only have a 16 or 256 Color system 
+
+ If you would like to see the above mentioned features or
+ can't run NetSurf because you only have a 16 or 256 Color system
  get in contact.
 
  Please also check the FAQ document.
@@ -95,18 +94,15 @@ Additional Notes
  so far. This release lacks some features and some of the code written
  was just coded with an "I have to get this done quickly" attitude.
  This is especially true for the drawin routines... It doesn't offer
- offscreen bitmaps, which was one of my goals for a release. But 
+ offscreen bitmaps, which was one of my goals for a release. But
  I dropped that in favor of an not-so-delayed release.
 
 
 Known Bugs
 ----------
 
- - Redraw artefacts/false clipping when moving other applications above 
-   NetSurf.
- - Double Redraws when used with classic TOS systems.
- - Window can not be moved out of the desktop area to the right
-
+ - "View Source" only works when the configured editor is already launched.
+ - Wrong redraw area when parts of the window move out of the screen area.
 
 Technical info & outlook
 ------------------------
@@ -118,10 +114,10 @@ Greetings & Thanks
  - AtFact for providing help with resource files & images
  - The MiNT Mailing list, they all helped me a lot!
  - The NetSurf Mailing list guys, especially the Amiga guys.
- - The NetSurf developers that did a great job! 
- - Everyone that tested this Browser! 
- - Everyone that provides feedback! 
- - The forum.atari-home.de members for giving me much help 
+ - The NetSurf developers that did a great job!
+ - Everyone that tested this Browser!
+ - Everyone that provides feedback!
+ - The forum.atari-home.de members for giving me much help
    during setup of my atari!
 
 
