@@ -134,11 +134,25 @@ gboolean nsgtk_search_entry_changed(GtkWidget *widget, gpointer data)
 	struct browser_window *bw = nsgtk_get_browser_window(
 			nsgtk_scaffolding_top_level(g));
 
-	if (bw != NULL)
-		browser_window_search_destroy_context(bw);
+	assert(bw != NULL);
+
+	browser_window_search_destroy_context(bw);
 
 	nsgtk_search_set_forward_state(true, (void *)bw);
 	nsgtk_search_set_back_state(true, (void *)bw);
+
+	search_flags_t flags = SEARCH_FLAG_FORWARDS |
+			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+			nsgtk_scaffolding_search(g)->caseSens)) ?
+			SEARCH_FLAG_CASE_SENSITIVE : 0) | 
+			(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
+			nsgtk_scaffolding_search(g)->checkAll)) ?
+			SEARCH_FLAG_SHOWALL : 0);
+
+	if (browser_window_search_verify_new(bw, &nsgtk_search_callbacks,
+			(void *)bw))
+		browser_window_search_step(bw, flags, gtk_entry_get_text(
+				nsgtk_scaffolding_search(g)->entry));
 	return TRUE;
 }
 
