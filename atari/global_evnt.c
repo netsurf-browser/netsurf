@@ -273,6 +273,18 @@ static void __CDECL menu_debug_render(WINDOW *win, int item, int title, void *da
 	}
 }
 
+static void __CDECL menu_fg_images(WINDOW *win, int item, int title, void *data)
+{
+	option_foreground_images = !option_foreground_images;
+	MenuIcheck( NULL, MAINMENU_M_FG_IMAGES, (option_foreground_images) ? 1 : 0);
+}
+
+static void __CDECL menu_bg_images(WINDOW *win, int item, int title, void *data)
+{
+	option_background_images = !option_background_images;
+	MenuIcheck( NULL, MAINMENU_M_BG_IMAGES, (option_background_images) ? 1 : 0);
+}
+
 static void __CDECL menu_back(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
@@ -361,6 +373,8 @@ static struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_VIEW, MAINMENU_M_TOOLBARS, "Toolbars", menu_toolbars, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_SAVEWIN, "", menu_savewin, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_DEBUG_RENDER, "", menu_debug_render, {0,0,0}, NULL},
+	{T_VIEW, MAINMENU_M_FG_IMAGES, "", menu_fg_images, {0,0,0}, NULL},
+	{T_VIEW, MAINMENU_M_BG_IMAGES, "", menu_bg_images, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_STOP, "Stop", menu_stop, {0,0,0}, NULL},
 	{T_NAV, MAINMENU_M_BACK, "Back", menu_back, {0,0,0}, NULL},
 	{T_NAV, MAINMENU_M_FORWARD, "Forward", menu_forward, {0,0,0}, NULL},
@@ -656,6 +670,13 @@ static void set_menu_title(int rid, const char * nsid)
 	}
 }
 
+void main_menu_update( void )
+{
+	MenuIcheck( NULL, MAINMENU_M_DEBUG_RENDER, (html_redraw_debug) ? 1 : 0);
+	MenuIcheck( NULL, MAINMENU_M_FG_IMAGES, (option_foreground_images) ? 1 : 0);
+	MenuIcheck( NULL, MAINMENU_M_BG_IMAGES, (option_background_images) ? 1 : 0);
+}
+
 
 /* Bind global and menu events to event handler functions, create accelerators */
 void bind_global_events( void )
@@ -750,6 +771,7 @@ void bind_global_events( void )
 		}
 		i++;
 	}
+	main_menu_update();
 	/* TODO: Fix pixel sizes for Titles and Items (for non-8px fonts) */
 }
 

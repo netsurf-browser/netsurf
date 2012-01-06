@@ -57,6 +57,7 @@ struct s_menu_item_evnt {
 
 void bind_global_events( void );
 void unbind_global_events( void );
+void main_menu_update( void );
 
 
 #endif
