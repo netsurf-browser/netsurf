@@ -303,8 +303,10 @@ void dump_font_drivers(void);
 void dump_plot_drivers(void);
 void dump_vdi_info(short);
 
+/* convert an vdi color to bgra */
+void vdi1000_to_rgb( unsigned short * in, unsigned char * out );
 
-/* convert an rgb color to vdi1000 color */
+/* convert an bgra color to vdi1000 color */
 void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
 
 /* convert an rgb color to an index into the web palette */

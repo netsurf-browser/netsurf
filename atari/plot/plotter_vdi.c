@@ -71,6 +71,9 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 static int plot_mfdb( GEM_PLOTTER self, GRECT * where, MFDB * mfdb, unsigned char fgcolor, uint32_t flags);
 static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, const plot_font_style_t *fstyle);
 
+static inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val );
+static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y );
+
 
 #ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
@@ -212,7 +215,7 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 				}
 
 			}
-			vdi1000_to_rgb( &pal[i],  &rgb_lookup[i][0] );
+			vdi1000_to_rgb( &pal[i][0],  &rgb_lookup[i][0] );
 		}
 
 	} else {
@@ -953,7 +956,6 @@ static void snapshot_destroy( GEM_PLOTTER self )
 	}
 }
 
-
 inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
 	short * buf;
@@ -1128,7 +1130,7 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	// apply transparency.
 	if( transp ){
 		unsigned long bgcol = 0;
-		unsigned char prev_col = 0x12345678;
+		unsigned char prev_col = 0;
 
 
 		for( y=0; y<clip->g_h; y++ ){
@@ -1145,7 +1147,7 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 
 				if( (pixel&0xFF) < 0xF0 ){
 					col = get_stdpx( &stdform, wdplanesize,x,y );
-					if( col != prev_col )
+					if( (col != prev_col) || (y == 0) )
 						bgcol = (((rgb_lookup[col][2] << 16) | (rgb_lookup[col][1] << 8) | (rgb_lookup[col][0]))<<8);
 					if( prev_col != col || prev_pixel != pixel ){
 						prev_col = col;
