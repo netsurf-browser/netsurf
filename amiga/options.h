@@ -114,8 +114,8 @@ int option_cookies_window_ysize = 0; \
 int option_cairo_renderer = 1; \
 bool option_direct_render = false; \
 int option_amiga_ydpi = 72; \
-int option_monitor_aspect_x = 4; \
-int option_monitor_aspect_y = 3; \
+int option_monitor_aspect_x = 0; \
+int option_monitor_aspect_y = 0; \
 bool option_accept_lang_locale = true; \
 int option_menu_refresh = 0; \
 
