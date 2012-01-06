@@ -11,6 +11,7 @@
 #include "desktop/options.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/settings.h"
+#include "atari/global_evnt.h"
 #include "atari/misc.h"
 #include "atari/options.h"
 
@@ -58,7 +59,7 @@ static int buts[] = {
 #define ENABLE_OBJ(idx) SET_BIT(dlgtree[idx].ob_state, DISABLED, 0); \
 						ObjcDraw( OC_FORM, dlgwin, idx, 1 )
 
-#define FORMEVENT(idx) form_event( NULL, idx, 0, NULL );
+#define FORMEVENT(idx) form_event( NULL, idx, 1, NULL );
 
 #define INPUT_HOMEPAGE_URL_MAX_LEN 44
 #define INPUT_LOCALE_MAX_LEN 6
@@ -106,7 +107,7 @@ WINDOW * open_settings()
 		ObjcAttachFormFunc( dlgwin, CHOICES_ABORT, closeform, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_OK, saveform, NULL);
 
-		/* Connect dialog element events to generic event handler: */
+		/* Connect interactive dialog elements to generic event handler: */
 		ObjcAttachFormFunc( dlgwin, CHOICES_CB_USE_PROXY, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_CB_PROXY_AUTH, form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_EDIT_DOWNLOAD_PATH, form_event, NULL);
@@ -197,6 +198,7 @@ saveform( WINDOW *win, int index, int unused, void *unused2)
 	close_settings();
 	ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 	form_alert(1, "[1][Some options require an netsurf restart!][OK]");
+	main_menu_update();
 }
 
 static void __CDECL clear_history( WINDOW *win, int index, int unused,
@@ -206,11 +208,12 @@ static void __CDECL clear_history( WINDOW *win, int index, int unused,
 }
 
 static void __CDECL
-form_event( WINDOW *win, int index, int unused, void *unused2)
+form_event( WINDOW *win, int index, int intern, void *unused2)
 {
 	char spare[255];
 	bool is_button = false;
 	bool checked = OBJ_SELECTED( index );
+	char * tmp;
 
 	/* For font driver popup: */
 	const char *font_driver_items[] = {"freetype", "internal" };
@@ -263,16 +266,24 @@ form_event( WINDOW *win, int index, int unused, void *unused2)
 			break;
 
 		case CHOICES_BT_SEL_FONT_RENDERER:
-			objc_offset( FORM(win), CHOICES_BT_SEL_FONT_RENDERER, &x, &y);
-			choice = MenuPopUp ( font_driver_items, x, y,
-								num_font_drivers,
-								 -1, -1, P_LIST + P_WNDW + P_CHCK );
-			if( choice > 0 &&
-				choice <= num_font_drivers ){
-				ObjcStrCpy( dlgtree, CHOICES_BT_SEL_FONT_RENDERER,
-							(char*)font_driver_items[choice-1] );
+			if( !intern ){
+				objc_offset( FORM(win), CHOICES_BT_SEL_FONT_RENDERER, &x, &y);
+				choice = MenuPopUp ( font_driver_items, x, y,
+									num_font_drivers,
+									 -1, -1, P_LIST + P_WNDW + P_CHCK );
+				if( choice > 0 &&
+					choice <= num_font_drivers ){
+					ObjcStrCpy( dlgtree, CHOICES_BT_SEL_FONT_RENDERER,
+								(char*)font_driver_items[choice-1] );
+				}
+				ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 			}
-			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
+			tmp = ObjcString( dlgtree, CHOICES_BT_SEL_FONT_RENDERER, NULL);
+			if( strcmp(tmp, "freetype") == 0 ){
+				ENABLE_OBJ( CHOICES_CB_ANTI_ALIASING );
+			} else {
+				DISABLE_OBJ( CHOICES_CB_ANTI_ALIASING );
+			}
 			break;
 
 		case CHOICES_BT_SEL_LOCALE:
@@ -457,9 +468,11 @@ static void toggle_objects( void )
 	// enable / disable objects depending on radio button values.
 	FORMEVENT(CHOICES_CB_USE_PROXY);
 	FORMEVENT(CHOICES_CB_PROXY_AUTH);
+	FORMEVENT(CHOICES_BT_SEL_FONT_RENDERER);
 }
 
 
+/* this gets called each time the settings dialog is opened: */
 static void display_settings( void )
 {
 	char spare[255];
@@ -519,6 +532,8 @@ static void display_settings( void )
 			SELECTED, option_animate_images ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_INCREMENTAL_REFLOW].ob_state,
 			SELECTED, option_incremental_reflow ? 1 : 0 );
+	SET_BIT(dlgtree[CHOICES_CB_ANTI_ALIASING].ob_state,
+			SELECTED, option_atari_font_monochrom ? 0 : 1 );
 
 	tmp_option_min_reflow_period = option_min_reflow_period;
 	sprintf( spare, "%04d", tmp_option_min_reflow_period );
@@ -540,10 +555,14 @@ static void display_settings( void )
 			INPUT_PROXY_USERNAME_MAX_LEN );
 	set_text( CHOICES_EDIT_PROXY_PASSWORD, option_http_proxy_auth_pass,
 			INPUT_PROXY_PASSWORD_MAX_LEN );
-	if( option_http_proxy )
-		OBJ_CHECK( CHOICES_CB_USE_PROXY );
-	if( option_http_proxy_auth )
-		OBJ_CHECK( CHOICES_CB_PROXY_AUTH );
+	SET_BIT(dlgtree[CHOICES_CB_USE_PROXY].ob_state,
+			SELECTED, option_http_proxy ? 1 : 0 );
+	SET_BIT(dlgtree[CHOICES_CB_PROXY_AUTH].ob_state,
+			SELECTED, option_http_proxy_auth ? 1 : 0 );
+	SET_BIT(dlgtree[CHOICES_CB_FG_IMAGES].ob_state,
+			SELECTED, option_foreground_images ? 1 : 0 );
+	SET_BIT(dlgtree[CHOICES_CB_BG_IMAGES].ob_state,
+			SELECTED, option_background_images ? 1 : 0 );
 
 	tmp_option_max_cached_fetch_handles = option_max_cached_fetch_handles;
 	sprintf( spare, "%2d", option_max_cached_fetch_handles );
@@ -570,7 +589,7 @@ static void display_settings( void )
 	/* Only first tab is refreshed: */
 	ObjcDraw( OC_FORM, dlgwin, CHOICES_TAB_BROWSER, 4 );
 
-	// update elements chained to form events:
+	// update elements (enable/disable) chained to form events:
 	toggle_objects();
 }
 
@@ -598,6 +617,8 @@ static void apply_settings( void )
 		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_CACHED_CONNECTIONS, NULL));
 	option_max_fetchers =
 		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS, NULL) );
+	option_foreground_images = OBJ_SELECTED( CHOICES_CB_FG_IMAGES );
+	option_background_images = OBJ_SELECTED( CHOICES_CB_BG_IMAGES );
 
 	/* "Style" tab: */
 	option_font_min_size = tmp_option_font_min_size;
