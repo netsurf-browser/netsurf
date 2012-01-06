@@ -462,8 +462,9 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			avail_width -= widths[col][row];
 		}
 
-		/* distribute remainder to relative values in preference */
+		/* Redistribute to fit window */
 		if ((relative > 0) && (avail_width > 0)) {
+			/* Expand the relative sections to fill remainder */
 			for (col = 0; col < bw->cols; col++) {
 				index = (row * bw->cols) + col;
 				window = &bw->children[index];
@@ -484,19 +485,18 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			applied = 0;
 			for (col = 0; col < bw->cols; col++) {
 				if (col == bw->cols - 1) {
-					size = extent - applied;
-					widths[col][row] += (size > 0) ?
-							size : 0;
+					/* Last cell, use up remainder */
+					widths[col][row] += extent - applied;
+					widths[col][row] =
+							widths[col][row] < 0 ?
+							0 : widths[col][row];
 				} else {
-					/* Intermediate step: get absolute
-					 * extent value */
-					size = extent < 0 ? -extent : extent;
-
 					/* Find size of cell adjustment */
 					size = (widths[col][row] * extent) /
-							(bw_width - size);
-					applied += size;
+							(bw_width - extent);
+					/* Modify cell */
 					widths[col][row] += size;
+					applied += size;
 				}
 			}
 		}
@@ -545,8 +545,9 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 		if (avail_height == 0)
 			continue;
 
-		/* try to distribute remainder to relative values in preference */
+		/* Redistribute to fit window */
 		if ((relative > 0) && (avail_height > 0)) {
+			/* Expand the relative sections to fill remainder */
 			for (row = 0; row < bw->rows; row++) {
 				index = (row * bw->cols) + col;
 				window = &bw->children[index];
@@ -567,19 +568,18 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
 			applied = 0;
 			for (row = 0; row < bw->rows; row++) {
 				if (row == bw->rows - 1) {
-					size = extent - applied;
-					heights[col][row] += (size > 0) ?
-							size : 0;
+					/* Last cell, use up remainder */
+					heights[col][row] += extent - applied;
+					heights[col][row] =
+							heights[col][row] < 0 ?
+							0 : heights[col][row];
 				} else {
-					/* Intermediate step: get absolute
-					 * extent value */
-					size = extent < 0 ? -extent : extent;
-
 					/* Find size of cell adjustment */
 					size = (heights[col][row] * extent) /
-							(bw_height - size);
-					applied += size;
+							(bw_height - extent);
+					/* Modify cell */
 					heights[col][row] += size;
+					applied += size;
 				}
 			}
 		}
