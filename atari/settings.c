@@ -632,6 +632,7 @@ static void apply_settings( void )
 	option_minimum_gif_delay = (int)(tmp_option_minimum_gif_delay*100+0.5);
 	option_incremental_reflow = OBJ_SELECTED(CHOICES_CB_INCREMENTAL_REFLOW);
 	option_min_reflow_period = tmp_option_min_reflow_period;
+	option_atari_font_monochrom = !OBJ_SELECTED( CHOICES_CB_ANTI_ALIASING );
 
 	/* "Paths" tabs: */
 	option_ca_bundle = ObjcString( dlgtree, CHOICES_EDIT_CA_BUNDLE, NULL);
