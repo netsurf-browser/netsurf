@@ -1,6 +1,6 @@
-# Italian messages for NetSurf 2.9/3.0 Development (Revision 13151)
+# Italian messages for NetSurf 2.9/3.0 Development (Revision 13287)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture) for ATO Italia
-# 7.12.2011
+# 8.01.2012
 # ========================================================================================
 #
 # Description
@@ -24,7 +24,7 @@
 
 # Globals
 NetSurf:NetSurf
-NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
+NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
 
 # Menus
 # =====
@@ -57,7 +57,7 @@ Help:Aiuto
 #
 PageInfo:Info  ^F1
 Save:Salva  F3
-SaveComp:Salva tutto  ?F3
+SaveComp:Salva Tutto  ?F3
 Export:Esporta
 SaveURL:Salva indirizzo
 Print:Stampa  STAMPA
@@ -176,7 +176,7 @@ EditToolbar:Modifica barra strumenti
 # Generic tree menus (currently Hotlist and Global history)
 #
 Selection:Seleziona
-SelectAll:Seleziona tutto  ^A
+SelectAll:Seleziona Tutto  ^A
 Clear:Cancella selezione  ^Z
 Copy:Copia nella clipboard  ^C
 Cut:Taglia nella clipboard  ^X
@@ -263,7 +263,7 @@ PrintNS:Stampa...
 CutNS:Taglia
 CopyNS:Copia
 PasteNS:Incolla
-SelectAllNS:Seleziona tutto
+SelectAllNS:Seleziona Tutto
 ClearNS:Annulla selezione
 
 # Browser menu
@@ -343,7 +343,7 @@ TreeVersion2:RFC 2965
 TreeSession:Fine sessione
 TreeUnused:Inutilizzato
 TreeImport:URL importati
-TreeNewLink:New address
+TreeNewLink:Nuovo indirizzo
 TreeNewFolder:Nuova cartella
 TreeLaunch:Visita URL
 TreeDelete:Elimina
@@ -366,7 +366,7 @@ TreeHotlist:Segnalibri di NetSurf
 #
 NewLink:Crea nuovo indirizzo
 NewFolder:Crea nuova cartella
-EditTitle:Edit title
+EditTitle:Modifica titolo
 EditLink:Modifica indirizzo
 EditFolder:Rinomina cartella
 
@@ -605,7 +605,7 @@ Printing:Stampa della pagina
 NotFound:Non trovato
 Next:Successivo
 Prev:Precedente
-ShowAll:Mostra tutto
+ShowAll:Mostra Tutto
 CaseSens:Maiuscole/Minuscole
 
 # 401 login user interface tokens
