@@ -75,14 +75,22 @@ void browser_window_scroll_callback(void *client_data,
 		}
 		break;
 	case SCROLLBAR_MSG_SCROLL_START:
-		if (scrollbar_is_horizontal(scrollbar_data->scrollbar))
-			browser_window_set_drag_type(bw, DRAGGING_SCR_X);
-		else
-			browser_window_set_drag_type(bw, DRAGGING_SCR_Y);
+	{
+		struct rect rect = {
+			.x0 = scrollbar_data->x0,
+			.y0 = scrollbar_data->y0,
+			.x1 = scrollbar_data->x1,
+			.y1 = scrollbar_data->y1
+		};
 
+		if (scrollbar_is_horizontal(scrollbar_data->scrollbar))
+			browser_window_set_drag_type(bw, DRAGGING_SCR_X, &rect);
+		else
+			browser_window_set_drag_type(bw, DRAGGING_SCR_Y, &rect);
+	}
 		break;
 	case SCROLLBAR_MSG_SCROLL_FINISHED:
-		browser_window_set_drag_type(bw, DRAGGING_NONE);
+		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 		browser_window_set_pointer(bw, GUI_POINTER_DEFAULT);
 		break;
@@ -653,7 +661,8 @@ void browser_window_resize_frame(struct browser_window *bw, int x, int y) {
 	else if (bw->drag_resize_right)
 		sibling = &parent->children[row * parent->cols + (col + 1)];
 	if (sibling)
-		change |= browser_window_resolve_frame_dimension(bw, sibling, x, y, true, false);
+		change |= browser_window_resolve_frame_dimension(bw, sibling,
+				x, y, true, false);
 
 	sibling = NULL;
 	if (bw->drag_resize_up)
@@ -661,14 +670,16 @@ void browser_window_resize_frame(struct browser_window *bw, int x, int y) {
 	else if (bw->drag_resize_down)
 		sibling = &parent->children[(row + 1) * parent->cols + col];
 	if (sibling)
-		change |= browser_window_resolve_frame_dimension(bw, sibling, x, y, false, true);
+		change |= browser_window_resolve_frame_dimension(bw, sibling,
+				x, y, false, true);
 
 	if (change)
 		browser_window_recalculate_frameset(parent);
 }
 
 
-bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct browser_window *sibling,
+bool browser_window_resolve_frame_dimension(struct browser_window *bw,
+		struct browser_window *sibling,
 		int x, int y, bool width, bool height) {
 	int bw_dimension, sibling_dimension;
 	int bw_pixels, sibling_pixels;
@@ -784,8 +795,10 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw, struct br
 }
 
 
-bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state mouse, int x, int y,
-		gui_pointer_shape *pointer, const char **status, bool *action) {
+bool browser_window_resize_frames(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y,
+		gui_pointer_shape *pointer, const char **status,
+		bool *action) {
 	struct browser_window *parent;
 	bool left, right, up, down;
 	int i, resize_margin;
@@ -871,23 +884,19 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 			} else {
 				*pointer = GUI_POINTER_DOWN;
 			}
-			if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
-				browser_window_set_drag_type(bw, DRAGGING_FRAME);
+			if (mouse & (BROWSER_MOUSE_DRAG_1 |
+					BROWSER_MOUSE_DRAG_2)) {
+
+				/* TODO: Pass appropriate rectangle to allow
+				 *	 front end to clamp pointer range */
+				browser_window_set_drag_type(bw,
+						DRAGGING_FRAME, NULL);
 				bw->drag_start_x = x;
 				bw->drag_start_y = y;
 				bw->drag_resize_left = left;
 				bw->drag_resize_right = right;
 				bw->drag_resize_up = up;
 				bw->drag_resize_down = down;
-
-				/* TODO: Tell the front end the valid pointer
-				 *       movement range for the drag, so that
-				 *       they can clamp pointer.
-				 *
-				 *       Probably need a general function for
-				 *       this, to be used by all core-managed
-				 *       drag ops.
-				 */
 
 				*status = messages_get("FrameDrag");
 				*action = true;
@@ -898,14 +907,14 @@ bool browser_window_resize_frames(struct browser_window *bw, browser_mouse_state
 
 	if (bw->children) {
 		for (i = 0; i < (bw->cols * bw->rows); i++)
-			if (browser_window_resize_frames(&bw->children[i], mouse, x, y, pointer, status,
-					action))
+			if (browser_window_resize_frames(&bw->children[i],
+					mouse, x, y, pointer, status, action))
 				return true;
 	}
 	if (bw->iframes) {
 		for (i = 0; i < bw->iframe_count; i++)
-			if (browser_window_resize_frames(&bw->iframes[i], mouse, x, y, pointer, status,
-					action))
+			if (browser_window_resize_frames(&bw->iframes[i],
+					mouse, x, y, pointer, status, action))
 				return true;
 	}
 	return false;

@@ -638,7 +638,7 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 		idx = textplain_offset_from_coords(c, x, y, dir);
 		selection_track(&text->sel, mouse, idx);
 
-		browser_window_set_drag_type(bw, DRAGGING_NONE);
+		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 	}
 
 	switch (bw->drag_type) {
@@ -680,7 +680,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 	size_t idx;
 	int dir = 0;
 
-	browser_window_set_drag_type(bw, DRAGGING_NONE);
+	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 	idx = textplain_offset_from_coords(c, x, y, dir);
 	if (selection_click(&text->sel, mouse, idx)) {

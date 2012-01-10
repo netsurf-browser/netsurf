@@ -380,7 +380,7 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 
 /* exported interface, documented in browser.h */
 void browser_window_set_drag_type(struct browser_window *bw,
-		browser_drag_type type)
+		browser_drag_type type, struct rect *rect)
 {
 	struct browser_window *top_bw = browser_window_get_root(bw);
 
@@ -390,6 +390,9 @@ void browser_window_set_drag_type(struct browser_window *bw,
 		top_bw->drag_window = bw;
 
 	bw->drag_type = type;
+
+	/* TODO: inform front end that the core is handling drag,
+	 *       pass rect */
 }
 
 /* exported interface, documented in browser.h */
@@ -2583,7 +2586,7 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 		break;
 
 	default:
-		browser_window_set_drag_type(bw, DRAGGING_NONE);
+		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 		break;
 	}
 }
@@ -2616,7 +2619,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y)
 {
-	browser_window_set_drag_type(bw, DRAGGING_PAGE_SCROLL);
+	browser_window_set_drag_type(bw, DRAGGING_PAGE_SCROLL, NULL);
 
 	bw->drag_start_x = x;
 	bw->drag_start_y = y;

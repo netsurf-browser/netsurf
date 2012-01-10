@@ -413,9 +413,10 @@ void browser_window_set_scroll(struct browser_window *bw, int x, int y);
  *
  * \param  bw     browser window to set the type of the current drag for
  * \param  type   drag type
+ * \param  rect   area pointer may be confined to, during drag, or NULL
  */
 void browser_window_set_drag_type(struct browser_window *bw,
-		browser_drag_type type);
+		browser_drag_type type, struct rect *rect);
 
 /*
  * Get the root level browser window

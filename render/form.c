@@ -1287,7 +1287,16 @@ void form_select_menu_scroll_callback(void *client_data,
      					menu->height);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
-			browser_window_set_drag_type(html->bw, DRAGGING_OTHER);
+		{
+			struct rect rect = {
+				.x0 = scrollbar_data->x0,
+				.y0 = scrollbar_data->y0,
+				.x1 = scrollbar_data->x1,
+				.y1 = scrollbar_data->y1
+			};
+
+			browser_window_set_drag_type(html->bw, DRAGGING_OTHER,
+					&rect);
 
 			menu->scroll_capture = true;
 
@@ -1295,6 +1304,7 @@ void form_select_menu_scroll_callback(void *client_data,
 			gui_window_box_scroll_start(root_bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,
      					scrollbar_data->x1, scrollbar_data->y1);
+		}
 			break;
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
 			menu->scroll_capture = false;

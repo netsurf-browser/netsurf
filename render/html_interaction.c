@@ -108,7 +108,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		if (idx != 0)
 			selection_track(&html->sel, mouse, idx);
 
-		browser_window_set_drag_type(bw, DRAGGING_NONE);
+		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 	}
 
 	switch (bw->drag_type) {
@@ -255,7 +255,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	}
 
 	/* Content related drags handled by now */
-	browser_window_set_drag_type(bw, DRAGGING_NONE);
+	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars */
@@ -849,7 +849,15 @@ void html_overflow_scroll_callback(void *client_data,
 			html_redraw_a_box(html->bw->current_content, box);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
-			browser_window_set_drag_type(html->bw, DRAGGING_OTHER);
+		{
+			struct rect rect = {
+				.x0 = scrollbar_data->x0,
+				.y0 = scrollbar_data->y0,
+				.x1 = scrollbar_data->x1,
+				.y1 = scrollbar_data->y1
+			};
+			browser_window_set_drag_type(html->bw, DRAGGING_OTHER,
+					&rect);
 
 			html->scrollbar = scrollbar_data->scrollbar;
 
@@ -857,6 +865,7 @@ void html_overflow_scroll_callback(void *client_data,
 			gui_window_box_scroll_start(root_bw->window,
 					scrollbar_data->x0, scrollbar_data->y0,
      					scrollbar_data->x1, scrollbar_data->y1);
+		}
 			break;
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
 			html->scrollbar = NULL;
