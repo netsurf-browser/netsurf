@@ -106,6 +106,8 @@ struct gui_window_2 {
 	struct AppIcon *appicon; /* iconify appicon */
 	struct DiskObject *dobj; /* iconify appicon */
 	struct Hook search_ico_hook;
+	gui_drag_type drag_op;
+	struct IBox *ptr_lock;
 };
 
 struct gui_window

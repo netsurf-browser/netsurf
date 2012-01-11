@@ -1090,6 +1090,54 @@ void ami_gui_scroll_internal(struct gui_window_2 *gwin, int xs, int ys)
 	}
 }
 
+struct IBox *ami_ns_rect_to_ibox(struct gui_window_2 *gwin, const struct rect *rect)
+{
+	struct IBox *bbox, *ibox;
+
+	ibox = AllocVec(sizeof(struct IBox), MEMF_CLEAR | MEMF_PRIVATE);
+	if(ibox == NULL) return NULL;
+
+	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
+
+	ibox->Left = gwin->win->MouseX + (rect->x0 * gwin->bw->scale);
+	ibox->Top = gwin->win->MouseY + (rect->y0 * gwin->bw->scale);
+
+	ibox->Width = (rect->x1 - rect->x0) * gwin->bw->scale;
+	ibox->Height = (rect->y1 - rect->y0) * gwin->bw->scale;
+
+	if(ibox->Left < bbox->Left) ibox->Left = bbox->Left;
+	if(ibox->Top < bbox->Top) ibox->Top = bbox->Top;
+
+	if((ibox->Left > (bbox->Left + bbox->Width)) ||
+		(ibox->Top > (bbox->Top + bbox->Height)) ||
+		(ibox->Width < 0) || (ibox->Height < 0))
+	{
+		FreeVec(ibox);
+		return NULL;
+	}
+
+	return ibox;	
+}
+
+void ami_gui_trap_mouse(struct gui_window_2 *gwin)
+{
+	switch(gwin->drag_op)
+	{
+		case GDRAGGING_NONE:
+		case GDRAGGING_SCROLLBAR:
+		case GDRAGGING_OTHER:
+		break;
+
+		default:
+			if(gwin->ptr_lock)
+			{
+				SetWindowAttrs(gwin->win, WA_GrabFocus, 10,
+					WA_MouseLimits, gwin->ptr_lock, TAG_DONE);
+			}
+		break;
+	}
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
@@ -1249,6 +1297,8 @@ void ami_handle_msg(void)
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
+					ami_gui_trap_mouse(gwin); /* re-assert mouse area */
+
 					drag_x_move = 0;
 					drag_y_move = 0;
 
@@ -3846,7 +3896,21 @@ bool gui_window_scroll_start(struct gui_window *g)
 bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 		const struct rect *rect)
 {
-	DebugPrintF("drag start\n");
+	g->shared->drag_op = type;
+	if(rect) g->shared->ptr_lock = ami_ns_rect_to_ibox(g->shared, rect);
+
+	if(type == GDRAGGING_NONE)
+	{
+		SetWindowAttrs(gwin->win, WA_GrabFocus, 0,
+			WA_MouseLimits, NULL, TAG_DONE);
+
+		if(gwin->ptr_lock)
+		{
+			FreeVec(gwin->ptr_lock);
+			gwin->ptr_lock = NULL;
+		}
+	}
+
 	return true;
 }
 
