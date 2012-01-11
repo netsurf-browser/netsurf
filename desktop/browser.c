@@ -380,7 +380,7 @@ void browser_window_set_position(struct browser_window *bw, int x, int y)
 
 /* exported interface, documented in browser.h */
 void browser_window_set_drag_type(struct browser_window *bw,
-		browser_drag_type type, struct rect *rect)
+		browser_drag_type type, const struct rect *rect)
 {
 	struct browser_window *top_bw = browser_window_get_root(bw);
 	gui_drag_type gtype;
