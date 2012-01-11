@@ -21,11 +21,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <mint/osbind.h>
-#include <mint/cookie.h>
 #include <windom.h>
 
 #include "desktop/cookies.h"
 #include "desktop/mouse.h"
+#include "desktop/cookies.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"
@@ -53,11 +53,6 @@ void die(const char *error)
 {
 	printf("%s\n", error);
 	exit(1);
-}
-
-bool cookies_update(const char *domain, const struct cookie_data *data)
-{
-    return true;
 }
 
 /**

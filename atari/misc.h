@@ -44,6 +44,8 @@ OBJECT *get_tree( int idx );
 char *get_rsc_string( int idx );
 void gem_set_cursor( MFORM_EX * cursor );
 void dbg_grect( char * str, GRECT * r );
+void dbg_lgrect( char * str, LGRECT * r );
+void dbg_pxy( char * str, short * pxy );
 void * ldg_open( char * name, short * global );
 void * ldg_find( char * name, short * ldg );
 int ldg_close( void * ldg, short * global );
