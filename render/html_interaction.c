@@ -223,8 +223,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		return;
 	}
 
-	if (bw->drag_type != DRAGGING_NONE && !mouse &&
-			html->scrollbar != NULL) {
+	if (!mouse && html->scrollbar != NULL) {
 		/* drag end: scrollbar */
 		html_overflow_scroll_drag_end(html->scrollbar, mouse, x, y);
 	}
@@ -856,19 +855,19 @@ void html_overflow_scroll_callback(void *client_data,
 				.x1 = scrollbar_data->x1,
 				.y1 = scrollbar_data->y1
 			};
-			browser_window_set_drag_type(html->bw, DRAGGING_OTHER,
-					&rect);
+			browser_window_set_drag_type(html->bw,
+					DRAGGING_CONTENT_SCROLLBAR, &rect);
 
 			html->scrollbar = scrollbar_data->scrollbar;
 
 			root_bw = browser_window_get_root(html->bw);
-			gui_window_box_scroll_start(root_bw->window,
-					scrollbar_data->x0, scrollbar_data->y0,
-     					scrollbar_data->x1, scrollbar_data->y1);
 		}
 			break;
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
 			html->scrollbar = NULL;
+
+			browser_window_set_drag_type(html->bw,
+					DRAGGING_NONE, NULL);
 			
 			browser_window_set_pointer(html->bw,
 					GUI_POINTER_DEFAULT);

@@ -68,9 +68,9 @@ extern bool print_active, print_text_black;
 typedef enum { GUI_DRAG_NONE, GUI_DRAG_SELECTION, GUI_DRAG_DOWNLOAD_SAVE,
 		GUI_DRAG_SAVE, GUI_DRAG_SCROLL, GUI_DRAG_STATUS_RESIZE,
 		GUI_DRAG_TREEVIEW, GUI_DRAG_BUTTONBAR,
-		GUI_DRAG_FRAME } gui_drag_type;
+		GUI_DRAG_FRAME } ro_gui_drag_type;
 
-extern gui_drag_type gui_current_drag_type;
+extern ro_gui_drag_type gui_current_drag_type;
 
 /** desktop font, size and style being used */
 extern char ro_gui_desktop_font_family[];

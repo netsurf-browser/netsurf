@@ -1244,45 +1244,62 @@ bool gui_window_scroll_start(struct gui_window *g)
 
 
 /**
- * Platform-dependent part of starting a box scrolling operation,
- * for frames and textareas.
+ * Platform-dependent part of starting drag operation.
  *
- * \param  x0  minimum x ordinate of box relative to mouse pointer
- * \param  y0  minimum y ordinate
- * \param  x1  maximum x ordinate
- * \param  y1  maximum y ordinate
+ * \param  g	gui window containing the drag
+ * \param  type	type of drag the core is performing
+ * \param  rect rectangle to constrain pointer to (relative to drag start coord)
  * \return true iff succesful
  */
 
-bool gui_window_box_scroll_start(struct gui_window *g, int x0, int y0, int x1, int y1)
+bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+		struct rect *rect)
 {
 	wimp_pointer pointer;
 	os_error *error;
 	wimp_drag drag;
 
-	error = xwimp_get_pointer_info(&pointer);
-	if (error) {
-		LOG(("xwimp_get_pointer_info 0x%x : %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return false;
+	if (rect != NULL) {
+		/* We have a box to constrain the pointer to, for the drag
+		 * duration */
+		error = xwimp_get_pointer_info(&pointer);
+		if (error) {
+			LOG(("xwimp_get_pointer_info 0x%x : %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return false;
+		}
+
+		drag.type = wimp_DRAG_USER_POINT;
+		drag.bbox.x0 = pointer.pos.x +
+				(int)(rect->x0 * 2 * g->bw->scale);
+		drag.bbox.y0 = pointer.pos.y +
+				(int)(rect->y0 * 2 * g->bw->scale);
+		drag.bbox.x1 = pointer.pos.x +
+				(int)(rect->x1 * 2 * g->bw->scale);
+		drag.bbox.y1 = pointer.pos.y +
+				(int)(rect->y1 * 2 * g->bw->scale);
+
+		error = xwimp_drag_box(&drag);
+		if (error) {
+			LOG(("xwimp_drag_box: 0x%x : %s",
+					error->errnum, error->errmess));
+			warn_user("WimpError", error->errmess);
+			return false;
+		}
 	}
 
-	drag.type = wimp_DRAG_USER_POINT;
-	drag.bbox.x0 = pointer.pos.x + (int)(x0 * 2 * g->bw->scale);
-	drag.bbox.y0 = pointer.pos.y + (int)(y0 * 2 * g->bw->scale);
-	drag.bbox.x1 = pointer.pos.x + (int)(x1 * 2 * g->bw->scale);
-	drag.bbox.y1 = pointer.pos.y + (int)(y1 * 2 * g->bw->scale);
+	switch (type) {
+	case GDRAGGING_SCROLLBAR:
+		/* Dragging a core scrollbar */
+		gui_current_drag_type = GUI_DRAG_SCROLL;
+		break;
 
-	error = xwimp_drag_box(&drag);
-	if (error) {
-		LOG(("xwimp_drag_box: 0x%x : %s",
-				error->errnum, error->errmess));
-		warn_user("WimpError", error->errmess);
-		return false;
+	default:
+		/* Not handled here yet */
+		break;
 	}
 
-	gui_current_drag_type = GUI_DRAG_SCROLL;
 	return true;
 }
 

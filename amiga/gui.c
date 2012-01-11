@@ -3843,10 +3843,10 @@ bool gui_window_scroll_start(struct gui_window *g)
 	return true;
 }
 
-bool gui_window_box_scroll_start(struct gui_window *g,
-		int x0, int y0, int x1, int y1)
+bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+		struct rect *rect)
 {
-	DebugPrintF("box scroll start\n");
+	DebugPrintF("drag start\n");
 	return true;
 }
 

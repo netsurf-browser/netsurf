@@ -1295,19 +1295,19 @@ void form_select_menu_scroll_callback(void *client_data,
 				.y1 = scrollbar_data->y1
 			};
 
-			browser_window_set_drag_type(html->bw, DRAGGING_OTHER,
-					&rect);
+			browser_window_set_drag_type(html->bw,
+					DRAGGING_CONTENT_SCROLLBAR, &rect);
 
 			menu->scroll_capture = true;
 
 			root_bw = browser_window_get_root(html->bw);
-			gui_window_box_scroll_start(root_bw->window,
-					scrollbar_data->x0, scrollbar_data->y0,
-     					scrollbar_data->x1, scrollbar_data->y1);
 		}
 			break;
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
 			menu->scroll_capture = false;
+
+			browser_window_set_drag_type(html->bw,
+					DRAGGING_NONE, NULL);
 			break;
 		default:
 			break;

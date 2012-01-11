@@ -1718,8 +1718,8 @@ bool gui_window_scroll_start(struct gui_window *w)
 	return true;
 }
 
-bool gui_window_box_scroll_start(struct gui_window *w,
-				 int x0, int y0, int x1, int y1)
+bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+		struct rect *rect)
 {
 	return true;
 }

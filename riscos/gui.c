@@ -176,7 +176,7 @@ static wimp_w gui_track_wimp_w;
 /** Browser window which the pointer is over, or 0 if none. */
 struct gui_window *gui_track_gui_window;
 
-gui_drag_type gui_current_drag_type;
+ro_gui_drag_type gui_current_drag_type;
 wimp_t task_handle;	/**< RISC OS wimp task handle. */
 static clock_t gui_last_poll;	/**< Time of last wimp_poll. */
 osspriteop_area *gui_sprites;	   /**< Sprite area containing pointer and hotlist sprites */

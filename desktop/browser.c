@@ -383,16 +383,28 @@ void browser_window_set_drag_type(struct browser_window *bw,
 		browser_drag_type type, struct rect *rect)
 {
 	struct browser_window *top_bw = browser_window_get_root(bw);
-
-	if (type == DRAGGING_NONE)
-		top_bw->drag_window = NULL;
-	else
-		top_bw->drag_window = bw;
+	gui_drag_type gtype;
 
 	bw->drag_type = type;
 
-	/* TODO: inform front end that the core is handling drag,
-	 *       pass rect */
+	if (type == DRAGGING_NONE) {
+		top_bw->drag_window = NULL;
+	} else {
+		top_bw->drag_window = bw;
+
+		switch (type) {
+		case DRAGGING_SCR_X:
+		case DRAGGING_SCR_Y:
+		case DRAGGING_CONTENT_SCROLLBAR:
+			gtype = GDRAGGING_SCROLLBAR;
+			break;
+		default:
+			gtype = GDRAGGING_OTHER;
+			break;
+		}
+
+		gui_window_drag_start(top_bw->window, gtype, rect);
+	}
 }
 
 /* exported interface, documented in browser.h */
@@ -2554,10 +2566,8 @@ void browser_window_mouse_drag_end(struct browser_window *bw,
 
 	switch (bw->drag_type) {
 	case DRAGGING_SELECTION:
-		/* Drag handled by content handler */
-		break;
-
 	case DRAGGING_OTHER:
+	case DRAGGING_CONTENT_SCROLLBAR:
 		/* Drag handled by content handler */
 		break;
 

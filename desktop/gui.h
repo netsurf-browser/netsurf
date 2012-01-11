@@ -41,6 +41,12 @@ typedef enum {
 	GUI_SAVE_CLIPBOARD_CONTENTS
 } gui_save_type;
 
+typedef enum {
+	GDRAGGING_NONE,
+	GDRAGGING_SCROLLBAR,
+	GDRAGGING_OTHER
+} gui_drag_type;
+
 struct gui_window;
 struct gui_download_window;
 struct browser_window;
@@ -100,8 +106,10 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height);
 void gui_window_remove_caret(struct gui_window *g);
 void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);
-bool gui_window_box_scroll_start(struct gui_window *g,
-		int x0, int y0, int x1, int y1);
+
+bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
+		struct rect *rect);
+
 void gui_window_save_link(struct gui_window *g, const char *url, 
 		const char *title);
 
