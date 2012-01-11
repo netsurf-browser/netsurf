@@ -754,3 +754,23 @@ void tb_stop_click( struct gui_window * gw )
 	browser_window_stop( gw->browser->bw );
 }
 
+
+void tb_hide( struct gui_window * gw, short mode )
+{
+	CMP_TOOLBAR tb = gw->root->toolbar;
+	assert( tb != NULL );
+	if( mode == 1 ){
+		tb->hidden = true;
+		tb->comp->rect.g_h = 0;
+		tb->comp->bounds.max_height = 0;
+
+	} else {
+		tb->hidden = false;
+		tb->comp->rect.g_h = TOOLBAR_HEIGHT;
+		tb->comp->bounds.max_height = TOOLBAR_HEIGHT;
+	}
+	gw->browser->reformat_pending = true;
+	browser_update_rects( gw );
+	snd_rdw( gw->root->handle  );
+}
+

@@ -71,6 +71,7 @@ struct s_toolbar
 	GRECT btdim;
 	/* size & location of buttons: */
 	struct s_tb_button * buttons;
+	bool hidden;
 	int btcnt;
 };
 
@@ -97,5 +98,7 @@ void tb_url_set( struct gui_window * gw, char * text );
 /* perform redraw of invalidated url textinput areas: */
 void tb_url_redraw( struct gui_window * gw );
 struct gui_window * tb_gui_window( CMP_TOOLBAR tb );
+/* hide toolbar, mode = 1: hide, mode = 0: show */
+void tb_hide( struct gui_window * gw, short mode );
 
 #endif
