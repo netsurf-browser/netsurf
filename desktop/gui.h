@@ -108,7 +108,7 @@ void gui_window_new_content(struct gui_window *g);
 bool gui_window_scroll_start(struct gui_window *g);
 
 bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		struct rect *rect);
+		const struct rect *rect);
 
 void gui_window_save_link(struct gui_window *g, const char *url, 
 		const char *title);

@@ -1253,7 +1253,7 @@ bool gui_window_scroll_start(struct gui_window *g)
  */
 
 bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		struct rect *rect)
+		const struct rect *rect)
 {
 	wimp_pointer pointer;
 	os_error *error;

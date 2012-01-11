@@ -594,7 +594,7 @@ bool gui_window_scroll_start(struct gui_window *w)
 }
 
 bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		struct rect *rect)
+		const struct rect *rect)
 {
 	TODO();
 	return true;

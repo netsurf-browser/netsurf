@@ -3844,7 +3844,7 @@ bool gui_window_scroll_start(struct gui_window *g)
 }
 
 bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-		struct rect *rect)
+		const struct rect *rect)
 {
 	DebugPrintF("drag start\n");
 	return true;

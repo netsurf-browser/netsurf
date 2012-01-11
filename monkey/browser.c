@@ -371,7 +371,7 @@ gui_window_remove_caret(struct gui_window *g)
 
 bool
 gui_window_drag_start(struct gui_window *g, gui_drag_type type,
-                      struct rect *rect)
+                      const struct rect *rect)
 {
   fprintf(stdout, "WINDOW SCROLL_START WIN %u TYPE %i\n);
   return false;
