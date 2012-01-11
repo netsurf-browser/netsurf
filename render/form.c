@@ -1269,7 +1269,6 @@ void form_select_menu_scroll_callback(void *client_data,
 	struct form_control *control = client_data;
 	struct form_select_menu *menu = control->data.select.menu;
 	html_content *html = (html_content *)menu->c;
-	struct browser_window *root_bw;
 	
 	switch (scrollbar_data->msg) {
 		case SCROLLBAR_MSG_REDRAW:
@@ -1299,8 +1298,6 @@ void form_select_menu_scroll_callback(void *client_data,
 					DRAGGING_CONTENT_SCROLLBAR, &rect);
 
 			menu->scroll_capture = true;
-
-			root_bw = browser_window_get_root(html->bw);
 		}
 			break;
 		case SCROLLBAR_MSG_SCROLL_FINISHED:
