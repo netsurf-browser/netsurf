@@ -131,7 +131,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 
 		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
 		{
-			rlen = ReadChunkBytes(iffh,&cset,24);
+			rlen = ReadChunkBytes(iffh,&cset,32);
 			if(cset.CodeSet == 1) codeset = 106;
 				else codeset = cset.CodeSet;
 		}
@@ -172,10 +172,10 @@ bool gui_empty_clipboard(void)
 		{
 			if(option_utf8_clipboard || ami_utf8_clipboard)
 			{
-				if(!(PushChunk(iffh,0,ID_CSET,24)))
+				if(!(PushChunk(iffh,0,ID_CSET,32)))
 				{
 					cset.CodeSet = 106; // UTF-8
-					WriteChunkBytes(iffh,&cset,24);
+					WriteChunkBytes(iffh,&cset,32);
 					PopChunk(iffh);
 				}
 			}
