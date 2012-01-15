@@ -3901,13 +3901,13 @@ bool gui_window_drag_start(struct gui_window *g, gui_drag_type type,
 
 	if(type == GDRAGGING_NONE)
 	{
-		SetWindowAttrs(gwin->win, WA_GrabFocus, 0,
+		SetWindowAttrs(g->shared->win, WA_GrabFocus, 0,
 			WA_MouseLimits, NULL, TAG_DONE);
 
-		if(gwin->ptr_lock)
+		if(g->shared->ptr_lock)
 		{
-			FreeVec(gwin->ptr_lock);
-			gwin->ptr_lock = NULL;
+			FreeVec(g->shared->ptr_lock);
+			g->shared->ptr_lock = NULL;
 		}
 	}
 
