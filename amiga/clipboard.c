@@ -111,6 +111,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	struct ContextNode *cn;
 	ULONG rlen=0,error;
 	struct CSet cset;
+	LONG codeset = 0;
 	char *clip;
 	STRPTR readbuf = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR);
 
@@ -131,13 +132,15 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
 		{
 			rlen = ReadChunkBytes(iffh,&cset,24);
+			if(cset.CodeSet == 1) codeset = 106;
+				else codeset = cset.CodeSet;
 		}
 
 		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS))
 		{
 			while((rlen = ReadChunkBytes(iffh,readbuf,1024)) > 0)
 			{
-				if(cset.CodeSet == 0)
+				if(codeset == 0)
 				{
 					utf8_from_local_encoding(readbuf,rlen,&clip);
 				}
@@ -145,7 +148,7 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 				{
 					utf8_from_enc(readbuf,
 						(const char *)ObtainCharsetInfo(DFCS_NUMBER,
-										cset.CodeSet, DFCS_MIMENAME),
+										codeset, DFCS_MIMENAME),
 						rlen, &clip);
 				}
 
