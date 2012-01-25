@@ -272,28 +272,22 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
  */
 void gui_window_set_status(struct gui_window *w, const char *text)
 {
-
-	static char * msg_done = NULL;
 	static char * msg_loading = NULL;
 	static char * msg_fetch = NULL;
 
-	if( msg_done == NULL ){
-		msg_done = messages_get("Done");
+	if( msg_loading == NULL ){
 		msg_loading = messages_get("Loading");
 		msg_fetch = messages_get("Fetch");
 	}
 
-	if( strncmp(msg_done, text, 4) == 0 ){
-		rendering = false;
-	} else {
-		if( !rendering
-			&&
-			(
-				strncmp(msg_loading, text, 4) == 0 ||
-				strncmp(msg_fetch, text, 4) == 0)) {
+	if( (strncmp(msg_loading, text, 4) == 0)
+		||
+		(strncmp(msg_fetch, text, 4)) == 0 ) {
 			rendering = true;
-		}
+	} else {
+		rendering = false;
 	}
+
 	if (w == NULL || text == NULL )
 		return;
 	window_set_stauts( w , (char*)text );
