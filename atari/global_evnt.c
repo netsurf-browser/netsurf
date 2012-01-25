@@ -249,7 +249,12 @@ static void __CDECL menu_reload(WINDOW *win, int item, int title, void *data)
 
 static void __CDECL menu_toolbars(WINDOW *win, int item, int title, void *data)
 {
+	static int state = 0;
 	LOG(("%s", __FUNCTION__));
+	if( input_window != null && input_window->root->toolbar != null ){
+		state = !state;
+		tb_hide( input_window, state );
+	}
 }
 
 static void __CDECL menu_savewin(WINDOW *win, int item, int title, void *data)
@@ -381,7 +386,7 @@ static struct s_menu_item_evnt menu_evnt_tbl[] =
 	{T_NAV, MAINMENU_M_HOME, "Home", menu_home, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_LHISTORY, "HistLocal", menu_lhistory, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_GHISTORY, "HistGlobal", menu_ghistory, {0,0,0}, NULL},
-	{T_UTIL, MAINMENU_M_ADD_BOOKMARK, "HotlistAdd", menu_add_bookmark, {0,0,0}, NULL},
+	{T_UTIL, MAINMENU_M_ADD_BOOKMARK, "HotlistAdd", menu_add_bookmark, {'D',0,K_CTRL}, NULL},
 	{T_UTIL, MAINMENU_M_BOOKMARKS, "HotlistShow", menu_bookmarks, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_CHOICES, "Choices", menu_choices, {0,0,0}, NULL},
 	{T_UTIL, MAINMENU_M_VLOG, "Verbose Log", menu_vlog, {0,0,0}, NULL},
