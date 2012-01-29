@@ -593,7 +593,8 @@ static const content_handler nspng_content_handler = {
 };
 
 static const char *nspng_types[] = {
-	"image/png"
+	"image/png",
+	"image/x-png"
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nspng, nspng_types, nspng_content_handler);

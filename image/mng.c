@@ -818,7 +818,8 @@ static const char *nsjpng_types[] = {
 	"image/jng",
 	"image/x-jng",
         /* PNG types*/
-	"image/png"
+	"image/png",
+	"image/x-png"
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(nsjpng, nsjpng_types, nsjpng_content_handler);
