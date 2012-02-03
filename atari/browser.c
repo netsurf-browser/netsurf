@@ -252,6 +252,7 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * da
 
 	short rel_cur_x, rel_cur_y;
 	short prev_x=sx_origin, prev_y=sy_origin;
+	bool dragmode = 0;
 
 	/* Detect left mouse button state and compare with event state: */
 	graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
@@ -265,13 +266,19 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * da
 		do{
 			if( abs(prev_x-rel_cur_x) > 5 || abs(prev_y-rel_cur_y) > 5 ){
 				browser_window_mouse_track( gw->browser->bw,
-									BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_HOLDING_1,
+									BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_DRAG_1,
 									rel_cur_x, rel_cur_y);
 				prev_x = rel_cur_x;
 				prev_y = rel_cur_y;
-				if( browser_redraw_required( gw ) ){
-					browser_redraw( gw );
+				dragmode = true;
+			} else {
+				if( dragmode == false ){
+					browser_window_mouse_track( gw->browser->bw,BROWSER_MOUSE_PRESS_1,
+									rel_cur_x, rel_cur_y);
 				}
+			}
+			if( browser_redraw_required( gw ) ){
+				browser_redraw( gw );
 			}
 			graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
 			rel_cur_x = (rel_cur_x - cwork.g_x) + gw->browser->scroll.current.x;
