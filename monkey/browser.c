@@ -373,7 +373,7 @@ bool
 gui_window_drag_start(struct gui_window *g, gui_drag_type type,
                       const struct rect *rect)
 {
-  fprintf(stdout, "WINDOW SCROLL_START WIN %u TYPE %i\n);
+  fprintf(stdout, "WINDOW SCROLL_START WIN %u TYPE %i\n", g->win_num, type);
   return false;
 }
 
