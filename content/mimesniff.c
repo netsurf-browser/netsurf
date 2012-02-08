@@ -62,6 +62,7 @@ static lwc_string *application_x_gzip;
 static lwc_string *application_postscript;
 static lwc_string *application_pdf;
 static lwc_string *video_mp4;
+static lwc_string *image_svg;
 
 nserror mimesniff_init(void)
 {
@@ -97,6 +98,7 @@ nserror mimesniff_init(void)
 	SINIT(application_postscript,       "application/postscript");
 	SINIT(application_pdf,              "application/pdf");
 	SINIT(video_mp4,                    "video/mp4");
+	SINIT(image_svg,                    "image/svg+xml");
 #undef SINIT
 
 	return NSERROR_OK;
@@ -104,6 +106,7 @@ nserror mimesniff_init(void)
 
 void mimesniff_fini(void)
 {
+	lwc_string_unref(image_svg);
 	lwc_string_unref(video_mp4);
 	lwc_string_unref(application_pdf);
 	lwc_string_unref(application_postscript);
@@ -636,7 +639,7 @@ static nserror mimesniff__compute_feed_or_html(const uint8_t *data,
 /* See mimesniff.h for documentation */
 nserror mimesniff_compute_effective_type(llcache_handle *handle,
 		const uint8_t *data, size_t len, bool sniff_allowed,
-		lwc_string **effective_type)
+		bool image_only, lwc_string **effective_type)
 {
 #define S(s) { s, SLEN(s) }
 	static const struct tt_s {
@@ -681,6 +684,22 @@ nserror mimesniff_compute_effective_type(llcache_handle *handle,
 		*effective_type = lwc_string_ref(ct->media_type);
 		http_content_type_destroy(ct);
 		return NSERROR_OK;
+	}
+
+	if (image_only) {
+		lwc_string *official_type;
+
+		if (lwc_string_caseless_isequal(ct->media_type, image_svg, 
+				&match) == lwc_error_ok && match) {
+			*effective_type = lwc_string_ref(image_svg);
+			http_content_type_destroy(ct);
+			return NSERROR_OK;
+		}
+
+		official_type = lwc_string_ref(ct->media_type);
+		http_content_type_destroy(ct);
+		return mimesniff__compute_image(official_type,
+				data, len, effective_type);
 	}
 
 	content_type_header_len = strlen(content_type_header);

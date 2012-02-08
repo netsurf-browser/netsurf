@@ -522,6 +522,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 	case LLCACHE_EVENT_HAD_HEADERS:
 		error = mimesniff_compute_effective_type(handle, NULL, 0,
 				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE,
+				ctx->accepted_types == CONTENT_IMAGE,
 				&effective_type);
 		if (error == NSERROR_OK || error == NSERROR_NOT_FOUND) {
 			/* If the sniffer was successful or failed to find
@@ -545,6 +546,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		error = mimesniff_compute_effective_type(handle,
 				event->data.data.buf, event->data.data.len,
 				ctx->flags & HLCACHE_RETRIEVE_SNIFF_TYPE,
+				ctx->accepted_types == CONTENT_IMAGE,
 				&effective_type);
 		if (error != NSERROR_OK) {
 			assert(0 && "MIME sniff failed with data");
@@ -561,7 +563,7 @@ nserror hlcache_llcache_callback(llcache_handle *handle,
 		/* DONE event before we could determine the effective MIME type.
 		 */
 		error = mimesniff_compute_effective_type(handle,
-				NULL, 0, false, &effective_type);
+				NULL, 0, false, false, &effective_type);
 		if (error == NSERROR_OK) {
 			error = hlcache_migrate_ctx(ctx, effective_type);
 

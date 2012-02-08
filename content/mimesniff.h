@@ -38,6 +38,7 @@ struct llcache_handle;
  * \param data            First data chunk, or NULL
  * \param len             Length of \a data, in bytes
  * \param sniff_allowed   Whether MIME type sniffing is allowed
+ * \param image_only      Sniff image types only
  * \param effective_type  Location to receive computed type
  * \return NSERROR_OK on success,
  *         NSERROR_NEED_DATA iff \a data is NULL and data is needed
@@ -46,7 +47,7 @@ struct llcache_handle;
  */
 nserror mimesniff_compute_effective_type(struct llcache_handle *handle,
 		const uint8_t *data, size_t len, bool sniff_allowed,
-		lwc_string **effective_type);
+		bool image_only, lwc_string **effective_type);
 
 nserror mimesniff_init(void);
 void mimesniff_fini(void);
