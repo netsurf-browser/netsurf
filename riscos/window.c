@@ -3160,10 +3160,10 @@ void ro_gui_window_scroll_action(struct gui_window *g,
 			state.xscroll += 0x10000000;
 			break;
 		case SCROLL_PAGE_UP:
-			state.xscroll -= visible_x;
+			state.xscroll += visible_x;
 			break;
 		case SCROLL_PAGE_DOWN:
-			state.xscroll += visible_x;
+			state.xscroll -= visible_x;
 			break;
 		default:
 			state.xscroll += 2 * step_x;
