@@ -88,9 +88,6 @@
 
 #include "utils/log.h"
 
-/** Connect a GTK signal handler to a widget */
-#define SIG_CONNECT(obj, sig, callback, ptr) \
-	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 /** Obtain a GTK widget handle from glade xml object */
 #define GET_WIDGET(x) glade_xml_get_widget(g->xml, (x))
@@ -112,7 +109,7 @@ static gboolean nsgtk_on_##q##_activate(struct gtk_scaffolding *g)
 
 /** Macro to define a handler for menu events. */
 #define MENUHANDLER(q)\
-static gboolean nsgtk_on_##q##_activate(GtkMenuItem *widget, gpointer data)
+static gboolean nsgtk_on_##q##_activate_menu(GtkMenuItem *widget, gpointer data)
 
 /** Macro to define a handler for button events. */
 #define BUTTONHANDLER(q)\
@@ -1568,8 +1565,8 @@ static void nsgtk_attach_menu_handlers(struct gtk_scaffolding *g)
 		}
 	}
 #define CONNECT_CHECK(q)\
-	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->q##_menuitem, "toggled", G_CALLBACK(nsgtk_on_##q##_activate), g);\
-	g_signal_connect(g->menu_popup->view_submenu->toolbars_submenu->q##_menuitem, "toggled", G_CALLBACK(nsgtk_on_##q##_activate), g)
+	g_signal_connect(g->menu_bar->view_submenu->toolbars_submenu->q##_menuitem, "toggled", G_CALLBACK(nsgtk_on_##q##_activate_menu), g);\
+	g_signal_connect(g->menu_popup->view_submenu->toolbars_submenu->q##_menuitem, "toggled", G_CALLBACK(nsgtk_on_##q##_activate_menu), g)
 	CONNECT_CHECK(menubar);
 	CONNECT_CHECK(toolbar);
 #undef CONNECT_CHECK
@@ -1591,30 +1588,33 @@ static bool nsgtk_new_scaffolding_popup(struct gtk_scaffolding *g, GtkAccelGroup
 	if (nmenu == NULL)
 		return false;
 
+/** Connect a GTK signal handler to a widget */
+#define SIG_CONNECT(obj, sig, callback, ptr) \
+	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
+
 	SIG_CONNECT(nmenu->popup_menu, "hide",
 		    nsgtk_window_popup_menu_hidden, g);
 
-	SIG_CONNECT(nmenu->savelink_menuitem, "activate",
-		    nsgtk_on_savelink_activate, g);
+	g_signal_connect(nmenu->savelink_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_savelink_activate_menu), g);
 
-	SIG_CONNECT(nmenu->opentab_menuitem, "activate",
-		    nsgtk_on_link_opentab_activate, g);
+	g_signal_connect(nmenu->opentab_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_link_opentab_activate_menu), g);
 
-	SIG_CONNECT(nmenu->openwin_menuitem, "activate",
-		    nsgtk_on_link_openwin_activate, g);
+	g_signal_connect(nmenu->openwin_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_link_openwin_activate_menu), g);
 
-	SIG_CONNECT(nmenu->cut_menuitem, "activate",
-		    nsgtk_on_cut_activate, g);
+	g_signal_connect(nmenu->cut_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_cut_activate_menu), g);
 
-	SIG_CONNECT(nmenu->copy_menuitem, "activate",
-		    nsgtk_on_copy_activate, g);
+	g_signal_connect(nmenu->copy_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_copy_activate_menu), g);
 
-	SIG_CONNECT(nmenu->paste_menuitem, "activate",
-		    nsgtk_on_paste_activate, g);
+	g_signal_connect(nmenu->paste_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_paste_activate_menu), g);
 
-	SIG_CONNECT(nmenu->customize_menuitem, "activate",
-		    nsgtk_on_customize_activate, g);
-
+	g_signal_connect(nmenu->customize_menuitem, "activate", 
+			 G_CALLBACK(nsgtk_on_customize_activate_menu), g);
 
 	/* set initial popup menu visibility */
 	popup_menu_hide(nmenu, true, false, false, false, true);
