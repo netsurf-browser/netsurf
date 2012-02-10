@@ -437,7 +437,7 @@ char *container_extract_theme(const char *themefile, const char *dirbasename)
 		free(themename);
 		return NULL;
 	}
-	mkdir(dirname, 00777);
+	mkdir(dirname, S_IRWXU);
 
 	for (e = container_iterate(cctx, &state), i = 0; i < cctx->entries;
 			e = container_iterate(cctx, &state), i++) {
@@ -533,7 +533,7 @@ static void extract_theme(const char *themefile, const char *dirname)
 		exit(1);
 	}
 
-	mkdir(dirname, 00777);
+	mkdir(dirname, S_IRWXU);
 
 	cctx = container_open(themefile);
 	if (cctx == NULL) {
