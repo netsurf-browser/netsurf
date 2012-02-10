@@ -472,10 +472,12 @@ static void nsgtk_check_homedir(void)
 	snprintf(buf, PATH_MAX, "%s/.netsurf", hdir);
 	if (access(buf, F_OK) != 0) {
 		LOG(("You don't have a ~/.netsurf - creating one for you."));
-		if (mkdir(buf, 0777) == -1) {
+		if (mkdir(buf, 0700) == -1) {
 			LOG(("Unable to create %s", buf));
 			die("NetSurf requires ~/.netsurf to exist, but it cannot be created.\n");
 		}
+	} else {
+		chmod(buf, 0700);
 	}
 }
 
