@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -286,15 +286,17 @@ bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
+	bool success;
+
+	if(s->defined == false) return false;
 	if(!gui_empty_clipboard()) return false;
 
-	if (s->defined && selection_traverse(s, ami_clipboard_copy, NULL))
-	{
-		gui_commit_clipboard();
-		return true;
-	}
+	success = selection_traverse(s, ami_clipboard_copy, NULL);
 
-	return false;
+	/* commit regardless, otherwise we leave the clipboard in an unusable state */
+	gui_commit_clipboard();
+
+	return success;
 }
 
 struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
