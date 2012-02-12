@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -4084,7 +4084,7 @@ Object *ami_gui_splash_open(void)
 		SetFont(win->RPort, tfont);
 
 #ifdef NDEBUG
-	ver_string = ASPrintf("NetSurf %s", netsurf_version);
+	ver_string = ASPrintf("%s", netsurf_version);
 #else
 	ver_string = ASPrintf("NetSurf %s (%s)", versvn, verdate);
 #endif
