@@ -20,6 +20,9 @@
 # ignored.
 #
 
+# Globals
+NetSurf:NetSurf
+NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
 
 # Menus
 # =====
@@ -29,7 +32,6 @@
 
 # Iconbar menu
 #
-NetSurf:NetSurf
 Info:Info
 Open:Öffnen
 AppHelp:Hilfe...  F1
@@ -347,6 +349,7 @@ TreeDelete:Löschen
 TreeDefault:Set as default
 TreeClear:Clear default
 
+
 # Tree export
 #
 TreeHotlist:NetSurf Hotlist
@@ -384,6 +387,7 @@ HotlistFeatureRequest:NetSurf Verbesserungsvorschläge
 #
 
 GlobalHistory:History (global)
+DomainAll:(All domains)
 DateToday:Heute
 DateYesterday:Gestern
 Date1Week:vorige Woche
@@ -457,6 +461,7 @@ gtkQuit:NetSurf beenden?
 gtkDownloadsRunning:Es sind noch Downloads aktiv, beim Beenden werden sie abgebrochen und die Dateien gelöscht.
 gtkStartDownload:Datei herunterladen?
 gtkOverwrite:Eine Datei mit dem Namen "%s" existiert bereits. Soll sie ersetzt werden?
+gtkOverwriteTitle:File exists
 gtkOverwriteInfo:Die Datei existiert bereits im Verzeichnis "%s".  Beim ersetzen wird ihr momentaner Inhalt überschrieben.
 gtkFailed:Download fehlgeschlagen
 gtkFileError:Dateifehler: %s
@@ -464,14 +469,23 @@ gtkInfo:%s von %s ist %s in size
 gtkSave:Datei speichern unter...
 gtkSourceSave:Quelltext speichern
 gtkSourceTabError:Fehler beim behandeln der Quelldaten 
-gtkPlainSave:Als Text speichern
-gtkFullSave:Speichern der Webseite abgeschlossen - wähle ein leeres Verzeichnis
+gtkplainSave:Als Text speichern
+gtkcompleteSave:Save webpage complete - select an empty directory
+gtkSaveConfirm:File saved
+gtkSaveCancelled:File not saved
 gtkUnknownHost:ein unbekannter Host
 gtkUnknownFile:
 gtkUnknownSize:unbekannt
 
 # gtk Menu / Button labels
 #
+
+gtkFile:_File
+gtkEdit:_Edit
+gtkView:_View
+gtkNavigate:_Navigate
+gtkTabs:_Tabs
+gtkHelp:_Help
 
 gtkNewTab:Neuer _Tab
 gtkNewTabAccel:<ctrl>t
@@ -551,6 +565,8 @@ gtkGlobalHistoryAccel:<ctrl><shift>h
 gtkAddBookMarks:_Add to Bookmarks..
 gtkShowBookMarks:_Show Bookmarks..
 gtkShowBookMarksAccel:F6
+gtkShowCookies:Show _Cookies…
+gtkShowCookiesAccel:F9
 gtkOpenLocation:_Open Location..
 gtkOpenLocationAccel:<ctrl>l
 
@@ -566,6 +582,10 @@ gtkGuide:User _guide
 gtkUserInformation:User _information
 gtkAbout:_About
 
+gtkCustomize:Customise…
+gtkOpentab:Open Link in _New Tab
+gtkOpenwin:Open Link in New Window
+gtkSavelink:Save Link
 
 gtkToolBarTitle:Toolbar custom button store
 gtkAddThemeTitle:Select folder containing theme images
@@ -975,6 +995,7 @@ HelpBrowserMenu1-0-0:Informationen zum aktuellen Objekt zeigen.
 HelpBrowserMenu1-0-1:Abspeichern des Objektes (Original).
 HelpBrowserMenu1-0-2:Optionen zum Export des aktuellen Objektes zeigen.
 HelpBrowserMenu1-0-2-0:Abspeichern des Bildes als Sprite Datei.
+HelpBrowserMenu1-0-2-1:\Rsave the image as a DrawFile
 HelpBrowserMenu1-0-3:Die Adresse des Objektes speichern.
 HelpBrowserMenu1-0-3-0:Speichert die Adresse des Objektes im Acorn URI Format.
 HelpBrowserMenu1-0-3-1:Speichert die Adresse des Objektes im Ant URL Format.
