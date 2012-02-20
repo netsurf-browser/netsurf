@@ -74,9 +74,6 @@ struct gui_window {
 	/** display widget for this page or frame */
 	GtkLayout *layout;
 
-	/** frames only; top level of gtk structure of gui_window */
-	GtkScrolledWindow *scrolledwindow;
-
 	/** handle to the the visible tab */
 	GtkWidget *tab;
 
@@ -513,7 +510,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					     bool new_tab)
 {
 	struct gui_window *g; /**< what we're creating to return */
-	GtkPolicyType scrollpolicy;
 
 	g = calloc(1, sizeof(*g));
 	if (!g) {
@@ -589,23 +585,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	nsgtk_tab_add(g, tab_contents, tempback);
 
 	g_object_unref(xml);
-
-	switch(bw->scrolling) {
-	case SCROLLING_NO:
-		scrollpolicy = GTK_POLICY_NEVER;
-		break;
-	case SCROLLING_YES:
-		scrollpolicy = GTK_POLICY_ALWAYS;
-		break;
-	case SCROLLING_AUTO:
-	default:
-		scrollpolicy = GTK_POLICY_AUTOMATIC;
-		break;
-	}
-
-	if (g->scrolledwindow)
-		gtk_scrolled_window_set_policy(g->scrolledwindow,
-				scrollpolicy, scrollpolicy);
 
 	/* Attach ourselves to the list (push_top) */
 	if (window_list)
@@ -711,16 +690,12 @@ void gui_window_destroy(struct gui_window *g)
 	LOG(("	   Scaffolding: %p", g->scaffold));
 	LOG(("	   Window name: %s", g->bw->name));
 
-	if (g->scrolledwindow == NULL) {
-		/* tab => remove tab */
-		gtk_widget_destroy(gtk_widget_get_parent(GTK_WIDGET(g->layout)));
-		/* if it was the last tab, destroy scaffold too */
-		gint numbertabs = gtk_notebook_get_n_pages(nsgtk_scaffolding_notebook(g->scaffold));
-		if (numbertabs == 0)
-			nsgtk_scaffolding_destroy(g->scaffold);
-	} else {
-		/* frame within a document => destroy frame only */
-		gtk_widget_destroy(GTK_WIDGET(g->scrolledwindow));
+	/* tab => remove tab */
+	gtk_widget_destroy(gtk_widget_get_parent(GTK_WIDGET(g->layout)));
+
+	/* if it was the last tab, destroy scaffold too */
+	if (gtk_notebook_get_n_pages(nsgtk_scaffolding_notebook(g->scaffold)) == 0) {
+		nsgtk_scaffolding_destroy(g->scaffold);
 	}
 
 	free(g);
