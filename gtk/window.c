@@ -39,6 +39,8 @@
 #include "gtk/plotters.h"
 #include "gtk/schedule.h"
 #include "gtk/tabs.h"
+#include "gtk/bitmap.h"
+#include "gtk/gdk.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
@@ -46,7 +48,7 @@ struct gui_window {
 	/** The gtk scaffold object containing menu, buttons, url bar, [tabs],
 	 * drawing area, etc that may contain one or more gui_windows.
 	 */
-	nsgtk_scaffolding	*scaffold;
+	nsgtk_scaffolding *scaffold;
 
 	/** The 'content' window that is rendered in the gui_window */
 	struct browser_window	*bw;
@@ -86,6 +88,9 @@ struct gui_window {
 	/** to allow disactivation / resume of normal window behaviour */
 	gulong signalhandler[NSGTK_WINDOW_SIGNAL_COUNT];
 
+	/** The icon this window should have */
+	GdkPixbuf *icon;
+
 	/** list for cleanup */
 	struct gui_window *next, *prev;
 };
@@ -96,6 +101,11 @@ int temp_open_background = -1;
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g)
 {
 	return g->scaffold;
+}
+
+GdkPixbuf *nsgtk_get_icon(struct gui_window *gw)
+{
+	return gw->icon;
 }
 
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g)
@@ -692,16 +702,37 @@ void gui_window_destroy(struct gui_window *g)
 
 	/* tab => remove tab */
 	gtk_widget_destroy(gtk_widget_get_parent(GTK_WIDGET(g->layout)));
-
-	/* if it was the last tab, destroy scaffold too */
-	if (gtk_notebook_get_n_pages(nsgtk_scaffolding_notebook(g->scaffold)) == 0) {
-		nsgtk_scaffolding_destroy(g->scaffold);
-	}
-
-	free(g);
-
 }
 
+/**
+ * set favicon
+ */
+void gui_window_set_icon(struct gui_window *gw, hlcache_handle *icon)
+{
+	struct bitmap *icon_bitmap = NULL;
+
+	/* free any existing icon */
+	if (gw->icon != NULL) {
+		g_object_unref(gw->icon);
+		gw->icon = NULL;
+	}
+
+	if (icon != NULL) {
+		icon_bitmap = content_get_bitmap(icon);
+		if (icon_bitmap != NULL) {
+			LOG(("Using %p bitmap", icon_bitmap));
+			gw->icon = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
+		} 
+	} 
+
+	if (gw->icon == NULL) {
+		LOG(("Using default favicon"));
+		g_object_ref(favicon_pixbuf);
+		gw->icon = favicon_pixbuf;
+	}
+
+	nsgtk_scaffolding_set_icon(gw);
+}
 
 static void nsgtk_redraw_caret(struct gui_window *g)
 {

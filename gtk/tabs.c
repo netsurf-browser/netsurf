@@ -111,17 +111,9 @@ static void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 	GtkWidget *window = gtk_notebook_get_nth_page(notebook, page_num);
 	struct gui_window *gw = g_object_get_data(G_OBJECT(window),
 			"gui_window");
-	if (gw == NULL)
-		return;
-	struct browser_window *bw = nsgtk_get_browser_window(gw);
-	if (bw == NULL)
-		return;
-
-	browser_window_search_destroy_context(bw);
-
-	nsgtk_search_set_forward_state(true, bw);
-	nsgtk_search_set_back_state(true, bw);
-	nsgtk_scaffolding_set_top_level(gw);
+	if (gw != NULL) {
+		nsgtk_scaffolding_set_top_level(gw);
+	}
 }
 
 static void

@@ -494,7 +494,7 @@ static gboolean nsgtk_window_tool_bar_clicked(GtkToolbar *toolbar,
 /**
  * Update the menus when the number of tabs changes.
  */
-static void nsgtk_window_tabs_num_changed(GtkNotebook *notebook,
+static void nsgtk_window_tabs_add(GtkNotebook *notebook,
 		GtkWidget *page, guint page_num, struct gtk_scaffolding *g)
 {
 	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
@@ -504,6 +504,26 @@ static void nsgtk_window_tabs_num_changed(GtkNotebook *notebook,
 	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
 	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
 	nsgtk_scaffolding_set_sensitivity(g);
+}
+
+/**
+ * Update the menus when the number of tabs changes.
+ */
+static void nsgtk_window_tabs_remove(GtkNotebook *notebook,
+		GtkWidget *page, guint page_num, struct gtk_scaffolding *g)
+{
+
+	if (gtk_notebook_get_n_pages(notebook) == 0) {
+		nsgtk_scaffolding_destroy(g);
+	} else {
+	gboolean visible = gtk_notebook_get_show_tabs(g->notebook);
+	g_object_set(g->menu_bar->view_submenu->tabs_menuitem, "visible", visible, NULL);
+	g_object_set(g->menu_popup->view_submenu->tabs_menuitem, "visible", visible, NULL);
+	g->buttons[NEXTTAB_BUTTON]->sensitivity = visible;
+	g->buttons[PREVTAB_BUTTON]->sensitivity = visible;
+	g->buttons[CLOSETAB_BUTTON]->sensitivity = visible;
+	nsgtk_scaffolding_set_sensitivity(g);
+	}
 }
 
 /**
@@ -1844,9 +1864,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			gtk_widget_hide_on_delete, NULL);
 
 	g_signal_connect_after(g->notebook, "page-added",
-			G_CALLBACK(nsgtk_window_tabs_num_changed), g);
+			G_CALLBACK(nsgtk_window_tabs_add), g);
 	g_signal_connect_after(g->notebook, "page-removed",
-			G_CALLBACK(nsgtk_window_tabs_num_changed), g);
+			G_CALLBACK(nsgtk_window_tabs_remove), g);
 
 	/* connect signals to handlers. */
 	CONNECT(g->window, "delete-event", nsgtk_window_delete_event, g);
@@ -1935,13 +1955,9 @@ void gui_window_set_title(struct gui_window *_g, const char *title)
 	nsgtk_tab_set_title(_g, title);
 
 	if (g->top_level == _g) {
-		if (title == NULL || title[0] == '\0')
-		{
+		if (title == NULL || title[0] == '\0') {
 			gtk_window_set_title(g->window, "NetSurf");
-
-		}
-		else
-		{
+		} else {
 			strcpy(nt, title);
 			strcat(nt, suffix);
 			gtk_window_set_title(g->window, nt);
@@ -1994,42 +2010,23 @@ void gui_window_stop_throbber(struct gui_window* _g)
 /**
  * set favicon
  */
-void gui_window_set_icon(struct gui_window *_g, hlcache_handle *icon)
+void
+nsgtk_scaffolding_set_icon(struct gui_window *gw)
 {
-	struct gtk_scaffolding *g = nsgtk_get_scaffold(_g);
-	struct bitmap *icon_bitmap = NULL;
-	GdkPixbuf *icon_pixbuf = NULL;
+	struct gtk_scaffolding *sc = nsgtk_get_scaffold(gw);
+	GdkPixbuf *icon_pixbuf = nsgtk_get_icon(gw);
 
-	if (g->top_level != _g) {
+	/* check icon needs to be shown */
+	if ((icon_pixbuf == NULL) || 
+	    (sc->top_level != gw)) {
 		return;
 	}
 
-	if (icon != NULL) {
-		icon_bitmap = content_get_bitmap(icon);
-		if (icon_bitmap != NULL) {
-			LOG(("Using %p bitmap", icon_bitmap));
-			icon_pixbuf = nsgdk_pixbuf_get_from_surface(icon_bitmap->surface, 16, 16);
-		} 
-	} 
-
-	if (icon_pixbuf == NULL) {
-		LOG(("Using default favicon"));
-		g_object_ref(favicon_pixbuf);
-		icon_pixbuf = favicon_pixbuf;
-	}
-
-	if (icon_pixbuf == NULL) {
-		return;
-	}
-
-	nsgtk_entry_set_icon_from_pixbuf(g->url_bar, 
+	nsgtk_entry_set_icon_from_pixbuf(sc->url_bar, 
 					 GTK_ENTRY_ICON_PRIMARY, 
 					 icon_pixbuf);
 
-	gtk_widget_show_all(GTK_WIDGET(g->buttons[URL_BAR_ITEM]->button));
-
-	g_object_unref(icon_pixbuf);
-
+	gtk_widget_show_all(GTK_WIDGET(sc->buttons[URL_BAR_ITEM]->button));
 }
 
 void gui_window_set_search_ico(hlcache_handle *ico)
@@ -2224,21 +2221,33 @@ struct gui_window *nsgtk_scaffolding_top_level(nsgtk_scaffolding *g)
 	return g->top_level;
 }
 
-void nsgtk_scaffolding_set_top_level (struct gui_window *gw)
+/* set the current active top level gui window */
+void nsgtk_scaffolding_set_top_level(struct gui_window *gw)
 {
-	nsgtk_get_scaffold(gw)->top_level = gw;
-	struct browser_window *bw = nsgtk_get_browser_window(gw);
+	struct browser_window *bw;
+	nsgtk_scaffolding *sc;
+
+	assert(gw != NULL);
+
+	bw = nsgtk_get_browser_window(gw);
 
 	assert(bw != NULL);
 
+	sc = nsgtk_get_scaffold(gw);
+	assert(sc != NULL);
+
+	sc->top_level = gw;
+
 	/* Synchronise the history (will also update the URL bar) */
-	nsgtk_window_update_back_forward(nsgtk_get_scaffold(gw));
+	nsgtk_window_update_back_forward(sc);
 
 	/* clear effects of potential searches */
 	browser_window_search_destroy_context(bw);
 
 	nsgtk_search_set_forward_state(true, bw);
 	nsgtk_search_set_back_state(true, bw);
+
+	nsgtk_scaffolding_set_icon(gw);
 
 	/* Ensure the window's title bar is updated */
 	if (bw->current_content != NULL) {

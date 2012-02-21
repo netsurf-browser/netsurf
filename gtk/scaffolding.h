@@ -150,6 +150,7 @@ void nsgtk_scaffolding_popup_menu(struct gtk_scaffolding *g, gdouble x,
     gdouble y);
 void nsgtk_scaffolding_toolbar_size_allocate(GtkWidget *widget,
 		GtkAllocation *alloc, gpointer data);
+void nsgtk_scaffolding_set_icon(struct gui_window *gw);
 
 gboolean nsgtk_window_url_activate_event(GtkWidget *, gpointer);
 gboolean nsgtk_window_url_changed(GtkWidget *, GdkEventKey *, gpointer);

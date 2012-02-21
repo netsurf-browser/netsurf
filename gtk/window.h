@@ -36,6 +36,7 @@ extern int temp_open_background;
 
 struct browser_window *nsgtk_get_browser_window(struct gui_window *g);
 nsgtk_scaffolding *nsgtk_get_scaffold(struct gui_window *g);
+GdkPixbuf *nsgtk_get_icon(struct gui_window *gw);
 void nsgtk_reflow_all_windows(void);
 void nsgtk_window_process_reformats(void);
 float nsgtk_get_scale_for_gui(struct gui_window *g);
