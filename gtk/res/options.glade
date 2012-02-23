@@ -1955,7 +1955,8 @@ Amazon
 Ebay
 IMDB
 Espn
-Wikipedia</property>
+Wikipedia
+DuckDuckGo</property>
                               </widget>
                               <packing>
                                 <property name="position">2</property>
