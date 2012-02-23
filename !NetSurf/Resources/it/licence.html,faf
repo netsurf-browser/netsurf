@@ -35,11 +35,11 @@ dl.components > dd > span + span {
 
 <h1>Licenza d'uso</h1>
 
-<p>Il codice sorgente di NetSurf, la sua documentazione, i file delle traduzioni e le definizioni UI sono rilasciati liberamente secondo i termini della Licenza Pubblica Generica GNU cosi com'è pubblicata dalla Free Software Foundation nella versione 2.0 o successiva, inoltre, come eccezione particolare è possibile collegare il codice sorgente di NetSurf con quello della libreria OpenSSL oppure distribuirli insieme usando una versione modificata della libreria stessa avente la medesima licenza d'uso.</p>
+<p style="text-align: justify">Il codice sorgente di NetSurf, la sua documentazione, i file delle traduzioni e le definizioni UI sono rilasciati liberamente secondo i termini della Licenza Pubblica Generica GNU cosi com'è pubblicata dalla Free Software Foundation nella versione 2.0 o successiva, inoltre, come eccezione particolare è possibile collegare il codice sorgente di NetSurf a quello della libreria OpenSSL oppure distribuirli insieme usando una versione modificata della libreria stessa avente però la medesima licenza d'uso.</p>
 
-<p>E' necessario rispettare a tutti gli effetti la Licenza Pubblica Generica GNU versione 2.0 per tutte le parti del codice sorgente utilizzato ad eccezione di OpenSSL.</p>
+<p style="text-align: justify">Comunque è necessario rispettare a tutti gli effetti la Licenza Pubblica Generica GNU versione 2.0 per tutte le parti del codice sorgente utilizzato ad eccezione della libreria OpenSSL.</p>
 
-<p>Nel caso si desideri modificare il programma è possibile estendere questa eccezione anche alla versione del codice sorgente modificato, tuttavia non è obbligatorio farlo, se non lo si desidera è possibile cancellare questa eccezione dalla propria versione.</p>
+<p style="text-align: justify">Nel caso si desideri modificare il programma è possibile estendere questa eccezione anche alla versione del codice sorgente modificato, tuttavia non è obbligatorio farlo e se non lo si desidera è possibile cancellare questa eccezione dalla propria versione.</p>
 
 <h2>Licenza d'uso dei vari componenti</h2>
 
@@ -52,25 +52,25 @@ dl.components > dd > span + span {
 <dl class="components">
 <dt><a href="http://www.netsurf-browser.org/">NetSurf</a></dt>
 <dd>
-<span>&copy; 2002&ndash;2011 The NetSurf Developers</span>
+<span>&copy; 2002&ndash;2012 The NetSurf Developers</span>
 <span><a href="#gplv2">GPLv2</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libcss/">LibCSS</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2011 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2012 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/hubbub/">Hubbub</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2011 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
+<span>&copy; 2007&ndash;2012 John-Mark Bell<br>&copy; 2008&ndash;2009 Andrew Sidwell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
 <dt><a href="http://www.netsurf-browser.org/projects/libparserutils/">LibParserUtils</a></dt>
 <dd>
-<span>&copy; 2007&ndash;2011 John-Mark Bell</span>
+<span>&copy; 2007&ndash;2012 John-Mark Bell</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -106,7 +106,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://source.netsurf-browser.org/trunk/libnsfb/">Libnsfb</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2011 Vincent Sanders<br>&copy; 2009&ndash;2011 Michael Drake</span>
+<span>&copy; 2009&ndash;2012 Vincent Sanders<br>&copy; 2009&ndash;2012 Michael Drake</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
@@ -118,7 +118,7 @@ dl.components > dd > span + span {
 
 <dt><a href="http://www.netsurf-browser.org/projects/libwapcaplet">LibWapcaplet</a></dt>
 <dd>
-<span>&copy; 2009&ndash;2011 NetSurf Browser Project, Daniel Silverstone</span>
+<span>&copy; 2009&ndash;2012 NetSurf Browser Project, Daniel Silverstone</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 </dl>
@@ -198,7 +198,7 @@ Graham Shaw, James Bursa and John-Mark Bell.</span>
 
 <h2>Testi delle licenze</h2>
 
-<p>Ove possibile le forme generiche dei vari testi delle licenze sono visualizzate qui. Alcuni componenti possono variare leggermente la licenza per cui il nostro sforzo è stato quello di rispettare in accordo ad esse le nostre modifiche, in questo caso le piccole variazioni alla licenza sono elencate qui, eventuali altre variazioni minori come ad esempio gli spazi bianchi non sono considerati.</p>
+<p style="text-align: justify">Ove possibile le forme generiche dei vari testi delle licenze sono visualizzate qui. Alcuni componenti possono variare leggermente la licenza d'uso, tuttavia nei casi in cui abbiamo apportato delle modifiche il nostro sforzo è stato quello di rispettare il più fedelmente possibile (ed in accordo ad essa) la licenza originale, in questo caso le piccole variazioni alla licenza sono elencate qui, eventuali altre variazioni minori come ad esempio gli spazi bianchi non sono considerati.</p>
 
 <a name="gplv2" />
 <h3>GNU General Public Licence, Versione 2</h3>
@@ -1894,7 +1894,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 </div>
 
 <div class="footer">
-<p>Copyright 2003&ndash;2011 The NetSurf Developers</p>
+<p>Copyright 2003&ndash;2012 The NetSurf Developers</p>
 </div>
 
 </body>
