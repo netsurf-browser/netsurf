@@ -4002,7 +4002,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		case IDCMP_SIZEVERIFY:
 		break;
 
-#if AMI_SIMPLEREFRESH
+#ifdef AMI_SIMPLEREFRESH
 		case IDCMP_REFRESHWINDOW:
 printf("refreshing\n");
 			ami_refresh_window(gwin);
