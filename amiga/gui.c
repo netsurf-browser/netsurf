@@ -17,7 +17,7 @@
  */
 
 /* define this to use simple (as opposed to smart) refresh windows */
-#undef AMI_SIMPLEREFRESH
+//#define AMI_SIMPLEREFRESH 1
 
 /* NetSurf core includes */
 #include "content/urldb.h"
@@ -2662,7 +2662,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_Height,curh,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
+#ifdef AMI_SIMPLEREFRESH
+			WA_SimpleRefresh,TRUE,
+#else
 			WA_SmartRefresh,TRUE,
+#endif
 			WA_SizeBBottom, TRUE,
        	   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
@@ -3506,18 +3510,33 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 {
 	struct IBox *bbox;
 	int x0, x1, y0, y1;
+	struct RegionRectangle *regrect, *nregrect;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
 
 	BeginRefresh(gwin->win);
 
 // probably need to trawl through struct Region *DamageList
-	x0 = gwin->win->RPort->Layer->bounds.MinX;
-	x1 = gwin->win->RPort->Layer->bounds.MaxX;
-	y0 = gwin->win->RPort->Layer->bounds.MinY;
-	y1 = gwin->win->RPort->Layer->bounds.MaxY;
+	x0 = gwin->win->RPort->Layer->DamageList->bounds.MinX;
+	x1 = gwin->win->RPort->Layer->DamageList->bounds.MaxX;
+	y0 = gwin->win->RPort->Layer->DamageList->bounds.MinY;
+	y1 = gwin->win->RPort->Layer->DamageList->bounds.MaxY;
+
+	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
 	ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+
+	while(regrect)
+	{
+		x0 = regrect->bounds.MinX;
+		x1 = regrect->bounds.MaxX;
+		y0 = regrect->bounds.MinY;
+		y1 = regrect->bounds.MaxY;
+
+		regrect = regrect->Next;
+
+		ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+	}
 
 /* quick refresh - scuppered by shared offscreen bitmap
 	BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
@@ -4004,8 +4023,12 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 #ifdef AMI_SIMPLEREFRESH
 		case IDCMP_REFRESHWINDOW:
-printf("refreshing\n");
+//printf("refreshing\n");
 			ami_refresh_window(gwin);
+		break;
+
+		default:
+			printf("UNHANDLED EVENT %ld\n",msg->Class);
 		break;
 #endif
 	}
