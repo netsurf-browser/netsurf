@@ -24,6 +24,7 @@ extern char *option_url_file;
 extern char *option_hotlist_file;
 extern char *option_use_pubscreen;
 extern char *option_modeid;
+extern int option_screen_compositing;
 extern int option_cache_bitmaps;
 extern char *option_theme;
 extern bool option_utf8_clipboard;
@@ -74,6 +75,7 @@ char *option_url_file = 0; \
 char *option_hotlist_file = 0; \
 char *option_use_pubscreen = 0; \
 char *option_modeid = 0; \
+extern int option_screen_compositing = -1; \
 int option_cache_bitmaps = 0; \
 char *option_theme = 0; \
 bool option_utf8_clipboard = false; \
@@ -124,6 +126,7 @@ int option_menu_refresh = 0; \
 { "hotlist_file",		OPTION_STRING,	&option_hotlist_file }, \
 { "use_pubscreen",	OPTION_STRING,	&option_use_pubscreen}, \
 { "screen_modeid",	OPTION_STRING,	&option_modeid}, \
+{ "screen_compositing",	OPTION_INTEGER,	&option_screen_compositing}, \
 { "cache_bitmaps",	OPTION_INTEGER,	&option_cache_bitmaps}, \
 { "theme",		OPTION_STRING,	&option_theme}, \
 { "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \

@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* define this to use simple (as opposed to smart) refresh windows */
+#undef AMI_SIMPLEREFRESH
+
 /* NetSurf core includes */
 #include "content/urldb.h"
 #include "css/utils.h"
@@ -563,6 +566,12 @@ void gui_init(int argc, char** argv)
 void ami_openscreen(void)
 {
 	ULONG id = 0;
+	ULONG compositing;
+
+	if(option_screen_compositing == -1)
+		compositing = ~0UL;
+	else compositing = option_screen_compositing;
+
 	if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
 	{
 		if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
@@ -595,6 +604,7 @@ void ami_openscreen(void)
 					SA_Type, PUBLICSCREEN,
 					SA_PubName, "NetSurf",
 					SA_LikeWorkbench, TRUE,
+					SA_Compositing, compositing,
 					TAG_DONE);
 
 		if(scrn)
@@ -2527,7 +2537,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->search_ico_hook.h_Entry = (void *)ami_set_search_ico_render_hook;
 	gwin->shared->search_ico_hook.h_Data = gwin->shared;
 
-
 	if(!option_kiosk_mode)
 	{
 		ULONG addtabclosegadget = TAG_IGNORE;
@@ -2659,13 +2668,18 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 						IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 						IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-						IDCMP_ACTIVEWINDOW | // IDCMP_INTUITICKS |
-						IDCMP_EXTENDEDMOUSE,
+#ifdef AMI_SIMPLEREFRESH
+						IDCMP_REFRESHWINDOW |
+#endif
+						IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, gwin->shared->menu,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE |
+			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE |
+#ifdef AMI_SIMPLEREFRESH
+						IDCMP_REFRESHWINDOW |
+#endif
 						IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
        	    WINDOW_AppPort, appport,
 			WINDOW_AppWindow,TRUE,
@@ -3485,6 +3499,43 @@ void ami_do_redraw(struct gui_window_2 *g)
 	g->new_content = false;
 }
 
+#if AMI_SIMPLEREFRESH
+// simplerefresh only
+
+void ami_refresh_window(struct gui_window_2 *gwin)
+{
+	struct IBox *bbox;
+	int x0, x1, y0, y1;
+
+	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
+
+	BeginRefresh(gwin->win);
+
+// probably need to trawl through struct Region *DamageList
+	x0 = gwin->win->RPort->Layer->bounds.MinX;
+	x1 = gwin->win->RPort->Layer->bounds.MaxX;
+	y0 = gwin->win->RPort->Layer->bounds.MinY;
+	y1 = gwin->win->RPort->Layer->bounds.MaxY;
+
+	ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
+
+/* quick refresh - scuppered by shared offscreen bitmap
+	BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+				BLITA_Source, browserglob.bm,
+				BLITA_SrcX, 0,
+				BLITA_SrcY, 0,
+				BLITA_DestType, BLITT_RASTPORT, 
+				BLITA_Dest, gwin->win->RPort,
+				BLITA_DestX, bbox->Left,
+				BLITA_DestY, bbox->Top,
+				BLITA_Width, bbox->Width,
+				BLITA_Height, bbox->Height,
+				TAG_DONE);
+*/
+	EndRefresh(gwin->win, TRUE);
+}
+#endif
+
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 {
 	if(gwin->objects[GID_HSCROLL])
@@ -3950,6 +4001,13 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 		case IDCMP_SIZEVERIFY:
 		break;
+
+#if AMI_SIMPLEREFRESH
+		case IDCMP_REFRESHWINDOW:
+printf("refreshing\n");
+			ami_refresh_window(gwin);
+		break;
+#endif
 	}
 //	ReplyMsg((struct Message *)msg);
 } 
