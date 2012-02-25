@@ -48,7 +48,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 		.plot = &amiplot
 	};
 
-	plot_width = MIN(content_get_width(content), 1024);
+	plot_width = MIN(content_get_width(content), option_redraw_tile_size);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
