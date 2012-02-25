@@ -477,15 +477,19 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 				}
 		}
 	}
+#ifdef WITH_8BPP_SUPPORT
 	if( app.nplanes > 8 ){
+#endif
 		unsigned short out[4];
 		rgb_to_vdi1000( (unsigned char*)&colour, (unsigned short*)&out );
 		vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
 		self->plotter->plot_mfdb( self->plotter, loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
+#ifdef WITH_8BPP_SUPPORT
 	} else {
 		unsigned char c = RGB_TO_VDI(colour);
 		self->plotter->plot_mfdb( self->plotter, loc, &tmp, c, PLOT_FLAG_TRANS );
 	}
+#endif
 
 }
 

@@ -145,7 +145,11 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->path = path;
 	self->bitmap = bitmap;
 	self->bitmap_resize = bitmap_resize;
+#ifdef WITH_8BPP_SUPPORT
 	self->bitmap_convert =(app.nplanes > 8) ? bitmap_convert : bitmap_convert_8;
+#else
+	self->bitmap_convert = bitmap_convert;
+#endif
 	//self->bitmap_convert =bitmap_convert;
 	self->plot_mfdb = plot_mfdb;
 	self->text = text;
@@ -261,10 +265,11 @@ static int dtor( GEM_PLOTTER self )
 			free( self->fbuf[i].mem );
 	}
 
+#ifdef WITH_8BPP_SUPPORT
 	for( i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++){
 		vs_color( self->vdi_handle, i, &sys_pal[i][0] );
 	}
-
+#endif
 
 	/* close Hermes stuff: */
 	Hermes_ConverterReturn( hermes_cnv_h );
@@ -1031,6 +1036,7 @@ inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
 	return( ret );
 }
 
+#ifdef WITH_8BPP_SUPPORT
 static int bitmap_convert_8( GEM_PLOTTER self,
 	struct bitmap * img,
 	int x,
@@ -1211,6 +1217,7 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 
 	return(0);
 }
+#endif
 
 /* convert bitmap to the virutal (chunked) framebuffer format */
 static int bitmap_convert( GEM_PLOTTER self,
