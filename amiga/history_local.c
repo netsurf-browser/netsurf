@@ -83,7 +83,7 @@ void ami_history_open(struct browser_window *bw, struct history *history)
 	{
 		hwindow = AllocVec(sizeof(struct history_window),MEMF_CLEAR | MEMF_PRIVATE);
 
-		ami_init_layers(&hwindow->gg, 0, 0);
+		ami_init_layers(&hwindow->gg, scrn->Width, scrn->Height);
 
 		hwindow->bw = bw;
 		history_size(history, &width, &height);

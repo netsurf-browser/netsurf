@@ -65,6 +65,7 @@ extern int option_cookies_window_ysize;
 extern int option_cairo_renderer;
 extern bool option_direct_render;
 extern int option_amiga_ydpi;
+extern int option_redraw_tile_size;
 extern int option_monitor_aspect_x;
 extern int option_monitor_aspect_y;
 extern bool option_accept_lang_locale;
@@ -75,7 +76,7 @@ char *option_url_file = 0; \
 char *option_hotlist_file = 0; \
 char *option_use_pubscreen = 0; \
 char *option_modeid = 0; \
-extern int option_screen_compositing = -1; \
+int option_screen_compositing = -1; \
 int option_cache_bitmaps = 0; \
 char *option_theme = 0; \
 bool option_utf8_clipboard = false; \
@@ -116,6 +117,7 @@ int option_cookies_window_ysize = 0; \
 int option_cairo_renderer = 1; \
 bool option_direct_render = false; \
 int option_amiga_ydpi = 72; \
+int option_redraw_tile_size = 300; \
 int option_monitor_aspect_x = 0; \
 int option_monitor_aspect_y = 0; \
 bool option_accept_lang_locale = true; \
@@ -167,6 +169,7 @@ int option_menu_refresh = 0; \
 { "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&option_direct_render}, \
 { "amiga_ydpi",	OPTION_INTEGER,	&option_amiga_ydpi}, \
+{ "redraw_tile_size",	OPTION_INTEGER,	&option_redraw_tile_size}, \
 { "monitor_aspect_x",	OPTION_INTEGER,	&option_monitor_aspect_x}, \
 { "monitor_aspect_y",	OPTION_INTEGER,	&option_monitor_aspect_y}, \
 { "accept_lang_locale",	OPTION_BOOL,	&option_accept_lang_locale}, \

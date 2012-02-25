@@ -121,8 +121,9 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 
 	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
 
-	if(!width) width = scrn->Width;
-	if(!height) height = scrn->Width;
+	if(option_redraw_tile_size <= 0) option_redraw_tile_size = scrn->Width;
+	if(!width) width = option_redraw_tile_size;
+	if(!height) height = option_redraw_tile_size;
 
 	gg->layerinfo = NewLayerInfo();
 	gg->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);

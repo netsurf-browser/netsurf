@@ -1840,7 +1840,7 @@ void ami_handle_msg(void)
 				break;
 
 	   	     	default:
-//					printf("class: %ld\n",(result & WMHI_CLASSMASK));
+					//printf("class: %ld\n",(result & WMHI_CLASSMASK));
    	       		break;
 			}
 
@@ -2081,7 +2081,7 @@ void ami_get_msg(void)
 
 	if(signal & schedulesig)
 	{
-		if(timermsg = (struct TimerRequest *)GetMsg(msgport))
+		while(timermsg = (struct TimerRequest *)GetMsg(msgport))
 		{
 			ReplyMsg((struct Message *)timermsg);
 			schedule_run(FALSE);
@@ -3214,6 +3214,72 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 	}
 }
 
+void ami_do_redraw_tiled(struct gui_window_2 *gwin,
+	ULONG left, ULONG top, ULONG width, ULONG height,
+	ULONG sx, ULONG sy, struct IBox *bbox, struct redraw_context *ctx)
+{
+	ULONG x, y;
+	struct rect clip;
+
+	if(top < 0) {
+		height += top;
+		top = 0;
+	}
+
+	if(left < 0) {
+		width += left;
+		left = 0;
+	}
+
+	if(top < sy) {
+		height += (top - sy);
+		top = sy;
+	}
+	if(left < sx) {
+		width += (left - sx);
+		left = sx;
+	}
+
+	if(((top - sy) + height) > bbox->Height)
+		height = bbox->Height - (top - sy);
+
+	if(((left - sx) + width) > bbox->Width)
+		width = bbox->Width - (left - sx);
+
+	if(width <= 0) return;
+	if(height <= 0) return;
+
+	for(y = top; y < (top + height); y += option_redraw_tile_size) {
+		clip.y0 = 0;
+		clip.y1 = option_redraw_tile_size;
+		if(((top + height) - y) < option_redraw_tile_size) clip.y1 = (top + height) - y;
+
+		for(x = left; x < (left + width); x += option_redraw_tile_size) {
+			clip.x0 = 0;
+			clip.x1 = option_redraw_tile_size;
+			if(((left + width) - x) < option_redraw_tile_size) clip.x1 = (left + width) - x;
+
+			if(browser_window_redraw(gwin->bw, clip.x0 - (x / gwin->bw->scale), clip.y0 - (y / gwin->bw->scale), &clip, ctx))
+			{
+				ami_clearclipreg(&browserglob);
+
+				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+					BLITA_Source, browserglob.bm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestType, BLITT_RASTPORT, 
+					BLITA_Dest, gwin->win->RPort,
+					BLITA_DestX, bbox->Left + x - sx,
+					BLITA_DestY, bbox->Top + y - sy,
+					BLITA_Width, clip.x1,
+					BLITA_Height, clip.y1,
+					TAG_DONE);
+			}
+		}
+	}
+}
+
+
 /**
  * Redraw an area of the browser window - Amiga-specific function
  *
@@ -3252,87 +3318,17 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 				g->shared->objects[GID_TABS], (ULONG *)&cur_tab);
 
 	if(!((cur_tab == g->tab) || (g->shared->tabs <= 1)))
-	{
 		return;
-	}
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
 
-	width=bbox->Width / bw->scale;
-	height=bbox->Height / bw->scale;
-	xoffset=bbox->Left;
-	yoffset=bbox->Top;
+	x0 *= g->shared->bw->scale;
+	x1 *= g->shared->bw->scale;
+	y0 *= g->shared->bw->scale;
+	y1 *= g->shared->bw->scale;
 
-	if((y1<sy) || (y0>sy+height)) return;
-	if((x1<sx) || (x0>sx+width)) return;
-
-	if((x0-(int)sx)<0) x0 = sx;
-	if((y0-(int)sy)<0) y0 = sy;
-
-	/* Check this - xoffset/yoffset are window-relative, not bitmap-relative */
-	if((x1-x0)+(xoffset+x0-sx)>(width)) x1 = (width-(x0-sx)+x0);
-	if((y1-y0)+(yoffset+y0-sy)>(height)) y1 = (height-(y0-sy)+y0);
-
-	glob = &browserglob;
-
-	if(option_direct_render == false)
-	{
-		clip.x0 = (x0 - sx);
-		clip.y0 = (y0 - sy);
-		clip.x1 = (x1 - sx);
-		clip.y1 = (y1 - sy);
-		posx = - sx;
-		posy = - sy;
-	}
-	else
-	{
-		temprp = browserglob.rp;
- 		browserglob.rp = g->shared->win->RPort;
-		clip.x0 = (x0 - sx) + bbox->Left;
-		clip.y0 = (y0 - sy) + bbox->Top;
-		clip.x1 = (x1 - sx) + bbox->Left;
-		clip.y1 = (y1 - sy) + bbox->Top;
-		posx = bbox->Left - sx;
-		posy = bbox->Top - sy;
-	}
-
-	if(browser_window_redraw(bw, posx, posy, &clip, &ctx))
-	{
-		ami_clearclipreg(&browserglob);
-
-		if(option_direct_render == false)
-		{
-/* This is identical to the below, but for some reason doesn't blit anything.
- * Probably some values are wrong and BltBitMapTags is fussier.
-
-		BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-				BLITA_Source, browserglob.bm,
-				BLITA_SrcX, clip.x0 * g->shared->bw->scale,
-				BLITA_SrcY, clip.y0 * g->shared->bw->scale,
-				BLITA_DestType, BLITT_RASTPORT, 
-				BLITA_Dest, g->shared->win->RPort,
-				BLITA_DestX, xoffset + (clip.x0 * g->shared->bw->scale),
-				BLITA_DestY, yoffset + (clip.y0 * g->shared->bw->scale),
-				BLITA_Width, (x1 - x0) * g->shared->bw->scale,
-				BLITA_Height, (y1 - y0) * g->shared->bw->scale,
-				TAG_DONE);
-*/
-
-		BltBitMapRastPort(browserglob.bm,
-						clip.x0 * g->shared->bw->scale,
-						clip.y0 * g->shared->bw->scale,
-						g->shared->win->RPort,
-						xoffset + (clip.x0 * g->shared->bw->scale),
-						yoffset + (clip.y0 * g->shared->bw->scale),
-						(x1 - x0) * g->shared->bw->scale,
-						(y1 - y0) * g->shared->bw->scale,
-						0x0C0);
-		}
-		else
-		{
-	 		browserglob.rp = temprp;
-		}
-	}
+	ami_do_redraw_tiled(g->shared, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
+	return;
 }
 
 void gui_window_redraw_window(struct gui_window *g)
@@ -3398,7 +3394,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
  		if(g->new_content) g->redraw_scroll = false;
 
-		if(g->bw->scale != 1.0) g->redraw_scroll = false;
+		//if(g->bw->scale != 1.0) g->redraw_scroll = false;
 	}
 
 	if(g->redraw_scroll)
@@ -3414,30 +3410,30 @@ void ami_do_redraw(struct gui_window_2 *g)
 		if(vcurrent>oldv)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent, (height / g->bw->scale) + oldv - 1,
-					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale) + 1);
+					hcurrent / g->bw->scale, (height + oldv - 1) / g->bw->scale,
+					(hcurrent + width) / g->bw->scale,
+					(vcurrent + height + 1) / g->bw->scale);
 		}
 		else if(vcurrent<oldv)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent, vcurrent,
-					hcurrent + (width / g->bw->scale),
-					oldv);
+					hcurrent / g->bw->scale, vcurrent / g->bw->scale,
+					(hcurrent + width) / g->bw->scale,
+					oldv / g->bw->scale);
 		}
 
 		if(hcurrent>oldh)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					(width / g->bw->scale) + oldh, vcurrent,
-					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale));
+					(width + oldh) / g->bw->scale, vcurrent / g->bw->scale,
+					(hcurrent + width) / g->bw->scale,
+					(vcurrent + height) / g->bw->scale);
 		}
 		else if(hcurrent<oldh)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent, vcurrent,
-					oldh, vcurrent+(height / g->bw->scale));
+					hcurrent / g->bw->scale, vcurrent / g->bw->scale,
+					oldh / g->bw->scale, (vcurrent + height) / g->bw->scale);
 		}
 	}
 	else
@@ -3453,10 +3449,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		if(option_direct_render == false)
 		{
-			clip.x0 = 0;
-			clip.y0 = 0;
-			clip.x1 = width;
-			clip.y1 = height;
+			ami_do_redraw_tiled(g, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
 		else
 		{
@@ -3466,29 +3459,11 @@ void ami_do_redraw(struct gui_window_2 *g)
 			clip.y0 = bbox->Top;
 			clip.x1 = bbox->Left + bbox->Width;
 			clip.y1 = bbox->Top + bbox->Height;
-		}
 
-		if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
-		{
-			ami_clearclipreg(&browserglob);
-
-			if(option_direct_render == false)
+			if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
 			{
-				BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-					BLITA_Source, browserglob.bm,
-					BLITA_SrcX, 0,
-					BLITA_SrcY, 0,
-					BLITA_DestType, BLITT_RASTPORT, 
-					BLITA_Dest, g->win->RPort,
-					BLITA_DestX, bbox->Left,
-					BLITA_DestY, bbox->Top,
-					BLITA_Width, bbox->Width,
-					BLITA_Height, bbox->Height,
-					TAG_DONE);
-			}
-			else
-			{
- 				browserglob.rp = temprp;
+				ami_clearclipreg(&browserglob);
+				browserglob.rp = temprp;
 			}
 		}
 	}
