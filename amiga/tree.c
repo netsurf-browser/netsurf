@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -42,6 +42,7 @@
 #include <gadgets/scroller.h>
 #include <reaction/reaction_macros.h>
 #include <intuition/icclass.h>
+#include <graphics/blitattr.h>
 
 #include "amiga/context_menu.h"
 #include "amiga/file.h"
@@ -512,7 +513,7 @@ void ami_tree_open(struct treeview_window *twin,int type)
 	twin->scrollerhook.h_Entry = (void *)ami_tree_scroller_hook;
 	twin->scrollerhook.h_Data = twin;
 
-	ami_init_layers(&twin->globals, scrn->Width, scrn->Height);
+	ami_init_layers(&twin->globals, 0, 0);
 	ami_tree_menu(twin);
 
 	if(type == AMI_TREE_SSLCERT)
@@ -1216,6 +1217,7 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	struct treeview_window *twin = data;
 	struct IBox *bbox;
 	int pos_x, pos_y;
+	int tile_x, tile_y, tile_w, tile_h;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
@@ -1235,10 +1237,42 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	if(x - pos_x + width > bbox->Width) width = bbox->Width - (x - pos_x);
 	if(y - pos_y + height > bbox->Height) height = bbox->Height - (y - pos_y);
 
-	tree_draw(twin->tree, -pos_x, -pos_y, x, y, width, height, &ctx);
+	if(x < pos_x) {
+		width -= pos_x - x;
+		x = pos_x;
+	}
 
-	BltBitMapRastPort(twin->globals.bm, x - pos_x, y - pos_y, twin->win->RPort,
-		bbox->Left + x - pos_x, bbox->Top + y - pos_y, width, height, 0x0C0);
+	if(y < pos_y) {
+		height -= pos_y - y;
+		y = pos_y;
+	}
+
+	for(tile_y = y; tile_y < (y + height); tile_y += option_redraw_tile_size) {
+		tile_h = option_redraw_tile_size;
+		if(((y + height) - tile_y) < option_redraw_tile_size)
+			tile_h = (y + height) - tile_y;
+
+		for(tile_x = x; tile_x < (x + width); tile_x += option_redraw_tile_size) {
+			tile_w = option_redraw_tile_size;
+			if(((x + width) - tile_x) < option_redraw_tile_size)
+				tile_w = (x + width) - tile_x;
+
+			tree_draw(twin->tree, - tile_x, - tile_y,
+				tile_x, tile_y, tile_w, tile_h, &ctx);
+
+			BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
+					BLITA_Source, twin->globals.bm,
+					BLITA_SrcX, 0,
+					BLITA_SrcY, 0,
+					BLITA_DestType, BLITT_RASTPORT, 
+					BLITA_Dest, twin->win->RPort,
+					BLITA_DestX, bbox->Left + tile_x - pos_x,
+					BLITA_DestY, bbox->Top + tile_y - pos_y,
+					BLITA_Width, tile_w,
+					BLITA_Height, tile_h,
+					TAG_DONE);
+		}
+	}
 
 	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
 	glob = &browserglob;
