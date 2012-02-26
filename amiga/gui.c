@@ -3215,10 +3215,10 @@ void gui_window_set_title(struct gui_window *g, const char *title)
 }
 
 void ami_do_redraw_tiled(struct gui_window_2 *gwin,
-	ULONG left, ULONG top, ULONG width, ULONG height,
-	ULONG sx, ULONG sy, struct IBox *bbox, struct redraw_context *ctx)
+	int left, int top, int width, int height,
+	int sx, int sy, struct IBox *bbox, struct redraw_context *ctx)
 {
-	ULONG x, y;
+	int x, y;
 	struct rect clip;
 
 	if(top < 0) {
@@ -3249,6 +3249,8 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	if(width <= 0) return;
 	if(height <= 0) return;
 
+//printf("%ld %ld %ld %ld\n",left, top, width, height);
+
 	for(y = top; y < (top + height); y += option_redraw_tile_size) {
 		clip.y0 = 0;
 		clip.y1 = option_redraw_tile_size;
@@ -3259,7 +3261,12 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 			clip.x1 = option_redraw_tile_size;
 			if(((left + width) - x) < option_redraw_tile_size) clip.x1 = (left + width) - x;
 
-			if(browser_window_redraw(gwin->bw, clip.x0 - (x / gwin->bw->scale), clip.y0 - (y / gwin->bw->scale), &clip, ctx))
+//printf("%ld %ld -> %ld %ld\n",clip.x0 - (int)(x / gwin->bw->scale), clip.y0 - (int)(y / gwin->bw->scale), clip.x1, clip.y1);
+
+			if(browser_window_redraw(gwin->bw,
+				clip.x0 - (int)(x / gwin->bw->scale),
+				clip.y0 - (int)(y / gwin->bw->scale),
+				&clip, ctx))
 			{
 				ami_clearclipreg(&browserglob);
 
