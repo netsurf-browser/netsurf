@@ -20,6 +20,9 @@
 # ignored.
 #
 
+# Globals
+NetSurf:NetSurf
+NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
 
 # Menus
 # =====
@@ -29,7 +32,6 @@
 
 # Iconbar menu
 #
-NetSurf:NetSurf
 Info:Informatie
 AppHelp:Hulp...  F1
 Open:Open
@@ -347,6 +349,7 @@ TreeDelete:Delete
 TreeDefault:Set as default
 TreeClear:Clear default
 
+
 # Tree export
 #
 TreeHotlist:NetSurf bladwijzers
@@ -384,6 +387,7 @@ HotlistFeatureRequest:NetSurf feature requests
 #
 
 GlobalHistory:Historie (globaal)
+DomainAll:(All domains)
 DateToday:vandaag
 DateYesterday:gisteren
 Date1Week:vorige week
@@ -457,6 +461,7 @@ gtkQuit:Quit NetSurf?
 gtkDownloadsRunning:There are still downloads running, if you quit now these will be canceled and the files deleted.
 gtkStartDownload:Download file?
 gtkOverwrite:A file named "%s" already exists.  Do you want to replace it?
+gtkOverwriteTitle:File exists
 gtkOverwriteInfo:The file already exists in "%s".  Replacing it will overwrite its contents.
 gtkFailed:Download failed
 gtkFileError:File error: %s
@@ -464,14 +469,23 @@ gtkInfo:%s from %s is %s in size
 gtkSave:Save file as...
 gtkSourceSave:Save Source
 gtkSourceTabError:Error handling source data 
-gtkPlainSave:Save as text
-gtkFullSave:Save webpage complete - select an empty directory
+gtkplainSave:Save as text
+gtkcompleteSave:Save webpage complete - select an empty directory
+gtkSaveConfirm:File saved
+gtkSaveCancelled:File not saved
 gtkUnknownHost:an unknown host
 gtkUnknownFile:
 gtkUnknownSize:unknown
 
 # gtk Menu / Button labels
 #
+
+gtkFile:_File
+gtkEdit:_Edit
+gtkView:_View
+gtkNavigate:_Navigate
+gtkTabs:_Tabs
+gtkHelp:_Help
 
 gtkNewTab:New _Tab
 gtkNewTabAccel:<ctrl>t
@@ -551,6 +565,8 @@ gtkGlobalHistoryAccel:<ctrl><shift>h
 gtkAddBookMarks:_Add to Bookmarks..
 gtkShowBookMarks:_Show Bookmarks..
 gtkShowBookMarksAccel:F6
+gtkShowCookies:Show _Cookies…
+gtkShowCookiesAccel:F9
 gtkOpenLocation:_Open Location..
 gtkOpenLocationAccel:<ctrl>l
 
@@ -566,6 +582,10 @@ gtkGuide:User _guide
 gtkUserInformation:User _information
 gtkAbout:_About
 
+gtkCustomize:Customise…
+gtkOpentab:Open Link in _New Tab
+gtkOpenwin:Open Link in New Window
+gtkSavelink:Save Link
 
 gtkToolBarTitle:Toolbar custom button store
 gtkAddThemeTitle:Select folder containing theme images
@@ -730,10 +750,6 @@ DownloadWarn:Dit bestand is misschien niet compleet opgehaald:
 MiscError:Er trad een onverwachtte fout op:
 FileError:Bestand bestaat niet:
 PrintError:Fout tijdens printen:
-AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
-EncNotRec:Encoding type not recognised.
-FileOpenError:could not open file '%s'
-DirectoryError:directory '%s' already exists
 
 # Specific errors - displayed in a dialog box
 #
@@ -753,7 +769,10 @@ URIError:NetSurf was unable to parse this URI file due to a syntax error.
 SearchError:Invalid Search.
 EmptyError:bestand is leeg.
 PrintErrorRO2:De printer lijkt al bezig te zijn.
-AWNotSeen:Please locate the AWViewer application and try again.
+AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
+EncNotRec:Encoding type not recognised.
+FileOpenError:could not open file '%s'
+DirectoryError:directory '%s' already exists
 
 # Error messages for Amiga version only
 CompError:Unable to open
@@ -976,6 +995,7 @@ HelpBrowserMenu1-0-0:\Rsee information about the current item.
 HelpBrowserMenu1-0-1:\Rsave the current item.
 HelpBrowserMenu1-0-2:\Rsee the export options.
 HelpBrowserMenu1-0-2-0:\Rsave the image as a Sprite.
+HelpBrowserMenu1-0-2-1:\Rsave the image as a DrawFile
 HelpBrowserMenu1-0-3:\Rsave the address of the current item.
 HelpBrowserMenu1-0-3-0:\Rsave the current item's address in Acorn URI format.
 HelpBrowserMenu1-0-3-1:\Rsave the current item's address in Ant URL format.

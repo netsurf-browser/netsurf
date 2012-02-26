@@ -20,6 +20,9 @@
 # ignored.
 #
 
+# Globals
+NetSurf:NetSurf
+NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
 
 # Menus
 # =====
@@ -29,7 +32,6 @@
 
 # Iconbar menu
 #
-NetSurf:NetSurf
 Info:Info
 AppHelp:Aide...  F1
 Open:Ouvrir
@@ -347,6 +349,7 @@ TreeDelete:Delete
 TreeDefault:Set as default
 TreeClear:Clear default
 
+
 # Tree export
 #
 TreeHotlist:Favoris de NetSurf
@@ -384,6 +387,7 @@ HotlistFeatureRequest:Demandes de nouvelles fonctions de Netsurf
 #
 
 GlobalHistory:Historique globale
+DomainAll:(All domains)
 DateToday:Aujourd'hui
 DateYesterday:Hier
 Date1Week:La semaine dernière
@@ -457,6 +461,7 @@ gtkQuit:Quitter NetSurf?
 gtkDownloadsRunning:Il ya encore des téléchargements en cours, si vous quittez maintenant ceux-ci seront annulés et les fichiers supprimés.
 gtkStartDownload:Téléchargement du fichier?
 gtkOverwrite:Un fichier nommé "%s" existe déja. Voulez-vous le remplacer ?
+gtkOverwriteTitle:File exists
 gtkOverwriteInfo:Le fichier existe déja dans "%s". Son remplacement réécrira son contenu.
 gtkFailed:Echec du téléchargement
 gtkFileError:Erreur de fichier: %s
@@ -464,14 +469,23 @@ gtkInfo:La taille de %s de %s est de %s
 gtkSave:Enregistrer le fichier sous...
 gtkSourceSave:Enregistrer la Source
 gtkSourceTabError:Erreur de manipulation des données source 
-gtkPlainSave:Enregistrer comme texte
-gtkFullSave:Enregistrer page web complète - sélectioner un dossier vide 
+gtkplainSave:Enregistrer comme texte
+gtkcompleteSave:Enregistrer page web complète - sélectioner un dossier vide 
+gtkSaveConfirm:File saved
+gtkSaveCancelled:File not saved
 gtkUnknownHost:un hôte inconnu
 gtkUnknownFile:
 gtkUnknownSize:inconnu
 
 # gtk Menu / Button labels
 #
+
+gtkFile:_File
+gtkEdit:_Edit
+gtkView:_View
+gtkNavigate:_Navigate
+gtkTabs:_Tabs
+gtkHelp:_Help
 
 gtkNewTab:Nouvel _Onglet
 gtkNewTabAccel:<ctrl>t
@@ -551,6 +565,8 @@ gtkGlobalHistoryAccel:<ctrl><shift>h
 gtkAddBookMarks:_Ajouter un marque-page..
 gtkShowBookMarks:_Montrer les marques-pages..
 gtkShowBookMarksAccel:F6
+gtkShowCookies:Show _Cookies…
+gtkShowCookiesAccel:F9
 gtkOpenLocation:_Ouvrir un site..
 gtkOpenLocationAccel:<ctrl>l
 
@@ -566,6 +582,10 @@ gtkGuide:Guide _Utilisateur
 gtkUserInformation:_Information Utilisateur
 gtkAbout:_A propos...
 
+gtkCustomize:Customise…
+gtkOpentab:Open Link in _New Tab
+gtkOpenwin:Open Link in New Window
+gtkSavelink:Save Link
 
 gtkToolBarTitle:Personaliser la barre d'outils
 gtkAddThemeTitle:Sélectionner le dossier contenant des images de thèmes
@@ -975,6 +995,7 @@ HelpBrowserMenu1-0-0:\Rvoir les informations sur l'objet en cours.
 HelpBrowserMenu1-0-1:\Rsauver l'objet courant.
 HelpBrowserMenu1-0-2:\Rvoir les options d'exportation.
 HelpBrowserMenu1-0-2-0:\Rsauver l'image au format Sprite.
+HelpBrowserMenu1-0-2-1:\Rsave the image as a DrawFile
 HelpBrowserMenu1-0-3:\Rsauver l'adresse de l'objet courant.
 HelpBrowserMenu1-0-3-0:\Rsauver l'adresse de l'objet courant au format Acorn URI.
 HelpBrowserMenu1-0-3-1:\Rsauver l'adresse de l'objet courant au format Ant URL.
@@ -1029,12 +1050,6 @@ HelpBrowserMenu5-1-0:\Souvrir la \w d'historique local.
 HelpBrowserMenu5-1-1:\Souvrir la fenêtre d'historique global.
 HelpBrowserMenu5-2:\Rgérer vos favoris.
 HelpBrowserMenu5-2-0:\Souvrir la fenêtre de gestion des cookies.
-HelpBrowserMenu5-3:\Rchercher un fragment de texte sur la page.
-HelpBrowserMenu5-4:\Rcontroler le positionnement de fenêtre par défaut.
-HelpBrowserMenu5-4-0:\Spromouvoir la position de fenêtre courante en celle par défault.
-HelpBrowserMenu5-4-1:\Sdécider si les fenêtres suivantes doivent être ouvertes en décalage à l'écran.
-HelpBrowserMenu5-4-2:\Sdécider si les fenêtres-filles doivent être ouvertes à la même taille que celle de leurs parents.
-HelpBrowserMenu5-4-3:\Srevenir au positionnement de fenêtre par défaut.
 HelpBrowserMenu6:\Rvoir l'aide disponible.
 HelpBrowserMenu6-0:\Souvrir la page de documentation dans une nouvelle fenêtre.
 HelpBrowserMenu6-1:\Souvrir le guide de l'utilisateur dans une nouvelle fenêtre.
