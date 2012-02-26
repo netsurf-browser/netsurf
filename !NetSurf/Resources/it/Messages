@@ -1,8 +1,6 @@
 # Italian messages for NetSurf 2.9/3.0 Development (Revision 13287)
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture) for ATO Italia
 # 8.01.2012
-# ========================================================================================
-#
 # Description
 # -----------
 #
@@ -310,6 +308,7 @@ Frame:Frame
 FrameNewWin:Apri frame in nuova finestra...
 FrameNewTab:Apri frame in nuova scheda
 FrameOnly:Apri frame in questa finestra
+
 SelectFile:Seleziona file...
 ExternalApp:Apri con applicazione esterna
 
@@ -350,6 +349,7 @@ TreeDelete:Elimina
 TreeDefault:Imposta come predefinito
 TreeClear:Annulla predefinito
 
+
 # Tree export
 #
 TreeHotlist:Segnalibri di NetSurf
@@ -387,6 +387,7 @@ HotlistFeatureRequest:Suggerimenti per NetSurf
 #
 
 GlobalHistory:Cronologia globale
+DomainAll:(All domains)
 DateToday:Oggi
 DateYesterday:Ieri
 Date1Week:Ultima settimana
@@ -456,7 +457,6 @@ gtkWorking: In corso
 
 # Dialogs
 #
-
 gtkQuit:Sei sicuro di voler uscire da NetSurf?
 gtkDownloadsRunning:Sono presenti alcuni file in download in attesa di essere completati, chiudendo questa sessione tutti i file incompleti verranno cancellati.
 gtkStartDownload:Scaricare il file?
@@ -479,6 +479,13 @@ gtkUnknownSize:sconosciuto
 
 # gtk Menu / Button labels
 #
+
+gtkFile:_File
+gtkEdit:_Edit
+gtkView:_View
+gtkNavigate:_Navigate
+gtkTabs:_Tabs
+gtkHelp:_Help
 
 gtkNewTab:Nuova _scheda
 gtkNewTabAccel:<ctrl>t
@@ -558,6 +565,8 @@ gtkGlobalHistoryAccel:<ctrl><shift>h
 gtkAddBookMarks:_Aggiungi ai segnalibri...
 gtkShowBookMarks:_Mostra segnalibri...
 gtkShowBookMarksAccel:F6
+gtkShowCookies:Show _Cookies…
+gtkShowCookiesAccel:F9
 gtkOpenLocation:_Apri indirizzo...
 gtkOpenLocationAccel:<ctrl>l
 
@@ -573,6 +582,10 @@ gtkGuide:_Guida in linea
 gtkUserInformation:Informazioni _utente
 gtkAbout:_Informazioni
 
+gtkCustomize:Customise…
+gtkOpentab:Open Link in _New Tab
+gtkOpenwin:Open Link in New Window
+gtkSavelink:Save Link
 
 gtkToolBarTitle:Pulsanti della barra strumenti
 gtkAddThemeTitle:Seleziona una cartella contenente le immagini del tema in questione
@@ -607,6 +620,7 @@ Next:Successivo
 Prev:Precedente
 ShowAll:Mostra Tutto
 CaseSens:Maiuscole/Minuscole
+
 
 # 401 login user interface tokens
 # ===============================
@@ -791,7 +805,6 @@ Loading:Caricamento della pagina...
 Fetching:prelevamento dati in corso...
 Processing:elaborazione del documento in corso...
 Formatting:formattazione del documento in corso...
-Converting:conversione del documento in corso...
 Done:Completato
 Stopped:Interrotto
 
@@ -1479,4 +1492,3 @@ AnimImg:Animazioni
 DitherImg:Immagini Dither
 FilterImg:Immagini Smooth
 RenderText:Sfuma testo di sfondo
-Initialising:Inizializzazione...
