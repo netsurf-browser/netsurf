@@ -1180,6 +1180,7 @@ BOOL ami_tree_event(struct treeview_window *twin)
 			break;
 
 			case WMHI_NEWSIZE:
+				ami_tree_resized(twin->tree, twin->max_width, twin->max_height, twin);
 				ami_tree_draw(twin);
 			break;
 
