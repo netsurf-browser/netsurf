@@ -22,9 +22,9 @@ CFLAGS += -U__STRICT_ANSI__ -std=c99 -I. -Dsmall $(WARNFLAGS) -Dnsatari \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
-		$(shell $(PKG_CONFIG) --cflags libhubbub libcss openssl) \
-		$(shell xml2-config --cflags) \
-		$(shell curl-config --cflags)
+		$(shell $(PKG_CONFIG) --cflags libhubbub libcss openssl ) \
+		$(shell $(PKG_CONFIG) --cflags libxml-2.0 ) \
+		$(shell $(PKG_CONFIG) --cflags libcurl )
 
 LDFLAGS += -lcurl
 LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet
