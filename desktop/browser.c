@@ -2072,6 +2072,19 @@ void browser_window_set_scale_internal(struct browser_window *bw, float scale)
 
 
 /**
+ * Gets the scale of a browser window
+ *
+ * \param bw	The browser window to scale
+ * \return 
+ */
+
+float browser_window_get_scale(struct browser_window *bw)
+{
+	return bw->scale;
+}
+
+
+/**
  * Update URL bar for a given browser window to given URL
  *
  * \param bw	Browser window to update URL bar for.

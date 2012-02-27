@@ -241,6 +241,7 @@ void browser_window_destroy(struct browser_window *bw);
 void browser_window_reformat(struct browser_window *bw, bool background,
 		int width, int height);
 void browser_window_set_scale(struct browser_window *bw, float scale, bool all);
+float browser_window_get_scale(struct browser_window *bw);
 
 /**
  * Get access to any content, link URLs and objects (images) currently
