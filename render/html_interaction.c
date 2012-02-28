@@ -194,8 +194,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	plot_font_style_t fstyle;
 	int scroll_mouse_x = 0, scroll_mouse_y = 0;
 	int padding_left, padding_right, padding_top, padding_bottom;
+	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 
-	if (bw->drag_type != DRAGGING_NONE && !mouse &&
+	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
 		/* drag end: select menu */
 		form_select_mouse_drag_end(html->visible_select_menu,
@@ -449,7 +450,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						text_box->byte_offset + idx);
 
 				if (selection_dragging(&html->sel)) {
-					bw->drag_type = DRAGGING_SELECTION;
+					browser_window_set_drag_type(bw,
+							DRAGGING_SELECTION,
+							NULL);
 					status = messages_get("Selecting");
 				} else
 					status = content_get_status_message(h);
@@ -494,7 +497,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						text_box->byte_offset + idx);
 
 				if (selection_dragging(&html->sel))
-					bw->drag_type = DRAGGING_SELECTION;
+					browser_window_set_drag_type(bw,
+							DRAGGING_SELECTION,
+							NULL);
 			}
 			else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(&html->sel, true);
@@ -611,8 +616,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					 * operations ignored */
 
 					if (selection_dragging(&html->sel)) {
-						bw->drag_type =
-							DRAGGING_SELECTION;
+						browser_window_set_drag_type(bw,
+							DRAGGING_SELECTION,
+							NULL);
 						status =
 							messages_get("Selecting");
 					} else
