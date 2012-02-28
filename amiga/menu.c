@@ -294,6 +294,8 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	gwin->menu[9].nm_Flags = NM_ITEMDISABLED;
 #endif
 
+	gwin->menu[15].nm_Flags = NM_ITEMDISABLED;
+
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), false, gwin);
 	ami_menu_arexx_scan(gwin);
 
