@@ -408,6 +408,12 @@ void browser_window_set_drag_type(struct browser_window *bw,
 }
 
 /* exported interface, documented in browser.h */
+browser_drag_type browser_window_get_drag_type(struct browser_window *bw)
+{
+	return bw->drag_type;
+}
+
+/* exported interface, documented in browser.h */
 struct browser_window * browser_window_get_root(struct browser_window *bw)
 {
 	while (bw && !bw->window && bw->parent) {
