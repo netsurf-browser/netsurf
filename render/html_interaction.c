@@ -95,8 +95,9 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	html_content *html = (html_content*) c;
+	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 
-	if (bw->drag_type == DRAGGING_SELECTION && !mouse) {
+	if (drag_type == DRAGGING_SELECTION && !mouse) {
 		int dir = -1;
 		size_t idx;
 
@@ -111,7 +112,7 @@ void html_mouse_track(struct content *c, struct browser_window *bw,
 		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 	}
 
-	switch (bw->drag_type) {
+	switch (drag_type) {
 		case DRAGGING_SELECTION: {
 			struct box *box;
 			int dir = -1;
