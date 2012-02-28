@@ -3,7 +3,7 @@
 #
 # ==============================================================================
 # Translated by Samir Hawamdeh (http://www.betatesting.it/backforthefuture) for ATO Italia
-# 8.01.2012
+# 28.02.2012
 # ==============================================================================
 #
 # Description
@@ -215,7 +215,7 @@ Domains:Domini
 # Other menus
 #
 # URL suggestion menu
-URLSuggest:URL Recenti
+URLSuggest:URL recenti
 
 # Menus within the choices system
 #
@@ -392,7 +392,7 @@ HotlistFeatureRequest:Suggerimenti per NetSurf
 #
 
 GlobalHistory:Cronologia globale
-DomainAll:(All domains)
+DomainAll:(Tutti i domini)
 DateToday:Oggi
 DateYesterday:Ieri
 Date1Week:Ultima settimana
@@ -486,11 +486,11 @@ gtkUnknownSize:sconosciuto
 #
 
 gtkFile:_File
-gtkEdit:_Edit
-gtkView:_View
-gtkNavigate:_Navigate
-gtkTabs:_Tabs
-gtkHelp:_Help
+gtkEdit:Mo_difica
+gtkView:_Mostra
+gtkNavigate:_Visualizza
+gtkTabs:_Schede
+gtkHelp:_Aiuto
 
 gtkNewTab:Nuova _scheda
 gtkNewTabAccel:<ctrl>t
@@ -570,7 +570,7 @@ gtkGlobalHistoryAccel:<ctrl><shift>h
 gtkAddBookMarks:_Aggiungi ai segnalibri...
 gtkShowBookMarks:_Mostra segnalibri...
 gtkShowBookMarksAccel:F6
-gtkShowCookies:Show _Cookies…
+gtkShowCookies:Mostra _cookie...
 gtkShowCookiesAccel:F9
 gtkOpenLocation:_Apri indirizzo...
 gtkOpenLocationAccel:<ctrl>l
@@ -587,10 +587,10 @@ gtkGuide:_Guida in linea
 gtkUserInformation:Informazioni _utente
 gtkAbout:_Informazioni
 
-gtkCustomize:Customise…
-gtkOpentab:Open Link in _New Tab
-gtkOpenwin:Open Link in New Window
-gtkSavelink:Save Link
+gtkCustomize:Personalizza...
+gtkOpentab:Apri in una _nuova scheda
+gtkOpenwin:Apri in una nuova finestra
+gtkSavelink:Salva Link
 
 gtkToolBarTitle:Pulsanti della barra strumenti
 gtkAddThemeTitle:Seleziona una cartella contenente le immagini del tema in questione
