@@ -1248,14 +1248,14 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 		y = pos_y;
 	}
 
-	for(tile_y = y; tile_y < (y + height); tile_y += option_redraw_tile_size) {
-		tile_h = option_redraw_tile_size;
-		if(((y + height) - tile_y) < option_redraw_tile_size)
+	for(tile_y = y; tile_y < (y + height); tile_y += option_redraw_tile_size_y) {
+		tile_h = option_redraw_tile_size_y;
+		if(((y + height) - tile_y) < option_redraw_tile_size_y)
 			tile_h = (y + height) - tile_y;
 
-		for(tile_x = x; tile_x < (x + width); tile_x += option_redraw_tile_size) {
-			tile_w = option_redraw_tile_size;
-			if(((x + width) - tile_x) < option_redraw_tile_size)
+		for(tile_x = x; tile_x < (x + width); tile_x += option_redraw_tile_size_x) {
+			tile_w = option_redraw_tile_size_x;
+			if(((x + width) - tile_x) < option_redraw_tile_size_x)
 				tile_w = (x + width) - tile_x;
 
 			tree_draw(twin->tree, - tile_x, - tile_y,

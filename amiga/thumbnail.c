@@ -42,13 +42,17 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	struct BitScaleArgs bsa;
 	int plot_width;
 	int plot_height;
+	int redraw_tile_size = option_redraw_tile_size_x;
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
 		.plot = &amiplot
 	};
 
-	plot_width = MIN(content_get_width(content), option_redraw_tile_size);
+	if(option_redraw_tile_size_y < option_redraw_tile_size_x)
+		redraw_tile_size = option_redraw_tile_size_y;
+
+	plot_width = MIN(content_get_width(content), redraw_tile_size);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
 			bitmap->width;
 
