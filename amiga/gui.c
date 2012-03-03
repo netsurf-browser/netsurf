@@ -3400,7 +3400,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
  		if(g->new_content) g->redraw_scroll = false;
 
-		if(g->bw->scale != 1.0) g->redraw_scroll = false;
+		//if(g->bw->scale != 1.0) g->redraw_scroll = false;
 	}
 
 	if(g->redraw_scroll)
@@ -3416,30 +3416,30 @@ void ami_do_redraw(struct gui_window_2 *g)
 		if(vcurrent>oldv)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent / g->bw->scale, (height + oldv - 1) / g->bw->scale,
-					(hcurrent + width) / g->bw->scale,
-					(vcurrent + height + 1) / g->bw->scale);
+					hcurrent, (height / g->bw->scale) + oldv - 1,
+					hcurrent + (width / g->bw->scale),
+					vcurrent + (height / g->bw->scale) + 1);
 		}
 		else if(vcurrent<oldv)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent / g->bw->scale, vcurrent / g->bw->scale,
-					(hcurrent + width) / g->bw->scale,
-					oldv / g->bw->scale);
+					hcurrent, vcurrent,
+					hcurrent + (width / g->bw->scale),
+					oldv);
 		}
 
 		if(hcurrent>oldh)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					(width + oldh) / g->bw->scale, vcurrent / g->bw->scale,
-					(hcurrent + width) / g->bw->scale,
-					(vcurrent + height) / g->bw->scale);
+					(width / g->bw->scale) + oldh , vcurrent,
+					hcurrent + (width / g->bw->scale),
+					vcurrent + (height / g->bw->scale));
 		}
 		else if(hcurrent<oldh)
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent / g->bw->scale, vcurrent / g->bw->scale,
-					oldh / g->bw->scale, (vcurrent + height) / g->bw->scale);
+					hcurrent, vcurrent,
+					oldh, vcurrent + (height / g->bw->scale));
 		}
 	}
 	else
