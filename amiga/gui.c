@@ -3220,6 +3220,8 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 {
 	int x, y;
 	struct rect clip;
+	int tile_x_scale = (int)(option_redraw_tile_size_x / gwin->bw->scale);
+	int tile_y_scale = (int)(option_redraw_tile_size_y / gwin->bw->scale);
 
 	if(top < 0) {
 		height += top;
@@ -3251,21 +3253,23 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 
 //printf("%ld %ld %ld %ld\n",left, top, width, height);
 
-	for(y = top; y < (top + height); y += option_redraw_tile_size_y) {
+	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
 		clip.y1 = option_redraw_tile_size_y;
-		if(((top + height) - y) < option_redraw_tile_size_y) clip.y1 = (top + height) - y;
+		if((((y - sy) * gwin->bw->scale) + clip.y1) > bbox->Height)
+			clip.y1 = bbox->Height - ((y - sy) * gwin->bw->scale);
 
-		for(x = left; x < (left + width); x += option_redraw_tile_size_x) {
+		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
 			clip.x1 = option_redraw_tile_size_x;
-			if(((left + width) - x) < option_redraw_tile_size_x) clip.x1 = (left + width) - x;
+			if((((x - sx) * gwin->bw->scale) + clip.x1) > bbox->Width)
+				clip.x1 = bbox->Width - ((x - sx) * gwin->bw->scale);
 
-//printf("%ld %ld -> %ld %ld\n",clip.x0 - (int)(x / gwin->bw->scale), clip.y0 - (int)(y / gwin->bw->scale), clip.x1, clip.y1);
+//printf("%ld %ld -> %ld %ld\n",clip.x0 - (int)(x), clip.y0 - (int)(y), clip.x1, clip.y1);
 
 			if(browser_window_redraw(gwin->bw,
-				clip.x0 - (int)(x / gwin->bw->scale),
-				clip.y0 - (int)(y / gwin->bw->scale),
+				clip.x0 - (int)x,
+				clip.y0 - (int)y,
 				&clip, ctx))
 			{
 				ami_clearclipreg(&browserglob);
@@ -3276,10 +3280,10 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 					BLITA_SrcY, 0,
 					BLITA_DestType, BLITT_RASTPORT, 
 					BLITA_Dest, gwin->win->RPort,
-					BLITA_DestX, bbox->Left + x - sx,
-					BLITA_DestY, bbox->Top + y - sy,
-					BLITA_Width, clip.x1,
-					BLITA_Height, clip.y1,
+					BLITA_DestX, bbox->Left + (int)((x - sx) * gwin->bw->scale),
+					BLITA_DestY, bbox->Top + (int)((y - sy) * gwin->bw->scale),
+					BLITA_Width, (int)(clip.x1),
+					BLITA_Height, (int)(clip.y1),
 					TAG_DONE);
 			}
 		}
@@ -3328,11 +3332,6 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 		return;
 
 	GetAttr(SPACE_AreaBox, g->shared->objects[GID_BROWSER], (ULONG *)&bbox);
-
-	x0 *= g->shared->bw->scale;
-	x1 *= g->shared->bw->scale;
-	y0 *= g->shared->bw->scale;
-	y1 *= g->shared->bw->scale;
 
 	ami_do_redraw_tiled(g->shared, x0, y0, x1 - x0, y1 - y0, sx, sy, bbox, &ctx);
 	return;
@@ -3401,7 +3400,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
  		if(g->new_content) g->redraw_scroll = false;
 
-		//if(g->bw->scale != 1.0) g->redraw_scroll = false;
+		if(g->bw->scale != 1.0) g->redraw_scroll = false;
 	}
 
 	if(g->redraw_scroll)
