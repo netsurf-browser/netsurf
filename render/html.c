@@ -678,7 +678,7 @@ void html_finish_conversion(html_content *c)
 
 		if (i < STYLESHEET_USER)
 			origin = CSS_ORIGIN_UA;
-		if (i < STYLESHEET_START)
+		else if (i < STYLESHEET_START)
 			origin = CSS_ORIGIN_USER;
 
 		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
