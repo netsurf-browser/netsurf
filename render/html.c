@@ -160,6 +160,7 @@ static lwc_string *html_charset;
 static nsurl *html_default_stylesheet_url;
 static nsurl *html_adblock_stylesheet_url;
 static nsurl *html_quirks_stylesheet_url;
+static nsurl *html_user_stylesheet_url;
 
 nserror html_init(void)
 {
@@ -188,6 +189,11 @@ nserror html_init(void)
 	if (error != NSERROR_OK)
 		goto error;
 
+	error = nsurl_create("resource:user.css",
+			&html_user_stylesheet_url);
+	if (error != NSERROR_OK)
+		goto error;
+
 	for (i = 0; i < NOF_ELEMENTS(html_types); i++) {
 		error = content_factory_register_handler(html_types[i],
 				&html_content_handler);
@@ -205,6 +211,11 @@ error:
 
 void html_fini(void)
 {
+	if (html_user_stylesheet_url != NULL) {
+		nsurl_unref(html_user_stylesheet_url);
+		html_user_stylesheet_url = NULL;
+	}
+
 	if (html_quirks_stylesheet_url != NULL) {
 		nsurl_unref(html_quirks_stylesheet_url);
 		html_quirks_stylesheet_url = NULL;
@@ -665,8 +676,10 @@ void html_finish_conversion(html_content *c)
 		css_stylesheet *sheet;
 		css_origin origin = CSS_ORIGIN_AUTHOR;
 
-		if (i < STYLESHEET_START)
+		if (i < STYLESHEET_USER)
 			origin = CSS_ORIGIN_UA;
+		if (i < STYLESHEET_START)
+			origin = CSS_ORIGIN_USER;
 
 		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
 				hsheet->data.external != NULL) {
@@ -1153,7 +1166,8 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the quirks mode style sheet,
-	 * stylesheet 2 is the adblocking stylesheet */
+	 * stylesheet 2 is the adblocking stylesheet,
+	 * stylesheet 3 is the user stylesheet */
 	c->stylesheets = talloc_array(c, struct html_stylesheet,
 			STYLESHEET_START);
 	if (c->stylesheets == NULL)
@@ -1164,6 +1178,8 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 	c->stylesheets[STYLESHEET_QUIRKS].data.external = NULL;
 	c->stylesheets[STYLESHEET_ADBLOCK].type = HTML_STYLESHEET_EXTERNAL;
 	c->stylesheets[STYLESHEET_ADBLOCK].data.external = NULL;
+	c->stylesheets[STYLESHEET_USER].type = HTML_STYLESHEET_EXTERNAL;
+	c->stylesheets[STYLESHEET_USER].data.external = NULL;
 	c->stylesheet_count = STYLESHEET_START;
 
 	c->base.active = 0;
@@ -1200,6 +1216,15 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 
 		c->base.active++;
 	}
+
+	ns_error = hlcache_handle_retrieve(html_user_stylesheet_url, 0,
+			content_get_url(&c->base), NULL,
+			html_convert_css_callback, c, &child, accept,
+			&c->stylesheets[STYLESHEET_USER].data.external);
+	if (ns_error != NSERROR_OK)
+		goto no_memory;
+
+	c->base.active++;
 
 	node = html;
 

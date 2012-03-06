@@ -76,6 +76,7 @@ static const char *fetch_resource_paths[] = {
 	"default.css",
 	"internal.css",
 	"quirks.css",
+	"user.css",
 	"credits.html",
 	"licence.html",
 	"favicon.ico",

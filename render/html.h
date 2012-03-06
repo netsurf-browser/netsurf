@@ -132,7 +132,8 @@ struct content_html_iframe {
 #define STYLESHEET_BASE		0	/* base style sheet */
 #define STYLESHEET_QUIRKS	1	/* quirks mode stylesheet */
 #define STYLESHEET_ADBLOCK	2	/* adblocking stylesheet */
-#define STYLESHEET_START	3	/* start of document stylesheets */
+#define STYLESHEET_USER		3	/* user stylesheet */
+#define STYLESHEET_START	4	/* start of document stylesheets */
 
 /** Render padding and margin box outlines in html_redraw(). */
 extern bool html_redraw_debug;
