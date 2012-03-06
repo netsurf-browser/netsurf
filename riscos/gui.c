@@ -278,14 +278,23 @@ nsurl *gui_get_resource_url(const char *path)
 	nsurl *url = NULL;
 
 	/* Map paths first */
-	if (strcmp(path, "adblock.css") == 0)
+	if (strcmp(path, "adblock.css") == 0) {
 		path = "AdBlock";
-	else if (strcmp(path, "default.css") == 0)
+
+	} else if (strcmp(path, "default.css") == 0) {
 		path = "CSS";
-	else if (strcmp(path, "quirks.css") == 0)
+
+	} else if (strcmp(path, "quirks.css") == 0) {
 		path = "Quirks";
-	else if (strcmp(path, "favicon.ico") == 0)
+
+	} else if (strcmp(path, "favicon.ico") == 0) {
 		path = "Icons/content.png";
+
+	} else if (strcmp(path, "user.css") == 0) {
+		/* Special case; this file comes from Choices: */
+		nsurl_create("file:///Choices:WWW/NetSurf/User", &url);
+		return url;
+	}
 
 	path_len = strlen(path);
 
