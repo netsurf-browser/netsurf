@@ -65,7 +65,11 @@ static void __CDECL evnt_bt_abort_click
 	struct gui_download_window * dw = (struct gui_download_window *)data;
 	assert( dw != NULL );
 	ObjcChange( OC_FORM, win, index, ~SELECTED, TRUE);
-	if( dw->status != NSATARI_DOWNLOAD_CANCELED ){
+	if( dw->status == NSATARI_DOWNLOAD_COMPLETE
+		|| dw->status == NSATARI_DOWNLOAD_ERROR ) {
+		ApplWrite( _AESapid, WM_CLOSED, win->handle, 0,0,0,0);
+	}
+	else if( dw->status != NSATARI_DOWNLOAD_CANCELED ){
 		dw->abort = true;
 	}
 }
@@ -298,27 +302,34 @@ void gui_download_window_error(struct gui_download_window *dw,
 
 void gui_download_window_done(struct gui_download_window *dw)
 {
+	OBJECT * tree;
 	LOG((""));
+
 	dw->status = NSATARI_DOWNLOAD_COMPLETE;
+
 	if( dw->fd != NULL ) {
 		fclose( dw->fd );
 		dw->fd = NULL;
 	}
-	OBJECT * tree = ObjcTree(OC_FORM, dw->form );
-	tree[DOWNLOAD_PROGRESS_DONE].ob_width = DOWNLOAD_BAR_MAX;
-	snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
-		"%lu%s", 100, "%"
-	);
-	snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",
-		human_friendly_bytesize(dw->size_downloaded),
-		(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : human_friendly_bytesize(dw->size_downloaded)
-	);
-	ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
-	ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
-	ObjcChange( OC_FORM, dw->form, DOWNLOAD_BT_ABORT, DISABLED, FALSE);
-	snd_rdw( dw->form );
+
+
+	tree = ObjcTree(OC_FORM, dw->form );
+
 	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
 		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0);
+	} else {
+		tree[DOWNLOAD_PROGRESS_DONE].ob_width = DOWNLOAD_BAR_MAX;
+		snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
+			"%lu%s", 100, "%"
+		);
+		snprintf( (char*)&dw->lbl_done, MAX_SLEN_LBL_DONE, "%s / %s",
+			human_friendly_bytesize(dw->size_downloaded),
+			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : human_friendly_bytesize(dw->size_downloaded)
+		);
+		ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
+		ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
+		ObjcString( tree, DOWNLOAD_BT_ABORT, (char*)"Close" );
+		snd_rdw( dw->form );
 	}
 	gui_window_set_status(input_window, messages_get("Done") );
 }
