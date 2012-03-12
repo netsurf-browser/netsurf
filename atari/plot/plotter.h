@@ -48,14 +48,20 @@
 #endif
 
 #define MAX_FRAMEBUFS 0x010
-#define C2P (1<<0)	                    /* C2P convert buffer 1 to buffer 2 */
+#define C2P (1<<0)					/* C2P convert buffer 1 to buffer 2 */
 /* TODO: implement offscreen buffer switch */
 
-/* Plotter Flags: */
-#define PLOT_FLAG_OFFSCREEN 0x01	/* offsreen plotter should set/accept this flag */
-#define PLOT_FLAG_LOCKED 	0x02		/* plotter should set this flag during screen updates */
-#define PLOT_FLAG_DITHER 	0x04		/* true if the plotter shall dither images */
-#define PLOT_FLAG_TRANS		0x08		/* true if the plotter supports transparent operations */
+/* Plotter Option Flags: */
+#define PLOT_FLAG_DITHER 	0x04	/* true if the plotter shall dither images */
+#define PLOT_FLAG_TRANS		0x08	/* true if the plotter supports transparent operations */
+
+/* Plotter "feature" flags */
+#define PLOT_FLAG_HAS_DITHER 	0x0400
+#define PLOT_FLAG_HAS_ALPHA	 	0x0800
+#define PLOT_FLAG_OFFSCREEN 	0x1000	/* offsreen plotter should set this flag */
+
+/* Plotter "internal" flags  */
+#define PLOT_FLAG_LOCKED 		0x08000	/* plotter should set this flag during screen updates */
 
 /* Font Plotter flags: */
 #define FONTPLOT_FLAG_MONOGLYPH 0x01
@@ -159,9 +165,6 @@ typedef	void * (*_pmf_create_framebuffer)(GEM_PLOTTER self);
 typedef	void * (*_pmf_switch_to_framebuffer)(GEM_PLOTTER self);
 typedef	int (*_pmf_lock)(GEM_PLOTTER self);
 typedef	int (*_pmf_unlock)(GEM_PLOTTER self);
-typedef	int (*_pmf_update_region)(GEM_PLOTTER self, GRECT region);
-typedef	int (*_pmf_update_screen_region)( GEM_PLOTTER self, GRECT region );
-typedef	int (*_pmf_update_screen)(GEM_PLOTTER self);
 typedef	int (*_pmf_put_pixel)(GEM_PLOTTER self, int x, int y, int color );
 typedef	int (*_pmf_copy_rect)(GEM_PLOTTER self, GRECT src, GRECT dst );
 typedef	int (*_pmf_clip)(GEM_PLOTTER self, const struct rect * clip );
@@ -205,9 +208,6 @@ struct s_gem_plotter
 	_pmf_unlock unlock;
 	_pmf_create_framebuffer create_framebuffer;
 	_pmf_switch_to_framebuffer switch_to_framebuffer;
-	_pmf_update_region update_region;
-	_pmf_update_screen update_screen;
-	_pmf_update_screen_region update_screen_region;
 	_pmf_put_pixel put_pixel;
 	_pmf_copy_rect copy_rect;
 	_pmf_clip clip;

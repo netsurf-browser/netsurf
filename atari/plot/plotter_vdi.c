@@ -50,9 +50,6 @@ static int resize( GEM_PLOTTER self, int w, int h );
 static int move( GEM_PLOTTER self, short x, short y );
 static int lock( GEM_PLOTTER self );
 static int unlock( GEM_PLOTTER self );
-static int update_region( GEM_PLOTTER self, GRECT region );
-static int update_screen_region( GEM_PLOTTER self, GRECT region );
-static int update_screen( GEM_PLOTTER self );
 static int put_pixel(GEM_PLOTTER self, int x, int y, int color );
 static int copy_rect( GEM_PLOTTER self, GRECT src, GRECT dst );
 static int arc(GEM_PLOTTER self,int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle);
@@ -131,9 +128,6 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->move = move;
 	self->lock = lock;
 	self->unlock = unlock;
-	self->update_region = update_region;
-	self->update_screen_region = update_screen_region;
-	self->update_screen = update_screen;
 	self->put_pixel = put_pixel;
 	self->copy_rect = copy_rect;
 	self->clip = plotter_std_clip;
@@ -347,99 +341,6 @@ static int unlock( GEM_PLOTTER self )
 	return( 1 );
 }
 
-/*
-   region specifies an rectangle within the framebuffer
-   calculation of screen coords is done automatically.
-*/
-static int update_region( GEM_PLOTTER self, GRECT region )
-{
-	int src_offs;
-	GRECT screen_area, tmp, visible;
-	short pxy[10];
-	plotter_get_visible_grect( self, &visible );
-
-/*
-	LOG(("%s: %s %d\n", (char*)__FILE__, __FUNCTION__, __LINE__));
-	LOG(("region: x:%d, y:%d, w:%d, h:%d\n", region.g_x, region.g_y, region.g_w, region.g_h ));
-	LOG(("visible: x:%d, y:%d, w:%d, h:%d\n", visible.g_x, visible.g_y, visible.g_w, visible.g_h ));
-*/
-	/* sanitize region: */
-	tmp = region;
-	if( !rc_intersect(&visible, &tmp) )
-		return( 0 );
-/*
-    region is partially out of bottom or left:
-   if( region.g_x < self->visible.g_x )
-   {
-      region.g_w = self->visible.g_x - region.g_x;
-      region.g_x = self->visible.g_x;
-   }
-   if( region.g_y < self->visible.g_y )
-   {
-      region.g_h = self->visible.g_y - region.g_y;
-      region.g_y = self->visible.g_y;
-   }
-    region is partially out of top or right:
-   if( region.g_x + region.g_w > self->visible.g_x + self->visible.g_w )
-   {
-      region.g_w = self->visible.g_w - region.g_x;
-   }
-   if( region.g_y + region.g_h > self->visible.g_y + self->visible.g_h )
-   {
-      region.g_h = self->visible.g_h - region.g_y;
-   }
-    now region contains coords of framebuffer that needs redraw.
-*/
-	if( fbrect_to_screen( self, tmp, &screen_area) ) {
-		pxy[0] = screen_area.g_x;
-		pxy[1] = screen_area.g_y;
-		pxy[2] = screen_area.g_x + screen_area.g_w;
-		pxy[3] = screen_area.g_y;
-		pxy[4] = screen_area.g_x + screen_area.g_w;
-		pxy[5] = screen_area.g_y + screen_area.g_h;
-		pxy[6] = screen_area.g_x;
-		pxy[7] = screen_area.g_y + screen_area.g_h;
-		pxy[8] = screen_area.g_x;
-		pxy[9] = screen_area.g_y;
-	}
-   return( 1 );
-}
-
-/*
-   region specifies an rectangle within the screen,
-   calculation of framebuffer coords is done automatically.
-*/
-static int update_screen_region( GEM_PLOTTER self, GRECT region )
-{
-   LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
-
-   return( 1 );
-}
-
-/* Updates all visible parts of the framebuffer */
-static int update_screen( GEM_PLOTTER self )
-{
-	GRECT target, src;
-	int src_offset;
-	int i,x;
-	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
-	if( !(PLOT_FLAG_OFFSCREEN & self->flags) )
-    	return( 0 );
-	target.g_x = src.g_x = 0;
-	target.g_y = src.g_y = 0;
-	target.g_w = src.g_w = CURFB(self).w;
-	target.g_h = src.g_h = CURFB(self).h;
-	if( !fbrect_to_screen( self, target, &target ) )
-		return( -1 );
-	src_offset = get_pixel_offset( CURFB(self).vis_x, CURFB(self).vis_y, CURFB(self).w, self->bpp_virt );
-	LOG(("area: x:%d ,y:%d ,w:%d ,h:%d, from: %p (offset: %d) \n",
-		target.g_x, target.g_y,
-         target.g_w, target.g_h,
-		((char*)CURFB(self).mem)+src_offset, src_offset
-	));
-
-   return( 1 );
-}
 static int put_pixel(GEM_PLOTTER self, int x, int y, int color )
 {
    LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
