@@ -32,6 +32,10 @@
 #include "atari/plot/eddi.h"
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
+#ifdef WITH_GD_PLOTTER
+ #include "atari/plot/plotter_gd.h"
+#endif
+
 #ifdef WITH_VDI_FONT_DRIVER
  #include "atari/plot/font_vdi.h"
 #endif
@@ -45,6 +49,40 @@
 #include "utils/log.h"
 #include "atari/misc.h"
 #include "atari/osspec.h"
+
+
+struct s_driver_table_entry screen_driver_table[] =
+{
+	{
+		(char*)"vdi",
+		ctor_plotter_vdi,
+		PLOT_FLAG_HAS_ALPHA,
+		32
+	},
+#ifdef WITH_GD_PLOTTER
+	{
+		(char*)"gd",
+		ctor_plotter_gd,
+		PLOT_FLAG_OFFSCREEN | PLOT_FLAG_HAS_ALPHA,
+		32
+	},
+#endif
+	{(char*)NULL, NULL, 0, 0 }
+};
+
+const struct s_font_driver_table_entry font_driver_table[] =
+{
+#ifdef WITH_VDI_FONT_DRIVER
+	{(char*)"vdi", ctor_font_plotter_vdi, 0},
+#endif
+#ifdef WITH_FREETYPE_FONT_DRIVER
+	{(char*)"freetype", ctor_font_plotter_freetype, 0},
+#endif
+#ifdef WITH_INTERNAL_FONT_DRIVER
+	{(char*)"internal", ctor_font_plotter_internal, 0},
+#endif
+	{(char*)NULL, NULL, 0}
+};
 
 
 /* get index to driver in driver list by name */
@@ -102,26 +140,6 @@ unsigned short vdi_web_pal[216][3] = {
 
 static short prev_vdi_clip[4];
 struct s_vdi_sysinfo vdi_sysinfo;
-
-struct s_driver_table_entry screen_driver_table[] =
-{
-	{(char*)"vdi", ctor_plotter_vdi, 0, 32},
-	{(char*)NULL, NULL, 0, 0 }
-};
-
-const struct s_font_driver_table_entry font_driver_table[] =
-{
-#ifdef WITH_VDI_FONT_DRIVER
-	{(char*)"vdi", ctor_font_plotter_vdi, 0},
-#endif
-#ifdef WITH_FREETYPE_FONT_DRIVER
-	{(char*)"freetype", ctor_font_plotter_freetype, 0},
-#endif
-#ifdef WITH_INTERNAL_FONT_DRIVER
-	{(char*)"internal", ctor_font_plotter_internal, 0},
-#endif
-	{(char*)NULL, NULL, 0}
-};
 
 struct s_vdi_sysinfo * read_vdi_sysinfo( short vdih, struct s_vdi_sysinfo * info ) {
 
@@ -380,7 +398,7 @@ GEM_PLOTTER new_plotter(int vdihandle, char * name, GRECT * loc_size,
 
 	gemplotter->name = name;
 	gemplotter->vdi_handle = vdihandle;
-	gemplotter->flags |= flags;
+	gemplotter->flags = 0;
 	gemplotter->font_plotter = fplotter;
 	gemplotter->bpp_virt = virt_bpp;
 	gemplotter->cfbi = 0;
@@ -404,7 +422,7 @@ GEM_PLOTTER new_plotter(int vdihandle, char * name, GRECT * loc_size,
 		else {
 			if( strcmp(name, screen_driver_table[i].name) == 0 ) {
 				if( screen_driver_table[i].ctor  ) {
-					gemplotter->flags |= screen_driver_table[i].flags;
+					gemplotter->flags = (screen_driver_table[i].flags | flags);
 					res = screen_driver_table[i].ctor( gemplotter );
 					*error = 0;
 				} else {
