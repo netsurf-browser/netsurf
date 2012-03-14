@@ -28,6 +28,7 @@
 #include "atari/plot/plotter.h"
 #include "atari/plot/plotter_vdi.h"
 
+
 /* assign vdi line style to dst ( netsurf type ) */
 #define NSLT2VDI(dst, src) \
 	dst = 0;\
@@ -52,6 +53,8 @@ static int lock( GEM_PLOTTER self );
 static int unlock( GEM_PLOTTER self );
 static int put_pixel(GEM_PLOTTER self, int x, int y, int color );
 static int copy_rect( GEM_PLOTTER self, GRECT src, GRECT dst );
+static int set_clip(GEM_PLOTTER self, const struct rect * clip);
+static int get_clip( GEM_PLOTTER self, struct rect * out );
 static int arc(GEM_PLOTTER self,int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle);
 static int disc(GEM_PLOTTER self,int x, int y, int radius, const plot_style_t * pstyle);
 static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_style_t * pstyle);
@@ -71,18 +74,26 @@ static int text(GEM_PLOTTER self, int x, int y, const char *text,size_t length, 
 static inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val );
 static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y );
 
+/*
+	Set clipping for current framebuffer
+*/
+static int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
 
-#ifdef WITH_8BPP_SUPPORT
-static unsigned short sys_pal[256][3]; /*RGB*/
-static unsigned short pal[256][3];     /*RGB*/
-static char rgb_lookup[256][4];
-extern unsigned short vdi_web_pal[126][3];
-#endif
+
 extern struct s_vdi_sysinfo vdi_sysinfo;
 
 static HermesHandle hermes_pal_h; /* hermes palette handle */
 static HermesHandle hermes_cnv_h; /* hermes converter instance handle */
 static HermesHandle hermes_res_h;
+
+static short prev_vdi_clip[4];
+
+#ifdef WITH_8BPP_SUPPORT
+static unsigned short sys_pal[256][3]; /*RGB*/
+static unsigned short pal[256][3];     /*RGB*/
+static char rgb_lookup[256][4];
+extern unsigned short vdi_web_pal[216][3];
+#endif
 
 
 static inline void vsl_rgbcolor( short vdih, uint32_t cin )
@@ -117,7 +128,143 @@ static inline void vsf_rgbcolor( short vdih, uint32_t cin )
 	}
 }
 
-int ctor_plotter_vdi(GEM_PLOTTER self )
+static int set_clip(GEM_PLOTTER self, const struct rect * clip)
+{
+	VIEW( self ).clipping.x0 = clip->x0;
+	VIEW( self ).clipping.y0 = clip->y0;
+	VIEW( self ).clipping.x1 = clip->x1;
+	VIEW( self ).clipping.y1 = clip->y1;
+	return ( 1 );
+}
+
+static int get_clip( GEM_PLOTTER self, struct rect * out )
+{
+	out->x0 = VIEW( self ).clipping.x0;
+	out->y0 = VIEW( self ).clipping.y0;
+	out->x1 = VIEW( self ).clipping.x1;
+	out->y1 = VIEW( self ).clipping.y1;
+	return( 1 );
+}
+
+/*
+	Get current visible coords
+*/
+static inline void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out )
+{
+	/*todo: !!! */
+	out->g_x = VIEW( self ).clipping.x0;
+	out->g_y = VIEW( self ).clipping.y0;
+	out->g_w = VIEW( self ).clipping.x1 - VIEW( self ).clipping.x0;
+	out->g_h = VIEW( self ).clipping.y1 - VIEW( self ).clipping.y0;
+}
+
+
+/*
+	1. calculate visible area of framebuffer in coords relative to framebuffer position
+
+	result:
+	this function should calc offsets into x,y coords of the framebuffer which
+	can be drawn. If the framebuffer coords do not fall within the screen region,
+	all values of visible region are set to zero.
+*/
+static inline void update_visible_rect( GEM_PLOTTER p )
+{
+	GRECT screen;
+	GRECT common;
+	GRECT frame;
+
+	screen.g_x = 0;
+	screen.g_y = 0;
+	screen.g_w = vdi_sysinfo.scr_w;
+	screen.g_h = vdi_sysinfo.scr_h;
+
+    common.g_x = frame.g_x = VIEW(p).x;
+	common.g_y = frame.g_y = VIEW(p).y;
+	common.g_w = frame.g_w = VIEW(p).w;
+	common.g_h = frame.g_h = VIEW(p).h;
+
+	if( rc_intersect( &screen, &common ) ) {
+		VIEW(p).vis_w = common.g_w;
+		VIEW(p).vis_h = common.g_h;
+		if( VIEW(p).x < screen.g_x )
+			VIEW(p).vis_x = frame.g_w - common.g_w;
+		else
+			VIEW(p).vis_x = 0;
+		if( VIEW(p).y <screen.g_y )
+			VIEW(p).vis_y = frame.g_h - common.g_h;
+		else
+			VIEW(p).vis_y = 0;
+	} else {
+		VIEW(p).vis_w = VIEW(p).vis_h = 0;
+		VIEW(p).vis_x = VIEW(p).vis_y = 0;
+	}
+}
+
+/*
+	Returns the visible parts of the box (relative coords within framebuffer),
+   	relative to screen coords (normally starting at 0,0 )
+*/
+static inline bool fbrect_to_screen( GEM_PLOTTER self, GRECT box, GRECT * ret )
+{
+	GRECT out, vis, screen;
+
+	screen.g_x = 0;
+	screen.g_y = 0;
+	screen.g_w = vdi_sysinfo.scr_w;
+	screen.g_h = vdi_sysinfo.scr_h;
+
+	/* get visible region: */
+    vis.g_x = VIEW(self).x;
+	vis.g_y = VIEW(self).y;
+	vis.g_w = VIEW(self).w;
+	vis.g_h = VIEW(self).h;
+
+	if ( !rc_intersect( &screen, &vis ) ) {
+		return( false );
+	}
+	vis.g_x = VIEW(self).w - vis.g_w;
+	vis.g_y = VIEW(self).h - vis.g_h;
+
+	/* clip box to visible region: */
+	if( !rc_intersect(&vis, &box) ) {
+		return( false );
+	}
+	out.g_x = box.g_x + VIEW(self).x;
+	out.g_y = box.g_y + VIEW(self).y;
+	out.g_w = box.g_w;
+	out.g_h = box.g_h;
+	*ret = out;
+	return ( true );
+}
+
+/*
+	convert framebuffer clipping to vdi clipping and activates it
+*/
+
+static inline void plotter_vdi_clip( GEM_PLOTTER self, bool set)
+{
+	return;
+	if( set == true ) {
+		struct rect c;
+		short vdiflags[58];
+		short newclip[4];
+		self->get_clip( self, &c );
+		vq_extnd( self->vdi_handle, 1, (short*)&vdiflags);
+		prev_vdi_clip[0] = vdiflags[45];
+		prev_vdi_clip[1] = vdiflags[46];
+		prev_vdi_clip[2] = vdiflags[47];
+		prev_vdi_clip[3] = vdiflags[48];
+		newclip[0] = VIEW(self).x + MAX(c.x0, 0);
+		newclip[1] = VIEW(self).y + MAX(c.y0, 0);
+		newclip[2] = MIN(VIEW(self).x+VIEW(self).w, newclip[0] + (c.x1 - c.x0) )-1;
+		newclip[3] = MIN(VIEW(self).y+VIEW(self).h, newclip[1] + (c.y1 - c.y0) )-1;
+		vs_clip( self->vdi_handle, 1, (short*)&newclip );
+	} else {
+		vs_clip( self->vdi_handle, 1, (short *)&prev_vdi_clip );
+	}
+}
+
+int ctor_plotter_vdi( GEM_PLOTTER self , GRECT * loc_size )
 {
 	int retval = 0;
 	int i;
@@ -130,7 +277,8 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->unlock = unlock;
 	self->put_pixel = put_pixel;
 	self->copy_rect = copy_rect;
-	self->clip = plotter_std_clip;
+	self->set_clip = set_clip;
+	self->get_clip = get_clip;
 	self->arc = arc;
 	self->disc = disc;
 	self->line = line;
@@ -139,12 +287,13 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	self->path = path;
 	self->bitmap = bitmap;
 	self->bitmap_resize = bitmap_resize;
+	/* override virtual bpp - must be in sync with screen for this driver: 	*/
+	self->bpp_virt = app.nplanes;
 #ifdef WITH_8BPP_SUPPORT
 	self->bitmap_convert =(app.nplanes > 8) ? bitmap_convert : bitmap_convert_8;
 #else
 	self->bitmap_convert = bitmap_convert;
 #endif
-	//self->bitmap_convert =bitmap_convert;
 	self->plot_mfdb = plot_mfdb;
 	self->text = text;
 	LOG(("Screen: x: %d, y: %d\n", vdi_sysinfo.scr_w, vdi_sysinfo.scr_h));
@@ -153,6 +302,11 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 	if( self->priv_data == NULL )
 		return( 0-ERR_NO_MEM );
 	memset( self->priv_data, 0, sizeof(struct s_vdi_priv_data) );
+	memset( &VIEW(self), 0, sizeof( struct s_view) );
+	VIEW( self ).x = loc_size->g_x;
+	VIEW( self ).y = loc_size->g_y;
+	VIEW( self ).w = loc_size->g_w;
+	VIEW( self ).h = loc_size->g_h;
 	DUMMY_PRIV(self)->bufops = 0;
 	DUMMY_PRIV(self)->size_buf_packed = 0;
 	DUMMY_PRIV(self)->size_buf_planar = 0;
@@ -164,20 +318,15 @@ int ctor_plotter_vdi(GEM_PLOTTER self )
 		DUMMY_PRIV(self)->bufops = C2P;
 		self->bpp_virt = 8;
 	}
-	if( FIRSTFB(self).w > vdi_sysinfo.scr_w || FIRSTFB(self).h > vdi_sysinfo.scr_h ){
-		return( 0-ERR_BUFFERSIZE_EXCEEDS_SCREEN );
-	}
 
-	FIRSTFB(self).size = calc_chunked_buffer_size( FIRSTFB(self).w, FIRSTFB(self).h, FIRSTFB(self).w, self->bpp_virt );
-	/* offscreen: FIRSTFB(self).mem = malloc( FIRSTFB(self).size ); */
-	FIRSTFB(self).mem = NULL;
+	VIEW(self).mem = NULL;
 	update_visible_rect( self );
 
 	clip.x0 = 0;
 	clip.y0 = 0;
-	clip.x1 = FIRSTFB(self).w;
-	clip.y1 = FIRSTFB(self).h;
-	self->clip( self, &clip );
+	clip.x1 = VIEW(self).w;
+	clip.y1 = VIEW(self).h;
+	self->set_clip( self, &clip );
 
 	assert( Hermes_Init() );
 	/* store system palette & setup the new (web) palette: */
@@ -254,10 +403,9 @@ static int dtor( GEM_PLOTTER self )
 {
 	int i=0;
 	LOG(("%s: %s\n", (char*)__FILE__, __FUNCTION__));
-	for( i=0; i<MAX_FRAMEBUFS; i++) {
-		if( self->fbuf[i].mem != NULL )
-			free( self->fbuf[i].mem );
-	}
+
+	if( VIEW(self).mem )
+		free( VIEW(self).mem );
 
 #ifdef WITH_8BPP_SUPPORT
 	for( i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++){
@@ -283,31 +431,23 @@ static int dtor( GEM_PLOTTER self )
 
 static int resize( GEM_PLOTTER self, int w, int h )
 {
-	if( w == CURFB(self).w && h == CURFB(self).h )
+	if( w == VIEW(self).w && h == VIEW(self).h )
 		return( 1 );
-	/* todo: needed when using offscreen buffers...
-	int newsize = calc_chunked_buffer_size( w, h, w, self->bpp_virt );
-	LOG(("%s: %s, oldsize: %d\n", (char*)__FILE__, __FUNCTION__, CURFB(self).size ));
-	if( newsize > self->screen_buffer_size ) {
-		self->screen_buffer_size = newsize;
-		self->screen_buffer =realloc( self->screen_buffer , self->screen_buffer_size );
-	}
-	*/
-	CURFB(self).w = w;
-	CURFB(self).h = h;
+	VIEW(self).w = w;
+	VIEW(self).h = h;
 	update_visible_rect( self );
-	LOG(("%s: %s, newsize: %d\n", (char*)__FILE__, (char*)__FUNCTION__, CURFB(self).size ));
+	LOG(("%s: %s\n", (char*)__FILE__, (char*)__FUNCTION__));
 	return( 1 );
 }
 static int move( GEM_PLOTTER self,short x, short y )
 {
 	bool upd;
-	if(x == CURFB(self).x && y == CURFB(self).y ){
+	if(x == VIEW(self).x && y == VIEW(self).y ){
 		return 1;
 	}
 	LOG(("%s: x: %d, y: %d\n",(char*)__FUNCTION__, x, y));
-	CURFB(self).x = x;
-	CURFB(self).y = y;
+	VIEW(self).x = x;
+	VIEW(self).y = y;
 	update_visible_rect( self );
 	return( 1 );
 }
@@ -364,10 +504,10 @@ static int copy_rect( GEM_PLOTTER self, GRECT src, GRECT dst )
 	if( !rc_intersect(&vis, &dst) )
 		return 1;
 
-	src.g_x = CURFB(self).x + src.g_x;
-	src.g_y = CURFB(self).y + src.g_y;
-	dst.g_x = CURFB(self).x + dst.g_x;
-	dst.g_y = CURFB(self).y + dst.g_y;
+	src.g_x = VIEW(self).x + src.g_x;
+	src.g_y = VIEW(self).y + src.g_y;
+	dst.g_x = VIEW(self).x + dst.g_x;
+	dst.g_y = VIEW(self).y + dst.g_y;
 
 	devmf.fd_addr = NULL;
 	devmf.fd_w = src.g_w;
@@ -410,12 +550,12 @@ static int arc(GEM_PLOTTER self,int x, int y, int radius, int angle1, int angle2
 		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour);
 		vsf_perimeter( self->vdi_handle, 1);
 		vsf_interior( self->vdi_handle, 1 );
-		v_arc( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius, angle1*10, angle2*10 );
+		v_arc( self->vdi_handle, VIEW(self).x + x, VIEW(self).y + y, radius, angle1*10, angle2*10 );
 	} else {
 		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour);
 		vsl_width( self->vdi_handle, 1 );
 		vsf_perimeter( self->vdi_handle, 1);
-		v_arc( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius, angle1*10, angle2*10 );
+		v_arc( self->vdi_handle, VIEW(self).x + x, VIEW(self).y + y, radius, angle1*10, angle2*10 );
 	}
 	//plotter_vdi_clip( self, 0);
 	return ( 1 );
@@ -428,12 +568,12 @@ static int disc(GEM_PLOTTER self,int x, int y, int radius, const plot_style_t * 
 		vsf_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
 		vsf_perimeter( self->vdi_handle, 1);
 		vsf_interior( self->vdi_handle, 0 );
-		v_circle( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius  );
+		v_circle( self->vdi_handle, VIEW(self).x + x, VIEW(self).y + y, radius  );
 	} else {
 		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour );
 		vsf_perimeter( self->vdi_handle, 0);
 		vsf_interior( self->vdi_handle, FIS_SOLID );
-		v_circle( self->vdi_handle, CURFB(self).x + x, CURFB(self).y + y, radius  );
+		v_circle( self->vdi_handle, VIEW(self).x + x, VIEW(self).y + y, radius  );
 	}
 	plotter_vdi_clip( self, 0);
 	return ( 1 );
@@ -446,10 +586,10 @@ static int line(GEM_PLOTTER self,int x0, int y0, int x1, int y1, const plot_styl
 	uint32_t lt;
 	int sw = pstyle->stroke_width;
 
-	pxy[0] = CURFB(self).x + x0;
-	pxy[1] = CURFB(self).y + y0;
-	pxy[2] = CURFB(self).x + x1;
-	pxy[3] = CURFB(self).y + y1;
+	pxy[0] = VIEW(self).x + x0;
+	pxy[1] = VIEW(self).y + y0;
+	pxy[2] = VIEW(self).x + x1;
+	pxy[3] = VIEW(self).y + y1;
 
 	plotter_vdi_clip( self, 1);
 	if( sw == 0)
@@ -475,16 +615,16 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 	uint32_t lt;
 
 	/* current canvas clip: */
-	rclip.g_x = self->clipping.x0;
-	rclip.g_y = self->clipping.y0;
-	rclip.g_w = self->clipping.x1 - self->clipping.x0;
-	rclip.g_h = self->clipping.y1 - self->clipping.y0;
+	rclip.g_x = VIEW( self ).clipping.x0;
+	rclip.g_y = VIEW( self ).clipping.y0;
+	rclip.g_w = VIEW( self ).clipping.x1 - VIEW( self ).clipping.x0;
+	rclip.g_h = VIEW( self ).clipping.y1 - VIEW( self ).clipping.y0;
 
 	/* physical clipping: */
 	sclip.g_x = rclip.g_x;
 	sclip.g_y = rclip.g_y;
-	sclip.g_w = CURFB(self).vis_w;
-	sclip.g_h = CURFB(self).vis_h;
+	sclip.g_w = VIEW(self).vis_w;
+	sclip.g_h = VIEW(self).vis_h;
 
 	rc_intersect(&sclip, &rclip);
 	r.g_x = x0;
@@ -516,37 +656,37 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 		vsl_rgbcolor( self->vdi_handle, pstyle->stroke_colour );
 		/* top border: */
 		if( r.g_y == y0){
-			pxy[0] = CURFB(self).x + r.g_x;
-			pxy[1] = CURFB(self).y + r.g_y ;
-			pxy[2] = CURFB(self).x + r.g_x + r.g_w;
-			pxy[3] = CURFB(self).y + r.g_y;
+			pxy[0] = VIEW(self).x + r.g_x;
+			pxy[1] = VIEW(self).y + r.g_y ;
+			pxy[2] = VIEW(self).x + r.g_x + r.g_w;
+			pxy[3] = VIEW(self).y + r.g_y;
 			v_pline(self->vdi_handle, 2, (short *)&pxy );
 		}
 
 		/* right border: */
 		if( r.g_x + r.g_w == x1 ){
-			pxy[0] = CURFB(self).x + r.g_x + r.g_w;
-			pxy[1] = CURFB(self).y + r.g_y;
-			pxy[2] = CURFB(self).x + r.g_x + r.g_w;
-			pxy[3] = CURFB(self).y + r.g_y + r.g_h;
+			pxy[0] = VIEW(self).x + r.g_x + r.g_w;
+			pxy[1] = VIEW(self).y + r.g_y;
+			pxy[2] = VIEW(self).x + r.g_x + r.g_w;
+			pxy[3] = VIEW(self).y + r.g_y + r.g_h;
 			v_pline(self->vdi_handle, 2, (short *)&pxy );
 		}
 
 		/* bottom border: */
 		if( r.g_y+r.g_h == y1 ){
-			pxy[0] = CURFB(self).x + r.g_x;
-			pxy[1] = CURFB(self).y + r.g_y+r.g_h;
-			pxy[2] = CURFB(self).x + r.g_x+r.g_w;
-			pxy[3] = CURFB(self).y + r.g_y+r.g_h;
+			pxy[0] = VIEW(self).x + r.g_x;
+			pxy[1] = VIEW(self).y + r.g_y+r.g_h;
+			pxy[2] = VIEW(self).x + r.g_x+r.g_w;
+			pxy[3] = VIEW(self).y + r.g_y+r.g_h;
 			v_pline(self->vdi_handle, 2, (short *)&pxy );
 		}
 
 		/* left border: */
 		if( r.g_x == x0 ){
-			pxy[0] = CURFB(self).x + r.g_x;
-			pxy[1] = CURFB(self).y + r.g_y;
-			pxy[2] = CURFB(self).x + r.g_x;
-			pxy[3] = CURFB(self).y + r.g_y + r.g_h;
+			pxy[0] = VIEW(self).x + r.g_x;
+			pxy[1] = VIEW(self).y + r.g_y;
+			pxy[2] = VIEW(self).x + r.g_x;
+			pxy[3] = VIEW(self).y + r.g_y + r.g_h;
 			v_pline(self->vdi_handle, 2, (short *)&pxy );
 		}
 	}
@@ -561,10 +701,10 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 		vsf_interior( self->vdi_handle, FIS_SOLID );
 
 
-		pxy[0] = CURFB(self).x + r.g_x + stroke_width;
-		pxy[1] = CURFB(self).y + r.g_y + stroke_width;
-		pxy[2] = CURFB(self).x + r.g_x + r.g_w -1 - stroke_width ;
-		pxy[3] = CURFB(self).y + r.g_y + r.g_h -1 - stroke_width;
+		pxy[0] = VIEW(self).x + r.g_x + stroke_width;
+		pxy[1] = VIEW(self).y + r.g_y + stroke_width;
+		pxy[2] = VIEW(self).x + r.g_x + r.g_w -1 - stroke_width ;
+		pxy[3] = VIEW(self).y + r.g_y + r.g_h -1 - stroke_width;
 
 		vsf_style( self->vdi_handle, 1);
 		v_bar( self->vdi_handle, (short*)&pxy );
@@ -584,8 +724,8 @@ static int polygon(GEM_PLOTTER self,const int *p, unsigned int n,  const plot_st
 	vsf_interior( self->vdi_handle, FIS_SOLID );
 	vsf_style( self->vdi_handle, 1);
 	for( i = 0; i<n*2; i=i+2 ) {
-		pxy[i] = (short)CURFB(self).x+p[i];
-		pxy[i+1] = (short)CURFB(self).y+p[i+1];
+		pxy[i] = (short)VIEW(self).x+p[i];
+		pxy[i+1] = (short)VIEW(self).y+p[i+1];
 	}
 	if( pstyle->fill_type == PLOT_OP_TYPE_SOLID){
 		vsf_rgbcolor( self->vdi_handle, pstyle->fill_colour);
@@ -1261,10 +1401,10 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	off.g_h = bmp->height;
 	off.g_w = bmp->width;
 
-	clip.g_x = self->clipping.x0;
-	clip.g_y = self->clipping.y0;
-	clip.g_w = self->clipping.x1 - self->clipping.x0;
-	clip.g_h = self->clipping.y1 - self->clipping.y0;
+	clip.g_x = VIEW( self ).clipping.x0;
+	clip.g_y = VIEW( self ).clipping.y0;
+	clip.g_w = VIEW( self ).clipping.x1 - VIEW( self ).clipping.x0;
+	clip.g_h = VIEW( self ).clipping.y1 - VIEW( self ).clipping.y0;
 
 	if( !rc_intersect( &clip, &off) ) {
 		return( true );
@@ -1285,10 +1425,10 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	pxy[1] = 0;
 	pxy[2] = off.g_w-1;
 	pxy[3] = off.g_h-1;
-	pxy[4] = CURFB(self).x + loc.g_x;
-	pxy[5] = CURFB(self).y + loc.g_y;
-	pxy[6] = CURFB(self).x + loc.g_x + off.g_w-1;
-	pxy[7] = CURFB(self).y + loc.g_y + off.g_h-1;
+	pxy[4] = VIEW(self).x + loc.g_x;
+	pxy[5] = VIEW(self).y + loc.g_y;
+	pxy[6] = VIEW(self).x + loc.g_x + off.g_w-1;
+	pxy[7] = VIEW(self).y + loc.g_y + off.g_h-1;
 	/* Convert the Bitmap to native screen format - ready for output*/
 	/* This includes blending transparent pixels */
 	if( self->bitmap_convert( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
@@ -1342,8 +1482,8 @@ static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, unsigned char
 	pxy[1] = off.g_y - loc->g_y;
 	pxy[2] = pxy[0] + off.g_w - 1;
 	pxy[3] = pxy[1] + off.g_h - 1;
-	pxy[4] = CURFB(self).x + off.g_x;
-	pxy[5] = CURFB(self).y + off.g_y;
+	pxy[4] = VIEW(self).x + off.g_x;
+	pxy[5] = VIEW(self).y + off.g_y;
 	pxy[6] = pxy[4] + off.g_w-1;
 	pxy[7] = pxy[5] + off.g_h-1;
 

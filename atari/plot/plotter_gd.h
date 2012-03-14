@@ -24,14 +24,16 @@
 #include "plotter.h"
 
 struct s_gd_priv_data {
-
+	gdImagePtr vbuf;
+	int origin_x;
+	int origin_y;
 };
 
 /* this is an shortcut cast to access the members of the s_gd_priv_data */
-#define THIS(instance) ((struct s_gd_priv_data*)self->priv_data)
+#define THIS(instance) ((struct s_gd_priv_data*)instance->priv_data)
 
 /* Each driver object must export 1 it's own constructor: */
-int ctor_plotter_gd( GEM_PLOTTER p );
+int ctor_plotter_gd( GEM_PLOTTER p, GRECT * loc_size );
 
 #endif
 #endif

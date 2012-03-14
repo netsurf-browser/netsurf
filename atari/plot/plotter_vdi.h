@@ -21,6 +21,22 @@
 #include "plotter.h"
 #include <Hermes/Hermes.h>
 
+struct s_view
+{
+	short x;			/* drawing (screen) offset x 						*/
+	short y;			/* drawing (screen) offset y						*/
+	short w;			/* width of buffer, not in sync with vis_w			*/
+	short h;			/* height of buffer, not in sync with vis_w			*/
+	short vis_x;		/* visible rectangle of the screen buffer 			*/
+	short vis_y;		/* coords are relative to plot location 			*/
+	short vis_w;		/* clipped to screen dimensions 					*/
+	short vis_h;		/*  												*/
+	struct rect clipping;
+	int size;
+	bool swapped;
+	void * mem;
+};
+
 struct s_vdi_priv_data {
 	short bufops;
 	/* temp buffer for bitmap conversion: */
@@ -49,6 +65,11 @@ struct s_vdi_priv_data {
 
 	/* netsurf source bitmap format */
 	HermesFormat nsfmt;
+
+	/* Some internal structure used everywhere 								*/
+	/* trying to describe screen position, plotting origins and maxmimum 	*/
+	/* extent. 																*/
+	struct s_view  view;
 };
 
 /* how much memory should be kept allocated for temp. conversion bitmaps: */
@@ -57,10 +78,12 @@ struct s_vdi_priv_data {
 #define CONV_BLOCK_SIZE	32000
 
 /* this is an shortcut cast to access the members of the s_vdi_priv_data */
-#define DUMMY_PRIV(self) ((struct s_vdi_priv_data*)self->priv_data)
+#define DUMMY_PRIV(_self) ((struct s_vdi_priv_data*)_self->priv_data)
+
+#define VIEW( priv ) DUMMY_PRIV( priv )->view
 
 /* Each driver object must export 1 it's own constructor: */
-int ctor_plotter_vdi( GEM_PLOTTER p );
+int ctor_plotter_vdi( GEM_PLOTTER p, GRECT * loc_size );
 
 /*
 * Capture the screen at x,y location

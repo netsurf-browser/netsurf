@@ -73,31 +73,18 @@ struct s_driver_table_entry screen_driver_table[] =
 const struct s_font_driver_table_entry font_driver_table[] =
 {
 #ifdef WITH_VDI_FONT_DRIVER
-	{(char*)"vdi", ctor_font_plotter_vdi, 0},
+	{"vdi", ctor_font_plotter_vdi, 0},
 #endif
 #ifdef WITH_FREETYPE_FONT_DRIVER
-	{(char*)"freetype", ctor_font_plotter_freetype, 0},
+	{"freetype", ctor_font_plotter_freetype, 0},
 #endif
 #ifdef WITH_INTERNAL_FONT_DRIVER
-	{(char*)"internal", ctor_font_plotter_internal, 0},
+	{"internal", ctor_font_plotter_internal, 0},
 #endif
 	{(char*)NULL, NULL, 0}
 };
 
 
-/* get index to driver in driver list by name */
-static int drvrname_idx( char * name );
-
-/* Error code translations: */
-static const char * plot_error_codes[] =
-{
-	"None",
-	"ERR_BUFFERSIZE_EXCEEDS_SCREEN",
-	"ERR_NO_MEM",
-	"ERR_PLOTTER_NOT_AVAILABLE"
-};
-
-#ifdef WITH_8BPP_SUPPORT
 unsigned short vdi_web_pal[216][3] = {
 	{0x000,0x000,0x000}, {0x0c8,0x000,0x000}, {0x190,0x000,0x000}, {0x258,0x000,0x000}, {0x320,0x000,0x000}, {0x3e8,0x000,0x000},
 	{0x000,0x0c8,0x000}, {0x0c8,0x0c8,0x000}, {0x190,0x0c8,0x000}, {0x258,0x0c8,0x000}, {0x320,0x0c8,0x000}, {0x3e8,0x0c8,0x000},
@@ -136,9 +123,20 @@ unsigned short vdi_web_pal[216][3] = {
 	{0x000,0x320,0x3e8}, {0x0c8,0x320,0x3e8}, {0x190,0x320,0x3e8}, {0x258,0x320,0x3e8}, {0x320,0x320,0x3e8}, {0x3e8,0x320,0x3e8},
 	{0x000,0x3e8,0x3e8}, {0x0c8,0x3e8,0x3e8}, {0x190,0x3e8,0x3e8}, {0x258,0x3e8,0x3e8}, {0x320,0x3e8,0x3e8}, {0x3e8,0x3e8,0x3e8}
 };
-#endif
 
-static short prev_vdi_clip[4];
+
+/* get index to driver in driver list by name */
+static int drvrname_idx( char * name );
+
+/* Error code translations: */
+static const char * plot_error_codes[] =
+{
+	"None",
+	"ERR_BUFFERSIZE_EXCEEDS_SCREEN",
+	"ERR_NO_MEM",
+	"ERR_PLOTTER_NOT_AVAILABLE"
+};
+
 struct s_vdi_sysinfo vdi_sysinfo;
 
 struct s_vdi_sysinfo * read_vdi_sysinfo( short vdih, struct s_vdi_sysinfo * info ) {
@@ -401,12 +399,6 @@ GEM_PLOTTER new_plotter(int vdihandle, char * name, GRECT * loc_size,
 	gemplotter->flags = 0;
 	gemplotter->font_plotter = fplotter;
 	gemplotter->bpp_virt = virt_bpp;
-	gemplotter->cfbi = 0;
-	memset(&gemplotter->fbuf, 0, sizeof(struct s_frame_buf) * MAX_FRAMEBUFS );
-	gemplotter->fbuf[0].x = loc_size->g_x;
-	gemplotter->fbuf[0].y = loc_size->g_y;
-	gemplotter->fbuf[0].w = loc_size->g_w;
-	gemplotter->fbuf[0].h = loc_size->g_h;
 
 	/* request vdi info once, so every plotter is able to access the info */
 	if( !init ) {
@@ -423,7 +415,7 @@ GEM_PLOTTER new_plotter(int vdihandle, char * name, GRECT * loc_size,
 			if( strcmp(name, screen_driver_table[i].name) == 0 ) {
 				if( screen_driver_table[i].ctor  ) {
 					gemplotter->flags = (screen_driver_table[i].flags | flags);
-					res = screen_driver_table[i].ctor( gemplotter );
+					res = screen_driver_table[i].ctor( gemplotter, loc_size );
 					*error = 0;
 				} else {
 					res = 0-ERR_PLOTTER_NOT_AVAILABLE;
@@ -501,84 +493,6 @@ int get_pixel_offset( int x, int y, int stride, int bpp )
    return( ( (y * stride) + x) * (bpp >> 3) );
 }
 
-/*
-	1. calculate visible area of framebuffer in coords relative to framebuffer position
-
-	result:
-	this function should calc offsets into x,y coords of the framebuffer which
-	can be drawn. If the framebuffer coords do not fall within the screen region,
-	all values of visible region are set to zero.
-*/
-void update_visible_rect( GEM_PLOTTER p )
-{
-	GRECT screen;
-	GRECT common;
-	GRECT frame;
-
-	screen.g_x = 0;
-	screen.g_y = 0;
-	screen.g_w = vdi_sysinfo.scr_w;
-	screen.g_h = vdi_sysinfo.scr_h;
-
-    common.g_x = frame.g_x = CURFB(p).x;
-	common.g_y = frame.g_y = CURFB(p).y;
-	common.g_w = frame.g_w = CURFB(p).w;
-	common.g_h = frame.g_h = CURFB(p).h;
-
-	if( rc_intersect( &screen, &common ) ) {
-		CURFB(p).vis_w = common.g_w;
-		CURFB(p).vis_h = common.g_h;
-		if( CURFB(p).x < screen.g_x )
-			CURFB(p).vis_x = frame.g_w - common.g_w;
-		else
-			CURFB(p).vis_x = 0;
-		if( CURFB(p).y <screen.g_y )
-			CURFB(p).vis_y = frame.g_h - common.g_h;
-		else
-			CURFB(p).vis_y = 0;
-	} else {
-		CURFB(p).vis_w = CURFB(p).vis_h = 0;
-		CURFB(p).vis_x = CURFB(p).vis_y = 0;
-	}
-}
-
-/*
-	Returns the visible parts of the box (relative coords within framebuffer),
-   	relative to screen coords (normally starting at 0,0 )
-*/
-bool fbrect_to_screen( GEM_PLOTTER self, GRECT box, GRECT * ret )
-{
-	GRECT out, vis, screen;
-
-	screen.g_x = 0;
-	screen.g_y = 0;
-	screen.g_w = vdi_sysinfo.scr_w;
-	screen.g_h = vdi_sysinfo.scr_h;
-
-	/* get visible region: */
-    vis.g_x = CURFB(self).x;
-	vis.g_y = CURFB(self).y;
-	vis.g_w = CURFB(self).w;
-	vis.g_h = CURFB(self).h;
-
-	if ( !rc_intersect( &screen, &vis ) ) {
-		return( false );
-	}
-	vis.g_x = CURFB(self).w - vis.g_w;
-	vis.g_y = CURFB(self).h - vis.g_h;
-
-	/* clip box to visible region: */
-	if( !rc_intersect(&vis, &box) ) {
-		return( false );
-	}
-	out.g_x = box.g_x + CURFB(self).x;
-	out.g_y = box.g_y + CURFB(self).y;
-	out.g_w = box.g_w;
-	out.g_h = box.g_h;
-	*ret = out;
-	return ( true );
-}
-
 const char* plotter_err_str(int i) { return(plot_error_codes[abs(i)]); }
 
 void dump_vdi_info( short vdih )
@@ -635,13 +549,54 @@ void dump_font_drivers(void)
 }
 
 /*
+	bpp: bits per pixel,
+
+*/
+int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
+{
+	int dststride;
+	dststride = MFDB_STRIDE( w );
+	int size = MFDB_SIZE( bpp, dststride, h );
+	if( bpp > 0 ) {
+		if( (flags & MFDB_FLAG_NOALLOC) == 0  ) {
+			out->fd_addr = malloc( size );
+			if( out->fd_addr == NULL ){
+				return( 0 );
+			}
+			if( (flags & MFDB_FLAG_ZEROMEM) ){
+				memset( out->fd_addr, 0, size );
+			}
+		}
+		out->fd_stand = (flags & MFDB_FLAG_STAND) ? 1 : 0;
+		out->fd_nplanes = (short)bpp;
+		out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
+	} else {
+		memset( out, 0, sizeof(MFDB) );
+	}
+	out->fd_w = dststride;
+	out->fd_h = h;
+	out->fd_wdwidth = dststride >> 4;
+	return( size );
+}
+
+void plotter_get_clip_grect( GEM_PLOTTER self, GRECT * out )
+{
+	struct rect clip;
+	self->get_clip( self, &clip );
+	out->g_x = clip.x0;
+	out->g_y = clip.y0;
+	out->g_w = clip.x1 - clip.x0;
+	out->g_h = clip.y1 - clip.y0;
+}
+
+/*
 	Convert an RGB color to an VDI Color
 */
 void rgb_to_vdi1000( unsigned char * in, unsigned short * out )
 {
-	double r = ((double)in[3]/255); /* prozentsatz red */
+	double r = ((double)in[3]/255); /* prozentsatz red   */
 	double g = ((double)in[2]/255);	/* prozentsatz green */
-	double b = ((double)in[1]/255);	/* prozentsatz blue */
+	double b = ((double)in[1]/255);	/* prozentsatz blue  */
 	out[0] = 1000 * r + 0.5;
 	out[1] = 1000 * g + 0.5;
 	out[2] = 1000 * b + 0.5;
@@ -650,9 +605,9 @@ void rgb_to_vdi1000( unsigned char * in, unsigned short * out )
 
 void vdi1000_to_rgb( unsigned short * in, unsigned char * out )
 {
-	double r = ((double)in[0]/1000); /* prozentsatz red */
-	double g = ((double)in[1]/1000);	/* prozentsatz green */
-	double b = ((double)in[2]/1000);	/* prozentsatz blue */
+	double r = ((double)in[0]/1000); /* prozentsatz red   */
+	double g = ((double)in[1]/1000); /* prozentsatz green */
+	double b = ((double)in[2]/1000); /* prozentsatz blue  */
 	out[2] = 255 * r + 0.5;
 	out[1] = 255 * g + 0.5;
 	out[0] = 255 * b + 0.5;
@@ -660,7 +615,10 @@ void vdi1000_to_rgb( unsigned short * in, unsigned char * out )
 }
 
 
-static short web_std_colors[6] = {0, 51, 102, 153, 204, 255};
+#ifdef WITH_8BPP_SUPPORT
+
+
+short web_std_colors[6] = {0, 51, 102, 153, 204, 255};
 
 /*
 	Convert an RGB color into an index into the 216 colors web pallette
@@ -699,93 +657,6 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 	}
 	return( tval[2]*36+tval[1]*6+tval[0] );
 }
+#endif
 
-/*
-	bpp: bits per pixel,
-
-*/
-int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
-{
-	int dststride;
-	dststride = MFDB_STRIDE( w );
-	int size = MFDB_SIZE( bpp, dststride, h );
-	if( bpp > 0 ) {
-		if( (flags & MFDB_FLAG_NOALLOC) == 0  ) {
-			out->fd_addr = malloc( size );
-			if( out->fd_addr == NULL ){
-				return( 0 );
-			}
-			if( (flags & MFDB_FLAG_ZEROMEM) ){
-				memset( out->fd_addr, 0, size );
-			}
-		}
-		out->fd_stand = (flags & MFDB_FLAG_STAND) ? 1 : 0;
-		out->fd_nplanes = (short)bpp;
-		out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
-	} else {
-		memset( out, 0, sizeof(MFDB) );
-	}
-	out->fd_w = dststride;
-	out->fd_h = h;
-	out->fd_wdwidth = dststride >> 4;
-	return( size );
-}
-
-
-int plotter_get_clip( GEM_PLOTTER self, struct rect * out )
-{
-	out->x0 = self->clipping.x0;
-	out->y0 = self->clipping.y0;
-	out->x1 = self->clipping.x1;
-	out->y1 = self->clipping.y1;
-	return( 1 );
-}
-
-void plotter_get_clip_grect( GEM_PLOTTER self, GRECT * out )
-{
-	out->g_x = self->clipping.x0;
-	out->g_y = self->clipping.y0;
-	out->g_w = self->clipping.x1 - self->clipping.x0;
-	out->g_h = self->clipping.y1 - self->clipping.y0;
-}
-
-void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out )
-{
-	/*todo: !!! */
-	out->g_x = self->clipping.x0;
-	out->g_y = self->clipping.y0;
-	out->g_w = self->clipping.x1 - self->clipping.x0;
-	out->g_h = self->clipping.y1 - self->clipping.y0;
-}
-
-int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip)
-{
-	self->clipping.x0 = clip->x0;
-	self->clipping.y0 =	clip->y0;
-	self->clipping.x1 = clip->x1;
-	self->clipping.y1 = clip->y1;
-	return ( 1 );
-}
-
-
-void plotter_vdi_clip( GEM_PLOTTER self, bool set)
-{
-	if( set == true ) {
-		struct rect * c = &self->clipping;
-		short vdiflags[58];
-		short newclip[4];
-		vq_extnd( self->vdi_handle, 1, (short*)&vdiflags);
-		prev_vdi_clip[0] = vdiflags[45];
-		prev_vdi_clip[1] = vdiflags[46];
-		prev_vdi_clip[2] = vdiflags[47];
-		prev_vdi_clip[3] = vdiflags[48];
-		newclip[0] = CURFB(self).x + MAX(c->x0, 0);
-		newclip[1] = CURFB(self).y + MAX(c->y0, 0);
-		newclip[2] = MIN(CURFB(self).x+CURFB(self).w, newclip[0] + (c->x1 - c->x0) )-1;
-		newclip[3] = MIN(CURFB(self).y+CURFB(self).h, newclip[1] + (c->y1 - c->y0) )-1;
-		vs_clip( self->vdi_handle, 1, (short*)&newclip );
-	} else {
-		vs_clip( self->vdi_handle, 1, (short *)&prev_vdi_clip );
-	}
-}
 

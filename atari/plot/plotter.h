@@ -143,21 +143,6 @@ struct s_vdi_sysinfo {
 };
 
 
-struct s_frame_buf
-{
-	short x;
-	short y;
-	short w;
-	short h;
-	short vis_x;	/* visible rectangle of the screen buffer */
-	short vis_y;	/* coords are relative to framebuffer location */
-	short vis_w;
-	short vis_h;
-	int size;
-	bool swapped;
-	void * mem;
-};
-
 /* declaration of plotter member functions ( _pmf_ prefix )*/
 typedef int (*_pmf_resize)(GEM_PLOTTER self, int w, int h);
 typedef	int (*_pmf_move)(GEM_PLOTTER self, short x, short y );
@@ -167,7 +152,8 @@ typedef	int (*_pmf_lock)(GEM_PLOTTER self);
 typedef	int (*_pmf_unlock)(GEM_PLOTTER self);
 typedef	int (*_pmf_put_pixel)(GEM_PLOTTER self, int x, int y, int color );
 typedef	int (*_pmf_copy_rect)(GEM_PLOTTER self, GRECT src, GRECT dst );
-typedef	int (*_pmf_clip)(GEM_PLOTTER self, const struct rect * clip );
+typedef	int (*_pmf_set_clip)(GEM_PLOTTER self, const struct rect * clip );
+typedef	int (*_pmf_get_clip)(GEM_PLOTTER self, struct rect * clip_out );
 typedef	int (*_pmf_arc)(GEM_PLOTTER self, int x, int y, int radius, int angle1, int angle2, const plot_style_t * pstyle);
 typedef	int (*_pmf_disc)(GEM_PLOTTER self, int x, int y, int radius, const plot_style_t * pstyle);
 typedef	int (*_pmf_line)(GEM_PLOTTER self, int x0, int y0, int x1,	int y1, const plot_style_t * pstyle);
@@ -194,10 +180,6 @@ struct s_gem_plotter
 	void * priv_data;
 	/* bit depth of framebuffers: */
 	int bpp_virt;
-	struct rect clipping;
-	struct s_frame_buf fbuf[MAX_FRAMEBUFS];
-	/* current framebuffer index: */
-	int cfbi;
 
 	FONT_PLOTTER font_plotter;
 	/* set new dimensions (realloc memory): */
@@ -210,7 +192,8 @@ struct s_gem_plotter
 	_pmf_switch_to_framebuffer switch_to_framebuffer;
 	_pmf_put_pixel put_pixel;
 	_pmf_copy_rect copy_rect;
-	_pmf_clip clip;
+	_pmf_set_clip set_clip;
+	_pmf_get_clip get_clip;
 	_pmf_arc arc;
 	_pmf_disc disc;
 	_pmf_line line;
@@ -234,15 +217,23 @@ struct s_gem_plotter
 /* a table in plotter.c defines all the available plotters */
 struct s_driver_table_entry
 {
-	char * name;											/* name (unique) */
-	int (*ctor)( GEM_PLOTTER self );	/* pointer to ctor of the plotter */
-	int flags;												/* a bitmask containing info about supported operations */
-	int max_bpp;											/* the maximum supported screen depth of the plotter */
+
+	/* name (unique) */
+	char * name;
+
+	/* pointer to ctor of the plotter */
+	int (*ctor)( GEM_PLOTTER self, GRECT * log_isze );
+
+	/* a bitmask containing info about supported operations */
+	int flags;
+
+	/* the maximum supported screen depth of the plotter */
+	int max_bpp;
 };
 
 struct s_font_driver_table_entry
 {
-	char * name;
+	const char * name;
 	int (*ctor)( FONT_PLOTTER self );
 	int flags;
 };
@@ -290,12 +281,6 @@ int calc_chunked_buffer_size(int x, int y, int stride, int bpp);
 /* calculates the pixel offset from x,y pos */
 int get_pixel_offset( int x, int y, int stride, int bpp );
 
-/* Recalculate visible parts of the framebuffer */
-void update_visible_rect( GEM_PLOTTER p );
-
-/* resolve possible visible parts of the framebuffer in screen coords */
-bool fbrect_to_screen( GEM_PLOTTER self, GRECT box, GRECT * ret );
-
 /* translate an error number */
 const char* plotter_err_str(int i) ;
 
@@ -334,50 +319,39 @@ int plotter_get_clip( GEM_PLOTTER self, struct rect * out );
 */
 void plotter_get_clip_grect( GEM_PLOTTER self, GRECT * out );
 
-/*
-	Get current visible coords
-*/
-void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out );
-
-/*
-	Set clipping for current framebuffer
-*/
-int plotter_std_clip(GEM_PLOTTER self, const struct rect * clip);
-
-
-/*
-	convert framebuffer clipping to vdi clipping and activates it
-*/
-void plotter_vdi_clip( GEM_PLOTTER self, bool set);
-
 
 #define PLOTTER_IS_LOCKED(plotter) ( plotter->private_flags & PLOTTER_FLAG_LOCKED )
 
-#define CURFB( p ) \
-	p->fbuf[p->cfbi]
 
-#define FIRSTFB( p ) \
-	p->fbuf[0]
+/*
+	calculates MFDB compatible rowstride (in number of bits)
+*/
+#define MFDB_STRIDE( w ) (((w & 15) != 0) ? (w | 15)+1 : w)
 
+/*
+Calculate size of an mfdb,
+
+ params:
+
+	bpp: 	Bits per pixel,
+	stride: Word aligned rowstride (width) as returned by MFDB_STRIDE,
+	h: 		Height in pixels
+*/
+#define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
+
+#ifdef WITH_8BPP_SUPPORT
 /* some Well known indexes into the VDI palette */
 /* common indexes into the VDI palette */
 /* (only used when running with 256 colors or less ) */
 #define OFFSET_WEB_PAL 16
 #define OFFSET_CUST_PAL 232
-#define OFFSET_CUSTOM_COLOR 255	/* this one is used by the TC renderer */
 #define RGB_TO_VDI(c) rgb_to_666_index( (c&0xFF),(c&0xFF00)>>8,(c&0xFF0000)>>16)+OFFSET_WEB_PAL
-/* the name of this macro is crap - it should be named bgr_to_rgba ... or so */
+#endif
+
+/* 	the name of this macro is crap - it should be named bgr_to_rgba ... or so */
 #define ABGR_TO_RGB(c)  ( ((c&0xFF)<<16) | (c&0xFF00) | ((c&0xFF0000)>>16) ) << 8
+/* this index into the palette is used by the TC renderer to set current draw color: */
+#define OFFSET_CUSTOM_COLOR 255
 
-/* calculate MFDB compatible rowstride (in number of bits) */
-#define MFDB_STRIDE( w ) (((w & 15) != 0) ? (w | 15)+1 : w)
-
-/*
-Calculate size of an mfdb, params:
-	Bits per pixel,
-	Word aligned rowstride (width) as returned by MFDB_STRIDE,
-	height in pixels
-*/
-#define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
 
 #endif

@@ -378,16 +378,19 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 	size_t bmpstride;
 	int xloop,yloop,xoff,yoff;
 	int x,y,w,h;
+	struct rect clipping;
 
 	x = loc->g_x;
 	y = loc->g_y;
 	w = loc->g_w;
 	h = loc->g_h;
 
-	clip.g_x = self->plotter->clipping.x0;
-	clip.g_y = self->plotter->clipping.y0;
-	clip.g_w = (self->plotter->clipping.x1 - self->plotter->clipping.x0)+1;
-	clip.g_h = (self->plotter->clipping.y1 - self->plotter->clipping.y0)+1;
+	self->plotter->get_clip( self->plotter, &clipping );
+
+	clip.g_x = clipping.x0;
+	clip.g_y = clipping.y0;
+	clip.g_w = (clipping.x1 - clipping.x0)+1;
+	clip.g_h = (clipping.y1 - clipping.y0)+1;
 
 	if( !rc_intersect( &clip, loc ) ){
 		return;
@@ -426,16 +429,19 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 	int x,y,w,h;
 	uint8_t bitm;
     const uint8_t *fntd;
+    struct rect clipping;
 
 	x = loc->g_x;
 	y = loc->g_y;
 	w = loc->g_w;
 	h = loc->g_h;
 
-	clip.g_x = self->plotter->clipping.x0;
-	clip.g_y = self->plotter->clipping.y0;
-	clip.g_w = (self->plotter->clipping.x1 - self->plotter->clipping.x0)+1;
-	clip.g_h = (self->plotter->clipping.y1 - self->plotter->clipping.y0)+1;
+	self->plotter->get_clip( self->plotter, &clipping );
+
+	clip.g_x = clipping.x0;
+	clip.g_y = clipping.y0;
+	clip.g_w = (clipping.x1 - clipping.x0)+1;
+	clip.g_h = (clipping.y1 - clipping.y0)+1;
 
 	if( !rc_intersect( &clip, loc ) ){
 		return;
