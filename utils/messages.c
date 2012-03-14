@@ -54,7 +54,7 @@ static struct hash_table *messages_hash = NULL;
 struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx)
 {
 	char s[400];
-	gzFile *fp;
+	gzFile fp;
 
 	assert(path != NULL);
 
