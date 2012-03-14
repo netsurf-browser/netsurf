@@ -753,7 +753,7 @@ void browser_redraw( struct gui_window * gw )
 	clip.y0 = 0;
 	clip.x1 = bwrect.g_w;
 	clip.y1 = bwrect.g_h;
-	plotter->clip( plotter, &clip );
+	plotter->set_clip( plotter, &clip );
 	if( plotter->lock(plotter) == 0 )
 		return;
 

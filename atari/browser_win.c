@@ -504,7 +504,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 	    struct rect clip = { 0,0,w,h };
         plotter->move( plotter, x, y );
         plotter->resize( plotter, w, h );
-        plotter->clip(plotter, &clip );
+        plotter->set_clip(plotter, &clip );
         plotter->bitmap_resize( plotter,  gw->icon, w, h  );
         plotter->bitmap(
 			plotter,
