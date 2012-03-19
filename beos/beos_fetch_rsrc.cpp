@@ -67,15 +67,15 @@ static struct fetch_rsrc_context *ring = NULL;
 
 static BResources *gAppResources = NULL;
 
-static bool fetch_rsrc_initialise(const char *scheme)
+static bool fetch_rsrc_initialise(lwc_string *scheme)
 {
-	LOG(("fetch_rsrc_initialise called for %s", scheme));
+	LOG(("fetch_rsrc_initialise called for %s", lwc_string_data(scheme)));
 	return true;
 }
 
-static void fetch_rsrc_finalise(const char *scheme)
+static void fetch_rsrc_finalise(lwc_string *scheme)
 {
-	LOG(("fetch_rsrc_finalise called for %s", scheme));
+	LOG(("fetch_rsrc_finalise called for %s", lwc_string_data(scheme)));
 }
 
 static bool fetch_rsrc_can_fetch(const nsurl *url)
@@ -83,7 +83,7 @@ static bool fetch_rsrc_can_fetch(const nsurl *url)
 	return true;
 }
 
-static void *fetch_rsrc_setup(struct fetch *parent_fetch, const char *url,
+static void *fetch_rsrc_setup(struct fetch *parent_fetch, nsurl *url,
 		 bool only_2xx, const char *post_urlenc,
 		 const struct fetch_multipart_data *post_multipart,
 		 const char **headers)
@@ -95,12 +95,14 @@ static void *fetch_rsrc_setup(struct fetch *parent_fetch, const char *url,
 		return NULL;
 		
 	ctx->parent_fetch = parent_fetch;
-	ctx->url = strdup(url);
+	/* TODO: keep as nsurl to avoid copy */
+	ctx->url = (char *)malloc(nsurl_length(url) + 1);
 	
 	if (ctx->url == NULL) {
 		free(ctx);
 		return NULL;
 	}
+	memcpy(ctx->url, nsurl_access(url), nsurl_length(url) + 1);
 
 	RING_INSERT(ring, ctx);
 	
@@ -135,17 +137,17 @@ static void fetch_rsrc_abort(void *ctx)
 	c->aborted = true;
 }
 
-static void fetch_rsrc_send_callback(fetch_msg msg, 
-		struct fetch_rsrc_context *c, const void *data, 
-		unsigned long size, fetch_error_code errorcode)
+static void fetch_rsrc_send_callback(const fetch_msg *msg, 
+		struct fetch_rsrc_context *c)
 {
 	c->locked = true;
-	fetch_send_callback(msg, c->parent_fetch, data, size, errorcode);
+	fetch_send_callback(msg, c->parent_fetch);
 	c->locked = false;
 }
 
 static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 {
+	fetch_msg msg;
 	char *params;
 	char *at = NULL;
 	char *slash;
@@ -162,8 +164,9 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (rsrc:/) */
-		fetch_rsrc_send_callback(FETCH_ERROR, c, 
-			"Malformed rsrc: URL", 0, FETCH_ERROR_URL);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Malformed rsrc: URL";
+		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}
 	
@@ -172,8 +175,9 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	
 	/* find the slash */
 	if ( (slash = strchr(params, '/')) == NULL) {
-		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Malformed rsrc: URL", 0, FETCH_ERROR_URL);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Malformed rsrc: URL";
+		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}
 
@@ -182,9 +186,10 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	c->name = strdup(slash + 1);
 	
 	if (c->mimetype == NULL) {
-		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Unable to allocate memory for mimetype in rsrc: URL",
-			0, FETCH_ERROR_MEMORY);
+		msg.type = FETCH_ERROR;
+		msg.data.error =
+			"Unable to allocate memory for mimetype in rsrc: URL";
+		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}
 
@@ -204,9 +209,9 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	else
 		found = gAppResources->HasResource(type, c->name);
 	if (!found) {
-		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Cannot locate rsrc: URL",
-			0, FETCH_ERROR_MISC);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Cannot locate rsrc: URL";
+		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}
 
@@ -218,17 +223,18 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 		data = gAppResources->LoadResource(type, c->name, &len);
 
 	if (!data) {
-		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Cannot load rsrc: URL",
-			0, FETCH_ERROR_MISC);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Cannot load rsrc: URL";
+		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}
 
 	c->datalen = len;
 	c->data = (char *)malloc(c->datalen);
 	if (c->data == NULL) {
-		fetch_rsrc_send_callback(FETCH_ERROR, c,
-			"Unable to allocate memory for rsrc: URL", 0, FETCH_ERROR_MEMORY);
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Unable to allocate memory for rsrc: URL";
+		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}
 	memcpy(c->data, data, c->datalen);
@@ -236,8 +242,9 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	return true;
 }
 
-static void fetch_rsrc_poll(const char *scheme)
+static void fetch_rsrc_poll(lwc_string *scheme)
 {
+	fetch_msg msg;
 	struct fetch_rsrc_context *c, *next;
 
 	if (ring == NULL) return;
@@ -272,21 +279,27 @@ static void fetch_rsrc_poll(const char *scheme)
 			 */
 			snprintf(header, sizeof header, "Content-Type: %s",
 					c->mimetype);
-			fetch_rsrc_send_callback(FETCH_HEADER, c, header,
-					strlen(header), FETCH_ERROR_NO_ERROR);
+			msg.type = FETCH_HEADER;
+			msg.data.header_or_data.buf = (const uint8_t *) header;
+			msg.data.header_or_data.len = strlen(header);
+			fetch_rsrc_send_callback(&msg, c);
 
 			snprintf(header, sizeof header, "Content-Length: %zd",
 					c->datalen);
-			fetch_rsrc_send_callback(FETCH_HEADER, c, header,
-					strlen(header), FETCH_ERROR_NO_ERROR);
+			msg.type = FETCH_HEADER;
+			msg.data.header_or_data.buf = (const uint8_t *) header;
+			msg.data.header_or_data.len = strlen(header);
+			fetch_rsrc_send_callback(&msg, c);
 
 			if (!c->aborted) {
-				fetch_rsrc_send_callback(FETCH_DATA, 
-					c, c->data, c->datalen, FETCH_ERROR_NO_ERROR);
+				msg.type = FETCH_DATA;
+				msg.data.header_or_data.buf = (const uint8_t *) c->data;
+				msg.data.header_or_data.len = c->datalen;
+				fetch_rsrc_send_callback(&msg, c);
 			}
 			if (!c->aborted) {
-				fetch_rsrc_send_callback(FETCH_FINISHED, 
-					c, 0, 0, FETCH_ERROR_NO_ERROR);
+				msg.type = FETCH_FINISHED;
+				fetch_rsrc_send_callback(&msg, c);
 			}
 		} else {
 			LOG(("Processing of %s failed!", c->url));
@@ -337,13 +350,22 @@ BResources *get_app_resources()
 
 void fetch_rsrc_register(void)
 {
+	lwc_string *scheme;
 	int err;
+
 	err = find_app_resources();
+
 	if (err < B_OK) {
 		warn_user("Resources", strerror(err));
 		return;
 	}
-	fetch_add_fetcher("rsrc",
+
+	if (lwc_intern_string("rsrc", SLEN("rsrc"), &scheme) != lwc_error_ok) {
+		die("Failed to initialise the fetch module "
+				"(couldn't intern \"rsrc\").");
+	}
+
+	fetch_add_fetcher(scheme,
 		fetch_rsrc_initialise,
 		fetch_rsrc_can_fetch,
 		fetch_rsrc_setup,
