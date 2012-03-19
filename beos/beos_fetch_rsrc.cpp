@@ -157,13 +157,13 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	int32 id = 0;
 	
 	/* format of a rsrc: URL is:
-	 *   rsrc:[TYPE][@NUM]/name[,mime]
+	 *   rsrc://[TYPE][@NUM]/name[,mime]
 	 */
 	
 	LOG(("*** Processing %s", c->url));
 	
-	if (strlen(c->url) < 6) {
-		/* 6 is the minimum possible length (rsrc:/) */
+	if (strlen(c->url) < 7) {
+		/* 7 is the minimum possible length (rsrc://) */
 		msg.type = FETCH_ERROR;
 		msg.data.error = "Malformed rsrc: URL";
 		fetch_rsrc_send_callback(&msg, c);
@@ -171,7 +171,7 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	}
 	
 	/* skip the rsrc: part */
-	params = c->url + sizeof("rsrc:") - 1;
+	params = c->url + sizeof("rsrc://") - 1;
 	
 	/* find the slash */
 	if ( (slash = strchr(params, '/')) == NULL) {

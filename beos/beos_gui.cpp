@@ -421,7 +421,7 @@ static int32 bapp_thread(void *arg)
 nsurl *gui_get_resource_url(const char *path)
 {
 	nsurl *url = NULL;
-	BString u("rsrc:/");
+	BString u("rsrc:///");
 	if (strcmp(path, "default.css") == 0)
 		u << "beosdefault.css";
 	else
