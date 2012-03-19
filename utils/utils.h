@@ -52,6 +52,12 @@
 #define PRId64 "lld"
 #endif
 
+#if defined(__GNUC__) && (__GNUC__ < 3)
+#define FLEX_ARRAY_LEN_DECL 0
+#else
+#define FLEX_ARRAY_LEN_DECL 
+#endif
+
 #if defined(__HAIKU__) || defined(__BEOS__)
 #define strtof(s,p) ((float)(strtod((s),(p))))
 #endif
