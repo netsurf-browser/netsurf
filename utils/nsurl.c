@@ -156,7 +156,11 @@ struct nsurl {
 	int count;	/* Number of references to NetSurf URL object */
 
 	size_t length;	/* Length of string */
-	char string[];	/* Full URL as a string */
+	char string[
+#if defined(__GNUC__) && (__GNUC__ < 3)
+	0
+#endif
+	];	/* Full URL as a string */
 };
 
 
