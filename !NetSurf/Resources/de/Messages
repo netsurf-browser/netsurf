@@ -168,7 +168,7 @@ HelpContent:Inhalt  F1
 HelpGuide:Handbuch
 HelpInfo:Nutzerinformation
 HelpCredits:Credits
-HelpLicence:Licence
+HelpLicence:Lizenz
 HelpInter:interaktive Hilfe
 
 # Toolbar menu
@@ -306,16 +306,16 @@ CopyURL:URL ins Clipboard
 CopyClip:Inhalt ins Clipboard
 SaveAs:Speichern als...
 SaveIFF:Speichern als IFF...
-SaveComplete:Save complete...
-Close:Close
+SaveComplete:Speichern abgeschlossen...
+Close:Schließen
 ObjShow:Zeige Objekt
 Frame:Frame
-FrameNewWin:Show in new window
-FrameNewTab:Show in new tab
-FrameOnly:Show only this frame
+FrameNewWin:In neuem Fenster anzeigen
+FrameNewTab:In neuem Tab anzeigen
+FrameOnly:Nur diesen Frame anzeigen
 
 SelectFile:Datei auswählen...
-ExternalApp:Open in external application
+ExternalApp:In externer Anwendung öffnen..
 
 # Treeview interface tokens
 # =========================
@@ -430,8 +430,8 @@ amiDownloadComplete:NetSurf: Download vollständig
 
 # Requesters
 #
-amiSizeExisting:Existing file size:
-amiSizeNew:New file size:
+amiSizeExisting:Größe der vorhandenen Datei:
+amiSizeNew:Größe der neuen Datei:
 
 # GTK download window tokens
 #
@@ -439,8 +439,8 @@ amiSizeNew:New file size:
 # download window.
 #
 
-gtkSizeInfo:%s of %s
-gtkProgressBar:%.0f%% of %u files
+gtkSizeInfo:%s von %s
+gtkProgressBar:%.0f%% von %u Dateien
 gtkProgressBarPulse:Lade %u Dateien herunter
 gtkProgressBarPulseSingle:Lade %u Datei
 
@@ -485,12 +485,12 @@ gtkUnknownSize:unbekannt
 # gtk Menu / Button labels
 #
 
-gtkFile:_File
-gtkEdit:_Edit
-gtkView:_View
-gtkNavigate:_Navigate
+gtkFile:_Datei
+gtkEdit:_Bearbeiten
+gtkView:_Ansicht
+gtkNavigate:_Navigation
 gtkTabs:_Tabs
-gtkHelp:_Help
+gtkHelp:_Hilfe
 
 gtkNewTab:Neuer _Tab
 gtkNewTabAccel:<ctrl>t
@@ -532,73 +532,73 @@ gtkStopAccel:Escape
 gtkReload:Neu laden
 gtkReloadAccel:F5
 gtkScaleView:Ansicht skalieren
-gtkZoomPlus:Zoom _in
+gtkZoomPlus:Here_inzoomen
 gtkZoomPlusAccel:<ctrl>plus
-gtkZoomMinus:Zoom _out
+gtkZoomMinus:Herausz_oomen
 gtkZoomMinusAccel:<ctrl>minus
-gtkZoomNormal:_Normal size
+gtkZoomNormal:_Normalgröße
 gtkZoomNormalAccel:<ctrl>0
-gtkFullScreen:_Fullscreen
+gtkFullScreen:_Vollbild
 gtkFullScreenAccel:F11
-gtkViewSource:View S_ource
+gtkViewSource: Q_uelltext Anzeigen
 gtkViewSourceAccel:F8
-gtkImages:_Images
-gtkForegroundImages:_Foreground Images
-gtkBackgroundImages:_Background Images
-gtkToolbars:_Toolbars
-gtkMenuBar:_Menu Bar
-gtkToolBar:_Button Bar
-gtkStatusBar:_Status Bar
+gtkImages:B_ilder
+gtkForegroundImages:_Vordergrundbilder
+gtkBackgroundImages:_Hintergrundbilder
+gtkToolbars:_Werkzeugleisten
+gtkMenuBar:_Menüleiste
+gtkToolBar:_Buttonleiste
+gtkStatusBar:_Statusleiste
 gtkDownloads:_Downloads
 gtkDownloadsAccel:<ctrl>d
-gtkSaveWindowSize:S_ave Window Size
+gtkSaveWindowSize:Fenstergröße _speichern
 gtkDebugging:De_bugging
 gtkToggleDebugging:T_oggle debug rendering
 gtkSaveBoxTree:_Save box tree
 gtkSaveDomTree:Save DOM tree
 
-gtkBack:_Back
+gtkBack:_Zurück
 gtkBackAccel:<alt>Left
-gtkForward:_Forward
+gtkForward:_Vorwärts
 gtkForwardAccel:<alt>Right
-gtkHome:_Home
+gtkHome:_Startseite
 gtkHomeAccel:<alt>Down
-gtkLocalHistory:_Local History
+gtkLocalHistory:_Lokaler Verlauf
 gtkLocalHistoryAccel:<ctrl>h
-gtkGlobalHistory:_Global History
+gtkGlobalHistory:_Globaler Verlauf
 gtkGlobalHistoryAccel:<ctrl><shift>h
-gtkAddBookMarks:_Add to Bookmarks..
-gtkShowBookMarks:_Show Bookmarks..
+gtkAddBookMarks:_Lesezeichen hinzufügen..
+gtkShowBookMarks:Le_sezeichen anzeigen..
 gtkShowBookMarksAccel:F6
-gtkShowCookies:Show _Cookies…
+gtkShowCookies:Show _Cookies..
 gtkShowCookiesAccel:F9
-gtkOpenLocation:_Open Location..
+gtkOpenLocation:_Ort öffnen..
 gtkOpenLocationAccel:<ctrl>l
 
-gtkNextTab:_Next tab
+gtkNextTab:_Nächster Tab
 gtkNextTabAccel:<ctrl>Right
-gtkPrevTab:_Previous tab
+gtkPrevTab:_Vorheriger tab
 gtkPrevTabAccel:<ctrl>Left
-gtkCloseTab:_Close tab
+gtkCloseTab:Tab s_chliessen
 gtkCloseTabAccel:<ctrl>w
 
-gtkContents:_Contents
-gtkGuide:User _guide
-gtkUserInformation:User _information
-gtkAbout:_About
+gtkContents:_Inhalt
+gtkGuide:H_andbuch
+gtkUserInformation:Benutzer_information
+gtkAbout:Ü_ber
 
-gtkCustomize:Customise…
-gtkOpentab:Open Link in _New Tab
-gtkOpenwin:Open Link in New Window
-gtkSavelink:Save Link
+gtkCustomize:Customise..
+gtkOpentab:Link in _neuem Tab öffnen
+gtkOpenwin:Link in neuem Fenster öffnen
+gtkSavelink:Link speichern..
 
-gtkToolBarTitle:Toolbar custom button store
-gtkAddThemeTitle:Select folder containing theme images
+gtkToolBarTitle:Benutzerdefinierter Ort für Toolbar-Icons
+gtkAddThemeTitle:Ordner mit Themenbildern auswählen
 
-gtkThemeFolderInstructions:To Install a theme, create a directory full of appropriately-named images as a subdirectory of gtk/res/themes/
-gtkThemeFolderSub:Select a subdirectory of the themes folder
-gtkThemeDup:Theme is already included
-gtkThemeAdd:Theme added successfully
+gtkThemeFolderInstructions:Erstellen sie ein Verzeichnis mit korrekt benannten Bildern als Unterverzeichnis von gtk/res/themes um ein Thema zu installieren
+gtkThemeFolderSub:Unterverzeichnis mit Themenbildern wählen
+gtkThemeDup:Das Thema ist bereits hinzugefügt worden
+gtkThemeAdd:Thema erfolgreich hinzugefügt
 
 # Printing user interface tokens
 # ==============================
@@ -708,14 +708,14 @@ EncodingUnk:Unbekannt
 
 # Directory browser
 #
-FileIndex:Index of %s
-FileParent:^ Up to parent directory
-FileDirectory:Directory
+FileIndex:Inhalt von %s
+FileParent:^ Eine Ebene höher
+FileDirectory:Verzeichnis
 FileName:Name
-FileSize:Size
-FileDate:Date
-FileTime:Time
-FileType:Type
+FileSize:Größe
+FileDate:Datum
+FileTime:Zeit
+FileType:Typ
 
 # Misc
 #
@@ -1333,8 +1333,8 @@ HelpThemePConfig:Dieser Dialog zeigt die verfügbaren Themen.|MDas ausgewählte 
 
 # HelpHint (tooltip) text
 #
-HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
-HelpAddTab:Tab add button.|MAdds a new blank tab.
+HelpWebSearch:Websuchleiste.|MText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen.
+HelpAddTab:Tab hinzufügen.
 
 
 # Configuration tokens
@@ -1395,10 +1395,10 @@ NeedRestart:Diese Optionen werden erst nach einem Neustart von NetSurf aktiviert
 #
 
 Proxy:HTTP Proxy
-Fetching:Fetching
-FetchesMax:Maximum fetches
-FetchesHost:Fetches per host
-FetchesCached:Cached connections
+Fetching:Ladevorgänge
+FetchesMax:Maximale Anzahl an Ladevorgängen
+FetchesHost:Ladevorgänge pro Host
+FetchesCached:Gehaltene Verbindungen
 
 # Rendering tab
 #
@@ -1413,9 +1413,9 @@ AnimDisable:Animationen abschalten
 None:Keine
 Scaled:Skaliert
 
-Resolution:Resolution
-ResolutionY:Vertical resolution
-ResolutionX:Horizontal resolution
+Resolution:Auflösung
+ResolutionY:Vertikale Auflösung
+ResolutionX:Horizontale Auflösung
 DPI:DPI
 
 # Fonts tab
