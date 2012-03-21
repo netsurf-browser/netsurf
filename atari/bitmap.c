@@ -59,13 +59,14 @@ void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int st
 {
     struct bitmap * bitmap;
 
-    LOG(("width %d, height %d, state %u",w, h, state ));
+    LOG(("width %d (rowstride: %d, bpp: %d), height %d, state %u",w, rowstride,
+		bpp, h, state ));
 
 	if( rowstride == 0) {
 		rowstride = bpp * w;
 	}
 
-	assert( rowstride >= w * bpp );
+	assert( rowstride >= (w * bpp) );
     bitmap = calloc(1 , sizeof(struct bitmap) );
     if (bitmap) {
 		if( pixdata == NULL) {
@@ -108,7 +109,7 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 		bitmap->opaque = false;
 	} else {
 		int oldsize = bitmap->rowstride * bitmap->height;
-		bool doalloc = ( state == BITMAP_GROW) ? (newsize > oldsize) : (newsize != oldsize);
+		bool doalloc = (state & BITMAP_GROW) ? (newsize > oldsize) : (newsize != oldsize);
  		if( newsize > oldsize )
 			assert( doalloc == true );
 		if( doalloc ) {
@@ -145,6 +146,7 @@ void bitmap_to_mfdb(void * bitmap, MFDB * out)
 
 	if( oldstride != dststride * bm->bpp )
 	{
+		assert( oldstride <= dststride );
 		/* we need to convert the img to new rowstride */
 		tmp = bm->pixdata;
 		bm->pixdata = calloc(1, dststride * bm->bpp * bm->height );
@@ -180,7 +182,7 @@ void bitmap_to_mfdb(void * bitmap, MFDB * out)
  * of rows. The width of a row in bytes is given by bitmap_get_rowstride().
  */
 
-unsigned char *bitmap_get_buffer(void *bitmap)
+unsigned char * bitmap_get_buffer(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
@@ -373,6 +375,12 @@ int bitmap_get_height(void *bitmap)
 	return(bm->height);
 }
 
+
+/**
+*
+*	Gets the number of BYTES per pixel.
+*
+*/
 size_t bitmap_get_bpp(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
