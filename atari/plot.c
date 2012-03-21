@@ -75,14 +75,14 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 	LOG(("using plotters: %s, %s", drvrname, fdrvrname));
 	fplotter = new_font_plotter(vdih, fdrvrname, font_flags, &err );
 	if(err){
-		char * desc = plotter_err_str(err);
+		const char * desc = plotter_err_str(err);
 		die(("Unable to load font plotter %s -> %s", fdrvrname, desc ));
 	}
 
 	plotter = new_plotter( vdih, drvrname, &loc_pos, drvinfo->max_bpp,
 							flags, fplotter, &err );
 	if(err){
-		char * desc = plotter_err_str(err);
+		const char * desc = plotter_err_str(err);
 		die(("Unable to load graphics plotter %s -> %s", drvrname, desc ));
 	}
 
@@ -118,13 +118,14 @@ static bool plot_polygon(const int *p, unsigned int n,
 
 bool plot_clip(const struct rect *clip)
 {
-	plotter->clip( plotter, clip );
+	plotter->set_clip( plotter, clip );
 	return ( true );
 }
 
 
-bool plot_get_clip(struct rect * out){
-	plotter_get_clip( plotter , out );
+bool plot_get_clip(struct rect * out)
+{
+	plotter->get_clip( plotter, out );
 	return( true );
 }
 
@@ -162,7 +163,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 	bmph = bitmap_get_height(bitmap);
 
 	if ( repeat_x || repeat_y ) {
-		plotter_get_clip( plotter, &clip );
+		plotter->get_clip( plotter, &clip );
 		if( repeat_x && width == 1 && repeat_y && height == 1 ){
 			width = MAX( width, clip.x1 - x );
 			height = MAX( height,  clip.y1 - y );
