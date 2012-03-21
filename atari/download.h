@@ -41,8 +41,6 @@ struct gui_download_window {
 	WINDOW * form;
 	nsatari_download_status status;
 	char *destination;
-	char *domain;
-	char * url;
 	FILE * fd;
 	char lbl_done[MAX_SLEN_LBL_DONE];
 	char lbl_percent[MAX_SLEN_LBL_PERCENT];

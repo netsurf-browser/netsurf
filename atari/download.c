@@ -112,12 +112,6 @@ static void gui_download_window_destroy( struct gui_download_window * gdw )
 	if( gdw->destination ) {
 		free( gdw->destination );
 	}
-	if( gdw->domain ) {
-		free( gdw->domain );
-	}
-	if( gdw->url ) {
-		free( gdw->url );
-	}
 	if( gdw->fd != NULL ){
 		fclose(gdw->fd);
 		gdw->fd = NULL;
@@ -129,27 +123,69 @@ static void gui_download_window_destroy( struct gui_download_window * gdw )
 	free( gdw );
 }
 
+static char * select_filepath( const char * path, const char * filename )
+{
+	char tmp[PATH_MAX];
+	char res_path[PATH_MAX];
+	char res_file[PATH_MAX];
+	char * ret = NULL;
+
+
+	strncpy( res_path, path, PATH_MAX );
+	strncpy( res_file, filename, PATH_MAX );
+	res_file[PATH_MAX-1] = 0;
+	res_path[PATH_MAX-1] = 0;
+	if( mt_FselInput( &app, res_path, res_file, (char*)"*",
+					(char*)messages_get("SaveAsNS"), res_path, NULL ) ) {
+		assert( (strlen( res_path ) + strlen( res_file ) + 2) < PATH_MAX );
+		sprintf(tmp, "%s%s", res_path, res_file );
+		ret = malloc( strlen(tmp)+1 );
+		strcpy( ret, tmp );
+	}
+	return( ret );
+}
+
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *parent)
 {
 
 	char *filename;
 	char *destination;
-	const char * path = option_downloads_path;
+	char gdos_path[PATH_MAX];
 	const char * url;
 	struct gui_download_window * gdw;
+	int dlgres = 0;
+	OBJECT * tree = get_tree(DOWNLOAD);
 
 	/* TODO: Implement real form and use messages file strings! */
-	if( form_alert(2, "[2][Accept Download?][Yes|No]") == 2){
+
+	if( tree == NULL )
+		return( NULL );
+
+	filename = download_context_get_filename( ctx );
+	dlgres = form_alert(2, "[2][Accept download?][Yes|Save as...|No]");
+	if( dlgres == 3){
+		return( NULL );
+	}
+	else if( dlgres == 2 ){
+		gemdos_realpath(option_downloads_path, gdos_path);
+		char * tmp = select_filepath( gdos_path, filename );
+		if( tmp == NULL )
+			return( NULL );
+		destination = tmp;
+	} else {
+		gemdos_realpath(option_downloads_path, gdos_path);
+		destination = malloc( strlen(gdos_path)+1
+							+ strlen(filename)+1 );
+		sprintf( destination, "%s/%s", gdos_path, filename );
+	}
+
+	gdw = calloc( 1, sizeof(struct gui_download_window) );
+	if( gdw == NULL ){
+		free( destination );
 		return( NULL );
 	}
 
-	OBJECT * tree = get_tree(DOWNLOAD);
-	if( tree == NULL )
-		return( NULL );
-	gdw = calloc( 1, sizeof(struct gui_download_window) );
-	if( gdw == NULL )
-		return( NULL );
 	gdw->ctx = ctx;
 	gdw->abort = false;
 	gdw->start = clock() / CLOCKS_PER_SEC;
@@ -159,47 +195,16 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	gdw->fbufsize = MAX(BUFSIZ, 48000);
 	gdw->size_downloaded = 0;
 	gdw->size_total = download_context_get_total_length(ctx);
+	gdw->destination = destination;
 	url = download_context_get_url(ctx);
 
-	gdw->url = calloc(1, strlen(url) + 1 );
-	if( gdw->url == NULL ){
-		gui_download_window_destroy(gdw);
-		return( NULL );
-	}
-
-	if (url_nice(url, &filename, false) != URL_FUNC_OK) {
-		filename = strdup("unknown");
-		if (filename == NULL) {
-			gui_download_window_destroy(gdw);
-			return NULL;
-		}
-	}
-
-	if (url_host(url, &gdw->domain) != URL_FUNC_OK) {
-		gdw->domain = strdup("unknown");
-		if (gdw->domain == NULL) {
-			free(filename);
-			gui_download_window_destroy(gdw);
-			return NULL;
-		}
-	}
-
-	char * tpath = alloca(strlen(filename) + strlen(path) + 2 );
-	char * tpath2 = alloca(PATH_MAX);
-	strcpy( tpath, path );
-	if( path[strlen(path)-1] != '/' &&  path[strlen(path)-1] != '\\' ) {
-		strcat( tpath, "/");
-	}
-	strcat( tpath, filename );
-	gemdos_realpath(tpath, tpath2);
-	gdw->destination = malloc(strlen(tpath2) + 2);
-	strcpy(gdw->destination, tpath2);
 	gdw->fd = fopen(gdw->destination, "wb" );
 	if( gdw->fd == NULL ){
 		free( filename );
 		gui_download_window_destroy(gdw);
 		return( NULL );
 	}
+
 	gdw->fbuf = malloc( gdw->fbufsize+1 );
 	if( gdw->fbuf != NULL ){
 		setvbuf( gdw->fd, gdw->fbuf, _IOFBF, gdw->fbufsize );
