@@ -1002,7 +1002,7 @@ static void snapshot_destroy( GEM_PLOTTER self )
 	}
 }
 
-inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
+static inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
 	short * buf;
 	short whichbit = (1<<(15-(x%16)));
@@ -1034,7 +1034,7 @@ inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char va
 	*buf = (val&(1<<7)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
 }
 
-inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
+static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
 {
 	unsigned char ret=0;
 	short * buf;
