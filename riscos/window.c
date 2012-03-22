@@ -69,7 +69,7 @@
 #include "riscos/help.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/save.h"
 #include "riscos/content-handlers/sprite.h"
@@ -398,7 +398,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->iconise_icon = -1;
 
 	/* Set the window position */
-	if (clone && clone->window && option_window_size_clone) {
+	if (clone && clone->window && nsoption_bool(window_size_clone)) {
 		for (top = clone; top->parent; top = top->parent);
 		state.w = top->window->window;
 		error = xwimp_get_window_state(&state);
@@ -416,17 +416,17 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		ro_gui_screen_size(&screen_width, &screen_height);
 
 		/* Check if we have a preferred position */
-		if ((option_window_screen_width != 0) &&
-				(option_window_screen_height != 0)) {
-			win_width = (option_window_width * screen_width) /
-					option_window_screen_width;
-			win_height = (option_window_height * screen_height) /
-					option_window_screen_height;
-			window.visible.x0 = (option_window_x * screen_width) /
-					option_window_screen_width;
-			window.visible.y0 = (option_window_y * screen_height) /
-					option_window_screen_height;
-			if (option_window_stagger) {
+		if ((nsoption_int(window_screen_width) != 0) &&
+		    (nsoption_int(window_screen_height) != 0)) {
+			win_width = (nsoption_int(window_width) * screen_width) /
+				nsoption_int(window_screen_width);
+			win_height = (nsoption_int(window_height) * screen_height) /
+				nsoption_int(window_screen_height);
+			window.visible.x0 = (nsoption_int(window_x) * screen_width) /
+				nsoption_int(window_screen_width);
+			window.visible.y0 = (nsoption_int(window_y) * screen_height) /
+				nsoption_int(window_screen_height);
+			if (nsoption_bool(window_stagger)) {
 				window.visible.y0 += 96 -
 						(48 * (window_count % 5));
 			}
@@ -520,7 +520,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	/* Add in a toolbar and status bar */
 	g->status_bar = ro_gui_status_bar_create(g->window,
-			option_toolbar_status_width);
+						 nsoption_int(toolbar_status_width));
 	g->toolbar = ro_toolbar_create(NULL, g->window,
 			THEME_STYLE_BROWSER_TOOLBAR, TOOLBAR_FLAGS_NONE,
 			&ro_gui_window_toolbar_callbacks, g,
@@ -528,7 +528,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if (g->toolbar != NULL) {
 		ro_toolbar_add_buttons(g->toolbar,
 				brower_toolbar_buttons,
-				option_toolbar_browser);
+				       nsoption_charp(toolbar_browser));
 		ro_toolbar_add_url(g->toolbar);
 		ro_toolbar_add_throbber(g->toolbar);
 		ro_toolbar_rebuild(g->toolbar);
@@ -2349,10 +2349,10 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	/* View Submenu */
 
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_IMAGES_FOREGROUND,
-			g != NULL && option_foreground_images);
+				     g != NULL && nsoption_bool(foreground_images));
 
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_IMAGES_BACKGROUND,
-			g != NULL && option_background_images);
+				     g != NULL && nsoption_bool(background_images));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_BUFFER_ANIMS,
 			g == NULL || g->option.buffer_everything);
@@ -2367,16 +2367,16 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_SCALE_VIEW, h == NULL);
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_WINDOW_STAGGER,
-			option_window_screen_width == 0);
+				     nsoption_int(window_screen_width) == 0);
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_WINDOW_STAGGER,
-			((option_window_screen_width == 0) ||
-			option_window_stagger));
+				     ((nsoption_int(window_screen_width) == 0) ||
+				      nsoption_bool(window_stagger)));
 
 	ro_gui_menu_set_entry_ticked(menu, BROWSER_WINDOW_COPY,
-			option_window_size_clone);
+				     nsoption_bool(window_size_clone));
 
 	ro_gui_menu_set_entry_shaded(menu, BROWSER_WINDOW_RESET,
-			option_window_screen_width == 0);
+				     nsoption_int(window_screen_width) == 0);
 
 
 	/* Utilities Submenu */
@@ -2393,7 +2393,7 @@ bool ro_gui_window_menu_prepare(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	ro_gui_menu_set_entry_ticked(menu, HELP_LAUNCH_INTERACTIVE,
 			ro_gui_interactive_help_available() &&
-			option_interactive_help);
+				     nsoption_bool(interactive_help));
 
 	return true;
 }
@@ -2658,9 +2658,9 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 	case HELP_LAUNCH_INTERACTIVE:
 		if (!ro_gui_interactive_help_available()) {
 			ro_gui_interactive_help_start();
-			option_interactive_help = true;
+			nsoption_set_bool(interactive_help, true);
 		} else {
-			option_interactive_help = !option_interactive_help;
+			nsoption_set_bool(interactive_help, !nsoption_bool(interactive_help));
 		}
 		break;
 
@@ -2868,13 +2868,13 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 	case BROWSER_IMAGES_FOREGROUND:
 		if (g != NULL)
-			option_foreground_images =
-					!option_foreground_images;
+			nsoption_set_bool(foreground_images,
+					  !nsoption_bool(foreground_images));
 		break;
 	case BROWSER_IMAGES_BACKGROUND:
 		if (g != NULL)
-			option_background_images =
-					!option_background_images;
+			nsoption_set_bool(background_images,
+					  !nsoption_bool(background_images));
 		break;
 	case BROWSER_BUFFER_ANIMS:
 		if (g != NULL)
@@ -2894,8 +2894,8 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 		break;
 	case BROWSER_WINDOW_DEFAULT:
 		if (g != NULL) {
-			ro_gui_screen_size(&option_window_screen_width,
-					&option_window_screen_height);
+			ro_gui_screen_size(&nsoption_int(window_screen_width),
+					   &nsoption_int(window_screen_height));
 			state.w = w;
 			error = xwimp_get_window_state(&state);
 			if (error) {
@@ -2904,26 +2904,26 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 						error->errmess));
 				warn_user("WimpError", error->errmess);
 			}
-			option_window_x = state.visible.x0;
-			option_window_y = state.visible.y0;
-			option_window_width =
-					state.visible.x1 - state.visible.x0;
-			option_window_height =
-					state.visible.y1 - state.visible.y0;
+			nsoption_set_int(window_x, state.visible.x0);
+			nsoption_set_int(window_y, state.visible.y0);
+			nsoption_set_int(window_width,
+				    state.visible.x1 - state.visible.x0);
+			nsoption_set_int(window_height,
+				    state.visible.y1 - state.visible.y0);
 			ro_gui_save_options();
 		}
 		break;
 	case BROWSER_WINDOW_STAGGER:
-		option_window_stagger = !option_window_stagger;
+		nsoption_set_bool(window_stagger, !nsoption_bool(window_stagger));
 		ro_gui_save_options();
 		break;
 	case BROWSER_WINDOW_COPY:
-		option_window_size_clone = !option_window_size_clone;
+		nsoption_set_bool(window_size_clone, !nsoption_bool(window_size_clone));
 		ro_gui_save_options();
 		break;
 	case BROWSER_WINDOW_RESET:
-		option_window_screen_width = 0;
-		option_window_screen_height = 0;
+		nsoption_set_int(window_screen_width, 0);
+		nsoption_set_int(window_screen_height, 0);
 		ro_gui_save_options();
 		break;
 
@@ -3886,12 +3886,12 @@ void ro_gui_window_action_home(struct gui_window *g)
 	if (g == NULL || g->bw == NULL)
 		return;
 
-	if ((option_homepage_url) && (option_homepage_url[0])) {
-		browser_window_go(g->bw, option_homepage_url, 0, true);
+	if ((nsoption_charp(homepage_url)) && (nsoption_charp(homepage_url)[0])) {
+		browser_window_go(g->bw, nsoption_charp(homepage_url), 0, true);
 	} else {
 		snprintf(url, sizeof url,
 				"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-				option_language);
+			 nsoption_charp(language));
 		browser_window_go(g->bw, url, 0, true);
 	}
 }
@@ -4325,9 +4325,7 @@ void ro_gui_window_update_toolbar(void *data)
 
 void ro_gui_window_save_toolbar_buttons(void *data, char *config)
 {
-	if (option_toolbar_browser != NULL)
-		free(option_toolbar_browser);
-	option_toolbar_browser = config;
+	nsoption_set_charp(toolbar_browser, config);
 	ro_gui_save_options();
 }
 
@@ -4467,9 +4465,9 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	/*	Clone the basic options
 	*/
 	if (!old_gui) {
-		new_bw->scale = ((float)option_scale) / 100;
-		new_gui->option.buffer_animations = option_buffer_animations;
-		new_gui->option.buffer_everything = option_buffer_everything;
+		new_bw->scale = ((float)nsoption_int(scale)) / 100;
+		new_gui->option.buffer_animations = nsoption_bool(buffer_animations);
+		new_gui->option.buffer_everything = nsoption_bool(buffer_everything);
 	} else {
 		new_gui->option = old_gui->option;
 	}
@@ -4478,11 +4476,11 @@ void ro_gui_window_clone_options(struct browser_window *new_bw,
 	*/
 	if (new_gui->toolbar) {
 		ro_toolbar_set_display_buttons(new_gui->toolbar,
-				option_toolbar_show_buttons);
+					       nsoption_bool(toolbar_show_buttons));
 		ro_toolbar_set_display_url(new_gui->toolbar,
-				option_toolbar_show_address);
+					   nsoption_bool(toolbar_show_address));
 		ro_toolbar_set_display_throbber(new_gui->toolbar,
-				option_toolbar_show_throbber);
+						nsoption_bool(toolbar_show_throbber));
 		if ((old_gui) && (old_gui->toolbar)) {
 			ro_toolbar_set_display_buttons(new_gui->toolbar,
 					ro_toolbar_get_display_buttons(
@@ -4518,23 +4516,23 @@ void ro_gui_window_default_options(struct browser_window *bw)
 
 	/*	Save the basic options
 	*/
-	option_scale = bw->scale * 100;
-	option_buffer_animations = gui->option.buffer_animations;
-	option_buffer_everything = gui->option.buffer_everything;
+	nsoption_set_int(scale, bw->scale * 100);
+	nsoption_set_bool(buffer_animations, gui->option.buffer_animations);
+	nsoption_set_bool(buffer_everything, gui->option.buffer_everything);
 
 	/*	Set up the toolbar
 	*/
 	if (gui->toolbar != NULL) {
-		option_toolbar_show_buttons =
-				ro_toolbar_get_display_buttons(gui->toolbar);
-		option_toolbar_show_address =
-				ro_toolbar_get_display_url(gui->toolbar);
-		option_toolbar_show_throbber =
-				ro_toolbar_get_display_throbber(gui->toolbar);
+		nsoption_set_bool(toolbar_show_buttons,
+				  ro_toolbar_get_display_buttons(gui->toolbar));
+		nsoption_set_bool(toolbar_show_address,
+				  ro_toolbar_get_display_url(gui->toolbar));
+		nsoption_set_bool(toolbar_show_throbber,
+				  ro_toolbar_get_display_throbber(gui->toolbar));
 	}
 	if (gui->status_bar != NULL)
-		option_toolbar_status_width =
-				ro_gui_status_bar_get_width(gui->status_bar);
+		nsoption_set_int(toolbar_status_width,
+				 ro_gui_status_bar_get_width(gui->status_bar));
 }
 
 

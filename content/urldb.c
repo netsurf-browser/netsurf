@@ -545,7 +545,9 @@ void urldb_save_search_tree(struct search_node *parent, FILE *fp)
 	unsigned int path_count = 0;
 	char *path, *p, *end;
 	int path_alloc = 64, path_used = 1;
-	time_t expiry = time(NULL) - (60 * 60 * 24) * option_expire_url;
+	time_t expiry;
+
+	expiry = time(NULL) - ((60 * 60 * 24) * nsoption_int(expire_url));
 
 	if (parent == &empty)
 		return;

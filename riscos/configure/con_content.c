@@ -20,7 +20,6 @@
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -44,13 +43,13 @@ bool ro_gui_options_content_initialise(wimp_w w)
 {
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS,
-			option_block_ads);
+                                       nsoption_bool(block_ads));
 	ro_gui_set_icon_selected_state(w, CONTENT_BLOCK_POPUPS,
-			option_block_popups);
+                                       nsoption_bool(block_popups));
 	ro_gui_set_icon_selected_state(w, CONTENT_NO_PLUGINS,
-			option_no_plugins);
+                                       nsoption_bool(no_plugins));
 	ro_gui_set_icon_selected_state(w, CONTENT_TARGET_BLANK,
-			option_target_blank);
+                                       nsoption_bool(target_blank));
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_checkbox(w, CONTENT_BLOCK_ADVERTISEMENTS);
@@ -83,14 +82,16 @@ void ro_gui_options_content_default(wimp_pointer *pointer)
 
 bool ro_gui_options_content_ok(wimp_w w)
 {
-	option_block_ads = ro_gui_get_icon_selected_state(w,
-			CONTENT_BLOCK_ADVERTISEMENTS);
-	option_block_popups = ro_gui_get_icon_selected_state(w,
-			CONTENT_BLOCK_POPUPS);
-	option_no_plugins = ro_gui_get_icon_selected_state(w,
-			CONTENT_NO_PLUGINS);
-	option_target_blank = ro_gui_get_icon_selected_state(w,
-			CONTENT_TARGET_BLANK);
+	nsoption_set_bool(block_ads,
+			  ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_ADVERTISEMENTS));
+
+	nsoption_set_bool(block_popups,
+			  ro_gui_get_icon_selected_state(w, CONTENT_BLOCK_POPUPS));
+	nsoption_set_bool(no_plugins,
+			  ro_gui_get_icon_selected_state(w, CONTENT_NO_PLUGINS));
+
+	nsoption_set_bool(target_blank,
+			  ro_gui_get_icon_selected_state(w, CONTENT_TARGET_BLANK));
 
 	ro_gui_save_options();
   	return true;

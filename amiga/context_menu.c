@@ -34,7 +34,7 @@
 #include "amiga/gui.h"
 #include "amiga/history_local.h"
 #include "amiga/iff_dr2d.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/theme.h"
 #include "amiga/tree.h"
@@ -555,9 +555,9 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 {
 	int top, left, width, height;
 
-	if(option_context_menu == false) return FALSE;
+	if(nsoption_bool(context_menu) == false) return FALSE;
 
-	if((option_kiosk_mode == false) && (trap == FALSE))
+	if((nsoption_bool(kiosk_mode) == false) && (trap == FALSE))
 	{
 		if(browser_window_back_available(gwin->bw) &&
 				ami_gadget_hit(gwin->objects[GID_BACK],
@@ -871,7 +871,7 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 			break;
 
 			case CMID_NAVHOME:
-				browser_window_go(gwin->bw, option_homepage_url, NULL, true);
+				browser_window_go(gwin->bw, nsoption_charp(homepage_url), NULL, true);
 			break;
 
 			case CMID_NAVBACK:

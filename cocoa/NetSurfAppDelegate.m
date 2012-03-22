@@ -39,7 +39,7 @@
 
 - (void) newDocument: (id) sender;
 {
-	browser_window_create( option_homepage_url, NULL, NULL, true, false );
+	browser_window_create( nsoption_charp(homepage_url), NULL, NULL, true, false );
 }
 
 - (void) openDocument: (id) sender;

@@ -25,7 +25,7 @@
  *
  *
  * The CURL handles are cached in the curl_handle_ring. There are at most
- * ::option_max_cached_fetch_handles in this ring.
+ * ::max_cached_fetch_handles in this ring.
  */
 
 #include <assert.h>
@@ -195,7 +195,7 @@ void fetch_curl_register(void)
 	    SETOPT(CURLOPT_VERBOSE, 0);
 	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
-	if (option_suppress_curl_debug)
+	if (nsoption_bool(suppress_curl_debug))
 		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore_debug);
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
@@ -208,13 +208,14 @@ void fetch_curl_register(void)
 	SETOPT(CURLOPT_NOSIGNAL, 1L);
 	SETOPT(CURLOPT_CONNECTTIMEOUT, 30L);
 
-	if (option_ca_bundle && strcmp(option_ca_bundle, "")) {
-		LOG(("option_ca_bundle: '%s'", option_ca_bundle));
-		SETOPT(CURLOPT_CAINFO, option_ca_bundle);
+	if (nsoption_charp(ca_bundle) && 
+	    strcmp(nsoption_charp(ca_bundle), "")) {
+		LOG(("ca_bundle: '%s'", nsoption_charp(ca_bundle)));
+		SETOPT(CURLOPT_CAINFO, nsoption_charp(ca_bundle));
 	}
-	if (option_ca_path && strcmp(option_ca_path, "")) {
-		LOG(("option_ca_path: '%s'", option_ca_path));
-		SETOPT(CURLOPT_CAPATH, option_ca_path);
+	if (nsoption_charp(ca_path) && strcmp(nsoption_charp(ca_path), "")) {
+		LOG(("ca_path: '%s'", nsoption_charp(ca_path)));
+		SETOPT(CURLOPT_CAPATH, nsoption_charp(ca_path));
 	}
 
 	/* Detect whether the SSL CTX function API works */
@@ -405,20 +406,20 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 	 * which fails with lighttpd, so disable it (see bug 1429054) */
 	APPEND(fetch->headers, "Expect:");
 
-	if (option_accept_language != NULL && 
-			option_accept_language[0] != '\0') {
+	if ((nsoption_charp(accept_language) != NULL) && 
+	    (nsoption_charp(accept_language)[0] != '\0')) {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Language: %s, *;q=0.1",
-				option_accept_language);
+			 nsoption_charp(accept_language));
 		s[sizeof s - 1] = 0;
 		APPEND(fetch->headers, s);
 	}
 
-	if (option_accept_charset != NULL && 
-			option_accept_charset[0] != '\0') {
+	if (nsoption_charp(accept_charset) != NULL && 
+	    nsoption_charp(accept_charset)[0] != '\0') {
 		char s[80];
 		snprintf(s, sizeof s, "Accept-Charset: %s, *;q=0.1",
-				option_accept_charset);
+			 nsoption_charp(accept_charset));
 		s[sizeof s - 1] = 0;
 		APPEND(fetch->headers, s);
 	}
@@ -525,11 +526,13 @@ void fetch_curl_cache_handle(CURL *handle, lwc_string *host)
 	}
 	/* We do not have a handle cached, first up determine if the cache is full */
 	RING_GETSIZE(struct cache_handle, curl_handle_ring, c);
-	if (c >= option_max_cached_fetch_handles) {
-		/* Cache is full, so, we rotate the ring by one and replace the
-		 * oldest handle with this one. We do this without freeing/allocating
-		 * memory (except the hostname) and without removing the entry from the
-		 * ring and then re-inserting it, in order to be as efficient as we can.
+	if (c >= nsoption_int(max_cached_fetch_handles)) {
+		/* Cache is full, so, we rotate the ring by one and
+		 * replace the oldest handle with this one. We do this
+		 * without freeing/allocating memory (except the
+		 * hostname) and without removing the entry from the
+		 * ring and then re-inserting it, in order to be as
+		 * efficient as we can.
 		 */
 		if (curl_handle_ring != NULL) {
 			h = curl_handle_ring;
@@ -605,21 +608,22 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_USERPWD, NULL);
 	}
 
-	if (option_http_proxy && option_http_proxy_host &&
-			strncmp(nsurl_access(f->url), "file:", 5) != 0) {
-		SETOPT(CURLOPT_PROXY, option_http_proxy_host);
-		SETOPT(CURLOPT_PROXYPORT, (long) option_http_proxy_port);
-		if (option_http_proxy_auth != OPTION_HTTP_PROXY_AUTH_NONE) {
+	if (nsoption_bool(http_proxy) && 
+	    (nsoption_charp(http_proxy_host) != NULL) &&
+	    (strncmp(nsurl_access(f->url), "file:", 5) != 0)) {
+		SETOPT(CURLOPT_PROXY, nsoption_charp(http_proxy_host));
+		SETOPT(CURLOPT_PROXYPORT, (long) nsoption_int(http_proxy_port));
+		if (nsoption_int(http_proxy_auth) != OPTION_HTTP_PROXY_AUTH_NONE) {
 			SETOPT(CURLOPT_PROXYAUTH,
-					option_http_proxy_auth ==
+			       nsoption_int(http_proxy_auth) ==
 					OPTION_HTTP_PROXY_AUTH_BASIC ?
 					(long) CURLAUTH_BASIC :
 					(long) CURLAUTH_NTLM);
 			snprintf(fetch_proxy_userpwd,
 					sizeof fetch_proxy_userpwd,
 					"%s:%s",
-					option_http_proxy_auth_user,
-					option_http_proxy_auth_pass);
+				 nsoption_charp(http_proxy_auth_user),
+				 nsoption_charp(http_proxy_auth_pass));
 			SETOPT(CURLOPT_PROXYUSERPWD, fetch_proxy_userpwd);
 		}
 	} else {

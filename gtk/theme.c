@@ -29,7 +29,7 @@
 #include "gtk/menu.h"
 #include "gtk/theme.h"
 #include "gtk/window.h"
-#include "gtk/options.h"
+#include "desktop/options.h"
 #include "gtk/dialogs/options.h"
 #include "utils/container.h"
 #include "utils/log.h"
@@ -156,7 +156,7 @@ static bool nsgtk_theme_verify(const char *themename)
 void nsgtk_theme_init(void)
 {
 	size_t len;
-	if (option_current_theme == 0) {
+	if (nsoption_int(current_theme) == 0) {
 		return;
 	}
 
@@ -174,7 +174,7 @@ void nsgtk_theme_init(void)
 		if (buf[0] == '\0')
 			continue;
 
-		if (row_count++ == option_current_theme) {
+		if (row_count++ == nsoption_int(current_theme)) {
 			if (current_theme_name != NULL)
 				free(current_theme_name);
 			/* clear the '\n' ["\n\0"->"\0\0"] */

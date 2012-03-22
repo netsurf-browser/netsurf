@@ -106,7 +106,7 @@ struct Node * URLHistory_FindPage( const char *urlString )
 
 void URLHistory_AddPage( const char * urlString )
 {
-	if(!option_url_suggestion) return;
+	if(!nsoption_bool(url_suggestion)) return;
 
 	// Only search if length > 0
 	if( strlen( urlString ) > 0 )

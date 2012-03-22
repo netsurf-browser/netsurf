@@ -25,7 +25,6 @@
 #include "desktop/options.h"
 #include "desktop/search.h"
 #include "utils/utils.h"
-#include "gtk/options.h"
 #include "gtk/search.h"
 #include "gtk/tabs.h"
 
@@ -64,7 +63,7 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 
 	hbox = gtk_hbox_new(FALSE, 2);
 
-	if (option_new_blank == true)
+	if (nsoption_bool(new_blank) == true)
 		label = gtk_label_new("New Tab");
 	else
 		label = gtk_label_new("Loading...");
@@ -119,7 +118,7 @@ static void nsgtk_tab_page_changed(GtkNotebook *notebook, gpointer *page,
 static void
 nsgtk_tab_orientation(GtkNotebook *notebook)
 {
-	switch (option_position_tab) {
+	switch (nsoption_int(position_tab)) {
 	case 0:
 		gtk_notebook_set_tab_pos(notebook, GTK_POS_TOP);
 		break;
@@ -144,7 +143,8 @@ static void
 nsgtk_tab_visibility_update(GtkNotebook *notebook, GtkWidget *child, guint page)
 {
 	gint num_pages = gtk_notebook_get_n_pages(notebook);
-        if (option_show_single_tab == true || num_pages > 1) {
+
+        if ((nsoption_bool(show_single_tab) == true) || (num_pages > 1)) {
                 gtk_notebook_set_show_tabs(notebook, TRUE);
 	} else {
                 gtk_notebook_set_show_tabs(notebook, FALSE);

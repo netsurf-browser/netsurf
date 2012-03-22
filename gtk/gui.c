@@ -69,7 +69,6 @@
 #include "gtk/throbber.h"
 #include "gtk/treeview.h"
 #include "gtk/window.h"
-#include "gtk/options.h"
 #include "gtk/schedule.h"
 
 #include "render/box.h"
@@ -240,7 +239,7 @@ static void check_options(char **respath)
 	char *hdir = getenv("HOME");
 	char buf[PATH_MAX];
 
-	option_core_select_menu = true;
+	nsoption_set_bool(core_select_menu, true);
 
 	/* Attempt to handle nonsense status bar widths.  These may exist
 	 * in people's Choices as the GTK front end used to abuse the
@@ -248,8 +247,8 @@ static void check_options(char **respath)
 	 * The GTK front end now correctly uses it as a proportion of window
 	 * width.  Here we assume that a value of less than 15% is wrong
 	 * and set to the default two thirds. */
-	if (option_toolbar_status_width < 1500) {
-		option_toolbar_status_width = 6667;
+	if (nsoption_int(toolbar_status_width) < 1500) {
+		nsoption_set_int(toolbar_status_width, 6667);
 	}
 
 	/* user options should be stored in the users home directory */
@@ -260,46 +259,47 @@ static void check_options(char **respath)
 	 * resource path, they should just be set to the default
 	 * values! 
 	 */
-	if (!option_cookie_file) {
+	if (nsoption_charp(cookie_file) == NULL) {
 		filepath_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
 		LOG(("Using '%s' as Cookies file", buf));
-		option_cookie_file = strdup(buf);
+		nsoption_set_charp(cookie_file, strdup(buf));
 	}
-	if (!option_cookie_jar) {
+	if (nsoption_charp(cookie_jar) == NULL) {
 		filepath_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
 		LOG(("Using '%s' as Cookie Jar file", buf));
-		option_cookie_jar = strdup(buf);
+		nsoption_set_charp(cookie_jar, strdup(buf));
 	}
-	if (!option_cookie_file || !option_cookie_jar)
+	if (nsoption_charp(cookie_file) == NULL || 
+	    nsoption_charp(cookie_jar) == NULL)
 		die("Failed initialising cookie options");
 
-	if (!option_url_file) {
+	if (nsoption_charp(url_file) == NULL) {
 		filepath_sfinddef(respath, buf, "URLs", "~/.netsurf/");
 		LOG(("Using '%s' as URL file", buf));
-		option_url_file = strdup(buf);
+		nsoption_set_charp(url_file, strdup(buf));
 	}
 
-        if (!option_ca_path) {
+        if (nsoption_charp(ca_path) == NULL) {
 		filepath_sfinddef(respath, buf, "certs", "/etc/ssl/");
                 LOG(("Using '%s' as certificate path", buf));
-                option_ca_path = strdup(buf);
+                nsoption_set_charp(ca_path, strdup(buf));
         }
 
-        if (!option_downloads_directory) {
+        if (nsoption_charp(downloads_directory) == NULL) {
         	LOG(("Using '%s' as download directory", hdir));
-        	option_downloads_directory = hdir;
+        	nsoption_set_charp(downloads_directory, hdir);
 	}
 	
 	filepath_sfinddef(respath, buf, "icons/", "~/.netsurf/");
 	LOG(("Using '%s' as Tree icons dir", buf));
 	tree_set_icon_dir(strdup(buf));
 
-	if (!option_hotlist_path) {
+	if (nsoption_charp(hotlist_path) == NULL) {
 		filepath_sfinddef(respath, buf, "Hotlist", "~/.netsurf/");
 		LOG(("Using '%s' as Hotlist file", buf));
-		option_hotlist_path = strdup(buf);		
+		nsoption_set_charp(hotlist_path, strdup(buf));	
 	}
-	if (!option_hotlist_path)
+	if (nsoption_charp(hotlist_path) == NULL)
 		die("Failed initialising hotlist option");	
 	
 
@@ -310,12 +310,12 @@ static void check_options(char **respath)
 	/* check what the font settings are, setting them to a default font
 	 * if they're not set - stops Pango whinging
 	 */
-#define SETFONTDEFAULT(x,y) (x) = ((x) != NULL) ? (x) : strdup((y))
-	SETFONTDEFAULT(option_font_sans, "Sans");
-	SETFONTDEFAULT(option_font_serif, "Serif");
-	SETFONTDEFAULT(option_font_mono, "Monospace");
-	SETFONTDEFAULT(option_font_cursive, "Serif");
-	SETFONTDEFAULT(option_font_fantasy, "Serif");
+#define SETFONTDEFAULT(OPTION,y) if (nsoption_charp(OPTION) == NULL) nsoption_set_charp(OPTION, strdup((y)))
+	SETFONTDEFAULT(font_sans, "Sans");
+	SETFONTDEFAULT(font_serif, "Serif");
+	SETFONTDEFAULT(font_mono, "Monospace");
+	SETFONTDEFAULT(font_cursive, "Serif");
+	SETFONTDEFAULT(font_fantasy, "Serif");
 
 }
 
@@ -416,8 +416,8 @@ static void gui_init(int argc, char** argv, char **respath)
 	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
 
-	urldb_load(option_url_file);
-	urldb_load_cookies(option_cookie_file);
+	urldb_load(nsoption_charp(url_file));
+	urldb_load_cookies(nsoption_charp(cookie_file));
 
 	/* The tree view system needs to know the screen's DPI, so we
 	 * find that out here, rather than when we create a first browser
@@ -442,9 +442,9 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	sslcert_init(tree_content_icon_name);
 
-        if ((option_homepage_url != NULL) && 
-	    (option_homepage_url[0] != '\0'))
-                addr = option_homepage_url;
+        if (nsoption_charp(homepage_url) != NULL) {
+                addr = nsoption_charp(homepage_url);
+	}
 
 	if (2 <= argc)
 		addr = argv[1];
@@ -587,14 +587,12 @@ void gui_poll(bool active)
 void gui_quit(void)
 {
 	nsgtk_download_destroy();
-	urldb_save_cookies(option_cookie_jar);
-	urldb_save(option_url_file);
+	urldb_save_cookies(nsoption_charp(cookie_jar));
+	urldb_save(nsoption_charp(url_file));
 	nsgtk_cookies_destroy();
 	nsgtk_history_destroy();
 	nsgtk_hotlist_destroy();
 	sslcert_cleanup();
-	free(option_cookie_file);
-	free(option_cookie_jar);
 	free(print_options_file_location);
 	free(search_engines_file_location);
 	free(search_default_ico_location);

@@ -31,7 +31,7 @@
 #include "css/utils.h"
 #include "render/font.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -94,18 +94,19 @@ void nsfont_init(void)
 
 	fallback = nsfont_fallback_font();
 
-	nsfont_check_option(&option_font_sans, "Homerton", fallback);
-	nsfont_check_option(&option_font_serif, "Trinity", fallback);
-	nsfont_check_option(&option_font_mono, "Corpus", fallback);
-	nsfont_check_option(&option_font_cursive, "Churchill", fallback);
-	nsfont_check_option(&option_font_fantasy, "Sassoon", fallback);
+	nsfont_check_option(&nsoption_charp(font_sans), "Homerton", fallback);
+	nsfont_check_option(&nsoption_charp(font_serif), "Trinity", fallback);
+	nsfont_check_option(&nsoption_charp(font_mono), "Corpus", fallback);
+	nsfont_check_option(&nsoption_charp(font_cursive), "Churchill", fallback);
+	nsfont_check_option(&nsoption_charp(font_fantasy), "Sassoon", fallback);
 
-	if (option_font_default != PLOT_FONT_FAMILY_SANS_SERIF &&
-			option_font_default != PLOT_FONT_FAMILY_SERIF &&
-			option_font_default != PLOT_FONT_FAMILY_MONOSPACE &&
-			option_font_default != PLOT_FONT_FAMILY_CURSIVE &&
-			option_font_default != PLOT_FONT_FAMILY_FANTASY)
-		option_font_default = PLOT_FONT_FAMILY_SANS_SERIF;
+	if (nsoption_int(font_default) != PLOT_FONT_FAMILY_SANS_SERIF &&
+            nsoption_int(font_default) != PLOT_FONT_FAMILY_SERIF &&
+            nsoption_int(font_default) != PLOT_FONT_FAMILY_MONOSPACE &&
+            nsoption_int(font_default) != PLOT_FONT_FAMILY_CURSIVE &&
+            nsoption_int(font_default) != PLOT_FONT_FAMILY_FANTASY) {
+            nsoption_set_int(font_default, PLOT_FONT_FAMILY_SANS_SERIF);
+        }
 }
 
 
@@ -447,22 +448,22 @@ void nsfont_read_style(const plot_font_style_t *fstyle,
 
 	switch (fstyle->family) {
 	case PLOT_FONT_FAMILY_SANS_SERIF:
-		*font_family = option_font_sans;
+            *font_family = nsoption_charp(font_sans);
 		break;
 	case PLOT_FONT_FAMILY_SERIF:
-		*font_family = option_font_serif;
+            *font_family = nsoption_charp(font_serif);
 		break;
 	case PLOT_FONT_FAMILY_MONOSPACE:
-		*font_family = option_font_mono;
+            *font_family = nsoption_charp(font_mono);
 		break;
 	case PLOT_FONT_FAMILY_CURSIVE:
-		*font_family = option_font_cursive;
+            *font_family = nsoption_charp(font_cursive);
 		break;
 	case PLOT_FONT_FAMILY_FANTASY:
-		*font_family = option_font_fantasy;
+            *font_family = nsoption_charp(font_fantasy);
 		break;
 	default:
-		*font_family = option_font_sans;
+            *font_family = nsoption_charp(font_sans);
 		break;
 	}
 

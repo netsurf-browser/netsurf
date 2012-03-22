@@ -49,7 +49,7 @@
 #include "riscos/gui/url_bar.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/save.h"
 #include "riscos/theme.h"
 #include "riscos/toolbar.h"

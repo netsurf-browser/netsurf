@@ -20,7 +20,7 @@
 #include "amiga/plotters.h"
 #include "render/font.h"
 #include "amiga/gui.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/print.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -255,7 +255,7 @@ void ami_print_ui(struct hlcache_handle *c)
 					GA_RelVerify, TRUE,
 					GA_TabCycle, TRUE,
 					CHOOSER_LabelArray, printers,
-					CHOOSER_Selected, option_printer_unit,
+					CHOOSER_Selected, nsoption_int(printer_unit),
 				ChooserEnd,
 				CHILD_Label, LabelObject,
 					LABEL_Text, gadlab[PGID_PRINTER],
@@ -278,7 +278,7 @@ void ami_print_ui(struct hlcache_handle *c)
 						GA_ID, PGID_SCALE,
 						GA_RelVerify, TRUE,
 						GA_TabCycle, TRUE,
-						INTEGER_Number, option_print_scale,
+						INTEGER_Number, nsoption_int(print_scale),
 						INTEGER_Minimum, 0,
 						INTEGER_Maximum, 100,
 						INTEGER_Arrows, TRUE,
@@ -331,6 +331,8 @@ BOOL ami_print_event(struct ami_print_window *pw)
 	uint16 code;
 	struct hlcache_handle *c;
 	int copies;
+	int print_scale;
+	int printer_unit;
 
 	while((result = RA_HandleInput(pw->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 	{
@@ -341,11 +343,14 @@ BOOL ami_print_event(struct ami_print_window *pw)
 				{
 					case PGID_PRINT:
 						GetAttr(INTEGER_Number, pw->gadgets[PGID_SCALE],
-							(ULONG *)&option_print_scale);
+							(ULONG *)&print_scale);
 						GetAttr(INTEGER_Number, pw->gadgets[PGID_COPIES],
 							(ULONG *)&copies);
 						GetAttr(CHOOSER_Selected, pw->gadgets[PGID_PRINTER],
-							(ULONG *)&option_printer_unit);
+							(ULONG *)&printer_unit);
+
+						nsoption_set_int(print_scale, print_scale);
+						nsoption_set_int(printer_unit, printer_unit);
 
 						c = pw->c;
 						ami_print_close(pw);
@@ -372,7 +377,7 @@ BOOL ami_print_event(struct ami_print_window *pw)
 void ami_print(struct hlcache_handle *c, int copies)
 {
 	double height, print_height;
-	float scale = option_print_scale / 100.0;
+	float scale = nsoption_int(print_scale) / 100.0;
 
 	if(!ami_print_info.msgport) return;
 
@@ -383,7 +388,7 @@ void ami_print(struct hlcache_handle *c, int copies)
 				ASO_NoTrack, FALSE,
 				TAG_DONE))) return;
 
-	if(OpenDevice("printer.device", option_printer_unit,
+	if(OpenDevice("printer.device", nsoption_int(printer_unit),
 			(struct IORequest *)ami_print_info.PReq, 0))
 	{
 		warn_user("CompError","printer.device");

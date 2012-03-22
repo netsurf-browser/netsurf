@@ -51,7 +51,7 @@
 #include "riscos/gui.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
 #include "riscos/save_draw.h"
@@ -337,7 +337,7 @@ bool ro_gui_save_ok(wimp_w w)
 						|| !(pointer.buttons & wimp_CLICK_ADJUST);
 	memcpy(&gui_save_message.data.data_xfer.file_name, path, 1 + strlen(path));
 
-	if (ro_gui_save_content(gui_save_content, path, !option_confirm_overwrite)) {
+	if (ro_gui_save_content(gui_save_content, path, !nsoption_bool(confirm_overwrite))) {
 		ro_gui_save_done();
 		return true;
 	}
@@ -794,7 +794,7 @@ void ro_gui_save_datasave_ack(wimp_message *message)
 	if (message->data.data_xfer.est_size == -1)
 		force_overwrite = true;
 	else
-		force_overwrite = !option_confirm_overwrite;
+		force_overwrite = !nsoption_bool(confirm_overwrite);
 
 	if (ro_gui_save_content(h, path, force_overwrite))
 		ro_gui_save_done();
@@ -1312,7 +1312,7 @@ void ro_gui_save_set_state(hlcache_handle *h, gui_save_type save_type,
 	}
 
 	/* leafname */
-	if (url && url_nice(url, &nice, option_strip_extensions) ==
+	if (url && url_nice(url, &nice, nsoption_bool(strip_extensions)) ==
 			URL_FUNC_OK) {
 		for (i = 0; nice[i]; i++) {
 			if (nice[i] == '.')

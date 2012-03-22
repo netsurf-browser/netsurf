@@ -36,7 +36,7 @@
 #include <workbench/icon.h>
 
 #include "amiga/drag.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/theme.h"
 #include "desktop/searchweb.h"
 #include "utils/messages.h"
@@ -100,17 +100,16 @@ void ami_theme_init(void)
 	char searchico[1024];
 	BPTR lock = 0;
 
-	strcpy(themefile,option_theme);
+	strcpy(themefile,nsoption_charp(theme));
 	AddPart(themefile,"Theme",100);
 
 	lock = Lock(themefile,ACCESS_READ);
 
 	if(!lock)
 	{
-		warn_user("ThemeApplyErr",option_theme);
+		warn_user("ThemeApplyErr",nsoption_charp(theme));
 		strcpy(themefile,"PROGDIR:Resources/Themes/Default/Theme");
-		free(option_theme);
-		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");		
+		nsoption_set_charp(theme, (char *)strdup("PROGDIR:Resources/Themes/Default"));
 	}
 	else
 	{
@@ -194,7 +193,7 @@ void ami_get_theme_filename(char *filename, char *themestring, bool protocol)
 	}
 	else
 	{
-		strcat(filename, option_theme);
+		strcat(filename, nsoption_charp(theme));
 		AddPart(filename, messages_get(themestring), 100);
 	}
 }
@@ -209,7 +208,7 @@ void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
 	if(mouseptrcurrent == shape) return;
 	if(drag_save_data) return;
 
-	if(option_use_os_pointers)
+	if(nsoption_bool(use_os_pointers))
 	{
 		switch(shape)
 		{
@@ -287,7 +286,7 @@ void ami_init_mouse_pointers(void)
 		mouseptrobj[i] = NULL;
 		char ptrfname[1024];
 
-		if(option_truecolour_mouse_pointers)
+		if(nsoption_bool(truecolour_mouse_pointers))
 		{
 			ami_get_theme_filename((char *)&ptrfname,ptrs32[i], false);
 			if(dobj = GetIconTags(ptrfname,ICONGETA_UseFriendBitMap,TRUE,TAG_DONE))
@@ -405,7 +404,7 @@ void gui_window_start_throbber(struct gui_window *g)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
-	if(option_kiosk_mode) return;
+	if(nsoption_bool(kiosk_mode)) return;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 	{
@@ -435,7 +434,7 @@ void gui_window_stop_throbber(struct gui_window *g)
 	ULONG cur_tab = 0;
 
 	if(!g) return;
-	if(option_kiosk_mode) return;
+	if(nsoption_bool(kiosk_mode)) return;
 
 	if(g->tab_node && (g->shared->tabs > 1))
 	{

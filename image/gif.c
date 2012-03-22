@@ -158,14 +158,15 @@ static void nsgif_animate(void *p)
 	/* Continue animating if we should */
 	if (gif->gif->loop_count >= 0) {
 		delay = gif->gif->frames[gif->current_frame].frame_delay;
-		if (delay < option_minimum_gif_delay)
-			delay = option_minimum_gif_delay;
+		if (delay < nsoption_int(minimum_gif_delay))
+			delay = nsoption_int(minimum_gif_delay);
 		schedule(delay, nsgif_animate, gif);
 	}
 
-	if ((!option_animate_images) ||
-			(!gif->gif->frames[gif->current_frame].display))
+	if ((!nsoption_bool(animate_images)) ||
+	    (!gif->gif->frames[gif->current_frame].display)) {
 		return;
+	}
 
 	/* area within gif to redraw */
 	f = gif->current_frame;
@@ -319,8 +320,9 @@ static gif_result nsgif_get_frame(nsgif_content *gif)
 	gif_result res = GIF_OK;
 
 	current_frame = gif->current_frame;
-	if (!option_animate_images)
+	if (!nsoption_bool(animate_images)) {
 		current_frame = 0;
+	}
 
 	if (current_frame < gif->gif->decoded_frame)
 		previous_frame = 0;

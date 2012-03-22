@@ -34,7 +34,6 @@
 #include "desktop/selection.h"
 #include "gtk/compat.h"
 #include "gtk/gui.h"
-#include "gtk/options.h"
 #include "gtk/scaffolding.h"
 #include "gtk/plotters.h"
 #include "gtk/schedule.h"
@@ -507,8 +506,9 @@ static gboolean nsgtk_window_size_allocate_event(GtkWidget *widget,
 		/* TODO: Probably want to detect when the user adjusts the
 		 *       status bar width, remember that proportion for the
 		 *       window, and use that here. */
-		gtk_paned_set_position(g->paned, (option_toolbar_status_width *
-				allocation->width) / 10000);
+		gtk_paned_set_position(g->paned, 
+				       (nsoption_int(toolbar_status_width) *
+					allocation->width) / 10000);
 	}
 
 	return TRUE;
@@ -533,10 +533,11 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	g->paned = NULL;
 	g->mouse.state = 0;
 	g->current_pointer = GUI_POINTER_DEFAULT;
-	if (clone != NULL)
+	if (clone != NULL) {
 		bw->scale = clone->scale;
-	else
-		bw->scale = (float) option_scale / 100;
+	} else {
+		bw->scale = (float) nsoption_int(scale) / 100.0;
+	}
 
 	g->careth = 0;
 
@@ -582,7 +583,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	bool tempback = true;
 	switch (temp_open_background) {
 	case -1:
-		tempback = !(option_focus_new);
+		tempback = !(nsoption_bool(focus_new));
 		break;
 	case 0:
 		tempback = false;

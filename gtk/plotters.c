@@ -38,7 +38,6 @@
 #include "gtk/scaffolding.h"
 #include "render/font.h"
 #include "desktop/options.h"
-#include "gtk/options.h"
 #include "gtk/bitmap.h"
 
 GtkWidget *current_widget;

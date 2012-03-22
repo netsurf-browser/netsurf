@@ -30,7 +30,7 @@
 #include "utils/log.h"
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
 #include "riscos/wimp.h"
@@ -105,7 +105,7 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 
 	/* we must have a toolbar/url bar */
 	if (!ro_toolbar_get_display_url(toolbar) ||
-			(!option_url_suggestion)) {
+	    (!nsoption_bool(url_suggestion))) {
 		ro_gui_url_complete_close();
 		return false;
 	}

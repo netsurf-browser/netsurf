@@ -329,7 +329,7 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 	/* Grab parent size, defaulting to medium if none */
 	if (parent == NULL) {
 		parent_size.value = FDIV(FMUL(factors[CSS_FONT_SIZE_MEDIUM - 1],
-					      INTTOFIX(option_font_size)), 
+					      INTTOFIX(nsoption_int(font_size))), 
 					 INTTOFIX(10));
 		parent_size.unit = CSS_UNIT_PT;
 	} else {
@@ -346,7 +346,7 @@ css_error nscss_compute_font_size(void *pw, const css_hint *parent,
 	if (size->status < CSS_FONT_SIZE_LARGER) {
 		/* Keyword -- simple */
 		size->data.length.value = FDIV(FMUL(factors[size->status - 1],
-						    INTTOFIX(option_font_size)), 
+						    INTTOFIX(nsoption_int(font_size))), 
 					       F_10);
 		size->data.length.unit = CSS_UNIT_PT;
 	} else if (size->status == CSS_FONT_SIZE_LARGER) {
@@ -816,8 +816,9 @@ css_error node_has_id(void *pw, void *node,
 
 	*match = false;
 
-	if (p->id != NULL)
+	if (p->id != NULL) {
 		lwc_string_isequal(name, p->id, match);
+	}
 
 	return CSS_OK;
 }
@@ -2192,7 +2193,7 @@ css_error ua_default_for_property(void *pw, uint32_t property, css_hint *hint)
 		hint->status = CSS_COLOR_COLOR;
 	} else if (property == CSS_PROP_FONT_FAMILY) {
 		hint->data.strings = NULL;
-		switch (option_font_default) {
+		switch (nsoption_int(font_default)) {
 		case PLOT_FONT_FAMILY_SANS_SERIF:
 			hint->status = CSS_FONT_FAMILY_SANS_SERIF;
 			break;
@@ -2643,7 +2644,7 @@ bool parse_font_size(const char *size, uint8_t *val,
 
 	if (value == 7) {
 		/* Manufacture xxx-large */
-		*len = FDIV(FMUL(INTTOFIX(3), INTTOFIX(option_font_size)), 
+	  *len = FDIV(FMUL(INTTOFIX(3), INTTOFIX(nsoption_int(font_size))), 
 				F_10);
 	} else {
 		/* Len is irrelevant */

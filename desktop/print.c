@@ -126,7 +126,7 @@ bool print_draw_next_page(const struct printer *printer,
 	struct content_redraw_data data;
 	struct redraw_context ctx = {
 		.interactive = false,
-		.background_images = !option_remove_backgrounds,
+		.background_images = !nsoption_bool(remove_backgrounds),
 		.plot = printer->plotter
 	};
 
@@ -288,18 +288,18 @@ struct print_settings *print_make_settings(print_configuration configuration,
 			settings->page_height = DEFAULT_PAGE_HEIGHT;
 			settings->copies = DEFAULT_COPIES;
 			
-			settings->scale = (float)option_export_scale / 100;
+			settings->scale = (float)nsoption_int(export_scale) / 100;
 			
-			length = INTTOFIX(option_margin_left);
+			length = INTTOFIX(nsoption_int(margin_left));
 			settings->margins[MARGINLEFT] = 
 					nscss_len2px(length, unit, NULL);
-			length = INTTOFIX(option_margin_right);
+			length = INTTOFIX(nsoption_int(margin_right));
 			settings->margins[MARGINRIGHT] = 
 					nscss_len2px(length, unit, NULL);
-			length = INTTOFIX(option_margin_top);
+			length = INTTOFIX(nsoption_int(margin_top));
 			settings->margins[MARGINTOP] = 
 					nscss_len2px(length, unit, NULL);
-			length = INTTOFIX(option_margin_bottom);
+			length = INTTOFIX(nsoption_int(margin_bottom));
 			settings->margins[MARGINBOTTOM] = 
 					nscss_len2px(length, unit, NULL);
 			break;

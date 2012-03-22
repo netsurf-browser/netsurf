@@ -2252,7 +2252,7 @@ bool html_redraw_inline_background(int x, int y, struct box *box, float scale,
 
 	plot_content = (box->background != NULL);
 
-	if (html_redraw_printing && option_remove_backgrounds)
+	if (html_redraw_printing && nsoption_bool(remove_backgrounds))
 		return true;
 
 	if (plot_content) {

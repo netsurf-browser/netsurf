@@ -13,7 +13,6 @@
 #include "atari/settings.h"
 #include "atari/global_evnt.h"
 #include "atari/misc.h"
-#include "atari/options.h"
 
 extern char options[PATH_MAX];
 
@@ -193,8 +192,8 @@ saveform( WINDOW *win, int index, int unused, void *unused2)
 {
 	apply_settings();
 	// Save settings
-	options_write( (const char*)&options );
-	options_read( (const char*)&options );
+	nsoption_write( (const char*)&options );
+	nsoption_read( (const char*)&options );
 	close_settings();
 	ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 	form_alert(1, "[1][Some options require an netsurf restart!][OK]");
@@ -479,111 +478,111 @@ static void display_settings( void )
 	// read current settings and display them
 
 	/* "Browser" tab: */
-	set_text( CHOICES_EDIT_HOMEPAGE, option_homepage_url,
+	set_text( CHOICES_EDIT_HOMEPAGE, nsoption_charp(homepage_url),
 			INPUT_HOMEPAGE_URL_MAX_LEN );
 
-	if( option_block_ads ){
+	if( nsoption_bool(block_ads) ){
 		OBJ_CHECK( CHOICES_CB_HIDE_ADVERTISEMENT );
 	} else {
 		OBJ_UNCHECK( CHOICES_CB_HIDE_ADVERTISEMENT );
 	}
-	if( option_target_blank ){
+	if( nsoption_bool(target_blank) ){
 		OBJ_UNCHECK( CHOICES_CB_DISABLE_POPUP_WINDOWS );
 	} else {
 		OBJ_CHECK( CHOICES_CB_DISABLE_POPUP_WINDOWS );
 	}
-	if( option_send_referer ){
+	if( nsoption_bool(send_referer) ){
 		OBJ_CHECK( CHOICES_CB_SEND_HTTP_REFERRER );
 	} else {
 		OBJ_UNCHECK( CHOICES_CB_SEND_HTTP_REFERRER );
 	}
 
 	set_text( CHOICES_BT_SEL_LOCALE,
-			option_accept_language ? option_accept_language : (char*)"en",
+		  nsoption_charp(accept_language) ? nsoption_charp(accept_language) : (char*)"en",
 			INPUT_LOCALE_MAX_LEN );
 
-	tmp_option_expire_url = option_expire_url;
-	sprintf( spare, "%02d", option_expire_url );
+	tmp_option_expire_url = nsoption_int(expire_url);
+	sprintf( spare, "%02d", nsoption_int(expire_url) );
 	set_text( CHOICES_EDIT_HISTORY_AGE, spare, 2 );
 
 	/* "Cache" tab: */
-	tmp_option_memory_cache_size = option_memory_cache_size / 100000;
+	tmp_option_memory_cache_size = nsoption_int(memory_cache_size) / 100000;
 	sprintf( spare, "%03.1f", tmp_option_memory_cache_size );
 	set_text( CHOICES_STR_MAX_MEM_CACHE, spare, 5 );
 
 	/* "Paths" tab: */
-	set_text( CHOICES_EDIT_DOWNLOAD_PATH, option_downloads_path,
+	set_text( CHOICES_EDIT_DOWNLOAD_PATH, nsoption_charp(downloads_path),
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_EDIT_HOTLIST_FILE, option_hotlist_file,
+	set_text( CHOICES_EDIT_HOTLIST_FILE, nsoption_charp(hotlist_file),
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_EDIT_CA_BUNDLE, option_ca_bundle,
+	set_text( CHOICES_EDIT_CA_BUNDLE, nsoption_charp(ca_bundle),
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_EDIT_CA_CERTS_PATH, option_ca_path,
+	set_text( CHOICES_EDIT_CA_CERTS_PATH, nsoption_charp(ca_path),
 			LABEL_PATH_MAX_LEN );
-	set_text( CHOICES_EDIT_EDITOR, option_atari_editor,
+	set_text( CHOICES_EDIT_EDITOR, nsoption_charp(atari_editor),
 			LABEL_PATH_MAX_LEN );
 
 	/* "Rendering" tab: */
-	set_text( CHOICES_BT_SEL_FONT_RENDERER, option_atari_font_driver,
+	set_text( CHOICES_BT_SEL_FONT_RENDERER, nsoption_charp(atari_font_driver),
 			LABEL_FONT_RENDERER_MAX_LEN );
 	SET_BIT(dlgtree[CHOICES_CB_TRANSPARENCY].ob_state,
-			SELECTED, option_atari_transparency ? 1 : 0 );
+			SELECTED, nsoption_int(atari_transparency) ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_ENABLE_ANIMATION].ob_state,
-			SELECTED, option_animate_images ? 1 : 0 );
+			SELECTED, nsoption_bool(animate_images) ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_INCREMENTAL_REFLOW].ob_state,
-			SELECTED, option_incremental_reflow ? 1 : 0 );
+			SELECTED, nsoption_bool(incremental_reflow) ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_ANTI_ALIASING].ob_state,
-			SELECTED, option_atari_font_monochrom ? 0 : 1 );
+			SELECTED, nsoption_int(atari_font_monochrom) ? 0 : 1 );
 
-	tmp_option_min_reflow_period = option_min_reflow_period;
+	tmp_option_min_reflow_period = nsoption_int(min_reflow_period);
 	sprintf( spare, "%04d", tmp_option_min_reflow_period );
 	set_text( CHOICES_EDIT_MIN_REFLOW_PERIOD, spare,
 			INPUT_MIN_REFLOW_PERIOD_MAX_LEN );
 
-	tmp_option_minimum_gif_delay = (float)option_minimum_gif_delay / (float)100;
+	tmp_option_minimum_gif_delay = (float)nsoption_int(minimum_gif_delay) / (float)100;
 	sprintf( spare, "%01.1f", tmp_option_minimum_gif_delay );
 	set_text( CHOICES_EDIT_MIN_GIF_DELAY, spare, 3 );
 
 	/* "Network" tab: */
-	set_text( CHOICES_EDIT_PROXY_HOST, option_http_proxy_host,
+	set_text( CHOICES_EDIT_PROXY_HOST, nsoption_charp(http_proxy_host),
 			INPUT_PROXY_HOST_MAX_LEN );
-	sprintf( spare, "%5d", option_http_proxy_port );
+	sprintf( spare, "%5d", nsoption_int(http_proxy_port) );
 	set_text( CHOICES_EDIT_PROXY_PORT, spare,
 			INPUT_PROXY_PORT_MAX_LEN );
 
-	set_text( CHOICES_EDIT_PROXY_USERNAME, option_http_proxy_auth_user,
+	set_text( CHOICES_EDIT_PROXY_USERNAME, nsoption_charp(http_proxy_auth_user),
 			INPUT_PROXY_USERNAME_MAX_LEN );
-	set_text( CHOICES_EDIT_PROXY_PASSWORD, option_http_proxy_auth_pass,
+	set_text( CHOICES_EDIT_PROXY_PASSWORD, nsoption_charp(http_proxy_auth_pass),
 			INPUT_PROXY_PASSWORD_MAX_LEN );
 	SET_BIT(dlgtree[CHOICES_CB_USE_PROXY].ob_state,
-			SELECTED, option_http_proxy ? 1 : 0 );
+			SELECTED, nsoption_bool(http_proxy) ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_PROXY_AUTH].ob_state,
-			SELECTED, option_http_proxy_auth ? 1 : 0 );
+			SELECTED, nsoption_int(http_proxy_auth) ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_FG_IMAGES].ob_state,
-			SELECTED, option_foreground_images ? 1 : 0 );
+			SELECTED, nsoption_bool(foreground_images) ? 1 : 0 );
 	SET_BIT(dlgtree[CHOICES_CB_BG_IMAGES].ob_state,
-			SELECTED, option_background_images ? 1 : 0 );
+			SELECTED, nsoption_bool(background_images) ? 1 : 0 );
 
-	tmp_option_max_cached_fetch_handles = option_max_cached_fetch_handles;
-	sprintf( spare, "%2d", option_max_cached_fetch_handles );
+	tmp_option_max_cached_fetch_handles = nsoption_int(max_cached_fetch_handles);
+	sprintf( spare, "%2d", nsoption_int(max_cached_fetch_handles) );
 	set_text( CHOICES_EDIT_MAX_CACHED_CONNECTIONS, spare , 2 );
 
-	tmp_option_max_fetchers = option_max_fetchers;
-	sprintf( spare, "%2d", option_max_fetchers );
+	tmp_option_max_fetchers = nsoption_int(max_fetchers);
+	sprintf( spare, "%2d", nsoption_int(max_fetchers) );
 	set_text( CHOICES_EDIT_MAX_FETCHERS, spare , 2 );
 
-	tmp_option_max_fetchers_per_host = option_max_fetchers_per_host;
-	sprintf( spare, "%2d", option_max_fetchers_per_host );
+	tmp_option_max_fetchers_per_host = nsoption_int(max_fetchers_per_host);
+	sprintf( spare, "%2d", nsoption_int(max_fetchers_per_host) );
 	set_text( CHOICES_EDIT_MAX_FETCHERS_PER_HOST, spare , 2 );
 
 
 	/* "Style" tab: */
-	tmp_option_font_min_size = option_font_min_size;
-	sprintf( spare, "%3d", option_font_min_size );
+	tmp_option_font_min_size = nsoption_int(font_min_size);
+	sprintf( spare, "%3d", nsoption_int(font_min_size) );
 	set_text( CHOICES_EDIT_MIN_FONT_SIZE, spare , 3 );
 
-	tmp_option_font_size = option_font_size;
-	sprintf( spare, "%3d", option_font_size );
+	tmp_option_font_size = nsoption_int(font_size);
+	sprintf( spare, "%3d", nsoption_int(font_size) );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
 	/* Only first tab is refreshed: */
@@ -595,64 +594,82 @@ static void display_settings( void )
 
 static void apply_settings( void )
 {
-
-
 	/* "Network" tab: */
-	option_http_proxy = OBJ_SELECTED(CHOICES_CB_USE_PROXY);
-	if( OBJ_SELECTED(CHOICES_CB_PROXY_AUTH) )
-		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
-	else
-		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
-	option_http_proxy_auth_pass =
-		ObjcString( dlgtree, CHOICES_EDIT_PROXY_PASSWORD, NULL);
-	option_http_proxy_auth_user =
-		ObjcString( dlgtree, CHOICES_EDIT_PROXY_USERNAME, NULL);
-	option_http_proxy_host =
-		ObjcString( dlgtree, CHOICES_EDIT_PROXY_HOST, NULL);
-	option_http_proxy_port =
-		atoi( ObjcString( dlgtree, CHOICES_EDIT_PROXY_PORT, NULL) );
-	option_max_fetchers_per_host =
-		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS_PER_HOST, NULL));
-	option_max_cached_fetch_handles =
-		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_CACHED_CONNECTIONS, NULL));
-	option_max_fetchers =
-		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS, NULL) );
-	option_foreground_images = OBJ_SELECTED( CHOICES_CB_FG_IMAGES );
-	option_background_images = OBJ_SELECTED( CHOICES_CB_BG_IMAGES );
+	nsoption_set_bool(http_proxy, OBJ_SELECTED(CHOICES_CB_USE_PROXY));
+	if ( OBJ_SELECTED(CHOICES_CB_PROXY_AUTH) ) {
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_BASIC);
+	} else {
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
+	}
+	nsoption_set_charp(http_proxy_auth_pass,
+		ObjcString( dlgtree, CHOICES_EDIT_PROXY_PASSWORD, NULL));
+	nsoption_set_charp(http_proxy_auth_user,
+		ObjcString( dlgtree, CHOICES_EDIT_PROXY_USERNAME, NULL));
+	nsoption_set_charp(http_proxy_host,
+		ObjcString( dlgtree, CHOICES_EDIT_PROXY_HOST, NULL));
+	nsoption_set_int(http_proxy_port,
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_PROXY_PORT, NULL) ));
+	nsoption_set_int(max_fetchers_per_host,
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS_PER_HOST, NULL)));
+	nsoption_set_int(max_cached_fetch_handles,
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_CACHED_CONNECTIONS, NULL)));
+	nsoption_set_int(max_fetchers,
+		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS, NULL) ));
+	nsoption_set_bool(foreground_images,
+			  OBJ_SELECTED( CHOICES_CB_FG_IMAGES ));
+	nsoption_set_bool(background_images, 
+			  OBJ_SELECTED( CHOICES_CB_BG_IMAGES ));
 
 	/* "Style" tab: */
-	option_font_min_size = tmp_option_font_min_size;
-	option_font_size = tmp_option_font_size;
+	nsoption_set_int(font_min_size, tmp_option_font_min_size);
+	nsoption_set_int(font_size, tmp_option_font_size);
 
 	/* "Rendering" tab: */
-	option_atari_font_driver = ObjcString( dlgtree,
-										CHOICES_BT_SEL_FONT_RENDERER, NULL);
-	option_atari_transparency = OBJ_SELECTED(CHOICES_CB_TRANSPARENCY);
-	option_animate_images = OBJ_SELECTED(CHOICES_CB_ENABLE_ANIMATION);
-	option_minimum_gif_delay = (int)(tmp_option_minimum_gif_delay*100+0.5);
-	option_incremental_reflow = OBJ_SELECTED(CHOICES_CB_INCREMENTAL_REFLOW);
-	option_min_reflow_period = tmp_option_min_reflow_period;
-	option_atari_font_monochrom = !OBJ_SELECTED( CHOICES_CB_ANTI_ALIASING );
+	nsoption_set_charp(atari_font_driver,
+		ObjcString( dlgtree, CHOICES_BT_SEL_FONT_RENDERER, NULL));
+	nsoption_set_bool(atari_transparency,
+			  OBJ_SELECTED(CHOICES_CB_TRANSPARENCY));
+	nsoption_set_bool(animate_images,
+			  OBJ_SELECTED(CHOICES_CB_ENABLE_ANIMATION));
+	nsoption_set_int(minimum_gif_delay,
+			 (int)(tmp_option_minimum_gif_delay*100+0.5));
+	nsoption_set_bool(incremental_reflow,
+			  OBJ_SELECTED(CHOICES_CB_INCREMENTAL_REFLOW));
+	nsoption_set_int(min_reflow_period, tmp_option_min_reflow_period);
+	nsoption_set_int(atari_font_monochrom, 
+			 !OBJ_SELECTED( CHOICES_CB_ANTI_ALIASING ));
 
 	/* "Paths" tabs: */
-	option_ca_bundle = ObjcString( dlgtree, CHOICES_EDIT_CA_BUNDLE, NULL);
-	option_ca_path = ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL);
-	option_homepage_url = ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL);
-	option_hotlist_file = ObjcString( dlgtree, CHOICES_EDIT_HOTLIST_FILE, NULL);
-	option_atari_editor = ObjcString( dlgtree, CHOICES_EDIT_EDITOR, NULL);
-	option_downloads_path = ObjcString( dlgtree, CHOICES_EDIT_DOWNLOAD_PATH, NULL);
+	nsoption_set_charp(ca_bundle,
+		ObjcString( dlgtree, CHOICES_EDIT_CA_BUNDLE, NULL));
+	nsoption_set_charp(ca_path, 
+		ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL));
+	nsoption_set_charp(homepage_url, 
+		ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL));
+	nsoption_set_charp(hotlist_file,
+		ObjcString( dlgtree, CHOICES_EDIT_HOTLIST_FILE, NULL));
+	nsoption_set_charp(atari_editor,
+		ObjcString( dlgtree, CHOICES_EDIT_EDITOR, NULL));
+	nsoption_set_charp(downloads_path,
+		ObjcString( dlgtree, CHOICES_EDIT_DOWNLOAD_PATH, NULL));
 
 	/* "Cache" tab: */
-	option_memory_cache_size = tmp_option_memory_cache_size * 100000;
+	nsoption_set_int(memory_cache_size,
+			 tmp_option_memory_cache_size * 100000);
 
 	/* "Browser" tab: */
-	option_target_blank = !OBJ_SELECTED(CHOICES_CB_DISABLE_POPUP_WINDOWS);
-	option_block_ads = OBJ_SELECTED(CHOICES_CB_HIDE_ADVERTISEMENT);
-	option_accept_language = ObjcString( dlgtree, CHOICES_BT_SEL_LOCALE, NULL);
-	option_expire_url = atoi(ObjcString( dlgtree, CHOICES_EDIT_HISTORY_AGE,
-										NULL));
-	option_send_referer = OBJ_SELECTED(CHOICES_CB_SEND_HTTP_REFERRER);
-	option_homepage_url = ObjcString( dlgtree, CHOICES_EDIT_HOMEPAGE, NULL);
+	nsoption_set_bool(target_blank,
+			  !OBJ_SELECTED(CHOICES_CB_DISABLE_POPUP_WINDOWS));
+	nsoption_set_bool(block_ads, 
+			  OBJ_SELECTED(CHOICES_CB_HIDE_ADVERTISEMENT));
+	nsoption_set_charp(accept_language, 
+			   ObjcString( dlgtree, CHOICES_BT_SEL_LOCALE, NULL));
+	nsoption_set_int(expire_url, 
+		atoi(ObjcString( dlgtree, CHOICES_EDIT_HISTORY_AGE, NULL)));
+	nsoption_set_bool(send_referer,
+			  OBJ_SELECTED(CHOICES_CB_SEND_HTTP_REFERRER));
+	nsoption_set_charp(homepage_url,
+			   ObjcString( dlgtree, CHOICES_EDIT_HOMEPAGE, NULL));
 }
 
 #undef OBJ_SELECTED

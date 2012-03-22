@@ -91,8 +91,8 @@ css_fixed nscss_len2px(css_fixed length, css_unit unit,
 		font_size = nscss_len2pt(font_size, font_unit);
 
 		/* Clamp to configured minimum */
-		if (font_size < FDIV(INTTOFIX(option_font_min_size), F_10)) {
-			font_size = FDIV(INTTOFIX(option_font_min_size), F_10);
+		if (font_size < FDIV(INTTOFIX(nsoption_int(font_min_size)), F_10)) {
+		  font_size = FDIV(INTTOFIX(nsoption_int(font_min_size)), F_10);
 		}
 
 		/* Convert to pixels (manually, to maximise precision) 

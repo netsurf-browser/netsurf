@@ -436,8 +436,8 @@ static void gui_init2(int argc, char** argv)
 	CALLED();
 	const char *addr = NETSURF_HOMEPAGE;
 
-	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-		addr = option_homepage_url;
+	if (nsoption_charp(homepage_url) != NULL)
+		addr = nsoption_charp(homepage_url);
 
 	if (argc > 1) addr = argv[1];
 	if (gFirstRefsReceived) addr = NULL;
@@ -544,78 +544,79 @@ void gui_init(int argc, char** argv)
 	find_resource(buf, "Choices", "%/Choices");
 	LOG(("Using '%s' as Preferences file", buf));
 	options_file_location = strdup(buf);
-	options_read(buf);
+	nsoption_read(buf);
 
 
 	/* check what the font settings are, setting them to a default font
 	 * if they're not set - stops Pango whinging
 	 */
-#define SETFONTDEFAULT(x,y) (x) = ((x) != NULL) ? (x) : strdup((y))
+
 	//XXX: use be_plain_font & friends, when we can check if font is serif or not.
 /*
 	font_family family;
 	font_style style;
 	be_plain_font->GetFamilyAndStyle(&family, &style);
-	SETFONTDEFAULT(option_font_sans, family);
-	SETFONTDEFAULT(option_font_serif, family);
-	SETFONTDEFAULT(option_font_mono, family);
-	SETFONTDEFAULT(option_font_cursive, family);
-	SETFONTDEFAULT(option_font_fantasy, family);
+	nsoption_setnull_charp(font_sans, family);
+	nsoption_setnull_charp(font_serif, family);
+	nsoption_setnull_charp(font_mono, family);
+	nsoption_setnull_charp(font_cursive, family);
+	nsoption_setnull_charp(font_fantasy, family);
 */
 #ifdef __HAIKU__
-	SETFONTDEFAULT(option_font_sans, "DejaVu Sans");
-	SETFONTDEFAULT(option_font_serif, "DejaVu Serif");
-	SETFONTDEFAULT(option_font_mono, "DejaVu Mono");
-	SETFONTDEFAULT(option_font_cursive, "DejaVu Sans");
-	SETFONTDEFAULT(option_font_fantasy, "DejaVu Sans");
+	nsoption_setnull_charp(font_sans, "DejaVu Sans");
+	nsoption_setnull_charp(font_serif, "DejaVu Serif");
+	nsoption_setnull_charp(font_mono, "DejaVu Mono");
+	nsoption_setnull_charp(font_cursive, "DejaVu Sans");
+	nsoption_setnull_charp(font_fantasy, "DejaVu Sans");
 #else
-	SETFONTDEFAULT(option_font_sans, "Bitstream Vera Sans");
-	SETFONTDEFAULT(option_font_serif, "Bitstream Vera Serif");
-	SETFONTDEFAULT(option_font_mono, "Bitstream Vera Sans Mono");
-	SETFONTDEFAULT(option_font_cursive, "Bitstream Vera Serif");
-	SETFONTDEFAULT(option_font_fantasy, "Bitstream Vera Serif");
+	nsoption_setnull_charp(font_sans, "Bitstream Vera Sans");
+	nsoption_setnull_charp(font_serif, "Bitstream Vera Serif");
+	nsoption_setnull_charp(font_mono, "Bitstream Vera Sans Mono");
+	nsoption_setnull_charp(font_cursive, "Bitstream Vera Serif");
+	nsoption_setnull_charp(font_fantasy, "Bitstream Vera Serif");
 #if 0
-	SETFONTDEFAULT(option_font_sans, "Swis721 BT");
-	SETFONTDEFAULT(option_font_serif, "Dutch801 Rm BT");
-	//SETFONTDEFAULT(option_font_mono, "Monospac821 BT");
-	SETFONTDEFAULT(option_font_mono, "Courier10 BT");
-	SETFONTDEFAULT(option_font_cursive, "Swis721 BT");
-	SETFONTDEFAULT(option_font_fantasy, "Swis721 BT");
+	nsoption_setnull_charp(font_sans, "Swis721 BT");
+	nsoption_setnull_charp(font_serif, "Dutch801 Rm BT");
+	//nsoption_setnull_charp(font_mono, "Monospac821 BT");
+	nsoption_setnull_charp(font_mono, "Courier10 BT");
+	nsoption_setnull_charp(font_cursive, "Swis721 BT");
+	nsoption_setnull_charp(font_fantasy, "Swis721 BT");
 #endif
 #endif
 
 	nsbeos_options_init();
 
-	if (!option_cookie_file) {
+	if (nsoption_charp(cookie_file) == NULL) {
 		find_resource(buf, "Cookies", "%/Cookies");
 		LOG(("Using '%s' as Cookies file", buf));
-		option_cookie_file = strdup(buf);
+		nsoption_set_charp(cookie_file, strdup(buf));
 	}
-	if (!option_cookie_jar) {
+	if (nsoption_charp(cookie_jar) == NULL) {
 		find_resource(buf, "Cookies", "%/Cookies");
 		LOG(("Using '%s' as Cookie Jar file", buf));
-		option_cookie_jar = strdup(buf);
+		nsoption_set_charp(cookie_jar, strdup(buf));
 	}
-	if (!option_cookie_file || !option_cookie_jar)
+	if ((nsoption_charp(cookie_file) == NULL) || 
+	    (nsoption_charp(cookie_jar) == NULL))
 		die("Failed initialising cookie options");
 
-	if (!option_url_file) {
+	if (nsoption_charp(url_file) == NULL) {
 		find_resource(buf, "URLs", "%/URLs");
 		LOG(("Using '%s' as URL file", buf));
-		option_url_file = strdup(buf);
+		onsption_set_charp(url_file, strdup(buf));
 	}
 
-        if (!option_ca_path) {
+        if (nsoption_charp(ca_path) == NULL) {
                 find_resource(buf, "certs", "/etc/ssl/certs");
                 LOG(("Using '%s' as certificate path", buf));
-                option_ca_path = strdup(buf);
+                nsoption_set_charp(ca_path, strdup(buf));
         }
 
 	//find_resource(buf, "mime.types", "/etc/mime.types");
 	beos_fetch_filetype_init();
 
-	urldb_load(option_url_file);
-	urldb_load_cookies(option_cookie_file);
+	urldb_load(nsoption_charp(url_file));
+	urldb_load_cookies(nsoption_charp(cookie_file));
 
 	//nsbeos_download_initialise();
 
@@ -736,12 +737,12 @@ void gui_poll(bool active)
 void gui_quit(void)
 {
 	CALLED();
-	urldb_save_cookies(option_cookie_jar);
-	urldb_save(option_url_file);
-	//options_save_tree(hotlist,option_hotlist_file,messages_get("TreeHotlist"));
+	urldb_save_cookies(nsoption_charp(cookie_jar));
+	urldb_save(nsoption_charp(url_file));
+	//options_save_tree(hotlist,nsoption_charp(hotlist_file),messages_get("TreeHotlist"));
 
-	free(option_cookie_file);
-	free(option_cookie_jar);
+	free(nsoption_charp(cookie_file));
+	free(nsoption_charp(cookie_jar));
 	beos_fetch_filetype_fin();
 	fetch_rsrc_unregister();
 }

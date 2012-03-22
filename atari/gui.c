@@ -56,7 +56,6 @@
 #include "utils/utils.h"
 
 #include "atari/gui.h"
-#include "atari/options.h"
 #include "atari/misc.h"
 #include "atari/findfile.h"
 #include "atari/schedule.h"
@@ -824,8 +823,8 @@ void gui_quit(void)
 
 	hotlist_destroy();
 
-	urldb_save_cookies(option_cookie_file);
-	urldb_save(option_url_file);
+	urldb_save_cookies(nsoption_charp(cookie_file));
+	urldb_save(nsoption_charp(url_file));
 
 	RsrcXtype( 0, rsc_trindex, rsc_ntree);
 	unbind_global_events();
@@ -852,9 +851,9 @@ process_cmdline(int argc, char** argv)
 
 	LOG(("argc %d, argv %p", argc, argv));
 
-	if ((option_window_width != 0) && (option_window_height != 0)) {
-		cfg_width = option_window_width;
-		cfg_height = option_window_height;
+	if ((nsoption_int(window_width) != 0) && (nsoption_int(window_height) != 0)) {
+		cfg_width = nsoption_int(window_width);
+		cfg_height = nsoption_int(window_height);
 	} else {
 		if( sys_type() == SYS_TOS ){
 			/* on single tasking OS, start as fulled window: */
@@ -866,8 +865,8 @@ process_cmdline(int argc, char** argv)
 		}
 	}
 
-	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-		cfg_homepage_url = option_homepage_url;
+	if (nsoption_charp(homepage_url) != NULL)
+		cfg_homepage_url = nsoption_charp(homepage_url);
 	else
 		cfg_homepage_url = NETSURF_HOMEPAGE;
 
@@ -964,21 +963,21 @@ static void gui_init(int argc, char** argv)
 		cursors, &gem_cursors.help);
 
 	LOG(("Enabling core select menu"));
-	option_core_select_menu = true;
+	nsoption_set_bool(core_select_menu, true);
 
-	if( strlen(option_url_file) ){
-		urldb_load(option_url_file);
+	if( strlen(nsoption_charp(url_file)) ){
+		urldb_load(nsoption_charp(url_file));
 	}
-	if( strlen(option_cookie_file) ){
-		urldb_load_cookies(option_cookie_file);
-		LOG(("Loading cookies from: %s", option_cookie_file ));
+	if( strlen(nsoption_charp(cookie_file)) ){
+		urldb_load_cookies(nsoption_charp(cookie_file));
+		LOG(("Loading cookies from: %s", nsoption_charp(cookie_file) ));
 	}
 
 	if (process_cmdline(argc,argv) != true)
 		die("unable to process command line.\n");
 
 	nkc_init();
-	atari_plotter_init( option_atari_screen_driver, option_atari_font_driver );
+	atari_plotter_init( nsoption_charp(atari_screen_driver), nsoption_charp(atari_font_driver) );
 }
 
 static char *theapp = (char*)"NetSurf";
@@ -990,7 +989,7 @@ static void gui_init2(int argc, char** argv)
 	if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
- 	tree_set_icon_dir( option_tree_icons_path );
+	tree_set_icon_dir( nsoption_charp(tree_icons_path) );
 	hotlist_init();
 }
 

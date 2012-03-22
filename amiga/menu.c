@@ -50,7 +50,7 @@
 #include "amiga/history_local.h"
 #include "amiga/hotlist.h"
 #include "amiga/menu.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/print.h"
 #include "amiga/search.h"
 #include "amiga/theme.h"
@@ -300,8 +300,8 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 	ami_menu_arexx_scan(gwin);
 
 /*	Set up scheduler to refresh the hotlist menu */
-	if(option_menu_refresh > 0)
-		schedule(option_menu_refresh, (void *)ami_menu_refresh, gwin);
+	if(nsoption_int(menu_refresh) > 0)
+		schedule(nsoption_int(menu_refresh), (void *)ami_menu_refresh, gwin);
 
 	return(gwin->menu);
 }
@@ -316,7 +316,7 @@ void ami_menu_arexx_scan(struct gui_window_2 *gwin)
 	LONG cont;
 	struct ExAllData *ead;
 
-	if(lock = Lock(option_arexx_dir,SHARED_LOCK))
+	if(lock = Lock(nsoption_charp(arexx_dir), SHARED_LOCK))
 	{
 		if(buffer = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
 		{
@@ -457,11 +457,11 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 			switch(itemnum)
 			{
 				case 0: // new window
-					bw = browser_window_create(option_homepage_url, NULL, 0, true, false);
+					bw = browser_window_create(nsoption_charp(homepage_url), NULL, 0, true, false);
 				break;
 
 				case 1: // new tab
-					bw = browser_window_create(option_homepage_url, gwin->bw, 0, true, true);
+					bw = browser_window_create(nsoption_charp(homepage_url), gwin->bw, 0, true, true);
 				break;
 
 				case 3: // open local file
@@ -680,14 +680,14 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				break;
 
 				case 2: // snapshot
-					option_window_x = gwin->win->LeftEdge;
-					option_window_y = gwin->win->TopEdge;
-					option_window_width = gwin->win->Width;
-					option_window_height = gwin->win->Height;
+					nsoption_set_int(window_x, gwin->win->LeftEdge);
+					nsoption_set_int(window_y, gwin->win->TopEdge);
+					nsoption_set_int(window_width, gwin->win->Width);
+					nsoption_set_int(window_height, gwin->win->Height);
 				break;
 
 				case 3: // save settings
-					options_write("PROGDIR:Resources/Options");
+					nsoption_write("PROGDIR:Resources/Options");
 				break;
 			}
 		break;
@@ -700,7 +700,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 						ASLFR_TitleText,messages_get("NetSurf"),
 						ASLFR_Screen,scrn,
 						ASLFR_DoSaveMode,FALSE,
-						ASLFR_InitialDrawer,option_arexx_dir,
+						ASLFR_InitialDrawer,nsoption_charp(arexx_dir),
 						ASLFR_InitialPattern,"#?.nsrx",
 						TAG_DONE))
 					{
@@ -719,7 +719,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 					{
 						if(temp = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR))
 						{
-							strcpy(temp,option_arexx_dir);
+							strcpy(temp,nsoption_charp(arexx_dir));
 							AddPart(temp,GTMENUITEM_USERDATA(item),1024);
 							ami_arexx_execute(temp);
 							FreeVec(temp);
@@ -735,7 +735,7 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 {
 	struct Window *win = g->shared->win;
 
-	if(option_kiosk_mode == true) return;
+	if(nsoption_bool(kiosk_mode) == true) return;
 
 	OffMenu(win,AMI_MENU_CUT);
 	OffMenu(win,AMI_MENU_COPY);

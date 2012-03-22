@@ -28,7 +28,7 @@
 #include "desktop/browser.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/theme.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -198,7 +198,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 
 	/* simply overwrite previous theme versions */
 	snprintf(theme_save, sizeof theme_save, "%s.%s",
-			option_theme_save, theme_file);
+                 nsoption_charp(theme_save), theme_file);
 
 	theme_save[sizeof theme_save - 1] = '\0';
 
@@ -222,8 +222,7 @@ bool ro_gui_theme_install_apply(wimp_w w)
 	if (!theme_install || !ro_gui_theme_apply(theme_install)) {
 		warn_user("ThemeApplyErr", 0);
 	} else {
-		free(option_theme);
-		option_theme = strdup(theme_install->leafname);
+            nsoption_set_charp(theme, strdup(theme_install->leafname));
 	}
 	free(theme_file);
 	ro_gui_save_options();

@@ -85,189 +85,189 @@ static struct gui_system_colour_ctx colour_list[] = {
 		"ActiveBorder", 
 		SLEN("ActiveBorder"), 
 		0xff000000, 
-		&option_sys_colour_ActiveBorder, 
+		&nsoption_colour(sys_colour_ActiveBorder), 
 		NULL, 
 		NOCOL
 	}, { 
 		"ActiveCaption", 
 		SLEN("ActiveCaption"), 
 		0xffdddddd, 
-		&option_sys_colour_ActiveCaption, 
+		&nsoption_colour(sys_colour_ActiveCaption), 
 		NULL, 
 		B_WINDOW_TAB_COLOR
 	}, { 
 		"AppWorkspace", 
 		SLEN("AppWorkspace"), 
 		0xffeeeeee, 
-		&option_sys_colour_AppWorkspace, 
+		&nsoption_colour(sys_colour_AppWorkspace), 
 		NULL, 
 		B_PANEL_BACKGROUND_COLOR
 	}, { 
 		"Background", 
 		SLEN("Background"), 
 		0xff0000aa, 
-		&option_sys_colour_Background, 
+		&nsoption_colour(sys_colour_Background), 
 		NULL, 
 		B_DESKTOP_COLOR
 	}, {
 		"ButtonFace", 
 		SLEN("ButtonFace"), 
 		0xffaaaaaa, 
-		&option_sys_colour_ButtonFace, 
+		&nsoption_colour(sys_colour_ButtonFace), 
 		NULL, 
 		B_CONTROL_BACKGROUND_COLOR
 	}, {
 		"ButtonHighlight", 
 		SLEN("ButtonHighlight"), 
 		0xffdddddd, 
-		&option_sys_colour_ButtonHighlight, 
+		&nsoption_colour(sys_colour_ButtonHighlight), 
 		NULL, 
 		B_CONTROL_HIGHLIGHT_COLOR
 	}, {
 		"ButtonShadow", 
 		SLEN("ButtonShadow"), 
 		0xffbbbbbb, 
-		&option_sys_colour_ButtonShadow, 
+		&nsoption_colour(sys_colour_ButtonShadow), 
 		NULL, 
 		NOCOL
 	}, {
 		"ButtonText", 
 		SLEN("ButtonText"), 
 		0xff000000, 
-		&option_sys_colour_ButtonText, 
+		&nsoption_colour(sys_colour_ButtonText), 
 		NULL, 
 		B_CONTROL_TEXT_COLOR
 	}, {
 		"CaptionText", 
 		SLEN("CaptionText"), 
 		0xff000000, 
-		&option_sys_colour_CaptionText, 
+		&nsoption_colour(sys_colour_CaptionText), 
 		NULL, 
 		NOCOL
 	}, {
 		"GrayText", 
 		SLEN("GrayText"), 
 		0xffcccccc, 
-		&option_sys_colour_GrayText, 
+		&nsoption_colour(sys_colour_GrayText), 
 		NULL, 
 		NOCOL
 	}, {
 		"Highlight", 
 		SLEN("Highlight"), 
 		0xff0000ee, 
-		&option_sys_colour_Highlight, 
+		&nsoption_colour(sys_colour_Highlight), 
 		NULL, 
 		NOCOL
 	}, {
 		"HighlightText", 
 		SLEN("HighlightText"), 
 		0xff000000, 
-		&option_sys_colour_HighlightText, 
+		&nsoption_colour(sys_colour_HighlightText), 
 		NULL, 
 		NOCOL
 	}, {
 		"InactiveBorder", 
 		SLEN("InactiveBorder"), 
 		0xffffffff, 
-		&option_sys_colour_InactiveBorder, 
+		&nsoption_colour(sys_colour_InactiveBorder), 
 		NULL, 
 		NOCOL
 	}, {
 		"InactiveCaption", 
 		SLEN("InactiveCaption"), 
 		0xffffffff, 
-		&option_sys_colour_InactiveCaption, 
+		&nsoption_colour(sys_colour_InactiveCaption), 
 		NULL, 
 		NOCOL
 	}, {
 		"InactiveCaptionText", 
 		SLEN("InactiveCaptionText"), 
 		0xffcccccc, 
-		&option_sys_colour_InactiveCaptionText, 
+		&nsoption_colour(sys_colour_InactiveCaptionText), 
 		NULL, 
 		NOCOL
 	}, {
 		"InfoBackground", 
 		SLEN("InfoBackground"), 
 		0xffaaaaaa, 
-		&option_sys_colour_InfoBackground, 
+		&nsoption_colour(sys_colour_InfoBackground), 
 		NULL, 
 		B_TOOLTIP_BACKGROUND_COLOR
 	}, {
 		"InfoText", 
 		SLEN("InfoText"), 
 		0xff000000, 
-		&option_sys_colour_InfoText, 
+		&nsoption_colour(sys_colour_InfoText), 
 		NULL, 
 		B_TOOLTIP_TEXT_COLOR
 	}, {
 		"Menu", 
 		SLEN("Menu"), 
 		0xffaaaaaa, 
-		&option_sys_colour_Menu, 
+		&nsoption_colour(sys_colour_Menu), 
 		NULL, 
 		B_MENU_BACKGROUND_COLOR
 	}, {
 		"MenuText", 
 		SLEN("MenuText"), 
 		0xff000000, 
-		&option_sys_colour_MenuText, 
+		&nsoption_colour(sys_colour_MenuText), 
 		NULL, 
 		B_MENU_ITEM_TEXT_COLOR
 	}, {
 		"Scrollbar", 
 		SLEN("Scrollbar"), 
 		0xffaaaaaa, 
-		&option_sys_colour_Scrollbar, 
+		&nsoption_colour(sys_colour_Scrollbar), 
 		NULL, 
 		NOCOL
 	}, {
 		"ThreeDDarkShadow", 
 		SLEN("ThreeDDarkShadow"), 
 		0xff555555, 
-		&option_sys_colour_ThreeDDarkShadow, 
+		&nsoption_colour(sys_colour_ThreeDDarkShadow), 
 		NULL, 
 		NOCOL
 	}, {
 		"ThreeDFace", 
 		SLEN("ThreeDFace"), 
 		0xffdddddd, 
-		&option_sys_colour_ThreeDFace, 
+		&nsoption_colour(sys_colour_ThreeDFace), 
 		NULL, 
 		NOCOL
 	}, {
 		"ThreeDHighlight", 
 		SLEN("ThreeDHighlight"), 
 		0xffaaaaaa, 
-		&option_sys_colour_ThreeDHighlight, 
+		&nsoption_colour(sys_colour_ThreeDHighlight), 
 		NULL, 
 		NOCOL
 	}, {
 		"ThreeDLightShadow", 
 		SLEN("ThreeDLightShadow"), 
 		0xff999999, 
-		&option_sys_colour_ThreeDLightShadow, 
+		&nsoption_colour(sys_colour_ThreeDLightShadow), 
 		NULL, 
 		NOCOL
 	}, {
 		"ThreeDShadow", 
 		SLEN("ThreeDShadow"), 
 		0xff777777, 
-		&option_sys_colour_ThreeDShadow, 
+		&nsoption_colour(sys_colour_ThreeDShadow), 
 		NULL, 
 		NOCOL
 	}, {
 		"Window", 
 		SLEN("Window"), 
 		0xffaaaaaa, 
-		&option_sys_colour_Window, 
+		&nsoption_colour(sys_colour_Window), 
 		NULL, 
 		B_DOCUMENT_BACKGROUND_COLOR
 	}, {
 		"WindowFrame", 
 		SLEN("WindowFrame"), 
 		0xff000000, 
-		&option_sys_colour_WindowFrame, 
+		&nsoption_colour(sys_colour_WindowFrame), 
 		NULL, 
 		NOCOL
 	}, {
@@ -275,7 +275,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 		"WindowText", 
 		SLEN("WindowText"), 
 		0xff000000, 
-		&option_sys_colour_WindowText, 
+		&nsoption_colour(sys_colour_WindowText), 
 		NULL, 
 		B_DOCUMENT_TEXT_COLOR
 	},

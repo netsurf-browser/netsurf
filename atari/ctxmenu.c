@@ -44,7 +44,7 @@
 #include "atari/browser_win.h"
 #include "atari/misc.h"
 #include "atari/clipboard.h"
-#include "atari/options.h"
+#include "desktop/options.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/ctxmenu.h"
 
@@ -245,7 +245,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 		break;
 
 		case POP_CTX_VIEW_SOURCE:
-			if( option_atari_editor != NULL ) {
+			if( nsoption_charp(atari_editor) != NULL ) {
 				data = content_get_source_data( gw->browser->bw->current_content, &size );
 				if( size > 0 && data != NULL ){
 					tempfile = tmpnam( NULL );
@@ -255,11 +255,12 @@ void context_popup( struct gui_window * gw, short x, short y )
 						fclose( fp_tmpfile );
 
 						// TODO: check if app is runnin, if not, use pexec or such.
-						/*sprintf((char*)&cmdline, "%s \"%s\"", option_atari_editor, tempfile );
-						system( (char*)&cmdline );
+						/*
+						  sprintf((char*)&cmdline, "%s \"%s\"", nsoption_charp(atari_editor), tempfile );
+						  system( (char*)&cmdline );
 						*/
-						err = ShelWrite( option_atari_editor, tempfile , option_atari_editor, 1, 0);
-						LOG(("Launched: %s %s (%d)\n", option_atari_editor, tempfile, err ));
+						err = ShelWrite( nsoption_charp(atari_editor), tempfile , nsoption_charp(atari_editor), 1, 0);
+						LOG(("Launched: %s %s (%d)\n", nsoption_charp(atari_editor), tempfile, err ));
 					} else {
 						printf("Could not open temp file: %s!\n", tempfile );
 					}

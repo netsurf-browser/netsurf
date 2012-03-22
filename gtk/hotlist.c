@@ -23,7 +23,6 @@
 #include "desktop/tree.h"
 #include "gtk/gui.h"
 #include "gtk/hotlist.h"
-#include "gtk/options.h"
 #include "gtk/plotters.h"
 #include "gtk/scaffolding.h"
 #include "gtk/treeview.h"
@@ -131,7 +130,7 @@ bool nsgtk_hotlist_init(const char *glade_file_location)
 	CONNECT(window, "hide", nsgtk_tree_window_hide, hotlist_window);
 	
 	hotlist_initialise(nsgtk_treeview_get_tree(hotlist_window),
-			   option_hotlist_path, 
+			   nsoption_charp(hotlist_path), 
 			   tree_directory_icon_name);
 		
 	nsgtk_hotlist_init_menu();
@@ -163,7 +162,7 @@ void nsgtk_hotlist_init_menu(void)
 void nsgtk_hotlist_destroy(void)
 {
 	/* TODO: what about gladeFile? */
-	hotlist_cleanup(option_hotlist_path);
+	hotlist_cleanup(nsoption_charp(hotlist_path));
 	nsgtk_treeview_destroy(hotlist_window);
 }
 

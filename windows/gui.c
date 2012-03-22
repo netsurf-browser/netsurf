@@ -832,7 +832,7 @@ nsws_window_command(HWND hwnd,
 		break;
 
 	case IDM_NAV_HOME:
-		browser_window_go(gw->bw, option_homepage_url, 0, true);
+		browser_window_go(gw->bw, nsoption_charp(homepage_url), 0, true);
 		break;
 
 	case IDM_NAV_STOP:
@@ -893,11 +893,11 @@ nsws_window_command(HWND hwnd,
 	case IDM_VIEW_SAVE_WIN_METRICS: {
 		RECT r;
 		GetWindowRect(gw->main, &r);
-		option_window_x = r.left;
-		option_window_y = r.top;
-		option_window_width = r.right - r.left;
-		option_window_height = r.bottom - r.top;
-		options_write(options_file_location);
+		nsoption_set_int(window_x, r.left);
+		nsoption_set_int(window_y, r.top);
+		nsoption_set_int(window_width, r.right - r.left);
+		nsoption_set_int(window_height, r.bottom - r.top);
+		nsoption_write(options_file_location);
 		break;
 	}
 
@@ -1140,16 +1140,16 @@ static HWND nsws_window_create(struct gui_window *gw)
 
 	nscss_screen_dpi = get_window_dpi(hwnd);
 
-	if ((option_window_width >= 100) &&
-	    (option_window_height >= 100) &&
-	    (option_window_x >= 0) &&
-	    (option_window_y >= 0)) {
+	if ((nsoption_int(window_width) >= 100) &&
+	    (nsoption_int(window_height) >= 100) &&
+	    (nsoption_int(window_x) >= 0) &&
+	    (nsoption_int(window_y) >= 0)) {
 		LOG(("Setting Window position %d,%d %d,%d",
-		     option_window_x, option_window_y,
-		     option_window_width, option_window_height));
+		     nsoption_int(window_x), nsoption_int(window_y),
+		     nsoption_int(window_width), nsoption_int(window_height)));
 		SetWindowPos(hwnd, HWND_TOP,
-			     option_window_x, option_window_y,
-			     option_window_width, option_window_height,
+			     nsoption_int(window_x), nsoption_int(window_y),
+			     nsoption_int(window_width), nsoption_int(window_height),
 			     SWP_SHOWWINDOW);
 	}
 

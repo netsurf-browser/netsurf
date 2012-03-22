@@ -53,7 +53,6 @@
 #include "framebuffer/findfile.h"
 #include "framebuffer/image_data.h"
 #include "framebuffer/font.h"
-#include "framebuffer/options.h"
 
 #include "content/urldb.h"
 #include "desktop/history_core.h"
@@ -388,19 +387,21 @@ process_cmdline(int argc, char** argv)
 	fename = "sdl";
 	febpp = 32;
 
-	if ((option_window_width != 0) && (option_window_height != 0)) {
-		fewidth = option_window_width;
-		feheight = option_window_height;
+	if ((nsoption_int(window_width) != 0) && 
+	    (nsoption_int(window_height) != 0)) {
+		fewidth = nsoption_int(window_width);
+		feheight = nsoption_int(window_height);
 	} else {
 		fewidth = 800;
 		feheight = 600;
 	}
 
-	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-		feurl = option_homepage_url;
-	else
+	if ((nsoption_charp(homepage_url) != NULL) && 
+	    (nsoption_charp(homepage_url)[0] != '\0')) {
+		feurl = nsoption_charp(homepage_url);
+	} else {
 		feurl = NETSURF_HOMEPAGE;
-
+	}
 
 	while((opt = getopt(argc, argv, "f:b:w:h:")) != -1) {
 		switch (opt) {
@@ -440,19 +441,19 @@ gui_init(int argc, char** argv)
 {
 	nsfb_t *nsfb;
 
-	option_core_select_menu = true;
+	nsoption_set_bool(core_select_menu, true);
 
-	if (option_cookie_file == NULL) {
-		option_cookie_file = strdup("~/.netsurf/Cookies");
-		LOG(("Using '%s' as Cookies file", option_cookie_file));
+	if (nsoption_charp(cookie_file) == NULL) {
+		nsoption_set_charp(cookie_file, strdup("~/.netsurf/Cookies"));
+		LOG(("Using '%s' as Cookies file", nsoption_charp(cookie_file)));
 	}
 
-	if (option_cookie_jar == NULL) {
-		option_cookie_jar = strdup("~/.netsurf/Cookies");
-		LOG(("Using '%s' as Cookie Jar file", option_cookie_jar));
+	if (nsoption_charp(cookie_jar) == NULL) {
+		nsoption_set_charp(cookie_jar, strdup("~/.netsurf/Cookies"));
+		LOG(("Using '%s' as Cookie Jar file", nsoption_charp(cookie_jar)));
 	}
 
-	if (option_cookie_file == NULL || option_cookie_jar == NULL)
+	if (nsoption_charp(cookie_file) == NULL || nsoption_charp(cookie_jar == NULL))
 		die("Failed initialising cookie options");
 
 	if (process_cmdline(argc,argv) != true)
@@ -471,7 +472,7 @@ gui_init(int argc, char** argv)
 
 	fbtk_enable_oskb(fbtk);
 
-	urldb_load_cookies(option_cookie_file);
+	urldb_load_cookies(nsoption_charp(cookie_file));
 }
 
 /** Entry point from OS.
@@ -546,7 +547,7 @@ gui_quit(void)
 {
 	LOG(("gui_quit"));
 
-	urldb_save_cookies(option_cookie_jar);
+	urldb_save_cookies(nsoption_charp(cookie_jar));
 
 	framebuffer_finalise();
 }
@@ -1150,13 +1151,13 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 	fbtk_widget_t *widget;
 	fbtk_widget_t *toolbar;
 	int statusbar_width = 0;
-	int toolbar_height = option_fb_toolbar_size;
+	int toolbar_height = nsoption_int(fb_toolbar_size);
 
 	LOG(("Normal window"));
 
 	gw->window = fbtk_create_window(fbtk, 0, 0, 0, 0, 0);
 
-	statusbar_width = option_toolbar_status_width *
+	statusbar_width = nsoption_int(toolbar_status_width) *
 		fbtk_get_width(gw->window) / 10000;
 
 	/* toolbar */
@@ -1164,7 +1165,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 				 toolbar_height, 
 				 2, 
 				 FB_FRAME_COLOUR, 
-				 option_fb_toolbar_layout);
+				 nsoption_charp(fb_toolbar_layout));
 
 	/* set the actually created toolbar height */
 	if (toolbar != NULL) {
@@ -1197,7 +1198,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 
 	/* fill bottom right area */
 
-	if (option_fb_osk == true) {
+	if (nsoption_bool(fb_osk) == true) {
 		widget = fbtk_create_text_button(gw->window,
 						 fbtk_get_width(gw->window) - furniture_width,
 						 fbtk_get_height(gw->window) - furniture_width,
@@ -1230,7 +1231,7 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 					  gw);
 
 	/* browser widget */
-	create_browser_widget(gw, toolbar_height, option_fb_furniture_size);
+	create_browser_widget(gw, toolbar_height, nsoption_int(fb_furniture_size));
 
 	/* Give browser_window's user widget input focus */
 	fbtk_set_focus(gw->browser);
@@ -1254,8 +1255,8 @@ gui_create_browser_window(struct browser_window *bw,
 	 */
 	gw->bw = bw;
 
-	create_normal_browser_window(gw, option_fb_furniture_size);
-	gw->localhistory = fb_create_localhistory(bw, fbtk, option_fb_furniture_size);
+	create_normal_browser_window(gw, nsoption_int(fb_furniture_size));
+	gw->localhistory = fb_create_localhistory(bw, fbtk, nsoption_int(fb_furniture_size));
 
 	/* map and request redraw of gui window */
 	fbtk_set_mapping(gw->window, true);

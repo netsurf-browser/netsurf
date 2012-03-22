@@ -39,7 +39,7 @@
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
@@ -123,7 +123,7 @@ void ro_gui_hotlist_postinitialise(void)
 	if (hotlist_window.toolbar != NULL) {
 		ro_toolbar_add_buttons(hotlist_window.toolbar,
 				hotlist_toolbar_buttons,
-				option_toolbar_hotlist);
+				       nsoption_charp(toolbar_hotlist));
 		ro_toolbar_rebuild(hotlist_window.toolbar);
 	}
 
@@ -143,7 +143,7 @@ void ro_gui_hotlist_postinitialise(void)
 	/* Initialise the hotlist into the tree. */
 
 	hotlist_initialise(ro_treeview_get_tree(hotlist_window.tv),
-			   option_hotlist_path,
+			   nsoption_charp(hotlist_path),
 			   tree_directory_icon_name);
 
 
@@ -200,10 +200,11 @@ void ro_gui_hotlist_open(void)
 	os_error	*error;
 	char		command[2048];
 
-	if (option_external_hotlists && option_external_hotlist_app != NULL &&
-			*option_external_hotlist_app != '\0') {
+	if (nsoption_bool(external_hotlists) && 
+	    nsoption_charp(external_hotlist_app) != NULL &&
+	    *nsoption_charp(external_hotlist_app) != '\0') {
 		snprintf(command, sizeof(command), "Filer_Run %s",
-				option_external_hotlist_app);
+			 nsoption_charp(external_hotlist_app));
 		error = xos_cli(command);
 
 		if (error == NULL)
@@ -292,9 +293,7 @@ void ro_gui_hotlist_toolbar_update_buttons(void)
 
 void ro_gui_hotlist_toolbar_save_buttons(char *config)
 {
-	if (option_toolbar_hotlist != NULL)
-		free(option_toolbar_hotlist);
-	option_toolbar_hotlist = config;
+	nsoption_set_charp(toolbar_hotlist, config);
 	ro_gui_save_options();
 }
 
@@ -481,7 +480,7 @@ void ro_gui_hotlist_add_page(const char *url)
 	 * own hotlist and return...
 	 */
 
-	if (!option_external_hotlists) {
+	if (!nsoption_bool(external_hotlists)) {
 		hotlist_add_page(url);
 		return;
 	}

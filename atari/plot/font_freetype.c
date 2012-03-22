@@ -223,7 +223,7 @@ static bool ft_font_init(void)
 
 	font_faces[FONT_FACE_SANS_SERIF] = NULL;
 	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face(
-											option_atari_face_sans_serif,
+											nsoption_charp(atari_face_sans_serif),
                             				"fonts/ss.ttf",
                             				DEJAVU_PATH"DejaVuSans.ttf"
 										);
@@ -235,47 +235,47 @@ static bool ft_font_init(void)
 	}
 
 	font_faces[FONT_FACE_SANS_SERIF_BOLD] =
-		ft_new_face(option_atari_face_sans_serif_bold,
+			ft_new_face(nsoption_charp(atari_face_sans_serif_bold),
                             "fonts/ssb.ttf",
                             DEJAVU_PATH"DejaVuSans-Bold.ttf");
 
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC] =
-		ft_new_face(option_atari_face_sans_serif_italic,
+			ft_new_face(nsoption_charp(atari_face_sans_serif_italic),
                             "fonts/ssi.ttf",
                             DEJAVU_PATH"DejaVuSans-Oblique.ttf");
 
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC_BOLD] =
-		ft_new_face(option_atari_face_sans_serif_italic_bold,
+			ft_new_face(nsoption_charp(atari_face_sans_serif_italic_bold),
                             "fonts/ssib.ttf",
                             DEJAVU_PATH"DejaVuSans-BoldOblique.ttf");
 
 	font_faces[FONT_FACE_MONOSPACE] =
-		ft_new_face(option_atari_face_monospace,
+			ft_new_face(nsoption_charp(atari_face_monospace),
                             "fonts/mono.ttf",
                             DEJAVU_PATH"DejaVuSansMono.ttf");
 
 	font_faces[FONT_FACE_MONOSPACE_BOLD] =
-		ft_new_face(option_atari_face_monospace_bold,
+			ft_new_face(nsoption_charp(atari_face_monospace_bold),
                             "fonts/monob.ttf",
                             DEJAVU_PATH"DejaVuSansMono-Bold.ttf");
 
 	font_faces[FONT_FACE_SERIF] =
-		ft_new_face(option_atari_face_serif,
+			ft_new_face(nsoption_charp(atari_face_serif),
                             "fonts/s.ttf",
                             DEJAVU_PATH"DejaVuSerif.ttf");
 
 	font_faces[FONT_FACE_SERIF_BOLD] =
-		ft_new_face(option_atari_face_serif_bold,
+			ft_new_face(nsoption_charp(atari_face_serif_bold),
                             "fonts/sb.ttf",
                             DEJAVU_PATH"DejaVuSerif-Bold.ttf");
 
 	font_faces[FONT_FACE_CURSIVE] =
-		ft_new_face(option_atari_face_cursive,
+			ft_new_face(nsoption_charp(atari_face_cursive),
                             "fonts/cursive.ttf",
                             DEJAVU_PATH"DejaVuSansMono-Oblique.ttf");
 
 	font_faces[FONT_FACE_FANTASY] =
-		ft_new_face(option_atari_face_fantasy,
+			ft_new_face(nsoption_charp(atari_face_fantasy),
                             "fonts/fantasy.ttf",
                             DEJAVU_PATH"DejaVuSerifCondensed-Bold.ttf");
 

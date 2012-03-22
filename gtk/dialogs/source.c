@@ -29,7 +29,6 @@
 #include "gtk/gui.h"
 #include "gtk/print.h"
 #include "gtk/selection.h"
-#include "gtk/options.h"
 #include "desktop/netsurf.h"
 #include "desktop/print.h"
 #include "desktop/options.h"
@@ -111,7 +110,7 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 	if (content_get_type(bw->current_content) != CONTENT_HTML)
 		return;
 	
-	if (option_source_tab) {
+	if (nsoption_bool(source_tab)) {
 		nsgtk_source_tab_init(parent, bw);
 		return;
 	}

@@ -73,7 +73,6 @@
 #include "gtk/toolbar.h"
 #include "gtk/treeview.h"
 #include "gtk/window.h"
-#include "gtk/options.h"
 #include "gtk/compat.h"
 #include "gtk/gdk.h"
 #include "image/ico.h"
@@ -546,9 +545,9 @@ static void nsgtk_openfile_open(const char *filename)
 MULTIHANDLER(newwindow)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	const char *url = option_homepage_url;
+	const char *url = nsoption_charp(homepage_url);
 
-	if ((url != NULL) && (url[0] == '\0'))
+	if (url != NULL)
 		url = NULL;
 
 	if (url == NULL)
@@ -563,15 +562,15 @@ MULTIHANDLER(newtab)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
-	if (option_new_blank) {
+	if (nsoption_bool(new_blank)) {
 		browser_window_create(NULL, bw, NULL, false, true);
 		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
 		gtk_widget_modify_bg(window, GTK_STATE_NORMAL, &((GdkColor)
 				{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}));
 	} else {
-		const char *url = option_homepage_url;
+		const char *url = nsoption_charp(homepage_url);
 
-		if ((url != NULL) && (url[0] == '\0'))
+		if (url != NULL)
 			url = NULL;
 
 		if (url == NULL)
@@ -1177,16 +1176,21 @@ MULTIHANDLER(downloads)
 
 MULTIHANDLER(savewindowsize)
 {
-	if (GTK_IS_PANED(g->status_pane))
-		option_toolbar_status_width =
-				gtk_paned_get_position(g->status_pane);
-	gtk_window_get_position(g->window, &option_window_x,
-			&option_window_y);
-	gtk_window_get_size(g->window, &option_window_width,
-					&option_window_height);
+	int x,y,w,h;
 
+	if (GTK_IS_PANED(g->status_pane)) {
+		nsoption_set_int(toolbar_status_width,
+				 gtk_paned_get_position(g->status_pane));
+	}
+	gtk_window_get_position(g->window, &x, &y);
+	gtk_window_get_size(g->window, &w, &h);
 
-	options_write(options_file_location);
+	nsoption_set_int(window_width, w);
+	nsoption_set_int(window_height, h);
+	nsoption_set_int(window_x, x);
+	nsoption_set_int(window_y, y);
+
+	nsoption_write(options_file_location);
 
 	return TRUE;
 }
@@ -1371,8 +1375,9 @@ MULTIHANDLER(home)
 	struct browser_window *bw =
 			nsgtk_get_browser_window(g->top_level);
 
-	if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-		addr = option_homepage_url;
+	if (nsoption_charp(homepage_url) != NULL) {
+		addr = nsoption_charp(homepage_url);
+	}
 
 	browser_window_go(bw, addr, 0, true);
 
@@ -1381,8 +1386,7 @@ MULTIHANDLER(home)
 
 MULTIHANDLER(localhistory)
 {
-	struct browser_window *bw =
-			nsgtk_get_browser_window(g->top_level);
+	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
 
 	int x,y, width, height, mainwidth, mainheight, margin = 20;
 	/* if entries of the same url but different frag_ids have been added
@@ -1728,10 +1732,13 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
 	 */
-	if (option_window_width > 0) {
-		gtk_window_move(g->window, option_window_x, option_window_y);
-		gtk_window_resize(g->window, option_window_width,
-				option_window_height);
+	if (nsoption_int(window_width) > 0) {
+		gtk_window_move(g->window, 
+				nsoption_int(window_x), 
+				nsoption_int(window_y));
+		gtk_window_resize(g->window, 
+				  nsoption_int(window_width),
+				  nsoption_int(window_height));
 	} else {
 		/* Set to 1000x700, so we're very likely to fit even on
 		 * 1024x768 displays, not being able to take into account
@@ -1741,32 +1748,39 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	}
 
 	/* Default toolbar button type uses system defaults */
-	if (option_button_type == 0) {
+	if (nsoption_int(button_type) == 0) {
 		GtkSettings *settings = gtk_settings_get_default();
 		GtkIconSize tooliconsize;
 		GtkToolbarStyle toolbarstyle;
-		g_object_get(settings, "gtk-toolbar-icon-size",  &tooliconsize,
-				"gtk-toolbar-style", &toolbarstyle, NULL);
+
+		g_object_get(settings, 
+			     "gtk-toolbar-icon-size", &tooliconsize,
+			     "gtk-toolbar-style", &toolbarstyle, NULL);
+
 		switch (toolbarstyle) {
 		case GTK_TOOLBAR_ICONS:
-			option_button_type = (tooliconsize ==
-					      GTK_ICON_SIZE_SMALL_TOOLBAR) ?
-					      1 : 2;
+			if (tooliconsize == GTK_ICON_SIZE_SMALL_TOOLBAR) {
+				nsoption_set_int(button_type, 1);
+			} else {
+				nsoption_set_int(button_type, 2);
+			}
 			break;
+
 		case GTK_TOOLBAR_TEXT:
-			option_button_type = 4;
+			nsoption_set_int(button_type, 4);
 			break;
+
 		case GTK_TOOLBAR_BOTH:
 		case GTK_TOOLBAR_BOTH_HORIZ:
-		/* no labels in default configuration */
+			/* no labels in default configuration */
 		default:
 			/* No system default, so use large icons */
-			option_button_type = 2;
+			nsoption_set_int(button_type, 2);
 			break;
 		}
 	}
 
-	switch (option_button_type) {
+	switch (nsoption_int(button_type)) {
 	/* case 0 is 'unset' [from fresh install / clearing options]
 	 * see above */
 
@@ -1901,11 +1915,12 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* prepare to set the web search ico */
 
 	/* init web search prefs from file */
-	search_web_provider_details(option_search_provider);
+	search_web_provider_details(nsoption_int(search_provider));
 
 	/* potentially retrieve ico */
-	if (search_web_ico() == NULL)
+	if (search_web_ico() == NULL) {
 		search_web_retrieve_ico(false);
+	}
 
 	/* set entry */
 	searchname = search_web_provider_name();

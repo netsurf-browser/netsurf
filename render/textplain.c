@@ -267,7 +267,7 @@ nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 	parserutils_error error;
 	union content_msg_data msg_data;
 
-	textplain_style.size = (option_font_size * FONT_SIZE_SCALE) / 10;
+	textplain_style.size = (nsoption_int(font_size) * FONT_SIZE_SCALE) / 10;
 
 	utf8_data = talloc_array(c, char, CHUNK);
 	if (utf8_data == NULL)

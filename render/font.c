@@ -49,8 +49,8 @@ void font_plot_style_from_css(const css_computed_style *css,
 				      INTTOFIX(FONT_SIZE_SCALE)));
 
 	/* Clamp font size to configured minimum */
-	if (fstyle->size < (option_font_min_size * FONT_SIZE_SCALE) / 10)
-		fstyle->size = (option_font_min_size * FONT_SIZE_SCALE) / 10;
+	if (fstyle->size < (nsoption_int(font_min_size) * FONT_SIZE_SCALE) / 10)
+		fstyle->size = (nsoption_int(font_min_size) * FONT_SIZE_SCALE) / 10;
 
 	fstyle->weight = plot_font_weight(css_computed_font_weight(css));
 	fstyle->flags = plot_font_flags(css_computed_font_style(css), 

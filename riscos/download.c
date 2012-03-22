@@ -44,7 +44,7 @@
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
 #include "riscos/dialog.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/save.h"
 #include "riscos/query.h"
 #include "riscos/wimp.h"
@@ -364,7 +364,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 			filename[i] = '_';
 	}
 
-	if (option_strip_extensions && last_dot != (size_t) -1)
+	if (nsoption_bool(strip_extensions) && last_dot != (size_t) -1)
 		filename[last_dot] = '\0';
 
 	if (download_dir != NULL && strlen(download_dir) > 0)
@@ -881,7 +881,7 @@ bool ro_gui_download_keypress(wimp_key *key)
 
 			dw->send_dataload = false;
 			if (ro_gui_download_save(dw, dw->path,
-					!option_confirm_overwrite) && !dw->ctx)
+					!nsoption_bool(confirm_overwrite)) && !dw->ctx)
 			{
 				/* finished already */
 				schedule(200, ro_gui_download_window_destroy_wrapper, dw);
@@ -967,7 +967,7 @@ void ro_gui_download_datasave_ack(wimp_message *message)
 	memcpy(&dw->save_message, message, sizeof(wimp_message));
 
 	if (!ro_gui_download_save(dw, message->data.data_xfer.file_name,
-			!option_confirm_overwrite))
+			!nsoption_bool(confirm_overwrite)))
 		return;
 
 	if (!dw->ctx) {

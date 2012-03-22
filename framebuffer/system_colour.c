@@ -34,176 +34,176 @@ struct gui_system_colour_ctx {
 	lwc_string *lwcstr;
 };
 
-static struct gui_system_colour_ctx colour_list[] = { 
-	{ 
-		"ActiveBorder", 
-		SLEN("ActiveBorder"), 
-		0xff000000, 
-		&option_sys_colour_ActiveBorder, 
-		NULL 
-	}, { 
-		"ActiveCaption", 
-		SLEN("ActiveCaption"), 
-		0xffdddddd, 
-		&option_sys_colour_ActiveCaption, 
-		NULL 
-	}, { 
-		"AppWorkspace", 
-		SLEN("AppWorkspace"), 
-		0xffeeeeee, 
-		&option_sys_colour_AppWorkspace, 
-		NULL 
-	}, { 
-		"Background", 
-		SLEN("Background"), 
-		0xff0000aa, 
-		&option_sys_colour_Background, 
-		NULL 
-	}, {
-		"ButtonFace", 
-		SLEN("ButtonFace"), 
-		0xffaaaaaa, 
-		&option_sys_colour_ButtonFace, 
-		NULL 
-	}, {
-		"ButtonHighlight", 
-		SLEN("ButtonHighlight"), 
-		0xffdddddd, 
-		&option_sys_colour_ButtonHighlight, 
+static struct gui_system_colour_ctx colour_list[] = {
+	{
+		"ActiveBorder",
+		SLEN("ActiveBorder"),
+		0xff000000,
+		&nsoption_colour(sys_colour_ActiveBorder),
 		NULL
 	}, {
-		"ButtonShadow", 
-		SLEN("ButtonShadow"), 
-		0xffbbbbbb, 
-		&option_sys_colour_ButtonShadow, 
-		NULL 
+		"ActiveCaption",
+		SLEN("ActiveCaption"),
+		0xffdddddd,
+		&nsoption_colour(sys_colour_ActiveCaption),
+		NULL
 	}, {
-		"ButtonText", 
-		SLEN("ButtonText"), 
-		0xff000000, 
-		&option_sys_colour_ButtonText, 
-		NULL 
+		"AppWorkspace",
+		SLEN("AppWorkspace"),
+		0xffeeeeee,
+		&nsoption_colour(sys_colour_AppWorkspace),
+		NULL
 	}, {
-		"CaptionText", 
-		SLEN("CaptionText"), 
-		0xff000000, 
-		&option_sys_colour_CaptionText, 
-		NULL 
+		"Background",
+		SLEN("Background"),
+		0xff0000aa,
+		&nsoption_colour(sys_colour_Background),
+		NULL
 	}, {
-		"GrayText", 
-		SLEN("GrayText"), 
-		0xffcccccc, 
-		&option_sys_colour_GrayText, 
-		NULL 
+		"ButtonFace",
+		SLEN("ButtonFace"),
+		0xffaaaaaa,
+		&nsoption_colour(sys_colour_ButtonFace),
+		NULL
 	}, {
-		"Highlight", 
-		SLEN("Highlight"), 
-		0xff0000ee, 
-		&option_sys_colour_Highlight, 
-		NULL 
+		"ButtonHighlight",
+		SLEN("ButtonHighlight"),
+		0xffdddddd,
+		&nsoption_colour(sys_colour_ButtonHighlight),
+		NULL
 	}, {
-		"HighlightText", 
-		SLEN("HighlightText"), 
-		0xff000000, 
-		&option_sys_colour_HighlightText, 
-		NULL 
+		"ButtonShadow",
+		SLEN("ButtonShadow"),
+		0xffbbbbbb,
+		&nsoption_colour(sys_colour_ButtonShadow),
+		NULL
 	}, {
-		"InactiveBorder", 
-		SLEN("InactiveBorder"), 
-		0xffffffff, 
-		&option_sys_colour_InactiveBorder, 
-		NULL 
+		"ButtonText",
+		SLEN("ButtonText"),
+		0xff000000,
+		&nsoption_colour(sys_colour_ButtonText),
+		NULL
 	}, {
-		"InactiveCaption", 
-		SLEN("InactiveCaption"), 
-		0xffffffff, 
-		&option_sys_colour_InactiveCaption, 
-		NULL 
+		"CaptionText",
+		SLEN("CaptionText"),
+		0xff000000,
+		&nsoption_colour(sys_colour_CaptionText),
+		NULL
 	}, {
-		"InactiveCaptionText", 
-		SLEN("InactiveCaptionText"), 
-		0xffcccccc, 
-		&option_sys_colour_InactiveCaptionText, 
-		NULL 
+		"GrayText",
+		SLEN("GrayText"),
+		0xffcccccc,
+		&nsoption_colour(sys_colour_GrayText),
+		NULL
 	}, {
-		"InfoBackground", 
-		SLEN("InfoBackground"), 
-		0xffaaaaaa, 
-		&option_sys_colour_InfoBackground, 
-		NULL 
+		"Highlight",
+		SLEN("Highlight"),
+		0xff0000ee,
+		&nsoption_colour(sys_colour_Highlight),
+		NULL
 	}, {
-		"InfoText", 
-		SLEN("InfoText"), 
-		0xff000000, 
-		&option_sys_colour_InfoText, 
-		NULL 
+		"HighlightText",
+		SLEN("HighlightText"),
+		0xff000000,
+		&nsoption_colour(sys_colour_HighlightText),
+		NULL
 	}, {
-		"Menu", 
-		SLEN("Menu"), 
-		0xffaaaaaa, 
-		&option_sys_colour_Menu, 
-		NULL 
+		"InactiveBorder",
+		SLEN("InactiveBorder"),
+		0xffffffff,
+		&nsoption_colour(sys_colour_InactiveBorder),
+		NULL
 	}, {
-		"MenuText", 
-		SLEN("MenuText"), 
-		0xff000000, 
-		&option_sys_colour_MenuText, 
-		NULL 
+		"InactiveCaption",
+		SLEN("InactiveCaption"),
+		0xffffffff,
+		&nsoption_colour(sys_colour_InactiveCaption),
+		NULL
 	}, {
-		"Scrollbar", 
-		SLEN("Scrollbar"), 
-		0xffaaaaaa, 
-		&option_sys_colour_Scrollbar, 
-		NULL 
+		"InactiveCaptionText",
+		SLEN("InactiveCaptionText"),
+		0xffcccccc,
+		&nsoption_colour(sys_colour_InactiveCaptionText),
+		NULL
 	}, {
-		"ThreeDDarkShadow", 
-		SLEN("ThreeDDarkShadow"), 
-		0xff555555, 
-		&option_sys_colour_ThreeDDarkShadow, 
-		NULL 
+		"InfoBackground",
+		SLEN("InfoBackground"),
+		0xffaaaaaa,
+		&nsoption_colour(sys_colour_InfoBackground),
+		NULL
 	}, {
-		"ThreeDFace", 
-		SLEN("ThreeDFace"), 
-		0xffdddddd, 
-		&option_sys_colour_ThreeDFace, 
-		NULL 
+		"InfoText",
+		SLEN("InfoText"),
+		0xff000000,
+		&nsoption_colour(sys_colour_InfoText),
+		NULL
 	}, {
-		"ThreeDHighlight", 
-		SLEN("ThreeDHighlight"), 
-		0xffaaaaaa, 
-		&option_sys_colour_ThreeDHighlight, 
-		NULL 
+		"Menu",
+		SLEN("Menu"),
+		0xffaaaaaa,
+		&nsoption_colour(sys_colour_Menu),
+		NULL
 	}, {
-		"ThreeDLightShadow", 
-		SLEN("ThreeDLightShadow"), 
-		0xff999999, 
-		&option_sys_colour_ThreeDLightShadow, 
-		NULL 
+		"MenuText",
+		SLEN("MenuText"),
+		0xff000000,
+		&nsoption_colour(sys_colour_MenuText),
+		NULL
 	}, {
-		"ThreeDShadow", 
-		SLEN("ThreeDShadow"), 
-		0xff777777, 
-		&option_sys_colour_ThreeDShadow, 
-		NULL 
+		"Scrollbar",
+		SLEN("Scrollbar"),
+		0xffaaaaaa,
+		&nsoption_colour(sys_colour_Scrollbar),
+		NULL
 	}, {
-		"Window", 
-		SLEN("Window"), 
-		0xffaaaaaa, 
-		&option_sys_colour_Window, 
-		NULL 
+		"ThreeDDarkShadow",
+		SLEN("ThreeDDarkShadow"),
+		0xff555555,
+		&nsoption_colour(sys_colour_ThreeDDarkShadow),
+		NULL
 	}, {
-		"WindowFrame", 
-		SLEN("WindowFrame"), 
-		0xff000000, 
-		&option_sys_colour_WindowFrame, 
-		NULL 
+		"ThreeDFace",
+		SLEN("ThreeDFace"),
+		0xffdddddd,
+		&nsoption_colour(sys_colour_ThreeDFace),
+		NULL
 	}, {
-		
-		"WindowText", 
-		SLEN("WindowText"), 
-		0xff000000, 
-		&option_sys_colour_WindowText, 
-		NULL 
+		"ThreeDHighlight",
+		SLEN("ThreeDHighlight"),
+		0xffaaaaaa,
+		&nsoption_colour(sys_colour_ThreeDHighlight),
+		NULL
+	}, {
+		"ThreeDLightShadow",
+		SLEN("ThreeDLightShadow"),
+		0xff999999,
+		&nsoption_colour(sys_colour_ThreeDLightShadow),
+		NULL
+	}, {
+		"ThreeDShadow",
+		SLEN("ThreeDShadow"),
+		0xff777777,
+		&nsoption_colour(sys_colour_ThreeDShadow),
+		NULL
+	}, {
+		"Window",
+		SLEN("Window"),
+		0xffaaaaaa,
+		&nsoption_colour(sys_colour_Window),
+		NULL
+	}, {
+		"WindowFrame",
+		SLEN("WindowFrame"),
+		0xff000000,
+		&nsoption_colour(sys_colour_WindowFrame),
+		NULL
+	}, {
+
+		"WindowText",
+		SLEN("WindowText"),
+		0xff000000,
+		&nsoption_colour(sys_colour_WindowText),
+		NULL
 	},
 
 };
@@ -217,13 +217,13 @@ bool gui_system_colour_init(void)
 {
 	unsigned int ccount;
 
-	if (gui_system_colour_pw != NULL) 
+	if (gui_system_colour_pw != NULL)
 		return false;
 
 	/* Intern colour strings */
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
-		if (lwc_intern_string(colour_list[ccount].name, 
-				      colour_list[ccount].length, 
+		if (lwc_intern_string(colour_list[ccount].name,
+				      colour_list[ccount].length,
 				      &(colour_list[ccount].lwcstr)) != lwc_error_ok) {
 			return false;
 		}
@@ -237,7 +237,7 @@ bool gui_system_colour_init(void)
 	}
 
 	gui_system_colour_pw = colour_list;
-	
+
 	return true;
 }
 
@@ -256,8 +256,8 @@ colour gui_system_colour_char(char *name)
 	unsigned int ccount;
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
-		if (strncasecmp(name, 
-				colour_list[ccount].name, 
+		if (strncasecmp(name,
+				colour_list[ccount].name,
 				colour_list[ccount].length) == 0) {
 			ret = colour_list[ccount].colour;
 			break;
@@ -272,13 +272,13 @@ css_error gui_system_colour(void *pw, lwc_string *name, css_color *colour)
 	bool match;
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
-		if (lwc_string_caseless_isequal(name, 
+		if (lwc_string_caseless_isequal(name,
 				colour_list[ccount].lwcstr,
 				&match) == lwc_error_ok && match) {
 			*colour = colour_list[ccount].colour;
 			return CSS_OK;
 		}
-	}	
+	}
 
 	return CSS_INVALID;
 }

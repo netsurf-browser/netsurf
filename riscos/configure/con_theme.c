@@ -23,11 +23,11 @@
 #include "oslib/wimp.h"
 #include "oslib/wimpspriteop.h"
 #include "utils/config.h"
+#include "desktop/options.h"
 #include "riscos/configure/configure.h"
 #include "riscos/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
 #include "riscos/theme.h"
 #include "riscos/toolbar.h"
 #include "riscos/url_complete.h"
@@ -151,7 +151,7 @@ bool ro_gui_options_theme_initialise(wimp_w w)
 	ro_gui_options_theme_load();
 
 	/* set the current selection */
-	theme_choice = ro_gui_theme_find(option_theme);
+	theme_choice = ro_gui_theme_find(nsoption_charp(theme));
 	if (!theme_choice)
 		theme_choice = ro_gui_theme_find("Aletheia");
 	for (toolbar = toolbars; toolbar; toolbar = toolbar->next)
@@ -202,13 +202,12 @@ bool ro_gui_options_theme_ok(wimp_w w)
 	}
 
 	/* set the options */
-	if (option_theme)
-		free(option_theme);
 	if (theme_new) {
-		option_theme = strdup(theme_new->leafname);
+		nsoption_set_charp(theme, strdup(theme_new->leafname));
 		ro_gui_theme_apply(theme_new);
-	} else
-		option_theme = NULL;
+	} else {
+		nsoption_set_charp(theme, NULL);
+        }
 	ro_gui_save_options();
 
 	/* store the pane status */
@@ -269,7 +268,7 @@ void ro_gui_options_theme_load(void)
 				TOOLBAR_FLAGS_DISPLAY, NULL, NULL, NULL);
 		if (toolbar != NULL) {
 			ro_toolbar_add_buttons(toolbar, brower_toolbar_buttons,
-				option_toolbar_browser);
+					       nsoption_charp(toolbar_browser));
 			ro_toolbar_add_url(toolbar);
 			ro_toolbar_add_throbber(toolbar);
 			ro_toolbar_rebuild(toolbar);

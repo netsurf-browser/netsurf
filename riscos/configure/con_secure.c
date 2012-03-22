@@ -20,7 +20,6 @@
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -44,9 +43,9 @@ bool ro_gui_options_security_initialise(wimp_w w)
 {
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, SECURITY_REFERRER,
-			option_send_referer);
+                                       nsoption_bool(send_referer));
 	ro_gui_set_icon_integer(w, SECURITY_DURATION_FIELD,
-			option_expire_url);
+                                nsoption_int(expire_url));
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_checkbox(w, SECURITY_REFERRER);
@@ -73,10 +72,11 @@ void ro_gui_options_security_default(wimp_pointer *pointer)
 
 bool ro_gui_options_security_ok(wimp_w w)
 {
-  	option_send_referer = ro_gui_get_icon_selected_state(w,
-  			SECURITY_REFERRER);
-	option_expire_url = ro_gui_get_icon_decimal(w,
-			SECURITY_DURATION_FIELD, 0);
+	nsoption_set_bool(send_referer,
+			  ro_gui_get_icon_selected_state(w, SECURITY_REFERRER));
+
+	nsoption_set_int(expire_url,
+			 ro_gui_get_icon_decimal(w,SECURITY_DURATION_FIELD, 0));
 
 	ro_gui_save_options();
   	return true;

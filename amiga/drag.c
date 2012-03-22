@@ -37,7 +37,7 @@
 #include "amiga/drag.h"
 #include "amiga/file.h"
 #include "amiga/filetype.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/theme.h"
 
 #include "desktop/selection.h"
@@ -55,9 +55,9 @@ BOOL drag_in_progress = FALSE;
 void gui_drag_save_object(gui_save_type type, hlcache_handle *c,
 		struct gui_window *g)
 {
-	const char *filetype;
+	const char *filetype = NULL;
 
-	if(strcmp(option_use_pubscreen,"Workbench")) return;
+	if(strcmp(nsoption_charp(use_pubscreen), "Workbench")) return;
 
 	switch(type)
 	{
@@ -108,7 +108,7 @@ void ami_drag_save(struct Window *win)
 	ami_drag_icon_close(NULL);
 	ami_autoscroll = FALSE;
 
-	if(option_use_pubscreen && (strcmp(option_use_pubscreen,"Workbench") == 0))
+	if(nsoption_charp(use_pubscreen) && (strcmp(nsoption_charp(use_pubscreen),"Workbench") == 0))
 	{
 		which = WhichWorkbenchObject(NULL,scrn->MouseX,scrn->MouseY,
 									WBOBJA_Type,&type,
@@ -203,7 +203,7 @@ void ami_drag_icon_show(struct Window *win, const char *type)
 
 	drag_in_progress = TRUE;
 
-	if(option_drag_save_icons == false)
+	if(nsoption_bool(drag_save_icons) == false)
 	{
 		ami_update_pointer(win, AMI_GUI_POINTER_DRAG);
 		return;

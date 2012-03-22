@@ -22,7 +22,7 @@
 #include "oslib/osspriteop.h"
 #include "riscos/image.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/tinct.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -69,8 +69,8 @@ bool image_redraw(osspriteop_area *area, int x, int y, int req_width,
 	req_height *= 2;
 	width *= 2;
 	height *= 2;
-	tinct_options = background ? option_bg_plot_style :
-			option_fg_plot_style;
+	tinct_options = background ? nsoption_int(bg_plot_style) :
+		nsoption_int(fg_plot_style);
 	switch (type) {
 		case IMAGE_PLOT_TINCT_ALPHA:
 			return image_redraw_tinct(header, x, y,

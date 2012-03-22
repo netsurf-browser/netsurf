@@ -21,7 +21,7 @@
 #include "amiga/arexx.h"
 #include "amiga/download.h"
 #include "amiga/gui.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/theme.h"
 
 #include "desktop/browser.h"
@@ -411,13 +411,13 @@ STATIC VOID rx_pubscreen(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__
 {
 	cmd->ac_RC = 0;
 
-	if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
+	if(nsoption_charp(use_pubscreen) == NULL)
 	{
 		strcpy(result,"NetSurf");
 	}
 	else
 	{
-		strcpy(result,option_use_pubscreen);
+		strcpy(result, nsoption_charp(use_pubscreen));
 	}
 
 	cmd->ac_Result = result;
@@ -457,7 +457,7 @@ STATIC VOID rx_home(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unu
 	if((cmd->ac_ArgList[0]) && (cmd->ac_ArgList[1]))
 		bw = ami_find_tab(*(ULONG *)cmd->ac_ArgList[0], *(ULONG *)cmd->ac_ArgList[1]);
 
-	if(bw) browser_window_go(bw, option_homepage_url, NULL, true);
+	if(bw) browser_window_go(bw, nsoption_charp(homepage_url), NULL, true);
 }
 
 STATIC VOID rx_reload(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
@@ -520,7 +520,7 @@ STATIC VOID rx_active(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((u
 	int window = 0, tab = 0;
 	struct browser_window *bw = curbw;
 	struct nsObject *node, *nnode;
-	struct gui_window_2 *gwin;
+	struct gui_window_2 *gwin = NULL;
 
 	cmd->ac_RC = 0;
 

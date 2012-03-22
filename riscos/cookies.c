@@ -35,7 +35,7 @@
 #include "riscos/cookies.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
@@ -99,7 +99,7 @@ void ro_gui_cookies_postinitialise(void)
 	if (cookies_window.toolbar != NULL) {
 		ro_toolbar_add_buttons(cookies_window.toolbar,
 				cookies_toolbar_buttons,
-				option_toolbar_cookies);
+				       nsoption_charp(toolbar_cookies));
 		ro_toolbar_rebuild(cookies_window.toolbar);
 	}
 
@@ -232,9 +232,7 @@ void ro_gui_cookies_toolbar_update_buttons(void)
 
 void ro_gui_cookies_toolbar_save_buttons(char *config)
 {
-	if (option_toolbar_cookies != NULL)
-		free(option_toolbar_cookies);
-	option_toolbar_cookies = config;
+	nsoption_set_charp(toolbar_cookies, config);
 	ro_gui_save_options();
 }
 

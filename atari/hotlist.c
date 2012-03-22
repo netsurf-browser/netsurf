@@ -41,7 +41,6 @@
 #include "atari/hotlist.h"
 #include "atari/findfile.h"
 #include "atari/res/netsurf.rsh"
-#include "atari/options.h"
 
 struct atari_hotlist hl;
 
@@ -86,10 +85,10 @@ static void __CDECL evnt_hl_mbutton( WINDOW *win, short buff[8] )
 
 void hotlist_init(void)
 {
-	if( strcmp(option_hotlist_file, "") == 0 ){
+	if( strcmp(nsoption_charp(hotlist_file), "") == 0 ){
 		atari_find_resource( (char*)&hl.path, "hotlist", "hotlist" );
 	} else {
-		strncpy( (char*)&hl.path, option_hotlist_file, PATH_MAX-1 );
+		strncpy( (char*)&hl.path, nsoption_charp(hotlist_file), PATH_MAX-1 );
 	}
 
 	LOG(("Hotlist: %s",  (char*)&hl.path ));

@@ -33,7 +33,6 @@
 
 #include "framebuffer/gui.h"
 #include "framebuffer/font.h"
-#include "framebuffer/options.h"
 #include "framebuffer/findfile.h"
 
 /* glyph cache minimum size */
@@ -172,7 +171,7 @@ bool fb_font_init(void)
         }
 
         /* set the Glyph cache size up */
-        max_cache_size = option_fb_font_cachesize * 1024; 
+        max_cache_size = nsoption_int(fb_font_cachesize) * 1024; 
 
 	if (max_cache_size < CACHE_MIN_SIZE) {
 		max_cache_size = CACHE_MIN_SIZE;
@@ -199,7 +198,7 @@ bool fb_font_init(void)
 	/* need to obtain the generic font faces */
 
 	/* Start with the sans serif font */
-	fb_face = fb_new_face(option_fb_face_sans_serif,
+	fb_face = fb_new_face(nsoption_charp(fb_face_sans_serif),
 			      "sans_serif.ttf",
 			      NETSURF_FB_FONT_SANS_SERIF);
 	if (fb_face == NULL) {
@@ -213,7 +212,7 @@ bool fb_font_init(void)
 	}
 
 	/* Bold sans serif face */
-	fb_face = fb_new_face(option_fb_face_sans_serif_bold,
+	fb_face = fb_new_face(nsoption_charp(fb_face_sans_serif_bold),
                             "sans_serif_bold.ttf",
                             NETSURF_FB_FONT_SANS_SERIF_BOLD);
 	if (fb_face == NULL) {
@@ -224,7 +223,7 @@ bool fb_font_init(void)
 	}
 
 	/* Italic sans serif face */
-	fb_face = fb_new_face(option_fb_face_sans_serif_italic,
+	fb_face = fb_new_face(nsoption_charp(fb_face_sans_serif_italic),
 			      "sans_serif_italic.ttf",
 			      NETSURF_FB_FONT_SANS_SERIF_ITALIC);
 	if (fb_face == NULL) {
@@ -235,7 +234,7 @@ bool fb_font_init(void)
 	}
 
 	/* Bold italic sans serif face */
-	fb_face = fb_new_face(option_fb_face_sans_serif_italic_bold, 
+	fb_face = fb_new_face(nsoption_charp(fb_face_sans_serif_italic_bold), 
 			      "sans_serif_italic_bold.ttf",
 			      NETSURF_FB_FONT_SANS_SERIF_ITALIC_BOLD);
 	if (fb_face == NULL) {
@@ -246,7 +245,7 @@ bool fb_font_init(void)
 	}
 
 	/* serif face */
-	fb_face = fb_new_face(option_fb_face_serif,
+	fb_face = fb_new_face(nsoption_charp(fb_face_serif),
                             "serif.ttf",
 			      NETSURF_FB_FONT_SERIF);
 	if (fb_face == NULL) {
@@ -257,7 +256,7 @@ bool fb_font_init(void)
 	}
 
 	/* bold serif face*/
-	fb_face = fb_new_face(option_fb_face_serif_bold,
+	fb_face = fb_new_face(nsoption_charp(fb_face_serif_bold),
 			      "serif_bold.ttf",
 			      NETSURF_FB_FONT_SERIF_BOLD);
 	if (fb_face == NULL) {
@@ -269,7 +268,7 @@ bool fb_font_init(void)
 
 
 	/* monospace face */
-	fb_face = fb_new_face(option_fb_face_monospace,
+	fb_face = fb_new_face(nsoption_charp(fb_face_monospace),
 			      "monospace.ttf",
 			      NETSURF_FB_FONT_MONOSPACE);
 	if (fb_face == NULL) {
@@ -280,7 +279,7 @@ bool fb_font_init(void)
 	}
 
 	/* bold monospace face*/
-	fb_face = fb_new_face(option_fb_face_monospace_bold,
+	fb_face = fb_new_face(nsoption_charp(fb_face_monospace_bold),
 			      "monospace_bold.ttf",
 			      NETSURF_FB_FONT_MONOSPACE_BOLD);
 	if (fb_face == NULL) {
@@ -291,7 +290,7 @@ bool fb_font_init(void)
 	}
 
 	/* cursive face */
-	fb_face = fb_new_face(option_fb_face_cursive,
+	fb_face = fb_new_face(nsoption_charp(fb_face_cursive),
 			      "cursive.ttf",
 			      NETSURF_FB_FONT_CURSIVE);
 	if (fb_face == NULL) {
@@ -302,7 +301,7 @@ bool fb_font_init(void)
 	}
 
 	/* fantasy face */
-	fb_face = fb_new_face(option_fb_face_fantasy,
+	fb_face = fb_new_face(nsoption_charp(fb_face_fantasy),
 			      "fantasy.ttf",
 			      NETSURF_FB_FONT_FANTASY);
 	if (fb_face == NULL) {
@@ -314,7 +313,7 @@ bool fb_font_init(void)
 
         
         /* set the default render mode */
-        if (option_fb_font_monochrome == true)
+        if (nsoption_bool(fb_font_monochrome) == true)
                 ft_load_type = FT_LOAD_MONOCHROME; /* faster but less pretty */
         else
                 ft_load_type = 0;

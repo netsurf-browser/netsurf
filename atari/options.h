@@ -16,74 +16,79 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _NETSURF_DESKTOP_OPTIONS_INCLUDING_
+#error "Frontend options header cannot be included directly"
+#endif
+
 #ifndef NS_ATARI_OPTIONS_H_
 #define NS_ATARI_OPTIONS_H_
 
-#include "desktop/options.h"
-extern char * option_atari_screen_driver;
-extern char * option_atari_font_driver;
-extern int option_atari_font_monochrom;
-extern int option_atari_dither;
-extern int option_atari_transparency;
-extern char *option_atari_face_sans_serif; /* default sans face */
-extern char *option_atari_face_sans_serif_bold; /* bold sans face */
-extern char *option_atari_face_sans_serif_italic; /* bold sans face */
-extern char *option_atari_face_sans_serif_italic_bold; /* bold sans face */
-extern char *option_atari_face_monospace; /* monospace face */
-extern char *option_atari_face_monospace_bold; /* monospace face */
-extern char *option_atari_face_serif; /* serif face */
-extern char *option_atari_face_serif_bold; /* bold serif face */
-extern char *option_atari_face_cursive;
-extern char *option_atari_face_fantasy;
-extern char *option_atari_editor;
-extern char *option_downloads_path;
-extern char *option_url_file;
-extern char *option_hotlist_file;
-extern char *option_tree_icons_path;
 
+#define NSOPTION_EXTRA_DEFINE						\
+	char *atari_screen_driver;					\
+	char *atari_font_driver;					\
+	int atari_font_monochrom;					\
+	int atari_dither;						\
+	int atari_transparency;						\
+	char *atari_face_sans_serif; /* default sans face */		\
+	char *atari_face_sans_serif_bold; /* bold sans face */		\
+	char *atari_face_sans_serif_italic; /* bold sans face */	\
+	char *atari_face_sans_serif_italic_bold; /* bold sans face */	\
+	char *atari_face_monospace; /* monospace face */		\
+	char *atari_face_monospace_bold; /* monospace face */		\
+	char *atari_face_serif; /* serif face */			\
+	char *atari_face_serif_bold; /* bold serif face */		\
+	char *atari_face_cursive;					\
+	char *atari_face_fantasy;					\
+	char *atari_editor;						\
+	char *downloads_path;						\
+	char *url_file;							\
+	char *hotlist_file;						\
+	char *tree_icons_path
 
-#define EXTRA_OPTION_DEFINE \
-char * option_atari_screen_driver = (char*)"vdi";\
-char * option_atari_font_driver = (char*)"vdi";\
-int option_atari_font_monochrom = 0;\
-int option_atari_dither = 1;\
-int option_atari_transparency = 1;\
-char *option_atari_face_sans_serif;\
-char *option_atari_face_sans_serif_bold;\
-char *option_atari_face_sans_serif_italic;\
-char *option_atari_face_sans_serif_italic_bold;\
-char *option_atari_face_monospace;\
-char *option_atari_face_monospace_bold;\
-char *option_atari_face_serif;\
-char *option_atari_face_serif_bold;\
-char *option_atari_face_cursive; \
-char *option_atari_face_fantasy; \
-char *option_atari_editor = (char*)"";\
-char *option_downloads_path = (char*)""; \
-char *option_url_file = (char*)"url.db";\
-char *option_hotlist_file = (char*)"hotlist";\
-char *option_tree_icons_path = (char*)"./res/icons";
+#define NSOPTION_EXTRA_DEFAULTS					\
+	.atari_screen_driver = (char*)"vdi",			\
+	.atari_font_driver = (char*)"vdi",			\
+	.atari_font_monochrom = 0,				\
+	.atari_dither = 1,					\
+	.atari_transparency = 1,					\
+	.atari_face_sans_serif = NULL,					\
+	.atari_face_sans_serif_bold = NULL,				\
+	.atari_face_sans_serif_italic = NULL,				\
+	.atari_face_sans_serif_italic_bold = NULL,			\
+	.atari_face_monospace = NULL,					\
+	.atari_face_monospace_bold = NULL,				\
+	.atari_face_serif = NULL,					\
+	.atari_face_serif_bold = NULL,					\
+	.atari_face_cursive = NULL,					\
+	.atari_face_fantasy = NULL,					\
+	.atari_editor = (char*)"",					\
+	.downloads_path = (char*)"",					\
+	.url_file = (char*)"url.db",					\
+	.hotlist_file = (char*)"hotlist",				\
+	.tree_icons_path = (char*)"./res/icons"
 
-#define EXTRA_OPTION_TABLE \
-	{ "atari_screen_driver", OPTION_STRING, &option_atari_screen_driver },\
-	{ "atari_font_driver", OPTION_STRING, &option_atari_font_driver },\
-	{ "atari_font_monochrom", OPTION_INTEGER, &option_atari_font_monochrom },\
-	{ "atari_transparency", OPTION_INTEGER, &option_atari_transparency },\
-	{ "atari_dither", OPTION_INTEGER, &option_atari_dither },\
-	{ "atari_editor", OPTION_STRING, &option_atari_editor },\
-	{ "font_face_sans_serif", OPTION_STRING, &option_atari_face_sans_serif },\
-	{ "font_face_sans_serif_bold", OPTION_STRING, &option_atari_face_sans_serif_bold },\
-	{ "font_face_sans_serif_italic", OPTION_STRING, &option_atari_face_sans_serif_italic },\
-	{ "font_face_sans_serif_italic_bold", OPTION_STRING, &option_atari_face_sans_serif_italic_bold },\
-	{ "font_face_monospace", OPTION_STRING, &option_atari_face_monospace },\
-	{ "font_face_monospace_bold", OPTION_STRING, &option_atari_face_monospace_bold },\
-	{ "font_face_serif", OPTION_STRING, &option_atari_face_serif },\
-	{ "font_face_serif_bold", OPTION_STRING, &option_atari_face_serif_bold },\
-	{ "font_face_cursive", OPTION_STRING, &option_atari_face_cursive },\
-	{ "font_face_fantasy", OPTION_STRING, &option_atari_face_fantasy },\
-	{ "downloads_path", OPTION_STRING, &option_downloads_path },\
-	{ "url_file", OPTION_STRING, &option_url_file },\
-	{ "hotlist_file", OPTION_STRING, &option_hotlist_file },\
-	{ "tree_icons_path", OPTION_STRING, &option_tree_icons_path }
+#define NSOPTION_EXTRA_TABLE \
+	{ "atari_screen_driver", OPTION_STRING, &nsoptions.atari_screen_driver },\
+	{ "atari_font_driver", OPTION_STRING, &nsoptions.atari_font_driver },\
+	{ "atari_font_monochrom", OPTION_INTEGER, &nsoptions.atari_font_monochrom },\
+	{ "atari_transparency", OPTION_INTEGER, &nsoptions.atari_transparency },\
+	{ "atari_dither", OPTION_INTEGER, &nsoptions.atari_dither },\
+	{ "atari_editor", OPTION_STRING, &nsoptions.atari_editor },\
+	{ "font_face_sans_serif", OPTION_STRING, &nsoptions.atari_face_sans_serif },\
+	{ "font_face_sans_serif_bold", OPTION_STRING, &nsoptions.atari_face_sans_serif_bold },\
+	{ "font_face_sans_serif_italic", OPTION_STRING, &nsoptions.atari_face_sans_serif_italic },\
+	{ "font_face_sans_serif_italic_bold", OPTION_STRING, &nsoptions.atari_face_sans_serif_italic_bold },\
+	{ "font_face_monospace", OPTION_STRING, &nsoptions.atari_face_monospace },\
+	{ "font_face_monospace_bold", OPTION_STRING, &nsoptions.atari_face_monospace_bold },\
+	{ "font_face_serif", OPTION_STRING, &nsoptions.atari_face_serif },\
+	{ "font_face_serif_bold", OPTION_STRING, &nsoptions.atari_face_serif_bold },\
+	{ "font_face_cursive", OPTION_STRING, &nsoptions.atari_face_cursive },\
+	{ "font_face_fantasy", OPTION_STRING, &nsoptions.atari_face_fantasy },\
+	{ "downloads_path", OPTION_STRING, &nsoptions.downloads_path },\
+	{ "url_file", OPTION_STRING, &nsoptions.url_file },\
+	{ "hotlist_file", OPTION_STRING, &nsoptions.hotlist_file },\
+	{ "tree_icons_path", OPTION_STRING, &nsoptions.tree_icons_path }
+
 #endif
 

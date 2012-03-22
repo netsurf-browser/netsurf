@@ -372,7 +372,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			status = messages_get("FormSelect");
 			pointer = GUI_POINTER_MENU;
 			if (mouse & BROWSER_MOUSE_CLICK_1 &&
-					option_core_select_menu) {
+			    nsoption_bool(core_select_menu)) {
 				html->visible_select_menu = gadget;
 				form_open_select_menu(c, gadget,
 						form_select_menu_callback,

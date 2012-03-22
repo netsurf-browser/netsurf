@@ -186,29 +186,30 @@ void tree_set_icon_dir(char *icon_dir)
 static void tree_setup_colours(void)
 {
 	/* Background colour */
-	plot_style_fill_tree_background.fill_colour = option_gui_colour_bg_1;
+	plot_style_fill_tree_background.fill_colour = nsoption_colour(gui_colour_bg_1);
 
 	/* Selection background colour */
-	plot_style_fill_tree_selected.fill_colour = option_gui_colour_fg_1;
+	plot_style_fill_tree_selected.fill_colour = nsoption_colour(gui_colour_fg_1);
 
 	/* Furniture line colour */
 	plot_style_stroke_tree_furniture.stroke_colour = blend_colour(
-			option_gui_colour_bg_1, option_gui_colour_fg_1);
+		nsoption_colour(gui_colour_bg_1), 
+		nsoption_colour(gui_colour_fg_1));
 
 	/* Furniture fill colour */
-	plot_style_fill_tree_furniture.fill_colour = option_gui_colour_fg_2;
+	plot_style_fill_tree_furniture.fill_colour = nsoption_colour(gui_colour_fg_2);
 
 	/* Text colour */
-	plot_fstyle.foreground = option_gui_colour_fg_1;
-	plot_fstyle.background = option_gui_colour_bg_1;
-	plot_fstyle_def_folder.foreground = option_gui_colour_fg_1;
-	plot_fstyle_def_folder.background = option_gui_colour_bg_1;
+	plot_fstyle.foreground = nsoption_colour(gui_colour_fg_1);
+	plot_fstyle.background = nsoption_colour(gui_colour_bg_1);
+	plot_fstyle_def_folder.foreground = nsoption_colour(gui_colour_fg_1);
+	plot_fstyle_def_folder.background = nsoption_colour(gui_colour_bg_1);
 
 	/* Selected text colour */
-	plot_fstyle_selected.foreground = option_gui_colour_fg_2;
-	plot_fstyle_selected.background = option_gui_colour_fg_1;
-	plot_fstyle_selected_def_folder.foreground = option_gui_colour_fg_2;
-	plot_fstyle_selected_def_folder.background = option_gui_colour_fg_1;
+	plot_fstyle_selected.foreground = nsoption_colour(gui_colour_fg_2);
+	plot_fstyle_selected.background = nsoption_colour(gui_colour_fg_1);
+	plot_fstyle_selected_def_folder.foreground = nsoption_colour(gui_colour_fg_2);
+	plot_fstyle_selected_def_folder.background = nsoption_colour(gui_colour_fg_1);
 }
 
 

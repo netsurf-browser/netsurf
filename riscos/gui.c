@@ -81,7 +81,6 @@
 #include "riscos/iconbar.h"
 #include "riscos/menus.h"
 #include "riscos/message.h"
-#include "riscos/options.h"
 #include "riscos/print.h"
 #include "riscos/query.h"
 #include "riscos/save.h"
@@ -379,49 +378,40 @@ static void gui_init(int argc, char** argv)
 	}
 
 	/* Set defaults for absent option strings */
-	if (!option_theme)
-		option_theme = strdup("Aletheia");
-	if (!option_toolbar_browser)
-		option_toolbar_browser = strdup("0123|58|9");
-	if (!option_toolbar_hotlist)
-		option_toolbar_hotlist = strdup("40|12|3");
-	if (!option_toolbar_history)
-		option_toolbar_history = strdup("0|12|3");
-	if (!option_toolbar_cookies)
-		option_toolbar_cookies = strdup("0|12");
-	if (!option_ca_bundle)
-		option_ca_bundle = strdup("NetSurf:Resources.ca-bundle");
-	if (!option_cookie_file)
-		option_cookie_file = strdup("NetSurf:Cookies");
-	if (!option_cookie_jar)
-		option_cookie_jar = strdup(CHOICES_PREFIX "Cookies");
-	if (!option_url_path)
-		option_url_path = strdup("NetSurf:URL");
-	if (!option_url_save)
-		option_url_save = strdup(CHOICES_PREFIX "URL");
-	if (!option_hotlist_path)
-		option_hotlist_path = strdup("NetSurf:Hotlist");
-	if (!option_hotlist_save)
-		option_hotlist_save = strdup(CHOICES_PREFIX "Hotlist");
-	if (!option_recent_path)
-		option_recent_path = strdup("NetSurf:Recent");
-	if (!option_recent_save)
-		option_recent_save = strdup(CHOICES_PREFIX "Recent");
-	if (!option_theme_path)
-		option_theme_path = strdup("NetSurf:Themes");
-	if (!option_theme_save)
-		option_theme_save = strdup(CHOICES_PREFIX "Themes");
+	nsoption_setnull_charp(theme, strdup("Aletheia"));
+	nsoption_setnull_charp(toolbar_browser, strdup("0123|58|9"));
+	nsoption_setnull_charp(toolbar_hotlist, strdup("40|12|3"));
+	nsoption_setnull_charp(toolbar_history, strdup("0|12|3"));
+	nsoption_setnull_charp(toolbar_cookies, strdup("0|12"));
+	nsoption_setnull_charp(ca_bundle, strdup("NetSurf:Resources.ca-bundle"));
+	nsoption_setnull_charp(cookie_file, strdup("NetSurf:Cookies"));
+	nsoption_setnull_charp(cookie_jar, strdup(CHOICES_PREFIX "Cookies"));
+	nsoption_setnull_charp(url_path, strdup("NetSurf:URL"));
+	nsoption_setnull_charp(url_save, strdup(CHOICES_PREFIX "URL"));
+	nsoption_setnull_charp(hotlist_path, strdup("NetSurf:Hotlist"));
+	nsoption_setnull_charp(hotlist_save, strdup(CHOICES_PREFIX "Hotlist"));
+	nsoption_setnull_charp(recent_path, strdup("NetSurf:Recent"));
+	nsoption_setnull_charp(recent_save, strdup(CHOICES_PREFIX "Recent"));
+	nsoption_setnull_charp(theme_path, strdup("NetSurf:Themes"));
+	nsoption_setnull_charp(theme_save, strdup(CHOICES_PREFIX "Themes"));
 
 	tree_set_icon_dir(strdup("NetSurf:Resources.Icons"));
 
-	if (!option_theme || ! option_toolbar_browser ||
-			!option_toolbar_hotlist || !option_toolbar_history ||
-			!option_ca_bundle || !option_cookie_file ||
-			!option_cookie_jar || !option_url_path ||
-			!option_url_save || !option_hotlist_path ||
-			!option_hotlist_save || !option_recent_path ||
-			!option_recent_save || !option_theme_path ||
-			!option_theme_save)
+	if (nsoption_charp(theme) == NULL || 
+	    nsoption_charp(toolbar_browser) == NULL ||
+	    nsoption_charp(toolbar_hotlist) == NULL || 
+	    nsoption_charp(toolbar_history) == NULL ||
+	    nsoption_charp(ca_bundle) == NULL || 
+	    nsoption_charp(cookie_file) == NULL ||
+	    nsoption_charp(cookie_jar) == NULL || 
+	    nsoption_charp(url_path) == NULL ||
+	    nsoption_charp(url_save) == NULL || 
+	    nsoption_charp(hotlist_path) == NULL ||
+	    nsoption_charp(hotlist_save) == NULL || 
+	    nsoption_charp(recent_path) == NULL ||
+	    nsoption_charp(recent_save) == NULL || 
+	    nsoption_charp(theme_path) == NULL ||
+	    nsoption_charp(theme_save) == NULL)
 		die("Failed initialising string options");
 
 	/* Create our choices directories */
@@ -466,8 +456,8 @@ static void gui_init(int argc, char** argv)
 	bitmap_initialise_memory();
 
 	/* Load in visited URLs and Cookies */
-	urldb_load(option_url_path);
-	urldb_load_cookies(option_cookie_file);
+	urldb_load(nsoption_charp(url_path));
+	urldb_load_cookies(nsoption_charp(cookie_file));
 
 	/* Initialise with the wimp */
 	error = xwimp_initialise(wimp_VERSION_RO38, task_name,
@@ -512,7 +502,7 @@ static void gui_init(int argc, char** argv)
 	/* Open the templates */
 	if ((length = snprintf(path, sizeof(path),
 			"NetSurf:Resources.%s.Templates",
-			option_language)) < 0 || length >= (int)sizeof(path))
+			nsoption_charp(language))) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Templates resource.");
 	error = xwimp_open_template(path);
 	if (error) {
@@ -565,19 +555,19 @@ void ro_gui_create_dirs(void)
 	ro_gui_create_dir(buf);
 
 	/* URL */
-	snprintf(buf, sizeof(buf), "%s", option_url_save);
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(url_save));
 	ro_gui_create_dir(buf);
 
 	/* Hotlist */
-	snprintf(buf, sizeof(buf), "%s", option_hotlist_save);
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(hotlist_save));
 	ro_gui_create_dir(buf);
 
 	/* Recent */
-	snprintf(buf, sizeof(buf), "%s", option_recent_save);
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(recent_save));
 	ro_gui_create_dir(buf);
 
 	/* Theme */
-	snprintf(buf, sizeof(buf), "%s", option_theme_save);
+	snprintf(buf, sizeof(buf), "%s", nsoption_charp(theme_save));
 	ro_gui_create_dir(buf);
 	/* and the final directory part (as theme_save is a directory) */
 	xosfile_create_dir(buf, 0);
@@ -611,24 +601,23 @@ void ro_gui_choose_language(void)
 	char path[40];
 
 	/* if option_language exists and is valid, use that */
-	if (option_language) {
-		if (2 < strlen(option_language))
-			option_language[2] = 0;
-		sprintf(path, "NetSurf:Resources.%s", option_language);
+	if (nsoption_charp(language)) {
+		if (2 < strlen(nsoption_charp(language)))
+			nsoption_charp(language)[2] = 0;
+		sprintf(path, "NetSurf:Resources.%s", nsoption_charp(language));
 		if (is_dir(path)) {
-			if (!option_accept_language)
-				option_accept_language = strdup(option_language);
+			nsoption_setnull_charp(accept_language, 
+					strdup(nsoption_charp(language)));
 			return;
 		}
-		free(option_language);
-		option_language = 0;
+		nsoption_set_charp(language, NULL);
 	}
 
-	option_language = strdup(ro_gui_default_language());
-	if (!option_language)
+	nsoption_set_charp(language, strdup(ro_gui_default_language()));
+	if (nsoption_charp(language) == NULL)
 		die("Out of memory");
-	option_accept_language = strdup(option_language);
-	if (!option_accept_language)
+	nsoption_set_charp(accept_language, strdup(nsoption_charp(language)));
+	if (nsoption_charp(accept_language) == NULL)
 		die("Out of memory");
 }
 
@@ -702,7 +691,7 @@ void ro_gui_check_resolvers(void)
 static void gui_init2(int argc, char** argv)
 {
 	char *url = 0;
-	bool open_window = option_open_browser_at_startup;
+	bool open_window = nsoption_bool(open_browser_at_startup);
 
 	/* Complete initialisation of the treeview modules. */
 
@@ -762,13 +751,13 @@ static void gui_init2(int argc, char** argv)
 		}
 	}
 	/* get user's homepage (if configured) */
-	else if (option_homepage_url && option_homepage_url[0]) {
-		url = calloc(strlen(option_homepage_url) + 5, sizeof(char));
+	else if (nsoption_charp(homepage_url) && nsoption_charp(homepage_url)[0]) {
+		url = calloc(strlen(nsoption_charp(homepage_url)) + 5, sizeof(char));
 		if (!url) {
 			LOG(("malloc failed"));
 			die("Insufficient memory for URL");
 		}
-		sprintf(url, "%s", option_homepage_url);
+		sprintf(url, "%s", nsoption_charp(homepage_url));
 	}
 	/* default homepage */
 	else {
@@ -778,7 +767,7 @@ static void gui_init2(int argc, char** argv)
 			die("Insufficient memory for URL");
 		}
 		snprintf(url, 80, "file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-			option_language);
+			 nsoption_charp(language));
 	}
 
 	if (open_window)
@@ -807,7 +796,7 @@ int main(int argc, char** argv)
 	/* Load in our language-specific Messages */
 	if ((length = snprintf(path, sizeof(path),
 			"NetSurf:Resources.%s.Messages",
-			option_language)) < 0 || length >= (int)sizeof(path))
+			nsoption_charp(language))) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Messages resource.");
 	messages_load(path);
 	messages_load("NetSurf:Resources.LangNames");
@@ -831,12 +820,12 @@ int main(int argc, char** argv)
 void gui_quit(void)
 {
 	bitmap_quit();
-	urldb_save_cookies(option_cookie_jar);
-	urldb_save(option_url_save);
+	urldb_save_cookies(nsoption_charp(cookie_jar));
+	urldb_save(nsoption_charp(url_save));
 	ro_gui_window_quit();
 	history_global_cleanup();
 	cookies_cleanup();
-	hotlist_cleanup(option_hotlist_save);
+	hotlist_cleanup(nsoption_charp(hotlist_save));
 	sslcert_cleanup();
 	ro_gui_saveas_quit();
 	rufl_quit();
@@ -861,7 +850,7 @@ void ro_gui_signal(int sig)
 
 	xhourglass_on();
 	xhourglass_colours(0x0000ffff, 0x000000ff, &old_sand, &old_glass);
-	options_dump(stderr);
+	nsoption_dump(stderr);
 	/*rufl_dump_state();*/
 
 #ifndef __ELF__
@@ -1836,14 +1825,14 @@ void ro_msg_dataopen(wimp_message *message)
 		if (len < 9 || strcmp(".!NetSurf",
 				message->data.data_xfer.file_name + len - 9))
 			return;
-		if (option_homepage_url && option_homepage_url[0]) {
-			url = strdup(option_homepage_url);
+		if (nsoption_charp(homepage_url) && nsoption_charp(homepage_url)[0]) {
+			url = strdup(nsoption_charp(homepage_url));
 		} else {
 			url = malloc(80);
 			if (url)
 				snprintf(url, 80,
 					"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-					option_language);
+					 nsoption_charp(language));
 		}
 		if (!url)
 			warn_user("NoMemory", 0);
@@ -1943,7 +1932,7 @@ void ro_msg_window_info(wimp_message *message)
 	struct gui_window *g;
 
 	/* allow the user to turn off thumbnail icons */
-	if (!option_thumbnail_iconise)
+	if (!nsoption_bool(thumbnail_iconise))
 		return;
 
 	wi = (wimp_full_message_window_info*)message;
@@ -2141,7 +2130,7 @@ void ro_gui_open_help_page(const char *page)
 
 	if ((length = snprintf(url, sizeof url,
 			"file:///<NetSurf$Dir>/Docs/%s_%s",
-			page, option_language)) >= 0 &&
+			       page, nsoption_charp(language))) >= 0 &&
 			length < (int)sizeof(url))
 		browser_window_create(url, NULL, 0, true, false);
 }

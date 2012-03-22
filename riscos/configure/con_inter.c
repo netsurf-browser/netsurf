@@ -19,7 +19,7 @@
 #include <stdbool.h>
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -46,23 +46,23 @@ bool ro_gui_options_interface_initialise(wimp_w w)
 {
 	/* set the current values */
 	ro_gui_set_icon_selected_state(w, INTERFACE_STRIP_EXTNS_OPTION,
-			option_strip_extensions);
+                                       nsoption_bool(strip_extensions));
 	ro_gui_set_icon_selected_state(w, INTERFACE_CONFIRM_OVWR_OPTION,
-			option_confirm_overwrite);
+                                       nsoption_bool(confirm_overwrite));
 	ro_gui_set_icon_selected_state(w, INTERFACE_URL_COMPLETE_OPTION,
-			option_url_suggestion);
+                                       nsoption_bool(url_suggestion));
 	ro_gui_set_icon_selected_state(w, INTERFACE_HISTORY_TOOLTIP_OPTION,
-			option_history_tooltip);
+                                       nsoption_bool(history_tooltip));
 	ro_gui_set_icon_selected_state(w, INTERFACE_THUMBNAIL_ICONISE_OPTION,
-			option_thumbnail_iconise);
+                                       nsoption_bool(thumbnail_iconise));
 	ro_gui_set_icon_selected_state(w, INTERFACE_USE_EXTERNAL_HOTLIST,
-			option_external_hotlists);
+                                       nsoption_bool(external_hotlists));
 	ro_gui_set_icon_string(w, INTERFACE_EXTERNAL_HOTLIST_APP,
-			(option_external_hotlist_app) ?
-			option_external_hotlist_app : "", false);
+                               (nsoption_charp(external_hotlist_app)) ?
+                               nsoption_charp(external_hotlist_app) : "", false);
 
 	ro_gui_set_icon_shaded_state(w, INTERFACE_EXTERNAL_HOTLIST_APP,
-			!option_external_hotlists);
+                                     !nsoption_bool(external_hotlists));
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_mouse_click(w,
@@ -117,23 +117,27 @@ void ro_gui_options_interface_default(wimp_pointer *pointer)
 
 bool ro_gui_options_interface_ok(wimp_w w)
 {
-	option_strip_extensions = ro_gui_get_icon_selected_state(w,
-			INTERFACE_STRIP_EXTNS_OPTION);
-	option_confirm_overwrite = ro_gui_get_icon_selected_state(w,
-			INTERFACE_CONFIRM_OVWR_OPTION);
-	option_url_suggestion = ro_gui_get_icon_selected_state(w,
-			INTERFACE_URL_COMPLETE_OPTION);
-	option_history_tooltip = ro_gui_get_icon_selected_state(w,
-			INTERFACE_HISTORY_TOOLTIP_OPTION);
-	option_thumbnail_iconise = ro_gui_get_icon_selected_state(w,
-			INTERFACE_THUMBNAIL_ICONISE_OPTION);
-	option_external_hotlists = ro_gui_get_icon_selected_state(w,
-			INTERFACE_USE_EXTERNAL_HOTLIST);
-	if (option_external_hotlist_app)
-		free(option_external_hotlist_app);
-	option_external_hotlist_app =
-			strdup(ro_gui_get_icon_string(w,
-			INTERFACE_EXTERNAL_HOTLIST_APP));
+	nsoption_set_bool(strip_extensions, 
+			ro_gui_get_icon_selected_state(w, 
+					INTERFACE_STRIP_EXTNS_OPTION));
+	nsoption_set_bool(confirm_overwrite, 
+                          ro_gui_get_icon_selected_state(w,
+                                        INTERFACE_CONFIRM_OVWR_OPTION));
+	nsoption_set_bool(url_suggestion, 
+                          ro_gui_get_icon_selected_state(w,
+                                        INTERFACE_URL_COMPLETE_OPTION));
+	nsoption_set_bool(history_tooltip, 
+                          ro_gui_get_icon_selected_state(w,
+                                        INTERFACE_HISTORY_TOOLTIP_OPTION));
+	nsoption_set_bool(thumbnail_iconise, 
+                          ro_gui_get_icon_selected_state(w,
+                                        INTERFACE_THUMBNAIL_ICONISE_OPTION));
+	nsoption_set_bool(external_hotlists, 
+                          ro_gui_get_icon_selected_state(w,
+                                        INTERFACE_USE_EXTERNAL_HOTLIST));
+	nsoption_set_charp(external_hotlist_app,
+                           strdup(ro_gui_get_icon_string(w,
+                                        INTERFACE_EXTERNAL_HOTLIST_APP)));
 
 	ro_gui_save_options();
 	return true;

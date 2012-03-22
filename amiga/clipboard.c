@@ -29,7 +29,7 @@
 #include "amiga/iff_cset.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/menu.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/utf8.h"
 
 #include <proto/iffparse.h>
@@ -85,7 +85,7 @@ void gui_start_selection(struct gui_window *g)
 {
 	if(!g) return;
 	if(!g->shared->win) return;
-	if(option_kiosk_mode == true) return;
+	if(nsoption_bool(kiosk_mode) == true) return;
 
 	OnMenu(g->shared->win, AMI_MENU_CLEAR);
 	OnMenu(g->shared->win, AMI_MENU_COPY);
@@ -98,7 +98,7 @@ void gui_clear_selection(struct gui_window *g)
 {
 	if(!g) return;
 	if(!g->shared->win) return;
-	if(option_kiosk_mode == true) return;
+	if(nsoption_bool(kiosk_mode) == true) return;
 
 	OffMenu(g->shared->win, AMI_MENU_CLEAR);
 	OffMenu(g->shared->win, AMI_MENU_CUT);
@@ -170,7 +170,7 @@ bool gui_empty_clipboard(void)
 	{
 		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
 		{
-			if(option_utf8_clipboard || ami_utf8_clipboard)
+			if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard)
 			{
 				if(!(PushChunk(iffh,0,ID_CSET,32)))
 				{
@@ -219,7 +219,7 @@ bool ami_add_to_clipboard(const char *text, size_t length, bool space)
 {
 	char *buffer;
 
-	if(option_utf8_clipboard || ami_utf8_clipboard)
+	if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard)
 	{
 		WriteChunkBytes(iffh,text,length);
 	}

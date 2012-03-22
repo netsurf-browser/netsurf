@@ -34,7 +34,7 @@
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "utils/messages.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/utf8.h"
 #include "desktop/searchweb.h"
 
@@ -376,7 +376,7 @@ void ami_gui_opts_open(void)
 	BOOL screenmodedisabled = FALSE, screennamedisabled = FALSE;
 	BOOL proxyhostdisabled = TRUE, proxyauthdisabled = TRUE;
 	BOOL disableanims, animspeeddisabled = FALSE, acceptlangdisabled = FALSE;
-	BOOL scaleselected = option_scale_quality, scaledisabled = FALSE;
+	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL download_notify_disabled = FALSE;
 	char animspeed[10];
 	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy, fontunicode;
@@ -388,9 +388,9 @@ void ami_gui_opts_open(void)
 		return;
 	}
 
-	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
+	if(nsoption_charp(use_pubscreen))
 	{
-		if(strcmp(option_use_pubscreen,"Workbench") == 0)
+		if(strcmp(nsoption_charp(use_pubscreen),"Workbench") == 0)
 		{
 			screenoptsselected = 1;
 			screennamedisabled = TRUE;
@@ -408,15 +408,15 @@ void ami_gui_opts_open(void)
 		screennamedisabled = TRUE;
 	}
 
-	if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
+	if((nsoption_charp(modeid)) && (strncmp(nsoption_charp(modeid),"0x",2) == 0))
 	{
-		screenmodeid = strtoul(option_modeid,NULL,0);
+		screenmodeid = strtoul(nsoption_charp(modeid),NULL,0);
 	}
 
-	if(option_http_proxy)
+	if(nsoption_bool(http_proxy))
 	{
-		proxytype = option_http_proxy_auth + 1;
-		switch(option_http_proxy_auth)
+		proxytype = nsoption_int(http_proxy_auth) + 1;
+		switch(nsoption_int(http_proxy_auth))
 		{
 			case OPTION_HTTP_PROXY_AUTH_BASIC:
 			case OPTION_HTTP_PROXY_AUTH_NTLM:
@@ -427,9 +427,9 @@ void ami_gui_opts_open(void)
 		}
 	}
 
-	sprintf(animspeed,"%.2f",(float)(option_minimum_gif_delay/100.0));
+	sprintf(animspeed,"%.2f",(float)(nsoption_int(minimum_gif_delay)/100.0));
 
-	if(option_animate_images)
+	if(nsoption_bool(animate_images))
 	{
 		disableanims = FALSE;
 		animspeeddisabled = FALSE;
@@ -440,7 +440,7 @@ void ami_gui_opts_open(void)
 		animspeeddisabled = TRUE;
 	}
 
-	if(option_accept_lang_locale)
+	if(nsoption_bool(accept_lang_locale))
 		acceptlangdisabled = TRUE;
 	else
 		acceptlangdisabled = FALSE;
@@ -454,15 +454,15 @@ void ami_gui_opts_open(void)
 	if(ApplicationBase->lib_Version < 53)
 	{
 		download_notify_disabled = TRUE;
-		option_download_notify = FALSE;
+		nsoption_set_bool(download_notify, FALSE);
 	}
 
-	fontsans.ta_Name = ASPrintf("%s.font",option_font_sans);
-	fontserif.ta_Name = ASPrintf("%s.font",option_font_serif);
-	fontmono.ta_Name = ASPrintf("%s.font",option_font_mono);
-	fontcursive.ta_Name = ASPrintf("%s.font",option_font_cursive);
-	fontfantasy.ta_Name = ASPrintf("%s.font",option_font_fantasy);
-	fontunicode.ta_Name = ASPrintf("%s.font",option_font_unicode);
+	fontsans.ta_Name = ASPrintf("%s.font", nsoption_charp(font_sans));
+	fontserif.ta_Name = ASPrintf("%s.font", nsoption_charp(font_serif));
+	fontmono.ta_Name = ASPrintf("%s.font", nsoption_charp(font_mono));
+	fontcursive.ta_Name = ASPrintf("%s.font", nsoption_charp(font_cursive));
+	fontfantasy.ta_Name = ASPrintf("%s.font", nsoption_charp(font_fantasy));
+	fontunicode.ta_Name = ASPrintf("%s.font", nsoption_charp(font_unicode));
 
 	fontsans.ta_Style = 0;
 	fontserif.ta_Style = 0;
@@ -522,7 +522,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_HOMEPAGE] = StringObject,
 										GA_ID, GID_OPTS_HOMEPAGE,
 										GA_RelVerify, TRUE,
-										STRINGA_TextVal, option_homepage_url,
+										STRINGA_TextVal, nsoption_charp(homepage_url),
 										STRINGA_BufferPos,0,
 									StringEnd,
 									CHILD_Label, LabelObject,
@@ -556,7 +556,7 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_HIDEADS,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_HIDEADS],
-  				      		            	GA_Selected, option_block_ads,
+         	           						GA_Selected, nsoption_bool(block_ads),
             	    					CheckBoxEnd,
 									LayoutEnd, // content blocking
 									LAYOUT_AddChild,VGroupObject,
@@ -567,14 +567,14 @@ void ami_gui_opts_open(void)
 											GA_ID, GID_OPTS_CONTENTLANG,
 											GA_RelVerify, TRUE,
 											GA_Disabled, acceptlangdisabled,
-											STRINGA_TextVal, option_accept_language,
+											STRINGA_TextVal, nsoption_charp(accept_language),
 											STRINGA_BufferPos,0,
 										StringEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_FROMLOCALE] = CheckBoxObject,
 											GA_ID, GID_OPTS_FROMLOCALE,
 											GA_Text, gadlab[GID_OPTS_FROMLOCALE],
 											GA_RelVerify, TRUE,
-											GA_Selected, option_accept_lang_locale,
+											GA_Selected, nsoption_bool(accept_lang_locale),
 										ButtonEnd,
 									//	CHILD_WeightedWidth, 0,
 									LayoutEnd, // content language
@@ -588,7 +588,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_HISTORY] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_expire_url,
+											INTEGER_Number, nsoption_int(expire_url),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 366,
 											INTEGER_Arrows, TRUE,
@@ -612,13 +612,13 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_REFERRAL,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_REFERRAL],
-  				      		            GA_Selected, option_send_referer,
+         	           					GA_Selected, nsoption_bool(send_referer),
             	    				CheckBoxEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_FASTSCROLL,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
-  				      		            GA_Selected, option_faster_scroll,
+         	           					GA_Selected, nsoption_bool(faster_scroll),
             	    				CheckBoxEnd,
 								LayoutEnd, // misc
 								CHILD_WeightedHeight, 0,
@@ -655,7 +655,7 @@ void ami_gui_opts_open(void)
 												GA_ID, GID_OPTS_SCREENNAME,
 												GA_RelVerify, TRUE,
 												GA_Disabled,screennamedisabled,
-												STRINGA_TextVal, option_use_pubscreen,
+												STRINGA_TextVal, nsoption_bool(use_pubscreen),
 												STRINGA_BufferPos,0,
 											StringEnd,
 										LayoutEnd,
@@ -670,7 +670,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_THEME] = GetFileObject,
 										GA_ID, GID_OPTS_THEME,
 										GA_RelVerify, TRUE,
-										GETFILE_Drawer, option_theme,
+										GETFILE_Drawer, nsoption_charp(theme),
 										GETFILE_DrawersOnly, TRUE,
 										GETFILE_ReadOnly, TRUE,
 										GETFILE_FullFileExpand, FALSE,
@@ -685,13 +685,13 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_PTRTRUE,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTRTRUE],
-  				      		            GA_Selected, option_truecolour_mouse_pointers,
+         	           					GA_Selected, nsoption_bool(truecolour_mouse_pointers),
             	    				CheckBoxEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_PTROS] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_PTROS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_PTROS],
-  				      		            GA_Selected, option_use_os_pointers,
+         	           					GA_Selected, nsoption_bool(use_os_pointers),
             	    				CheckBoxEnd,
 								LayoutEnd, // mouse
 								CHILD_WeightedHeight,0,
@@ -725,14 +725,14 @@ void ami_gui_opts_open(void)
 											GA_ID, GID_OPTS_PROXY_HOST,
 											GA_RelVerify, TRUE,
 											GA_Disabled, proxyhostdisabled,
-											STRINGA_TextVal, option_http_proxy_host,
+											STRINGA_TextVal, nsoption_charp(http_proxy_host),
 											STRINGA_BufferPos,0,
 										StringEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_PROXY_PORT] = IntegerObject,
 											GA_ID, GID_OPTS_PROXY_PORT,
 											GA_RelVerify, TRUE,
 											GA_Disabled, proxyhostdisabled,
-											INTEGER_Number, option_http_proxy_port,
+											INTEGER_Number, nsoption_charp(http_proxy_port),
 											INTEGER_Minimum, 1,
 											INTEGER_Maximum, 65535,
 											INTEGER_Arrows, FALSE,
@@ -750,7 +750,7 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_PROXY_USER,
 										GA_RelVerify, TRUE,
 										GA_Disabled, proxyauthdisabled,
-										STRINGA_TextVal, option_http_proxy_auth_user,
+										STRINGA_TextVal, nsoption_charp(http_proxy_auth_user),
 										STRINGA_BufferPos,0,
 									StringEnd,
 									CHILD_Label, LabelObject,
@@ -760,7 +760,7 @@ void ami_gui_opts_open(void)
 										GA_ID, GID_OPTS_PROXY_PASS,
 										GA_RelVerify, TRUE,
 										GA_Disabled, proxyauthdisabled,
-										STRINGA_TextVal, option_http_proxy_auth_pass,
+										STRINGA_TextVal, nsoption_charp(http_proxy_auth_pass),
 										STRINGA_BufferPos,0,
 									StringEnd,
 									CHILD_Label, LabelObject,
@@ -775,7 +775,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_FETCHMAX] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHMAX,
 										GA_RelVerify, TRUE,
-										INTEGER_Number, option_max_fetchers,
+										INTEGER_Number, nsoption_int(max_fetchers),
 										INTEGER_Minimum, 1,
 										INTEGER_Maximum, 99,
 										INTEGER_Arrows, TRUE,
@@ -787,7 +787,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_FETCHHOST] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHHOST,
 										GA_RelVerify, TRUE,
-										INTEGER_Number, option_max_fetchers_per_host,
+										INTEGER_Number, nsoption_int(max_fetchers_per_host),
 										INTEGER_Minimum, 1,
 										INTEGER_Maximum, 99,
 										INTEGER_Arrows, TRUE,
@@ -799,7 +799,7 @@ void ami_gui_opts_open(void)
 									LAYOUT_AddChild, gow->objects[GID_OPTS_FETCHCACHE] = IntegerObject,
 										GA_ID, GID_OPTS_FETCHCACHE,
 										GA_RelVerify, TRUE,
-										INTEGER_Number, option_max_cached_fetch_handles,
+										INTEGER_Number, nsoption_int(max_cached_fetch_handles),
 										INTEGER_Minimum, 1,
 										INTEGER_Maximum, 99,
 										INTEGER_Arrows, TRUE,
@@ -827,7 +827,7 @@ void ami_gui_opts_open(void)
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
 										CHOOSER_LabelArray, nativebmopts,
-										CHOOSER_Selected, option_cache_bitmaps,
+										CHOOSER_Selected, nsoption_int(cache_bitmaps),
 									ChooserEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_NATIVEBM],
@@ -880,7 +880,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_DPI_Y] = IntegerObject,
 											GA_ID, GID_OPTS_DPI_Y,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_amiga_ydpi,
+											INTEGER_Number, nsoption_int(amiga_ydpi),
 											INTEGER_Minimum, 60,
 											INTEGER_Maximum, 150,
 											INTEGER_Arrows, TRUE,
@@ -967,7 +967,7 @@ void ami_gui_opts_open(void)
 										GA_RelVerify, TRUE,
 										CHOOSER_PopUp, TRUE,
 										CHOOSER_LabelArray, fontopts,
-										CHOOSER_Selected, option_font_default - PLOT_FONT_FAMILY_SANS_SERIF,
+										CHOOSER_Selected, nsoption_int(font_default) - PLOT_FONT_FAMILY_SANS_SERIF,
 									ChooserEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_DEFAULT],
@@ -983,7 +983,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SIZE] = IntegerObject,
 											GA_ID, GID_OPTS_FONT_SIZE,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_font_size / 10,
+											INTEGER_Number, nsoption_int(font_size) / 10,
 											INTEGER_Minimum, 1,
 											INTEGER_Maximum, 99,
 											INTEGER_Arrows, TRUE,
@@ -1001,7 +1001,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MINSIZE] = IntegerObject,
 											GA_ID, GID_OPTS_FONT_MINSIZE,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_font_min_size / 10,
+											INTEGER_Number, nsoption_int(font_min_size) / 10,
 											INTEGER_Minimum, 1,
 											INTEGER_Maximum, 99,
 											INTEGER_Arrows, TRUE,
@@ -1033,7 +1033,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_CACHE_MEM] = IntegerObject,
 											GA_ID, GID_OPTS_CACHE_MEM,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_memory_cache_size / 1048576,
+											INTEGER_Number, nsoption_int(memory_cache_size) / 1048576,
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 2048,
 											INTEGER_Arrows, TRUE,
@@ -1058,7 +1058,7 @@ void ami_gui_opts_open(void)
 											GA_ID, GID_OPTS_CACHE_DISC,
 											GA_RelVerify, TRUE,
 											GA_Disabled, TRUE,
-											INTEGER_Number, option_disc_cache_age,
+											INTEGER_Number, nsoption_int(disc_cache_age),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 366,
 											INTEGER_Arrows, TRUE,
@@ -1091,20 +1091,20 @@ void ami_gui_opts_open(void)
          	           						GA_RelVerify, TRUE,
 											GA_Disabled, FALSE,
          	           						GA_Text, gadlab[GID_OPTS_OVERWRITE],
-	  				      		            GA_Selected, option_ask_overwrite,
+         	           						GA_Selected, nsoption_bool(ask_overwrite),
     	        	    				CheckBoxEnd,
 			                			LAYOUT_AddChild, gow->objects[GID_OPTS_NOTIFY] = CheckBoxObject,
       	    	          					GA_ID, GID_OPTS_NOTIFY,
          	    	       					GA_RelVerify, TRUE,
 											GA_Disabled, download_notify_disabled,
          	           						GA_Text, gadlab[GID_OPTS_NOTIFY],
-  					      		            GA_Selected, option_download_notify,
+         	           						GA_Selected, nsoption_bool(download_notify),
 										CheckBoxEnd,
 									LayoutEnd,
 									LAYOUT_AddChild, gow->objects[GID_OPTS_DLDIR] = GetFileObject,
 										GA_ID, GID_OPTS_DLDIR,
 										GA_RelVerify, TRUE,
-										GETFILE_Drawer, option_download_dir,
+										GETFILE_Drawer, nsoption_charp(download_dir),
 										GETFILE_DrawersOnly, TRUE,
 										GETFILE_ReadOnly, TRUE,
 										GETFILE_FullFileExpand, FALSE,
@@ -1123,19 +1123,19 @@ void ami_gui_opts_open(void)
       	              						GA_ID, GID_OPTS_TAB_ACTIVE,
          	        	   					GA_RelVerify, TRUE,
          	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-  				      		            	GA_Selected, !option_new_tab_active,
+         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
             	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_LAST,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
-  				      			            GA_Selected, option_new_tab_last,
+         	           						GA_Selected, nsoption_bool(new_tab_last),
             	    					CheckBoxEnd,
 										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
       	              						GA_ID, GID_OPTS_TAB_2,
          	           						GA_RelVerify, TRUE,
          	           						GA_Text, gadlab[GID_OPTS_TAB_2],
-  				      			            GA_Selected, option_button_2_tab,
+         	           						GA_Selected, nsoption_bool(button_2_tab),
             	    					CheckBoxEnd,
 									LayoutEnd, // tabbed browsing
 
@@ -1147,19 +1147,19 @@ void ami_gui_opts_open(void)
     	  	              					GA_ID, GID_OPTS_STARTUP_NO_WIN,
         	 	           					GA_RelVerify, TRUE,
 											GA_Text, gadlab[GID_OPTS_STARTUP_NO_WIN],
-  						      	            GA_Selected, option_startup_no_window,
+        	 	           					GA_Selected, nsoption_bool(startup_no_window),
             		    				CheckBoxEnd,
 		        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CLOSE_NO_QUIT] = CheckBoxObject,
       		              					GA_ID, GID_OPTS_CLOSE_NO_QUIT,
 											GA_RelVerify, TRUE,
 											GA_Text, gadlab[GID_OPTS_CLOSE_NO_QUIT],
-											GA_Selected, option_close_no_quit,
+											GA_Selected, nsoption_bool(close_no_quit),
 	        	        				CheckBoxEnd,
 		                				LAYOUT_AddChild, gow->objects[GID_OPTS_DOCKY] = CheckBoxObject,
 											GA_ID, GID_OPTS_DOCKY,
         	 	           					GA_RelVerify, TRUE,
          		           					GA_Text, gadlab[GID_OPTS_DOCKY],
-  					      		            GA_Selected, !option_hide_docky_icon,
+         		           					GA_Selected, !nsoption_bool(hide_docky_icon),
 	            		    			CheckBoxEnd,
 									LayoutEnd, // behaviour
 									CHILD_WeightedHeight, 0,
@@ -1175,7 +1175,7 @@ void ami_gui_opts_open(void)
       		              					GA_ID, GID_OPTS_CLIPBOARD,
          		           					GA_RelVerify, TRUE,
          	    	       					GA_Text, gadlab[GID_OPTS_CLIPBOARD],
-  				    	  		            GA_Selected, option_utf8_clipboard,
+         	    	       					GA_Selected, nsoption_bool(utf8_clipboard),
             	    					CheckBoxEnd,
 									LayoutEnd, // clipboard
 									CHILD_WeightedHeight, 0,
@@ -1188,7 +1188,7 @@ void ami_gui_opts_open(void)
 											GA_RelVerify, TRUE,
 											CHOOSER_PopUp, TRUE,
 											CHOOSER_LabelArray, websearch_list,
-											CHOOSER_Selected, option_search_provider,
+											CHOOSER_Selected, nsoption_int(search_provider),
 											CHOOSER_MaxLabels, 40,
 										ChooserEnd,
 										CHILD_Label, LabelObject,
@@ -1207,7 +1207,7 @@ void ami_gui_opts_open(void)
    	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
        	 	           					GA_RelVerify, TRUE,
    	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
-  				      		            GA_Selected, option_context_menu,
+   	     	           					GA_Selected, nsoption_bool(context_menu),
            	    					CheckBoxEnd,
 								LayoutEnd, // context menus
 								CHILD_WeightedHeight, 0,
@@ -1230,7 +1230,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_TOP] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_TOP,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_margin_top,
+											INTEGER_Number, nsoption_int(margin_top),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 99,
 											INTEGER_Arrows, TRUE,
@@ -1248,7 +1248,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_LEFT] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_LEFT,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_margin_left,
+											INTEGER_Number, nsoption_int(margin_left),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 99,
 											INTEGER_Arrows, TRUE,
@@ -1266,7 +1266,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_BOTTOM] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_BOTTOM,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_margin_bottom,
+											INTEGER_Number, nsoption_int(margin_bottom),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 99,
 											INTEGER_Arrows, TRUE,
@@ -1284,7 +1284,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_MARGIN_RIGHT] = IntegerObject,
 											GA_ID, GID_OPTS_MARGIN_RIGHT,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_margin_right,
+											INTEGER_Number, nsoption_int(margin_right),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 99,
 											INTEGER_Arrows, TRUE,
@@ -1308,7 +1308,7 @@ void ami_gui_opts_open(void)
 										LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_SCALE] = IntegerObject,
 											GA_ID, GID_OPTS_EXPORT_SCALE,
 											GA_RelVerify, TRUE,
-											INTEGER_Number, option_export_scale,
+											INTEGER_Number, nsoption_int(export_scale),
 											INTEGER_Minimum, 0,
 											INTEGER_Maximum, 100,
 											INTEGER_Arrows, TRUE,
@@ -1331,19 +1331,19 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_EXPORT_NOIMAGES,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_NOIMAGES],
-  				      		            GA_Selected, option_suppress_images,
+         	           					GA_Selected, nsoption_bool(suppress_images),
             	    				CheckBoxEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_NOBKG] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_NOBKG,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_NOBKG],
-  				      		            GA_Selected, option_remove_backgrounds,
+         	           					GA_Selected, nsoption_bool(remove_backgrounds),
             	    				CheckBoxEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_LOOSEN] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_LOOSEN,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_LOOSEN],
-  				      		            GA_Selected, option_enable_loosening,
+         	           					GA_Selected, nsoption_bool(enable_loosening),
             	    				CheckBoxEnd,
 								LayoutEnd, // appearance
 								CHILD_WeightedHeight, 0,
@@ -1355,14 +1355,14 @@ void ami_gui_opts_open(void)
       	              					GA_ID, GID_OPTS_EXPORT_COMPRESS,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_COMPRESS],
-  				      		            GA_Selected, option_enable_PDF_compression,
+         	           					GA_Selected, nsoption_bool(enable_PDF_compression),
             	    				CheckBoxEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_EXPORT_PASSWORD] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_EXPORT_PASSWORD,
          	           					GA_RelVerify, TRUE,
 										GA_Disabled, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_EXPORT_PASSWORD],
-  				      		            GA_Selected, option_enable_PDF_password,
+         	           					GA_Selected, nsoption_bool(enable_PDF_password),
             	    				CheckBoxEnd,
 								LayoutEnd, // export
 								CHILD_WeightedHeight, 0,
@@ -1406,244 +1406,303 @@ void ami_gui_opts_use(void)
 	char *dot;
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_HOMEPAGE],(ULONG *)&data);
-	if(option_homepage_url) free(option_homepage_url);
-	option_homepage_url = (char *)strdup((char *)data);
+	nsoption_set_charp(homepage_url, (char *)strdup((char *)data));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_CONTENTLANG],(ULONG *)&data);
-	if(option_accept_language) free(option_accept_language);
-	option_accept_language = (char *)strdup((char *)data);
+	nsoption_set_charp(accept_language, (char *)strdup((char *)data));
 
 	GetAttr(GA_Selected, gow->objects[GID_OPTS_FROMLOCALE],(ULONG *)&data);
-	if(data) option_accept_lang_locale = true;
-		else option_accept_lang_locale = false;
+	if (data) {
+		nsoption_set_bool(accept_lang_locale, true);
+	} else {
+		nsoption_set_bool(accept_lang_locale, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_HIDEADS],(ULONG *)&data);
-	if(data) option_block_ads = true;
-		else option_block_ads = false;
+	if (data) {
+		nsoption_set_bool(block_ads, true);
+	} else {
+		nsoption_set_bool(block_ads, false);
+	}
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_HISTORY],(ULONG *)&option_expire_url);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_HISTORY],(ULONG *)&nsoption_int(expire_url));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_REFERRAL],(ULONG *)&data);
-	if(data) option_send_referer = true;
-		else option_send_referer = false;
+	if (data) {
+		nsoption_set_bool(send_referer, true);
+	} else {
+		nsoption_set_bool(send_referer, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_FASTSCROLL],(ULONG *)&data);
-	if(data) option_faster_scroll = true;
-		else option_faster_scroll = false;
+	if (data) {
+		nsoption_set_bool(faster_scroll, true);
+	} else {
+		nsoption_set_bool(faster_scroll, false);
+	}
 
 	GetAttr(RADIOBUTTON_Selected,gow->objects[GID_OPTS_SCREEN],(ULONG *)&data);
 	switch(data)
 	{
 		case 0:
-			if(option_use_pubscreen) free(option_use_pubscreen);
-			option_use_pubscreen = NULL;
-		break;
+			nsoption_set_charp(use_pubscreen, NULL);
+			break;
 
 		case 1:
-			if(option_use_pubscreen) free(option_use_pubscreen);
-			option_use_pubscreen = (char *)strdup("Workbench");
-		break;
+			nsoption_set_charp(use_pubscreen, (char *)strdup("Workbench"));
+			break;
 
 		case 2:
 			GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_SCREENNAME],(ULONG *)&data);
-			if(option_use_pubscreen) free(option_use_pubscreen);
-			option_use_pubscreen = (char *)strdup((char *)data);
-		break;
+			nsoption_set_charp(use_pubscreen, (char *)strdup((char *)data));
+			break;
 	}
 
 	GetAttr(GETSCREENMODE_DisplayID, gow->objects[GID_OPTS_SCREENMODE], (ULONG *)&id);
 	if(id)
 	{
-		if(option_modeid) free(option_modeid);
-		option_modeid = malloc(20);
-		sprintf(option_modeid,"0x%lx", id);
+		char *modeid = malloc(20);
+		sprintf(modeid,"0x%lx", id);
+		nsoption_set_charp(modeid, modeid);
 	}
 
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
-	if(option_theme) free(option_theme);
-	option_theme = (char *)strdup((char *)data);
+	nsoption_set_charp(theme, (char *)strdup((char *)data));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTRTRUE],(ULONG *)&data);
-	if(data) option_truecolour_mouse_pointers = true;
-		else option_truecolour_mouse_pointers = false;
+	if (data) {
+		nsoption_set_bool(truecolour_mouse_pointers, true);
+	} else {
+		nsoption_set_bool(truecolour_mouse_pointers, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_PTROS],(ULONG *)&data);
-	if(data) option_use_os_pointers = true;
-		else option_use_os_pointers = false;
+	if (data) {
+		nsoption_set_bool(use_os_pointers, true);
+	} else {
+		nsoption_set_bool(use_os_pointers, false);
+	}
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_PROXY],(ULONG *)&data);
 	if(data)
 	{
-		option_http_proxy = true;
-		option_http_proxy_auth = data - 1;
+		nsoption_set_bool(http_proxy, true);
+		nsoption_set_int(http_proxy_auth, data - 1);
 	}
 	else
 	{
-		option_http_proxy = false;
+		nsoption_set_bool(http_proxy, false);
 	}
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_HOST],(ULONG *)&data);
-	if(option_http_proxy_host) free(option_http_proxy_host);
-	option_http_proxy_host = (char *)strdup((char *)data);
+	nsoption_set_charp(http_proxy_host, (char *)strdup((char *)data));
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_PROXY_PORT],(ULONG *)&option_http_proxy_port);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_PROXY_PORT],(ULONG *)&nsoption_int(http_proxy_port));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_USER],(ULONG *)&data);
-	if(option_http_proxy_auth_user) free(option_http_proxy_auth_user);
-	option_http_proxy_auth_user = (char *)strdup((char *)data);
+	nsoption_set_charp(http_proxy_auth_user, (char *)strdup((char *)data));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_PROXY_PASS],(ULONG *)&data);
-	if(option_http_proxy_auth_pass) free(option_http_proxy_auth_pass);
-	option_http_proxy_auth_pass = (char *)strdup((char *)data);
+	nsoption_set_charp(http_proxy_auth_pass, (char *)strdup((char *)data));
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&option_max_fetchers);
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&option_max_fetchers_per_host);
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&option_max_cached_fetch_handles);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHMAX],(ULONG *)&nsoption_int(max_fetchers));
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHHOST],(ULONG *)&nsoption_int(max_fetchers_per_host));
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FETCHCACHE],(ULONG *)&nsoption_int(max_cached_fetch_handles));
 
-	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_NATIVEBM],(ULONG *)&option_cache_bitmaps);
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_NATIVEBM],(ULONG *)&nsoption_int(cache_bitmaps));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_SCALEQ],(ULONG *)&data);
-	if(data) option_scale_quality = true;
-		else option_scale_quality = false;
+	if (data) {
+		nsoption_set_bool(scale_quality, true);
+	} else {
+		nsoption_set_bool(scale_quality, false);
+	}
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
-	animspeed = strtof((char *)data,NULL);
-	option_minimum_gif_delay = (int)(animspeed * 100);
+	animspeed = strtof((char *)data, NULL);
+	nsoption_set_int(minimum_gif_delay, (int)(animspeed * 100));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_ANIMDISABLE],(ULONG *)&data);
-	if(data) option_animate_images = false;
-		else option_animate_images = true;
+	if(data) { 
+		nsoption_set_bool(animate_images, false);
+	} else { 
+		nsoption_set_bool(animate_images, true);
+	}
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&option_amiga_ydpi);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_DPI_Y],(ULONG *)&nsoption_int(amiga_ydpi));
 	ami_font_setdevicedpi(id); // id set above
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SANS],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
-	if(option_font_sans) free(option_font_sans);
+
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-	option_font_sans = (char *)strdup((char *)tattr->ta_Name);
+	nsoption_set_charp(font_sans, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_SERIF],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
-	if(option_font_serif) free(option_font_serif);
+
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-	option_font_serif = (char *)strdup((char *)tattr->ta_Name);
+	nsoption_set_charp(font_serif, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_MONO],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
-	if(option_font_mono) free(option_font_mono);
+
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-	option_font_mono = (char *)strdup((char *)tattr->ta_Name);
+	nsoption_set_charp(font_mono, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_CURSIVE],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
-	if(option_font_cursive) free(option_font_cursive);
+
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-	option_font_cursive = (char *)strdup((char *)tattr->ta_Name);
+	nsoption_set_charp(font_cursive, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_FANTASY],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
-	if(option_font_fantasy) free(option_font_fantasy);
+
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-	option_font_fantasy = (char *)strdup((char *)tattr->ta_Name);
+	nsoption_set_charp(font_fantasy, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_UNICODE],(ULONG *)&data);
 	tattr = (struct TextAttr *)data;
-	if(option_font_unicode) free(option_font_unicode);
+
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-	option_font_unicode = (char *)strdup((char *)tattr->ta_Name);
+	nsoption_set_charp(font_unicode, (char *)strdup((char *)tattr->ta_Name));
 
-	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&option_font_default);
-	option_font_default += PLOT_FONT_FAMILY_SANS_SERIF;
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
+	nsoption_set_int(font_default, nsoption_int(font_default) + PLOT_FONT_FAMILY_SANS_SERIF);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_SIZE],(ULONG *)&option_font_size);
-	option_font_size *= 10;
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_SIZE],(ULONG *)&nsoption_int(font_size));
+	nsoption_set_int(font_size, nsoption_int(font_size) * 10);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_MINSIZE],(ULONG *)&option_font_min_size);
-	option_font_min_size *= 10;
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_MINSIZE],(ULONG *)&nsoption_int(font_min_size));
+	nsoption_set_int(font_min_size, nsoption_int(font_min_size) * 10);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&option_memory_cache_size);
-	option_memory_cache_size *= 1048576;
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
+	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&option_disc_cache_age);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_DISC],(ULONG *)&nsoption_int(disc_cache_age));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_OVERWRITE],(ULONG *)&data);
-	if(data) option_ask_overwrite = true;
-		else option_ask_overwrite = false;
+	if (data) { 
+		nsoption_set_bool(ask_overwrite, true);
+	} else {
+		nsoption_set_bool(ask_overwrite, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_NOTIFY],(ULONG *)&data);
-	if(data) option_download_notify = true;
-		else option_download_notify = false;
+	if (data) {
+		nsoption_set_bool(download_notify, true);
+	} else {
+		nsoption_set_bool(download_notify, false);
+	}
 
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_DLDIR],(ULONG *)&data);
-	if(option_download_dir) free(option_download_dir);
-	option_download_dir = (char *)strdup((char *)data);
+	nsoption_set_charp(download_dir, (char *)strdup((char *)data));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ACTIVE],(ULONG *)&data);
-	if(data) option_new_tab_active = false;
-		else option_new_tab_active = true;
+	if (data) {
+		nsoption_set_bool(new_tab_active, false);
+	} else {
+		nsoption_set_bool(new_tab_active, true);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_LAST],(ULONG *)&data);
-	if(data) option_new_tab_last = true;
-		else option_new_tab_last = false;
+	if (data) {
+		nsoption_set_bool(new_tab_last, true);
+	} else {
+		nsoption_set_bool(new_tab_last, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_2],(ULONG *)&data);
-	if(data) option_button_2_tab = true;
-		else option_button_2_tab = false;
+	if (data) {
+		nsoption_set_bool(button_2_tab, true);
+	} else {
+		nsoption_set_bool(button_2_tab, false);
+	}
 
-	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&option_search_provider);
-	search_web_provider_details(option_search_provider);
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));
+	search_web_provider_details(nsoption_int(search_provider));
 	search_web_retrieve_ico(false);
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLIPBOARD],(ULONG *)&data);
-	if(data) option_utf8_clipboard = true;
-		else option_utf8_clipboard = false;
+	if (data) {
+		nsoption_set_bool(utf8_clipboard, true);
+	} else {
+		nsoption_set_bool(utf8_clipboard, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CMENU_ENABLE],(ULONG *)&data);
-	if(data) option_context_menu = true;
-		else option_context_menu = false;
+	if (data) {
+		nsoption_set_bool(context_menu, true);
+	} else {
+		nsoption_set_bool(context_menu, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_STARTUP_NO_WIN],(ULONG *)&data);
-	if(data) option_startup_no_window = true;
-		else option_startup_no_window = false;
+	if (data) {
+		nsoption_set_bool(startup_no_window, true);
+	} else {
+		nsoption_set_bool(startup_no_window, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_CLOSE_NO_QUIT],(ULONG *)&data);
-	if(data) option_close_no_quit = true;
-		else option_close_no_quit = false;
+	if (data) {
+		nsoption_set_bool(close_no_quit, true);
+	} else { 
+		nsoption_set_bool(close_no_quit, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_DOCKY],(ULONG *)&data);
-	if(data) option_hide_docky_icon = false;
-		else option_hide_docky_icon = true;
+	if (data) {
+		nsoption_set_bool(hide_docky_icon, false);
+	} else {
+		nsoption_set_bool(hide_docky_icon, true);
+	}
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_TOP],(ULONG *)&option_margin_top);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_TOP],(ULONG *)&nsoption_int(margin_top));
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_LEFT],(ULONG *)&option_margin_left);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_LEFT],(ULONG *)&nsoption_int(margin_left));
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_BOTTOM],(ULONG *)&option_margin_bottom);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_BOTTOM],(ULONG *)&nsoption_int(margin_bottom));
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_RIGHT],(ULONG *)&option_margin_right);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_MARGIN_RIGHT],(ULONG *)&nsoption_int(margin_right));
 
-	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_EXPORT_SCALE],(ULONG *)&option_export_scale);
+	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_EXPORT_SCALE],(ULONG *)&nsoption_int(export_scale));
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_NOIMAGES],(ULONG *)&data);
-	if(data) option_suppress_images = true;
-		else option_suppress_images = false;
+	if (data) {
+		nsoption_set_bool(suppress_images, true);
+	} else {
+		nsoption_set_bool(suppress_images, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_NOBKG],(ULONG *)&data);
-	if(data) option_remove_backgrounds = true;
-		else option_remove_backgrounds = false;
+	if (data) {
+		nsoption_set_bool(remove_backgrounds, true);
+	} else {
+		nsoption_set_bool(remove_backgrounds, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_LOOSEN],(ULONG *)&data);
-	if(data) option_enable_loosening = true;
-		else option_enable_loosening = false;
+	if (data) {
+		nsoption_set_bool(enable_loosening, true);
+	} else {
+		nsoption_set_bool(enable_loosening, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_COMPRESS],(ULONG *)&data);
-	if(data) option_enable_PDF_compression = true;
-		else option_enable_PDF_compression = false;
+	if (data) {
+		nsoption_set_bool(enable_PDF_compression, true);
+	} else {
+		nsoption_set_bool(enable_PDF_compression, false);
+	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_EXPORT_PASSWORD],(ULONG *)&data);
-	if(data) option_enable_PDF_password = true;
-		else option_enable_PDF_password = false;
+	if (data) {
+		nsoption_set_bool(enable_PDF_password, true);
+	} else {
+		nsoption_set_bool(enable_PDF_password, false);
+	}
 }
 
 void ami_gui_opts_close(void)
@@ -1675,7 +1734,7 @@ BOOL ami_gui_opts_event(void)
 				{
 					case GID_OPTS_SAVE:
 						ami_gui_opts_use();
-						options_write("PROGDIR:Resources/Options");
+						nsoption_write("PROGDIR:Resources/Options");
 						ami_gui_opts_close();
 						return TRUE;
 					break;
@@ -1852,9 +1911,9 @@ STRPTR *ami_gui_opts_websearch(void)
 
 	websearchlist = AllocVec(200, MEMF_CLEAR);
 
-	if (option_search_engines_file == NULL) return websearchlist;
+	if (nsoption_charp(search_engines_file) == NULL) return websearchlist;
 
-	FILE *f = fopen(option_search_engines_file, "r");
+	FILE *f = fopen(nsoption_charp(search_engines_file), "r");
 	if (f == NULL) return websearchlist;
 
 	while (fgets(buf, sizeof(buf), f) != NULL) {

@@ -54,7 +54,7 @@
 #include "riscos/help.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/save.h"
 #include "riscos/tinct.h"
 #include "riscos/toolbar.h"

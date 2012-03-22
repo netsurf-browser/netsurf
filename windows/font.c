@@ -46,30 +46,45 @@ utf8_convert_ret utf8_to_local_encoding(const char *string,
 	return utf8_to_enc(string, "UCS-2", len, result);
 }
 
+utf8_convert_ret utf8_from_local_encoding(const char *string, size_t len,
+		char **result)
+{
+	assert(string && result);
+
+	if (len == 0)
+		len = strlen(string);
+
+	*result = strndup(string, len);
+	if (!(*result))
+		return UTF8_CONVERT_NOMEM;
+
+	return UTF8_CONVERT_OK;
+}
+
 HFONT get_font(const plot_font_style_t *style)
 {
 	char *face = NULL;
 	DWORD family;
 	switch(style->family) {
 	case PLOT_FONT_FAMILY_SERIF:
-		face = strdup(option_font_serif);
+		face = strdup(nsoption_charp(font_serif));
 		family = FF_ROMAN | DEFAULT_PITCH;
 		break;
 	case PLOT_FONT_FAMILY_MONOSPACE:
-		face = strdup(option_font_mono);
+		face = strdup(nsoption_charp(font_mono));
 		family = FF_MODERN | DEFAULT_PITCH;
 		break;
 	case PLOT_FONT_FAMILY_CURSIVE:
-		face = strdup(option_font_cursive);
+		face = strdup(nsoption_charp(font_cursive));
 		family = FF_SCRIPT | DEFAULT_PITCH;
 		break;
 	case PLOT_FONT_FAMILY_FANTASY:
-		face = strdup(option_font_fantasy);
+		face = strdup(nsoption_charp(font_fantasy));
 		family = FF_DECORATIVE | DEFAULT_PITCH;
 		break;
 	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
-		face = strdup(option_font_sans);
+		face = strdup(nsoption_charp(font_sans));
 		family = FF_SWISS | DEFAULT_PITCH;
 		break;
 	}

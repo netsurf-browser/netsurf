@@ -30,7 +30,7 @@
 #include "desktop/gui.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
-#include "gtk/options.h"
+#include "desktop/options.h"
 #include "gtk/download.h"
 #include "gtk/window.h"
 #include "gtk/compat.h"
@@ -373,7 +373,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 	nsgtk_download_change_sensitivity(dw, NSGTK_DOWNLOAD_CLEAR);
 	nsgtk_download_change_status(dw, NSGTK_DOWNLOAD_COMPLETE);
 	
-	if (option_downloads_clear)
+	if (nsoption_bool(downloads_clear))
 		nsgtk_download_store_clear_item(dw);
 	else
 		nsgtk_download_update(TRUE);
@@ -735,10 +735,10 @@ gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *domain,
 					(GTK_FILE_CHOOSER(dialog), filename);
 			gtk_file_chooser_set_current_folder
 					(GTK_FILE_CHOOSER(dialog), 
-					option_downloads_directory);
+					 nsoption_charp(downloads_directory));
 			gtk_file_chooser_set_do_overwrite_confirmation
 					(GTK_FILE_CHOOSER(dialog),
-					option_request_overwrite);
+					 nsoption_bool(request_overwrite));
 					
 			gint result = gtk_dialog_run(GTK_DIALOG(dialog));
 			if (result == GTK_RESPONSE_ACCEPT)
@@ -748,23 +748,23 @@ gchar* nsgtk_download_dialog_show (const gchar *filename, const gchar *domain,
 			break;
 		}
 		case GTK_RESPONSE_DOWNLOAD: {
-			destination = malloc(strlen(option_downloads_directory)
+			destination = malloc(strlen(nsoption_charp(downloads_directory))
 					+ strlen(filename) + SLEN("/") + 1);
 			if (destination == NULL) {
 				warn_user(messages_get("NoMemory"), 0);
 				break;
 			}
 			sprintf(destination, "%s/%s", 
-					option_downloads_directory, filename);
+				nsoption_charp(downloads_directory), filename);
 			/* Test if file already exists and display overwrite	
 			 * confirmation if needed */
-			if (g_file_test(destination, G_FILE_TEST_EXISTS)
-					&& option_request_overwrite) {
+			if (g_file_test(destination, G_FILE_TEST_EXISTS) && 
+			    nsoption_bool(request_overwrite)) {
 				message = g_strdup_printf(messages_get(
 						"gtkOverwrite"), filename);
 				info = g_strdup_printf(messages_get(
 						"gtkOverwriteInfo"),
-						option_downloads_directory);
+						       nsoption_charp(downloads_directory));
 				
 				dialog = gtk_message_dialog_new_with_markup(
 						nsgtk_download_parent, 

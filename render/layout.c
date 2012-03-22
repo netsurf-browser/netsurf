@@ -2402,7 +2402,7 @@ bool layout_line(struct box *first, int *width, int *y,
 							opt_maxwidth =opt_width;
 					}
 					b->width = opt_maxwidth;
-					if (option_core_select_menu)
+					if (nsoption_bool(core_select_menu))
 						b->width += SCROLLBAR_WIDTH;
 				} else {
 					font_func->font_width(&fstyle, b->text,
@@ -3076,7 +3076,7 @@ struct box *layout_minmax_line(struct box *first,
 					}
 
 					b->width = opt_maxwidth;
-					if (option_core_select_menu)
+					if (nsoption_bool(core_select_menu))
 						b->width += SCROLLBAR_WIDTH;
 
 				} else {

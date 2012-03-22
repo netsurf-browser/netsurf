@@ -296,20 +296,20 @@ void nsbeos_style_to_font(BFont &font, const plot_font_style_t *fstyle)
 
 	switch (fstyle->family) {
 	case PLOT_FONT_FAMILY_SERIF:
-		family = option_font_serif;
+		family = nsoption_charp(font_serif);
 		break;
 	case PLOT_FONT_FAMILY_MONOSPACE:
-		family = option_font_mono;
+		family = nsoption_charp(font_mono);
 		break;
 	case PLOT_FONT_FAMILY_CURSIVE:
-		family = option_font_cursive;
+		family = nsoption_charp(font_cursive);
 		break;
 	case PLOT_FONT_FAMILY_FANTASY:
-		family = option_font_fantasy;
+		family = nsoption_charp(font_fantasy);
 		break;
 	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
-		family = option_font_sans;
+		family = nsoption_charp(font_sans);
 		break;
 	}
 

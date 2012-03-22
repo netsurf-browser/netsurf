@@ -41,7 +41,7 @@
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/save.h"
 #include "riscos/sslcert.h"
 #include "riscos/toolbar.h"
@@ -664,7 +664,7 @@ void ro_gui_dialog_close_persistent(wimp_w parent) {
 
 void ro_gui_save_options(void)
 {
-	options_write("<NetSurf$ChoicesSave>");
+	nsoption_write("<NetSurf$ChoicesSave>");
 }
 
 bool ro_gui_dialog_zoom_apply(wimp_w w) {

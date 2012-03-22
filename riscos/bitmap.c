@@ -39,7 +39,7 @@
 #include "image/bitmap.h"
 #include "riscos/bitmap.h"
 #include "riscos/image.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/palettes.h"
 #include "riscos/content-handlers/sprite.h"
 #include "riscos/tinct.h"
@@ -138,7 +138,7 @@ void bitmap_initialise_memory(void)
 	available_memory = free_slot;
 
 	/* calculate our memory block sizes */
-	if (option_image_memory_direct == -1) {
+	if (nsoption_int(image_memory_direct) == -1) {
 		/* claim 25% of free memory - min 256KB, max 32768KB */
 		direct_size = available_memory / 4;
 		if (direct_size < (256 << 10))
@@ -146,9 +146,9 @@ void bitmap_initialise_memory(void)
 		if (direct_size > (32768 << 10))
 			direct_size = (32768 << 10);
 	} else {
-		direct_size = (option_image_memory_direct << 10);
+		direct_size = (nsoption_int(image_memory_direct) << 10);
 	}
-	if (option_image_memory_compressed == -1) {
+	if (nsoption_int(image_memory_compressed) == -1) {
 		/* claim 10% of free memory - min 256KB, max 4192KB */
 		compressed_size = available_memory / 10;
 		if (compressed_size < (256 << 10))
@@ -156,7 +156,7 @@ void bitmap_initialise_memory(void)
 		if (compressed_size > (4192 << 10))
 			compressed_size = (4192 << 10);
 	} else {
-		compressed_size = (option_image_memory_compressed << 10);
+		compressed_size = (nsoption_int(image_memory_compressed) << 10);
 	}
 
 	/* set our values. No fixed buffers here, ho hum. */

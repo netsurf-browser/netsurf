@@ -84,7 +84,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		bw->scale = clone->scale;
 		window = [(BrowserViewController *)(clone->window) windowController];
 	} else {
-		bw->scale = (float) option_scale / 100;	
+		bw->scale = (float) nsoption_int(scale) / 100;	
 	}
 
 	BrowserViewController *result = [[BrowserViewController alloc] initWithBrowser: bw];

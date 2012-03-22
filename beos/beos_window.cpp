@@ -384,7 +384,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	if (clone != NULL)
 		bw->scale = clone->scale;
 	else
-		bw->scale = (float) option_scale / 100;
+		bw->scale = (float) nsoption_int(scale) / 100;
 
 	g->careth = 0;
 	g->pending_resizes = 0;

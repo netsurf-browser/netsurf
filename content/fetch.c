@@ -278,7 +278,7 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 		/* Not a problem if referer has no scheme */
 
 		/* Determine whether to send the Referer header */
-		if (option_send_referer && ref_scheme != NULL) {
+		if (nsoption_bool(send_referer) && ref_scheme != NULL) {
 			/* User permits us to send the header 
 			 * Only send it if:
 			 *    1) The fetch and referer schemes match
@@ -389,7 +389,7 @@ void fetch_dispatch_jobs(void)
 	}
 #endif
 
-	while ( all_queued && all_active < option_max_fetchers ) {
+	while ( all_queued && all_active < nsoption_int(max_fetchers) ) {
 		/*LOG(("%d queued, %d fetching", all_queued, all_active));*/
 		if (fetch_choose_and_dispatch()) {
 			all_queued--;
@@ -426,7 +426,7 @@ bool fetch_choose_and_dispatch(void)
 		int countbyhost;
 		RING_COUNTBYLWCHOST(struct fetch, fetch_ring, countbyhost,
 				queueitem->host);
-		if (countbyhost < option_max_fetchers_per_host) {
+		if (countbyhost < nsoption_int(max_fetchers_per_host)) {
 			/* We can dispatch this item in theory */
 			return fetch_dispatch_job(queueitem);
 		}

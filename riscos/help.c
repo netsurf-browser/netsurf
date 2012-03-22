@@ -35,7 +35,7 @@
 #include "riscos/help.h"
 #include "riscos/iconbar.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -106,7 +106,7 @@ void ro_gui_interactive_help_request(wimp_message *message)
 	int				i;
 
 	/* check we aren't turned off */
-	if (!option_interactive_help)
+	if (!nsoption_bool(interactive_help))
 		return;
 
 	/* only accept help requests */

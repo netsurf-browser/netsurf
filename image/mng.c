@@ -712,8 +712,10 @@ static bool nsmng_redraw(struct content *c, struct content_redraw_data *data,
 			mng->bitmap, data->background_colour, flags);
 
 	/* Check if we need to restart the animation */
-	if ((mng->waiting) && (option_animate_images))
+	if ((mng->waiting) && 
+	    (nsoption_bool(animate_images))) {
 		nsmng_animate(c);
+	}
 
 	return ret;
 }

@@ -28,7 +28,7 @@
 #include <graphics/composite.h>
 #endif
 #include <graphics/gfxbase.h>
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include <proto/datatypes.h>
 #include <datatypes/pictureclass.h>
 #include <proto/dos.h>
@@ -378,7 +378,7 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 								bitmap->width, bitmap->height);
 		}
 
-		if(option_cache_bitmaps == 2)
+		if(nsoption_int(cache_bitmaps) == 2)
 		{
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = bitmap->width;
@@ -400,7 +400,7 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 			uint32 flags = 0;
 
 			if(bitmap->opaque) flags |= COMPFLAG_IgnoreDestAlpha;
-			if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
+			if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 
 			CompositeTags(comptype,tbm,scaledbm,
 						COMPTAG_ScaleX,COMP_FLOAT_TO_FIX(width/bitmap->width),
@@ -442,7 +442,7 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 		tbm = scaledbm;
 		bitmap->nativebm = NULL;
 
-		if(option_cache_bitmaps >= 1)
+		if(nsoption_int(cache_bitmaps) >= 1)
 		{
 			bitmap->nativebm = tbm;
 			bitmap->nativebmwidth = width;

@@ -17,19 +17,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _NETSURF_DESKTOP_OPTIONS_INCLUDING_
+#error "Frontend options header cannot be included directly"
+#endif
+
 #ifndef _NETSURF_BEOS_OPTIONS_H_
 #define _NETSURF_BEOS_OPTIONS_H_
 
-#include "desktop/options.h"
+#define NSOPTION_EXTRA_DEFINE			\
+	bool render_resample;			\
+	char *url_file
 
-extern bool option_render_resample;
-extern char *option_url_file;
+#define NSOPTION_EXTRA_DEFAULTS				\
+	.render_resample = false,			\
+	.url_file = 0
 
-#define EXTRA_OPTION_DEFINE \
-bool option_render_resample = false; \
-char *option_url_file = 0;
+#define NSOPTION_EXTRA_TABLE \
+	{ "render_resample",	OPTION_BOOL,	&nsoptions.render_resample }, \
+	{ "url_file",		OPTION_STRING,	&nsoptions.url_file }
 
-#define EXTRA_OPTION_TABLE \
-{ "render_resample",	OPTION_BOOL,	&option_render_resample }, \
-{ "url_file",		OPTION_STRING,	&option_url_file },
 #endif

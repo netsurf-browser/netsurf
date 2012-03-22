@@ -32,7 +32,6 @@
 #include "desktop/searchweb.h"
 
 #include "gtk/compat.h"
-#include "gtk/options.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/theme.h"
@@ -48,7 +47,6 @@ static GladeXML *gladeFile;
 static struct browser_window *current_browser;
 
 static int proxy_type;
-static float animation_delay;
 
 static void dialog_response_handler (GtkDialog *dlg, gint res_id);
 static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
@@ -294,13 +292,41 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 void nsgtk_options_load(void) 
 {
 	GtkBox *box;
-	const char *default_accept_language = 
-			option_accept_language ? option_accept_language : "en";
+	const char *default_accept_language = "en";
+	const char *default_homepage_url = "";
+	const char *default_http_proxy_host = "";
+	const char *default_http_proxy_auth_user = "";
+	const char *default_http_proxy_auth_pass = "";
 	int combo_row_count = 0;
 	int active_language = 0;
 	int proxytype = 0;
 	FILE *fp;
 	char buf[50];
+
+	/* get widget text */
+	if (nsoption_charp(accept_language) != NULL) {
+		default_accept_language = nsoption_charp(accept_language);
+	}
+
+	if (nsoption_charp(homepage_url) != NULL) {
+		default_homepage_url = nsoption_charp(homepage_url);
+	}
+
+	if (nsoption_charp(http_proxy_host) != NULL) {
+		default_http_proxy_host = nsoption_charp(http_proxy_host);
+	}
+
+	if (nsoption_charp(http_proxy_auth_user) != NULL) {
+		default_http_proxy_auth_user = nsoption_charp(http_proxy_auth_user);
+	}
+
+	if (nsoption_charp(http_proxy_auth_pass) != NULL) {
+		default_http_proxy_auth_pass = nsoption_charp(http_proxy_auth_pass);
+	}
+
+	if (nsoption_bool(http_proxy) == true) {
+		proxytype = nsoption_int(http_proxy_auth) + 1;
+	}
 
 	/* Create combobox */
 	box = GTK_BOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
@@ -343,91 +369,85 @@ void nsgtk_options_load(void)
 	
 	nsgtk_options_theme_combo();
 	
-	SET_ENTRY(entryHomePageURL,
-			option_homepage_url ? option_homepage_url : "");
+	SET_ENTRY(entryHomePageURL, default_homepage_url);
 	SET_BUTTON(setCurrentPage);
 	SET_BUTTON(setDefaultPage);
-	SET_CHECK(checkHideAdverts, option_block_ads);
+	SET_CHECK(checkHideAdverts, nsoption_bool(block_ads));
 	
-	SET_CHECK(checkDisablePopups, option_disable_popups);
-	SET_CHECK(checkDisablePlugins, option_disable_plugins);
-	SET_SPIN(spinHistoryAge, option_history_age);
-	SET_CHECK(checkHoverURLs, option_hover_urls);
+	SET_CHECK(checkDisablePopups, nsoption_bool(disable_popups));
+	SET_CHECK(checkDisablePlugins, nsoption_bool(disable_plugins));
+	SET_SPIN(spinHistoryAge, nsoption_int(history_age));
+	SET_CHECK(checkHoverURLs, nsoption_bool(hover_urls));
 	
-	SET_CHECK(checkDisplayRecentURLs, option_url_suggestion);
-	SET_CHECK(checkSendReferer, option_send_referer);
-        SET_CHECK(checkShowSingleTab, option_show_single_tab);
+	SET_CHECK(checkDisplayRecentURLs, nsoption_bool(url_suggestion));
+	SET_CHECK(checkSendReferer, nsoption_bool(send_referer));
+        SET_CHECK(checkShowSingleTab, nsoption_bool(show_single_tab));
 	
-	if (option_http_proxy == false)
-		proxytype = 0;
-	else
-		proxytype = option_http_proxy_auth + 1;
-
 	SET_COMBO(comboProxyType, proxytype);
-	SET_ENTRY(entryProxyHost,
-			option_http_proxy_host ? option_http_proxy_host : "");
+	SET_ENTRY(entryProxyHost, default_http_proxy_host);
+
 	gtk_widget_set_sensitive(entryProxyHost, proxytype != 0);
 
-	snprintf(buf, sizeof(buf), "%d", option_http_proxy_port);	
+	snprintf(buf, sizeof(buf), "%d", nsoption_int(http_proxy_port));	
 
 	SET_ENTRY(entryProxyPort, buf);
 	gtk_widget_set_sensitive(entryProxyPort, proxytype != 0);
 
-	SET_ENTRY(entryProxyUser, option_http_proxy_auth_user ?
-			option_http_proxy_auth_user : "");
+	SET_ENTRY(entryProxyUser, default_http_proxy_auth_user);
+
 	gtk_widget_set_sensitive(entryProxyUser, proxytype != 0);
 
-	SET_ENTRY(entryProxyPassword, option_http_proxy_auth_pass ?
-			option_http_proxy_auth_pass : "");
+	SET_ENTRY(entryProxyPassword, default_http_proxy_auth_pass);
+
 	gtk_widget_set_sensitive(entryProxyPassword, proxytype != 0);
 
-	SET_SPIN(spinMaxFetchers, option_max_fetchers);
-	SET_SPIN(spinFetchesPerHost, option_max_fetchers_per_host);
-	SET_SPIN(spinCachedConnections, option_max_cached_fetch_handles);
+	SET_SPIN(spinMaxFetchers, nsoption_int(max_fetchers));
+	SET_SPIN(spinFetchesPerHost, nsoption_int(max_fetchers_per_host));
+	SET_SPIN(spinCachedConnections, nsoption_int(max_cached_fetch_handles));
 
-	SET_CHECK(checkResampleImages, option_render_resample);
-	SET_SPIN(spinAnimationSpeed, option_minimum_gif_delay / 100.0);
-	SET_CHECK(checkDisableAnimations, !option_animate_images);
+	SET_CHECK(checkResampleImages, nsoption_bool(render_resample));
+	SET_SPIN(spinAnimationSpeed, nsoption_int(minimum_gif_delay) / 100.0);
+	SET_CHECK(checkDisableAnimations, !nsoption_bool(animate_images));
 
-	SET_FONT(fontSansSerif, option_font_sans);
-	SET_FONT(fontSerif, option_font_serif);
-	SET_FONT(fontMonospace, option_font_mono);
-	SET_FONT(fontCursive, option_font_cursive);
-	SET_FONT(fontFantasy, option_font_fantasy);
-	SET_COMBO(comboDefault, option_font_default);
-	SET_SPIN(spinDefaultSize, option_font_size / 10);
-	SET_SPIN(spinMinimumSize, option_font_min_size / 10);
+	SET_FONT(fontSansSerif, nsoption_charp(font_sans));
+	SET_FONT(fontSerif, nsoption_charp(font_serif));
+	SET_FONT(fontMonospace, nsoption_charp(font_mono));
+	SET_FONT(fontCursive, nsoption_charp(font_cursive));
+	SET_FONT(fontFantasy, nsoption_charp(font_fantasy));
+	SET_COMBO(comboDefault, nsoption_int(font_default));
+	SET_SPIN(spinDefaultSize, nsoption_int(font_size) / 10);
+	SET_SPIN(spinMinimumSize, nsoption_bool(font_min_size) / 10);
 	SET_BUTTON(fontPreview);
 	
-	SET_COMBO(comboButtonType, option_button_type -1);
+	SET_COMBO(comboButtonType, nsoption_int(button_type) -1);
 
-	SET_COMBO(comboTabPosition, option_position_tab);
+	SET_COMBO(comboTabPosition, nsoption_int(position_tab));
 
-	SET_SPIN(spinMemoryCacheSize, option_memory_cache_size >> 20);
-	SET_SPIN(spinDiscCacheAge, option_disc_cache_age);
+	SET_SPIN(spinMemoryCacheSize, nsoption_int(memory_cache_size) >> 20);
+	SET_SPIN(spinDiscCacheAge, nsoption_int(disc_cache_age));
 	
-	SET_CHECK(checkClearDownloads, option_downloads_clear);
-	SET_CHECK(checkRequestOverwrite, option_request_overwrite);
-	SET_FILE_CHOOSER(fileChooserDownloads, option_downloads_directory);
+	SET_CHECK(checkClearDownloads, nsoption_bool(downloads_clear));
+	SET_CHECK(checkRequestOverwrite, nsoption_bool(request_overwrite));
+	SET_FILE_CHOOSER(fileChooserDownloads, nsoption_charp(downloads_directory));
 	
-	SET_CHECK(checkFocusNew, option_focus_new);
-	SET_CHECK(checkNewBlank, option_new_blank);
-	SET_CHECK(checkUrlSearch, option_search_url_bar);
-	SET_COMBO(comboSearch, option_search_provider);
+	SET_CHECK(checkFocusNew, nsoption_bool(focus_new));
+	SET_CHECK(checkNewBlank, nsoption_bool(new_blank));
+	SET_CHECK(checkUrlSearch, nsoption_bool(search_url_bar));
+	SET_COMBO(comboSearch, nsoption_int(search_provider));
 	
 	SET_BUTTON(buttonaddtheme);
-	SET_CHECK(sourceButtonTab, option_source_tab);
+	SET_CHECK(sourceButtonTab, nsoption_bool(source_tab));
 		
-	SET_SPIN(spinMarginTop, option_margin_top);
-	SET_SPIN(spinMarginBottom, option_margin_bottom);
-	SET_SPIN(spinMarginLeft, option_margin_left);
-	SET_SPIN(spinMarginRight, option_margin_right);
-	SET_SPIN(spinExportScale, option_export_scale);
-	SET_CHECK(checkSuppressImages, option_suppress_images);
-	SET_CHECK(checkRemoveBackgrounds, option_remove_backgrounds);
-	SET_CHECK(checkFitPage, option_enable_loosening);
-	SET_CHECK(checkCompressPDF, option_enable_PDF_compression);
-	SET_CHECK(checkPasswordPDF, option_enable_PDF_password);
+	SET_SPIN(spinMarginTop, nsoption_int(margin_top));
+	SET_SPIN(spinMarginBottom, nsoption_int(margin_bottom));
+	SET_SPIN(spinMarginLeft, nsoption_int(margin_left));
+	SET_SPIN(spinMarginRight, nsoption_int(margin_right));
+	SET_SPIN(spinExportScale, nsoption_int(export_scale));
+	SET_CHECK(checkSuppressImages, nsoption_bool(suppress_images));
+	SET_CHECK(checkRemoveBackgrounds, nsoption_bool(remove_backgrounds));
+	SET_CHECK(checkFitPage, nsoption_bool(enable_loosening));
+	SET_CHECK(checkCompressPDF, nsoption_bool(enable_PDF_compression));
+	SET_CHECK(checkPasswordPDF, nsoption_bool(enable_PDF_password));
 	SET_BUTTON(setDefaultExportOptions);
 }
 
@@ -446,7 +466,7 @@ static void dialog_response_handler (GtkDialog *dlg, gint res_id)
 static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 {
 	LOG(("Writing options to file"));
-	options_write(options_file_location);
+	nsoption_write(options_file_location);
 	if ((stay_alive) && GTK_IS_WIDGET(dlg))
 		gtk_widget_hide(GTK_WIDGET(dlg));
 	else {
@@ -487,7 +507,7 @@ static void nsgtk_options_theme_combo(void) {
 	}
 	fclose(fp);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combotheme), 
-			option_current_theme);
+				 nsoption_int(current_theme));
 	gtk_box_pack_start(box, combotheme, FALSE, TRUE, 0);
 	gtk_widget_show(combotheme);		
 }
@@ -505,54 +525,47 @@ bool nsgtk_options_combo_theme_add(const char *themename)
  * nsgtk_reflow_all_windows only where necessary */
 
 #define ENTRY_CHANGED(widget, option)                                   \
-        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
-        if (!g_str_equal(gtk_entry_get_text(GTK_ENTRY((widget))), (option) ? (option) : "")) { \
+static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) \
+{									\
+        if (!g_str_equal(gtk_entry_get_text(GTK_ENTRY((widget))),	\
+			 nsoption_charp(option) ? nsoption_charp(option) : "")) { \
                 LOG(("Signal emitted on '%s'", #widget));               \
-                if ((option))                                           \
-                        free((option));                                 \
-                (option) = strdup(gtk_entry_get_text(GTK_ENTRY((widget)))); \
-                }                                                       \
-        do {                                                            \
+		nsoption_set_charp(option, strdup(gtk_entry_get_text(GTK_ENTRY((widget))))); \
+	}								\
+        return FALSE;							\
+}
                 
 #define CHECK_CHANGED(widget, option)                                   \
         static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #widget));                       \
-	(option) = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((widget))); \
-        do {                                                            \
+	nsoption_set_bool(option, gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((widget)))); \
+        do 
 
 #define SPIN_CHANGED(widget, option)                                    \
         static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
         LOG(("Signal emitted on '%s'", #widget));                       \
-        (option) = gtk_spin_button_get_value(GTK_SPIN_BUTTON((widget))); \
-        do {                                                            \
+        nsoption_set_int(option, gtk_spin_button_get_value(GTK_SPIN_BUTTON((widget)))); \
+        do
 
 #define COMBO_CHANGED(widget, option)                                   \
         static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #widget));                       \
-	(option) = gtk_combo_box_get_active(GTK_COMBO_BOX((widget)));   \
-        do {
+	nsoption_set_int(option, gtk_combo_box_get_active(GTK_COMBO_BOX((widget)))); \
+        do 
 
 #define FONT_CHANGED(widget, option)                                    \
         static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #widget));                       \
-	if ((option))                                                   \
-                free((option));                                         \
-	(option) = strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((widget)))); \
-        do {
-
-#define FILE_CHOOSER_CHANGED(widget, option)                            \
-        static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
-	LOG(("Signal emitted on '%s'", #widget));                       \
-	(option) = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((widget))); \
-        do {
+	nsoption_set_charp(option, strdup(gtk_font_button_get_font_name(GTK_FONT_BUTTON((widget))))); \
+        do 
 
 #define BUTTON_CLICKED(widget)                                          \
         static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) { \
 	LOG(("Signal emitted on '%s'", #widget));                       \
-        do {
+        do 
 
 #define END_HANDLER                             \
-        } while (0);                            \
+        while (0);                            \
         return FALSE;                           \
         }
 
@@ -564,79 +577,84 @@ static gboolean on_comboLanguage_changed(GtkWidget *widget, gpointer data)
 	if (lang == NULL)
 		return FALSE;
 
-	if (option_accept_language != NULL) {
-		free(option_accept_language);
-	}
-
-	option_accept_language = lang;
+	nsoption_set_charp(accept_language, lang);
 
 	g_free(lang);
 	
 	return FALSE;
 }
 
-ENTRY_CHANGED(entryHomePageURL, option_homepage_url)
-END_HANDLER
+ENTRY_CHANGED(entryHomePageURL, homepage_url)
 
 BUTTON_CLICKED(setCurrentPage)
-	const gchar *url = nsurl_access(hlcache_handle_get_url(
-			current_browser->current_content));
+{
+	const gchar *url;
+	url = nsurl_access(hlcache_handle_get_url(current_browser->current_content));
 	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL), url);
-	option_homepage_url = 
-		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));
+	nsoption_set_charp(homepage_url, 
+			   strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL))));
+}
 END_HANDLER
 
 BUTTON_CLICKED(setDefaultPage)
-	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL),
-                           "http://www.netsurf-browser.org/welcome/");
-	option_homepage_url = 
-		strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL)));
+{
+	gtk_entry_set_text(GTK_ENTRY(entryHomePageURL), NETSURF_HOMEPAGE);
+	nsoption_set_charp(homepage_url, 
+			   strdup(gtk_entry_get_text(GTK_ENTRY(entryHomePageURL))));
+}
 END_HANDLER
 
-CHECK_CHANGED(checkHideAdverts, option_block_ads)
+CHECK_CHANGED(checkHideAdverts, block_ads)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkDisplayRecentURLs, option_url_suggestion)
+CHECK_CHANGED(checkDisplayRecentURLs, url_suggestion)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkSendReferer, option_send_referer)
+CHECK_CHANGED(checkSendReferer, send_referer)
+{
+}
 END_HANDLER
                 
-CHECK_CHANGED(checkShowSingleTab, option_show_single_tab)
+CHECK_CHANGED(checkShowSingleTab, show_single_tab)
+{
 	nsgtk_reflow_all_windows();
+}
 END_HANDLER
 
-COMBO_CHANGED(comboProxyType, proxy_type)
-	LOG(("proxy type: %d", proxy_type));
-	switch (proxy_type)
-	{
+COMBO_CHANGED(comboProxyType, http_proxy_auth)
+{
+	LOG(("proxy auth: %d", nsoption_int(http_proxy_auth)));
+	switch (nsoption_int(http_proxy_auth)) {
 	case 0:
-		option_http_proxy = false;
-		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+		nsoption_set_bool(http_proxy, false);
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
 		break;
 	case 1:
-		option_http_proxy = true;
-		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NONE;
+		nsoption_set_bool(http_proxy, true);
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
 		break;
 	case 2:
-		option_http_proxy = true;
-		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_BASIC;
+		nsoption_set_bool(http_proxy, true);
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_BASIC);
 		break;
 	case 3:
-		option_http_proxy = true;
-		option_http_proxy_auth = OPTION_HTTP_PROXY_AUTH_NTLM;
+		nsoption_set_bool(http_proxy, true);
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NTLM);
 		break;
 	}
 	gboolean sensitive = (!proxy_type == 0);
-	gtk_widget_set_sensitive (entryProxyHost, sensitive);
-	gtk_widget_set_sensitive (entryProxyPort, sensitive);
-	gtk_widget_set_sensitive (entryProxyUser, sensitive);
-	gtk_widget_set_sensitive (entryProxyPassword, sensitive);
-	
+	gtk_widget_set_sensitive(entryProxyHost, sensitive);
+	gtk_widget_set_sensitive(entryProxyPort, sensitive);
+	gtk_widget_set_sensitive(entryProxyUser, sensitive);
+	gtk_widget_set_sensitive(entryProxyPassword, sensitive);
+}	
 END_HANDLER
 
-ENTRY_CHANGED(entryProxyHost, option_http_proxy_host)
-END_HANDLER
+ENTRY_CHANGED(entryProxyHost, http_proxy_host)
 
 gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 {
@@ -645,92 +663,132 @@ gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
 	errno = 0;
 	port = strtol((char *)gtk_entry_get_text(GTK_ENTRY(entryProxyPort)),
 			NULL, 10) & 0xffff;
-	if (port != 0 && errno == 0) {
-		option_http_proxy_port = port;
+	if ((port != 0) && (errno == 0)) {
+		nsoption_set_int(http_proxy_port, port);
 	} else {
 		char buf[32];
-		snprintf(buf, sizeof(buf), "%d", option_http_proxy_port);
+		snprintf(buf, sizeof(buf), "%d", nsoption_int(http_proxy_port));
 		SET_ENTRY(entryProxyPort, buf);
 	}
 
 	return FALSE;
 }
 
-ENTRY_CHANGED(entryProxyUser, option_http_proxy_auth_user)
+ENTRY_CHANGED(entryProxyUser, http_proxy_auth_user)
+
+ENTRY_CHANGED(entryProxyPassword, http_proxy_auth_pass)
+
+SPIN_CHANGED(spinMaxFetchers, max_fetchers)
+{
+}
 END_HANDLER
 
-ENTRY_CHANGED(entryProxyPassword, option_http_proxy_auth_pass)
+SPIN_CHANGED(spinFetchesPerHost, max_fetchers_per_host)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinMaxFetchers, option_max_fetchers)
+SPIN_CHANGED(spinCachedConnections, max_cached_fetch_handles)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinFetchesPerHost, option_max_fetchers_per_host)
+CHECK_CHANGED(checkResampleImages, render_resample)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinCachedConnections, option_max_cached_fetch_handles)
+static gboolean on_spinAnimationSpeed_changed(GtkWidget *widget, gpointer data)
+{ 
+        LOG(("Signal emitted on '%s'", "spinAnimationSpeed"));
+	nsoption_set_int(minimum_gif_delay, 
+			 round(gtk_spin_button_get_value(GTK_SPIN_BUTTON(widget)) * 100.0));
+	return FALSE;
+}
+
+CHECK_CHANGED(checkDisableAnimations, animate_images)
+{
+	nsoption_set_bool(animate_images, !nsoption_bool(animate_images));
+}
 END_HANDLER
 
-CHECK_CHANGED(checkResampleImages, option_render_resample)
+CHECK_CHANGED(checkDisablePopups, disable_popups)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinAnimationSpeed, animation_delay)
-	option_minimum_gif_delay = round(animation_delay * 100.0);
+CHECK_CHANGED(checkDisablePlugins, disable_plugins)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkDisableAnimations, option_animate_images);
-	option_animate_images = !option_animate_images;
+SPIN_CHANGED(spinHistoryAge, history_age)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkDisablePopups, option_disable_popups)
+CHECK_CHANGED(checkHoverURLs, hover_urls)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkDisablePlugins, option_disable_plugins)
+FONT_CHANGED(fontSansSerif, font_sans)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinHistoryAge, option_history_age)
+FONT_CHANGED(fontSerif, font_serif)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkHoverURLs, option_hover_urls)
+FONT_CHANGED(fontMonospace, font_mono)
+{
+}
 END_HANDLER
 
-FONT_CHANGED(fontSansSerif, option_font_sans)
+FONT_CHANGED(fontCursive, font_cursive)
+{
+}
 END_HANDLER
 
-FONT_CHANGED(fontSerif, option_font_serif)
+FONT_CHANGED(fontFantasy, font_fantasy)
+{
+}
 END_HANDLER
 
-FONT_CHANGED(fontMonospace, option_font_mono)
+COMBO_CHANGED(comboDefault, font_default)
+{
+}
 END_HANDLER
 
-FONT_CHANGED(fontCursive, option_font_cursive)
+SPIN_CHANGED(spinDefaultSize, font_size)
+{
+	nsoption_set_int(font_size, nsoption_int(font_size) * 10);
+}
 END_HANDLER
 
-FONT_CHANGED(fontFantasy, option_font_fantasy)
-END_HANDLER
-
-COMBO_CHANGED(comboDefault, option_font_default)
-END_HANDLER
-
-SPIN_CHANGED(spinDefaultSize, option_font_size)
-	option_font_size *= 10;
-END_HANDLER
-
-SPIN_CHANGED(spinMinimumSize, option_font_min_size)
-	option_font_min_size *= 10;
+SPIN_CHANGED(spinMinimumSize, font_min_size)
+{
+	nsoption_set_int(font_min_size, nsoption_int(font_min_size) * 10);
+}
 END_HANDLER
 
 BUTTON_CLICKED(fontPreview)
+{
 	nsgtk_reflow_all_windows();
+}
 END_HANDLER
 
-COMBO_CHANGED(comboButtonType, option_button_type)
+COMBO_CHANGED(comboButtonType, button_type)
+{
 	nsgtk_scaffolding *current = scaf_list;
-	option_button_type++;
+	nsoption_set_int(button_type, nsoption_int(button_type) + 1);
+
 	/* value of 0 is reserved for 'unset' */
 	while (current)	{
 		nsgtk_scaffolding_reset_offset(current);
-		switch(option_button_type) {
+		switch(nsoption_int(button_type)) {
 		case 1:
 			gtk_toolbar_set_style(
 				GTK_TOOLBAR(nsgtk_scaffolding_toolbar(current)),
@@ -764,11 +822,14 @@ COMBO_CHANGED(comboButtonType, option_button_type)
 		}
 		current = nsgtk_scaffolding_iterate(current);
 	}
+}
 END_HANDLER
 
-COMBO_CHANGED(comboTabPosition, option_position_tab)
+COMBO_CHANGED(comboTabPosition, position_tab)
+{
 	nsgtk_scaffolding *current = scaf_list;
-	option_button_type++;
+	nsoption_set_int(button_type, nsoption_int(button_type) + 1);
+
 	/* value of 0 is reserved for 'unset' */
 	while (current)	{
 		nsgtk_scaffolding_reset_offset(current);
@@ -777,43 +838,67 @@ COMBO_CHANGED(comboTabPosition, option_position_tab)
 
 		current = nsgtk_scaffolding_iterate(current);
 	}
+}
 END_HANDLER
 
-SPIN_CHANGED(spinMemoryCacheSize, option_memory_cache_size)
-	option_memory_cache_size <<= 20;
+SPIN_CHANGED(spinMemoryCacheSize, memory_cache_size)
+{
+	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) << 20);
+}
 END_HANDLER
 
-SPIN_CHANGED(spinDiscCacheAge, option_disc_cache_age)
+SPIN_CHANGED(spinDiscCacheAge, disc_cache_age)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkClearDownloads, option_downloads_clear)
+CHECK_CHANGED(checkClearDownloads, downloads_clear)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkRequestOverwrite, option_request_overwrite)
+CHECK_CHANGED(checkRequestOverwrite, request_overwrite)
+{
+}
 END_HANDLER
 
-FILE_CHOOSER_CHANGED(fileChooserDownloads, option_downloads_directory)
+static gboolean on_fileChooserDownloads_changed(GtkWidget *widget, gpointer data) 
+{ 
+	LOG(("Signal emitted on '%s'", "fileChooserDownloads"));                       
+	nsoption_set_charp(downloads_directory, gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((widget))));
+	return FALSE;
+} 
+
+CHECK_CHANGED(checkFocusNew, focus_new)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkFocusNew, option_focus_new)
+CHECK_CHANGED(checkNewBlank, new_blank)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkNewBlank, option_new_blank)
+CHECK_CHANGED(checkUrlSearch, search_url_bar)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkUrlSearch, option_search_url_bar)
-END_HANDLER
-
-COMBO_CHANGED(comboSearch, option_search_provider)	
+COMBO_CHANGED(comboSearch, search_provider)	
+{
 	nsgtk_scaffolding *current = scaf_list;
 	char *name;
+
 	/* refresh web search prefs from file */
-	search_web_provider_details(option_search_provider);
+	search_web_provider_details(nsoption_charp(search_provider));
+
 	/* retrieve ico */
 	search_web_retrieve_ico(false);
+
 	/* callback may handle changing gui */
 	if (search_web_ico() != NULL)
 		gui_window_set_search_ico(search_web_ico());
+
 	/* set entry */
 	name = search_web_provider_name();
 	if (name == NULL) {
@@ -827,12 +912,14 @@ COMBO_CHANGED(comboSearch, option_search_provider)
 		nsgtk_scaffolding_set_websearch(current, content);
 		current = nsgtk_scaffolding_iterate(current);
 	}
+}
 END_HANDLER
 
-COMBO_CHANGED(combotheme, option_current_theme)
+COMBO_CHANGED(combotheme, current_theme)
+{
 	nsgtk_scaffolding *current = scaf_list;
 	char *name;
-	if (option_current_theme != 0) {
+	if (nsoption_int(current_theme) != 0) {
 		if (nsgtk_theme_name() != NULL)
 			free(nsgtk_theme_name());
 		name = nsgtk_combo_box_text_get_active_text(combotheme);
@@ -850,9 +937,11 @@ COMBO_CHANGED(combotheme, option_current_theme)
 		nsgtk_theme_implement(current);
 		current = nsgtk_scaffolding_iterate(current);
 	}		
+}
 END_HANDLER
 
 BUTTON_CLICKED(buttonaddtheme)
+{
 	char *filename, *directory;
 	size_t len;
 	GtkWidget *fc = gtk_file_chooser_dialog_new(
@@ -903,62 +992,86 @@ BUTTON_CLICKED(buttonaddtheme)
 		if (filename != NULL)
 			free(filename);
 	}
-
+}
 END_HANDLER
 
-CHECK_CHANGED(sourceButtonTab, option_source_tab)
+CHECK_CHANGED(sourceButtonTab, source_tab)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinMarginTop, option_margin_top)
+SPIN_CHANGED(spinMarginTop, margin_top)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinMarginBottom, option_margin_bottom)
+SPIN_CHANGED(spinMarginBottom, margin_bottom)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinMarginLeft, option_margin_left)
+SPIN_CHANGED(spinMarginLeft, margin_left)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinMarginRight, option_margin_right)
+SPIN_CHANGED(spinMarginRight, margin_right)
+{
+}
 END_HANDLER
 
-SPIN_CHANGED(spinExportScale, option_export_scale)
+SPIN_CHANGED(spinExportScale, export_scale)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkSuppressImages, option_suppress_images)
+CHECK_CHANGED(checkSuppressImages, suppress_images)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkRemoveBackgrounds, option_remove_backgrounds)
+CHECK_CHANGED(checkRemoveBackgrounds, remove_backgrounds)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkFitPage, option_enable_loosening)
+CHECK_CHANGED(checkFitPage, enable_loosening)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkCompressPDF, option_enable_PDF_compression)
+CHECK_CHANGED(checkCompressPDF, enable_PDF_compression)
+{
+}
 END_HANDLER
 
-CHECK_CHANGED(checkPasswordPDF, option_enable_PDF_password)
+CHECK_CHANGED(checkPasswordPDF, enable_PDF_password)
+{
+}
 END_HANDLER
 
 BUTTON_CLICKED(setDefaultExportOptions)
-	option_margin_top = DEFAULT_MARGIN_TOP_MM;
-	option_margin_bottom = DEFAULT_MARGIN_BOTTOM_MM;
-	option_margin_left = DEFAULT_MARGIN_LEFT_MM;
-	option_margin_right = DEFAULT_MARGIN_RIGHT_MM;
-	option_export_scale = DEFAULT_EXPORT_SCALE * 100;		
-	option_suppress_images = false;
-	option_remove_backgrounds = false;
-	option_enable_loosening = true;
-	option_enable_PDF_compression = true;
-	option_enable_PDF_password = false;
+{
+	nsoption_set_int(margin_top, DEFAULT_MARGIN_TOP_MM);
+	nsoption_set_int(margin_bottom, DEFAULT_MARGIN_BOTTOM_MM);
+	nsoption_set_int(margin_left, DEFAULT_MARGIN_LEFT_MM);
+	nsoption_set_int(margin_right, DEFAULT_MARGIN_RIGHT_MM);
+	nsoption_set_int(export_scale, DEFAULT_EXPORT_SCALE * 100);		
+	nsoption_set_bool(suppress_images, false);
+	nsoption_set_bool(remove_backgrounds, false);
+	nsoption_set_bool(enable_loosening, true);
+	nsoption_set_bool(enable_PDF_compression, true);
+	nsoption_set_bool(enable_PDF_password, false);
 			
-	SET_SPIN(spinMarginTop, option_margin_top);
-	SET_SPIN(spinMarginBottom, option_margin_bottom);
-	SET_SPIN(spinMarginLeft, option_margin_left);
-	SET_SPIN(spinMarginRight, option_margin_right);
-	SET_SPIN(spinExportScale, option_export_scale);
-	SET_CHECK(checkSuppressImages, option_suppress_images);
-	SET_CHECK(checkRemoveBackgrounds, option_remove_backgrounds);
-	SET_CHECK(checkCompressPDF, option_enable_PDF_compression);
-	SET_CHECK(checkPasswordPDF, option_enable_PDF_password);
-	SET_CHECK(checkFitPage, option_enable_loosening);
+	SET_SPIN(spinMarginTop, nsoption_int(margin_top));
+	SET_SPIN(spinMarginBottom, nsoption_int(margin_bottom));
+	SET_SPIN(spinMarginLeft, nsoption_int(margin_left));
+	SET_SPIN(spinMarginRight, nsoption_int(margin_right));
+	SET_SPIN(spinExportScale, nsoption_int(export_scale));
+	SET_CHECK(checkSuppressImages, nsoption_bool(suppress_images));
+	SET_CHECK(checkRemoveBackgrounds, nsoption_bool(remove_backgrounds));
+	SET_CHECK(checkCompressPDF, nsoption_bool(enable_PDF_compression));
+	SET_CHECK(checkPasswordPDF, nsoption_bool(enable_PDF_password));
+	SET_CHECK(checkFitPage, nsoption_bool(enable_loosening));
+}
 END_HANDLER

@@ -32,7 +32,6 @@
 #include "atari/gui.h"
 #include "atari/font.h"
 #include "atari/plot.h"
-#include "atari/options.h"
 #include "atari/findfile.h"
 #include "atari/gui.h"
 #include "atari/plot.h"

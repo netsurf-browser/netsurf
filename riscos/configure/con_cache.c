@@ -21,7 +21,6 @@
 #include "desktop/options.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -45,7 +44,7 @@ bool ro_gui_options_cache_initialise(wimp_w w)
 {
 	/* set the current values */
 	ro_gui_set_icon_decimal(w, CACHE_MEMORY_SIZE,
-			(option_memory_cache_size * 10) >> 20, 1);
+			(nsoption_int(memory_cache_size) * 10) >> 20, 1);
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_numeric_field(w, CACHE_MEMORY_SIZE,
@@ -74,8 +73,9 @@ bool ro_gui_options_cache_click(wimp_pointer *pointer)
 
 bool ro_gui_options_cache_ok(wimp_w w)
 {
-	option_memory_cache_size = (((ro_gui_get_icon_decimal(w,
-			CACHE_MEMORY_SIZE, 1) + 1) << 20) - 1) / 10;
+	nsoption_set_int(memory_cache_size,
+			(((ro_gui_get_icon_decimal(w,
+					CACHE_MEMORY_SIZE, 1) + 1) << 20) - 1) / 10);
 
 	ro_gui_save_options();
   	return true;

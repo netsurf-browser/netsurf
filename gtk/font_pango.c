@@ -281,20 +281,20 @@ PangoFontDescription *nsfont_style_to_description(
 
 	switch (fstyle->family) {
 	case PLOT_FONT_FAMILY_SERIF:
-		desc = pango_font_description_from_string(option_font_serif);
+		desc = pango_font_description_from_string(nsoption_charp(font_serif));
 		break;
 	case PLOT_FONT_FAMILY_MONOSPACE:
-		desc = pango_font_description_from_string(option_font_mono);
+		desc = pango_font_description_from_string(nsoption_charp(font_mono));
 		break;
 	case PLOT_FONT_FAMILY_CURSIVE:
-		desc = pango_font_description_from_string(option_font_cursive);
+		desc = pango_font_description_from_string(nsoption_charp(font_cursive));
 		break;
 	case PLOT_FONT_FAMILY_FANTASY:
-		desc = pango_font_description_from_string(option_font_fantasy);
+		desc = pango_font_description_from_string(nsoption_charp(font_fantasy));
 		break;
 	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
-		desc = pango_font_description_from_string(option_font_sans);
+		desc = pango_font_description_from_string(nsoption_charp(font_sans));
 		break;
 	}
 

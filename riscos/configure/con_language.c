@@ -22,7 +22,6 @@
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -48,11 +47,11 @@ bool ro_gui_options_language_initialise(wimp_w w)
 {
 	/* set the current values */
 	ro_gui_set_icon_string(w, LANGUAGE_INTERFACE_FIELD,
-			ro_gui_options_language_name(option_language ?
-					option_language : "en"), true);
+		ro_gui_options_language_name(nsoption_charp(language) ?
+			nsoption_charp(language) : "en"), true);
 	ro_gui_set_icon_string(w, LANGUAGE_WEB_PAGES_FIELD,
-			ro_gui_options_language_name(option_accept_language ?
-					option_accept_language : "en"), true);
+		ro_gui_options_language_name(nsoption_charp(accept_language) ?
+			nsoption_charp(accept_language) : "en"), true);
 
 	/* initialise all functions for a newly created window */
 	ro_gui_wimp_event_register_menu_gright(w, LANGUAGE_INTERFACE_FIELD,
@@ -92,11 +91,11 @@ bool ro_gui_options_language_ok(wimp_w w)
 			ro_gui_get_icon_string(w, LANGUAGE_INTERFACE_FIELD));
 	if (code) {
 		code += 5;	/* skip 'lang_' */
-		if ((!option_language) || (strcmp(option_language, code))) {
+		if ((!nsoption_charp(language)) || 
+                    (strcmp(nsoption_charp(language), code))) {
 			temp = strdup(code);
 			if (temp) {
-				free(option_language);
-				option_language = temp;
+				nsoption_set_charp(language, temp);
 			} else {
 				LOG(("No memory to duplicate language code"));
 				warn_user("NoMemory", 0);
@@ -107,12 +106,11 @@ bool ro_gui_options_language_ok(wimp_w w)
 			ro_gui_get_icon_string(w, LANGUAGE_WEB_PAGES_FIELD));
 	if (code) {
 		code += 5;	/* skip 'lang_' */
-		if ((!option_accept_language) ||
-				(strcmp(option_accept_language, code))) {
+		if ((!nsoption_charp(accept_language)) ||
+                    (strcmp(nsoption_charp(accept_language), code))) {
 			temp = strdup(code);
 			if (temp) {
-				free(option_accept_language);
-				option_accept_language = temp;
+				nsoption_set_charp(accept_language,temp);
 			} else {
 				LOG(("No memory to duplicate language code"));
 				warn_user("NoMemory", 0);

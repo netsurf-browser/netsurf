@@ -45,7 +45,6 @@
 #include "atari/misc.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/download.h"
-#include "atari/options.h"
 #include "atari/osspec.h"
 
 /*TODO: get filename from core. */
@@ -168,13 +167,13 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		return( NULL );
 	}
 	else if( dlgres == 2 ){
-		gemdos_realpath(option_downloads_path, gdos_path);
+		gemdos_realpath(nsoption_charp(downloads_path), gdos_path);
 		char * tmp = select_filepath( gdos_path, filename );
 		if( tmp == NULL )
 			return( NULL );
 		destination = tmp;
 	} else {
-		gemdos_realpath(option_downloads_path, gdos_path);
+		gemdos_realpath(nsoption_charp(downloads_path), gdos_path);
 		destination = malloc( strlen(gdos_path)+1
 							+ strlen(filename)+1 );
 		sprintf( destination, "%s/%s", gdos_path, filename );

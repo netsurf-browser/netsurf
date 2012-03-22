@@ -44,15 +44,14 @@
 
 - (void) setHomepageURL: (NSString *) newUrl;
 {
-	free( option_homepage_url );
-	option_homepage_url = strdup( [newUrl UTF8String] );
+	nsoption_set_charp(homepage_url, strdup( [newUrl UTF8String] ));
 	[[NSUserDefaults standardUserDefaults] setObject: newUrl forKey: kHomepageURLOption];
 	[[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 - (NSString *) homepageURL;
 {
-	return [NSString stringWithUTF8String: option_homepage_url];
+	return [NSString stringWithUTF8String: nsoption_charp(homepage_url)];
 }
 
 @end

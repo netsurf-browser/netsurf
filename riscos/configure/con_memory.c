@@ -19,7 +19,6 @@
 #include <stdbool.h>
 #include "desktop/options.h"
 #include "riscos/bitmap.h"
-#include "riscos/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/dialog.h"
@@ -52,9 +51,9 @@ bool ro_gui_options_memory_initialise(wimp_w w)
 	ro_gui_set_icon_decimal(w, MEMORY_COMPRESSED_FIELD,
 			(bitmap_compressed_size * 10) >> 20, 1);
 	ro_gui_set_icon_selected_state(w, MEMORY_DIRECT_AUTO,
-			(option_image_memory_direct == -1));
+                                       (nsoption_int(image_memory_direct) == -1));
 	ro_gui_set_icon_selected_state(w, MEMORY_COMPRESSED_AUTO,
-			(option_image_memory_compressed == -1));
+                                       (nsoption_int(image_memory_compressed) == -1));
 	ro_gui_options_update_shading(w);
 
 	/* register icons */
@@ -123,17 +122,17 @@ bool ro_gui_options_memory_ok(wimp_w w)
 {
 	/* set the option values */
 	if (ro_gui_get_icon_selected_state(w, MEMORY_DIRECT_AUTO))
-		option_image_memory_direct = -1;
+            nsoption_set_int(image_memory_direct, -1);
 	else
-		option_image_memory_direct =
+            nsoption_set_int(image_memory_direct,
 			(((ro_gui_get_icon_decimal(w, MEMORY_DIRECT_FIELD, 1)
-				<< 10) + 1023) / 10);
+                           << 10) + 1023) / 10));
 	if (ro_gui_get_icon_selected_state(w, MEMORY_COMPRESSED_AUTO))
-		option_image_memory_compressed = -1;
+            nsoption_set_int(image_memory_compressed, -1);
 	else
-		option_image_memory_compressed =
+            nsoption_set_int(image_memory_compressed,
 			(((ro_gui_get_icon_decimal(w, MEMORY_COMPRESSED_FIELD, 1)
-				<< 10) + 1023) / 10);
+                           << 10) + 1023) / 10));
 	/* update the memory usage */
 	bitmap_initialise_memory();
 	ro_gui_set_icon_decimal(w, MEMORY_DIRECT_FIELD,

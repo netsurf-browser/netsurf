@@ -320,7 +320,7 @@ static bool fetch_about_config_handler(struct fetch_about_context *ctx)
 			"<tr><th></th><th></th><th></th></tr>\n");
 
 	do {
-		res = options_snoptionf(buffer + slen, sizeof buffer - slen,
+		res = nsoption_snoptionf(buffer + slen, sizeof buffer - slen,
 				opt_loop,
 				"<tr><th>%k</th><td>%t</td><td>%V</td></tr>\n");
 		if (res <= 0) 
@@ -382,7 +382,7 @@ static bool fetch_about_choices_handler(struct fetch_about_context *ctx)
 		 "# Automatically generated current NetSurf browser Choices\n");
 
 	do {
-		res = options_snoptionf(buffer + slen, 
+		res = nsoption_snoptionf(buffer + slen, 
 				sizeof buffer - slen, 
 				opt_loop, 
 				"%k:%v\n");

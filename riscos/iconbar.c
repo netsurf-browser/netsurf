@@ -37,7 +37,7 @@
 #include "riscos/global_history.h"
 #include "riscos/hotlist.h"
 #include "riscos/iconbar.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/wimp_event.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -122,13 +122,13 @@ bool ro_gui_iconbar_click(wimp_pointer *pointer)
 
 	switch (pointer->buttons) {
 	case wimp_CLICK_SELECT:
-		if (option_homepage_url && option_homepage_url[0]) {
-			browser_window_create(option_homepage_url, NULL, 0,
-					true, false);
+		if (nsoption_charp(homepage_url) != NULL) {
+			browser_window_create(nsoption_charp(homepage_url), 
+					      NULL, 0, true, false);
 		} else {
 			snprintf(url, sizeof url,
-					"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-					option_language);
+				 "file:///<NetSurf$Dir>/Docs/welcome/index_%s",
+				 nsoption_charp(language));
 			browser_window_create(url, NULL, 0, true, false);
 		}
 		break;

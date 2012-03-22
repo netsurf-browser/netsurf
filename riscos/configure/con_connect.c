@@ -24,7 +24,6 @@
 #include "riscos/configure/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -55,7 +54,7 @@
 #define CONNECTION_CANCEL_BUTTON 28
 #define CONNECTION_OK_BUTTON 29
 
-#define http_proxy_type (option_http_proxy ? (option_http_proxy_auth + 1) : 0)
+#define http_proxy_type (nsoption_bool(http_proxy) ? (nsoption_int(http_proxy_auth) + 1) : 0)
 
 static int ro_gui_options_connection_proxy_type(wimp_w w);
 static void ro_gui_options_connection_default(wimp_pointer *pointer);
@@ -68,27 +67,27 @@ bool ro_gui_options_connection_initialise(wimp_w w)
 	int proxy_type;
 
 	/* set the current values */
-	proxy_type = (option_http_proxy ? (option_http_proxy_auth + 1) : 0);
+	proxy_type = (nsoption_bool(http_proxy) ? (nsoption_int(http_proxy_auth) + 1) : 0);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_FIELD,
 			proxy_type_menu->entries[proxy_type].
 				data.indirected_text.text, true);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_HOST,
-			option_http_proxy_host ?
-					option_http_proxy_host : "", true);
+                               nsoption_charp(http_proxy_host) ?
+                               nsoption_charp(http_proxy_host) : "", true);
 	ro_gui_set_icon_integer(w, CONNECTION_PROXY_PORT,
-			option_http_proxy_port);
+                                nsoption_int(http_proxy_port));
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_USERNAME,
-			option_http_proxy_auth_user ?
-					option_http_proxy_auth_user : "", true);
+                               nsoption_charp(http_proxy_auth_user) ?
+                               nsoption_charp(http_proxy_auth_user) : "", true);
 	ro_gui_set_icon_string(w, CONNECTION_PROXY_PASSWORD,
-			option_http_proxy_auth_pass ?
-					option_http_proxy_auth_pass : "", true);
+                               nsoption_charp(http_proxy_auth_pass) ?
+                               nsoption_charp(http_proxy_auth_pass) : "", true);
 	ro_gui_set_icon_integer(w, CONNECTION_MAX_FETCH_FIELD,
-			option_max_fetchers);
+                                nsoption_int(max_fetchers));
 	ro_gui_set_icon_integer(w, CONNECTION_HOST_FETCH_FIELD,
-			option_max_fetchers_per_host);
+                                nsoption_int(max_fetchers_per_host));
 	ro_gui_set_icon_integer(w, CONNECTION_CACHE_FETCH_FIELD,
-			option_max_cached_fetch_handles);
+                                nsoption_int(max_cached_fetch_handles));
 	ro_gui_options_connection_update(w, -1, NULL, NULL, NO_ACTION);
 
 	/* register icons */
@@ -181,32 +180,39 @@ bool ro_gui_options_connection_ok(wimp_w w)
 	int proxy_type;
 
 	proxy_type = ro_gui_options_connection_proxy_type(w);
-	if (proxy_type == 0)
-		option_http_proxy = false;
-	else {
-		option_http_proxy = true;
-		option_http_proxy_auth = proxy_type - 1;
+	if (proxy_type == 0) {
+		nsoption_set_bool(http_proxy, false);
+	} else {
+		nsoption_set_bool(http_proxy, true);
+		nsoption_set_int(http_proxy_auth, proxy_type - 1);
 	}
-	if (option_http_proxy_host)
-		free(option_http_proxy_host);
-	option_http_proxy_host = strdup(ro_gui_get_icon_string(w,
-			CONNECTION_PROXY_HOST));
-	option_http_proxy_port = ro_gui_get_icon_decimal(w,
-			CONNECTION_PROXY_PORT, 0);
-	if (option_http_proxy_auth_user)
-		free(option_http_proxy_auth_user);
-	option_http_proxy_auth_user = strdup(ro_gui_get_icon_string(w,
-			CONNECTION_PROXY_USERNAME));
-	if (option_http_proxy_auth_pass)
-		free(option_http_proxy_auth_pass);
-	option_http_proxy_auth_pass = strdup(ro_gui_get_icon_string(w,
-			CONNECTION_PROXY_PASSWORD));
-	option_max_fetchers = ro_gui_get_icon_decimal(w,
-			CONNECTION_MAX_FETCH_FIELD, 0);
-	option_max_fetchers_per_host = ro_gui_get_icon_decimal(w,
-			CONNECTION_HOST_FETCH_FIELD, 0);
-	option_max_cached_fetch_handles = ro_gui_get_icon_decimal(w,
-			CONNECTION_CACHE_FETCH_FIELD, 0);
+
+	nsoption_set_charp(http_proxy_host,
+			   strdup(ro_gui_get_icon_string(w,
+					CONNECTION_PROXY_HOST)));
+
+	nsoption_set_int(http_proxy_port,
+			 ro_gui_get_icon_decimal(w, CONNECTION_PROXY_PORT, 0));
+
+	nsoption_set_charp(http_proxy_auth_user,
+			   strdup(ro_gui_get_icon_string(w,
+					CONNECTION_PROXY_USERNAME)));
+
+	nsoption_set_charp(http_proxy_auth_pass,
+			   strdup(ro_gui_get_icon_string(w,
+					CONNECTION_PROXY_PASSWORD)));
+
+	nsoption_set_int(max_fetchers,
+			 ro_gui_get_icon_decimal(w,
+					CONNECTION_MAX_FETCH_FIELD, 0));
+
+	nsoption_set_int(max_fetchers_per_host,
+			 ro_gui_get_icon_decimal(w,
+					CONNECTION_HOST_FETCH_FIELD, 0));
+
+	nsoption_set_int(max_cached_fetch_handles,
+			 ro_gui_get_icon_decimal(w,
+					CONNECTION_CACHE_FETCH_FIELD, 0));
 
 	ro_gui_save_options();
 	return true;

@@ -32,7 +32,7 @@
 #include "atari/osspec.h"
 #include "atari/gui.h"
 #include "atari/font.h"
-#include "atari/options.h"
+#include "desktop/options.h"
 #include "atari/findfile.h"
 #include "utils/utf8.h"
 #include "utils/log.h"

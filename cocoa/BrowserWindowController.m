@@ -150,7 +150,7 @@
 
 - (IBAction) newTab: (id) sender;
 {
-	browser_window_create( option_homepage_url, [activeBrowser browser], NULL, false, true );
+	browser_window_create( nsoption_charp(homepage_url), [activeBrowser browser], NULL, false, true );
 }
 
 - (IBAction) closeCurrentTab: (id) sender;

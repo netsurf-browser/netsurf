@@ -36,7 +36,7 @@
 #include "riscos/global_history.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/save.h"
 #include "riscos/toolbar.h"
 #include "riscos/treeview.h"
@@ -102,7 +102,7 @@ void ro_gui_global_history_postinitialise(void)
 	if (global_history_window.toolbar != NULL) {
 		ro_toolbar_add_buttons(global_history_window.toolbar,
 				global_history_toolbar_buttons,
-				option_toolbar_history);
+				       nsoption_charp(toolbar_history));
 		ro_toolbar_rebuild(global_history_window.toolbar);
 	}
 
@@ -246,9 +246,7 @@ void ro_gui_global_history_toolbar_update_buttons(void)
 
 void ro_gui_global_history_toolbar_save_buttons(char *config)
 {
-	if (option_toolbar_history != NULL)
-		free(option_toolbar_history);
-	option_toolbar_history = config;
+	nsoption_set_charp(toolbar_history, config);
 	ro_gui_save_options();
 }
 

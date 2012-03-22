@@ -23,7 +23,6 @@
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
 #include "riscos/configure.h"
@@ -74,15 +73,15 @@ static bool ro_gui_options_fonts_init_menu(void);
 bool ro_gui_options_fonts_initialise(wimp_w w)
 {
 	/* set the current values */
-	ro_gui_set_icon_decimal(w, FONT_DEFAULT_SIZE, option_font_size, 1);
-	ro_gui_set_icon_decimal(w, FONT_MINIMUM_SIZE, option_font_min_size, 1);
-	ro_gui_set_icon_string(w, FONT_SANS_FIELD, option_font_sans, true);
-	ro_gui_set_icon_string(w, FONT_SERIF_FIELD, option_font_serif, true);
-	ro_gui_set_icon_string(w, FONT_MONOSPACE_FIELD, option_font_mono, true);
-	ro_gui_set_icon_string(w, FONT_CURSIVE_FIELD, option_font_cursive, true);
-	ro_gui_set_icon_string(w, FONT_FANTASY_FIELD, option_font_fantasy, true);
+	ro_gui_set_icon_decimal(w, FONT_DEFAULT_SIZE, nsoption_int(font_size), 1);
+	ro_gui_set_icon_decimal(w, FONT_MINIMUM_SIZE, nsoption_int(font_min_size), 1);
+	ro_gui_set_icon_string(w, FONT_SANS_FIELD, nsoption_charp(font_sans), true);
+	ro_gui_set_icon_string(w, FONT_SERIF_FIELD, nsoption_charp(font_serif), true);
+	ro_gui_set_icon_string(w, FONT_MONOSPACE_FIELD, nsoption_charp(font_mono), true);
+	ro_gui_set_icon_string(w, FONT_CURSIVE_FIELD, nsoption_charp(font_cursive), true);
+	ro_gui_set_icon_string(w, FONT_FANTASY_FIELD, nsoption_charp(font_fantasy), true);
 	ro_gui_set_icon_string(w, FONT_DEFAULT_FIELD,
-			font_names[option_font_default], true);
+			       font_names[nsoption_int(font_default)], true);
 
 	if (!ro_gui_options_fonts_init_menu())
 		return false;
@@ -140,22 +139,32 @@ bool ro_gui_options_fonts_ok(wimp_w w)
 {
 	unsigned int i;
 
-	option_font_size = ro_gui_get_icon_decimal(w, FONT_DEFAULT_SIZE, 1);
-	option_font_min_size = ro_gui_get_icon_decimal(w, FONT_MINIMUM_SIZE, 1);
-	if (option_font_size < option_font_min_size) {
-		option_font_size = option_font_min_size;
-		ro_gui_set_icon_decimal(w, FONT_DEFAULT_SIZE, option_font_size, 1);
-	}
-	free(option_font_sans);
-	option_font_sans = strdup(ro_gui_get_icon_string(w, FONT_SANS_FIELD));
-	free(option_font_serif);
-	option_font_serif = strdup(ro_gui_get_icon_string(w, FONT_SERIF_FIELD));
-	free(option_font_mono);
-	option_font_mono = strdup(ro_gui_get_icon_string(w, FONT_MONOSPACE_FIELD));
-	free(option_font_cursive);
-	option_font_cursive = strdup(ro_gui_get_icon_string(w, FONT_CURSIVE_FIELD));
-	free(option_font_fantasy);
-	option_font_fantasy = strdup(ro_gui_get_icon_string(w, FONT_FANTASY_FIELD));
+	nsoption_set_int(font_size,
+			 ro_gui_get_icon_decimal(w, FONT_DEFAULT_SIZE, 1));
+
+	nsoption_set_int(font_min_size,
+			 ro_gui_get_icon_decimal(w, FONT_MINIMUM_SIZE, 1));
+
+	if (nsoption_int(font_size) < nsoption_int(font_min_size)) {
+		nsoption_set_int(font_size, nsoption_int(font_min_size));
+		ro_gui_set_icon_decimal(w, FONT_DEFAULT_SIZE, nsoption_int(font_size), 1);
+	
+}
+
+	nsoption_set_charp(font_sans,
+			   strdup(ro_gui_get_icon_string(w, FONT_SANS_FIELD)));
+
+	nsoption_set_charp(font_serif,
+			   strdup(ro_gui_get_icon_string(w, FONT_SERIF_FIELD)));
+
+	nsoption_set_charp(font_mono,
+			   strdup(ro_gui_get_icon_string(w, FONT_MONOSPACE_FIELD)));
+
+	nsoption_set_charp(font_cursive,
+			   strdup(ro_gui_get_icon_string(w, FONT_CURSIVE_FIELD)));
+
+	nsoption_set_charp(font_fantasy,
+			   strdup(ro_gui_get_icon_string(w, FONT_FANTASY_FIELD)));
 
 	for (i = 0; i != 5; i++) {
 		if (!strcmp(font_names[i], ro_gui_get_icon_string(w,
@@ -166,7 +175,7 @@ bool ro_gui_options_fonts_ok(wimp_w w)
 		/* this should never happen, but still */
 		i = 0;
 
-	option_font_default = i;
+	nsoption_set_int(font_default, i);
 
 	ro_gui_save_options();
 	return true;

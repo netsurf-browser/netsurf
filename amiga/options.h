@@ -16,165 +16,171 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef _NETSURF_DESKTOP_OPTIONS_INCLUDING_
+#error "Frontend options header cannot be included directly"
+#endif
+
 #ifndef AMIGA_OPTIONS_H
 #define AMIGA_OPTIONS_H
-#include "desktop/options.h"
 
-extern char *option_url_file;
-extern char *option_hotlist_file;
-extern char *option_use_pubscreen;
-extern char *option_modeid;
-extern int option_screen_compositing;
-extern int option_cache_bitmaps;
-extern char *option_theme;
-extern bool option_utf8_clipboard;
-extern bool option_context_menu;
-extern bool option_truecolour_mouse_pointers;
-extern bool option_use_os_pointers;
-extern bool option_new_tab_active;
-extern bool option_new_tab_last;
-extern bool option_kiosk_mode;
-extern char *option_search_engines_file;
-extern char *option_arexx_dir;
-extern char *option_arexx_startup;
-extern char *option_arexx_shutdown;
-extern char *option_download_dir;
-extern bool option_download_notify;
-extern bool option_faster_scroll;
-extern bool option_scale_quality;
-extern bool option_ask_overwrite;
-extern int option_printer_unit;
-extern int option_print_scale;
-extern bool option_startup_no_window;
-extern bool option_close_no_quit;
-extern bool option_hide_docky_icon;
-extern char *option_font_unicode;
-extern bool option_drag_save_icons;
-extern int option_hotlist_window_xpos;
-extern int option_hotlist_window_ypos;
-extern int option_hotlist_window_xsize;
-extern int option_hotlist_window_ysize;
-extern int option_history_window_xpos;
-extern int option_history_window_ypos;
-extern int option_history_window_xsize;
-extern int option_history_window_ysize;
-extern int option_cookies_window_xpos;
-extern int option_cookies_window_ypos;
-extern int option_cookies_window_xsize;
-extern int option_cookies_window_ysize;
-extern int option_cairo_renderer;
-extern bool option_direct_render;
-extern int option_amiga_ydpi;
-extern int option_redraw_tile_size_x;
-extern int option_redraw_tile_size_y;
-extern int option_monitor_aspect_x;
-extern int option_monitor_aspect_y;
-extern bool option_accept_lang_locale;
-extern int option_menu_refresh;
+#define NSOPTION_EXTRA_DEFINE			\
+	char *url_file;				\
+	char *hotlist_file;			\
+	char *use_pubscreen;			\
+	char *modeid;				\
+	int screen_compositing;			\
+	int cache_bitmaps;			\
+	char *theme;				\
+	bool utf8_clipboard;			\
+	bool context_menu;			\
+	bool truecolour_mouse_pointers;		\
+	bool use_os_pointers;			\
+	bool new_tab_active;			\
+	bool new_tab_last;			\
+	bool kiosk_mode;			\
+	char *search_engines_file;		\
+	char *arexx_dir;			\
+	char *arexx_startup;			\
+	char *arexx_shutdown;			\
+	char *download_dir;			\
+	bool download_notify;			\
+	bool faster_scroll;			\
+	bool scale_quality;			\
+	bool ask_overwrite;			\
+	int printer_unit;			\
+	int print_scale;			\
+	bool startup_no_window;			\
+	bool close_no_quit;			\
+	bool hide_docky_icon;			\
+	char *font_unicode;			\
+	bool drag_save_icons;			\
+	int hotlist_window_xpos;		\
+	int hotlist_window_ypos;		\
+	int hotlist_window_xsize;		\
+	int hotlist_window_ysize;		\
+	int history_window_xpos;		\
+	int history_window_ypos;		\
+	int history_window_xsize;		\
+	int history_window_ysize;		\
+	int cookies_window_xpos;		\
+	int cookies_window_ypos;		\
+	int cookies_window_xsize;		\
+	int cookies_window_ysize;		\
+	int cairo_renderer;			\
+	bool direct_render;			\
+	int amiga_ydpi;				\
+	int redraw_tile_size_x;			\
+	int redraw_tile_size_y;			\
+	int monitor_aspect_x;			\
+	int monitor_aspect_y;			\
+	bool accept_lang_locale;		\
+	int menu_refresh                        
 
-#define EXTRA_OPTION_DEFINE \
-char *option_url_file = 0; \
-char *option_hotlist_file = 0; \
-char *option_use_pubscreen = 0; \
-char *option_modeid = 0; \
-int option_screen_compositing = -1; \
-int option_cache_bitmaps = 0; \
-char *option_theme = 0; \
-bool option_utf8_clipboard = false; \
-bool option_context_menu = true; \
-bool option_truecolour_mouse_pointers = false; \
-bool option_use_os_pointers = true; \
-bool option_new_tab_active = false; \
-bool option_new_tab_last = false; \
-bool option_kiosk_mode = false; \
-char *option_search_engines_file = 0; \
-char *option_arexx_dir = 0; \
-char *option_arexx_startup = 0; \
-char *option_arexx_shutdown = 0; \
-char *option_download_dir = 0; \
-bool option_download_notify = false; \
-bool option_faster_scroll = true; \
-bool option_scale_quality = false; \
-bool option_ask_overwrite = true; \
-int option_printer_unit = 0; \
-int option_print_scale = 100; \
-bool option_startup_no_window = false; \
-bool option_close_no_quit = false; \
-bool option_hide_docky_icon = false; \
-char *option_font_unicode = 0; \
-bool option_drag_save_icons = true; \
-int option_hotlist_window_xpos = 0; \
-int option_hotlist_window_ypos = 0; \
-int option_hotlist_window_xsize = 0; \
-int option_hotlist_window_ysize = 0; \
-int option_history_window_xpos = 0; \
-int option_history_window_ypos = 0; \
-int option_history_window_xsize = 0; \
-int option_history_window_ysize = 0; \
-int option_cookies_window_xpos = 0; \
-int option_cookies_window_ypos = 0; \
-int option_cookies_window_xsize = 0; \
-int option_cookies_window_ysize = 0; \
-int option_cairo_renderer = 1; \
-bool option_direct_render = false; \
-int option_amiga_ydpi = 72; \
-int option_redraw_tile_size_x = 400; \
-int option_redraw_tile_size_y = 150; \
-int option_monitor_aspect_x = 0; \
-int option_monitor_aspect_y = 0; \
-bool option_accept_lang_locale = true; \
-int option_menu_refresh = 0; \
 
-#define EXTRA_OPTION_TABLE \
-{ "url_file",		OPTION_STRING,	&option_url_file }, \
-{ "hotlist_file",		OPTION_STRING,	&option_hotlist_file }, \
-{ "use_pubscreen",	OPTION_STRING,	&option_use_pubscreen}, \
-{ "screen_modeid",	OPTION_STRING,	&option_modeid}, \
-{ "screen_compositing",	OPTION_INTEGER,	&option_screen_compositing}, \
-{ "cache_bitmaps",	OPTION_INTEGER,	&option_cache_bitmaps}, \
-{ "theme",		OPTION_STRING,	&option_theme}, \
-{ "clipboard_write_utf8",	OPTION_BOOL,	&option_utf8_clipboard}, \
-{ "context_menu",	OPTION_BOOL,	&option_context_menu}, \
-{ "truecolour_mouse_pointers",	OPTION_BOOL,	&option_truecolour_mouse_pointers}, \
-{ "os_mouse_pointers",	OPTION_BOOL,	&option_use_os_pointers}, \
-{ "new_tab_is_active",	OPTION_BOOL,	&option_new_tab_active}, \
-{ "new_tab_last",	OPTION_BOOL,	&option_new_tab_last}, \
-{ "kiosk_mode",	OPTION_BOOL,	&option_kiosk_mode}, \
-{ "search_engines_file",		OPTION_STRING,	&option_search_engines_file }, \
-{ "arexx_dir",		OPTION_STRING,	&option_arexx_dir }, \
-{ "arexx_startup",		OPTION_STRING,	&option_arexx_startup }, \
-{ "arexx_shutdown",		OPTION_STRING,	&option_arexx_shutdown }, \
-{ "download_dir",		OPTION_STRING,	&option_download_dir }, \
-{ "download_notify",	OPTION_BOOL,	&option_download_notify}, \
-{ "faster_scroll",	OPTION_BOOL,	&option_faster_scroll}, \
-{ "scale_quality",	OPTION_BOOL,	&option_scale_quality}, \
-{ "ask_overwrite",	OPTION_BOOL,	&option_ask_overwrite}, \
-{ "printer_unit",	OPTION_INTEGER,	&option_printer_unit}, \
-{ "print_scale",	OPTION_INTEGER,	&option_print_scale}, \
-{ "startup_no_window",	OPTION_BOOL,	&option_startup_no_window}, \
-{ "close_no_quit",	OPTION_BOOL,	&option_close_no_quit}, \
-{ "hide_docky_icon",	OPTION_BOOL,	&option_hide_docky_icon}, \
-{ "font_unicode",		OPTION_STRING,	&option_font_unicode }, \
-{ "drag_save_icons",	OPTION_BOOL,	&option_drag_save_icons}, \
-{ "hotlist_window_xpos",	OPTION_INTEGER,	&option_hotlist_window_xpos}, \
-{ "hotlist_window_ypos",	OPTION_INTEGER,	&option_hotlist_window_ypos}, \
-{ "hotlist_window_xsize",	OPTION_INTEGER,	&option_hotlist_window_xsize}, \
-{ "hotlist_window_ysize",	OPTION_INTEGER,	&option_hotlist_window_ysize}, \
-{ "history_window_xpos",	OPTION_INTEGER,	&option_history_window_xpos}, \
-{ "history_window_ypos",	OPTION_INTEGER,	&option_history_window_ypos}, \
-{ "history_window_xsize",	OPTION_INTEGER,	&option_history_window_xsize}, \
-{ "history_window_ysize",	OPTION_INTEGER,	&option_history_window_ysize}, \
-{ "cookies_window_xpos",	OPTION_INTEGER,	&option_cookies_window_xpos}, \
-{ "cookies_window_ypos",	OPTION_INTEGER,	&option_cookies_window_ypos}, \
-{ "cookies_window_xsize",	OPTION_INTEGER,	&option_cookies_window_xsize}, \
-{ "cookies_window_ysize",	OPTION_INTEGER,	&option_cookies_window_ysize}, \
-{ "cairo_renderer",	OPTION_INTEGER,	&option_cairo_renderer}, \
-{ "direct_render",	OPTION_BOOL,	&option_direct_render}, \
-{ "amiga_ydpi",	OPTION_INTEGER,	&option_amiga_ydpi}, \
-{ "redraw_tile_size_x",	OPTION_INTEGER,	&option_redraw_tile_size_x}, \
-{ "redraw_tile_size_y",	OPTION_INTEGER,	&option_redraw_tile_size_y}, \
-{ "monitor_aspect_x",	OPTION_INTEGER,	&option_monitor_aspect_x}, \
-{ "monitor_aspect_y",	OPTION_INTEGER,	&option_monitor_aspect_y}, \
-{ "accept_lang_locale",	OPTION_BOOL,	&option_accept_lang_locale}, \
-{ "menu_refresh",	OPTION_INTEGER,	&option_menu_refresh},
+#define NSOPTION_EXTRA_DEFAULTS				\
+	.url_file = NULL,				\
+	.hotlist_file = NULL,				\
+	.use_pubscreen = NULL,				\
+	.modeid = NULL,					\
+	.screen_compositing = -1,			\
+	.cache_bitmaps = 0,				\
+	.theme = NULL,					\
+	.utf8_clipboard = false,			\
+	.context_menu = true,				\
+	.truecolour_mouse_pointers = false,		\
+	.use_os_pointers = true,			\
+	.new_tab_active = false,			\
+	.new_tab_last = false,				\
+	.kiosk_mode = false,				\
+	.search_engines_file = NULL,			\
+	.arexx_dir = NULL,				\
+	.arexx_startup = NULL,				\
+	.arexx_shutdown = NULL,				\
+	.download_dir = NULL,				\
+	.download_notify = false,			\
+	.faster_scroll = true,				\
+	.scale_quality = false,				\
+	.ask_overwrite = true,				\
+	.printer_unit = 0,				\
+	.print_scale = 100,				\
+	.startup_no_window = false,			\
+	.close_no_quit = false,				\
+	.hide_docky_icon = false,			\
+	.font_unicode = NULL,				\
+	.drag_save_icons = true,			\
+	.hotlist_window_xpos = 0,			\
+	.hotlist_window_ypos = 0,			\
+	.hotlist_window_xsize = 0,			\
+	.hotlist_window_ysize = 0,			\
+	.history_window_xpos = 0,			\
+	.history_window_ypos = 0,			\
+	.history_window_xsize = 0,			\
+	.history_window_ysize = 0,			\
+	.cookies_window_xpos = 0,			\
+	.cookies_window_ypos = 0,			\
+	.cookies_window_xsize = 0,			\
+	.cookies_window_ysize = 0,			\
+	.cairo_renderer = 1,				\
+	.direct_render = false,				\
+	.amiga_ydpi = 72,				\
+	.redraw_tile_size_x = 400,			\
+	.redraw_tile_size_y = 150,			\
+	.monitor_aspect_x = 0,				\
+	.monitor_aspect_y = 0,				\
+	.accept_lang_locale = true,			\
+	.menu_refresh = 0 
+
+#define NSOPTION_EXTRA_TABLE \
+{ "url_file",		OPTION_STRING,	&nsoptions.url_file }, \
+{ "hotlist_file",	OPTION_STRING,	&nsoptions.hotlist_file }, \
+{ "use_pubscreen",	OPTION_STRING,	&nsoptions.use_pubscreen}, \
+{ "screen_modeid",	OPTION_STRING,	&nsoptions.modeid}, \
+{ "screen_compositing",	OPTION_INTEGER,	&nsoptions.screen_compositing}, \
+{ "cache_bitmaps",	OPTION_INTEGER,	&nsoptions.cache_bitmaps}, \
+{ "theme",		OPTION_STRING,	&nsoptions.theme}, \
+{ "clipboard_write_utf8", OPTION_BOOL,	&nsoptions.utf8_clipboard}, \
+{ "context_menu",	OPTION_BOOL,	&nsoptions.context_menu}, \
+{ "truecolour_mouse_pointers", OPTION_BOOL, &nsoptions.truecolour_mouse_pointers}, \
+{ "os_mouse_pointers",	OPTION_BOOL,	&nsoptions.use_os_pointers}, \
+{ "new_tab_is_active",	OPTION_BOOL,	&nsoptions.new_tab_active}, \
+{ "new_tab_last",	OPTION_BOOL,	&nsoptions.new_tab_last}, \
+{ "kiosk_mode",		OPTION_BOOL,	&nsoptions.kiosk_mode},		\
+{ "search_engines_file",OPTION_STRING,	&nsoptions.search_engines_file }, \
+{ "arexx_dir",		OPTION_STRING,	&nsoptions.arexx_dir }, \
+{ "arexx_startup",	OPTION_STRING,	&nsoptions.arexx_startup }, \
+{ "arexx_shutdown",	OPTION_STRING,	&nsoptions.arexx_shutdown }, \
+{ "download_dir",	OPTION_STRING,	&nsoptions.download_dir }, \
+{ "download_notify",	OPTION_BOOL,	&nsoptions.download_notify}, \
+{ "faster_scroll",	OPTION_BOOL,	&nsoptions.faster_scroll}, \
+{ "scale_quality",	OPTION_BOOL,	&nsoptions.scale_quality}, \
+{ "ask_overwrite",	OPTION_BOOL,	&nsoptions.ask_overwrite}, \
+{ "printer_unit",	OPTION_INTEGER,	&nsoptions.printer_unit}, \
+{ "print_scale",	OPTION_INTEGER,	&nsoptions.print_scale}, \
+{ "startup_no_window",	OPTION_BOOL,	&nsoptions.startup_no_window}, \
+{ "close_no_quit",	OPTION_BOOL,	&nsoptions.close_no_quit}, \
+{ "hide_docky_icon",	OPTION_BOOL,	&nsoptions.hide_docky_icon}, \
+{ "font_unicode",	OPTION_STRING,	&nsoptions.font_unicode }, \
+{ "drag_save_icons",	OPTION_BOOL,	&nsoptions.drag_save_icons}, \
+{ "hotlist_window_xpos", OPTION_INTEGER, &nsoptions.hotlist_window_xpos}, \
+{ "hotlist_window_ypos", OPTION_INTEGER, &nsoptions.hotlist_window_ypos}, \
+{ "hotlist_window_xsize", OPTION_INTEGER, &nsoptions.hotlist_window_xsize}, \
+{ "hotlist_window_ysize", OPTION_INTEGER, &nsoptions.hotlist_window_ysize}, \
+{ "history_window_xpos", OPTION_INTEGER, &nsoptions.history_window_xpos}, \
+{ "history_window_ypos", OPTION_INTEGER, &nsoptions.history_window_ypos}, \
+{ "history_window_xsize", OPTION_INTEGER, &nsoptions.history_window_xsize}, \
+{ "history_window_ysize", OPTION_INTEGER, &nsoptions.history_window_ysize}, \
+{ "cookies_window_xpos", OPTION_INTEGER, &nsoptions.cookies_window_xpos}, \
+{ "cookies_window_ypos", OPTION_INTEGER, &nsoptions.cookies_window_ypos}, \
+{ "cookies_window_xsize", OPTION_INTEGER, &nsoptions.cookies_window_xsize}, \
+{ "cookies_window_ysize", OPTION_INTEGER, &nsoptions.cookies_window_ysize}, \
+{ "cairo_renderer",	OPTION_INTEGER,	&nsoptions.cairo_renderer}, \
+{ "direct_render",	OPTION_BOOL,	&nsoptions.direct_render}, \
+{ "amiga_ydpi",		OPTION_INTEGER,	&nsoptions.amiga_ydpi}, \
+{ "redraw_tile_size_x",	OPTION_INTEGER,	&nsoptions.redraw_tile_size_x}, \
+{ "redraw_tile_size_y",	OPTION_INTEGER,	&nsoptions.redraw_tile_size_y}, \
+{ "monitor_aspect_x",	OPTION_INTEGER,	&nsoptions.monitor_aspect_x}, \
+{ "monitor_aspect_y",	OPTION_INTEGER,	&nsoptions.monitor_aspect_y}, \
+{ "accept_lang_locale",	OPTION_BOOL,	&nsoptions.accept_lang_locale}, \
+{ "menu_refresh",	OPTION_INTEGER,	&nsoptions.menu_refresh}
+
 #endif

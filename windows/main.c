@@ -131,19 +131,19 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	ret = nsws_create_drawable_class(hInstance);
 	ret = nsws_create_localhistory_class(hInstance);
 
-	option_target_blank = false;
+	nsoption_set_bool(target_blank, false);
 
 	nsws_window_init_pointers(hInstance);
 
 	/* ensure homepage option has a default */
-	if (option_homepage_url == NULL || option_homepage_url[0] == '\0')
-		option_homepage_url = strdup(NETSURF_HOMEPAGE);
+	nsoption_setnull_charp(homepage_url, strdup(NETSURF_HOMEPAGE));
 
 	/* If there is a url specified on the command line use it */
-	if (argc > 1)
+	if (argc > 1) {
 		addr = argv[1];
-	else
-		addr = option_homepage_url;
+	} else {
+		addr = nsoption_charp(homepage_url);
+	}
 
 	LOG(("calling browser_window_create"));
 	bw = browser_window_create(addr, 0, 0, true, false);

@@ -34,7 +34,6 @@
 #include "atari/bitmap.h"
 #include "atari/gui.h"
 #include "atari/plot.h"
-#include "atari/options.h"
 #include "desktop/options.h"
 #include "atari/plot.h"
 
@@ -57,11 +56,11 @@ int atari_plotter_init( char* drvrname, char * fdrvrname )
 	int flags = 0;
 	unsigned long font_flags = 0;
 
-	if( option_atari_dither == 1)
+	if( nsoption_int(atari_dither) == 1)
 		flags |= PLOT_FLAG_DITHER;
-	if( option_atari_transparency == 1 )
+	if( nsoption_int(atari_transparency) == 1 )
 		flags |= PLOT_FLAG_TRANS;
-	if( option_atari_font_monochrom == 1 )
+	if( nsoption_int(atari_font_monochrom) == 1 )
 		font_flags |= FONTPLOT_FLAG_MONOGLYPH;
 
 	vdih = app.graf.handle;

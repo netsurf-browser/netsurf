@@ -24,7 +24,6 @@
 #include "riscos/configure/configure.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
 #include "riscos/tinct.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -78,19 +77,19 @@ bool ro_gui_options_image_initialise(wimp_w w)
 
 	/* set the current values */
 	for (i = 0; (i < 4); i++) {
-		if ((unsigned int)option_fg_plot_style == tinct_options[i])
+		if ((unsigned int)nsoption_int(fg_plot_style) == tinct_options[i])
 			ro_gui_set_icon_string(w, IMAGE_FOREGROUND_FIELD,
 					image_quality_menu->entries[i].
 						data.indirected_text.text, true);
-		if ((unsigned int)option_bg_plot_style == tinct_options[i])
+		if ((unsigned int)nsoption_int(bg_plot_style) == tinct_options[i])
 			ro_gui_set_icon_string(w, IMAGE_BACKGROUND_FIELD,
 					image_quality_menu->entries[i].
 						data.indirected_text.text, true);
 	}
 	ro_gui_set_icon_decimal(w, IMAGE_SPEED_FIELD,
-			option_minimum_gif_delay, 2);
+				nsoption_int(minimum_gif_delay), 2);
 	ro_gui_set_icon_selected_state(w, IMAGE_DISABLE_ANIMATION,
-			!option_animate_images);
+				       !nsoption_bool(animate_images));
 	ro_gui_options_update_shading(w);
 
 	/* register icons */
@@ -252,12 +251,16 @@ void ro_gui_options_update_shading(wimp_w w)
 
 bool ro_gui_options_image_ok(wimp_w w)
 {
-	ro_gui_options_image_read(w, (unsigned int *) &option_bg_plot_style,
-			(unsigned int *) &option_fg_plot_style);
-	option_minimum_gif_delay = ro_gui_get_icon_decimal(w,
-			IMAGE_SPEED_FIELD, 2);
-	option_animate_images = !ro_gui_get_icon_selected_state(w,
-					IMAGE_DISABLE_ANIMATION);
+	ro_gui_options_image_read(w, 
+				  (unsigned int *)&nsoption_int(bg_plot_style),
+				  (unsigned int *)&nsoption_int(fg_plot_style));
+
+	nsoption_set_int(minimum_gif_delay,
+			 ro_gui_get_icon_decimal(w, IMAGE_SPEED_FIELD, 2));
+
+	nsoption_set_bool(animate_images,
+			  !ro_gui_get_icon_selected_state(w,
+					IMAGE_DISABLE_ANIMATION));
 	ro_gui_save_options();
 
 	return true;

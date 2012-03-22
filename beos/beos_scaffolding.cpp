@@ -824,8 +824,8 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 		{
 			static const char *addr = NETSURF_HOMEPAGE;
 
-			if (option_homepage_url != NULL && option_homepage_url[0] != '\0')
-				addr = option_homepage_url;
+			if (nsoption_charp(homepage_url) != NULL)
+				addr = nsoption_charp(homepage_url);
 
 			browser_window_go(bw, addr, 0, true);
 			break;
@@ -1261,14 +1261,19 @@ MENUHANDLER(downloads)
 MENUHANDLER(save_window_size)
 {
 	struct beos_scaffolding *gw = (struct beos_scaffolding *)g;
+	int x,y,w,h;
 
-	option_toolbar_status_width = beos_paned_get_position(gw->status_pane);
-	beos_window_get_position(gw->window, &option_window_x, &option_window_y);
-	beos_window_get_size(gw->window, &option_window_width,
-					&option_window_height);
+	nsoption_set_int(toolbar_status_width, 
+			 beos_paned_get_position(gw->status_pane));
+	beos_window_get_position(gw->window, &x, &y);
+	beos_window_get_size(gw->window, &w, &h);
 
+	nsoption_set_int(window_x, x);
+	nsoption_set_int(window_y, y);
+	nsoption_set_int(window_width, w);
+	nsoption_set_int(window_height, h);
 
-	options_write(options_file_location);
+	nsoption_write(options_file_location);
 
 	return TRUE;
 }
@@ -1690,9 +1695,9 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	if (!replicant_view) {
 
 		BRect frame(0, 0, 600-1, 500-1);
-		if (option_window_width > 0) {
-			frame.Set(0, 0, option_window_width - 1, option_window_height - 1);
-			frame.OffsetToSelf(option_window_x, option_window_y);
+		if (nsoption_int(window_width) > 0) {
+			frame.Set(0, 0, nsoption_int(window_width) - 1, nsoption_int(window_height) - 1);
+			frame.OffsetToSelf(nsoption_int(window_x), nsoption_int(window_y));
 		} else {
 			BPoint pos(50, 50);
 			// XXX: use last BApplication::WindowAt()'s dynamic_cast<NSBrowserWindow *> Frame()
@@ -2158,16 +2163,16 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.
 	 */
-	if (option_window_width > 0) {
-		beos_window_move(g->window, option_window_x, option_window_y);
-		beos_window_resize(g->window, option_window_width,
-						option_window_height);
+	if (nsoption_int(window_width) > 0) {
+		beos_window_move(g->window, nsoption_int(window_x), nsoption_int(window_y));
+		beos_window_resize(g->window, nsoption_int(window_width),
+				   nsoption_int(window_height));
 	} else {
 		beos_window_set_default_size(g->window, 600, 600);
 	}
 
 	/* set the size of the hpane with status bar and h scrollbar */
-	beos_paned_set_position(g->status_pane, option_toolbar_status_width);
+	beos_paned_set_position(g->status_pane, nsoption_int(toolbar_status_width));
 
 	/* set the URL entry box to expand, as we can't do this from within
 	 * glade because of the way it emulates toolbars.

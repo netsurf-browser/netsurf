@@ -167,12 +167,12 @@ nserror netsurf_init(int *pargc,
 				utsname.version, utsname.machine));
 
 	LOG(("Using '%s' for Options file", options));
-	options_read(options);
+	nsoption_read(options);
 
 	messages_load(messages);
 
 	/* set up cache limits based on the memory cache size option */
-	hlcache_parameters.limit = option_memory_cache_size;
+	hlcache_parameters.limit = nsoption_int(memory_cache_size);
 
 	if (hlcache_parameters.limit < MINIMUM_MEMORY_CACHE_SIZE) {
 		hlcache_parameters.limit = MINIMUM_MEMORY_CACHE_SIZE;
@@ -228,7 +228,7 @@ nserror netsurf_init(int *pargc,
 	/* Initialize system colours */
 	gui_system_colour_init();
 
-	options_commandline(pargc, *pargv);
+	nsoption_commandline(pargc, *pargv);
 
 	js_initialise();
 

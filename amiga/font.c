@@ -22,7 +22,7 @@
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 #include "amiga/object.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/font.h"
@@ -400,23 +400,23 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	switch(fontfamily)
 	{
 		case PLOT_FONT_FAMILY_SANS_SERIF:
-			fontname = option_font_sans;
+			fontname = nsoption_charp(font_sans);
 		break;
 		case PLOT_FONT_FAMILY_SERIF:
-			fontname = option_font_serif;
+			fontname = nsoption_charp(font_serif);
 		break;
 		case PLOT_FONT_FAMILY_MONOSPACE:
-			fontname = option_font_mono;
+			fontname = nsoption_charp(font_mono);
 		break;
 		case PLOT_FONT_FAMILY_CURSIVE:
-			fontname = option_font_cursive;
+			fontname = nsoption_charp(font_cursive);
 		break;
 		case PLOT_FONT_FAMILY_FANTASY:
-			fontname = option_font_fantasy;
+			fontname = nsoption_charp(font_fantasy);
 		break;
 		case NSA_UNICODE_FONT:
 		default:
-			fontname = option_font_unicode;
+			fontname = nsoption_charp(font_unicode);
 		break;
 	}
 
@@ -779,12 +779,12 @@ void ami_font_setdevicedpi(int id)
 {
 	DisplayInfoHandle dih;
 	struct DisplayInfo dinfo;
-	ULONG ydpi = option_amiga_ydpi;
-	ULONG xdpi = option_amiga_ydpi;
+	ULONG ydpi = nsoption_int(amiga_ydpi);
+	ULONG xdpi = nsoption_int(amiga_ydpi);
 
-	nscss_screen_dpi = INTTOFIX(option_amiga_ydpi);
+	nscss_screen_dpi = INTTOFIX(nsoption_int(amiga_ydpi));
 
-	if(id && (option_monitor_aspect_x != 0) && (option_monitor_aspect_y != 0))
+	if(id && (nsoption_int(monitor_aspect_x) != 0) && (nsoption_int(monitor_aspect_y) != 0))
 	{
 		if(dih = FindDisplayInfo(id))
 		{
@@ -794,12 +794,12 @@ void ami_font_setdevicedpi(int id)
 				int xres = dinfo.Resolution.x;
 				int yres = dinfo.Resolution.y;
 
-				if((option_monitor_aspect_x != 4) || (option_monitor_aspect_y != 3))
+				if((nsoption_int(monitor_aspect_x) != 4) || (nsoption_int(monitor_aspect_y) != 3))
 				{
 					/* AmigaOS sees 4:3 modes as square in the DisplayInfo database,
 					 * so we correct other modes to "4:3 equiv" here. */
-					xres = (xres * option_monitor_aspect_x) / 4;
-					yres = (yres * option_monitor_aspect_y) / 3;
+					xres = (xres * nsoption_int(monitor_aspect_x)) / 4;
+					yres = (yres * nsoption_int(monitor_aspect_y)) / 3;
 				}
 
 				xdpi = (yres * ydpi) / xres;

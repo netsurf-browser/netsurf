@@ -21,7 +21,7 @@
 #include <stdlib.h>
 
 #include "monkey/filetype.h"
-#include "monkey/options.h"
+#include "desktop/options.h"
 #include "monkey/poll.h"
 #include "monkey/dispatch.h"
 #include "monkey/browser.h"
@@ -57,11 +57,11 @@ nsmonkey_init_resource(const char *resource_path)
 
 void gui_quit(void)
 {
-  urldb_save_cookies(option_cookie_jar);
-  urldb_save(option_url_file);
+	urldb_save_cookies(nsoption_charp(cookie_jar));
+	urldb_save(nsoption_charp(url_file));
   sslcert_cleanup();
-  free(option_cookie_file);
-  free(option_cookie_jar);
+  free(nsoption_charp(cookie_file));
+  free(nsoption_charp(cookie_jar));
   gtk_fetch_filetype_fin();
 }
 
@@ -117,8 +117,8 @@ main(int argc, char **argv)
   filepath_sfinddef(respaths, buf, "mime.types", "/etc/");
   gtk_fetch_filetype_init(buf);
   
-  urldb_load(option_url_file);
-  urldb_load_cookies(option_cookie_file);
+  urldb_load(nsoption_charp(url_file));
+  urldb_load_cookies(nsoption_charp(cookie_file));
 
   sslcert_init("content.png");
   

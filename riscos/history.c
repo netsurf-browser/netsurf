@@ -30,7 +30,7 @@
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/gui.h"
 #include "riscos/wimp.h"
 #include "riscos/wimp_event.h"
@@ -183,7 +183,7 @@ void ro_gui_history_mouse_at(wimp_pointer *pointer)
 
 	/* If the mouse hasn't moved, or if we don't want tooltips, exit */
 	if ((mouse_x == pointer->pos.x && mouse_y == pointer->pos.y) ||
-			!option_history_tooltip)
+	    !nsoption_bool(history_tooltip))
 		return;
 
 	/* Update mouse position */

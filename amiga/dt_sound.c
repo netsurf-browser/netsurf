@@ -149,7 +149,7 @@ bool amiga_dt_sound_convert(struct content *c)
 
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
 	union content_msg_data msg_data;
-	int width, height;
+	int width = 50, height = 50;
 	char title[100];
 	const uint8 *data;
 	ULONG size;

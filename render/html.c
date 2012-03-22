@@ -1205,7 +1205,7 @@ bool html_find_stylesheets(html_content *c, xmlNode *html)
 		c->base.active++;
 	}
 
-	if (option_block_ads) {
+	if (nsoption_bool(block_ads)) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child, accept,
@@ -1791,7 +1791,7 @@ nserror html_object_callback(hlcache_handle *object,
 	 *     5) the time since the previous reformat is more than the
 	 *        configured minimum time between reformats
 	 * then reformat the page to display newly fetched objects */
-	else if (option_incremental_reflow &&
+	else if (nsoption_bool(incremental_reflow) &&
 			event->type == CONTENT_MSG_DONE &&
 			!(box->flags & REPLACE_DIM) &&
 			(c->base.status == CONTENT_STATUS_READY ||
@@ -1966,8 +1966,8 @@ void html_reformat(struct content *c, int width, int height)
 
 	time_taken = wallclock() - time_before;
 	c->reformat_time = wallclock() +
-			((time_taken * 3 < option_min_reflow_period ?
-			option_min_reflow_period : time_taken * 3));
+		((time_taken * 3 < nsoption_int(min_reflow_period) ?
+		  nsoption_int(min_reflow_period) : time_taken * 3));
 }
 
 

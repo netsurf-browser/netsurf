@@ -22,7 +22,6 @@
 #include "amiga/filetype.h"
 #include "amiga/icon.h"
 #include "amiga/iff_dr2d.h"
-#include "amiga/options.h"
 #include "amiga/save_pdf.h"
 #include "amiga/theme.h"
 
@@ -198,7 +197,7 @@ void ami_file_req_init(void)
 	savereq = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
 							ASLFR_DoSaveMode, TRUE,
 							ASLFR_RejectIcons, TRUE,
-							ASLFR_InitialDrawer, option_download_dir,
+							ASLFR_InitialDrawer, nsoption_charp(download_dir),
 							TAG_DONE);
 
 	aslhookfunc.h_Entry = (void *)&ami_file_asl_mime_hook;

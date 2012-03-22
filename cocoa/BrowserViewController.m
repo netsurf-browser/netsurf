@@ -87,7 +87,7 @@
 
 - (IBAction) zoomOriginal: (id) sender;
 {
-	browser_window_set_scale( browser, (float)option_scale / 100.0, true );
+	browser_window_set_scale( browser, (float)nsoption_int(scale) / 100.0, true );
 }
 
 - (IBAction) backForwardSelected: (id) sender;
@@ -114,7 +114,7 @@
 
 - (IBAction) goHome: (id) sender;
 {
-	browser_window_go( browser, option_homepage_url, NULL, true );
+	browser_window_go( browser, nsoption_charp(homepage_url), NULL, true );
 }
 
 - (IBAction) reloadPage: (id) sender;
@@ -218,7 +218,7 @@ static inline bool compare_float( float a, float b )
 	}
 	
 	if (action == @selector( zoomOriginal: )) {
-		return !compare_float( browser->scale, (float)option_scale / 100.0 );
+		return !compare_float( browser->scale, (float)nsoption_int(scale) / 100.0 );
 	}
 	
 	if (action == @selector( goBack: )) {

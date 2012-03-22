@@ -40,7 +40,7 @@
 #include "render/font.h"
 #include "riscos/bitmap.h"
 #include "riscos/gui.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/oslib_pre7.h"
 #include "riscos/thumbnail.h"
 #include "riscos/tinct.h"

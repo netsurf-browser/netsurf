@@ -63,7 +63,6 @@
 #include "amiga/login.h"
 #include "amiga/menu.h"
 #include "amiga/misc.h"
-#include "amiga/options.h"
 #include "amiga/plotters.h"
 #include "amiga/plugin_hack.h"
 #include "amiga/print.h"
@@ -290,9 +289,9 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	/* Firstly check the user's selected theme.  NB: ami_locate_resource()
 	 * gets called for Messages before options are loaded */
 
-	if(option_theme)
+	if(nsoption_charp(theme))
 	{
-		strcpy(fullpath, option_theme);
+		strcpy(fullpath, nsoption_charp(theme));
 		found = ami_gui_check_resource(fullpath, file);
 		if(found) return true;
 	}
@@ -380,96 +379,96 @@ void ami_set_options(void)
 	** updated to show more items than can fit in one column vertically
 	*/
 
-	option_core_select_menu = true;
+	nsoption_set_bool(core_select_menu, true);
 
 	#ifndef NS_AMIGA_CAIRO
 	/* Ensure we get some output when Cairo not available */
-	option_cairo_renderer = 0;
+	nsoption_set_int(cairo_renderer, 0);
 	#endif
 
-	if((!option_accept_language) || (option_accept_language[0] == '\0') ||
-		(option_accept_lang_locale == true))
+	if((!nsoption_charp(accept_language)) || 
+	   (nsoption_charp(accept_language)[0] == '\0') ||
+	   (nsoption_bool(accept_lang_locale) == true))
 	{
 		if(tempacceptlangs = ami_locale_langs())
 		{
-			option_accept_language = (char *)strdup(tempacceptlangs);
+			nsoption_set_charp(accept_language,
+					   (char *)strdup(tempacceptlangs));
 			FreeVec(tempacceptlangs);
 		}
 	}
 
-	if((!option_cookie_file) || (option_cookie_file[0] == '\0'))
-		option_cookie_file = (char *)strdup("PROGDIR:Resources/Cookies");
+	nsoption_setnull_charp(cookie_file, 
+			       (char *)strdup("PROGDIR:Resources/Cookies"));
 
-	if((!option_hotlist_file) || (option_hotlist_file[0] == '\0'))
-		option_hotlist_file = (char *)strdup("PROGDIR:Resources/Hotlist");
+	nsoption_setnull_charp(hotlist_file, 
+			       (char *)strdup("PROGDIR:Resources/Hotlist"));
 
-	if((!option_url_file) || (option_url_file[0] == '\0'))
-		option_url_file = (char *)strdup("PROGDIR:Resources/URLs");
+
+	nsoption_setnull_charp(url_file,
+			       (char *)strdup("PROGDIR:Resources/URLs"));
 
 /*
-	if((!option_cookie_jar) || (option_cookie_jar[0] == '\0'))
-		option_cookie_jar = (char *)strdup("PROGDIR:Resources/CookieJar");
+	nsoption_setnull_charp(cookie_jar,
+			       (char *)strdup("PROGDIR:Resources/CookieJar"));
 */
 
 /* devs:curl-ca-bundle.crt is the default place for the ca bundle on OS4,
  * but we can't rely on it existing, so default to our local one in resources */
 
-	if((!option_ca_bundle) || (option_ca_bundle[0] == '\0'))
-		option_ca_bundle = (char *)strdup("PROGDIR:Resources/ca-bundle");
 
-	if((!option_search_engines_file) || (option_search_engines_file[0] == '\0'))
-		option_search_engines_file = (char *)strdup("PROGDIR:Resources/SearchEngines");
+	nsoption_setnull_charp(ca_bundle,
+			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
 
-	search_engines_file_location = option_search_engines_file;
+	
+	nsoption_setnull_charp(search_engines_file,
+			(char *)strdup("PROGDIR:Resources/SearchEngines"));
 
-	if((!option_font_sans) || (option_font_sans[0] == '\0'))
-		option_font_sans = (char *)strdup("DejaVu Sans");
+	search_engines_file_location = nsoption_charp(search_engines_file);
 
-	if((!option_font_serif) || (option_font_serif[0] == '\0'))
-		option_font_serif = (char *)strdup("DejaVu Serif");
+	/* font defaults */
+	nsoption_setnull_charp(font_sans, (char *)strdup("DejaVu Sans"));
+	nsoption_setnull_charp(font_serif, (char *)strdup("DejaVu Serif"));
+	nsoption_setnull_charp(font_mono, (char *)strdup("DejaVu Sans Mono"));
+	nsoption_setnull_charp(font_cursive, (char *)strdup("DejaVu Sans"));
+	nsoption_setnull_charp(font_fantasy, (char *)strdup("DejaVu Serif"));
 
-	if((!option_font_mono) || (option_font_mono[0] == '\0'))
-		option_font_mono = (char *)strdup("DejaVu Sans Mono");
-
-	if((!option_font_cursive) || (option_font_cursive[0] == '\0'))
-		option_font_cursive = (char *)strdup("DejaVu Sans");
-
-	if((!option_font_fantasy) || (option_font_fantasy[0] == '\0'))
-		option_font_fantasy = (char *)strdup("DejaVu Serif");
-
-	if((!option_font_unicode) || (option_font_unicode[0] == '\0'))
+	if (nsoption_charp(font_unicode) == NULL)
 	{
 		/* Search for some likely candidates */
 
 		if(lock=Lock("FONTS:Code2000.font",ACCESS_READ))
 		{
 			UnLock(lock);
-			option_font_unicode = (char *)strdup("Code2000");
+			nsoption_set_charp(font_unicode, 
+					   (char *)strdup("Code2000"));
 		}
 		else if(lock=Lock("FONTS:Bitstream Cyberbit.font",ACCESS_READ))
 		{
 			UnLock(lock);
-			option_font_unicode = (char *)strdup("Bitstream Cyberbit");
+			nsoption_set_charp(font_unicode,
+					   (char *)strdup("Bitstream Cyberbit"));
 		}
-		else option_font_unicode = (char *)strdup("DejaVu Sans");
+		else {
+			nsoption_set_charp(font_unicode,
+					   (char *)strdup("DejaVu Sans"));
+		}
 	}
 
-	if((!option_theme) || (option_theme[0] == '\0'))
-		option_theme = (char *)strdup("PROGDIR:Resources/Themes/Default");
+	nsoption_setnull_charp(theme,
+			(char *)strdup("PROGDIR:Resources/Themes/Default"));
 
 	tree_set_icon_dir(strdup("ENV:Sys"));
 
-	if((!option_arexx_dir) || (option_arexx_dir[0] == '\0'))
-		option_arexx_dir = (char *)strdup("Rexx");
 
-	if((!option_arexx_startup) || (option_arexx_startup[0] == '\0'))
-		option_arexx_startup = (char *)strdup("Startup.nsrx");
+	nsoption_setnull_charp(arexx_dir, (char *)strdup("Rexx"));
 
-	if((!option_arexx_shutdown) || (option_arexx_shutdown[0] == '\0'))
-		option_arexx_shutdown = (char *)strdup("Shutdown.nsrx");
+	nsoption_setnull_charp(arexx_startup, (char *)strdup("Startup.nsrx"));
 
-	if(!option_window_width) option_window_width = 800;
-	if(!option_window_height) option_window_height = 600;
+	nsoption_setnull_charp(arexx_shutdown, (char *)strdup("Shutdown.nsrx"));
+
+	if(!nsoption_int(window_width)) nsoption_set_int(window_width, 800);
+	if(!nsoption_int(window_height)) nsoption_set_int(window_height, 600);
 }
 
 void ami_amiupdate(void)
@@ -554,8 +553,8 @@ void gui_init(int argc, char** argv)
 
 	window_list = NewObjList();
 
-	urldb_load(option_url_file);
-	urldb_load_cookies(option_cookie_file);
+	urldb_load(nsoption_charp(url_file));
+	urldb_load_cookies(nsoption_charp(cookie_file));
 
 	save_complete_init();
 	ami_theme_init();
@@ -568,15 +567,16 @@ void ami_openscreen(void)
 	ULONG id = 0;
 	ULONG compositing;
 
-	if(option_screen_compositing == -1)
+	if (nsoption_int(screen_compositing) == -1)
 		compositing = ~0UL;
-	else compositing = option_screen_compositing;
+	else compositing = nsoption_int(screen_compositing);
 
-	if(!option_use_pubscreen || option_use_pubscreen[0] == '\0')
+	if (nsoption_charp(use_pubscreen) == NULL)
 	{
-		if((option_modeid) && (strncmp(option_modeid,"0x",2) == 0))
+		if((nsoption_charp(modeid)) && 
+		   (strncmp(nsoption_charp(modeid), "0x", 2) == 0))
 		{
-			id = strtoul(option_modeid,NULL,0);
+			id = strtoul(nsoption_charp(modeid), NULL, 0);
 		}
 		else
 		{
@@ -589,10 +589,11 @@ void ami_openscreen(void)
 						ASLSM_MaxDepth,32,
 						TAG_DONE))
 				{
+					char *modeid = malloc(20);
 					id = screenmodereq->sm_DisplayID;
-					option_modeid = malloc(20);
-					sprintf(option_modeid,"0x%lx",id);
-					options_write("PROGDIR:Resources/Options");
+					sprintf(modeid, "0x%lx", id);
+					nsoption_set_charp(modeid, modeid);
+					nsoption_write("PROGDIR:Resources/Options");
 				}
 				FreeAslRequest(screenmodereq);
 			}
@@ -619,14 +620,15 @@ void ami_openscreen(void)
 			}
 			else
 			{
-				option_use_pubscreen = strdup("Workbench");
+				nsoption_set_charp(use_pubscreen,
+						   strdup("Workbench"));
 			}
 		}
 	}
 
-	if(option_use_pubscreen && option_use_pubscreen[0] != '\0')
+	if (nsoption_charp(use_pubscreen) != NULL)
 	{
-		scrn = LockPubScreen(option_use_pubscreen);
+		scrn = LockPubScreen(nsoption_charp(use_pubscreen));
 
 		if(scrn == NULL)
 		{
@@ -668,18 +670,19 @@ static void gui_init2(int argc, char** argv)
 	glob = &browserglob;
 	/**/
 
-	ami_hotlist_initialise(option_hotlist_file);
+	ami_hotlist_initialise(nsoption_charp(hotlist_file));
 	ami_cookies_initialise();
 	ami_global_history_initialise();
 	sslcert_init(tree_content_icon_name);
 
-	search_web_provider_details(option_search_provider);
+	search_web_provider_details(nsoption_int(search_provider));
 
 	if(argc) // argc==0 is started from wb
 	{
 		if(args = ReadArgs(template,rarray,NULL))
 		{
-			if(notalreadyrunning && (option_startup_no_window == false))
+			if (notalreadyrunning && 
+			    (nsoption_bool(startup_no_window) == false))
 				ami_openscreenfirst();
 
 			if(rarray[A_URL])
@@ -708,7 +711,8 @@ static void gui_init2(int argc, char** argv)
 		int first=0,i=0;
 		char fullpath[1024];
 
-		if(notalreadyrunning && (option_startup_no_window == false))
+		if (notalreadyrunning && 
+		    (nsoption_bool(startup_no_window) == false))
 			ami_openscreenfirst();
 
 		for(i=0,wbarg=WBenchMsg->sm_ArgList;i<WBenchMsg->sm_NumArgs;i++,wbarg++)
@@ -739,8 +743,7 @@ static void gui_init2(int argc, char** argv)
 		}
 	}
 
-	if ((!option_homepage_url) || (option_homepage_url[0] == '\0'))
-    	option_homepage_url = (char *)strdup(NETSURF_HOMEPAGE);
+    	nsoption_setnull_charp(homepage_url, (char *)strdup(NETSURF_HOMEPAGE));
 
 	if(!notalreadyrunning)
 	{
@@ -753,7 +756,7 @@ static void gui_init2(int argc, char** argv)
 		}
 		else
 		{
-			sendcmd = ASPrintf("OPEN \"%s\" NEW",option_homepage_url);
+			sendcmd = ASPrintf("OPEN \"%s\" NEW",nsoption_charp(homepage_url));
 		}
 		IDoMethod(arexx_obj,AM_EXECUTE,sendcmd,"NETSURF",NULL,NULL,NULL,NULL);
 		IDoMethod(arexx_obj,AM_EXECUTE,"TOFRONT","NETSURF",NULL,NULL,NULL,NULL);
@@ -772,7 +775,8 @@ static void gui_init2(int argc, char** argv)
 		{
 			ULONG noicon = TAG_IGNORE;
 
-			if(option_hide_docky_icon) noicon = REGAPP_NoIcon;
+			if (nsoption_bool(hide_docky_icon)) 
+				noicon = REGAPP_NoIcon;
 
 			ami_appid = RegisterApplication(messages_get("NetSurf"),
 				REGAPP_URLIdentifier, "netsurf-browser.org",
@@ -802,8 +806,8 @@ static void gui_init2(int argc, char** argv)
 		if(applibport) applibsig = (1L << applibport->mp_SigBit);
 	}
 
-	if(!bw && (option_startup_no_window == false))
-		bw = browser_window_create(option_homepage_url, 0, 0, true,false);
+	if(!bw && (nsoption_bool(startup_no_window) == false))
+		bw = browser_window_create(nsoption_charp(homepage_url), 0, 0, true,false);
 }
 
 /** Normal entry point from OS */
@@ -835,14 +839,14 @@ int main(int argc, char** argv)
 
 	ami_gui_splash_close(splash_window);
 
-	strncpy(script, option_arexx_dir, 1024);
-	AddPart(script, option_arexx_startup, 1024);
+	strncpy(script, nsoption_charp(arexx_dir), 1024);
+	AddPart(script, nsoption_charp(arexx_startup), 1024);
 	ami_arexx_execute(script);
 
 	netsurf_main_loop();
 
-	strncpy(script, option_arexx_dir, 1024);
-	AddPart(script, option_arexx_shutdown, 1024);
+	strncpy(script, nsoption_charp(arexx_dir), 1024);
+	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
 	ami_arexx_execute(script);
 
 	netsurf_exit();
@@ -1530,7 +1534,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_ADDTAB:
-							browser_window_create(option_homepage_url, gwin->bw, 0, true, true);
+							browser_window_create(nsoption_charp(homepage_url), gwin->bw, 0, true, true);
 						break;
 
 						case GID_URL:
@@ -1560,7 +1564,7 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_HOME:
-							browser_window_go(gwin->bw,option_homepage_url,NULL,true);	
+							browser_window_go(gwin->bw,nsoption_charp(homepage_url),NULL,true);	
 						break;
 
 						case GID_STOP:
@@ -1626,19 +1630,19 @@ void ami_handle_msg(void)
 						switch(nskey)
 						{
 							case 'n':
-								if((option_kiosk_mode == false))
-									browser_window_create(option_homepage_url, NULL,
+								if ((nsoption_bool(kiosk_mode) == false))
+									browser_window_create(nsoption_charp(homepage_url), NULL,
 										0, true, false);
 							break;
 
 							case 't':
-								if((option_kiosk_mode == false))
-									browser_window_create(option_homepage_url,
+								if((nsoption_bool(kiosk_mode) == false))
+									browser_window_create(nsoption_charp(homepage_url),
 										gwin->bw, 0, true, true);
 							break;
 
 							case 'k':
-								if((option_kiosk_mode == false))
+								if((nsoption_bool(kiosk_mode) == false))
 									browser_window_destroy(gwin->bw);
 							break;
 
@@ -1656,7 +1660,7 @@ void ami_handle_msg(void)
 							break;
 
 							case 'q':
-								if((option_kiosk_mode == false))
+								if((nsoption_bool(kiosk_mode) == false))
 									ami_quit_netsurf();
 							break;
 
@@ -1686,7 +1690,7 @@ void ami_handle_msg(void)
 							break;
 
 							case 'h':
-								if((option_kiosk_mode == false))
+								if((nsoption_bool(kiosk_mode) == false))
 									ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
 							break;
 
@@ -1698,7 +1702,7 @@ void ami_handle_msg(void)
 							break;
 /*
 							case 'u': // open url
-								if((option_kiosk_mode == false))
+								if((nsoption_bool(kiosk_mode) == false))
 									ActivateGadget((struct Gadget *)gwin->objects[GID_URL],
 										gwin->win, NULL);
 							break;
@@ -1993,7 +1997,7 @@ void ami_handle_applib(void)
 		switch (applibmsg->type)
 		{
 			case APPLIBMT_NewBlankDoc:
-				bw = browser_window_create(option_homepage_url, 0, 0, true, false);
+				bw = browser_window_create(nsoption_charp(homepage_url), 0, 0, true, false);
 			break;
 
 			case APPLIBMT_OpenDoc:
@@ -2017,7 +2021,7 @@ void ami_handle_applib(void)
 				}
 				else
 				{
-					bw = browser_window_create(option_homepage_url, 0, 0, true, false);
+					bw = browser_window_create(nsoption_charp(homepage_url), 0, 0, true, false);
 				}
 			break;
 
@@ -2194,7 +2198,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 
 void ami_try_quit(void)
 {
-	if(option_close_no_quit == false)
+	if(nsoption_bool(close_no_quit) == false)
 	{
 		netsurf_quit = true;
 		return;
@@ -2259,9 +2263,9 @@ void gui_quit(void)
 
 	ami_theme_throbber_free();
 
-	urldb_save(option_url_file);
-	urldb_save_cookies(option_cookie_file);
-	ami_hotlist_free(option_hotlist_file);
+	urldb_save(nsoption_charp(url_file));
+	urldb_save_cookies(nsoption_charp(cookie_file));
+	ami_hotlist_free(nsoption_charp(hotlist_file));
 	ami_cookies_free();
 	ami_global_history_free();
 	sslcert_cleanup();
@@ -2324,7 +2328,7 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	if(!browser_window_reload_available(gwin->bw))
 		reload=TRUE;
 
-	if(option_kiosk_mode == false)
+	if(nsoption_bool(kiosk_mode) == false)
 	{
 		if(gwin->tabs <= 1)
 		{
@@ -2429,7 +2433,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	struct gui_window *gwin = NULL;
 	bool closegadg=TRUE;
 	struct Node *node;
-	ULONG curx=option_window_x,cury=option_window_y,curw=option_window_width,curh=option_window_height;
+	ULONG curx=nsoption_int(window_x),cury=nsoption_int(window_y),curw=nsoption_int(window_width),curh=nsoption_int(window_height);
 	char nav_west[100],nav_west_s[100],nav_west_g[100];
 	char nav_east[100],nav_east_s[100],nav_east_g[100];
 	char stop[100],stop_s[100],stop_g[100];
@@ -2439,9 +2443,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char addtab[100],addtab_s[100],addtab_g[100];
 	char tabthrobber[100];
 
-	if(!scrn) ami_openscreenfirst();
+	if (!scrn) ami_openscreenfirst();
 
-	if(option_kiosk_mode) new_tab = false;
+	if (nsoption_bool(kiosk_mode)) new_tab = false;
 	bw->scale = 1.0;
 
 	if(clone)
@@ -2484,7 +2488,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 								TNA_CloseGadget, TRUE,
 								TAG_DONE);
 
-		if(option_new_tab_last)
+		if(nsoption_bool(new_tab_last))
 		{
 			AddTail(&gwin->shared->tab_list, gwin->tab_node);
 		}
@@ -2503,7 +2507,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							CLICKTAB_Labels, &gwin->shared->tab_list,
 							TAG_DONE);
 
-		if(option_new_tab_active)
+		if(nsoption_bool(new_tab_active))
 		{
 			RefreshSetGadgetAttrs((struct Gadget *)gwin->shared->objects[GID_TABS],gwin->shared->win,NULL,
 							CLICKTAB_Current,gwin->tab,
@@ -2516,7 +2520,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		gwin->shared->tabs++;
 		gwin->shared->next_tab++;
 
-		if(option_new_tab_active) ami_switch_tab(gwin->shared,false);
+		if(nsoption_bool(new_tab_active)) ami_switch_tab(gwin->shared,false);
 
 		ami_update_buttons(gwin->shared);
 
@@ -2537,13 +2541,14 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->search_ico_hook.h_Entry = (void *)ami_set_search_ico_render_hook;
 	gwin->shared->search_ico_hook.h_Data = gwin->shared;
 
-	if(!option_kiosk_mode)
+	if(!nsoption_bool(kiosk_mode))
 	{
 		ULONG addtabclosegadget = TAG_IGNORE;
 		ULONG iconifygadget = FALSE;
 
-		if(option_use_pubscreen && (locked_screen == TRUE) &&
-			(strcmp(option_use_pubscreen,"Workbench") == 0))
+		if (nsoption_charp(use_pubscreen) && 
+		    (locked_screen == TRUE) &&
+		    (strcmp(nsoption_charp(use_pubscreen), "Workbench") == 0))
 				iconifygadget = TRUE;
 		ami_create_menu(gwin->shared);
 
@@ -2909,7 +2914,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			ICA_TARGET, ICTARGET_IDCMP,
 			TAG_DONE);
 
-	if(option_kiosk_mode == false)
+	if(nsoption_bool(kiosk_mode) == false)
 	{
 		ULONG sz, size1, size2;
 
@@ -3031,7 +3036,7 @@ ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULO
 
 	available_width = gwin->win->Width - scrn->WBorLeft - sz;
 
-	gad1percent = option_toolbar_status_width / 10000.0;
+	gad1percent = nsoption_int(toolbar_status_width) / 10000.0;
 
 	*size1 = (ULONG)(available_width * gad1percent);
 	*size2 = (ULONG)(available_width * (1 - gad1percent));
@@ -3220,8 +3225,8 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 {
 	int x, y;
 	struct rect clip;
-	int tile_x_scale = (int)(option_redraw_tile_size_x / gwin->bw->scale);
-	int tile_y_scale = (int)(option_redraw_tile_size_y / gwin->bw->scale);
+	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->bw->scale);
+	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->bw->scale);
 
 	if(top < 0) {
 		height += top;
@@ -3255,13 +3260,13 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
-		clip.y1 = option_redraw_tile_size_y;
+		clip.y1 = nsoption_int(redraw_tile_size_y);
 		if((((y - sy) * gwin->bw->scale) + clip.y1) > bbox->Height)
 			clip.y1 = bbox->Height - ((y - sy) * gwin->bw->scale);
 
 		for(x = left; x < (left + width); x += tile_x_scale) {
 			clip.x0 = 0;
-			clip.x1 = option_redraw_tile_size_x;
+			clip.x1 = nsoption_int(redraw_tile_size_x);
 			if((((x - sx) * gwin->bw->scale) + clip.x1) > bbox->Width)
 				clip.x1 = bbox->Width - ((x - sx) * gwin->bw->scale);
 
@@ -3453,7 +3458,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		glob = &browserglob;
 
-		if(option_direct_render == false)
+		if(nsoption_bool(direct_render) == false)
 		{
 			ami_do_redraw_tiled(g, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
@@ -3610,7 +3615,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 		}
 		g->shared->redraw_required = true;
 
-		if(option_faster_scroll == true) g->shared->redraw_scroll = true;
+		if(nsoption_bool(faster_scroll) == true) g->shared->redraw_scroll = true;
 			else g->shared->redraw_scroll = false;
 
 		g->scrollx = sx;
@@ -3754,7 +3759,7 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
 
-	if(option_kiosk_mode == true) return;
+	if(nsoption_bool(kiosk_mode) == true) return;
 	if(!g) return;
 
 	if(g->tab_node && (g->shared->tabs > 1)) GetAttr(CLICKTAB_Current,
@@ -3809,11 +3814,9 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
 	char fname[100];
-	struct bitmap *nsbm;
-	bool free_bm = false;
 
 	if(IsMinListEmpty(window_list))	return;
-	if(option_kiosk_mode == true) return;
+	if(nsoption_bool(kiosk_mode) == true) return;
 
 	if (ico == NULL) ico = search_web_ico();
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
@@ -3856,8 +3859,6 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 			}
 		}
 	} while(node = nnode);
-
-	if(bm && free_bm) bitmap_destroy(nsbm);
 }
 
 static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
@@ -3899,7 +3900,7 @@ void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 	g->c_y = y;
 	g->c_h = height;
 
-	if((option_kiosk_mode == false))
+	if((nsoption_bool(kiosk_mode) == false))
 		OnMenu(g->shared->win, AMI_MENU_PASTE);
 }
 
@@ -3911,7 +3912,7 @@ void gui_window_remove_caret(struct gui_window *g)
 	if(!g) return;
 	if(g->c_h == 0) return;
 
-	if((option_kiosk_mode == false))
+	if((nsoption_bool(kiosk_mode) == false))
 		OffMenu(g->shared->win, AMI_MENU_PASTE);
 
 	ami_do_redraw_limits(g, g->shared->bw, g->c_x, g->c_y,
@@ -3982,7 +3983,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				case GID_HSCROLL:
  				case OID_HSCROLL: 
  				case OID_VSCROLL:
-					if(option_faster_scroll == true) gwin->redraw_scroll = true;
+					if(nsoption_bool(faster_scroll) == true) gwin->redraw_scroll = true;
 						else gwin->redraw_scroll = false;
 
 					gwin->redraw_required = true;

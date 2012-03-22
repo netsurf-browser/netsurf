@@ -155,7 +155,7 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 		nsbeos_set_colour(style->fill_colour);
 		nsbeos_set_solid();
 #ifdef CAIRO_VERSION
-		if (option_render_cairo) {
+		if (nsoption_bool(render_cairo)) {
 			cairo_set_line_width(current_cr, 0);
 			cairo_rectangle(current_cr, x0, y0, x1 - x0, y1 - y0);
 			cairo_fill(current_cr);
@@ -206,7 +206,7 @@ bool nsbeos_plot_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *s
 
 #if 0 /* GTK */
 #ifdef CAIRO_VERSION
-		if (option_render_cairo) {
+		if (nsoption_bool(render_cairo)) {
 			if (line_width == 0)
 				line_width = 1;
 
@@ -267,7 +267,7 @@ bool nsbeos_plot_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 #if 0 /* GTK */
 #ifdef CAIRO_VERSION
-	if (option_render_cairo) {
+	if (nsoption_bool(render_cairo)) {
 		if (width == 0)
 			width = 1;
 
@@ -337,7 +337,7 @@ bool nsbeos_plot_clip(const struct rect *ns_clip)
 
 #if 0 /* GTK */
 #ifdef CAIRO_VERSION
-  	if (option_render_cairo) {
+  	if (nsoption_bool(render_cairo)) {
 		cairo_reset_clip(current_cr);
 		cairo_rectangle(current_cr, clip->x0, clip->y0,
 			clip->x1 - clip->x0, clip->y1 - clip->y0);
@@ -385,7 +385,7 @@ bool nsbeos_plot_disc(int x, int y, int radius, const plot_style_t *style)
 	nsbeos_set_colour(c);
 	nsbeos_set_solid();
 #ifdef CAIRO_VERSION
-	if (option_render_cairo) {
+	if (nsoption_bool(render_cairo)) {
 		if (filled)
 			cairo_set_line_width(current_cr, 0);
 		else
@@ -432,7 +432,7 @@ bool nsbeos_plot_arc(int x, int y, int radius, int angle1, int angle2, const plo
 	nsbeos_set_colour(style->fill_colour);
 	nsbeos_set_solid();
 #ifdef CAIRO_VERSION
-	if (option_render_cairo) {
+	if (nsoption_bool(render_cairo)) {
 		cairo_set_line_width(current_cr, 1);
 		cairo_arc(current_cr, x, y, radius,
 		    (angle1 + 90) * (M_PI / 180),
@@ -516,7 +516,7 @@ static bool nsbeos_plot_bbitmap(int x, int y, int width, int height,
 		GdkPixbuf *scaled;
 		scaled = gdk_pixbuf_scale_simple(pixbuf,
 				width, height,
-				option_render_resample ? GDK_INTERP_BILINEAR
+                                nsoption_bool(render_resample) ? GDK_INTERP_BILINEAR
 							: GDK_INTERP_NEAREST);
 		if (!scaled)
 			return false;
@@ -772,7 +772,7 @@ void nsbeos_set_colour(colour c)
 			&colour);
 	gdk_gc_set_foreground(current_gc, &colour);
 #ifdef CAIRO_VERSION
-	if (option_render_cairo)
+	if (nsoption_bool(render_cairo))
 		cairo_set_source_rgba(current_cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
 #endif

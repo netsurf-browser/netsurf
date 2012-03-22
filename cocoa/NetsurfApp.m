@@ -62,27 +62,21 @@
 								 nil]];
 	
 	
-	if (NULL == option_cookie_file) {
-		option_cookie_file = strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] );
-	}
-	
-	if (NULL == option_cookie_jar) {
-		option_cookie_jar = strdup( option_cookie_file );
-	}
-	
-	if (NULL == option_homepage_url) {
-		option_homepage_url = strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] );
-	}
+	nsoption_setnull(cookie_file, strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] ));
+
+	nsoption_setnull(cookie_jar, strdup( nsoption_charp(cookie_file) ));
+
+	nsoption_setnull(homepage_url, strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] ));
 
 	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
-	urldb_load_cookies( option_cookie_file );
+	urldb_load_cookies( nsoption_charp(cookie_file) );
 	
 	cocoa_update_scale_factor();
 }
 
 - (void) saveOptions;
 {
-	urldb_save_cookies( option_cookie_file );
+	urldb_save_cookies( nsoption_charp(cookie_file) );
 	urldb_save( [[[NSUserDefaults standardUserDefaults] objectForKey: kURLsFileOption] UTF8String] );
 }
 
@@ -178,9 +172,7 @@ int main( int argc, char **argv )
 	const char * const options = cocoa_get_options_file();
 	const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
 
-        if (ca_bundle != NULL) {
-		option_ca_bundle = strdup(ca_bundle);
-        }
+	nsoption_setnull(ca_bundle, strdup(ca_bundle));
 
 	netsurf_init(&argc, &argv, options, messages);
 

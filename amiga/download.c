@@ -34,7 +34,7 @@
 #include "amiga/download.h"
 #include "amiga/icon.h"
 #include "amiga/object.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
 #include "amiga/theme.h"
@@ -226,14 +226,14 @@ void ami_download_window_abort(struct gui_download_window *dw)
 
 void gui_download_window_done(struct gui_download_window *dw)
 {
-	struct dlnode *dln,*dln2;
+	struct dlnode *dln,*dln2 = NULL;
 	struct browser_window *bw = dw->bw;
 	bool queuedl = false;
 	STRPTR sendcmd = NULL;
 
 	if(!dw) return;
 
-	if(option_download_notify)
+	if(nsoption_bool(download_notify))
 	{
 		Notify(ami_appid, APPNOTIFY_Title, messages_get("amiDownloadComplete"),
 				APPNOTIFY_PubScreenName, "FRONT",
@@ -366,7 +366,7 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 	int64 oldsize = 0;
 	char *overwritetext;
 
-	if(option_ask_overwrite == false) return TRUE;
+	if(nsoption_bool(ask_overwrite) == false) return TRUE;
 
 	lock = Lock(file, ACCESS_READ);
 

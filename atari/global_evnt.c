@@ -46,7 +46,6 @@
 #include "atari/browser_win.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/search.h"
-#include "atari/options.h"
 #include "atari/findfile.h"
 #include "atari/settings.h"
 #include "cflib.h"
@@ -280,14 +279,14 @@ static void __CDECL menu_debug_render(WINDOW *win, int item, int title, void *da
 
 static void __CDECL menu_fg_images(WINDOW *win, int item, int title, void *data)
 {
-	option_foreground_images = !option_foreground_images;
-	MenuIcheck( NULL, MAINMENU_M_FG_IMAGES, (option_foreground_images) ? 1 : 0);
+	nsoption_set_bool(foreground_images, !nsoption_bool(foreground_images));
+	MenuIcheck( NULL, MAINMENU_M_FG_IMAGES, (nsoption_bool(foreground_images)) ? 1 : 0);
 }
 
 static void __CDECL menu_bg_images(WINDOW *win, int item, int title, void *data)
 {
-	option_background_images = !option_background_images;
-	MenuIcheck( NULL, MAINMENU_M_BG_IMAGES, (option_background_images) ? 1 : 0);
+	nsoption_set_bool(background_images, !nsoption_bool(background_images));
+	MenuIcheck( NULL, MAINMENU_M_BG_IMAGES, (nsoption_bool(background_images)) ? 1 : 0);
 }
 
 static void __CDECL menu_back(WINDOW *win, int item, int title, void *data)
@@ -326,7 +325,7 @@ static void __CDECL menu_ghistory(WINDOW *win, int item, int title, void *data)
 	LOG(("%s", __FUNCTION__));
 	char buf[PATH_MAX];
 	strcpy((char*)&buf, "file://");
-	strncat((char*)&buf, option_url_file, PATH_MAX - (strlen("file://")+1) );
+	strncat((char*)&buf, nsoption_charp(url_file), PATH_MAX - (strlen("file://")+1) );
 	browser_window_create((char*)&buf, 0, 0, true, false);
 }
 
@@ -678,8 +677,8 @@ static void set_menu_title(int rid, const char * nsid)
 void main_menu_update( void )
 {
 	MenuIcheck( NULL, MAINMENU_M_DEBUG_RENDER, (html_redraw_debug) ? 1 : 0);
-	MenuIcheck( NULL, MAINMENU_M_FG_IMAGES, (option_foreground_images) ? 1 : 0);
-	MenuIcheck( NULL, MAINMENU_M_BG_IMAGES, (option_background_images) ? 1 : 0);
+	MenuIcheck( NULL, MAINMENU_M_FG_IMAGES, (nsoption_bool(foreground_images)) ? 1 : 0);
+	MenuIcheck( NULL, MAINMENU_M_BG_IMAGES, (nsoption_bool(background_images)) ? 1 : 0);
 }
 
 

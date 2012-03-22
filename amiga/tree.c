@@ -53,7 +53,7 @@
 #include "amiga/drag.h" /* drag icon stuff */
 #include "amiga/theme.h" /* pointers */
 #include "amiga/filetype.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "content/urldb.h"
 #include "desktop/cookies.h"
 #include "desktop/history_global_core.h"
@@ -573,26 +573,26 @@ void ami_tree_open(struct treeview_window *twin,int type)
 		ULONG top = (scrn->Height / 2) - (height / 2);
 		ULONG left = (scrn->Width / 2) - (width / 2);
 
-		if((type == AMI_TREE_HOTLIST) && (option_hotlist_window_xsize > 0))
+		if((type == AMI_TREE_HOTLIST) && (nsoption_int(hotlist_window_xsize) > 0))
 		{
-			top = option_hotlist_window_ypos;
-			left = option_hotlist_window_xpos;
-			width = option_hotlist_window_xsize;
-			height = option_hotlist_window_ysize;
+			top = nsoption_int(hotlist_window_ypos);
+			left = nsoption_int(hotlist_window_xpos);
+			width = nsoption_int(hotlist_window_xsize);
+			height = nsoption_int(hotlist_window_ysize);
 		}
-		else if((type == AMI_TREE_HISTORY) && (option_history_window_xsize > 0))
+		else if((type == AMI_TREE_HISTORY) && (nsoption_int(history_window_xsize) > 0))
 		{
-			top = option_history_window_ypos;
-			left = option_history_window_xpos;
-			width = option_history_window_xsize;
-			height = option_history_window_ysize;
+			top = nsoption_int(history_window_ypos);
+			left = nsoption_int(history_window_xpos);
+			width = nsoption_int(history_window_xsize);
+			height = nsoption_int(history_window_ysize);
 		}
-		else if((type == AMI_TREE_COOKIES) && (option_cookies_window_xsize > 0))
+		else if((type == AMI_TREE_COOKIES) && (nsoption_int(cookies_window_xsize) > 0))
 		{
-			top = option_cookies_window_ypos;
-			left = option_cookies_window_xpos;
-			width = option_cookies_window_xsize;
-			height = option_cookies_window_ysize;
+			top = nsoption_int(cookies_window_ypos);
+			left = nsoption_int(cookies_window_xpos);
+			width = nsoption_int(cookies_window_xsize);
+			height = nsoption_int(cookies_window_ysize);
 		}
 
 		twin->objects[OID_MAIN] = WindowObject,
@@ -1093,22 +1093,22 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									switch(twin->type)
 									{
 										case AMI_TREE_HISTORY:
-											option_history_window_ypos = twin->win->TopEdge;
-											option_history_window_xpos = twin->win->LeftEdge;
-											option_history_window_xsize = twin->win->Width;
-											option_history_window_ysize = twin->win->Height;
+											nsoption_set_int(history_window_ypos, twin->win->TopEdge);
+											nsoption_set_int(history_window_xpos, twin->win->LeftEdge);
+											nsoption_set_int(history_window_xsize, twin->win->Width);
+											nsoption_set_int(history_window_ysize, twin->win->Height);
 										break;
 										case AMI_TREE_COOKIES:
-											option_cookies_window_ypos = twin->win->TopEdge;
-											option_cookies_window_xpos = twin->win->LeftEdge;
-											option_cookies_window_xsize = twin->win->Width;
-											option_cookies_window_ysize = twin->win->Height;
+											nsoption_set_int(cookies_window_ypos, twin->win->TopEdge);
+											nsoption_set_int(cookies_window_xpos, twin->win->LeftEdge);
+											nsoption_set_int(cookies_window_xsize, twin->win->Width);
+											nsoption_set_int(cookies_window_ysize, twin->win->Height);
 										break;
 										case AMI_TREE_HOTLIST:
-											option_hotlist_window_ypos = twin->win->TopEdge;
-											option_hotlist_window_xpos = twin->win->LeftEdge;
-											option_hotlist_window_xsize = twin->win->Width;
-											option_hotlist_window_ysize = twin->win->Height;
+											nsoption_set_int(hotlist_window_ypos, twin->win->TopEdge);
+											nsoption_set_int(hotlist_window_xpos, twin->win->LeftEdge);
+											nsoption_set_int(hotlist_window_xsize, twin->win->Width);
+											nsoption_set_int(hotlist_window_ysize, twin->win->Height);
 										break;
 									}
 								break;
@@ -1248,14 +1248,14 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 		y = pos_y;
 	}
 
-	for(tile_y = y; tile_y < (y + height); tile_y += option_redraw_tile_size_y) {
-		tile_h = option_redraw_tile_size_y;
-		if(((y + height) - tile_y) < option_redraw_tile_size_y)
+	for(tile_y = y; tile_y < (y + height); tile_y += nsoption_int(redraw_tile_size_y)) {
+		tile_h = nsoption_int(redraw_tile_size_y);
+		if(((y + height) - tile_y) < nsoption_int(redraw_tile_size_y))
 			tile_h = (y + height) - tile_y;
 
-		for(tile_x = x; tile_x < (x + width); tile_x += option_redraw_tile_size_x) {
-			tile_w = option_redraw_tile_size_x;
-			if(((x + width) - tile_x) < option_redraw_tile_size_x)
+		for(tile_x = x; tile_x < (x + width); tile_x += nsoption_int(redraw_tile_size_x)) {
+			tile_w = nsoption_int(redraw_tile_size_x);
+			if(((x + width) - tile_x) < nsoption_int(redraw_tile_size_x))
 				tile_w = (x + width) - tile_x;
 
 			tree_draw(twin->tree, - tile_x, - tile_y,

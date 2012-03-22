@@ -44,7 +44,7 @@
 #include "riscos/gui.h"
 #include "riscos/hotlist.h"
 #include "riscos/menus.h"
-#include "riscos/options.h"
+#include "desktop/options.h"
 #include "riscos/theme.h"
 #include "riscos/treeview.h"
 #include "riscos/wimp.h"
@@ -72,7 +72,7 @@ void ro_gui_theme_initialise(void)
 	struct theme_descriptor *descriptor;
 
 	theme_descriptors = ro_gui_theme_get_available();
-	descriptor = ro_gui_theme_find(option_theme);
+	descriptor = ro_gui_theme_find(nsoption_charp(theme));
 	if (!descriptor)
 		descriptor = ro_gui_theme_find("Aletheia");
 	ro_gui_theme_apply(descriptor);
@@ -136,7 +136,7 @@ struct theme_descriptor *ro_gui_theme_get_available(void)
 	ro_gui_theme_add_descriptor("NetSurf:Resources", "Aletheia");
 
 	/* scan our choices directory */
-	ro_gui_theme_get_available_in_dir(option_theme_path);
+	ro_gui_theme_get_available_in_dir(nsoption_charp(theme_path));
 
 	/* sort alphabetically in a very rubbish way */
 	if ((theme_descriptors) && (theme_descriptors->next)) {

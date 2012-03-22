@@ -20,7 +20,7 @@
 #include "desktop/browser.h"
 #include "amiga/gui.h"
 #include "amiga/bitmap.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #include "content/urldb.h"
 #include "desktop/plotters.h"
 #include "desktop/thumbnail.h"
@@ -42,15 +42,15 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	struct BitScaleArgs bsa;
 	int plot_width;
 	int plot_height;
-	int redraw_tile_size = option_redraw_tile_size_x;
+	int redraw_tile_size = nsoption_int(redraw_tile_size_x);
 	struct redraw_context ctx = {
 		.interactive = false,
 		.background_images = true,
 		.plot = &amiplot
 	};
 
-	if(option_redraw_tile_size_y < option_redraw_tile_size_x)
-		redraw_tile_size = option_redraw_tile_size_y;
+	if(nsoption_int(redraw_tile_size_y) < nsoption_int(redraw_tile_size_x))
+		redraw_tile_size = nsoption_int(redraw_tile_size_y);
 
 	plot_width = MIN(content_get_width(content), redraw_tile_size);
 	plot_height = ((plot_width * bitmap->height) + (bitmap->width / 2)) /
@@ -70,7 +70,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 	{
 		float resample_scale = bitmap->width / (float)plot_width;
 		uint32 flags = COMPFLAG_IgnoreDestAlpha | COMPFLAG_SrcAlphaOverride;
-		if(option_scale_quality) flags |= COMPFLAG_SrcFilter;
+		if(nsoption_bool(scale_quality)) flags |= COMPFLAG_SrcFilter;
 
 		CompositeTags(COMPOSITE_Src,browserglob.bm,bitmap->nativebm,
 					COMPTAG_ScaleX,

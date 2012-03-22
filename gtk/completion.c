@@ -70,6 +70,7 @@ bool nsgtk_completion_udb_callback(const char *url, const struct url_data *data)
 void nsgtk_completion_update(const char *prefix)
 {
 	nsgtk_completion_empty();
-	if (option_url_suggestion == true)
+	if (nsoption_bool(url_suggestion) == true) {
 		urldb_iterate_partial(prefix, nsgtk_completion_udb_callback);
+	}
 }

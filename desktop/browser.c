@@ -158,7 +158,8 @@ bool browser_window_redraw(struct browser_window *bw, int x, int y,
 
 	/* Browser window has content OR children (frames) */
 
-	if (bw->window != NULL && ctx->plot->option_knockout) {
+	if ((bw->window != NULL) && 
+	    (ctx->plot->option_knockout)) {
 		/* Root browser window: start knockout */
 		knockout_plot_start(ctx, &new_ctx);
 	}
@@ -725,7 +726,7 @@ void browser_window_initialise_common(struct browser_window *bw,
 
 	bw->reformat_pending = false;
 	bw->drag_type = DRAGGING_NONE;
-	bw->scale = (float) option_scale / 100.0;
+	bw->scale = (float) nsoption_int(scale) / 100.0;
 
 	bw->scroll_x = NULL;
 	bw->scroll_y = NULL;
@@ -2157,7 +2158,7 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	if ((!(mouse & BROWSER_MOUSE_CLICK_2)) &&
 			(!((mouse & BROWSER_MOUSE_CLICK_2) &&
 			(mouse & BROWSER_MOUSE_MOD_2))) &&
-			(!option_target_blank)) {
+	    (!nsoption_bool(target_blank))) {
 		/* not a mouse button 2 click
 		 * not a mouse button 1 click with ctrl pressed
 		 * configured to ignore target="_blank" */
@@ -2166,12 +2167,14 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 	}
 
 	/* handle reserved keywords */
-	if (((option_button_2_tab) && (mouse & BROWSER_MOUSE_CLICK_2)) ||
-			((!option_button_2_tab) &&
-			((mouse & BROWSER_MOUSE_CLICK_1) &&
-			(mouse & BROWSER_MOUSE_MOD_2))) ||
-			((option_button_2_tab) && ((target == TARGET_BLANK) ||
-			(!strcasecmp(target, "_blank"))))) {
+	if (((nsoption_bool(button_2_tab)) && 
+	     (mouse & BROWSER_MOUSE_CLICK_2))||
+	    ((!nsoption_bool(button_2_tab)) &&
+	     ((mouse & BROWSER_MOUSE_CLICK_1) &&
+	      (mouse & BROWSER_MOUSE_MOD_2))) ||
+	    ((nsoption_bool(button_2_tab)) && 
+	     ((target == TARGET_BLANK) ||
+	      (!strcasecmp(target, "_blank"))))) {
 		/* open in new tab if:
 		 * - button_2 opens in new tab and button_2 was pressed
 		 * OR
@@ -2184,13 +2187,14 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		if (!bw_target)
 			return bw;
 		return bw_target;
-	} else if (((!option_button_2_tab) &&
-			(mouse & BROWSER_MOUSE_CLICK_2)) ||
-			((option_button_2_tab) &&
-			((mouse & BROWSER_MOUSE_CLICK_1) &&
-			(mouse & BROWSER_MOUSE_MOD_2))) ||
-			((!option_button_2_tab) && ((target == TARGET_BLANK) ||
-			(!strcasecmp(target, "_blank"))))) {
+	} else if (((!nsoption_bool(button_2_tab)) &&
+		    (mouse & BROWSER_MOUSE_CLICK_2)) ||
+		   ((nsoption_bool(button_2_tab)) &&
+		    ((mouse & BROWSER_MOUSE_CLICK_1) &&
+		     (mouse & BROWSER_MOUSE_MOD_2))) ||
+		   ((!nsoption_bool(button_2_tab)) && 
+		    ((target == TARGET_BLANK) ||
+		     (!strcasecmp(target, "_blank"))))) {
 		/* open in new window if:
 		 * - button_2 doesn't open in new tabs and button_2 was pressed
 		 * OR
@@ -2231,8 +2235,9 @@ struct browser_window *browser_window_find_target(struct browser_window *bw,
 		return bw_target;
 
 	/* we require a new window using the target name */
-	if (!option_target_blank)
+	if (!nsoption_bool(target_blank))
 		return bw;
+
 	bw_target = browser_window_create(NULL, bw, NULL, false, false);
 	if (!bw_target)
 		return bw;

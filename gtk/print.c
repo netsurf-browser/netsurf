@@ -41,7 +41,6 @@
 #include "gtk/bitmap.h"
 #include "gtk/print.h"
 #include "gtk/scaffolding.h"
-#include "gtk/options.h"
 #include "render/font.h"
 #include "utils/log.h"
 #include "utils/utils.h"

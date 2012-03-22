@@ -22,126 +22,131 @@
  * RISC OS specific options.
  */
 
+#include "riscos/tinct.h"
+
+#ifndef _NETSURF_DESKTOP_OPTIONS_INCLUDING_
+#error "Frontend options header cannot be included directly"
+#endif
+
 #ifndef _NETSURF_RISCOS_OPTIONS_H_
 #define _NETSURF_RISCOS_OPTIONS_H_
 
-#include <stdbool.h>
-#include "desktop/options.h"
-#include "riscos/tinct.h"
+#define NSOPTION_EXTRA_DEFINE				\
+	bool use_mouse_gestures;			\
+	bool allow_text_selection;			\
+	char *theme;					\
+	char *language;					\
+	int fg_plot_style; /* tinct flagword */			\
+	int bg_plot_style; /* tinct flagword */			\
+	bool history_tooltip;					\
+	bool toolbar_show_buttons;				\
+	bool toolbar_show_address;				\
+	bool toolbar_show_throbber;				\
+	char *toolbar_browser;					\
+	char *toolbar_hotlist;					\
+	char *toolbar_history;					\
+	char *toolbar_cookies;					\
+	bool window_stagger;					\
+	bool window_size_clone;					\
+	bool buffer_animations;					\
+	bool buffer_everything;					\
+	bool open_browser_at_startup;				\
+	bool no_plugins;					\
+	bool block_popups;					\
+	int image_memory_direct; /* -1 means auto-detect */	\
+	int image_memory_compressed; /* -1 means auto-detect */	\
+	bool strip_extensions;					\
+	bool confirm_overwrite;					\
+	char *url_path;						\
+	char *url_save;						\
+	char *hotlist_path;					\
+	char *hotlist_save;					\
+	char *recent_path;					\
+	char *recent_save;					\
+	char *theme_path;					\
+	char *theme_save;					\
+	bool thumbnail_iconise;					\
+	bool interactive_help;					\
+	bool external_hotlists;					\
+	char *external_hotlist_app
 
-extern bool option_allow_text_selection;
-extern char *option_theme;
-extern char *option_language;
-extern int option_fg_plot_style;	/* tinct flagword */
-extern int option_bg_plot_style;	/* tinct flagword */
-extern bool option_history_tooltip;
-extern bool option_toolbar_show_buttons;
-extern bool option_toolbar_show_address;
-extern bool option_toolbar_show_throbber;
-extern char *option_toolbar_browser;
-extern char *option_toolbar_hotlist;
-extern char *option_toolbar_history;
-extern char *option_toolbar_cookies;
-extern bool option_window_stagger;
-extern bool option_window_size_clone;
-extern bool option_buffer_animations;
-extern bool option_buffer_everything;
-extern bool option_open_browser_at_startup;
-extern bool option_no_plugins;
-extern bool option_block_popups;
-extern int option_image_memory_direct;	/* -1 means auto-detect */
-extern int option_image_memory_compressed;	/* -1 means auto-detect */
-extern bool option_strip_extensions;
-extern bool option_confirm_overwrite;
-extern char *option_url_path;
-extern char *option_url_save;
-extern char *option_hotlist_path;
-extern char *option_hotlist_save;
-extern char *option_recent_path;
-extern char *option_recent_save;
-extern char *option_theme_path;
-extern char *option_theme_save;
-extern bool option_thumbnail_iconise;
-extern bool option_interactive_help;
-extern bool option_external_hotlists;
-extern char *option_external_hotlist_app;
 
-#define EXTRA_OPTION_DEFINE \
-bool option_use_mouse_gestures = false;\
-bool option_allow_text_selection = true;\
-char *option_theme = 0;\
-char *option_language = 0;\
-int option_fg_plot_style = tinct_ERROR_DIFFUSE;\
-int option_bg_plot_style = tinct_DITHER;\
-bool option_history_tooltip = true; \
-bool option_toolbar_show_buttons = true; \
-bool option_toolbar_show_address = true; \
-bool option_toolbar_show_throbber = true; \
-char *option_toolbar_browser = 0; \
-char *option_toolbar_hotlist = 0; \
-char *option_toolbar_history = 0; \
-char *option_toolbar_cookies = 0; \
-bool option_window_stagger = true; \
-bool option_window_size_clone = true; \
-bool option_buffer_animations = true; \
-bool option_buffer_everything = true; \
-bool option_open_browser_at_startup = false; \
-bool option_no_plugins = false; \
-bool option_block_popups = false; \
-int option_image_memory_direct = -1; \
-int option_image_memory_compressed = -1; \
-bool option_strip_extensions = true; \
-bool option_confirm_overwrite = true; \
-char *option_url_path = 0; \
-char *option_url_save = 0; \
-char *option_hotlist_path = 0; \
-char *option_hotlist_save = 0; \
-char *option_recent_path = 0; \
-char *option_recent_save = 0; \
-char *option_theme_path = 0; \
-char *option_theme_save = 0; \
-bool option_thumbnail_iconise = true; \
-bool option_interactive_help = true; \
-bool option_external_hotlists = false; \
-char *option_external_hotlist_app = 0;
+#define NSOPTION_EXTRA_DEFAULTS			\
+	.use_mouse_gestures = false,		\
+	.allow_text_selection = true,		\
+	.theme = NULL,				\
+	.language = NULL,			\
+	.fg_plot_style = tinct_ERROR_DIFFUSE,	\
+	.bg_plot_style = tinct_DITHER,		\
+	.history_tooltip = true,		\
+	.toolbar_show_buttons = true,		\
+	.toolbar_show_address = true,		\
+	.toolbar_show_throbber = true,		\
+	.toolbar_browser = NULL,		\
+	.toolbar_hotlist = NULL,		\
+	.toolbar_history = NULL,		\
+	.toolbar_cookies = NULL,		\
+	.window_stagger = true,			\
+	.window_size_clone = true,		\
+	.buffer_animations = true,		\
+	.buffer_everything = true,		\
+	.open_browser_at_startup = false,	\
+	.no_plugins = false,			\
+	.block_popups = false,			\
+	.image_memory_direct = -1,		\
+	.image_memory_compressed = -1,		\
+	.strip_extensions = true,		\
+	.confirm_overwrite = true,		\
+	.url_path = NULL,			\
+	.url_save = NULL,			\
+	.hotlist_path = NULL,			\
+	.hotlist_save = NULL,			\
+	.recent_path = NULL,			\
+	.recent_save = NULL,			\
+	.theme_path = NULL,			\
+	.theme_save = NULL,			\
+	.thumbnail_iconise = true,		\
+	.interactive_help = true,		\
+	.external_hotlists = false,		\
+	.external_hotlist_app = NULL
 
-#define EXTRA_OPTION_TABLE \
-{ "use_mouse_gestures",     OPTION_BOOL,    &option_use_mouse_gestures },\
-{ "allow_text_selection",   OPTION_BOOL,    &option_allow_text_selection },\
-{ "theme",                  OPTION_STRING,  &option_theme },\
-{ "language",               OPTION_STRING,  &option_language },\
-{ "plot_fg_quality",        OPTION_INTEGER, &option_fg_plot_style },\
-{ "plot_bg_quality",        OPTION_INTEGER, &option_bg_plot_style },\
-{ "history_tooltip",        OPTION_BOOL,    &option_history_tooltip }, \
-{ "toolbar_show_buttons",   OPTION_BOOL,    &option_toolbar_show_buttons }, \
-{ "toolbar_show_address",   OPTION_BOOL,    &option_toolbar_show_address }, \
-{ "toolbar_show_throbber",  OPTION_BOOL,    &option_toolbar_show_throbber }, \
-{ "toolbar_browser",	    OPTION_STRING,  &option_toolbar_browser }, \
-{ "toolbar_hotlist",	    OPTION_STRING,  &option_toolbar_hotlist }, \
-{ "toolbar_history",	    OPTION_STRING,  &option_toolbar_history }, \
-{ "toolbar_cookies",	    OPTION_STRING,  &option_toolbar_cookies }, \
-{ "window_stagger",         OPTION_BOOL,    &option_window_stagger }, \
-{ "window_size_clone",      OPTION_BOOL,    &option_window_size_clone }, \
-{ "buffer_animations",      OPTION_BOOL,    &option_buffer_animations }, \
-{ "buffer_everything",      OPTION_BOOL,    &option_buffer_everything }, \
-{ "open_browser_at_startup",OPTION_BOOL,    &option_open_browser_at_startup }, \
-{ "no_plugins",             OPTION_BOOL,    &option_no_plugins }, \
-{ "block_popups",           OPTION_BOOL,    &option_block_popups }, \
-{ "image_memory_direct",    OPTION_INTEGER, &option_image_memory_direct }, \
-{ "image_memory_compressed",OPTION_INTEGER, &option_image_memory_compressed }, \
-{ "strip_extensions",       OPTION_BOOL,    &option_strip_extensions }, \
-{ "confirm_overwrite",      OPTION_BOOL,    &option_confirm_overwrite }, \
-{ "url_path",               OPTION_STRING,  &option_url_path }, \
-{ "url_save",               OPTION_STRING,  &option_url_save }, \
-{ "hotlist_path",           OPTION_STRING,  &option_hotlist_path }, \
-{ "hotlist_save",           OPTION_STRING,  &option_hotlist_save }, \
-{ "recent_path",            OPTION_STRING,  &option_recent_path }, \
-{ "recent_save",            OPTION_STRING,  &option_recent_save }, \
-{ "theme_path",             OPTION_STRING,  &option_theme_path }, \
-{ "theme_save",             OPTION_STRING,  &option_theme_save }, \
-{ "thumbnail_iconise",      OPTION_BOOL,    &option_thumbnail_iconise }, \
-{ "interactive_help",       OPTION_BOOL,    &option_interactive_help }, \
-{ "external_hotlists",      OPTION_BOOL,    &option_external_hotlists }, \
-{ "external_hotlist_app",   OPTION_STRING,  &option_external_hotlist_app }
+#define NSOPTION_EXTRA_TABLE \
+{ "use_mouse_gestures",     OPTION_BOOL,    &nsoptions.use_mouse_gestures },\
+{ "allow_text_selection",   OPTION_BOOL,    &nsoptions.allow_text_selection },\
+{ "theme",                  OPTION_STRING,  &nsoptions.theme },\
+{ "language",               OPTION_STRING,  &nsoptions.language },\
+{ "plot_fg_quality",        OPTION_INTEGER, &nsoptions.fg_plot_style },\
+{ "plot_bg_quality",        OPTION_INTEGER, &nsoptions.bg_plot_style },\
+{ "history_tooltip",        OPTION_BOOL,    &nsoptions.history_tooltip }, \
+{ "toolbar_show_buttons",   OPTION_BOOL,    &nsoptions.toolbar_show_buttons }, \
+{ "toolbar_show_address",   OPTION_BOOL,    &nsoptions.toolbar_show_address }, \
+{ "toolbar_show_throbber",  OPTION_BOOL,    &nsoptions.toolbar_show_throbber }, \
+{ "toolbar_browser",	    OPTION_STRING,  &nsoptions.toolbar_browser }, \
+{ "toolbar_hotlist",	    OPTION_STRING,  &nsoptions.toolbar_hotlist }, \
+{ "toolbar_history",	    OPTION_STRING,  &nsoptions.toolbar_history }, \
+{ "toolbar_cookies",	    OPTION_STRING,  &nsoptions.toolbar_cookies }, \
+{ "window_stagger",         OPTION_BOOL,    &nsoptions.window_stagger }, \
+{ "window_size_clone",      OPTION_BOOL,    &nsoptions.window_size_clone }, \
+{ "buffer_animations",      OPTION_BOOL,    &nsoptions.buffer_animations }, \
+{ "buffer_everything",      OPTION_BOOL,    &nsoptions.buffer_everything }, \
+{ "open_browser_at_startup",OPTION_BOOL,    &nsoptions.open_browser_at_startup }, \
+{ "no_plugins",             OPTION_BOOL,    &nsoptions.no_plugins }, \
+{ "block_popups",           OPTION_BOOL,    &nsoptions.block_popups }, \
+{ "image_memory_direct",    OPTION_INTEGER, &nsoptions.image_memory_direct }, \
+{ "image_memory_compressed",OPTION_INTEGER, &nsoptions.image_memory_compressed }, \
+{ "strip_extensions",       OPTION_BOOL,    &nsoptions.strip_extensions }, \
+{ "confirm_overwrite",      OPTION_BOOL,    &nsoptions.confirm_overwrite }, \
+{ "url_path",               OPTION_STRING,  &nsoptions.url_path }, \
+{ "url_save",               OPTION_STRING,  &nsoptions.url_save }, \
+{ "hotlist_path",           OPTION_STRING,  &nsoptions.hotlist_path }, \
+{ "hotlist_save",           OPTION_STRING,  &nsoptions.hotlist_save }, \
+{ "recent_path",            OPTION_STRING,  &nsoptions.recent_path }, \
+{ "recent_save",            OPTION_STRING,  &nsoptions.recent_save }, \
+{ "theme_path",             OPTION_STRING,  &nsoptions.theme_path }, \
+{ "theme_save",             OPTION_STRING,  &nsoptions.theme_save }, \
+{ "thumbnail_iconise",      OPTION_BOOL,    &nsoptions.thumbnail_iconise }, \
+{ "interactive_help",       OPTION_BOOL,    &nsoptions.interactive_help }, \
+{ "external_hotlists",      OPTION_BOOL,    &nsoptions.external_hotlists }, \
+{ "external_hotlist_app",   OPTION_STRING,  &nsoptions.external_hotlist_app }
 
 #endif

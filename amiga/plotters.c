@@ -25,7 +25,7 @@
 #include <graphics/gfxmacros.h>
 #include <graphics/gfxbase.h>
 #include "amiga/utf8.h"
-#include "amiga/options.h"
+#include "desktop/options.h"
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
@@ -121,10 +121,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 
 	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
 
-	if(option_redraw_tile_size_x <= 0) option_redraw_tile_size_x = scrn->Width;
-	if(option_redraw_tile_size_y <= 0) option_redraw_tile_size_y = scrn->Height;
-	if(!width) width = option_redraw_tile_size_x;
-	if(!height) height = option_redraw_tile_size_y;
+	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
+	if(nsoption_int(redraw_tile_size_y) <= 0) nsoption_set_int(redraw_tile_size_y, scrn->Height);
+	if(!width) width = nsoption_int(redraw_tile_size_x);
+	if(!height) height = nsoption_int(redraw_tile_size_y);
 
 	gg->layerinfo = NewLayerInfo();
 	gg->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
@@ -206,7 +206,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
-		if(option_cairo_renderer < 2)
+		if(nsoption_int(cairo_renderer) < 2)
 		{
 			SetRPAttrs(glob->rp, RPTAG_APenColor,
 				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
@@ -228,7 +228,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	}
 
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		if(option_cairo_renderer < 2)
+		if(nsoption_int(cairo_renderer) < 2)
 		{
 			glob->rp->PenWidth = style->stroke_width;
 			glob->rp->PenHeight = style->stroke_width;
@@ -301,7 +301,7 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_line()"));
 	#endif
 
-	if(option_cairo_renderer < 2)
+	if(nsoption_int(cairo_renderer) < 2)
 	{
 		glob->rp->PenWidth = style->stroke_width;
 		glob->rp->PenHeight = style->stroke_width;
@@ -377,7 +377,7 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 	int k;
 
-	if(option_cairo_renderer < 1)
+	if(nsoption_int(cairo_renderer) < 1)
 	{
 		ULONG cx,cy;
 
@@ -443,7 +443,7 @@ bool ami_clip(const struct rect *clip)
 	}
 
 #ifdef NS_AMIGA_CAIRO
-	if(option_cairo_renderer == 2)
+	if(nsoption_int(cairo_renderer) == 2)
 	{
 		cairo_reset_clip(glob->cr);
 		cairo_rectangle(glob->cr, clip->x0, clip->y0,
@@ -472,7 +472,7 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_disc()"));
 	#endif
 
-	if(option_cairo_renderer < 2)
+	if(nsoption_int(cairo_renderer) < 2)
 	{
 		if (style->fill_type != PLOT_OP_TYPE_NONE) {
 			SetRPAttrs(glob->rp,
@@ -525,7 +525,7 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 	LOG(("[ami_plotter] Entered ami_arc()"));
 	#endif
 
-	if(option_cairo_renderer >= 1)
+	if(nsoption_int(cairo_renderer) >= 1)
 	{
 #ifdef NS_AMIGA_CAIRO
 		ami_cairo_set_colour(glob->cr, style->fill_colour);
@@ -801,7 +801,7 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 /* We should probably check if the off-screen bitmap is 32-bit and render
  * using Cairo regardless if it is.  For now, we respect user preferences.
  */
-	if(option_cairo_renderer >= 1)
+	if(nsoption_int(cairo_renderer) >= 1)
 	{
 		unsigned int i;
 		cairo_matrix_t old_ctm, n_ctm;
