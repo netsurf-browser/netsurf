@@ -32,6 +32,7 @@
 #include "desktop/textinput.h"
 #include "desktop/hotlist.h"
 #include "desktop/save_complete.h"
+#include "desktop/options.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
