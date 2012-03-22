@@ -23,7 +23,7 @@ extern "C" {
 #include "desktop/gui.h"
 #include "desktop/browser.h"
 }
-#include "beos/beos_scaffolding.h"
+#include "beos/scaffolding.h"
 
 class NSBrowserFrameView : public BView {
 public:

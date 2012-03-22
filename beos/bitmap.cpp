@@ -37,9 +37,9 @@ extern "C" {
 #include "image/bitmap.h"
 #include "utils/log.h"
 }
-#include "beos/beos_bitmap.h"
-#include "beos/beos_gui.h"
-#include "beos/beos_scaffolding.h"
+#include "beos/bitmap.h"
+#include "beos/gui.h"
+#include "beos/scaffolding.h"
 
 struct bitmap {
   BBitmap *primary;

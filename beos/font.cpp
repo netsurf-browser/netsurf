@@ -38,9 +38,9 @@ extern "C" {
 #include "desktop/options.h"
 }
 
-#include "beos/beos_gui.h"
-#include "beos/beos_font.h"
-#include "beos/beos_plotters.h"
+#include "beos/gui.h"
+#include "beos/font.h"
+#include "beos/plotters.h"
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,

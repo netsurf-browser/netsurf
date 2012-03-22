@@ -39,7 +39,7 @@ extern "C" {
 
 }
 
-#include "beos/beos_gui.h"
+#include "beos/gui.h"
 
 
 #if !defined(__HAIKU__) && !defined(B_BEOS_VERSION_DANO)

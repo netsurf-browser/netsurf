@@ -23,9 +23,9 @@
 extern "C" {
 #include "utils/log.h"
 }
-#include "beos/beos_about.h"
-#include "beos/beos_scaffolding.h"
-#include "beos/beos_window.h"
+#include "beos/about.h"
+#include "beos/scaffolding.h"
+#include "beos/window.h"
 
 #include <Alert.h>
 #include <ScrollView.h>

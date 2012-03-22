@@ -37,7 +37,7 @@ extern "C" {
 #include "utils/utils.h"
 }
 
-#include "beos/beos_filetype.h"
+#include "beos/filetype.h"
 
 static struct {
 	const char *type;

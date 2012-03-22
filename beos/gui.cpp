@@ -66,17 +66,17 @@ extern "C" {
 #include "utils/utils.h"
 }
 
-#include "beos/beos_gui.h"
+#include "beos/gui.h"
 
-#include "beos/beos_options.h"
-//#include "beos/beos_completion.h"
-#include "beos/beos_window.h"
-#include "beos/beos_throbber.h"
-#include "beos/beos_filetype.h"
-//#include "beos/beos_download.h"
-#include "beos/beos_schedule.h"
-#include "beos/beos_fetch_rsrc.h"
-#include "beos/beos_scaffolding.h"
+#include "beos/gui_options.h"
+//#include "beos/completion.h"
+#include "beos/window.h"
+#include "beos/throbber.h"
+#include "beos/filetype.h"
+//#include "beos/download.h"
+#include "beos/schedule.h"
+#include "beos/fetch_rsrc.h"
+#include "beos/scaffolding.h"
 
 
 static void *myrealloc(void *ptr, size_t len, void *pw);

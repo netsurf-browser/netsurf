@@ -23,9 +23,9 @@
 extern "C" {
 #include "utils/log.h"
 }
-#include "beos/beos_throbber.h"
-#include "beos/beos_bitmap.h"
-#include "beos/beos_fetch_rsrc.h"
+#include "beos/throbber.h"
+#include "beos/bitmap.h"
+#include "beos/fetch_rsrc.h"
 
 #include <File.h>
 #include <Resources.h>

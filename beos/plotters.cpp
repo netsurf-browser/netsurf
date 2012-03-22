@@ -37,12 +37,12 @@ extern "C" {
 #include "utils/utils.h"
 #include "desktop/options.h"
 }
-#include "beos/beos_font.h"
-#include "beos/beos_gui.h"
-#include "beos/beos_plotters.h"
-//#include "beos/beos_scaffolding.h"
+#include "beos/font.h"
+#include "beos/gui.h"
+#include "beos/plotters.h"
+//#include "beos/scaffolding.h"
 //#include "beos/options.h"
-#include "beos/beos_bitmap.h"
+#include "beos/bitmap.h"
 
 #warning MAKE ME static
 /*static*/ BView *current_view;

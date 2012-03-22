@@ -37,9 +37,9 @@ extern "C" {
 #include "utils/url.h"
 #include "utils/utils.h"
 }
-#include "beos/beos_gui.h"
-#include "beos/beos_scaffolding.h"
-#include "beos/beos_window.h"
+#include "beos/gui.h"
+#include "beos/scaffolding.h"
+#include "beos/window.h"
 
 class LoginAlert : public BAlert {
 public:

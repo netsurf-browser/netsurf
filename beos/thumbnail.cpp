@@ -39,9 +39,9 @@ extern "C" {
 #include "render/font.h"
 #include "utils/log.h"
 }
-#include "beos/beos_scaffolding.h"
-#include "beos/beos_plotters.h"
-#include "beos/beos_bitmap.h"
+#include "beos/scaffolding.h"
+#include "beos/plotters.h"
+#include "beos/bitmap.h"
 
 // Zeta PRIVATE: in libzeta for now.
 extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);

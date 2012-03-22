@@ -34,13 +34,13 @@ extern "C" {
 #include "utils/utf8.h"
 #include "utils/utils.h"
 }
-#include "beos/beos_about.h"
-#include "beos/beos_window.h"
-#include "beos/beos_font.h"
-#include "beos/beos_gui.h"
-#include "beos/beos_scaffolding.h"
-#include "beos/beos_plotters.h"
-//#include "beos/beos_schedule.h"
+#include "beos/about.h"
+#include "beos/window.h"
+#include "beos/font.h"
+#include "beos/gui.h"
+#include "beos/scaffolding.h"
+#include "beos/plotters.h"
+//#include "beos/schedule.h"
 
 #include <AppDefs.h>
 #include <BeBuild.h>

@@ -1,8 +1,8 @@
 /*
  * Copyright 2008 François Revol <mmu_man@users.sourceforge.net>
- * Copyright 2008 Rob Kendrick <rjek@netsurf-browser.org>
+ * Copyright 2006 Rob Kendrick <rjek@rjek.com>
  *
- * This file is part of NetSurf.
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
  * NetSurf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * rsrc: URL method handler
- */
+#define __STDBOOL_H__	1
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+extern "C" {
+#include "utils/log.h"
+#include "desktop/options.h"
+}
+#include "beos/gui.h"
+#include "beos/scaffolding.h"
+#include "beos/gui_options.h"
 
-#ifndef NETSURF_BEOS_FETCH_DATA_H
-#define NETSURF_BEOS_FETCH_DATA_H
+#include <View.h>
+#include <Window.h>
 
-void fetch_rsrc_register(void);
-void fetch_rsrc_unregister(void);
+BWindow *wndPreferences;
 
-class BResources;
-BResources *get_app_resources();
+void nsbeos_options_init(void) {
+	/* set the widgets to reflect the current options */
+	nsbeos_options_load();
+}
 
-#include "beos_res.h"
+void nsbeos_options_load(void) {
+#warning WRITEME
+}
 
-#endif
+
+void nsbeos_options_save(void) {
+#warning WRITEME
+}

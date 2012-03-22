@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "beos_res.h"
+#include "res.h"
 
 /* throbber */
 resource(400, "throbber0.png") #'data' import "res/throbber/throbber0.png";
