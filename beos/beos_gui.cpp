@@ -71,7 +71,6 @@ extern "C" {
 #include "beos/beos_options.h"
 //#include "beos/beos_completion.h"
 #include "beos/beos_window.h"
-#include "beos/options.h"
 #include "beos/beos_throbber.h"
 #include "beos/beos_filetype.h"
 //#include "beos/beos_download.h"
@@ -603,7 +602,7 @@ void gui_init(int argc, char** argv)
 	if (nsoption_charp(url_file) == NULL) {
 		find_resource(buf, "URLs", "%/URLs");
 		LOG(("Using '%s' as URL file", buf));
-		onsption_set_charp(url_file, strdup(buf));
+		nsoption_set_charp(url_file, strdup(buf));
 	}
 
         if (nsoption_charp(ca_path) == NULL) {

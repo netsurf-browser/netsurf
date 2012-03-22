@@ -25,7 +25,6 @@ extern "C" {
 #include "utils/log.h"
 #include "desktop/options.h"
 }
-#include "beos/options.h"
 #include "beos/beos_gui.h"
 #include "beos/beos_scaffolding.h"
 #include "beos/beos_options.h"
