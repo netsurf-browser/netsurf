@@ -696,11 +696,11 @@ void layout_minmax_block(struct box *block,
 			wtype != CSS_WIDTH_SET) {
 		/* box shrinks to fit; need minimum width */
 		block->flags |= NEED_MIN;
-	} else if (block->type == BOX_TABLE_CELL) {		
+	} else if (block->type == BOX_TABLE_CELL) {
 		/* box shrinks to fit; need minimum width */
 		block->flags |= NEED_MIN;
 	} else if (block->parent && (block->parent->flags & NEED_MIN) &&
-			wtype != CSS_WIDTH_SET) {	
+			wtype != CSS_WIDTH_SET) {
 		/* box inside shrink-to-fit context; need minimum width */
 		block->flags |= NEED_MIN;
 	}
