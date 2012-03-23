@@ -19,9 +19,7 @@
 #ifndef _NETSURF_RENDER_PARSER_BINDING_H_
 #define _NETSURF_RENDER_PARSER_BINDING_H_
 
-#include <stdint.h>
-
-#include <libxml/tree.h>
+#include <dom/dom.h>
 
 struct box;
 struct form;
@@ -66,12 +64,12 @@ binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len);
 binding_error binding_parse_completed(void *ctx);
 
 const char *binding_get_encoding(void *ctx, binding_encoding_source *source);
-xmlDocPtr binding_get_document(void *ctx, binding_quirks_mode *quirks);
+dom_document *binding_get_document(void *ctx, binding_quirks_mode *quirks);
 
 struct form *binding_get_forms(void *ctx);
-struct form_control *binding_get_control_for_node(void *ctx, xmlNodePtr node);
+struct form_control *binding_get_control_for_node(void *ctx, dom_node *node);
 
-void binding_destroy_document(xmlDocPtr doc);
+void binding_destroy_document(dom_document *doc);
 
 #endif
 

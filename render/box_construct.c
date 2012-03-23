@@ -31,8 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <libxml/HTMLparser.h>
-#include <libxml/parserInternals.h>
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "css/css.h"
@@ -56,7 +54,7 @@
 struct box_construct_ctx {
 	html_content *content;		/**< Content we're constructing for */
 
-	xmlNode *n;			/**< Current node to process */
+	dom_node *n;			/**< Current node to process */
 
 	struct box *root_box;		/**< Root box in the tree */
 
@@ -95,13 +93,13 @@ const char *TARGET_BLANK = "_blank";
 static void convert_xml_to_box(struct box_construct_ctx *ctx);
 static bool box_construct_element(struct box_construct_ctx *ctx,
 		bool *convert_children);
-static void box_construct_element_after(xmlNode *n, html_content *content);
+static void box_construct_element_after(dom_node *n, html_content *content);
 static bool box_construct_text(struct box_construct_ctx *ctx);
 static css_select_results * box_get_style(html_content *c,
-		const css_computed_style *parent_style, xmlNode *n);
+		const css_computed_style *parent_style, dom_node *n);
 static void box_text_transform(char *s, unsigned int len,
 		enum css_text_transform_e tt);
-#define BOX_SPECIAL_PARAMS xmlNode *n, html_content *content, \
+#define BOX_SPECIAL_PARAMS dom_node *n, html_content *content, \
 		struct box *box, bool *convert_children
 static bool box_a(BOX_SPECIAL_PARAMS);
 static bool box_body(BOX_SPECIAL_PARAMS);
@@ -113,14 +111,14 @@ static bool box_input(BOX_SPECIAL_PARAMS);
 static bool box_input_text(BOX_SPECIAL_PARAMS, bool password);
 static bool box_button(BOX_SPECIAL_PARAMS);
 static bool box_frameset(BOX_SPECIAL_PARAMS);
-static bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
+static bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		html_content *content);
-static bool box_select_add_option(struct form_control *control, xmlNode *n);
+static bool box_select_add_option(struct form_control *control, dom_node *n);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
 static bool box_pre(BOX_SPECIAL_PARAMS);
 static bool box_iframe(BOX_SPECIAL_PARAMS);
-static bool box_get_attribute(xmlNode *n, const char *attribute,
+static bool box_get_attribute(dom_node *n, const char *attribute,
 		void *context, char **value);
 static struct frame_dimension *box_parse_multi_lengths(const char *s,
 		unsigned int *count);
@@ -157,7 +155,7 @@ static const struct element_entry element_table[] = {
  * \return  true on success, false on memory exhaustion
  */
 
-bool xml_to_box(xmlNode *n, html_content *c, box_construct_complete_cb cb)
+bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 {
 	struct box_construct_ctx *ctx;
 
@@ -197,12 +195,12 @@ static const box_type box_map[] = {
 	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
-static inline struct box *box_for_node(const xmlNode *n)
+static inline struct box *box_for_node(const dom_node *n)
 {
 	return ((binding_private *) n->_private)->box;
 }
 
-static inline bool box_is_root(const xmlNode *n)
+static inline bool box_is_root(const dom_done *n)
 {
 	return n->parent == NULL || n->parent->type == XML_HTML_DOCUMENT_NODE;
 }
@@ -216,10 +214,10 @@ static inline bool box_is_root(const xmlNode *n)
  * \param convert_children  Whether to consider children of \a n
  * \return Next node to process, or NULL if complete
  */
-static xmlNode *next_node(xmlNode *n, html_content *content,
+static dom_node *next_node(dome_node *n, html_content *content,
 		bool convert_children)
 {
-	xmlNode *next = NULL;
+	dom_node *next = NULL;
 
 	if (convert_children && n->children != NULL) {
 		next = n->children;
@@ -257,7 +255,7 @@ static xmlNode *next_node(xmlNode *n, html_content *content,
  */
 void convert_xml_to_box(struct box_construct_ctx *ctx)
 {
-	xmlNode *next;
+	dom_node *next;
 	bool convert_children;
 	uint32_t num_processed = 0;
 	const uint32_t max_processed_before_yield = 10;
@@ -445,7 +443,7 @@ static bool box_construct_marker(struct box *box, const char *title,
  * This is currently incomplete. It just does enough to support the clearfix
  * hack. ( http://www.positioniseverything.net/easyclearing.html )
  */
-static void box_construct_generate(xmlNode *n, html_content *content,
+static void box_construct_generate(dom_node *n, html_content *content,
 		struct box *box, const css_computed_style *style)
 {
 	struct box *gen = NULL;
@@ -490,7 +488,7 @@ static void box_construct_generate(xmlNode *n, html_content *content,
  * \param n      Current DOM node to convert
  * \param props  Property object to populate
  */
-static void box_extract_properties(const xmlNode *n, 
+static void box_extract_properties(const dom_node *n, 
 		struct box_construct_props *props)
 {
 	memset(props, 0, sizeof(*props));
@@ -789,7 +787,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
  *
  * This will be called after all children of an element have been processed
  */
-void box_construct_element_after(xmlNode *n, html_content *content)
+void box_construct_element_after(dom_node *n, html_content *content)
 {
 	struct box_construct_props props;
 	struct box *box = box_for_node(n);
@@ -1091,7 +1089,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
  * \return  the new style, or NULL on memory exhaustion
  */
 css_select_results *box_get_style(html_content *c,
-		const css_computed_style *parent_style, xmlNode *n)
+		const css_computed_style *parent_style, dom_node *n)
 {
 	char *s;
 	int pseudo_element;
@@ -1445,7 +1443,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	struct object_params *params;
 	struct object_param *param;
 	xmlChar *codebase, *classid, *data;
-	xmlNode *c;
+	dom_node *c;
 
 	if (box->style && css_computed_display(box->style, 
 			n->parent == NULL) == CSS_DISPLAY_NONE)
@@ -1655,14 +1653,14 @@ static int box_frames_talloc_destructor(struct content_html_frames *f)
 	return 0;
 }
 
-bool box_create_frameset(struct content_html_frames *f, xmlNode *n,
+bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		html_content *content) {
 	unsigned int row, col, index, i;
 	unsigned int rows = 1, cols = 1;
 	char *s;
 	nsurl *url;
 	struct frame_dimension *row_height = 0, *col_width = 0;
-	xmlNode *c;
+	dom_node *c;
 	struct content_html_frames *frame;
 	bool default_border = true;
 	colour default_border_colour = 0x000000;
@@ -2164,7 +2162,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	struct box *inline_container;
 	struct box *inline_box;
 	struct form_control *gadget;
-	xmlNode *c, *c2;
+	dom_node *c, *c2;
 
 	gadget = binding_get_control_for_node(content->parser_binding, n);
 	if (!gadget)
@@ -2244,7 +2242,7 @@ no_memory:
  * \return  true on success, false on memory exhaustion
  */
 
-bool box_select_add_option(struct form_control *control, xmlNode *n)
+bool box_select_add_option(struct form_control *control, dom_node *n)
 {
 	char *value = 0;
 	char *text = 0;
@@ -2304,7 +2302,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	 * by using a 0-length TEXT for blank lines. */
 
 	xmlChar *current, *string;
-	xmlNode *n2;
+	dom_node *n2;
 	xmlBufferPtr buf;
 	xmlParserCtxtPtr ctxt;
 	struct box *inline_container, *inline_box, *br_box;
@@ -2503,7 +2501,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
  * attribute was not found, *value will be unchanged.
  */
 
-bool box_get_attribute(xmlNode *n, const char *attribute,
+bool box_get_attribute(dom_node *n, const char *attribute,
 		void *context, char **value)
 {
 	xmlChar *s = xmlGetProp(n, (const xmlChar *) attribute);

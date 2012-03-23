@@ -2604,7 +2604,7 @@ void html_dump_frameset(struct content_html_frames *frame,
  * \param h  HTML content to retrieve document tree from
  * \return Pointer to document tree
  */
-xmlDoc *html_get_document(hlcache_handle *h)
+dom_document *html_get_document(hlcache_handle *h)
 {
 	html_content *c = (html_content *) hlcache_handle_get_content(h);
 

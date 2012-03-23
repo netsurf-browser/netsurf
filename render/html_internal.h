@@ -34,7 +34,7 @@ typedef struct html_content {
 	/** Parser object handle */
 	void *parser_binding;
 	/** Document tree */
-	xmlDoc *document;
+	dom_document *document;
 	/** Quirkyness of document */
 	binding_quirks_mode quirks;
 
