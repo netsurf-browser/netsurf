@@ -24,10 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <libxml/encoding.h>
-#include <libxml/globals.h>
-#include <libxml/xmlversion.h>
-
 #include <libwapcaplet/libwapcaplet.h>
 
 #include "utils/config.h"
