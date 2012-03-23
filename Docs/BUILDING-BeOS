@@ -38,16 +38,8 @@
 ---------------------------------
 
   The NetSurf project has developed several libraries which are required by
-  the browser.  To fetch each of these libraries, run the following commands:
-
-      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
-      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
-      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
-      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
-      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
-      $ svn co svn://svn.netsurf-browser.org/trunk/libsvgtiny
+  the browser.  To fetch each of these libraries, run the appropriate commands
+  from the Docs/LIBRARIES file.
 
   To build and install these libraries, simply enter each of their directories
   and run:
