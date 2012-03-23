@@ -1,0 +1,49 @@
+--------------------------------------------------------------------------------
+  NetSurf project libraries required                             23 March 2012
+--------------------------------------------------------------------------------
+
+  To build NetSurf, you need the libraries required by the core, and any extra
+  libraries required by the specific front end you are building.
+
+
+  NetSurf Core
+==============
+
+  Required:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
+      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
+      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
+      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
+
+  Optional:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/libsvgtiny
+
+
+  RISC OS front end
+===================
+
+  Required:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/pencil
+      $ svn co svn://svn.netsurf-browser.org/trunk/rufl
+
+
+  Framebuffer front end
+=======================
+
+  Optional:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
+
+
+  Non RISC OS front ends
+========================
+
+  Optional:
+
+      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
+
