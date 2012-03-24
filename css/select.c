@@ -1242,24 +1242,48 @@ css_error node_has_attribute_prefix(void *pw, void *node,
 		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
-	xmlNode *n = node;
-	xmlChar *attr;
-        size_t vlen = lwc_string_length(value);
+	dom_node *n = node;
+	dom_string *name;
+	dom_string *atr_val;
+	dom_exception err;
 
-        *match = false;
+	size_t vlen = lwc_string_length(value);
 
-	if (vlen != 0) {
-		attr = xmlGetProp(n, 
-				(const xmlChar *) lwc_string_data(qname->name));
-		if (attr != NULL) {
-			if (strlen((char *) attr) >= vlen && 
-					strncasecmp((char *) attr,
-					lwc_string_data(value), vlen) == 0)
-				*match = true;
+	if (vlen == 0) {
+		*match = false;
+		return CSS_OK;
+	}
 
-			xmlFree(attr);
+	err = dom_string_create_interned(
+		(const uint8_t *) lwc_string_data(qname->name), 
+		lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
+
+	err = dom_element_get_attribute(n, name, &atr_val);
+	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+		dom_string_unref(name);
+		*match = false;
+		return CSS_OK;
+	}
+
+	dom_string_unref(name);
+
+	/* check for exact match */
+	*match = dom_string_caseless_lwc_isequal(atr_val, value);
+
+	/* check for prefix match */
+	if (*match == false) {
+		const char *data = (const char *) dom_string_data(atr_val);
+		size_t len = dom_string_byte_length(atr_val);
+
+		if ((len >= vlen) && 
+		    (strncasecmp(data, lwc_string_data(value), vlen) == 0)) {
+			*match = true;
 		}
 	}
+
+	dom_string_unref(atr_val);
 
 	return CSS_OK;
 }
@@ -1282,26 +1306,52 @@ css_error node_has_attribute_suffix(void *pw, void *node,
 		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
-	xmlNode *n = node;
-	xmlChar *attr;
-        size_t vlen = lwc_string_length(value);
+	dom_node *n = node;
+	dom_string *name;
+	dom_string *atr_val;
+	dom_exception err;
 
-        *match = false;
+	size_t vlen = lwc_string_length(value);
 
-	if (vlen != 0) {
-		attr = xmlGetProp(n, 
-				(const xmlChar *) lwc_string_data(qname->name));
-		if (attr != NULL) {
-			size_t len = strlen((char *) attr);
-			const char *start = (char *) attr + len - vlen;
-
-			if (len >= vlen && strncasecmp(start, 
-					lwc_string_data(value), vlen) == 0)
-				*match = true;
-
-			xmlFree(attr);
-		}
+	if (vlen == 0) {
+		*match = false;
+		return CSS_OK;
 	}
+
+	err = dom_string_create_interned(
+		(const uint8_t *) lwc_string_data(qname->name), 
+		lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
+
+	err = dom_element_get_attribute(n, name, &atr_val);
+	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+		dom_string_unref(name);
+		*match = false;
+		return CSS_OK;
+	}
+
+	dom_string_unref(name);
+
+	/* check for exact match */
+	*match = dom_string_caseless_lwc_isequal(atr_val, value);
+
+	/* check for prefix match */
+	if (*match == false) {
+		const char *data = (const char *) dom_string_data(atr_val);
+		size_t len = dom_string_byte_length(atr_val);
+		
+		const char *start = (char *) data + len - vlen;
+
+		if ((len >= vlen) && 
+		    (strncasecmp(start, lwc_string_data(value), vlen) == 0)) {
+			*match = true;
+		}
+
+
+	}
+
+	dom_string_unref(atr_val);
 
 	return CSS_OK;
 }
@@ -1324,36 +1374,57 @@ css_error node_has_attribute_substring(void *pw, void *node,
 		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
-	xmlNode *n = node;
-	xmlChar *attr;
-        size_t vlen = lwc_string_length(value);
+	dom_node *n = node;
+	dom_string *name;
+	dom_string *atr_val;
+	dom_exception err;
 
-        *match = false;
+	size_t vlen = lwc_string_length(value);
 
-	if (vlen != 0) {
-		attr = xmlGetProp(n, 
-				(const xmlChar *) lwc_string_data(qname->name));
-		if (attr != NULL) {
-			const char *vdata = lwc_string_data(value);
-			size_t len = strlen((char *) attr);
-			const char *start = (char *) attr;
-			const char *last_start = start + len - vlen;
+	if (vlen == 0) {
+		*match = false;
+		return CSS_OK;
+	}
 
-			if (len >= vlen) {
-				while (start <= last_start) {
-					if (strncasecmp(start, vdata, 
-							vlen) == 0) {
-						*match = true;
-						break;
-					}
+	err = dom_string_create_interned(
+		(const uint8_t *) lwc_string_data(qname->name), 
+		lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
 
-					start++;
+	err = dom_element_get_attribute(n, name, &atr_val);
+	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+		dom_string_unref(name);
+		*match = false;
+		return CSS_OK;
+	}
+
+	dom_string_unref(name);
+
+	/* check for exact match */
+	*match = dom_string_caseless_lwc_isequal(atr_val, value);
+
+	/* check for prefix match */
+	if (*match == false) {
+		const char *vdata = lwc_string_data(value);
+		const char *start = (const char *) dom_string_data(atr_val);
+		size_t len = dom_string_byte_length(atr_val);
+		const char *last_start = start + len - vlen;
+
+		if (len >= vlen) {
+			while (start <= last_start) {
+				if (strncasecmp(start, vdata, 
+						vlen) == 0) {
+					*match = true;
+					break;
 				}
-			}
 
-			xmlFree(attr);
+				start++;
+			}
 		}
 	}
+
+	dom_string_unref(atr_val);
 
 	return CSS_OK;
 }
@@ -1370,10 +1441,31 @@ css_error node_has_attribute_substring(void *pw, void *node,
  */
 css_error node_is_root(void *pw, void *node, bool *match)
 {
-	xmlNode *n = node;
+	dom_node *n = node;
+	dom_node *parent;
+	dom_node_type type;
+	dom_exception err;
 
-	*match = (n->parent == NULL || 
-			n->parent->type == XML_HTML_DOCUMENT_NODE);
+	err = dom_node_get_parent_node(n, &parent);
+	if (err != DOM_NO_ERR) {
+		return CSS_NOMEM;
+	}
+
+	if (parent != NULL) {
+		err = dom_node_get_node_type(parent, &type);
+
+		dom_node_unref(parent);
+
+		if (err != DOM_NO_ERR)
+			return CSS_NOMEM;
+
+		if (type != DOM_DOCUMENT_NODE) {
+			*match = false;
+			return CSS_OK;
+		} 
+	}
+	
+	*match = true;
 
 	return CSS_OK;
 }
@@ -1393,6 +1485,7 @@ css_error node_is_root(void *pw, void *node, bool *match)
 css_error node_count_siblings(void *pw, void *node, bool same_name,
 		bool after, int32_t *count)
 {
+#ifdef FIXME
 	xmlNode *n = node;
 	int32_t cnt = 0;
 
@@ -1433,7 +1526,7 @@ css_error node_count_siblings(void *pw, void *node, bool same_name,
 	}
 
 	*count = cnt;
-
+#endif
 	return CSS_OK;
 }
 
@@ -1449,6 +1542,7 @@ css_error node_count_siblings(void *pw, void *node, bool same_name,
  */
 css_error node_is_empty(void *pw, void *node, bool *match)
 {
+#ifdef FIXME
 	xmlNode *n = node;
 
 	*match = true;
@@ -1460,7 +1554,7 @@ css_error node_is_empty(void *pw, void *node, bool *match)
 			break;
 		}
 	}
-
+#endif
 	return CSS_OK;
 }
 
@@ -1476,11 +1570,12 @@ css_error node_is_empty(void *pw, void *node, bool *match)
  */
 css_error node_is_link(void *pw, void *node, bool *match)
 {
+#ifdef FIXME
 	xmlNode *n = node;
 
 	*match = (strcasecmp((const char *) n->name, "a") == 0 &&
 			xmlHasProp(n, (const xmlChar *) "href") != NULL);
-
+#endif
 	return CSS_OK;
 }
 
@@ -1705,6 +1800,7 @@ css_error node_is_lang(void *pw, void *node,
 css_error node_presentational_hint(void *pw, void *node,
 		uint32_t property, css_hint *hint)
 {
+#ifdef FIXME
 	nscss_select_ctx *ctx = pw;
 	xmlNode *n = node;
 
@@ -2413,7 +2509,7 @@ css_error node_presentational_hint(void *pw, void *node,
 			return CSS_OK;
 		}
 	}
-
+#endif
 	return CSS_PROPERTY_NOT_SET;
 }
 
