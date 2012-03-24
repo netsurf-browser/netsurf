@@ -2741,7 +2741,7 @@ void html_set_search(struct content *c, struct search_context *s)
  * \return content's search context, or NULL if none
  */
 
-static struct search_context *html_get_search(struct content *c)
+struct search_context *html_get_search(struct content *c)
 {
 	html_content *html = (html_content *) c;
 
