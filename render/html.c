@@ -109,6 +109,8 @@ static dom_string *html_dom_string__parent;
 static dom_string *html_dom_string__self;
 static dom_string *html_dom_string__blank;
 static dom_string *html_dom_string__top;
+static dom_string *html_dom_string_http_equiv;
+static dom_string *html_dom_string_content;
 
 static nserror 
 html_create_html_data(html_content *c, const http_parameter *params)
@@ -558,6 +560,198 @@ static bool html_head(html_content *c, dom_node *head)
 	return true;
 }
 
+static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
+{
+	union content_msg_data msg_data;
+	const char *url, *end, *refresh = NULL;
+	char *new_url;
+	char quote = '\0';
+	dom_string *equiv, *content;
+	dom_exception exc;
+	nsurl *nsurl;
+	nserror error;
+
+	exc = dom_element_get_attribute(n, html_dom_string_http_equiv, &equiv);
+	if (exc != DOM_NO_ERR)
+		return false;
+
+	if (equiv == NULL)
+		return true;
+
+	if (strcasecmp(dom_string_data(equiv), "refresh") != 0) {
+		dom_string_unref(equiv);
+		return true;
+	}
+
+	dom_string_unref(equiv);
+
+	exc = dom_element_get_attribute(n, html_dom_string_content, &content);
+	if (exc != DOM_NO_ERR)
+		return false;
+
+	if (content == NULL)
+		return true;
+
+	end = dom_string_data(content) + dom_string_byte_length(content);
+
+	/* content  := *LWS intpart fracpart? *LWS [';' *LWS *1url *LWS]
+	 * intpart  := 1*DIGIT
+	 * fracpart := 1*('.' | DIGIT)
+	 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
+	 * url-nq   := *urlchar
+	 * url-sq   := "'" *(urlchar | '"') "'"
+	 * url-dq   := '"' *(urlchar | "'") '"'
+	 * urlchar  := [#x9#x21#x23-#x26#x28-#x7E] | nonascii
+	 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
+	 */
+
+	url = dom_string_data(content);
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* intpart */
+	if (url == end || (*url < '0' || '9' < *url)) {
+		/* Empty content, or invalid timeval */
+		dom_string_unref(content);
+		return true;
+	}
+
+	msg_data.delay = (int) strtol(url, &new_url, 10);
+	/* a very small delay and self-referencing URL can cause a loop
+	 * that grinds machines to a halt. To prevent this we set a
+	 * minimum refresh delay of 1s. */
+	if (msg_data.delay < 1)
+		msg_data.delay = 1;
+
+	url = new_url;
+
+	/* fracpart? (ignored, as delay is integer only) */
+	while (url < end && (('0' <= *url && *url <= '9') || 
+			*url == '.')) {
+		url++;
+	}
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* ';' */
+	if (url < end && *url == ';')
+		url++;
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	if (url == end) {
+		/* Just delay specified, so refresh current page */
+		dom_string_unref(content);
+
+		c->base.refresh = nsurl_ref(
+				content_get_url(&c->base));
+
+		content_broadcast(&c->base, CONTENT_MSG_REFRESH, 
+				msg_data);
+		return true;
+	}
+
+	/* "url" */
+	if (url <= end - 3) {
+		if (strncasecmp(url, "url", 3) == 0) {
+			url += 3;
+		} else {
+			/* Unexpected input, ignore this header */
+			dom_string_unref(content);
+			return true;
+		}
+	} else {
+		/* Insufficient input, ignore this header */
+		dom_string_unref(content);
+		return true;
+	}
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* '=' */
+	if (url < end) {
+		if (*url == '=') {
+			url++;
+		} else {
+			/* Unexpected input, ignore this header */
+			dom_string_unref(content);
+			return true;
+		}
+	} else {
+		/* Insufficient input, ignore this header */
+		dom_string_unref(content);
+		return true;
+	}
+
+	/* *LWS */
+	while (url < end && isspace(*url)) {
+		url++;
+	}
+
+	/* '"' or "'" */
+	if (url < end && (*url == '"' || *url == '\'')) {
+		quote = *url;
+		url++;
+	}
+
+	/* Start of URL */
+	refresh = url;
+
+	if (quote != 0) {
+		/* url-sq | url-dq */
+		while (url < end && *url != quote)
+			url++;
+	} else {
+		/* url-nq */
+		while (url < end && !isspace(*url))
+			url++;
+	}
+
+	/* '"' or "'" or *LWS (we don't care) */
+	if (url < end) {
+		new_url = strndup(refresh, url - refresh);
+		if (new_url == NULL) {
+			dom_string_unref(content);
+			return false;
+		}
+
+		error = nsurl_join(c->base_url, new_url, &nsurl);
+		if (error != NSERROR_OK) {
+			free(new_url);
+
+			dom_string_unref(content);
+
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
+					msg_data);
+
+			return false;
+		}
+
+		free(new_url);
+
+		c->base.refresh = nsurl;
+
+		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+	}
+
+	dom_string_unref(content);
+
+	return true;
+}
+
 /**
  * Search for meta refresh
  *
@@ -570,195 +764,69 @@ static bool html_head(html_content *c, dom_node *head)
 
 static bool html_meta_refresh(html_content *c, dom_node *head)
 {
-#ifdef FIXME
-	dom_node *n;
-	xmlChar *equiv, *content;
-	union content_msg_data msg_data;
-	char *url, *end, *refresh = NULL, quote = 0;
-	nsurl *nsurl;
-	nserror error;
+	dom_node *n, *next;
+	dom_exception exc;
 
-	for (n = head == NULL ? NULL : head->children; n; n = n->next) {
-		if (n->type != XML_ELEMENT_NODE)
-			continue;
+	if (head == NULL)
+		return true;
 
-		/* Recurse into noscript elements */
-		if (strcmp((const char *) n->name, "noscript") == 0) {
-			if (html_meta_refresh(c, n) == false) {
-				/* Some error occurred */
-				return false;
-			} else if (c->base.refresh) {
-				/* Meta refresh found - stop */
-				return true;
-			}
-		}
+	exc = dom_node_get_first_child(head, &n);
+	if (exc != DOM_NO_ERR)
+		return false;
 
-		if (strcmp((const char *) n->name, "meta") != 0) {
-			continue;
-		}
+	while (n != NULL) {
+		dom_node_type type;
 
-		equiv = xmlGetProp(n, (const xmlChar *) "http-equiv");
-		if (equiv == NULL)
-			continue;
-
-		if (strcasecmp((const char *) equiv, "refresh") != 0) {
-			xmlFree(equiv);
-			continue;
-		}
-
-		xmlFree(equiv);
-
-		content = xmlGetProp(n, (const xmlChar *) "content");
-		if (content == NULL)
-			continue;
-
-		end = (char *) content + strlen((const char *) content);
-
-		/* content  := *LWS intpart fracpart? *LWS [';' *LWS *1url *LWS]
-		 * intpart  := 1*DIGIT
-		 * fracpart := 1*('.' | DIGIT)
-		 * url      := "url" *LWS '=' *LWS (url-nq | url-sq | url-dq)
-		 * url-nq   := *urlchar
-		 * url-sq   := "'" *(urlchar | '"') "'"
-		 * url-dq   := '"' *(urlchar | "'") '"'
-		 * urlchar  := [#x9#x21#x23-#x26#x28-#x7E] | nonascii
-		 * nonascii := [#x80-#xD7FF#xE000-#xFFFD#x10000-#x10FFFF]
-		 */
-
-		url = (char *) content;
-
-		/* *LWS */
-		while (url < end && isspace(*url)) {
-			url++;
-		}
-
-		/* intpart */
-		if (url == end || (*url < '0' || '9' < *url)) {
-			/* Empty content, or invalid timeval */
-			xmlFree(content);
-			continue;
-		}
-
-		msg_data.delay = (int) strtol(url, &url, 10);
-		/* a very small delay and self-referencing URL can cause a loop
-		 * that grinds machines to a halt. To prevent this we set a
-		 * minimum refresh delay of 1s. */
-		if (msg_data.delay < 1)
-			msg_data.delay = 1;
-
-		/* fracpart? (ignored, as delay is integer only) */
-		while (url < end && (('0' <= *url && *url <= '9') || 
-				*url == '.')) {
-			url++;
-		}
-
-		/* *LWS */
-		while (url < end && isspace(*url)) {
-			url++;
-		}
-
-		/* ';' */
-		if (url < end && *url == ';')
-			url++;
-
-		/* *LWS */
-		while (url < end && isspace(*url)) {
-			url++;
-		}
-
-		if (url == end) {
-			/* Just delay specified, so refresh current page */
-			xmlFree(content);
-
-			c->base.refresh = nsurl_ref(
-					content_get_url(&c->base));
-
-			content_broadcast(&c->base, CONTENT_MSG_REFRESH, 
-					msg_data);
-			break;
-		}
-
-		/* "url" */
-		if (url <= end - 3) {
-			if (strncasecmp(url, "url", 3) == 0) {
-				url += 3;
-			} else {
-				/* Unexpected input, ignore this header */
-				xmlFree(content);
-				continue;
-			}
-		} else {
-			/* Insufficient input, ignore this header */
-			xmlFree(content);
-			continue;
-		}
-
-		/* *LWS */
-		while (url < end && isspace(*url)) {
-			url++;
-		}
-
-		/* '=' */
-		if (url < end) {
-			if (*url == '=') {
-				url++;
-			} else {
-				/* Unexpected input, ignore this header */
-				xmlFree(content);
-				continue;
-			}
-		} else {
-			/* Insufficient input, ignore this header */
-			xmlFree(content);
-			continue;
-		}
-
-		/* *LWS */
-		while (url < end && isspace(*url)) {
-			url++;
-		}
-
-		/* '"' or "'" */
-		if (url < end && (*url == '"' || *url == '\'')) {
-			quote = *url;
-			url++;
-		}
-
-		/* Start of URL */
-		refresh = url;
-
-		if (quote != 0) {
-			/* url-sq | url-dq */
-			while (url < end && *url != quote)
-				url++;
-		} else {
-			/* url-nq */
-			while (url < end && !isspace(*url))
-				url++;
-		}
-
-		/* '"' or "'" or *LWS (we don't care) */
-		if (url < end)
-			*url = '\0';
-
-		error = nsurl_join(c->base_url, refresh, &nsurl);
-		if (error != NSERROR_OK) {
-			xmlFree(content);
-
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
-					msg_data);
-
+		exc = dom_node_get_node_type(n, &type);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(n);
 			return false;
 		}
 
-		xmlFree(content);
+		if (type == XML_ELEMENT_NODE) {
+			dom_string *name;
 
-		c->base.refresh = nsurl;
+			exc = dom_node_get_node_name(n, &name);
+			if (exc != DOM_NO_ERR) {
+				dom_node_unref(n);
+				return false;
+			}
 
-		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+			/* Recurse into noscript elements */
+			if (strcmp(dom_string_data(name), "noscript") == 0) {
+				if (html_meta_refresh(c, n) == false) {
+					/* Some error occurred */
+					dom_node_unref(n);
+					return false;
+				} else if (c->base.refresh) {
+					/* Meta refresh found - stop */
+					dom_node_unref(n);
+					return true;
+				}
+			} else if (strcmp(dom_string_data(name), "meta") == 0) {
+				if (html_meta_refresh_process_element(c, 
+						n) == false) {
+					/* Some error occurred */
+					dom_node_unref(n);
+					return false;
+				} else if (c->base.refresh != NULL) {
+					/* Meta refresh found - stop */
+					dom_node_unref(n);
+					return true;
+				}
+			}
+		}
+
+		exc = dom_node_get_next_sibling(n, &next);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return false;
+		}
+
+		dom_node_unref(n);
+		n = next;
 	}
-#endif
+
 	return true;
 }
 
@@ -3066,8 +3134,15 @@ nserror html_init(void)
 	HTML_DOM_STRING_INTERN(_self);
 	HTML_DOM_STRING_INTERN(_parent);
 	HTML_DOM_STRING_INTERN(_top);
+	HTML_DOM_STRING_INTERN(content);
 
 #undef HTML_DOM_STRING_INTERN
+
+	exc = dom_string_create_interned((const uint8_t *) "http-equiv",
+					 SLEN("http-equiv"),
+					 &html_dom_string_http_equiv);
+	if ((exc != DOM_NO_ERR) || (html_dom_string_http_equiv == NULL))
+		goto error;
 
 	for (i = 0; i < NOF_ELEMENTS(html_types); i++) {
 		error = content_factory_register_handler(html_types[i],
