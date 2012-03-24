@@ -102,7 +102,11 @@ static dom_string *html_dom_string_sizes;
 static dom_string *html_dom_string_title;
 static dom_string *html_dom_string_base;
 static dom_string *html_dom_string_link;
-
+static dom_string *html_dom_string_target;
+static dom_string *html_dom_string__parent;
+static dom_string *html_dom_string__self;
+static dom_string *html_dom_string__blank;
+static dom_string *html_dom_string__top;
 
 static nserror 
 html_create_html_data(html_content *c, const http_parameter *params)
@@ -451,42 +455,49 @@ static bool html_process_title(html_content *c, dom_node *node)
 
 static bool html_process_base(html_content *c, dom_node *node)
 {
-#ifdef FIXME
-	char *href = (char *) xmlGetProp(node, (const xmlChar *) "href");
-	if (href) {
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *atr_string;
+
+	/* get href attribute if present */
+	exc = dom_element_get_attribute(node, html_dom_string_href, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		nsurl *url;
 		nserror error;
-		error = nsurl_create(href, &url);
+
+		/* get url from string */
+		error = nsurl_create(dom_string_data(atr_string), &url);
+		dom_string_unref(atr_string);
 		if (error == NSERROR_OK) {
 			if (c->base_url != NULL)
 				nsurl_unref(c->base_url);
 			c->base_url = url;
 		}
-		xmlFree(href);
 	}
 
-	/* don't use the central values to ease freeing later on */
-	if ((s = xmlGetProp(node, (const xmlChar *) "target"))) {
-		if ((!strcasecmp((const char *) s, "_blank")) ||
-		    (!strcasecmp((const char *) s,
-				 "_top")) ||
-		    (!strcasecmp((const char *) s,
-				 "_parent")) ||
-		    (!strcasecmp((const char *) s,
-				 "_self")) ||
-		    ('a' <= s[0] && s[0] <= 'z') ||
-		    ('A' <= s[0] && s[0] <= 'Z')) {  /* [6.16] */
-			c->base_target = talloc_strdup(c,
-						       (const char *) s);
-			if (!c->base_target) {
-				xmlFree(s);
-				return false;
-			}
-		}
-		xmlFree(s);
+
+	/* get target attribute if present and not already set */
+	if (c->base_target != NULL) {
+		return true;
 	}
-	#endif
-	return false;
+
+	exc = dom_element_get_attribute(node, html_dom_string_target, &atr_string);
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
+		/* Validation rules from the HTML5 spec for the base element:
+		 *  The target must be one of _blank, _self, _parent, or 
+		 *  _top or any identifier which does not begin with an 
+		 *  underscore 
+		 */
+		if (*dom_string_data(atr_string) != '_' ||
+		    dom_string_caseless_isequal(atr_string, html_dom_string__blank) ||
+		    dom_string_caseless_isequal(atr_string, html_dom_string__self) ||
+		    dom_string_caseless_isequal(atr_string, html_dom_string__parent) ||
+		    dom_string_caseless_isequal(atr_string, html_dom_string__top)) {
+			c->base_target = strdup(dom_string_data(atr_string));
+		}
+		dom_string_unref(atr_string);
+	}
+
+	return true;
 }
 
 /**
@@ -1406,9 +1417,8 @@ no_memory:
 
 static bool html_find_stylesheets(html_content *c, dom_node *html)
 {
-#ifdef FIXME
 	content_type accept = CONTENT_CSS;
-	dom_node *node;
+	dom_node *node, next_node;
 	char *rel, *type, *media, *href;
 	unsigned int i = STYLESHEET_START;
 	union content_msg_data msg_data;
@@ -1482,11 +1492,18 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 
 	c->base.active++;
 
-	node = html;
 
 	/* depth-first search the tree for link elements */
-	while (node) {
-		if (node->children) {  /* 1. children */
+
+	node = dom_node_ref(html); /* tree root */
+
+	while (node != NULL) {
+		bool has_children;
+		exc = dom_node_has_child_nodes(node, &has_children);
+		if (exc != DOM_NO_ERR)
+			break;
+
+		if (has_children) {  /* 1. children */
 			node = node->children;
 		} else if (node->next) {  /* 2. siblings */
 			node = node->next;
@@ -1598,7 +1615,6 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 no_memory:
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-#endif
 	return false;
 }
 
@@ -2814,60 +2830,33 @@ static content_type html_content_type(void)
 
 static void html_fini(void)
 {
-	if (html_dom_string_title != NULL) {
-		dom_string_unref(html_dom_string_title);
-		html_dom_string_title = NULL;
-	}
 
-	if (html_dom_string_base != NULL) {
-		dom_string_unref(html_dom_string_base);
-		html_dom_string_base = NULL;
-	}
+#define HTML_DOM_STRING_UNREF(NAME)					\
+	do {								\
+		if (html_dom_string_##NAME != NULL) {			\
+			dom_string_unref(html_dom_string_##NAME);	\
+			html_dom_string_##NAME = NULL;			\
+		}							\
+	} while (0)							\
 
-	if (html_dom_string_link != NULL) {
-		dom_string_unref(html_dom_string_link);
-		html_dom_string_link = NULL;
-	}
+	HTML_DOM_STRING_UNREF(html);
+	HTML_DOM_STRING_UNREF(head);
+	HTML_DOM_STRING_UNREF(rel);
+	HTML_DOM_STRING_UNREF(href);
+	HTML_DOM_STRING_UNREF(hreflang);
+	HTML_DOM_STRING_UNREF(type);
+	HTML_DOM_STRING_UNREF(media);
+	HTML_DOM_STRING_UNREF(sizes);
+	HTML_DOM_STRING_UNREF(title);
+	HTML_DOM_STRING_UNREF(base);
+	HTML_DOM_STRING_UNREF(link);
+	HTML_DOM_STRING_UNREF(target);
+	HTML_DOM_STRING_UNREF(_blank);
+	HTML_DOM_STRING_UNREF(_self);
+	HTML_DOM_STRING_UNREF(_parent);
+	HTML_DOM_STRING_UNREF(_top);
 
-	if (html_dom_string_rel != NULL) {
-		dom_string_unref(html_dom_string_rel);
-		html_dom_string_rel = NULL;
-	}
-
-	if (html_dom_string_href != NULL) {
-		dom_string_unref(html_dom_string_href);
-		html_dom_string_href = NULL;
-	}
-
-	if (html_dom_string_hreflang != NULL) {
-		dom_string_unref(html_dom_string_hreflang);
-		html_dom_string_hreflang = NULL;
-	}
-
-	if (html_dom_string_type != NULL) {
-		dom_string_unref(html_dom_string_type);
-		html_dom_string_type = NULL;
-	}
-
-	if (html_dom_string_media != NULL) {
-		dom_string_unref(html_dom_string_media);
-		html_dom_string_media = NULL;
-	}
-
-	if (html_dom_string_sizes != NULL) {
-		dom_string_unref(html_dom_string_sizes);
-		html_dom_string_sizes = NULL;
-	}
-
-	if (html_dom_string_head != NULL) {
-		dom_string_unref(html_dom_string_head);
-		html_dom_string_head = NULL;
-	}
-
-	if (html_dom_string_html != NULL) {
-		dom_string_unref(html_dom_string_html);
-		html_dom_string_html = NULL;
-	}
+#undef HTML_DOM_STRING_UNREF
 
 	if (html_user_stylesheet_url != NULL) {
 		nsurl_unref(html_user_stylesheet_url);
@@ -2950,51 +2939,31 @@ nserror html_init(void)
 	if (error != NSERROR_OK)
 		goto error;
 
-	exc = dom_string_create_interned((const uint8_t *)"html", 
-					 4, 
-					 &html_dom_string_html);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_html == NULL))
-		goto error;
+#define HTML_DOM_STRING_INTERN(NAME)					\
+	exc = dom_string_create_interned((const uint8_t *)#NAME,	\
+					 sizeof(#NAME) - 1,		\
+					 &html_dom_string_##NAME );	\
+	if ((exc != DOM_NO_ERR) || (html_dom_string_##NAME == NULL))	\
+		goto error						
 
-	exc = dom_string_create_interned((const uint8_t *)"head", 4, &html_dom_string_head);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_head == NULL))
-		goto error;
+	HTML_DOM_STRING_INTERN(html);
+	HTML_DOM_STRING_INTERN(head);
+	HTML_DOM_STRING_INTERN(rel);
+	HTML_DOM_STRING_INTERN(href);
+	HTML_DOM_STRING_INTERN(hreflang);
+	HTML_DOM_STRING_INTERN(type);
+	HTML_DOM_STRING_INTERN(media);
+	HTML_DOM_STRING_INTERN(sizes);
+	HTML_DOM_STRING_INTERN(title);
+	HTML_DOM_STRING_INTERN(base);
+	HTML_DOM_STRING_INTERN(link);
+	HTML_DOM_STRING_INTERN(target);
+	HTML_DOM_STRING_INTERN(_blank);
+	HTML_DOM_STRING_INTERN(_self);
+	HTML_DOM_STRING_INTERN(_parent);
+	HTML_DOM_STRING_INTERN(_top);
 
-	exc = dom_string_create_interned((const uint8_t *)"rel", 3, &html_dom_string_rel);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_rel == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"href", 4, &html_dom_string_href);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_href == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"hreflang", 8, &html_dom_string_hreflang);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_hreflang == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"type", 4, &html_dom_string_type);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_type == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"media", 5, &html_dom_string_media);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_media == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"sizes", 5, &html_dom_string_sizes);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_sizes == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"title", 5, &html_dom_string_title);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_title == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"base", 4, &html_dom_string_base);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_base == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *)"link", 4, &html_dom_string_link);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_link == NULL))
-		goto error;
+#undef HTML_DOM_STRING_INTERN
 
 	for (i = 0; i < NOF_ELEMENTS(html_types); i++) {
 		error = content_factory_register_handler(html_types[i],
