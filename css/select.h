@@ -21,7 +21,7 @@
 
 #include <stdint.h>
 
-#include <libxml/tree.h>
+#include <dom/dom.h>
 
 #include "css/css.h"
 #include "utils/nsurl.h"
@@ -43,7 +43,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
 		const char *charset, const char *url, bool allow_quirks, 
 		css_allocator_fn alloc, void *pw);
 
-css_select_results *nscss_get_style(nscss_select_ctx *ctx, xmlNode *n,
+css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		uint64_t media, const css_stylesheet *inline_style,
 		css_allocator_fn alloc, void *pw);
 

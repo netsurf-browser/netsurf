@@ -223,7 +223,7 @@ css_stylesheet *nscss_create_inline_style(const uint8_t *data, size_t len,
  * \return Pointer to selection results (containing partial computed styles),
  *         or NULL on failure
  */
-css_select_results *nscss_get_style(nscss_select_ctx *ctx, xmlNode *n,
+css_select_results *nscss_get_style(nscss_select_ctx *ctx, dom_node *n,
 		uint64_t media, const css_stylesheet *inline_style,
 		css_allocator_fn alloc, void *pw)
 {
@@ -455,14 +455,23 @@ bool nscss_parse_colour(const char *data, css_color *result)
  */
 css_error node_name(void *pw, void *node, css_qname *qname)
 {
-	xmlNode *n = node;
-	binding_private *p = n->_private;
+	dom_node *n = node;
+	dom_string *name;
+	dom_exception err;
+
+	err = dom_node_get_node_name(n, &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
 
 	qname->ns = NULL;
 
-	assert(p != NULL && p->localname != NULL);
+	err = dom_string_intern(name, &qname->name);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(name);
+		return CSS_NOMEM;
+	}
 
-	qname->name = lwc_string_ref(p->localname);
+	dom_string_unref(name);
 
 	return CSS_OK;
 }
@@ -484,26 +493,15 @@ css_error node_name(void *pw, void *node, css_qname *qname)
 css_error node_classes(void *pw, void *node, 
 		lwc_string ***classes, uint32_t *n_classes)
 {
-	xmlNode *n = node;
-	binding_private *p = n->_private;
+	dom_node *n = node;
+	dom_exception err;
 
 	*classes = NULL;
 	*n_classes = 0;
 
-	if (p->nclasses > 0) {
-		lwc_string **result;
-		uint32_t items;
-
-		result = malloc(p->nclasses * sizeof(lwc_string *));
-		if (result == NULL)
-			return CSS_NOMEM;
-
-		for (items = 0; items < p->nclasses; items++)
-			result[items] = lwc_string_ref(p->classes[items]);
-
-		*classes = result;
-		*n_classes = p->nclasses;
-	}
+	err = dom_element_get_classes(n, classes, n_classes);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
 
 	return CSS_OK;
 }
@@ -519,13 +517,24 @@ css_error node_classes(void *pw, void *node,
  */
 css_error node_id(void *pw, void *node, lwc_string **id)
 {
-	xmlNode *n = node;
-	binding_private *p = n->_private;
+	dom_node *n = node;
+	dom_string *attr;
+	dom_exception err;
 
 	*id = NULL;
 
-	if (p->id != NULL)
-		*id = lwc_string_ref(p->id);
+	/** \todo Assumes an HTML DOM */
+	err = dom_html_element_get_id(n, &attr);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
+
+	if (attr != NULL) {
+		err = dom_string_intern(attr, id);
+		if (err != DOM_NO_ERR) {
+			dom_string_unref(attr);
+			return CSS_NOMEM;
+		}
+	}
 
 	return CSS_OK;
 }
@@ -544,24 +553,50 @@ css_error node_id(void *pw, void *node, lwc_string **id)
 css_error named_ancestor_node(void *pw, void *node,
 		const css_qname *qname, void **ancestor)
 {
-	xmlNode *n = node;
-	binding_private *p;
-	bool match;
+	dom_node *n = node;
+	dom_node *parent;
+	dom_exception err;
 
 	*ancestor = NULL;
 
-	for (n = n->parent; n != NULL; n = n->parent) {
-		if (n->type != XML_ELEMENT_NODE)
-			continue;
+	err = dom_node_get_parent_node(n, &n);
+	if (err != DOM_NO_ERR)
+		return CSS_OK;
 
-		p = n->_private;
+	while (n != NULL) {
+		dom_node_type type;
+		dom_string *name;
 
-		if (lwc_string_caseless_isequal(qname->name, 
-				p->localname, &match) == lwc_error_ok && 
-				match) {
-			*ancestor = (void *) n;
-			break;
+		err = dom_node_get_node_type(n, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
 		}
+
+		if (type == DOM_ELEMENT_NODE) {
+			err = dom_node_get_node_name(n, &name);
+			if (err != DOM_NO_ERR) {
+				dom_node_unref(n);
+				return CSS_OK;
+			}
+
+			if (dom_string_caseless_lwc_isequal(name, 
+					qname->name)) {
+				dom_node_unref(n);
+				/** \todo Sort out reference counting */
+				*ancestor = n;
+				break;
+			}
+		}
+
+		err = dom_node_get_parent_node(n, &parent);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+		n = parent;
 	}
 
 	return CSS_OK;
@@ -581,26 +616,55 @@ css_error named_ancestor_node(void *pw, void *node,
 css_error named_parent_node(void *pw, void *node,
 		const css_qname *qname, void **parent)
 {
-	xmlNode *n = node;
-	binding_private *p;
-	bool match;
+	dom_node *n = node;
+	dom_node *p;
+	dom_exception err;
 
 	*parent = NULL;
 
 	/* Find parent element */
-	for (n = n->parent; n != NULL; n = n->parent) {
-		if (n->type == XML_ELEMENT_NODE)
-			break;
-	}
-
-	if (n == NULL)
+	err = dom_node_get_parent_node(n, &n);
+	if (err != DOM_NO_ERR)
 		return CSS_OK;
 
-	p = n->_private;
+	while (n != NULL) {
+		dom_node_type type;
 
-	if (lwc_string_caseless_isequal(qname->name, p->localname,
-			&match) == lwc_error_ok && match)
-		*parent = (void *) n;
+		err = dom_node_get_node_type(n, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		if (type == DOM_ELEMENT_NODE)
+			break;
+
+		err = dom_node_get_parent_node(n, &p);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+		n = p;
+	}
+
+	if (n != NULL) {
+		dom_string *name;
+
+		err = dom_node_get_node_name(n, &name);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+
+		if (dom_string_caseless_lwc_isequal(name, qname->name)) {
+			/** \todo Sort out reference counting */
+			*parent = n;
+		}
+	}
 
 	return CSS_OK;
 }
@@ -619,26 +683,55 @@ css_error named_parent_node(void *pw, void *node,
 css_error named_sibling_node(void *pw, void *node,
 		const css_qname *qname, void **sibling)
 {
-	xmlNode *n = node;
-	binding_private *p;
-	bool match;
+	dom_node *n = node;
+	dom_node *prev;
+	dom_exception err;
 
 	*sibling = NULL;
 
 	/* Find sibling element */
-	for (n = n->prev; n != NULL; n = n->prev) {
-		if (n->type == XML_ELEMENT_NODE)
-			break;
-	}
-
-	if (n == NULL)
+	err = dom_node_get_previous_sibling(n, &n);
+	if (err != DOM_NO_ERR)
 		return CSS_OK;
 
-	p = n->_private;
+	while (n != NULL) {
+		dom_node_type type;
 
-	if (lwc_string_caseless_isequal(qname->name, p->localname,
-			&match) == lwc_error_ok && match)
-		*sibling = (void *) n;
+		err = dom_node_get_node_type(n, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		if (type == DOM_ELEMENT_NODE)
+			break;
+
+		err = dom_node_get_previous_sibling(n, &prev);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+		n = prev;
+	}
+
+	if (n != NULL) {
+		dom_string *name;
+
+		err = dom_node_get_node_name(n, &name);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+
+		if (dom_string_caseless_lwc_isequal(name, qname->name)) {
+			/** \todo Sort out reference counting */
+			*sibling = n;
+		}
+	}
 
 	return CSS_OK;
 }
@@ -657,24 +750,50 @@ css_error named_sibling_node(void *pw, void *node,
 css_error named_generic_sibling_node(void *pw, void *node,
 		const css_qname *qname, void **sibling)
 {
-	xmlNode *n = node;
-	binding_private *p;
-	bool match;
+	dom_node *n = node;
+	dom_node *prev;
+	dom_exception err;
 
 	*sibling = NULL;
 
-	for (n = n->prev; n != NULL; n = n->prev) {
-		if (n->type != XML_ELEMENT_NODE)
-			continue;
+	err = dom_node_get_previous_sibling(n, &n);
+	if (err != DOM_NO_ERR)
+		return CSS_OK;
 
-		p = n->_private;
+	while (n != NULL) {
+		dom_node_type type;
+		dom_string *name;
 
-		if (lwc_string_caseless_isequal(qname->name,
-				p->localname, &match) == lwc_error_ok &&
-				match) {
-			*sibling = (void *) n;
-			break;
+		err = dom_node_get_node_type(n, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
 		}
+
+		if (type == DOM_ELEMENT_NODE) {
+			err = dom_node_get_node_name(n, &name);
+			if (err != DOM_NO_ERR) {
+				dom_node_unref(n);
+				return CSS_OK;
+			}
+
+			if (dom_string_caseless_lwc_isequal(name, 
+					qname->name)) {
+				dom_node_unref(n);
+				/** \todo Sort out reference counting */
+				*sibling = n;
+				break;
+			}
+		}
+
+		err = dom_node_get_previous_sibling(n, &prev);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+		n = prev;
 	}
 
 	return CSS_OK;
@@ -692,15 +811,43 @@ css_error named_generic_sibling_node(void *pw, void *node,
  */
 css_error parent_node(void *pw, void *node, void **parent)
 {
-	xmlNode *n = node;
+	dom_node *n = node;
+	dom_node *p;
+	dom_exception err;
 
 	/* Find parent element */
-	for (n = n->parent; n != NULL; n = n->parent) {
-		if (n->type == XML_ELEMENT_NODE)
+	err = dom_node_get_parent_node(n, &n);
+	if (err != DOM_NO_ERR)
+		return CSS_OK;
+
+	while (n != NULL) {
+		dom_node_type type;
+
+		err = dom_node_get_node_type(n, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		if (type == DOM_ELEMENT_NODE)
 			break;
+
+		err = dom_node_get_parent_node(n, &p);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+		n = p;
 	}
 
-	*parent = (void *) n;
+	if (n != NULL) {
+		/** \todo Sort out reference counting */
+		dom_node_unref(n);
+
+		*parent = n;
+	}
 
 	return CSS_OK;
 }
@@ -717,15 +864,45 @@ css_error parent_node(void *pw, void *node, void **parent)
  */
 css_error sibling_node(void *pw, void *node, void **sibling)
 {
-	xmlNode *n = node;
+	dom_node *n = node;
+	dom_node *prev;
+	dom_exception err;
+
+	*sibling = NULL;
 
 	/* Find sibling element */
-	for (n = n->prev; n != NULL; n = n->prev) {
-		if (n->type == XML_ELEMENT_NODE)
+	err = dom_node_get_previous_sibling(n, &n);
+	if (err != DOM_NO_ERR)
+		return CSS_OK;
+
+	while (n != NULL) {
+		dom_node_type type;
+
+		err = dom_node_get_node_type(n, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		if (type == DOM_ELEMENT_NODE)
 			break;
+
+		err = dom_node_get_previous_sibling(n, &prev);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_OK;
+		}
+
+		dom_node_unref(n);
+		n = prev;
 	}
 
-	*sibling = (void *) n;
+	if (n != NULL) {
+		/** \todo Sort out reference counting */
+		dom_node_unref(n);
+
+		*sibling = n;
+	}
 
 	return CSS_OK;
 }
@@ -745,15 +922,22 @@ css_error node_has_name(void *pw, void *node,
 		const css_qname *qname, bool *match)
 {
 	nscss_select_ctx *ctx = pw;
-	xmlNode *n = node;
-	binding_private *p = n->_private;
-	lwc_string *name = qname->name;
+	dom_node *n = node;
 
-	lwc_string_isequal(name, ctx->universal, match);
+	lwc_string_isequal(qname->name, ctx->universal, match);
 	if (*match == false) {
+		dom_string *name;
+		dom_exception err;
+
+		err = dom_node_get_node_name(n, &name);
+		if (err != DOM_NO_ERR)
+			return CSS_OK;
+
 		/* Element names are case insensitive in HTML */
-		lwc_string_caseless_isequal(p->localname, name, match);
-	} 
+		*match = dom_string_caseless_lwc_isequal(name, qname->name);
+
+		dom_string_unref(name);
+	}
 
 	return CSS_OK;
 }
@@ -772,27 +956,14 @@ css_error node_has_name(void *pw, void *node,
 css_error node_has_class(void *pw, void *node,
 		lwc_string *name, bool *match)
 {
-	nscss_select_ctx *ctx = pw;
-	xmlNode *n = node;
-	binding_private *p = n->_private;
-	uint32_t count;
+	dom_node *n = node;
+	dom_exception err;
 
-	*match = false;
+	/** \todo: Ensure that libdom performs case-insensitive 
+	 * matching in quirks mode */
+	err = dom_element_has_class(n, name, match);
 
-	/* Class names are case insensitive in quirks mode */
-	if (ctx->quirks) {
-		for (count = 0; count < p->nclasses; count++) {
-			if (lwc_string_caseless_isequal(name, p->classes[count], 
-					match) == lwc_error_ok && *match)
-				break;
-		}
-	} else {
-		for (count = 0; count < p->nclasses; count++) {
-			if (lwc_string_isequal(name, p->classes[count], 
-					match) == lwc_error_ok && *match)
-				break;
-		}
-	}
+	assert(err == DOM_NO_ERR);
 
 	return CSS_OK;
 }
