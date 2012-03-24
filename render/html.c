@@ -1297,6 +1297,20 @@ html_convert_css_callback(hlcache_handle *css,
 }
 
 /**
+ * Handle notification of inline style completion
+ *
+ * \param css  Inline style object
+ * \param pw   Private data
+ */
+static void html_inline_style_done(struct content_css_data *css, void *pw)
+{
+	html_content *html = pw;
+
+	if (--html->base.active == 0)
+		html_finish_conversion(html);
+}
+
+/**
  * Process an inline stylesheet in the document.
  *
  * \param  c      content structure
@@ -1311,31 +1325,34 @@ html_process_style_element(html_content *c,
 			   unsigned int *index,
 			   dom_node *style)
 {
-#ifdef FIXME
-	dom_node *child;
-	char *type, *media, *data;
+	dom_node *child, *next;
+	dom_string *val;
+	dom_exception exc;
 	union content_msg_data msg_data;
 	struct html_stylesheet *stylesheets;
 	struct content_css_data *sheet;
 	nserror error;
 
 	/* type='text/css', or not present (invalid but common) */
-	if ((type = (char *) xmlGetProp(style, (const xmlChar *) "type"))) {
-		if (strcmp(type, "text/css") != 0) {
-			xmlFree(type);
+	exc = dom_element_get_attribute(style, html_dom_string_type, &val);
+	if (exc == DOM_NO_ERR && val != NULL) {
+		if (strcmp(dom_string_data(val), "text/css") != 0) {
+			dom_string_unref(val);
 			return true;
 		}
-		xmlFree(type);
+		dom_string_unref(val);
 	}
 
 	/* media contains 'screen' or 'all' or not present */
-	if ((media = (char *) xmlGetProp(style, (const xmlChar *) "media"))) {
-		if (strcasestr(media, "screen") == NULL &&
-				strcasestr(media, "all") == NULL) {
-			xmlFree(media);
+	exc = dom_element_get_attribute(style, html_dom_string_media, &val);
+	if (exc == DOM_NO_ERR && val != NULL) {
+		if (strcasestr(dom_string_data(val), "screen") == NULL &&
+				strcasestr(dom_string_data(val), 
+						"all") == NULL) {
+			dom_string_unref(val);
 			return true;
 		}
-		xmlFree(media);
+		dom_string_unref(val);
 	}
 
 	/* Extend array */
@@ -1361,6 +1378,7 @@ html_process_style_element(html_content *c,
 		nsurl_access(c->base_url), NULL, c->quirks,
 		html_inline_style_done, c);
 	if (error != NSERROR_OK) {
+		talloc_free(sheet);
 		c->stylesheet_count--;
 		goto no_memory;
 	}
@@ -1368,19 +1386,49 @@ html_process_style_element(html_content *c,
 	/* can't just use xmlNodeGetContent(style), because that won't
 	 * give the content of comments which may be used to 'hide'
 	 * the content */
-	for (child = style->children; child != 0; child = child->next) {
-		data = (char *) xmlNodeGetContent(child);
-		if (nscss_process_css_data(sheet, data, strlen(data)) == 
-				false) {
-			xmlFree(data);
+	exc = dom_node_get_first_child(style, &child);
+	if (exc != DOM_NO_ERR) {
+		nscss_destroy_css_data(sheet);
+		talloc_free(sheet);
+		c->stylesheet_count--;
+		goto no_memory;
+	}
+
+	while (child != NULL) {
+		dom_string *data;
+
+		exc = dom_node_get_text_content(child, &data);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
 			talloc_free(sheet);
 			c->stylesheet_count--;
-			/** \todo  not necessarily caused by
-			 *  memory exhaustion */
 			goto no_memory;
 		}
-		xmlFree(data);
+
+		if (nscss_process_css_data(sheet, dom_string_data(data), 
+				dom_string_byte_length(data)) == false) {
+			dom_string_unref(data);
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			talloc_free(sheet);
+			c->stylesheet_count--;
+			goto no_memory;
+		}
+
+		dom_string_unref(data);
+
+		exc = dom_node_get_next_sibling(child, &next);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(child);
+			nscss_destroy_css_data(sheet);
+			talloc_free(sheet);
+			c->stylesheet_count--;
+			goto no_memory;
+		}
+
+		dom_node_unref(child);
+		child = next;
 	}
 
 	c->base.active++;
@@ -1403,7 +1451,6 @@ html_process_style_element(html_content *c,
 no_memory:
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-#endif
 	return false;
 }
 
@@ -1904,21 +1951,6 @@ static bool html_convert(struct content *c)
 	return true;
 }
 
-
-
-/**
- * Handle notification of inline style completion
- *
- * \param css  Inline style object
- * \param pw   Private data
- */
-static void html_inline_style_done(struct content_css_data *css, void *pw)
-{
-	html_content *html = pw;
-
-	if (--html->base.active == 0)
-		html_finish_conversion(html);
-}
 
 
 
