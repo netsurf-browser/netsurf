@@ -1175,7 +1175,7 @@ static void html_box_convert_done(html_content *c, bool success)
                 html_dump_frameset(c->frameset, 0);
 #endif
 
-	exc = dom_document_get_document_element(c->document, &html);
+	exc = dom_document_get_document_element(c->document, (void *) &html);
         if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
 		msg_data.error = messages_get("ParsingFail");
@@ -1284,7 +1284,7 @@ static void html_finish_conversion(html_content *c)
 	content_set_status(&c->base, messages_get("Processing"));
 	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
 
-	exc = dom_document_get_document_element(c->document, &html);
+	exc = dom_document_get_document_element(c->document, (void *) &html);
         if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
 		msg_data.error = messages_get("ParsingFail");
@@ -1905,7 +1905,7 @@ static bool html_convert(struct content *c)
 	}
 
 	/* locate html and head elements */
-	exc = dom_document_get_document_element(htmlc->document, &html);
+	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
         if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
 		msg_data.error = messages_get("ParsingFail");
