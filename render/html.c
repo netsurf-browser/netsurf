@@ -1566,7 +1566,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 		assert(node != NULL);
 
 		exc = dom_node_get_node_type(node, &type);
-		if (exc != DOM_NO_ERR || type != XML_ELEMENT_NODE)
+		if (exc != DOM_NO_ERR || type != DOM_ELEMENT_NODE)
 			continue;
 
 		exc = dom_node_get_node_name(node, &name);
