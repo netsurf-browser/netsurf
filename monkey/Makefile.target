@@ -25,7 +25,6 @@
   $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
   MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
-		-D_GNU_SOURCE \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
