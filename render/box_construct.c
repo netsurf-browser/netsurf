@@ -229,7 +229,7 @@ static inline struct box *box_for_node(dom_node *n)
 	struct box *box = NULL;
 	dom_exception err;
 
-	err = dom_node_get_user_data(n, kstr_box_key, &box);
+	err = dom_node_get_user_data(n, kstr_box_key, (void *) &box);
 	if (err != DOM_NO_ERR)
 		return NULL;
 
@@ -885,7 +885,8 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Attach box to DOM node */
-	err = dom_node_set_user_data(ctx->n, kstr_box_key, box, NULL, &old_box);
+	err = dom_node_set_user_data(ctx->n, kstr_box_key, box, NULL, 
+			(void *) &old_box);
 	if (err != DOM_NO_ERR)
 		return false;
 
@@ -2922,7 +2923,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 		dom_attr *attr;
 		dom_string *name, *value;
 
-		err = dom_namednodemap_item(attrs, idx, &attr);
+		err = dom_namednodemap_item(attrs, idx, (void *) &attr);
 		if (err != DOM_NO_ERR) {
 			dom_namednodemap_unref(attrs);
 			return false;
