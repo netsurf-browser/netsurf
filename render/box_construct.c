@@ -195,14 +195,70 @@ static const box_type box_map[] = {
 	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
-static inline struct box *box_for_node(const dom_node *n)
+/** \todo: initialise/finalise */
+/** Key for box userdata on DOM elements (== '__ns_box') */
+static dom_string *kstr_box_key;
+static dom_string *kstr_title;
+static dom_string *kstr_id;
+static dom_string *kstr_colspan;
+static dom_string *kstr_rowspan;
+static dom_string *kstr_style;
+static dom_string *kstr_href;
+static dom_string *kstr_name;
+static dom_string *kstr_target;
+static dom_string *kstr_alt;
+static dom_string *kstr_src;
+static dom_string *kstr_codebase;
+static dom_string *kstr_classid;
+static dom_string *kstr_data;
+static dom_string *kstr_rows;
+static dom_string *kstr_cols;
+static dom_string *kstr_border;
+static dom_string *kstr_frameborder;
+static dom_string *kstr_bordercolor;
+static dom_string *kstr_noresize;
+static dom_string *kstr_scrolling;
+static dom_string *kstr_marginwidth;
+static dom_string *kstr_marginheight;
+static dom_string *kstr_type;
+static dom_string *kstr_value;
+static dom_string *kstr_selected;
+
+static inline struct box *box_for_node(dom_node *n)
 {
-	return ((binding_private *) n->_private)->box;
+	struct box *box = NULL;
+	dom_exception err;
+
+	err = dom_node_get_user_data(n, kstr_box_key, &box);
+	if (err != DOM_NO_ERR)
+		return NULL;
+
+	return box;
 }
 
-static inline bool box_is_root(const dom_done *n)
+static inline bool box_is_root(dom_node *n)
 {
-	return n->parent == NULL || n->parent->type == XML_HTML_DOCUMENT_NODE;
+	dom_node *parent;
+	dom_node_type type;
+	dom_exception err;
+
+	err = dom_node_get_parent_node(n, &parent);
+	if (err != DOM_NO_ERR)
+		return false;
+
+	if (parent != NULL) {
+		err = dom_node_get_node_type(parent, &type);
+
+		dom_node_unref(parent);
+
+		if (err != DOM_NO_ERR)
+			return false;
+
+		if (type != DOM_DOCUMENT_NODE)
+			return false;
+	}
+
+	return true;
 }
 
 /**
@@ -213,36 +269,105 @@ static inline bool box_is_root(const dom_done *n)
  * \param content           Containing content
  * \param convert_children  Whether to consider children of \a n
  * \return Next node to process, or NULL if complete
+ *
+ * \note \a n will be unreferenced
  */
-static dom_node *next_node(dome_node *n, html_content *content,
+static dom_node *next_node(dom_node *n, html_content *content,
 		bool convert_children)
 {
 	dom_node *next = NULL;
+	bool has_children;
+	dom_exception err;
 
-	if (convert_children && n->children != NULL) {
-		next = n->children;
-	} else if (n->next != NULL) {
-		if (box_for_node(n) != NULL)
-			box_construct_element_after(n, content);
+	err = dom_node_has_child_nodes(n, &has_children);
+	if (err != DOM_NO_ERR) {
+		dom_node_unref(n);
+		return NULL;
+	}
 
-		next = n->next;
+	if (convert_children && has_children) {
+		err = dom_node_get_first_child(n, &next);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return NULL;
+		}
 	} else {
-		if (box_for_node(n) != NULL)
-			box_construct_element_after(n, content);
-
-		while (box_is_root(n) == false && n->parent->next == NULL) {
-			n = n->parent;
-
-			if (box_for_node(n) != NULL)
-				box_construct_element_after(n, content);
+		err = dom_node_get_next_sibling(n, &next);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return NULL;
 		}
 
-		if (box_is_root(n) == false) {
-			if (box_for_node(n->parent) != NULL) {
-				box_construct_element_after(n->parent, content);
+		if (next != NULL) {
+			if (box_for_node(n) != NULL)
+				box_construct_element_after(n, content);
+			dom_node_unref(n);
+		} else {
+			if (box_for_node(n) != NULL)
+				box_construct_element_after(n, content);
+
+			while (box_is_root(n) == false) {
+				dom_node *parent = NULL;
+				dom_node *parent_next = NULL;
+
+				err = dom_node_get_parent_node(n, &parent);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(n);
+					return NULL;
+				}
+
+				assert(parent != NULL);
+
+				err = dom_node_get_next_sibling(parent, 
+						&parent_next);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(parent);
+					dom_node_unref(n);
+					return NULL;
+				}
+
+				if (parent_next != NULL) {
+					dom_node_unref(parent_next);
+					break;
+				}
+
+				dom_node_unref(n);
+				n = parent;
+				parent = NULL;
+
+				if (box_for_node(n) != NULL) {
+					box_construct_element_after(
+							n, content);
+				}
 			}
 
-			next = n->parent->next;
+			if (box_is_root(n) == false) {
+				dom_node *parent = NULL;
+
+				err = dom_node_get_parent_node(n, &parent);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(n);
+					return NULL;
+				}
+
+				assert(parent != NULL);
+
+				err = dom_node_get_next_sibling(parent, &next);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(parent);
+					dom_node_unref(n);
+					return NULL;
+				}
+
+				if (box_for_node(parent) != NULL) {
+					box_construct_element_after(parent, 
+							content);
+				}
+
+				dom_node_unref(parent);
+			}
+
+			dom_node_unref(n);
 		}
 	}
 
@@ -264,21 +389,36 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
 		convert_children = true;
 
 		assert(ctx->n != NULL);
-		assert(ctx->n->type == XML_ELEMENT_NODE);
 
 		if (box_construct_element(ctx, &convert_children) == false) {
 			ctx->cb(ctx->content, false);
+			dom_node_unref(ctx->n);
 			free(ctx);
 			return;
 		}
 
 		/* Find next element to process, converting text nodes as we go */
 		next = next_node(ctx->n, ctx->content, convert_children);
-		while (next != NULL && next->type != XML_ELEMENT_NODE) {
-			if (next->type == XML_TEXT_NODE) {
+		while (next != NULL) {
+			dom_node_type type;
+			dom_exception err;
+
+			err = dom_node_get_node_type(next, &type);
+			if (err != DOM_NO_ERR) {
+				ctx->cb(ctx->content, false);
+				dom_node_unref(next);
+				free(ctx);
+				return;
+			}
+
+			if (type == DOM_ELEMENT_NODE)
+				break;
+
+			if (type == DOM_TEXT_NODE) {
 				ctx->n = next;
 				if (box_construct_text(ctx) == false) {
 					ctx->cb(ctx->content, false);
+					dom_node_unref(ctx->n);
 					free(ctx);
 					return;
 				}
@@ -308,6 +448,8 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
 
 				ctx->cb(ctx->content, true);
 			}
+
+			assert(ctx->n == NULL);
 
 			free(ctx);
 			return;
@@ -488,7 +630,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
  * \param n      Current DOM node to convert
  * \param props  Property object to populate
  */
-static void box_extract_properties(const dom_node *n, 
+static void box_extract_properties(dom_node *n, 
 		struct box_construct_props *props)
 {
 	memset(props, 0, sizeof(*props));
@@ -497,22 +639,52 @@ static void box_extract_properties(const dom_node *n,
 
 	/* Extract properties from containing DOM node */
 	if (props->node_is_root == false) {
+		dom_node *current_node = n;
+		dom_node *parent_node = NULL;
 		struct box *parent_box;
+		dom_exception err;
 
 		/* Find ancestor node containing parent box */
-		while (n->parent != NULL && box_for_node(n->parent) == NULL)
-			n = n->parent;
+		while (true) {
+			err = dom_node_get_parent_node(current_node,
+					&parent_node);
+			if (err != DOM_NO_ERR || parent_node == NULL)
+				break;
 
-		parent_box = box_for_node(n->parent);
+			parent_box = box_for_node(parent_node);
 
-		props->parent_style = parent_box->style;
-		props->href = parent_box->href;
-		props->target = parent_box->target;
-		props->title = parent_box->title;
+			if (parent_box != NULL) {
+				props->parent_style = parent_box->style;
+				props->href = parent_box->href;
+				props->target = parent_box->target;
+				props->title = parent_box->title;
 
+				dom_node_unref(parent_node);
+				break;
+			} else {
+				if (current_node != n)
+					dom_node_unref(current_node);
+				current_node = parent_node;
+				parent_node = NULL;
+			}
+		}
+			
 		/* Find containing block (may be parent) */
-		for (n = n->parent; n != NULL; n = n->parent) {
-			struct box *b = box_for_node(n);
+		while (true) {
+			struct box *b;
+
+			err = dom_node_get_parent_node(current_node,
+					&parent_node);
+			if (err != DOM_NO_ERR || parent_node == NULL) {
+				if (current_node != n)
+					dom_node_unref(current_node);
+				break;
+			}
+
+			if (current_node != n)
+				dom_node_unref(current_node);
+
+			b = box_for_node(parent_node);
 
 			/* Children of nodes that created an inline box
 			 * will generate boxes which are attached as
@@ -523,7 +695,12 @@ static void box_extract_properties(const dom_node *n,
 			if (b != NULL && b->type != BOX_INLINE && 
 					b->type != BOX_BR) {
 				props->containing_block = b;
+
+				dom_node_unref(parent_node);
 				break;
+			} else {
+				current_node = parent_node;
+				parent_node = NULL;
 			}
 		}
 	}
@@ -547,16 +724,16 @@ static void box_extract_properties(const dom_node *n,
 bool box_construct_element(struct box_construct_ctx *ctx,
 		bool *convert_children)
 {
-	xmlChar *title0, *s;
+	dom_string *title0, *s;
 	lwc_string *id = NULL;
-	struct box *box = NULL;
+	struct box *box = NULL, *old_box;
 	css_select_results *styles = NULL;
 	struct element_entry *element;
 	lwc_string *bgimage_uri;
+	dom_exception err;
 	struct box_construct_props props;
 
 	assert(ctx->n != NULL);
-	assert(ctx->n->type == XML_ELEMENT_NODE);
 
 	box_extract_properties(ctx->n, &props);
 
@@ -572,10 +749,14 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		return false;
 
 	/* Extract title attribute, if present */
-	if ((title0 = xmlGetProp(ctx->n, (const xmlChar *) "title")) != NULL) {
-		char *t = squash_whitespace((char *) title0);
+	err = dom_element_get_attribute(ctx->n, kstr_title, &title0);
+	if (err != DOM_NO_ERR)
+		return false;
 
-		xmlFree(title0);
+	if (title0 != NULL) {
+		char *t = squash_whitespace(dom_string_data(title0));
+
+		dom_string_unref(title0);
 
 		if (t == NULL)
 			return false;
@@ -589,14 +770,16 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Extract id attribute, if present */
-	s = xmlGetProp(ctx->n, (const xmlChar *) "id");
-	if (s) {
-		lwc_error lerror = lwc_intern_string((const char *) s,
-				strlen((const char *) s), &id);
-		xmlFree(s);
+	err = dom_element_get_attribute(ctx->n, kstr_id, &s);
+	if (err != DOM_NO_ERR)
+		return false;
 
-		if (lerror != lwc_error_ok)
+	if (s != NULL) {
+		err = dom_string_intern(s, &id);
+		if (err != DOM_NO_ERR)
 			id = NULL;
+
+		dom_string_unref(s);
 	}
 
 	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
@@ -610,18 +793,30 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		ctx->root_box = box;
 
 	/* Deal with colspan/rowspan */
-	if ((s = xmlGetProp(ctx->n, (const xmlChar *) "colspan")) != NULL) {
-		if ('0' <= s[0] && s[0] <= '9')
-			box->columns = strtol((char *) s, NULL, 10);
+	err = dom_element_get_attribute(ctx->n, kstr_colspan, &s);
+	if (err != DOM_NO_ERR)
+		return false;
 
-		xmlFree(s);
+	if (s != NULL) {
+		const char *val = dom_string_data(s);
+
+		if ('0' <= val[0] && val[0] <= '9')
+			box->columns = strtol(val, NULL, 10);
+
+		dom_string_unref(s);
 	}
 
-	if ((s = xmlGetProp(ctx->n, (const xmlChar *) "rowspan")) != NULL) {
-		if ('0' <= s[0] && s[0] <= '9')
-			box->rows = strtol((char *) s, NULL, 10);
+	err = dom_element_get_attribute(ctx->n, kstr_rowspan, &s);
+	if (err != DOM_NO_ERR)
+		return false;
 
-		xmlFree(s);
+	if (s != NULL) {
+		const char *val = dom_string_data(s);
+
+		if ('0' <= val[0] && val[0] <= '9')
+			box->rows = strtol(val, NULL, 10);
+
+		dom_string_unref(s);
 	}
 
 	/* Set box type from computed display */
@@ -649,10 +844,17 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	box_construct_generate(ctx->n, ctx->content, box,
 			box->styles->styles[CSS_PSEUDO_ELEMENT_BEFORE]);
 
+	err = dom_node_get_node_name(ctx->n, &s);
+	if (err != DOM_NO_ERR || s == NULL)
+		return false;
+
 	/* Special elements */
-	element = bsearch((const char *) ctx->n->name, element_table,
+	element = bsearch(dom_string_data(s), element_table,
 			ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
 			(int (*)(const void *, const void *)) strcmp);
+
+	dom_string_unref(s);
+
 	if (element != NULL) {
 		/* A special convert function exists for this element */
 		if (element->convert(ctx->n, ctx->content, box, 
@@ -683,7 +885,9 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	}
 
 	/* Attach box to DOM node */
-	((binding_private *) ctx->n->_private)->box = box;
+	err = dom_node_set_user_data(ctx->n, kstr_box_key, box, NULL, &old_box);
+	if (err != DOM_NO_ERR)
+		return false;
 
 	if (props.inline_container == NULL &&
 			(box->type == BOX_INLINE ||
@@ -799,8 +1003,14 @@ void box_construct_element_after(dom_node *n, html_content *content)
 	if (box->type == BOX_INLINE || box->type == BOX_BR) {
 		/* Insert INLINE_END into containing block */
 		struct box *inline_end;
+		bool has_children;
+		dom_exception err;
 
-		if (n->children == NULL || 
+		err = dom_node_has_child_nodes(n, &has_children);
+		if (err != DOM_NO_ERR)
+			return;
+
+		if (has_children == false || 
 				(box->flags & CONVERT_CHILDREN) == 0) {
 			/* No children, or didn't want children converted */
 			return;
@@ -851,19 +1061,29 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 {
 	struct box_construct_props props;
 	struct box *box = NULL;
+	dom_string *content;
+	dom_exception err;
 
 	assert(ctx->n != NULL);
-	assert(ctx->n->type == XML_TEXT_NODE);
 
 	box_extract_properties(ctx->n, &props);
 
 	assert(props.containing_block != NULL);
 
+	err = dom_characterdata_get_data(ctx->n, &content);
+	if (err != DOM_NO_ERR || content == NULL)
+		return false;
+
 	if (css_computed_white_space(props.parent_style) == 
 			CSS_WHITE_SPACE_NORMAL ||
 			css_computed_white_space(props.parent_style) == 
 			CSS_WHITE_SPACE_NOWRAP) {
-		char *text = squash_whitespace((char *) ctx->n->content);
+		char *text;
+
+		text = squash_whitespace(dom_string_data(content));
+
+		dom_string_unref(content);
+
 		if (text == NULL)
 			return false;
 
@@ -963,7 +1183,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 		}
 	} else {
 		/* white-space: pre */
-		char *text = cnv_space2nbsp((char *) ctx->n->content);
+		char *text = cnv_space2nbsp(dom_string_data(content));
 		char *current;
 		enum css_white_space_e white_space =
 				css_computed_white_space(props.parent_style);
@@ -972,6 +1192,8 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 		assert(white_space == CSS_WHITE_SPACE_PRE ||
 				white_space == CSS_WHITE_SPACE_PRE_LINE ||
 				white_space == CSS_WHITE_SPACE_PRE_WRAP);
+
+		dom_string_unref(content);
 
 		if (text == NULL)
 			return false;
@@ -1091,7 +1313,8 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 css_select_results *box_get_style(html_content *c,
 		const css_computed_style *parent_style, dom_node *n)
 {
-	char *s;
+	dom_string *s;
+	dom_exception err;
 	int pseudo_element;
 	css_error error;
 	css_stylesheet *inline_style = NULL;
@@ -1099,15 +1322,20 @@ css_select_results *box_get_style(html_content *c,
 	nscss_select_ctx ctx;
 
 	/* Firstly, construct inline stylesheet, if any */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "style"))) {
+	err = dom_element_get_attribute(n, kstr_style, &s);
+	if (err != DOM_NO_ERR)
+		return NULL;
+
+	if (s != NULL) {
 		inline_style = nscss_create_inline_style(
-				(uint8_t *) s, strlen(s),
+				(const uint8_t *) dom_string_data(s),
+				dom_string_byte_length(s),
 				c->encoding,
 				nsurl_access(content_get_url(&c->base)), 
 				c->quirks != BINDING_QUIRKS_MODE_NONE,
 				box_style_alloc, NULL);
 
-		xmlFree(s);
+		dom_string_unref(s);
 
 		if (inline_style == NULL)
 			return NULL;
@@ -1282,12 +1510,14 @@ bool box_a(BOX_SPECIAL_PARAMS)
 {
 	bool ok;
 	nsurl *url;
-	xmlChar *s;
+	dom_string *s;
+	dom_exception err;
 
-	if ((s = xmlGetProp(n, (const xmlChar *) "href"))) {
-		ok = box_extract_link((const char *) s,
+	err = dom_element_get_attribute(n, kstr_href, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		ok = box_extract_link(dom_string_data(s),
 				content->base_url, &url);
-		xmlFree(s);
+		dom_string_unref(s);
 		if (!ok)
 			return false;
 		if (url) {
@@ -1298,16 +1528,15 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	}
 
 	/* name and id share the same namespace */
-	s = xmlGetProp(n, (const xmlChar *) "name");
-	if (s) {
-		lwc_error lerror;
+	err = dom_element_get_attribute(n, kstr_name, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
 		lwc_string *lwc_name;
 
-		lerror = lwc_intern_string((const char *) s,
-				strlen((const char *) s), &lwc_name);
-		xmlFree(s);
+		err = dom_string_intern(s, &lwc_name);
 
-		if (lerror == lwc_error_ok) {
+		dom_string_unref(s);
+
+		if (err == DOM_NO_ERR) {
 			/* name replaces existing id
 			 * TODO: really? */
 			if (box->id != NULL)
@@ -1318,27 +1547,29 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	}
 
 	/* target frame [16.3] */
-	if ((s = xmlGetProp(n, (const xmlChar *) "target"))) {
-		if (!strcasecmp((const char *) s, "_blank"))
+	err = dom_element_get_attribute(n, kstr_target, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		if (!strcasecmp(dom_string_data(s), "_blank"))
 			box->target = TARGET_BLANK;
-		else if (!strcasecmp((const char *) s, "_top"))
+		else if (!strcasecmp(dom_string_data(s), "_top"))
 			box->target = TARGET_TOP;
-		else if (!strcasecmp((const char *) s, "_parent"))
+		else if (!strcasecmp(dom_string_data(s), "_parent"))
 			box->target = TARGET_PARENT;
-		else if (!strcasecmp((const char *) s, "_self"))
+		else if (!strcasecmp(dom_string_data(s), "_self"))
 			/* the default may have been overridden by a
 			 * <base target=...>, so this is different to 0 */
 			box->target = TARGET_SELF;
 		else {
 			/* 6.16 says that frame names must begin with [a-zA-Z]
 			 * This doesn't match reality, so just take anything */
-			box->target = talloc_strdup(content, (const char *) s);
+			box->target = talloc_strdup(content, 
+					dom_string_data(s));
 			if (!box->target) {
-				xmlFree(s);
+				dom_string_unref(s);
 				return false;
 			}
 		}
-		xmlFree(s);
+		dom_string_unref(s);
 	}
 
 	return true;
@@ -1352,9 +1583,9 @@ bool box_a(BOX_SPECIAL_PARAMS)
 bool box_image(BOX_SPECIAL_PARAMS)
 {
 	bool ok;
-	char *s;
+	dom_string *s;
+	dom_exception err;
 	nsurl *url;
-	xmlChar *alt, *src;
 	enum css_width_e wtype;
 	enum css_height_e htype;
 	css_fixed value = 0;
@@ -1362,18 +1593,19 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	css_unit hunit = CSS_UNIT_PX;
 
 	if (box->style && css_computed_display(box->style, 
-			n->parent == NULL) == CSS_DISPLAY_NONE)
+			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
 	/* handle alt text */
-	if ((alt = xmlGetProp(n, (const xmlChar *) "alt"))) {
-		s = squash_whitespace((const char *) alt);
-		xmlFree(alt);
-		if (!s)
+	err = dom_element_get_attribute(n, kstr_alt, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		char *alt = squash_whitespace(dom_string_data(s));
+		dom_string_unref(s);
+		if (alt == NULL)
 			return false;
-		box->text = talloc_strdup(content, s);
-		free(s);
-		if (!box->text)
+		box->text = talloc_strdup(content, alt);
+		free(alt);
+		if (box->text == NULL)
 			return false;
 		box->length = strlen(box->text);
 	}
@@ -1389,12 +1621,19 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		box->usemap++;
 
 	/* get image URL */
-	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
+	err = dom_element_get_attribute(n, kstr_src, &s);
+	if (err != DOM_NO_ERR || s == NULL)
 		return true;
-	if (!box_extract_link((char *) src, content->base_url, &url))
+
+	if (box_extract_link(dom_string_data(s), content->base_url, 
+			&url) == false) {
+		dom_string_unref(s);
 		return false;
-	xmlFree(src);
-	if (!url)
+	}
+
+	dom_string_unref(s);
+
+	if (url == NULL)
 		return true;
 
 	/* start fetch */
@@ -1442,73 +1681,85 @@ bool box_object(BOX_SPECIAL_PARAMS)
 {
 	struct object_params *params;
 	struct object_param *param;
-	xmlChar *codebase, *classid, *data;
+	dom_string *codebase, *classid, *data;
 	dom_node *c;
+	dom_exception err;
 
 	if (box->style && css_computed_display(box->style, 
-			n->parent == NULL) == CSS_DISPLAY_NONE)
+			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
-	if (!box_get_attribute(n, "usemap", content, &box->usemap))
+	if (box_get_attribute(n, "usemap", content, &box->usemap) == false)
 		return false;
 	if (box->usemap && box->usemap[0] == '#')
 		box->usemap++;
 
 	params = talloc(content, struct object_params);
-	if (!params)
+	if (params == NULL)
 		return false;
 
 	talloc_set_destructor(params, box_object_talloc_destructor);
 
-	params->data = 0;
-	params->type = 0;
-	params->codetype = 0;
-	params->codebase = 0;
-	params->classid = 0;
-	params->params = 0;
+	params->data = NULL;
+	params->type = NULL;
+	params->codetype = NULL;
+	params->codebase = NULL;
+	params->classid = NULL;
+	params->params = NULL;
 
 	/* codebase, classid, and data are URLs
 	 * (codebase is the base for the other two) */
-	if ((codebase = xmlGetProp(n, (const xmlChar *) "codebase"))) {
-		if (!box_extract_link((char *) codebase, content->base_url,
-				&params->codebase))
+	err = dom_element_get_attribute(n, kstr_codebase, &codebase);
+	if (err == DOM_NO_ERR && codebase != NULL) {
+		if (box_extract_link(dom_string_data(codebase), 
+				content->base_url, 
+				&params->codebase) == false) {
+			dom_string_unref(codebase);
 			return false;
-		xmlFree(codebase);
+		}
+		dom_string_unref(codebase);
 	}
-	if (!params->codebase)
+	if (params->codebase == NULL)
 		params->codebase = nsurl_ref(content->base_url);
 
-	if ((classid = xmlGetProp(n, (const xmlChar *) "classid"))) {
-		if (!box_extract_link((char *) classid, params->codebase,
-				&params->classid))
+	err = dom_element_get_attribute(n, kstr_classid, &classid);
+	if (err == DOM_NO_ERR && classid != NULL) {
+		if (box_extract_link(dom_string_data(classid), params->codebase,
+				&params->classid) == false) {
+			dom_string_unref(classid);
 			return false;
-		xmlFree(classid);
+		}
+		dom_string_unref(classid);
 	}
 
-	if ((data = xmlGetProp(n, (const xmlChar *) "data"))) {
-		if (!box_extract_link((char *) data, params->codebase,
-				&params->data))
+	err = dom_element_get_attribute(n, kstr_data, &data);
+	if (err == DOM_NO_ERR && data != NULL) {
+		if (box_extract_link(dom_string_data(data), params->codebase,
+				&params->data)) {
+			dom_string_unref(data);
 			return false;
-		xmlFree(data);
+		}
+		dom_string_unref(data);
 	}
 
-	if (!params->classid && !params->data)
+	if (params->classid == NULL && params->data == NULL)
 		/* nothing to embed; ignore */
 		return true;
 
 	/* Don't include ourself */
-	if (params->classid && nsurl_compare(content->base_url,
+	if (params->classid != NULL && nsurl_compare(content->base_url,
 			params->classid, NSURL_COMPLETE))
 		return true;
 
-	if (params->data && nsurl_compare(content->base_url,
+	if (params->data != NULL && nsurl_compare(content->base_url,
 			params->data, NSURL_COMPLETE))
 		return true;
 
 	/* codetype and type are MIME types */
-	if (!box_get_attribute(n, "codetype", params, &params->codetype))
+	if (box_get_attribute(n, "codetype", params, 
+			&params->codetype) == false)
 		return false;
-	if (!box_get_attribute(n, "type", params, &params->type))
+	if (box_get_attribute(n, "type", params, &params->type) == false)
 		return false;
 
 	/* classid && !data => classid is used (consult codetype)
@@ -1555,40 +1806,92 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	}
 
 	/* add parameters to linked list */
-	for (c = n->children; c; c = c->next) {
-		if (c->type != XML_ELEMENT_NODE)
-			continue;
-		if (strcmp((const char *) c->name, "param") != 0)
-			/* The first non-param child is the start of the alt
-			 * html. Therefore, we should break out of this loop. */
-			break;
+	err = dom_node_get_first_child(n, &c);
+	if (err != DOM_NO_ERR)
+		return false;
 
-		param = talloc(params, struct object_param);
-		if (!param)
-			return false;
-		param->name = 0;
-		param->value = 0;
-		param->type = 0;
-		param->valuetype = 0;
-		param->next = 0;
+	while (c != NULL) {
+		dom_node *next;
+		dom_node_type type;
 
-		if (!box_get_attribute(c, "name", param, &param->name))
+		err = dom_node_get_node_type(c, &type);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(c);
 			return false;
-		if (!box_get_attribute(c, "value", param, &param->value))
-			return false;
-		if (!box_get_attribute(c, "type", param, &param->type))
-			return false;
-		if (!box_get_attribute(c, "valuetype", param,
-				&param->valuetype))
-			return false;
-		if (!param->valuetype) {
-			param->valuetype = talloc_strdup(param, "data");
-			if (!param->valuetype)
-				return false;
 		}
 
-		param->next = params->params;
-		params->params = param;
+		if (type == DOM_ELEMENT_NODE) {
+			dom_string *name;
+
+			err = dom_node_get_node_name(c, &name);
+			if (err != DOM_NO_ERR) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			if (strcmp(dom_string_data(name), "param") != 0) {
+				/* The first non-param child is the start of 
+				 * the alt html. Therefore, we should break 
+				 * out of this loop. */
+				dom_node_unref(c);
+				break;
+			}
+
+			param = talloc(params, struct object_param);
+			if (param == NULL) {
+				dom_node_unref(c);
+				return false;
+			}
+			param->name = NULL;
+			param->value = NULL;
+			param->type = NULL;
+			param->valuetype = NULL;
+			param->next = NULL;
+
+			if (box_get_attribute(c, "name", param, 
+					&param->name) == false) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			if (box_get_attribute(c, "value", param, 
+					&param->value) == false) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			if (box_get_attribute(c, "type", param, 
+					&param->type) == false) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			if (box_get_attribute(c, "valuetype", param,
+					&param->valuetype) == false) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			if (param->valuetype == NULL) {
+				param->valuetype = talloc_strdup(param, "data");
+				if (param->valuetype == NULL) {
+					dom_node_unref(c);
+					return false;
+				}
+			}
+
+			param->next = params->params;
+			params->params = param;
+		}
+
+		err = dom_node_get_next_sibling(c, &next);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(c);
+			return false;
+		}
+
+		dom_node_unref(c);
+		c = next;
 	}
 
 	box->object_params = params;
@@ -1657,62 +1960,71 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		html_content *content) {
 	unsigned int row, col, index, i;
 	unsigned int rows = 1, cols = 1;
-	char *s;
+	dom_string *s;
+	dom_exception err;
 	nsurl *url;
 	struct frame_dimension *row_height = 0, *col_width = 0;
-	dom_node *c;
+	dom_node *c, *next;
 	struct content_html_frames *frame;
 	bool default_border = true;
 	colour default_border_colour = 0x000000;
 
 	/* parse rows and columns */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "rows"))) {
-		row_height = box_parse_multi_lengths(s, &rows);
-		xmlFree(s);
-		if (!row_height)
+	err = dom_element_get_attribute(n, kstr_rows, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		row_height = box_parse_multi_lengths(dom_string_data(s), &rows);
+		dom_string_unref(s);
+		if (row_height == NULL)
 			return false;
 	} else {
 		row_height = calloc(1, sizeof(struct frame_dimension));
-		if (!row_height)
+		if (row_height == NULL)
 			return false;
 		row_height->value = 100;
 		row_height->unit = FRAME_DIMENSION_PERCENT;
 	}
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "cols"))) {
-		col_width = box_parse_multi_lengths(s, &cols);
-		xmlFree(s);
-		if (!col_width)
+	err = dom_element_get_attribute(n, kstr_cols, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		col_width = box_parse_multi_lengths(dom_string_data(s), &cols);
+		dom_string_unref(s);
+		if (col_width == NULL)
 			return false;
 	} else {
 		col_width = calloc(1, sizeof(struct frame_dimension));
-		if (!col_width)
+		if (col_width == NULL)
 			return false;
 		col_width->value = 100;
 		col_width->unit = FRAME_DIMENSION_PERCENT;
 	}
 
 	/* common extension: border="0|1" to control all children */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "border"))) {
-		if ((s[0] == '0') && (s[1] == '\0'))
+	err = dom_element_get_attribute(n, kstr_border, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		if ((dom_string_data(s)[0] == '0') && 
+				(dom_string_data(s)[1] == '\0'))
 			default_border = false;
-		xmlFree(s);
+		dom_string_unref(s);
 	}
+
 	/* common extension: frameborder="yes|no" to control all children */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "frameborder"))) {
-	  	if (!strcasecmp(s, "no"))
+	err = dom_element_get_attribute(n, kstr_frameborder, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+	  	if (strcasecmp(dom_string_data(s), "no") == 0)
 	  		default_border = false;
-		xmlFree(s);
+		dom_string_unref(s);
 	}
+
 	/* common extension: bordercolor="#RRGGBB|<named colour>" to control
 	 *all children */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
+	err = dom_element_get_attribute(n, kstr_bordercolor, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
 		css_color color;
 
-		if (nscss_parse_colour((const char *) s, &color))
+		if (nscss_parse_colour(dom_string_data(s), &color))
 			default_border_colour = nscss_color_to_ns(color);
 
-		xmlFree(s);
+		dom_string_unref(s);
 	}
 
 	/* update frameset and create default children */
@@ -1747,15 +2059,46 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	free(row_height);
 
 	/* create the frameset windows */
-	c = n->children;
-	for (row = 0; c && row < rows; row++) {
-		for (col = 0; c && col < cols; col++) {
-			while (c && !(c->type == XML_ELEMENT_NODE && (
-				strcmp((const char *) c->name, "frame") == 0 ||
-				strcmp((const char *) c->name, "frameset") == 0
-					)))
-				c = c->next;
-			if (!c)
+	err = dom_node_get_first_child(n, &c);
+	if (err != DOM_NO_ERR)
+		return false;
+
+	for (row = 0; c != NULL && row < rows; row++) {
+		for (col = 0; c != NULL && col < cols; col++) {
+			while (c != NULL) {
+				dom_node_type type;
+				dom_string *name;
+
+				err = dom_node_get_node_type(c, &type);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(c);
+					return false;
+				}
+
+				err = dom_node_get_node_name(c, &name);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(c);
+					return false;
+				}
+
+				if (type != DOM_ELEMENT_NODE ||
+						(strcmp(dom_string_data(name), 
+							"frame") != 0 &&
+						strcmp(dom_string_data(name), 
+							"frameset") != 0)) {
+					err = dom_node_get_next_sibling(c, 
+							&next);
+					if (err != DOM_NO_ERR) {
+						dom_node_unref(c);
+						return false;
+					}
+
+					dom_node_unref(c);
+					c = next;
+				}
+			}
+
+			if (c == NULL)
 				break;
 
 			/* get current frame */
@@ -1763,24 +2106,45 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			frame = &f->children[index];
 
 			/* nest framesets */
-			if (strcmp((const char *) c->name, "frameset") == 0) {
+			err = dom_node_get_node_name(c, &s);
+			if (err != DOM_NO_ERR) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			if (strcmp(dom_string_data(s), "frameset") == 0) {
+				dom_string_unref(s);
 				frame->border = 0;
-				if (!box_create_frameset(frame, c, content))
+				if (box_create_frameset(frame, c, 
+						content) == false) {
+					dom_node_unref(c);
 					return false;
-				c = c->next;
+				}
+
+				err = dom_node_get_next_sibling(c, &next);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(c);
+					return false;
+				}
+
+				dom_node_unref(c);
+				c = next;
 				continue;
 			}
 
+			dom_string_unref(s);
+
 			/* get frame URL (not required) */
 			url = NULL;
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "src"))) {
-				box_extract_link(s, content->base_url, &url);
-				xmlFree(s);
+			err = dom_element_get_attribute(c, kstr_src, &s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				box_extract_link(dom_string_data(s), 
+						content->base_url, &url);
+				dom_string_unref(s);
 			}
 
 			/* copy url */
-			if (url) {
+			if (url != NULL) {
 			  	/* no self-references */
 			  	if (nsurl_compare(content->base_url, url,
 						NSURL_COMPLETE) == false)
@@ -1789,51 +2153,70 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			}
 
 			/* fill in specified values */
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "name"))) {
-				frame->name = talloc_strdup(content, s);
-				xmlFree(s);
+			err = dom_element_get_attribute(c, kstr_name, &s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				frame->name = talloc_strdup(content, 
+						dom_string_data(s));
+				dom_string_unref(s);
 			}
-			frame->no_resize = xmlHasProp(c,
-					(const xmlChar *) "noresize") != NULL;
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "frameborder"))) {
-				i = atoi(s);
+
+			dom_element_has_attribute(c, kstr_noresize, 
+					&frame->no_resize);
+
+			err = dom_element_get_attribute(c, kstr_frameborder, 
+					&s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				i = atoi(dom_string_data(s));
 				frame->border = (i != 0);
-				xmlFree(s);
+				dom_string_unref(s);
 			}
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "scrolling"))) {
-				if (!strcasecmp(s, "yes"))
+
+			err = dom_element_get_attribute(c, kstr_scrolling, &s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				if (strcasecmp(dom_string_data(s), "yes") == 0)
 					frame->scrolling = SCROLLING_YES;
-				else if (!strcasecmp(s, "no"))
+				else if (strcasecmp(dom_string_data(s), 
+						"no") == 0)
 					frame->scrolling = SCROLLING_NO;
-				xmlFree(s);
+				dom_string_unref(s);
 			}
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "marginwidth"))) {
-				frame->margin_width = atoi(s);
-				xmlFree(s);
+
+			err = dom_element_get_attribute(c, kstr_marginwidth, 
+					&s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				frame->margin_width = atoi(dom_string_data(s));
+				dom_string_unref(s);
 			}
-			if ((s = (char *) xmlGetProp(c,
-					(const xmlChar *) "marginheight"))) {
-				frame->margin_height = atoi(s);
-				xmlFree(s);
+
+			err = dom_element_get_attribute(c, kstr_marginheight,
+					&s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				frame->margin_height = atoi(dom_string_data(s));
+				dom_string_unref(s);
 			}
-			if ((s = (char *) xmlGetProp(c, (const xmlChar *)
-							"bordercolor"))) {
+
+			err = dom_element_get_attribute(c, kstr_bordercolor, 
+					&s);
+			if (err == DOM_NO_ERR && s != NULL) {
 				css_color color;
 
-				if (nscss_parse_colour((const char *) s, 
+				if (nscss_parse_colour(dom_string_data(s), 
 						&color))
 					frame->border_colour =
 						nscss_color_to_ns(color);
 
-				xmlFree(s);
+				dom_string_unref(s);
 			}
 
 			/* advance */
-			c = c->next;
+			err = dom_node_get_next_sibling(c, &next);
+			if (err != DOM_NO_ERR) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			dom_node_unref(c);
+			c = next;
 		}
 	}
 
@@ -1865,12 +2248,13 @@ static int box_iframes_talloc_destructor(struct content_html_iframe *f)
 bool box_iframe(BOX_SPECIAL_PARAMS)
 {
 	nsurl *url;
-	char *s;
+	dom_string *s;
+	dom_exception err;
 	struct content_html_iframe *iframe;
 	int i;
 
 	if (box->style && css_computed_display(box->style, 
-			n->parent == NULL) == CSS_DISPLAY_NONE)
+			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
 	if (box->style && css_computed_visibility(box->style) ==
@@ -1881,15 +2265,16 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* get frame URL */
-	if (!(s = (char *) xmlGetProp(n,
-			(const xmlChar *) "src")))
+	err = dom_element_get_attribute(n, kstr_src, &s);
+	if (err != DOM_NO_ERR || s == NULL)
 		return true;
-	if (!box_extract_link(s, content->base_url, &url)) {
-		xmlFree(s);
+	if (box_extract_link(dom_string_data(s), content->base_url, 
+			&url) == false) {
+		dom_string_unref(s);
 		return false;
 	}
-	xmlFree(s);
-	if (!url)
+	dom_string_unref(s);
+	if (url == NULL)
 		return true;
 
 	/* don't include ourself */
@@ -1900,7 +2285,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 	/* create a new iframe */
 	iframe = talloc(content, struct content_html_iframe);
-	if (!iframe) {
+	if (iframe == NULL) {
 		nsurl_unref(url);
 		return false;
 	}
@@ -1920,37 +2305,48 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	content->iframe = iframe;
 
 	/* fill in specified values */
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "name"))) {
-		iframe->name = talloc_strdup(content, s);
-		xmlFree(s);
+	err = dom_element_get_attribute(n, kstr_name, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		iframe->name = talloc_strdup(content, dom_string_data(s));
+		dom_string_unref(s);
 	}
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "frameborder"))) {
-		i = atoi(s);
+
+	err = dom_element_get_attribute(n, kstr_frameborder, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		i = atoi(dom_string_data(s));
 		iframe->border = (i != 0);
-		xmlFree(s);
+		dom_string_unref(s);
 	}
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "bordercolor"))) {
+
+	err = dom_element_get_attribute(n, kstr_bordercolor, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
 		css_color color;
 
-		if (nscss_parse_colour(s, &color))
+		if (nscss_parse_colour(dom_string_data(s), &color))
 			iframe->border_colour = nscss_color_to_ns(color);
 
-		xmlFree(s);
+		dom_string_unref(s);
 	}
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "scrolling"))) {
-		if (!strcasecmp(s, "yes"))
+
+	err = dom_element_get_attribute(n, kstr_scrolling, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		if (strcasecmp(dom_string_data(s), "yes") == 0)
 			iframe->scrolling = SCROLLING_YES;
-		else if (!strcasecmp(s, "no"))
+		else if (strcasecmp(dom_string_data(s), "no") == 0)
 			iframe->scrolling = SCROLLING_NO;
-		xmlFree(s);
+		dom_string_unref(s);
 	}
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "marginwidth"))) {
-		iframe->margin_width = atoi(s);
-		xmlFree(s);
+
+	err = dom_element_get_attribute(n, kstr_marginwidth, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		iframe->margin_width = atoi(dom_string_data(s));
+		dom_string_unref(s);
 	}
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "marginheight"))) {
-		iframe->margin_height = atoi(s);
-		xmlFree(s);
+
+	err = dom_element_get_attribute(n, kstr_marginheight, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		iframe->margin_height = atoi(dom_string_data(s));
+		dom_string_unref(s);
 	}
 
 	/* box */
@@ -1971,46 +2367,49 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 bool box_input(BOX_SPECIAL_PARAMS)
 {
 	struct form_control *gadget = NULL;
-	char *s, *type;
+	dom_string *type = NULL;
+	dom_exception err;
 	nsurl *url;
 	nserror error;
 
-	type = (char *) xmlGetProp(n, (const xmlChar *) "type");
+	dom_element_get_attribute(n, kstr_type, &type);
 
 	gadget = binding_get_control_for_node(content->parser_binding, n);
-	if (!gadget)
+	if (gadget == NULL)
 		goto no_memory;
 	box->gadget = gadget;
 	gadget->box = box;
 
-	if (type && strcasecmp(type, "password") == 0) {
-		if (!box_input_text(n, content, box, 0, true))
+	if (type && strcasecmp(dom_string_data(type), "password") == 0) {
+		if (box_input_text(n, content, box, 0, true) == false)
 			goto no_memory;
-	} else if (type && strcasecmp(type, "file") == 0) {
+	} else if (type && strcasecmp(dom_string_data(type), "file") == 0) {
 		box->type = BOX_INLINE_BLOCK;
-	} else if (type && strcasecmp(type, "hidden") == 0) {
+	} else if (type && strcasecmp(dom_string_data(type), "hidden") == 0) {
 		/* no box for hidden inputs */
 		box->type = BOX_NONE;
-	} else if (type && (strcasecmp(type, "checkbox") == 0 ||
-			strcasecmp(type, "radio") == 0)) {
-	} else if (type && (strcasecmp(type, "submit") == 0 ||
-			strcasecmp(type, "reset") == 0 ||
-			strcasecmp(type, "button") == 0)) {
+	} else if (type && 
+			(strcasecmp(dom_string_data(type), "checkbox") == 0 ||
+			strcasecmp(dom_string_data(type), "radio") == 0)) {
+	} else if (type && 
+			(strcasecmp(dom_string_data(type), "submit") == 0 ||
+			strcasecmp(dom_string_data(type), "reset") == 0 ||
+			strcasecmp(dom_string_data(type), "button") == 0)) {
 		struct box *inline_container, *inline_box;
 
-		if (!box_button(n, content, box, 0))
+		if (box_button(n, content, box, 0) == false)
 			goto no_memory;
 
 		inline_container = box_create(NULL, 0, false, 0, 0, 0, 0,
 				content);
-		if (!inline_container)
+		if (inline_container == NULL)
 			goto no_memory;
 
 		inline_container->type = BOX_INLINE_CONTAINER;
 
 		inline_box = box_create(NULL, box->style, false, 0, 0,
 				box->title, 0, content);
-		if (!inline_box)
+		if (inline_box == NULL)
 			goto no_memory;
 
 		inline_box->type = BOX_TEXT;
@@ -2027,7 +2426,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		else
 			inline_box->text = talloc_strdup(content, "Button");
 
-		if (!inline_box->text)
+		if (inline_box->text == NULL)
 			goto no_memory;
 
 		inline_box->length = strlen(inline_box->text);
@@ -2035,16 +2434,19 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		box_add_child(inline_container, inline_box);
 
 		box_add_child(box, inline_container);
-	} else if (type && strcasecmp(type, "image") == 0) {
+	} else if (type && strcasecmp(dom_string_data(type), "image") == 0) {
 		gadget->type = GADGET_IMAGE;
 
 		if (box->style && css_computed_display(box->style,
-				n->parent == NULL) != CSS_DISPLAY_NONE &&
+				box_is_root(n)) != CSS_DISPLAY_NONE &&
 		    nsoption_bool(foreground_images) == true) {
-			if ((s = (char *) xmlGetProp(n,
-					(const xmlChar*) "src"))) {
-				error = nsurl_join(content->base_url, s, &url);
-				xmlFree(s);
+			dom_string *s;
+
+			err = dom_element_get_attribute(n, kstr_src, &s);
+			if (err == DOM_NO_ERR && s != NULL) {
+				error = nsurl_join(content->base_url, 
+						dom_string_data(s), &url);
+				dom_string_unref(s);
 				if (error != NSERROR_OK)
 					goto no_memory;
 
@@ -2067,19 +2469,20 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		}
 	} else {
 		/* the default type is "text" */
-		if (!box_input_text(n, content, box, 0, false))
+		if (box_input_text(n, content, box, 0, false) == false)
 			goto no_memory;
 	}
 
 	if (type)
-		xmlFree(type);
+		dom_string_unref(type);
 
 	*convert_children = false;
 	return true;
 
 no_memory:
 	if (type)
-		xmlFree(type);
+		dom_string_unref(type);
+
 	return false;
 }
 
@@ -2163,24 +2566,88 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	struct box *inline_box;
 	struct form_control *gadget;
 	dom_node *c, *c2;
+	dom_node *next, *next2;
+	dom_exception err;
 
 	gadget = binding_get_control_for_node(content->parser_binding, n);
-	if (!gadget)
+	if (gadget == NULL)
 		return false;
 
-	for (c = n->children; c; c = c->next) {
-		if (strcmp((const char *) c->name, "option") == 0) {
-			if (!box_select_add_option(gadget, c))
-				goto no_memory;
-		} else if (strcmp((const char *) c->name, "optgroup") == 0) {
-			for (c2 = c->children; c2; c2 = c2->next) {
-				if (strcmp((const char *) c2->name,
-						"option") == 0) {
-					if (!box_select_add_option(gadget, c2))
-						goto no_memory;
-				}
-			}
+	err = dom_node_get_first_child(n, &c);
+	if (err != DOM_NO_ERR)
+		return false;
+
+	while (c != NULL) {
+		dom_string *name;
+
+		err = dom_node_get_node_name(c, &name);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(c);
+			return false;
 		}
+
+		if (strcmp(dom_string_data(name), "option") == 0) {
+			dom_string_unref(name);
+
+			if (box_select_add_option(gadget, c) == false) {
+				dom_node_unref(c);
+				goto no_memory;
+			}
+		} else if (strcmp(dom_string_data(name), "optgroup") == 0) {
+			dom_string_unref(name);
+
+			err = dom_node_get_first_child(c, &c2);
+			if (err != DOM_NO_ERR) {
+				dom_node_unref(c);
+				return false;
+			}
+
+			while (c2 != NULL) {
+				dom_string *c2_name;
+
+				err = dom_node_get_node_name(c2, &c2_name);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(c2);
+					dom_node_unref(c);
+					return false;
+				}
+				
+				if (strcmp(dom_string_data(c2_name),
+						"option") == 0) {
+					dom_string_unref(c2_name);
+
+					if (box_select_add_option(gadget, 
+							c2) == false) {
+						dom_node_unref(c2);
+						dom_node_unref(c);
+						goto no_memory;
+					}
+				} else {
+					dom_string_unref(c2_name);
+				}
+
+				err = dom_node_get_next_sibling(c2, &next2);
+				if (err != DOM_NO_ERR) {
+					dom_node_unref(c2);
+					dom_node_unref(c);
+					return false;
+				}
+
+				dom_node_unref(c2);
+				c2 = next2;
+			}
+		} else {
+			dom_string_unref(name);
+		}
+	
+		err = dom_node_get_next_sibling(c, &next);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(c);
+			return false;
+		}
+
+		dom_node_unref(c);
+		c = next;
 	}
 
 	if (gadget->data.select.num_items == 0) {
@@ -2193,18 +2660,18 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	gadget->box = box;
 
 	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content);
-	if (!inline_container)
+	if (inline_container == NULL)
 		goto no_memory;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
 			content);
-	if (!inline_box)
+	if (inline_box == NULL)
 		goto no_memory;
 	inline_box->type = BOX_TEXT;
 	box_add_child(inline_container, inline_box);
 	box_add_child(box, inline_container);
 
-	if (!gadget->data.select.multiple &&
+	if (gadget->data.select.multiple == false &&
 			gadget->data.select.num_selected == 0) {
 		gadget->data.select.current = gadget->data.select.items;
 		gadget->data.select.current->initial_selected =
@@ -2221,7 +2688,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	else
 		inline_box->text = talloc_strdup(content,
 				messages_get("Form_Many"));
-	if (!inline_box->text)
+	if (inline_box->text == NULL)
 		goto no_memory;
 
 	inline_box->length = strlen(inline_box->text);
@@ -2244,37 +2711,43 @@ no_memory:
 
 bool box_select_add_option(struct form_control *control, dom_node *n)
 {
-	char *value = 0;
-	char *text = 0;
-	char *text_nowrap = 0;
+	char *value = NULL;
+	char *text = NULL;
+	char *text_nowrap = NULL;
 	bool selected;
-	xmlChar *content;
-	char *s;
+	dom_string *content, *s;
+	dom_exception err;
 
-	content = xmlNodeGetContent(n);
-	if (!content)
-		goto no_memory;
-	text = squash_whitespace((const char *) content);
-	xmlFree(content);
-	if (!text)
+	err = dom_node_get_text_content(n, &content);
+	if (err != DOM_NO_ERR)
+		return false;
+
+	text = squash_whitespace(dom_string_data(content));
+
+	dom_string_unref(content);
+
+	if (text == NULL)
 		goto no_memory;
 
-	if ((s = (char *) xmlGetProp(n, (const xmlChar *) "value"))) {
-		value = strdup(s);
-		xmlFree(s);
-	} else
+	err = dom_element_get_attribute(n, kstr_value, &s);
+	if (err == DOM_NO_ERR && s != NULL) {
+		value = strdup(dom_string_data(s));
+		dom_string_unref(s);
+	} else {
 		value = strdup(text);
-	if (!value)
+	}
+
+	if (value == NULL)
 		goto no_memory;
 
-	selected = xmlHasProp(n, (const xmlChar *) "selected") != NULL;
+	dom_element_has_attribute(n, kstr_selected, &selected);
 
 	/* replace spaces/TABs with hard spaces to prevent line wrapping */
 	text_nowrap = cnv_space2nbsp(text);
-	if (!text_nowrap)
+	if (text_nowrap == NULL)
 		goto no_memory;
 
-	if (!form_add_option(control, value, text_nowrap, selected))
+	if (form_add_option(control, value, text_nowrap, selected) == false)
 		goto no_memory;
 
 	free(text);
@@ -2301,78 +2774,52 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	 * Consecutive BR may not be present. These constraints are satisfied
 	 * by using a 0-length TEXT for blank lines. */
 
-	xmlChar *current, *string;
-	dom_node *n2;
-	xmlBufferPtr buf;
-	xmlParserCtxtPtr ctxt;
+	const char *current;
+	dom_string *area_data = NULL;
+	dom_exception err;
 	struct box *inline_container, *inline_box, *br_box;
 	char *s;
 	size_t len;
 
 	box->type = BOX_INLINE_BLOCK;
 	box->gadget = binding_get_control_for_node(content->parser_binding, n);
-	if (!box->gadget)
+	if (box->gadget == NULL)
 		return false;
 	box->gadget->box = box;
 
 	inline_container = box_create(NULL, 0, false, 0, 0, box->title, 0,
 			content);
-	if (!inline_container)
+	if (inline_container == NULL)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	box_add_child(box, inline_container);
 
-	/** \todo Is it really necessary to reparse the content of a
-	 * textarea element to remove entities? Hubbub will do that for us.
-	 */
-	n2 = n->children;
-	buf = xmlBufferCreate();
-	while(n2) {
-		int ret = xmlNodeDump(buf, n2->doc, n2, 0, 0);
-		if (ret == -1) {
-			xmlBufferFree(buf);
-			return false;
-		}
-		n2 = n2->next;
+	err = dom_node_get_text_content(n, &area_data);
+	if (err != DOM_NO_ERR)
+		return false;
+
+	if (area_data == NULL) {
+		current = dom_string_data(area_data);
+	} else {
+		/* No content, or failed reading it: use a blank string */
+		current = "";
 	}
 
-	ctxt = xmlCreateDocParserCtxt(buf->content);
-	string = current = NULL;
-	if (ctxt) {
-		string = current = xmlStringDecodeEntities(ctxt,
-				buf->content,
-				XML_SUBSTITUTE_REF,
-				0, 0, 0);
-		xmlFreeParserCtxt(ctxt);
-	}
-
-	if (!string) {
-		/* If we get here, either the parser context failed to be
-		 * created or we were unable to decode the entities in the
-		 * buffer. Therefore, try to create a blank string in order
-		 * to recover. */
-		string = current = xmlStrdup((const xmlChar *) "");
-		if (!string) {
-			xmlBufferFree(buf);
-			return false;
-		}
-	}
-
-	while (1) {
+	while (true) {
 		/* BOX_TEXT */
-		len = strcspn((const char *) current, "\r\n");
-		s = talloc_strndup(content, (const char *) current, len);
-		if (!s) {
-			xmlFree(string);
-			xmlBufferFree(buf);
+		len = strcspn(current, "\r\n");
+		s = talloc_strndup(content, current, len);
+		if (s == NULL) {
+			if (area_data != NULL)
+				dom_string_unref(area_data);
 			return false;
 		}
 
 		inline_box = box_create(NULL, box->style, false, 0, 0,
 				box->title, 0, content);
-		if (!inline_box) {
-			xmlFree(string);
-			xmlBufferFree(buf);
+		if (inline_box == NULL) {
+			if (area_data != NULL)
+				dom_string_unref(area_data);
 			return false;
 		}
 		inline_box->type = BOX_TEXT;
@@ -2388,9 +2835,9 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		/* BOX_BR */
 		br_box = box_create(NULL, box->style, false, 0, 0, box->title,
 				0, content);
-		if (!br_box) {
-			xmlFree(string);
-			xmlBufferFree(buf);
+		if (br_box == NULL) {
+			if (area_data != NULL)
+				dom_string_unref(area_data);
 			return false;
 		}
 		br_box->type = BOX_BR;
@@ -2402,8 +2849,8 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 			current++;
 	}
 
-	xmlFree(string);
-	xmlBufferFree(buf);
+	if (area_data != NULL)
+		dom_string_unref(area_data);
 
 	*convert_children = false;
 	return true;
@@ -2419,33 +2866,41 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 {
 	struct object_params *params;
 	struct object_param *param;
-	xmlChar *src;
-	xmlAttr *a;
+	dom_namednodemap *attrs;
+	unsigned long idx, num_attrs;
+	dom_string *src;
+	dom_exception err;
 
 	if (box->style && css_computed_display(box->style,
-			n->parent == NULL) == CSS_DISPLAY_NONE)
+			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
 	params = talloc(content, struct object_params);
-	if (!params)
+	if (params == NULL)
 		return false;
 
 	talloc_set_destructor(params, box_object_talloc_destructor);
 
-	params->data = 0;
-	params->type = 0;
-	params->codetype = 0;
-	params->codebase = 0;
-	params->classid = 0;
-	params->params = 0;
+	params->data = NULL;
+	params->type = NULL;
+	params->codetype = NULL;
+	params->codebase = NULL;
+	params->classid = NULL;
+	params->params = NULL;
 
 	/* src is a URL */
-	if (!(src = xmlGetProp(n, (const xmlChar *) "src")))
+	err = dom_element_get_attribute(n, kstr_src, &src);
+	if (err != DOM_NO_ERR || src == NULL)
 		return true;
-	if (!box_extract_link((char *) src, content->base_url, &params->data))
+	if (box_extract_link(dom_string_data(src), content->base_url, 
+			&params->data) == false) {
+		dom_string_unref(src);
 		return false;
-	xmlFree(src);
-	if (!params->data)
+	}
+
+	dom_string_unref(src);
+
+	if (params->data == NULL)
 		return true;
 
 	/* Don't include ourself */
@@ -2453,28 +2908,72 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 		return true;
 
 	/* add attributes as parameters to linked list */
-	for (a = n->properties; a; a = a->next) {
-		if (strcasecmp((const char *) a->name, "src") == 0)
+	err = dom_node_get_attributes(n, &attrs);
+	if (err != DOM_NO_ERR)
+		return false;
+
+	err = dom_namednodemap_get_length(attrs, &num_attrs);
+	if (err != DOM_NO_ERR) {
+		dom_namednodemap_unref(attrs);
+		return false;
+	}
+
+	for (idx = 0; idx < num_attrs; idx++) {
+		dom_attr *attr;
+		dom_string *name, *value;
+
+		err = dom_namednodemap_item(attrs, idx, &attr);
+		if (err != DOM_NO_ERR) {
+			dom_namednodemap_unref(attrs);
+			return false;
+		}
+
+		err = dom_attr_get_name(attr, &name);
+		if (err != DOM_NO_ERR) {
+			dom_namednodemap_unref(attrs);
+			return false;
+		}
+
+		if (strcasecmp(dom_string_data(name), "src") == 0) {
+			dom_string_unref(name);
 			continue;
-		if (!a->children || !a->children->content)
-			continue;
+		}
+
+		err = dom_attr_get_value(attr, &value);
+		if (err != DOM_NO_ERR) {
+			dom_string_unref(name);
+			dom_namednodemap_unref(attrs);
+			return false;
+		}
 
 		param = talloc(content, struct object_param);
-		if (!param)
+		if (param == NULL) {
+			dom_string_unref(value);
+			dom_string_unref(name);
+			dom_namednodemap_unref(attrs);
 			return false;
-		param->name = talloc_strdup(content, (const char *) a->name);
-		param->value = talloc_strdup(content,
-				(char *) a->children->content);
-		param->type = 0;
-		param->valuetype = talloc_strdup(content, "data");
-		param->next = 0;
+		}
 
-		if (!param->name || !param->value || !param->valuetype)
+		param->name = talloc_strdup(content, dom_string_data(name));
+		param->value = talloc_strdup(content, dom_string_data(value));
+		param->type = NULL;
+		param->valuetype = talloc_strdup(content, "data");
+		param->next = NULL;
+
+		dom_string_unref(value);
+		dom_string_unref(name);
+
+		if (param->name == NULL || param->value == NULL || 
+				param->valuetype == NULL) {
+			dom_namednodemap_unref(attrs);
 			return false;
+		}
 
 		param->next = params->params;
 		params->params = param;
 	}
+
+	dom_namednodemap_unref(attrs);
 
 	box->object_params = params;
 
@@ -2504,13 +3003,34 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 bool box_get_attribute(dom_node *n, const char *attribute,
 		void *context, char **value)
 {
-	xmlChar *s = xmlGetProp(n, (const xmlChar *) attribute);
-	if (!s)
-		return true;
-	*value = talloc_strdup(context, (const char *) s);
-	xmlFree(s);
-	if (!*value)
+	char *result;
+	dom_string *attr, *attr_name;
+	dom_exception err;
+
+	err = dom_string_create_interned((const uint8_t *) attribute, 
+			strlen(attribute), &attr_name);
+	if (err != DOM_NO_ERR)
 		return false;
+
+	err = dom_element_get_attribute(n, attr_name, &attr);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(attr_name);
+		return false;
+	}
+
+	dom_string_unref(attr_name);
+
+	if (attr != NULL) {
+		result = talloc_strdup(context, dom_string_data(attr));
+
+		dom_string_unref(attr);
+	
+		if (result == NULL)
+			return false;
+
+		*value = result;
+	}
+
 	return true;
 }
 
