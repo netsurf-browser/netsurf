@@ -57,7 +57,6 @@
 #include "desktop/js.h"
 
 #include "render/form.h"
-#include "render/html.h"
 #include "render/textplain.h"
 #include "utils/log.h"
 #include "utils/messages.h"
