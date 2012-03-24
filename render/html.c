@@ -28,6 +28,8 @@
 #include <strings.h>
 #include <stdlib.h>
 
+#include <dom/dom.h>
+
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
@@ -1418,15 +1420,13 @@ no_memory:
 static bool html_find_stylesheets(html_content *c, dom_node *html)
 {
 	content_type accept = CONTENT_CSS;
-	dom_node *node, next_node;
-	char *rel, *type, *media, *href;
+	dom_node *node;
 	unsigned int i = STYLESHEET_START;
 	union content_msg_data msg_data;
 	struct html_stylesheet *stylesheets;
 	hlcache_child_context child;
 	nserror ns_error;
 	nsurl *joined;
-	dom_exception exc; /* returned by libdom functions */
 
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
@@ -1493,86 +1493,153 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 
 	c->base.active++;
 
-
 	/* depth-first search the tree for link elements */
 
 	node = dom_node_ref(html); /* tree root */
 
 	while (node != NULL) {
-		bool has_children;
-		exc = dom_node_has_child_nodes(node, &has_children);
-		if (exc != DOM_NO_ERR)
-			break;
+		dom_node *next = NULL;
+		dom_node_type type;
+		dom_string *name;
+		dom_exception exc;
 
-		if (has_children) {  /* 1. children */
-			node = node->children;
-		} else if (node->next) {  /* 2. siblings */
-			node = node->next;
-		} else {  /* 3. ancestor siblings */
-			while (node && !node->next)
-				node = node->parent;
-			if (!node)
-				break;
-			node = node->next;
+		exc = dom_node_get_first_child(node, &next);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(node);
+			break;
 		}
 
-		assert(node);
+		if (next != NULL) {  /* 1. children */
+			dom_node_unref(node);
+			node = next;
+		} else {
+			exc = dom_node_get_next_sibling(node, &next);
+			if (exc != DOM_NO_ERR) {
+				dom_node_unref(node);
+				break;
+			}
 
-		if (node->type != XML_ELEMENT_NODE)
+			if (next != NULL) {  /* 2. siblings */
+				dom_node_unref(node);
+				node = next;
+			} else {  /* 3. ancestor siblings */
+				while (node != NULL) {
+					exc = dom_node_get_next_sibling(node, 
+							&next);
+					if (exc != DOM_NO_ERR) {
+						dom_node_unref(node);
+						node = NULL;
+						break;
+					}
+
+					if (next != NULL) {
+						dom_node_unref(next);
+						break;
+					}
+
+					exc = dom_node_get_parent_node(node,
+							&next);
+					if (exc != DOM_NO_ERR) {
+						dom_node_unref(node);
+						node = NULL;
+						break;
+					}
+
+					dom_node_unref(node);
+					node = next;
+				}
+
+				if (node == NULL)
+					break;
+
+				exc = dom_node_get_next_sibling(node, &next);
+				if (exc != DOM_NO_ERR) {
+					dom_node_unref(node);
+					break;
+				}
+
+				dom_node_unref(node);
+				node = next;
+			}
+		}
+
+		assert(node != NULL);
+
+		exc = dom_node_get_node_type(node, &type);
+		if (exc != DOM_NO_ERR || type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp((const char *) node->name, "link") == 0) {
+		exc = dom_node_get_node_name(node, &name);
+		if (exc != DOM_NO_ERR)
+			continue;
+
+		if (strcmp(dom_string_data(name), "link") == 0) {
+			dom_string *rel, *type_attr, *media, *href;
+
+			dom_string_unref(name);
+
 			/* rel=<space separated list, including 'stylesheet'> */
-			if ((rel = (char *) xmlGetProp(node,
-					(const xmlChar *) "rel")) == NULL)
+			exc = dom_element_get_attribute(node, 
+					html_dom_string_rel, &rel);
+			if (exc != DOM_NO_ERR || rel == NULL)
 				continue;
-			if (strcasestr(rel, "stylesheet") == 0) {
-				xmlFree(rel);
+
+			if (strcasestr(dom_string_data(rel), 
+					"stylesheet") == 0) {
+				dom_string_unref(rel);
 				continue;
-			} else if (strcasestr(rel, "alternate")) {
+			} else if (strcasestr(dom_string_data(rel), 
+					"alternate") != 0) {
 				/* Ignore alternate stylesheets */
-				xmlFree(rel);
+				dom_string_unref(rel);
 				continue;
 			}
-			xmlFree(rel);
+			dom_string_unref(rel);
 
-			/* type='text/css' or not present */
-			if ((type = (char *) xmlGetProp(node,
-					(const xmlChar *) "type")) != NULL) {
-				if (strcmp(type, "text/css") != 0) {
-					xmlFree(type);
+			/* type='text/css' or not present */	
+			exc = dom_element_get_attribute(node,
+					html_dom_string_type, &type_attr);
+			if (exc == DOM_NO_ERR && type_attr != NULL) {
+				if (strcmp(dom_string_data(type_attr), 
+						"text/css") != 0) {
+					dom_string_unref(type_attr);
 					continue;
 				}
-				xmlFree(type);
+				dom_string_unref(type_attr);
 			}
 
 			/* media contains 'screen' or 'all' or not present */
-			if ((media = (char *) xmlGetProp(node,
-					(const xmlChar *) "media")) != NULL) {
-				if (strcasestr(media, "screen") == NULL &&
-						strcasestr(media, "all") == 
-						NULL) {
-					xmlFree(media);
+			exc = dom_element_get_attribute(node,
+					html_dom_string_media, &media);
+			if (exc == DOM_NO_ERR && media != NULL) {
+				if (strcasestr(dom_string_data(media), 
+						"screen") == NULL &&
+						strcasestr(
+							dom_string_data(media),
+							"all") == NULL) {
+					dom_string_unref(media);
 					continue;
 				}
-				xmlFree(media);
+				dom_string_unref(media);
 			}
 
 			/* href='...' */
-			if ((href = (char *) xmlGetProp(node,
-					(const xmlChar *) "href")) == NULL)
+			exc = dom_element_get_attribute(node,
+					html_dom_string_href, &href);
+			if (exc != DOM_NO_ERR || href == NULL)
 				continue;
 
 			/* TODO: only the first preferred stylesheets (ie.
 			 * those with a title attribute) should be loaded
 			 * (see HTML4 14.3) */
 
-			ns_error = nsurl_join(c->base_url, href, &joined);
+			ns_error = nsurl_join(c->base_url, 
+					dom_string_data(href), &joined);
 			if (ns_error != NSERROR_OK) {
-				xmlFree(href);
+				dom_string_unref(href);
 				goto no_memory;
 			}
-			xmlFree(href);
+			dom_string_unref(href);
 
 			LOG(("linked stylesheet %i '%s'", i,
 					nsurl_access(joined)));
@@ -1603,9 +1670,13 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 			c->base.active++;
 
 			i++;
-		} else if (strcmp((const char *) node->name, "style") == 0) {
+		} else if (strcmp(dom_string_data(name), "style") == 0) {
+			dom_string_unref(name);
+
 			if (!html_process_style_element(c, &i, node))
 				return false;
+		} else {
+			dom_string_unref(name);
 		}
 	}
 
