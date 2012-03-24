@@ -1055,24 +1055,36 @@ css_error node_has_attribute_equal(void *pw, void *node,
 		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
-	xmlNode *n = node;
-	xmlChar *attr;
+	dom_node *n = node;
+	dom_string *name;
+	dom_string *atr_val;
+	dom_exception err;
+
 	size_t vlen = lwc_string_length(value);
 
-	*match = false;
-
-	if (vlen != 0) {
-		attr = xmlGetProp(n, 
-				(const xmlChar *) lwc_string_data(qname->name));
-		if (attr != NULL) {
-			*match = strlen((const char *) attr) ==
-						lwc_string_length(value) &&
-					strncasecmp((const char *) attr,
-						lwc_string_data(value),
-						lwc_string_length(value)) == 0;
-			xmlFree(attr);
-		}
+	if (vlen == 0) {
+		*match = false;
+		return CSS_OK;
 	}
+
+	err = dom_string_create_interned(
+		(const uint8_t *) lwc_string_data(qname->name), 
+		lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
+
+	err = dom_element_get_attribute(n, name, &atr_val);
+	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+		dom_string_unref(name);
+		*match = false;
+		return CSS_OK;
+	}
+
+	dom_string_unref(name);
+
+	*match = dom_string_caseless_lwc_isequal(atr_val, value);
+
+	dom_string_unref(atr_val);
 
 	return CSS_OK;
 }
@@ -1095,29 +1107,49 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
-	xmlNode *n = node;
-	xmlChar *attr;
+	dom_node *n = node;
+	dom_string *name;
+	dom_string *atr_val;
+	dom_exception err;
+
 	size_t vlen = lwc_string_length(value);
 
-        *match = false;
+	if (vlen == 0) {
+		*match = false;
+		return CSS_OK;
+	}
 
-	if (vlen != 0) {
-		attr = xmlGetProp(n, 
-				(const xmlChar *) lwc_string_data(qname->name));
-		if (attr != NULL) {
-			const char *vdata = lwc_string_data(value);
-			const char *data = (const char *) attr;
-			size_t len = strlen(data);
+	err = dom_string_create_interned(
+		(const uint8_t *) lwc_string_data(qname->name), 
+		lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
 
-			if (len == vlen && strcasecmp(data, vdata) == 0)
+	err = dom_element_get_attribute(n, name, &atr_val);
+	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+		dom_string_unref(name);
+		*match = false;
+		return CSS_OK;
+	}
+
+	dom_string_unref(name);
+
+	/* check for exact match */
+	*match = dom_string_caseless_lwc_isequal(atr_val, value);
+
+	/* check for dashmatch */
+	if (*match == false) {
+		const char *vdata = lwc_string_data(value);
+		const char *data = (const char *) dom_string_data(atr_val);
+		size_t len = dom_string_byte_length(atr_val);
+
+		if (len > vlen && data[vlen] == '-' &&
+		    strncasecmp(data, vdata, vlen) == 0) {
 				*match = true;
-			else if (len > vlen && data[vlen] == '-' &&
-					strncasecmp(data, vdata, vlen) == 0)
-				*match = true;
-
-			xmlFree(attr);
 		}
 	}
+
+	dom_string_unref(atr_val);
 
 	return CSS_OK;
 }
@@ -1140,37 +1172,54 @@ css_error node_has_attribute_includes(void *pw, void *node,
 		const css_qname *qname, lwc_string *value,
 		bool *match)
 {
-	xmlNode *n = node;
-	xmlChar *attr;
+	dom_node *n = node;
+	dom_string *name;
+	dom_string *atr_val;
+	dom_exception err;
 	size_t vlen = lwc_string_length(value);
+	const char *p;
+	const char *start;
+	const char *end;
 
-        *match = false;
+	if (vlen == 0) {
+		*match = false;
+		return CSS_OK;
+	}
 
-	if (vlen != 0) {
-		attr = xmlGetProp(n, 
-				(const xmlChar *) lwc_string_data(qname->name));
-		if (attr != NULL) {
-			const char *p;
-			const char *start = (const char *) attr;
-			const char *end = start + strlen(start);
+	err = dom_string_create_interned(
+		(const uint8_t *) lwc_string_data(qname->name), 
+		lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
 
-			for (p = start; p <= end; p++) {
-				if (*p == ' ' || *p == '\0') {
-					if ((size_t) (p - start) == vlen &&
-							strncasecmp(start,
-							lwc_string_data(value),
-							vlen) == 0) {
-						*match = true;
-						break;
-					}
+	err = dom_element_get_attribute(n, name, &atr_val);
+	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+		dom_string_unref(name);
+		*match = false;
+		return CSS_OK;
+	}
 
-					start = p + 1;
-				}
+	dom_string_unref(name);
+
+	/* check for match */
+	start = (const char *) dom_string_data(atr_val);
+	end = start + dom_string_byte_length(atr_val);
+
+	for (p = start; p <= end; p++) {
+		if (*p == ' ' || *p == '\0') {
+			if ((size_t) (p - start) == vlen &&
+			    strncasecmp(start,
+					lwc_string_data(value),
+					vlen) == 0) {
+				*match = true;
+				break;
 			}
 
-			xmlFree(attr);
+			start = p + 1;
 		}
 	}
+
+	dom_string_unref(atr_val);
 
 	return CSS_OK;
 }
