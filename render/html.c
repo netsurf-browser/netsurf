@@ -783,7 +783,7 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 			return false;
 		}
 
-		if (type == XML_ELEMENT_NODE) {
+		if (type == DOM_ELEMENT_NODE) {
 			dom_string *name;
 
 			exc = dom_node_get_node_name(n, &name);
