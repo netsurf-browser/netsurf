@@ -24,8 +24,8 @@
 #define _NETSURF_DESKTOP_SELECTION_H_
 
 #include "desktop/browser.h"
-#include "render/box.h"
 
+struct box;
 
 typedef enum {
 	DRAG_NONE,

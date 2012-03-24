@@ -40,7 +40,6 @@
 #include "desktop/plotters.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
-#include "render/box.h"
 #include "render/font.h"
 #include "render/search.h"
 #include "render/textplain.h"
