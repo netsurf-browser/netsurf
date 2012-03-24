@@ -31,8 +31,9 @@
 #include "content/content.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
-#include "render/html.h"
 #include "utils/types.h"
+
+#include "frame_types.h"
 
 struct box;
 struct hlcache_handle;
@@ -66,8 +67,6 @@ typedef enum {
 	DRAGGING_CONTENT_SCROLLBAR,
 	DRAGGING_OTHER
 } browser_drag_type;
-
-
 
 /** Browser window data. */
 struct browser_window {

@@ -39,6 +39,7 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
+#include "render/html.h"
 
 /** maximum frame resize margin */
 #define FRAME_RESIZE 6

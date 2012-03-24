@@ -58,6 +58,7 @@
 
 #include "render/form.h"
 #include "render/textplain.h"
+#include "render/html.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/nsurl.h"

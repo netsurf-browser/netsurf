@@ -30,6 +30,7 @@
 #include "content/hlcache.h"
 #include "desktop/save_text.h"
 #include "render/box.h"
+#include "render/html.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"

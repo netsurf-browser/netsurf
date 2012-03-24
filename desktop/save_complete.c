@@ -41,6 +41,7 @@
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
+#include "render/html.h"
 
 regex_t save_complete_import_re;
 

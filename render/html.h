@@ -31,6 +31,7 @@
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 #include "render/parser_binding.h"
+#include "desktop/frame_types.h"
 
 struct fetch_multipart_data;
 struct box;
@@ -56,21 +57,6 @@ struct html_stylesheet {
 		struct content_css_data *internal;
 	} data;	/**< Sheet data */
 };
-
-struct frame_dimension {
-  	float value;
-	enum {
-	  	FRAME_DIMENSION_PIXELS,		/* '100', '200' */
-	  	FRAME_DIMENSION_PERCENT, 	/* '5%', '20%' */
-	  	FRAME_DIMENSION_RELATIVE	/* '*', '2*' */
-	} unit;
-};
-
-typedef enum {
-  	SCROLLING_AUTO,
-  	SCROLLING_YES,
-  	SCROLLING_NO
-} frame_scrolling;
 
 
 /** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
