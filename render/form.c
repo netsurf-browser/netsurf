@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <dom/dom.h>
 #include "content/fetch.h"
 #include "content/hlcache.h"
 #include "css/css.h"

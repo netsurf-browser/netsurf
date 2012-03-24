@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <dom/dom.h>
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "css/css.h"

@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+#include <dom/dom.h>
 
 #include "desktop/browser.h"
 #include "desktop/gui.h"

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <dom/dom.h>
 
 #include "desktop/gui.h"
 #include "desktop/mouse.h"

@@ -25,6 +25,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <dom/dom.h>
+
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "render/box.h"

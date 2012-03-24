@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <dom/dom.h>
 #include "css/css.h"
 #include "css/utils.h"
 #include "content/content_protected.h"

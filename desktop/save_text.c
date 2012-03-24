@@ -25,6 +25,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <dom/dom.h>
+
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"

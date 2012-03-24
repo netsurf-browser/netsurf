@@ -25,6 +25,9 @@
 
 #include <ctype.h>
 #include <string.h>
+
+#include <dom/dom.h>
+
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/browser.h"

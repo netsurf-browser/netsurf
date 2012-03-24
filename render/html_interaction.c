@@ -26,6 +26,8 @@
 #include <assert.h>
 #include <stdbool.h>
 
+#include <dom/dom.h>
+
 #include "content/content.h"
 #include "desktop/browser.h"
 #include "desktop/frames.h"

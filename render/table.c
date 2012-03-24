@@ -22,6 +22,9 @@
  */
 
 #include <assert.h>
+
+#include <dom/dom.h>
+
 #include "css/css.h"
 #include "css/utils.h"
 #include "render/box.h"
