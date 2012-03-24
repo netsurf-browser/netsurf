@@ -982,13 +982,21 @@ css_error node_has_class(void *pw, void *node,
 css_error node_has_id(void *pw, void *node,
 		lwc_string *name, bool *match)
 {
-	xmlNode *n = node;
-	binding_private *p = n->_private;
+	dom_node *n = node;
+	dom_string *attr;
+	dom_exception err;
 
 	*match = false;
 
-	if (p->id != NULL) {
-		lwc_string_isequal(name, p->id, match);
+	/** \todo Assumes an HTML DOM */
+	err = dom_html_element_get_id(n, &attr);
+	if (err != DOM_NO_ERR)
+		return CSS_OK;
+
+	if (attr != NULL) {
+		*match = dom_string_lwc_isequal(attr, name);
+
+		dom_string_unref(attr);
 	}
 
 	return CSS_OK;
@@ -1009,11 +1017,23 @@ css_error node_has_id(void *pw, void *node,
 css_error node_has_attribute(void *pw, void *node,
 		const css_qname *qname, bool *match)
 {
-	xmlNode *n = node;
-	xmlAttr *attr;
+	dom_node *n = node;
+	dom_string *name;
+	dom_exception err;
 
-	attr = xmlHasProp(n, (const xmlChar *) lwc_string_data(qname->name));
-	*match = attr != NULL;
+	err = dom_string_create_interned(
+			(const uint8_t *) lwc_string_data(qname->name), 
+			lwc_string_length(qname->name), &name);
+	if (err != DOM_NO_ERR)
+		return CSS_NOMEM;
+
+	err = dom_element_has_attribute(n, name, match);
+	if (err != DOM_NO_ERR) {
+		dom_string_unref(name);
+		return CSS_OK;
+	}
+
+	dom_string_unref(name);
 
 	return CSS_OK;
 }
