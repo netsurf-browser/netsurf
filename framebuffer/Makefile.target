@@ -58,12 +58,12 @@ ifeq ($(HOST),mint)
     # xml-config returns -lsocket which is not needed and does not
     # exist on all systems.  because of that - hardcoded reference to
     # libxml-2.0 here.
-    LDFLAGS += -L/usr/lib/ -lxml2 -lz -liconv 
+    LDFLAGS += -L/usr/lib/ -lz -liconv 
     LDFLAGS += -lm
 else
     CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl)
 
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub openssl)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libdom openssl)
     LDFLAGS += $(shell $(PKG_CONFIG) --libs libcss)
 endif
 

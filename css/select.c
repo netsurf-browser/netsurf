@@ -1074,7 +1074,7 @@ css_error node_has_attribute_equal(void *pw, void *node,
 		return CSS_NOMEM;
 
 	err = dom_element_get_attribute(n, name, &atr_val);
-	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		dom_string_unref(name);
 		*match = false;
 		return CSS_OK;
@@ -1126,7 +1126,7 @@ css_error node_has_attribute_dashmatch(void *pw, void *node,
 		return CSS_NOMEM;
 
 	err = dom_element_get_attribute(n, name, &atr_val);
-	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		dom_string_unref(name);
 		*match = false;
 		return CSS_OK;
@@ -1193,7 +1193,7 @@ css_error node_has_attribute_includes(void *pw, void *node,
 		return CSS_NOMEM;
 
 	err = dom_element_get_attribute(n, name, &atr_val);
-	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		dom_string_unref(name);
 		*match = false;
 		return CSS_OK;
@@ -1261,7 +1261,7 @@ css_error node_has_attribute_prefix(void *pw, void *node,
 		return CSS_NOMEM;
 
 	err = dom_element_get_attribute(n, name, &atr_val);
-	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		dom_string_unref(name);
 		*match = false;
 		return CSS_OK;
@@ -1325,7 +1325,7 @@ css_error node_has_attribute_suffix(void *pw, void *node,
 		return CSS_NOMEM;
 
 	err = dom_element_get_attribute(n, name, &atr_val);
-	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		dom_string_unref(name);
 		*match = false;
 		return CSS_OK;
@@ -1393,7 +1393,7 @@ css_error node_has_attribute_substring(void *pw, void *node,
 		return CSS_NOMEM;
 
 	err = dom_element_get_attribute(n, name, &atr_val);
-	if ((err != DOM_NO_ERR) && (atr_val != NULL)) {
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		dom_string_unref(name);
 		*match = false;
 		return CSS_OK;
