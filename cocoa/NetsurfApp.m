@@ -62,11 +62,11 @@
 								 nil]];
 	
 	
-	nsoption_setnull(cookie_file, strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] ));
+	nsoption_setnull_charp(cookie_file, strdup( [[defaults objectForKey: kCookiesFileOption] UTF8String] ));
 
-	nsoption_setnull(cookie_jar, strdup( nsoption_charp(cookie_file) ));
+	nsoption_setnull_charp(cookie_jar, strdup( nsoption_charp(cookie_file) ));
 
-	nsoption_setnull(homepage_url, strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] ));
+	nsoption_setnull_charp(homepage_url, strdup( [[defaults objectForKey: kHomepageURLOption] UTF8String] ));
 
 	urldb_load( [[defaults objectForKey: kURLsFileOption] UTF8String] );
 	urldb_load_cookies( nsoption_charp(cookie_file) );
@@ -172,7 +172,7 @@ int main( int argc, char **argv )
 	const char * const options = cocoa_get_options_file();
 	const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
 
-	nsoption_setnull(ca_bundle, strdup(ca_bundle));
+	nsoption_setnull_charp(ca_bundle, strdup(ca_bundle));
 
 	netsurf_init(&argc, &argv, options, messages);
 
