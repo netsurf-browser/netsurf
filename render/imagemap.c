@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <strings.h>
+
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "render/box.h"
@@ -75,9 +76,9 @@ struct imagemap {
 static bool imagemap_add(html_content *c, const char *key,
 		struct mapentry *list);
 static bool imagemap_create(html_content *c);
-static bool imagemap_extract_map(xmlNode *node, html_content *c,
+static bool imagemap_extract_map(dom_node *node, html_content *c,
 		struct mapentry **entry);
-static bool imagemap_addtolist(xmlNode *n, nsurl *base_url,
+static bool imagemap_addtolist(dom_node *n, nsurl *base_url,
 		struct mapentry **entry);
 static void imagemap_freelist(struct mapentry *list);
 static unsigned int imagemap_hash(const char *key);
@@ -246,9 +247,10 @@ void imagemap_dump(html_content *c)
  * \param c The containing content
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_extract(xmlNode *node, html_content *c)
+bool imagemap_extract(dom_node *node, html_content *c)
 {
-	xmlNode *this_node;
+#ifdef FIXME
+	dom_node *this_node;
 	struct mapentry *entry = NULL;
 	char *name;
 
@@ -292,7 +294,7 @@ bool imagemap_extract(xmlNode *node, html_content *c)
 		if (imagemap_extract(this_node, c) == false)
 			return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -304,9 +306,10 @@ bool imagemap_extract(xmlNode *node, html_content *c)
  * \param entry List of map entries
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_extract_map(xmlNode *node, html_content *c,
+bool imagemap_extract_map(dom_node *node, html_content *c,
 		struct mapentry **entry)
 {
+#ifdef FIXME
 	xmlNode *this_node;
 
 	assert(c != NULL);
@@ -331,7 +334,7 @@ bool imagemap_extract_map(xmlNode *node, html_content *c,
 		if (imagemap_extract_map(this_node, c, entry) == false)
 			return false;
 	}
-
+#endif
 	return true;
 }
 
@@ -343,9 +346,10 @@ bool imagemap_extract_map(xmlNode *node, html_content *c,
  * \param entry Pointer to list of entries
  * \return false on memory exhaustion, true otherwise
  */
-bool imagemap_addtolist(xmlNode *n, nsurl *base_url,
+bool imagemap_addtolist(dom_node *n, nsurl *base_url,
 		struct mapentry **entry)
 {
+#ifdef FIXME
 	char *shape, *coords = NULL, *href, *target = NULL;
 	struct mapentry *new_map, *temp;
 
@@ -588,7 +592,7 @@ bool imagemap_addtolist(xmlNode *n, nsurl *base_url,
 	xmlFree(shape);
 	if (coords)
 		xmlFree(coords);
-
+#endif
 	return true;
 }
 
