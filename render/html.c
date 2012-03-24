@@ -1426,6 +1426,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	hlcache_child_context child;
 	nserror ns_error;
 	nsurl *joined;
+	dom_exception exc; /* returned by libdom functions */
 
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
