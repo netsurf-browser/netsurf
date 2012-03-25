@@ -943,11 +943,16 @@ nserror nscss_init(void)
 
 
 #define CSS_DOM_STRING_INTERN(NAME)					\
-	exc = dom_string_create_interned((const uint8_t *)#NAME,	\
+	do {								\
+		exc = dom_string_create_interned((const uint8_t *)#NAME,\
 					 sizeof(#NAME) - 1,		\
 					 &nscss_dom_string_##NAME );	\
-	if ((exc != DOM_NO_ERR) || (nscss_dom_string_##NAME == NULL))	\
-		goto error						
+		if ((exc != DOM_NO_ERR) || 				\
+				(nscss_dom_string_##NAME == NULL)) {	\
+			error = NSERROR_NOMEM;				\
+			goto error;					\
+		}							\
+	} while(0)
 
 	CSS_DOM_STRING_INTERN(a);
 	CSS_DOM_STRING_INTERN(abscenter);
