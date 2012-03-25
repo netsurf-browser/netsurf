@@ -2120,9 +2120,12 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 		if (named_ancestor_node(ctx, node, &qs, 
 					(void **)&tablenode) != CSS_OK) {
 			/* Didn't find, or had error */
+			lwc_string_unref(qs.name);
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
+		
+		lwc_string_unref(qs.name);
 		
 		if (tablenode != NULL) {
 			exc = dom_element_get_attribute(tablenode,
@@ -2302,35 +2305,62 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *width;
+	dom_string *name;
+	dom_exception exc;
+	dom_string *width = NULL;
 	bool is_table_cell = false;
-
-	if (strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0) {
-		is_table_cell = true;
-		/* Find table */
-		for (n = n->parent; n != NULL &&
-			     n->type == XML_ELEMENT_NODE;
-		     n = n->parent) {
-			if (strcmp((const char *) n->name, "table") ==
-			    0)
-				break;
+	
+	exc = dom_node_get_node_name(node, &name);
+	if (exc != DOM_NO_ERR)
+		return CSS_BADPARM;
+	
+	if (dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th)) {
+		css_qname qs;
+		dom_node *tablenode = NULL;
+		qs.ns = NULL;
+		exc = dom_string_intern(nscss_dom_string_table, &qs.name);
+		if (exc != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
 		}
-
-		if (n == NULL)
+		if (named_ancestor_node(ctx, node, &qs, 
+					(void **)&tablenode) != CSS_OK) {
+			/* Didn't find, or had error */
+			lwc_string_unref(qs.name);
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
+		}
+		
+		lwc_string_unref(qs.name);
+		if (tablenode != NULL) {
+			exc = dom_element_get_attribute(tablenode,
+							nscss_dom_string_width,
+							&width);
+			if (exc != DOM_NO_ERR) {
+				dom_string_unref(name);
+				return CSS_BADPARM;
+			}
+		}
+		/* No need to unref tablenode, named_ancestor_node does not
+		 * return a reffed node to the CSS
+		 */
+		is_table_cell = true;
+	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
+		exc = dom_element_get_attribute(node, nscss_dom_string_width, 
+						&width);
+		if (exc != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
+		}
 	}
-
-	if (strcmp((const char *) n->name, "table") == 0)
-		width = xmlGetProp(n, (const xmlChar *) "border");
-	else
-		width = NULL;
-
+	
+	dom_string_unref(name);
+	
 	if (width == NULL)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (parse_dimension((const char *) width, false,
+	if (parse_dimension(dom_string_data(width), false,
 			    &hint->data.length.value,
 			    &hint->data.length.unit)) {
 		if (is_table_cell &&
@@ -2341,15 +2371,13 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 		}
 		hint->status = CSS_BORDER_WIDTH_WIDTH;
 	} else {
-		xmlFree(width);
+		dom_string_unref(width);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(width);
+	dom_string_unref(width);
 
 	return CSS_OK;
-#endif
-	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
