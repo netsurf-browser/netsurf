@@ -186,30 +186,39 @@ void tree_set_icon_dir(char *icon_dir)
 static void tree_setup_colours(void)
 {
 	/* Background colour */
-	plot_style_fill_tree_background.fill_colour = nsoption_colour(gui_colour_bg_1);
+	plot_style_fill_tree_background.fill_colour =
+			nsoption_colour(sys_colour_Window);
 
 	/* Selection background colour */
-	plot_style_fill_tree_selected.fill_colour = nsoption_colour(gui_colour_fg_1);
+	plot_style_fill_tree_selected.fill_colour =
+			nsoption_colour(sys_colour_Highlight);
 
 	/* Furniture line colour */
 	plot_style_stroke_tree_furniture.stroke_colour = blend_colour(
-		nsoption_colour(gui_colour_bg_1), 
-		nsoption_colour(gui_colour_fg_1));
+			nsoption_colour(sys_colour_Window), 
+			nsoption_colour(sys_colour_WindowText));
 
 	/* Furniture fill colour */
-	plot_style_fill_tree_furniture.fill_colour = nsoption_colour(gui_colour_fg_2);
+	plot_style_fill_tree_furniture.fill_colour =
+			nsoption_colour(sys_colour_Window);
 
 	/* Text colour */
-	plot_fstyle.foreground = nsoption_colour(gui_colour_fg_1);
-	plot_fstyle.background = nsoption_colour(gui_colour_bg_1);
-	plot_fstyle_def_folder.foreground = nsoption_colour(gui_colour_fg_1);
-	plot_fstyle_def_folder.background = nsoption_colour(gui_colour_bg_1);
+	plot_fstyle.foreground = nsoption_colour(sys_colour_WindowText);
+	plot_fstyle.background = nsoption_colour(sys_colour_Window);
+	plot_fstyle_def_folder.foreground =
+			nsoption_colour(sys_colour_InfoText);
+	plot_fstyle_def_folder.background =
+			nsoption_colour(sys_colour_Window);
 
 	/* Selected text colour */
-	plot_fstyle_selected.foreground = nsoption_colour(gui_colour_fg_2);
-	plot_fstyle_selected.background = nsoption_colour(gui_colour_fg_1);
-	plot_fstyle_selected_def_folder.foreground = nsoption_colour(gui_colour_fg_2);
-	plot_fstyle_selected_def_folder.background = nsoption_colour(gui_colour_fg_1);
+	plot_fstyle_selected.foreground =
+			nsoption_colour(sys_colour_HighlightText);
+	plot_fstyle_selected.background =
+			nsoption_colour(sys_colour_Highlight);
+	plot_fstyle_selected_def_folder.foreground =
+			nsoption_colour(sys_colour_HighlightText);
+	plot_fstyle_selected_def_folder.background =
+			nsoption_colour(sys_colour_Highlight);
 }
 
 
