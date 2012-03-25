@@ -1972,13 +1972,13 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (strcmp(dom_string_data(name), "p") == 0 ||
-	    strcmp(dom_string_data(name), "h1") == 0 ||
-	    strcmp(dom_string_data(name), "h2") == 0 ||
-	    strcmp(dom_string_data(name), "h3") == 0 ||
-	    strcmp(dom_string_data(name), "h4") == 0 ||
-	    strcmp(dom_string_data(name), "h5") == 0 ||
-	    strcmp(dom_string_data(name), "h6") == 0) {
+	if (dom_string_isequal(name, nscss_dom_string_p) ||
+	    dom_string_isequal(name, nscss_dom_string_h1) ||
+	    dom_string_isequal(name, nscss_dom_string_h2) ||
+	    dom_string_isequal(name, nscss_dom_string_h3) ||
+	    dom_string_isequal(name, nscss_dom_string_h4) ||
+	    dom_string_isequal(name, nscss_dom_string_h5) ||
+	    dom_string_isequal(name, nscss_dom_string_h6)) {
 		err = dom_element_get_attribute(node,
 				nscss_dom_string_align, &align);
 		if (err != DOM_NO_ERR || align == NULL) {
@@ -1986,16 +1986,16 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (strcasecmp(dom_string_data(align), "left") == 0) {
+		if (dom_string_caseless_isequal(align, nscss_dom_string_left)) {
 			hint->status = CSS_TEXT_ALIGN_LEFT;
-		} else if (strcasecmp(dom_string_data(align),
-				      "center") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_center)) {
 			hint->status = CSS_TEXT_ALIGN_CENTER;
-		} else if (strcasecmp(dom_string_data(align),
-				      "right") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_right)) {
 			hint->status = CSS_TEXT_ALIGN_RIGHT;
-		} else if (strcasecmp(dom_string_data(align),
-				      "justify") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_justify)) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
 			dom_string_unref(align);
@@ -2007,13 +2007,13 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp(dom_string_data(name), "center") == 0) {
+	} else if (dom_string_isequal(name, nscss_dom_string_center)) {
 		hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
 
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp(dom_string_data(name), "caption") == 0) {
+	} else if (dom_string_isequal(name, nscss_dom_string_caption)) {
 		err = dom_element_get_attribute(node,
 				nscss_dom_string_align, &align);
 		if (err != DOM_NO_ERR) {
@@ -2021,17 +2021,17 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (align == NULL || strcasecmp(dom_string_data(align),
-						"center") == 0) {
+		if (align == NULL || dom_string_caseless_isequal(align,
+				nscss_dom_string_center)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-		} else if (strcasecmp(dom_string_data(align),
-				      "left") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_left)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-		} else if (strcasecmp(dom_string_data(align),
-				      "right") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_right)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-		} else if (strcasecmp(dom_string_data(align),
-				      "justify") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_justify)) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
 			dom_string_unref(align);
@@ -2044,13 +2044,13 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp(dom_string_data(name), "div") == 0 ||
-		   strcmp(dom_string_data(name), "thead") == 0 ||
-		   strcmp(dom_string_data(name), "tbody") == 0 ||
-		   strcmp(dom_string_data(name), "tfoot") == 0 ||
-		   strcmp(dom_string_data(name), "tr") == 0 ||
-		   strcmp(dom_string_data(name), "td") == 0 ||
-		   strcmp(dom_string_data(name), "th") == 0) {
+	} else if (dom_string_isequal(name, nscss_dom_string_div) ||
+		   dom_string_isequal(name, nscss_dom_string_thead) ||
+		   dom_string_isequal(name, nscss_dom_string_tbody) ||
+		   dom_string_isequal(name, nscss_dom_string_tfoot) ||
+		   dom_string_isequal(name, nscss_dom_string_tr) ||
+		   dom_string_isequal(name, nscss_dom_string_td) ||
+		   dom_string_isequal(name, nscss_dom_string_th)) {
 		err = dom_element_get_attribute(node,
 				nscss_dom_string_align, &align);
 		if (err != DOM_NO_ERR || align == NULL) {
@@ -2058,16 +2058,17 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (strcasecmp(dom_string_data(align), "center") == 0) {
+		if (dom_string_caseless_isequal(align,
+					nscss_dom_string_center)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-		} else if (strcasecmp(dom_string_data(align),
-				      "left") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_left)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-		} else if (strcasecmp(dom_string_data(align),
-				      "right") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_right)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-		} else if (strcasecmp(dom_string_data(align),
-				      "justify") == 0) {
+		} else if (dom_string_caseless_isequal(align,
+					nscss_dom_string_justify)) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
 			dom_string_unref(align);
@@ -2079,7 +2080,7 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp(dom_string_data(name), "table") == 0) {
+	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
 		/* Tables usually reset alignment */
 		hint->status = CSS_TEXT_ALIGN_INHERIT_IF_NON_MAGIC;
 
