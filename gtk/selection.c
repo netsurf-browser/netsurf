@@ -28,6 +28,8 @@
 #include "gtk/selection.h"
 #include "gtk/window.h"
 #include "utils/utf8.h"
+
+#include "render/box.h"
  
 static GString *current_selection = NULL;
 static GtkClipboard *clipboard;
