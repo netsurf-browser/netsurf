@@ -24,4 +24,7 @@
 css_error nscss_resolve_url(void *pw, const char *base, 
 		lwc_string *rel, lwc_string **abs);
 
+extern struct dom_string *nscss_dom_string_a;
+extern struct dom_string *nscss_dom_string_href;
+
 #endif

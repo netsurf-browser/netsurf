@@ -1627,20 +1627,36 @@ css_error node_is_empty(void *pw, void *node, bool *match)
  * Callback to determine if a node is a linking element.
  *
  * \param pw     HTML document
- * \param node   DOM node
+ * \param n      DOM node
  * \param match  Pointer to location to receive result
  * \return CSS_OK.
  *
  * \post \a match will contain true if the node matches and false otherwise.
  */
-css_error node_is_link(void *pw, void *node, bool *match)
+css_error node_is_link(void *pw, void *n, bool *match)
 {
-#ifdef FIXME
-	xmlNode *n = node;
+	dom_node *node = n;
+	dom_exception exc;
+	dom_string *node_name = NULL;
 
-	*match = (strcasecmp((const char *) n->name, "a") == 0 &&
-			xmlHasProp(n, (const xmlChar *) "href") != NULL);
-#endif
+	exc = dom_node_get_node_name(node, &node_name);
+	if ((exc != DOM_NO_ERR) || (node_name == NULL)) {
+		return CSS_NOMEM;
+	}
+
+	if (dom_string_caseless_isequal(node_name, nscss_dom_string_a)) {
+		bool has_href;
+		exc = dom_element_has_attribute(node, nscss_dom_string_href, &has_href); 
+		if ((exc == DOM_NO_ERR) && (has_href)) {
+			*match = true;
+		} else {
+			*match = false;
+		}
+	} else {
+		*match = false;
+	}
+	dom_string_unref(node_name);
+
 	return CSS_OK;
 }
 

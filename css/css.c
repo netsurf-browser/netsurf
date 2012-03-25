@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include <libwapcaplet/libwapcaplet.h>
+#include <dom/dom.h>
 
 #include "content/content_protected.h"
 #include "content/fetch.h"
@@ -55,7 +56,6 @@ typedef struct {
 						 *   imports array */
 } nscss_import_ctx;
 
-static void nscss_fini(void);
 static nserror nscss_create(const content_handler *handler, 
 		lwc_string *imime_type,	const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
@@ -79,58 +79,12 @@ static css_error nscss_register_imports(struct content_css_data *c);
 static css_error nscss_register_import(struct content_css_data *c,
 		const hlcache_handle *import);
 
-static const content_handler css_content_handler = {
-	.fini = nscss_fini,
-	.create = nscss_create,
-	.process_data = nscss_process_data,
-	.data_complete = nscss_convert,
-	.destroy = nscss_destroy,
-	.clone = nscss_clone,
-	.matches_quirks = nscss_matches_quirks,
-	.type = nscss_content_type,
-	.no_share = false,
-};
 
 static lwc_string *css_charset;
 static css_stylesheet *blank_import;
 
-/**
- * Initialise the CSS content handler
- */
-nserror nscss_init(void)
-{
-	lwc_error lerror;
-	nserror error;
-
-	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
-	if (lerror != lwc_error_ok) {
-		return NSERROR_NOMEM;
-	}
-
-	error = content_factory_register_handler("text/css", 
-			&css_content_handler);
-	if (error != NSERROR_OK) {
-		lwc_string_unref(css_charset);
-	}
-
-	return error;
-}
-
-/**
- * Clean up after the CSS content handler
- */
-void nscss_fini(void)
-{
-	if (css_charset != NULL) {
-		lwc_string_unref(css_charset);
-		css_charset = NULL;
-	}
-
-	if (blank_import != NULL) {
-		css_stylesheet_destroy(blank_import);
-		blank_import = NULL;
-	}
-}
+dom_string *nscss_dom_string_a;
+dom_string *nscss_dom_string_href;
 
 /**
  * Initialise a CSS content
@@ -812,3 +766,86 @@ css_error nscss_register_import(struct content_css_data *c,
 	return error;
 }
 
+/**
+ * Clean up after the CSS content handler
+ */
+static void nscss_fini(void)
+{
+#define CSS_DOM_STRING_UNREF(NAME)					\
+	do {								\
+		if (nscss_dom_string_##NAME != NULL) {			\
+			dom_string_unref(nscss_dom_string_##NAME);	\
+			nscss_dom_string_##NAME = NULL;			\
+		}							\
+	} while (0)							\
+
+	CSS_DOM_STRING_UNREF(href);
+	CSS_DOM_STRING_UNREF(a);
+
+#undef CSS_DOM_STRING_UNREF
+
+
+	if (css_charset != NULL) {
+		lwc_string_unref(css_charset);
+		css_charset = NULL;
+	}
+
+	if (blank_import != NULL) {
+		css_stylesheet_destroy(blank_import);
+		blank_import = NULL;
+	}
+}
+
+static const content_handler css_content_handler = {
+	.fini = nscss_fini,
+	.create = nscss_create,
+	.process_data = nscss_process_data,
+	.data_complete = nscss_convert,
+	.destroy = nscss_destroy,
+	.clone = nscss_clone,
+	.matches_quirks = nscss_matches_quirks,
+	.type = nscss_content_type,
+	.no_share = false,
+};
+
+/**
+ * Initialise the CSS content handler
+ */
+nserror nscss_init(void)
+{
+	lwc_error lerror;
+	nserror error;
+	dom_exception exc;
+
+	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
+	if (lerror != lwc_error_ok) {
+		error = NSERROR_NOMEM;
+		goto error;
+	}
+
+
+#define CSS_DOM_STRING_INTERN(NAME)					\
+	exc = dom_string_create_interned((const uint8_t *)#NAME,	\
+					 sizeof(#NAME) - 1,		\
+					 &nscss_dom_string_##NAME );	\
+	if ((exc != DOM_NO_ERR) || (nscss_dom_string_##NAME == NULL))	\
+		goto error						
+
+	CSS_DOM_STRING_INTERN(a);
+	CSS_DOM_STRING_INTERN(href);
+
+
+#undef CSS_DOM_STRING_INTERN
+
+	error = content_factory_register_handler("text/css", 
+			&css_content_handler);
+	if (error != NSERROR_OK) 
+		goto error;
+
+	return NSERROR_OK;
+
+error:
+	nscss_fini();
+
+	return error;
+}
