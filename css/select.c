@@ -2645,28 +2645,36 @@ node_presentational_hint_font_size(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *size;
+	dom_exception err;
+	dom_string *node_name = NULL;
+	dom_string *size;
 
-	if (strcmp((const char *) n->name, "font") == 0)
-		size = xmlGetProp(n, (const xmlChar *) "size");
-	else
-		size = NULL;
+	err = dom_node_get_node_name(node, &node_name);
+	if ((err != DOM_NO_ERR) || (node_name == NULL)) {
+		return CSS_NOMEM;
+	}
 
-	if (size == NULL)
-		return CSS_PROPERTY_NOT_SET;
-
-	if (parse_font_size((const char *) size, &hint->status,
-			    &hint->data.length.value,
-			    &hint->data.length.unit) == false) {
-		xmlFree(size);
+	if (!dom_string_isequal(node_name, nscss_dom_string_font)) {
+		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(size);
+	dom_string_unref(node_name);
 
-	return CSS_OK;
-#endif
+	err = dom_element_get_attribute(node, nscss_dom_string_align, &size);
+	if ((err != DOM_NO_ERR) || (size == NULL)) {
+		return CSS_PROPERTY_NOT_SET;
+	}
+
+	if (parse_font_size((const char *)dom_string_data(size), 
+			    &hint->status,
+			    &hint->data.length.value,
+			    &hint->data.length.unit)) {
+		dom_string_unref(size);
+		return CSS_OK;
+	}
+
+	dom_string_unref(size);
 	return CSS_PROPERTY_NOT_SET;
 }
 
