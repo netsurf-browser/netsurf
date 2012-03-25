@@ -47,9 +47,10 @@ binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len)
 {
 	dom_hubbub_error error;
 	error = dom_hubbub_parser_parse_chunk(ctx, data, len);
-	if (error != DOM_HUBBUB_OK) {
+	if (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_ENCODINGCHANGE)) {
+		return BINDING_ENCODINGCHANGE;
+	} else if (error != DOM_NO_ERR) {
 		return BINDING_NOMEM;
-		/* TODO: encoding change */
 	}
 	return BINDING_OK;
 }
