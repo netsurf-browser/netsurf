@@ -29,6 +29,7 @@ extern "C" {
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/font.h"
+#include "render/box.h"
 #include "utils/log.h"
 #include "utils/types.h"
 #include "utils/utf8.h"
