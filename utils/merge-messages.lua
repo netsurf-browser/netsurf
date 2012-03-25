@@ -35,9 +35,10 @@ table.sort(sorted)
 io.stderr:write("working through en...\n")
 
 local manipulators = {
-   { "^ami(.*)", "ami.%1" },
-   { "^gtk(.*)", "gtk.%1" },
-   { "^Help(.*)", "ro.Help%1" },
+   { "^(ami.*)", "ami.%1" },
+   { "^(gtk.*)", "gtk.%1" },
+   { "^(Help.*)", "ro.%1" },
+   { "^(ARexx.*)", "ami.%1" },
 
    { "^(.*)$", "all.%1" } -- must be last
 }
@@ -45,7 +46,6 @@ local manipulators = {
 local function manipulate_tag(t)
    for _, m in ipairs(manipulators) do
       local r, s = t:gsub(m[1], m[2])
---      if s > 0 then io.stderr:write(("*** '%s' -> '%s' (%d)\n"):format(t, r, s)) end
       if s > 0 then return r end
    end
    return t
