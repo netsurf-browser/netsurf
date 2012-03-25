@@ -677,6 +677,11 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 						"%p", centry->content);
 				break;
 
+			case 'U':
+				slen += snprintf(string + slen, size - slen,
+				    		"%s", nsurl_access(llcache_handle_get_url(centry->content->llcache)));
+				break;
+			
 			case 's':
 				if (centry->bitmap != NULL) {
 					slen += snprintf(string + slen,

@@ -174,3 +174,20 @@ body#configlist table.config td + td {
 
 body#configlist .null-content {
         font-style: italic; }
+
+/* about:imagecache */
+
+table.imagecachelist {
+	border: 1px solid #000;
+	border-spacing: 0px;
+	border-collapse: collapse;
+}
+
+table.imagecachelist th {
+	border: 1px solid #000;
+}
+
+table.imagecachelist td {
+	border: 1px solid #000;
+}
+

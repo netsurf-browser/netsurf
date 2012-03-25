@@ -181,7 +181,7 @@ static bool fetch_about_licence_handler(struct fetch_about_context *ctx)
 static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 {
 	fetch_msg msg;
-	char buffer[1024]; /* output buffer */
+	char buffer[2048]; /* output buffer */
 	int code = 200;
 	int slen;
 	unsigned int cent_loop = 0;
@@ -240,18 +240,19 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 
 	/* image cache entry table */
 	slen = snprintf(buffer, sizeof buffer, 
-			"<table class=\"config\">\n"
+			"<table class=\"imagecachelist\">\n"
 			"<tr><th>Entry</th>"
 			"<th>Content Key</th>"
 			"<th>Redraw Count</th>"
 			"<th>Conversion Count</th>"
 			"<th>Last Redraw</th>"
 			"<th>Bitmap Age</th>"
-			"<th>Bitmap Size</th></tr>\n");
+			"<th>Bitmap Size</th>"
+			"<th>Source URL</th></tr>\n");
 	do {
 		res = image_cache_snentryf(buffer + slen, sizeof buffer - slen,
 				cent_loop,
-				"<tr><td>%e</td><td>%k</td><td>%r</td><td>%c</td><td>%a</td><td>%g</td><td>%s</td></tr>\n");
+				"<tr><td>%e</td><td>%k</td><td>%r</td><td>%c</td><td>%a</td><td>%g</td><td>%s</td><td><a href='%U'>%U</a></td></tr>\n");
 		if (res <= 0) 
 			break; /* last option */
 
