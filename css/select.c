@@ -815,6 +815,8 @@ css_error parent_node(void *pw, void *node, void **parent)
 	dom_node *p;
 	dom_exception err;
 
+	*parent = NULL;
+
 	/* Find parent element */
 	err = dom_node_get_parent_node(n, &n);
 	if (err != DOM_NO_ERR)
