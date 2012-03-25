@@ -118,7 +118,7 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 	struct content_html_object *object;
 	char filename[256];
 	unsigned int i, count;
-	xmlDocPtr doc;
+	xmlDocPtr doc = NULL;
 	bool res;
 
 	if (content_get_type(c) != CONTENT_HTML)
@@ -240,10 +240,24 @@ bool save_complete_html(hlcache_handle *c, const char *path, bool index,
 			return false;
 	}
 
-	/*save_complete_list_dump();*/
-
-	/* copy document */
-	doc = xmlCopyDoc(html_get_document(c), 1);
+	/* create shiny XML document from the content source */
+	
+	{
+		unsigned long html_size;
+		const char *html_source;
+		xmlChar *terminated_html_source;
+		html_source = content_get_source_data(c, &html_size);
+		
+		terminated_html_source = malloc(html_size + 1);
+		if (terminated_html_source != NULL) {
+			memcpy(terminated_html_source, html_source, html_size);
+			terminated_html_source[html_size] = '\0';
+			doc = htmlParseDoc(terminated_html_source, NULL);
+			free(terminated_html_source);
+		}
+		
+	}
+	
 	if (doc == NULL) {
 		warn_user("NoMemory", 0);
 		return false;
