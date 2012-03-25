@@ -2099,6 +2099,7 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *cellpadding = NULL;
 
 	if (strcmp((const char *) n->name, "td") == 0 ||
@@ -2132,7 +2133,7 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 	xmlFree(cellpadding);
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2702,6 +2703,7 @@ node_presentational_hint_background_image(nscss_select_ctx *ctx,
 	dom_exception err;
 	dom_string *atr_val;
 	nserror error;
+	nsurl *url;
 	lwc_string *iurl;
 	lwc_error lerror;
 
