@@ -43,6 +43,7 @@
 #include "render/font.h"
 #include "render/search.h"
 #include "render/textplain.h"
+#include "render/html.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
