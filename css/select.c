@@ -2119,7 +2119,7 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 			return CSS_BADPARM;
 		}
 		if (named_ancestor_node(ctx, node, &qs, 
-					(void **)&tablenode) != CSS_OK) {
+					(void *)&tablenode) != CSS_OK) {
 			/* Didn't find, or had error */
 			lwc_string_unref(qs.name);
 			dom_string_unref(name);
@@ -2326,7 +2326,7 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 			return CSS_BADPARM;
 		}
 		if (named_ancestor_node(ctx, node, &qs, 
-					(void **)&tablenode) != CSS_OK) {
+					(void *)&tablenode) != CSS_OK) {
 			/* Didn't find, or had error */
 			lwc_string_unref(qs.name);
 			dom_string_unref(name);
@@ -2406,7 +2406,7 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 		}
 
 		if (named_ancestor_node(ctx, node, &qs, 
-					(void **)&tablenode) != CSS_OK) {
+					(void *)&tablenode) != CSS_OK) {
 			/* Didn't find, or had error */
 			lwc_string_unref(qs.name);
 			dom_string_unref(name);
@@ -2734,7 +2734,7 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 			return CSS_BADPARM;
 		}
 		if (named_ancestor_node(ctx, node, &qs, 
-					(void **)&bodynode) != CSS_OK) {
+					(void *)&bodynode) != CSS_OK) {
 			/* Didn't find, or had error */
 			lwc_string_unref(qs.name);
 			dom_string_unref(node_name);
