@@ -1880,13 +1880,13 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (strcmp(dom_string_data(name), "col") == 0 ||
-	    strcmp(dom_string_data(name), "thead") == 0 ||
-	    strcmp(dom_string_data(name), "tbody") == 0 ||
-	    strcmp(dom_string_data(name), "tfoot") == 0 ||
-	    strcmp(dom_string_data(name), "tr") == 0 ||
-	    strcmp(dom_string_data(name), "td") == 0 ||
-	    strcmp(dom_string_data(name), "th") == 0) {
+	if (dom_string_isequal(name, nscss_dom_string_col) ||
+	    dom_string_isequal(name, nscss_dom_string_thead) ||
+	    dom_string_isequal(name, nscss_dom_string_tbody) ||
+	    dom_string_isequal(name, nscss_dom_string_tfoot) ||
+	    dom_string_isequal(name, nscss_dom_string_tr) ||
+	    dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th)) {
 		err = dom_element_get_attribute(node, 
 				nscss_dom_string_valign, &valign);
 		if (err != DOM_NO_ERR || valign == NULL) {
@@ -1894,16 +1894,16 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (strcasecmp(dom_string_data(valign), "top") == 0) {
+		if (dom_string_caseless_isequal(valign, nscss_dom_string_top)) {
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-		} else if (strcasecmp(dom_string_data(valign),
-				      "middle") == 0) {
+		} else if (dom_string_caseless_isequal(valign,
+					nscss_dom_string_middle)) {
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-		} else if (strcasecmp(dom_string_data(valign),
-				      "bottom") == 0) {
+		} else if (dom_string_caseless_isequal(valign,
+					nscss_dom_string_bottom)) {
 			hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
-		} else if (strcasecmp(dom_string_data(valign),
-				      "baseline") == 0) {
+		} else if (dom_string_caseless_isequal(valign,
+					nscss_dom_string_baseline)) {
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
 		} else {
 			dom_string_unref(valign);
@@ -1915,11 +1915,11 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp(dom_string_data(name), "applet") == 0 ||
-		   strcmp(dom_string_data(name), "embed") == 0 ||
-		   strcmp(dom_string_data(name), "iframe") == 0 ||
-		   strcmp(dom_string_data(name), "img") == 0 ||
-		   strcmp(dom_string_data(name), "object") == 0) {
+	} else if (dom_string_isequal(name, nscss_dom_string_applet) ||
+		   dom_string_isequal(name, nscss_dom_string_embed) ||
+		   dom_string_isequal(name, nscss_dom_string_iframe) ||
+		   dom_string_isequal(name, nscss_dom_string_img) ||
+		   dom_string_isequal(name, nscss_dom_string_object)) {
 		/** \todo input[type=image][align=*] - $11.3.3 */
 		err = dom_element_get_attribute(node, 
 				nscss_dom_string_align, &valign);
@@ -1928,20 +1928,20 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (strcasecmp(dom_string_data(valign), "top") == 0) {
+		if (dom_string_caseless_isequal(valign, nscss_dom_string_top)) {
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-		} else if (strcasecmp(dom_string_data(valign),
-				      "bottom") == 0 ||
-			   strcasecmp(dom_string_data(valign),
-				      "baseline") == 0) {
+		} else if (dom_string_caseless_isequal(valign,
+					nscss_dom_string_bottom) ||
+			   dom_string_caseless_isequal(valign,
+					nscss_dom_string_baseline)) {
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-		} else if (strcasecmp(dom_string_data(valign),
-				      "texttop") == 0) {
+		} else if (dom_string_caseless_isequal(valign,
+					nscss_dom_string_texttop)) {
 			hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
-		} else if (strcasecmp(dom_string_data(valign),
-				      "absmiddle") == 0 ||
-			   strcasecmp(dom_string_data(valign),
-				      "abscenter") == 0) {
+		} else if (dom_string_caseless_isequal(valign,
+					nscss_dom_string_absmiddle) ||
+			   dom_string_caseless_isequal(valign,
+					nscss_dom_string_abscenter)) {
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
 		} else {
 			dom_string_unref(valign);
