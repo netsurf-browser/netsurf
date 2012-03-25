@@ -2675,34 +2675,44 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-		xmlChar *align = NULL;
+	dom_exception err;
+	dom_string *node_name = NULL;
+	dom_string *align;
 
-		/** \todo input[type=image][align=*] - $11.3.3 */
-		if (strcmp((const char *) n->name, "table") == 0 ||
-				strcmp((const char *) n->name, "applet") == 0 ||
-				strcmp((const char *) n->name, "embed") == 0 ||
-				strcmp((const char *) n->name, "iframe") == 0 ||
-				strcmp((const char *) n->name, "img") == 0 ||
-				strcmp((const char *) n->name, "object") == 0)
-			align = xmlGetProp(n, (const xmlChar *) "align");
+	err = dom_node_get_node_name(node, &node_name);
+	if ((err != DOM_NO_ERR) || (node_name == NULL)) {
+		return CSS_NOMEM;
+	}
 
-		if (align == NULL)
-			return CSS_PROPERTY_NOT_SET;
+	/** \todo input[type=image][align=*] - $11.3.3 */
+	if (!dom_string_isequal(node_name, nscss_dom_string_applet) &&
+	    !dom_string_isequal(node_name, nscss_dom_string_embed) &&
+	    !dom_string_isequal(node_name, nscss_dom_string_iframe) &&
+	    !dom_string_isequal(node_name, nscss_dom_string_img) &&
+	    !dom_string_isequal(node_name, nscss_dom_string_object)) {
+		dom_string_unref(node_name);
+		return CSS_PROPERTY_NOT_SET;
+	}
 
-		if (strcasecmp((const char *) align, "left") == 0) {
-			hint->status = CSS_FLOAT_LEFT;
-		} else if (strcasecmp((const char *) align, "right") == 0) {
-			hint->status = CSS_FLOAT_RIGHT;
-		} else {
-			xmlFree(align);
-			return CSS_PROPERTY_NOT_SET;
-		}
+	dom_string_unref(node_name);
 
-		xmlFree(align);
+	err = dom_element_get_attribute(node, nscss_dom_string_align, &align);
+	if ((err != DOM_NO_ERR) || (align == NULL)) {
+		return CSS_PROPERTY_NOT_SET;
+	}
 
+	if (dom_string_isequal(align, nscss_dom_string_left)) {
+		hint->status = CSS_FLOAT_LEFT;
+		dom_string_unref(align);
 		return CSS_OK;
-#endif
+	} else if (dom_string_isequal(align, nscss_dom_string_right)) {
+		hint->status = CSS_FLOAT_RIGHT;
+		dom_string_unref(align);
+		return CSS_OK;
+	}
+
+	dom_string_unref(align);
+
 	return CSS_PROPERTY_NOT_SET;
 }
 
