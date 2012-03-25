@@ -2099,42 +2099,60 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *cellpadding = NULL;
-
-	if (strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0) {
-		/* Find table */
-		for (n = n->parent; n != NULL &&
-			     n->type == XML_ELEMENT_NODE;
-		     n = n->parent) {
-			if (strcmp((const char *) n->name, "table") ==
-			    0)
-				break;
+	dom_string *name;
+	dom_exception exc;
+	dom_string *cellpadding = NULL;
+	
+	exc = dom_node_get_node_name(node, &name);
+	if (exc != DOM_NO_ERR)
+		return CSS_BADPARM;
+	
+	if (dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th)) {
+		css_qname qs;
+		dom_node *tablenode = NULL;
+		qs.ns = NULL;
+		exc = dom_string_intern(nscss_dom_string_table, &qs.name);
+		if (exc != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
 		}
-
-		if (n != NULL)
-			cellpadding = xmlGetProp(n,
-						 (const xmlChar *) "cellpadding");
+		if (named_ancestor_node(ctx, node, &qs, 
+					(void **)&tablenode) != CSS_OK) {
+			/* Didn't find, or had error */
+			dom_string_unref(name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+		
+		if (tablenode != NULL) {
+			exc = dom_element_get_attribute(tablenode,
+							nscss_dom_string_cellpadding,
+							&cellpadding);
+			if (exc != DOM_NO_ERR) {
+				dom_string_unref(name);
+				return CSS_BADPARM;
+			}
+		}
+		/* No need to unref tablenode, named_ancestor_node does not
+		 * return a reffed node to the CSS
+		 */
 	}
-
+	
+	dom_string_unref(name);
+	
 	if (cellpadding == NULL)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (parse_dimension((const char *) cellpadding, false,
+	if (parse_dimension(dom_string_data(cellpadding), false,
 			    &hint->data.length.value,
 			    &hint->data.length.unit)) {
 		hint->status = CSS_PADDING_SET;
 	} else {
-		xmlFree(cellpadding);
+		dom_string_unref(cellpadding);
 		return CSS_PROPERTY_NOT_SET;
 	}
-
-	xmlFree(cellpadding);
-
+	
 	return CSS_OK;
-#endif
-	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
