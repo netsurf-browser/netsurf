@@ -2679,26 +2679,35 @@ node_presentational_hint_caption_side(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *align = NULL;
+	dom_exception err;
+	dom_string *node_name = NULL;
+	dom_string *align = NULL;
 
-	if (strcmp((const char *) n->name, "caption") == 0)
-		align = xmlGetProp(n, (const xmlChar *) "align");
-
-	if (align == NULL)
-		return CSS_PROPERTY_NOT_SET;
-
-	if (strcasecmp((const char *) align, "bottom") == 0) {
-		hint->status = CSS_CAPTION_SIDE_BOTTOM;
-	} else {
-		xmlFree(align);
+	err = dom_node_get_node_name(node, &node_name);
+	if ((err != DOM_NO_ERR) || (node_name == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(align);
+	if (!dom_string_caseless_isequal(node_name, nscss_dom_string_caption)) {
+		dom_string_unref(node_name);
+		return CSS_PROPERTY_NOT_SET;
+	}
 
-	return CSS_OK;
-#endif
+	dom_string_unref(node_name);
+
+	err = dom_element_get_attribute(node, nscss_dom_string_align, &align);
+	if ((err != DOM_NO_ERR) || (align == NULL)) {
+		return CSS_PROPERTY_NOT_SET;
+	}
+
+	if (dom_string_caseless_isequal(align, nscss_dom_string_bottom)) {
+		hint->status = CSS_CAPTION_SIDE_BOTTOM;
+		dom_string_unref(align);
+		return CSS_OK;
+	}
+
+	dom_string_unref(align);
+
 	return CSS_PROPERTY_NOT_SET;
 }
 
@@ -2707,23 +2716,23 @@ node_presentational_hint_background_color(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *bgcol = xmlGetProp(n, (const xmlChar *) "bgcolor");
-	if (bgcol == NULL)
-		return CSS_PROPERTY_NOT_SET;
+	dom_exception err;
+	dom_string *bgcolor;
 
-	if (nscss_parse_colour((const char *) bgcol,
-			       &hint->data.color)) {
-		hint->status = CSS_BACKGROUND_COLOR_COLOR;
-	} else {
-		xmlFree(bgcol);
+	err = dom_element_get_attribute(node, nscss_dom_string_bgcolor, &bgcolor);
+	if ((err != DOM_NO_ERR) || (bgcolor == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(bgcol);
+	if (nscss_parse_colour((const char *)dom_string_data(bgcolor),
+			       &hint->data.color)) {
+		hint->status = CSS_BACKGROUND_COLOR_COLOR;
+		dom_string_unref(bgcolor);
+		return CSS_OK;
+	}
 
-	return CSS_OK;
-#endif
+	dom_string_unref(bgcolor);
+
 	return CSS_PROPERTY_NOT_SET;
 }
 
