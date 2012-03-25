@@ -1644,7 +1644,7 @@ css_error node_is_link(void *pw, void *n, bool *match)
 		return CSS_NOMEM;
 	}
 
-	if (dom_string_caseless_isequal(node_name, nscss_dom_string_a)) {
+	if (dom_string_isequal(node_name, nscss_dom_string_a)) {
 		bool has_href;
 		exc = dom_element_has_attribute(node, nscss_dom_string_href, &has_href); 
 		if ((exc == DOM_NO_ERR) && (has_href)) {
@@ -2671,55 +2671,86 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *col;
 	css_error error;
-	bool is_link, is_visited;
+	dom_exception err;
+	dom_string *node_name = NULL;
+	dom_string *color;
 
-	error = node_is_link(ctx, n, &is_link);
-	if (error != CSS_OK)
-		return error;
+	err = dom_node_get_node_name(node, &node_name);
+	if ((err != DOM_NO_ERR) || (node_name == NULL)) {
+		return CSS_NOMEM;
+	}
 
-	if (is_link) {
-		xmlNode *body;
-		for (body = n; body != NULL && body->parent != NULL &&
-			     body->parent->parent != NULL;
-		     body = body->parent) {
-			if (body->parent->parent->parent == NULL)
-				break;
+	if (dom_string_isequal(node_name, nscss_dom_string_a)) {
+		/* find body node */
+		css_qname qs;
+		dom_node *bodynode = NULL;
+		bool is_visited;
+
+		qs.ns = NULL;
+		err = dom_string_intern(nscss_dom_string_body, &qs.name);
+		if (err != DOM_NO_ERR) {
+			dom_string_unref(node_name);
+			return CSS_BADPARM;
+		}
+		if (named_ancestor_node(ctx, node, &qs, 
+					(void **)&bodynode) != CSS_OK) {
+			/* Didn't find, or had error */
+			lwc_string_unref(qs.name);
+			dom_string_unref(node_name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+		
+		lwc_string_unref(qs.name);
+
+		/* deal with missing body ancestor */
+		if (bodynode == NULL) {
+			dom_string_unref(node_name);
+			return CSS_BADPARM;
 		}
 
-		error = node_is_visited(ctx, n, &is_visited);
+		error = node_is_visited(ctx, node, &is_visited);
 		if (error != CSS_OK)
 			return error;
 
-		if (is_visited)
-			col = xmlGetProp(body,
-					 (const xmlChar *) "vlink");
-		else
-			col = xmlGetProp(body,
-					 (const xmlChar *) "link");
-	} else if (strcmp((const char *) n->name, "body") == 0) {
-		col = xmlGetProp(n, (const xmlChar *) "text");
+		if (is_visited) {
+			err = dom_element_get_attribute(node, nscss_dom_string_vlink, &color);
+			if ((err != DOM_NO_ERR) || (color == NULL)) {
+				dom_string_unref(node_name);
+				return CSS_PROPERTY_NOT_SET;
+			}
+		} else {
+			err = dom_element_get_attribute(node, nscss_dom_string_link, &color);
+			if ((err != DOM_NO_ERR) || (color == NULL)) {
+				dom_string_unref(node_name);
+				return CSS_PROPERTY_NOT_SET;
+			}
+		}
+	} else if (dom_string_isequal(node_name, nscss_dom_string_body)) {
+		err = dom_element_get_attribute(node, nscss_dom_string_text, &color);
+		if ((err != DOM_NO_ERR) || (color == NULL)) {
+			dom_string_unref(node_name);
+			return CSS_PROPERTY_NOT_SET;
+		}
 	} else {
-		col = xmlGetProp(n, (const xmlChar *) "color");
+		err = dom_element_get_attribute(node, nscss_dom_string_color, &color);
+		if ((err != DOM_NO_ERR) || (color == NULL)) {
+			dom_string_unref(node_name);
+			return CSS_PROPERTY_NOT_SET;
+		}
 	}
 
-	if (col == NULL)
-		return CSS_PROPERTY_NOT_SET;
-
-	if (nscss_parse_colour((const char *) col, &hint->data.color)) {
-		hint->status = CSS_COLOR_COLOR;
-	} else {
-		xmlFree(col);
+	if (!nscss_parse_colour((const char *)dom_string_data(color), 
+				&hint->data.color)) {
+		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(col);
+	hint->status = CSS_COLOR_COLOR;
+
+	dom_string_unref(node_name);
 
 	return CSS_OK;
-#endif
-	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
