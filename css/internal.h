@@ -33,6 +33,7 @@ extern struct dom_string *nscss_dom_string_background;
 extern struct dom_string *nscss_dom_string_baseline;
 extern struct dom_string *nscss_dom_string_bgcolor;
 extern struct dom_string *nscss_dom_string_body;
+extern struct dom_string *nscss_dom_string_border;
 extern struct dom_string *nscss_dom_string_bordercolor;
 extern struct dom_string *nscss_dom_string_bottom;
 extern struct dom_string *nscss_dom_string_caption;

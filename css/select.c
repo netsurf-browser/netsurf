@@ -2386,36 +2386,75 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
+	dom_string *name;
+	dom_exception exc;
 
-	bool is_table_cell = false;
+	exc = dom_node_get_node_name(node, &name);
+	if (exc != DOM_NO_ERR)
+		return CSS_BADPARM;
 
-	if (strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0) {
-		is_table_cell = true;
-		/* Find table */
-		for (n = n->parent; n != NULL &&
-			     n->type == XML_ELEMENT_NODE;
-		     n = n->parent) {
-			if (strcmp((const char *) n->name, "table") ==
-			    0)
-				break;
+	if (dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th)) {
+		css_qname qs;
+		dom_node *tablenode = NULL;
+		qs.ns = NULL;
+
+		exc = dom_string_intern(nscss_dom_string_table, &qs.name);
+		if (exc != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
 		}
 
-		if (n == NULL)
+		if (named_ancestor_node(ctx, node, &qs, 
+					(void **)&tablenode) != CSS_OK) {
+			/* Didn't find, or had error */
+			lwc_string_unref(qs.name);
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
+		}
+		
+		lwc_string_unref(qs.name);
+
+		if (tablenode != NULL) {
+			bool has_border = false;
+
+			exc = dom_element_has_attribute(tablenode,
+							nscss_dom_string_border,
+							&has_border);
+			if (exc != DOM_NO_ERR) {
+				dom_string_unref(name);
+				return CSS_BADPARM;
+			}
+
+			if (has_border) {
+				hint->status = CSS_BORDER_STYLE_INSET;
+				dom_string_unref(name);
+				return CSS_OK;
+			}
+		}
+		/* No need to unref tablenode, named_ancestor_node does not
+		 * return a reffed node to the CSS
+		 */
+	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
+		bool has_border = false;
+
+		exc = dom_element_has_attribute(node,
+						nscss_dom_string_border,
+						&has_border);
+		if (exc != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
+		}
+
+		if (has_border) {
+			hint->status = CSS_BORDER_STYLE_OUTSET;
+			dom_string_unref(name);
+			return CSS_OK;
+		}
 	}
 
-	if (strcmp((const char *) n->name, "table") == 0 &&
-	    xmlHasProp(n,
-		       (const xmlChar *) "border") != NULL) {
-		if (is_table_cell)
-			hint->status = CSS_BORDER_STYLE_INSET;
-		else
-			hint->status = CSS_BORDER_STYLE_OUTSET;
-		return CSS_OK;
-	}
-#endif
+	dom_string_unref(name);
+
 	return CSS_PROPERTY_NOT_SET;
 }
 

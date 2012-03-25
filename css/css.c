@@ -92,6 +92,7 @@ dom_string *nscss_dom_string_background;
 dom_string *nscss_dom_string_baseline;
 dom_string *nscss_dom_string_bgcolor;
 dom_string *nscss_dom_string_body;
+dom_string *nscss_dom_string_border;
 dom_string *nscss_dom_string_bordercolor;
 dom_string *nscss_dom_string_bottom;
 dom_string *nscss_dom_string_caption;
@@ -846,6 +847,7 @@ static void nscss_fini(void)
 	CSS_DOM_STRING_UNREF(baseline);
 	CSS_DOM_STRING_UNREF(bgcolor);
 	CSS_DOM_STRING_UNREF(body);
+	CSS_DOM_STRING_UNREF(border);
 	CSS_DOM_STRING_UNREF(bordercolor);
 	CSS_DOM_STRING_UNREF(bottom);
 	CSS_DOM_STRING_UNREF(caption);
@@ -956,6 +958,7 @@ nserror nscss_init(void)
 	CSS_DOM_STRING_INTERN(baseline);
 	CSS_DOM_STRING_INTERN(bgcolor);
 	CSS_DOM_STRING_INTERN(body);
+	CSS_DOM_STRING_INTERN(border);
 	CSS_DOM_STRING_INTERN(bordercolor);
 	CSS_DOM_STRING_INTERN(bottom);
 	CSS_DOM_STRING_INTERN(caption);
