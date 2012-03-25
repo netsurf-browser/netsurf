@@ -35,6 +35,7 @@ extern struct dom_string *nscss_dom_string_body;
 extern struct dom_string *nscss_dom_string_bordercolor;
 extern struct dom_string *nscss_dom_string_bottom;
 extern struct dom_string *nscss_dom_string_caption;
+extern struct dom_string *nscss_dom_string_cellpadding;
 extern struct dom_string *nscss_dom_string_cellspacing;
 extern struct dom_string *nscss_dom_string_center;
 extern struct dom_string *nscss_dom_string_color;

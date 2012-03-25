@@ -94,6 +94,7 @@ dom_string *nscss_dom_string_body;
 dom_string *nscss_dom_string_bordercolor;
 dom_string *nscss_dom_string_bottom;
 dom_string *nscss_dom_string_caption;
+dom_string *nscss_dom_string_cellpadding;
 dom_string *nscss_dom_string_cellspacing;
 dom_string *nscss_dom_string_center;
 dom_string *nscss_dom_string_color;
@@ -843,6 +844,7 @@ static void nscss_fini(void)
         CSS_DOM_STRING_UNREF(bordercolor);
         CSS_DOM_STRING_UNREF(bottom);
         CSS_DOM_STRING_UNREF(caption);
+        CSS_DOM_STRING_UNREF(cellpadding);
         CSS_DOM_STRING_UNREF(cellspacing);
         CSS_DOM_STRING_UNREF(center);
         CSS_DOM_STRING_UNREF(color);
@@ -948,6 +950,7 @@ nserror nscss_init(void)
         CSS_DOM_STRING_INTERN(bordercolor);
         CSS_DOM_STRING_INTERN(bottom);
         CSS_DOM_STRING_INTERN(caption);
+        CSS_DOM_STRING_INTERN(cellpadding);
         CSS_DOM_STRING_INTERN(cellspacing);
         CSS_DOM_STRING_INTERN(center);
         CSS_DOM_STRING_INTERN(color);
