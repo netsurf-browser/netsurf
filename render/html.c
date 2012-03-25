@@ -3027,8 +3027,14 @@ static void html_fini(void)
 	HTML_DOM_STRING_UNREF(_self);
 	HTML_DOM_STRING_UNREF(_parent);
 	HTML_DOM_STRING_UNREF(_top);
+	HTML_DOM_STRING_UNREF(content);
 
 #undef HTML_DOM_STRING_UNREF
+
+	if (html_dom_string_http_equiv != NULL) {
+		dom_string_unref(html_dom_string_http_equiv);
+		html_dom_string_http_equiv = NULL;
+	}
 
 	if (html_user_stylesheet_url != NULL) {
 		nsurl_unref(html_user_stylesheet_url);
