@@ -1544,19 +1544,40 @@ css_error node_count_siblings(void *pw, void *node, bool same_name,
  */
 css_error node_is_empty(void *pw, void *node, bool *match)
 {
-#ifdef FIXME
-	xmlNode *n = node;
-
+	dom_node *n = node, *next;
+	dom_exception err;
+	
 	*match = true;
-
-	for (n = n->children; n != NULL; n = n->next) {
-		if (n->type == XML_ELEMENT_NODE ||
-				n->type == XML_TEXT_NODE) {
+	
+	err = dom_node_get_first_child(n, &n);
+	if (err != DOM_NO_ERR) {
+		return CSS_BADPARM;
+	}
+	
+	while (n != NULL) {
+		dom_node_type ntype;
+		err = dom_node_get_node_type(n, &ntype);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_BADPARM;
+		}
+		
+		if (ntype == DOM_ELEMENT_NODE ||
+		    ntype == DOM_TEXT_NODE) {
 			*match = false;
+			dom_node_unref(n);
 			break;
 		}
+		
+		err = dom_node_get_next_sibling(n, &next);
+		if (err != DOM_NO_ERR) {
+			dom_node_unref(n);
+			return CSS_BADPARM;
+		}
+		dom_node_unref(n);
+		n = next;
 	}
-#endif
+	
 	return CSS_OK;
 }
 
