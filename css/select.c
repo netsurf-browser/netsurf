@@ -2157,61 +2157,74 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 
 static css_error 
 node_presentational_hint_margin_rl(nscss_select_ctx *ctx, 
-					  dom_node *node, 
-					  css_hint *hint)
+				   dom_node *node, 
+				   css_hint *hint,
+				   uint32_t property)
 {
-#ifdef FIXME
-	xmlChar *hspace = NULL;
-	xmlChar *align = NULL;
-
-	if (strcmp((const char *) n->name, "img") == 0 ||
-	    strcmp((const char *) n->name, "applet") == 0) {
-		hspace = xmlGetProp(n, (const xmlChar *) "hspace");
-
-		if (hspace == NULL)
+	dom_string *n;
+	dom_exception exc;
+	
+	exc = dom_node_get_node_name(node, &n);
+	if (exc != DOM_NO_ERR)
+		return CSS_BADPARM;
+	
+	if (dom_string_isequal(n, nscss_dom_string_img) ||
+	    dom_string_isequal(n, nscss_dom_string_applet)) {
+		dom_string_unref(n);
+		exc = dom_element_get_attribute(node,
+						nscss_dom_string_hspace, &n);
+		if (exc != DOM_NO_ERR) {
+			return CSS_BADPARM;
+		}
+		
+		if (n == NULL)
 			return CSS_PROPERTY_NOT_SET;
-
-		if (parse_dimension((const char *) hspace, false,
+		
+		if (parse_dimension(dom_string_data(n), false,
 				    &hint->data.length.value,
 				    &hint->data.length.unit)) {
 			hint->status = CSS_MARGIN_SET;
 		} else {
-			xmlFree(hspace);
+			dom_string_unref(n);
 			return CSS_PROPERTY_NOT_SET;
 		}
-
-		xmlFree(hspace);
-
+		dom_string_unref(n);
 		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "table") == 0) {
-		align = xmlGetProp(n, (const xmlChar *) "align");
-
-		if (align == NULL)
+	} else if (dom_string_isequal(n, nscss_dom_string_table) ||
+		   dom_string_isequal(n, nscss_dom_string_align)) {
+		dom_string_unref(n);
+		exc = dom_element_get_attribute(node,
+						nscss_dom_string_align, &n);
+		if (exc != DOM_NO_ERR) {
+			return CSS_BADPARM;
+		}
+		
+		if (n == NULL)
 			return CSS_PROPERTY_NOT_SET;
-
-		if (strcasecmp((const char *) align, "center") == 0 ||
-		    strcasecmp((const char *) align,
-			       "abscenter") == 0 ||
-		    strcasecmp((const char *) align,
-			       "middle") == 0 ||
-		    strcasecmp((const char *) align,
-			       "absmiddle") == 0) {
+		
+		if (dom_string_caseless_isequal(n, nscss_dom_string_center) ||
+		    dom_string_caseless_isequal(n, nscss_dom_string_abscenter) ||
+		    dom_string_caseless_isequal(n, nscss_dom_string_middle) ||
+		    dom_string_caseless_isequal(n, nscss_dom_string_absmiddle)) {
 			hint->status = CSS_MARGIN_AUTO;
 		} else {
-			xmlFree(align);
+			dom_string_unref(n);
 			return CSS_PROPERTY_NOT_SET;
 		}
-
-		xmlFree(align);
-
+		
+		dom_string_unref(n);
 		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "hr") == 0) {
-		align = xmlGetProp(n, (const xmlChar *) "align");
-
-		if (align == NULL)
+	} else if (dom_string_isequal(n, nscss_dom_string_hr)) {
+		dom_string_unref(n);
+		exc = dom_element_get_attribute(node,
+						nscss_dom_string_align, &n);
+		if (exc != DOM_NO_ERR)
+			return CSS_BADPARM;
+		
+		if (n == NULL)
 			return CSS_PROPERTY_NOT_SET;
-
-		if (strcasecmp((const char *) align, "left") == 0) {
+		
+		if (dom_string_caseless_isequal(n, nscss_dom_string_left)) {
 			if (property == CSS_PROP_MARGIN_LEFT) {
 				hint->data.length.value = 0;
 				hint->data.length.unit = CSS_UNIT_PX;
@@ -2219,11 +2232,9 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 			} else {
 				hint->status = CSS_MARGIN_AUTO;
 			}
-		} else if (strcasecmp((const char *) align,
-				      "center") == 0) {
+		} else if (dom_string_caseless_isequal(n, nscss_dom_string_center)) {
 			hint->status = CSS_MARGIN_AUTO;
-		} else if (strcasecmp((const char *) align,
-				      "right") == 0) {
+		} else if (dom_string_caseless_isequal(n, nscss_dom_string_right)) {
 			if (property == CSS_PROP_MARGIN_RIGHT) {
 				hint->data.length.value = 0;
 				hint->data.length.unit = CSS_UNIT_PX;
@@ -2232,15 +2243,16 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 				hint->status = CSS_MARGIN_AUTO;
 			}
 		} else {
-			xmlFree(align);
+			dom_string_unref(n);
 			return CSS_PROPERTY_NOT_SET;
 		}
-
-		xmlFree(align);
-
+		dom_string_unref(n);
+		
 		return CSS_OK;
 	}
-#endif
+	
+	dom_string_unref(n);
+	
 	return CSS_PROPERTY_NOT_SET;
 }
 
@@ -2844,7 +2856,7 @@ css_error node_presentational_hint(void *pw, void *node,
 
 	case CSS_PROP_MARGIN_RIGHT:
 	case CSS_PROP_MARGIN_LEFT:
-		return node_presentational_hint_margin_rl(pw, node, hint);
+		return node_presentational_hint_margin_rl(pw, node, hint, property);
 
 	case CSS_PROP_PADDING_TOP:
 	case CSS_PROP_PADDING_RIGHT :
