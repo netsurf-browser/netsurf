@@ -1964,104 +1964,131 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-	xmlChar *align = NULL;
+	dom_string *name;
+	dom_string *align = NULL;
+	dom_exception err;
 
-	if (strcmp((const char *) n->name, "p") == 0 ||
-	    strcmp((const char *) n->name, "h1") == 0 ||
-	    strcmp((const char *) n->name, "h2") == 0 ||
-	    strcmp((const char *) n->name, "h3") == 0 ||
-	    strcmp((const char *) n->name, "h4") == 0 ||
-	    strcmp((const char *) n->name, "h5") == 0 ||
-	    strcmp((const char *) n->name, "h6") == 0) {
-		align = xmlGetProp(n, (const xmlChar *) "align");
+	err = dom_node_get_node_name(node, &name);
+	if (err != DOM_NO_ERR)
+		return CSS_PROPERTY_NOT_SET;
 
-		if (align == NULL)
-			return CSS_PROPERTY_NOT_SET;
-
-		if (strcasecmp((const char *) align, "left") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LEFT;
-		} else if (strcasecmp((const char *) align,
-				      "center") == 0) {
-			hint->status = CSS_TEXT_ALIGN_CENTER;
-		} else if (strcasecmp((const char *) align,
-				      "right") == 0) {
-			hint->status = CSS_TEXT_ALIGN_RIGHT;
-		} else if (strcasecmp((const char *) align,
-				      "justify") == 0) {
-			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
-		} else {
-			xmlFree(align);
+	if (strcmp(dom_string_data(name), "p") == 0 ||
+	    strcmp(dom_string_data(name), "h1") == 0 ||
+	    strcmp(dom_string_data(name), "h2") == 0 ||
+	    strcmp(dom_string_data(name), "h3") == 0 ||
+	    strcmp(dom_string_data(name), "h4") == 0 ||
+	    strcmp(dom_string_data(name), "h5") == 0 ||
+	    strcmp(dom_string_data(name), "h6") == 0) {
+		err = dom_element_get_attribute(node,
+				nscss_dom_string_align, &align);
+		if (err != DOM_NO_ERR || align == NULL) {
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		xmlFree(align);
-
-		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "center") == 0) {
-		hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-
-		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "caption") == 0) {
-		align = xmlGetProp(n, (const xmlChar *) "align");
-
-		if (align == NULL || strcasecmp((const char *) align,
-						"center") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-		} else if (strcasecmp((const char *) align,
-				      "left") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-		} else if (strcasecmp((const char *) align,
+		if (strcasecmp(dom_string_data(align), "left") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LEFT;
+		} else if (strcasecmp(dom_string_data(align),
+				      "center") == 0) {
+			hint->status = CSS_TEXT_ALIGN_CENTER;
+		} else if (strcasecmp(dom_string_data(align),
 				      "right") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-		} else if (strcasecmp((const char *) align,
+			hint->status = CSS_TEXT_ALIGN_RIGHT;
+		} else if (strcasecmp(dom_string_data(align),
 				      "justify") == 0) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
-			xmlFree(align);
+			dom_string_unref(align);
+			dom_string_unref(name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		dom_string_unref(align);
+		dom_string_unref(name);
+
+		return CSS_OK;
+	} else if (strcmp(dom_string_data(name), "center") == 0) {
+		hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
+
+		dom_string_unref(name);
+
+		return CSS_OK;
+	} else if (strcmp(dom_string_data(name), "caption") == 0) {
+		err = dom_element_get_attribute(node,
+				nscss_dom_string_align, &align);
+		if (err != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		if (align == NULL || strcasecmp(dom_string_data(align),
+						"center") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
+		} else if (strcasecmp(dom_string_data(align),
+				      "left") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
+		} else if (strcasecmp(dom_string_data(align),
+				      "right") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
+		} else if (strcasecmp(dom_string_data(align),
+				      "justify") == 0) {
+			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
+		} else {
+			dom_string_unref(align);
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
 		if (align != NULL)
-			xmlFree(align);
+			dom_string_unref(align);
+		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "div") == 0 ||
-		   strcmp((const char *) n->name, "thead") == 0 ||
-		   strcmp((const char *) n->name, "tbody") == 0 ||
-		   strcmp((const char *) n->name, "tfoot") == 0 ||
-		   strcmp((const char *) n->name, "tr") == 0 ||
-		   strcmp((const char *) n->name, "td") == 0 ||
-		   strcmp((const char *) n->name, "th") == 0) {
-		align = xmlGetProp(n, (const xmlChar *) "align");
-
-		if (align == NULL)
-			return CSS_PROPERTY_NOT_SET;
-
-		if (strcasecmp((const char *) align, "center") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-		} else if (strcasecmp((const char *) align,
-				      "left") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-		} else if (strcasecmp((const char *) align,
-				      "right") == 0) {
-			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-		} else if (strcasecmp((const char *) align,
-				      "justify") == 0) {
-			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
-		} else {
-			xmlFree(align);
+	} else if (strcmp(dom_string_data(name), "div") == 0 ||
+		   strcmp(dom_string_data(name), "thead") == 0 ||
+		   strcmp(dom_string_data(name), "tbody") == 0 ||
+		   strcmp(dom_string_data(name), "tfoot") == 0 ||
+		   strcmp(dom_string_data(name), "tr") == 0 ||
+		   strcmp(dom_string_data(name), "td") == 0 ||
+		   strcmp(dom_string_data(name), "th") == 0) {
+		err = dom_element_get_attribute(node,
+				nscss_dom_string_align, &align);
+		if (err != DOM_NO_ERR || align == NULL) {
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		xmlFree(align);
+		if (strcasecmp(dom_string_data(align), "center") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
+		} else if (strcasecmp(dom_string_data(align),
+				      "left") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
+		} else if (strcasecmp(dom_string_data(align),
+				      "right") == 0) {
+			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
+		} else if (strcasecmp(dom_string_data(align),
+				      "justify") == 0) {
+			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
+		} else {
+			dom_string_unref(align);
+			dom_string_unref(name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		dom_string_unref(align);
+		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "table") == 0) {
+	} else if (strcmp(dom_string_data(name), "table") == 0) {
 		/* Tables usually reset alignment */
 		hint->status = CSS_TEXT_ALIGN_INHERIT_IF_NON_MAGIC;
 
+		dom_string_unref(name);
+
 		return CSS_OK;
 	} else {
+		dom_string_unref(name);
+
 		return CSS_PROPERTY_NOT_SET;
 	}
 
