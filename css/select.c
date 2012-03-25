@@ -2261,32 +2261,40 @@ node_presentational_hint_margin_tb(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *vspace;
-
-	if (strcmp((const char *) n->name, "img") == 0 ||
-	    strcmp((const char *) n->name, "applet") == 0)
-		vspace = xmlGetProp(n, (const xmlChar *) "vspace");
-	else
-		vspace = NULL;
-
+	dom_string *name, *vspace = NULL;
+	dom_exception exc;
+	
+	exc = dom_node_get_node_name(node, &name);
+	if (exc != DOM_NO_ERR)
+		return CSS_BADPARM;
+	
+	if (dom_string_isequal(name, nscss_dom_string_img) ||
+	    dom_string_isequal(name, nscss_dom_string_applet)) {
+		exc = dom_element_get_attribute(node, nscss_dom_string_vspace,
+						&vspace);
+		if (exc != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
+		}
+	}
+	
+	dom_string_unref(name);
+	
 	if (vspace == NULL)
 		return CSS_PROPERTY_NOT_SET;
-
-	if (parse_dimension((const char *) vspace, false,
+	
+	if (parse_dimension(dom_string_data(vspace), false,
 			    &hint->data.length.value,
 			    &hint->data.length.unit)) {
 		hint->status = CSS_MARGIN_SET;
 	} else {
-		xmlFree(vspace);
+		dom_string_unref(vspace);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(vspace);
+	dom_string_unref(vspace);
 
 	return CSS_OK;
-#endif
-	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
