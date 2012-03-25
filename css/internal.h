@@ -26,8 +26,8 @@ css_error nscss_resolve_url(void *pw, const char *base,
 
 extern struct dom_string *nscss_dom_string_a;
 extern struct dom_string *nscss_dom_string_href;
+extern struct dom_string *nscss_dom_string_background;
 extern struct dom_string *nscss_dom_string_align;
 extern struct dom_string *nscss_dom_string_valign;
-
 
 #endif

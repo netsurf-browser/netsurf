@@ -2140,6 +2140,7 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *hspace = NULL;
 	xmlChar *align = NULL;
 
@@ -2219,7 +2220,7 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 
 		return CSS_OK;
 	}
-
+#endif
 }
 
 static css_error 
@@ -2227,6 +2228,7 @@ node_presentational_hint_margin_tb(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *vspace;
 
 	if (strcmp((const char *) n->name, "img") == 0 ||
@@ -2250,7 +2252,7 @@ node_presentational_hint_margin_tb(nscss_select_ctx *ctx,
 	xmlFree(vspace);
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2258,6 +2260,7 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *width;
 	bool is_table_cell = false;
 
@@ -2303,7 +2306,7 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 	xmlFree(width);
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2311,6 +2314,8 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
+
 	bool is_table_cell = false;
 
 	if (strcmp((const char *) n->name, "td") == 0 ||
@@ -2338,6 +2343,7 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 			hint->status = CSS_BORDER_STYLE_OUTSET;
 		return CSS_OK;
 	}
+#endif
 }
 
 static css_error 
@@ -2345,6 +2351,7 @@ node_presentational_hint_border_trbl_color(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *col;
 
 	if (strcmp((const char *) n->name, "td") == 0 ||
@@ -2380,7 +2387,7 @@ node_presentational_hint_border_trbl_color(nscss_select_ctx *ctx,
 	xmlFree(col);
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2388,6 +2395,7 @@ node_presentational_hint_border_spacing(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *cellspacing;
 
 	if (strcmp((const char *) n->name, "table") != 0)
@@ -2410,7 +2418,7 @@ node_presentational_hint_border_spacing(nscss_select_ctx *ctx,
 	xmlFree(cellspacing);
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2418,6 +2426,7 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *width;
 
 	if (strcmp((const char *) n->name, "hr") == 0 ||
@@ -2470,7 +2479,7 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 	}
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2478,6 +2487,7 @@ node_presentational_hint_height(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *height;
 
 	if (strcmp((const char *) n->name, "iframe") == 0 ||
@@ -2511,7 +2521,7 @@ node_presentational_hint_height(nscss_select_ctx *ctx,
 		hint->data.length.unit = CSS_UNIT_EM;
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2519,6 +2529,7 @@ node_presentational_hint_font_size(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *size;
 
 	if (strcmp((const char *) n->name, "font") == 0)
@@ -2539,6 +2550,7 @@ node_presentational_hint_font_size(nscss_select_ctx *ctx,
 	xmlFree(size);
 
 	return CSS_OK;
+#endif
 }
 
 static css_error 
@@ -2546,6 +2558,7 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 		xmlChar *align = NULL;
 
 		/** \todo input[type=image][align=*] - $11.3.3 */
@@ -2572,7 +2585,7 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 		xmlFree(align);
 
 		return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2580,6 +2593,7 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *col;
 	css_error error;
 	bool is_link, is_visited;
@@ -2626,6 +2640,7 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 	xmlFree(col);
 
 	return CSS_OK;
+#endif
 }
 
 static css_error 
@@ -2633,6 +2648,7 @@ node_presentational_hint_caption_side(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *align = NULL;
 
 	if (strcmp((const char *) n->name, "caption") == 0)
@@ -2651,6 +2667,7 @@ node_presentational_hint_caption_side(nscss_select_ctx *ctx,
 	xmlFree(align);
 
 	return CSS_OK;
+#endif
 }
 
 static css_error 
@@ -2658,6 +2675,7 @@ node_presentational_hint_background_color(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
+#ifdef FIXME
 	xmlChar *bgcol = xmlGetProp(n, (const xmlChar *) "bgcolor");
 	if (bgcol == NULL)
 		return CSS_PROPERTY_NOT_SET;
@@ -2673,7 +2691,7 @@ node_presentational_hint_background_color(nscss_select_ctx *ctx,
 	xmlFree(bgcol);
 
 	return CSS_OK;
-
+#endif
 }
 
 static css_error 
@@ -2681,36 +2699,39 @@ node_presentational_hint_background_image(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-	nsurl *url;
+	dom_exception err;
+	dom_string *atr_val;
 	nserror error;
-	xmlChar *bg = xmlGetProp(n, (const xmlChar *) "background");
+	lwc_string *iurl;
+	lwc_error lerror;
 
-	if (bg == NULL)
+	err = dom_element_get_attribute(node, nscss_dom_string_background, &atr_val);
+	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
+	}
 
-	error = nsurl_join(ctx->base_url, (const char *) bg, &url);
+	error = nsurl_join(ctx->base_url, (const char *)dom_string_data(atr_val), &url);
 
-	xmlFree(bg);
+	dom_string_unref(atr_val);
 
 	if (error != NSERROR_OK) {
 		return CSS_NOMEM;
-	} else {
-		lwc_string *iurl;
-		lwc_error lerror;
+	} 
 
-		lerror = lwc_intern_string(nsurl_access(url),
-					   nsurl_length(url), &iurl);
+	lerror = lwc_intern_string(nsurl_access(url), nsurl_length(url), &iurl);
 
-		nsurl_unref(url);
+	nsurl_unref(url);
 
-		if (lerror == lwc_error_oom) {
-			return CSS_NOMEM;
-		} else if (lerror == lwc_error_ok) {
-			hint->data.string = iurl;
-			hint->status = CSS_BACKGROUND_IMAGE_IMAGE;
-			return CSS_OK;
-		}
+	if (lerror == lwc_error_oom) {
+		return CSS_NOMEM;
+	} 
+
+	if (lerror == lwc_error_ok) {
+		hint->data.string = iurl;
+		hint->status = CSS_BACKGROUND_IMAGE_IMAGE;
+		return CSS_OK;
 	}
+	
 	return CSS_PROPERTY_NOT_SET;
 }
 
