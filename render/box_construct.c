@@ -195,7 +195,6 @@ static const box_type box_map[] = {
 	BOX_NONE /*CSS_DISPLAY_NONE*/
 };
 
-/** \todo: initialise/finalise */
 /** Key for box userdata on DOM elements (== '__ns_box') */
 static dom_string *kstr_box_key;
 static dom_string *kstr_title;
@@ -223,6 +222,100 @@ static dom_string *kstr_marginheight;
 static dom_string *kstr_type;
 static dom_string *kstr_value;
 static dom_string *kstr_selected;
+
+nserror box_construct_init(void)
+{
+	dom_exception err;
+
+	err = dom_string_create_interned((const uint8_t *) "__ns_box",
+				SLEN("__ns_box"), &kstr_box_key);
+	if (err != DOM_NO_ERR || kstr_box_key == NULL)
+		goto error;
+
+#define BOX_CONSTRUCT_STRING_INTERN(NAME)				\
+	err = dom_string_create_interned((const uint8_t *)#NAME,	\
+					 sizeof(#NAME) - 1,		\
+					 &kstr_##NAME );		\
+	if ((err != DOM_NO_ERR) || (kstr_##NAME == NULL))		\
+		goto error						
+
+	BOX_CONSTRUCT_STRING_INTERN(title);
+	BOX_CONSTRUCT_STRING_INTERN(id);
+	BOX_CONSTRUCT_STRING_INTERN(colspan);
+	BOX_CONSTRUCT_STRING_INTERN(rowspan);
+	BOX_CONSTRUCT_STRING_INTERN(style);
+	BOX_CONSTRUCT_STRING_INTERN(href);
+	BOX_CONSTRUCT_STRING_INTERN(name);
+	BOX_CONSTRUCT_STRING_INTERN(target);
+	BOX_CONSTRUCT_STRING_INTERN(alt);
+	BOX_CONSTRUCT_STRING_INTERN(src);
+	BOX_CONSTRUCT_STRING_INTERN(codebase);
+	BOX_CONSTRUCT_STRING_INTERN(classid);
+	BOX_CONSTRUCT_STRING_INTERN(data);
+	BOX_CONSTRUCT_STRING_INTERN(rows);
+	BOX_CONSTRUCT_STRING_INTERN(cols);
+	BOX_CONSTRUCT_STRING_INTERN(border);
+	BOX_CONSTRUCT_STRING_INTERN(frameborder);
+	BOX_CONSTRUCT_STRING_INTERN(bordercolor);
+	BOX_CONSTRUCT_STRING_INTERN(noresize);
+	BOX_CONSTRUCT_STRING_INTERN(scrolling);
+	BOX_CONSTRUCT_STRING_INTERN(marginwidth);
+	BOX_CONSTRUCT_STRING_INTERN(marginheight);
+	BOX_CONSTRUCT_STRING_INTERN(type);
+	BOX_CONSTRUCT_STRING_INTERN(value);
+	BOX_CONSTRUCT_STRING_INTERN(selected);
+
+#undef BOX_CONSTRUCT_STRING_INTERN
+
+	return NSERROR_OK;
+
+error:
+	return NSERROR_NOMEM;
+}
+
+void box_construct_fini(void)
+{
+	if (kstr_box_key != NULL) {
+		dom_string_unref(kstr_box_key);
+		kstr_box_key = NULL;
+	}
+
+#define BOX_CONSTRUCT_STRING_UNREF(NAME)				\
+	do {								\
+		if (kstr_##NAME != NULL) {				\
+			dom_string_unref(kstr_##NAME);			\
+			kstr_##NAME = NULL;				\
+		}							\
+	} while (0)							\
+
+	BOX_CONSTRUCT_STRING_UNREF(title);
+	BOX_CONSTRUCT_STRING_UNREF(id);
+	BOX_CONSTRUCT_STRING_UNREF(colspan);
+	BOX_CONSTRUCT_STRING_UNREF(rowspan);
+	BOX_CONSTRUCT_STRING_UNREF(style);
+	BOX_CONSTRUCT_STRING_UNREF(href);
+	BOX_CONSTRUCT_STRING_UNREF(name);
+	BOX_CONSTRUCT_STRING_UNREF(target);
+	BOX_CONSTRUCT_STRING_UNREF(alt);
+	BOX_CONSTRUCT_STRING_UNREF(src);
+	BOX_CONSTRUCT_STRING_UNREF(codebase);
+	BOX_CONSTRUCT_STRING_UNREF(classid);
+	BOX_CONSTRUCT_STRING_UNREF(data);
+	BOX_CONSTRUCT_STRING_UNREF(rows);
+	BOX_CONSTRUCT_STRING_UNREF(cols);
+	BOX_CONSTRUCT_STRING_UNREF(border);
+	BOX_CONSTRUCT_STRING_UNREF(frameborder);
+	BOX_CONSTRUCT_STRING_UNREF(bordercolor);
+	BOX_CONSTRUCT_STRING_UNREF(noresize);
+	BOX_CONSTRUCT_STRING_UNREF(scrolling);
+	BOX_CONSTRUCT_STRING_UNREF(marginwidth);
+	BOX_CONSTRUCT_STRING_UNREF(marginheight);
+	BOX_CONSTRUCT_STRING_UNREF(type);
+	BOX_CONSTRUCT_STRING_UNREF(value);
+	BOX_CONSTRUCT_STRING_UNREF(selected);
+
+#undef BOX_CONSTRUCT_DOM_STRING_UNREF
+}
 
 static inline struct box *box_for_node(dom_node *n)
 {

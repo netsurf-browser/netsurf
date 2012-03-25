@@ -3002,6 +3002,7 @@ static content_type html_content_type(void)
 
 static void html_fini(void)
 {
+	box_construct_fini();
 
 #define HTML_DOM_STRING_UNREF(NAME)					\
 	do {								\
@@ -3148,6 +3149,10 @@ nserror html_init(void)
 					 SLEN("http-equiv"),
 					 &html_dom_string_http_equiv);
 	if ((exc != DOM_NO_ERR) || (html_dom_string_http_equiv == NULL))
+		goto error;
+
+	error = box_construct_init();
+	if (error != NSERROR_OK)
 		goto error;
 
 	for (i = 0; i < NOF_ELEMENTS(html_types); i++) {
