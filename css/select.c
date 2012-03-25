@@ -1472,6 +1472,41 @@ css_error node_is_root(void *pw, void *node, bool *match)
 	return CSS_OK;
 }
 
+static int 
+node_count_siblings_check(dom_node *node, 
+			  bool check_name, 
+			  dom_string *check_name)
+{
+	dom_node_type type;
+	int ret = 0;
+
+	if (node == NULL) 
+		return 0;
+
+	exc = dom_node_get_node_type(node, &type);
+	if ((exc != DOM_NO_ERR) || (type != DOM_ELEMENT_NODE)) {
+		return 0;
+	}
+	
+	if (check_name) {
+		dom_string node_name = NULL;
+		exc = dom_node_get_node_name(node, &node_name);
+
+		if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
+
+			if (dom_string_caseless_isequal(check_name, 
+							node_name)) {
+				ret = 1;
+			}
+			dom_string_unref(node_name);
+		}
+	} else {
+		ret = 1;
+	}
+	
+	return ret;
+}
+			
 /**
  * Callback to count a node's siblings.
  *
@@ -1484,51 +1519,57 @@ css_error node_is_root(void *pw, void *node, bool *match)
  *
  * \post \a count will contain the number of siblings
  */
-css_error node_count_siblings(void *pw, void *node, bool same_name,
+css_error node_count_siblings(void *pw, void *n, bool same_name,
 		bool after, int32_t *count)
 {
-#ifdef FIXME
-	xmlNode *n = node;
 	int32_t cnt = 0;
+	dom_exception exc;
+	dom_string node_name = NULL;
 
 	if (same_name) {
-		binding_private *p = n->_private;
-		lwc_string *name = p->localname;
-		bool match;
-
+		dom_node *node = n;
+		exc = dom_node_get_node_name(node, &node_name);
+		if ((exc != DOM_NO_ERR) || (node_name == NULL)) {
+			return CSS_NOMEM;
+		}
+	}
+	
+	if (after) {
+		dom_node *node = dom_node_ref(n);
+		dom_node *next;
+		
 		do {
-			n = after ? n->next : n->prev;
+			exc = dom_node_get_next_sibling(node, &next);
+			if ((exc != DOM_NO_ERR))
+				break;
+			
+			dom_node_unref(node);
+			node = next;
 
-			if (n != NULL && n->type == XML_ELEMENT_NODE) {
-				p = n->_private;
-
-				if (lwc_string_caseless_isequal(p->localname, 
-					name, &match) == lwc_error_ok && 
-						match) {
-					cnt++;
-				}
-			}
-		} while (n != NULL);
-	} else if (after) {
-		do {
-			n = n->next;
-
-			if (n != NULL && n->type == XML_ELEMENT_NODE) {
-				cnt++;
-			}
-		} while (n != NULL);
+			cnt += node_count_siblings_check(node, same_name, node_name);
+		} while (node != NULL);
 	} else {
+		dom_node *node = dom_node_ref(n);
+		dom_node *next;
+		
 		do {
-			n = n->prev;
+			exc = dom_node_get_previous_sibling(node, &next);
+			if ((exc != DOM_NO_ERR))
+				break;
+			
+			dom_node_unref(node);
+			node = next;
 
-			if (n != NULL && n->type == XML_ELEMENT_NODE) {
-				cnt++;
-			}
-		} while (n != NULL);
+			cnt += node_count_siblings_check(node, same_name, node_name);
+
+		} while (node != NULL);
+	}
+
+	if (node_name != NULL) {
+		dom_string_unref(node_name);	
 	}
 
 	*count = cnt;
-#endif
 	return CSS_OK;
 }
 
