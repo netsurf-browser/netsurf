@@ -28,7 +28,7 @@ struct hlcache_handle;
 
 void imagemap_destroy(struct html_content *c);
 void imagemap_dump(struct html_content *c);
-bool imagemap_extract(dom_node *node, struct html_content *c);
+bool imagemap_extract(struct html_content *c);
 
 nsurl *imagemap_get(struct html_content *c, const char *key,
 		unsigned long x, unsigned long y,

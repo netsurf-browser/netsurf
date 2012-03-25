@@ -96,7 +96,7 @@ static nsurl *html_user_stylesheet_url;
 static dom_string *html_dom_string_html;
 static dom_string *html_dom_string_head;
 static dom_string *html_dom_string_rel;
-static dom_string *html_dom_string_href;
+dom_string *html_dom_string_href;
 static dom_string *html_dom_string_hreflang;
 static dom_string *html_dom_string_type;
 static dom_string *html_dom_string_media;
@@ -104,13 +104,27 @@ static dom_string *html_dom_string_sizes;
 static dom_string *html_dom_string_title;
 static dom_string *html_dom_string_base;
 static dom_string *html_dom_string_link;
-static dom_string *html_dom_string_target;
+dom_string *html_dom_string_target;
 static dom_string *html_dom_string__parent;
 static dom_string *html_dom_string__self;
 static dom_string *html_dom_string__blank;
 static dom_string *html_dom_string__top;
 static dom_string *html_dom_string_http_equiv;
 static dom_string *html_dom_string_content;
+dom_string *html_dom_string_map;
+dom_string *html_dom_string_id;
+dom_string *html_dom_string_name;
+dom_string *html_dom_string_area;
+dom_string *html_dom_string_a;
+dom_string *html_dom_string_nohref;
+dom_string *html_dom_string_shape;
+dom_string *html_dom_string_default;
+dom_string *html_dom_string_rect;
+dom_string *html_dom_string_rectangle;
+dom_string *html_dom_string_coords;
+dom_string *html_dom_string_circle;
+dom_string *html_dom_string_poly;
+dom_string *html_dom_string_polygon;
 
 static nserror 
 html_create_html_data(html_content *c, const http_parameter *params)
@@ -1185,7 +1199,7 @@ static void html_box_convert_done(html_content *c, bool success)
 	}
 
 	/* extract image maps - can't do this sensibly in xml_to_box */
-	if (imagemap_extract(html, c) == false) {
+	if (imagemap_extract(c) == false) {
 		LOG(("imagemap extraction failed"));
 		html_destroy_objects(c);
 		msg_data.error = messages_get("NoMemory");
@@ -3029,6 +3043,20 @@ static void html_fini(void)
 	HTML_DOM_STRING_UNREF(_parent);
 	HTML_DOM_STRING_UNREF(_top);
 	HTML_DOM_STRING_UNREF(content);
+	HTML_DOM_STRING_UNREF(map);
+	HTML_DOM_STRING_UNREF(id);
+	HTML_DOM_STRING_UNREF(name);
+	HTML_DOM_STRING_UNREF(area);
+	HTML_DOM_STRING_UNREF(a);
+	HTML_DOM_STRING_UNREF(nohref);
+	HTML_DOM_STRING_UNREF(shape);
+	HTML_DOM_STRING_UNREF(default);
+	HTML_DOM_STRING_UNREF(rect);
+	HTML_DOM_STRING_UNREF(rectangle);
+	HTML_DOM_STRING_UNREF(coords);
+	HTML_DOM_STRING_UNREF(circle);
+	HTML_DOM_STRING_UNREF(poly);
+	HTML_DOM_STRING_UNREF(polygon);
 
 #undef HTML_DOM_STRING_UNREF
 
@@ -3142,6 +3170,20 @@ nserror html_init(void)
 	HTML_DOM_STRING_INTERN(_parent);
 	HTML_DOM_STRING_INTERN(_top);
 	HTML_DOM_STRING_INTERN(content);
+	HTML_DOM_STRING_INTERN(map);
+	HTML_DOM_STRING_INTERN(id);
+	HTML_DOM_STRING_INTERN(name);
+	HTML_DOM_STRING_INTERN(area);
+	HTML_DOM_STRING_INTERN(a);
+	HTML_DOM_STRING_INTERN(nohref);
+	HTML_DOM_STRING_INTERN(shape);
+	HTML_DOM_STRING_INTERN(default);
+	HTML_DOM_STRING_INTERN(rect);
+	HTML_DOM_STRING_INTERN(rectangle);
+	HTML_DOM_STRING_INTERN(coords);
+	HTML_DOM_STRING_INTERN(circle);
+	HTML_DOM_STRING_INTERN(poly);
+	HTML_DOM_STRING_INTERN(polygon);
 
 #undef HTML_DOM_STRING_INTERN
 

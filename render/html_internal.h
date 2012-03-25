@@ -132,6 +132,26 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 void html_overflow_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
 
+/* Useful dom_string pointers */
+struct dom_string;
+
+extern struct dom_string *html_dom_string_map;
+extern struct dom_string *html_dom_string_id;
+extern struct dom_string *html_dom_string_name;
+extern struct dom_string *html_dom_string_area;
+extern struct dom_string *html_dom_string_a;
+extern struct dom_string *html_dom_string_nohref;
+extern struct dom_string *html_dom_string_href;
+extern struct dom_string *html_dom_string_target;
+extern struct dom_string *html_dom_string_shape;
+extern struct dom_string *html_dom_string_default;
+extern struct dom_string *html_dom_string_rect;
+extern struct dom_string *html_dom_string_rectangle;
+extern struct dom_string *html_dom_string_coords;
+extern struct dom_string *html_dom_string_circle;
+extern struct dom_string *html_dom_string_poly;
+extern struct dom_string *html_dom_string_polygon;
+
 #endif
 
 
