@@ -2892,7 +2892,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	if (err != DOM_NO_ERR)
 		return false;
 
-	if (area_data == NULL) {
+	if (area_data != NULL) {
 		current = dom_string_data(area_data);
 	} else {
 		/* No content, or failed reading it: use a blank string */
