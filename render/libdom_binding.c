@@ -100,7 +100,21 @@ struct form *binding_get_forms(void *ctx)
 
 struct form_control *binding_get_control_for_node(void *ctx, dom_node *node)
 {
-	return NULL;
+	/** \todo implement properly */
+	struct form_control *ctl = form_new_control(node, GADGET_HIDDEN);
+	if (ctl != NULL) {
+		ctl->value = strdup("");
+		ctl->initial_value = strdup("");
+		ctl->name = strdup("foo");
+
+		if (ctl->value == NULL || ctl->initial_value == NULL ||
+				ctl->name == NULL) {
+			form_free_control(ctl);
+			ctl = NULL;
+		}
+	}
+
+	return ctl;
 }
 
 void binding_destroy_document(dom_document *doc)
