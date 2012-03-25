@@ -101,6 +101,8 @@ struct object_params;
 struct object_param;
 struct html_content;
 
+struct dom_node;
+
 #define UNKNOWN_WIDTH INT_MAX
 #define UNKNOWN_MAX_WIDTH INT_MAX
 
@@ -339,7 +341,7 @@ bool box_hscrollbar_present(const struct box *box);
 
 nserror box_construct_init(void);
 void box_construct_fini(void);
-bool xml_to_box(dom_node *n, struct html_content *c, 
+bool xml_to_box(struct dom_node *n, struct html_content *c, 
 		box_construct_complete_cb cb);
 
 bool box_normalise_block(struct box *block, struct html_content *c);
