@@ -1872,75 +1872,91 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-	xmlChar *valign = NULL;
+	dom_string *name;
+	dom_string *valign = NULL;
+	dom_exception err;
 
-	if (strcmp((const char *) n->name, "col") == 0 ||
-	    strcmp((const char *) n->name, "thead") == 0 ||
-	    strcmp((const char *) n->name, "tbody") == 0 ||
-	    strcmp((const char *) n->name, "tfoot") == 0 ||
-	    strcmp((const char *) n->name, "tr") == 0 ||
-	    strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0) {
-		valign = xmlGetProp(n, (const xmlChar *) "valign");
+	err = dom_node_get_node_name(node, &name);
+	if (err != DOM_NO_ERR)
+		return CSS_PROPERTY_NOT_SET;
 
-		if (valign == NULL)
-			return CSS_PROPERTY_NOT_SET;
-
-		if (strcasecmp((const char *) valign, "top") == 0) {
-			hint->status = CSS_VERTICAL_ALIGN_TOP;
-		} else if (strcasecmp((const char *) valign,
-				      "middle") == 0) {
-			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-		} else if (strcasecmp((const char *) valign,
-				      "bottom") == 0) {
-			hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
-		} else if (strcasecmp((const char *) valign,
-				      "baseline") == 0) {
-			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-		} else {
-			xmlFree(valign);
+	if (strcmp(dom_string_data(name), "col") == 0 ||
+	    strcmp(dom_string_data(name), "thead") == 0 ||
+	    strcmp(dom_string_data(name), "tbody") == 0 ||
+	    strcmp(dom_string_data(name), "tfoot") == 0 ||
+	    strcmp(dom_string_data(name), "tr") == 0 ||
+	    strcmp(dom_string_data(name), "td") == 0 ||
+	    strcmp(dom_string_data(name), "th") == 0) {
+		err = dom_element_get_attribute(node, 
+				nscss_dom_string_valign, &valign);
+		if (err != DOM_NO_ERR || valign == NULL) {
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		xmlFree(valign);
-
-		return CSS_OK;
-	} else if (strcmp((const char *) n->name, "applet") == 0 ||
-		   strcmp((const char *) n->name, "embed") == 0 ||
-		   strcmp((const char *) n->name, "iframe") == 0 ||
-		   strcmp((const char *) n->name, "img") == 0 ||
-		   strcmp((const char *) n->name, "object") == 0) {
-		/** \todo input[type=image][align=*] - $11.3.3 */
-		valign = xmlGetProp(n, (const xmlChar *) "align");
-
-		if (valign == NULL)
-			return CSS_PROPERTY_NOT_SET;
-
-		if (strcasecmp((const char *) valign, "top") == 0) {
+		if (strcasecmp(dom_string_data(valign), "top") == 0) {
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-		} else if (strcasecmp((const char *) valign,
-				      "bottom") == 0 ||
-			   strcasecmp((const char *) valign,
+		} else if (strcasecmp(dom_string_data(valign),
+				      "middle") == 0) {
+			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
+		} else if (strcasecmp(dom_string_data(valign),
+				      "bottom") == 0) {
+			hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
+		} else if (strcasecmp(dom_string_data(valign),
 				      "baseline") == 0) {
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-		} else if (strcasecmp((const char *) valign,
+		} else {
+			dom_string_unref(valign);
+			dom_string_unref(name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		dom_string_unref(valign);
+		dom_string_unref(name);
+
+		return CSS_OK;
+	} else if (strcmp(dom_string_data(name), "applet") == 0 ||
+		   strcmp(dom_string_data(name), "embed") == 0 ||
+		   strcmp(dom_string_data(name), "iframe") == 0 ||
+		   strcmp(dom_string_data(name), "img") == 0 ||
+		   strcmp(dom_string_data(name), "object") == 0) {
+		/** \todo input[type=image][align=*] - $11.3.3 */
+		err = dom_element_get_attribute(node, 
+				nscss_dom_string_align, &valign);
+		if (err != DOM_NO_ERR || valign == NULL) {
+			dom_string_unref(name);
+			return CSS_PROPERTY_NOT_SET;
+		}
+
+		if (strcasecmp(dom_string_data(valign), "top") == 0) {
+			hint->status = CSS_VERTICAL_ALIGN_TOP;
+		} else if (strcasecmp(dom_string_data(valign),
+				      "bottom") == 0 ||
+			   strcasecmp(dom_string_data(valign),
+				      "baseline") == 0) {
+			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
+		} else if (strcasecmp(dom_string_data(valign),
 				      "texttop") == 0) {
 			hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
-		} else if (strcasecmp((const char *) valign,
+		} else if (strcasecmp(dom_string_data(valign),
 				      "absmiddle") == 0 ||
-			   strcasecmp((const char *) valign,
+			   strcasecmp(dom_string_data(valign),
 				      "abscenter") == 0) {
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
 		} else {
-			xmlFree(valign);
+			dom_string_unref(valign);
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		xmlFree(valign);
+		dom_string_unref(valign);
+		dom_string_unref(name);
 
 		return CSS_OK;
 	}
 
+	dom_string_unref(name);
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 

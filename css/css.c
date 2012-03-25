@@ -85,6 +85,8 @@ static css_stylesheet *blank_import;
 
 dom_string *nscss_dom_string_a;
 dom_string *nscss_dom_string_href;
+dom_string *nscss_dom_string_align;
+dom_string *nscss_dom_string_valign;
 
 /**
  * Initialise a CSS content
@@ -779,6 +781,8 @@ static void nscss_fini(void)
 		}							\
 	} while (0)							\
 
+	CSS_DOM_STRING_UNREF(valign);
+	CSS_DOM_STRING_UNREF(align);
 	CSS_DOM_STRING_UNREF(href);
 	CSS_DOM_STRING_UNREF(a);
 
@@ -833,7 +837,8 @@ nserror nscss_init(void)
 
 	CSS_DOM_STRING_INTERN(a);
 	CSS_DOM_STRING_INTERN(href);
-
+	CSS_DOM_STRING_INTERN(align);
+	CSS_DOM_STRING_INTERN(valign);
 
 #undef CSS_DOM_STRING_INTERN
 
