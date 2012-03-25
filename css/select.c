@@ -1475,10 +1475,11 @@ css_error node_is_root(void *pw, void *node, bool *match)
 static int 
 node_count_siblings_check(dom_node *node, 
 			  bool check_name, 
-			  dom_string *check_name)
+			  dom_string *name)
 {
 	dom_node_type type;
 	int ret = 0;
+	dom_exception exc;
 
 	if (node == NULL) 
 		return 0;
@@ -1489,12 +1490,12 @@ node_count_siblings_check(dom_node *node,
 	}
 	
 	if (check_name) {
-		dom_string node_name = NULL;
+		dom_string *node_name = NULL;
 		exc = dom_node_get_node_name(node, &node_name);
 
 		if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
 
-			if (dom_string_caseless_isequal(check_name, 
+			if (dom_string_caseless_isequal(name, 
 							node_name)) {
 				ret = 1;
 			}
@@ -1524,7 +1525,7 @@ css_error node_count_siblings(void *pw, void *n, bool same_name,
 {
 	int32_t cnt = 0;
 	dom_exception exc;
-	dom_string node_name = NULL;
+	dom_string *node_name = NULL;
 
 	if (same_name) {
 		dom_node *node = n;
