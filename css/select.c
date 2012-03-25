@@ -2134,6 +2134,7 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2222,6 +2223,7 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 		return CSS_OK;
 	}
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2254,6 +2256,7 @@ node_presentational_hint_margin_tb(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2308,6 +2311,7 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2345,6 +2349,7 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 		return CSS_OK;
 	}
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2389,6 +2394,7 @@ node_presentational_hint_border_trbl_color(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2420,6 +2426,7 @@ node_presentational_hint_border_spacing(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2481,6 +2488,7 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2523,6 +2531,7 @@ node_presentational_hint_height(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2552,6 +2561,7 @@ node_presentational_hint_font_size(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2587,6 +2597,7 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 
 		return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2642,6 +2653,7 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2669,6 +2681,7 @@ node_presentational_hint_caption_side(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
@@ -2693,6 +2706,7 @@ node_presentational_hint_background_color(nscss_select_ctx *ctx,
 
 	return CSS_OK;
 #endif
+	return CSS_PROPERTY_NOT_SET;
 }
 
 static css_error 
