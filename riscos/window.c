@@ -59,6 +59,7 @@
 #include "desktop/tree.h"
 #include "desktop/gui.h"
 #include "render/form.h"
+#include "render/html.h"
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
 #include "riscos/cookies.h"
