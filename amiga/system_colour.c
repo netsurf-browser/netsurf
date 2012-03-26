@@ -26,6 +26,7 @@
 #include "utils/log.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "desktop/tree.h"
 
 #include <proto/graphics.h>
 #include <proto/intuition.h>
@@ -290,7 +291,8 @@ bool gui_system_colour_init(void)
 	}
 
 	gui_system_colour_pw = colour_list;
-	
+	tree_setup_colours();
+
 	return true;
 }
 

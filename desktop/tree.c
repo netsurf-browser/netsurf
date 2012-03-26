@@ -183,7 +183,7 @@ void tree_set_icon_dir(char *icon_dir)
 /**
  * Set up colours for plot styles used in tree redraw.
  */
-static void tree_setup_colours(void)
+void tree_setup_colours(void)
 {
 	/* Background colour */
 	plot_style_fill_tree_background.fill_colour =

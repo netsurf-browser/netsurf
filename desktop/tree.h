@@ -130,6 +130,7 @@ typedef node_callback_resp (*tree_node_user_callback)(void *user_data,
 /* Non-platform specific code */
 
 void tree_set_icon_dir(char *icon_dir);
+void tree_setup_colours(void);
 
 /* Functions for creating/deleting tree primitives and for tree structure
    manipulation */
