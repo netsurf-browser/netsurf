@@ -47,6 +47,7 @@
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/form.h"
+#include "render/html.h"
 #include "riscos/dialog.h"
 #include "riscos/gui.h"
 #include "riscos/menus.h"
