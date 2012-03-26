@@ -20,7 +20,7 @@
 /** \file
  * Box tree construction and manipulation (interface).
  *
- * This stage of rendering converts a tree of xmlNodes (produced by libxml2)
+ * This stage of rendering converts a tree of dom_nodes (produced by libdom)
  * to a tree of struct box. The box tree represents the structure of the
  * document as given by the CSS display and float properties.
  *
