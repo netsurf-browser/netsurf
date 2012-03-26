@@ -17,9 +17,10 @@
  */
 
 #include "desktop/gui.h"
-#include "utils/utf8.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
+#include "render/box.h"
+#include "utils/utf8.h"
 
 #include "amiga/bitmap.h"
 #include "amiga/clipboard.h"

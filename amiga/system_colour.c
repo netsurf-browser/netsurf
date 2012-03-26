@@ -250,10 +250,6 @@ static struct gui_system_colour_ctx colour_list[] = {
 
 static struct gui_system_colour_ctx *gui_system_colour_pw = NULL;
 
-extern colour scrollbar_widget_fg_colour;
-extern colour scrollbar_widget_bg_colour;
-extern colour scrollbar_widget_arrow_colour;
-
 css_color ami_css_colour_from_pen(struct Screen *screen, UWORD pen);
 
 UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
@@ -266,23 +262,9 @@ UWORD ami_system_colour_scrollbar_fgpen(struct DrawInfo *drinfo)
 		else return FOREGROUNDPEN;
 }
 
-void ami_system_colour_scrollbar_widget(void)
-{
-	if(scrn == NULL) return;
-
-	scrollbar_widget_fg_colour = p96EncodeColor(RGBFB_A8B8G8R8,
-			ami_css_colour_from_pen(scrn, AMINS_SCROLLERPEN));
-	scrollbar_widget_bg_colour = p96EncodeColor(RGBFB_A8B8G8R8,
-			ami_css_colour_from_pen(scrn, FILLSHADOWPEN));
-	scrollbar_widget_arrow_colour = p96EncodeColor(RGBFB_A8B8G8R8,
-			ami_css_colour_from_pen(scrn, SHINEPEN));
-}
-
 bool gui_system_colour_init(void)
 {
 	unsigned int ccount;
-
-	ami_system_colour_scrollbar_widget();
 
 	if (gui_system_colour_pw != NULL) 
 		return false;
