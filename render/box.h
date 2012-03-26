@@ -89,7 +89,6 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <libxml/HTMLparser.h>
 
 #include "desktop/browser.h"
 #include "css/css.h"
