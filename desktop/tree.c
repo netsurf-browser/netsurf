@@ -187,38 +187,38 @@ void tree_setup_colours(void)
 {
 	/* Background colour */
 	plot_style_fill_tree_background.fill_colour =
-			nsoption_colour(sys_colour_Window);
+			gui_system_colour_char("Window");
 
 	/* Selection background colour */
 	plot_style_fill_tree_selected.fill_colour =
-			nsoption_colour(sys_colour_Highlight);
+			gui_system_colour_char("Highlight");
 
 	/* Furniture line colour */
 	plot_style_stroke_tree_furniture.stroke_colour = blend_colour(
-			nsoption_colour(sys_colour_Window), 
-			nsoption_colour(sys_colour_WindowText));
+			gui_system_colour_char("Window"), 
+			gui_system_colour_char("WindowText"));
 
 	/* Furniture fill colour */
 	plot_style_fill_tree_furniture.fill_colour =
-			nsoption_colour(sys_colour_Window);
+			gui_system_colour_char("Window");
 
 	/* Text colour */
-	plot_fstyle.foreground = nsoption_colour(sys_colour_WindowText);
-	plot_fstyle.background = nsoption_colour(sys_colour_Window);
+	plot_fstyle.foreground = gui_system_colour_char("WindowText");
+	plot_fstyle.background = gui_system_colour_char("Window");
 	plot_fstyle_def_folder.foreground =
-			nsoption_colour(sys_colour_InfoText);
+			gui_system_colour_char("InfoText");
 	plot_fstyle_def_folder.background =
-			nsoption_colour(sys_colour_Window);
+			gui_system_colour_char("Window");
 
 	/* Selected text colour */
 	plot_fstyle_selected.foreground =
-			nsoption_colour(sys_colour_HighlightText);
+			gui_system_colour_char("HighlightText");
 	plot_fstyle_selected.background =
-			nsoption_colour(sys_colour_Highlight);
+			gui_system_colour_char("Highlight");
 	plot_fstyle_selected_def_folder.foreground =
-			nsoption_colour(sys_colour_HighlightText);
+			gui_system_colour_char("HighlightText");
 	plot_fstyle_selected_def_folder.background =
-			nsoption_colour(sys_colour_Highlight);
+			gui_system_colour_char("Highlight");
 }
 
 
