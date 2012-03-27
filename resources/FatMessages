@@ -183,16 +183,16 @@ nl.all.Text:Tekst  ^F3
 
 # Main -> Page -> Save location menu
 #
-en.all.URI:Acorn URI
-de.all.URI:Acorn URI
-fr.all.URI:Acorn URI
-it.all.URI:Acorn URI
-nl.all.URI:Acorn URI
-en.all.URL:ANT URL
-de.all.URL:ANT URL
-fr.all.URL:ANT URL
-it.all.URL:ANT URL
-nl.all.URL:ANT URL
+en.ro.URI:Acorn URI
+de.ro.URI:Acorn URI
+fr.ro.URI:Acorn URI
+it.ro.URI:Acorn URI
+nl.ro.URI:Acorn URI
+en.ro.URL:ANT URL
+de.ro.URL:ANT URL
+fr.ro.URL:ANT URL
+it.ro.URL:ANT URL
+nl.ro.URL:ANT URL
 en.all.LinkText:Text
 de.all.LinkText:Text
 fr.all.LinkText:Texte
@@ -714,11 +714,11 @@ nl.all.ImgStyle3:Fout-spreiding
 #
 # Project menu
 #
-en.all.Project:Project
-de.all.Project:Projekt
-fr.all.Project:Project
-it.all.Project:Progetto
-nl.all.Project:Project
+en.ami.Project:Project
+de.ami.Project:Projekt
+fr.ami.Project:Project
+it.ami.Project:Progetto
+nl.ami.Project:Project
 en.all.NewWindowNS:New window
 de.all.NewWindowNS:Neues Fenster
 fr.all.NewWindowNS:New window
@@ -764,11 +764,11 @@ de.all.PDFNS:PDF...
 fr.all.PDFNS:PDF...
 it.all.PDFNS:PDF...
 nl.all.PDFNS:PDF...
-en.all.IFF:IFF...
-de.all.IFF:IFF...
-fr.all.IFF:IFF...
-it.all.IFF:IFF...
-nl.all.IFF:IFF...
+en.ami.IFF:IFF...
+de.ami.IFF:IFF...
+fr.ami.IFF:IFF...
+it.ami.IFF:IFF...
+nl.ami.IFF:IFF...
 en.all.OpenFile:Open local file...
 de.all.OpenFile:Öffne lokale Datei...
 fr.all.OpenFile:Open local file...
@@ -937,11 +937,11 @@ de.all.SaveAs:Speichern als...
 fr.all.SaveAs:Save as...
 it.all.SaveAs:Salva come...
 nl.all.SaveAs:Save as...
-en.all.SaveIFF:Save as IFF...
-de.all.SaveIFF:Speichern als IFF...
-fr.all.SaveIFF:Save as IFF...
-it.all.SaveIFF:Salva come IFF...
-nl.all.SaveIFF:Save as IFF...
+en.ami.SaveIFF:Save as IFF...
+de.ami.SaveIFF:Speichern als IFF...
+fr.ami.SaveIFF:Save as IFF...
+it.ami.SaveIFF:Salva come IFF...
+nl.ami.SaveIFF:Save as IFF...
 en.all.SaveComplete:Save complete...
 de.all.SaveComplete:Speichern abgeschlossen...
 fr.all.SaveComplete:Save complete...
@@ -2652,11 +2652,11 @@ it.all.DirectoryError:La directory '%s' è già esistente
 nl.all.DirectoryError:directory '%s' already exists
 
 # Error messages for Amiga version only
-en.all.CompError:Unable to open
-de.all.CompError:Nicht zu öffnen
-fr.all.CompError:Unable to open
-it.all.CompError:Impossibile aprire
-nl.all.CompError:Unable to open
+en.ami.CompError:Unable to open
+de.ami.CompError:Nicht zu öffnen
+fr.ami.CompError:Unable to open
+it.ami.CompError:Impossibile aprire
+nl.ami.CompError:Unable to open
 
 # Queries
 # =======
@@ -5199,16 +5199,16 @@ de.all.ScreenOwn:Eigener Screen
 fr.all.ScreenOwn:Own screen
 it.all.ScreenOwn:Schermo proprietario
 nl.all.ScreenOwn:Own screen
-en.all.ScreenWB:Workbench
-de.all.ScreenWB:Workbench
-fr.all.ScreenWB:Workbench
-it.all.ScreenWB:Schermo Workbench
-nl.all.ScreenWB:Workbench
-en.all.ScreenPublic:Public screen
-de.all.ScreenPublic:Public Screen
-fr.all.ScreenPublic:Public screen
-it.all.ScreenPublic:Schermo pubblico
-nl.all.ScreenPublic:Public screen
+en.ami.ScreenWB:Workbench
+de.ami.ScreenWB:Workbench
+fr.ami.ScreenWB:Workbench
+it.ami.ScreenWB:Schermo Workbench
+nl.ami.ScreenWB:Workbench
+en.ami.ScreenPublic:Public screen
+de.ami.ScreenPublic:Public Screen
+fr.ami.ScreenPublic:Public screen
+it.ami.ScreenPublic:Schermo pubblico
+nl.ami.ScreenPublic:Public screen
 en.all.Theme:Theme
 de.all.Theme:Thema
 fr.all.Theme:Theme
@@ -5471,11 +5471,11 @@ de.all.SearchProvider:Suchmaschine
 fr.all.SearchProvider:Search provider
 it.all.SearchProvider:Ricerca su provider
 nl.all.SearchProvider:Search provider
-en.all.OptionDocky:Show in AmiDock
-de.all.OptionDocky:In AmiDock zeigen
-fr.all.OptionDocky:Show in AmiDock
-it.all.OptionDocky:Mostra icona su AmiDock
-nl.all.OptionDocky:Show in AmiDock
+en.ami.OptionDocky:Show in AmiDock
+de.ami.OptionDocky:In AmiDock zeigen
+fr.ami.OptionDocky:Show in AmiDock
+it.ami.OptionDocky:Mostra icona su AmiDock
+nl.ami.OptionDocky:Show in AmiDock
 en.all.Clipboard:Clipboard
 de.all.Clipboard:Clipboard
 fr.all.Clipboard:Clipboard
