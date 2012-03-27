@@ -60,9 +60,9 @@
  * colour and adding them to half the intensity of each channel in the second
  * colour */
 #define blend_colour(c0, c1)						\
-	 ((((c0 >> 16) + (c1 >> 16)) >> 1) << 16) |			\
-	(((((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff)) >> 1) << 8) |	\
-	 ((((c0 & 0xff) + (c1 & 0xff)) >> 1) << 0)
+	(((((c0 >> 16) & 0xff) + ((c1 >> 16) & 0xff)) >> 1) << 16) |	\
+	(((((c0 >>  8) & 0xff) + ((c1 >>  8) & 0xff)) >> 1) <<  8) |	\
+	(((( c0        & 0xff) + ( c1        & 0xff)) >> 1) <<  0)
 
 /* get a bitmap pixel (image/bitmap.h) into a plot colour */
 #define pixel_to_colour(b)					\
