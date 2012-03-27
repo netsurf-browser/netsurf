@@ -161,7 +161,7 @@ nsurl* gui_get_resource_url(const char *path);
 css_error gui_system_colour(void *pw, lwc_string *name, css_color *color);
 
 /** Obtain a named system colour from a frontend. */
-colour gui_system_colour_char(char *name);
+colour gui_system_colour_char(const char *name);
 
 bool gui_system_colour_init(void);
 void gui_system_colour_finalize(void);

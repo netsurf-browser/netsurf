@@ -255,7 +255,7 @@ void gui_system_colour_finalize(void)
 	}
 }
 
-colour gui_system_colour_char(char *name)
+colour gui_system_colour_char(const char *name)
 {
 	colour ret = 0xff00000;
 	unsigned int ccount;
