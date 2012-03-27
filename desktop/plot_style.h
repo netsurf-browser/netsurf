@@ -32,29 +32,29 @@
 /* Darken a colour by taking three quarters of each channel's intensity */
 #define darken_colour(c1)				 		\
 	((((3 * ((c1 >> 16) & 0xff)) >> 2) << 16) |			\
-	 (((3 * ((c1 >> 8) & 0xff)) >> 2) << 8) |	 		\
-	 (((3 * (c1 & 0xff)) >> 2) << 0))
+	 (((3 * ((c1 >>  8) & 0xff)) >> 2) <<  8) |	 		\
+	 (((3 * ( c1        & 0xff)) >> 2) <<  0))
 
 /* Darken a colour by taking nine sixteenths of each channel's intensity */
 #define double_darken_colour(c1)			 		\
 	((((9 * ((c1 >> 16) & 0xff)) >> 4) << 16) |			\
-	 (((9 * ((c1 >> 8) & 0xff)) >> 4) << 8) |	 		\
-	 (((9 * (c1 & 0xff)) >> 4) << 0))
+	 (((9 * ((c1 >>  8) & 0xff)) >> 4) <<  8) |	 		\
+	 (((9 * ( c1        & 0xff)) >> 4) <<  0))
 
 /* Lighten a colour by taking three quarters of each channel's intensity
  * and adding a full quarter
  */
 #define lighten_colour(c1)						\
-	(((((3 * (c1 >> 16)) >> 2) + 64) << 16) |			\
-	 ((((3 * ((c1 >> 8) & 0xff)) >> 2) + 64) << 8) |		\
-	 ((((3 * (c1 & 0xff)) >> 2) + 64) << 0))
+	(((((3 * ((c1 >> 16) & 0xff)) >> 2) + 64) << 16) |		\
+	 ((((3 * ((c1 >>  8) & 0xff)) >> 2) + 64) <<  8) |		\
+	 ((((3 * ( c1        & 0xff)) >> 2) + 64) <<  0))
 
 /* Lighten a colour by taking nine sixteenths of each channel's intensity and
  * adding a full intensity 7/16ths */
 #define double_lighten_colour(c1)					\
-	(((((9 * (c1 >> 16)) >> 4) + 112) << 16) |			\
-	 ((((9 * ((c1 >> 8) & 0xff)) >> 4) + 112) << 8) |		\
-	 ((((9 * (c1 & 0xff)) >> 4) + 112) << 0))
+	(((((9 * ((c1 >> 16) & 0xff)) >> 4) + 112) << 16) |		\
+	 ((((9 * ((c1 >>  8) & 0xff)) >> 4) + 112) <<  8) |		\
+	 ((((9 * ( c1        & 0xff)) >> 4) + 112) <<  0))
 
 /* Blend two colours by taking half the intensity of each channel in the first
  * colour and adding them to half the intensity of each channel in the second
