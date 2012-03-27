@@ -241,7 +241,7 @@ static struct gui_system_colour_ctx colour_list[] = {
 		SLEN("WindowText"), 
 		0xff000000, 
 		&nsoption_colour(sys_colour_WindowText), 
-		INACTIVEFILLTEXTPEN,
+		TEXTPEN,
 		NULL 
 	},
 
@@ -307,6 +307,11 @@ void gui_system_colour_finalize(void)
 	gui_system_colour_pw = NULL;
 }
 
+colour ami_css_color_to_colour(css_color c)
+{
+	return (c & 0xFF00FF00) | ((c >> 16) & 0xFF) | ((c & 0xFF) << 16);
+}
+
 colour gui_system_colour_char(const char *name)
 {
 	colour ret = 0xff00000;
@@ -314,7 +319,7 @@ colour gui_system_colour_char(const char *name)
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
 		if (strcmp(name, colour_list[ccount].name) == 0) {
-			ret = colour_list[ccount].colour;
+			ret = ami_css_color_to_colour(colour_list[ccount].colour);
 			break;
 		}
 	}
