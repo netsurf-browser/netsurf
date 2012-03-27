@@ -332,10 +332,8 @@ colour gui_system_colour_char(const char *name)
 	unsigned int ccount;
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
-		if (strncasecmp(name, 
-				colour_list[ccount].name, 
-				colour_list[ccount].length) == 0) {
-			ret = colour_list[ccount].css_colour;
+		if (strcmp(name, colour_list[ccount].name) == 0) {
+			ret = colour_list[ccount].colour;
 			break;
 		}
 	}
