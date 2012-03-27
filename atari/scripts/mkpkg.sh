@@ -201,11 +201,6 @@ max_fetchers:3
 max_fetchers_per_host:2
 max_cached_fetch_handles:5
 
-# uncomment to configure GUI colors
-#gui_colour_bg_1
-#gui_colour_fg_1
-#gui_colour_fg_2
-
 # allow target=_blank (link opens in new window):
 target_blank:1
 

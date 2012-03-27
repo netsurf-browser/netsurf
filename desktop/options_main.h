@@ -168,11 +168,6 @@
 	/** Whether second mouse button opens in new tab */		\
 	bool button_2_tab;						\
 									\
-	/* Interface colours */						\
-	colour gui_colour_bg_1; /** Background          (bbggrr) */	\
-	colour gui_colour_fg_1; /** Foreground          (bbggrr) */	\
-	colour gui_colour_fg_2; /** Foreground selected (bbggrr) */	\
-									\
 	/* system colours */						\
 	colour sys_colour_ActiveBorder;					\
 	colour sys_colour_ActiveCaption;				\
@@ -263,10 +258,7 @@
 	.max_cached_fetch_handles = 6,			\
 	.suppress_curl_debug = true,			\
 	.target_blank = true,				\
-	.button_2_tab = true,				\
-	.gui_colour_bg_1 = 0xFFCCBB,			\
-	.gui_colour_fg_1 = 0x000000,			\
-	.gui_colour_fg_2 = 0xFFFBF8			
+	.button_2_tab = true
 
 #define NSOPTION_MAIN_SYS_COLOUR_DEFAULTS		\
 	.sys_colour_ActiveBorder = 0x00000000,		\
@@ -362,10 +354,6 @@
 	{ "enable_loosening",	OPTION_BOOL,	&nsoptions.enable_loosening}, \
  	{ "enable_PDF_compression", OPTION_BOOL, &nsoptions.enable_PDF_compression}, \
  	{ "enable_PDF_password", OPTION_BOOL,	&nsoptions.enable_PDF_password}, \
-		/* Interface colours */					\
-	{ "gui_colour_bg_1",	OPTION_COLOUR,	&nsoptions.gui_colour_bg_1}, \
-	{ "gui_colour_fg_1",	OPTION_COLOUR,	&nsoptions.gui_colour_fg_1}, \
-	{ "gui_colour_fg_2",	OPTION_COLOUR,	&nsoptions.gui_colour_fg_2}, \
 									\
 		/* System colours */					\
 	{ "sys_colour_ActiveBorder",OPTION_COLOUR,&nsoptions.sys_colour_ActiveBorder },	\
