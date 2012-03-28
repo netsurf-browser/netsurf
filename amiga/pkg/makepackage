@@ -14,7 +14,6 @@ delete ram:netsurf/resources/#?.user
 copy resources/Pointers/~(.svn) ram:NetSurf/Resources/Pointers
 copy (COPYING|ChangeLog) ram:NetSurf/
 copy NetSurf ram:NetSurf/NetSurf
-;copy NetSurf-Static ram:NetSurf/NetSurf-Cairo
 copy amiga/dist/AutoInstall ram:
 copy amiga/dist/~(.svn|AutoInstall) ram:NetSurf/
 copy amiga/pkg/drawer.info ram:NetSurf.info
@@ -24,8 +23,6 @@ copy amiga/dist/Rexx/~(.svn) ram:NetSurf/Rexx/ COM
 makedir ram:NetSurf/Libs
 copy libs:parserutils.library libs:nsgif.library libs:nsbmp.library libs:iconv.library libs:hubbub.library ram:NetSurf/Libs
 ; libs:css.library libs:wapcaplet.library 
-makedir ram:NetSurf/ParserUtils_lowmem
-copy /libparserutils/amiga_lib/parserutils.library_noiconv ram:NetSurf/ParserUtils_lowmem/parserutils.library
 makedir ram:NetSurf/SObjs
-copy sobjs:libjpeg.so.8 sobjs:libxml2.so.9 sobjs:libcurl.so.7 sobjs:librtmp.so.0 sobjs:libsvgtiny.so.0 sobjs:libssl.so.1.0.0 sobjs:libcrypto.so.1.0.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libpng12.so ram:NetSurf/SObjs clone
+copy sobjs:libjpeg.so.8 sobjs:libxml2.so.9 sobjs:libcurl.so.7 sobjs:librtmp.so.0 sobjs:libsvgtiny.so.0 sobjs:libssl.so.1.0.0 sobjs:libcrypto.so.1.0.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libpng12.so sobjs:libdom.so.0 sobjs:libhubbub.so.0 ram:NetSurf/SObjs clone
 ;sobjs:libhpdf-2.2.0.so.0.0
