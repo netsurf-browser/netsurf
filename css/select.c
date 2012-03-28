@@ -553,51 +553,8 @@ css_error node_id(void *pw, void *node, lwc_string **id)
 css_error named_ancestor_node(void *pw, void *node,
 		const css_qname *qname, void **ancestor)
 {
-	dom_node *n = node;
-	dom_node *parent;
-	dom_exception err;
-
-	*ancestor = NULL;
-
-	err = dom_node_get_parent_node(n, &n);
-	if (err != DOM_NO_ERR)
-		return CSS_OK;
-
-	while (n != NULL) {
-		dom_node_type type;
-		dom_string *name;
-
-		err = dom_node_get_node_type(n, &type);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		if (type == DOM_ELEMENT_NODE) {
-			err = dom_node_get_node_name(n, &name);
-			if (err != DOM_NO_ERR) {
-				dom_node_unref(n);
-				return CSS_OK;
-			}
-
-			if (dom_string_caseless_lwc_isequal(name, 
-					qname->name)) {
-				dom_node_unref(n);
-				/** \todo Sort out reference counting */
-				*ancestor = n;
-				break;
-			}
-		}
-
-		err = dom_node_get_parent_node(n, &parent);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		dom_node_unref(n);
-		n = parent;
-	}
+	dom_element_named_ancestor_node(node, qname->name,
+			(struct dom_element **)ancestor);
 
 	return CSS_OK;
 }
@@ -616,55 +573,8 @@ css_error named_ancestor_node(void *pw, void *node,
 css_error named_parent_node(void *pw, void *node,
 		const css_qname *qname, void **parent)
 {
-	dom_node *n = node;
-	dom_node *p;
-	dom_exception err;
-
-	*parent = NULL;
-
-	/* Find parent element */
-	err = dom_node_get_parent_node(n, &n);
-	if (err != DOM_NO_ERR)
-		return CSS_OK;
-
-	while (n != NULL) {
-		dom_node_type type;
-
-		err = dom_node_get_node_type(n, &type);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		if (type == DOM_ELEMENT_NODE)
-			break;
-
-		err = dom_node_get_parent_node(n, &p);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		dom_node_unref(n);
-		n = p;
-	}
-
-	if (n != NULL) {
-		dom_string *name;
-
-		err = dom_node_get_node_name(n, &name);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		dom_node_unref(n);
-
-		if (dom_string_caseless_lwc_isequal(name, qname->name)) {
-			/** \todo Sort out reference counting */
-			*parent = n;
-		}
-	}
+	dom_element_named_parent_node(node, qname->name,
+			(struct dom_element **)parent);
 
 	return CSS_OK;
 }
@@ -811,45 +721,7 @@ css_error named_generic_sibling_node(void *pw, void *node,
  */
 css_error parent_node(void *pw, void *node, void **parent)
 {
-	dom_node *n = node;
-	dom_node *p;
-	dom_exception err;
-
-	*parent = NULL;
-
-	/* Find parent element */
-	err = dom_node_get_parent_node(n, &n);
-	if (err != DOM_NO_ERR)
-		return CSS_OK;
-
-	while (n != NULL) {
-		dom_node_type type;
-
-		err = dom_node_get_node_type(n, &type);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		if (type == DOM_ELEMENT_NODE)
-			break;
-
-		err = dom_node_get_parent_node(n, &p);
-		if (err != DOM_NO_ERR) {
-			dom_node_unref(n);
-			return CSS_OK;
-		}
-
-		dom_node_unref(n);
-		n = p;
-	}
-
-	if (n != NULL) {
-		/** \todo Sort out reference counting */
-		dom_node_unref(n);
-
-		*parent = n;
-	}
+	dom_element_parent_node(node, (struct dom_element **)parent);
 
 	return CSS_OK;
 }
