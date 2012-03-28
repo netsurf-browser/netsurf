@@ -2335,43 +2335,65 @@ node_presentational_hint_border_trbl_color(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *col;
+	dom_string *name;
+	dom_string *bordercolor = NULL;
+	dom_exception err;
 
-	if (strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0) {
-		/* Find table */
-		for (n = n->parent; n != NULL &&
-			     n->type == XML_ELEMENT_NODE;
-		     n = n->parent) {
-			if (strcmp((const char *) n->name, "table") ==
-			    0)
-				break;
+	err = dom_node_get_node_name(node, &name);
+	if (err != DOM_NO_ERR)
+		return CSS_PROPERTY_NOT_SET;
+
+	if (dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th)) {
+		css_qname qs;
+		dom_node *tablenode = NULL;
+		qs.ns = NULL;
+
+		err = dom_string_intern(nscss_dom_string_table, &qs.name);
+		if (err != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return CSS_BADPARM;
 		}
 
-		if (n == NULL)
+		if (named_ancestor_node(ctx, node, &qs, 
+					(void *)&tablenode) != CSS_OK) {
+			/* Didn't find, or had error */
+			lwc_string_unref(qs.name);
+			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
+		}
+		
+		lwc_string_unref(qs.name);
+
+		if (tablenode != NULL) {
+			err = dom_element_get_attribute(node, 
+						nscss_dom_string_bordercolor, 
+						&bordercolor);
+		}
+		/* No need to unref tablenode, named_ancestor_node does not
+		 * return a reffed node to the CSS
+		 */
+
+	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
+		err = dom_element_get_attribute(node, 
+						nscss_dom_string_bordercolor, 
+						&bordercolor);
 	}
 
-	if (strcmp((const char *) n->name, "table") == 0)
-		col = xmlGetProp(n, (const xmlChar *) "bordercolor");
-	else
-		col = NULL;
+	dom_string_unref(name);
 
-	if (col == NULL)
+	if ((err != DOM_NO_ERR) || (bordercolor == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
+	}
 
-	if (nscss_parse_colour((const char *) col, &hint->data.color)) {
+	if (nscss_parse_colour((const char *)dom_string_data(bordercolor), 
+			       &hint->data.color)) {
 		hint->status = CSS_BORDER_COLOR_COLOR;
-	} else {
-		xmlFree(col);
-		return CSS_PROPERTY_NOT_SET;
+		dom_string_unref(bordercolor);
+		return CSS_OK;
 	}
 
-	xmlFree(col);
-
-	return CSS_OK;
-#endif
+	dom_string_unref(bordercolor);
 	return CSS_PROPERTY_NOT_SET;
 }
 
@@ -2412,7 +2434,6 @@ node_presentational_hint_border_spacing(nscss_select_ctx *ctx,
 
 		dom_string_unref(cellspacing);
 		return CSS_OK;
-
 	}
 
 	dom_string_unref(cellspacing);
