@@ -2474,41 +2474,53 @@ node_presentational_hint_height(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *height;
+	dom_string *name;
+	dom_string *height = NULL;
+	dom_exception err;
+	bool textarea = false;
 
-	if (strcmp((const char *) n->name, "iframe") == 0 ||
-	    strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0 ||
-	    strcmp((const char *) n->name, "tr") == 0 ||
-	    strcmp((const char *) n->name, "img") == 0 ||
-	    strcmp((const char *) n->name, "object") == 0 ||
-	    strcmp((const char *) n->name, "applet") == 0)
-		height = xmlGetProp(n, (const xmlChar *) "height");
-	else if (strcmp((const char *) n->name, "textarea") == 0)
-		height = xmlGetProp(n, (const xmlChar *) "rows");
-	else
-		height = NULL;
-
-	if (height == NULL)
+	err = dom_node_get_node_name(node, &name);
+	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (parse_dimension((const char *) height, false,
-			    &hint->data.length.value,
-			    &hint->data.length.unit)) {
-		hint->status = CSS_HEIGHT_SET;
-	} else {
-		xmlFree(height);
+	if (dom_string_isequal(name, nscss_dom_string_iframe) ||
+	    dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th) ||
+	    dom_string_isequal(name, nscss_dom_string_tr) ||
+	    dom_string_isequal(name, nscss_dom_string_img) ||
+	    dom_string_isequal(name, nscss_dom_string_object) ||
+	    dom_string_isequal(name, nscss_dom_string_applet)) {
+		err = dom_element_get_attribute(node, 
+						nscss_dom_string_height, 
+						&height);
+	} else if (dom_string_isequal(name, nscss_dom_string_textarea)) {
+		textarea = true;
+		err = dom_element_get_attribute(node, 
+						nscss_dom_string_rows, 
+						&height);
+	}
+
+	dom_string_unref(name);
+
+	if ((err != DOM_NO_ERR) || (height == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(height);
+	if (parse_dimension((const char *)dom_string_data(height), 
+			    false,
+			    &hint->data.length.value,
+			    &hint->data.length.unit)) {
+		hint->status = CSS_HEIGHT_SET;
 
-	if (strcmp((const char *) n->name, "textarea") == 0)
-		hint->data.length.unit = CSS_UNIT_EM;
+		if (textarea) {
+			hint->data.length.unit = CSS_UNIT_EM;
+		}
 
-	return CSS_OK;
-#endif
+		dom_string_unref(height);
+		return CSS_OK;
+	}
+
+	dom_string_unref(height);
 	return CSS_PROPERTY_NOT_SET;
 }
 
