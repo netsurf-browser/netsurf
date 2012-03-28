@@ -2412,61 +2412,80 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *width;
+	dom_string *name;
+	dom_string *width = NULL;
+	dom_exception err;
+	bool textarea = false;
+	bool input = false;
 
-	if (strcmp((const char *) n->name, "hr") == 0 ||
-	    strcmp((const char *) n->name, "iframe") == 0 ||
-	    strcmp((const char *) n->name, "img") == 0 ||
-	    strcmp((const char *) n->name, "object") == 0 ||
-	    strcmp((const char *) n->name, "table") == 0 ||
-	    strcmp((const char *) n->name, "td") == 0 ||
-	    strcmp((const char *) n->name, "th") == 0 ||
-	    strcmp((const char *) n->name, "applet") == 0)
-		width = xmlGetProp(n, (const xmlChar *) "width");
-	else if (strcmp((const char *) n->name, "textarea") == 0)
-		width = xmlGetProp(n, (const xmlChar *) "cols");
-	else if (strcmp((const char *) n->name, "input") == 0) {
-		width = xmlGetProp(n, (const xmlChar *) "size");
-	} else
-		width = NULL;
-
-	if (width == NULL)
+	err = dom_node_get_node_name(node, &name);
+	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (parse_dimension((const char *) width, false,
+	if (dom_string_isequal(name, nscss_dom_string_hr) ||
+	    dom_string_isequal(name, nscss_dom_string_iframe) ||
+	    dom_string_isequal(name, nscss_dom_string_img) ||
+	    dom_string_isequal(name, nscss_dom_string_object) ||
+	    dom_string_isequal(name, nscss_dom_string_table) ||
+	    dom_string_isequal(name, nscss_dom_string_td) ||
+	    dom_string_isequal(name, nscss_dom_string_th) ||
+	    dom_string_isequal(name, nscss_dom_string_applet)) {
+		err = dom_element_get_attribute(node, 
+						nscss_dom_string_width, 
+						&width);
+	} else if (dom_string_isequal(name, nscss_dom_string_textarea)) {
+		textarea = true;
+		err = dom_element_get_attribute(node, 
+						nscss_dom_string_cols, 
+						&width);
+	} else if (dom_string_isequal(name, nscss_dom_string_input)) {
+		input = true;
+		err = dom_element_get_attribute(node, 
+						nscss_dom_string_size, 
+						&width);
+	}
+
+	dom_string_unref(name);
+
+	if ((err != DOM_NO_ERR) || (width == NULL)) {
+		return CSS_PROPERTY_NOT_SET;
+	}
+
+	if (parse_dimension((const char *)dom_string_data(width), 
+			    false,
 			    &hint->data.length.value,
 			    &hint->data.length.unit)) {
 		hint->status = CSS_WIDTH_SET;
-	} else {
-		xmlFree(width);
-		return CSS_PROPERTY_NOT_SET;
-	}
+		dom_string_unref(width);
 
-	xmlFree(width);
-
-	if (strcmp((const char *) n->name, "textarea") == 0)
-		hint->data.length.unit = CSS_UNIT_EX;
-	else if (strcmp((const char *) n->name, "input") == 0) {
-		xmlChar *type = xmlGetProp(n, (const xmlChar *) "type");
-
-		if (type == NULL || strcasecmp((const char *) type,
-					       "text") == 0 ||
-		    strcasecmp((const char *) type,
-			       "password") == 0)
+		if (textarea) {
 			hint->data.length.unit = CSS_UNIT_EX;
-		else {
-			xmlFree(type);
-			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (type != NULL)
-			xmlFree(type);
+		if (input) {
+			err = dom_element_get_attribute(node, 
+							nscss_dom_string_type, 
+							&width);
+			if ((err != DOM_NO_ERR) || (width == NULL)) {
+				return CSS_PROPERTY_NOT_SET;
+			}
+
+			if (dom_string_isequal(name, nscss_dom_string_text) ||
+			    dom_string_isequal(name, nscss_dom_string_password)) {
+				hint->data.length.unit = CSS_UNIT_EX;
+
+			}
+			dom_string_unref(width);
+
+
+		}
+
+		return CSS_OK;
 	}
 
-	return CSS_OK;
-#endif
+	dom_string_unref(width);
 	return CSS_PROPERTY_NOT_SET;
+
 }
 
 static css_error 
