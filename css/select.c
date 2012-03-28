@@ -2380,30 +2380,42 @@ node_presentational_hint_border_spacing(nscss_select_ctx *ctx,
 					  dom_node *node, 
 					  css_hint *hint)
 {
-#ifdef FIXME
-	xmlChar *cellspacing;
+	dom_exception err;
+	dom_string *node_name = NULL;
+	dom_string *cellspacing = NULL;
 
-	if (strcmp((const char *) n->name, "table") != 0)
-		return CSS_PROPERTY_NOT_SET;
-
-	cellspacing = xmlGetProp(n, (const xmlChar *) "cellspacing");
-	if (cellspacing == NULL)
-		return CSS_PROPERTY_NOT_SET;
-
-	if (parse_dimension((const char *) cellspacing, false,
-			    &hint->data.position.h.value,
-			    &hint->data.position.h.unit)) {
-		hint->data.position.v = hint->data.position.h;
-		hint->status = CSS_BORDER_SPACING_SET;
-	} else {
-		xmlFree(cellspacing);
+	err = dom_node_get_node_name(node, &node_name);
+	if ((err != DOM_NO_ERR) || (node_name == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	xmlFree(cellspacing);
+	if (!dom_string_caseless_isequal(node_name, nscss_dom_string_table)) {
+		dom_string_unref(node_name);
+		return CSS_PROPERTY_NOT_SET;
+	}
 
-	return CSS_OK;
-#endif
+	dom_string_unref(node_name);
+
+	err = dom_element_get_attribute(node, nscss_dom_string_cellspacing, &cellspacing);
+	if ((err != DOM_NO_ERR) || (cellspacing == NULL)) {
+		return CSS_PROPERTY_NOT_SET;
+	}
+
+
+	if (parse_dimension((const char *)dom_string_data(cellspacing), 
+			    false,
+			    &hint->data.position.h.value,
+			    &hint->data.position.h.unit)) {
+
+		hint->data.position.v = hint->data.position.h;
+		hint->status = CSS_BORDER_SPACING_SET;
+
+		dom_string_unref(cellspacing);
+		return CSS_OK;
+
+	}
+
+	dom_string_unref(cellspacing);
 	return CSS_PROPERTY_NOT_SET;
 }
 
