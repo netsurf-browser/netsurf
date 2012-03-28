@@ -35,7 +35,7 @@ Note that there may be other generic options which can also be specified.
 @endnode
 
 @node options "Options file"
-The options file is stored in @{"Resources/Options" link Resources/Options/Main} by default.  Most of the settings can be changed from within NetSurf by selecting Edit preferences from the Settings menu.
+The options file is stored in @{"Users/Default/Choices" link Users/Default/Choices/Main} by default.  Most of the settings can be changed from within NetSurf by selecting Edit preferences from the Settings menu.
 
 There are a couple of Amiga-specific options which can only be changed directly in the file.  These are:
 
@@ -73,7 +73,7 @@ For most users, installing and selecting @{"Code2000" rxs "address netsurf 'open
 
 The default and minimum font sizes can also be set.
 NB: The resolution setting on the "Rendering" tab in NetSurf's preferences affects how big text appears on screen (the conversion between point and pixel sizes) amongst other things.  To find the correct value, divide the number of pixels on the screen vertically by the physical height of the screen in inches (horizontal resolution is calculated automatically if NetSurf is running on a custom screen, square pixels are assumed on all other screens).
-If the monitor is widescreen, monitor_aspect_x and monitor_aspect_y values in Resources/Options will also need modifying.
+If the monitor is widescreen, monitor_aspect_x and monitor_aspect_y values in Users/Default/Choices will also need modifying.
 @endnode
 
 @node Themes
