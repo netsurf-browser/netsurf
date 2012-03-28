@@ -155,6 +155,9 @@ struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 BOOL refresh_search_ico = FALSE;
 
+static char *current_user;
+static char *current_user_dir;
+
 const char tree_directory_icon_name[] = "def_drawer.info";
 const char tree_content_icon_name[] = "def_project.info";
 
@@ -375,6 +378,7 @@ void ami_set_options(void)
 {
 	STRPTR tempacceptlangs;
 	BPTR lock = 0;
+	char temp[1024];
 
 	/* The following line disables the popupmenu.class select menu
 	** This will become a user option when/if popupmenu.class is
@@ -400,24 +404,20 @@ void ami_set_options(void)
 		}
 	}
 
+	sprintf(temp, "%s/Cookies", current_user_dir);
 	nsoption_setnull_charp(cookie_file, 
-			       (char *)strdup("PROGDIR:Resources/Cookies"));
+			       (char *)strdup(temp));
 
+	sprintf(temp, "%s/Hotlist", current_user_dir);
 	nsoption_setnull_charp(hotlist_file, 
-			       (char *)strdup("PROGDIR:Resources/Hotlist"));
+			       (char *)strdup(temp));
 
-
+	sprintf(temp, "%s/URLdb", current_user_dir);
 	nsoption_setnull_charp(url_file,
-			       (char *)strdup("PROGDIR:Resources/URLs"));
-
-/*
-	nsoption_setnull_charp(cookie_jar,
-			       (char *)strdup("PROGDIR:Resources/CookieJar"));
-*/
+			       (char *)strdup(temp));
 
 /* devs:curl-ca-bundle.crt is the default place for the ca bundle on OS4,
  * but we can't rely on it existing, so default to our local one in resources */
-
 
 	nsoption_setnull_charp(ca_bundle,
 			       (char *)strdup("PROGDIR:Resources/ca-bundle"));
@@ -595,7 +595,7 @@ void ami_openscreen(void)
 					id = screenmodereq->sm_DisplayID;
 					sprintf(modeid, "0x%lx", id);
 					nsoption_set_charp(modeid, modeid);
-					nsoption_write("PROGDIR:Resources/Options");
+					nsoption_write(current_user_options);
 				}
 				FreeAslRequest(screenmodereq);
 			}
@@ -818,21 +818,27 @@ int main(int argc, char** argv)
 	setbuf(stderr, NULL);
 	char messages[100];
 	char script[1024];
+	char temp[1024];
 	
 	Object *splash_window = ami_gui_splash_open();
+
+	current_user = ASPrintf("Default");
+	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
+	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 
 	if(ami_locate_resource(messages, "Messages") == false)
 		die("Cannot open Messages file");
 
 	ami_mime_init("PROGDIR:Resources/mimetypes");
-	ami_mime_init("PROGDIR:Resources/mimetypes.user");
+	sprintf(temp, "%s/mimetypes.user", current_user_dir);
+	ami_mime_init(temp);
 	ami_schedule_open_timer();
 	ami_schedule_create();
 
 	amiga_plugin_hack_init();
 	amiga_datatypes_init();
 
-	netsurf_init(&argc, &argv, "PROGDIR:Resources/Options", messages);
+	netsurf_init(&argc, &argv, current_user_options, messages);
 
 	amiga_icon_init();
 
@@ -1705,8 +1711,8 @@ void ami_handle_msg(void)
 /*
 							case 'u': // open url
 								if((nsoption_bool(kiosk_mode) == false))
-									ActivateGadget((struct Gadget *)gwin->objects[GID_URL],
-										gwin->win, NULL);
+									ActivateLayoutGadget((struct Gadget *)gwin->objects[GID_MAIN],
+										gwin->win, NULL, (uint32)gwin->objects[GID_URL]);
 							break;
 */
 						}
@@ -2311,6 +2317,10 @@ void gui_quit(void)
 	ami_schedule_close_timer();
 
 	FreeObjList(window_list);
+
+	FreeVec(current_user_options);
+	FreeVec(current_user_dir);
+	FreeVec(current_user);
 }
 
 void ami_update_buttons(struct gui_window_2 *gwin)

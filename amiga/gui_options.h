@@ -20,4 +20,6 @@
 #define AMIGA_GUI_OPTIONS_H
 void ami_gui_opts_open(void);
 BOOL ami_gui_opts_event(void);
+
+char *current_user_options;
 #endif

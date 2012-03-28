@@ -687,7 +687,7 @@ void ami_menupick(ULONG code,struct gui_window_2 *gwin,struct MenuItem *item)
 				break;
 
 				case 3: // save settings
-					nsoption_write("PROGDIR:Resources/Options");
+					nsoption_write(current_user_options);
 				break;
 			}
 		break;

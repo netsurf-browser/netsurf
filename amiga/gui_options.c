@@ -1734,7 +1734,7 @@ BOOL ami_gui_opts_event(void)
 				{
 					case GID_OPTS_SAVE:
 						ami_gui_opts_use();
-						nsoption_write("PROGDIR:Resources/Options");
+						nsoption_write(current_user_options);
 						ami_gui_opts_close();
 						return TRUE;
 					break;
