@@ -333,7 +333,7 @@ colour gui_system_colour_char(const char *name)
 
 	for (ccount = 0; ccount < colour_list_len; ccount++) {
 		if (strcmp(name, colour_list[ccount].name) == 0) {
-			ret = colour_list[ccount].colour;
+			ret = colour_list[ccount].css_colour;
 			break;
 		}
 	}
