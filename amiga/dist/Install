@@ -363,7 +363,12 @@
 
 (complete 15)
 
-(set #options-exist (exists (tackon @default-dest "Users/Default/Choices")))
+(set #user (getenv "user"))
+(if (= #user "") (set #user "Default"))
+
+(set #user-dir (tackon (tackon @default-dest "Users") #user))
+(set #user-options (tackon #user-dir "Choices"))
+(set #options-exist (exists #user-options))
 (set #searchengines-exist (exists (tackon @default-dest "Resources/SearchEngines")))
 (set #aiss-theme "")
 
@@ -518,12 +523,12 @@
 			)
 		)
 
-		(makedir (tackon @default-dest "Users/Default"))
+		(makedir #user-dir)
 
 		(textfile
 			(prompt "Setting default options")
 			(help @textfile-help)
-			(dest (tackon @default-dest "Users/Default/Choices"))
+			(dest #user-options)
 			(append "theme:" #theme "\n")
 			(append "use_pubscreen:Workbench\n")
 		)

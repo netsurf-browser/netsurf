@@ -819,11 +819,18 @@ int main(int argc, char** argv)
 	char messages[100];
 	char script[1024];
 	char temp[1024];
+	BPTR lock = 0;
+	int32 user = 0;
 	
 	Object *splash_window = ami_gui_splash_open();
 
-	current_user = ASPrintf("Default");
+	user = GetVar("user", temp, 1024, GVF_GLOBAL_ONLY);
+	current_user = ASPrintf("%s", (user == -1) ? "Default" : temp);
 	current_user_dir = ASPrintf("PROGDIR:Users/%s", current_user);
+
+	if(lock = CreateDirTree(current_user_dir))
+		UnLock(lock);
+
 	current_user_options = ASPrintf("%s/Choices", current_user_dir);
 
 	if(ami_locate_resource(messages, "Messages") == false)
