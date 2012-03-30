@@ -291,7 +291,13 @@ bool ami_locate_resource(char *fullpath, const char *file)
 	bool found = false;
 	char *remapped;
 
-	/* Firstly check the user's selected theme.  NB: ami_locate_resource()
+	/* Check NetSurf user data area first */
+
+	strcpy(fullpath, current_user_dir);
+	found = ami_gui_check_resource(fullpath, file);
+	if(found) return true;
+
+	/* Secondly check the user's selected theme.  NB: ami_locate_resource()
 	 * gets called for Messages before options are loaded */
 
 	if(nsoption_charp(theme))
