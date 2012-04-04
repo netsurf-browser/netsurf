@@ -106,7 +106,6 @@ void gui_poll(bool active)
 	// int timeout; /* timeout in milliseconds */
 	int flags = MU_MESAG | MU_KEYBD | MU_BUTTON ;
 	short mx, my, dummy;
-	short aestop;
 
 	evnt.timer = schedule_run();
 
@@ -119,7 +118,7 @@ void gui_poll(bool active)
 		}
 	} else {
 		if( input_window != NULL ){
-			wind_get( 0, WF_TOP, &aestop, &winloc[1], &winloc[2], &winloc[3]);
+			wind_get( 0, WF_TOP, &winloc[0], &winloc[1], &winloc[2], &winloc[3]);
 			if( winloc[1] == _AESapid ){
 				/* only check for mouse move when netsurf is on top: */
 				// move that into m1 event handler
@@ -309,13 +308,12 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 	if (gw == NULL)
 		return;
 	b = gw->browser;
-	/* the box values are actually floats */
 	int x0 = rect->x0 - b->scroll.current.x;
 	int y0 = rect->y0 - b->scroll.current.y;
 	int w,h;
 	w = rect->x1 - rect->x0;
 	h = rect->y1 - rect->y0;
- 	browser_schedule_redraw_rect( gw, x0, y0, w,h);
+ 	browser_schedule_redraw_rect( gw, x0, y0, w, h );
 }
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
