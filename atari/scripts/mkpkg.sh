@@ -28,8 +28,8 @@
 #
 
 # config variable, set default values
-src="/f/netsurf/netsurf/"
-dst=$src"atari/nspkg/"
+src="/usr/src/netsurf-2.9/release/netsurf/2.9/"
+dst="/tmp/nspkg/"
 shortfs=0
 inc_short_fonts=0
 font_src="/usr/share/fonts/truetype/ttf-dejavu/"
@@ -97,9 +97,10 @@ mkdir $dst"download"
 mkdir $dst"res"
 mkdir $dst"res/icons"
 mkdir $dst"res/fonts"
-touch $dst"cookies"
+touch $dst"res/cookies"
 cp $src"atari/doc" $dst -R
 cp $src"ns.prg" $dst
+cp $src"ChangeLog" $dst
 chmod +x $dst"ns.prg"
 m68k-atari-mint-strip $dst"ns.prg"
 m68k-atari-mint-stack -S 256k $dst"ns.prg"
@@ -163,7 +164,7 @@ homepage_url:file://./res/blank
 font_size:130
 font_min_size:120
 
-# 2.5 MB Cache as default:
+# 20 MB Cache as default:
 memory_cache_size:2048512
 
 # this actually hides advertisements, it still generates network traffic:
@@ -183,19 +184,23 @@ suppress_curl_debug:1
 minimum_gif_delay:50
 animate_images:1
 
+foreground_images:1
+background_images:1
+
+
 # path configuration
 ca_bundle:./res/cabundle
 ca_path:./res/certs
 cookie_file:./res/cookies
 url_file:./res/url.db
 tree_icons_path:./res/icons
-downloads_directory:./download
-hotlist_path:./res/hotlist
+downloads_path:./download
+hotlist_file:./res/hotlist
 
 # enable reflow for interactive content and during fetch:
 incremental_reflow:1
 # reformat time during fetch:
-min_reflow_period:500
+min_reflow_period:2500
 core_select_menu:1
 max_fetchers:3
 max_fetchers_per_host:2
@@ -215,6 +220,8 @@ target_blank:1
 # enable loosening for printed content:
 #enable_loosening:1
 # configure disc cache ( currently not implemented )
+#option_disc_cache_age:28
+#configure urldb (url search):
 #expire_url:28
 #hover_urls:1
 " > $dst"Choices"
