@@ -26,6 +26,7 @@
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
+#include "image/image_cache.h"
 #include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -37,45 +38,21 @@
 #include <datatypes/pictureclass.h>
 #include <intuition/classusr.h>
 
-typedef struct amiga_dt_picture_content {
-	struct content base;
-
-	struct bitmap *bitmap;	/**< Created NetSurf bitmap */
-
-	Object *dto;
-	int x;
-	int y;
-	int w;
-	int h;
-} amiga_dt_picture_content;
-
 static nserror amiga_dt_picture_create(const content_handler *handler,
 		lwc_string *imime_type, const http_parameter *params,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c);
 static bool amiga_dt_picture_convert(struct content *c);
-static void amiga_dt_picture_destroy(struct content *c);
-static bool amiga_dt_picture_redraw(struct content *c,
-		struct content_redraw_data *data, const struct rect *clip,
-		const struct redraw_context *ctx);
 static nserror amiga_dt_picture_clone(const struct content *old, struct content **newc);
-static content_type amiga_dt_picture_content_type(void);
-
-static void *amiga_dt_picture_get_internal(const struct content *c, void *context)
-{
-	amiga_dt_picture_content *pic_c = (amiga_dt_picture_content *) c;
-
-	return pic_c->bitmap;
-}
 
 static const content_handler amiga_dt_picture_content_handler = {
 	.create = amiga_dt_picture_create,
 	.data_complete = amiga_dt_picture_convert,
-	.destroy = amiga_dt_picture_destroy,
-	.redraw = amiga_dt_picture_redraw,
+	.destroy = image_cache_destroy,
+	.redraw = image_cache_redraw,
 	.clone = amiga_dt_picture_clone,
-	.get_internal = amiga_dt_picture_get_internal,
-	.type = amiga_dt_picture_content_type,
+	.get_internal = image_cache_get_internal,
+	.type = image_cache_content_type,
 	.no_share = false,
 };
 
@@ -125,30 +102,74 @@ nserror amiga_dt_picture_create(const content_handler *handler,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
-	amiga_dt_picture_content *plugin;
+	struct content *adt;
 	nserror error;
 
-	plugin = talloc_zero(0, amiga_dt_picture_content);
-	if (plugin == NULL)
+	adt = talloc_zero(0, struct content);
+	if (adt == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__init(&plugin->base, handler, imime_type, params,
+	error = content__init(adt, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(plugin);
+		talloc_free(adt);
 		return error;
 	}
 
-	*c = (struct content *) plugin;
+	*c = adt;
 
 	return NSERROR_OK;
+}
+
+static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
+{
+	LOG(("amiga_dt_picture_cache_convert"));
+
+	union content_msg_data msg_data;
+	const uint8 *data;
+	UBYTE *bm_buffer;
+	ULONG size;
+	Object *dto;
+	struct bitmap *bitmap;
+	unsigned int bm_flags = BITMAP_NEW;
+	int bm_format = PBPAFMT_RGBA;
+
+	/* This is only relevant for picture datatypes... */
+
+	data = (uint8 *)content__get_source_data(c, &size);
+
+	if(dto = NewDTObject(NULL,
+					DTA_SourceType, DTST_MEMORY,
+					DTA_SourceAddress, data,
+					DTA_SourceSize, size,
+					DTA_GroupID, GID_PICTURE,
+					PDTA_DestMode, PMODE_V43,
+					TAG_DONE))
+	{
+		bitmap = bitmap_create(c->width, c->height, bm_flags);
+		if (!bitmap) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return NULL;
+		}
+
+		bm_buffer = bitmap_get_buffer(bitmap);
+
+		IDoMethod(dto, PDTM_READPIXELARRAY,
+			bm_buffer, bm_format, bitmap_get_rowstride(bitmap),
+			0, 0, c->width, c->height);
+
+		DisposeDTObject(dto);
+	}
+	else return NULL;
+
+	return bitmap;
 }
 
 bool amiga_dt_picture_convert(struct content *c)
 {
 	LOG(("amiga_dt_picture_convert"));
 
-	amiga_dt_picture_content *plugin = (amiga_dt_picture_content *) c;
 	union content_msg_data msg_data;
 	int width, height;
 	char title[100];
@@ -164,7 +185,7 @@ bool amiga_dt_picture_convert(struct content *c)
 
 	data = (uint8 *)content__get_source_data(c, &size);
 
-	if(plugin->dto = NewDTObject(NULL,
+	if(dto = NewDTObject(NULL,
 					DTA_SourceType, DTST_MEMORY,
 					DTA_SourceAddress, data,
 					DTA_SourceSize, size,
@@ -172,38 +193,28 @@ bool amiga_dt_picture_convert(struct content *c)
 					PDTA_DestMode, PMODE_V43,
 					TAG_DONE))
 	{
-		if(GetDTAttrs(plugin->dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
+		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
 		{
 			width = (int)bmh->bmh_Width;
 			height = (int)bmh->bmh_Height;
-
-			plugin->bitmap = bitmap_create(width, height, bm_flags);
-			if (!plugin->bitmap) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-				return false;
-			}
-
-			bm_buffer = bitmap_get_buffer(plugin->bitmap);
-
-			IDoMethod(plugin->dto, PDTM_READPIXELARRAY,
-				bm_buffer, bm_format, bitmap_get_rowstride(plugin->bitmap),
-				0, 0, width, height);
 		}
 		else return false;
+
+		DisposeDTObject(dto);
 	}
 	else return false;
 
 	c->width = width;
 	c->height = height;
+	c->size = width * height * 4;
+
+	image_cache_add(c, NULL, amiga_dt_picture_cache_convert);
 
 /*
 	snprintf(title, sizeof(title), "image (%lux%lu, %lu bytes)",
 		width, height, size);
 	content__set_title(c, title);
 */
-
-	bitmap_modified(plugin->bitmap);
 
 	content_set_ready(c);
 	content_set_done(c);
@@ -212,74 +223,35 @@ bool amiga_dt_picture_convert(struct content *c)
 	return true;
 }
 
-void amiga_dt_picture_destroy(struct content *c)
-{
-	amiga_dt_picture_content *plugin = (amiga_dt_picture_content *) c;
-
-	LOG(("amiga_dt_picture_destroy"));
-
-	if (plugin->bitmap != NULL) {
-		bitmap_destroy(plugin->bitmap);
-	}
-
-	DisposeDTObject(plugin->dto);
-
-	return;
-}
-
-bool amiga_dt_picture_redraw(struct content *c,
-		struct content_redraw_data *data, 
-		const struct rect *clip,
-		const struct redraw_context *ctx)
-{
-	amiga_dt_picture_content *plugin = (amiga_dt_picture_content *) c;
-	bitmap_flags_t flags = BITMAPF_NONE;
-
-	LOG(("amiga_dt_picture_redraw"));
-
-	if (data->repeat_x)
-		flags |= BITMAPF_REPEAT_X;
-	if (data->repeat_y)
-		flags |= BITMAPF_REPEAT_Y;
-
-	return ctx->plot->bitmap(data->x, data->y, data->width, data->height,
-			plugin->bitmap, data->background_colour, flags);
-}
-
 nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
 {
-	amiga_dt_picture_content *plugin;
+	struct content *adt;
 	nserror error;
 
 	LOG(("amiga_dt_picture_clone"));
 
-	plugin = talloc_zero(0, amiga_dt_picture_content);
-	if (plugin == NULL)
+	adt = talloc_zero(0, struct content);
+	if (adt == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__clone(old, &plugin->base);
+	error = content__clone(old, adt);
 	if (error != NSERROR_OK) {
-		content_destroy(&plugin->base);
+		content_destroy(adt);
 		return error;
 	}
 
 	/* We "clone" the old content by replaying conversion */
 	if ((old->status == CONTENT_STATUS_READY) || 
 	    (old->status == CONTENT_STATUS_DONE)) {
-		if (amiga_dt_picture_convert(&plugin->base) == false) {
-			content_destroy(&plugin->base);
+		if (amiga_dt_picture_convert(adt) == false) {
+			content_destroy(adt);
 			return NSERROR_CLONE_FAILED;
 		}
 	}
 
-	*newc = (struct content *) plugin;
+	*newc = adt;
 
 	return NSERROR_OK;
-}
-
-content_type amiga_dt_picture_content_type(void)
-{
-	return CONTENT_IMAGE;
 }
 
 #endif
