@@ -287,7 +287,7 @@ static void check_options(char **respath)
 
         if (nsoption_charp(downloads_directory) == NULL) {
         	LOG(("Using '%s' as download directory", hdir));
-        	nsoption_set_charp(downloads_directory, hdir);
+        	nsoption_set_charp(downloads_directory, strdup(hdir));
 	}
 	
 	filepath_sfinddef(respath, buf, "icons/", "~/.netsurf/");

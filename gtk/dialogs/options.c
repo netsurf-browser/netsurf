@@ -577,7 +577,7 @@ static gboolean on_comboLanguage_changed(GtkWidget *widget, gpointer data)
 	if (lang == NULL)
 		return FALSE;
 
-	nsoption_set_charp(accept_language, lang);
+	nsoption_set_charp(accept_language, strdup(lang));
 
 	g_free(lang);
 	
@@ -863,9 +863,13 @@ CHECK_CHANGED(checkRequestOverwrite, request_overwrite)
 END_HANDLER
 
 static gboolean on_fileChooserDownloads_changed(GtkWidget *widget, gpointer data) 
-{ 
-	LOG(("Signal emitted on '%s'", "fileChooserDownloads"));                       
-	nsoption_set_charp(downloads_directory, gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((widget))));
+{
+	gchar *dir;
+	LOG(("Signal emitted on '%s'", "fileChooserDownloads"));
+
+	dir = gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER((widget)));
+	nsoption_set_charp(downloads_directory, strdup(dir));
+	g_free(dir);
 	return FALSE;
 } 
 
@@ -968,21 +972,21 @@ BUTTON_CLICKED(buttonaddtheme)
 						0);
 				gtk_widget_destroy(GTK_WIDGET(fc));
 				if (filename != NULL)
-					free(filename);
+					g_free(filename);
 				return FALSE;
 			} else {
 				directory++;
 			}
 		} else {
 			if (filename != NULL)
-				free(filename);
+				g_free(filename);
 			filename = gtk_file_chooser_get_filename(
 					GTK_FILE_CHOOSER(fc));
 			if (strcmp(filename, themesfolder) == 0) {
 				warn_user(messages_get("gtkThemeFolderSub"),
 						0);
 				gtk_widget_destroy(GTK_WIDGET(fc));
-				free(filename);
+				g_free(filename);
 				return FALSE;
 			}
 			directory = strrchr(filename, '/') + 1;
@@ -990,7 +994,7 @@ BUTTON_CLICKED(buttonaddtheme)
 		gtk_widget_destroy(GTK_WIDGET(fc));
 		nsgtk_theme_add(directory);
 		if (filename != NULL)
-			free(filename);
+			g_free(filename);
 	}
 }
 END_HANDLER
