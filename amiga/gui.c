@@ -154,6 +154,7 @@ BOOL screen_closed = FALSE;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 BOOL refresh_search_ico = FALSE;
+struct Hook newprefs_hook;
 
 static char *current_user;
 static char *current_user_dir;
@@ -568,6 +569,12 @@ void gui_init(int argc, char** argv)
 	ami_theme_init();
 	ami_init_mouse_pointers();
 	ami_theme_throbber_setup();
+}
+
+static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
+{
+	gui_system_colour_finalize();
+	gui_system_colour_init();
 }
 
 void ami_openscreen(void)
@@ -2566,6 +2573,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->search_ico_hook.h_Entry = (void *)ami_set_search_ico_render_hook;
 	gwin->shared->search_ico_hook.h_Data = gwin->shared;
 
+	newprefs_hook.h_Entry = (void *)ami_gui_newprefs_hook;
+	newprefs_hook.h_Data = 0;
+
 	if(!nsoption_bool(kiosk_mode))
 	{
 		ULONG addtabclosegadget = TAG_IGNORE;
@@ -2709,6 +2719,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, gwin->shared->menu,
 			WINDOW_VertProp,1,
+			WINDOW_NewPrefsHook,&newprefs_hook,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE |
 #ifdef AMI_SIMPLEREFRESH
