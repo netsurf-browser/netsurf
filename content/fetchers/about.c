@@ -552,7 +552,7 @@ struct about_handlers about_handler_list[] = {
 	{ "about", SLEN("about"), NULL, fetch_about_about_handler, true },
 	{ "logo", SLEN("logo"), NULL, fetch_about_logo_handler, true },
 	/* details about the cache */
-	{ "imagecache", SLEN("iamgecache"), NULL, fetch_about_imagecache_handler, true },
+	{ "imagecache", SLEN("imagecache"), NULL, fetch_about_imagecache_handler, false },
 	/* The default blank page */
 	{ "blank", SLEN("blank"), NULL, fetch_about_blank_handler, true } 
 };
