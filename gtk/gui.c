@@ -659,6 +659,17 @@ void gui_window_save_link(struct gui_window *g, const char *url,
 
 void gui_launch_url(const char *url)
 {
+	gboolean ok;
+	GError *error = NULL;
+
+	ok = gtk_show_uri(NULL, url, GDK_CURRENT_TIME, &error);
+	if (ok == TRUE)
+		return;
+
+	if (error) {
+		warn_user(messages_get("URIOpenError"), error->message);
+		g_error_free(error);
+	}
 }
 
 void warn_user(const char *warning, const char *detail)
