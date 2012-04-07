@@ -708,8 +708,6 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 		v_hide_c ( app.graf.handle);
 		/* copy screen image */
 		vro_cpyfm ( app.graf.handle, S_ONLY, pxy, &screen, &b->caret.background);
-		/* restore the mouse */
-		v_show_c ( app.graf.handle, 1);
 		/* draw caret: */
 		caret.g_x -= area->g_x;
 		caret.g_y -= area->g_y;
@@ -725,6 +723,8 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 					plot_style_caret );
 		/* restore old clip area: */
 		plot_clip( &old_clip );
+		/* restore the mouse */
+		v_show_c ( app.graf.handle, 1);
 		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
 		b->caret.current.g_y = caret.g_y + gw->browser->scroll.current.y;
 		b->caret.current.g_w = caret.g_w;
@@ -764,18 +764,26 @@ void browser_redraw( struct gui_window * gw )
 
 	if ((b->redraw.areas_used > 0) && b->bw->current_content != NULL ) {
 		if( (plotter->flags & PLOT_FLAG_OFFSCREEN) == 0 ) {
+
 			int i;
 			GRECT area;
 			GRECT fbwork;
+			short wf_top[4];
 			todo[0] = bwrect.g_x;
 			todo[1] = bwrect.g_y;
 			todo[2] = todo[0] + bwrect.g_w-1;
 			todo[3] = todo[1] + bwrect.g_h-1;
 			vs_clip(plotter->vdi_handle, 1, (short*)&todo[0]);
-			if( wind_get(gw->root->handle->handle, WF_FIRSTXYWH,
-							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
-				while (todo[2] && todo[3]) {
-					/* convert screen to framebuffer coords: */
+
+			wind_get( 0, WF_TOP, &wf_top[0], &wf_top[1],
+						&wf_top[2], &wf_top[3] );
+
+			if( wf_top[0] == gw->root->handle->handle
+				&& wf_top[1] == _AESapid ){
+				printf("top redraw");
+				/* The window is on top, so there is no need to walk the 	*/
+				/* AES rectangle list. 										*/
+				for( i=0; i<b->redraw.areas_used; i++ ){
 					fbwork.g_x = todo[0] - bwrect.g_x;
 					fbwork.g_y = todo[1] - bwrect.g_y;
 					if( fbwork.g_x < 0 ){
@@ -790,35 +798,91 @@ void browser_redraw( struct gui_window * gw )
 					} else {
 						fbwork.g_h = todo[3];
 					}
-					/* walk the redraw requests: */
-					for( i=0; i<b->redraw.areas_used; i++ ){
-						area.g_x = b->redraw.areas[i].x0;
-						area.g_y = b->redraw.areas[i].y0;
-						area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
-						area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
-						if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
-							redraw_area.x0 = area.g_x;
-							redraw_area.y0 = area.g_y;
-							redraw_area.x1 = area.g_x + area.g_w;
-							redraw_area.y1 = area.g_y + area.g_h;
-							browser_redraw_content( gw, 0, 0, &redraw_area );
-						} else {
-							/*
-								the area should be kept scheduled for later redraw, but because this
-								is onscreen plotter, it doesn't make much sense anyway...
-							*/
-						}
-
+					area.g_x = b->redraw.areas[i].x0;
+					area.g_y = b->redraw.areas[i].y0;
+					area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
+					area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
+					if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
+						redraw_area.x0 = area.g_x;
+						redraw_area.y0 = area.g_y;
+						redraw_area.x1 = area.g_x + area.g_w;
+						redraw_area.y1 = area.g_y + area.g_h;
+						browser_redraw_content( gw, 0, 0, &redraw_area );
+					} else {
+						/* the area should be kept scheduled for later redraw,*/
+						/* but because this is onscreen plotter, it doesn't   */
+						/* make much sense anyway...						  */
 					}
-					if (wind_get(gw->root->handle->handle, WF_NEXTXYWH,
-							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
-						break;
+				}
+			} else {
+				/* walk the AES rectangle list: */
+				if( wind_get(gw->root->handle->handle, WF_FIRSTXYWH,
+								&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
+					while (todo[2] && todo[3]) {
+						/* convert screen to framebuffer coords: */
+						fbwork.g_x = todo[0] - bwrect.g_x;
+						fbwork.g_y = todo[1] - bwrect.g_y;
+						if( fbwork.g_x < 0 ){
+							fbwork.g_w = todo[2] + todo[0];
+							fbwork.g_x = 0;
+						} else {
+							fbwork.g_w = todo[2];
+						}
+						if( fbwork.g_y < 0 ){
+							fbwork.g_h = todo[3] + todo[1];
+							fbwork.g_y = 0;
+						} else {
+							fbwork.g_h = todo[3];
+						}
+						/* walk the redraw requests: */
+						for( i=0; i<b->redraw.areas_used; i++ ){
+							area.g_x = b->redraw.areas[i].x0;
+							area.g_y = b->redraw.areas[i].y0;
+							area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
+							area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
+							if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
+								redraw_area.x0 = area.g_x;
+								redraw_area.y0 = area.g_y;
+								redraw_area.x1 = area.g_x + area.g_w;
+								redraw_area.y1 = area.g_y + area.g_h;
+								browser_redraw_content( gw, 0, 0, &redraw_area );
+							} else {
+								/* the area should be kept scheduled for later redraw,*/
+								/* but because this is onscreen plotter, it doesn't   */
+								/* make much sense anyway...						  */
+							}
+
+						}
+						if (wind_get(gw->root->handle->handle, WF_NEXTXYWH,
+								&todo[0], &todo[1], &todo[2], &todo[3])==0) {
+							break;
+						}
 					}
 				}
 			}
+
+
 			vs_clip(plotter->vdi_handle, 0, (short*)&todo);
 		} else {
-			/* its save to do a complete redraw :) */
+
+			/* its save to do a complete redraw without knowledge about GEM windows :) */
+			/* walk the redraw requests: */
+			int i;
+			for( i=0; i<b->redraw.areas_used; i++ ){
+				struct redraw_context ctx = {
+					.interactive = true,
+					.background_images = true,
+					.plot = &atari_plotters
+				};
+				browser_window_redraw( b->bw, -b->scroll.current.x,
+						-b->scroll.current.y, &b->redraw.areas[i], &ctx );
+			}
+			GRECT area;
+			area.g_x = bwrect.g_x;
+			area.g_y = bwrect.g_y;
+			area.g_w = bwrect.g_w;
+			area.g_h = bwrect.g_h;
+			//plotter->blit( plotter, &area );
 		}
 		b->redraw.areas_used = 0;
 	}
