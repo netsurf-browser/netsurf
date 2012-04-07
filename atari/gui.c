@@ -49,6 +49,7 @@
 #include "desktop/mouse.h"
 #include "render/html.h"
 #include "render/font.h"
+#include "render/box.h"
 #include "utils/schedule.h"
 #include "utils/url.h"
 #include "utils/log.h"
