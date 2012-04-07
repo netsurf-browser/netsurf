@@ -19,3 +19,4 @@ IMDB|www.imdb.com|http://www.imdb.com/find?q=%s|http://www.imdb.com/favicon.ico|
 ESPN|search.espn.go.com|http://search.espn.go.com/%s/|http://www.espn.go.com/favicon.ico|
 Wikipedia|en.wikipedia.org|http://en.wikipedia.org/w/index.php?title=Special%%3ASearch&search=%s|http://en.wikipedia.org/favicon.ico|
 DuckDuckGo|www.duckduckgo.com|http://www.duckduckgo.com/?q=%s|http://www.duckduckgo.com/favicon.ico|
+Seeks|www.seeks-project.info|https://www.seeks-project.info/search.php/search?q=%s|http://www.seeks-project.info/search.php/public/images/seek_icon_32x32_transparent.png|
