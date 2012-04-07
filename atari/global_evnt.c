@@ -59,6 +59,7 @@ extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
 extern short last_drag_x;
 extern short last_drag_y;
+extern bool html_redraw_debug;
 
 /* Zero based resource tree ids: */
 #define T_ABOUT 0
