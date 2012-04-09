@@ -78,6 +78,8 @@ ULONG ami_xdpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth);
+int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+		uint16 char1, uint16 char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		BOOL fallback);
 static void ami_font_cleanup(struct MinList *ami_font_list);
@@ -161,8 +163,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 		utf16next = utf16[utf16charlen];
 
-		tempx = ami_font_plot_glyph(ofont, NULL, *utf16, utf16next,
-					0, 0, emwidth);
+		tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
 
 		if(tempx == 0)
 		{
@@ -173,14 +174,12 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 
 			if(ufont)
 			{
-				tempx = ami_font_plot_glyph(ufont, NULL, *utf16, utf16next,
-							0, 0, emwidth);
+				tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
 			}
 /*
 			if(tempx == 0)
 			{
-				tempx = ami_font_plot_glyph(ofont, NULL, 0xfffd, utf16next,
-							0, 0, emwidth);
+				tempx = ami_font_width_glyph(ofont, NULL, 0xfffd, utf16next, emwidth);
 			}
 */
 		}
@@ -282,7 +281,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 			}
 		}
 
-		tempx = ami_font_plot_glyph(ofont, NULL, *utf16, utf16next, 0, 0, emwidth);
+		tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
 
 		if(tempx == 0)
 		{
@@ -293,14 +292,12 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 
 			if(ufont)
 			{
-				tempx = ami_font_plot_glyph(ufont, NULL, *utf16, utf16next,
-							0, 0, emwidth);
+				tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
 			}
 /*
 			if(tempx == 0)
 			{
-				tempx = ami_font_plot_glyph(ofont, NULL, 0xfffd, utf16next,
-							0, 0, emwidth);
+				tempx = ami_font_width_glyph(ofont, 0xfffd, utf16next, emwidth);
 			}
 */
 		}
@@ -562,6 +559,47 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 			EReleaseInfo(&ofont->olf_EEngine,
 				OT_GlyphMap8Bit,glyph,
 				TAG_END);
+		}
+	}
+
+	return char_advance;
+}
+
+int32 ami_font_width_glyph(struct OutlineFont *ofont, 
+		uint16 char1, uint16 char2, uint32 emwidth)
+{
+	int32 char_advance = 0;
+	FIXED kern = 0;
+	struct MinList *gwlist;
+	FIXED char1w;
+	struct GlyphWidthEntry *gwnode;
+
+	if(ESetInfo(&ofont->olf_EEngine,
+			OT_GlyphCode, char1,
+			OT_GlyphCode2, char1,
+			TAG_END) == OTERR_Success)
+	{
+		if(EObtainInfo(&ofont->olf_EEngine,
+			OT_WidthList, &gwlist,
+			TAG_END) == 0)
+		{
+			gwnode = GetHead((struct MinList *)gwlist);
+			char1w = gwnode->gwe_Width;
+
+			kern = 0;
+
+			if(char2) {
+				if(ESetInfo(&ofont->olf_EEngine,
+						OT_GlyphCode, char1,
+						OT_GlyphCode2, char2,
+						TAG_END) == OTERR_Success)
+				{
+					EObtainInfo(&ofont->olf_EEngine,
+								OT_TextKernPair, &kern,
+								TAG_END);
+				}
+			}
+			char_advance = (ULONG)(((char1w - kern) * emwidth) / 65536);
 		}
 	}
 
