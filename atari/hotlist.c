@@ -45,8 +45,8 @@
 struct atari_hotlist hl;
 
 static void evnt_hl_toolbar( WINDOW *win, short buff[8]) {
-	/* handle toolbar object (index in buff[4] ) */	
-	switch( buff[4] ) { 
+	/* handle toolbar object (index in buff[4] ) */
+	switch( buff[4] ) {
 	case TOOLBAR_HOTLIST_CREATE_FOLDER:
 		hotlist_add_folder(true);
 		break;
@@ -58,12 +58,12 @@ static void evnt_hl_toolbar( WINDOW *win, short buff[8]) {
 	case TOOLBAR_HOTLIST_DELETE:
 		hotlist_delete_selected();
 		break;
-	
+
 	case TOOLBAR_HOTLIST_EDIT:
 		hotlist_edit_selected();
 		break;
 	}
-	ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG ); 
+	ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
 }
 
 
@@ -75,9 +75,9 @@ static void __CDECL evnt_hl_close( WINDOW *win, short buff[8] )
 
 static void __CDECL evnt_hl_mbutton( WINDOW *win, short buff[8] )
 {
-	/* todo: implement popup? 
+	/* todo: implement popup?
 	if(evnt.mbut & 2) {
-		
+
 	}
 	*/
 }
@@ -108,7 +108,7 @@ void hotlist_init(void)
 		WindSetPtr( hl.window, WF_TOOLBAR, tree, evnt_hl_toolbar );
 		EvntAttach( hl.window, WM_CLOSED, evnt_hl_close );
 		EvntAttach( hl.window, WM_XBUTTON,evnt_hl_mbutton );
-		hl.tv = atari_treeview_create( 
+		hl.tv = atari_treeview_create(
 			hotlist_get_tree_flags(),
 			hl.window
 		);
@@ -117,14 +117,14 @@ void hotlist_init(void)
 			LOG(("Failed to allocate treeview"));
 			return;
 		}
-		
+
 		hotlist_initialise(
 			hl.tv->tree,
 			/* TODO: use option_hotlist_file or slt*/
 			(char*)&hl.path,
 			"dir.png"
 		);
-		
+
 	} else {
 
 	}
@@ -132,7 +132,7 @@ void hotlist_init(void)
 }
 
 
-void hotlist_open(void) 
+void hotlist_open(void)
 {
 	if( hl.init == false ) {
 		return;
@@ -142,7 +142,7 @@ void hotlist_open(void)
 		hl.open = true;
 		atari_treeview_open( hl.tv );
 	} else {
-		WindTop( hl.window );	
+		WindTop( hl.window );
 	}
 }
 
@@ -160,7 +160,7 @@ void hotlist_destroy(void)
 	}
 	if( hl.window != NULL ) {
 		hotlist_cleanup( (char*)&hl.path );
-		if( hl.open ) 
+		if( hl.open )
 			hotlist_close();
 		WindDelete( hl.window );
 		hl.window = NULL;

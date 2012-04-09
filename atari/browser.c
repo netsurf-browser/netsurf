@@ -780,7 +780,6 @@ void browser_redraw( struct gui_window * gw )
 
 			if( wf_top[0] == gw->root->handle->handle
 				&& wf_top[1] == _AESapid ){
-				printf("top redraw");
 				/* The window is on top, so there is no need to walk the 	*/
 				/* AES rectangle list. 										*/
 				for( i=0; i<b->redraw.areas_used; i++ ){

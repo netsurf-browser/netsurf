@@ -112,7 +112,7 @@ int window_create( struct gui_window * gw,
 		return( -1 );
 	memset( gw->root, 0, sizeof(struct s_gui_win_root) );
 	gw->root->title = malloc(atari_sysinfo.aes_max_win_title_len+1);
-	gw->root->handle = WindCreate( flags,40, 40, app.w, app.h );
+	gw->root->handle = WindCreate( flags, 40, 40, app.w, app.h );
 	if( gw->root->handle == NULL ) {
 		free( gw->root->title );
 		free( gw->root );
