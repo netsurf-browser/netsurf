@@ -45,7 +45,6 @@ typedef void __CDECL (*menu_evnt_func)(WINDOW * win, int item, int title, void *
 struct s_menu_item_evnt {
 	short title; /* to which menu this item belongs */
 	short rid; /* resource ID */
-	const char * nsid; /* Netsurf message ID */
 	menu_evnt_func menu_func; /* click handler */
 	struct s_accelerator accel; /* accelerator info */
 	char * menustr;
