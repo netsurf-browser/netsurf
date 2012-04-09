@@ -71,7 +71,6 @@ extern bool html_redraw_debug;
 #define T_HELP MAINMENU_T_NAVIGATE - MAINMENU_T_FILE + 1
 /* Count of the above defines: */
 #define NUM_MENU_TITLES 7
-static char * menu_titles[NUM_MENU_TITLES] = {NULL};
 
 /* Global event handlers: */
 static void __CDECL global_evnt_apterm( WINDOW * win, short buff[8] );
@@ -81,9 +80,6 @@ static void __CDECL global_evnt_keybd( WINDOW * win, short buff[8],void * data);
 
 /* Menu event handlers: */
 static void __CDECL menu_about(WINDOW *win, int item, int title, void *data);
-
-static char * get_accel(int mode, char * message, struct s_accelerator * accel);
-static int parse_accel( char * message, struct s_accelerator * accel);
 
 
 /* Menu event handlers: */
@@ -366,32 +362,32 @@ static struct s_menu_item_evnt menu_evnt_tbl[] =
 {
 	{T_ABOUT,MAINMENU_M_ABOUT, "About", menu_about, {0,0,0}, NULL },
 	{T_FILE, MAINMENU_M_NEWWIN, "NewWindow", menu_new_win, {0,0,0}, NULL},
-	{T_FILE, MAINMENU_M_OPENURL, "OpenURL", menu_open_url, {0,0,0}, NULL},
-	{T_FILE, MAINMENU_M_OPENFILE, "OpenFile", menu_open_file, {0,0,0}, NULL},
+	{T_FILE, MAINMENU_M_OPENURL, "OpenURL", menu_open_url, {'G',0,K_CTRL}, NULL},
+	{T_FILE, MAINMENU_M_OPENFILE, "OpenFile", menu_open_file, {'O',0,K_CTRL}, NULL},
 	{T_FILE, MAINMENU_M_CLOSEWIN, "CloseWindow", menu_close_win, {0,0,0}, NULL},
-	{T_FILE, MAINMENU_M_SAVEPAGE, "Save", menu_save_page, {0,0,0}, NULL},
+	{T_FILE, MAINMENU_M_SAVEPAGE, "Save", menu_save_page, {0,NK_F3,0}, NULL},
 	{T_FILE, MAINMENU_M_QUIT, "Quit", menu_quit, {'Q',0,K_CTRL}, NULL},
-	{T_EDIT, MAINMENU_M_CUT, "Cut", menu_cut, {0,0,0}, NULL},
-	{T_EDIT, MAINMENU_M_COPY, "Copy", menu_copy, {0,0,0}, NULL},
-	{T_EDIT, MAINMENU_M_PASTE, "Paste", menu_paste, {0,0,0}, NULL},
-	{T_EDIT, MAINMENU_M_FIND, "FindText", menu_find, {0,0,0}, NULL},
+	{T_EDIT, MAINMENU_M_CUT, "Cut", menu_cut, {'X',0,K_CTRL}, NULL},
+	{T_EDIT, MAINMENU_M_COPY, "Copy", menu_copy, {'C',0,K_CTRL}, NULL},
+	{T_EDIT, MAINMENU_M_PASTE, "Paste", menu_paste, {'V',0,K_CTRL}, NULL},
+	{T_EDIT, MAINMENU_M_FIND, "FindText", menu_find, {0,NK_F4,0}, NULL},
 	{T_VIEW, MAINMENU_M_RELOAD, "Reload", menu_reload, {0,NK_F5,0}, NULL},
-	{T_VIEW, MAINMENU_M_TOOLBARS, "Toolbars", menu_toolbars, {0,0,0}, NULL},
+	{T_VIEW, MAINMENU_M_TOOLBARS, "Toolbars", menu_toolbars, {0,NK_F1,K_CTRL}, NULL},
 	{T_VIEW, MAINMENU_M_SAVEWIN, "", menu_savewin, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_DEBUG_RENDER, "", menu_debug_render, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_FG_IMAGES, "", menu_fg_images, {0,0,0}, NULL},
 	{T_VIEW, MAINMENU_M_BG_IMAGES, "", menu_bg_images, {0,0,0}, NULL},
-	{T_VIEW, MAINMENU_M_STOP, "Stop", menu_stop, {0,0,0}, NULL},
-	{T_NAV, MAINMENU_M_BACK, "Back", menu_back, {0,0,0}, NULL},
-	{T_NAV, MAINMENU_M_FORWARD, "Forward", menu_forward, {0,0,0}, NULL},
-	{T_NAV, MAINMENU_M_HOME, "Home", menu_home, {0,0,0}, NULL},
-	{T_UTIL, MAINMENU_M_LHISTORY, "HistLocal", menu_lhistory, {0,0,0}, NULL},
-	{T_UTIL, MAINMENU_M_GHISTORY, "HistGlobal", menu_ghistory, {0,0,0}, NULL},
+	{T_VIEW, MAINMENU_M_STOP, "Stop", menu_stop, {0,NK_ESC,K_ALT}, NULL},
+	{T_NAV, MAINMENU_M_BACK, "Back", menu_back, {0,NK_LEFT,K_ALT}, NULL},
+	{T_NAV, MAINMENU_M_FORWARD, "Forward", menu_forward, {0,NK_RIGHT,K_ALT}, NULL},
+	{T_NAV, MAINMENU_M_HOME, "Home", menu_home, {0,NK_CLRHOME,0}, NULL},
+	{T_UTIL, MAINMENU_M_LHISTORY, "HistLocal", menu_lhistory, {0,NK_F7,0}, NULL},
+	{T_UTIL, MAINMENU_M_GHISTORY, "HistGlobal", menu_ghistory, {0,NK_F7,K_CTRL}, NULL},
 	{T_UTIL, MAINMENU_M_ADD_BOOKMARK, "HotlistAdd", menu_add_bookmark, {'D',0,K_CTRL}, NULL},
-	{T_UTIL, MAINMENU_M_BOOKMARKS, "HotlistShow", menu_bookmarks, {0,0,0}, NULL},
+	{T_UTIL, MAINMENU_M_BOOKMARKS, "HotlistShow", menu_bookmarks, {0,NK_F6,0}, NULL},
 	{T_UTIL, MAINMENU_M_CHOICES, "Choices", menu_choices, {0,0,0}, NULL},
-	{T_UTIL, MAINMENU_M_VLOG, "Verbose Log", menu_vlog, {0,0,0}, NULL},
-	{T_HELP, MAINMENU_M_HELP_CONTENT, "Help", menu_help_content, {0,0,0}, NULL},
+	{T_UTIL, MAINMENU_M_VLOG, "Verbose Log", menu_vlog, {'V',0,K_ALT}, NULL},
+	{T_HELP, MAINMENU_M_HELP_CONTENT, "Help", menu_help_content, {0,NK_F1,0}, NULL},
 	{T_HELP, -1, "", NULL,{0,0,0}, NULL }
 };
 
@@ -528,109 +524,83 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 }
 
 /*
-	mode = 0 -> return string ptr
-				(build from accel definition in s_accelerator accel)
-	mode = 1 -> return ptr to (untranslated) NS accel string, if any
-*/
-static char * get_accel(int mode, char * message, struct s_accelerator * accel )
-{
-	static char result[8];
-	int pos = 0;
-	char * r = NULL;
-	char * s = NULL;
-	memset( &result, 0, 8);
-	if( (accel->ascii != 0 || accel->keycode != 0) && mode == 0)
-		goto predefined_accel;
-	s = strrchr(message, (int)' ' ) ;
-	if(!s)
-		goto error;
-	if( strlen( s ) < 2)
-		goto error;
-	if(strlen(s) >= 2){
-		s++;
-		/* if string after space begins with lowercase ascii, its not an accelerator: */
-		if( s[0] >= 0x061 && s[0] <= 0x07A  )
-			goto error;
-		if( strncmp(s, "URL", 3) == 0)
-			goto error;
-		if(mode == 1)
-			return( s );
-		/* detect obscure shift accelerator: */
-		if(!strncmp("\xe2\x87\x91", s, 3)){
-			s = s+3;
-			strcpy((char*)&result, "");
-			strncpy((char*)&result[1], s, 14);
-			goto success;
-		}
-		strncpy((char*)&result, s, 15);
-	}
-goto success;
+	Parse encoded menu key shortcut
 
-predefined_accel:
-	if( (accel->mod & K_RSHIFT) || (accel->mod & K_RSHIFT) ) {
-		result[pos]='';
-		pos++;
+	The format is:
+
+	"[" 		-   marks start of the shortcut
+	"@,^,<" 	-   If the keyshortcut is only valid
+					with modifier keys, one of these characters must directly
+					follow the start mark.
+					Meaning:
+					@ -> Alternate
+					^ -> Control
+	"#"			-   keycode or ascii character.
+					The value is handled as keycode if the character value
+					is <= 28 ( Atari chracter table )
+					or if it is interpreted as function key string.
+					(strings: F1 - F10)
+
+*/
+static void register_menu_str( struct s_menu_item_evnt * mi )
+{
+	char * str = ObjcString( h_gem_menu, mi->rid, NULL );
+	int l = strlen(str);
+	int i = l;
+	int x = -1;
+	struct s_accelerator * accel = &mi->accel;
+
+
+
+	while( i>2 ){
+		if( str[i] == '['){
+			x = i;
+			break;
+		}
+		i--;
 	}
-	if(accel->mod == K_CTRL ) {
-		result[pos]='^';
-		pos++;
-	}
-	if(accel->ascii != 0L ) {
-		result[pos]= accel->ascii;
-		pos++;
-	}
-	else if(accel->keycode != 0L ) {
-		if( accel->keycode >= NK_F1 && accel->keycode <= NK_F10){
-			result[pos++] = 'F';
-			sprintf( (char*)&result[pos++], "%d", ((accel->keycode - NK_F1)+1) );
+	if( x > -1 ){
+		mi->menustr = malloc( l+1 );
+		strcpy(mi->menustr, str );
+		mi->menustr[x]=' ';
+		x++;
+		if( str[x] == '@' ){
+			accel->mod = K_ALT;
+			mi->menustr[x] = 0x07;
+			x++;
+		}
+		else if( str[x] == '^' ) {
+			accel->mod = K_CTRL;
+			x++;
+		}
+		if( str[x] <= 28 ){
+			// parse symbol
+			unsigned short keycode=0;
+			switch( str[x] ){
+					case 0x03:
+					accel->keycode = NK_RIGHT;
+				break;
+					case 0x04:
+					accel->keycode = NK_LEFT;
+				break;
+					case 0x1B:
+					accel->keycode = NK_ESC;
+				break;
+					default:
+				break;
+			}
 		} else {
-			*((char*)0) = 1;
-			switch( accel->keycode ) {
-			/* TODO: Add further Keycodes & Symbols here, if needed. */
-			default:
-				goto error;
+			if(str[x] == 'F' && ( str[x+1] >= '1' && str[x+1] <= '9') ){
+				// parse function key
+				short fkey = atoi(  &str[x+1] );
+				if( (fkey >= 0) && (fkey <= 10) ){
+					accel->keycode = NK_F1 - 1 + fkey;
+				}
+			} else {
+				accel->ascii = str[x];
 			}
 		}
 	}
-success:
-	r = (char*)&result;
-error:
-	return r;
-}
-
-/* create accelerator info and keep track of the line length */
-static int parse_accel( char * message, struct s_accelerator * accel)
-{
-	int retval = strlen( message ) ;
-	char * s = get_accel( 0, message, accel );
-	if(!s && (accel->keycode == 0 && accel->ascii == 0 && accel->mod == 0) ) {
-		return retval+4; /* add 3 "imaginary" accel characters + blank */
-	}
-
-	/* the accel is already defined: */
-	if(accel->keycode != 0 ||accel->ascii != 0 || accel->mod != 0) {
-		return( retval+1 );
-	}
-
-	if(s[0] == '' ) {  /* arrow up */
-		accel->mod |= (K_LSHIFT|K_RSHIFT);
-		s++;
-	}
-	else if(s[0] == 0x05E ) { /* ^ */
-		accel->mod |= K_CTRL;
-		s++;
-	}
-
-	/* expect  F1/F10 or something like A, B, C ... : */
-	if(strlen(s) >= 2 && s[0] == 'F' ) {
-		if(s[1] >= 49 && s[1] <= 57) {
-			accel->keycode = NK_F1 +  (atoi(&s[1])-1);
-		}
-	}
-	else {
-		accel->ascii = s[0];
-	}
-	return( retval+1 ); /* add 1 blank */
 }
 
 
@@ -655,27 +625,6 @@ void __CDECL global_evnt_menu( WINDOW * win, short buff[8] )
 	}
 }
 
-
-static void set_menu_title(int rid, const char * nsid)
-{
-	static int count=0;
-	char * msgstr;
-	msgstr = (char*)messages_get(nsid);
-	if(msgstr != NULL) {
-		if(msgstr[0] != 0) {
-			// TODO: modify resource tree, adjust width of menu to chars
-			// actually used.
-			assert(count < NUM_MENU_TITLES);
-			menu_titles[count] = malloc( strlen(msgstr)+3 );
-			strcpy((char*)menu_titles[count], " ");
-			strncat((char*)menu_titles[count], msgstr, strlen(msgstr)+1 );
-			strncat((char*)menu_titles[count], " ", 2 );
-			MenuText(NULL, rid, menu_titles[count] );
-			count++;
-		}
-	}
-}
-
 void main_menu_update( void )
 {
 	MenuIcheck( NULL, MAINMENU_M_DEBUG_RENDER, (html_redraw_debug) ? 1 : 0);
@@ -697,97 +646,22 @@ void bind_global_events( void )
 	EvntAttach( NULL, MN_SELECTED,  global_evnt_menu );
 	EvntAttach( NULL, WM_XM1, global_evnt_m1 );
 
-	set_menu_title( MAINMENU_T_FILE, "Page");
-	set_menu_title( MAINMENU_T_EDIT, "Edit" );
-	set_menu_title( MAINMENU_T_NAVIGATE, "Navigate");
-	set_menu_title( MAINMENU_T_VIEW, "View");
-	set_menu_title( MAINMENU_T_UTIL, "Utilities");
-	set_menu_title( MAINMENU_T_HELP, "Help");
-
-	/* measure items in titles : */
+	/* parse and update menu items:  */
 	i = 0;
 	while( menu_evnt_tbl[i].rid != -1 ) {
-		if( menu_evnt_tbl[i].nsid[0] != 0 ) {
-			m = (char*)messages_get(menu_evnt_tbl[i].nsid);
-			assert(strlen(m)<40);
-			/* create accelerator: */
-			len = parse_accel(m, &menu_evnt_tbl[i].accel);
-			maxlen[menu_evnt_tbl[i].title]=MAX(len, maxlen[menu_evnt_tbl[i].title] );
-			assert(maxlen[menu_evnt_tbl[i].title]<40);
-		}
-		i++;
-	}
-	for( i=0; i<NUM_MENU_TITLES; i++) {
-		if ( maxlen[i] > 120 )
-			maxlen[i] = 120;
-	}
-	/* set menu texts : */
-	i = 0;
-	while( menu_evnt_tbl[i].rid != -1 ) {
-		if( menu_evnt_tbl[i].nsid[0] != 0 ) {
-			m = (char*)messages_get(menu_evnt_tbl[i].nsid);
-			if(m == NULL) {
-				m = (char*)menu_evnt_tbl[i].nsid;
-			}
-			u = get_accel( 1, m, &menu_evnt_tbl[i].accel); /* get NS accel str */
-			t = get_accel( 0, m, &menu_evnt_tbl[i].accel); /* get NS or custom accel */
-			memset((char*)&spare, ' ', 121);
-			spare[0]=' '; /*''; */
-			spare[1]=' ';
-			if( u != NULL && t != NULL ) {
-				LOG(("Menu Item %s: found NS accelerator, ascii: %c, scancode: %x, mod: %x",
-					m,
-					menu_evnt_tbl[i].accel.ascii,
-					menu_evnt_tbl[i].accel.keycode,
-					menu_evnt_tbl[i].accel.mod
-				));
-				/* Accelerator is defined in menu string: */
-				memcpy((char*)&spare[2], m, u-m-1);
-				strncpy(&spare[maxlen[menu_evnt_tbl[i].title]-strlen(t)], t, 4);
-			}
-			else if( t != NULL && u == NULL) {
-				LOG(("Menu Item %s: found RSC accelerator, ascii: %c, scancode: %x, mod: %x",
-					m,
-					menu_evnt_tbl[i].accel.ascii,
-					menu_evnt_tbl[i].accel.keycode,
-					menu_evnt_tbl[i].accel.mod
-				));
-				/* Accelerator is defined in struct: */
-				memcpy( (char*)&spare[2], m, strlen(m) );
-				strncpy(&spare[maxlen[menu_evnt_tbl[i].title]-strlen(t)], t, 4);
-			}
-			else {
-				/* No accel defined: */
-				strcpy((char*)&spare[2], m);
-			}
-			spare[ maxlen[menu_evnt_tbl[i].title]+1 ] = 0;
-			menu_evnt_tbl[i].menustr = malloc(strlen((char*)&spare)+1);
-			if( menu_evnt_tbl[i].menustr ) {
-					strcpy(	menu_evnt_tbl[i].menustr , (char*)&spare );
-			}
-		}
-		i++;
-	}
-	i=0;
-	while( menu_evnt_tbl[i].rid != -1 ) {
-		if( menu_evnt_tbl[i].menustr != NULL ) {
-			// TODO: modify resource tree, adjust width of menu to chars
-			// actually used.
+		char * str = ObjcString( h_gem_menu, menu_evnt_tbl[i].rid, NULL );
+		register_menu_str( &menu_evnt_tbl[i] );
+		if( menu_evnt_tbl[i].menustr != NULL ){
 			MenuText( NULL, menu_evnt_tbl[i].rid, menu_evnt_tbl[i].menustr );
 		}
 		i++;
 	}
 	main_menu_update();
-	/* TODO: Fix pixel sizes for Titles and Items (for non-8px fonts) */
 }
 
 void unbind_global_events( void )
 {
 	int i;
-	for( i=0; i<NUM_MENU_TITLES; i++){
-		if( menu_titles[i]!= NULL)
-			free( menu_titles[i] );
-	}
 	i=0;
 	while(menu_evnt_tbl[i].rid != -1) {
 		if( menu_evnt_tbl[i].menustr != NULL )
