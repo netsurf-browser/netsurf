@@ -21,28 +21,30 @@
 
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
+#include "content/hlcache.h"
 #include "atari/browser.h"
 
 #define TB_BUTTON_WIDTH 32
-#define TB_BUTTON_HEIGHT 21 /* includes 1px 3d effect */
-#define TOOLBAR_HEIGHT 25
 #define THROBBER_WIDTH 32
 #define THROBBER_MIN_INDEX 1
 #define THROBBER_MAX_INDEX 12
 #define THROBBER_INACTIVE_INDEX 13
-#define URLBOX_HEIGHT 21
 
-#define TOOLBAR_URL_TEXT_SIZE_PT 14
-#define TOOLBAR_TEXTAREA_HEIGHT 19
 #define TOOLBAR_URL_MARGIN_LEFT 	2
 #define TOOLBAR_URL_MARGIN_RIGHT 	2
 #define TOOLBAR_URL_MARGIN_TOP		2
 #define TOOLBAR_URL_MARGIN_BOTTOM	2
+
 struct s_tb_button
 {
 	short rsc_id;
 	void (*cb_click)(struct gui_window * gw);
+	const char * iconfile;
 	COMPONENT * comp;
+	OBJECT * aes_object;
+	hlcache_handle * icon;
+	struct gui_window * gw;
+	short index;
 };
 
 
@@ -73,9 +75,14 @@ struct s_toolbar
 	struct s_tb_button * buttons;
 	bool hidden;
 	int btcnt;
+	int style;
+	bool redraw;
 };
 
 /* interface to the toolbar */
+
+/* Must be called before any other toolbar function is called: */
+void toolbar_init( void );
 CMP_TOOLBAR tb_create( struct gui_window * gw );
 void tb_destroy( CMP_TOOLBAR tb );
 /* recalculate size/position of nested controls within the toolbar: */
@@ -88,7 +95,7 @@ void tb_forward_click( struct gui_window * gw );
 void tb_home_click( struct gui_window * gw );
 void tb_stop_click( struct gui_window * gw );
 /* enable / disable buttons etc. */
-void tb_update_buttons( struct gui_window * gw );
+void tb_update_buttons( struct gui_window * gw, short buttonid );
 /* handles clicks on url widget: */
 void tb_url_click( struct gui_window * gw, short mx, short my, short mb, short kstat );
 /* handle keybd event while url widget has focus:*/

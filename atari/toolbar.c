@@ -36,6 +36,7 @@
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
+#include "desktop/tree.h"
 #include "atari/clipboard.h"
 #include "atari/gui.h"
 #include "atari/toolbar.h"
@@ -55,10 +56,12 @@ extern short vdih;
 extern void * h_gem_rsrc;
 extern GEM_PLOTTER plotter;
 static OBJECT * throbber_form = NULL;
+static bool img_toolbar = false;
 
-static const plot_font_style_t font_style_url = {
+
+static plot_font_style_t font_style_url = {
     .family = PLOT_FONT_FAMILY_SANS_SERIF,
-    .size = TOOLBAR_URL_TEXT_SIZE_PT*FONT_SIZE_SCALE,
+    .size = 14*FONT_SIZE_SCALE,
     .weight = 400,
     .flags = FONTF_NONE,
     .background = 0xffffff,
@@ -66,52 +69,111 @@ static const plot_font_style_t font_style_url = {
  };
 
 /* prototypes & order for button widgets: */
+
 static struct s_tb_button tb_buttons[] =
 {
-	{ TOOLBAR_BT_BACK, tb_back_click, NULL },
-	{ TOOLBAR_BT_HOME, tb_home_click,  NULL },
-	{ TOOLBAR_BT_FORWARD, tb_forward_click,  NULL },
-	{ TOOLBAR_BT_RELOAD, tb_reload_click,  NULL },
-	{ TOOLBAR_BT_STOP, tb_stop_click,  NULL },
-	{ 0, NULL, NULL }
+	{ TOOLBAR_BT_BACK, tb_back_click, "back.png", 0, 0, 0, 0, 0 },
+	{ TOOLBAR_BT_HOME, tb_home_click, "home.png", 0, 0, 0, 0, 0 },
+	{ TOOLBAR_BT_FORWARD, tb_forward_click, "forward.png", 0, 0, 0, 0, 0 },
+	{ TOOLBAR_BT_RELOAD, tb_reload_click, "reload.png", 0, 0, 0, 0, 0 },
+	{ TOOLBAR_BT_STOP, tb_stop_click, "stop.png", 0, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, -1 }
+};
+
+struct s_toolbar_style {
+	int font_height_pt;
+	int height;
+	int button_width;
+	int button_margin;
+	short bgcolor;
+};
+
+static struct s_toolbar_style toolbar_styles[] =
+{
+	/* small (18 px height) */
+	{ 9, 18, 16, 0, LWHITE},
+	/* medium (default - 26 px height) */
+	{14, 26, 24, 1, LWHITE},
+	/* large ( 49 px height ) */
+	{18, 34, 64, 2, LWHITE}
 };
 
 static void tb_txt_request_redraw(void *data, int x, int y, int w, int h);
 
-static void __CDECL button_redraw( COMPONENT *c, long buff[8])
+void toolbar_init( void )
 {
-	OBJECT *tree = (OBJECT*)mt_CompDataSearch( &app, c, CDT_OBJECT );
-	struct gui_window * gw = mt_CompDataSearch( &app, c, CDT_OWNER );
+	img_toolbar = (nsoption_int( atari_image_toolbar ) > 0 ) ? true : false;
+}
+
+/**
+ * Callback for load_icon(). Should be removed once bitmaps get loaded directly
+ * from disc
+ */
+static nserror toolbar_icon_callback(hlcache_handle *handle,
+		const hlcache_event *event, void *pw)
+{
+	if ( event->type != CONTENT_MSG_READY ){
+		return( NSERROR_OK );
+	}
+	struct s_tb_button * bt = (struct s_tb_button *)pw;
+	struct gui_window * gw = (struct gui_window *)bt->gw;
+	mt_CompEvntRedraw( &app, bt->comp );
+	return NSERROR_OK;
+}
+
+
+static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
+{
+
+	OBJECT *tree;
 	LGRECT work,clip;
 	GRECT todo,crect;
+	struct s_tb_button *bt = (struct s_tb_button*)data;
+	struct gui_window * gw = bt->gw;
+	struct s_toolbar * tb = gw->root->toolbar;
+
 	short pxy[4];
+	int  bmpx, bmpy, bmpw, bmph;
+	struct bitmap * icon;
+	bool draw_bitmap = false;
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
+	work.g_h = work.g_h - 1;
 	clip = work;
 	/* return if component and redraw region does not intersect: */
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) {
 		return;
 	}
-	/* clip contains intersecting part: */
-	pxy[0] = clip.g_x;
-	pxy[1] = clip.g_y;
-	pxy[2] = clip.g_w + clip.g_x;
-	pxy[3] = clip.g_h + clip.g_y;
 
-	vs_clip( vdih, 1, (short*)&pxy );
+	if( img_toolbar ){
+		if( bt->icon != NULL && bt->iconfile != NULL ){
+			draw_bitmap = true;
+		}
+	}
 
-	tree->ob_x = work.g_x+1;
-	tree->ob_y = work.g_y+2;
-	tree->ob_width = work.g_w;
-	tree->ob_height = work.g_h;
+	if( draw_bitmap == false ){
+		/* Place the CICON into workarea: */
+		tree = bt->aes_object;
+		if( tree == NULL )
+			return;
+		tree->ob_x = work.g_x;
+		tree->ob_y = work.g_y + (work.g_h - tree->ob_height) / 2;
+	} else {
+		icon = content_get_bitmap(bt->icon);
+		/* Check if icon content is available: */
+		/* ( It may isn't loaded yet ) */
+		if( icon == NULL )
+			return;
+		bmpw = bitmap_get_width(icon);
+		bmph = toolbar_styles[tb->style].height - (toolbar_styles[tb->style].button_margin*2);
+		bmpx = toolbar_styles[tb->style].button_margin;
+		bmpy = toolbar_styles[tb->style].button_margin;
+	}
+
+	/* Setup draw mode: */
 	vsf_interior( vdih , 1 );
-	vsf_color( vdih, LWHITE );
-	pxy[0] = (short)buff[4];
-	pxy[1] = (short)buff[5];
-	pxy[2] = (short)buff[4] + buff[6];
-	pxy[3] = MIN( (short)buff[5] + buff[7], work.g_y + work.g_h - 2);
+	vsf_color( vdih, toolbar_styles[tb->style].bgcolor );
 	vswr_mode( vdih, MD_REPLACE);
-	v_bar( vdih, (short*)&pxy );
 
 	/* go through the rectangle list, using classic AES methods. */
 	/* Windom ComGetLGrect is buggy for WF_FIRST/NEXTXYWH	     */
@@ -123,46 +185,49 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8])
 							&todo.g_x, &todo.g_y, &todo.g_w, &todo.g_h );
 	while( (todo.g_w > 0) && (todo.g_h > 0) ){
 
-		if( rc_intersect(&crect, &todo) ){
-			objc_draw( tree, 0, 0, todo.g_x, todo.g_y, todo.g_w, todo.g_h );
+		if( rc_intersect( &crect, &todo ) ){
+			pxy[0] = todo.g_x;
+			pxy[1] = todo.g_y;
+			pxy[2] = todo.g_w + todo.g_x-1;
+			pxy[3] = todo.g_h + todo.g_y-1;
+			vs_clip( vdih, 1, (short*)&pxy );
+			v_bar( vdih, (short*)&pxy );
+			if( draw_bitmap ){
+				plotter->resize( plotter, work.g_w+1, work.g_h+1 );
+				plotter->move( plotter, work.g_x, work.g_y );
+				atari_plotters.bitmap( bmpx, bmpy, bmpw, bmph, icon,
+										0, BITMAPF_BUFFER_NATIVE );
+			} else {
+				objc_draw( tree, 0, 0, todo.g_x, todo.g_y, todo.g_w, todo.g_h );
+			}
+			vs_clip( vdih, 0, (short*)&clip );
 		}
 		wind_get(gw->root->handle->handle, WF_NEXTXYWH,
 							&todo.g_x, &todo.g_y, &todo.g_w, &todo.g_h );
 	}
-
-	if( gw->root->toolbar->buttons[0].comp ==  c && work.g_x == buff[4] ){
-		vsl_color( vdih, LWHITE );
-		pxy[0] = (short)buff[4];
-		pxy[1] = (short)buff[5];
-		pxy[2] = (short)buff[4];
-		pxy[3] = (short)buff[5] + buff[7];
-		v_pline( vdih, 2, (short*) pxy );
-	}
-	vs_clip( vdih, 0, (short*)&clip );
 }
 
-static void __CDECL button_enable( COMPONENT *c, long buff[8])
+static void __CDECL button_enable( COMPONENT *c, long buff[8], void * data )
 {
-	((OBJECT*)mt_CompDataSearch(&app, c, CDT_OBJECT))->ob_state &= ~OS_DISABLED;
+	printf("enb...");
+	struct s_tb_button * bt = (struct s_tb_button *)data;
+	bt->aes_object->ob_state &= ~OS_DISABLED;
 }
 
-static void __CDECL button_disable( COMPONENT *c, long buff[8])
+static void __CDECL button_disable( COMPONENT *c, long buff[8], void * data )
 {
-	((OBJECT*)mt_CompDataSearch(&app, c, CDT_OBJECT))->ob_state |= OS_DISABLED;
+	printf("dis...");
+	struct s_tb_button * bt = (struct s_tb_button *)data;
+	bt->aes_object->ob_state |= OS_DISABLED;
 }
 
-static void __CDECL button_click( COMPONENT *c, long buff[8])
+static void __CDECL button_click( COMPONENT *c, long buff[8], void * data )
 {
+	struct s_tb_button * bt = (struct s_tb_button *)data;
 	int i = 0;
-	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
+	struct gui_window * gw = bt->gw;
 	assert( gw );
-	while( i < gw->root->toolbar->btcnt ) {
-		if(c == gw->root->toolbar->buttons[i].comp ) {
-			gw->root->toolbar->buttons[i].cb_click( gw );
-			break;
-		}
-		i++;
-	}
+	gw->root->toolbar->buttons[i].cb_click( gw );
 }
 
 static struct s_tb_button * find_button( struct gui_window * gw, int rsc_id )
@@ -177,17 +242,41 @@ static struct s_tb_button * find_button( struct gui_window * gw, int rsc_id )
 }
 
 
-static COMPONENT *button_create( OBJECT *o, short type, long size, short flex )
+static COMPONENT *button_init( CMP_TOOLBAR t, OBJECT * tree, int index,
+							struct s_tb_button * instance )
 {
-	COMPONENT *c = mt_CompCreate( &app, type, size, flex );
-	OBJECT *oc = mt_ObjcNDup( &app, o, NULL, 1);
-	oc->ob_next = oc->ob_head = oc->ob_tail = -1;
-	mt_CompDataAttach( &app, c, CDT_OBJECT, oc );
-	mt_CompEvntAttach( &app, c, WM_REDRAW, button_redraw );
-	mt_CompEvntAttach( &app, c, WM_XBUTTON, button_click );
-	mt_CompEvntAttach( &app, c, CM_GETFOCUS, button_enable );
-	mt_CompEvntAttach( &app, c, CM_LOSEFOCUS, button_disable );
-	return c;
+	instance->index = index;
+	instance->gw = t->owner;
+	instance->rsc_id = tb_buttons[index].rsc_id;
+	instance->cb_click = tb_buttons[index].cb_click;
+
+	instance->comp = mt_CompCreate( &app, CLT_VERTICAL, TB_BUTTON_WIDTH, 0 );
+
+	assert( instance->comp );
+
+	if( img_toolbar == false ){
+		OBJECT *oc = mt_ObjcNDup( &app, &tree[instance->rsc_id], NULL, 1);
+		oc->ob_next = oc->ob_head = oc->ob_tail = -1;
+		instance->aes_object = oc;
+	} else {
+		if( (tb_buttons[index].iconfile != NULL) ){
+			/* Fixme: use one a single icon instance! */
+			instance->iconfile = tb_buttons[index].iconfile;
+			instance->icon = load_icon( instance->iconfile,
+										toolbar_icon_callback, instance );
+		}
+		instance->comp->bounds.max_width = TB_BUTTON_WIDTH;
+	}
+
+	mt_CompEvntDataAttach( &app, instance->comp, WM_REDRAW, button_redraw,
+						instance );
+	mt_CompEvntDataAttach( &app, instance->comp, WM_XBUTTON, button_click,
+						instance );
+	mt_CompEvntDataAttach( &app, instance->comp, CM_GETFOCUS, button_enable,
+						instance );
+	mt_CompEvntDataAttach( &app, instance->comp, CM_LOSEFOCUS, button_disable,
+						instance );
+	return instance->comp;
 }
 
 
@@ -346,8 +435,8 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 	// TODO: do not send an complete redraw!
 	ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
-
 }
+
 
 void tb_adjust_size( struct gui_window * gw )
 {
@@ -392,6 +481,7 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
 	CMP_TOOLBAR t = data;
 	if( t->url.redraw == false ){
 		t->url.redraw = true;
+		//t->redraw = true;
 		t->url.rdw_area.g_x = x;
 		t->url.rdw_area.g_y = y;
 		t->url.rdw_area.g_w = w;
@@ -492,51 +582,57 @@ void tb_url_redraw( struct gui_window * gw )
 CMP_TOOLBAR tb_create( struct gui_window * gw )
 {
 	int i;
-	OBJECT * tbut;
+	OBJECT * tbut = NULL;
 
 	CMP_TOOLBAR t = malloc( sizeof(struct s_toolbar) );
 	if( t == NULL )
 		return( NULL );
 
 	t->owner = gw;
+	t->style = 1;
 
 	/* create the root component: */
-	t->comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL, TOOLBAR_HEIGHT, 0);
-	t->comp->rect.g_h = TOOLBAR_HEIGHT;
-	t->comp->bounds.max_height = TOOLBAR_HEIGHT;
-	mt_CompEvntDataAdd(&app, t->comp, WM_REDRAW, evnt_toolbar_redraw, NULL, EV_BOT);
+	t->comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL,
+										toolbar_styles[t->style].height, 0 );
+	t->comp->rect.g_h = toolbar_styles[t->style].height;
+	t->comp->bounds.max_height = toolbar_styles[t->style].height;
+	mt_CompEvntDataAdd(&app, t->comp, WM_REDRAW, evnt_toolbar_redraw,
+						NULL, EV_BOT);
+
+	if( img_toolbar == false ){
+		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &tbut );
+	}
 
 	/* count buttons and add them as components: */
-	RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR , &tbut );
-	t->btdim.g_x = 0;
-	t->btdim.g_y = 1;
-	t->btdim.g_w = 0;
-	t->btdim.g_h = TB_BUTTON_HEIGHT+1;
 	i = 0;
 	while( tb_buttons[i].rsc_id > 0 ) {
 		i++;
 	}
 	t->btcnt = i;
-	t->buttons = malloc( sizeof(struct s_tb_button) * t->btcnt );
+	t->buttons = malloc( t->btcnt * sizeof(struct s_tb_button) );
+	memset( t->buttons, 0, t->btcnt * sizeof(struct s_tb_button) );
 	for( i=0; i < t->btcnt; i++ ) {
-		t->buttons[i].rsc_id = tb_buttons[i].rsc_id;
-		t->buttons[i].cb_click = tb_buttons[i].cb_click;
-		t->buttons[i].comp = button_create( &tbut[t->buttons[i].rsc_id] , CLT_VERTICAL, TB_BUTTON_WIDTH+1, 0);
-		mt_CompDataAttach( &app, t->buttons[i].comp, CDT_OWNER, gw );
-		t->buttons[i].comp->bounds.max_width = TB_BUTTON_WIDTH+1;
+		button_init( t, tbut, i, &t->buttons[i] );
 		mt_CompAttach( &app, t->comp,  t->buttons[i].comp );
-		t->btdim.g_w += TB_BUTTON_WIDTH+1;
 	}
 
 	/* create the url widget: */
-	t->url.textarea = textarea_create( 300, TOOLBAR_TEXTAREA_HEIGHT, 0,
+	font_style_url.size =
+		toolbar_styles[t->style].font_height_pt * FONT_SIZE_SCALE;
+
+	int ta_height = toolbar_styles[t->style].height;
+	ta_height -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM);
+	t->url.textarea = textarea_create( 300,
+									ta_height,
+									0,
 									&font_style_url, tb_txt_request_redraw,
 									t );
 	if( t->url.textarea != NULL ){
 		textarea_set_text(t->url.textarea, "http://");
 	}
 
-	t->url.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL, TOOLBAR_HEIGHT, 1);
+	t->url.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL,
+											toolbar_styles[t->style].height, 1);
 	mt_CompEvntAttach( &app, t->url.comp, WM_REDRAW, evnt_url_redraw );
 	mt_CompEvntAttach( &app, t->url.comp, WM_XBUTTON, evnt_url_click );
 	mt_CompDataAttach( &app, t->url.comp, CDT_OWNER, gw );
@@ -548,10 +644,11 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 		throbber_form->ob_x = 0;
 		throbber_form->ob_y = 0;
 	}
-	t->throbber.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL, TOOLBAR_HEIGHT, 0);
-	t->throbber.comp->rect.g_h = TOOLBAR_HEIGHT;
+	t->throbber.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL,
+												toolbar_styles[t->style].height, 0);
+	t->throbber.comp->rect.g_h = toolbar_styles[t->style].height;
 	t->throbber.comp->rect.g_w = 32;
-	t->throbber.comp->bounds.max_height = TOOLBAR_HEIGHT;
+	t->throbber.comp->bounds.max_height = toolbar_styles[t->style].height;
 	t->throbber.comp->bounds.max_width = 32;
 	t->throbber.index = THROBBER_MIN_INDEX;
 	t->throbber.max_index = THROBBER_MAX_INDEX;
@@ -559,7 +656,6 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	mt_CompEvntAttach( &app, t->throbber.comp, WM_REDRAW, evnt_throbber_redraw );
 	mt_CompDataAttach( &app, t->throbber.comp, CDT_OWNER, gw );
 	mt_CompAttach( &app, t->comp, t->throbber.comp );
-
 	return( t );
 }
 
@@ -568,7 +664,9 @@ void tb_destroy( CMP_TOOLBAR tb )
 {
 	int i=0;
 	while( i < tb->btcnt ) {
-		mt_ObjcFree( &app, (OBJECT*)mt_CompDataSearch(&app, tb->buttons[i].comp, CDT_OBJECT) );
+		if( tb->buttons[i].aes_object ){
+			mt_ObjcFree( &app, tb->buttons[i].aes_object );
+		}
 		i++;
 	}
 	free( tb->buttons );
@@ -594,42 +692,81 @@ struct gui_window * tb_gui_window( CMP_TOOLBAR tb )
 }
 
 
-void tb_update_buttons( struct gui_window * gw )
+void tb_update_buttons( struct gui_window * gw, short button )
 {
+
+#define FIRST_BUTTON TOOLBAR_BT_BACK
+
 	struct s_tb_button * bt;
-	return; /* not working correctly, buttons disabled, even if it shouldn't */
+	bool enable = false;
+	return;
+	if( button == TOOLBAR_BT_BACK || button <= 0 ){
+		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_BACK-FIRST_BUTTON];
+		enable = browser_window_back_available(gw->browser->bw);
+		if( bt->aes_object ){
+			if( enable ) {
+				bt->aes_object->ob_state |= OS_DISABLED;
+			} else {
+				bt->aes_object->ob_state &= ~OS_DISABLED;
+			}
+			mt_CompEvntRedraw( &app, bt->comp );
+		} else {
+			// TODOs
+		}
 
-	bt = find_button( gw, TOOLBAR_BT_BACK );
-	if( browser_window_back_available(gw->browser->bw) ) {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state |= OS_DISABLED;
-	} else {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state &= ~OS_DISABLED;
 	}
-	mt_CompEvntRedraw( &app, bt->comp );
 
-	bt = find_button( gw, TOOLBAR_BT_FORWARD );
-	if( browser_window_forward_available(gw->browser->bw) ) {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state |= OS_DISABLED;
-	} else {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state &= ~OS_DISABLED;
+	if( button == TOOLBAR_BT_HOME || button <= 0 ){
+		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_HOME-FIRST_BUTTON];
+		mt_CompEvntRedraw( &app, bt->comp );
 	}
-	mt_CompEvntRedraw( &app, bt->comp );
 
-	bt = find_button( gw, TOOLBAR_BT_RELOAD );
-	if( browser_window_reload_available(gw->browser->bw) ) {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state |= OS_DISABLED;
-	} else {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state &= ~OS_DISABLED;
+	if( button == TOOLBAR_BT_FORWARD || button <= 0 ){
+		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_FORWARD-FIRST_BUTTON];
+		enable = browser_window_forward_available(gw->browser->bw);
+		if( bt->aes_object ){
+			if( enable ) {
+				bt->aes_object->ob_state |= OS_DISABLED;
+			} else {
+				bt->aes_object->ob_state &= ~OS_DISABLED;
+			}
+			mt_CompEvntRedraw( &app, bt->comp );
+		} else {
+			// TODOs
+		}
 	}
-	mt_CompEvntRedraw( &app, bt->comp );
 
-	bt = find_button( gw, TOOLBAR_BT_STOP );
-	if( browser_window_stop_available(gw->browser->bw) ) {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state |= OS_DISABLED;
-	} else {
-		((OBJECT*)mt_CompDataSearch(&app, bt->comp, CDT_OBJECT))->ob_state &= ~OS_DISABLED;
+	if( button == TOOLBAR_BT_RELOAD || button <= 0 ){
+		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_RELOAD-FIRST_BUTTON];
+		enable = browser_window_reload_available(gw->browser->bw);
+		if( bt->aes_object ){
+			if( enable ) {
+				bt->aes_object->ob_state |= OS_DISABLED;
+			} else {
+				bt->aes_object->ob_state &= ~OS_DISABLED;
+			}
+			mt_CompEvntRedraw( &app, bt->comp );
+		} else {
+			// TODOs
+		}
 	}
-	mt_CompEvntRedraw( &app, bt->comp );
+
+	if( button == TOOLBAR_BT_STOP || button <= 0 ){
+		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_STOP-FIRST_BUTTON];
+		enable = browser_window_stop_available(gw->browser->bw);
+		if( bt->aes_object ){
+			if( enable ) {
+				bt->aes_object->ob_state |= OS_DISABLED;
+			} else {
+				bt->aes_object->ob_state &= ~OS_DISABLED;
+			}
+			mt_CompEvntRedraw( &app, bt->comp );
+		} else {
+			// TODOs
+		}
+	}
+
+#undef FIRST_BUTON
 }
 
 
@@ -724,7 +861,7 @@ void tb_back_click( struct gui_window * gw )
 
 	if( history_back_available(bw->history) )
 		history_back(bw, bw->history);
-	tb_update_buttons(gw);
+	tb_update_buttons(gw, TOOLBAR_BT_BACK );
 }
 
 void tb_reload_click( struct gui_window * gw )
@@ -739,13 +876,13 @@ void tb_forward_click( struct gui_window * gw )
 	if (history_forward_available(bw->history))
 		history_forward(bw, bw->history);
 
-	tb_update_buttons(gw);
+	tb_update_buttons(gw, TOOLBAR_BT_FORWARD );
 }
 
 void tb_home_click( struct gui_window * gw )
 {
 	browser_window_go(gw->browser->bw, cfg_homepage_url, 0, true);
-	tb_update_buttons(gw);
+	tb_update_buttons(gw, TOOLBAR_BT_HOME );
 }
 
 
@@ -766,8 +903,8 @@ void tb_hide( struct gui_window * gw, short mode )
 
 	} else {
 		tb->hidden = false;
-		tb->comp->rect.g_h = TOOLBAR_HEIGHT;
-		tb->comp->bounds.max_height = TOOLBAR_HEIGHT;
+		tb->comp->rect.g_h = toolbar_styles[tb->style].height;
+		tb->comp->bounds.max_height = toolbar_styles[tb->style].height;
 	}
 	gw->browser->reformat_pending = true;
 	browser_update_rects( gw );
