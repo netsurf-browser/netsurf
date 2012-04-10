@@ -19,10 +19,9 @@
 #ifndef NS_ATARI_BITMAP_H
 #define NS_ATARI_BITMAP_H
 
-#define BITMAP_SHRINK	0
-#define BITMAP_GROW		0x1024
-#define BITMAP_MONOGLYPH 0x2048
-#define BITMAP_CLEAR	0x4096
+#define BITMAP_SHRINK		0
+#define BITMAP_GROW			1024	/* Don't realloc when bitmap size shrinks */
+#define BITMAP_CLEAR		2048	/* Zero bitmap memory                     */
 
 struct bitmap {
 	int width;
@@ -32,6 +31,7 @@ struct bitmap {
 	short bpp;				/* number of BYTES! per pixel */
 	size_t rowstride;
 	struct bitmap * resized;
+	MFDB native;
 };
 
 #define NS_BMP_DEFAULT_BPP 4

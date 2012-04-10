@@ -240,6 +240,8 @@ void bitmap_destroy(void *bitmap)
 	if( bm->resized != NULL ) {
 		bitmap_destroy(bm->resized);
 	}
+	if( bm->native.fd_addr )
+		free( bm->native.fd_addr );
 	free(bm->pixdata);
 	free(bm);
 }
