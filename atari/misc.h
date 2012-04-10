@@ -20,6 +20,8 @@
 #define NS_ATARI_MISC_H
 
 #include "cflib.h"
+#include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/textinput.h"
 #include "atari/gui.h"
 
@@ -43,12 +45,15 @@ struct gui_window * find_cmp_window( COMPONENT * c );
 OBJECT *get_tree( int idx );
 char *get_rsc_string( int idx );
 void gem_set_cursor( MFORM_EX * cursor );
+hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
+						void * pw );
 void dbg_grect( char * str, GRECT * r );
 void dbg_lgrect( char * str, LGRECT * r );
 void dbg_pxy( char * str, short * pxy );
 void * ldg_open( char * name, short * global );
 void * ldg_find( char * name, short * ldg );
+const char * file_select( const char * title, const char * name );
 int ldg_close( void * ldg, short * global );
 long nkc_to_input_key(short nkc, long * ucs4_out);
-const char * file_select( const char * title, const char * name );
+
 #endif

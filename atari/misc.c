@@ -16,16 +16,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
+#include <sys/types.h>
 #include <mint/osbind.h>
 #include <windom.h>
 
+#include "content/content.h"
+#include "content/hlcache.h"
 #include "desktop/cookies.h"
 #include "desktop/mouse.h"
 #include "desktop/cookies.h"
+#include "desktop/tree.h"
+#include "desktop/options.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/url.h"
@@ -164,6 +170,94 @@ OBJECT *get_tree( int idx) {
   OBJECT *tree;
   RsrcGaddr( h_gem_rsrc, R_TREE, idx, &tree);
   return tree;
+}
+
+
+
+/**
+ * Callback for load_icon(). Should be removed once bitmaps get loaded directly
+ * from disc
+ */
+static nserror load_icon_callback(hlcache_handle *handle,
+		const hlcache_event *event, void *pw)
+{
+	return NSERROR_OK;
+}
+
+
+/**
+ * utility function. Placed here so that this code doesn't have to be
+ * copied by each user.
+ *
+ * \param name	the name of the loaded icon, if it's not a full path the icon is
+ *		looked for in the directory specified by icons_dir
+ * \return the icon in form of a content or NULL on failure
+ */
+hlcache_handle *load_icon(const char *name, hlcache_handle_callback cb,
+						void * pw )
+{
+	char *url = NULL;
+	const char *icon_url = NULL;
+	int len;
+	hlcache_handle *c;
+	nserror err;
+	nsurl *icon_nsurl;
+	char * icons_dir = nsoption_charp(tree_icons_path);
+
+	/** @todo something like bitmap_from_disc is needed here */
+
+	if (!strncmp(name, "file://", 7)) {
+		icon_url = name;
+	} else {
+		char *native_path;
+
+		if (icons_dir == NULL)
+			return NULL;
+
+		/* path + separator + leafname + '\0' */
+		len = strlen(icons_dir) + 1 + strlen(name) + 1;
+		native_path = malloc(len);
+		if (native_path == NULL) {
+			LOG(("malloc failed"));
+			warn_user("NoMemory", 0);
+			return NULL;
+		}
+
+		/* Build native path */
+		memcpy(native_path, icons_dir,
+		       strlen(icons_dir) + 1);
+		path_add_part(native_path, len, name);
+
+		/* Convert native path to URL */
+		url = path_to_url(native_path);
+
+		free(native_path);
+		icon_url = url;
+	}
+
+	err = nsurl_create(icon_url, &icon_nsurl);
+	if (err != NSERROR_OK) {
+		if (url != NULL)
+			free(url);
+		return NULL;
+	}
+
+	/* Fetch the icon */
+	err = hlcache_handle_retrieve(icon_nsurl, 0, 0, 0,
+				      ((cb != NULL) ? cb : load_icon_callback), pw, 0,
+				      CONTENT_IMAGE, &c);
+
+	nsurl_unref(icon_nsurl);
+
+	/* If we built the URL here, free it */
+	if (url != NULL)
+		free(url);
+
+	if (err != NSERROR_OK) {
+		return NULL;
+	}
+
+	return c;
 }
 
 void gem_set_cursor( MFORM_EX * cursor )
