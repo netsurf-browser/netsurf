@@ -246,7 +246,7 @@ void window_open( struct gui_window * gw, GRECT pos )
 /* update back forward buttons (see tb_update_buttons (bug) ) */
 void window_update_back_forward( struct gui_window * gw)
 {
-	tb_update_buttons( gw );
+	tb_update_buttons( gw, -1 );
 }
 
 void window_set_stauts( struct gui_window * gw , char * text )

@@ -76,9 +76,9 @@ struct s_focus_info
 #define CDT_OWNER 	            0x03UL
 #define CDT_ICON 	            0x04UL
 #define CDT_ICON_TYPE	        0x05UL
-#define CDT_ICON_TYPE_NONE      0x00UL
-#define CDT_ICON_TYPE_OBJECT    0x01UL
-#define CDT_ICON_TYPE_BITMAP    0x02UL
+#	define CDT_ICON_TYPE_NONE      0x00UL
+#	define CDT_ICON_TYPE_OBJECT    0x01UL
+#	define CDT_ICON_TYPE_BITMAP    0x02UL
 
 
 struct gui_window;

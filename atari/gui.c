@@ -178,7 +178,7 @@ gui_create_browser_window(struct browser_window *bw,
 		window_open( gw , pos );
 		/* Recalculate windows browser area now */
 		browser_update_rects( gw );
-		tb_update_buttons( gw );
+		tb_update_buttons( gw, -1 );
 		input_window = gw;
 		/* TODO:... this line: placeholder to create a local history widget ... */
 	}
@@ -990,6 +990,7 @@ static void gui_init2(int argc, char** argv)
 	}
 	tree_set_icon_dir( nsoption_charp(tree_icons_path) );
 	hotlist_init();
+	toolbar_init();
 }
 
 /* #define WITH_DBG_LOGFILE 1 */

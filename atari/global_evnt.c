@@ -496,26 +496,24 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 	}
 	sascii = keybd2ascii( evnt.keybd, K_LSHIFT);
 	while( menu_evnt_tbl[i].rid != -1 && done == false) {
-		if(menu_evnt_tbl[i].nsid[0] != 0 ) {
-			if( kstate == menu_evnt_tbl[i].accel.mod && menu_evnt_tbl[i].accel.ascii != 0) {
-				if( menu_evnt_tbl[i].accel.ascii == sascii) {
-					menu_evnt_tbl[i].menu_func( NULL, menu_evnt_tbl[i].rid, MAINMENU, buff);
-					done = true;
-					break;
-				}
-			} else {
-				/* the accel code hides in the keycode: */
-				if( menu_evnt_tbl[i].accel.keycode != 0) {
-					if( menu_evnt_tbl[i].accel.keycode == (nkc & 0xFF) &&
-						kstate == menu_evnt_tbl[i].accel.mod &&
-						menu_evnt_tbl[i].menu_func != NULL) {
-							menu_evnt_tbl[i].menu_func( NULL,
-								menu_evnt_tbl[i].rid,
-								MAINMENU, buff
-							);
-							done = true;
-							break;
-					}
+		if( kstate == menu_evnt_tbl[i].accel.mod && menu_evnt_tbl[i].accel.ascii != 0) {
+			if( menu_evnt_tbl[i].accel.ascii == sascii) {
+				menu_evnt_tbl[i].menu_func( NULL, menu_evnt_tbl[i].rid, MAINMENU, buff);
+				done = true;
+				break;
+			}
+		} else {
+			/* the accel code hides in the keycode: */
+			if( menu_evnt_tbl[i].accel.keycode != 0) {
+				if( menu_evnt_tbl[i].accel.keycode == (nkc & 0xFF) &&
+					kstate == menu_evnt_tbl[i].accel.mod &&
+					menu_evnt_tbl[i].menu_func != NULL) {
+						menu_evnt_tbl[i].menu_func( NULL,
+							menu_evnt_tbl[i].rid,
+							MAINMENU, buff
+						);
+						done = true;
+						break;
 				}
 			}
 		}
