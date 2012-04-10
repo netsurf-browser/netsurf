@@ -71,6 +71,10 @@
 #define MFDB_FLAG_ZEROMEM		0x02
 #define MFDB_FLAG_NOALLOC		0x04
 
+/* Flags for blit functions: */
+#define BITMAPF_MONOGLYPH 		4096	/* The bitmap is an character bitmap  */
+#define BITMAPF_BUFFER_NATIVE	8192	/* Bitmap shall be kept converted     */
+
 /* Error codes: */
 #define ERR_BUFFERSIZE_EXCEEDS_SCREEN 1	/* The buffer allocated is larger than the screen */
 #define ERR_NO_MEM 2					/* Not enough memory for requested operation */
@@ -167,6 +171,7 @@ typedef	int (*_pmf_bitmap)(GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 				unsigned long bg, unsigned long flags );
 typedef int (*_pmf_plot_mfdb)(GEM_PLOTTER self, GRECT * loc, MFDB * mfdb, unsigned char fgcolor, uint32_t flags);
 typedef	int (*_pmf_text)(GEM_PLOTTER self, int x, int y, const char *text, size_t length, const plot_font_style_t *fstyle);
+typedef int (*_pmf_blit)(GEM_PLOTTER self, GRECT * region);
 typedef	int (*_pmf_dtor)(GEM_PLOTTER self);
 
 
@@ -208,6 +213,8 @@ struct s_gem_plotter
 	_pmf_bitmap bitmap;
 	/* plot an mfdb into the buffer / screen: */
 	_pmf_plot_mfdb plot_mfdb;
+	/* draw to screen, only valid for offscreen plotters: */
+	_pmf_blit blit;
 	_pmf_text text;
 	_pmf_dtor dtor;
 };

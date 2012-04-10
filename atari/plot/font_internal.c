@@ -162,7 +162,7 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT *inloc, uint8_t *chrp, int pitc
 			pixmask = (pixmask << 1);
 		}
 	}
-	self->plotter->bitmap( self->plotter, fontbmp, loc.g_x, loc.g_y, 0, BITMAP_MONOGLYPH );
+	self->plotter->bitmap( self->plotter, fontbmp, loc.g_x, loc.g_y, 0, BITMAPF_MONOGLYPH );
 }
 
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,

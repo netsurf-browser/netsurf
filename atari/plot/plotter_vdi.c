@@ -433,9 +433,11 @@ static int resize( GEM_PLOTTER self, int w, int h )
 {
 	if( w == VIEW(self).w && h == VIEW(self).h )
 		return( 1 );
+	struct rect newclip = { 0, 0, w-1, h-1 };
 	VIEW(self).w = w;
 	VIEW(self).h = h;
 	update_visible_rect( self );
+	set_clip( self, &newclip);
 	LOG(("%s: %s\n", (char*)__FILE__, (char*)__FUNCTION__));
 	return( 1 );
 }
@@ -1002,6 +1004,9 @@ static void snapshot_destroy( GEM_PLOTTER self )
 	}
 }
 
+
+#ifdef WITH_8BPP_SUPPORT
+
 static inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
 	short * buf;
@@ -1077,7 +1082,6 @@ static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
 	return( ret );
 }
 
-#ifdef WITH_8BPP_SUPPORT
 static int bitmap_convert_8( GEM_PLOTTER self,
 	struct bitmap * img,
 	int x,
@@ -1094,7 +1098,7 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	int bw;
 	struct bitmap * scrbuf = NULL;
 	struct bitmap * bm;
-	bool transp = ( ( (img->opaque == false) || ( (flags & BITMAP_MONOGLYPH) != 0) )
+	bool transp = ( ( (img->opaque == false) || ( (flags & BITMAPF_MONOGLYPH) != 0) )
 					&& ((self->flags & PLOT_FLAG_TRANS) != 0) );
 
 	assert( clip->g_h > 0 );
@@ -1135,7 +1139,7 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	// realloc mem for stdform
 	MFDB stdform;
 	if( transp ){
-		if( ((self->flags & PLOT_FLAG_TRANS) != 0) || ( (flags & BITMAP_MONOGLYPH) != 0) ) {
+		if( ((self->flags & PLOT_FLAG_TRANS) != 0) || ( (flags & BITMAPF_MONOGLYPH) != 0) ) {
 			// point image to snapshot buffer, otherwise allocate mem
 			MFDB * bg = snapshot_create_std_mfdb( self, x+clip->g_x,y+clip->g_y, clip->g_w, clip->g_h );
 			stdform.fd_addr = bg->fd_addr;
@@ -1260,7 +1264,11 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 }
 #endif
 
-/* convert bitmap to the virutal (chunked) framebuffer format */
+/*
+*
+* Convert bitmap to the virutal (chunked) framebuffer format
+*
+*/
 static int bitmap_convert( GEM_PLOTTER self,
 	struct bitmap * img,
 	int x,
@@ -1273,24 +1281,34 @@ static int bitmap_convert( GEM_PLOTTER self,
 	int dststride;						/* stride of dest. image */
 	int dstsize;						/* size of dest. in byte */
 	int err;
-	int bw;
+	int bw, bh;
 	struct bitmap * scrbuf = NULL;
 	struct bitmap * bm;
+	bool cache = ( flags & BITMAPF_BUFFER_NATIVE );
 
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
 
 	bm = img;
 	bw = bitmap_get_width( img );
+	bh = bitmap_get_height( img );
+
+	if( cache ){
+		assert( clip->g_w >= bw && clip->g_h >= bh );
+		if( img->native.fd_addr != NULL ){
+			*out = img->native;
+			return( 0 );
+		}
+	}
 
 	/* rem. if eddi xy is installed, we could directly access the screen! */
 	/* apply transparency to the image: */
-	if( (img->opaque == false)
+	if( ( img->opaque == false )
 		&& ( (self->flags & PLOT_FLAG_TRANS) != 0)
 		&& (
 			(vdi_sysinfo.vdiformat == VDI_FORMAT_PACK )
 			||
-			( (flags & BITMAP_MONOGLYPH) != 0)
+			( (flags & BITMAPF_MONOGLYPH) != 0)
 		) ) {
 		uint32_t * imgpixel;
 		uint32_t * screenpixel;
@@ -1320,28 +1338,38 @@ static int bitmap_convert( GEM_PLOTTER self,
 			bm = scrbuf;
 		}
 	}
-
 	/* (re)allocate buffer for framebuffer image: */
 	dststride = MFDB_STRIDE( clip->g_w );
 	dstsize = ( ((dststride >> 3) * clip->g_h) * self->bpp_virt);
-	if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
-		int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-		if( DUMMY_PRIV(self)->buf_packed == NULL )
-			DUMMY_PRIV(self)->buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
-		 else
-			DUMMY_PRIV(self)->buf_packed =(void*)realloc(
-													DUMMY_PRIV(self)->buf_packed,
-													blocks * CONV_BLOCK_SIZE
-												);
-		assert( DUMMY_PRIV(self)->buf_packed );
-		if( DUMMY_PRIV(self)->buf_packed == NULL ) {
+	if( cache == false ){
+		if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
+			int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+			if( DUMMY_PRIV(self)->buf_packed == NULL )
+				DUMMY_PRIV(self)->buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
+			 else
+				DUMMY_PRIV(self)->buf_packed =(void*)realloc(
+														DUMMY_PRIV(self)->buf_packed,
+														blocks * CONV_BLOCK_SIZE
+													);
+			assert( DUMMY_PRIV(self)->buf_packed );
+			if( DUMMY_PRIV(self)->buf_packed == NULL ) {
+				if( scrbuf != NULL )
+					bitmap_destroy( scrbuf );
+				return( 0-ERR_NO_MEM );
+			}
+			DUMMY_PRIV(self)->size_buf_packed = blocks * CONV_BLOCK_SIZE;
+		}
+		out->fd_addr = DUMMY_PRIV(self)->buf_packed;
+	} else {
+		assert( out->fd_addr == NULL );
+		out->fd_addr = (void*)malloc( dstsize );
+		if( out->fd_addr == NULL ){
 			if( scrbuf != NULL )
 				bitmap_destroy( scrbuf );
 			return( 0-ERR_NO_MEM );
 		}
-		DUMMY_PRIV(self)->size_buf_packed = blocks * CONV_BLOCK_SIZE;
 	}
-	out->fd_addr = DUMMY_PRIV(self)->buf_packed;
+
 	out->fd_w = dststride;
 	out->fd_h = clip->g_h;
 	out->fd_wdwidth = dststride >> 4;
@@ -1369,7 +1397,9 @@ static int bitmap_convert( GEM_PLOTTER self,
 		(dststride >> 3) *  self->bpp_virt /* stride as bytes */
 	);
 	assert( err != 0 );
-
+	if( cache == true ){
+		img->native = *out;
+	}
 	return( 0 );
 
 }
@@ -1431,6 +1461,7 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	pxy[7] = VIEW(self).y + loc.g_y + off.g_h-1;
 	/* Convert the Bitmap to native screen format - ready for output*/
 	/* This includes blending transparent pixels */
+
 	if( self->bitmap_convert( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
 		return( true );
 	}
