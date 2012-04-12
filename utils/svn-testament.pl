@@ -12,6 +12,8 @@ If there is no SVN in place, the data is invented arbitrarily.
 
 =cut
 
+$ENV{LC_ALL} = 'C';
+
 my $root = shift @ARGV;
 my $targetfile = shift @ARGV;
 
@@ -61,7 +63,7 @@ sub gather_output {
 }
 
 if ( $svn_present ) {
-   foreach my $line (split(/\n/, gather_output("LC_ALL=C svn info $root"))) {
+   foreach my $line (split(/\n/, gather_output("svn info $root"))) {
       my ($key, $value) = split(/: /, $line, 2);
       $key = lc($key);
       $key =~ s/\s+//g;
@@ -76,7 +78,7 @@ if ( $svn_present ) {
 my %svnstatus; # The SVN status output
 
 if ( $svn_present ) {
-   foreach my $line (split(/\n/, gather_output("LC_ALL=C svn status $root"))) {
+   foreach my $line (split(/\n/, gather_output("svn status $root"))) {
       chomp $line;
       my $op = substr($line, 0, 1);
       if ($op eq ' ' && substr($line, 1, 1) ne ' ') { $op = "p"; }
