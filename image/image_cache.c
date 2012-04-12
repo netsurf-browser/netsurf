@@ -637,6 +637,7 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 	struct image_cache_entry_s *centry;
 	size_t slen = 0; /* current output string length */
 	int fmtc = 0; /* current index into format string */
+	lwc_string *origin; /* current entry's origin */
 
 	centry = image_cache__findn(entryn);
 	if (centry == NULL)
@@ -680,6 +681,29 @@ int image_cache_snentryf(char *string, size_t size, unsigned int entryn,
 			case 'U':
 				slen += snprintf(string + slen, size - slen,
 				    		"%s", nsurl_access(llcache_handle_get_url(centry->content->llcache)));
+				break;
+
+			case 'o':
+				if (nsurl_has_component(llcache_handle_get_url(
+						centry->content->llcache),
+						NSURL_HOST)) {
+					origin = nsurl_get_component(
+							llcache_handle_get_url(
+							centry->content->
+								llcache),
+							NSURL_HOST);
+					
+					slen += snprintf(string + slen,
+							size - slen, "%s",
+				    			lwc_string_data(
+				    				origin));
+
+					lwc_string_unref(origin);
+				} else {
+					slen += snprintf(string + slen,
+							size - slen, "%s",
+				    			"localhost");
+				}
 				break;
 			
 			case 's':

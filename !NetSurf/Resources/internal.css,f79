@@ -181,24 +181,28 @@ body#configlist .null-content {
  * about:imagecache
  */
 
-table.imagecachelist {
+p.imagecachelist {
 	border-spacing: 0px;
 	margin-top: 1.2em;
 	margin-bottom: 1.2em;
+	display: table;
 }
 
-table.imagecachelist tr:nth-child(2n+3) {
+p.imagecachelist a:nth-child(2n+3) {
 	background: #e8edff;
 }
 
-table.imagecachelist th {
-	background: #c8d5ff;
-	padding: 2px;
-	text-align: left;
+p.imagecachelist strong, p.imagecachelist a {
+	display: table-row;
 }
 
-table.imagecachelist td {
+p.imagecachelist strong span {
+	background: #c8d5ff;
+}
+
+p.imagecachelist span {
 	border-top: 1px solid #bcf;
-	padding: 2px;
+	padding: 2px 0.5em;
+	display: table-cell;
 }
 

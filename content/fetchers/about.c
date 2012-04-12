@@ -242,29 +242,30 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 
 	/* image cache entry table */
 	slen = snprintf(buffer, sizeof buffer, 
-			"<table class=\"imagecachelist\">\n"
-			"<tr>"
-			"<th>Entry</th>"
-			"<th>Content Key</th>"
-			"<th>Redraw<br>Count</th>"
-			"<th>Conversion<br>Count</th>"
-			"<th>Last Redraw</th>"
-			"<th>Bitmap Age</th>"
-			"<th>Bitmap Size</th>"
-			"<th>Source URL</th>"
-			"</tr>\n");
+			"<p class=\"imagecachelist\">\n"
+			"<strong>"
+			"<span>Entry</span>"
+			"<span>Content Key</span>"
+			"<span>Redraw Count</span>"
+			"<span>Conversion Count</span>"
+			"<span>Last Redraw</span>"
+			"<span>Bitmap Age</span>"
+			"<span>Bitmap Size</span>"
+			"<span>Source</span>"
+			"</strong>\n");
 	do {
 		res = image_cache_snentryf(buffer + slen, sizeof buffer - slen,
 				cent_loop,
-				"<tr><td>%e</td>"
-				"<td>%k</td>"
-				"<td>%r</td>"
-				"<td>%c</td>"
-				"<td>%a</td>"
-				"<td>%g</td>"
-				"<td>%s</td>"
-				"<td><a href=\"%U\">%U</a></td>"
-				"</tr>\n");
+				"<a href=\"%U\">"
+				"<span>%e</span>"
+				"<span>%k</span>"
+				"<span>%r</span>"
+				"<span>%c</span>"
+				"<span>%a</span>"
+				"<span>%g</span>"
+				"<span>%s</span>"
+				"<span>%o</span>"
+				"</a>\n");
 		if (res <= 0) 
 			break; /* last option */
 
@@ -282,7 +283,7 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 	} while (res > 0);
 
 	slen += snprintf(buffer + slen, sizeof buffer - slen, 
-			 "</table>\n</body>\n</html>\n");
+			 "</p>\n</body>\n</html>\n");
 
 	msg.data.header_or_data.len = slen;
 	if (fetch_about_send_callback(&msg, ctx))
