@@ -216,20 +216,22 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 
 	/* image cache summary */
 	slen = image_cache_snsummaryf(buffer, sizeof(buffer), 
-		"<p>Configured limit of %a hysteresis of %b"
-		"<p>Total bitmap size in use %c (in %d)"
-		"<p>Age %es"
-		"<p>Peak size %f (in %g)"
-		"<p>Peak image count %h (size %i)"
+		"<p>Configured limit of %a hysteresis of %b</p>\n"
+		"<p>Total bitmap size in use %c (in %d)</p>\n"
+		"<p>Age %es</p>\n"
+		"<p>Peak size %f (in %g)</p>\n"
+		"<p>Peak image count %h (size %i)</p>\n"
 		"<p>Cache total/hit/miss/fail (counts) %j/%k/%l/%m "
-				"(%pj%%/%pk%%/%pl%%/%pm%%)"
+				"(%pj%%/%pk%%/%pl%%/%pm%%)</p>\n"
 		"<p>Cache total/hit/miss/fail (size) %n/%o/%q/%r "
-				"(%pn%%/%po%%/%pq%%/%pr%%)" 
+				"(%pn%%/%po%%/%pq%%/%pr%%)</p>\n" 
 		"<p>Total images never rendered: %s "
-				"(includes %t that were converted)"
+				"(includes %t that were converted)</p>\n"
 		"<p>Total number of excessive conversions: %u "
 				"(from %v images converted more than once)"
-		"<p>Bitmap of size %w had most (%x) conversions");
+				"</p>\n"
+		"<p>Bitmap of size %w had most (%x) conversions</p>\n"
+		"<h2>Current image cache contents</h2>\n");
 	if (slen >= (int) (sizeof(buffer))) 
 		goto fetch_about_imagecache_handler_aborted; /* overflow */
 
@@ -244,8 +246,8 @@ static bool fetch_about_imagecache_handler(struct fetch_about_context *ctx)
 			"<tr>"
 			"<th>Entry</th>"
 			"<th>Content Key</th>"
-			"<th>Redraw Count</th>"
-			"<th>Conversion Count</th>"
+			"<th>Redraw<br>Count</th>"
+			"<th>Conversion<br>Count</th>"
 			"<th>Last Redraw</th>"
 			"<th>Bitmap Age</th>"
 			"<th>Bitmap Size</th>"
