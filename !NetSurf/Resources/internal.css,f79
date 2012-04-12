@@ -159,6 +159,7 @@ body#dirlist span.size + span.size {
 	text-align: left;
 	padding-right: 0; }
 
+
 /* 
  * configuration listing style 
  */
@@ -175,19 +176,29 @@ body#configlist table.config td + td {
 body#configlist .null-content {
         font-style: italic; }
 
-/* about:imagecache */
+
+/*
+ * about:imagecache
+ */
 
 table.imagecachelist {
-	border: 1px solid #000;
 	border-spacing: 0px;
-	border-collapse: collapse;
+	margin-top: 1.2em;
+	margin-bottom: 1.2em;
+}
+
+table.imagecachelist tr:nth-child(2n+3) {
+	background: #e8edff;
 }
 
 table.imagecachelist th {
-	border: 1px solid #000;
+	background: #c8d5ff;
+	padding: 2px;
+	text-align: left;
 }
 
 table.imagecachelist td {
-	border: 1px solid #000;
+	border-top: 1px solid #bcf;
+	padding: 2px;
 }
 
