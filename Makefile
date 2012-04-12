@@ -616,6 +616,7 @@ clean: $(CLEANS)
 install-gtk: nsgtk
 	@# TODO: filter out .svn directories from install location
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
+	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
 	@cp nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
 	@cp -RL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
@@ -626,7 +627,7 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/icons $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@cp -RL gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/internal.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
@@ -638,14 +639,9 @@ install-gtk: nsgtk
 	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	@cp -RL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/themes $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@tar cf - --exclude .svn -C gtk/res themes | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install translations
-	@cp -RL gtk/res/C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/de $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/en $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/fr $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/it $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/nl $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@tar cf - --exclude .svn -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install glade templates
 	@gzip -9v < gtk/res/cookies.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)cookies.glade
 	@gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
