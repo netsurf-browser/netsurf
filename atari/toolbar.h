@@ -83,6 +83,8 @@ struct s_toolbar
 
 /* Must be called before any other toolbar function is called: */
 void toolbar_init( void );
+/*Must be called when netsurf exits to free toolbar resources: */
+void toolbar_exit( void );
 CMP_TOOLBAR tb_create( struct gui_window * gw );
 void tb_destroy( CMP_TOOLBAR tb );
 /* recalculate size/position of nested controls within the toolbar: */

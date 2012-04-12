@@ -55,6 +55,7 @@ extern char * cfg_homepage_url;
 extern short vdih;
 extern void * h_gem_rsrc;
 extern GEM_PLOTTER plotter;
+extern struct gui_window * input_window;
 static OBJECT * throbber_form = NULL;
 static bool img_toolbar = false;
 
@@ -95,14 +96,42 @@ static struct s_toolbar_style toolbar_styles[] =
 	/* medium (default - 26 px height) */
 	{14, 26, 24, 1, LWHITE},
 	/* large ( 49 px height ) */
+	{18, 34, 64, 2, LWHITE},
+	/* custom style: */
 	{18, 34, 64, 2, LWHITE}
 };
 
-static void tb_txt_request_redraw(void *data, int x, int y, int w, int h);
+static void tb_txt_request_redraw( void *data, int x, int y, int w, int h );
+static nserror toolbar_icon_callback( hlcache_handle *handle,
+		const hlcache_event *event, void *pw );
+
 
 void toolbar_init( void )
 {
+	int i=0;
+
 	img_toolbar = (nsoption_int( atari_image_toolbar ) > 0 ) ? true : false;
+	if( img_toolbar ){
+		while( tb_buttons[i].rsc_id != 0){
+			tb_buttons[i].index = i;
+			if( (tb_buttons[i].iconfile != NULL) ){
+				tb_buttons[i].icon = load_icon( tb_buttons[i].iconfile,
+										toolbar_icon_callback, &tb_buttons[i] );
+			}
+			i++;
+		}
+	}
+}
+
+void toolbar_exit( void )
+{
+	int i=0;
+	while( tb_buttons[i].rsc_id != 0 ) {
+		if( tb_buttons[i].icon ){
+			hlcache_handle_release( tb_buttons[i].icon );
+		}
+		i++;
+	}
 }
 
 /**
@@ -116,8 +145,23 @@ static nserror toolbar_icon_callback(hlcache_handle *handle,
 		return( NSERROR_OK );
 	}
 	struct s_tb_button * bt = (struct s_tb_button *)pw;
-	struct gui_window * gw = (struct gui_window *)bt->gw;
-	mt_CompEvntRedraw( &app, bt->comp );
+	if( bt->gw == NULL ){
+		/* callback is for protoype */
+		/* find the instance of the button within input_window: */
+		if( input_window != NULL && input_window->root
+			&& input_window->root->toolbar ){
+			if( input_window->root->toolbar->buttons ){
+				struct s_tb_button * instance =
+					&input_window->root->toolbar->buttons[bt->index];
+				/* send redraw: */
+				if(  instance->comp )
+					mt_CompEvntRedraw( &app, instance->comp );
+			}
+		}
+	}
+	/* otherwise callback is for an instance */
+	/* maybe that will be used if throbber is implemented as GIF */
+
 	return NSERROR_OK;
 }
 
@@ -209,14 +253,12 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 
 static void __CDECL button_enable( COMPONENT *c, long buff[8], void * data )
 {
-	printf("enb...");
 	struct s_tb_button * bt = (struct s_tb_button *)data;
 	bt->aes_object->ob_state &= ~OS_DISABLED;
 }
 
 static void __CDECL button_disable( COMPONENT *c, long buff[8], void * data )
 {
-	printf("dis...");
 	struct s_tb_button * bt = (struct s_tb_button *)data;
 	bt->aes_object->ob_state |= OS_DISABLED;
 }
@@ -227,7 +269,7 @@ static void __CDECL button_click( COMPONENT *c, long buff[8], void * data )
 	int i = 0;
 	struct gui_window * gw = bt->gw;
 	assert( gw );
-	gw->root->toolbar->buttons[i].cb_click( gw );
+	gw->root->toolbar->buttons[bt->index].cb_click( gw );
 }
 
 static struct s_tb_button * find_button( struct gui_window * gw, int rsc_id )
@@ -245,29 +287,21 @@ static struct s_tb_button * find_button( struct gui_window * gw, int rsc_id )
 static COMPONENT *button_init( CMP_TOOLBAR t, OBJECT * tree, int index,
 							struct s_tb_button * instance )
 {
-	instance->index = index;
+	*instance = tb_buttons[index];
 	instance->gw = t->owner;
-	instance->rsc_id = tb_buttons[index].rsc_id;
-	instance->cb_click = tb_buttons[index].cb_click;
 
 	instance->comp = mt_CompCreate( &app, CLT_VERTICAL, TB_BUTTON_WIDTH, 0 );
-
 	assert( instance->comp );
 
+	instance->comp->bounds.max_width = TB_BUTTON_WIDTH;
+
 	if( img_toolbar == false ){
+		// FIXME: is it really required to dup the object? Can this be moved
+		// to toolbar_init() ?
 		OBJECT *oc = mt_ObjcNDup( &app, &tree[instance->rsc_id], NULL, 1);
 		oc->ob_next = oc->ob_head = oc->ob_tail = -1;
 		instance->aes_object = oc;
-	} else {
-		if( (tb_buttons[index].iconfile != NULL) ){
-			/* Fixme: use one a single icon instance! */
-			instance->iconfile = tb_buttons[index].iconfile;
-			instance->icon = load_icon( instance->iconfile,
-										toolbar_icon_callback, instance );
-		}
-		instance->comp->bounds.max_width = TB_BUTTON_WIDTH;
 	}
-
 	mt_CompEvntDataAttach( &app, instance->comp, WM_REDRAW, button_redraw,
 						instance );
 	mt_CompEvntDataAttach( &app, instance->comp, WM_XBUTTON, button_click,
@@ -858,7 +892,6 @@ void tb_back_click( struct gui_window * gw )
 {
 	struct browser_window *bw = gw->browser->bw;
 
-
 	if( history_back_available(bw->history) )
 		history_back(bw, bw->history);
 	tb_update_buttons(gw, TOOLBAR_BT_BACK );
@@ -872,7 +905,6 @@ void tb_reload_click( struct gui_window * gw )
 void tb_forward_click( struct gui_window * gw )
 {
 	struct browser_window *bw = gw->browser->bw;
-
 	if (history_forward_available(bw->history))
 		history_forward(bw, bw->history);
 
