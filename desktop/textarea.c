@@ -908,7 +908,7 @@ void textarea_redraw(struct text_area *ta, int x, int y,
 			/* Caret in vertical clip range; plot */
 			plot->line(x + ta->caret_x, y + ta->caret_y,
 				  	x + ta->caret_x,
-					y + ta->caret_y + ta->line_height,
+					y + ta->caret_y + caret_height,
 					&pstyle_stroke_caret);
 	}
 }
