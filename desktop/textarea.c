@@ -407,6 +407,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 	int x, y;
 	int x0, y0, x1, y1;
 	int text_y_offset;
+	int width, height;
 
 	if (ta->flags & TEXTAREA_READONLY)
 		return true;
@@ -454,8 +455,12 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 		/* set the caret coordinate beyond the redraw rectangle */
 		ta->caret_x = x - 2;
 
-		ta->redraw_request(ta->data, x - 1, y + text_y_offset, x + 1,
-				y + ta->line_height + text_y_offset);
+		x0 = x - 1;
+		y0 = y + text_y_offset;
+		width = 2;
+		height = ta->line_height;
+
+		ta->redraw_request(ta->data, x0, y0, width, height);
 	}
 
 	/* check if the caret has to be drawn at all */
@@ -501,16 +506,24 @@ bool textarea_set_caret(struct text_area *ta, int caret)
 		y = ta->line_height * ta->caret_pos.line - ta->scroll_y;
 		ta->caret_y = y;
 
-		if (textarea_scroll_visible(ta))
+		if (textarea_scroll_visible(ta)) {
 			ta->redraw_request(ta->data, 0, 0,
 					ta->vis_width,
 					ta->vis_height);
-		else {
+		} else {
 			x0 = max(x - 1, MARGIN_LEFT);
 			y0 = max(y + text_y_offset, 0);
 			x1 = min(x + 1, ta->vis_width - MARGIN_RIGHT);
-			y1 = min(y + ta->line_height + text_y_offset, ta->vis_height);
-			ta->redraw_request(ta->data, x0, y0, x1, y1);
+			y1 = min(y + ta->line_height + text_y_offset,
+					ta->vis_height);
+
+			width = x1 - x0;
+			height = y1 - y0;
+
+			if (width > 0 && height > 0) {
+				ta->redraw_request(ta->data, x0, y0,
+						width, height);
+			}
 		}
 	}
 
