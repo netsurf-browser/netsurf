@@ -821,6 +821,7 @@ void gui_quit(void)
 	}
 
 	hotlist_destroy();
+	toolbar_exit();
 
 	urldb_save_cookies(nsoption_charp(cookie_file));
 	urldb_save(nsoption_charp(url_file));

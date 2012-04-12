@@ -29,7 +29,6 @@ struct point_s {
 typedef struct point_s POINT;
 
 #define MFORM_EX_FLAG_USERFORM 0x01
-#define MFORM_EX_FLAG_REDRAW_REQUIRED 0x02
 
 struct mform_ex_s
 {
