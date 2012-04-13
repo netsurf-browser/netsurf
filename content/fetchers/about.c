@@ -551,23 +551,33 @@ struct about_handlers {
 	int name_len;
 	lwc_string *lname; /**< Interned name */
 	fetch_about_handler handler; /* handler for the url */
-	bool hidden; /* Flag indicating if entry should be show in listing */
+	bool hidden; /* Flag indicating if entry should show in listing */
 };
 
 /** List of about paths and their handlers */
 struct about_handlers about_handler_list[] = { 
-	{ "credits", SLEN("credits"), NULL, fetch_about_credits_handler, false },
-	{ "licence", SLEN("licence"), NULL, fetch_about_licence_handler, false },
-	{ "license", SLEN("license"), NULL, fetch_about_licence_handler, true },
-	{ "config", SLEN("config"), NULL, fetch_about_config_handler, false },
-	{ "Choices", SLEN("Choices"), NULL, fetch_about_choices_handler, false },
-	{ "testament", SLEN("testament"), NULL, fetch_about_testament_handler, false },
-	{ "about", SLEN("about"), NULL, fetch_about_about_handler, true },
-	{ "logo", SLEN("logo"), NULL, fetch_about_logo_handler, true },
-	/* details about the cache */
-	{ "imagecache", SLEN("imagecache"), NULL, fetch_about_imagecache_handler, false },
+	{ "credits", SLEN("credits"), NULL,
+			fetch_about_credits_handler, false },
+	{ "licence", SLEN("licence"), NULL,
+			fetch_about_licence_handler, false },
+	{ "license", SLEN("license"), NULL,
+			fetch_about_licence_handler, true },
+	{ "config", SLEN("config"), NULL,
+			fetch_about_config_handler, false },
+	{ "Choices", SLEN("Choices"), NULL,
+			fetch_about_choices_handler, false },
+	{ "testament", SLEN("testament"), NULL,
+			fetch_about_testament_handler, false },
+	{ "about", SLEN("about"), NULL,
+			fetch_about_about_handler, true },
+	{ "logo", SLEN("logo"), NULL,
+			fetch_about_logo_handler, true },
+	/* details about the image cache */
+	{ "imagecache", SLEN("imagecache"), NULL,
+			fetch_about_imagecache_handler, true },
 	/* The default blank page */
-	{ "blank", SLEN("blank"), NULL, fetch_about_blank_handler, true } 
+	{ "blank", SLEN("blank"), NULL,
+			fetch_about_blank_handler, true } 
 };
 
 #define about_handler_list_len (sizeof(about_handler_list) / sizeof(struct about_handlers))
