@@ -79,7 +79,7 @@ void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int st
         if (bitmap->pixdata != NULL) {
 			bitmap->width = w;
 			bitmap->height = h;
-			bitmap->opaque = false;
+			bitmap->opaque = (state & BITMAP_OPAQUE) ? true : false;
 			bitmap->bpp = bpp;
 			bitmap->resized = NULL;
 			bitmap->rowstride = rowstride;
@@ -121,7 +121,6 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 	if( state & BITMAP_CLEAR ){
 		memset( bitmap->pixdata, 0x00, newsize + 128  );
 	}
-
 	bitmap->width = w;
 	bitmap->height = h;
 	bitmap->bpp = bpp;
@@ -240,7 +239,7 @@ void bitmap_destroy(void *bitmap)
 	if( bm->resized != NULL ) {
 		bitmap_destroy(bm->resized);
 	}
-	if( bm->native.fd_addr )
+	if( bm->converted && ( bm->native.fd_addr != bm->pixdata ) )
 		free( bm->native.fd_addr );
 	free(bm->pixdata);
 	free(bm);
@@ -268,11 +267,18 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 void bitmap_modified(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
-
 	if( bm->resized != NULL ) {
 		bitmap_destroy( bm->resized );
 		bm->resized = NULL;
 	}
+	if( bm->converted ){
+		if( bm->pixdata != bm->native.fd_addr ){
+			free( bm->native.fd_addr );
+		}
+		bm->native.fd_addr = NULL;
+		bm->converted = false;
+	}
+
 }
 
 
@@ -298,13 +304,13 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
 {
 	struct bitmap *bm = bitmap;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return;
-        }
+    if (bitmap == NULL) {
+		LOG(("NULL bitmap!"));
+		return;
+	}
 
-        LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
-        bm->opaque = opaque;
+	LOG(("setting bitmap %p to %s", bm, opaque?"opaque":"transparent"));
+    bm->opaque = opaque;
 }
 
 
@@ -316,23 +322,23 @@ void bitmap_set_opaque(void *bitmap, bool opaque)
  */
 bool bitmap_test_opaque(void *bitmap)
 {
-        int tst;
+	int tst;
 	struct bitmap *bm = bitmap;
 
-        if (bitmap == NULL) {
-                LOG(("NULL bitmap!"));
-                return false;
-        }
+	if (bitmap == NULL) {
+		LOG(("NULL bitmap!"));
+		return false;
+	}
 
-        tst = bm->width * bm->height;
+	tst = bm->width * bm->height;
 
-        while (tst-- > 0) {
-                if (bm->pixdata[(tst << 2) + 3] != 0xff) {
-                        LOG(("bitmap %p has transparency",bm));
-                        return false;
-                }
-        }
-        LOG(("bitmap %p is opaque", bm));
+	while (tst-- > 0) {
+		if (bm->pixdata[(tst << 2) + 3] != 0xff) {
+				LOG(("bitmap %p has transparency",bm));
+					return false;
+		}
+	}
+	LOG(("bitmap %p is opaque", bm));
 	return true;
 }
 

@@ -32,6 +32,7 @@ struct bitmap {
 	size_t rowstride;
 	struct bitmap * resized;
 	MFDB native;
+	bool converted;
 };
 
 #define NS_BMP_DEFAULT_BPP 4
