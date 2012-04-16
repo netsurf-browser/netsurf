@@ -2189,6 +2189,9 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 
 					dom_node_unref(c);
 					c = next;
+				} else {
+					/* Got a FRAME or FRAMESET element */
+					break;
 				}
 			}
 
