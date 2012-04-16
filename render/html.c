@@ -734,7 +734,8 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 	}
 
 	/* '"' or "'" or *LWS (we don't care) */
-	if (url < end) {
+	if (url > refresh) {
+		/* There's a URL */
 		new_url = strndup(refresh, url - refresh);
 		if (new_url == NULL) {
 			dom_string_unref(content);
