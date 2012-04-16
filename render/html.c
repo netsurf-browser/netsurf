@@ -542,19 +542,19 @@ static bool html_head(html_content *c, dom_node *head)
 	}
 
 	while (node != NULL) {
-		exc = dom_node_get_node_type(head, &node_type);
+		exc = dom_node_get_node_type(node, &node_type);
 
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
-			exc = dom_node_get_node_name(head, &node_name);
+			exc = dom_node_get_node_name(node, &node_name);
 
 			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
-				if (!dom_string_caseless_isequal(node_name, 
+				if (dom_string_caseless_isequal(node_name, 
 						 html_dom_string_title)) {
 					html_process_title(c, node);
-				} else if (!dom_string_caseless_isequal(node_name, 
+				} else if (dom_string_caseless_isequal(node_name, 
 						 html_dom_string_base)) {
 					html_process_base(c, node);
-				} else if (!dom_string_caseless_isequal(node_name, 
+				} else if (dom_string_caseless_isequal(node_name, 
 						 html_dom_string_link)) {
 					html_process_link(c, node);
 				}
