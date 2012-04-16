@@ -2208,8 +2208,7 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 		lwc_string_unref(qs.name);
 		if (tablenode != NULL) {
 			exc = dom_element_get_attribute(tablenode,
-							nscss_dom_string_width,
-							&width);
+					nscss_dom_string_border, &width);
 			if (exc != DOM_NO_ERR) {
 				dom_string_unref(name);
 				return CSS_BADPARM;
@@ -2220,8 +2219,8 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 		 */
 		is_table_cell = true;
 	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
-		exc = dom_element_get_attribute(node, nscss_dom_string_width, 
-						&width);
+		exc = dom_element_get_attribute(node, nscss_dom_string_border,
+				&width);
 		if (exc != DOM_NO_ERR) {
 			dom_string_unref(name);
 			return CSS_BADPARM;
