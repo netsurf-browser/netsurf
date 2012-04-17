@@ -56,8 +56,8 @@ extern "C" {
 #define B_SHINE_COLOR ((color_which)18)
 #define B_SHADOW_COLOR ((color_which)19)
 #define B_MENU_SELECTED_BORDER_COLOR ((color_which)9)
-#define B_TOOLTIP_BACKGROUND_COLOR ((color_which)20)
-#define B_TOOLTIP_TEXT_COLOR ((color_which)21)
+#define B_TOOL_TIP_BACKGROUND_COLOR ((color_which)20)
+#define B_TOOL_TIP_TEXT_COLOR ((color_which)21)
 #define B_SUCCESS_COLOR ((color_which)100)
 #define B_FAILURE_COLOR ((color_which)101)
 #define B_MENU_SELECTED_BACKGROUND_COLOR B_MENU_SELECTION_BACKGROUND_COLOR
@@ -67,6 +67,11 @@ extern "C" {
 #define B_DSANDLER_FAVORITE_INK_COLOR ((color_which)0x80000003)
 #define B_DSANDLER_FAVORITE_SHOES_COLOR ((color_which)0x80000004)
 #define B_DAVE_BROWN_FAVORITE_COLOR ((color_which)0x80000005)
+#endif
+#if defined(B_BEOS_VERSION_DANO)
+#define B_TOOL_TIP_BACKGROUND_COLOR B_TOOLTIP_BACKGROUND_COLOR
+#define B_TOOL_TIP_TEXT_COLOR B_TOOLTIP_TEXT_COLOR
+#define 
 #endif
 #define NOCOL ((color_which)0)
 
@@ -192,14 +197,14 @@ static struct gui_system_colour_ctx colour_list[] = {
 		0xffaaaaaa, 
 		&nsoption_colour(sys_colour_InfoBackground), 
 		NULL, 
-		B_TOOLTIP_BACKGROUND_COLOR
+		B_TOOL_TIP_BACKGROUND_COLOR
 	}, {
 		"InfoText", 
 		SLEN("InfoText"), 
 		0xff000000, 
 		&nsoption_colour(sys_colour_InfoText), 
 		NULL, 
-		B_TOOLTIP_TEXT_COLOR
+		B_TOOL_TIP_TEXT_COLOR
 	}, {
 		"Menu", 
 		SLEN("Menu"), 
