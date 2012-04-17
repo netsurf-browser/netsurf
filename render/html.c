@@ -2321,7 +2321,7 @@ static void html_destroy(struct content *c)
 
 	/* Free base target */
 	if (html->base_target != NULL) {
-	 	talloc_free(html->base_target);
+	 	free(html->base_target);
 	 	html->base_target = NULL;
 	}
 
