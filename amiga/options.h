@@ -29,12 +29,14 @@
 	char *use_pubscreen;			\
 	char *modeid;				\
 	int screen_compositing;			\
+	int amiga_ydpi;				\
 	int cache_bitmaps;			\
 	char *theme;				\
 	bool utf8_clipboard;			\
 	bool context_menu;			\
 	bool truecolour_mouse_pointers;		\
 	bool use_os_pointers;			\
+	bool use_openurl_lib;			\
 	bool new_tab_active;			\
 	bool new_tab_last;			\
 	bool kiosk_mode;			\
@@ -68,7 +70,6 @@
 	int cookies_window_ysize;		\
 	int cairo_renderer;			\
 	bool direct_render;			\
-	int amiga_ydpi;				\
 	int redraw_tile_size_x;			\
 	int redraw_tile_size_y;			\
 	int monitor_aspect_x;			\
@@ -83,12 +84,14 @@
 	.use_pubscreen = NULL,				\
 	.modeid = NULL,					\
 	.screen_compositing = -1,			\
+	.amiga_ydpi = 72,				\
 	.cache_bitmaps = 0,				\
 	.theme = NULL,					\
 	.utf8_clipboard = false,			\
 	.context_menu = true,				\
 	.truecolour_mouse_pointers = false,		\
 	.use_os_pointers = true,			\
+	.use_openurl_lib = false,			\
 	.new_tab_active = false,			\
 	.new_tab_last = false,				\
 	.kiosk_mode = false,				\
@@ -122,7 +125,6 @@
 	.cookies_window_ysize = 0,			\
 	.cairo_renderer = 1,				\
 	.direct_render = false,				\
-	.amiga_ydpi = 72,				\
 	.redraw_tile_size_x = 400,			\
 	.redraw_tile_size_y = 150,			\
 	.monitor_aspect_x = 0,				\
@@ -136,12 +138,14 @@
 { "use_pubscreen",	OPTION_STRING,	&nsoptions.use_pubscreen}, \
 { "screen_modeid",	OPTION_STRING,	&nsoptions.modeid}, \
 { "screen_compositing",	OPTION_INTEGER,	&nsoptions.screen_compositing}, \
+{ "screen_ydpi",		OPTION_INTEGER,	&nsoptions.amiga_ydpi}, \
 { "cache_bitmaps",	OPTION_INTEGER,	&nsoptions.cache_bitmaps}, \
 { "theme",		OPTION_STRING,	&nsoptions.theme}, \
 { "clipboard_write_utf8", OPTION_BOOL,	&nsoptions.utf8_clipboard}, \
 { "context_menu",	OPTION_BOOL,	&nsoptions.context_menu}, \
 { "truecolour_mouse_pointers", OPTION_BOOL, &nsoptions.truecolour_mouse_pointers}, \
 { "os_mouse_pointers",	OPTION_BOOL,	&nsoptions.use_os_pointers}, \
+{ "use_openurl_lib",	OPTION_BOOL,	&nsoptions.use_openurl_lib}, \
 { "new_tab_is_active",	OPTION_BOOL,	&nsoptions.new_tab_active}, \
 { "new_tab_last",	OPTION_BOOL,	&nsoptions.new_tab_last}, \
 { "kiosk_mode",		OPTION_BOOL,	&nsoptions.kiosk_mode},		\
@@ -175,7 +179,6 @@
 { "cookies_window_ysize", OPTION_INTEGER, &nsoptions.cookies_window_ysize}, \
 { "cairo_renderer",	OPTION_INTEGER,	&nsoptions.cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&nsoptions.direct_render}, \
-{ "amiga_ydpi",		OPTION_INTEGER,	&nsoptions.amiga_ydpi}, \
 { "redraw_tile_size_x",	OPTION_INTEGER,	&nsoptions.redraw_tile_size_x}, \
 { "redraw_tile_size_y",	OPTION_INTEGER,	&nsoptions.redraw_tile_size_y}, \
 { "monitor_aspect_x",	OPTION_INTEGER,	&nsoptions.monitor_aspect_x}, \
