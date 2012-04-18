@@ -867,13 +867,13 @@ int main(int argc, char** argv)
 
 	ami_gui_splash_close(splash_window);
 
-	strncpy(script, nsoption_charp(arexx_dir), 1024);
+	strlcpy(script, nsoption_charp(arexx_dir), 1024);
 	AddPart(script, nsoption_charp(arexx_startup), 1024);
 	ami_arexx_execute(script);
 
 	netsurf_main_loop();
 
-	strncpy(script, nsoption_charp(arexx_dir), 1024);
+	strlcpy(script, nsoption_charp(arexx_dir), 1024);
 	AddPart(script, nsoption_charp(arexx_shutdown), 1024);
 	ami_arexx_execute(script);
 
