@@ -419,7 +419,7 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 			linebuf[xloop] = (uint32_t)(colour | fontpix);
 		}
 	}
-	self->plotter->bitmap( self->plotter, fontbmp, loc->g_x, loc->g_y, 0, 0);
+	self->plotter->bitmap( self->plotter, fontbmp, loc->g_x, loc->g_y, 0, BITMAPF_MONOGLYPH);
 }
 
 static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)

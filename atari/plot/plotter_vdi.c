@@ -87,6 +87,7 @@ static HermesHandle hermes_cnv_h; /* hermes converter instance handle */
 static HermesHandle hermes_res_h;
 
 static short prev_vdi_clip[4];
+static struct bitmap snapshot;
 
 #ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
@@ -151,11 +152,10 @@ static int get_clip( GEM_PLOTTER self, struct rect * out )
 */
 static inline void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out )
 {
-	/*todo: !!! */
-	out->g_x = VIEW( self ).clipping.x0;
-	out->g_y = VIEW( self ).clipping.y0;
-	out->g_w = VIEW( self ).clipping.x1 - VIEW( self ).clipping.x0;
-	out->g_h = VIEW( self ).clipping.y1 - VIEW( self ).clipping.y0;
+	out->g_x = VIEW( self ).vis_x;
+	out->g_y = VIEW( self ).vis_y;
+	out->g_w = VIEW( self ).vis_w;
+	out->g_h = VIEW( self ).vis_h;
 }
 
 
@@ -163,9 +163,10 @@ static inline void plotter_get_visible_grect( GEM_PLOTTER self, GRECT * out )
 	1. calculate visible area of framebuffer in coords relative to framebuffer position
 
 	result:
-	this function should calc offsets into x,y coords of the framebuffer which
-	can be drawn. If the framebuffer coords do not fall within the screen region,
-	all values of visible region are set to zero.
+	this function should calculates an rectangle relative to the plot origin and
+	size.
+	If the ploter coords do not fall within the screen region,
+	all values of the region are set to zero.
 */
 static inline void update_visible_rect( GEM_PLOTTER p )
 {
@@ -408,8 +409,10 @@ static int dtor( GEM_PLOTTER self )
 		free( VIEW(self).mem );
 
 #ifdef WITH_8BPP_SUPPORT
-	for( i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++){
-		vs_color( self->vdi_handle, i, &sys_pal[i][0] );
+	if( DUMMY_PRIV(self)->vfmt.indexed ){
+		for( i=OFFSET_WEB_PAL; i<OFFSET_CUST_PAL+16; i++){
+			vs_color( self->vdi_handle, i, &sys_pal[i][0] );
+		}
 	}
 #endif
 
@@ -910,12 +913,25 @@ static MFDB * snapshot_create_std_mfdb(GEM_PLOTTER self, int x, int y, int w, in
 /*
 	This will create an snapshot of the screen in netsurf ABGR format
 */
+
 static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, int h)
 {
 	int err;
 	MFDB * native;
+	uint32_t start = clock();
+
+	// FIXME: 	This can be optimized a lot.
+	//			1. do not copy the snapshot to the bitmap buffer
+	//				when the format of screen and bitmap equals.
+	//				just point the bitmap to the native mfdb.
+	//			2. if we have eddi 1.1, we could optimize that further
+	//				make snapshot_create_native_mfdb just returning a pointer
+	//				to the screen.
 
 	native = snapshot_create_native_mfdb( self, x, y, w, h );
+
+	if( DUMMY_PRIV(self)->vfmt.bits == 32 )
+		goto no_copy;
 
 	/* allocate buffer for result bitmap: */
 	if( DUMMY_PRIV(self)->buf_scr_compat == NULL ) {
@@ -948,6 +964,24 @@ static struct bitmap * snapshot_create(GEM_PLOTTER self, int x, int y, int w, in
 	);
 	assert( err != 0 );
 	return( (struct bitmap * )DUMMY_PRIV(self)->buf_scr_compat );
+
+no_copy:
+
+	snapshot.width = w;
+	snapshot.height = h;
+	snapshot.pixdata = native->fd_addr;
+	snapshot.native = *native;
+	snapshot.rowstride = MFDB_STRIDE( w )*4;
+
+	uint32_t row, col;
+	for( row = 0; row<h; row++ ){
+		// fd_w matches stride!
+		uint32_t *rowptr = ((uint32_t*)native->fd_addr + ((row*native->fd_w)));
+		for( col=0; col<w; col++){
+			*(rowptr+col) = (*(rowptr+col)<<8);
+		}
+	}
+	return( &snapshot );
 }
 
 static void snapshot_suspend(GEM_PLOTTER self )
@@ -974,34 +1008,36 @@ static void snapshot_suspend(GEM_PLOTTER self )
 		}
 	}
 
-	if( bitmap_buffer_size( DUMMY_PRIV(self)->buf_scr_compat ) > CONV_KEEP_LIMIT ) {
-		int w = 0;
-		int h = 1;
-		w = (CONV_KEEP_LIMIT / DUMMY_PRIV(self)->buf_scr_compat->bpp);
-		assert( CONV_KEEP_LIMIT == w*DUMMY_PRIV(self)->buf_scr_compat->bpp );
-		DUMMY_PRIV(self)->buf_scr_compat = bitmap_realloc( w, h,
-			DUMMY_PRIV(self)->buf_scr_compat->bpp,
-			CONV_KEEP_LIMIT, BITMAP_SHRINK, DUMMY_PRIV(self)->buf_scr_compat
-		);
+	if( DUMMY_PRIV(self)->buf_scr_compat != NULL ) {
+		size_t bs = bitmap_buffer_size( DUMMY_PRIV(self)->buf_scr_compat );
+		if( bs > CONV_KEEP_LIMIT ) {
+			int w = 0;
+			int h = 1;
+			w = (CONV_KEEP_LIMIT / DUMMY_PRIV(self)->buf_scr_compat->bpp);
+			assert( CONV_KEEP_LIMIT == w*DUMMY_PRIV(self)->buf_scr_compat->bpp );
+			DUMMY_PRIV(self)->buf_scr_compat = bitmap_realloc( w, h,
+				DUMMY_PRIV(self)->buf_scr_compat->bpp,
+				CONV_KEEP_LIMIT, BITMAP_SHRINK, DUMMY_PRIV(self)->buf_scr_compat
+			);
+		}
 	}
 }
 
 static void snapshot_destroy( GEM_PLOTTER self )
 {
-	if( DUMMY_PRIV(self)->buf_scr.fd_addr ) {
-		free( DUMMY_PRIV(self)->buf_scr.fd_addr  );
-		DUMMY_PRIV(self)->buf_scr.fd_addr = NULL;
-	}
 
-	if( DUMMY_PRIV(self)->buf_std.fd_addr ) {
-		free( DUMMY_PRIV(self)->buf_std.fd_addr  );
-		DUMMY_PRIV(self)->buf_std.fd_addr = NULL;
-	}
-
-	if( DUMMY_PRIV(self)->buf_scr_compat ) {
+	free( DUMMY_PRIV(self)->buf_scr.fd_addr  );
+	if( DUMMY_PRIV(self)->buf_scr_compat != NULL ) {
 		bitmap_destroy( DUMMY_PRIV(self)->buf_scr_compat );
-		DUMMY_PRIV(self)->buf_scr_compat = NULL;
 	}
+
+	DUMMY_PRIV(self)->buf_scr.fd_addr = NULL;
+	DUMMY_PRIV(self)->buf_scr_compat = NULL;
+
+#ifdef WITH_8BPP_SUPPORT
+	free( DUMMY_PRIV(self)->buf_std.fd_addr  );
+	DUMMY_PRIV(self)->buf_std.fd_addr = NULL;
+#endif
 }
 
 
@@ -1082,94 +1118,129 @@ static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y )
 	return( ret );
 }
 
-static int bitmap_convert_8( GEM_PLOTTER self,
-	struct bitmap * img,
-	int x,
-	int y,
-	GRECT * clip,
-	uint32_t bg,
-	uint32_t flags,
-	MFDB *out  )
+static int bitmap_convert_8( GEM_PLOTTER self, struct bitmap * img, int x,
+							int y, GRECT * clip, uint32_t bg, uint32_t flags,
+							MFDB *out )
 {
-
+	MFDB native;
+	MFDB stdform;
 	int dststride;						/* stride of dest. image */
 	int dstsize;						/* size of dest. in byte */
 	int err;
-	int bw;
+	int bw, bh;
+	int process_w, process_h;
 	struct bitmap * scrbuf = NULL;
-	struct bitmap * bm;
-	bool transp = ( ( (img->opaque == false) || ( (flags & BITMAPF_MONOGLYPH) != 0) )
-					&& ((self->flags & PLOT_FLAG_TRANS) != 0) );
+	struct bitmap * source;
+	bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
+	bool opaque = bitmap_get_opaque( img );
+
+	if( opaque == false ){
+		if( ( (self->flags & PLOT_FLAG_TRANS) == 0)
+			&&
+			((flags & (BITMAPF_MONOGLYPH|BITMAPF_BUFFER_NATIVE))==0) ){
+			opaque = true;
+		}
+	}
 
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
 
-	bm = img;
-	bw = bitmap_get_width( img );
+	process_w = bw = bitmap_get_width( img );
+	process_h = bh = bitmap_get_height( img );
 
-	dststride = MFDB_STRIDE( clip->g_w );
-	dstsize = ( ((dststride >> 3) * clip->g_h) * self->bpp_virt );
+	// The converted bitmap can be saved for subsequent blits, when
+	// the bitmap is fully opaque
+
+	if( (opaque == true) || (flags & BITMAPF_BUFFER_NATIVE ) ){
+		if( img->converted == true ){
+			*out = img->native;
+			return( 0 );
+		}
+		if( ( flags & BITMAPF_MONOGLYPH ) == 0 ){
+			cache = true;
+		}
+	}
+	if( ( flags & BITMAPF_MONOGLYPH ) != 0 ){
+			assert(cache == false);
+		}
 
 	/* (re)allocate buffer for out image: */
 	/* altough the buffer is named "buf_packed" on 8bit systems */
 	/* it's not... */
-	if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
-		int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-		if( DUMMY_PRIV(self)->buf_packed == NULL )
-			DUMMY_PRIV(self)->buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
-		 else
-			DUMMY_PRIV(self)->buf_packed =(void*)realloc(
-													DUMMY_PRIV(self)->buf_packed,
-													blocks * CONV_BLOCK_SIZE
-												);
-		assert( DUMMY_PRIV(self)->buf_packed );
-		if( DUMMY_PRIV(self)->buf_packed == NULL ) {
+	if( cache == false ){
+		// the size of the output will match the size of the clipping:
+		dststride = MFDB_STRIDE( clip->g_w );
+		dstsize = ( ((dststride >> 3) * clip->g_h) * self->bpp_virt );
+		if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
+			int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+			if( DUMMY_PRIV(self)->buf_packed == NULL )
+				DUMMY_PRIV(self)->buf_packed =(void*)malloc( blocks * CONV_BLOCK_SIZE );
+			 else
+				DUMMY_PRIV(self)->buf_packed =(void*)realloc(
+														DUMMY_PRIV(self)->buf_packed,
+														blocks * CONV_BLOCK_SIZE
+													);
+			assert( DUMMY_PRIV(self)->buf_packed );
+			if( DUMMY_PRIV(self)->buf_packed == NULL ) {
+				return( 0-ERR_NO_MEM );
+			}
+			DUMMY_PRIV(self)->size_buf_packed = blocks * CONV_BLOCK_SIZE;
+		}
+		native.fd_addr = DUMMY_PRIV(self)->buf_packed;
+	}
+	else {
+		// the output image will be completly saved, so size of the output
+		// image will match the input image size.
+		dststride = MFDB_STRIDE( bw );
+		dstsize = ( ((dststride >> 3) * bh) * self->bpp_virt );
+		assert( out->fd_addr == NULL );
+		native.fd_addr = (void*)malloc( dstsize );
+		if( native.fd_addr == NULL ){
+			if( scrbuf != NULL )
+				bitmap_destroy( scrbuf );
 			return( 0-ERR_NO_MEM );
 		}
-		DUMMY_PRIV(self)->size_buf_packed = blocks * CONV_BLOCK_SIZE;
 	}
 
 
 	/*
 		on 8 bit systems we must convert the TC (ABGR) image
 		to vdi standard format. ( only tested for 256 colors )
-		and then convert it to native format
+		and then convert it to native format with v_trnfm()
 	*/
-
 	// realloc mem for stdform
-	MFDB stdform;
-	if( transp ){
-		if( ((self->flags & PLOT_FLAG_TRANS) != 0) || ( (flags & BITMAPF_MONOGLYPH) != 0) ) {
-			// point image to snapshot buffer, otherwise allocate mem
-			MFDB * bg = snapshot_create_std_mfdb( self, x+clip->g_x,y+clip->g_y, clip->g_w, clip->g_h );
-			stdform.fd_addr = bg->fd_addr;
-		} else {
-			if( dstsize > DUMMY_PRIV(self)->size_buf_planar) {
-				int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
-				if( DUMMY_PRIV(self)->buf_planar == NULL )
-					DUMMY_PRIV(self)->buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
-				 else
-					DUMMY_PRIV(self)->buf_planar =(void*)realloc(
-															DUMMY_PRIV(self)->buf_planar,
-															blocks * CONV_BLOCK_SIZE
-														);
-				assert( DUMMY_PRIV(self)->buf_planar );
-				if( DUMMY_PRIV(self)->buf_planar == NULL ) {
-					return( 0-ERR_NO_MEM );
-				}
-				DUMMY_PRIV(self)->size_buf_planar = blocks * CONV_BLOCK_SIZE;
+	if( opaque == false ){
+		// point image to snapshot buffer, otherwise allocate mem
+		MFDB * bg = snapshot_create_std_mfdb( self, x, y, clip->g_w,
+												clip->g_h );
+		stdform.fd_addr = bg->fd_addr;
+		bh = clip->g_h;
+	} else {
+		if( dstsize > DUMMY_PRIV(self)->size_buf_planar) {
+			int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
+			if( DUMMY_PRIV(self)->buf_planar == NULL )
+				DUMMY_PRIV(self)->buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
+			 else
+				DUMMY_PRIV(self)->buf_planar =(void*)realloc(
+														DUMMY_PRIV(self)->buf_planar,
+														blocks * CONV_BLOCK_SIZE
+													);
+			assert( DUMMY_PRIV(self)->buf_planar );
+			if( DUMMY_PRIV(self)->buf_planar == NULL ) {
+				return( 0-ERR_NO_MEM );
 			}
-			stdform.fd_addr = DUMMY_PRIV(self)->buf_planar;
+			DUMMY_PRIV(self)->size_buf_planar = blocks * CONV_BLOCK_SIZE;
 		}
+		stdform.fd_addr = DUMMY_PRIV(self)->buf_planar;
 	}
 	stdform.fd_w = dststride;
-	stdform.fd_h = clip->g_h;
+	stdform.fd_h = bh;
 	stdform.fd_wdwidth = dststride >> 4;
 	stdform.fd_stand = 1;
 	stdform.fd_nplanes = (short)self->bpp_virt;
 	stdform.fd_r1 = stdform.fd_r2 = stdform.fd_r3 = 0;
 
-	int img_stride = bitmap_get_rowstride(bm);
+	int img_stride = bitmap_get_rowstride(img);
 	uint32_t prev_pixel = 0x12345678;
 	unsigned long col = 0;
 	unsigned char val = 0;
@@ -1177,25 +1248,17 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 	uint32_t pixel;
 	int wdplanesize = stdform.fd_wdwidth*stdform.fd_h;
 
-
-	// apply transparency.
-	if( transp ){
+	if( opaque == false ){
+		// apply transparency and convert to vdi std format
 		unsigned long bgcol = 0;
 		unsigned char prev_col = 0;
-
-
 		for( y=0; y<clip->g_h; y++ ){
-
-			row = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
-
+			row = (uint32_t *)(img->pixdata + (img_stride * (y+clip->g_y)));
 			for( x=0; x<clip->g_w; x++ ){
-
 				pixel = row[x+clip->g_x];
-
 				if( (pixel&0xFF) == 0 ){
 					continue;
 				}
-
 				if( (pixel&0xFF) < 0xF0 ){
 					col = get_stdpx( &stdform, wdplanesize,x,y );
 					if( (col != prev_col) || (y == 0) )
@@ -1211,7 +1274,7 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 									| ((pixel&0xFF0000)>>16) );
 						val = RGB_TO_VDI( col );
 					}
-					set_stdpx( &stdform, wdplanesize, x,y, val );
+					set_stdpx( &stdform, wdplanesize, x, y, val );
 				} else {
 					if( pixel != prev_pixel ){
 						/* convert pixel value to vdi color index: */
@@ -1222,18 +1285,19 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 						val = RGB_TO_VDI( col );
 						prev_pixel = pixel;
 					}
-					set_stdpx( &stdform, wdplanesize, x,y, val );
+					set_stdpx( &stdform, wdplanesize, x, y, val );
 				}
 			}
 		}
+		// adjust output position:
+		clip->g_x = 0;
+		clip->g_y = 0;
 	} else {
-		for( y=0; y<clip->g_h; y++ ){
-
-			row = (uint32_t *)(bm->pixdata + (img_stride * (y+clip->g_y)));
-
-			for( x=0; x<clip->g_w; x++ ){
-
-				pixel = row[x+clip->g_x];
+		// convert the whole image data to vdi std format.
+		for( y=0; y < bh; y++ ){
+			row = (uint32_t *)(img->pixdata + (img_stride * y));
+			for( x=0; x < bw; x++ ){
+				pixel = row[x];
 				if( pixel != prev_pixel ){
 					/* convert pixel value to vdi color index: */
 					pixel = pixel >> 8;
@@ -1243,22 +1307,24 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 					val = RGB_TO_VDI( col );
 					prev_pixel = pixel;
 				}
-				set_stdpx( &stdform, wdplanesize, x,y, val );
+				set_stdpx( &stdform, wdplanesize, x, y, val );
 			}
 		}
 	}
 
 	// convert into native format:
-	MFDB native;
-	native.fd_addr = DUMMY_PRIV(self)->buf_packed;
-	native.fd_w = dststride;
-	native.fd_h = clip->g_h;
-	native.fd_wdwidth = dststride >> 4;
+	native.fd_w = stdform.fd_w;
+	native.fd_h = stdform.fd_h;
+	native.fd_wdwidth = stdform.fd_wdwidth;
 	native.fd_stand = 0;
 	native.fd_nplanes = (short)self->bpp_virt;
 	native.fd_r1 = native.fd_r2 = native.fd_r3 = 0;
 	vr_trnfm( self->vdi_handle, &stdform, &native );
 	*out = native;
+	if( cache == true ){
+		img->native = native;
+		img->converted = true;
+	}
 
 	return(0);
 }
@@ -1266,81 +1332,122 @@ static int bitmap_convert_8( GEM_PLOTTER self,
 
 /*
 *
-* Convert bitmap to the virutal (chunked) framebuffer format
-*
+* Convert bitmap to the native screen format
+*	self: 	the plotter instance
+*	img:	the bitmap
+*	x:		coordinate where the bitmap REGION (described in clip)
+*			shall be drawn (screen coords)
+*	y: 		coordinate where the bitmap REGION (described in clip)
+*			shall be drawn (screen coords)
+*	clip:	which area of the bitmap shall be drawn
+*	bg: 	background color
+*	flags:	blit flags
+*	out:	the result MFDB
 */
-static int bitmap_convert( GEM_PLOTTER self,
-	struct bitmap * img,
-	int x,
-	int y,
-	GRECT * clip,
-	uint32_t bg,
-	uint32_t flags,
-	MFDB *out  )
+static int bitmap_convert( GEM_PLOTTER self, struct bitmap * img, int x, int y,
+						GRECT * clip, uint32_t bg, uint32_t flags, MFDB *out  )
 {
 	int dststride;						/* stride of dest. image */
 	int dstsize;						/* size of dest. in byte */
 	int err;
 	int bw, bh;
 	struct bitmap * scrbuf = NULL;
-	struct bitmap * bm;
-	bool cache = ( flags & BITMAPF_BUFFER_NATIVE );
+	struct bitmap * source;
+	bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
+	bool opaque = bitmap_get_opaque( img );
+
+	if( opaque == false ){
+		if( ( (self->flags & PLOT_FLAG_TRANS) == 0)
+			&&
+			((flags & (BITMAPF_MONOGLYPH|BITMAPF_BUFFER_NATIVE))==0) ){
+			opaque = true;
+		}
+	}
+
 
 	assert( clip->g_h > 0 );
 	assert( clip->g_w > 0 );
 
-	bm = img;
 	bw = bitmap_get_width( img );
 	bh = bitmap_get_height( img );
 
-	if( cache ){
-		assert( clip->g_w >= bw && clip->g_h >= bh );
-		if( img->native.fd_addr != NULL ){
+	// The converted bitmap can be saved for subsequent blits, WHEN:
+	// A.) the bitmap is fully opaque OR
+	// B.) the bitmap is completly inside the window
+	// the latter one is important for alpha blits,
+	// because we must get the window background to apply transparency
+	// If the image is not completly within the window,
+	// we can't get the whole background for the image.
+	// this only works if the image isn't used at several different places.
+	// In fact in case of alpha bitmap caching it is only used for the
+	// toolbar buttons right now.
+
+	if( (opaque == true) || (flags & BITMAPF_BUFFER_NATIVE ) ){
+		if( img->converted == true ){
 			*out = img->native;
 			return( 0 );
+		}
+		if( ( flags & BITMAPF_MONOGLYPH ) == 0 ){
+			cache = true;
 		}
 	}
 
 	/* rem. if eddi xy is installed, we could directly access the screen! */
 	/* apply transparency to the image: */
-	if( ( img->opaque == false )
-		&& ( (self->flags & PLOT_FLAG_TRANS) != 0)
-		&& (
-			(vdi_sysinfo.vdiformat == VDI_FORMAT_PACK )
-			||
-			( (flags & BITMAPF_MONOGLYPH) != 0)
-		) ) {
-		uint32_t * imgpixel;
-		uint32_t * screenpixel;
+	if( ( opaque == false )  ) {
+		uint32_t * imgrow;
+		uint32_t * screenrow;
 		int img_x, img_y;	/* points into old bitmap */
 		int screen_x, screen_y;	/* pointers into new bitmap */
+
 		/* copy the screen to an temp buffer: */
 		scrbuf = snapshot_create(self, x, y, clip->g_w, clip->g_h );
 		if( scrbuf != NULL ) {
-			/* copy blended pixels the new buffer (which contains screen content): */
-			int img_stride = bitmap_get_rowstride(bm);
+			// copy blended pixels to the new buffer (which contains screen content):
+			int img_stride = bitmap_get_rowstride(img);
 			int screen_stride = bitmap_get_rowstride(scrbuf);
 			for( img_y = clip->g_y, screen_y = 0; screen_y < clip->g_h; screen_y++, img_y++) {
-				imgpixel = (uint32_t *)(bm->pixdata + (img_stride * img_y));
-				screenpixel = (uint32_t *)(scrbuf->pixdata + (screen_stride * screen_y));
+				imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
+				screenrow = (uint32_t *)(scrbuf->pixdata + (screen_stride * screen_y));
 				for( img_x = clip->g_x, screen_x = 0; screen_x < clip->g_w; screen_x++, img_x++ ) {
-					if( (imgpixel[img_x] & 0xFF) == 0xFF ) {
-						screenpixel[screen_x] = imgpixel[img_x];
-					} else {
-						if( (imgpixel[img_x] & 0x0FF) != 0 ) {
-							screenpixel[screen_x] = ablend( imgpixel[img_x], screenpixel[screen_x]);
-						}
+
+					// when the pixel isn't fully opaque,...:
+					if( (imgrow[img_x] & 0x0FF) != 0 ){
+						screenrow[screen_x] = ablend( imgrow[img_x], screenrow[screen_x]);
 					}
+
+					// FIXME, maybe this loop would be faster??:
+					// ---
+					//if( (imgrow[img_x] & 0x0FF) != 0xFF ){
+					//	imgrow[screen_x] = ablend( imgrow[img_x], screenrow[screen_x]);
+					//}
+
+					// or maybe even this???
+					// ---
+					//if(  (imgrow[img_x] & 0x0FF) == 0xFF ){
+					//	screenrow[screen_x] = imgrow[img_x];
+					//} else if( (imgrow[img_x] & 0x0FF) != 0x00 ) {
+					//	screenrow[screen_x] = ablend( imgrow[img_x], screenrow[screen_x]);
+					//}
 				}
 			}
+			assert( clip->g_w <= bw );
+			assert( clip->g_h <= bh );
+			/* adjust size which gets converted: */
+			bw = clip->g_w;
+			bh = clip->g_h;
+			/* adjust output position: */
 			clip->g_x = 0;
 			clip->g_y = 0;
-			bm = scrbuf;
+			/* set the source of conversion: */
+			source = scrbuf;
 		}
+	} else {
+		source = img;
 	}
-	/* (re)allocate buffer for framebuffer image: */
-	dststride = MFDB_STRIDE( clip->g_w );
-	dstsize = ( ((dststride >> 3) * clip->g_h) * self->bpp_virt);
+	/* (re)allocate buffer for converted image: */
+	dststride = MFDB_STRIDE( bw );
+	dstsize = ( ((dststride >> 3) * bh) * self->bpp_virt );
 	if( cache == false ){
 		if( dstsize > DUMMY_PRIV(self)->size_buf_packed) {
 			int blocks = (dstsize / (CONV_BLOCK_SIZE-1))+1;
@@ -1371,7 +1478,7 @@ static int bitmap_convert( GEM_PLOTTER self,
 	}
 
 	out->fd_w = dststride;
-	out->fd_h = clip->g_h;
+	out->fd_h = bh;
 	out->fd_wdwidth = dststride >> 4;
 	out->fd_stand = 0;
 	out->fd_nplanes = (short)self->bpp_virt;
@@ -1383,22 +1490,28 @@ static int bitmap_convert( GEM_PLOTTER self,
 			&DUMMY_PRIV(self)->vfmt
 	);
 	assert( err != 0 );
+
+	// FIXME: here we can use the same optimization which is used for
+	// the snapshot creation.
+
 	/* convert image to virtual format: */
 	err = Hermes_ConverterCopy( hermes_cnv_h,
-		bm->pixdata,
-		clip->g_x,			/* x src coord of top left in pixel coords */
-		clip->g_y,			/* y src coord of top left in pixel coords */
-		clip->g_w, clip->g_h,
-		bm->rowstride, 	/* stride as bytes */
+		source->pixdata,
+		0,					/* x src coord of top left in pixel coords */
+		0,					/* y src coord of top left in pixel coords */
+		bw, bh,
+		source->rowstride, 	/* stride as bytes */
 		out->fd_addr,
-		0,			/* x dst coord of top left in pixel coords */
-		0,			/* y dst coord of top left in pixel coords */
-		clip->g_w, clip->g_h,
-		(dststride >> 3) *  self->bpp_virt /* stride as bytes */
+		0,					/* x dst coord of top left in pixel coords */
+		0,					/* y dst coord of top left in pixel coords */
+		bw, bh,
+		(dststride >> 3) *  self->bpp_virt 			/* stride as bytes */
 	);
 	assert( err != 0 );
+
 	if( cache == true ){
 		img->native = *out;
+		img->converted = true;
 	}
 	return( 0 );
 
@@ -1421,7 +1534,8 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	MFDB src_mf;
 	MFDB scrmf;
 	short pxy[8];
-	GRECT off, clip, loc, vis;
+	GRECT off, clip, vis;
+	int screen_x, screen_y;
 
 	src_mf.fd_addr = NULL;
 	scrmf.fd_addr = NULL;
@@ -1431,43 +1545,53 @@ static int bitmap( GEM_PLOTTER self, struct bitmap * bmp, int x, int y,
 	off.g_h = bmp->height;
 	off.g_w = bmp->width;
 
+	// clip plotter clip rectangle:
 	clip.g_x = VIEW( self ).clipping.x0;
 	clip.g_y = VIEW( self ).clipping.y0;
 	clip.g_w = VIEW( self ).clipping.x1 - VIEW( self ).clipping.x0;
 	clip.g_h = VIEW( self ).clipping.y1 - VIEW( self ).clipping.y0;
 
 	if( !rc_intersect( &clip, &off) ) {
-		return( true );
+		return( 1 );
 	}
 
+	// clip the visible rectangle of the plot area
+	// this is the area of the plotter which falls into
+	// screen region:
 	plotter_get_visible_grect( self, &vis );
 	if( !rc_intersect( &vis, &off) ) {
-		return( true );
+		return( 1 );
 	}
 
-	loc = off;
-	off.g_x = MAX(0, off.g_x - x);
-	off.g_y = MAX(0, off.g_y - y);
-	loc.g_x = MAX(0, loc.g_x);
-	loc.g_y = MAX(0, loc.g_y);
+	screen_x = VIEW(self).x + off.g_x;
+	screen_y = VIEW(self).y + off.g_y;
 
-	pxy[0] = 0;
-	pxy[1] = 0;
-	pxy[2] = off.g_w-1;
-	pxy[3] = off.g_h-1;
-	pxy[4] = VIEW(self).x + loc.g_x;
-	pxy[5] = VIEW(self).y + loc.g_y;
-	pxy[6] = VIEW(self).x + loc.g_x + off.g_w-1;
-	pxy[7] = VIEW(self).y + loc.g_y + off.g_h-1;
-	/* Convert the Bitmap to native screen format - ready for output*/
-	/* This includes blending transparent pixels */
+	// convert the clipping relative to bitmap:
+	off.g_x = off.g_x - x;
+	off.g_y = off.g_y - y;
+	assert( (off.g_x >= 0) && (off.g_y >= 0) );
 
-	if( self->bitmap_convert( self, bmp, pxy[4], pxy[5], &off, bg, flags, &src_mf) != 0 ) {
-		return( true );
+	/* Convert the Bitmap to native screen format - ready for output.	*/
+	/* This includes blending transparent pixels:					 	*/
+	if( self->bitmap_convert( self, bmp, screen_x, screen_y, &off, bg, flags, &src_mf) != 0 ) {
+		return( 1 );
 	}
+
+	// setup the src region:
+	pxy[0] = off.g_x;
+	pxy[1] = off.g_y;
+	pxy[2] = off.g_x + off.g_w-1;
+	pxy[3] = off.g_y + off.g_h-1;
+
+	// setup the target region:
+	pxy[4] = screen_x;
+	pxy[5] = screen_y;
+	pxy[6] = screen_x + off.g_w-1;
+	pxy[7] = screen_y + off.g_h-1;
+
 	vro_cpyfm( self->vdi_handle, S_ONLY, (short*)&pxy, &src_mf,  &scrmf);
 	convert_bitmap_done( self );
-	return( true );
+	return( 1 );
 }
 
 static int plot_mfdb (GEM_PLOTTER self, GRECT * loc, MFDB * insrc, unsigned char fgcolor, uint32_t flags)
