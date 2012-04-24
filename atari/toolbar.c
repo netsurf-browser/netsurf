@@ -37,6 +37,7 @@
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+#include "utils/utf8.h"
 #include "atari/clipboard.h"
 #include "atari/gui.h"
 #include "atari/toolbar.h"
@@ -169,7 +170,7 @@ static nserror toolbar_icon_callback(hlcache_handle *handle,
 static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 {
 
-	OBJECT *tree;
+	OBJECT *tree=NULL;
 	LGRECT work,clip;
 	GRECT todo,crect;
 	struct s_tb_button *bt = (struct s_tb_button*)data;
@@ -177,8 +178,8 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	struct s_toolbar * tb = gw->root->toolbar;
 
 	short pxy[4];
-	int  bmpx, bmpy, bmpw, bmph;
-	struct bitmap * icon;
+	int  bmpx=0, bmpy=0, bmpw=0, bmph = 0;
+	struct bitmap * icon = NULL;
 	bool draw_bitmap = false;
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
@@ -875,6 +876,25 @@ bool tb_url_input( struct gui_window * gw, short nkc )
 			textarea_get_text( tb->url.textarea, text, len+1 );
 			scrap_txt_write( &app, text );
 			free( text );
+		}
+	}
+	else if( ik == KEY_PASTE ){
+		char * clip = scrap_txt_read( &app );
+		if( clip != NULL ){
+			int clip_length = strlen( clip );
+			if ( clip_length > 0 ) {
+				char *utf8;
+				utf8_convert_ret res;
+				/* Clipboard is in local encoding so
+				 * convert to UTF8 */
+				res = utf8_from_local_encoding( clip, clip_length, &utf8 );
+				if ( res == UTF8_CONVERT_OK ) {
+					tb_url_set( gw, utf8 );
+					free(utf8);
+					ret = true;
+				}
+				free( clip );
+			}
 		}
 	}
 	else if( ik == KEY_ESCAPE ) {
