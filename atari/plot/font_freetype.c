@@ -577,9 +577,10 @@ int ctor_font_plotter_freetype( FONT_PLOTTER self )
 static int dtor( FONT_PLOTTER self )
 {
 	ft_font_finalise();
-	if( fontbmp == NULL )
+	if( fontbmp != NULL ) {
 		bitmap_destroy( fontbmp );
-
+        fontbmp = NULL;
+    }
 	if( tmp.fd_addr != NULL ){
 		free( tmp.fd_addr );
 	}
