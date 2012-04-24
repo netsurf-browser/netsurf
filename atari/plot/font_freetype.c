@@ -41,10 +41,6 @@ typedef struct ftc_faceid_s {
         int cidx; /* character map index for unicode */
 } ftc_faceid_t;
 
-static struct bitmap * fontbmp;
-
-static ftc_faceid_t *font_faces[FONT_FACE_COUNT];
-
 static int dtor( FONT_PLOTTER self );
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle,
 						const char * str, size_t length, int * width  );
@@ -57,14 +53,19 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 static int text( FONT_PLOTTER self,  int x, int y, const char *text,
 					size_t length, const plot_font_style_t *fstyle );
 
-static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata,
-						int pitch, uint32_t colour);
-static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata,
-						int pitch, uint32_t colour);
+static void draw_glyph8(FONT_PLOTTER self, GRECT *clip, GRECT * loc,
+						uint8_t * pixdata, int pitch, uint32_t colour);
+static void draw_glyph1(FONT_PLOTTER self, GRECT * clip, GRECT * loc,
+						uint8_t * pixdata, int pitch, uint32_t colour);
 
+static ftc_faceid_t *font_faces[FONT_FACE_COUNT];
 static MFDB tmp;
 static int tmp_mfdb_size;
 static bool init = false;
+static struct bitmap * fontbmp;
+static size_t fontbmp_stride;
+static int fontbmp_allocated_height;
+static int fontbmp_allocated_width;
 
 
 
@@ -370,51 +371,39 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 }
 
 
-static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
+static void draw_glyph8(FONT_PLOTTER self, GRECT * clip, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
 {
-	GRECT clip;
 	uint32_t * linebuf;
 	uint32_t fontpix;
-	size_t bmpstride;
 	int xloop,yloop,xoff,yoff;
 	int x,y,w,h;
-	struct rect clipping;
 
 	x = loc->g_x;
 	y = loc->g_y;
 	w = loc->g_w;
 	h = loc->g_h;
 
-	self->plotter->get_clip( self->plotter, &clipping );
-
-	clip.g_x = clipping.x0;
-	clip.g_y = clipping.y0;
-	clip.g_w = (clipping.x1 - clipping.x0)+1;
-	clip.g_h = (clipping.y1 - clipping.y0)+1;
-
-	if( !rc_intersect( &clip, loc ) ){
+	if( !rc_intersect( clip, loc ) ){
 		return;
 	}
 
-	assert( loc->g_w > 0 );
-	assert( loc->g_h > 0 );
 	xoff = loc->g_x - x;
 	yoff = loc->g_y - y;
 
-	if (h > loc->g_h)
-		h = loc->g_h;
+	assert( loc->g_h <= h );
+	assert( loc->g_w <= w );
 
-	if (w > loc->g_w)
-		w = loc->g_w;
-	fontbmp = bitmap_realloc( w, h,
-				fontbmp->bpp, w * fontbmp->bpp,
-				BITMAP_GROW, fontbmp );
-	assert( fontbmp );
-	assert( fontbmp->pixdata );
-	bmpstride = bitmap_get_rowstride(fontbmp);
-	for( yloop = 0; yloop < h; yloop++) {
-		linebuf = (uint32_t *)(fontbmp->pixdata + (bmpstride * yloop));
-		for(xloop = 0; xloop < w; xloop++){
+	h = loc->g_h;
+	w = loc->g_w;
+    
+    assert( h <= fontbmp_allocated_height );
+    assert( w <= fontbmp_allocated_width );
+
+	fontbmp->height = h;
+	fontbmp->width = w;
+	for( yloop = 0; yloop < MIN(fontbmp_allocated_height, h); yloop++) {
+		linebuf = (uint32_t *)(fontbmp->pixdata + (fontbmp_stride * yloop));
+		for(xloop = 0; xloop < MIN(fontbmp_allocated_width, w); xloop++){
 			fontpix = (uint32_t)(pixdata[(( yoff + yloop ) * pitch) + xloop + xoff]);
 			linebuf[xloop] = (uint32_t)(colour | fontpix);
 		}
@@ -422,33 +411,22 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 	self->plotter->bitmap( self->plotter, fontbmp, loc->g_x, loc->g_y, 0, BITMAPF_MONOGLYPH);
 }
 
-static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
+static void draw_glyph1(FONT_PLOTTER self, GRECT * clip, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
 {
-	GRECT clip;
 	int xloop,yloop,xoff,yoff;
 	int x,y,w,h;
 	uint8_t bitm;
     const uint8_t *fntd;
-    struct rect clipping;
 
 	x = loc->g_x;
 	y = loc->g_y;
 	w = loc->g_w;
 	h = loc->g_h;
 
-	self->plotter->get_clip( self->plotter, &clipping );
-
-	clip.g_x = clipping.x0;
-	clip.g_y = clipping.y0;
-	clip.g_w = (clipping.x1 - clipping.x0)+1;
-	clip.g_h = (clipping.y1 - clipping.y0)+1;
-
-	if( !rc_intersect( &clip, loc ) ){
+	if( !rc_intersect( clip, loc ) ){
 		return;
 	}
 
-	assert( loc->g_w > 0 );
-	assert( loc->g_h > 0 );
 	xoff = loc->g_x - x;
 	yoff = loc->g_y - y;
 
@@ -486,21 +464,14 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata, int p
 #ifdef WITH_8BPP_SUPPORT
 	if( app.nplanes > 8 ){
 #endif
-		unsigned short out[4];
-		rgb_to_vdi1000( (unsigned char*)&colour, (unsigned short*)&out );
-		vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
 		self->plotter->plot_mfdb( self->plotter, loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
 #ifdef WITH_8BPP_SUPPORT
 	} else {
-		unsigned char c = RGB_TO_VDI(colour);
-		self->plotter->plot_mfdb( self->plotter, loc, &tmp, c, PLOT_FLAG_TRANS );
+		self->plotter->plot_mfdb( self->plotter, loc, &tmp, colour, PLOT_FLAG_TRANS );
 	}
 #endif
 
 }
-
-
-
 
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,
 				 const plot_font_style_t *fstyle )
@@ -509,12 +480,39 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 	size_t nxtchr = 0;
 	FT_Glyph glyph;
 	FT_BitmapGlyph bglyph;
-	GRECT loc;
+	GRECT loc, clip;
 	uint32_t c = fstyle->foreground ;
+	struct rect clipping;
 	/* in -> BGR */
 	/* out -> ARGB */
-	if( !(self->flags & FONTPLOT_FLAG_MONOGLYPH) )
+	if( !(self->flags & FONTPLOT_FLAG_MONOGLYPH) ){
 		c = ABGR_TO_RGB(c);
+	} else {
+#ifdef WITH_8BPP_SUPPORT
+		if( app.nplanes > 8 ){
+#endif
+			unsigned short out[4];
+			rgb_to_vdi1000( (unsigned char*)&c, (unsigned short*)&out );
+			vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
+#ifdef WITH_8BPP_SUPPORT
+		} else {
+			c = RGB_TO_VDI(c);
+		}
+#endif
+	}
+
+	self->plotter->get_clip( self->plotter, &clipping );
+	clip.g_x = clipping.x0;
+	clip.g_y = clipping.y0;
+	clip.g_w = (clipping.x1 - clipping.x0)+1;
+	clip.g_h = (clipping.y1 - clipping.y0)+1;
+
+	fontbmp = bitmap_realloc( clip.g_w, clip.g_h,
+				4, clip.g_w << 2,
+				BITMAP_GROW, fontbmp );
+	fontbmp_stride = bitmap_get_rowstride(fontbmp);
+	fontbmp_allocated_height = clip.g_h;
+	fontbmp_allocated_width = clip.g_w;
 
 	while (nxtchr < length) {
 		ucs4 = utf8_to_ucs4(text + nxtchr, length - nxtchr);
@@ -534,7 +532,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 
 				if( loc.g_w > 0) {
 					self->draw_glyph( self,
-						&loc,
+						&clip, &loc,
 						bglyph->bitmap.buffer,
 						bglyph->bitmap.pitch,
 						c
@@ -542,7 +540,6 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 				}
 		}
 		x += glyph->advance.x >> 16;
-
 	}
 	return( 0 );
 }
