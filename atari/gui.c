@@ -115,7 +115,7 @@ void gui_poll(bool active)
 			evnt.timer = 0;
 			flags |= MU_TIMER;
 			EvntWindom( flags );
-			next_poll = clock() + (CLOCKS_PER_SEC>>2);
+			next_poll = clock() + (CLOCKS_PER_SEC>>3);
 		}
 	} else {
 		if( input_window != NULL ){
@@ -271,22 +271,6 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
  */
 void gui_window_set_status(struct gui_window *w, const char *text)
 {
-	static char * msg_loading = NULL;
-	static char * msg_fetch = NULL;
-
-	if( msg_loading == NULL ){
-		msg_loading = messages_get("Loading");
-		msg_fetch = messages_get("Fetch");
-	}
-
-	if( (strncmp(msg_loading, text, 4) == 0)
-		||
-		(strncmp(msg_fetch, text, 4)) == 0 ) {
-			rendering = true;
-	} else {
-		rendering = false;
-	}
-
 	if (w == NULL || text == NULL )
 		return;
 	window_set_stauts( w , (char*)text );
@@ -505,6 +489,8 @@ void gui_window_start_throbber(struct gui_window *w)
 	schedule(100, throbber_advance, w );
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
+        
+    rendering = true;
 }
 
 void gui_window_stop_throbber(struct gui_window *w)
@@ -517,11 +503,17 @@ void gui_window_stop_throbber(struct gui_window *w)
 
 	schedule_remove(throbber_advance, w);
 
+    /* refresh toolbar buttons: */
+    tb_update_buttons( w, -1 );
+    
+    /* redraw throbber: */
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
 						WF_WORKXYWH, &work);
-	w->root->toolbar->throbber.running = false;
+	w->root->toolbar->throbber.running = false;  
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
+        
+    rendering = false;
 }
 
 /* Place caret in window */
