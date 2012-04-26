@@ -102,25 +102,23 @@ void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int stat
 		return( NULL );
 	}
 
-	if( bitmap->pixdata == NULL ) {
-		assert( 1 == 0 );
-		/* add some buffer for bad code */
-		bitmap->pixdata = malloc( newsize + 128 );
-		bitmap->opaque = false;
-	} else {
-		int oldsize = bitmap->rowstride * bitmap->height;
-		bool doalloc = (state & BITMAP_GROW) ? (newsize > oldsize) : (newsize != oldsize);
- 		if( newsize > oldsize )
-			assert( doalloc == true );
-		if( doalloc ) {
-			bitmap->pixdata = realloc( bitmap->pixdata, newsize + 128 );
-			if( bitmap->pixdata == NULL )
-				return( NULL );
-		}
+	assert( bitmap->pixdata != NULL );
+	int oldsize = bitmap->rowstride * bitmap->height;
+	bool doalloc = (state & BITMAP_GROW) ? (newsize > oldsize) : (newsize != oldsize);
+	if( newsize > oldsize )
+		assert( doalloc == true );
+	if( doalloc ) {
+		// TODO: set red band to a specific value and check the red band
+		// on bitmap_destroy()
+		bitmap->pixdata = realloc( bitmap->pixdata, newsize + 128 );
+		if( bitmap->pixdata == NULL )
+			return( NULL );
 	}
+
 	if( state & BITMAP_CLEAR ){
 		memset( bitmap->pixdata, 0x00, newsize + 128  );
 	}
+
 	bitmap->width = w;
 	bitmap->height = h;
 	bitmap->bpp = bpp;
@@ -329,6 +327,10 @@ bool bitmap_test_opaque(void *bitmap)
 		LOG(("NULL bitmap!"));
 		return false;
 	}
+    
+    if( nsoption_int(atari_transparency) == 0 ){
+        return( true );
+    }
 
 	tst = bm->width * bm->height;
 
