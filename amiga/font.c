@@ -583,7 +583,7 @@ int32 ami_font_width_glyph(struct OutlineFont *ofont,
 			OT_WidthList, &gwlist,
 			TAG_END) == 0)
 		{
-			gwnode = GetHead((struct MinList *)gwlist);
+			gwnode = (struct GlyphWidthEntry *)GetHead((struct List *)gwlist);
 			if(gwnode) char1w = gwnode->gwe_Width;
 
 			kern = 0;

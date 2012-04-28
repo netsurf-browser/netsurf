@@ -47,6 +47,7 @@
 #include "desktop/tree_url_node.h"
 #include "render/box.h"
 #include "render/form.h"
+#include "render/html.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
 #include "utils/utils.h"

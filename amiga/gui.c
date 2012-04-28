@@ -17,7 +17,7 @@
  */
 
 /* define this to use simple (as opposed to smart) refresh windows */
-//#define AMI_SIMPLEREFRESH 1
+// #define AMI_SIMPLEREFRESH 1
 
 /* NetSurf core includes */
 #include "content/urldb.h"
@@ -1334,7 +1334,6 @@ void ami_handle_msg(void)
 
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
-
 //printf("class %ld\n",class);
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
@@ -1849,9 +1848,9 @@ void ami_handle_msg(void)
 					amiga_icon_superimpose_favicon_internal(gwin->bw->window->favicon,
 						gwin->dobj);
 					HideWindow(gwin->win);
-					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN], 0,
-											gwin->win->Title, appport, 0,
-											gwin->dobj, NULL);
+					gwin->appicon = AddAppIcon((ULONG)gwin->objects[OID_MAIN],
+										(ULONG)gwin, gwin->win->Title, appport,
+										0, gwin->dobj, NULL);
 
 					curbw = NULL;
 				}
@@ -1943,7 +1942,7 @@ void ami_handle_appmsg(void)
 
 	while(appmsg=(struct AppMessage *)GetMsg(appport))
 	{
-		GetAttr(WINDOW_UserData, (Object *)appmsg->am_ID, (ULONG *)&gwin);
+		gwin = (struct gui_window_2 *)appmsg->am_UserData;
 
 		if(appmsg->am_Type == AMTYPE_APPICON)
 		{
@@ -2092,7 +2091,9 @@ void ami_get_msg(void)
     ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig;
 
     signal = Wait(signalmask);
-
+/*
+printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig , schedulesig , rxsig , printsig , applibsig);
+*/
 	if(signal & winsignal)
 		ami_handle_msg();
 
@@ -2726,8 +2727,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						IDCMP_REFRESHWINDOW |
 #endif
 						IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
-       	    WINDOW_AppPort, appport,
-			WINDOW_AppWindow,TRUE,
 			WINDOW_SharedPort,sport,
 			WINDOW_BuiltInScroll,TRUE,
 			WINDOW_GadgetHelp, TRUE,
@@ -2916,8 +2915,6 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
 			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
-            WINDOW_AppPort, appport,
-			WINDOW_AppWindow,TRUE,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gwin->shared,
 			WINDOW_BuiltInScroll,TRUE,
@@ -3025,6 +3022,9 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->rmbtrapped = FALSE;
 	gwin->shared->bw = bw;
 	curbw = bw;
+
+	gwin->shared->appwin = AddAppWindowA((ULONG)gwin->shared->objects[OID_MAIN],
+							(ULONG)gwin->shared, gwin->shared->win, appport, NULL);
 
 	gwin->shared->node = AddObject(window_list,AMINS_WINDOW);
 	gwin->shared->node->objstruct = gwin->shared;
@@ -3170,6 +3170,7 @@ void gui_window_destroy(struct gui_window *g)
 
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
+	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
 
 	/* These aren't freed by the above.
 	 * TODO: nav_west etc need freeing too */

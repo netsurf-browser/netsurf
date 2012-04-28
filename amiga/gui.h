@@ -108,6 +108,7 @@ struct gui_window_2 {
 	struct Hook search_ico_hook;
 	gui_drag_type drag_op;
 	struct IBox *ptr_lock;
+	struct AppWindow *appwin;
 };
 
 struct gui_window
