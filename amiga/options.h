@@ -70,6 +70,7 @@
 	int cookies_window_ysize;		\
 	int cairo_renderer;			\
 	bool direct_render;			\
+	bool window_simple_refresh;			\
 	int redraw_tile_size_x;			\
 	int redraw_tile_size_y;			\
 	int monitor_aspect_x;			\
@@ -125,6 +126,7 @@
 	.cookies_window_ysize = 0,			\
 	.cairo_renderer = 1,				\
 	.direct_render = false,				\
+	.window_simple_refresh = false,				\
 	.redraw_tile_size_x = 400,			\
 	.redraw_tile_size_y = 150,			\
 	.monitor_aspect_x = 0,				\
@@ -179,6 +181,7 @@
 { "cookies_window_ysize", OPTION_INTEGER, &nsoptions.cookies_window_ysize}, \
 { "cairo_renderer",	OPTION_INTEGER,	&nsoptions.cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&nsoptions.direct_render}, \
+{ "window_simple_refresh",	OPTION_BOOL,	&nsoptions.window_simple_refresh}, \
 { "redraw_tile_size_x",	OPTION_INTEGER,	&nsoptions.redraw_tile_size_x}, \
 { "redraw_tile_size_y",	OPTION_INTEGER,	&nsoptions.redraw_tile_size_y}, \
 { "monitor_aspect_x",	OPTION_INTEGER,	&nsoptions.monitor_aspect_x}, \

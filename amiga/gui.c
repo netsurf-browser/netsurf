@@ -2475,6 +2475,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	char closetab[100],closetab_s[100],closetab_g[100];
 	char addtab[100],addtab_s[100],addtab_g[100];
 	char tabthrobber[100];
+	ULONG refresh_mode = WA_SmartRefresh;
 
 	if (!scrn) ami_openscreenfirst();
 
@@ -2576,6 +2577,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 	newprefs_hook.h_Entry = (void *)ami_gui_newprefs_hook;
 	newprefs_hook.h_Data = 0;
+
+	if(nsoption_bool(window_simple_refresh) == true) {
+		refresh_mode = WA_SimpleRefresh;
+	} else {
+		refresh_mode = WA_SmartRefresh;
+	}
 
 	if(!nsoption_bool(kiosk_mode))
 	{
@@ -2703,29 +2710,20 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_Height,curh,
 			WA_CustomScreen,scrn,
 			WA_ReportMouse,TRUE,
-#ifdef AMI_SIMPLEREFRESH
-			WA_SimpleRefresh,TRUE,
-#else
-			WA_SmartRefresh,TRUE,
-#endif
+			refresh_mode, TRUE,
 			WA_SizeBBottom, TRUE,
        	   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 						IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 						IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
-#ifdef AMI_SIMPLEREFRESH
 						IDCMP_REFRESHWINDOW |
-#endif
 						IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, gwin->shared->menu,
 			WINDOW_VertProp,1,
 			WINDOW_NewPrefsHook,&newprefs_hook,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE |
-#ifdef AMI_SIMPLEREFRESH
-						IDCMP_REFRESHWINDOW |
-#endif
+			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_REFRESHWINDOW |
 						IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
 			WINDOW_SharedPort,sport,
 			WINDOW_BuiltInScroll,TRUE,
@@ -2904,17 +2902,19 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_Width, scrn->Width,
 			WA_Height, scrn->Height,
            	WA_SizeGadget, FALSE,
-			WA_CustomScreen,scrn,
-			WA_ReportMouse,TRUE,
-       	   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
+			WA_CustomScreen, scrn,
+			WA_ReportMouse, TRUE,
+			refresh_mode, TRUE,
+       	   	WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 					IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
-					IDCMP_RAWKEY | // IDCMP_INTUITICKS |
+					IDCMP_RAWKEY | IDCMP_REFRESHWINDOW |
 					IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
 					IDCMP_EXTENDEDMOUSE,
 			WINDOW_HorizProp,1,
 			WINDOW_VertProp,1,
 			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
-			WINDOW_IDCMPHookBits,IDCMP_IDCMPUPDATE | IDCMP_EXTENDEDMOUSE,
+			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE |
+					IDCMP_EXTENDEDMOUSE | IDCMP_REFRESHWINDOW,
 			WINDOW_SharedPort,sport,
 			WINDOW_UserData,gwin->shared,
 			WINDOW_BuiltInScroll,TRUE,
@@ -3527,11 +3527,10 @@ void ami_do_redraw(struct gui_window_2 *g)
 	g->new_content = false;
 }
 
-#if AMI_SIMPLEREFRESH
-// simplerefresh only
-
 void ami_refresh_window(struct gui_window_2 *gwin)
 {
+	/* simplerefresh only */
+
 	struct IBox *bbox;
 	int x0, x1, y0, y1, sx, sy;
 	struct RegionRectangle *regrect, *nregrect;
@@ -3572,22 +3571,8 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 		ami_do_redraw_limits(gwin->bw->window, gwin->bw, x0, y0, x1, y1);
 	}
 
-/* quick refresh - scuppered by shared offscreen bitmap
-	BltBitMapTags(BLITA_SrcType, BLITT_BITMAP, 
-				BLITA_Source, browserglob.bm,
-				BLITA_SrcX, 0,
-				BLITA_SrcY, 0,
-				BLITA_DestType, BLITT_RASTPORT, 
-				BLITA_Dest, gwin->win->RPort,
-				BLITA_DestX, bbox->Left,
-				BLITA_DestY, bbox->Top,
-				BLITA_Width, bbox->Width,
-				BLITA_Height, bbox->Height,
-				TAG_DONE);
-*/
 	EndRefresh(gwin->win, TRUE);
 }
-#endif
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)
 {
@@ -4051,16 +4036,13 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 		case IDCMP_SIZEVERIFY:
 		break;
 
-#ifdef AMI_SIMPLEREFRESH
 		case IDCMP_REFRESHWINDOW:
-//printf("refreshing\n");
 			ami_refresh_window(gwin);
 		break;
 
 		default:
 			printf("UNHANDLED EVENT %ld\n",msg->Class);
 		break;
-#endif
 	}
 //	ReplyMsg((struct Message *)msg);
 } 
