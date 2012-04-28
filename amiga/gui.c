@@ -3533,18 +3533,24 @@ void ami_do_redraw(struct gui_window_2 *g)
 void ami_refresh_window(struct gui_window_2 *gwin)
 {
 	struct IBox *bbox;
-	int x0, x1, y0, y1;
+	int x0, x1, y0, y1, sx, sy;
 	struct RegionRectangle *regrect, *nregrect;
+
+	sx = gwin->bw->window->scrollx;
+	sy = gwin->bw->window->scrolly;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
 
 	BeginRefresh(gwin->win);
 
-// probably need to trawl through struct Region *DamageList
-	x0 = gwin->win->RPort->Layer->DamageList->bounds.MinX;
-	x1 = gwin->win->RPort->Layer->DamageList->bounds.MaxX;
-	y0 = gwin->win->RPort->Layer->DamageList->bounds.MinY;
-	y1 = gwin->win->RPort->Layer->DamageList->bounds.MaxY;
+	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
+			browser_window_get_scale(gwin->bw)) + sx;
+	x1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxX - bbox->Left) /
+			browser_window_get_scale(gwin->bw)) + sx;
+	y0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinY - bbox->Top) /
+			browser_window_get_scale(gwin->bw)) + sy;
+	y1 = ((gwin->win->RPort->Layer->DamageList->bounds.MaxY - bbox->Top) /
+			browser_window_get_scale(gwin->bw)) + sy;
 
 	regrect = gwin->win->RPort->Layer->DamageList->RegionRectangle;
 
@@ -3552,10 +3558,14 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 
 	while(regrect)
 	{
-		x0 = regrect->bounds.MinX;
-		x1 = regrect->bounds.MaxX;
-		y0 = regrect->bounds.MinY;
-		y1 = regrect->bounds.MaxY;
+		x0 = ((regrect->bounds.MinX - bbox->Left) /
+			browser_window_get_scale(gwin->bw)) + sx;
+		x1 = ((regrect->bounds.MaxX - bbox->Left) /
+			browser_window_get_scale(gwin->bw)) + sx;
+		y0 = ((regrect->bounds.MinY - bbox->Top) /
+			browser_window_get_scale(gwin->bw)) + sy;
+		y1 = ((regrect->bounds.MaxY - bbox->Top) /
+			browser_window_get_scale(gwin->bw)) + sy;
 
 		regrect = regrect->Next;
 
