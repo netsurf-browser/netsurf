@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008-2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -94,6 +94,7 @@ struct gui_window_2 {
 	bool new_content;
 	char *menulab[AMI_MENU_AREXX_MAX + 1];
 	char menukey[AMI_MENU_AREXX_MAX + 1];
+	struct Hook menu_hook[AMI_MENU_AREXX_MAX + 1];
 	UBYTE *menutype;
 	struct NewMenu *menu;
 	ULONG hotlist_items;
@@ -106,6 +107,8 @@ struct gui_window_2 {
 	struct AppIcon *appicon; /* iconify appicon */
 	struct DiskObject *dobj; /* iconify appicon */
 	struct Hook search_ico_hook;
+	struct Hook favicon_hook;
+	struct Hook throbber_hook;
 	gui_drag_type drag_op;
 	struct IBox *ptr_lock;
 	struct AppWindow *appwin;

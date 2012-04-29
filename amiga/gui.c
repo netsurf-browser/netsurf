@@ -16,9 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* define this to use simple (as opposed to smart) refresh windows */
-// #define AMI_SIMPLEREFRESH 1
-
 /* NetSurf core includes */
 #include "content/urldb.h"
 #include "css/utils.h"
@@ -154,6 +151,8 @@ BOOL screen_closed = FALSE;
 struct MsgPort *applibport = NULL;
 ULONG applibsig = 0;
 BOOL refresh_search_ico = FALSE;
+BOOL refresh_favicon = FALSE;
+BOOL refresh_throbber = FALSE;
 struct Hook newprefs_hook;
 
 static char *current_user;
@@ -179,6 +178,10 @@ void ami_try_quit(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
 static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
+	struct gpRender *msg);
+static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
+	struct gpRender *msg);
+static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg);
 bool ami_gui_map_filename(char **remapped, const char *path, const char *file,
 	const char *map);
@@ -1334,7 +1337,7 @@ void ami_handle_msg(void)
 
 		while((result = RA_HandleInput(gwin->objects[OID_MAIN],&code)) != WMHI_LASTMSG)
 		{
-//printf("class %ld\n",class);
+//printf("%ld: %ld (switch)\n",code, result & WMHI_CLASSMASK);
 	        switch(result & WMHI_CLASSMASK) // class
    		   	{
 				case WMHI_MOUSEMOVE:
@@ -1629,16 +1632,6 @@ void ami_handle_msg(void)
 					}
 				break;
 
-				case WMHI_MENUPICK:
-					item = ItemAddress(gwin->win->MenuStrip,code);
-					while (code != MENUNULL)
-					{
-						ami_menupick(code,gwin,item);
-						if(win_destroyed) break;
-						code = item->NextSelect;
-					}
-				break;
-
 				case WMHI_RAWKEY:
 					storage = result & WMHI_GADGETMASK;
 
@@ -1917,6 +1910,18 @@ void ami_handle_msg(void)
 	{
 		gui_window_set_search_ico(NULL);
 		refresh_search_ico = FALSE;
+	}
+
+	if(refresh_favicon)
+	{
+		gui_window_set_icon(gwin->bw->window, gwin->bw->window->favicon);
+		refresh_favicon = FALSE;
+	}
+
+	if(refresh_throbber)
+	{
+		ami_update_throbber(gwin, true);
+		refresh_throbber = FALSE;
 	}
 }
 
@@ -2575,6 +2580,12 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	gwin->shared->search_ico_hook.h_Entry = (void *)ami_set_search_ico_render_hook;
 	gwin->shared->search_ico_hook.h_Data = gwin->shared;
 
+	gwin->shared->favicon_hook.h_Entry = (void *)ami_set_favicon_render_hook;
+	gwin->shared->favicon_hook.h_Data = gwin->shared;
+
+	gwin->shared->throbber_hook.h_Entry = (void *)ami_set_throbber_render_hook;
+	gwin->shared->throbber_hook.h_Data = gwin->shared;
+
 	newprefs_hook.h_Entry = (void *)ami_gui_newprefs_hook;
 	newprefs_hook.h_Data = 0;
 
@@ -2712,7 +2723,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 			WA_ReportMouse,TRUE,
 			refresh_mode, TRUE,
 			WA_SizeBBottom, TRUE,
-       	   	WA_IDCMP,IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
+       	   	WA_IDCMP, IDCMP_MENUPICK | IDCMP_MOUSEMOVE |
 						IDCMP_MOUSEBUTTONS | IDCMP_NEWSIZE |
 						IDCMP_RAWKEY | IDCMP_SIZEVERIFY |
 						IDCMP_GADGETUP | IDCMP_IDCMPUPDATE |
@@ -2720,15 +2731,16 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						IDCMP_ACTIVEWINDOW | IDCMP_EXTENDEDMOUSE,
 			WINDOW_IconifyGadget, iconifygadget,
 			WINDOW_NewMenu, gwin->shared->menu,
-			WINDOW_VertProp,1,
-			WINDOW_NewPrefsHook,&newprefs_hook,
-			WINDOW_IDCMPHook,&gwin->shared->scrollerhook,
+			WINDOW_MenuUserData, WGUD_HOOK,
+			WINDOW_VertProp, 1,
+			WINDOW_NewPrefsHook, &newprefs_hook,
+			WINDOW_IDCMPHook, &gwin->shared->scrollerhook,
 			WINDOW_IDCMPHookBits, IDCMP_IDCMPUPDATE | IDCMP_REFRESHWINDOW |
 						IDCMP_EXTENDEDMOUSE | IDCMP_SIZEVERIFY,
-			WINDOW_SharedPort,sport,
-			WINDOW_BuiltInScroll,TRUE,
+			WINDOW_SharedPort, sport,
+			WINDOW_BuiltInScroll, TRUE,
 			WINDOW_GadgetHelp, TRUE,
-			WINDOW_UserData,gwin->shared,
+			WINDOW_UserData, gwin->shared,
            	WINDOW_ParentGroup, gwin->shared->objects[GID_MAIN] = VGroupObject,
                	LAYOUT_SpaceOuter, TRUE,
 				LAYOUT_AddChild, gwin->shared->objects[GID_TOOLBARLAYOUT] = HGroupObject,
@@ -2810,6 +2822,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						SPACE_MinWidth, 16,
 						SPACE_MinHeight, 16,
 						SPACE_Transparent, TRUE,
+					//	SPACE_RenderHook, &gwin->shared->favicon_hook,
 					SpaceEnd,
 					CHILD_WeightedWidth,0,
 					CHILD_WeightedHeight,0,
@@ -2852,6 +2865,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						SPACE_MinWidth,throbber_width,
 						SPACE_MinHeight,throbber_height,
 						SPACE_Transparent,TRUE,
+					//	SPACE_RenderHook, &gwin->shared->throbber_hook,
 					SpaceEnd,
 					CHILD_WeightedWidth,0,
 					CHILD_WeightedHeight,0,
@@ -3832,6 +3846,13 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	g->favicon = icon;
 }
 
+static uint32 ami_set_favicon_render_hook(struct Hook *hook, APTR space,
+	struct gpRender *msg)
+{
+	refresh_favicon = TRUE;
+	return 0;
+}
+
 /**
  * set gui display of a retrieved favicon representing the search
  * provider
@@ -3898,6 +3919,13 @@ static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
 	struct gpRender *msg)
 {
 	refresh_search_ico = TRUE;
+	return 0;
+}
+
+static uint32 ami_set_throbber_render_hook(struct Hook *hook, APTR space,
+	struct gpRender *msg)
+{
+	refresh_throbber = TRUE;
 	return 0;
 }
 
