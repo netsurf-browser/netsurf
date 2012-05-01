@@ -1445,7 +1445,7 @@ void ami_gui_opts_use(void)
 	switch(data)
 	{
 		case 0:
-			nsoption_set_charp(use_pubscreen, NULL);
+			nsoption_set_charp(use_pubscreen, strdup("\0"));
 			break;
 
 		case 1:
