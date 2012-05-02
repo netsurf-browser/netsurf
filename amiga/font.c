@@ -724,12 +724,21 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 			utf16charsc = ami_font_translate_smallcaps(*utf16);
 			utf16nextsc = ami_font_translate_smallcaps(utf16next);
 
-			tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc, dx + x, dy, emwidth);
+			if(rp) {
+				tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc, dx + x, dy, emwidth);
+			} else {
+				tempx = ami_font_width_glyph(ofont, utf16charsc, utf16nextsc, emwidth);
+			}
 		}
 		else tempx = 0;
 
-		if(tempx == 0)
-			tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next, dx + x, dy, emwidth);
+		if(tempx == 0) {
+			if(rp) {
+				tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next, dx + x, dy, emwidth);
+			} else {
+				tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
+			}
+		}
 
 		if(tempx == 0)
 		{
@@ -740,14 +749,22 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 			if(ufont)
 			{
-				tempx = ami_font_plot_glyph(ufont, rp, *utf16, utf16next,
-							dx + x, dy, emwidth);
+				if(rp) {
+					tempx = ami_font_plot_glyph(ufont, rp, *utf16, utf16next,
+												dx + x, dy, emwidth);
+				} else {
+					tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
+				}
 			}
 /*
 			if(tempx == 0)
 			{
-				tempx = ami_font_plot_glyph(ofont, rp, 0xfffd, utf16next,
-							dx + x, dy, emwidth);
+				if(rp) {
+					tempx = ami_font_plot_glyph(ofont, rp, 0xfffd, utf16next,
+												dx + x, dy, emwidth);
+				} else {
+					tempx = ami_font_width_glyph(ofont, 0xfffd, utf16next, emwidth);
+				}
 			}
 */
 		}
