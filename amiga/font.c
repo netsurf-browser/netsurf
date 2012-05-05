@@ -416,8 +416,8 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 		break;
 		case NSA_UNICODE_FONT:
 		default:
-			fontname = ami_font_scan_lookup(codepoint, glypharray);
-printf("FONT::: %s\n", fontname);
+			fontname = (char *)ami_font_scan_lookup(codepoint, glypharray);
+			if(fontname == NULL) return NULL;
 		break;
 	}
 
@@ -784,13 +784,8 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 void ami_init_fonts(void)
 {
-	struct MinList *list;
-
 	/* Initialise Unicode font scanner */
-	list = NewObjList();
-	/** TODO: add font_unicode and other preferred fonts to the list here */
-	ami_font_scan_init(nsoption_charp(font_unicode_file), list, glypharray);
-	FreeObjList(list);
+	ami_font_scan_init(nsoption_charp(font_unicode_file), false, glypharray);
 
 	/* Initialise font caching etc lists */
 	ami_font_list = NewObjList();

@@ -27,11 +27,35 @@
 #include <proto/diskfont.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
+#include <proto/intuition.h>
 #include <diskfont/diskfonttag.h>
 #include <diskfont/oterrors.h>
 
+#include <proto/window.h>
+#include <proto/layout.h>
+#include <proto/fuelgauge.h>
+#include <classes/window.h>
+#include <gadgets/fuelgauge.h>
+#include <gadgets/layout.h>
+
 #include "amiga/font_scan.h"
 #include "amiga/object.h"
+
+#include "desktop/options.h"
+#include "utils/log.h"
+
+enum {
+	FS_OID_MAIN = 0,
+	FS_GID_MAIN,
+	FS_GID_FONTS,
+	FS_GID_GLYPHS,
+	FS_GID_LAST
+};
+
+struct ami_font_scan_window {
+	struct Window *win;
+	Object *objects[FS_GID_LAST];
+};
 
 /**
  * Lookup a font that contains a UTF-16 codepoint
@@ -44,6 +68,28 @@ const char *ami_font_scan_lookup(uint16 code, lwc_string **glypharray)
 {
 	if(glypharray[code] == NULL) return NULL;
 		else return lwc_string_data(glypharray[code]);
+}
+
+/**
+ * Open GUI to show font scanning progress
+ *
+ * \param fonts  number of fonts that are being scanned
+ * \return pointer to a struct ami_font_scan_window
+ */
+struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
+{
+	return NULL;
+}
+
+/**
+ * Close GUI showing font scanning progress
+ *
+ * \param win   pointer to a struct ami_font_scan_window
+ */
+void ami_font_scan_gui_close(struct ami_font_scan_window *win)
+{
+	DisposeObject(win->objects[FS_OID_MAIN]);
+	FreeVec(win);
 }
 
 /**
@@ -130,7 +176,7 @@ ULONG ami_font_scan_list(struct MinList *list)
 	int afShortage, afSize = 100, i;
 	struct AvailFontsHeader *afh;
 	struct AvailFonts *af;
-	ULONG found;
+	ULONG found = 0;
 	struct nsObject *node;
 
 	printf("Scanning fonts...\n");
@@ -197,7 +243,7 @@ ULONG ami_font_scan_load(const char *filename, lwc_string **glypharray)
 	rargs = AllocDosObjectTags(DOS_RDARGS, TAG_DONE);
 
 	if(fh = FOpen(filename, MODE_OLDFILE, 0)) {
-		printf("Reading %s\n", filename);
+		LOG(("Loading font glyph cache from %s", filename));
 
 		while(FGets(fh, (UBYTE *)&buffer, 256) != 0)
 		{
@@ -238,7 +284,7 @@ void ami_font_scan_save(const char *filename, lwc_string **glypharray)
 	BPTR fh = 0;
 
 	if(fh = FOpen(filename, MODE_NEWFILE, 0)) {
-		printf("Writing %s\n", filename);
+		LOG(("Writing font glyph cache to %s", filename));
 		FPrintf(fh, "; This file is auto-generated. To re-create the cache, delete this file.\n");
 		FPrintf(fh, "; This file is parsed using ReadArgs() with the following template:\n");
 		FPrintf(fh, "; CODE/A,FONT/A\n;\n");
@@ -276,26 +322,49 @@ void ami_font_scan_fini(lwc_string **glypharray)
  * Reads an existing file or, if not present, generates a new cache.
  *
  * \param  filename       cache file to attempt to read
+ * \param  entries        number of entries in list
+ * \param  force_scan     force re-creation of cache
  * \param  glypharray     an array of 0xffff lwc_string pointers
  */
-void ami_font_scan_init(const char *filename, struct MinList *list, lwc_string **glypharray)
+void ami_font_scan_init(const char *filename, bool force_scan,
+		lwc_string **glypharray)
 {
-	ULONG i, found, ffound;
+	ULONG i, found = 0, entries = 0;
+	struct MinList *list;
+	struct nsObject *node;
+	char *unicode_font;
 
 	/* Ensure array zeroed */
 	for(i=0x0000; i<=0xffff; i++)
 		glypharray[i] = NULL;
 
-	found = ami_font_scan_load(filename, glypharray);
+	if(force_scan == false)
+		found = ami_font_scan_load(filename, glypharray);
 
 	if(found == 0) {
-		ffound = ami_font_scan_list(list);
-		printf("Found %ld system fonts\n", ffound);
-		found = ami_font_scan_fonts(list, glypharray);
-		ami_font_scan_save(filename, glypharray);
+		if(list = NewObjList()) {
+
+			/* add preferred font */
+			asprintf(&unicode_font, "%s.font", nsoption_charp(font_unicode));
+			if(unicode_font != NULL) {
+				node = AddObject(list, AMINS_UNKNOWN);
+				if(node) node->dtz_Node.ln_Name = unicode_font;
+				entries = 1;
+			}
+
+			if(nsoption_bool(font_unicode_only) == false)
+				entries += ami_font_scan_list(list);
+
+			printf("Found %ld fonts\n", entries);
+
+			found = ami_font_scan_fonts(list, glypharray);
+			FreeObjList(list);
+
+			ami_font_scan_save(filename, glypharray);
+		}
 	}
 
-	printf("Initialised with %ld glyphs\n", found);
+	LOG(("Initialised with %ld glyphs", found));
 }
 
 #ifdef AMI_FONT_SCAN_STANDALONE

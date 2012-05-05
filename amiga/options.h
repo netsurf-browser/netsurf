@@ -55,7 +55,8 @@
 	bool close_no_quit;			\
 	bool hide_docky_icon;			\
 	char *font_unicode;			\
-	char *font_unicode_file;			\
+	char *font_unicode_file;		\
+	bool font_unicode_only;		\
 	bool drag_save_icons;			\
 	int hotlist_window_xpos;		\
 	int hotlist_window_ypos;		\
@@ -113,6 +114,7 @@
 	.hide_docky_icon = false,			\
 	.font_unicode = NULL,				\
 	.font_unicode_file = NULL,				\
+	.font_unicode_only = false,				\
 	.drag_save_icons = true,			\
 	.hotlist_window_xpos = 0,			\
 	.hotlist_window_ypos = 0,			\
@@ -169,6 +171,7 @@
 { "hide_docky_icon",	OPTION_BOOL,	&nsoptions.hide_docky_icon}, \
 { "font_unicode",	OPTION_STRING,	&nsoptions.font_unicode }, \
 { "font_unicode_file",	OPTION_STRING,	&nsoptions.font_unicode_file }, \
+{ "font_unicode_only",	OPTION_BOOL,	&nsoptions.font_unicode_only }, \
 { "drag_save_icons",	OPTION_BOOL,	&nsoptions.drag_save_icons}, \
 { "hotlist_window_xpos", OPTION_INTEGER, &nsoptions.hotlist_window_xpos}, \
 { "hotlist_window_ypos", OPTION_INTEGER, &nsoptions.hotlist_window_ypos}, \
