@@ -31,6 +31,8 @@
 
 #include <libwapcaplet/libwapcaplet.h>
 
+#include "amiga/object.h"
+
 /**
  * Scan a font for glyphs not present in glypharray.
  *
@@ -45,6 +47,7 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 	struct GlyphWidthEntry *gwnode;
 	ULONG foundglyphs = 0;
 	ULONG serif = 0;
+	lwc_error lerror;
 
 	ofont = OpenOutlineFont(fontname, NULL, OFF_OPEN);
 
@@ -62,8 +65,8 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 			gwnode = (struct GlyphWidthEntry *)GetHead((struct List *)widthlist);
 			do {
 				if(gwnode && (glypharray[gwnode->gwe_Code] == NULL)) {
-					 lwc_intern_string(fontname, strlen(fontname) - 5, &glypharray[gwnode->gwe_Code]);
-					//printf("%lx\n",gwnode->gwe_Code);
+					lerror = lwc_intern_string(fontname, strlen(fontname) - 5, &glypharray[gwnode->gwe_Code]);
+					if(lerror != lwc_error_ok) continue;
 					foundglyphs++;
 				}
 			} while(gwnode = (struct GlyphWidthEntry *)GetSucc((struct Node *)gwnode));
@@ -81,13 +84,41 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return number of glyphs found
  */
-ULONG ami_font_scan_fonts(lwc_string **glypharray)
+ULONG ami_font_scan_fonts(struct MinList *list, lwc_string **glypharray)
 {
-/* TODO: this function should take a list of fonts and add to it, ignoring duplicates */
+	ULONG found, total = 0;
+	struct nsObject *node;
+	struct nsObject *nnode;
+
+	if(IsMinListEmpty(list)) return 0;
+
+	node = (struct nsObject *)GetHead((struct List *)list);
+
+	do {
+		nnode = (struct nsObject *)GetSucc((struct Node *)node);
+		printf("Scanning %s...\n", node->dtz_Node.ln_Name);
+		found = ami_font_scan_font(node->dtz_Node.ln_Name, glypharray);
+		total += found;
+		printf("Found %ld new glyphs (total = %ld)\n", found, total);
+	} while(node = nnode);
+
+	return total;
+}
+
+
+/**
+ * Add OS fonts to a list.
+ *
+ * \param  list   list to add font names to
+ * \return number of fonts found
+ */
+ULONG ami_font_scan_list(struct MinList *list)
+{
 	int afShortage, afSize = 100, i;
 	struct AvailFontsHeader *afh;
 	struct AvailFonts *af;
-	ULONG found, total = 0;
+	ULONG found;
+	struct nsObject *node;
 
 	printf("Scanning fonts...\n");
 	do {
@@ -105,13 +136,19 @@ ULONG ami_font_scan_fonts(lwc_string **glypharray)
 	if(afh) {
 		af = (struct AvailFonts *)&(afh[1]);
 printf("af = %lx entries = %ld\n", af, afh->afh_NumEntries);
-/* bug somewhere, this only does 36 fonts as size 0 */
+
 		for(i = 0; i < afh->afh_NumEntries; i++) {
-			if((af[i].af_Attr.ta_YSize == 0) && (af[i].af_Attr.ta_Style == FS_NORMAL)) {
-				printf("%s (%ld) %ld\n", af[i].af_Attr.ta_Name, af[i].af_Attr.ta_Style, af[i].af_Attr.ta_YSize);
-				found = ami_font_scan_font(af[i].af_Attr.ta_Name, glypharray);
-				total += found;
-				printf("Found %ld new glyphs (total = %ld)\n", found, total);
+			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
+				node = (struct nsObject *)FindIName((struct List *)list,
+							af[i].af_Attr.ta_Name);
+				if(node == NULL) {
+					node = AddObject(list, AMINS_UNKNOWN);
+					if(node) {
+						node->dtz_Node.ln_Name = strdup(af[i].af_Attr.ta_Name);
+						found++;
+						printf("Added %s\n", af[i].af_Attr.ta_Name);
+					}
+				}
 			}
 			af++;
 		}
@@ -119,6 +156,7 @@ printf("af = %lx entries = %ld\n", af, afh->afh_NumEntries);
 	} else {
 		return 0;
 	}
+	return found;
 }
 
 /**
@@ -132,10 +170,43 @@ ULONG ami_font_scan_load(const char *filename, lwc_string **glypharray)
 {
 	ULONG found = 0;
 	BPTR fh = 0;
+	lwc_error lerror;
+	char buffer[256];
+	struct RDArgs *rargs = NULL;
+	STRPTR template = "CODE/A,FONT/A";
+	long rarray[] = {0,0};
+
+	enum {
+		A_CODE = 0,
+		A_FONT
+	};
+
+	rargs = AllocDosObjectTags(DOS_RDARGS, TAG_DONE);
 
 	if(fh = FOpen(filename, MODE_OLDFILE, 0)) {
 		printf("Reading %s\n", filename);
-		/* TODO: read lines using ReadArgs() */
+
+		while(FGets(fh, (UBYTE *)&buffer, 256) != 0)
+		{
+			rargs->RDA_Source.CS_Buffer = (char *)&buffer;
+			rargs->RDA_Source.CS_Length = 256;
+			rargs->RDA_Source.CS_CurChr = 0;
+
+			rargs->RDA_DAList = NULL;
+			rargs->RDA_Buffer = NULL;
+			rargs->RDA_BufSiz = 0;
+			rargs->RDA_ExtHelp = NULL;
+			rargs->RDA_Flags = 0;
+
+			if(ReadArgs(template, rarray, rargs))
+			{
+				lerror = lwc_intern_string((const char *)rarray[A_FONT],
+							strlen((const char *)rarray[A_FONT]),
+							&glypharray[strtoul(rarray[A_CODE], NULL, 0)]);
+				if(lerror != lwc_error_ok) continue;
+				found++;
+			}
+		}
 		FClose(fh);
 	}
 
@@ -162,7 +233,7 @@ void ami_font_scan_save(const char *filename, lwc_string **glypharray)
 		for(i=0x0000; i<=0xffff; i++)
 		{
 			if(glypharray[i]) {
-				FPrintf(fh, "%04lx \"%s\"\n", i, lwc_string_data(glypharray[i]));
+				FPrintf(fh, "0x%04lx \"%s\"\n", i, lwc_string_data(glypharray[i]));
 				lwc_string_unref(glypharray[i]);
 			}
 		}
@@ -195,9 +266,9 @@ void ami_font_scan_fini(lwc_string **glypharray)
  * \param  filename       cache file to attempt to read
  * \param  glypharray     an array of 0xffff lwc_string pointers
  */
-void ami_font_scan_init(const char *filename, lwc_string **glypharray)
+void ami_font_scan_init(const char *filename, struct MinList *list, lwc_string **glypharray)
 {
-	ULONG i, found;
+	ULONG i, found, ffound;
 
 	/* Ensure array zeroed */
 	for(i=0x0000; i<=0xffff; i++)
@@ -206,7 +277,9 @@ void ami_font_scan_init(const char *filename, lwc_string **glypharray)
 	found = ami_font_scan_load(filename, glypharray);
 
 	if(found == 0) {
-		found = ami_font_scan_fonts(glypharray);
+		ffound = ami_font_scan_list(list);
+		printf("Found %ld system fonts\n", ffound);
+		found = ami_font_scan_fonts(list, glypharray);
 		ami_font_scan_save(filename, glypharray);
 	}
 
@@ -215,21 +288,30 @@ void ami_font_scan_init(const char *filename, lwc_string **glypharray)
 
 #ifdef AMI_FONT_SCAN_STANDALONE
 /* This can be compiled as standalone using:
-* gcc -o font_scan font_scan.c -lwapcaplet -lauto -D__USE_INLINE__ -DAMI_FONT_SCAN_STANDALONE
+* gcc -o font_scan font_scan.c object.c -lwapcaplet -lauto -I .. -D__USE_INLINE__ -DAMI_FONT_SCAN_STANDALONE
 */
 int main(int argc, char** argv)
 {
 	lwc_string *glypharray[0xffff + 1];
 	ULONG found = 0;
 	BPTR fh;
+	struct MinList *list;
 
 	if(argc < 2) return 5;
 
 	printf("%s\n",argv[1]);
 
-	ami_font_scan_init(argv[1], glypharray);
+	list = NewObjList();
+
+	ami_font_scan_init(argv[1], list, glypharray);
 	ami_font_scan_fini(glypharray);
+
+	FreeObjList(list);
 
 	return 0;
 }
+
+void ami_font_close(APTR discard) { }
+void ami_mime_entry_free(APTR discard) { }
+
 #endif
