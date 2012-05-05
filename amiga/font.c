@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -19,6 +19,7 @@
 #include <assert.h>
 
 #include "amiga/font.h"
+#include "amiga/font_scan.h"
 #include "amiga/gui.h"
 #include "amiga/utf8.h"
 #include "amiga/object.h"
@@ -73,6 +74,7 @@ struct ami_font_node
 
 struct MinList *ami_font_list = NULL;
 struct List ami_diskfontlib_list;
+lwc_string *glypharray[0xffff + 1];
 ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
@@ -81,7 +83,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		uint16 char1, uint16 char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
-		BOOL fallback);
+		uint16 codepoint);
 static void ami_font_cleanup(struct MinList *ami_font_list);
 
 static bool nsfont_width(const plot_font_style_t *fstyle,
@@ -148,7 +150,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
 
-	if(!(ofont = ami_open_outline_font(fstyle, FALSE))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
 	*char_offset = length;
 
@@ -169,7 +171,7 @@ bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		{
 			if(ufont == NULL)
 			{
-				ufont = ami_open_outline_font(fstyle, TRUE);
+				ufont = ami_open_outline_font(fstyle, *utf16);
 			}
 
 			if(ufont)
@@ -252,7 +254,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 	len = utf8_bounded_length(string, length);
 	if(utf8_to_enc((char *)string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return false;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, FALSE))) return false;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) return false;
 
 	*char_offset = 0;
 	*actual_x = 0;
@@ -287,7 +289,7 @@ bool nsfont_split(const plot_font_style_t *fstyle,
 		{
 			if(ufont == NULL)
 			{
-				ufont = ami_open_outline_font(fstyle, TRUE);
+				ufont = ami_open_outline_font(fstyle, *utf16);
 			}
 
 			if(ufont)
@@ -375,10 +377,11 @@ struct ami_font_node *ami_font_open(const char *font)
  * Open an outline font in the specified size and style
  *
  * \param fstyle font style structure
- * \param default open a default font instead of the one specified by fstyle
+ * \param codepoint open a default font instead of the one specified by fstyle
  * \return outline font or NULL on error
  */
-struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL fallback)
+struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
+		uint16 codepoint)
 {
 	struct ami_font_node *node;
 	struct OutlineFont *ofont;
@@ -391,7 +394,7 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 	ULONG shearsin = 0;
 	ULONG shearcos = (1 << 16);
 
-	if(fallback) fontfamily = NSA_UNICODE_FONT;
+	if(codepoint) fontfamily = NSA_UNICODE_FONT;
 		else fontfamily = fstyle->family;
 
 	switch(fontfamily)
@@ -413,7 +416,8 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle, BOOL 
 		break;
 		case NSA_UNICODE_FONT:
 		default:
-			fontname = nsoption_charp(font_unicode);
+			fontname = ami_font_scan_lookup(codepoint, glypharray);
+printf("FONT::: %s\n", fontname);
 		break;
 	}
 
@@ -706,7 +710,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 	if(utf8_to_enc(string,"UTF-16",length,(char **)&utf16) != UTF8_CONVERT_OK) return 0;
 	outf16 = utf16;
-	if(!(ofont = ami_open_outline_font(fstyle, FALSE))) return 0;
+	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
 
 	if(rp) SetRPAttrs(rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fstyle->foreground),TAG_DONE);
 
@@ -744,7 +748,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 		{
 			if(ufont == NULL)
 			{
-				ufont = ami_open_outline_font(fstyle, TRUE);
+				ufont = ami_open_outline_font(fstyle, *utf16);
 			}
 
 			if(ufont)
@@ -780,6 +784,15 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 void ami_init_fonts(void)
 {
+	struct MinList *list;
+
+	/* Initialise Unicode font scanner */
+	list = NewObjList();
+	/** TODO: add font_unicode and other preferred fonts to the list here */
+	ami_font_scan_init(nsoption_charp(font_unicode_file), list, glypharray);
+	FreeObjList(list);
+
+	/* Initialise font caching etc lists */
 	ami_font_list = NewObjList();
 	NewList(&ami_diskfontlib_list);
 
@@ -792,6 +805,7 @@ void ami_close_fonts(void)
 	LOG(("Cleaning up font cache"));
 	FreeObjList(ami_font_list);
 	ami_font_list = NULL;
+	ami_font_scan_fini(glypharray);
 }
 
 void ami_font_close(struct ami_font_node *node)

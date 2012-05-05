@@ -21,6 +21,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <proto/diskfont.h>
@@ -29,9 +30,21 @@
 #include <diskfont/diskfonttag.h>
 #include <diskfont/oterrors.h>
 
-#include <libwapcaplet/libwapcaplet.h>
-
+#include "amiga/font_scan.h"
 #include "amiga/object.h"
+
+/**
+ * Lookup a font that contains a UTF-16 codepoint
+ *
+ * \param  code           UTF-16 codepoint to lookup
+ * \param  glypharray     an array of 0xffff lwc_string pointers
+ * \return font name or NULL
+ */
+const char *ami_font_scan_lookup(uint16 code, lwc_string **glypharray)
+{
+	if(glypharray[code] == NULL) return NULL;
+		else return lwc_string_data(glypharray[code]);
+}
 
 /**
  * Scan a font for glyphs not present in glypharray.
@@ -51,7 +64,7 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 
 	ofont = OpenOutlineFont(fontname, NULL, OFF_OPEN);
 
-	if(!ofont) return;
+	if(!ofont) return 0;
 
 	if(ESetInfo(&ofont->olf_EEngine,
 		OT_PointHeight, 10 * (1 << 16),
@@ -202,7 +215,7 @@ ULONG ami_font_scan_load(const char *filename, lwc_string **glypharray)
 			{
 				lerror = lwc_intern_string((const char *)rarray[A_FONT],
 							strlen((const char *)rarray[A_FONT]),
-							&glypharray[strtoul(rarray[A_CODE], NULL, 0)]);
+							&glypharray[strtoul((const char *)rarray[A_CODE], NULL, 0)]);
 				if(lerror != lwc_error_ok) continue;
 				found++;
 			}
@@ -226,7 +239,7 @@ void ami_font_scan_save(const char *filename, lwc_string **glypharray)
 
 	if(fh = FOpen(filename, MODE_NEWFILE, 0)) {
 		printf("Writing %s\n", filename);
-		FPrintf(fh, "; This file is auto-generated. To recreate the cache, delete this file.\n");
+		FPrintf(fh, "; This file is auto-generated. To re-create the cache, delete this file.\n");
 		FPrintf(fh, "; This file is parsed using ReadArgs() with the following template:\n");
 		FPrintf(fh, "; CODE/A,FONT/A\n;\n");
 
@@ -234,7 +247,6 @@ void ami_font_scan_save(const char *filename, lwc_string **glypharray)
 		{
 			if(glypharray[i]) {
 				FPrintf(fh, "0x%04lx \"%s\"\n", i, lwc_string_data(glypharray[i]));
-				lwc_string_unref(glypharray[i]);
 			}
 		}
 		FClose(fh);
@@ -302,11 +314,10 @@ int main(int argc, char** argv)
 	printf("%s\n",argv[1]);
 
 	list = NewObjList();
-
 	ami_font_scan_init(argv[1], list, glypharray);
-	ami_font_scan_fini(glypharray);
-
 	FreeObjList(list);
+
+	ami_font_scan_fini(glypharray);
 
 	return 0;
 }

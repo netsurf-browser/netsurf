@@ -438,6 +438,10 @@ void ami_set_options(void)
 
 	search_engines_file_location = nsoption_charp(search_engines_file);
 
+	sprintf(temp, "%s/UnicodeFontCache", current_user_dir);
+	nsoption_setnull_charp(font_unicode_file,
+			       (char *)strdup(temp));
+
 	/* font defaults */
 	nsoption_setnull_charp(font_sans, (char *)strdup("DejaVu Sans"));
 	nsoption_setnull_charp(font_serif, (char *)strdup("DejaVu Serif"));
@@ -460,10 +464,6 @@ void ami_set_options(void)
 			UnLock(lock);
 			nsoption_set_charp(font_unicode,
 					   (char *)strdup("Bitstream Cyberbit"));
-		}
-		else {
-			nsoption_set_charp(font_unicode,
-					   (char *)strdup("DejaVu Sans"));
 		}
 	}
 
