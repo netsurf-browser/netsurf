@@ -782,10 +782,25 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	return x;
 }
 
+void ami_font_initscanner(bool force, bool save)
+{
+	ami_font_scan_init(nsoption_charp(font_unicode_file), force, save, glypharray);
+}
+
+void ami_font_finiscanner(void)
+{
+	ami_font_scan_fini(glypharray);
+}
+
+void ami_font_savescanner(void)
+{
+	ami_font_scan_save(nsoption_charp(font_unicode_file), glypharray);
+}
+
 void ami_init_fonts(void)
 {
 	/* Initialise Unicode font scanner */
-	ami_font_scan_init(nsoption_charp(font_unicode_file), false, glypharray);
+	ami_font_initscanner(false, true);
 
 	/* Initialise font caching etc lists */
 	ami_font_list = NewObjList();
@@ -800,7 +815,7 @@ void ami_close_fonts(void)
 	LOG(("Cleaning up font cache"));
 	FreeObjList(ami_font_list);
 	ami_font_list = NULL;
-	ami_font_scan_fini(glypharray);
+	ami_font_finiscanner();
 }
 
 void ami_font_close(struct ami_font_node *node)

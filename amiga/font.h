@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009, 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -31,6 +31,11 @@ void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
 void ami_font_close(struct ami_font_node *node);
+
+/* Alternate entry points into font_scan */
+void ami_font_initscanner(bool force, bool save);
+void ami_font_finiscanner(void);
+void ami_font_savescanner(void);
 
 /* Simple diskfont functions for graphics.library use (not page rendering) */
 struct TextFont *ami_font_open_disk_font(struct TextAttr *tattr);

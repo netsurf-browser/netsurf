@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 - 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2009 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -1404,12 +1404,18 @@ void ami_gui_opts_open(void)
 	}
 }
 
-void ami_gui_opts_use(void)
+void ami_gui_opts_use(bool save)
 {
 	ULONG data, id = 0;
 	float animspeed;
 	struct TextAttr *tattr;
 	char *dot;
+	bool rescan_fonts = false;
+
+	SetWindowPointer(gow->win,
+		WA_BusyPointer, TRUE,
+		WA_PointerDelay, TRUE,
+		TAG_DONE);	
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_HOMEPAGE],(ULONG *)&data);
 	nsoption_set_charp(homepage_url, (char *)strdup((char *)data));
@@ -1572,6 +1578,11 @@ void ami_gui_opts_use(void)
 	tattr = (struct TextAttr *)data;
 
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
+
+	if(strcmp(tattr->ta_Name, nsoption_charp(font_unicode)) != 0) {
+		rescan_fonts = true;
+	}
+
 	nsoption_set_charp(font_unicode, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
@@ -1709,6 +1720,20 @@ void ami_gui_opts_use(void)
 	} else {
 		nsoption_set_bool(enable_PDF_password, false);
 	}
+
+	if(rescan_fonts == true) {
+		ami_font_finiscanner();
+		ami_font_initscanner(true, false);
+	}
+
+	if(save == true) {
+		nsoption_write(current_user_options);
+		ami_font_savescanner(); /* just in case it has changed and been used only */
+	}
+
+	SetWindowPointer(gow->win,
+		WA_Pointer, NULL,
+		TAG_DONE);
 }
 
 void ami_gui_opts_close(void)
@@ -1739,14 +1764,13 @@ BOOL ami_gui_opts_event(void)
 				switch(result & WMHI_GADGETMASK)
 				{
 					case GID_OPTS_SAVE:
-						ami_gui_opts_use();
-						nsoption_write(current_user_options);
+						ami_gui_opts_use(true);
 						ami_gui_opts_close();
 						return TRUE;
 					break;
 
 					case GID_OPTS_USE:
-						ami_gui_opts_use();
+						ami_gui_opts_use(false);
 						// fall through
 
 					case GID_OPTS_CANCEL:

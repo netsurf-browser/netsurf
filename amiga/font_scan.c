@@ -82,14 +82,35 @@ struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 }
 
 /**
+ * Update GUI showing font scanning progress
+ *
+ * \param win       pointer to a struct ami_font_scan_window
+ * \param font      current font being scanned
+ * \param font_num  font number being scanned
+ * \param glyphs    number of unique glyphs found
+ */
+void ami_font_scan_gui_update(struct ami_font_scan_window *win, const char *font,
+			ULONG font_num, ULONG glyphs)
+{
+	if(win) {
+		// RefreshSetGadgetAttrs() etc
+	} else {
+		printf("Found %ld glyphs\n", glyphs);
+		printf("Scanning font #%ld (%s)...\n", font_num, font);
+	}
+}
+
+/**
  * Close GUI showing font scanning progress
  *
  * \param win   pointer to a struct ami_font_scan_window
  */
 void ami_font_scan_gui_close(struct ami_font_scan_window *win)
 {
-	DisposeObject(win->objects[FS_OID_MAIN]);
-	FreeVec(win);
+	if(win) {
+		DisposeObject(win->objects[FS_OID_MAIN]);
+		FreeVec(win);
+	}
 }
 
 /**
@@ -143,9 +164,10 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
  * \param  glypharray     an array of 0xffff lwc_string pointers
  * \return number of glyphs found
  */
-ULONG ami_font_scan_fonts(struct MinList *list, lwc_string **glypharray)
+ULONG ami_font_scan_fonts(struct MinList *list,
+		struct ami_font_scan_window *win, lwc_string **glypharray)
 {
-	ULONG found, total = 0;
+	ULONG found, total = 0, font_num = 0;
 	struct nsObject *node;
 	struct nsObject *nnode;
 
@@ -155,15 +177,15 @@ ULONG ami_font_scan_fonts(struct MinList *list, lwc_string **glypharray)
 
 	do {
 		nnode = (struct nsObject *)GetSucc((struct Node *)node);
-		printf("Scanning %s...\n", node->dtz_Node.ln_Name);
+		ami_font_scan_gui_update(win, node->dtz_Node.ln_Name, font_num, total);
+		LOG(("Scanning %s\n", node->dtz_Node.ln_Name));
 		found = ami_font_scan_font(node->dtz_Node.ln_Name, glypharray);
 		total += found;
-		printf("Found %ld new glyphs (total = %ld)\n", found, total);
+		LOG(("Found %ld new glyphs (total = %ld)\n", found, total));
 	} while(node = nnode);
 
 	return total;
 }
-
 
 /**
  * Add OS fonts to a list.
@@ -179,7 +201,6 @@ ULONG ami_font_scan_list(struct MinList *list)
 	ULONG found = 0;
 	struct nsObject *node;
 
-	printf("Scanning fonts...\n");
 	do {
 		if(afh = (struct AvailFontsHeader *)AllocVec(afSize, MEMF_PRIVATE)) {
 			if(afShortage = AvailFonts(afh, afSize, AFF_DISK | AFF_OTAG | AFF_SCALED)) {
@@ -194,7 +215,6 @@ ULONG ami_font_scan_list(struct MinList *list)
 
 	if(afh) {
 		af = (struct AvailFonts *)&(afh[1]);
-printf("af = %lx entries = %ld\n", af, afh->afh_NumEntries);
 
 		for(i = 0; i < afh->afh_NumEntries; i++) {
 			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
@@ -205,7 +225,7 @@ printf("af = %lx entries = %ld\n", af, afh->afh_NumEntries);
 					if(node) {
 						node->dtz_Node.ln_Name = strdup(af[i].af_Attr.ta_Name);
 						found++;
-						printf("Added %s\n", af[i].af_Attr.ta_Name);
+						LOG(("Added %s\n", af[i].af_Attr.ta_Name));
 					}
 				}
 			}
@@ -326,13 +346,14 @@ void ami_font_scan_fini(lwc_string **glypharray)
  * \param  force_scan     force re-creation of cache
  * \param  glypharray     an array of 0xffff lwc_string pointers
  */
-void ami_font_scan_init(const char *filename, bool force_scan,
+void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 		lwc_string **glypharray)
 {
 	ULONG i, found = 0, entries = 0;
 	struct MinList *list;
 	struct nsObject *node;
 	char *unicode_font;
+	struct ami_font_scan_window *win = NULL;
 
 	/* Ensure array zeroed */
 	for(i=0x0000; i<=0xffff; i++)
@@ -355,12 +376,13 @@ void ami_font_scan_init(const char *filename, bool force_scan,
 			if(nsoption_bool(font_unicode_only) == false)
 				entries += ami_font_scan_list(list);
 
-			printf("Found %ld fonts\n", entries);
+			LOG(("Found %ld fonts\n", entries));
 
-			found = ami_font_scan_fonts(list, glypharray);
+			found = ami_font_scan_fonts(list, win, glypharray);
 			FreeObjList(list);
 
-			ami_font_scan_save(filename, glypharray);
+			if(save == true)
+				ami_font_scan_save(filename, glypharray);
 		}
 	}
 
