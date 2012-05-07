@@ -2555,31 +2555,31 @@ de.all.NoMemory:Zu wenig Speicher. Bitte mehr Speicher zur Verfügung stellen un
 fr.all.NoMemory:NetSurf a besoin de plus de mémoire. Veuillez libérer de la mémoire et réessayer.
 it.all.NoMemory:Memoria insufficiente per l'esecuzione di NetSurf. Per favore liberane un pò e riprova nuovamente.
 nl.all.NoMemory:NetSurf krijgt gebrek aan geheugen. Maak wat geheugen vrij en probeer het dan nog eens.
-en.all.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-de.all.FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
-fr.all.FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
-it.all.FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
-nl.all.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
-en.all.FontError:Failed to open font "Homerton.Medium" (%s).
-de.all.FontError:Fehler beim öffnen des Fonts "Homerton.Medium" (%s).
-fr.all.FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
-it.all.FontError:Impossibile aprire il font "Homerton.Medium" (%s).
-nl.all.FontError:Het lettertypenbestand "Homerton.Medium" kan niet geopend worden (%s).
-en.all.Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
-de.all.Resolvers:Keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien sind ladbar. Bitte DNS unter !Boot eintragen.
-fr.all.Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
-it.all.Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
-nl.all.Resolvers:Er zijn geen DNS servers ingesteld, dus kunnen alleen locale bestanden bekeken worden. Gebruik Configure om uw naam server(s) in te stellen.
+en.ro.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
+de.ro.FontBadInst:Font-Initialisierung fehlerhaft. Obsolete Kopien von ROM Fonts auf dem lokalem Speichermedium. Fehlerbehebung startet.
+fr.ro.FontBadInst:Une erreur s'est produite lors de l'initialisation des fontes à cause de la présence de copies obsolètes de fontes ROM sur disque. NetSurf va sortir et lancer un programme qui va tenter de réparer cela.
+it.ro.FontBadInst:Si è verificato un errore durante l'inizializzazione dei font a causa della presenza di una copia obsoleta dei font "ROM" nel disco. NetSurf verrà chiuso e si cercherà di lanciare un programma in grado di risolvere questo problema.
+nl.ro.FontBadInst:An error occurred when initialising fonts due to the presence of obsolete copies of the ROM fonts on disc. NetSurf will exit and launch a program which will attempt to fix this.
+en.ro.FontError:Failed to open font "Homerton.Medium" (%s).
+de.ro.FontError:Fehler beim öffnen des Fonts "Homerton.Medium" (%s).
+fr.ro.FontError:Échec d'ouverture de la fonte "Homerton.Medium" (%s).
+it.ro.FontError:Impossibile aprire il font "Homerton.Medium" (%s).
+nl.ro.FontError:Het lettertypenbestand "Homerton.Medium" kan niet geopend worden (%s).
+en.ro.Resolvers:No domain name servers are configured, so only browsing local files will be possible. Use Configure to set your name server(s).
+de.ro.Resolvers:Keine Domain Name Servers (DNS) konfiguriert. Nur lokale Dateien sind ladbar. Bitte DNS unter !Boot eintragen.
+fr.ro.Resolvers:Aucun nom de domaine n'étant configuré, seul la consultation de fichiers locaux est possible. Utilisez Configure pour définir les serveurs de noms.
+it.ro.Resolvers:Non è stato configurato nessun nome per i domini dei server, perciò sarà possibile effettuare la navigazione dei file solo in modalità locale. Usa "Configura" per impostare il nome (o i nomi) del/dei server.
+nl.ro.Resolvers:Er zijn geen DNS servers ingesteld, dus kunnen alleen locale bestanden bekeken worden. Gebruik Configure om uw naam server(s) in te stellen.
 en.all.NoDiscSpace:Not enough space available on disc.
 de.all.NoDiscSpace:Nicht genug Speicherplatz auf dem Medium vorhanden.
 fr.all.NoDiscSpace:Pas assez d'espace disque disponible.
 it.all.NoDiscSpace:Spazio insufficiente nel disco.
 nl.all.NoDiscSpace:Niet genoeg ruimte beschikbaar op disk.
-en.all.Template:A window template is missing from the Templates file. Please reinstall NetSurf.
-de.all.Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
-fr.all.Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
-it.all.Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
-nl.all.Template:Er ontbreekt een venster sjabloon in het Templates bestand. Installeer NetSurf opnieuw.
+en.ro.Template:A window template is missing from the Templates file. Please reinstall NetSurf.
+de.ro.Template:Ein Template für ein Fenster fehlt in der Datei Templates. Bitte NetSurf neu installieren.
+fr.ro.Template:Un modèle de fenêtre est absent du fichier Templates. Réinstallez NetSurf SVP.
+it.ro.Template:Una finestra di template risulta mancante. Per favore reinstalla NetSurf.
+nl.ro.Template:Er ontbreekt een venster sjabloon in het Templates bestand. Installeer NetSurf opnieuw.
 en.all.HotlistSaveError:The hotlist was unable to be correctly saved.
 de.all.HotlistSaveError:Hotlist konnte nicht korrekt gespeichert werden.
 fr.all.HotlistSaveError:Les favoris n'ont pas pu être sauvés correctement.
@@ -2595,11 +2595,11 @@ de.all.NoDirError:%s ist kein Verzeichnis.
 fr.all.NoDirError:%s n'est pas un répertoire
 it.all.NoDirError:%s non è una directory
 nl.all.NoDirError:%s is not a directory
-en.all.NoPathError:To save, drag the icon to a directory display
-de.all.NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
-fr.all.NoPathError:Pour sauver, lâcher cette icône dans une fenêtre de Filer
-it.all.NoPathError:Per salvare, trascina l'icona in una directory di visualizzazione.
-nl.all.NoPathError:Sleep het icoon naar een bestandsvenster om het op te slaan.
+en.ro.NoPathError:To save, drag the icon to a directory display
+de.ro.NoPathError:Symbol in ein Verzeichnisfenster ziehen um zu Speichern.
+fr.ro.NoPathError:Pour sauver, lâcher cette icône dans une fenêtre de Filer
+it.ro.NoPathError:Per salvare, trascina l'icona in una directory di visualizzazione.
+nl.ro.NoPathError:Sleep het icoon naar een bestandsvenster om het op te slaan.
 en.all.NoNameError:Please enter a name
 de.all.NoNameError:Bitte einen Namen eingeben.
 fr.all.NoNameError:Entrez un nom SVP
@@ -2630,11 +2630,11 @@ de.all.PrintErrorRO2:Der Drucker scheint beschäftigt zu sein.
 fr.all.PrintErrorRO2:Il semble que l'imprimante soit occupée.
 it.all.PrintErrorRO2:La stampante sembra essere occupata.
 nl.all.PrintErrorRO2:De printer lijkt al bezig te zijn.
-en.all.AWNotSeen:Please locate the AWViewer application and try again.
-de.all.AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
-fr.all.AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
-it.all.AWNotSeen:Please locate the AWViewer application and try again.
-nl.all.AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
+en.ro.AWNotSeen:Please locate the AWViewer application and try again.
+de.ro.AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
+fr.ro.AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
+it.ro.AWNotSeen:Please locate the AWViewer application and try again.
+nl.ro.AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
 en.all.EncNotRec:Encoding type not recognised.
 de.all.EncNotRec:Encodierung nicht erkannt.
 fr.all.EncNotRec:Encoding type not recognised.
