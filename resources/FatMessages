@@ -5043,16 +5043,16 @@ de.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 fr.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 it.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 nl.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
-en.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
-de.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
-fr.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
-it.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
-nl.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
-en.ami.HelpToolbarWebSearch:Web search bar.\nType text and press Return to search using your default search provider.
-de.ami.HelpToolbarWebSearch:Websuchleiste.\nText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen.
-fr.ami.HelpToolbarWebSearch:Web search bar.\nType text and press Return to search using your default search provider.
+en.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+de.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+fr.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+it.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+nl.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+en.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
+de.ami.HelpToolbarWebSearch:Websuchleiste\nText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen
+fr.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 it.ami.HelpToolbarWebSearch:Digita una voce in base al provider scelto e premi invio
-nl.ami.HelpToolbarWebSearch:Web search bar.\nType text and press Return to search using your default search provider.
+nl.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 en.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
 de.ami.HelpToolbarAddTab:Tab hinzufügen.
 fr.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
