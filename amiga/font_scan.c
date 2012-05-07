@@ -38,11 +38,16 @@
 #include <gadgets/fuelgauge.h>
 #include <gadgets/layout.h>
 
+#include <reaction/reaction_macros.h>
+
 #include "amiga/font_scan.h"
+#include "amiga/gui.h"
 #include "amiga/object.h"
+#include "amiga/utf8.h"
 
 #include "desktop/options.h"
 #include "utils/log.h"
+#include "utils/messages.h"
 
 enum {
 	FS_OID_MAIN = 0,
@@ -55,6 +60,8 @@ enum {
 struct ami_font_scan_window {
 	struct Window *win;
 	Object *objects[FS_GID_LAST];
+	char *title;
+	char *glyphtext;
 };
 
 /**
@@ -78,7 +85,62 @@ const char *ami_font_scan_lookup(uint16 code, lwc_string **glypharray)
  */
 struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
 {
-	return NULL;
+	struct ami_font_scan_window *fsw =
+		AllocVec(sizeof(struct ami_font_scan_window), MEMF_PRIVATE);
+
+	if(fsw == NULL) return NULL;
+
+	fsw->title = ami_utf8_easy(messages_get("FontScanning"));
+	fsw->glyphtext = ami_utf8_easy(messages_get("FontGlyphs"));
+
+	fsw->objects[FS_OID_MAIN] = WindowObject,
+      	    WA_ScreenTitle, nsscreentitle,
+           	WA_Title, fsw->title,
+           	WA_Activate, TRUE,
+           	WA_DepthGadget, TRUE,
+           	WA_DragBar, TRUE,
+           	WA_CloseGadget, FALSE,
+           	WA_SizeGadget, TRUE,
+			WA_CustomScreen, scrn,
+			WA_BusyPointer, TRUE,
+			WA_Width, 400,
+			WINDOW_UserData, fsw,
+			WINDOW_IconifyGadget, FALSE,
+         	WINDOW_Position, WPOS_CENTERSCREEN,
+			WINDOW_LockHeight, TRUE,
+           	WINDOW_ParentGroup, fsw->objects[FS_GID_MAIN] = VGroupObject,
+				LAYOUT_AddChild, fsw->objects[FS_GID_FONTS] = FuelGaugeObject,
+					GA_ID, FS_GID_FONTS,
+					GA_Text, fsw->title,
+					FUELGAUGE_Min, 0,
+					FUELGAUGE_Max, fonts,
+					FUELGAUGE_Level, 0,
+					FUELGAUGE_Ticks, 11,
+					FUELGAUGE_ShortTicks, TRUE,
+					FUELGAUGE_Percent, FALSE,
+					FUELGAUGE_Justification, FGJ_CENTER,
+				FuelGaugeEnd,
+				CHILD_NominalSize, TRUE,
+				CHILD_WeightedHeight, 0,
+				LAYOUT_AddChild, fsw->objects[FS_GID_GLYPHS] = FuelGaugeObject,
+					GA_ID, FS_GID_GLYPHS,
+					//GA_Text, "Glyphs",
+					FUELGAUGE_Min, 0x0000,
+					FUELGAUGE_Max, 0xffff,
+					FUELGAUGE_Level, 0,
+					FUELGAUGE_Ticks,11,
+					FUELGAUGE_ShortTicks, TRUE,
+					FUELGAUGE_Percent, FALSE,
+					FUELGAUGE_Justification, FGJ_CENTER,
+				FuelGaugeEnd,
+				CHILD_NominalSize, TRUE,
+				CHILD_WeightedHeight, 0,
+			EndGroup,
+		EndWindow;
+
+	fsw->win = (struct Window *)RA_OpenWindow(fsw->objects[FS_OID_MAIN]);
+
+	return fsw;
 }
 
 /**
@@ -89,11 +151,27 @@ struct ami_font_scan_window *ami_font_scan_gui_open(int32 fonts)
  * \param font_num  font number being scanned
  * \param glyphs    number of unique glyphs found
  */
-void ami_font_scan_gui_update(struct ami_font_scan_window *win, const char *font,
+void ami_font_scan_gui_update(struct ami_font_scan_window *fsw, const char *font,
 			ULONG font_num, ULONG glyphs)
 {
-	if(win) {
-		// RefreshSetGadgetAttrs() etc
+	ULONG va[2];
+
+	if(fsw) {
+		RefreshSetGadgetAttrs((struct Gadget *)fsw->objects[FS_GID_FONTS],
+						fsw->win, NULL,
+						FUELGAUGE_Level,   font_num,
+						GA_Text,           font,
+						TAG_DONE);
+
+		va[0] = glyphs;
+		va[1] = 0;
+
+		RefreshSetGadgetAttrs((struct Gadget *)fsw->objects[FS_GID_GLYPHS],
+						fsw->win, NULL,
+						GA_Text,           fsw->glyphtext,
+						FUELGAUGE_VarArgs, va,
+						FUELGAUGE_Level,   glyphs,
+						TAG_DONE);
 	} else {
 		printf("Found %ld glyphs\n", glyphs);
 		printf("Scanning font #%ld (%s)...\n", font_num, font);
@@ -105,11 +183,12 @@ void ami_font_scan_gui_update(struct ami_font_scan_window *win, const char *font
  *
  * \param win   pointer to a struct ami_font_scan_window
  */
-void ami_font_scan_gui_close(struct ami_font_scan_window *win)
+void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
 {
-	if(win) {
-		DisposeObject(win->objects[FS_OID_MAIN]);
-		FreeVec(win);
+	if(fsw) {
+		DisposeObject(fsw->objects[FS_OID_MAIN]);
+		ami_utf8_free(fsw->title);
+		FreeVec(fsw);
 	}
 }
 
@@ -182,6 +261,7 @@ ULONG ami_font_scan_fonts(struct MinList *list,
 		found = ami_font_scan_font(node->dtz_Node.ln_Name, glypharray);
 		total += found;
 		LOG(("Found %ld new glyphs (total = %ld)\n", found, total));
+		font_num++;
 	} while(node = nnode);
 
 	return total;
@@ -378,7 +458,10 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 
 			LOG(("Found %ld fonts\n", entries));
 
+			win = ami_font_scan_gui_open(entries);
 			found = ami_font_scan_fonts(list, win, glypharray);
+			ami_font_scan_gui_close(win);
+
 			FreeObjList(list);
 
 			if(save == true)

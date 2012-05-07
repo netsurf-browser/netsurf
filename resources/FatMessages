@@ -39,11 +39,11 @@ de.all.NetSurf:NetSurf
 fr.all.NetSurf:NetSurf
 it.all.NetSurf:NetSurf
 nl.all.NetSurf:NetSurf
-en.all.NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
-de.all.NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
-fr.all.NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
+en.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
+de.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
+fr.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
 it.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
-nl.all.NetSurfCopyright:Copyright © 2003 - 2011 The NetSurf Developers
+nl.all.NetSurfCopyright:Copyright © 2003 - 2012 The NetSurf Developers
 
 # Menus
 # =====
@@ -5363,11 +5363,11 @@ de.all.FontFantasy:Fantasy
 fr.all.FontFantasy:Fantasy
 it.all.FontFantasy:Fantasia
 nl.all.FontFantasy:Fantasy
-en.all.FontFallback:Fallback (Unicode)
-de.all.FontFallback:Fallback (Unicode)
-fr.all.FontFallback:Fallback (Unicode)
-it.all.FontFallback:Fallback (Unicode)
-nl.all.FontFallback:Fallback (Unicode)
+en.ami.FontFallback:Preferred fallback
+de.ami.FontFallback:Preferred fallback
+fr.ami.FontFallback:Preferred fallback
+it.ami.FontFallback:Preferred fallback
+nl.ami.FontFallback:Preferred fallback
 en.all.Default:Default
 de.all.Default:Standard
 fr.all.Default:Default
@@ -5388,6 +5388,18 @@ de.all.Pt:pt
 fr.all.Pt:pt
 it.all.Pt:pt
 nl.all.Pt:pt
+
+# Font scanning
+en.ami.FontScanning:Scanning fonts...
+de.ami.FontScanning:Scanning fonts...
+fr.ami.FontScanning:Scanning fonts...
+it.ami.FontScanning:Scanning fonts...
+nl.ami.FontScanning:Scanning fonts...
+en.ami.FontGlyphs:%ld unique glyphs found
+de.ami.FontGlyphs:%ld unique glyphs found
+fr.ami.FontGlyphs:%ld unique glyphs found
+it.ami.FontGlyphs:%ld unique glyphs found
+nl.ami.FontGlyphs:%ld unique glyphs found
 
 # Cache tab
 #
