@@ -2620,21 +2620,21 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared->svbuffer = AllocVec(2000, MEMF_CLEAR);
 
 		g->shared->helphints[GID_BACK] =
-			remove_escape_chars(messages_get("HelpToolbar0"), true);
+			translate_escape_chars(messages_get("HelpToolbarBack"));
 		g->shared->helphints[GID_FORWARD] =
-			remove_escape_chars(messages_get("HelpToolbar1"), true);
+			translate_escape_chars(messages_get("HelpToolbarForward"));
 		g->shared->helphints[GID_STOP] =
-			remove_escape_chars(messages_get("HelpToolbar2"), true);
+			translate_escape_chars(messages_get("HelpToolbarStop"));
 		g->shared->helphints[GID_RELOAD] =
-			remove_escape_chars(messages_get("HelpToolbar3"), true);
+			translate_escape_chars(messages_get("HelpToolbarReload"));
 		g->shared->helphints[GID_HOME] =
-			remove_escape_chars(messages_get("HelpToolbar4"), true);
+			translate_escape_chars(messages_get("HelpToolbarHome"));
 		g->shared->helphints[GID_URL] =
-			remove_escape_chars(messages_get("HelpToolbar14"), true);
+			translate_escape_chars(messages_get("HelpToolbarURL"));
 		g->shared->helphints[GID_SEARCHSTRING] =
-			remove_escape_chars(messages_get("HelpWebSearch"), true);
+			translate_escape_chars(messages_get("HelpToolbarWebSearch"));
 		g->shared->helphints[GID_ADDTAB] =
-			remove_escape_chars(messages_get("HelpAddTab"), true);
+			translate_escape_chars(messages_get("HelpToolbarAddTab"));
 
 		ami_get_theme_filename(nav_west,"theme_nav_west",false);
 		ami_get_theme_filename(nav_west_s,"theme_nav_west_s",false);

@@ -155,35 +155,24 @@ bool path_add_part(char *path, int length, const char *newpart)
 }
 
 /**
- * returns a string without escape chars or |M chars.
+ * returns a string with escape chars translated.
  * (based on remove_underscores from utils.c)
- * \param translate true to insert a linebreak where there was |M,
- *        and capitalise initial characters after escape chars.
  */
 
-char *remove_escape_chars(const char *s, bool translate)
+char *translate_escape_chars(const char *s)
 {
 	size_t i, ii, len;
 	char *ret;
-	bool nextcharupper = false;
 	len = strlen(s);
 	ret = malloc(len + 1);
 	if (ret == NULL)
 		return NULL;
 	for (i = 0, ii = 0; i < len; i++) {
-		if ((s[i] != '\\') && (s[i] != '|')) {
-			if(nextcharupper) {
-				ret[ii++] = toupper(s[i]);
-				nextcharupper = false;
-			}
-			else ret[ii++] = s[i];
+		if (s[i] != '\\') {
+			ret[ii++] = s[i];
 		}
-		else if ((translate) && (s[i] == '|') && (s[i+1] == 'M')) {
+		else if (s[i+1] == 'n') {
 			ret[ii++] = '\n';
-			i++;
-		}
-		else {
-			if(translate) nextcharupper = true;
 			i++;
 		}
 	}

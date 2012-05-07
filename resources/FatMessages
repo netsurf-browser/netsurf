@@ -5015,18 +5015,49 @@ fr.ro.HelpThemePConfig:Cette fenêtre indique les thèmes disponibles.|MLe thèm
 it.ro.HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist, global history and cookie management.
 nl.ro.HelpThemePConfig:This pane shows the available themes.|MThe selected icon theme is used for NetSurf browser \ws, the hotlist and global history.
 
-# HelpHint (tooltip) text
+# Amiga HelpHint (tooltip) text
 #
-en.ro.HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
-de.ro.HelpWebSearch:Websuchleiste.|MText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen.
-fr.ro.HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
-it.ro.HelpWebSearch:\Tdigita una voce in base al provider scelto e premi invio
-nl.ro.HelpWebSearch:Web search bar.|MType text and press Return to search using your default search provider.
-en.ro.HelpAddTab:Tab add button.|MAdds a new blank tab.
-de.ro.HelpAddTab:Tab hinzufügen.
-fr.ro.HelpAddTab:Tab add button.|MAdds a new blank tab.
-it.ro.HelpAddTab:Apri una nuova scheda
-nl.ro.HelpAddTab:Tab add button.|MAdds a new blank tab.
+
+en.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+de.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+fr.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+it.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+nl.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+en.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+de.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+fr.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+it.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+nl.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+en.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+de.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+fr.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+it.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+nl.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+en.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+de.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+fr.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+it.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+nl.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+en.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+de.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+fr.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+it.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+nl.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+en.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
+de.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
+fr.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
+it.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
+nl.ami.HelpToolbarURL:URL bar\nType a URL and press Return. Suggestions can be selected with up/down.
+en.ami.HelpToolbarWebSearch:Web search bar.\nType text and press Return to search using your default search provider.
+de.ami.HelpToolbarWebSearch:Websuchleiste.\nText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen.
+fr.ami.HelpToolbarWebSearch:Web search bar.\nType text and press Return to search using your default search provider.
+it.ami.HelpToolbarWebSearch:Digita una voce in base al provider scelto e premi invio
+nl.ami.HelpToolbarWebSearch:Web search bar.\nType text and press Return to search using your default search provider.
+en.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
+de.ami.HelpToolbarAddTab:Tab hinzufügen.
+fr.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
+it.ami.HelpToolbarAddTab:Apri una nuova scheda
+nl.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
 
 
 # Configuration tokens

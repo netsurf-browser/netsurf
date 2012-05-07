@@ -18,5 +18,5 @@
 
 #ifndef AMIGA_MISC_H
 #define AMIGA_MISC_H
-char *remove_escape_chars(const char *s, bool translate);
+char *translate_escape_chars(const char *s);
 #endif
