@@ -475,16 +475,16 @@ de.ro.HelpInfo:Nutzerinformation
 fr.ro.HelpInfo:Information utilisateur
 it.ro.HelpInfo:Informazioni utente
 nl.ro.HelpInfo:Gebruikers informatie
-en.ro.HelpCredits:Credits
-de.ro.HelpCredits:Credits
-fr.ro.HelpCredits:Credits
-it.ro.HelpCredits:Ringraziamenti
-nl.ro.HelpCredits:Credits
-en.ro.HelpLicence:Licence
-de.ro.HelpLicence:Lizenz
-fr.ro.HelpLicence:Licence
-it.ro.HelpLicence:Licenza
-nl.ro.HelpLicence:Licence
+en.all.HelpCredits:Credits
+de.all.HelpCredits:Credits
+fr.all.HelpCredits:Credits
+it.all.HelpCredits:Ringraziamenti
+nl.all.HelpCredits:Credits
+en.all.HelpLicence:Licence
+de.all.HelpLicence:Lizenz
+fr.all.HelpLicence:Licence
+it.all.HelpLicence:Licenza
+nl.all.HelpLicence:Licence
 en.ro.HelpInter:Interactive help
 de.ro.HelpInter:interaktive Hilfe
 fr.ro.HelpInter:Aide interactive
