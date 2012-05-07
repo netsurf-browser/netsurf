@@ -5053,11 +5053,11 @@ de.ami.HelpToolbarWebSearch:Websuchleiste\nText eingeben und Enter drücken um m
 fr.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 it.ami.HelpToolbarWebSearch:Digita una voce in base al provider scelto e premi invio
 nl.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
-en.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
+en.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 de.ami.HelpToolbarAddTab:Tab hinzufügen.
-fr.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
+fr.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 it.ami.HelpToolbarAddTab:Apri una nuova scheda
-nl.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab.
+nl.ami.HelpToolbarAddTab:Add tab\nLMB: Adds a new blank tab
 
 
 # Configuration tokens
