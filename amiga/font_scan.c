@@ -432,7 +432,7 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 	ULONG i, found = 0, entries = 0;
 	struct MinList *list;
 	struct nsObject *node;
-	char *unicode_font;
+	char *unicode_font, *csv;
 	struct ami_font_scan_window *win = NULL;
 
 	/* Ensure array zeroed */
@@ -451,6 +451,23 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 				node = AddObject(list, AMINS_UNKNOWN);
 				if(node) node->dtz_Node.ln_Name = unicode_font;
 				entries = 1;
+			}
+
+			/* add preferred fonts list */
+			if(nsoption_charp(font_unicode_list) &&
+					(csv = strdup(nsoption_charp(font_unicode_list))))
+			{
+				char *p;
+
+				while(p = strsep(&csv, ",")) {
+					asprintf(&unicode_font, "%s.font", p);
+					if(unicode_font != NULL) {
+						node = AddObject(list, AMINS_UNKNOWN);
+						if(node) node->dtz_Node.ln_Name = unicode_font;
+						entries++;
+					}
+				}
+				free(csv);
 			}
 
 			if(nsoption_bool(font_unicode_only) == false)

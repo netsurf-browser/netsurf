@@ -438,7 +438,7 @@ void ami_set_options(void)
 
 	search_engines_file_location = nsoption_charp(search_engines_file);
 
-	sprintf(temp, "%s/UnicodeFontCache", current_user_dir);
+	sprintf(temp, "%s/FontGlyphCache", current_user_dir);
 	nsoption_setnull_charp(font_unicode_file,
 			       (char *)strdup(temp));
 

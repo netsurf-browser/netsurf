@@ -55,6 +55,7 @@
 	bool close_no_quit;			\
 	bool hide_docky_icon;			\
 	char *font_unicode;			\
+	char *font_unicode_list;		\
 	char *font_unicode_file;		\
 	bool font_unicode_only;		\
 	bool drag_save_icons;			\
@@ -113,6 +114,7 @@
 	.close_no_quit = false,				\
 	.hide_docky_icon = false,			\
 	.font_unicode = NULL,				\
+	.font_unicode_list = NULL,				\
 	.font_unicode_file = NULL,				\
 	.font_unicode_only = false,				\
 	.drag_save_icons = true,			\
@@ -170,6 +172,7 @@
 { "close_no_quit",	OPTION_BOOL,	&nsoptions.close_no_quit}, \
 { "hide_docky_icon",	OPTION_BOOL,	&nsoptions.hide_docky_icon}, \
 { "font_unicode",	OPTION_STRING,	&nsoptions.font_unicode }, \
+{ "font_unicode_list",	OPTION_STRING,	&nsoptions.font_unicode_list }, \
 { "font_unicode_file",	OPTION_STRING,	&nsoptions.font_unicode_file }, \
 { "font_unicode_only",	OPTION_BOOL,	&nsoptions.font_unicode_only }, \
 { "drag_save_icons",	OPTION_BOOL,	&nsoptions.drag_save_icons}, \
