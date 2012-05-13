@@ -59,6 +59,8 @@ extern GEM_PLOTTER plotter;
 extern struct gui_window * input_window;
 static OBJECT * throbber_form = NULL;
 static bool img_toolbar = false;
+static char * img_toolbar_folder = (char *)"default";
+static short toolbar_bg_color = LWHITE;
 
 
 static plot_font_style_t font_style_url = {
@@ -74,12 +76,46 @@ static plot_font_style_t font_style_url = {
 
 static struct s_tb_button tb_buttons[] =
 {
-	{ TOOLBAR_BT_BACK, tb_back_click, "back.png", 0, 0, 0, 0, 0 },
-	{ TOOLBAR_BT_HOME, tb_home_click, "home.png", 0, 0, 0, 0, 0 },
-	{ TOOLBAR_BT_FORWARD, tb_forward_click, "forward.png", 0, 0, 0, 0, 0 },
-	{ TOOLBAR_BT_RELOAD, tb_reload_click, "reload.png", 0, 0, 0, 0, 0 },
-	{ TOOLBAR_BT_STOP, tb_stop_click, "stop.png", 0, 0, 0, 0, 0 },
-	{ 0, 0, 0, 0, 0, 0, 0, -1 }
+	{
+        TOOLBAR_BT_BACK,
+        tb_back_click,
+        "toolbar/%s/back_%s.png",
+        0, 0,
+        {0,0},
+        0, 0, 0
+    },
+	{
+        TOOLBAR_BT_HOME,
+        tb_home_click,
+        "toolbar/%s/home_%s.png",
+        0, 0, {0,0}, 0, 0, 0
+    },
+	{
+        TOOLBAR_BT_FORWARD,
+        tb_forward_click,
+        "toolbar/%s/forward_%s.png",
+        0, 0,
+        {0,0},
+        0, 0, 0
+    },
+	{
+        TOOLBAR_BT_RELOAD,
+        tb_reload_click,
+        "toolbar/%s/reload_%s.png",
+        0, 0,
+        {0,0},
+        0, 0, 0
+    },
+	{
+        TOOLBAR_BT_STOP,
+        tb_stop_click,
+        "toolbar/%s/stop_%s.png",
+        0, 0,
+        {0,0},
+        0, 0, 0
+    },
+
+	{ 0, 0, 0, 0, 0,  {0,0}, 0, 0, -1 }
 };
 
 struct s_toolbar_style {
@@ -109,28 +145,45 @@ static nserror toolbar_icon_callback( hlcache_handle *handle,
 
 void toolbar_init( void )
 {
-	int i=0;
+	int i=0, n;
 
 	img_toolbar = (nsoption_int( atari_image_toolbar ) > 0 ) ? true : false;
 	if( img_toolbar ){
-		while( tb_buttons[i].rsc_id != 0){
+
+        char imgfile[PATH_MAX];
+		const char * states[] = {"on", "off"};
+
+        while( tb_buttons[i].rsc_id != 0){
 			tb_buttons[i].index = i;
 			if( (tb_buttons[i].iconfile != NULL) ){
-				tb_buttons[i].icon = load_icon( tb_buttons[i].iconfile,
+                for( int x=0; x<TOOLBAR_BUTTON_NUM_STATES; x++ ){
+                    snprintf( imgfile, PATH_MAX, tb_buttons[i].iconfile,
+                            img_toolbar_folder, states[x] );
+                    printf("icon: %s\n", imgfile );
+                    tb_buttons[i].icon[x] = load_icon( imgfile,
 										toolbar_icon_callback, &tb_buttons[i] );
+                }
+
 			}
 			i++;
 		}
 	}
+    n = (sizeof( toolbar_styles ) / sizeof( struct s_toolbar_style ));
+    printf("toolbar styles: %d\n", n );
+    for( i=0; i<n; i++ ){
+        toolbar_styles[i].bgcolor = toolbar_bg_color;
+    }
 }
 
 void toolbar_exit( void )
 {
 	int i=0;
 	while( tb_buttons[i].rsc_id != 0 ) {
-		if( tb_buttons[i].icon ){
-			hlcache_handle_release( tb_buttons[i].icon );
-		}
+        for( int x=0; x<TOOLBAR_BUTTON_NUM_STATES; x++ ){
+            if( tb_buttons[i].icon[x] != NULL ){
+                hlcache_handle_release( tb_buttons[i].icon[x] );
+            }
+        }
 		i++;
 	}
 }
@@ -142,10 +195,20 @@ void toolbar_exit( void )
 static nserror toolbar_icon_callback(hlcache_handle *handle,
 		const hlcache_event *event, void *pw)
 {
-	if ( event->type != CONTENT_MSG_READY ){
+	struct s_tb_button * bt = (struct s_tb_button *)pw;
+    int i;
+	if ( event->type != CONTENT_MSG_READY
+        && event->type != CONTENT_MSG_ERROR ){
 		return( NSERROR_OK );
 	}
-	struct s_tb_button * bt = (struct s_tb_button *)pw;
+    if( event->type == CONTENT_MSG_ERROR ){
+        for( i = 0; i < TOOLBAR_BUTTON_NUM_STATES; i++ ){
+            if( bt->icon[i] == handle ){
+                bt->icon[i] = NULL;
+                return( NSERROR_OK );
+            }
+        }
+    }
 	if( bt->gw == NULL ){
 		/* callback is for protoype */
 		/* find the instance of the button within input_window: */
@@ -178,7 +241,7 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	struct s_toolbar * tb = gw->root->toolbar;
 
 	short pxy[4];
-	int  bmpx=0, bmpy=0, bmpw=0, bmph = 0;
+	int  bmpx=0, bmpy=0, bmpw=0, bmph = 0, drawstate=0;
 	struct bitmap * icon = NULL;
 	bool draw_bitmap = false;
 
@@ -191,11 +254,18 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	}
 
 	if( img_toolbar ){
-		if( bt->icon != NULL && bt->iconfile != NULL ){
-			draw_bitmap = true;
-		}
-	}
 
+		if( bt->icon[bt->state] != NULL ){
+            drawstate = bt->state;
+			draw_bitmap = true;
+		} else {
+            if( bt->icon[0] != NULL ){
+                drawstate = 0;
+                draw_bitmap = true;
+            }
+        }
+	}
+   // printf("rs: %d\n" , bt->state );
 	if( draw_bitmap == false ){
 		/* Place the CICON into workarea: */
 		tree = bt->aes_object;
@@ -204,11 +274,19 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 		tree->ob_x = work.g_x;
 		tree->ob_y = work.g_y + (work.g_h - tree->ob_height) / 2;
 	} else {
-		icon = content_get_bitmap(bt->icon);
+		icon = content_get_bitmap( bt->icon[drawstate] );
 		/* Check if icon content is available: */
 		/* ( It may isn't loaded yet ) */
-		if( icon == NULL )
+
+        if( icon == NULL && drawstate != 0 ){
+            icon = content_get_bitmap( bt->icon[0] );
+            drawstate = 0;
+        }
+
+		if( icon == NULL ){
 			return;
+        }
+
 		bmpw = bitmap_get_width(icon);
 		bmph = toolbar_styles[tb->style].height - (toolbar_styles[tb->style].button_margin*2);
 		bmpx = toolbar_styles[tb->style].button_margin;
@@ -307,10 +385,12 @@ static COMPONENT *button_init( CMP_TOOLBAR t, OBJECT * tree, int index,
 						instance );
 	mt_CompEvntDataAttach( &app, instance->comp, WM_XBUTTON, button_click,
 						instance );
+/*
 	mt_CompEvntDataAttach( &app, instance->comp, CM_GETFOCUS, button_enable,
 						instance );
 	mt_CompEvntDataAttach( &app, instance->comp, CM_LOSEFOCUS, button_disable,
 						instance );
+*/
 	return instance->comp;
 }
 
@@ -337,7 +417,7 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 
 	vsf_interior( vdih , 1 );
 	if(app.nplanes > 2 )
-		vsf_color( vdih, LWHITE );
+		vsf_color( vdih, toolbar_styles[gw->root->toolbar->style].bgcolor );
 	else
 		vsf_color( vdih, WHITE );
 	pxy[0] = (short)buff[4];
@@ -359,6 +439,7 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	LGRECT work, clip;
 	struct gui_window * gw;
 	short pxy[10];
+    // FIXME: optimize this:
 	gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
 	if( gw == NULL )
 		return;
@@ -380,7 +461,7 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 
 	vsf_perimeter( vdih, 0 );
 	vsf_interior( vdih , 1 );
-	vsf_color( vdih, LWHITE );
+	vsf_color( vdih, toolbar_styles[tb->style].bgcolor );
 
 	//left margin:
 	pxy[0] = work.g_x;
@@ -734,21 +815,27 @@ void tb_update_buttons( struct gui_window * gw, short button )
 
 	struct s_tb_button * bt;
 	bool enable = false;
-	return;
+	//return;
 	if( button == TOOLBAR_BT_BACK || button <= 0 ){
 		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_BACK-FIRST_BUTTON];
 		enable = browser_window_back_available(gw->browser->bw);
+        if( enable ){
+            printf("enabling back\n");
+            bt->state = button_on;
+        } else {
+            printf("disabling back\n");
+            bt->state = button_off;
+        }
 		if( bt->aes_object ){
 			if( enable ) {
 				bt->aes_object->ob_state |= OS_DISABLED;
 			} else {
 				bt->aes_object->ob_state &= ~OS_DISABLED;
 			}
-			mt_CompEvntRedraw( &app, bt->comp );
 		} else {
 			// TODOs
 		}
-
+        mt_CompEvntRedraw( &app, bt->comp );
 	}
 
 	if( button == TOOLBAR_BT_HOME || button <= 0 ){
@@ -759,46 +846,61 @@ void tb_update_buttons( struct gui_window * gw, short button )
 	if( button == TOOLBAR_BT_FORWARD || button <= 0 ){
 		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_FORWARD-FIRST_BUTTON];
 		enable = browser_window_forward_available(gw->browser->bw);
+        if( enable ){
+            bt->state = button_on;
+        } else {
+            bt->state = button_off;
+        }
 		if( bt->aes_object ){
 			if( enable ) {
 				bt->aes_object->ob_state |= OS_DISABLED;
 			} else {
 				bt->aes_object->ob_state &= ~OS_DISABLED;
 			}
-			mt_CompEvntRedraw( &app, bt->comp );
 		} else {
 			// TODOs
 		}
+        mt_CompEvntRedraw( &app, bt->comp );
 	}
 
 	if( button == TOOLBAR_BT_RELOAD || button <= 0 ){
 		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_RELOAD-FIRST_BUTTON];
 		enable = browser_window_reload_available(gw->browser->bw);
+        if( enable ){
+            bt->state = button_on;
+        } else {
+            bt->state = button_off;
+        }
 		if( bt->aes_object ){
 			if( enable ) {
 				bt->aes_object->ob_state |= OS_DISABLED;
 			} else {
 				bt->aes_object->ob_state &= ~OS_DISABLED;
 			}
-			mt_CompEvntRedraw( &app, bt->comp );
 		} else {
 			// TODOs
 		}
+        mt_CompEvntRedraw( &app, bt->comp );
 	}
 
 	if( button == TOOLBAR_BT_STOP || button <= 0 ){
 		bt = &gw->root->toolbar->buttons[TOOLBAR_BT_STOP-FIRST_BUTTON];
 		enable = browser_window_stop_available(gw->browser->bw);
+        if( enable ){
+            bt->state = button_on;
+        } else {
+            bt->state = button_off;
+        }
 		if( bt->aes_object ){
 			if( enable ) {
 				bt->aes_object->ob_state |= OS_DISABLED;
 			} else {
 				bt->aes_object->ob_state &= ~OS_DISABLED;
 			}
-			mt_CompEvntRedraw( &app, bt->comp );
 		} else {
 			// TODOs
 		}
+        mt_CompEvntRedraw( &app, bt->comp );
 	}
 
 #undef FIRST_BUTON
@@ -914,7 +1016,6 @@ void tb_back_click( struct gui_window * gw )
 
 	if( history_back_available(bw->history) )
 		history_back(bw, bw->history);
-	tb_update_buttons(gw, TOOLBAR_BT_BACK );
 }
 
 void tb_reload_click( struct gui_window * gw )
@@ -927,14 +1028,11 @@ void tb_forward_click( struct gui_window * gw )
 	struct browser_window *bw = gw->browser->bw;
 	if (history_forward_available(bw->history))
 		history_forward(bw, bw->history);
-
-	tb_update_buttons(gw, TOOLBAR_BT_FORWARD );
 }
 
 void tb_home_click( struct gui_window * gw )
 {
 	browser_window_go(gw->browser->bw, cfg_homepage_url, 0, true);
-	tb_update_buttons(gw, TOOLBAR_BT_HOME );
 }
 
 

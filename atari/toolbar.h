@@ -35,6 +35,12 @@
 #define TOOLBAR_URL_MARGIN_TOP		2
 #define TOOLBAR_URL_MARGIN_BOTTOM	2
 
+enum e_toolbar_button_states {
+        button_on = 0,
+        button_off = 1
+};
+#define TOOLBAR_BUTTON_NUM_STATES   2
+
 struct s_tb_button
 {
 	short rsc_id;
@@ -42,9 +48,10 @@ struct s_tb_button
 	const char * iconfile;
 	COMPONENT * comp;
 	OBJECT * aes_object;
-	hlcache_handle * icon;
+	hlcache_handle * icon[TOOLBAR_BUTTON_NUM_STATES];
 	struct gui_window * gw;
-	short index;
+    short state;
+    short index;
 };
 
 
