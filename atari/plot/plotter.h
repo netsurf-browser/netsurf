@@ -98,8 +98,8 @@ typedef int (*_fpmf_pixel_pos)( FONT_PLOTTER self, const plot_font_style_t *fsty
 typedef int (*_fpmf_text)( FONT_PLOTTER self, int x, int y, const char *text,
 													size_t length, const plot_font_style_t *fstyle);
 
-typedef void (*_fpmf_draw_glyph)(FONT_PLOTTER self, GRECT * loc, uint8_t * pixdata,
-						int pitch, uint32_t colour);
+typedef void (*_fpmf_draw_glyph)(FONT_PLOTTER self, GRECT * clip, GRECT * loc,
+								uint8_t * pixdata, int pitch, uint32_t colour);
 typedef int (*_fpmf_dtor)( FONT_PLOTTER self );
 
 

@@ -131,6 +131,7 @@ static inline void vsf_rgbcolor( short vdih, uint32_t cin )
 
 static int set_clip(GEM_PLOTTER self, const struct rect * clip)
 {
+	// FIXME: consider the canvas size
 	VIEW( self ).clipping.x0 = clip->x0;
 	VIEW( self ).clipping.y0 = clip->y0;
 	VIEW( self ).clipping.x1 = clip->x1;
@@ -697,7 +698,6 @@ static int rectangle(GEM_PLOTTER self,int x0, int y0, int x1, int y1,  const plo
 	}
 
 	if( pstyle->fill_type != PLOT_OP_TYPE_NONE ){
-
 		short stroke_width = (short)(pstyle->stroke_type != PLOT_OP_TYPE_NONE) ?
 								pstyle->stroke_width : 0;
 
