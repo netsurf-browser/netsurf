@@ -308,7 +308,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 				tmp_option_memory_cache_size = 0.5;
 			if( tmp_option_memory_cache_size > 999.9 )
 				tmp_option_memory_cache_size = 999.9;
-			sprintf( spare, "%03.1f", tmp_option_memory_cache_size );
+			snprintf( spare, 255, "%03.1f", tmp_option_memory_cache_size );
 			set_text( CHOICES_STR_MAX_MEM_CACHE, spare, 5 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_STR_MAX_MEM_CACHE, 2, 1 );
@@ -323,7 +323,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_max_cached_fetch_handles > 31 )
 				tmp_option_max_cached_fetch_handles = 31;
 
-			sprintf( spare, "%02d", tmp_option_max_cached_fetch_handles );
+			snprintf( spare, 255, "%02d", tmp_option_max_cached_fetch_handles );
 			set_text( CHOICES_EDIT_MAX_CACHED_CONNECTIONS, spare, 2 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_MAX_CACHED_CONNECTIONS,
@@ -339,7 +339,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_max_fetchers > 31 )
 				tmp_option_max_fetchers = 31;
 
-			sprintf( spare, "%02d", tmp_option_max_fetchers );
+			snprintf( spare, 255, "%02d", tmp_option_max_fetchers );
 			set_text( CHOICES_EDIT_MAX_FETCHERS, spare, 2 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_MAX_FETCHERS,
@@ -355,7 +355,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_max_fetchers_per_host > 31 )
 				tmp_option_max_fetchers_per_host = 31;
 
-			sprintf( spare, "%02d", tmp_option_max_fetchers_per_host );
+			snprintf( spare, 255, "%02d", tmp_option_max_fetchers_per_host );
 			set_text( CHOICES_EDIT_MAX_FETCHERS_PER_HOST, spare, 2 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_MAX_FETCHERS_PER_HOST,
@@ -372,7 +372,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_expire_url > 99 )
 				tmp_option_expire_url =  0;
 
-			sprintf( spare, "%02d", tmp_option_expire_url );
+			snprintf( spare, 255, "%02d", tmp_option_expire_url );
 			set_text( CHOICES_EDIT_HISTORY_AGE, spare, 2 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_HISTORY_AGE,
@@ -390,7 +390,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 				tmp_option_minimum_gif_delay = 0.1;
 			if( tmp_option_minimum_gif_delay > 9.0 )
 				tmp_option_minimum_gif_delay = 9.0;
-			sprintf( spare, "%01.1f", tmp_option_minimum_gif_delay );
+			snprintf( spare, 255, "%01.1f", tmp_option_minimum_gif_delay );
 			set_text( CHOICES_EDIT_MIN_GIF_DELAY, spare, 3 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_MIN_GIF_DELAY, 3, 1 );
@@ -408,7 +408,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_font_min_size < 10 )
 				tmp_option_font_min_size = 10;
 
-			sprintf( spare, "%03d", tmp_option_font_min_size );
+			snprintf( spare, 255, "%03d", tmp_option_font_min_size );
 			set_text( CHOICES_EDIT_MIN_FONT_SIZE, spare, 3 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_MIN_FONT_SIZE,
@@ -427,7 +427,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_font_size < 50 )
 				tmp_option_font_size = 50;
 
-			sprintf( spare, "%03d", tmp_option_font_size );
+			snprintf( spare, 255, "%03d", tmp_option_font_size );
 			set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare, 3 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_DEF_FONT_SIZE,
@@ -445,7 +445,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			if( tmp_option_min_reflow_period > 9999 )
 				tmp_option_min_reflow_period = 10;
 
-			sprintf( spare, "%04d", tmp_option_min_reflow_period );
+			snprintf( spare, 255, "%04d", tmp_option_min_reflow_period );
 			set_text( CHOICES_EDIT_MIN_REFLOW_PERIOD, spare, 4 );
 			is_button = true;
 			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_EDIT_MIN_REFLOW_PERIOD,
@@ -502,12 +502,12 @@ static void display_settings( void )
 			INPUT_LOCALE_MAX_LEN );
 
 	tmp_option_expire_url = nsoption_int(expire_url);
-	sprintf( spare, "%02d", nsoption_int(expire_url) );
+	snprintf( spare, 255, "%02d", nsoption_int(expire_url) );
 	set_text( CHOICES_EDIT_HISTORY_AGE, spare, 2 );
 
 	/* "Cache" tab: */
 	tmp_option_memory_cache_size = nsoption_int(memory_cache_size) / 100000;
-	sprintf( spare, "%03.1f", tmp_option_memory_cache_size );
+	snprintf( spare, 255, "%03.1f", tmp_option_memory_cache_size );
 	set_text( CHOICES_STR_MAX_MEM_CACHE, spare, 5 );
 
 	/* "Paths" tab: */
@@ -535,18 +535,18 @@ static void display_settings( void )
 			SELECTED, nsoption_int(atari_font_monochrom) ? 0 : 1 );
 
 	tmp_option_min_reflow_period = nsoption_int(min_reflow_period);
-	sprintf( spare, "%04d", tmp_option_min_reflow_period );
+	snprintf( spare, 255, "%04d", tmp_option_min_reflow_period );
 	set_text( CHOICES_EDIT_MIN_REFLOW_PERIOD, spare,
 			INPUT_MIN_REFLOW_PERIOD_MAX_LEN );
 
 	tmp_option_minimum_gif_delay = (float)nsoption_int(minimum_gif_delay) / (float)100;
-	sprintf( spare, "%01.1f", tmp_option_minimum_gif_delay );
+	snprintf( spare, 255, "%01.1f", tmp_option_minimum_gif_delay );
 	set_text( CHOICES_EDIT_MIN_GIF_DELAY, spare, 3 );
 
 	/* "Network" tab: */
 	set_text( CHOICES_EDIT_PROXY_HOST, nsoption_charp(http_proxy_host),
 			INPUT_PROXY_HOST_MAX_LEN );
-	sprintf( spare, "%5d", nsoption_int(http_proxy_port) );
+	snprintf( spare, 255, "%5d", nsoption_int(http_proxy_port) );
 	set_text( CHOICES_EDIT_PROXY_PORT, spare,
 			INPUT_PROXY_PORT_MAX_LEN );
 
@@ -564,25 +564,25 @@ static void display_settings( void )
 			SELECTED, nsoption_bool(background_images) ? 1 : 0 );
 
 	tmp_option_max_cached_fetch_handles = nsoption_int(max_cached_fetch_handles);
-	sprintf( spare, "%2d", nsoption_int(max_cached_fetch_handles) );
+	snprintf( spare, 255, "%2d", nsoption_int(max_cached_fetch_handles) );
 	set_text( CHOICES_EDIT_MAX_CACHED_CONNECTIONS, spare , 2 );
 
 	tmp_option_max_fetchers = nsoption_int(max_fetchers);
-	sprintf( spare, "%2d", nsoption_int(max_fetchers) );
+	snprintf( spare, 255, "%2d", nsoption_int(max_fetchers) );
 	set_text( CHOICES_EDIT_MAX_FETCHERS, spare , 2 );
 
 	tmp_option_max_fetchers_per_host = nsoption_int(max_fetchers_per_host);
-	sprintf( spare, "%2d", nsoption_int(max_fetchers_per_host) );
+	snprintf( spare, 255, "%2d", nsoption_int(max_fetchers_per_host) );
 	set_text( CHOICES_EDIT_MAX_FETCHERS_PER_HOST, spare , 2 );
 
 
 	/* "Style" tab: */
 	tmp_option_font_min_size = nsoption_int(font_min_size);
-	sprintf( spare, "%3d", nsoption_int(font_min_size) );
+	snprintf( spare, "%3d", nsoption_int(font_min_size) );
 	set_text( CHOICES_EDIT_MIN_FONT_SIZE, spare , 3 );
 
 	tmp_option_font_size = nsoption_int(font_size);
-	sprintf( spare, "%3d", nsoption_int(font_size) );
+	snprintf( spare, 255, "%3d", nsoption_int(font_size) );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
 	/* Only first tab is refreshed: */
@@ -617,7 +617,7 @@ static void apply_settings( void )
 		atoi( ObjcString( dlgtree, CHOICES_EDIT_MAX_FETCHERS, NULL) ));
 	nsoption_set_bool(foreground_images,
 			  OBJ_SELECTED( CHOICES_CB_FG_IMAGES ));
-	nsoption_set_bool(background_images, 
+	nsoption_set_bool(background_images,
 			  OBJ_SELECTED( CHOICES_CB_BG_IMAGES ));
 
 	/* "Style" tab: */
@@ -636,15 +636,15 @@ static void apply_settings( void )
 	nsoption_set_bool(incremental_reflow,
 			  OBJ_SELECTED(CHOICES_CB_INCREMENTAL_REFLOW));
 	nsoption_set_int(min_reflow_period, tmp_option_min_reflow_period);
-	nsoption_set_int(atari_font_monochrom, 
+	nsoption_set_int(atari_font_monochrom,
 			 !OBJ_SELECTED( CHOICES_CB_ANTI_ALIASING ));
 
 	/* "Paths" tabs: */
 	nsoption_set_charp(ca_bundle,
 		ObjcString( dlgtree, CHOICES_EDIT_CA_BUNDLE, NULL));
-	nsoption_set_charp(ca_path, 
+	nsoption_set_charp(ca_path,
 		ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL));
-	nsoption_set_charp(homepage_url, 
+	nsoption_set_charp(homepage_url,
 		ObjcString( dlgtree, CHOICES_EDIT_CA_CERTS_PATH, NULL));
 	nsoption_set_charp(hotlist_file,
 		ObjcString( dlgtree, CHOICES_EDIT_HOTLIST_FILE, NULL));
@@ -660,11 +660,11 @@ static void apply_settings( void )
 	/* "Browser" tab: */
 	nsoption_set_bool(target_blank,
 			  !OBJ_SELECTED(CHOICES_CB_DISABLE_POPUP_WINDOWS));
-	nsoption_set_bool(block_ads, 
+	nsoption_set_bool(block_ads,
 			  OBJ_SELECTED(CHOICES_CB_HIDE_ADVERTISEMENT));
-	nsoption_set_charp(accept_language, 
+	nsoption_set_charp(accept_language,
 			   ObjcString( dlgtree, CHOICES_BT_SEL_LOCALE, NULL));
-	nsoption_set_int(expire_url, 
+	nsoption_set_int(expire_url,
 		atoi(ObjcString( dlgtree, CHOICES_EDIT_HISTORY_AGE, NULL)));
 	nsoption_set_bool(send_referer,
 			  OBJ_SELECTED(CHOICES_CB_SEND_HTTP_REFERRER));

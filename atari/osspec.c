@@ -182,7 +182,7 @@ char * gemdos_realpath(const char * path, char * rpath)
 		if( rpath[l-1] == 0x5C || rpath[l-1] == '/' )
 			rpath[l-1] = 0;
 	} else {
-		strcpy( rpath, work_ptr );
+		strncpy( rpath, work_ptr, PATH_MAX );
 	}
 	l = strlen( rpath );
 	LOG(("gdos rpath out: %s\n", rpath));

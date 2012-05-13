@@ -137,7 +137,7 @@ static char * select_filepath( const char * path, const char * filename )
 	if( mt_FselInput( &app, res_path, res_file, (char*)"*",
 					(char*)messages_get("SaveAsNS"), res_path, NULL ) ) {
 		assert( (strlen( res_path ) + strlen( res_file ) + 2) < PATH_MAX );
-		sprintf(tmp, "%s%s", res_path, res_file );
+		snprintf(tmp, PATH_MAX, "%s%s", res_path, res_file );
 		ret = malloc( strlen(tmp)+1 );
 		strcpy( ret, tmp );
 	}
@@ -173,10 +173,11 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 			return( NULL );
 		destination = tmp;
 	} else {
+		int dstsize=0;
 		gemdos_realpath(nsoption_charp(downloads_path), gdos_path);
-		destination = malloc( strlen(gdos_path)+1
-							+ strlen(filename)+1 );
-		sprintf( destination, "%s/%s", gdos_path, filename );
+		dstsize = strlen(gdos_path) + strlen(filename) + 2;
+		destination = malloc( dstsize );
+		snprintf( destination, dstsize, "%s/%s", gdos_path, filename );
 	}
 
 	gdw = calloc( 1, sizeof(struct gui_download_window) );

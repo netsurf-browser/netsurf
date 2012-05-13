@@ -98,7 +98,7 @@ void hotlist_init(void)
 		OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
 		assert( tree );
 		hl.open = false;
-		hl.window = WindCreate( flags,40, 40, app.w, app.h );
+		hl.window = WindCreate( flags, 40, 40, app.w, app.h );
 		if( hl.window == NULL ) {
 			LOG(("Failed to allocate Hotlist"));
 			return;

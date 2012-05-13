@@ -103,7 +103,6 @@ struct s_gui_win_root
 	MFORM_EX cursor;
 	struct s_focus_info focus;
 	float scale;
-	bool throbbing;
 	char * title;
 	/* current size of window on screen: */
 	GRECT loc;
