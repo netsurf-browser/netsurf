@@ -54,19 +54,19 @@ static GdkRectangle cliprect;
 static inline void nsgtk_print_set_colour(colour c)
 {
 	int r, g, b;
-	GdkColor colour;
 
 	r = c & 0xff;
 	g = (c & 0xff00) >> 8;
 	b = (c & 0xff0000) >> 16;
 
+#ifdef FIXME
+	GdkColor colour;
 	colour.red = r | (r << 8);
 	colour.green = g | (g << 8);
 	colour.blue = b | (b << 8);
 	colour.pixel = (r << 16) | (g << 8) | b;
-
 	gdk_colormap_alloc_color(gdk_colormap_get_system(), &colour, true, true);
-
+#endif
 	cairo_set_source_rgba(gtk_print_current_cr, r / 255.0,
 			g / 255.0, b / 255.0, 1.0);
 }

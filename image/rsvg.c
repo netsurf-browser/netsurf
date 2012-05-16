@@ -238,7 +238,7 @@ static void rsvg_destroy(struct content *c)
 	rsvg_content *d = (rsvg_content *) c;
 
 	if (d->bitmap != NULL) bitmap_destroy(d->bitmap);
-	if (d->rsvgh != NULL) rsvg_handle_free(d->rsvgh);
+	if (d->rsvgh != NULL) g_object_unref(d->rsvgh);
 	if (d->ct != NULL) cairo_destroy(d->ct);
 	if (d->cs != NULL) cairo_surface_destroy(d->cs);
 

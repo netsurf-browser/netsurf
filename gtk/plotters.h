@@ -31,7 +31,6 @@ extern const struct plotter_table nsgtk_plotters;
 
 /* make sure this is NULL if no redraw is in progress */
 extern GtkWidget *current_widget;
-extern GdkDrawable *current_drawable;
 extern cairo_t *current_cr;
 
 void nsgtk_set_colour(colour c);

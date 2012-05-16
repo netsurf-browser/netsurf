@@ -20,10 +20,12 @@
  /** \file
  * Free text search (front component)
  */
+#include <stdint.h>
 #include <ctype.h>
 #include <string.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "gtk/compat.h"
 #include "gtk/search.h"
 #include "gtk/scaffolding.h"
 #include "gtk/window.h"
@@ -37,7 +39,6 @@
 #include "desktop/selection.h"
 #include "render/box.h"
 #include "render/html.h"
-#include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -171,7 +172,7 @@ gboolean nsgtk_search_entry_activate(GtkWidget *widget, gpointer data)
 gboolean nsgtk_search_entry_key(GtkWidget *widget, GdkEventKey *event, 
 		gpointer data)
 {
-	if (event->keyval == GDK_Escape) {
+	if (event->keyval == GDK_KEY(Escape)) {
 		struct gtk_scaffolding *g = (struct gtk_scaffolding *)data;
 		nsgtk_scaffolding_toggle_search_bar_visibility(g);
 	}

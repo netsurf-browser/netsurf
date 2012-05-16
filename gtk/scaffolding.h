@@ -20,7 +20,7 @@
 #define NETSURF_GTK_SCAFFOLDING_H 1
 
 #include <gtk/gtk.h>
-#include <glade/glade.h>
+//#include <glade/glade.h>
 #include <glib.h>
 
 #include "desktop/gui.h"

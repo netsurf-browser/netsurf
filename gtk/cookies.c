@@ -24,6 +24,7 @@
 #include "desktop/cookies.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+#include "utils/log.h"
 #include "gtk/gui.h"
 #include "gtk/cookies.h"
 #include "gtk/plotters.h"
@@ -80,7 +81,7 @@ static struct menu_events menu_events[] = {
 };
 
 static struct nsgtk_treeview *cookies_window;
-static GladeXML *gladeFile;
+static GtkBuilder *gladeFile;
 GtkWindow *wndCookies;
 
 /**
@@ -92,19 +93,23 @@ bool nsgtk_cookies_init(const char *glade_file_location)
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
 
-	gladeFile = glade_xml_new(glade_file_location, NULL, NULL);
-	if (gladeFile == NULL)
+	GError* error = NULL;
+	gladeFile = gtk_builder_new ();
+	if (!gtk_builder_add_from_file(gladeFile, glade_file_location, &error)) {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
 		return false;
+	}
 	
-	glade_xml_signal_autoconnect(gladeFile);
+	gtk_builder_connect_signals(gladeFile, NULL);
 	
-	wndCookies = GTK_WINDOW(glade_xml_get_widget(gladeFile, "wndCookies"));
+	wndCookies = GTK_WINDOW(gtk_builder_get_object(gladeFile, "wndCookies"));
 	window = wndCookies;
 	
-	scrolled = GTK_SCROLLED_WINDOW(glade_xml_get_widget(gladeFile,
+	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(gladeFile,
 			"cookiesScrolled"));
 
-	drawing_area = GTK_DRAWING_AREA(glade_xml_get_widget(gladeFile,
+	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(gladeFile,
 			"cookiesDrawingArea"));
 	
 	cookies_window = nsgtk_treeview_create(cookies_get_tree_flags(), window,
@@ -134,12 +139,14 @@ bool nsgtk_cookies_init(const char *glade_file_location)
 void nsgtk_cookies_init_menu()
 {
 	struct menu_events *event = menu_events;
+	GtkWidget *w;
 
-	while (event->widget != NULL)
-	{
-		GtkWidget *w = glade_xml_get_widget(gladeFile, event->widget);
-		g_signal_connect(G_OBJECT(w), "activate", event->handler,
-				 cookies_window);
+	while (event->widget != NULL) {
+		w = GTK_WIDGET(gtk_builder_get_object(gladeFile, event->widget));
+		if (w == NULL) {
+			LOG(("Unable to connect menu widget ""%s""", event->widget));		} else {
+			g_signal_connect(G_OBJECT(w), "activate", event->handler, cookies_window);
+		}
 		event++;
 	}
 }

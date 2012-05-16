@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <glade/glade.h>
+#include <stdint.h>
 #include <string.h>
+
+#include "gtk/compat.h"
 #include "gtk/window.h"
 #include "gtk/gui.h"
 #include "desktop/browser.h"
@@ -37,10 +39,16 @@ static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 	PangoFontMetrics *metrics;
 	PangoContext *context;
 	int char_width, h, w;
+	GtkStyleContext *style;
+	GtkStateFlags state;
+
+	state = nsgtk_widget_get_state_flags(hbox);
+	style = nsgtk_widget_get_style_context(hbox);
 
 	context = gtk_widget_get_pango_context(hbox);
-	metrics = pango_context_get_metrics(context, hbox->style->font_desc,
-			pango_context_get_language(context));
+	metrics = pango_context_get_metrics(context, 
+				nsgtk_style_context_get_font(style, state),
+				pango_context_get_language(context));
 
 	char_width = pango_font_metrics_get_approximate_digit_width(metrics);
 	pango_font_metrics_unref(metrics);
@@ -59,9 +67,8 @@ static void nsgtk_tab_update_size(GtkWidget *hbox, GtkStyle *previous_style,
 static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 {
 	GtkWidget *hbox, *label, *button, *close;
-	GtkRcStyle *rcstyle;
 
-	hbox = gtk_hbox_new(FALSE, 2);
+	hbox = nsgtk_hbox_new(FALSE, 2);
 
 	if (nsoption_bool(new_blank) == true)
 		label = gtk_label_new("New Tab");
@@ -81,10 +88,13 @@ static GtkWidget *nsgtk_tab_label_setup(struct gui_window *window)
 	gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
 	gtk_widget_set_tooltip_text(button, "Close this tab.");
 
+#ifdef FIXME
+	GtkRcStyle *rcstyle;
 	rcstyle = gtk_rc_style_new();
 	rcstyle->xthickness = rcstyle->ythickness = 0;
 	gtk_widget_modify_style(button, rcstyle);
 	g_object_unref(rcstyle);
+#endif
 
 	g_signal_connect_swapped(button, "clicked",
 			G_CALLBACK(nsgtk_window_destroy_browser), window);

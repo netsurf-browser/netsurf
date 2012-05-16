@@ -21,7 +21,6 @@
 #include <string.h>
 #include <assert.h>
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "utils/log.h"
 #include "gtk/gui.h"
@@ -41,7 +40,7 @@ struct session_401 {
 	char *realm;				/**< Authentication realm */
 	nserror (*cb)(bool proceed, void *pw);	/**< Continuation callback */
 	void *cbpw;				/**< Continuation data */
-	GladeXML *x;				/**< Our glade windows */
+	GtkBuilder *x;				/**< Our glade windows */
 	GtkWindow *wnd;				/**< The login window itself */
 	GtkEntry *user;				/**< Widget with username */
 	GtkEntry *pass;				/**< Widget with password */
@@ -78,18 +77,26 @@ void create_login_window(const char *url, const char *host, const char *realm,
 	 * the widgets we're interested in.
 	 */
 
-	GladeXML *x = glade_xml_new(glade_file_location->login, NULL, NULL);
-	GtkWindow *wnd = GTK_WINDOW(glade_xml_get_widget(x, "wndLogin"));
+	GtkWindow *wnd;
 	GtkLabel *lhost, *lrealm;
 	GtkEntry *euser, *epass;
 	GtkButton *bok, *bcan;
+	GError* error = NULL;
+	GtkBuilder* builder; 
 
-	lhost = GTK_LABEL(glade_xml_get_widget(x, "labelLoginHost"));
-	lrealm = GTK_LABEL(glade_xml_get_widget(x, "labelLoginRealm"));
-	euser = GTK_ENTRY(glade_xml_get_widget(x, "entryLoginUser"));
-	epass = GTK_ENTRY(glade_xml_get_widget(x, "entryLoginPass"));
-	bok = GTK_BUTTON(glade_xml_get_widget(x, "buttonLoginOK"));
-	bcan = GTK_BUTTON(glade_xml_get_widget(x, "buttonLoginCan"));
+	builder = gtk_builder_new ();
+	if (!gtk_builder_add_from_file(builder, glade_file_location->login, &error)) {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
+	}
+
+	wnd = GTK_WINDOW(gtk_builder_get_object(builder, "wndLogin"));
+	lhost = GTK_LABEL(gtk_builder_get_object(builder, "labelLoginHost"));
+	lrealm = GTK_LABEL(gtk_builder_get_object(builder, "labelLoginRealm"));
+	euser = GTK_ENTRY(gtk_builder_get_object(builder, "entryLoginUser"));
+	epass = GTK_ENTRY(gtk_builder_get_object(builder, "entryLoginPass"));
+	bok = GTK_BUTTON(gtk_builder_get_object(builder, "buttonLoginOK"));
+	bcan = GTK_BUTTON(gtk_builder_get_object(builder, "buttonLoginCan"));
 
 	/* create and fill in our session structure */
 
@@ -99,7 +106,7 @@ void create_login_window(const char *url, const char *host, const char *realm,
 	session->realm = strdup(realm ? realm : "Secure Area");
 	session->cb = cb;
 	session->cbpw = cbpw;
-	session->x = x;
+	session->x = builder;
 	session->wnd = wnd;
 	session->user = euser;
 	session->pass = epass;

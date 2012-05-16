@@ -36,7 +36,6 @@
 #include <curl/curl.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 #include <glib.h>
 #include <glib/gi18n.h>
 
@@ -58,6 +57,7 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "css/utils.h"
+#include "gtk/compat.h"
 #include "gtk/dialogs/options.h"
 #include "gtk/completion.h"
 #include "gtk/cookies.h"
@@ -169,14 +169,20 @@ static bool nsgtk_throbber_init(char **respath, int framec)
 #define NEW_GLADE_ERROR_SIZE 128
 
 static char *
-nsgtk_new_glade(char **respath, const char *name, GladeXML **pglade)
+nsgtk_new_ui(char **respath, const char *name, GtkBuilder **pglade)
 {
-	GladeXML *newglade;
+	GtkBuilder *builder;
+	GError* error = NULL;
 	char *filepath;
 	char errorstr[NEW_GLADE_ERROR_SIZE];
 	char resname[PATH_MAX];
+#if GTK_CHECK_VERSION(3,0,0)
+	int gtkv = 3;
+#else
+	int gtkv = 2;
+#endif
 
-	snprintf(resname, PATH_MAX, "%s.glade", name);
+	snprintf(resname, PATH_MAX, "%s.gtk%d.ui", name, gtkv);
 
 	filepath = filepath_find(respath, resname);
 	if (filepath == NULL) {
@@ -185,19 +191,22 @@ nsgtk_new_glade(char **respath, const char *name, GladeXML **pglade)
 		die(errorstr);
 	}
 
-	newglade = glade_xml_new(filepath, NULL, NULL);
-	if (newglade == NULL) {
+	builder = gtk_builder_new();
+	if (!gtk_builder_add_from_file(builder, filepath, &error))  {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
 		snprintf(errorstr, NEW_GLADE_ERROR_SIZE, 
 			 "Unable to load glade %s window definitions.\n", name);
 
 		die(errorstr);
 	}
-	glade_xml_signal_autoconnect(newglade);
 
-	LOG(("Using '%s' as %s glade template file", filepath, name));
+	gtk_builder_connect_signals(builder, NULL);
+
+	LOG(("Using '%s' as %s ui template file", filepath, name));
 
 	if (pglade != NULL) {
-		*pglade = newglade;
+		*pglade = builder;
 	}
 
 	return filepath;
@@ -209,29 +218,28 @@ nsgtk_new_glade(char **respath, const char *name, GladeXML **pglade)
 static void 
 nsgtk_init_glade(char **respath)
 {
-	GladeXML *gladeWarning;
-
-	glade_init();
+	GtkBuilder *gladeWarning;
 
 	glade_file_location = calloc(1, sizeof(struct glade_file_location_s));
 	if (glade_file_location == NULL) {
 		die("Unable to allocate glade file locations");
 	}
 
-	glade_file_location->netsurf = nsgtk_new_glade(respath, "netsurf", NULL);
-	glade_file_location->password = nsgtk_new_glade(respath, "password", NULL);
-	glade_file_location->login = nsgtk_new_glade(respath, "login", NULL);
-	glade_file_location->ssl = nsgtk_new_glade(respath, "ssl", NULL);
-	glade_file_location->toolbar = nsgtk_new_glade(respath, "toolbar", NULL);
-	glade_file_location->downloads = nsgtk_new_glade(respath, "downloads", NULL);
-	glade_file_location->history = nsgtk_new_glade(respath, "history", NULL);
-	glade_file_location->options = nsgtk_new_glade(respath, "options", NULL);
-	glade_file_location->hotlist = nsgtk_new_glade(respath, "hotlist", NULL);
-	glade_file_location->cookies = nsgtk_new_glade(respath, "cookies", NULL);
+	glade_file_location->netsurf = nsgtk_new_ui(respath, "netsurf", NULL);
+	glade_file_location->tabcontents = nsgtk_new_ui(respath, "tabcontents", NULL);
+	glade_file_location->password = nsgtk_new_ui(respath, "password", NULL);
+	glade_file_location->login = nsgtk_new_ui(respath, "login", NULL);
+	glade_file_location->ssl = nsgtk_new_ui(respath, "ssl", NULL);
+	glade_file_location->toolbar = nsgtk_new_ui(respath, "toolbar", NULL);
+	glade_file_location->downloads = nsgtk_new_ui(respath, "downloads", NULL);
+	glade_file_location->history = nsgtk_new_ui(respath, "history", NULL);
+	glade_file_location->options = nsgtk_new_ui(respath, "options", NULL);
+	glade_file_location->hotlist = nsgtk_new_ui(respath, "hotlist", NULL);
+	glade_file_location->cookies = nsgtk_new_ui(respath, "cookies", NULL);
 
-	glade_file_location->warning = nsgtk_new_glade(respath, "warning", &gladeWarning);
-	nsgtk_warning_window = GTK_WINDOW(glade_xml_get_widget(gladeWarning, "wndWarning"));
-	widWarning = glade_xml_get_widget(gladeWarning, "labelWarning");
+	glade_file_location->warning = nsgtk_new_ui(respath, "warning", &gladeWarning);
+	nsgtk_warning_window = GTK_WINDOW(gtk_builder_get_object(gladeWarning, "wndWarning"));
+	widWarning = GTK_WIDGET(gtk_builder_get_object(gladeWarning, "labelWarning"));
 }
 
 static void check_options(char **respath)
@@ -701,22 +709,26 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 {	
 	static struct nsgtk_treeview *ssl_window;	
 	struct sslcert_session_data *data;
-	GladeXML *x = glade_xml_new(glade_file_location->ssl, NULL, NULL);
 	GtkButton *accept, *reject;
 	void **session = calloc(sizeof(void *), 3);
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
+	GError* error = NULL;
+	GtkBuilder* builder; 
+
+	builder = gtk_builder_new ();
+	if (!gtk_builder_add_from_file(builder, glade_file_location->ssl, &error)) {
+		g_warning("Couldn't load builder file: %s", error->message);
+		g_error_free(error);
+		return;
+	}
 
 	data = sslcert_create_session_data(num, url, cb, cbpw);
 		
-	window = GTK_WINDOW(
-			glade_xml_get_widget(x,"wndSSLProblem"));
-	scrolled = GTK_SCROLLED_WINDOW(
-			glade_xml_get_widget(x,"SSLScrolled"));
-	drawing_area = GTK_DRAWING_AREA(
-			glade_xml_get_widget(x,"SSLDrawingArea"));
-
+	window = GTK_WINDOW(gtk_builder_get_object(builder, "wndSSLProblem"));
+	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "SSLScrolled"));
+	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(builder, "SSLDrawingArea"));
 
 	ssl_window = nsgtk_treeview_create(sslcert_get_tree_flags(),
 			window, scrolled, drawing_area);
@@ -726,10 +738,10 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 	
 	sslcert_load_tree(nsgtk_treeview_get_tree(ssl_window), certs, data);
 	
-	accept = GTK_BUTTON(glade_xml_get_widget(x, "sslaccept"));
-	reject = GTK_BUTTON(glade_xml_get_widget(x, "sslreject"));	
+	accept = GTK_BUTTON(gtk_builder_get_object(builder, "sslaccept"));
+	reject = GTK_BUTTON(gtk_builder_get_object(builder, "sslreject"));	
 
-	session[0] = x;
+	session[0] = builder;
 	session[1] = ssl_window;
 	session[2] = data;
 	
@@ -747,7 +759,7 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 {
 	void **session = data;
-	GladeXML *x = session[0];
+	GtkBuilder *x = session[0];
 	struct nsgtk_treeview *wnd = session[1];
 	struct sslcert_session_data *ssl_data = session[2];
 
@@ -761,7 +773,7 @@ void nsgtk_ssl_accept(GtkButton *w, gpointer data)
 void nsgtk_ssl_reject(GtkWidget *w, gpointer data)
 {
 	void **session = data;
-	GladeXML *x = session[0];
+	GtkBuilder *x = session[0];
 	struct nsgtk_treeview *wnd = session[1];
 	struct sslcert_session_data *ssl_data = session[2];
 
@@ -970,38 +982,38 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 	 */
 	switch (key->keyval) {
 	
-	case GDK_Tab:
+	case GDK_KEY(Tab):
 		return KEY_TAB;
 
-	case GDK_BackSpace:
+	case GDK_KEY(BackSpace):
 		if (key->state & GDK_SHIFT_MASK)
 			return KEY_DELETE_LINE_START;
 		else
 			return KEY_DELETE_LEFT;
-	case GDK_Delete:
+	case GDK_KEY(Delete):
 		if (key->state & GDK_SHIFT_MASK)
 			return KEY_DELETE_LINE_END;
 		else
 			return KEY_DELETE_RIGHT;
-	case GDK_Linefeed:	return 13;
-	case GDK_Return:	return 10;
-	case GDK_Left:		return KEY_LEFT;
-	case GDK_Right:		return KEY_RIGHT;
-	case GDK_Up:		return KEY_UP;
-	case GDK_Down:		return KEY_DOWN;
-	case GDK_Home:
+	case GDK_KEY(Linefeed):	return 13;
+	case GDK_KEY(Return):	return 10;
+	case GDK_KEY(Left):		return KEY_LEFT;
+	case GDK_KEY(Right):		return KEY_RIGHT;
+	case GDK_KEY(Up):		return KEY_UP;
+	case GDK_KEY(Down):		return KEY_DOWN;
+	case GDK_KEY(Home):
 		if (key->state & GDK_CONTROL_MASK)
 			return KEY_TEXT_START;
 		else
 			return KEY_LINE_START;
-	case GDK_End:
+	case GDK_KEY(End):
 		if (key->state & GDK_CONTROL_MASK)
 			return KEY_TEXT_END;
 		else
 			return KEY_LINE_END;
-	case GDK_Page_Up:
+	case GDK_KEY(Page_Up):
 		return KEY_PAGE_UP;
-	case GDK_Page_Down:
+	case GDK_KEY(Page_Down):
 		return KEY_PAGE_DOWN;
 	case 'a':
 		if (key->state & GDK_CONTROL_MASK)
@@ -1011,24 +1023,24 @@ uint32_t gtk_gui_gdkkey_to_nskey(GdkEventKey *key)
 		if (key->state & GDK_CONTROL_MASK)
 			return KEY_CLEAR_SELECTION;
 		return gdk_keyval_to_unicode(key->keyval);
-	case GDK_Escape:
+	case GDK_KEY(Escape):
 		return KEY_ESCAPE;
 
 		/* Modifiers - do nothing for now */
-	case GDK_Shift_L:
-	case GDK_Shift_R:
-	case GDK_Control_L:
-	case GDK_Control_R:
-	case GDK_Caps_Lock:
-	case GDK_Shift_Lock:
-	case GDK_Meta_L:
-	case GDK_Meta_R:
-	case GDK_Alt_L:
-	case GDK_Alt_R:
-	case GDK_Super_L:
-	case GDK_Super_R:
-	case GDK_Hyper_L:
-	case GDK_Hyper_R:	
+	case GDK_KEY(Shift_L):
+	case GDK_KEY(Shift_R):
+	case GDK_KEY(Control_L):
+	case GDK_KEY(Control_R):
+	case GDK_KEY(Caps_Lock):
+	case GDK_KEY(Shift_Lock):
+	case GDK_KEY(Meta_L):
+	case GDK_KEY(Meta_R):
+	case GDK_KEY(Alt_L):
+	case GDK_KEY(Alt_R):
+	case GDK_KEY(Super_L):
+	case GDK_KEY(Super_R):
+	case GDK_KEY(Hyper_L):
+	case GDK_KEY(Hyper_R):	
 		return 0;
 
 	default:		

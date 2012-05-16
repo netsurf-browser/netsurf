@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <math.h>
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
 #include "desktop/options.h"
 #include "desktop/print.h"
@@ -42,7 +41,7 @@
 #include "utils/messages.h"
 
 GtkDialog *wndPreferences = NULL;
-static GladeXML *gladeFile;
+static GtkBuilder *gladeFile;
 
 static struct browser_window *current_browser;
 
@@ -128,7 +127,7 @@ DECLARE(setDefaultExportOptions);
 /* Used when the feature is not implemented yet */
 #define FIND_WIDGET(wname)                                              \
         do {                                                            \
-                (wname) = glade_xml_get_widget(gladeFile, #wname);      \
+		(wname) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #wname)); \
                 if ((wname) == NULL)                                    \
                         LOG(("Unable to find widget '%s'!", #wname));   \
         } while (0)
@@ -140,14 +139,17 @@ DECLARE(setDefaultExportOptions);
 
 GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 {
-	gladeFile = glade_xml_new(glade_file_location->options, NULL, NULL);
-	if (gladeFile == NULL)
+	GError* error = NULL;
+	gladeFile = gtk_builder_new();
+	if (!gtk_builder_add_from_file(gladeFile, glade_file_location->options, &error)) {
+		g_warning("Couldn't load builder file: %s", error->message);
+		g_error_free(error);
 		return NULL;
+	}
 	
 	current_browser = bw;
-	wndPreferences = GTK_DIALOG(glade_xml_get_widget(gladeFile,
-				"dlgPreferences"));
-	gtk_window_set_transient_for (GTK_WINDOW(wndPreferences), parent);
+	wndPreferences = GTK_DIALOG(gtk_builder_get_object(gladeFile, "dlgPreferences"));
+	gtk_window_set_transient_for(GTK_WINDOW(wndPreferences), parent);
 	
 	FIND_WIDGET(sourceButtonTab);
 	FIND_WIDGET(sourceButtonWindow);
@@ -246,46 +248,46 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 
 #define SET_ENTRY(widget, value)                                        \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+		(widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
                 gtk_entry_set_text(GTK_ENTRY((widget)), (value));       \
         } while (0)
 
 #define SET_SPIN(widget, value)                                         \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
                 gtk_spin_button_set_value(GTK_SPIN_BUTTON((widget)), (value)); \
         } while (0)
 
 #define SET_CHECK(widget, value)                                        \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
                 gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((widget)), \
                                              (value));                  \
         } while (0)
 
 #define SET_COMBO(widget, value)                                        \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
                 gtk_combo_box_set_active(GTK_COMBO_BOX((widget)), (value)); \
         } while (0)
 
 #define SET_FONT(widget, value)                                         \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
                 gtk_font_button_set_font_name(GTK_FONT_BUTTON((widget)), \
                                               (value));                 \
         } while (0)
 
 #define SET_FILE_CHOOSER(widget, value)                                  \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);      \
+                (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
                 gtk_file_chooser_set_current_folder(GTK_FILE_CHOOSER(\
                 		(widget)), (value));			\
         } while (0)
 
 #define SET_BUTTON(widget)                                              \
         do {                                                            \
-                (widget) = glade_xml_get_widget(gladeFile, #widget);    \
+                (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
         } while (0)
 
 
@@ -329,7 +331,7 @@ void nsgtk_options_load(void)
 	}
 
 	/* Create combobox */
-	box = GTK_BOX(glade_xml_get_widget(gladeFile, "combolanguagevbox"));
+	box = GTK_BOX(gtk_builder_get_object(gladeFile, "combolanguagevbox"));
 	comboLanguage = nsgtk_combo_box_text_new();
 
 	/* Populate combobox from languages file */
@@ -477,7 +479,7 @@ static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive)
 
 static void nsgtk_options_theme_combo(void) {
 /* populate theme combo from themelist file */
-	GtkBox *box = GTK_BOX(glade_xml_get_widget(gladeFile, "themehbox"));
+	GtkBox *box = GTK_BOX(gtk_builder_get_object(gladeFile, "themehbox"));
 	char buf[50];
 	size_t len = SLEN("themelist") + strlen(res_dir_location) + 1;
 	char themefile[len];

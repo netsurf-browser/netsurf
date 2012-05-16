@@ -160,6 +160,9 @@ ifeq ($(TARGET),gtk)
     NETSURF_USE_HARU_PDF := NO
   endif
 
+  # Set default GTK version to build for (2 or 3)
+  NETSURF_GTK_MAJOR := 2
+
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized
 

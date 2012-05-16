@@ -254,7 +254,7 @@ void nsgtk_theme_add(const char *themename)
 	}
 	g_signal_connect_swapped(notification, "response",
 				 G_CALLBACK(gtk_widget_destroy), notification);
-	gtk_container_add(GTK_CONTAINER(GTK_DIALOG(notification)->vbox), label);
+	gtk_container_add(GTK_CONTAINER(gtk_dialog_get_action_area(GTK_DIALOG(notification))), label);
 	gtk_widget_show_all(notification);
 
 	/* update combo */

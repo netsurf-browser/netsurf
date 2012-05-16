@@ -49,12 +49,12 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-D_NETBSD_SOURCE \
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g \
-		$(shell $(PKG_CONFIG) --cflags libglade-2.0 gtk+-2.0) \
+		$(shell $(PKG_CONFIG) --cflags gtk+-$(NETSURF_GTK_MAJOR).0) \
 		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl) \
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
-GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs libglade-2.0 gtk+-2.0 gthread-2.0 gmodule-2.0 lcms)
+GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs gtk+-$(NETSURF_GTK_MAJOR).0 gthread-2.0 gmodule-2.0 lcms)
 
 CFLAGS += $(GTKCFLAGS)
 LDFLAGS += $(GTKLDFLAGS)
@@ -67,22 +67,49 @@ ifeq ($(HOST),Windows_NT)
     CFLAGS += -U__STRICT_ANSI__
 endif
 
+
+# ----------------------------------------------------------------------------
+# Pixbuf
+# ----------------------------------------------------------------------------
+
+GTK_IMAGE_menu_cursor := gtk/res/menu_cursor.png
+
+# 1: input file
+# 2: output file
+# 3: bitmap name
+define convert_image
+
+S_PIXBUF += $(2)
+
+$(2): $(1)
+	$(Q)echo "#include <gdk-pixbuf/gdk-pixdata.h>" > $(2)
+	$(Q)gdk-pixbuf-csource --extern --struct --name=$(3) $(1) >> $(2) || \
+	( rm -f $(2) && false )
+
+endef
+
 # ----------------------------------------------------------------------------
 # Source file setup
 # ----------------------------------------------------------------------------
+
+#converted pixbuf sources
+S_PIXBUF :=
+
+$(eval $(foreach V,$(filter GTK_IMAGE_%,$(.VARIABLES)),$(call convert_image,$($(V)),$(OBJROOT)/$(patsubst GTK_IMAGE_%,%,$(V)).c,$(patsubst GTK_IMAGE_%,%,$(V))_pixdata)))
 
 # S_GTK are sources purely for the GTK build
 S_GTK := font_pango.c bitmap.c gui.c schedule.c thumbnail.c plotters.c	\
 	treeview.c scaffolding.c gdk.c completion.c login.c throbber.c	\
 	selection.c history.c window.c filetype.c download.c menu.c	\
 	print.c save.c search.c tabs.c theme.c toolbar.c		\
-	sexy_icon_entry.c compat.c cookies.c hotlist.c system_colour.c	\
+	compat.c cookies.c hotlist.c system_colour.c	\
 	$(addprefix dialogs/,options.c about.c source.c)
+
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # code in utils/container.ch is non-universal it seems
 
 # This is the final source build list
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
-SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_GTK)
+SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_PDF) $(S_PIXBUF) $(S_GTK)
 EXETARGET := nsgtk

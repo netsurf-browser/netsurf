@@ -22,7 +22,9 @@
 #include <limits.h>
 #include <assert.h>
 
+#include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <gdk-pixbuf/gdk-pixdata.h>
 
 #include "content/hlcache.h"
 #include "gtk/window.h"
@@ -42,6 +44,8 @@
 #include "gtk/gdk.h"
 #include "utils/log.h"
 #include "utils/utils.h"
+
+extern const GdkPixdata menu_cursor_pixdata;
 
 struct gui_window {
 	/** The gtk scaffold object containing menu, buttons, url bar, [tabs],
@@ -143,10 +147,12 @@ float nsgtk_get_scale_for_gui(struct gui_window *g)
 	return g->bw->scale;
 }
 
-static gboolean nsgtk_window_expose_event(GtkWidget *widget,
-				   GdkEventExpose *event, gpointer data)
+#if GTK_CHECK_VERSION(3,0,0)
+
+static gboolean 
+nsgtk_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
 {
-	struct gui_window *g = data;
+	struct gui_window *gw = data;
 	struct gui_window *z;
 	struct rect clip;
 	struct redraw_context ctx = {
@@ -155,33 +161,84 @@ static gboolean nsgtk_window_expose_event(GtkWidget *widget,
 		.plot = &nsgtk_plotters
 	};
 
-	assert(g);
-	assert(g->bw);
+	double x1;
+	double y1;
+	double x2;
+	double y2;
 
-	for (z = window_list; z && z != g; z = z->next)
+	assert(gw);
+	assert(gw->bw);
+
+	for (z = window_list; z && z != gw; z = z->next)
 		continue;
 	assert(z);
-	assert(GTK_WIDGET(g->layout) == widget);
+	assert(GTK_WIDGET(gw->layout) == widget);
 
-	current_widget = (GtkWidget *)g->layout;
-	current_cr = gdk_cairo_create(g->layout->bin_window);
+	current_widget = (GtkWidget *)gw->layout;
+	current_cr = cr;
+
+	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
+
+	clip.x0 = x1;
+	clip.y0 = y1;
+	clip.x1 = x2;
+	clip.y1 = y2;
+
+	browser_window_redraw(gw->bw, 0, 0, &clip, &ctx);
+
+	if (gw->careth != 0) {
+		nsgtk_plot_caret(gw->caretx, gw->carety, gw->careth);
+	}
+
+	current_widget = NULL;
+
+	return FALSE;
+}
+
+#else
+
+static gboolean 
+nsgtk_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer data)
+{
+	struct gui_window *gw = data;
+	struct gui_window *z;
+	struct rect clip;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &nsgtk_plotters
+	};
+
+	assert(gw);
+	assert(gw->bw);
+
+	for (z = window_list; z && z != gw; z = z->next)
+		continue;
+	assert(z);
+	assert(GTK_WIDGET(gw->layout) == widget);
+
+	current_widget = (GtkWidget *)gw->layout;
+	current_cr = gdk_cairo_create(gtk_layout_get_bin_window(gw->layout));
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
 	clip.x1 = event->area.x + event->area.width;
 	clip.y1 = event->area.y + event->area.height;
 
-	browser_window_redraw(g->bw, 0, 0, &clip, &ctx);
+	browser_window_redraw(gw->bw, 0, 0, &clip, &ctx);
 
-	if (g->careth != 0) {
-		nsgtk_plot_caret(g->caretx, g->carety, g->careth);
+	if (gw->careth != 0) {
+		nsgtk_plot_caret(gw->caretx, gw->carety, gw->careth);
 	}
 
-	current_widget = NULL;
 	cairo_destroy(current_cr);
+
+	current_widget = NULL;
 
 	return FALSE;
 }
+
+#endif
 
 static gboolean nsgtk_window_motion_notify_event(GtkWidget *widget,
 					  GdkEventMotion *event, gpointer data)
@@ -320,78 +377,101 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 {
 	struct gui_window *g = data;
 	double value;
-	GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
-	GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
-	GtkAdjustment *scroll;
-	const GtkAllocation *const alloc =
-		&GTK_WIDGET(g->layout)->allocation;
+	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hscroll = nsgtk_layout_get_hadjustment(g->layout);
+	GtkAllocation alloc;
 
+	LOG(("%d", event->direction));
 	switch (event->direction) {
 	case GDK_SCROLL_LEFT:
 		if (browser_window_scroll_at_point(g->bw,
 				event->x / g->bw->scale,
 				event->y / g->bw->scale,
-				-100, 0) == true)
-			/* Core handled it */
-			return TRUE;
+				-100, 0) != true) {
+			/* core did not handle event do horizontal scroll */
 
-		scroll = hscroll;
-		value = gtk_adjustment_get_value(scroll) -
-			(scroll->step_increment * 2);
-		if (value < scroll->lower)
-			value = scroll->lower;
+			value = gtk_adjustment_get_value(hscroll) -
+				(gtk_adjustment_get_step_increment(hscroll) *2);
+
+			if (value < gtk_adjustment_get_lower(hscroll)) {
+				value = gtk_adjustment_get_lower(hscroll);
+			}
+
+			gtk_adjustment_set_value(hscroll, value);
+		}
 		break;
 
 	case GDK_SCROLL_UP:
 		if (browser_window_scroll_at_point(g->bw,
 				event->x / g->bw->scale,
 				event->y / g->bw->scale,
-				0, -100) == true)
-			/* Core handled it */
-			return TRUE;
+				0, -100) != true) {
+			/* core did not handle event change vertical
+			 * adjustment. 
+			 */
 
-		scroll = vscroll;
-		value = gtk_adjustment_get_value(scroll) -
-			(scroll->step_increment * 2);
-		if (value < scroll->lower)
-			value = scroll->lower;
+			value = gtk_adjustment_get_value(vscroll) -
+				(gtk_adjustment_get_step_increment(vscroll) * 2);
+
+			if (value < gtk_adjustment_get_lower(vscroll)) {
+				value = gtk_adjustment_get_lower(vscroll);
+			}
+
+			gtk_adjustment_set_value(vscroll, value);
+		}
 		break;
 
 	case GDK_SCROLL_RIGHT:
 		if (browser_window_scroll_at_point(g->bw,
 				event->x / g->bw->scale,
 				event->y / g->bw->scale,
-				100, 0) == true)
-			/* Core handled it */
-			return TRUE;
+				100, 0) != true) {
 
-		scroll = hscroll;
-		value = gtk_adjustment_get_value(scroll) +
-			(scroll->step_increment * 2);
-		if (value > scroll->upper - alloc->width)
-			value = scroll->upper - alloc->width;
+			/* core did not handle event change horizontal
+			 * adjustment. 
+			 */
+
+			value = gtk_adjustment_get_value(hscroll) +
+				(gtk_adjustment_get_step_increment(hscroll) * 2);
+
+			/* @todo consider gtk_widget_get_allocated_width() */
+			gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+
+			if (value > gtk_adjustment_get_upper(hscroll) - alloc.width) {
+				value = gtk_adjustment_get_upper(hscroll) - 
+					alloc.width;
+			}
+
+			gtk_adjustment_set_value(hscroll, value);
+		}
 		break;
 
 	case GDK_SCROLL_DOWN:
 		if (browser_window_scroll_at_point(g->bw,
 				event->x / g->bw->scale,
 				event->y / g->bw->scale,
-				0, 100) == true)
-			/* Core handled it */
-			return TRUE;
+				0, 100) != true) {
+			/* core did not handle event change vertical
+			 * adjustment. 
+			 */
 
-		scroll = vscroll;
-		value = gtk_adjustment_get_value(scroll) +
-			(scroll->step_increment * 2);
-		if (value > scroll->upper - alloc->height)
-			value = scroll->upper - alloc->height;
+			value = gtk_adjustment_get_value(vscroll) +
+				(gtk_adjustment_get_step_increment(vscroll) * 2);
+			/* @todo consider gtk_widget_get_allocated_height */
+			gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+
+			if (value > gtk_adjustment_get_upper(vscroll) - alloc.height) {
+				value = gtk_adjustment_get_upper(vscroll) - 
+					alloc.height;
+			}
+
+			gtk_adjustment_set_value(vscroll, value);
+		}
 		break;
 
 	default:
-		return TRUE;
+		break;
 	}
-
-	gtk_adjustment_set_value(scroll, value);
 
 	return TRUE;
 }
@@ -405,88 +485,104 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	if (browser_window_key_press(g->bw, nskey))
 		return TRUE;
 
-	if ((event->state & 0x7) == 0) {
-		double value;
-		GtkAdjustment *vscroll = gtk_layout_get_vadjustment(g->layout);
-		GtkAdjustment *hscroll = gtk_layout_get_hadjustment(g->layout);
-		GtkAdjustment *scroll;
-		const GtkAllocation *const alloc =
-			&GTK_WIDGET(g->layout)->allocation;
+	if ((event->state & 0x7) != 0) 
+		return TRUE;
 
-		switch (event->keyval) {
-		default:
-			return TRUE;
+	double value;
+	GtkAdjustment *vscroll = nsgtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hscroll = nsgtk_layout_get_hadjustment(g->layout);
+	GtkAllocation alloc;
 
-		case GDK_Home:
-		case GDK_KP_Home:
-			scroll = vscroll;
-			value = scroll->lower;
-			break;
+	/* @todo consider gtk_widget_get_allocated_width() */
+	gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
-		case GDK_End:
-		case GDK_KP_End:
-			scroll = vscroll;
-			value = scroll->upper - alloc->height;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
+	switch (event->keyval) {
 
-		case GDK_Left:
-		case GDK_KP_Left:
-			scroll = hscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
+	case GDK_KEY(Home):
+	case GDK_KEY(KP_Home):
+		value = gtk_adjustment_get_lower(vscroll);
+		gtk_adjustment_set_value(vscroll, value);
+		break;
 
-		case GDK_Up:
-		case GDK_KP_Up:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
+	case GDK_KEY(End):
+	case GDK_KEY(KP_End):
+		value = gtk_adjustment_get_upper(vscroll) - alloc.height;
 
-		case GDK_Right:
-		case GDK_KP_Right:
-			scroll = hscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - alloc->width)
-				value = scroll->upper - alloc->width;
-			break;
+		if (value < gtk_adjustment_get_lower(vscroll))
+			value = gtk_adjustment_get_lower(vscroll);
 
-		case GDK_Down:
-		case GDK_KP_Down:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - alloc->height)
-				value = scroll->upper - alloc->height;
-			break;
+		gtk_adjustment_set_value(vscroll, value);
+		break;
 
-		case GDK_Page_Up:
-		case GDK_KP_Page_Up:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) -
-						scroll->page_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
-			break;
+	case GDK_KEY(Left):
+	case GDK_KEY(KP_Left):
+		value = gtk_adjustment_get_value(hscroll) -
+			gtk_adjustment_get_step_increment(hscroll);
 
-		case GDK_Page_Down:
-		case GDK_KP_Page_Down:
-			scroll = vscroll;
-			value = gtk_adjustment_get_value(scroll) +
-						scroll->page_increment;
-			if (value > scroll->upper - alloc->height)
-				value = scroll->upper - alloc->height;
-			break;
-		}
+		if (value < gtk_adjustment_get_lower(hscroll))
+			value = gtk_adjustment_get_lower(hscroll);
 
-		gtk_adjustment_set_value(scroll, value);
+		gtk_adjustment_set_value(hscroll, value);
+		break;
+
+	case GDK_KEY(Up):
+	case GDK_KEY(KP_Up):
+		value = gtk_adjustment_get_value(vscroll) -
+			gtk_adjustment_get_step_increment(vscroll);
+
+		if (value < gtk_adjustment_get_lower(vscroll))
+			value = gtk_adjustment_get_lower(vscroll);
+
+		gtk_adjustment_set_value(vscroll, value);
+		break;
+
+	case GDK_KEY(Right):
+	case GDK_KEY(KP_Right):
+		value = gtk_adjustment_get_value(hscroll) +
+			gtk_adjustment_get_step_increment(hscroll);
+
+		if (value > gtk_adjustment_get_upper(hscroll) - alloc.width)
+			value = gtk_adjustment_get_upper(hscroll) - alloc.width;
+
+		gtk_adjustment_set_value(hscroll, value);
+		break;
+
+	case GDK_KEY(Down):
+	case GDK_KEY(KP_Down):
+		value = gtk_adjustment_get_value(vscroll) +
+			gtk_adjustment_get_step_increment(vscroll);
+
+		if (value > gtk_adjustment_get_upper(vscroll) - alloc.height)
+			value = gtk_adjustment_get_upper(vscroll) - alloc.height;
+
+		gtk_adjustment_set_value(vscroll, value);
+		break;
+
+	case GDK_KEY(Page_Up):
+	case GDK_KEY(KP_Page_Up):
+		value = gtk_adjustment_get_value(vscroll) -
+			gtk_adjustment_get_page_increment(vscroll);
+
+		if (value < gtk_adjustment_get_lower(vscroll))
+			value = gtk_adjustment_get_lower(vscroll);
+
+		gtk_adjustment_set_value(vscroll, value);
+		break;
+
+	case GDK_KEY(Page_Down):
+	case GDK_KEY(KP_Page_Down):
+		value = gtk_adjustment_get_value(vscroll) +
+			gtk_adjustment_get_page_increment(vscroll);
+
+		if (value > gtk_adjustment_get_upper(vscroll) - alloc.height)
+			value = gtk_adjustment_get_upper(vscroll) - alloc.height;
+
+		gtk_adjustment_set_value(vscroll, value);
+		break;
+
+	default:
+		break;
+
 	}
 
 	return TRUE;
@@ -558,26 +654,27 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	/* Construct our primary elements */
 
 	/* top-level document (not a frame) => create a new tab */
-	GladeXML *xml = glade_xml_new(glade_file_location->netsurf, 
-				"tabContents", NULL);
-	if (!xml) {
-		warn_user("MiscError", "Failed to create tab contents");
-		free(g);
+	GError* error = NULL;
+	GtkBuilder* xml = gtk_builder_new();
+	if (!gtk_builder_add_from_file(xml, 
+				       glade_file_location->tabcontents, 
+				       &error)) {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free(error);
 		return 0;
 	}
 
-	GtkWidget *tab_contents = glade_xml_get_widget(xml, "tabContents");
-	g->layout = GTK_LAYOUT(glade_xml_get_widget(xml, "layout"));
-	g->status_bar = GTK_LABEL(glade_xml_get_widget(xml, "status_bar"));
-	g->paned = GTK_PANED(glade_xml_get_widget(xml, "hpaned1"));
+	g->layout = GTK_LAYOUT(gtk_builder_get_object(xml, "layout"));
+	g->status_bar = GTK_LABEL(gtk_builder_get_object(xml, "status_bar"));
+	g->paned = GTK_PANED(gtk_builder_get_object(xml, "hpaned1"));
 
 	/* connect the scrollbars to the layout widget */
-	gtk_layout_set_hadjustment(g->layout,
+	nsgtk_layout_set_hadjustment(g->layout,
 			gtk_range_get_adjustment(GTK_RANGE(
-			glade_xml_get_widget(xml, "hscrollbar"))));
-	gtk_layout_set_vadjustment(g->layout,
+			gtk_builder_get_object(xml, "hscrollbar"))));
+	nsgtk_layout_set_vadjustment(g->layout,
 			gtk_range_get_adjustment(GTK_RANGE(
-			glade_xml_get_widget(xml, "vscrollbar"))));
+			gtk_builder_get_object(xml, "vscrollbar"))));
 
 	/* add the tab to the scaffold */
 	bool tempback = true;
@@ -592,6 +689,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		tempback = true;
 		break;
 	}
+
+	GtkWidget *tab_contents = GTK_WIDGET(gtk_builder_get_object(xml, "tabContents"));
 	g_object_set_data(G_OBJECT(tab_contents), "gui_window", g);
 	nsgtk_tab_add(g, tab_contents, tempback);
 
@@ -620,14 +719,15 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 	nsgtk_widget_set_can_focus(GTK_WIDGET(g->layout), TRUE);
 
 	/* set the default background colour of the drawing area to white. */
-	gtk_widget_modify_bg(GTK_WIDGET(g->layout), GTK_STATE_NORMAL,
-				&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
+	nsgtk_widget_override_background_color(GTK_WIDGET(g->layout), 
+					       GTK_STATE_NORMAL, 0, 0xffff, 0xffff, 0xffff);
+
+
+	nsgtk_connect_draw_event(GTK_WIDGET(g->layout), G_CALLBACK(nsgtk_window_draw_event), g);
 
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	g->signalhandler[NSGTK_WINDOW_SIGNAL_REDRAW] =
-			CONNECT(g->layout, "expose_event",
-			nsgtk_window_expose_event, g);
+
 	CONNECT(g->layout, "motion_notify_event",
 			nsgtk_window_motion_notify_event, g);
 	g->signalhandler[NSGTK_WINDOW_SIGNAL_CLICK] =
@@ -665,16 +765,19 @@ void nsgtk_reflow_all_windows(void)
 void nsgtk_window_process_reformats(void)
 {
 	struct gui_window *g;
+	GtkAllocation alloc;
 
 	browser_reformat_pending = false;
 	for (g = window_list; g; g = g->next) {
-		GtkWidget *widget = GTK_WIDGET(g->layout);
 		if (!g->bw->reformat_pending)
 			continue;
+
 		g->bw->reformat_pending = false;
-		browser_window_reformat(g->bw, false,
-				widget->allocation.width,
-				widget->allocation.height);
+
+		/* @todo consider gtk_widget_get_allocated_width() */
+		gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+
+		browser_window_reformat(g->bw, false, alloc.width, alloc.height);
 	}
 }
 
@@ -797,8 +900,8 @@ void gui_window_set_status(struct gui_window *g, const char *text)
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-	GtkAdjustment *vadj = gtk_layout_get_vadjustment(g->layout);
-	GtkAdjustment *hadj = gtk_layout_get_hadjustment(g->layout);
+	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
 
 	assert(vadj);
 	assert(hadj);
@@ -811,8 +914,8 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-	GtkAdjustment *vadj = gtk_layout_get_vadjustment(g->layout);
-	GtkAdjustment *hadj = gtk_layout_get_hadjustment(g->layout);
+	GtkAdjustment *vadj = nsgtk_layout_get_vadjustment(g->layout);
+	GtkAdjustment *hadj = nsgtk_layout_get_hadjustment(g->layout);
 	gdouble vlower, vpage, vupper, hlower, hpage, hupper, x = (double)sx, y = (double)sy;
 
 	assert(vadj);
@@ -853,35 +956,13 @@ void gui_window_update_extent(struct gui_window *g)
 
 static GdkCursor *nsgtk_create_menu_cursor(void)
 {
-	static char menu_cursor_bits[] = {
-	0x00, 0x00, 0x80, 0x7F, 0x88, 0x40, 0x9E, 0x5E, 0x88, 0x40, 0x80, 0x56,
-	0x80, 0x40, 0x80, 0x5A, 0x80, 0x40, 0x80, 0x5E, 0x80, 0x40, 0x80, 0x56,
-	0x80, 0x40, 0x80, 0x7F, 0x00, 0x00, 0x00, 0x00, };
+	GdkCursor *cursor = NULL;
+	GdkPixbuf *pixbuf;
+	pixbuf = gdk_pixbuf_from_pixdata(&menu_cursor_pixdata, FALSE, NULL);
+	cursor = gdk_cursor_new_from_pixbuf(gdk_display_get_default(), pixbuf, 0, 3);
+	g_object_unref (pixbuf);
 
-	static char menu_cursor_mask_bits[] = {
-	0xC0, 0xFF, 0xC8, 0xFF, 0xDF, 0xFF, 0xFF, 0xFF, 0xDF, 0xFF, 0xC8, 0xFF,
-	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF,
-	0xC0, 0xFF, 0xC0, 0xFF, 0xC0, 0xFF, 0x00, 0x00, };
-
-	static GdkCursor *r;
-	static GdkColor fg = { 0, 0, 0, 0 };
-	static GdkColor bg = { 0, 65535, 65535, 65535 };
-
-	GdkPixmap *source, *mask;
-
-	if (r != NULL)
-		return r;
-
-	source = gdk_bitmap_create_from_data(NULL, menu_cursor_bits,
-						16, 16);
-	mask = gdk_bitmap_create_from_data (NULL, menu_cursor_mask_bits,
-						16, 16);
-
-	r = gdk_cursor_new_from_pixmap(source, mask, &fg, &bg, 0, 3);
-	g_object_unref(source);
-	g_object_unref(mask);
-
-	return r;
+	return cursor;
 }
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
@@ -961,10 +1042,11 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 				gtk_widget_get_display(
 					GTK_WIDGET(g->layout)),
 					cursortype);
-	gdk_window_set_cursor(GTK_WIDGET(g->layout)->window, cursor);
+	gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(g->layout)), 
+			      cursor);
 
 	if (!nullcursor)
-		gdk_cursor_unref(cursor);
+		nsgdk_cursor_unref(cursor);
 }
 
 void gui_window_hide_pointer(struct gui_window *g)
@@ -1015,8 +1097,13 @@ void gui_drag_save_selection(struct selection *s, struct gui_window *g)
 void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 			       bool scaled)
 {
-	*width = GTK_WIDGET(g->layout)->allocation.width;
-	*height = GTK_WIDGET(g->layout)->allocation.height;
+	GtkAllocation alloc;
+
+	/* @todo consider gtk_widget_get_allocated_width() */
+	gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+
+	*width = alloc.width;
+	*height = alloc.height;
 
 	if (scaled) {
 		*width /= g->bw->scale;

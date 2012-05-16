@@ -22,14 +22,16 @@
  */
 
 #include <assert.h>
-#include <gdk/gdkkeysyms.h>
-#include <gtk/gtk.h>
 #include <stdio.h>
 #include <limits.h>
+
+#include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
 #include "desktop/plotters.h"
+#include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/plotters.h"
 #include "gtk/treeview.h"
@@ -164,9 +166,40 @@ static void nsgtk_tree_get_window_dimensions(int *width, int *height, void *data
 	}
 }
 
+#if GTK_CHECK_VERSION(3,0,0)
+
+static gboolean 
+nsgtk_tree_window_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
+{
+	struct tree *tree = (struct tree *)data;
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &nsgtk_plotters
+	};
+	double x1;
+	double y1;
+	double x2;
+	double y2;
+	
+	current_widget = widget;
+	current_cr = cr;
+	
+	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
+
+	tree_set_redraw(tree, true);
+	tree_draw(tree, 0, 0, x1, y1, x2 - x1, y2 - y1, &ctx);
+	
+	current_widget = NULL;
+	
+	return FALSE;
+}
+
+#else
+
 /* signal handler functions for a tree window */
-gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
-		GdkEventExpose *event, gpointer g)
+static gboolean 
+nsgtk_tree_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 {
 	struct tree *tree = (struct tree *) g;
 	struct redraw_context ctx = {
@@ -182,7 +215,7 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 	height = event->area.height;
 	
 	current_widget = widget;
-	current_cr = gdk_cairo_create(widget->window);
+	current_cr = gdk_cairo_create(gtk_widget_get_window(widget));
 	
 	tree_set_redraw(tree, true);
 	tree_draw(tree, 0, 0, x, y, width, height, &ctx);
@@ -192,6 +225,8 @@ gboolean nsgtk_tree_window_expose_event(GtkWidget *widget,
 	
 	return FALSE;
 }
+
+#endif
 
 void nsgtk_tree_window_hide(GtkWidget *widget, gpointer g)
 {
@@ -382,81 +417,85 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	edited = tree_is_edited(tree);
 
 	switch (event->keyval) {
-		case GDK_Home:
-		case GDK_KP_Home:
+	case GDK_KEY(Home):
+	case GDK_KEY(KP_Home):
 			if (edited)
 				break;
 			scroll = vscroll;
-			value = scroll->lower;
+			value = gtk_adjustment_get_lower(scroll);
 			break;
 
-		case GDK_End:
-		case GDK_KP_End:
+	case GDK_KEY(End):
+	case GDK_KEY(KP_End):
 			if (edited)
 				break;			
 			scroll = vscroll;
-			value = scroll->upper - vpage;
-			if (value < scroll->lower)
-				value = scroll->lower;
+			value = gtk_adjustment_get_upper(scroll) - vpage;
+			if (value < gtk_adjustment_get_lower(scroll))
+				value = gtk_adjustment_get_lower(scroll);
 			break;
 
-		case GDK_Left:
-		case GDK_KP_Left:
+	case GDK_KEY(Left):
+	case GDK_KEY(KP_Left):
 			if (edited)
 				break;			
 			scroll = hscroll;
 			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
+				gtk_adjustment_get_step_increment(scroll);
+			if (value < gtk_adjustment_get_lower(scroll))
+				value = gtk_adjustment_get_lower(scroll);
 			break;
 
-		case GDK_Up:
-		case GDK_KP_Up:
+	case GDK_KEY(Up):
+	case GDK_KEY(KP_Up):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) -
-						scroll->step_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
+				gtk_adjustment_get_step_increment(scroll);
+			if (value < gtk_adjustment_get_lower(scroll))
+				value = gtk_adjustment_get_lower(scroll);
 			break;
 
-		case GDK_Right:
-		case GDK_KP_Right:
+	case GDK_KEY(Right):
+	case GDK_KEY(KP_Right):
 			if (edited)
 				break;
 			scroll = hscroll;
 			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - hpage)
-				value = scroll->upper - hpage;
+				gtk_adjustment_get_step_increment(scroll);
+			if (value > gtk_adjustment_get_upper(scroll) - hpage)
+				value = gtk_adjustment_get_upper(scroll) - hpage;
 			break;
 
-		case GDK_Down:
-		case GDK_KP_Down:
+	case GDK_KEY(Down):
+	case GDK_KEY(KP_Down):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) +
-						scroll->step_increment;
-			if (value > scroll->upper - vpage)
-				value = scroll->upper - vpage;
+				gtk_adjustment_get_step_increment(scroll);
+			if (value > gtk_adjustment_get_upper(scroll) - vpage)
+				value = gtk_adjustment_get_upper(scroll) - vpage;
 			break;
 
-		case GDK_Page_Up:
-		case GDK_KP_Page_Up:
+	case GDK_KEY(Page_Up):
+	case GDK_KEY(KP_Page_Up):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) -
-						scroll->page_increment;
-			if (value < scroll->lower)
-				value = scroll->lower;
+				gtk_adjustment_get_page_increment(scroll);
+
+			if (value < gtk_adjustment_get_lower(scroll))
+				value = gtk_adjustment_get_lower(scroll);
+
 			break;
 
-		case GDK_Page_Down:
-		case GDK_KP_Page_Down:
+	case GDK_KEY(Page_Down):
+	case GDK_KEY(KP_Page_Down):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) +
-						scroll->page_increment;
-			if (value > scroll->upper - vpage)
-				value = scroll->upper - vpage;
+				gtk_adjustment_get_page_increment(scroll);
+
+			if (value > gtk_adjustment_get_upper(scroll) - vpage)
+				value = gtk_adjustment_get_upper(scroll) - vpage;
 			break;			
+
 		default:
 			tree_keypress(tree, nskey);
 			return TRUE;
@@ -483,6 +522,8 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 {
 	struct nsgtk_treeview *tv;	
 	
+	assert(drawing_area != NULL);
+
 	tv = malloc(sizeof(struct nsgtk_treeview));
 	if (tv == NULL) {
 		LOG(("malloc failed"));
@@ -497,15 +538,14 @@ struct nsgtk_treeview *nsgtk_treeview_create(unsigned int flags,
 	tv->mouse_state = 0;
 	tv->mouse_pressed = false;
 	
-	gtk_widget_modify_bg(GTK_WIDGET(drawing_area), GTK_STATE_NORMAL,
-			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
+	nsgtk_widget_override_background_color(GTK_WIDGET(drawing_area), 
+					       GTK_STATE_NORMAL,
+					       0, 0xffff, 0xffff, 0xffff);
+
+	nsgtk_connect_draw_event(GTK_WIDGET(drawing_area), G_CALLBACK(nsgtk_tree_window_draw_event), tv->tree);
 	
 #define CONNECT(obj, sig, callback, ptr) \
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
-	
-	CONNECT(drawing_area, "expose_event",
-			nsgtk_tree_window_expose_event,
-  			tv->tree);
 	CONNECT(drawing_area, "button_press_event",
 			nsgtk_tree_window_button_press_event,
 			tv);

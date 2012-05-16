@@ -85,7 +85,7 @@ static struct menu_events menu_events[] = {
 };
 
 static struct nsgtk_treeview *global_history_window;
-static GladeXML *gladeFile;
+static GtkBuilder *gladeFile;
 GtkWindow *wndHistory;
 
 
@@ -95,31 +95,33 @@ bool nsgtk_history_init(const char *glade_file_location)
 	GtkWindow *window;
 	GtkScrolledWindow *scrolled;
 	GtkDrawingArea *drawing_area;
-	
-	gladeFile = glade_xml_new(glade_file_location, NULL, NULL);
-	if (gladeFile == NULL)
-		return false;
+	GError* error = NULL;
 
-	glade_xml_signal_autoconnect(gladeFile);
+	gladeFile = gtk_builder_new();
+	if (!gtk_builder_add_from_file(gladeFile, glade_file_location, &error))  {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
+		return false;
+	}
+
+	gtk_builder_connect_signals(gladeFile, NULL);
 	
-	wndHistory = GTK_WINDOW(glade_xml_get_widget(gladeFile, "wndHistory"));
+	wndHistory = GTK_WINDOW(gtk_builder_get_object(gladeFile, "wndHistory"));
 	
 	window = wndHistory;
 	
-	scrolled = GTK_SCROLLED_WINDOW(glade_xml_get_widget(gladeFile,
-			"globalHistoryScrolled"));
+	scrolled = GTK_SCROLLED_WINDOW(gtk_builder_get_object(gladeFile, "globalHistoryScrolled"));
 
-	drawing_area = GTK_DRAWING_AREA(glade_xml_get_widget(gladeFile,
-			"globalHistoryDrawingArea"));
+	drawing_area = GTK_DRAWING_AREA(gtk_builder_get_object(gladeFile, "globalHistoryDrawingArea"));
 
 	global_history_window = nsgtk_treeview_create(
-			history_global_get_tree_flags(), window, scrolled,
-			drawing_area);
+		history_global_get_tree_flags(), window, scrolled,
+		drawing_area);
 	
 	if (global_history_window == NULL)
 		return false;
 	
-#define CONNECT(obj, sig, callback, ptr) \
+#define CONNECT(obj, sig, callback, ptr)				\
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))	
 	
 	CONNECT(window, "delete_event", gtk_widget_hide_on_delete, NULL);
@@ -141,12 +143,15 @@ bool nsgtk_history_init(const char *glade_file_location)
 void nsgtk_history_init_menu(void)
 {
 	struct menu_events *event = menu_events;
+	GtkWidget *w;
 
-	while (event->widget != NULL)
-	{
-		GtkWidget *w = glade_xml_get_widget(gladeFile, event->widget);
-		g_signal_connect(G_OBJECT(w), "activate", event->handler,
-				global_history_window);
+	while (event->widget != NULL) {
+		w = GTK_WIDGET(gtk_builder_get_object(gladeFile, event->widget));
+		if (w == NULL) {
+			LOG(("Unable to connect menu widget ""%s""", event->widget));
+		} else {
+			g_signal_connect(G_OBJECT(w), "activate", event->handler, global_history_window);
+		}
 		event++;
 	}
 }

@@ -46,8 +46,33 @@ typedef enum {
 } GtkEntryIconPosition;
 #endif
 
+#if GTK_CHECK_VERSION (2, 90, 7)
+#define GDK_KEY(symbol) GDK_KEY_##symbol
+#else
+#include <gdk/gdkkeysyms.h> 
+#define GDK_KEY(symbol) GDK_##symbol
+#endif
+
+#if !GTK_CHECK_VERSION(3,0,0)
+typedef GtkStateType GtkStateFlags;
+typedef GtkStyle GtkStyleContext;
+#endif
+
 GtkWidget *nsgtk_entry_new(void);
 void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
+void nsgtk_widget_override_background_color(GtkWidget *widget, GtkStateFlags state, uint16_t a, uint16_t r, uint16_t g, uint16_t b);
+GtkAdjustment *nsgtk_layout_get_vadjustment(GtkLayout *layout);
+GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout);
+void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj); 
+void nsgtk_layout_set_vadjustment(GtkLayout *layout, GtkAdjustment *adj);
+GtkWidget* nsgtk_hbox_new(gboolean homogeneous, gint spacing);
+GtkWidget* nsgtk_vbox_new(gboolean homogeneous, gint spacing);
+GtkStateFlags nsgtk_widget_get_state_flags(GtkWidget *widget);
+GtkStyleContext* nsgtk_widget_get_style_context(GtkWidget *widget);
+const PangoFontDescription* nsgtk_style_context_get_font(GtkStyleContext *style, GtkStateFlags state);
+gulong nsgtk_connect_draw_event(GtkWidget *widget, GCallback callback, gpointer g);
+void nsgdk_cursor_unref(GdkCursor *cursor);
+void nsgtk_widget_modify_font(GtkWidget *widget, PangoFontDescription *font_desc);
 
 #endif /* NETSURF_GTK_COMPAT_H */

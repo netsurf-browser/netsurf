@@ -16,13 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <gtk/gtk.h>
-#include <glade/glade.h>
 
+#include "gtk/compat.h"
 #include "gtk/dialogs/source.h"
 #include "gtk/dialogs/about.h"
 #include "gtk/window.h"
@@ -36,6 +37,7 @@
 #include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
+#include "render/html.h"
 #include "render/font.h"
 #include "content/content.h"
 #include "content/content_type.h"
@@ -58,17 +60,11 @@ struct menu_events {
 	GCallback handler;
 };
 
-static GladeXML *glade_File;
+static GtkBuilder *glade_File;
 static struct nsgtk_source_window *nsgtk_source_list = 0;
 static char source_zoomlevel = 10;
 
 void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw);
-static void nsgtk_attach_source_menu_handlers(GladeXML *xml, gpointer g);
-static gboolean nsgtk_source_delete_event(GtkWindow *window, gpointer g);
-static gboolean nsgtk_source_destroy_event(GtkWindow *window, gpointer g);
-static void nsgtk_source_update_zoomlevel(gpointer g);
-static void nsgtk_source_file_save(GtkWindow *parent, const char *filename, 
-		const char *data);
 
 #define MENUEVENT(x) { #x, G_CALLBACK(nsgtk_on_##x##_activate) }
 #define MENUPROTO(x) static gboolean nsgtk_on_##x##_activate( \
@@ -103,9 +99,45 @@ MENUEVENT(source_about),
 {NULL, NULL}
 };
 
+static void nsgtk_attach_source_menu_handlers(GtkBuilder *xml, gpointer g)
+{
+	struct menu_events *event = source_menu_events;
+
+	while (event->widget != NULL)
+	{
+		GtkWidget *w = GTK_WIDGET(gtk_builder_get_object(xml, event->widget));
+		g_signal_connect(G_OBJECT(w), "activate", event->handler, g);
+		event++;
+	}
+}
+
+static gboolean nsgtk_source_destroy_event(GtkBuilder *window, gpointer g)
+{
+	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;	
+
+	if (nsg->next != NULL)
+		nsg->next->prev = nsg->prev;
+
+	if (nsg->prev != NULL)
+		nsg->prev->next = nsg->next;
+	else
+		nsgtk_source_list = nsg->next;
+
+	free(nsg->data);
+	free(nsg->url);
+	free(g);
+
+	return FALSE;
+}
+
+static gboolean nsgtk_source_delete_event(GtkWindow * window, gpointer g)
+{
+	return FALSE;
+}
+
 void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 {	
-	char glade_Location[strlen(res_dir_location) + SLEN("source.glade")
+	char glade_Location[strlen(res_dir_location) + SLEN("source.gtk2.ui")
 			+ 1];
 	if (content_get_type(bw->current_content) != CONTENT_HTML)
 		return;
@@ -115,11 +147,17 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 		return;
 	}
 	
-	sprintf(glade_Location, "%ssource.glade", res_dir_location);
-	glade_File = glade_xml_new(glade_Location, NULL, NULL);
-	if (glade_File == NULL) {
+	sprintf(glade_Location, "%ssource.gtk2.ui", res_dir_location);
+
+	GError* error = NULL;
+	glade_File = gtk_builder_new();
+	if (!gtk_builder_add_from_file(glade_File, glade_Location, &error)) {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
 		LOG(("error loading glade tree"));
+		return;
 	}
+
 
 	const char *source_data;
 	unsigned long source_size;
@@ -141,16 +179,16 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 		return;
 	}
 
-	GtkWindow *wndSource = GTK_WINDOW(glade_xml_get_widget(
+	GtkWindow *wndSource = GTK_WINDOW(gtk_builder_get_object(
 			glade_File, "wndSource"));
-	GtkWidget *cutbutton = glade_xml_get_widget(
-			glade_File, "source_cut");
-	GtkWidget *pastebutton = glade_xml_get_widget(
-			glade_File, "source_paste");
-	GtkWidget *deletebutton = glade_xml_get_widget(
-			glade_File, "source_delete");
-	GtkWidget *printbutton = glade_xml_get_widget(
-			glade_File, "source_print");
+	GtkWidget *cutbutton = GTK_WIDGET(gtk_builder_get_object(
+						  glade_File, "source_cut"));
+	GtkWidget *pastebutton = GTK_WIDGET(gtk_builder_get_object(
+						    glade_File, "source_paste"));
+	GtkWidget *deletebutton = GTK_WIDGET(gtk_builder_get_object(
+						     glade_File, "source_delete"));
+	GtkWidget *printbutton = GTK_WIDGET(gtk_builder_get_object(
+						    glade_File, "source_print"));
 	gtk_widget_set_sensitive(cutbutton, FALSE);
 	gtk_widget_set_sensitive(pastebutton, FALSE);
 	gtk_widget_set_sensitive(deletebutton, FALSE);
@@ -200,13 +238,15 @@ void nsgtk_source_dialog_init(GtkWindow *parent, struct browser_window *bw)
 			thiswindow);
 		
 	GtkTextView *sourceview = GTK_TEXT_VIEW(
-			glade_xml_get_widget(glade_File, 
+			gtk_builder_get_object(glade_File, 
 			"source_view"));
+
 	PangoFontDescription *fontdesc =
 		pango_font_description_from_string("Monospace 8");
 
 	thiswindow->gv = sourceview;
-	gtk_widget_modify_font(GTK_WIDGET(sourceview), fontdesc);
+	nsgtk_widget_modify_font(GTK_WIDGET(sourceview), fontdesc);
+
 	GtkTextBuffer *tb = gtk_text_view_get_buffer(sourceview);
 	gtk_text_buffer_set_text(tb, thiswindow->data, -1);
 			
@@ -262,18 +302,68 @@ void nsgtk_source_tab_init(GtkWindow *parent, struct browser_window *bw)
 	free(fileurl);
 }
 
-
-void nsgtk_attach_source_menu_handlers(GladeXML *xml, gpointer g)
+static void nsgtk_source_file_save(GtkWindow *parent, const char *filename, 
+		const char *data)
 {
-	struct menu_events *event = source_menu_events;
+	FILE *f;
+	bool auth = true;
+	char temp[255];
+	GtkWidget *notif, *label;
 
-	while (event->widget != NULL)
-	{
-		GtkWidget *w = glade_xml_get_widget(xml, event->widget);
-		g_signal_connect(G_OBJECT(w), "activate", event->handler, g);
-		event++;
+	if (!(access(filename, F_OK))) {
+		GtkWidget *confd = gtk_dialog_new_with_buttons(
+				messages_get("gtkOverwriteTitle"), 
+				parent,
+				GTK_DIALOG_DESTROY_WITH_PARENT,
+				GTK_STOCK_OK, 
+				GTK_RESPONSE_ACCEPT,
+				GTK_STOCK_CANCEL,
+				GTK_RESPONSE_REJECT,
+				NULL);
+		const char *format = messages_get("gtkOverwrite");
+		int len = strlen(filename) + strlen(format) + SLEN("\n\n") + 1;
+		char warn[len];
+		auth = false;
+
+		warn[0] = '\n';
+		snprintf(warn + 1, len - 2, format, filename);
+		len = strlen(warn);
+		warn[len - 1] = '\n';
+		warn[len] = '\0';
+
+		label = gtk_label_new(warn);
+		gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(confd))), 
+				label);
+		gtk_widget_show(label);
+		if (gtk_dialog_run(GTK_DIALOG(confd)) == GTK_RESPONSE_ACCEPT) {
+			auth = true;
+		}
+		gtk_widget_destroy(confd);
 	}
+
+	if (auth) {
+		f = fopen(filename, "w+");
+		fprintf(f, "%s", data);
+		fclose(f);
+		snprintf(temp, sizeof(temp), "\n                    %s"
+				"                    \n",
+				messages_get("gtkSaveConfirm"));
+	} else {
+		snprintf(temp, sizeof(temp), "\n                    %s"
+				"                    \n",
+				messages_get("gtkSaveCancelled"));
+	}
+	
+	notif = gtk_dialog_new_with_buttons(temp, 
+			parent, GTK_DIALOG_MODAL, GTK_STOCK_OK,
+			GTK_RESPONSE_NONE, NULL);
+	g_signal_connect_swapped(notif, "response",
+			G_CALLBACK(gtk_widget_destroy), notif);
+	label = gtk_label_new(temp);
+	gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(notif))), label);
+	gtk_widget_show_all(notif);
 }
+
 
 gboolean nsgtk_on_source_save_as_activate(GtkMenuItem *widget, gpointer g)
 {
@@ -314,67 +404,6 @@ gboolean nsgtk_on_source_save_as_activate(GtkMenuItem *widget, gpointer g)
 	return TRUE;
 }
 
-void nsgtk_source_file_save(GtkWindow *parent, const char *filename, 
-		const char *data)
-{
-	FILE *f;
-	bool auth = true;
-	char temp[255];
-	GtkWidget *notif, *label;
-
-	if (!(access(filename, F_OK))) {
-		GtkWidget *confd = gtk_dialog_new_with_buttons(
-				messages_get("gtkOverwriteTitle"), 
-				parent,
-				GTK_DIALOG_DESTROY_WITH_PARENT,
-				GTK_STOCK_OK, 
-				GTK_RESPONSE_ACCEPT,
-				GTK_STOCK_CANCEL,
-				GTK_RESPONSE_REJECT,
-				NULL);
-		const char *format = messages_get("gtkOverwrite");
-		int len = strlen(filename) + strlen(format) + SLEN("\n\n") + 1;
-		char warn[len];
-		auth = false;
-
-		warn[0] = '\n';
-		snprintf(warn + 1, len - 2, format, filename);
-		len = strlen(warn);
-		warn[len - 1] = '\n';
-		warn[len] = '\0';
-
-		label = gtk_label_new(warn);
-		gtk_container_add(GTK_CONTAINER(GTK_DIALOG(confd)->vbox), 
-				label);
-		gtk_widget_show(label);
-		if (gtk_dialog_run(GTK_DIALOG(confd)) == GTK_RESPONSE_ACCEPT) {
-			auth = true;
-		}
-		gtk_widget_destroy(confd);
-	}
-
-	if (auth) {
-		f = fopen(filename, "w+");
-		fprintf(f, "%s", data);
-		fclose(f);
-		snprintf(temp, sizeof(temp), "\n                    %s"
-				"                    \n",
-				messages_get("gtkSaveConfirm"));
-	} else {
-		snprintf(temp, sizeof(temp), "\n                    %s"
-				"                    \n",
-				messages_get("gtkSaveCancelled"));
-	}
-	
-	notif = gtk_dialog_new_with_buttons(temp, 
-			parent, GTK_DIALOG_MODAL, GTK_STOCK_OK,
-			GTK_RESPONSE_NONE, NULL);
-	g_signal_connect_swapped(notif, "response",
-			G_CALLBACK(gtk_widget_destroy), notif);
-	label = gtk_label_new(temp);
-	gtk_container_add(GTK_CONTAINER(GTK_DIALOG(notif)->vbox), label);
-	gtk_widget_show_all(notif);
-}
 
 gboolean nsgtk_on_source_print_activate( GtkMenuItem *widget, gpointer g)
 {
@@ -392,29 +421,7 @@ gboolean nsgtk_on_source_close_activate( GtkMenuItem *widget, gpointer g)
 	return TRUE;
 }
 
-gboolean nsgtk_source_delete_event(GtkWindow * window, gpointer g)
-{
-	return FALSE;
-}
 
-gboolean nsgtk_source_destroy_event(GtkWindow * window, gpointer g)
-{
-	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;	
-
-	if (nsg->next != NULL)
-		nsg->next->prev = nsg->prev;
-
-	if (nsg->prev != NULL)
-		nsg->prev->next = nsg->next;
-	else
-		nsgtk_source_list = nsg->next;
-
-	free(nsg->data);
-	free(nsg->url);
-	free(g);
-
-	return FALSE;
-}
 
 gboolean nsgtk_on_source_select_all_activate (GtkMenuItem *widget, gpointer g)
 {
@@ -455,42 +462,7 @@ gboolean nsgtk_on_source_delete_activate(GtkMenuItem *widget, gpointer g)
 	return TRUE;
 }
 
-gboolean nsgtk_on_source_zoom_in_activate(GtkMenuItem *widget, gpointer g)
-{
-	source_zoomlevel++;
-	nsgtk_source_update_zoomlevel(g);
-
-	return TRUE;
-}
-
-gboolean nsgtk_on_source_zoom_out_activate(GtkMenuItem *widget, gpointer g)
-{
-	if (source_zoomlevel > 1) {
-		source_zoomlevel--;
-		nsgtk_source_update_zoomlevel(g);
-	}
-
-	return TRUE;
-}
-
-gboolean nsgtk_on_source_zoom_normal_activate(GtkMenuItem *widget, gpointer g)
-{
-	source_zoomlevel = 10;
-	nsgtk_source_update_zoomlevel(g);
-
-	return TRUE;
-}
-
-gboolean nsgtk_on_source_about_activate(GtkMenuItem *widget, gpointer g)
-{
-	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
-
-	nsgtk_about_dialog_init(nsg->sourcewindow, nsg->bw, netsurf_version);
-
-	return TRUE;
-}
-
-void nsgtk_source_update_zoomlevel(gpointer g)
+static void nsgtk_source_update_zoomlevel(gpointer g)
 {
 	struct nsgtk_source_window *nsg;
 	GtkTextBuffer *buf;
@@ -527,3 +499,40 @@ void nsgtk_source_update_zoomlevel(gpointer g)
 		nsg = nsg->next;
 	}
 }
+
+gboolean nsgtk_on_source_zoom_in_activate(GtkMenuItem *widget, gpointer g)
+{
+	source_zoomlevel++;
+	nsgtk_source_update_zoomlevel(g);
+
+	return TRUE;
+}
+
+gboolean nsgtk_on_source_zoom_out_activate(GtkMenuItem *widget, gpointer g)
+{
+	if (source_zoomlevel > 1) {
+		source_zoomlevel--;
+		nsgtk_source_update_zoomlevel(g);
+	}
+
+	return TRUE;
+}
+
+
+gboolean nsgtk_on_source_zoom_normal_activate(GtkMenuItem *widget, gpointer g)
+{
+	source_zoomlevel = 10;
+	nsgtk_source_update_zoomlevel(g);
+
+	return TRUE;
+}
+
+gboolean nsgtk_on_source_about_activate(GtkMenuItem *widget, gpointer g)
+{
+	struct nsgtk_source_window *nsg = (struct nsgtk_source_window *) g;
+
+	nsgtk_about_dialog_init(nsg->sourcewindow, nsg->bw, netsurf_version);
+
+	return TRUE;
+}
+

@@ -29,10 +29,11 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
-#include <glade/glade.h>
+//#include <glade/glade.h>
 
 struct glade_file_location_s {
 	char *netsurf;
+	char *tabcontents;
 	char *password;
 	char *warning;
 	char *login;

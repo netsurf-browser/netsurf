@@ -20,6 +20,8 @@
  * Compatibility functions for older GTK versions (implementation)
  */
 
+#include <stdint.h>
+
 #include "gtk/compat.h"
 
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus)
@@ -169,3 +171,133 @@ void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon
 
 #endif
 }
+
+void nsgtk_widget_override_background_color(GtkWidget *widget, GtkStateFlags state, uint16_t a, uint16_t r, uint16_t g, uint16_t b)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	GdkRGBA colour;
+	colour.alpha = (double)a / 0xffff;
+	colour.red = (double)r / 0xffff;
+	colour.green = (double)g / 0xffff;
+	colour.blue = (double)b / 0xffff;
+	gtk_widget_override_background_color(widget, state, &colour);
+#else
+	GdkColor colour;
+	colour.pixel = a;
+	colour.red = r;
+	colour.green = g;
+	colour.blue = b;
+	gtk_widget_modify_bg(widget, state, &colour );
+#endif
+}
+
+GtkAdjustment *nsgtk_layout_get_vadjustment(GtkLayout *layout)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_scrollable_get_vadjustment(GTK_SCROLLABLE(layout));
+#else
+	return gtk_layout_get_vadjustment(layout);
+#endif
+}
+
+GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_scrollable_get_hadjustment(GTK_SCROLLABLE(layout));
+#else
+	return gtk_layout_get_hadjustment(layout);
+#endif
+}
+
+void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj) 
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	gtk_scrollable_set_hadjustment(GTK_SCROLLABLE(layout), adj);
+#else
+	gtk_layout_set_hadjustment(layout, adj);
+#endif
+}
+
+void nsgtk_layout_set_vadjustment(GtkLayout *layout, GtkAdjustment *adj) 
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	gtk_scrollable_set_vadjustment(GTK_SCROLLABLE(layout), adj);
+#else
+	gtk_layout_set_vadjustment(layout, adj);
+#endif
+}
+
+GtkWidget *nsgtk_hbox_new(gboolean homogeneous, gint spacing)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_box_new(GTK_ORIENTATION_HORIZONTAL, spacing);
+#else
+	return gtk_hbox_new(homogeneous, spacing);
+#endif
+}
+
+GtkWidget *nsgtk_vbox_new(gboolean homogeneous, gint spacing)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_box_new(GTK_ORIENTATION_VERTICAL, spacing);
+#else
+	return gtk_vbox_new(homogeneous, spacing);
+#endif
+}
+
+GtkStateFlags nsgtk_widget_get_state_flags(GtkWidget *widget)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_widget_get_state_flags(widget);
+#else
+	return gtk_widget_get_state(widget);
+#endif
+}
+
+GtkStyleContext *nsgtk_widget_get_style_context(GtkWidget *widget)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_widget_get_style_context(widget);
+#else
+	return widget->style;
+#endif
+}
+
+const PangoFontDescription* nsgtk_style_context_get_font(GtkStyleContext *style, GtkStateFlags state)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return gtk_style_context_get_font(style, state);
+#else
+	return style->font_desc;
+#endif
+}
+
+gulong nsgtk_connect_draw_event(GtkWidget *widget, GCallback callback, gpointer g)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	return g_signal_connect(G_OBJECT(widget), "draw", callback, g);
+#else
+	return g_signal_connect(G_OBJECT(widget), "expose_event", callback, g);
+#endif
+}
+
+void nsgdk_cursor_unref(GdkCursor *cursor)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+	g_object_unref(cursor);
+#else
+	gdk_cursor_unref(cursor);
+#endif
+}
+
+void nsgtk_widget_modify_font(GtkWidget *widget, PangoFontDescription *font_desc)
+{
+#if GTK_CHECK_VERSION(3,0,0)
+/* FIXME */
+	return;
+#else
+	gtk_widget_modify_font(widget, font_desc);
+#endif
+}
+
+

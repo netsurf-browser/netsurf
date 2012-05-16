@@ -20,7 +20,6 @@
 
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
-#include <glade/glade-xml.h>
 
 #include "gtk/menu.h"
 #include "utils/messages.h"

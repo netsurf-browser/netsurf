@@ -88,8 +88,6 @@
 #include "utils/log.h"
 
 
-/** Obtain a GTK widget handle from glade xml object */
-#define GET_WIDGET(x) glade_xml_get_widget(g->xml, (x))
 
 /** Macro to define a handler for menu, button and activate events. */
 #define MULTIHANDLER(q)\
@@ -139,7 +137,7 @@ struct gtk_scaffolding {
 	int				toolbarbase;
 	int				historybase;
 
-	GladeXML			*xml;
+	GtkBuilder			*xml;
 
 	struct gtk_history_window	*history_window;
 	GtkDialog 			*preferences_dialog;
@@ -565,8 +563,9 @@ MULTIHANDLER(newtab)
 	if (nsoption_bool(new_blank)) {
 		browser_window_create(NULL, bw, NULL, false, true);
 		GtkWidget *window = gtk_notebook_get_nth_page(g->notebook, -1);
-		gtk_widget_modify_bg(window, GTK_STATE_NORMAL, &((GdkColor)
-				{0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF}));
+		nsgtk_widget_override_background_color(window, 
+						       GTK_STATE_NORMAL, 
+						       0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF);
 	} else {
 		const char *url = nsoption_charp(homepage_url);
 
@@ -1285,8 +1284,10 @@ MULTIHANDLER(savedomtree)
 			if (bw->current_content &&
 					content_get_type(bw->current_content) ==
 					CONTENT_HTML) {
+#ifdef FIXME
 				xmlDebugDumpDocument(fh,
 					html_get_document(bw->current_content));
+#endif
 			}
 
 			fclose(fh);
@@ -1409,7 +1410,7 @@ MULTIHANDLER(localhistory)
 	gtk_widget_show(GTK_WIDGET(g->history_window->window));
 	gtk_window_move(g->history_window->window, x + g->historybase, y +
 			g->toolbarbase);
-	gdk_window_raise(GTK_WIDGET(g->history_window->window)->window);
+	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(g->history_window->window)));
 
 	return TRUE;
 }
@@ -1417,7 +1418,7 @@ MULTIHANDLER(localhistory)
 MULTIHANDLER(globalhistory)
 {
 	gtk_widget_show(GTK_WIDGET(wndHistory));
-	gdk_window_raise(GTK_WIDGET(wndHistory)->window);
+	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(wndHistory)));
 
 	return TRUE;
 }
@@ -1436,7 +1437,7 @@ MULTIHANDLER(addbookmarks)
 MULTIHANDLER(showbookmarks)
 {
 	gtk_widget_show(GTK_WIDGET(wndHotlist));
-	gdk_window_raise(GTK_WIDGET(wndHotlist)->window);
+	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(wndHotlist)));
 	gtk_window_set_focus(wndHotlist, NULL);
 
 	return TRUE;
@@ -1445,7 +1446,7 @@ MULTIHANDLER(showbookmarks)
 MULTIHANDLER(showcookies)
 {
 	gtk_widget_show(GTK_WIDGET(wndCookies));
-	gdk_window_raise(GTK_WIDGET(wndCookies)->window);
+	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(wndCookies)));
 
 	return TRUE;
 }
@@ -1519,10 +1520,49 @@ BUTTONHANDLER(history)
 #undef CHECKHANDLER
 #undef BUTTONHANDLER
 
+#if GTK_CHECK_VERSION(3,0,0)
+
+static gboolean 
+nsgtk_history_draw_event(GtkWidget *widget, cairo_t *cr, gpointer data)
+{
+	struct rect clip;
+	struct gtk_history_window *hw = (struct gtk_history_window *)data;
+	struct browser_window *bw =
+			nsgtk_get_browser_window(hw->g->top_level);
+
+	struct redraw_context ctx = {
+		.interactive = true,
+		.background_images = true,
+		.plot = &nsgtk_plotters
+	};
+	double x1;
+	double y1;
+	double x2;
+	double y2;
+
+	current_widget = widget;
+	current_cr = cr;
+
+	cairo_clip_extents(cr, &x1, &y1, &x2, &y2);
+
+	clip.x0 = x1;
+	clip.y0 = y1;
+	clip.x1 = x2;
+	clip.y1 = y2;
+
+	ctx.plot->clip(&clip);
+
+	history_redraw(bw->history, &ctx);
+
+	current_widget = NULL;
+
+	return FALSE;
+}
+#else
 
 /* signal handler functions for the local history window */
-static gboolean nsgtk_history_expose_event(GtkWidget *widget,
-		GdkEventExpose *event, gpointer g)
+static gboolean 
+nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 {
 	struct rect clip;
 	struct gtk_history_window *hw = (struct gtk_history_window *)g;
@@ -1537,7 +1577,7 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 
 	current_widget = widget;
 
-	current_cr = gdk_cairo_create(widget->window);
+	current_cr = gdk_cairo_create(gtk_widget_get_window(widget));
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
@@ -1547,13 +1587,14 @@ static gboolean nsgtk_history_expose_event(GtkWidget *widget,
 
 	history_redraw(bw->history, &ctx);
 
-	current_widget = NULL;
-
 	cairo_destroy(current_cr);
+
+	current_widget = NULL;
 
 	return FALSE;
 }
 
+#endif /* GTK_CHECK_VERSION(3,0,0) */
 
 static gboolean nsgtk_history_button_press_event(GtkWidget *widget,
 		GdkEventButton *event, gpointer g)
@@ -1654,6 +1695,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	char *searchname;
 	int i;
 	GtkAccelGroup *group;
+	GError* error = NULL;
 
 	if (g == NULL) {
 		warn_user("NoMemory", 0);
@@ -1669,9 +1711,18 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	/* load the window template from the glade xml file, and extract
 	 * widget references from it for later use.
 	 */
-	g->xml = glade_xml_new(glade_file_location->netsurf,
-			"wndBrowser", NULL);
-	glade_xml_signal_autoconnect(g->xml);
+	g->xml = gtk_builder_new();
+	if (!gtk_builder_add_from_file(g->xml, glade_file_location->netsurf, &error)) {
+		g_warning("Couldn't load builder file: \"%s\"", error->message);
+		g_error_free (error);
+		return NULL;
+	}
+
+	gtk_builder_connect_signals(g->xml, NULL);
+
+/** Obtain a GTK widget handle from glade xml object */
+#define GET_WIDGET(x) GTK_WIDGET (gtk_builder_get_object(g->xml, (x)))
+
 	g->window = GTK_WINDOW(GET_WIDGET("wndBrowser"));
 	g->notebook = GTK_NOTEBOOK(GET_WIDGET("notebook"));
 	g->tool_bar = GTK_TOOLBAR(GET_WIDGET("toolbar"));
@@ -1694,7 +1745,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g->search->checkAll = GTK_CHECK_BUTTON(GET_WIDGET("checkAllSearch"));
 	g->search->caseSens = GTK_CHECK_BUTTON(GET_WIDGET("caseSensButton"));
 
-
+#undef GET_WIDGET
 
 	for (i = BACK_BUTTON; i < PLACEHOLDER_BUTTON; i++) {
 		g->buttons[i] = malloc(sizeof(struct nsgtk_button_connect));
@@ -1724,7 +1775,7 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	group = gtk_accel_group_new();
 	gtk_window_add_accel_group(g->window, group);
 
-	g->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(glade_xml_get_widget(g->xml, "menubar")), group);
+	g->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(gtk_builder_get_object(g->xml, "menubar")), group);
 
 
 	g->preferences_dialog = NULL;
@@ -1838,9 +1889,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 			GDK_EXPOSURE_MASK |
 			GDK_POINTER_MOTION_MASK |
 			GDK_BUTTON_PRESS_MASK);
-	gtk_widget_modify_bg(GTK_WIDGET(g->history_window->drawing_area),
+	nsgtk_widget_override_background_color(GTK_WIDGET(g->history_window->drawing_area),
 			GTK_STATE_NORMAL,
-			&((GdkColor) { 0, 0xffff, 0xffff, 0xffff } ));
+			0, 0xffff, 0xffff, 0xffff);
 	gtk_scrolled_window_add_with_viewport(g->history_window->scrolled,
 			GTK_WIDGET(g->history_window->drawing_area));
 	gtk_widget_show(GTK_WIDGET(g->history_window->drawing_area));
@@ -1868,8 +1919,9 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 	g_signal_connect(G_OBJECT(obj), (sig), G_CALLBACK(callback), (ptr))
 
 	/* connect history window signals to their handlers */
-	CONNECT(g->history_window->drawing_area, "expose_event",
-			nsgtk_history_expose_event, g->history_window);
+	nsgtk_connect_draw_event(GTK_WIDGET(g->history_window->drawing_area), 
+				 G_CALLBACK(nsgtk_history_draw_event), 
+				 g->history_window);
 	/*CONNECT(g->history_window->drawing_area, "motion_notify_event",
 			nsgtk_history_motion_notify_event, g->history_window);*/
 	CONNECT(g->history_window->drawing_area, "button_press_event",

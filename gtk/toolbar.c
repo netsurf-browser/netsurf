@@ -43,7 +43,7 @@ struct nsgtk_toolbar_custom_store {
 	GtkWidget *widgetvbox;
 	GtkWidget *currentbar;
 	char numberh; /* current horizontal location while adding */
-	GladeXML *glade;			/* button widgets to store */
+	GtkBuilder *glade;			/* button widgets to store */
 	int buttonlocations[PLACEHOLDER_BUTTON];
 	int currentbutton;
 	bool fromstore;
@@ -123,10 +123,10 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 				nsgtk_window_get_signalhandler(
 				nsgtk_scaffolding_top_level(list),
 				NSGTK_WINDOW_SIGNAL_REDRAW));
-		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_layout(
+		nsgtk_widget_override_background_color(
+			GTK_WIDGET(nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
-				GTK_STATE_NORMAL, &((GdkColor)
-				{0, 0xEEEE, 0xEEEE, 0xEEEE}));
+			GTK_STATE_NORMAL, 0, 0xEEEE, 0xEEEE, 0xEEEE);
 
 		if (list == g) {
 			list = nsgtk_scaffolding_iterate(list);
@@ -188,6 +188,7 @@ void nsgtk_toolbar_customization_init(nsgtk_scaffolding *g)
 void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 {
 	int x = 0, y = 0;
+	GError* error = NULL;
 	struct nsgtk_theme *theme =
 			nsgtk_theme_load(GTK_ICON_SIZE_LARGE_TOOLBAR);
 	if (theme == NULL) {
@@ -195,22 +196,29 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		return;
 	}
-	window->glade = glade_xml_new(glade_file_location->toolbar,
-			"toolbarwindow", NULL);
-	if (window->glade == NULL) {
+
+	window->glade = gtk_builder_new();
+	if (!gtk_builder_add_from_file(window->glade, 
+				       glade_file_location->toolbar, 
+				       &error)) {
+		g_warning ("Couldn't load builder file: %s", error->message);
+		g_error_free (error);
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
+		return;
 	}
-	glade_xml_signal_autoconnect(window->glade);
 
-	window->window = glade_xml_get_widget(window->glade, "toolbarwindow");
+	gtk_builder_connect_signals(window->glade, NULL);
+
+	window->window = GTK_WIDGET(gtk_builder_get_object(window->glade, "toolbarwindow"));
 	if (window->window == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
 		free(theme);
 		return;
 	}
-	window->widgetvbox = glade_xml_get_widget(window->glade, "widgetvbox");
+
+	window->widgetvbox = GTK_WIDGET(gtk_builder_get_object(window->glade, "widgetvbox"));
 	if (window->widgetvbox == NULL) {
 		warn_user(messages_get("NoMemory"), 0);
 		nsgtk_toolbar_cancel_clicked(NULL, g);
@@ -251,12 +259,14 @@ void nsgtk_toolbar_window_open(nsgtk_scaffolding *g)
 			GTK_WIN_POS_CENTER_ON_PARENT);
 	gtk_window_get_position(nsgtk_scaffolding_window(g), &x, &y);
 	gtk_window_move(GTK_WINDOW(window->window), x, y + 100);
-	g_signal_connect(glade_xml_get_widget(window->glade, "cancelbutton"),
-			"clicked", G_CALLBACK(
-			nsgtk_toolbar_cancel_clicked), g);
-	g_signal_connect(glade_xml_get_widget(window->glade, "okbutton"),
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->glade, "cancelbutton")),
+			 "clicked", 
+			 G_CALLBACK(nsgtk_toolbar_cancel_clicked), 
+			 g);
+
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->glade, "okbutton")),
 			"clicked", G_CALLBACK(nsgtk_toolbar_persist), g);
-	g_signal_connect(glade_xml_get_widget(window->glade, "resetbutton"),
+	g_signal_connect(GTK_WIDGET(gtk_builder_get_object(window->glade, "resetbutton")),
 			"clicked", G_CALLBACK(nsgtk_toolbar_reset), g);
 	g_signal_connect(window->window, "delete-event",
 			G_CALLBACK(nsgtk_toolbar_delete), g);
@@ -396,10 +406,7 @@ void nsgtk_toolbar_close(nsgtk_scaffolding *g)
 		gtk_widget_show_all(GTK_WIDGET(nsgtk_scaffolding_toolbar(
 				list)));
 		nsgtk_scaffolding_set_sensitivity(list);
-		gtk_widget_modify_bg(GTK_WIDGET(nsgtk_window_get_layout(
-				nsgtk_scaffolding_top_level(list))),
-				GTK_STATE_NORMAL, &((GdkColor)
-				{0, 0xFFFF, 0xFFFF, 0xFFFF}));
+		nsgtk_widget_override_background_color(GTK_WIDGET(nsgtk_window_get_layout(nsgtk_scaffolding_top_level(list))), GTK_STATE_NORMAL, 0, 0xFFFF, 0xFFFF, 0xFFFF);
 		g_signal_handler_unblock(GTK_WIDGET(
 				nsgtk_window_get_layout(
 				nsgtk_scaffolding_top_level(list))),
@@ -1044,8 +1051,9 @@ void nsgtk_toolbar_customization_load(nsgtk_scaffolding *g)
 		return;
 	}
 	val = fgets(buffer, sizeof buffer, f);
-	if (val == NULL)
+	if (val == NULL) {
 		LOG(("empty read toolbar settings"));
+	}
 	fclose(f);
 	i = BACK_BUTTON;
 	ii = BACK_BUTTON;

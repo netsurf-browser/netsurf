@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdint.h>
+
 #include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/dialogs/about.h"
@@ -55,9 +57,9 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 					     GTK_DIALOG_DESTROY_WITH_PARENT,
 					     NULL);
 
-	vbox = gtk_vbox_new (FALSE, 8);
+	vbox = nsgtk_vbox_new(FALSE, 8);
 
-	gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialog)->vbox), vbox, TRUE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), vbox, TRUE, TRUE, 0);
 	
 	if (pixbufs != NULL) {
 		GtkIconSet *icon_set = gtk_icon_set_new_from_pixbuf(GDK_PIXBUF(g_list_nth_data(pixbufs, 0)));
@@ -101,16 +103,16 @@ void nsgtk_about_dialog_init(GtkWindow *parent,
 
 	/* Add the credits button */
 	button = gtk_button_new_from_stock ("Credits");
-	gtk_box_pack_end(GTK_BOX (GTK_DIALOG (dialog)->action_area),
+	gtk_box_pack_end(GTK_BOX(gtk_dialog_get_action_area(GTK_DIALOG(dialog))),
 			 button, FALSE, TRUE, 0);
-	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX (GTK_DIALOG (dialog)->action_area), button, TRUE);
+	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX(gtk_dialog_get_action_area(GTK_DIALOG(dialog))), button, TRUE);
 	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_credits), (gpointer)bw);
 
 	/* Add the Licence button */
 	button = gtk_button_new_from_stock ("Licence");
-	gtk_box_pack_end(GTK_BOX (GTK_DIALOG (dialog)->action_area),
+	gtk_box_pack_end(GTK_BOX (GTK_DIALOG(gtk_dialog_get_action_area(GTK_DIALOG(dialog)))),
 			 button, FALSE, TRUE, 0);
-	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX (GTK_DIALOG (dialog)->action_area), button, TRUE);
+	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX(gtk_dialog_get_action_area(GTK_DIALOG(dialog))), button, TRUE);
 	g_signal_connect(button, "clicked", G_CALLBACK(nsgtk_about_dialog_licence), (gpointer)bw);
 
 
