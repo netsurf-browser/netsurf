@@ -215,7 +215,7 @@ nsgtk_tree_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer 
 	height = event->area.height;
 	
 	current_widget = widget;
-	current_cr = gdk_cairo_create(gtk_widget_get_window(widget));
+	current_cr = gdk_cairo_create(nsgtk_widget_get_window(widget));
 	
 	tree_set_redraw(tree, true);
 	tree_draw(tree, 0, 0, x, y, width, height, &ctx);
@@ -422,7 +422,7 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 			if (edited)
 				break;
 			scroll = vscroll;
-			value = gtk_adjustment_get_lower(scroll);
+			value = nsgtk_adjustment_get_lower(scroll);
 			break;
 
 	case GDK_KEY(End):
@@ -430,9 +430,9 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 			if (edited)
 				break;			
 			scroll = vscroll;
-			value = gtk_adjustment_get_upper(scroll) - vpage;
-			if (value < gtk_adjustment_get_lower(scroll))
-				value = gtk_adjustment_get_lower(scroll);
+			value = nsgtk_adjustment_get_upper(scroll) - vpage;
+			if (value < nsgtk_adjustment_get_lower(scroll))
+				value = nsgtk_adjustment_get_lower(scroll);
 			break;
 
 	case GDK_KEY(Left):
@@ -441,18 +441,18 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 				break;			
 			scroll = hscroll;
 			value = gtk_adjustment_get_value(scroll) -
-				gtk_adjustment_get_step_increment(scroll);
-			if (value < gtk_adjustment_get_lower(scroll))
-				value = gtk_adjustment_get_lower(scroll);
+				nsgtk_adjustment_get_step_increment(scroll);
+			if (value < nsgtk_adjustment_get_lower(scroll))
+				value = nsgtk_adjustment_get_lower(scroll);
 			break;
 
 	case GDK_KEY(Up):
 	case GDK_KEY(KP_Up):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) -
-				gtk_adjustment_get_step_increment(scroll);
-			if (value < gtk_adjustment_get_lower(scroll))
-				value = gtk_adjustment_get_lower(scroll);
+				nsgtk_adjustment_get_step_increment(scroll);
+			if (value < nsgtk_adjustment_get_lower(scroll))
+				value = nsgtk_adjustment_get_lower(scroll);
 			break;
 
 	case GDK_KEY(Right):
@@ -461,28 +461,28 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 				break;
 			scroll = hscroll;
 			value = gtk_adjustment_get_value(scroll) +
-				gtk_adjustment_get_step_increment(scroll);
-			if (value > gtk_adjustment_get_upper(scroll) - hpage)
-				value = gtk_adjustment_get_upper(scroll) - hpage;
+				nsgtk_adjustment_get_step_increment(scroll);
+			if (value > nsgtk_adjustment_get_upper(scroll) - hpage)
+				value = nsgtk_adjustment_get_upper(scroll) - hpage;
 			break;
 
 	case GDK_KEY(Down):
 	case GDK_KEY(KP_Down):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) +
-				gtk_adjustment_get_step_increment(scroll);
-			if (value > gtk_adjustment_get_upper(scroll) - vpage)
-				value = gtk_adjustment_get_upper(scroll) - vpage;
+				nsgtk_adjustment_get_step_increment(scroll);
+			if (value > nsgtk_adjustment_get_upper(scroll) - vpage)
+				value = nsgtk_adjustment_get_upper(scroll) - vpage;
 			break;
 
 	case GDK_KEY(Page_Up):
 	case GDK_KEY(KP_Page_Up):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) -
-				gtk_adjustment_get_page_increment(scroll);
+				nsgtk_adjustment_get_page_increment(scroll);
 
-			if (value < gtk_adjustment_get_lower(scroll))
-				value = gtk_adjustment_get_lower(scroll);
+			if (value < nsgtk_adjustment_get_lower(scroll))
+				value = nsgtk_adjustment_get_lower(scroll);
 
 			break;
 
@@ -490,10 +490,10 @@ gboolean nsgtk_tree_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 	case GDK_KEY(KP_Page_Down):
 			scroll = vscroll;
 			value = gtk_adjustment_get_value(scroll) +
-				gtk_adjustment_get_page_increment(scroll);
+				nsgtk_adjustment_get_page_increment(scroll);
 
-			if (value > gtk_adjustment_get_upper(scroll) - vpage)
-				value = gtk_adjustment_get_upper(scroll) - vpage;
+			if (value > nsgtk_adjustment_get_upper(scroll) - vpage)
+				value = nsgtk_adjustment_get_upper(scroll) - vpage;
 			break;			
 
 		default:

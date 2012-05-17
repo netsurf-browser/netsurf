@@ -1410,7 +1410,7 @@ MULTIHANDLER(localhistory)
 	gtk_widget_show(GTK_WIDGET(g->history_window->window));
 	gtk_window_move(g->history_window->window, x + g->historybase, y +
 			g->toolbarbase);
-	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(g->history_window->window)));
+	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(g->history_window->window)));
 
 	return TRUE;
 }
@@ -1418,7 +1418,7 @@ MULTIHANDLER(localhistory)
 MULTIHANDLER(globalhistory)
 {
 	gtk_widget_show(GTK_WIDGET(wndHistory));
-	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(wndHistory)));
+	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(wndHistory)));
 
 	return TRUE;
 }
@@ -1437,7 +1437,7 @@ MULTIHANDLER(addbookmarks)
 MULTIHANDLER(showbookmarks)
 {
 	gtk_widget_show(GTK_WIDGET(wndHotlist));
-	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(wndHotlist)));
+	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(wndHotlist)));
 	gtk_window_set_focus(wndHotlist, NULL);
 
 	return TRUE;
@@ -1446,7 +1446,7 @@ MULTIHANDLER(showbookmarks)
 MULTIHANDLER(showcookies)
 {
 	gtk_widget_show(GTK_WIDGET(wndCookies));
-	gdk_window_raise(gtk_widget_get_window(GTK_WIDGET(wndCookies)));
+	gdk_window_raise(nsgtk_widget_get_window(GTK_WIDGET(wndCookies)));
 
 	return TRUE;
 }
@@ -1577,7 +1577,7 @@ nsgtk_history_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer g)
 
 	current_widget = widget;
 
-	current_cr = gdk_cairo_create(gtk_widget_get_window(widget));
+	current_cr = gdk_cairo_create(nsgtk_widget_get_window(widget));
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;

@@ -62,10 +62,6 @@ GtkWidget *nsgtk_entry_new(void);
 void nsgtk_entry_set_icon_from_pixbuf(GtkWidget *entry, GtkEntryIconPosition icon_pos, GdkPixbuf *pixbuf);
 void nsgtk_entry_set_icon_from_stock(GtkWidget *entry, GtkEntryIconPosition icon_pos, const gchar *stock_id);
 void nsgtk_widget_override_background_color(GtkWidget *widget, GtkStateFlags state, uint16_t a, uint16_t r, uint16_t g, uint16_t b);
-GtkAdjustment *nsgtk_layout_get_vadjustment(GtkLayout *layout);
-GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout);
-void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj); 
-void nsgtk_layout_set_vadjustment(GtkLayout *layout, GtkAdjustment *adj);
 GtkWidget* nsgtk_hbox_new(gboolean homogeneous, gint spacing);
 GtkWidget* nsgtk_vbox_new(gboolean homogeneous, gint spacing);
 GtkStateFlags nsgtk_widget_get_state_flags(GtkWidget *widget);
@@ -74,5 +70,21 @@ const PangoFontDescription* nsgtk_style_context_get_font(GtkStyleContext *style,
 gulong nsgtk_connect_draw_event(GtkWidget *widget, GCallback callback, gpointer g);
 void nsgdk_cursor_unref(GdkCursor *cursor);
 void nsgtk_widget_modify_font(GtkWidget *widget, PangoFontDescription *font_desc);
+GdkWindow *nsgtk_widget_get_window(GtkWidget *widget);
+GtkWidget *nsgtk_dialog_get_action_area(GtkDialog *dialog);
+GtkWidget *nsgtk_dialog_get_content_area(GtkDialog *dialog);
+gboolean nsgtk_show_uri(GdkScreen *screen, const gchar *uri, guint32 timestamp, GError **error);
+GdkWindow *nsgtk_layout_get_bin_window(GtkLayout *layout);
+void nsgtk_widget_get_allocation(GtkWidget *widget, GtkAllocation *allocation);
+
+GtkAdjustment *nsgtk_layout_get_vadjustment(GtkLayout *layout);
+GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout);
+void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj); 
+void nsgtk_layout_set_vadjustment(GtkLayout *layout, GtkAdjustment *adj);
+gdouble nsgtk_adjustment_get_step_increment(GtkAdjustment *adjustment);
+gdouble nsgtk_adjustment_get_upper(GtkAdjustment *adjustment);
+gdouble nsgtk_adjustment_get_lower(GtkAdjustment *adjustment);
+gdouble nsgtk_adjustment_get_page_increment(GtkAdjustment *adjustment);
+
 
 #endif /* NETSURF_GTK_COMPAT_H */

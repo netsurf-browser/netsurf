@@ -24,6 +24,10 @@
 
 #include "gtk/compat.h"
 
+#if !GTK_CHECK_VERSION(2,16,0)
+#include "gtk/sexy_icon_entry.c"
+#endif
+
 void nsgtk_widget_set_can_focus(GtkWidget *widget, gboolean can_focus)
 {
   #if GTK_CHECK_VERSION(2,22,0)
@@ -250,7 +254,11 @@ GtkStateFlags nsgtk_widget_get_state_flags(GtkWidget *widget)
 #if GTK_CHECK_VERSION(3,0,0)
 	return gtk_widget_get_state_flags(widget);
 #else
+#if GTK_CHECK_VERSION(2,18,0)
 	return gtk_widget_get_state(widget);
+#else
+	return 0; /* FIXME */
+#endif
 #endif
 }
 
@@ -300,4 +308,95 @@ void nsgtk_widget_modify_font(GtkWidget *widget, PangoFontDescription *font_desc
 #endif
 }
 
+GdkWindow *nsgtk_widget_get_window(GtkWidget *widget)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+return gtk_widget_get_window(widget);
+#else
+ return widget->window;
+#endif
+}
 
+GtkWidget *nsgtk_dialog_get_content_area(GtkDialog *dialog)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_dialog_get_content_area(dialog);
+#else
+  return dialog->vbox;
+#endif
+}
+
+GtkWidget *nsgtk_dialog_get_action_area(GtkDialog *dialog)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_dialog_get_action_area(dialog);
+#else
+  return dialog->action_area;
+#endif
+}
+
+gboolean nsgtk_show_uri(GdkScreen *screen, const gchar *uri, guint32 timestamp, GError **error)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_show_uri(screen, uri, timestamp, error);
+#else
+  return FALSE; /* FIXME */
+#endif
+}
+
+GdkWindow *nsgtk_layout_get_bin_window(GtkLayout *layout)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_layout_get_bin_window(layout);
+#else
+  return layout->bin_window;
+#endif
+}
+
+gdouble nsgtk_adjustment_get_step_increment(GtkAdjustment *adjustment)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_adjustment_get_step_increment(adjustment);
+#else
+  return adjustment->step_increment;
+#endif
+}
+
+gdouble nsgtk_adjustment_get_upper(GtkAdjustment *adjustment)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_adjustment_get_upper(adjustment);
+#else
+  return adjustment->upper;
+#endif
+}
+
+gdouble nsgtk_adjustment_get_lower(GtkAdjustment *adjustment)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_adjustment_get_lower(adjustment);
+#else
+  return adjustment->lower;
+#endif
+}
+
+gdouble nsgtk_adjustment_get_page_increment(GtkAdjustment *adjustment)
+{
+#if GTK_CHECK_VERSION(2,14,0)
+  return gtk_adjustment_get_page_increment(adjustment);
+#else
+  return adjustment->page_increment;
+#endif
+}
+
+void nsgtk_widget_get_allocation(GtkWidget *widget, GtkAllocation *allocation)
+{
+#if GTK_CHECK_VERSION(2,18,0)
+  gtk_widget_get_allocation(widget, allocation);
+#else
+  allocation->x = widget->allocation.x;
+  allocation->y = widget->allocation.y;
+  allocation->width = widget->allocation.width;
+  allocation->height = widget->allocation.height;
+#endif
+}

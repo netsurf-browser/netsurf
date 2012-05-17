@@ -218,7 +218,7 @@ nsgtk_window_draw_event(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 	assert(GTK_WIDGET(gw->layout) == widget);
 
 	current_widget = (GtkWidget *)gw->layout;
-	current_cr = gdk_cairo_create(gtk_layout_get_bin_window(gw->layout));
+	current_cr = gdk_cairo_create(nsgtk_layout_get_bin_window(gw->layout));
 
 	clip.x0 = event->area.x;
 	clip.y0 = event->area.y;
@@ -391,10 +391,10 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 			/* core did not handle event do horizontal scroll */
 
 			value = gtk_adjustment_get_value(hscroll) -
-				(gtk_adjustment_get_step_increment(hscroll) *2);
+				(nsgtk_adjustment_get_step_increment(hscroll) *2);
 
-			if (value < gtk_adjustment_get_lower(hscroll)) {
-				value = gtk_adjustment_get_lower(hscroll);
+			if (value < nsgtk_adjustment_get_lower(hscroll)) {
+				value = nsgtk_adjustment_get_lower(hscroll);
 			}
 
 			gtk_adjustment_set_value(hscroll, value);
@@ -411,10 +411,10 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 			 */
 
 			value = gtk_adjustment_get_value(vscroll) -
-				(gtk_adjustment_get_step_increment(vscroll) * 2);
+				(nsgtk_adjustment_get_step_increment(vscroll) * 2);
 
-			if (value < gtk_adjustment_get_lower(vscroll)) {
-				value = gtk_adjustment_get_lower(vscroll);
+			if (value < nsgtk_adjustment_get_lower(vscroll)) {
+				value = nsgtk_adjustment_get_lower(vscroll);
 			}
 
 			gtk_adjustment_set_value(vscroll, value);
@@ -432,13 +432,13 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 			 */
 
 			value = gtk_adjustment_get_value(hscroll) +
-				(gtk_adjustment_get_step_increment(hscroll) * 2);
+				(nsgtk_adjustment_get_step_increment(hscroll) * 2);
 
 			/* @todo consider gtk_widget_get_allocated_width() */
-			gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
-			if (value > gtk_adjustment_get_upper(hscroll) - alloc.width) {
-				value = gtk_adjustment_get_upper(hscroll) - 
+			if (value > nsgtk_adjustment_get_upper(hscroll) - alloc.width) {
+				value = nsgtk_adjustment_get_upper(hscroll) - 
 					alloc.width;
 			}
 
@@ -456,12 +456,12 @@ static gboolean nsgtk_window_scroll_event(GtkWidget *widget,
 			 */
 
 			value = gtk_adjustment_get_value(vscroll) +
-				(gtk_adjustment_get_step_increment(vscroll) * 2);
+				(nsgtk_adjustment_get_step_increment(vscroll) * 2);
 			/* @todo consider gtk_widget_get_allocated_height */
-			gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+			nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
-			if (value > gtk_adjustment_get_upper(vscroll) - alloc.height) {
-				value = gtk_adjustment_get_upper(vscroll) - 
+			if (value > nsgtk_adjustment_get_upper(vscroll) - alloc.height) {
+				value = nsgtk_adjustment_get_upper(vscroll) - 
 					alloc.height;
 			}
 
@@ -494,22 +494,22 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	GtkAllocation alloc;
 
 	/* @todo consider gtk_widget_get_allocated_width() */
-	gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+	nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
 	switch (event->keyval) {
 
 	case GDK_KEY(Home):
 	case GDK_KEY(KP_Home):
-		value = gtk_adjustment_get_lower(vscroll);
+		value = nsgtk_adjustment_get_lower(vscroll);
 		gtk_adjustment_set_value(vscroll, value);
 		break;
 
 	case GDK_KEY(End):
 	case GDK_KEY(KP_End):
-		value = gtk_adjustment_get_upper(vscroll) - alloc.height;
+		value = nsgtk_adjustment_get_upper(vscroll) - alloc.height;
 
-		if (value < gtk_adjustment_get_lower(vscroll))
-			value = gtk_adjustment_get_lower(vscroll);
+		if (value < nsgtk_adjustment_get_lower(vscroll))
+			value = nsgtk_adjustment_get_lower(vscroll);
 
 		gtk_adjustment_set_value(vscroll, value);
 		break;
@@ -517,10 +517,10 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	case GDK_KEY(Left):
 	case GDK_KEY(KP_Left):
 		value = gtk_adjustment_get_value(hscroll) -
-			gtk_adjustment_get_step_increment(hscroll);
+			nsgtk_adjustment_get_step_increment(hscroll);
 
-		if (value < gtk_adjustment_get_lower(hscroll))
-			value = gtk_adjustment_get_lower(hscroll);
+		if (value < nsgtk_adjustment_get_lower(hscroll))
+			value = nsgtk_adjustment_get_lower(hscroll);
 
 		gtk_adjustment_set_value(hscroll, value);
 		break;
@@ -528,10 +528,10 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	case GDK_KEY(Up):
 	case GDK_KEY(KP_Up):
 		value = gtk_adjustment_get_value(vscroll) -
-			gtk_adjustment_get_step_increment(vscroll);
+			nsgtk_adjustment_get_step_increment(vscroll);
 
-		if (value < gtk_adjustment_get_lower(vscroll))
-			value = gtk_adjustment_get_lower(vscroll);
+		if (value < nsgtk_adjustment_get_lower(vscroll))
+			value = nsgtk_adjustment_get_lower(vscroll);
 
 		gtk_adjustment_set_value(vscroll, value);
 		break;
@@ -539,10 +539,10 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	case GDK_KEY(Right):
 	case GDK_KEY(KP_Right):
 		value = gtk_adjustment_get_value(hscroll) +
-			gtk_adjustment_get_step_increment(hscroll);
+			nsgtk_adjustment_get_step_increment(hscroll);
 
-		if (value > gtk_adjustment_get_upper(hscroll) - alloc.width)
-			value = gtk_adjustment_get_upper(hscroll) - alloc.width;
+		if (value > nsgtk_adjustment_get_upper(hscroll) - alloc.width)
+			value = nsgtk_adjustment_get_upper(hscroll) - alloc.width;
 
 		gtk_adjustment_set_value(hscroll, value);
 		break;
@@ -550,10 +550,10 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	case GDK_KEY(Down):
 	case GDK_KEY(KP_Down):
 		value = gtk_adjustment_get_value(vscroll) +
-			gtk_adjustment_get_step_increment(vscroll);
+			nsgtk_adjustment_get_step_increment(vscroll);
 
-		if (value > gtk_adjustment_get_upper(vscroll) - alloc.height)
-			value = gtk_adjustment_get_upper(vscroll) - alloc.height;
+		if (value > nsgtk_adjustment_get_upper(vscroll) - alloc.height)
+			value = nsgtk_adjustment_get_upper(vscroll) - alloc.height;
 
 		gtk_adjustment_set_value(vscroll, value);
 		break;
@@ -561,10 +561,10 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	case GDK_KEY(Page_Up):
 	case GDK_KEY(KP_Page_Up):
 		value = gtk_adjustment_get_value(vscroll) -
-			gtk_adjustment_get_page_increment(vscroll);
+			nsgtk_adjustment_get_page_increment(vscroll);
 
-		if (value < gtk_adjustment_get_lower(vscroll))
-			value = gtk_adjustment_get_lower(vscroll);
+		if (value < nsgtk_adjustment_get_lower(vscroll))
+			value = nsgtk_adjustment_get_lower(vscroll);
 
 		gtk_adjustment_set_value(vscroll, value);
 		break;
@@ -572,10 +572,10 @@ static gboolean nsgtk_window_keypress_event(GtkWidget *widget,
 	case GDK_KEY(Page_Down):
 	case GDK_KEY(KP_Page_Down):
 		value = gtk_adjustment_get_value(vscroll) +
-			gtk_adjustment_get_page_increment(vscroll);
+			nsgtk_adjustment_get_page_increment(vscroll);
 
-		if (value > gtk_adjustment_get_upper(vscroll) - alloc.height)
-			value = gtk_adjustment_get_upper(vscroll) - alloc.height;
+		if (value > nsgtk_adjustment_get_upper(vscroll) - alloc.height)
+			value = nsgtk_adjustment_get_upper(vscroll) - alloc.height;
 
 		gtk_adjustment_set_value(vscroll, value);
 		break;
@@ -775,7 +775,7 @@ void nsgtk_window_process_reformats(void)
 		g->bw->reformat_pending = false;
 
 		/* @todo consider gtk_widget_get_allocated_width() */
-		gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+		nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
 		browser_window_reformat(g->bw, false, alloc.width, alloc.height);
 	}
@@ -1042,7 +1042,7 @@ void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 				gtk_widget_get_display(
 					GTK_WIDGET(g->layout)),
 					cursortype);
-	gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(g->layout)), 
+	gdk_window_set_cursor(nsgtk_widget_get_window(GTK_WIDGET(g->layout)), 
 			      cursor);
 
 	if (!nullcursor)
@@ -1100,7 +1100,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 	GtkAllocation alloc;
 
 	/* @todo consider gtk_widget_get_allocated_width() */
-	gtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
+	nsgtk_widget_get_allocation(GTK_WIDGET(g->layout), &alloc);
 
 	*width = alloc.width;
 	*height = alloc.height;

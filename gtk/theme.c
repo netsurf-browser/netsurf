@@ -18,12 +18,14 @@
 
 #include <gtk/gtk.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include "content/content.h"
 #include "content/content_type.h"
 #include "content/hlcache.h"
+#include "gtk/compat.h"
 #include "gtk/gui.h"
 #include "gtk/scaffolding.h"
 #include "gtk/menu.h"
@@ -254,7 +256,7 @@ void nsgtk_theme_add(const char *themename)
 	}
 	g_signal_connect_swapped(notification, "response",
 				 G_CALLBACK(gtk_widget_destroy), notification);
-	gtk_container_add(GTK_CONTAINER(gtk_dialog_get_action_area(GTK_DIALOG(notification))), label);
+	gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_action_area(GTK_DIALOG(notification))), label);
 	gtk_widget_show_all(notification);
 
 	/* update combo */

@@ -670,7 +670,7 @@ void gui_launch_url(const char *url)
 	gboolean ok;
 	GError *error = NULL;
 
-	ok = gtk_show_uri(NULL, url, GDK_CURRENT_TIME, &error);
+	ok = nsgtk_show_uri(NULL, url, GDK_CURRENT_TIME, &error);
 	if (ok == TRUE)
 		return;
 

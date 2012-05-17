@@ -332,7 +332,7 @@ static void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
 		warn[len] = '\0';
 
 		label = gtk_label_new(warn);
-		gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(confd))), 
+		gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_content_area(GTK_DIALOG(confd))), 
 				label);
 		gtk_widget_show(label);
 		if (gtk_dialog_run(GTK_DIALOG(confd)) == GTK_RESPONSE_ACCEPT) {
@@ -360,7 +360,7 @@ static void nsgtk_source_file_save(GtkWindow *parent, const char *filename,
 	g_signal_connect_swapped(notif, "response",
 			G_CALLBACK(gtk_widget_destroy), notif);
 	label = gtk_label_new(temp);
-	gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(notif))), label);
+	gtk_container_add(GTK_CONTAINER(nsgtk_dialog_get_content_area(GTK_DIALOG(notif))), label);
 	gtk_widget_show_all(notif);
 }
 
