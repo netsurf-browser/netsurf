@@ -5186,11 +5186,11 @@ de.all.ContentLanguage:Sprache
 fr.all.ContentLanguage:Content language
 it.all.ContentLanguage:Lingua contenuti
 nl.all.ContentLanguage:Content language
-en.all.LocaleLang:Get from Locale prefs
-de.all.LocaleLang:Rechnervorgabe nutzen
-fr.all.LocaleLang:Get from Locale prefs
-it.all.LocaleLang:Ottieni da preferenze localizzazione
-nl.all.LocaleLang:Get from Locale prefs
+en.ami.LocaleLang:Get from Locale prefs
+de.ami.LocaleLang:Rechnervorgabe nutzen
+fr.ami.LocaleLang:Get from Locale prefs
+it.ami.LocaleLang:Ottieni da preferenze localizzazione
+nl.ami.LocaleLang:Get from Locale prefs
 en.all.HistoryAge:Keep history for
 de.all.HistoryAge:History behalten für
 fr.all.HistoryAge:Keep history for
@@ -5206,11 +5206,21 @@ de.all.Miscellaneous:Verschiedenes
 fr.all.Miscellaneous:Miscellaneous
 it.all.Miscellaneous:Impostazioni varie
 nl.all.Miscellaneous:Miscellaneous
+en.ami.Privacy:Privacy
+de.ami.Privacy:Privacy
+fr.ami.Privacy:Privacy
+it.ami.Privacy:Privacy
+nl.ami.Privacy:Privacy
 en.all.SendReferer:Send site referral information
 de.all.SendReferer:Seitenreferenzen senden
 fr.all.SendReferer:Send site referral information
 it.all.SendReferer:Invia informazioni sul referral del sito
 nl.all.SendReferer:Send site referral information
+en.ami.DoNotTrack:Send header to tell websites not to track
+de.ami.DoNotTrack:Send header to tell websites not to track
+fr.ami.DoNotTrack:Send header to tell websites not to track
+it.ami.DoNotTrack:Send header to tell websites not to track
+nl.ami.DoNotTrack:Send header to tell websites not to track
 en.all.FastScrolling:Fast scrolling
 de.all.FastScrolling:Schnelles Scrollen
 fr.all.FastScrolling:Fast scrolling

@@ -78,6 +78,7 @@ enum
 	GID_OPTS_FROMLOCALE,
 	GID_OPTS_HISTORY,
 	GID_OPTS_REFERRAL,
+	GID_OPTS_DONOTTRACK,
 	GID_OPTS_FASTSCROLL,
 	GID_OPTS_SCREEN,
 	GID_OPTS_SCREENMODE,
@@ -117,7 +118,7 @@ enum
 	GID_OPTS_TAB_LAST,
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
-	GID_OPTS_CMENU_ENABLE,
+	GID_OPTS_CONTEXTMENU,
 	GID_OPTS_STARTUP_NO_WIN,
 	GID_OPTS_CLOSE_NO_QUIT,
 	GID_OPTS_DOCKY,
@@ -143,6 +144,7 @@ enum
 	GRP_OPTS_CONTENTBLOCKING,
 	GRP_OPTS_CONTENTLANGUAGE,
 	GRP_OPTS_HISTORY,
+	GRP_OPTS_PRIVACY,
 	GRP_OPTS_MISC,
 	GRP_OPTS_SCREEN,
 	GRP_OPTS_THEME,
@@ -160,7 +162,6 @@ enum
 	GRP_OPTS_TABS,
 	GRP_OPTS_SEARCH,
 	GRP_OPTS_CLIPBOARD,
-	GRP_OPTS_CONTEXTMENU,
 	GRP_OPTS_BEHAVIOUR,
 	GRP_OPTS_MARGINS,
 	GRP_OPTS_SCALING,
@@ -249,6 +250,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("LocaleLang"));
 	gadlab[GID_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("HistoryAge"));
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
+	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
 	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColour"));
 	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
@@ -283,7 +285,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_TAB_LAST] = (char *)ami_utf8_easy((char *)messages_get("TabLast"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
-	gadlab[GID_OPTS_CMENU_ENABLE] = (char *)ami_utf8_easy((char *)messages_get("Enable"));
+	gadlab[GID_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
 	gadlab[GID_OPTS_STARTUP_NO_WIN] = (char *)ami_utf8_easy((char *)messages_get("OptionNoWindow"));
 	gadlab[GID_OPTS_CLOSE_NO_QUIT] = (char *)ami_utf8_easy((char *)messages_get("OptionNoQuit"));
 	gadlab[GID_OPTS_DOCKY] = (char *)ami_utf8_easy((char *)messages_get("OptionDocky"));
@@ -331,7 +333,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_TABS] = (char *)ami_utf8_easy((char *)messages_get("TabbedBrowsing"));
 	gadlab[GRP_OPTS_SEARCH] = (char *)ami_utf8_easy((char *)messages_get("SearchWeb"));
 	gadlab[GRP_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("Clipboard"));
-	gadlab[GRP_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
+	gadlab[GRP_OPTS_PRIVACY] = (char *)ami_utf8_easy((char *)messages_get("Privacy"));
 	gadlab[GRP_OPTS_BEHAVIOUR] = (char *)ami_utf8_easy((char *)messages_get("Behaviour"));
 	gadlab[GRP_OPTS_MARGINS] = (char *)ami_utf8_easy((char *)messages_get("Margins"));
 	gadlab[GRP_OPTS_SCALING] = (char *)ami_utf8_easy((char *)messages_get("Scaling"));
@@ -607,18 +609,18 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_MISC],
+									LAYOUT_Label, gadlab[GRP_OPTS_PRIVACY],
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_REFERRAL] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_REFERRAL,
          	           					GA_RelVerify, TRUE,
          	           					GA_Text, gadlab[GID_OPTS_REFERRAL],
          	           					GA_Selected, nsoption_bool(send_referer),
             	    				CheckBoxEnd,
-		                			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,
-      	              					GA_ID, GID_OPTS_FASTSCROLL,
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_DONOTTRACK] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_DONOTTRACK,
          	           					GA_RelVerify, TRUE,
-         	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
-         	           					GA_Selected, nsoption_bool(faster_scroll),
+         	           					GA_Text, gadlab[GID_OPTS_DONOTTRACK],
+         	           					GA_Selected, nsoption_bool(do_not_track),
             	    				CheckBoxEnd,
 								LayoutEnd, // misc
 								CHILD_WeightedHeight, 0,
@@ -1205,16 +1207,22 @@ void ami_gui_opts_open(void)
 								LayoutEnd, // hgroup
 								CHILD_WeightedHeight, 0,
 
-								LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,HGroupObject,
 									LAYOUT_BevelStyle, BVS_GROUP,
-									LAYOUT_Label, gadlab[GRP_OPTS_CONTEXTMENU],
+									LAYOUT_Label, gadlab[GRP_OPTS_MISC],
 									LAYOUT_SpaceOuter, TRUE,
-	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CMENU_ENABLE] = CheckBoxObject,
-   	    	          					GA_ID, GID_OPTS_CMENU_ENABLE,
+	        	        			LAYOUT_AddChild, gow->objects[GID_OPTS_CONTEXTMENU] = CheckBoxObject,
+   	    	          					GA_ID, GID_OPTS_CONTEXTMENU,
        	 	           					GA_RelVerify, TRUE,
-   	     	           					GA_Text, gadlab[GID_OPTS_CMENU_ENABLE],
+   	     	           					GA_Text, gadlab[GID_OPTS_CONTEXTMENU],
    	     	           					GA_Selected, nsoption_bool(context_menu),
            	    					CheckBoxEnd,
+			               			LAYOUT_AddChild, gow->objects[GID_OPTS_FASTSCROLL] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_FASTSCROLL,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_FASTSCROLL],
+         	           					GA_Selected, nsoption_bool(faster_scroll),
+            	    				CheckBoxEnd,
 								LayoutEnd, // context menus
 								CHILD_WeightedHeight, 0,
 
@@ -1446,6 +1454,13 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(send_referer, false);
 	}
 
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_DONOTTRACK],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(do_not_track, true);
+	} else {
+		nsoption_set_bool(do_not_track, false);
+	}
+	
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_FASTSCROLL],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(faster_scroll, true);
@@ -1648,7 +1663,7 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(utf8_clipboard, false);
 	}
 
-	GetAttr(GA_Selected,gow->objects[GID_OPTS_CMENU_ENABLE],(ULONG *)&data);
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_CONTEXTMENU],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(context_menu, true);
 	} else {
