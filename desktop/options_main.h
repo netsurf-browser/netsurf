@@ -70,6 +70,9 @@
 	int disc_cache_age;					\
 	/** Whether to block advertisements */			\
 	bool block_ads;						\
+	/** Disable website tracking, see	\
+	 * http://www.w3.org/Submission/2011/SUBM-web-tracking-protection-20110224/#dnt-uas */	\
+	bool do_not_track;					\
 	/** Minimum GIF animation delay */			\
 	int minimum_gif_delay;					\
 	/** Whether to send the referer HTTP header */		\
@@ -217,6 +220,7 @@
 	.memory_cache_size = 12 * 1024 * 1024,		\
 	.disc_cache_age = 28,				\
 	.block_ads = false,				\
+	.do_not_track = false,				\
 	.minimum_gif_delay = 10,			\
 	.send_referer = true,				\
 	.foreground_images = true,			\
@@ -310,6 +314,7 @@
 	{ "memory_cache_size",	OPTION_INTEGER,	&nsoptions.memory_cache_size },	\
 	{ "disc_cache_age",	OPTION_INTEGER,	&nsoptions.disc_cache_age }, \
 	{ "block_advertisements", OPTION_BOOL,	&nsoptions.block_ads },	\
+	{ "do_not_track", OPTION_BOOL,	&nsoptions.do_not_track },	\
 	{ "minimum_gif_delay",	OPTION_INTEGER,	&nsoptions.minimum_gif_delay },	\
 	{ "send_referer",	OPTION_BOOL,	&nsoptions.send_referer }, \
 	{ "foreground_images",	OPTION_BOOL,	&nsoptions.foreground_images },	\

@@ -424,6 +424,10 @@ void * fetch_curl_setup(struct fetch *parent_fetch, nsurl *url,
 		APPEND(fetch->headers, s);
 	}
 
+	if (nsoption_bool(do_not_track) == true) {
+		APPEND(fetch->headers, "DNT: 1");
+	}
+
 	/* And add any headers specified by the caller */
 	for (i = 0; headers[i] != NULL; i++) {
 		APPEND(fetch->headers, headers[i]);
