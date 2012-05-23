@@ -310,7 +310,7 @@ static void nsurl__get_string_markers(const char * const url_s,
 					  (*(pos - off + 4) == 'S')))) {
 				marker.scheme_type = NSURL_SCHEME_HTTPS;
 				is_http = true;
-			} else if (off == SLEN("https") &&
+			} else if (off == SLEN("ftp") &&
 					(((*(pos - off + 0) == 'f') ||
 					  (*(pos - off + 0) == 'F')) &&
 					 ((*(pos - off + 1) == 't') ||
