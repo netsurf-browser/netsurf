@@ -1331,6 +1331,70 @@ static int bitmap_convert_8( GEM_PLOTTER self, struct bitmap * img, int x,
 #endif
 
 /*
+	Aplha blends the foreground image (img) onto the
+	background images (bg). The background receives the blended
+	image pixels.
+*/
+static int ablend_bitmap( struct bitmap * img, struct bitmap * bg,
+						GRECT * img_clip, GRECT * bg_clip )
+{
+	uint32_t * imgrow;
+	uint32_t * screenrow;
+	int img_x, img_y, bg_x, bg_y, img_stride, bg_stride;
+
+	bg_clip = bg_clip;
+	img_stride= bitmap_get_rowstride(img);
+	bg_stride = bitmap_get_rowstride(bg);
+
+	for( img_y = img_clip->g_y, bg_y = 0; bg_y < img_clip->g_h; bg_y++, img_y++) {
+		imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
+		screenrow = (uint32_t *)(bg->pixdata + (bg_stride * bg_y));
+		for( img_x = img_clip->g_x, bg_x = 0; bg_x < img_clip->g_w; bg_x++, img_x++ ) {
+
+			// when the pixel isn't fully transparent,...:
+			if( (imgrow[img_x] & 0x0FF) != 0 ){
+				screenrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
+			}
+
+			// FIXME, maybe this loop would be faster??:
+			// ---
+			//if( (imgrow[img_x] & 0x0FF) != 0xFF ){
+			//	imgrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
+			//}
+
+			// or maybe even this???
+			// ---
+			//if(  (imgrow[img_x] & 0x0FF) == 0xFF ){
+			//	screenrow[bg_x] = imgrow[img_x];
+			//} else if( (imgrow[img_x] & 0x0FF) != 0x00 ) {
+			//	screenrow[bg_x] = ablend( imgrow[img_x], screenrow[bg_x]);
+			//}
+		}
+	}
+	return( 0 );
+}
+
+/*
+	Alpha blends an image, using one pixel as the background.
+	The bitmap receives the result.
+*/
+static int ablend_pixel( struct bitmap * img, uint32_t bg, GRECT * clip )
+{
+	uint32_t * imgrow;
+	int img_x, img_y, img_stride;
+
+	img_stride= bitmap_get_rowstride(img);
+
+	for( img_y = 0; img_y < clip->g_h; img_y++) {
+		imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
+		for( img_x = 0; img_x < clip->g_w; img_x++ ) {
+			imgrow[img_x] = ablend( imgrow[img_x], bg );
+		}
+	}
+	return( 0 );
+}
+
+/*
 *
 * Convert bitmap to the native screen format
 *	self: 	the plotter instance
@@ -1352,7 +1416,7 @@ static int bitmap_convert( GEM_PLOTTER self, struct bitmap * img, int x, int y,
 	int err;
 	int bw, bh;
 	struct bitmap * scrbuf = NULL;
-	struct bitmap * source;
+	struct bitmap * source = NULL;
 	bool cache =  ( flags & BITMAPF_BUFFER_NATIVE );
 	bool opaque = bitmap_get_opaque( img );
 
@@ -1395,52 +1459,33 @@ static int bitmap_convert( GEM_PLOTTER self, struct bitmap * img, int x, int y,
 	/* rem. if eddi xy is installed, we could directly access the screen! */
 	/* apply transparency to the image: */
 	if( ( opaque == false )  ) {
-		uint32_t * imgrow;
-		uint32_t * screenrow;
-		int img_x, img_y;	/* points into old bitmap */
-		int screen_x, screen_y;	/* pointers into new bitmap */
-
 		/* copy the screen to an temp buffer: */
-		scrbuf = snapshot_create(self, x, y, clip->g_w, clip->g_h );
-		if( scrbuf != NULL ) {
-			// copy blended pixels to the new buffer (which contains screen content):
-			int img_stride = bitmap_get_rowstride(img);
-			int screen_stride = bitmap_get_rowstride(scrbuf);
-			for( img_y = clip->g_y, screen_y = 0; screen_y < clip->g_h; screen_y++, img_y++) {
-				imgrow = (uint32_t *)(img->pixdata + (img_stride * img_y));
-				screenrow = (uint32_t *)(scrbuf->pixdata + (screen_stride * screen_y));
-				for( img_x = clip->g_x, screen_x = 0; screen_x < clip->g_w; screen_x++, img_x++ ) {
+		if( (flags & BITMAPF_BUFFER_NATIVE) == 0 ){
+			scrbuf = snapshot_create(self, x, y, clip->g_w, clip->g_h );
+			if( scrbuf != NULL ) {
 
-					// when the pixel isn't fully opaque,...:
-					if( (imgrow[img_x] & 0x0FF) != 0 ){
-						screenrow[screen_x] = ablend( imgrow[img_x], screenrow[screen_x]);
-					}
+				assert( clip->g_w <= bw );
+				assert( clip->g_h <= bh );
 
-					// FIXME, maybe this loop would be faster??:
-					// ---
-					//if( (imgrow[img_x] & 0x0FF) != 0xFF ){
-					//	imgrow[screen_x] = ablend( imgrow[img_x], screenrow[screen_x]);
-					//}
-
-					// or maybe even this???
-					// ---
-					//if(  (imgrow[img_x] & 0x0FF) == 0xFF ){
-					//	screenrow[screen_x] = imgrow[img_x];
-					//} else if( (imgrow[img_x] & 0x0FF) != 0x00 ) {
-					//	screenrow[screen_x] = ablend( imgrow[img_x], screenrow[screen_x]);
-					//}
-				}
+				// copy blended pixels to the screen buffer:
+				ablend_bitmap( img, scrbuf, clip, NULL );
+				/* adjust size which gets converted: */
+				bw = clip->g_w;
+				bh = clip->g_h;
+				/* adjust output position: */
+				clip->g_x = 0;
+				clip->g_y = 0;
+				/* set the source of conversion: */
+				source = scrbuf;
 			}
-			assert( clip->g_w <= bw );
-			assert( clip->g_h <= bh );
-			/* adjust size which gets converted: */
-			bw = clip->g_w;
-			bh = clip->g_h;
-			/* adjust output position: */
-			clip->g_x = 0;
-			clip->g_y = 0;
-			/* set the source of conversion: */
-			source = scrbuf;
+		} else {
+			/*
+				The whole bitmap can be transformed to an mfdb
+				(and get's cached)
+			*/
+			GRECT region = { 0, 0, bw, bh };
+			ablend_pixel( img, bg, &region );
+			source = img;
 		}
 	} else {
 		source = img;
