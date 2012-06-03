@@ -62,7 +62,9 @@ static bool img_toolbar = false;
 static char * img_toolbar_folder = (char *)"default";
 static short toolbar_bg_color = LWHITE;
 static hlcache_handle * toolbar_image;
+static hlcache_handle * throbber_image;
 static bool toolbar_image_ready = false;
+static bool throbber_image_ready = false;
 
 
 static plot_font_style_t font_style_url = {
@@ -158,15 +160,15 @@ void toolbar_init( void )
 	if( img_toolbar ){
 
         char imgfile[PATH_MAX];
-		const char * states[] = {"on", "off"};
 
-		toolbar_image = load_icon( "toolbar/default/main.png", toolbar_icon_callback, NULL );
         while( tb_buttons[i].rsc_id != 0){
 			tb_buttons[i].index = i;
 			i++;
 		}
-
-
+		toolbar_image = load_icon( "toolbar/default/main.png",
+									toolbar_icon_callback, NULL );
+		throbber_image = load_icon( "toolbar/default/throbber.png",
+								toolbar_icon_callback, NULL );
 
 	}
     n = (sizeof( toolbar_styles ) / sizeof( struct s_toolbar_style ));
@@ -182,7 +184,10 @@ void toolbar_init( void )
 
 void toolbar_exit( void )
 {
-	hlcache_handle_release( toolbar_image );
+	if( toolbar_image )
+		hlcache_handle_release( toolbar_image );
+	if( throbber_image )
+		hlcache_handle_release( throbber_image );
 }
 
 /**
@@ -193,9 +198,14 @@ static nserror toolbar_icon_callback(hlcache_handle *handle,
 		const hlcache_event *event, void *pw)
 {
 	if( event->type == CONTENT_MSG_READY ){
-		toolbar_image_ready = true;
-		if( input_window != NULL )
-			tb_update_buttons( input_window, 0 );
+		if( handle == toolbar_image ){
+			toolbar_image_ready = true;
+			if( input_window != NULL )
+				tb_update_buttons( input_window, 0 );
+		}
+		else if( handle == throbber_image ){
+			throbber_image_ready = true;
+		}
 	}
 
 	return NSERROR_OK;
@@ -246,7 +256,7 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 			work.g_x-(toolbar_styles[tb->style].icon_width * bt->index)+toolbar_styles[tb->style].button_vmargin,
 			work.g_y-(toolbar_styles[tb->style].icon_height * drawstate)+toolbar_styles[tb->style].button_hmargin,
 			toolbar_styles[tb->style].icon_width*(bt->index+1),
-			work.g_y-(toolbar_styles[tb->style].icon_height * drawstate)
+			toolbar_styles[tb->style].icon_height*(drawstate+1)
 		);
 		icon_clip.x0 = bmpx+(toolbar_styles[tb->style].icon_width*bt->index);
 		icon_clip.y0 = bmpy+(toolbar_styles[tb->style].icon_height*drawstate);
@@ -371,25 +381,19 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	LGRECT work, clip;
 	int idx;
 	short pxy[4];
+	struct s_toolbar * tb;
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app,
 																	c,
 																	CDT_OWNER );
-	if( gw->root->toolbar->throbber.running == false ) {
-		idx = THROBBER_INACTIVE_INDEX;
-	} else {
-		idx = gw->root->toolbar->throbber.index;
-		if( idx > THROBBER_MAX_INDEX || idx < THROBBER_MIN_INDEX ) {
-			idx = THROBBER_MIN_INDEX;
-		}
-	}
 
+	tb = gw->root->toolbar;
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 
 	vsf_interior( vdih , 1 );
 	if(app.nplanes > 2 )
-		vsf_color( vdih, toolbar_styles[gw->root->toolbar->style].bgcolor );
+		vsf_color( vdih, toolbar_styles[tb->style].bgcolor );
 	else
 		vsf_color( vdih, WHITE );
 	pxy[0] = (short)buff[4];
@@ -397,12 +401,74 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	pxy[2] = (short)buff[4] + buff[6]-1;
 	pxy[3] = (short)buff[5] + buff[7]-2;
 	v_bar( vdih, (short*)&pxy );
+	vs_clip( vdih, 1, (short*)&pxy );
 
-	if( throbber_form != NULL ) {
-		throbber_form[idx].ob_x = work.g_x+1;
-		throbber_form[idx].ob_y = work.g_y+4;
-		mt_objc_draw( throbber_form, idx, 8, clip.g_x, clip.g_y, clip.g_w, clip.g_h, app.aes_global );
+	if( img_toolbar && throbber_image != NULL ){
+
+		int  bmpx=0, bmpy=0, bmpw=0, bmph = 0, drawstate=0;
+		struct rect icon_clip;
+		struct bitmap * icon = NULL;
+
+		if( throbber_image_ready == false ){
+			return;
+		}
+		icon = content_get_bitmap( throbber_image );
+		if( icon == NULL ){
+			return;
+		}
+
+		if( tb->throbber.running == false ) {
+				idx = 0;
+		}
+		else {
+			idx = tb->throbber.index;
+			if( idx > tb->throbber.max_index ) {
+				idx = tb->throbber.index = 1;
+			}
+		}
+		bmpw = bitmap_get_width(icon);
+		bmph = bitmap_get_height(icon);
+		bmpx = 0;
+		bmpy = 0;
+
+		/*
+			for some reason, adding
+			toolbar_styles[tb->style].button_vmargin to the x pos of
+			the plotter shifts the icon a bit to much.
+			That shouldn't happen... maybe the URL widget
+			size is a bit to large - to be inspected...
+		*/
+		plot_set_dimensions(
+			work.g_x-(toolbar_styles[tb->style].icon_width * idx),
+			work.g_y+toolbar_styles[tb->style].button_hmargin,
+			toolbar_styles[tb->style].icon_width*(idx+1),
+			toolbar_styles[tb->style].icon_height
+		);
+		icon_clip.x0 = bmpx+(toolbar_styles[tb->style].icon_width*idx);
+		icon_clip.y0 = bmpy;
+		icon_clip.x1 = icon_clip.x0+toolbar_styles[tb->style].icon_width;
+		icon_clip.y1 = icon_clip.y0+toolbar_styles[tb->style].icon_height;
+		plot_clip( &icon_clip  );
+		atari_plotters.bitmap( bmpx, bmpy, bmpw, bmph, icon,
+										toolbar_styles[tb->style].icon_bgcolor,
+										BITMAPF_BUFFER_NATIVE );
 	}
+	else {
+		if( throbber_form != NULL ) {
+			if( gw->root->toolbar->throbber.running == false ) {
+				idx = THROBBER_INACTIVE_INDEX;
+			} else {
+				idx = gw->root->toolbar->throbber.index;
+				if( idx > THROBBER_MAX_INDEX || idx < THROBBER_MIN_INDEX ) {
+					idx = THROBBER_MIN_INDEX;
+				}
+			}
+			throbber_form[idx].ob_x = work.g_x+1;
+			throbber_form[idx].ob_y = work.g_y+4;
+			mt_objc_draw( throbber_form, idx, 8, clip.g_x, clip.g_y, clip.g_w, clip.g_h, app.aes_global );
+		}
+	}
+
 }
 
 static
@@ -609,8 +675,7 @@ void tb_url_redraw( struct gui_window * gw )
 			work.g_w -= TOOLBAR_URL_MARGIN_RIGHT;
 			work.g_h -= TOOLBAR_URL_MARGIN_BOTTOM;
 
-			plotter->resize(plotter, work.g_w, work.g_h );
-			plotter->move(plotter, work.g_x, work.g_y );
+			plot_set_dimensions( work.g_x, work.g_y, work.g_w, work.g_h );
 			if( plotter->lock( plotter ) == 0 )
 				return;
 
@@ -727,7 +792,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	mt_CompAttach( &app, t->comp, t->url.comp );
 
 	/* create the throbber widget: */
-	if( throbber_form == NULL ) {
+	if( throbber_form == NULL && img_toolbar == false ) {
 		RsrcGaddr( h_gem_rsrc, R_TREE, THROBBER , &throbber_form );
 		throbber_form->ob_x = 0;
 		throbber_form->ob_y = 0;
@@ -735,11 +800,17 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	t->throbber.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL,
 												toolbar_styles[t->style].height, 0);
 	t->throbber.comp->rect.g_h = toolbar_styles[t->style].height;
-	t->throbber.comp->rect.g_w = 32;
+	t->throbber.comp->rect.g_w = t->throbber.comp->bounds.max_width = \
+		toolbar_styles[t->style].icon_width + \
+		(2*toolbar_styles[t->style].button_vmargin );
 	t->throbber.comp->bounds.max_height = toolbar_styles[t->style].height;
-	t->throbber.comp->bounds.max_width = 32;
-	t->throbber.index = THROBBER_MIN_INDEX;
-	t->throbber.max_index = THROBBER_MAX_INDEX;
+	if( img_toolbar ){
+		t->throbber.index = 0;
+		t->throbber.max_index = 8;
+	} else {
+		t->throbber.index = THROBBER_MIN_INDEX;
+		t->throbber.max_index = THROBBER_MAX_INDEX;
+	}
 	t->throbber.running = false;
 	mt_CompEvntAttach( &app, t->throbber.comp, WM_REDRAW, evnt_throbber_redraw );
 	mt_CompDataAttach( &app, t->throbber.comp, CDT_OWNER, gw );
