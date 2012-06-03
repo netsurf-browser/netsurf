@@ -170,10 +170,6 @@ void toolbar_init( void )
 
 	}
     n = (sizeof( toolbar_styles ) / sizeof( struct s_toolbar_style ));
-    printf("toolbar styles: %d\n", n );
-
-
-
     for( i=0; i<n; i++ ){
         toolbar_styles[i].bgcolor = toolbar_bg_color;
         if( img_toolbar ){
@@ -908,6 +904,7 @@ void tb_url_set( struct gui_window * gw, char * text )
 	/* do not overwrite the black border, because of that, add 1 */
 	work.g_h -= (TOOLBAR_URL_MARGIN_TOP + TOOLBAR_URL_MARGIN_BOTTOM+1);
 	tb_txt_request_redraw( gw->root->toolbar, 0,0,work.g_w,work.g_h );
+	tb_update_buttons( gw, TOOLBAR_BT_STOP );
 	return;
 }
 
