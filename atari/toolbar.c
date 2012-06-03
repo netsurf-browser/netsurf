@@ -57,6 +57,8 @@ extern short vdih;
 extern void * h_gem_rsrc;
 extern GEM_PLOTTER plotter;
 extern struct gui_window * input_window;
+
+static OBJECT * toolbar_buttons = NULL;
 static OBJECT * throbber_form = NULL;
 static bool img_toolbar = false;
 static char * img_toolbar_folder = (char *)"default";
@@ -84,7 +86,7 @@ static struct s_tb_button tb_buttons[] =
         TOOLBAR_BT_BACK,
         tb_back_click,
         "toolbar/%s/bck_%s.png",
-        0, 0,
+        0,
         {0,0},
         0, 0, 0
     },
@@ -92,13 +94,13 @@ static struct s_tb_button tb_buttons[] =
         TOOLBAR_BT_HOME,
         tb_home_click,
         "toolbar/%s/hme_%s.png",
-        0, 0, {0,0}, 0, 0, 0
+        0, {0,0}, 0, 0, 0
     },
 	{
         TOOLBAR_BT_FORWARD,
         tb_forward_click,
         "toolbar/%s/fwd_%s.png",
-        0, 0,
+        0,
         {0,0},
         0, 0, 0
     },
@@ -106,7 +108,7 @@ static struct s_tb_button tb_buttons[] =
         TOOLBAR_BT_STOP,
         tb_stop_click,
         "toolbar/%s/stp_%s.png",
-        0, 0,
+        0,
         {0,0},
         0, 0, 0
     },
@@ -114,11 +116,11 @@ static struct s_tb_button tb_buttons[] =
         TOOLBAR_BT_RELOAD,
         tb_reload_click,
         "toolbar/%s/rld_%s.png",
-        0, 0,
+        0,
         {0,0},
         0, 0, 0
     },
-	{ 0, 0, 0, 0, 0,  {0,0}, 0, 0, -1 }
+	{ 0, 0, 0, 0, {0,0}, 0, 0, -1 }
 };
 
 struct s_toolbar_style {
@@ -266,15 +268,15 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 		plot_clip( &icon_clip  );
 	} else {
 		/* Place the CICON into workarea: */
-		tree = bt->aes_object;
+		OBJECT * tree = &toolbar_buttons[bt->rsc_id];
 		if( tree == NULL )
 			return;
 		tree->ob_x = work.g_x;
 		tree->ob_y = work.g_y + (work.g_h - tree->ob_height) / 2;
 		if( drawstate == button_off ) {
-				bt->aes_object->ob_state |= OS_DISABLED;
+			tree->ob_state |= OS_DISABLED;
 		} else {
-				bt->aes_object->ob_state &= ~OS_DISABLED;
+			tree->ob_state &= ~OS_DISABLED;
 		}
 	}
 
@@ -315,17 +317,6 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	}
 }
 
-static void __CDECL button_enable( COMPONENT *c, long buff[8], void * data )
-{
-	struct s_tb_button * bt = (struct s_tb_button *)data;
-	bt->aes_object->ob_state &= ~OS_DISABLED;
-}
-
-static void __CDECL button_disable( COMPONENT *c, long buff[8], void * data )
-{
-	struct s_tb_button * bt = (struct s_tb_button *)data;
-	bt->aes_object->ob_state |= OS_DISABLED;
-}
 
 static void __CDECL button_click( COMPONENT *c, long buff[8], void * data )
 {
@@ -335,6 +326,7 @@ static void __CDECL button_click( COMPONENT *c, long buff[8], void * data )
 	assert( gw );
 	gw->root->toolbar->buttons[bt->index].cb_click( gw );
 }
+
 
 static struct s_tb_button * find_button( struct gui_window * gw, int rsc_id )
 {
@@ -363,14 +355,6 @@ static COMPONENT *button_init( CMP_TOOLBAR t, OBJECT * tree, int index,
 	assert( instance->comp );
 
 	instance->comp->bounds.max_width = comp_width;
-
-	if( img_toolbar == false ){
-		// FIXME: is it really required to dup the object? Can this be moved
-		// to toolbar_init() ?
-		OBJECT *oc = mt_ObjcNDup( &app, &tree[instance->rsc_id], NULL, 1);
-		oc->ob_next = oc->ob_head = oc->ob_tail = -1;
-		instance->aes_object = oc;
-	}
 	mt_CompEvntDataAttach( &app, instance->comp, WM_REDRAW, button_redraw,
 						instance );
 	mt_CompEvntDataAttach( &app, instance->comp, WM_XBUTTON, button_click,
@@ -439,8 +423,7 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 			for some reason, adding
 			toolbar_styles[tb->style].button_vmargin to the x pos of
 			the plotter shifts the icon a bit to much.
-			That shouldn't happen... maybe the URL widget
-			size is a bit to large - to be inspected...
+			Maybe that's becasue the icon is inside an padded form.
 		*/
 		plot_set_dimensions(
 			work.g_x-(toolbar_styles[tb->style].icon_width * idx),
@@ -739,7 +722,7 @@ void tb_url_redraw( struct gui_window * gw )
 CMP_TOOLBAR tb_create( struct gui_window * gw )
 {
 	int i;
-	OBJECT * tbut = NULL;
+
 
 	CMP_TOOLBAR t = malloc( sizeof(struct s_toolbar) );
 	if( t == NULL )
@@ -757,7 +740,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 						NULL, EV_BOT);
 
 	if( img_toolbar == false ){
-		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &tbut );
+		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &toolbar_buttons );
 	}
 
 	/* count buttons and add them as components: */
@@ -769,7 +752,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	t->buttons = malloc( t->btcnt * sizeof(struct s_tb_button) );
 	memset( t->buttons, 0, t->btcnt * sizeof(struct s_tb_button) );
 	for( i=0; i < t->btcnt; i++ ) {
-		button_init( t, tbut, i, &t->buttons[i] );
+		button_init( t, toolbar_buttons, i, &t->buttons[i] );
 		mt_CompAttach( &app, t->comp,  t->buttons[i].comp );
 	}
 
@@ -825,13 +808,6 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 
 void tb_destroy( CMP_TOOLBAR tb )
 {
-	int i=0;
-	while( i < tb->btcnt ) {
-		if( tb->buttons[i].aes_object ){
-			mt_ObjcFree( &app, tb->buttons[i].aes_object );
-		}
-		i++;
-	}
 	free( tb->buttons );
 	textarea_destroy( tb->url.textarea );
 	mt_CompDelete( &app, tb->comp);

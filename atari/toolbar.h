@@ -47,7 +47,6 @@ struct s_tb_button
 	void (*cb_click)(struct gui_window * gw);
 	const char * iconfile;
 	COMPONENT * comp;
-	OBJECT * aes_object;
 	hlcache_handle * icon[TOOLBAR_BUTTON_NUM_STATES];
 	struct gui_window * gw;
     short state;
