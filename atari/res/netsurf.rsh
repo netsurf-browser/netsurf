@@ -44,8 +44,8 @@
 #define TOOLBAR_BT_BACK 2  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_HOME 3  /* CICON in tree TOOLBAR */
 #define TOOLBAR_BT_FORWARD 4  /* CICON in tree TOOLBAR */
-#define TOOLBAR_BT_RELOAD 5  /* CICON in tree TOOLBAR */
-#define TOOLBAR_BT_STOP 6  /* CICON in tree TOOLBAR */
+#define TOOLBAR_BT_STOP 5  /* CICON in tree TOOLBAR */
+#define TOOLBAR_BT_RELOAD 6  /* CICON in tree TOOLBAR */
 
 #define ICONIFY 2  /* form/dial */
 #define ICONIFY_GLOBE 1  /* CICON in tree ICONIFY */
