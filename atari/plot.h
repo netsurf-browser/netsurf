@@ -28,7 +28,7 @@ extern const struct plotter_table atari_plotters;
 
 int atari_plotter_init( char*, char * );
 int atari_plotter_finalise( void );
-void plot_set_knockout( int set );
+bool plot_set_dimensions( int x, int y, int w, int h );
 bool plot_get_clip(struct rect * out);
 bool plot_clip(const struct rect *clip);
 bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );

@@ -186,8 +186,7 @@ static nserror load_icon_callback(hlcache_handle *handle,
 
 
 /**
- * utility function. Placed here so that this code doesn't have to be
- * copied by each user.
+ * utility function. Copied from NetSurf tree API.
  *
  * \param name	the name of the loaded icon, if it's not a full path the icon is
  *		looked for in the directory specified by icons_dir

@@ -115,6 +115,12 @@ static bool plot_polygon(const int *p, unsigned int n,
 	return ( true );
 }
 
+bool plot_set_dimensions( int x, int y, int w, int h )
+{
+	plotter->resize( plotter, w, h );
+	plotter->move( plotter, x, y );
+}
+
 bool plot_clip(const struct rect *clip)
 {
 	plotter->set_clip( plotter, clip );
@@ -191,7 +197,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
 		return( true );
 	}
 
-	if (!(repeat_x || repeat_y)) {
+	if (!(repeat_x || repeat_y) ) {
 		plotter->bitmap( plotter, bm, x, y, bg, flags );
 	} else {
 		int xf,yf;
