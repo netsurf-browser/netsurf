@@ -226,26 +226,27 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	int  bmpx=0, bmpy=0, bmpw=0, bmph = 0, drawstate=0;
 	struct rect icon_clip;
 	struct bitmap * icon = NULL;
-	bool draw_bitmap = false;
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	work.g_h = work.g_h - 1;
 	clip = work;
+
 	/* return if component and redraw region does not intersect: */
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) {
 		return;
 	}
 
-	if( img_toolbar && toolbar_image != NULL ){
+	drawstate = bt->state;
+	if( img_toolbar ){
+
 		if( toolbar_image_ready == false ){
 			return;
 		}
+
 		icon = content_get_bitmap( toolbar_image );
 		if( icon == NULL ){
 			return;
 		}
-		draw_bitmap = true;
-		drawstate = bt->state;
 
 		bmpw = bitmap_get_width(icon);
 		bmph = bitmap_get_height(icon);
@@ -263,15 +264,18 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 		icon_clip.x1 = icon_clip.x0+toolbar_styles[tb->style].icon_width;
 		icon_clip.y1 = icon_clip.y0+toolbar_styles[tb->style].icon_height;
 		plot_clip( &icon_clip  );
-	}
-
-	if( draw_bitmap == false ){
+	} else {
 		/* Place the CICON into workarea: */
 		tree = bt->aes_object;
 		if( tree == NULL )
 			return;
 		tree->ob_x = work.g_x;
 		tree->ob_y = work.g_y + (work.g_h - tree->ob_height) / 2;
+		if( drawstate == button_off ) {
+				bt->aes_object->ob_state |= OS_DISABLED;
+		} else {
+				bt->aes_object->ob_state &= ~OS_DISABLED;
+		}
 	}
 
 	/* Setup draw mode: */
@@ -297,7 +301,7 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 			vs_clip( vdih, 1, (short*)&pxy );
 			v_bar( vdih, (short*)&pxy );
 
-			if( draw_bitmap ){
+			if( img_toolbar == true ){
 				atari_plotters.bitmap( bmpx, bmpy, bmpw, bmph, icon,
 										toolbar_styles[tb->style].icon_bgcolor,
 										BITMAPF_BUFFER_NATIVE );
@@ -403,7 +407,7 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	v_bar( vdih, (short*)&pxy );
 	vs_clip( vdih, 1, (short*)&pxy );
 
-	if( img_toolbar && throbber_image != NULL ){
+	if( img_toolbar ){
 
 		int  bmpx=0, bmpy=0, bmpw=0, bmph = 0, drawstate=0;
 		struct rect icon_clip;
@@ -804,7 +808,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 		toolbar_styles[t->style].icon_width + \
 		(2*toolbar_styles[t->style].button_vmargin );
 	t->throbber.comp->bounds.max_height = toolbar_styles[t->style].height;
-	if( img_toolbar ){
+	if( img_toolbar == true ){
 		t->throbber.index = 0;
 		t->throbber.max_index = 8;
 	} else {
@@ -866,15 +870,6 @@ void tb_update_buttons( struct gui_window * gw, short button )
         } else {
             bt->state = button_off;
         }
-		if( bt->aes_object ){
-			if( enable ) {
-				bt->aes_object->ob_state |= OS_DISABLED;
-			} else {
-				bt->aes_object->ob_state &= ~OS_DISABLED;
-			}
-		} else {
-			// TODOs
-		}
         mt_CompEvntRedraw( &app, bt->comp );
 	}
 
@@ -891,15 +886,6 @@ void tb_update_buttons( struct gui_window * gw, short button )
         } else {
             bt->state = button_off;
         }
-		if( bt->aes_object ){
-			if( enable ) {
-				bt->aes_object->ob_state |= OS_DISABLED;
-			} else {
-				bt->aes_object->ob_state &= ~OS_DISABLED;
-			}
-		} else {
-			// TODOs
-		}
         mt_CompEvntRedraw( &app, bt->comp );
 	}
 
@@ -911,15 +897,6 @@ void tb_update_buttons( struct gui_window * gw, short button )
         } else {
             bt->state = button_off;
         }
-		if( bt->aes_object ){
-			if( enable ) {
-				bt->aes_object->ob_state |= OS_DISABLED;
-			} else {
-				bt->aes_object->ob_state &= ~OS_DISABLED;
-			}
-		} else {
-			// TODOs
-		}
         mt_CompEvntRedraw( &app, bt->comp );
 	}
 
@@ -931,15 +908,6 @@ void tb_update_buttons( struct gui_window * gw, short button )
         } else {
             bt->state = button_off;
         }
-		if( bt->aes_object ){
-			if( enable ) {
-				bt->aes_object->ob_state |= OS_DISABLED;
-			} else {
-				bt->aes_object->ob_state &= ~OS_DISABLED;
-			}
-		} else {
-			// TODOs
-		}
         mt_CompEvntRedraw( &app, bt->comp );
 	}
 
