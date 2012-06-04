@@ -172,6 +172,14 @@ void toolbar_init( void )
 		throbber_image = load_icon( "toolbar/default/throbber.png",
 								toolbar_icon_callback, NULL );
 
+	} else {
+		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &toolbar_buttons );
+		toolbar_buttons->ob_x = 0;
+		toolbar_buttons->ob_y = 0;
+
+		RsrcGaddr( h_gem_rsrc, R_TREE, THROBBER , &throbber_form );
+		throbber_form->ob_x = 0;
+		throbber_form->ob_y = 0;
 	}
     n = (sizeof( toolbar_styles ) / sizeof( struct s_toolbar_style ));
     for( i=0; i<n; i++ ){
@@ -268,7 +276,7 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 		plot_clip( &icon_clip  );
 	} else {
 		/* Place the CICON into workarea: */
-		OBJECT * tree = &toolbar_buttons[bt->rsc_id];
+		tree = &toolbar_buttons[bt->rsc_id];
 		if( tree == NULL )
 			return;
 		tree->ob_x = work.g_x;
@@ -737,11 +745,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	t->comp->rect.g_h = toolbar_styles[t->style].height;
 	t->comp->bounds.max_height = toolbar_styles[t->style].height;
 	mt_CompEvntDataAdd(&app, t->comp, WM_REDRAW, evnt_toolbar_redraw,
-						NULL, EV_BOT);
-
-	if( img_toolbar == false ){
-		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &toolbar_buttons );
-	}
+						gw, EV_BOT);
 
 	/* count buttons and add them as components: */
 	i = 0;
@@ -779,11 +783,6 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 	mt_CompAttach( &app, t->comp, t->url.comp );
 
 	/* create the throbber widget: */
-	if( throbber_form == NULL && img_toolbar == false ) {
-		RsrcGaddr( h_gem_rsrc, R_TREE, THROBBER , &throbber_form );
-		throbber_form->ob_x = 0;
-		throbber_form->ob_y = 0;
-	}
 	t->throbber.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL,
 												toolbar_styles[t->style].height, 0);
 	t->throbber.comp->rect.g_h = toolbar_styles[t->style].height;
