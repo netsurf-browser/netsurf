@@ -46,6 +46,7 @@
 	char *arexx_shutdown;			\
 	char *download_dir;			\
 	bool download_notify;			\
+	int download_task_pri;		\
 	bool faster_scroll;			\
 	bool scale_quality;			\
 	bool ask_overwrite;			\
@@ -105,6 +106,7 @@
 	.arexx_shutdown = NULL,				\
 	.download_dir = NULL,				\
 	.download_notify = false,			\
+	.download_task_pri = -1,			\
 	.faster_scroll = true,				\
 	.scale_quality = false,				\
 	.ask_overwrite = true,				\
@@ -163,6 +165,7 @@
 { "arexx_shutdown",	OPTION_STRING,	&nsoptions.arexx_shutdown }, \
 { "download_dir",	OPTION_STRING,	&nsoptions.download_dir }, \
 { "download_notify",	OPTION_BOOL,	&nsoptions.download_notify}, \
+{ "download_task_pri",	OPTION_INTEGER,	&nsoptions.download_task_pri}, \
 { "faster_scroll",	OPTION_BOOL,	&nsoptions.faster_scroll}, \
 { "scale_quality",	OPTION_BOOL,	&nsoptions.scale_quality}, \
 { "ask_overwrite",	OPTION_BOOL,	&nsoptions.ask_overwrite}, \

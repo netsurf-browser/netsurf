@@ -83,6 +83,9 @@ enum {
 	AMINS_DLOAD_ABORT,
 };
 
+int downloads_in_progress = 0;
+BYTE original_task_priority = 0;
+
 struct gui_download_window *gui_download_window_create(download_context *ctx,
 		struct gui_window *gui)
 {
@@ -181,6 +184,16 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 
 	dw->node = AddObject(window_list,AMINS_DLWINDOW);
 	dw->node->objstruct = dw;
+
+	/* Set task priority to -1.
+	 * NetSurf loops without Wait()ing when downloading,
+	 * so this gives other tasks a bit more CPU time. */
+	if(downloads_in_progress == 0) {
+		original_task_priority = SetTaskPri(FindTask(0), (BYTE)nsoption_int(download_task_pri));
+		LOG(("Now running at priority %d (was %d)", nsoption_int(download_task_pri), original_task_priority));
+	}
+	downloads_in_progress++;
+
 	return dw;
 }
 
@@ -267,6 +280,13 @@ void gui_download_window_done(struct gui_download_window *dw)
 	FClose(dw->fh);
 	SetComment(dw->fname, dw->url);
 	if(dw->url) free(dw->url);
+
+	/* Set task priority back to what it was originally */
+	downloads_in_progress--;
+	if(downloads_in_progress == 0) {
+		BYTE taskpri = 	SetTaskPri(FindTask(0), original_task_priority);
+		LOG(("Now running at priority %d (was %d)", original_task_priority, taskpri));
+	}
 
 	DisposeObject(dw->objects[OID_MAIN]);
 	DelObject(dw->node);
