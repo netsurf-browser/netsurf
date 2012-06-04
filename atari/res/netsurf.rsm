@@ -3,7 +3,7 @@ ResourceMaster v3.65
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@1@1@1@1@
-#M 20010100@0@7728@599@
+#M 20010100@0@7728@600@
 #T 0@1@MAINMENU@@62@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -106,7 +106,7 @@ ResourceMaster v3.65
 #O 8@21@LBL_SPEED@@
 #O 9@26@CB_CLOSE_RDY@@
 #T 11@2@ABOUT@@2@@
-#T 12@2@POP_CTX@@11@@
+#T 12@2@POP_CTX@@12@@
 #O 1@21@CUT_SEL@@
 #O 2@21@COPY_SEL@@
 #O 3@21@PASTE_SEL@@
@@ -116,6 +116,7 @@ ResourceMaster v3.65
 #O 8@21@COPY_URL@@
 #O 9@21@SAVE_AS@@
 #O 10@21@VIEW_SOURCE@@
+#O 11@21@SAVE_LINK_AS@@
 #T 13@2@CHOICES@@103@@
 #O 1@26@REG_BROWSER@@
 #O 2@26@REG_RENDER@@
@@ -183,4 +184,4 @@ ResourceMaster v3.65
 #O 101@26@CB_BG_IMAGES@@
 #O 98@26@ABORT@@
 #O 99@26@OK@@
-#c 24297@
+#c 27841@

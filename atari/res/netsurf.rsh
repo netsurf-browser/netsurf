@@ -124,6 +124,7 @@
 #define POP_CTX_COPY_URL 8  /* TEXT in tree POP_CTX */
 #define POP_CTX_SAVE_AS 9  /* TEXT in tree POP_CTX */
 #define POP_CTX_VIEW_SOURCE 10  /* TEXT in tree POP_CTX */
+#define POP_CTX_SAVE_LINK_AS 11  /* TEXT in tree POP_CTX */
 
 #define CHOICES 13  /* form/dial */
 #define CHOICES_REG_BROWSER 1  /* BUTTON in tree CHOICES */
