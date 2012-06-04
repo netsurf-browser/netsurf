@@ -493,7 +493,11 @@ all-program: $(EXETARGET) post-exe
 
 .PHONY: testament
 testament utils/testament.h:
-	$(Q)$(PERL) utils/svn-testament.pl $(CURDIR) utils/testament.h
+	$(Q)if test -d .svn; then \
+		$(PERL) utils/svn-testament.pl $(CURDIR) utils/testament.h; \
+	else \
+		$(PERL) utils/git-testament.pl $(CURDIR) utils/testament.h; \
+	fi
 
 post-exe: $(POSTEXES)
 

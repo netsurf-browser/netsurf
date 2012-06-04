@@ -432,7 +432,7 @@ fetch_about_choices_handler_aborted:
 /** Generate the text of an svn testament which represents the current
  * build-tree status
  */
-typedef struct { const char *leaf; const char modtype; } modification_t;
+typedef struct { const char *leaf; const char *modtype; } modification_t;
 static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 {
 	static modification_t modifications[] = WT_MODIFICATIONS;
@@ -461,16 +461,21 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 		goto fetch_about_testament_handler_aborted;
 	
 	slen = snprintf(buffer, sizeof buffer, 
-#if defined(WT_BRANCHISTRUNK)
-			"# This is a *DEVELOPMENT* build from the trunk.\n\n"
-#elif defined(WT_BRANCHISRELEASE)
-			"# This is a release build of NetSurf\n\n"
-#elif defined(WT_NO_SVN)
+#if defined(WT_BRANCHISTRUNK) || defined(WT_BRANCHISMASTER)
+			"# This is a *DEVELOPMENT* build from the main line.\n\n"
+#elif defined(WT_BRANCHISTAG) && (WT_MODIFIED == 0)
+			"# This is a tagged build of NetSurf\n"
+#ifdef WT_TAGIS
+                        "#      The tag used was '" WT_TAGIS "'\n\n"
+#else
+                        "\n"
+#endif
+#elif defined(WT_NO_SVN) || defined(WT_NO_GIT)
 			"# This NetSurf was built outside of our revision "
 			"control environment.\n"
 			"# This testament is therefore very useful.\n\n"
 #else
-			"# This NetSurf was built from a branch.\n\n"
+			"# This NetSurf was built from a branch (" WT_BRANCHPATH ").\n\n"
 #endif
 			);
 
@@ -510,7 +515,7 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 	
 	for (i = 0; i < WT_MODIFIED; ++i) {
 		slen = snprintf(buffer, sizeof buffer,
-				"  %c  %s\n",
+				"  %s  %s\n",
 				modifications[i].modtype,
 				modifications[i].leaf);
 		msg.data.header_or_data.len = slen;
