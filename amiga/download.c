@@ -74,6 +74,13 @@ struct gui_download_window {
 	struct download_context *ctx;
 	char *url;
 	char fname[1024];
+	int result;
+};
+
+enum {
+	AMINS_DLOAD_OK = 0,
+	AMINS_DLOAD_ERROR,
+	AMINS_DLOAD_ABORT,
 };
 
 struct gui_download_window *gui_download_window_create(download_context *ctx,
@@ -215,12 +222,14 @@ void gui_download_window_error(struct gui_download_window *dw,
 		const char *error_msg)
 {
 	warn_user("Unwritten","");
+	dw->result = AMINS_DLOAD_ERROR;
 	gui_download_window_done(dw);
 }
 
 void ami_download_window_abort(struct gui_download_window *dw)
 {
 	download_context_abort(dw->ctx);
+	dw->result = AMINS_DLOAD_ABORT;
 	gui_download_window_done(dw);
 }
 
@@ -233,7 +242,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 
 	if(!dw) return;
 
-	if(nsoption_bool(download_notify))
+	if((nsoption_bool(download_notify)) && (dw->result == AMINS_DLOAD_OK))
 	{
 		Notify(ami_appid, APPNOTIFY_Title, messages_get("amiDownloadComplete"),
 				APPNOTIFY_PubScreenName, "FRONT",
