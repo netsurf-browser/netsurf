@@ -140,7 +140,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 {
 
 #define POP_FIRST_ITEM POP_CTX_CUT_SEL
-#define POP_LAST_ITEM POP_CTX_VIEW_SOURCE
+#define POP_LAST_ITEM POP_CTX_SAVE_LINK_AS
 
 	OBJECT * pop;
 	int choice;
@@ -175,10 +175,10 @@ void context_popup( struct gui_window * gw, short x, short y )
 	}
 
 	if( ctx->flags & CNT_HREF ){
-		SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
-        	SET_BIT(pop[ POP_CTX_COPY_LINK ].ob_state, DISABLED, 0);
-        	SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
-    	}
+		SET_BIT(pop[ POP_CTX_COPY_LINK ].ob_state, DISABLED, 0);
+        SET_BIT(pop[ POP_CTX_OPEN_NEW ].ob_state, DISABLED, 0);
+        SET_BIT(pop[ POP_CTX_SAVE_LINK_AS ].ob_state, DISABLED, 0);
+	}
 
 	if( ctx->flags & CNT_IMG ){
 		SET_BIT(pop[ POP_CTX_SAVE_AS ].ob_state, DISABLED, 0);
@@ -210,13 +210,25 @@ void context_popup( struct gui_window * gw, short x, short y )
 		break;
 
 		case POP_CTX_SAVE_AS:
-			if( hlcache_handle_get_url(ctx->ccdata.object) != NULL ){
+			if( ctx->ccdata.object != NULL ) {
+				if( hlcache_handle_get_url(ctx->ccdata.object) != NULL ) {
+					browser_window_download(
+						gw->browser->bw,
+						nsurl_access(hlcache_handle_get_url(ctx->ccdata.object)),
+						nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
+					);
+				}
+			}
+
+		case POP_CTX_SAVE_LINK_AS:
+			if( ctx->ccdata.link_url != NULL ) {
 				browser_window_download(
 					gw->browser->bw,
-					nsurl_access(hlcache_handle_get_url(ctx->ccdata.object)),
+					nsurl_access(ctx->ccdata.link_url),
 					nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
 				);
 			}
+
 		break;
 
 		case POP_CTX_COPY_URL:
