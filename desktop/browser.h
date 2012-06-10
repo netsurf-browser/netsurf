@@ -199,8 +199,6 @@ struct browser_window {
 
 	/** current javascript context */
 	struct jscontext *jsctx;
-	/** current global javascript object */
-	struct jsobject *jsglobal;
 
 	/** cache of the currently displayed status text. */
 	char *status_text; /**< Current status bar text. */

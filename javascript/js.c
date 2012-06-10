@@ -1,6 +1,27 @@
+/*
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "mozjs/jsapi.h"
 
-#include "desktop/js.h"
+#include "content/content.h"
+#include "javascript/global.h"
+#include "javascript/js.h"
+
 #include "utils/log.h"
 
 static JSRuntime *rt; /* global runtime */
@@ -71,7 +92,7 @@ static JSClass global_class = {
 };
 
 
-jsobject *js_newcompartment(jscontext *ctx)
+jsobject *js_newcompartment(jscontext *ctx, struct content* c)
 {
 	JSContext *cx = (JSContext *)ctx;
 	JSObject *global;
@@ -79,7 +100,7 @@ jsobject *js_newcompartment(jscontext *ctx)
 	if (cx == NULL) {
 		return NULL;
 	}
-#ifdef HAVE_JS_NEWCOMPARTMENTANDGLOBALOBJECT
+#ifdef SPIDERMONKEY_400
 	global = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
 	if (global == NULL) {
 		return NULL;
@@ -92,13 +113,45 @@ jsobject *js_newcompartment(jscontext *ctx)
 	JS_SetGlobalObject(cx, global);
 #endif
 
-	/* Populate the global object with the standard globals,
-	   like Object and Array. */
+	JS_SetContextPrivate(cx, c); /* private pointer to content */
+
+	js_new_globalfunc(cx, global);
+
+	/* Populate the global object with the standard globals, like
+	   Object and Array. */
 	if (!JS_InitStandardClasses(cx, global)) {
 		return NULL;
 	}
 
-	LOG(("Creating new global object %p", global));
+	LOG(("Created new global object %p", global));
 
 	return (jsobject *)global;
+}
+
+bool js_exec(jscontext *ctx, const char *txt, int txtlen)
+{
+	JSContext *cx = (JSContext *)ctx;
+
+	//LOG(("%p \"%s\"",cx ,txt));
+
+	if (ctx == NULL) {
+		return false;
+	}
+
+	if (txt == NULL) {
+		return false;
+	}
+
+	if (txtlen == 0) {
+		return false;
+	}
+
+	if (JS_EvaluateScript(cx, 
+			      JS_GetGlobalObject(cx), 
+			      txt, txtlen, 
+			      "<head>", 0, NULL) == JS_TRUE) {
+		return true;
+	}
+
+	return false;
 }

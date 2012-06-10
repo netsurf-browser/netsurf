@@ -104,6 +104,10 @@ typedef struct html_content {
 
 	/** Context for free text search, or NULL if none */
 	struct search_context *search;
+
+	/** javascript context */
+	struct jscontext *jscontext;
+
 } html_content;
 
 

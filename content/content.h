@@ -73,6 +73,7 @@ typedef enum {
 	CONTENT_MSG_REFRESH,   /**< wants refresh */
 	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
+	CONTENT_MSG_GETCTX,    /**< Javascript context */
 } content_msg;
 
 /** RFC5988 metadata link */
@@ -80,7 +81,7 @@ struct content_rfc5988_link {
 	struct content_rfc5988_link *next; /**< next rfc5988_link in list */
 
 	lwc_string *rel; /**< the link relationship - must be present */
-	nsurl *href; /* the link href - must be present */
+	nsurl *href; /**< the link href - must be present */
 	lwc_string *hreflang;
 	lwc_string *type;
 	lwc_string *media;
@@ -89,8 +90,9 @@ struct content_rfc5988_link {
 
 /** Extra data for some content_msg messages. */
 union content_msg_data {
-	const char *error;	/**< Error message, for CONTENT_MSG_ERROR. */
-	/** Area of content which needs redrawing, for CONTENT_MSG_REDRAW. */
+	/** CONTENT_MSG_ERROR - Error message */
+	const char *error;	
+	/** CONTENT_MSG_REDRAW - Area of content which needs redrawing */
 	struct {
 		int x, y, width, height;
 		/** Redraw the area fully. If false, object must be set,
@@ -103,13 +105,16 @@ union content_msg_data {
 		/** Dimensions to plot object with. */
 		int object_width, object_height;
 	} redraw;
-	int delay;	/**< Minimum delay, for CONTENT_MSG_REFRESH */
-	/** Reformat should not cause a redraw, for CONTENT_MSG_REFORMAT */
+	/** CONTENT_MSG_REFRESH - Minimum delay  */
+	int delay;	
+	/** CONTENT_MSG_REFORMAT - Reformat should not cause a redraw */
 	bool background;
-	/** Low-level cache handle, for CONTENT_MSG_DOWNLOAD */
+	/** CONTENT_MSG_DOWNLOAD - Low-level cache handle */
 	struct llcache_handle *download;
-	/** rfc5988 link data  CONTENT_MSG_RFC5988_LINK */
+	/** CONTENT_MSG_RFC5988_LINK - rfc5988 link data   */
 	struct content_rfc5988_link *rfc5988_link;
+	/** CONTENT_MSG_GETCTX - Javascript context */
+	struct jscontext **jscontext;
 };
 
 /** parameters to content redraw */

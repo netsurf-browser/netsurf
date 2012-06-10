@@ -38,6 +38,7 @@
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
+#include "javascript/js.h"
 #include "image/bitmap.h"
 #include "render/box.h"
 #include "render/font.h"
@@ -104,6 +105,7 @@ static dom_string *html_dom_string_sizes;
 static dom_string *html_dom_string_title;
 static dom_string *html_dom_string_base;
 static dom_string *html_dom_string_link;
+static dom_string *html_dom_string_script;
 dom_string *html_dom_string_target;
 static dom_string *html_dom_string__parent;
 static dom_string *html_dom_string__self;
@@ -158,6 +160,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->box = NULL;
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
+	c->jscontext = NULL;
 
 	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
 		error = BINDING_NOMEM;
@@ -354,6 +357,40 @@ encoding_change:
 		 * it cannot be changed again. */
 		return html_process_data(c, source_data, source_size);
 	}
+}
+
+/** process script node */
+static bool html_process_script(html_content *c, dom_node *node)
+{
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *script;
+
+	bool success;
+
+	/* ensure javascript context is available */
+	if (c->jscontext == NULL) {
+		union content_msg_data msg_data;
+
+		msg_data.jscontext = &c->jscontext;
+		content_broadcast(&c->base, CONTENT_MSG_GETCTX, msg_data);
+		LOG(("javascript context %p ", c->jscontext));
+		if (c->jscontext == NULL) {
+			return false;
+		}
+	}
+
+	exc = dom_node_get_text_content(node, &script);
+	if ((exc != DOM_NO_ERR) || (script == NULL)) {
+		return false;
+	}
+			
+	js_exec(c->jscontext, 
+		dom_string_data(script), 
+		dom_string_byte_length(script)) ;
+
+	dom_string_unref(script);
+
+	return success;
 }
 
 /** process link node */
@@ -557,6 +594,9 @@ static bool html_head(html_content *c, dom_node *head)
 				} else if (dom_string_caseless_isequal(node_name, 
 						 html_dom_string_link)) {
 					html_process_link(c, node);
+				} else if (dom_string_caseless_isequal(node_name, 
+						 html_dom_string_script)) {
+					html_process_script(c, node);
 				}
 			}
 		}
@@ -3037,6 +3077,7 @@ static void html_fini(void)
 	HTML_DOM_STRING_UNREF(sizes);
 	HTML_DOM_STRING_UNREF(title);
 	HTML_DOM_STRING_UNREF(base);
+	HTML_DOM_STRING_UNREF(script);
 	HTML_DOM_STRING_UNREF(link);
 	HTML_DOM_STRING_UNREF(target);
 	HTML_DOM_STRING_UNREF(_blank);
@@ -3165,6 +3206,7 @@ nserror html_init(void)
 	HTML_DOM_STRING_INTERN(title);
 	HTML_DOM_STRING_INTERN(base);
 	HTML_DOM_STRING_INTERN(link);
+	HTML_DOM_STRING_INTERN(script);
 	HTML_DOM_STRING_INTERN(target);
 	HTML_DOM_STRING_INTERN(_blank);
 	HTML_DOM_STRING_INTERN(_self);

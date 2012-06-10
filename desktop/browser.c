@@ -54,7 +54,8 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/plotters.h"
-#include "desktop/js.h"
+
+#include "javascript/js.h"
 
 #include "render/form.h"
 #include "render/textplain.h"
@@ -963,9 +964,6 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 	browser_window_set_status(bw, messages_get("Loading"));
 	bw->history_add = add_to_history;
 
-	/* fresh javascript compartment */
-	bw->jsglobal = js_newcompartment(bw->jsctx);
-
 	/* Verifiable fetches may trigger a download */
 	if (verifiable)
 		fetch_flags |= HLCACHE_RETRIEVE_MAY_DOWNLOAD;
@@ -977,28 +975,34 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 			browser_window_callback, bw,
 			parent != NULL ? &child : NULL,
 			CONTENT_ANY, &c);
-	if (error == NSERROR_NO_FETCH_HANDLER) {
+
+	switch (error) {
+	case NSERROR_NO_FETCH_HANDLER: /* no handler for this type */
 		gui_launch_url(nsurl_access(nsurl));
 		nsurl_unref(nsurl);
 		if (nsref != NULL)
 			nsurl_unref(nsref);
-		return;
-	} else if (error != NSERROR_OK) {
+		break;
+
+	case NSERROR_OK:
+		bw->loading_content = c;
+		browser_window_start_throbber(bw);
+		browser_window_refresh_url_bar(bw, nsurl, NULL);
+
+		nsurl_unref(nsurl);
+		if (nsref != NULL)
+			nsurl_unref(nsref);
+		break;
+
+	default: /* assume out of memory */
+		/* TODO: fix all fetcher errors being reported as OOM? */
 		nsurl_unref(nsurl);
 		if (nsref != NULL)
 			nsurl_unref(nsref);
 		browser_window_set_status(bw, messages_get("NoMemory"));
 		warn_user("NoMemory", 0);
-		return;
+
 	}
-
-	bw->loading_content = c;
-	browser_window_start_throbber(bw);
-	browser_window_refresh_url_bar(bw, nsurl, NULL);
-
-	nsurl_unref(nsurl);
-	if (nsref != NULL)
-		nsurl_unref(nsref);
 }
 
 
@@ -1389,6 +1393,16 @@ nserror browser_window_callback(hlcache_handle *c,
 					event->data.rfc5988_link);
 		}
 	}
+		break;
+
+	case CONTENT_MSG_GETCTX: 
+		/* only the content object created by the browser
+		 * window requires a new global compartment object 
+		 */
+		if (js_newcompartment(bw->jsctx, 
+				      hlcache_handle_get_content(c)) != NULL) {
+			*(event->data.jscontext) = bw->jsctx;
+		}
 		break;
 
 	default:

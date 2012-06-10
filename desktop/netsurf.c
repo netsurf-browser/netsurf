@@ -42,7 +42,9 @@
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/searchweb.h"
-#include "desktop/js.h"
+
+#include "javascript/js.h"
+
 #include "render/html.h"
 #include "render/textplain.h"
 #include "utils/log.h"
