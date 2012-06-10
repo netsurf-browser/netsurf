@@ -214,13 +214,15 @@ void nsgtk_tab_set_title(struct gui_window *g, const char *title)
 	GtkWidget *label;
 	GtkWidget *tab;
 	tab = nsgtk_window_get_tab(g);
-	gboolean is_top_level = (tab != NULL);
 
-	if (is_top_level) {
-		label = g_object_get_data(G_OBJECT(tab), "label");
-		gtk_label_set_text(GTK_LABEL(label), title);
-		gtk_widget_set_tooltip_text(tab, title);
+	if (tab == NULL) {
+		return;
 	}
+
+	label = g_object_get_data(G_OBJECT(tab), "label");
+	gtk_label_set_text(GTK_LABEL(label), title);
+	gtk_widget_set_tooltip_text(tab, title);
+	
 }
 
 /* exported interface documented in gtk/tabs.h */
