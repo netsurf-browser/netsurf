@@ -625,7 +625,6 @@ install-gtk: nsgtk
 	@cp nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
 	@cp -RL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/arrow_down_8x32.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/blankpage $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RL gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
