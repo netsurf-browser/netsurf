@@ -1109,7 +1109,7 @@ void gui_window_get_dimensions(struct gui_window *g, int *width, int *height,
 		*width /= g->bw->scale;
 		*height /= g->bw->scale;
 	}
-	LOG(("\tWINDOW WIDTH:  %i\n", *width));
-	LOG(("\tWINDOW HEIGHT: %i\n", *height));
+	LOG(("width: %i", *width));
+	LOG(("height: %i", *height));
 }
 
