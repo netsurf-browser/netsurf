@@ -20,6 +20,8 @@
  * Dummy implementation of javascript engine functions.
  */
 
+#include "content/content.h"
+
 #include "javascript/js.h"
 #include "utils/log.h"
 
@@ -45,7 +47,7 @@ jsobject *js_newcompartment(jscontext *ctx, struct content* c)
 	return NULL;
 }
 
-bool js_exec(jscontext *ctx, char *txt, int txtlen)
+bool js_exec(jscontext *ctx, const char *txt, int txtlen)
 {
 	return true;
 }
