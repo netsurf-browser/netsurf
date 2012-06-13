@@ -31,15 +31,14 @@ static JSBool jsalert(JSContext *cx, uintN argc, jsval *vp)
 		return JS_FALSE;
 
 
-#ifdef SPIDERMONKEY_400
+#if JS_VERSION <= 180
+	txt = JS_GetStringBytes(u16_txt);
+#else
 	unsigned int length;
 	length = JS_GetStringLength(u16_txt);
 	txt = alloca(sizeof(char)*(length+1));
 	JS_EncodeStringToBuffer(u16_txt, txt, length);
 	txt[length] = '\0';
-
-#else
-	txt = JS_GetStringBytes(u16_txt);
 #endif
 
 	warn_user(txt, NULL);

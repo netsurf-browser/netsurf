@@ -20,7 +20,7 @@
  * Dummy implementation of javascript engine functions.
  */
 
-#include "desktop/js.h"
+#include "javascript/js.h"
 #include "utils/log.h"
 
 void js_initialise(void)
