@@ -29,6 +29,11 @@ static JSRuntime *rt; /* global runtime */
 void js_initialise(void)
 {
 	/* Create a JS runtime. */
+
+#if JS_VERSION >= 180
+        JS_SetCStringsAreUTF8(); /* we prefer our runtime to be utf-8 */
+#endif
+
 	rt = JS_NewRuntime(8L * 1024L * 1024L);
 	LOG(("New runtime handle %p", rt));
 }
@@ -85,12 +90,22 @@ void js_destroycontext(jscontext *ctx)
 
 /* The class of the global object. */
 static JSClass global_class = {
-    "global", JSCLASS_GLOBAL_FLAGS,
-    JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
-    JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub,
-    JSCLASS_NO_OPTIONAL_MEMBERS
+	"global", 
+	JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, 
+	JS_PropertyStub, 
+	JS_PropertyStub, 
+#if JS_VERSION <= 180
+	JS_PropertyStub,
+#else
+	JS_StrictPropertyStub,
+#endif
+	JS_EnumerateStub, 
+	JS_ResolveStub, 
+	JS_ConvertStub, 
+	JS_FinalizeStub,
+	JSCLASS_NO_OPTIONAL_MEMBERS
 };
-
 
 jsobject *js_newcompartment(jscontext *ctx, struct content* c)
 {
@@ -100,17 +115,18 @@ jsobject *js_newcompartment(jscontext *ctx, struct content* c)
 	if (cx == NULL) {
 		return NULL;
 	}
-#ifdef SPIDERMONKEY_400
-	global = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
-	if (global == NULL) {
-		return NULL;
-	}
-#else
+
+#if JS_VERSION <= 180
 	global = JS_NewObject(cx, &global_class, NULL, NULL);
 	if (global == NULL) {
 		return NULL;
 	}
 	JS_SetGlobalObject(cx, global);
+#else
+	global = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	if (global == NULL) {
+		return NULL;
+	}
 #endif
 
 	JS_SetContextPrivate(cx, c); /* private pointer to content */
