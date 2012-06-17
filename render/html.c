@@ -64,19 +64,6 @@
 #define ALWAYS_DUMP_FRAMESET 0
 #define ALWAYS_DUMP_BOX 0
 
-static const char empty_document[] =
-	"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
-	"	\"http://www.w3.org/TR/html4/strict.dtd\">"
-	"<html>"
-	"<head>"
-	"<title>Empty document</title>"
-	"</head>"
-	"<body>"
-	"<h1>Empty document</h1>"
-	"<p>The document sent by the server is empty.</p>"
-	"</body>"
-	"</html>";
-
 static const char *html_types[] = {
 	"application/xhtml+xml",
 	"text/html"
@@ -365,7 +352,7 @@ static bool html_process_script(html_content *c, dom_node *node)
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *script;
 
-	bool success;
+	bool success = true;
 
 	/* ensure javascript context is available */
 	if (c->jscontext == NULL) {
@@ -1887,36 +1874,6 @@ static bool html_convert(struct content *c)
 
 	/* finish parsing */
 	content__get_source_data(c, &size);
-	if (size == 0) {
-		/* Destroy current binding */
-		binding_destroy_tree(htmlc->parser_binding);
-
-		/* Also, any existing encoding information, 
-		 * as it's not guaranteed to match the error page.
-		 */
-		talloc_free(htmlc->encoding);
-		htmlc->encoding = NULL;
-
-		/* Create new binding, using default charset */
-		err = binding_create_tree(c, NULL, &htmlc->parser_binding);
-		if (err != BINDING_OK) {
-			union content_msg_data msg_data;
-
-			if (err == BINDING_BADENCODING) {
-				LOG(("Bad encoding: %s", htmlc->encoding 
-						? htmlc->encoding : ""));
-				msg_data.error = messages_get("ParsingFail");
-			} else
-				msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-			return false;
-		}
-
-		/* Process the error page */
-		if (html_process_data(c, (char *) empty_document, 
-				SLEN(empty_document)) == false)
-			return false;
-	}
 
 	err = binding_parse_completed(htmlc->parser_binding);
 	if (err != BINDING_OK) {
@@ -1930,7 +1887,6 @@ static bool html_convert(struct content *c)
 
 	htmlc->document = binding_get_document(htmlc->parser_binding,
 					&htmlc->quirks);
-	/*xmlDebugDumpDocument(stderr, htmlc->document);*/
 
 	if (htmlc->document == NULL) {
 		LOG(("Parsing failed"));
@@ -1959,7 +1915,7 @@ static bool html_convert(struct content *c)
 		return false;
 	}
 
-	/* locate html and head elements */
+	/* locate root element and ensure it is html */
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
         if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
@@ -1972,13 +1928,14 @@ static bool html_convert(struct content *c)
         if ((exc != DOM_NO_ERR) || 
 	    (node_name == NULL) || 
 	    (!dom_string_caseless_isequal(node_name, html_dom_string_html))) {
-		LOG(("html element not found"));
+		LOG(("root element not html"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
         }
 	dom_string_unref(node_name);
 
+	/* ensure the head element is found */
 	exc = dom_node_get_first_child(html, &head);
         if ((exc != DOM_NO_ERR) || (head == NULL)) {
 		head = NULL;
