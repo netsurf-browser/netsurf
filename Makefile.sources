@@ -29,9 +29,9 @@ S_DESKTOP := cookies.c history_global_core.c hotlist.c knockout.c	\
 
 # Javascript sources
 ifeq ($(NETSURF_USE_JS),YES)
-S_JAVASCRIPT += js.c global.c
+S_JAVASCRIPT += jsapi.c jsapi/global.c
 else
-S_JAVASCRIPT += nojs.c
+S_JAVASCRIPT += none.c
 endif
 
 # S_COMMON are sources common to all builds

@@ -19,7 +19,7 @@
 #include "mozjs/jsapi.h"
 
 #include "content/content.h"
-#include "javascript/global.h"
+#include "javascript/jsapi.h"
 #include "javascript/js.h"
 
 #include "utils/log.h"
@@ -50,7 +50,7 @@ void js_finalise(void)
 /* The error reporter callback. */
 static void js_reportError(JSContext *cx, const char *message, JSErrorReport *report)
 {
-	LOG(("%s:%u:%s\n",
+	LOG(("%s:%u:%s",
             report->filename ? report->filename : "<no filename>",
             (unsigned int) report->lineno,
 	     message));
@@ -131,7 +131,7 @@ jsobject *js_newcompartment(jscontext *ctx, struct content* c)
 
 	JS_SetContextPrivate(cx, c); /* private pointer to content */
 
-	js_new_globalfunc(cx, global);
+	jsapi_new_globalfunc(cx, global);
 
 	/* Populate the global object with the standard globals, like
 	   Object and Array. */

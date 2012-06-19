@@ -58,6 +58,26 @@ struct html_stylesheet {
 	} data;	/**< Sheet data */
 };
 
+/**
+ * Container for scripts used by an HTML document
+ */
+struct html_script {
+	/** Type of script */
+	enum html_script_type { HTML_SCRIPT_EXTERNAL, HTML_SCRIPT_INTERNAL } type;
+	union {
+		struct hlcache_handle *external;
+		struct dom_string *internal;
+	} data;	/**< Script data */
+	struct dom_string *script_type;
+	struct dom_string *encoding;
+	bool already_started;
+	bool parser_inserted;
+	bool force_async;
+	bool ready_exec;
+	bool async;
+	bool defer;
+};
+
 
 /** An object (<img>, <object>, etc.) in a CONTENT_HTML document. */
 struct content_html_object {

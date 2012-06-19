@@ -17,12 +17,12 @@
  */
 
 /** \file
- * spidermonkey engine global functions.
+ * spidermonkey jsapi bindings.
  */
 
-#ifndef _NETSURF_JAVASCRIPT_GLOBAL_H_
-#define _NETSURF_JAVASCRIPT_GLOBAL_H_
+#ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
+#define _NETSURF_JAVASCRIPT_JSAPI_H_
 
-bool js_new_globalfunc(JSContext *cx, JSObject *global);
+bool jsapi_new_globalfunc(JSContext *cx, JSObject *global);
 
 #endif

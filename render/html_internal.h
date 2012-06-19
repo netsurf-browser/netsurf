@@ -58,6 +58,13 @@ typedef struct html_content {
 	/** Font callback table */
 	const struct font_functions *font_func;
 
+	/** Number of entries in scripts */
+	unsigned int scripts_count;
+	/** Scripts */
+	struct html_script *scripts;
+	/** javascript context */
+	struct jscontext *jscontext;
+
 	/** Number of entries in stylesheet_content. */
 	unsigned int stylesheet_count;
 	/** Stylesheets. Each may be NULL. */
@@ -104,9 +111,6 @@ typedef struct html_content {
 
 	/** Context for free text search, or NULL if none */
 	struct search_context *search;
-
-	/** javascript context */
-	struct jscontext *jscontext;
 
 } html_content;
 

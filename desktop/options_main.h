@@ -70,7 +70,7 @@
 	int disc_cache_age;					\
 	/** Whether to block advertisements */			\
 	bool block_ads;						\
-	/** Disable website tracking, see	\
+	/** Disable website tracking, see	                \
 	 * http://www.w3.org/Submission/2011/SUBM-web-tracking-protection-20110224/#dnt-uas */	\
 	bool do_not_track;					\
 	/** Minimum GIF animation delay */			\
@@ -83,6 +83,8 @@
 	bool background_images;					\
 	/** Whether to animate images */			\
 	bool animate_images;					\
+	/** Whether to execute javascript */			\
+	bool enable_javascript;					\
 	/** How many days to retain URL data for */		\
 	int expire_url;						\
 	/** Default font family */				\
@@ -262,7 +264,8 @@
 	.max_cached_fetch_handles = 6,			\
 	.suppress_curl_debug = true,			\
 	.target_blank = true,				\
-	.button_2_tab = true
+	.button_2_tab = true,				\
+	.enable_javascript = true
 
 #define NSOPTION_MAIN_SYS_COLOUR_DEFAULTS		\
 	.sys_colour_ActiveBorder = 0x00000000,		\
@@ -320,6 +323,7 @@
 	{ "foreground_images",	OPTION_BOOL,	&nsoptions.foreground_images },	\
 	{ "background_images",	OPTION_BOOL,	&nsoptions.background_images },	\
 	{ "animate_images",	OPTION_BOOL,	&nsoptions.animate_images }, \
+	{ "enable_javasctipt",	OPTION_BOOL,	&nsoptions.enable_javascript},	\
 	{ "expire_url",		OPTION_INTEGER,	&nsoptions.expire_url }, \
 	{ "font_default",	OPTION_INTEGER,	&nsoptions.font_default }, \
 	{ "ca_bundle",		OPTION_STRING,	&nsoptions.ca_bundle },	\

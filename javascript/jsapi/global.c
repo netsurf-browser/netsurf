@@ -19,7 +19,7 @@
 #include "mozjs/jsapi.h"
 
 #include "content/content.h"
-#include "javascript/global.h"
+#include "javascript/jsapi.h"
 #include "utils/log.h"
 
 static JSBool jsalert(JSContext *cx, uintN argc, jsval *vp)
@@ -54,7 +54,7 @@ static JSFunctionSpec global_functions[] =
 	JS_FS_END
 };
 
-bool js_new_globalfunc(JSContext *cx, JSObject *global)
+bool jsapi_new_globalfunc(JSContext *cx, JSObject *global)
 {
 	return JS_DefineFunctions(cx, global, global_functions);
 }
