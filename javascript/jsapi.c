@@ -19,6 +19,7 @@
 #include "mozjs/jsapi.h"
 
 #include "content/content.h"
+#include "javascript/content.h"
 #include "javascript/jsapi.h"
 #include "javascript/js.h"
 
@@ -36,6 +37,9 @@ void js_initialise(void)
 
 	rt = JS_NewRuntime(8L * 1024L * 1024L);
 	LOG(("New runtime handle %p", rt));
+
+	/* register script content handler */
+	javascript_init();
 }
 
 void js_finalise(void)
