@@ -39,15 +39,7 @@
 
 extern char * tree_directory_icon_name;
 
-struct s_atari_global_history {
-	WINDOW * window;
-	NSTREEVIEW tv;		/*< The history treeview handle.  */
-	bool open;
-	bool init;
-};
-
-static struct s_atari_global_history gl_history;
-
+struct s_atari_global_history gl_history;
 
 
 void global_history_add_recent( const char *url )

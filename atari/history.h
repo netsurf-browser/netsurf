@@ -24,9 +24,25 @@
 #include "desktop/tree.h"
 #include "atari/treeview.h"
 
+struct s_atari_global_history {
+	WINDOW * window;
+	NSTREEVIEW tv;		/*< The history treeview handle.  */
+	bool open;
+	bool init;
+};
+
+extern struct s_atari_global_history gl_history;
+
 bool global_history_init( void );
 void global_history_destroy( void );
 void global_history_open( void );
 void global_history_close( void );
+
+inline void global_history_redraw( void );
+inline void global_history_redraw( void )
+{
+	atari_treeview_redraw( gl_history.tv );
+}
+
 
 #endif

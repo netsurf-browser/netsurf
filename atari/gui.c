@@ -66,6 +66,7 @@
 #include "atari/toolbar.h"
 #include "atari/verify_ssl.h"
 #include "atari/hotlist.h"
+#include "atari/history.h"
 #include "atari/login.h"
 #include "atari/global_evnt.h"
 #include "atari/encoding.h"
@@ -149,7 +150,8 @@ void gui_poll(bool active)
 	if( evnt.timer != 0 && !active ){
 		/* this suits for stuff with lower priority */
 		/* TBD: really be spare on redraws??? */
-		atari_treeview_redraw( hl.tv );
+		hotlist_redraw();
+		global_history_redraw();
 	}
 }
 
