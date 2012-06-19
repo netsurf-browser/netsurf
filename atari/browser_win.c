@@ -502,8 +502,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 		mt_objc_draw( tree, 0, 8, buff[4], buff[5], buff[6], buff[7], app.aes_global );
 	} else {
 	    struct rect clip = { 0,0,w,h };
-        plotter->move( plotter, x, y );
-        plotter->resize( plotter, w, h );
+	    plot_set_dimensions( x,y,w,h );
         plotter->set_clip(plotter, &clip );
         plotter->bitmap_resize( plotter,  gw->icon, w, h  );
         plotter->bitmap(
