@@ -99,11 +99,14 @@ extern unsigned short vdi_web_pal[216][3];
 
 static inline void vsl_rgbcolor( short vdih, uint32_t cin )
 {
+	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
+	#endif
 		unsigned short c[4];
 		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, (unsigned short*)&c[0] );
 		vsl_color( vdih, OFFSET_CUSTOM_COLOR );
+	#ifdef WITH_8BPP_SUPPORT
 	} else {
 		if( vdi_sysinfo.scr_bpp >= 4 ){
 			vsl_color( vdih, RGB_TO_VDI(cin) );
@@ -111,15 +114,19 @@ static inline void vsl_rgbcolor( short vdih, uint32_t cin )
 		else
 			vsl_color( vdih, BLACK );
 	}
+	#endif
 }
 
 static inline void vsf_rgbcolor( short vdih, uint32_t cin )
 {
+	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
+	#endif
 		unsigned short c[4];
 		rgb_to_vdi1000( (unsigned char*)&cin, (unsigned short*)&c );
 		vs_color( vdih, OFFSET_CUSTOM_COLOR, &c[0] );
 		vsf_color( vdih, OFFSET_CUSTOM_COLOR );
+	#ifdef WITH_8BPP_SUPPORT
 	} else {
 		if( vdi_sysinfo.scr_bpp >= 4 ){
 			vsf_color( vdih, RGB_TO_VDI(cin) );
@@ -127,6 +134,7 @@ static inline void vsf_rgbcolor( short vdih, uint32_t cin )
 		else
 			vsf_color( vdih, WHITE );
 	}
+	#endif
 }
 
 static int set_clip(GEM_PLOTTER self, const struct rect * clip)
