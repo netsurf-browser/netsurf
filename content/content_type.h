@@ -36,12 +36,21 @@ typedef enum {
 	CONTENT_TEXTPLAIN	= 0x02,
 	CONTENT_CSS		= 0x04,
 
+	/** All images */
 	CONTENT_IMAGE		= 0x08,
 
+	/** Navigator API Plugins */
 	CONTENT_PLUGIN		= 0x10,
 
+	/** Themes (only GTK) */
 	CONTENT_THEME		= 0x20,
 
+	/** Javascript */
+	CONTENT_JS		= 0x40,
+	/** All script types. */
+	CONTENT_SCRIPT		= 0x40,
+
+	/** Any content matches */
 	CONTENT_ANY		= 0x3f
 } content_type;
 

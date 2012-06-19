@@ -656,7 +656,7 @@ nserror hlcache_migrate_ctx(hlcache_retrieval_ctx *ctx,
 			hlcache_event hlevent;
 
 			hlevent.type = CONTENT_MSG_ERROR;
-			hlevent.data.error = messages_get("BadType");
+			hlevent.data.error = messages_get("UnacceptableType");
 
 			ctx->handle->cb(ctx->handle, &hlevent,
 					ctx->handle->pw);

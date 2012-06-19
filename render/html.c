@@ -1882,7 +1882,7 @@ html_process_script(dom_node *node, dom_string *name, void *ctx)
 						   html_convert_script_callback, 
 						   c, 
 						   &child,
-						   CONTENT_ANY,
+						   CONTENT_SCRIPT,
 						   &nscript->data.external);
 
 		nsurl_unref(joined);
