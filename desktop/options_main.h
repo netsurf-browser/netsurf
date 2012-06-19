@@ -323,7 +323,7 @@
 	{ "foreground_images",	OPTION_BOOL,	&nsoptions.foreground_images },	\
 	{ "background_images",	OPTION_BOOL,	&nsoptions.background_images },	\
 	{ "animate_images",	OPTION_BOOL,	&nsoptions.animate_images }, \
-	{ "enable_javasctipt",	OPTION_BOOL,	&nsoptions.enable_javascript},	\
+	{ "enable_javascript",	OPTION_BOOL,	&nsoptions.enable_javascript},	\
 	{ "expire_url",		OPTION_INTEGER,	&nsoptions.expire_url }, \
 	{ "font_default",	OPTION_INTEGER,	&nsoptions.font_default }, \
 	{ "ca_bundle",		OPTION_STRING,	&nsoptions.ca_bundle },	\
