@@ -489,7 +489,7 @@ void gui_window_start_throbber(struct gui_window *w)
 	schedule(100, throbber_advance, w );
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
-        
+
     rendering = true;
 }
 
@@ -505,14 +505,14 @@ void gui_window_stop_throbber(struct gui_window *w)
 
     /* refresh toolbar buttons: */
     tb_update_buttons( w, -1 );
-    
+
     /* redraw throbber: */
 	mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
 						WF_WORKXYWH, &work);
-	w->root->toolbar->throbber.running = false;  
+	w->root->toolbar->throbber.running = false;
 	ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
 		work.g_x, work.g_y, work.g_w, work.g_h );
-        
+
     rendering = false;
 }
 
@@ -812,6 +812,7 @@ void gui_quit(void)
 		gw = tmp;
 	}
 
+	global_history_destroy();
 	hotlist_destroy();
 	toolbar_exit();
 
@@ -982,6 +983,7 @@ static void gui_init2(int argc, char** argv)
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
 	tree_set_icon_dir( nsoption_charp(tree_icons_path) );
+	global_history_init();
 	hotlist_init();
 	toolbar_init();
 }

@@ -42,6 +42,7 @@
 #include "atari/toolbar.h"
 #include "atari/browser.h"
 #include "atari/hotlist.h"
+#include "atari/history.h"
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
 #include "atari/browser_win.h"
@@ -321,10 +322,7 @@ static void __CDECL menu_lhistory(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_ghistory(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
-	char buf[PATH_MAX];
-	strcpy((char*)&buf, "file://");
-	strncat((char*)&buf, nsoption_charp(url_file), PATH_MAX - (strlen("file://")+1) );
-	browser_window_create((char*)&buf, 0, 0, true, false);
+	global_history_open();
 }
 
 static void __CDECL menu_add_bookmark(WINDOW *win, int item, int title, void *data)

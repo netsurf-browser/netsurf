@@ -19,4 +19,14 @@
 #ifndef NS_ATARI_HISTORY_H
 #define NS_ATARI_HISTORY_H
 
+#include <stdbool.h>
+#include <windom.h>
+#include "desktop/tree.h"
+#include "atari/treeview.h"
+
+bool global_history_init( void );
+void global_history_destroy( void );
+void global_history_open( void );
+void global_history_close( void );
+
 #endif
