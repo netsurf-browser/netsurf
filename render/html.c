@@ -1919,7 +1919,6 @@ static bool html_find_scripts(html_content *c, dom_node *html)
 
 struct find_stylesheet_ctx {
 	unsigned int count;
-	hlcache_child_context child;
 	html_content *c;
 };
 
@@ -1935,6 +1934,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	union content_msg_data msg_data;
 	dom_exception exc;
 	nserror ns_error;
+	hlcache_child_context child;
 
 	/* deal with style nodes */
 	if (strcmp(dom_string_data(name), "style") == 0) {
@@ -2016,13 +2016,17 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	ctx->c->stylesheets = stylesheets;
 	ctx->c->stylesheet_count++;
 	ctx->c->stylesheets[ctx->count].type = HTML_STYLESHEET_EXTERNAL;
+
+	child.charset = ctx->c->encoding;
+	child.quirks = ctx->c->base.quirks;
+
 	ns_error = hlcache_handle_retrieve(joined, 
 					   0,
 					   content_get_url(&ctx->c->base), 
 					   NULL,
 					   html_convert_css_callback, 
 					   ctx->c, 
-					   &ctx->child,
+					   &child,
 					   CONTENT_CSS,
 					   &ctx->c->stylesheets[ctx->count].data.external);
 
@@ -2058,18 +2062,15 @@ no_memory:
 
 static bool html_find_stylesheets(html_content *c, dom_node *html)
 {
-	content_type accept = CONTENT_CSS;
 	union content_msg_data msg_data;
 	nserror ns_error;
 	bool result;
 	struct find_stylesheet_ctx ctx;
+	hlcache_child_context child;
 
 	/* setup context */
 	ctx.c = c;
 	ctx.count = STYLESHEET_START;
-
-	ctx.child.charset = c->encoding;
-	ctx.child.quirks = c->base.quirks;
 
 	/* stylesheet 0 is the base style sheet,
 	 * stylesheet 1 is the quirks mode style sheet,
@@ -2090,9 +2091,12 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	c->stylesheets[STYLESHEET_USER].data.external = NULL;
 	c->stylesheet_count = STYLESHEET_START;
 
+	child.charset = c->encoding;
+	child.quirks = c->base.quirks;
+
 	ns_error = hlcache_handle_retrieve(html_default_stylesheet_url, 0,
 			content_get_url(&c->base), NULL,
-			html_convert_css_callback, c, &ctx.child, accept,
+			html_convert_css_callback, c, &child, CONTENT_CSS,
 			&c->stylesheets[STYLESHEET_BASE].data.external);
 	if (ns_error != NSERROR_OK)
 		goto html_find_stylesheets_no_memory;
@@ -2103,9 +2107,9 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	if (c->quirks == BINDING_QUIRKS_MODE_FULL) {
 		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url, 
 				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &ctx.child, accept,
-				&c->stylesheets[STYLESHEET_QUIRKS].
-						data.external);
+				html_convert_css_callback, c, &child, 
+				CONTENT_CSS,
+				&c->stylesheets[STYLESHEET_QUIRKS].data.external);
 		if (ns_error != NSERROR_OK)
 			goto html_find_stylesheets_no_memory;
 
@@ -2117,7 +2121,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	if (nsoption_bool(block_ads)) {
 		ns_error = hlcache_handle_retrieve(html_adblock_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &ctx.child, accept,
+				html_convert_css_callback, c, &child, CONTENT_CSS,
 				&c->stylesheets[STYLESHEET_ADBLOCK].
 						data.external);
 		if (ns_error != NSERROR_OK)
@@ -2130,7 +2134,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 
 	ns_error = hlcache_handle_retrieve(html_user_stylesheet_url, 0,
 			content_get_url(&c->base), NULL,
-			html_convert_css_callback, c, &ctx.child, accept,
+			html_convert_css_callback, c, &child, CONTENT_CSS,
 			&c->stylesheets[STYLESHEET_USER].data.external);
 	if (ns_error != NSERROR_OK)
 		goto html_find_stylesheets_no_memory;
@@ -2333,7 +2337,7 @@ static bool html_convert(struct content *c)
 		/* @todo this ought to be done during parse */
 		html_find_scripts(htmlc, html);
 		/* run as far as we can */
-		html_scripts_run(htmlc);
+		html_scripts_exec(htmlc);
 	} 
 
 	/* get stylesheets */
