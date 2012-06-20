@@ -42,7 +42,7 @@ typedef enum {
 	/** Navigator API Plugins */
 	CONTENT_PLUGIN		= 0x10,
 
-	/** Themes (only GTK) */
+	/** Themes (only GTK and RISC OS) */
 	CONTENT_THEME		= 0x20,
 
 	/** Javascript */
@@ -51,7 +51,7 @@ typedef enum {
 	CONTENT_SCRIPT		= 0x40,
 
 	/** Any content matches */
-	CONTENT_ANY		= 0x3f
+	CONTENT_ANY		= 0x7f
 } content_type;
 
 
