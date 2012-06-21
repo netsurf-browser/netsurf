@@ -464,7 +464,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 
 static void toggle_objects( void )
 {
-	// enable / disable objects depending on radio button values.
+	/* enable / disable (refresh) objects depending on radio button values: */
 	FORMEVENT(CHOICES_CB_USE_PROXY);
 	FORMEVENT(CHOICES_CB_PROXY_AUTH);
 	FORMEVENT(CHOICES_BT_SEL_FONT_RENDERER);
@@ -495,6 +495,11 @@ static void display_settings( void )
 		OBJ_CHECK( CHOICES_CB_SEND_HTTP_REFERRER );
 	} else {
 		OBJ_UNCHECK( CHOICES_CB_SEND_HTTP_REFERRER );
+	}
+	if( nsoption_bool(do_not_track) ){
+		OBJ_CHECK( CHOICES_CB_SEND_DO_NOT_TRACK );
+	} else {
+		OBJ_UNCHECK( CHOICES_CB_SEND_DO_NOT_TRACK );
 	}
 
 	set_text( CHOICES_BT_SEL_LOCALE,
@@ -578,7 +583,7 @@ static void display_settings( void )
 
 	/* "Style" tab: */
 	tmp_option_font_min_size = nsoption_int(font_min_size);
-	snprintf( spare, "%3d", nsoption_int(font_min_size) );
+	snprintf( spare, 255, "%3d", nsoption_int(font_min_size) );
 	set_text( CHOICES_EDIT_MIN_FONT_SIZE, spare , 3 );
 
 	tmp_option_font_size = nsoption_int(font_size);
@@ -667,6 +672,8 @@ static void apply_settings( void )
 	nsoption_set_int(expire_url,
 		atoi(ObjcString( dlgtree, CHOICES_EDIT_HISTORY_AGE, NULL)));
 	nsoption_set_bool(send_referer,
+			  OBJ_SELECTED(CHOICES_CB_SEND_HTTP_REFERRER));
+	nsoption_set_bool(do_not_track,
 			  OBJ_SELECTED(CHOICES_CB_SEND_HTTP_REFERRER));
 	nsoption_set_charp(homepage_url,
 			   ObjcString( dlgtree, CHOICES_EDIT_HOMEPAGE, NULL));
