@@ -85,7 +85,6 @@ static struct s_tb_button tb_buttons[] =
 	{
         TOOLBAR_BT_BACK,
         tb_back_click,
-        "toolbar/%s/bck_%s.png",
         0,
         {0,0},
         0, 0, 0
@@ -93,13 +92,11 @@ static struct s_tb_button tb_buttons[] =
 	{
         TOOLBAR_BT_HOME,
         tb_home_click,
-        "toolbar/%s/hme_%s.png",
         0, {0,0}, 0, 0, 0
     },
 	{
         TOOLBAR_BT_FORWARD,
         tb_forward_click,
-        "toolbar/%s/fwd_%s.png",
         0,
         {0,0},
         0, 0, 0
@@ -107,7 +104,6 @@ static struct s_tb_button tb_buttons[] =
 	{
         TOOLBAR_BT_STOP,
         tb_stop_click,
-        "toolbar/%s/stp_%s.png",
         0,
         {0,0},
         0, 0, 0
@@ -115,12 +111,11 @@ static struct s_tb_button tb_buttons[] =
 	{
         TOOLBAR_BT_RELOAD,
         tb_reload_click,
-        "toolbar/%s/rld_%s.png",
         0,
         {0,0},
         0, 0, 0
     },
-	{ 0, 0, 0, 0, {0,0}, 0, 0, -1 }
+	{ 0, 0, 0, {0,0}, 0, 0, -1 }
 };
 
 struct s_toolbar_style {
@@ -158,6 +153,7 @@ void toolbar_init( void )
 	short vdicolor[3];
 	uint32_t rgbcolor;
 
+	toolbar_bg_color = MIN(15,nsoption_int(atari_toolbar_bg));
 	img_toolbar = (nsoption_int( atari_image_toolbar ) > 0 ) ? true : false;
 	if( img_toolbar ){
 
@@ -577,8 +573,14 @@ void __CDECL evnt_url_click( COMPONENT *c, long buff[8] )
 			int mstate = BROWSER_MOUSE_PRESS_1;
 			if( (kstat & (K_LSHIFT|K_RSHIFT)) != 0 )
 				mstate = BROWSER_MOUSE_MOD_1;
-			textarea_mouse_action( tb->url.textarea,
-									BROWSER_MOUSE_PRESS_1, mx, my );
+				if( evnt.nb_click == 2 ){
+					textarea_mouse_action( tb->url.textarea,
+							BROWSER_MOUSE_DOUBLE_CLICK | BROWSER_MOUSE_CLICK_1,
+							mx, my );
+				} else {
+					textarea_mouse_action( tb->url.textarea,
+							BROWSER_MOUSE_PRESS_1, mx, my );
+				}
 		}
 	}
 	// TODO: do not send an complete redraw!
