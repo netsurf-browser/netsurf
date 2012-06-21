@@ -31,6 +31,7 @@
 	int atari_dither;												\
 	int atari_transparency;											\
 	int atari_image_toolbar;										\
+	int atari_toolbar_bg;											\
 	char *atari_face_sans_serif; /* default sans face */			\
 	char *atari_face_sans_serif_bold; /* bold sans face */			\
 	char *atari_face_sans_serif_italic; /* bold sans face */		\
@@ -54,6 +55,7 @@
 	.atari_dither = 1,							\
 	.atari_transparency = 1,					\
 	.atari_image_toolbar = 0,					\
+	.atari_toolbar_bg = 8,						\
 	.atari_face_sans_serif = NULL,				\
 	.atari_face_sans_serif_bold = NULL,			\
 	.atari_face_sans_serif_italic = NULL,		\
@@ -75,6 +77,7 @@
 	{ "atari_font_driver", OPTION_STRING, &nsoptions.atari_font_driver },\
 	{ "atari_font_monochrom", OPTION_INTEGER, &nsoptions.atari_font_monochrom },\
 	{ "atari_image_toolbar", OPTION_INTEGER, &nsoptions.atari_image_toolbar },\
+	{ "atari_toolbar_bg", OPTION_INTEGER, &nsoptions.atari_toolbar_bg },\
 	{ "atari_transparency", OPTION_INTEGER, &nsoptions.atari_transparency },\
 	{ "atari_dither", OPTION_INTEGER, &nsoptions.atari_dither },\
 	{ "atari_editor", OPTION_STRING, &nsoptions.atari_editor },\
