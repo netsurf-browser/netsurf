@@ -61,7 +61,7 @@ extern struct gui_window * input_window;
 static OBJECT * toolbar_buttons = NULL;
 static OBJECT * throbber_form = NULL;
 static bool img_toolbar = false;
-static char * img_toolbar_folder = (char *)"default";
+static char * toolbar_image_folder = (char *)"default";
 static short toolbar_bg_color = LWHITE;
 static hlcache_handle * toolbar_image;
 static hlcache_handle * throbber_image;
@@ -153,20 +153,26 @@ void toolbar_init( void )
 	short vdicolor[3];
 	uint32_t rgbcolor;
 
+	toolbar_image_folder = nsoption_charp(atari_image_toolbar_folder);
 	toolbar_bg_color = MIN(15,nsoption_int(atari_toolbar_bg));
 	img_toolbar = (nsoption_int( atari_image_toolbar ) > 0 ) ? true : false;
 	if( img_toolbar ){
 
         char imgfile[PATH_MAX];
+        const char * imgfiletmpl = "toolbar/%s/%s";
 
         while( tb_buttons[i].rsc_id != 0){
 			tb_buttons[i].index = i;
 			i++;
 		}
-		toolbar_image = load_icon( "toolbar/default/main.png",
+		snprintf( imgfile, PATH_MAX-1, imgfiletmpl, toolbar_image_folder,
+				"main.png" );
+		toolbar_image = load_icon( imgfile,
 									toolbar_icon_callback, NULL );
-		throbber_image = load_icon( "toolbar/default/throbber.png",
-								toolbar_icon_callback, NULL );
+		snprintf( imgfile, PATH_MAX-1, imgfiletmpl, toolbar_image_folder,
+				"throbber.png" );
+		throbber_image = load_icon( imgfile,
+									toolbar_icon_callback, NULL );
 
 	} else {
 		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &toolbar_buttons );
@@ -181,7 +187,7 @@ void toolbar_init( void )
     for( i=0; i<n; i++ ){
         toolbar_styles[i].bgcolor = toolbar_bg_color;
         if( img_toolbar ){
-			vq_color( vdih, toolbar_styles[i].bgcolor, 0, vdicolor );
+			vq_color( vdih, toolbar_bg_color, 0, vdicolor );
 			vdi1000_to_rgb( vdicolor, (unsigned char*)&rgbcolor );
 			toolbar_styles[i].icon_bgcolor = rgbcolor;
         }
