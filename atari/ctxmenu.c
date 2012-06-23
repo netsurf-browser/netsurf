@@ -150,6 +150,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 	FILE * fp_tmpfile;
 	char * tempfile;
 	int err = 0;
+	char * editor;
 	char cmdline[128];
 
 	pop = get_tree( POP_CTX );
@@ -224,7 +225,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 			if( ctx->ccdata.link_url != NULL ) {
 				browser_window_download(
 					gw->browser->bw,
-					nsurl_access(ctx->ccdata.link_url),
+					nsurl_access((const char*)ctx->ccdata.link_url),
 					nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
 				);
 			}
@@ -257,7 +258,8 @@ void context_popup( struct gui_window * gw, short x, short y )
 		break;
 
 		case POP_CTX_VIEW_SOURCE:
-			if( nsoption_charp(atari_editor) != NULL ) {
+			editor = nsoption_charp(atari_editor);
+			if( editor != NULL && strlen(editor)>0  ) {
 				data = content_get_source_data( gw->browser->bw->current_content, &size );
 				if( size > 0 && data != NULL ){
 					tempfile = tmpnam( NULL );
@@ -271,8 +273,8 @@ void context_popup( struct gui_window * gw, short x, short y )
 						  sprintf((char*)&cmdline, "%s \"%s\"", nsoption_charp(atari_editor), tempfile );
 						  system( (char*)&cmdline );
 						*/
-						err = ShelWrite( nsoption_charp(atari_editor), tempfile , nsoption_charp(atari_editor), 1, 0);
-						LOG(("Launched: %s %s (%d)\n", nsoption_charp(atari_editor), tempfile, err ));
+						err = ShelWrite( editor, tempfile , editor, 1, 0);
+						LOG(("Launched: %s %s (%d)\n", editor, tempfile, err ));
 					} else {
 						printf("Could not open temp file: %s!\n", tempfile );
 					}
@@ -281,7 +283,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 					LOG(("Invalid content!"));
 				}
 			} else {
-				printf("Please set option_atari_editor!");
+				form_alert(0, "[1][Set option \"option_atari_editor\".][OK]");
 			}
 		break;
 
