@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <time.h>
 #include <limits.h>
@@ -13,6 +14,7 @@
 #include "atari/settings.h"
 #include "atari/global_evnt.h"
 #include "atari/misc.h"
+#include "atari/findfile.h"
 
 extern char options[PATH_MAX];
 
@@ -28,6 +30,7 @@ static unsigned int tmp_option_min_reflow_period;
 static unsigned int tmp_option_max_fetchers;
 static unsigned int tmp_option_max_fetchers_per_host;
 static unsigned int tmp_option_max_cached_fetch_handles;
+static unsigned int tmp_option_atari_toolbar_bg;
 
 /* Tab forms and their buttons: */
 static int frms[] = {
@@ -69,6 +72,7 @@ static int buts[] = {
 #define INPUT_MIN_REFLOW_PERIOD_MAX_LEN 4
 #define LABEL_FONT_RENDERER_MAX_LEN 8
 #define LABEL_PATH_MAX_LEN 43
+#define LABEL_ICONSET_MAX_LEN 8
 
 static void toggle_objects( void );
 static void display_settings( void );
@@ -135,6 +139,10 @@ WINDOW * open_settings()
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_SEL_FONT_RENDERER,
 							form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_SEL_LOCALE,
+							form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_BT_TOOLBAR_BGCOLOR,
+							form_event, NULL);
+		ObjcAttachFormFunc( dlgwin, CHOICES_BT_TOOLBAR_ICONSET,
 							form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_CLEAR_HISTORY,
 							clear_history, NULL);
@@ -204,6 +212,76 @@ static void __CDECL clear_history( WINDOW *win, int index, int unused,
 								void *unused2)
 {
 
+}
+
+/**
+* Displays a popup to select available icon sets,
+	the returned string is no longer than 8 characters.
+* \param x x pos of popup
+* \param y y pos of popup
+* \return the selected string or NULL on failure.
+*/
+static char * toolbar_iconset_popup( int x, int y )
+{
+	#define MAX_SETS 24
+	DIR *dp;
+	struct dirent *ep;
+	struct stat statbuf;
+	char * current = NULL;
+	char *avail[MAX_SETS];
+	int selected = 0, navail = 0, i, choice=-1;
+	static char toolbar_folder[PATH_MAX];
+	char fullpath[PATH_MAX];
+
+	strncpy( fullpath, nsoption_charp(tree_icons_path), 255 );
+	path_add_part( fullpath, 255, "toolbar/" );
+
+	/* Get current set (for pre-selection): */
+	memset( avail, 0, MAX_SETS );
+	current = nsoption_charp(atari_image_toolbar_folder);
+
+	/* locate the toolbar folder: */
+	atari_find_resource( toolbar_folder, fullpath, fullpath );
+
+	/* search for iconset folders: */
+	dp = opendir (toolbar_folder);
+	if (dp != NULL){
+		while (ep = readdir (dp)) {
+			if (strlen(ep->d_name) < 3)
+				continue;
+			snprintf(fullpath, PATH_MAX-1, "%s/%s", toolbar_folder, ep->d_name );
+			if (stat(fullpath, &statbuf) == 0) {
+				if (S_ISDIR(statbuf.st_mode)) {
+					if (strcmp(ep->d_name, current) == 0)
+						selected = navail;
+					/* store the folder name: */
+					avail[navail] = malloc( strlen(ep->d_name)+1 );
+					sprintf( avail[navail], "%s", ep->d_name );
+					navail++;
+					if( navail >= MAX_SETS )
+						break;
+				}
+			}
+		}
+		(void) closedir (dp);
+	}
+
+
+	if (navail > 0){
+		choice = MenuPopUp( avail, x, y, navail,
+						-1, selected, P_LIST | P_CHCK );
+		if (choice > 0)
+			snprintf( toolbar_folder, 9, "%s", avail[choice-1] );
+	}
+
+	for (i=0;i<navail; i++ ) {
+		free( avail[i] );
+	}
+	if (choice > 0)
+		return( toolbar_folder );
+	else
+		return( NULL );
+	#undef MAX_SETS
 }
 
 static void __CDECL
@@ -294,6 +372,31 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 				ObjcStrCpy( dlgtree, CHOICES_BT_SEL_LOCALE,
 							(char*)locales[choice-1] );
 			}
+			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
+			break;
+
+		case CHOICES_BT_TOOLBAR_BGCOLOR:
+			objc_offset( FORM(win), CHOICES_BT_TOOLBAR_BGCOLOR, &x, &y );
+			choice = MenuPopUp( get_tree(POP_COLOR), x, y, -1,
+									-1, -1, P_WNDW + P_CHCK );
+			if( choice >= 0 && choice <= 15 ){
+				snprintf( spare, 255, "%02d", choice-1 );
+				tmp_option_atari_toolbar_bg = choice-1;
+				ObjcStrCpy( dlgtree, CHOICES_BT_TOOLBAR_BGCOLOR,
+							spare );
+
+			}
+			is_button = true;
+			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
+			break;
+
+		case CHOICES_BT_TOOLBAR_ICONSET:
+			objc_offset( FORM(win), CHOICES_BT_TOOLBAR_ICONSET, &x, &y );
+			tmp = toolbar_iconset_popup(x,y);
+			if( tmp != NULL ){
+				ObjcStrCpy( dlgtree, CHOICES_BT_TOOLBAR_ICONSET, tmp );
+			}
+			is_button = true;
 			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 			break;
 
@@ -461,7 +564,10 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 	}
 }
 
-
+/**
+ * Toogle all objects which are directly influenced by other GUI elements
+ * ( like checkbox )
+ */
 static void toggle_objects( void )
 {
 	/* enable / disable (refresh) objects depending on radio button values: */
@@ -590,6 +696,13 @@ static void display_settings( void )
 	snprintf( spare, 255, "%3d", nsoption_int(font_size) );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
+	set_text(CHOICES_BT_TOOLBAR_ICONSET,
+			nsoption_charp(atari_image_toolbar_folder), LABEL_ICONSET_MAX_LEN);
+
+	tmp_option_atari_toolbar_bg = nsoption_int(atari_toolbar_bg);
+	snprintf( spare, 255, "%2d", tmp_option_atari_toolbar_bg);
+	set_text( CHOICES_BT_TOOLBAR_BGCOLOR, spare , 2 );
+
 	/* Only first tab is refreshed: */
 	ObjcDraw( OC_FORM, dlgwin, CHOICES_TAB_BROWSER, 4 );
 
@@ -628,6 +741,10 @@ static void apply_settings( void )
 	/* "Style" tab: */
 	nsoption_set_int(font_min_size, tmp_option_font_min_size);
 	nsoption_set_int(font_size, tmp_option_font_size);
+	nsoption_set_int(atari_toolbar_bg, tmp_option_atari_toolbar_bg);
+	nsoption_set_charp(atari_image_toolbar_folder,
+						ObjcString( dlgtree, CHOICES_BT_TOOLBAR_ICONSET, NULL)
+					);
 
 	/* "Rendering" tab: */
 	nsoption_set_charp(atari_font_driver,
