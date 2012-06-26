@@ -26,14 +26,29 @@
 typedef struct jscontext jscontext;
 typedef struct jsobject jsobject;
 
+/** Initialise javascript interpreter */
 void js_initialise(void);
+
+/** finalise javascript interpreter */
 void js_finalise(void);
 
+/** Create a new javascript context.
+ *
+ * There aare usually one context per browser context
+ */
 jscontext *js_newcontext(void);
+
+/** Destroy a previously created context */
 void js_destroycontext(jscontext *ctx);
 
-jsobject *js_newcompartment(jscontext *ctx, struct content* c);
+/** Create a new javascript compartment
+ *
+ * This is called once for a page with javascript script tags on
+ * it. It constructs a fresh global window object.
+ */
+jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
 
+/* execute some javascript in a context */
 bool js_exec(jscontext *ctx, const char *txt, int txtlen);
 
 #endif /* _NETSURF_JAVASCRIPT_JS_H_ */

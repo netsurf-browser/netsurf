@@ -92,60 +92,37 @@ void js_destroycontext(jscontext *ctx)
 
 
 
-/* The class of the global object. */
-static JSClass global_class = {
-	"global", 
-	JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-#if JS_VERSION <= 180
-	JS_PropertyStub,
-#else
-	JS_StrictPropertyStub,
-#endif
-	JS_EnumerateStub, 
-	JS_ResolveStub, 
-	JS_ConvertStub, 
-	JS_FinalizeStub,
-	JSCLASS_NO_OPTIONAL_MEMBERS
-};
-
-jsobject *js_newcompartment(jscontext *ctx, struct content* c)
+jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 {
 	JSContext *cx = (JSContext *)ctx;
-	JSObject *global;
-	
-	if (cx == NULL) {
-		return NULL;
-	}
+	JSObject *window_obj = NULL;
+	JSObject *document_obj;
+	JSObject *console_obj;
 
-#if JS_VERSION <= 180
-	global = JS_NewObject(cx, &global_class, NULL, NULL);
-	if (global == NULL) {
-		return NULL;
-	}
-	JS_SetGlobalObject(cx, global);
-#else
-	global = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
-	if (global == NULL) {
-		return NULL;
-	}
-#endif
+	if (cx == NULL)
+		goto js_newcompartment_fail;
 
-	JS_SetContextPrivate(cx, c); /* private pointer to content */
+	/* create the window object as the global */
+	window_obj = jsapi_new_window(cx, NULL, win_priv);
+	if (window_obj == NULL) 
+		goto js_newcompartment_fail;
 
-	jsapi_new_globalfunc(cx, global);
+	/* attach the subclasses off the window global */
+	document_obj = jsapi_new_document(cx, window_obj, doc_priv);
+	if (document_obj == NULL) 
+		goto js_newcompartment_fail;
 
-	/* Populate the global object with the standard globals, like
-	   Object and Array. */
-	if (!JS_InitStandardClasses(cx, global)) {
-		return NULL;
-	}
+	/* @todo forms, history, location */
 
-	LOG(("Created new global object %p", global));
+	console_obj = jsapi_new_console(cx, window_obj);
+	if (console_obj == NULL) 
+		goto js_newcompartment_fail;
 
-	return (jsobject *)global;
+	return (jsobject *)window_obj;
+
+js_newcompartment_fail:
+
+	return NULL;
 }
 
 bool js_exec(jscontext *ctx, const char *txt, int txtlen)

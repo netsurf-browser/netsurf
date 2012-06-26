@@ -17,12 +17,34 @@
  */
 
 /** \file
- * spidermonkey jsapi bindings.
+ * spidermonkey jsapi bindings and compatability glue.
  */
 
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
 #define _NETSURF_JAVASCRIPT_JSAPI_H_
 
-bool jsapi_new_globalfunc(JSContext *cx, JSObject *global);
+#if JS_VERSION <= 180
+inline JSObject *
+JS_NewCompartmentAndGlobalObject(JSContext *cx, 
+				 JSClass *jsclass, 
+				 JSPrincipals *principals)
+{
+	JSObject *global;
+	global = JS_NewObject(cx, jsclass, NULL, NULL);
+	if (global == NULL) {
+		return NULL;
+	}
+	JS_SetGlobalObject(cx, global);
+	return global;
+}
+
+#define JS_StrictPropertyStub JS_PropertyStub
+
+#endif
+
+
+JSObject *jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv);
+JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv);
+JSObject *jsapi_new_console(JSContext *cx, JSObject *parent);
 
 #endif

@@ -48,13 +48,58 @@ static JSBool jsalert(JSContext *cx, uintN argc, jsval *vp)
 	return JS_TRUE;
 }
 
-static JSFunctionSpec global_functions[] =
+static JSFunctionSpec jsfunctions_window[] =
 {
 	JS_FN("alert", jsalert, 1, 0),
 	JS_FS_END
 };
 
-bool jsapi_new_globalfunc(JSContext *cx, JSObject *global)
+/* The class of the global object. */
+static JSClass jsclass_window = {
+	"window", 
+	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, 
+	JS_PropertyStub, 
+	JS_PropertyStub, 
+	JS_StrictPropertyStub,
+	JS_EnumerateStub, 
+	JS_ResolveStub, 
+	JS_ConvertStub, 
+	JS_FinalizeStub,
+	JSCLASS_NO_OPTIONAL_MEMBERS
+};
+
+
+JSObject * jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv)
 {
-	return JS_DefineFunctions(cx, global, global_functions);
+	JSObject *window = NULL;
+	
+	if (parent == NULL) {
+		window = JS_NewCompartmentAndGlobalObject(cx, &jsclass_window, NULL);
+		if (window == NULL) {
+			return NULL;
+		}
+
+		/* Populate the global object with the standard globals, like
+		   Object and Array. */
+		if (!JS_InitStandardClasses(cx, window)) {
+			return NULL;
+		}
+
+	} else {
+		/* @todo sort out windows that are not globals */
+		assert(false);
+	}
+
+	if (!JS_DefineFunctions(cx, window, jsfunctions_window)) {
+		return NULL;
+	}
+
+	/* private pointer to browsing context */
+	if (!JS_SetPrivate(cx, window, win_priv))
+		return NULL;
+
+	LOG(("Created new window object %p", window));
+
+	return window;
 }
