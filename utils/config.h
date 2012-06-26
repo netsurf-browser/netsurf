@@ -125,13 +125,4 @@ char *realpath(const char *path, char *resolved_path);
 	#define NO_IPV6
 #endif
 
-/* Configuration sanity checks: */
-#if defined(WITH_NS_SVG) && defined(WITH_RSVG)
-    #error Cannot build WITH_NS_SVG and WITH_RSVG both enabled
-#endif
-
-#if defined(WITH_NSSPRITE) && defined(WITH_SPRITE)
-    #error Cannot build WITH_NSSPRITE and WITH_SPRITE both enabled
-#endif
-
 #endif
