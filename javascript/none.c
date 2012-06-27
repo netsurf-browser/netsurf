@@ -42,7 +42,7 @@ void js_destroycontext(jscontext *ctx)
 {
 }
 
-jsobject *js_newcompartment(jscontext *ctx, struct content* c)
+jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 {
 	return NULL;
 }

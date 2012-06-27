@@ -16,10 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mozjs/jsapi.h"
-
-#include "content/content.h"
 #include "javascript/jsapi.h"
+
 #include "utils/log.h"
 
 static JSFunctionSpec jsfunctions_document[] = {

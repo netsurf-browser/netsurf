@@ -23,6 +23,12 @@
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
 #define _NETSURF_JAVASCRIPT_JSAPI_H_
 
+#ifdef WITH_MOZJS
+#include "js/jsapi.h"
+#else
+#include "mozjs/jsapi.h"
+#endif
+
 #if JS_VERSION <= 180
 inline JSObject *
 JS_NewCompartmentAndGlobalObject(JSContext *cx, 

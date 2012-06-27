@@ -15,6 +15,7 @@
       $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
       $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
       $ svn co svn://svn.netsurf-browser.org/trunk/libcss
+      $ svn co svn://svn.netsurf-browser.org/trunk/libdom
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
       $ svn co svn://svn.netsurf-browser.org/trunk/libdom
@@ -36,7 +37,7 @@
   Framebuffer front end
 =======================
 
-  Optional:
+  Required:
 
       $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
 
