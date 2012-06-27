@@ -46,6 +46,19 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JS_StrictPropertyStub JS_PropertyStub
 
+#define JSString_to_char(injsstring, outchar, outlen)	\
+	txt = JS_GetStringBytes(u16_txt);		\
+	outlen = strlen(txt)
+
+#else
+
+#define JSString_to_char(injsstring, outchar, outlen)		\
+	outlen = JS_GetStringLength(injsstring);		\
+	outchar = alloca(sizeof(char)*(outlen+1));		\
+	JS_EncodeStringToBuffer(injsstring, outchar, outlen);	\
+	outchar[outlen] = '\0'
+
+
 #endif
 
 

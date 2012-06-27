@@ -151,20 +151,12 @@ static JSBool jsnative_alert(JSContext *cx, uintN argc, jsval *vp)
 {
 	JSString* u16_txt;
 	char *txt;
+	unsigned long length;
 
 	if (!JS_ConvertArguments(cx, argc, JS_ARGV(cx, vp), "S", &u16_txt))
 		return JS_FALSE;
 
-
-#if JS_VERSION <= 180
-	txt = JS_GetStringBytes(u16_txt);
-#else
-	unsigned int length;
-	length = JS_GetStringLength(u16_txt);
-	txt = alloca(sizeof(char)*(length+1));
-	JS_EncodeStringToBuffer(u16_txt, txt, length);
-	txt[length] = '\0';
-#endif
+	JSString_to_char(u16_txt, txt, length);
 
 	warn_user(txt, NULL);
 
@@ -173,10 +165,48 @@ static JSBool jsnative_alert(JSContext *cx, uintN argc, jsval *vp)
 	return JS_TRUE;
 }
 
+static JSBool jsnative_confirm(JSContext *cx, uintN argc, jsval *vp)
+{
+	JSString* u16_txt;
+	char *txt;
+	unsigned long length;
+	JSBool result = JS_FALSE;
+
+	if (!JS_ConvertArguments(cx, argc, JS_ARGV(cx, vp), "S", &u16_txt))
+		return JS_FALSE;
+
+	JSString_to_char(u16_txt, txt, length);
+
+	warn_user(txt, NULL);
+
+	JS_SET_RVAL(cx, vp, result);
+	
+	return JS_TRUE;
+}
+
+static JSBool jsnative_prompt(JSContext *cx, uintN argc, jsval *vp)
+{
+	JSString* u16_txt;
+	char *txt;
+	unsigned long length;
+
+	if (!JS_ConvertArguments(cx, argc, JS_ARGV(cx, vp), "S", &u16_txt))
+		return JS_FALSE;
+
+	JSString_to_char(u16_txt, txt, length);
+
+	warn_user(txt, NULL);
+
+	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	
+	return JS_TRUE;
+}
 
 static JSFunctionSpec jsfunctions_window[] =
 {
 	JS_FN("alert", jsnative_alert, 1, 0),
+	JS_FN("confirm", jsnative_confirm, 1, 0),
+	JS_FN("prompt", jsnative_prompt, 1, 0),
 	JS_FS_END
 };
 
@@ -207,6 +237,7 @@ static JSPropertySpec jsproperties_window[] =
 	  jsproperty_get_window, 
 	  jsproperty_set_window
 	},
+	{ NULL, 0,0,NULL,NULL }
 };
 
 /* The class of the global object. */
