@@ -68,7 +68,7 @@ struct html_script {
 		struct hlcache_handle *external;
 		struct dom_string *internal;
 	} data;	/**< Script data */
-	struct dom_string *script_type;
+	struct dom_string *mimetype;
 	struct dom_string *encoding;
 	bool already_started;
 	bool parser_inserted;

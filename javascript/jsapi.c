@@ -124,7 +124,7 @@ js_newcompartment_fail:
 	return NULL;
 }
 
-bool js_exec(jscontext *ctx, const char *txt, int txtlen)
+bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	JSContext *cx = (JSContext *)ctx;
 

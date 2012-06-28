@@ -49,6 +49,6 @@ void js_destroycontext(jscontext *ctx);
 jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
 
 /* execute some javascript in a context */
-bool js_exec(jscontext *ctx, const char *txt, int txtlen);
+bool js_exec(jscontext *ctx, const char *txt, size_t txtlen);
 
 #endif /* _NETSURF_JAVASCRIPT_JS_H_ */

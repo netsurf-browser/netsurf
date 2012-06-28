@@ -47,7 +47,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	return NULL;
 }
 
-bool js_exec(jscontext *ctx, const char *txt, int txtlen)
+bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	return true;
 }

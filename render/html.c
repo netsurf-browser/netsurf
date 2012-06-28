@@ -93,6 +93,7 @@ static dom_string *html_dom_string_title;
 static dom_string *html_dom_string_base;
 static dom_string *html_dom_string_link;
 static dom_string *html_dom_string_script;
+static dom_string *html_dom_string_text_javascript;
 static dom_string *html_dom_string_src;
 dom_string *html_dom_string_target;
 static dom_string *html_dom_string__parent;
@@ -1647,6 +1648,18 @@ html_treewalk_dom(dom_node *root,
 	return result;
 }
 
+typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size) ;
+
+
+static script_handler_t *select_script_handler(content_type ctype)
+{
+	if (ctype == CONTENT_JS) {
+		return js_exec;
+	}
+	return NULL;
+}
+
+
 /* attempt to progress script execution 
  *
  * execute scripts using algorithm found in:
@@ -1657,6 +1670,7 @@ static bool html_scripts_exec(html_content *c)
 {
 	unsigned int i;
 	struct html_script *s;
+	script_handler_t *script_handler;
 
 	if (c->jscontext == NULL)
 		return false;
@@ -1670,30 +1684,48 @@ static bool html_scripts_exec(html_content *c)
 		       (s->type == HTML_SCRIPT_INTERNAL));
 
 		if (s->type == HTML_SCRIPT_EXTERNAL) {
+			/* ensure script content is present */
 			if (s->data.external == NULL)
-				continue; /* script not present - skip */
+				continue; 
 
+			/* ensure script content fetch status is not an error */
 			if (content_get_status(s->data.external) == CONTENT_STATUS_ERROR)
-				continue; /* script content errored - skip */
+				continue; 
+
+			/* ensure script handler for content type */
+			script_handler = select_script_handler(content_get_type(s->data.external));
+			if (script_handler == NULL)
+				continue; /* unsupported type */
 
 			if (content_get_status(s->data.external) == CONTENT_STATUS_DONE) {
-				/* external script is now available
-				 * execute it and continue 
-				 */
+				/* external script is now available */
 				const char *data;
 				unsigned long size;
 				data = content_get_source_data(s->data.external, &size );
-				js_exec(c->jscontext, data, size);
+				script_handler(c->jscontext, data, size);
+				
 				s->already_started = true;
 				
 			} else {
 				/* script not yet available */
+
+				/* check if deferable or asynchronous */
 				if (!s->defer && !s->async) {
-					break; /* not deferable or async */
+					break; 
 				}
 			}
 		} else {
-			js_exec(c->jscontext, 
+			struct lwc_string_s *lwcmimetype;
+			dom_string_intern(s->mimetype, &lwcmimetype);
+
+			/* ensure script handler for content type */
+			script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
+			lwc_string_unref(lwcmimetype);
+
+			if (script_handler == NULL)
+				continue; /* unsupported type */
+
+			script_handler(c->jscontext, 
 				dom_string_data(s->data.internal), 
 				dom_string_byte_length(s->data.internal));
 			s->already_started = true;
@@ -1704,7 +1736,8 @@ static bool html_scripts_exec(html_content *c)
 }
 
 /* create new html script entry */
-static struct html_script *html_process_new_script(html_content *c, enum html_script_type type)
+static struct html_script *
+html_process_new_script(html_content *c, enum html_script_type type)
 {
 	struct html_script *nscript;
 	/* add space for new script entry */
@@ -1811,7 +1844,7 @@ html_process_script(dom_node *node, dom_string *name, void *ctx)
 {
 	html_content *c = (html_content *)ctx;
 	dom_exception exc; /* returned by libdom functions */
-	dom_string *src, *script;
+	dom_string *src, *script, *mimetype;
 	struct html_script *nscript;
 	union content_msg_data msg_data;
 
@@ -1831,23 +1864,30 @@ html_process_script(dom_node *node, dom_string *name, void *ctx)
 		}
 	}
 
+	exc = dom_element_get_attribute(node, html_dom_string_type, &mimetype);
+	if (exc != DOM_NO_ERR || mimetype == NULL) {
+		mimetype = dom_string_ref(html_dom_string_text_javascript);
+	}
+
 	exc = dom_element_get_attribute(node, html_dom_string_src, &src);
 	if (exc != DOM_NO_ERR || src == NULL) {
 		/* does not appear to be a src so script is inline content */
 		exc = dom_node_get_text_content(node, &script);
 		if ((exc != DOM_NO_ERR) || (script == NULL)) {
+			dom_string_unref(mimetype);
 			return true; /* no contents, skip */
 		}
 
 		nscript = html_process_new_script(c, HTML_STYLESHEET_INTERNAL);
 		if (nscript == NULL) {
+			dom_string_unref(mimetype);
 			dom_string_unref(script);
 			goto html_process_script_no_memory;
 		}
 
 		nscript->data.internal = script;
+		nscript->mimetype = mimetype;
 
-		/* type */
 		/* charset (encoding) */
 	} else {
 		/* script with a src tag */
@@ -1855,25 +1895,29 @@ html_process_script(dom_node *node, dom_string *name, void *ctx)
 		nsurl *joined;
 		hlcache_child_context child;
 
-		child.charset = c->encoding;
-		child.quirks = c->base.quirks;
 
 		nscript = html_process_new_script(c, HTML_STYLESHEET_EXTERNAL);
 		if (nscript == NULL) {
 			dom_string_unref(src);
+			dom_string_unref(mimetype);
 			goto html_process_script_no_memory;
 		}
 
-		/* type */
 		/* charset (encoding) */
 
 		ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
 		dom_string_unref(src);
 		if (ns_error != NSERROR_OK) {
+			dom_string_unref(mimetype);
 			goto html_process_script_no_memory;
 		}
 
+		nscript->mimetype = mimetype; /* keep reference to mimetype */
+
 		LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
+
+		child.charset = c->encoding;
+		child.quirks = c->base.quirks;
 
 		ns_error = hlcache_handle_retrieve(joined, 
 						   0,
@@ -1887,8 +1931,9 @@ html_process_script(dom_node *node, dom_string *name, void *ctx)
 
 		nsurl_unref(joined);
 
-		if (ns_error != NSERROR_OK)
+		if (ns_error != NSERROR_OK) {
 			goto html_process_script_no_memory;
+		}
 
 		c->base.active++; /* ensure base content knows the fetch is active */
 		LOG(("%d fetches active", c->base.active));
@@ -2675,6 +2720,9 @@ static void html_destroy(struct content *c)
 
 	/* Free scripts */
 	for (i = 0; i != html->scripts_count; i++) {
+		if (html->scripts[i].mimetype != NULL) {
+			dom_string_unref(html->scripts[i].mimetype);
+		}
 		if (html->scripts[i].type == HTML_SCRIPT_EXTERNAL &&
 				html->scripts[i].data.external != NULL) {
 			hlcache_handle_release(
@@ -3362,6 +3410,7 @@ static void html_fini(void)
 	HTML_DOM_STRING_UNREF(title);
 	HTML_DOM_STRING_UNREF(base);
 	HTML_DOM_STRING_UNREF(src);
+	HTML_DOM_STRING_UNREF(text_javascript);
 	HTML_DOM_STRING_UNREF(script);
 	HTML_DOM_STRING_UNREF(link);
 	HTML_DOM_STRING_UNREF(target);
@@ -3515,6 +3564,12 @@ nserror html_init(void)
 	HTML_DOM_STRING_INTERN(polygon);
 
 #undef HTML_DOM_STRING_INTERN
+
+	exc = dom_string_create_interned((const uint8_t *) "text/javascript",
+					 SLEN("text/javascript"),
+					 &html_dom_string_text_javascript);
+	if ((exc != DOM_NO_ERR) || (html_dom_string_text_javascript == NULL))
+		goto error;
 
 	exc = dom_string_create_interned((const uint8_t *) "http-equiv",
 					 SLEN("http-equiv"),
