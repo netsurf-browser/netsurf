@@ -62,8 +62,10 @@ NETSURF_USE_WEBP := NO
 NETSURF_USE_VIDEO := NO
 
 # Enable NetSurf's use of spidermonkey for javascript
-# Valid options: YES, NO
+# Valid options: YES, NO, AUTO
 NETSURF_USE_JS := NO
+# Javascript support in older debian/ubuntu versions
+NETSURF_USE_MOZJS := NO
 
 # Enable NetSurf's use of libharu for PDF export and GTK printing support.
 # There is no auto-detection available for this, as it does not have a

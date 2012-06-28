@@ -179,7 +179,7 @@ static JSBool jsnative_confirm(JSContext *cx, uintN argc, jsval *vp)
 
 	warn_user(txt, NULL);
 
-	JS_SET_RVAL(cx, vp, result);
+	JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(result));
 	
 	return JS_TRUE;
 }
