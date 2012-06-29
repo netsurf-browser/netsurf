@@ -253,12 +253,13 @@ int netsurf_main_loop(void)
 
 void netsurf_exit(void)
 {
-	js_finalise();
-
 	hlcache_stop();
 	
 	LOG(("Closing GUI"));
 	gui_quit();
+	
+	LOG(("Finalising JavaScript"));
+	js_finalise();
 
 	LOG(("Closing search and related resources"));
 	search_web_cleanup();
