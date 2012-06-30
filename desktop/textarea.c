@@ -121,6 +121,7 @@ static unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y);
 static bool textarea_set_caret_xy(struct text_area *ta, int x, int y);
 static bool textarea_scroll_visible(struct text_area *ta);
 static bool textarea_select(struct text_area *ta, int c_start, int c_end);
+static bool textarea_select_fragment(struct text_area *ta);
 static void textarea_normalise_text(struct text_area *ta,
 		unsigned int b_start, unsigned int b_len);
 
@@ -1335,6 +1336,12 @@ bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
 					ta->vis_height);
 		}
 	}
+	else if (mouse & BROWSER_MOUSE_DOUBLE_CLICK) {
+		if (!(ta->flags & TEXTAREA_READONLY)) {
+			textarea_set_caret_xy(ta, x, y);
+			return textarea_select_fragment(ta);
+		}
+	}
 	else if (mouse & BROWSER_MOUSE_DRAG_1) {
 		ta->drag_start_char = textarea_get_xy_offset(ta, x, y);
 		if (!(ta->flags & TEXTAREA_READONLY))
@@ -1402,6 +1409,57 @@ bool textarea_select(struct text_area *ta, int c_start, int c_end)
 	ta->redraw_request(ta->data, 0, 0, ta->vis_width, ta->vis_height);
 
 	return true;
+}
+
+
+/**
+ * Selects a text fragment, relative to current caret position.
+ *
+ * \param ta  Text area
+ * \return True on success, false otherwise
+ */
+static bool textarea_select_fragment(struct text_area * ta)
+{
+	int caret_pos, sel_start = 0, sel_end = 0, index;
+	size_t b_start, b_end;
+
+	/* Fragment separators must be suitable for URLs and ordinary text */
+	static const char *sep = " /:.\r\n";
+
+	caret_pos = textarea_get_caret(ta);
+	if (caret_pos < 0) {
+		return false;
+	}
+
+	/* Compute byte offset of caret position */
+	for (b_start = 0, index = 0; index < caret_pos;
+			b_start = utf8_next(ta->text, ta->text_len,
+					    b_start),
+			index++) {
+		/* Cache the character offset of the last separator */
+		if (strchr(sep, ta->text[b_start]) != NULL) {
+			/* Add one to start to skip over separator */
+			sel_start = index + 1;
+		}
+	}
+
+	/* Search for next separator, if any */
+	for (b_end = b_start; b_end < ta->text_len;
+			b_end = utf8_next(ta->text, ta->text_len,
+					  b_end),
+			index++) {
+		if (strchr(sep, ta->text[b_end]) != NULL) {
+			sel_end = index;
+			break;
+		}
+	}
+
+	if (sel_start < sel_end) {
+		textarea_select(ta, sel_start, sel_end);
+		return true;
+	}
+
+	return false;
 }
 
 
