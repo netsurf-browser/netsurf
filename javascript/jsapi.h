@@ -30,9 +30,48 @@
 #endif
 
 #if JS_VERSION <= 180
-inline JSObject *
-JS_NewCompartmentAndGlobalObject(JSContext *cx, 
-				 JSClass *jsclass, 
+
+#include <string.h>
+
+/* *CAUTION* these macros introduce and use jsthis and jsrval
+ * parameters, native function code should not conflict with these
+ */
+
+/* five parameter jsapi native call */
+#define JSAPI_NATIVE(name, cx, argc, vp) \
+	jsapi_native_##name(cx, JSObject *jsthis, argc, vp, jsval *jsrval)
+
+/* five parameter function descriptor */
+#define JSAPI_FS(name, nargs, flags) \
+	JS_FS(#name, jsapi_native_##name, nargs, flags, 0)
+
+/* function descriptor end */
+#define JSAPI_FS_END JS_FS_END
+
+/* return value */
+#define JSAPI_RVAL(cx, vp) JS_RVAL(cx, jsrval)
+
+/* return value setter */
+#define JSAPI_SET_RVAL(cx, vp, v) JS_SET_RVAL(cx, jsrval, v)
+
+/* arguments */
+#define JSAPI_ARGV(cx, vp) (vp)
+
+/* proprty native calls */
+#define JSAPI_PROPERTYGET(name, cx, obj, vp) \
+	jsapi_property_##name##_get(cx, obj, jsval id, vp)
+#define JSAPI_PROPERTYSET(name, cx, obj, vp) \
+	jsapi_property_##name##_set(cx, obj, jsval id, vp)
+
+/* property specifier */
+#define JSAPI_PS(name, tinyid, flags) \
+	{ #name , tinyid , flags , jsapi_property_##name##_get , jsapi_property_##name##_set }
+
+#define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
+
+static inline JSObject *
+JS_NewCompartmentAndGlobalObject(JSContext *cx,
+				 JSClass *jsclass,
 				 JSPrincipals *principals)
 {
 	JSObject *global;
@@ -50,7 +89,44 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	txt = JS_GetStringBytes(u16_txt);		\
 	outlen = strlen(txt)
 
-#else
+#else /* #if JS_VERSION <= 180 */
+
+/* three parameter jsapi native call */
+#define JSAPI_NATIVE(name, cx, argc, vp) jsnative_##name(cx, argc, vp)
+
+/* three parameter function descriptor */
+#define JSAPI_FS(name, nargs, flags) \
+	JS_FS(#name, jsapi_native_##name, nargs, flags)
+
+/* function descriptor end */
+#define JSAPI_FS_END JS_FS_END
+
+/* return value */
+#define JSAPI_RVAL JS_RVAL
+
+/* return value setter */
+#define JSAPI_SET_RVAL JS_SET_RVAL
+
+/* arguments */
+#define JSAPI_ARGV(cx, vp) JS_ARGV(cx,vp)
+
+/* proprty native calls */
+#define JSAPI_PROPERTYGET(name, cx, obj, vp) \
+	jsapi_property_##name##_get(cx, obj, jsid id, vp)
+#define JSAPI_PROPERTYSET(name, cx, obj, vp) \
+	jsapi_property_##name##_set(cx, obj, jsid id, JSBool strict, vp)
+
+/* property specifier */
+#define JSAPI_PS(name, tinyid, flags) {				\
+		#name ,						\
+		tinyid ,					\
+		flags ,						\
+		jsapi_property_##name##_get ,			\
+		jsapi_property_##name##_set			\
+	}
+
+#define JSAPI_PS_END { NULL, 0,0,NULL,NULL }
+
 
 #define JSString_to_char(injsstring, outchar, outlen)		\
 	outlen = JS_GetStringLength(injsstring);		\

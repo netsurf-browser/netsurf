@@ -21,92 +21,92 @@
 //#include "content/content.h"
 #include "utils/log.h"
 
-static JSBool jsdebug(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(debug, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jsdir(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(dir, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jserror(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(error, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jsgroup(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(group, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jsgroupCollapsed(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(groupCollapsed, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jsgroupEnd(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(groupEnd, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jsinfo(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(info, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jslog(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(log, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jstime(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(time, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jstimeEnd(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(timeEnd, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jstrace(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(trace, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
-static JSBool jswarn(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(warn, JSContext *cx, uintN argc, jsval *vp)
 {
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
 
 static JSFunctionSpec jsfunctions_console[] = {
-	JS_FS("debug", jsdebug, 1, 0),
-	JS_FS("dir", jsdir, 1, 0),
-	JS_FS("error", jserror, 1, 0),
-	JS_FS("group", jsgroup, 1, 0),
-	JS_FS("groupCollapsed", jsgroupCollapsed, 1, 0),
-	JS_FS("groupEnd", jsgroupEnd, 1, 0),
-	JS_FS("info", jsinfo, 1, 0),
-	JS_FS("log", jslog, 1, 0),
-	JS_FS("time", jstime, 1, 0),
-	JS_FS("timeEnd", jstimeEnd, 1, 0),
-	JS_FS("trace", jstrace, 1, 0),
-	JS_FS("warn", jswarn, 1, 0),
-	JS_FS_END
+	JSAPI_FS(debug, 1, 0),
+	JSAPI_FS(dir, 1, 0),
+	JSAPI_FS(error, 1, 0),
+	JSAPI_FS(group, 1, 0),
+	JSAPI_FS(groupCollapsed, 1, 0),
+	JSAPI_FS(groupEnd, 1, 0),
+	JSAPI_FS(info, 1, 0),
+	JSAPI_FS(log, 1, 0),
+	JSAPI_FS(time, 1, 0),
+	JSAPI_FS(timeEnd, 1, 0),
+	JSAPI_FS(trace, 1, 0),
+	JSAPI_FS(warn, 1, 0),
+	JSAPI_FS_END
 };
 
 static JSClass jsclass_console =

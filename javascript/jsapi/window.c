@@ -21,7 +21,7 @@
 #include "content/content.h"
 #include "utils/log.h"
 
-/* IDL 
+/* IDL
 
 [NamedPropertiesObject]
 interface Window : EventTarget {
@@ -29,7 +29,7 @@ interface Window : EventTarget {
   [Unforgeable] readonly attribute WindowProxy window;
   [Replaceable] readonly attribute WindowProxy self;
   [Unforgeable] readonly attribute Document document;
-           attribute DOMString name; 
+	   attribute DOMString name;
   [PutForwards=href, Unforgeable] readonly attribute Location location;
   readonly attribute History history;
 
@@ -41,7 +41,7 @@ interface Window : EventTarget {
   [Replaceable] readonly attribute BarProp scrollbars;
   [Replaceable] readonly attribute BarProp statusbar;
   [Replaceable] readonly attribute BarProp toolbar;
-           attribute DOMString status;
+	   attribute DOMString status;
   void close();
   void stop();
   void focus();
@@ -51,7 +51,7 @@ interface Window : EventTarget {
   [Replaceable] readonly attribute WindowProxy frames;
   [Replaceable] readonly attribute unsigned long length;
   [Unforgeable] readonly attribute WindowProxy top;
-           attribute WindowProxy? opener;
+	   attribute WindowProxy? opener;
   readonly attribute WindowProxy parent;
   readonly attribute Element? frameElement;
   WindowProxy open(optional DOMString url, optional DOMString target, optional DOMString features, optional boolean replace);
@@ -59,7 +59,7 @@ interface Window : EventTarget {
   getter object (DOMString name);
 
   // the user agent
-  readonly attribute Navigator navigator; 
+  readonly attribute Navigator navigator;
   readonly attribute External external;
   readonly attribute ApplicationCache applicationCache;
 
@@ -147,77 +147,88 @@ interface Window : EventTarget {
 */
 
 
-static JSBool jsnative_alert(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(alert, JSContext *cx, uintN argc, jsval *vp)
 {
 	JSString* u16_txt;
 	char *txt;
 	unsigned long length;
 
-	if (!JS_ConvertArguments(cx, argc, JS_ARGV(cx, vp), "S", &u16_txt))
+	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt))
 		return JS_FALSE;
 
 	JSString_to_char(u16_txt, txt, length);
 
 	warn_user(txt, NULL);
 
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
-	
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
 	return JS_TRUE;
 }
 
-static JSBool jsnative_confirm(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(confirm, JSContext *cx, uintN argc, jsval *vp)
 {
 	JSString* u16_txt;
 	char *txt;
 	unsigned long length;
 	JSBool result = JS_FALSE;
 
-	if (!JS_ConvertArguments(cx, argc, JS_ARGV(cx, vp), "S", &u16_txt))
+	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt))
 		return JS_FALSE;
 
 	JSString_to_char(u16_txt, txt, length);
 
 	warn_user(txt, NULL);
 
-	JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(result));
-	
+	JSAPI_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(result));
+
 	return JS_TRUE;
 }
 
-static JSBool jsnative_prompt(JSContext *cx, uintN argc, jsval *vp)
+static JSBool JSAPI_NATIVE(prompt, JSContext *cx, uintN argc, jsval *vp)
 {
 	JSString* u16_txt;
 	char *txt;
 	unsigned long length;
 
-	if (!JS_ConvertArguments(cx, argc, JS_ARGV(cx, vp), "S", &u16_txt))
+	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt))
 		return JS_FALSE;
 
 	JSString_to_char(u16_txt, txt, length);
 
 	warn_user(txt, NULL);
 
-	JS_SET_RVAL(cx, vp, JSVAL_VOID);
-	
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
 	return JS_TRUE;
 }
 
 static JSFunctionSpec jsfunctions_window[] =
 {
-	JS_FN("alert", jsnative_alert, 1, 0),
-	JS_FN("confirm", jsnative_confirm, 1, 0),
-	JS_FN("prompt", jsnative_prompt, 1, 0),
-	JS_FS_END
+	JSAPI_FS(alert, 1, 0),
+	JSAPI_FS(confirm, 1, 0),
+	JSAPI_FS(prompt, 1, 0),
+	JSAPI_FS_END
 };
 
 
-static JSBool jsproperty_get_window(JSContext *ctx, JSObject *obj, jsid id, jsval *vp)
+static JSBool JSAPI_PROPERTYGET(window, JSContext *cx, JSObject *obj, jsval *vp)
 {
 	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 	return JS_TRUE;
 }
 
-static JSBool jsproperty_set_window(JSContext *ctx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
+static JSBool JSAPI_PROPERTYSET(window, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	return JS_FALSE;
+}
+
+static JSBool JSAPI_PROPERTYGET(self, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_PROPERTYSET(self, JSContext *cx, JSObject *obj, jsval *vp)
 {
 	return JS_FALSE;
 }
@@ -225,32 +236,22 @@ static JSBool jsproperty_set_window(JSContext *ctx, JSObject *obj, jsid id, JSBo
 
 static JSPropertySpec jsproperties_window[] =
 {
-	{ "window", 
-	  0, 
-	  JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED, 
-	  jsproperty_get_window, 
-	  jsproperty_set_window
-	},
-	{ "self", 
-	  0, 
-	  JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED, 
-	  jsproperty_get_window, 
-	  jsproperty_set_window
-	},
-	{ NULL, 0,0,NULL,NULL }
+	JSAPI_PS(window, 0, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED),
+	JSAPI_PS(self, 0, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED),
+	JSAPI_PS_END
 };
 
 /* The class of the global object. */
 static JSClass jsclass_window = {
-	"window", 
+	"window",
 	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-	JS_PropertyStub, 
+	JS_PropertyStub,
+	JS_PropertyStub,
+	JS_PropertyStub,
 	JS_StrictPropertyStub,
-	JS_EnumerateStub, 
-	JS_ResolveStub, 
-	JS_ConvertStub, 
+	JS_EnumerateStub,
+	JS_ResolveStub,
+	JS_ConvertStub,
 	JS_FinalizeStub,
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
@@ -259,7 +260,7 @@ static JSClass jsclass_window = {
 JSObject * jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv)
 {
 	JSObject *window = NULL;
-	
+
 	if (parent == NULL) {
 		window = JS_NewCompartmentAndGlobalObject(cx, &jsclass_window, NULL);
 		if (window == NULL) {
