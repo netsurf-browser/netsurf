@@ -202,8 +202,40 @@ static JSBool JSAPI_NATIVE(prompt, JSContext *cx, uintN argc, jsval *vp)
 	return JS_TRUE;
 }
 
+static JSBool JSAPI_NATIVE(close, JSContext *cx, uintN argc, jsval *vp)
+{
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_NATIVE(stop, JSContext *cx, uintN argc, jsval *vp)
+{
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_NATIVE(focus, JSContext *cx, uintN argc, jsval *vp)
+{
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_NATIVE(blur, JSContext *cx, uintN argc, jsval *vp)
+{
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
+	return JS_TRUE;
+}
+
 static JSFunctionSpec jsfunctions_window[] =
 {
+	JSAPI_FS(close, 0, 0),
+	JSAPI_FS(stop, 0, 0),
+	JSAPI_FS(focus, 0, 0),
+	JSAPI_FS(blur, 0, 0),
 	JSAPI_FS(alert, 1, 0),
 	JSAPI_FS(confirm, 1, 0),
 	JSAPI_FS(prompt, 1, 0),

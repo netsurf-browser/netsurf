@@ -96,6 +96,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	JSContext *cx = (JSContext *)ctx;
 	JSObject *window_obj = NULL;
 	JSObject *document_obj;
+	JSObject *navigator_obj;
 	JSObject *console_obj;
 
 	if (cx == NULL)
@@ -109,6 +110,10 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	/* attach the subclasses off the window global */
 	document_obj = jsapi_new_document(cx, window_obj, doc_priv);
 	if (document_obj == NULL) 
+		goto js_newcompartment_fail;
+
+	navigator_obj = jsapi_new_navigator(cx, window_obj);
+	if (navigator_obj == NULL) 
 		goto js_newcompartment_fail;
 
 	/* @todo forms, history, location */
