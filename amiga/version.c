@@ -18,10 +18,15 @@
 
 #include "utils/testament.h"
 
+/* NB: AmigaOS revision numbers start at 1 (not 0) and are monotonically
+ * incremental (v1.20 is higher than v1.3 and not the same as v1.2).
+ * Consequently, this version pair may not match the user-facing one in
+ * desktop/version.c.
+ */
 #define NETSURF_VERSION_MAJOR "3"
+#define NETSURF_VERSION_MINOR "1"
 
-static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." WT_REVID " (" WT_COMPILEDATE ")\0";
-const char * const versvn = "r" WT_REVID;
+static const __attribute__((used)) char *verstag = "\0$VER: NetSurf " NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR " (" WT_COMPILEDATE ")\0";
 const char * const verdate = WT_COMPILEDATE;
-const char * const verarexx = NETSURF_VERSION_MAJOR "." WT_REVID;
+const char * const verarexx = NETSURF_VERSION_MAJOR "." NETSURF_VERSION_MINOR;
 const char * const wt_revid = WT_REVID;

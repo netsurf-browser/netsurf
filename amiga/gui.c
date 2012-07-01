@@ -4204,11 +4204,7 @@ Object *ami_gui_splash_open(void)
 	if(tfont = ami_font_open_disk_font(&tattr))
 		SetFont(win->RPort, tfont);
 
-#ifdef NDEBUG
 	ver_string = ASPrintf("%s", netsurf_version);
-#else
-	ver_string = ASPrintf("NetSurf %s (%s)", versvn, verdate);
-#endif
 
 	Move(win->RPort, left + 185, top + 220);
 	Text(win->RPort, ver_string, strlen(ver_string));

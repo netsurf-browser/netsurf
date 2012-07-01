@@ -77,7 +77,6 @@
 
 BOOL menualreadyinit;
 const char * const netsurf_version;
-const char * const versvn;
 const char * const verdate;
 
 ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin);
@@ -712,7 +711,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 				TDR_Window, gwin->win,
 				TDR_GadgetString, temp2,
 #ifndef NDEBUG
-				TDR_FormatString,"NetSurf %s\n%s\n%s (%s)\n\nhttp://www.netsurf-browser.org",
+				TDR_FormatString,"NetSurf %s\n%s\nBuild date %s\n\nhttp://www.netsurf-browser.org",
 #else
 				TDR_FormatString,"NetSurf %s\n%s\n\nhttp://www.netsurf-browser.org",
 #endif
@@ -722,7 +721,6 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 #else
 				TDR_Arg2,"graphics.library static build",
 #endif
-				TDR_Arg3,versvn,
 				TDR_Arg4,verdate,
 				TAG_DONE);
 
