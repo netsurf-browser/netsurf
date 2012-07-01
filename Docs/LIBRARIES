@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  NetSurf project libraries required                             23 March 2012
+  NetSurf project libraries required                               1 July 2012
 --------------------------------------------------------------------------------
 
   To build NetSurf, you need the libraries required by the core, and any extra
@@ -11,18 +11,18 @@
 
   Required:
 
-      $ svn co svn://svn.netsurf-browser.org/trunk/libparserutils
-      $ svn co svn://svn.netsurf-browser.org/trunk/libwapcaplet
-      $ svn co svn://svn.netsurf-browser.org/trunk/hubbub
-      $ svn co svn://svn.netsurf-browser.org/trunk/libcss
-      $ svn co svn://svn.netsurf-browser.org/trunk/libdom
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsbmp
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsgif
-      $ svn co svn://svn.netsurf-browser.org/trunk/libdom
+      $ git clone git://git.netsurf-browser.org/buildsystem
+      $ git clone git://git.netsurf-browser.org/libwapcaplet
+      $ git clone git://git.netsurf-browser.org/libparserutils
+      $ git clone git://git.netsurf-browser.org/libhubbub
+      $ git clone git://git.netsurf-browser.org/libcss
+      $ git clone git://git.netsurf-browser.org/libdom
+      $ git clone git://git.netsurf-browser.org/libnsbmp
+      $ git clone git://git.netsurf-browser.org/libnsgif
 
   Optional:
 
-      $ svn co svn://svn.netsurf-browser.org/trunk/libsvgtiny
+      $ git clone git://git.netsurf-browser.org/libsvgtiny
 
 
   RISC OS front end
@@ -30,8 +30,8 @@
 
   Required:
 
-      $ svn co svn://svn.netsurf-browser.org/trunk/pencil
-      $ svn co svn://svn.netsurf-browser.org/trunk/rufl
+      $ git clone git://git.netsurf-browser.org/pencil
+      $ git clone git://git.netsurf-browser.org/rufl
 
 
   Framebuffer front end
@@ -39,7 +39,7 @@
 
   Required:
 
-      $ svn co svn://svn.netsurf-browser.org/trunk/libnsfb
+      $ git clone git://git.netsurf-browser.org/libnsfb
 
 
   Non RISC OS front ends
@@ -47,5 +47,5 @@
 
   Optional:
 
-      $ svn co svn://svn.netsurf-browser.org/trunk/librosprite
+      $ git clone git://git.netsurf-browser.org/librosprite
 
