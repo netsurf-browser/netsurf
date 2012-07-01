@@ -618,7 +618,6 @@ $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 clean: $(CLEANS)
 
 install-gtk: nsgtk
-	@# TODO: filter out .svn directories from install location
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
 	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
@@ -646,18 +645,7 @@ install-gtk: nsgtk
 	@# Install translations
 	@tar cf - --exclude .svn -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install glade templates
-	@gzip -9v < gtk/res/cookies.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)cookies.glade
-	@gzip -9v < gtk/res/downloads.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)downloads.glade
-	@gzip -9v < gtk/res/history.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)history.glade
-	@gzip -9v < gtk/res/hotlist.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)hotlist.glade
-	@gzip -9v < gtk/res/login.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)login.glade
-	@gzip -9v < gtk/res/netsurf.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)netsurf.glade
-	@gzip -9v < gtk/res/options.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)options.glade
-	@gzip -9v < gtk/res/password.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)password.glade
-	@gzip -9v < gtk/res/source.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)source.glade
-	@gzip -9v < gtk/res/ssl.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)ssl.glade
-	@gzip -9v < gtk/res/toolbar.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)toolbar.glade
-	@gzip -9v < gtk/res/warning.glade > $(DESTDIR)$(NETSURF_GTK_RESOURCES)warning.glade
+	@cp -v gtk/res/*.gtk*.ui $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
 install-beos: NetSurf
 #       TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
