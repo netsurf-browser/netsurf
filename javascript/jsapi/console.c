@@ -18,7 +18,6 @@
 
 #include "javascript/jsapi.h"
 
-//#include "content/content.h"
 #include "utils/log.h"
 
 static JSBool JSAPI_NATIVE(debug, JSContext *cx, uintN argc, jsval *vp)
@@ -65,6 +64,18 @@ static JSBool JSAPI_NATIVE(info, JSContext *cx, uintN argc, jsval *vp)
 
 static JSBool JSAPI_NATIVE(log, JSContext *cx, uintN argc, jsval *vp)
 {
+	unsigned int argloop;
+	JSString *jsstr;
+	unsigned long jsstrlen;
+	char *txt;
+
+	for (argloop = 0; argloop < argc; argloop++) {
+		jsstr = JS_ValueToString(cx, *JSAPI_ARGV(cx, vp + argloop));
+
+		JSString_to_char(jsstr, txt, jsstrlen);
+		LOG(("%s", txt));
+	}
+
 	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 	return JS_TRUE;
 }
