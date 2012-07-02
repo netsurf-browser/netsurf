@@ -92,7 +92,7 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #else /* #if JS_VERSION <= 180 */
 
 /* three parameter jsapi native call */
-#define JSAPI_NATIVE(name, cx, argc, vp) jsnative_##name(cx, argc, vp)
+#define JSAPI_NATIVE(name, cx, argc, vp) jsapi_native_##name(cx, argc, vp)
 
 /* three parameter function descriptor */
 #define JSAPI_FS(name, nargs, flags) \
@@ -137,9 +137,38 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #endif
 
-
+/** Create a new javascript window object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object or NULL for new global
+ * @param win_priv The private context to set on the object
+ * @return new javascript object or NULL on error
+ */
 JSObject *jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv);
+
+/** Create a new javascript document object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @param doc_priv The private context to set on the object
+ * @return new javascript object or NULL on error
+ */
 JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv);
+
+/** Create a new javascript console object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @return new javascript object or NULL on error
+ */
 JSObject *jsapi_new_console(JSContext *cx, JSObject *parent);
+
+/** Create a new javascript navigator object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @return new javascript object or NULL on error
+ */
+JSObject *jsapi_new_navigator(JSContext *cx, JSObject *parent);
 
 #endif

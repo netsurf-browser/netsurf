@@ -29,7 +29,7 @@ S_DESKTOP := cookies.c history_global_core.c hotlist.c knockout.c	\
 
 # Javascript sources
 ifeq ($(NETSURF_USE_JS),YES)
-S_JSAPI = window.c document.c console.c
+S_JSAPI = window.c document.c navigator.c console.c
 S_JAVASCRIPT += content.c jsapi.c $(addprefix jsapi/,$(S_JSAPI))
 else
 S_JAVASCRIPT += none.c
