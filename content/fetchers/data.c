@@ -154,7 +154,7 @@ static bool fetch_data_process(struct fetch_data_context *c)
 	 * data must still be there.
 	 */
 	
-	LOG(("*** Processing %s", c->url));
+	LOG(("url: %.140s", c->url));
 	
 	if (strlen(c->url) < 6) {
 		/* 6 is the minimum possible length (data:,) */

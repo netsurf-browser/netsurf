@@ -47,6 +47,7 @@
 #include "utils/talloc.h"
 #include "utils/utils.h"
 
+#define URL_FMT_SPC "%.140s"
 
 const char * const content_status_name[] = {
 	"LOADING",
@@ -82,7 +83,8 @@ nserror content__init(struct content *c, const content_handler *handler,
 	struct content_user *user_sentinel;
 	nserror error;
 	
-	LOG(("url %s -> %p", nsurl_access(llcache_handle_get_url(llcache)), c));
+	LOG(("url "URL_FMT_SPC" -> %p", 
+	     nsurl_access(llcache_handle_get_url(llcache)), c));
 
 	user_sentinel = talloc(c, struct content_user);
 	if (user_sentinel == NULL) {
@@ -274,7 +276,7 @@ void content_convert(struct content *c)
 	if (c->locked == true)
 		return;
 	
-	LOG(("content %s (%p)",
+	LOG(("content "URL_FMT_SPC" (%p)",
 			nsurl_access(llcache_handle_get_url(c->llcache)), c));
 
 	if (c->handler->data_complete != NULL) {
@@ -550,7 +552,7 @@ bool content_add_user(struct content *c,
 {
 	struct content_user *user;
 
-	LOG(("content %s (%p), user %p %p",
+	LOG(("content "URL_FMT_SPC" (%p), user %p %p",
 			nsurl_access(llcache_handle_get_url(c->llcache)),
 			c, callback, pw));
 	user = talloc(c, struct content_user);
@@ -578,7 +580,7 @@ void content_remove_user(struct content *c,
 		void *pw)
 {
 	struct content_user *user, *next;
-	LOG(("content %s (%p), user %p %p",
+	LOG(("content "URL_FMT_SPC" (%p), user %p %p",
 			nsurl_access(llcache_handle_get_url(c->llcache)), c,
 			callback, pw));
 
