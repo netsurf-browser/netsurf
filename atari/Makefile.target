@@ -2,9 +2,19 @@
 # Atari target setup
 # ----------------------------------------------------------------------------
 
+# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
+NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
+
+ifeq ($(NETSURF_USE_MOZJS),YES)
+NETSURF_USE_JS:=YES
+NETSURF_USE_MOZJS:=YES
+endif
+
 $(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
-$(eval $(call feature_enabled,GD_PLOTTER,-DWITH_GD_PLOTTER,-lgd,GD Plotter (libgd)  ))
-$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
+$(eval $(call feature_enabled,GD_PLOTTER,-DWITH_GD_PLOTTER,-lgd,GD Plotter (libgd)))
+$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)))
+$(eval $(call feature_enabled,MOZJS,-DWITH_MOZJS,-ljs,JavaScript (Spidermonkey)))
 
 CFLAGS += -DATARI_USE_FREETYPE $(shell freetype-config --cflags)
 LDFLAGS += -lcflib -lfreetype
