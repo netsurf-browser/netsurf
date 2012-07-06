@@ -183,21 +183,6 @@ static bool html_scripts_exec(html_content *c)
 					break;
 				}
 			}
-		} else {
-			struct lwc_string_s *lwcmimetype;
-			dom_string_intern(s->mimetype, &lwcmimetype);
-
-			/* ensure script handler for content type */
-			script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
-			lwc_string_unref(lwcmimetype);
-
-			if (script_handler == NULL)
-				continue; /* unsupported type */
-
-			script_handler(c->jscontext,
-				dom_string_data(s->data.internal),
-				dom_string_byte_length(s->data.internal));
-			s->already_started = true;
 		}
 	}
 
@@ -511,6 +496,8 @@ html_process_script(void *ctx, dom_node *node)
 		}
 	}
 
+	LOG(("content %p parser %p node %p",c,c->parser_binding, node));
+
 	exc = dom_element_get_attribute(node, html_dom_string_type, &mimetype);
 	if (exc != DOM_NO_ERR || mimetype == NULL) {
 		mimetype = dom_string_ref(html_dom_string_text_javascript);
@@ -518,6 +505,9 @@ html_process_script(void *ctx, dom_node *node)
 
 	exc = dom_element_get_attribute(node, html_dom_string_src, &src);
 	if (exc != DOM_NO_ERR || src == NULL) {
+		struct lwc_string_s *lwcmimetype;
+		script_handler_t *script_handler;
+
 		/* does not appear to be a src so script is inline content */
 		exc = dom_node_get_text_content(node, &script);
 		if ((exc != DOM_NO_ERR) || (script == NULL)) {
@@ -534,8 +524,22 @@ html_process_script(void *ctx, dom_node *node)
 
 		nscript->data.internal = script;
 		nscript->mimetype = mimetype;
+		nscript->already_started = true;
 
 		/* charset (encoding) */
+
+		/* ensure script handler for content type */
+		dom_string_intern(mimetype, &lwcmimetype);
+		script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
+		lwc_string_unref(lwcmimetype);
+
+		if (script_handler != NULL) {
+			script_handler(c->jscontext,
+				       dom_string_data(script),
+				       dom_string_byte_length(script));
+		}
+
+
 	} else {
 		/* script with a src tag */
 		nserror ns_error;

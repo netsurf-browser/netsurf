@@ -56,7 +56,7 @@ static JSBool JSAPI_NATIVE(write, JSContext *cx, uintN argc, jsval *vp)
 
 	JSString_to_char(u16_txt, txt, length);
 
-	LOG(("content %p writing %s",htmlc, txt));
+	LOG(("content %p parser %p writing %s",htmlc, htmlc->parser_binding, txt));
 
 	dom_hubbub_parser_insert_chunk(htmlc->parser_binding, (uint8_t *)txt, length);
 

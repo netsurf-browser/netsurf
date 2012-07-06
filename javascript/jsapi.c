@@ -133,7 +133,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	JSContext *cx = (JSContext *)ctx;
 
-	LOG(("%p \"%s\"",cx ,txt));
+	/* LOG(("%p \"%s\"",cx ,txt)); */
 
 	if (ctx == NULL) {
 		return false;
