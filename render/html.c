@@ -796,6 +796,7 @@ encoding_change:
 
 	/* Destroy binding */
 	binding_destroy_tree(html->parser_binding);
+	html->parser_binding = NULL;
 
 	/* Create new binding, using the new encoding */
 	err = binding_create_tree(&html->parser_binding,
@@ -2666,8 +2667,10 @@ static void html_destroy(struct content *c)
 	if (html->base_url)
 		nsurl_unref(html->base_url);
 
-	if (html->parser_binding != NULL)
+	if (html->parser_binding != NULL) {
 		binding_destroy_tree(html->parser_binding);
+		html->parser_binding = NULL;
+	}
 
 	if (html->document != NULL)
 		binding_destroy_document(html->document);
