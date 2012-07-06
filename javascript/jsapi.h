@@ -86,8 +86,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JS_StrictPropertyStub JS_PropertyStub
 
 #define JSString_to_char(injsstring, outchar, outlen)	\
-	txt = JS_GetStringBytes(u16_txt);		\
-	outlen = strlen(txt)
+	outchar = JS_GetStringBytes(injsstring);		\
+	outlen = strlen(outchar)
 
 #else /* #if JS_VERSION <= 180 */
 

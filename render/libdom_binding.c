@@ -24,11 +24,11 @@
 
 #include "utils/log.h"
 
-binding_error binding_create_tree(void *arena, const char *charset, void **ctx)
+binding_error binding_create_tree(void **ctx, const char *charset, bool enable_script, dom_script script, void *context)
 {
 	dom_hubbub_parser *parser = NULL;
 
-	parser = dom_hubbub_parser_create(charset, true, NULL, NULL);
+	parser = dom_hubbub_parser_create(charset, true, enable_script, NULL, script, context);
         if (parser == NULL) {
                 LOG(("Can't create Hubbub Parser\n"));
                 return BINDING_NOMEM;

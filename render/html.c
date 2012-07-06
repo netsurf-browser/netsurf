@@ -117,7 +117,486 @@ dom_string *html_dom_string_circle;
 dom_string *html_dom_string_poly;
 dom_string *html_dom_string_polygon;
 
-static nserror 
+typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size) ;
+
+
+static script_handler_t *select_script_handler(content_type ctype)
+{
+	if (ctype == CONTENT_JS) {
+		return js_exec;
+	}
+	return NULL;
+}
+
+
+/* attempt to progress script execution
+ *
+ * execute scripts using algorithm found in:
+ * http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#the-script-element
+ *
+ */
+static bool html_scripts_exec(html_content *c)
+{
+	unsigned int i;
+	struct html_script *s;
+	script_handler_t *script_handler;
+
+	if (c->jscontext == NULL)
+		return false;
+
+	for (i = 0, s = c->scripts; i != c->scripts_count; i++, s++) {
+		if (s->already_started) {
+			continue;
+		}
+
+		assert((s->type == HTML_SCRIPT_EXTERNAL) ||
+		       (s->type == HTML_SCRIPT_INTERNAL));
+
+		if (s->type == HTML_SCRIPT_EXTERNAL) {
+			/* ensure script content is present */
+			if (s->data.external == NULL)
+				continue;
+
+			/* ensure script content fetch status is not an error */
+			if (content_get_status(s->data.external) == CONTENT_STATUS_ERROR)
+				continue;
+
+			/* ensure script handler for content type */
+			script_handler = select_script_handler(content_get_type(s->data.external));
+			if (script_handler == NULL)
+				continue; /* unsupported type */
+
+			if (content_get_status(s->data.external) == CONTENT_STATUS_DONE) {
+				/* external script is now available */
+				const char *data;
+				unsigned long size;
+				data = content_get_source_data(s->data.external, &size );
+				script_handler(c->jscontext, data, size);
+
+				s->already_started = true;
+
+			} else {
+				/* script not yet available */
+
+				/* check if deferable or asynchronous */
+				if (!s->defer && !s->async) {
+					break;
+				}
+			}
+		} else {
+			struct lwc_string_s *lwcmimetype;
+			dom_string_intern(s->mimetype, &lwcmimetype);
+
+			/* ensure script handler for content type */
+			script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
+			lwc_string_unref(lwcmimetype);
+
+			if (script_handler == NULL)
+				continue; /* unsupported type */
+
+			script_handler(c->jscontext,
+				dom_string_data(s->data.internal),
+				dom_string_byte_length(s->data.internal));
+			s->already_started = true;
+		}
+	}
+
+	return true;
+}
+
+/* create new html script entry */
+static struct html_script *
+html_process_new_script(html_content *c, enum html_script_type type)
+{
+	struct html_script *nscript;
+	/* add space for new script entry */
+	nscript = realloc(c->scripts,
+			  sizeof(struct html_script) * (c->scripts_count + 1));
+	if (nscript == NULL) {
+		return NULL;
+	}
+
+	c->scripts = nscript;
+
+	/* increment script entry count */
+	nscript = &c->scripts[c->scripts_count];
+	c->scripts_count++;
+
+	nscript->already_started = false;
+	nscript->parser_inserted = false;
+	nscript->force_async = true;
+	nscript->ready_exec = false;
+	nscript->async = false;
+	nscript->defer = false;
+
+	nscript->type = type;
+
+	return nscript;
+}
+
+static void html_destroy_objects(html_content *html)
+{
+	while (html->object_list != NULL) {
+		struct content_html_object *victim = html->object_list;
+
+		if (victim->content != NULL) {
+			LOG(("object %p", victim->content));
+
+			if (content_get_type(victim->content) == CONTENT_HTML)
+				schedule_remove(html_object_refresh, victim);
+
+			hlcache_handle_release(victim->content);
+		}
+
+		html->object_list = victim->next;
+		talloc_free(victim);
+	}
+}
+
+/**
+ * Perform post-box-creation conversion of a document
+ *
+ * \param c        HTML content to complete conversion of
+ * \param success  Whether box tree construction was successful
+ */
+static void html_box_convert_done(html_content *c, bool success)
+{
+	union content_msg_data msg_data;
+	dom_exception exc; /* returned by libdom functions */
+	dom_node *html;
+
+	LOG(("Done XML to box (%p)", c));
+
+	/* Clean up and report error if unsuccessful or aborted */
+	if ((success == false) || c->aborted) {
+		html_destroy_objects(c);
+		if (success == false)
+			msg_data.error = messages_get("NoMemory");
+		else
+			msg_data.error = messages_get("Stopped");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+#if ALWAYS_DUMP_BOX
+	box_dump(stderr, c->layout->children, 0);
+#endif
+#if ALWAYS_DUMP_FRAMESET
+	if (c->frameset)
+		html_dump_frameset(c->frameset, 0);
+#endif
+
+	exc = dom_document_get_document_element(c->document, (void *) &html);
+	if ((exc != DOM_NO_ERR) || (html == NULL)) {
+		LOG(("error retrieving html element from dom"));
+		msg_data.error = messages_get("ParsingFail");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* extract image maps - can't do this sensibly in xml_to_box */
+	if (imagemap_extract(c) == false) {
+		LOG(("imagemap extraction failed"));
+		html_destroy_objects(c);
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+	/*imagemap_dump(c);*/
+
+	/* Destroy the parser binding */
+	binding_destroy_tree(c->parser_binding);
+	c->parser_binding = NULL;
+
+	content_set_ready(&c->base);
+
+	if (c->base.active == 0)
+		content_set_done(&c->base);
+
+	html_set_status(c, "");
+}
+
+/**
+ * Complete conversion of an HTML document
+ *
+ * \param c  Content to convert
+ */
+static void html_finish_conversion(html_content *c)
+{
+	union content_msg_data msg_data;
+	dom_exception exc; /* returned by libdom functions */
+	dom_node *html;
+	uint32_t i;
+	css_error error;
+
+	/* Bail out if we've been aborted */
+	if (c->aborted) {
+		msg_data.error = messages_get("Stopped");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* check that the base stylesheet loaded; layout fails without it */
+	if (c->stylesheets[STYLESHEET_BASE].data.external == NULL) {
+		msg_data.error = "Base stylesheet failed to load";
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* Create selection context */
+	error = css_select_ctx_create(ns_realloc, c, &c->select_ctx);
+	if (error != CSS_OK) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* Add sheets to it */
+	for (i = STYLESHEET_BASE; i != c->stylesheet_count; i++) {
+		const struct html_stylesheet *hsheet = &c->stylesheets[i];
+		css_stylesheet *sheet;
+		css_origin origin = CSS_ORIGIN_AUTHOR;
+
+		if (i < STYLESHEET_USER)
+			origin = CSS_ORIGIN_UA;
+		else if (i < STYLESHEET_START)
+			origin = CSS_ORIGIN_USER;
+
+		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
+				hsheet->data.external != NULL) {
+			sheet = nscss_get_stylesheet(hsheet->data.external);
+		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
+			sheet = hsheet->data.internal->sheet;
+		} else {
+			sheet = NULL;
+		}
+
+		if (sheet != NULL) {
+			error = css_select_ctx_append_sheet(
+					c->select_ctx, sheet,
+					origin, CSS_MEDIA_SCREEN);
+			if (error != CSS_OK) {
+				msg_data.error = messages_get("NoMemory");
+				content_broadcast(&c->base, CONTENT_MSG_ERROR,
+						msg_data);
+				content_set_error(&c->base);
+				return;
+			}
+		}
+	}
+
+	/* convert xml tree to box tree */
+	LOG(("XML to box (%p)", c));
+	content_set_status(&c->base, messages_get("Processing"));
+	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
+
+	exc = dom_document_get_document_element(c->document, (void *) &html);
+	if ((exc != DOM_NO_ERR) || (html == NULL)) {
+		LOG(("error retrieving html element from dom"));
+		msg_data.error = messages_get("ParsingFail");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+
+	if (xml_to_box(html, c, html_box_convert_done) == false) {
+		html_destroy_objects(c);
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		content_set_error(&c->base);
+		return;
+	}
+}
+
+
+/**
+ * Callback for fetchcache() for linked stylesheets.
+ */
+
+static nserror
+html_convert_script_callback(hlcache_handle *script,
+			  const hlcache_event *event,
+			  void *pw)
+{
+	html_content *parent = pw;
+	unsigned int i;
+	struct html_script *s;
+
+	/* Find script */
+	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
+		if (s->type == HTML_SCRIPT_EXTERNAL &&
+		    s->data.external == script)
+			break;
+	}
+
+	assert(i != parent->scripts_count);
+
+	switch (event->type) {
+	case CONTENT_MSG_LOADING:
+		break;
+
+	case CONTENT_MSG_READY:
+		break;
+
+	case CONTENT_MSG_DONE:
+		LOG(("script %d done '%s'", i,
+				nsurl_access(hlcache_handle_get_url(script))));
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+
+		/* script finished loading so try and continue execution */
+		html_scripts_exec(parent);
+		break;
+
+	case CONTENT_MSG_ERROR:
+		LOG(("script %s failed: %s",
+				nsurl_access(hlcache_handle_get_url(script)),
+				event->data.error));
+		hlcache_handle_release(script);
+		s->data.external = NULL;
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+		content_add_error(&parent->base, "?", 0);
+
+		/* script failed loading so try and continue execution */
+		html_scripts_exec(parent);
+
+		break;
+
+	case CONTENT_MSG_STATUS:
+		html_set_status(parent, content_get_status_message(script));
+		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+				event->data);
+		break;
+
+	default:
+		assert(0);
+	}
+
+	if (parent->base.active == 0)
+		html_finish_conversion(parent);
+
+	return NSERROR_OK;
+}
+
+/** process script node
+ *
+ *
+ */
+static dom_hubbub_error
+html_process_script(void *ctx, dom_node *node)
+{
+	html_content *c = (html_content *)ctx;
+	dom_exception exc; /* returned by libdom functions */
+	dom_string *src, *script, *mimetype;
+	struct html_script *nscript;
+	union content_msg_data msg_data;
+
+	/* ensure javascript context is available */
+	if (c->jscontext == NULL) {
+		union content_msg_data msg_data;
+
+		msg_data.jscontext = &c->jscontext;
+		content_broadcast(&c->base, CONTENT_MSG_GETCTX, msg_data);
+		LOG(("javascript context %p ", c->jscontext));
+		if (c->jscontext == NULL) {
+			/* no context and it could not be created, abort */
+			return DOM_HUBBUB_OK;
+		}
+	}
+
+	exc = dom_element_get_attribute(node, html_dom_string_type, &mimetype);
+	if (exc != DOM_NO_ERR || mimetype == NULL) {
+		mimetype = dom_string_ref(html_dom_string_text_javascript);
+	}
+
+	exc = dom_element_get_attribute(node, html_dom_string_src, &src);
+	if (exc != DOM_NO_ERR || src == NULL) {
+		/* does not appear to be a src so script is inline content */
+		exc = dom_node_get_text_content(node, &script);
+		if ((exc != DOM_NO_ERR) || (script == NULL)) {
+			dom_string_unref(mimetype);
+			return DOM_HUBBUB_OK; /* no contents, skip */
+		}
+
+		nscript = html_process_new_script(c, HTML_STYLESHEET_INTERNAL);
+		if (nscript == NULL) {
+			dom_string_unref(mimetype);
+			dom_string_unref(script);
+			goto html_process_script_no_memory;
+		}
+
+		nscript->data.internal = script;
+		nscript->mimetype = mimetype;
+
+		/* charset (encoding) */
+	} else {
+		/* script with a src tag */
+		nserror ns_error;
+		nsurl *joined;
+		hlcache_child_context child;
+
+
+		nscript = html_process_new_script(c, HTML_STYLESHEET_EXTERNAL);
+		if (nscript == NULL) {
+			dom_string_unref(src);
+			dom_string_unref(mimetype);
+			goto html_process_script_no_memory;
+		}
+
+		/* charset (encoding) */
+
+		ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
+		dom_string_unref(src);
+		if (ns_error != NSERROR_OK) {
+			dom_string_unref(mimetype);
+			goto html_process_script_no_memory;
+		}
+
+		nscript->mimetype = mimetype; /* keep reference to mimetype */
+
+		LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
+
+		child.charset = c->encoding;
+		child.quirks = c->base.quirks;
+
+		ns_error = hlcache_handle_retrieve(joined,
+						   0,
+						   content_get_url(&c->base),
+						   NULL,
+						   html_convert_script_callback,
+						   c,
+						   &child,
+						   CONTENT_SCRIPT,
+						   &nscript->data.external);
+
+		nsurl_unref(joined);
+
+		if (ns_error != NSERROR_OK) {
+			goto html_process_script_no_memory;
+		}
+
+		c->base.active++; /* ensure base content knows the fetch is active */
+		LOG(("%d fetches active", c->base.active));
+
+	}
+	html_scripts_exec(c);
+
+	return DOM_HUBBUB_OK;
+
+html_process_script_no_memory:
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	return DOM_HUBBUB_NOMEM;
+}
+
+static nserror
 html_create_html_data(html_content *c, const http_parameter *params)
 {
 	lwc_string *charset;
@@ -174,14 +653,23 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	}
 
 	/* Create the parser binding */
-	error = binding_create_tree(c, c->encoding, &c->parser_binding);
+	error = binding_create_tree(&c->parser_binding,
+				    c->encoding,
+				    nsoption_bool(enable_javascript),
+				    html_process_script,
+				    c);
 	if (error == BINDING_BADENCODING && c->encoding != NULL) {
-		/* Ok, we don't support the declared encoding. Bailing out 
+		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to autodetect */
 		talloc_free(c->encoding);
 		c->encoding = NULL;
 
-		error = binding_create_tree(c, c->encoding, &c->parser_binding);
+		error = binding_create_tree(&c->parser_binding,
+					    c->encoding,
+					    nsoption_bool(enable_javascript),
+					    html_process_script,
+					    c);
+
 	}
 
 	if (error != BINDING_OK)
@@ -221,13 +709,13 @@ error:
  * created.
  */
 
-static nserror 
+static nserror
 html_create(const content_handler *handler,
-	    lwc_string *imime_type, 
+	    lwc_string *imime_type,
 	    const http_parameter *params,
-	    llcache_handle *llcache, 
+	    llcache_handle *llcache,
 	    const char *fallback_charset,
-	    bool quirks, 
+	    bool quirks,
 	    struct content **c)
 {
 	html_content *html;
@@ -261,7 +749,7 @@ html_create(const content_handler *handler,
  * Process data for CONTENT_HTML.
  */
 
-static bool 
+static bool
 html_process_data(struct content *c, const char *data, unsigned int size)
 {
 	html_content *html = (html_content *) c;
@@ -306,9 +794,13 @@ encoding_change:
 	binding_destroy_tree(html->parser_binding);
 
 	/* Create new binding, using the new encoding */
-	err = binding_create_tree(html, html->encoding, &html->parser_binding);
+	err = binding_create_tree(&html->parser_binding,
+				  html->encoding,
+				  nsoption_bool(enable_javascript),
+				  html_process_script,
+				  html);
 	if (err == BINDING_BADENCODING) {
-		/* Ok, we don't support the declared encoding. Bailing out 
+		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to Windows-1252 */
 		talloc_free(html->encoding);
 		html->encoding = talloc_strdup(c, "Windows-1252");
@@ -320,15 +812,18 @@ encoding_change:
 			return false;
 		}
 
-		err = binding_create_tree(html, html->encoding,
-				&html->parser_binding);
+		err = binding_create_tree(&html->parser_binding,
+					  html->encoding,
+					  nsoption_bool(enable_javascript),
+					  html_process_script,
+					  html);
 	}
 
 	if (err != BINDING_OK) {
 		union content_msg_data msg_data;
 
 		if (err == BINDING_BADENCODING) {
-			LOG(("Bad encoding: %s", html->encoding 
+			LOG(("Bad encoding: %s", html->encoding
 					? html->encoding : ""));
 			msg_data.error = messages_get("ParsingFail");
 		} else
@@ -372,11 +867,11 @@ static bool html_process_link(html_content *c, dom_node *node)
 	if (exc != DOM_NO_ERR) {
 		return false;
 	}
-		
+
 	/* check that the href exists - w3c spec says must be present */
 	exc = dom_element_get_attribute(node, html_dom_string_href, &atr_string);
 	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
-		lwc_string_unref(link.rel);		
+		lwc_string_unref(link.rel);
 		return false;
 	}
 
@@ -384,35 +879,35 @@ static bool html_process_link(html_content *c, dom_node *node)
 	error = nsurl_join(c->base_url, dom_string_data(atr_string), &link.href);
 	dom_string_unref(atr_string);
 	if (error != NSERROR_OK) {
-		lwc_string_unref(link.rel);		
+		lwc_string_unref(link.rel);
 		return false;
 	}
 
 	/* look for optional properties -- we don't care if internment fails */
 
 	exc = dom_element_get_attribute(node, html_dom_string_hreflang, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {	
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the href lang */
 		exc = dom_string_intern(atr_string, &link.hreflang);
 		dom_string_unref(atr_string);
 	}
 
 	exc = dom_element_get_attribute(node, html_dom_string_type, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {	
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the type */
 		exc = dom_string_intern(atr_string, &link.type);
 		dom_string_unref(atr_string);
 	}
 
 	exc = dom_element_get_attribute(node, html_dom_string_media, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {	
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the media */
 		exc = dom_string_intern(atr_string, &link.media);
 		dom_string_unref(atr_string);
 	}
 
 	exc = dom_element_get_attribute(node, html_dom_string_sizes, &atr_string);
-	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {	
+	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the sizes */
 		exc = dom_string_intern(atr_string, &link.sizes);
 		dom_string_unref(atr_string);
@@ -496,9 +991,9 @@ static bool html_process_base(html_content *c, dom_node *node)
 	exc = dom_element_get_attribute(node, html_dom_string_target, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* Validation rules from the HTML5 spec for the base element:
-		 *  The target must be one of _blank, _self, _parent, or 
-		 *  _top or any identifier which does not begin with an 
-		 *  underscore 
+		 *  The target must be one of _blank, _self, _parent, or
+		 *  _top or any identifier which does not begin with an
+		 *  underscore
 		 */
 		if (*dom_string_data(atr_string) != '_' ||
 		    dom_string_caseless_isequal(atr_string, html_dom_string__blank) ||
@@ -543,16 +1038,16 @@ static bool html_head(html_content *c, dom_node *head)
 			exc = dom_node_get_node_name(node, &node_name);
 
 			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
-				if (dom_string_caseless_isequal(node_name, 
+				if (dom_string_caseless_isequal(node_name,
 						 html_dom_string_title)) {
 					html_process_title(c, node);
-				} else if (dom_string_caseless_isequal(node_name, 
+				} else if (dom_string_caseless_isequal(node_name,
 						 html_dom_string_base)) {
 					html_process_base(c, node);
-				} else if (dom_string_caseless_isequal(node_name, 
+				} else if (dom_string_caseless_isequal(node_name,
 						 html_dom_string_link)) {
 					html_process_link(c, node);
-				} 
+				}
 			}
 		}
 
@@ -638,7 +1133,7 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 	url = new_url;
 
 	/* fracpart? (ignored, as delay is integer only) */
-	while (url < end && (('0' <= *url && *url <= '9') || 
+	while (url < end && (('0' <= *url && *url <= '9') ||
 			*url == '.')) {
 		url++;
 	}
@@ -664,7 +1159,7 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 		c->base.refresh = nsurl_ref(
 				content_get_url(&c->base));
 
-		content_broadcast(&c->base, CONTENT_MSG_REFRESH, 
+		content_broadcast(&c->base, CONTENT_MSG_REFRESH,
 				msg_data);
 		return true;
 	}
@@ -744,7 +1239,7 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 			dom_string_unref(content);
 
 			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&c->base, CONTENT_MSG_ERROR, 
+			content_broadcast(&c->base, CONTENT_MSG_ERROR,
 					msg_data);
 
 			return false;
@@ -814,7 +1309,7 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 					return true;
 				}
 			} else if (strcmp(dom_string_data(name), "meta") == 0) {
-				if (html_meta_refresh_process_element(c, 
+				if (html_meta_refresh_process_element(c,
 						n) == false) {
 					/* Some error occurred */
 					dom_node_unref(n);
@@ -844,8 +1339,8 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
  * Update a box whose content has completed rendering.
  */
 
-static void 
-html_object_done(struct box *box, 
+static void
+html_object_done(struct box *box,
 		 hlcache_handle *object,
 		 bool background)
 {
@@ -879,7 +1374,7 @@ html_object_done(struct box *box,
  * \param  background  the object was the background image for the box
  */
 
-static void 
+static void
 html_object_failed(struct box *box, html_content *content, bool background)
 {
 	/* Nothing to do */
@@ -890,9 +1385,9 @@ html_object_failed(struct box *box, html_content *content, bool background)
  * Callback for hlcache_handle_retrieve() for objects.
  */
 
-static nserror 
+static nserror
 html_object_callback(hlcache_handle *object,
-		     const hlcache_event *event, 
+		     const hlcache_event *event,
 		     void *pw)
 {
 	struct content_html_object *o = pw;
@@ -980,17 +1475,17 @@ html_object_callback(hlcache_handle *object,
 
 			box_coords(box, &x, &y);
 
-			if (hlcache_handle_get_content(object) == 
+			if (hlcache_handle_get_content(object) ==
 					event->data.redraw.object) {
 				data.redraw.x = data.redraw.x *
 					box->width / content_get_width(object);
 				data.redraw.y = data.redraw.y *
-					box->height / 
+					box->height /
 					content_get_height(object);
 				data.redraw.width = data.redraw.width *
 					box->width / content_get_width(object);
 				data.redraw.height = data.redraw.height *
-					box->height / 
+					box->height /
 					content_get_height(object);
 				data.redraw.object_width = box->width;
 				data.redraw.object_height = box->height;
@@ -1027,7 +1522,7 @@ html_object_callback(hlcache_handle *object,
 			event->type == CONTENT_MSG_DONE ||
 			event->type == CONTENT_MSG_ERROR)) {
 		/* all objects have arrived */
-		content__reformat(&c->base, false, c->base.available_width, 
+		content__reformat(&c->base, false, c->base.available_width,
 				c->base.height);
 		html_set_status(c, "");
 		content_set_done(&c->base);
@@ -1047,7 +1542,7 @@ html_object_callback(hlcache_handle *object,
 			(c->base.status == CONTENT_STATUS_READY ||
 			 c->base.status == CONTENT_STATUS_DONE) &&
 			(wallclock() > c->base.reformat_time)) {
-		content__reformat(&c->base, false, c->base.available_width, 
+		content__reformat(&c->base, false, c->base.available_width,
 				c->base.height);
 	}
 
@@ -1090,8 +1585,8 @@ static bool html_replace_object(struct content_html_object *object, nsurl *url)
 	}
 
 	/* initialise fetch */
-	error = hlcache_handle_retrieve(url, HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			content_get_url(&c->base), NULL, 
+	error = hlcache_handle_retrieve(url, HLCACHE_RETRIEVE_SNIFF_TYPE,
+			content_get_url(&c->base), NULL,
 			html_object_callback, object, &child,
 			object->permitted_types,
 			&object->content);
@@ -1138,194 +1633,13 @@ static void html_object_refresh(void *p)
 
 
 
-
-static void html_destroy_objects(html_content *html)
-{
-	while (html->object_list != NULL) {
-		struct content_html_object *victim = html->object_list;
-
-		if (victim->content != NULL) {
-			LOG(("object %p", victim->content));
-
-			if (content_get_type(victim->content) == CONTENT_HTML)
-				schedule_remove(html_object_refresh, victim);
-
-			hlcache_handle_release(victim->content);
-		}
-
-		html->object_list = victim->next;
-		talloc_free(victim);
-	}
-}
-
-/**
- * Perform post-box-creation conversion of a document
- *
- * \param c        HTML content to complete conversion of
- * \param success  Whether box tree construction was successful
- */
-static void html_box_convert_done(html_content *c, bool success)
-{
-	union content_msg_data msg_data;
-	dom_exception exc; /* returned by libdom functions */
-	dom_node *html;
-
-	LOG(("Done XML to box (%p)", c));
-
-	/* Clean up and report error if unsuccessful or aborted */
-	if ((success == false) || c->aborted) {
-		html_destroy_objects(c);
-		if (success == false)
-			msg_data.error = messages_get("NoMemory");
-		else
-			msg_data.error = messages_get("Stopped");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-#if ALWAYS_DUMP_BOX
-	box_dump(stderr, c->layout->children, 0);
-#endif
-#if ALWAYS_DUMP_FRAMESET
-	if (c->frameset)
-                html_dump_frameset(c->frameset, 0);
-#endif
-
-	exc = dom_document_get_document_element(c->document, (void *) &html);
-        if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		LOG(("error retrieving html element from dom"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* extract image maps - can't do this sensibly in xml_to_box */
-	if (imagemap_extract(c) == false) {
-		LOG(("imagemap extraction failed"));
-		html_destroy_objects(c);
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-	/*imagemap_dump(c);*/
-
-	/* Destroy the parser binding */
-	binding_destroy_tree(c->parser_binding);
-	c->parser_binding = NULL;
-
-	content_set_ready(&c->base);
-
-	if (c->base.active == 0)
-		content_set_done(&c->base);
-
-	html_set_status(c, "");
-}
-
-/**
- * Complete conversion of an HTML document
- * 
- * \param c  Content to convert
- */
-static void html_finish_conversion(html_content *c)
-{
-	union content_msg_data msg_data;
-	dom_exception exc; /* returned by libdom functions */
-	dom_node *html;
-	uint32_t i;
-	css_error error;
-
-	/* Bail out if we've been aborted */
-	if (c->aborted) {
-		msg_data.error = messages_get("Stopped");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* check that the base stylesheet loaded; layout fails without it */
-	if (c->stylesheets[STYLESHEET_BASE].data.external == NULL) {
-		msg_data.error = "Base stylesheet failed to load";
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* Create selection context */
-	error = css_select_ctx_create(ns_realloc, c, &c->select_ctx);
-	if (error != CSS_OK) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* Add sheets to it */
-	for (i = STYLESHEET_BASE; i != c->stylesheet_count; i++) {
-		const struct html_stylesheet *hsheet = &c->stylesheets[i];
-		css_stylesheet *sheet;
-		css_origin origin = CSS_ORIGIN_AUTHOR;
-
-		if (i < STYLESHEET_USER)
-			origin = CSS_ORIGIN_UA;
-		else if (i < STYLESHEET_START)
-			origin = CSS_ORIGIN_USER;
-
-		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
-				hsheet->data.external != NULL) {
-			sheet = nscss_get_stylesheet(hsheet->data.external);
-		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
-			sheet = hsheet->data.internal->sheet;
-		} else {
-			sheet = NULL;
-		}
-
-		if (sheet != NULL) {
-			error = css_select_ctx_append_sheet(
-					c->select_ctx, sheet,
-					origin, CSS_MEDIA_SCREEN);
-			if (error != CSS_OK) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(&c->base, CONTENT_MSG_ERROR, 
-						msg_data);
-				content_set_error(&c->base);
-				return;
-			}
-		}
-	}
-
-	/* convert xml tree to box tree */
-	LOG(("XML to box (%p)", c));
-	content_set_status(&c->base, messages_get("Processing"));
-	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
-
-	exc = dom_document_get_document_element(c->document, (void *) &html);
-        if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		LOG(("error retrieving html element from dom"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	if (xml_to_box(html, c, html_box_convert_done) == false) {
-		html_destroy_objects(c);
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-}
-
 /**
  * Callback for fetchcache() for linked stylesheets.
  */
 
-static nserror 
-html_convert_css_callback(hlcache_handle *css, 
-			  const hlcache_event *event, 
+static nserror
+html_convert_css_callback(hlcache_handle *css,
+			  const hlcache_event *event,
 			  void *pw)
 {
 	html_content *parent = pw;
@@ -1333,9 +1647,9 @@ html_convert_css_callback(hlcache_handle *css,
 	struct html_stylesheet *s;
 
 	/* Find sheet */
-	for (i = 0, s = parent->stylesheets; 
+	for (i = 0, s = parent->stylesheets;
 			i != parent->stylesheet_count; i++, s++) {
-		if (s->type == HTML_STYLESHEET_EXTERNAL && 
+		if (s->type == HTML_STYLESHEET_EXTERNAL &&
 				s->data.external == css)
 			break;
 	}
@@ -1369,7 +1683,7 @@ html_convert_css_callback(hlcache_handle *css,
 
 	case CONTENT_MSG_STATUS:
 		html_set_status(parent, content_get_status_message(css));
-		content_broadcast(&parent->base, CONTENT_MSG_STATUS, 
+		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
 				event->data);
 		break;
 
@@ -1401,14 +1715,14 @@ static void html_inline_style_done(struct content_css_data *css, void *pw)
  * Process an inline stylesheet in the document.
  *
  * \param  c      content structure
- * \param  index  Index of stylesheet in stylesheet_content array, 
+ * \param  index  Index of stylesheet in stylesheet_content array,
  *                updated if successful
  * \param  style  xml node of style element
  * \return  true on success, false if an error occurred
  */
 
-static bool 
-html_process_style_element(html_content *c, 
+static bool
+html_process_style_element(html_content *c,
 			   unsigned int *index,
 			   dom_node *style)
 {
@@ -1434,7 +1748,7 @@ html_process_style_element(html_content *c,
 	exc = dom_element_get_attribute(style, html_dom_string_media, &val);
 	if (exc == DOM_NO_ERR && val != NULL) {
 		if (strcasestr(dom_string_data(val), "screen") == NULL &&
-				strcasestr(dom_string_data(val), 
+				strcasestr(dom_string_data(val),
 						"all") == NULL) {
 			dom_string_unref(val);
 			return true;
@@ -1493,7 +1807,7 @@ html_process_style_element(html_content *c,
 			goto no_memory;
 		}
 
-		if (nscss_process_css_data(sheet, dom_string_data(data), 
+		if (nscss_process_css_data(sheet, dom_string_data(data),
 				dom_string_byte_length(data)) == false) {
 			dom_string_unref(data);
 			dom_node_unref(child);
@@ -1544,13 +1858,13 @@ no_memory:
 }
 
 
-/* depth-first walk the dom calling callback for each element 
+/* depth-first walk the dom calling callback for each element
  *
- * @param root the dom node to use as the root of the tree walk 
- * @return true if all nodes were examined, false if the callback terminated 
- *         the walk early. 
+ * @param root the dom node to use as the root of the tree walk
+ * @return true if all nodes were examined, false if the callback terminated
+ *         the walk early.
  */
-static bool 
+static bool
 html_treewalk_dom(dom_node *root,
 		  bool (*callback)(dom_node *node, dom_string *name, void *ctx),
 		  void *ctx)
@@ -1587,7 +1901,7 @@ html_treewalk_dom(dom_node *root,
 				node = next;
 			} else {  /* 3. ancestor siblings */
 				while (node != NULL) {
-					exc = dom_node_get_next_sibling(node, 
+					exc = dom_node_get_next_sibling(node,
 							&next);
 					if (exc != DOM_NO_ERR) {
 						dom_node_unref(node);
@@ -1643,336 +1957,24 @@ html_treewalk_dom(dom_node *root,
 		if (result == false) {
 			break; /* callback caused early termination */
 		}
-			
+
 	}
 	return result;
 }
 
-typedef bool (script_handler_t)(struct jscontext *jscontext, const char *data, size_t size) ;
 
-
-static script_handler_t *select_script_handler(content_type ctype)
-{
-	if (ctype == CONTENT_JS) {
-		return js_exec;
-	}
-	return NULL;
-}
-
-
-/* attempt to progress script execution 
- *
- * execute scripts using algorithm found in:
- * http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#the-script-element
- * 
- */
-static bool html_scripts_exec(html_content *c)
-{
-	unsigned int i;
-	struct html_script *s;
-	script_handler_t *script_handler;
-
-	if (c->jscontext == NULL)
-		return false;
-
-	for (i = 0, s = c->scripts; i != c->scripts_count; i++, s++) {
-		if (s->already_started) {
-			continue;
-		}
-
-		assert((s->type == HTML_SCRIPT_EXTERNAL) || 
-		       (s->type == HTML_SCRIPT_INTERNAL));
-
-		if (s->type == HTML_SCRIPT_EXTERNAL) {
-			/* ensure script content is present */
-			if (s->data.external == NULL)
-				continue; 
-
-			/* ensure script content fetch status is not an error */
-			if (content_get_status(s->data.external) == CONTENT_STATUS_ERROR)
-				continue; 
-
-			/* ensure script handler for content type */
-			script_handler = select_script_handler(content_get_type(s->data.external));
-			if (script_handler == NULL)
-				continue; /* unsupported type */
-
-			if (content_get_status(s->data.external) == CONTENT_STATUS_DONE) {
-				/* external script is now available */
-				const char *data;
-				unsigned long size;
-				data = content_get_source_data(s->data.external, &size );
-				script_handler(c->jscontext, data, size);
-				
-				s->already_started = true;
-				
-			} else {
-				/* script not yet available */
-
-				/* check if deferable or asynchronous */
-				if (!s->defer && !s->async) {
-					break; 
-				}
-			}
-		} else {
-			struct lwc_string_s *lwcmimetype;
-			dom_string_intern(s->mimetype, &lwcmimetype);
-
-			/* ensure script handler for content type */
-			script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
-			lwc_string_unref(lwcmimetype);
-
-			if (script_handler == NULL)
-				continue; /* unsupported type */
-
-			script_handler(c->jscontext, 
-				dom_string_data(s->data.internal), 
-				dom_string_byte_length(s->data.internal));
-			s->already_started = true;
-		}
-	}
-
-	return true;
-}
-
-/* create new html script entry */
-static struct html_script *
-html_process_new_script(html_content *c, enum html_script_type type)
-{
-	struct html_script *nscript;
-	/* add space for new script entry */
-	nscript = realloc(c->scripts, 
-			  sizeof(struct html_script) * (c->scripts_count + 1));
-	if (nscript == NULL) {
-		return NULL;
-	}
-
-	c->scripts = nscript; 
-
-	/* increment script entry count */
-	nscript = &c->scripts[c->scripts_count];
-	c->scripts_count++;
-
-	nscript->already_started = false;
-	nscript->parser_inserted = false;
-	nscript->force_async = true;
-	nscript->ready_exec = false;
-	nscript->async = false;
-	nscript->defer = false;
-
-	nscript->type = type;
-
-	return nscript;
-}
-
-/**
- * Callback for fetchcache() for linked stylesheets.
- */
-
-static nserror 
-html_convert_script_callback(hlcache_handle *script, 
-			  const hlcache_event *event, 
-			  void *pw)
-{
-	html_content *parent = pw;
-	unsigned int i;
-	struct html_script *s;
-
-	/* Find sheet */
-	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
-		if (s->type == HTML_SCRIPT_EXTERNAL && 
-		    s->data.external == script)
-			break;
-	}
-
-	assert(i != parent->scripts_count);
-
-	switch (event->type) {
-	case CONTENT_MSG_LOADING:
-		break;
-
-	case CONTENT_MSG_READY:
-		break;
-
-	case CONTENT_MSG_DONE:
-		LOG(("script %d done '%s'", i,
-				nsurl_access(hlcache_handle_get_url(script))));
-		parent->base.active--;
-		LOG(("%d fetches active", parent->base.active));
-
-		/* script finished loading so try and continue execution */ 
-		html_scripts_exec(parent); 
-		break;
-
-	case CONTENT_MSG_ERROR:
-		LOG(("script %s failed: %s",
-				nsurl_access(hlcache_handle_get_url(script)),
-				event->data.error));
-		hlcache_handle_release(script);
-		s->data.external = NULL;
-		parent->base.active--;
-		LOG(("%d fetches active", parent->base.active));
-		content_add_error(&parent->base, "?", 0);
-
-		/* script failed loading so try and continue execution */ 
-		html_scripts_exec(parent); 
-
-		break;
-
-	case CONTENT_MSG_STATUS:
-		html_set_status(parent, content_get_status_message(script));
-		content_broadcast(&parent->base, CONTENT_MSG_STATUS, 
-				event->data);
-		break;
-
-	default:
-		assert(0);
-	}
-
-	if (parent->base.active == 0)
-		html_finish_conversion(parent);
-
-	return NSERROR_OK;
-}
-
-/** process script node 
- *
- *
- */
-static bool 
-html_process_script(dom_node *node, dom_string *name, void *ctx)
-{
-	html_content *c = (html_content *)ctx;
-	dom_exception exc; /* returned by libdom functions */
-	dom_string *src, *script, *mimetype;
-	struct html_script *nscript;
-	union content_msg_data msg_data;
-
-	if (!dom_string_isequal(name, html_dom_string_script))
-		return true; /* was not a script tag, carry on the walk */
-
-	/* ensure javascript context is available */
-	if (c->jscontext == NULL) {
-		union content_msg_data msg_data;
-
-		msg_data.jscontext = &c->jscontext;
-		content_broadcast(&c->base, CONTENT_MSG_GETCTX, msg_data);
-		LOG(("javascript context %p ", c->jscontext));
-		if (c->jscontext == NULL) {
-			/* no context and it could not be created, abort */
-			return false; 
-		}
-	}
-
-	exc = dom_element_get_attribute(node, html_dom_string_type, &mimetype);
-	if (exc != DOM_NO_ERR || mimetype == NULL) {
-		mimetype = dom_string_ref(html_dom_string_text_javascript);
-	}
-
-	exc = dom_element_get_attribute(node, html_dom_string_src, &src);
-	if (exc != DOM_NO_ERR || src == NULL) {
-		/* does not appear to be a src so script is inline content */
-		exc = dom_node_get_text_content(node, &script);
-		if ((exc != DOM_NO_ERR) || (script == NULL)) {
-			dom_string_unref(mimetype);
-			return true; /* no contents, skip */
-		}
-
-		nscript = html_process_new_script(c, HTML_STYLESHEET_INTERNAL);
-		if (nscript == NULL) {
-			dom_string_unref(mimetype);
-			dom_string_unref(script);
-			goto html_process_script_no_memory;
-		}
-
-		nscript->data.internal = script;
-		nscript->mimetype = mimetype;
-
-		/* charset (encoding) */
-	} else {
-		/* script with a src tag */
-		nserror ns_error;
-		nsurl *joined;
-		hlcache_child_context child;
-
-
-		nscript = html_process_new_script(c, HTML_STYLESHEET_EXTERNAL);
-		if (nscript == NULL) {
-			dom_string_unref(src);
-			dom_string_unref(mimetype);
-			goto html_process_script_no_memory;
-		}
-
-		/* charset (encoding) */
-
-		ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
-		dom_string_unref(src);
-		if (ns_error != NSERROR_OK) {
-			dom_string_unref(mimetype);
-			goto html_process_script_no_memory;
-		}
-
-		nscript->mimetype = mimetype; /* keep reference to mimetype */
-
-		LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
-
-		child.charset = c->encoding;
-		child.quirks = c->base.quirks;
-
-		ns_error = hlcache_handle_retrieve(joined, 
-						   0,
-						   content_get_url(&c->base), 
-						   NULL,
-						   html_convert_script_callback, 
-						   c, 
-						   &child,
-						   CONTENT_SCRIPT,
-						   &nscript->data.external);
-
-		nsurl_unref(joined);
-
-		if (ns_error != NSERROR_OK) {
-			goto html_process_script_no_memory;
-		}
-
-		c->base.active++; /* ensure base content knows the fetch is active */
-		LOG(("%d fetches active", c->base.active));
-
-	}
-					
-	return true;
-
-html_process_script_no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-	return false; /* out of memory, abort walk */
-}
-
-/**
- * Process inline script and fetch linked scripts.
- *
- * 
- *
- * \param c content structure
- * \param html dom node of html element
- * \return true on success, false if an error occurred
- */
-static bool html_find_scripts(html_content *c, dom_node *html)
-{
-	return html_treewalk_dom(html, html_process_script, c);
-}
 
 struct find_stylesheet_ctx {
 	unsigned int count;
 	html_content *c;
 };
 
-/** callback to process stylesheet elements 
+/** callback to process stylesheet elements
  */
-static bool 
+static bool
 html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 {
-	struct find_stylesheet_ctx *ctx = (struct find_stylesheet_ctx *)vctx; 
+	struct find_stylesheet_ctx *ctx = (struct find_stylesheet_ctx *)vctx;
 	dom_string *rel, *type_attr, *media, *href;
 	struct html_stylesheet *stylesheets;
 	nsurl *joined;
@@ -1991,10 +1993,10 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	/* if it is not a link node skip it */
 	if (strcmp(dom_string_data(name), "link") != 0) {
 		return true;
-	} 
+	}
 
 	/* rel=<space separated list, including 'stylesheet'> */
-	exc = dom_element_get_attribute(node, 
+	exc = dom_element_get_attribute(node,
 					html_dom_string_rel, &rel);
 	if (exc != DOM_NO_ERR || rel == NULL)
 		return true;
@@ -2009,7 +2011,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	}
 	dom_string_unref(rel);
 
-	/* type='text/css' or not present */	
+	/* type='text/css' or not present */
 	exc = dom_element_get_attribute(node, html_dom_string_type, &type_attr);
 	if (exc == DOM_NO_ERR && type_attr != NULL) {
 		if (strcmp(dom_string_data(type_attr), "text/css") != 0) {
@@ -2051,7 +2053,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	/* start fetch */
 	stylesheets = talloc_realloc(ctx->c,
 				     ctx->c->stylesheets,
-				     struct html_stylesheet, 
+				     struct html_stylesheet,
 				     ctx->count + 1);
 	if (stylesheets == NULL) {
 		nsurl_unref(joined);
@@ -2065,12 +2067,12 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	child.charset = ctx->c->encoding;
 	child.quirks = ctx->c->base.quirks;
 
-	ns_error = hlcache_handle_retrieve(joined, 
+	ns_error = hlcache_handle_retrieve(joined,
 					   0,
-					   content_get_url(&ctx->c->base), 
+					   content_get_url(&ctx->c->base),
 					   NULL,
-					   html_convert_css_callback, 
-					   ctx->c, 
+					   html_convert_css_callback,
+					   ctx->c,
 					   &child,
 					   CONTENT_CSS,
 					   &ctx->c->stylesheets[ctx->count].data.external);
@@ -2123,7 +2125,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	 * stylesheet 3 is the user stylesheet */
 	c->stylesheets = talloc_array(c, struct html_stylesheet,
 			STYLESHEET_START);
-	if (c->stylesheets == NULL) 
+	if (c->stylesheets == NULL)
 		goto html_find_stylesheets_no_memory;
 
 	c->stylesheets[STYLESHEET_BASE].type = HTML_STYLESHEET_EXTERNAL;
@@ -2150,9 +2152,9 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	LOG(("%d fetches active", c->base.active));
 
 	if (c->quirks == BINDING_QUIRKS_MODE_FULL) {
-		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url, 
+		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
-				html_convert_css_callback, c, &child, 
+				html_convert_css_callback, c, &child,
 				CONTENT_CSS,
 				&c->stylesheets[STYLESHEET_QUIRKS].data.external);
 		if (ns_error != NSERROR_OK)
@@ -2250,7 +2252,7 @@ static bool html_convert(struct content *c)
 
 	if (htmlc->encoding == NULL) {
 		const char *encoding = binding_get_encoding(
-				htmlc->parser_binding, 
+				htmlc->parser_binding,
 				&htmlc->encoding_source);
 
 		htmlc->encoding = talloc_strdup(c, encoding);
@@ -2270,27 +2272,27 @@ static bool html_convert(struct content *c)
 
 	/* locate root element and ensure it is html */
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
-        if ((exc != DOM_NO_ERR) || (html == NULL)) {
+	if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
-        }
+	}
 
 	exc = dom_node_get_node_name(html, &node_name);
-        if ((exc != DOM_NO_ERR) || 
-	    (node_name == NULL) || 
+	if ((exc != DOM_NO_ERR) ||
+	    (node_name == NULL) ||
 	    (!dom_string_caseless_isequal(node_name, html_dom_string_html))) {
 		LOG(("root element not html"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
-        }
+	}
 	dom_string_unref(node_name);
 
 	/* ensure the head element is found */
 	exc = dom_node_get_first_child(html, &head);
-        if ((exc != DOM_NO_ERR) || (head == NULL)) {
+	if ((exc != DOM_NO_ERR) || (head == NULL)) {
 		head = NULL;
 		LOG(("head element not found"));
 	} else {
@@ -2301,7 +2303,7 @@ static bool html_convert(struct content *c)
 		do {
 			exc = dom_node_get_node_type(head, &node_type);
 
-			if ((exc != DOM_NO_ERR) || 
+			if ((exc != DOM_NO_ERR) ||
 			    (node_type == DOM_ELEMENT_NODE))
 				break;
 
@@ -2317,7 +2319,7 @@ static bool html_convert(struct content *c)
 		if (head != NULL) {
 			exc = dom_node_get_node_name(head, &node_name);
 			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
-				if (!dom_string_caseless_isequal(node_name, 
+				if (!dom_string_caseless_isequal(node_name,
 							html_dom_string_head)) {
 					dom_node_unref(head);
 					LOG(("head element not found"));
@@ -2349,7 +2351,7 @@ static bool html_convert(struct content *c)
 		/* Make all actions absolute */
 		if (f->action == NULL || f->action[0] == '\0') {
 			/* HTML5 4.10.22.3 step 11 */
-			res = url_join(nsurl_access(content_get_url(c)), 
+			res = url_join(nsurl_access(content_get_url(c)),
 					nsurl_access(htmlc->base_url), &action);
 		} else {
 			res = url_join(f->action, nsurl_access(htmlc->base_url),
@@ -2370,20 +2372,12 @@ static bool html_convert(struct content *c)
 			f->document_charset = strdup(htmlc->encoding);
 			if (f->document_charset == NULL) {
 				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR, 
+				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
 				return false;
 			}
 		}
 	}
-
-	/* find script tags */
-	if (nsoption_bool(enable_javascript)) {
-		/* @todo this ought to be done during parse */
-		html_find_scripts(htmlc, html);
-		/* run as far as we can */
-		html_scripts_exec(htmlc);
-	} 
 
 	/* get stylesheets */
 	if (html_find_stylesheets(htmlc, html) == false)
@@ -2435,11 +2429,11 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 	object->box = box;
 	object->permitted_types = permitted_types;
 	object->background = background;
- 
-	error = hlcache_handle_retrieve(url, 
-			HLCACHE_RETRIEVE_SNIFF_TYPE, 
-			content_get_url(&c->base), NULL, 
-			html_object_callback, object, &child, 
+
+	error = hlcache_handle_retrieve(url,
+			HLCACHE_RETRIEVE_SNIFF_TYPE,
+			content_get_url(&c->base), NULL,
+			html_object_callback, object, &child,
 			object->permitted_types, &object->content);
        	if (error != NSERROR_OK) {
 		talloc_free(object);
@@ -2477,18 +2471,18 @@ static void html_stop(struct content *c)
 		htmlc->aborted = true;
 		break;
 	case CONTENT_STATUS_READY:
-		for (object = htmlc->object_list; object != NULL; 
+		for (object = htmlc->object_list; object != NULL;
 				object = object->next) {
 			if (object->content == NULL)
 				continue;
 
-			if (content_get_status(object->content) == 
+			if (content_get_status(object->content) ==
 					CONTENT_STATUS_DONE)
 				; /* already loaded: do nothing */
-			else if (content_get_status(object->content) == 
+			else if (content_get_status(object->content) ==
 					CONTENT_STATUS_READY)
 				hlcache_handle_abort(object->content);
-				/* Active count will be updated when 
+				/* Active count will be updated when
 				 * html_object_callback receives
  				 * CONTENT_MSG_DONE from this object */
 			else {
@@ -2710,7 +2704,7 @@ static void html_destroy(struct content *c)
 				html->stylesheets[i].data.external != NULL) {
 			hlcache_handle_release(
 					html->stylesheets[i].data.external);
-		} else if (html->stylesheets[i].type == 
+		} else if (html->stylesheets[i].type ==
 				HTML_STYLESHEET_INTERNAL &&
 				html->stylesheets[i].data.internal != NULL) {
 			nscss_destroy_css_data(
@@ -2727,7 +2721,7 @@ static void html_destroy(struct content *c)
 				html->scripts[i].data.external != NULL) {
 			hlcache_handle_release(
 					html->scripts[i].data.external);
-		} else if (html->scripts[i].type == 
+		} else if (html->scripts[i].type ==
 				HTML_SCRIPT_INTERNAL &&
 				html->scripts[i].data.internal != NULL) {
 			dom_string_unref(html->scripts[i].data.internal);
@@ -2744,8 +2738,8 @@ static nserror html_clone(const struct content *old, struct content **newc)
 {
 	/** \todo Clone HTML specifics */
 
-	/* In the meantime, we should never be called, as HTML contents 
-	 * cannot be shared and we're not intending to fix printing's 
+	/* In the meantime, we should never be called, as HTML contents
+	 * cannot be shared and we're not intending to fix printing's
 	 * cloning of documents. */
 	assert(0 && "html_clone should never be called");
 
@@ -2766,10 +2760,10 @@ void html_set_status(html_content *c, const char *extra)
  * Handle a window containing a CONTENT_HTML being opened.
  */
 
-static void 
-html_open(struct content *c, 
+static void
+html_open(struct content *c,
 	  struct browser_window *bw,
-	  struct content *page, 
+	  struct content *page,
 	  struct box *box,
 	  struct object_params *params)
 {
@@ -2792,7 +2786,7 @@ html_open(struct content *c,
 		if (content_get_type(object->content) == CONTENT_NONE)
 			continue;
 
-               	content_open(object->content,
+		content_open(object->content,
 				bw, c,
 				object->box,
 				object->box->object_params);
@@ -2826,7 +2820,7 @@ static void html_close(struct content *c)
 		if (content_get_type(object->content) == CONTENT_HTML)
 			schedule_remove(html_object_refresh, object);
 
-               	content_close(object->content);
+		content_close(object->content);
 	}
 }
 
@@ -2853,10 +2847,10 @@ static struct selection *html_get_selection(struct content *c)
  * \param data	pointer to contextual_content struct.  Its fields are updated
  *		with pointers to any relevent content, or set to NULL if none.
  */
-static void 
+static void
 html_get_contextual_content(struct content *c,
-			    int x, 
-			    int y, 
+			    int x,
+			    int y,
 			    struct contextual_content *data)
 {
 	html_content *html = (html_content *) c;
@@ -2870,7 +2864,7 @@ html_get_contextual_content(struct content *c,
 			&containing_content)) != NULL) {
 		box = next;
 
-		if (box->style && css_computed_visibility(box->style) == 
+		if (box->style && css_computed_visibility(box->style) ==
 				CSS_VISIBILITY_HIDDEN)
 			continue;
 
@@ -2904,7 +2898,7 @@ html_get_contextual_content(struct content *c,
  * \param scry	y-coordinate of point of interest
  * \return true iff scroll was consumed by something in the content
  */
-static bool 
+static bool
 html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 {
 	html_content *html = (html_content *) c;
@@ -2921,7 +2915,7 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 			&containing_content)) != NULL) {
 		box = next;
 
-		if (box->style && css_computed_visibility(box->style) == 
+		if (box->style && css_computed_visibility(box->style) ==
 				CSS_VISIBILITY_HIDDEN)
 			continue;
 
@@ -3141,7 +3135,7 @@ struct search_context *html_get_search(struct content *c)
  * Print a frameset tree to stderr.
  */
 
-static void 
+static void
 html_dump_frameset(struct content_html_frames *frame, unsigned int depth)
 {
 	unsigned int i;
@@ -3502,7 +3496,7 @@ nserror html_init(void)
 		goto error;
 	}
 
-	error = nsurl_create("resource:default.css", 
+	error = nsurl_create("resource:default.css",
 			&html_default_stylesheet_url);
 	if (error != NSERROR_OK)
 		goto error;
@@ -3527,7 +3521,7 @@ nserror html_init(void)
 					 sizeof(#NAME) - 1,		\
 					 &html_dom_string_##NAME );	\
 	if ((exc != DOM_NO_ERR) || (html_dom_string_##NAME == NULL))	\
-		goto error						
+		goto error
 
 	HTML_DOM_STRING_INTERN(html);
 	HTML_DOM_STRING_INTERN(head);
