@@ -1400,7 +1400,9 @@ nserror browser_window_callback(hlcache_handle *c,
 		 * window requires a new global compartment object 
 		 */
 		assert(bw->loading_content == c);
-		if (js_newcompartment(bw->jsctx, bw, c) != NULL) {
+		if (js_newcompartment(bw->jsctx,
+				      bw,
+				      hlcache_handle_get_content(c)) != NULL) {
 			*(event->data.jscontext) = bw->jsctx;
 		}
 		break;
