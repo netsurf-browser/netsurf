@@ -101,7 +101,7 @@ const char *nslog_gettime(void)
 
 	timeval_subtract(&tv, &now_tv, &start_tv);
 
-        snprintf(buff, sizeof(buff),"(%ld.%ld)", 
+        snprintf(buff, sizeof(buff),"(%ld.%06ld)", 
 			(long)tv.tv_sec, (long)tv.tv_usec);
 
         return buff;
