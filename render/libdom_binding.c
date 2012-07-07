@@ -27,6 +27,7 @@
 typedef struct binding_ctx {
 	dom_hubbub_parser *parser;
 	dom_document *extracted;
+	struct form *forms;
 } binding_ctx;
 
 binding_error binding_create_tree(void **ctx, const char *charset, bool enable_script, dom_script script, void *context)
@@ -41,10 +42,10 @@ binding_error binding_create_tree(void **ctx, const char *charset, bool enable_s
 	}
 
 	parser = dom_hubbub_parser_create(charset, true, enable_script, NULL, script, context);
-        if (parser == NULL) {
-                LOG(("Can't create Hubbub Parser\n"));
-                return BINDING_NOMEM;
-        }
+	if (parser == NULL) {
+		LOG(("Can't create Hubbub Parser\n"));
+		return BINDING_NOMEM;
+	}
 	bctx->parser = parser;
 	*ctx = bctx;
 	return BINDING_OK;
@@ -76,9 +77,9 @@ binding_error binding_parse_completed(void *ctx)
 	struct binding_ctx *bctx = ctx;
 	dom_hubbub_error error;
 	error = dom_hubbub_parser_completed(bctx->parser);
-        if (error != DOM_HUBBUB_OK) {
+	if (error != DOM_HUBBUB_OK) {
 		return BINDING_NOMEM;
-        }
+	}
 	return BINDING_OK;
 }
 
@@ -217,6 +218,9 @@ struct form *binding_get_forms(void *ctx)
 	dom_node *node;
 	unsigned long nforms, n;
 
+	if (bctx->forms != NULL)
+		return bctx->forms;
+
 	if (doc == NULL)
 		return NULL;
 
@@ -255,12 +259,111 @@ out:
 	/* Finished with the collection, return it */
 	dom_html_collection_unref(forms);
 
+	bctx->forms = ret;
+
 	return ret;
 }
 
-struct form_control *binding_get_control_for_node(void *ctx, dom_node *node)
+static struct form *
+find_form(struct form *forms, dom_html_form_element *form)
 {
-	/** \todo implement properly */
+	while (forms != NULL) {
+		if (forms->node == form)
+			break;
+		forms = forms->prev;
+	}
+
+	return forms;
+}
+
+static struct form_control *
+parse_button_element(struct form *forms, dom_html_button_element *button)
+{
+	struct form_control *control = NULL;
+	dom_exception err;
+	dom_html_form_element *form = NULL;
+	dom_string *ds_type = NULL;
+	dom_string *ds_value = NULL;
+	dom_string *ds_name = NULL;
+	char *type = NULL;
+
+	err = dom_html_button_element_get_form(button, &form);
+	if (err != DOM_NO_ERR)
+		goto out;
+
+	err = dom_html_button_element_get_type(button, &ds_type);
+	if (err != DOM_NO_ERR)
+		goto out;
+
+	if (ds_type == NULL) {
+		control = form_new_control(button, GADGET_SUBMIT);
+	} else {
+		type = strndup(dom_string_data(ds_type),
+			       dom_string_byte_length(ds_type));
+		if (strcasecmp(type, "submit") == 0) {
+			control = form_new_control(button, GADGET_SUBMIT);
+		} else if (strcasecmp(type, "reset") == 0) {
+			control = form_new_control(button, GADGET_RESET);
+		} else {
+			control = form_new_control(button, GADGET_BUTTON);
+		}
+	}
+
+	if (control == NULL)
+		goto out;
+
+	err = dom_html_button_element_get_value(button, &ds_value);
+	if (err != DOM_NO_ERR)
+		goto out;
+	err = dom_html_button_element_get_name(button, &ds_name);
+	if (err != DOM_NO_ERR)
+		goto out;
+
+	if (ds_value != NULL) {
+		control->value = strndup(
+			dom_string_data(ds_value),
+			dom_string_byte_length(ds_value));
+
+		if (control->value == NULL) {
+			form_free_control(control);
+			control = NULL;
+			goto out;
+		}
+	}
+
+	if (ds_name != NULL) {
+		control->name = strndup(
+			dom_string_data(ds_name),
+			dom_string_byte_length(ds_name));
+
+		if (control->name == NULL) {
+			form_free_control(control);
+			control = NULL;
+			goto out;
+		}
+	}
+
+	if (form != NULL && control != NULL)
+		form_add_control(find_form(forms, form), control);
+
+out:
+	if (form != NULL)
+		dom_node_unref(form);
+	if (ds_type != NULL)
+		dom_string_unref(ds_type);
+	if (ds_value != NULL)
+		dom_string_unref(ds_value);
+	if (ds_name != NULL)
+		dom_string_unref(ds_name);
+	if (type == NULL)
+		free(type);
+
+	return control;
+}
+
+static struct form_control *
+invent_fake_gadget(dom_node *node)
+{
 	struct form_control *ctl = form_new_control(node, GADGET_HIDDEN);
 	if (ctl != NULL) {
 		ctl->value = strdup("");
@@ -273,7 +376,48 @@ struct form_control *binding_get_control_for_node(void *ctx, dom_node *node)
 			ctl = NULL;
 		}
 	}
+	return ctl;
+}
 
+struct form_control *binding_get_control_for_node(void *ctx, dom_node *node)
+{
+	struct form *f;
+	struct form_control *ctl = NULL;
+	dom_exception err;
+	dom_string *ds_name = NULL;
+	char *node_name = NULL;
+	binding_ctx *bctx = ctx;
+
+	if (bctx->forms == NULL)
+		return NULL;
+
+	/* Step one, see if we already have a control */
+	for (f = bctx->forms; f != NULL; f = f->prev) {
+		for (ctl = f->controls; ctl != NULL; ctl = ctl->next) {
+			if (ctl->node == node)
+				return ctl;
+		}
+	}
+
+	/* Step two, extract the node's name so we can construct a gadget. */
+	err = dom_element_get_tag_name(node, &ds_name);
+	if (err == DOM_NO_ERR && ds_name != NULL) {
+		node_name = strndup(dom_string_data(ds_name),
+				    dom_string_byte_length(ds_name));
+	}
+
+	/* Step three, attempt to work out what gadget to make */
+	LOG(("NODE: %s", node_name));
+	if (node_name && strcmp(node_name, "button") == 0)
+		ctl = parse_button_element(bctx->forms,
+					   (dom_html_button_element *) node);
+	else
+		ctl = invent_fake_gadget(node);
+
+	if (ds_name != NULL)
+		dom_string_unref(ds_name);
+	if (node_name != NULL)
+		free(node_name);
 	return ctl;
 }
 
