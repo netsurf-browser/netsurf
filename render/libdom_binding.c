@@ -362,6 +362,142 @@ out:
 }
 
 static struct form_control *
+parse_input_element(struct form *forms, dom_html_input_element *input)
+{
+	struct form_control *control;
+	dom_html_form_element *form = NULL;
+	dom_string *ds_type = NULL;
+	dom_string *ds_name = NULL;
+	dom_string *ds_value = NULL;
+
+	char *type = NULL;
+	char *name = NULL;
+
+	if (dom_html_input_element_get_form(input, &form) != DOM_NO_ERR)
+		goto out;
+
+	if (dom_html_input_element_get_type(input, &ds_type) != DOM_NO_ERR)
+		goto out;
+
+	if (ds_type != NULL)
+		type = strndup(dom_string_data(ds_type),
+			       dom_string_byte_length(ds_type));
+
+	if (dom_html_input_element_get_name(input, &ds_name) != DOM_NO_ERR)
+		goto out;
+
+	if (ds_name != NULL)
+		name = strndup(dom_string_data(ds_name),
+			       dom_string_byte_length(ds_name));
+
+	if (type != NULL && strcasecmp(type, "password") == 0) {
+		control = form_new_control(input, GADGET_PASSWORD);
+	} else if (type != NULL && strcasecmp(type, "file") == 0) {
+		control = form_new_control(input, GADGET_FILE);
+	} else if (type != NULL && strcasecmp(type, "hidden") == 0) {
+		control = form_new_control(input, GADGET_HIDDEN);
+	} else if (type != NULL && strcasecmp(type, "checkbox") == 0) {
+		control = form_new_control(input, GADGET_CHECKBOX);
+	} else if (type != NULL && strcasecmp(type, "radio") == 0) {
+		control = form_new_control(input, GADGET_RADIO);
+	} else if (type != NULL && strcasecmp(type, "submit") == 0) {
+		control = form_new_control(input, GADGET_SUBMIT);
+	} else if (type != NULL && strcasecmp(type, "reset") == 0) {
+		control = form_new_control(input, GADGET_RESET);
+	} else if (type != NULL && strcasecmp(type, "button") == 0) {
+		control = form_new_control(input, GADGET_BUTTON);
+	} else if (type != NULL && strcasecmp(type, "image") == 0) {
+		control = form_new_control(input, GADGET_IMAGE);
+	} else {
+		control = form_new_control(input, GADGET_TEXTBOX);
+	}
+
+	if (control == NULL)
+		goto out;
+
+	if (name != NULL) {
+		/* Hand the name string over */
+		control->name = name;
+		name = NULL;
+	}
+
+	if (control->type == GADGET_CHECKBOX || control->type == GADGET_RADIO) {
+		bool selected;
+		if (dom_html_input_element_get_checked(
+			    input, &selected) == DOM_NO_ERR) {
+			control->selected = selected;
+		}
+	}
+
+	if (control->type == GADGET_PASSWORD ||
+	    control->type == GADGET_TEXTBOX) {
+		unsigned long maxlength;
+		if (dom_html_input_element_get_max_length(
+			    input, &maxlength) == DOM_NO_ERR) {
+			control->maxlength = maxlength;
+		}
+	}
+
+	if (control->type != GADGET_FILE && control->type != GADGET_IMAGE) {
+		if (dom_html_input_element_get_value(
+			    input, &ds_value) == DOM_NO_ERR) {
+			if (ds_value != NULL) {
+				control->value = strndup(
+					dom_string_data(ds_value),
+					dom_string_byte_length(ds_value));
+				if (control->value == NULL) {
+					form_free_control(control);
+					control = NULL;
+					goto out;
+				}
+				control->length = strlen(control->value);
+			}
+		}
+
+		if (control->type == GADGET_TEXTBOX ||
+				control->type == GADGET_PASSWORD) {
+			if (control->value == NULL) {
+				control->value = strdup("");
+				if (control->value == NULL) {
+					form_free_control(control);
+					control = NULL;
+					goto out;
+				}
+
+				control->length = 0;
+			}
+
+			control->initial_value = strdup(control->value);
+			if (control->initial_value == NULL) {
+				form_free_control(control);
+				control = NULL;
+				goto out;
+			}
+		}
+	}
+
+	if (form != NULL && control != NULL)
+		form_add_control(find_form(forms, form), control);
+
+out:
+	if (form != NULL)
+		dom_node_unref(form);
+	if (ds_type != NULL)
+		dom_string_unref(ds_type);
+	if (ds_name != NULL)
+		dom_string_unref(ds_name);
+	if (ds_value != NULL)
+		dom_string_unref(ds_value);
+
+	if (type != NULL)
+		free(type);
+	if (name != NULL)
+		free(name);
+
+	return control;
+}
+
+static struct form_control *
 invent_fake_gadget(dom_node *node)
 {
 	struct form_control *ctl = form_new_control(node, GADGET_HIDDEN);
@@ -407,11 +543,16 @@ struct form_control *binding_get_control_for_node(void *ctx, dom_node *node)
 	}
 
 	/* Step three, attempt to work out what gadget to make */
-	LOG(("NODE: %s", node_name));
-	if (node_name && strcmp(node_name, "button") == 0)
+
+	if (node_name && strcasecmp(node_name, "button") == 0)
 		ctl = parse_button_element(bctx->forms,
 					   (dom_html_button_element *) node);
-	else
+	else if (node_name && strcasecmp(node_name, "input") == 0)
+		ctl = parse_input_element(bctx->forms,
+					  (dom_html_input_element *) node);
+
+	/* If all else fails, fake gadget time */
+	if (ctl == NULL)
 		ctl = invent_fake_gadget(node);
 
 	if (ds_name != NULL)

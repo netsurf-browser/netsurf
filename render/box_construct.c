@@ -944,7 +944,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 	/* Special elements */
 	element = bsearch(dom_string_data(s), element_table,
 			ELEMENT_TABLE_COUNT, sizeof(element_table[0]),
-			(int (*)(const void *, const void *)) strcmp);
+			(int (*)(const void *, const void *)) strcasecmp);
 
 	dom_string_unref(s);
 
