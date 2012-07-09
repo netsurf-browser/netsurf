@@ -103,6 +103,7 @@ my %userinfo; # The information about the current user
    my $gecos = $pwent[6];
    $gecos =~ s/,.+//g;
    $gecos =~ s/"/'/g;
+   $gecos =~ s/\\/\\\\/g;
    $userinfo{GECOS} = $gecos;
 }
 

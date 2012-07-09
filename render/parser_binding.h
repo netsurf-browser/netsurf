@@ -20,6 +20,7 @@
 #define _NETSURF_RENDER_PARSER_BINDING_H_
 
 #include <dom/dom.h>
+#include <dom/bindings/hubbub/parser.h>
 
 struct box;
 struct form;
@@ -44,7 +45,7 @@ typedef enum binding_quirks_mode {
 	BINDING_QUIRKS_MODE_FULL
 } binding_quirks_mode;
 
-binding_error binding_create_tree(void *arena, const char *charset, void **ctx);
+binding_error binding_create_tree(void **ctx, const char *charset, bool enable_script, dom_script script, void *context);
 binding_error binding_destroy_tree(void *ctx);
 
 binding_error binding_parse_chunk(void *ctx, const uint8_t *data, size_t len);
