@@ -6,10 +6,10 @@
 
                            NATIVE ATARI ALPHA
 
-                  Version 3.0 (Development Version)
+                  Version 2.9 (Release Version)
 
 Ported by:     m0n0
-Release date:  09.09.2011
+Release date:  xx.xx.xx
 Contact:       ole@monochrom.net
 WWW:           http://netsurf-browser.org
 

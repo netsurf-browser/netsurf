@@ -47,6 +47,7 @@
 #include "atari/browser_win.h"
 #include "atari/browser.h"
 #include "atari/misc.h"
+#include "atari/plot.h"
 #include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/browser.h"

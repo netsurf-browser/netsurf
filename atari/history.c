@@ -103,7 +103,7 @@ bool global_history_init( void )
 			LOG(("Failed to allocate history window"));
 			return( false );
 		}
-		/* TODO: load hotlist strings from messages */
+		/* TODO: load history strings from messages */
 		WindSetStr( gl_history.window, WF_NAME, (char*)"History" );
 		//WindSetPtr( gl_history.window, WF_TOOLBAR, tree, evnt_history_toolbar );
 		EvntAttach( gl_history.window, WM_CLOSED, evnt_history_close );
