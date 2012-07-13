@@ -42,10 +42,10 @@
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
-#include "atari/plot/plotter.h"
+#include "atari/plot/plot.h"
 #include "atari/osspec.h"
 
-extern short vdih;
+extern int atari_plot_vdi_handle;
 
 static
 void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
@@ -69,42 +69,43 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &lclip ) ) {
 		return;
 	}
-	vsf_interior( vdih, FIS_SOLID );
-	vsl_color( vdih, BLACK );
-	vsl_type( vdih, 1);
-	vsl_width( vdih, 1 );
-	vst_color(vdih, BLACK);
+	vsf_interior(atari_plot_vdi_handle, FIS_SOLID );
+	vsl_color(atari_plot_vdi_handle, BLACK );
+	vsl_type(atari_plot_vdi_handle, 1);
+	vsl_width(atari_plot_vdi_handle, 1 );
+	vst_color(atari_plot_vdi_handle, BLACK);
 
-	vst_height( vdih, atari_sysinfo.medium_sfont_pxh, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
-	vst_alignment(vdih, 0, 5, &d, &d );
-	vst_effects( vdih, 0 );
+	vst_height(atari_plot_vdi_handle, atari_sysinfo.medium_sfont_pxh, &pxy[0], &pxy[1], &pxy[2], &pxy[3] );
+	vst_alignment(atari_plot_vdi_handle, 0, 5, &d, &d );
+	vst_effects(atari_plot_vdi_handle, 0 );
 	pxyclip[0] = lclip.g_x;
 	pxyclip[1] = lclip.g_y;
 	pxyclip[2] = lclip.g_x + lclip.g_w-1;
 	pxyclip[3] = lclip.g_y + lclip.g_h-1;
 
-	vs_clip(vdih, 1, (short*)&pxyclip );
-	vswr_mode( vdih, MD_REPLACE );
+	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxyclip );
+	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
 
 	if( lclip.g_y <= work.g_y ) {
 		pxy[0] = work.g_x;
 		pxy[1] = work.g_y;
 		pxy[2] = MIN( work.g_x + work.g_w, lclip.g_x + lclip.g_w );
 		pxy[3] = work.g_y;
-		v_pline( vdih, 2, (short*)&pxy );
+		v_pline(atari_plot_vdi_handle, 2, (short*)&pxy );
 	}
 
 	if(app.nplanes > 2) {
-		vsf_color( vdih, LWHITE);
+		vsf_color(atari_plot_vdi_handle, LWHITE);
 	} else {
-		vsf_color( vdih, WHITE );
+		vsf_color(atari_plot_vdi_handle, WHITE );
 	}
 
 	pxy[0] = work.g_x;
 	pxy[1] = work.g_y+1;
 	pxy[2] = work.g_x + work.g_w-1;
 	pxy[3] = work.g_y + work.g_h-1;
-	v_bar( vdih, pxy );
+	v_bar(atari_plot_vdi_handle, pxy );
+
 
 	if( sb->textlen > 0 ) {
 		short curx;
@@ -114,32 +115,32 @@ void __CDECL evnt_sb_redraw( COMPONENT *c, long buff[8] )
 		t[1]=0;
 		if( atari_sysinfo.sfont_monospaced ) {
 			t[0]='A';
-			int r = vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+			int r = vqt_width(atari_plot_vdi_handle, t[0], &vqw[0], &vqw[1], &vqw[2] );
 			cw = vqw[0];
 		}
-		vswr_mode( vdih, MD_TRANS );
+		vswr_mode(atari_plot_vdi_handle, MD_TRANS );
 		for( curx = work.g_x + 2, i=0 ; (curx+cw < work.g_x+work.g_w ) && i < sb->textlen; i++ ){
 			t[0] = sb->text[i];
 			if( !atari_sysinfo.sfont_monospaced ) {
-				vqt_width( vdih, t[0], &vqw[0], &vqw[1], &vqw[2] );
+				vqt_width(atari_plot_vdi_handle, t[0], &vqw[0], &vqw[1], &vqw[2] );
 				cw = vqw[0];
 			}
 			if( curx >= lclip.g_x - cw ) {
-				v_gtext( vdih, curx, work.g_y + 5, (char*)&t );
+				v_gtext(atari_plot_vdi_handle, curx, work.g_y + 5, (char*)&t );
 			}
 			curx += cw;
 			if( curx >= lclip.g_x + lclip.g_w )
 				break;
 		}
 	}
-	vswr_mode( vdih, MD_REPLACE );
+	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
 	pxy[0] = work.g_x + work.g_w;
 	pxy[1] = work.g_y + work.g_h;
 	pxy[2] = work.g_x + work.g_w;
 	pxy[3] = work.g_y + work.g_h-work.g_h;
-	v_pline( vdih, 2, (short*)&pxy );
+	v_pline(atari_plot_vdi_handle, 2, (short*)&pxy );
 
-	vs_clip(vdih, 0, (short*)&pxyclip );
+	vs_clip(atari_plot_vdi_handle, 0, (short*)&pxyclip );
 	return;
 }
 

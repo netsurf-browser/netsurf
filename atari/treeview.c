@@ -35,7 +35,7 @@
 #include "utils/utils.h"
 #include "atari/gui.h"
 #include "atari/treeview.h"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
 #include "atari/misc.h"
 #include "cflib.h"
 
@@ -43,7 +43,8 @@ extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
 extern short last_drag_x;
 extern short last_drag_y;
-extern GEM_PLOTTER plotter;
+extern long atari_plot_flags;
+extern int atari_plot_vdi_handle;
 
 static void atari_treeview_resized(struct tree *tree,int w,int h,void *pw);
 static void atari_treeview_scroll_visible(int y, int h, void *pw);
@@ -266,8 +267,9 @@ bool atari_treeview_mevent( NSTREEVIEW tv, browser_mouse_state bms, int x, int y
 
 void atari_treeview_redraw( NSTREEVIEW tv)
 {
+
 	if (tv != NULL) {
-		if( tv->redraw && ((plotter->flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
+		if( tv->redraw && ((atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
 			short todo[4];
 			GRECT work;
 			WindGetGrect( tv->window, WF_WORKXYWH, &work );
@@ -277,17 +279,15 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 				.background_images = true,
 				.plot = &atari_plotters
 			};
-
-			plotter->resize(plotter, work.g_w, work.g_h);
-			plotter->move(plotter, work.g_x, work.g_y );
-			if( plotter->lock( plotter ) == 0 )
+			plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
+			if (plot_lock() == false)
 				return;
 
 			todo[0] = work.g_x;
 			todo[1] = work.g_y;
 			todo[2] = todo[0] + work.g_w-1;
 			todo[3] = todo[1] + work.g_h-1;
-			vs_clip(plotter->vdi_handle, 1, (short*)&todo );
+			vs_clip(atari_plot_vdi_handle, 1, (short*)&todo );
 
 			if( wind_get(tv->window->handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
@@ -316,11 +316,11 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 					}
 				}
 			} else {
-				plotter->unlock( plotter );
+				plot_unlock();
 				return;
 			}
-			plotter->unlock( plotter );
-			vs_clip(plotter->vdi_handle, 0, (short*)&todo);
+			plot_unlock();
+			vs_clip(atari_plot_vdi_handle, 0, (short*)&todo);
 			tv->redraw = false;
 			tv->rdw_area.g_x = 65000;
 			tv->rdw_area.g_y = 65000;

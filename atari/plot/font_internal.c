@@ -18,7 +18,9 @@
  */
 
 #ifdef WITH_INTERNAL_FONT_DRIVER
-#include "atari/plot/plotter.h"
+
+#include "atari/plot/plot.h"
+#include "atari/plot/fontplot.h"
 #include "atari/plot/font_internal.h"
 
 #include "utils/utf8.h"
@@ -26,6 +28,8 @@
 
 #include <windom.h>
 
+extern unsigned long atari_plot_flags;
+extern int atari_plot_vdi_handle;
 
 static int dtor( FONT_PLOTTER self );
 static int str_width( FONT_PLOTTER self,const plot_font_style_t *fstyle, 	const char * str, size_t length, int * width  );
@@ -162,7 +166,7 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT *inloc, uint8_t *chrp, int pitc
 			pixmask = (pixmask << 1);
 		}
 	}
-	self->plotter->bitmap( self->plotter, fontbmp, loc.g_x, loc.g_y, 0, BITMAPF_MONOGLYPH );
+	plot_blit_bitmap(fontbmp, loc.g_x, loc.g_y, 0, BITMAPF_MONOGLYPH );
 }
 
 static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t length,
@@ -192,7 +196,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 		return( 1 );
 	}
 
-	if( self->plotter->flags & PLOT_FLAG_OFFSCREEN ){
+	if(atari_plot_flags & PLOT_FLAG_OFFSCREEN ){
 		/* 	when the plotter is an offscreen plotter the call to
 			bitmap() isn't that expensive. Draw an 8 bit bitmap into the
 			offscreen buffer.
@@ -245,12 +249,12 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 #endif
 			unsigned short out[4];
 			rgb_to_vdi1000( (unsigned char*)&fstyle->foreground, (unsigned short*)&out );
-			vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
-			self->plotter->plot_mfdb( self->plotter, &loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
+			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
+			plot_blit_mfdb(&loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
 #ifdef WITH_8BPP_SUPPORT
 		} else {
 			unsigned char c = RGB_TO_VDI(fstyle->foreground);
-			self->plotter->plot_mfdb( self->plotter, &loc, &tmp, c, PLOT_FLAG_TRANS );
+			plot_blit_mfdb(&loc, &tmp, c, PLOT_FLAG_TRANS );
 		}
 #endif
 	}

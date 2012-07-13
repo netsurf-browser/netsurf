@@ -19,9 +19,34 @@
 #ifndef NS_ATARI_BITMAP_H
 #define NS_ATARI_BITMAP_H
 
+#include <gem.h>
+
+/* Flags for init_mfdb function: */
+#define MFDB_FLAG_STAND			0x01
+#define MFDB_FLAG_ZEROMEM		0x02
+#define MFDB_FLAG_NOALLOC		0x04
+
 #define BITMAP_SHRINK		0
 #define BITMAP_GROW			1024	/* Don't realloc when bitmap size shrinks */
 #define BITMAP_CLEAR		2048	/* Zero bitmap memory                     */
+
+
+/*
+        calculates MFDB compatible rowstride (in number of bits)
+*/
+#define MFDB_STRIDE( w ) (((w & 15) != 0) ? (w | 15)+1 : w)
+
+
+/*
+Calculate size of an mfdb,
+
+ params:
+
+        bpp:    Bits per pixel,
+        stride: Word aligned rowstride (width) as returned by MFDB_STRIDE,
+        h:              Height in pixels
+*/
+#define MFDB_SIZE( bpp, stride, h ) ( ((stride >> 3) * h) * bpp )
 
 struct bitmap {
 	int width;
@@ -41,5 +66,14 @@ void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int st
 void bitmap_to_mfdb(void * bitmap, MFDB * out);
 void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int state, void * bmp );
 size_t bitmap_buffer_size( void * bitmap ) ;
+/*
+        setup an MFDB struct and allocate memory for it when it is needed.
+        If bpp == 0, this function assumes that the MFDB shall point to the screen
+        and will not allocate any memory (mfdb.fd_addr == 0).
+        The function will return 0 when the memory allocation fails
+        ( out of memory), otherwise it returns the size of the mfdb.fd_addr
+  as number of bytes.
+*/
+int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out );
 
 #endif

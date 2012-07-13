@@ -71,7 +71,7 @@
 #include "atari/global_evnt.h"
 #include "atari/encoding.h"
 #include "atari/res/netsurf.rsh"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
 #include "atari/clipboard.h"
 #include "atari/osspec.h"
 #include "atari/search.h"
@@ -85,7 +85,6 @@ struct gui_window *window_list = NULL;
 void * h_gem_rsrc;
 OBJECT * h_gem_menu;
 OBJECT **rsc_trindex;
-short vdih;
 short rsc_ntree;
 long next_poll;
 bool rendering = false;
@@ -972,7 +971,7 @@ static void gui_init(int argc, char** argv)
 		die("unable to process command line.\n");
 
 	nkc_init();
-	atari_plotter_init( nsoption_charp(atari_screen_driver), nsoption_charp(atari_font_driver) );
+	atari_plotter_init(nsoption_charp(atari_font_driver));
 }
 
 static char *theapp = (char*)"NetSurf";

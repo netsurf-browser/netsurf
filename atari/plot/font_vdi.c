@@ -17,7 +17,7 @@
  */
 
 #ifdef WITH_VDI_FONT_DRIVER
-#include "atari/plot/plotter.h"
+#include "atari/plot/plot.h"
 #include "atari/plot/font_vdi.h"
 
 #include "utils/utf8.h"

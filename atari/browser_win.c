@@ -47,13 +47,12 @@
 #include "atari/browser_win.h"
 #include "atari/browser.h"
 #include "atari/misc.h"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
 #include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/browser.h"
 #include "atari/toolbar.h"
 #include "atari/statusbar.h"
-#include "atari/plot/plotter.h"
 #include "atari/dragdrop.h"
 #include "atari/search.h"
 #include "atari/osspec.h"
@@ -62,7 +61,6 @@
 
 extern void * h_gem_rsrc;
 extern struct gui_window *input_window;
-extern GEM_PLOTTER plotter;
 
 void __CDECL std_szd( WINDOW * win, short buff[8], void * );
 void __CDECL std_mvd( WINDOW * win, short buff[8], void * );
@@ -230,8 +228,7 @@ void window_open( struct gui_window * gw, GRECT pos )
 	browser_update_rects( gw );
 	mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
 	browser_get_rect( gw, BR_CONTENT, &br );
-	plotter->move( plotter, br.g_x, br.g_y );
-	plotter->resize( plotter, br.g_w, br.g_h );
+	plot_set_dimensions(br.g_x, br.g_y, br.g_w, br.g_h);
 	gw->browser->attached = true;
 	if( gw->root->statusbar != NULL ){
 		gw->root->statusbar->attached = true;
@@ -504,13 +501,10 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 	} else {
 	    struct rect clip = { 0,0,w,h };
 	    plot_set_dimensions( x,y,w,h );
-        plotter->set_clip(plotter, &clip );
-        plotter->bitmap_resize( plotter,  gw->icon, w, h  );
-        plotter->bitmap(
-			plotter,
-			( gw->icon->resized ) ? gw->icon->resized : gw->icon,
-			0, 0, 0xffffff, BITMAPF_NONE
-		);
+        plot_clip(&clip);
+        plot_resize_bitmap(gw->icon, w, h);
+        plot_blit_bitmap(( gw->icon->resized ) ? gw->icon->resized : gw->icon,
+						0, 0, 0xffffff, BITMAPF_NONE);
 	}
 }
 

@@ -33,12 +33,12 @@
 #include "atari/verify_ssl.h"
 
 /*
-   todo: this file need to use the treeview api - complete rework, 
-   current implementation is not used in any way. 
+   todo: this file need to use the treeview api - complete rework,
+   current implementation is not used in any way.
 */
 
 extern void * h_gem_rsrc;
-extern short vdih;
+extern short atari_plot_vdi_handle;
 
 
 #define CERT_INF_LINES 8
@@ -95,15 +95,15 @@ static void __CDECL cert_info_draw( WINDOW * win, short buf[8], void * data)
 	work.g_h = 176;
 
 	maxchars = (work.g_w / 8)+1;
-	vs_clip( vdih, 1,(short*) &pxy );
-	vswr_mode( vdih, MD_REPLACE );
-	vsf_interior( vdih, 1 );
-	vsf_color( vdih, LWHITE );
-	v_bar( vdih, (short*)&pxy );
-	vst_height( vdih, 16, &d, &d, &cbw, &cbh );
-	vst_alignment(vdih, 0, 5, &d, &d );
-	vst_color( vdih, BLACK );
-	vst_effects( vdih, 0 );
+	vs_clip( atari_plot_vdi_handle, 1,(short*) &pxy );
+	vswr_mode( atari_plot_vdi_handle, MD_REPLACE );
+	vsf_interior( atari_plot_vdi_handle, 1 );
+	vsf_color( atari_plot_vdi_handle, LWHITE );
+	v_bar( atari_plot_vdi_handle, (short*)&pxy );
+	vst_height( atari_plot_vdi_handle, 16, &d, &d, &cbw, &cbh );
+	vst_alignment(atari_plot_vdi_handle, 0, 5, &d, &d );
+	vst_color( atari_plot_vdi_handle, BLACK );
+	vst_effects( atari_plot_vdi_handle, 0 );
 	px_ypos = px_xpos = 0;
 	for(i=0; i<CERT_INF_LINES; i++ ) {
 		switch( i ) {
@@ -145,12 +145,12 @@ static void __CDECL cert_info_draw( WINDOW * win, short buf[8], void * data)
 		if( (int)strlen(line) > dp->scrollx ) {
 			if( dp->scrollx + maxchars < 511 && ( (signed int)strlen(line) - dp->scrollx) > maxchars )
 				line[dp->scrollx + maxchars] = 0;
-			v_gtext(vdih, work.g_x + 1, work.g_y + px_ypos, &line[dp->scrollx]);
+			v_gtext(atari_plot_vdi_handle, work.g_x + 1, work.g_y + px_ypos, &line[dp->scrollx]);
 		}
 		px_ypos += cbh;
 	}
-	vst_alignment(vdih, 0, 0, &d, &d );
-	vs_clip( vdih, 0, (short*)&pxy );
+	vst_alignment(atari_plot_vdi_handle, 0, 0, &d, &d );
+	vs_clip( atari_plot_vdi_handle, 0, (short*)&pxy );
 	free( line );
 }
 

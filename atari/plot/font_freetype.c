@@ -21,11 +21,15 @@
 #include <ft2build.h>
 #include FT_CACHE_H
 
-#include "atari/plot/plotter.h"
+#include "desktop/options.h"
+#include "atari/plot/plot.h"
 #include "atari/plot/font_freetype.h"
 
 
 #define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
+
+extern unsigned long atari_plot_flags;
+extern int atari_plot_vdi_handle;
 
 static FT_Library library;
 static FTC_Manager ft_cmanager;
@@ -395,7 +399,7 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * clip, GRECT * loc, uint8_t * 
 
 	h = loc->g_h;
 	w = loc->g_w;
-    
+
     assert( h <= fontbmp_allocated_height );
     assert( w <= fontbmp_allocated_width );
 
@@ -408,7 +412,7 @@ static void draw_glyph8(FONT_PLOTTER self, GRECT * clip, GRECT * loc, uint8_t * 
 			linebuf[xloop] = (uint32_t)(colour | fontpix);
 		}
 	}
-	self->plotter->bitmap( self->plotter, fontbmp, loc->g_x, loc->g_y, 0, BITMAPF_MONOGLYPH);
+	plot_blit_bitmap(fontbmp, loc->g_x, loc->g_y, 0, BITMAPF_MONOGLYPH);
 }
 
 static void draw_glyph1(FONT_PLOTTER self, GRECT * clip, GRECT * loc, uint8_t * pixdata, int pitch, uint32_t colour)
@@ -464,10 +468,10 @@ static void draw_glyph1(FONT_PLOTTER self, GRECT * clip, GRECT * loc, uint8_t * 
 #ifdef WITH_8BPP_SUPPORT
 	if( app.nplanes > 8 ){
 #endif
-		self->plotter->plot_mfdb( self->plotter, loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
+		plot_blit_mfdb(loc, &tmp, OFFSET_CUSTOM_COLOR, PLOT_FLAG_TRANS );
 #ifdef WITH_8BPP_SUPPORT
 	} else {
-		self->plotter->plot_mfdb( self->plotter, loc, &tmp, colour, PLOT_FLAG_TRANS );
+		plot_blit_mfdb(loc, &tmp, colour, PLOT_FLAG_TRANS );
 	}
 #endif
 
@@ -493,7 +497,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 #endif
 			unsigned short out[4];
 			rgb_to_vdi1000( (unsigned char*)&c, (unsigned short*)&out );
-			vs_color( self->plotter->vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0] );
+			vs_color(atari_plot_vdi_handle, OFFSET_CUSTOM_COLOR, (unsigned short*)&out[0]);
 #ifdef WITH_8BPP_SUPPORT
 		} else {
 			c = RGB_TO_VDI(c);
@@ -501,7 +505,7 @@ static int text( FONT_PLOTTER self,  int x, int y, const char *text, size_t leng
 #endif
 	}
 
-	self->plotter->get_clip( self->plotter, &clipping );
+	plot_get_clip(&clipping);
 	clip.g_x = clipping.x0;
 	clip.g_y = clipping.y0;
 	clip.g_w = (clipping.x1 - clipping.x0)+1;

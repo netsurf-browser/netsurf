@@ -225,7 +225,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 			if( ctx->ccdata.link_url != NULL ) {
 				browser_window_download(
 					gw->browser->bw,
-					nsurl_access((const char*)ctx->ccdata.link_url),
+					nsurl_access(/*(const char*)*/ctx->ccdata.link_url),
 					nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
 				);
 			}

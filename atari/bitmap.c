@@ -23,11 +23,43 @@
 
 
 #include "assert.h"
+#include "desktop/options.h"
 #include "image/bitmap.h"
 #include "atari/bitmap.h"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
 #include "utils/log.h"
 
+
+/*
+	bpp: bits per pixel,
+
+*/
+int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
+{
+	int dststride;
+	dststride = MFDB_STRIDE( w );
+	int size = MFDB_SIZE( bpp, dststride, h );
+	if( bpp > 0 ) {
+		if( (flags & MFDB_FLAG_NOALLOC) == 0  ) {
+			out->fd_addr = malloc( size );
+			if( out->fd_addr == NULL ){
+				return( 0 );
+			}
+			if( (flags & MFDB_FLAG_ZEROMEM) ){
+				memset( out->fd_addr, 0, size );
+			}
+		}
+		out->fd_stand = (flags & MFDB_FLAG_STAND) ? 1 : 0;
+		out->fd_nplanes = (short)bpp;
+		out->fd_r1 = out->fd_r2 = out->fd_r3 = 0;
+	} else {
+		memset( out, 0, sizeof(MFDB) );
+	}
+	out->fd_w = dststride;
+	out->fd_h = h;
+	out->fd_wdwidth = dststride >> 4;
+	return( size );
+}
 
 
 /**
@@ -327,7 +359,7 @@ bool bitmap_test_opaque(void *bitmap)
 		LOG(("NULL bitmap!"));
 		return false;
 	}
-    
+
     if( nsoption_int(atari_transparency) == 0 ){
         return( true );
     }

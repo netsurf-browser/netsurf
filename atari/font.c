@@ -31,13 +31,12 @@
 
 #include "atari/gui.h"
 #include "atari/font.h"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
 #include "atari/findfile.h"
 #include "atari/gui.h"
-#include "atari/plot.h"
-#include "atari/plot/plotter.h"
+#include "atari/plot/plot.h"
 
-extern GEM_FONT_PLOTTER fplotter;
+extern FONT_PLOTTER fplotter;
 
 static bool atari_font_position_in_string(const plot_font_style_t * fstyle,const char *string,
 						size_t length,int x, size_t *char_offset, int *actual_x )

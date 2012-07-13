@@ -25,7 +25,6 @@
 
 
 #define NSOPTION_EXTRA_DEFINE										\
-	char *atari_screen_driver;										\
 	char *atari_font_driver;										\
 	int atari_font_monochrom;										\
 	int atari_dither;												\
@@ -50,7 +49,6 @@
 	char *tree_icons_path
 
 #define NSOPTION_EXTRA_DEFAULTS						\
-	.atari_screen_driver = (char*)"vdi",			\
 	.atari_font_driver = (char*)"vdi",				\
 	.atari_font_monochrom = 0,						\
 	.atari_dither = 1,								\
@@ -75,7 +73,6 @@
 	.tree_icons_path = (char*)"./res/icons"
 
 #define NSOPTION_EXTRA_TABLE \
-	{ "atari_screen_driver", OPTION_STRING, &nsoptions.atari_screen_driver },\
 	{ "atari_font_driver", OPTION_STRING, &nsoptions.atari_font_driver },\
 	{ "atari_font_monochrom", OPTION_INTEGER, &nsoptions.atari_font_monochrom },\
 	{ "atari_image_toolbar", OPTION_INTEGER, &nsoptions.atari_image_toolbar },\

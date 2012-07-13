@@ -52,14 +52,16 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/redrawslots.h"
 #include "atari/browser.h"
-#include "atari/plot/plotter.h"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
+#include "atari/plot/plot.h"
 #include "atari/encoding.h"
 #include "atari/ctxmenu.h"
 #include "cflib.h"
 
-extern GEM_PLOTTER plotter;
 extern struct gui_window *input_window;
+
+extern long atari_plot_flags;
+extern int atari_plot_vdi_handle;
 
 static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
@@ -431,7 +433,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		dst.g_y = h;
 		dst.g_w = src.g_w;
 		dst.g_h = src.g_h;
-		plotter->copy_rect( plotter, src, dst );
+		plot_copy_rect(src, dst);
 		b->scroll.current.y += b->scroll.requested.y;
 		browser_schedule_redraw( gw, 0, 0, bwrect.g_w, h );
 	}
@@ -446,7 +448,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		dst.g_y = 0;
 		dst.g_w = bwrect.g_w;
 		dst.g_h = bwrect.g_h - h;
-		plotter->copy_rect( plotter, src, dst );
+		plot_copy_rect(src, dst );
 		b->scroll.current.y += b->scroll.requested.y;
 		browser_schedule_redraw( gw, 0, bwrect.g_h - h, bwrect.g_w, bwrect.g_h );
 	}
@@ -461,7 +463,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		dst.g_y = 0;
 		dst.g_w = bwrect.g_w - w;
 		dst.g_h = bwrect.g_h;
-		plotter->copy_rect( plotter, src, dst );
+		plot_copy_rect(src, dst );
 		b->scroll.current.x += b->scroll.requested.x;
 		browser_schedule_redraw( gw, 0, 0, w, bwrect.g_h );
 	}
@@ -476,7 +478,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		dst.g_y = 0;
 		dst.g_w = bwrect.g_w - w;
 		dst.g_h = bwrect.g_h;
-		plotter->copy_rect( plotter, src, dst );
+		plot_copy_rect(src, dst );
 		b->scroll.current.x += b->scroll.requested.x;
 		browser_schedule_redraw( gw, bwrect.g_w - w, 0, bwrect.g_w, bwrect.g_h );
 	}
@@ -747,14 +749,13 @@ void browser_redraw( struct gui_window * gw )
 
 	browser_get_rect(gw, BR_CONTENT, &bwrect);
 
-	plotter->resize(plotter, bwrect.g_w, bwrect.g_h);
-	plotter->move(plotter, bwrect.g_x, bwrect.g_y );
+	plot_set_dimensions(bwrect.g_x, bwrect.g_y, bwrect.g_w, bwrect.g_h);
 	clip.x0 = 0;
 	clip.y0 = 0;
 	clip.x1 = bwrect.g_w;
 	clip.y1 = bwrect.g_h;
-	plotter->set_clip( plotter, &clip );
-	if( plotter->lock(plotter) == 0 )
+	plot_clip(&clip);
+	if (plot_lock() == false)
 		return;
 
 	if( b->scroll.required == true && b->bw->current_content != NULL) {
@@ -763,7 +764,7 @@ void browser_redraw( struct gui_window * gw )
 	}
 
 	if ((b->redraw.areas_used > 0) && b->bw->current_content != NULL ) {
-		if( (plotter->flags & PLOT_FLAG_OFFSCREEN) == 0 ) {
+		if( (atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0 ) {
 
 			int i;
 			GRECT area;
@@ -773,7 +774,7 @@ void browser_redraw( struct gui_window * gw )
 			todo[1] = bwrect.g_y;
 			todo[2] = todo[0] + bwrect.g_w-1;
 			todo[3] = todo[1] + bwrect.g_h-1;
-			vs_clip(plotter->vdi_handle, 1, (short*)&todo[0]);
+			vs_clip(atari_plot_vdi_handle, 1, (short*)&todo[0]);
 
 			wind_get( 0, WF_TOP, &wf_top[0], &wf_top[1],
 						&wf_top[2], &wf_top[3] );
@@ -859,9 +860,7 @@ void browser_redraw( struct gui_window * gw )
 					}
 				}
 			}
-
-
-			vs_clip(plotter->vdi_handle, 0, (short*)&todo);
+			vs_clip(atari_plot_vdi_handle, 0, (short*)&todo);
 		} else {
 
 			/* its save to do a complete redraw without knowledge about GEM windows :) */
@@ -881,7 +880,7 @@ void browser_redraw( struct gui_window * gw )
 			area.g_y = bwrect.g_y;
 			area.g_w = bwrect.g_w;
 			area.g_h = bwrect.g_h;
-			//plotter->blit( plotter, &area );
+			//plot_blit( plotter, &area );
 		}
 		b->redraw.areas_used = 0;
 	}
@@ -895,12 +894,12 @@ void browser_redraw( struct gui_window * gw )
 		area.g_y = bwrect.g_y;
 		area.g_w = bwrect.g_w;
 		area.g_h = bwrect.g_h;
-		vs_clip(plotter->vdi_handle, 1, (short*)&todo[0]);
+		vs_clip(atari_plot_vdi_handle, 1, (short*)&todo[0]);
 		browser_redraw_caret( gw, &area );
-		vs_clip(plotter->vdi_handle, 0, (short*)&todo[0]);
+		vs_clip(atari_plot_vdi_handle, 0, (short*)&todo[0]);
 		b->caret.redraw = false;
 	}
-	plotter->unlock(plotter);
+	plot_unlock();
 	/* TODO: if we use offscreen bitmap, trigger content redraw here */
 }
 

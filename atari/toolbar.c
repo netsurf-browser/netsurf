@@ -37,6 +37,7 @@
 #include "desktop/plot_style.h"
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
+#include "desktop/options.h"
 #include "utils/utf8.h"
 #include "atari/clipboard.h"
 #include "atari/gui.h"
@@ -46,17 +47,16 @@
 #include "atari/clipboard.h"
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
-#include "atari/plot.h"
+#include "atari/plot/plot.h"
 #include "cflib.h"
 #include "atari/res/netsurf.rsh"
-#include "atari/plot/plotter.h"
 
 
 extern char * cfg_homepage_url;
-extern short vdih;
 extern void * h_gem_rsrc;
-extern GEM_PLOTTER plotter;
 extern struct gui_window * input_window;
+extern long atari_plot_flags;
+extern int atari_plot_vdi_handle;
 
 static OBJECT * toolbar_buttons = NULL;
 static OBJECT * throbber_form = NULL;
@@ -187,7 +187,7 @@ void toolbar_init( void )
     for( i=0; i<n; i++ ){
         toolbar_styles[i].bgcolor = toolbar_bg_color;
         if( img_toolbar ){
-			vq_color( vdih, toolbar_bg_color, 0, vdicolor );
+			vq_color(atari_plot_vdi_handle, toolbar_bg_color, 0, vdicolor );
 			vdi1000_to_rgb( vdicolor, (unsigned char*)&rgbcolor );
 			toolbar_styles[i].icon_bgcolor = rgbcolor;
         }
@@ -291,9 +291,9 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	}
 
 	/* Setup draw mode: */
-	vsf_interior( vdih , 1 );
-	vsf_color( vdih, toolbar_styles[tb->style].bgcolor );
-	vswr_mode( vdih, MD_REPLACE);
+	vsf_interior(atari_plot_vdi_handle , 1 );
+	vsf_color(atari_plot_vdi_handle, toolbar_styles[tb->style].bgcolor );
+	vswr_mode(atari_plot_vdi_handle, MD_REPLACE);
 
 	/* go through the rectangle list, using classic AES methods. */
 	/* Windom ComGetLGrect is buggy for WF_FIRST/NEXTXYWH	     */
@@ -310,8 +310,8 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 			pxy[1] = todo.g_y;
 			pxy[2] = todo.g_w + todo.g_x-1;
 			pxy[3] = todo.g_h + todo.g_y-1;
-			vs_clip( vdih, 1, (short*)&pxy );
-			v_bar( vdih, (short*)&pxy );
+			vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
+			v_bar(atari_plot_vdi_handle, (short*)&pxy );
 
 			if( img_toolbar == true ){
 				atari_plotters.bitmap( bmpx, bmpy, bmpw, bmph, icon,
@@ -320,7 +320,7 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 			} else {
 				objc_draw( tree, 0, 0, todo.g_x, todo.g_y, todo.g_w, todo.g_h );
 			}
-			vs_clip( vdih, 0, (short*)&clip );
+			vs_clip(atari_plot_vdi_handle, 0, (short*)&clip );
 		}
 		wind_get(gw->root->handle->handle, WF_NEXTXYWH,
 							&todo.g_x, &todo.g_y, &todo.g_w, &todo.g_h );
@@ -389,17 +389,17 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	clip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 
-	vsf_interior( vdih , 1 );
+	vsf_interior(atari_plot_vdi_handle , 1 );
 	if(app.nplanes > 2 )
-		vsf_color( vdih, toolbar_styles[tb->style].bgcolor );
+		vsf_color(atari_plot_vdi_handle, toolbar_styles[tb->style].bgcolor );
 	else
-		vsf_color( vdih, WHITE );
+		vsf_color(atari_plot_vdi_handle, WHITE );
 	pxy[0] = (short)buff[4];
 	pxy[1] = (short)buff[5];
 	pxy[2] = (short)buff[4] + buff[6]-1;
 	pxy[3] = (short)buff[5] + buff[7]-2;
-	v_bar( vdih, (short*)&pxy );
-	vs_clip( vdih, 1, (short*)&pxy );
+	v_bar(atari_plot_vdi_handle, (short*)&pxy );
+	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
 
 	if( img_toolbar ){
 
@@ -492,41 +492,41 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	pxy[1] = clip.g_y;
 	pxy[2] = clip.g_w + clip.g_x-1;
 	pxy[3] = clip.g_h + clip.g_y-1;
-	vs_clip( vdih, 1, (short*)&pxy );
+	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
 
-	vsf_perimeter( vdih, 0 );
-	vsf_interior( vdih , 1 );
-	vsf_color( vdih, toolbar_styles[tb->style].bgcolor );
+	vsf_perimeter(atari_plot_vdi_handle, 0 );
+	vsf_interior(atari_plot_vdi_handle , 1 );
+	vsf_color(atari_plot_vdi_handle, toolbar_styles[tb->style].bgcolor );
 
 	//left margin:
 	pxy[0] = work.g_x;
 	pxy[1] = work.g_y;
 	pxy[2] = work.g_x + TOOLBAR_URL_MARGIN_LEFT-1;
 	pxy[3] = work.g_y + work.g_h-1;
-	v_bar( vdih, pxy );
+	v_bar(atari_plot_vdi_handle, pxy );
 
 	// right margin:
 	pxy[0] = work.g_x+work.g_w-TOOLBAR_URL_MARGIN_RIGHT;
 	pxy[1] = work.g_y;
 	pxy[2] = work.g_x+work.g_w-1;
 	pxy[3] = work.g_y+work.g_h-1;
-	v_bar( vdih, pxy );
+	v_bar(atari_plot_vdi_handle, pxy );
 
 	// top margin:
 	pxy[0] = work.g_x;
 	pxy[1] = work.g_y;
 	pxy[2] = work.g_x+work.g_w-1;
 	pxy[3] = work.g_y+TOOLBAR_URL_MARGIN_TOP-1;
-	v_bar( vdih, pxy );
+	v_bar(atari_plot_vdi_handle, pxy );
 
 	// bottom margin:
 	pxy[0] = work.g_x;
 	pxy[1] = work.g_y+work.g_h-TOOLBAR_URL_MARGIN_BOTTOM;
 	pxy[2] = work.g_x+work.g_w-1;
 	pxy[3] = work.g_y+work.g_h-1;
-	v_bar( vdih, pxy );
+	v_bar(atari_plot_vdi_handle, pxy );
 
-	vs_clip( vdih, 0, (short*)&pxy );
+	vs_clip(atari_plot_vdi_handle, 0, (short*)&pxy );
 
 	// TBD: request redraw of textarea for specific region.
 	clip.g_x -= work.g_x+TOOLBAR_URL_MARGIN_LEFT;
@@ -619,14 +619,14 @@ static void __CDECL evnt_toolbar_redraw( COMPONENT *c, long buff[8], void *data 
 
 	if( work.g_y + work.g_h != clip.g_y + clip.g_h )	return;
 
-	vswr_mode( vdih, MD_REPLACE );
-	vsl_color( vdih, BLACK );
-	vsl_type( vdih, 1 );
-	vsl_width( vdih, 1 );
+	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
+	vsl_color(atari_plot_vdi_handle, BLACK );
+	vsl_type(atari_plot_vdi_handle, 1 );
+	vsl_width(atari_plot_vdi_handle, 1 );
 	pxy[0] = clip.g_x;
 	pxy[1] = pxy[3] = work.g_y + work.g_h-1 ;
 	pxy[2] = clip.g_x + clip.g_w;
-	v_pline( vdih, 2, (short*)&pxy );
+	v_pline(atari_plot_vdi_handle, 2, (short*)&pxy );
 }
 
 
@@ -660,9 +660,10 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
 
 void tb_url_redraw( struct gui_window * gw )
 {
+
 	CMP_TOOLBAR t = gw->root->toolbar;
 	if (t != NULL) {
-		if( t->url.redraw && ((plotter->flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
+		if( t->url.redraw && ((atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
 
 			const struct redraw_context ctx = {
 				.interactive = true,
@@ -679,14 +680,14 @@ void tb_url_redraw( struct gui_window * gw )
 			work.g_h -= TOOLBAR_URL_MARGIN_BOTTOM;
 
 			plot_set_dimensions( work.g_x, work.g_y, work.g_w, work.g_h );
-			if( plotter->lock( plotter ) == 0 )
+			if(plot_lock() == false)
 				return;
 
 			todo[0] = work.g_x;
 			todo[1] = work.g_y;
 			todo[2] = todo[0] + work.g_w-1;
 			todo[3] = todo[1] + work.g_h-1;
-			vs_clip(plotter->vdi_handle, 1, (short*)&todo );
+			vs_clip(atari_plot_vdi_handle, 1, (short*)&todo );
 
 			if( wind_get(gw->root->handle->handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
@@ -719,11 +720,11 @@ void tb_url_redraw( struct gui_window * gw )
 					}
 				}
 			} else {
-				plotter->unlock( plotter );
+				plot_unlock();
 				return;
 			}
-			plotter->unlock( plotter );
-			vs_clip(plotter->vdi_handle, 0, (short*)&todo);
+			plot_unlock();
+			vs_clip(atari_plot_vdi_handle, 0, (short*)&todo);
 			t->url.redraw = false;
 			t->url.rdw_area.g_x = 65000;
 			t->url.rdw_area.g_y = 65000;

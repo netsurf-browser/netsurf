@@ -20,6 +20,8 @@
 #ifndef FONT_PLOTTER_INTERNAL
 #define FONT_PLOTTER_INTERNAL
 
+#include "atari/plot/plot.h"
+
 int ctor_font_plotter_internal( FONT_PLOTTER self );
 
 struct fb_font_desc {
