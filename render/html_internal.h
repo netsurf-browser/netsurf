@@ -127,6 +127,12 @@ void html__redraw_a_box(struct content *c, struct box *box);
 struct browser_window *html_get_browser_window(struct content *c);
 struct search_context *html_get_search(struct content *c);
 void html_set_search(struct content *c, struct search_context *s);
+/**
+ * Complete conversion of an HTML document
+ *
+ * \param c  Content to convert
+ */
+void html_finish_conversion(html_content *c);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, struct content_redraw_data *data,
@@ -139,6 +145,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			browser_mouse_state mouse, int x, int y);
 void html_overflow_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
+
+/* in render/html_script.c */
+dom_hubbub_error  html_process_script(void *ctx, dom_node *node);
 
 /* Useful dom_string pointers */
 struct dom_string;
@@ -159,6 +168,9 @@ extern struct dom_string *html_dom_string_coords;
 extern struct dom_string *html_dom_string_circle;
 extern struct dom_string *html_dom_string_poly;
 extern struct dom_string *html_dom_string_polygon;
+extern struct dom_string *html_dom_string_text_javascript;
+extern struct dom_string *html_dom_string_type;
+extern struct dom_string *html_dom_string_src;
 
 #endif
 
