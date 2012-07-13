@@ -26,11 +26,14 @@
 #define _NETSURF_RENDER_HTML_H_
 
 #include <stdbool.h>
+
+#include <dom/dom.h>
+#include <dom/bindings/hubbub/parser.h>
+
 #include "content/content_type.h"
 #include "css/css.h"
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
-#include "render/parser_binding.h"
 #include "desktop/frame_types.h"
 
 struct fetch_multipart_data;
@@ -45,6 +48,12 @@ struct object_params;
 struct plotters;
 struct scrollbar;
 struct scrollbar_msg_data;
+
+typedef enum binding_quirks_mode {
+        BINDING_QUIRKS_MODE_NONE,
+        BINDING_QUIRKS_MODE_LIMITED,
+        BINDING_QUIRKS_MODE_FULL
+} binding_quirks_mode;
 
 /**
  * Container for stylesheets used by an HTML document
@@ -167,7 +176,7 @@ bool text_redraw(const char *utf8_text, size_t utf8_len,
 dom_document *html_get_document(struct hlcache_handle *h);
 struct box *html_get_box_tree(struct hlcache_handle *h);
 const char *html_get_encoding(struct hlcache_handle *h);
-binding_encoding_source html_get_encoding_source(struct hlcache_handle *h);
+dom_hubbub_encoding_source html_get_encoding_source(struct hlcache_handle *h);
 struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
 nsurl *html_get_base_url(struct hlcache_handle *h);

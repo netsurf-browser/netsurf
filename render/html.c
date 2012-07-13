@@ -28,8 +28,6 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include <dom/dom.h>
-
 #include "utils/config.h"
 #include "content/content_protected.h"
 #include "content/fetch.h"
@@ -191,8 +189,8 @@ static void html_box_convert_done(html_content *c, bool success)
 	/*imagemap_dump(c);*/
 
 	/* Destroy the parser binding */
-	binding_destroy_tree(c->parser_binding);
-	c->parser_binding = NULL;
+	dom_hubbub_parser_destroy(c->parser);
+	c->parser = NULL;
 
 	content_set_ready(&c->base);
 
@@ -304,10 +302,9 @@ html_create_html_data(html_content *c, const http_parameter *params)
 {
 	lwc_string *charset;
 	union content_msg_data msg_data;
-	binding_error error;
 	nserror nerror;
 
-	c->parser_binding = NULL;
+	c->parser = NULL;
 	c->document = NULL;
 	c->quirks = BINDING_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
@@ -336,8 +333,10 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->jscontext = NULL;
 
 	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
-		error = BINDING_NOMEM;
-		goto error;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+
+		return NSERROR_NOMEM;
 	}
 
 	selection_prepare(&c->sel, (struct content *)c, true);
@@ -349,60 +348,56 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		lwc_string_unref(charset);
 
 		if (c->encoding == NULL) {
-			error = BINDING_NOMEM;
-			goto error;
+			lwc_string_unref(c->universal);
+			c->universal = NULL;
+
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+
+			return NSERROR_NOMEM;
+
 		}
-		c->encoding_source = ENCODING_SOURCE_HEADER;
+		c->encoding_source = DOM_HUBBUB_ENCODING_SOURCE_HEADER;
 	}
 
 	/* Create the parser binding */
-	error = binding_create_tree(&c->parser_binding,
-				    c->encoding,
-				    nsoption_bool(enable_javascript),
-				    html_process_script,
-				    c);
-	if (error == BINDING_BADENCODING && c->encoding != NULL) {
+	c->parser = dom_hubbub_parser_create(c->encoding, 
+					     true, 
+					     nsoption_bool(enable_javascript), 
+					     NULL, 
+					     html_process_script, 
+					     c);
+	if ((c->parser == NULL) && (c->encoding != NULL)) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to autodetect */
 		talloc_free(c->encoding);
 		c->encoding = NULL;
 
-		error = binding_create_tree(&c->parser_binding,
-					    c->encoding,
-					    nsoption_bool(enable_javascript),
-					    html_process_script,
-					    c);
+		c->parser = dom_hubbub_parser_create(c->encoding, 
+						     true, 
+						     nsoption_bool(enable_javascript), 
+						     NULL, 
+						     html_process_script, 
+						     c);
+
 
 	}
 
-	if (error != BINDING_OK)
-		goto error;
+	if (c->parser == NULL) {
+		nsurl_unref(c->base_url);
+		c->base_url = NULL;
+
+		lwc_string_unref(c->universal);
+		c->universal = NULL;
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+
+		return NSERROR_NOMEM;
+	}
 
 	return NSERROR_OK;
 
-error:
-	if (error == BINDING_BADENCODING) {
-		LOG(("Bad encoding: %s", c->encoding ? c->encoding : ""));
-		msg_data.error = messages_get("ParsingFail");
-		nerror = NSERROR_BAD_ENCODING;
-	} else {
-		msg_data.error = messages_get("NoMemory");
-		nerror = NSERROR_NOMEM;
-	}
-
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-
-	if (c->universal != NULL) {
-		lwc_string_unref(c->universal);
-		c->universal = NULL;
-	}
-
-	if (c->base_url != NULL) {
-		nsurl_unref(c->base_url);
-		c->base_url = NULL;
-	}
-
-	return nerror;
 }
 
 /**
@@ -456,14 +451,16 @@ static bool
 html_process_data(struct content *c, const char *data, unsigned int size)
 {
 	html_content *html = (html_content *) c;
-	binding_error err;
+	dom_hubbub_error error;
 	const char *encoding;
+	const char *source_data;
+	unsigned long source_size;
 
-	err = binding_parse_chunk(html->parser_binding,
-			(const uint8_t *) data, size);
-	if (err == BINDING_ENCODINGCHANGE) {
+	error = dom_hubbub_parser_parse_chunk(html->parser, (const uint8_t *) data, size);
+
+	if (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_ENCODINGCHANGE)) {
 		goto encoding_change;
-	} else if (err != BINDING_OK) {
+	} else if (error != DOM_HUBBUB_OK) {
 		union content_msg_data msg_data;
 
 		msg_data.error = messages_get("NoMemory");
@@ -477,9 +474,8 @@ html_process_data(struct content *c, const char *data, unsigned int size)
 encoding_change:
 
 	/* Retrieve new encoding */
-	encoding = binding_get_encoding(
-			html->parser_binding,
-			&html->encoding_source);
+	encoding = dom_hubbub_parser_get_encoding(html->parser, 
+						  &html->encoding_source);
 
 	if (html->encoding != NULL)
 		talloc_free(html->encoding);
@@ -494,16 +490,17 @@ encoding_change:
 	}
 
 	/* Destroy binding */
-	binding_destroy_tree(html->parser_binding);
-	html->parser_binding = NULL;
+	dom_hubbub_parser_destroy(html->parser);
+	html->parser = NULL;
 
 	/* Create new binding, using the new encoding */
-	err = binding_create_tree(&html->parser_binding,
-				  html->encoding,
-				  nsoption_bool(enable_javascript),
-				  html_process_script,
-				  html);
-	if (err == BINDING_BADENCODING) {
+	html->parser = dom_hubbub_parser_create(html->encoding, 
+				true, 
+				nsoption_bool(enable_javascript), 
+				NULL, 
+				html_process_script, 
+				html);
+	if (html->parser == NULL) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to Windows-1252 */
 		talloc_free(html->encoding);
@@ -516,37 +513,35 @@ encoding_change:
 			return false;
 		}
 
-		err = binding_create_tree(&html->parser_binding,
-					  html->encoding,
-					  nsoption_bool(enable_javascript),
-					  html_process_script,
-					  html);
-	}
+		html->parser = dom_hubbub_parser_create(html->encoding, 
+							true, 
+							nsoption_bool(enable_javascript), 
+							NULL, 
+							html_process_script, 
+							html);
 
-	if (err != BINDING_OK) {
-		union content_msg_data msg_data;
+		if (html->parser == NULL) {
+			union content_msg_data msg_data;
 
-		if (err == BINDING_BADENCODING) {
-			LOG(("Bad encoding: %s", html->encoding
-					? html->encoding : ""));
-			msg_data.error = messages_get("ParsingFail");
-		} else
+			/** @todo add a message callback function and pass the
+			 * parser errors back instead of everything being
+			 * OOM 
+			 */
+
 			msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-		return false;
+			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
+
 	}
 
-	{
-		const char *source_data;
-		unsigned long source_size;
+	source_data = content__get_source_data(c, &source_size);
 
-		source_data = content__get_source_data(c, &source_size);
-
-		/* Recurse to reprocess all the data.  This is safe because
-		 * the encoding is now specified at parser start which means
-		 * it cannot be changed again. */
-		return html_process_data(c, source_data, source_size);
-	}
+	/* Recurse to reprocess all the data.  This is safe because
+	 * the encoding is now specified at parser start which means
+	 * it cannot be changed again. */
+	return html_process_data(c, source_data, source_size);
+	
 }
 
 
@@ -1923,7 +1918,7 @@ html_find_stylesheets_no_memory:
 static bool html_convert(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
-	binding_error err;
+	dom_hubbub_error err;
 	dom_node *html, *head;
 	union content_msg_data msg_data;
 	unsigned long size;
@@ -1934,18 +1929,19 @@ static bool html_convert(struct content *c)
 	/* finish parsing */
 	content__get_source_data(c, &size);
 
-	err = binding_parse_completed(htmlc->parser_binding);
-	if (err != BINDING_OK) {
+	err = dom_hubbub_parser_completed(htmlc->parser);
+	if (err != DOM_HUBBUB_OK) {
 		union content_msg_data msg_data;
 
+		/** @todo Improve precessing of errors */
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 
 		return false;
 	}
 
-	htmlc->document = binding_get_document(htmlc->parser_binding,
-					&htmlc->quirks);
+	/** @todo quirks used to be set here too */
+	htmlc->document = dom_hubbub_parser_get_document(htmlc->parser);
 
 	if (htmlc->document == NULL) {
 		LOG(("Parsing failed"));
@@ -1955,9 +1951,9 @@ static bool html_convert(struct content *c)
 	}
 
 	if (htmlc->encoding == NULL) {
-		const char *encoding = binding_get_encoding(
-				htmlc->parser_binding,
-				&htmlc->encoding_source);
+		const char *encoding;
+		encoding = dom_hubbub_parser_get_encoding(htmlc->parser,
+					&htmlc->encoding_source);
 
 		htmlc->encoding = talloc_strdup(c, encoding);
 		if (htmlc->encoding == NULL) {
@@ -2047,7 +2043,7 @@ static bool html_convert(struct content *c)
 	}
 
 	/* Retrieve forms from parser */
-	htmlc->forms = binding_get_forms(htmlc->parser_binding);
+	htmlc->forms = NULL; /*binding_get_forms(htmlc->parser);*/
 	for (f = htmlc->forms; f != NULL; f = f->prev) {
 		char *action;
 		url_func_result res;
@@ -2366,13 +2362,14 @@ static void html_destroy(struct content *c)
 	if (html->base_url)
 		nsurl_unref(html->base_url);
 
-	if (html->parser_binding != NULL) {
-		binding_destroy_tree(html->parser_binding);
-		html->parser_binding = NULL;
+	if (html->parser != NULL) {
+		dom_hubbub_parser_destroy(html->parser);
+		html->parser = NULL;
 	}
 
-	if (html->document != NULL)
-		binding_destroy_document(html->document);
+	if (html->document != NULL) {
+		dom_node_unref(html->document);
+	}
 
 	/* Free base target */
 	if (html->base_target != NULL) {
@@ -2943,7 +2940,7 @@ const char *html_get_encoding(hlcache_handle *h)
  * \param h  Content to retrieve charset from
  * \return Pointer to charset, or NULL
  */
-binding_encoding_source html_get_encoding_source(hlcache_handle *h)
+dom_hubbub_encoding_source html_get_encoding_source(hlcache_handle *h)
 {
 	html_content *c = (html_content *) hlcache_handle_get_content(h);
 

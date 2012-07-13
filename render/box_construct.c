@@ -146,6 +146,25 @@ static const struct element_entry element_table[] = {
 };
 #define ELEMENT_TABLE_COUNT (sizeof(element_table) / sizeof(element_table[0]))
 
+static struct form_control *binding_get_control_for_node(void *ctx, dom_node *node)
+{
+	/** \todo implement properly */
+	struct form_control *ctl = form_new_control(node, GADGET_HIDDEN);
+	if (ctl != NULL) {
+		ctl->value = strdup("");
+		ctl->initial_value = strdup("");
+		ctl->name = strdup("foo");
+
+		if (ctl->value == NULL || ctl->initial_value == NULL ||
+				ctl->name == NULL) {
+			form_free_control(ctl);
+			ctl = NULL;
+		}
+	}
+
+	return ctl;
+}
+
 /**
  * Construct a box tree from an xml tree and stylesheets.
  *
@@ -2471,7 +2490,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 	dom_element_get_attribute(n, kstr_type, &type);
 
-	gadget = binding_get_control_for_node(content->parser_binding, n);
+	gadget = binding_get_control_for_node(content->parser, n);
 	if (gadget == NULL)
 		goto no_memory;
 	box->gadget = gadget;
@@ -2638,7 +2657,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 {
 	struct form_control *gadget;
 
-	gadget = binding_get_control_for_node(content->parser_binding, n);
+	gadget = binding_get_control_for_node(content->parser, n);
 	if (!gadget)
 		return false;
 
@@ -2666,7 +2685,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	dom_node *next, *next2;
 	dom_exception err;
 
-	gadget = binding_get_control_for_node(content->parser_binding, n);
+	gadget = binding_get_control_for_node(content->parser, n);
 	if (gadget == NULL)
 		return false;
 
@@ -2879,7 +2898,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	size_t len;
 
 	box->type = BOX_INLINE_BLOCK;
-	box->gadget = binding_get_control_for_node(content->parser_binding, n);
+	box->gadget = binding_get_control_for_node(content->parser, n);
 	if (box->gadget == NULL)
 		return false;
 	box->gadget->box = box;

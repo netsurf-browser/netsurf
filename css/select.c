@@ -28,7 +28,6 @@
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
-#include "render/parser_binding.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"

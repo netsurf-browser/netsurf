@@ -31,8 +31,8 @@
 typedef struct html_content {
 	struct content base;
 
-	/** Parser object handle */
-	void *parser_binding;
+	dom_hubbub_parser *parser; /**< Parser object handle */
+
 	/** Document tree */
 	dom_document *document;
 	/** Quirkyness of document */
@@ -41,7 +41,7 @@ typedef struct html_content {
 	/** Encoding of source, NULL if unknown. */
 	char *encoding;
 	/** Source of encoding information. */
-	binding_encoding_source encoding_source;
+	dom_hubbub_encoding_source encoding_source;
 
 	/** Base URL (may be a copy of content->url). */
 	nsurl *base_url;

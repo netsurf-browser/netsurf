@@ -234,7 +234,7 @@ html_process_script(void *ctx, dom_node *node)
 		}
 	}
 
-	LOG(("content %p parser %p node %p",c,c->parser_binding, node));
+	LOG(("content %p parser %p node %p",c,c->parser, node));
 
 	exc = dom_element_get_attribute(node, html_dom_string_type, &mimetype);
 	if (exc != DOM_NO_ERR || mimetype == NULL) {
