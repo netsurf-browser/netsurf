@@ -33,6 +33,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
+#include "render/html.h"
 #include "css/css.h"
 #include "render/box.h"
 #include "render/form.h"
@@ -67,16 +68,14 @@ struct s_context_info ctxinfo;
 
 static struct s_context_info * get_context_info( struct gui_window * gw, short mx, short my )
 {
-	int posx, posy;
 	struct box *box;
-	struct box *file_box = 0;
 	hlcache_handle *h;
 	int box_x, box_y;
 	LGRECT bwrect;
 	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
-	h = bw->current_content;
 
+	h = bw->current_content;
 	ctxinfo.flags = 0;
 
 	browser_get_rect( gw, BR_CONTENT, &bwrect );
@@ -146,7 +145,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 	int choice;
 	struct s_context_info * ctx;
 	unsigned long size;
-	char * data;
+	const char * data;
 	FILE * fp_tmpfile;
 	char * tempfile;
 	int err = 0;
@@ -154,9 +153,9 @@ void context_popup( struct gui_window * gw, short x, short y )
 	char cmdline[128];
 
 	pop = get_tree( POP_CTX );
-	if( pop == NULL )
+	if (pop == NULL)
         	return;
-	ctx = get_context_info( gw, x, y );
+	ctx = get_context_info(gw, x, y);
 
     /*
         Disable all items by default:
@@ -225,7 +224,7 @@ void context_popup( struct gui_window * gw, short x, short y )
 			if( ctx->ccdata.link_url != NULL ) {
 				browser_window_download(
 					gw->browser->bw,
-					nsurl_access(/*(const char*)*/ctx->ccdata.link_url),
+					ctx->ccdata.link_url,
 					nsurl_access(hlcache_handle_get_url(gw->browser->bw->current_content))
 				);
 			}
@@ -259,14 +258,15 @@ void context_popup( struct gui_window * gw, short x, short y )
 
 		case POP_CTX_VIEW_SOURCE:
 			editor = nsoption_charp(atari_editor);
-			if( editor != NULL && strlen(editor)>0  ) {
-				data = content_get_source_data( gw->browser->bw->current_content, &size );
-				if( size > 0 && data != NULL ){
+			if (editor != NULL && strlen(editor)>0) {
+				data = content_get_source_data(gw->browser->bw->current_content,
+												&size);
+				if (size > 0 && data != NULL){
 					tempfile = tmpnam( NULL );
 					fp_tmpfile = fopen( tempfile, "w" );
-					if( fp_tmpfile ){
-						fwrite( data, size, 1, fp_tmpfile );
-						fclose( fp_tmpfile );
+					if (fp_tmpfile != NULL){
+						fwrite(data, size, 1, fp_tmpfile);
+						fclose(fp_tmpfile );
 
 						// TODO: check if app is runnin, if not, use pexec or such.
 						/*
