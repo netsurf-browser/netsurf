@@ -121,7 +121,7 @@ EOF
 
   regex:
 
-      $ wget http://downloads.sourceforge.net/project/mingw/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz
+      $ wget http://kent.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz
       $ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
       $ cd mingw-libgnurx-2.5.1
       $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
@@ -147,27 +147,27 @@ EOF
 
   libcurl:
 
-      $ wget -q http://curl.haxx.se/download/curl-7.21.1.tar.gz
-      $ tar -zxf curl-7.21.1.tar.gz
-      $ cd curl-7.21.1
+      $ wget http://curl.haxx.se/download/curl-7.26.0.tar.gz
+      $ tar -zxf curl-7.26.0.tar.gz
+      $ cd curl-7.26.0
       $ LDFLAGS=-mwindows ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared --disable-ldap --without-random
       $ make
       $ sudo make install
 
   libpng:
 
-      $ wget http://download.sourceforge.net/libpng/libpng-1.4.4.tar.gz
-      $ tar -zxf libpng-1.4.4.tar.gz
-      $ cd libpng-1.4.4
+      $ wget http://kent.dl.sourceforge.net/project/libpng/libpng14/1.4.12/libpng-1.4.12.tar.gz
+      $ tar -zxf libpng-1.4.12.tar.gz
+      $ cd libpng-1.4.12
       $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc
       $ make
       $ sudo make install
 
   libjpeg:
 
-      $ wget http://www.ijg.org/files/jpegsrc.v8b.tar.gz
-      $ tar -zxf jpegsrc.v8b.tar.gz
-      $ cd jpeg-8b
+      $ wget http://www.ijg.org/files/jpegsrc.v8d.tar.gz
+      $ tar -zxf jpegsrc.v8d.tar.gz
+      $ cd jpeg-8d
       $ ./configure --prefix=/usr/i586-mingw32msvc/ --host=i586-mingw32msvc --disable-shared
       $ make
       $ sudo make install
