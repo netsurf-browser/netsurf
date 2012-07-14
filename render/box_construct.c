@@ -2471,7 +2471,7 @@ bool box_input(BOX_SPECIAL_PARAMS)
 
 	dom_element_get_attribute(n, kstr_type, &type);
 
-	gadget = binding_get_control_for_node(content->parser_binding, n);
+	gadget = html_forms_get_control_for_node(content->forms, n);
 	if (gadget == NULL)
 		goto no_memory;
 	box->gadget = gadget;
@@ -2638,7 +2638,7 @@ bool box_button(BOX_SPECIAL_PARAMS)
 {
 	struct form_control *gadget;
 
-	gadget = binding_get_control_for_node(content->parser_binding, n);
+	gadget = html_forms_get_control_for_node(content->forms, n);
 	if (!gadget)
 		return false;
 
@@ -2666,7 +2666,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	dom_node *next, *next2;
 	dom_exception err;
 
-	gadget = binding_get_control_for_node(content->parser_binding, n);
+	gadget = html_forms_get_control_for_node(content->forms, n);
 	if (gadget == NULL)
 		return false;
 
@@ -2879,7 +2879,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	size_t len;
 
 	box->type = BOX_INLINE_BLOCK;
-	box->gadget = binding_get_control_for_node(content->parser_binding, n);
+	box->gadget = html_forms_get_control_for_node(content->forms, n);
 	if (box->gadget == NULL)
 		return false;
 	box->gadget->box = box;

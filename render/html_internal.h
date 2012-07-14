@@ -140,6 +140,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 void html_overflow_scroll_callback(void *client_data,
 		struct scrollbar_msg_data *scrollbar_data);
 
+/* in render/html_forms.c */
+struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);
+struct form_control *html_forms_get_control_for_node(struct form *forms, dom_node *node);
+
 /* Useful dom_string pointers */
 struct dom_string;
 
