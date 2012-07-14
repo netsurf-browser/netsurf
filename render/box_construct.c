@@ -1445,7 +1445,7 @@ css_select_results *box_get_style(html_content *c,
 				dom_string_byte_length(s),
 				c->encoding,
 				nsurl_access(content_get_url(&c->base)), 
-				c->quirks != BINDING_QUIRKS_MODE_NONE,
+				c->quirks != DOM_DOCUMENT_QUIRKS_MODE_NONE,
 				box_style_alloc, NULL);
 
 		dom_string_unref(s);
@@ -1456,7 +1456,7 @@ css_select_results *box_get_style(html_content *c,
 
 	/* Populate selection context */
 	ctx.ctx = c->select_ctx;
-	ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+	ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 	ctx.base_url = c->base_url;
 	ctx.universal = c->universal;
 

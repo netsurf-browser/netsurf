@@ -49,12 +49,6 @@ struct plotters;
 struct scrollbar;
 struct scrollbar_msg_data;
 
-typedef enum binding_quirks_mode {
-        BINDING_QUIRKS_MODE_NONE,
-        BINDING_QUIRKS_MODE_LIMITED,
-        BINDING_QUIRKS_MODE_FULL
-} binding_quirks_mode;
-
 /**
  * Container for stylesheets used by an HTML document
  */

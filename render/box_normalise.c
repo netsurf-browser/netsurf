@@ -152,7 +152,7 @@ bool box_normalise_block(struct box *block, html_content *c)
 			assert(block->style != NULL);
 
 			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
@@ -254,7 +254,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 			assert(table->style != NULL);
 
 			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
@@ -341,7 +341,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		assert(table->style != NULL);
 
 		ctx.ctx = c->select_ctx;
-		ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+		ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 		ctx.base_url = c->base_url;
 		ctx.universal = c->universal;
 
@@ -477,7 +477,7 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 
 					ctx.ctx = c->select_ctx;
 					ctx.quirks = (c->quirks == 
-						BINDING_QUIRKS_MODE_FULL);
+						DOM_DOCUMENT_QUIRKS_MODE_FULL);
 					ctx.base_url = c->base_url;
 					ctx.universal = c->universal;
 
@@ -587,7 +587,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 			assert(row_group->style != NULL);
 
 			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 
@@ -662,7 +662,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		assert(row_group->style != NULL);
 
 		ctx.ctx = c->select_ctx;
-		ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+		ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 		ctx.base_url = c->base_url;
 		ctx.universal = c->universal;
 
@@ -732,7 +732,7 @@ bool box_normalise_table_row(struct box *row,
 			assert(row->style != NULL);
 
 			ctx.ctx = c->select_ctx;
-			ctx.quirks = (c->quirks == BINDING_QUIRKS_MODE_FULL);
+			ctx.quirks = (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL);
 			ctx.base_url = c->base_url;
 			ctx.universal = c->universal;
 

@@ -306,7 +306,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 
 	c->parser = NULL;
 	c->document = NULL;
-	c->quirks = BINDING_QUIRKS_MODE_NONE;
+	c->quirks = DOM_DOCUMENT_QUIRKS_MODE_NONE;
 	c->encoding = NULL;
 	c->base_url = nsurl_ref(content_get_url(&c->base));
 	c->base_target = NULL;
@@ -1850,7 +1850,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	c->base.active++;
 	LOG(("%d fetches active", c->base.active));
 
-	if (c->quirks == BINDING_QUIRKS_MODE_FULL) {
+	if (c->quirks == DOM_DOCUMENT_QUIRKS_MODE_FULL) {
 		ns_error = hlcache_handle_retrieve(html_quirks_stylesheet_url,
 				0, content_get_url(&c->base), NULL,
 				html_convert_css_callback, c, &child,
@@ -1940,7 +1940,6 @@ static bool html_convert(struct content *c)
 		return false;
 	}
 
-	/** @todo quirks used to be set here too */
 	htmlc->document = dom_hubbub_parser_get_document(htmlc->parser);
 
 	if (htmlc->document == NULL) {
@@ -1949,6 +1948,14 @@ static bool html_convert(struct content *c)
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
+
+	exc = dom_document_get_quirks_mode(htmlc->document, &htmlc->quirks);
+	if (exc != DOM_NO_ERR) {
+		LOG(("error retrieving quirks"));
+	} 
+
+	LOG(("quirks set to %d", htmlc->quirks));
+
 
 	if (htmlc->encoding == NULL) {
 		const char *encoding;

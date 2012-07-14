@@ -36,7 +36,7 @@ typedef struct html_content {
 	/** Document tree */
 	dom_document *document;
 	/** Quirkyness of document */
-	binding_quirks_mode quirks;
+	dom_document_quirks_mode quirks;
 
 	/** Encoding of source, NULL if unknown. */
 	char *encoding;
