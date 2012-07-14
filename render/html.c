@@ -2050,7 +2050,7 @@ static bool html_convert(struct content *c)
 	}
 
 	/* Retrieve forms from parser */
-	htmlc->forms = NULL; /*binding_get_forms(htmlc->parser);*/
+	htmlc->forms = html_forms_get_forms(htmlc->encoding, htmlc->document);
 	for (f = htmlc->forms; f != NULL; f = f->prev) {
 		char *action;
 		url_func_result res;
