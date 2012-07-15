@@ -1690,7 +1690,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	}
 
 	/* if it is not a link node skip it */
-	if (strcmp(dom_string_data(name), "link") != 0) {
+	if (strcmp(dom_string_data(name), "LINK") != 0) {
 		return true;
 	}
 
