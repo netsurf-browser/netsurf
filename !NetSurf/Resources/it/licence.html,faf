@@ -98,19 +98,19 @@ dl.components > dd > span + span {
 <span><a href="#mit">MIT</a></span>
 </dd>
 
-<dt><a href="http://source.netsurf-browser.org/trunk/libnsbmp/">Libnsbmp</a></dt>
+<dt><a href="http://www.netsurf-browser.org/projects/libnsbmp/">Libnsbmp</a></dt>
 <dd>
 <span>&copy; 2006 Richard Wilson<br>&copy; 2008 Sean Fox</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
-<dt><a href="http://source.netsurf-browser.org/trunk/libnsfb/">Libnsfb</a></dt>
+<dt><a href="http://www.netsurf-browser.org/projects/libnsfb/">Libnsfb</a></dt>
 <dd>
 <span>&copy; 2009&ndash;2012 Vincent Sanders<br>&copy; 2009&ndash;2012 Michael Drake</span>
 <span><a href="#mit">MIT</a></span>
 </dd>
 
-<dt><a href="http://source.netsurf-browser.org/trunk/libnsgif/">Libnsgif</a></dt>
+<dt><a href="http://www.netsurf-browser.org/projects/libnsgif/">Libnsgif</a></dt>
 <dd>
 <span>&copy; 2004 Richard Wilson<br>&copy; 2008 Sean Fox</span>
 <span><a href="#mit">MIT</a></span>
