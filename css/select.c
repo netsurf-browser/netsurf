@@ -2494,15 +2494,15 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 		}
 
 		if (input) {
-			err = dom_element_get_attribute(node, 
-							nscss_dom_string_type, 
-							&width);
+			err = dom_element_get_attribute(node,
+					nscss_dom_string_type, &width);
 			if ((err != DOM_NO_ERR) || (width == NULL)) {
 				return CSS_PROPERTY_NOT_SET;
 			}
 
-			if (dom_string_isequal(name, nscss_dom_string_text) ||
-			    dom_string_isequal(name, nscss_dom_string_password)) {
+			if (dom_string_isequal(width, nscss_dom_string_text) ||
+			    dom_string_isequal(width,
+			    		nscss_dom_string_password)) {
 				hint->data.length.unit = CSS_UNIT_EX;
 
 			}
