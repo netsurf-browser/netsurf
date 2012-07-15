@@ -114,6 +114,7 @@ static bool box_frameset(BOX_SPECIAL_PARAMS);
 static bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		html_content *content);
 static bool box_select_add_option(struct form_control *control, dom_node *n);
+static bool box_noscript(BOX_SPECIAL_PARAMS);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
 static bool box_pre(BOX_SPECIAL_PARAMS);
@@ -139,6 +140,7 @@ static const struct element_entry element_table[] = {
 	{"image", box_image},
 	{"img", box_image},
 	{"input", box_input},
+	{"noscript", box_noscript},
 	{"object", box_object},
 	{"pre", box_pre},
 	{"select", box_select},
@@ -1746,6 +1748,20 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	}
 
 	return ok;
+}
+
+
+/**
+ * Noscript element
+ */
+
+bool box_noscript(BOX_SPECIAL_PARAMS)
+{
+	/* If scripting is enabled, do not display the contents of noscript */
+	if (nsoption_bool(enable_javascript))
+		*convert_children = false;
+
+	return true;
 }
 
 
