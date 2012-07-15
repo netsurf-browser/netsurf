@@ -30,7 +30,7 @@
 
   Required:
 
-      $ git clone git://git.netsurf-browser.org/pencil
+      $ git clone git://git.netsurf-browser.org/libpencil
       $ git clone git://git.netsurf-browser.org/rufl
 
 

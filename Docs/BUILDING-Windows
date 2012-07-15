@@ -204,7 +204,7 @@ EOF
 -----------
 
   The windows resources may be rebuilt. Currently there is 1 object
-  file included in the svn distribution of NetSurf that could be
+  file included in the Git distribution of NetSurf that could be
   manually compiled
 
       $ cd windows/res
