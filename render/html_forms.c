@@ -258,7 +258,7 @@ out:
 static struct form_control *
 parse_input_element(struct form *forms, dom_html_input_element *input)
 {
-	struct form_control *control;
+	struct form_control *control = NULL;
 	dom_html_form_element *form = NULL;
 	dom_string *ds_type = NULL;
 	dom_string *ds_name = NULL;
