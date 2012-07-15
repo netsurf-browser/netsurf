@@ -1939,7 +1939,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 				return false;
 			}
 
-			if (strcmp(dom_string_data(name), "param") != 0) {
+			if (strcasecmp(dom_string_data(name), "param") != 0) {
 				/* The first non-param child is the start of 
 				 * the alt html. Therefore, we should break 
 				 * out of this loop. */
@@ -2192,9 +2192,11 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				}
 
 				if (type != DOM_ELEMENT_NODE ||
-						(strcmp(dom_string_data(name), 
+						(strcasecmp(
+							dom_string_data(name),
 							"frame") != 0 &&
-						strcmp(dom_string_data(name), 
+						strcasecmp(
+							dom_string_data(name),
 							"frameset") != 0)) {
 					err = dom_node_get_next_sibling(c, 
 							&next);
@@ -2225,7 +2227,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				return false;
 			}
 
-			if (strcmp(dom_string_data(s), "frameset") == 0) {
+			if (strcasecmp(dom_string_data(s), "frameset") == 0) {
 				dom_string_unref(s);
 				frame->border = 0;
 				if (box_create_frameset(frame, c, 
@@ -2699,14 +2701,14 @@ bool box_select(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		if (strcmp(dom_string_data(name), "option") == 0) {
+		if (strcasecmp(dom_string_data(name), "option") == 0) {
 			dom_string_unref(name);
 
 			if (box_select_add_option(gadget, c) == false) {
 				dom_node_unref(c);
 				goto no_memory;
 			}
-		} else if (strcmp(dom_string_data(name), "optgroup") == 0) {
+		} else if (strcasecmp(dom_string_data(name), "optgroup") == 0) {
 			dom_string_unref(name);
 
 			err = dom_node_get_first_child(c, &c2);
@@ -2725,7 +2727,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 					return false;
 				}
 				
-				if (strcmp(dom_string_data(c2_name),
+				if (strcasecmp(dom_string_data(c2_name),
 						"option") == 0) {
 					dom_string_unref(c2_name);
 

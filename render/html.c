@@ -997,7 +997,8 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 			}
 
 			/* Recurse into noscript elements */
-			if (strcmp(dom_string_data(name), "noscript") == 0) {
+			if (strcasecmp(dom_string_data(name),
+					"noscript") == 0) {
 				if (html_meta_refresh(c, n) == false) {
 					/* Some error occurred */
 					dom_node_unref(n);
@@ -1007,7 +1008,8 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 					dom_node_unref(n);
 					return true;
 				}
-			} else if (strcmp(dom_string_data(name), "meta") == 0) {
+			} else if (strcasecmp(dom_string_data(name),
+					"meta") == 0) {
 				if (html_meta_refresh_process_element(c,
 						n) == false) {
 					/* Some error occurred */
@@ -1436,7 +1438,7 @@ html_process_style_element(html_content *c,
 	/* type='text/css', or not present (invalid but common) */
 	exc = dom_element_get_attribute(style, html_dom_string_type, &val);
 	if (exc == DOM_NO_ERR && val != NULL) {
-		if (strcmp(dom_string_data(val), "text/css") != 0) {
+		if (strcasecmp(dom_string_data(val), "text/css") != 0) {
 			dom_string_unref(val);
 			return true;
 		}
@@ -1683,14 +1685,14 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	hlcache_child_context child;
 
 	/* deal with style nodes */
-	if (strcmp(dom_string_data(name), "style") == 0) {
+	if (strcasecmp(dom_string_data(name), "style") == 0) {
 		if (!html_process_style_element(ctx->c,	&ctx->count, node))
 			return false;
 		return true;
 	}
 
 	/* if it is not a link node skip it */
-	if (strcmp(dom_string_data(name), "LINK") != 0) {
+	if (strcasecmp(dom_string_data(name), "link") != 0) {
 		return true;
 	}
 
@@ -1713,7 +1715,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	/* type='text/css' or not present */
 	exc = dom_element_get_attribute(node, html_dom_string_type, &type_attr);
 	if (exc == DOM_NO_ERR && type_attr != NULL) {
-		if (strcmp(dom_string_data(type_attr), "text/css") != 0) {
+		if (strcasecmp(dom_string_data(type_attr), "text/css") != 0) {
 			dom_string_unref(type_attr);
 			return true;
 		}

@@ -470,7 +470,7 @@ static xmlNode *tree_url_find_xml_element(xmlNode *node, const char *name)
 
 	for (xmlnode = node->children;
 	     xmlnode && !(xmlnode->type == XML_ELEMENT_NODE &&
-		    strcmp((const char *) xmlnode->name, name) == 0);
+		    strcasecmp((const char *) xmlnode->name, name) == 0);
 	     xmlnode = xmlnode->next)
 		;
 
@@ -498,7 +498,7 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	for (xmlnode = li->children; xmlnode; xmlnode = xmlnode->next) {
 		/* The li must contain an "a" element */
 		if (xmlnode->type == XML_ELEMENT_NODE &&
-		    strcmp((const char *)xmlnode->name, "a") == 0) {
+		    strcasecmp((const char *)xmlnode->name, "a") == 0) {
 			url1 = (char *)xmlGetProp(xmlnode,
 					(const xmlChar *) "href");
 			title = (char *)xmlNodeGetContent(xmlnode);
@@ -590,12 +590,12 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 		if (xmlnode->type != XML_ELEMENT_NODE)
 			continue;
 
-		if (strcmp((const char *)xmlnode->name, "li") == 0) {
+		if (strcasecmp((const char *)xmlnode->name, "li") == 0) {
 			/* entry */
 			tree_url_load_entry(xmlnode, tree, directory, callback,
 					    callback_data);
 
-		} else if (strcmp((const char *)xmlnode->name, "h4") == 0) {
+		} else if (strcasecmp((const char *)xmlnode->name, "h4") == 0) {
 			/* directory */
 			bool dir_is_default = false;
 			title = (char *) xmlNodeGetContent(xmlnode );
@@ -610,7 +610,7 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 			     xmlnode = xmlnode->next)	
 				;
 			if ((xmlnode == NULL) || 
-			    strcmp((const char *)xmlnode->name, "ul") != 0) {
+			    strcasecmp((const char *)xmlnode->name, "ul") != 0) {
 				/* next element isn't expected ul */
 				free(title);
 				warn_user("TreeLoadError", "(Expected "
@@ -620,7 +620,8 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 				id = xmlGetProp(xmlnode,
 						(const xmlChar *) "id");
 				if (id != NULL) {
-					if(strcmp((const char *)id, "default") == 0)
+					if (strcasecmp((const char *)id,
+							"default") == 0)
 						dir_is_default = true;
 					xmlFree(id);
 				}
