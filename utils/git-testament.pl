@@ -68,7 +68,7 @@ if ( $git_present ) {
    chomp $gitinfo{url};
    $gitinfo{revision} = `git rev-parse HEAD`;
    chomp $gitinfo{revision};
-   $gitinfo{branch} = `git for-each-ref --format="\%(refname:short)" \$(git symbolic-ref HEAD)`;
+   $gitinfo{branch} = `git for-each-ref --format="\%(refname:short)" \$(git symbolic-ref HEAD 2>/dev/null || git show-ref -s HEAD)`;
    chomp $gitinfo{branch};
    @bits = split /\s+/, `git describe --tags --exact-match HEAD 2>/dev/null`;
    $bits[0] = "" unless exists $bits[0];
