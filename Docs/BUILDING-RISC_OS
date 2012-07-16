@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-  Build Instructions for RISC OS NetSurf                       16 January 2010
+  Build Instructions for RISC OS NetSurf                          16 July 2012
 --------------------------------------------------------------------------------
 
   This document provides instructions for building the RISC OS NetSurf
@@ -16,11 +16,6 @@
   |           + Perl 5.8.8 or later
   |           + GCC 3.4.6 release 3 or later
   |           + The latest NSTools
-  |
-  |       For instructions on how to do all of the above, consult the following
-  |       document:
-  |
-  |           http://www.netsurf-browser.org/documentation/robuild
 
   If you want to cross-compile NetSurf for RISC OS, use the BUILDING-ROCross
   document.
