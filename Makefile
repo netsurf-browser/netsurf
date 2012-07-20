@@ -241,8 +241,25 @@ else
         ifeq ($(TARGET),cocoa)
           PKG_CONFIG := PKG_CONFIG_PATH="$(PKG_CONFIG_PATH):/usr/local/lib/pkgconfig" pkg-config
         else
-          # Building for GTK, Framebuffer, Atari
-          PKG_CONFIG := pkg-config
+          ifeq ($(TARGET),atari)
+            ifeq ($(HOST),atari)
+              PKG_CONFIG := pkg-config
+            else
+              ifeq ($(HOST),mint)
+                PKG_CONFIG := pkg-config
+              else
+                GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-atari-mint/env
+                GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-atari-mint/cross/bin
+
+                CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+
+                PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config
+              endif
+            endif
+          else
+            # Building for GTK, Framebuffer
+            PKG_CONFIG := pkg-config
+          endif
         endif
       endif
     endif
