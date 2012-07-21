@@ -548,6 +548,21 @@ static bool fetch_about_logo_handler(struct fetch_about_context *ctx)
 	return true;
 }
 
+static bool fetch_about_welcome_handler(struct fetch_about_context *ctx)
+{
+	fetch_msg msg;
+
+	/* content is going to return redirect */
+	fetch_set_http_code(ctx->fetchh, 302);
+
+	msg.type = FETCH_REDIRECT;
+	msg.data.redirect = "resource:welcome.html";
+
+	fetch_about_send_callback(&msg, ctx);
+
+	return true;
+}
+
 /* Forward declaration because this handler requires the handler table. */
 static bool fetch_about_about_handler(struct fetch_about_context *ctx);
 
@@ -560,13 +575,15 @@ struct about_handlers {
 };
 
 /** List of about paths and their handlers */
-struct about_handlers about_handler_list[] = { 
+struct about_handlers about_handler_list[] = {
 	{ "credits", SLEN("credits"), NULL,
 			fetch_about_credits_handler, false },
 	{ "licence", SLEN("licence"), NULL,
 			fetch_about_licence_handler, false },
 	{ "license", SLEN("license"), NULL,
 			fetch_about_licence_handler, true },
+	{ "welcome", SLEN("welcome"), NULL,
+			fetch_about_welcome_handler, false },
 	{ "config", SLEN("config"), NULL,
 			fetch_about_config_handler, false },
 	{ "Choices", SLEN("Choices"), NULL,
@@ -585,7 +602,8 @@ struct about_handlers about_handler_list[] = {
 			fetch_about_blank_handler, true } 
 };
 
-#define about_handler_list_len (sizeof(about_handler_list) / sizeof(struct about_handlers))
+#define about_handler_list_len (sizeof(about_handler_list) /		\
+		sizeof(struct about_handlers))
 
 /**
  * List all the valid about: paths available 
