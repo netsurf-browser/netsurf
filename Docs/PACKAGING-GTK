@@ -74,8 +74,8 @@
 ===============
 
   If the user hasn't specified a home page URL in their Preferences, NetSurf
-  defaults to a "portal" welcome page on http://www.netsurf-browser.org/ - if
-  you wish to change this, you can do so by editing NETSURF_HOMEPAGE in
+  defaults to a "portal" welcome page at about:netsurf - if you wish to
+  change this, you can do so by overriding the NETSURF_HOMEPAGE URL in
   Makefile.config.
 
 

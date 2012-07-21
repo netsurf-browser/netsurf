@@ -117,19 +117,16 @@ void ro_gui_iconbar_initialise(void)
 
 bool ro_gui_iconbar_click(wimp_pointer *pointer)
 {
-	char url[80];
 	int key_down = 0;
 
 	switch (pointer->buttons) {
 	case wimp_CLICK_SELECT:
 		if (nsoption_charp(homepage_url) != NULL) {
 			browser_window_create(nsoption_charp(homepage_url), 
-					      NULL, 0, true, false);
+					NULL, 0, true, false);
 		} else {
-			snprintf(url, sizeof url,
-				 "file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-				 nsoption_charp(language));
-			browser_window_create(url, NULL, 0, true, false);
+			browser_window_create(NETSURF_HOMEPAGE,
+					NULL, 0, true, false);
 		}
 		break;
 

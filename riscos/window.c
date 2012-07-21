@@ -3882,18 +3882,13 @@ bool ro_gui_window_navigate_up(struct gui_window *g, const char *url) {
 
 void ro_gui_window_action_home(struct gui_window *g)
 {
-	char			url[80];
-
 	if (g == NULL || g->bw == NULL)
 		return;
 
 	if ((nsoption_charp(homepage_url)) && (nsoption_charp(homepage_url)[0])) {
 		browser_window_go(g->bw, nsoption_charp(homepage_url), 0, true);
 	} else {
-		snprintf(url, sizeof url,
-				"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-			 nsoption_charp(language));
-		browser_window_go(g->bw, url, 0, true);
+		browser_window_go(g->bw, NETSURF_HOMEPAGE, 0, true);
 	}
 }
 
