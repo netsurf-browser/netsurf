@@ -416,7 +416,6 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 	struct form_control *ctl = NULL;
 	dom_exception err;
 	dom_string *ds_name = NULL;
-	char *node_name = NULL;
 
 	if (forms == NULL)
 		return NULL;
@@ -432,18 +431,18 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 	/* Step two, extract the node's name so we can construct a gadget. */
 	err = dom_element_get_tag_name(node, &ds_name);
 	if (err == DOM_NO_ERR && ds_name != NULL) {
-		node_name = strndup(dom_string_data(ds_name),
-				    dom_string_byte_length(ds_name));
+
+		/* Step three, attempt to work out what gadget to make */
+		if (dom_string_caseless_isequal(ds_name,
+				html_dom_string_button)) {
+			ctl = parse_button_element(forms,
+					(dom_html_button_element *) node);
+		} else if (dom_string_caseless_isequal(ds_name,
+				html_dom_string_input)) {
+			ctl = parse_input_element(forms,
+					(dom_html_input_element *) node);
+		}
 	}
-
-	/* Step three, attempt to work out what gadget to make */
-
-	if (node_name && strcasecmp(node_name, "button") == 0)
-		ctl = parse_button_element(forms,
-					   (dom_html_button_element *) node);
-	else if (node_name && strcasecmp(node_name, "input") == 0)
-		ctl = parse_input_element(forms,
-					  (dom_html_input_element *) node);
 
 	/* If all else fails, fake gadget time */
 	if (ctl == NULL)
@@ -451,8 +450,7 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 
 	if (ds_name != NULL)
 		dom_string_unref(ds_name);
-	if (node_name != NULL)
-		free(node_name);
+
 	return ctl;
 }
 

@@ -113,6 +113,9 @@ dom_string *html_dom_string_coords;
 dom_string *html_dom_string_circle;
 dom_string *html_dom_string_poly;
 dom_string *html_dom_string_polygon;
+dom_string *html_dom_string_button;
+dom_string *html_dom_string_input;
+dom_string *html_dom_string_textarea;
 
 
 static void html_destroy_objects(html_content *html)
@@ -3140,6 +3143,9 @@ static void html_fini(void)
 	HTML_DOM_STRING_UNREF(circle);
 	HTML_DOM_STRING_UNREF(poly);
 	HTML_DOM_STRING_UNREF(polygon);
+	HTML_DOM_STRING_UNREF(button);
+	HTML_DOM_STRING_UNREF(input);
+	HTML_DOM_STRING_UNREF(textarea);
 
 #undef HTML_DOM_STRING_UNREF
 
@@ -3269,6 +3275,9 @@ nserror html_init(void)
 	HTML_DOM_STRING_INTERN(circle);
 	HTML_DOM_STRING_INTERN(poly);
 	HTML_DOM_STRING_INTERN(polygon);
+	HTML_DOM_STRING_INTERN(button);
+	HTML_DOM_STRING_INTERN(input);
+	HTML_DOM_STRING_INTERN(textarea);
 
 #undef HTML_DOM_STRING_INTERN
 
