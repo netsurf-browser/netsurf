@@ -187,6 +187,7 @@ static void html_box_convert_done(html_content *c, bool success)
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
+		dom_node_unref(html);
 		return;
 	}
 	/*imagemap_dump(c);*/
@@ -201,6 +202,7 @@ static void html_box_convert_done(html_content *c, bool success)
 		content_set_done(&c->base);
 
 	html_set_status(c, "");
+	dom_node_unref(html);
 }
 
 /**
@@ -296,6 +298,7 @@ void html_finish_conversion(html_content *c)
 		content_set_error(&c->base);
 		return;
 	}
+	dom_node_unref(html);
 }
 
 
@@ -1998,6 +2001,7 @@ static bool html_convert(struct content *c)
 		LOG(("root element not html"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		dom_node_unref(html);
 		return false;
 	}
 	dom_string_unref(node_name);
@@ -2046,12 +2050,17 @@ static bool html_convert(struct content *c)
 		if (html_head(htmlc, head) == false) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			dom_node_unref(html);
+			dom_node_unref(head);
 			return false;
 		}
 
 		/* handle meta refresh */
-		if (html_meta_refresh(htmlc, head) == false)
+		if (html_meta_refresh(htmlc, head) == false) {
+			dom_node_unref(html);
+			dom_node_unref(head);
 			return false;
+		}
 	}
 
 	/* Retrieve forms from parser */
@@ -2074,6 +2083,8 @@ static bool html_convert(struct content *c)
 		if (res != URL_FUNC_OK) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			dom_node_unref(html);
+			dom_node_unref(head);
 			return false;
 		}
 
@@ -2087,15 +2098,21 @@ static bool html_convert(struct content *c)
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
+				dom_node_unref(html);
+				dom_node_unref(head);
 				return false;
 			}
 		}
 	}
 
+	dom_node_unref(head);
 	/* get stylesheets */
-	if (html_find_stylesheets(htmlc, html) == false)
+	if (html_find_stylesheets(htmlc, html) == false) {
+		dom_node_unref(html);
 		return false;
+	}
 
+	dom_node_unref(html);
 	return true;
 }
 
