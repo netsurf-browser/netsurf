@@ -2114,24 +2114,6 @@ void ro_gui_screen_size(int *width, int *height)
 
 
 /**
- * Opens a language sensitive help page
- *
- * \param page  the page to open
- */
-void ro_gui_open_help_page(const char *page)
-{
-	char url[80];
-	int length;
-
-	if ((length = snprintf(url, sizeof url,
-			"file:///<NetSurf$Dir>/Docs/%s_%s",
-			       page, nsoption_charp(language))) >= 0 &&
-			length < (int)sizeof(url))
-		browser_window_create(url, NULL, 0, true, false);
-}
-
-
-/**
  * Send the source of a content to a text editor.
  */
 

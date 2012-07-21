@@ -1917,7 +1917,9 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	switch (c) {
 	case IS_WIMP_KEY + wimp_KEY_F1:	/* Help. */
-		ro_gui_open_help_page("documentation/index");
+		browser_window_create(
+				"http://www.netsurf-browser.org/documentation/",
+				NULL, 0, true, false);
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F1:
@@ -2642,13 +2644,19 @@ bool ro_gui_window_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	/* help actions */
 	case HELP_OPEN_CONTENTS:
-		ro_gui_open_help_page("documentation/index");
+		browser_window_create(
+			"http://www.netsurf-browser.org/documentation/",
+			NULL, 0, true, false);
 		break;
 	case HELP_OPEN_GUIDE:
-		ro_gui_open_help_page("documentation/guide");
+		browser_window_create(
+			"http://www.netsurf-browser.org/documentation/guide",
+			NULL, 0, true, false);
 		break;
 	case HELP_OPEN_INFORMATION:
-		ro_gui_open_help_page("documentation/info");
+		browser_window_create(
+			"http://www.netsurf-browser.org/documentation/info",
+			NULL, 0, true, false);
 		break;
 	case HELP_OPEN_CREDITS:
 		browser_window_create("about:credits", NULL, 0, true, false);

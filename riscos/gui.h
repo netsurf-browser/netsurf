@@ -114,7 +114,6 @@ extern struct gui_window *ro_gui_current_redraw_gui;
 
 /* in gui.c */
 void ro_gui_open_window_request(wimp_open *open);
-void ro_gui_open_help_page(const char *page);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct hlcache_handle *c);
 void ro_gui_dump_content(struct hlcache_handle *c);

@@ -183,7 +183,9 @@ bool ro_gui_iconbar_menu_select(wimp_w w, wimp_i i, wimp_menu *menu,
 
 	switch (action) {
 	case HELP_OPEN_CONTENTS:
-		ro_gui_open_help_page("documentation/index");
+		browser_window_create(
+				"http://www.netsurf-browser.org/documentation/",
+				NULL, 0, true, false);
 		return true;
 	case BROWSER_NAVIGATE_URL:
 		ro_gui_dialog_prepare_open_url();
