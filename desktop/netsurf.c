@@ -47,6 +47,7 @@
 
 #include "render/html.h"
 #include "render/textplain.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utf8.h"
@@ -169,6 +170,11 @@ nserror netsurf_init(int *pargc,
 
 	messages_load(messages);
 
+	/* corestrings init */
+	error = corestrings_init();
+	if (error != NSERROR_OK)
+		return error;
+
 	/* set up cache limits based on the memory cache size option */
 	hlcache_parameters.limit = nsoption_int(memory_cache_size);
 
@@ -287,6 +293,7 @@ void netsurf_exit(void)
 	LOG(("Destroying System colours"));
 	gui_system_colour_finalize();
 
+	corestrings_fini();
 	LOG(("Remaining lwc strings:"));
 	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
