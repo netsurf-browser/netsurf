@@ -38,6 +38,7 @@ extern lwc_string *corestring_lwc_applet;
 extern lwc_string *corestring_lwc_baseline;
 extern lwc_string *corestring_lwc_body;
 extern lwc_string *corestring_lwc_bottom;
+extern lwc_string *corestring_lwc_button;
 extern lwc_string *corestring_lwc_caption;
 extern lwc_string *corestring_lwc_center;
 extern lwc_string *corestring_lwc_col;

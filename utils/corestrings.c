@@ -33,6 +33,7 @@ lwc_string *corestring_lwc_applet;
 lwc_string *corestring_lwc_baseline;
 lwc_string *corestring_lwc_body;
 lwc_string *corestring_lwc_bottom;
+lwc_string *corestring_lwc_button;
 lwc_string *corestring_lwc_caption;
 lwc_string *corestring_lwc_center;
 lwc_string *corestring_lwc_col;
@@ -113,6 +114,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(baseline);
 	CSS_LWC_STRING_UNREF(body);
 	CSS_LWC_STRING_UNREF(bottom);
+	CSS_LWC_STRING_UNREF(button);
 	CSS_LWC_STRING_UNREF(caption);
 	CSS_LWC_STRING_UNREF(center);
 	CSS_LWC_STRING_UNREF(col);
@@ -212,6 +214,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(baseline);
 	CSS_LWC_STRING_INTERN(body);
 	CSS_LWC_STRING_INTERN(bottom);
+	CSS_LWC_STRING_INTERN(button);
 	CSS_LWC_STRING_INTERN(caption);
 	CSS_LWC_STRING_INTERN(center);
 	CSS_LWC_STRING_INTERN(col);

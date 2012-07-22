@@ -19,6 +19,7 @@
 
 #include "render/form.h"
 #include "render/html_internal.h"
+#include "utils/corestrings.h"
 
 #include "utils/log.h"
 
@@ -479,16 +480,16 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 	if (err == DOM_NO_ERR && ds_name != NULL) {
 
 		/* Step three, attempt to work out what gadget to make */
-		if (dom_string_caseless_isequal(ds_name,
-				html_dom_string_button)) {
+		if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_button)) {
 			ctl = parse_button_element(forms,
 					(dom_html_button_element *) node);
-		} else if (dom_string_caseless_isequal(ds_name,
-				html_dom_string_input)) {
+		} else if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_input)) {
 			ctl = parse_input_element(forms,
 					(dom_html_input_element *) node);
-		} else if (dom_string_caseless_isequal(ds_name,
-				html_dom_string_textarea)) {
+		} else if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_textarea)) {
 			ctl = parse_textarea_element(forms,
 					(dom_html_text_area_element *) node);
 		}
