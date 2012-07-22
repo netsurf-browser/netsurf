@@ -534,6 +534,7 @@ css_error node_id(void *pw, void *node, lwc_string **id)
 			dom_string_unref(attr);
 			return CSS_NOMEM;
 		}
+		dom_string_unref(attr);
 	}
 
 	return CSS_OK;
