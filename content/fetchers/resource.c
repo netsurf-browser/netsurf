@@ -79,6 +79,7 @@ static const char *fetch_resource_paths[] = {
 	"user.css",
 	"credits.html",
 	"licence.html",
+	"welcome.html",
 	"favicon.ico",
 	"netsurf.png"
 };

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 
 #include "utils/config.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "javascript/js.h"
@@ -77,19 +78,23 @@ static bool html_scripts_exec(html_content *c)
 				continue;
 
 			/* ensure script content fetch status is not an error */
-			if (content_get_status(s->data.external) == CONTENT_STATUS_ERROR)
+			if (content_get_status(s->data.external) ==
+					CONTENT_STATUS_ERROR)
 				continue;
 
 			/* ensure script handler for content type */
-			script_handler = select_script_handler(content_get_type(s->data.external));
+			script_handler = select_script_handler(
+					content_get_type(s->data.external));
 			if (script_handler == NULL)
 				continue; /* unsupported type */
 
-			if (content_get_status(s->data.external) == CONTENT_STATUS_DONE) {
+			if (content_get_status(s->data.external) ==
+					CONTENT_STATUS_DONE) {
 				/* external script is now available */
 				const char *data;
 				unsigned long size;
-				data = content_get_source_data(s->data.external, &size );
+				data = content_get_source_data(
+						s->data.external, &size );
 				script_handler(c->jscontext, data, size);
 
 				s->already_started = true;
@@ -236,12 +241,12 @@ html_process_script(void *ctx, dom_node *node)
 
 	LOG(("content %p parser %p node %p",c,c->parser, node));
 
-	exc = dom_element_get_attribute(node, html_dom_string_type, &mimetype);
+	exc = dom_element_get_attribute(node, corestring_dom_type, &mimetype);
 	if (exc != DOM_NO_ERR || mimetype == NULL) {
-		mimetype = dom_string_ref(html_dom_string_text_javascript);
+		mimetype = dom_string_ref(corestring_dom_text_javascript);
 	}
 
-	exc = dom_element_get_attribute(node, html_dom_string_src, &src);
+	exc = dom_element_get_attribute(node, corestring_dom_src, &src);
 	if (exc != DOM_NO_ERR || src == NULL) {
 		struct lwc_string_s *lwcmimetype;
 		script_handler_t *script_handler;

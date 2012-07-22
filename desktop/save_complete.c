@@ -589,28 +589,28 @@ bool rewrite_urls(xmlNode *n, const char *base,
 		/* ignore */
 	}
 	/* 1 */
-	else if (strcmp((const char *) n->name, "object") == 0) {
+	else if (strcasecmp((const char *) n->name, "object") == 0) {
 		if (!rewrite_url(n, "data", base, list))
 			return false;
 	}
 	/* 2 */
-	else if (strcmp((const char *) n->name, "a") == 0 ||
-			strcmp((const char *) n->name, "area") == 0 ||
-			strcmp((const char *) n->name, "link") == 0) {
+	else if (strcasecmp((const char *) n->name, "a") == 0 ||
+			strcasecmp((const char *) n->name, "area") == 0 ||
+			strcasecmp((const char *) n->name, "link") == 0) {
 		if (!rewrite_url(n, "href", base, list))
 			return false;
 	}
 	/* 3 */
-	else if (strcmp((const char *) n->name, "frame") == 0 ||
-			strcmp((const char *) n->name, "iframe") == 0 ||
-			strcmp((const char *) n->name, "input") == 0 ||
-			strcmp((const char *) n->name, "img") == 0 ||
-			strcmp((const char *) n->name, "script") == 0) {
+	else if (strcasecmp((const char *) n->name, "frame") == 0 ||
+			strcasecmp((const char *) n->name, "iframe") == 0 ||
+			strcasecmp((const char *) n->name, "input") == 0 ||
+			strcasecmp((const char *) n->name, "img") == 0 ||
+			strcasecmp((const char *) n->name, "script") == 0) {
 		if (!rewrite_url(n, "src", base, list))
 			return false;
 	}
 	/* 4 */
-	else if (strcmp((const char *) n->name, "style") == 0) {
+	else if (strcasecmp((const char *) n->name, "style") == 0) {
 		unsigned int len;
 		xmlChar *content;
 
@@ -642,7 +642,7 @@ bool rewrite_urls(xmlNode *n, const char *base,
 		return true;
 	}
 	/* 5 */
-	else if (strcmp((const char *) n->name, "base") == 0) {
+	else if (strcasecmp((const char *) n->name, "base") == 0) {
 		/* simply remove any <base> tags from the document */
 		xmlUnlinkNode(n);
 		xmlFreeNode(n);

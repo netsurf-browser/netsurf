@@ -83,67 +83,6 @@ static css_error nscss_register_import(struct content_css_data *c,
 static lwc_string *css_charset;
 static css_stylesheet *blank_import;
 
-dom_string *nscss_dom_string_a;
-dom_string *nscss_dom_string_abscenter;
-dom_string *nscss_dom_string_absmiddle;
-dom_string *nscss_dom_string_align;
-dom_string *nscss_dom_string_applet;
-dom_string *nscss_dom_string_background;
-dom_string *nscss_dom_string_baseline;
-dom_string *nscss_dom_string_bgcolor;
-dom_string *nscss_dom_string_body;
-dom_string *nscss_dom_string_border;
-dom_string *nscss_dom_string_bordercolor;
-dom_string *nscss_dom_string_bottom;
-dom_string *nscss_dom_string_caption;
-dom_string *nscss_dom_string_cellpadding;
-dom_string *nscss_dom_string_cellspacing;
-dom_string *nscss_dom_string_center;
-dom_string *nscss_dom_string_col;
-dom_string *nscss_dom_string_color;
-dom_string *nscss_dom_string_cols;
-dom_string *nscss_dom_string_div;
-dom_string *nscss_dom_string_embed;
-dom_string *nscss_dom_string_font;
-dom_string *nscss_dom_string_h1;
-dom_string *nscss_dom_string_h2;
-dom_string *nscss_dom_string_h3;
-dom_string *nscss_dom_string_h4;
-dom_string *nscss_dom_string_h5;
-dom_string *nscss_dom_string_h6;
-dom_string *nscss_dom_string_height;
-dom_string *nscss_dom_string_hr;
-dom_string *nscss_dom_string_href;
-dom_string *nscss_dom_string_hspace;
-dom_string *nscss_dom_string_iframe;
-dom_string *nscss_dom_string_img;
-dom_string *nscss_dom_string_input;
-dom_string *nscss_dom_string_justify;
-dom_string *nscss_dom_string_left;
-dom_string *nscss_dom_string_link;
-dom_string *nscss_dom_string_middle;
-dom_string *nscss_dom_string_object;
-dom_string *nscss_dom_string_p;
-dom_string *nscss_dom_string_password;
-dom_string *nscss_dom_string_right;
-dom_string *nscss_dom_string_rows;
-dom_string *nscss_dom_string_size;
-dom_string *nscss_dom_string_table;
-dom_string *nscss_dom_string_tbody;
-dom_string *nscss_dom_string_td;
-dom_string *nscss_dom_string_text;
-dom_string *nscss_dom_string_textarea;
-dom_string *nscss_dom_string_texttop;
-dom_string *nscss_dom_string_tfoot;
-dom_string *nscss_dom_string_th;
-dom_string *nscss_dom_string_thead;
-dom_string *nscss_dom_string_top;
-dom_string *nscss_dom_string_tr;
-dom_string *nscss_dom_string_type;
-dom_string *nscss_dom_string_valign;
-dom_string *nscss_dom_string_vlink;
-dom_string *nscss_dom_string_vspace;
-dom_string *nscss_dom_string_width;
 
 /**
  * Initialise a CSS content
@@ -830,79 +769,6 @@ css_error nscss_register_import(struct content_css_data *c,
  */
 static void nscss_fini(void)
 {
-#define CSS_DOM_STRING_UNREF(NAME)					\
-	do {								\
-		if (nscss_dom_string_##NAME != NULL) {			\
-			dom_string_unref(nscss_dom_string_##NAME);	\
-			nscss_dom_string_##NAME = NULL;			\
-		}							\
-	} while (0)							\
-
-	CSS_DOM_STRING_UNREF(a);
-	CSS_DOM_STRING_UNREF(abscenter);
-	CSS_DOM_STRING_UNREF(absmiddle);
-	CSS_DOM_STRING_UNREF(align);
-	CSS_DOM_STRING_UNREF(applet);
-	CSS_DOM_STRING_UNREF(background);
-	CSS_DOM_STRING_UNREF(baseline);
-	CSS_DOM_STRING_UNREF(bgcolor);
-	CSS_DOM_STRING_UNREF(body);
-	CSS_DOM_STRING_UNREF(border);
-	CSS_DOM_STRING_UNREF(bordercolor);
-	CSS_DOM_STRING_UNREF(bottom);
-	CSS_DOM_STRING_UNREF(caption);
-	CSS_DOM_STRING_UNREF(cellpadding);
-	CSS_DOM_STRING_UNREF(cellspacing);
-	CSS_DOM_STRING_UNREF(center);
-	CSS_DOM_STRING_UNREF(col);
-	CSS_DOM_STRING_UNREF(color);
-	CSS_DOM_STRING_UNREF(cols);
-	CSS_DOM_STRING_UNREF(div);
-	CSS_DOM_STRING_UNREF(embed);
-	CSS_DOM_STRING_UNREF(font);
-	CSS_DOM_STRING_UNREF(h1);
-	CSS_DOM_STRING_UNREF(h2);
-	CSS_DOM_STRING_UNREF(h3);
-	CSS_DOM_STRING_UNREF(h4);
-	CSS_DOM_STRING_UNREF(h5);
-	CSS_DOM_STRING_UNREF(h6);
-	CSS_DOM_STRING_UNREF(height);
-	CSS_DOM_STRING_UNREF(hr);
-	CSS_DOM_STRING_UNREF(href);
-	CSS_DOM_STRING_UNREF(hspace);
-	CSS_DOM_STRING_UNREF(iframe);
-	CSS_DOM_STRING_UNREF(img);
-	CSS_DOM_STRING_UNREF(input);
-	CSS_DOM_STRING_UNREF(justify);
-	CSS_DOM_STRING_UNREF(left);
-	CSS_DOM_STRING_UNREF(link);
-	CSS_DOM_STRING_UNREF(middle);
-	CSS_DOM_STRING_UNREF(object);
-	CSS_DOM_STRING_UNREF(p);
-	CSS_DOM_STRING_UNREF(password);
-	CSS_DOM_STRING_UNREF(right);
-	CSS_DOM_STRING_UNREF(rows);
-	CSS_DOM_STRING_UNREF(size);
-	CSS_DOM_STRING_UNREF(table);
-	CSS_DOM_STRING_UNREF(tbody);
-	CSS_DOM_STRING_UNREF(td);
-	CSS_DOM_STRING_UNREF(text);
-	CSS_DOM_STRING_UNREF(textarea);
-	CSS_DOM_STRING_UNREF(texttop);
-	CSS_DOM_STRING_UNREF(tfoot);
-	CSS_DOM_STRING_UNREF(th);
-	CSS_DOM_STRING_UNREF(thead);
-	CSS_DOM_STRING_UNREF(top);
-	CSS_DOM_STRING_UNREF(tr);
-	CSS_DOM_STRING_UNREF(type);
-	CSS_DOM_STRING_UNREF(valign);
-	CSS_DOM_STRING_UNREF(vlink);
-	CSS_DOM_STRING_UNREF(vspace);
-	CSS_DOM_STRING_UNREF(width);
-
-#undef CSS_DOM_STRING_UNREF
-
-
 	if (css_charset != NULL) {
 		lwc_string_unref(css_charset);
 		css_charset = NULL;
@@ -933,90 +799,12 @@ nserror nscss_init(void)
 {
 	lwc_error lerror;
 	nserror error;
-	dom_exception exc;
 
 	lerror = lwc_intern_string("charset", SLEN("charset"), &css_charset);
 	if (lerror != lwc_error_ok) {
 		error = NSERROR_NOMEM;
 		goto error;
 	}
-
-
-#define CSS_DOM_STRING_INTERN(NAME)					\
-	do {								\
-		exc = dom_string_create_interned((const uint8_t *)#NAME,\
-					 sizeof(#NAME) - 1,		\
-					 &nscss_dom_string_##NAME );	\
-		if ((exc != DOM_NO_ERR) || 				\
-				(nscss_dom_string_##NAME == NULL)) {	\
-			error = NSERROR_NOMEM;				\
-			goto error;					\
-		}							\
-	} while(0)
-
-	CSS_DOM_STRING_INTERN(a);
-	CSS_DOM_STRING_INTERN(abscenter);
-	CSS_DOM_STRING_INTERN(absmiddle);
-	CSS_DOM_STRING_INTERN(align);
-	CSS_DOM_STRING_INTERN(applet);
-	CSS_DOM_STRING_INTERN(background);
-	CSS_DOM_STRING_INTERN(baseline);
-	CSS_DOM_STRING_INTERN(bgcolor);
-	CSS_DOM_STRING_INTERN(body);
-	CSS_DOM_STRING_INTERN(border);
-	CSS_DOM_STRING_INTERN(bordercolor);
-	CSS_DOM_STRING_INTERN(bottom);
-	CSS_DOM_STRING_INTERN(caption);
-	CSS_DOM_STRING_INTERN(cellpadding);
-	CSS_DOM_STRING_INTERN(cellspacing);
-	CSS_DOM_STRING_INTERN(center);
-	CSS_DOM_STRING_INTERN(col);
-	CSS_DOM_STRING_INTERN(color);
-	CSS_DOM_STRING_INTERN(cols);
-	CSS_DOM_STRING_INTERN(div);
-	CSS_DOM_STRING_INTERN(embed);
-	CSS_DOM_STRING_INTERN(font);
-	CSS_DOM_STRING_INTERN(h1);
-	CSS_DOM_STRING_INTERN(h2);
-	CSS_DOM_STRING_INTERN(h3);
-	CSS_DOM_STRING_INTERN(h4);
-	CSS_DOM_STRING_INTERN(h5);
-	CSS_DOM_STRING_INTERN(h6);
-	CSS_DOM_STRING_INTERN(height);
-	CSS_DOM_STRING_INTERN(hr);
-	CSS_DOM_STRING_INTERN(href);
-	CSS_DOM_STRING_INTERN(hspace);
-	CSS_DOM_STRING_INTERN(iframe);
-	CSS_DOM_STRING_INTERN(img);
-	CSS_DOM_STRING_INTERN(input);
-	CSS_DOM_STRING_INTERN(justify);
-	CSS_DOM_STRING_INTERN(left);
-	CSS_DOM_STRING_INTERN(link);
-	CSS_DOM_STRING_INTERN(middle);
-	CSS_DOM_STRING_INTERN(object);
-	CSS_DOM_STRING_INTERN(p);
-	CSS_DOM_STRING_INTERN(password);
-	CSS_DOM_STRING_INTERN(right);
-	CSS_DOM_STRING_INTERN(rows);
-	CSS_DOM_STRING_INTERN(size);
-	CSS_DOM_STRING_INTERN(table);
-	CSS_DOM_STRING_INTERN(tbody);
-	CSS_DOM_STRING_INTERN(td);
-	CSS_DOM_STRING_INTERN(text);
-	CSS_DOM_STRING_INTERN(textarea);
-	CSS_DOM_STRING_INTERN(texttop);
-	CSS_DOM_STRING_INTERN(tfoot);
-	CSS_DOM_STRING_INTERN(th);
-	CSS_DOM_STRING_INTERN(thead);
-	CSS_DOM_STRING_INTERN(top);
-	CSS_DOM_STRING_INTERN(tr);
-	CSS_DOM_STRING_INTERN(type);
-	CSS_DOM_STRING_INTERN(valign);
-	CSS_DOM_STRING_INTERN(vlink);
-	CSS_DOM_STRING_INTERN(vspace);
-	CSS_DOM_STRING_INTERN(width);
-
-#undef CSS_DOM_STRING_INTERN
 
 	error = content_factory_register_handler("text/css", 
 			&css_content_handler);

@@ -10,7 +10,7 @@
  * format and many glyphs added for use in the NetSurf project.
  *
  * Plain text font data:
- *     http://source.netsurf-browser.org/trunk/art/fonts/netsurf/glyph_data
+ *     http://source.netsurf-browser.org/?p=art.git;a=blob_plain;f=fonts/netsurf/glyph_data;hb=HEAD
  *
  *     Zap: http://zap.tartarus.org/
  * NetSurf: http://www.netsurf-browser.org/

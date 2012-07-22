@@ -761,13 +761,11 @@ static void gui_init2(int argc, char** argv)
 	}
 	/* default homepage */
 	else {
-		url = calloc(80, sizeof(char));
+		url = strdup(NETSURF_HOMEPAGE);
 		if (!url) {
 			LOG(("malloc failed"));
 			die("Insufficient memory for URL");
 		}
-		snprintf(url, 80, "file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-			 nsoption_charp(language));
 	}
 
 	if (open_window)
@@ -1825,14 +1823,11 @@ void ro_msg_dataopen(wimp_message *message)
 		if (len < 9 || strcmp(".!NetSurf",
 				message->data.data_xfer.file_name + len - 9))
 			return;
-		if (nsoption_charp(homepage_url) && nsoption_charp(homepage_url)[0]) {
+		if (nsoption_charp(homepage_url) &&
+					nsoption_charp(homepage_url)[0]) {
 			url = strdup(nsoption_charp(homepage_url));
 		} else {
-			url = malloc(80);
-			if (url)
-				snprintf(url, 80,
-					"file:///<NetSurf$Dir>/Docs/welcome/index_%s",
-					 nsoption_charp(language));
+			url = strdup(NETSURF_HOMEPAGE);
 		}
 		if (!url)
 			warn_user("NoMemory", 0);
@@ -2115,24 +2110,6 @@ void ro_gui_screen_size(int *width, int *height)
 {
 	*width = screen_info.width;
 	*height = screen_info.height;
-}
-
-
-/**
- * Opens a language sensitive help page
- *
- * \param page  the page to open
- */
-void ro_gui_open_help_page(const char *page)
-{
-	char url[80];
-	int length;
-
-	if ((length = snprintf(url, sizeof url,
-			"file:///<NetSurf$Dir>/Docs/%s_%s",
-			       page, nsoption_charp(language))) >= 0 &&
-			length < (int)sizeof(url))
-		browser_window_create(url, NULL, 0, true, false);
 }
 
 

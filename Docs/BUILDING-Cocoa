@@ -27,7 +27,7 @@
   The remainder must be installed manually.  Currently, some of the libraries
   developed as part of the NetSurf project have not had official releases.
   Hopefully they will soon be released with downloadable tarballs and packaged
-  in common distros.  For now, you'll have to make do with svn checkouts.
+  in common distros.  For now, you'll have to make do with Git checkouts.
 
   Package installation
 ----------------------

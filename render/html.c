@@ -113,6 +113,9 @@ dom_string *html_dom_string_coords;
 dom_string *html_dom_string_circle;
 dom_string *html_dom_string_poly;
 dom_string *html_dom_string_polygon;
+dom_string *html_dom_string_button;
+dom_string *html_dom_string_input;
+dom_string *html_dom_string_textarea;
 
 
 static void html_destroy_objects(html_content *html)
@@ -184,6 +187,7 @@ static void html_box_convert_done(html_content *c, bool success)
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
+		dom_node_unref(html);
 		return;
 	}
 	/*imagemap_dump(c);*/
@@ -198,6 +202,7 @@ static void html_box_convert_done(html_content *c, bool success)
 		content_set_done(&c->base);
 
 	html_set_status(c, "");
+	dom_node_unref(html);
 }
 
 /**
@@ -287,12 +292,15 @@ void html_finish_conversion(html_content *c)
 	}
 
 	if (xml_to_box(html, c, html_box_convert_done) == false) {
+		dom_node_unref(html);
 		html_destroy_objects(c);
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
 		return;
 	}
+
+	dom_node_unref(html);
 }
 
 
@@ -736,18 +744,22 @@ static bool html_head(html_content *c, dom_node *head)
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			exc = dom_node_get_node_name(node, &node_name);
 
-			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
+			if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
 				if (dom_string_caseless_isequal(node_name,
-						 html_dom_string_title)) {
+						html_dom_string_title)) {
 					html_process_title(c, node);
-				} else if (dom_string_caseless_isequal(node_name,
-						 html_dom_string_base)) {
+				} else if (dom_string_caseless_isequal(
+						node_name,
+						html_dom_string_base)) {
 					html_process_base(c, node);
-				} else if (dom_string_caseless_isequal(node_name,
-						 html_dom_string_link)) {
+				} else if (dom_string_caseless_isequal(
+						node_name,
+						html_dom_string_link)) {
 					html_process_link(c, node);
 				}
 			}
+			if (node_name != NULL)
+				dom_string_unref(node_name);
 		}
 
 		/* move to next node */
@@ -997,28 +1009,35 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 			}
 
 			/* Recurse into noscript elements */
-			if (strcmp(dom_string_data(name), "noscript") == 0) {
+			if (strcasecmp(dom_string_data(name),
+					"noscript") == 0) {
 				if (html_meta_refresh(c, n) == false) {
 					/* Some error occurred */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return false;
 				} else if (c->base.refresh) {
 					/* Meta refresh found - stop */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return true;
 				}
-			} else if (strcmp(dom_string_data(name), "meta") == 0) {
+			} else if (strcasecmp(dom_string_data(name),
+					"meta") == 0) {
 				if (html_meta_refresh_process_element(c,
 						n) == false) {
 					/* Some error occurred */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return false;
 				} else if (c->base.refresh != NULL) {
 					/* Meta refresh found - stop */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return true;
 				}
 			}
+			dom_string_unref(name);
 		}
 
 		exc = dom_node_get_next_sibling(n, &next);
@@ -1436,7 +1455,7 @@ html_process_style_element(html_content *c,
 	/* type='text/css', or not present (invalid but common) */
 	exc = dom_element_get_attribute(style, html_dom_string_type, &val);
 	if (exc == DOM_NO_ERR && val != NULL) {
-		if (strcmp(dom_string_data(val), "text/css") != 0) {
+		if (strcasecmp(dom_string_data(val), "text/css") != 0) {
 			dom_string_unref(val);
 			return true;
 		}
@@ -1683,14 +1702,14 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	hlcache_child_context child;
 
 	/* deal with style nodes */
-	if (strcmp(dom_string_data(name), "style") == 0) {
+	if (strcasecmp(dom_string_data(name), "style") == 0) {
 		if (!html_process_style_element(ctx->c,	&ctx->count, node))
 			return false;
 		return true;
 	}
 
 	/* if it is not a link node skip it */
-	if (strcmp(dom_string_data(name), "link") != 0) {
+	if (strcasecmp(dom_string_data(name), "link") != 0) {
 		return true;
 	}
 
@@ -1713,7 +1732,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	/* type='text/css' or not present */
 	exc = dom_element_get_attribute(node, html_dom_string_type, &type_attr);
 	if (exc == DOM_NO_ERR && type_attr != NULL) {
-		if (strcmp(dom_string_data(type_attr), "text/css") != 0) {
+		if (strcasecmp(dom_string_data(type_attr), "text/css") != 0) {
 			dom_string_unref(type_attr);
 			return true;
 		}
@@ -1993,6 +2012,7 @@ static bool html_convert(struct content *c)
 		LOG(("root element not html"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		dom_node_unref(html);
 		return false;
 	}
 	dom_string_unref(node_name);
@@ -2041,16 +2061,22 @@ static bool html_convert(struct content *c)
 		if (html_head(htmlc, head) == false) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			dom_node_unref(html);
+			dom_node_unref(head);
 			return false;
 		}
 
 		/* handle meta refresh */
-		if (html_meta_refresh(htmlc, head) == false)
+		if (html_meta_refresh(htmlc, head) == false) {
+			dom_node_unref(html);
+			dom_node_unref(head);
 			return false;
+		}
 	}
 
 	/* Retrieve forms from parser */
-	htmlc->forms = html_forms_get_forms(htmlc->encoding, htmlc->document);
+	htmlc->forms = html_forms_get_forms(htmlc->encoding,
+			(dom_html_document *) htmlc->document);
 	for (f = htmlc->forms; f != NULL; f = f->prev) {
 		char *action;
 		url_func_result res;
@@ -2068,6 +2094,8 @@ static bool html_convert(struct content *c)
 		if (res != URL_FUNC_OK) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			dom_node_unref(html);
+			dom_node_unref(head);
 			return false;
 		}
 
@@ -2081,15 +2109,21 @@ static bool html_convert(struct content *c)
 				msg_data.error = messages_get("NoMemory");
 				content_broadcast(c, CONTENT_MSG_ERROR,
 						msg_data);
+				dom_node_unref(html);
+				dom_node_unref(head);
 				return false;
 			}
 		}
 	}
 
+	dom_node_unref(head);
 	/* get stylesheets */
-	if (html_find_stylesheets(htmlc, html) == false)
+	if (html_find_stylesheets(htmlc, html) == false) {
+		dom_node_unref(html);
 		return false;
+	}
 
+	dom_node_unref(html);
 	return true;
 }
 
@@ -3137,6 +3171,9 @@ static void html_fini(void)
 	HTML_DOM_STRING_UNREF(circle);
 	HTML_DOM_STRING_UNREF(poly);
 	HTML_DOM_STRING_UNREF(polygon);
+	HTML_DOM_STRING_UNREF(button);
+	HTML_DOM_STRING_UNREF(input);
+	HTML_DOM_STRING_UNREF(textarea);
 
 #undef HTML_DOM_STRING_UNREF
 
@@ -3266,6 +3303,9 @@ nserror html_init(void)
 	HTML_DOM_STRING_INTERN(circle);
 	HTML_DOM_STRING_INTERN(poly);
 	HTML_DOM_STRING_INTERN(polygon);
+	HTML_DOM_STRING_INTERN(button);
+	HTML_DOM_STRING_INTERN(input);
+	HTML_DOM_STRING_INTERN(textarea);
 
 #undef HTML_DOM_STRING_INTERN
 

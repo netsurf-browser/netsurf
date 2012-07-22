@@ -32,6 +32,7 @@
 #include "render/box.h"
 #include "render/html_internal.h"
 #include "render/imagemap.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/utils.h"
 
@@ -258,7 +259,7 @@ imagemap_extract(html_content *c)
 	unsigned long maybe_maps, mapnr;
 	
 	exc = dom_document_get_elements_by_tag_name(c->document, 
-						    html_dom_string_map, 
+						    corestring_dom_map, 
 						    &nlist);
 	if (exc != DOM_NO_ERR) {
 		return false;
@@ -277,7 +278,7 @@ imagemap_extract(html_content *c)
 			goto out_nlist;
 		}
 		
-		exc = dom_element_get_attribute(node, html_dom_string_id,
+		exc = dom_element_get_attribute(node, corestring_dom_id,
 						&name);
 		if (exc != DOM_NO_ERR) {
 			dom_node_unref(node);
@@ -286,7 +287,7 @@ imagemap_extract(html_content *c)
 		
 		if (name == NULL) {
 			exc = dom_element_get_attribute(node, 
-							html_dom_string_name,
+							corestring_dom_name,
 							&name);
 			if (exc != DOM_NO_ERR) {
 				dom_node_unref(node);
@@ -391,10 +392,10 @@ bool imagemap_extract_map(dom_node *node, html_content *c,
 		struct mapentry **entry)
 {
 	if (imagemap_extract_map_entries(node, c, entry, 
-					 html_dom_string_area) == false)
+			corestring_dom_area) == false)
 		return false;
 	return imagemap_extract_map_entries(node, c, entry,
-					    html_dom_string_a);
+			corestring_dom_a);
 }
 /**
  * Adds an imagemap entry to the list
@@ -414,39 +415,38 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 	struct mapentry *new_map, *temp;
 	bool ret = true;
 	
-	if (tagtype == html_dom_string_area) {
+	if (dom_string_caseless_isequal(tagtype, corestring_dom_area)) {
 		bool nohref = false;
 		exc = dom_element_has_attribute(n, 
-						html_dom_string_nohref,
-						&nohref);
+				corestring_dom_nohref, &nohref);
 		if ((exc != DOM_NO_ERR) || nohref)
 			/* Skip <area nohref="anything" /> */
 			goto ok_out;
 	}
 	
-	exc = dom_element_get_attribute(n, html_dom_string_href, &href);
+	exc = dom_element_get_attribute(n, corestring_dom_href, &href);
 	if (exc != DOM_NO_ERR) {
 		/* No href="" attribute, skip this element */
 		goto ok_out;
 	}
 	
-	exc = dom_element_get_attribute(n, html_dom_string_target, &target);
+	exc = dom_element_get_attribute(n, corestring_dom_target, &target);
 	if (exc != DOM_NO_ERR) {
 		goto ok_out;
 	}
 	
-	exc = dom_element_get_attribute(n, html_dom_string_shape, &shape);
+	exc = dom_element_get_attribute(n, corestring_dom_shape, &shape);
 	if (exc != DOM_NO_ERR) {
 		goto ok_out;
 	}
 	
 	/* If there's no shape, we default to rectangles */
 	if (shape == NULL)
-		shape = dom_string_ref(html_dom_string_rect);
+		shape = dom_string_ref(corestring_dom_rect);
 	
-	if (!dom_string_caseless_isequal(shape, html_dom_string_default)) {
+	if (!dom_string_caseless_lwc_isequal(shape, corestring_lwc_default)) {
 		/* If not 'default' and there's no 'coords' give up */
-		exc = dom_element_get_attribute(n, html_dom_string_coords, 
+		exc = dom_element_get_attribute(n, corestring_dom_coords, 
 						&coords);
 		if (exc != DOM_NO_ERR) {
 			goto ok_out;
@@ -458,15 +458,15 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 		goto bad_out;
 	}
 	
-	if (dom_string_caseless_isequal(shape, html_dom_string_rect) ||
-	    dom_string_caseless_isequal(shape, html_dom_string_rectangle))
+	if (dom_string_caseless_lwc_isequal(shape, corestring_lwc_rect) ||
+	    dom_string_caseless_lwc_isequal(shape, corestring_lwc_rectangle))
 		new_map->type = IMAGEMAP_RECT;
-	else if (dom_string_caseless_isequal(shape, html_dom_string_circle))
+	else if (dom_string_caseless_lwc_isequal(shape, corestring_lwc_circle))
 		new_map->type = IMAGEMAP_CIRCLE;
-	else if (dom_string_caseless_isequal(shape, html_dom_string_poly) ||
-		 dom_string_caseless_isequal(shape, html_dom_string_polygon))
+	else if (dom_string_caseless_lwc_isequal(shape, corestring_lwc_poly) ||
+		 dom_string_caseless_lwc_isequal(shape, corestring_lwc_polygon))
 		new_map->type = IMAGEMAP_POLY;
-	else if (dom_string_caseless_isequal(shape, html_dom_string_default))
+	else if (dom_string_caseless_lwc_isequal(shape, corestring_lwc_default))
 		new_map->type = IMAGEMAP_DEFAULT;
 	else
 		goto bad_out;

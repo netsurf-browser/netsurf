@@ -86,7 +86,7 @@ NETSURF_UA_FORMAT_STRING := "NetSurf/%d.%d (%s; %s)"
 # option does not apply to the RISC OS version, as it has its own local
 # home page, and it can be changed by editing the end of gui_init2() in
 # riscos/gui.c
-NETSURF_HOMEPAGE := "http://www.netsurf-browser.org/welcome/"
+NETSURF_HOMEPAGE := "about:welcome"
 
 # Force using glibc internal iconv implementation instead of external libiconv
 # Valid options: YES, NO

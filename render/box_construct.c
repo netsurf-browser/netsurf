@@ -114,6 +114,7 @@ static bool box_frameset(BOX_SPECIAL_PARAMS);
 static bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 		html_content *content);
 static bool box_select_add_option(struct form_control *control, dom_node *n);
+static bool box_noscript(BOX_SPECIAL_PARAMS);
 static bool box_object(BOX_SPECIAL_PARAMS);
 static bool box_embed(BOX_SPECIAL_PARAMS);
 static bool box_pre(BOX_SPECIAL_PARAMS);
@@ -139,6 +140,7 @@ static const struct element_entry element_table[] = {
 	{"image", box_image},
 	{"img", box_image},
 	{"input", box_input},
+	{"noscript", box_noscript},
 	{"object", box_object},
 	{"pre", box_pre},
 	{"select", box_select},
@@ -164,7 +166,7 @@ bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 		return false;
 
 	ctx->content = c;
-	ctx->n = n;
+	ctx->n = dom_node_ref(n);
 	ctx->root_box = NULL;
 	ctx->cb = cb;
 
@@ -384,6 +386,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 			dom_node_unref(n);
 			return NULL;
 		}
+		dom_node_unref(n);
 	} else {
 		err = dom_node_get_next_sibling(n, &next);
 		if (err != DOM_NO_ERR) {
@@ -421,6 +424,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 
 				if (parent_next != NULL) {
 					dom_node_unref(parent_next);
+					dom_node_unref(parent);
 					break;
 				}
 
@@ -1750,6 +1754,20 @@ bool box_image(BOX_SPECIAL_PARAMS)
 
 
 /**
+ * Noscript element
+ */
+
+bool box_noscript(BOX_SPECIAL_PARAMS)
+{
+	/* If scripting is enabled, do not display the contents of noscript */
+	if (nsoption_bool(enable_javascript))
+		*convert_children = false;
+
+	return true;
+}
+
+
+/**
  * Destructor for object_params, for <object> elements
  *
  * \param b	The object params being destroyed.
@@ -1923,7 +1941,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 				return false;
 			}
 
-			if (strcmp(dom_string_data(name), "param") != 0) {
+			if (strcasecmp(dom_string_data(name), "param") != 0) {
 				/* The first non-param child is the start of 
 				 * the alt html. Therefore, we should break 
 				 * out of this loop. */
@@ -2176,9 +2194,11 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				}
 
 				if (type != DOM_ELEMENT_NODE ||
-						(strcmp(dom_string_data(name), 
+						(strcasecmp(
+							dom_string_data(name),
 							"frame") != 0 &&
-						strcmp(dom_string_data(name), 
+						strcasecmp(
+							dom_string_data(name),
 							"frameset") != 0)) {
 					err = dom_node_get_next_sibling(c, 
 							&next);
@@ -2209,7 +2229,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				return false;
 			}
 
-			if (strcmp(dom_string_data(s), "frameset") == 0) {
+			if (strcasecmp(dom_string_data(s), "frameset") == 0) {
 				dom_string_unref(s);
 				frame->border = 0;
 				if (box_create_frameset(frame, c, 
@@ -2683,14 +2703,14 @@ bool box_select(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		if (strcmp(dom_string_data(name), "option") == 0) {
+		if (strcasecmp(dom_string_data(name), "option") == 0) {
 			dom_string_unref(name);
 
 			if (box_select_add_option(gadget, c) == false) {
 				dom_node_unref(c);
 				goto no_memory;
 			}
-		} else if (strcmp(dom_string_data(name), "optgroup") == 0) {
+		} else if (strcasecmp(dom_string_data(name), "optgroup") == 0) {
 			dom_string_unref(name);
 
 			err = dom_node_get_first_child(c, &c2);
@@ -2709,7 +2729,7 @@ bool box_select(BOX_SPECIAL_PARAMS)
 					return false;
 				}
 				
-				if (strcmp(dom_string_data(c2_name),
+				if (strcasecmp(dom_string_data(c2_name),
 						"option") == 0) {
 					dom_string_unref(c2_name);
 

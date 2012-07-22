@@ -19,6 +19,7 @@
 
 #include "render/form.h"
 #include "render/html_internal.h"
+#include "utils/corestrings.h"
 
 #include "utils/log.h"
 
@@ -258,7 +259,7 @@ out:
 static struct form_control *
 parse_input_element(struct form *forms, dom_html_input_element *input)
 {
-	struct form_control *control;
+	struct form_control *control = NULL;
 	dom_html_form_element *form = NULL;
 	dom_string *ds_type = NULL;
 	dom_string *ds_name = NULL;
@@ -392,6 +393,52 @@ out:
 }
 
 static struct form_control *
+parse_textarea_element(struct form *forms, dom_html_text_area_element *ta)
+{
+	struct form_control *control = NULL;
+	dom_html_form_element *form = NULL;
+	dom_string *ds_name = NULL;
+
+	char *name = NULL;
+
+	if (dom_html_text_area_element_get_form(ta, &form) != DOM_NO_ERR)
+		goto out;
+
+	if (dom_html_text_area_element_get_name(ta, &ds_name) != DOM_NO_ERR)
+		goto out;
+
+	if (ds_name != NULL)
+		name = strndup(dom_string_data(ds_name),
+			       dom_string_byte_length(ds_name));
+
+	control = form_new_control(ta, GADGET_TEXTAREA);
+
+	if (control == NULL)
+		goto out;
+
+	if (name != NULL) {
+		/* Hand the name string over */
+		control->name = name;
+		name = NULL;
+	}
+
+	if (form != NULL && control != NULL)
+		form_add_control(find_form(forms, form), control);
+
+out:
+	if (form != NULL)
+		dom_node_unref(form);
+	if (ds_name != NULL)
+		dom_string_unref(ds_name);
+
+	if (name != NULL)
+		free(name);
+
+
+	return control;
+}
+
+static struct form_control *
 invent_fake_gadget(dom_node *node)
 {
 	struct form_control *ctl = form_new_control(node, GADGET_HIDDEN);
@@ -416,7 +463,6 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 	struct form_control *ctl = NULL;
 	dom_exception err;
 	dom_string *ds_name = NULL;
-	char *node_name = NULL;
 
 	if (forms == NULL)
 		return NULL;
@@ -432,18 +478,22 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 	/* Step two, extract the node's name so we can construct a gadget. */
 	err = dom_element_get_tag_name(node, &ds_name);
 	if (err == DOM_NO_ERR && ds_name != NULL) {
-		node_name = strndup(dom_string_data(ds_name),
-				    dom_string_byte_length(ds_name));
+
+		/* Step three, attempt to work out what gadget to make */
+		if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_button)) {
+			ctl = parse_button_element(forms,
+					(dom_html_button_element *) node);
+		} else if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_input)) {
+			ctl = parse_input_element(forms,
+					(dom_html_input_element *) node);
+		} else if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_textarea)) {
+			ctl = parse_textarea_element(forms,
+					(dom_html_text_area_element *) node);
+		}
 	}
-
-	/* Step three, attempt to work out what gadget to make */
-
-	if (node_name && strcasecmp(node_name, "button") == 0)
-		ctl = parse_button_element(forms,
-					   (dom_html_button_element *) node);
-	else if (node_name && strcasecmp(node_name, "input") == 0)
-		ctl = parse_input_element(forms,
-					  (dom_html_input_element *) node);
 
 	/* If all else fails, fake gadget time */
 	if (ctl == NULL)
@@ -451,8 +501,7 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 
 	if (ds_name != NULL)
 		dom_string_unref(ds_name);
-	if (node_name != NULL)
-		free(node_name);
+
 	return ctl;
 }
 

@@ -28,6 +28,7 @@
 #include "css/utils.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/url.h"
 #include "utils/utils.h"
@@ -533,6 +534,7 @@ css_error node_id(void *pw, void *node, lwc_string **id)
 			dom_string_unref(attr);
 			return CSS_NOMEM;
 		}
+		dom_string_unref(attr);
 	}
 
 	return CSS_OK;
@@ -637,9 +639,10 @@ css_error named_sibling_node(void *pw, void *node,
 		dom_node_unref(n);
 
 		if (dom_string_caseless_lwc_isequal(name, qname->name)) {
-			/** \todo Sort out reference counting */
 			*sibling = n;
 		}
+
+		dom_string_unref(name);
 	}
 
 	return CSS_OK;
@@ -1515,9 +1518,10 @@ css_error node_is_link(void *pw, void *n, bool *match)
 		return CSS_NOMEM;
 	}
 
-	if (dom_string_isequal(node_name, nscss_dom_string_a)) {
+	if (dom_string_caseless_lwc_isequal(node_name, corestring_lwc_a)) {
 		bool has_href;
-		exc = dom_element_has_attribute(node, nscss_dom_string_href, &has_href); 
+		exc = dom_element_has_attribute(node, corestring_dom_href,
+				&has_href); 
 		if ((exc == DOM_NO_ERR) && (has_href)) {
 			*match = true;
 		} else {
@@ -1751,30 +1755,31 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (dom_string_isequal(name, nscss_dom_string_col) ||
-	    dom_string_isequal(name, nscss_dom_string_thead) ||
-	    dom_string_isequal(name, nscss_dom_string_tbody) ||
-	    dom_string_isequal(name, nscss_dom_string_tfoot) ||
-	    dom_string_isequal(name, nscss_dom_string_tr) ||
-	    dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_col) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_thead) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_tbody) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_tfoot) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_tr) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th)) {
 		err = dom_element_get_attribute(node, 
-				nscss_dom_string_valign, &valign);
+				corestring_dom_valign, &valign);
 		if (err != DOM_NO_ERR || valign == NULL) {
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (dom_string_caseless_isequal(valign, nscss_dom_string_top)) {
+		if (dom_string_caseless_lwc_isequal(valign,
+				corestring_lwc_top)) {
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-		} else if (dom_string_caseless_isequal(valign,
-					nscss_dom_string_middle)) {
+		} else if (dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_middle)) {
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
-		} else if (dom_string_caseless_isequal(valign,
-					nscss_dom_string_bottom)) {
+		} else if (dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_bottom)) {
 			hint->status = CSS_VERTICAL_ALIGN_BOTTOM;
-		} else if (dom_string_caseless_isequal(valign,
-					nscss_dom_string_baseline)) {
+		} else if (dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_baseline)) {
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
 		} else {
 			dom_string_unref(valign);
@@ -1786,33 +1791,39 @@ node_presentational_hint_vertical_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (dom_string_isequal(name, nscss_dom_string_applet) ||
-		   dom_string_isequal(name, nscss_dom_string_embed) ||
-		   dom_string_isequal(name, nscss_dom_string_iframe) ||
-		   dom_string_isequal(name, nscss_dom_string_img) ||
-		   dom_string_isequal(name, nscss_dom_string_object)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_applet) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_embed) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_iframe) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_img) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_object)) {
 		/** \todo input[type=image][align=*] - $11.3.3 */
 		err = dom_element_get_attribute(node, 
-				nscss_dom_string_align, &valign);
+				corestring_dom_align, &valign);
 		if (err != DOM_NO_ERR || valign == NULL) {
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (dom_string_caseless_isequal(valign, nscss_dom_string_top)) {
+		if (dom_string_caseless_lwc_isequal(valign,
+				corestring_lwc_top)) {
 			hint->status = CSS_VERTICAL_ALIGN_TOP;
-		} else if (dom_string_caseless_isequal(valign,
-					nscss_dom_string_bottom) ||
-			   dom_string_caseless_isequal(valign,
-					nscss_dom_string_baseline)) {
+		} else if (dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_bottom) ||
+			   dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_baseline)) {
 			hint->status = CSS_VERTICAL_ALIGN_BASELINE;
-		} else if (dom_string_caseless_isequal(valign,
-					nscss_dom_string_texttop)) {
+		} else if (dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_texttop)) {
 			hint->status = CSS_VERTICAL_ALIGN_TEXT_TOP;
-		} else if (dom_string_caseless_isequal(valign,
-					nscss_dom_string_absmiddle) ||
-			   dom_string_caseless_isequal(valign,
-					nscss_dom_string_abscenter)) {
+		} else if (dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_absmiddle) ||
+			   dom_string_caseless_lwc_isequal(valign,
+					corestring_lwc_abscenter)) {
 			hint->status = CSS_VERTICAL_ALIGN_MIDDLE;
 		} else {
 			dom_string_unref(valign);
@@ -1843,30 +1854,31 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (dom_string_isequal(name, nscss_dom_string_p) ||
-	    dom_string_isequal(name, nscss_dom_string_h1) ||
-	    dom_string_isequal(name, nscss_dom_string_h2) ||
-	    dom_string_isequal(name, nscss_dom_string_h3) ||
-	    dom_string_isequal(name, nscss_dom_string_h4) ||
-	    dom_string_isequal(name, nscss_dom_string_h5) ||
-	    dom_string_isequal(name, nscss_dom_string_h6)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_p) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_h1) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_h2) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_h3) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_h4) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_h5) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_h6)) {
 		err = dom_element_get_attribute(node,
-				nscss_dom_string_align, &align);
+				corestring_dom_align, &align);
 		if (err != DOM_NO_ERR || align == NULL) {
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (dom_string_caseless_isequal(align, nscss_dom_string_left)) {
+		if (dom_string_caseless_lwc_isequal(align,
+				corestring_lwc_left)) {
 			hint->status = CSS_TEXT_ALIGN_LEFT;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_center)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_center)) {
 			hint->status = CSS_TEXT_ALIGN_CENTER;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_right)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_right)) {
 			hint->status = CSS_TEXT_ALIGN_RIGHT;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_justify)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_justify)) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
 			dom_string_unref(align);
@@ -1878,31 +1890,33 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (dom_string_isequal(name, nscss_dom_string_center)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_center)) {
 		hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
 
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (dom_string_isequal(name, nscss_dom_string_caption)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_caption)) {
 		err = dom_element_get_attribute(node,
-				nscss_dom_string_align, &align);
+				corestring_dom_align, &align);
 		if (err != DOM_NO_ERR) {
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (align == NULL || dom_string_caseless_isequal(align,
-				nscss_dom_string_center)) {
+		if (align == NULL || dom_string_caseless_lwc_isequal(align,
+				corestring_lwc_center)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_left)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_left)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_right)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_right)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_justify)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_justify)) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
 			dom_string_unref(align);
@@ -1915,31 +1929,38 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (dom_string_isequal(name, nscss_dom_string_div) ||
-		   dom_string_isequal(name, nscss_dom_string_thead) ||
-		   dom_string_isequal(name, nscss_dom_string_tbody) ||
-		   dom_string_isequal(name, nscss_dom_string_tfoot) ||
-		   dom_string_isequal(name, nscss_dom_string_tr) ||
-		   dom_string_isequal(name, nscss_dom_string_td) ||
-		   dom_string_isequal(name, nscss_dom_string_th)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_div) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_thead) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_tbody) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_tfoot) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_tr) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_td) ||
+		   dom_string_caseless_lwc_isequal(name,
+		   		corestring_lwc_th)) {
 		err = dom_element_get_attribute(node,
-				nscss_dom_string_align, &align);
+				corestring_dom_align, &align);
 		if (err != DOM_NO_ERR || align == NULL) {
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 
-		if (dom_string_caseless_isequal(align,
-					nscss_dom_string_center)) {
+		if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_center)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_CENTER;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_left)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_left)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_LEFT;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_right)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_right)) {
 			hint->status = CSS_TEXT_ALIGN_LIBCSS_RIGHT;
-		} else if (dom_string_caseless_isequal(align,
-					nscss_dom_string_justify)) {
+		} else if (dom_string_caseless_lwc_isequal(align,
+					corestring_lwc_justify)) {
 			hint->status = CSS_TEXT_ALIGN_JUSTIFY;
 		} else {
 			dom_string_unref(align);
@@ -1951,7 +1972,8 @@ node_presentational_hint_text_align(nscss_select_ctx *ctx,
 		dom_string_unref(name);
 
 		return CSS_OK;
-	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+			corestring_lwc_table)) {
 		/* Tables usually reset alignment */
 		hint->status = CSS_TEXT_ALIGN_INHERIT_IF_NON_MAGIC;
 
@@ -1979,20 +2001,15 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 	if (exc != DOM_NO_ERR)
 		return CSS_BADPARM;
 	
-	if (dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th)) {
 		css_qname qs;
 		dom_node *tablenode = NULL;
 		qs.ns = NULL;
-		exc = dom_string_intern(nscss_dom_string_table, &qs.name);
-		if (exc != DOM_NO_ERR) {
-			dom_string_unref(name);
-			return CSS_BADPARM;
-		}
+		qs.name = lwc_string_ref(corestring_lwc_table);
 		if (named_ancestor_node(ctx, node, &qs, 
 					(void *)&tablenode) != CSS_OK) {
 			/* Didn't find, or had error */
-			lwc_string_unref(qs.name);
 			dom_string_unref(name);
 			return CSS_PROPERTY_NOT_SET;
 		}
@@ -2001,8 +2018,8 @@ node_presentational_hint_padding_trbl(nscss_select_ctx *ctx,
 		
 		if (tablenode != NULL) {
 			exc = dom_element_get_attribute(tablenode,
-							nscss_dom_string_cellpadding,
-							&cellpadding);
+					corestring_dom_cellpadding,
+					&cellpadding);
 			if (exc != DOM_NO_ERR) {
 				dom_string_unref(name);
 				return CSS_BADPARM;
@@ -2043,11 +2060,11 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 	if (exc != DOM_NO_ERR)
 		return CSS_BADPARM;
 	
-	if (dom_string_isequal(n, nscss_dom_string_img) ||
-	    dom_string_isequal(n, nscss_dom_string_applet)) {
+	if (dom_string_caseless_lwc_isequal(n, corestring_lwc_img) ||
+	    dom_string_caseless_lwc_isequal(n, corestring_lwc_applet)) {
 		dom_string_unref(n);
 		exc = dom_element_get_attribute(node,
-						nscss_dom_string_hspace, &n);
+				corestring_dom_hspace, &n);
 		if (exc != DOM_NO_ERR) {
 			return CSS_BADPARM;
 		}
@@ -2065,11 +2082,11 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 		}
 		dom_string_unref(n);
 		return CSS_OK;
-	} else if (dom_string_isequal(n, nscss_dom_string_table) ||
-		   dom_string_isequal(n, nscss_dom_string_align)) {
+	} else if (dom_string_caseless_lwc_isequal(n, corestring_lwc_table) ||
+		   dom_string_caseless_lwc_isequal(n, corestring_lwc_align)) {
 		dom_string_unref(n);
 		exc = dom_element_get_attribute(node,
-						nscss_dom_string_align, &n);
+				corestring_dom_align, &n);
 		if (exc != DOM_NO_ERR) {
 			return CSS_BADPARM;
 		}
@@ -2077,10 +2094,14 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 		if (n == NULL)
 			return CSS_PROPERTY_NOT_SET;
 		
-		if (dom_string_caseless_isequal(n, nscss_dom_string_center) ||
-		    dom_string_caseless_isequal(n, nscss_dom_string_abscenter) ||
-		    dom_string_caseless_isequal(n, nscss_dom_string_middle) ||
-		    dom_string_caseless_isequal(n, nscss_dom_string_absmiddle)) {
+		if (dom_string_caseless_lwc_isequal(n,
+				corestring_lwc_center) ||
+		    dom_string_caseless_lwc_isequal(n,
+		    		corestring_lwc_abscenter) ||
+		    dom_string_caseless_lwc_isequal(n,
+		    		corestring_lwc_middle) ||
+		    dom_string_caseless_lwc_isequal(n,
+		    		corestring_lwc_absmiddle)) {
 			hint->status = CSS_MARGIN_AUTO;
 		} else {
 			dom_string_unref(n);
@@ -2089,17 +2110,18 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 		
 		dom_string_unref(n);
 		return CSS_OK;
-	} else if (dom_string_isequal(n, nscss_dom_string_hr)) {
+	} else if (dom_string_caseless_lwc_isequal(n, corestring_lwc_hr)) {
 		dom_string_unref(n);
 		exc = dom_element_get_attribute(node,
-						nscss_dom_string_align, &n);
+				corestring_dom_align, &n);
 		if (exc != DOM_NO_ERR)
 			return CSS_BADPARM;
 		
 		if (n == NULL)
 			return CSS_PROPERTY_NOT_SET;
 		
-		if (dom_string_caseless_isequal(n, nscss_dom_string_left)) {
+		if (dom_string_caseless_lwc_isequal(n,
+				corestring_lwc_left)) {
 			if (property == CSS_PROP_MARGIN_LEFT) {
 				hint->data.length.value = 0;
 				hint->data.length.unit = CSS_UNIT_PX;
@@ -2107,9 +2129,11 @@ node_presentational_hint_margin_rl(nscss_select_ctx *ctx,
 			} else {
 				hint->status = CSS_MARGIN_AUTO;
 			}
-		} else if (dom_string_caseless_isequal(n, nscss_dom_string_center)) {
+		} else if (dom_string_caseless_lwc_isequal(n,
+				corestring_lwc_center)) {
 			hint->status = CSS_MARGIN_AUTO;
-		} else if (dom_string_caseless_isequal(n, nscss_dom_string_right)) {
+		} else if (dom_string_caseless_lwc_isequal(n,
+				corestring_lwc_right)) {
 			if (property == CSS_PROP_MARGIN_RIGHT) {
 				hint->data.length.value = 0;
 				hint->data.length.unit = CSS_UNIT_PX;
@@ -2143,10 +2167,10 @@ node_presentational_hint_margin_tb(nscss_select_ctx *ctx,
 	if (exc != DOM_NO_ERR)
 		return CSS_BADPARM;
 	
-	if (dom_string_isequal(name, nscss_dom_string_img) ||
-	    dom_string_isequal(name, nscss_dom_string_applet)) {
-		exc = dom_element_get_attribute(node, nscss_dom_string_vspace,
-						&vspace);
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_img) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_applet)) {
+		exc = dom_element_get_attribute(node, corestring_dom_vspace,
+				&vspace);
 		if (exc != DOM_NO_ERR) {
 			dom_string_unref(name);
 			return CSS_BADPARM;
@@ -2186,16 +2210,12 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 	if (exc != DOM_NO_ERR)
 		return CSS_BADPARM;
 	
-	if (dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th)) {
 		css_qname qs;
 		dom_node *tablenode = NULL;
 		qs.ns = NULL;
-		exc = dom_string_intern(nscss_dom_string_table, &qs.name);
-		if (exc != DOM_NO_ERR) {
-			dom_string_unref(name);
-			return CSS_BADPARM;
-		}
+		qs.name = lwc_string_ref(corestring_lwc_table);
 		if (named_ancestor_node(ctx, node, &qs, 
 					(void *)&tablenode) != CSS_OK) {
 			/* Didn't find, or had error */
@@ -2207,7 +2227,7 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 		lwc_string_unref(qs.name);
 		if (tablenode != NULL) {
 			exc = dom_element_get_attribute(tablenode,
-					nscss_dom_string_border, &width);
+					corestring_dom_border, &width);
 			if (exc != DOM_NO_ERR) {
 				dom_string_unref(name);
 				return CSS_BADPARM;
@@ -2217,8 +2237,9 @@ node_presentational_hint_border_trbl_width(nscss_select_ctx *ctx,
 		 * return a reffed node to the CSS
 		 */
 		is_table_cell = true;
-	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
-		exc = dom_element_get_attribute(node, nscss_dom_string_border,
+	} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_table)) {
+		exc = dom_element_get_attribute(node, corestring_dom_border,
 				&width);
 		if (exc != DOM_NO_ERR) {
 			dom_string_unref(name);
@@ -2263,17 +2284,12 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 	if (exc != DOM_NO_ERR)
 		return CSS_BADPARM;
 
-	if (dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th)) {
 		css_qname qs;
 		dom_node *tablenode = NULL;
 		qs.ns = NULL;
-
-		exc = dom_string_intern(nscss_dom_string_table, &qs.name);
-		if (exc != DOM_NO_ERR) {
-			dom_string_unref(name);
-			return CSS_BADPARM;
-		}
+		qs.name = lwc_string_ref(corestring_lwc_table);
 
 		if (named_ancestor_node(ctx, node, &qs, 
 					(void *)&tablenode) != CSS_OK) {
@@ -2289,7 +2305,7 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 			bool has_border = false;
 
 			exc = dom_element_has_attribute(tablenode,
-							nscss_dom_string_border,
+							corestring_dom_border,
 							&has_border);
 			if (exc != DOM_NO_ERR) {
 				dom_string_unref(name);
@@ -2305,11 +2321,12 @@ node_presentational_hint_border_trbl_style(nscss_select_ctx *ctx,
 		/* No need to unref tablenode, named_ancestor_node does not
 		 * return a reffed node to the CSS
 		 */
-	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+			corestring_lwc_table)) {
 		bool has_border = false;
 
 		exc = dom_element_has_attribute(node,
-						nscss_dom_string_border,
+						corestring_dom_border,
 						&has_border);
 		if (exc != DOM_NO_ERR) {
 			dom_string_unref(name);
@@ -2341,17 +2358,12 @@ node_presentational_hint_border_trbl_color(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th)) {
 		css_qname qs;
 		dom_node *tablenode = NULL;
 		qs.ns = NULL;
-
-		err = dom_string_intern(nscss_dom_string_table, &qs.name);
-		if (err != DOM_NO_ERR) {
-			dom_string_unref(name);
-			return CSS_BADPARM;
-		}
+		qs.name = lwc_string_ref(corestring_lwc_table);
 
 		if (named_ancestor_node(ctx, node, &qs, 
 					(void *)&tablenode) != CSS_OK) {
@@ -2365,17 +2377,18 @@ node_presentational_hint_border_trbl_color(nscss_select_ctx *ctx,
 
 		if (tablenode != NULL) {
 			err = dom_element_get_attribute(node, 
-						nscss_dom_string_bordercolor, 
-						&bordercolor);
+					corestring_dom_bordercolor, 
+					&bordercolor);
 		}
 		/* No need to unref tablenode, named_ancestor_node does not
 		 * return a reffed node to the CSS
 		 */
 
-	} else if (dom_string_isequal(name, nscss_dom_string_table)) {
+	} else if (dom_string_caseless_lwc_isequal(name,
+			corestring_lwc_table)) {
 		err = dom_element_get_attribute(node, 
-						nscss_dom_string_bordercolor, 
-						&bordercolor);
+				corestring_dom_bordercolor, 
+				&bordercolor);
 	}
 
 	dom_string_unref(name);
@@ -2409,14 +2422,16 @@ node_presentational_hint_border_spacing(nscss_select_ctx *ctx,
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	if (!dom_string_caseless_isequal(node_name, nscss_dom_string_table)) {
+	if (!dom_string_caseless_lwc_isequal(node_name,
+			corestring_lwc_table)) {
 		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
 	dom_string_unref(node_name);
 
-	err = dom_element_get_attribute(node, nscss_dom_string_cellspacing, &cellspacing);
+	err = dom_element_get_attribute(node,
+			corestring_dom_cellspacing, &cellspacing);
 	if ((err != DOM_NO_ERR) || (cellspacing == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
@@ -2453,27 +2468,26 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (dom_string_isequal(name, nscss_dom_string_hr) ||
-	    dom_string_isequal(name, nscss_dom_string_iframe) ||
-	    dom_string_isequal(name, nscss_dom_string_img) ||
-	    dom_string_isequal(name, nscss_dom_string_object) ||
-	    dom_string_isequal(name, nscss_dom_string_table) ||
-	    dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th) ||
-	    dom_string_isequal(name, nscss_dom_string_applet)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_hr) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_iframe) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_img) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_object) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_table) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_applet)) {
 		err = dom_element_get_attribute(node, 
-						nscss_dom_string_width, 
-						&width);
-	} else if (dom_string_isequal(name, nscss_dom_string_textarea)) {
+				corestring_dom_width, &width);
+	} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_textarea)) {
 		textarea = true;
 		err = dom_element_get_attribute(node, 
-						nscss_dom_string_cols, 
-						&width);
-	} else if (dom_string_isequal(name, nscss_dom_string_input)) {
+				corestring_dom_cols, &width);
+	} else if (dom_string_caseless_lwc_isequal(name,
+			corestring_lwc_input)) {
 		input = true;
 		err = dom_element_get_attribute(node, 
-						nscss_dom_string_size, 
-						&width);
+				corestring_dom_size, &width);
 	}
 
 	dom_string_unref(name);
@@ -2494,15 +2508,16 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 		}
 
 		if (input) {
-			err = dom_element_get_attribute(node, 
-							nscss_dom_string_type, 
-							&width);
+			err = dom_element_get_attribute(node,
+					corestring_dom_type, &width);
 			if ((err != DOM_NO_ERR) || (width == NULL)) {
 				return CSS_PROPERTY_NOT_SET;
 			}
 
-			if (dom_string_isequal(name, nscss_dom_string_text) ||
-			    dom_string_isequal(name, nscss_dom_string_password)) {
+			if (dom_string_lwc_isequal(width,
+					corestring_lwc_text) ||
+			    dom_string_lwc_isequal(width,
+			    		corestring_lwc_password)) {
 				hint->data.length.unit = CSS_UNIT_EX;
 
 			}
@@ -2533,21 +2548,20 @@ node_presentational_hint_height(nscss_select_ctx *ctx,
 	if (err != DOM_NO_ERR)
 		return CSS_PROPERTY_NOT_SET;
 
-	if (dom_string_isequal(name, nscss_dom_string_iframe) ||
-	    dom_string_isequal(name, nscss_dom_string_td) ||
-	    dom_string_isequal(name, nscss_dom_string_th) ||
-	    dom_string_isequal(name, nscss_dom_string_tr) ||
-	    dom_string_isequal(name, nscss_dom_string_img) ||
-	    dom_string_isequal(name, nscss_dom_string_object) ||
-	    dom_string_isequal(name, nscss_dom_string_applet)) {
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_iframe) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_td) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_th) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_tr) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_img) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_object) ||
+	    dom_string_caseless_lwc_isequal(name, corestring_lwc_applet)) {
 		err = dom_element_get_attribute(node, 
-						nscss_dom_string_height, 
-						&height);
-	} else if (dom_string_isequal(name, nscss_dom_string_textarea)) {
+				corestring_dom_height, &height);
+	} else if (dom_string_caseless_lwc_isequal(name,
+			corestring_lwc_textarea)) {
 		textarea = true;
 		err = dom_element_get_attribute(node, 
-						nscss_dom_string_rows, 
-						&height);
+				corestring_dom_rows, &height);
 	}
 
 	dom_string_unref(name);
@@ -2588,14 +2602,15 @@ node_presentational_hint_font_size(nscss_select_ctx *ctx,
 		return CSS_NOMEM;
 	}
 
-	if (!dom_string_isequal(node_name, nscss_dom_string_font)) {
+	if (!dom_string_caseless_lwc_isequal(node_name,
+			corestring_lwc_font)) {
 		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
 	dom_string_unref(node_name);
 
-	err = dom_element_get_attribute(node, nscss_dom_string_align, &size);
+	err = dom_element_get_attribute(node, corestring_dom_align, &size);
 	if ((err != DOM_NO_ERR) || (size == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
@@ -2627,27 +2642,32 @@ node_presentational_hint_float(nscss_select_ctx *ctx,
 	}
 
 	/** \todo input[type=image][align=*] - $11.3.3 */
-	if (!dom_string_isequal(node_name, nscss_dom_string_applet) &&
-	    !dom_string_isequal(node_name, nscss_dom_string_embed) &&
-	    !dom_string_isequal(node_name, nscss_dom_string_iframe) &&
-	    !dom_string_isequal(node_name, nscss_dom_string_img) &&
-	    !dom_string_isequal(node_name, nscss_dom_string_object)) {
+	if (!dom_string_caseless_lwc_isequal(node_name,
+			corestring_lwc_applet) &&
+	    !dom_string_caseless_lwc_isequal(node_name,
+	    		corestring_lwc_embed) &&
+	    !dom_string_caseless_lwc_isequal(node_name,
+	    		corestring_lwc_iframe) &&
+	    !dom_string_caseless_lwc_isequal(node_name,
+	    		corestring_lwc_img) &&
+	    !dom_string_caseless_lwc_isequal(node_name,
+	    		corestring_lwc_object)) {
 		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
 	dom_string_unref(node_name);
 
-	err = dom_element_get_attribute(node, nscss_dom_string_align, &align);
+	err = dom_element_get_attribute(node, corestring_dom_align, &align);
 	if ((err != DOM_NO_ERR) || (align == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	if (dom_string_isequal(align, nscss_dom_string_left)) {
+	if (dom_string_lwc_isequal(align, corestring_lwc_left)) {
 		hint->status = CSS_FLOAT_LEFT;
 		dom_string_unref(align);
 		return CSS_OK;
-	} else if (dom_string_isequal(align, nscss_dom_string_right)) {
+	} else if (dom_string_lwc_isequal(align, corestring_lwc_right)) {
 		hint->status = CSS_FLOAT_RIGHT;
 		dom_string_unref(align);
 		return CSS_OK;
@@ -2673,18 +2693,14 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 		return CSS_NOMEM;
 	}
 
-	if (dom_string_isequal(node_name, nscss_dom_string_a)) {
+	if (dom_string_caseless_lwc_isequal(node_name, corestring_lwc_a)) {
 		/* find body node */
 		css_qname qs;
 		dom_node *bodynode = NULL;
 		bool is_visited;
 
 		qs.ns = NULL;
-		err = dom_string_intern(nscss_dom_string_body, &qs.name);
-		if (err != DOM_NO_ERR) {
-			dom_string_unref(node_name);
-			return CSS_BADPARM;
-		}
+		qs.name = lwc_string_ref(corestring_lwc_body);
 		if (named_ancestor_node(ctx, node, &qs, 
 					(void *)&bodynode) != CSS_OK) {
 			/* Didn't find, or had error */
@@ -2706,26 +2722,31 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 			return error;
 
 		if (is_visited) {
-			err = dom_element_get_attribute(node, nscss_dom_string_vlink, &color);
+			err = dom_element_get_attribute(node,
+					corestring_dom_vlink, &color);
 			if ((err != DOM_NO_ERR) || (color == NULL)) {
 				dom_string_unref(node_name);
 				return CSS_PROPERTY_NOT_SET;
 			}
 		} else {
-			err = dom_element_get_attribute(node, nscss_dom_string_link, &color);
+			err = dom_element_get_attribute(node,
+					corestring_dom_link, &color);
 			if ((err != DOM_NO_ERR) || (color == NULL)) {
 				dom_string_unref(node_name);
 				return CSS_PROPERTY_NOT_SET;
 			}
 		}
-	} else if (dom_string_isequal(node_name, nscss_dom_string_body)) {
-		err = dom_element_get_attribute(node, nscss_dom_string_text, &color);
+	} else if (dom_string_caseless_lwc_isequal(node_name,
+			corestring_lwc_body)) {
+		err = dom_element_get_attribute(node,
+				corestring_dom_text, &color);
 		if ((err != DOM_NO_ERR) || (color == NULL)) {
 			dom_string_unref(node_name);
 			return CSS_PROPERTY_NOT_SET;
 		}
 	} else {
-		err = dom_element_get_attribute(node, nscss_dom_string_color, &color);
+		err = dom_element_get_attribute(node,
+				corestring_dom_color, &color);
 		if ((err != DOM_NO_ERR) || (color == NULL)) {
 			dom_string_unref(node_name);
 			return CSS_PROPERTY_NOT_SET;
@@ -2759,19 +2780,20 @@ node_presentational_hint_caption_side(nscss_select_ctx *ctx,
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	if (!dom_string_caseless_isequal(node_name, nscss_dom_string_caption)) {
+	if (!dom_string_caseless_lwc_isequal(node_name,
+			corestring_lwc_caption)) {
 		dom_string_unref(node_name);
 		return CSS_PROPERTY_NOT_SET;
 	}
 
 	dom_string_unref(node_name);
 
-	err = dom_element_get_attribute(node, nscss_dom_string_align, &align);
+	err = dom_element_get_attribute(node, corestring_dom_align, &align);
 	if ((err != DOM_NO_ERR) || (align == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	if (dom_string_caseless_isequal(align, nscss_dom_string_bottom)) {
+	if (dom_string_caseless_lwc_isequal(align, corestring_lwc_bottom)) {
 		hint->status = CSS_CAPTION_SIDE_BOTTOM;
 		dom_string_unref(align);
 		return CSS_OK;
@@ -2790,7 +2812,8 @@ node_presentational_hint_background_color(nscss_select_ctx *ctx,
 	dom_exception err;
 	dom_string *bgcolor;
 
-	err = dom_element_get_attribute(node, nscss_dom_string_bgcolor, &bgcolor);
+	err = dom_element_get_attribute(node,
+			corestring_dom_bgcolor, &bgcolor);
 	if ((err != DOM_NO_ERR) || (bgcolor == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
@@ -2819,12 +2842,14 @@ node_presentational_hint_background_image(nscss_select_ctx *ctx,
 	lwc_string *iurl;
 	lwc_error lerror;
 
-	err = dom_element_get_attribute(node, nscss_dom_string_background, &atr_val);
+	err = dom_element_get_attribute(node,
+			corestring_dom_background, &atr_val);
 	if ((err != DOM_NO_ERR) || (atr_val == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
 
-	error = nsurl_join(ctx->base_url, (const char *)dom_string_data(atr_val), &url);
+	error = nsurl_join(ctx->base_url,
+			(const char *)dom_string_data(atr_val), &url);
 
 	dom_string_unref(atr_val);
 
@@ -2832,7 +2857,8 @@ node_presentational_hint_background_image(nscss_select_ctx *ctx,
 		return CSS_NOMEM;
 	} 
 
-	lerror = lwc_intern_string(nsurl_access(url), nsurl_length(url), &iurl);
+	lerror = lwc_intern_string(nsurl_access(url),
+			nsurl_length(url), &iurl);
 
 	nsurl_unref(url);
 
