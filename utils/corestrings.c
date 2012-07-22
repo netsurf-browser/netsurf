@@ -23,6 +23,7 @@
 #include <dom/dom.h>
 
 #include "utils/corestrings.h"
+#include "utils/utils.h"
 
 /* lwc_string strings */
 lwc_string *corestring_lwc_a;
@@ -36,7 +37,9 @@ lwc_string *corestring_lwc_bottom;
 lwc_string *corestring_lwc_button;
 lwc_string *corestring_lwc_caption;
 lwc_string *corestring_lwc_center;
+lwc_string *corestring_lwc_circle;
 lwc_string *corestring_lwc_col;
+lwc_string *corestring_lwc_default;
 lwc_string *corestring_lwc_div;
 lwc_string *corestring_lwc_embed;
 lwc_string *corestring_lwc_font;
@@ -56,6 +59,10 @@ lwc_string *corestring_lwc_middle;
 lwc_string *corestring_lwc_object;
 lwc_string *corestring_lwc_p;
 lwc_string *corestring_lwc_password;
+lwc_string *corestring_lwc_poly;
+lwc_string *corestring_lwc_polygon;
+lwc_string *corestring_lwc_rect;
+lwc_string *corestring_lwc_rectangle;
 lwc_string *corestring_lwc_right;
 lwc_string *corestring_lwc_table;
 lwc_string *corestring_lwc_tbody;
@@ -70,7 +77,9 @@ lwc_string *corestring_lwc_top;
 lwc_string *corestring_lwc_tr;
 
 /* dom_string strings */
+dom_string *corestring_dom_a;
 dom_string *corestring_dom_align;
+dom_string *corestring_dom_area;
 dom_string *corestring_dom_background;
 dom_string *corestring_dom_bgcolor;
 dom_string *corestring_dom_border;
@@ -79,13 +88,21 @@ dom_string *corestring_dom_cellpadding;
 dom_string *corestring_dom_cellspacing;
 dom_string *corestring_dom_color;
 dom_string *corestring_dom_cols;
+dom_string *corestring_dom_coords;
 dom_string *corestring_dom_height;
 dom_string *corestring_dom_href;
 dom_string *corestring_dom_hspace;
+dom_string *corestring_dom_id;
 dom_string *corestring_dom_link;
+dom_string *corestring_dom_map;
+dom_string *corestring_dom_name;
+dom_string *corestring_dom_nohref;
+dom_string *corestring_dom_rect;
 dom_string *corestring_dom_rows;
 dom_string *corestring_dom_size;
+dom_string *corestring_dom_shape;
 dom_string *corestring_dom_src;
+dom_string *corestring_dom_target;
 dom_string *corestring_dom_text;
 dom_string *corestring_dom_text_javascript;
 dom_string *corestring_dom_type;
@@ -119,7 +136,9 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(button);
 	CSS_LWC_STRING_UNREF(caption);
 	CSS_LWC_STRING_UNREF(center);
+	CSS_LWC_STRING_UNREF(circle);
 	CSS_LWC_STRING_UNREF(col);
+	CSS_LWC_STRING_UNREF(default);
 	CSS_LWC_STRING_UNREF(div);
 	CSS_LWC_STRING_UNREF(embed);
 	CSS_LWC_STRING_UNREF(font);
@@ -139,6 +158,10 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(object);
 	CSS_LWC_STRING_UNREF(p);
 	CSS_LWC_STRING_UNREF(password);
+	CSS_LWC_STRING_UNREF(poly);
+	CSS_LWC_STRING_UNREF(polygon);
+	CSS_LWC_STRING_UNREF(rect);
+	CSS_LWC_STRING_UNREF(rectangle);
 	CSS_LWC_STRING_UNREF(right);
 	CSS_LWC_STRING_UNREF(table);
 	CSS_LWC_STRING_UNREF(tbody);
@@ -161,7 +184,9 @@ void corestrings_fini(void)
 		}							\
 	} while (0)
 
+	CSS_DOM_STRING_UNREF(a);
 	CSS_DOM_STRING_UNREF(align);
+	CSS_DOM_STRING_UNREF(area);
 	CSS_DOM_STRING_UNREF(background);
 	CSS_DOM_STRING_UNREF(bgcolor);
 	CSS_DOM_STRING_UNREF(border);
@@ -170,13 +195,21 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(cellspacing);
 	CSS_DOM_STRING_UNREF(color);
 	CSS_DOM_STRING_UNREF(cols);
+	CSS_DOM_STRING_UNREF(coords);
 	CSS_DOM_STRING_UNREF(height);
 	CSS_DOM_STRING_UNREF(href);
 	CSS_DOM_STRING_UNREF(hspace);
+	CSS_DOM_STRING_UNREF(id);
 	CSS_DOM_STRING_UNREF(link);
+	CSS_DOM_STRING_UNREF(map);
+	CSS_DOM_STRING_UNREF(name);
+	CSS_DOM_STRING_UNREF(nohref);
+	CSS_DOM_STRING_UNREF(rect);
 	CSS_DOM_STRING_UNREF(rows);
 	CSS_DOM_STRING_UNREF(size);
+	CSS_DOM_STRING_UNREF(shape);
 	CSS_DOM_STRING_UNREF(src);
+	CSS_DOM_STRING_UNREF(target);
 	CSS_DOM_STRING_UNREF(text);
 	CSS_DOM_STRING_UNREF(text_javascript);
 	CSS_DOM_STRING_UNREF(type);
@@ -221,7 +254,9 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(button);
 	CSS_LWC_STRING_INTERN(caption);
 	CSS_LWC_STRING_INTERN(center);
+	CSS_LWC_STRING_INTERN(circle);
 	CSS_LWC_STRING_INTERN(col);
+	CSS_LWC_STRING_INTERN(default);
 	CSS_LWC_STRING_INTERN(div);
 	CSS_LWC_STRING_INTERN(embed);
 	CSS_LWC_STRING_INTERN(font);
@@ -241,6 +276,10 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(object);
 	CSS_LWC_STRING_INTERN(p);
 	CSS_LWC_STRING_INTERN(password);
+	CSS_LWC_STRING_INTERN(poly);
+	CSS_LWC_STRING_INTERN(polygon);
+	CSS_LWC_STRING_INTERN(rect);
+	CSS_LWC_STRING_INTERN(rectangle);
 	CSS_LWC_STRING_INTERN(right);
 	CSS_LWC_STRING_INTERN(table);
 	CSS_LWC_STRING_INTERN(tbody);
@@ -268,7 +307,9 @@ nserror corestrings_init(void)
 		}							\
 	} while(0)
 
+	CSS_DOM_STRING_INTERN(a);
 	CSS_DOM_STRING_INTERN(align);
+	CSS_DOM_STRING_INTERN(area);
 	CSS_DOM_STRING_INTERN(background);
 	CSS_DOM_STRING_INTERN(bgcolor);
 	CSS_DOM_STRING_INTERN(border);
@@ -277,21 +318,34 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(cellspacing);
 	CSS_DOM_STRING_INTERN(color);
 	CSS_DOM_STRING_INTERN(cols);
+	CSS_DOM_STRING_INTERN(coords);
 	CSS_DOM_STRING_INTERN(height);
 	CSS_DOM_STRING_INTERN(href);
 	CSS_DOM_STRING_INTERN(hspace);
+	CSS_DOM_STRING_INTERN(id);
 	CSS_DOM_STRING_INTERN(link);
+	CSS_DOM_STRING_INTERN(map);
+	CSS_DOM_STRING_INTERN(name);
+	CSS_DOM_STRING_INTERN(nohref);
+	CSS_DOM_STRING_INTERN(rect);
 	CSS_DOM_STRING_INTERN(rows);
 	CSS_DOM_STRING_INTERN(size);
+	CSS_DOM_STRING_INTERN(shape);
 	CSS_DOM_STRING_INTERN(src);
+	CSS_DOM_STRING_INTERN(target);
 	CSS_DOM_STRING_INTERN(text);
-	CSS_DOM_STRING_INTERN(text_javascript);
 	CSS_DOM_STRING_INTERN(type);
 	CSS_DOM_STRING_INTERN(valign);
 	CSS_DOM_STRING_INTERN(vlink);
 	CSS_DOM_STRING_INTERN(vspace);
 	CSS_DOM_STRING_INTERN(width);
 #undef CSS_DOM_STRING_INTERN
+
+	exc = dom_string_create_interned((const uint8_t *) "text/javascript",
+			SLEN("text/javascript"),
+			&corestring_dom_text_javascript);
+	if ((exc != DOM_NO_ERR) || (corestring_dom_text_javascript == NULL))
+		goto error;
 
 	return NSERROR_OK;
 
