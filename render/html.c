@@ -1013,10 +1013,12 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 					"noscript") == 0) {
 				if (html_meta_refresh(c, n) == false) {
 					/* Some error occurred */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return false;
 				} else if (c->base.refresh) {
 					/* Meta refresh found - stop */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return true;
 				}
@@ -1025,14 +1027,17 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 				if (html_meta_refresh_process_element(c,
 						n) == false) {
 					/* Some error occurred */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return false;
 				} else if (c->base.refresh != NULL) {
 					/* Meta refresh found - stop */
+					dom_string_unref(name);
 					dom_node_unref(n);
 					return true;
 				}
 			}
+			dom_string_unref(name);
 		}
 
 		exc = dom_node_get_next_sibling(n, &next);
