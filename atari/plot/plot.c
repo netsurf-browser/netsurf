@@ -500,7 +500,7 @@ static struct s_vdi_sysinfo * read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo 
 /*
 	Convert an RGB color to an VDI Color
 */
-void rgb_to_vdi1000(unsigned char * in, unsigned short * out)
+static void inline rgb_to_vdi1000(unsigned char * in, unsigned short * out)
 {
     double r = ((double)in[3]/255); /* prozentsatz red   */
     double g = ((double)in[2]/255);	/* prozentsatz green */
@@ -511,7 +511,7 @@ void rgb_to_vdi1000(unsigned char * in, unsigned short * out)
     return;
 }
 
-void vdi1000_to_rgb(unsigned short * in, unsigned char * out)
+static void inline vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 {
     double r = ((double)in[0]/1000); /* prozentsatz red   */
     double g = ((double)in[1]/1000); /* prozentsatz green */
@@ -603,7 +603,7 @@ static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
 /*
 	Convert an RGB color into an index into the 216 colors web pallette
 */
-short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
+static short inline rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 {
     short ret = 0;
     short i;
@@ -958,7 +958,7 @@ static inline uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
 	Alpha blends an image, using one pixel as the background.
 	The bitmap receives the result.
 */
-static bool ablend_pixel( struct bitmap * img, uint32_t bg, GRECT * clip )
+static bool inline ablend_pixel( struct bitmap * img, uint32_t bg, GRECT * clip )
 {
 	uint32_t * imgrow;
 	int img_x, img_y, img_stride;
@@ -980,7 +980,7 @@ static bool ablend_pixel( struct bitmap * img, uint32_t bg, GRECT * clip )
 	background images (bg). The background receives the blended
 	image pixels.
 */
-static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
+static bool inline ablend_bitmap( struct bitmap * img, struct bitmap * bg,
 						GRECT * img_clip, GRECT * bg_clip )
 {
 	uint32_t * imgrow;
@@ -1395,14 +1395,13 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 
 }
 
-static void convert_bitmap_done(void)
+static void inline convert_bitmap_done(void)
 {
 	if (size_buf_packed > CONV_KEEP_LIMIT) {
 		/* free the mem if it was an large allocation ... */
 		buf_packed = realloc(buf_packed, CONV_KEEP_LIMIT);
 		size_buf_packed = CONV_KEEP_LIMIT;
 	}
-	snapshot_suspend();
 }
 
 
@@ -1470,6 +1469,7 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
 
 	vro_cpyfm(atari_plot_vdi_handle, S_ONLY, (short*)&pxy, &src_mf,  &scrmf);
 	convert_bitmap_done();
+	snapshot_suspend();
 	return(true);
 }
 
