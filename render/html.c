@@ -292,12 +292,14 @@ void html_finish_conversion(html_content *c)
 	}
 
 	if (xml_to_box(html, c, html_box_convert_done) == false) {
+		dom_node_unref(html);
 		html_destroy_objects(c);
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
 		content_set_error(&c->base);
 		return;
 	}
+
 	dom_node_unref(html);
 }
 
