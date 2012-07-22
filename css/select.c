@@ -638,9 +638,10 @@ css_error named_sibling_node(void *pw, void *node,
 		dom_node_unref(n);
 
 		if (dom_string_caseless_lwc_isequal(name, qname->name)) {
-			/** \todo Sort out reference counting */
 			*sibling = n;
 		}
+
+		dom_string_unref(name);
 	}
 
 	return CSS_OK;
