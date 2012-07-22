@@ -166,7 +166,7 @@ bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 		return false;
 
 	ctx->content = c;
-	ctx->n = n;
+	ctx->n = dom_node_ref(n);
 	ctx->root_box = NULL;
 	ctx->cb = cb;
 
@@ -386,6 +386,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 			dom_node_unref(n);
 			return NULL;
 		}
+		dom_node_unref(n);
 	} else {
 		err = dom_node_get_next_sibling(n, &next);
 		if (err != DOM_NO_ERR) {
@@ -423,6 +424,7 @@ static dom_node *next_node(dom_node *n, html_content *content,
 
 				if (parent_next != NULL) {
 					dom_node_unref(parent_next);
+					dom_node_unref(parent);
 					break;
 				}
 
