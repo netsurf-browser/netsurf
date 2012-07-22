@@ -31,6 +31,7 @@ lwc_string *corestring_lwc_abscenter;
 lwc_string *corestring_lwc_absmiddle;
 lwc_string *corestring_lwc_align;
 lwc_string *corestring_lwc_applet;
+lwc_string *corestring_lwc_base;
 lwc_string *corestring_lwc_baseline;
 lwc_string *corestring_lwc_body;
 lwc_string *corestring_lwc_bottom;
@@ -49,12 +50,15 @@ lwc_string *corestring_lwc_h3;
 lwc_string *corestring_lwc_h4;
 lwc_string *corestring_lwc_h5;
 lwc_string *corestring_lwc_h6;
+lwc_string *corestring_lwc_head;
 lwc_string *corestring_lwc_hr;
+lwc_string *corestring_lwc_html;
 lwc_string *corestring_lwc_iframe;
 lwc_string *corestring_lwc_img;
 lwc_string *corestring_lwc_input;
 lwc_string *corestring_lwc_justify;
 lwc_string *corestring_lwc_left;
+lwc_string *corestring_lwc_link;
 lwc_string *corestring_lwc_middle;
 lwc_string *corestring_lwc_object;
 lwc_string *corestring_lwc_p;
@@ -70,11 +74,16 @@ lwc_string *corestring_lwc_td;
 lwc_string *corestring_lwc_text;
 lwc_string *corestring_lwc_textarea;
 lwc_string *corestring_lwc_texttop;
+lwc_string *corestring_lwc_title;
 lwc_string *corestring_lwc_tfoot;
 lwc_string *corestring_lwc_th;
 lwc_string *corestring_lwc_thead;
 lwc_string *corestring_lwc_top;
 lwc_string *corestring_lwc_tr;
+lwc_string *corestring_lwc__blank;
+lwc_string *corestring_lwc__parent;
+lwc_string *corestring_lwc__self;
+lwc_string *corestring_lwc__top;
 
 /* dom_string strings */
 dom_string *corestring_dom_a;
@@ -88,18 +97,24 @@ dom_string *corestring_dom_cellpadding;
 dom_string *corestring_dom_cellspacing;
 dom_string *corestring_dom_color;
 dom_string *corestring_dom_cols;
+dom_string *corestring_dom_content;
 dom_string *corestring_dom_coords;
 dom_string *corestring_dom_height;
 dom_string *corestring_dom_href;
+dom_string *corestring_dom_hreflang;
 dom_string *corestring_dom_hspace;
+dom_string *corestring_dom_http_equiv;
 dom_string *corestring_dom_id;
 dom_string *corestring_dom_link;
 dom_string *corestring_dom_map;
+dom_string *corestring_dom_media;
 dom_string *corestring_dom_name;
 dom_string *corestring_dom_nohref;
 dom_string *corestring_dom_rect;
+dom_string *corestring_dom_rel;
 dom_string *corestring_dom_rows;
 dom_string *corestring_dom_size;
+dom_string *corestring_dom_sizes;
 dom_string *corestring_dom_shape;
 dom_string *corestring_dom_src;
 dom_string *corestring_dom_target;
@@ -130,6 +145,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(absmiddle);
 	CSS_LWC_STRING_UNREF(align);
 	CSS_LWC_STRING_UNREF(applet);
+	CSS_LWC_STRING_UNREF(base);
 	CSS_LWC_STRING_UNREF(baseline);
 	CSS_LWC_STRING_UNREF(body);
 	CSS_LWC_STRING_UNREF(bottom);
@@ -148,12 +164,15 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(h4);
 	CSS_LWC_STRING_UNREF(h5);
 	CSS_LWC_STRING_UNREF(h6);
+	CSS_LWC_STRING_UNREF(head);
 	CSS_LWC_STRING_UNREF(hr);
+	CSS_LWC_STRING_UNREF(html);
 	CSS_LWC_STRING_UNREF(iframe);
 	CSS_LWC_STRING_UNREF(img);
 	CSS_LWC_STRING_UNREF(input);
 	CSS_LWC_STRING_UNREF(justify);
 	CSS_LWC_STRING_UNREF(left);
+	CSS_LWC_STRING_UNREF(link);
 	CSS_LWC_STRING_UNREF(middle);
 	CSS_LWC_STRING_UNREF(object);
 	CSS_LWC_STRING_UNREF(p);
@@ -169,11 +188,16 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(text);
 	CSS_LWC_STRING_UNREF(textarea);
 	CSS_LWC_STRING_UNREF(texttop);
+	CSS_LWC_STRING_UNREF(title);
 	CSS_LWC_STRING_UNREF(tfoot);
 	CSS_LWC_STRING_UNREF(th);
 	CSS_LWC_STRING_UNREF(thead);
 	CSS_LWC_STRING_UNREF(top);
 	CSS_LWC_STRING_UNREF(tr);
+	CSS_LWC_STRING_UNREF(_blank);
+	CSS_LWC_STRING_UNREF(_parent);
+	CSS_LWC_STRING_UNREF(_self);
+	CSS_LWC_STRING_UNREF(_top);
 #undef CSS_LWC_STRING_UNREF
 
 #define CSS_DOM_STRING_UNREF(NAME)					\
@@ -195,18 +219,24 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(cellspacing);
 	CSS_DOM_STRING_UNREF(color);
 	CSS_DOM_STRING_UNREF(cols);
+	CSS_DOM_STRING_UNREF(content);
 	CSS_DOM_STRING_UNREF(coords);
 	CSS_DOM_STRING_UNREF(height);
 	CSS_DOM_STRING_UNREF(href);
+	CSS_DOM_STRING_UNREF(hreflang);
 	CSS_DOM_STRING_UNREF(hspace);
+	CSS_DOM_STRING_UNREF(http_equiv);
 	CSS_DOM_STRING_UNREF(id);
 	CSS_DOM_STRING_UNREF(link);
 	CSS_DOM_STRING_UNREF(map);
+	CSS_DOM_STRING_UNREF(media);
 	CSS_DOM_STRING_UNREF(name);
 	CSS_DOM_STRING_UNREF(nohref);
 	CSS_DOM_STRING_UNREF(rect);
+	CSS_DOM_STRING_UNREF(rel);
 	CSS_DOM_STRING_UNREF(rows);
 	CSS_DOM_STRING_UNREF(size);
+	CSS_DOM_STRING_UNREF(sizes);
 	CSS_DOM_STRING_UNREF(shape);
 	CSS_DOM_STRING_UNREF(src);
 	CSS_DOM_STRING_UNREF(target);
@@ -248,6 +278,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(absmiddle);
 	CSS_LWC_STRING_INTERN(align);
 	CSS_LWC_STRING_INTERN(applet);
+	CSS_LWC_STRING_INTERN(base);
 	CSS_LWC_STRING_INTERN(baseline);
 	CSS_LWC_STRING_INTERN(body);
 	CSS_LWC_STRING_INTERN(bottom);
@@ -266,12 +297,15 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(h4);
 	CSS_LWC_STRING_INTERN(h5);
 	CSS_LWC_STRING_INTERN(h6);
+	CSS_LWC_STRING_INTERN(head);
 	CSS_LWC_STRING_INTERN(hr);
+	CSS_LWC_STRING_INTERN(html);
 	CSS_LWC_STRING_INTERN(iframe);
 	CSS_LWC_STRING_INTERN(img);
 	CSS_LWC_STRING_INTERN(input);
 	CSS_LWC_STRING_INTERN(justify);
 	CSS_LWC_STRING_INTERN(left);
+	CSS_LWC_STRING_INTERN(link);
 	CSS_LWC_STRING_INTERN(middle);
 	CSS_LWC_STRING_INTERN(object);
 	CSS_LWC_STRING_INTERN(p);
@@ -287,11 +321,16 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(text);
 	CSS_LWC_STRING_INTERN(textarea);
 	CSS_LWC_STRING_INTERN(texttop);
+	CSS_LWC_STRING_INTERN(title);
 	CSS_LWC_STRING_INTERN(tfoot);
 	CSS_LWC_STRING_INTERN(th);
 	CSS_LWC_STRING_INTERN(thead);
 	CSS_LWC_STRING_INTERN(top);
 	CSS_LWC_STRING_INTERN(tr);
+	CSS_LWC_STRING_INTERN(_blank);
+	CSS_LWC_STRING_INTERN(_parent);
+	CSS_LWC_STRING_INTERN(_self);
+	CSS_LWC_STRING_INTERN(_top);
 #undef CSS_LWC_STRING_INTERN
 
 #define CSS_DOM_STRING_INTERN(NAME)					\
@@ -318,18 +357,23 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(cellspacing);
 	CSS_DOM_STRING_INTERN(color);
 	CSS_DOM_STRING_INTERN(cols);
+	CSS_DOM_STRING_INTERN(content);
 	CSS_DOM_STRING_INTERN(coords);
 	CSS_DOM_STRING_INTERN(height);
 	CSS_DOM_STRING_INTERN(href);
+	CSS_DOM_STRING_INTERN(hreflang);
 	CSS_DOM_STRING_INTERN(hspace);
 	CSS_DOM_STRING_INTERN(id);
 	CSS_DOM_STRING_INTERN(link);
 	CSS_DOM_STRING_INTERN(map);
+	CSS_DOM_STRING_INTERN(media);
 	CSS_DOM_STRING_INTERN(name);
 	CSS_DOM_STRING_INTERN(nohref);
 	CSS_DOM_STRING_INTERN(rect);
+	CSS_DOM_STRING_INTERN(rel);
 	CSS_DOM_STRING_INTERN(rows);
 	CSS_DOM_STRING_INTERN(size);
+	CSS_DOM_STRING_INTERN(sizes);
 	CSS_DOM_STRING_INTERN(shape);
 	CSS_DOM_STRING_INTERN(src);
 	CSS_DOM_STRING_INTERN(target);
@@ -345,6 +389,12 @@ nserror corestrings_init(void)
 			SLEN("text/javascript"),
 			&corestring_dom_text_javascript);
 	if ((exc != DOM_NO_ERR) || (corestring_dom_text_javascript == NULL))
+		goto error;
+
+	exc = dom_string_create_interned((const uint8_t *) "http-equiv",
+			SLEN("http-equiv"),
+			&corestring_dom_http_equiv);
+	if ((exc != DOM_NO_ERR) || (corestring_dom_http_equiv == NULL))
 		goto error;
 
 	return NSERROR_OK;

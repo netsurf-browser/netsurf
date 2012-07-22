@@ -44,6 +44,7 @@
 #include "render/imagemap.h"
 #include "render/layout.h"
 #include "render/search.h"
+#include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -76,46 +77,6 @@ static nsurl *html_default_stylesheet_url;
 static nsurl *html_adblock_stylesheet_url;
 static nsurl *html_quirks_stylesheet_url;
 static nsurl *html_user_stylesheet_url;
-
-/* pre-interned dom strings */
-static dom_string *html_dom_string_html;
-static dom_string *html_dom_string_head;
-static dom_string *html_dom_string_rel;
-dom_string *html_dom_string_href;
-static dom_string *html_dom_string_hreflang;
-dom_string *html_dom_string_type;
-static dom_string *html_dom_string_media;
-static dom_string *html_dom_string_sizes;
-static dom_string *html_dom_string_title;
-static dom_string *html_dom_string_base;
-static dom_string *html_dom_string_link;
-static dom_string *html_dom_string_script;
-dom_string *html_dom_string_text_javascript;
-dom_string *html_dom_string_src;
-dom_string *html_dom_string_target;
-static dom_string *html_dom_string__parent;
-static dom_string *html_dom_string__self;
-static dom_string *html_dom_string__blank;
-static dom_string *html_dom_string__top;
-static dom_string *html_dom_string_http_equiv;
-static dom_string *html_dom_string_content;
-dom_string *html_dom_string_map;
-dom_string *html_dom_string_id;
-dom_string *html_dom_string_name;
-dom_string *html_dom_string_area;
-dom_string *html_dom_string_a;
-dom_string *html_dom_string_nohref;
-dom_string *html_dom_string_shape;
-dom_string *html_dom_string_default;
-dom_string *html_dom_string_rect;
-dom_string *html_dom_string_rectangle;
-dom_string *html_dom_string_coords;
-dom_string *html_dom_string_circle;
-dom_string *html_dom_string_poly;
-dom_string *html_dom_string_polygon;
-dom_string *html_dom_string_button;
-dom_string *html_dom_string_input;
-dom_string *html_dom_string_textarea;
 
 
 static void html_destroy_objects(html_content *html)
@@ -564,7 +525,7 @@ static bool html_process_link(html_content *c, dom_node *node)
 	memset(&link, 0, sizeof(struct content_rfc5988_link));
 
 	/* check that the relation exists - w3c spec says must be present */
-	exc = dom_element_get_attribute(node, html_dom_string_rel, &atr_string);
+	exc = dom_element_get_attribute(node, corestring_dom_rel, &atr_string);
 	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
 		return false;
 	}
@@ -576,14 +537,15 @@ static bool html_process_link(html_content *c, dom_node *node)
 	}
 
 	/* check that the href exists - w3c spec says must be present */
-	exc = dom_element_get_attribute(node, html_dom_string_href, &atr_string);
+	exc = dom_element_get_attribute(node, corestring_dom_href, &atr_string);
 	if ((exc != DOM_NO_ERR) || (atr_string == NULL)) {
 		lwc_string_unref(link.rel);
 		return false;
 	}
 
 	/* get nsurl */
-	error = nsurl_join(c->base_url, dom_string_data(atr_string), &link.href);
+	error = nsurl_join(c->base_url, dom_string_data(atr_string),
+			&link.href);
 	dom_string_unref(atr_string);
 	if (error != NSERROR_OK) {
 		lwc_string_unref(link.rel);
@@ -592,28 +554,32 @@ static bool html_process_link(html_content *c, dom_node *node)
 
 	/* look for optional properties -- we don't care if internment fails */
 
-	exc = dom_element_get_attribute(node, html_dom_string_hreflang, &atr_string);
+	exc = dom_element_get_attribute(node,
+			corestring_dom_hreflang, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the href lang */
 		exc = dom_string_intern(atr_string, &link.hreflang);
 		dom_string_unref(atr_string);
 	}
 
-	exc = dom_element_get_attribute(node, html_dom_string_type, &atr_string);
+	exc = dom_element_get_attribute(node,
+			corestring_dom_type, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the type */
 		exc = dom_string_intern(atr_string, &link.type);
 		dom_string_unref(atr_string);
 	}
 
-	exc = dom_element_get_attribute(node, html_dom_string_media, &atr_string);
+	exc = dom_element_get_attribute(node,
+			corestring_dom_media, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the media */
 		exc = dom_string_intern(atr_string, &link.media);
 		dom_string_unref(atr_string);
 	}
 
-	exc = dom_element_get_attribute(node, html_dom_string_sizes, &atr_string);
+	exc = dom_element_get_attribute(node,
+			corestring_dom_sizes, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* get a lwc string containing the sizes */
 		exc = dom_string_intern(atr_string, &link.sizes);
@@ -674,7 +640,8 @@ static bool html_process_base(html_content *c, dom_node *node)
 	dom_string *atr_string;
 
 	/* get href attribute if present */
-	exc = dom_element_get_attribute(node, html_dom_string_href, &atr_string);
+	exc = dom_element_get_attribute(node,
+			corestring_dom_href, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		nsurl *url;
 		nserror error;
@@ -695,7 +662,8 @@ static bool html_process_base(html_content *c, dom_node *node)
 		return true;
 	}
 
-	exc = dom_element_get_attribute(node, html_dom_string_target, &atr_string);
+	exc = dom_element_get_attribute(node,
+			corestring_dom_target, &atr_string);
 	if ((exc == DOM_NO_ERR) && (atr_string != NULL)) {
 		/* Validation rules from the HTML5 spec for the base element:
 		 *  The target must be one of _blank, _self, _parent, or
@@ -703,10 +671,14 @@ static bool html_process_base(html_content *c, dom_node *node)
 		 *  underscore
 		 */
 		if (*dom_string_data(atr_string) != '_' ||
-		    dom_string_caseless_isequal(atr_string, html_dom_string__blank) ||
-		    dom_string_caseless_isequal(atr_string, html_dom_string__self) ||
-		    dom_string_caseless_isequal(atr_string, html_dom_string__parent) ||
-		    dom_string_caseless_isequal(atr_string, html_dom_string__top)) {
+		    dom_string_caseless_lwc_isequal(atr_string,
+		    		corestring_lwc__blank) ||
+		    dom_string_caseless_lwc_isequal(atr_string,
+		    		corestring_lwc__self) ||
+		    dom_string_caseless_lwc_isequal(atr_string,
+		    		corestring_lwc__parent) ||
+		    dom_string_caseless_lwc_isequal(atr_string,
+		    		corestring_lwc__top)) {
 			c->base_target = strdup(dom_string_data(atr_string));
 		}
 		dom_string_unref(atr_string);
@@ -745,16 +717,17 @@ static bool html_head(html_content *c, dom_node *head)
 			exc = dom_node_get_node_name(node, &node_name);
 
 			if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
-				if (dom_string_caseless_isequal(node_name,
-						html_dom_string_title)) {
+				if (dom_string_caseless_lwc_isequal(
+						node_name,
+						corestring_lwc_title)) {
 					html_process_title(c, node);
-				} else if (dom_string_caseless_isequal(
+				} else if (dom_string_caseless_lwc_isequal(
 						node_name,
-						html_dom_string_base)) {
+						corestring_lwc_base)) {
 					html_process_base(c, node);
-				} else if (dom_string_caseless_isequal(
+				} else if (dom_string_caseless_lwc_isequal(
 						node_name,
-						html_dom_string_link)) {
+						corestring_lwc_link)) {
 					html_process_link(c, node);
 				}
 			}
@@ -786,7 +759,7 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 	nsurl *nsurl;
 	nserror error;
 
-	exc = dom_element_get_attribute(n, html_dom_string_http_equiv, &equiv);
+	exc = dom_element_get_attribute(n, corestring_dom_http_equiv, &equiv);
 	if (exc != DOM_NO_ERR)
 		return false;
 
@@ -800,7 +773,7 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 
 	dom_string_unref(equiv);
 
-	exc = dom_element_get_attribute(n, html_dom_string_content, &content);
+	exc = dom_element_get_attribute(n, corestring_dom_content, &content);
 	if (exc != DOM_NO_ERR)
 		return false;
 
@@ -1453,7 +1426,7 @@ html_process_style_element(html_content *c,
 	nserror error;
 
 	/* type='text/css', or not present (invalid but common) */
-	exc = dom_element_get_attribute(style, html_dom_string_type, &val);
+	exc = dom_element_get_attribute(style, corestring_dom_type, &val);
 	if (exc == DOM_NO_ERR && val != NULL) {
 		if (strcasecmp(dom_string_data(val), "text/css") != 0) {
 			dom_string_unref(val);
@@ -1463,7 +1436,7 @@ html_process_style_element(html_content *c,
 	}
 
 	/* media contains 'screen' or 'all' or not present */
-	exc = dom_element_get_attribute(style, html_dom_string_media, &val);
+	exc = dom_element_get_attribute(style, corestring_dom_media, &val);
 	if (exc == DOM_NO_ERR && val != NULL) {
 		if (strcasestr(dom_string_data(val), "screen") == NULL &&
 				strcasestr(dom_string_data(val),
@@ -1715,7 +1688,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 
 	/* rel=<space separated list, including 'stylesheet'> */
 	exc = dom_element_get_attribute(node,
-					html_dom_string_rel, &rel);
+					corestring_dom_rel, &rel);
 	if (exc != DOM_NO_ERR || rel == NULL)
 		return true;
 
@@ -1730,7 +1703,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	dom_string_unref(rel);
 
 	/* type='text/css' or not present */
-	exc = dom_element_get_attribute(node, html_dom_string_type, &type_attr);
+	exc = dom_element_get_attribute(node, corestring_dom_type, &type_attr);
 	if (exc == DOM_NO_ERR && type_attr != NULL) {
 		if (strcasecmp(dom_string_data(type_attr), "text/css") != 0) {
 			dom_string_unref(type_attr);
@@ -1740,7 +1713,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	}
 
 	/* media contains 'screen' or 'all' or not present */
-	exc = dom_element_get_attribute(node, html_dom_string_media, &media);
+	exc = dom_element_get_attribute(node, corestring_dom_media, &media);
 	if (exc == DOM_NO_ERR && media != NULL) {
 		if (strcasestr(dom_string_data(media), "screen") == NULL &&
 		    strcasestr(dom_string_data(media), "all") == NULL) {
@@ -1751,7 +1724,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	}
 
 	/* href='...' */
-	exc = dom_element_get_attribute(node, html_dom_string_href, &href);
+	exc = dom_element_get_attribute(node, corestring_dom_href, &href);
 	if (exc != DOM_NO_ERR || href == NULL)
 		return true;
 
@@ -2008,7 +1981,8 @@ static bool html_convert(struct content *c)
 	exc = dom_node_get_node_name(html, &node_name);
 	if ((exc != DOM_NO_ERR) ||
 	    (node_name == NULL) ||
-	    (!dom_string_caseless_isequal(node_name, html_dom_string_html))) {
+	    (!dom_string_caseless_lwc_isequal(node_name,
+	    		corestring_lwc_html))) {
 		LOG(("root element not html"));
 		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -2046,8 +2020,8 @@ static bool html_convert(struct content *c)
 		if (head != NULL) {
 			exc = dom_node_get_node_name(head, &node_name);
 			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
-				if (!dom_string_caseless_isequal(node_name,
-							html_dom_string_head)) {
+				if (!dom_string_caseless_lwc_isequal(node_name,
+							corestring_lwc_head)) {
 					dom_node_unref(head);
 					LOG(("head element not found"));
 					head = NULL;
@@ -3129,59 +3103,6 @@ static void html_fini(void)
 {
 	box_construct_fini();
 
-#define HTML_DOM_STRING_UNREF(NAME)					\
-	do {								\
-		if (html_dom_string_##NAME != NULL) {			\
-			dom_string_unref(html_dom_string_##NAME);	\
-			html_dom_string_##NAME = NULL;			\
-		}							\
-	} while (0)							\
-
-	HTML_DOM_STRING_UNREF(html);
-	HTML_DOM_STRING_UNREF(head);
-	HTML_DOM_STRING_UNREF(rel);
-	HTML_DOM_STRING_UNREF(href);
-	HTML_DOM_STRING_UNREF(hreflang);
-	HTML_DOM_STRING_UNREF(type);
-	HTML_DOM_STRING_UNREF(media);
-	HTML_DOM_STRING_UNREF(sizes);
-	HTML_DOM_STRING_UNREF(title);
-	HTML_DOM_STRING_UNREF(base);
-	HTML_DOM_STRING_UNREF(src);
-	HTML_DOM_STRING_UNREF(text_javascript);
-	HTML_DOM_STRING_UNREF(script);
-	HTML_DOM_STRING_UNREF(link);
-	HTML_DOM_STRING_UNREF(target);
-	HTML_DOM_STRING_UNREF(_blank);
-	HTML_DOM_STRING_UNREF(_self);
-	HTML_DOM_STRING_UNREF(_parent);
-	HTML_DOM_STRING_UNREF(_top);
-	HTML_DOM_STRING_UNREF(content);
-	HTML_DOM_STRING_UNREF(map);
-	HTML_DOM_STRING_UNREF(id);
-	HTML_DOM_STRING_UNREF(name);
-	HTML_DOM_STRING_UNREF(area);
-	HTML_DOM_STRING_UNREF(a);
-	HTML_DOM_STRING_UNREF(nohref);
-	HTML_DOM_STRING_UNREF(shape);
-	HTML_DOM_STRING_UNREF(default);
-	HTML_DOM_STRING_UNREF(rect);
-	HTML_DOM_STRING_UNREF(rectangle);
-	HTML_DOM_STRING_UNREF(coords);
-	HTML_DOM_STRING_UNREF(circle);
-	HTML_DOM_STRING_UNREF(poly);
-	HTML_DOM_STRING_UNREF(polygon);
-	HTML_DOM_STRING_UNREF(button);
-	HTML_DOM_STRING_UNREF(input);
-	HTML_DOM_STRING_UNREF(textarea);
-
-#undef HTML_DOM_STRING_UNREF
-
-	if (html_dom_string_http_equiv != NULL) {
-		dom_string_unref(html_dom_string_http_equiv);
-		html_dom_string_http_equiv = NULL;
-	}
-
 	if (html_user_stylesheet_url != NULL) {
 		nsurl_unref(html_user_stylesheet_url);
 		html_user_stylesheet_url = NULL;
@@ -3235,7 +3156,6 @@ nserror html_init(void)
 	uint32_t i;
 	lwc_error lerror;
 	nserror error;
-	dom_exception exc; /* returned by libdom functions */
 
 	lerror = lwc_intern_string("charset", SLEN("charset"), &html_charset);
 	if (lerror != lwc_error_ok) {
@@ -3261,64 +3181,6 @@ nserror html_init(void)
 	error = nsurl_create("resource:user.css",
 			&html_user_stylesheet_url);
 	if (error != NSERROR_OK)
-		goto error;
-
-#define HTML_DOM_STRING_INTERN(NAME)					\
-	exc = dom_string_create_interned((const uint8_t *)#NAME,	\
-					 sizeof(#NAME) - 1,		\
-					 &html_dom_string_##NAME );	\
-	if ((exc != DOM_NO_ERR) || (html_dom_string_##NAME == NULL))	\
-		goto error
-
-	HTML_DOM_STRING_INTERN(html);
-	HTML_DOM_STRING_INTERN(head);
-	HTML_DOM_STRING_INTERN(rel);
-	HTML_DOM_STRING_INTERN(href);
-	HTML_DOM_STRING_INTERN(hreflang);
-	HTML_DOM_STRING_INTERN(type);
-	HTML_DOM_STRING_INTERN(media);
-	HTML_DOM_STRING_INTERN(sizes);
-	HTML_DOM_STRING_INTERN(title);
-	HTML_DOM_STRING_INTERN(base);
-	HTML_DOM_STRING_INTERN(link);
-	HTML_DOM_STRING_INTERN(script);
-	HTML_DOM_STRING_INTERN(src);
-	HTML_DOM_STRING_INTERN(target);
-	HTML_DOM_STRING_INTERN(_blank);
-	HTML_DOM_STRING_INTERN(_self);
-	HTML_DOM_STRING_INTERN(_parent);
-	HTML_DOM_STRING_INTERN(_top);
-	HTML_DOM_STRING_INTERN(content);
-	HTML_DOM_STRING_INTERN(map);
-	HTML_DOM_STRING_INTERN(id);
-	HTML_DOM_STRING_INTERN(name);
-	HTML_DOM_STRING_INTERN(area);
-	HTML_DOM_STRING_INTERN(a);
-	HTML_DOM_STRING_INTERN(nohref);
-	HTML_DOM_STRING_INTERN(shape);
-	HTML_DOM_STRING_INTERN(default);
-	HTML_DOM_STRING_INTERN(rect);
-	HTML_DOM_STRING_INTERN(rectangle);
-	HTML_DOM_STRING_INTERN(coords);
-	HTML_DOM_STRING_INTERN(circle);
-	HTML_DOM_STRING_INTERN(poly);
-	HTML_DOM_STRING_INTERN(polygon);
-	HTML_DOM_STRING_INTERN(button);
-	HTML_DOM_STRING_INTERN(input);
-	HTML_DOM_STRING_INTERN(textarea);
-
-#undef HTML_DOM_STRING_INTERN
-
-	exc = dom_string_create_interned((const uint8_t *) "text/javascript",
-					 SLEN("text/javascript"),
-					 &html_dom_string_text_javascript);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_text_javascript == NULL))
-		goto error;
-
-	exc = dom_string_create_interned((const uint8_t *) "http-equiv",
-					 SLEN("http-equiv"),
-					 &html_dom_string_http_equiv);
-	if ((exc != DOM_NO_ERR) || (html_dom_string_http_equiv == NULL))
 		goto error;
 
 	error = box_construct_init();
