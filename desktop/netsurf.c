@@ -77,7 +77,7 @@ bool verbose_log = false;
 
 static void netsurf_lwc_iterator(lwc_string *str, void *pw)
 {
-	LOG(("%.*s", (int) lwc_string_length(str), lwc_string_data(str)));
+	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str), lwc_string_data(str)));
 }
 
 /**
