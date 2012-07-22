@@ -744,18 +744,22 @@ static bool html_head(html_content *c, dom_node *head)
 		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			exc = dom_node_get_node_name(node, &node_name);
 
-			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
+			if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
 				if (dom_string_caseless_isequal(node_name,
-						 html_dom_string_title)) {
+						html_dom_string_title)) {
 					html_process_title(c, node);
-				} else if (dom_string_caseless_isequal(node_name,
-						 html_dom_string_base)) {
+				} else if (dom_string_caseless_isequal(
+						node_name,
+						html_dom_string_base)) {
 					html_process_base(c, node);
-				} else if (dom_string_caseless_isequal(node_name,
-						 html_dom_string_link)) {
+				} else if (dom_string_caseless_isequal(
+						node_name,
+						html_dom_string_link)) {
 					html_process_link(c, node);
 				}
 			}
+			if (node_name != NULL)
+				dom_string_unref(node_name);
 		}
 
 		/* move to next node */
