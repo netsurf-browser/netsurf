@@ -250,7 +250,7 @@ out:
 		dom_string_unref(ds_value);
 	if (ds_name != NULL)
 		dom_string_unref(ds_name);
-	if (type == NULL)
+	if (type != NULL)
 		free(type);
 
 	return control;
