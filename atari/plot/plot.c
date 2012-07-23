@@ -160,7 +160,7 @@ const char* plot_err_str(int i)
 }
 
 
-static inline void vsl_rgbcolor(short vdih, uint32_t cin)
+inline static void vsl_rgbcolor(short vdih, uint32_t cin)
 {
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
@@ -180,7 +180,7 @@ static inline void vsl_rgbcolor(short vdih, uint32_t cin)
 	#endif
 }
 
-static inline void vsf_rgbcolor(short vdih, uint32_t cin)
+inline static void vsf_rgbcolor(short vdih, uint32_t cin)
 {
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
@@ -205,7 +205,7 @@ static inline void vsf_rgbcolor(short vdih, uint32_t cin)
 /*
 	Get current visible coords
 */
-static inline void plotter_get_visible_grect(GRECT * out)
+inline static void plotter_get_visible_grect(GRECT * out)
 {
 	out->g_x = view.vis_x;
 	out->g_y = view.vis_y;
@@ -222,7 +222,7 @@ static inline void plotter_get_visible_grect(GRECT * out)
 /*  and size.																*/
 /*	If the ploter coords do not fall within the screen region,				*/
 /*	all values of the region are set to zero.								*/
-static inline void update_visible_rect(void)
+inline static void update_visible_rect(void)
 {
 	GRECT screen;
 	GRECT common;
@@ -257,7 +257,7 @@ static inline void update_visible_rect(void)
 
 /* Returns the visible parts of the box (relative coords within framebuffer),*/
 /*   	relative to screen coords (normally starting at 0,0 ) 				 */
-static inline bool fbrect_to_screen(GRECT box, GRECT * ret)
+inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
 {
 	GRECT out, vis, screen;
 
@@ -291,7 +291,7 @@ static inline bool fbrect_to_screen(GRECT box, GRECT * ret)
 }
 
 /* convert framebuffer clipping to vdi clipping and activates it */
-static inline void plotter_vdi_clip(bool set)
+inline static void plotter_vdi_clip(bool set)
 {
 	// TODO : check this
 	return;
@@ -500,7 +500,7 @@ static struct s_vdi_sysinfo * read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo 
 /*
 	Convert an RGB color to an VDI Color
 */
-static void inline rgb_to_vdi1000(unsigned char * in, unsigned short * out)
+inline void rgb_to_vdi1000(unsigned char * in, unsigned short * out)
 {
     double r = ((double)in[3]/255); /* prozentsatz red   */
     double g = ((double)in[2]/255);	/* prozentsatz green */
@@ -511,7 +511,7 @@ static void inline rgb_to_vdi1000(unsigned char * in, unsigned short * out)
     return;
 }
 
-static void inline vdi1000_to_rgb(unsigned short * in, unsigned char * out)
+inline void vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 {
     double r = ((double)in[0]/1000); /* prozentsatz red   */
     double g = ((double)in[1]/1000); /* prozentsatz green */
@@ -525,7 +525,7 @@ static void inline vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 
 #ifdef WITH_8BPP_SUPPORT
 
-static inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
+inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
 	short * buf;
 	short whichbit = (1<<(15-(x%16)));
@@ -557,7 +557,7 @@ static inline void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned 
 	*buf = (val&(1<<7)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
 }
 
-static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
+inline static unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
 {
 	unsigned char ret=0;
 	short * buf;
@@ -603,7 +603,7 @@ static inline unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
 /*
 	Convert an RGB color into an index into the 216 colors web pallette
 */
-static short inline rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
+inline short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 {
     short ret = 0;
     short i;
@@ -665,61 +665,6 @@ static void dump_vdi_info( short vdih )
     printf("	unsigned long EdDiVersion: 0x0%03x\n", temp.EdDiVersion);
     printf("	unsigned short rasterscale: 0x%2x\n", temp.rasterscale);
     printf("};\n");
-}
-
-bool plot_resize_bitmap(struct bitmap * img, int nw, int nh)
-{
-	HermesFormat fmt;
-	short bpp = bitmap_get_bpp( img );
-	int stride = bitmap_get_rowstride( img );
-	int err;
-
-	if( img->resized != NULL ) {
-		if( img->resized->width != nw || img->resized->height != nh ) {
-			bitmap_destroy( img->resized );
-			img->resized = NULL;
-		} else {
-			/* the bitmap is already resized */
-			return( 0 );
-		}
-	}
-
-	/* allocate the mem for resized bitmap */
-	img->resized = bitmap_create_ex( nw, nh, bpp, nw*bpp, 0, NULL );
-	if( img->resized == NULL ) {
-			printf("W: %d, H: %d, bpp: %d\n", nw, nh, bpp);
-			assert( img->resized );
-			return ( -ERR_NO_MEM );
-	}
-
-	/* allocate an converter, only for resizing */
-	err = Hermes_ConverterRequest( hermes_res_h,
-			&nsfmt,
-			&nsfmt
-	);
-	if( err == 0 ) {
-		return( -ERR_PLOTTER_NOT_AVAILABLE );
-	}
-
-	err = Hermes_ConverterCopy( hermes_res_h,
-		img->pixdata,
-		0,			/* x src coord of top left in pixel coords */
-		0,			/* y src coord of top left in pixel coords */
-		bitmap_get_width( img ), bitmap_get_height( img ),
-		stride, 	/* stride as bytes */
-		img->resized->pixdata,
-		0,			/* x dst coord of top left in pixel coords */
-		0,			/* y dst coord of top left in pixel coords */
-		nw, nh,
-		bitmap_get_rowstride(img->resized) /* stride as bytes */
-	);
-	if( err == 0 ) {
-		bitmap_destroy( img->resized );
-		img->resized = NULL;
-		return( -2 );
-	}
-
-	return( 0 );
 }
 
 // create snapshot, native screen format
@@ -939,7 +884,7 @@ static void snapshot_destroy(void)
 }
 
 
-static inline uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
+inline static uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
 {
     int opacity = pixel & 0xFF;
     int transp = 0x100 - opacity;
@@ -958,7 +903,7 @@ static inline uint32_t ablend(uint32_t pixel, uint32_t scrpixel)
 	Alpha blends an image, using one pixel as the background.
 	The bitmap receives the result.
 */
-static bool inline ablend_pixel( struct bitmap * img, uint32_t bg, GRECT * clip )
+inline static bool ablend_pixel(struct bitmap * img, uint32_t bg, GRECT * clip)
 {
 	uint32_t * imgrow;
 	int img_x, img_y, img_stride;
@@ -980,7 +925,7 @@ static bool inline ablend_pixel( struct bitmap * img, uint32_t bg, GRECT * clip 
 	background images (bg). The background receives the blended
 	image pixels.
 */
-static bool inline ablend_bitmap( struct bitmap * img, struct bitmap * bg,
+inline static bool ablend_bitmap( struct bitmap * img, struct bitmap * bg,
 						GRECT * img_clip, GRECT * bg_clip )
 {
 	uint32_t * imgrow;
@@ -1395,7 +1340,7 @@ static bool bitmap_convert_tc(struct bitmap * img, int x, int y,
 
 }
 
-static void inline convert_bitmap_done(void)
+ inline static void convert_bitmap_done(void)
 {
 	if (size_buf_packed > CONV_KEEP_LIMIT) {
 		/* free the mem if it was an large allocation ... */
@@ -1996,7 +1941,7 @@ static bool plot_bitmap(int x, int y, int width, int height,
     }
 
     if(  width != bmpw || height != bmph ) {
-        plot_resize_bitmap(bitmap, width, height );
+        bitmap_resize(bitmap, hermes_res_h, &nsfmt, width, height );
         if( bitmap->resized )
             bm = bitmap->resized;
         else

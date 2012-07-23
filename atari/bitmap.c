@@ -429,6 +429,61 @@ size_t bitmap_get_bpp(void *bitmap)
 	return bm->bpp;
 }
 
+bool bitmap_resize(struct bitmap *img, HermesHandle hermes_h,
+		HermesFormat *fmt, int nw, int nh)
+{
+	short bpp = bitmap_get_bpp( img );
+	int stride = bitmap_get_rowstride( img );
+	int err;
+
+	if( img->resized != NULL ) {
+		if( img->resized->width != nw || img->resized->height != nh ) {
+			bitmap_destroy( img->resized );
+			img->resized = NULL;
+		} else {
+			/* the bitmap is already resized */
+			return(true);
+		}
+	}
+
+	/* allocate the mem for resized bitmap */
+	img->resized = bitmap_create_ex( nw, nh, bpp, nw*bpp, 0, NULL );
+	if( img->resized == NULL ) {
+			printf("W: %d, H: %d, bpp: %d\n", nw, nh, bpp);
+			assert(img->resized);
+			return(false);
+	}
+
+	/* allocate an converter, only for resizing */
+	err = Hermes_ConverterRequest( hermes_h,
+			fmt,
+			fmt
+	);
+	if( err == 0 ) {
+		return(false);
+	}
+
+	err = Hermes_ConverterCopy( hermes_h,
+		img->pixdata,
+		0,			/* x src coord of top left in pixel coords */
+		0,			/* y src coord of top left in pixel coords */
+		bitmap_get_width( img ), bitmap_get_height( img ),
+		stride, 	/* stride as bytes */
+		img->resized->pixdata,
+		0,			/* x dst coord of top left in pixel coords */
+		0,			/* y dst coord of top left in pixel coords */
+		nw, nh,
+		bitmap_get_rowstride(img->resized) /* stride as bytes */
+	);
+	if( err == 0 ) {
+		bitmap_destroy( img->resized );
+		img->resized = NULL;
+		return(false);
+	}
+
+	return(true);
+}
+
 /*
  * Local Variables:
  * c-basic-offset:8

@@ -20,6 +20,9 @@
 #define NS_ATARI_BITMAP_H
 
 #include <gem.h>
+#include <Hermes/Hermes.h>
+
+#define NS_BMP_DEFAULT_BPP 4
 
 /* Flags for init_mfdb function: */
 #define MFDB_FLAG_STAND			0x01
@@ -60,12 +63,12 @@ struct bitmap {
 	bool converted;
 };
 
-#define NS_BMP_DEFAULT_BPP 4
-
 void * bitmap_create_ex( int w, int h, short bpp, int rowstride, unsigned int state, void * pixdata );
 void bitmap_to_mfdb(void * bitmap, MFDB * out);
 void * bitmap_realloc( int w, int h, short bpp, int rowstride, unsigned int state, void * bmp );
 size_t bitmap_buffer_size( void * bitmap ) ;
+bool bitmap_resize(struct bitmap * img, HermesHandle hermes_h,
+		HermesFormat *fmt, int nw, int nh);
 /*
         setup an MFDB struct and allocate memory for it when it is needed.
         If bpp == 0, this function assumes that the MFDB shall point to the screen

@@ -113,7 +113,6 @@ void plotter_get_clip_grect(GRECT * out);
 bool plot_clip(const struct rect *clip);
 bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );
 bool plot_line( int x0, int y0, int x1, int y1, const plot_style_t *style );
-bool plot_resize_bitmap(struct bitmap * img, int nw, int nh);
 bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
                       unsigned long bg, unsigned long flags);
 bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
