@@ -38,11 +38,13 @@ lwc_string *corestring_lwc_bottom;
 lwc_string *corestring_lwc_button;
 lwc_string *corestring_lwc_caption;
 lwc_string *corestring_lwc_center;
+lwc_string *corestring_lwc_checkbox;
 lwc_string *corestring_lwc_circle;
 lwc_string *corestring_lwc_col;
 lwc_string *corestring_lwc_default;
 lwc_string *corestring_lwc_div;
 lwc_string *corestring_lwc_embed;
+lwc_string *corestring_lwc_file;
 lwc_string *corestring_lwc_font;
 lwc_string *corestring_lwc_h1;
 lwc_string *corestring_lwc_h2;
@@ -51,33 +53,40 @@ lwc_string *corestring_lwc_h4;
 lwc_string *corestring_lwc_h5;
 lwc_string *corestring_lwc_h6;
 lwc_string *corestring_lwc_head;
+lwc_string *corestring_lwc_hidden;
 lwc_string *corestring_lwc_hr;
 lwc_string *corestring_lwc_html;
 lwc_string *corestring_lwc_iframe;
+lwc_string *corestring_lwc_image;
 lwc_string *corestring_lwc_img;
 lwc_string *corestring_lwc_input;
 lwc_string *corestring_lwc_justify;
 lwc_string *corestring_lwc_left;
 lwc_string *corestring_lwc_link;
 lwc_string *corestring_lwc_middle;
+lwc_string *corestring_lwc_multipart_form_data;
 lwc_string *corestring_lwc_object;
 lwc_string *corestring_lwc_p;
 lwc_string *corestring_lwc_password;
 lwc_string *corestring_lwc_poly;
 lwc_string *corestring_lwc_polygon;
+lwc_string *corestring_lwc_post;
+lwc_string *corestring_lwc_radio;
 lwc_string *corestring_lwc_rect;
 lwc_string *corestring_lwc_rectangle;
+lwc_string *corestring_lwc_reset;
 lwc_string *corestring_lwc_right;
+lwc_string *corestring_lwc_submit;
 lwc_string *corestring_lwc_table;
 lwc_string *corestring_lwc_tbody;
 lwc_string *corestring_lwc_td;
 lwc_string *corestring_lwc_text;
 lwc_string *corestring_lwc_textarea;
 lwc_string *corestring_lwc_texttop;
-lwc_string *corestring_lwc_title;
 lwc_string *corestring_lwc_tfoot;
 lwc_string *corestring_lwc_th;
 lwc_string *corestring_lwc_thead;
+lwc_string *corestring_lwc_title;
 lwc_string *corestring_lwc_top;
 lwc_string *corestring_lwc_tr;
 lwc_string *corestring_lwc__blank;
@@ -152,11 +161,13 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(button);
 	CSS_LWC_STRING_UNREF(caption);
 	CSS_LWC_STRING_UNREF(center);
+	CSS_LWC_STRING_UNREF(checkbox);
 	CSS_LWC_STRING_UNREF(circle);
 	CSS_LWC_STRING_UNREF(col);
 	CSS_LWC_STRING_UNREF(default);
 	CSS_LWC_STRING_UNREF(div);
 	CSS_LWC_STRING_UNREF(embed);
+	CSS_LWC_STRING_UNREF(file);
 	CSS_LWC_STRING_UNREF(font);
 	CSS_LWC_STRING_UNREF(h1);
 	CSS_LWC_STRING_UNREF(h2);
@@ -165,39 +176,47 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(h5);
 	CSS_LWC_STRING_UNREF(h6);
 	CSS_LWC_STRING_UNREF(head);
+	CSS_LWC_STRING_UNREF(hidden);
 	CSS_LWC_STRING_UNREF(hr);
 	CSS_LWC_STRING_UNREF(html);
 	CSS_LWC_STRING_UNREF(iframe);
+	CSS_LWC_STRING_UNREF(image);
 	CSS_LWC_STRING_UNREF(img);
 	CSS_LWC_STRING_UNREF(input);
 	CSS_LWC_STRING_UNREF(justify);
 	CSS_LWC_STRING_UNREF(left);
 	CSS_LWC_STRING_UNREF(link);
 	CSS_LWC_STRING_UNREF(middle);
+	CSS_LWC_STRING_UNREF(multipart_form_data);
 	CSS_LWC_STRING_UNREF(object);
 	CSS_LWC_STRING_UNREF(p);
 	CSS_LWC_STRING_UNREF(password);
 	CSS_LWC_STRING_UNREF(poly);
 	CSS_LWC_STRING_UNREF(polygon);
+	CSS_LWC_STRING_UNREF(post);
+	CSS_LWC_STRING_UNREF(radio);
 	CSS_LWC_STRING_UNREF(rect);
 	CSS_LWC_STRING_UNREF(rectangle);
+	CSS_LWC_STRING_UNREF(reset);
 	CSS_LWC_STRING_UNREF(right);
+	CSS_LWC_STRING_UNREF(submit);
 	CSS_LWC_STRING_UNREF(table);
 	CSS_LWC_STRING_UNREF(tbody);
 	CSS_LWC_STRING_UNREF(td);
 	CSS_LWC_STRING_UNREF(text);
 	CSS_LWC_STRING_UNREF(textarea);
 	CSS_LWC_STRING_UNREF(texttop);
-	CSS_LWC_STRING_UNREF(title);
 	CSS_LWC_STRING_UNREF(tfoot);
 	CSS_LWC_STRING_UNREF(th);
 	CSS_LWC_STRING_UNREF(thead);
+	CSS_LWC_STRING_UNREF(title);
 	CSS_LWC_STRING_UNREF(top);
 	CSS_LWC_STRING_UNREF(tr);
 	CSS_LWC_STRING_UNREF(_blank);
 	CSS_LWC_STRING_UNREF(_parent);
 	CSS_LWC_STRING_UNREF(_self);
 	CSS_LWC_STRING_UNREF(_top);
+
 #undef CSS_LWC_STRING_UNREF
 
 #define CSS_DOM_STRING_UNREF(NAME)					\
@@ -285,11 +304,13 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(button);
 	CSS_LWC_STRING_INTERN(caption);
 	CSS_LWC_STRING_INTERN(center);
+	CSS_LWC_STRING_INTERN(checkbox);
 	CSS_LWC_STRING_INTERN(circle);
 	CSS_LWC_STRING_INTERN(col);
 	CSS_LWC_STRING_INTERN(default);
 	CSS_LWC_STRING_INTERN(div);
 	CSS_LWC_STRING_INTERN(embed);
+	CSS_LWC_STRING_INTERN(file);
 	CSS_LWC_STRING_INTERN(font);
 	CSS_LWC_STRING_INTERN(h1);
 	CSS_LWC_STRING_INTERN(h2);
@@ -298,9 +319,11 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(h5);
 	CSS_LWC_STRING_INTERN(h6);
 	CSS_LWC_STRING_INTERN(head);
+	CSS_LWC_STRING_INTERN(hidden);
 	CSS_LWC_STRING_INTERN(hr);
 	CSS_LWC_STRING_INTERN(html);
 	CSS_LWC_STRING_INTERN(iframe);
+	CSS_LWC_STRING_INTERN(image);
 	CSS_LWC_STRING_INTERN(img);
 	CSS_LWC_STRING_INTERN(input);
 	CSS_LWC_STRING_INTERN(justify);
@@ -312,19 +335,23 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(password);
 	CSS_LWC_STRING_INTERN(poly);
 	CSS_LWC_STRING_INTERN(polygon);
+	CSS_LWC_STRING_INTERN(post);
+	CSS_LWC_STRING_INTERN(radio);
 	CSS_LWC_STRING_INTERN(rect);
 	CSS_LWC_STRING_INTERN(rectangle);
+	CSS_LWC_STRING_INTERN(reset);
 	CSS_LWC_STRING_INTERN(right);
+	CSS_LWC_STRING_INTERN(submit);
 	CSS_LWC_STRING_INTERN(table);
 	CSS_LWC_STRING_INTERN(tbody);
 	CSS_LWC_STRING_INTERN(td);
 	CSS_LWC_STRING_INTERN(text);
 	CSS_LWC_STRING_INTERN(textarea);
 	CSS_LWC_STRING_INTERN(texttop);
-	CSS_LWC_STRING_INTERN(title);
 	CSS_LWC_STRING_INTERN(tfoot);
 	CSS_LWC_STRING_INTERN(th);
 	CSS_LWC_STRING_INTERN(thead);
+	CSS_LWC_STRING_INTERN(title);
 	CSS_LWC_STRING_INTERN(top);
 	CSS_LWC_STRING_INTERN(tr);
 	CSS_LWC_STRING_INTERN(_blank);
@@ -332,6 +359,14 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(_self);
 	CSS_LWC_STRING_INTERN(_top);
 #undef CSS_LWC_STRING_INTERN
+
+	lerror = lwc_intern_string("multipart/form-data",
+			SLEN("multipart/form-data"),
+			&corestring_lwc_multipart_form_data);
+	if ((lerror != lwc_error_ok) ||
+			(corestring_lwc_multipart_form_data == NULL))
+		goto error;
+
 
 #define CSS_DOM_STRING_INTERN(NAME)					\
 	do {								\

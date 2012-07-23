@@ -40,19 +40,24 @@ parse_form_element(const char *docenc, dom_node *node)
 	struct form * ret = NULL;
 
 	/* Retrieve the attributes from the node */
-	if (dom_html_form_element_get_action(formele, &ds_action) != DOM_NO_ERR)
+	if (dom_html_form_element_get_action(formele,
+			&ds_action) != DOM_NO_ERR)
 		goto out;
 
-	if (dom_html_form_element_get_accept_charset(formele, &ds_charset) != DOM_NO_ERR)
+	if (dom_html_form_element_get_accept_charset(formele,
+			&ds_charset) != DOM_NO_ERR)
 		goto out;
 
-	if (dom_html_form_element_get_target(formele, &ds_target) != DOM_NO_ERR)
+	if (dom_html_form_element_get_target(formele,
+			&ds_target) != DOM_NO_ERR)
 		goto out;
 
-	if (dom_html_form_element_get_method(formele, &ds_method) != DOM_NO_ERR)
+	if (dom_html_form_element_get_method(formele,
+			&ds_method) != DOM_NO_ERR)
 		goto out;
 
-	if (dom_html_form_element_get_enctype(formele, &ds_enctype) != DOM_NO_ERR)
+	if (dom_html_form_element_get_enctype(formele,
+			&ds_enctype) != DOM_NO_ERR)
 		goto out;
 
 	/* Extract the plain attributes ready for use.  We have to do this
@@ -74,13 +79,13 @@ parse_form_element(const char *docenc, dom_node *node)
 	/* Determine the method */
 	method = method_GET;
 	if (ds_method != NULL) {
-		if (strncasecmp("post", dom_string_data(ds_method),
-				dom_string_byte_length(ds_method)) == 0) {
+		if (dom_string_caseless_lwc_isequal(ds_method,
+				corestring_lwc_post)) {
 			method = method_POST_URLENC;
 			if (ds_enctype != NULL) {
-				if (strncasecmp("multipart/form-data",
-						dom_string_data(ds_enctype),
-						dom_string_byte_length(ds_enctype)) == 0) {
+				if (dom_string_caseless_lwc_isequal(ds_enctype,
+					corestring_lwc_multipart_form_data)) {
+
 					method = method_POST_MULTIPART;
 				}
 			}
@@ -180,7 +185,6 @@ parse_button_element(struct form *forms, dom_html_button_element *button)
 	dom_string *ds_type = NULL;
 	dom_string *ds_value = NULL;
 	dom_string *ds_name = NULL;
-	char *type = NULL;
 
 	err = dom_html_button_element_get_form(button, &form);
 	if (err != DOM_NO_ERR)
@@ -193,11 +197,11 @@ parse_button_element(struct form *forms, dom_html_button_element *button)
 	if (ds_type == NULL) {
 		control = form_new_control(button, GADGET_SUBMIT);
 	} else {
-		type = strndup(dom_string_data(ds_type),
-			       dom_string_byte_length(ds_type));
-		if (strcasecmp(type, "submit") == 0) {
+		if (dom_string_caseless_lwc_isequal(ds_type,
+				corestring_lwc_submit)) {
 			control = form_new_control(button, GADGET_SUBMIT);
-		} else if (strcasecmp(type, "reset") == 0) {
+		} else if (dom_string_caseless_lwc_isequal(ds_type,
+				corestring_lwc_reset)) {
 			control = form_new_control(button, GADGET_RESET);
 		} else {
 			control = form_new_control(button, GADGET_BUTTON);
@@ -250,8 +254,6 @@ out:
 		dom_string_unref(ds_value);
 	if (ds_name != NULL)
 		dom_string_unref(ds_name);
-	if (type != NULL)
-		free(type);
 
 	return control;
 }
@@ -265,7 +267,6 @@ parse_input_element(struct form *forms, dom_html_input_element *input)
 	dom_string *ds_name = NULL;
 	dom_string *ds_value = NULL;
 
-	char *type = NULL;
 	char *name = NULL;
 
 	if (dom_html_input_element_get_form(input, &form) != DOM_NO_ERR)
@@ -274,10 +275,6 @@ parse_input_element(struct form *forms, dom_html_input_element *input)
 	if (dom_html_input_element_get_type(input, &ds_type) != DOM_NO_ERR)
 		goto out;
 
-	if (ds_type != NULL)
-		type = strndup(dom_string_data(ds_type),
-			       dom_string_byte_length(ds_type));
-
 	if (dom_html_input_element_get_name(input, &ds_name) != DOM_NO_ERR)
 		goto out;
 
@@ -285,23 +282,32 @@ parse_input_element(struct form *forms, dom_html_input_element *input)
 		name = strndup(dom_string_data(ds_name),
 			       dom_string_byte_length(ds_name));
 
-	if (type != NULL && strcasecmp(type, "password") == 0) {
+	if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_password)) {
 		control = form_new_control(input, GADGET_PASSWORD);
-	} else if (type != NULL && strcasecmp(type, "file") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_file)) {
 		control = form_new_control(input, GADGET_FILE);
-	} else if (type != NULL && strcasecmp(type, "hidden") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_hidden)) {
 		control = form_new_control(input, GADGET_HIDDEN);
-	} else if (type != NULL && strcasecmp(type, "checkbox") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_checkbox)) {
 		control = form_new_control(input, GADGET_CHECKBOX);
-	} else if (type != NULL && strcasecmp(type, "radio") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_radio)) {
 		control = form_new_control(input, GADGET_RADIO);
-	} else if (type != NULL && strcasecmp(type, "submit") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_submit)) {
 		control = form_new_control(input, GADGET_SUBMIT);
-	} else if (type != NULL && strcasecmp(type, "reset") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_reset)) {
 		control = form_new_control(input, GADGET_RESET);
-	} else if (type != NULL && strcasecmp(type, "button") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_button)) {
 		control = form_new_control(input, GADGET_BUTTON);
-	} else if (type != NULL && strcasecmp(type, "image") == 0) {
+	} else if (ds_type != NULL && dom_string_caseless_lwc_isequal(ds_type,
+			corestring_lwc_image)) {
 		control = form_new_control(input, GADGET_IMAGE);
 	} else {
 		control = form_new_control(input, GADGET_TEXTBOX);
@@ -384,8 +390,6 @@ out:
 	if (ds_value != NULL)
 		dom_string_unref(ds_value);
 
-	if (type != NULL)
-		free(type);
 	if (name != NULL)
 		free(name);
 
