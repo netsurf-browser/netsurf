@@ -62,7 +62,7 @@ static OBJECT * toolbar_buttons = NULL;
 static OBJECT * throbber_form = NULL;
 static bool img_toolbar = false;
 static char * toolbar_image_folder = (char *)"default";
-static short toolbar_bg_color = LWHITE;
+static uint32_t toolbar_bg_color = 0xFFFFFF;
 static hlcache_handle * toolbar_image;
 static hlcache_handle * throbber_image;
 static bool toolbar_image_ready = false;
@@ -125,7 +125,6 @@ struct s_toolbar_style {
 	int icon_height;
 	int button_hmargin;
 	int button_vmargin;
-	short bgcolor;
 	/* RRGGBBAA: */
 	uint32_t icon_bgcolor;
 };
@@ -133,13 +132,13 @@ struct s_toolbar_style {
 static struct s_toolbar_style toolbar_styles[] =
 {
 	/* small (18 px height) */
-	{ 9, 18, 16, 16, 0, 0, LWHITE, 0 },
+	{ 9, 18, 16, 16, 0, 0, 0 },
 	/* medium (default - 26 px height) */
-	{14, 26, 24, 24, 1, 4, LWHITE, 0 },
+	{14, 26, 24, 24, 1, 4, 0 },
 	/* large ( 49 px height ) */
-	{18, 34, 64, 64, 2, 0, LWHITE, 0 },
+	{18, 34, 64, 64, 2, 0, 0 },
 	/* custom style: */
-	{18, 34, 64, 64, 2, 0, LWHITE, 0 }
+	{18, 34, 64, 64, 2, 0, 0 }
 };
 
 static void tb_txt_request_redraw( void *data, int x, int y, int w, int h );
@@ -154,7 +153,7 @@ void toolbar_init( void )
 	uint32_t rgbcolor;
 
 	toolbar_image_folder = nsoption_charp(atari_image_toolbar_folder);
-	toolbar_bg_color = MIN(15,nsoption_int(atari_toolbar_bg));
+	toolbar_bg_color = (nsoption_colour(atari_toolbar_bg));
 	img_toolbar = (nsoption_int( atari_image_toolbar ) > 0 ) ? true : false;
 	if( img_toolbar ){
 
@@ -184,13 +183,8 @@ void toolbar_init( void )
 		throbber_form->ob_y = 0;
 	}
     n = (sizeof( toolbar_styles ) / sizeof( struct s_toolbar_style ));
-    for( i=0; i<n; i++ ){
-        toolbar_styles[i].bgcolor = toolbar_bg_color;
-        if( img_toolbar ){
-			vq_color(atari_plot_vdi_handle, toolbar_bg_color, 0, vdicolor );
-			vdi1000_to_rgb( vdicolor, (unsigned char*)&rgbcolor );
-			toolbar_styles[i].icon_bgcolor = rgbcolor;
-        }
+    for (i=0; i<n; i++) {
+		toolbar_styles[i].icon_bgcolor = ABGR_TO_RGB(toolbar_bg_color);
     }
 }
 
@@ -236,15 +230,22 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 
 	short pxy[4];
 	int  bmpx=0, bmpy=0, bmpw=0, bmph = 0, drawstate=0;
-	struct rect icon_clip;
 	struct bitmap * icon = NULL;
+	struct rect icon_clip;
+	GRECT icon_dim = {0,0,0,0};
+	plot_style_t plot_style_background = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = toolbar_bg_color,
+		.stroke_type = PLOT_OP_TYPE_NONE
+	};
+
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	work.g_h = work.g_h - 1;
 	clip = work;
 
 	/* return if component and redraw region does not intersect: */
-	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) {
+	if (!rc_lintersect( (LGRECT*)&buff[4], &clip)) {
 		return;
 	}
 
@@ -264,18 +265,14 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 		bmph = bitmap_get_height(icon);
 		bmpx = 0;
 		bmpy = 0;
-
-		plot_set_dimensions(
-			work.g_x-(toolbar_styles[tb->style].icon_width * bt->index)+toolbar_styles[tb->style].button_vmargin,
-			work.g_y-(toolbar_styles[tb->style].icon_height * drawstate)+toolbar_styles[tb->style].button_hmargin,
-			toolbar_styles[tb->style].icon_width*(bt->index+1),
-			toolbar_styles[tb->style].icon_height*(drawstate+1)
-		);
 		icon_clip.x0 = bmpx+(toolbar_styles[tb->style].icon_width*bt->index);
 		icon_clip.y0 = bmpy+(toolbar_styles[tb->style].icon_height*drawstate);
 		icon_clip.x1 = icon_clip.x0+toolbar_styles[tb->style].icon_width;
 		icon_clip.y1 = icon_clip.y0+toolbar_styles[tb->style].icon_height;
-		plot_clip( &icon_clip  );
+		icon_dim.g_x = work.g_x-(toolbar_styles[tb->style].icon_width * bt->index)+toolbar_styles[tb->style].button_vmargin;
+		icon_dim.g_y = work.g_y-(toolbar_styles[tb->style].icon_height * drawstate)+toolbar_styles[tb->style].button_hmargin;
+		icon_dim.g_w = toolbar_styles[tb->style].icon_width*(bt->index+1);
+		icon_dim.g_h = toolbar_styles[tb->style].icon_height*(drawstate+1);
 	} else {
 		/* Place the CICON into workarea: */
 		tree = &toolbar_buttons[bt->rsc_id];
@@ -292,7 +289,6 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 
 	/* Setup draw mode: */
 	vsf_interior(atari_plot_vdi_handle , 1 );
-	vsf_color(atari_plot_vdi_handle, toolbar_styles[tb->style].bgcolor );
 	vswr_mode(atari_plot_vdi_handle, MD_REPLACE);
 
 	/* go through the rectangle list, using classic AES methods. */
@@ -305,15 +301,22 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 							&todo.g_x, &todo.g_y, &todo.g_w, &todo.g_h );
 	while( (todo.g_w > 0) && (todo.g_h > 0) ){
 
-		if( rc_intersect( &crect, &todo ) ){
+		if (rc_intersect(&crect, &todo )) {
+			
+			struct rect bgclip = {0,0,todo.g_w, todo.g_h};
 			pxy[0] = todo.g_x;
 			pxy[1] = todo.g_y;
 			pxy[2] = todo.g_w + todo.g_x-1;
 			pxy[3] = todo.g_h + todo.g_y-1;
+			
 			vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
-			v_bar(atari_plot_vdi_handle, (short*)&pxy );
-
+			plot_set_dimensions(todo.g_x, todo.g_y, todo.g_w, todo.g_h);
+			plot_rectangle(0, 0, crect.g_w, crect.g_h, &plot_style_background);
+			
 			if( img_toolbar == true ){
+				plot_set_dimensions(icon_dim.g_x, icon_dim.g_y, 
+				                    icon_dim.g_w, icon_dim.g_h);
+				plot_clip( &icon_clip  );
 				atari_plotters.bitmap( bmpx, bmpy, bmpw, bmph, icon,
 										toolbar_styles[tb->style].icon_bgcolor,
 										BITMAPF_BUFFER_NATIVE );
@@ -383,6 +386,11 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	struct gui_window * gw = (struct gui_window *)mt_CompDataSearch(&app,
 																	c,
 																	CDT_OWNER );
+	plot_style_t plot_style_background = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = toolbar_bg_color,
+		.stroke_type = PLOT_OP_TYPE_NONE
+	};
 
 	tb = gw->root->toolbar;
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
@@ -390,16 +398,20 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 
 	vsf_interior(atari_plot_vdi_handle , 1 );
-	if(app.nplanes > 2 )
-		vsf_color(atari_plot_vdi_handle, toolbar_styles[tb->style].bgcolor );
-	else
-		vsf_color(atari_plot_vdi_handle, WHITE );
 	pxy[0] = (short)buff[4];
 	pxy[1] = (short)buff[5];
 	pxy[2] = (short)buff[4] + buff[6]-1;
 	pxy[3] = (short)buff[5] + buff[7]-2;
-	v_bar(atari_plot_vdi_handle, (short*)&pxy );
 	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
+	
+	if (app.nplanes > 2 ) {
+		plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
+		plot_rectangle( 0, 0, work.g_w, work.g_h, &plot_style_background);
+	}		
+	else {
+		vsf_color(atari_plot_vdi_handle, WHITE );
+		v_bar(atari_plot_vdi_handle, (short*)&pxy );
+	}
 
 	if( img_toolbar ){
 
@@ -469,17 +481,18 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 }
 
 static
-void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
+void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8], void * data)
 {
 	LGRECT work, clip;
 	struct gui_window * gw;
 	short pxy[10];
-    // FIXME: optimize this:
-	gw = (struct gui_window *)mt_CompDataSearch(&app, c, CDT_OWNER);
-	if( gw == NULL )
-		return;
+	plot_style_t plot_style_background = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = toolbar_bg_color,
+		.stroke_type = PLOT_OP_TYPE_NONE
+	};
 
-	CMP_TOOLBAR tb = gw->root->toolbar;
+	CMP_TOOLBAR tb = (CMP_TOOLBAR)data;
 	mt_CompGetLGrect(&app, tb->url.comp, WF_WORKXYWH, &work);
 
 	// this last pixel is drawn by the root component of the toolbar:
@@ -488,45 +501,22 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8] )
 	clip = work;
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 
-	pxy[0] = clip.g_x;
-	pxy[1] = clip.g_y;
-	pxy[2] = clip.g_w + clip.g_x-1;
-	pxy[3] = clip.g_h + clip.g_y-1;
-	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
-
-	vsf_perimeter(atari_plot_vdi_handle, 0 );
-	vsf_interior(atari_plot_vdi_handle , 1 );
-	vsf_color(atari_plot_vdi_handle, toolbar_styles[tb->style].bgcolor );
-
+	plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
+	
 	//left margin:
-	pxy[0] = work.g_x;
-	pxy[1] = work.g_y;
-	pxy[2] = work.g_x + TOOLBAR_URL_MARGIN_LEFT-1;
-	pxy[3] = work.g_y + work.g_h-1;
-	v_bar(atari_plot_vdi_handle, pxy );
-
+	plot_rectangle(0, 0, TOOLBAR_URL_MARGIN_LEFT, work.g_h, 
+	               &plot_style_background);
 	// right margin:
-	pxy[0] = work.g_x+work.g_w-TOOLBAR_URL_MARGIN_RIGHT;
-	pxy[1] = work.g_y;
-	pxy[2] = work.g_x+work.g_w-1;
-	pxy[3] = work.g_y+work.g_h-1;
-	v_bar(atari_plot_vdi_handle, pxy );
+	plot_rectangle(work.g_w-TOOLBAR_URL_MARGIN_RIGHT, 0, work.g_w, work.g_h, 
+	               &plot_style_background);
 
 	// top margin:
-	pxy[0] = work.g_x;
-	pxy[1] = work.g_y;
-	pxy[2] = work.g_x+work.g_w-1;
-	pxy[3] = work.g_y+TOOLBAR_URL_MARGIN_TOP-1;
-	v_bar(atari_plot_vdi_handle, pxy );
+	plot_rectangle(0, 0, work.g_w, TOOLBAR_URL_MARGIN_TOP, 
+	               &plot_style_background);
 
 	// bottom margin:
-	pxy[0] = work.g_x;
-	pxy[1] = work.g_y+work.g_h-TOOLBAR_URL_MARGIN_BOTTOM;
-	pxy[2] = work.g_x+work.g_w-1;
-	pxy[3] = work.g_y+work.g_h-1;
-	v_bar(atari_plot_vdi_handle, pxy );
-
-	vs_clip(atari_plot_vdi_handle, 0, (short*)&pxy );
+	plot_rectangle(0, work.g_h-TOOLBAR_URL_MARGIN_BOTTOM, work.g_w, work.g_h, 
+	               &plot_style_background);
 
 	// TBD: request redraw of textarea for specific region.
 	clip.g_x -= work.g_x+TOOLBAR_URL_MARGIN_LEFT;
@@ -612,13 +602,17 @@ static void __CDECL evnt_toolbar_redraw( COMPONENT *c, long buff[8], void *data 
 {
 	LGRECT work, clip;
 	short pxy[4];
+	const plot_style_t plot_style_background = {
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = toolbar_bg_color,
+		.stroke_type = PLOT_OP_TYPE_NONE
+	};
 
 	mt_CompGetLGrect(&app, c, WF_WORKXYWH, &work);
 	clip = work;
 	if( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
-
 	if( work.g_y + work.g_h != clip.g_y + clip.g_h )	return;
-
+	
 	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
 	vsl_color(atari_plot_vdi_handle, BLACK );
 	vsl_type(atari_plot_vdi_handle, 1 );
@@ -786,7 +780,7 @@ CMP_TOOLBAR tb_create( struct gui_window * gw )
 
 	t->url.comp = (COMPONENT*)mt_CompCreate(&app, CLT_HORIZONTAL,
 											toolbar_styles[t->style].height, 1);
-	mt_CompEvntAttach( &app, t->url.comp, WM_REDRAW, evnt_url_redraw );
+	mt_CompEvntDataAttach( &app, t->url.comp, WM_REDRAW, evnt_url_redraw, t);
 	mt_CompEvntAttach( &app, t->url.comp, WM_XBUTTON, evnt_url_click );
 	mt_CompDataAttach( &app, t->url.comp, CDT_OWNER, gw );
 	mt_CompAttach( &app, t->comp, t->url.comp );

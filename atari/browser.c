@@ -695,9 +695,9 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 
 		/* save background: */
 		//assert( b->caret.background.fd_addr == NULL );
-		init_mfdb( app.nplanes, caret.g_w, caret.g_h, 0,
-					&b->caret.background );
-		init_mfdb( 0, caret.g_w, caret.g_h, 0, &screen );
+		init_mfdb(app.nplanes, caret.g_w, caret.g_h, 0,
+					&b->caret.background);
+		init_mfdb(0, caret.g_w, caret.g_h, 0, &screen);
 		pxy[0] = caret.g_x;
 		pxy[1] = caret.g_y;
 		pxy[2] = caret.g_x + caret.g_w - 1;
@@ -707,9 +707,9 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 		pxy[6] = caret.g_w - 1;
 		pxy[7] = caret.g_h - 1;
 		/* hide the mouse */
-		v_hide_c ( app.graf.handle);
+		v_hide_c (app.graf.handle);
 		/* copy screen image */
-		vro_cpyfm ( app.graf.handle, S_ONLY, pxy, &screen, &b->caret.background);
+		vro_cpyfm (app.graf.handle, S_ONLY, pxy, &screen, &b->caret.background);
 		/* draw caret: */
 		caret.g_x -= area->g_x;
 		caret.g_y -= area->g_y;

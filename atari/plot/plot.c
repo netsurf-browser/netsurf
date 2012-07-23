@@ -1846,6 +1846,7 @@ static bool plot_polygon(const int *p, unsigned int n,
 bool plot_set_dimensions(int x, int y, int w, int h)
 {
 	bool doupdate = false;
+	struct rect newclip = {0, 0, w, h};
 
 	if (!(w == view.w && h == view.h)) {
 		struct rect newclip = { 0, 0, w-1, h-1 };
@@ -1860,6 +1861,8 @@ bool plot_set_dimensions(int x, int y, int w, int h)
 	}
 	if (doupdate==true)
 		update_visible_rect();
+
+	plot_clip(&newclip);
     return(true);
 }
 
