@@ -1792,7 +1792,7 @@ bool gui_commit_clipboard(void)
 {
 	return false;
 }
-
+/*
 static bool
 gui_selection_traverse_handler(const char *text,
 			       size_t length,
@@ -1814,7 +1814,7 @@ gui_selection_traverse_handler(const char *text,
 
 	return true;
 }
-
+*/
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	if (selection_defined(s)) {

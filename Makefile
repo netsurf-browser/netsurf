@@ -207,12 +207,13 @@ else
     ifeq ($(TARGET),windows)
       ifneq ($(HOST),windows)
         # Set Mingw defaults
-	MINGW_PREFIX ?= i586-mingw32msvc-
-	MINGW_INSTALL_ENV ?= /usr/i586-mingw32msvc/
+        GCCSDK_INSTALL_ENV ?= /opt/netsurf/i686-w64-mingw32/env
+        GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/i686-w64-mingw32/cross/bin
 
-        # mingw cross-compile
-        CC := $(MINGW_PREFIX)gcc
-        PKG_CONFIG := $(MINGW_INSTALL_ENV)/bin/pkg-config
+        CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+        WINDRES := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*windres)
+
+        PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config
       else
         # Building on Windows
         CC := gcc

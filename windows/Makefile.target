@@ -2,7 +2,8 @@
 # Windows target setup
 # ----------------------------------------------------------------------------
 
-  LDFLAGS += -L${MINGW_INSTALL_ENV}/lib
+  LDFLAGS += -L${GCCSDK_INSTALL_ENV}/lib 
+  CFLAGS += -I${GCCSDK_INSTALL_ENV}/include/
 
   NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
   NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
@@ -17,9 +18,9 @@
 
   ifneq ($(PKG_CONFIG),)
     CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl libhubbub zlib \
-		libparserutils libxml-2.0)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libxml-2.0 libcurl \
-		libhubbub libparserutils libcss libwapcaplet)
+		libparserutils libdom libwapcaplet libcares libxml-2.0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libxml-2.0 libcares libcurl \
+		libhubbub libparserutils libcss libdom libwapcaplet)
   else
     LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lxml2 -lcurl -lz
   endif
@@ -39,8 +40,8 @@
 
 
   WSCFLAGS := -std=c99 \
-	$(WARNFLAGS) -I. -I${MINGW_INSTALL_ENV}/include/ \
-	-DCURL_STATICLIB -DLIBXML_STATIC -g
+	$(WARNFLAGS) -I.  \
+	-DCURL_STATICLIB -DLIBXML_STATIC -DCARES_STATICLIB -g
   CFLAGS += $(WSCFLAGS)
   LDFLAGS += $(WSCFLAGS)
 
@@ -50,7 +51,7 @@
 
 $(OBJROOT)/windows_resource.o: windows/res/resource.rc
 	$(VQ)echo " WINDRES: compiling windows resources"
-	${Q}$(MINGW_PREFIX)windres $< -O coff -o $@
+	${Q}$(WINDRES) $< -O coff -o $@
 
 S_RESOURCES := windows_resource.o
 
