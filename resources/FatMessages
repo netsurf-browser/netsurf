@@ -232,7 +232,7 @@ nl.all.Sprite:Sprite
 en.all.ObjDraw:Draw
 de.all.ObjDraw:Draw
 fr.all.ObjDraw:Draw
-it.all.ObjDraw:Disegna
+it.all.ObjDraw:Draw
 nl.all.ObjDraw:Draw
 
 # Main -> Object -> Link menu
@@ -529,12 +529,12 @@ nl.all.Copy:Copieer naar prikbord  ^C
 en.all.Cut:Cut to clipboard  ^X
 de.all.Cut:Ausschneiden  ^X
 fr.all.Cut:Cut to clipboard  ^X
-it.all.Cut:Taglia nella clipboard  ^X
+it.all.Cut:Taglia dalla clipboard  ^X
 nl.all.Cut:Cut to clipboard  ^X
 en.all.Paste:Paste from clipboard  ^V
 de.all.Paste:Einfügen  ^V
 fr.all.Paste:Paste from clipboard  ^V
-it.all.Paste:Incolla dalla clipboard  ^V
+it.all.Paste:Incolla sulla clipboard  ^V
 nl.all.Paste:Paste from clipboard  ^V
 
 # Selection Menu
@@ -1306,7 +1306,7 @@ nl.all.DownloadU:%s van onbekend  •  %s/s  •  %s totaal
 en.all.Downloaded:%s complete  •  average %s/s  •  %s total
 de.all.Downloaded:%s komplett • etwa %s/s • gesamt %s
 fr.all.Downloaded:%s effectués  •  moyenne %s/s  •  %s total
-it.all.Downloaded:%s completato  ?  media %s/s  ?  %s totale
+it.all.Downloaded:%s completato  ?  media di %s/s  ?  %s totale
 nl.all.Downloaded:%s compleet  •  gemiddeld %s/s  •  %s totaal
 en.all.Unwritten:Writing data to file failed.
 de.all.Unwritten:Schreiben der Datei ist fehlgeschlagen.
@@ -1493,12 +1493,12 @@ nl.gtk.gtkSourceTabError:Error handling source data
 en.gtk.gtkplainSave:Save plain text
 de.gtk.gtkplainSave:Als Text speichern
 fr.gtk.gtkplainSave:Enregistrer comme texte
-it.gtk.gtkplainSave:Save plain text
+it.gtk.gtkplainSave:Salva come testo
 nl.gtk.gtkplainSave:Save as text
 en.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 de.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 fr.gtk.gtkcompleteSave:Enregistrer page web complète - sélectioner un dossier vide 
-it.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
+it.gtk.gtkcompleteSave:Salva l'intera pagina web - seleziona una directory vuota
 nl.gtk.gtkcompleteSave:Save webpage complete - select an empty directory
 en.gtk.gtkSaveConfirm:File saved
 de.gtk.gtkSaveConfirm:File saved
@@ -2188,47 +2188,47 @@ nl.all.SSLError:NetSurf failed to verify the authenticity of an SSL certificate.
 en.all.SSL_Certificate_Subject:Subject: %s
 de.all.SSL_Certificate_Subject:Subject: %s
 fr.all.SSL_Certificate_Subject:Subject: %s
-it.all.SSL_Certificate_Subject:Subject: %s
+it.all.SSL_Certificate_Subject:Oggetto: %s
 nl.all.SSL_Certificate_Subject:Subject: %s
 en.all.SSL_Certificate_Issuer:Issuer: %s
 de.all.SSL_Certificate_Issuer:Issuer: %s
 fr.all.SSL_Certificate_Issuer:Issuer: %s
-it.all.SSL_Certificate_Issuer:Issuer: %s
+it.all.SSL_Certificate_Issuer:Emittente: %s
 nl.all.SSL_Certificate_Issuer:Issuer: %s
 en.all.SSL_Certificate_Version:Version: %ld
 de.all.SSL_Certificate_Version:Version: %ld
 fr.all.SSL_Certificate_Version:Version: %ld
-it.all.SSL_Certificate_Version:Version: %ld
+it.all.SSL_Certificate_Version:Versione: %ld
 nl.all.SSL_Certificate_Version:Version: %ld
 en.all.SSL_Certificate_ValidFrom:Valid from: %s
 de.all.SSL_Certificate_ValidFrom:Valid from: %s
 fr.all.SSL_Certificate_ValidFrom:Valid from: %s
-it.all.SSL_Certificate_ValidFrom:Valid from: %s
+it.all.SSL_Certificate_ValidFrom:Valido da: %s
 nl.all.SSL_Certificate_ValidFrom:Valid from: %s
 en.all.SSL_Certificate_ValidTo:Valid until: %s
 de.all.SSL_Certificate_ValidTo:Valid until: %s
 fr.all.SSL_Certificate_ValidTo:Valid until: %s
-it.all.SSL_Certificate_ValidTo:Valid until: %s
+it.all.SSL_Certificate_ValidTo:Valido fino a: %s
 nl.all.SSL_Certificate_ValidTo:Valid until: %s
 en.all.SSL_Certificate_Type:Type: %i
 de.all.SSL_Certificate_Type:Type: %i
 fr.all.SSL_Certificate_Type:Type: %i
-it.all.SSL_Certificate_Type:Type: %i
+it.all.SSL_Certificate_Type:Tipo: %i
 nl.all.SSL_Certificate_Type:Type: %i
 en.all.SSL_Certificate_Serial:Serial: %ld
 de.all.SSL_Certificate_Serial:Serial: %ld
 fr.all.SSL_Certificate_Serial:Serial: %ld
-it.all.SSL_Certificate_Serial:Serial: %ld
+it.all.SSL_Certificate_Serial:Seriale: %ld
 nl.all.SSL_Certificate_Serial:Serial: %ld
 en.all.SSL_Certificate_Accept:Accept
 de.all.SSL_Certificate_Accept:Accept
 fr.all.SSL_Certificate_Accept:Accept
-it.all.SSL_Certificate_Accept:Accept
+it.all.SSL_Certificate_Accept:Accetta
 nl.all.SSL_Certificate_Accept:Accept
 en.all.SSL_Certificate_Reject:Reject
 de.all.SSL_Certificate_Reject:Reject
 fr.all.SSL_Certificate_Reject:Reject
-it.all.SSL_Certificate_Reject:Reject
+it.all.SSL_Certificate_Reject:Rifiuta
 nl.all.SSL_Certificate_Reject:Reject
 
 
@@ -2588,7 +2588,7 @@ nl.all.HotlistSaveError:The hotlist was unable to be correctly saved.
 en.all.TreeLoadError:The tree was unable to be correctly loaded.
 de.all.TreeLoadError:The tree was unable to be correctly loaded.
 fr.all.TreeLoadError:The tree was unable to be correctly loaded.
-it.all.TreeLoadError:The tree was unable to be correctly loaded.
+it.all.TreeLoadError:L'albero non � stato caricato correttamente.
 nl.all.TreeLoadError:The tree was unable to be correctly loaded.
 en.all.NoDirError:%s is not a directory
 de.all.NoDirError:%s ist kein Verzeichnis.
@@ -2633,7 +2633,7 @@ nl.all.PrintErrorRO2:De printer lijkt al bezig te zijn.
 en.ro.AWNotSeen:Please locate the AWViewer application and try again.
 de.ro.AWNotSeen:Das Programm AWViewer wurde nicht gefunden.
 fr.ro.AWNotSeen:Localisez l'application AMViewer SVP puis réessayez.
-it.ro.AWNotSeen:Please locate the AWViewer application and try again.
+it.ro.AWNotSeen:Per favore fornisci l'applicativo AWViewer e riprova nuovamente.
 nl.ro.AWNotSeen:Zoek eerst de AWViewer applicatie en probeer het dan nog eens.
 en.all.EncNotRec:Encoding type not recognised.
 de.all.EncNotRec:Encodierung nicht erkannt.
@@ -4008,12 +4008,12 @@ nl.ro.HelpHotlistMenu0-0:\Rcreate a new item.
 en.ro.HelpHotlistMenu0-0-0:\Rcreate a new directory.
 de.ro.HelpHotlistMenu0-0-0:Neues Verzeichnis anlegen.
 fr.ro.HelpHotlistMenu0-0-0:\Rcréer un nouveau répertoire.
-it.ro.HelpHotlistMenu0-0-0:\Rcreate a new directory.
+it.ro.HelpHotlistMenu0-0-0:\Rcrea una nuova directory.
 nl.ro.HelpHotlistMenu0-0-0:\Rcreate a new directory.
 en.ro.HelpHotlistMenu0-0-1:\Rcreate a new address.
 de.ro.HelpHotlistMenu0-0-1:Neuen Eintrag erstellen.
 fr.ro.HelpHotlistMenu0-0-1:\Rcréer une nouvelle adresse.
-it.ro.HelpHotlistMenu0-0-1:\Rcreate a new address.
+it.ro.HelpHotlistMenu0-0-1:\Rcrea un nuovo indirizzo.
 nl.ro.HelpHotlistMenu0-0-1:\Rcreate a new address.
 en.ro.HelpHotlistMenu0-1:\Rexport the hotlist as an HTML file.
 de.ro.HelpHotlistMenu0-1:Die gesamte Hotlist als HTML Datei speichern.
@@ -4033,7 +4033,7 @@ nl.ro.HelpHotlistMenu0-2-0:\Sopen all directories and show all entry details.
 en.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
 de.ro.HelpHotlistMenu0-2-1:Öffnet alle Verzeichnisse.
 fr.ro.HelpHotlistMenu0-2-1:\Souvrir tous les répertoires.
-it.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
+it.ro.HelpHotlistMenu0-2-1:\Sapri tutte le directory.
 nl.ro.HelpHotlistMenu0-2-1:\Sopen all directories.
 en.ro.HelpHotlistMenu0-2-2:\Sshow all entry details.
 de.ro.HelpHotlistMenu0-2-2:Zeigt die Zusatzinformationen zu den Einträgen an.
@@ -4053,7 +4053,7 @@ nl.ro.HelpHotlistMenu0-3-0:\Sclose all directories and hide all entry details.
 en.ro.HelpHotlistMenu0-3-1:\Sclose all directories.
 de.ro.HelpHotlistMenu0-3-1:Schließt alle Verzeichnisse.
 fr.ro.HelpHotlistMenu0-3-1:\Sfermer tous les répertoires.
-it.ro.HelpHotlistMenu0-3-1:\Sclose all directories.
+it.ro.HelpHotlistMenu0-3-1:\Schiudi tutte le directory.
 nl.ro.HelpHotlistMenu0-3-1:\Sclose all directories.
 en.ro.HelpHotlistMenu0-3-2:\Shide all entry details.
 de.ro.HelpHotlistMenu0-3-2:Versteckt die Zusatzinformationen der Einträge.
@@ -4272,12 +4272,12 @@ nl.ro.HelpCookiesMenu0-0-0:\Sopen all directories and show all cookie details.
 en.ro.HelpCookiesMenu0-0-1:\Sopen all directories.
 de.ro.HelpCookiesMenu0-0-1:Klicken mit AUSWAHL öffnet alle Verzeichnisse.
 fr.ro.HelpCookiesMenu0-0-1:\Souvrir tous les répertoires.
-it.ro.HelpCookiesMenu0-0-1:\Sopen all directories.
+it.ro.HelpCookiesMenu0-0-1:\Sapri tutte le directory.
 nl.ro.HelpCookiesMenu0-0-1:\Sopen all directories.
 en.ro.HelpCookiesMenu0-0-2:\Sshow all cookie details.
 de.ro.HelpCookiesMenu0-0-2:Klicken mit AUSWAHL zeigt Details zu allen angezeigten Cookies.
 fr.ro.HelpCookiesMenu0-0-2:\Smontrer le détail de tous les cookies.
-it.ro.HelpCookiesMenu0-0-2:\Sshow all cookie details.
+it.ro.HelpCookiesMenu0-0-2:\Smostra tutti i cookie in dettaglio.
 nl.ro.HelpCookiesMenu0-0-2:\Sshow all cookie details.
 en.ro.HelpCookiesMenu0-1:\Rcollapse items within the cookie list.
 de.ro.HelpCookiesMenu0-1:Menü zum Schließen der Einträge der Liste.
@@ -4292,7 +4292,7 @@ nl.ro.HelpCookiesMenu0-1-0:\Sclose all directories and hide all cookie details.
 en.ro.HelpCookiesMenu0-1-1:\Sclose all directories.
 de.ro.HelpCookiesMenu0-1-1:Klicken mit AUSWAHL schließt alle Verzeichnisse.
 fr.ro.HelpCookiesMenu0-1-1:\Sfermer tous les répertoires.
-it.ro.HelpCookiesMenu0-1-1:\Sclose all directories.
+it.ro.HelpCookiesMenu0-1-1:\Schiudi le directory.
 nl.ro.HelpCookiesMenu0-1-1:\Sclose all directories.
 en.ro.HelpCookiesMenu0-1-2:\Shide all cookie details.
 de.ro.HelpCookiesMenu0-1-2:Klicken mit AUSWAHL versteckt alle Cookiedetails.
@@ -4322,17 +4322,17 @@ nl.ro.HelpCookiesMenu1:\Roperate on the current selection.
 en.ro.HelpCookiesMenu1-0:\Sdelete any selected cookies.
 de.ro.HelpCookiesMenu1-0:Klicken mit AUSWAHL löscht alle markierten Cookies.
 fr.ro.HelpCookiesMenu1-0:\Ssupprimer tous les cookies sélectionnés.
-it.ro.HelpCookiesMenu1-0:\Sdelete any selected cookies.
+it.ro.HelpCookiesMenu1-0:\Scancella tutti i cookie selezionati.
 nl.ro.HelpCookiesMenu1-0:\Sdelete any selected cookies.
 en.ro.HelpCookiesMenu2:\Sselect all the items in the cookie list.
 de.ro.HelpCookiesMenu2:Klicken mit AUSWAHL markiert alle Cookies als gewählt.
 fr.ro.HelpCookiesMenu2:\Ssélectionner tous les items dans la liste de cookies.
-it.ro.HelpCookiesMenu2:\Sselect all the items in the cookie list.
+it.ro.HelpCookiesMenu2:\Sseleziona tutti gli oggetti nella lista dei cookie.
 nl.ro.HelpCookiesMenu2:\Sselect all the items in the cookie list.
 en.ro.HelpCookiesMenu3:\Sdeselect all selected items.
 de.ro.HelpCookiesMenu3:Klicken mit AUSWAHL macht alle Markierungen rückgängig.
 fr.ro.HelpCookiesMenu3:\Sdéselectionner tous les items.
-it.ro.HelpCookiesMenu3:\Sdeselect all selected items.
+it.ro.HelpCookiesMenu3:\Sdeseleziona tutti gli oggetti selezionati.
 nl.ro.HelpCookiesMenu3:\Sdeselect all selected items.
 
 en.ro.HelpAppInfo:\TNetSurf information \w.|MSee the about page for the contributor list and credits.
@@ -4365,7 +4365,7 @@ nl.ro.HelpConfigure2:Content configuration tool
 en.ro.HelpConfigure3:Font configuration tool
 de.ro.HelpConfigure3:Zeichensätze konfigurieren
 fr.ro.HelpConfigure3:Outil de configuration de fontes
-it.ro.HelpConfigure3:Font configuration tool
+it.ro.HelpConfigure3:Strumento di configurazione dei font
 nl.ro.HelpConfigure3:Font configuration tool
 en.ro.HelpConfigure4:Home page configuration tool
 de.ro.HelpConfigure4:Homepage einstellen
@@ -5219,7 +5219,7 @@ nl.all.SendReferer:Send site referral information
 en.ami.DoNotTrack:Send header to tell websites not to track
 de.ami.DoNotTrack:Send header to tell websites not to track
 fr.ami.DoNotTrack:Send header to tell websites not to track
-it.ami.DoNotTrack:Send header to tell websites not to track
+it.ami.DoNotTrack:Invia header al sito con la richiesta di non tracciamento
 nl.ami.DoNotTrack:Send header to tell websites not to track
 en.all.FastScrolling:Fast scrolling
 de.all.FastScrolling:Schnelles Scrollen
@@ -5287,7 +5287,7 @@ nl.all.Proxy:HTTP Proxy
 en.all.Fetching:Fetching
 de.all.Fetching:Fetching
 fr.all.Fetching:Fetching
-it.all.Fetching:Fetching
+it.all.Fetching:Ricezione
 nl.all.Fetching:Fetching
 en.all.FetchesMax:Maximum fetches
 de.all.FetchesMax:Maximale Anzahl an Ladevorgängen
@@ -5407,7 +5407,7 @@ nl.all.FontFantasy:Fantasy
 en.ami.FontFallback:Preferred fallback
 de.ami.FontFallback:Preferred fallback
 fr.ami.FontFallback:Preferred fallback
-it.ami.FontFallback:Preferred fallback
+it.ami.FontFallback:Fallback preferito
 nl.ami.FontFallback:Preferred fallback
 en.all.Default:Default
 de.all.Default:Standard
@@ -5434,12 +5434,12 @@ nl.all.Pt:pt
 en.ami.FontScanning:Scanning fonts...
 de.ami.FontScanning:Scanning fonts...
 fr.ami.FontScanning:Scanning fonts...
-it.ami.FontScanning:Scanning fonts...
+it.ami.FontScanning:Scansione dei font...
 nl.ami.FontScanning:Scanning fonts...
 en.ami.FontGlyphs:%ld unique glyphs found
 de.ami.FontGlyphs:%ld unique glyphs found
 fr.ami.FontGlyphs:%ld unique glyphs found
-it.ami.FontGlyphs:%ld unique glyphs found
+it.ami.FontGlyphs:%ld glifi unici trovati
 nl.ami.FontGlyphs:%ld unique glyphs found
 
 # Cache tab
