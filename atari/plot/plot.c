@@ -232,7 +232,7 @@ inline static void vsf_rgbcolor(short vdih, uint32_t cin)
 /*
 	Get current visible coords
 */
-inline static void plotter_get_visible_grect(GRECT * out)
+inline static void plot_get_visible_grect(GRECT * out)
 {
 	out->g_x = view.vis_x;
 	out->g_y = view.vis_y;
@@ -353,7 +353,7 @@ bool plot_copy_rect(GRECT src, GRECT dst)
 	GRECT vis;
 
 	/* clip to visible rect, only needed for onscreen renderer: */
-	plotter_get_visible_grect(&vis );
+	plot_get_visible_grect(&vis );
 
 	if( !rc_intersect(&vis, &src) )
 		return(true);
@@ -1404,7 +1404,7 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
 	// clip the visible rectangle of the plot area
 	// this is the area of the plotter which falls into
 	// screen region:
-	plotter_get_visible_grect(&vis);
+	plot_get_visible_grect(&vis);
 	if( !rc_intersect( &vis, &off) ) {
 		return(true);
 	}
