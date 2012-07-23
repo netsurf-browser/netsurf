@@ -48,6 +48,33 @@ struct s_view {
     struct rect clipping;	/* clipping rectangle							*/
 };
 
+/*
+* Capture the screen at x,y location
+* param self instance
+* param x absolute screen coords
+* param y absolute screen coords
+* param w width
+* param h height
+*
+* This creates an snapshot in RGBA format (NetSurf's native format)
+*
+*/
+static struct bitmap * snapshot_create(int x, int y, int w, int h);
+
+/* Garbage collection of the snapshot routine */
+/* this should be called after you are done with the data returned by snapshot_create */
+/* don't access the screenshot after you called this function */
+static void snapshot_suspend(void);
+
+/* destroy memory used by screenshot */
+static void snapshot_destroy(void);
+
+/* convert an bgra color to vdi1000 color */
+void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
+
+/* convert an rgb color to an index into the web palette */
+short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
+
 
 #ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
@@ -291,7 +318,7 @@ inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
 }
 
 /* convert framebuffer clipping to vdi clipping and activates it */
-inline static void plotter_vdi_clip(bool set)
+inline static void plot_vdi_clip(bool set)
 {
 	// TODO : check this
 	return;
@@ -639,7 +666,7 @@ inline short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b)
 #endif
 
 
-static void dump_vdi_info( short vdih )
+static void dump_vdi_info(short vdih)
 {
     struct s_vdi_sysinfo temp;
     read_vdi_sysinfo( vdih, &temp );
@@ -1065,11 +1092,8 @@ static bool bitmap_convert_8(struct bitmap * img, int x,
 			if( buf_planar == NULL )
 				buf_planar =(void*)malloc( blocks * CONV_BLOCK_SIZE );
 			 else
-				buf_planar =(void*)realloc(
-														buf_planar,
-														blocks * CONV_BLOCK_SIZE
-													);
-			assert( buf_planar );
+				buf_planar =(void*)realloc(buf_planar, blocks * CONV_BLOCK_SIZE);
+			assert(buf_planar);
 			if( buf_planar == NULL ) {
 				return( 0-ERR_NO_MEM );
 			}
@@ -1428,7 +1452,7 @@ bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
 	short c[2] = {fgcolor, WHITE};
 	GRECT off;
 
-	plotter_get_clip_grect(&off);
+	plot_get_clip_grect(&off);
 	if( rc_intersect(loc, &off) == 0 ){
 		return( 1 );
 	}
@@ -1482,7 +1506,7 @@ Returns non-zero value > -1 when the objects could be succesfully created.
 Returns value < 0 to indicate an error
 */
 
-int atari_plotter_init(char * fdrvrname)
+int plot_init(char * fdrvrname)
 {
 
     GRECT loc_pos= {0,0,360,400};
@@ -1608,7 +1632,7 @@ int atari_plotter_init(char * fdrvrname)
     return( err );
 }
 
-int atari_plotter_finalise( void )
+int plot_finalise( void )
 {
 	int i=0;
 
@@ -1775,7 +1799,7 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	pxy[2] = view.x + x1;
 	pxy[3] = view.y + y1;
 
-	plotter_vdi_clip(true);
+	plot_vdi_clip(true);
 	if( sw == 0)
 		sw = 1;
 	NSLT2VDI(lt, pstyle)
@@ -1787,7 +1811,7 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	vsl_width(atari_plot_vdi_handle, (short)sw);
 	vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 	v_pline(atari_plot_vdi_handle, 2, (short *)&pxy );
-	plotter_vdi_clip(false);
+	plot_vdi_clip(false);
     return ( true );
 }
 
@@ -1799,7 +1823,7 @@ static bool plot_polygon(const int *p, unsigned int n,
 	short d[4];
 	if (vdi_sysinfo.maxpolycoords > 0)
 		assert( (signed int)n < vdi_sysinfo.maxpolycoords);
-	plotter_vdi_clip(true);
+	plot_vdi_clip(true);
 	vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
 	vsf_style(atari_plot_vdi_handle, 1);
 	for (i = 0; i<n*2; i=i+2) {
@@ -1815,7 +1839,7 @@ static bool plot_polygon(const int *p, unsigned int n,
 		vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 		v_pline(atari_plot_vdi_handle, n+1,  (short *)&pxy);
 	}
-	plotter_vdi_clip(false);
+	plot_vdi_clip(false);
     return ( true );
 }
 
@@ -1859,7 +1883,7 @@ bool plot_get_clip(struct rect * out)
     return( true );
 }
 
-void plotter_get_clip_grect(GRECT * out)
+void plot_get_clip_grect(GRECT * out)
 {
     struct rect clip={0,0,0,0};
     plot_get_clip(&clip);
@@ -1877,7 +1901,7 @@ static bool plot_text(int x, int y, const char *text, size_t length, const plot_
 
 static bool plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
 {
-	plotter_vdi_clip(true);
+	plot_vdi_clip(true);
 	if (pstyle->fill_type != PLOT_OP_TYPE_SOLID) {
 		vsf_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 		vsf_perimeter(atari_plot_vdi_handle, 1);
@@ -1889,14 +1913,14 @@ static bool plot_disc(int x, int y, int radius, const plot_style_t *pstyle)
 		vsf_interior(atari_plot_vdi_handle, FIS_SOLID);
 		v_circle(atari_plot_vdi_handle, view.x + x, view.y + y, radius);
 	}
-	plotter_vdi_clip(false);
+	plot_vdi_clip(false);
     return ( true );
 }
 
 static bool plot_arc(int x, int y, int radius, int angle1, int angle2,
                      const plot_style_t *pstyle)
 {
-	//plotter_vdi_clip(true);
+	//plot_vdi_clip(true);
 	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
 	if (pstyle->fill_type == PLOT_OP_TYPE_NONE)
 		return(true);
@@ -1911,7 +1935,7 @@ static bool plot_arc(int x, int y, int radius, int angle1, int angle2,
 		vsf_perimeter(atari_plot_vdi_handle, 1);
 		v_arc(atari_plot_vdi_handle, view.x + x, view.y + y, radius, angle1*10, angle2*10);
 	}
-	//plotter_vdi_clip(true);
+	//plot_vdi_clip(true);
     return (true);
 }
 

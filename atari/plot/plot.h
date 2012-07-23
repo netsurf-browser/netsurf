@@ -99,8 +99,8 @@ struct rect;
 
 extern const struct plotter_table atari_plotters;
 
-int atari_plotter_init(char *);
-int atari_plotter_finalise(void);
+int plot_init(char *);
+int plot_finalise(void);
 /* translate an error number */
 const char* plot_err_str(int i) ;
 
@@ -109,7 +109,7 @@ bool plot_unlock(void);
 bool plot_set_dimensions( int x, int y, int w, int h );
 bool plot_get_clip(struct rect * out);
 /* Get clipping for current framebuffer as GRECT */
-void plotter_get_clip_grect(GRECT * out);
+void plot_get_clip_grect(GRECT * out);
 bool plot_clip(const struct rect *clip);
 bool plot_rectangle( int x0, int y0, int x1, int y1,const plot_style_t *style );
 bool plot_line( int x0, int y0, int x1, int y1, const plot_style_t *style );
@@ -118,35 +118,9 @@ bool plot_blit_bitmap(struct bitmap * bmp, int x, int y,
 bool plot_blit_mfdb(GRECT * loc, MFDB * insrc, unsigned char fgcolor,
 						uint32_t flags);
 bool plot_copy_rect(GRECT src, GRECT dst);
-/*
-* Capture the screen at x,y location
-* param self instance
-* param x absolute screen coords
-* param y absolute screen coords
-* param w width
-* param h height
-*
-* This creates an snapshot in RGBA format (NetSurf's native format)
-*
-*/
-static struct bitmap * snapshot_create(int x, int y, int w, int h);
-
-/* Garbage collection of the snapshot routine */
-/* this should be called after you are done with the data returned by snapshot_create */
-/* don't access the screenshot after you called this function */
-static void snapshot_suspend(void);
-
-/* destroy memory used by screenshot */
-static void snapshot_destroy(void);
 
 /* convert an vdi color to bgra */
 void vdi1000_to_rgb( unsigned short * in, unsigned char * out );
-
-/* convert an bgra color to vdi1000 color */
-void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
-
-/* convert an rgb color to an index into the web palette */
-short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
 
 /* assign vdi line style to dst ( netsurf type ) */
 #define NSLT2VDI(dst, src) \
@@ -165,8 +139,6 @@ short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
 		break;\
 	}\
 
-
-#define PLOTTER_IS_LOCKED() ( atari_plot_flags & PLOTTER_FLAG_LOCKED )
 
 
 #ifdef WITH_8BPP_SUPPORT

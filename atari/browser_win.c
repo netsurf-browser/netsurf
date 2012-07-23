@@ -502,9 +502,7 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 	    struct rect clip = { 0,0,w,h };
 	    plot_set_dimensions( x,y,w,h );
         plot_clip(&clip);
-        plot_resize_bitmap(gw->icon, w, h);
-        plot_blit_bitmap(( gw->icon->resized ) ? gw->icon->resized : gw->icon,
-						0, 0, 0xffffff, BITMAPF_NONE);
+        atari_plotters.bitmap(0, 0, w, h, gw->icon, 0xffffff, 0);
 	}
 }
 

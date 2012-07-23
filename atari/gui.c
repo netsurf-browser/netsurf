@@ -827,7 +827,7 @@ void gui_quit(void)
 		RsrcXfree(h_gem_rsrc );
 	}
 	LOG(("Shutting down plotter"));
-	atari_plotter_finalise();
+	plot_finalise();
 	if( tmp_clipboard != NULL ){
 		free( tmp_clipboard );
 		tmp_clipboard = NULL;
@@ -971,7 +971,7 @@ static void gui_init(int argc, char** argv)
 		die("unable to process command line.\n");
 
 	nkc_init();
-	atari_plotter_init(nsoption_charp(atari_font_driver));
+	plot_init(nsoption_charp(atari_font_driver));
 }
 
 static char *theapp = (char*)"NetSurf";
