@@ -691,11 +691,12 @@ css_error named_generic_sibling_node(void *pw, void *node,
 
 			if (dom_string_caseless_lwc_isequal(name, 
 					qname->name)) {
+				dom_string_unref(name);
 				dom_node_unref(n);
-				/** \todo Sort out reference counting */
 				*sibling = n;
 				break;
 			}
+			dom_string_unref(name);
 		}
 
 		err = dom_node_get_previous_sibling(n, &prev);
