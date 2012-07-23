@@ -135,7 +135,7 @@ nl.all.Save:Bewaar  F3
 en.all.SaveComp:Full save  ⇑F3
 de.all.SaveComp:Alles speichern  ⇑F3
 fr.all.SaveComp:Sauvegarde Complète  ⇑F3
-it.all.SaveComp:Salva Tutto  ?F3
+it.all.SaveComp:Salva Tutto  ⇑F3
 nl.all.SaveComp:Bewaar alles  ⇑F3
 en.all.Export:Export
 de.all.Export:Exportieren
@@ -168,7 +168,7 @@ nl.all.ViewSrc:Bekijk HTML...  F8
 en.all.Draw:Draw  ⇑^F3
 de.all.Draw:Draw  ⇑^F3
 fr.all.Draw:Draw  ⇑^F3
-it.all.Draw:Disegna  ?^F3
+it.all.Draw:Draw  ⇑^F3
 nl.all.Draw:Draw  ⇑^F3
 en.all.PDF:PDF
 de.all.PDF:PDF
