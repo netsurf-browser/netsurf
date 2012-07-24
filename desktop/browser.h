@@ -202,7 +202,7 @@ struct browser_window {
 
 	/** cache of the currently displayed status text. */
 	char *status_text; /**< Current status bar text. */
-	int status_text_len; /**< Length of the ::status_text buffer. */
+	int status_text_len; /**< Length of the browser_window::status_text buffer. */
 	int status_match; /**< Number of times an idempotent status-set operation was performed. */
 	int status_miss; /**< Number of times status was really updated. */
 };

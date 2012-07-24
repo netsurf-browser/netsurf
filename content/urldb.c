@@ -167,7 +167,7 @@ struct path_data {
 				 * the default port for given scheme, i.e.
 				 * 80 (http), 443 (https). */
 	char *segment;		/**< Path segment for this node */
-	unsigned int frag_cnt;	/**< Number of entries in ::fragment */
+	unsigned int frag_cnt;	/**< Number of entries in path_data::fragment */
 	char **fragment;	/**< Array of fragments */
 	bool persistent;	/**< This entry should persist */
 

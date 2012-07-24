@@ -16,7 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file Utility routines to obtain paths to file resources. */
+/** 
+ * \file utils/filepath.h
+ * \brief Utility routines to obtain paths to file resources. 
+ */
 
 #ifndef _NETSURF_UTILS_FILEPATH_H_
 #define _NETSURF_UTILS_FILEPATH_H_

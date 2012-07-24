@@ -17,7 +17,8 @@
  */
 
 /**
- * \file Core download context (implementation)
+ * \file desktop/download.c
+ * \brief Core download context implementation
  */
 
 #include <assert.h>

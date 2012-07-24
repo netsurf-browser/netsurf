@@ -1622,7 +1622,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 			browser_window_set_scroll(bw, 0, 0);
 
 		/* if frag_id exists, then try to scroll to it */
-		/** \TODO don't do this if the user has scrolled */
+		/** @todo don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
 				bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
@@ -1641,7 +1641,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 			browser_window_set_scroll(bw, 0, 0);
 
 		/* if frag_id exists, then try to scroll to it */
-		/** \TODO don't do this if the user has scrolled */
+		/** @todo don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
 				bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
@@ -1659,7 +1659,7 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 			browser_window_set_scroll(bw, 0, 0);
 
 		/* if frag_id exists, then try to scroll to it */
-		/** \TODO don't do this if the user has scrolled */
+		/** @todo don't do this if the user has scrolled */
 		if (bw->frag_id && html_get_id_offset(bw->current_content,
 				bw->frag_id, &x, &y)) {
 			browser_window_set_scroll(bw, x, y);
@@ -1849,7 +1849,8 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
 /**
  * Change the shape of the mouse pointer
  *
- * \param  shape    shape to use
+ * \param bw Browser window to set shape in
+ * \param shape The pointer shape to use
  */
 
 void browser_window_set_pointer(struct browser_window *bw,

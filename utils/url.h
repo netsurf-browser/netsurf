@@ -17,17 +17,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- * URL parsing and joining (interface).
+/** 
+ * \file utils/url.h
+ * \brief URL parsing and joining (interface).
  */
 
 #ifndef _NETSURF_UTILS_URL_H_
 #define _NETSURF_UTILS_URL_H_
 
-/* file url prefix */
+/** File url prefix */
 #define FILE_SCHEME_PREFIX "file:///"
+/** File url prefix length */
 #define FILE_SCHEME_PREFIX_LEN 8
 
+/** URL utility function return codes */
 typedef enum {
 	URL_FUNC_OK,     /**< No error */
 	URL_FUNC_NOMEM,  /**< Insufficient memory */
