@@ -283,7 +283,7 @@ struct column {
 	bool positioned;
 };
 
-/** Parameters for <object> and similar elements. */
+/** Parameters for object element and similar elements. */
 struct object_params {
 	nsurl *data;
 	char *type;
@@ -293,7 +293,7 @@ struct object_params {
 	struct object_param *params;
 };
 
-/** Linked list of <object> parameters. */
+/** Linked list of object element parameters. */
 struct object_param {
 	char *name;
 	char *value;

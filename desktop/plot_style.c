@@ -16,7 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file Plotter global styles.
+/** 
+ * \file desktop/plot_style.c
+ * \brief Plotter global styles.
  *
  * These plot styles are globaly available and used in many places.
  */

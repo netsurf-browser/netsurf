@@ -17,7 +17,8 @@
  */
 
 /**
- * \file Core download context (interface)
+ * \file desktop/download.h
+ * \brief Core download context (interface)
  */
 
 #ifndef NETSURF_DESKTOP_DOWNLOAD_H_

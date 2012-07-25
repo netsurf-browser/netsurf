@@ -17,9 +17,9 @@
   $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
   ifneq ($(PKG_CONFIG),)
-    CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl libhubbub zlib \
-		libparserutils libdom libwapcaplet libcares libxml-2.0)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libxml-2.0 libcares libcurl \
+    CFLAGS += $(shell $(PKG_CONFIG) --cflags zlib libcares libcurl libhubbub  \
+		libparserutils libdom libwapcaplet libxml-2.0)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libxml-2.0 libcurl libcares \
 		libhubbub libparserutils libcss libdom libwapcaplet)
   else
     LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lxml2 -lcurl -lz

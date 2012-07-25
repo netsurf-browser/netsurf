@@ -3367,7 +3367,7 @@ bool parse_number(const char *data, bool maybe_negative, bool real,
 }
 
 /**
- * Parse a font @size attribute
+ * Parse a font \@size attribute
  *
  * \param size  Data to parse (NUL-terminated)
  * \param val   Pointer to location to receive enum value
