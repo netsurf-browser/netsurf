@@ -186,8 +186,13 @@ const char* plot_err_str(int i)
     return(plot_error_codes[abs(i)]);
 }
 
-
-inline static void vsl_rgbcolor(short vdih, uint32_t cin)
+/**
+ * Set line drawing color by passing netsurf XBGR "colour" type.
+ * 
+ * \param vdih The vdi handle
+ * \param cin  The netsurf colour value
+ */
+inline static void vsl_rgbcolor(short vdih, colour cin)
 {
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
@@ -207,7 +212,13 @@ inline static void vsl_rgbcolor(short vdih, uint32_t cin)
 	#endif
 }
 
-inline static void vsf_rgbcolor(short vdih, uint32_t cin)
+/**
+ * Set fill color by passing netsurf XBGR "colour" type.
+ * 
+ * \param vdih The vdi handle
+ * \param cin  The netsurf colour value
+ */
+inline static void vsf_rgbcolor(short vdih, colour cin)
 {
 	#ifdef WITH_8BPP_SUPPORT
 	if( vdi_sysinfo.scr_bpp > 8 ) {
@@ -229,9 +240,9 @@ inline static void vsf_rgbcolor(short vdih, uint32_t cin)
 
 
 
-/*
-	Get current visible coords
-*/
+/**
+ * Get current visible coords
+ */
 inline static void plot_get_visible_grect(GRECT * out)
 {
 	out->g_x = view.vis_x;
@@ -396,6 +407,10 @@ bool plot_copy_rect(GRECT src, GRECT dst)
 	return(true);
 }
 
+/**
+ * Fill the screen info structure.
+ *
+ */
 static struct s_vdi_sysinfo * read_vdi_sysinfo(short vdih, struct s_vdi_sysinfo * info) {
 
     unsigned long cookie_EdDI=0;
@@ -551,7 +566,9 @@ inline void vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 
 
 #ifdef WITH_8BPP_SUPPORT
-
+/**
+ * Set pixel within an 8 bit VDI standard bitmap. 
+ */
 inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
 	short * buf;
@@ -584,6 +601,9 @@ inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned 
 	*buf = (val&(1<<7)) ? ((*buf)|(whichbit)) : ((*buf)&~(whichbit));
 }
 
+/**
+ * Read pixel from an 8 bit VDI standard bitmap. 
+ */
 inline static unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
 {
 	unsigned char ret=0;
@@ -694,7 +714,9 @@ static void dump_vdi_info(short vdih)
     printf("};\n");
 }
 
-// create snapshot, native screen format
+/**
+ * Create an snapshot of the screen image in device format. 
+ */
 static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
 {
 	MFDB scr;
@@ -743,7 +765,9 @@ static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
 	return( &buf_scr );
 }
 
-// create snapshot, vdi std. format
+/**
+ * Create an snapshot of the screen image in VDI standard format (8 bit). 
+ */
 static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 {
 	/* allocate memory for the snapshot */
@@ -780,10 +804,9 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 	return( &buf_std );
 }
 
-/*
-	This will create an snapshot of the screen in netsurf ABGR format
-*/
-
+/* 
+ * Create an snapshot of the screen in netsurf ABGR format
+ */
 static struct bitmap * snapshot_create(int x, int y, int w, int h)
 {
 	int err;
@@ -854,6 +877,9 @@ no_copy:
 	return( &snapshot );
 }
 
+/**
+ * Notify the snapshot interface that the last snapshot is no longer in use.
+ */
 static void snapshot_suspend(void)
 {
 	if(size_buf_scr > CONV_KEEP_LIMIT  ) {
@@ -893,6 +919,9 @@ static void snapshot_suspend(void)
 	}
 }
 
+/**
+ * Shut down the snapshot interface.
+ */
 static void snapshot_destroy(void)
 {
 
