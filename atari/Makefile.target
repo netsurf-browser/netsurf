@@ -2,7 +2,33 @@
 # Atari target setup
 # ----------------------------------------------------------------------------
 
+ifeq ($(ATARI_ARCH),68020-60)
+CFLAGS += -m68020-60
+LDFLAGS += -m68020-60
+endif
+
+ifeq ($(ATARI_ARCH),5475)
+CFLAGS += -mcpu=5475
+LDFLAGS += -mcpu=5475
+endif
+
+# non-pkgconfig components
+
+FREETYPE_FONT_CFLAGS := $(shell freetype-config --cflags) -DWITH_FREETYPE_FONT_DRIVER
+SPIDERMONKEY_CFLAGS := -DWITH_MOZJS -DXP_UNIX -DJS_HAS_FILE_OBJECT=0 -DJSOPTION_JIT=0 -DPOSIX_SOURCE -D_BSD_SOURCE
+
+$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
+$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)))
+$(eval $(call feature_enabled,MOZJS,$(SPIDERMONKEY_CFLAGS),-ljs,JavaScript (Spidermonkey)))
+$(eval $(call feature_enabled,ATARI_FREETYPE_FONT,$(FREETYPE_FONT_CFLAGS),-lfreetype,(Freetype)))
+$(eval $(call feature_enabled,ATARI_NETSURF_FONT,-DWITH_INTERNAL_FONT_DRIVER,,(Internal Font)))
+$(eval $(call feature_enabled,ATARI_8BPP_SUPPORT,-DWITH_8BPP_SUPPORT,,(Indexed screen format support)))
+
 # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
+NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
 NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
@@ -11,22 +37,6 @@ NETSURF_USE_JS:=YES
 NETSURF_USE_MOZJS:=YES
 endif
 
-# non-pkgconfig components
-$(eval $(call feature_enabled,MNG,-DWITH_MNG,-lmng,PNG/MNG/JNG (libmng)))
-$(eval $(call feature_enabled,GD_PLOTTER,-DWITH_GD_PLOTTER,-lgd,GD Plotter (libgd)))
-$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)))
-$(eval $(call feature_enabled,MOZJS,-DWITH_MOZJS,-ljs,JavaScript (Spidermonkey)))
-
-CFLAGS += -DATARI_USE_FREETYPE $(shell freetype-config --cflags)
-LDFLAGS += -lcflib -lfreetype
-
-# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
-NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
-NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
-NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-
-#LDFLAGS += -lnsbmp -lnsgif
 $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
 $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
 
@@ -38,7 +48,7 @@ CFLAGS += -U__STRICT_ANSI__ -std=c99 -I. -Dsmall $(WARNFLAGS) -Dnsatari \
 		$(shell $(PKG_CONFIG) --cflags libxml-2.0 ) \
 		$(shell $(PKG_CONFIG) --cflags libcurl )
 
-LDFLAGS += -lcurl
+LDFLAGS += -lcflib -lcurl
 LDFLAGS += -lcss -lparserutils -ldom -lwapcaplet -lhubbub
 LDFLAGS += -lssl -lcrypto
 LDFLAGS += -lxml2 -lz -liconv -lcares -lHermes -lwindom -lgem -lm
