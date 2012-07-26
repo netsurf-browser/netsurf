@@ -365,7 +365,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(noscript);
 	CSS_LWC_STRING_INTERN(object);
 	CSS_LWC_STRING_INTERN(optgroup);
-	CSS_LWC_STRING_INTERN(object);
+	CSS_LWC_STRING_INTERN(option);
 	CSS_LWC_STRING_INTERN(p);
 	CSS_LWC_STRING_INTERN(param);
 	CSS_LWC_STRING_INTERN(password);
