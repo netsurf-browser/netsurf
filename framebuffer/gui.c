@@ -234,9 +234,8 @@ fb_pan(fbtk_widget_t *widget,
 		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
 		fb_queue_redraw(widget, 0, 0, width, - bwidget->pany);
-	}
 
-	if (bwidget->pany > 0) {
+	} else if (bwidget->pany > 0) {
 		/* pan down by less then viewport height */
 		srcbox.x0 = x;
 		srcbox.y0 = y + bwidget->pany;
@@ -253,7 +252,8 @@ fb_pan(fbtk_widget_t *widget,
 
 		/* redraw newly exposed area */
 		bwidget->scrolly += bwidget->pany;
-		fb_queue_redraw(widget, 0, height - bwidget->pany, width, height);
+		fb_queue_redraw(widget, 0, height - bwidget->pany,
+				width, height);
 	}
 
 	if (bwidget->panx < 0) {
@@ -274,9 +274,8 @@ fb_pan(fbtk_widget_t *widget,
 		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
 		fb_queue_redraw(widget, 0, 0, -bwidget->panx, height);
-	}
 
-	if (bwidget->panx > 0) {
+	} else if (bwidget->panx > 0) {
 		/* pan right by less then viewport width */
 		srcbox.x0 = x + bwidget->panx;
 		srcbox.y0 = y;
@@ -293,9 +292,9 @@ fb_pan(fbtk_widget_t *widget,
 
 		/* redraw newly exposed area */
 		bwidget->scrollx += bwidget->panx;
-		fb_queue_redraw(widget, width - bwidget->panx, 0, width, height);
+		fb_queue_redraw(widget, width - bwidget->panx, 0,
+				width, height);
 	}
-
 
 	bwidget->pan_required = false;
 	bwidget->panx = 0;
