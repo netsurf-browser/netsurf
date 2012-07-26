@@ -202,8 +202,8 @@ fb_pan(fbtk_widget_t *widget,
 	y = fbtk_get_absy(widget);
 
 	/* if the pan exceeds the viewport size just redraw the whole area */
-	if (bwidget->pany > height || bwidget->pany < -height ||
-	    bwidget->panx > width || bwidget->panx < -width) {
+	if (bwidget->pany >= height || bwidget->pany <= -height ||
+	    bwidget->panx >= width || bwidget->panx <= -width) {
 
 		bwidget->scrolly += bwidget->pany;
 		bwidget->scrollx += bwidget->panx;
@@ -212,6 +212,8 @@ fb_pan(fbtk_widget_t *widget,
 		/* ensure we don't try to scroll again */
 		bwidget->panx = 0;
 		bwidget->pany = 0;
+		bwidget->pan_required = false;
+		return;
 	}
 
 	if (bwidget->pany < 0) {
