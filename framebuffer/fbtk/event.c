@@ -193,36 +193,42 @@ fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
 	/* ensure we have the root widget */
 	root = fbtk_get_root_widget(root);
 
-	if (nsfb_event(root->u.root.fb, event, timeout) == false)
-		return false;
+	do {
+		if (nsfb_event(root->u.root.fb, event, timeout) == false)
+			return false;
 
-	switch (event->type) {
-	case NSFB_EVENT_KEY_DOWN:
-	case NSFB_EVENT_KEY_UP:
-		if ((event->value.controlcode >= NSFB_KEY_MOUSE_1) &&
-		    (event->value.controlcode <= NSFB_KEY_MOUSE_5)) {
-			fbtk_click(root, event);
-		} else {
-			fbtk_input(root, event);
+		switch (event->type) {
+		case NSFB_EVENT_KEY_DOWN:
+		case NSFB_EVENT_KEY_UP:
+			if ((event->value.controlcode >= NSFB_KEY_MOUSE_1) &&
+			    (event->value.controlcode <= NSFB_KEY_MOUSE_5)) {
+				fbtk_click(root, event);
+			} else {
+				fbtk_input(root, event);
+			}
+			break;
+
+		case NSFB_EVENT_CONTROL:
+			unused = true;
+			break;
+
+		case NSFB_EVENT_MOVE_RELATIVE:
+			fbtk_warp_pointer(root, event->value.vector.x,
+					event->value.vector.y, true);
+			timeout = 0;
+			break;
+
+		case NSFB_EVENT_MOVE_ABSOLUTE:
+			fbtk_warp_pointer(root, event->value.vector.x,
+					event->value.vector.y, false);
+			timeout = 0;
+			break;
+
+		default:
+			break;
 		}
-		break;
-
-	case NSFB_EVENT_CONTROL:
-		unused = true;
-		break;
-
-	case NSFB_EVENT_MOVE_RELATIVE:
-		fbtk_warp_pointer(root, event->value.vector.x, event->value.vector.y, true);
-		break;
-
-	case NSFB_EVENT_MOVE_ABSOLUTE:
-		fbtk_warp_pointer(root, event->value.vector.x, event->value.vector.y, false);
-		break;
-
-	default:
-		break;
-
-	}
+	} while (event->type == NSFB_EVENT_MOVE_RELATIVE ||
+			event->type == NSFB_EVENT_MOVE_ABSOLUTE);
 	return unused;
 }
 
