@@ -10,10 +10,13 @@
 #include <windom.h>
 
 #include "desktop/options.h"
+#include "desktop/plot_style.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/settings.h"
 #include "atari/global_evnt.h"
 #include "atari/misc.h"
+#include "atari/plot/plot.h"
+#include "atari/bitmap.h"
 #include "atari/findfile.h"
 
 extern char options[PATH_MAX];
@@ -30,7 +33,7 @@ static unsigned int tmp_option_min_reflow_period;
 static unsigned int tmp_option_max_fetchers;
 static unsigned int tmp_option_max_fetchers_per_host;
 static unsigned int tmp_option_max_cached_fetch_handles;
-static unsigned int tmp_option_atari_toolbar_bg;
+static colour tmp_option_atari_toolbar_bg;
 
 /* Tab forms and their buttons: */
 static int frms[] = {
@@ -73,6 +76,7 @@ static int buts[] = {
 #define LABEL_FONT_RENDERER_MAX_LEN 8
 #define LABEL_PATH_MAX_LEN 43
 #define LABEL_ICONSET_MAX_LEN 8
+#define INPUT_TOOLBAR_COLOR_MAX_LEN 6
 
 static void toggle_objects( void );
 static void display_settings( void );
@@ -86,6 +90,8 @@ static void __CDECL
 	form_event( WINDOW *win, int index, int unused, void *unused2);
 static void __CDECL
 	clear_history( WINDOW *win, int index, int unused, void *unused2);
+
+
 
 WINDOW * open_settings()
 {
@@ -140,7 +146,7 @@ WINDOW * open_settings()
 							form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_SEL_LOCALE,
 							form_event, NULL);
-		ObjcAttachFormFunc( dlgwin, CHOICES_BT_TOOLBAR_BGCOLOR,
+		ObjcAttachFormFunc( dlgwin, CHOICES_INPUT_TOOLBAR_BGCOLOR,
 							form_event, NULL);
 		ObjcAttachFormFunc( dlgwin, CHOICES_BT_TOOLBAR_ICONSET,
 							form_event, NULL);
@@ -212,6 +218,142 @@ static void __CDECL clear_history( WINDOW *win, int index, int unused,
 								void *unused2)
 {
 
+}
+
+
+static colour color_popup(int x, int y, colour current)
+{
+#define GRID_ROWS 9
+#define GRID_COLS 27
+	colour retval = current;
+	int boxwidth=6, boxheight=8;	
+	struct bitmap *palette_img;
+	MFDB bg, screen;
+	GRECT bgarea = {x, y, GRID_COLS*boxwidth+4, GRID_ROWS*boxheight+4};
+	short web_std_colors[6] = {0, 51, 102, 153, 204, 255};
+	int r,g,b;
+	int xpos = 0, ypos = 0;
+	colour palette[216+8];
+	int i=0;
+
+	plot_style_t drawcolour = {
+		.stroke_type = PLOT_OP_TYPE_NONE,
+		.fill_type = PLOT_OP_TYPE_SOLID,
+		.fill_colour = 0
+	};
+
+	plot_style_t outline = {
+		.stroke_type = PLOT_OP_TYPE_SOLID,
+		.stroke_colour = 0xAAAAAA,
+		.stroke_width = 2,
+		.fill_type = PLOT_OP_TYPE_NONE,
+		.fill_colour = 0
+	}; 
+	
+	/* create a palette array (web colors): */
+	for (r=0; r<6; r++) {
+		for (g=0; g<6; g++) {
+			for (b=0; b<6; b++) {
+				palette[i] = ((web_std_colors[b]<<16) 
+				              | (web_std_colors[g]<<8) 
+				              	| web_std_colors[r]);				
+				i++;
+			}
+		}
+	}
+	
+	/* setup the gray color values: */
+	int z = 0;
+	colour grays[15] = {0x111111, 0x222222, 0x333333, 0x444444, 
+	                    0x555555, 0x666666, 0x777777, 0x888888,
+	                    0x999999, 0x999999, 0xAAAAAA, 0xBBBBBB,
+	                    0xCCCCCC, 0xDDDDDD, 0xEEEEEE};
+	for (z=0;i<243;i++) {
+		if (z<15)
+			palette[i] = grays[z];
+		else
+			palette[i] = 0x000000;
+		z++;
+	}
+	
+	/* hide the mouse */
+	v_hide_c (app.graf.handle);
+	
+	plot_set_dimensions(x, y, 
+	                    (GRID_COLS*boxwidth)+4, (GRID_ROWS*boxheight)+4);
+	plot_lock();
+
+	// store background: 
+	short pxy[8];
+	init_mfdb(app.nplanes, bgarea.g_w, bgarea.g_h, 0, &bg);
+	init_mfdb(0, bgarea.g_w, bgarea.g_h, 0, &screen);
+	
+	pxy[0] = bgarea.g_x;
+	pxy[1] = bgarea.g_y;
+	pxy[2] = bgarea.g_x + bgarea.g_w - 1;
+	pxy[3] = bgarea.g_y + bgarea.g_h - 1;
+	pxy[4] = 0;
+	pxy[5] = 0;
+	pxy[6] = bgarea.g_w - 1;
+	pxy[7] = bgarea.g_h - 1;
+
+	/* copy screen image */
+	vro_cpyfm (app.graf.handle, S_ONLY, pxy, &screen, &bg);
+
+	/*
+	plot_rectangle(x+1, y+1, x+(GRID_COLS*boxwidth)+3, 
+	               y+(GRID_ROWS*boxheight)+3, &outline);
+	
+	plot_line(x, y, x+(GRID_COLS*boxwidth)+2, y+(GRID_ROWS*boxheight)+2,
+	          &outline);
+	*/
+	plot_line(x, y, x+(GRID_COLS*boxwidth)+2, y,
+	          &outline);
+
+	plot_line(x, y+(GRID_ROWS*boxheight)+2, x+(GRID_COLS*boxwidth)+2, 
+	          y+(GRID_ROWS*boxheight)+2,
+	          &outline);
+
+	/* draw a 27*8 grid: */
+	for (i=0; i<243; i++){
+		drawcolour.fill_colour = palette[i];
+		plot_rectangle(xpos+2, ypos+2, xpos+boxwidth+2, ypos+boxheight+2, 
+		               &drawcolour);
+		xpos += boxwidth;
+		if (xpos >= GRID_COLS*boxwidth) {
+			xpos = 0;
+			ypos += boxheight;
+		}						
+	}
+	
+	/* restore the mouse */
+	v_show_c ( app.graf.handle, 1);
+
+	/* fetch mouse event: */
+	mt_EvntDisable(&app, dlgwin, WM_XBUTTON);
+	EvntWindom(MU_BUTTON);
+	mt_EvntEnable(&app, dlgwin, WM_XBUTTON);
+
+	/* calulate clicked grid coords: */
+	int row = ((evnt.my-y)/boxheight);
+	int col = ((evnt.mx-x)/boxwidth);
+	
+	if (row >= 0 && row <= GRID_ROWS-1 && col >= 0 && col <= GRID_COLS-1) {
+		assert( (GRID_COLS*row)+(col) >= 0 );
+		assert( (GRID_COLS*row)+(col) < 243 );
+		retval = palette[(GRID_COLS*row)+(col)];
+	}
+
+	/* restore background: */
+	w_put_bkgr(&app, bgarea.g_x, bgarea.g_y, bgarea.g_w, bgarea.g_h, &bg);
+	free(bg.fd_addr);
+
+	plot_unlock();
+
+#undef GRID_COLS
+#undef GRID_ROWS
+	
+	return(retval);
 }
 
 /**
@@ -375,19 +517,16 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 			break;
 
-		case CHOICES_BT_TOOLBAR_BGCOLOR:
-			objc_offset( FORM(win), CHOICES_BT_TOOLBAR_BGCOLOR, &x, &y );
-			choice = MenuPopUp( get_tree(POP_COLOR), x, y, -1,
-									-1, -1, P_WNDW + P_CHCK );
-			if( choice >= 0 && choice <= 15 ){
-				snprintf( spare, 255, "%02d", choice-1 );
-				tmp_option_atari_toolbar_bg = choice-1;
-				ObjcStrCpy( dlgtree, CHOICES_BT_TOOLBAR_BGCOLOR,
+		case CHOICES_INPUT_TOOLBAR_BGCOLOR:
+			objc_offset( FORM(win), CHOICES_INPUT_TOOLBAR_BGCOLOR, &x, &y );
+			choice = color_popup(x, y, tmp_option_atari_toolbar_bg);
+			snprintf( spare, 255, "%06x", choice );
+			tmp_option_atari_toolbar_bg = choice;
+			ObjcStrCpy( dlgtree, CHOICES_INPUT_TOOLBAR_BGCOLOR,
 							spare );
-
-			}
 			is_button = true;
 			ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
+			ObjcDrawParent(OC_FORM, dlgwin, CHOICES_INPUT_TOOLBAR_BGCOLOR, 2, 1 );
 			break;
 
 		case CHOICES_BT_TOOLBAR_ICONSET:
@@ -696,12 +835,13 @@ static void display_settings( void )
 	snprintf( spare, 255, "%3d", nsoption_int(font_size) );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
-	set_text(CHOICES_BT_TOOLBAR_ICONSET,
-			nsoption_charp(atari_image_toolbar_folder), LABEL_ICONSET_MAX_LEN);
+	set_text(CHOICES_BT_TOOLBAR_ICONSET, 
+	         nsoption_charp(atari_image_toolbar_folder), LABEL_ICONSET_MAX_LEN);
 
 	tmp_option_atari_toolbar_bg = nsoption_int(atari_toolbar_bg);
-	snprintf( spare, 255, "%2d", tmp_option_atari_toolbar_bg);
-	set_text( CHOICES_BT_TOOLBAR_BGCOLOR, spare , 2 );
+	snprintf( spare, 255, "%06x", tmp_option_atari_toolbar_bg);
+	set_text(CHOICES_INPUT_TOOLBAR_BGCOLOR, spare,
+			INPUT_TOOLBAR_COLOR_MAX_LEN );
 
 	/* Only first tab is refreshed: */
 	ObjcDraw( OC_FORM, dlgwin, CHOICES_TAB_BROWSER, 4 );
@@ -741,7 +881,7 @@ static void apply_settings( void )
 	/* "Style" tab: */
 	nsoption_set_int(font_min_size, tmp_option_font_min_size);
 	nsoption_set_int(font_size, tmp_option_font_size);
-	nsoption_set_int(atari_toolbar_bg, tmp_option_atari_toolbar_bg);
+	nsoption_set_colour(atari_toolbar_bg, tmp_option_atari_toolbar_bg);
 	nsoption_set_charp(atari_image_toolbar_folder,
 						ObjcString( dlgtree, CHOICES_BT_TOOLBAR_ICONSET, NULL)
 					);
