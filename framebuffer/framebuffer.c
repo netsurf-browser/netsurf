@@ -136,12 +136,14 @@ static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
     if (buffer == NULL)
         return true;
 
-        /* y is given to the fonts baseline we need it to the fonts top */
-        y-=((fb_font->height * 75)/100);
+        /* y is given as the baseline, at 3/4 from top.
+         * we need it to the top */
+        y -= ((fb_font->height * 3) / 4);
 
-        y+=1; /* the coord is the bottom-left of the pixels offset by 1 to make
-               *   it work since fb coords are the top-left of pixels
-               */
+        /* the coord is the bottom-left of the pixels offset by 1 to make
+         *   it work since fb coords are the top-left of pixels
+         */
+        y += 1;
 
     blen = strlen(buffer);
 
@@ -154,7 +156,7 @@ static bool framebuffer_plot_text(int x, int y, const char *text, size_t length,
         chrp = fb_font->data + ((unsigned char)buffer[chr] * fb_font->height);
         nsfb_plot_glyph1(nsfb, &loc, (uint8_t *)chrp, 32, fstyle->foreground);
 
-        x+=fb_font->width;
+        x += fb_font->width;
 
     }
 
