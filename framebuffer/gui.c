@@ -119,7 +119,6 @@ widget_scroll_y(struct gui_window *gw, int y, bool abs)
 	} else {
 		bwidget->pany += y;
 	}
-	bwidget->pan_required = true;
 
 	content_height = content_get_height(gw->bw->current_content) * scale;
 
@@ -132,6 +131,11 @@ widget_scroll_y(struct gui_window *gw, int y, bool abs)
 	/* do not pan off the bottom of the content */
 	if ((bwidget->scrolly + bwidget->pany) > (content_height - height))
 		bwidget->pany = (content_height - height) - bwidget->scrolly;
+
+	if (bwidget->pany == 0)
+		return;
+
+	bwidget->pan_required = true;
 
 	fbtk_request_redraw(gw->browser);
 
@@ -152,12 +156,10 @@ widget_scroll_x(struct gui_window *gw, int x, bool abs)
 	} else {
 		bwidget->panx += x;
 	}
-	bwidget->pan_required = true;
 
 	content_width = content_get_width(gw->bw->current_content) * scale;
 
 	width = fbtk_get_width(gw->browser);
-
 
 	/* dont pan off the left */
 	if ((bwidget->scrollx + bwidget->panx) < 0)
@@ -166,6 +168,11 @@ widget_scroll_x(struct gui_window *gw, int x, bool abs)
 	/* do not pan off the right of the content */
 	if ((bwidget->scrollx + bwidget->panx) > (content_width - width))
 		bwidget->panx = (content_width - width) - bwidget->scrollx;
+
+	if (bwidget->panx == 0)
+		return;
+
+	bwidget->pan_required = true;
 
 	fbtk_request_redraw(gw->browser);
 
