@@ -188,14 +188,31 @@ fbtk_warp_pointer(fbtk_widget_t *widget, int x, int y, bool relative)
 bool
 fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
 {
+	nsfb_bbox_t cloc;
 	bool unused = false; /* is the event available */
+	bool move_pointer = false; /* whether pointer move events occured */
 
 	/* ensure we have the root widget */
 	root = fbtk_get_root_widget(root);
 
 	do {
-		if (nsfb_event(root->u.root.fb, event, timeout) == false)
+		if (nsfb_event(root->u.root.fb, event, timeout) == false) {
+			if (move_pointer)
+				fbtk_warp_pointer(root, cloc.x0, cloc.y0,
+						false);
 			return false;
+		}
+
+		if (move_pointer && event->type != NSFB_EVENT_MOVE_RELATIVE &&
+				event->type != NSFB_EVENT_MOVE_ABSOLUTE) {
+			/* Flush the movements */
+			fbtk_warp_pointer(root, cloc.x0, cloc.y0, false);
+
+		} else if (!move_pointer &&
+				event->type == NSFB_EVENT_MOVE_RELATIVE) {
+			/* Get current pointer coords */
+			nsfb_cursor_loc_get(root->u.root.fb, &cloc);
+		}
 
 		switch (event->type) {
 		case NSFB_EVENT_KEY_DOWN:
@@ -213,14 +230,20 @@ fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
 			break;
 
 		case NSFB_EVENT_MOVE_RELATIVE:
-			fbtk_warp_pointer(root, event->value.vector.x,
-					event->value.vector.y, true);
+			/* Consecutive move events are consolidated into a
+			 * single pointer warp */
+			move_pointer = true;
+			cloc.x0 += event->value.vector.x;
+			cloc.y0 += event->value.vector.y;
 			timeout = 0;
 			break;
 
 		case NSFB_EVENT_MOVE_ABSOLUTE:
-			fbtk_warp_pointer(root, event->value.vector.x,
-					event->value.vector.y, false);
+			/* Consecutive move events are consolidated into a
+			 * single pointer warp */
+			move_pointer = true;
+			cloc.x0 = event->value.vector.x;
+			cloc.y0 = event->value.vector.y;
 			timeout = 0;
 			break;
 
