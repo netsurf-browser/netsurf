@@ -371,10 +371,25 @@ ifeq ($(TARGET),atari)
   
   NETSURF_USE_MNG := NO
 
-  NETSURF_ATARI_USE_FREETYPE := YES
+  # enable true type fonts via freetype2
+  # Valid options: YES, NO
+  NETSURF_USE_ATARI_FREETYPE_FONT := YES
 
-  # Optimisation levels
-  CFLAGS += -m68000 -O2 -Wuninitialized
+  # Enable use of netsurf embedded font
+  # Valid options: YES, NO
+  NETSURF_USE_ATARI_NETSURF_FONT := YES
+
+  # Configure support for screen drivers with no true colour mode
+  # Valid options: YES, NO
+  NETSURF_USE_ATARI_8BPP_SUPPORT := NO
+
+  # Configure the CPU target
+  # Valid options: 68000, 68020-60, 5475 (coldfire)
+  ATARI_ARCH = 68020-60
+
+  # enable optimizations
+  # -O2 is currently broken with m68000 / m68020-60 builds 
+  CFLAGS += -O1 -Wuninitialized
 
   WARNFLAGS = -W -Wundef -Wpointer-arith \
 		-Wcast-align -Wwrite-strings -Wstrict-prototypes \
