@@ -46,6 +46,8 @@ lwc_string *corestring_lwc_div;
 lwc_string *corestring_lwc_embed;
 lwc_string *corestring_lwc_file;
 lwc_string *corestring_lwc_font;
+lwc_string *corestring_lwc_frame;
+lwc_string *corestring_lwc_frameset;
 lwc_string *corestring_lwc_h1;
 lwc_string *corestring_lwc_h2;
 lwc_string *corestring_lwc_h3;
@@ -66,9 +68,13 @@ lwc_string *corestring_lwc_link;
 lwc_string *corestring_lwc_meta;
 lwc_string *corestring_lwc_middle;
 lwc_string *corestring_lwc_multipart_form_data;
+lwc_string *corestring_lwc_no;
 lwc_string *corestring_lwc_noscript;
 lwc_string *corestring_lwc_object;
+lwc_string *corestring_lwc_optgroup;
+lwc_string *corestring_lwc_option;
 lwc_string *corestring_lwc_p;
+lwc_string *corestring_lwc_param;
 lwc_string *corestring_lwc_password;
 lwc_string *corestring_lwc_poly;
 lwc_string *corestring_lwc_polygon;
@@ -79,6 +85,7 @@ lwc_string *corestring_lwc_rectangle;
 lwc_string *corestring_lwc_refresh;
 lwc_string *corestring_lwc_reset;
 lwc_string *corestring_lwc_right;
+lwc_string *corestring_lwc_src;
 lwc_string *corestring_lwc_style;
 lwc_string *corestring_lwc_submit;
 lwc_string *corestring_lwc_table;
@@ -95,6 +102,7 @@ lwc_string *corestring_lwc_title;
 lwc_string *corestring_lwc_top;
 lwc_string *corestring_lwc_tr;
 lwc_string *corestring_lwc_url;
+lwc_string *corestring_lwc_yes;
 lwc_string *corestring_lwc__blank;
 lwc_string *corestring_lwc__parent;
 lwc_string *corestring_lwc__self;
@@ -175,6 +183,8 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(embed);
 	CSS_LWC_STRING_UNREF(file);
 	CSS_LWC_STRING_UNREF(font);
+	CSS_LWC_STRING_UNREF(frame);
+	CSS_LWC_STRING_UNREF(frameset);
 	CSS_LWC_STRING_UNREF(h1);
 	CSS_LWC_STRING_UNREF(h2);
 	CSS_LWC_STRING_UNREF(h3);
@@ -195,9 +205,13 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(meta);
 	CSS_LWC_STRING_UNREF(middle);
 	CSS_LWC_STRING_UNREF(multipart_form_data);
+	CSS_LWC_STRING_UNREF(no);
 	CSS_LWC_STRING_UNREF(noscript);
 	CSS_LWC_STRING_UNREF(object);
+	CSS_LWC_STRING_UNREF(optgroup);
+	CSS_LWC_STRING_UNREF(option);
 	CSS_LWC_STRING_UNREF(p);
+	CSS_LWC_STRING_UNREF(param);
 	CSS_LWC_STRING_UNREF(password);
 	CSS_LWC_STRING_UNREF(poly);
 	CSS_LWC_STRING_UNREF(polygon);
@@ -208,6 +222,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(refresh);
 	CSS_LWC_STRING_UNREF(reset);
 	CSS_LWC_STRING_UNREF(right);
+	CSS_LWC_STRING_UNREF(src);
 	CSS_LWC_STRING_UNREF(style);
 	CSS_LWC_STRING_UNREF(submit);
 	CSS_LWC_STRING_UNREF(table);
@@ -224,6 +239,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(top);
 	CSS_LWC_STRING_UNREF(tr);
 	CSS_LWC_STRING_UNREF(url);
+	CSS_LWC_STRING_UNREF(yes);
 	CSS_LWC_STRING_UNREF(_blank);
 	CSS_LWC_STRING_UNREF(_parent);
 	CSS_LWC_STRING_UNREF(_self);
@@ -324,6 +340,8 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(embed);
 	CSS_LWC_STRING_INTERN(file);
 	CSS_LWC_STRING_INTERN(font);
+	CSS_LWC_STRING_INTERN(frame);
+	CSS_LWC_STRING_INTERN(frameset);
 	CSS_LWC_STRING_INTERN(h1);
 	CSS_LWC_STRING_INTERN(h2);
 	CSS_LWC_STRING_INTERN(h3);
@@ -343,9 +361,13 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(link);
 	CSS_LWC_STRING_INTERN(meta);
 	CSS_LWC_STRING_INTERN(middle);
+	CSS_LWC_STRING_INTERN(no);
 	CSS_LWC_STRING_INTERN(noscript);
 	CSS_LWC_STRING_INTERN(object);
+	CSS_LWC_STRING_INTERN(optgroup);
+	CSS_LWC_STRING_INTERN(object);
 	CSS_LWC_STRING_INTERN(p);
+	CSS_LWC_STRING_INTERN(param);
 	CSS_LWC_STRING_INTERN(password);
 	CSS_LWC_STRING_INTERN(poly);
 	CSS_LWC_STRING_INTERN(polygon);
@@ -356,6 +378,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(refresh);
 	CSS_LWC_STRING_INTERN(reset);
 	CSS_LWC_STRING_INTERN(right);
+	CSS_LWC_STRING_INTERN(src);
 	CSS_LWC_STRING_INTERN(style);
 	CSS_LWC_STRING_INTERN(submit);
 	CSS_LWC_STRING_INTERN(table);
@@ -371,11 +394,13 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(top);
 	CSS_LWC_STRING_INTERN(tr);
 	CSS_LWC_STRING_INTERN(url);
+	CSS_LWC_STRING_INTERN(yes);
 	CSS_LWC_STRING_INTERN(_blank);
 	CSS_LWC_STRING_INTERN(_parent);
 	CSS_LWC_STRING_INTERN(_self);
 	CSS_LWC_STRING_INTERN(_top);
 #undef CSS_LWC_STRING_INTERN
+
 
 	lerror = lwc_intern_string("multipart/form-data",
 			SLEN("multipart/form-data"),

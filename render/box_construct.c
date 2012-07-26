@@ -40,6 +40,7 @@
 #include "render/box.h"
 #include "render/form.h"
 #include "render/html_internal.h"
+#include "utils/corestrings.h"
 #include "utils/locale.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -1647,13 +1648,17 @@ bool box_a(BOX_SPECIAL_PARAMS)
 	/* target frame [16.3] */
 	err = dom_element_get_attribute(n, kstr_target, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		if (!strcasecmp(dom_string_data(s), "_blank"))
+		if (dom_string_caseless_lwc_isequal(s,
+				corestring_lwc__blank))
 			box->target = TARGET_BLANK;
-		else if (!strcasecmp(dom_string_data(s), "_top"))
+		else if (dom_string_caseless_lwc_isequal(s,
+				corestring_lwc__top))
 			box->target = TARGET_TOP;
-		else if (!strcasecmp(dom_string_data(s), "_parent"))
+		else if (dom_string_caseless_lwc_isequal(s,
+				corestring_lwc__parent))
 			box->target = TARGET_PARENT;
-		else if (!strcasecmp(dom_string_data(s), "_self"))
+		else if (dom_string_caseless_lwc_isequal(s,
+				corestring_lwc__self))
 			/* the default may have been overridden by a
 			 * <base target=...>, so this is different to 0 */
 			box->target = TARGET_SELF;
@@ -1941,7 +1946,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 				return false;
 			}
 
-			if (strcasecmp(dom_string_data(name), "param") != 0) {
+			if (!dom_string_caseless_lwc_isequal(name,
+					corestring_lwc_param)) {
 				/* The first non-param child is the start of 
 				 * the alt html. Therefore, we should break 
 				 * out of this loop. */
@@ -2122,7 +2128,8 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	/* common extension: frameborder="yes|no" to control all children */
 	err = dom_element_get_attribute(n, kstr_frameborder, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-	  	if (strcasecmp(dom_string_data(s), "no") == 0)
+	  	if (dom_string_caseless_lwc_isequal(s,
+	  			corestring_lwc_no) == 0)
 	  		default_border = false;
 		dom_string_unref(s);
 	}
@@ -2194,12 +2201,13 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				}
 
 				if (type != DOM_ELEMENT_NODE ||
-						(strcasecmp(
-							dom_string_data(name),
-							"frame") != 0 &&
-						strcasecmp(
-							dom_string_data(name),
-							"frameset") != 0)) {
+					(!dom_string_caseless_lwc_isequal(
+							name,
+							corestring_lwc_frame) &&
+					!dom_string_caseless_lwc_isequal(
+							name,
+							corestring_lwc_frameset
+							))) {
 					err = dom_node_get_next_sibling(c, 
 							&next);
 					if (err != DOM_NO_ERR) {
@@ -2229,7 +2237,8 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 				return false;
 			}
 
-			if (strcasecmp(dom_string_data(s), "frameset") == 0) {
+			if (dom_string_caseless_lwc_isequal(s,
+					corestring_lwc_frameset)) {
 				dom_string_unref(s);
 				frame->border = 0;
 				if (box_create_frameset(frame, c, 
@@ -2290,10 +2299,11 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 
 			err = dom_element_get_attribute(c, kstr_scrolling, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
-				if (strcasecmp(dom_string_data(s), "yes") == 0)
+				if (dom_string_caseless_lwc_isequal(s,
+						corestring_lwc_yes))
 					frame->scrolling = SCROLLING_YES;
-				else if (strcasecmp(dom_string_data(s), 
-						"no") == 0)
+				else if (dom_string_caseless_lwc_isequal(s,
+						corestring_lwc_no))
 					frame->scrolling = SCROLLING_NO;
 				dom_string_unref(s);
 			}
@@ -2447,9 +2457,11 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 
 	err = dom_element_get_attribute(n, kstr_scrolling, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		if (strcasecmp(dom_string_data(s), "yes") == 0)
+		if (dom_string_caseless_lwc_isequal(s,
+				corestring_lwc_yes))
 			iframe->scrolling = SCROLLING_YES;
-		else if (strcasecmp(dom_string_data(s), "no") == 0)
+		else if (dom_string_caseless_lwc_isequal(s,
+				corestring_lwc_no))
 			iframe->scrolling = SCROLLING_NO;
 		dom_string_unref(s);
 	}
@@ -2497,21 +2509,33 @@ bool box_input(BOX_SPECIAL_PARAMS)
 	box->gadget = gadget;
 	gadget->box = box;
 
-	if (type && strcasecmp(dom_string_data(type), "password") == 0) {
+	if (type && dom_string_caseless_lwc_isequal(type,
+			corestring_lwc_password)) {
 		if (box_input_text(n, content, box, 0, true) == false)
 			goto no_memory;
-	} else if (type && strcasecmp(dom_string_data(type), "file") == 0) {
+
+	} else if (type && dom_string_caseless_lwc_isequal(type,
+			corestring_lwc_file)) {
 		box->type = BOX_INLINE_BLOCK;
-	} else if (type && strcasecmp(dom_string_data(type), "hidden") == 0) {
+
+	} else if (type && dom_string_caseless_lwc_isequal(type,
+			corestring_lwc_hidden)) {
 		/* no box for hidden inputs */
 		box->type = BOX_NONE;
+
 	} else if (type && 
-			(strcasecmp(dom_string_data(type), "checkbox") == 0 ||
-			strcasecmp(dom_string_data(type), "radio") == 0)) {
+			(dom_string_caseless_lwc_isequal(type,
+				corestring_lwc_checkbox) ||
+			dom_string_caseless_lwc_isequal(type,
+				corestring_lwc_radio))) {
+
 	} else if (type && 
-			(strcasecmp(dom_string_data(type), "submit") == 0 ||
-			strcasecmp(dom_string_data(type), "reset") == 0 ||
-			strcasecmp(dom_string_data(type), "button") == 0)) {
+			(dom_string_caseless_lwc_isequal(type,
+				corestring_lwc_submit) ||
+			dom_string_caseless_lwc_isequal(type,
+				corestring_lwc_reset) ||
+			dom_string_caseless_lwc_isequal(type,
+				corestring_lwc_button))) {
 		struct box *inline_container, *inline_box;
 
 		if (box_button(n, content, box, 0) == false)
@@ -2551,7 +2575,9 @@ bool box_input(BOX_SPECIAL_PARAMS)
 		box_add_child(inline_container, inline_box);
 
 		box_add_child(box, inline_container);
-	} else if (type && strcasecmp(dom_string_data(type), "image") == 0) {
+
+	} else if (type && dom_string_caseless_lwc_isequal(type,
+			corestring_lwc_image)) {
 		gadget->type = GADGET_IMAGE;
 
 		if (box->style && css_computed_display(box->style,
@@ -2703,14 +2729,16 @@ bool box_select(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		if (strcasecmp(dom_string_data(name), "option") == 0) {
+		if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_option)) {
 			dom_string_unref(name);
 
 			if (box_select_add_option(gadget, c) == false) {
 				dom_node_unref(c);
 				goto no_memory;
 			}
-		} else if (strcasecmp(dom_string_data(name), "optgroup") == 0) {
+		} else if (dom_string_caseless_lwc_isequal(name,
+				corestring_lwc_optgroup)) {
 			dom_string_unref(name);
 
 			err = dom_node_get_first_child(c, &c2);
@@ -2729,8 +2757,8 @@ bool box_select(BOX_SPECIAL_PARAMS)
 					return false;
 				}
 				
-				if (strcasecmp(dom_string_data(c2_name),
-						"option") == 0) {
+				if (dom_string_caseless_lwc_isequal(c2_name,
+						corestring_lwc_option)) {
 					dom_string_unref(c2_name);
 
 					if (box_select_add_option(gadget, 
@@ -3051,7 +3079,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		if (strcasecmp(dom_string_data(name), "src") == 0) {
+		if (dom_string_caseless_lwc_isequal(name, corestring_lwc_src)) {
 			dom_string_unref(name);
 			continue;
 		}
