@@ -149,6 +149,7 @@ void html_overflow_scroll_callback(void *client_data,
 
 /* in render/html_script.c */
 dom_hubbub_error  html_process_script(void *ctx, dom_node *node);
+void html_free_scripts(html_content *html);
 
 /* in render/html_forms.c */
 struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc);

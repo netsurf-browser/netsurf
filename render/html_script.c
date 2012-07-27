@@ -69,32 +69,32 @@ static bool html_scripts_exec(html_content *c)
 			continue;
 		}
 
-		assert((s->type == HTML_SCRIPT_EXTERNAL) ||
-		       (s->type == HTML_SCRIPT_INTERNAL));
+		assert((s->type == HTML_SCRIPT_SYNC) ||
+		       (s->type == HTML_SCRIPT_INLINE));
 
-		if (s->type == HTML_SCRIPT_EXTERNAL) {
+		if (s->type == HTML_SCRIPT_SYNC) {
 			/* ensure script content is present */
-			if (s->data.external == NULL)
+			if (s->data.handle == NULL)
 				continue;
 
 			/* ensure script content fetch status is not an error */
-			if (content_get_status(s->data.external) ==
+			if (content_get_status(s->data.handle) ==
 					CONTENT_STATUS_ERROR)
 				continue;
 
 			/* ensure script handler for content type */
 			script_handler = select_script_handler(
-					content_get_type(s->data.external));
+					content_get_type(s->data.handle));
 			if (script_handler == NULL)
 				continue; /* unsupported type */
 
-			if (content_get_status(s->data.external) ==
+			if (content_get_status(s->data.handle) ==
 					CONTENT_STATUS_DONE) {
 				/* external script is now available */
 				const char *data;
 				unsigned long size;
 				data = content_get_source_data(
-						s->data.external, &size );
+						s->data.handle, &size );
 				script_handler(c->jscontext, data, size);
 
 				s->already_started = true;
@@ -158,8 +158,7 @@ convert_script_async_cb(hlcache_handle *script,
 
 	/* Find script */
 	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
-		if (s->type == HTML_SCRIPT_EXTERNAL &&
-		    s->data.external == script)
+		if (s->type == HTML_SCRIPT_ASYNC && s->data.handle == script)
 			break;
 	}
 
@@ -187,7 +186,7 @@ convert_script_async_cb(hlcache_handle *script,
 				nsurl_access(hlcache_handle_get_url(script)),
 				event->data.error));
 		hlcache_handle_release(script);
-		s->data.external = NULL;
+		s->data.handle = NULL;
 		parent->base.active--;
 		LOG(("%d fetches active", parent->base.active));
 		content_add_error(&parent->base, "?", 0);
@@ -213,13 +212,13 @@ convert_script_async_cb(hlcache_handle *script,
 	return NSERROR_OK;
 }
 
-/** 
- * process a script with a src tag 
+/**
+ * process a script with a src tag
  */
 static dom_hubbub_error
-exec_src_script(html_content *c, 
-		dom_node *node, 
-		dom_string *mimetype, 
+exec_src_script(html_content *c,
+		dom_node *node,
+		dom_string *mimetype,
 		dom_string *src)
 {
 	nserror ns_error;
@@ -230,7 +229,7 @@ exec_src_script(html_content *c,
 
 	//exc = dom_element_has_attribute(node, html_dom_string_async, &async);
 
-	nscript = html_process_new_script(c, HTML_STYLESHEET_EXTERNAL);
+	nscript = html_process_new_script(c, HTML_SCRIPT_SYNC);
 	if (nscript == NULL) {
 		dom_string_unref(mimetype);
 		goto html_process_script_no_memory;
@@ -258,7 +257,7 @@ exec_src_script(html_content *c,
 					   c,
 					   &child,
 					   CONTENT_SCRIPT,
-					   &nscript->data.external);
+					   &nscript->data.handle);
 
 	nsurl_unref(joined);
 
@@ -297,7 +296,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 		return DOM_HUBBUB_OK; /* no contents, skip */
 	}
 
-	nscript = html_process_new_script(c, HTML_STYLESHEET_INTERNAL);
+	nscript = html_process_new_script(c, HTML_SCRIPT_INLINE);
 	if (nscript == NULL) {
 		dom_string_unref(mimetype);
 		dom_string_unref(script);
@@ -308,7 +307,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 
 	}
 
-	nscript->data.internal = script;
+	nscript->data.string = script;
 	nscript->mimetype = mimetype;
 	nscript->already_started = true;
 
@@ -328,7 +327,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 }
 
 
-/** 
+/**
  * process script node parser callback
  *
  *
@@ -354,7 +353,7 @@ html_process_script(void *ctx, dom_node *node)
 		}
 	}
 
-	LOG(("content %p parser %p node %p",c,c->parser, node));
+	LOG(("content %p parser %p node %p", c, c->parser, node));
 
 	exc = dom_element_get_attribute(node, corestring_dom_type, &mimetype);
 	if (exc != DOM_NO_ERR || mimetype == NULL) {
@@ -370,4 +369,28 @@ html_process_script(void *ctx, dom_node *node)
 	}
 
 	return err;
+}
+
+void html_free_scripts(html_content *html)
+{
+	unsigned int i;
+
+	for (i = 0; i != html->scripts_count; i++) {
+		if (html->scripts[i].mimetype != NULL) {
+			dom_string_unref(html->scripts[i].mimetype);
+		}
+
+		if ((html->scripts[i].type == HTML_SCRIPT_INLINE) &&
+		    (html->scripts[i].data.string != NULL)) {
+
+			dom_string_unref(html->scripts[i].data.string);
+
+		} else if ((html->scripts[i].type == HTML_SCRIPT_SYNC) &&
+			   (html->scripts[i].data.handle != NULL)) {
+
+			hlcache_handle_release(html->scripts[i].data.handle);
+
+		}
+	}
+	free(html->scripts);
 }

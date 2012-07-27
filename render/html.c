@@ -2433,21 +2433,7 @@ static void html_destroy(struct content *c)
 	}
 
 	/* Free scripts */
-	for (i = 0; i != html->scripts_count; i++) {
-		if (html->scripts[i].mimetype != NULL) {
-			dom_string_unref(html->scripts[i].mimetype);
-		}
-		if (html->scripts[i].type == HTML_SCRIPT_EXTERNAL &&
-				html->scripts[i].data.external != NULL) {
-			hlcache_handle_release(
-					html->scripts[i].data.external);
-		} else if (html->scripts[i].type ==
-				HTML_SCRIPT_INTERNAL &&
-				html->scripts[i].data.internal != NULL) {
-			dom_string_unref(html->scripts[i].data.internal);
-		}
-	}
-	free(html->scripts);
+	html_free_scripts(html);
 
 	/* Free objects */
 	html_destroy_objects(html);
