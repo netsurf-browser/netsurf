@@ -55,12 +55,14 @@ char **global_history_get_recent( int *count )
 
 void global_history_open( void )
 {
-	if( gl_history.init == false ) {
+	GRECT pos = {app.w - (app.w/3), app.y, app.w/3, app.h/2};
+
+	if (gl_history.init == false ) {
 		printf("history not init");
 		return;
 	}
 	if( gl_history.open == false ) {
-		WindOpen( gl_history.window, -1, -1, app.w/3, app.h/2);
+		WindOpen( gl_history.window, pos.g_x, pos.g_y, pos.g_w, pos.g_h);
 		gl_history.open = true;
 		atari_treeview_open( gl_history.tv );
 	} else {

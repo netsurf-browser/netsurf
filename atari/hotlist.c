@@ -134,11 +134,14 @@ void hotlist_init(void)
 
 void hotlist_open(void)
 {
+	GRECT pos = {app.w - (app.w/3), app.y, app.w/3, app.h/2};
+
 	if( hl.init == false ) {
 		return;
 	}
+
 	if( hl.open == false ) {
-		WindOpen( hl.window, -1, -1, app.w/3, app.h/2);
+		WindOpen( hl.window, pos.g_x, pos.g_y, pos.g_w, pos.g_h);
 		hl.open = true;
 		atari_treeview_open( hl.tv );
 	} else {

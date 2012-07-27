@@ -52,7 +52,7 @@
 #include "atari/res/netsurf.rsh"
 
 
-extern char * cfg_homepage_url;
+extern char * option_homepage_url;
 extern void * h_gem_rsrc;
 extern struct gui_window * input_window;
 extern long atari_plot_flags;
@@ -302,19 +302,19 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 	while( (todo.g_w > 0) && (todo.g_h > 0) ){
 
 		if (rc_intersect(&crect, &todo )) {
-			
+
 			struct rect bgclip = {0,0,todo.g_w, todo.g_h};
 			pxy[0] = todo.g_x;
 			pxy[1] = todo.g_y;
 			pxy[2] = todo.g_w + todo.g_x-1;
 			pxy[3] = todo.g_h + todo.g_y-1;
-			
+
 			vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
 			plot_set_dimensions(todo.g_x, todo.g_y, todo.g_w, todo.g_h);
 			plot_rectangle(0, 0, crect.g_w, crect.g_h, &plot_style_background);
-			
+
 			if( img_toolbar == true ){
-				plot_set_dimensions(icon_dim.g_x, icon_dim.g_y, 
+				plot_set_dimensions(icon_dim.g_x, icon_dim.g_y,
 				                    icon_dim.g_w, icon_dim.g_h);
 				plot_clip( &icon_clip  );
 				atari_plotters.bitmap( bmpx, bmpy, bmpw, bmph, icon,
@@ -403,11 +403,11 @@ void __CDECL evnt_throbber_redraw( COMPONENT *c, long buff[8])
 	pxy[2] = (short)buff[4] + buff[6]-1;
 	pxy[3] = (short)buff[5] + buff[7]-2;
 	vs_clip(atari_plot_vdi_handle, 1, (short*)&pxy );
-	
+
 	if (app.nplanes > 2 ) {
 		plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
 		plot_rectangle( 0, 0, work.g_w, work.g_h, &plot_style_background);
-	}		
+	}
 	else {
 		vsf_color(atari_plot_vdi_handle, WHITE );
 		v_bar(atari_plot_vdi_handle, (short*)&pxy );
@@ -502,20 +502,20 @@ void __CDECL evnt_url_redraw( COMPONENT *c, long buff[8], void * data)
 	if ( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 
 	plot_set_dimensions(work.g_x, work.g_y, work.g_w, work.g_h);
-	
+
 	//left margin:
-	plot_rectangle(0, 0, TOOLBAR_URL_MARGIN_LEFT, work.g_h, 
+	plot_rectangle(0, 0, TOOLBAR_URL_MARGIN_LEFT, work.g_h,
 	               &plot_style_background);
 	// right margin:
-	plot_rectangle(work.g_w-TOOLBAR_URL_MARGIN_RIGHT, 0, work.g_w, work.g_h, 
+	plot_rectangle(work.g_w-TOOLBAR_URL_MARGIN_RIGHT, 0, work.g_w, work.g_h,
 	               &plot_style_background);
 
 	// top margin:
-	plot_rectangle(0, 0, work.g_w, TOOLBAR_URL_MARGIN_TOP, 
+	plot_rectangle(0, 0, work.g_w, TOOLBAR_URL_MARGIN_TOP,
 	               &plot_style_background);
 
 	// bottom margin:
-	plot_rectangle(0, work.g_h-TOOLBAR_URL_MARGIN_BOTTOM, work.g_w, work.g_h, 
+	plot_rectangle(0, work.g_h-TOOLBAR_URL_MARGIN_BOTTOM, work.g_w, work.g_h,
 	               &plot_style_background);
 
 	// TBD: request redraw of textarea for specific region.
@@ -612,7 +612,7 @@ static void __CDECL evnt_toolbar_redraw( COMPONENT *c, long buff[8], void *data 
 	clip = work;
 	if( !rc_lintersect( (LGRECT*)&buff[4], &clip ) ) return;
 	if( work.g_y + work.g_h != clip.g_y + clip.g_h )	return;
-	
+
 	vswr_mode(atari_plot_vdi_handle, MD_REPLACE );
 	vsl_color(atari_plot_vdi_handle, BLACK );
 	vsl_type(atari_plot_vdi_handle, 1 );
@@ -1019,13 +1019,13 @@ void tb_forward_click( struct gui_window * gw )
 
 void tb_home_click( struct gui_window * gw )
 {
-	browser_window_go(gw->browser->bw, cfg_homepage_url, 0, true);
+	browser_window_go(gw->browser->bw, option_homepage_url, 0, true);
 }
 
 
 void tb_stop_click( struct gui_window * gw )
 {
-	browser_window_stop( gw->browser->bw );
+	browser_window_stop(gw->browser->bw);
 }
 
 

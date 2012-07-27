@@ -52,7 +52,6 @@
 #include "atari/settings.h"
 #include "cflib.h"
 
-extern const char * cfg_homepage_url;
 extern struct gui_window *input_window;
 extern OBJECT * 	h_gem_menu;
 extern int mouse_click_time[3];
@@ -61,6 +60,13 @@ extern browser_mouse_state bmstate;
 extern short last_drag_x;
 extern short last_drag_y;
 extern bool html_redraw_debug;
+
+extern const char * option_homepage_url;
+extern int option_window_width;
+extern int option_window_height;
+extern int option_window_x;
+extern int option_window_y;
+extern char options[PATH_MAX];
 
 /* Zero based resource tree ids: */
 #define T_ABOUT 0
@@ -96,7 +102,7 @@ static void __CDECL menu_about(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_new_win(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
-	browser_window_create(cfg_homepage_url, 0, 0, true, false);
+	browser_window_create(option_homepage_url, 0, 0, true, false);
 }
 
 static void __CDECL menu_open_url(WINDOW *win, int item, int title, void *data)
@@ -258,6 +264,20 @@ static void __CDECL menu_toolbars(WINDOW *win, int item, int title, void *data)
 static void __CDECL menu_savewin(WINDOW *win, int item, int title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
+	if (input_window && input_window->browser) {
+		GRECT rect;
+		wind_get_grect(input_window->root->handle->handle, WF_CURRXYWH, &rect);
+		option_window_width = rect.g_w;
+		option_window_height = rect.g_h;
+		option_window_x = rect.g_x;
+		option_window_y = rect.g_y;
+		nsoption_set_int(window_width, rect.g_w);
+		nsoption_set_int(window_height, rect.g_h);
+		nsoption_set_int(window_x, rect.g_x);
+		nsoption_set_int(window_y, rect.g_y);
+		nsoption_write((const char*)&options);
+	}
+
 }
 
 static void __CDECL menu_debug_render(WINDOW *win, int item, int title, void *data)
