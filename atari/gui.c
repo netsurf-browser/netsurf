@@ -91,11 +91,13 @@ bool rendering = false;
 
 
 /* Comandline / Options: */
-int cfg_width;
-int cfg_height;
+int option_window_width;
+int option_window_height;
+int option_window_x;
+int option_window_y;
 
 /* Defaults to option_homepage_url, commandline options overwrites that value */
-const char * cfg_homepage_url;
+const char * option_homepage_url;
 
 /* path to choices file: */
 char options[PATH_MAX];
@@ -173,8 +175,8 @@ gui_create_browser_window(struct browser_window *bw,
 	window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE|WIDGET_SCROLL );
 	if( gw->root->handle ) {
 		GRECT pos = {
-			app.w/2-(cfg_width/2), (app.h/2)-(cfg_height/2)+16,
-			cfg_width, cfg_height
+			option_window_x, option_window_y,
+			option_window_width, option_window_height
 		};
 		window_open( gw , pos );
 		/* Recalculate windows browser area now */
@@ -842,36 +844,50 @@ static bool
 process_cmdline(int argc, char** argv)
 {
 	int opt;
+	bool set_default_dimensions = true;
 
 	LOG(("argc %d, argv %p", argc, argv));
 
 	if ((nsoption_int(window_width) != 0) && (nsoption_int(window_height) != 0)) {
-		cfg_width = nsoption_int(window_width);
-		cfg_height = nsoption_int(window_height);
-	} else {
+
+		option_window_width = nsoption_int(window_width);
+		option_window_height = nsoption_int(window_height);
+		option_window_x = nsoption_int(window_x);
+		option_window_y = nsoption_int(window_y);
+
+		if (option_window_width <= app.w && option_window_height < app.h) {
+			set_default_dimensions = false;
+		}
+	}
+
+	if (set_default_dimensions) {
 		if( sys_type() == SYS_TOS ){
 			/* on single tasking OS, start as fulled window: */
-			cfg_width = app.w;
-			cfg_height = app.h;
+			option_window_width = app.w;
+			option_window_height = app.h-20;
+			option_window_x = app.w/2-(option_window_width/2);
+			option_window_y = (app.h/2)-(option_window_height/2);
 		} else {
-			cfg_width = 600;
-			cfg_height = 360;
+			option_window_width = 600;
+			option_window_height = 360;
+			option_window_x = 10;
+			option_window_y = 30;
 		}
 	}
 
 	if (nsoption_charp(homepage_url) != NULL)
-		cfg_homepage_url = nsoption_charp(homepage_url);
+		option_homepage_url = nsoption_charp(homepage_url);
 	else
-		cfg_homepage_url = NETSURF_HOMEPAGE;
+		option_homepage_url = NETSURF_HOMEPAGE;
 
 	while((opt = getopt(argc, argv, "w:h:")) != -1) {
 		switch (opt) {
 		case 'w':
-			cfg_width = atoi(optarg);
+			option_window_width = atoi(optarg);
 			break;
 
 		case 'h':
-			cfg_height = atoi(optarg);
+			option_window_height = atoi(optarg);
 			break;
 
 		default:
@@ -883,7 +899,7 @@ process_cmdline(int argc, char** argv)
 	}
 
 	if (optind < argc) {
-		cfg_homepage_url = argv[optind];
+		option_homepage_url = argv[optind];
 	}
 	return true;
 }
@@ -1014,7 +1030,7 @@ int main(int argc, char** argv)
 	netsurf_init(&argc, &argv, options, messages);
 	gui_init(argc, argv);
 	gui_init2(argc, argv);
-	browser_window_create(cfg_homepage_url, 0, 0, true, false);
+	browser_window_create(option_homepage_url, 0, 0, true, false);
 	graf_mouse( ARROW , NULL);
 	netsurf_main_loop();
 	netsurf_exit();
