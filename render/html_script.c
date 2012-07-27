@@ -115,7 +115,9 @@ static bool html_scripts_exec(html_content *c)
 
 /* create new html script entry */
 static struct html_script *
-html_process_new_script(html_content *c, enum html_script_type type)
+html_process_new_script(html_content *c, 
+			dom_string *mimetype, 
+			enum html_script_type type)
 {
 	struct html_script *nscript;
 	/* add space for new script entry */
@@ -140,13 +142,14 @@ html_process_new_script(html_content *c, enum html_script_type type)
 
 	nscript->type = type;
 
+	nscript->mimetype = dom_string_ref(mimetype); /* reference mimetype */
+
 	return nscript;
 }
 
 /**
  * Callback for asyncronous scripts
  */
-
 static nserror
 convert_script_async_cb(hlcache_handle *script,
 			  const hlcache_event *event,
@@ -213,6 +216,152 @@ convert_script_async_cb(hlcache_handle *script,
 }
 
 /**
+ * Callback for defer scripts
+ */
+static nserror
+convert_script_defer_cb(hlcache_handle *script,
+			  const hlcache_event *event,
+			  void *pw)
+{
+	html_content *parent = pw;
+	unsigned int i;
+	struct html_script *s;
+
+	/* Find script */
+	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
+		if (s->type == HTML_SCRIPT_ASYNC && s->data.handle == script)
+			break;
+	}
+
+	assert(i != parent->scripts_count);
+
+	switch (event->type) {
+	case CONTENT_MSG_LOADING:
+		break;
+
+	case CONTENT_MSG_READY:
+		break;
+
+	case CONTENT_MSG_DONE:
+		LOG(("script %d done '%s'", i,
+				nsurl_access(hlcache_handle_get_url(script))));
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+
+		/* script finished loading so try and continue execution */
+		html_scripts_exec(parent);
+		break;
+
+	case CONTENT_MSG_ERROR:
+		LOG(("script %s failed: %s",
+				nsurl_access(hlcache_handle_get_url(script)),
+				event->data.error));
+		hlcache_handle_release(script);
+		s->data.handle = NULL;
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+		content_add_error(&parent->base, "?", 0);
+
+		/* script failed loading so try and continue execution */
+		html_scripts_exec(parent);
+
+		break;
+
+	case CONTENT_MSG_STATUS:
+		html_set_status(parent, content_get_status_message(script));
+		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+				event->data);
+		break;
+
+	default:
+		assert(0);
+	}
+
+	if (parent->base.active == 0)
+		html_finish_conversion(parent);
+
+	return NSERROR_OK;
+}
+
+/**
+ * Callback for syncronous scripts
+ */
+static nserror
+convert_script_sync_cb(hlcache_handle *script,
+			  const hlcache_event *event,
+			  void *pw)
+{
+	html_content *parent = pw;
+	unsigned int i;
+	struct html_script *s;
+
+	/* Find script */
+	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
+		if (s->type == HTML_SCRIPT_ASYNC && s->data.handle == script)
+			break;
+	}
+
+	assert(i != parent->scripts_count);
+
+	switch (event->type) {
+	case CONTENT_MSG_LOADING:
+		break;
+
+	case CONTENT_MSG_READY:
+		break;
+
+	case CONTENT_MSG_DONE:
+		LOG(("script %d done '%s'", i,
+				nsurl_access(hlcache_handle_get_url(script))));
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+
+		s->already_started = true;
+
+		script_handler = select_script_handler(
+			content_get_type(s->data.handle));
+		if (script_handler != NULL) {
+			/* script fetch is done and supported type */
+
+			const char *data;
+			unsigned long size;
+			data = content_get_source_data(s->data.handle, &size );
+			script_handler(c->jscontext, data, size);
+		}
+		break;
+
+	case CONTENT_MSG_ERROR:
+		LOG(("script %s failed: %s",
+				nsurl_access(hlcache_handle_get_url(script)),
+				event->data.error));
+
+		hlcache_handle_release(script);
+		s->data.handle = NULL;
+		parent->base.active--;
+		LOG(("%d fetches active", parent->base.active));
+		content_add_error(&parent->base, "?", 0);
+
+		s->already_started = true;
+
+		break;
+
+	case CONTENT_MSG_STATUS:
+		html_set_status(parent, content_get_status_message(script));
+		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+				event->data);
+		break;
+
+	default:
+		assert(0);
+	}
+
+	if (parent->base.active == 0)
+		html_finish_conversion(parent);
+
+	return NSERROR_OK;
+}
+
+/**
  * process a script with a src tag
  */
 static dom_hubbub_error
@@ -226,26 +375,73 @@ exec_src_script(html_content *c,
 	hlcache_child_context child;
 	struct html_script *nscript;
 	union content_msg_data msg_data;
+	bool async;
+	bool defer;
+	enum html_script_type script_type;
+	hlcache_handle_callback script_cb;
+	dom_hubbub_error ret = DOM_HUBBUB_OK;
+	dom_exception exc; /* returned by libdom functions */
 
-	//exc = dom_element_has_attribute(node, html_dom_string_async, &async);
-
-	nscript = html_process_new_script(c, HTML_SCRIPT_SYNC);
-	if (nscript == NULL) {
-		dom_string_unref(mimetype);
-		goto html_process_script_no_memory;
-	}
-
-	/* charset (encoding) */
+	/* src url */
 	ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
 	if (ns_error != NSERROR_OK) {
-		dom_string_unref(mimetype);
+		goto html_process_script_no_memory;
+	}
+	LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
+
+	/* there are three ways to process the script tag at this point:
+	 *
+	 * Syncronously  pause the parent parse and continue after
+	 *                 the script has downloaded and executed. (default)
+	 * Async         Start the script downloading and execute it when it 
+	 *                 becomes available. 
+	 * Defered       Start the script downloading and execute it when 
+	 *                 the page has completed parsing, may be set along 
+	 *                 with async where it is ignored.
+	 */
+
+	/* we interpret the presence of the async and defer attribute
+	 * as true and ignore its value, technically only the empty
+	 * value or the attribute name itself are valid. However
+	 * various browsers interpret this in various ways the most
+	 * compatible approach is to be liberal and accept any
+	 * value. Note setting the values to "false" still makes them true! 
+	 */
+	exc = dom_element_has_attribute(node, corestring_dom_async, &async);
+	if (exc != DOM_NO_ERR) {
+		return DOM_HUBBUB_OK; /* dom error */
+	}
+
+	if (async) {
+		/* asyncronous script */
+		script_type = HTML_SCRIPT_ASYNC;
+		script_cb = convert_script_async_cb;
+
+	} else {
+		exc = dom_element_has_attribute(node, 
+						corestring_dom_defer, &defer);
+		if (exc != DOM_NO_ERR) {
+			return DOM_HUBBUB_OK; /* dom error */
+		}
+
+		if (defer) {
+			/* defered script */
+			script_type = HTML_SCRIPT_DEFER;
+			script_cb = convert_script_defer_cb;
+		} else {
+			/* syncronous script */
+			script_type = HTML_SCRIPT_SYNC;
+			script_cb = convert_script_sync_cb;
+		}
+	}
+
+	nscript = html_process_new_script(c, mimetype, script_type);
+	if (nscript == NULL) {
+		nsurl_unref(joined);
 		goto html_process_script_no_memory;
 	}
 
-	nscript->mimetype = mimetype; /* keep reference to mimetype */
-
-	LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
-
+	/* set up child fetch encoding and quirks */
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
 
@@ -253,25 +449,42 @@ exec_src_script(html_content *c,
 					   0,
 					   content_get_url(&c->base),
 					   NULL,
-					   convert_script_async_cb,
+					   script_cb,
 					   c,
 					   &child,
 					   CONTENT_SCRIPT,
 					   &nscript->data.handle);
 
+
 	nsurl_unref(joined);
 
 	if (ns_error != NSERROR_OK) {
-		goto html_process_script_no_memory;
+		/* @todo Deal with fetch error better. currently assume
+		 * fetch never became active 
+		 */
+		/* mark duff script fetch as already started */
+		nscript->already_started = true; 
+		LOG(("Fetch failed with error %d",ns_error));
+	} else {
+		/* update base content active fetch count */
+		c->base.active++; 
+		LOG(("%d fetches active", c->base.active));
+		switch (script_type) {
+		case HTML_SCRIPT_SYNC:
+			ret =  DOM_HUBBUB_PAUSED;
+
+		case HTML_SCRIPT_ASYNC:
+			break;
+
+		case HTML_SCRIPT_DEFER:
+			break;
+
+		default:
+			assert(true);
+		}
 	}
 
-	c->base.active++; /* ensure base content knows the fetch is active */
-	LOG(("%d fetches active", c->base.active));
-
-	html_scripts_exec(c);
-
-	return DOM_HUBBUB_OK;
-
+	return ret;
 
 html_process_script_no_memory:
 	msg_data.error = messages_get("NoMemory");
@@ -292,13 +505,11 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	/* does not appear to be a src so script is inline content */
 	exc = dom_node_get_text_content(node, &script);
 	if ((exc != DOM_NO_ERR) || (script == NULL)) {
-		dom_string_unref(mimetype);
 		return DOM_HUBBUB_OK; /* no contents, skip */
 	}
 
-	nscript = html_process_new_script(c, HTML_SCRIPT_INLINE);
+	nscript = html_process_new_script(c, mimetype, HTML_SCRIPT_INLINE);
 	if (nscript == NULL) {
-		dom_string_unref(mimetype);
 		dom_string_unref(script);
 
 		msg_data.error = messages_get("NoMemory");
@@ -308,10 +519,7 @@ exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
 	}
 
 	nscript->data.string = script;
-	nscript->mimetype = mimetype;
 	nscript->already_started = true;
-
-	/* charset (encoding) */
 
 	/* ensure script handler for content type */
 	dom_string_intern(mimetype, &lwcmimetype);
@@ -367,6 +575,8 @@ html_process_script(void *ctx, dom_node *node)
 		err = exec_src_script(c, node, mimetype, src);
 		dom_string_unref(src);
 	}
+
+	dom_string_unref(mimetype);
 
 	return err;
 }

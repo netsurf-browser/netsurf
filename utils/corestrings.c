@@ -112,6 +112,7 @@ lwc_string *corestring_lwc__top;
 dom_string *corestring_dom_a;
 dom_string *corestring_dom_align;
 dom_string *corestring_dom_area;
+dom_string *corestring_dom_async;
 dom_string *corestring_dom_background;
 dom_string *corestring_dom_bgcolor;
 dom_string *corestring_dom_border;
@@ -122,6 +123,7 @@ dom_string *corestring_dom_color;
 dom_string *corestring_dom_cols;
 dom_string *corestring_dom_content;
 dom_string *corestring_dom_coords;
+dom_string *corestring_dom_defer;
 dom_string *corestring_dom_height;
 dom_string *corestring_dom_href;
 dom_string *corestring_dom_hreflang;
@@ -258,6 +260,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(a);
 	CSS_DOM_STRING_UNREF(align);
 	CSS_DOM_STRING_UNREF(area);
+	CSS_DOM_STRING_UNREF(async);
 	CSS_DOM_STRING_UNREF(background);
 	CSS_DOM_STRING_UNREF(bgcolor);
 	CSS_DOM_STRING_UNREF(border);
@@ -268,6 +271,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(cols);
 	CSS_DOM_STRING_UNREF(content);
 	CSS_DOM_STRING_UNREF(coords);
+	CSS_DOM_STRING_UNREF(defer);
 	CSS_DOM_STRING_UNREF(height);
 	CSS_DOM_STRING_UNREF(href);
 	CSS_DOM_STRING_UNREF(hreflang);
@@ -431,6 +435,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(a);
 	CSS_DOM_STRING_INTERN(align);
 	CSS_DOM_STRING_INTERN(area);
+	CSS_DOM_STRING_INTERN(async);
 	CSS_DOM_STRING_INTERN(background);
 	CSS_DOM_STRING_INTERN(bgcolor);
 	CSS_DOM_STRING_INTERN(border);
@@ -441,6 +446,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(cols);
 	CSS_DOM_STRING_INTERN(content);
 	CSS_DOM_STRING_INTERN(coords);
+	CSS_DOM_STRING_INTERN(defer);
 	CSS_DOM_STRING_INTERN(height);
 	CSS_DOM_STRING_INTERN(href);
 	CSS_DOM_STRING_INTERN(hreflang);
