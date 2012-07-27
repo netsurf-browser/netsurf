@@ -144,11 +144,11 @@ html_process_new_script(html_content *c, enum html_script_type type)
 }
 
 /**
- * Callback for fetchcache() for linked stylesheets.
+ * Callback for asyncronous scripts
  */
 
 static nserror
-html_convert_script_callback(hlcache_handle *script,
+convert_script_async_cb(hlcache_handle *script,
 			  const hlcache_event *event,
 			  void *pw)
 {
@@ -213,7 +213,123 @@ html_convert_script_callback(hlcache_handle *script,
 	return NSERROR_OK;
 }
 
-/** process script node
+/** 
+ * process a script with a src tag 
+ */
+static dom_hubbub_error
+exec_src_script(html_content *c, 
+		dom_node *node, 
+		dom_string *mimetype, 
+		dom_string *src)
+{
+	nserror ns_error;
+	nsurl *joined;
+	hlcache_child_context child;
+	struct html_script *nscript;
+	union content_msg_data msg_data;
+
+	//exc = dom_element_has_attribute(node, html_dom_string_async, &async);
+
+	nscript = html_process_new_script(c, HTML_STYLESHEET_EXTERNAL);
+	if (nscript == NULL) {
+		dom_string_unref(mimetype);
+		goto html_process_script_no_memory;
+	}
+
+	/* charset (encoding) */
+	ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
+	if (ns_error != NSERROR_OK) {
+		dom_string_unref(mimetype);
+		goto html_process_script_no_memory;
+	}
+
+	nscript->mimetype = mimetype; /* keep reference to mimetype */
+
+	LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
+
+	child.charset = c->encoding;
+	child.quirks = c->base.quirks;
+
+	ns_error = hlcache_handle_retrieve(joined,
+					   0,
+					   content_get_url(&c->base),
+					   NULL,
+					   convert_script_async_cb,
+					   c,
+					   &child,
+					   CONTENT_SCRIPT,
+					   &nscript->data.external);
+
+	nsurl_unref(joined);
+
+	if (ns_error != NSERROR_OK) {
+		goto html_process_script_no_memory;
+	}
+
+	c->base.active++; /* ensure base content knows the fetch is active */
+	LOG(("%d fetches active", c->base.active));
+
+	html_scripts_exec(c);
+
+	return DOM_HUBBUB_OK;
+
+
+html_process_script_no_memory:
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	return DOM_HUBBUB_NOMEM;
+}
+
+static dom_hubbub_error
+exec_inline_script(html_content *c, dom_node *node, dom_string *mimetype)
+{
+	union content_msg_data msg_data;
+	dom_string *script;
+	dom_exception exc; /* returned by libdom functions */
+	struct lwc_string_s *lwcmimetype;
+	script_handler_t *script_handler;
+	struct html_script *nscript;
+
+	/* does not appear to be a src so script is inline content */
+	exc = dom_node_get_text_content(node, &script);
+	if ((exc != DOM_NO_ERR) || (script == NULL)) {
+		dom_string_unref(mimetype);
+		return DOM_HUBBUB_OK; /* no contents, skip */
+	}
+
+	nscript = html_process_new_script(c, HTML_STYLESHEET_INTERNAL);
+	if (nscript == NULL) {
+		dom_string_unref(mimetype);
+		dom_string_unref(script);
+
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return DOM_HUBBUB_NOMEM;
+
+	}
+
+	nscript->data.internal = script;
+	nscript->mimetype = mimetype;
+	nscript->already_started = true;
+
+	/* charset (encoding) */
+
+	/* ensure script handler for content type */
+	dom_string_intern(mimetype, &lwcmimetype);
+	script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
+	lwc_string_unref(lwcmimetype);
+
+	if (script_handler != NULL) {
+		script_handler(c->jscontext,
+			       dom_string_data(script),
+			       dom_string_byte_length(script));
+	}
+	return DOM_HUBBUB_OK;
+}
+
+
+/** 
+ * process script node parser callback
  *
  *
  */
@@ -222,9 +338,8 @@ html_process_script(void *ctx, dom_node *node)
 {
 	html_content *c = (html_content *)ctx;
 	dom_exception exc; /* returned by libdom functions */
-	dom_string *src, *script, *mimetype;
-	struct html_script *nscript;
-	union content_msg_data msg_data;
+	dom_string *src, *mimetype;
+	dom_hubbub_error err = DOM_HUBBUB_OK;
 
 	/* ensure javascript context is available */
 	if (c->jscontext == NULL) {
@@ -248,97 +363,11 @@ html_process_script(void *ctx, dom_node *node)
 
 	exc = dom_element_get_attribute(node, corestring_dom_src, &src);
 	if (exc != DOM_NO_ERR || src == NULL) {
-		struct lwc_string_s *lwcmimetype;
-		script_handler_t *script_handler;
-
-		/* does not appear to be a src so script is inline content */
-		exc = dom_node_get_text_content(node, &script);
-		if ((exc != DOM_NO_ERR) || (script == NULL)) {
-			dom_string_unref(mimetype);
-			return DOM_HUBBUB_OK; /* no contents, skip */
-		}
-
-		nscript = html_process_new_script(c, HTML_STYLESHEET_INTERNAL);
-		if (nscript == NULL) {
-			dom_string_unref(mimetype);
-			dom_string_unref(script);
-			goto html_process_script_no_memory;
-		}
-
-		nscript->data.internal = script;
-		nscript->mimetype = mimetype;
-		nscript->already_started = true;
-
-		/* charset (encoding) */
-
-		/* ensure script handler for content type */
-		dom_string_intern(mimetype, &lwcmimetype);
-		script_handler = select_script_handler(content_factory_type_from_mime_type(lwcmimetype));
-		lwc_string_unref(lwcmimetype);
-
-		if (script_handler != NULL) {
-			script_handler(c->jscontext,
-				       dom_string_data(script),
-				       dom_string_byte_length(script));
-		}
-
-
+		err = exec_inline_script(c, node, mimetype);
 	} else {
-		/* script with a src tag */
-		nserror ns_error;
-		nsurl *joined;
-		hlcache_child_context child;
-
-
-		nscript = html_process_new_script(c, HTML_STYLESHEET_EXTERNAL);
-		if (nscript == NULL) {
-			dom_string_unref(src);
-			dom_string_unref(mimetype);
-			goto html_process_script_no_memory;
-		}
-
-		/* charset (encoding) */
-
-		ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
+		err = exec_src_script(c, node, mimetype, src);
 		dom_string_unref(src);
-		if (ns_error != NSERROR_OK) {
-			dom_string_unref(mimetype);
-			goto html_process_script_no_memory;
-		}
-
-		nscript->mimetype = mimetype; /* keep reference to mimetype */
-
-		LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
-
-		child.charset = c->encoding;
-		child.quirks = c->base.quirks;
-
-		ns_error = hlcache_handle_retrieve(joined,
-						   0,
-						   content_get_url(&c->base),
-						   NULL,
-						   html_convert_script_callback,
-						   c,
-						   &child,
-						   CONTENT_SCRIPT,
-						   &nscript->data.external);
-
-		nsurl_unref(joined);
-
-		if (ns_error != NSERROR_OK) {
-			goto html_process_script_no_memory;
-		}
-
-		c->base.active++; /* ensure base content knows the fetch is active */
-		LOG(("%d fetches active", c->base.active));
-
 	}
-	html_scripts_exec(c);
 
-	return DOM_HUBBUB_OK;
-
-html_process_script_no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-	return DOM_HUBBUB_NOMEM;
+	return err;
 }
