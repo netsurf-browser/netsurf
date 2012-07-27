@@ -93,8 +93,10 @@ vscroll_drag(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	int newpos;
 	fbtk_widget_t *scrollw = cbi->context;
 
-	newpos = ((widget->u.scroll.maximum - widget->u.scroll.minimum) /
-		  (widget->height - 4)) * (cbi->y - widget->u.scroll.drag);
+	newpos = ((widget->u.scroll.drag_position +
+			(cbi->y - widget->u.scroll.drag)) *
+			(widget->u.scroll.maximum - widget->u.scroll.minimum)) /
+			(widget->height - 4);
 
 	if (newpos < scrollw->u.scroll.minimum)
 		newpos = scrollw->u.scroll.minimum;
@@ -205,7 +207,8 @@ vscrollarea_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLY, newpos);
 		} else {
 			/* on bar - start drag */
-			widget->u.scroll.drag = cbi->y - vpos;
+			widget->u.scroll.drag = cbi->y;
+			widget->u.scroll.drag_position = vpos;
 			fbtk_set_handler(widget, FBTK_CBT_POINTERMOVE, vscroll_drag, widget);
 			fbtk_tgrab_pointer(widget);
 		}
@@ -369,8 +372,10 @@ hscroll_drag(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	int newpos;
 	fbtk_widget_t *scrollw = cbi->context;
 
-	newpos = ((widget->u.scroll.maximum - widget->u.scroll.minimum) /
-		  (widget->width - 4)) * (cbi->x - widget->u.scroll.drag);
+	newpos = ((widget->u.scroll.drag_position +
+			(cbi->x - widget->u.scroll.drag)) *
+			(widget->u.scroll.maximum - widget->u.scroll.minimum)) /
+			(widget->width - 4);
 
 	if (newpos < scrollw->u.scroll.minimum)
 		newpos = scrollw->u.scroll.minimum;
@@ -423,7 +428,8 @@ hscrollarea_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		ret = fbtk_post_callback(cbi->context, FBTK_CBT_SCROLLX, newpos);
 	} else {
 		/* on bar - start drag */
-		widget->u.scroll.drag = cbi->x - hpos;
+		widget->u.scroll.drag = cbi->x;
+		widget->u.scroll.drag_position = hpos;
 		fbtk_set_handler(widget, FBTK_CBT_POINTERMOVE, hscroll_drag, widget);
 		fbtk_tgrab_pointer(widget);
 	}

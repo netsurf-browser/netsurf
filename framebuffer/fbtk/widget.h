@@ -189,6 +189,7 @@ struct fbtk_widget_s {
 			int page; /* amount to page document */
 			int position; /* position of bar */
 			int drag; /* offset to start of drag */
+			int drag_position; /* indicator bar pos at drag start */
 			struct fbtk_widget_s *btnul; /* scroll button up/left */
 			struct fbtk_widget_s *btndr; /* scroll button down/right*/
 		} scroll;
