@@ -239,23 +239,37 @@ SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
 {
 	char * title;
 	SEARCH_FORM_SESSION sfs;
+	GRECT pos, treesize;
 	OBJECT * tree = get_tree(SEARCH);
 	if( tree == NULL ){
 		return( NULL );
 	}
+
 	sfs = calloc(1, sizeof(struct s_search_form_session));
 	if( sfs == NULL )
 		return( NULL );
+
 	title = (char*)messages_get("FindTextNS");
 	if( title == NULL )
 		title = (char*)"Find text ...";
 
 	search_destroy( gw );
+
+	/* setup dipslay position: right corner */
+	treesize.g_x = 0;
+	treesize.g_y = 0;
+	treesize.g_w = tree->ob_width;
+	treesize.g_h = tree->ob_height;
+	wind_calc_grect(WC_BORDER, WAT_FORM, &treesize, &pos);
+	pos.g_x =  app.w - pos.g_w;
+	pos.g_y = app.h - pos.g_h;
+
+
 	current = sfs;
 	sfs->bw = gw->browser->bw;
 	sfs->formwind = mt_FormCreate( &app, tree, WAT_FORM,
 								NULL, title,
-								NULL, true, false);
+								&pos, true, false);
 
 	ObjcAttachFormFunc( sfs->formwind, SEARCH_BT_SEARCH, evnt_bt_srch_click, NULL);
 	ObjcAttachFormFunc( sfs->formwind, SEARCH_CB_CASESENSE, evnt_cb_click, NULL);
