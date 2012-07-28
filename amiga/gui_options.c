@@ -610,7 +610,7 @@ void ami_gui_opts_open(void)
 											LABEL_Text, gadlab[GID_OPTS_HISTORY],
 										LabelEnd,
 									LayoutEnd, // history
-#if defined(WITH_JS) || (WITH_MOZJS)
+#if defined(WITH_JS) || defined(WITH_MOZJS)
 									LAYOUT_AddChild, VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
 										LAYOUT_BevelStyle, BVS_GROUP, 
@@ -1473,7 +1473,7 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(send_referer, false);
 	}
 
-#if defined(WITH_JS) || (WITH_MOZJS)
+#if defined(WITH_JS) || defined(WITH_MOZJS)
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_JAVASCRIPT],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(enable_javascript, true);
