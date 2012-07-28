@@ -5201,6 +5201,16 @@ de.all.Days:Tage
 fr.all.Days:days
 it.all.Days:giorni
 nl.all.Days:days
+en.all.Scripting:Scripting
+de.all.Scripting:Scripting
+fr.all.Scripting:Scripting
+it.all.Scripting:Scripting
+nl.all.Scripting:Scripting
+en.all.EnableJS:Enable Javascript
+de.all.EnableJS:Enable Javascript
+fr.all.EnableJS:Enable Javascript
+it.all.EnableJS:Enable Javascript
+nl.all.EnableJS:Enable Javascript
 en.all.Miscellaneous:Miscellaneous
 de.all.Miscellaneous:Verschiedenes
 fr.all.Miscellaneous:Miscellaneous

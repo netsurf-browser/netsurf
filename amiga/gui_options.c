@@ -77,6 +77,7 @@ enum
 	GID_OPTS_CONTENTLANG,
 	GID_OPTS_FROMLOCALE,
 	GID_OPTS_HISTORY,
+	GID_OPTS_JAVASCRIPT,
 	GID_OPTS_REFERRAL,
 	GID_OPTS_DONOTTRACK,
 	GID_OPTS_FASTSCROLL,
@@ -144,6 +145,7 @@ enum
 	GRP_OPTS_CONTENTBLOCKING,
 	GRP_OPTS_CONTENTLANGUAGE,
 	GRP_OPTS_HISTORY,
+	GRP_OPTS_SCRIPTING,
 	GRP_OPTS_PRIVACY,
 	GRP_OPTS_MISC,
 	GRP_OPTS_SCREEN,
@@ -249,6 +251,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_HIDEADS] = (char *)ami_utf8_easy((char *)messages_get("BlockAds"));
 	gadlab[GID_OPTS_FROMLOCALE] = (char *)ami_utf8_easy((char *)messages_get("LocaleLang"));
 	gadlab[GID_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("HistoryAge"));
+	gadlab[GID_OPTS_JAVASCRIPT] = (char *)ami_utf8_easy((char *)messages_get("EnableJS"));
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
@@ -316,6 +319,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_CONTENTBLOCKING] = (char *)ami_utf8_easy((char *)messages_get("ContentBlocking"));
 	gadlab[GRP_OPTS_CONTENTLANGUAGE] = (char *)ami_utf8_easy((char *)messages_get("ContentLanguage"));
 	gadlab[GRP_OPTS_HISTORY] = (char *)ami_utf8_easy((char *)messages_get("History"));
+	gadlab[GRP_OPTS_SCRIPTING] = (char *)ami_utf8_easy((char *)messages_get("Scripting"));
 	gadlab[GRP_OPTS_MISC] = (char *)ami_utf8_easy((char *)messages_get("Miscellaneous"));
 	gadlab[GRP_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
 	gadlab[GRP_OPTS_THEME] = (char *)ami_utf8_easy((char *)messages_get("Theme"));
@@ -581,30 +585,45 @@ void ami_gui_opts_open(void)
 									//	CHILD_WeightedWidth, 0,
 									LayoutEnd, // content language
 								LayoutEnd, // content
-								LAYOUT_AddChild, VGroupObject,
-									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_HISTORY],
-									LAYOUT_AddChild, HGroupObject,
-										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_HISTORY] = IntegerObject,
-											GA_ID, GID_OPTS_CACHE_DISC,
-											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(expire_url),
-											INTEGER_Minimum, 0,
-											INTEGER_Maximum, 366,
-											INTEGER_Arrows, TRUE,
-										IntegerEnd,
+								LAYOUT_AddChild, HGroupObject,
+									LAYOUT_AddChild, VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_HISTORY],
+										LAYOUT_AddChild, HGroupObject,
+											LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+											LAYOUT_AddChild, gow->objects[GID_OPTS_HISTORY] = IntegerObject,
+												GA_ID, GID_OPTS_HISTORY,
+												GA_RelVerify, TRUE,
+												INTEGER_Number, nsoption_int(expire_url),
+												INTEGER_Minimum, 0,
+												INTEGER_Maximum, 366,
+												INTEGER_Arrows, TRUE,
+											IntegerEnd,
+											CHILD_WeightedWidth, 0,
+											CHILD_Label, LabelObject,
+												LABEL_Text, gadlab[LAB_OPTS_DAYS],
+											LabelEnd,
+										LayoutEnd,
 										CHILD_WeightedWidth, 0,
-				                		CHILD_Label, LabelObject,
-    		     	           				LABEL_Text, gadlab[LAB_OPTS_DAYS],
-	        	    	    			LabelEnd,
-									LayoutEnd,
-									CHILD_WeightedWidth, 0,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_HISTORY],
-									LabelEnd,
-								LayoutEnd, // history
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[GID_OPTS_HISTORY],
+										LabelEnd,
+									LayoutEnd, // history
+#if defined(WITH_JS) || (WITH_MOZJS)
+									LAYOUT_AddChild, VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_SCRIPTING],
+		                				LAYOUT_AddChild, gow->objects[GID_OPTS_JAVASCRIPT] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_JAVASCRIPT,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_JAVASCRIPT],
+         	           						GA_Selected, nsoption_bool(enable_javascript),
+            	    					CheckBoxEnd,
+									LayoutEnd, // scripting
+#endif
+								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
@@ -1454,6 +1473,15 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(send_referer, false);
 	}
 
+#if defined(WITH_JS) || (WITH_MOZJS)
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_JAVASCRIPT],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(enable_javascript, true);
+	} else {
+		nsoption_set_bool(enable_javascript, false);
+	}
+#endif
+	
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_DONOTTRACK],(ULONG *)&data);
 	if (data) {
 		nsoption_set_bool(do_not_track, true);
