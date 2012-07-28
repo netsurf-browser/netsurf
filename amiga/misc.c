@@ -23,7 +23,14 @@
 #include <sys/types.h>
 
 #include <proto/dos.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/utility.h>
 
+#include <proto/requester.h>
+#include <classes/requester.h>
+
+#include "amiga/gui.h"
 #include "amiga/utf8.h"
 #include "desktop/cookies.h"
 #include "utils/log.h"
@@ -33,19 +40,34 @@
 
 void warn_user(const char *warning, const char *detail)
 {
+	Object *req = NULL;
 	char *utf8warning = ami_utf8_easy(messages_get(warning));
+	STRPTR bodytext = NULL;
+	LONG result = 0;
 
 	LOG(("%s %s", warning, detail));
 
-	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_WARNING,
-							TDR_TitleString,messages_get("NetSurf"),
-							TDR_GadgetString,messages_get("OK"),
-//							TDR_CharSet,106,
-							TDR_FormatString,"%s\n%s",
-							TDR_Arg1,utf8warning != NULL ? utf8warning : warning,
-							TDR_Arg2,detail,
-							TAG_DONE);
+	bodytext = ASPrintf("\33b%s\33n\n%s",
+		utf8warning != NULL ? utf8warning : warning, detail);
 
+	req = NewObject(REQUESTER_GetClass(), NULL,
+		REQ_Type,               REQTYPE_INFO,
+		REQ_TitleText,          messages_get("NetSurf"),
+		REQ_BodyText,           bodytext,
+		REQ_GadgetText,         messages_get("OK"),
+#ifdef __amigaos4__
+		REQ_VarArgs,			
+		REQ_Image,				(struct Image *)REQIMAGE_WARNING,
+		/* REQ_CharSet,			106, */
+#endif
+		TAG_DONE);
+
+	if (req) {
+		result = IDoMethod(req, RM_OPENREQ, NULL, NULL, scrn);
+		DisposeObject(req);
+	}
+
+	if(bodytext) FreeVec(bodytext);
 	if(utf8warning) free(utf8warning);
 }
 
