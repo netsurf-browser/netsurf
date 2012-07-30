@@ -294,10 +294,11 @@ convert_script_sync_cb(hlcache_handle *script,
 	html_content *parent = pw;
 	unsigned int i;
 	struct html_script *s;
+	script_handler_t *script_handler;
 
 	/* Find script */
 	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
-		if (s->type == HTML_SCRIPT_ASYNC && s->data.handle == script)
+		if (s->type == HTML_SCRIPT_SYNC && s->data.handle == script)
 			break;
 	}
 
@@ -318,16 +319,19 @@ convert_script_sync_cb(hlcache_handle *script,
 
 		s->already_started = true;
 
-		script_handler = select_script_handler(
-			content_get_type(s->data.handle));
+		/* attempt to execute script */
+		script_handler = select_script_handler(content_get_type(s->data.handle));
 		if (script_handler != NULL) {
-			/* script fetch is done and supported type */
-
+			/* script has a handler */
 			const char *data;
 			unsigned long size;
 			data = content_get_source_data(s->data.handle, &size );
-			script_handler(c->jscontext, data, size);
+			script_handler(parent->jscontext, data, size);
 		}
+
+		/* continue parse */
+		dom_hubbub_parser_pause(parent->parser, false);
+
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -338,6 +342,7 @@ convert_script_sync_cb(hlcache_handle *script,
 		hlcache_handle_release(script);
 		s->data.handle = NULL;
 		parent->base.active--;
+
 		LOG(("%d fetches active", parent->base.active));
 		content_add_error(&parent->base, "?", 0);
 
@@ -354,9 +359,6 @@ convert_script_sync_cb(hlcache_handle *script,
 	default:
 		assert(0);
 	}
-
-	if (parent->base.active == 0)
-		html_finish_conversion(parent);
 
 	return NSERROR_OK;
 }
@@ -385,8 +387,11 @@ exec_src_script(html_content *c,
 	/* src url */
 	ns_error = nsurl_join(c->base_url, dom_string_data(src), &joined);
 	if (ns_error != NSERROR_OK) {
-		goto html_process_script_no_memory;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return DOM_HUBBUB_NOMEM;
 	}
+
 	LOG(("script %i '%s'", c->scripts_count, nsurl_access(joined)));
 
 	/* there are three ways to process the script tag at this point:
@@ -438,7 +443,9 @@ exec_src_script(html_content *c,
 	nscript = html_process_new_script(c, mimetype, script_type);
 	if (nscript == NULL) {
 		nsurl_unref(joined);
-		goto html_process_script_no_memory;
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+		return DOM_HUBBUB_NOMEM;
 	}
 
 	/* set up child fetch encoding and quirks */
@@ -469,6 +476,7 @@ exec_src_script(html_content *c,
 		/* update base content active fetch count */
 		c->base.active++; 
 		LOG(("%d fetches active", c->base.active));
+
 		switch (script_type) {
 		case HTML_SCRIPT_SYNC:
 			ret =  DOM_HUBBUB_PAUSED;
@@ -480,16 +488,11 @@ exec_src_script(html_content *c,
 			break;
 
 		default:
-			assert(true);
+			assert(0);
 		}
 	}
 
 	return ret;
-
-html_process_script_no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-	return DOM_HUBBUB_NOMEM;
 }
 
 static dom_hubbub_error
