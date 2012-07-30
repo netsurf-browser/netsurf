@@ -180,8 +180,8 @@ convert_script_async_cb(hlcache_handle *script,
 		parent->base.active--;
 		LOG(("%d fetches active", parent->base.active));
 
-		/* script finished loading so try and continue execution */
-		html_scripts_exec(parent);
+
+
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -194,9 +194,6 @@ convert_script_async_cb(hlcache_handle *script,
 		LOG(("%d fetches active", parent->base.active));
 		content_add_error(&parent->base, "?", 0);
 
-		/* script failed loading so try and continue execution */
-		html_scripts_exec(parent);
-
 		break;
 
 	case CONTENT_MSG_STATUS:
@@ -208,9 +205,6 @@ convert_script_async_cb(hlcache_handle *script,
 	default:
 		assert(0);
 	}
-
-	if (parent->base.active == 0)
-		html_finish_conversion(parent);
 
 	return NSERROR_OK;
 }
@@ -248,8 +242,6 @@ convert_script_defer_cb(hlcache_handle *script,
 		parent->base.active--;
 		LOG(("%d fetches active", parent->base.active));
 
-		/* script finished loading so try and continue execution */
-		html_scripts_exec(parent);
 		break;
 
 	case CONTENT_MSG_ERROR:
@@ -261,9 +253,6 @@ convert_script_defer_cb(hlcache_handle *script,
 		parent->base.active--;
 		LOG(("%d fetches active", parent->base.active));
 		content_add_error(&parent->base, "?", 0);
-
-		/* script failed loading so try and continue execution */
-		html_scripts_exec(parent);
 
 		break;
 
@@ -277,8 +266,12 @@ convert_script_defer_cb(hlcache_handle *script,
 		assert(0);
 	}
 
-	if (parent->base.active == 0)
-		html_finish_conversion(parent);
+	/* if there are no active fetches remaining begin post parse
+	 * conversion
+	 */
+	if (parent->base.active == 0) {
+		html_begin_conversion(parent);
+	}
 
 	return NSERROR_OK;
 }
@@ -295,6 +288,7 @@ convert_script_sync_cb(hlcache_handle *script,
 	unsigned int i;
 	struct html_script *s;
 	script_handler_t *script_handler;
+	dom_hubbub_error err;
 
 	/* Find script */
 	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
@@ -330,7 +324,10 @@ convert_script_sync_cb(hlcache_handle *script,
 		}
 
 		/* continue parse */
-		dom_hubbub_parser_pause(parent->parser, false);
+		err = dom_hubbub_parser_pause(parent->parser, false);
+		if (err != DOM_HUBBUB_OK) {
+			LOG(("unpause returned 0x%x", err));
+		} 
 
 		break;
 
@@ -358,6 +355,13 @@ convert_script_sync_cb(hlcache_handle *script,
 
 	default:
 		assert(0);
+	}
+
+	/* if there are no active fetches remaining begin post parse
+	 * conversion
+	 */
+	if (parent->base.active == 0) {
+		html_begin_conversion(parent);
 	}
 
 	return NSERROR_OK;

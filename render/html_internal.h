@@ -127,12 +127,20 @@ void html__redraw_a_box(struct content *c, struct box *box);
 struct browser_window *html_get_browser_window(struct content *c);
 struct search_context *html_get_search(struct content *c);
 void html_set_search(struct content *c, struct search_context *s);
+
 /**
  * Complete conversion of an HTML document
  *
- * \param c  Content to convert
+ * \param htmlc  Content to convert
  */
-void html_finish_conversion(html_content *c);
+void html_finish_conversion(html_content *htmlc);
+
+/**
+ * Begin conversion of an HTML document
+ *
+ * \param htmlc Content to convert
+ */
+bool html_begin_conversion(html_content *htmlc);
 
 /* in render/html_redraw.c */
 bool html_redraw(struct content *c, struct content_redraw_data *data,
