@@ -50,6 +50,19 @@
 /* Convert pixels to points, assuming a DPI of 90 */
 #define px_to_pt(x) (((x) * 72) / FBTK_DPI)
 
+/* Get a font style for a text input */
+static inline void
+fb_text_font_style(fbtk_widget_t *widget, int font_height,
+		plot_font_style_t *font_style)
+{
+	font_style->family = PLOT_FONT_FAMILY_SANS_SERIF;
+	font_style->size = px_to_pt(font_height) * FONT_SIZE_SCALE;
+	font_style->weight = 400;
+	font_style->flags = FONTF_NONE;
+	font_style->background = widget->bg;
+	font_style->foreground = widget->fg;
+}
+
 /** Text redraw callback.
  *
  * Called when a text widget requires redrawing.
@@ -94,13 +107,7 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 
 	if (widget->u.text.text != NULL) {
 		fh = widget->height - padding - padding;
-		font_style.family = PLOT_FONT_FAMILY_SANS_SERIF;
-		font_style.size = px_to_pt(fh) * FONT_SIZE_SCALE;
-		font_style.weight = 400;
-		font_style.flags = FONTF_NONE;
-		font_style.background = widget->bg;
-		font_style.foreground = widget->fg;
-
+		fb_text_font_style(widget, fh, &font_style);
 		FBTK_LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d padding %d",
 		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
 		     widget->width, widget->height, fh, padding));
@@ -192,12 +199,7 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 
 	if (widget->u.text.text != NULL) {
 		fh = widget->height - border - border;
-		font_style.family = PLOT_FONT_FAMILY_SANS_SERIF;
-		font_style.size = px_to_pt(fh) * FONT_SIZE_SCALE;
-		font_style.weight = 400;
-		font_style.flags = FONTF_NONE;
-		font_style.background = widget->bg;
-		font_style.foreground = widget->fg;
+		fb_text_font_style(widget, fh, &font_style);
 
 		LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d border %d",
 		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
