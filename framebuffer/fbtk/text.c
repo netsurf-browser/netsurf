@@ -282,6 +282,7 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	plot_font_style_t font_style;
 	int fh;
 	int border;
+	bool caret_moved = false;
 
 	fb_text_font_style(widget, &fh, &border, &font_style);
 
@@ -324,13 +325,8 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		nsfont.font_width(&font_style, widget->u.text.text,
 				widget->u.text.len, &widget->u.text.width);
-		nsfont.font_width(&font_style, widget->u.text.text,
-				widget->u.text.idx, &widget->u.text.idx_offset);
-		fbtk_set_caret(widget, true,
-				widget->u.text.idx_offset + border,
-				border,
-				widget->height - border - border,
-				fb_text_input_remove_caret_cb);
+
+		caret_moved = true;
 		break;
 
 	case NSFB_KEY_RETURN:
@@ -340,27 +336,14 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_KEY_RIGHT:
 		if (widget->u.text.idx < widget->u.text.len)
 			widget->u.text.idx++;
-
-		nsfont.font_width(&font_style, widget->u.text.text,
-				widget->u.text.idx, &widget->u.text.idx_offset);
-		fbtk_set_caret(widget, true,
-				widget->u.text.idx_offset + border,
-				border,
-				widget->height - border - border,
-				fb_text_input_remove_caret_cb);
+		caret_moved = true;
 		break;
 
 	case NSFB_KEY_LEFT:
 		if (widget->u.text.idx > 0)
 			widget->u.text.idx--;
 
-		nsfont.font_width(&font_style, widget->u.text.text,
-				widget->u.text.idx, &widget->u.text.idx_offset);
-		fbtk_set_caret(widget, true,
-				widget->u.text.idx_offset + border,
-				border,
-				widget->height - border - border,
-				fb_text_input_remove_caret_cb);
+		caret_moved = true;
 		break;
 
 	case NSFB_KEY_PAGEUP:
@@ -398,6 +381,11 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 		nsfont.font_width(&font_style, widget->u.text.text,
 				widget->u.text.len, &widget->u.text.width);
+		caret_moved = true;
+		break;
+	}
+
+	if (caret_moved) {
 		nsfont.font_width(&font_style, widget->u.text.text,
 				widget->u.text.idx, &widget->u.text.idx_offset);
 		fbtk_set_caret(widget, true,
@@ -405,7 +393,6 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 				border,
 				widget->height - border - border,
 				fb_text_input_remove_caret_cb);
-		break;
 	}
 
 	fbtk_request_redraw(widget);
