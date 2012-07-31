@@ -334,16 +334,25 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		break;
 
 	case NSFB_KEY_RIGHT:
-		if (widget->u.text.idx < widget->u.text.len)
-			widget->u.text.idx++;
-		caret_moved = true;
+		if (widget->u.text.idx < widget->u.text.len) {
+			if (modifier == 0)
+				widget->u.text.idx++;
+			else
+				widget->u.text.idx = widget->u.text.len;
+
+			caret_moved = true;
+		}
 		break;
 
 	case NSFB_KEY_LEFT:
-		if (widget->u.text.idx > 0)
-			widget->u.text.idx--;
+		if (widget->u.text.idx > 0) {
+			if (modifier == 0)
+				widget->u.text.idx--;
+			else
+				widget->u.text.idx = 0;
 
-		caret_moved = true;
+			caret_moved = true;
+		}
 		break;
 
 	case NSFB_KEY_PAGEUP:
