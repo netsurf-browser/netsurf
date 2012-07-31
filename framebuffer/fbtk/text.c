@@ -413,9 +413,9 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	return 0;
 }
 
-/** Routine called when text events occour in writeable widget.
+/** Routine called when click events occour in writeable widget.
  *
- * @param widget The widget reciving input events.
+ * @param widget The widget reciving click events.
  * @param cbi The callback parameters.
  * @return The callback result.
  */
@@ -443,6 +443,20 @@ text_input_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			fb_text_input_remove_caret_cb);
 
 	fbtk_request_redraw(widget);
+
+	return 0;
+}
+
+/** Routine called when "stripped of focus" event occours for writeable widget.
+ *
+ * @param widget The widget reciving "stripped of focus" event.
+ * @param cbi The callback parameters.
+ * @return The callback result.
+ */
+static int
+text_input_strip_focus(fbtk_widget_t *widget, fbtk_callback_info *cbi)
+{
+	fbtk_set_caret(widget, false, 0, 0, 0, NULL);
 
 	return 0;
 }
@@ -546,6 +560,7 @@ fbtk_create_writable_text(fbtk_widget_t *parent,
 
 	fbtk_set_handler(neww, FBTK_CBT_REDRAW, fb_redraw_text, NULL);
 	fbtk_set_handler(neww, FBTK_CBT_CLICK, text_input_click, pw);
+	fbtk_set_handler(neww, FBTK_CBT_STRIP_FOCUS, text_input_strip_focus, NULL);
 	fbtk_set_handler(neww, FBTK_CBT_INPUT, text_input, neww);
 
 	return neww;
