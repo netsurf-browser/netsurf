@@ -29,9 +29,11 @@
 
 #include "utils/log.h"
 #include "desktop/browser.h"
+#include "render/font.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
+#include "framebuffer/font.h"
 #include "framebuffer/framebuffer.h"
 #include "framebuffer/image_data.h"
 
@@ -52,11 +54,24 @@
 
 /* Get a font style for a text input */
 static inline void
-fb_text_font_style(fbtk_widget_t *widget, int font_height,
+fb_text_font_style(fbtk_widget_t *widget, int *font_height, int *padding,
 		plot_font_style_t *font_style)
 {
+	if (widget->u.text.outline)
+		*padding = 1;
+	else
+		*padding = 0;
+
+#ifdef FB_USE_FREETYPE
+	*padding += widget->height / 6;
+	*font_height = widget->height - *padding - *padding;
+#else
+	*font_height = font_regular.height;
+	*padding = (widget->height - *padding - *font_height) / 2;
+#endif
+
 	font_style->family = PLOT_FONT_FAMILY_SANS_SERIF;
-	font_style->size = px_to_pt(font_height) * FONT_SIZE_SCALE;
+	font_style->size = px_to_pt(*font_height) * FONT_SIZE_SCALE;
 	font_style->weight = 400;
 	font_style->flags = FONTF_NONE;
 	font_style->background = widget->bg;
@@ -78,10 +93,11 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	nsfb_bbox_t rect;
 	fbtk_widget_t *root;
 	plot_font_style_t font_style;
+	int caret_x, caret_y, caret_h;
 	int fh;
 	int padding;
 
-	padding = (widget->height * FBTK_WIDGET_PADDING) / 200;
+	fb_text_font_style(widget, &fh, &padding, &font_style);
 
 	root = fbtk_get_root_widget(widget);
 
@@ -101,26 +117,39 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	if (widget->u.text.outline) {
 		rect.x1--;
 		rect.y1--;
-		nsfb_plot_rectangle(root->u.root.fb, &rect, 1, 0x00000000, false, false);
-		padding++;
+		nsfb_plot_rectangle(root->u.root.fb, &rect, 1,
+				0x00000000, false, false);
 	}
 
 	if (widget->u.text.text != NULL) {
-		fh = widget->height - padding - padding;
-		fb_text_font_style(widget, fh, &font_style);
-		FBTK_LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d padding %d",
+		FBTK_LOG(("plotting %p at %d,%d %d,%d w/h %d,%d "
+		    "font h %d padding %d",
 		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
 		     widget->width, widget->height, fh, padding));
-		/* Call the fb text plotting, baseline is 3/4 down the
-		 * font, somewhere along the way the co-ordinate
-		 * system for the baseline is to the "higher value
-		 * pixel co-ordinate" due to this the + 1 is neccessary.
-		 */
+		/* Call the fb text plotting, baseline is 3/4 down the font */
 		fb_plotters.text(bbox.x0 + padding,
-			  bbox.y0 + (((fh * 3) + 3)/4) + padding + 1,
-			  widget->u.text.text,
-			  widget->u.text.len,
-			  &font_style);
+				bbox.y0 + ((fh * 3) / 4) + padding,
+				widget->u.text.text,
+				widget->u.text.len,
+				&font_style);
+	}
+
+	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
+		/* This widget has caret, so render it */
+		nsfb_t *nsfb = fbtk_get_nsfb(widget);
+		nsfb_bbox_t line;
+		nsfb_plot_pen_t pen;
+
+		line.x0 = bbox.x0 + caret_x;
+		line.y0 = bbox.y0 + caret_y;
+		line.x1 = bbox.x0 + caret_x;
+		line.y1 = bbox.y0 + caret_y + caret_h;
+
+		pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID;
+		pen.stroke_width = 1;
+		pen.stroke_colour = 0xFF0000FF;
+
+		nsfb_plot_line(nsfb, &line, &pen);
 	}
 
 	nsfb_update(root->u.root.fb, &bbox);
@@ -144,15 +173,12 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	nsfb_bbox_t line;
 	nsfb_plot_pen_t pen;
 	plot_font_style_t font_style;
+	int caret_x, caret_y, caret_h;
 	int fh;
 	int border;
 	fbtk_widget_t *root = fbtk_get_root_widget(widget);
 
-	if (widget->height < 20) {
-		border = 0;
-	} else {
-		border = (widget->height * 10) / 90;
-	}
+	fb_text_font_style(widget, &fh, &border, &font_style);
 
 	pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID;
 	pen.stroke_width = 1;
@@ -194,31 +220,51 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		line.x1 = rect.x1;
 		line.y1 = rect.y1;
 		nsfb_plot_line(root->u.root.fb, &line, &pen);
-		border++;
 	}
 
 	if (widget->u.text.text != NULL) {
-		fh = widget->height - border - border;
-		fb_text_font_style(widget, fh, &font_style);
-
 		LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d border %d",
 		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
 		     widget->width, widget->height, fh, border));
-		/* Call the fb text plotting, baseline is 3/4 down the
-		 * font, somewhere along the way the co-ordinate
-		 * system for the baseline is to the "higher value
-		 * pixel co-ordinate" due to this the + 1 is neccessary.
-		 */
+		/* Call the fb text plotting, baseline is 3/4 down the font */
 		fb_plotters.text(bbox.x0 + border,
-			  bbox.y0 + (((fh * 3) + 3)/4) + border + 1,
-			  widget->u.text.text,
-			  widget->u.text.len,
-			  &font_style);
+				bbox.y0 + ((fh * 3) / 4) + border,
+				widget->u.text.text,
+				widget->u.text.len,
+				&font_style);
+	}
+
+	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
+		/* This widget has caret, so render it */
+		nsfb_t *nsfb = fbtk_get_nsfb(widget);
+		nsfb_bbox_t line;
+		nsfb_plot_pen_t pen;
+
+		line.x0 = bbox.x0 + caret_x;
+		line.y0 = bbox.y0 + caret_y;
+		line.x1 = bbox.x0 + caret_x;
+		line.y1 = bbox.y0 + caret_y + caret_h;
+
+		pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID;
+		pen.stroke_width = 1;
+		pen.stroke_colour = 0xFF0000FF;
+
+		nsfb_plot_line(nsfb, &line, &pen);
 	}
 
 	nsfb_update(root->u.root.fb, &bbox);
 
 	return 0;
+}
+
+static void
+fb_text_input_remove_caret_cb(fbtk_widget_t *widget)
+{
+	int c_x, c_y, c_h;
+
+	if (fbtk_get_caret(widget, &c_x, &c_y, &c_h)) {
+		fbtk_request_redraw(widget);
+	}
 }
 
 /** Routine called when text events occour in writeable widget.
@@ -233,14 +279,16 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	int value;
 	static uint8_t modifier = 0;
 	char *temp;
+	plot_font_style_t font_style;
+	int fh;
+	int border;
+
+	fb_text_font_style(widget, &fh, &border, &font_style);
 
 	if (cbi->event == NULL) {
 		/* gain focus */
 		if (widget->u.text.text == NULL)
 			widget->u.text.text = calloc(1,1);
-		widget->u.text.idx = widget->u.text.len;
-
-		fbtk_request_redraw(widget);
 
 		return 0;
 	}
@@ -273,6 +321,16 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		widget->u.text.idx--;
 		widget->u.text.len--;
 		widget->u.text.text[widget->u.text.len] = 0;
+
+		nsfont.font_width(&font_style, widget->u.text.text,
+				widget->u.text.len, &widget->u.text.width);
+		nsfont.font_width(&font_style, widget->u.text.text,
+				widget->u.text.idx, &widget->u.text.idx_offset);
+		fbtk_set_caret(widget, true,
+				widget->u.text.idx_offset + border,
+				border,
+				widget->height - border - border,
+				fb_text_input_remove_caret_cb);
 		break;
 
 	case NSFB_KEY_RETURN:
@@ -282,11 +340,27 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_KEY_RIGHT:
 		if (widget->u.text.idx < widget->u.text.len)
 			widget->u.text.idx++;
+
+		nsfont.font_width(&font_style, widget->u.text.text,
+				widget->u.text.idx, &widget->u.text.idx_offset);
+		fbtk_set_caret(widget, true,
+				widget->u.text.idx_offset + border,
+				border,
+				widget->height - border - border,
+				fb_text_input_remove_caret_cb);
 		break;
 
 	case NSFB_KEY_LEFT:
 		if (widget->u.text.idx > 0)
 			widget->u.text.idx--;
+
+		nsfont.font_width(&font_style, widget->u.text.text,
+				widget->u.text.idx, &widget->u.text.idx_offset);
+		fbtk_set_caret(widget, true,
+				widget->u.text.idx_offset + border,
+				border,
+				widget->height - border - border,
+				fb_text_input_remove_caret_cb);
 		break;
 
 	case NSFB_KEY_PAGEUP:
@@ -322,8 +396,51 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		widget->u.text.len++;
 		widget->u.text.text[widget->u.text.len] = '\0';
 
+		nsfont.font_width(&font_style, widget->u.text.text,
+				widget->u.text.len, &widget->u.text.width);
+		nsfont.font_width(&font_style, widget->u.text.text,
+				widget->u.text.idx, &widget->u.text.idx_offset);
+		fbtk_set_caret(widget, true,
+				widget->u.text.idx_offset + border,
+				border,
+				widget->height - border - border,
+				fb_text_input_remove_caret_cb);
 		break;
 	}
+
+	fbtk_request_redraw(widget);
+
+	return 0;
+}
+
+/** Routine called when text events occour in writeable widget.
+ *
+ * @param widget The widget reciving input events.
+ * @param cbi The callback parameters.
+ * @return The callback result.
+ */
+static int
+text_input_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
+{
+	plot_font_style_t font_style;
+	int fh;
+	int border;
+	size_t idx;
+
+	fb_text_font_style(widget, &fh, &border, &font_style);
+
+	widget->u.text.idx = widget->u.text.len;
+
+	nsfont.font_position_in_string(&font_style, widget->u.text.text,
+			widget->u.text.len, cbi->x - border,
+			&idx,
+			&widget->u.text.idx_offset);
+	widget->u.text.idx = idx;
+	fbtk_set_caret(widget, true,
+			widget->u.text.idx_offset + border,
+			border,
+			widget->height - border - border,
+			fb_text_input_remove_caret_cb);
 
 	fbtk_request_redraw(widget);
 
@@ -407,6 +524,7 @@ fbtk_create_writable_text(fbtk_widget_t *parent,
 	neww->u.text.pw = pw;
 
 	fbtk_set_handler(neww, FBTK_CBT_REDRAW, fb_redraw_text, NULL);
+	fbtk_set_handler(neww, FBTK_CBT_CLICK, text_input_click, pw);
 	fbtk_set_handler(neww, FBTK_CBT_INPUT, text_input, neww);
 
 	return neww;
