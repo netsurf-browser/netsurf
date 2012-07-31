@@ -18,6 +18,7 @@
  */
 
 #include <inttypes.h>
+#include <string.h>
 
 #include <assert.h>
 #include "css/css.h"
@@ -112,7 +113,7 @@ static bool nsfont_position_in_string(const plot_font_style_t *fstyle,
 		int x, size_t *char_offset, int *actual_x)
 {
         const struct fb_font_desc* fb_font = fb_get_font(fstyle);
-        *char_offset = x / fb_font->width;
+        *char_offset = (x + fb_font->width / 2) / fb_font->width;
         if (*char_offset > length)
                 *char_offset = length;
         *actual_x = *char_offset * fb_font->width;
