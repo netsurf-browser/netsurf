@@ -306,6 +306,14 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			modifier &= ~(1<<1);
 			break;
 
+		case NSFB_KEY_RCTRL:
+			modifier &= ~(1<<2);
+			break;
+
+		case NSFB_KEY_LCTRL:
+			modifier &= ~(1<<3);
+			break;
+
 		default:
 			break;
 		}
@@ -371,7 +379,28 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		modifier |= 1<<1;
 		break;
 
+	case NSFB_KEY_RCTRL:
+		modifier |= 1<<2;
+		break;
+
+	case NSFB_KEY_LCTRL:
+		modifier |= 1<<3;
+		break;
+
 	default:
+		if (modifier & 1<<2 || modifier & 1<<3) {
+			/* CTRL pressed, don't enter any text */
+			if (value == NSFB_KEY_u) {
+				/* CTRL+U: clear writable */
+				widget->u.text.idx = 0;
+				widget->u.text.len = 0;
+				widget->u.text.text[widget->u.text.len] = '\0';
+				widget->u.text.width = 0;
+				caret_moved = true;
+			}
+			break;
+		}
+
 		/* allow for new character and null */
 		temp = realloc(widget->u.text.text, widget->u.text.len + 2);
 		if (temp == NULL) {
