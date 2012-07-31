@@ -49,13 +49,13 @@ static script_handler_t *select_script_handler(content_type ctype)
 }
 
 
-/* attempt to progress script execution
+/* attempt defer and async script execution
  *
  * execute scripts using algorithm found in:
  * http://www.whatwg.org/specs/web-apps/current-work/multipage/scripting-1.html#the-script-element
  *
  */
-static bool html_scripts_exec(html_content *c)
+bool html_scripts_exec(html_content *c)
 {
 	unsigned int i;
 	struct html_script *s;
@@ -69,10 +69,8 @@ static bool html_scripts_exec(html_content *c)
 			continue;
 		}
 
-		assert((s->type == HTML_SCRIPT_SYNC) ||
-		       (s->type == HTML_SCRIPT_INLINE));
-
-		if (s->type == HTML_SCRIPT_SYNC) {
+		if ((s->type == HTML_SCRIPT_ASYNC) ||
+		    (s->type == HTML_SCRIPT_DEFER)) {
 			/* ensure script content is present */
 			if (s->data.handle == NULL)
 				continue;
@@ -99,14 +97,7 @@ static bool html_scripts_exec(html_content *c)
 
 				s->already_started = true;
 
-			} else {
-				/* script not yet available */
-
-				/* check if deferable or asynchronous */
-				if (!s->defer && !s->async) {
-					break;
-				}
-			}
+			} 
 		}
 	}
 

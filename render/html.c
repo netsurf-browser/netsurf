@@ -1972,6 +1972,9 @@ html_begin_conversion(html_content *htmlc)
 		return false;
 	}
 
+	/* complete script execution */
+	html_scripts_exec(htmlc);
+
 	htmlc->document = dom_hubbub_parser_get_document(htmlc->parser);
 
 	if (htmlc->document == NULL) {
