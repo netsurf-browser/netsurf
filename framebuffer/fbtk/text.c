@@ -119,7 +119,7 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		fb_plotters.text(bbox.x0 + padding,
 			  bbox.y0 + (((fh * 3) + 3)/4) + padding + 1,
 			  widget->u.text.text,
-			  strlen(widget->u.text.text),
+			  widget->u.text.len,
 			  &font_style);
 	}
 
@@ -212,7 +212,7 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 		fb_plotters.text(bbox.x0 + border,
 			  bbox.y0 + (((fh * 3) + 3)/4) + border + 1,
 			  widget->u.text.text,
-			  strlen(widget->u.text.text),
+			  widget->u.text.len,
 			  &font_style);
 	}
 
