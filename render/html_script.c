@@ -336,6 +336,12 @@ convert_script_sync_cb(hlcache_handle *script,
 
 		s->already_started = true;
 
+		/* continue parse */
+		err = dom_hubbub_parser_pause(parent->parser, false);
+		if (err != DOM_HUBBUB_OK) {
+			LOG(("unpause returned 0x%x", err));
+		} 
+
 		break;
 
 	case CONTENT_MSG_STATUS:
