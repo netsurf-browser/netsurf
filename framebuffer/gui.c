@@ -308,12 +308,14 @@ fb_redraw(fbtk_widget_t *widget,
 {
 	int x;
 	int y;
+	int caret_x, caret_y, caret_h;
 	struct rect clip;
 	struct redraw_context ctx = {
 		.interactive = true,
 		.background_images = true,
 		.plot = &fb_plotters
 	};
+	nsfb_t *nsfb = fbtk_get_nsfb(widget);
 
 	LOG(("%d,%d to %d,%d",
 	     bwidget->redraw_box.x0,
@@ -330,7 +332,7 @@ fb_redraw(fbtk_widget_t *widget,
 	bwidget->redraw_box.x0 += x;
 	bwidget->redraw_box.x1 += x;
 
-	nsfb_claim(fbtk_get_nsfb(widget), &bwidget->redraw_box);
+	nsfb_claim(nsfb, &bwidget->redraw_box);
 
 	/* redraw bounding box is relative to window */
 	clip.x0 = bwidget->redraw_box.x0;
@@ -342,6 +344,23 @@ fb_redraw(fbtk_widget_t *widget,
 			(x - bwidget->scrollx) / bw->scale,
 			(y - bwidget->scrolly) / bw->scale,
 			&clip, &ctx);
+
+	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
+		/* This widget has caret, so render it */
+		nsfb_bbox_t line;
+		nsfb_plot_pen_t pen;
+
+		line.x0 = x - bwidget->scrollx + caret_x;
+		line.y0 = y - bwidget->scrolly + caret_y;
+		line.x1 = x - bwidget->scrollx + caret_x;
+		line.y1 = y - bwidget->scrolly + caret_y + caret_h;
+
+		pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID;
+		pen.stroke_width = 1;
+		pen.stroke_colour = 0xFF0000FF;
+
+		nsfb_plot_line(nsfb, &line, &pen);
+	}
 
 	nsfb_update(fbtk_get_nsfb(widget), &bwidget->redraw_box);
 
@@ -1483,11 +1502,48 @@ gui_window_stop_throbber(struct gui_window *gw)
 void
 gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
+	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
+	int c_x, c_y, c_h;
+
+	if (fbtk_get_caret(g->browser, &c_x, &c_y, &c_h)) {
+		/* browser window already had caret:
+		 * redraw its area to remove it first */
+		fb_queue_redraw(g->browser,
+				c_x - bwidget->scrollx,
+				c_y - bwidget->scrolly,
+				c_x + 1 - bwidget->scrollx,
+				c_y + c_h - bwidget->scrolly);
+	}
+
+	/* set new pos */
+	fbtk_set_caret(g->browser, true, x, y, height);
+
+	/* redraw new caret pos */
+	fb_queue_redraw(g->browser,
+			x - bwidget->scrollx,
+			y - bwidget->scrolly,
+			x + 1 - bwidget->scrollx,
+			y + height - bwidget->scrolly);
 }
 
 void
 gui_window_remove_caret(struct gui_window *g)
 {
+	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
+	int c_x, c_y, c_h;
+
+	if (fbtk_get_caret(g->browser, &c_x, &c_y, &c_h)) {
+		/* browser window already had caret:
+		 * redraw its area to remove it first */
+		fb_queue_redraw(g->browser,
+				c_x - bwidget->scrollx,
+				c_y - bwidget->scrolly,
+				c_x + 1 - bwidget->scrollx,
+				c_y + c_h - bwidget->scrolly);
+	}
+
+	/* remove caret */
+	fbtk_set_caret(g->browser, false, 0, 0, 0);
 }
 
 void
