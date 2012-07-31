@@ -299,8 +299,18 @@ JSObject * jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv)
 			return NULL;
 		}
 
+		/** @todo reconsider global object handling. future
+		 * editions of spidermonkey appear to be removing the
+		 * idea of a global so we probably need to handle
+		 * global object references internally
+		 */
+
+		/* set the contexts global */
+		JS_SetGlobalObject(cx, window);
+
 		/* Populate the global object with the standard globals, like
-		   Object and Array. */
+		 *  Object and Array.
+		 */
 		if (!JS_InitStandardClasses(cx, window)) {
 			return NULL;
 		}

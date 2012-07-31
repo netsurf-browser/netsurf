@@ -92,8 +92,10 @@ JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv)
 
 	LOG(("setting content to %p",doc_priv));
 	/* private pointer to browsing context */
-	if (!JS_SetPrivate(cx, doc, doc_priv))
+	if (JS_SetPrivate(cx, doc, doc_priv) != JS_TRUE) {
+		LOG(("failed to set content"));
 		return NULL;
+	}
 	
 	return doc;
 }

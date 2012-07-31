@@ -79,7 +79,6 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	if (global == NULL) {
 		return NULL;
 	}
-	JS_SetGlobalObject(cx, global);
 	return global;
 }
 
