@@ -461,6 +461,11 @@ fbtk_writable_text(fbtk_widget_t *widget, fbtk_enter_t enter, void *pw)
 void
 fbtk_set_text(fbtk_widget_t *widget, const char *text)
 {
+	plot_font_style_t font_style;
+	int c_x, c_y, c_h;
+	int fh;
+	int border;
+
 	if ((widget == NULL) || (widget->type != FB_WIDGET_TYPE_TEXT))
 		return;
 	if (widget->u.text.text != NULL) {
@@ -471,6 +476,22 @@ fbtk_set_text(fbtk_widget_t *widget, const char *text)
 	widget->u.text.text = strdup(text);
 	widget->u.text.len = strlen(text);
 	widget->u.text.idx = widget->u.text.len;
+
+
+	fb_text_font_style(widget, &fh, &border, &font_style);
+	nsfont.font_width(&font_style, widget->u.text.text,
+			widget->u.text.len, &widget->u.text.width);
+	nsfont.font_width(&font_style, widget->u.text.text,
+			widget->u.text.idx, &widget->u.text.idx_offset);
+
+	if (fbtk_get_caret(widget, &c_x, &c_y, &c_h)) {
+		/* Widget has caret; move it to end of new string */
+		fbtk_set_caret(widget, true,
+				widget->u.text.idx_offset + border,
+				border,
+				widget->height - border - border,
+				fb_text_input_remove_caret_cb);
+	}
 
 	fbtk_request_redraw(widget);
 }
