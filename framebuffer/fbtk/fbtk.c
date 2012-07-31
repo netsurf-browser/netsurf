@@ -729,6 +729,9 @@ fbtk_post_callback(fbtk_widget_t *widget, fbtk_callback_type cbt, ...)
 		case FBTK_CBT_USER:
 			break;
 
+		case FBTK_CBT_STRIP_FOCUS:
+			break;
+
 		default:
 			break;
 		}
@@ -748,6 +751,13 @@ fbtk_set_focus(fbtk_widget_t *widget)
 
 	/* ensure we have the root widget */
 	root = fbtk_get_root_widget(widget);
+
+	if (root->u.root.input != NULL &&
+			root->u.root.input != widget) {
+		/* inform previous holder of focus that it's being stripped
+		 * of focus */
+		fbtk_post_callback(root->u.root.input, FBTK_CBT_STRIP_FOCUS);
+	}
 
 	root->u.root.input = widget;
 }

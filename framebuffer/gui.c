@@ -1153,6 +1153,20 @@ create_toolbar(struct gui_window *gw,
 	return toolbar;
 }
 
+/** Routine called when "stripped of focus" event occours for browser widget.
+ *
+ * @param widget The widget reciving "stripped of focus" event.
+ * @param cbi The callback parameters.
+ * @return The callback result.
+ */
+static int
+fb_browser_window_strip_focus(fbtk_widget_t *widget, fbtk_callback_info *cbi)
+{
+	fbtk_set_caret(widget, false, 0, 0, 0, NULL);
+
+	return 0;
+}
+
 static void
 create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_width)
 {
@@ -1169,6 +1183,7 @@ create_browser_widget(struct gui_window *gw, int toolbar_height, int furniture_w
 	fbtk_set_handler(gw->browser, FBTK_CBT_REDRAW, fb_browser_window_redraw, gw);
 	fbtk_set_handler(gw->browser, FBTK_CBT_INPUT, fb_browser_window_input, gw);
 	fbtk_set_handler(gw->browser, FBTK_CBT_CLICK, fb_browser_window_click, gw);
+	fbtk_set_handler(gw->browser, FBTK_CBT_STRIP_FOCUS, fb_browser_window_strip_focus, gw);
 	fbtk_set_handler(gw->browser, FBTK_CBT_POINTERMOVE, fb_browser_window_move, gw);
 }
 

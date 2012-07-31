@@ -48,6 +48,7 @@ typedef enum fbtk_callback_type {
 	FBTK_CBT_REDRAW,
 	FBTK_CBT_DESTROY,
 	FBTK_CBT_USER,
+	FBTK_CBT_STRIP_FOCUS,
 	FBTK_CBT_END,
 } fbtk_callback_type;
 
