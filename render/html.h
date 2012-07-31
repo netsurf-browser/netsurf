@@ -66,10 +66,13 @@ struct html_stylesheet {
  */
 struct html_script {
 	/** Type of script */
-	enum html_script_type { HTML_SCRIPT_EXTERNAL, HTML_SCRIPT_INTERNAL } type;
+	enum html_script_type { HTML_SCRIPT_INLINE,
+				HTML_SCRIPT_SYNC,
+				HTML_SCRIPT_DEFER,
+				HTML_SCRIPT_ASYNC } type;
 	union {
-		struct hlcache_handle *external;
-		struct dom_string *internal;
+		struct hlcache_handle *handle;
+		struct dom_string *string;
 	} data;	/**< Script data */
 	struct dom_string *mimetype;
 	struct dom_string *encoding;
@@ -175,9 +178,9 @@ struct content_html_frames *html_get_frameset(struct hlcache_handle *h);
 struct content_html_iframe *html_get_iframe(struct hlcache_handle *h);
 nsurl *html_get_base_url(struct hlcache_handle *h);
 const char *html_get_base_target(struct hlcache_handle *h);
-struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h, 
+struct html_stylesheet *html_get_stylesheets(struct hlcache_handle *h,
 		unsigned int *n);
-struct content_html_object *html_get_objects(struct hlcache_handle *h, 
+struct content_html_object *html_get_objects(struct hlcache_handle *h,
 		unsigned int *n);
 bool html_get_id_offset(struct hlcache_handle *h, lwc_string *frag_id,
 		int *x, int *y);

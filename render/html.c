@@ -301,6 +301,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->scripts = NULL;
 	c->jscontext = NULL;
 
+	c->base.active = 1; /* The html content itself is active */
+
 	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
@@ -412,35 +414,16 @@ html_create(const content_handler *handler,
 
 
 
-/**
- * Process data for CONTENT_HTML.
- */
-
 static bool
-html_process_data(struct content *c, const char *data, unsigned int size)
+html_process_encoding_change(struct content *c, 
+			     const char *data, 
+			     unsigned int size)
 {
 	html_content *html = (html_content *) c;
 	dom_hubbub_error error;
 	const char *encoding;
 	const char *source_data;
 	unsigned long source_size;
-
-	error = dom_hubbub_parser_parse_chunk(html->parser, (const uint8_t *) data, size);
-
-	if (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_ENCODINGCHANGE)) {
-		goto encoding_change;
-	} else if (error != DOM_HUBBUB_OK) {
-		union content_msg_data msg_data;
-
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
-
-		return false;
-	}
-
-	return true;
-
-encoding_change:
 
 	/* Retrieve new encoding */
 	encoding = dom_hubbub_parser_get_encoding(html->parser, 
@@ -464,11 +447,11 @@ encoding_change:
 
 	/* Create new binding, using the new encoding */
 	html->parser = dom_hubbub_parser_create(html->encoding, 
-				true, 
-				nsoption_bool(enable_javascript), 
-				NULL, 
-				html_process_script, 
-				html);
+						true, 
+						nsoption_bool(enable_javascript), 
+						NULL, 
+						html_process_script, 
+						html);
 	if (html->parser == NULL) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to Windows-1252 */
@@ -506,10 +489,50 @@ encoding_change:
 
 	source_data = content__get_source_data(c, &source_size);
 
-	/* Recurse to reprocess all the data.  This is safe because
+	/* Reprocess all the data.  This is safe because
 	 * the encoding is now specified at parser start which means
 	 * it cannot be changed again. */
-	return html_process_data(c, source_data, source_size);
+	error = dom_hubbub_parser_parse_chunk(html->parser, (const uint8_t *)source_data, source_size);
+
+	if ((error == DOM_HUBBUB_OK) || 
+	    (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_PAUSED))) {
+		return true;
+	}
+
+	union content_msg_data msg_data;
+
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+	return false;
+
+}
+
+/**
+ * Process data for CONTENT_HTML.
+ */
+
+static bool
+html_process_data(struct content *c, const char *data, unsigned int size)
+{
+	html_content *html = (html_content *) c;
+	dom_hubbub_error error;
+	union content_msg_data msg_data;
+
+	error = dom_hubbub_parser_parse_chunk(html->parser, (const uint8_t *) data, size);
+
+	if ((error == DOM_HUBBUB_OK) || 
+	    (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_PAUSED))) {
+		return true;
+	} else if (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_ENCODINGCHANGE)) {
+		return html_process_encoding_change(c, data, size);
+	} 
+
+	/** @todo better error handling and reporting */
+	msg_data.error = messages_get("NoMemory");
+	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+
+	return false;
 	
 }
 
@@ -1912,24 +1935,39 @@ html_find_stylesheets_no_memory:
 static bool html_convert(struct content *c)
 {
 	html_content *htmlc = (html_content *) c;
-	dom_hubbub_error err;
+
+	htmlc->base.active--; /* the html fetch is no longer active */
+	LOG(("%d fetches active", htmlc->base.active));
+
+
+	/* if there are no active fetches in progress no scripts are
+	 * being fetched or they completed already.
+	 */ 
+	if (htmlc->base.active == 0) {
+		return html_begin_conversion(htmlc);
+	}
+	return true;
+
+}
+
+bool
+html_begin_conversion(html_content *htmlc)
+{
 	dom_node *html, *head;
 	union content_msg_data msg_data;
-	unsigned long size;
 	struct form *f;
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *node_name = NULL;
+	dom_hubbub_error error;
 
-	/* finish parsing */
-	content__get_source_data(c, &size);
-
-	err = dom_hubbub_parser_completed(htmlc->parser);
-	if (err != DOM_HUBBUB_OK) {
+	/* complete parsing */
+	error = dom_hubbub_parser_completed(htmlc->parser);
+	if (error != DOM_HUBBUB_OK) {
 		union content_msg_data msg_data;
 
-		/** @todo Improve precessing of errors */
+		/** @todo Improve processing of errors */
 		msg_data.error = messages_get("NoMemory");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 
 		return false;
 	}
@@ -1939,7 +1977,7 @@ static bool html_convert(struct content *c)
 	if (htmlc->document == NULL) {
 		LOG(("Parsing failed"));
 		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
@@ -1956,10 +1994,10 @@ static bool html_convert(struct content *c)
 		encoding = dom_hubbub_parser_get_encoding(htmlc->parser,
 					&htmlc->encoding_source);
 
-		htmlc->encoding = talloc_strdup(c, encoding);
+		htmlc->encoding = talloc_strdup(&htmlc->base, encoding);
 		if (htmlc->encoding == NULL) {
 			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 			return false;
 		}
 	}
@@ -1967,7 +2005,7 @@ static bool html_convert(struct content *c)
 	/* Give up processing if we've been aborted */
 	if (htmlc->aborted) {
 		msg_data.error = messages_get("Stopped");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
@@ -1976,7 +2014,7 @@ static bool html_convert(struct content *c)
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
 		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 		return false;
 	}
 
@@ -1987,7 +2025,7 @@ static bool html_convert(struct content *c)
 	    		corestring_lwc_html))) {
 		LOG(("root element not html"));
 		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 		dom_node_unref(html);
 		return false;
 	}
@@ -2036,7 +2074,7 @@ static bool html_convert(struct content *c)
 	if (head != NULL) {
 		if (html_head(htmlc, head) == false) {
 			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 			dom_node_unref(html);
 			dom_node_unref(head);
 			return false;
@@ -2060,7 +2098,7 @@ static bool html_convert(struct content *c)
 		/* Make all actions absolute */
 		if (f->action == NULL || f->action[0] == '\0') {
 			/* HTML5 4.10.22.3 step 11 */
-			res = url_join(nsurl_access(content_get_url(c)),
+			res = url_join(nsurl_access(content_get_url(&htmlc->base)),
 					nsurl_access(htmlc->base_url), &action);
 		} else {
 			res = url_join(f->action, nsurl_access(htmlc->base_url),
@@ -2069,7 +2107,7 @@ static bool html_convert(struct content *c)
 
 		if (res != URL_FUNC_OK) {
 			msg_data.error = messages_get("NoMemory");
-			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 			dom_node_unref(html);
 			dom_node_unref(head);
 			return false;
@@ -2083,8 +2121,9 @@ static bool html_convert(struct content *c)
 			f->document_charset = strdup(htmlc->encoding);
 			if (f->document_charset == NULL) {
 				msg_data.error = messages_get("NoMemory");
-				content_broadcast(c, CONTENT_MSG_ERROR,
-						msg_data);
+				content_broadcast(&htmlc->base, 
+						  CONTENT_MSG_ERROR,
+						  msg_data);
 				dom_node_unref(html);
 				dom_node_unref(head);
 				return false;
@@ -2093,6 +2132,7 @@ static bool html_convert(struct content *c)
 	}
 
 	dom_node_unref(head);
+
 	/* get stylesheets */
 	if (html_find_stylesheets(htmlc, html) == false) {
 		dom_node_unref(html);
@@ -2100,6 +2140,11 @@ static bool html_convert(struct content *c)
 	}
 
 	dom_node_unref(html);
+
+	if (htmlc->base.active == 0) {
+		html_finish_conversion(htmlc);
+	}
+
 	return true;
 }
 
@@ -2433,21 +2478,7 @@ static void html_destroy(struct content *c)
 	}
 
 	/* Free scripts */
-	for (i = 0; i != html->scripts_count; i++) {
-		if (html->scripts[i].mimetype != NULL) {
-			dom_string_unref(html->scripts[i].mimetype);
-		}
-		if (html->scripts[i].type == HTML_SCRIPT_EXTERNAL &&
-				html->scripts[i].data.external != NULL) {
-			hlcache_handle_release(
-					html->scripts[i].data.external);
-		} else if (html->scripts[i].type ==
-				HTML_SCRIPT_INTERNAL &&
-				html->scripts[i].data.internal != NULL) {
-			dom_string_unref(html->scripts[i].data.internal);
-		}
-	}
-	free(html->scripts);
+	html_free_scripts(html);
 
 	/* Free objects */
 	html_destroy_objects(html);
