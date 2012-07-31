@@ -220,6 +220,28 @@ fbtk_set_pos_and_size(fbtk_widget_t *widget,
 	return false;
 }
 
+
+/* exported function docuemnted in fbtk.h */
+void
+fbtk_set_caret(fbtk_widget_t *widget, bool set,
+		int x, int y, int height)
+{
+	fbtk_widget_t *root;
+
+	assert(widget != NULL);
+	root = fbtk_get_root_widget(widget);
+
+	if (set) {
+		root->u.root.caret.owner = widget;
+		root->u.root.caret.x = x;
+		root->u.root.caret.y = y;
+		root->u.root.caret.height = height;
+
+	} else {
+		root->u.root.caret.owner = NULL;
+	}
+}
+
 /* exported function documented in fbtk.h */
 int
 fbtk_destroy_widget(fbtk_widget_t *widget)
@@ -427,6 +449,27 @@ fbtk_get_bbox(fbtk_widget_t *widget, nsfb_bbox_t *bbox)
 	}
 
 	return true;
+}
+
+bool
+fbtk_get_caret(fbtk_widget_t *widget, int *x, int *y, int *height)
+{
+	fbtk_widget_t *root = fbtk_get_root_widget(widget);
+
+	if (root->u.root.caret.owner == widget) {
+		*x = root->u.root.caret.x;
+		*y = root->u.root.caret.y;
+		*height = root->u.root.caret.height;
+
+		return true;
+
+	} else {
+		*x = 0;
+		*y = 0;
+		*height = 0;
+
+		return false;
+	}
 }
 
 /* exported function documented in fbtk.h */
@@ -727,6 +770,7 @@ fbtk_init(nsfb_t *fb)
 
 	root->type = FB_WIDGET_TYPE_ROOT;
 	root->u.root.fb = fb;
+	root->u.root.caret.owner = NULL;
 
 	nsfb_get_geometry(fb, &root->width, &root->height, NULL);
 

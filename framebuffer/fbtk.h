@@ -247,6 +247,16 @@ int fbtk_get_height(fbtk_widget_t *widget);
  */
 bool fbtk_get_bbox(fbtk_widget_t *widget, struct nsfb_bbox_s *bbox);
 
+/** Get a widget caret pos, if it owns caret.
+ *
+ * @param widget  The widget to inspect.
+ * @param x       If widget has caret, returns x-coord of caret within widget
+ * @param y       If widget has caret, returns y-coord of caret within widget
+ * @param height  If widget has caret, returns caret height
+ * @return true iff widget has caret
+ */
+bool fbtk_get_caret(fbtk_widget_t *widget, int *x, int *y, int *height);
+
 
 /******************* Widget Manipulation **********************/
 
@@ -254,6 +264,16 @@ bool fbtk_get_bbox(fbtk_widget_t *widget, struct nsfb_bbox_s *bbox);
  *
  */
 bool fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int height);
+
+/** Set caret owner and position
+ *
+ * @param widget  widget to give caret to, or ensure caret is released from
+ * @param set     true: caret to be set for widget, false: caret to be released
+ * @param x       x-coordinate of caret top
+ * @param y       y-coordinate of caret top
+ * @param height  height of caret
+ */
+void fbtk_set_caret(fbtk_widget_t *widget, bool set, int x, int y, int height);
 
 /** Map a widget and request it is redrawn.
  */

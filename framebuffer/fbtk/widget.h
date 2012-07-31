@@ -161,6 +161,14 @@ struct fbtk_widget_s {
 			struct fbtk_widget_s *prev; /* previous widget pointer wasin */
 			struct fbtk_widget_s *grabbed; /* widget that has grabbed pointer movement. */
 			struct fbtk_widget_s *input;
+
+			/* caret */
+			struct {
+				struct fbtk_widget_s *owner; /* widget / NULL */
+				int x; /* relative to owner */
+				int y; /* relative to owner */
+				int height;
+			} caret;
 		} root;
 
 		/* bitmap */
