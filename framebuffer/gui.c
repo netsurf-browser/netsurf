@@ -1499,24 +1499,31 @@ gui_window_stop_throbber(struct gui_window *gw)
 
 }
 
-void
-gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+static void
+gui_window_remove_caret_cb(fbtk_widget_t *widget)
 {
-	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
+	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
 	int c_x, c_y, c_h;
 
-	if (fbtk_get_caret(g->browser, &c_x, &c_y, &c_h)) {
+	if (fbtk_get_caret(widget, &c_x, &c_y, &c_h)) {
 		/* browser window already had caret:
 		 * redraw its area to remove it first */
-		fb_queue_redraw(g->browser,
+		fb_queue_redraw(widget,
 				c_x - bwidget->scrollx,
 				c_y - bwidget->scrolly,
 				c_x + 1 - bwidget->scrollx,
 				c_y + c_h - bwidget->scrolly);
 	}
+}
+
+void
+gui_window_place_caret(struct gui_window *g, int x, int y, int height)
+{
+	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
 
 	/* set new pos */
-	fbtk_set_caret(g->browser, true, x, y, height);
+	fbtk_set_caret(g->browser, true, x, y, height,
+			gui_window_remove_caret_cb);
 
 	/* redraw new caret pos */
 	fb_queue_redraw(g->browser,
@@ -1529,21 +1536,8 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 void
 gui_window_remove_caret(struct gui_window *g)
 {
-	struct browser_widget_s *bwidget = fbtk_get_userpw(g->browser);
-	int c_x, c_y, c_h;
-
-	if (fbtk_get_caret(g->browser, &c_x, &c_y, &c_h)) {
-		/* browser window already had caret:
-		 * redraw its area to remove it first */
-		fb_queue_redraw(g->browser,
-				c_x - bwidget->scrollx,
-				c_y - bwidget->scrolly,
-				c_x + 1 - bwidget->scrollx,
-				c_y + c_h - bwidget->scrolly);
-	}
-
 	/* remove caret */
-	fbtk_set_caret(g->browser, false, 0, 0, 0);
+	fbtk_set_caret(g->browser, false, 0, 0, 0, NULL);
 }
 
 void

@@ -273,7 +273,8 @@ bool fbtk_set_pos_and_size(fbtk_widget_t *widget, int x, int y, int width, int h
  * @param y       y-coordinate of caret top
  * @param height  height of caret
  */
-void fbtk_set_caret(fbtk_widget_t *widget, bool set, int x, int y, int height);
+void fbtk_set_caret(fbtk_widget_t *widget, bool set, int x, int y, int height,
+		void (*remove_caret)(fbtk_widget_t *widget));
 
 /** Map a widget and request it is redrawn.
  */

@@ -168,6 +168,7 @@ struct fbtk_widget_s {
 				int x; /* relative to owner */
 				int y; /* relative to owner */
 				int height;
+				void (*remove_cb)(fbtk_widget_t *widget);
 			} caret;
 		} root;
 
@@ -182,9 +183,10 @@ struct fbtk_widget_s {
 			bool outline;
 			fbtk_enter_t enter;
 			void *pw;
-			int idx;
-			int len;
-			int width;
+			int idx; /* caret pos in text */
+			int len; /* text length */
+			int width; /* text width in px */
+			int idx_offset; /* caret pos in pixels */
 		} text;
 
 		/* application driven widget */

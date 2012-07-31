@@ -224,21 +224,30 @@ fbtk_set_pos_and_size(fbtk_widget_t *widget,
 /* exported function docuemnted in fbtk.h */
 void
 fbtk_set_caret(fbtk_widget_t *widget, bool set,
-		int x, int y, int height)
+		int x, int y, int height,
+		void (*remove_caret)(fbtk_widget_t *widget))
 {
 	fbtk_widget_t *root;
 
 	assert(widget != NULL);
 	root = fbtk_get_root_widget(widget);
 
+	if (root->u.root.caret.owner != NULL &&
+			root->u.root.caret.remove_cb != NULL)
+		root->u.root.caret.remove_cb(widget);
+
 	if (set) {
+		assert(remove_caret != NULL);
+
 		root->u.root.caret.owner = widget;
 		root->u.root.caret.x = x;
 		root->u.root.caret.y = y;
 		root->u.root.caret.height = height;
+		root->u.root.caret.remove_cb = remove_caret;
 
 	} else {
 		root->u.root.caret.owner = NULL;
+		root->u.root.caret.remove_cb = NULL;
 	}
 }
 
