@@ -79,7 +79,7 @@ fbtk_click(fbtk_widget_t *widget, nsfb_event_t *event)
 		return;
 
 	if (fbtk_get_handler(clicked, FBTK_CBT_INPUT) != NULL) {
-		root->u.root.input = clicked;
+		fbtk_set_focus(clicked);
 	}
 
 	x = fbtk_get_absx(clicked);
