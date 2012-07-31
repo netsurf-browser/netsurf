@@ -1536,8 +1536,12 @@ gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 void
 gui_window_remove_caret(struct gui_window *g)
 {
-	/* remove caret */
-	fbtk_set_caret(g->browser, false, 0, 0, 0, NULL);
+	int c_x, c_y, c_h;
+
+	if (fbtk_get_caret(g->browser, &c_x, &c_y, &c_h)) {
+		/* browser window owns the caret, so can remove it */
+		fbtk_set_caret(g->browser, false, 0, 0, 0, NULL);
+	}
 }
 
 void
