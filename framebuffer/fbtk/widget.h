@@ -183,6 +183,8 @@ struct fbtk_widget_s {
 			fbtk_enter_t enter;
 			void *pw;
 			int idx;
+			int len;
+			int width;
 		} text;
 
 		/* application driven widget */

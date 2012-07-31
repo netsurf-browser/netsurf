@@ -238,7 +238,7 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		/* gain focus */
 		if (widget->u.text.text == NULL)
 			widget->u.text.text = calloc(1,1);
-		widget->u.text.idx = strlen(widget->u.text.text);
+		widget->u.text.idx = widget->u.text.len;
 
 		fbtk_request_redraw(widget);
 
@@ -267,18 +267,30 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_KEY_BACKSPACE:
 		if (widget->u.text.idx <= 0)
 			break;
+		memmove(widget->u.text.text + widget->u.text.idx - 1,
+				widget->u.text.text + widget->u.text.idx,
+				widget->u.text.len - widget->u.text.idx);
 		widget->u.text.idx--;
-		widget->u.text.text[widget->u.text.idx] = 0;
+		widget->u.text.len--;
+		widget->u.text.text[widget->u.text.len] = 0;
 		break;
 
 	case NSFB_KEY_RETURN:
 		widget->u.text.enter(widget->u.text.pw, widget->u.text.text);
 		break;
 
+	case NSFB_KEY_RIGHT:
+		if (widget->u.text.idx < widget->u.text.len)
+			widget->u.text.idx++;
+		break;
+
+	case NSFB_KEY_LEFT:
+		if (widget->u.text.idx > 0)
+			widget->u.text.idx--;
+		break;
+
 	case NSFB_KEY_PAGEUP:
 	case NSFB_KEY_PAGEDOWN:
-	case NSFB_KEY_RIGHT:
-	case NSFB_KEY_LEFT:
 	case NSFB_KEY_UP:
 	case NSFB_KEY_DOWN:
 		/* Not handling any of these correctly yet, but avoid putting
@@ -295,13 +307,20 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	default:
 		/* allow for new character and null */
-		temp = realloc(widget->u.text.text, widget->u.text.idx + 2);
-		if (temp != NULL) {
-			widget->u.text.text = temp;
-			widget->u.text.text[widget->u.text.idx] = fbtk_keycode_to_ucs4(value, modifier);
-			widget->u.text.text[widget->u.text.idx + 1] = '\0';
-			widget->u.text.idx++;
+		temp = realloc(widget->u.text.text, widget->u.text.len + 2);
+		if (temp == NULL) {
+			break;
 		}
+
+		widget->u.text.text = temp;
+		memmove(widget->u.text.text + widget->u.text.idx + 1,
+				widget->u.text.text + widget->u.text.idx,
+				widget->u.text.len - widget->u.text.idx);
+		widget->u.text.text[widget->u.text.idx] =
+				fbtk_keycode_to_ucs4(value, modifier);
+		widget->u.text.idx++;
+		widget->u.text.len++;
+		widget->u.text.text[widget->u.text.len] = '\0';
 
 		break;
 	}
@@ -333,7 +352,8 @@ fbtk_set_text(fbtk_widget_t *widget, const char *text)
 		free(widget->u.text.text);
 	}
 	widget->u.text.text = strdup(text);
-	widget->u.text.idx = strlen(text);
+	widget->u.text.len = strlen(text);
+	widget->u.text.idx = widget->u.text.len;
 
 	fbtk_request_redraw(widget);
 }
