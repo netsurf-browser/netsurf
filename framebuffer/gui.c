@@ -82,6 +82,17 @@ struct browser_widget_s {
 	int panx, pany; /**< Panning required. */
 };
 
+static struct gui_drag {
+	enum state {
+		GUI_DRAG_NONE,
+		GUI_DRAG_PRESSED,
+		GUI_DRAG_DRAG
+	} state;
+	int button;
+	int x;
+	int y;
+} gui_drag;
+
 
 /* queue a redraw operation, co-ordinates are relative to the window */
 static void
@@ -585,7 +596,9 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
-	float scale;
+	float scale = gw->bw->scale;
+	int x = (cbi->x + bwidget->scrollx) / scale;
+	int y = (cbi->y + bwidget->scrolly) / scale;
 
 	if (cbi->event->type != NSFB_EVENT_KEY_DOWN &&
 	    cbi->event->type != NSFB_EVENT_KEY_UP)
@@ -597,37 +610,33 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_DOWN:
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_MOUSE_1:
-			scale = gw->bw->scale;
 			browser_window_mouse_click(gw->bw,
-					BROWSER_MOUSE_PRESS_1,
-					(cbi->x + bwidget->scrollx) / scale,
-					(cbi->y + bwidget->scrolly) / scale);
+					BROWSER_MOUSE_PRESS_1, x, y);
+			gui_drag.state = GUI_DRAG_PRESSED;
+			gui_drag.button = 1;
+			gui_drag.x = x;
+			gui_drag.y = y;
 			break;
 
 		case NSFB_KEY_MOUSE_3:
-			scale = gw->bw->scale;
 			browser_window_mouse_click(gw->bw,
-					BROWSER_MOUSE_PRESS_2,
-					(cbi->x + bwidget->scrollx) / scale,
-					(cbi->y + bwidget->scrolly) / scale);
+					BROWSER_MOUSE_PRESS_2, x, y);
+			gui_drag.state = GUI_DRAG_PRESSED;
+			gui_drag.button = 2;
+			gui_drag.x = x;
+			gui_drag.y = y;
 			break;
 
 		case NSFB_KEY_MOUSE_4:
 			/* scroll up */
-			scale = gw->bw->scale;
-			if (browser_window_scroll_at_point(gw->bw,
-					(cbi->x + bwidget->scrollx) / scale,
-					(cbi->y + bwidget->scrolly) / scale,
+			if (browser_window_scroll_at_point(gw->bw, x, y,
 					0, -100) == false)
 				widget_scroll_y(gw, -100, false);
 			break;
 
 		case NSFB_KEY_MOUSE_5:
 			/* scroll down */
-			scale = gw->bw->scale;
-			if (browser_window_scroll_at_point(gw->bw,
-					(cbi->x + bwidget->scrollx) / scale,
-					(cbi->y + bwidget->scrolly) / scale,
+			if (browser_window_scroll_at_point(gw->bw, x, y,
 					0, 100) == false)
 				widget_scroll_y(gw, 100, false);
 			break;
@@ -641,19 +650,29 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_UP:
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_MOUSE_1:
-			scale = gw->bw->scale;
+			if (gui_drag.state == GUI_DRAG_DRAG) {
+				/* End of a drag, rather than click */
+				gui_drag.state = GUI_DRAG_NONE;
+				break;
+			}
+			/* This is a click;
+			 * clear PRESSED state and pass to core */
+			gui_drag.state = GUI_DRAG_NONE;
 			browser_window_mouse_click(gw->bw,
-					BROWSER_MOUSE_CLICK_1,
-					(cbi->x + bwidget->scrollx) / scale,
-					(cbi->y + bwidget->scrolly) / scale);
+					BROWSER_MOUSE_CLICK_1, x, y);
 			break;
 
 		case NSFB_KEY_MOUSE_3:
-			scale = gw->bw->scale;
+			if (gui_drag.state == GUI_DRAG_DRAG) {
+				/* End of a drag, rather than click */
+				gui_drag.state = GUI_DRAG_NONE;
+				break;
+			}
+			/* This is a click;
+			 * clear PRESSED state and pass to core */
+			gui_drag.state = GUI_DRAG_NONE;
 			browser_window_mouse_click(gw->bw,
-					BROWSER_MOUSE_CLICK_2,
-					(cbi->x + bwidget->scrollx) / scale,
-					(cbi->y + bwidget->scrolly) / scale);
+					BROWSER_MOUSE_CLICK_2, x, y);
 			break;
 
 		default:
@@ -673,12 +692,39 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 static int
 fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
+	browser_mouse_state mouse = 0;
 	struct gui_window *gw = cbi->context;
 	struct browser_widget_s *bwidget = fbtk_get_userpw(widget);
+	int x = (cbi->x + bwidget->scrollx) / gw->bw->scale;
+	int y = (cbi->y + bwidget->scrolly) / gw->bw->scale;
 
-	browser_window_mouse_track(gw->bw, 0,
-			(cbi->x + bwidget->scrollx) / gw->bw->scale,
-			(cbi->y + bwidget->scrolly) / gw->bw->scale);
+	if (gui_drag.state == GUI_DRAG_PRESSED &&
+			(abs(x - gui_drag.x) < 5 ||
+			 abs(y - gui_drag.y) < 5)) {
+		/* Drag started */
+		if (gui_drag.button == 1) {
+			browser_window_mouse_click(gw->bw,
+					BROWSER_MOUSE_DRAG_1,
+					gui_drag.x, gui_drag.y);
+		} else {
+			browser_window_mouse_click(gw->bw,
+					BROWSER_MOUSE_DRAG_2,
+					gui_drag.x, gui_drag.y);
+		}
+		gui_drag.state = GUI_DRAG_DRAG;
+	}
+
+	if (gui_drag.state == GUI_DRAG_DRAG) {
+		/* set up mouse state */
+		mouse |= BROWSER_MOUSE_DRAG_ON;
+
+		if (gui_drag.button == 1)
+			mouse |= BROWSER_MOUSE_HOLDING_1;
+		else
+			mouse |= BROWSER_MOUSE_HOLDING_2;
+	}
+
+	browser_window_mouse_track(gw->bw, mouse, x, y);
 
 	return 0;
 }
