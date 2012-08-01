@@ -234,24 +234,6 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 				&font_style);
 	}
 
-	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
-		/* This widget has caret, so render it */
-		nsfb_t *nsfb = fbtk_get_nsfb(widget);
-		nsfb_bbox_t line;
-		nsfb_plot_pen_t pen;
-
-		line.x0 = bbox.x0 + caret_x;
-		line.y0 = bbox.y0 + caret_y;
-		line.x1 = bbox.x0 + caret_x;
-		line.y1 = bbox.y0 + caret_y + caret_h;
-
-		pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID;
-		pen.stroke_width = 1;
-		pen.stroke_colour = 0xFF0000FF;
-
-		nsfb_plot_line(nsfb, &line, &pen);
-	}
-
 	nsfb_update(root->u.root.fb, &bbox);
 
 	return 0;
