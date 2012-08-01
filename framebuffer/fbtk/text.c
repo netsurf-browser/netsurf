@@ -96,8 +96,14 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	int caret_x, caret_y, caret_h;
 	int fh;
 	int padding;
+	int scroll = 0;
+	bool caret = false;
 
 	fb_text_font_style(widget, &fh, &padding, &font_style);
+
+	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
+		caret = true;
+	}
 
 	root = fbtk_get_root_widget(widget);
 
@@ -122,27 +128,28 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	}
 
 	if (widget->u.text.text != NULL) {
-		FBTK_LOG(("plotting %p at %d,%d %d,%d w/h %d,%d "
-		    "font h %d padding %d",
-		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
-		     widget->width, widget->height, fh, padding));
+		int x = bbox.x0 + padding;
+		int y = bbox.y0 + ((fh * 3) / 4) + padding;
+
+		if (caret && widget->width - padding - padding < caret_x) {
+			scroll = (widget->width - padding - padding) - caret_x;
+			x +=  scroll;
+		}
+
 		/* Call the fb text plotting, baseline is 3/4 down the font */
-		fb_plotters.text(bbox.x0 + padding,
-				bbox.y0 + ((fh * 3) / 4) + padding,
-				widget->u.text.text,
-				widget->u.text.len,
-				&font_style);
+		fb_plotters.text(x, y, widget->u.text.text,
+				widget->u.text.len, &font_style);
 	}
 
-	if (fbtk_get_caret(widget, &caret_x, &caret_y, &caret_h)) {
+	if (caret) {
 		/* This widget has caret, so render it */
 		nsfb_t *nsfb = fbtk_get_nsfb(widget);
 		nsfb_bbox_t line;
 		nsfb_plot_pen_t pen;
 
-		line.x0 = bbox.x0 + caret_x;
+		line.x0 = bbox.x0 + caret_x + scroll;
 		line.y0 = bbox.y0 + caret_y;
-		line.x1 = bbox.x0 + caret_x;
+		line.x1 = bbox.x0 + caret_x + scroll;
 		line.y1 = bbox.y0 + caret_y + caret_h;
 
 		pen.stroke_type = NFSB_PLOT_OPTYPE_SOLID;
@@ -173,7 +180,6 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	nsfb_bbox_t line;
 	nsfb_plot_pen_t pen;
 	plot_font_style_t font_style;
-	int caret_x, caret_y, caret_h;
 	int fh;
 	int border;
 	fbtk_widget_t *root = fbtk_get_root_widget(widget);
@@ -223,9 +229,6 @@ fb_redraw_text_button(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 	}
 
 	if (widget->u.text.text != NULL) {
-		LOG(("plotting %p at %d,%d %d,%d w/h %d,%d font h %d border %d",
-		     widget, bbox.x0, bbox.y0, bbox.x1, bbox.y1,
-		     widget->width, widget->height, fh, border));
 		/* Call the fb text plotting, baseline is 3/4 down the font */
 		fb_plotters.text(bbox.x0 + border,
 				bbox.y0 + ((fh * 3) / 4) + border,
