@@ -24,6 +24,80 @@
 #include "render/html_internal.h"
 #include "utils/log.h"
 
+/* IDL from http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html
+
+
+interface Document : Node {
+  // Modified in DOM Level 3:
+  readonly attribute DocumentType    doctype;
+  readonly attribute DOMImplementation implementation;
+  readonly attribute Element         documentElement;
+  Element            createElement(in DOMString tagName)
+                                        raises(DOMException);
+  DocumentFragment   createDocumentFragment();
+  Text               createTextNode(in DOMString data);
+  Comment            createComment(in DOMString data);
+  CDATASection       createCDATASection(in DOMString data)
+                                        raises(DOMException);
+  ProcessingInstruction createProcessingInstruction(in DOMString target, 
+                                                    in DOMString data)
+                                        raises(DOMException);
+  Attr               createAttribute(in DOMString name)
+                                        raises(DOMException);
+  EntityReference    createEntityReference(in DOMString name)
+                                        raises(DOMException);
+  NodeList           getElementsByTagName(in DOMString tagname);
+  // Introduced in DOM Level 2:
+  Node               importNode(in Node importedNode, 
+                                in boolean deep)
+                                        raises(DOMException);
+  // Introduced in DOM Level 2:
+  Element            createElementNS(in DOMString namespaceURI, 
+                                     in DOMString qualifiedName)
+                                        raises(DOMException);
+  // Introduced in DOM Level 2:
+  Attr               createAttributeNS(in DOMString namespaceURI, 
+                                       in DOMString qualifiedName)
+                                        raises(DOMException);
+  // Introduced in DOM Level 2:
+  NodeList           getElementsByTagNameNS(in DOMString namespaceURI, 
+                                            in DOMString localName);
+  // Introduced in DOM Level 2:
+  Element            getElementById(in DOMString elementId);
+  // Introduced in DOM Level 3:
+  readonly attribute DOMString       inputEncoding;
+  // Introduced in DOM Level 3:
+  readonly attribute DOMString       xmlEncoding;
+  // Introduced in DOM Level 3:
+           attribute boolean         xmlStandalone;
+                                        // raises(DOMException) on setting
+
+  // Introduced in DOM Level 3:
+           attribute DOMString       xmlVersion;
+                                        // raises(DOMException) on setting
+
+  // Introduced in DOM Level 3:
+           attribute boolean         strictErrorChecking;
+  // Introduced in DOM Level 3:
+           attribute DOMString       documentURI;
+  // Introduced in DOM Level 3:
+  Node               adoptNode(in Node source)
+                                        raises(DOMException);
+  // Introduced in DOM Level 3:
+  readonly attribute DOMConfiguration domConfig;
+  // Introduced in DOM Level 3:
+  void               normalizeDocument();
+  // Introduced in DOM Level 3:
+  Node               renameNode(in Node n, 
+                                in DOMString namespaceURI, 
+                                in DOMString qualifiedName)
+                                        raises(DOMException);
+};
+
+
+ */
+
+
 static JSClass jsclass_document =
 {
         "document", 
@@ -39,6 +113,12 @@ static JSClass jsclass_document =
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
+static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
+{
+	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+
+	return JS_TRUE;
+}
 
 static JSBool JSAPI_NATIVE(write, JSContext *cx, uintN argc, jsval *vp)
 {
@@ -67,6 +147,7 @@ static JSBool JSAPI_NATIVE(write, JSContext *cx, uintN argc, jsval *vp)
 
 static JSFunctionSpec jsfunctions_document[] = {
 	JSAPI_FS(write, 1, 0),
+	JSAPI_FS(getElementById, 1, 0),
 	JSAPI_FS_END
 };
 
