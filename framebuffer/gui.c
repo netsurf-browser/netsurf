@@ -1764,35 +1764,6 @@ gui_clear_selection(struct gui_window *g)
 }
 
 void
-gui_paste_from_clipboard(struct gui_window *g, int x, int y)
-{
-}
-
-bool
-gui_empty_clipboard(void)
-{
-	return false;
-}
-
-bool
-gui_add_to_clipboard(const char *text, size_t length, bool space)
-{
-	return false;
-}
-
-bool
-gui_commit_clipboard(void)
-{
-	return false;
-}
-
-bool
-gui_copy_to_clipboard(struct selection *s)
-{
-	return false;
-}
-
-void
 gui_create_form_select_menu(struct browser_window *bw,
 			    struct form_control *control)
 {
