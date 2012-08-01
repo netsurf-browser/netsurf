@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 
 
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libhubbub libcss)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libdom libcss)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
 
   # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
@@ -32,7 +32,7 @@
 		-DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\" \
 		$(WARNFLAGS) -I. -g \
 		$(shell $(PKG_CONFIG) --cflags glib-2.0) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl) \
+		$(shell $(PKG_CONFIG) --cflags libdom libcurl) \
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
