@@ -427,7 +427,7 @@ framebuffer_finalise(void)
 bool
 framebuffer_set_cursor(struct fbtk_bitmap *bm)
 {
-    return nsfb_cursor_set(nsfb, (nsfb_colour_t *)bm->pixdata, bm->width, bm->height, bm->width);
+    return nsfb_cursor_set(nsfb, (nsfb_colour_t *)bm->pixdata, bm->width, bm->height, bm->width, bm->hot_x, bm->hot_y);
 } 
 
 nsfb_t *framebuffer_set_surface(nsfb_t *new_nsfb)

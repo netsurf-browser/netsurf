@@ -373,7 +373,9 @@ fbtk_set_ptr(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			(nsfb_colour_t *)bm->pixdata,
 			bm->width,
 			bm->height,
-			bm->width);
+			bm->width,
+			bm->hot_x,
+			bm->hot_y);
 
 	return 0;
 }
