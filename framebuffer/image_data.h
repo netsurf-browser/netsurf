@@ -42,6 +42,7 @@ extern struct fbtk_bitmap pointer_image;
 extern struct fbtk_bitmap hand_image;
 extern struct fbtk_bitmap caret_image;
 extern struct fbtk_bitmap menu_image;
+extern struct fbtk_bitmap move_image;
 extern struct fbtk_bitmap progress_image;
 
 extern struct fbtk_bitmap throbber0;

@@ -653,6 +653,7 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			if (gui_drag.state == GUI_DRAG_DRAG) {
 				/* End of a drag, rather than click */
 				gui_drag.state = GUI_DRAG_NONE;
+				framebuffer_set_cursor(&pointer_image);
 				break;
 			}
 			/* This is a click;
@@ -1527,6 +1528,10 @@ gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 
 	case GUI_POINTER_PROGRESS:
 		framebuffer_set_cursor(&progress_image);
+		break;
+
+	case GUI_POINTER_MOVE:
+		framebuffer_set_cursor(&move_image);
 		break;
 
 	default:
