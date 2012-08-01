@@ -74,6 +74,15 @@ struct fbtk_bitmap {
         int hot_y;
 };
 
+/* Key modifier status */
+typedef enum fbtk_modifier_type {
+	FBTK_MOD_CLEAR  = 0,
+	FBTK_MOD_LSHIFT = (1 << 0),
+	FBTK_MOD_RSHIFT = (1 << 1),
+	FBTK_MOD_LCTRL  = (1 << 2),
+	FBTK_MOD_RCTRL  = (1 << 3)
+} fbtk_modifier_type;
+
 typedef int (*fbtk_callback)(fbtk_widget_t *widget, fbtk_callback_info *cbi);
 
 /* enter pressed on writable icon */
@@ -198,7 +207,7 @@ bool fbtk_tgrab_pointer(fbtk_widget_t *widget);
  *
  * Character mapping between keycode with modifier state and ucs-4.
  */
-int fbtk_keycode_to_ucs4(int code, uint8_t mods);
+int fbtk_keycode_to_ucs4(int code, fbtk_modifier_type mods);
 
 
 /******************* Widget Information **********************/

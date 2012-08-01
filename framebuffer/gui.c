@@ -688,7 +688,7 @@ static int
 fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	struct gui_window *gw = cbi->context;
-	static uint8_t modifier = 0;
+	static fbtk_modifier_type modifier = FBTK_MOD_CLEAR;
 	int ucs4 = -1;
 
 	LOG(("got value %d", cbi->event->value.keycode));
@@ -698,41 +698,93 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		switch (cbi->event->value.keycode) {
 
 		case NSFB_KEY_PAGEUP:
-			if (browser_window_key_press(gw->bw, KEY_PAGE_UP) == false)
-				widget_scroll_y(gw, -fbtk_get_height(gw->browser), false);
+			if (browser_window_key_press(gw->bw,
+					KEY_PAGE_UP) == false)
+				widget_scroll_y(gw, -fbtk_get_height(
+						gw->browser), false);
 			break;
 
 		case NSFB_KEY_PAGEDOWN:
-			if (browser_window_key_press(gw->bw, KEY_PAGE_DOWN) == false)
-				widget_scroll_y(gw, fbtk_get_height(gw->browser), false);
+			if (browser_window_key_press(gw->bw,
+					KEY_PAGE_DOWN) == false)
+				widget_scroll_y(gw, fbtk_get_height(
+						gw->browser), false);
 			break;
 
 		case NSFB_KEY_RIGHT:
-			if (browser_window_key_press(gw->bw, KEY_RIGHT) == false)
-				widget_scroll_x(gw, 100, false);
+			if (modifier & FBTK_MOD_RCTRL ||
+					modifier & FBTK_MOD_LCTRL) {
+				/* CTRL held */
+				if (browser_window_key_press(gw->bw,
+						KEY_LINE_END) == false)
+					widget_scroll_x(gw, INT_MAX, true);
+
+			} else if (modifier & FBTK_MOD_RSHIFT ||
+					modifier & FBTK_MOD_LSHIFT) {
+				/* SHIFT held */
+				if (browser_window_key_press(gw->bw,
+						KEY_WORD_RIGHT) == false)
+					widget_scroll_x(gw, fbtk_get_width(
+						gw->browser), false);
+
+			} else {
+				/* no modifier */
+				if (browser_window_key_press(gw->bw,
+						KEY_RIGHT) == false)
+					widget_scroll_x(gw, 100, false);
+			}
 			break;
 
 		case NSFB_KEY_LEFT:
-			if (browser_window_key_press(gw->bw, KEY_LEFT) == false)
-				widget_scroll_x(gw, -100, false);
+			if (modifier & FBTK_MOD_RCTRL ||
+					modifier & FBTK_MOD_LCTRL) {
+				/* CTRL held */
+				if (browser_window_key_press(gw->bw,
+						KEY_LINE_START) == false)
+					widget_scroll_x(gw, 0, true);
+
+			} else if (modifier & FBTK_MOD_RSHIFT ||
+					modifier & FBTK_MOD_LSHIFT) {
+				/* SHIFT held */
+				if (browser_window_key_press(gw->bw,
+						KEY_WORD_LEFT) == false)
+					widget_scroll_x(gw, -fbtk_get_width(
+						gw->browser), false);
+
+			} else {
+				/* no modifier */
+				if (browser_window_key_press(gw->bw,
+						KEY_LEFT) == false)
+					widget_scroll_x(gw, -100, false);
+			}
 			break;
 
 		case NSFB_KEY_UP:
-			if (browser_window_key_press(gw->bw, KEY_UP) == false)
+			if (browser_window_key_press(gw->bw,
+					KEY_UP) == false)
 				widget_scroll_y(gw, -100, false);
 			break;
 
 		case NSFB_KEY_DOWN:
-			if (browser_window_key_press(gw->bw, KEY_DOWN) == false)
+			if (browser_window_key_press(gw->bw,
+					KEY_DOWN) == false)
 				widget_scroll_y(gw, 100, false);
 			break;
 
 		case NSFB_KEY_RSHIFT:
-			modifier |= 1;
+			modifier |= FBTK_MOD_RSHIFT;
 			break;
 
 		case NSFB_KEY_LSHIFT:
-			modifier |= 1<<1;
+			modifier |= FBTK_MOD_LSHIFT;
+			break;
+
+		case NSFB_KEY_RCTRL:
+			modifier |= FBTK_MOD_RCTRL;
+			break;
+
+		case NSFB_KEY_LCTRL:
+			modifier |= FBTK_MOD_LCTRL;
 			break;
 
 		default:
@@ -747,11 +799,19 @@ fb_browser_window_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	case NSFB_EVENT_KEY_UP:
 		switch (cbi->event->value.keycode) {
 		case NSFB_KEY_RSHIFT:
-			modifier &= ~1;
+			modifier &= ~FBTK_MOD_RSHIFT;
 			break;
 
 		case NSFB_KEY_LSHIFT:
-			modifier &= ~(1<<1);
+			modifier &= ~FBTK_MOD_LSHIFT;
+			break;
+
+		case NSFB_KEY_RCTRL:
+			modifier &= ~FBTK_MOD_RCTRL;
+			break;
+
+		case NSFB_KEY_LCTRL:
+			modifier &= ~FBTK_MOD_LCTRL;
 			break;
 
 		default:

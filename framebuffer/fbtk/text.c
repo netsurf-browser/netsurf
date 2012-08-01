@@ -262,7 +262,7 @@ static int
 text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 {
 	int value;
-	static uint8_t modifier = 0;
+	static fbtk_modifier_type modifier = FBTK_MOD_CLEAR;
 	char *temp;
 	plot_font_style_t font_style;
 	int fh;
@@ -284,19 +284,19 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	if (cbi->event->type != NSFB_EVENT_KEY_DOWN) {
 		switch (value) {
 		case NSFB_KEY_RSHIFT:
-			modifier &= ~1;
+			modifier &= ~FBTK_MOD_RSHIFT;
 			break;
 
 		case NSFB_KEY_LSHIFT:
-			modifier &= ~(1<<1);
+			modifier &= ~FBTK_MOD_LSHIFT;
 			break;
 
 		case NSFB_KEY_RCTRL:
-			modifier &= ~(1<<2);
+			modifier &= ~FBTK_MOD_RCTRL;
 			break;
 
 		case NSFB_KEY_LCTRL:
-			modifier &= ~(1<<3);
+			modifier &= ~FBTK_MOD_LCTRL;
 			break;
 
 		default:
@@ -328,7 +328,7 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	case NSFB_KEY_RIGHT:
 		if (widget->u.text.idx < widget->u.text.len) {
-			if (modifier == 0)
+			if (modifier == FBTK_MOD_CLEAR)
 				widget->u.text.idx++;
 			else
 				widget->u.text.idx = widget->u.text.len;
@@ -339,7 +339,7 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 
 	case NSFB_KEY_LEFT:
 		if (widget->u.text.idx > 0) {
-			if (modifier == 0)
+			if (modifier == FBTK_MOD_CLEAR)
 				widget->u.text.idx--;
 			else
 				widget->u.text.idx = 0;
@@ -357,23 +357,23 @@ text_input(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		break;
 
 	case NSFB_KEY_RSHIFT:
-		modifier |= 1;
+		modifier |= FBTK_MOD_RSHIFT;
 		break;
 
 	case NSFB_KEY_LSHIFT:
-		modifier |= 1<<1;
+		modifier |= FBTK_MOD_LSHIFT;
 		break;
 
 	case NSFB_KEY_RCTRL:
-		modifier |= 1<<2;
+		modifier |= FBTK_MOD_RCTRL;
 		break;
 
 	case NSFB_KEY_LCTRL:
-		modifier |= 1<<3;
+		modifier |= FBTK_MOD_LCTRL;
 		break;
 
 	default:
-		if (modifier & 1<<2 || modifier & 1<<3) {
+		if (modifier & FBTK_MOD_LCTRL || modifier & FBTK_MOD_RCTRL) {
 			/* CTRL pressed, don't enter any text */
 			if (value == NSFB_KEY_u) {
 				/* CTRL+U: clear writable */

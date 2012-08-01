@@ -34,6 +34,7 @@
 #include "css/css.h"
 #include "desktop/browser.h"
 #include "desktop/plotters.h"
+#include "desktop/textinput.h"
 
 #include "framebuffer/gui.h"
 #include "framebuffer/fbtk.h"
@@ -292,16 +293,46 @@ static int sh_keymap[] = {
 
 /* exported function documented in fbtk.h */
 int
-fbtk_keycode_to_ucs4(int code, uint8_t mods)
+fbtk_keycode_to_ucs4(int code, fbtk_modifier_type mods)
 {
 	int ucs4 = -1;
 
-	if (mods) {
+	if (mods & FBTK_MOD_LSHIFT || mods & FBTK_MOD_RSHIFT) {
 		if ((code >= 0) && (code < (int) NOF_ELEMENTS(sh_keymap)))
 			ucs4 = sh_keymap[code];
-	} else {
+
+	} else if (mods == FBTK_MOD_CLEAR) {
 		if ((code >= 0) && (code < (int) NOF_ELEMENTS(keymap)))
 			ucs4 = keymap[code];
+
+	} else if (mods & FBTK_MOD_LCTRL || mods & FBTK_MOD_RCTRL) {
+		switch (code) {
+		case NSFB_KEY_a:
+			ucs4 = KEY_SELECT_ALL;
+			break;
+
+		case NSFB_KEY_c:
+			ucs4 = KEY_COPY_SELECTION;
+			break;
+
+		case NSFB_KEY_u:
+			ucs4 = KEY_CUT_LINE;
+			break;
+
+		case NSFB_KEY_v:
+			ucs4 = KEY_PASTE;
+			break;
+
+		case NSFB_KEY_x:
+			ucs4 = KEY_CUT_SELECTION;
+			break;
+
+		case NSFB_KEY_z:
+			ucs4 = KEY_CLEAR_SELECTION;
+			break;
+		default:
+			break;
+		}
 	}
 	return ucs4;
 }
