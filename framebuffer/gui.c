@@ -653,7 +653,9 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			if (gui_drag.state == GUI_DRAG_DRAG) {
 				/* End of a drag, rather than click */
 				gui_drag.state = GUI_DRAG_NONE;
-				framebuffer_set_cursor(&pointer_image);
+
+				/* Tell core */
+				browser_window_mouse_track(gw->bw, 0, x, y);
 				break;
 			}
 			/* This is a click;
@@ -667,6 +669,9 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			if (gui_drag.state == GUI_DRAG_DRAG) {
 				/* End of a drag, rather than click */
 				gui_drag.state = GUI_DRAG_NONE;
+
+				/* Tell core */
+				browser_window_mouse_track(gw->bw, 0, x, y);
 				break;
 			}
 			/* This is a click;
