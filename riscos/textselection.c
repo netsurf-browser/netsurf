@@ -34,9 +34,6 @@
 #include "riscos/message.h"
 #include "riscos/save.h"
 #include "riscos/textselection.h"
-#include "render/box.h"
-#include "render/form.h"
-#include "render/html.h"
 #include "utils/log.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
@@ -499,15 +496,10 @@ bool ro_gui_save_clipboard(const char *path)
 void ro_gui_selection_dragging(wimp_message *message)
 {
 	wimp_full_message_dragging *drag = (wimp_full_message_dragging*)message;
-	struct box *textarea = NULL;
 	struct browser_window *bw;
 	hlcache_handle *h;
-	int gadget_box_x = 0;
-	int gadget_box_y = 0;
 	struct gui_window *g;
 	os_coord pos;
-	int box_x = 0;
-	int box_y = 0;
 
 	/* with autoscrolling, we will probably need to remember the
 	 * gui_window and override the drag->w window handle which
@@ -525,58 +517,8 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 	bw = g->bw;
 	h = bw->current_content;
-	if (h && content_get_type(h) == CONTENT_HTML &&
-			html_get_box_tree(h)) {
-		struct box *box = html_get_box_tree(h);
 
-		while ((box = box_at_point(box, pos.x, pos.y,
-				&box_x, &box_y, &h))) {
-			if (box->style &&
-					css_computed_visibility(box->style) ==
-					CSS_VISIBILITY_HIDDEN)
-				continue;
-
-			if (box->gadget &&
-					box->gadget->type == GADGET_TEXTAREA) {
-				textarea = box;
-				gadget_box_x = box_x;
-				gadget_box_y = box_y;
-			}
-		}
-	}
-
-	if (textarea) {
-		/* draw/move the ghost caret */
-		if (!drag_claimed)
-			gui_window_set_pointer(g, GUI_POINTER_CARET);
-
-		drag_claimed = true;
-	} else {
-		drag_claimed = false;
-	}
-
-	if (drag_claimed) {
-		wimp_full_message_drag_claim claim;
-		os_error *error;
-
-		claim.size =
-			offsetof(wimp_full_message_drag_claim, file_types) + 8;
-		claim.your_ref = drag->my_ref;
-		claim.action = message_DRAG_CLAIM;
-		claim.flags = wimp_DRAG_CLAIM_POINTER_CHANGED |
-				wimp_DRAG_CLAIM_SUPPRESS_DRAGBOX;
-		claim.file_types[0] = osfile_TYPE_TEXT;
-		claim.file_types[1] = ~0;
-
-		error = xwimp_send_message(wimp_USER_MESSAGE,
-				(wimp_message *) &claim, drag->sender);
-		if (error) {
-			LOG(("xwimp_send_message: 0x%x: %s",
-				error->errnum, error->errmess));
-			warn_user("WimpError", error->errmess);
-		}
-		drag_claimed = true;
-	}
+	drag_claimed = false;
 }
 
 
