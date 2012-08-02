@@ -91,6 +91,7 @@ static struct gui_drag {
 	int button;
 	int x;
 	int y;
+	bool grabbed_pointer;
 } gui_drag;
 
 
@@ -652,6 +653,13 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 		case NSFB_KEY_MOUSE_1:
 			if (gui_drag.state == GUI_DRAG_DRAG) {
 				/* End of a drag, rather than click */
+
+				if (gui_drag.grabbed_pointer) {
+					/* need to ungrab pointer */
+					fbtk_tgrab_pointer(widget);
+					gui_drag.grabbed_pointer = false;
+				}
+
 				gui_drag.state = GUI_DRAG_NONE;
 
 				/* Tell core */
@@ -669,6 +677,12 @@ fb_browser_window_click(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 			if (gui_drag.state == GUI_DRAG_DRAG) {
 				/* End of a drag, rather than click */
 				gui_drag.state = GUI_DRAG_NONE;
+
+				if (gui_drag.grabbed_pointer) {
+					/* need to ungrab pointer */
+					fbtk_tgrab_pointer(widget);
+					gui_drag.grabbed_pointer = false;
+				}
 
 				/* Tell core */
 				browser_window_mouse_track(gw->bw, 0, x, y);
@@ -717,6 +731,7 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 					BROWSER_MOUSE_DRAG_2,
 					gui_drag.x, gui_drag.y);
 		}
+		gui_drag.grabbed_pointer = fbtk_tgrab_pointer(widget);
 		gui_drag.state = GUI_DRAG_DRAG;
 	}
 
