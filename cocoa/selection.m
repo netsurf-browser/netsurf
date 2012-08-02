@@ -69,17 +69,6 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 	return true;
 }
 
-static bool cocoa_clipboard_copy_handler(const char *text, size_t length, struct box *box,
-										 void *handle, const char *whitespace_text,
-										 size_t whitespace_length)
-{
-	bool add_space = box != NULL ? box->space != 0 : false;
-
-	if (whitespace_text && !gui_add_to_clipboard( whitespace_text, 
-												 whitespace_length, false )) return false;
-	return gui_add_to_clipboard( text, length, add_space );
-}
-
 bool gui_commit_clipboard(void)
 {
 	NSPasteboard *pb = [NSPasteboard generalPasteboard];
@@ -91,7 +80,7 @@ bool gui_commit_clipboard(void)
 
 bool gui_copy_to_clipboard(struct selection *s)
 {
-	if (selection_defined( s ) && selection_traverse( s, cocoa_clipboard_copy_handler, NULL ))
+	if (selection_defined( s ) && selection_copy_to_clipboard( s ))
 		gui_commit_clipboard();
 	return true;
 }
