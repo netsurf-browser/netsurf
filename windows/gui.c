@@ -1792,29 +1792,8 @@ bool gui_commit_clipboard(void)
 {
 	return false;
 }
-/*
-static bool
-gui_selection_traverse_handler(const char *text,
-			       size_t length,
-			       struct box *box,
-			       void *handle,
-			       const char *space_text,
-			       size_t space_length)
-{
-	bool add_space = box != NULL ? box->space != 0 : false;
 
-	if (space_text != NULL && space_length > 0) {
-		if (!gui_add_to_clipboard(space_text, space_length, false)) {
-			return false;
-		}
-	}
 
-	if (!gui_add_to_clipboard(text, length, add_space))
-		return false;
-
-	return true;
-}
-*/
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	if (selection_defined(s)) {
@@ -1823,8 +1802,7 @@ bool gui_copy_to_clipboard(struct selection *s)
 
 /*		OpenClipboard(s->bw->window->main);
 		EmptyClipboard();
-		if (selection_traverse(s, gui_selection_traverse_handler,
-				       NULL)) {
+		if (selection_copy_to_clipboard(s)) {
 			CloseClipboard();
 			return true;
 		}
