@@ -730,6 +730,55 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
 
 
 /**
+ * Selection traversal routine for appending text to the current contents
+ * of the clipboard.
+ *
+ * \param  text		pointer to text being added, or NULL for newline
+ * \param  length	length of text to be appended (bytes)
+ * \param  box		pointer to text box, or NULL if from textplain
+ * \param  handle	unused handle, we don't need one
+ * \param  whitespace_text    whitespace to place before text for formatting
+ *                            may be NULL
+ * \param  whitespace_length  length of whitespace_text
+ * \return true iff successful and traversal should continue
+ */
+
+static bool selection_copy_handler(const char *text, size_t length,
+		struct box *box, void *handle, const char *whitespace_text,
+		size_t whitespace_length)
+{
+	bool add_space = box != NULL ? box->space != 0 : false;
+
+	/* add any whitespace which precedes the text from this box */
+	if (whitespace_text != NULL && whitespace_length > 0) {
+		if (!gui_add_to_clipboard(whitespace_text,
+				whitespace_length, false)) {
+			return false;
+		}
+	}
+
+	/* add the text from this box */
+	if (!gui_add_to_clipboard(text, length, add_space))
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Copy the selected contents to the clipboard
+ *
+ * \param s  selection
+ * \return true iff successful, ie. cut operation can proceed without losing data
+ */
+
+bool selection_copy_to_clipboard(struct selection *s)
+{
+	return selection_traverse(s, selection_copy_handler, NULL);
+}
+
+
+/**
  * Clears the current selection, optionally causing the screen to be updated.
  *
  * \param  s       selection object
