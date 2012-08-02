@@ -705,8 +705,8 @@ fb_browser_window_move(fbtk_widget_t *widget, fbtk_callback_info *cbi)
 	int y = (cbi->y + bwidget->scrolly) / gw->bw->scale;
 
 	if (gui_drag.state == GUI_DRAG_PRESSED &&
-			(abs(x - gui_drag.x) < 5 ||
-			 abs(y - gui_drag.y) < 5)) {
+			(abs(x - gui_drag.x) > 5 ||
+			 abs(y - gui_drag.y) > 5)) {
 		/* Drag started */
 		if (gui_drag.button == 1) {
 			browser_window_mouse_click(gw->bw,
