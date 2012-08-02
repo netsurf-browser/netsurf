@@ -25,7 +25,6 @@
 #include <string.h>
 #include "desktop/selection.h"
 #include "framebuffer/gui.h"
-#include "render/box.h"
 #include "utils/log.h"
 
 
@@ -34,42 +33,6 @@ static struct gui_clipboard {
 	size_t buffer_len;
 	size_t length;
 } gui_clipboard;
-
-
-/**
- * Selection traversal routine for appending text to the current contents
- * of the clipboard.
- *
- * \param  text		pointer to text being added, or NULL for newline
- * \param  length	length of text to be appended (bytes)
- * \param  box		pointer to text box, or NULL if from textplain
- * \param  handle	unused handle, we don't need one
- * \param  whitespace_text    whitespace to place before text for formatting
- *                            may be NULL
- * \param  whitespace_length  length of whitespace_text
- * \return true iff successful and traversal should continue
- */
-
-static bool copy_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length)
-{
-	bool add_space = box != NULL ? box->space != 0 : false;
-
-	/* add any whitespace which precedes the text from this box */
-	if (whitespace_text != NULL && whitespace_length > 0) {
-		if (!gui_add_to_clipboard(whitespace_text,
-				whitespace_length, false)) {
-			return false;
-		}
-	}
-
-	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, add_space))
-		return false;
-
-	return true;
-}
 
 
 /**
@@ -159,7 +122,7 @@ bool gui_copy_to_clipboard(struct selection *s)
 	if (!gui_empty_clipboard())
 		return false;
 
-	selection_traverse(s, copy_handler, NULL);
+	selection_copy_to_clipboard(s);
 
 	return gui_commit_clipboard();
 }
