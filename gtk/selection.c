@@ -22,21 +22,13 @@
 #include "utils/log.h"
 
 #include "desktop/gui.h"
-#include "desktop/textinput.h"
 #include "desktop/selection.h"
 #include "desktop/browser.h"
 #include "gtk/selection.h"
 #include "gtk/window.h"
-#include "utils/utf8.h"
-
-#include "render/box.h"
  
 static GString *current_selection = NULL;
 static GtkClipboard *clipboard;
- 
-static bool copy_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length);
 
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space)
@@ -48,31 +40,10 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 	return true;
 }
 
-bool copy_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length)
-{
-	bool add_space = box != NULL ? box->space != 0 : false;
-
-	/* add any whitespace which precedes the text from this box */
-	if (whitespace_text != NULL && whitespace_length > 0) {
-		if (!gui_add_to_clipboard(whitespace_text,
-				whitespace_length, false)) {
-			return false;
-		}
-	}
-
-	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, add_space))
-		return false;
-
-	return true;
-}
-
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
-	if (s->defined && selection_traverse(s, copy_handler, NULL))
+	if (s->defined && selection_copy_to_clipboard(s))
 		gui_commit_clipboard();
 	return TRUE;
 }
