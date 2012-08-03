@@ -46,7 +46,6 @@
 #define ID_UTF8  MAKE_ID('U','T','F','8')
 
 struct IFFHandle *iffh = NULL;
-bool ami_utf8_clipboard = false; // force UTF-8 in clipboard
 
 bool ami_add_to_clipboard(const char *text, size_t length, bool space);
 static bool ami_copy_selection(const char *text, size_t length,
@@ -226,7 +225,7 @@ bool gui_empty_clipboard(void)
 	{
 		if(!(PushChunk(iffh,ID_FTXT,ID_FORM,IFFSIZE_UNKNOWN)))
 		{
-			if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard)
+			if(nsoption_bool(utf8_clipboard))
 			{
 				if(!(PushChunk(iffh,0,ID_CSET,32)))
 				{
@@ -258,7 +257,7 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 	if(text == NULL) return true;
 	
 	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN))) {
-		if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard) {
+		if(nsoption_bool(utf8_clipboard)) {
 			WriteChunkBytes(iffh,text,length);
 		} else {
 			buffer = ami_utf8_easy(text);
@@ -371,8 +370,6 @@ void ami_drag_selection(struct selection *s)
 
 	if(text_box = ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
 	{
-		ami_utf8_clipboard = true;
-
 		iffh = ami_clipboard_init_internal(1);
 
 		if(gui_copy_to_clipboard(s))
@@ -383,7 +380,6 @@ void ami_drag_selection(struct selection *s)
 
 		ami_clipboard_free_internal(iffh);
 		iffh = old_iffh;
-		ami_utf8_clipboard = false;
 	}
 	else
 	{
