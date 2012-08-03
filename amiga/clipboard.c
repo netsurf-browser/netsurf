@@ -198,18 +198,10 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 	   These only seem to be called from desktop/textinput.c in this specific order, if they
 	   are added elsewhere this might need a rewrite. */
 
-	if(text)
-	{
-		if(!ami_add_to_clipboard(text, length, space)) return false;
-	}
-
-	return true;
-}
-
-bool ami_add_to_clipboard(const char *text, size_t length, bool space)
-{
 	char *buffer;
 
+	if(text == NULL) return true;
+	
 	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN))) {
 		if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard) {
 			WriteChunkBytes(iffh,text,length);
