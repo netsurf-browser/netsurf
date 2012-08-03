@@ -43,6 +43,8 @@
 #include <datatypes/textclass.h>
 #include <datatypes/pictureclass.h>
 
+#define ID_UTF8  MAKE_ID('U','T','F','8')
+
 struct IFFHandle *iffh = NULL;
 bool ami_utf8_clipboard = false; // force UTF-8 in clipboard
 
@@ -223,6 +225,15 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 		}
 
 		if(space) WriteChunkBytes(iffh," ",1);
+		PopChunk(iffh);
+	} else {
+		PopChunk(iffh);
+		return false;
+	}
+
+	if(!(PushChunk(iffh, 0, ID_UTF8, IFFSIZE_UNKNOWN))) {
+		WriteChunkBytes(iffh, text, length);
+		if(space) WriteChunkBytes(iffh, " ", 1);
 		PopChunk(iffh);
 	} else {
 		PopChunk(iffh);
