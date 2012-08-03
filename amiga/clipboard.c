@@ -247,23 +247,6 @@ bool gui_commit_clipboard(void)
 	return true;
 }
 
-bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
-	void *handle, const char *whitespace_text,size_t whitespace_length)
-{
-	if (whitespace_text)
-	{
-		if(!ami_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
-	}
-
-	if(text)
-	{
-		bool add_space = box != NULL ? box->space != 0 : false;
-
-		if (!ami_add_to_clipboard(text, length, add_space)) return false;
-	}
-	return true;
-}
-
 bool gui_copy_to_clipboard(struct selection *s)
 {
 	bool success;
@@ -271,7 +254,7 @@ bool gui_copy_to_clipboard(struct selection *s)
 	if(s->defined == false) return false;
 	if(!gui_empty_clipboard()) return false;
 
-	success = selection_traverse(s, ami_clipboard_copy, NULL);
+	success = selection_copy_to_clipboard(s);
 
 	/* commit regardless, otherwise we leave the clipboard in an unusable state */
 	gui_commit_clipboard();
