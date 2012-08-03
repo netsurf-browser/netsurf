@@ -198,19 +198,9 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space)
 	   These only seem to be called from desktop/textinput.c in this specific order, if they
 	   are added elsewhere this might need a rewrite. */
 
-	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
+	if(text)
 	{
-		if(text)
-		{
-			if(!ami_add_to_clipboard(text, length, space)) return false;
-		}
-
-		PopChunk(iffh);
-	}
-	else
-	{
-		PopChunk(iffh);
-		return false;
+		if(!ami_add_to_clipboard(text, length, space)) return false;
 	}
 
 	return true;
@@ -220,33 +210,33 @@ bool ami_add_to_clipboard(const char *text, size_t length, bool space)
 {
 	char *buffer;
 
-	if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard)
-	{
-		WriteChunkBytes(iffh,text,length);
-	}
-	else
-	{
-		buffer = ami_utf8_easy(text);
+	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN))) {
+		if(nsoption_bool(utf8_clipboard) || ami_utf8_clipboard) {
+			WriteChunkBytes(iffh,text,length);
+		} else {
+			buffer = ami_utf8_easy(text);
 
-		if(buffer)
-		{
-			char *p;
+			if(buffer) {
+				char *p;
 
-			p = buffer;
+				p = buffer;
 
-			while(*p != '\0')
-			{
-				if(*p == 0xa0) *p = 0x20;
-				p++;
+				while(*p != '\0') {
+					if(*p == 0xa0) *p = 0x20;
+					p++;
+				}
+				WriteChunkBytes(iffh, buffer, strlen(buffer));
+				ami_utf8_free(buffer);
 			}
-			WriteChunkBytes(iffh, buffer, strlen(buffer));
-
-			ami_utf8_free(buffer);
 		}
+
+		if(space) WriteChunkBytes(iffh," ",1);
+		PopChunk(iffh);
+	} else {
+		PopChunk(iffh);
+		return false;
 	}
-
-	if(space) WriteChunkBytes(iffh," ",1);
-
+		
 	return true;
 }
 
@@ -260,28 +250,17 @@ bool gui_commit_clipboard(void)
 bool ami_clipboard_copy(const char *text, size_t length, struct box *box,
 	void *handle, const char *whitespace_text,size_t whitespace_length)
 {
-	if(!(PushChunk(iffh,0,ID_CHRS,IFFSIZE_UNKNOWN)))
+	if (whitespace_text)
 	{
-		if (whitespace_text)
-		{
-			if(!ami_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
-		}
-
-		if(text)
-		{
-			bool add_space = box != NULL ? box->space != 0 : false;
-
-			if (!ami_add_to_clipboard(text, length, add_space)) return false;
-		}
-
-		PopChunk(iffh);
-	}
-	else
-	{
-		PopChunk(iffh);
-		return false;
+		if(!ami_add_to_clipboard(whitespace_text,whitespace_length, false)) return false;
 	}
 
+	if(text)
+	{
+		bool add_space = box != NULL ? box->space != 0 : false;
+
+		if (!ami_add_to_clipboard(text, length, add_space)) return false;
+	}
 	return true;
 }
 
