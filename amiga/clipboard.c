@@ -108,6 +108,22 @@ void gui_clear_selection(struct gui_window *g)
 	OffMenu(g->shared->win, AMI_MENU_COPY);
 }
 
+bool ami_clipboard_check_for_utf8(struct IFFHandle *iffh) {
+	struct ContextNode *cn;
+	ULONG error;
+	bool utf8_chunk = false;
+	
+	if(OpenIFF(iffh, IFFF_READ)) return false;
+	if(!StopChunk(iffh, ID_FTXT, ID_UTF8)) {
+		error = ParseIFF(iffh, IFFPARSE_SCAN);
+		if(error != IFFERR_EOF)
+			utf8_chunk = true; /* or a real error, but that'll get caught later */
+	}
+	CloseIFF(iffh);
+
+	return utf8_chunk;
+}
+
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 {
 	/* This and the other clipboard code is heavily based on the RKRM examples */
@@ -116,14 +132,23 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 	struct CSet cset;
 	LONG codeset = 0;
 	char *clip;
+	bool utf8_chunks = false;
 	STRPTR readbuf = AllocVec(1024,MEMF_PRIVATE | MEMF_CLEAR);
 
 	cset.CodeSet = 0;
 
+	if(ami_clipboard_check_for_utf8(iffh))
+		utf8_chunks = true;
+	
 	if(OpenIFF(iffh,IFFF_READ)) return;
-	if(StopChunk(iffh,ID_FTXT,ID_CHRS)) return;
-	if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
-
+	
+	if(utf8_chunks == false) {
+		if(StopChunk(iffh,ID_FTXT,ID_CHRS)) return;
+		if(StopChunk(iffh,ID_FTXT,ID_CSET)) return;
+	} else {
+		if(StopChunk(iffh,ID_FTXT,ID_UTF8)) return;
+	}
+	
 	while(1)
 	{
 		error = ParseIFF(iffh,IFFPARSE_SCAN);
@@ -132,14 +157,14 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 
 		cn = CurrentChunk(iffh);
 
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET))
+		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CSET)&&(utf8_chunks == false))
 		{
 			rlen = ReadChunkBytes(iffh,&cset,32);
 			if(cset.CodeSet == 1) codeset = 106;
 				else codeset = cset.CodeSet;
 		}
 
-		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS))
+		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_CHRS)&&(utf8_chunks == false))
 		{
 			while((rlen = ReadChunkBytes(iffh,readbuf,1024)) > 0)
 			{
@@ -156,6 +181,15 @@ void gui_paste_from_clipboard(struct gui_window *g, int x, int y)
 				}
 
 				browser_window_paste_text(g->shared->bw,clip,rlen,true);
+			}
+			if(rlen < 0) error = rlen;
+		}
+
+		if((cn)&&(cn->cn_Type == ID_FTXT)&&(cn->cn_ID == ID_UTF8)&&(utf8_chunks == true))
+		{
+			while((rlen = ReadChunkBytes(iffh, readbuf, 1024)) > 0)
+			{
+				browser_window_paste_text(g->shared->bw, readbuf, rlen, true);
 			}
 			if(rlen < 0) error = rlen;
 		}
