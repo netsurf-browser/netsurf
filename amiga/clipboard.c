@@ -53,6 +53,21 @@ static bool ami_copy_selection(const char *text, size_t length,
 	struct box *box, void *handle, const char *whitespace_text,
 	size_t whitespace_length);
 
+static LONG ami_clipboard_iffp_do_nothing(struct Hook *hook, void *object, LONG *cmd)
+{
+	return 0;
+}
+
+static void ami_clipboard_iffp_clear_stopchunk(struct IFFHandle *iffh, ULONG iff_type, ULONG iff_chunk)
+{
+	static struct Hook entry_hook;
+
+	entry_hook.h_Entry = (void *)ami_clipboard_iffp_do_nothing;
+	entry_hook.h_Data = 0;
+
+	EntryHandler(iffh, iff_type, iff_chunk, IFFSLI_TOP, &entry_hook, NULL);
+}
+
 struct IFFHandle *ami_clipboard_init_internal(int unit)
 {
 	struct IFFHandle *iffhandle = NULL;
@@ -114,6 +129,10 @@ bool ami_clipboard_check_for_utf8(struct IFFHandle *iffh) {
 	bool utf8_chunk = false;
 	
 	if(OpenIFF(iffh, IFFF_READ)) return false;
+	
+	ami_clipboard_iffp_clear_stopchunk(iffh, ID_FTXT, ID_CSET);
+	ami_clipboard_iffp_clear_stopchunk(iffh, ID_FTXT, ID_CHRS);
+	
 	if(!StopChunk(iffh, ID_FTXT, ID_UTF8)) {
 		error = ParseIFF(iffh, IFFPARSE_SCAN);
 		if(error != IFFERR_EOF)
