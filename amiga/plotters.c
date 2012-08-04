@@ -120,8 +120,21 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	/* init shared bitmaps                                               *
 	 * Height is set to screen width to give enough space for thumbnails *
 	 * Also applies to the further gfx/layers functions and memory below */
+ 
+	ULONG depth = 32;
 	struct DrawInfo *dri;
 	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
+
+	if(dri = GetScreenDrawInfo(scrn)) {
+		if(depth < 16) {
+			palette_mapped = true;
+			depth = dri->dri_Depth; /* this is always wrong */
+			friend = scrn->RastPort.BitMap;
+		} else {
+			palette_mapped = false;
+		}
+		FreeScreenDrawInfo(scrn, dri);
+	}
 
 	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
 	if(nsoption_int(redraw_tile_size_y) <= 0) nsoption_set_int(redraw_tile_size_y, scrn->Height);
@@ -129,11 +142,16 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 
 	gg->layerinfo = NewLayerInfo();
-	gg->areabuf = AllocVec(100,MEMF_PRIVATE | MEMF_CLEAR);
-	gg->tmprasbuf = AllocVec(width*height,MEMF_PRIVATE | MEMF_CLEAR);
+	gg->areabuf = AllocVec(100, MEMF_PRIVATE | MEMF_CLEAR);
+	gg->tmprasbuf = AllocVec(width * height, MEMF_PRIVATE | MEMF_CLEAR);
 
-	gg->bm = p96AllocBitMap(width, height, 32,
+	if(palette_mapped ==false) {
+		gg->bm = p96AllocBitMap(width, height, 32,
 					BMF_INTERLEAVED, friend, RGBFB_A8R8G8B8);
+	} else {
+		gg->bm = AllocBitMap(width, height, depth, BMF_INTERLEAVED, friend);
+	}
+	
 	if(!gg->bm) warn_user("NoMemory","");
 
 	gg->rp = AllocVec(sizeof(struct RastPort), MEMF_PRIVATE | MEMF_CLEAR);
@@ -165,15 +183,6 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->surface = cairo_amigaos_surface_create(gg->rp->BitMap);
 	gg->cr = cairo_create(gg->surface);
 #endif
-
-	if(dri = GetScreenDrawInfo(scrn)) {
-		if(dri->dri_Depth < 16) { /* this is always true */
-			palette_mapped = true;
-		} else {
-			palette_mapped = false;
-		}
-		FreeScreenDrawInfo(scrn,dri);
-	}
 }
 
 void ami_free_layers(struct gui_globals *gg)
