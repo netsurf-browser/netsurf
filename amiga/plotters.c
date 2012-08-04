@@ -19,24 +19,29 @@
 #include "amiga/plotters.h"
 #include "amiga/bitmap.h"
 #include "amiga/font.h"
+#include "amiga/gui.h"
+#include "amiga/utf8.h"
+
+#include "desktop/options.h"
+#include "utils/utils.h"
+#include "utils/log.h"
+
 #include <proto/Picasso96API.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+
 #include <intuition/intuition.h>
 #include <graphics/rpattr.h>
 #include <graphics/gfxmacros.h>
 #include <graphics/gfxbase.h>
-#include "amiga/utf8.h"
-#include "desktop/options.h"
+
 #ifdef __amigaos4__
 #include <graphics/blitattr.h>
 #include <graphics/composite.h>
 #endif
-#include "utils/log.h"
+
 #include <math.h>
 #include <assert.h>
-#include <proto/exec.h>
-#include <proto/intuition.h>
-#include "amiga/gui.h"
-#include "utils/utils.h"
 
 static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct BackFillMessage *bfmsg);
 
@@ -231,6 +236,8 @@ void ami_plot_setapen(ULONG colour)
 			(colour & 0x00ff0000) << 8,
 			NULL);
 
+		if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
+			
 		SetAPen(glob->rp, pen);	
 	}
 }
@@ -499,7 +506,9 @@ bool ami_text(int x, int y, const char *text, size_t length,
 	LOG(("[ami_plotter] Entered ami_text()"));
 	#endif
 
+	ami_plot_setapen(fstyle->foreground);
 	ami_unicode_text(glob->rp,text,length,fstyle,x,y);
+	
 	return true;
 }
 

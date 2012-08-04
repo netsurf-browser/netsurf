@@ -712,8 +712,6 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 	outf16 = utf16;
 	if(!(ofont = ami_open_outline_font(fstyle, 0))) return 0;
 
-	if(rp) SetRPAttrs(rp,RPTAG_APenColor,p96EncodeColor(RGBFB_A8B8G8R8,fstyle->foreground),TAG_DONE);
-
 	while(*utf16 != 0)
 	{
 		if (*utf16 < 0xD800 || 0xDFFF < *utf16)
