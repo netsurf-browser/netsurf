@@ -1,5 +1,5 @@
 /*
- * Copyright 2008,2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009, 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -34,6 +34,7 @@
 #include <math.h>
 #include <assert.h>
 #include <proto/exec.h>
+#include <proto/intuition.h>
 #include "amiga/gui.h"
 #include "utils/utils.h"
 
@@ -47,6 +48,7 @@ struct bfbitmap {
 	int offsety;
 };
 
+bool palette_mapped = false;
 
 #ifndef M_PI /* For some reason we don't always get this from math.h */
 #define M_PI		3.14159265358979323846
@@ -118,7 +120,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	/* init shared bitmaps                                               *
 	 * Height is set to screen width to give enough space for thumbnails *
 	 * Also applies to the further gfx/layers functions and memory below */
-
+	struct DrawInfo *dri;
 	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
 
 	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
@@ -163,6 +165,15 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->surface = cairo_amigaos_surface_create(gg->rp->BitMap);
 	gg->cr = cairo_create(gg->surface);
 #endif
+
+	if(dri = GetScreenDrawInfo(scrn)) {
+		if(dri->dri_Depth < 16) { /* this is always true */
+			palette_mapped = true;
+		} else {
+			palette_mapped = false;
+		}
+		FreeScreenDrawInfo(scrn,dri);
+	}
 }
 
 void ami_free_layers(struct gui_globals *gg)
@@ -198,6 +209,23 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MaxY = scrn->Height-1;
 }
 
+void ami_plot_setapen(ULONG colour)
+{
+	if(palette_mapped == false) {
+		SetRPAttrs(glob->rp, RPTAG_APenColor,
+			p96EncodeColor(RGBFF_A8B8G8R8, colour),
+			TAG_DONE);
+	} else {
+		ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
+			(colour & 0x000000ff) << 24,
+			(colour & 0x0000ff00) << 16,
+			(colour & 0x00ff0000) << 8,
+			NULL);
+
+		SetAPen(glob->rp, pen);	
+	}
+}
+
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
@@ -206,11 +234,10 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 
 	if (style->fill_type != PLOT_OP_TYPE_NONE) { 
 
-		if(nsoption_int(cairo_renderer) < 2)
+		if((nsoption_int(cairo_renderer) < 2) ||
+			(palette_mapped == true))
 		{
-			SetRPAttrs(glob->rp, RPTAG_APenColor,
-				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-				TAG_DONE);
+			ami_plot_setapen(style->fill_colour);
 			RectFill(glob->rp, x0, y0, x1-1, y1-1);
 		}
 		else
@@ -228,7 +255,8 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	}
 
 	if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-		if(nsoption_int(cairo_renderer) < 2)
+		if((nsoption_int(cairo_renderer) < 2) ||
+			(palette_mapped == true))
 		{
 			glob->rp->PenWidth = style->stroke_width;
 			glob->rp->PenHeight = style->stroke_width;
