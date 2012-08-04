@@ -603,7 +603,7 @@ void ami_openscreen(void)
 			if(screenmodereq = AllocAslRequest(ASL_ScreenModeRequest,NULL))
 			{
 				if(AslRequestTags(screenmodereq,
-						ASLSM_MinDepth,16,
+						ASLSM_MinDepth,0,
 						ASLSM_MaxDepth,32,
 						TAG_DONE))
 				{
@@ -3187,7 +3187,7 @@ void gui_window_destroy(struct gui_window *g)
 	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
 
 	/* These aren't freed by the above.
-	 * TODO: nav_west etc need freeing too */
+	 * TODO: nav_west etc need freeing too? */
 	DisposeObject(g->shared->objects[GID_ADDTAB_BM]);
 	DisposeObject(g->shared->objects[GID_CLOSETAB_BM]);
 	DisposeObject(g->shared->objects[GID_TABS_FLAG]);
@@ -3308,7 +3308,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	if(width <= 0) return;
 	if(height <= 0) return;
 
-//printf("%ld %ld %ld %ld\n",left, top, width, height);
+// printf("%ld %ld %ld %ld\n",left, top, width, height);
 
 	for(y = top; y < (top + height); y += tile_y_scale) {
 		clip.y0 = 0;
@@ -3470,14 +3470,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		g->bw->window->c_h = g->bw->window->c_h_temp;
 
-		if(vcurrent>oldv)
+		if(vcurrent>oldv) /* Going down */
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
 					hcurrent, (height / g->bw->scale) + oldv - 1,
 					hcurrent + (width / g->bw->scale),
 					vcurrent + (height / g->bw->scale) + 1);
 		}
-		else if(vcurrent<oldv)
+		else if(vcurrent<oldv) /* Going up */
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
 					hcurrent, vcurrent,
@@ -3485,14 +3485,14 @@ void ami_do_redraw(struct gui_window_2 *g)
 					oldv);
 		}
 
-		if(hcurrent>oldh)
+		if(hcurrent>oldh) /* Going right */
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
 					(width / g->bw->scale) + oldh , vcurrent,
 					hcurrent + (width / g->bw->scale),
 					vcurrent + (height / g->bw->scale));
 		}
-		else if(hcurrent<oldh)
+		else if(hcurrent<oldh) /* Going left */
 		{
 			ami_do_redraw_limits(g->bw->window, g->bw,
 					hcurrent, vcurrent,
