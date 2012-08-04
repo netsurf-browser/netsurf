@@ -358,6 +358,7 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 	uint32_t ucs4;
 	size_t nxtchr = 0;
 	FT_Glyph glyph;
+	int prev_x = 0;
 
 	*actual_x = 0;
 	while (nxtchr < length) {
@@ -368,9 +369,15 @@ static int pixel_pos( FONT_PLOTTER self, const plot_font_style_t *fstyle,
 			*actual_x += glyph->advance.x >> 16;
 			if (*actual_x > x)
 				break;
+
+			prev_x = *actual_x;
 			nxtchr = utf8_next(string, length, nxtchr);
 	}
-   *char_offset = nxtchr;
+
+	/* choose nearest of previous and last x */
+	if (abs(*actual_x - x) > abs(prev_x - x))
+		*actual_x = prev_x;
+	*char_offset = nxtchr;
 	return ( 1 );
 }
 
