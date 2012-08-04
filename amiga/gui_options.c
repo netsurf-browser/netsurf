@@ -669,7 +669,7 @@ void ami_gui_opts_open(void)
         	 	           						GA_RelVerify, TRUE,
 												GA_Disabled,screenmodedisabled,
 												GETSCREENMODE_DisplayID,screenmodeid,
-												GETSCREENMODE_MinDepth, 16,
+												GETSCREENMODE_MinDepth, 0,
 												GETSCREENMODE_MaxDepth, 32,
 											GetScreenModeEnd,
 											LAYOUT_AddChild, gow->objects[GID_OPTS_SCREENNAME] = StringObject,
