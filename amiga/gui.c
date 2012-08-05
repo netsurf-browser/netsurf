@@ -3561,6 +3561,7 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox); 
 
+	browserglob.locked_layers = true;
 	BeginRefresh(gwin->win);
 
 	x0 = ((gwin->win->RPort->Layer->DamageList->bounds.MinX - bbox->Left) /
@@ -3593,6 +3594,7 @@ void ami_refresh_window(struct gui_window_2 *gwin)
 	}
 
 	EndRefresh(gwin->win, TRUE);
+	browserglob.locked_layers = false;
 }
 
 void ami_get_hscroll_pos(struct gui_window_2 *gwin, ULONG *xs)

@@ -34,7 +34,8 @@ struct gui_globals
 	APTR tmprasbuf;
 	struct Rectangle rect;
 	struct MinList *shared_pens;
-#ifdef NS_AMIGA_CAIRO
+	bool locked_layers;
+	#ifdef NS_AMIGA_CAIRO
 	cairo_surface_t *surface;
 	cairo_t *cr;
 #endif

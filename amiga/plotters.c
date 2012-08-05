@@ -194,6 +194,8 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->surface = cairo_amigaos_surface_create(gg->rp->BitMap);
 	gg->cr = cairo_create(gg->surface);
 #endif
+
+	gg->locked_layers = false;
 }
 
 void ami_free_layers(struct gui_globals *gg)
@@ -644,7 +646,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	if(palette_mapped == false) {
 		tbm = ami_getcachenativebm(bitmap, width, height, glob->rp->BitMap);
 	} else {
-		tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
+		if(glob->locked_layers == false)
+			tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
 	}
 	
 	if(!tbm) return true;
@@ -733,7 +736,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	if(palette_mapped == false) {
 		tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
 	} else {
-		tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
+		if(glob->locked_layers == false)
+			tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
 	}
 	
 	if(!tbm) return true;
