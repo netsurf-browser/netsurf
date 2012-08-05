@@ -668,6 +668,8 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	LOG(("[ami_plotter] Entered ami_bitmap_tile()"));
 	#endif
 
+	if(palette_mapped == true) return true;
+	
 	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
 	struct Hook *bfh = NULL;
