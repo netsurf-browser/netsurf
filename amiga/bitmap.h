@@ -35,7 +35,7 @@ struct bitmap {
 	struct BitMap *nativebm;
 	int nativebmwidth;
 	int nativebmheight;
-	APTR native_mask;
+	PLANEPTR native_mask;
 	Object *dto;
 	char *url;   /* temporary storage space */
 	char *title; /* temporary storage space */

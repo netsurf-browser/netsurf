@@ -661,7 +661,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		} else {
 			tag = BLITA_MaskPlane;
 			tag_data = (ULONG)bitmap->native_mask;
-			minterm = (ABC|ABNC|ANBC);
+			minterm = 0xc0; /* Should be (ABC|ABNC|ANBC) */
 		}
 		
 		BltBitMapTags(BLITA_Width,width,
@@ -826,7 +826,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 				} else {
 					tag = BLITA_MaskPlane;
 					tag_data = (ULONG)bfbm->mask;
-					minterm = (ABC|ABNC|ANBC);
+					minterm = 0xc0; /* Should be (ABC|ABNC|ANBC) */
 				}
 		
 				BltBitMapTags(BLITA_Width, bfbm->width,
