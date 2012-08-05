@@ -328,6 +328,8 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 			IDoMethod(dto, PDTM_READPIXELARRAY, bitmap_get_buffer(bm),
 				PBPAFMT_RGBA, bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
+				
+			bitmap_set_opaque(bm, bitmap_test_opaque(bm));
 		}
 		DisposeDTObject(dto);
 	}
