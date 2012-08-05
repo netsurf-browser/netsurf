@@ -49,6 +49,7 @@
 	int download_task_pri;		\
 	bool faster_scroll;			\
 	bool scale_quality;			\
+	int dither_quality;			\
 	bool ask_overwrite;			\
 	int printer_unit;			\
 	int print_scale;			\
@@ -109,6 +110,7 @@
 	.download_task_pri = -1,			\
 	.faster_scroll = true,				\
 	.scale_quality = false,				\
+	.dither_quality = 1,				\
 	.ask_overwrite = true,				\
 	.printer_unit = 0,				\
 	.print_scale = 100,				\
@@ -168,6 +170,7 @@
 { "download_task_pri",	OPTION_INTEGER,	&nsoptions.download_task_pri}, \
 { "faster_scroll",	OPTION_BOOL,	&nsoptions.faster_scroll}, \
 { "scale_quality",	OPTION_BOOL,	&nsoptions.scale_quality}, \
+{ "dither_quality",	OPTION_INTEGER,	&nsoptions.dither_quality}, \
 { "ask_overwrite",	OPTION_BOOL,	&nsoptions.ask_overwrite}, \
 { "printer_unit",	OPTION_INTEGER,	&nsoptions.printer_unit}, \
 { "print_scale",	OPTION_INTEGER,	&nsoptions.print_scale}, \

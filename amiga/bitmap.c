@@ -486,6 +486,7 @@ struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 		SetDTAttrs(bitmap->dto, NULL, NULL,
 				PDTA_Screen, scrn,
 				PDTA_ScaleQuality, nsoption_bool(scale_quality),
+				PDTA_DitherQuality, nsoption_int(dither_quality),
 				TAG_DONE);
 
 		if((bitmap->width != width) || (bitmap->height != height)) {
