@@ -208,7 +208,7 @@ bool bitmap_test_opaque(void *bitmap)
 
 	for(a=0;a<p;a+=4)
 	{
-		if ((*bmi & 0x000000ffU) != 0x000000ffU) return false;
+		if ((*bmi & 0xff000000U) != 0xff000000U) return false;
 		bmi++;
 	}
 	return true;
@@ -328,6 +328,8 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 			IDoMethod(dto, PDTM_READPIXELARRAY, bitmap_get_buffer(bm),
 				PBPAFMT_RGBA, bitmap_get_rowstride(bm), 0, 0,
 				bmh->bmh_Width, bmh->bmh_Height);
+				
+			bitmap_set_opaque(bm, bitmap_test_opaque(bm));
 		}
 		DisposeDTObject(dto);
 	}

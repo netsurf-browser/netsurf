@@ -159,6 +159,8 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 			bm_buffer, bm_format, bitmap_get_rowstride(bitmap),
 			0, 0, c->width, c->height);
 
+		bitmap_set_opaque(bitmap, bitmap_test_opaque(bitmap));
+	
 		DisposeDTObject(dto);
 	}
 	else return NULL;

@@ -2824,7 +2824,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 						GA_ID, GID_ICON,
 						SPACE_MinWidth, 16,
 						SPACE_MinHeight, 16,
-						SPACE_Transparent, TRUE,
+						SPACE_Transparent, FALSE,
 					//	SPACE_RenderHook, &g->shared->favicon_hook,
 					SpaceEnd,
 					CHILD_WeightedWidth,0,
@@ -2850,7 +2850,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							GA_ID, GID_SEARCH_ICON,
 							SPACE_MinWidth, 16,
 							SPACE_MinHeight, 16,
-							SPACE_Transparent, TRUE,
+							SPACE_Transparent, FALSE,
 							SPACE_RenderHook, &g->shared->search_ico_hook,
 						SpaceEnd,
 						CHILD_WeightedWidth,0,
@@ -3830,8 +3830,8 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	{
 		GetAttr(SPACE_AreaBox, g->shared->objects[GID_ICON], (ULONG *)&bbox);
 
-		EraseRect(g->shared->win->RPort, bbox->Left, bbox->Top,
-			bbox->Left+16, bbox->Top+16);
+		RefreshGList((struct Gadget *)g->shared->objects[GID_ICON],
+					g->shared->win, NULL, 1);
 
 		if(bm)
 		{
