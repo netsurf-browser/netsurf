@@ -117,10 +117,15 @@ void bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
-		if((bm->nativebm) && (bm->dto == NULL))
+		if((bm->nativebm) && (bm->dto == NULL)) {
 			p96FreeBitMap(bm->nativebm);
+			bm->nativebm = NULL;
+		}
 		
-		if(bm->dto) DisposeDTObject(bm->dto);
+		if(bm->dto) {
+			DisposeDTObject(bm->dto);
+			bm->dto = NULL;
+		}
 
 		FreeVec(bm->pixdata);
 		bm->pixdata = NULL;
