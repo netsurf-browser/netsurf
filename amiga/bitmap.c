@@ -208,7 +208,7 @@ bool bitmap_test_opaque(void *bitmap)
 
 	for(a=0;a<p;a+=4)
 	{
-		if ((*bmi & 0x000000ffU) != 0x000000ffU) return false;
+		if ((*bmi & 0xff000000U) != 0xff000000U) return false;
 		bmi++;
 	}
 	return true;
