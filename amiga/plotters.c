@@ -51,6 +51,7 @@ struct bfbitmap {
 	ULONG height;
 	int offsetx;
 	int offsety;
+	APTR mask;
 };
 
 bool palette_mapped = false;
@@ -651,6 +652,18 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	}
 	else
 	{
+		ULONG tag, tag_data, minterm;
+		
+		if(palette_mapped == false) {
+			tag = BLITA_UseSrcAlpha;
+			tag_data = !bitmap->opaque;
+			minterm = 0xc0;
+		} else {
+			tag = BLITA_MaskPlane;
+			tag_data = (ULONG)bitmap->native_mask;
+			minterm = (ABC|ABNC|ANBC);
+		}
+		
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,
@@ -659,8 +672,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 						BLITA_DestY,y,
 						BLITA_SrcType,BLITT_BITMAP,
 						BLITA_DestType,BLITT_RASTPORT,
-//						BLITA_Mask,0xFF,
-						BLITA_UseSrcAlpha,!bitmap->opaque,
+						BLITA_Minterm, minterm,
+						tag, tag_data,
 						TAG_DONE);
 	}
 
@@ -691,7 +704,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
-if(palette_mapped == true) return true; // stop trailling into tiled mode for now
+
 	/* If it is a one pixel transparent image, we are wasting our time */
 	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
 		return true;
@@ -756,6 +769,7 @@ if(palette_mapped == true) return true; // stop trailling into tiled mode for no
 		bfbm.height = height;
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
+		bfbm.mask = bitmap->native_mask;
 		bfh = AllocVec(sizeof(struct Hook),MEMF_CLEAR);
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;
@@ -787,9 +801,9 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 	for (xf = -bfbm->offsetx; xf < bfmsg->Bounds.MaxX; xf += bfbm->width) {
 		for (yf = -bfbm->offsety; yf < bfmsg->Bounds.MaxY; yf += bfbm->height) {
 
-			if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+			if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 			{
-				CompositeTags(COMPOSITE_Src_Over_Dest,bfbm->bm,rp->BitMap,
+				CompositeTags(COMPOSITE_Src_Over_Dest,bfbm->bm, rp->BitMap,
 					COMPTAG_Flags,COMPFLAG_IgnoreDestAlpha,
 					COMPTAG_DestX,bfmsg->Bounds.MinX,
 					COMPTAG_DestY,bfmsg->Bounds.MinY,
@@ -803,17 +817,30 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 			}
 			else
 			{
-				BltBitMapTags(BLITA_Width,bfbm->width,
-					BLITA_Height,bfbm->height,
-					BLITA_Source,bfbm->bm,
-					BLITA_Dest,rp,
-					BLITA_DestX,xf,
-					BLITA_DestY,yf,
-					BLITA_SrcType,BLITT_BITMAP,
-					BLITA_DestType,BLITT_RASTPORT,
-					BLITA_UseSrcAlpha,TRUE,
+				ULONG tag, tag_data, minterm;
+		
+				if(palette_mapped == false) {
+					tag = BLITA_UseSrcAlpha;
+					tag_data = TRUE;
+					minterm = 0xc0;
+				} else {
+					tag = BLITA_MaskPlane;
+					tag_data = (ULONG)bfbm->mask;
+					minterm = (ABC|ABNC|ANBC);
+				}
+		
+				BltBitMapTags(BLITA_Width, bfbm->width,
+					BLITA_Height, bfbm->height,
+					BLITA_Source, bfbm->bm,
+					BLITA_Dest, rp,
+					BLITA_DestX, xf,
+					BLITA_DestY, yf,
+					BLITA_SrcType, BLITT_BITMAP,
+					BLITA_DestType, BLITT_RASTPORT,
+					BLITA_Minterm, minterm,
+					tag, tag_data,
 					TAG_DONE);
-			}
+			}			
 		}
 	}
 }
