@@ -131,10 +131,10 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
 
 	if(dri = GetScreenDrawInfo(scrn)) {
-		if(dri->dri_Depth < 16) {
+		if((dri->dri_Depth < 16) || (nsoption_int(cairo_renderer) == -1)) {
 			palette_mapped = true;
 			depth = dri->dri_Depth; /* this is always wrong */
-		//	friend = scrn->RastPort.BitMap;
+			// friend = scrn->RastPort.BitMap;
 		} else {
 			palette_mapped = false;
 		}
@@ -578,7 +578,7 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 	LOG(("[ami_plotter] Entered ami_arc()"));
 	#endif
 
-	if((nsoption_int(cairo_renderer) == 0) || (palette_mapped == true)) {
+	if((nsoption_int(cairo_renderer) <= 0) || (palette_mapped == true)) {
 		/* TODO: gfx.lib plotter needs arc support */
 		/* eg. http://www.crbond.com/primitives.htm CommonFuncsPPC.lha */
 		ami_plot_setapen(style->fill_colour);
