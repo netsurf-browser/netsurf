@@ -54,6 +54,11 @@ struct bfbitmap {
 	APTR mask;
 };
 
+struct ami_plot_pen {
+	struct MinNode node;
+	ULONG pen;
+};
+
 bool palette_mapped = false;
 
 #ifndef M_PI /* For some reason we don't always get this from math.h */
@@ -228,8 +233,9 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MaxY = scrn->Height-1;
 }
 
-ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
+static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
 {
+	struct ami_plot_pen *node;
 	ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
 			(colour & 0x000000ff) << 24,
 			(colour & 0x0000ff00) << 16,
@@ -237,18 +243,33 @@ ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
 			NULL);
 	
 	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
+
+	if(node = (struct ami_plot_pen *)AllocVec(sizeof(struct ami_plot_pen),
+				MEMF_PRIVATE | MEMF_CLEAR)) {
+		AddTail((struct List *)shared_pens, (struct Node *)node);
+	}
 			
-	/* TODO: add allocated pen to list */
-	
 	return pen;
 }
 
 void ami_plot_release_pens(struct MinList *shared_pens)
 {
-	/* TODO: trawl through list releasing pens */
+	struct ami_plot_pen *node;
+	struct ami_plot_pen *nnode;
+
+	if(IsMinListEmpty(shared_pens)) return;
+	node = (struct ami_plot_pen *)GetHead((struct List *)shared_pens);
+
+	do
+	{
+		nnode = (struct ami_plot_pen *)GetSucc((struct Node *)node);
+		ReleasePen(scrn->ViewPort.ColorMap, node->pen);
+		Remove((struct Node *)node);
+		FreeVec(node);
+	}while(node = nnode);
 }
 
-void ami_plot_setapen(ULONG colour)
+static void ami_plot_setapen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
@@ -260,7 +281,7 @@ void ami_plot_setapen(ULONG colour)
 	}
 }
 
-void ami_plot_setopen(ULONG colour)
+static void ami_plot_setopen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
