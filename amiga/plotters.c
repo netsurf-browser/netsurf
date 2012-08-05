@@ -207,7 +207,11 @@ void ami_free_layers(struct gui_globals *gg)
 	FreeVec(gg->tmprasbuf);
 	FreeVec(gg->areabuf);
 	DisposeLayerInfo(gg->layerinfo);
-	p96FreeBitMap(gg->bm);
+	if(palette_mapped == false) {
+		p96FreeBitMap(gg->bm);
+	} else {
+		FreeBitMap(gg->bm);
+	}
 }
 
 void ami_clearclipreg(struct gui_globals *gg)
