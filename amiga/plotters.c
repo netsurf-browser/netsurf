@@ -251,7 +251,10 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
 					MEMF_PRIVATE | MEMF_CLEAR)) {
 			AddTail((struct List *)shared_pens, (struct Node *)node);
 		}
-	}	
+	} else {
+		/* Immediately release the pen if we can't keep track of it. */
+		ReleasePen(scrn->ViewPort.ColorMap, pen);
+	}
 	return pen;
 }
 
