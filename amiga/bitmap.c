@@ -469,19 +469,38 @@ struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 {
 	struct BitMap *dtbm;
 	
+	/* Dispose the DataTypes object if we've performed a layout already,
+		and we need to scale, as scaling can only be performed before
+		the first GM_LAYOUT */
+	
+	if(bitmap->dto &&
+			((bitmap->nativebmwidth != width) ||
+			(bitmap->nativebmheight != height))) {
+		DisposeDTObject(bitmap->dto);
+		bitmap->dto = NULL;
+	}
+	
 	if(bitmap->dto == NULL)
 		bitmap->dto = ami_datatype_object_from_bitmap(bitmap);
-	
+		
 	SetDTAttrs(bitmap->dto, NULL, NULL,
 			PDTA_Screen, scrn,
+			PDTA_ScaleQuality, nsoption_bool(scale_quality),
 			TAG_DONE);
 
+	if((bitmap->width != width) || (bitmap->height != height)) {
+		IDoMethod(bitmap->dto, PDTM_SCALE, width, height, 0);
+	}
+	
 	if(DoDTMethod(bitmap->dto, 0, 0, DTM_PROCLAYOUT, 0, 1)) {
 		GetDTAttrs(bitmap->dto, 
 			PDTA_DestBitMap, &dtbm,
 			PDTA_MaskPlane, &bitmap->native_mask,
 			TAG_END);
 	}
-/* TODO: support scaling */	
+
+	bitmap->nativebmwidth = width;
+	bitmap->nativebmheight = height;
+	
 	return dtbm;
 }
