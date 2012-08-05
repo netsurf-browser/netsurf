@@ -227,6 +227,26 @@ void ami_clearclipreg(struct gui_globals *gg)
 	gg->rect.MaxY = scrn->Height-1;
 }
 
+ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
+{
+	ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
+			(colour & 0x000000ff) << 24,
+			(colour & 0x0000ff00) << 16,
+			(colour & 0x00ff0000) << 8,
+			NULL);
+	
+	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
+			
+	/* TODO: add allocated pen to list */
+	
+	return pen;
+}
+
+void ami_plot_release_pens(struct MinList *shared_pens)
+{
+	/* TODO: trawl through list releasing pens */
+}
+
 void ami_plot_setapen(ULONG colour)
 {
 	if(palette_mapped == false) {
@@ -234,16 +254,8 @@ void ami_plot_setapen(ULONG colour)
 			p96EncodeColor(RGBFF_A8B8G8R8, colour),
 			TAG_DONE);
 	} else {
-		ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
-			(colour & 0x000000ff) << 24,
-			(colour & 0x0000ff00) << 16,
-			(colour & 0x00ff0000) << 8,
-			NULL);
-
-		if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
-			
-		SetAPen(glob->rp, pen);	
-		/* TODO: Add pen to a list for later release */
+		ULONG pen = ami_plot_obtain_pen(gg->shared_pens, colour);
+		if(pen != -1) SetAPen(glob->rp, pen);
 	}
 }
 
@@ -254,16 +266,8 @@ void ami_plot_setopen(ULONG colour)
 			p96EncodeColor(RGBFF_A8B8G8R8, colour),
 			TAG_DONE);
 	} else {
-		ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
-			(colour & 0x000000ff) << 24,
-			(colour & 0x0000ff00) << 16,
-			(colour & 0x00ff0000) << 8,
-			NULL);
-
-		if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
-			
-		SetOPen(glob->rp, pen);	
-		/* TODO: Add pen to a list for later release */
+		ULONG pen = ami_plot_obtain_pen(gg->shared_pens, colour);
+		if(pen != -1) SetOPen(glob->rp, pen);
 	}
 }
 

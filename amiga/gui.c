@@ -2209,6 +2209,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		return;
 	}
 
+	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_update_buttons(gwin);
 	ami_menu_update_disabled(gwin->bw->window, gwin->bw->current_content);
 
@@ -2574,6 +2575,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	}
 
+	NewList(&g->shared->shared_pens);
+	
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;
 
@@ -3182,6 +3185,8 @@ void gui_window_destroy(struct gui_window *g)
 		return;
 	}
 
+	ami_plot_release_pens(&g->shared->shared_pens);
+
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
 	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
@@ -3280,6 +3285,8 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->bw->scale);
 	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->bw->scale);
 
+	browserglob.shared_pens = &gwin->shared_pens;
+	
 	if(top < 0) {
 		height += top;
 		top = 0;
@@ -3997,7 +4004,7 @@ void gui_window_new_content(struct gui_window *g)
 	g->shared->oldh = 0;
 	g->shared->oldv = 0;
 	g->favicon = NULL;
-
+	ami_plot_release_pens(&g->shared->shared_pens);
 	ami_menu_update_disabled(g, c);
 }
 

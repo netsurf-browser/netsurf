@@ -33,6 +33,7 @@ struct gui_globals
 	APTR areabuf;
 	APTR tmprasbuf;
 	struct Rectangle rect;
+	struct MinList *shared_pens;
 #ifdef NS_AMIGA_CAIRO
 	cairo_surface_t *surface;
 	cairo_t *cr;
@@ -63,6 +64,7 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height);
 void ami_free_layers(struct gui_globals *gg);
 void ami_clearclipreg(struct gui_globals *gg);
+void ami_plot_release_pens(struct MinList *shared_pens);
 
 struct gui_globals *glob;
 #endif
