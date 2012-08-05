@@ -243,6 +243,26 @@ void ami_plot_setapen(ULONG colour)
 	}
 }
 
+void ami_plot_setopen(ULONG colour)
+{
+	if(palette_mapped == false) {
+		SetRPAttrs(glob->rp, RPTAG_OPenColor,
+			p96EncodeColor(RGBFF_A8B8G8R8, colour),
+			TAG_DONE);
+	} else {
+		ULONG pen = ObtainBestPenA(scrn->ViewPort.ColorMap,
+			(colour & 0x000000ff) << 24,
+			(colour & 0x0000ff00) << 16,
+			(colour & 0x00ff0000) << 8,
+			NULL);
+
+		if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
+			
+		SetOPen(glob->rp, pen);	
+		/* TODO: Add pen to a list for later release */
+	}
+}
+
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
@@ -309,25 +329,25 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 #ifdef NS_AMIGA_CAIRO
 			ami_cairo_set_colour(glob->cr, style->stroke_colour);
 
-                switch (style->stroke_type) {
-                case PLOT_OP_TYPE_SOLID: /**< Solid colour */
-                default:
-                        ami_cairo_set_solid(glob->cr);
-                        break;
+			switch (style->stroke_type) {
+				case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+					default:
+						ami_cairo_set_solid(glob->cr);
+					break;
 
-                case PLOT_OP_TYPE_DOT: /**< Doted plot */
-                        ami_cairo_set_dotted(glob->cr);
-                        break;
+					case PLOT_OP_TYPE_DOT: /**< Doted plot */
+						ami_cairo_set_dotted(glob->cr);
+					break;
 
-                case PLOT_OP_TYPE_DASH: /**< dashed plot */
-                        ami_cairo_set_dashed(glob->cr);
-                        break;
-                }
+					case PLOT_OP_TYPE_DASH: /**< dashed plot */
+						ami_cairo_set_dashed(glob->cr);
+					break;
+				}
 
-                if (style->stroke_width == 0)
-                        cairo_set_line_width(glob->cr, 1);
-                else
-                        cairo_set_line_width(glob->cr, style->stroke_width);
+				if (style->stroke_width == 0)
+					cairo_set_line_width(glob->cr, 1);
+				else
+					cairo_set_line_width(glob->cr, style->stroke_width);
 
 			cairo_rectangle(glob->cr, x0, y0, x1 - x0, y1 - y0);
 			cairo_stroke(glob->cr);
