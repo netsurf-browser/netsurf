@@ -117,7 +117,11 @@ void bitmap_destroy(void *bitmap)
 
 	if(bm)
 	{
-		if(bm->nativebm) p96FreeBitMap(bm->nativebm);
+		if((bm->nativebm) && (bm->dto == NULL))
+			p96FreeBitMap(bm->nativebm);
+		
+		if(bm->dto) DisposeDTObject(bm->dto);
+
 		FreeVec(bm->pixdata);
 		bm->pixdata = NULL;
 		FreeVec(bm);
@@ -160,8 +164,13 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 void bitmap_modified(void *bitmap) {
 	struct bitmap *bm = bitmap;
 
-	p96FreeBitMap(bm->nativebm);
+	if((bm->nativebm) && (bm->dto == NULL))
+		p96FreeBitMap(bm->nativebm);
+		
+	if(bm->dto) DisposeDTObject(bm->dto);
 	bm->nativebm = NULL;
+	bm->dto = NULL;
+	bm->native_mask = NULL;
 }
 
 
@@ -453,4 +462,26 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 	}
 
 	return tbm;
+}
+
+struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
+					int width, int height)
+{
+	struct BitMap *dtbm;
+	
+	if(bitmap->dto == NULL)
+		bitmap->dto = ami_datatype_object_from_bitmap(bitmap);
+	
+	SetDTAttrs(bitmap->dto, NULL, NULL,
+			PDTA_Screen, scrn,
+			TAG_DONE);
+
+	if(DoDTMethod(bitmap->dto, 0, 0, DTM_PROCLAYOUT, 0, 1)) {
+		GetDTAttrs(bitmap->dto, 
+			PDTA_DestBitMap, &dtbm,
+			PDTA_MaskPlane, &bitmap->native_mask,
+			TAG_END);
+	}
+/* TODO: support scaling */	
+	return dtbm;
 }

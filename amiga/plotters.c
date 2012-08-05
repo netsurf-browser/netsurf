@@ -619,15 +619,19 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		(y > glob->rect.MaxY))
 		return true;
 
-	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
-
+	if(palette_mapped == false) {
+		tbm = ami_getcachenativebm(bitmap, width, height, glob->rp->BitMap);
+	} else {
+		tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
+	}
+	
 	if(!tbm) return true;
 
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] ami_bitmap() got native bitmap"));
 	#endif
 
-	if(GfxBase->LibNode.lib_Version >= 53) // AutoDoc says v52, but this function isn't in OS4.0, so checking for v53 (OS4.1)
+	if((GfxBase->LibNode.lib_Version >= 53) && (palette_mapped == false))
 	{
 		uint32 comptype = COMPOSITE_Src;
 		if(!bitmap->opaque) 
@@ -660,7 +664,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 						TAG_DONE);
 	}
 
-	if(tbm != bitmap->nativebm)
+	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
 	{
 		p96FreeBitMap(tbm);
 	}
@@ -676,8 +680,6 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	LOG(("[ami_plotter] Entered ami_bitmap_tile()"));
 	#endif
 
-	if(palette_mapped == true) return true;
-	
 	int xf,yf,xm,ym,oy,ox;
 	struct BitMap *tbm = NULL;
 	struct Hook *bfh = NULL;
@@ -689,13 +691,17 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 
 	if(!(repeat_x || repeat_y))
 		return ami_bitmap(x, y, width, height, bitmap);
-
+if(palette_mapped == true) return true; // stop trailling into tiled mode for now
 	/* If it is a one pixel transparent image, we are wasting our time */
 	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
 		return true;
 
-	tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
-
+	if(palette_mapped == false) {
+		tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
+	} else {
+		tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
+	}
+	
 	if(!tbm) return true;
 
 	ox = x;
@@ -764,7 +770,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	if(bitmap->opaque) DeleteBackFillHook(bfh);
 		else FreeVec(bfh);
 
-	if(tbm != bitmap->nativebm)
+	if((bitmap->dto == NULL) && (tbm != bitmap->nativebm))
 	{
 		p96FreeBitMap(tbm);
 	}

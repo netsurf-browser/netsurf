@@ -35,12 +35,16 @@ struct bitmap {
 	struct BitMap *nativebm;
 	int nativebmwidth;
 	int nativebmheight;
+	APTR native_mask;
+	Object *dto;
 	char *url;   /* temporary storage space */
 	char *title; /* temporary storage space */
 	ULONG *icondata; /* for appicons */
 };
 
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm);
+struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap, int width, int height);
+
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 struct bitmap *ami_bitmap_from_datatype(char *filename);
 #endif
