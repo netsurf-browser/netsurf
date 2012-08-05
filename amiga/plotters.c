@@ -293,10 +293,7 @@ bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
                         break;
                 }
 
-			SetRPAttrs(glob->rp,
-				   RPTAG_APenColor,
-				   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
-				   TAG_DONE);
+			ami_plot_setapen(style->stroke_colour);
 			Move(glob->rp, x0,y0);
 			Draw(glob->rp, x1, y0);
 			Draw(glob->rp, x1, y1);
@@ -346,7 +343,7 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_line()"));
 	#endif
 
-	if(nsoption_int(cairo_renderer) < 2)
+	if((nsoption_int(cairo_renderer) < 2) || (palette_mapped == true))
 	{
 		glob->rp->PenWidth = style->stroke_width;
 		glob->rp->PenHeight = style->stroke_width;
@@ -366,10 +363,7 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		break;
 		}
 
-		SetRPAttrs(glob->rp,
-		   RPTAG_APenColor,
-		   p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
-		   TAG_DONE);
+		ami_plot_setapen(style->stroke_colour);
 		Move(glob->rp,x0,y0);
 		Draw(glob->rp,x1,y1);
 
@@ -382,25 +376,25 @@ bool ami_line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 #ifdef NS_AMIGA_CAIRO
 		ami_cairo_set_colour(glob->cr, style->stroke_colour);
 
-	switch (style->stroke_type) {
-	case PLOT_OP_TYPE_SOLID: /**< Solid colour */
-	default:
-		ami_cairo_set_solid(glob->cr);
-		break;
+		switch (style->stroke_type) {
+			case PLOT_OP_TYPE_SOLID: /**< Solid colour */
+			default:
+				ami_cairo_set_solid(glob->cr);
+			break;
 
-	case PLOT_OP_TYPE_DOT: /**< Doted plot */
-		ami_cairo_set_dotted(glob->cr);
-		break;
+			case PLOT_OP_TYPE_DOT: /**< Doted plot */
+				ami_cairo_set_dotted(glob->cr);
+			break;
 
-	case PLOT_OP_TYPE_DASH: /**< dashed plot */
-		ami_cairo_set_dashed(glob->cr);
-		break;
-	}
+			case PLOT_OP_TYPE_DASH: /**< dashed plot */
+				ami_cairo_set_dashed(glob->cr);
+			break;
+		}
 
-	if (style->stroke_width == 0)
-		cairo_set_line_width(glob->cr, 1);
-	else
-		cairo_set_line_width(glob->cr, style->stroke_width);
+		if (style->stroke_width == 0)
+			cairo_set_line_width(glob->cr, 1);
+		else
+			cairo_set_line_width(glob->cr, style->stroke_width);
 
 		/* core expects horizontal and vertical lines to be on pixels, not
 		 * between pixels */
@@ -422,17 +416,12 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 	int k;
 
-	if(nsoption_int(cairo_renderer) < 1)
+	if((nsoption_int(cairo_renderer) < 1) || (palette_mapped == true))
 	{
 		ULONG cx,cy;
 
-		SetRPAttrs(glob->rp,
-		   RPTAG_APenColor,
-		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-		   RPTAG_OPenColor,
-		   p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-//					RPTAG_OPenColor,0xffffffff,
-		   TAG_DONE);
+		ami_plot_setapen(style->fill_colour);
+		ami_plot_setopen(style->fill_colour);
 
 		AreaMove(glob->rp,p[0],p[1]);
 
@@ -488,7 +477,7 @@ bool ami_clip(const struct rect *clip)
 	}
 
 #ifdef NS_AMIGA_CAIRO
-	if(nsoption_int(cairo_renderer) == 2)
+	if((nsoption_int(cairo_renderer) == 2) && (palette_mapped == false))
 	{
 		cairo_reset_clip(glob->cr);
 		cairo_rectangle(glob->cr, clip->x0, clip->y0,
@@ -519,23 +508,16 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	LOG(("[ami_plotter] Entered ami_disc()"));
 	#endif
 
-	if(nsoption_int(cairo_renderer) < 2)
+	if((nsoption_int(cairo_renderer) < 2) || (palette_mapped == true))
 	{
 		if (style->fill_type != PLOT_OP_TYPE_NONE) {
-			SetRPAttrs(glob->rp,
-					RPTAG_APenColor,
-					p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-					TAG_DONE);
+			ami_plot_setapen(style->fill_colour);
 			AreaCircle(glob->rp,x,y,radius);
 			AreaEnd(glob->rp);
 		}
 
 		if (style->stroke_type != PLOT_OP_TYPE_NONE) {
-			SetRPAttrs(glob->rp,
-					RPTAG_APenColor,
-					p96EncodeColor(RGBFB_A8B8G8R8, style->stroke_colour),
-					TAG_DONE);
-
+			ami_plot_setapen(style->stroke_colour);
 			DrawEllipse(glob->rp,x,y,radius,radius);
 		}
 	}
@@ -572,8 +554,12 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 	LOG(("[ami_plotter] Entered ami_arc()"));
 	#endif
 
-	if(nsoption_int(cairo_renderer) >= 1)
-	{
+	if((nsoption_int(cairo_renderer) == 0) || (palette_mapped == true)) {
+		/* TODO: gfx.lib plotter needs arc support */
+		/* eg. http://www.crbond.com/primitives.htm CommonFuncsPPC.lha */
+		ami_plot_setapen(style->fill_colour);
+		/*	DrawArc(glob->rp,x,y,(float)angle1,(float)angle2,radius); */
+	} else {
 #ifdef NS_AMIGA_CAIRO
 		ami_cairo_set_colour(glob->cr, style->fill_colour);
 		ami_cairo_set_solid(glob->cr);
@@ -585,19 +571,7 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 		cairo_stroke(glob->cr);
 #endif
 	}
-	else
-	{
-		/* TODO: gfx.lib plotter needs arc support */
-/* http://www.crbond.com/primitives.htm
-CommonFuncsPPC.lha */
-
-		SetRPAttrs(glob->rp,
-				RPTAG_APenColor,
-				p96EncodeColor(RGBFB_A8B8G8R8, style->fill_colour),
-				TAG_DONE);
-
-//	DrawArc(glob->rp,x,y,(float)angle1,(float)angle2,radius);
-	}
+	
 	return true;
 }
 
@@ -848,7 +822,7 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 /* We should probably check if the off-screen bitmap is 32-bit and render
  * using Cairo regardless if it is.  For now, we respect user preferences.
  */
-	if(nsoption_int(cairo_renderer) >= 1)
+	if((nsoption_int(cairo_renderer) >= 1) && (palette_mapped == false))
 	{
 		unsigned int i;
 		cairo_matrix_t old_ctm, n_ctm;
