@@ -480,25 +480,27 @@ struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 		bitmap->dto = NULL;
 	}
 	
-	if(bitmap->dto == NULL)
+	if(bitmap->dto == NULL) {
 		bitmap->dto = ami_datatype_object_from_bitmap(bitmap);
 		
-	SetDTAttrs(bitmap->dto, NULL, NULL,
-			PDTA_Screen, scrn,
-			PDTA_ScaleQuality, nsoption_bool(scale_quality),
-			TAG_DONE);
+		SetDTAttrs(bitmap->dto, NULL, NULL,
+				PDTA_Screen, scrn,
+				PDTA_ScaleQuality, nsoption_bool(scale_quality),
+				TAG_DONE);
 
-	if((bitmap->width != width) || (bitmap->height != height)) {
-		IDoMethod(bitmap->dto, PDTM_SCALE, width, height, 0);
+		if((bitmap->width != width) || (bitmap->height != height)) {
+			IDoMethod(bitmap->dto, PDTM_SCALE, width, height, 0);
+		}
+		
+		if((DoDTMethod(bitmap->dto, 0, 0, DTM_PROCLAYOUT, 0, 1)) == 0)
+			return NULL;
 	}
 	
-	if(DoDTMethod(bitmap->dto, 0, 0, DTM_PROCLAYOUT, 0, 1)) {
-		GetDTAttrs(bitmap->dto, 
-			PDTA_DestBitMap, &dtbm,
-			PDTA_MaskPlane, &bitmap->native_mask,
-			TAG_END);
-	}
-
+	GetDTAttrs(bitmap->dto, 
+		PDTA_DestBitMap, &dtbm,
+		PDTA_MaskPlane, &bitmap->native_mask,
+		TAG_END);
+	
 	bitmap->nativebmwidth = width;
 	bitmap->nativebmheight = height;
 	
