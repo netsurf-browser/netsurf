@@ -79,7 +79,7 @@ ULONG ami_devicedpi;
 ULONG ami_xdpi;
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
-		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth);
+		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth, bool aa);
 int32 ami_font_width_glyph(struct OutlineFont *ofont, 
 		uint16 char1, uint16 char2, uint32 emwidth);
 struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
@@ -108,7 +108,7 @@ bool nsfont_width(const plot_font_style_t *fstyle,
 		const char *string, size_t length,
 		int *width)
 {
-	*width = ami_unicode_text(NULL,string,length,fstyle,0,0);
+	*width = ami_unicode_text(NULL, string, length, fstyle, 0, 0, false);
 
 	if(*width <= 0) *width == length; // fudge
 
@@ -517,20 +517,27 @@ struct OutlineFont *ami_open_outline_font(const plot_font_style_t *fstyle,
 }
 
 int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
-		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth)
+		uint16 char1, uint16 char2, uint32 x, uint32 y, uint32 emwidth, bool aa)
 {
 	struct GlyphMap *glyph;
 	UBYTE *glyphbm;
 	int32 char_advance = 0;
 	FIXED kern = 0;
-
+	ULONG glyphmaptag = OT_GlyphMap8Bit;
+	ULONG template_type = BLITT_ALPHATEMPLATE;
+	
+	if(aa == false) {
+		glyphmaptag = OT_GlyphMap;
+		template_type = BLITT_TEMPLATE;
+	}
+ 
 	if(ESetInfo(&ofont->olf_EEngine,
 			OT_GlyphCode, char1,
 			OT_GlyphCode2, char2,
 			TAG_END) == OTERR_Success)
 	{
 		if(EObtainInfo(&ofont->olf_EEngine,
-			OT_GlyphMap8Bit,&glyph,
+			glyphmaptag, &glyph,
 			TAG_END) == 0)
 		{
 			glyphbm = glyph->glm_BitMap;
@@ -545,7 +552,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 					BLITA_Width, glyph->glm_BlackWidth,
 					BLITA_Height, glyph->glm_BlackHeight,
 					BLITA_Source, glyphbm,
-					BLITA_SrcType, BLITT_ALPHATEMPLATE,
+					BLITA_SrcType, template_type,
 					BLITA_Dest, rp,
 					BLITA_DestType, BLITT_RASTPORT,
 					BLITA_SrcBytesPerRow, glyph->glm_BMModulo,
@@ -561,7 +568,7 @@ int32 ami_font_plot_glyph(struct OutlineFont *ofont, struct RastPort *rp,
 			char_advance = (ULONG)(((glyph->glm_Width - kern) * emwidth) / 65536);
 
 			EReleaseInfo(&ofont->olf_EEngine,
-				OT_GlyphMap8Bit,glyph,
+				glyphmaptag, glyph,
 				TAG_END);
 		}
 	}
@@ -691,7 +698,8 @@ uint16 ami_font_translate_smallcaps(uint16 utf16char)
 	return utf16char;
 }
 
-ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const plot_font_style_t *fstyle,ULONG dx, ULONG dy)
+ULONG ami_unicode_text(struct RastPort *rp, const char *string, ULONG length,
+			const plot_font_style_t *fstyle, ULONG dx, ULONG dy, bool aa)
 {
 	uint16 *utf16 = NULL, *outf16 = NULL;
 	uint16 utf16charsc = 0, utf16nextsc = 0;
@@ -727,7 +735,8 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 			utf16nextsc = ami_font_translate_smallcaps(utf16next);
 
 			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc, dx + x, dy, emwidth);
+				tempx = ami_font_plot_glyph(ofont, rp, utf16charsc, utf16nextsc,
+								dx + x, dy, emwidth, aa);
 			} else {
 				tempx = ami_font_width_glyph(ofont, utf16charsc, utf16nextsc, emwidth);
 			}
@@ -736,7 +745,8 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 
 		if(tempx == 0) {
 			if(rp) {
-				tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next, dx + x, dy, emwidth);
+				tempx = ami_font_plot_glyph(ofont, rp, *utf16, utf16next,
+								dx + x, dy, emwidth, aa);
 			} else {
 				tempx = ami_font_width_glyph(ofont, *utf16, utf16next, emwidth);
 			}
@@ -753,7 +763,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 			{
 				if(rp) {
 					tempx = ami_font_plot_glyph(ufont, rp, *utf16, utf16next,
-												dx + x, dy, emwidth);
+												dx + x, dy, emwidth, aa);
 				} else {
 					tempx = ami_font_width_glyph(ufont, *utf16, utf16next, emwidth);
 				}
@@ -763,7 +773,7 @@ ULONG ami_unicode_text(struct RastPort *rp,const char *string,ULONG length,const
 			{
 				if(rp) {
 					tempx = ami_font_plot_glyph(ofont, rp, 0xfffd, utf16next,
-												dx + x, dy, emwidth);
+												dx + x, dy, emwidth, aa);
 				} else {
 					tempx = ami_font_width_glyph(ofont, 0xfffd, utf16next, emwidth);
 				}

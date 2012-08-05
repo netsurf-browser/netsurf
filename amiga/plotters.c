@@ -521,7 +521,7 @@ bool ami_text(int x, int y, const char *text, size_t length,
 	#endif
 
 	ami_plot_setapen(fstyle->foreground);
-	ami_unicode_text(glob->rp,text,length,fstyle,x,y);
+	ami_unicode_text(glob->rp, text, length, fstyle, x, y, !palette_mapped);
 	
 	return true;
 }

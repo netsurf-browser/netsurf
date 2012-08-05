@@ -26,7 +26,7 @@
 struct ami_font_node;
 
 ULONG ami_unicode_text(struct RastPort *rp, const char *string,
-	ULONG length, const plot_font_style_t *fstyle, ULONG x, ULONG y);
+	ULONG length, const plot_font_style_t *fstyle, ULONG x, ULONG y, bool aa);
 void ami_font_setdevicedpi(int id);
 void ami_init_fonts(void);
 void ami_close_fonts(void);
