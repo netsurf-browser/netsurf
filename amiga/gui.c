@@ -3523,6 +3523,7 @@ void ami_do_redraw(struct gui_window_2 *g)
 		}
 		else
 		{
+			browserglob.shared_pens = &g->shared_pens;
 			temprp = browserglob.rp;
  			browserglob.rp = g->win->RPort;
 			clip.x0 = bbox->Left;

@@ -35,7 +35,7 @@ struct gui_globals
 	struct Rectangle rect;
 	struct MinList *shared_pens;
 	bool locked_layers;
-	#ifdef NS_AMIGA_CAIRO
+#ifdef NS_AMIGA_CAIRO
 	cairo_surface_t *surface;
 	cairo_t *cr;
 #endif

@@ -246,11 +246,12 @@ static ULONG ami_plot_obtain_pen(struct MinList *shared_pens, ULONG colour)
 	
 	if(pen == -1) LOG(("WARNING: Cannot allocate pen for ABGR:%lx", colour));
 
-	if(node = (struct ami_plot_pen *)AllocVec(sizeof(struct ami_plot_pen),
-				MEMF_PRIVATE | MEMF_CLEAR)) {
-		AddTail((struct List *)shared_pens, (struct Node *)node);
-	}
-			
+	if(shared_pens != NULL) {
+		if(node = (struct ami_plot_pen *)AllocVec(sizeof(struct ami_plot_pen),
+					MEMF_PRIVATE | MEMF_CLEAR)) {
+			AddTail((struct List *)shared_pens, (struct Node *)node);
+		}
+	}	
 	return pen;
 }
 
