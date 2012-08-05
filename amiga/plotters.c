@@ -254,7 +254,7 @@ void ami_plot_setapen(ULONG colour)
 			p96EncodeColor(RGBFF_A8B8G8R8, colour),
 			TAG_DONE);
 	} else {
-		ULONG pen = ami_plot_obtain_pen(gg->shared_pens, colour);
+		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
 		if(pen != -1) SetAPen(glob->rp, pen);
 	}
 }
@@ -266,7 +266,7 @@ void ami_plot_setopen(ULONG colour)
 			p96EncodeColor(RGBFF_A8B8G8R8, colour),
 			TAG_DONE);
 	} else {
-		ULONG pen = ami_plot_obtain_pen(gg->shared_pens, colour);
+		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
 		if(pen != -1) SetOPen(glob->rp, pen);
 	}
 }

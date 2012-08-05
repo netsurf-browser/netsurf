@@ -2209,7 +2209,7 @@ void ami_switch_tab(struct gui_window_2 *gwin,bool redraw)
 		return;
 	}
 
-	ami_plot_release_pens(&g->shared->shared_pens);
+	ami_plot_release_pens(&gwin->shared_pens);
 	ami_update_buttons(gwin);
 	ami_menu_update_disabled(gwin->bw->window, gwin->bw->current_content);
 
@@ -2575,7 +2575,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		return NULL;
 	}
 
-	NewList(&g->shared->shared_pens);
+	NewMinList(&g->shared->shared_pens);
 	
 	g->shared->scrollerhook.h_Entry = (void *)ami_scroller_hook;
 	g->shared->scrollerhook.h_Data = g->shared;
