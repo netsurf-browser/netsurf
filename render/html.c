@@ -334,7 +334,8 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	/* Create the parser binding */
 	c->parser = dom_hubbub_parser_create(c->encoding, 
 					     true, 
-					     nsoption_bool(enable_javascript), 
+					     nsoption_bool(enable_javascript),
+					     &c->document,
 					     NULL, 
 					     html_process_script, 
 					     c);
@@ -347,6 +348,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		c->parser = dom_hubbub_parser_create(c->encoding, 
 						     true, 
 						     nsoption_bool(enable_javascript), 
+						     &c->document,
 						     NULL, 
 						     html_process_script, 
 						     c);
@@ -449,6 +451,7 @@ html_process_encoding_change(struct content *c,
 	html->parser = dom_hubbub_parser_create(html->encoding, 
 						true, 
 						nsoption_bool(enable_javascript), 
+						&html->document,
 						NULL, 
 						html_process_script, 
 						html);
@@ -468,6 +471,8 @@ html_process_encoding_change(struct content *c,
 		html->parser = dom_hubbub_parser_create(html->encoding, 
 							true, 
 							nsoption_bool(enable_javascript), 
+							&html->document,
+
 							NULL, 
 							html_process_script, 
 							html);
@@ -1966,7 +1971,8 @@ html_begin_conversion(html_content *htmlc)
 		union content_msg_data msg_data;
 
 		/** @todo Improve processing of errors */
-		msg_data.error = messages_get("NoMemory");
+		LOG(("Parsing failed"));
+		msg_data.error = messages_get("ParsingFail");
 		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 
 		return false;
@@ -1975,23 +1981,15 @@ html_begin_conversion(html_content *htmlc)
 	/* complete script execution */
 	html_scripts_exec(htmlc);
 
-	htmlc->document = dom_hubbub_parser_get_document(htmlc->parser);
-
-	if (htmlc->document == NULL) {
-		LOG(("Parsing failed"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
-		return false;
-	}
-
+	/* quirks mode */
 	exc = dom_document_get_quirks_mode(htmlc->document, &htmlc->quirks);
 	if (exc != DOM_NO_ERR) {
 		LOG(("error retrieving quirks"));
+		/** @todo should this be fatal to the conversion? */
 	} 
-
 	LOG(("quirks set to %d", htmlc->quirks));
 
-
+	/* get encoding */
 	if (htmlc->encoding == NULL) {
 		const char *encoding;
 		encoding = dom_hubbub_parser_get_encoding(htmlc->parser,

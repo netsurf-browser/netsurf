@@ -115,7 +115,40 @@ static JSClass jsclass_document =
 
 static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 {
-	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
+	JSString* u16_txt;
+	char *txt;
+	unsigned long txtlen;
+	struct html_content *htmlc;
+	dom_string *idstr;
+	dom_element *idelement;
+
+	htmlc = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
+	if (htmlc == NULL)
+		return JS_FALSE;
+
+	if (htmlc->document == NULL) {
+		/* no document available, this is obviously a problem
+		 * for finding elements 
+		 */
+		JSAPI_SET_RVAL(cx, vp, JSVAL_NULL);
+
+		return JS_TRUE;
+	}
+
+	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt))
+		return JS_FALSE;
+
+	JSString_to_char(u16_txt, txt, txtlen);
+
+	dom_string_create((unsigned char*)txt, txtlen, &idstr);
+
+	dom_document_get_element_by_id(htmlc->document, idstr, &idelement);
+
+	if (idelement==NULL) {
+	JSAPI_SET_RVAL(cx, vp, JSVAL_NULL);
+	} else {
+		/* create element object and return it*/
+	}
 
 	return JS_TRUE;
 }
