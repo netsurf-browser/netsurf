@@ -144,11 +144,7 @@ static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 
 	dom_document_get_element_by_id(htmlc->document, idstr, &idelement);
 
-	if (idelement==NULL) {
-	JSAPI_SET_RVAL(cx, vp, JSVAL_NULL);
-	} else {
-		/* create element object and return it*/
-	}
+	JSAPI_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(jsapi_new_element(cx, JS_GetGlobalObject(cx), htmlc, idelement)));
 
 	return JS_TRUE;
 }
