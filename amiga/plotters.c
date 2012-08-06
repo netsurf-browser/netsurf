@@ -153,11 +153,12 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->areabuf = AllocVec(100, MEMF_PRIVATE | MEMF_CLEAR);
 	gg->tmprasbuf = AllocVec(width * height, MEMF_PRIVATE | MEMF_CLEAR);
 
-	if(palette_mapped ==false) {
+	if((palette_mapped == true) || 
+		((depth == 16) && (nsoption_int(cairo_renderer) <= 0))) {
+		gg->bm = AllocBitMap(width, height, depth, BMF_INTERLEAVED, friend);
+	} else {
 		gg->bm = p96AllocBitMap(width, height, 32,
 					BMF_INTERLEAVED, friend, RGBFB_A8R8G8B8);
-	} else {
-		gg->bm = AllocBitMap(width, height, depth, BMF_INTERLEAVED, friend);
 	}
 	
 	if(!gg->bm) warn_user("NoMemory","");
