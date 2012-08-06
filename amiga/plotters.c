@@ -274,7 +274,7 @@ static void ami_plot_setapen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_APenColor,
-			p96EncodeColor(RGBFF_A8B8G8R8, colour),
+			p96EncodeColor(RGBFB_A8B8G8R8, colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
@@ -286,7 +286,7 @@ static void ami_plot_setopen(ULONG colour)
 {
 	if(palette_mapped == false) {
 		SetRPAttrs(glob->rp, RPTAG_OPenColor,
-			p96EncodeColor(RGBFF_A8B8G8R8, colour),
+			p96EncodeColor(RGBFB_A8B8G8R8, colour),
 			TAG_DONE);
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
