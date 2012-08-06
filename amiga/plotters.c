@@ -136,15 +136,12 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	struct DrawInfo *dri;
 	struct BitMap *friend = NULL; /* Required to be NULL for Cairo and ARGB bitmaps */
 
-	if(dri = GetScreenDrawInfo(scrn)) {
-		if((dri->dri_Depth < 16) || (nsoption_int(cairo_renderer) == -1)) {
-			palette_mapped = true;
-			depth = dri->dri_Depth; /* this is always wrong */
-			// friend = scrn->RastPort.BitMap;
-		} else {
-			palette_mapped = false;
-		}
-		FreeScreenDrawInfo(scrn, dri);
+	depth = GetBitMapAttr(scrn->RastPort.BitMap, BMA_DEPTH);
+	if((depth < 16) || (nsoption_int(cairo_renderer) == -1)) {
+		palette_mapped = true;
+		// friend = scrn->RastPort.BitMap;
+	} else {
+		palette_mapped = false;
 	}
 
 	if(nsoption_int(redraw_tile_size_x) <= 0) nsoption_set_int(redraw_tile_size_x, scrn->Width);
