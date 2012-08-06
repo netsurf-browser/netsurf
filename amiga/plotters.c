@@ -153,8 +153,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	gg->areabuf = AllocVec(100, MEMF_PRIVATE | MEMF_CLEAR);
 	gg->tmprasbuf = AllocVec(width * height, MEMF_PRIVATE | MEMF_CLEAR);
 
-	if((palette_mapped == true) || 
-		((depth == 16) && (nsoption_int(cairo_renderer) <= 0))) {
+	if(palette_mapped == true) { 
 		gg->bm = AllocBitMap(width, height, depth, BMF_INTERLEAVED, friend);
 	} else {
 		gg->bm = p96AllocBitMap(width, height, 32,
