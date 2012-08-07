@@ -986,3 +986,8 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 #endif
 	return true;
 }
+
+bool ami_plot_screen_is_palettemapped(void)
+{
+	return palette_mapped;
+}

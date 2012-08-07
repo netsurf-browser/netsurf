@@ -65,6 +65,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height);
 void ami_free_layers(struct gui_globals *gg);
 void ami_clearclipreg(struct gui_globals *gg);
 void ami_plot_release_pens(struct MinList *shared_pens);
+bool ami_plot_screen_is_palettemapped(void);
 
 struct gui_globals *glob;
 #endif
