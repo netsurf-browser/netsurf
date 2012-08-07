@@ -468,9 +468,6 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 	dom_exception err;
 	dom_string *ds_name = NULL;
 
-	if (forms == NULL)
-		return NULL;
-
 	/* Step one, see if we already have a control */
 	for (f = forms; f != NULL; f = f->prev) {
 		for (ctl = f->controls; ctl != NULL; ctl = ctl->next) {
