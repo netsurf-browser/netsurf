@@ -605,7 +605,6 @@ void ami_openscreen(void)
 				if(AslRequestTags(screenmodereq,
 						ASLSM_MinDepth, 0,
 						ASLSM_MaxDepth, 32,
-						ASLSM_DoDepth, TRUE,
 						TAG_DONE))
 				{
 					char *modeid = malloc(20);
