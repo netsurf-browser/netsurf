@@ -42,6 +42,8 @@ struct bitmap {
 	ULONG *icondata; /* for appicons */
 };
 
+struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
+				int width, int height, struct BitMap *friendbm);
 struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm);
 struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap, int width, int height);
 

@@ -3823,7 +3823,7 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 	if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
 	{
-		bm = ami_getcachenativebm(content_get_bitmap(icon), 16, 16,
+		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16,
 					g->shared->win->RPort->BitMap);
 	}
 
