@@ -1058,8 +1058,9 @@ css_error node_has_attribute_includes(void *pw, void *node,
 	const char *start;
 	const char *end;
 
+	*match = false;
+
 	if (vlen == 0) {
-		*match = false;
 		return CSS_OK;
 	}
 
