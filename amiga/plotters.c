@@ -642,12 +642,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		(y > glob->rect.MaxY))
 		return true;
 
-	if(palette_mapped == false) {
-		tbm = ami_getcachenativebm(bitmap, width, height, glob->rp->BitMap);
-	} else {
-		tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
-	}
-	
+	tbm = ami_bitmap_get_native(bitmap, width, height, glob->rp->BitMap);
 	if(!tbm) return true;
 
 	#ifdef AMI_PLOTTER_DEBUG
@@ -731,12 +726,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 	if((bitmap->opaque == false) && (bitmap->width == 1) && (bitmap->height == 1))
 		return true;
 
-	if(palette_mapped == false) {
-		tbm = ami_getcachenativebm(bitmap,width,height,glob->rp->BitMap);
-	} else {
-		tbm = ami_bitmap_get_palettemapped(bitmap, width, height);
-	}
-	
+	tbm = ami_bitmap_get_native(bitmap,width,height,glob->rp->BitMap);
 	if(!tbm) return true;
 
 	ox = x;

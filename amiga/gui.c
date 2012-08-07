@@ -3883,7 +3883,7 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	if (ico == NULL) ico = search_web_ico();
 	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
 	{
-		bm = ami_getcachenativebm(content_get_bitmap(ico), 16, 16, NULL);
+		bm = ami_bitmap_get_native(content_get_bitmap(ico), 16, 16, NULL);
 	}
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
