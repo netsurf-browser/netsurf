@@ -351,17 +351,7 @@ struct bitmap *ami_bitmap_from_datatype(char *filename)
 	return bm;
 }
 
-struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
-				int width, int height, struct BitMap *friendbm)
-{
-	if(ami_plot_screen_is_palettemapped() == true) {
-		return ami_bitmap_get_palettemapped(bitmap, width, height);
-	} else {
-		return ami_getcachenativebm(bitmap, width, height, friendbm);
-	}
-}
-
-struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
+static struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,struct BitMap *friendbm)
 {
 	struct RenderInfo ri;
 	struct BitMap *tbm = NULL;
@@ -477,7 +467,7 @@ struct BitMap *ami_getcachenativebm(struct bitmap *bitmap,int width,int height,s
 	return tbm;
 }
 
-struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
+static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 					int width, int height)
 {
 	struct BitMap *dtbm;
@@ -520,4 +510,14 @@ struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	bitmap->nativebmheight = height;
 	
 	return dtbm;
+}
+
+struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
+				int width, int height, struct BitMap *friendbm)
+{
+	if(ami_plot_screen_is_palettemapped() == true) {
+		return ami_bitmap_get_palettemapped(bitmap, width, height);
+	} else {
+		return ami_getcachenativebm(bitmap, width, height, friendbm);
+	}
 }
