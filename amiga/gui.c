@@ -3813,6 +3813,7 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 	struct BitMap *bm = NULL;
 	struct IBox *bbox;
 	ULONG cur_tab = 0;
+	struct bitmap *icon_bitmap;
 
 	if(nsoption_bool(kiosk_mode) == true) return;
 	if(!g) return;
@@ -3821,9 +3822,9 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 						g->shared->objects[GID_TABS],
 						(ULONG *)&cur_tab);
 
-	if ((icon != NULL) && (content_get_bitmap(icon) != NULL))
+	if ((icon != NULL) && ((icon_bitmap = content_get_bitmap(icon)) != NULL))
 	{
-		bm = ami_bitmap_get_native(content_get_bitmap(icon), 16, 16,
+		bm = ami_bitmap_get_native(icon_bitmap, 16, 16,
 					g->shared->win->RPort->BitMap);
 	}
 
@@ -3836,6 +3837,18 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
 		if(bm)
 		{
+			ULONG tag, tag_data, minterm;
+			
+			if(ami_plot_screen_is_palettemapped() == false) {
+				tag = BLITA_UseSrcAlpha;
+				tag_data = !icon_bitmap->opaque;
+				minterm = 0xc0;
+			} else {
+				tag = BLITA_MaskPlane;
+				tag_data = (ULONG)icon_bitmap->native_mask;
+				minterm = 0xc0; /* should be (ABC|ABNC|ANBC); */
+			}
+		
 			BltBitMapTags(BLITA_SrcX, 0,
 						BLITA_SrcY, 0,
 						BLITA_DestX, bbox->Left,
@@ -3846,7 +3859,8 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 						BLITA_Dest, g->shared->win->RPort,
 						BLITA_SrcType, BLITT_BITMAP,
 						BLITA_DestType, BLITT_RASTPORT,
-						BLITA_UseSrcAlpha, TRUE,
+						BLITA_Minterm, minterm,
+						tag, tag_data,
 						TAG_DONE);
 		}
 	}
@@ -3876,15 +3890,15 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 	struct nsObject *nnode;
 	struct gui_window_2 *gwin;
 	char fname[100];
+	struct bitmap *ico_bitmap;
 
 	if(IsMinListEmpty(window_list))	return;
 	if(nsoption_bool(kiosk_mode) == true) return;
 
 	if (ico == NULL) ico = search_web_ico();
-	if ((ico != NULL) && (content_get_bitmap(ico) != NULL))
-	{
-		bm = ami_bitmap_get_native(content_get_bitmap(ico), 16, 16, NULL);
-	}
+	ico_bitmap = content_get_bitmap(ico);
+	if ((ico != NULL) && (ico_bitmap != NULL))
+		bm = ami_bitmap_get_native(ico_bitmap, 16, 16, NULL);
 
 	node = (struct nsObject *)GetHead((struct List *)window_list);
 
@@ -3906,6 +3920,18 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 
 			if(bm)
 			{
+				ULONG tag, tag_data, minterm;
+				
+				if(ami_plot_screen_is_palettemapped() == false) {
+					tag = BLITA_UseSrcAlpha;
+					tag_data = !ico_bitmap->opaque;
+					minterm = 0xc0;
+				} else {
+					tag = BLITA_MaskPlane;
+					tag_data = (ULONG)ico_bitmap->native_mask;
+					minterm = 0xc0; /* should be (ABC|ABNC|ANBC); */
+				}
+
 				BltBitMapTags(BLITA_SrcX, 0,
 							BLITA_SrcY, 0,
 							BLITA_DestX, bbox->Left,
@@ -3916,7 +3942,8 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 							BLITA_Dest, gwin->win->RPort,
 							BLITA_SrcType, BLITT_BITMAP,
 							BLITA_DestType, BLITT_RASTPORT,
-							BLITA_UseSrcAlpha, TRUE,
+							BLITA_Minterm, minterm,
+							tag, tag_data,
 							TAG_DONE);
 			}
 		}
