@@ -24,79 +24,58 @@
 #include "render/html_internal.h"
 #include "utils/log.h"
 
-/* IDL from http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html
+/* IDL http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#interface-document
 
+CAUTION - write, writeln are not part of the DOM they come from:
+http://www.w3.org/TR/html5/apis-in-html-documents.html#document.write
 
 interface Document : Node {
-  // Modified in DOM Level 3:
-  readonly attribute DocumentType    doctype;
   readonly attribute DOMImplementation implementation;
-  readonly attribute Element         documentElement;
-  Element            createElement(in DOMString tagName)
-                                        raises(DOMException);
-  DocumentFragment   createDocumentFragment();
-  Text               createTextNode(in DOMString data);
-  Comment            createComment(in DOMString data);
-  CDATASection       createCDATASection(in DOMString data)
-                                        raises(DOMException);
-  ProcessingInstruction createProcessingInstruction(in DOMString target, 
-                                                    in DOMString data)
-                                        raises(DOMException);
-  Attr               createAttribute(in DOMString name)
-                                        raises(DOMException);
-  EntityReference    createEntityReference(in DOMString name)
-                                        raises(DOMException);
-  NodeList           getElementsByTagName(in DOMString tagname);
-  // Introduced in DOM Level 2:
-  Node               importNode(in Node importedNode, 
-                                in boolean deep)
-                                        raises(DOMException);
-  // Introduced in DOM Level 2:
-  Element            createElementNS(in DOMString namespaceURI, 
-                                     in DOMString qualifiedName)
-                                        raises(DOMException);
-  // Introduced in DOM Level 2:
-  Attr               createAttributeNS(in DOMString namespaceURI, 
-                                       in DOMString qualifiedName)
-                                        raises(DOMException);
-  // Introduced in DOM Level 2:
-  NodeList           getElementsByTagNameNS(in DOMString namespaceURI, 
-                                            in DOMString localName);
-  // Introduced in DOM Level 2:
-  Element            getElementById(in DOMString elementId);
-  // Introduced in DOM Level 3:
-  readonly attribute DOMString       inputEncoding;
-  // Introduced in DOM Level 3:
-  readonly attribute DOMString       xmlEncoding;
-  // Introduced in DOM Level 3:
-           attribute boolean         xmlStandalone;
-                                        // raises(DOMException) on setting
+  readonly attribute DOMString URL;
+  readonly attribute DOMString documentURI;
+  readonly attribute DOMString compatMode;
+  readonly attribute DOMString characterSet;
+  readonly attribute DOMString contentType;
 
-  // Introduced in DOM Level 3:
-           attribute DOMString       xmlVersion;
-                                        // raises(DOMException) on setting
+  readonly attribute DocumentType? doctype;
+  readonly attribute Element? documentElement;
+  HTMLCollection getElementsByTagName(DOMString localName);
+  HTMLCollection getElementsByTagNameNS(DOMString? namespace, DOMString localName);
+  HTMLCollection getElementsByClassName(DOMString classNames);
+  Element? getElementById(DOMString elementId);
 
-  // Introduced in DOM Level 3:
-           attribute boolean         strictErrorChecking;
-  // Introduced in DOM Level 3:
-           attribute DOMString       documentURI;
-  // Introduced in DOM Level 3:
-  Node               adoptNode(in Node source)
-                                        raises(DOMException);
-  // Introduced in DOM Level 3:
-  readonly attribute DOMConfiguration domConfig;
-  // Introduced in DOM Level 3:
-  void               normalizeDocument();
-  // Introduced in DOM Level 3:
-  Node               renameNode(in Node n, 
-                                in DOMString namespaceURI, 
-                                in DOMString qualifiedName)
-                                        raises(DOMException);
+  Element createElement(DOMString localName);
+  Element createElementNS(DOMString? namespace, DOMString qualifiedName);
+  DocumentFragment createDocumentFragment();
+  Text createTextNode(DOMString data);
+  Comment createComment(DOMString data);
+  ProcessingInstruction createProcessingInstruction(DOMString target, DOMString data);
+
+  Node importNode(Node node, optional boolean deep = true);
+  Node adoptNode(Node node);
+
+  Event createEvent(DOMString interface);
+
+  Range createRange();
+
+  // NodeFilter.SHOW_ALL = 0xFFFFFFFF
+  NodeIterator createNodeIterator(Node root, optional unsigned long whatToShow = 0xFFFFFFFF, optional NodeFilter? filter = null);
+  TreeWalker createTreeWalker(Node root, optional unsigned long whatToShow = 0xFFFFFFFF, optional NodeFilter? filter = null);
+
+  // NEW
+  void prepend((Node or DOMString)... nodes);
+  void append((Node or DOMString)... nodes);
 };
 
 
  */
 
+static void jsfinalize_document(JSContext *cx, JSObject *obj);
+
+struct jsclass_document_priv {
+	struct html_content *htmlc;
+	dom_document *node;
+};
 
 static JSClass jsclass_document =
 {
@@ -109,24 +88,29 @@ static JSClass jsclass_document =
         JS_EnumerateStub, 
 	JS_ResolveStub, 
 	JS_ConvertStub, 
-	JS_FinalizeStub, 
+	jsfinalize_document, 
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
+
+#define JSCLASS_NAME document
+
+#include "node.c"
 
 static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 {
 	JSString* u16_txt;
 	char *txt;
 	unsigned long txtlen;
-	struct html_content *htmlc;
 	dom_string *idstr;
 	dom_element *idelement;
+	struct jsclass_document_priv *document;
 
-	htmlc = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
-	if (htmlc == NULL)
+	document = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
+	if (document == NULL) {
 		return JS_FALSE;
+	}
 
-	if (htmlc->document == NULL) {
+	if (document->node == NULL) {
 		/* no document available, this is obviously a problem
 		 * for finding elements 
 		 */
@@ -142,9 +126,9 @@ static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 
 	dom_string_create((unsigned char*)txt, txtlen, &idstr);
 
-	dom_document_get_element_by_id(htmlc->document, idstr, &idelement);
+	dom_document_get_element_by_id(document->node, idstr, &idelement);
 
-	JSAPI_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(jsapi_new_element(cx, JS_GetGlobalObject(cx), htmlc, idelement)));
+	JSAPI_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(jsapi_new_element(cx, JS_GetGlobalObject(cx), document->htmlc, idelement)));
 
 	return JS_TRUE;
 }
@@ -154,20 +138,23 @@ static JSBool JSAPI_NATIVE(write, JSContext *cx, uintN argc, jsval *vp)
 	JSString* u16_txt;
 	char *txt;
 	unsigned long length;
-	struct html_content *htmlc;
+	struct jsclass_document_priv *document;
 
-	htmlc = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
-	if (htmlc == NULL)
+	document = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
+	if (document == NULL) {
 		return JS_FALSE;
+	}
 
-	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt))
+	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt)) {
 		return JS_FALSE;
+	}
 
 	JSString_to_char(u16_txt, txt, length);
 
-	LOG(("content %p parser %p writing %s",htmlc, htmlc->parser, txt));
-	if (htmlc->parser != NULL) {
-		dom_hubbub_parser_insert_chunk(htmlc->parser, (uint8_t *)txt, length);
+	LOG(("content %p parser %p writing %s",
+	     document->htmlc, document->htmlc->parser, txt));
+	if (document->htmlc->parser != NULL) {
+		dom_hubbub_parser_insert_chunk(document->htmlc->parser, (uint8_t *)txt, length);
 	}
 	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
 
@@ -175,6 +162,7 @@ static JSBool JSAPI_NATIVE(write, JSContext *cx, uintN argc, jsval *vp)
 }
 
 static JSFunctionSpec jsfunctions_document[] = {
+	JSAPI_FS_NODE,
 	JSAPI_FS(write, 1, 0),
 	JSAPI_FS(getElementById, 1, 0),
 	JSAPI_FS_END
@@ -182,11 +170,30 @@ static JSFunctionSpec jsfunctions_document[] = {
 
 
 
-
-JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv)
+static void jsfinalize_document(JSContext *cx, JSObject *obj)
 {
-	JSObject *doc;
-	doc = JS_InitClass(cx, 
+	struct jsclass_document_priv *document;
+
+	document = JS_GetInstancePrivate(cx, obj, &jsclass_document, NULL);
+	if (document != NULL) {
+		free(document);
+	}
+}
+
+JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_content *htmlc)
+{
+	/* create document object and return it */
+	JSObject *jsdocument;
+	struct jsclass_document_priv *document;
+
+	document = malloc(sizeof(document));
+	if (document == NULL) {
+		return NULL;
+	}
+	document->htmlc = htmlc;
+	document->node = htmlc->document;
+
+	jsdocument = JS_InitClass(cx, 
 		     parent, 
 		     NULL, 
 		     &jsclass_document, 
@@ -196,16 +203,18 @@ JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv)
 		     jsfunctions_document, 
 		     NULL, 
 		     NULL);
-	if (doc == NULL) {
+	if (jsdocument == NULL) {
+		free(document);
 		return NULL;
 	}
 
-	LOG(("setting content to %p",doc_priv));
+	LOG(("setting document private to %p", document));
 	/* private pointer to browsing context */
-	if (JS_SetPrivate(cx, doc, doc_priv) != JS_TRUE) {
-		LOG(("failed to set content"));
+	if (JS_SetPrivate(cx, jsdocument, document) != JS_TRUE) {
+		LOG(("failed to set document private"));
+		free(document);
 		return NULL;
 	}
 	
-	return doc;
+	return jsdocument;
 }

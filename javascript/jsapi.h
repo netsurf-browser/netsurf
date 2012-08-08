@@ -155,7 +155,7 @@ JSObject *jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv);
  * @param doc_priv The private context to set on the object
  * @return new javascript object or NULL on error
  */
-JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv);
+JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_content *htmlc);
 
 /** Create a new javascript console object
  *

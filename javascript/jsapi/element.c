@@ -24,16 +24,62 @@
 #include "render/html_internal.h"
 #include "utils/log.h"
 
+/* IDL http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#interface-element
+
+CAUTION - innerHTML etc. are not part of the DOM they come from:
+http://html5.org/specs/dom-parsing.html#extensions-to-the-element-interface
+
+interface Element : Node {
+  readonly attribute DOMString? namespaceURI;
+  readonly attribute DOMString? prefix;
+  readonly attribute DOMString localName;
+  readonly attribute DOMString tagName;
+
+           attribute DOMString id;
+           attribute DOMString className;
+  readonly attribute DOMTokenList classList;
+
+  readonly attribute Attr[] attributes;
+  DOMString? getAttribute(DOMString name);
+  DOMString? getAttributeNS(DOMString? namespace, DOMString localName);
+  void setAttribute(DOMString name, DOMString value);
+  void setAttributeNS(DOMString? namespace, DOMString name, DOMString value);
+  void removeAttribute(DOMString name);
+  void removeAttributeNS(DOMString? namespace, DOMString localName);
+  boolean hasAttribute(DOMString name);
+  boolean hasAttributeNS(DOMString? namespace, DOMString localName);
+
+  HTMLCollection getElementsByTagName(DOMString localName);
+  HTMLCollection getElementsByTagNameNS(DOMString? namespace, DOMString localName);
+  HTMLCollection getElementsByClassName(DOMString classNames);
+
+  readonly attribute HTMLCollection children;
+  readonly attribute Element? firstElementChild;
+  readonly attribute Element? lastElementChild;
+  readonly attribute Element? previousElementSibling;
+  readonly attribute Element? nextElementSibling;
+  readonly attribute unsigned long childElementCount;
+
+  // NEW
+  void prepend((Node or DOMString)... nodes);
+  void append((Node or DOMString)... nodes);
+  void before((Node or DOMString)... nodes);
+  void after((Node or DOMString)... nodes);
+  void replace((Node or DOMString)... nodes);
+  void remove();
+};
+*/
+
 static void jsfinalize_element(JSContext *cx, JSObject *obj);
 
-typedef struct {
+struct jsclass_document_priv {
 	struct html_content *htmlc;
-	struct dom_element *dom_element;
-} elementp;
+	dom_element *node;
+};
 
 static JSClass jsclass_element =
 {
-        "element", 
+        "Element", 
 	JSCLASS_HAS_PRIVATE, 
 	JS_PropertyStub, 
 	JS_PropertyStub, 
@@ -46,9 +92,13 @@ static JSClass jsclass_element =
 	JSCLASS_NO_OPTIONAL_MEMBERS
 };
 
+#define JSCLASS_NAME element
+
+#include "node.c"
+
 static void jsfinalize_element(JSContext *cx, JSObject *obj)
 {
-	elementp *element;
+	struct jsclass_document_priv *element;
 	element = JS_GetInstancePrivate(cx, obj, &jsclass_element, NULL);
 	if (element != NULL) {
 		free(element);
@@ -58,6 +108,7 @@ static void jsfinalize_element(JSContext *cx, JSObject *obj)
 
 
 static JSFunctionSpec jsfunctions_element[] = {
+	JSAPI_FS_NODE,
 	JSAPI_FS_END
 };
 
@@ -66,18 +117,18 @@ JSObject *
 jsapi_new_element(JSContext *cx, 
 		  JSObject *parent, 
 		  struct html_content *htmlc, 
-		  struct dom_element *domelement)
+		  dom_element *domelement)
 {
-	/* create element object and return it*/
+	/* create element object and return it */
 	JSObject *jselement;
-	elementp *element;
+	struct jsclass_document_priv *element;
 
 	element = malloc(sizeof(element));
 	if (element == NULL) {
 		return NULL;
 	}
 	element->htmlc = htmlc;
-	element->dom_element = domelement;
+	element->node = domelement;
 
 	jselement = JS_InitClass(cx, 
 			   parent, 
@@ -94,10 +145,10 @@ jsapi_new_element(JSContext *cx,
 		return NULL;
 	}
 
-	LOG(("setting element private to %p", element));
+	LOG(("setting private to %p", element));
 	/* private pointer to browsing context */
 	if (JS_SetPrivate(cx, jselement, element) != JS_TRUE) {
-		LOG(("failed to set content"));
+		LOG(("failed to set private"));
 		free(element);
 		return NULL;
 	}
