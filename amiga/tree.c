@@ -98,6 +98,7 @@ struct treeview_window {
 	char *sslerr;
 	char *sslaccept;
 	char *sslreject;
+	struct MinList shared_pens;
 };
 
 void ami_tree_draw(struct treeview_window *twin);
@@ -130,8 +131,11 @@ struct treeview_window *ami_tree_create(uint8 flags,
 	}
 
 	twin->ssl_data = ssl_data;
-
 	twin->tree = tree_create(flags, &ami_tree_callbacks, twin);
+
+	NewMinList(&twin->shared_pens);
+	twin->globals.shared_pens = &twin->shared_pens;
+	
 	return twin;
 }
 
@@ -666,6 +670,7 @@ void ami_tree_close(struct treeview_window *twin)
 	DisposeObject(twin->objects[OID_MAIN]);
 	DelObjectNoFree(twin->node);
 	ami_free_layers(&twin->globals);
+	ami_plot_release_pens(&twin->shared_pens);
 
 	for(i=0;i<AMI_TREE_MENU_ITEMS;i++)
 	{
