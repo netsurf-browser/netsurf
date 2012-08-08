@@ -35,7 +35,6 @@
 #include <proto/intuition.h>
 #include <proto/utility.h>
 #include "utils/messages.h"
-#include "utils/log.h"
 
 /**
  * Create a bitmap.
@@ -63,8 +62,6 @@ void *bitmap_create(int width, int height, unsigned int state)
 		if(state & BITMAP_OPAQUE) bitmap->opaque = true;
 			else bitmap->opaque = false;
 	}
-
-	LOG(("Created bitmap %lx", bitmap));
 
 	return bitmap;
 }
@@ -119,8 +116,6 @@ void bitmap_destroy(void *bitmap)
 {
 	struct bitmap *bm = bitmap;
 
-	LOG(("Freeing bitmap %lx", bitmap));
-	
 	if(bm)
 	{
 		if((bm->nativebm) && (bm->dto == NULL)) {
