@@ -129,7 +129,12 @@ fb_redraw_text(fbtk_widget_t *widget, fbtk_callback_info *cbi )
 
 	if (widget->u.text.text != NULL) {
 		int x = bbox.x0 + padding;
-		int y = bbox.y0 + ((fh * 3) / 4) + padding;
+		int y = bbox.y0 + ((fh * 3 + 2) / 4) + padding;
+
+#ifdef FB_USE_FREETYPE
+		/* Freetype renders text higher */
+		y += 1;
+#endif
 
 		if (caret && widget->width - padding - padding < caret_x) {
 			scroll = (widget->width - padding - padding) - caret_x;
