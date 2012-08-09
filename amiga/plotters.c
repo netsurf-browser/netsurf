@@ -678,9 +678,10 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 		} else {
 			tag = BLITA_MaskPlane;
 			tag_data = (ULONG)bitmap->native_mask;
-			minterm = 0xc0; /* should be (ABC|ABNC|ANBC); */
+			minterm = (ABC|ABNC|ANBC);
 		}
-		
+		//BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, (ABC|ABNC|ANBC), bitmap->native_mask);
+
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
 						BLITA_Source,tbm,

@@ -120,16 +120,20 @@ void bitmap_destroy(void *bitmap)
 	{
 		if((bm->nativebm) && (bm->dto == NULL)) {
 			p96FreeBitMap(bm->nativebm);
-			bm->nativebm = NULL;
 		}
 		
 		if(bm->dto) {
 			DisposeDTObject(bm->dto);
-			bm->dto = NULL;
 		}
+
+		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
 
 		FreeVec(bm->pixdata);
 		bm->pixdata = NULL;
+		bm->nativebm = NULL;
+		bm->native_mask = NULL;
+		bm->dto = NULL;
+	
 		FreeVec(bm);
 		bm = NULL;
 	}
@@ -174,6 +178,8 @@ void bitmap_modified(void *bitmap) {
 		p96FreeBitMap(bm->nativebm);
 		
 	if(bm->dto) DisposeDTObject(bm->dto);
+	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
+
 	bm->nativebm = NULL;
 	bm->dto = NULL;
 	bm->native_mask = NULL;
@@ -468,6 +474,31 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 	return tbm;
 }
 
+static PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
+{
+	uint32 *bmi = (uint32 *) bitmap->pixdata;
+	UBYTE maskbit = 0;
+	int y, x;
+
+	if((height != bitmap->height) || (width != bitmap->width)) return NULL;
+	if(bitmap_get_opaque(bitmap) == true) return NULL;
+	if(bitmap->native_mask) return bitmap->native_mask;
+
+	bitmap->native_mask = AllocRaster(width, height);
+	
+	for(y=0; y<height; y++) {
+		for(x=0; x<width; x++) {
+			if ((*bmi & 0xff000000U) == 0x00000000U) maskbit = 1;
+				else maskbit = 0;
+			bmi++;
+			bitmap->native_mask[(y*4) + (x/8)] =
+				(bitmap->native_mask[(y*4) + (x/8)] << 1) | maskbit;
+		}
+	}
+
+	return bitmap->native_mask;
+}
+
 static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 					int width, int height)
 {
@@ -504,11 +535,13 @@ static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	
 	GetDTAttrs(bitmap->dto, 
 		PDTA_DestBitMap, &dtbm,
-		PDTA_MaskPlane, &bitmap->native_mask,
+		//PDTA_MaskPlane, &bitmap->native_mask,
 		TAG_END);
 	
 	bitmap->nativebmwidth = width;
 	bitmap->nativebmheight = height;
+	
+	ami_bitmap_get_mask(bitmap, width, height);
 	
 	return dtbm;
 }
