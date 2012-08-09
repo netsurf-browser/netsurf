@@ -227,11 +227,13 @@ enum url_sections {
 
 #define nsurl__component_copy(c) (c == NULL) ? NULL : lwc_string_ref(c)
 
-#define nsurl__component_compare(c1, c2, match)		\
-	if (c1 && c2)					\
-		lwc_string_isequal(c1, c2, match);	\
-	else if (c1 || c2)				\
-		*match = false;
+#define nsurl__component_compare(c1, c2, match)	      		\
+	if (c1 && c2 && lwc_error_ok ==				\
+			lwc_string_isequal(c1, c2, match)) {	\
+		/* do nothing */                                \
+	} else if (c1 || c2) {					\
+		*match = false;					\
+	}
 
 
 /**
