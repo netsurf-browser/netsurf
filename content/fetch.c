@@ -291,9 +291,15 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 			 */
 			bool match1;
 			bool match2;
-			lwc_string_isequal(scheme, ref_scheme, &match);
-			lwc_string_isequal(scheme, fetch_https_lwc, &match1);
-			lwc_string_isequal(ref_scheme, fetch_http_lwc, &match2);
+			if (lwc_string_isequal(scheme, ref_scheme, &match) != lwc_error_ok) {
+				match = false;
+			}
+			if (lwc_string_isequal(scheme, fetch_https_lwc, &match1) != lwc_error_ok) {
+				match1 = false;
+			}
+			if (lwc_string_isequal(ref_scheme, fetch_http_lwc, &match2) != lwc_error_ok) {
+				match2= false;
+			}
 			if (match == true || (match1 == true && match2 == true))
 				fetch->send_referer = true;
 		}
@@ -306,8 +312,7 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 
 	/* Pick the scheme ops */
 	while (fetcher) {
-		lwc_string_isequal(fetcher->scheme_name, scheme, &match);
-		if (match == true) {
+		if ((lwc_string_isequal(fetcher->scheme_name, scheme, &match) == lwc_error_ok) && (match == true)) {
 			fetch->ops = fetcher;
 			break;
 		}
@@ -542,9 +547,9 @@ bool fetch_can_fetch(const nsurl *url)
 	lwc_string *scheme = nsurl_get_component(url, NSURL_SCHEME);
 
 	while (fetcher != NULL) {
-		lwc_string_isequal(fetcher->scheme_name, scheme, &match);
-		if (match == true)
+		if (lwc_string_isequal(fetcher->scheme_name, scheme, &match) == lwc_error_ok && match == true) {
 			break;
+		}
 
 		fetcher = fetcher->next_fetcher;
 	}
