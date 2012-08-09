@@ -18,11 +18,11 @@
 
 #include <dom/dom.h>
 
+#include "utils/config.h"
+#include "utils/log.h"
+#include "render/html_internal.h"
 
 #include "javascript/jsapi.h"
-#include "utils/config.h"
-#include "render/html_internal.h"
-#include "utils/log.h"
 
 /* IDL http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#interface-element
 

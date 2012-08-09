@@ -29,6 +29,8 @@
 #include "mozjs/jsapi.h"
 #endif
 
+#include "render/html_internal.h"
+
 #if JS_VERSION <= 180
 
 #include <string.h>
@@ -135,9 +137,6 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 
 #endif
-
-typedef struct dom_element dom_element;
-typedef struct html_content html_content;
 
 /** Create a new javascript window object
  *

@@ -16,10 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "javascript/jsapi.h"
-
-#include "content/content.h"
 #include "utils/log.h"
+
+#include "javascript/jsapi.h"
 
 /* IDL
 

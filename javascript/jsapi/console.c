@@ -16,9 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "javascript/jsapi.h"
 
 #include "utils/log.h"
+
+#include "javascript/jsapi.h"
 
 static JSBool JSAPI_NATIVE(debug, JSContext *cx, uintN argc, jsval *vp)
 {
