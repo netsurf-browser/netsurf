@@ -1,5 +1,5 @@
 /*
- * Copyright 2008, 2009 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2008, 2009, 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#define AMI_CUSTOM_MASK 1
 
 #include "amiga/os3support.h"
 
@@ -230,7 +232,7 @@ bool bitmap_test_opaque(void *bitmap)
 
 	for(a=0;a<p;a+=4)
 	{
-		if ((*bmi & 0xff000000U) != 0xff000000U) return false;
+		if ((*bmi & 0x000000ffU) != 0x000000ffU) return false;
 		bmi++;
 	}
 	return true;
@@ -487,13 +489,17 @@ static PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height
 
 	bitmap->native_mask = AllocRaster(width, height);
 
+	for(int i=0; i<(height * (width / 8)); i++) {
+		bitmap->native_mask[i] = 0;
+	}
+
 	for(y=0; y<height; y++) {
 		for(x=0; x<width; x++) {
-			if ((*bmi & 0xff000000U) == 0x00000000U) maskbit = 1;
+			if ((*bmi & 0x000000ffU) == 0x00000000U) maskbit = 1;
 				else maskbit = 0;
 			bmi++;
-			bitmap->native_mask[(y*4) + (x/8)] =
-				(bitmap->native_mask[(y*4) + (x/8)] << 1) | maskbit;
+			bitmap->native_mask[(y*(width/8)) + (x/8)] =
+				(bitmap->native_mask[(y*(width/8)) + (x/8)] << 1) | maskbit;
 		}
 	}
 
