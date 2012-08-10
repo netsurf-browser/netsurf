@@ -481,15 +481,17 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
 {
 	uint32 *bmi = (uint32 *) bitmap->pixdata;
 	UBYTE maskbit = 0;
-	int y, x;
+	int y, x, w;
 
 	if((height != bitmap->height) || (width != bitmap->width)) return NULL;
 	if(bitmap_get_opaque(bitmap) == true) return NULL;
 	if(bitmap->native_mask) return bitmap->native_mask;
 
 	bitmap->native_mask = AllocRaster(width, height);
-	while((width % 8) != 0) width++; 
-	
+
+	w = width / 8;
+	if((width % 8) != 0) w++;
+
 	for(int i=0; i<(height * (width / 8)); i++) {
 		bitmap->native_mask[i] = 0;
 	}
@@ -499,8 +501,8 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
 			if ((*bmi & 0x000000ffU) <= (ULONG)nsoption_int(mask_alpha)) maskbit = 0;
 				else maskbit = 1;
 			bmi++;
-			bitmap->native_mask[(y*(width/8)) + (x/8)] =
-				(bitmap->native_mask[(y*(width/8)) + (x/8)] << 1) | maskbit;
+			bitmap->native_mask[(y*w) + (x/8)] =
+				(bitmap->native_mask[(y*w) + (x/8)] << 1) | maskbit;
 		}
 	}
 
