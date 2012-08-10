@@ -495,7 +495,7 @@ static PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height
 
 	for(y=0; y<height; y++) {
 		for(x=0; x<width; x++) {
-			if ((*bmi & 0x000000ffU) == 0x00000000U) maskbit = 0;
+			if ((*bmi & 0x000000ffU) <= (ULONG)nsoption_int(mask_alpha)) maskbit = 0;
 				else maskbit = 1;
 			bmi++;
 			bitmap->native_mask[(y*(width/8)) + (x/8)] =
