@@ -396,7 +396,8 @@ FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
 
         fb_face = (fb_faceid_t *)srec.face_id;
 
-        glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id, fb_face->cidx, ucs4);
+        glyph_index = FTC_CMapCache_Lookup(ft_cmap_cache, srec.face_id,
+			fb_face->cidx, ucs4);
 
         error = FTC_ImageCache_LookupScaler(ft_image_cache, 
                                             &srec, 
@@ -406,6 +407,8 @@ FT_Glyph fb_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
                                             glyph_index, 
                                             &glyph, 
                                             NULL);
+	if (error != 0)
+		return NULL;
 
         return glyph;
 }
