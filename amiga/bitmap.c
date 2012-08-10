@@ -488,7 +488,8 @@ PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
 	if(bitmap->native_mask) return bitmap->native_mask;
 
 	bitmap->native_mask = AllocRaster(width, height);
-
+	while((width % 8) != 0) width++; 
+	
 	for(int i=0; i<(height * (width / 8)); i++) {
 		bitmap->native_mask[i] = 0;
 	}
