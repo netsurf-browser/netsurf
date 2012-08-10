@@ -477,7 +477,7 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 	return tbm;
 }
 
-static PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
+PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
 {
 	uint32 *bmi = (uint32 *) bitmap->pixdata;
 	UBYTE maskbit = 0;

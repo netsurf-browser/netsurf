@@ -3845,8 +3845,8 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 				minterm = 0xc0;
 			} else {
 				tag = BLITA_MaskPlane;
-				tag_data = (ULONG)icon_bitmap->native_mask;
-				minterm = 0xc0; /* should be (ABC|ABNC|ANBC); */
+				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16);
+				minterm = (ABC|ABNC|ANBC);
 			}
 		
 			BltBitMapTags(BLITA_SrcX, 0,
@@ -3928,8 +3928,8 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 					minterm = 0xc0;
 				} else {
 					tag = BLITA_MaskPlane;
-					tag_data = (ULONG)ico_bitmap->native_mask;
-					minterm = 0xc0; /* should be (ABC|ABNC|ANBC); */
+					tag_data = (ULONG)ami_bitmap_get_mask(ico_bitmap, 16, 16);
+					minterm = (ABC|ABNC|ANBC);
 				}
 
 				BltBitMapTags(BLITA_SrcX, 0,

@@ -44,6 +44,8 @@ struct bitmap {
 
 struct BitMap *ami_bitmap_get_native(struct bitmap *bitmap,
 				int width, int height, struct BitMap *friendbm);
+PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height);
+
 Object *ami_datatype_object_from_bitmap(struct bitmap *bitmap);
 struct bitmap *ami_bitmap_from_datatype(char *filename);
 #endif

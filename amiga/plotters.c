@@ -678,10 +678,9 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 			minterm = 0xc0;
 		} else {
 			tag = BLITA_MaskPlane;
-			tag_data = (ULONG)bitmap->native_mask;
+			tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height);
 			minterm = (ABC|ABNC|ANBC);
 		}
-		//BltMaskBitMapRastPort(tbm, 0, 0, glob->rp, x, y, width, height, (ABC|ABNC|ANBC), bitmap->native_mask);
 
 		BltBitMapTags(BLITA_Width,width,
 						BLITA_Height,height,
@@ -783,7 +782,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfbm.height = height;
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
-		bfbm.mask = bitmap->native_mask;
+		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height);;
 		bfh = AllocVec(sizeof(struct Hook),MEMF_CLEAR);
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;
@@ -840,7 +839,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 				} else {
 					tag = BLITA_MaskPlane;
 					tag_data = (ULONG)bfbm->mask;
-					minterm = 0xc0; /* Should be (ABC|ABNC|ANBC) */
+					minterm = (ABC|ABNC|ANBC);
 				}
 		
 				BltBitMapTags(BLITA_Width, bfbm->width,
