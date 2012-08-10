@@ -25,7 +25,6 @@
 #include <proto/graphics.h>
 #include <proto/icon.h>
 #include <proto/intuition.h>
-#include <proto/Picasso96API.h>
 
 #include <gadgets/clicktab.h>
 #include <gadgets/space.h>
@@ -35,6 +34,7 @@
 #include <intuition/pointerclass.h>
 #include <workbench/icon.h>
 
+#include "amiga/bitmap.h"
 #include "amiga/drag.h"
 #include "desktop/options.h"
 #include "amiga/theme.h"
@@ -43,6 +43,7 @@
 #include "utils/utils.h"
 
 struct BitMap *throbber = NULL;
+struct bitmap *throbber_nsbm = NULL;
 ULONG throbber_frames,throbber_update_interval;
 static Object *mouseptrobj[AMI_LASTPOINTER+1];
 static struct BitMap *mouseptrbm[AMI_LASTPOINTER+1];
@@ -131,53 +132,25 @@ void ami_theme_throbber_setup(void)
 {
 	char throbberfile[1024];
 	Object *dto;
+	struct bitmap *bm;
 
 	ami_get_theme_filename(throbberfile,"theme_throbber",false);
 	throbber_frames=atoi(messages_get("theme_throbber_frames"));
 	throbber_update_interval = atoi(messages_get("theme_throbber_delay"));
 	if(throbber_update_interval == 0) throbber_update_interval = 100;
 
-	if(dto = NewDTObject(throbberfile,
-					DTA_GroupID,GID_PICTURE,
-					PDTA_DestMode,PMODE_V43,
-					TAG_DONE))
-	{
-		struct BitMapHeader *throbber_bmh;
-		struct RastPort throbber_rp;
-
-		if(GetDTAttrs(dto,PDTA_BitMapHeader,&throbber_bmh,TAG_DONE))
-		{
-			throbber_width = throbber_bmh->bmh_Width / throbber_frames;
-			throbber_height = throbber_bmh->bmh_Height;
-
-			InitRastPort(&throbber_rp);
-
-			if(throbber = p96AllocBitMap(throbber_bmh->bmh_Width,
-				throbber_height,32,
-				BMF_CLEAR | BMF_DISPLAYABLE | BMF_INTERLEAVED,
-				NULL,RGBFB_A8R8G8B8))
-			{
-				struct RenderInfo ri;
-				UBYTE *throbber_tempmem = AllocVec(throbber_bmh->bmh_Width*throbber_height*4,MEMF_PRIVATE | MEMF_CLEAR);
-				throbber_rp.BitMap = throbber;
-				ri.Memory = throbber_tempmem;
-				ri.BytesPerRow = 4*throbber_bmh->bmh_Width;
-				ri.RGBFormat = RGBFB_A8R8G8B8;
-
-				IDoMethod(dto,PDTM_READPIXELARRAY,ri.Memory,PBPAFMT_ARGB,ri.BytesPerRow,0,0,throbber_bmh->bmh_Width,throbber_height);
-
-				p96WritePixelArray((struct RenderInfo *)&ri,0,0,&throbber_rp,0,0,throbber_bmh->bmh_Width,throbber_height);
-
-				FreeVec(throbber_tempmem);
-			}
-		}
-		DisposeDTObject(dto);
-	}
+	bm = ami_bitmap_from_datatype(throbberfile);
+	throbber = ami_bitmap_get_native(bm, bm->width, bm->height, NULL);
+				
+	throbber_width = bm->width / throbber_frames;
+	throbber_height = bm->height;
+	throbber_nsbm = bm;
 }
 
 void ami_theme_throbber_free(void)
 {
-	p96FreeBitMap(throbber);
+	bitmap_destroy(throbber_nsbm);
+	throbber = NULL;
 }
 
 void ami_get_theme_filename(char *filename, char *themestring, bool protocol)

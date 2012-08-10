@@ -571,7 +571,6 @@ void gui_init(int argc, char** argv)
 	save_complete_init();
 	ami_theme_init();
 	ami_init_mouse_pointers();
-	ami_theme_throbber_setup();
 }
 
 static void ami_gui_newprefs_hook(struct Hook *hook, APTR window, APTR reserved)
@@ -665,6 +664,7 @@ void ami_openscreenfirst(void)
 {
 	ami_openscreen();
 	if(!browserglob.bm) ami_init_layers(&browserglob, 0, 0);
+	ami_theme_throbber_setup();
 }
 
 static void gui_init2(int argc, char** argv)
