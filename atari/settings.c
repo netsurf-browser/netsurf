@@ -97,7 +97,7 @@ WINDOW * open_settings()
 {
 
 	if( dlgtree == NULL){
-		dlgtree = get_tree( CHOICES );
+		dlgtree = get_tree(CHOICES);
 		if( dlgtree == NULL ){
 			return( NULL );
 		}
@@ -106,7 +106,7 @@ WINDOW * open_settings()
 	if( dlgwin == NULL){
 		// TODO: localize title
 		dlgwin = FormCreate( dlgtree, WAT_FORM, NULL, (char*)"Settings",
-					  NULL, TRUE, FALSE);
+					  NULL, TRUE, 1);
 		if( !dlgwin ){
 			return( NULL );
 		}
@@ -166,7 +166,9 @@ WINDOW * open_settings()
 void close_settings(void)
 {
 	if( dlgwin != NULL ){
-		WindClose( dlgwin );
+		/* Duplicated form tree must be free'd manualy? */
+		ObjcFree(ObjcTree(OC_FORM, dlgwin));
+		WindClose(dlgwin);
 		dlgwin = NULL;
 	}
 
@@ -191,7 +193,7 @@ static void set_text( short idx, char * text, int len )
 
 static void __CDECL onclose( WINDOW *win, short buff[8] )
 {
-	dlgwin = NULL;
+	close_settings();
 }
 
 static void __CDECL

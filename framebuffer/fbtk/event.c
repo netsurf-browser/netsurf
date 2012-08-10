@@ -218,8 +218,8 @@ fbtk_event(fbtk_widget_t *root, nsfb_event_t *event, int timeout)
 		switch (event->type) {
 		case NSFB_EVENT_KEY_DOWN:
 		case NSFB_EVENT_KEY_UP:
-			if ((event->value.controlcode >= NSFB_KEY_MOUSE_1) &&
-			    (event->value.controlcode <= NSFB_KEY_MOUSE_5)) {
+			if ((event->value.keycode >= NSFB_KEY_MOUSE_1) &&
+			    (event->value.keycode <= NSFB_KEY_MOUSE_5)) {
 				fbtk_click(root, event);
 			} else {
 				fbtk_input(root, event);

@@ -788,8 +788,8 @@ content_find_rfc5988_link(hlcache_handle *h, lwc_string *rel)
 	bool rel_match = false;
 
 	while (link != NULL) {
-		lwc_string_caseless_isequal(link->rel, rel, &rel_match);
-		if (rel_match) {
+		if (lwc_string_caseless_isequal(link->rel, rel,
+				&rel_match) == lwc_error_ok && rel_match) {
 			break;
 		}
 		link = link->next;

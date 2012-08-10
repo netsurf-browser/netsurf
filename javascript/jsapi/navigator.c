@@ -17,8 +17,7 @@
  */
 
 #include <assert.h>
-
-#include "javascript/jsapi.h"
+#include <stdlib.h>
 
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
@@ -27,6 +26,8 @@
 #include "utils/useragent.h"
 #include "utils/log.h"
 #include "utils/utsname.h"
+
+#include "javascript/jsapi.h"
 
 /*
  * navigator properties for netsurf

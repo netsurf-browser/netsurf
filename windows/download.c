@@ -17,9 +17,12 @@
  */
 
 #include <limits.h>
-#include <windows.h>
-#include <shlobj.h>
 #include <sys/time.h>
+
+#include "utils/config.h"
+
+#include <shlobj.h>
+#include <windows.h>
 
 #include "content/fetch.h"
 #include "desktop/gui.h"

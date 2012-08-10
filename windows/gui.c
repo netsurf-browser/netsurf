@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "utils/config.h"
+
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>

@@ -16,6 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils/config.h"
+
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>

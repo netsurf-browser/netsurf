@@ -22,6 +22,9 @@
 #include <string.h>
 #include <limits.h>
 #include <math.h>
+
+#include "utils/config.h"
+
 #include <windows.h>
 
 #include "utils/log.h"
@@ -94,12 +97,13 @@ static bool line(int x0, int y0, int x1, int y1, const plot_style_t *style)
 		DeleteObject(clipregion);
 		return false;
 	}
+/*
 	RECT r;
 	r.left = x0;
 	r.top = y0;
 	r.right = x1;
 	r.bottom = y1;
-
+*/
 	SelectClipRgn(plot_hdc, clipregion);
 
 	MoveToEx(plot_hdc, x0, y0, (LPPOINT) NULL);
@@ -276,15 +280,16 @@ static bool text(int x, int y, const char *text, size_t length,
 	int wlen;
 	SIZE s;
 	LPWSTR wstring;
-	RECT r;
 	fontbak = (HFONT) SelectObject(plot_hdc, font);
 	GetTextExtentPoint(plot_hdc, text, length, &s);
 
+/*
+	RECT r;
 	r.left = x;
 	r.top = y  - (3 * s.cy) / 4;
 	r.right = x + s.cx;
 	r.bottom = y + s.cy / 4;
-
+*/
 	SelectClipRgn(plot_hdc, clipregion);
 
 	SetTextAlign(plot_hdc, TA_BASELINE | TA_LEFT);
@@ -354,12 +359,13 @@ static bool disc(int x, int y, int radius, const plot_style_t *style)
 		DeleteObject(brush);
 		return false;
 	}
+/*
 	RECT r;
 	r.left = x - radius;
 	r.top = y - radius;
 	r.right = x + radius;
 	r.bottom = y + radius;
-
+*/
 	SelectClipRgn(plot_hdc, clipregion);
 
 	if (style->fill_type == PLOT_OP_TYPE_NONE)
@@ -408,7 +414,7 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 		DeleteObject(pen);
 		return false;
 	}
-	RECT r;
+
 	int q1, q2;
 	double a1=1.0, a2=1.0, b1=1.0, b2=1.0;
 	q1 = (int) ((angle1 + 45) / 90) - 45;
@@ -462,11 +468,13 @@ static bool arc(int x, int y, int radius, int angle1, int angle2,
 		break;
 	}
 
+/*
+	RECT r;
 	r.left = x - radius;
 	r.top = y - radius;
 	r.right = x + radius;
 	r.bottom = y + radius;
-
+*/
 	SelectClipRgn(plot_hdc, clipregion);
 
 	Arc(plot_hdc, x - radius, y - radius, x + radius, y + radius,

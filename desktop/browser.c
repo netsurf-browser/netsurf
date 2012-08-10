@@ -1372,18 +1372,22 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		if (lwc_intern_string("icon", SLEN("icon"), 
 				&icon_str) == lwc_error_ok) {
-			lwc_string_caseless_isequal(
+			if (lwc_string_caseless_isequal(
 					event->data.rfc5988_link->rel, 
-					icon_str, &icon_match);
+					icon_str, &icon_match) != lwc_error_ok) {
+				icon_match = false;
+			}
 			lwc_string_unref(icon_str);
 		}
 
 		if (lwc_intern_string("shortcut icon", SLEN("shortcut icon"), 
 				&shortcut_icon_str) == lwc_error_ok) {
-			lwc_string_caseless_isequal(
+			if (lwc_string_caseless_isequal(
 					event->data.rfc5988_link->rel, 
 					shortcut_icon_str, 
-					&shortcut_icon_match);
+					&shortcut_icon_match) != lwc_error_ok) {
+				shortcut_icon_match = false;
+			}
 			lwc_string_unref(shortcut_icon_str);
 		}
 

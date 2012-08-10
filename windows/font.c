@@ -21,7 +21,11 @@
 #include <inttypes.h>
 
 #include <assert.h>
+
+#include "utils/config.h"
+
 #include <windows.h>
+
 #include "css/css.h"
 #include "render/font.h"
 #include "desktop/options.h"

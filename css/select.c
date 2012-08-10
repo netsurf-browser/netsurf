@@ -801,8 +801,7 @@ css_error node_has_name(void *pw, void *node,
 	nscss_select_ctx *ctx = pw;
 	dom_node *n = node;
 
-	lwc_string_isequal(qname->name, ctx->universal, match);
-	if (*match == false) {
+	if (lwc_string_isequal(qname->name, ctx->universal, match) == lwc_error_ok && *match == false) {
 		dom_string *name;
 		dom_exception err;
 
@@ -1058,8 +1057,9 @@ css_error node_has_attribute_includes(void *pw, void *node,
 	const char *start;
 	const char *end;
 
+	*match = false;
+
 	if (vlen == 0) {
-		*match = false;
 		return CSS_OK;
 	}
 

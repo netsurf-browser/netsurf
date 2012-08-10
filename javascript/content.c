@@ -111,8 +111,11 @@ static const content_handler javascript_content_handler = {
 };
 
 static const char *javascript_types[] = {
-	"application/javascript",
-	"text/javascript"
+	"application/javascript", /* RFC 4329 */
+	"application/ecmascript", /* RFC 4329 */
+	"application/x-javascript", /* common usage */
+	"text/javascript", /* common usage */
+	"text/ecmascript", /* common usage */
 };
 
 CONTENT_FACTORY_REGISTER_TYPES(javascript, javascript_types, javascript_content_handler);

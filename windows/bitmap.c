@@ -20,6 +20,9 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <string.h>
+
+#include "utils/config.h"
+
 #include <windows.h>
 
 #include "image/bitmap.h"

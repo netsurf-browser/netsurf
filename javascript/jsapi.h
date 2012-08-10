@@ -29,6 +29,8 @@
 #include "mozjs/jsapi.h"
 #endif
 
+#include "render/html_internal.h"
+
 #if JS_VERSION <= 180
 
 #include <string.h>
@@ -152,7 +154,7 @@ JSObject *jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv);
  * @param doc_priv The private context to set on the object
  * @return new javascript object or NULL on error
  */
-JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, void *doc_priv);
+JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_content *htmlc);
 
 /** Create a new javascript console object
  *
@@ -169,5 +171,14 @@ JSObject *jsapi_new_console(JSContext *cx, JSObject *parent);
  * @return new javascript object or NULL on error
  */
 JSObject *jsapi_new_navigator(JSContext *cx, JSObject *parent);
+
+/** Create a new javascript element object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @param doc_priv The private context to set on the object
+ * @return new javascript object or NULL on error
+ */
+JSObject *jsapi_new_element(JSContext *cx, JSObject *parent, struct html_content *htmlc, struct dom_element *domelement);
 
 #endif

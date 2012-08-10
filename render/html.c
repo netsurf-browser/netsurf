@@ -335,10 +335,10 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->parser = dom_hubbub_parser_create(c->encoding, 
 					     true, 
 					     nsoption_bool(enable_javascript),
-					     &c->document,
 					     NULL, 
 					     html_process_script, 
-					     c);
+					     c,
+					     &c->document);
 	if ((c->parser == NULL) && (c->encoding != NULL)) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to autodetect */
@@ -348,12 +348,10 @@ html_create_html_data(html_content *c, const http_parameter *params)
 		c->parser = dom_hubbub_parser_create(c->encoding, 
 						     true, 
 						     nsoption_bool(enable_javascript), 
-						     &c->document,
 						     NULL, 
 						     html_process_script, 
-						     c);
-
-
+						     c,
+						     &c->document);
 	}
 
 	if (c->parser == NULL) {
@@ -451,10 +449,10 @@ html_process_encoding_change(struct content *c,
 	html->parser = dom_hubbub_parser_create(html->encoding, 
 						true, 
 						nsoption_bool(enable_javascript), 
-						&html->document,
 						NULL, 
 						html_process_script, 
-						html);
+						html,
+						&html->document);
 	if (html->parser == NULL) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to Windows-1252 */
@@ -471,11 +469,10 @@ html_process_encoding_change(struct content *c,
 		html->parser = dom_hubbub_parser_create(html->encoding, 
 							true, 
 							nsoption_bool(enable_javascript), 
-							&html->document,
-
 							NULL, 
 							html_process_script, 
-							html);
+							html,
+							&html->document);
 
 		if (html->parser == NULL) {
 			union content_msg_data msg_data;
