@@ -16,8 +16,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define AMI_CUSTOM_MASK 1
-
 #include "amiga/os3support.h"
 
 #include "assert.h"
@@ -127,9 +125,8 @@ void bitmap_destroy(void *bitmap)
 		if(bm->dto) {
 			DisposeDTObject(bm->dto);
 		}
-#ifdef AMI_CUSTOM_MASK
+
 		if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
-#endif
 		FreeVec(bm->pixdata);
 		bm->pixdata = NULL;
 		bm->nativebm = NULL;
@@ -180,9 +177,7 @@ void bitmap_modified(void *bitmap) {
 		p96FreeBitMap(bm->nativebm);
 		
 	if(bm->dto) DisposeDTObject(bm->dto);
-#ifdef AMI_CUSTOM_MASK
 	if(bm->native_mask) FreeRaster(bm->native_mask, bm->width, bm->height);
-#endif
 	bm->nativebm = NULL;
 	bm->dto = NULL;
 	bm->native_mask = NULL;
@@ -552,17 +547,12 @@ static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	
 	GetDTAttrs(bitmap->dto, 
 		PDTA_DestBitMap, &dtbm,
-#ifndef AMI_CUSTOM_MASK
-		PDTA_MaskPlane, &bitmap->native_mask,
-#endif
 		TAG_END);
 	
 	bitmap->nativebmwidth = width;
 	bitmap->nativebmheight = height;
 
-#ifdef AMI_CUSTOM_MASK
 	ami_bitmap_get_mask(bitmap, width, height);
-#endif
 	return dtbm;
 }
 
