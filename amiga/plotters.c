@@ -670,7 +670,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 	}
 	else
 	{
-		ULONG tag, tag_data, minterm;
+		ULONG tag, tag_data, minterm = 0xc0;
 		
 		if(palette_mapped == false) {
 			tag = BLITA_UseSrcAlpha;
@@ -678,8 +678,8 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 			minterm = 0xc0;
 		} else {
 			tag = BLITA_MaskPlane;
-			tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height);
-			minterm = (ABC|ABNC|ANBC);
+			if(tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height))
+				minterm = (ABC|ABNC|ANBC);
 		}
 
 		BltBitMapTags(BLITA_Width,width,
@@ -830,7 +830,7 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 			}
 			else
 			{
-				ULONG tag, tag_data, minterm;
+				ULONG tag, tag_data, minterm = 0xc0;
 		
 				if(palette_mapped == false) {
 					tag = BLITA_UseSrcAlpha;
@@ -838,8 +838,8 @@ static void ami_bitmap_tile_hook(struct Hook *hook,struct RastPort *rp,struct Ba
 					minterm = 0xc0;
 				} else {
 					tag = BLITA_MaskPlane;
-					tag_data = (ULONG)bfbm->mask;
-					minterm = (ABC|ABNC|ANBC);
+					if(tag_data = (ULONG)bfbm->mask)
+						minterm = (ABC|ABNC|ANBC);
 				}
 		
 				BltBitMapTags(BLITA_Width, bfbm->width,
