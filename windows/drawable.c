@@ -18,6 +18,8 @@
 
 #include <stdbool.h>
 
+#include "utils/config.h"
+
 #include <windows.h>
 #include <windowsx.h>
 

@@ -18,6 +18,9 @@
 
 #include <limits.h>
 #include <stdbool.h>
+
+#include "utils/config.h"
+
 #include <windows.h>
 
 #include "desktop/gui.h"

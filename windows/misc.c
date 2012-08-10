@@ -20,6 +20,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "utils/config.h"
+
 #include <windows.h>
 
 #include "desktop/cookies.h"
