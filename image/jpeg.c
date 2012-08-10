@@ -245,14 +245,16 @@ jpeg_cache_convert(struct content *c)
 	rowstride = bitmap_get_rowstride(bitmap);
 	do {
 		JSAMPROW scanlines[1];
-#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
-		int i;
 
 		scanlines[0] = (JSAMPROW) (pixels +
 					   rowstride * cinfo.output_scanline);
 		jpeg_read_scanlines(&cinfo, scanlines, 1);
 
-		/* expand to RGBA */
+#if RGB_RED != 0 || RGB_GREEN != 1 || RGB_BLUE != 2 || RGB_PIXELSIZE != 4
+{
+		/* Missmatch between configured libjpeg pixel format and
+		 * NetSurf pixel format.  Convert to RGBA */
+		int i;
 		for (i = width - 1; 0 <= i; i--) {
 			int r = scanlines[0][i * RGB_PIXELSIZE + RGB_RED];
 			int g = scanlines[0][i * RGB_PIXELSIZE + RGB_GREEN];
@@ -262,11 +264,7 @@ jpeg_cache_convert(struct content *c)
 			scanlines[0][i * 4 + 2] = b;
 			scanlines[0][i * 4 + 3] = 0xff;
 		}
-#else
-		scanlines[0] = (JSAMPROW) (pixels +
-					   rowstride * cinfo.output_scanline);
-		jpeg_read_scanlines(&cinfo, scanlines, 1);
-
+}
 #endif
 	} while (cinfo.output_scanline != cinfo.output_height);
 	bitmap_modified(bitmap);
