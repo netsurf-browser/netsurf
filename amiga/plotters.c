@@ -678,7 +678,7 @@ static bool ami_bitmap(int x, int y, int width, int height, struct bitmap *bitma
 			minterm = 0xc0;
 		} else {
 			tag = BLITA_MaskPlane;
-			if(tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height))
+			if(tag_data = (ULONG)ami_bitmap_get_mask(bitmap, width, height, tbm))
 				minterm = (ABC|ABNC|ANBC);
 		}
 
@@ -782,7 +782,7 @@ bool ami_bitmap_tile(int x, int y, int width, int height,
 		bfbm.height = height;
 		bfbm.offsetx = ox;
 		bfbm.offsety = oy;
-		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height);;
+		bfbm.mask = ami_bitmap_get_mask(bitmap, width, height, tbm);
 		bfh = AllocVec(sizeof(struct Hook),MEMF_CLEAR);
 		bfh->h_Entry = (HOOKFUNC)ami_bitmap_tile_hook;
 		bfh->h_SubEntry = 0;

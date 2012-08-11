@@ -3845,7 +3845,7 @@ void gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 				minterm = 0xc0;
 			} else {
 				tag = BLITA_MaskPlane;
-				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16);
+				tag_data = (ULONG)ami_bitmap_get_mask(icon_bitmap, 16, 16, bm);
 				minterm = (ABC|ABNC|ANBC);
 			}
 		
@@ -3928,7 +3928,7 @@ void gui_window_set_search_ico(hlcache_handle *ico)
 					minterm = 0xc0;
 				} else {
 					tag = BLITA_MaskPlane;
-					tag_data = (ULONG)ami_bitmap_get_mask(ico_bitmap, 16, 16);
+					tag_data = (ULONG)ami_bitmap_get_mask(ico_bitmap, 16, 16, bm);
 					minterm = (ABC|ABNC|ANBC);
 				}
 

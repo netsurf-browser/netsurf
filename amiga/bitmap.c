@@ -472,39 +472,30 @@ static struct BitMap *ami_bitmap_get_truecolour(struct bitmap *bitmap,int width,
 	return tbm;
 }
 
-PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width, int height)
+PLANEPTR ami_bitmap_get_mask(struct bitmap *bitmap, int width,
+			int height, struct BitMap *n_bm)
 {
 	uint32 *bmi = (uint32 *) bitmap->pixdata;
 	UBYTE maskbit = 0;
+	ULONG bm_width;
 	int y, x, w;
 
 	if((height != bitmap->height) || (width != bitmap->width)) return NULL;
 	if(bitmap_get_opaque(bitmap) == true) return NULL;
 	if(bitmap->native_mask) return bitmap->native_mask;
 
-	bitmap->native_mask = AllocRaster(width, height);
+	bm_width = GetBitMapAttr(n_bm, BMA_WIDTH);
+	bitmap->native_mask = AllocRaster(bm_width, height);
 
-	w = width / 8;
-
-/*
-	int wu = width;
-	while((wu % 16) != 0) {
-		wu += 8;
-		w++;
-	}
-*/
-	
-	for(int i=0; i<(height * (width / 8)); i++) {
-		bitmap->native_mask[i] = 0;
-	}
+	int bpr = RASSIZE(bm_width, 1);
 
 	for(y=0; y<height; y++) {
 		for(x=0; x<width; x++) {
 			if ((*bmi & 0x000000ffU) <= (ULONG)nsoption_int(mask_alpha)) maskbit = 0;
 				else maskbit = 1;
 			bmi++;
-			bitmap->native_mask[(y*w) + (x/8)] =
-				(bitmap->native_mask[(y*w) + (x/8)] << 1) | maskbit;
+			bitmap->native_mask[(y*bpr) + (x/8)] =
+				(bitmap->native_mask[(y*bpr) + (x/8)] << 1) | maskbit;
 		}
 	}
 
@@ -552,7 +543,7 @@ static struct BitMap *ami_bitmap_get_palettemapped(struct bitmap *bitmap,
 	bitmap->nativebmwidth = width;
 	bitmap->nativebmheight = height;
 
-	ami_bitmap_get_mask(bitmap, width, height);
+	ami_bitmap_get_mask(bitmap, width, height, dtbm);
 	return dtbm;
 }
 
