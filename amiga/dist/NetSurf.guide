@@ -42,10 +42,14 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @{b}kiosk_mode@{ub} No gadgets
 @{b}printer_unit@{ub} Specifies which printer.device unit to print to
 @{b}drag_save_icons@{ub} Enables displaying Workbench-style transparent icons under the pointer when performing drag saves (ctrl-drag of objects available if NetSurf is running on the Workbench screen) and text selection drags.  If set to 0 the pointer style will change instead.  OS 4.0 users may want to set this to 0 as icons will appear opaque and obscure the drop position.
-@{b}cairo_renderer@{ub} Set rendering engine (SObjs version only). 0 = graphics.library, 1 = Cairo/graphics.library mixed (recommended), 2 = Full Cairo.
+@{b}cairo_renderer@{ub} Set rendering engine. -1 = palette-mapped (set automatically when required), 0 = graphics.library, 1 = Cairo/graphics.library mixed (recommended), 2 = Full Cairo.
 @{b}monitor_aspect_x@{ub}/@{b}monitor_aspect_y@{ub} Correct aspect ratio for displays (default of 0 means "assume square pixels").
 @{b}screen_compositing@{ub} Use compositing on NetSurf's own screen. 0=disable, 1=enable, 2=default
 @{b}redraw_tile_size_x@{ub}/@{b}redraw_tile_size_y@{ub} Specify the size of the off-screen bitmap. Higher will speed up redraws at the expense of memory. 0 disables tiling (will use a bitmap at least the size of the screen NetSurf is running on)
+@{b}font_antialiasing@{ub} Switch text anti-aliasing on or off. Defaults to on in true-colour modes, but text rendering performance can be improved by setting to 0.
+
+@{b}dithering_quality@{ub} Specify the dithering quality from all values supported by picture.datatype. Currently these are 0=None, 1=Normal, 2=High quality. Other values are undefined. This is only used when NetSurf is running in palette-mapped mode.
+@{b}mask_alpha@{ub} Threshold to use when determining which alpha values to convert to full transparency (0 - 255, where 255 will convert even opaque pixels to transparent).  Defaults to 50 (0x32).  This is only used in palette-mapped modes where alpha blending is not currently supported.
 
 @{b}url_file@{ub} Path to URL database file
 @{b}hotlist_file@{ub} Path to Hotlist file
@@ -69,11 +73,15 @@ If the font NetSurf is trying to use does not contain a specific character used 
 
 For most users, installing and selecting @{"Code2000" rxs "address netsurf 'open http://code2000.sf.net'"} or @{"Bitstream Cyberbit" rxs "address netsurf 'open http://ftp.netscape.com/pub/communicator/extras/fonts/windows/'"} is the best option.
 
+Additional fall-back fonts can be provided since NetSurf 3.0. These need to go into Users/user/Choices as a comma-separated list, for the font_unicode_list option.
+
+NB: Since NetSurf 3.0, NetSurf will scan the provided Unicode fonts, and the rest of the system fonts, on first startup.  Setting font_unicode_only:1 will prevent fonts not in the preferred Unicode fonts list from being scanned or used as fallback fonts.  If the system fonts or NetSurf's fallback fonts list changes, this cache will need to be re-generated.  This can be forced by deleting the font glyph cache (which defaults to Users/user/FontGlyphCache).
+
 @{b}Font sizes@{ub}
 
 The default and minimum font sizes can also be set.
 NB: The resolution setting on the "Rendering" tab in NetSurf's preferences affects how big text appears on screen (the conversion between point and pixel sizes) amongst other things.  To find the correct value, divide the number of pixels on the screen vertically by the physical height of the screen in inches (horizontal resolution is calculated automatically if NetSurf is running on a custom screen, square pixels are assumed on all other screens).
-If the monitor is widescreen, monitor_aspect_x and monitor_aspect_y values in Users/Default/Choices will also need modifying.
+If the monitor is widescreen, monitor_aspect_x and monitor_aspect_y values in Users/Default/Choices may also need modifying.
 @endnode
 
 @node Themes
@@ -266,6 +274,8 @@ Deselect @{b}Higher quality scaling@{ub}, this will be very slow if not done in 
 @{lindent 2}* In @{"Options" link Options}, set cairo_renderer:1@{lindent}
 
 @{lindent 2}* In @{"Options" link Options}, increase redraw_tile_size_x/y (increasing this value uses more graphics mem)@{lindent}
+
+@{lindent 2}* In @{"Options" link Options}, set font_antialiasing:0@{lindent}
 @endnode
 
 @node contact "Credits"
