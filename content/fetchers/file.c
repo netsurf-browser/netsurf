@@ -266,7 +266,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		return;
 	}
 
-	fd = open(ctx->path, O_RDONLY);
+	fd = open(ctx->path, O_RDONLY | O_BINARY);
 	if (fd < 0) {
 		/* process errors as appropriate */
 		fetch_file_process_error(ctx,
@@ -304,7 +304,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		goto fetch_file_process_aborted;
 
 	/* content length */
-	if (fetch_file_send_header(ctx, "Content-Length: %zd", fdstat->st_size))
+	if (fetch_file_send_header(ctx, "Content-Length: %"SSIZET_FMT, fdstat->st_size))
 		goto fetch_file_process_aborted;
 
 	/* create etag */

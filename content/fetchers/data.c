@@ -280,7 +280,7 @@ static void fetch_data_poll(lwc_string *scheme)
 
 			if (c->aborted == false) {
 				snprintf(header, sizeof header, 
-					"Content-Length: %zd",
+					"Content-Length: %"SSIZET_FMT,
 					c->datalen);
 				msg.type = FETCH_HEADER;
 				msg.data.header_or_data.buf = 

@@ -71,3 +71,15 @@ S_WINDOWS := $(addprefix windows/,$(S_WINDOWS))
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_WINDOWS) $(S_RESOURCES)
 EXETARGET := NetSurf.exe
+
+# ----------------------------------------------------------------------------
+# Install target
+# ----------------------------------------------------------------------------
+
+install-windows: netsurf-installer.exe
+
+WIN_RES_OBJ := installer.nsi NetSurf.ico netsurf.png welcome.html default.css messages
+WIN_RES_INS_OBJ := $(addprefix windows/res/,$(WIN_RES_OBJ))
+
+netsurf-installer.exe: $(EXETARGET) $(WIN_RES_INS_OBJ)
+	makensis -V4 -NOCD windows/res/installer.nsi 

@@ -116,13 +116,23 @@ char *realpath(const char *path, char *resolved_path);
     #define WITH_MMAP
 #endif
 
+/* gtk */
 #if defined(gtk)
 	#define WITH_THEME_INSTALL
 #endif
 
+/* amiga */
 #if defined(__amigaos4__) || defined(__AMIGA__) || \
 		defined(nsatari)
 	#define NO_IPV6
+#endif
+
+/* windows */
+#if (defined(_WIN32))
+#define SSIZET_FMT "Iu"
+#else
+#define SSIZET_FMT "zd"
+#define O_BINARY 0
 #endif
 
 #endif
