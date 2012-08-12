@@ -550,7 +550,7 @@ bool ami_text(int x, int y, const char *text, size_t length,
 
 	bool aa = true;
 	
-	if((nsoption_bool(font_antialiasing) == false) || (palette_mapped == false))
+	if((nsoption_bool(font_antialiasing) == false) || (palette_mapped == true))
 		aa = false;
 	
 	ami_plot_setapen(fstyle->foreground);
