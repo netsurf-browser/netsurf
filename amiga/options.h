@@ -61,6 +61,7 @@
 	char *font_unicode_list;		\
 	char *font_unicode_file;		\
 	bool font_unicode_only;		\
+	bool font_antialiasing;		\
 	bool drag_save_icons;			\
 	int hotlist_window_xpos;		\
 	int hotlist_window_ypos;		\
@@ -123,6 +124,7 @@
 	.font_unicode_list = NULL,				\
 	.font_unicode_file = NULL,				\
 	.font_unicode_only = false,				\
+	.font_antialiasing = true,				\
 	.drag_save_icons = true,			\
 	.hotlist_window_xpos = 0,			\
 	.hotlist_window_ypos = 0,			\
@@ -184,6 +186,7 @@
 { "font_unicode_list",	OPTION_STRING,	&nsoptions.font_unicode_list }, \
 { "font_unicode_file",	OPTION_STRING,	&nsoptions.font_unicode_file }, \
 { "font_unicode_only",	OPTION_BOOL,	&nsoptions.font_unicode_only }, \
+{ "font_antialiasing",	OPTION_BOOL,	&nsoptions.font_antialiasing }, \
 { "drag_save_icons",	OPTION_BOOL,	&nsoptions.drag_save_icons}, \
 { "hotlist_window_xpos", OPTION_INTEGER, &nsoptions.hotlist_window_xpos}, \
 { "hotlist_window_ypos", OPTION_INTEGER, &nsoptions.hotlist_window_ypos}, \

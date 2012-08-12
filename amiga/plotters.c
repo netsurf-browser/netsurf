@@ -548,8 +548,13 @@ bool ami_text(int x, int y, const char *text, size_t length,
 	LOG(("[ami_plotter] Entered ami_text()"));
 	#endif
 
+	bool aa = true;
+	
+	if((nsoption_bool(font_antialiasing) == false) || (palette_mapped == false))
+		aa = false;
+	
 	ami_plot_setapen(fstyle->foreground);
-	ami_unicode_text(glob->rp, text, length, fstyle, x, y, !palette_mapped);
+	ami_unicode_text(glob->rp, text, length, fstyle, x, y, aa);
 	
 	return true;
 }
