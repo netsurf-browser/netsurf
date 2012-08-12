@@ -112,7 +112,7 @@
 	.faster_scroll = true,				\
 	.scale_quality = false,				\
 	.dither_quality = 1,				\
-	.mask_alpha = 0,					\
+	.mask_alpha = 50,					\
 	.ask_overwrite = true,				\
 	.printer_unit = 0,				\
 	.print_scale = 100,				\
