@@ -1411,6 +1411,27 @@ nserror browser_window_callback(hlcache_handle *c,
 		}
 		break;
 
+	case CONTENT_MSG_SCROLL:
+		/* Content wants to be scrolled */
+		if (bw->current_content != c)
+			break;
+
+		if (event->data.scroll.area) {
+			struct rect rect = {
+				.x0 = event->data.scroll.x0,
+				.y0 = event->data.scroll.y0,
+				.x1 = event->data.scroll.x1,
+				.y1 = event->data.scroll.y1
+			};
+			browser_window_scroll_visible(bw, &rect);
+		} else {
+			browser_window_set_scroll(bw,
+					event->data.scroll.x0,
+					event->data.scroll.y0);
+		}
+
+		break;
+
 	default:
 		assert(0);
 	}
