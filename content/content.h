@@ -74,6 +74,7 @@ typedef enum {
 	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
 	CONTENT_MSG_GETCTX,    /**< Javascript context */
+	CONTENT_MSG_SCROLL     /**< Request to scroll content */
 } content_msg;
 
 /** RFC5988 metadata link */
@@ -115,6 +116,14 @@ union content_msg_data {
 	struct content_rfc5988_link *rfc5988_link;
 	/** CONTENT_MSG_GETCTX - Javascript context */
 	struct jscontext **jscontext;
+	/** CONTENT_MSG_SCROLL - Part of content to scroll to show */
+	struct {
+		/** if true, scroll to show area given by (x0, y0) and (x1,y1).
+		 * if false, scroll point (x0, y0) to top left of viewport */
+		bool area;
+		int x0, y0;
+		int x1, y1;
+	} scroll;
 };
 
 /** parameters to content redraw */
