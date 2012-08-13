@@ -130,6 +130,8 @@ char *realpath(const char *path, char *resolved_path);
 /* windows */
 #if (defined(_WIN32))
 #define SSIZET_FMT "Iu"
+#elif (defined(riscos))
+#define SSIZET_FMT "zd"
 #else
 #define SSIZET_FMT "zd"
 #define O_BINARY 0
