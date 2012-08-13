@@ -34,9 +34,14 @@
 #include <limits.h>
 #include <stdarg.h>
 
+#include "utils/config.h"
+
+#ifdef HAVE_MMAP
+#include <sys/mman.h>
+#endif
+
 #include <libwapcaplet/libwapcaplet.h>
 
-#include "utils/config.h"
 #include "content/dirlist.h"
 #include "content/fetch.h"
 #include "content/fetchers/file.h"
@@ -249,12 +254,10 @@ fetch_file_process_error_aborted:
 static void fetch_file_process_plain(struct fetch_file_context *ctx,
 				     struct stat *fdstat)
 {
+#ifdef HAVE_MMAP
 	fetch_msg msg;
 	char *buf;
 	size_t buf_size;
-
-	ssize_t tot_read = 0;
-	ssize_t res;
 
 	int fd; /**< The file descriptor of the object */
 
@@ -266,8 +269,86 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		return;
 	}
 
-	fd = open(ctx->path, O_RDONLY | O_BINARY);
+	fd = open(ctx->path, O_RDONLY);
 	if (fd < 0) {
+		/* process errors as appropriate */
+		fetch_file_process_error(ctx,
+				fetch_file_errno_to_http_code(errno));
+		return;
+	}
+
+	/* set buffer size */
+	buf_size = fdstat->st_size;
+	if (buf_size > FETCH_FILE_MAX_BUF_SIZE)
+		buf_size = FETCH_FILE_MAX_BUF_SIZE;
+
+	/* allocate the buffer storage */
+	buf = mmap(NULL, buf_size, PROT_READ, MAP_SHARED, fd, 0);
+	if (buf == MAP_FAILED) {
+		msg.type = FETCH_ERROR;
+		msg.data.error = "Unable to map memory for file data buffer";
+		fetch_file_send_callback(&msg, ctx);
+		close(fd);
+		return;
+	}
+
+	/* fetch is going to be successful */
+	fetch_set_http_code(ctx->fetchh, 200);
+
+	/* Any callback can result in the fetch being aborted.
+	 * Therefore, we _must_ check for this after _every_ call to
+	 * fetch_file_send_callback().
+	 */
+
+	/* content type */
+	if (fetch_file_send_header(ctx, "Content-Type: %s", 
+			fetch_filetype(ctx->path)))
+		goto fetch_file_process_aborted;
+
+	/* content length */
+	if (fetch_file_send_header(ctx, "Content-Length: %"SSIZET_FMT, fdstat->st_size))
+		goto fetch_file_process_aborted;
+
+	/* create etag */
+	if (fetch_file_send_header(ctx, "ETag: \"%10" PRId64 "\"",
+			(int64_t) fdstat->st_mtime))
+		goto fetch_file_process_aborted;
+
+
+	msg.type = FETCH_DATA;
+	msg.data.header_or_data.buf = (const uint8_t *) buf;
+	msg.data.header_or_data.len = buf_size;
+	fetch_file_send_callback(&msg, ctx);
+
+	if (ctx->aborted == false) {
+		msg.type = FETCH_FINISHED;
+		fetch_file_send_callback(&msg, ctx);
+	}
+
+fetch_file_process_aborted:
+
+	munmap(buf, buf_size);
+	close(fd);
+#else
+	fetch_msg msg;
+	char *buf;
+	size_t buf_size;
+
+	ssize_t tot_read = 0;
+	ssize_t res;
+
+	FILE *infile;
+
+	/* Check if we can just return not modified */
+	if (ctx->file_etag != 0 && ctx->file_etag == fdstat->st_mtime) {
+		fetch_set_http_code(ctx->fetchh, 304);
+		msg.type = FETCH_NOTMODIFIED;
+		fetch_file_send_callback(&msg, ctx);
+		return;
+	}
+
+	infile = fopen(ctx->path, "rb");
+	if (infile == NULL) {
 		/* process errors as appropriate */
 		fetch_file_process_error(ctx,
 				fetch_file_errno_to_http_code(errno));
@@ -286,7 +367,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 		msg.data.error =
 			"Unable to allocate memory for file data buffer";
 		fetch_file_send_callback(&msg, ctx);
-		close(fd);
+		fclose(infile);
 		return;
 	}
 
@@ -314,21 +395,20 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	/* main data loop */
 	while (tot_read < fdstat->st_size) {
-		res = read(fd, buf, buf_size);
-		if (res == -1) {
-			msg.type = FETCH_ERROR;
-			msg.data.error = "Error reading file";
-			fetch_file_send_callback(&msg, ctx);
-			goto fetch_file_process_aborted;
-		}
-
+		res = fread(buf, 1, buf_size, infile);
 		if (res == 0) {
-			msg.type = FETCH_ERROR;
-			msg.data.error = "Unexpected EOF reading file";
-			fetch_file_send_callback(&msg, ctx);
-			goto fetch_file_process_aborted;
+			if (feof(infile)) {
+				msg.type = FETCH_ERROR;
+				msg.data.error = "Unexpected EOF reading file";
+				fetch_file_send_callback(&msg, ctx);
+				goto fetch_file_process_aborted;
+			} else {
+				msg.type = FETCH_ERROR;
+				msg.data.error = "Error reading file";
+				fetch_file_send_callback(&msg, ctx);
+				goto fetch_file_process_aborted;
+			}
 		}
-
 		tot_read += res;
 
 		msg.type = FETCH_DATA;
@@ -345,8 +425,9 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 fetch_file_process_aborted:
 
-	close(fd);
+	fclose(infile);
 	free(buf);
+#endif
 	return;
 }
 

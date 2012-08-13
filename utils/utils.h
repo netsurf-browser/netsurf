@@ -32,24 +32,36 @@
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
 #endif
+
 #ifndef ABS
 #define ABS(x) (((x)>0)?(x):(-(x)))
 #endif
+
 #ifdef __MINT__ /* avoid using GCCs builtin min/max functions */
 #undef min
 #undef max
 #endif
+
 #ifndef min
 #define min(x,y) (((x)<(y))?(x):(y))
 #endif
+
 #ifndef max
 #define max(x,y) (((x)>(y))?(x):(y))
 #endif
+
 #ifndef PRIxPTR
 #define PRIxPTR "x"
 #endif
+
 #ifndef PRId64
 #define PRId64 "lld"
+#endif
+
+#if defined(_WIN32)
+#define SSIZET_FMT "Iu"
+#else
+#define SSIZET_FMT "zd"
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ < 3)

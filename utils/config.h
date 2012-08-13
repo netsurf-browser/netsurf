@@ -90,6 +90,10 @@ char *realpath(const char *path, char *resolved_path);
 #undef HAVE_STDOUT
 #endif
 
+#define HAVE_MMAP
+#if (defined(_WIN32) || defined(riscos) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__))
+#undef HAVE_MMAP
+#endif
 
 /* This section toggles build options on and off.
  * Simply undefine a symbol to turn the relevant feature off.
@@ -125,16 +129,6 @@ char *realpath(const char *path, char *resolved_path);
 #if defined(__amigaos4__) || defined(__AMIGA__) || \
 		defined(nsatari)
 	#define NO_IPV6
-#endif
-
-/* windows */
-#if (defined(_WIN32))
-#define SSIZET_FMT "Iu"
-#elif (defined(riscos))
-#define SSIZET_FMT "zd"
-#else
-#define SSIZET_FMT "zd"
-#define O_BINARY 0
 #endif
 
 #endif
