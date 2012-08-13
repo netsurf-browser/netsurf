@@ -1229,6 +1229,15 @@ html_object_callback(hlcache_handle *object,
 		/* Don't care about favicons */
 		break;
 
+	case CONTENT_MSG_SCROLL:
+		if (box->scroll_x != NULL)
+			scrollbar_set(box->scroll_x, event->data.scroll.x0,
+					false);
+		if (box->scroll_y != NULL)
+			scrollbar_set(box->scroll_y, event->data.scroll.y0,
+					false);
+		break;
+
 	default:
 		assert(0);
 	}
