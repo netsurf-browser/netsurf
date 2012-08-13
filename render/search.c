@@ -202,7 +202,7 @@ void search_step(struct search_context *context, search_flags_t flags,
 	for(i = 0; i < string_len; i++)
 		if (string[i] != '#' && string[i] != '*') break;
 	if (i >= string_len) {
-		struct browser_window *bw;
+		union content_msg_data msg_data;
 		free_matches(context);
 		if (context->callbacks->status != NULL)
 			context->callbacks->status(true, context->p);
@@ -211,9 +211,10 @@ void search_step(struct search_context *context, search_flags_t flags,
 		if (context->callbacks->forward_state != NULL)
 			context->callbacks->forward_state(false, context->p);
 
-		bw = search_get_browser_window(context);
-		if (bw != NULL)
-			browser_window_set_scroll(bw, 0, 0);
+		msg_data.scroll.area = false;
+		msg_data.scroll.x0 = 0;
+		msg_data.scroll.y0 = 0;
+		content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
 		return;
 	}
 	search_text(string, string_len, context, flags);
@@ -259,7 +260,7 @@ void search_text(const char *string, int string_len,
 {
 	struct rect bounds;
 	struct box *box = NULL;
-	struct browser_window *bw;
+	union content_msg_data msg_data;
 	bool case_sensitive, forwards, showall;
 	
 	case_sensitive = ((flags & SEARCH_FLAG_CASE_SENSITIVE) != 0) ?
@@ -374,9 +375,12 @@ void search_text(const char *string, int string_len,
 				context->current->end_idx, &bounds);
 	}
 
-	bw = search_get_browser_window(context);
-	if (bw != NULL)
-		browser_window_scroll_visible(bw, &bounds);
+	msg_data.scroll.area = true;
+	msg_data.scroll.x0 = bounds.x0;
+	msg_data.scroll.y0 = bounds.y0;
+	msg_data.scroll.x1 = bounds.x1;
+	msg_data.scroll.y1 = bounds.y1;
+	content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
 }
 
 /**
