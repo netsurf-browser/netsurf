@@ -56,7 +56,8 @@ bool gui_empty_clipboard(void)
 	return true;
 }
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+bool gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
 {
 	if (nil == cocoa_clipboard_string) return false;
 	

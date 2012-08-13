@@ -129,7 +129,8 @@ void gui_clear_selection(struct gui_window *g);
 
 void gui_paste_from_clipboard(struct gui_window *g, int x, int y);
 bool gui_empty_clipboard(void);
-bool gui_add_to_clipboard(const char *text, size_t length, bool space);
+bool gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle);
 bool gui_commit_clipboard(void);
 bool gui_copy_to_clipboard(struct selection *s);
 

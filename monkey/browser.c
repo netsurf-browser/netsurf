@@ -339,7 +339,8 @@ gui_empty_clipboard(void)
 }
 
 bool
-gui_add_to_clipboard(const char *text, size_t length, bool space)
+gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
 {
   return true;
 }

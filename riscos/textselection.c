@@ -229,10 +229,12 @@ void gui_clear_selection(struct gui_window *g)
  * \param  text    text to be added
  * \param  length  length of text in bytes
  * \param  space   indicates whether a trailing space should be appended also
+ * \param  fstyle  font plot style for text
  * \return true iff successful
  */
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+bool gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
 {
 	size_t new_length = clip_length + length + (space ? 1 : 0);
 

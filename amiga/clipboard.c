@@ -17,6 +17,7 @@
  */
 
 #include "desktop/gui.h"
+#include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/box.h"
@@ -245,7 +246,8 @@ bool gui_empty_clipboard(void)
 	return false;
 }
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+bool gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
 {
 	/* This might crash or at least not work if gui_empty_clipboard isn't called first,
 	   and gui_commit_clipboard after.
@@ -418,7 +420,8 @@ void ami_drag_selection(struct selection *s)
 bool ami_easy_clipboard(char *text)
 {
 	if(!gui_empty_clipboard()) return false;
-	if(!gui_add_to_clipboard(text,strlen(text),false)) return false;
+	if(!gui_add_to_clipboard(text,strlen(text),false,plot_style_font))
+		return false;
 	if(!gui_commit_clipboard()) return false;
 
 	return true;

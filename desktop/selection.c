@@ -753,7 +753,7 @@ static bool selection_copy_handler(const char *text, size_t length,
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text != NULL && whitespace_length > 0) {
 		if (!gui_add_to_clipboard(whitespace_text,
-				whitespace_length, false)) {
+				whitespace_length, false, &style)) {
 			return false;
 		}
 	}
@@ -772,7 +772,7 @@ static bool selection_copy_handler(const char *text, size_t length,
 	}
 
 	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, add_space))
+	if (!gui_add_to_clipboard(text, length, add_space, &style))
 		return false;
 
 	return true;

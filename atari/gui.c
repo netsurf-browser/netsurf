@@ -643,7 +643,8 @@ bool gui_empty_clipboard(void)
 	return true;
 }
 
-bool gui_add_to_clipboard(const char *text_utf8, size_t length_utf8, bool space)
+bool gui_add_to_clipboard(const char *text_utf8, size_t length_utf8, bool space,
+		const plot_font_style_t *fstyle)
 {
 	LOG(("(%s): %s (%d)\n", (space)?"space":"", (char*)text_utf8, (int)length_utf8));
 	char * oldptr = tmp_clipboard;

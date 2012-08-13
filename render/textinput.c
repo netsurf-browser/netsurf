@@ -554,8 +554,8 @@ static bool textinput_textarea_cut(struct content *c,
 		struct box *next = box->next;
 
 		if (box->type == BOX_BR) {
-			if (clipboard &&
-					!gui_add_to_clipboard("\n", 1, false)) {
+			if (clipboard && !gui_add_to_clipboard("\n", 1, false,
+					plot_style_font)) {
 				gui_commit_clipboard();
 				return false;
 			}
@@ -565,7 +565,7 @@ static bool textinput_textarea_cut(struct content *c,
 			if (clipboard &&
 				!gui_add_to_clipboard(box->text + start_idx,
 					box->length - start_idx,
-					SPACE_LEN(box))) {
+					SPACE_LEN(box), plot_style_font)) {
 				gui_commit_clipboard();
 				return false;
 			}
@@ -593,7 +593,8 @@ static bool textinput_textarea_cut(struct content *c,
 	/* and the last box */
 	if (box) {
 		if (clipboard && !gui_add_to_clipboard(box->text + start_idx,
-				end_idx - start_idx, end_idx > box->length)) {
+				end_idx - start_idx, end_idx > box->length,
+				plot_style_font)) {
 			success = false;
 		} else {
 			if (del) {

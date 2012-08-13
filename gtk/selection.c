@@ -31,12 +31,13 @@ static GString *current_selection = NULL;
 static GtkClipboard *clipboard;
 
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+bool gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
 {
 	/* add the text from this box */
-	current_selection = g_string_append_len (current_selection,
+	current_selection = g_string_append_len(current_selection,
 		text, length);
-	if (space) g_string_append (current_selection, " ");
+	if (space) g_string_append(current_selection, " ");
 	return true;
 }
 

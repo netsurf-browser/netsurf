@@ -1668,7 +1668,8 @@ bool gui_empty_clipboard(void)
 	return true;
 }
 
-bool gui_add_to_clipboard(const char *text, size_t length, bool space)
+bool gui_add_to_clipboard(const char *text, size_t length, bool space,
+		const plot_font_style_t *fstyle)
 {
 	BString s;
 	s.SetTo(text, length);
@@ -1720,7 +1721,8 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text) {
 		if (!gui_add_to_clipboard(whitespace_text,
-				whitespace_length, false)) {
+				whitespace_length, false,
+				plot_style_font)) {
 			return false;
 		}
 	}
@@ -1740,7 +1742,7 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 	}
 
 	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, space))
+	if (!gui_add_to_clipboard(text, length, space, plot_style_font))
 		return false;
 
 	return true;
