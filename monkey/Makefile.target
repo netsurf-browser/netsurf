@@ -36,7 +36,7 @@
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
-  MONKEYLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
+  MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
 
   CFLAGS += $(MONKEYCFLAGS) -Werror
   LDFLAGS += $(MONKEYLDFLAGS)
