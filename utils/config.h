@@ -91,7 +91,7 @@ char *realpath(const char *path, char *resolved_path);
 #endif
 
 #define HAVE_MMAP
-#if (defined(_WIN32) || defined(riscos) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__))
+#if (defined(_WIN32) || defined(riscos) || defined(__HAIKU__) || defined(__BEOS__) || defined(__amigaos4__) || defined(__AMIGA__) || defined(__MINT__))
 #undef HAVE_MMAP
 #endif
 
