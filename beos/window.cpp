@@ -1734,10 +1734,7 @@ static bool copy_handler(const char *text, size_t length, struct box *box,
 		nsbeos_style_to_font(font, &style);
 		run->offset = current_selection.Length();
 		run->font = font;
-		css_color csscolor;
-		if (css_computed_color(box->style, &csscolor) == CSS_COLOR_COLOR) {
-			run->color = nsbeos_rgb_colour(nscss_color_to_ns(csscolor));
-		}
+		run->color = nsbeos_rgb_colour(style->foreground);
 		current_selection_textruns.AddItem(run);
 		space = box->space != 0;
 	}
