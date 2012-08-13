@@ -892,7 +892,7 @@ char * selection_get_copy(struct selection *s)
 		.length = 0
 	};
 
-	if (!s->defined)
+	if (s == NULL || !s->defined)
 		return NULL;
 
 	if (!selection_traverse(s, selection_copy_handler, &sel_string)) {
