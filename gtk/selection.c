@@ -46,7 +46,7 @@ bool gui_copy_to_clipboard(struct selection *s)
 	clipboard = gtk_clipboard_get (GDK_SELECTION_CLIPBOARD);
 	if (s->defined && selection_copy_to_clipboard(s))
 		gui_commit_clipboard();
-	return TRUE;
+	return true;
 }
 
 void gui_start_selection(struct gui_window *g)
