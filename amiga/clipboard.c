@@ -48,11 +48,6 @@
 
 struct IFFHandle *iffh = NULL;
 
-bool ami_add_to_clipboard(const char *text, size_t length, bool space);
-static bool ami_copy_selection(const char *text, size_t length,
-	struct box *box, void *handle, const char *whitespace_text,
-	size_t whitespace_length);
-
 static LONG ami_clipboard_iffp_do_nothing(struct Hook *hook, void *object, LONG *cmd)
 {
 	return 0;
@@ -322,33 +317,30 @@ bool gui_copy_to_clipboard(struct selection *s)
 struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
 {
 	struct ami_text_selection *sel;
+	int len;
+	char *ss;
 
 	sel = AllocVec(sizeof(struct ami_text_selection),
 			MEMF_PRIVATE | MEMF_CLEAR);
 
-	if(sel) selection_traverse(browser_window_get_selection(gwin->bw), ami_copy_selection, sel);
+	if (sel) {
+		/* Get selection string */
+		ss = selection_get_copy(browser_window_get_selection(gwin->bw));
+		if (ss == NULL)
+			return sel;
 
+		len = strlen(ss);
+
+		if (len > sizeof(sel->text))
+			len = sizeof(sel->text) - 1;
+
+		memcpy(sel->text, ss, len);
+		sel->length = len;
+		sel->text[sel->length] = '\0';
+
+		free(ss);
+	}
 	return sel;
-}
-
-static bool ami_copy_selection(const char *text, size_t length,
-	struct box *box, void *handle, const char *whitespace_text,
-	size_t whitespace_length)
-{
-	struct ami_text_selection *sel = handle;
-	int len = length;
-
-	if((length + (sel->length)) > (sizeof(sel->text)))
-		len = sizeof(sel->text) - (sel->length);
-
-	if(len <= 0) return false;
-
-	memcpy((sel->text) + (sel->length), text, len);
-	sel->length += len;
-
-	sel->text[sel->length] = '\0';
-
-	return true;
 }
 
 void ami_drag_selection(struct selection *s)
