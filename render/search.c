@@ -113,7 +113,7 @@ static struct browser_window *search_get_browser_window(
 
 /**
  * create a search_context
- * \param bw the browser_window the search_context is connected to
+ * \param h the hlcache_handle the search_context is connected to
  * \param callbacks the callbacks to modify appearance according to results
  * \param p the pointer to send to the callbacks
  * \return true for success
