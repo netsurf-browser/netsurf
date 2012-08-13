@@ -747,13 +747,27 @@ static bool selection_copy_handler(const char *text, size_t length,
 		struct box *box, void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
-	bool add_space = box != NULL ? box->space != 0 : false;
+	bool add_space = false;
+	plot_font_style_t style = *plot_style_font;
 
 	/* add any whitespace which precedes the text from this box */
 	if (whitespace_text != NULL && whitespace_length > 0) {
 		if (!gui_add_to_clipboard(whitespace_text,
 				whitespace_length, false)) {
 			return false;
+		}
+	}
+
+	if (box != NULL) {
+		/* HTML */
+		add_space = (box->space != 0);
+
+		if (box->style != NULL) {
+			/* Override default font style */
+			font_plot_style_from_css(box->style, &style);
+		} else {
+			/* If there's no style, there must be no text */
+			assert(box->text == NULL);
 		}
 	}
 
