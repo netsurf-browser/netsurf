@@ -886,7 +886,11 @@ static bool selection_copy_handler(const char *text, size_t length,
 
 char * selection_get_copy(struct selection *s)
 {
-	struct selection_string sel_string;
+	struct selection_string sel_string = {
+		.buffer = NULL,
+		.buffer_len = 0,
+		.length = 0
+	};
 
 	if (!s->defined)
 		return NULL;
