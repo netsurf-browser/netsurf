@@ -72,6 +72,12 @@ struct rdw_info {
 	struct rect r;
 };
 
+struct selection_string {
+	char *buffer;
+	size_t buffer_len;
+	size_t length;
+};
+
 static bool redraw_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length);
@@ -743,7 +749,7 @@ void selection_redraw(struct selection *s, unsigned start_idx, unsigned end_idx)
  * \return true iff successful and traversal should continue
  */
 
-static bool selection_copy_handler(const char *text, size_t length,
+static bool selection_copy_clip_handler(const char *text, size_t length,
 		struct box *box, void *handle, const char *whitespace_text,
 		size_t whitespace_length)
 {
@@ -788,7 +794,111 @@ static bool selection_copy_handler(const char *text, size_t length,
 
 bool selection_copy_to_clipboard(struct selection *s)
 {
-	return selection_traverse(s, selection_copy_handler, NULL);
+	return selection_traverse(s, selection_copy_clip_handler, NULL);
+}
+
+
+/**
+ * Append text to selection string.
+ *
+ * \param  text        text to be added
+ * \param  length      length of text in bytes
+ * \param  space       indicates whether a trailing space should be appended
+ * \param  sel_string  string to append to, may be resized
+ * \return true iff successful
+ */
+
+static bool selection_string_append(const char *text, size_t length, bool space,
+		struct selection_string *sel_string)
+{
+	size_t new_length = sel_string->length + length + (space ? 1 : 0) + 1;
+
+	if (new_length > sel_string->buffer_len) {
+		size_t new_alloc = new_length + (new_length / 4);
+		char *new_buff;
+
+		new_buff = realloc(sel_string->buffer, new_alloc);
+		if (new_buff == NULL)
+			return false;
+
+		sel_string->buffer = new_buff;
+		sel_string->buffer_len = new_alloc;
+	}
+
+	memcpy(sel_string->buffer + sel_string->length, text, length);
+	sel_string->length += length;
+
+	if (space)
+		sel_string->buffer[sel_string->length++] = ' ';
+
+	sel_string->buffer[sel_string->length] = '\0';
+
+	return true;
+}
+
+
+/**
+ * Selection traversal routine for appending text to a string
+ *
+ * \param  text		pointer to text being added, or NULL for newline
+ * \param  length	length of text to be appended (bytes)
+ * \param  box		pointer to text box, or NULL if from textplain
+ * \param  handle	selection string to append to
+ * \param  whitespace_text    whitespace to place before text for formatting
+ *                            may be NULL
+ * \param  whitespace_length  length of whitespace_text
+ * \return true iff successful and traversal should continue
+ */
+
+static bool selection_copy_handler(const char *text, size_t length,
+		struct box *box, void *handle, const char *whitespace_text,
+		size_t whitespace_length)
+{
+	bool add_space = false;
+
+	/* add any whitespace which precedes the text from this box */
+	if (whitespace_text != NULL && whitespace_length > 0) {
+		if (!selection_string_append(whitespace_text,
+				whitespace_length, false, handle)) {
+			return false;
+		}
+	}
+
+	if (box != NULL) {
+		/* HTML */
+		add_space = (box->space != 0);
+	}
+
+	/* add the text from this box */
+	if (!selection_string_append(text, length, add_space, handle))
+		return false;
+
+	return true;
+}
+
+
+/**
+ * Get copy of selection as string
+ *
+ * \param s  selection
+ * \return string of selected text, or NULL.  Ownership passed to caller.
+ */
+
+char * selection_get_copy(struct selection *s)
+{
+	struct selection_string sel_string;
+
+	if (!s->defined)
+		return NULL;
+
+	if (!selection_traverse(s, selection_copy_handler, &sel_string)) {
+		if (sel_string.buffer != NULL) {
+			free(sel_string.buffer);
+		}
+		return NULL;
+	}
+
+	return sel_string.buffer;
 }
 
 

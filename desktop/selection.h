@@ -96,6 +96,7 @@ void selection_track(struct selection *s, browser_mouse_state mouse,
 		unsigned idx);
 
 bool selection_copy_to_clipboard(struct selection *s);
+char * selection_get_copy(struct selection *s);
 
 /** Handles completion of a drag operation */
 /* void selection_drag_end(struct selection *s); */
