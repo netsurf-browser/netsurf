@@ -1672,6 +1672,15 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space,
 		const plot_font_style_t *fstyle)
 {
 	BString s;
+	BFont font;
+	text_run *run = new text_run;
+
+	nsbeos_style_to_font(font, &fstyle);
+	run->offset = current_selection.Length();
+	run->font = font;
+	run->color = nsbeos_rgb_colour(fstyle->foreground);
+	current_selection_textruns.AddItem(run);
+
 	s.SetTo(text, length);
 	current_selection << s;
 	if (space)
@@ -1712,45 +1721,9 @@ bool gui_commit_clipboard(void)
 	return true;
 }
 
-static bool copy_handler(const char *text, size_t length, struct box *box,
-		void *handle, const char *whitespace_text,
-		size_t whitespace_length)
-{
-	bool space = false;
-	//XXX: handle box->style to StyledEdit / RTF ?
-	/* add any whitespace which precedes the text from this box */
-	if (whitespace_text) {
-		if (!gui_add_to_clipboard(whitespace_text,
-				whitespace_length, false,
-				plot_style_font)) {
-			return false;
-		}
-	}
-
-	// add a text_run for StyledEdit-like text formating
-	if (box && box->style) {
-		text_run *run = new text_run;
-		BFont font;
-		plot_font_style_t style;
-		font_plot_style_from_css(box->style, &style);
-		nsbeos_style_to_font(font, &style);
-		run->offset = current_selection.Length();
-		run->font = font;
-		run->color = nsbeos_rgb_colour(style->foreground);
-		current_selection_textruns.AddItem(run);
-		space = box->space != 0;
-	}
-
-	/* add the text from this box */
-	if (!gui_add_to_clipboard(text, length, space, plot_style_font))
-		return false;
-
-	return true;
-}
-
 bool gui_copy_to_clipboard(struct selection *s)
 {
-	if (s->defined && selection_traverse(s, copy_handler, NULL))
+	if (s->defined && selection_copy_to_clipboard(s))
 		gui_commit_clipboard();
 	return true;
 }
