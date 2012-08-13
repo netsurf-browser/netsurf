@@ -55,11 +55,6 @@ struct selection
 };
 
 
-typedef bool (*seln_traverse_handler)(const char *text, size_t length,
-		struct box *box, void *handle, const char *whitespace_text,
-		size_t whitespace_length);
-
-
 struct selection *selection_create(struct content *c, bool is_html);
 void selection_prepare(struct selection *s, struct content *c, bool is_html);
 void selection_destroy(struct selection *s);
@@ -101,9 +96,6 @@ char * selection_get_copy(struct selection *s);
 /** Handles completion of a drag operation */
 /* void selection_drag_end(struct selection *s); */
 #define selection_drag_end(s) ((s)->drag_state = DRAG_NONE)
-
-bool selection_traverse(struct selection *s, seln_traverse_handler handler,
-		void *handle);
 
 bool selection_highlighted(const struct selection *s,
 		unsigned start, unsigned end,

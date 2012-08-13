@@ -78,6 +78,12 @@ struct selection_string {
 	size_t length;
 };
 
+
+typedef bool (*seln_traverse_handler)(const char *text, size_t length,
+		struct box *box, void *handle, const char *whitespace_text,
+		size_t whitespace_length);
+
+
 static bool redraw_handler(const char *text, size_t length, struct box *box,
 		void *handle, const char *whitespace_text,
 		size_t whitespace_length);
@@ -618,8 +624,8 @@ bool traverse_tree(struct box *box, unsigned start_idx, unsigned end_idx,
  * \return false iff traversal abandoned part-way through
  */
 
-bool selection_traverse(struct selection *s, seln_traverse_handler handler,
-		void *handle)
+static bool selection_traverse(struct selection *s,
+		seln_traverse_handler handler, void *handle)
 {
 	save_text_whitespace before = WHITESPACE_NONE;
 	bool first = true;
