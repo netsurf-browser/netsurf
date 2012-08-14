@@ -44,6 +44,19 @@
 #include "utils/utils.h"
 
 
+/* callback informing us that a search context is nolonger valid */
+static void browser_window_search_invalidate(struct search_context *context,
+		void *p)
+{
+	struct browser_window *bw = p;
+	assert(bw != NULL);
+
+	if (bw->cur_search != NULL && bw->cur_search == context) {
+		/* The browser's current search is the one being invalidated */
+		bw->cur_search = NULL;
+	}
+}
+
 
 bool browser_window_search_create_context(struct browser_window *bw, 
 		struct gui_search_callbacks *gui_callbacks, void *gui_p)
@@ -61,6 +74,8 @@ bool browser_window_search_create_context(struct browser_window *bw,
 
 	callbacks.gui = gui_callbacks;
 	callbacks.gui_p = gui_p;
+	callbacks.invalidate = browser_window_search_invalidate;
+	callbacks.p = bw;
 	bw->cur_search = search_create_context(bw->current_content, callbacks);
 
 	if (bw->cur_search == NULL)

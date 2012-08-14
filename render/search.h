@@ -24,18 +24,22 @@
 
 #include "desktop/search.h"
 
+struct search_context;
+
 /**
  * Called when a search context is destroyed
- * \param p pointer for client data
+ * \param context  search context being invalidated
+ * \param p        pointer for client data
  */
-typedef void (*search_destroy_callback)(void *p);
+typedef void (*search_invalidate_callback)(struct search_context *context,
+		void *p);
 
 struct search_callbacks {
 	struct gui_search_callbacks *gui;
 	void *gui_p; /* private gui owned data */
+	search_invalidate_callback invalidate;
+	void *p; /* private client data */
 };
-
-struct search_context;
 
 
 struct search_context * search_create_context(struct hlcache_handle *h, 

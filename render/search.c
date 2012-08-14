@@ -30,7 +30,6 @@
 
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
 #include "desktop/gui.h"
 #include "desktop/selection.h"
 #include "render/box.h"
@@ -73,26 +72,6 @@ struct search_context {
 	bool 				newsearch;
 	bool				is_html;
 };
-
-
-/**
- * Find the browser window that contains the content associated with a search
- *
- * \param  search	search context
- * \return the browser window, or NULL if none
- */
-static struct browser_window *search_get_browser_window(
-		struct search_context *search)
-{
-	if (search->c != NULL) {
-		if (search->is_html == true) {
-			return html_get_browser_window(search->c);
-		} else {
-			return textplain_get_browser_window(search->c);
-		}
-	}
-	return NULL;
-}
 
 
 /**
@@ -722,13 +701,11 @@ void search_destroy_context(struct search_context *context)
 {
 	assert(context != NULL);
 
-	if (context->c != NULL) {
-		struct browser_window *bw = search_get_browser_window(context);
+	if (context->callbacks.invalidate != NULL) {
+		context->callbacks.invalidate(context, context->callbacks.p);
+	}
 
-		/* TODO: don't poke inside bw */
-		if (bw->cur_search == context) {
-			bw->cur_search = NULL;
-		}
+	if (context->c != NULL) {
 
 		if (context->is_html)
 			html_set_search(context->c, NULL);
