@@ -75,21 +75,6 @@ struct search_context {
 	struct list_entry 		*current; /* first for select all */
 };
 
-static void search_text(const char *string, int string_len,
-		struct search_context *context, search_flags_t flags);
-static const char *find_pattern(const char *string, int s_len,
-		const char *pattern, int p_len, bool case_sens, 
-		unsigned int *m_len);
-static bool find_occurrences_html(const char *pattern, int p_len,
-		struct box *cur, bool case_sens,
-		struct search_context *context);
-static bool find_occurrences_text(const char *pattern, int p_len,
-		struct content *c, bool case_sens,
-		struct search_context *context);
-static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
-		struct search_context *context);
-static void free_matches(struct search_context *context);
-
 
 /**
  * Find the browser window that contains the content associated with a search
@@ -175,57 +160,11 @@ struct search_context * search_create_context(hlcache_handle *h,
 
 
 /**
- * Begins/continues the search process
- * Note that this may be called many times for a single search.
- *
- * \param bw the browser_window to search in
- * \param flags the flags forward/back etc
- * \param string the string to match
- */
-
-void search_step(struct search_context *context, search_flags_t flags,
-		const char *string)
-{
-	int string_len;
-	int i = 0;
-	
-	if ((context == NULL) || (context->callbacks == NULL)) {
-		warn_user("SearchError", 0);
-		return;
-	}
-	
-	
-	if (context->callbacks->add_recent != NULL)
-		context->callbacks->add_recent(string, context->p);
-
-	string_len = strlen(string);
-	for(i = 0; i < string_len; i++)
-		if (string[i] != '#' && string[i] != '*') break;
-	if (i >= string_len) {
-		union content_msg_data msg_data;
-		free_matches(context);
-		if (context->callbacks->status != NULL)
-			context->callbacks->status(true, context->p);
-		if (context->callbacks->back_state != NULL)
-			context->callbacks->back_state(false, context->p);
-		if (context->callbacks->forward_state != NULL)
-			context->callbacks->forward_state(false, context->p);
-
-		msg_data.scroll.area = false;
-		msg_data.scroll.x0 = 0;
-		msg_data.scroll.y0 = 0;
-		content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
-		return;
-	}
-	search_text(string, string_len, context, flags);
-}
-
-/**
  * Release the memory used by the list of matches,
  * deleting selection objects too
  */
 
-void free_matches(struct search_context *context)
+static void free_matches(struct search_context *context)
 {
 	struct list_entry *a;
 	struct list_entry *b;
@@ -249,139 +188,6 @@ void free_matches(struct search_context *context)
 	}
 }
 
-/**
- * Search for a string in the box tree
- *
- * \param string the string to search for
- * \param string_len length of search string
- */
-void search_text(const char *string, int string_len,
-		struct search_context *context, search_flags_t flags)
-{
-	struct rect bounds;
-	struct box *box = NULL;
-	union content_msg_data msg_data;
-	bool case_sensitive, forwards, showall;
-	
-	case_sensitive = ((flags & SEARCH_FLAG_CASE_SENSITIVE) != 0) ?
-			true : false;
-	forwards = ((flags & SEARCH_FLAG_FORWARDS) != 0) ? true : false;
-	showall = ((flags & SEARCH_FLAG_SHOWALL) != 0) ? true : false;
-
-	if (context->c == NULL)
-		return;
-        
-	if (context->is_html == true) {
-		html_content *html = (html_content *)context->c;
-
-		box = html->layout;
-
-		if (!box)
-			return;
-	}
-
-	/* LOG(("do_search '%s' - '%s' (%p, %p) %p (%d, %d) %d",
-		search_data.string, string, search_data.content, c, search_data.found->next,
-		search_data.prev_case_sens, case_sens, forwards)); */
-
-	/* check if we need to start a new search or continue an old one */
-	if (context->newsearch) {
-		bool res;
-
-		if (context->string != NULL)
-			free(context->string);
-		context->current = NULL;
-		free_matches(context);
-
-		context->string = malloc(string_len + 1);
-		if (context->string != NULL) {
-			memcpy(context->string, string, string_len);
-			context->string[string_len] = '\0';
-		}
-
-		if ((context->callbacks != NULL) && 
-				(context->callbacks->hourglass != NULL))
-			context->callbacks->hourglass(true, context->p);
-
-		if (context->is_html == true) {
-			res = find_occurrences_html(string, string_len,
-					box, case_sensitive, context);
-		} else {
-			res = find_occurrences_text(string, string_len,
-					context->c, case_sensitive, context);
-		}
-
-		if (!res) {
-			free_matches(context);
-			if ((context->callbacks != NULL) && 
-					(context->callbacks->hourglass !=
-					NULL))
-				context->callbacks->hourglass(false,
-						context->p);
-			return;
-		}
-		if ((context->callbacks != NULL) && 
-				(context->callbacks->hourglass != NULL))
-			context->callbacks->hourglass(false, context->p);
-
-		context->prev_case_sens = case_sensitive;
-/* LOG(("%d %p %p (%p, %p)", new, search_data.found->next, search_data.current,
-		search_data.current->prev, search_data.current->next)); */
-		/* new search, beginning at the top of the page */
-		context->current = context->found->next;
-		context->newsearch = false;
-	}
-	else if (context->current != NULL) {
-		/* continued search in the direction specified */
-		if (forwards) {
-			if (context->current->next)
-				context->current = context->current->next;
-		}
-		else {
-			if (context->current->prev)
-				context->current = context->current->prev;
-		}
-	}
-
-	if (context->callbacks == NULL)
-		return;
-	if (context->callbacks->status != NULL)
-		context->callbacks->status((context->current != NULL), 
-				context->p);
-	search_show_all(showall, context);
-
-	if (context->callbacks->back_state != NULL)
-		context->callbacks->back_state((context->current != NULL) &&
-				(context->current->prev != NULL),
-				context->p);
-	if (context->callbacks->forward_state != NULL)
-		context->callbacks->forward_state((context->current != NULL) &&
-				(context->current->next != NULL), context->p);
-
-	if (context->current == NULL)
-		return;
-
-	if (context->is_html == true) {
-		/* get box position and jump to it */
-		box_coords(context->current->start_box, &bounds.x0, &bounds.y0);
-		/* \todo: move x0 in by correct idx */
-		box_coords(context->current->end_box, &bounds.x1, &bounds.y1);
-		/* \todo: move x1 in by correct idx */
-		bounds.x1 += context->current->end_box->width;
-		bounds.y1 += context->current->end_box->height;
-	} else {
-		textplain_coords_from_range(context->c,
-				context->current->start_idx,
-				context->current->end_idx, &bounds);
-	}
-
-	msg_data.scroll.area = true;
-	msg_data.scroll.x0 = bounds.x0;
-	msg_data.scroll.y0 = bounds.y0;
-	msg_data.scroll.x1 = bounds.x1;
-	msg_data.scroll.y1 = bounds.y1;
-	content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
-}
 
 /**
  * Find the first occurrence of 'match' in 'string' and return its index
@@ -395,8 +201,9 @@ void search_text(const char *string, int string_len,
  * \return pointer to first match, NULL if none
  */
 
-const char *find_pattern(const char *string, int s_len, const char *pattern,
-		int p_len, bool case_sens, unsigned int *m_len)
+static const char *find_pattern(const char *string, int s_len,
+		const char *pattern, int p_len, bool case_sens,
+		unsigned int *m_len)
 {
 	struct { const char *ss, *s, *p; bool first; } context[16];
 	const char *ep = pattern + p_len;
@@ -498,6 +305,43 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
 	return ss;
 }
 
+
+/**
+ * Add a new entry to the list of matches
+ *
+ * \param  start_idx  offset of match start within textual representation
+ * \param  end_idx    offset of match end
+ * \return pointer to added entry, NULL iff failed
+ */
+
+static struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
+		struct search_context *context)
+{
+	struct list_entry *entry;
+
+	/* found string in box => add to list */
+	entry = calloc(1, sizeof(*entry));
+	if (!entry) {
+		warn_user("NoMemory", 0);
+		return NULL;
+	}
+
+	entry->start_idx = start_idx;
+	entry->end_idx = end_idx;
+	entry->sel = NULL;
+
+	entry->next = 0;
+	entry->prev = context->found->prev;
+	if (context->found->prev == NULL)
+		context->found->next = entry;
+	else
+		context->found->prev->next = entry;
+	context->found->prev = entry;
+
+	return entry;
+}
+
+
 /**
  * Finds all occurrences of a given string in the html box tree
  *
@@ -507,8 +351,9 @@ const char *find_pattern(const char *string, int s_len, const char *pattern,
  * \param case_sens whether to perform a case sensitive search
  * \return true on success, false on memory allocation failure
  */
-bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
-		bool case_sens, struct search_context *context)
+static bool find_occurrences_html(const char *pattern, int p_len,
+		struct box *cur, bool case_sens,
+		struct search_context *context)
 {
 	struct box *a;
 
@@ -556,6 +401,7 @@ bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
 	return true;
 }
 
+
 /**
  * Finds all occurrences of a given string in a textplain content
  *
@@ -566,7 +412,7 @@ bool find_occurrences_html(const char *pattern, int p_len, struct box *cur,
  * \return true on success, false on memory allocation failure
  */
 
-bool find_occurrences_text(const char *pattern, int p_len,
+static bool find_occurrences_text(const char *pattern, int p_len,
 		struct content *c, bool case_sens,
 		struct search_context *context)
 {
@@ -606,6 +452,188 @@ bool find_occurrences_text(const char *pattern, int p_len,
 	return true;
 }
 
+
+/**
+ * Search for a string in the box tree
+ *
+ * \param string the string to search for
+ * \param string_len length of search string
+ */
+static void search_text(const char *string, int string_len,
+		struct search_context *context, search_flags_t flags)
+{
+	struct rect bounds;
+	struct box *box = NULL;
+	union content_msg_data msg_data;
+	bool case_sensitive, forwards, showall;
+
+	case_sensitive = ((flags & SEARCH_FLAG_CASE_SENSITIVE) != 0) ?
+			true : false;
+	forwards = ((flags & SEARCH_FLAG_FORWARDS) != 0) ? true : false;
+	showall = ((flags & SEARCH_FLAG_SHOWALL) != 0) ? true : false;
+
+	if (context->c == NULL)
+		return;
+
+	if (context->is_html == true) {
+		html_content *html = (html_content *)context->c;
+
+		box = html->layout;
+
+		if (!box)
+			return;
+	}
+
+	/* LOG(("do_search '%s' - '%s' (%p, %p) %p (%d, %d) %d",
+		search_data.string, string, search_data.content, c, search_data.found->next,
+		search_data.prev_case_sens, case_sens, forwards)); */
+
+	/* check if we need to start a new search or continue an old one */
+	if (context->newsearch) {
+		bool res;
+
+		if (context->string != NULL)
+			free(context->string);
+		context->current = NULL;
+		free_matches(context);
+
+		context->string = malloc(string_len + 1);
+		if (context->string != NULL) {
+			memcpy(context->string, string, string_len);
+			context->string[string_len] = '\0';
+		}
+
+		if ((context->callbacks != NULL) &&
+				(context->callbacks->hourglass != NULL))
+			context->callbacks->hourglass(true, context->p);
+
+		if (context->is_html == true) {
+			res = find_occurrences_html(string, string_len,
+					box, case_sensitive, context);
+		} else {
+			res = find_occurrences_text(string, string_len,
+					context->c, case_sensitive, context);
+		}
+
+		if (!res) {
+			free_matches(context);
+			if ((context->callbacks != NULL) &&
+					(context->callbacks->hourglass !=
+					NULL))
+				context->callbacks->hourglass(false,
+						context->p);
+			return;
+		}
+		if ((context->callbacks != NULL) &&
+				(context->callbacks->hourglass != NULL))
+			context->callbacks->hourglass(false, context->p);
+
+		context->prev_case_sens = case_sensitive;
+/* LOG(("%d %p %p (%p, %p)", new, search_data.found->next, search_data.current,
+		search_data.current->prev, search_data.current->next)); */
+		/* new search, beginning at the top of the page */
+		context->current = context->found->next;
+		context->newsearch = false;
+	}
+	else if (context->current != NULL) {
+		/* continued search in the direction specified */
+		if (forwards) {
+			if (context->current->next)
+				context->current = context->current->next;
+		}
+		else {
+			if (context->current->prev)
+				context->current = context->current->prev;
+		}
+	}
+
+	if (context->callbacks == NULL)
+		return;
+	if (context->callbacks->status != NULL)
+		context->callbacks->status((context->current != NULL),
+				context->p);
+	search_show_all(showall, context);
+
+	if (context->callbacks->back_state != NULL)
+		context->callbacks->back_state((context->current != NULL) &&
+				(context->current->prev != NULL),
+				context->p);
+	if (context->callbacks->forward_state != NULL)
+		context->callbacks->forward_state((context->current != NULL) &&
+				(context->current->next != NULL), context->p);
+
+	if (context->current == NULL)
+		return;
+
+	if (context->is_html == true) {
+		/* get box position and jump to it */
+		box_coords(context->current->start_box, &bounds.x0, &bounds.y0);
+		/* \todo: move x0 in by correct idx */
+		box_coords(context->current->end_box, &bounds.x1, &bounds.y1);
+		/* \todo: move x1 in by correct idx */
+		bounds.x1 += context->current->end_box->width;
+		bounds.y1 += context->current->end_box->height;
+	} else {
+		textplain_coords_from_range(context->c,
+				context->current->start_idx,
+				context->current->end_idx, &bounds);
+	}
+
+	msg_data.scroll.area = true;
+	msg_data.scroll.x0 = bounds.x0;
+	msg_data.scroll.y0 = bounds.y0;
+	msg_data.scroll.x1 = bounds.x1;
+	msg_data.scroll.y1 = bounds.y1;
+	content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
+}
+
+
+/**
+ * Begins/continues the search process
+ * Note that this may be called many times for a single search.
+ *
+ * \param bw the browser_window to search in
+ * \param flags the flags forward/back etc
+ * \param string the string to match
+ */
+
+void search_step(struct search_context *context, search_flags_t flags,
+		const char *string)
+{
+	int string_len;
+	int i = 0;
+
+	if ((context == NULL) || (context->callbacks == NULL)) {
+		warn_user("SearchError", 0);
+		return;
+	}
+
+	if (context->callbacks->add_recent != NULL)
+		context->callbacks->add_recent(string, context->p);
+
+	string_len = strlen(string);
+	for(i = 0; i < string_len; i++)
+		if (string[i] != '#' && string[i] != '*') break;
+	if (i >= string_len) {
+		union content_msg_data msg_data;
+		free_matches(context);
+		if (context->callbacks->status != NULL)
+			context->callbacks->status(true, context->p);
+		if (context->callbacks->back_state != NULL)
+			context->callbacks->back_state(false, context->p);
+		if (context->callbacks->forward_state != NULL)
+			context->callbacks->forward_state(false, context->p);
+
+		msg_data.scroll.area = false;
+		msg_data.scroll.x0 = 0;
+		msg_data.scroll.y0 = 0;
+		content_broadcast(context->c, CONTENT_MSG_SCROLL, msg_data);
+		return;
+	}
+	search_text(string, string_len, context, flags);
+}
+
+
 /**
  * Determines whether any portion of the given text box should be
  * selected because it matches the current search string.
@@ -635,6 +663,7 @@ bool search_term_highlighted(struct content *c,
 
 	return false;
 }
+
 
 /**
  * Specifies whether all matches or just the current match should
@@ -678,40 +707,6 @@ void search_show_all(bool all, struct search_context *context)
 	}
 }
 
-/**
- * Add a new entry to the list of matches
- *
- * \param  start_idx  offset of match start within textual representation
- * \param  end_idx    offset of match end
- * \return pointer to added entry, NULL iff failed
- */
-
-struct list_entry *add_entry(unsigned start_idx, unsigned end_idx,
-		struct search_context *context)
-{
-	struct list_entry *entry;
-
-	/* found string in box => add to list */
-	entry = calloc(1, sizeof(*entry));
-	if (!entry) {
-		warn_user("NoMemory", 0);
-		return NULL;
-	}
-
-	entry->start_idx = start_idx;
-	entry->end_idx = end_idx;
-	entry->sel = NULL;
-
-	entry->next = 0;
-	entry->prev = context->found->prev;
-	if (context->found->prev == NULL)
-		context->found->next = entry;
-	else
-		context->found->prev->next = entry;
-	context->found->prev = entry;
-
-	return entry;
-}
 
 /**
  * Ends the search process, invalidating all state
@@ -742,4 +737,3 @@ void search_destroy_context(struct search_context *context)
 	free_matches(context);
 	free(context);
 }
-
