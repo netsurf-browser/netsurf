@@ -90,11 +90,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "desktop/browser.h"
 #include "css/css.h"
+#include "utils/nsurl.h"
 #include "utils/types.h"
 
 struct box;
+struct browser_window;
 struct column;
 struct object_params;
 struct object_param;
