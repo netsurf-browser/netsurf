@@ -84,7 +84,7 @@ static void ami_search_add_recent(const char *string, void *p);
 static void ami_search_set_forward_state(bool active, void *p);
 static void ami_search_set_back_state(bool active, void *p);
 
-static struct search_callbacks ami_search_callbacks = {
+static struct gui_search_callbacks ami_search_callbacks = {
 	ami_search_set_forward_state,
 	ami_search_set_back_state,
 	ami_search_set_status,

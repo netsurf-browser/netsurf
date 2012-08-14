@@ -78,7 +78,7 @@ static void ro_gui_search_set_status(bool found, void *p);
 static void ro_gui_search_set_hourglass(bool active, void *p);
 static void ro_gui_search_add_recent(const char *string, void *p);
 
-static struct search_callbacks ro_gui_search_callbacks = {
+static struct gui_search_callbacks ro_gui_search_callbacks = {
 	ro_gui_search_set_forward_state,
 	ro_gui_search_set_back_state,
 	ro_gui_search_set_status,

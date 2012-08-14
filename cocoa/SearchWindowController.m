@@ -26,7 +26,7 @@
 static void cocoa_search_set_back( bool active, void *p );
 static void cocoa_search_set_forward( bool active, void *p );
 
-static struct search_callbacks cocoa_search_callbacks = {
+static struct gui_search_callbacks cocoa_search_callbacks = {
 	.forward_state = cocoa_search_set_forward,
 	.back_state = cocoa_search_set_back,
 	.status = NULL,

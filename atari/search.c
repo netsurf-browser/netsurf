@@ -30,7 +30,7 @@ static void nsatari_search_add_recent(const char *string, void *p);
 void nsatari_search_set_forward_state(bool active, void *p);
 void nsatari_search_set_back_state(bool active, void *p);
 
-static struct search_callbacks nsatari_search_callbacks = {
+static struct gui_search_callbacks nsatari_search_callbacks = {
 	nsatari_search_set_forward_state,
 	nsatari_search_set_back_state,
 	nsatari_search_set_status,

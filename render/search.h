@@ -24,13 +24,22 @@
 
 #include "desktop/search.h"
 
+/**
+ * Called when a search context is destroyed
+ * \param p pointer for client data
+ */
+typedef void (*search_destroy_callback)(void *p);
+
+struct search_callbacks {
+	struct gui_search_callbacks *gui;
+	void *gui_p; /* private gui owned data */
+};
+
 struct search_context;
 
 
-
-
 struct search_context * search_create_context(struct hlcache_handle *h, 
-		struct search_callbacks *callbacks, void *p);
+		struct search_callbacks callbacks);
 void search_destroy_context(struct search_context *context);
 void search_step(struct search_context *context, search_flags_t flags,
 		const char * string);

@@ -64,15 +64,14 @@ struct list_entry {
 };
 
 struct search_context {
+	struct search_callbacks		callbacks;
 	struct content	 		*c;
+	struct list_entry 		*found;
+	struct list_entry 		*current; /* first for select all */
 	char 				*string;
 	bool 				prev_case_sens;
 	bool 				newsearch;
 	bool				is_html;
-	void 				*p; /* front-specific data */
-	struct search_callbacks		*callbacks;
-	struct list_entry 		*found;
-	struct list_entry 		*current; /* first for select all */
 };
 
 
@@ -104,7 +103,7 @@ static struct browser_window *search_get_browser_window(
  * \return true for success
  */
 struct search_context * search_create_context(hlcache_handle *h,
-		struct search_callbacks *callbacks, void *p)
+		struct search_callbacks callbacks)
 {
 	struct search_context *context;
 	struct list_entry *search_head;
@@ -147,7 +146,6 @@ struct search_context * search_create_context(hlcache_handle *h,
 	context->c = c;
 	context->is_html = (content_get_type(h) == CONTENT_HTML) ? true : false;
 	context->callbacks = callbacks;
-	context->p = p;
 
 	if (context->is_html) {
 		html_set_search(context->c, context);
@@ -503,9 +501,10 @@ static void search_text(const char *string, int string_len,
 			context->string[string_len] = '\0';
 		}
 
-		if ((context->callbacks != NULL) &&
-				(context->callbacks->hourglass != NULL))
-			context->callbacks->hourglass(true, context->p);
+		if ((context->callbacks.gui != NULL) &&
+				(context->callbacks.gui->hourglass != NULL))
+			context->callbacks.gui->hourglass(true,
+					context->callbacks.gui_p);
 
 		if (context->is_html == true) {
 			res = find_occurrences_html(string, string_len,
@@ -517,16 +516,17 @@ static void search_text(const char *string, int string_len,
 
 		if (!res) {
 			free_matches(context);
-			if ((context->callbacks != NULL) &&
-					(context->callbacks->hourglass !=
+			if ((context->callbacks.gui != NULL) &&
+					(context->callbacks.gui->hourglass !=
 					NULL))
-				context->callbacks->hourglass(false,
-						context->p);
+				context->callbacks.gui->hourglass(false,
+						context->callbacks.gui_p);
 			return;
 		}
-		if ((context->callbacks != NULL) &&
-				(context->callbacks->hourglass != NULL))
-			context->callbacks->hourglass(false, context->p);
+		if ((context->callbacks.gui != NULL) &&
+				(context->callbacks.gui->hourglass != NULL))
+			context->callbacks.gui->hourglass(false,
+					context->callbacks.gui_p);
 
 		context->prev_case_sens = case_sensitive;
 /* LOG(("%d %p %p (%p, %p)", new, search_data.found->next, search_data.current,
@@ -547,20 +547,22 @@ static void search_text(const char *string, int string_len,
 		}
 	}
 
-	if (context->callbacks == NULL)
+	if (context->callbacks.gui == NULL)
 		return;
-	if (context->callbacks->status != NULL)
-		context->callbacks->status((context->current != NULL),
-				context->p);
+	if (context->callbacks.gui->status != NULL)
+		context->callbacks.gui->status((context->current != NULL),
+				context->callbacks.gui_p);
 	search_show_all(showall, context);
 
-	if (context->callbacks->back_state != NULL)
-		context->callbacks->back_state((context->current != NULL) &&
+	if (context->callbacks.gui->back_state != NULL)
+		context->callbacks.gui->back_state((context->current != NULL) &&
 				(context->current->prev != NULL),
-				context->p);
-	if (context->callbacks->forward_state != NULL)
-		context->callbacks->forward_state((context->current != NULL) &&
-				(context->current->next != NULL), context->p);
+				context->callbacks.gui_p);
+	if (context->callbacks.gui->forward_state != NULL)
+		context->callbacks.gui->forward_state(
+				(context->current != NULL) &&
+					(context->current->next != NULL),
+				context->callbacks.gui_p);
 
 	if (context->current == NULL)
 		return;
@@ -603,13 +605,14 @@ void search_step(struct search_context *context, search_flags_t flags,
 	int string_len;
 	int i = 0;
 
-	if ((context == NULL) || (context->callbacks == NULL)) {
+	if ((context == NULL) || (context->callbacks.gui == NULL)) {
 		warn_user("SearchError", 0);
 		return;
 	}
 
-	if (context->callbacks->add_recent != NULL)
-		context->callbacks->add_recent(string, context->p);
+	if (context->callbacks.gui->add_recent != NULL)
+		context->callbacks.gui->add_recent(string,
+				context->callbacks.gui_p);
 
 	string_len = strlen(string);
 	for(i = 0; i < string_len; i++)
@@ -617,12 +620,15 @@ void search_step(struct search_context *context, search_flags_t flags,
 	if (i >= string_len) {
 		union content_msg_data msg_data;
 		free_matches(context);
-		if (context->callbacks->status != NULL)
-			context->callbacks->status(true, context->p);
-		if (context->callbacks->back_state != NULL)
-			context->callbacks->back_state(false, context->p);
-		if (context->callbacks->forward_state != NULL)
-			context->callbacks->forward_state(false, context->p);
+		if (context->callbacks.gui->status != NULL)
+			context->callbacks.gui->status(true,
+					context->callbacks.gui_p);
+		if (context->callbacks.gui->back_state != NULL)
+			context->callbacks.gui->back_state(false,
+					context->callbacks.gui_p);
+		if (context->callbacks.gui->forward_state != NULL)
+			context->callbacks.gui->forward_state(false,
+					context->callbacks.gui_p);
 
 		msg_data.scroll.area = false;
 		msg_data.scroll.x0 = 0;
@@ -729,9 +735,10 @@ void search_destroy_context(struct search_context *context)
 		else
 			textplain_set_search(context->c, NULL);
 	}
-	if ((context->string != NULL) && (context->callbacks != NULL) &&
-			(context->callbacks->add_recent != NULL)) {
-		context->callbacks->add_recent(context->string, context->p);
+	if ((context->string != NULL) && (context->callbacks.gui != NULL) &&
+			(context->callbacks.gui->add_recent != NULL)) {
+		context->callbacks.gui->add_recent(context->string,
+				context->callbacks.gui_p);
 		free(context->string);
 	}
 	free_matches(context);

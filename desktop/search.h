@@ -22,8 +22,6 @@
 #include <ctype.h>
 #include <string.h>
 
-struct search_context;
-
 typedef enum {
 	SEARCH_FLAG_CASE_SENSITIVE = (1 << 0),
 	SEARCH_FLAG_FORWARDS = (1 << 1),
@@ -33,54 +31,54 @@ typedef enum {
 /**
  * Change the displayed search status.
  * \param found  search pattern matched in text
- * \param p the pointer sent to search_step() / search_create_context()
+ * \param p gui private data pointer provided with search callbacks
  */
-typedef void (*search_status_callback)(bool found, void *p);
+typedef void (*gui_search_status)(bool found, void *p);
 
 /**
  * display hourglass while searching
  * \param active start/stop indicator
- * \param p the pointer sent to search_step() / search_create_context()
+ * \param p gui private data pointer provided with search callbacks
  */
-typedef void (*search_hourglass_callback)(bool active, void *p);
+typedef void (*gui_search_hourglass)(bool active, void *p);
 
 /**
  * add search string to recent searches list
  * front has full liberty how to implement the bare notification;
  * core gives no guarantee of the integrity of the const char *
  * \param string search pattern
- * \param p the pointer sent to search_step() / search_create_context()
+ * \param p gui private data pointer provided with search callbacks
  */
-typedef void (*search_add_recent_callback)(const char *string, void *p);
+typedef void (*gui_search_add_recent)(const char *string, void *p);
 
 /**
  * activate search forwards button in gui
  * \param active activate/inactivate
- * \param p the pointer sent to search_step() / search_create_context()
+ * \param p gui private data pointer provided with search callbacks
  */
-typedef void (*search_forward_state_callback)(bool active, void *p);
+typedef void (*gui_search_forward_state)(bool active, void *p);
 
 /**
  * activate search back button in gui
  * \param active activate/inactivate
- * \param p the pointer sent to search_step() / search_create_context()
+ * \param p gui private data pointer provided with search callbacks
  */
-typedef void (*search_back_state_callback)(bool active, void *p);
+typedef void (*gui_search_back_state)(bool active, void *p);
 
-struct search_callbacks {
-	search_forward_state_callback 	forward_state;
-	search_back_state_callback 	back_state;
-	search_status_callback 		status;
-	search_hourglass_callback 	hourglass;
-	search_add_recent_callback 	add_recent;
+struct gui_search_callbacks {
+	gui_search_forward_state 	forward_state;
+	gui_search_back_state		back_state;
+	gui_search_status		status;
+	gui_search_hourglass		hourglass;
+	gui_search_add_recent		add_recent;
 };
 
 
 bool browser_window_search_create_context(struct browser_window *bw, 
-		struct search_callbacks *callbacks, void *p);
+		struct gui_search_callbacks *gui_callbacks, void *gui_p);
 void browser_window_search_destroy_context(struct browser_window *bw);
 bool browser_window_search_verify_new(struct browser_window *bw,
-		struct search_callbacks *callbacks, void *p);
+		struct gui_search_callbacks *gui_callbacks, void *gui_p);
 void browser_window_search_step(struct browser_window *bw,
 		search_flags_t flags, const char *string);
 void browser_window_search_show_all(bool all, struct browser_window *bw);

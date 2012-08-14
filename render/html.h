@@ -48,6 +48,7 @@ struct object_params;
 struct plotters;
 struct scrollbar;
 struct scrollbar_msg_data;
+struct search_context;
 
 /**
  * Container for stylesheets used by an HTML document

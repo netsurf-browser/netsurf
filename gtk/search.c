@@ -47,7 +47,7 @@ static void nsgtk_search_set_status(bool found, void *p);
 static void nsgtk_search_set_hourglass(bool active, void *p);
 static void nsgtk_search_add_recent(const char *string, void *p);
 
-static struct search_callbacks nsgtk_search_callbacks = {
+static struct gui_search_callbacks nsgtk_search_callbacks = {
 	nsgtk_search_set_forward_state,
 	nsgtk_search_set_back_state,
 	nsgtk_search_set_status,

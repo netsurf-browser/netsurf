@@ -46,9 +46,11 @@
 
 
 bool browser_window_search_create_context(struct browser_window *bw, 
-		struct search_callbacks *callbacks, void *p)
+		struct gui_search_callbacks *gui_callbacks, void *gui_p)
 {
+	struct search_callbacks callbacks;
 	assert(bw != NULL);
+	assert(gui_callbacks != NULL);
 
 	if (bw->cur_search != NULL)
 		search_destroy_context(bw->cur_search);
@@ -57,8 +59,9 @@ bool browser_window_search_create_context(struct browser_window *bw,
 	if (!bw->current_content)
 		return false;
 
-	bw->cur_search = search_create_context(bw->current_content,
-			callbacks, p);
+	callbacks.gui = gui_callbacks;
+	callbacks.gui_p = gui_p;
+	bw->cur_search = search_create_context(bw->current_content, callbacks);
 
 	if (bw->cur_search == NULL)
 		return false;
@@ -82,16 +85,17 @@ void browser_window_search_destroy_context(struct browser_window *bw)
  * non-NULL, creates a new search_context in case of a new search
  * \param bw the browser_window the search refers to
  * \param callbacks the callbacks to modify appearance according to results
- * \param p a pointer returned to the callbacks
+ * \param gui_p a pointer returned to the callbacks
  * \return true for success
  */
 bool browser_window_search_verify_new(struct browser_window *bw,
-		struct search_callbacks *callbacks, void *p)
+		struct gui_search_callbacks *gui_callbacks, void *gui_p)
 {
 	if (bw == NULL)
 		return false;
 	if (bw->cur_search == NULL)
-		return browser_window_search_create_context(bw, callbacks, p);
+		return browser_window_search_create_context(bw,
+				gui_callbacks, gui_p);
 
 	return true;
 }
