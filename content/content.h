@@ -107,9 +107,13 @@ union content_msg_data {
 		int object_width, object_height;
 	} redraw;
 	/** CONTENT_MSG_REFRESH - Minimum delay  */
-	int delay;	
+	int delay;
 	/** CONTENT_MSG_REFORMAT - Reformat should not cause a redraw */
 	bool background;
+	/** CONTENT_MSG_STATUS - Status message update.  If NULL, the content's
+	 * internal status text has been updated, and listener should use
+	 * content_get_status_message() */
+	const char *explicit_status_text;
 	/** CONTENT_MSG_DOWNLOAD - Low-level cache handle */
 	struct llcache_handle *download;
 	/** CONTENT_MSG_RFC5988_LINK - rfc5988 link data   */

@@ -240,6 +240,7 @@ void html_finish_conversion(html_content *c)
 	/* convert xml tree to box tree */
 	LOG(("XML to box (%p)", c));
 	content_set_status(&c->base, messages_get("Processing"));
+	msg_data.explicit_status_text = NULL;
 	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
 
 	exc = dom_document_get_document_element(c->document, (void *) &html);
@@ -1168,14 +1169,18 @@ html_object_callback(hlcache_handle *object,
 		LOG(("%d fetches active", c->base.active));
 
 		content_add_error(&c->base, "?", 0);
-		html_set_status(c, event->data.error);
-		content_broadcast(&c->base, CONTENT_MSG_STATUS, event->data);
 		html_object_failed(box, c, o->background);
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(c, content_get_status_message(object));
-		/* content_broadcast(&c->base, CONTENT_MSG_STATUS, 0); */
+		if (event->data.explicit_status_text == NULL) {
+			/* Object content's status text updated */
+			html_set_status(c, content_get_status_message(object));
+		} else {
+			/* Object content wants to set explicit message */
+			content_broadcast(&c->base, CONTENT_MSG_STATUS,
+					event->data);
+		}
 		break;
 
 	case CONTENT_MSG_REFORMAT:
@@ -1406,9 +1411,17 @@ html_convert_css_callback(hlcache_handle *css,
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(parent, content_get_status_message(css));
-		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-				event->data);
+		if (event->data.explicit_status_text == NULL) {
+			/* Object content's status text updated */
+			html_set_status(parent,
+					content_get_status_message(css));
+			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+					event->data);
+		} else {
+			/* Object content wants to set explicit message */
+			content_broadcast(&parent->base, CONTENT_MSG_STATUS,
+					event->data);
+		}
 		break;
 
 	default:

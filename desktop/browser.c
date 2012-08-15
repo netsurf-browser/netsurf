@@ -1323,7 +1323,15 @@ nserror browser_window_callback(hlcache_handle *c,
 		break;
 
 	case CONTENT_MSG_STATUS:
-		browser_window_set_status(bw, content_get_status_message(c));
+		if (event->data.explicit_status_text == NULL) {
+			/* Object content's status text updated */
+			browser_window_set_status(bw,
+					content_get_status_message(c));
+		} else {
+			/* Object content wants to set explicit message */
+			browser_window_set_status(bw,
+					event->data.explicit_status_text);
+		}
 		break;
 
 	case CONTENT_MSG_REFORMAT:

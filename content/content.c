@@ -169,6 +169,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		(void) llcache_handle_get_source_data(llcache, &source_size);
 
 		content_set_status(c, messages_get("Processing"));
+		msg_data.explicit_status_text = NULL;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 
 		content_convert(c);
@@ -182,6 +183,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		break;
 	case LLCACHE_EVENT_PROGRESS:
 		content_set_status(c, event->data.msg);
+		msg_data.explicit_status_text = NULL;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 		break;
 	}

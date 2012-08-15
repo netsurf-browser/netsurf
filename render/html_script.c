@@ -188,9 +188,6 @@ convert_script_async_cb(hlcache_handle *script,
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(parent, content_get_status_message(script));
-		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-				event->data);
 		break;
 
 	default:
@@ -248,9 +245,6 @@ convert_script_defer_cb(hlcache_handle *script,
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(parent, content_get_status_message(script));
-		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-				event->data);
 		break;
 
 	default:
@@ -345,9 +339,6 @@ convert_script_sync_cb(hlcache_handle *script,
 		break;
 
 	case CONTENT_MSG_STATUS:
-		html_set_status(parent, content_get_status_message(script));
-		content_broadcast(&parent->base, CONTENT_MSG_STATUS,
-				event->data);
 		break;
 
 	default:
