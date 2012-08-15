@@ -23,6 +23,7 @@
 #include "amiga/filetype.h"
 #include "amiga/plugin_hack.h"
 #include "content/content_protected.h"
+#include "content/hlcache.h"
 #include "desktop/plotters.h"
 #include "render/box.h"
 #include "utils/log.h"
