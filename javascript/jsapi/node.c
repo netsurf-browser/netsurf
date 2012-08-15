@@ -18,6 +18,7 @@
 
 
 /* IDL http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#interface-node 
+
 interface Node : EventTarget {
   const unsigned short ELEMENT_NODE = 1;
   const unsigned short ATTRIBUTE_NODE = 2; // historical
@@ -73,20 +74,9 @@ interface Node : EventTarget {
 };
 */
 
+#include "jsclass.h"
+
 #include "eventtarget.c"
-
-#ifndef JSCLASS_NAME
-#error "The class name must be defined"
-#endif
-
-#ifndef JSCLASS_TYPE
-#define CLASS jsclass
-#define PRIVATE priv
-#define EXPAND(a,b) PASTE(a,b)
-#define PASTE(x,y) x##_##y
-#define JSCLASS_OBJECT EXPAND(CLASS,JSCLASS_NAME)
-#define JSCLASS_TYPE EXPAND(JSCLASS_OBJECT,PRIVATE)
-#endif
 
 static JSBool JSAPI_NATIVE(hasChildNodes, JSContext *cx, uintN argc, jsval *vp)
 {

@@ -16,17 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <dom/dom.h>
-
-#include "utils/config.h"
-#include "utils/log.h"
-
-#include "javascript/jsapi.h"
 
 /* IDL http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#interface-document
-
-CAUTION - write, writeln are not part of the DOM they come from:
-http://www.w3.org/TR/html5/apis-in-html-documents.html#document.write
 
 interface Document : Node {
   readonly attribute DOMImplementation implementation;
@@ -69,29 +60,7 @@ interface Document : Node {
 
  */
 
-static void jsfinalize_document(JSContext *cx, JSObject *obj);
-
-struct jsclass_document_priv {
-	struct html_content *htmlc;
-	dom_document *node;
-};
-
-static JSClass jsclass_document =
-{
-        "document", 
-	JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-	JS_StrictPropertyStub,
-        JS_EnumerateStub, 
-	JS_ResolveStub, 
-	JS_ConvertStub, 
-	jsfinalize_document, 
-	JSCLASS_NO_OPTIONAL_MEMBERS
-};
-
-#define JSCLASS_NAME document
+#include "jsclass.h"
 
 #include "node.c"
 
@@ -104,7 +73,7 @@ static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 	dom_element *idelement;
 	struct jsclass_document_priv *document;
 
-	document = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
+	document = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &JSCLASS_OBJECT, NULL);
 	if (document == NULL) {
 		return JS_FALSE;
 	}
@@ -132,88 +101,7 @@ static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 	return JS_TRUE;
 }
 
-static JSBool JSAPI_NATIVE(write, JSContext *cx, uintN argc, jsval *vp)
-{
-	JSString* u16_txt;
-	char *txt;
-	unsigned long length;
-	struct jsclass_document_priv *document;
+#define JSAPI_FS_DOCUMENT \
+	JSAPI_FS_NODE, \
+	JSAPI_FS(getElementById, 1, 0) \
 
-	document = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &jsclass_document, NULL);
-	if (document == NULL) {
-		return JS_FALSE;
-	}
-
-	if (!JS_ConvertArguments(cx, argc, JSAPI_ARGV(cx, vp), "S", &u16_txt)) {
-		return JS_FALSE;
-	}
-
-	JSString_to_char(u16_txt, txt, length);
-
-	LOG(("content %p parser %p writing %s",
-	     document->htmlc, document->htmlc->parser, txt));
-	if (document->htmlc->parser != NULL) {
-		dom_hubbub_parser_insert_chunk(document->htmlc->parser, (uint8_t *)txt, length);
-	}
-	JSAPI_SET_RVAL(cx, vp, JSVAL_VOID);
-
-	return JS_TRUE;
-}
-
-static JSFunctionSpec jsfunctions_document[] = {
-	JSAPI_FS_NODE,
-	JSAPI_FS(write, 1, 0),
-	JSAPI_FS(getElementById, 1, 0),
-	JSAPI_FS_END
-};
-
-
-
-static void jsfinalize_document(JSContext *cx, JSObject *obj)
-{
-	struct jsclass_document_priv *document;
-
-	document = JS_GetInstancePrivate(cx, obj, &jsclass_document, NULL);
-	if (document != NULL) {
-		free(document);
-	}
-}
-
-JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_content *htmlc)
-{
-	/* create document object and return it */
-	JSObject *jsdocument;
-	struct jsclass_document_priv *document;
-
-	document = malloc(sizeof(document));
-	if (document == NULL) {
-		return NULL;
-	}
-	document->htmlc = htmlc;
-	document->node = htmlc->document;
-
-	jsdocument = JS_InitClass(cx, 
-		     parent, 
-		     NULL, 
-		     &jsclass_document, 
-		     NULL, 
-		     0, 
-		     NULL, 
-		     jsfunctions_document, 
-		     NULL, 
-		     NULL);
-	if (jsdocument == NULL) {
-		free(document);
-		return NULL;
-	}
-
-	LOG(("setting document private to %p", document));
-	/* private pointer to browsing context */
-	if (JS_SetPrivate(cx, jsdocument, document) != JS_TRUE) {
-		LOG(("failed to set document private"));
-		free(document);
-		return NULL;
-	}
-	
-	return jsdocument;
-}

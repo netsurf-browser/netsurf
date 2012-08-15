@@ -16,18 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <dom/dom.h>
-
-#include "utils/config.h"
-#include "utils/log.h"
-#include "render/html_internal.h"
-
-#include "javascript/jsapi.h"
 
 /* IDL http://dvcs.w3.org/hg/domcore/raw-file/tip/Overview.html#interface-element
 
-CAUTION - innerHTML etc. are not part of the DOM they come from:
-http://html5.org/specs/dom-parsing.html#extensions-to-the-element-interface
 
 interface Element : Node {
   readonly attribute DOMString? namespaceURI;
@@ -70,88 +61,24 @@ interface Element : Node {
 };
 */
 
-static void jsfinalize_element(JSContext *cx, JSObject *obj);
-
-struct jsclass_document_priv {
-	struct html_content *htmlc;
-	dom_element *node;
-};
-
-static JSClass jsclass_element =
-{
-        "Element", 
-	JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-	JS_PropertyStub, 
-	JS_StrictPropertyStub,
-        JS_EnumerateStub, 
-	JS_ResolveStub, 
-	JS_ConvertStub, 
-	jsfinalize_element, 
-	JSCLASS_NO_OPTIONAL_MEMBERS
-};
-
-#define JSCLASS_NAME element
+#include "jsclass.h"
 
 #include "node.c"
 
-static void jsfinalize_element(JSContext *cx, JSObject *obj)
+static JSBool JSAPI_NATIVE(getAttribute, JSContext *cx, uintN argc, jsval *vp)
 {
-	struct jsclass_document_priv *element;
-	element = JS_GetInstancePrivate(cx, obj, &jsclass_element, NULL);
-	if (element != NULL) {
-		free(element);
-	}
+	struct JSCLASS_TYPE *priv;
+
+	priv = JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx,vp), &JSCLASS_OBJECT, NULL);
+	if (priv == NULL)
+		return JS_FALSE;
+
+
+	JSAPI_SET_RVAL(cx, vp, JSVAL_NULL);
+
+	return JS_TRUE;
 }
 
-
-
-static JSFunctionSpec jsfunctions_element[] = {
-	JSAPI_FS_NODE,
-	JSAPI_FS_END
-};
-
-
-JSObject *
-jsapi_new_element(JSContext *cx, 
-		  JSObject *parent, 
-		  struct html_content *htmlc, 
-		  dom_element *domelement)
-{
-	/* create element object and return it */
-	JSObject *jselement;
-	struct jsclass_document_priv *element;
-
-	element = malloc(sizeof(element));
-	if (element == NULL) {
-		return NULL;
-	}
-	element->htmlc = htmlc;
-	element->node = domelement;
-
-	jselement = JS_InitClass(cx, 
-			   parent, 
-			   NULL, 
-			   &jsclass_element, 
-			   NULL, 
-			   0, 
-			   NULL, 
-			   jsfunctions_element, 
-			   NULL, 
-			   NULL);
-	if (jselement == NULL) {
-		free(element);
-		return NULL;
-	}
-
-	LOG(("setting private to %p", element));
-	/* private pointer to browsing context */
-	if (JS_SetPrivate(cx, jselement, element) != JS_TRUE) {
-		LOG(("failed to set private"));
-		free(element);
-		return NULL;
-	}
-
-	return jselement;
-}
+#define JSAPI_FS_ELEMENT \
+	JSAPI_FS_NODE, \
+	JSAPI_FS(getAttribute, 0, 0)
