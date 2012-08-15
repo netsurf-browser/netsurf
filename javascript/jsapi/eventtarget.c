@@ -26,19 +26,7 @@ interface EventTarget {
 };
 */
 
-
-#ifndef JSCLASS_NAME
-#error "The class name must be defined"
-#endif
-
-#ifndef JSCLASS_TYPE
-#define CLASS jsclass
-#define PRIVATE priv
-#define EXPAND(a,b) PASTE(a,b)
-#define PASTE(x,y) x##_##y
-#define JSCLASS_OBJECT EXPAND(CLASS,JSCLASS_NAME)
-#define JSCLASS_TYPE EXPAND(JSCLASS_OBJECT,PRIVATE)
-#endif
+#include "jsclass.h"
 
 static JSBool JSAPI_NATIVE(addEventListener, JSContext *cx, uintN argc, jsval *vp)
 {
