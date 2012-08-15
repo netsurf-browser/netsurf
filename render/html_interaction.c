@@ -197,6 +197,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	int scroll_mouse_x = 0, scroll_mouse_y = 0;
 	int padding_left, padding_right, padding_top, padding_bottom;
 	browser_drag_type drag_type = browser_window_get_drag_type(bw);
+	union content_msg_data msg_data;
 
 	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
@@ -214,9 +215,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				box->padding[BOTTOM] + box->padding[TOP];
 		status = form_select_mouse_action(html->visible_select_menu,
 				mouse, x - box_x, y - box_y);
-		if (status != NULL)
-			browser_window_set_status(bw, status);
-		else {
+		if (status != NULL) {
+			msg_data.explicit_status_text = status;
+			content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+		} else {
 			int width, height;
 			form_select_get_dimensions(html->visible_select_menu,
 					&width, &height);
@@ -252,8 +254,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			status = scrollbar_mouse_action(html->scrollbar, mouse, 
 					scroll_mouse_x, scroll_mouse_y);
 		}
-		
-		browser_window_set_status(bw, status);
+
+		msg_data.explicit_status_text = status;
+		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 		return;
 	}
 
@@ -685,8 +688,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	if (action == ACTION_SUBMIT || action == ACTION_GO)
 		bw->last_action = wallclock();
 
-	if (status != NULL)
-		browser_window_set_status(bw, status);
+	if (status != NULL) {
+		msg_data.explicit_status_text = status;
+		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
+	}
 
 	if (!iframe)
 		browser_window_set_pointer(bw, pointer);
