@@ -721,7 +721,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 #else
 				TDR_Arg2,"graphics.library static build",
 #endif
-				TDR_Arg4,verdate,
+				TDR_Arg3,verdate,
 				TAG_DONE);
 
 	free(temp2);
