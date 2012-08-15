@@ -32,7 +32,6 @@
 #include "content/content_protected.h"
 #include "content/fetch.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/selection.h"
 #include "desktop/scrollbar.h"
@@ -2510,7 +2509,7 @@ static nserror html_clone(const struct content *old, struct content **newc)
 
 void html_set_status(html_content *c, const char *extra)
 {
-	content_set_status(&c->base, "%s", extra);
+	content_set_status(&c->base, extra);
 }
 
 

@@ -59,7 +59,6 @@ const char * const content_status_name[] = {
 static nserror content_llcache_callback(llcache_handle *llcache,
 		const llcache_event *event, void *pw);
 static void content_convert(struct content *c);
-static void content_update_status(struct content *c);
 
 
 /**
@@ -169,7 +168,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 
 		(void) llcache_handle_get_source_data(llcache, &source_size);
 
-		content_set_status(c, messages_get("Processing"), source_size);
+		content_set_status(c, messages_get("Processing"));
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 
 		content_convert(c);
@@ -182,7 +181,7 @@ nserror content_llcache_callback(llcache_handle *llcache,
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		break;
 	case LLCACHE_EVENT_PROGRESS:
-		content_set_status(c, "%s", event->data.msg);
+		content_set_status(c, event->data.msg);
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 		break;
 	}
@@ -207,31 +206,7 @@ bool content_can_reformat(hlcache_handle *h)
 }
 
 
-/**
- * Updates content with new status.
- *
- * The textual status contained in the content is updated with given string.
- *
- * \param status_message new textual status
- */
-
-void content_set_status(struct content *c, const char *status_message, ...)
-{
-	va_list ap;
-	int len;
-
-	va_start(ap, status_message);
-	if ((len = vsnprintf(c->sub_status, sizeof (c->sub_status),
-			status_message, ap)) < 0 ||
-			(int)sizeof (c->sub_status) <= len)
-		c->sub_status[sizeof (c->sub_status) - 1] = '\0';
-	va_end(ap);
-
-	content_update_status(c);
-}
-
-
-void content_update_status(struct content *c)
+static void content_update_status(struct content *c)
 {
 	if (c->status == CONTENT_STATUS_LOADING ||
 			c->status == CONTENT_STATUS_READY) {
@@ -245,8 +220,28 @@ void content_update_status(struct content *c)
 				"%s (%.1fs)", messages_get("Done"),
 				(float) time / 100);
 	}
+}
 
-	/* LOG(("%s", c->status_message)); */
+
+/**
+ * Updates content with new status.
+ *
+ * The textual status contained in the content is updated with given string.
+ *
+ * \param status_message  new textual status
+ */
+
+void content_set_status(struct content *c, const char *status_message)
+{
+	size_t len = strlen(status_message);
+
+	if (len >= sizeof(c->sub_status)) {
+		len = sizeof(c->sub_status) - 1;
+	}
+	memcpy(c->sub_status, status_message, len);
+	c->sub_status[len] = '\0';
+
+	content_update_status(c);
 }
 
 
