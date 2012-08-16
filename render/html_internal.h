@@ -122,7 +122,7 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 
 void html_set_status(html_content *c, const char *extra);
 
-void html__redraw_a_box(struct content *c, struct box *box);
+void html__redraw_a_box(html_content *html, struct box *box);
 
 struct browser_window *html_get_browser_window(struct content *c);
 struct search_context *html_get_search(struct content *c);
