@@ -833,32 +833,8 @@ void html_overflow_scroll_callback(void *client_data,
 	struct html_scrollbar_data *data = client_data;
 	html_content *html = (html_content *)data->c;
 	struct box *box = data->box;
-	int x, y, box_x, box_y, diff_x, diff_y;
 	
 	switch(scrollbar_data->msg) {
-		case SCROLLBAR_MSG_REDRAW:
-			diff_x = box->padding[LEFT] + box->width +
-					box->padding[RIGHT] - SCROLLBAR_WIDTH;
-			diff_y = box->padding[TOP] + box->height +
-					box->padding[BOTTOM] - SCROLLBAR_WIDTH;
-	
-			box_coords(box, &box_x, &box_y);
-			if (scrollbar_is_horizontal(
-					scrollbar_data->scrollbar)) {
-				x = box_x + scrollbar_get_offset(box->scroll_x);
-				y = box_y + scrollbar_get_offset(box->scroll_y) +
-						diff_y;
-			} else {
-				x = box_x + scrollbar_get_offset(box->scroll_x) +
-						diff_x;
-				y = box_y + scrollbar_get_offset(box->scroll_y);
-			}
-			content__request_redraw((struct content *)html,
-					x + scrollbar_data->x0,
-					y + scrollbar_data->y0,
-     					scrollbar_data->x1 - scrollbar_data->x0,
-					scrollbar_data->y1 - scrollbar_data->y0);
-			break;
 		case SCROLLBAR_MSG_MOVED:
 			html_redraw_a_box(html->bw->current_content, box);
 			break;

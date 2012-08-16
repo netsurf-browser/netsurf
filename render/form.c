@@ -1272,18 +1272,10 @@ void form_select_menu_scroll_callback(void *client_data,
 	html_content *html = (html_content *)menu->c;
 	
 	switch (scrollbar_data->msg) {
-		case SCROLLBAR_MSG_REDRAW:
-			menu->callback(menu->client_data,
-				       	menu->width -
-					SCROLLBAR_WIDTH + scrollbar_data->x0,
-     					scrollbar_data->y0,
-					scrollbar_data->x1 - scrollbar_data->x0,
-					scrollbar_data->y1 - scrollbar_data->y0);
-			break;
 		case SCROLLBAR_MSG_MOVED:
 			menu->callback(menu->client_data,
 				    	0, 0,
-					menu->width - SCROLLBAR_WIDTH,
+					menu->width,
      					menu->height);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:

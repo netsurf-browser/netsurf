@@ -427,16 +427,6 @@ void scrollbar_set(struct scrollbar *s, int value, bool bar_pos)
 	msg.msg = SCROLLBAR_MSG_MOVED;
 	msg.scroll_offset = s->offset;
 	s->client_callback(s->client_data, &msg);
-
-	msg.msg = SCROLLBAR_MSG_REDRAW;
-	msg.x0 = s->horizontal ? SCROLLBAR_WIDTH - 1 : 0;
-	msg.y0 = s->horizontal ? 0 : SCROLLBAR_WIDTH - 1;
-	msg.x1 = (s->horizontal ? s->length - SCROLLBAR_WIDTH + 1 :
-			SCROLLBAR_WIDTH);
-	msg.y1 = (s->horizontal ? SCROLLBAR_WIDTH :
-			s->length - SCROLLBAR_WIDTH + 1);
-
-	s->client_callback(s->client_data, &msg);
 }
 
 
@@ -496,16 +486,6 @@ bool scrollbar_scroll(struct scrollbar *s, int change)
 	msg.scrollbar = s;
 	msg.msg = SCROLLBAR_MSG_MOVED;
 	msg.scroll_offset = s->offset;
-	s->client_callback(s->client_data, &msg);
-
-	msg.msg = SCROLLBAR_MSG_REDRAW;
-	msg.x0 = s->horizontal ? SCROLLBAR_WIDTH - 1 : 0;
-	msg.y0 = s->horizontal ? 0 : SCROLLBAR_WIDTH - 1;
-	msg.x1 = (s->horizontal ? s->length - SCROLLBAR_WIDTH + 1 :
-			SCROLLBAR_WIDTH);
-	msg.y1 = (s->horizontal ? SCROLLBAR_WIDTH :
-			s->length - SCROLLBAR_WIDTH + 1);
-
 	s->client_callback(s->client_data, &msg);
 
 	return true;

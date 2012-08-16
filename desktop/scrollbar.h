@@ -39,7 +39,6 @@
 struct scrollbar;
 
 typedef enum {
-	SCROLLBAR_MSG_REDRAW,		/* the scrollbar requests a redraw */
 	SCROLLBAR_MSG_MOVED,		/* the scroll value has changed */
 	SCROLLBAR_MSG_SCROLL_START,	/* a scrollbar drag has started, all
  					 * mouse events should be passed to
@@ -47,7 +46,6 @@ typedef enum {
 					 * coordinates
 					 */
 	SCROLLBAR_MSG_SCROLL_FINISHED,	/* cancel the above */
-			
 } scrollbar_msg;
 
 struct scrollbar_msg_data {

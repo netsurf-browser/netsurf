@@ -59,9 +59,6 @@ void browser_window_scroll_callback(void *client_data,
 	struct browser_window *bw = client_data;
 
 	switch(scrollbar_data->msg) {
-	case SCROLLBAR_MSG_REDRAW:
-		/* TODO: Is this needed? */
-		break;
 	case SCROLLBAR_MSG_MOVED:
 		if (bw->browser_window_type == BROWSER_WINDOW_IFRAME) {
 			html_redraw_a_box(bw->parent->current_content, bw->box);
