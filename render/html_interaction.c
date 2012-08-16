@@ -696,10 +696,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	}
 
-
-	if (action == ACTION_SUBMIT || action == ACTION_GO)
-		bw->last_action = wallclock();
-
 	if (status != NULL) {
 		msg_data.explicit_status_text = status;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);

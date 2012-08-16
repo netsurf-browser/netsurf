@@ -1003,6 +1003,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		warn_user("NoMemory", 0);
 
 	}
+
+	/* Record time */
+	bw->last_action = wallclock();
 }
 
 
