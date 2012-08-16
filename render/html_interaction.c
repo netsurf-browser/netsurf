@@ -585,7 +585,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			struct browser_window *parent;
 			for (parent = bw->parent; parent->parent;
 					parent = parent->parent);
-			if (browser_window_resize_frames(parent, mouse,
+			if (browser_window_frame_resize_start(parent, mouse,
 					x + bw->x, y + bw->y,
 					&pointer)) {
 				if (mouse & (BROWSER_MOUSE_DRAG_1 |

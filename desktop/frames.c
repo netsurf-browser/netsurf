@@ -798,7 +798,7 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 }
 
 
-bool browser_window_resize_frames(struct browser_window *bw,
+static bool browser_window_resize_frames(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
 		gui_pointer_shape *pointer)
 {
@@ -926,4 +926,12 @@ bool browser_window_resize_frames(struct browser_window *bw,
 				return true;
 	}
 	return false;
+}
+
+
+bool browser_window_frame_resize_start(struct browser_window *bw,
+		browser_mouse_state mouse, int x, int y,
+		gui_pointer_shape *pointer)
+{
+	return browser_window_resize_frames(bw, mouse, x, y, pointer);
 }
