@@ -587,8 +587,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					parent = parent->parent);
 			if (browser_window_resize_frames(parent, mouse,
 					x + bw->x, y + bw->y,
-					&pointer, &done)) {
-				status = messages_get("FrameDrag");
+					&pointer)) {
+				if (mouse & (BROWSER_MOUSE_DRAG_1 |
+						BROWSER_MOUSE_DRAG_2)) {
+					status = messages_get("FrameDrag");
+				}
+				done = true;
 			}
 		}
 

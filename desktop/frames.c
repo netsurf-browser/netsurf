@@ -796,8 +796,7 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 
 bool browser_window_resize_frames(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
-		gui_pointer_shape *pointer,
-		bool *action) {
+		gui_pointer_shape *pointer) {
 	struct browser_window *parent;
 	bool left, right, up, down;
 	int i, resize_margin;
@@ -896,8 +895,6 @@ bool browser_window_resize_frames(struct browser_window *bw,
 				bw->drag_resize_right = right;
 				bw->drag_resize_up = up;
 				bw->drag_resize_down = down;
-
-				*action = true;
 			}
 			return true;
 		}
@@ -906,13 +903,13 @@ bool browser_window_resize_frames(struct browser_window *bw,
 	if (bw->children) {
 		for (i = 0; i < (bw->cols * bw->rows); i++)
 			if (browser_window_resize_frames(&bw->children[i],
-					mouse, x, y, pointer, action))
+					mouse, x, y, pointer))
 				return true;
 	}
 	if (bw->iframes) {
 		for (i = 0; i < bw->iframe_count; i++)
 			if (browser_window_resize_frames(&bw->iframes[i],
-					mouse, x, y, pointer, action))
+					mouse, x, y, pointer))
 				return true;
 	}
 	return false;
