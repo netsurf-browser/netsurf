@@ -288,7 +288,8 @@ void browser_window_recalculate_iframes(struct browser_window *bw)
  */
 
 void browser_window_create_frameset(struct browser_window *bw,
-		struct content_html_frames *frameset) {
+		struct content_html_frames *frameset)
+{
 	int row, col, index;
 	struct content_html_frames *frame;
 	struct browser_window *window;
@@ -401,7 +402,8 @@ void browser_window_create_frameset(struct browser_window *bw,
  * \param  bw	    The browser window to reposition framesets for
  */
 
-void browser_window_recalculate_frameset(struct browser_window *bw) {
+void browser_window_recalculate_frameset(struct browser_window *bw)
+{
 	int widths[bw->cols][bw->rows];
 	int heights[bw->cols][bw->rows];
 	int bw_width, bw_height;
@@ -636,7 +638,8 @@ void browser_window_recalculate_frameset(struct browser_window *bw) {
  * \param  bw	    The browser window to resize
  */
 
-void browser_window_resize_frame(struct browser_window *bw, int x, int y) {
+void browser_window_resize_frame(struct browser_window *bw, int x, int y)
+{
 	struct browser_window *parent;
 	struct browser_window *sibling;
 	int col = -1, row = -1, i;
@@ -679,7 +682,8 @@ void browser_window_resize_frame(struct browser_window *bw, int x, int y) {
 
 bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 		struct browser_window *sibling,
-		int x, int y, bool width, bool height) {
+		int x, int y, bool width, bool height)
+{
 	int bw_dimension, sibling_dimension;
 	int bw_pixels, sibling_pixels;
 	struct frame_dimension *bw_d, *sibling_d;
@@ -796,7 +800,8 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 
 bool browser_window_resize_frames(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
-		gui_pointer_shape *pointer) {
+		gui_pointer_shape *pointer)
+{
 	struct browser_window *parent;
 	bool left, right, up, down;
 	int i, resize_margin;
@@ -847,13 +852,21 @@ bool browser_window_resize_frames(struct browser_window *bw,
 
 			/* check the sibling frames can be resized */
 			if (left)
-				left &= !parent->children[row * parent->cols + (col - 1)].no_resize;
+				left &= !parent->children[row *
+						parent->cols + (col - 1)].
+						no_resize;
 			if (right)
-				right &= !parent->children[row * parent->cols + (col + 1)].no_resize;
+				right &= !parent->children[row *
+						parent->cols + (col + 1)].
+						no_resize;
 			if (up)
-				up &= !parent->children[(row - 1) * parent->cols + col].no_resize;
+				up &= !parent->children[(row - 1) *
+						parent->cols + col].
+						no_resize;
 			if (down)
-				down &= !parent->children[(row + 1) * parent->cols + col].no_resize;
+				down &= !parent->children[(row + 1) *
+						parent->cols + col].
+						no_resize;
 
 			/* can't have opposite directions simultaneously */
 			if (up)
