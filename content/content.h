@@ -74,7 +74,8 @@ typedef enum {
 	CONTENT_MSG_DOWNLOAD,  /**< download, not for display */
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
 	CONTENT_MSG_GETCTX,    /**< Javascript context */
-	CONTENT_MSG_SCROLL     /**< Request to scroll content */
+	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
+	CONTENT_MSG_DRAGSAVE   /**< Allow drag saving of content */
 } content_msg;
 
 /** RFC5988 metadata link */
@@ -128,6 +129,16 @@ union content_msg_data {
 		int x0, y0;
 		int x1, y1;
 	} scroll;
+	/** CONTENT_MSG_DRAGSAVE - Drag save a content */
+	struct {
+		enum {
+			CONTENT_SAVE_ORIG,
+			CONTENT_SAVE_NATIVE,
+			CONTENT_SAVE_COMPLETE,
+			CONTENT_SAVE_SOURCE
+		} type;
+		struct hlcache_handle *content;
+	} dragsave;
 };
 
 /** parameters to content redraw */

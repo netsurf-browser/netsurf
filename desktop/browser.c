@@ -1440,6 +1440,36 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		break;
 
+	case CONTENT_MSG_DRAGSAVE:
+	{
+		/* Content wants drag save of a content */
+		struct browser_window *root = browser_window_get_root(bw);
+
+		switch(event->data.dragsave.type) {
+		case CONTENT_SAVE_ORIG:
+			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		case CONTENT_SAVE_NATIVE:
+			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		case CONTENT_SAVE_COMPLETE:
+			gui_drag_save_object(GUI_SAVE_COMPLETE,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		case CONTENT_SAVE_SOURCE:
+			gui_drag_save_object(GUI_SAVE_SOURCE,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		}
+	}
+		break;
+
 	default:
 		assert(0);
 	}
