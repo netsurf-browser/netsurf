@@ -731,18 +731,8 @@ browser_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *b
 	css_computed_style *style;
 	enum css_cursor_e cursor;
 	lwc_string **cursor_uris;
-	bool loading;
 
 	assert(bw);
-
-	loading = (bw->loading_content != NULL || (bw->current_content &&
-			content_get_status(bw->current_content) == 
-			CONTENT_STATUS_READY));
-
-	if (wallclock() - bw->last_action < 100 && loading)
-		/* If less than 1 second since last link followed, show
-		 * progress indicating pointer and we're loading something */
-		return BROWSER_POINTER_PROGRESS;
 
 	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
 		style = box->children->style;
@@ -769,13 +759,8 @@ browser_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *b
 			/* text input */
 			pointer = BROWSER_POINTER_CARET;
 		} else {
-			/* anything else */
-			if (loading) {
-				/* loading new content */
-				pointer = BROWSER_POINTER_PROGRESS;
-			} else {
-				pointer = BROWSER_POINTER_DEFAULT;
-			}
+			/* html content doesn't mind */
+			pointer = BROWSER_POINTER_AUTO;
 		}
 		break;
 	case CSS_CURSOR_CROSSHAIR:

@@ -1924,14 +1924,29 @@ void browser_window_set_pointer(struct browser_window *bw,
 {
 	struct browser_window *root = browser_window_get_root(bw);
 	gui_pointer_shape gui_shape;
+	bool loading;
 
 	assert(root);
 	assert(root->window);
 
-	if (shape == BROWSER_POINTER_AUTO) {
-		gui_shape = GUI_POINTER_DEFAULT;
+	loading = (bw->loading_content != NULL || (bw->current_content &&
+			content_get_status(bw->current_content) ==
+			CONTENT_STATUS_READY));
+
+	if (wallclock() - bw->last_action < 100 && loading) {
+		/* If loading and less than 1 second since last link followed,
+		 * force progress indicator pointer */
+		gui_shape = GUI_POINTER_PROGRESS;
+
+	} else if (shape == BROWSER_POINTER_AUTO) {
+		/* Up to browser window to decide */
+		if (loading)
+			gui_shape = GUI_POINTER_PROGRESS;
+		else
+			gui_shape = GUI_POINTER_DEFAULT;
 
 	} else {
+		/* Use what we were told */
 		gui_shape = (gui_pointer_shape)shape;
 	}
 
