@@ -581,19 +581,13 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		bool done = false;
 
 		/* frame resizing */
-		if (bw->parent) {
-			struct browser_window *parent;
-			for (parent = bw->parent; parent->parent;
-					parent = parent->parent);
-			if (browser_window_frame_resize_start(parent, mouse,
-					x + bw->x, y + bw->y,
-					&pointer)) {
-				if (mouse & (BROWSER_MOUSE_DRAG_1 |
-						BROWSER_MOUSE_DRAG_2)) {
-					status = messages_get("FrameDrag");
-				}
-				done = true;
+		if (browser_window_frame_resize_start(bw, mouse, x, y,
+				&pointer)) {
+			if (mouse & (BROWSER_MOUSE_DRAG_1 |
+					BROWSER_MOUSE_DRAG_2)) {
+				status = messages_get("FrameDrag");
 			}
+			done = true;
 		}
 
 		/* if clicking in the main page, remove the selection from any

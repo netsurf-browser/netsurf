@@ -933,5 +933,11 @@ bool browser_window_frame_resize_start(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
 		gui_pointer_shape *pointer)
 {
-	return browser_window_resize_frames(bw, mouse, x, y, pointer);
+	struct browser_window *root = browser_window_get_root(bw);
+	int offx, offy;
+
+	browser_window_get_position(bw, true, &offx, &offy);
+
+	return browser_window_resize_frames(root, mouse,
+			x + offx, y + offy, pointer);
 }
