@@ -75,7 +75,8 @@ typedef enum {
 	CONTENT_MSG_LINK,      /**< RFC5988 link */
 	CONTENT_MSG_GETCTX,    /**< Javascript context */
 	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
-	CONTENT_MSG_DRAGSAVE   /**< Allow drag saving of content */
+	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
+	CONTENT_MSG_SAVELINK   /**< Allow URL to be saved */
 } content_msg;
 
 /** RFC5988 metadata link */
@@ -139,6 +140,11 @@ union content_msg_data {
 		} type;
 		struct hlcache_handle *content;
 	} dragsave;
+	/** CONTENT_MSG_SAVELINK - Save a URL */
+	struct {
+		const char *url;
+		const char *title;
+	} savelink;
 };
 
 /** parameters to content redraw */

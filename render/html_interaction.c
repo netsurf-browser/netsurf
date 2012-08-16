@@ -696,16 +696,19 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
 			browser_window_go_post(bw, nsurl_access(url), 0, 0,
-					false, nsurl_access(hlcache_handle_get_url(h)),
+					false,
+					nsurl_access(hlcache_handle_get_url(h)),
 					true, true, 0);
+
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
-				gui_window_save_link(bw->window,
-						nsurl_access(url), title);
+			msg_data.savelink.url = nsurl_access(url);
+			msg_data.savelink.title = title;
+			content_broadcast(c, CONTENT_MSG_SAVELINK, msg_data);
+
 		} else if (mouse & (BROWSER_MOUSE_CLICK_1 |
 				BROWSER_MOUSE_CLICK_2))
 			action = ACTION_GO;
-
 	} else {
 		bool done = false;
 

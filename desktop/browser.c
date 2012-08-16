@@ -1473,6 +1473,16 @@ nserror browser_window_callback(hlcache_handle *c,
 	}
 		break;
 
+	case CONTENT_MSG_SAVELINK:
+	{
+		/* Content wants a link to be saved */
+		struct browser_window *root = browser_window_get_root(bw);
+		gui_window_save_link(root->window,
+				event->data.savelink.url,
+				event->data.savelink.title);
+	}
+		break;
+
 	default:
 		assert(0);
 	}
