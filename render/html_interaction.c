@@ -581,13 +581,13 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		bool done = false;
 
 		/* frame resizing */
-		if (bw->parent) {
-			struct browser_window *parent;
-			for (parent = bw->parent; parent->parent;
-					parent = parent->parent);
-			browser_window_resize_frames(parent, mouse,
-					x + bw->x, y + bw->y,
-					&pointer, &status, &done);
+		if (browser_window_frame_resize_start(bw, mouse, x, y,
+				&pointer)) {
+			if (mouse & (BROWSER_MOUSE_DRAG_1 |
+					BROWSER_MOUSE_DRAG_2)) {
+				status = messages_get("FrameDrag");
+			}
+			done = true;
 		}
 
 		/* if clicking in the main page, remove the selection from any
@@ -833,34 +833,10 @@ void html_overflow_scroll_callback(void *client_data,
 	struct html_scrollbar_data *data = client_data;
 	html_content *html = (html_content *)data->c;
 	struct box *box = data->box;
-	int x, y, box_x, box_y, diff_x, diff_y;
 	
 	switch(scrollbar_data->msg) {
-		case SCROLLBAR_MSG_REDRAW:
-			diff_x = box->padding[LEFT] + box->width +
-					box->padding[RIGHT] - SCROLLBAR_WIDTH;
-			diff_y = box->padding[TOP] + box->height +
-					box->padding[BOTTOM] - SCROLLBAR_WIDTH;
-	
-			box_coords(box, &box_x, &box_y);
-			if (scrollbar_is_horizontal(
-					scrollbar_data->scrollbar)) {
-				x = box_x + scrollbar_get_offset(box->scroll_x);
-				y = box_y + scrollbar_get_offset(box->scroll_y) +
-						diff_y;
-			} else {
-				x = box_x + scrollbar_get_offset(box->scroll_x) +
-						diff_x;
-				y = box_y + scrollbar_get_offset(box->scroll_y);
-			}
-			content__request_redraw((struct content *)html,
-					x + scrollbar_data->x0,
-					y + scrollbar_data->y0,
-     					scrollbar_data->x1 - scrollbar_data->x0,
-					scrollbar_data->y1 - scrollbar_data->y0);
-			break;
 		case SCROLLBAR_MSG_MOVED:
-			html_redraw_a_box(html->bw->current_content, box);
+			html__redraw_a_box(html, box);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
 		{

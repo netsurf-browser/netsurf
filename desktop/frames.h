@@ -33,9 +33,9 @@ void browser_window_recalculate_iframes(struct browser_window *bw);
 void browser_window_create_frameset(struct browser_window *bw,
 		struct content_html_frames *frameset);
 void browser_window_recalculate_frameset(struct browser_window *bw);
-bool browser_window_resize_frames(struct browser_window *bw,
+bool browser_window_frame_resize_start(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
-		gui_pointer_shape *pointer, const char **status, bool *action);
+		gui_pointer_shape *pointer);
 void browser_window_resize_frame(struct browser_window *bw, int x, int y);
 
 void browser_window_scroll_callback(void *client_data,

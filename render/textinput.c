@@ -967,7 +967,7 @@ bool textinput_textarea_paste_text(struct browser_window *bw,
 				textinput_textarea_move_caret,
 				textarea, c);
 
-		html__redraw_a_box(c, textarea);
+		html__redraw_a_box((html_content *)c, textarea);
 	}
 
 	return success;
@@ -1085,7 +1085,7 @@ static void textinput_input_update_display(struct content *c, struct box *input,
 			input, c);
 
 	if (dx || redraw)
-		html__redraw_a_box(c, input);
+		html__redraw_a_box(html, input);
 }
 
 
@@ -1599,7 +1599,7 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 			textarea, c);
 
 	if (scrolled || reflow)
-		html__redraw_a_box(c, textarea);
+		html__redraw_a_box(html, textarea);
 
 	return true;
 }
@@ -1657,7 +1657,7 @@ void textinput_textarea_click(struct content *c, browser_mouse_state mouse,
 			textarea, c);
 
 	if (scrolled)
-		html__redraw_a_box(c, textarea);
+		html__redraw_a_box(html, textarea);
 }
 
 
@@ -2122,7 +2122,7 @@ void textinput_input_click(struct content *c, struct box *input,
 			input, c);
 
 	if (dx)
-		html__redraw_a_box(c, input);
+		html__redraw_a_box(html, input);
 }
 
 

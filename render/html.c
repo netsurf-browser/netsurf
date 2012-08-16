@@ -2359,13 +2359,13 @@ void html_redraw_a_box(hlcache_handle *h, struct box *box)
  * \param  box  box to redraw
  */
 
-void html__redraw_a_box(struct content *c, struct box *box)
+void html__redraw_a_box(struct html_content *html, struct box *box)
 {
 	int x, y;
 
 	box_coords(box, &x, &y);
 
-	content__request_redraw(c, x, y,
+	content__request_redraw((struct content *)html, x, y,
 			box->padding[LEFT] + box->width + box->padding[RIGHT],
 			box->padding[TOP] + box->height + box->padding[BOTTOM]);
 }
@@ -2786,7 +2786,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 
 		/* Redraw box. */
 		if (containing_content == NULL)
-			html__redraw_a_box(c, file_box);
+			html__redraw_a_box(html, file_box);
 		else
 			html_redraw_a_box(containing_content, file_box);
 
