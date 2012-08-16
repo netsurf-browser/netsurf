@@ -836,7 +836,7 @@ void html_overflow_scroll_callback(void *client_data,
 	
 	switch(scrollbar_data->msg) {
 		case SCROLLBAR_MSG_MOVED:
-			html_redraw_a_box(html->bw->current_content, box);
+			html__redraw_a_box(html, box);
 			break;
 		case SCROLLBAR_MSG_SCROLL_START:
 		{
