@@ -46,8 +46,135 @@
 #include "utils/utils.h"
 
 
-static browser_pointer_shape get_pointer_shape(struct box *box, bool imagemap);
-static void html_box_drag_start(struct box *box, int x, int y);
+/**
+ * Get pointer shape for given box
+ *
+ * \param box       box in question
+ * \param imagemap  whether an imagemap applies to the box
+ */
+
+static browser_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
+{
+	browser_pointer_shape pointer;
+	css_computed_style *style;
+	enum css_cursor_e cursor;
+	lwc_string **cursor_uris;
+
+	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
+		style = box->children->style;
+	else
+		style = box->style;
+
+	if (style == NULL)
+		return BROWSER_POINTER_DEFAULT;
+
+	cursor = css_computed_cursor(style, &cursor_uris);
+
+	switch (cursor) {
+	case CSS_CURSOR_AUTO:
+		if (box->href || (box->gadget &&
+				(box->gadget->type == GADGET_IMAGE ||
+				box->gadget->type == GADGET_SUBMIT)) ||
+				imagemap) {
+			/* link */
+			pointer = BROWSER_POINTER_POINT;
+		} else if (box->gadget &&
+				(box->gadget->type == GADGET_TEXTBOX ||
+				box->gadget->type == GADGET_PASSWORD ||
+				box->gadget->type == GADGET_TEXTAREA)) {
+			/* text input */
+			pointer = BROWSER_POINTER_CARET;
+		} else {
+			/* html content doesn't mind */
+			pointer = BROWSER_POINTER_AUTO;
+		}
+		break;
+	case CSS_CURSOR_CROSSHAIR:
+		pointer = BROWSER_POINTER_CROSS;
+		break;
+	case CSS_CURSOR_POINTER:
+		pointer = BROWSER_POINTER_POINT;
+		break;
+	case CSS_CURSOR_MOVE:
+		pointer = BROWSER_POINTER_MOVE;
+		break;
+	case CSS_CURSOR_E_RESIZE:
+		pointer = BROWSER_POINTER_RIGHT;
+		break;
+	case CSS_CURSOR_W_RESIZE:
+		pointer = BROWSER_POINTER_LEFT;
+		break;
+	case CSS_CURSOR_N_RESIZE:
+		pointer = BROWSER_POINTER_UP;
+		break;
+	case CSS_CURSOR_S_RESIZE:
+		pointer = BROWSER_POINTER_DOWN;
+		break;
+	case CSS_CURSOR_NE_RESIZE:
+		pointer = BROWSER_POINTER_RU;
+		break;
+	case CSS_CURSOR_SW_RESIZE:
+		pointer = BROWSER_POINTER_LD;
+		break;
+	case CSS_CURSOR_SE_RESIZE:
+		pointer = BROWSER_POINTER_RD;
+		break;
+	case CSS_CURSOR_NW_RESIZE:
+		pointer = BROWSER_POINTER_LU;
+		break;
+	case CSS_CURSOR_TEXT:
+		pointer = BROWSER_POINTER_CARET;
+		break;
+	case CSS_CURSOR_WAIT:
+		pointer = BROWSER_POINTER_WAIT;
+		break;
+	case CSS_CURSOR_PROGRESS:
+		pointer = BROWSER_POINTER_PROGRESS;
+		break;
+	case CSS_CURSOR_HELP:
+		pointer = BROWSER_POINTER_HELP;
+		break;
+	default:
+		pointer = BROWSER_POINTER_DEFAULT;
+		break;
+	}
+
+	return pointer;
+}
+
+
+/**
+ * Start drag scrolling the contents of a box
+ *
+ * \param box	the box to be scrolled
+ * \param x	x ordinate of initial mouse position
+ * \param y	y ordinate
+ */
+
+static void html_box_drag_start(struct box *box, int x, int y)
+{
+	int box_x, box_y;
+	int scroll_mouse_x, scroll_mouse_y;
+
+	box_coords(box, &box_x, &box_y);
+
+	if (box->scroll_x != NULL) {
+		scroll_mouse_x = x - box_x ;
+		scroll_mouse_y = y - (box_y + box->padding[TOP] +
+				box->height + box->padding[BOTTOM] -
+				SCROLLBAR_WIDTH);
+		scrollbar_start_content_drag(box->scroll_x,
+				scroll_mouse_x, scroll_mouse_y);
+	} else if (box->scroll_y != NULL) {
+		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
+				box->width + box->padding[RIGHT] -
+				SCROLLBAR_WIDTH);
+		scroll_mouse_y = y - box_y;
+
+		scrollbar_start_content_drag(box->scroll_y,
+				scroll_mouse_x, scroll_mouse_y);
+	}
+}
 
 
 /**
@@ -722,96 +849,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 }
 
 
-browser_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
-{
-	browser_pointer_shape pointer;
-	css_computed_style *style;
-	enum css_cursor_e cursor;
-	lwc_string **cursor_uris;
-
-	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
-		style = box->children->style;
-	else
-		style = box->style;
-
-	if (style == NULL)
-		return BROWSER_POINTER_DEFAULT;
-
-	cursor = css_computed_cursor(style, &cursor_uris);
-
-	switch (cursor) {
-	case CSS_CURSOR_AUTO:
-		if (box->href || (box->gadget &&
-				(box->gadget->type == GADGET_IMAGE ||
-				box->gadget->type == GADGET_SUBMIT)) ||
-				imagemap) {
-			/* link */
-			pointer = BROWSER_POINTER_POINT;
-		} else if (box->gadget &&
-				(box->gadget->type == GADGET_TEXTBOX ||
-				box->gadget->type == GADGET_PASSWORD ||
-				box->gadget->type == GADGET_TEXTAREA)) {
-			/* text input */
-			pointer = BROWSER_POINTER_CARET;
-		} else {
-			/* html content doesn't mind */
-			pointer = BROWSER_POINTER_AUTO;
-		}
-		break;
-	case CSS_CURSOR_CROSSHAIR:
-		pointer = BROWSER_POINTER_CROSS;
-		break;
-	case CSS_CURSOR_POINTER:
-		pointer = BROWSER_POINTER_POINT;
-		break;
-	case CSS_CURSOR_MOVE:
-		pointer = BROWSER_POINTER_MOVE;
-		break;
-	case CSS_CURSOR_E_RESIZE:
-		pointer = BROWSER_POINTER_RIGHT;
-		break;
-	case CSS_CURSOR_W_RESIZE:
-		pointer = BROWSER_POINTER_LEFT;
-		break;
-	case CSS_CURSOR_N_RESIZE:
-		pointer = BROWSER_POINTER_UP;
-		break;
-	case CSS_CURSOR_S_RESIZE:
-		pointer = BROWSER_POINTER_DOWN;
-		break;
-	case CSS_CURSOR_NE_RESIZE:
-		pointer = BROWSER_POINTER_RU;
-		break;
-	case CSS_CURSOR_SW_RESIZE:
-		pointer = BROWSER_POINTER_LD;
-		break;
-	case CSS_CURSOR_SE_RESIZE:
-		pointer = BROWSER_POINTER_RD;
-		break;
-	case CSS_CURSOR_NW_RESIZE:
-		pointer = BROWSER_POINTER_LU;
-		break;
-	case CSS_CURSOR_TEXT:
-		pointer = BROWSER_POINTER_CARET;
-		break;
-	case CSS_CURSOR_WAIT:
-		pointer = BROWSER_POINTER_WAIT;
-		break;
-	case CSS_CURSOR_PROGRESS:
-		pointer = BROWSER_POINTER_PROGRESS;
-		break;
-	case CSS_CURSOR_HELP:
-		pointer = BROWSER_POINTER_HELP;
-		break;
-	default:
-		pointer = BROWSER_POINTER_DEFAULT;
-		break;
-	}
-
-	return pointer;
-}
-
-
 /**
  * Callback for in-page scrollbars.
  */
@@ -884,40 +921,6 @@ void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 				SCROLLBAR_WIDTH);
 		scroll_mouse_y = y - box_y;
 		scrollbar_mouse_drag_end(scrollbar, mouse,
-				scroll_mouse_x, scroll_mouse_y);
-	}
-}
-
-
-/**
- * Start drag scrolling the contents of a box
- *
- * \param box	the box to be scrolled
- * \param x	x ordinate of initial mouse position
- * \param y	y ordinate
- */
-
-void html_box_drag_start(struct box *box, int x, int y)
-{
-	int box_x, box_y;
-	int scroll_mouse_x, scroll_mouse_y;
-	
-	box_coords(box, &box_x, &box_y);
-	
-	if (box->scroll_x != NULL) {
-		scroll_mouse_x = x - box_x ;
-		scroll_mouse_y = y - (box_y + box->padding[TOP] +
-				box->height + box->padding[BOTTOM] -
-				SCROLLBAR_WIDTH);
-		scrollbar_start_content_drag(box->scroll_x,
-				scroll_mouse_x, scroll_mouse_y);
-	} else if (box->scroll_y != NULL) {
-		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
-				box->width + box->padding[RIGHT] -
-				SCROLLBAR_WIDTH);
-		scroll_mouse_y = y - box_y;
-		
-		scrollbar_start_content_drag(box->scroll_y,
 				scroll_mouse_x, scroll_mouse_y);
 	}
 }
