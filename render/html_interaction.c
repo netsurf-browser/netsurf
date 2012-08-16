@@ -46,7 +46,7 @@
 #include "utils/utils.h"
 
 
-static gui_pointer_shape get_pointer_shape(struct browser_window *bw,
+static browser_pointer_shape get_pointer_shape(struct browser_window *bw,
 		struct box *box, bool imagemap);
 static void html_box_drag_start(struct box *box, int x, int y);
 
@@ -175,7 +175,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	const char *target = 0;
 	char status_buffer[200];
 	const char *status = 0;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 	bool imagemap = false;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
@@ -370,19 +370,19 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	if (scrollbar) {
 		status = scrollbar_mouse_action(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
-		pointer = GUI_POINTER_DEFAULT;
+		pointer = BROWSER_POINTER_DEFAULT;
 	} else if (gadget) {
 		switch (gadget->type) {
 		case GADGET_SELECT:
 			status = messages_get("FormSelect");
-			pointer = GUI_POINTER_MENU;
+			pointer = BROWSER_POINTER_MENU;
 			if (mouse & BROWSER_MOUSE_CLICK_1 &&
 			    nsoption_bool(core_select_menu)) {
 				html->visible_select_menu = gadget;
 				form_open_select_menu(c, gadget,
 						form_select_menu_callback,
 						c);
-				pointer =  GUI_POINTER_DEFAULT;
+				pointer =  BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1)
 				gui_create_form_select_menu(bw, gadget);
 			break;
@@ -666,7 +666,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 								drag_candidate,
 								x, y);
 					}
-					pointer = GUI_POINTER_MOVE;
+					pointer = BROWSER_POINTER_MOVE;
 				}
 			}
 			else if (mouse & BROWSER_MOUSE_DRAG_2) {
@@ -686,7 +686,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 								drag_candidate,
 								x, y);
 					}
-					pointer = GUI_POINTER_MOVE;
+					pointer = BROWSER_POINTER_MOVE;
 				}
 			}
 		}
@@ -724,10 +724,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 }
 
 
-gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
+browser_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 		bool imagemap)
 {
-	gui_pointer_shape pointer;
+	browser_pointer_shape pointer;
 	css_computed_style *style;
 	enum css_cursor_e cursor;
 	lwc_string **cursor_uris;
@@ -742,7 +742,7 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 	if (wallclock() - bw->last_action < 100 && loading)
 		/* If less than 1 second since last link followed, show
 		 * progress indicating pointer and we're loading something */
-		return GUI_POINTER_PROGRESS;
+		return BROWSER_POINTER_PROGRESS;
 
 	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
 		style = box->children->style;
@@ -750,7 +750,7 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 		style = box->style;
 
 	if (style == NULL)
-		return GUI_POINTER_DEFAULT;
+		return BROWSER_POINTER_DEFAULT;
 
 	cursor = css_computed_cursor(style, &cursor_uris);
 
@@ -761,70 +761,70 @@ gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
 				box->gadget->type == GADGET_SUBMIT)) ||
 				imagemap) {
 			/* link */
-			pointer = GUI_POINTER_POINT;
+			pointer = BROWSER_POINTER_POINT;
 		} else if (box->gadget &&
 				(box->gadget->type == GADGET_TEXTBOX ||
 				box->gadget->type == GADGET_PASSWORD ||
 				box->gadget->type == GADGET_TEXTAREA)) {
 			/* text input */
-			pointer = GUI_POINTER_CARET;
+			pointer = BROWSER_POINTER_CARET;
 		} else {
 			/* anything else */
 			if (loading) {
 				/* loading new content */
-				pointer = GUI_POINTER_PROGRESS;
+				pointer = BROWSER_POINTER_PROGRESS;
 			} else {
-				pointer = GUI_POINTER_DEFAULT;
+				pointer = BROWSER_POINTER_DEFAULT;
 			}
 		}
 		break;
 	case CSS_CURSOR_CROSSHAIR:
-		pointer = GUI_POINTER_CROSS;
+		pointer = BROWSER_POINTER_CROSS;
 		break;
 	case CSS_CURSOR_POINTER:
-		pointer = GUI_POINTER_POINT;
+		pointer = BROWSER_POINTER_POINT;
 		break;
 	case CSS_CURSOR_MOVE:
-		pointer = GUI_POINTER_MOVE;
+		pointer = BROWSER_POINTER_MOVE;
 		break;
 	case CSS_CURSOR_E_RESIZE:
-		pointer = GUI_POINTER_RIGHT;
+		pointer = BROWSER_POINTER_RIGHT;
 		break;
 	case CSS_CURSOR_W_RESIZE:
-		pointer = GUI_POINTER_LEFT;
+		pointer = BROWSER_POINTER_LEFT;
 		break;
 	case CSS_CURSOR_N_RESIZE:
-		pointer = GUI_POINTER_UP;
+		pointer = BROWSER_POINTER_UP;
 		break;
 	case CSS_CURSOR_S_RESIZE:
-		pointer = GUI_POINTER_DOWN;
+		pointer = BROWSER_POINTER_DOWN;
 		break;
 	case CSS_CURSOR_NE_RESIZE:
-		pointer = GUI_POINTER_RU;
+		pointer = BROWSER_POINTER_RU;
 		break;
 	case CSS_CURSOR_SW_RESIZE:
-		pointer = GUI_POINTER_LD;
+		pointer = BROWSER_POINTER_LD;
 		break;
 	case CSS_CURSOR_SE_RESIZE:
-		pointer = GUI_POINTER_RD;
+		pointer = BROWSER_POINTER_RD;
 		break;
 	case CSS_CURSOR_NW_RESIZE:
-		pointer = GUI_POINTER_LU;
+		pointer = BROWSER_POINTER_LU;
 		break;
 	case CSS_CURSOR_TEXT:
-		pointer = GUI_POINTER_CARET;
+		pointer = BROWSER_POINTER_CARET;
 		break;
 	case CSS_CURSOR_WAIT:
-		pointer = GUI_POINTER_WAIT;
+		pointer = BROWSER_POINTER_WAIT;
 		break;
 	case CSS_CURSOR_PROGRESS:
-		pointer = GUI_POINTER_PROGRESS;
+		pointer = BROWSER_POINTER_PROGRESS;
 		break;
 	case CSS_CURSOR_HELP:
-		pointer = GUI_POINTER_HELP;
+		pointer = BROWSER_POINTER_HELP;
 		break;
 	default:
-		pointer = GUI_POINTER_DEFAULT;
+		pointer = BROWSER_POINTER_DEFAULT;
 		break;
 	}
 
@@ -867,7 +867,7 @@ void html_overflow_scroll_callback(void *client_data,
 					DRAGGING_NONE, NULL);
 			
 			browser_window_set_pointer(html->bw,
-					GUI_POINTER_DEFAULT);
+					BROWSER_POINTER_DEFAULT);
 			break;
 	}
 }

@@ -1920,14 +1920,22 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
  */
 
 void browser_window_set_pointer(struct browser_window *bw,
-		gui_pointer_shape shape)
+		browser_pointer_shape shape)
 {
 	struct browser_window *root = browser_window_get_root(bw);
+	gui_pointer_shape gui_shape;
 
 	assert(root);
 	assert(root->window);
 
-	gui_window_set_pointer(root->window, shape);
+	if (shape == BROWSER_POINTER_AUTO) {
+		gui_shape = GUI_POINTER_DEFAULT;
+
+	} else {
+		gui_shape = (gui_pointer_shape)shape;
+	}
+
+	gui_window_set_pointer(root->window, gui_shape);
 }
 
 
@@ -2400,7 +2408,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 {
 	hlcache_handle *c = bw->current_content;
 	const char *status = NULL;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 
 	if (bw->window != NULL && bw->drag_window && bw != bw->drag_window) {
 		/* This is the root browser window and there's an active drag
@@ -2481,7 +2489,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_action(bw->scroll_x, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2506,7 +2514,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_action(bw->scroll_y, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2552,7 +2560,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 {
 	hlcache_handle *c = bw->current_content;
 	const char *status = NULL;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 
 	if (bw->children) {
 		/* Browser window has children (frames) */
@@ -2600,7 +2608,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 				scr_y > 0 && scr_y < SCROLLBAR_WIDTH) {
 			status = scrollbar_mouse_action(bw->scroll_x, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2621,7 +2629,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 				scr_x > 0 && scr_x < SCROLLBAR_WIDTH) {
 			status = scrollbar_mouse_action(bw->scroll_y, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2648,7 +2656,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
 				BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
-			browser_window_set_pointer(bw, GUI_POINTER_MOVE);
+			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);
 		}
 		break;
 	}

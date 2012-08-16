@@ -91,7 +91,7 @@ void browser_window_scroll_callback(void *client_data,
 	case SCROLLBAR_MSG_SCROLL_FINISHED:
 		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
-		browser_window_set_pointer(bw, GUI_POINTER_DEFAULT);
+		browser_window_set_pointer(bw, BROWSER_POINTER_DEFAULT);
 		break;
 	}
 }
@@ -800,7 +800,7 @@ bool browser_window_resolve_frame_dimension(struct browser_window *bw,
 
 static bool browser_window_resize_frames(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
-		gui_pointer_shape *pointer)
+		browser_pointer_shape *pointer)
 {
 	struct browser_window *parent;
 	bool left, right, up, down;
@@ -878,22 +878,22 @@ static bool browser_window_resize_frames(struct browser_window *bw,
 		if (left || right || up || down) {
 			if (left) {
 				if (down)
-					*pointer = GUI_POINTER_LD;
+					*pointer = BROWSER_POINTER_LD;
 				else if (up)
-					*pointer = GUI_POINTER_LU;
+					*pointer = BROWSER_POINTER_LU;
 				else
-					*pointer = GUI_POINTER_LEFT;
+					*pointer = BROWSER_POINTER_LEFT;
 			} else if (right) {
 				if (down)
-					*pointer = GUI_POINTER_RD;
+					*pointer = BROWSER_POINTER_RD;
 				else if (up)
-					*pointer = GUI_POINTER_RU;
+					*pointer = BROWSER_POINTER_RU;
 				else
-					*pointer = GUI_POINTER_RIGHT;
+					*pointer = BROWSER_POINTER_RIGHT;
 			} else if (up) {
-				*pointer = GUI_POINTER_UP;
+				*pointer = BROWSER_POINTER_UP;
 			} else {
-				*pointer = GUI_POINTER_DOWN;
+				*pointer = BROWSER_POINTER_DOWN;
 			}
 			if (mouse & (BROWSER_MOUSE_DRAG_1 |
 					BROWSER_MOUSE_DRAG_2)) {
@@ -931,7 +931,7 @@ static bool browser_window_resize_frames(struct browser_window *bw,
 
 bool browser_window_frame_resize_start(struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y,
-		gui_pointer_shape *pointer)
+		browser_pointer_shape *pointer)
 {
 	struct browser_window *root = browser_window_get_root(bw);
 	int offx, offy;
