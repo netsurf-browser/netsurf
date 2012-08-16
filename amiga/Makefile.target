@@ -90,3 +90,35 @@ S_AMIGA := $(addprefix amiga/,$(S_AMIGA))
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)
+
+# ----------------------------------------------------------------------------
+# Install target
+# ----------------------------------------------------------------------------
+
+install-amiga: netsurf.lha
+
+AMIGA_LANGUAGES := de en fr it ja nl
+AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map SearchEngines splash.png
+AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle
+AMIGA_RESOURCES := $(addprefix amiga/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
+AMIGA_DISTRIBUTION_FILES := amiga/dist/*
+AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
+
+netsurf.lha: NetSurf
+	$(VQ)echo Creating netsurf.lha
+	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp NetSurf $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_RESOURCES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources
+	$(Q)cp -r $(AMIGA_DISTRIBUTION_FILES) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/adblock.css
+	$(Q)cp \!NetSurf/Resources/CSS,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/nsdefault.css
+	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/internal.css
+	$(Q)cp \!NetSurf/Resources/Quirks,f79 $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/quirks.css
+	$(Q)cp amiga/pkg/fitr $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
+	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
+	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)cd $(AMIGA_INSTALL_TARGET_DIR); \
+	  lha a netsurf.lha NetSurf NetSurf.info AutoInstall
+
