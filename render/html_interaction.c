@@ -526,12 +526,16 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	} else if (object && (mouse & BROWSER_MOUSE_MOD_2)) {
 
-		if (mouse & BROWSER_MOUSE_DRAG_2)
-			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, object,
-					bw->window);
-		else if (mouse & BROWSER_MOUSE_DRAG_1)
-			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, object,
-					bw->window);
+		if (mouse & BROWSER_MOUSE_DRAG_2) {
+			msg_data.dragsave.type = CONTENT_SAVE_NATIVE;
+			msg_data.dragsave.content = object;
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, msg_data);
+
+		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+			msg_data.dragsave.type = CONTENT_SAVE_ORIG;
+			msg_data.dragsave.content = object;
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, msg_data);
+		}
 
 		/* \todo should have a drag-saving object msg */
 		status = content_get_status_message(h);
@@ -647,8 +651,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 			if (mouse & BROWSER_MOUSE_DRAG_1) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_COMPLETE,
-							h, bw->window);
+					msg_data.dragsave.type =
+							CONTENT_SAVE_COMPLETE;
+					msg_data.dragsave.content = h;
+					content_broadcast(c,
+							CONTENT_MSG_DRAGSAVE,
+							msg_data);
 				} else {
 					if (drag_candidate == NULL)
 						browser_window_page_drag_start(
@@ -663,8 +671,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			}
 			else if (mouse & BROWSER_MOUSE_DRAG_2) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_SOURCE,
-							h, bw->window);
+					msg_data.dragsave.type =
+							CONTENT_SAVE_SOURCE;
+					msg_data.dragsave.content = h;
+					content_broadcast(c,
+							CONTENT_MSG_DRAGSAVE,
+							msg_data);
 				} else {
 					if (drag_candidate == NULL)
 						browser_window_page_drag_start(
