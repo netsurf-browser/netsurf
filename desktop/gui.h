@@ -67,7 +67,6 @@ typedef enum { GUI_POINTER_DEFAULT, GUI_POINTER_POINT, GUI_POINTER_CARET,
 #include <libcss/libcss.h>
 
 #include "utils/config.h"
-#include "content/content.h"
 #include "content/hlcache.h"
 #include "desktop/download.h"
 #include "desktop/search.h"
