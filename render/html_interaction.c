@@ -46,8 +46,7 @@
 #include "utils/utils.h"
 
 
-static browser_pointer_shape get_pointer_shape(struct browser_window *bw,
-		struct box *box, bool imagemap);
+static browser_pointer_shape get_pointer_shape(struct box *box, bool imagemap);
 static void html_box_drag_start(struct box *box, int x, int y);
 
 
@@ -314,7 +313,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		if (box->title)
 			title = box->title;
 
-		pointer = get_pointer_shape(bw, box, false);
+		pointer = get_pointer_shape(box, false);
 
 		if ((box->scroll_x != NULL || box->scroll_y != NULL) &&
 				   drag_candidate == NULL)
@@ -410,8 +409,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						messages_get("FormSubmit"),
 						gadget->form->action);
 				status = status_buffer;
-				pointer = get_pointer_shape(bw, gadget_box,
-						false);
+				pointer = get_pointer_shape(gadget_box, false);
 				if (mouse & (BROWSER_MOUSE_CLICK_1 |
 						BROWSER_MOUSE_CLICK_2))
 					action = ACTION_SUBMIT;
@@ -421,7 +419,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			break;
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
-			pointer = get_pointer_shape(bw, gadget_box, false);
+			pointer = get_pointer_shape(gadget_box, false);
 
 			if (mouse & (BROWSER_MOUSE_PRESS_1 |
 					BROWSER_MOUSE_PRESS_2)) {
@@ -468,7 +466,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
-			pointer = get_pointer_shape(bw, gadget_box, false);
+			pointer = get_pointer_shape(gadget_box, false);
 
 			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
@@ -565,7 +563,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		} else
 			status = nsurl_access(url);
 
-		pointer = get_pointer_shape(bw, url_box, imagemap);
+		pointer = get_pointer_shape(url_box, imagemap);
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
@@ -724,15 +722,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 }
 
 
-browser_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
-		bool imagemap)
+browser_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
 {
 	browser_pointer_shape pointer;
 	css_computed_style *style;
 	enum css_cursor_e cursor;
 	lwc_string **cursor_uris;
-
-	assert(bw);
 
 	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
 		style = box->children->style;
