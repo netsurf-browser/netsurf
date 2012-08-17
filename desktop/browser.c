@@ -1483,6 +1483,11 @@ nserror browser_window_callback(hlcache_handle *c,
 	}
 		break;
 
+	case CONTENT_MSG_POINTER:
+		/* Content wants to have specific mouse pointer */
+		browser_window_set_pointer(bw, event->data.pointer);
+		break;
+
 	default:
 		assert(0);
 	}

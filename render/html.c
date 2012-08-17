@@ -1252,6 +1252,11 @@ html_object_callback(hlcache_handle *object,
 		content_broadcast(&c->base, CONTENT_MSG_SAVELINK, event->data);
 		break;
 
+	case CONTENT_MSG_POINTER:
+		/* Pass it on */
+		content_broadcast(&c->base, CONTENT_MSG_POINTER, event->data);
+		break;
+
 	default:
 		assert(0);
 	}
