@@ -416,8 +416,14 @@ void content_mouse_track(hlcache_handle *h, struct browser_window *bw,
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != NULL);
 
-	if (c->handler->mouse_track != NULL)
+	if (c->handler->mouse_track != NULL) {
 		c->handler->mouse_track(c, bw, mouse, x, y);
+	} else {
+		union content_msg_data msg_data;
+		msg_data.pointer = BROWSER_POINTER_AUTO;
+		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+	}
+
 
 	return;
 }
