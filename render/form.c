@@ -1121,6 +1121,84 @@ bool form_clip_inside_select_menu(struct form_control *control, float scale,
 	return false;
 }
 
+
+/**
+ * Process a selection from a form select menu.
+ *
+ * \param  bw	    browser window with menu
+ * \param  control  form control with menu
+ * \param  item	    index of item selected from the menu
+ */
+
+static void form__select_process_selection(html_content *html,
+		struct form_control *control, int item)
+{
+	struct box *inline_box;
+	struct form_option *o;
+	int count;
+
+	assert(control != NULL);
+	assert(html != NULL);
+
+	/** \todo Even though the form code is effectively part of the html
+	 *        content handler, poking around inside contents is not good */
+
+	inline_box = control->box->children->children;
+
+	for (count = 0, o = control->data.select.items;
+			o != NULL;
+			count++, o = o->next) {
+		if (!control->data.select.multiple)
+			o->selected = false;
+		if (count == item) {
+			if (control->data.select.multiple) {
+				if (o->selected) {
+					o->selected = false;
+					control->data.select.num_selected--;
+				} else {
+					o->selected = true;
+					control->data.select.num_selected++;
+				}
+			} else {
+				o->selected = true;
+			}
+		}
+		if (o->selected)
+			control->data.select.current = o;
+	}
+
+	talloc_free(inline_box->text);
+	inline_box->text = 0;
+	if (control->data.select.num_selected == 0)
+		inline_box->text = talloc_strdup(html,
+				messages_get("Form_None"));
+	else if (control->data.select.num_selected == 1)
+		inline_box->text = talloc_strdup(html,
+				control->data.select.current->text);
+	else
+		inline_box->text = talloc_strdup(html,
+				messages_get("Form_Many"));
+	if (!inline_box->text) {
+		warn_user("NoMemory", 0);
+		inline_box->length = 0;
+	} else
+		inline_box->length = strlen(inline_box->text);
+	inline_box->width = control->box->width;
+
+	html__redraw_a_box(html, control->box);
+}
+
+
+void form_select_process_selection(hlcache_handle *h,
+		struct form_control *control, int item)
+{
+	assert(h != NULL);
+
+	form__select_process_selection(
+			(html_content *)hlcache_handle_get_content(h),
+			control, item);
+}
+
 /**
  * Handle a click on the area of the currently opened select menu.
  * 
@@ -1153,9 +1231,7 @@ void form_select_menu_clicked(struct form_control *control, int x, int y)
 	}
 	
 	if (option != NULL) {
-		/* TODO: going via the bw to get a hlcache_handle is nasty */
-		form_select_process_selection(html->bw->current_content,
-				control, i);
+		form__select_process_selection(html, control, i);
 	}
 	
 	menu->callback(menu->client_data, 0, 0, menu->width, menu->height);
@@ -1316,75 +1392,6 @@ void form_select_get_dimensions(struct form_control *control,
 {
 	*width = control->data.select.menu->width;
 	*height = control->data.select.menu->height;
-}
-
-
-/**
- * Process a selection from a form select menu.
- *
- * \param  bw	    browser window with menu
- * \param  control  form control with menu
- * \param  item	    index of item selected from the menu
- */
-
-void form_select_process_selection(hlcache_handle *h,
-		struct form_control *control, int item)
-{
-	struct box *inline_box;
-	struct form_option *o;
-	int count;
-	struct content *current_content;
-
-	assert(control != NULL);
-	assert(h != NULL);
-
-	/** \todo Even though the form code is effectively part of the html
-	 *        content handler, poking around inside contents is not good */
-	current_content = hlcache_handle_get_content(h);
-
-	inline_box = control->box->children->children;
-
-	for (count = 0, o = control->data.select.items;
-			o != NULL;
-			count++, o = o->next) {
-		if (!control->data.select.multiple)
-			o->selected = false;
-		if (count == item) {
-			if (control->data.select.multiple) {
-				if (o->selected) {
-					o->selected = false;
-					control->data.select.num_selected--;
-				} else {
-					o->selected = true;
-					control->data.select.num_selected++;
-				}
-			} else {
-				o->selected = true;
-			}
-		}
-		if (o->selected)
-			control->data.select.current = o;
-	}
-
-	talloc_free(inline_box->text);
-	inline_box->text = 0;
-	if (control->data.select.num_selected == 0)
-		inline_box->text = talloc_strdup(current_content,
-				messages_get("Form_None"));
-	else if (control->data.select.num_selected == 1)
-		inline_box->text = talloc_strdup(current_content,
-				control->data.select.current->text);
-	else
-		inline_box->text = talloc_strdup(current_content,
-				messages_get("Form_Many"));
-	if (!inline_box->text) {
-		warn_user("NoMemory", 0);
-		inline_box->length = 0;
-	} else
-		inline_box->length = strlen(inline_box->text);
-	inline_box->width = control->box->width;
-
-	html_redraw_a_box(h, control->box);
 }
 
 /**
