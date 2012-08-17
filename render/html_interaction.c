@@ -392,7 +392,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars */
 
-	box = html_get_box_tree(h);
+	box = html->layout;
 
 	/* Consider the margins of the html page now */
 	box_x = box->margin[LEFT];
@@ -725,7 +725,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		/* if clicking in the main page, remove the selection from any
 		 * text areas */
 		if (!done) {
-			struct box *layout = html_get_box_tree(h);
+			struct box *layout = html->layout;
 
 			if (mouse && (mouse < BROWSER_MOUSE_MOD_1) &&
 					selection_root(&html->sel) != layout) {
