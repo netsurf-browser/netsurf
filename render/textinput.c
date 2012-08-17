@@ -1911,7 +1911,7 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 		selection_clear(&html->sel, true);
 
 		if (form)
-			form_submit(bw->current_content, bw, form, 0);
+			form_submit(content_get_url(c), bw, form, 0);
 		return true;
 
 	case KEY_SHIFT_TAB:

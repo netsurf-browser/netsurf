@@ -1460,7 +1460,7 @@ void form_radio_set(hlcache_handle *content,
  * Collect controls and submit a form.
  */
 
-void form_submit(hlcache_handle *h, struct browser_window *target,
+void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button)
 {
 	char *data = NULL, *url = NULL;
@@ -1507,8 +1507,7 @@ void form_submit(hlcache_handle *h, struct browser_window *target,
 
 		url_destroy_components(&components);
 
-		browser_window_go(target, url, nsurl_access(hlcache_handle_get_url(h)),
-				true);
+		browser_window_go(target, url, nsurl_access(page_url), true);
 		break;
 
 	case method_POST_URLENC:
@@ -1520,14 +1519,12 @@ void form_submit(hlcache_handle *h, struct browser_window *target,
 		}
 
 		browser_window_go_post(target, form->action, data, 0,
-				true,  nsurl_access(hlcache_handle_get_url(h)),
-				false, true, 0);
+				true, nsurl_access(page_url), false, true, 0);
 		break;
 
 	case method_POST_MULTIPART:
-		browser_window_go_post(target, form->action, 0,
-				success, true, nsurl_access(hlcache_handle_get_url(h)),
-				false, true, 0);
+		browser_window_go_post(target, form->action, 0, success,
+				true, nsurl_access(page_url), false, true, 0);
 		break;
 	}
 

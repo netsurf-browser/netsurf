@@ -839,7 +839,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	 */
 	switch (action) {
 	case ACTION_SUBMIT:
-		form_submit(bw->current_content,
+		form_submit(content_get_url(c),
 				browser_window_find_target(bw, target, mouse),
 				gadget->form, gadget);
 		break;
