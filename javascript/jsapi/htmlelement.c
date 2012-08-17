@@ -178,6 +178,14 @@ static JSFunctionSpec jsfunctions_element[] = {
 };
 
 
+
+
+static JSPropertySpec jsproperties_element[] =
+{
+	JSAPI_PS_ELEMENT,
+	JSAPI_PS_END
+};
+
 JSObject *
 jsapi_new_element(JSContext *cx,
 		  JSObject *parent,
@@ -201,7 +209,7 @@ jsapi_new_element(JSContext *cx,
 			   &JSCLASS_OBJECT,
 			   NULL,
 			   0,
-			   NULL,
+			   jsproperties_element,
 			   jsfunctions_element,
 			   NULL,
 			   NULL);

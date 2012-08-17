@@ -260,8 +260,7 @@ static JSBool JSAPI_NATIVE(isDefaultNamespace, JSContext *cx, uintN argc, jsval 
 	return JS_TRUE;
 }
 
-
-#define JSAPI_FS_NODE \
+#define JSAPI_FS_NODE	      \
 	JSAPI_FS_EVENTTARGET, \
 	JSAPI_FS(hasChildNodes, 0, 0), \
 	JSAPI_FS(compareDocumentPosition, 0, 0), \
@@ -276,3 +275,25 @@ static JSBool JSAPI_NATIVE(isDefaultNamespace, JSContext *cx, uintN argc, jsval 
 	JSAPI_FS(lookupPrefix, 0, 0), \
 	JSAPI_FS(lookupNamespaceURI, 0, 0), \
 	JSAPI_FS(isDefaultNamespace, 0, 0)
+
+
+static JSBool JSAPI_PROPERTYGET(nodeType, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	JS_SET_RVAL(cx, vp, JSVAL_NULL);
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_PROPERTYGET(textContent, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	JS_SET_RVAL(cx, vp, JSVAL_NULL);
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_PROPERTYSET(textContent, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	return JS_FALSE;
+}
+
+#define JSAPI_PS_NODE						    \
+	JSAPI_PS_RO(nodeType, 0, JSPROP_ENUMERATE | JSPROP_SHARED), \
+	JSAPI_PS(textContent, 0, JSPROP_ENUMERATE | JSPROP_SHARED)

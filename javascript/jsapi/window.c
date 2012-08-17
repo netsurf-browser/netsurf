@@ -248,27 +248,16 @@ static JSBool JSAPI_PROPERTYGET(window, JSContext *cx, JSObject *obj, jsval *vp)
 	return JS_TRUE;
 }
 
-static JSBool JSAPI_PROPERTYSET(window, JSContext *cx, JSObject *obj, jsval *vp)
-{
-	return JS_FALSE;
-}
-
 static JSBool JSAPI_PROPERTYGET(self, JSContext *cx, JSObject *obj, jsval *vp)
 {
 	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 	return JS_TRUE;
 }
 
-static JSBool JSAPI_PROPERTYSET(self, JSContext *cx, JSObject *obj, jsval *vp)
-{
-	return JS_FALSE;
-}
-
-
 static JSPropertySpec jsproperties_window[] =
 {
-	JSAPI_PS(window, 0, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED),
-	JSAPI_PS(self, 0, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_SHARED),
+	JSAPI_PS_RO(window, 0, JSPROP_ENUMERATE | JSPROP_SHARED),
+	JSAPI_PS_RO(self, 0, JSPROP_ENUMERATE | JSPROP_SHARED),
 	JSAPI_PS_END
 };
 
