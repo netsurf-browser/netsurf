@@ -829,8 +829,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	}
 
-	if (!iframe)
-		browser_window_set_pointer(bw, pointer);
+	if (!iframe) {
+		msg_data.pointer = pointer;
+		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+	}
 
 	/* deferred actions that can cause this browser_window to be destroyed
 	 * and must therefore be done after set_status/pointer
@@ -861,6 +863,7 @@ void html_overflow_scroll_callback(void *client_data,
 	struct html_scrollbar_data *data = client_data;
 	html_content *html = (html_content *)data->c;
 	struct box *box = data->box;
+	union content_msg_data msg_data;
 	
 	switch(scrollbar_data->msg) {
 		case SCROLLBAR_MSG_MOVED:
@@ -885,9 +888,10 @@ void html_overflow_scroll_callback(void *client_data,
 
 			browser_window_set_drag_type(html->bw,
 					DRAGGING_NONE, NULL);
-			
-			browser_window_set_pointer(html->bw,
-					BROWSER_POINTER_DEFAULT);
+
+			msg_data.pointer = BROWSER_POINTER_AUTO;
+			content_broadcast(data->c, CONTENT_MSG_POINTER,
+					msg_data);
 			break;
 	}
 }

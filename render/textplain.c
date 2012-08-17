@@ -676,6 +676,7 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 {
 	textplain_content *text = (textplain_content *) c;
 	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
+	union content_msg_data msg_data;
 	const char *status = 0;
 	size_t idx;
 	int dir = 0;
@@ -708,7 +709,8 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 	if (status != NULL)
 		browser_window_set_status(bw, status);
 
-	browser_window_set_pointer(bw, pointer);
+	msg_data.pointer = pointer;
+	content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
 }
 
 
