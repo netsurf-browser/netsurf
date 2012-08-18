@@ -1257,6 +1257,11 @@ html_object_callback(hlcache_handle *object,
 		content_broadcast(&c->base, CONTENT_MSG_POINTER, event->data);
 		break;
 
+	case CONTENT_MSG_PASTE:
+		/* Pass it on */
+		content_broadcast(&c->base, CONTENT_MSG_PASTE, event->data);
+		break;
+
 	default:
 		assert(0);
 	}

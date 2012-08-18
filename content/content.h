@@ -77,7 +77,8 @@ typedef enum {
 	CONTENT_MSG_SCROLL,    /**< Request to scroll content */
 	CONTENT_MSG_DRAGSAVE,  /**< Allow drag saving of content */
 	CONTENT_MSG_SAVELINK,  /**< Allow URL to be saved */
-	CONTENT_MSG_POINTER    /**< Wants a specific mouse pointer set */
+	CONTENT_MSG_POINTER,   /**< Wants a specific mouse pointer set */
+	CONTENT_MSG_PASTE      /**< Inform that content wants clipboard paste */
 } content_msg;
 
 /** RFC5988 metadata link */
@@ -148,6 +149,14 @@ union content_msg_data {
 	} savelink;
 	/** CONTENT_MSG_POINTER - Mouse pointer to set */
 	browser_pointer_shape pointer;
+	/** CONTENT_MSG_PASTE - Content requests that clipboard is pasted */
+	struct {
+		/* TODO: Get rid of these coords.
+		 *       browser_window_paste_text doesn't take coords, but
+		 *       RISC OS front end is doing something different. */
+		int x;
+		int y;
+	} paste;
 };
 
 /** parameters to content redraw */
