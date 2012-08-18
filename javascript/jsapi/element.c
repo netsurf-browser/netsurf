@@ -82,3 +82,18 @@ static JSBool JSAPI_NATIVE(getAttribute, JSContext *cx, uintN argc, jsval *vp)
 #define JSAPI_FS_ELEMENT \
 	JSAPI_FS_NODE, \
 	JSAPI_FS(getAttribute, 0, 0)
+
+static JSBool JSAPI_PROPERTYGET(id, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	JS_SET_RVAL(cx, vp, JSVAL_NULL);
+	return JS_TRUE;
+}
+
+static JSBool JSAPI_PROPERTYSET(id, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	return JS_FALSE;
+}
+
+#define JSAPI_PS_ELEMENT						\
+	JSAPI_PS_NODE,							\
+	JSAPI_PS(id, 0, JSPROP_ENUMERATE | JSPROP_SHARED)

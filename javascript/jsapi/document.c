@@ -105,3 +105,6 @@ static JSBool JSAPI_NATIVE(getElementById, JSContext *cx, uintN argc, jsval *vp)
 	JSAPI_FS_NODE, \
 	JSAPI_FS(getElementById, 1, 0) \
 
+
+#define JSAPI_PS_DOCUMENT						\
+	JSAPI_PS_NODE

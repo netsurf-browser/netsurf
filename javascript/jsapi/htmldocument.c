@@ -209,6 +209,12 @@ static JSFunctionSpec jsfunctions_document[] = {
 	JSAPI_FS_END
 };
 
+static JSPropertySpec jsproperties_document[] =
+{
+	JSAPI_PS_DOCUMENT,
+	JSAPI_PS_END
+};
+
 static void jsfinalize_document(JSContext *cx, JSObject *obj)
 {
 	struct jsclass_document_priv *document;
@@ -238,7 +244,7 @@ JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_conten
 		     &JSCLASS_OBJECT, 
 		     NULL, 
 		     0, 
-		     NULL, 
+		     jsproperties_document,
 		     jsfunctions_document, 
 		     NULL, 
 		     NULL);

@@ -675,7 +675,8 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 		browser_mouse_state mouse, int x, int y)
 {
 	textplain_content *text = (textplain_content *) c;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
+	union content_msg_data msg_data;
 	const char *status = 0;
 	size_t idx;
 	int dir = 0;
@@ -701,14 +702,15 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 
 		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
-			pointer = GUI_POINTER_MOVE;
+			pointer = BROWSER_POINTER_MOVE;
 		}
 	}
 
 	if (status != NULL)
 		browser_window_set_status(bw, status);
 
-	browser_window_set_pointer(bw, pointer);
+	msg_data.pointer = pointer;
+	content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
 }
 
 

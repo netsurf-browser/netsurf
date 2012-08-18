@@ -301,7 +301,7 @@ void browser_window_redraw_rect(struct browser_window *bw, int x, int y,
 
 void browser_window_set_status(struct browser_window *bw, const char *text);
 void browser_window_set_pointer(struct browser_window *bw,
-		gui_pointer_shape shape);
+		browser_pointer_shape shape);
 void browser_window_page_drag_start(struct browser_window *bw, int x, int y);
 
 bool browser_window_back_available(struct browser_window *bw);

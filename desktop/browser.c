@@ -1003,6 +1003,9 @@ void browser_window_go_post(struct browser_window *bw, const char *url,
 		warn_user("NoMemory", 0);
 
 	}
+
+	/* Record time */
+	bw->last_action = wallclock();
 }
 
 
@@ -1438,6 +1441,51 @@ nserror browser_window_callback(hlcache_handle *c,
 					event->data.scroll.y0);
 		}
 
+		break;
+
+	case CONTENT_MSG_DRAGSAVE:
+	{
+		/* Content wants drag save of a content */
+		struct browser_window *root = browser_window_get_root(bw);
+
+		switch(event->data.dragsave.type) {
+		case CONTENT_SAVE_ORIG:
+			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		case CONTENT_SAVE_NATIVE:
+			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		case CONTENT_SAVE_COMPLETE:
+			gui_drag_save_object(GUI_SAVE_COMPLETE,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		case CONTENT_SAVE_SOURCE:
+			gui_drag_save_object(GUI_SAVE_SOURCE,
+					event->data.dragsave.content,
+					root->window);
+			break;
+		}
+	}
+		break;
+
+	case CONTENT_MSG_SAVELINK:
+	{
+		/* Content wants a link to be saved */
+		struct browser_window *root = browser_window_get_root(bw);
+		gui_window_save_link(root->window,
+				event->data.savelink.url,
+				event->data.savelink.title);
+	}
+		break;
+
+	case CONTENT_MSG_POINTER:
+		/* Content wants to have specific mouse pointer */
+		browser_window_set_pointer(bw, event->data.pointer);
 		break;
 
 	default:
@@ -1887,14 +1935,37 @@ void browser_window_set_status(struct browser_window *bw, const char *text)
  */
 
 void browser_window_set_pointer(struct browser_window *bw,
-		gui_pointer_shape shape)
+		browser_pointer_shape shape)
 {
 	struct browser_window *root = browser_window_get_root(bw);
+	gui_pointer_shape gui_shape;
+	bool loading;
 
 	assert(root);
 	assert(root->window);
 
-	gui_window_set_pointer(root->window, shape);
+	loading = (bw->loading_content != NULL || (bw->current_content &&
+			content_get_status(bw->current_content) ==
+			CONTENT_STATUS_READY));
+
+	if (wallclock() - bw->last_action < 100 && loading) {
+		/* If loading and less than 1 second since last link followed,
+		 * force progress indicator pointer */
+		gui_shape = GUI_POINTER_PROGRESS;
+
+	} else if (shape == BROWSER_POINTER_AUTO) {
+		/* Up to browser window to decide */
+		if (loading)
+			gui_shape = GUI_POINTER_PROGRESS;
+		else
+			gui_shape = GUI_POINTER_DEFAULT;
+
+	} else {
+		/* Use what we were told */
+		gui_shape = (gui_pointer_shape)shape;
+	}
+
+	gui_window_set_pointer(root->window, gui_shape);
 }
 
 
@@ -2367,7 +2438,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 {
 	hlcache_handle *c = bw->current_content;
 	const char *status = NULL;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 
 	if (bw->window != NULL && bw->drag_window && bw != bw->drag_window) {
 		/* This is the root browser window and there's an active drag
@@ -2448,7 +2519,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_action(bw->scroll_x, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2473,7 +2544,7 @@ void browser_window_mouse_track(struct browser_window *bw,
 			/* Start a scrollbar drag, or continue existing drag */
 			status = scrollbar_mouse_action(bw->scroll_y, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2519,7 +2590,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 {
 	hlcache_handle *c = bw->current_content;
 	const char *status = NULL;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 
 	if (bw->children) {
 		/* Browser window has children (frames) */
@@ -2567,7 +2638,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 				scr_y > 0 && scr_y < SCROLLBAR_WIDTH) {
 			status = scrollbar_mouse_action(bw->scroll_x, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2588,7 +2659,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 				scr_x > 0 && scr_x < SCROLLBAR_WIDTH) {
 			status = scrollbar_mouse_action(bw->scroll_y, mouse,
 					scr_x, scr_y);
-			pointer = GUI_POINTER_DEFAULT;
+			pointer = BROWSER_POINTER_DEFAULT;
 
 			if (status != NULL)
 				browser_window_set_status(bw, status);
@@ -2615,7 +2686,7 @@ void browser_window_mouse_click(struct browser_window *bw,
 		else if (mouse & (BROWSER_MOUSE_DRAG_1 |
 				BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
-			browser_window_set_pointer(bw, GUI_POINTER_MOVE);
+			browser_window_set_pointer(bw, BROWSER_POINTER_MOVE);
 		}
 		break;
 	}

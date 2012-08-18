@@ -69,6 +69,9 @@
 #define JSAPI_PS(name, tinyid, flags) \
 	{ #name , tinyid , flags , jsapi_property_##name##_get , jsapi_property_##name##_set }
 
+#define JSAPI_PS_RO(name, tinyid, flags) \
+	{ #name , tinyid , flags | JSPROP_READONLY, jsapi_property_##name##_get , NULL }
+
 #define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
 
 static inline JSObject *
@@ -126,7 +129,15 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 		jsapi_property_##name##_set			\
 	}
 
-#define JSAPI_PS_END { NULL, 0,0,NULL,NULL }
+#define JSAPI_PS_RO(name, tinyid, flags) {			\
+		#name ,						\
+		tinyid ,					\
+		flags | JSPROP_READONLY,			\
+		jsapi_property_##name##_get ,			\
+		NULL						\
+	}
+
+#define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
 
 
 #define JSString_to_char(injsstring, outchar, outlen)		\

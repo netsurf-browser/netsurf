@@ -173,7 +173,7 @@ void form_select_get_dimensions(struct form_control *control,
 		int *width, int *height);
 void form_select_process_selection(hlcache_handle *h,
 		struct form_control *control, int item);
-void form_submit(struct hlcache_handle *h, struct browser_window *target,
+void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
 void form_radio_set(struct hlcache_handle *content, struct form_control *radio);
 

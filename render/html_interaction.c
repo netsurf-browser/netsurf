@@ -46,9 +46,135 @@
 #include "utils/utils.h"
 
 
-static gui_pointer_shape get_pointer_shape(struct browser_window *bw,
-		struct box *box, bool imagemap);
-static void html_box_drag_start(struct box *box, int x, int y);
+/**
+ * Get pointer shape for given box
+ *
+ * \param box       box in question
+ * \param imagemap  whether an imagemap applies to the box
+ */
+
+static browser_pointer_shape get_pointer_shape(struct box *box, bool imagemap)
+{
+	browser_pointer_shape pointer;
+	css_computed_style *style;
+	enum css_cursor_e cursor;
+	lwc_string **cursor_uris;
+
+	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
+		style = box->children->style;
+	else
+		style = box->style;
+
+	if (style == NULL)
+		return BROWSER_POINTER_DEFAULT;
+
+	cursor = css_computed_cursor(style, &cursor_uris);
+
+	switch (cursor) {
+	case CSS_CURSOR_AUTO:
+		if (box->href || (box->gadget &&
+				(box->gadget->type == GADGET_IMAGE ||
+				box->gadget->type == GADGET_SUBMIT)) ||
+				imagemap) {
+			/* link */
+			pointer = BROWSER_POINTER_POINT;
+		} else if (box->gadget &&
+				(box->gadget->type == GADGET_TEXTBOX ||
+				box->gadget->type == GADGET_PASSWORD ||
+				box->gadget->type == GADGET_TEXTAREA)) {
+			/* text input */
+			pointer = BROWSER_POINTER_CARET;
+		} else {
+			/* html content doesn't mind */
+			pointer = BROWSER_POINTER_AUTO;
+		}
+		break;
+	case CSS_CURSOR_CROSSHAIR:
+		pointer = BROWSER_POINTER_CROSS;
+		break;
+	case CSS_CURSOR_POINTER:
+		pointer = BROWSER_POINTER_POINT;
+		break;
+	case CSS_CURSOR_MOVE:
+		pointer = BROWSER_POINTER_MOVE;
+		break;
+	case CSS_CURSOR_E_RESIZE:
+		pointer = BROWSER_POINTER_RIGHT;
+		break;
+	case CSS_CURSOR_W_RESIZE:
+		pointer = BROWSER_POINTER_LEFT;
+		break;
+	case CSS_CURSOR_N_RESIZE:
+		pointer = BROWSER_POINTER_UP;
+		break;
+	case CSS_CURSOR_S_RESIZE:
+		pointer = BROWSER_POINTER_DOWN;
+		break;
+	case CSS_CURSOR_NE_RESIZE:
+		pointer = BROWSER_POINTER_RU;
+		break;
+	case CSS_CURSOR_SW_RESIZE:
+		pointer = BROWSER_POINTER_LD;
+		break;
+	case CSS_CURSOR_SE_RESIZE:
+		pointer = BROWSER_POINTER_RD;
+		break;
+	case CSS_CURSOR_NW_RESIZE:
+		pointer = BROWSER_POINTER_LU;
+		break;
+	case CSS_CURSOR_TEXT:
+		pointer = BROWSER_POINTER_CARET;
+		break;
+	case CSS_CURSOR_WAIT:
+		pointer = BROWSER_POINTER_WAIT;
+		break;
+	case CSS_CURSOR_PROGRESS:
+		pointer = BROWSER_POINTER_PROGRESS;
+		break;
+	case CSS_CURSOR_HELP:
+		pointer = BROWSER_POINTER_HELP;
+		break;
+	default:
+		pointer = BROWSER_POINTER_DEFAULT;
+		break;
+	}
+
+	return pointer;
+}
+
+
+/**
+ * Start drag scrolling the contents of a box
+ *
+ * \param box	the box to be scrolled
+ * \param x	x ordinate of initial mouse position
+ * \param y	y ordinate
+ */
+
+static void html_box_drag_start(struct box *box, int x, int y)
+{
+	int box_x, box_y;
+	int scroll_mouse_x, scroll_mouse_y;
+
+	box_coords(box, &box_x, &box_y);
+
+	if (box->scroll_x != NULL) {
+		scroll_mouse_x = x - box_x ;
+		scroll_mouse_y = y - (box_y + box->padding[TOP] +
+				box->height + box->padding[BOTTOM] -
+				SCROLLBAR_WIDTH);
+		scrollbar_start_content_drag(box->scroll_x,
+				scroll_mouse_x, scroll_mouse_y);
+	} else if (box->scroll_y != NULL) {
+		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
+				box->width + box->padding[RIGHT] -
+				SCROLLBAR_WIDTH);
+		scroll_mouse_y = y - box_y;
+
+		scrollbar_start_content_drag(box->scroll_y,
+				scroll_mouse_x, scroll_mouse_y);
+	}
+}
 
 
 /**
@@ -175,7 +301,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	const char *target = 0;
 	char status_buffer[200];
 	const char *status = 0;
-	gui_pointer_shape pointer = GUI_POINTER_DEFAULT;
+	browser_pointer_shape pointer = BROWSER_POINTER_DEFAULT;
 	bool imagemap = false;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
@@ -266,7 +392,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	/* search the box tree for a link, imagemap, form control, or
 	 * box with scrollbars */
 
-	box = html_get_box_tree(h);
+	box = html->layout;
 
 	/* Consider the margins of the html page now */
 	box_x = box->margin[LEFT];
@@ -314,7 +440,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		if (box->title)
 			title = box->title;
 
-		pointer = get_pointer_shape(bw, box, false);
+		pointer = get_pointer_shape(box, false);
 
 		if ((box->scroll_x != NULL || box->scroll_y != NULL) &&
 				   drag_candidate == NULL)
@@ -370,19 +496,19 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	if (scrollbar) {
 		status = scrollbar_mouse_action(scrollbar, mouse,
 				scroll_mouse_x, scroll_mouse_y);
-		pointer = GUI_POINTER_DEFAULT;
+		pointer = BROWSER_POINTER_DEFAULT;
 	} else if (gadget) {
 		switch (gadget->type) {
 		case GADGET_SELECT:
 			status = messages_get("FormSelect");
-			pointer = GUI_POINTER_MENU;
+			pointer = BROWSER_POINTER_MENU;
 			if (mouse & BROWSER_MOUSE_CLICK_1 &&
 			    nsoption_bool(core_select_menu)) {
 				html->visible_select_menu = gadget;
 				form_open_select_menu(c, gadget,
 						form_select_menu_callback,
 						c);
-				pointer =  GUI_POINTER_DEFAULT;
+				pointer =  BROWSER_POINTER_DEFAULT;
 			} else if (mouse & BROWSER_MOUSE_CLICK_1)
 				gui_create_form_select_menu(bw, gadget);
 			break;
@@ -410,8 +536,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						messages_get("FormSubmit"),
 						gadget->form->action);
 				status = status_buffer;
-				pointer = get_pointer_shape(bw, gadget_box,
-						false);
+				pointer = get_pointer_shape(gadget_box, false);
 				if (mouse & (BROWSER_MOUSE_CLICK_1 |
 						BROWSER_MOUSE_CLICK_2))
 					action = ACTION_SUBMIT;
@@ -421,7 +546,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			break;
 		case GADGET_TEXTAREA:
 			status = messages_get("FormTextarea");
-			pointer = get_pointer_shape(bw, gadget_box, false);
+			pointer = get_pointer_shape(gadget_box, false);
 
 			if (mouse & (BROWSER_MOUSE_PRESS_1 |
 					BROWSER_MOUSE_PRESS_2)) {
@@ -468,7 +593,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		case GADGET_TEXTBOX:
 		case GADGET_PASSWORD:
 			status = messages_get("FormTextbox");
-			pointer = get_pointer_shape(bw, gadget_box, false);
+			pointer = get_pointer_shape(gadget_box, false);
 
 			if ((mouse & BROWSER_MOUSE_PRESS_1) &&
 					!(mouse & (BROWSER_MOUSE_MOD_1 |
@@ -526,12 +651,16 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 	} else if (object && (mouse & BROWSER_MOUSE_MOD_2)) {
 
-		if (mouse & BROWSER_MOUSE_DRAG_2)
-			gui_drag_save_object(GUI_SAVE_OBJECT_NATIVE, object,
-					bw->window);
-		else if (mouse & BROWSER_MOUSE_DRAG_1)
-			gui_drag_save_object(GUI_SAVE_OBJECT_ORIG, object,
-					bw->window);
+		if (mouse & BROWSER_MOUSE_DRAG_2) {
+			msg_data.dragsave.type = CONTENT_SAVE_NATIVE;
+			msg_data.dragsave.content = object;
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, msg_data);
+
+		} else if (mouse & BROWSER_MOUSE_DRAG_1) {
+			msg_data.dragsave.type = CONTENT_SAVE_ORIG;
+			msg_data.dragsave.content = object;
+			content_broadcast(c, CONTENT_MSG_DRAGSAVE, msg_data);
+		}
 
 		/* \todo should have a drag-saving object msg */
 		status = content_get_status_message(h);
@@ -561,22 +690,25 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		} else
 			status = nsurl_access(url);
 
-		pointer = get_pointer_shape(bw, url_box, imagemap);
+		pointer = get_pointer_shape(url_box, imagemap);
 
 		if (mouse & BROWSER_MOUSE_CLICK_1 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
 			/* force download of link */
 			browser_window_go_post(bw, nsurl_access(url), 0, 0,
-					false, nsurl_access(hlcache_handle_get_url(h)),
+					false,
+					nsurl_access(hlcache_handle_get_url(h)),
 					true, true, 0);
+
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
 				mouse & BROWSER_MOUSE_MOD_1) {
-				gui_window_save_link(bw->window,
-						nsurl_access(url), title);
+			msg_data.savelink.url = nsurl_access(url);
+			msg_data.savelink.title = title;
+			content_broadcast(c, CONTENT_MSG_SAVELINK, msg_data);
+
 		} else if (mouse & (BROWSER_MOUSE_CLICK_1 |
 				BROWSER_MOUSE_CLICK_2))
 			action = ACTION_GO;
-
 	} else {
 		bool done = false;
 
@@ -593,7 +725,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		/* if clicking in the main page, remove the selection from any
 		 * text areas */
 		if (!done) {
-			struct box *layout = html_get_box_tree(h);
+			struct box *layout = html->layout;
 
 			if (mouse && (mouse < BROWSER_MOUSE_MOD_1) &&
 					selection_root(&html->sel) != layout) {
@@ -647,8 +779,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 			if (mouse & BROWSER_MOUSE_DRAG_1) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_COMPLETE,
-							h, bw->window);
+					msg_data.dragsave.type =
+							CONTENT_SAVE_COMPLETE;
+					msg_data.dragsave.content = h;
+					content_broadcast(c,
+							CONTENT_MSG_DRAGSAVE,
+							msg_data);
 				} else {
 					if (drag_candidate == NULL)
 						browser_window_page_drag_start(
@@ -658,13 +794,17 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 								drag_candidate,
 								x, y);
 					}
-					pointer = GUI_POINTER_MOVE;
+					pointer = BROWSER_POINTER_MOVE;
 				}
 			}
 			else if (mouse & BROWSER_MOUSE_DRAG_2) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
-					gui_drag_save_object(GUI_SAVE_SOURCE,
-							h, bw->window);
+					msg_data.dragsave.type =
+							CONTENT_SAVE_SOURCE;
+					msg_data.dragsave.content = h;
+					content_broadcast(c,
+							CONTENT_MSG_DRAGSAVE,
+							msg_data);
 				} else {
 					if (drag_candidate == NULL)
 						browser_window_page_drag_start(
@@ -674,7 +814,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 								drag_candidate,
 								x, y);
 					}
-					pointer = GUI_POINTER_MOVE;
+					pointer = BROWSER_POINTER_MOVE;
 				}
 			}
 		}
@@ -684,24 +824,22 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	}
 
-
-	if (action == ACTION_SUBMIT || action == ACTION_GO)
-		bw->last_action = wallclock();
-
 	if (status != NULL) {
 		msg_data.explicit_status_text = status;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 	}
 
-	if (!iframe)
-		browser_window_set_pointer(bw, pointer);
+	if (!iframe) {
+		msg_data.pointer = pointer;
+		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+	}
 
 	/* deferred actions that can cause this browser_window to be destroyed
 	 * and must therefore be done after set_status/pointer
 	 */
 	switch (action) {
 	case ACTION_SUBMIT:
-		form_submit(bw->current_content,
+		form_submit(content_get_url(c),
 				browser_window_find_target(bw, target, mouse),
 				gadget->form, gadget);
 		break;
@@ -716,114 +854,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 }
 
 
-gui_pointer_shape get_pointer_shape(struct browser_window *bw, struct box *box,
-		bool imagemap)
-{
-	gui_pointer_shape pointer;
-	css_computed_style *style;
-	enum css_cursor_e cursor;
-	lwc_string **cursor_uris;
-	bool loading;
-
-	assert(bw);
-
-	loading = (bw->loading_content != NULL || (bw->current_content &&
-			content_get_status(bw->current_content) == 
-			CONTENT_STATUS_READY));
-
-	if (wallclock() - bw->last_action < 100 && loading)
-		/* If less than 1 second since last link followed, show
-		 * progress indicating pointer and we're loading something */
-		return GUI_POINTER_PROGRESS;
-
-	if (box->type == BOX_FLOAT_LEFT || box->type == BOX_FLOAT_RIGHT)
-		style = box->children->style;
-	else
-		style = box->style;
-
-	if (style == NULL)
-		return GUI_POINTER_DEFAULT;
-
-	cursor = css_computed_cursor(style, &cursor_uris);
-
-	switch (cursor) {
-	case CSS_CURSOR_AUTO:
-		if (box->href || (box->gadget &&
-				(box->gadget->type == GADGET_IMAGE ||
-				box->gadget->type == GADGET_SUBMIT)) ||
-				imagemap) {
-			/* link */
-			pointer = GUI_POINTER_POINT;
-		} else if (box->gadget &&
-				(box->gadget->type == GADGET_TEXTBOX ||
-				box->gadget->type == GADGET_PASSWORD ||
-				box->gadget->type == GADGET_TEXTAREA)) {
-			/* text input */
-			pointer = GUI_POINTER_CARET;
-		} else {
-			/* anything else */
-			if (loading) {
-				/* loading new content */
-				pointer = GUI_POINTER_PROGRESS;
-			} else {
-				pointer = GUI_POINTER_DEFAULT;
-			}
-		}
-		break;
-	case CSS_CURSOR_CROSSHAIR:
-		pointer = GUI_POINTER_CROSS;
-		break;
-	case CSS_CURSOR_POINTER:
-		pointer = GUI_POINTER_POINT;
-		break;
-	case CSS_CURSOR_MOVE:
-		pointer = GUI_POINTER_MOVE;
-		break;
-	case CSS_CURSOR_E_RESIZE:
-		pointer = GUI_POINTER_RIGHT;
-		break;
-	case CSS_CURSOR_W_RESIZE:
-		pointer = GUI_POINTER_LEFT;
-		break;
-	case CSS_CURSOR_N_RESIZE:
-		pointer = GUI_POINTER_UP;
-		break;
-	case CSS_CURSOR_S_RESIZE:
-		pointer = GUI_POINTER_DOWN;
-		break;
-	case CSS_CURSOR_NE_RESIZE:
-		pointer = GUI_POINTER_RU;
-		break;
-	case CSS_CURSOR_SW_RESIZE:
-		pointer = GUI_POINTER_LD;
-		break;
-	case CSS_CURSOR_SE_RESIZE:
-		pointer = GUI_POINTER_RD;
-		break;
-	case CSS_CURSOR_NW_RESIZE:
-		pointer = GUI_POINTER_LU;
-		break;
-	case CSS_CURSOR_TEXT:
-		pointer = GUI_POINTER_CARET;
-		break;
-	case CSS_CURSOR_WAIT:
-		pointer = GUI_POINTER_WAIT;
-		break;
-	case CSS_CURSOR_PROGRESS:
-		pointer = GUI_POINTER_PROGRESS;
-		break;
-	case CSS_CURSOR_HELP:
-		pointer = GUI_POINTER_HELP;
-		break;
-	default:
-		pointer = GUI_POINTER_DEFAULT;
-		break;
-	}
-
-	return pointer;
-}
-
-
 /**
  * Callback for in-page scrollbars.
  */
@@ -833,6 +863,7 @@ void html_overflow_scroll_callback(void *client_data,
 	struct html_scrollbar_data *data = client_data;
 	html_content *html = (html_content *)data->c;
 	struct box *box = data->box;
+	union content_msg_data msg_data;
 	
 	switch(scrollbar_data->msg) {
 		case SCROLLBAR_MSG_MOVED:
@@ -857,9 +888,10 @@ void html_overflow_scroll_callback(void *client_data,
 
 			browser_window_set_drag_type(html->bw,
 					DRAGGING_NONE, NULL);
-			
-			browser_window_set_pointer(html->bw,
-					GUI_POINTER_DEFAULT);
+
+			msg_data.pointer = BROWSER_POINTER_AUTO;
+			content_broadcast(data->c, CONTENT_MSG_POINTER,
+					msg_data);
 			break;
 	}
 }
@@ -896,40 +928,6 @@ void html_overflow_scroll_drag_end(struct scrollbar *scrollbar,
 				SCROLLBAR_WIDTH);
 		scroll_mouse_y = y - box_y;
 		scrollbar_mouse_drag_end(scrollbar, mouse,
-				scroll_mouse_x, scroll_mouse_y);
-	}
-}
-
-
-/**
- * Start drag scrolling the contents of a box
- *
- * \param box	the box to be scrolled
- * \param x	x ordinate of initial mouse position
- * \param y	y ordinate
- */
-
-void html_box_drag_start(struct box *box, int x, int y)
-{
-	int box_x, box_y;
-	int scroll_mouse_x, scroll_mouse_y;
-	
-	box_coords(box, &box_x, &box_y);
-	
-	if (box->scroll_x != NULL) {
-		scroll_mouse_x = x - box_x ;
-		scroll_mouse_y = y - (box_y + box->padding[TOP] +
-				box->height + box->padding[BOTTOM] -
-				SCROLLBAR_WIDTH);
-		scrollbar_start_content_drag(box->scroll_x,
-				scroll_mouse_x, scroll_mouse_y);
-	} else if (box->scroll_y != NULL) {
-		scroll_mouse_x = x - (box_x + box->padding[LEFT] +
-				box->width + box->padding[RIGHT] -
-				SCROLLBAR_WIDTH);
-		scroll_mouse_y = y - box_y;
-		
-		scrollbar_start_content_drag(box->scroll_y,
 				scroll_mouse_x, scroll_mouse_y);
 	}
 }
