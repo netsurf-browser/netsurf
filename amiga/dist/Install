@@ -283,7 +283,7 @@
 (if (= @default-dest "")
 	(
 		; Workaround for Installer bug picking TEXTCLIP: as a sensible location
-		(if (= @default-dest "TextClip:") (set @default-dest "SYS:Utilities"))
+		(if (= @default-dest "TextClip:") (set @default-dest "SYS:Internet"))
 
 		(if (= @user-level 0)
 			(
@@ -297,7 +297,7 @@
 (set @default-dest
 	(askdir
 		(prompt "Where would you like to install NetSurf?\n"
-				"(a drawer will not be created)")
+				"(a drawer WILL NOT be created)")
 		(help @askdir-help)
 		(default @default-dest)
 	)
@@ -311,6 +311,9 @@
 (set osver (/ osver 65536))
 (set #versions-available 0)
 
+(set #static-filename "NetSurf-Static")
+(set #cairo-filename "NetSurf")
+
 (if (exists "NetSurf-Static")
 	(
 		(set #static-name "Static/graphics.library")
@@ -322,11 +325,32 @@
 	)
 )
 
-(if (AND (>= osver 53) (exists "NetSurf"))
+(if (exists "NetSurf")
 	(
-		(set #cairo-name "Shared objects/part-Cairo")
-		(set #versions-available (+ #versions-available 1))
-		(set #cairo-version 1)
+		(if (exists "SObjs")
+			(
+				(if (>= osver 53) 
+					(
+						(set #cairo-name "Shared objects/part-Cairo")
+						(set #versions-available (+ #versions-available 1))
+						(set #cairo-version 1)
+					)
+					;else
+					(
+						(set #cairo-version 0)
+						(set #cairo-name "")
+					)
+				)
+			)
+			;else
+			(
+				; assume static if sobjs is not present
+				(set #static-name "Static/graphics.library")
+				(set #versions-available (+ #versions-available 1))
+				(set #cairo-version 0)
+				(set #static-filename "NetSurf")
+			)
+		)
 	)
 	; else
 	(
@@ -421,7 +445,7 @@
 
 (complete 20)
 
-(set #netsurf-name (select #cairo-version "NetSurf-Static" "NetSurf"))
+(set #netsurf-name (select #cairo-version #static-filename #cairo-filename))
 
 (if (= #AutoInstall 0)
 	(
@@ -482,10 +506,14 @@
 (set #complete 40)
 (working "Copying Libraries")
 
-(foreach "Libs" "#?"
-	(complete #complete)
-	(p_copylib @each-name)
-	(set #complete (+ #complete 2))
+(if (exists "Libs")
+	(
+		(foreach "Libs" "#?"
+			(complete #complete)
+			(p_copylib @each-name)
+			(set #complete (+ #complete 2))
+		)
+	)
 )
 
 (set #complete 60)
