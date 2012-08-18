@@ -628,7 +628,7 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 {
 	textplain_content *text = (textplain_content *) c;
 
-	if (bw->drag_type == DRAGGING_SELECTION && !mouse) {
+	if (browser_window_get_drag_type(bw) == DRAGGING_SELECTION && !mouse) {
 		int dir = -1;
 		size_t idx;
 
@@ -641,7 +641,7 @@ void textplain_mouse_track(struct content *c, struct browser_window *bw,
 		browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 	}
 
-	switch (bw->drag_type) {
+	switch (browser_window_get_drag_type(bw)) {
 
 		case DRAGGING_SELECTION: {
 			int dir = -1;
@@ -687,7 +687,8 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 	if (selection_click(&text->sel, mouse, idx)) {
 
 		if (selection_dragging(&text->sel)) {
-			bw->drag_type = DRAGGING_SELECTION;
+			browser_window_set_drag_type(bw,
+					DRAGGING_SELECTION, NULL);
 			status = messages_get("Selecting");
 		}
 		else
