@@ -1230,7 +1230,7 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_LINK:
-		/* Don't care about favicons */
+		/* Don't care about favicons that aren't on top level content */
 		break;
 
 	case CONTENT_MSG_SCROLL:
@@ -1243,23 +1243,12 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_DRAGSAVE:
-		/* Pass it on */
-		content_broadcast(&c->base, CONTENT_MSG_DRAGSAVE, event->data);
-		break;
-
 	case CONTENT_MSG_SAVELINK:
-		/* Pass it on */
-		content_broadcast(&c->base, CONTENT_MSG_SAVELINK, event->data);
-		break;
-
 	case CONTENT_MSG_POINTER:
-		/* Pass it on */
-		content_broadcast(&c->base, CONTENT_MSG_POINTER, event->data);
-		break;
-
 	case CONTENT_MSG_PASTE:
-		/* Pass it on */
-		content_broadcast(&c->base, CONTENT_MSG_PASTE, event->data);
+		/* These messages are for browser window layer.
+		 * we're not interested, so pass them on. */
+		content_broadcast(&c->base, event->type, event->data);
 		break;
 
 	default:
