@@ -1308,13 +1308,16 @@ bool textinput_textarea_callback(struct browser_window *bw, uint32_t key,
 		break;
 
 	case KEY_PASTE:
-		gui_paste_from_clipboard(bw->window,
-			box_x + inline_container->x +
-					text_box->x + pixel_offset,
-			box_y + inline_container->y + text_box->y);
+	{
+		union content_msg_data msg_data;
+		msg_data.paste.x = box_x + inline_container->x +
+				text_box->x + pixel_offset;
+		msg_data.paste.y = box_y + inline_container->y + text_box->y;
+		content_broadcast(c, CONTENT_MSG_PASTE, msg_data);
 
 		/* screen updated and caret repositioned already */
 		return true;
+	}
 
 	case KEY_CUT_SELECTION:
 	{
@@ -1949,12 +1952,16 @@ bool textinput_input_callback(struct browser_window *bw, uint32_t key,
 		break;
 
 	case KEY_PASTE:
-		gui_paste_from_clipboard(bw->window,
-			box_x + input->children->x + text_box->x + pixel_offset,
-			box_y + input->children->y + text_box->y);
+	{
+		union content_msg_data msg_data;
+		msg_data.paste.x = box_x + input->children->x + text_box->x +
+				pixel_offset;
+		msg_data.paste.y = box_y + input->children->y + text_box->y;
+		content_broadcast(c, CONTENT_MSG_PASTE, msg_data);
 
 		/* screen updated and caret repositioned already */
 		return true;
+	}
 
 	case KEY_CUT_SELECTION:
 	{
