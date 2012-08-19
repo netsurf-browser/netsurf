@@ -584,8 +584,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 							DRAGGING_SELECTION,
 							NULL);
 					status = messages_get("Selecting");
-				} else
-					status = content_get_status_message(h);
+				}
 			}
 			else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(&html->sel, true);
@@ -663,7 +662,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 
 		/* \todo should have a drag-saving object msg */
-		status = content_get_status_message(h);
 
 	} else if (iframe) {
 		int pos_x, pos_y;
@@ -756,10 +754,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 						browser_window_set_drag_type(bw,
 							DRAGGING_SELECTION,
 							NULL);
-						status =
-							messages_get("Selecting");
-					} else
-						status = content_get_status_message(h);
+						status = messages_get(
+								"Selecting");
+					}
 
 					done = true;
 				}
@@ -771,11 +768,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		if (!done) {
 			if (title)
 				status = title;
-			else if (bw->loading_content)
-				status = content_get_status_message(
-						bw->loading_content);
-			else
-				status = content_get_status_message(h);
 
 			if (mouse & BROWSER_MOUSE_DRAG_1) {
 				if (mouse & BROWSER_MOUSE_MOD_2) {
@@ -824,12 +816,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	}
 
-	if (status != NULL) {
+	if (!iframe) {
 		msg_data.explicit_status_text = status;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
-	}
 
-	if (!iframe) {
 		msg_data.pointer = pointer;
 		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
 	}
