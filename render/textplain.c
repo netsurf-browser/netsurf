@@ -691,24 +691,16 @@ void textplain_mouse_action(struct content *c, struct browser_window *bw,
 					DRAGGING_SELECTION, NULL);
 			status = messages_get("Selecting");
 		}
-		else
-			status = content__get_status_message(c);
-	}
-	else {
-		if (bw->loading_content)
-			status = content_get_status_message(
-					bw->loading_content);
-		else
-			status = content__get_status_message(c);
 
+	} else {
 		if (mouse & (BROWSER_MOUSE_DRAG_1 | BROWSER_MOUSE_DRAG_2)) {
 			browser_window_page_drag_start(bw, x, y);
 			pointer = BROWSER_POINTER_MOVE;
 		}
 	}
 
-	if (status != NULL)
-		browser_window_set_status(bw, status);
+	msg_data.explicit_status_text = status;
+	content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 
 	msg_data.pointer = pointer;
 	content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
