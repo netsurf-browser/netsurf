@@ -648,15 +648,16 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 
 					if (box->gadget) {
 						switch (box->gadget->type) {
-							case GADGET_FILE:
-							case GADGET_TEXTBOX:
-							case GADGET_TEXTAREA:
-							case GADGET_PASSWORD:
-								dest_ok = true;
-								break;
+						case GADGET_FILE:
+						case GADGET_TEXTBOX:
+						case GADGET_TEXTAREA:
+						case GADGET_PASSWORD:
+							dest_ok = true;
+							break;
 
-							default:	/* appease compiler */
-								break;
+						default:
+							/* appease compiler */
+							break;
 						}
 					}
 				}
