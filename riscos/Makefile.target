@@ -111,4 +111,4 @@ netsurf.zip: $(EXETARGET)
 	rsync --archive --verbose $(CURDIR)/!NetSurf $($@_TMPDIR)
 	mv $($@_TMPDIR)/!NetSurf/ReadMe $($@_TMPDIR)
 	cd $($@_TMPDIR) && /opt/netsurf/arm-unknown-riscos/env/bin/zip -9vr\, $(CURDIR)/$@ *
-	$(Q) $(RM) $($@_TMPDIR)
+	$(Q) $(RM) -rf $($@_TMPDIR)
