@@ -105,12 +105,10 @@ CLEANS += clean-run
 # Install target
 # ----------------------------------------------------------------------------
 
-install-riscos: netsurf.zip
-
 netsurf.zip: $(EXETARGET)
-	TMPDIR:=$(shell mktemp -d)
+	$(eval $@_TMPDIR := $(shell mktemp -d))
 	$(Q) $(RM) $@
-	rsync --archive --verbose $(CURDIR)/!NetSurf $(TMPDIR)
-	mv $(TMPDIR)/!NetSurf/ReadMe $(TMPDIR)
-	$(shell cd $(TMPDIR) &&	/opt/netsurf/arm-unknown-riscos/env/bin/zip -9vr, $(CURDIR)/$@ *)
-	$(Q) $(RM) $(TMPDIR)
+	rsync --archive --verbose $(CURDIR)/!NetSurf $($@_TMPDIR)
+	mv $($@_TMPDIR)/!NetSurf/ReadMe $($@_TMPDIR)
+	$(shell cd $($@_TMPDIR) && /opt/netsurf/arm-unknown-riscos/env/bin/zip -9vr, $(CURDIR)/$@ *)
+	$(Q) $(RM) $($@_TMPDIR)
