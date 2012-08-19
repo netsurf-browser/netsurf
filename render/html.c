@@ -1243,6 +1243,18 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_DRAGSAVE:
+	{
+		union content_msg_data msg_data;
+		if (event->data.dragsave.content == NULL)
+			msg_data.dragsave.content = object;
+		else
+			msg_data.dragsave.content =
+					event->data.dragsave.content;
+
+		content_broadcast(&c->base, CONTENT_MSG_DRAGSAVE, msg_data);
+	}
+		break;
+
 	case CONTENT_MSG_SAVELINK:
 	case CONTENT_MSG_POINTER:
 	case CONTENT_MSG_PASTE:

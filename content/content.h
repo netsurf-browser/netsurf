@@ -140,6 +140,7 @@ union content_msg_data {
 			CONTENT_SAVE_COMPLETE,
 			CONTENT_SAVE_SOURCE
 		} type;
+		 /** if NULL, save the content generating the message */
 		struct hlcache_handle *content;
 	} dragsave;
 	/** CONTENT_MSG_SAVELINK - Save a URL */

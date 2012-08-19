@@ -773,7 +773,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				if (mouse & BROWSER_MOUSE_MOD_2) {
 					msg_data.dragsave.type =
 							CONTENT_SAVE_COMPLETE;
-					msg_data.dragsave.content = h;
+					msg_data.dragsave.content = NULL;
 					content_broadcast(c,
 							CONTENT_MSG_DRAGSAVE,
 							msg_data);
@@ -793,7 +793,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				if (mouse & BROWSER_MOUSE_MOD_2) {
 					msg_data.dragsave.type =
 							CONTENT_SAVE_SOURCE;
-					msg_data.dragsave.content = h;
+					msg_data.dragsave.content = NULL;
 					content_broadcast(c,
 							CONTENT_MSG_DRAGSAVE,
 							msg_data);
