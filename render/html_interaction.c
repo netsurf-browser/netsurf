@@ -695,7 +695,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			/* force download of link */
 			browser_window_go_post(bw, nsurl_access(url), 0, 0,
 					false,
-					nsurl_access(hlcache_handle_get_url(h)),
+					nsurl_access(content_get_url(c)),
 					true, true, 0);
 
 		} else if (mouse & BROWSER_MOUSE_CLICK_2 &&
@@ -836,7 +836,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	case ACTION_GO:
 		browser_window_go(browser_window_find_target(bw, target, mouse),
 				nsurl_access(url),
-				nsurl_access(hlcache_handle_get_url(h)), true);
+				nsurl_access(content_get_url(c)), true);
 		break;
 	case ACTION_NONE:
 		break;
