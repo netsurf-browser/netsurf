@@ -760,8 +760,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 					done = true;
 				}
-			}
-			else if (mouse & BROWSER_MOUSE_PRESS_1)
+
+			} else if (mouse & BROWSER_MOUSE_PRESS_1)
 				selection_clear(&html->sel, true);
 		}
 
@@ -778,10 +778,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 							CONTENT_MSG_DRAGSAVE,
 							msg_data);
 				} else {
-					if (drag_candidate == NULL)
+					if (drag_candidate == NULL) {
 						browser_window_page_drag_start(
 								bw, x, y);
-					else {
+					} else {
 						html_box_drag_start(
 								drag_candidate,
 								x, y);
@@ -798,10 +798,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 							CONTENT_MSG_DRAGSAVE,
 							msg_data);
 				} else {
-					if (drag_candidate == NULL)
+					if (drag_candidate == NULL) {
 						browser_window_page_drag_start(
 								bw, x, y);
-					else {
+					} else {
 						html_box_drag_start(
 								drag_candidate,
 								x, y);

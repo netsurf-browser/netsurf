@@ -521,8 +521,8 @@ void textplain_reformat(struct content *c, int width, int height)
 					/* break at last space in line */
 					i = space;
 					line[line_count-1].length = (i + 1) - line_start;
-				}
-				else
+
+				} else
 					line[line_count-1].length = i - line_start;
 			}
 			line[line_count++].start = line_start = i + 1;
