@@ -1328,8 +1328,17 @@ nserror browser_window_callback(hlcache_handle *c,
 	case CONTENT_MSG_STATUS:
 		if (event->data.explicit_status_text == NULL) {
 			/* Object content's status text updated */
-			browser_window_set_status(bw,
-					content_get_status_message(c));
+			const char *status = NULL;
+			if (bw->loading_content != NULL)
+				/* Give preference to any loading content */
+				status = content_get_status_message(
+						bw->loading_content);
+
+			if (status == NULL)
+				status = content_get_status_message(c);
+
+			if (status != NULL)
+				browser_window_set_status(bw, status);
 		} else {
 			/* Object content wants to set explicit message */
 			browser_window_set_status(bw,
