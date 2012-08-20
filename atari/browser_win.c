@@ -41,8 +41,6 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
-#include "render/box.h"
-#include "render/form.h"
 #include "atari/gui.h"
 #include "atari/browser_win.h"
 #include "atari/browser.h"
