@@ -2892,6 +2892,23 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 
 
 /**
+ * Dump debug info concerning the html_content
+ *
+ * \param  bw    The browser window
+ * \param  bw    The file to dump to
+ */
+static void html_debug_dump(struct content *c, FILE *f)
+{
+	html_content *html = (html_content *) c;
+
+	assert(html != NULL);
+	assert(html->layout != NULL);
+
+	box_dump(f, html->layout, 0);
+}
+
+
+/**
  * Set an HTML content's search context
  *
  * \param c	content of type html
@@ -3219,6 +3236,7 @@ static const content_handler html_content_handler = {
 	.get_contextual_content = html_get_contextual_content,
 	.scroll_at_point = html_scroll_at_point,
 	.drop_file_at_point = html_drop_file_at_point,
+	.debug_dump = html_debug_dump,
 	.clone = html_clone,
 	.type = html_content_type,
 	.no_share = true,
