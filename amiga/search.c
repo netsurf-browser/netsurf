@@ -30,8 +30,6 @@
 #include "desktop/gui.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
-#include "render/box.h"
-#include "render/html.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -58,19 +56,6 @@
 #ifndef NOF_ELEMENTS
 #define NOF_ELEMENTS(array) (sizeof(array)/sizeof(*(array)))
 #endif
-
-struct list_entry {
-	unsigned start_idx;	/* start position of match */
-	unsigned end_idx;	/* end of match */
-
-	struct box *start_box;	/* used only for html contents */
-	struct box *end_box;
-
-	struct selection *sel;
-
-	struct list_entry *prev;
-	struct list_entry *next;
-};
 
 static bool search_insert;
 
