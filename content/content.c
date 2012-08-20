@@ -762,6 +762,16 @@ bool content_drop_file_at_point(struct hlcache_handle *h,
 }
 
 
+void content_debug_dump(struct hlcache_handle *h, FILE *f)
+{
+	struct content *c = hlcache_handle_get_content(h);
+	assert(c != 0);
+
+	if (c->handler->debug_dump != NULL)
+		c->handler->debug_dump(c, f);
+}
+
+
 void content_add_error(struct content *c, const char *token,
 		unsigned int line)
 {

@@ -27,6 +27,7 @@
 #define _NETSURF_CONTENT_CONTENT_H_
 
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 
@@ -226,6 +227,7 @@ bool content_scroll_at_point(struct hlcache_handle *h,
 		int x, int y, int scrx, int scry);
 bool content_drop_file_at_point(struct hlcache_handle *h,
 		int x, int y, char *file);
+void content_debug_dump(struct hlcache_handle *h, FILE *f);
 struct content_rfc5988_link *content_find_rfc5988_link(struct hlcache_handle *c,
 		lwc_string *rel);
 

@@ -71,6 +71,7 @@ struct content_handler {
 			int scrx, int scry);
 	bool (*drop_file_at_point)(struct content *c, int x, int y,
 			char *file);
+	void (*debug_dump)(struct content *c, FILE *f);
 	nserror (*clone)(const struct content *old, struct content **newc);
 	bool (*matches_quirks)(const struct content *c, bool quirks);
 	content_type (*type)(void);
