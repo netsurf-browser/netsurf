@@ -71,7 +71,6 @@
 #include "gtk/window.h"
 #include "gtk/schedule.h"
 
-#include "render/box.h"
 #include "render/form.h"
 #include "utils/filepath.h"
 #include "utils/log.h"

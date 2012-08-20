@@ -76,7 +76,6 @@
 #include "gtk/compat.h"
 #include "gtk/gdk.h"
 #include "image/ico.h"
-#include "render/box.h"
 #include "render/font.h"
 #include "render/form.h"
 #include "render/html.h"
