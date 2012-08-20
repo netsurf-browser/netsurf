@@ -43,7 +43,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "render/box.h"
 #include "render/form.h"
 #include "riscos/dialog.h"
 #include "render/form.h"
