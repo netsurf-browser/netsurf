@@ -34,8 +34,6 @@
 #include "desktop/gui.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
-#include "render/box.h"
-#include "render/html.h"
 #include "riscos/dialog.h"
 #include "riscos/menus.h"
 #include "riscos/wimp.h"
