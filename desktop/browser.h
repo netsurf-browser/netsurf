@@ -292,8 +292,6 @@ struct browser_window *browser_window_find_target(
 		struct browser_window *bw, const char *target,
 		browser_mouse_state mouse);
 
-void browser_redraw_box(struct hlcache_handle *c, struct box *box);
-
 void browser_select_menu_callback(void *client_data,
 		int x, int y, int width, int height);
 
