@@ -55,9 +55,7 @@ extern "C" {
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 
-//#include "render/box.h"
 #include "render/form.h"
-//#include "render/html.h"
 #include "utils/filename.h"
 #include "utils/log.h"
 #include "utils/messages.h"
