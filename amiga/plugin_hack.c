@@ -25,7 +25,6 @@
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "desktop/plotters.h"
-#include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -50,8 +49,7 @@ static bool amiga_plugin_hack_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx);
 static void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params);
+		struct content *page, struct object_params *params);
 static void amiga_plugin_hack_close(struct content *c);
 static nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc);
 static content_type amiga_plugin_hack_content_type(void);
@@ -173,15 +171,15 @@ bool amiga_plugin_hack_redraw(struct content *c,
  * \param  params  object parameters, or 0 if not an object
  */
 void amiga_plugin_hack_open(struct content *c, struct browser_window *bw,
-	struct content *page, struct box *box,
-	struct object_params *params)
+	struct content *page, struct object_params *params)
 {
 	LOG(("amiga_plugin_hack_open %s", nsurl_access(content_get_url(c))));
 
-	if(c && box)
+	if(c)
 	{
-		c->width = box->width;
-		c->height = box->height;
+		/* TODO: Do we need valid dimensions at this point? */
+		c->width = 0;
+		c->height = 0;
 	}
 
 	return;
