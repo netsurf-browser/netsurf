@@ -1232,13 +1232,7 @@ MULTIHANDLER(saveboxtree)
 			struct browser_window *bw;
 			bw = nsgtk_get_browser_window(g->top_level);
 
-			if (bw->current_content &&
-					content_get_type(bw->current_content) ==
-					CONTENT_HTML) {
-				box_dump(fh,
-					html_get_box_tree(bw->current_content),
-					0);
-			}
+			browser_window_debug_dump(bw, fh);
 
 			fclose(fh);
 		}
