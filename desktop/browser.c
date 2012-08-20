@@ -648,6 +648,13 @@ bool browser_window_drop_file_at_point(struct browser_window *bw,
 	return false;
 }
 
+/* exported interface, documented in browser.h */
+void browser_window_debug_dump(struct browser_window *bw, FILE *f)
+{
+	if (bw->current_content != NULL)
+		content_debug_dump(bw->current_content, f);
+}
+
 
 /**
  * Create and open a new root browser window with the given page.
