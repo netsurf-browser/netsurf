@@ -670,22 +670,20 @@ void content_broadcast(struct content *c, content_msg msg,
  * \param  bw	   browser window containing the content
  * \param  page	   content of type CONTENT_HTML containing c, or 0 if not an
  *		   object within a page
- * \param  box	   box containing c, or 0 if not an object
  * \param  params  object parameters, or 0 if not an object
  *
  * Calls the open function for the content.
  */
 
 void content_open(hlcache_handle *h, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params)
+		struct content *page, struct object_params *params)
 {
 	struct content *c = hlcache_handle_get_content(h);
 	assert(c != 0);
 	LOG(("content %p %s", c,
 			nsurl_access(llcache_handle_get_url(c->llcache))));
 	if (c->handler->open != NULL)
-		c->handler->open(c, bw, page, box, params);
+		c->handler->open(c, bw, page, params);
 }
 
 

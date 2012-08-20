@@ -62,9 +62,7 @@ struct content_handler {
 			const struct rect *clip,
 			const struct redraw_context *ctx);
 	void (*open)(struct content *c, struct browser_window *bw,
-			struct content *page,
-			struct box *box,
-			struct object_params *params);
+			struct content *page, struct object_params *params);
 	void (*close)(struct content *c);
 	struct selection * (*get_selection)(struct content *c);
 	void (*get_contextual_content)(struct content *c, int x, int y,

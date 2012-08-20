@@ -1119,7 +1119,6 @@ html_object_callback(hlcache_handle *object,
 		if (c->base.status != CONTENT_STATUS_LOADING && c->bw != NULL)
 			content_open(object,
 					c->bw, &c->base,
-					box,
 					box->object_params);
 		break;
 
@@ -2554,7 +2553,6 @@ static void
 html_open(struct content *c,
 	  struct browser_window *bw,
 	  struct content *page,
-	  struct box *box,
 	  struct object_params *params)
 {
 	html_content *html = (html_content *) c;
@@ -2577,7 +2575,6 @@ html_open(struct content *c,
 
 		content_open(object->content,
 				bw, c,
-				object->box,
 				object->box->object_params);
 	}
 }

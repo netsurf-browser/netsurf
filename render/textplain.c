@@ -113,8 +113,7 @@ static void textplain_destroy(struct content *c);
 static bool textplain_redraw(struct content *c, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
 static void textplain_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params);
+		struct content *page, struct object_params *params);
 void textplain_close(struct content *c);
 struct selection *textplain_get_selection(struct content *c);
 struct search_context *textplain_get_search(struct content *c);
@@ -855,8 +854,7 @@ bool textplain_redraw(struct content *c, struct content_redraw_data *data,
  */
 
 void textplain_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params)
+		struct content *page, struct object_params *params)
 {
 	textplain_content *text = (textplain_content *) c;
 

@@ -40,7 +40,6 @@
 #include "desktop/mouse.h"
 #include "desktop/plot_style.h"
 
-struct box;
 struct browser_window;
 struct content;
 struct llcache_handle;
@@ -218,8 +217,7 @@ void content_mouse_action(struct hlcache_handle *h, struct browser_window *bw,
 bool content_redraw(struct hlcache_handle *h, struct content_redraw_data *data,
 		const struct rect *clip, const struct redraw_context *ctx);
 void content_open(struct hlcache_handle *h, struct browser_window *bw,
-		struct content *page, struct box *box, 
-		struct object_params *params);
+		struct content *page, struct object_params *params);
 void content_close(struct hlcache_handle *h);
 struct selection *content_get_selection(struct hlcache_handle *h);
 void content_get_contextual_content(struct hlcache_handle *h,
