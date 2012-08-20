@@ -20,7 +20,6 @@
 #include "desktop/plotters.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
-#include "render/box.h"
 #include "utils/utf8.h"
 
 #include "amiga/bitmap.h"
@@ -345,7 +344,6 @@ struct ami_text_selection *ami_selection_to_text(struct gui_window_2 *gwin)
 
 void ami_drag_selection(struct selection *s)
 {
-	struct box *text_box;
 	int x;
 	int y;
 	char *utf8text;
@@ -362,7 +360,7 @@ void ami_drag_selection(struct selection *s)
 	x = gwin->win->MouseX;
 	y = gwin->win->MouseY;
 
-	if(text_box = ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
+	if(ami_text_box_at_point(gwin, (ULONG *)&x, (ULONG *)&y))
 	{
 		iffh = ami_clipboard_init_internal(1);
 

@@ -143,7 +143,7 @@ void ami_do_redraw_limits(struct gui_window *g, struct browser_window *bw,
 		int x0, int y0, int x1, int y1);
 STRPTR ami_locale_langs(void);
 int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
-struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
+bool *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
 BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
 

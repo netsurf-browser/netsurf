@@ -30,9 +30,6 @@
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
 #include "image/ico.h"
-#include "render/box.h"
-#include "render/form.h"
-#include "render/html.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/utf8.h"
@@ -4113,17 +4110,12 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 /* return the text box at posn x,y in window coordinates
    x,y are updated to be document co-ordinates */
 
-struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
+bool *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 {
 	struct IBox *bbox;
 	ULONG xs,ys,width,height;
-	struct box *box,*text_box=0;
-	hlcache_handle *content;
 	int box_x=0,box_y=0;
-
-	content = gwin->bw->current_content;
-
-	if(content_get_type(content) != CONTENT_HTML) return NULL;
+	struct contextual_content data;
 
 	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER],
 				(ULONG *)&bbox);
@@ -4137,27 +4129,12 @@ struct box *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	width=bbox->Width;
 	height=bbox->Height;
 
-	box = html_get_box_tree(content);
-	while ((box = box_at_point(box, *x, *y, &box_x, &box_y, &content)))
-	{
-		if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)	continue;
+	browser_window_get_contextual_content(gwin->bw, x, y, &data);
 
-		if (box->gadget)
-		{
-			switch (box->gadget->type)
-			{
-				case GADGET_TEXTBOX:
-				case GADGET_TEXTAREA:
-				case GADGET_PASSWORD:
-					text_box = box;
-				break;
+	if (data.form_features == CTX_FORM_TEXT)
+		return true;
 
-				default:
-				break;
-			}
-		}
-	}
-	return text_box;
+	return false;
 }
 
 BOOL ami_gadget_hit(Object *obj, int x, int y)
