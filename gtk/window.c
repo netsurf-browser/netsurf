@@ -59,7 +59,6 @@ struct gui_window {
 	/** mouse state and events. */
 	struct {
 		struct gui_window *gui;
-		struct box *box;
 
 		gdouble pressed_x;
 		gdouble pressed_y;
