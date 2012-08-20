@@ -45,6 +45,7 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree_url_node.h"
+#include "render/form.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
