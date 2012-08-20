@@ -27,7 +27,6 @@
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
-#include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -66,8 +65,7 @@ static bool amiga_dt_anim_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx);
 static void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params);
+		struct content *page, struct object_params *params);
 static void amiga_dt_anim_close(struct content *c);
 static nserror amiga_dt_anim_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_anim_content_type(void);
@@ -285,8 +283,7 @@ bool amiga_dt_anim_redraw(struct content *c,
  * \param  params  object parameters, or 0 if not an object
  */
 void amiga_dt_anim_open(struct content *c, struct browser_window *bw,
-	struct content *page, struct box *box,
-	struct object_params *params)
+	struct content *page, struct object_params *params)
 {
 	LOG(("amiga_dt_anim_open"));
 

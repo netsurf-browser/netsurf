@@ -27,7 +27,6 @@
 #include "desktop/plotters.h"
 #include "image/bitmap.h"
 #include "image/image_cache.h"
-#include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"

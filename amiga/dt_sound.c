@@ -25,7 +25,6 @@
 #include "amiga/datatypes.h"
 #include "content/content_protected.h"
 #include "desktop/plotters.h"
-#include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/talloc.h"
@@ -53,8 +52,7 @@ static bool amiga_dt_sound_redraw(struct content *c,
 		struct content_redraw_data *data, const struct rect *clip,
 		const struct redraw_context *ctx);
 static void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
-		struct content *page, struct box *box,
-		struct object_params *params);
+		struct content *page, struct object_params *params);
 static nserror amiga_dt_sound_clone(const struct content *old, struct content **newc);
 static content_type amiga_dt_sound_content_type(void);
 
@@ -216,8 +214,7 @@ bool amiga_dt_sound_redraw(struct content *c,
 
 
 void amiga_dt_sound_open(struct content *c, struct browser_window *bw,
-	struct content *page, struct box *box,
-	struct object_params *params)
+	struct content *page, struct object_params *params)
 {
 	amiga_dt_sound_content *plugin = (amiga_dt_sound_content *) c;
 	struct object_param *param;
