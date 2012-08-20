@@ -33,10 +33,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "render/html.h"
 #include "css/css.h"
-#include "render/box.h"
-#include "render/form.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 
@@ -68,9 +65,7 @@ struct s_context_info ctxinfo;
 
 static struct s_context_info * get_context_info( struct gui_window * gw, short mx, short my )
 {
-	struct box *box;
 	hlcache_handle *h;
-	int box_x, box_y;
 	LGRECT bwrect;
 	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
@@ -107,31 +102,8 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 			ctxinfo.flags |= CNT_IMG;
 		}
 	}
-
-	box = html_get_box_tree(h);
-	box_x = box->margin[LEFT];
-	box_y = box->margin[TOP];
-
-	while ((box = box_at_point(box, mx+gw->browser->scroll.current.x, my+gw->browser->scroll.current.y, &box_x, &box_y, &h)))
-	{
-		if (box->style && css_computed_visibility(box->style) == CSS_VISIBILITY_HIDDEN)
-			continue;
-		if (box->gadget)
-        	{
-			switch (box->gadget->type)
-			{
-				case GADGET_TEXTBOX:
-				case GADGET_TEXTAREA:
-				case GADGET_PASSWORD:
-					// TODO: check if there is really an selection, but it
-					// doesn't hurt for now...:
-					ctxinfo.flags |= (CNT_INTERACTIVE | CNT_SELECTION);
-				break;
-
-				default: break;
-			}
-         	}
-    	}
+	if ( ctxinfo.ccdata.form_features == CTX_FORM_TEXT )
+		ctxinfo.flags |= (CNT_INTERACTIVE | CNT_SELECTION);
 	return( &ctxinfo );
 }
 
