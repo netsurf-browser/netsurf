@@ -2670,6 +2670,23 @@ html_get_contextual_content(struct content *c,
 					box->usemap, box_x, box_y, x, y,
 					&target));
 		}
+		if (box->gadget) {
+			switch (box->gadget->type) {
+			case GADGET_TEXTBOX:
+			case GADGET_TEXTAREA:
+			case GADGET_PASSWORD:
+				data->form_features = CTX_FORM_TEXT;
+				break;
+
+			case GADGET_FILE:
+				data->form_features = CTX_FORM_FILE;
+				break;
+
+			default:
+				data->form_features = CTX_FORM_NONE;
+				break;
+			}
+		}
 	}
 }
 

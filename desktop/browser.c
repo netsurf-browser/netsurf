@@ -549,6 +549,7 @@ void browser_window_get_contextual_content(struct browser_window *bw,
 	data->link_url = NULL;
 	data->object = NULL;
 	data->main = NULL;
+	data->form_features = CTX_FORM_NONE;
 
 	browser_window__get_contextual_content(bw, x, y, data);
 }

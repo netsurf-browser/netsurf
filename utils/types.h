@@ -52,6 +52,11 @@ struct contextual_content {
 	const char *link_url;
 	struct hlcache_handle *object;
 	struct hlcache_handle *main;
+	enum {
+		CTX_FORM_NONE,
+		CTX_FORM_TEXT,
+		CTX_FORM_FILE
+	} form_features;
 };
 
 #endif
