@@ -187,10 +187,6 @@ ifeq ($(TARGET),riscos)
      EXEEXT := ,ff8
     endif
     PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
-    CCACHE := $(shell which ccache)
-    ifneq ($(CCACHE),)
-      CC := $(CCACHE) $(CC)
-    endif
   endif
 else
   ifeq ($(TARGET),beos)
@@ -267,8 +263,14 @@ else
   endif
 endif
 
-# Target paths
 
+# CCACHE
+ifeq ($(origin CCACHE),undefined)
+  CCACHE=$(shell ccache -V >/dev/null 2>&1 && echo ccache || echo)
+endif
+CC := $(CCACHE) $(CC)
+
+# Target paths
 OBJROOT = build-$(HOST)-$(TARGET)$(SUBTARGET)
 DEPROOT := $(OBJROOT)/deps
 TOOLROOT := $(OBJROOT)/tools
