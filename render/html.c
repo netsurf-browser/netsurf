@@ -2731,13 +2731,14 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 
 
 /**
- * Drop a file onto a content at a particular point.
+ * Drop a file onto a content at a particular point, or determine if a file
+ * may be dropped onto the content at given point.
  *
  * \param c	html content to look inside
  * \param x	x-coordinate of point of interest
  * \param y	y-coordinate of point of interest
- * \param file	path to file to be dropped
- * \return true iff file drop has been handled
+ * \param file	path to file to be dropped, or NULL to know if drop allowed
+ * \return true iff file drop has been handled, or if drop possible (NULL file)
  */
 static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 {
@@ -2784,6 +2785,10 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	if (!file_box && !text_box)
 		/* No box capable of handling drop */
 		return false;
+
+	if (file == NULL)
+		/* There is a box capable of handling drop here */
+		return true;
 
 	/* Handle the drop */
 	if (file_box) {
