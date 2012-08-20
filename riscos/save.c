@@ -627,41 +627,8 @@ void ro_gui_save_drag_end(wimp_dragged *drag)
 		g = ro_gui_window_lookup(gui_save_sourcew);
 
 		if (g && ro_gui_window_to_window_pos(g, dx, dy, &pos)) {
-			hlcache_handle *h = g->bw->current_content;
-
-			if (h && content_get_type(h) == CONTENT_HTML) {
-				struct box *box = html_get_box_tree(h);
-				int box_x, box_y;
-
-				/* Consider the margins of the html page now */
-				box_x = box->margin[LEFT];
-				box_y = box->margin[TOP];
-
-				while (!dest_ok && (box = box_at_point(box,
-						pos.x, pos.y, &box_x, &box_y,
-						&h))) {
-					if (box->style &&
-							css_computed_visibility(
-								box->style) ==
-							CSS_VISIBILITY_HIDDEN)
-						continue;
-
-					if (box->gadget) {
-						switch (box->gadget->type) {
-						case GADGET_FILE:
-						case GADGET_TEXTBOX:
-						case GADGET_TEXTAREA:
-						case GADGET_PASSWORD:
-							dest_ok = true;
-							break;
-
-						default:
-							/* appease compiler */
-							break;
-						}
-					}
-				}
-			}
+			dest_ok = browser_window_drop_file_at_point(g->bw,
+					pos.x, pos.y, NULL);
 		}
 		if (!dest_ok) {
 			/* cancel the drag operation */
