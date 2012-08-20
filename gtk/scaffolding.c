@@ -162,8 +162,7 @@ nsgtk_scaffolding *scaf_list = NULL;
 
 /** holds the context data for what's under the pointer, when the contextual
  *  menu is opened. */
-static struct contextual_content current_menu_ctx = {
-		NULL, NULL, NULL, CTX_FORM_NONE };
+static struct contextual_content current_menu_ctx;
 
 
 /**
