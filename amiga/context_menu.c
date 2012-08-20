@@ -125,7 +125,7 @@ struct ami_file_input_menu_data {
 	int x;
 	int y;
 	struct browser_window bw;
-}
+};
 
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
