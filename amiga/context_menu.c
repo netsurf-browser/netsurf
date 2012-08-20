@@ -124,7 +124,7 @@ enum {
 struct ami_file_input_menu_data {
 	int x;
 	int y;
-	struct browser_window bw;
+	struct browser_window *bw;
 };
 
 struct Library  *PopupMenuBase = NULL;
@@ -679,10 +679,10 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			if(ccdata.form_features == CTX_FORM_FILE)
 			{
 				struct ami_file_input_menu_data file_input = {
-					.x = x;
-					.y = y;
-					.bw = gwin->bw;
-				}
+					.x = x,
+					.y = y,
+					.bw = gwin->bw
+				};
 				ami_context_menu_add_submenu(ctxmenuobj, CMID_SELECTFILE, &file_input);
 				menuhascontent = true;
 			}
