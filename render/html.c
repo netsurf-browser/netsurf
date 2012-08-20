@@ -294,7 +294,6 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->frameset = NULL;
 	c->iframe = NULL;
 	c->page = NULL;
-	c->box = NULL;
 	c->font_func = &nsfont;
 	c->scrollbar = NULL;
 	c->scripts_count = 0;
@@ -2563,7 +2562,6 @@ html_open(struct content *c,
 
 	html->bw = bw;
 	html->page = (html_content *) page;
-	html->box = box;
 
 	/* text selection */
 	selection_init(&html->sel, html->layout);
