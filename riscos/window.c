@@ -1993,7 +1993,7 @@ bool ro_gui_window_handle_local_keypress(struct gui_window *g, wimp_key *key,
 
 	case IS_WIMP_KEY + wimp_KEY_F9:
 		/* Dump content for debugging. */
-		ro_gui_dump_content(h);
+		ro_gui_dump_browser_window(g->bw);
 		return true;
 
 	case IS_WIMP_KEY + wimp_KEY_CONTROL + wimp_KEY_F9:

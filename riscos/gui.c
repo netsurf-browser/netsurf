@@ -65,9 +65,7 @@
 #include "desktop/sslcert.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
-#include "render/box.h"
 #include "render/font.h"
-#include "render/html.h"
 #include "riscos/content-handlers/artworks.h"
 #include "riscos/bitmap.h"
 #include "riscos/buffer.h"
@@ -2224,7 +2222,7 @@ void ro_gui_view_source_bounce(wimp_message *message)
  * Send the debug dump of a content to a text editor.
  */
 
-void ro_gui_dump_content(hlcache_handle *c)
+void ro_gui_dump_browser_window(struct browser_window *bw)
 {
 	os_error *error;
 
@@ -2236,14 +2234,7 @@ void ro_gui_dump_content(hlcache_handle *c)
 		return;
 	}
 
-	/* output debug information to file */
-	switch (content_get_type(c)) {
-	case CONTENT_HTML:
-		box_dump(stream, html_get_box_tree(c), 0);
-		break;
-	default:
-		break;
-        }
+	browser_window_debug_dump(bw, stream);
 
 	fclose(stream);
 

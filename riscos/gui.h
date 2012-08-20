@@ -116,7 +116,7 @@ extern struct gui_window *ro_gui_current_redraw_gui;
 void ro_gui_open_window_request(wimp_open *open);
 void ro_gui_screen_size(int *width, int *height);
 void ro_gui_view_source(struct hlcache_handle *c);
-void ro_gui_dump_content(struct hlcache_handle *c);
+void ro_gui_dump_browser_window(struct browser_window *bw);
 void ro_gui_drag_box_start(wimp_pointer *pointer);
 bool ro_gui_prequit(void);
 const char *ro_gui_default_language(void);
