@@ -45,9 +45,6 @@
 #include "desktop/searchweb.h"
 #include "desktop/textinput.h"
 #include "desktop/tree_url_node.h"
-#include "render/box.h"
-#include "render/form.h"
-#include "render/html.h"
 #include "utils/utf8.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
@@ -123,6 +120,12 @@ enum {
 	CMID_HISTORY,
 	CMID_LAST
 };
+
+struct ami_file_input_menu_data {
+	int x;
+	int y;
+	struct browser_window bw;
+}
 
 struct Library  *PopupMenuBase = NULL;
 struct PopupMenuIFace *IPopupMenu = NULL;
@@ -218,7 +221,7 @@ void ami_context_menu_add_submenu(Object *ctxmenuobj, ULONG cmsub, void *userdat
 	 * CMSUB_OBJECT    - userdata = hlcache_object *
 	 * CMSUB_SEL       - userdata = browser_window *
 	 * CMSUB_NAVIGATE  - userdata = browser_window * (only for menu construction)
-	 * CMID_SELECTFILE - userdata = box *
+	 * CMID_SELECTFILE - userdata = ami_file_input_menu_data *
 	 */
 
 	struct browser_window *bw = NULL;
@@ -582,7 +585,6 @@ BOOL ami_context_menu_mouse_trap(struct gui_window_2 *gwin, BOOL trap)
 void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 {
 	struct hlcache_handle *cc = gwin->bw->current_content;
-	struct box *curbox;
 	int box_x=0;
 	int box_y=0;
 	bool no_more_menus = false;
@@ -649,30 +651,6 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 	}
 	else
 	{
-		if(content_get_type(cc) == CONTENT_HTML)
-		{
-			curbox = html_get_box_tree(gwin->bw->current_content);
-
-			while(curbox = box_at_point(curbox, x, y, &box_x, &box_y, &cc))
-			{
-				if (curbox->style &&
-					css_computed_visibility(curbox->style) == CSS_VISIBILITY_HIDDEN)
-				continue;
-
-				if (curbox->gadget)
-				{
-					switch (curbox->gadget->type)
-					{
-						case GADGET_FILE:
-							ami_context_menu_add_submenu(ctxmenuobj, CMID_SELECTFILE, curbox);
-							menuhascontent = true;
-							no_more_menus = true;
-						break;
-					}
-				}
-			}
-		}
-
 		if(no_more_menus == false)
 		{
 			browser_window_get_contextual_content(gwin->bw, x, y, &ccdata);
@@ -695,6 +673,17 @@ void ami_context_menu_show(struct gui_window_2 *gwin,int x,int y)
 			if(ccdata.object)
 			{
 				ami_context_menu_add_submenu(ctxmenuobj, CMSUB_OBJECT, ccdata.object);
+				menuhascontent = true;
+			}
+
+			if(ccdata.form_features == CTX_FORM_FILE)
+			{
+				struct ami_file_input_menu_data file_input = {
+					.x = x;
+					.y = y;
+					.bw = gwin->bw;
+				}
+				ami_context_menu_add_submenu(ctxmenuobj, CMID_SELECTFILE, &file_input);
 				menuhascontent = true;
 			}
 
@@ -741,7 +730,8 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 					ASLFR_DoSaveMode,FALSE,
 					TAG_DONE))
 				{
-					struct box *box = userdata;
+					struct ami_file_input_menu_data
+							*file_input = userdata;
 					char *utf8_fn;
 					char fname[1024];
 					int x,y;
@@ -755,15 +745,11 @@ static uint32 ami_context_menu_hook(struct Hook *hook,Object *item,APTR reserved
 						break;
 					}
 
-					free(box->gadget->value);
-					box->gadget->value = utf8_fn;
-
-					box_coords(box, (int *)&x, (int *)&y);
-					ami_do_redraw_limits(gwin->bw->window, 
-						gwin->bw->window->shared->bw,
-						x,y,
-						x + box->width,
-						y + box->height);
+					browser_window_drop_file_at_point(
+							file_input->bw,
+							file_input->x,
+							file_input->y,
+							utf8_fn);
 				}
 			break;
 
