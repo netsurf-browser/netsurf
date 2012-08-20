@@ -266,7 +266,7 @@ endif
 
 # CCACHE
 ifeq ($(origin CCACHE),undefined)
-  CCACHE=$(shell ccache -V >/dev/null 2>&1 && echo ccache || echo)
+  CCACHE=$(word 1,$(shell ccache -V 2>/dev/null))
 endif
 CC := $(CCACHE) $(CC)
 
