@@ -1314,13 +1314,7 @@ MENUHANDLER(save_box_tree)
 			struct browser_window *bw;
 			bw = nsbeos_get_browser_window(gw->top_level);
 
-			if (bw->current_content && 
-					bw->current_content->type == 
-					CONTENT_HTML) {
-				box_dump(fh, 
-					bw->current_content->data.html.layout,
-					0);
-			}
+			browser_window_debug_dump(bw, f);
 
 			fclose(fh);
 		}
