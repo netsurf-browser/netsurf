@@ -1,3 +1,5 @@
+#define __USE_POSIX
+
 #include <sys/types.h>
 #include <limits.h>
 #include <stdlib.h>
