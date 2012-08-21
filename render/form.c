@@ -1423,12 +1423,12 @@ void form_select_menu_callback(void *client_data,
  * \param  radio    form control of type GADGET_RADIO
  */
 
-void form_radio_set(hlcache_handle *content,
+void form_radio_set(html_content *html,
 		struct form_control *radio)
 {
 	struct form_control *control;
 
-	assert(content);
+	assert(html);
 	assert(radio);
 	if (!radio->form)
 		return;
@@ -1447,12 +1447,12 @@ void form_radio_set(hlcache_handle *content,
 
 		if (control->selected) {
 			control->selected = false;
-			html_redraw_a_box(content, control->box);
+			html__redraw_a_box(html, control->box);
 		}
 	}
 
 	radio->selected = true;
-	html_redraw_a_box(content, radio->box);
+	html__redraw_a_box(html, radio->box);
 }
 
 

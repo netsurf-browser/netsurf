@@ -2644,10 +2644,8 @@ html_get_contextual_content(struct content *c,
 	struct box *box = html->layout;
 	struct box *next;
 	int box_x = 0, box_y = 0;
-	hlcache_handle *containing_content = NULL;
 
-	while ((next = box_at_point(box, x, y, &box_x, &box_y,
-			&containing_content)) != NULL) {
+	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
 		box = next;
 
 		if (box->style && css_computed_visibility(box->style) ==
@@ -2656,6 +2654,10 @@ html_get_contextual_content(struct content *c,
 
 		if (box->iframe)
 			browser_window_get_contextual_content(box->iframe,
+					x - box_x, y - box_y, data);
+
+		if (box->object)
+			content_get_contextual_content(box->object,
 					x - box_x, y - box_y, data);
 
 		if (box->object)
@@ -2709,13 +2711,11 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 	struct box *box = html->layout;
 	struct box *next;
 	int box_x = 0, box_y = 0;
-	hlcache_handle *containing_content = NULL;
 	bool handled_scroll = false;
 
 	/* TODO: invert order; visit deepest box first */
 
-	while ((next = box_at_point(box, x, y, &box_x, &box_y,
-			&containing_content)) != NULL) {
+	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
 		box = next;
 
 		if (box->style && css_computed_visibility(box->style) ==
@@ -2725,6 +2725,12 @@ html_scroll_at_point(struct content *c, int x, int y, int scrx, int scry)
 		/* Pass into iframe */
 		if (box->iframe && browser_window_scroll_at_point(box->iframe,
 				x - box_x, y - box_y, scrx, scry) == true)
+			return true;
+
+		/* Pass into object */
+		if (box->object != NULL && content_scroll_at_point(
+				box->object, x - box_x, y - box_y,
+				scrx, scry) == true)
 			return true;
 
 		/* Handle box scrollbars */
@@ -2761,11 +2767,9 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 	struct box *file_box = NULL;
 	struct box *text_box = NULL;
 	int box_x = 0, box_y = 0;
-	hlcache_handle *containing_content = NULL;
 
 	/* Scan box tree for boxes that can handle drop */
-	while ((next = box_at_point(box, x, y, &box_x, &box_y,
-			&containing_content)) != NULL) {
+	while ((next = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
 		box = next;
 
 		if (box->style && css_computed_visibility(box->style) ==
@@ -2775,6 +2779,10 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		if (box->iframe)
 			return browser_window_drop_file_at_point(box->iframe,
 					x - box_x, y - box_y, file);
+
+		if (box->object && content_drop_file_at_point(box->object,
+					x - box_x, y - box_y, file) == true)
+			return true;
 
 		if (box->gadget) {
 			switch (box->gadget->type) {
@@ -2823,10 +2831,7 @@ static bool html_drop_file_at_point(struct content *c, int x, int y, char *file)
 		file_box->gadget->value = utf8_fn;
 
 		/* Redraw box. */
-		if (containing_content == NULL)
-			html__redraw_a_box(html, file_box);
-		else
-			html_redraw_a_box(containing_content, file_box);
+		html__redraw_a_box(html, file_box);
 
 	} else if (html->bw != NULL) {
 		/* File dropped on text input */

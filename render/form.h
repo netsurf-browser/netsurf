@@ -33,6 +33,7 @@ struct box;
 struct form_control;
 struct form_option;
 struct form_select_menu;
+struct html_content;
 
 /** Form submit method. */
 typedef enum {
@@ -175,6 +176,6 @@ void form_select_process_selection(hlcache_handle *h,
 		struct form_control *control, int item);
 void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button);
-void form_radio_set(struct hlcache_handle *content, struct form_control *radio);
+void form_radio_set(struct html_content *html, struct form_control *radio);
 
 #endif

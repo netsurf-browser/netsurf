@@ -309,12 +309,10 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	struct box *url_box = 0;
 	struct box *gadget_box = 0;
 	struct box *text_box = 0;
-	hlcache_handle *h = bw->current_content;
 	struct box *box;
-	hlcache_handle *content = h;
-	hlcache_handle *gadget_content = h;
 	struct form_control *gadget = 0;
 	hlcache_handle *object = NULL;
+	hlcache_handle *html_object = NULL;
 	struct browser_window *iframe = NULL;
 	struct box *next_box;
 	struct box *drag_candidate = NULL;
@@ -398,7 +396,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	box_x = box->margin[LEFT];
 	box_y = box->margin[TOP];
 
-	while ((next_box = box_at_point(box, x, y, &box_x, &box_y, &content)) !=
+	while ((next_box = box_at_point(box, x, y, &box_x, &box_y)) !=
 			NULL) {
 		box = next_box;
 
@@ -406,8 +404,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				CSS_VISIBILITY_HIDDEN)
 			continue;
 
-		if (box->object)
-			object = box->object;
+		if (box->object) {
+			if (content_get_type(box->object) == CONTENT_HTML)
+				html_object = box->object;
+			else
+				object = box->object;
+		}
 
 		if (box->iframe)
 			iframe = box->iframe;
@@ -428,7 +430,6 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 
 		if (box->gadget) {
-			gadget_content = content;
 			gadget = box->gadget;
 			gadget_box = box;
 			gadget_box_x = box_x;
@@ -516,13 +517,13 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			status = messages_get("FormCheckbox");
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
 				gadget->selected = !gadget->selected;
-				html_redraw_a_box(gadget_content, gadget_box);
+				html__redraw_a_box(html, gadget_box);
 			}
 			break;
 		case GADGET_RADIO:
 			status = messages_get("FormRadio");
 			if (mouse & BROWSER_MOUSE_CLICK_1)
-				form_radio_set(gadget_content, gadget);
+				form_radio_set(html, gadget);
 			break;
 		case GADGET_IMAGE:
 			if (mouse & BROWSER_MOUSE_CLICK_1) {
@@ -678,6 +679,23 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					x - pos_x, y - pos_y);
 		} else {
 			browser_window_mouse_track(iframe, mouse,
+					x - pos_x, y - pos_y);
+		}
+	} else if (html_object) {
+		int pos_x, pos_y;
+		float scale = browser_window_get_scale(bw);
+
+		browser_window_get_position(iframe, false, &pos_x, &pos_y);
+
+		pos_x /= scale;
+		pos_y /= scale;
+
+		if (mouse & BROWSER_MOUSE_CLICK_1 ||
+				mouse & BROWSER_MOUSE_CLICK_2) {
+			content_mouse_action(html_object, bw, mouse,
+					x - pos_x, y - pos_y);
+		} else {
+			content_mouse_track(html_object, bw, mouse,
 					x - pos_x, y - pos_y);
 		}
 	} else if (url) {

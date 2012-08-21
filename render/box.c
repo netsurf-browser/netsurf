@@ -350,7 +350,6 @@ void box_bounds(struct box *box, struct rect *r)
  *                  to position of returned box, if any
  * \param  box_y    position of box, in global document coordinates, updated
  *                  to position of returned box, if any
- * \param  content  updated to content of object that returned box is in, if any
  * \return  box at given point, or 0 if none found
  *
  * To find all the boxes in the hierarchy at a certain point, use code like
@@ -358,17 +357,15 @@ void box_bounds(struct box *box, struct rect *r)
  * \code
  *	struct box *box = top_of_document_to_search;
  *	int box_x = 0, box_y = 0;
- *	struct content *content = document_to_search;
  *
- *	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
+ *	while ((box = box_at_point(box, x, y, &box_x, &box_y))) {
  *		// process box
  *	}
  * \endcode
  */
 
 struct box *box_at_point(struct box *box, const int x, const int y,
-		int *box_x, int *box_y,
-		hlcache_handle **content)
+		int *box_x, int *box_y)
 {
 	int bx = *box_x, by = *box_y;
 	struct box *child, *sibling;
@@ -376,21 +373,7 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 
 	assert(box);
 
-	/* drill into HTML objects */
-	if (box->object != NULL) {
-		struct box *layout;
-
-		if (content_get_type(box->object) == CONTENT_HTML &&
-				(layout = html_get_box_tree(box->object)) != 
-				NULL) {
-			*content = box->object;
-			box = layout;
-		} else {
-			goto siblings;
-		}
-	}
-
-	/* consider floats second, since they will often overlap other boxes */
+	/* consider floats first, since they will often overlap other boxes */
 	for (child = box->float_children; child; child = child->next_float) {
 		if (box_contains_point(child, x - bx, y - by, &physically)) {
 			*box_x = bx + child->x -
@@ -401,8 +384,7 @@ struct box *box_at_point(struct box *box, const int x, const int y,
 			if (physically)
 				return child;
 			else
-				return box_at_point(child, x, y, box_x, box_y,
-						content);
+				return box_at_point(child, x, y, box_x, box_y);
 		}
 	}
 
@@ -420,8 +402,7 @@ non_float_children:
 			if (physically)
 				return child;
 			else
-				return box_at_point(child, x, y, box_x, box_y,
-						content);
+				return box_at_point(child, x, y, box_x, box_y);
 		}
 	}
 
@@ -435,7 +416,6 @@ non_float_children:
 		}
 	}
 
-siblings:
 	/* siblings and siblings of ancestors */
 	while (box) {
 		if (box_is_float(box)) {
@@ -457,8 +437,7 @@ siblings:
 					else
 						return box_at_point(sibling,
 								x, y,
-								box_x, box_y,
-								content);
+								box_x, box_y);
 				}
 			}
 			/* ascend to float's parent */
@@ -489,8 +468,7 @@ siblings:
 					else
 						return box_at_point(sibling,
 								x, y,
-								box_x, box_y,
-								content);
+								box_x, box_y);
 				}
 			}
 			box = box->parent;
@@ -556,66 +534,6 @@ bool box_contains_point(struct box *box, int x, int y, bool *physically)
 		}
 	}
 	return false;
-}
-
-
-/**
- * Find the box containing an object at the given coordinates, if any.
- *
- * \param  h  content to search, must have type CONTENT_HTML
- * \param  x  coordinates in document units
- * \param  y  coordinates in document units
- */
-
-struct box *box_object_at_point(hlcache_handle *h, int x, int y)
-{
-	struct box *box;
-	int box_x = 0, box_y = 0;
-	hlcache_handle *content = h;
-	struct box *object_box = 0;
-
-	box = html_get_box_tree(h);
-
-	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
-		if (box->style && css_computed_visibility(box->style) ==
-				CSS_VISIBILITY_HIDDEN)
-			continue;
-
-		if (box->object)
-			object_box = box;
-	}
-
-	return object_box;
-}
-
-
-/**
- * Find the box containing an href at the given coordinates, if any.
- *
- * \param  h  content to search, must have type CONTENT_HTML
- * \param  x  coordinates in document units
- * \param  y  coordinates in document units
- */
-
-struct box *box_href_at_point(hlcache_handle *h, int x, int y)
-{
-	struct box *box;
-	int box_x = 0, box_y = 0;
-	hlcache_handle *content = h;
-	struct box *href_box = 0;
-
-	box = html_get_box_tree(h);
-
-	while ((box = box_at_point(box, x, y, &box_x, &box_y, &content))) {
-		if (box->style && css_computed_visibility(box->style) ==
-				CSS_VISIBILITY_HIDDEN)
-			continue;
-
-		if (box->href)
-			href_box = box;
-	}
-
-	return href_box;
 }
 
 
