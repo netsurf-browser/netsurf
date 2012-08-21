@@ -305,6 +305,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	bool imagemap = false;
 	int box_x = 0, box_y = 0;
 	int gadget_box_x = 0, gadget_box_y = 0;
+	int html_object_pos_x = 0, html_object_pos_y = 0;
 	int text_box_x = 0;
 	struct box *url_box = 0;
 	struct box *gadget_box = 0;
@@ -312,7 +313,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	struct box *box;
 	struct form_control *gadget = 0;
 	hlcache_handle *object = NULL;
-	hlcache_handle *html_object = NULL;
+	struct box *html_object_box = NULL;
 	struct browser_window *iframe = NULL;
 	struct box *next_box;
 	struct box *drag_candidate = NULL;
@@ -405,10 +406,13 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			continue;
 
 		if (box->object) {
-			if (content_get_type(box->object) == CONTENT_HTML)
-				html_object = box->object;
-			else
+			if (content_get_type(box->object) == CONTENT_HTML) {
+				html_object_box = box;
+				html_object_pos_x = box_x;
+				html_object_pos_y = box_y;
+			} else {
 				object = box->object;
+			}
 		}
 
 		if (box->iframe)
@@ -681,22 +685,18 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			browser_window_mouse_track(iframe, mouse,
 					x - pos_x, y - pos_y);
 		}
-	} else if (html_object) {
-		int pos_x, pos_y;
-		float scale = browser_window_get_scale(bw);
-
-		browser_window_get_position(iframe, false, &pos_x, &pos_y);
-
-		pos_x /= scale;
-		pos_y /= scale;
-
+	} else if (html_object_box) {
 		if (mouse & BROWSER_MOUSE_CLICK_1 ||
 				mouse & BROWSER_MOUSE_CLICK_2) {
-			content_mouse_action(html_object, bw, mouse,
-					x - pos_x, y - pos_y);
+			content_mouse_action(html_object_box->object,
+					bw, mouse,
+					x - html_object_pos_x,
+					y - html_object_pos_y);
 		} else {
-			content_mouse_track(html_object, bw, mouse,
-					x - pos_x, y - pos_y);
+			content_mouse_track(html_object_box->object,
+					bw, mouse,
+					x - html_object_pos_x,
+					y - html_object_pos_y);
 		}
 	} else if (url) {
 		if (title) {
@@ -834,7 +834,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 		}
 	}
 
-	if (!iframe) {
+	if (!iframe && !html_object_box) {
 		msg_data.explicit_status_text = status;
 		content_broadcast(c, CONTENT_MSG_STATUS, msg_data);
 
