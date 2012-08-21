@@ -1852,7 +1852,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	err = dom_element_get_attribute(n, kstr_data, &data);
 	if (err == DOM_NO_ERR && data != NULL) {
 		if (box_extract_link(dom_string_data(data), params->codebase,
-				&params->data)) {
+				&params->data) == false) {
 			dom_string_unref(data);
 			return false;
 		}
