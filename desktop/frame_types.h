@@ -40,7 +40,6 @@ typedef enum {
 
 /* Handy struct names */
 struct content_html_iframe;
-struct scrollbar_msg_data;
 struct content_html_frames;
 
 #endif

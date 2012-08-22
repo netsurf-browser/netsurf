@@ -25,6 +25,7 @@
 
 #include "desktop/browser.h"
 
+struct scrollbar_msg_data;
 
 void browser_window_create_iframes(struct browser_window *bw,
 		struct content_html_iframe *iframe);
