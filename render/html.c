@@ -1173,7 +1173,11 @@ html_object_callback(hlcache_handle *object,
 	case CONTENT_MSG_STATUS:
 		if (event->data.explicit_status_text == NULL) {
 			/* Object content's status text updated */
-			html_set_status(c, content_get_status_message(object));
+			union content_msg_data data;
+			data.explicit_status_text =
+					content_get_status_message(object);
+			html_set_status(c, data.explicit_status_text);
+			content_broadcast(&c->base, CONTENT_MSG_STATUS, data);
 		} else {
 			/* Object content wants to set explicit message */
 			content_broadcast(&c->base, CONTENT_MSG_STATUS,
