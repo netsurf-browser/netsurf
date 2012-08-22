@@ -32,6 +32,7 @@
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
+#include "desktop/browser_private.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"

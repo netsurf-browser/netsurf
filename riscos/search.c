@@ -32,6 +32,7 @@
 #include "content/hlcache.h"
 #include "desktop/browser.h"
 #include "desktop/gui.h"
+#include "desktop/browser_private.h"
 #include "desktop/search.h"
 #include "desktop/selection.h"
 #include "riscos/dialog.h"

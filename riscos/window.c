@@ -45,7 +45,7 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/cookies.h"
 #include "desktop/scrollbar.h"
 #include "desktop/frames.h"

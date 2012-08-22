@@ -28,7 +28,7 @@
 #include <dom/dom.h>
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/options.h"
 #include "desktop/search.h"

@@ -31,6 +31,7 @@
 #include <libnsfb_plot.h>
 #include <libnsfb_event.h>
 
+#include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/plotters.h"
 #include "desktop/netsurf.h"

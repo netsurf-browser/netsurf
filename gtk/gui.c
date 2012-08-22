@@ -45,7 +45,7 @@
 #include "content/fetchers/resource.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"

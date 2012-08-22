@@ -32,7 +32,7 @@
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/search.h"
 #include "desktop/searchweb.h"

@@ -28,7 +28,7 @@
 
 #include "content/hlcache.h"
 #include "gtk/window.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "desktop/options.h"
 #include "desktop/searchweb.h"

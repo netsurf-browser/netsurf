@@ -30,6 +30,7 @@
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"
 #include "riscos/dialog.h"
+#include "desktop/browser_private.h"
 #include "desktop/options.h"
 #include "riscos/gui.h"
 #include "riscos/wimp.h"

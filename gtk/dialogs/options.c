@@ -26,6 +26,7 @@
 #include <math.h>
 #include <gtk/gtk.h>
 
+#include "desktop/browser_private.h"
 #include "desktop/options.h"
 #include "desktop/print.h"
 #include "desktop/searchweb.h"

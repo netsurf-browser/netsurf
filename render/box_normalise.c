@@ -25,6 +25,7 @@
 
 #include <assert.h>
 #include <stdbool.h>
+#include <string.h>
 #include "css/css.h"
 #include "css/select.h"
 #include "render/box.h"

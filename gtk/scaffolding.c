@@ -33,7 +33,7 @@
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "css/utils.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
 #include "desktop/gui.h"

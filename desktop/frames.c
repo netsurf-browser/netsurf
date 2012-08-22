@@ -30,7 +30,7 @@
 #include <math.h>
 #include "utils/config.h"
 #include "content/hlcache.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/frames.h"
 #include "desktop/history_core.h"
 #include "desktop/gui.h"

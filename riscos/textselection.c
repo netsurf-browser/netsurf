@@ -498,8 +498,6 @@ bool ro_gui_save_clipboard(const char *path)
 void ro_gui_selection_dragging(wimp_message *message)
 {
 	wimp_full_message_dragging *drag = (wimp_full_message_dragging*)message;
-	struct browser_window *bw;
-	hlcache_handle *h;
 	struct gui_window *g;
 	os_coord pos;
 
@@ -516,9 +514,6 @@ void ro_gui_selection_dragging(wimp_message *message)
 
 	if (!ro_gui_window_to_window_pos(g, drag->pos.x, drag->pos.y, &pos))
 		return;
-
-	bw = g->bw;
-	h = bw->current_content;
 
 	drag_claimed = false;
 }

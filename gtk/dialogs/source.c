@@ -30,6 +30,7 @@
 #include "gtk/gui.h"
 #include "gtk/print.h"
 #include "gtk/selection.h"
+#include "desktop/browser_private.h"
 #include "desktop/netsurf.h"
 #include "desktop/print.h"
 #include "desktop/options.h"

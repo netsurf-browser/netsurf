@@ -23,7 +23,8 @@
 #ifndef _NETSURF_DESKTOP_SELECTION_H_
 #define _NETSURF_DESKTOP_SELECTION_H_
 
-#include "desktop/browser.h"
+#include <stdbool.h>
+#include "desktop/mouse.h"
 
 struct box;
 

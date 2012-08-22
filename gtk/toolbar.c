@@ -18,6 +18,7 @@
 
 #include <gtk/gtk.h>
 
+#include "desktop/browser_private.h"
 #include "desktop/searchweb.h"
 #include "utils/log.h"
 #include "utils/messages.h"

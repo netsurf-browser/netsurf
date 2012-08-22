@@ -29,7 +29,7 @@
 #include <string.h>
 #include <dom/dom.h>
 
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "desktop/scrollbar.h"

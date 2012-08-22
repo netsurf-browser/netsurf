@@ -685,11 +685,10 @@ bool ro_gui_dialog_zoom_apply(wimp_w w) {
 void ro_gui_dialog_prepare_zoom(struct gui_window *g)
 {
 	char scale_buffer[8];
-	sprintf(scale_buffer, "%.0f", g->bw->scale * 100);
+	sprintf(scale_buffer, "%.0f", browser_window_get_scale(g->bw) * 100);
 	ro_gui_set_icon_string(dialog_zoom, ICON_ZOOM_VALUE, scale_buffer, true);
 	ro_gui_set_icon_selected_state(dialog_zoom, ICON_ZOOM_FRAMES, true);
-	ro_gui_set_icon_shaded_state(dialog_zoom, ICON_ZOOM_FRAMES,
-			!(g->bw->parent));
+	ro_gui_set_icon_shaded_state(dialog_zoom, ICON_ZOOM_FRAMES, true);
 	ro_gui_current_zoom_gui = g;
 	ro_gui_wimp_event_memorise(dialog_zoom);
 }
