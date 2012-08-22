@@ -9,6 +9,7 @@
 
 #include "desktop/gui.h"
 #include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/search.h"
 #include "utils/log.h"
 #include "utils/messages.h"
