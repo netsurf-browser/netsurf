@@ -414,9 +414,6 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 		return nsgtk_plot_pixbuf(x, y, width, height, bitmap, bg);
 	}
 
-	width = bitmap_get_width(bitmap);
-	height = bitmap_get_height(bitmap);
-
 	if (y > cliprect.y) {
 		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
 	} else {
