@@ -25,9 +25,6 @@
 
 /* IDL http://www.whatwg.org/specs/web-apps/current-work/#the-document-object
 
-NOTE - this interface is not from the DOM specifications but from the
-html5 spec. I *think* thats right.
-
 [OverrideBuiltins]
 partial interface Document {
   // resource metadata management
