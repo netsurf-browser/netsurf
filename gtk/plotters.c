@@ -404,6 +404,11 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 	bool repeat_x = (flags & BITMAPF_REPEAT_X);
 	bool repeat_y = (flags & BITMAPF_REPEAT_Y);
 
+	/* Bail early if we can */
+	if (width == 0 || height == 0)
+		/* Nothing to plot */
+		return true;
+
 	if (!(repeat_x || repeat_y)) {
 		/* Not repeating at all, so just pass it on */
 		return nsgtk_plot_pixbuf(x, y, width, height, bitmap, bg);
@@ -411,11 +416,6 @@ static bool nsgtk_plot_bitmap(int x, int y, int width, int height,
 
 	width = bitmap_get_width(bitmap);
 	height = bitmap_get_height(bitmap);
-
-	/* Bail early if we can */
-	if (width == 0 || height == 0)
-		/* Nothing to plot */
-		return true;
 
 	if (y > cliprect.y) {
 		doneheight = (cliprect.y - height) + ((y - cliprect.y) % height);
