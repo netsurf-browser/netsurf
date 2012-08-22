@@ -288,9 +288,7 @@ ifeq ($(TARGET),framebuffer)
   # Valid options: internal, freetype
   NETSURF_FB_FONTLIB := internal
 
-  # freetype compiled in font locations 
-  NETSURF_FB_FONTPATH := /usr/share/fonts/truetype/ttf-dejavu:/usr/share/fonts/truetype/msttcorefonts
-
+  # Default freetype font files
   NETSURF_FB_FONT_SANS_SERIF := DejaVuSans.ttf
   NETSURF_FB_FONT_SANS_SERIF_BOLD := DejaVuSans-Bold.ttf
   NETSURF_FB_FONT_SANS_SERIF_ITALIC := DejaVuSans-Oblique.ttf
@@ -302,17 +300,18 @@ ifeq ($(TARGET),framebuffer)
   NETSURF_FB_FONT_CURSIVE := Comic_Sans_MS.ttf
   NETSURF_FB_FONT_FANTASY := Impact.ttf
 
-  # Framebuffer frontends may have differing root paths for resources
-  # As such, these specify the resource path and config path.
-  NETSURF_FB_RESPATH_linux := $(PREFIX)/share/netsurf/
-  NETSURF_FB_RESPATH_able := (tftpboot)/
-  NETSURF_FB_RESPATH_dummy := ./
-  NETSURF_FB_RESPATH_sdl := $(PREFIX)/share/netsurf/
-  NETSURF_FB_RESPATH_x := $(PREFIX)/share/netsurf/
-  NETSURF_FB_RESPATH_vnc := $(PREFIX)/share/netsurf/
-
-  NETSURF_FRAMEBUFFER_RESOURCES = $(NETSURF_FB_RESPATH_$(NETSURF_FB_FRONTEND))
+  # Default binary install path
   NETSURF_FRAMEBUFFER_BIN := $(PREFIX)/bin/
+
+  # Default resource install path
+  NETSURF_FRAMEBUFFER_RESOURCES := $(PREFIX)/share/netsurf/
+
+  # Default framebuffer search path
+  NETSURF_FB_RESPATH := $${HOME}/.netsurf/:$${NETSURFRES}:$(NETSURF_FRAMEBUFFER_RESOURCES):./framebuffer/res
+
+  # freetype compiled in font serch path
+  NETSURF_FB_FONTPATH := /usr/share/fonts/truetype/ttf-dejavu:/usr/share/fonts/truetype/msttcorefonts
+
 
 endif
 

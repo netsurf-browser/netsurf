@@ -530,7 +530,7 @@ main(int argc, char** argv)
 
 	setbuf(stderr, NULL);
 
-	respaths = fb_init_resource("${HOME}/.netsurf/:${NETSURFRES}:"NETSURF_FB_RESPATH":./framebuffer/res:"NETSURF_FB_FONTPATH);
+	respaths = fb_init_resource(NETSURF_FB_RESPATH":"NETSURF_FB_FONTPATH);
 
 	options = filepath_find(respaths, "Choices");
 	messages = filepath_find(respaths, "messages");
