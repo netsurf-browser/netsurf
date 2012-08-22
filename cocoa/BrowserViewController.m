@@ -20,7 +20,7 @@
 #import "cocoa/BrowserView.h"
 #import "cocoa/BrowserWindowController.h"
 
-#import "desktop/browser.h"
+#import "desktop/browser_private.h"
 #import "desktop/history_core.h"
 #import "desktop/textinput.h"
 #import "desktop/options.h"

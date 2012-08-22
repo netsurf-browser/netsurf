@@ -19,7 +19,7 @@
 #ifndef COCOA_COORDINATES_H
 #define COCOA_COORDINATES_H
 
-#import "desktop/browser.h"
+#import "desktop/browser_private.h"
 #import "render/box.h"
 
 extern CGFloat cocoa_scale_factor;

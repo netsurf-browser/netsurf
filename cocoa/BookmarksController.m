@@ -23,6 +23,7 @@
 #import "cocoa/BrowserViewController.h"
 #import "cocoa/gui.h"
 
+#import "desktop/browser_private.h"
 #import "desktop/hotlist.h"
 #import "desktop/tree.h"
 #import "desktop/tree_url_node.h"
