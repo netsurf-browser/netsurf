@@ -24,16 +24,14 @@
 #ifndef _NETSURF_DESKTOP_BROWSER_H_
 #define _NETSURF_DESKTOP_BROWSER_H_
 
-#include <inttypes.h>
 #include <stdbool.h>
-#include <time.h>
 
 #include "content/content.h"
+#include "desktop/frame_types.h"
 #include "desktop/gui.h"
 #include "desktop/mouse.h"
 #include "utils/types.h"
 
-#include "frame_types.h"
 
 struct box;
 struct hlcache_handle;
