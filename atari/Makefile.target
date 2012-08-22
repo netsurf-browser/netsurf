@@ -3,13 +3,19 @@
 # ----------------------------------------------------------------------------
 
 ifeq ($(ATARI_ARCH),68020-60)
+PRGSUFFIX := 000.app
+endif
+
+ifeq ($(ATARI_ARCH),68020-60)
 CFLAGS += -m68020-60
 LDFLAGS += -m68020-60
+PRGSUFFIX := 020.app
 endif
 
 ifeq ($(ATARI_ARCH),5475)
 CFLAGS += -mcpu=5475
 LDFLAGS += -mcpu=5475
+PRGSUFFIX := v4e.app
 endif
 
 # non-pkgconfig components
@@ -71,6 +77,6 @@ S_ATARI := $(addprefix atari/,$(S_ATARI))
 # Note this is deliberately *not* expanded here as common and image
 #   are not yet available
 SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_ATARI)
-EXETARGET := ns$(SUBTARGET).prg
+EXETARGET := ns$(SUBTARGET)$(PRGSUFFIX)
 
 
