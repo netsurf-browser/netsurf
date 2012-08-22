@@ -24,7 +24,7 @@
 #include "desktop/options.h"
 #include "amiga/theme.h"
 
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 
 #include <string.h>
 #include <math.h>

@@ -58,7 +58,7 @@
 #include "amiga/utf8.h"
 #include "desktop/tree_url_node.h"
 #include "desktop/hotlist.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/gui.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"

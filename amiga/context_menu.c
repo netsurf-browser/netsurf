@@ -39,6 +39,7 @@
 #include "amiga/theme.h"
 #include "amiga/tree.h"
 #include "amiga/utf8.h"
+#include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/hotlist.h"
 #include "desktop/selection.h"

@@ -34,6 +34,7 @@
 #include "amiga/gui.h"
 #include "amiga/gui_options.h"
 #include "utils/messages.h"
+#include "desktop/browser_private.h"
 #include "desktop/options.h"
 #include "amiga/utf8.h"
 #include "desktop/searchweb.h"

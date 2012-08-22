@@ -28,7 +28,7 @@
 #include "content/content.h"
 #include "content/fetch.h"
 
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"

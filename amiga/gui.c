@@ -19,6 +19,7 @@
 /* NetSurf core includes */
 #include "content/urldb.h"
 #include "css/utils.h"
+#include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/mouse.h"
 #include "desktop/netsurf.h"

@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/plotters.h"
 #include "amiga/os3support.h"
