@@ -41,7 +41,7 @@
 #include <fs_attr.h>
 extern "C" {
 #include "content/content.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/history_core.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"

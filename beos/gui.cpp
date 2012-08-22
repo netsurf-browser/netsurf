@@ -49,7 +49,7 @@ extern "C" {
 #include "content/fetchers/resource.h"
 #include "content/urldb.h"
 #include "desktop/401login.h"
-#include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/cookies.h"
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
