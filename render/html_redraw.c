@@ -667,6 +667,11 @@ bool html_redraw_box(const html_content *html, struct box *box,
 		obj_data.repeat_x = false;
 		obj_data.repeat_y = false;
 
+		if (content_get_type(box->object) == CONTENT_HTML) {
+			obj_data.x /= scale;
+			obj_data.y /= scale;
+		}
+
 		if (!content_redraw(box->object, &obj_data, &r, ctx))
 			return false;
 
