@@ -46,6 +46,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/browser.h"
+#include "desktop/browser_private.h"
 #include "desktop/mouse.h"
 #include "render/font.h"
 #include "utils/schedule.h"
