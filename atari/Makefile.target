@@ -2,20 +2,23 @@
 # Atari target setup
 # ----------------------------------------------------------------------------
 
-ifeq ($(ATARI_ARCH),68020-60)
+ifeq ($(ATARI_ARCH),68000)
 PRGSUFFIX := 000.app
+PKGNAME := ns000.zip
 endif
 
 ifeq ($(ATARI_ARCH),68020-60)
 CFLAGS += -m68020-60
 LDFLAGS += -m68020-60
 PRGSUFFIX := 020.app
+PKGNAME := ns020.zip
 endif
 
 ifeq ($(ATARI_ARCH),5475)
 CFLAGS += -mcpu=5475
 LDFLAGS += -mcpu=5475
 PRGSUFFIX := v4e.app
+PKGNAME := nsv4e.zip
 endif
 
 # non-pkgconfig components
@@ -83,10 +86,35 @@ EXETARGET := ns$(SUBTARGET)$(PRGSUFFIX)
 # Install target
 # ----------------------------------------------------------------------------
 
-install-atari:
+ATARI_INSTALL_TARGET_DIR := nsatari.package
+ATARI_RES_DIR := atari/res
+
+
+# ----------------------------------------------------------------------------
+# Install target
+# ----------------------------------------------------------------------------
+
+install-atari: 
 
 # ----------------------------------------------------------------------------
 # Package target
 # ----------------------------------------------------------------------------
 
-package-atari:
+package-atari: $(PKGNAME)
+	$(VQ)echo Creating $(PKGNAME)
+
+$(PKGNAME): $(EXETARGET)
+	$(Q)rm -rf $(ATARI_INSTALL_TARGET_DIR)
+	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/
+	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf
+	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/doc
+	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/download
+	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/res
+	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/fonts
+	#$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/icons
+	$(Q)touch $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/cookies
+	$(Q)cp $(ATARI_RES_DIR)/netsurf.rsc $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/netsurf.rsc
+	$(Q)cp $(ATARI_RES_DIR)/icons/ $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/icons/ -R
+
+
+	$(Q)cp $(EXETARGET) $(ATARI_INSTALL_TARGET_DIR)/netsurf

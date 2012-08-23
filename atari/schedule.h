@@ -1,5 +1,6 @@
 /*
  * Copyright 2008 Vincent Sanders <vince@simtec.co.uk>
+ *           2012 Ole Loots <ole@monochrom.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *

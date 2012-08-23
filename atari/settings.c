@@ -1,3 +1,21 @@
+/*
+ * Copyright 2012 Ole Loots <ole@monochrom.net>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -228,7 +246,7 @@ static colour color_popup(int x, int y, colour current)
 #define GRID_ROWS 9
 #define GRID_COLS 27
 	colour retval = current;
-	int boxwidth=6, boxheight=8;	
+	int boxwidth=6, boxheight=8;
 	struct bitmap *palette_img;
 	MFDB bg, screen;
 	GRECT bgarea = {x, y, GRID_COLS*boxwidth+4, GRID_ROWS*boxheight+4};
@@ -250,23 +268,23 @@ static colour color_popup(int x, int y, colour current)
 		.stroke_width = 2,
 		.fill_type = PLOT_OP_TYPE_NONE,
 		.fill_colour = 0
-	}; 
-	
+	};
+
 	/* create a palette array (web colors): */
 	for (r=0; r<6; r++) {
 		for (g=0; g<6; g++) {
 			for (b=0; b<6; b++) {
-				palette[i] = ((web_std_colors[b]<<16) 
-				              | (web_std_colors[g]<<8) 
-				              	| web_std_colors[r]);				
+				palette[i] = ((web_std_colors[b]<<16)
+				              | (web_std_colors[g]<<8)
+				              	| web_std_colors[r]);
 				i++;
 			}
 		}
 	}
-	
+
 	/* setup the gray color values: */
 	int z = 0;
-	colour grays[15] = {0x111111, 0x222222, 0x333333, 0x444444, 
+	colour grays[15] = {0x111111, 0x222222, 0x333333, 0x444444,
 	                    0x555555, 0x666666, 0x777777, 0x888888,
 	                    0x999999, 0x999999, 0xAAAAAA, 0xBBBBBB,
 	                    0xCCCCCC, 0xDDDDDD, 0xEEEEEE};
@@ -277,19 +295,19 @@ static colour color_popup(int x, int y, colour current)
 			palette[i] = 0x000000;
 		z++;
 	}
-	
+
 	/* hide the mouse */
 	v_hide_c (app.graf.handle);
-	
-	plot_set_dimensions(x, y, 
+
+	plot_set_dimensions(x, y,
 	                    (GRID_COLS*boxwidth)+4, (GRID_ROWS*boxheight)+4);
 	plot_lock();
 
-	// store background: 
+	// store background:
 	short pxy[8];
 	init_mfdb(app.nplanes, bgarea.g_w, bgarea.g_h, 0, &bg);
 	init_mfdb(0, bgarea.g_w, bgarea.g_h, 0, &screen);
-	
+
 	pxy[0] = bgarea.g_x;
 	pxy[1] = bgarea.g_y;
 	pxy[2] = bgarea.g_x + bgarea.g_w - 1;
@@ -303,31 +321,31 @@ static colour color_popup(int x, int y, colour current)
 	vro_cpyfm (app.graf.handle, S_ONLY, pxy, &screen, &bg);
 
 	/*
-	plot_rectangle(x+1, y+1, x+(GRID_COLS*boxwidth)+3, 
+	plot_rectangle(x+1, y+1, x+(GRID_COLS*boxwidth)+3,
 	               y+(GRID_ROWS*boxheight)+3, &outline);
-	
+
 	plot_line(x, y, x+(GRID_COLS*boxwidth)+2, y+(GRID_ROWS*boxheight)+2,
 	          &outline);
 	*/
 	plot_line(x, y, x+(GRID_COLS*boxwidth)+2, y,
 	          &outline);
 
-	plot_line(x, y+(GRID_ROWS*boxheight)+2, x+(GRID_COLS*boxwidth)+2, 
+	plot_line(x, y+(GRID_ROWS*boxheight)+2, x+(GRID_COLS*boxwidth)+2,
 	          y+(GRID_ROWS*boxheight)+2,
 	          &outline);
 
 	/* draw a 27*8 grid: */
 	for (i=0; i<243; i++){
 		drawcolour.fill_colour = palette[i];
-		plot_rectangle(xpos+2, ypos+2, xpos+boxwidth+2, ypos+boxheight+2, 
+		plot_rectangle(xpos+2, ypos+2, xpos+boxwidth+2, ypos+boxheight+2,
 		               &drawcolour);
 		xpos += boxwidth;
 		if (xpos >= GRID_COLS*boxwidth) {
 			xpos = 0;
 			ypos += boxheight;
-		}						
+		}
 	}
-	
+
 	/* restore the mouse */
 	v_show_c ( app.graf.handle, 1);
 
@@ -339,7 +357,7 @@ static colour color_popup(int x, int y, colour current)
 	/* calulate clicked grid coords: */
 	int row = ((evnt.my-y)/boxheight);
 	int col = ((evnt.mx-x)/boxwidth);
-	
+
 	if (row >= 0 && row <= GRID_ROWS-1 && col >= 0 && col <= GRID_COLS-1) {
 		assert( (GRID_COLS*row)+(col) >= 0 );
 		assert( (GRID_COLS*row)+(col) < 243 );
@@ -354,7 +372,7 @@ static colour color_popup(int x, int y, colour current)
 
 #undef GRID_COLS
 #undef GRID_ROWS
-	
+
 	return(retval);
 }
 
@@ -837,7 +855,7 @@ static void display_settings( void )
 	snprintf( spare, 255, "%3d", nsoption_int(font_size) );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
-	set_text(CHOICES_BT_TOOLBAR_ICONSET, 
+	set_text(CHOICES_BT_TOOLBAR_ICONSET,
 	         nsoption_charp(atari_image_toolbar_folder), LABEL_ICONSET_MAX_LEN);
 
 	tmp_option_atari_toolbar_bg = nsoption_int(atari_toolbar_bg);
