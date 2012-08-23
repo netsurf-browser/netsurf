@@ -1,4 +1,7 @@
-# RISC OS Target makefile
+#
+# Makefile for NetSurf RISC OS target
+#
+# This file is part of NetSurf 
 
 # ----------------------------------------------------------------------------
 # RISC OS target setup
@@ -104,6 +107,14 @@ CLEANS += clean-run
 # ----------------------------------------------------------------------------
 # Install target
 # ----------------------------------------------------------------------------
+
+install-riscos:
+
+# ----------------------------------------------------------------------------
+# Package target
+# ----------------------------------------------------------------------------
+
+package-riscos: netsurf.zip
 
 netsurf.zip: $(EXETARGET)
 	$(eval $@_TMPDIR := $(shell mktemp -d))

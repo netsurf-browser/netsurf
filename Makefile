@@ -633,61 +633,14 @@ $(eval $(foreach SOURCE,$(filter %.m,$(SOURCES)), \
 $(eval $(foreach SOURCE,$(filter %.s,$(SOURCES)), \
 	$(call compile_target_s,$(SOURCE),$(subst /,_,$(SOURCE:.s=.o)),$(subst /,_,$(SOURCE:.s=.d)))))
 
-.PHONY: all clean docs install install-gtk
+.PHONY: all clean docs install package-$(TARGET) package install-$(TARGET)
 
 clean: $(CLEANS)
 
-install-gtk: nsgtk
-	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
-	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
-	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
-	@cp nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	@cp -RL gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/arrow_down_8x32.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/internal.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/netsurf.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/quirks.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
-	@cp -RL gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RL gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@tar cf - --exclude .svn -C gtk/res themes | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@# Install translations
-	@tar cf - --exclude .svn -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@# Install glade templates
-	@cp -v gtk/res/*.gtk*.ui $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+# Target builds a distribution package
+package: all-program package-$(TARGET)
 
-install-beos: NetSurf
-#       TODO:HAIKU -- not sure if throbber is needed.  being left out for now.
-	mkdir -p $(DESTDIR)$(NETSURF_BEOS_BIN)
-	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-#	mkdir -p $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
-	@copyattr -d NetSurf $(DESTDIR)$(NETSURF_BEOS_BIN)NetSurf
-	@cp -vRL beos/res/adblock.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-	@cp -vRL beos/res/ca-bundle.txt $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-	@cp -vRL beos/res/default.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-	@cp -vRL beos/res/beosdefault.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
-#	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
-	gzip -9v < beos/res/messages > $(DESTDIR)$(NETSURF_BEOS_RESOURCES)messages 
-
-
-install-framebuffer: $(EXETARGET)
-	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_BIN)
-	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
-	@cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
-	@for F in default.css messages; do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
-
+# Target installs executable on the host system 
 install: all-program install-$(TARGET)
 
 docs:

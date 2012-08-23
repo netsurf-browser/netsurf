@@ -1,6 +1,7 @@
-# ----------------------------------------------------------------------------
-# Windows target setup
-# ----------------------------------------------------------------------------
+#
+# Makefile for NetSurf Windows target
+#
+# This file is part of NetSurf 
 
   LDFLAGS += -L${GCCSDK_INSTALL_ENV}/lib 
   CFLAGS += -I${GCCSDK_INSTALL_ENV}/include/
@@ -76,7 +77,13 @@ EXETARGET := NetSurf.exe
 # Install target
 # ----------------------------------------------------------------------------
 
-install-windows: netsurf-installer.exe
+install-windows:
+
+# ----------------------------------------------------------------------------
+# Package target
+# ----------------------------------------------------------------------------
+
+package-windows: netsurf-installer.exe
 
 WIN_RES_OBJ := installer.nsi NetSurf.ico netsurf.png welcome.html default.css messages
 WIN_RES_INS_OBJ := $(addprefix windows/res/,$(WIN_RES_OBJ))

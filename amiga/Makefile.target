@@ -95,7 +95,13 @@ SOURCES = $(S_COMMON) $(S_IMAGE) $(S_BROWSER) $(S_AMIGA) $(S_PDF)
 # Install target
 # ----------------------------------------------------------------------------
 
-install-amiga: netsurf.lha
+install-amiga:
+
+# ----------------------------------------------------------------------------
+# Package target
+# ----------------------------------------------------------------------------
+
+package-amiga: netsurf.lha
 
 AMIGA_LANGUAGES := de en fr it ja nl
 AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map SearchEngines splash.png
@@ -108,7 +114,7 @@ AMIGA_SOBJS := $(addprefix /SObjs/,$(AMIGA_SHARED_OBJS))
 AMIGA_DISTRIBUTION_FILES := amiga/dist/*
 AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
 
-netsurf.lha: NetSurf
+netsurf.lha: $(EXETARGET)
 	$(VQ)echo Creating netsurf.lha
 	$(Q)rm -rf $(AMIGA_INSTALL_TARGET_DIR)
 	$(Q)mkdir -p $(AMIGA_INSTALL_TARGET_DIR)/NetSurf

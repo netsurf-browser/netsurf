@@ -187,6 +187,12 @@ endef
 $(foreach lang,$(LANGUAGES),$(eval $(call make_lproj,$(lang),$(addprefix cocoa/res/$(lang).lproj/,$(LOCALIZED_RESOURCES)))))
 $(foreach lang,$(LANGUAGES),$(foreach xib,$(S_XIBS),$(eval $(call compile_xib,$(xib),$(lang)))))
 
+# ----------------------------------------------------------------------------
+# Install target
+# ----------------------------------------------------------------------------
+
+install-cocoa: NetSurf.app
+
 NetSurf.app: NetSurf cocoa/Makefile.target $(R_RESOURCES) NetSurf.app/Contents/Info.plist
 	$(VQ)echo Assembling NetSurf.app bundle
 	$(Q)mkdir -p NetSurf.app/Contents/MacOS
@@ -205,6 +211,12 @@ NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.tar
 	    -e 's/$${NETSURF_VERSION}/$(VERSION_FULL)/' \
 		-e 's/$${NETSURF_SHORT_VERSION}/$(VERSION_MAJ).$(VERSION_MIN)/' \
 	   < cocoa/res/NetSurf-Info.plist > NetSurf.app/Contents/Info.plist
+
+# ----------------------------------------------------------------------------
+# Package target
+# ----------------------------------------------------------------------------
+
+package-cocoa: NetSurf.dmg
 
 NetSurf.tmp.dmg: NetSurf.app
 	hdiutil create -size 8m -fs HFS+ -volname "NetSurf" $@
