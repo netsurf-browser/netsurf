@@ -952,12 +952,17 @@ static void gui_init(int argc, char** argv)
 	LOG(("Enabling core select menu"));
 	nsoption_set_bool(core_select_menu, true);
 
+	LOG(("Loading url.db from: %s", nsoption_charp(url_file) ));
 	if( strlen(nsoption_charp(url_file)) ){
 		urldb_load(nsoption_charp(url_file));
 	}
+
+	if (nsoption_charp(cookie_file) == NULL ){
+		nsoption_set_charp(cookie_file, "cookies");
+	}
+	LOG(("Loading cookies from: %s", nsoption_charp(cookie_file) ));
 	if( strlen(nsoption_charp(cookie_file)) ){
 		urldb_load_cookies(nsoption_charp(cookie_file));
-		LOG(("Loading cookies from: %s", nsoption_charp(cookie_file) ));
 	}
 
 	if (process_cmdline(argc,argv) != true)
