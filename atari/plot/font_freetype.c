@@ -18,6 +18,7 @@
  */
 
 #ifdef WITH_FREETYPE_FONT_DRIVER
+
 #include <ft2build.h>
 #include FT_CACHE_H
 
@@ -26,7 +27,47 @@
 #include "atari/plot/font_freetype.h"
 #include "atari/findfile.h"
 
+/* -------------------------------------------------------------------------- */
+/*  Font Loading & Mapping scheme                                             */
+/* -------------------------------------------------------------------------- */
+/*
+
+Truetype fonts are loaded in the following priority order:
+
+1. Option values.
+2. default resouce names (8.3 compatible).
+3. default font package installation path.
+
+
+Resource font names & their meanings:
+--------------------------------------------
+s.ttf		=> Serif
+sb.ttf		=> Serif Bold
+ss.ttf 		=> Sans Serif					*Default Font
+ssb.ttf 	=> Sans Serif Bold
+ssi.ttf 	=> Sans Serif Italic
+ssib.ttf 	=> Sans Serif Italic Bold
+mono.ttf	=> Monospaced
+monob.ttf 	=> Monospaced Bold
+cursive.ttf	=> Cursive
+fantasy.ttf => Fantasy
+*/
+
+	/* Cursive */
+	font_faces[FONT_FACE_CURSIVE] =
+			ft_new_face(nsoption_charp(atari_face_cursive),
+                            "fonts/cursive.ttf",
+                            DEJAVU_PATH"DejaVuSansMono-Oblique.ttf");
+
+	/* Fantasy */
+	font_faces[FONT_FACE_FANTASY] =
+			ft_new_face(nsoption_charp(atari_face_fantasy),
+                            "fonts/fantasy.ttf",
+
+
+
 #define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
+
 #define CACHE_SIZE 2048
 #define CACHE_MIN_SIZE (100 * 1024)
 #define BOLD_WEIGHT 700
