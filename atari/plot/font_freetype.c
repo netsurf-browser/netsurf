@@ -53,18 +53,6 @@ cursive.ttf	=> Cursive
 fantasy.ttf => Fantasy
 */
 
-	/* Cursive */
-	font_faces[FONT_FACE_CURSIVE] =
-			ft_new_face(nsoption_charp(atari_face_cursive),
-                            "fonts/cursive.ttf",
-                            DEJAVU_PATH"DejaVuSansMono-Oblique.ttf");
-
-	/* Fantasy */
-	font_faces[FONT_FACE_FANTASY] =
-			ft_new_face(nsoption_charp(atari_face_fantasy),
-                            "fonts/fantasy.ttf",
-
-
 
 #define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
 
