@@ -86,15 +86,28 @@ EXETARGET := ns$(SUBTARGET)$(PRGSUFFIX)
 # Install target
 # ----------------------------------------------------------------------------
 
-ATARI_INSTALL_TARGET_DIR := nsatari.package
-ATARI_RES_DIR := atari/res
+ATARI_TARGET_DIR := netsurf/
+ATARI_RES_DIR := atari/res/
+ATARI_DOC_DIR := atari/doc/
+ATARI_FONT_SOURCE_DIR := /usr/share/fonts/truetype/ttf-bitstream-vera/
+ATARI_FONT_DOC_DIR := /usr/share/doc/ttf-bitstream-vera/
+
+ifeq ($(HOST),mint)
+	STRIP := strip
+	STACK := stack
+endif
+
+ifneq ($(HOST),mint)
+	STRIP := m68k-atari-mint-strip
+	STACK := m68k-atari-mint-stack
+endif
 
 
 # ----------------------------------------------------------------------------
 # Install target
 # ----------------------------------------------------------------------------
 
-install-atari: 
+install-atari:
 
 # ----------------------------------------------------------------------------
 # Package target
@@ -104,17 +117,59 @@ package-atari: $(PKGNAME)
 	$(VQ)echo Creating $(PKGNAME)
 
 $(PKGNAME): $(EXETARGET)
-	$(Q)rm -rf $(ATARI_INSTALL_TARGET_DIR)
-	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/
-	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf
-	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/doc
-	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/download
-	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/res
-	$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/fonts
-	#$(Q)mkdir $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/icons
-	$(Q)touch $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/cookies
-	$(Q)cp $(ATARI_RES_DIR)/netsurf.rsc $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/netsurf.rsc
-	$(Q)cp $(ATARI_RES_DIR)/icons/ $(ATARI_INSTALL_TARGET_DIR)/netsurf/res/icons/ -R
+	$(Q)$(STRIP) $(EXETARGET)
+	$(Q)$(STACK) -S 256k $(EXETARGET)
+	$(Q)rm -rf $(ATARI_TARGET_DIR)
+	$(Q)rm -rf $(PKGNAME)
+	$(Q)mkdir $(ATARI_TARGET_DIR)
+	$(Q)mkdir $(ATARI_TARGET_DIR)doc
+	$(Q)mkdir $(ATARI_TARGET_DIR)download
+	$(Q)mkdir $(ATARI_TARGET_DIR)res
+	$(Q)mkdir $(ATARI_TARGET_DIR)res/fonts
+	$(Q)mkdir $(ATARI_TARGET_DIR)res/icons
+	$(Q)touch $(ATARI_TARGET_DIR)cookies
+	$(Q)touch $(ATARI_TARGET_DIR)url.db
 
+	$(Q)cp $(ATARI_DOC_DIR)bugs $(ATARI_TARGET_DIR)doc/
+	$(Q)cp $(ATARI_DOC_DIR)faq.txt $(ATARI_TARGET_DIR)doc/
+	$(Q)cp $(ATARI_DOC_DIR)readme.txt $(ATARI_TARGET_DIR)doc/
+	$(Q)cp $(ATARI_DOC_DIR)todo.txt $(ATARI_TARGET_DIR)doc/
 
-	$(Q)cp $(EXETARGET) $(ATARI_INSTALL_TARGET_DIR)/netsurf
+# GUI resources:
+	$(Q)cp $(ATARI_RES_DIR)/netsurf.rsc  $(ATARI_TARGET_DIR)res/netsurf.rsc
+	$(Q)cp $(ATARI_RES_DIR)/icons -R $(ATARI_TARGET_DIR)res/icons
+	$(Q)cp \!NetSurf/Resources/Icons/content.png -R $(ATARI_TARGET_DIR)res/icons/
+	$(Q)cp \!NetSurf/Resources/Icons/directory.png -R $(ATARI_TARGET_DIR)res/icons/dir.png
+
+	$(Q)cp \!NetSurf/Resources/AdBlock,f79 $(ATARI_TARGET_DIR)res/adblock.css
+	$(Q)cp \!NetSurf/Resources/CSS,f79 $(ATARI_TARGET_DIR)res/default.css
+	$(Q)cp \!NetSurf/Resources/Quirks,f79 $(ATARI_TARGET_DIR)res/quirks.css
+	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(ATARI_TARGET_DIR)res/internal.css
+	$(Q)cp \!NetSurf/Resources/SearchEngines $(ATARI_TARGET_DIR)res/search
+	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
+	$(Q)cp resources/FatMessages $(ATARI_TARGET_DIR)res/messages
+	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
+
+# copy "Bitstream Vera" font:
+	$(Q)cp $(ATARI_FONT_DOC_DIR)copyright $(ATARI_TARGET_DIR)res/fonts/
+	$(Q)cp $(ATARI_FONT_DOC_DIR)README.TXT $(ATARI_TARGET_DIR)res/fonts/
+	$(Q)cp $(ATARI_FONT_DOC_DIR)COPYRIGHT-FAQ.TXT $(ATARI_TARGET_DIR)res/fonts/
+
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)Vera.ttf $(ATARI_TARGET_DIR)res/fonts/ss.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraBd.ttf $(ATARI_TARGET_DIR)res/fonts/ssb.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraIt.ttf $(ATARI_TARGET_DIR)res/fonts/ssi.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraBI.ttf $(ATARI_TARGET_DIR)res/fonts/ssib.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraSe.ttf $(ATARI_TARGET_DIR)res/fonts/s.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraSeBd.ttf $(ATARI_TARGET_DIR)res/fonts/sb.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraMono.ttf $(ATARI_TARGET_DIR)res/fonts/mono.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraMoBd.ttf $(ATARI_TARGET_DIR)res/fonts/monob.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraMoIt.ttf $(ATARI_TARGET_DIR)res/fonts/cursive.ttf
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraMoBI.ttf $(ATARI_TARGET_DIR)res/fonts/fantasy.ttf
+
+	$(Q)cp $(EXETARGET) $(ATARI_TARGET_DIR)$(EXETARGET)
+
+# zip files
+	$(Q)zip $(PKGNAME) -9 -r ./$(ATARI_TARGET_DIR)
+
+# delete temporary folder
+	$(Q)rm -rf $(ATARI_TARGET_DIR)
