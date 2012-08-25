@@ -49,13 +49,13 @@
 	char *tree_icons_path
 
 #define NSOPTION_EXTRA_DEFAULTS						\
-	.atari_font_driver = (char*)"vdi",				\
+	.atari_font_driver = (char*)"freetype",			\
 	.atari_font_monochrom = 0,						\
 	.atari_dither = 1,								\
 	.atari_transparency = 1,						\
 	.atari_image_toolbar_folder = (char*)"default",	\
-	.atari_image_toolbar = 0,						\
-	.atari_toolbar_bg = 0xFFFFFF,					\
+	.atari_image_toolbar = 1,						\
+	.atari_toolbar_bg = 0xbbbbbb,					\
 	.atari_face_sans_serif = NULL,					\
 	.atari_face_sans_serif_bold = NULL,				\
 	.atari_face_sans_serif_italic = NULL,			\
