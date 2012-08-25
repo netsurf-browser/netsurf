@@ -24,9 +24,14 @@
 #include "desktop/options.h"
 #include "atari/plot/plot.h"
 #include "atari/plot/font_freetype.h"
-
+#include "atari/findfile.h"
 
 #define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
+#define CACHE_SIZE 2048
+#define CACHE_MIN_SIZE (100 * 1024)
+#define BOLD_WEIGHT 700
+
+extern css_fixed nscss_screen_dpi;
 
 extern unsigned long atari_plot_flags;
 extern int atari_plot_vdi_handle;
@@ -130,43 +135,57 @@ static void ft_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 	int selected_face = FONT_FACE_DEFAULT;
 
 	switch (fstyle->family) {
-/*
-	case PLOT_FONT_FAMILY_CURSIVE:
-		break;
-	case PLOT_FONT_FAMILY_FANTASY:
-		break;
-*/
-	case PLOT_FONT_FAMILY_SERIF:
-		if (fstyle->weight >= 700)
-			selected_face = FONT_FACE_SERIF_BOLD;
-		else
-			selected_face = FONT_FACE_SERIF;
 
+	case PLOT_FONT_FAMILY_SERIF:
+		if (fstyle->weight >= BOLD_WEIGHT) {
+			selected_face = FONT_FACE_SERIF_BOLD;
+		} else {
+			selected_face = FONT_FACE_SERIF;
+		}
 		break;
 
 	case PLOT_FONT_FAMILY_MONOSPACE:
+		if (fstyle->weight >= BOLD_WEIGHT) {
+			selected_face = FONT_FACE_MONOSPACE_BOLD;
+		} else {
 			selected_face = FONT_FACE_MONOSPACE;
+		}
+		break;
+
+	case PLOT_FONT_FAMILY_CURSIVE:
+		selected_face = FONT_FACE_CURSIVE;
+		break;
+
+	case PLOT_FONT_FAMILY_FANTASY:
+		selected_face = FONT_FACE_FANTASY;
 		break;
 
 	case PLOT_FONT_FAMILY_SANS_SERIF:
 	default:
-		if ((fstyle->flags & FONTF_ITALIC) || (fstyle->flags & FONTF_OBLIQUE)) {
-			if (fstyle->weight >= 700)
+		if ((fstyle->flags & FONTF_ITALIC) ||
+		    (fstyle->flags & FONTF_OBLIQUE)) {
+			if (fstyle->weight >= BOLD_WEIGHT) {
 				selected_face = FONT_FACE_SANS_SERIF_ITALIC_BOLD;
-			else
+			} else {
 				selected_face = FONT_FACE_SANS_SERIF_ITALIC;
+			}
 		} else {
-			if (fstyle->weight >= 700)
+			if (fstyle->weight >= BOLD_WEIGHT) {
 				selected_face = FONT_FACE_SANS_SERIF_BOLD;
-			else
+			} else {
 				selected_face = FONT_FACE_SANS_SERIF;
+			}
 		}
 	}
 
 	srec->face_id = (FTC_FaceID)font_faces[selected_face];
+
 	srec->width = srec->height = (fstyle->size * 64) / FONT_SIZE_SCALE;
 	srec->pixel = 0;
-	srec->x_res = srec->y_res = 72;
+
+	/* calculate x/y resolution, when nscss_screen_dpi isn't available */
+	/* 72 is an good value. */
+	srec->x_res = srec->y_res = FIXTOINT(nscss_screen_dpi);
 }
 
 static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
@@ -199,6 +218,7 @@ static bool ft_font_init(void)
 	FT_Error error;
 	FT_ULong max_cache_size;
 	FT_UInt max_faces = 6;
+	int i;
 
 	/* freetype library initialise */
 	error = FT_Init_FreeType( &library );
@@ -207,7 +227,11 @@ static bool ft_font_init(void)
                 return false;
 	}
 
-	max_cache_size = 2 * 1024 *1024; /* 2MB should be enough */
+	/* set the Glyph cache size up */
+	max_cache_size = CACHE_SIZE * 1024;
+	if (max_cache_size < CACHE_MIN_SIZE) {
+		max_cache_size = CACHE_MIN_SIZE;
+	}
 
 	/* cache manager initialise */
 	error = FTC_Manager_New(library,
@@ -226,6 +250,10 @@ static bool ft_font_init(void)
 	error = FTC_CMapCache_New(ft_cmanager, &ft_cmap_cache);
 	error = FTC_ImageCache_New(ft_cmanager, &ft_image_cache);
 
+	/* Optain font faces */
+
+
+	/* Default font, Sans Serif */
 	font_faces[FONT_FACE_SANS_SERIF] = NULL;
 	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face(
 											nsoption_charp(atari_face_sans_serif),
@@ -234,55 +262,70 @@ static bool ft_font_init(void)
 										);
 	if (font_faces[FONT_FACE_SANS_SERIF] == NULL) {
                 LOG(("Could not find default font (code %d)\n", error));
-                FTC_Manager_Done(ft_cmanager );
+                FTC_Manager_Done(ft_cmanager);
                 FT_Done_FreeType(library);
                 return false;
 	}
 
+	/* Sans Serif Bold*/
 	font_faces[FONT_FACE_SANS_SERIF_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_sans_serif_bold),
                             "fonts/ssb.ttf",
                             DEJAVU_PATH"DejaVuSans-Bold.ttf");
 
+	/* Sans Serif Italic */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC] =
 			ft_new_face(nsoption_charp(atari_face_sans_serif_italic),
                             "fonts/ssi.ttf",
                             DEJAVU_PATH"DejaVuSans-Oblique.ttf");
 
+	/* Sans Serif Italic Bold */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_sans_serif_italic_bold),
                             "fonts/ssib.ttf",
                             DEJAVU_PATH"DejaVuSans-BoldOblique.ttf");
 
+	/* Monospaced */
 	font_faces[FONT_FACE_MONOSPACE] =
 			ft_new_face(nsoption_charp(atari_face_monospace),
                             "fonts/mono.ttf",
                             DEJAVU_PATH"DejaVuSansMono.ttf");
 
+	/* Mospaced Bold */
 	font_faces[FONT_FACE_MONOSPACE_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_monospace_bold),
                             "fonts/monob.ttf",
                             DEJAVU_PATH"DejaVuSansMono-Bold.ttf");
 
+	/* Serif */
 	font_faces[FONT_FACE_SERIF] =
 			ft_new_face(nsoption_charp(atari_face_serif),
                             "fonts/s.ttf",
                             DEJAVU_PATH"DejaVuSerif.ttf");
 
+	/* Serif Bold */
 	font_faces[FONT_FACE_SERIF_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_serif_bold),
                             "fonts/sb.ttf",
                             DEJAVU_PATH"DejaVuSerif-Bold.ttf");
 
+	/* Cursive */
 	font_faces[FONT_FACE_CURSIVE] =
 			ft_new_face(nsoption_charp(atari_face_cursive),
                             "fonts/cursive.ttf",
                             DEJAVU_PATH"DejaVuSansMono-Oblique.ttf");
 
+	/* Fantasy */
 	font_faces[FONT_FACE_FANTASY] =
 			ft_new_face(nsoption_charp(atari_face_fantasy),
                             "fonts/fantasy.ttf",
                             DEJAVU_PATH"DejaVuSerifCondensed-Bold.ttf");
+
+	for (i=1; i<FONT_FACE_COUNT; i++) {
+		if (font_faces[i] == NULL){
+			font_faces[i] = font_faces[FONT_FACE_SANS_SERIF];
+		}
+	}
 
 	return true;
 }
