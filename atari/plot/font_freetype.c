@@ -53,8 +53,40 @@ cursive.ttf	=> Cursive
 fantasy.ttf => Fantasy
 */
 
+#define FONT_RESOURCE_PATH "fonts/"
+#define DEJAVU_PATH 	"/usr/share/fonts/truetype/ttf-dejavu/"
+#define BITSTREAM_PATH 	"/usr/share/fonts/truetype/ttf-bitstream-vera/"
 
-#define DEJAVU_PATH "/usr/share/fonts/truetype/ttf-dejavu/"
+#if !defined(USE_BITSTREAM_FONT_PACKAGE) && !defined(USE_DEJAVU_FONT_PACKAGE)
+# define USE_BITSTREAM_FONT_PACKAGE
+#endif
+
+#if defined(USE_DEJAVU_FONT_PACKAGE)
+# define FONT_PKG_PATH					DEJAVU_PATH
+# define FONT_FILE_SANS					"DejaVuSans.ttf"
+# define FONT_FILE_SANS_BOLD			"DejaVuSans-Bold.ttf"
+# define FONT_FILE_SANS_OBLIQUE			"DejaVuSans-Oblique.ttf"
+# define FONT_FILE_SANS_BOLD_OBLIQUE	"DejaVuSans-BoldOblique.ttf"
+# define FONT_FILE_SERIF				"DejaVuSerif.ttf"
+# define FONT_FILE_SERIF_BOLD			"DejaVuSerif-Bold.ttf"
+# define FONT_FILE_MONO					"DejaVuSansMono.ttf"
+# define FONT_FILE_MONO_BOLD			"DejaVuSerif-Bold.ttf"
+# define FONT_FILE_OBLIQUE				"DejaVuSansMono-Oblique.ttf"
+# define FONT_FILE_FANTASY				"DejaVuSerifCondensed-Bold.ttf"
+#elif  defined(USE_BITSTREAM_FONT_PACKAGE)
+# define FONT_PKG_PATH					BITSTREAM_PATH
+# define FONT_FILE_SANS					"Vera.ttf"
+# define FONT_FILE_SANS_BOLD			"VeraBd.ttf"
+# define FONT_FILE_SANS_OBLIQUE			"VeraIt.ttf"
+# define FONT_FILE_SANS_BOLD_OBLIQUE	"VeraBI.ttf"
+# define FONT_FILE_SERIF				"VeraSe.ttf"
+# define FONT_FILE_SERIF_BOLD			"VeraSeBd.ttf"
+# define FONT_FILE_MONO					"VeraMono.ttf"
+# define FONT_FILE_MONO_BOLD			"VeraMoBd.ttf"
+# define FONT_FILE_OBLIQUE				"VeraMoIt.ttf"
+# define FONT_FILE_FANTASY				"VeraMoBI.ttf"
+
+#endif
 
 #define CACHE_SIZE 2048
 #define CACHE_MIN_SIZE (100 * 1024)
@@ -212,9 +244,11 @@ static void ft_fill_scalar(const plot_font_style_t *fstyle, FTC_Scaler srec)
 	srec->width = srec->height = (fstyle->size * 64) / FONT_SIZE_SCALE;
 	srec->pixel = 0;
 
-	/* calculate x/y resolution, when nscss_screen_dpi isn't available */
-	/* 72 is an good value. */
-	srec->x_res = srec->y_res = FIXTOINT(nscss_screen_dpi);
+	/* calculate x/y resolution, when nscss_screen_dpi isn't available 	*/
+	/* 72 is an good value. 											*/
+	/* TODO: because nscss_screen_dpi is to large, calculate that value */
+	/*       by VDI values. 											*/
+	srec->x_res = srec->y_res = 72; // FIXTOINT(nscss_screen_dpi);
 }
 
 static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
@@ -238,7 +272,6 @@ static FT_Glyph ft_getglyph(const plot_font_style_t *fstyle, uint32_t ucs4)
                                             NULL);
 	return glyph;
 }
-
 
 
 /* initialise font handling */
@@ -286,8 +319,8 @@ static bool ft_font_init(void)
 	font_faces[FONT_FACE_SANS_SERIF] = NULL;
 	font_faces[FONT_FACE_SANS_SERIF] = ft_new_face(
 											nsoption_charp(atari_face_sans_serif),
-                            				"fonts/ss.ttf",
-                            				DEJAVU_PATH"DejaVuSans.ttf"
+                            				FONT_RESOURCE_PATH "ss.ttf",
+                            				FONT_PKG_PATH FONT_FILE_SANS
 										);
 	if (font_faces[FONT_FACE_SANS_SERIF] == NULL) {
                 LOG(("Could not find default font (code %d)\n", error));
@@ -299,56 +332,56 @@ static bool ft_font_init(void)
 	/* Sans Serif Bold*/
 	font_faces[FONT_FACE_SANS_SERIF_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_sans_serif_bold),
-                            "fonts/ssb.ttf",
-                            DEJAVU_PATH"DejaVuSans-Bold.ttf");
+                            FONT_RESOURCE_PATH "ssb.ttf",
+                            FONT_PKG_PATH FONT_FILE_SANS_BOLD);
 
 	/* Sans Serif Italic */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC] =
 			ft_new_face(nsoption_charp(atari_face_sans_serif_italic),
-                            "fonts/ssi.ttf",
-                            DEJAVU_PATH"DejaVuSans-Oblique.ttf");
+                            FONT_RESOURCE_PATH "ssi.ttf",
+                            FONT_PKG_PATH FONT_FILE_SANS_OBLIQUE);
 
 	/* Sans Serif Italic Bold */
 	font_faces[FONT_FACE_SANS_SERIF_ITALIC_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_sans_serif_italic_bold),
-                            "fonts/ssib.ttf",
-                            DEJAVU_PATH"DejaVuSans-BoldOblique.ttf");
+                            FONT_RESOURCE_PATH "ssib.ttf",
+                            FONT_PKG_PATH FONT_FILE_SANS_BOLD_OBLIQUE);
 
 	/* Monospaced */
 	font_faces[FONT_FACE_MONOSPACE] =
 			ft_new_face(nsoption_charp(atari_face_monospace),
-                            "fonts/mono.ttf",
-                            DEJAVU_PATH"DejaVuSansMono.ttf");
+                            FONT_RESOURCE_PATH "mono.ttf",
+                            FONT_PKG_PATH FONT_FILE_MONO);
 
 	/* Mospaced Bold */
 	font_faces[FONT_FACE_MONOSPACE_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_monospace_bold),
-                            "fonts/monob.ttf",
-                            DEJAVU_PATH"DejaVuSansMono-Bold.ttf");
+                            FONT_RESOURCE_PATH "monob.ttf",
+                            FONT_PKG_PATH FONT_FILE_MONO_BOLD);
 
 	/* Serif */
 	font_faces[FONT_FACE_SERIF] =
 			ft_new_face(nsoption_charp(atari_face_serif),
-                            "fonts/s.ttf",
-                            DEJAVU_PATH"DejaVuSerif.ttf");
+                            FONT_RESOURCE_PATH "s.ttf",
+                            FONT_PKG_PATH FONT_FILE_SERIF);
 
 	/* Serif Bold */
 	font_faces[FONT_FACE_SERIF_BOLD] =
 			ft_new_face(nsoption_charp(atari_face_serif_bold),
-                            "fonts/sb.ttf",
-                            DEJAVU_PATH"DejaVuSerif-Bold.ttf");
+                            FONT_RESOURCE_PATH "sb.ttf",
+                            FONT_PKG_PATH FONT_FILE_SERIF_BOLD);
 
 	/* Cursive */
 	font_faces[FONT_FACE_CURSIVE] =
 			ft_new_face(nsoption_charp(atari_face_cursive),
-                            "fonts/cursive.ttf",
-                            DEJAVU_PATH"DejaVuSansMono-Oblique.ttf");
+                            FONT_RESOURCE_PATH "cursive.ttf",
+                            FONT_PKG_PATH FONT_FILE_OBLIQUE);
 
 	/* Fantasy */
 	font_faces[FONT_FACE_FANTASY] =
 			ft_new_face(nsoption_charp(atari_face_fantasy),
-                            "fonts/fantasy.ttf",
-                            DEJAVU_PATH"DejaVuSerifCondensed-Bold.ttf");
+                            FONT_RESOURCE_PATH "fantasy.ttf",
+                            FONT_PKG_PATH FONT_FILE_FANTASY);
 
 	for (i=1; i<FONT_FACE_COUNT; i++) {
 		if (font_faces[i] == NULL){
