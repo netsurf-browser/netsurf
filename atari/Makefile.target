@@ -89,8 +89,11 @@ EXETARGET := ns$(SUBTARGET)$(PRGSUFFIX)
 ATARI_TARGET_DIR := netsurf/
 ATARI_RES_DIR := atari/res/
 ATARI_DOC_DIR := atari/doc/
-ATARI_FONT_SOURCE_DIR := /usr/share/fonts/truetype/ttf-bitstream-vera/
-ATARI_FONT_DOC_DIR := /usr/share/doc/ttf-bitstream-vera/
+ATARI_FONT_NAME := ttf-bitstream-vera-1.10
+#ATARI_FONT_SOURCE_URL := http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-vera/1.10/$(ATARI_FONT_NAME).tar.gz
+ATARI_FONT_SOURCE_URL := http://localhost/$(ATARI_FONT_NAME).tar.gz
+ATARI_FONT_TMP_DIR := $(DEPROOT)/../
+ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
 
 ifeq ($(HOST),mint)
 	STRIP := strip
@@ -113,7 +116,11 @@ install-atari:
 # Package target
 # ----------------------------------------------------------------------------
 
-package-atari: $(PKGNAME)
+$(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME):
+	$(Q)wget $(ATARI_FONT_SOURCE_URL) -O $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME).tar.gz
+	tar xfz $(ATARI_FONT_TMP_DIR)/$(ATARI_FONT_NAME).tar.gz -C $(ATARI_FONT_TMP_DIR)
+
+package-atari: $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME) $(PKGNAME)
 	$(VQ)echo Creating $(PKGNAME)
 
 $(PKGNAME): $(EXETARGET)
@@ -121,6 +128,7 @@ $(PKGNAME): $(EXETARGET)
 	$(Q)$(STACK) -S 256k $(EXETARGET)
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
+#	$(Q)rm -rf $(ATARI_FONT_SOURCE_DIR)
 	$(Q)mkdir $(ATARI_TARGET_DIR)
 	$(Q)mkdir $(ATARI_TARGET_DIR)doc
 	$(Q)mkdir $(ATARI_TARGET_DIR)download
@@ -151,9 +159,13 @@ $(PKGNAME): $(EXETARGET)
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
 
 # copy "Bitstream Vera" font:
-	$(Q)cp $(ATARI_FONT_DOC_DIR)copyright $(ATARI_TARGET_DIR)res/fonts/
-	$(Q)cp $(ATARI_FONT_DOC_DIR)README.TXT $(ATARI_TARGET_DIR)res/fonts/
-	$(Q)cp $(ATARI_FONT_DOC_DIR)COPYRIGHT-FAQ.TXT $(ATARI_TARGET_DIR)res/fonts/
+# try "cp
+#          /path/to/local/copy/font.ttf /path/to/pkg/font.ttf || wget -O
+#          /path/to/pkg/font.ttf http://foo/font.ttf"
+
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)RELEASENOTES.TXT $(ATARI_TARGET_DIR)res/fonts/
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)README.TXT $(ATARI_TARGET_DIR)res/fonts/
+	$(Q)cp $(ATARI_FONT_SOURCE_DIR)COPYRIGHT.TXT $(ATARI_TARGET_DIR)res/fonts/
 
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)Vera.ttf $(ATARI_TARGET_DIR)res/fonts/ss.ttf
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)VeraBd.ttf $(ATARI_TARGET_DIR)res/fonts/ssb.ttf
@@ -171,5 +183,6 @@ $(PKGNAME): $(EXETARGET)
 # zip files
 	$(Q)zip $(PKGNAME) -9 -r ./$(ATARI_TARGET_DIR)
 
-# delete temporary folder
+# delete temporary folders
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
+#	$(Q)rm -rf $(ATARI_FONT_SOURCE_DIR)
