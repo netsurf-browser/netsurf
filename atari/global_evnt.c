@@ -170,21 +170,9 @@ static void __CDECL menu_save_page(WINDOW *win, int item, int title, void *data)
 
 	do {
 		// TODO: localize string
-		path = file_select( "Select folder", "" );
-		if( path ) {
-			printf("testing: %s\n", path );
-			// dumb check if the selection is an folder:
-			/*FILE * fp;
-			fp = fopen( path, "r" );
-			if( !fp ){
-				is_folder = true;
-			} else {
-				fclose( fp );
-				form_alert(1, "[1][Please select an folder or abort!][OK]");
-			}
-			*/
-			is_folder = true;
-		}
+		path = file_select("Select folder", "");
+		if (path)
+			is_folder = is_dir(path);
 	} while( !is_folder && path != NULL );
 
 	if( path != NULL ){
