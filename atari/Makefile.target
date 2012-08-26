@@ -94,6 +94,8 @@ ATARI_FONT_SOURCE_URL := http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-ve
 #ATARI_FONT_SOURCE_URL := http://localhost/$(ATARI_FONT_NAME).tar.gz
 ATARI_FONT_TMP_DIR := $(DEPROOT)/../
 ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
+ATARI_GENERIC_RESOURCES := de en fr it ja nl
+ATARI_RESOURCES := $(addprefix \!NetSurf/Resources/,$(ATARI_GENERIC_RESOURCES))
 
 ifeq ($(HOST),mint)
 	STRIP := strip
@@ -143,6 +145,7 @@ $(PKGNAME): $(EXETARGET)
 	$(Q)cp $(ATARI_DOC_DIR)todo.txt $(ATARI_TARGET_DIR)doc/
 
 # GUI resources:
+	$(Q)cp -r $(ATARI_RESOURCES)  $(ATARI_TARGET_DIR)res/
 	$(Q)cp $(ATARI_RES_DIR)/netsurf.rsc  $(ATARI_TARGET_DIR)res/netsurf.rsc
 	$(Q)cp $(ATARI_RES_DIR)/icons/toolbar -R $(ATARI_TARGET_DIR)res/icons
 	$(Q)cp \!NetSurf/Resources/Icons/content.png -R $(ATARI_TARGET_DIR)res/icons/
@@ -154,8 +157,12 @@ $(PKGNAME): $(EXETARGET)
 	$(Q)cp \!NetSurf/Resources/internal.css,f79 $(ATARI_TARGET_DIR)res/internal.css
 	$(Q)cp \!NetSurf/Resources/SearchEngines $(ATARI_TARGET_DIR)res/search
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
-	$(Q)cp resources/FatMessages $(ATARI_TARGET_DIR)res/messages
+#	$(Q)cp resources/FatMessages $(ATARI_TARGET_DIR)res/messages
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
+	$(Q)cp \!NetSurf/Resources/en/Messages $(ATARI_TARGET_DIR)res/messages
+	$(Q)cp \!NetSurf/Resources/en/welcome.html,faf $(ATARI_TARGET_DIR)res/welcome.html
+	$(Q)cp \!NetSurf/Resources/en/licence.html,faf $(ATARI_TARGET_DIR)res/licence.html
+	$(Q)cp \!NetSurf/Resources/en/credits.html,faf $(ATARI_TARGET_DIR)res/credits.html
 
 # copy "Bitstream Vera" font:
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)RELEASENOTES.TXT $(ATARI_TARGET_DIR)res/fonts/
