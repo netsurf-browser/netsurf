@@ -412,16 +412,19 @@ static char * toolbar_iconset_popup( int x, int y )
 			if (strlen(ep->d_name) < 3)
 				continue;
 			snprintf(fullpath, PATH_MAX-1, "%s/%s", toolbar_folder, ep->d_name );
-			if (stat(fullpath, &statbuf) == 0) {
-				if (S_ISDIR(statbuf.st_mode)) {
-					if (strcmp(ep->d_name, current) == 0)
-						selected = navail;
+			if (is_dir(fullpath)) {
+				if (strcmp(ep->d_name, current) == 0)
+							selected = navail;
 					/* store the folder name: */
 					avail[navail] = malloc( strlen(ep->d_name)+1 );
 					sprintf( avail[navail], "%s", ep->d_name );
 					navail++;
 					if( navail >= MAX_SETS )
 						break;
+			}
+			if (stat(fullpath, &statbuf) == 0) {
+				if (S_ISDIR(statbuf.st_mode)) {
+
 				}
 			}
 		}
