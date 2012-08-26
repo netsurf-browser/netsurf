@@ -125,7 +125,7 @@ package-atari: $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME) $(PKGNAME)
 
 $(PKGNAME): $(EXETARGET)
 #	$(Q)$(STRIP) $(EXETARGET)
-	$(Q)$(STACK) -S 256k $(EXETARGET)
+#	$(Q)$(STACK) -S 256k $(EXETARGET)
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
 	$(Q)mkdir $(ATARI_TARGET_DIR)
