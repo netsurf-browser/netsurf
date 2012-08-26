@@ -128,7 +128,6 @@ $(PKGNAME): $(EXETARGET)
 	$(Q)$(STACK) -S 256k $(EXETARGET)
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
-#	$(Q)rm -rf $(ATARI_FONT_SOURCE_DIR)
 	$(Q)mkdir $(ATARI_TARGET_DIR)
 	$(Q)mkdir $(ATARI_TARGET_DIR)doc
 	$(Q)mkdir $(ATARI_TARGET_DIR)download
@@ -145,7 +144,7 @@ $(PKGNAME): $(EXETARGET)
 
 # GUI resources:
 	$(Q)cp $(ATARI_RES_DIR)/netsurf.rsc  $(ATARI_TARGET_DIR)res/netsurf.rsc
-	$(Q)cp $(ATARI_RES_DIR)/icons -R $(ATARI_TARGET_DIR)res/icons
+	$(Q)cp $(ATARI_RES_DIR)/icons/toolbar -R $(ATARI_TARGET_DIR)res/icons
 	$(Q)cp \!NetSurf/Resources/Icons/content.png -R $(ATARI_TARGET_DIR)res/icons/
 	$(Q)cp \!NetSurf/Resources/Icons/directory.png -R $(ATARI_TARGET_DIR)res/icons/dir.png
 
@@ -159,10 +158,6 @@ $(PKGNAME): $(EXETARGET)
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
 
 # copy "Bitstream Vera" font:
-# try "cp
-#          /path/to/local/copy/font.ttf /path/to/pkg/font.ttf || wget -O
-#          /path/to/pkg/font.ttf http://foo/font.ttf"
-
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)RELEASENOTES.TXT $(ATARI_TARGET_DIR)res/fonts/
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)README.TXT $(ATARI_TARGET_DIR)res/fonts/
 	$(Q)cp $(ATARI_FONT_SOURCE_DIR)COPYRIGHT.TXT $(ATARI_TARGET_DIR)res/fonts/
@@ -185,4 +180,3 @@ $(PKGNAME): $(EXETARGET)
 
 # delete temporary folders
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
-#	$(Q)rm -rf $(ATARI_FONT_SOURCE_DIR)
