@@ -670,8 +670,18 @@ void browser_restore_caret_background( struct gui_window * gw, LGRECT * area)
 */
 void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 {
-	// TODO: only redraw caret when window is topped.
+
 	if( gw->browser->caret.redraw && gw->browser->caret.requested.g_w > 0 ){
+
+		short wind_info[4];
+
+		/* Only redraw caret when window is topped. */
+		wind_get( 0, WF_TOP, &wind_info[0], &wind_info[1], &wind_info[2], &wind_info[3]);
+		if (gw->root->handle->handle != wind_info[0]) {
+			return;
+		}
+
+
 		LGRECT caret;
 		struct s_browser * b = gw->browser;
 		struct rect old_clip;
