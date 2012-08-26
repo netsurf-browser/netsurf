@@ -119,9 +119,9 @@ void gui_poll(bool active)
 			next_poll = clock() + (CLOCKS_PER_SEC>>3);
 		}
 	} else {
-		if( input_window != NULL ){
+		if (input_window != NULL) {
 			wind_get( 0, WF_TOP, &winloc[0], &winloc[1], &winloc[2], &winloc[3]);
-			if( winloc[1] == _AESapid ){
+			if (winloc[1] == _AESapid) {
 				/* only check for mouse move when netsurf is on top: */
 				// move that into m1 event handler
 				graf_mkstate( &mx, &my, &dummy, &dummy );

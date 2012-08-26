@@ -120,7 +120,6 @@ void hotlist_init(void)
 
 		hotlist_initialise(
 			hl.tv->tree,
-			/* TODO: use option_hotlist_file or slt*/
 			(char*)&hl.path,
 			"dir.png"
 		);
