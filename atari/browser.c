@@ -659,7 +659,7 @@ void browser_restore_caret_background( struct gui_window * gw, LGRECT * area)
 			area->g_x-b->scroll.current.x+b->caret.current.g_x,
 			area->g_y-b->scroll.current.y+b->caret.current.g_y,
 			gw->browser->caret.current.g_w,
-			gw->browser->caret.current.g_h,
+			gw->browser->caret.current.g_h+1,
 			&gw->browser->caret.background
 	);
 	gw->browser->caret.background.fd_addr = NULL;
@@ -709,12 +709,12 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 		init_mfdb(0, caret.g_w, caret.g_h, 0, &screen);
 		pxy[0] = caret.g_x;
 		pxy[1] = caret.g_y;
-		pxy[2] = caret.g_x + caret.g_w - 1;
-		pxy[3] = caret.g_y + caret.g_h - 1;
+		pxy[2] = caret.g_x + caret.g_w;
+		pxy[3] = caret.g_y + caret.g_h;
 		pxy[4] = 0;
 		pxy[5] = 0;
-		pxy[6] = caret.g_w - 1;
-		pxy[7] = caret.g_h - 1;
+		pxy[6] = caret.g_w;
+		pxy[7] = caret.g_h;
 		/* hide the mouse */
 		v_hide_c (app.graf.handle);
 		/* copy screen image */
@@ -724,8 +724,8 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 		caret.g_y -= area->g_y;
 		clip.x0 = caret.g_x;
 		clip.y0 = caret.g_y;
-		clip.x1 = caret.g_x + caret.g_w-1;
-		clip.y1 = caret.g_y + caret.g_h-1;
+		clip.x1 = caret.g_x + caret.g_w;
+		clip.y1 = caret.g_y + caret.g_h;
 		/* store old clip before adjusting it: */
 		plot_get_clip( &old_clip );
 		/* clip to cursor: */
