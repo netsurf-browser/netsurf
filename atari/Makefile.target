@@ -90,8 +90,8 @@ ATARI_TARGET_DIR := netsurf/
 ATARI_RES_DIR := atari/res/
 ATARI_DOC_DIR := atari/doc/
 ATARI_FONT_NAME := ttf-bitstream-vera-1.10
-#ATARI_FONT_SOURCE_URL := http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-vera/1.10/$(ATARI_FONT_NAME).tar.gz
-ATARI_FONT_SOURCE_URL := http://localhost/$(ATARI_FONT_NAME).tar.gz
+ATARI_FONT_SOURCE_URL := http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-vera/1.10/$(ATARI_FONT_NAME).tar.gz
+#ATARI_FONT_SOURCE_URL := http://localhost/$(ATARI_FONT_NAME).tar.gz
 ATARI_FONT_TMP_DIR := $(DEPROOT)/../
 ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
 
