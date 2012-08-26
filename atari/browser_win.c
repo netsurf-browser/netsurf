@@ -482,6 +482,9 @@ static void __CDECL evnt_window_iconify( WINDOW *win, short buff[8], void * data
 	}
 }
 
+/**
+ * Redraw the favicon
+*/
 static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * data )
 {
 	short x,y,w,h;
@@ -499,7 +502,12 @@ static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * dat
 		mt_objc_draw( tree, 0, 8, buff[4], buff[5], buff[6], buff[7], app.aes_global );
 	} else {
 	    struct rect clip = { 0,0,w,h };
-	    plot_set_dimensions( x,y,w,h );
+	    int xoff=0;
+	    if (w > h) {
+	    	xoff = ((w-h)/2);
+			w = h;
+		}
+	    plot_set_dimensions( x+xoff,y,w,h );
         plot_clip(&clip);
         atari_plotters.bitmap(0, 0, w, h, gw->icon, 0xffffff, 0);
 	}
