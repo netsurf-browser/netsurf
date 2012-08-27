@@ -22,10 +22,12 @@
 #define GUIWIN_VISIBLE(gw) (gw->root->handle->status & WS_OPEN)
 #define GEMWIN_VISIBLE(win) (win->status & WS_OPEN)
 
-#define WIDGET_STATUSBAR  0x1
-#define WIDGET_TOOLBAR    0x2
-#define WIDGET_SCROLL	  0x4
-#define WIDGET_RESIZE	  0x8
+#define WIDGET_STATUSBAR  	0x1
+#define WIDGET_TOOLBAR    	0x2
+#define WIDGET_SCROLL	  	0x4
+#define WIDGET_RESIZE	  	0x8
+
+#define WIN_TOP				0x100
 
 /* WinDom & Custom bindings for gui window */
 

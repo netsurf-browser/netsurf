@@ -165,8 +165,9 @@ int window_create( struct gui_window * gw,
 	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
 	EvntDataAttach( gw->root->handle, WM_SLIDEXY, evnt_window_slider, gw );
 
-	/* TODO: check if window is openend as "foreground" window... */
-	window_set_focus( gw, BROWSER, gw->browser);
+	if (inflags & WIN_TOP) {
+		window_set_focus( gw, BROWSER, gw->browser);
+	}
 
 	return (err);
 }
