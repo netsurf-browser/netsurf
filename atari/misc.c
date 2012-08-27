@@ -46,6 +46,11 @@
 
 extern void * h_gem_rsrc;
 
+struct is_process_running_callback_data {
+	const char * fname;
+	bool found;
+};
+
 void warn_user(const char *warning, const char *detail)
 {
 	size_t len = 1 + ((warning != NULL) ? strlen(messages_get(warning)) :
@@ -152,6 +157,86 @@ struct gui_window * find_cmp_window( COMPONENT * c )
 			gw = gw->next;
 	}
 	return( NULL );
+}
+
+static int scan_process_list(scan_process_callback cb, void *data)
+{
+	int pid, count = 0;
+	DIR	*dir;
+	char*dirname;
+	struct dirent *de;
+
+	if (( dir = opendir("U:/kern")) == NULL)
+		return(0);
+
+	while ((de = readdir( dir)) != NULL) {
+		dirname = de->d_name;
+
+		if( dirname[0] != '1' && dirname[0] != '2' && dirname[0] != '3' && dirname[0] != '4' && dirname[0] != '5'
+		 && dirname[0] != '6' && dirname[0] != '7' && dirname[0] != '8' && dirname[0] != '9')
+			continue;
+
+		count++;
+		if (cb != NULL) {
+			/* when callback returns negative value, we stop scanning: */
+			pid = atoi(dirname);
+			if (cb(pid, data)<0) {
+				break;
+			}
+		}
+	}
+
+	closedir(dir);
+
+	return(count);
+}
+
+static int proc_running_callback(int pid, void * arg)
+{
+	char buf[PATH_MAX], fnamepath[256];
+	FILE *fp;
+	int nread;
+	struct is_process_running_callback_data *data;
+
+	data = (struct is_process_running_callback_data *)arg;
+
+	sprintf(fnamepath, "U:\\kern\\%d\\fname", pid);
+
+	fp = fopen(fnamepath, "r");
+	if(!fp)
+		return(0);
+
+	nread = fread(buf, 1, PATH_MAX-1, fp);
+	fclose(fp);
+
+	if (nread > 0) {
+		buf[nread] = 0;
+
+		char *lastslash = strrchr(buf, '/');
+
+		if(lastslash == NULL)
+			lastslash = strrchr(buf, '\\');
+
+		if(lastslash==NULL)
+			lastslash = buf;
+		else
+			lastslash++;
+
+		if(strcasecmp(lastslash, data->fname)==0){
+			data->found = true;
+			return(-1);
+		}
+	}
+	return(0);
+}
+
+bool is_process_running(const char * name)
+{
+	struct is_process_running_callback_data data = {name, false};
+
+	scan_process_list(proc_running_callback, &data);
+
+	return( (data.found==1) ? true : false );
 }
 
 

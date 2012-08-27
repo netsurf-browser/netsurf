@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <windom.h>
+#include <mint/osbind.h>
 
 #include "desktop/gui.h"
 #include "desktop/netsurf.h"
@@ -122,8 +123,8 @@ void context_popup( struct gui_window * gw, short x, short y )
 	FILE * fp_tmpfile;
 	char * tempfile;
 	int err = 0;
-	char * editor;
-	char cmdline[128];
+	char * editor, *lastslash;
+	char cmdline[PATH_MAX];
 
 	pop = get_tree( POP_CTX );
 	if (pop == NULL)
@@ -240,14 +241,23 @@ void context_popup( struct gui_window * gw, short x, short y )
 					if (fp_tmpfile != NULL){
 						fwrite(data, size, 1, fp_tmpfile);
 						fclose(fp_tmpfile );
-
-						// TODO: check if app is runnin, if not, use pexec or such.
-						/*
-						  sprintf((char*)&cmdline, "%s \"%s\"", nsoption_charp(atari_editor), tempfile );
-						  system( (char*)&cmdline );
-						*/
-						err = ShelWrite( editor, tempfile , editor, 1, 0);
-						LOG(("Launched: %s %s (%d)\n", editor, tempfile, err ));
+						lastslash = strrchr(editor, '/');
+						if (lastslash == NULL)
+							lastslash = strrchr(editor, '\\');
+						if (lastslash == NULL)
+							lastslash = editor;
+						else
+							lastslash++;
+						if(is_process_running(lastslash)){
+							err = ShelWrite( editor, tempfile , editor, 1, 0);
+						} else {
+							/* check for max length of simple commandline param: */
+							if(strlen(tempfile)<=125){
+								sprintf(cmdline, "%c%s", (char)strlen(tempfile),
+												tempfile);
+								Pexec(100, editor, cmdline, NULL);
+							}
+						}
 					} else {
 						printf("Could not open temp file: %s!\n", tempfile );
 					}
