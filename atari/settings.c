@@ -123,8 +123,8 @@ WINDOW * open_settings()
 
 	if( dlgwin == NULL){
 		// TODO: localize title
-		dlgwin = FormCreate( dlgtree, WAT_FORM, NULL, (char*)"Settings",
-					  NULL, TRUE, 1);
+		dlgwin = FormCreate(dlgtree, WAT_FORM, NULL, (char*)"Settings",
+					  NULL, TRUE, FALSE);
 		if( !dlgwin ){
 			return( NULL );
 		}
@@ -173,9 +173,11 @@ WINDOW * open_settings()
 
 		EvntAdd( dlgwin, WM_CLOSED, onclose, EV_TOP  );
 		display_settings();
+		toggle_objects();
 
 	} else {
 		WindTop( dlgwin );
+		display_settings();
 		toggle_objects();
 	}
 	return( dlgwin );
@@ -185,7 +187,6 @@ void close_settings(void)
 {
 	if( dlgwin != NULL ){
 		/* Duplicated form tree must be free'd manualy? */
-		ObjcFree(ObjcTree(OC_FORM, dlgwin));
 		WindClose(dlgwin);
 		dlgwin = NULL;
 	}
@@ -320,13 +321,6 @@ static colour color_popup(int x, int y, colour current)
 	/* copy screen image */
 	vro_cpyfm (app.graf.handle, S_ONLY, pxy, &screen, &bg);
 
-	/*
-	plot_rectangle(x+1, y+1, x+(GRID_COLS*boxwidth)+3,
-	               y+(GRID_ROWS*boxheight)+3, &outline);
-
-	plot_line(x, y, x+(GRID_COLS*boxwidth)+2, y+(GRID_ROWS*boxheight)+2,
-	          &outline);
-	*/
 	plot_line(x, y, x+(GRID_COLS*boxwidth)+2, y,
 	          &outline);
 
@@ -480,6 +474,7 @@ form_event( WINDOW *win, int index, int external, void *unused2)
 				DISABLE_OBJ( CHOICES_CB_PROXY_AUTH );
 			}
 			FORMEVENT( CHOICES_CB_PROXY_AUTH );
+			ObjcDrawParent(OC_FORM, dlgwin, index, 9, 1 );
 			break;
 
 		case CHOICES_CB_PROXY_AUTH:
