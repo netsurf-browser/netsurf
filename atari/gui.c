@@ -958,7 +958,7 @@ static void gui_init(int argc, char** argv)
 	}
 
 	if (nsoption_charp(cookie_file) == NULL ){
-		nsoption_set_charp(cookie_file, "cookies");
+		nsoption_set_charp(cookie_file, (char*)"cookies");
 	}
 	LOG(("Loading cookies from: %s", nsoption_charp(cookie_file) ));
 	if( strlen(nsoption_charp(cookie_file)) ){

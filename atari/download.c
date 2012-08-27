@@ -47,8 +47,6 @@
 #include "atari/download.h"
 #include "atari/osspec.h"
 
-/*TODO: get filename from core. */
-
 extern struct gui_window * input_window;
 
 static void gui_download_window_destroy( struct gui_download_window * gdw );

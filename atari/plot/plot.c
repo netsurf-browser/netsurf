@@ -69,13 +69,6 @@ static void snapshot_suspend(void);
 /* destroy memory used by screenshot */
 static void snapshot_destroy(void);
 
-/* convert an bgra color to vdi1000 color */
-void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
-
-/* convert an rgb color to an index into the web palette */
-short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
-
-
 #ifdef WITH_8BPP_SUPPORT
 static unsigned short sys_pal[256][3]; /*RGB*/
 static unsigned short pal[256][3];     /*RGB*/
@@ -188,7 +181,7 @@ const char* plot_err_str(int i)
 
 /**
  * Set line drawing color by passing netsurf XBGR "colour" type.
- * 
+ *
  * \param vdih The vdi handle
  * \param cin  The netsurf colour value
  */
@@ -214,7 +207,7 @@ inline static void vsl_rgbcolor(short vdih, colour cin)
 
 /**
  * Set fill color by passing netsurf XBGR "colour" type.
- * 
+ *
  * \param vdih The vdi handle
  * \param cin  The netsurf colour value
  */
@@ -567,7 +560,7 @@ inline void vdi1000_to_rgb(unsigned short * in, unsigned char * out)
 
 #ifdef WITH_8BPP_SUPPORT
 /**
- * Set pixel within an 8 bit VDI standard bitmap. 
+ * Set pixel within an 8 bit VDI standard bitmap.
  */
 inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned char val )
 {
@@ -602,7 +595,7 @@ inline static void set_stdpx( MFDB * dst, int wdplanesz, int x, int y, unsigned 
 }
 
 /**
- * Read pixel from an 8 bit VDI standard bitmap. 
+ * Read pixel from an 8 bit VDI standard bitmap.
  */
 inline static unsigned char get_stdpx(MFDB * dst, int wdplanesz, int x, int y)
 {
@@ -715,7 +708,7 @@ static void dump_vdi_info(short vdih)
 }
 
 /**
- * Create an snapshot of the screen image in device format. 
+ * Create an snapshot of the screen image in device format.
  */
 static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
 {
@@ -766,7 +759,7 @@ static MFDB * snapshot_create_native_mfdb(int x, int y, int w, int h)
 }
 
 /**
- * Create an snapshot of the screen image in VDI standard format (8 bit). 
+ * Create an snapshot of the screen image in VDI standard format (8 bit).
  */
 static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 {
@@ -804,7 +797,7 @@ static MFDB * snapshot_create_std_mfdb(int x, int y, int w, int h)
 	return( &buf_std );
 }
 
-/* 
+/*
  * Create an snapshot of the screen in netsurf ABGR format
  */
 static struct bitmap * snapshot_create(int x, int y, int w, int h)

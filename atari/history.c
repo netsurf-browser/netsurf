@@ -28,6 +28,7 @@
 #include "desktop/gui.h"
 #include "desktop/history_global_core.h"
 #include "desktop/browser.h"
+#include "utils/messages.h"
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "content/urldb.h"
@@ -105,8 +106,7 @@ bool global_history_init( void )
 			LOG(("Failed to allocate history window"));
 			return( false );
 		}
-		/* TODO: load history strings from messages */
-		WindSetStr( gl_history.window, WF_NAME, (char*)"History" );
+		WindSetStr(gl_history.window, WF_NAME, messages_get("GlobalHistory"));
 		//WindSetPtr( gl_history.window, WF_TOOLBAR, tree, evnt_history_toolbar );
 		EvntAttach( gl_history.window, WM_CLOSED, evnt_history_close );
 		EvntAttach( gl_history.window, WM_XBUTTON,evnt_history_mbutton );

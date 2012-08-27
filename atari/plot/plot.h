@@ -122,6 +122,12 @@ bool plot_copy_rect(GRECT src, GRECT dst);
 /* convert an vdi color to bgra */
 void vdi1000_to_rgb( unsigned short * in, unsigned char * out );
 
+/* convert an bgra color to vdi1000 color */
+void rgb_to_vdi1000( unsigned char * in, unsigned short * out );
+
+/* convert an rgb color to an index into the web palette */
+short rgb_to_666_index(unsigned char r, unsigned char g, unsigned char b);
+
 /* assign vdi line style to dst ( netsurf type ) */
 #define NSLT2VDI(dst, src) \
 	dst = 0;\

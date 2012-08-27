@@ -103,8 +103,7 @@ void hotlist_init(void)
 			LOG(("Failed to allocate Hotlist"));
 			return;
 		}
-		/* TODO: load hotlist strings from messages */
-		WindSetStr( hl.window, WF_NAME, (char*)"Hotlist" );
+		WindSetStr( hl.window, WF_NAME, (char*)messages_get("Hotlist") );
 		WindSetPtr( hl.window, WF_TOOLBAR, tree, evnt_hl_toolbar );
 		EvntAttach( hl.window, WM_CLOSED, evnt_hl_close );
 		EvntAttach( hl.window, WM_XBUTTON,evnt_hl_mbutton );
