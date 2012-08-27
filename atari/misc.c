@@ -201,6 +201,7 @@ static int proc_running_callback(int pid, void * arg)
 	data = (struct is_process_running_callback_data *)arg;
 
 	sprintf(fnamepath, "U:\\kern\\%d\\fname", pid);
+	printf("checking: %s\n", fnamepath);
 
 	fp = fopen(fnamepath, "r");
 	if(!fp)
@@ -208,6 +209,7 @@ static int proc_running_callback(int pid, void * arg)
 
 	nread = fread(buf, 1, PATH_MAX-1, fp);
 	fclose(fp);
+	nread = MIN(PATH_MAX-1, nread);
 
 	if (nread > 0) {
 		buf[nread] = 0;
@@ -223,8 +225,22 @@ static int proc_running_callback(int pid, void * arg)
 			lastslash++;
 
 		if(strcasecmp(lastslash, data->fname)==0){
-			data->found = true;
-			return(-1);
+			/* found process, check status: */
+			sprintf(fnamepath, "U:\\kern\\%d\\status", pid);
+			fp = fopen(fnamepath, "r");
+			if (fp) {
+				nread = fread(buf, 1, PATH_MAX-1, fp);
+				fclose(fp);
+				if (nread>0) {
+					nread = MIN(PATH_MAX-1,nread);
+				}
+				buf[nread] = 0;
+				if (strstr(buf, "zombie")==NULL) {
+					data->found = true;
+					return(-1);
+				}
+			}
+
 		}
 	}
 	return(0);
