@@ -67,7 +67,7 @@
 	.atari_face_cursive = NULL,						\
 	.atari_face_fantasy = NULL,						\
 	.atari_editor = (char*)"",						\
-	.downloads_path = (char*)"",					\
+	.downloads_path = (char*)"downloads",			\
 	.url_file = (char*)"url.db",					\
 	.hotlist_file = (char*)"hotlist",				\
 	.tree_icons_path = (char*)"./res/icons"
