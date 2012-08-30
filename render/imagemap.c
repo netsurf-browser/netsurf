@@ -425,7 +425,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 	}
 	
 	exc = dom_element_get_attribute(n, corestring_dom_href, &href);
-	if (exc != DOM_NO_ERR) {
+	if (exc != DOM_NO_ERR || href == NULL) {
 		/* No href="" attribute, skip this element */
 		goto ok_out;
 	}
