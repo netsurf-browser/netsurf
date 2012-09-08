@@ -200,9 +200,6 @@ struct form_control *form_new_control(void *node, form_control_type type)
 	control->node = node;
 	control->type = type;
 
-	/* Default max length of input to something insane */
-	control->maxlength = UINT_MAX;
-
 	return control;
 }
 
