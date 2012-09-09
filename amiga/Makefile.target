@@ -103,7 +103,8 @@ install-amiga:
 
 package-amiga: netsurf.lha
 
-AMIGA_LANGUAGES := de en fr it ja nl
+AMIGA_LANGUAGES_MESSAGES := de en fr it nl
+AMIGA_LANGUAGES := $(AMIGA_LANGUAGES_MESSAGES) ja
 AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map SearchEngines splash.png
 AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle
 AMIGA_RESOURCES := $(addprefix amiga/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
@@ -130,6 +131,7 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp amiga/pkg/fitr $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
 	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
+	$(Q)$(foreach AMIGA_LANGUAGE, $(AMIGA_LANGUAGES_MESSAGES), perl utils/split-messages.pl $(AMIGA_LANGUAGE) ami < resources/FatMessages >$(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/$(AMIGA_LANGUAGE)/Messages;)
     ifeq ($(HOST),amiga)
 		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
 		$(Q)cp $(AMIGA_LIBS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
