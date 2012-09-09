@@ -332,10 +332,21 @@ parse_input_element(struct form *forms, dom_html_input_element *input)
 
 	if (control->type == GADGET_PASSWORD ||
 	    control->type == GADGET_TEXTBOX) {
-		unsigned long maxlength;
+		long maxlength;
 		if (dom_html_input_element_get_max_length(
-			    input, &maxlength) == DOM_NO_ERR) {
+			    input, &maxlength) != DOM_NO_ERR) {
+			maxlength = -1;
+		}
+
+		if (maxlength >= 0) {
+			/* Got valid maxlength */
 			control->maxlength = maxlength;
+		} else {
+			/* Input has no maxlength attr, or
+			 * dom_html_input_element_get_max_length failed.
+			 *
+			 * Set it to something insane. */
+			control->maxlength = UINT_MAX;
 		}
 	}
 
