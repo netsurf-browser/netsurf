@@ -121,7 +121,8 @@ struct form *html_forms_get_forms(const char *docenc, dom_html_document *doc)
 	dom_html_collection *forms;
 	struct form *ret = NULL, *newf;
 	dom_node *node;
-	unsigned long nforms, n;
+	unsigned long n;
+	uint32_t nforms;
 
 	if (doc == NULL)
 		return NULL;
@@ -332,7 +333,7 @@ parse_input_element(struct form *forms, dom_html_input_element *input)
 
 	if (control->type == GADGET_PASSWORD ||
 	    control->type == GADGET_TEXTBOX) {
-		long maxlength;
+		int32_t maxlength;
 		if (dom_html_input_element_get_max_length(
 			    input, &maxlength) != DOM_NO_ERR) {
 			maxlength = -1;

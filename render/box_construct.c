@@ -3012,7 +3012,8 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 	struct object_params *params;
 	struct object_param *param;
 	dom_namednodemap *attrs;
-	unsigned long idx, num_attrs;
+	unsigned long idx;
+	uint32_t num_attrs;
 	dom_string *src;
 	dom_exception err;
 

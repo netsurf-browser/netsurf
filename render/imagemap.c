@@ -256,7 +256,8 @@ imagemap_extract(html_content *c)
 {
 	dom_nodelist *nlist;
 	dom_exception exc;
-	unsigned long maybe_maps, mapnr;
+	unsigned long mapnr;
+	uint32_t maybe_maps;
 	
 	exc = dom_document_get_elements_by_tag_name(c->document, 
 						    corestring_dom_map, 
@@ -345,7 +346,8 @@ imagemap_extract_map_entries(dom_node *node, html_content *c,
 {
 	dom_nodelist *nlist;
 	dom_exception exc;
-	unsigned long tag_count, ent;
+	unsigned long ent;
+	uint32_t tag_count;
 	
 	exc = dom_element_get_elements_by_tag_name(node, tname, &nlist);
 	if (exc != DOM_NO_ERR) {
