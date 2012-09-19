@@ -85,6 +85,7 @@ lwc_string *corestring_lwc_rectangle;
 lwc_string *corestring_lwc_refresh;
 lwc_string *corestring_lwc_reset;
 lwc_string *corestring_lwc_right;
+lwc_string *corestring_lwc_select;
 lwc_string *corestring_lwc_src;
 lwc_string *corestring_lwc_style;
 lwc_string *corestring_lwc_submit;
@@ -224,6 +225,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(refresh);
 	CSS_LWC_STRING_UNREF(reset);
 	CSS_LWC_STRING_UNREF(right);
+	CSS_LWC_STRING_UNREF(select);
 	CSS_LWC_STRING_UNREF(src);
 	CSS_LWC_STRING_UNREF(style);
 	CSS_LWC_STRING_UNREF(submit);
@@ -382,6 +384,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(refresh);
 	CSS_LWC_STRING_INTERN(reset);
 	CSS_LWC_STRING_INTERN(right);
+	CSS_LWC_STRING_INTERN(select);
 	CSS_LWC_STRING_INTERN(src);
 	CSS_LWC_STRING_INTERN(style);
 	CSS_LWC_STRING_INTERN(submit);

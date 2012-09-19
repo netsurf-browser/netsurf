@@ -455,6 +455,56 @@ out:
 }
 
 static struct form_control *
+parse_select_element(struct form *forms, dom_html_select_element *select)
+{
+	struct form_control *control = NULL;
+	dom_html_form_element *form = NULL;
+	dom_string *ds_name = NULL;
+
+	char *name = NULL;
+
+	if (dom_html_select_element_get_form(select, &form) != DOM_NO_ERR)
+		goto out;
+
+	if (dom_html_select_element_get_name(select, &ds_name) != DOM_NO_ERR)
+		goto out;
+
+	if (ds_name != NULL)
+		name = strndup(dom_string_data(ds_name),
+			       dom_string_byte_length(ds_name));
+
+	control = form_new_control(select, GADGET_SELECT);
+
+	if (control == NULL)
+		goto out;
+
+	if (name != NULL) {
+		/* Hand the name string over */
+		control->name = name;
+		name = NULL;
+	}
+
+	dom_html_select_element_get_multiple(select,
+			&(control->data.select.multiple));
+
+	if (form != NULL && control != NULL)
+		form_add_control(find_form(forms, form), control);
+
+out:
+	if (form != NULL)
+		dom_node_unref(form);
+	if (ds_name != NULL)
+		dom_string_unref(ds_name);
+
+	if (name != NULL)
+		free(name);
+
+
+	return control;
+}
+
+
+static struct form_control *
 invent_fake_gadget(dom_node *node)
 {
 	struct form_control *ctl = form_new_control(node, GADGET_HIDDEN);
@@ -505,6 +555,10 @@ struct form_control *html_forms_get_control_for_node(struct form *forms, dom_nod
 				corestring_lwc_textarea)) {
 			ctl = parse_textarea_element(forms,
 					(dom_html_text_area_element *) node);
+		} else if (dom_string_caseless_lwc_isequal(ds_name,
+				corestring_lwc_select)) {
+			ctl = parse_select_element(forms,
+					(dom_html_select_element *) node);
 		}
 	}
 
