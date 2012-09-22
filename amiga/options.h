@@ -141,8 +141,8 @@
 	.cairo_renderer = 1,				\
 	.direct_render = false,				\
 	.window_simple_refresh = false,				\
-	.redraw_tile_size_x = 400,			\
-	.redraw_tile_size_y = 150,			\
+	.redraw_tile_size_x = 0,			\
+	.redraw_tile_size_y = 0,			\
 	.monitor_aspect_x = 0,				\
 	.monitor_aspect_y = 0,				\
 	.accept_lang_locale = true,			\
