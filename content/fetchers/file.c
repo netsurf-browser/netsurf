@@ -256,7 +256,7 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 {
 #ifdef HAVE_MMAP
 	fetch_msg msg;
-	char *buf;
+	char *buf = NULL;
 	size_t buf_size;
 
 	int fd; /**< The file descriptor of the object */
@@ -279,17 +279,17 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 	/* set buffer size */
 	buf_size = fdstat->st_size;
-	if (buf_size > FETCH_FILE_MAX_BUF_SIZE)
-		buf_size = FETCH_FILE_MAX_BUF_SIZE;
 
 	/* allocate the buffer storage */
-	buf = mmap(NULL, buf_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (buf == MAP_FAILED) {
-		msg.type = FETCH_ERROR;
-		msg.data.error = "Unable to map memory for file data buffer";
-		fetch_file_send_callback(&msg, ctx);
-		close(fd);
-		return;
+	if (buf_size > 0) {
+		buf = mmap(NULL, buf_size, PROT_READ, MAP_SHARED, fd, 0);
+		if (buf == MAP_FAILED) {
+			msg.type = FETCH_ERROR;
+			msg.data.error = "Unable to map memory for file data buffer";
+			fetch_file_send_callback(&msg, ctx);
+			close(fd);
+			return;
+		}
 	}
 
 	/* fetch is going to be successful */
@@ -327,7 +327,8 @@ static void fetch_file_process_plain(struct fetch_file_context *ctx,
 
 fetch_file_process_aborted:
 
-	munmap(buf, buf_size);
+	if (buf != NULL)
+		munmap(buf, buf_size);
 	close(fd);
 #else
 	fetch_msg msg;
