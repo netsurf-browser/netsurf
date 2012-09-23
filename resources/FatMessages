@@ -955,7 +955,7 @@ nl.all.Close:Close
 en.all.ObjShow:Show object
 de.all.ObjShow:Zeige Objekt
 fr.all.ObjShow:Show object
-it.all.ObjShow:Mostra immagine
+it.all.ObjShow:Mostra
 nl.all.ObjShow:Show object
 en.all.Frame:Frame
 de.all.Frame:Frame
@@ -1865,12 +1865,12 @@ nl.gtk.gtkToggleDebugging:T_oggle debug rendering
 en.gtk.gtkSaveBoxTree:_Save box tree
 de.gtk.gtkSaveBoxTree:_Save box tree
 fr.gtk.gtkSaveBoxTree:_Save box tree
-it.gtk.gtkSaveBoxTree:_Salva Box tree
+it.gtk.gtkSaveBoxTree:_Salva albero Box
 nl.gtk.gtkSaveBoxTree:_Save box tree
 en.gtk.gtkSaveDomTree:Save DOM tree
 de.gtk.gtkSaveDomTree:Save DOM tree
 fr.gtk.gtkSaveDomTree:Save DOM tree
-it.gtk.gtkSaveDomTree:Salva DOM tree
+it.gtk.gtkSaveDomTree:Salva albero DOM
 nl.gtk.gtkSaveDomTree:Save DOM tree
 
 en.gtk.gtkBack:_Back
@@ -2672,7 +2672,7 @@ nl.all.AbortDownload:Zeker weten dat u deze download af wilt breken?
 en.all.QuitDownload:One or more downloads are still in progress. Are you sure you wish to quit?
 de.all.QuitDownload:Das Herunterladen ein oder mehrerer Dateien wurde noch nicht abgeschlossen. Soll NetSurf trotzdem beendet werden ?
 fr.all.QuitDownload:Un ou plusieurs téléchargements sont en cours. Êtes-vous sûr de vouloir quitter ?
-it.all.QuitDownload:Uno o più file sono in attesa di essere scaricati completamente. Sei sicuro di voler chiudere?
+it.all.QuitDownload:Uno o più file si trovano in fase di scaricamento, sei sicuro di voler chiudere NetSurf?
 nl.all.QuitDownload:Een of meer downloads zijn nog bezig. Toch afbreken?
 en.all.OverwriteFile:A file with that name already exists and would be lost.
 de.all.OverwriteFile:Eine Datei mit diesem Namen existiert bereits und würde überschrieben werden.
@@ -2810,7 +2810,7 @@ nl.all.MNGError:MNG library fout: %i
 en.all.BadSprite:Invalid or corrupt Sprite data.
 de.all.BadSprite:Ungültiges oder beschädigtes Sprite.
 fr.all.BadSprite:Les données du sprite sont invalides ou corrompues.
-it.all.BadSprite:Dati Sprite invalidi o corrotti.
+it.all.BadSprite:Dati del file Sprite invalidi o corrotti.
 nl.all.BadSprite:foutief sprite bestand.
 
 # HTTP status codes
@@ -2903,7 +2903,7 @@ nl.all.HTTP401:Unauthorized
 en.all.HTTP402:Payment required
 de.all.HTTP402:Payment required
 fr.all.HTTP402:Paiment nécessaire
-it.all.HTTP402:Richiesto pagamento
+it.all.HTTP402:Richiesto di pagamento
 nl.all.HTTP402:Payment required
 en.all.HTTP403:Forbidden
 de.all.HTTP403:Forbidden
@@ -3145,7 +3145,7 @@ nl.all.ThemeInstActive:A theme is currently being downloaded or installed. Pleas
 en.all.ThemeInstDown:Please wait for the theme to download.
 de.all.ThemeInstDown:Bitte warten bis das Thema vollständig heruntergeladen wurde.
 fr.all.ThemeInstDown:Veuillez attendre le téléchargement du thème.
-it.all.ThemeInstDown:Per favore attendere lo scaricamento del tema.
+it.all.ThemeInstDown:Per favore attendere lo scaricamento del tema grafico.
 nl.all.ThemeInstDown:Please wait for the theme to download.
 en.all.ThemeInvalid:The downloaded theme is invalid or requires a newer version of NetSurf.
 de.all.ThemeInvalid:Das geladene Thema ist fehlerhaft oder benötigt eine neuere Version von NetSurf.
@@ -3578,7 +3578,7 @@ nl.ro.HelpBrowserMenu3:\Rsee the navigation options.
 en.ro.HelpBrowserMenu3-0:\Sreturn to the configured home page.
 de.ro.HelpBrowserMenu3-0:Öffnet die Homepage im aktuellen Fenster.
 fr.ro.HelpBrowserMenu3-0:\Srevenir à la page d'accueil configurée.
-it.ro.HelpBrowserMenu3-0:\Storna alla preconfigurata pagina iniziale
+it.ro.HelpBrowserMenu3-0:\Storna alla pagina iniziale preconfigurata
 nl.ro.HelpBrowserMenu3-0:\Sreturn to the configured home page.
 en.ro.HelpBrowserMenu3-1:\Sgo back a page in the local history.|MForm information is not resubmitted.
 de.ro.HelpBrowserMenu3-1:Schaltet zurück zur vorher dargestellten Seite.|MDie Seite wird dabei nicht aktualisiert.
@@ -4589,7 +4589,7 @@ nl.ro.HelpFontConfig3:\Tcurrently selected sans-serif font.|MNetSurf will use th
 en.ro.HelpFontConfig4:\Sselect a sans-serif font.
 de.ro.HelpFontConfig4:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
 fr.ro.HelpFontConfig4:\Ssélectionner une fonte sans-sérif.
-it.ro.HelpFontConfig4:\Sselect a sans-serif font.
+it.ro.HelpFontConfig4:\Sseleziona un font sans-serif
 nl.ro.HelpFontConfig4:\Sselect a sans-serif font.
 en.ro.HelpFontConfig6:\Tcurrently selected serif font.|MNetSurf will use this font wherever a web page specifies a serif typeface.
 de.ro.HelpFontConfig6:Das ist die aktuell gewählte Schriftart für Serif.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Serif vorgegeben wird.
@@ -4599,7 +4599,7 @@ nl.ro.HelpFontConfig6:\Tcurrently selected serif font.|MNetSurf will use this fo
 en.ro.HelpFontConfig7:\Sselect a sans-serif font.
 de.ro.HelpFontConfig7:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
 fr.ro.HelpFontConfig7:\Ssélectionner une fonte sérif.
-it.ro.HelpFontConfig7:\Sselect a sans-serif font.
+it.ro.HelpFontConfig7:\Sseleziona un font sans-serif
 nl.ro.HelpFontConfig7:\Sselect a sans-serif font.
 en.ro.HelpFontConfig9:\Tcurrently selected monospace font.|MNetSurf will use this font wherever a web page specifies a monospace typeface.
 de.ro.HelpFontConfig9:Das ist die aktuell gewählte Schriftart für Monospace.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Monospace vorgegeben wird.
@@ -4609,7 +4609,7 @@ nl.ro.HelpFontConfig9:\Tcurrently selected monospace font.|MNetSurf will use thi
 en.ro.HelpFontConfig10:\Sselect a monospace font.
 de.ro.HelpFontConfig10:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
 fr.ro.HelpFontConfig10:\Ssélectionner une fonte monospace.
-it.ro.HelpFontConfig10:\Sselect a monospace font.
+it.ro.HelpFontConfig10:\Sseleziona un font monospaziato
 nl.ro.HelpFontConfig10:\Sselect a monospace font.
 en.ro.HelpFontConfig12:\Tcurrently selected cursive font.|MNetSurf will use this font wherever a web page specifies a cursive typeface.
 de.ro.HelpFontConfig12:Das ist die aktuell gewählte Schriftart für Kursiv.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Kursiv vorgegeben wird.
@@ -4619,7 +4619,7 @@ nl.ro.HelpFontConfig12:\Tcurrently selected cursive font.|MNetSurf will use this
 en.ro.HelpFontConfig13:\Sselect a cursive font.
 de.ro.HelpFontConfig13:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
 fr.ro.HelpFontConfig13:\Ssélectionner une fonte cursive.
-it.ro.HelpFontConfig13:\Sselect a cursive font.
+it.ro.HelpFontConfig13:\Sseleziona un font corsivo
 nl.ro.HelpFontConfig13:\Sselect a cursive font.
 en.ro.HelpFontConfig15:\Tcurrently selected fantasy font.|MNetSurf will use this font wherever a web page specifies a fantasy typeface.
 de.ro.HelpFontConfig15:Das ist die aktuell gewählte Schriftart für Fantasy.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite ein Schriftbild in Fantasy vorgegeben wird.
@@ -4629,7 +4629,7 @@ nl.ro.HelpFontConfig15:\Tcurrently selected fantasy font.|MNetSurf will use this
 en.ro.HelpFontConfig16:\Sselect a fantasy font.
 de.ro.HelpFontConfig16:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
 fr.ro.HelpFontConfig16:\Ssélectionner une fonte fantaisie.
-it.ro.HelpFontConfig16:\Sselect a fantasy font.
+it.ro.HelpFontConfig16:\Sseleziona un font fantasia
 nl.ro.HelpFontConfig16:\Sselect a fantasy font.
 en.ro.HelpFontConfig18:\Tcurrently selected font family.|MNetSurf will use this wherever a web page does not specify a typeface.
 de.ro.HelpFontConfig18:Das ist die aktuell gewählte Schriftart für die Standardtextanzeige.|MNetSurf wird diese Schriftart überall dort verwenden, wo von der Webseite KEIN bestimmtes Schriftbild vorgegeben wird.
@@ -4639,7 +4639,7 @@ nl.ro.HelpFontConfig18:\Tcurrently selected font family.|MNetSurf will use this 
 en.ro.HelpFontConfig19:\Sselect a default font family.
 de.ro.HelpFontConfig19:Klicken mit AUSWAHL, um eine Schriftart auszuwählen.
 fr.ro.HelpFontConfig19:\Ssélectionner une famille de fontes par défaut.
-it.ro.HelpFontConfig19:\Sselect a default font family.
+it.ro.HelpFontConfig19:\Sseleziona una famiglia font predefinita
 nl.ro.HelpFontConfig19:\Sselect a default font family.
 en.ro.HelpFontConfig23:You can enter a default font size here.|MNetSurf will use this wherever a web page does not specify a font size of its own.
 de.ro.HelpFontConfig23:Hier kann eine Standarfontgröße gewählt werden.|MNetSurf wird diese Größe immer dann verwenden, wenn von der Webseite keine eigene Schriftgröße eingestellt wird.
@@ -4649,12 +4649,12 @@ nl.ro.HelpFontConfig23:You can enter a default font size here.|MNetSurf will use
 en.ro.HelpFontConfig24:\Sreduce the default font size.
 de.ro.HelpFontConfig24:Klicken mit AUSWAHL verkleinert die Standardfontgröße.
 fr.ro.HelpFontConfig24:\Sréduire la taille de fonte.
-it.ro.HelpFontConfig24:\Sreduce the default font size.
+it.ro.HelpFontConfig24:\Sriduce la dimensione del font predefinito
 nl.ro.HelpFontConfig24:\Sreduce the default font size.
 en.ro.HelpFontConfig25:\Sincrease the default font size.
 de.ro.HelpFontConfig25:Klicken mit AUSWAHL vergrößert die Standardfontgröße.
 fr.ro.HelpFontConfig25:\Saugmenter la taille de fonte.
-it.ro.HelpFontConfig25:\Sincrease the default font size.
+it.ro.HelpFontConfig25:\Saumenta la dimensione del font predefinito
 nl.ro.HelpFontConfig25:\Sincrease the default font size.
 en.ro.HelpFontConfig28:You can enter a minimum font size here.|MNetSurf will not allow web pages to display smaller text than this.
 de.ro.HelpFontConfig28:Hier kann eine minimale Schriftgröße eingestellt werden.|MNetSurf wird keine Darstellung von noch kleineren Schriften zulassen.
@@ -4664,17 +4664,17 @@ nl.ro.HelpFontConfig28:You can enter a minimum font size here.|MNetSurf will not
 en.ro.HelpFontConfig29:\Sreduce the minimum font size.
 de.ro.HelpFontConfig29:Klicken mit AUSWAHL verkleinert die minimal zugelassene Schriftgröße.
 fr.ro.HelpFontConfig29:\Sréduire la taille de fonte minimum.
-it.ro.HelpFontConfig29:\Sreduce the minimum font size.
+it.ro.HelpFontConfig29:\Sriduce la dimensione minima del font
 nl.ro.HelpFontConfig29:\Sreduce the minimum font size.
 en.ro.HelpFontConfig30:\Sincrease the minimum font size.
 de.ro.HelpFontConfig30:Klicken mit AUSWAHL vergrößert die minimal zugelassene Schriftgröße.
 fr.ro.HelpFontConfig30:\Saugmenter la taille de fonte minimum.
-it.ro.HelpFontConfig30:\Sincrease the minimum font size.
+it.ro.HelpFontConfig30:\Saumenta la dimensione minima del font
 nl.ro.HelpFontConfig30:\Sincrease the minimum font size.
 en.ro.HelpFontConfig32:\Sreset the Font options back to their default values.
 de.ro.HelpFontConfig32:Stellt die Standardeinstellungen wieder her.
 fr.ro.HelpFontConfig32:\Srevenir aux valeurs par défaut des options de Fontes.
-it.ro.HelpFontConfig32:\Sreset the Font options back to their default values.
+it.ro.HelpFontConfig32:\Sripristina le impostazioni dei font ai loro valori originali
 nl.ro.HelpFontConfig32:\Sreset the Font options back to their default values.
 en.ro.HelpFontConfig33:\Sclose this \w without saving changes.|M\Areturn the font options to the last saved configuration.
 de.ro.HelpFontConfig33:Klicken mit AUSWAHL schließt das Fenster ohne die Änderungen zu speichern.|MKlicken mit SPEZIAL stellt die zuletzt abgespeicherten Einstellungen wieder her.
@@ -5021,32 +5021,32 @@ nl.ro.HelpThemePConfig:This pane shows the available themes.|MThe selected icon 
 en.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
 de.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
 fr.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
-it.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
+it.ami.HelpToolbarBack:Indietro
 nl.ami.HelpToolbarBack:Back\nLMB: Steps back one page\nRMB: Display a menu of recent pages
 en.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 de.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 fr.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
-it.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
+it.ami.HelpToolbarForward:Avanti
 nl.ami.HelpToolbarForward:Forward\nLMB: Steps forward one page
 en.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 de.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 fr.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
-it.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
+it.ami.HelpToolbarStop:Stop
 nl.ami.HelpToolbarStop:Stop\nLMB: Stops loading the page
 en.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 de.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 fr.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
-it.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
+it.ami.HelpToolbarReload:Ricarica
 nl.ami.HelpToolbarReload:Reload\nLMB: Reloads the page\nShift+LMB: Reloads the page and all objects
 en.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 de.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 fr.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
-it.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
+it.ami.HelpToolbarHome:Pagina iniziale
 nl.ami.HelpToolbarHome:Home\nLMB: Goes to the homepage
 en.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
 de.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
 fr.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
-it.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
+it.ami.HelpToolbarURL:Barra indirizzi
 nl.ami.HelpToolbarURL:URL bar\nType a URL and press Return\nSuggestions can be selected with up/down
 en.ami.HelpToolbarWebSearch:Web search bar\nType text and press Return to search using your default search provider
 de.ami.HelpToolbarWebSearch:Websuchleiste\nText eingeben und Enter drücken um mit der Standardsuchmaschine zu suchen
@@ -5209,7 +5209,7 @@ nl.all.Scripting:Scripting
 en.all.EnableJS:Enable Javascript
 de.all.EnableJS:Enable Javascript
 fr.all.EnableJS:Enable Javascript
-it.all.EnableJS:Enable Javascript
+it.all.EnableJS:Attiva Javascript
 nl.all.EnableJS:Enable Javascript
 en.all.Miscellaneous:Miscellaneous
 de.all.Miscellaneous:Verschiedenes
@@ -5229,7 +5229,7 @@ nl.all.SendReferer:Send site referral information
 en.ami.DoNotTrack:Send header to tell websites not to track
 de.ami.DoNotTrack:Send header to tell websites not to track
 fr.ami.DoNotTrack:Send header to tell websites not to track
-it.ami.DoNotTrack:Invia header al sito con la richiesta di non tracciamento
+it.ami.DoNotTrack:Invia header al sito per la richiesta di non tracciamento
 nl.ami.DoNotTrack:Send header to tell websites not to track
 en.all.FastScrolling:Fast scrolling
 de.all.FastScrolling:Schnelles Scrollen
@@ -5444,7 +5444,7 @@ nl.all.Pt:pt
 en.ami.FontScanning:Scanning fonts...
 de.ami.FontScanning:Scanning fonts...
 fr.ami.FontScanning:Scanning fonts...
-it.ami.FontScanning:Scansione dei font...
+it.ami.FontScanning:Scansione dei font in corso...
 nl.ami.FontScanning:Scanning fonts...
 en.ami.FontGlyphs:%ld unique glyphs found
 de.ami.FontGlyphs:%ld unique glyphs found
@@ -5458,7 +5458,7 @@ nl.ami.FontGlyphs:%ld unique glyphs found
 en.all.CacheMemory:Memory cache
 de.all.CacheMemory:Arbeitsspeicher Cache
 fr.all.CacheMemory:Memory cache
-it.all.CacheMemory:Cache in memoria
+it.all.CacheMemory:Memoria cache
 nl.all.CacheMemory:Memory cache
 en.all.CacheDisc:Disc cache
 de.all.CacheDisc:Festplatten Cache
