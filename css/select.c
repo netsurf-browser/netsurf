@@ -2723,14 +2723,14 @@ node_presentational_hint_color(nscss_select_ctx *ctx,
 			return error;
 
 		if (is_visited) {
-			err = dom_element_get_attribute(node,
+			err = dom_element_get_attribute(bodynode,
 					corestring_dom_vlink, &color);
 			if ((err != DOM_NO_ERR) || (color == NULL)) {
 				dom_string_unref(node_name);
 				return CSS_PROPERTY_NOT_SET;
 			}
 		} else {
-			err = dom_element_get_attribute(node,
+			err = dom_element_get_attribute(bodynode,
 					corestring_dom_link, &color);
 			if ((err != DOM_NO_ERR) || (color == NULL)) {
 				dom_string_unref(node_name);
