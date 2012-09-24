@@ -450,7 +450,7 @@ imagemap_addtolist(dom_node *n, nsurl *base_url,
 		/* If not 'default' and there's no 'coords' give up */
 		exc = dom_element_get_attribute(n, corestring_dom_coords, 
 						&coords);
-		if (exc != DOM_NO_ERR) {
+		if (exc != DOM_NO_ERR || coords == NULL) {
 			goto ok_out;
 		}
 	}
