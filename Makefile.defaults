@@ -261,7 +261,7 @@ ifeq ($(TARGET),amiga)
   NETSURF_AMIGA_USE_CAIRO := YES
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2 -Wuninitialized -gstabs
 
 endif
 
