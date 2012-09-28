@@ -173,17 +173,15 @@ fbtk_enable_oskb(fbtk_widget_t *fbtk)
 		fbtk_set_text(widget, kbdbase[kloop].t);
 	}
 
-	widget = fbtk_create_text_button(osk,
-					 fbtk_get_width(osk) - furniture_width,
-					 fbtk_get_height(osk) - furniture_width,
-					 furniture_width,
-					 furniture_width,
-					 FB_FRAME_COLOUR,
-					 FB_COLOUR_BLACK,
-					 osk_close,
-					 NULL);
-	fbtk_set_text(widget, "\xe2\x8c\xa8");
-
+	widget = fbtk_create_button(osk,
+			fbtk_get_width(osk) - furniture_width,
+			fbtk_get_height(osk) - furniture_width,
+			furniture_width,
+			furniture_width,
+			FB_FRAME_COLOUR,
+			&osk_image,
+			osk_close,
+			NULL);
 }
 
 /* exported function documented in fbtk.h */

@@ -95,6 +95,7 @@ FB_IMAGE_scrollr := framebuffer/res/icons/scrollr.png
 FB_IMAGE_scrollu := framebuffer/res/icons/scrollu.png
 FB_IMAGE_scrolld := framebuffer/res/icons/scrolld.png
 
+FB_IMAGE_osk_image := framebuffer/res/icons/osk.png
 
 FB_IMAGE_pointer_image := framebuffer/res/pointers/default.png
 FB_IMAGE_hand_image := framebuffer/res/pointers/point.png

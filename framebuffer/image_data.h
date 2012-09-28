@@ -38,6 +38,8 @@ extern struct fbtk_bitmap scrollr;
 extern struct fbtk_bitmap scrollu;
 extern struct fbtk_bitmap scrolld;
 
+extern struct fbtk_bitmap osk_image;
+
 extern struct fbtk_bitmap pointer_image;
 extern struct fbtk_bitmap hand_image;
 extern struct fbtk_bitmap caret_image;

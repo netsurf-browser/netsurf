@@ -1377,7 +1377,15 @@ create_normal_browser_window(struct gui_window *gw, int furniture_width)
 						 FB_FRAME_COLOUR, FB_COLOUR_BLACK,
 						 fb_osk_click,
 						 NULL);
-		fbtk_set_text(widget, "\xe2\x8c\xa8");
+		widget = fbtk_create_button(gw->window,
+				fbtk_get_width(gw->window) - furniture_width,
+				fbtk_get_height(gw->window) - furniture_width,
+				furniture_width,
+				furniture_width,
+				FB_FRAME_COLOUR,
+				&osk_image,
+				fb_osk_click,
+				NULL);
 	} else {
 		widget = fbtk_create_fill(gw->window,
 					  fbtk_get_width(gw->window) - furniture_width,
