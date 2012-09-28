@@ -2867,9 +2867,12 @@ bool box_select_add_option(struct form_control *control, dom_node *n)
 	if (err != DOM_NO_ERR)
 		return false;
 
-	text = squash_whitespace(dom_string_data(content));
-
-	dom_string_unref(content);
+	if (content != NULL) {
+		text = squash_whitespace(dom_string_data(content));
+		dom_string_unref(content);
+	} else {
+		text = strdup("");
+	}
 
 	if (text == NULL)
 		goto no_memory;
