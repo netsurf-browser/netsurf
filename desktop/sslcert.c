@@ -237,7 +237,7 @@ bool sslcert_load_tree(struct tree *tree,
 
 	data->tree = tree;
 
-	return tree;
+	return true;
 
 }
 

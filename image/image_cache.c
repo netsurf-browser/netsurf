@@ -746,7 +746,7 @@ bool image_cache_redraw(struct content *c,
 	centry = image_cache__find(c);
 	if (centry == NULL) {
 		LOG(("Could not find cache entry for content (%p)", c));
-		return NULL;
+		return false;
 	}
 
 	if (centry->bitmap == NULL) {

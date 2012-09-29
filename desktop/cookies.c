@@ -247,7 +247,7 @@ static bool cookies_update_cookie_node(struct node *node,
 					      messages_get("Yes") : 
 					      messages_get("No")));
 
-	return node;
+	return true;
 }
 
 /**
