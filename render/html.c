@@ -423,6 +423,7 @@ html_process_encoding_change(struct content *c,
 	const char *encoding;
 	const char *source_data;
 	unsigned long source_size;
+	union content_msg_data msg_data;
 
 	/* Retrieve new encoding */
 	encoding = dom_hubbub_parser_get_encoding(html->parser, 
@@ -433,8 +434,6 @@ html_process_encoding_change(struct content *c,
 
 	html->encoding = talloc_strdup(c, encoding);
 	if (html->encoding == NULL) {
-		union content_msg_data msg_data;
-
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 		return false;
@@ -458,8 +457,6 @@ html_process_encoding_change(struct content *c,
 		talloc_free(html->encoding);
 		html->encoding = talloc_strdup(c, "Windows-1252");
 		if (html->encoding == NULL) {
-			union content_msg_data msg_data;
-
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
 			return false;
@@ -474,8 +471,6 @@ html_process_encoding_change(struct content *c,
 							&html->document);
 
 		if (html->parser == NULL) {
-			union content_msg_data msg_data;
-
 			/** @todo add a message callback function and pass the
 			 * parser errors back instead of everything being
 			 * OOM 
@@ -499,8 +494,6 @@ html_process_encoding_change(struct content *c,
 	    (error == (DOM_HUBBUB_HUBBUB_ERR | HUBBUB_PAUSED))) {
 		return true;
 	}
-
-	union content_msg_data msg_data;
 
 	msg_data.error = messages_get("NoMemory");
 	content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
