@@ -2611,7 +2611,7 @@ node_presentational_hint_font_size(nscss_select_ctx *ctx,
 
 	dom_string_unref(node_name);
 
-	err = dom_element_get_attribute(node, corestring_dom_align, &size);
+	err = dom_element_get_attribute(node, corestring_dom_size, &size);
 	if ((err != DOM_NO_ERR) || (size == NULL)) {
 		return CSS_PROPERTY_NOT_SET;
 	}
