@@ -1228,6 +1228,10 @@ html_object_callback(hlcache_handle *object,
 		/* Don't care about favicons that aren't on top level content */
 		break;
 
+	case CONTENT_MSG_GETCTX: 
+		*(event->data.jscontext) = NULL;
+		break;
+
 	case CONTENT_MSG_SCROLL:
 		if (box->scroll_x != NULL)
 			scrollbar_set(box->scroll_x, event->data.scroll.x0,
