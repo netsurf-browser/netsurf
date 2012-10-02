@@ -111,7 +111,7 @@ out:
 	if (charset != NULL)
 		free(charset);
 	if (target != NULL)
-		free(charset);
+		free(target);
 	return ret;
 }
 
