@@ -21,12 +21,14 @@
  */
 
 #include "content/content.h"
+#include "desktop/options.h"
 
 #include "javascript/js.h"
 #include "utils/log.h"
 
 void js_initialise(void)
 {
+	nsoption_set_bool(enable_javascript, false);
 }
 
 void js_finalise(void)
