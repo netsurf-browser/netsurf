@@ -454,9 +454,9 @@ static void nsurl__get_string_markers(const char * const url_s,
 	/* We got to the end of url_s.
 	 * Need to skip back over trailing whitespace to find end of URL */
 	pos--;
-	if (isspace(*pos)) {
+	if (pos >= url_s && isspace(*pos)) {
 		trailing_whitespace = true;
-		while (isspace(*pos))
+		while (pos >= url_s && isspace(*pos))
 			pos--;
 	}
 
