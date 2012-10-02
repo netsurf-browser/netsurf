@@ -119,7 +119,10 @@ package-riscos: netsurf.zip
 netsurf.zip: $(EXETARGET)
 	$(eval $@_TMPDIR := $(shell mktemp -d))
 	$(Q) $(RM) $@
-	rsync --archive --verbose $(CURDIR)/!NetSurf $($@_TMPDIR)
-	mv $($@_TMPDIR)/riscos/distribution/ReadMe $($@_TMPDIR)
-	cd $($@_TMPDIR) && /opt/netsurf/arm-unknown-riscos/env/bin/zip -9vr\, $(CURDIR)/$@ *
+	$(Q) rsync --archive --verbose $(CURDIR)/!NetSurf $($@_TMPDIR)
+	$(Q) rsync --archive --verbose $(CURDIR)/riscos/distribution/!Boot $($@_TMPDIR)
+	$(Q) rsync --archive --verbose $(CURDIR)/riscos/distribution/!System $($@_TMPDIR)
+	$(Q) rsync --archive --verbose $(CURDIR)/riscos/distribution/3rdParty $($@_TMPDIR)
+	$(Q) cp $(CURDIR)/riscos/distribution/ReadMe $($@_TMPDIR)
+	$(Q) cd $($@_TMPDIR) && /opt/netsurf/arm-unknown-riscos/env/bin/zip -9vr\, $(CURDIR)/$@ *
 	$(Q) $(RM) -rf $($@_TMPDIR)
