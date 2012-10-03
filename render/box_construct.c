@@ -1249,27 +1249,6 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 				css_computed_text_transform(
 					props.parent_style));
 
-		if (css_computed_white_space(props.parent_style) == 
-				CSS_WHITE_SPACE_NOWRAP) {
-			unsigned int i;
-
-			for (i = 0; i != box->length &&
-						box->text[i] != ' '; ++i)
-				; /* no body */
-
-			if (i != box->length) {
-				/* there is a space in text block and we
-				 * want all spaces to be converted to NBSP
-				 */
-				/*box->text = cnv_space2nbsp(text);
-				if (!box->text) {
-					free(text);
-					goto no_memory;
-				}
-				box->length = strlen(box->text);*/
-			}
-		}
-
 		box_add_child(props.inline_container, box);
 
 		if (box->text[0] == ' ') {
