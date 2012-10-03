@@ -35,7 +35,6 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 /* accommodate for old versions of libpng (beware security holes!) */
@@ -291,20 +290,25 @@ static nserror nspng_create(const content_handler *handler,
 	nspng_content *png_c;
 	nserror error;
 
-	png_c = talloc_zero(0, nspng_content);
+	png_c = calloc(1, sizeof(nspng_content));
 	if (png_c == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__init(&png_c->base, handler, imime_type, params,
-			      llcache, fallback_charset, quirks);
+	error = content__init(&png_c->base, 
+			      handler, 
+			      imime_type, 
+			      params,
+			      llcache, 
+			      fallback_charset, 
+			      quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(png_c);
+		free(png_c);
 		return error;
 	}
 
 	error = nspng_create_png_data(png_c);
 	if (error != NSERROR_OK) {
-		talloc_free(png_c);
+		free(png_c);
 		return error;
 	}
 
@@ -542,7 +546,7 @@ static nserror nspng_clone(const struct content *old_c, struct content **new_c)
 	const char *data;
 	unsigned long size;
 
-	clone_png_c = talloc_zero(0, nspng_content);
+	clone_png_c = calloc(1, sizeof(nspng_content));
 	if (clone_png_c == NULL)
 		return NSERROR_NOMEM;
 

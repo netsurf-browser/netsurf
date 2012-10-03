@@ -28,7 +28,6 @@
 #include "render/box.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 
 #include <proto/datatypes.h>
 #include <proto/dos.h>
@@ -126,14 +125,14 @@ nserror amiga_dt_sound_create(const content_handler *handler,
 
 	LOG(("amiga_dt_sound_create"));
 
-	plugin = talloc_zero(0, amiga_dt_sound_content);
+	plugin = calloc(1, sizeof(amiga_dt_sound_content));
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&plugin->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(plugin);
+		free(plugin);
 		return error;
 	}
 
@@ -251,7 +250,7 @@ nserror amiga_dt_sound_clone(const struct content *old, struct content **newc)
 
 	LOG(("amiga_dt_sound_clone"));
 
-	plugin = talloc_zero(0, amiga_dt_sound_content);
+	plugin = calloc(1, sizeof(amiga_dt_sound_content));
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 

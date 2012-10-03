@@ -39,7 +39,6 @@
 #include "riscos/wimputils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #define AWRender_FileInitAddress 0x46080
@@ -140,14 +139,14 @@ nserror artworks_create(const content_handler *handler,
 	artworks_content *aw;
 	nserror error;
 
-	aw = talloc_zero(0, artworks_content);
+	aw = calloc(1, sizeof(artworks_content));
 	if (aw == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&aw->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(aw);
+		free(aw);
 		return error;
 	}
 
@@ -406,7 +405,7 @@ nserror artworks_clone(const struct content *old, struct content **newc)
 	artworks_content *aw;
 	nserror error;
 
-	aw = talloc_zero(0, artworks_content);
+	aw = calloc(1, sizeof(artworks_content));
 	if (aw == NULL)
 		return NSERROR_NOMEM;
 

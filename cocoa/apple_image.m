@@ -24,7 +24,6 @@
 #include "content/content_protected.h"
 #include "image/bitmap.h"
 #include "desktop/plotters.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/schedule.h"
 
@@ -113,14 +112,14 @@ nserror apple_image_create(const content_handler *handler,
 	apple_image_content *ai;
 	nserror error;
 
-	ai = talloc_zero(0, apple_image_content);
+	ai = calloc(1, sizeof(apple_image_content));
 	if (ai == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&ai->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(ai);
+		free(ai);
 		return error;
 	}
 
@@ -188,7 +187,7 @@ bool apple_image_convert(struct content *c)
     if (frames > 1) {
         ai->frames = frames;
         ai->currentFrame = 0;
-        ai->frameTimes = talloc_zero_array( ai, int, ai->frames );
+        ai->frameTimes = calloc( ai->frames , sizeof(int));
         for (NSUInteger i = 0; i < frames; i++) {
             [image setProperty: NSImageCurrentFrame withValue: [NSNumber numberWithUnsignedInteger: i]];
             ai->frameTimes[i] = 100 * [[image valueForProperty: NSImageCurrentFrameDuration] floatValue];
@@ -217,7 +216,7 @@ nserror apple_image_clone(const struct content *old, struct content **newc)
 	apple_image_content *ai_old = (apple_image_content *)old;
 	nserror error;
 
-	ai = talloc_zero(0, apple_image_content);
+	ai = calloc(1, sizeof(apple_image_content));
 	if (ai == NULL)
 		return NSERROR_NOMEM;
 

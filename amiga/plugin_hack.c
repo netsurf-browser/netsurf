@@ -27,7 +27,6 @@
 #include "desktop/plotters.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -101,14 +100,14 @@ nserror amiga_plugin_hack_create(const content_handler *handler,
 	amiga_plugin_hack_content *plugin;
 	nserror error;
 
-	plugin = talloc_zero(0, amiga_plugin_hack_content);
+	plugin = calloc(1, amiga_plugin_hack_content);
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&plugin->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(plugin);
+		free(plugin);
 		return error;
 	}
 
@@ -208,7 +207,7 @@ nserror amiga_plugin_hack_clone(const struct content *old, struct content **newc
 
 	LOG(("amiga_plugin_hack_clone"));
 
-	plugin = talloc_zero(0, amiga_plugin_hack_content);
+	plugin = calloc(1, sizeof(amiga_plugin_hack_content));
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 

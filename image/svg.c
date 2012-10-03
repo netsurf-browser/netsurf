@@ -30,7 +30,6 @@
 #include "desktop/plotters.h"
 #include "image/svg.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 typedef struct svg_content {
@@ -73,20 +72,20 @@ static nserror svg_create(const content_handler *handler,
 	svg_content *svg;
 	nserror error;
 
-	svg = talloc_zero(0, svg_content);
+	svg = calloc(1, sizeof(svg_content));
 	if (svg == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&svg->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(svg);
+		free(svg);
 		return error;
 	}
 
 	error = svg_create_svg_data(svg);
 	if (error != NSERROR_OK) {
-		talloc_free(svg);
+		free(svg);
 		return error;
 	}
 
@@ -290,7 +289,7 @@ static nserror svg_clone(const struct content *old, struct content **newc)
 	svg_content *svg;
 	nserror error;
 
-	svg = talloc_zero(0, svg_content);
+	svg = calloc(1, sizeof(svg_content));
 	if (svg == NULL)
 		return NSERROR_NOMEM;
 

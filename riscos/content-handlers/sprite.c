@@ -35,7 +35,6 @@
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #ifdef WITH_SPRITE
@@ -81,14 +80,14 @@ nserror sprite_create(const content_handler *handler,
 	sprite_content *sprite;
 	nserror error;
 
-	sprite = talloc_zero(0, sprite_content);
+	sprite = calloc(1, sizeof(sprite_content));
 	if (sprite == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&sprite->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(sprite);
+		free(sprite);
 		return error;
 	}
 
@@ -191,7 +190,7 @@ nserror sprite_clone(const struct content *old, struct content **newc)
 	sprite_content *sprite;
 	nserror error;
 
-	sprite = talloc_zero(0, sprite_content);
+	sprite = calloc(1, sizeof(sprite_content));
 	if (sprite == NULL)
 		return NSERROR_NOMEM;
 

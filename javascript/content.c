@@ -30,7 +30,6 @@
 #include "content/hlcache.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 #include "javascript/content.h"
 
@@ -46,14 +45,14 @@ static nserror javascript_create(const content_handler *handler,
 	javascript_content *script;
 	nserror error;
 
-	script = talloc_zero(0, javascript_content);
+	script = calloc(1, sizeof(javascript_content));
 	if (script == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&script->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(script);
+		free(script);
 		return error;
 	}
 
@@ -76,7 +75,7 @@ javascript_clone(const struct content *old, struct content **newc)
 	javascript_content *script;
 	nserror error;
 
-	script = talloc_zero(0, javascript_content);
+	script = calloc(1, sizeof(javascript_content));
 	if (script == NULL)
 		return NSERROR_NOMEM;
 

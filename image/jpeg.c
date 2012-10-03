@@ -35,7 +35,6 @@
 
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/types.h"
 #include "utils/utils.h"
 
@@ -72,14 +71,14 @@ static nserror nsjpeg_create(const content_handler *handler,
 	struct content *jpeg;
 	nserror error;
 
-	jpeg = talloc_zero(0, struct content);
+	jpeg = calloc(1, sizeof(struct content));
 	if (jpeg == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(jpeg, handler, imime_type, params,
 			      llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(jpeg);
+		free(jpeg);
 		return error;
 	}
 
@@ -347,7 +346,7 @@ static nserror nsjpeg_clone(const struct content *old, struct content **newc)
 	struct content *jpeg_c;
 	nserror error;
 
-	jpeg_c = talloc_zero(0, struct content);
+	jpeg_c = calloc(1, sizeof(struct content));
 	if (jpeg_c == NULL)
 		return NSERROR_NOMEM;
 

@@ -32,7 +32,6 @@
 #include "image/nssprite.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 typedef struct nssprite_content {
@@ -68,14 +67,14 @@ static nserror nssprite_create(const content_handler *handler,
 	nssprite_content *sprite;
 	nserror error;
 
-	sprite = talloc_zero(0, nssprite_content);
+	sprite = calloc(1, sizeof(nssprite_content));
 	if (sprite == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&sprite->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(sprite);
+		free(sprite);
 		return error;
 	}
 
@@ -199,7 +198,7 @@ static nserror nssprite_clone(const struct content *old, struct content **newc)
 	nssprite_content *sprite;
 	nserror error;
 
-	sprite = talloc_zero(0, nssprite_content);
+	sprite = calloc(1, sizeof(nssprite_content));
 	if (sprite == NULL)
 		return NSERROR_NOMEM;
 

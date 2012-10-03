@@ -32,7 +32,6 @@
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 
 /* Define to trace import fetches */
 #undef NSCSS_IMPORT_TRACE
@@ -102,14 +101,14 @@ nserror nscss_create(const content_handler *handler,
 	union content_msg_data msg_data;
 	nserror error;
 
-	result = talloc_zero(0, nscss_content);
+	result = calloc(1, sizeof(nscss_content));
 	if (result == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&result->base, handler, imime_type,
 			params, llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(result);
+		free(result);
 		return error;
 	}
 
@@ -133,7 +132,7 @@ nserror nscss_create(const content_handler *handler,
 		content_broadcast(&result->base, CONTENT_MSG_ERROR, msg_data);
 		if (charset_value != NULL)
 			lwc_string_unref(charset_value);
-		talloc_free(result);
+		free(result);
 		return error;
 	}
 
@@ -340,7 +339,7 @@ nserror nscss_clone(const struct content *old, struct content **newc)
 	unsigned long size;
 	nserror error;
 
-	new_css = talloc_zero(0, nscss_content);
+	new_css = calloc(1, sizeof(nscss_content));
 	if (new_css == NULL)
 		return NSERROR_NOMEM;
 

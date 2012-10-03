@@ -2162,7 +2162,7 @@ static bool layout_text_box_split(html_content *content,
 	}
 
 	/* Create clone of split_box, c2 */
-	c2 = talloc_memdup(content, split_box, sizeof *c2);
+	c2 = talloc_memdup(content->bctx, split_box, sizeof *c2);
 	if (!c2)
 		return false;
 	c2->flags |= CLONE;
@@ -2172,7 +2172,7 @@ static bool layout_text_box_split(html_content *content,
 		/* Inside a form text input / textarea, special case */
 		/* TODO: Move text inputs to core textarea widget and remove
 		 *       this */
-		c2->text = talloc_strndup(content,
+		c2->text = talloc_strndup(content->bctx,
 				split_box->text + new_length + 1,
 				split_box->length - (new_length + 1));
 		if (!c2->text)

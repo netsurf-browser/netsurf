@@ -122,9 +122,7 @@ struct content {
 					  page's objects. */
 
 	unsigned int size;		/**< Estimated size of all data
-					  associated with this content, except
-					  alloced as talloc children of this. */
-	off_t talloc_size;		/**< Used by content_clean() */
+					  associated with this content */
 	char *title;			/**< Title for browser window. */
 	unsigned int active;		/**< Number of child fetches or
 					  conversions currently in progress. */

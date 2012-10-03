@@ -33,7 +33,6 @@
 #include "desktop/plotters.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #include "image/bitmap.h"
@@ -72,20 +71,20 @@ static nserror nsbmp_create(const content_handler *handler,
 	nsbmp_content *bmp;
 	nserror error;
 
-	bmp = talloc_zero(0, nsbmp_content);
+	bmp = calloc(1, sizeof(nsbmp_content));
 	if (bmp == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&bmp->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(bmp);
+		free(bmp);
 		return error;
 	}
 
 	error = nsbmp_create_bmp_data(bmp);
 	if (error != NSERROR_OK) {
-		talloc_free(bmp);
+		free(bmp);
 		return error;
 	}
 
@@ -214,7 +213,7 @@ static nserror nsbmp_clone(const struct content *old, struct content **newc)
 	nsbmp_content *new_bmp;
 	nserror error;
 
-	new_bmp = talloc_zero(0, nsbmp_content);
+	new_bmp = calloc(1, sizeof(nsbmp_content));
 	if (new_bmp == NULL)
 		return NSERROR_NOMEM;
 

@@ -35,7 +35,6 @@
 #include "riscos/gui.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 typedef struct draw_content {
@@ -82,14 +81,14 @@ nserror draw_create(const content_handler *handler,
 	draw_content *draw;
 	nserror error;
 
-	draw = talloc_zero(0, draw_content);
+	draw = calloc(1, sizeof(draw_content));
 	if (draw == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&draw->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(draw);
+		free(draw);
 		return error;
 	}
 
@@ -218,7 +217,7 @@ nserror draw_clone(const struct content *old, struct content **newc)
 	draw_content *draw;
 	nserror error;
 
-	draw = talloc_zero(0, draw_content);
+	draw = calloc(1, sizeof(draw_content));
 	if (draw == NULL)
 		return NSERROR_NOMEM;
 

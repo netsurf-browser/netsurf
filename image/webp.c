@@ -30,7 +30,6 @@
 #include "content/content_protected.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 typedef struct webp_content
@@ -49,14 +48,14 @@ static nserror webp_create(const content_handler *handler,
 	webp_content *webp;
 	nserror error;
 
-	webp = talloc_zero(0, webp_content);
+	webp = calloc(1, sizeof(webp_content));
 	if (webp == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&webp->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(webp);
+		free(webp);
 		return error;
 	}
 
@@ -169,7 +168,7 @@ static nserror webp_clone(const struct content *old, struct content **newc)
 	webp_content *webp;
 	nserror error;
 
-	webp = talloc_zero(0, webp_content);
+	webp = calloc(1, sizeof(webp_content));
 	if (webp == NULL)
 		return NSERROR_NOMEM;
 

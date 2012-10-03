@@ -45,7 +45,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 typedef struct nsgif_content {
@@ -105,20 +104,20 @@ static nserror nsgif_create(const content_handler *handler,
 	nsgif_content *result;
 	nserror error;
 
-	result = talloc_zero(0, nsgif_content);
+	result = calloc(1, sizeof(nsgif_content));
 	if (result == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&result->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(result);
+		free(result);
 		return error;
 	}
 
 	error = nsgif_create_gif_data(result);
 	if (error != NSERROR_OK) {
-		talloc_free(result);
+		free(result);
 		return error;
 	}
 
@@ -367,7 +366,7 @@ static nserror nsgif_clone(const struct content *old, struct content **newc)
 	nsgif_content *gif;
 	nserror error;
 
-	gif = talloc_zero(0, nsgif_content);
+	gif = calloc(1, sizeof(nsgif_content));
 	if (gif == NULL)
 		return NSERROR_NOMEM;
 

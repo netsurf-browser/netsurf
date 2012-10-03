@@ -44,7 +44,6 @@
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 #define URL_FMT_SPC "%.140s"
@@ -64,7 +63,7 @@ static void content_convert(struct content *c);
 /**
  * Initialise a new content structure.
  *
- * \param c                 Content to initialise (allocated with talloc)
+ * \param c                 Content to initialise
  * \param handler           Content handler
  * \param imime_type        MIME type of content
  * \param params            HTTP parameters
@@ -85,14 +84,16 @@ nserror content__init(struct content *c, const content_handler *handler,
 	LOG(("url "URL_FMT_SPC" -> %p", 
 	     nsurl_access(llcache_handle_get_url(llcache)), c));
 
-	user_sentinel = talloc(c, struct content_user);
+	user_sentinel = calloc(1, sizeof(struct content_user));
 	if (user_sentinel == NULL) {
 		return NSERROR_NOMEM;
 	}
 
-	c->fallback_charset = talloc_strdup(c, fallback_charset);
-	if (fallback_charset != NULL && c->fallback_charset == NULL) {
-		return NSERROR_NOMEM;
+	if (fallback_charset != NULL) {
+		c->fallback_charset = strdup(fallback_charset);
+		if (c->fallback_charset == NULL) {
+			return NSERROR_NOMEM;
+		}
 	}
 
 	c->llcache = llcache;
@@ -396,7 +397,22 @@ void content_destroy(struct content *c)
 		link = content__free_rfc5988_link(link);
 	}
 
-	talloc_free(c);
+	/* free the user list */
+	if (c->user_list != NULL) {
+		free(c->user_list);
+	}
+
+	/* free the title */
+	if (c->title != NULL) {
+		free(c->title);
+	}
+
+	/* free the fallback characterset */
+	if (c->fallback_charset != NULL) {
+		free(c->fallback_charset);
+	}
+
+	free(c);
 }
 
 
@@ -558,7 +574,7 @@ bool content_add_user(struct content *c,
 	LOG(("content "URL_FMT_SPC" (%p), user %p %p",
 			nsurl_access(llcache_handle_get_url(c->llcache)),
 			c, callback, pw));
-	user = talloc(c, struct content_user);
+	user = malloc(sizeof(struct content_user));
 	if (!user)
 		return false;
 	user->callback = callback;
@@ -599,7 +615,7 @@ void content_remove_user(struct content *c,
 	}
 	next = user->next;
 	user->next = next->next;
-	talloc_free(next);
+	free(next);
 }
 
 /**
@@ -779,12 +795,12 @@ void content_add_error(struct content *c, const char *token,
 
 bool content__set_title(struct content *c, const char *title)
 {
-	char *new_title = talloc_strdup(c, title);
+	char *new_title = strdup(title);
 	if (new_title == NULL)
 		return false;
 
 	if (c->title != NULL)
-		talloc_free(c->title);
+		free(c->title);
 
 	c->title = new_title;
 
@@ -1253,7 +1269,7 @@ struct content *content_clone(struct content *c)
  * Clone a content's data members
  *
  * \param c   Content to clone
- * \param nc  Content to populate (allocated with talloc)
+ * \param nc  Content to populate
  * \return NSERROR_OK on success, appropriate error otherwise
  */
 nserror content__clone(const struct content *c, struct content *nc)
@@ -1261,7 +1277,7 @@ nserror content__clone(const struct content *c, struct content *nc)
 	struct content_user *user_sentinel;
 	nserror error;
 
-	user_sentinel = talloc_zero(c, struct content_user);
+	user_sentinel = calloc(1, sizeof(struct content_user));
 	if (user_sentinel == NULL) {
 		return NSERROR_NOMEM;
 	}
@@ -1285,7 +1301,7 @@ nserror content__clone(const struct content *c, struct content *nc)
 	nc->quirks = c->quirks;
 	
 	if (c->fallback_charset != NULL) {
-		nc->fallback_charset = talloc_strdup(nc, c->fallback_charset);
+		nc->fallback_charset = strdup(c->fallback_charset);
 		if (nc->fallback_charset == NULL) {
 			return NSERROR_NOMEM;
 		}
@@ -1301,10 +1317,9 @@ nserror content__clone(const struct content *c, struct content *nc)
 	nc->time = c->time;
 	nc->reformat_time = c->reformat_time;
 	nc->size = c->size;
-	nc->talloc_size = c->talloc_size;
 	
 	if (c->title != NULL) {
-		nc->title = talloc_strdup(nc, c->title);
+		nc->title = strdup(c->title);
 		if (nc->title == NULL) {
 			return NSERROR_NOMEM;
 		}

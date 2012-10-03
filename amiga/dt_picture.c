@@ -29,7 +29,6 @@
 #include "image/image_cache.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 
 #include <proto/datatypes.h>
 #include <proto/dos.h>
@@ -104,14 +103,14 @@ nserror amiga_dt_picture_create(const content_handler *handler,
 	struct content *adt;
 	nserror error;
 
-	adt = talloc_zero(0, struct content);
+	adt = calloc(1, sizeof(struct content));
 	if (adt == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(adt, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(adt);
+		free(adt);
 		return error;
 	}
 
@@ -231,7 +230,7 @@ nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
 
 	LOG(("amiga_dt_picture_clone"));
 
-	adt = talloc_zero(0, struct content);
+	adt = calloc(1, sizeof(struct content));
 	if (adt == NULL)
 		return NSERROR_NOMEM;
 

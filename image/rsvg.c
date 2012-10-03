@@ -41,7 +41,6 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 
 #include "image/rsvg.h"
 
@@ -82,20 +81,20 @@ static nserror rsvg_create(const content_handler *handler,
 	rsvg_content *svg;
 	nserror error;
 
-	svg = talloc_zero(0, rsvg_content);
+	svg = calloc(1, sizeof(rsvg_content));
 	if (svg == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&svg->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(svg);
+		free(svg);
 		return error;
 	}
 
 	error = rsvg_create_svg_data(svg);
 	if (error != NSERROR_OK) {
-		talloc_free(svg);
+		free(svg);
 		return error;
 	}
 
@@ -252,7 +251,7 @@ static nserror rsvg_clone(const struct content *old, struct content **newc)
 	const char *data;
 	unsigned long size;
 
-	svg = talloc_zero(0, rsvg_content);
+	svg = calloc(1, sizeof(rsvg_content));
 	if (svg == NULL)
 		return NSERROR_NOMEM;
 

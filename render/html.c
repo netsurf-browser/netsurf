@@ -93,7 +93,7 @@ static void html_destroy_objects(html_content *html)
 		}
 
 		html->object_list = victim->next;
-		talloc_free(victim);
+		free(victim);
 	}
 }
 
@@ -280,6 +280,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	c->base_url = nsurl_ref(content_get_url(&c->base));
 	c->base_target = NULL;
 	c->aborted = false;
+	c->bctx = NULL;
 	c->layout = NULL;
 	c->background_colour = NS_TRANSPARENT;
 	c->stylesheet_count = 0;
@@ -313,7 +314,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 
 	nerror = http_parameter_list_find_item(params, html_charset, &charset);
 	if (nerror == NSERROR_OK) {
-		c->encoding = talloc_strdup(c, lwc_string_data(charset));
+		c->encoding = strdup(lwc_string_data(charset));
 
 		lwc_string_unref(charset);
 
@@ -341,7 +342,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	if ((c->parser == NULL) && (c->encoding != NULL)) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to autodetect */
-		talloc_free(c->encoding);
+		free(c->encoding);
 		c->encoding = NULL;
 
 		c->parser = dom_hubbub_parser_create(c->encoding, 
@@ -389,20 +390,20 @@ html_create(const content_handler *handler,
 	html_content *html;
 	nserror error;
 
-	html = talloc_zero(0, html_content);
+	html = calloc(1, sizeof(html_content));
 	if (html == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&html->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(html);
+		free(html);
 		return error;
 	}
 
 	error = html_create_html_data(html, params);
 	if (error != NSERROR_OK) {
-		talloc_free(html);
+		free(html);
 		return error;
 	}
 
@@ -429,10 +430,16 @@ html_process_encoding_change(struct content *c,
 	encoding = dom_hubbub_parser_get_encoding(html->parser, 
 						  &html->encoding_source);
 
-	if (html->encoding != NULL)
-		talloc_free(html->encoding);
+	if (encoding == NULL) {
+		msg_data.error = messages_get("NoMemory");
+		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
+		return false;
+	}
 
-	html->encoding = talloc_strdup(c, encoding);
+	if (html->encoding != NULL)
+		free(html->encoding);
+
+	html->encoding = strdup(encoding);
 	if (html->encoding == NULL) {
 		msg_data.error = messages_get("NoMemory");
 		content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -454,8 +461,8 @@ html_process_encoding_change(struct content *c,
 	if (html->parser == NULL) {
 		/* Ok, we don't support the declared encoding. Bailing out
 		 * isn't exactly user-friendly, so fall back to Windows-1252 */
-		talloc_free(html->encoding);
-		html->encoding = talloc_strdup(c, "Windows-1252");
+		free(html->encoding);
+		html->encoding = strdup("Windows-1252");
 		if (html->encoding == NULL) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(c, CONTENT_MSG_ERROR, msg_data);
@@ -1515,8 +1522,8 @@ html_process_style_element(html_content *c,
 	}
 
 	/* Extend array */
-	stylesheets = talloc_realloc(c, c->stylesheets,
-			struct html_stylesheet, *index + 1);
+	stylesheets = realloc(c->stylesheets, 
+			      sizeof(struct html_stylesheet) * (*index + 1));
 	if (stylesheets == NULL)
 		goto no_memory;
 
@@ -1527,7 +1534,7 @@ html_process_style_element(html_content *c,
 	c->stylesheets[(*index)].data.internal = NULL;
 
 	/* create stylesheet */
-	sheet = talloc(c, struct content_css_data);
+	sheet = calloc(1, sizeof(struct content_css_data));
 	if (sheet == NULL) {
 		c->stylesheet_count--;
 		goto no_memory;
@@ -1537,7 +1544,7 @@ html_process_style_element(html_content *c,
 		nsurl_access(c->base_url), NULL, c->quirks,
 		html_inline_style_done, c);
 	if (error != NSERROR_OK) {
-		talloc_free(sheet);
+		free(sheet);
 		c->stylesheet_count--;
 		goto no_memory;
 	}
@@ -1548,7 +1555,7 @@ html_process_style_element(html_content *c,
 	exc = dom_node_get_first_child(style, &child);
 	if (exc != DOM_NO_ERR) {
 		nscss_destroy_css_data(sheet);
-		talloc_free(sheet);
+		free(sheet);
 		c->stylesheet_count--;
 		goto no_memory;
 	}
@@ -1560,7 +1567,7 @@ html_process_style_element(html_content *c,
 		if (exc != DOM_NO_ERR) {
 			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
-			talloc_free(sheet);
+			free(sheet);
 			c->stylesheet_count--;
 			goto no_memory;
 		}
@@ -1570,7 +1577,7 @@ html_process_style_element(html_content *c,
 			dom_string_unref(data);
 			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
-			talloc_free(sheet);
+			free(sheet);
 			c->stylesheet_count--;
 			goto no_memory;
 		}
@@ -1581,7 +1588,7 @@ html_process_style_element(html_content *c,
 		if (exc != DOM_NO_ERR) {
 			dom_node_unref(child);
 			nscss_destroy_css_data(sheet);
-			talloc_free(sheet);
+			free(sheet);
 			c->stylesheet_count--;
 			goto no_memory;
 		}
@@ -1599,7 +1606,7 @@ html_process_style_element(html_content *c,
 		c->base.active--;
 		LOG(("%d fetches active", c->base.active));
 		nscss_destroy_css_data(sheet);
-		talloc_free(sheet);
+		free(sheet);
 		sheet = NULL;
 	}
 
@@ -1810,10 +1817,8 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	LOG(("linked stylesheet %i '%s'", ctx->count, nsurl_access(joined)));
 
 	/* start fetch */
-	stylesheets = talloc_realloc(ctx->c,
-				     ctx->c->stylesheets,
-				     struct html_stylesheet,
-				     ctx->count + 1);
+	stylesheets = realloc(ctx->c->stylesheets, 
+			      sizeof(struct html_stylesheet) * (ctx->count + 1));
 	if (stylesheets == NULL) {
 		nsurl_unref(joined);
 		goto no_memory;
@@ -1882,10 +1887,10 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	 * stylesheet 1 is the quirks mode style sheet,
 	 * stylesheet 2 is the adblocking stylesheet,
 	 * stylesheet 3 is the user stylesheet */
-	c->stylesheets = talloc_array(c, struct html_stylesheet,
-			STYLESHEET_START);
-	if (c->stylesheets == NULL)
+	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
+	if (c->stylesheets == NULL) {
 		goto html_find_stylesheets_no_memory;
+	}
 
 	c->stylesheets[STYLESHEET_BASE].type = HTML_STYLESHEET_EXTERNAL;
 	c->stylesheets[STYLESHEET_BASE].data.external = NULL;
@@ -2030,10 +2035,16 @@ html_begin_conversion(html_content *htmlc)
 	/* get encoding */
 	if (htmlc->encoding == NULL) {
 		const char *encoding;
+
 		encoding = dom_hubbub_parser_get_encoding(htmlc->parser,
 					&htmlc->encoding_source);
+		if (encoding == NULL) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+			return false;
+		}
 
-		htmlc->encoding = talloc_strdup(&htmlc->base, encoding);
+		htmlc->encoding = strdup(encoding);
 		if (htmlc->encoding == NULL) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
@@ -2219,7 +2230,7 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 	child.charset = c->encoding;
 	child.quirks = c->base.quirks;
 
-	object = talloc(c, struct content_html_object);
+	object = calloc(1, sizeof(struct content_html_object));
 	if (object == NULL) {
 		return false;
 	}
@@ -2237,7 +2248,7 @@ bool html_fetch_object(html_content *c, nsurl *url, struct box *box,
 			html_object_callback, object, &child,
 			object->permitted_types, &object->content);
        	if (error != NSERROR_OK) {
-		talloc_free(object);
+		free(object);
 		return error != NSERROR_NOMEM;
 	}
 
@@ -2395,17 +2406,17 @@ static void html_destroy_frameset(struct content_html_frames *frameset)
 	int i;
 
 	if (frameset->name) {
-		talloc_free(frameset->name);
+		free(frameset->name);
 		frameset->name = NULL;
 	}
 	if (frameset->url) {
-		talloc_free(frameset->url);
+		free(frameset->url);
 		frameset->url = NULL;
 	}
 	if (frameset->children) {
 		for (i = 0; i < (frameset->rows * frameset->cols); i++) {
 			if (frameset->children[i].name) {
-				talloc_free(frameset->children[i].name);
+				free(frameset->children[i].name);
 				frameset->children[i].name = NULL;
 			}
 			if (frameset->children[i].url) {
@@ -2415,7 +2426,7 @@ static void html_destroy_frameset(struct content_html_frames *frameset)
 		  	if (frameset->children[i].children)
 		  		html_destroy_frameset(&frameset->children[i]);
 		}
-		talloc_free(frameset->children);
+		free(frameset->children);
 		frameset->children = NULL;
 	}
 }
@@ -2427,12 +2438,23 @@ static void html_destroy_iframe(struct content_html_iframe *iframe)
 	while ((iframe = next) != NULL) {
 		next = iframe->next;
 		if (iframe->name)
-			talloc_free(iframe->name);
+			free(iframe->name);
 		if (iframe->url) {
 			nsurl_unref(iframe->url);
 			iframe->url = NULL;
 		}
-		talloc_free(iframe);
+		free(iframe);
+	}
+}
+
+
+static void html_free_layout(html_content *htmlc)
+{
+	if (htmlc->bctx != NULL) {
+		/* freeing talloc context should let the entire box
+		 * set be destroyed 
+		 */
+		talloc_free(htmlc->bctx);
 	}
 }
 
@@ -2481,7 +2503,7 @@ static void html_destroy(struct content *c)
 	/* Free frameset */
 	if (html->frameset != NULL) {
 		html_destroy_frameset(html->frameset);
-		talloc_free(html->frameset);
+		free(html->frameset);
 		html->frameset = NULL;
 	}
 
@@ -2515,12 +2537,16 @@ static void html_destroy(struct content *c)
 					html->stylesheets[i].data.internal);
 		}
 	}
+	free(html->stylesheets);
 
 	/* Free scripts */
 	html_free_scripts(html);
 
 	/* Free objects */
 	html_destroy_objects(html);
+
+	/* free layout */
+	html_free_layout(html);
 }
 
 

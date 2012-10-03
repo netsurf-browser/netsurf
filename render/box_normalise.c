@@ -32,7 +32,6 @@
 #include "render/html_internal.h"
 #include "render/table.h"
 #include "utils/log.h"
-#include "utils/talloc.h"
 
 /* Define to enable box normalise debug */
 #undef BOX_NORMALISE_DEBUG
@@ -163,7 +162,7 @@ bool box_normalise_block(struct box *block, html_content *c)
 				return false;
 
 			table = box_create(NULL, style, true, block->href,
-					block->target, NULL, NULL, c);
+					block->target, NULL, NULL, c->bctx);
 			if (table == NULL) {
 				css_computed_style_destroy(style);
 				return false;
@@ -267,7 +266,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 			}
 
 			row_group = box_create(NULL, style, true, table->href,
-					table->target, NULL, NULL, c);
+					table->target, NULL, NULL, c->bctx);
 			if (row_group == NULL) {
 				css_computed_style_destroy(style);
 				free(col_info.spans);
@@ -354,7 +353,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		}
 
 		row_group = box_create(NULL, style, true, table->href,
-				table->target, NULL, NULL, c);
+				table->target, NULL, NULL, c->bctx);
 		if (row_group == NULL) {
 			css_computed_style_destroy(style);
 			free(col_info.spans);
@@ -371,7 +370,7 @@ bool box_normalise_table(struct box *table, html_content * c)
 		}
 
 		row = box_create(NULL, style, true, row_group->href,
-				row_group->target, NULL, NULL, c);
+				row_group->target, NULL, NULL, c->bctx);
 		if (row == NULL) {
 			css_computed_style_destroy(style);
 			box_free(row_group);
@@ -491,7 +490,7 @@ bool box_normalise_table_spans(struct box *table, struct span_info *spans,
 					cell = box_create(NULL, style, true, 
 							table_row->href, 
 							table_row->target, 
-							NULL, NULL, c);
+							NULL, NULL, c->bctx);
 					if (cell == NULL) {
 						css_computed_style_destroy(
 								style);
@@ -598,7 +597,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 				return false;
 
 			row = box_create(NULL, style, true, row_group->href,
-					row_group->target, NULL, NULL, c);
+					row_group->target, NULL, NULL, c->bctx);
 			if (row == NULL) {
 				css_computed_style_destroy(style);
 				return false;
@@ -674,7 +673,7 @@ bool box_normalise_table_row_group(struct box *row_group,
 		}
 
 		row = box_create(NULL, style, true, row_group->href,
-				row_group->target, NULL, NULL, c);
+				row_group->target, NULL, NULL, c->bctx);
 		if (row == NULL) {
 			css_computed_style_destroy(style);
 			return false;
@@ -743,7 +742,7 @@ bool box_normalise_table_row(struct box *row,
 				return false;
 
 			cell = box_create(NULL, style, true, row->href,
-					row->target, NULL, NULL, c);
+					row->target, NULL, NULL, c->bctx);
 			if (cell == NULL) {
 				css_computed_style_destroy(style);
 				return false;

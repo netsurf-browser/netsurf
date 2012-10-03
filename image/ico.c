@@ -35,7 +35,6 @@
 #include "image/image.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 typedef struct nsico_content {
@@ -69,20 +68,20 @@ static nserror nsico_create(const content_handler *handler,
 	nsico_content *result;
 	nserror error;
 
-	result = talloc_zero(0, nsico_content);
+	result = calloc(1, sizeof(nsico_content));
 	if (result == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&result->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(result);
+		free(result);
 		return error;
 	}
 
 	error = nsico_create_ico_data(result);
 	if (error != NSERROR_OK) {
-		talloc_free(result);
+		free(result);
 		return error;
 	}
 
@@ -190,7 +189,7 @@ static nserror nsico_clone(const struct content *old, struct content **newc)
 	nsico_content *ico;
 	nserror error;
 
-	ico = talloc_zero(0, nsico_content);
+	ico = calloc(1, sizeof(nsico_content));
 	if (ico == NULL)
 		return NSERROR_NOMEM;
 

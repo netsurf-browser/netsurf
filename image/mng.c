@@ -35,7 +35,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 
 /* This implementation does not currently support dynamic MNGs or any
@@ -513,20 +512,20 @@ static nserror nsmng_create(const content_handler *handler,
 	nsmng_content *mng;
 	nserror error;
 
-	mng = talloc_zero(0, nsmng_content);
+	mng = calloc(1, sizeof(nsmng_content));
 	if (mng == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&mng->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(mng);
+		free(mng);
 		return error;
 	}
 
 	error = nsmng_create_mng_data(mng);
 	if (error != NSERROR_OK) {
-		talloc_free(mng);
+		free(mng);
 		return error;
 	}
 
@@ -728,7 +727,7 @@ static nserror nsmng_clone(const struct content *old, struct content **newc)
 	const char *data;
 	unsigned long size;
 
-	mng = talloc_zero(0, nsmng_content);
+	mng = calloc(1, sizeof(nsmng_content));
 	if (mng == NULL)
 		return NSERROR_NOMEM;
 

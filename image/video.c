@@ -21,7 +21,6 @@
 #include "content/content_factory.h"
 #include "content/content_protected.h"
 #include "image/video.h"
-#include "utils/talloc.h"
 
 typedef struct nsvideo_content {
 	struct content base;
@@ -76,26 +75,26 @@ static nserror nsvideo_create(const content_handler *handler,
 	nserror error;
 	GstBus *bus;
 
-	video = talloc_zero(0, nsvideo_content);
+	video = calloc(1, sizeof(nsvideo_content));
 	if (video == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&video->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(video);
+		free(video);
 		return error;
 	}
 
 	error = llcache_handle_force_stream(llcache);
 	if (error != NSERROR_OK) {
-		talloc_free(video);
+		free(video);
 		return error;
 	}
 
 	video->playbin = gst_element_factory_make("playbin2", NULL);
 	if (video->playbin == NULL) {
-		talloc_free(video);
+		free(video);
 		return NSERROR_NOMEM;
 	}
 

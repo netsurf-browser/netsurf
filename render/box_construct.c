@@ -60,6 +60,8 @@ struct box_construct_ctx {
 	struct box *root_box;		/**< Root box in the tree */
 
 	box_construct_complete_cb cb;	/**< Callback to invoke on completion */
+
+	int *bctx;                      /**< talloc context */
 };
 
 /**
@@ -162,6 +164,14 @@ bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 {
 	struct box_construct_ctx *ctx;
 
+	if (c->bctx == NULL) {
+		/* create a context allocation for this box tree */
+		c->bctx = talloc_zero(0, int);
+		if (c->bctx == NULL) {
+			return false;
+		}
+	}
+
 	ctx = malloc(sizeof(*ctx));
 	if (ctx == NULL)
 		return false;
@@ -170,6 +180,7 @@ bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 	ctx->n = dom_node_ref(n);
 	ctx->root_box = NULL;
 	ctx->cb = cb;
+	ctx->bctx = c->bctx;
 
 	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
 
@@ -568,13 +579,13 @@ void convert_xml_to_box(struct box_construct_ctx *ctx)
  * \return True on success, false on memory exhaustion
  */
 static bool box_construct_marker(struct box *box, const char *title, 
-		html_content *content, struct box *parent)
+		struct box_construct_ctx *ctx, struct box *parent)
 {
 	lwc_string *image_uri;
 	struct box *marker;
 
 	marker = box_create(NULL, box->style, false, NULL, NULL, title, 
-			NULL, content);
+			NULL, ctx->bctx);
 	if (marker == false)
 		return false;
 
@@ -629,7 +640,7 @@ static bool box_construct_marker(struct box *box, const char *title,
 			}
 		}
 
-		marker->text = talloc_array(content, char, 20);
+		marker->text = talloc_array(ctx->bctx, char, 20);
 		if (marker->text == NULL)
 			return false;
 
@@ -656,8 +667,8 @@ static bool box_construct_marker(struct box *box, const char *title,
 		if (error != NSERROR_OK)
 			return false;
 
-		if (html_fetch_object(content, url, marker, image_types,
-				content->base.available_width, 1000, false) ==
+		if (html_fetch_object(ctx->content, url, marker, image_types,
+				ctx->content->base.available_width, 1000, false) ==
 				false) {
 			nsurl_unref(url);
 			return false;
@@ -709,7 +720,7 @@ static void box_construct_generate(dom_node *n, html_content *content,
 
 		/** \todo Not wise to drop const from the computed style */ 
 		gen = box_create(NULL, (css_computed_style *) style,
-				false, NULL, NULL, NULL, NULL, content);
+				false, NULL, NULL, NULL, NULL, content->bctx);
 		if (gen == NULL) {
 			return;
 		}
@@ -859,7 +870,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		if (t == NULL)
 			return false;
 
-		props.title = talloc_strdup(ctx->content, t);
+		props.title = talloc_strdup(ctx->bctx, t);
 
 		free(t);
 
@@ -882,7 +893,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 
 	box = box_create(styles, styles->styles[CSS_PSEUDO_ELEMENT_NONE], false,
 			props.href, props.target, props.title, id,
-			ctx->content);
+			ctx->bctx);
 	if (box == NULL)
 		return false;
 
@@ -1001,7 +1012,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 				"Root box must not be inline or floated");
 
 		props.inline_container = box_create(NULL, NULL, false, NULL, 
-				NULL, NULL, NULL, ctx->content);
+				NULL, NULL, NULL, ctx->bctx);
 		if (props.inline_container == NULL)
 			return false;
 
@@ -1048,7 +1059,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		if (css_computed_display(box->style, props.node_is_root) ==
 				CSS_DISPLAY_LIST_ITEM) {
 			/* List item: compute marker */
-			if (box_construct_marker(box, props.title, ctx->content,
+			if (box_construct_marker(box, props.title, ctx,
 					props.containing_block) == false)
 				return false;
 		}
@@ -1059,7 +1070,7 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 			/* Float: insert a float between the parent and box. */
 			struct box *flt = box_create(NULL, NULL, false,
 					props.href, props.target, props.title, 
-					NULL, ctx->content);
+					NULL, ctx->bctx);
 			if (flt == NULL)
 				return false;
 
@@ -1118,7 +1129,7 @@ void box_construct_element_after(dom_node *n, html_content *content)
 		if (props.inline_container == NULL) {
 			/* Create inline container if we don't have one */
 			props.inline_container = box_create(NULL, NULL, false, 
-					NULL, NULL, NULL, NULL, content);
+					NULL, NULL, NULL, NULL, content->bctx);
 			if (props.inline_container == NULL)
 				return;
 
@@ -1131,7 +1142,7 @@ void box_construct_element_after(dom_node *n, html_content *content)
 		inline_end = box_create(NULL, box->style, false,
 				box->href, box->target, box->title, 
 				box->id == NULL ? NULL :
-				lwc_string_ref(box->id), content);
+				lwc_string_ref(box->id), content->bctx);
 		if (inline_end != NULL) {
 			inline_end->type = BOX_INLINE_END;
 
@@ -1206,7 +1217,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 			 * (i.e. this box is the first child of its parent, or 
 			 * was preceded by block-level siblings) */
 			props.inline_container = box_create(NULL, NULL, false, 
-					NULL, NULL, NULL, NULL, ctx->content);
+					NULL, NULL, NULL, NULL, ctx->bctx);
 			if (props.inline_container == NULL) {
 				free(text);
 				return false;
@@ -1222,7 +1233,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 		box = box_create(NULL, 
 				(css_computed_style *) props.parent_style,
 				false, props.href, props.target, props.title, 
-				NULL, ctx->content);
+				NULL, ctx->bctx);
 		if (box == NULL) {
 			free(text);
 			return false;
@@ -1230,7 +1241,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 		box->type = BOX_TEXT;
 
-		box->text = talloc_strdup(ctx->content, text);
+		box->text = talloc_strdup(ctx->bctx, text);
 		free(text);
 		if (box->text == NULL)
 			return false;
@@ -1324,7 +1335,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 				 * siblings) */
 				props.inline_container = box_create(NULL, NULL,
 						false, NULL, NULL, NULL, NULL, 
-						ctx->content);
+						ctx->bctx);
 				if (props.inline_container == NULL) {
 					free(text);
 					return false;
@@ -1341,7 +1352,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 			box = box_create(NULL,
 				(css_computed_style *) props.parent_style,
 				false, props.href, props.target, props.title, 
-				NULL, ctx->content);
+				NULL, ctx->bctx);
 			if (box == NULL) {
 				free(text);
 				return false;
@@ -1349,7 +1360,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 			box->type = BOX_TEXT;
 
-			box->text = talloc_strdup(ctx->content, current);
+			box->text = talloc_strdup(ctx->bctx, current);
 			if (box->text == NULL) {
 				free(text);
 				return false;
@@ -1367,7 +1378,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 				/* Linebreak: create new inline container */
 				props.inline_container = box_create(NULL, NULL,
 						false, NULL, NULL, NULL, NULL, 
-						ctx->content);
+						ctx->bctx);
 				if (props.inline_container == NULL) {
 					free(text);
 					return false;
@@ -1656,7 +1667,7 @@ bool box_a(BOX_SPECIAL_PARAMS)
 		else {
 			/* 6.16 says that frame names must begin with [a-zA-Z]
 			 * This doesn't match reality, so just take anything */
-			box->target = talloc_strdup(content, 
+			box->target = talloc_strdup(content->bctx, 
 					dom_string_data(s));
 			if (!box->target) {
 				dom_string_unref(s);
@@ -1697,7 +1708,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 		dom_string_unref(s);
 		if (alt == NULL)
 			return false;
-		box->text = talloc_strdup(content, alt);
+		box->text = talloc_strdup(content->bctx, alt);
 		free(alt);
 		if (box->text == NULL)
 			return false;
@@ -1802,7 +1813,7 @@ bool box_object(BOX_SPECIAL_PARAMS)
 	if (box->usemap && box->usemap[0] == '#')
 		box->usemap++;
 
-	params = talloc(content, struct object_params);
+	params = talloc(content->bctx, struct object_params);
 	if (params == NULL)
 		return false;
 
@@ -2035,11 +2046,11 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 		return true;
 	}
 
-	content->frameset = talloc_zero(content, struct content_html_frames);
+	content->frameset = talloc_zero(content->bctx, struct content_html_frames);
 	if (!content->frameset)
 		return false;
 
-	ok = box_create_frameset(content->frameset, n, content);
+	ok = box_create_frameset(content->frameset, n, content->bctx);
 	if (ok)
 		box->type = BOX_NONE;
 
@@ -2402,7 +2413,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	}
 
 	/* create a new iframe */
-	iframe = talloc(content, struct content_html_iframe);
+	iframe = talloc(content->bctx, struct content_html_iframe);
 	if (iframe == NULL) {
 		nsurl_unref(url);
 		return false;
@@ -2425,7 +2436,7 @@ bool box_iframe(BOX_SPECIAL_PARAMS)
 	/* fill in specified values */
 	err = dom_element_get_attribute(n, kstr_name, &s);
 	if (err == DOM_NO_ERR && s != NULL) {
-		iframe->name = talloc_strdup(content, dom_string_data(s));
+		iframe->name = talloc_strdup(content->bctx, dom_string_data(s));
 		dom_string_unref(s);
 	}
 
@@ -2533,30 +2544,31 @@ bool box_input(BOX_SPECIAL_PARAMS)
 			goto no_memory;
 
 		inline_container = box_create(NULL, 0, false, 0, 0, 0, 0,
-				content);
+				content->bctx);
 		if (inline_container == NULL)
 			goto no_memory;
 
 		inline_container->type = BOX_INLINE_CONTAINER;
 
 		inline_box = box_create(NULL, box->style, false, 0, 0,
-				box->title, 0, content);
+				box->title, 0, content->bctx);
 		if (inline_box == NULL)
 			goto no_memory;
 
 		inline_box->type = BOX_TEXT;
 
 		if (box->gadget->value != NULL)
-			inline_box->text = talloc_strdup(content,
+			inline_box->text = talloc_strdup(content->bctx,
 					box->gadget->value);
 		else if (box->gadget->type == GADGET_SUBMIT)
-			inline_box->text = talloc_strdup(content,
+			inline_box->text = talloc_strdup(content->bctx,
 					messages_get("Form_Submit"));
 		else if (box->gadget->type == GADGET_RESET)
-			inline_box->text = talloc_strdup(content,
+			inline_box->text = talloc_strdup(content->bctx,
 					messages_get("Form_Reset"));
 		else
-			inline_box->text = talloc_strdup(content, "Button");
+			inline_box->text = talloc_strdup(content->bctx, 
+							 "Button");
 
 		if (inline_box->text == NULL)
 			goto no_memory;
@@ -2631,18 +2643,18 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 
 	box->type = BOX_INLINE_BLOCK;
 
-	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content);
+	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content->bctx);
 	if (!inline_container)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
-			content);
+			content->bctx);
 	if (!inline_box)
 		return false;
 	inline_box->type = BOX_TEXT;
 	if (password) {
 		inline_box->length = strlen(box->gadget->value);
-		inline_box->text = talloc_array(content, char,
+		inline_box->text = talloc_array(content->bctx, char,
 				inline_box->length + 1);
 		if (!inline_box->text)
 			return false;
@@ -2654,7 +2666,7 @@ bool box_input_text(BOX_SPECIAL_PARAMS, bool password)
 		char *text = cnv_space2nbsp(box->gadget->value);
 		if (!text)
 			return false;
-		inline_box->text = talloc_strdup(content, text);
+		inline_box->text = talloc_strdup(content->bctx, text);
 		free(text);
 		if (!inline_box->text)
 			return false;
@@ -2795,12 +2807,12 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	box->gadget = gadget;
 	gadget->box = box;
 
-	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content);
+	inline_container = box_create(NULL, 0, false, 0, 0, 0, 0, content->bctx);
 	if (inline_container == NULL)
 		goto no_memory;
 	inline_container->type = BOX_INLINE_CONTAINER;
 	inline_box = box_create(NULL, box->style, false, 0, 0, box->title, 0,
-			content);
+			content->bctx);
 	if (inline_box == NULL)
 		goto no_memory;
 	inline_box->type = BOX_TEXT;
@@ -2816,13 +2828,13 @@ bool box_select(BOX_SPECIAL_PARAMS)
 	}
 
 	if (gadget->data.select.num_selected == 0)
-		inline_box->text = talloc_strdup(content,
+		inline_box->text = talloc_strdup(content->bctx,
 				messages_get("Form_None"));
 	else if (gadget->data.select.num_selected == 1)
-		inline_box->text = talloc_strdup(content,
+		inline_box->text = talloc_strdup(content->bctx,
 				gadget->data.select.current->text);
 	else
-		inline_box->text = talloc_strdup(content,
+		inline_box->text = talloc_strdup(content->bctx,
 				messages_get("Form_Many"));
 	if (inline_box->text == NULL)
 		goto no_memory;
@@ -2927,7 +2939,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	box->gadget->box = box;
 
 	inline_container = box_create(NULL, 0, false, 0, 0, box->title, 0,
-			content);
+			content->bctx);
 	if (inline_container == NULL)
 		return false;
 	inline_container->type = BOX_INLINE_CONTAINER;
@@ -2947,7 +2959,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 	while (true) {
 		/* BOX_TEXT */
 		len = strcspn(current, "\r\n");
-		s = talloc_strndup(content, current, len);
+		s = talloc_strndup(content->bctx, current, len);
 		if (s == NULL) {
 			if (area_data != NULL)
 				dom_string_unref(area_data);
@@ -2955,7 +2967,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 		}
 
 		inline_box = box_create(NULL, box->style, false, 0, 0,
-				box->title, 0, content);
+				box->title, 0, content->bctx);
 		if (inline_box == NULL) {
 			if (area_data != NULL)
 				dom_string_unref(area_data);
@@ -2973,7 +2985,7 @@ bool box_textarea(BOX_SPECIAL_PARAMS)
 
 		/* BOX_BR */
 		br_box = box_create(NULL, box->style, false, 0, 0, box->title,
-				0, content);
+				0, content->bctx);
 		if (br_box == NULL) {
 			if (area_data != NULL)
 				dom_string_unref(area_data);
@@ -3015,7 +3027,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
-	params = talloc(content, struct object_params);
+	params = talloc(content->bctx, struct object_params);
 	if (params == NULL)
 		return false;
 
@@ -3086,7 +3098,7 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		param = talloc(content, struct object_param);
+		param = talloc(content->bctx, struct object_param);
 		if (param == NULL) {
 			dom_string_unref(value);
 			dom_string_unref(name);
@@ -3094,10 +3106,10 @@ bool box_embed(BOX_SPECIAL_PARAMS)
 			return false;
 		}
 
-		param->name = talloc_strdup(content, dom_string_data(name));
-		param->value = talloc_strdup(content, dom_string_data(value));
+		param->name = talloc_strdup(content->bctx, dom_string_data(name));
+		param->value = talloc_strdup(content->bctx, dom_string_data(value));
 		param->type = NULL;
-		param->valuetype = talloc_strdup(content, "data");
+		param->valuetype = talloc_strdup(content->bctx, "data");
 		param->next = NULL;
 
 		dom_string_unref(value);

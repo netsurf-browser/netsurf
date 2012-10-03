@@ -47,7 +47,6 @@
 #include "utils/http.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/utf8.h"
 
@@ -212,14 +211,14 @@ nserror textplain_create(const content_handler *handler,
 	nserror error;
 	lwc_string *encoding;
 
-	text = talloc_zero(0, textplain_content);
+	text = calloc(1, sizeof(textplain_content));
 	if (text == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&text->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(text);
+		free(text);
 		return error;
 	}
 
@@ -232,7 +231,7 @@ nserror textplain_create(const content_handler *handler,
 	error = textplain_create_internal(text, encoding);
 	if (error != NSERROR_OK) {
 		lwc_string_unref(encoding);
-		talloc_free(text);
+		free(text);
 		return error;
 	}
 
@@ -268,7 +267,7 @@ nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 
 	textplain_style.size = (nsoption_int(font_size) * FONT_SIZE_SCALE) / 10;
 
-	utf8_data = talloc_array(c, char, CHUNK);
+	utf8_data = malloc(CHUNK);
 	if (utf8_data == NULL)
 		goto no_memory;
 
@@ -281,7 +280,7 @@ nserror textplain_create_internal(textplain_content *c, lwc_string *encoding)
 				&stream);
 	}
 	if (error != PARSERUTILS_OK) {
-		talloc_free(utf8_data);
+		free(utf8_data);
 		goto no_memory;
 	}
 	
@@ -376,11 +375,11 @@ bool textplain_copy_utf8_data(textplain_content *c,
 {
 	if (c->utf8_data_size + len >= c->utf8_data_allocated) {
 		/* Compute next multiple of chunk above the required space */
-		size_t allocated = (c->utf8_data_size + len + 
-				CHUNK - 1) & ~(CHUNK - 1);
-		char *utf8_data = talloc_realloc(c,
-				c->utf8_data,
-				char, allocated);
+		size_t allocated; 
+		char *utf8_data; 
+
+		allocated = (c->utf8_data_size + len + CHUNK - 1) & ~(CHUNK - 1);
+		utf8_data = realloc(c->utf8_data, allocated);
 		if (utf8_data == NULL)
 			return false;
 
@@ -484,7 +483,7 @@ void textplain_reformat(struct content *c, int width, int height)
 
 	if (!line) {
 		text->physical_line = line =
-				talloc_array(c, struct textplain_line, 1024 + 3);
+			malloc(sizeof(struct textplain_line) * (1024 + 3));
 		if (!line)
 			goto no_memory;
 	}
@@ -500,8 +499,9 @@ void textplain_reformat(struct content *c, int width, int height)
 
 		if (term || next_col >= columns) {
 			if (line_count % 1024 == 0) {
-				line1 = talloc_realloc(c, line,
-						struct textplain_line, line_count + 1024 + 3);
+				line1 = realloc(line, 
+						sizeof(struct textplain_line) * 
+						(line_count + 1024 + 3));
 				if (!line1)
 					goto no_memory;
 				text->physical_line = line = line1;
@@ -558,8 +558,17 @@ void textplain_destroy(struct content *c)
 
 	lwc_string_unref(text->encoding);
 
-	if (text->inputstream != NULL)
+	if (text->inputstream != NULL) {
 		parserutils_inputstream_destroy(text->inputstream);
+	}
+
+	if (text->physical_line != NULL) {
+		free(text->physical_line);
+	}
+
+	if (text->utf8_data != NULL) {
+		free(text->utf8_data);
+	}
 }
 
 
@@ -571,7 +580,7 @@ nserror textplain_clone(const struct content *old, struct content **newc)
 	const char *data;
 	unsigned long size;
 
-	text = talloc_zero(0, textplain_content);
+	text = calloc(1, sizeof(textplain_content));
 	if (text == NULL)
 		return NSERROR_NOMEM;
 

@@ -44,7 +44,6 @@
 #include "content/content_protected.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-#include "utils/talloc.h"
 #include "utils/utils.h"
 #include "utils/url.h"
 
@@ -108,14 +107,14 @@ nserror amiga_icon_create(const content_handler *handler,
 	amiga_icon_content *ai_content;
 	nserror error;
 
-	ai_content = talloc_zero(0, amiga_icon_content);
+	ai_content = calloc(1, sizeof(amiga_icon_content));
 	if (ai_content == NULL)
 		return NSERROR_NOMEM;
 
 	error = content__init(&ai_content->base, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
-		talloc_free(ai_content);
+		free(ai_content);
 		return error;
 	}
 
@@ -285,7 +284,7 @@ nserror amiga_icon_clone(const struct content *old, struct content **newc)
 	amiga_icon_content *ai;
 	nserror error;
 
-	ai = talloc_zero(0, amiga_icon_content);
+	ai = calloc(1, sizeof(amiga_icon_content));
 	if (ai == NULL)
 		return NSERROR_NOMEM;
 
