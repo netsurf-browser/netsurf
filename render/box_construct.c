@@ -1261,7 +1261,9 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 		}
 	} else {
 		/* white-space: pre */
-		char *text = cnv_space2nbsp(dom_string_data(content));
+		char *text;
+		size_t text_len = dom_string_byte_length(content);
+		size_t i;
 		char *current;
 		enum css_white_space_e white_space =
 				css_computed_white_space(props.parent_style);
@@ -1271,10 +1273,19 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 				white_space == CSS_WHITE_SPACE_PRE_LINE ||
 				white_space == CSS_WHITE_SPACE_PRE_WRAP);
 
+		text = malloc(text_len + 1);
 		dom_string_unref(content);
 
 		if (text == NULL)
 			return false;
+
+		memcpy(text, dom_string_data(content), text_len);
+		text[text_len] = '\0';
+
+		/* TODO: Handle tabs properly */
+		for (int i = 0; i < text_len; i++)
+			if (text[i] == '\t')
+				text[i] = ' ';
 
 		if (css_computed_text_transform(props.parent_style) != 
 				CSS_TEXT_TRANSFORM_NONE)
@@ -1301,6 +1312,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 
 		do {
 			size_t len = strcspn(current, "\r\n");
+
 			char old = current[len];
 
 			current[len] = 0;

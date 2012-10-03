@@ -2700,7 +2700,9 @@ bool layout_line(struct box *first, int *width, int *y,
 		size_t space = 0;
 		int w;
 		bool no_wrap = css_computed_white_space(
-				split_box->style) == CSS_WHITE_SPACE_NOWRAP;
+				split_box->style) == CSS_WHITE_SPACE_NOWRAP ||
+				css_computed_white_space(
+				split_box->style) == CSS_WHITE_SPACE_PRE;
 
 		x = x_previous;
 
