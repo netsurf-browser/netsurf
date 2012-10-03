@@ -2744,8 +2744,11 @@ bool layout_line(struct box *first, int *width, int *y,
 				!left && !right && inline_count == 1) {
 			/* first word of box doesn't fit, but no floats and
 			 * first box on line so force in */
-			if (space == 0) {
-				/* only one word in this box or not text */
+			if (space == 0 || css_computed_white_space(
+					split_box->style) ==
+					CSS_WHITE_SPACE_NOWRAP) {
+				/* only one word in this box, or not text
+				 * or white-space:nowrap */
 				b = split_box->next;
 			} else {
 				/* cut off first word for this line */
