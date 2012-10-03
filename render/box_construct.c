@@ -2050,7 +2050,7 @@ bool box_frameset(BOX_SPECIAL_PARAMS)
 	if (!content->frameset)
 		return false;
 
-	ok = box_create_frameset(content->frameset, n, content->bctx);
+	ok = box_create_frameset(content->frameset, n, content);
 	if (ok)
 		box->type = BOX_NONE;
 

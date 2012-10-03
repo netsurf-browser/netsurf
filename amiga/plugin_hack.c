@@ -100,7 +100,7 @@ nserror amiga_plugin_hack_create(const content_handler *handler,
 	amiga_plugin_hack_content *plugin;
 	nserror error;
 
-	plugin = calloc(1, amiga_plugin_hack_content);
+	plugin = calloc(1, sizeof(amiga_plugin_hack_content));
 	if (plugin == NULL)
 		return NSERROR_NOMEM;
 
