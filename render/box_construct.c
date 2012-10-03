@@ -2152,7 +2152,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 	f->cols = cols;
 	f->rows = rows;
 	f->scrolling = SCROLLING_NO;
-	f->children = talloc_array(content, struct content_html_frames,
+	f->children = talloc_array(content->bctx, struct content_html_frames,
 								(rows * cols));
 
 	talloc_set_destructor(f->children, box_frames_talloc_destructor);
