@@ -2699,6 +2699,8 @@ bool layout_line(struct box *first, int *width, int *y,
 		unsigned int i;
 		size_t space = 0;
 		int w;
+		bool no_wrap = css_computed_white_space(
+				split_box->style) == CSS_WHITE_SPACE_NOWRAP;
 
 		x = x_previous;
 
@@ -2723,7 +2725,7 @@ bool layout_line(struct box *first, int *width, int *y,
 
 		/* space != 0 implies split_box->text != 0 */
 
-		if (space == 0)
+		if (space == 0 || no_wrap)
 			w = split_box->width;
 		else {
 			font_plot_style_from_css(split_box->style, &fstyle);
@@ -2744,9 +2746,7 @@ bool layout_line(struct box *first, int *width, int *y,
 				!left && !right && inline_count == 1) {
 			/* first word of box doesn't fit, but no floats and
 			 * first box on line so force in */
-			if (space == 0 || css_computed_white_space(
-					split_box->style) ==
-					CSS_WHITE_SPACE_NOWRAP) {
+			if (space == 0 || no_wrap) {
 				/* only one word in this box, or not text
 				 * or white-space:nowrap */
 				b = split_box->next;
