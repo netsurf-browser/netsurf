@@ -2406,17 +2406,17 @@ static void html_destroy_frameset(struct content_html_frames *frameset)
 	int i;
 
 	if (frameset->name) {
-		free(frameset->name);
+		talloc_free(frameset->name);
 		frameset->name = NULL;
 	}
 	if (frameset->url) {
-		free(frameset->url);
+		talloc_free(frameset->url);
 		frameset->url = NULL;
 	}
 	if (frameset->children) {
 		for (i = 0; i < (frameset->rows * frameset->cols); i++) {
 			if (frameset->children[i].name) {
-				free(frameset->children[i].name);
+				talloc_free(frameset->children[i].name);
 				frameset->children[i].name = NULL;
 			}
 			if (frameset->children[i].url) {
@@ -2426,7 +2426,7 @@ static void html_destroy_frameset(struct content_html_frames *frameset)
 		  	if (frameset->children[i].children)
 		  		html_destroy_frameset(&frameset->children[i]);
 		}
-		free(frameset->children);
+		talloc_free(frameset->children);
 		frameset->children = NULL;
 	}
 }
@@ -2438,12 +2438,12 @@ static void html_destroy_iframe(struct content_html_iframe *iframe)
 	while ((iframe = next) != NULL) {
 		next = iframe->next;
 		if (iframe->name)
-			free(iframe->name);
+			talloc_free(iframe->name);
 		if (iframe->url) {
 			nsurl_unref(iframe->url);
 			iframe->url = NULL;
 		}
-		free(iframe);
+		talloc_free(iframe);
 	}
 }
 
@@ -2503,7 +2503,7 @@ static void html_destroy(struct content *c)
 	/* Free frameset */
 	if (html->frameset != NULL) {
 		html_destroy_frameset(html->frameset);
-		free(html->frameset);
+		talloc_free(html->frameset);
 		html->frameset = NULL;
 	}
 
