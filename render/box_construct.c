@@ -1283,7 +1283,7 @@ bool box_construct_text(struct box_construct_ctx *ctx)
 		text[text_len] = '\0';
 
 		/* TODO: Handle tabs properly */
-		for (int i = 0; i < text_len; i++)
+		for (i = 0; i < text_len; i++)
 			if (text[i] == '\t')
 				text[i] = ' ';
 
