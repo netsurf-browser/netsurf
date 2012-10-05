@@ -2447,6 +2447,9 @@ char *urldb_get_cookie(const char *url)
 
 	assert(url != NULL);
 
+	/* The URL must exist in the db in order to find relevant cookies, since
+	 * we search up the tree from the URL node, and cookies from further
+	 * up also apply. */
 	urldb_add_url(url);
 
 	p = urldb_find_url(url);
