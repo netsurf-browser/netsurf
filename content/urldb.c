@@ -1903,7 +1903,7 @@ struct path_data *urldb_find_url(const char *url)
 		return NULL;
 	}
 
-	/* generate plq */
+	/* generate plq (path, leaf, query) */
 	if (components.path)
 		len += strlen(components.path);
 	else
