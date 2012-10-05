@@ -49,7 +49,6 @@
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
-#include "utils/url.h"
 #include "utils/utils.h"
 #include "utils/ring.h"
 #include "utils/useragent.h"
