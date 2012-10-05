@@ -15,11 +15,11 @@ llcache_SRCS := content/fetch.c content/fetchers/curl.c \
 		utils/utils.c test/llcache.c
 
 urldbtest_SRCS := content/urldb.c utils/url.c utils/utils.c utils/log.c \
-		utils/messages.c utils/hashtable.c utils/filename.c \
-		test/urldbtest.c
+		desktop/options.c utils/messages.c utils/hashtable.c \
+		utils/filename.c test/urldbtest.c
 
-urldbtest_CFLAGS := -O2
-urldbtest_LDFLAGS :=
+urldbtest_CFLAGS := $(shell pkg-config --cflags libwapcaplet) -O2
+urldbtest_LDFLAGS := $(shell pkg-config --libs libwapcaplet)
 
 nsurl_SRCS := utils/log.c utils/nsurl.c test/nsurl.c
 nsurl_CFLAGS := $(shell pkg-config --cflags libwapcaplet)
