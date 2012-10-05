@@ -296,7 +296,7 @@ static bool textinput_textbox_insert(struct content *c,
 	}
 
 	/* insert in text box */
-	text = talloc_realloc(c, text_box->text,
+	text = talloc_realloc(html->bctx, text_box->text,
 			char,
 			text_box->length + SPACE_LEN(text_box) + utf8_len + 1);
 	if (!text) {
@@ -626,18 +626,19 @@ static bool textinput_textarea_cut(struct content *c,
 static struct box *textinput_textarea_insert_break(struct content *c,
 		struct box *text_box, size_t char_offset)
 {
+	html_content *html = (html_content *)c;
 	struct box *new_br, *new_text;
 	char *text;
 
-	text = talloc_array(c, char, text_box->length + 1);
+	text = talloc_array(html->bctx, char, text_box->length + 1);
 	if (!text) {
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
 
 	new_br = box_create(NULL, text_box->style, false, 0, 0, text_box->title,
-			0, c);
-	new_text = talloc(c, struct box);
+			0, html->bctx);
+	new_text = talloc(html->bctx, struct box);
 	if (!new_text) {
 		warn_user("NoMemory", 0);
 		return NULL;
