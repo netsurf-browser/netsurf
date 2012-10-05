@@ -177,7 +177,8 @@ bool dirlist_generate_title(const char *title, char *buffer, int buffer_length)
  *     dirlist_generate_bottom()
  */
 
-bool dirlist_generate_parent_link(char *parent, char *buffer, int buffer_length)
+bool dirlist_generate_parent_link(const char *parent, char *buffer,
+		int buffer_length)
 {
 	int error = snprintf(buffer, buffer_length,
 			"<p><a href=\"%s\">%s</a></p>",
