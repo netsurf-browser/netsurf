@@ -1720,7 +1720,7 @@ bool box_image(BOX_SPECIAL_PARAMS)
 	}
 
 	/* imagemap associated with this image */
-	if (!box_get_attribute(n, "usemap", content, &box->usemap))
+	if (!box_get_attribute(n, "usemap", content->bctx, &box->usemap))
 		return false;
 	if (box->usemap && box->usemap[0] == '#')
 		box->usemap++;
@@ -1808,7 +1808,8 @@ bool box_object(BOX_SPECIAL_PARAMS)
 			box_is_root(n)) == CSS_DISPLAY_NONE)
 		return true;
 
-	if (box_get_attribute(n, "usemap", content, &box->usemap) == false)
+	if (box_get_attribute(n, "usemap", content->bctx, &box->usemap) ==
+			false)
 		return false;
 	if (box->usemap && box->usemap[0] == '#')
 		box->usemap++;
