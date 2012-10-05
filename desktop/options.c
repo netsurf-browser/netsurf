@@ -133,6 +133,11 @@ void nsoption_read(const char *path)
 	char s[100];
 	FILE *fp;
 
+	if (path == NULL) {
+		LOG(("No options loaded"));
+		return;
+	}
+
 	fp = fopen(path, "r");
 	if (!fp) {
 		LOG(("failed to open file '%s'", path));
