@@ -532,45 +532,6 @@ url_func_result url_parent(const char *url, char **result)
 
 
 /**
- * Extract path, leafname and query segments from an URL
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return URL_FUNC_OK on success
- */
-
-url_func_result url_plq(const char *url, char **result)
-{
-	url_func_result status;
-	struct url_components components;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
-		if (!components.path) {
-			status = URL_FUNC_FAILED;
-		} else if ((components.query) &&
-				(strlen(components.query) > 0)) {
-			*result = malloc(strlen(components.path) +
-					strlen(components.query) + 2);
-			if (!(*result))
-				status = URL_FUNC_NOMEM;
-			else
-				sprintf((*result), "%s?%s", components.path,
-						components.query);
-		} else {
-			*result = strdup(components.path);
-			if (!(*result))
-				status = URL_FUNC_NOMEM;
-		}
-	}
-	url_destroy_components(&components);
-	return status;
-}
-
-
-/**
  * Extract path segment from an URL
  *
  * \param url	  an absolute URL
@@ -595,77 +556,6 @@ url_func_result url_path(const char *url, char **result)
 				status = URL_FUNC_NOMEM;
 		}
 	}
-	url_destroy_components(&components);
-	return status;
-}
-
-/**
- * Extract leafname from an URL
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return URL_FUNC_OK on success
- */
-
-url_func_result url_leafname(const char *url, char **result)
-{
-	url_func_result status;
-	struct url_components components;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
-		if (!components.path) {
-			status = URL_FUNC_FAILED;
-		} else {
-			char *slash = strrchr(components.path, '/');
-
-			assert (slash != NULL);
-
-			*result = strdup(slash + 1);
-			if (!(*result))
-				status = URL_FUNC_NOMEM;
-		}
-	}
-	url_destroy_components(&components);
-	return status;
-}
-
-/**
- * Extract fragment from an URL
- * This will unescape any %xx entities in the fragment
- *
- * \param url     an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return URL_FUNC_OK on success
- */
-
-url_func_result url_fragment(const char *url, char **result)
-{
-	url_func_result status;
-	struct url_components components;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
-		if (!components.fragment) {
-			status = URL_FUNC_FAILED;
-		} else {
-			char *frag = curl_unescape(components.fragment,
-					strlen(components.fragment));
-			if (!frag) {
-				status = URL_FUNC_NOMEM;
-			} else {
-				*result = strdup(frag);
-				if (!(*result))
-					status = URL_FUNC_NOMEM;
-				curl_free(frag);
-			}
-		}
-	}
-
 	url_destroy_components(&components);
 	return status;
 }
