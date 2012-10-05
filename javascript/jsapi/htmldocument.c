@@ -228,7 +228,7 @@ JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_conten
 	JSObject *jsdocument;
 	struct jsclass_document_priv *document;
 
-	document = malloc(sizeof(document));
+	document = malloc(sizeof(*document));
 	if (document == NULL) {
 		return NULL;
 	}
