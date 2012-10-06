@@ -48,6 +48,7 @@
 #include "content/urldb.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
+#include "utils/errors.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -493,10 +494,9 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 	char buffer[1024]; /* Output buffer */
 	bool even = false; /* formatting flag */
 	char *title; /* pretty printed title */
-	url_func_result res; /* result from url routines */
-	char *up; /* url of parent */
+	nserror err; /* result from url routines */
+	nsurl *up; /* url of parent */
 	char *path; /* url for list entries */
-	bool compare; /* result of url compare */
 
 	DIR *scandir; /* handle for enumerating the directory */
 	struct dirent* ent; /* leaf directory entry */
@@ -541,16 +541,17 @@ static void fetch_file_process_dir(struct fetch_file_context *ctx,
 		goto fetch_file_process_dir_aborted;
 
 	/* Print parent directory link */
-	res = url_parent(nsurl_access(ctx->url), &up);
-	if (res == URL_FUNC_OK) {
-		res = url_compare(nsurl_access(ctx->url), up, false, &compare);
-		if ((res == URL_FUNC_OK) && compare == false) {
-			dirlist_generate_parent_link(up, buffer, sizeof buffer);
+	err = nsurl_parent(ctx->url, &up);
+	if (err == NSERROR_OK) {
+		if (nsurl_compare(ctx->url, up, NSURL_COMPLETE) == false) {
+			/* different URL; have parent */
+			dirlist_generate_parent_link(nsurl_access(up),
+					buffer, sizeof buffer);
 
 			msg.data.header_or_data.len = strlen(buffer);
 			fetch_file_send_callback(&msg, ctx);
 		}
-		free(up);
+		nsurl_unref(up);
 
 		if (ctx->aborted)
 			goto fetch_file_process_dir_aborted;
