@@ -138,6 +138,11 @@ $testament .= "#define WT_ROOT \"$qroot\"\n";
 $testament .= "#define WT_HOSTNAME \"$hostname\"\n";
 $testament .= "#define WT_COMPILEDATE \"$compiledate\"\n";
 
+my $cibuild = $ENV{CI_BUILD};
+if (defined ($cibuild) && ($cibuild ne '')) {
+   $testament .= "#define CI_BUILD \"$cibuild\"\n";
+}
+
 $testament .= "#define WT_BRANCHPATH \"$gitinfo{branch}\"\n";
 
 if ($gitinfo{branch} =~ m@^master$@) {

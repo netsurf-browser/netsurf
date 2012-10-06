@@ -477,6 +477,9 @@ static bool fetch_about_testament_handler(struct fetch_about_context *ctx)
 #else
 			"# This NetSurf was built from a branch (" WT_BRANCHPATH ").\n\n"
 #endif
+#if defined(CI_BUILD)
+			"# This build carries the CI build number '" CI_BUILD "'\n\n"
+#endif
 			);
 
 	msg.data.header_or_data.len = slen;	

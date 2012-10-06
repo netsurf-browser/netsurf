@@ -76,6 +76,7 @@ S_BROWSER := $(addprefix desktop/,$(S_BROWSER))
 
 # The following files depend on the testament
 content/fetchers/about.c: testament utils/testament.h
+desktop/version.c: testament utils/testament.h
 
 # Some extra rules for building the transliteration table.
 ifeq ($(HOST),riscos)
