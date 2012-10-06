@@ -483,55 +483,6 @@ url_func_result url_canonical_root(const char *url, char **result)
 
 
 /**
- * Strip the topmost segment of the path
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold result
- * \return URL_FUNC_OK on success
- */
-
-url_func_result url_parent(const char *url, char **result)
-{
-	url_func_result status;
-	struct url_components components;
-	int len, path_len;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
-		if ((!components.scheme) || (!components.authority) ||
-				(!components.path)) {
-			status = URL_FUNC_FAILED;
-		} else {
-			if (strcmp(components.path, "/")) {
-				path_len = strlen(components.path);
-				if (components.path[path_len - 1] == '/')
-					path_len--;
-				while (components.path[path_len - 1] != '/')
-					path_len--;
-			} else {
-				path_len = 1;
-			}
-			len = strlen(components.scheme) +
-					strlen(components.authority) +
-					path_len + 4;
-			*result = malloc(len);
-			if (!(*result))
-				status = URL_FUNC_NOMEM;
-			else
-				snprintf((*result), len, "%s://%s%s",
-						components.scheme,
-						components.authority,
-						components.path);
-		}
-	}
-	url_destroy_components(&components);
-	return status;
-}
-
-
-/**
  * Extract path segment from an URL
  *
  * \param url	  an absolute URL
