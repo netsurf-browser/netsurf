@@ -1184,28 +1184,31 @@ static void nsurl_get_string(const struct nsurl_components *url, char *url_s,
 static void nsurl__dump(const nsurl *url)
 {
 	if (url->components.scheme)
-		LOG(("  Scheme: %s", lwc_string_data(url->scheme)));
+		LOG(("  Scheme: %s", lwc_string_data(url->components.scheme)));
 
 	if (url->components.username)
-		LOG(("Username: %s", lwc_string_data(url->username)));
+		LOG(("Username: %s",
+				lwc_string_data(url->components.username)));
 
 	if (url->components.password)
-		LOG(("Password: %s", lwc_string_data(url->password)));
+		LOG(("Password: %s",
+				lwc_string_data(url->components.password)));
 
 	if (url->components.host)
-		LOG(("    Host: %s", lwc_string_data(url->host)));
+		LOG(("    Host: %s", lwc_string_data(url->components.host)));
 
 	if (url->components.port)
-		LOG(("    Port: %s", lwc_string_data(url->port)));
+		LOG(("    Port: %s", lwc_string_data(url->components.port)));
 
 	if (url->components.path)
-		LOG(("    Path: %s", lwc_string_data(url->path)));
+		LOG(("    Path: %s", lwc_string_data(url->components.path)));
 
 	if (url->components.query)
-		LOG(("   Query: %s", lwc_string_data(url->query)));
+		LOG(("   Query: %s", lwc_string_data(url->components.query)));
 
 	if (url->components.fragment)
-		LOG(("Fragment: %s", lwc_string_data(url->fragment)));
+		LOG(("Fragment: %s",
+				lwc_string_data(url->components.fragment)));
 }
 #endif
 
@@ -1884,6 +1887,101 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 			nsurl__component_copy(url->components.query);
 	(*new_url)->components.fragment =
 			lwc_string_ref(frag);
+
+	(*new_url)->components.scheme_type = url->components.scheme_type;
+
+	/* Give the URL a reference */
+	(*new_url)->count = 1;
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface, documented in nsurl.h */
+nserror nsurl_parent(const nsurl *url, nsurl **new_url)
+{
+	lwc_string *lwc_path;
+	size_t old_path_len, new_path_len;
+	size_t len;
+	const char* path = NULL;
+	char *pos;
+
+	assert(url != NULL);
+
+	old_path_len = (url->components.path == NULL) ? 0 :
+			lwc_string_length(url->components.path);
+
+	/* Find new path length */
+	if (old_path_len == 0) {
+		new_path_len = old_path_len;
+	} else {
+		path = lwc_string_data(url->components.path);
+
+		new_path_len = old_path_len;
+		if (old_path_len > 1) {
+			/* Skip over any trailing / */
+			if (path[new_path_len - 1] == '/')
+				new_path_len--;
+
+			/* Work back to next / */
+			while (new_path_len > 0 &&
+					path[new_path_len - 1] != '/')
+				new_path_len--;
+		}
+	}
+
+	/* Find the length of new_url */
+	len = url->length;
+	if (url->components.query != NULL) {
+		len -= lwc_string_length(url->components.query);
+	}
+	if (url->components.fragment != NULL) {
+		len -= 1; /* # */
+		len -= lwc_string_length(url->components.fragment);
+	}
+	len -= old_path_len - new_path_len;
+
+	/* Create NetSurf URL object */
+	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
+	if (*new_url == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	/* Make new path */
+	if (old_path_len == 0) {
+		lwc_path = NULL;
+	} else if (old_path_len == new_path_len) {
+		lwc_path = lwc_string_ref(url->components.path);
+	} else {
+		if (lwc_intern_string(path, old_path_len - new_path_len,
+				&lwc_path) != lwc_error_ok) {
+			free(*new_url);
+			return NSERROR_NOMEM;
+		}
+	}
+
+	(*new_url)->length = len;
+
+	/* Set string */
+	pos = (*new_url)->string;
+	memcpy(pos, url->string, len);
+	pos += len;
+	*pos = '\0';
+
+	/* Copy components */
+	(*new_url)->components.scheme =
+			nsurl__component_copy(url->components.scheme);
+	(*new_url)->components.username =
+			nsurl__component_copy(url->components.username);
+	(*new_url)->components.password =
+			nsurl__component_copy(url->components.password);
+	(*new_url)->components.host =
+			nsurl__component_copy(url->components.host);
+	(*new_url)->components.port =
+			nsurl__component_copy(url->components.port);
+	(*new_url)->components.path = lwc_path;
+	(*new_url)->components.query = NULL;
+	(*new_url)->components.fragment = NULL;
 
 	(*new_url)->components.scheme_type = url->components.scheme_type;
 
