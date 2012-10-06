@@ -2284,7 +2284,7 @@ bool box_create_frameset(struct content_html_frames *f, dom_node *n,
 			/* fill in specified values */
 			err = dom_element_get_attribute(c, kstr_name, &s);
 			if (err == DOM_NO_ERR && s != NULL) {
-				frame->name = talloc_strdup(content, 
+				frame->name = talloc_strdup(content->bctx, 
 						dom_string_data(s));
 				dom_string_unref(s);
 			}
