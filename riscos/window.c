@@ -3709,23 +3709,18 @@ bool ro_gui_window_content_export_types(hlcache_handle *h,
 
 bool ro_gui_window_up_available(struct browser_window *bw)
 {
-	bool		result = false, compare;
-	char		*parent;
-	url_func_result	res;
+	bool result = false;
+	nsurl *parent;
+	nserror	err;
 
 	if (bw != NULL && bw->current_content != NULL) {
-		res = url_parent(nsurl_access(hlcache_handle_get_url(
-				bw->current_content)), &parent);
-
-		if (res == URL_FUNC_OK) {
-			res = url_compare(nsurl_access(hlcache_handle_get_url(
-					bw->current_content)),
-					parent, false, &compare);
-			if (res == URL_FUNC_OK)
-				result = !compare;
-			free(parent);
-		} else {
-			result = false;
+		err = nsurl_parent(hlcache_handle_get_url(
+				bw->current_content), &parent);
+		if (err == NSERROR_OK) {
+			result = nsurl_compare(hlcache_handle_get_url(
+					bw->current_content), parent,
+					NSURL_COMPLETE) == false;
+			nsurl_unref(parent);
 		}
 	}
 
@@ -3863,21 +3858,30 @@ void ro_gui_window_launch_url(struct gui_window *g, const char *url)
  * \param  g	the gui_window to open the parent link in
  * \param  url  the URL to open the parent of
  */
-bool ro_gui_window_navigate_up(struct gui_window *g, const char *url) {
-	char *parent;
-	url_func_result res;
-	bool compare;
+bool ro_gui_window_navigate_up(struct gui_window *g, const char *url)
+{
+	nsurl *current, *parent;
+	nserror err;
 
 	if (!g || (!g->bw))
 		return false;
 
-	res = url_parent(url, &parent);
-	if (res == URL_FUNC_OK) {
-		res = url_compare(url, parent, false, &compare);
-		if ((res == URL_FUNC_OK) && !compare)
-			browser_window_go(g->bw, parent, 0, true);
-		free(parent);
+	err = nsurl_create(url, &current);
+	if (err != NSERROR_OK)
+		return false;
+
+	err = nsurl_parent(current, &parent);
+	if (err != NSERROR_OK) {
+		nsurl_unref(current);
+		return false;
 	}
+
+	if (nsurl_compare(current, parent, NSURL_COMPLETE) == false) {
+		browser_window_go(g->bw, nsurl_access(parent), 0, true);
+	}
+
+	nsurl_unref(current);
+	nsurl_unref(parent);
 	return true;
 }
 
