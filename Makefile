@@ -150,6 +150,7 @@ ifeq ($(TARGET),riscos)
     CCRES := ccres
     TPLEXT :=
     MAKERUN := makerun
+    SQUEEZE := squeeze
     RUNEXT :=
     CC := gcc
     EXEEXT :=
@@ -176,6 +177,7 @@ ifeq ($(TARGET),riscos)
     CCRES := $(GCCSDK_INSTALL_CROSSBIN)/ccres
     TPLEXT := ,fec
     MAKERUN := $(GCCSDK_INSTALL_CROSSBIN)/makerun
+    SQUEEZE := $(GCCSDK_INSTALL_CROSSBIN)/squeeze
     RUNEXT := ,feb
     CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
     ifneq (,$(findstring arm-unknown-riscos-gcc,$(CC)))
