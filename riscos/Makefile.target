@@ -99,7 +99,7 @@ EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
 $(DEPROOT)/squeeze.d: $(EXETARGET)
 	$(VQ)echo " SQUEEZE: $<"
-	$(Q)$(SQUEEZE) $(EXETARGET)
+	$(Q)$(SQUEEZE) -f -v $(EXETARGET)
 	$(Q)$(TOUCH) $@
 POSTEXES += !NetSurf/!Run$(RUNEXT) $(DEPROOT)/squeeze.d
 
