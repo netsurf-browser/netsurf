@@ -141,6 +141,9 @@ $testament .= "#define WT_COMPILEDATE \"$compiledate\"\n";
 my $cibuild = $ENV{CI_BUILD};
 if (defined ($cibuild) && ($cibuild ne '')) {
    $testament .= "#define CI_BUILD \"$cibuild\"\n";
+   print "TESTMENT: Detected CI build \"$cibuild\"\n";
+} else {
+   print "TESTMENT: No sign of the CI system here\n";
 }
 
 $testament .= "#define WT_BRANCHPATH \"$gitinfo{branch}\"\n";
