@@ -42,7 +42,7 @@ static utf8_convert_ret utf8_convert(const char *string, size_t len,
  * Encoding of UCS values outside the UTF-16 plane has been removed from
  * RFC3629. This function conforms to RFC2279, however.
  *
- * \param s  The sequence to process
+ * \param s_in  The sequence to process
  * \param l  Length of sequence
  * \return   UCS4 character
  */

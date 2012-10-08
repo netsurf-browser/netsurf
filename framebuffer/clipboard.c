@@ -65,10 +65,11 @@ bool gui_empty_clipboard(void)
 /**
  * Add some text to the clipboard, optionally appending a trailing space.
  *
- * \param  text    text to be added
- * \param  length  length of text in bytes
- * \param  space   indicates whether a trailing space should be appended
- * \return true iff successful
+ * \param text text to be added
+ * \param length length of text in bytes
+ * \param space indicates whether a trailing space should be appended
+ * \param fstyle The font style
+ * \return true if successful
  */
 
 bool gui_add_to_clipboard(const char *text, size_t length, bool space,

@@ -97,7 +97,11 @@ EXETARGET := !NetSurf/!RunImage$(EXEEXT)
 !NetSurf/!Run$(RUNEXT): riscos/scripts/Run $(EXETARGET)
 	$(VQ)echo " MAKERUN: $@"
 	$(Q)$(MAKERUN) $(EXETARGET) $< $@
-POSTEXES += !NetSurf/!Run$(RUNEXT)
+$(DEPROOT)/squeeze.d: $(EXETARGET)
+	$(VQ)echo " SQUEEZE: $<"
+	$(Q)$(SQUEEZE) -f -v $(EXETARGET)
+	$(Q)$(TOUCH) $@
+POSTEXES += !NetSurf/!Run$(RUNEXT) $(DEPROOT)/squeeze.d
 
 clean-run:
 	$(VQ)echo "   CLEAN: !NetSurf/!Run$(RUNEXT)"

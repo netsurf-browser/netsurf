@@ -808,9 +808,9 @@ sexy_icon_entry_new(void)
 
 /**
  * sexy_icon_entry_set_icon
- * @entry: A #SexyIconEntry.
- * @position: Icon position.
- * @icon: A #GtkImage to set as the icon.
+ * @param entry A #SexyIconEntry.
+ * @param position Icon position.
+ * @param icon A #GtkImage to set as the icon.
  *
  * Sets the icon shown in the entry
  */
@@ -869,9 +869,9 @@ sexy_icon_entry_set_icon(SexyIconEntry *entry, SexyIconEntryPosition icon_pos,
 
 /**
  * sexy_icon_entry_set_icon_highlight
- * @entry: A #SexyIconEntry;
- * @position: Icon position.
- * @highlight: TRUE if the icon should highlight on mouse-over
+ * @param entry A #SexyIconEntry;
+ * @param position Icon position.
+ * @param highlight TRUE if the icon should highlight on mouse-over
  *
  * Determines whether the icon will highlight on mouse-over.
  */
@@ -896,8 +896,8 @@ sexy_icon_entry_set_icon_highlight(SexyIconEntry *entry,
 
 /**
  * sexy_icon_entry_get_icon
- * @entry: A #SexyIconEntry.
- * @position: Icon position.
+ * @param entry A #SexyIconEntry.
+ * @param position Icon position.
  *
  * Retrieves the image used for the icon
  *
@@ -916,8 +916,8 @@ sexy_icon_entry_get_icon(const SexyIconEntry *entry,
 
 /**
  * sexy_icon_entry_get_icon_highlight
- * @entry: A #SexyIconEntry.
- * @position: Icon position.
+ * @param entry A #SexyIconEntry.
+ * @param position Icon position.
  *
  * Retrieves whether entry will highlight the icon on mouseover.
  *
@@ -947,7 +947,7 @@ clear_button_clicked_cb(SexyIconEntry *icon_entry,
 
 /**
  * sexy_icon_entry_add_clear_button
- * @icon_entry: A #SexyIconEntry.
+ * @param icon_entry A #SexyIconEntry.
  *
  * A convenience function to add a clear button to the end of the entry.
  * This is useful for search boxes.

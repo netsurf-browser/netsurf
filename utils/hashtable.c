@@ -32,9 +32,9 @@
 
 
 struct hash_entry {
-	char *pairing;			/**< block containing '<key>\0<value>\0' */
-	unsigned int key_length;	/**< length of key */
-	struct hash_entry *next;	/**< next entry */
+	char *pairing;		 /**< block containing 'key\0value\0' */
+	unsigned int key_length; /**< length of key */
+	struct hash_entry *next; /**< next entry */
 };
 
 struct hash_table {

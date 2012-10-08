@@ -663,6 +663,9 @@ void browser_window_debug_dump(struct browser_window *bw, FILE *f)
  * \param  url	    URL to start fetching in the new window (copied)
  * \param  clone    The browser window to clone
  * \param  referer  The referring uri (copied), or 0 if none
+ * \param history_add add to history
+ * \param new_tab create a new tab
+ * \return new browser window or NULL on error
  */
 
 struct browser_window *browser_window_create(const char *url,
@@ -757,6 +760,7 @@ void browser_window_initialise_common(struct browser_window *bw,
  * \param  bw	    browser window
  * \param  url	    URL to start fetching (copied)
  * \param  referer  the referring uri (copied), or 0 if none
+ * \param history_add Add to history
  *
  * Any existing fetches in the window are aborted.
  */
@@ -793,6 +797,8 @@ void browser_window_download(struct browser_window *bw, const char *url,
  * \param  bw	    browser window
  * \param  url	    URL to start fetching (copied)
  * \param  referer  the referring uri (copied), or 0 if none
+ * \param history_add add to history
+ * \param parent parent handle
  *
  * Any existing fetches in the window are aborted.
  */
@@ -2282,7 +2288,8 @@ void browser_window_refresh_url_bar(struct browser_window *bw, nsurl *url,
  *
  * \param bw  the browser_window to search all relatives of
  * \param target  the target to locate
- * \param new_window  always return a new window (ie 'Open Link in New Window')
+ * \param mouse The current mouse state
+ * \return The browser window the mouse is in
  */
 
 struct browser_window *browser_window_find_target(struct browser_window *bw,

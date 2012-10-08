@@ -1033,7 +1033,7 @@ void nsgtk_toolbar_temp_connect(nsgtk_scaffolding *g, nsgtk_toolbar_button i)
 
 /**
  * load toolbar settings from file; file is a set of fields arranged as
- * <itemreference>;<itemlocation>|<itemreference>;<itemlocation>| etc
+ * [itemreference];[itemlocation]|[itemreference];[itemlocation]| etc
  */
 void nsgtk_toolbar_customization_load(nsgtk_scaffolding *g)
 {
