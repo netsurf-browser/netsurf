@@ -62,6 +62,7 @@ extern lwc_string *corestring_lwc_head;
 extern lwc_string *corestring_lwc_hidden;
 extern lwc_string *corestring_lwc_hr;
 extern lwc_string *corestring_lwc_html;
+extern lwc_string *corestring_lwc_https;
 extern lwc_string *corestring_lwc_iframe;
 extern lwc_string *corestring_lwc_image;
 extern lwc_string *corestring_lwc_img;
