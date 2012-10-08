@@ -3,7 +3,6 @@
 const char * const netsurf_version = "3.0 (Dev"
 #if defined(CI_BUILD)
 	" CI #" CI_BUILD
-#warning Discovered CI build.
 #endif
 	")"
 	;
