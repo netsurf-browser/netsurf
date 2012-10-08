@@ -27,6 +27,7 @@
 #include <time.h>
 #include "content/content.h"
 #include "content/content_type.h"
+#include "utils/nsurl.h"
 
 typedef enum {
 	COOKIE_NETSCAPE = 0,
@@ -69,44 +70,43 @@ void urldb_destroy(void);
 /* Persistence support */
 void urldb_load(const char *filename);
 void urldb_save(const char *filename);
-void urldb_set_url_persistence(const char *url, bool persist);
+void urldb_set_url_persistence(nsurl *url, bool persist);
 
 /* URL insertion */
-bool urldb_add_url(const char *url);
+bool urldb_add_url(nsurl *url);
 struct host_part *urldb_add_host(const char *host);
-struct path_data *urldb_add_path(const char *scheme,
-		unsigned int port, const struct host_part *host,
-		const char *path, const char *query, const char *fragment,
-		const char *url);
+struct path_data *urldb_add_path(lwc_string *scheme, unsigned int port,
+		const struct host_part *host, char *path_query,
+		lwc_string *fragment, nsurl *url);
 
 /* URL data modification / lookup */
-void urldb_set_url_title(const char *url, const char *title);
-void urldb_set_url_content_type(const char *url, content_type type);
-void urldb_update_url_visit_data(const char *url);
-void urldb_reset_url_visit_data(const char *url);
-const struct url_data *urldb_get_url_data(const char *url);
-const char *urldb_get_url(const char *url);
+void urldb_set_url_title(nsurl *url, const char *title);
+void urldb_set_url_content_type(nsurl *url, content_type type);
+void urldb_update_url_visit_data(nsurl *url);
+void urldb_reset_url_visit_data(nsurl *url);
+const struct url_data *urldb_get_url_data(nsurl *url);
+nsurl *urldb_get_url(nsurl *url);
 
 /* Authentication modification / lookup */
-void urldb_set_auth_details(const char *url, const char *realm,
+void urldb_set_auth_details(nsurl *url, const char *realm,
 		const char *auth);
-const char *urldb_get_auth_details(const char *url, const char *realm);
+const char *urldb_get_auth_details(nsurl *url, const char *realm);
 
 /* SSL certificate permissions */
-void urldb_set_cert_permissions(const char *url, bool permit);
-bool urldb_get_cert_permissions(const char *url);
+void urldb_set_cert_permissions(nsurl *url, bool permit);
+bool urldb_get_cert_permissions(nsurl *url);
 
 /* Thumbnail handling */
-void urldb_set_thumbnail(const char *url, struct bitmap *bitmap);
-struct bitmap *urldb_get_thumbnail(const char *url);
+void urldb_set_thumbnail(nsurl *url, struct bitmap *bitmap);
+struct bitmap *urldb_get_thumbnail(nsurl *url);
 
 /* URL completion */
 void urldb_iterate_partial(const char *prefix,
-		bool (*callback)(const char *url,
+		bool (*callback)(nsurl *url,
 		const struct url_data *data));
 
 /* Iteration */
-void urldb_iterate_entries(bool (*callback)(const char *url,
+void urldb_iterate_entries(bool (*callback)(nsurl *url,
 		const struct url_data *data));
 void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *cookie));
 
@@ -114,9 +114,8 @@ void urldb_iterate_cookies(bool (*callback)(const struct cookie_data *cookie));
 void urldb_dump(void);
 
 /* Cookies */
-bool urldb_set_cookie(const char *header, const char *url,
-		const char *referer);
-char *urldb_get_cookie(const char *url);
+bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer);
+char *urldb_get_cookie(nsurl *url);
 void urldb_delete_cookie(const char *domain, const char *path, const char *name);
 void urldb_load_cookies(const char *filename);
 void urldb_save_cookies(const char *filename);
