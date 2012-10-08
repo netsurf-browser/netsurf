@@ -1260,7 +1260,7 @@ nserror browser_window_callback(hlcache_handle *c,
 
 		/* history */
 		if (bw->history_add && bw->history) {
-			const char *url = nsurl_access(hlcache_handle_get_url(c));
+			nsurl *url = hlcache_handle_get_url(c);
 
 			history_add(bw->history, c, bw->frag_id == NULL ? NULL :
 					lwc_string_data(bw->frag_id));
@@ -1270,7 +1270,8 @@ nserror browser_window_callback(hlcache_handle *c,
 				urldb_set_url_content_type(url, 
 						content_get_type(c));
 				/* This is safe as we've just added the URL */
-				global_history_add(urldb_get_url(url));
+				global_history_add(
+					nsurl_access(urldb_get_url(url)));
 			}
 		}
 
