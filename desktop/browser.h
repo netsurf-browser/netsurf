@@ -315,7 +315,7 @@ struct selection *browser_window_get_selection(struct browser_window *bw);
  * Dump debug info concerning the browser window's contents to file
  *
  * \param  bw    The browser window
- * \param  bw    The file to dump to
+ * \param  f    The file to dump to
  */
 void browser_window_debug_dump(struct browser_window *bw, FILE *f);
 

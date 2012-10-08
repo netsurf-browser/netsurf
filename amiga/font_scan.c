@@ -181,7 +181,7 @@ void ami_font_scan_gui_update(struct ami_font_scan_window *fsw, const char *font
 /**
  * Close GUI showing font scanning progress
  *
- * \param win   pointer to a struct ami_font_scan_window
+ * \param fsw pointer to a struct ami_font_scan_window
  */
 void ami_font_scan_gui_close(struct ami_font_scan_window *fsw)
 {
@@ -240,7 +240,9 @@ ULONG ami_font_scan_font(const char *fontname, lwc_string **glypharray)
 /**
  * Scan all fonts for glyphs.
  *
- * \param  glypharray     an array of 0xffff lwc_string pointers
+ * \param list min list
+ * \param win scan window
+ * \param glypharray an array of 0xffff lwc_string pointers
  * \return number of glyphs found
  */
 ULONG ami_font_scan_fonts(struct MinList *list,
