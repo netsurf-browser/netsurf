@@ -597,14 +597,14 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 
-	f->cookie_string = urldb_get_cookie(nsurl_access(f->url));
+	f->cookie_string = urldb_get_cookie(f->url);
 	if (f->cookie_string) {
 		SETOPT(CURLOPT_COOKIE, f->cookie_string);
 	} else {
 		SETOPT(CURLOPT_COOKIE, NULL);
 	}
 
-	if ((auth = urldb_get_auth_details(nsurl_access(f->url), NULL)) != NULL) {
+	if ((auth = urldb_get_auth_details(f->url, NULL)) != NULL) {
 		SETOPT(CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 		SETOPT(CURLOPT_USERPWD, auth);
 	} else {
@@ -633,7 +633,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_PROXY, NULL);
 	}
 
-	if (urldb_get_cert_permissions(nsurl_access(f->url))) {
+	if (urldb_get_cert_permissions(f->url)) {
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 0L);
