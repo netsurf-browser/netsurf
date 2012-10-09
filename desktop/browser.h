@@ -325,8 +325,6 @@ void hotlist_visited(struct hlcache_handle *c);
 
 /* In platform specific global_history.c. */
 void global_history_add(const char *url);
-void global_history_add_recent(const char *url);
-char **global_history_get_recent(int *count);
 
 /* In platform specific theme_install.c. */
 #ifdef WITH_THEME_INSTALL
