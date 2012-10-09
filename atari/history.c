@@ -43,17 +43,6 @@ extern char * tree_directory_icon_name;
 struct s_atari_global_history gl_history;
 
 
-void global_history_add_recent( const char *url )
-{
-
-}
-
-char **global_history_get_recent( int *count )
-{
-    return NULL;
-}
-
-
 void global_history_open( void )
 {
 	GRECT pos = {app.w - (app.w/3), app.y, app.w/3, app.h/2};
