@@ -1453,7 +1453,7 @@ static nserror llcache_fetch_auth(llcache_object *object, const char *realm)
 	if (realm == NULL)
 		realm = nsurl_access(object->url);
 
-	auth = urldb_get_auth_details(nsurl_access(object->url), realm);
+	auth = urldb_get_auth_details(object->url, realm);
 
 	if (auth == NULL || object->fetch.tried_with_auth == true) {
 		/* No authentication details, or tried what we had, so ask */
