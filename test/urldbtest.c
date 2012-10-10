@@ -230,6 +230,10 @@ int main(void)
 	lwc_string_unref(scheme);
 	nsurl_unref(url);
 
+	url = make_url("file:///home/");
+	urldb_add_url(url);
+	nsurl_unref(url);
+
 	url = make_url("http://www.minimarcos.org.uk/cgi-bin/forum/Blah.pl?,v=login,p=2");
 	urldb_set_cookie("mmblah=foo; path=/; expires=Thur, 31-Dec-2099 00:00:00 GMT\r\n", url, NULL);
 	nsurl_unref(url);
