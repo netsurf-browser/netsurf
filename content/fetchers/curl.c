@@ -842,7 +842,7 @@ void fetch_curl_done(CURL *curl_handle, CURLcode result)
 		if (!f->had_headers && fetch_curl_process_headers(f))
 			; /* redirect with partial body, or similar */
 		else {
-			error = true;
+			finished = true;
 		}
 	} else if (result == CURLE_WRITE_ERROR && f->stopped)
 		/* CURLE_WRITE_ERROR occurs when fetch_curl_data
