@@ -1833,7 +1833,7 @@ void ami_handle_msg(void)
 					struct DiskObject *dobj;
 					struct bitmap *bm;
 
-					bm = urldb_get_thumbnail(nsurl_access(hlcache_handle_get_url(gwin->bw->current_content)));
+					bm = urldb_get_thumbnail(hlcache_handle_get_url(gwin->bw->current_content));
 					if(!bm) bm = content_get_bitmap(gwin->bw->current_content);
 					gwin->dobj = amiga_icon_from_bitmap(bm);
 					amiga_icon_superimpose_favicon_internal(gwin->bw->window->favicon,
@@ -4111,7 +4111,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 /* return the text box at posn x,y in window coordinates
    x,y are updated to be document co-ordinates */
 
-bool *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
+bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 {
 	struct IBox *bbox;
 	ULONG xs,ys,width,height;
@@ -4130,7 +4130,7 @@ bool *ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y)
 	width=bbox->Width;
 	height=bbox->Height;
 
-	browser_window_get_contextual_content(gwin->bw, x, y, &data);
+	browser_window_get_contextual_content(gwin->bw, *x, *y, &data);
 
 	if (data.form_features == CTX_FORM_TEXT)
 		return true;
