@@ -1745,6 +1745,8 @@ void browser_window_update(struct browser_window *bw, bool scroll_to_top)
 
 	case BROWSER_WINDOW_IFRAME:
 		/* Internal iframe browser window */
+		assert(bw->parent != NULL);
+		assert(bw->parent->current_content != NULL);
 
 		browser_window_update_extent(bw);
 
