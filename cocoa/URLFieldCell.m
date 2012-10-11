@@ -83,7 +83,7 @@
 	if (nsurl_create( [url UTF8String] , &nsurl ) != NSERROR_OK)
 		return;
 
-	const struct url_data *data = urldb_get_url_data( [url UTF8String] );
+	const struct url_data *data = urldb_get_url_data( nsurl );
 
 	nsurl_unref(nsurl);
 
