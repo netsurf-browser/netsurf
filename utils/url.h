@@ -56,7 +56,6 @@ url_func_result url_nice(const char *url, char **result,
 url_func_result url_escape(const char *unescaped, size_t toskip,
 		bool sptoplus, const char *escexceptions, char **result);
 url_func_result url_unescape(const char *str, char **result);
-url_func_result url_canonical_root(const char *url, char **result);
 url_func_result url_path(const char *url, char **result);
 
 url_func_result url_get_components(const char *url,

@@ -449,40 +449,6 @@ url_func_result url_scheme(const char *url, char **result)
 
 
 /**
- * Return the canonical root of an URL
- *
- * \param url	  an absolute URL
- * \param result  pointer to pointer to buffer to hold canonical rool URL
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_canonical_root(const char *url, char **result)
-{
-	url_func_result status;
-	struct url_components components;
-
-	assert(url);
-
-	status = url_get_components(url, &components);
-	if (status == URL_FUNC_OK) {
-		if ((!components.scheme) || (!components.authority)) {
-			status = URL_FUNC_FAILED;
-		} else {
-			*result = malloc(strlen(components.scheme) +
-					strlen(components.authority) + 4);
-			if (!(*result))
-				status = URL_FUNC_NOMEM;
-			else
-				sprintf((*result), "%s://%s", components.scheme,
-						components.authority);
-		}
-	}
-	url_destroy_components(&components);
-	return status;
-}
-
-
-/**
  * Extract path segment from an URL
  *
  * \param url	  an absolute URL
