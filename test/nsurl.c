@@ -17,6 +17,18 @@ struct test_pairs {
 	const char* res;
 };
 
+struct test_triplets {
+	const char* test1;
+	const char* test2;
+	const char* res;
+};
+
+static void netsurf_lwc_iterator(lwc_string *str, void *pw)
+{
+	LOG(("[%3u] %.*s", str->refcnt, (int) lwc_string_length(str),
+			lwc_string_data(str)));
+}
+
 static const struct test_pairs create_tests[] = {
 	{ "http:",		"http:" },
 	{ "http:/",		"http:" },
@@ -130,6 +142,26 @@ static const struct test_pairs join_tests[] = {
 	{ NULL,			NULL }
 };
 
+static const struct test_triplets replace_query_tests[] = {
+	{ "http://netsurf-browser.org/?magical=true",
+	  "?magical=true&result=win",
+	  "http://netsurf-browser.org/?magical=true&result=win"},
+
+	{ "http://netsurf-browser.org/?magical=true#fragment",
+	  "?magical=true&result=win",
+	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
+
+	{ "http://netsurf-browser.org/#fragment",
+	  "?magical=true&result=win",
+	  "http://netsurf-browser.org/?magical=true&result=win#fragment"},
+
+	{ "http://netsurf-browser.org/path",
+	  "?magical=true",
+	  "http://netsurf-browser.org/path?magical=true"},
+
+	{ NULL,	NULL, NULL }
+};
+
 /**
  * Test nsurl
  */
@@ -141,6 +173,7 @@ int main(void)
 	size_t len;
 	const char *url;
 	const struct test_pairs *test;
+	const struct test_triplets *ttest;
 	int passed = 0;
 	int count = 0;
 
@@ -207,12 +240,48 @@ int main(void)
 		count++;
 	}
 
+	/* Replace query tests */
+	LOG(("Testing nsurl_replace_query"));
+	for (ttest = replace_query_tests; ttest->test1 != NULL; ttest++) {
+		if (nsurl_create(ttest->test1, &base) != NSERROR_OK) {
+			LOG(("Failed to create URL:\n\t\t%s.", ttest->test1));
+		} else {
+			if (nsurl_replace_query(base, ttest->test2, &joined) !=
+					NSERROR_OK) {
+				LOG(("Failed to make test URL"));
+			} else {
+				if (strcmp(nsurl_access(joined),
+						ttest->res) == 0) {
+					LOG(("\tPASS: \"%s\" + %s",
+						ttest->test1,
+						ttest->test2));
+					passed++;
+				} else {
+					LOG(("\tFAIL: \"%s\" + %s",
+						ttest->test1,
+						ttest->test2));
+					LOG(("\t\tExpecting %s", ttest->res));
+					LOG(("\t\tGot %s",
+							nsurl_access(joined)));
+				}
+
+				nsurl_unref(joined);
+			}
+
+			nsurl_unref(base);
+		}
+		count++;
+	}
+
 	if (passed == count) {
 		LOG(("Testing complete: SUCCESS"));
 	} else {
 		LOG(("Testing complete: FAILURE"));
 		LOG(("Failed %d out of %d", count - passed, count));
 	}
+
+	LOG(("Remaining lwc strings:"));
+	lwc_iterate_strings(netsurf_lwc_iterator, NULL);
 
 	return 0;
 }

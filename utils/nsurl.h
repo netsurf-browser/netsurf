@@ -243,6 +243,25 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url);
 
 
 /**
+ * Create a NetSurf URL object, with query string replaced
+ *
+ * \param url	  NetSurf URL to create new NetSurf URL from
+ * \param query	  Query string to use
+ * \param new_url Returns new NetSurf URL with query string provided
+ * \return NSERROR_OK on success, appropriate error otherwise
+ *
+ * If return value != NSERROR_OK, nothing will be returned in new_url.
+ *
+ * It is up to the client to call nsurl_destroy when they are finished with
+ * the created object.
+ *
+ * Any query component in url is replaced with query in new_url.
+ */
+nserror nsurl_replace_query(const nsurl *url, const char *query,
+		nsurl **new_url);
+
+
+/**
  * Create a NetSurf URL object for URL with parent location of an existing URL.
  *
  * \param url	  NetSurf URL to create new NetSurf URL from

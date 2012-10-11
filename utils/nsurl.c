@@ -1902,6 +1902,89 @@ nserror nsurl_refragment(const nsurl *url, lwc_string *frag, nsurl **new_url)
 
 
 /* exported interface, documented in nsurl.h */
+nserror nsurl_replace_query(const nsurl *url, const char *query,
+		nsurl **new_url)
+{
+	int query_len;
+	int base_len;
+	char *pos;
+	size_t len;
+	lwc_string *lwc_query;
+
+	assert(url != NULL);
+	assert(query != NULL);
+	assert(query[0] == '?');
+
+	/* Get the length of the new query */
+	query_len = strlen(query);
+
+	/* Find the change in length from url to new_url */
+	base_len = url->length;
+	if (url->components.query != NULL) {
+		base_len -= lwc_string_length(url->components.query);
+	}
+	if (url->components.fragment != NULL) {
+		base_len -= 1 + lwc_string_length(url->components.fragment);
+	}
+
+	/* Set new_url's length */
+	len = base_len + query_len;
+
+	/* Create NetSurf URL object */
+	*new_url = malloc(sizeof(nsurl) + len + 1); /* Add 1 for \0 */
+	if (*new_url == NULL) {
+		return NSERROR_NOMEM;
+	}
+
+	if (lwc_intern_string(query, query_len, &lwc_query) != lwc_error_ok) {
+		free(*new_url);
+		return NSERROR_NOMEM;
+	}
+
+	(*new_url)->length = len;
+
+	/* Set string */
+	pos = (*new_url)->string;
+	memcpy(pos, url->string, base_len);
+	pos += base_len;
+	memcpy(pos, query, query_len);
+	pos += query_len;
+	if (url->components.fragment != NULL) {
+		const char *frag = lwc_string_data(url->components.fragment);
+		size_t frag_len = lwc_string_length(url->components.fragment);
+		*pos = '#';
+		memcpy(++pos, frag, frag_len);
+		pos += frag_len;
+	}
+	*pos = '\0';
+
+	/* Copy components */
+	(*new_url)->components.scheme =
+			nsurl__component_copy(url->components.scheme);
+	(*new_url)->components.username =
+			nsurl__component_copy(url->components.username);
+	(*new_url)->components.password =
+			nsurl__component_copy(url->components.password);
+	(*new_url)->components.host =
+			nsurl__component_copy(url->components.host);
+	(*new_url)->components.port =
+			nsurl__component_copy(url->components.port);
+	(*new_url)->components.path =
+			nsurl__component_copy(url->components.path);
+	(*new_url)->components.query = lwc_query;
+	(*new_url)->components.fragment =
+			nsurl__component_copy(url->components.fragment);
+
+	(*new_url)->components.scheme_type = url->components.scheme_type;
+
+	/* Give the URL a reference */
+	(*new_url)->count = 1;
+
+	return NSERROR_OK;
+}
+
+
+/* exported interface, documented in nsurl.h */
 nserror nsurl_parent(const nsurl *url, nsurl **new_url)
 {
 	lwc_string *lwc_path;
