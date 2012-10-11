@@ -26,6 +26,7 @@
 #import "desktop/options.h"
 #import "desktop/selection.h"
 
+#import "utils/corestrings.h"
 #import "utils/filename.h"
 #import "utils/url.h"
 
@@ -144,12 +145,13 @@
 		return;
 
 	/* try to load local files directly. */
-	char *scheme;
-	if (url_scheme(nsurl_access(content_get_url(content)), &scheme) != URL_FUNC_OK)
+	lwc_string *scheme = nsurl_get_component(hlcache_handle_get_url(content), NSURL_SCHEME);
+	if (scheme == NULL)
 		return;
-	if (strcmp(scheme, "file") == 0)
-		path = url_to_path(nsurl_access(content_get_url(content)));
-	free(scheme);
+
+	if (lwc_string_isequal(scheme, corestring_lwc_file) == 0)
+		path = url_to_path(nsurl_access(hlcache_handle_get_url(content)));
+	lwc_string_unref(scheme);
 
 	if (path == NULL) {
 		/* We cannot release the requested filename until after it
