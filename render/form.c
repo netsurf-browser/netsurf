@@ -674,26 +674,41 @@ char *form_textarea_value(struct form_control *textarea)
  *
  * \param  form  form to which successful controls relate
  * \param  control  linked list of fetch_multipart_data
+ * \param  query_string  iff true add '?' to the start of returned data
  * \return  URL-encoded form, or 0 on memory exhaustion
  */
 
 char *form_url_encode(struct form *form,
-		struct fetch_multipart_data *control)
+		struct fetch_multipart_data *control,
+		bool query_string)
 {
 	char *name, *value;
-	char *s = malloc(1), *s2;
-	unsigned int len = 0, len1;
+	char *s, *s2;
+	unsigned int len, len1;
 	url_func_result url_err;
 
-	if (!s)
-		return 0;
-	s[0] = 0;
+	if (query_string)
+		s = malloc(2);
+	else
+		s = malloc(1);
+
+	if (s == NULL)
+		return NULL;
+
+	if (query_string) {
+		s[0] = '?';
+		s[1] = '\0';
+		len = 1;
+	} else {
+		s[0] = '\0';
+		len = 0;
+	}
 
 	for (; control; control = control->next) {
 		url_err = url_escape(control->name, 0, true, NULL, &name);
 		if (url_err == URL_FUNC_NOMEM) {
 			free(s);
-			return 0;
+			return NULL;
 		}
 
 		assert(url_err == URL_FUNC_OK);
@@ -702,7 +717,7 @@ char *form_url_encode(struct form *form,
 		if (url_err == URL_FUNC_NOMEM) {
 			free(name);
 			free(s);
-			return 0;
+			return NULL;
 		}
 
 		assert(url_err == URL_FUNC_OK);
@@ -713,7 +728,7 @@ char *form_url_encode(struct form *form,
 			free(value);
 			free(name);
 			free(s);
-			return 0;
+			return NULL;
 		}
 		s = s2;
 		sprintf(s + len, "%s=%s&", name, value);
@@ -723,7 +738,7 @@ char *form_url_encode(struct form *form,
 	}
 
 	if (len)
-		s[len - 1] = 0;
+		s[len - 1] = '\0';
 	return s;
 }
 
@@ -1460,10 +1475,10 @@ void form_radio_set(html_content *html,
 void form_submit(nsurl *page_url, struct browser_window *target,
 		struct form *form, struct form_control *submit_button)
 {
-	char *data = NULL, *url = NULL;
+	char *data = NULL;
 	struct fetch_multipart_data *success;
-	struct url_components components;
-	url_func_result res;
+	nsurl *action;
+	nsurl *action_query;
 
 	assert(form != NULL);
 
@@ -1474,7 +1489,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 
 	switch (form->method) {
 	case method_GET:
-		data = form_url_encode(form, success);
+		data = form_url_encode(form, success, true);
 		if (data == NULL) {
 			fetch_multipart_data_destroy(success);
 			warn_user("NoMemory", 0);
@@ -1482,8 +1497,7 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		}
 
 		/* Decompose action */
-		res = url_get_components(form->action, &components);
-		if (res != URL_FUNC_OK) {
+		if (nsurl_create(form->action, &action) != NSERROR_OK) {
 			free(data);
 			fetch_multipart_data_destroy(success);
 			warn_user("NoMemory", 0);
@@ -1491,24 +1505,24 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 		}
 
 		/* Replace query segment */
-		components.query = data;
-
-		/* Construct submit url */
-		url = url_reform_components(&components);
-		if (url == NULL) {
+		if (nsurl_replace_query(action, data, &action_query) !=
+				NSERROR_OK) {
+			nsurl_unref(action);
 			free(data);
 			fetch_multipart_data_destroy(success);
 			warn_user("NoMemory", 0);
 			return;
 		}
 
-		url_destroy_components(&components);
-
-		browser_window_go(target, url, nsurl_access(page_url), true);
+		/* Construct submit url */
+		browser_window_go(target, nsurl_access(action_query),
+				nsurl_access(page_url), true);
+		nsurl_unref(action);
+		nsurl_unref(action_query);
 		break;
 
 	case method_POST_URLENC:
-		data = form_url_encode(form, success);
+		data = form_url_encode(form, success, false);
 		if (data == NULL) {
 			fetch_multipart_data_destroy(success);
 			warn_user("NoMemory", 0);
@@ -1527,5 +1541,4 @@ void form_submit(nsurl *page_url, struct browser_window *target,
 
 	fetch_multipart_data_destroy(success);
 	free(data);
-	free(url);
 }
