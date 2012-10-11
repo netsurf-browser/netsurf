@@ -167,6 +167,197 @@ out_true:
 	return true;
 }
 
+/**
+ * Split a URL into separate components
+ *
+ * URLs passed to this function are assumed to be valid and no error checking
+ * or recovery is attempted.
+ *
+ * See RFC 3986 for reference.
+ *
+ * \param  url	     a valid absolute or relative URL
+ * \param  result    pointer to buffer to hold components
+ * \return  URL_FUNC_OK on success
+ */
+
+static url_func_result url_get_components(const char *url,
+		struct url_components *result)
+{
+  	int storage_length;
+	char *storage_end;
+	const char *scheme;
+	const char *authority;
+	const char *path;
+	const char *query;
+	const char *fragment;
+	struct url_components_internal *internal;
+
+	assert(url);
+
+	/* clear our return value */
+	internal = (struct url_components_internal *)result;
+	memset(result, 0x00, sizeof(struct url_components));
+
+	/* get enough storage space for a URL with termination at each node */
+	storage_length = strlen(url) + 8;
+	internal->buffer = malloc(storage_length);
+	if (!internal->buffer)
+		return URL_FUNC_NOMEM;
+	storage_end = internal->buffer;
+
+	/* look for a valid scheme */
+	scheme = url;
+	if (isalpha(*scheme)) {
+		for (scheme = url + 1;
+				((*scheme != ':') && (*scheme != '\0'));
+				scheme++) {
+			if (!isalnum(*scheme) && (*scheme != '+') &&
+					(*scheme != '-') && (*scheme != '.'))
+				break;
+		}
+
+		if (*scheme == ':') {
+			memcpy(storage_end, url, scheme - url);
+			storage_end[scheme - url] = '\0';
+			result->scheme = storage_end;
+			storage_end += scheme - url + 1;
+			scheme++;
+		} else {
+			scheme = url;
+		}
+	}
+
+
+	/* look for an authority */
+	authority = scheme;
+	if ((authority[0] == '/') && (authority[1] == '/')) {
+		authority = strpbrk(scheme + 2, "/?#");
+		if (!authority)
+			authority = scheme + strlen(scheme);
+		memcpy(storage_end, scheme + 2, authority - scheme - 2);
+		storage_end[authority - scheme - 2] = '\0';
+		result->authority = storage_end;
+		storage_end += authority - scheme - 1;
+	}
+
+
+	/* look for a path */
+	path = authority;
+	if ((*path != '?') && (*path != '#') && (*path != '\0')) {
+		path = strpbrk(path, "?#");
+		if (!path)
+			path = authority + strlen(authority);
+		memcpy(storage_end, authority, path - authority);
+		storage_end[path - authority] = '\0';
+		result->path = storage_end;
+		storage_end += path - authority + 1;
+	}
+
+
+	/* look for a query */
+	query = path;
+	if (*query == '?') {
+		query = strchr(query, '#');
+		if (!query)
+			query = path + strlen(path);
+		memcpy(storage_end, path + 1, query - path - 1);
+		storage_end[query - path - 1] = '\0';
+		result->query = storage_end;
+		storage_end += query - path;
+	}
+
+
+	/* look for a fragment */
+	fragment = query;
+	if (*fragment == '#') {
+		fragment = query + strlen(query);
+
+		/* make a copy of the result for the caller */
+		memcpy(storage_end, query + 1, fragment - query - 1);
+		storage_end[fragment - query - 1] = '\0';
+		result->fragment = storage_end;
+		storage_end += fragment - query;
+	}
+
+	assert((result->buffer + storage_length) >= storage_end);
+	return URL_FUNC_OK;
+}
+
+
+/**
+ * Reform a URL from separate components
+ *
+ * See RFC 3986 for reference.
+ *
+ * \param  components  the components to reform into a URL
+ * \return  a new URL allocated on the heap, or NULL on failure
+ */
+
+static char *url_reform_components(const struct url_components *components)
+{
+	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
+			fragment_len = 0;
+	char *result, *url;
+
+	/* 5.3 */
+	if (components->scheme)
+		scheme_len = strlen(components->scheme) + 1;
+	if (components->authority)
+		authority_len = strlen(components->authority) + 2;
+	if (components->path)
+		path_len = strlen(components->path);
+	if (components->query)
+		query_len = strlen(components->query) + 1;
+	if (components->fragment)
+		fragment_len = strlen(components->fragment) + 1;
+
+	/* claim memory */
+	url = result = malloc(scheme_len + authority_len + path_len +
+			query_len + fragment_len + 1);
+	if (!url) {
+		LOG(("malloc failed"));
+		return NULL;
+	}
+
+	/* rebuild URL */
+	if (components->scheme) {
+	  	sprintf(url, "%s:", components->scheme);
+		url += scheme_len;
+	}
+	if (components->authority) {
+	  	sprintf(url, "//%s", components->authority);
+		url += authority_len;
+	}
+	if (components->path) {
+	  	sprintf(url, "%s", components->path);
+		url += path_len;
+	}
+	if (components->query) {
+	  	sprintf(url, "?%s", components->query);
+		url += query_len;
+	}
+	if (components->fragment)
+	  	sprintf(url, "#%s", components->fragment);
+	return result;
+}
+
+
+/**
+ * Release some url components from memory
+ *
+ * \param  result  pointer to buffer containing components
+ */
+static void url_destroy_components(const struct url_components *components)
+{
+	const struct url_components_internal *internal;
+
+	assert(components);
+
+	internal = (const struct url_components_internal *)components;
+	if (internal->buffer)
+		free(internal->buffer);
+}
+
 
 /**
  * Resolve a relative URL to absolute form.
@@ -683,197 +874,6 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 	free(escaped);
 
 	return URL_FUNC_OK;
-}
-
-/**
- * Split a URL into separate components
- *
- * URLs passed to this function are assumed to be valid and no error checking
- * or recovery is attempted.
- *
- * See RFC 3986 for reference.
- *
- * \param  url	     a valid absolute or relative URL
- * \param  result    pointer to buffer to hold components
- * \return  URL_FUNC_OK on success
- */
-
-url_func_result url_get_components(const char *url,
-		struct url_components *result)
-{
-  	int storage_length;
-	char *storage_end;
-	const char *scheme;
-	const char *authority;
-	const char *path;
-	const char *query;
-	const char *fragment;
-	struct url_components_internal *internal;
-
-	assert(url);
-
-	/* clear our return value */
-	internal = (struct url_components_internal *)result;
-	memset(result, 0x00, sizeof(struct url_components));
-
-	/* get enough storage space for a URL with termination at each node */
-	storage_length = strlen(url) + 8;
-	internal->buffer = malloc(storage_length);
-	if (!internal->buffer)
-		return URL_FUNC_NOMEM;
-	storage_end = internal->buffer;
-
-	/* look for a valid scheme */
-	scheme = url;
-	if (isalpha(*scheme)) {
-		for (scheme = url + 1;
-				((*scheme != ':') && (*scheme != '\0'));
-				scheme++) {
-			if (!isalnum(*scheme) && (*scheme != '+') &&
-					(*scheme != '-') && (*scheme != '.'))
-				break;
-		}
-
-		if (*scheme == ':') {
-			memcpy(storage_end, url, scheme - url);
-			storage_end[scheme - url] = '\0';
-			result->scheme = storage_end;
-			storage_end += scheme - url + 1;
-			scheme++;
-		} else {
-			scheme = url;
-		}
-	}
-
-
-	/* look for an authority */
-	authority = scheme;
-	if ((authority[0] == '/') && (authority[1] == '/')) {
-		authority = strpbrk(scheme + 2, "/?#");
-		if (!authority)
-			authority = scheme + strlen(scheme);
-		memcpy(storage_end, scheme + 2, authority - scheme - 2);
-		storage_end[authority - scheme - 2] = '\0';
-		result->authority = storage_end;
-		storage_end += authority - scheme - 1;
-	}
-
-
-	/* look for a path */
-	path = authority;
-	if ((*path != '?') && (*path != '#') && (*path != '\0')) {
-		path = strpbrk(path, "?#");
-		if (!path)
-			path = authority + strlen(authority);
-		memcpy(storage_end, authority, path - authority);
-		storage_end[path - authority] = '\0';
-		result->path = storage_end;
-		storage_end += path - authority + 1;
-	}
-
-
-	/* look for a query */
-	query = path;
-	if (*query == '?') {
-		query = strchr(query, '#');
-		if (!query)
-			query = path + strlen(path);
-		memcpy(storage_end, path + 1, query - path - 1);
-		storage_end[query - path - 1] = '\0';
-		result->query = storage_end;
-		storage_end += query - path;
-	}
-
-
-	/* look for a fragment */
-	fragment = query;
-	if (*fragment == '#') {
-		fragment = query + strlen(query);
-
-		/* make a copy of the result for the caller */
-		memcpy(storage_end, query + 1, fragment - query - 1);
-		storage_end[fragment - query - 1] = '\0';
-		result->fragment = storage_end;
-		storage_end += fragment - query;
-	}
-
-	assert((result->buffer + storage_length) >= storage_end);
-	return URL_FUNC_OK;
-}
-
-
-/**
- * Reform a URL from separate components
- *
- * See RFC 3986 for reference.
- *
- * \param  components  the components to reform into a URL
- * \return  a new URL allocated on the heap, or NULL on failure
- */
-
-char *url_reform_components(const struct url_components *components)
-{
-	int scheme_len = 0, authority_len = 0, path_len = 0, query_len = 0,
-			fragment_len = 0;
-	char *result, *url;
-
-	/* 5.3 */
-	if (components->scheme)
-		scheme_len = strlen(components->scheme) + 1;
-	if (components->authority)
-		authority_len = strlen(components->authority) + 2;
-	if (components->path)
-		path_len = strlen(components->path);
-	if (components->query)
-		query_len = strlen(components->query) + 1;
-	if (components->fragment)
-		fragment_len = strlen(components->fragment) + 1;
-
-	/* claim memory */
-	url = result = malloc(scheme_len + authority_len + path_len +
-			query_len + fragment_len + 1);
-	if (!url) {
-		LOG(("malloc failed"));
-		return NULL;
-	}
-
-	/* rebuild URL */
-	if (components->scheme) {
-	  	sprintf(url, "%s:", components->scheme);
-		url += scheme_len;
-	}
-	if (components->authority) {
-	  	sprintf(url, "//%s", components->authority);
-		url += authority_len;
-	}
-	if (components->path) {
-	  	sprintf(url, "%s", components->path);
-		url += path_len;
-	}
-	if (components->query) {
-	  	sprintf(url, "?%s", components->query);
-		url += query_len;
-	}
-	if (components->fragment)
-	  	sprintf(url, "#%s", components->fragment);
-	return result;
-}
-
-
-/**
- * Release some url components from memory
- *
- * \param  result  pointer to buffer containing components
- */
-void url_destroy_components(const struct url_components *components)
-{
-	const struct url_components_internal *internal;
-
-	assert(components);
-
-	internal = (const struct url_components_internal *)components;
-	if (internal->buffer)
-		free(internal->buffer);
 }
 
 
