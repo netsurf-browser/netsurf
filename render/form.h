@@ -151,8 +151,6 @@ bool form_add_option(struct form_control *control, char *value, char *text,
 bool form_successful_controls(struct form *form,
 		struct form_control *submit_button,
 		struct fetch_multipart_data **successful_controls);
-char *form_url_encode(struct form *form,
-		struct fetch_multipart_data *control, bool query_string);
 
 bool form_open_select_menu(void *client_data,
 		struct form_control *control,

@@ -678,7 +678,7 @@ char *form_textarea_value(struct form_control *textarea)
  * \return  URL-encoded form, or 0 on memory exhaustion
  */
 
-char *form_url_encode(struct form *form,
+static char *form_url_encode(struct form *form,
 		struct fetch_multipart_data *control,
 		bool query_string)
 {
