@@ -149,7 +149,8 @@
 	if (scheme == NULL)
 		return;
 
-	if (lwc_string_isequal(scheme, corestring_lwc_file) == 0)
+	bool match;
+	if (lwc_string_isequal(scheme, corestring_lwc_file, &match) == lwc_error_ok && match == true)
 		path = url_to_path(nsurl_access(hlcache_handle_get_url(content)));
 	lwc_string_unref(scheme);
 
