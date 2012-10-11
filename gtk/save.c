@@ -19,7 +19,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <libxml/HTMLtree.h>
 
 #include "content/content.h"
 #include "desktop/save_complete.h"

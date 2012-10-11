@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
-#include <libxml/debugXML.h>
 
 #include "gtk/scaffolding.h"
 #include "content/content.h"
