@@ -38,7 +38,7 @@
 - (IBAction) useCurrentPageAsHomepage: (id) sender;
 {
 	struct browser_window *bw = [[(NetSurfApp *)NSApp frontTab] browser];
-	const char *url = nsurl_access(content_get_url( bw->current_content ));
+	const char *url = nsurl_access(hlcache_handle_get_url( bw->current_content ));
 	[self setHomepageURL: [NSString stringWithUTF8String: url]];
 }
 
