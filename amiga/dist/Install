@@ -423,7 +423,7 @@
 	)
 )
 
-(complete 19)
+(complete 18)
 
 (if (>= osver 53)
 	(
@@ -440,6 +440,19 @@
 	;else
 	(
 		(set #addlaunchhandler 0)
+	)
+)
+
+(complete 19)
+
+(set #runfixfonts
+	(askbool
+		(prompt "Installer will run FixFonts after NetSurf is installed.  "
+			"Unless you have a *very* good reason you should not skip this step.")
+		(help "FixFonts corrects inconsistencies in the Amiga FONTS: structure. "
+			"Running it will prevent NetSurf hitting problems when the fonts are scanned.")
+		(default 1)
+		(choices "Run FixFonts" "Skip")
 	)
 )
 
@@ -624,6 +637,16 @@
 ;		(if (= (p_chk_launch-handler "FTP.LH") 0)
 ;			(p_fitr "ENVARC:launch-handler/URL/FTP.LH" "ClientName=\"NETSURF\"   ClientPath=\"APPDIR:NETSURF\"   CMDFORMAT=\"URL=*\"ftp://%s*\"\"")
 ;		)
+	)
+)
+
+(complete 99)
+
+(working "Running FixFonts")
+
+(if #runfixfonts
+	(
+		(run "SYS:System/FixFonts")
 	)
 )
 
