@@ -19,6 +19,7 @@
  */
 
 #include <sys/types.h>
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
@@ -82,6 +83,8 @@ fbtk_request_redraw(fbtk_widget_t *widget)
 {
 	fbtk_widget_t *cwidget;
 	fbtk_widget_t *pwidget;
+
+	assert(widget != NULL);
 
 	/* if widget not mapped do not try to redraw it */
 	pwidget = widget;
