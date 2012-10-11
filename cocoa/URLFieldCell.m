@@ -78,8 +78,15 @@
 {
 	NSString *url = [self stringValue];
 	NSString *title = url;
+	nsurl *nsurl;
+
+	if (nsurl_create( [url UTF8String] , &nsurl ) != NSERROR_OK)
+		return;
 
 	const struct url_data *data = urldb_get_url_data( [url UTF8String] );
+
+	nsurl_unref(nsurl);
+
 	if (data && data->title) title = [NSString stringWithUTF8String: data->title];
 
 	NSPasteboard *pb = [NSPasteboard pasteboardWithName: NSDragPboard];
