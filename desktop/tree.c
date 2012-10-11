@@ -753,6 +753,7 @@ static void tree_handle_node_changed(struct tree *tree, struct node *node,
 	int node_width, node_height, tree_width, tree_height;
 
 	assert(node != NULL);
+	assert(tree != NULL);
 
 	node_width = node->box.width;
 	node_height = node->box.height;
