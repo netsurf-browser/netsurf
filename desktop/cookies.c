@@ -342,6 +342,8 @@ static void cookies_schedule_callback(const void *scheduled_data)
 			warn_user("NoMemory", 0);
 			return;
 		}
+		/* ownership of domain_cp passed to tree, if node creation
+		 * does not fail */
 		node = tree_create_folder_node(cookies_tree,
 					       cookies_tree_root, domain_cp,
 					       false, false, false);
@@ -349,6 +351,9 @@ static void cookies_schedule_callback(const void *scheduled_data)
 			tree_set_node_user_callback(node, cookies_node_callback,
 						    NULL);
 			tree_set_node_icon(cookies_tree, node, folder_icon);
+
+		} else {
+			free(domain_cp);
 		}
 	}
 
