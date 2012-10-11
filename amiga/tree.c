@@ -283,10 +283,14 @@ void ami_tree_drag_icon_show(struct treeview_window *twin)
 	{
 		if(node && (url = tree_url_node_get_url(node)))
 		{
-			if(data = urldb_get_url_data(url))
+			nsurl *nsurl;
+			if (nsurl_create(url, &nsurl) != NSERROR_OK)
+				return;
+			if(data = urldb_get_url_data(nsurl))
 			{
 				type = ami_content_type_to_file_type(data->type);
 			}
+			nsurl_unref(nsurl);
 		}
 		ami_drag_icon_show(twin->win, type);
 	}
