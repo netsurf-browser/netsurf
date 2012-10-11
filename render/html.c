@@ -450,6 +450,9 @@ html_process_encoding_change(struct content *c,
 	dom_hubbub_parser_destroy(html->parser);
 	html->parser = NULL;
 
+	if (html->document != NULL)
+		dom_node_unref(html->document);
+
 	/* Create new binding, using the new encoding */
 	html->parser = dom_hubbub_parser_create(html->encoding, 
 						true, 
