@@ -416,13 +416,17 @@ nserror corestrings_init(void)
 			SLEN("multipart/form-data"),
 			&corestring_lwc_multipart_form_data);
 	if ((lerror != lwc_error_ok) ||
-			(corestring_lwc_multipart_form_data == NULL))
+			(corestring_lwc_multipart_form_data == NULL)) {
+		error = NSERROR_NOMEM;
 		goto error;
+	}
 
 	lerror = lwc_intern_string("text/css", SLEN("text/css"),
 			&corestring_lwc_text_css);
-	if ((lerror != lwc_error_ok) || (corestring_lwc_text_css == NULL))
+	if ((lerror != lwc_error_ok) || (corestring_lwc_text_css == NULL)) {
+		error = NSERROR_NOMEM;
 		goto error;
+	}
 
 
 #define CSS_DOM_STRING_INTERN(NAME)					\
@@ -482,14 +486,18 @@ nserror corestrings_init(void)
 	exc = dom_string_create_interned((const uint8_t *) "text/javascript",
 			SLEN("text/javascript"),
 			&corestring_dom_text_javascript);
-	if ((exc != DOM_NO_ERR) || (corestring_dom_text_javascript == NULL))
+	if ((exc != DOM_NO_ERR) || (corestring_dom_text_javascript == NULL)) {
+		error = NSERROR_NOMEM;
 		goto error;
+	}
 
 	exc = dom_string_create_interned((const uint8_t *) "http-equiv",
 			SLEN("http-equiv"),
 			&corestring_dom_http_equiv);
-	if ((exc != DOM_NO_ERR) || (corestring_dom_http_equiv == NULL))
+	if ((exc != DOM_NO_ERR) || (corestring_dom_http_equiv == NULL)) {
+		error = NSERROR_NOMEM;
 		goto error;
+	}
 
 	return NSERROR_OK;
 
