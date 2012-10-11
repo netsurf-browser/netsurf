@@ -58,8 +58,6 @@ url_func_result url_escape(const char *unescaped, size_t toskip,
 url_func_result url_unescape(const char *str, char **result);
 url_func_result url_canonical_root(const char *url, char **result);
 url_func_result url_path(const char *url, char **result);
-url_func_result url_compare(const char *url1, const char *url2,
-		bool nofrag, bool *result);
 
 url_func_result url_get_components(const char *url,
 		struct url_components *result);
