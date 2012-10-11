@@ -1652,7 +1652,7 @@ nserror nsurl_join(const nsurl *base, const char *rel, nsurl **joined)
 	if (buff == NULL)
 		return NSERROR_NOMEM;
 
-	buff_start = buff_pos = buff;
+	buff_pos = buff;
 
 	/* Form joined URL from base or rel components, as appropriate */
 
