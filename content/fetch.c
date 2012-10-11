@@ -248,8 +248,7 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 
 	/* The URL we're fetching must have a scheme */
 	scheme = nsurl_get_component(url, NSURL_SCHEME);
-	if (scheme == NULL)
-		goto failed;
+	assert(scheme != NULL);
 
 #ifdef DEBUG_FETCH_VERBOSE
 	LOG(("fetch %p, url '%s'", fetch, nsurl_access(url)));
@@ -307,12 +306,10 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 			lwc_string_unref(ref_scheme);
 	}
 
-	if (fetch->url == NULL)
-		goto failed;
-
 	/* Pick the scheme ops */
 	while (fetcher) {
-		if ((lwc_string_isequal(fetcher->scheme_name, scheme, &match) == lwc_error_ok) && (match == true)) {
+		if ((lwc_string_isequal(fetcher->scheme_name, scheme,
+				&match) == lwc_error_ok) && (match == true)) {
 			fetch->ops = fetcher;
 			break;
 		}
@@ -343,8 +340,7 @@ struct fetch * fetch_start(nsurl *url, nsurl *referer,
 	return fetch;
 
 failed:
-	if (scheme != NULL)
-		lwc_string_unref(scheme);
+	lwc_string_unref(scheme);
 
 	if (fetch->host != NULL)
 		lwc_string_unref(fetch->host);
