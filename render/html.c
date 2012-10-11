@@ -2142,20 +2142,20 @@ html_begin_conversion(html_content *htmlc)
 	htmlc->forms = html_forms_get_forms(htmlc->encoding,
 			(dom_html_document *) htmlc->document);
 	for (f = htmlc->forms; f != NULL; f = f->prev) {
-		char *action;
-		url_func_result res;
+		nsurl *action;
+		nserror res;
 
 		/* Make all actions absolute */
 		if (f->action == NULL || f->action[0] == '\0') {
-			/* HTML5 4.10.22.3 step 11 */
-			res = url_join(nsurl_access(content_get_url(&htmlc->base)),
-					nsurl_access(htmlc->base_url), &action);
+			/* HTML5 4.10.22.3 step 9 */
+			nsurl *doc_addr = content_get_url(&htmlc->base);
+			res = nsurl_join(htmlc->base_url,
+					nsurl_access(doc_addr), &action);
 		} else {
-			res = url_join(f->action, nsurl_access(htmlc->base_url),
-					&action);
+			res = nsurl_join(htmlc->base_url, f->action, &action);
 		}
 
-		if (res != URL_FUNC_OK) {
+		if (res != NSERROR_OK) {
 			msg_data.error = messages_get("NoMemory");
 			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
 			dom_node_unref(html);
@@ -2164,7 +2164,15 @@ html_begin_conversion(html_content *htmlc)
 		}
 
 		free(f->action);
-		f->action = action;
+		f->action = strdup(nsurl_access(action));
+		nsurl_unref(action);
+		if (f->action == NULL) {
+			msg_data.error = messages_get("NoMemory");
+			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+			dom_node_unref(html);
+			dom_node_unref(head);
+			return false;
+		}
 
 		/* Ensure each form has a document encoding */
 		if (f->document_charset == NULL) {
