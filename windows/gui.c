@@ -1821,7 +1821,7 @@ void gui_create_form_select_menu(struct browser_window *bw,
 }
 
 
-void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
+void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		     unsigned long num,
 		     nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {

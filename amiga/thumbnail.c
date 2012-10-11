@@ -37,7 +37,7 @@
 #include <sys/param.h>
 
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-	const char *url)
+	nsurl *url)
 {
 	struct BitScaleArgs bsa;
 	int plot_width;

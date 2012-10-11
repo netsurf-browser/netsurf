@@ -42,7 +42,7 @@
 
 extern void * h_gem_rsrc;
 
-bool login_form_do( char * url, char * realm, char ** out )
+bool login_form_do( nsurl * url, char * realm, char ** out )
 {
 	OBJECT *tree, *newtree;
 	WINDOW * form;
@@ -51,19 +51,21 @@ bool login_form_do( char * url, char * realm, char ** out )
 	bool bres = false;
 	int res = 0;
 	const char * auth;
-	char * host;
-	assert( url_host( url, &host) == URL_FUNC_OK );	
+	lwc_string * host = nsurl_get_component(url, NSURL_HOST);
+	assert(host != NULL);	
 
 	if( realm == NULL ){
 		realm = (char*)"Secure Area";
 	}
 
-	int len = strlen(realm) + strlen(host) + 4;
+	int len = strlen(realm) + lwc_string_length(host) + 4;
 	char * title = malloc( len );
 	strncpy(title, realm, len );
 	strncpy(title, ": ", len-strlen(realm) );
-	strncat(title, host, len-strlen(realm)+2 );
-  	
+	strncat(title, lwc_string_data(host), len-strlen(realm)+2 );
+
+	lwc_string_unref(host);
+
 	auth = urldb_get_auth_details(url, realm);
 	user[0] = 0;
 	pass[0] = 0;

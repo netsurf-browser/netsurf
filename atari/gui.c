@@ -743,12 +743,12 @@ void gui_launch_url(const char *url)
 	LOG(("launch file: %s\n", url));
 }
 
-void gui_401login_open(const char *url,	const char *realm,
+void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	bool bres;
 	char * out = NULL;
-	bres = login_form_do( (char*)url, (char*)realm, &out  );
+	bres = login_form_do( url, (char*)realm, &out  );
 	if( bres ) {
 		LOG(("url: %s, realm: %s, auth: %s\n", url, realm, out ));
 		urldb_set_auth_details(url, realm, out );
@@ -760,7 +760,7 @@ void gui_401login_open(const char *url,	const char *realm,
 		cb(bres, cbpw);
 }
 
-void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
+void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
 		unsigned long num,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {

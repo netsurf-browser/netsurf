@@ -34,7 +34,7 @@ static monkey_cert_t *cert_ring = NULL;
 static uint32_t cert_ctr = 0;
 
 void 
-gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
+gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
                 unsigned long num, nserror (*cb)(bool proceed, void *pw),
                 void *cbpw)
 {
@@ -48,7 +48,7 @@ gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
   RING_INSERT(cert_ring, m4t);
   
   fprintf(stdout, "SSLCERT VERIFY CERT %u URL %s\n",
-          m4t->num, url);
+          m4t->num, nsurl_access(url));
 }
 
 

@@ -1905,12 +1905,14 @@ struct path_data *urldb_find_url(nsurl *url)
 	tree = urldb_get_search_tree(host_str);
 	h = urldb_search_find(tree, host_str);
 	if (!h) {
+		lwc_string_unref(scheme);
 		return NULL;
 	}
 
 	/* generate plq (path, leaf, query) */
 	if (nsurl_get(url, NSURL_PATH | NSURL_QUERY, &plq, &len) !=
 			NSERROR_OK) {
+		lwc_string_unref(scheme);
 		return NULL;
 	}
 

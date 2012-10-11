@@ -19,6 +19,8 @@
 #ifndef NS_LOGIN_H_INCLUDED
 #define NS_LOGIN_H_INCLUDED
 
-bool login_form_do( char * host, char * realm, char **cbpw );
+#include "utils/nsurl.h"
+
+bool login_form_do( nsurl * host, char * realm, char **cbpw );
 
 #endif 

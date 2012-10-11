@@ -35,8 +35,8 @@
 #include "utils/utils.h"
 
 struct session_401 {
-	char *url;				/**< URL being fetched */
-	char *host;				/**< Host for user display */
+	nsurl *url;				/**< URL being fetched */
+	lwc_string *host;			/**< Host for user display */
 	char *realm;				/**< Authentication realm */
 	nserror (*cb)(bool proceed, void *pw);	/**< Continuation callback */
 	void *cbpw;				/**< Continuation data */
@@ -46,7 +46,7 @@ struct session_401 {
 	GtkEntry *pass;				/**< Widget with password */
 };
 
-static void create_login_window(const char *url, const char *host,
+static void create_login_window(nsurl *url, lwc_string *host,
                 const char *realm, nserror (*cb)(bool proceed, void *pw),
 		void *cbpw);
 static void destroy_login_window(struct session_401 *session);
@@ -54,21 +54,20 @@ static void nsgtk_login_next(GtkWidget *w, gpointer data);
 static void nsgtk_login_ok_clicked(GtkButton *w, gpointer data);
 static void nsgtk_login_cancel_clicked(GtkButton *w, gpointer data);
 
-void gui_401login_open(const char *url, const char *realm,
+void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
-	char *host;
-	url_func_result res;
+	lwc_string *host;
 
-	res = url_host(url, &host);
-	assert(res == URL_FUNC_OK);
+	host = nsurl_get_component(url, NSURL_HOST);
+	assert(host != NULL);
 
 	create_login_window(url, host, realm, cb, cbpw);
 
-	free(host);
+	lwc_string_unref(host);
 }
 
-void create_login_window(const char *url, const char *host, const char *realm, 
+void create_login_window(nsurl *url, lwc_string *host, const char *realm, 
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	struct session_401 *session;
@@ -101,8 +100,8 @@ void create_login_window(const char *url, const char *host, const char *realm,
 	/* create and fill in our session structure */
 
 	session = calloc(1, sizeof(struct session_401));
-	session->url = strdup(url);
-	session->host = strdup(host);
+	session->url = nsurl_ref(url);
+	session->host = lwc_string_ref(host);
 	session->realm = strdup(realm ? realm : "Secure Area");
 	session->cb = cb;
 	session->cbpw = cbpw;
@@ -113,7 +112,7 @@ void create_login_window(const char *url, const char *host, const char *realm,
 
 	/* fill in our new login window */
 
-	gtk_label_set_text(GTK_LABEL(lhost), host);
+	gtk_label_set_text(GTK_LABEL(lhost), lwc_string_data(host));
 	gtk_label_set_text(lrealm, realm);
 	gtk_entry_set_text(euser, "");
 	gtk_entry_set_text(epass, "");
@@ -145,8 +144,8 @@ void create_login_window(const char *url, const char *host, const char *realm,
 
 void destroy_login_window(struct session_401 *session)
 {
-	free(session->url);
-	free(session->host);
+	nsurl_unref(session->url);
+	lwc_string_unref(session->host);
 	free(session->realm);
 	gtk_widget_destroy(GTK_WIDGET(session->wnd));
 	g_object_unref(G_OBJECT(session->x));

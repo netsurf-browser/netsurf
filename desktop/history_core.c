@@ -227,6 +227,7 @@ void history_add(struct history *history, hlcache_handle *content,
 		const char *frag_id)
 {
 	struct history_entry *entry;
+	nsurl *nsurl = hlcache_handle_get_url(content);
 	char *url;
 	char *title;
 	struct bitmap *bitmap;
@@ -242,8 +243,7 @@ void history_add(struct history *history, hlcache_handle *content,
 		return;
 
 	/* TODO: use a nsurl? */
-	error = nsurl_get(hlcache_handle_get_url(content), NSURL_WITH_FRAGMENT,
-			&url, &url_len);
+	error = nsurl_get(nsurl, NSURL_WITH_FRAGMENT, &url, &url_len);
 	if (error != NSERROR_OK) {
 		warn_user("NoMemory", 0);
 		free(entry);
@@ -281,7 +281,7 @@ void history_add(struct history *history, hlcache_handle *content,
 
 	/* if we have a thumbnail, don't update until the page has finished
 	 * loading */
-	bitmap = urldb_get_thumbnail(url);
+	bitmap = urldb_get_thumbnail(nsurl);
 	if (!bitmap) {
 		bitmap = bitmap_create(WIDTH, HEIGHT,
 				BITMAP_NEW | BITMAP_CLEAR_MEMORY |
@@ -290,7 +290,7 @@ void history_add(struct history *history, hlcache_handle *content,
 			warn_user("NoMemory", 0);
 			return;
 		}
-		if (thumbnail_create(content, bitmap, url) == false) {
+		if (thumbnail_create(content, bitmap, nsurl) == false) {
 			/* Thumbnailing failed. Ignore it silently */
 			bitmap_destroy(bitmap);
 			bitmap = NULL;
@@ -329,7 +329,7 @@ void history_update(struct history *history, hlcache_handle *content)
 	free(history->current->page.title);
 	history->current->page.title = title;
 
-	thumbnail_create(content, history->current->bitmap, 0);
+	thumbnail_create(content, history->current->bitmap, NULL);
 }
 
 

@@ -48,23 +48,24 @@ struct gui_login_window {
 	Object *objects[GID_LAST];
 	nserror (*cb)(bool proceed, void *pw);
 	void *cbpw;
-	char *url;
+	nsurl *url;
 	char *realm;
-	char *host;
+	lwc_string *host;
 	char uname[256];
 	char pwd[256];
 };
 
-void gui_401login_open(const char *url, const char *realm,
+void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	const char *auth;
 	struct gui_login_window *lw = AllocVec(sizeof(struct gui_login_window),MEMF_PRIVATE | MEMF_CLEAR);
-	char *host;
+	lwc_string *host = nsurl_get_component(url, NSURL_HOST);
 
-	url_host(url, &host);
+	assert(host != NULL);
+
 	lw->host = host;
-	lw->url = (char *)url;
+	lw->url = nsurl_ref(url);
 	lw->realm = (char *)realm;
 	lw->cb = cb;
 	lw->cbpw = cbpw;
@@ -105,7 +106,7 @@ void gui_401login_open(const char *url, const char *realm,
          	WINDOW_Position, WPOS_CENTERSCREEN,
            	WINDOW_ParentGroup, lw->objects[GID_MAIN] = VGroupObject,
 				LAYOUT_AddChild, StringObject,
-					STRINGA_TextVal,lw->host,
+					STRINGA_TextVal,lw->lwc_string_data(host),
 					GA_ReadOnly,TRUE,
 				StringEnd,
 				CHILD_Label, LabelObject,
@@ -171,7 +172,8 @@ void ami_401login_close(struct gui_login_window *lw)
 		lw->cb(false, lw->cbpw);
 
 	DisposeObject(lw->objects[OID_MAIN]);
-	free(lw->host);
+	lwc_string_unref(lw->host);
+	nsurl_unref(lw->url);
 	DelObject(lw->node);
 }
 

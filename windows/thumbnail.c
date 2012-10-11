@@ -35,7 +35,7 @@
 bool 
 thumbnail_create(hlcache_handle *content, 
 		 struct bitmap *bitmap,
-		 const char *url)
+		 nsurl *url)
 {
 	int width;
 	int height;
@@ -53,7 +53,7 @@ thumbnail_create(hlcache_handle *content,
 			bitmap->width;
 
 	LOG(("bitmap %p for url %s content %p width %d, height %d", 
-	     bitmap, url, content, width, height));
+	     bitmap, nsurl_access(url), content, width, height));
 
 	/* create two memory device contexts to put the bitmaps in */
 	bufferdc = CreateCompatibleDC(NULL);

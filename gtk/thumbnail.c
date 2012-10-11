@@ -50,7 +50,7 @@
  * \param  url      the URL the thumnail belongs to, or NULL
  */
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		const char *url)
+		nsurl *url)
 {
 	cairo_surface_t *dsurface = bitmap->surface;
 	cairo_surface_t *surface;
@@ -121,7 +121,7 @@ bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
 
 	/* register the thumbnail with the URL */
 	if (url)
-	  urldb_set_thumbnail(url, bitmap);
+		urldb_set_thumbnail(url, bitmap);
 
 	return true;
 }

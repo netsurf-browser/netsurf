@@ -19,7 +19,7 @@
 #include "desktop/thumbnail.h"
 
 bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
-	const char *url)
+	nsurl *url)
 {
     return false;
 }

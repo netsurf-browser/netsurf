@@ -26,20 +26,21 @@
 
 
 #include "desktop/tree.h"
+#include "utils/nsurl.h"
 
 struct url_data;
 
 void tree_url_node_init(const char *folder_icon_name);
 void tree_url_node_cleanup(void);
 struct node *tree_create_URL_node(struct tree *tree,
-		struct node *parent, const char *url, const char *title,
+		struct node *parent, nsurl *url, const char *title,
     		tree_node_user_callback, void *callback_data);
 struct node *tree_create_URL_node_readonly(struct tree *tree,
-		struct node *parent, const char *url,
+		struct node *parent, nsurl *url,
   		const struct url_data *data,
     		tree_node_user_callback, void *callback_data);
-void tree_update_URL_node(struct tree *tree,struct node *node,
-		const char *url, const struct url_data *data);
+void tree_update_URL_node(struct tree *tree, struct node *node,
+		nsurl *url, const struct url_data *data);
 const char *tree_url_node_get_title(struct node *node);
 const char *tree_url_node_get_url(struct node *node);
 void tree_url_node_edit_title(struct tree *tree, struct node *node);

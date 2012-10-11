@@ -69,7 +69,7 @@ struct List * URLHistory_GetList( void )
 	return &PageList;
 }
 
-static bool URLHistoryFound(const char *url, const struct url_data *data)
+static bool URLHistoryFound(nsurl *url, const struct url_data *data)
 {
 	struct Node *node;
 
@@ -77,16 +77,16 @@ static bool URLHistoryFound(const char *url, const struct url_data *data)
 	if(data->visits <= 0) return true;
 
 	/* skip this URL if it is already in the list */
-	if(URLHistory_FindPage(url)) return true;
+	if(URLHistory_FindPage(nsurl_access(url))) return true;
 
 	node = AllocVec( sizeof( struct Node ), MEMF_SHARED|MEMF_CLEAR );
 
 	if ( node )
 	{
-		STRPTR urladd = (STRPTR) AllocVec( strlen ( url ) + 1, MEMF_SHARED|MEMF_CLEAR );
+		STRPTR urladd = (STRPTR) AllocVec( strlen ( nsurl_access(url) ) + 1, MEMF_SHARED|MEMF_CLEAR );
 		if ( urladd )
 		{
-			strcpy(urladd, url);
+			strcpy(urladd, nsurl_access(url));
 			node->ln_Name = urladd;
 			AddTail( &PageList, node );
 		}

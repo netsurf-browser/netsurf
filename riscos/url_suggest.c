@@ -34,7 +34,7 @@ struct url_suggest_item {
 	struct url_suggest_item	*next;  /*< The next URL in the list.     */
 };
 
-static bool ro_gui_url_suggest_callback(const char *url,
+static bool ro_gui_url_suggest_callback(nsurl *url,
 		const struct url_data *data);
 
 static int suggest_entries;
@@ -152,7 +152,7 @@ bool ro_gui_url_suggest_prepare_menu(void)
  * \return 		true to continue iteration, false otherwise
  */
 
-bool ro_gui_url_suggest_callback(const char *url, const struct url_data *data)
+bool ro_gui_url_suggest_callback(nsurl *url, const struct url_data *data)
 {
 	int			count;
 	unsigned int		weight;
@@ -190,7 +190,10 @@ bool ro_gui_url_suggest_callback(const char *url, const struct url_data *data)
 
 		if (new != NULL) {
 			suggest_entries++;
-			new->url = url;
+			/* TODO: keeping pointers to URLdb data is bad.
+			 *       should be nsurl_ref(url) or
+			 *       take a copy of the string. */
+			new->url = nsurl_access(url);
 			new->weight = weight;
 			new->next = *list;
 
@@ -205,6 +208,7 @@ bool ro_gui_url_suggest_callback(const char *url, const struct url_data *data)
 	while (suggest_list != NULL && suggest_entries > URL_SUGGEST_MAX_URLS) {
 		old = suggest_list;
 		suggest_list = suggest_list->next;
+
 		free(old);
 		suggest_entries--;
 	}
@@ -222,7 +226,7 @@ bool ro_gui_url_suggest_callback(const char *url, const struct url_data *data)
 
 const char *ro_gui_url_suggest_get_selection(wimp_selection *selection)
 {
-	const char	*url = NULL;
+	const char *url = NULL;
 
 	if (selection->items[0] >= 0)
 		url = ro_gui_url_suggest_menu->entries[selection->items[0]].

@@ -40,7 +40,7 @@
 
 #define MAXIMUM_VISIBLE_LINES 7
 
-static const char **url_complete_matches = NULL;
+static nsurl **url_complete_matches = NULL;
 static int url_complete_matches_allocated = 0;
 static int url_complete_matches_available = 0;
 static char *url_complete_matched_string = NULL;
@@ -51,7 +51,7 @@ static bool url_complete_matches_reset = false;
 static char *url_complete_original_url = NULL;
 static bool url_complete_memory_exhausted = false;
 
-static const char *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
+static nsurl *url_complete_redraw[MAXIMUM_VISIBLE_LINES];
 static char url_complete_icon_null[] = "";
 static char url_complete_icon_sprite[12];
 static wimp_icon url_complete_icon;
@@ -59,7 +59,7 @@ static wimp_icon url_complete_sprite;
 static int mouse_x;
 static int mouse_y;
 
-static bool url_complete_callback(const char *url,
+static bool url_complete_callback(nsurl *url,
 		const struct url_data *data);
 
 
@@ -303,12 +303,13 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
 				url_complete_original_url, true, false);
 	} else {
 		ro_toolbar_set_url(toolbar,
-				url_complete_matches[
-					url_complete_matches_selection],
+				nsurl_access(url_complete_matches[
+					url_complete_matches_selection]),
 				true, false);
 		free(url_complete_matched_string);
-		url_complete_matched_string = strdup(url_complete_matches[
-					url_complete_matches_selection]);
+		url_complete_matched_string = strdup(nsurl_access(
+					url_complete_matches[
+					url_complete_matches_selection]));
 	}
 	url_complete_keypress_selection = url_complete_matches_selection;
 
@@ -350,9 +351,9 @@ bool ro_gui_url_complete_keypress(struct toolbar *toolbar, uint32_t key)
  * \return true to continue iteration, false otherwise
  */
 
-bool url_complete_callback(const char *url, const struct url_data *data)
+bool url_complete_callback(nsurl *url, const struct url_data *data)
 {
-	const char **array_extend;
+	nsurl **array_extend;
 
 	/* Ignore unvisited URLs */
 	if (data->visits == 0)
@@ -363,9 +364,9 @@ bool url_complete_callback(const char *url, const struct url_data *data)
 	if (url_complete_matches_available >
 			url_complete_matches_allocated) {
 
-		array_extend = (const char **)realloc(url_complete_matches,
+		array_extend = (nsurl **)realloc(url_complete_matches,
 				(url_complete_matches_allocated + 64) *
-				sizeof(char *));
+				sizeof(nsurl *));
 		if (!array_extend) {
 			url_complete_memory_exhausted = true;
 			return false;
@@ -578,9 +579,11 @@ void ro_gui_url_complete_redraw(wimp_draw *redraw)
 			url_complete_icon.extent.y1 = -line * 44;
 			url_complete_icon.extent.y0 = -(line + 1) * 44;
 			url_complete_icon.data.indirected_text.text =
-					(char *)url_complete_matches[line];
+					(char *)nsurl_access(
+						url_complete_matches[line]);
 			url_complete_icon.data.indirected_text.size =
-					strlen(url_complete_matches[line]);
+					nsurl_length(
+						url_complete_matches[line]);
 
 			error = xwimp_plot_icon(&url_complete_icon);
 			if (error) {
@@ -700,8 +703,8 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 	/* Select sets the text and launches */
 	if (pointer->buttons == wimp_CLICK_SELECT) {
 		ro_toolbar_set_url(g->toolbar,
-				url_complete_matches[
-					url_complete_matches_selection],
+				nsurl_access(url_complete_matches[
+					url_complete_matches_selection]),
 				true, false);
 
 		/** \todo The interaction of components here is hideous */
@@ -714,16 +717,16 @@ bool ro_gui_url_complete_click(wimp_pointer *pointer)
 		 */
 
 		 browser_window_go(g->bw,
-				url_complete_matches[
-					url_complete_matches_selection],
+				nsurl_access(url_complete_matches[
+					url_complete_matches_selection]),
 				0, true);
 		ro_gui_url_complete_close();
 
 	/* Adjust just sets the text */
 	} else if (pointer->buttons == wimp_CLICK_ADJUST) {
 		ro_toolbar_set_url(g->toolbar,
-				url_complete_matches[
-					url_complete_matches_selection],
+				nsurl_access(url_complete_matches[
+					url_complete_matches_selection]),
 				true, false);
 		ro_gui_url_complete_keypress(g->toolbar, 0);
 	}

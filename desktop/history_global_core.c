@@ -94,8 +94,7 @@ static struct node *history_global_find(const char *url)
  * \param data URL data associated with URL
  * \return true (for urldb_iterate_entries)
  */
-static bool global_history_add_internal(const char *url,
-					const struct url_data *data)
+static bool global_history_add_internal(nsurl *url, const struct url_data *data)
 {
 	int i, j;
 	struct node *parent = NULL;
@@ -143,7 +142,7 @@ static bool global_history_add_internal(const char *url,
 
 	/* find any previous occurance */
 	if (global_history_initialised == false) {
-		node = history_global_find(url);
+		node = history_global_find(nsurl_access(url));
 		if (node != NULL) {
 			tree_update_URL_node(global_history_tree,
 					     node, url, data);
@@ -327,7 +326,7 @@ void history_global_cleanup(void)
  *
  * \param url the url to be added
  */
-void global_history_add(const char *url)
+void global_history_add(nsurl *url)
 {
 	const struct url_data *data;
 

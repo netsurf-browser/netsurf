@@ -57,7 +57,7 @@ extern status_t ScaleBitmap(const BBitmap& inBitmap, BBitmap& outBitmap);
  * \param  url      the URL the thumnail belongs to, or NULL
  */
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		const char *url)
+		nsurl *url)
 {
 	BBitmap *thumbnail;
 	BBitmap *small;

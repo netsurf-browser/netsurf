@@ -24,6 +24,7 @@
 #define _NETSURF_DESKTOP_THUMBNAIL_H_
 
 #include <stdbool.h>
+#include "utils/nsurl.h"
 #include "utils/types.h"
 
 struct hlcache_handle;
@@ -52,6 +53,6 @@ bool thumbnail_redraw(struct hlcache_handle *content,
 
 /* In platform specific thumbnail.c. */
 bool thumbnail_create(struct hlcache_handle *content, struct bitmap *bitmap,
-		const char *url);
+		nsurl *url);
 
 #endif

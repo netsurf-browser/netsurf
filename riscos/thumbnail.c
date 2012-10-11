@@ -80,7 +80,7 @@ static void thumbnail_restore_output(struct thumbnail_save_area *save_area);
  * \param  url      the URL the thumbnail belongs to, or NULL
  */
 bool thumbnail_create(hlcache_handle *content, struct bitmap *bitmap,
-		const char *url)
+		nsurl *url)
 {
 	struct thumbnail_save_area *save_area;
 	osspriteop_area *sprite_area = NULL;

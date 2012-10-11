@@ -94,15 +94,14 @@ static nserror netsurf_llcache_query_handler(const llcache_query *query,
 {
 	switch (query->type) {
 	case LLCACHE_QUERY_AUTH:
-		gui_401login_open(nsurl_access(query->url),
-				query->data.auth.realm, cb, cbpw);
+		gui_401login_open(query->url, query->data.auth.realm, cb, cbpw);
 		break;
 	case LLCACHE_QUERY_REDIRECT:
 		/** \todo Need redirect query dialog */
 		/* For now, do nothing, as this query type isn't emitted yet */
 		break;
 	case LLCACHE_QUERY_SSL:
-		gui_cert_verify(nsurl_access(query->url), query->data.ssl.certs, 
+		gui_cert_verify(query->url, query->data.ssl.certs, 
 				query->data.ssl.num, cb, cbpw);
 		break;
 	}

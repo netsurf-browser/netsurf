@@ -34,6 +34,7 @@
 #include "desktop/tree.h"
 #include "utils/log.h"
 #include "utils/messages.h"
+#include "utils/nsurl.h"
 #include "utils/utils.h"
 
 /** Flags for each type of ssl tree node. */
@@ -49,7 +50,7 @@ enum tree_element_ssl {
 /** ssl certificate verification context. */
 struct sslcert_session_data {
 	unsigned long num; /**< The number of ssl certificates in the chain */
-	char *url; /**< The url of the certificate */
+	nsurl *url; /**< The url of the certificate */
 	struct tree *tree; /**< The root of the treeview */
 	llcache_query_response cb; /**< callback when cert is accepted or rejected */
 	void *cbpw; /**< context passed to callback */
@@ -84,7 +85,7 @@ void sslcert_cleanup(void)
 
 struct sslcert_session_data *
 sslcert_create_session_data(unsigned long num,
-			    const char *url, 
+			    nsurl *url, 
 			    llcache_query_response cb, 
 			    void *cbpw)
 {
@@ -95,7 +96,7 @@ sslcert_create_session_data(unsigned long num,
 		warn_user("NoMemory", 0);
 		return NULL;
 	}
-	data->url = strdup(url);
+	data->url = nsurl_ref(url);
 	if (data->url == NULL) {
 		free(data);
 		warn_user("NoMemory", 0);
@@ -246,7 +247,9 @@ static void sslcert_cleanup_session(struct sslcert_session_data *session)
 {
 	assert(session != NULL);
 
-	free(session->url);
+	if (session->url)
+		nsurl_unref(session->url);
+
 	free(session);
 }
 

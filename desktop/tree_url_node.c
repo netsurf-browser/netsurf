@@ -126,14 +126,14 @@ void tree_url_node_cleanup()
  * \return the node created, or NULL for failure
  */
 struct node *tree_create_URL_node(struct tree *tree, struct node *parent,
-		const char *url, const char *title,
+		nsurl *url, const char *title,
 		tree_node_user_callback user_callback, void *callback_data)
 {
 	struct node *node;
 	struct node_element *element;
 	char *text_cp, *squashed;
 
-	squashed = squash_whitespace(title ? title : url);
+	squashed = squash_whitespace(title ? title : nsurl_access(url));
 	text_cp = strdup(squashed);
 	if (text_cp == NULL) {
 		LOG(("malloc failed"));
@@ -161,7 +161,7 @@ struct node *tree_create_URL_node(struct tree *tree, struct node *parent,
 	element = tree_create_node_element(node, NODE_ELEMENT_TEXT,
 					   TREE_ELEMENT_URL, true);
 	if (element != NULL) {
-		text_cp = strdup(url);
+		text_cp = strdup(nsurl_access(url));
 		if (text_cp == NULL) {
 			tree_delete_node(tree, node, false);
 			LOG(("malloc failed"));
@@ -184,7 +184,7 @@ struct node *tree_create_URL_node(struct tree *tree, struct node *parent,
  * \return the node created, or NULL for failure
  */
 struct node *tree_create_URL_node_readonly(struct tree *tree, 
-		struct node *parent, const char *url, 
+		struct node *parent, nsurl *url, 
 		const struct url_data *data, 
 		tree_node_user_callback user_callback, void *callback_data)
 {
@@ -197,7 +197,7 @@ struct node *tree_create_URL_node_readonly(struct tree *tree,
 	if (data->title != NULL) {
 		title = strdup(data->title);
 	} else {
-		title = strdup(url);
+		title = strdup(nsurl_access(url));
 	}
 
 	if (title == NULL)
@@ -223,7 +223,8 @@ struct node *tree_create_URL_node_readonly(struct tree *tree,
 	element = tree_create_node_element(node, NODE_ELEMENT_TEXT,
 					   TREE_ELEMENT_URL, false);
 	if (element != NULL) {
-		tree_update_node_element(tree, element, url, NULL);
+		tree_update_node_element(tree, element, nsurl_access(url),
+				NULL);
 	}
 
 	tree_update_URL_node(tree, node, url, data);
@@ -238,7 +239,7 @@ struct node *tree_create_URL_node_readonly(struct tree *tree,
  * \param node  the node to update
  */
 void tree_update_URL_node(struct tree *tree, struct node *node,
-		const char *url, const struct url_data *data)
+		nsurl *url, const struct url_data *data)
 {
 	struct node_element *element;
 	struct bitmap *bitmap = NULL;
@@ -253,7 +254,7 @@ void tree_update_URL_node(struct tree *tree, struct node *node,
 
 	if (data != NULL) {
 		if (data->title == NULL)
-			urldb_set_url_title(url, url);
+			urldb_set_url_title(url, nsurl_access(url));
 
 		if (data->title == NULL)
 			return;
@@ -367,8 +368,13 @@ node_callback_resp tree_url_node_callback(void *user_data,
 			 */
 		case TREE_ELEMENT_URL:
 			/* reset URL characteristics */
-			urldb_reset_url_visit_data(
-				msg_data->data.text);
+			error = nsurl_create(msg_data->data.text, &nsurl);
+			if (error != NSERROR_OK) {
+				warn_user("NoMemory", 0);
+				return NODE_CALLBACK_REJECT;
+			}
+			urldb_reset_url_visit_data(nsurl);
+			nsurl_unref(nsurl);
 			return NODE_CALLBACK_HANDLED;
 		case TREE_ELEMENT_TITLE:
 			return NODE_CALLBACK_HANDLED;
@@ -386,7 +392,7 @@ node_callback_resp tree_url_node_callback(void *user_data,
 			text = tree_node_element_get_text(element);
 			if (msg_data->flag == TREE_ELEMENT_LAUNCH_IN_TABS) {
 				msg_data->data.bw = browser_window_create(text,
-							msg_data->data.bw, 0, true, true);
+						msg_data->data.bw, 0, true, true);
 			} else {
 				browser_window_create(text, NULL, 0,
 						      true, false);
@@ -407,7 +413,6 @@ node_callback_resp tree_url_node_callback(void *user_data,
 			}
 			error = nsurl_get(nsurl, NSURL_WITH_FRAGMENT,
 					&norm_text, &len);
-			nsurl_unref(nsurl);
 			if (error != NSERROR_OK) {
 				warn_user("NoMemory", 0);
 				return NODE_CALLBACK_REJECT;
@@ -415,18 +420,20 @@ node_callback_resp tree_url_node_callback(void *user_data,
 
 			msg_data->data.text = norm_text;
 
-			data = urldb_get_url_data(norm_text);
+			data = urldb_get_url_data(nsurl);
 			if (data == NULL) {
-				urldb_add_url(norm_text);
-				urldb_set_url_persistence(norm_text,
-							  true);
-				data = urldb_get_url_data(norm_text);
-				if (data == NULL)
+				urldb_add_url(nsurl);
+				urldb_set_url_persistence(nsurl, true);
+				data = urldb_get_url_data(nsurl);
+				if (data == NULL) {
+					nsurl_unref(nsurl);
 					return NODE_CALLBACK_REJECT;
+				}
 			}
 			tree = user_data;
 			tree_update_URL_node(tree, msg_data->node,
-					     norm_text, NULL);
+					     nsurl, NULL);
+			nsurl_unref(nsurl);
 		}
 		else if (msg_data->flag == TREE_ELEMENT_TITLE) {
 			while (isspace(*text))
@@ -529,12 +536,12 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	/* No longer need this */
 	xmlFree(url1);
 
-	data = urldb_get_url_data(nsurl_access(url));
+	data = urldb_get_url_data(url);
 	if (data == NULL) {
 		/* No entry in database, so add one */
-		urldb_add_url(nsurl_access(url));
+		urldb_add_url(url);
 		/* now attempt to get url data */
-		data = urldb_get_url_data(nsurl_access(url));
+		data = urldb_get_url_data(url);
 	}
 	if (data == NULL) {
 		xmlFree(title);
@@ -544,19 +551,19 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	}
 
 	/* Make this URL persistent */
-	urldb_set_url_persistence(nsurl_access(url), true);
+	urldb_set_url_persistence(url, true);
 
 	/* Force the title in the hotlist */
-	urldb_set_url_title(nsurl_access(url), title);
+	urldb_set_url_title(url, title);
 
-	entry = tree_create_URL_node(tree, directory, nsurl_access(url), title,
+	entry = tree_create_URL_node(tree, directory, url, title,
 				     callback, callback_data);
 
  	if (entry == NULL) {
  		/** \todo why isn't this fatal? */
  		warn_user("NoMemory", 0);
  	} else {
-		tree_update_URL_node(tree, entry, nsurl_access(url), data);
+		tree_update_URL_node(tree, entry, url, data);
 	}
 
 

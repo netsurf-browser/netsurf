@@ -25,7 +25,7 @@
 typedef struct monkey401 {
   struct monkey401 *r_next, *r_prev;
   uint32_t num;
-  char *host; /* Ignore */
+  lwc_string *host; /* Ignore */
   nserror (*cb)(bool,void*);
   void *pw;
 } monkey401_t;
@@ -33,7 +33,7 @@ typedef struct monkey401 {
 static monkey401_t *m4_ring = NULL;
 static uint32_t m4_ctr = 0;
 
-void gui_401login_open(const char *url, const char *realm,
+void gui_401login_open(nsurl *url, const char *realm,
                        nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
   monkey401_t *m4t = calloc(sizeof(*m4t), 1);
@@ -46,7 +46,7 @@ void gui_401login_open(const char *url, const char *realm,
   RING_INSERT(m4_ring, m4t);
   
   fprintf(stdout, "401LOGIN OPEN M4 %u URL %s REALM %s\n",
-          m4t->num, url, realm);
+          m4t->num, nsurl_access(url), realm);
 }
 
 

@@ -310,7 +310,7 @@ void gui_launch_url(const char *url)
 
 struct ssl_cert_info;
 
-void gui_cert_verify(const char *url, const struct ssl_cert_info *certs, 
+void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs, 
 					 unsigned long num, nserror (*cb)(bool proceed, void *pw),
 					 void *cbpw)
 {
@@ -318,7 +318,7 @@ void gui_cert_verify(const char *url, const struct ssl_cert_info *certs,
 }
 
 
-void gui_401login_open(const char *url, const char *realm,
+void gui_401login_open(nsurl *url, const char *realm,
 					   nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
 	cb( false, cbpw );

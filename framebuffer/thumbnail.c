@@ -32,7 +32,7 @@
 bool
 thumbnail_create(struct hlcache_handle *content,
 		 struct bitmap *bitmap,
-		 const char *url)
+		 nsurl *url)
 {
 	nsfb_t *tbm = (nsfb_t *)bitmap; /* target bitmap */
 	nsfb_t *bm; /* temporary bitmap */

@@ -468,6 +468,7 @@ bool ro_gui_hotlist_check_menu(wimp_menu *menu)
 
 void ro_gui_hotlist_add_page(const char *url)
 {
+	nsurl *nsurl;
 	const struct url_data				*data;
 	wimp_message					message;
 	struct ro_hotlist_message_hotlist_addurl	*add_url =
@@ -494,9 +495,12 @@ void ro_gui_hotlist_add_page(const char *url)
 
 	LOG(("Sending Hotlist AddURL to potential hotlist clients."));
 
-	data = urldb_get_url_data(url);
+	if (nsurl_create(url, &nsurl) != NSERROR_OK)
+		return;
+	data = urldb_get_url_data(nsurl);
 	if (data == NULL)
 		return;
+	nsurl_unref(nsurl);
 
 	hotlist_url = osmodule_alloc(strlen(url) + 1);
 	hotlist_title = osmodule_alloc(strlen(data->title) + 1);

@@ -26,7 +26,7 @@
 GtkListStore *nsgtk_completion_list;
 
 static void nsgtk_completion_empty(void);
-static bool nsgtk_completion_udb_callback(const char *url,
+static bool nsgtk_completion_udb_callback(nsurl *url,
 		const struct url_data *data);
 
 void nsgtk_completion_init(void)
@@ -56,13 +56,14 @@ void nsgtk_completion_empty(void)
   	gtk_list_store_clear(nsgtk_completion_list);
 }
 
-bool nsgtk_completion_udb_callback(const char *url, const struct url_data *data)
+bool nsgtk_completion_udb_callback(nsurl *url, const struct url_data *data)
 {
 	GtkTreeIter iter;
 
 	if (data->visits != 0) {
 		gtk_list_store_append(nsgtk_completion_list, &iter);
-		gtk_list_store_set(nsgtk_completion_list, &iter, 0, url, -1);
+		gtk_list_store_set(nsgtk_completion_list, &iter, 0,
+				nsurl_access(url), -1);
 	}
 	return true;
 }

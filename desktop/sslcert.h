@@ -31,7 +31,7 @@ unsigned int sslcert_get_tree_flags(void);
 void sslcert_cleanup(void);
 
 struct sslcert_session_data *sslcert_create_session_data(unsigned long num,
-		const char *url, llcache_query_response cb, void *cbpw);
+		nsurl *url, llcache_query_response cb, void *cbpw);
 bool sslcert_load_tree(struct tree *tree,
 		const struct ssl_cert_info *certs,
 		struct sslcert_session_data *data);
