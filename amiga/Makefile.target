@@ -31,7 +31,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I /SDK/local/common/include/libpng12
-  LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -lregex -lauto -lpbl
+  LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -ltre -lintl -lauto -lpbl
   LDFLAGS += -lssl -lcrypto -ldom -lhubbub -lcss -lparserutils -lwapcaplet
 
   ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
@@ -110,7 +110,9 @@ AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle
 AMIGA_RESOURCES := $(addprefix amiga/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
 AMIGA_LIBRARIES := parserutils.library nsgif.library nsbmp.library iconv.library hubbub.library
 AMIGA_LIBS := $(addprefix /Libs/,$(AMIGA_LIBRARIES))
-AMIGA_SHARED_OBJS := libjpeg.so.12 libxml2.so.9 libcurl.so.7 librtmp.so.0 libsvgtiny.so.0 libssl.so.1.0.0 libcrypto.so.1.0.0 libcss.so.0 libwapcaplet.so.0 libpng12.so libdom.so.0 libhubbub.so.0
+AMIGA_SHARED_OBJS := libjpeg.so.12 libxml2.so.9 libcurl.so.7 librtmp.so.0 libsvgtiny.so.0	\
+	libssl.so.1.0.0 libcrypto.so.1.0.0 libcss.so.0 libwapcaplet.so.0 libpng12.so 	\
+	libdom.so.0 libhubbub.so.0 libtre.so.5 libintl.so
 AMIGA_SOBJS := $(addprefix /SObjs/,$(AMIGA_SHARED_OBJS))
 AMIGA_DISTRIBUTION_FILES := amiga/dist/*
 AMIGA_INSTALL_TARGET_DIR := NetSurf_Amiga
