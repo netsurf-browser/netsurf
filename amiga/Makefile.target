@@ -51,10 +51,10 @@ else
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
-  CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libcurl libcares openssl)
+  CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libcurl openssl)
   CFLAGS += $(shell $(PKG_CONFIG) --cflags tre libdom libcss)
 
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libcares openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs tre libdom libcss)
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
