@@ -65,6 +65,7 @@ lwc_string *corestring_lwc_img;
 lwc_string *corestring_lwc_input;
 lwc_string *corestring_lwc_justify;
 lwc_string *corestring_lwc_left;
+lwc_string *corestring_lwc_li;
 lwc_string *corestring_lwc_link;
 lwc_string *corestring_lwc_meta;
 lwc_string *corestring_lwc_middle;
@@ -103,6 +104,7 @@ lwc_string *corestring_lwc_thead;
 lwc_string *corestring_lwc_title;
 lwc_string *corestring_lwc_top;
 lwc_string *corestring_lwc_tr;
+lwc_string *corestring_lwc_ul;
 lwc_string *corestring_lwc_url;
 lwc_string *corestring_lwc_yes;
 lwc_string *corestring_lwc__blank;
@@ -206,6 +208,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(input);
 	CSS_LWC_STRING_UNREF(justify);
 	CSS_LWC_STRING_UNREF(left);
+	CSS_LWC_STRING_UNREF(li);
 	CSS_LWC_STRING_UNREF(link);
 	CSS_LWC_STRING_UNREF(meta);
 	CSS_LWC_STRING_UNREF(middle);
@@ -244,6 +247,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(title);
 	CSS_LWC_STRING_UNREF(top);
 	CSS_LWC_STRING_UNREF(tr);
+	CSS_LWC_STRING_UNREF(ul);
 	CSS_LWC_STRING_UNREF(url);
 	CSS_LWC_STRING_UNREF(yes);
 	CSS_LWC_STRING_UNREF(_blank);
@@ -367,6 +371,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(input);
 	CSS_LWC_STRING_INTERN(justify);
 	CSS_LWC_STRING_INTERN(left);
+	CSS_LWC_STRING_INTERN(li);
 	CSS_LWC_STRING_INTERN(link);
 	CSS_LWC_STRING_INTERN(meta);
 	CSS_LWC_STRING_INTERN(middle);
@@ -403,6 +408,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(title);
 	CSS_LWC_STRING_INTERN(top);
 	CSS_LWC_STRING_INTERN(tr);
+	CSS_LWC_STRING_INTERN(ul);
 	CSS_LWC_STRING_INTERN(url);
 	CSS_LWC_STRING_INTERN(yes);
 	CSS_LWC_STRING_INTERN(_blank);

@@ -45,6 +45,7 @@
 #include "render/search.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"
+#include "utils/libdom.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/schedule.h"
@@ -1626,111 +1627,6 @@ no_memory:
 }
 
 
-/* depth-first walk the dom calling callback for each element
- *
- * @param root the dom node to use as the root of the tree walk
- * @return true if all nodes were examined, false if the callback terminated
- *         the walk early.
- */
-static bool
-html_treewalk_dom(dom_node *root,
-		  bool (*callback)(dom_node *node, dom_string *name, void *ctx),
-		  void *ctx)
-{
-	dom_node *node;
-	bool result = true;;
-
-	node = dom_node_ref(root); /* tree root */
-
-	while (node != NULL) {
-		dom_node *next = NULL;
-		dom_node_type type;
-		dom_string *name;
-		dom_exception exc;
-
-		exc = dom_node_get_first_child(node, &next);
-		if (exc != DOM_NO_ERR) {
-			dom_node_unref(node);
-			break;
-		}
-
-		if (next != NULL) {  /* 1. children */
-			dom_node_unref(node);
-			node = next;
-		} else {
-			exc = dom_node_get_next_sibling(node, &next);
-			if (exc != DOM_NO_ERR) {
-				dom_node_unref(node);
-				break;
-			}
-
-			if (next != NULL) {  /* 2. siblings */
-				dom_node_unref(node);
-				node = next;
-			} else {  /* 3. ancestor siblings */
-				while (node != NULL) {
-					exc = dom_node_get_next_sibling(node,
-							&next);
-					if (exc != DOM_NO_ERR) {
-						dom_node_unref(node);
-						node = NULL;
-						break;
-					}
-
-					if (next != NULL) {
-						dom_node_unref(next);
-						break;
-					}
-
-					exc = dom_node_get_parent_node(node,
-							&next);
-					if (exc != DOM_NO_ERR) {
-						dom_node_unref(node);
-						node = NULL;
-						break;
-					}
-
-					dom_node_unref(node);
-					node = next;
-				}
-
-				if (node == NULL)
-					break;
-
-				exc = dom_node_get_next_sibling(node, &next);
-				if (exc != DOM_NO_ERR) {
-					dom_node_unref(node);
-					break;
-				}
-
-				dom_node_unref(node);
-				node = next;
-			}
-		}
-
-		assert(node != NULL);
-
-		exc = dom_node_get_node_type(node, &type);
-		if ((exc != DOM_NO_ERR) || (type != DOM_ELEMENT_NODE))
-			continue;
-
-		exc = dom_node_get_node_name(node, &name);
-		if (exc != DOM_NO_ERR)
-			continue;
-
-		result = callback(node, name, ctx);
-
-		dom_string_unref(name);
-
-		if (result == false) {
-			break; /* callback caused early termination */
-		}
-
-	}
-	return result;
-}
-
-
 
 struct find_stylesheet_ctx {
 	unsigned int count;
@@ -1957,7 +1853,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	LOG(("%d fetches active", c->base.active));
 
 
-	result = html_treewalk_dom(html, html_process_stylesheet, &ctx);
+	result = libdom_treewalk(html, html_process_stylesheet, &ctx);
 
 	assert(c->stylesheet_count == ctx.count);
 
