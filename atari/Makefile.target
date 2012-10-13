@@ -2,6 +2,17 @@
 # Atari target setup
 # ----------------------------------------------------------------------------
 
+CROSS_COMPILE = m68k-atari-mint-
+
+ifeq ($(HOST),mint)
+CROSS_COMPILE := 
+endif
+
+STRIP := $(CROSS_COMPILE)strip
+STACK := $(CROSS_COMPILE)stack
+
+$(Q)echo Strip: $(STRIP) 
+
 ifeq ($(ATARI_ARCH),68000)
 PRGSUFFIX := 000.app
 PKGNAME := ns000.zip
@@ -97,17 +108,6 @@ ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
 ATARI_GENERIC_RESOURCES := de en fr it ja nl
 ATARI_RESOURCES := $(addprefix \!NetSurf/Resources/,$(ATARI_GENERIC_RESOURCES))
 
-ifeq ($(HOST),mint)
-	STRIP := strip
-	STACK := stack
-endif
-
-ifneq ($(HOST),mint)
-	STRIP := m68k-atari-mint-strip
-	STACK := m68k-atari-mint-stack
-endif
-
-
 # ----------------------------------------------------------------------------
 # Install target
 # ----------------------------------------------------------------------------
@@ -126,8 +126,9 @@ package-atari: $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME) $(PKGNAME)
 	$(VQ)echo Creating $(PKGNAME)
 
 $(PKGNAME): $(EXETARGET)
-#	$(Q)$(STRIP) $(EXETARGET)
-#	$(Q)$(STACK) -S 256k $(EXETARGET)
+	$(Q)echo Stripping symbols from $(EXETARGET) with $(STRIP)
+	$(Q)$(STRIP) $(EXETARGET)
+	$(Q)$(STACK) -S 256k $(EXETARGET)
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
 	$(Q)mkdir $(ATARI_TARGET_DIR)
