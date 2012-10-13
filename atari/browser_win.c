@@ -308,6 +308,59 @@ bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t,
 	return( ( element == gw->root->focus.element && t == gw->root->focus.type) );
 }
 
+void window_set_icon(struct gui_window *gw, struct bitmap * bmp )
+{
+	gw->icon = bmp;
+	/* redraw window when it is iconyfied: */
+	if (gw->icon != NULL) {
+		short info, dummy;
+		WindGet(gw->root->handle, WF_ICONIFY, &info, &dummy, &dummy, &dummy);
+		if (info == 1) {
+			window_redraw_favicon(gw, NULL);
+		}
+ 	}
+}
+
+
+/**
+ * Redraw the favicon
+*/
+void window_redraw_favicon(struct gui_window *gw, GRECT *clip)
+{
+	GRECT work;
+
+	assert(gw->root);
+
+	WINDOW * bw = gw->root->handle;
+
+	WindClear(bw);
+	WindGet(bw, WF_WORKXYWH, &work.g_x, &work.g_y, &work.g_w, &work.g_h);
+	if (clip == NULL) {
+		clip = &work;
+	}
+
+	if (gw->icon == NULL) {
+		OBJECT * tree;
+		RsrcGaddr( h_gem_rsrc, R_TREE, ICONIFY , &tree);
+		tree->ob_x = work.g_x;
+		tree->ob_y = work.g_y;
+		tree->ob_width = work.g_w;
+		tree->ob_height = work.g_h;
+		objc_draw(tree, 0, 8, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
+	} else {
+		// TODO: consider the clipping rectangle
+	    struct rect work_clip = { 0,0,work.g_w,work.g_h };
+	    int xoff=0;
+	    if (work.g_w > work.g_h) {
+	    	xoff = ((work.g_w-work.g_h)/2);
+			work.g_w = work.g_h;
+		}
+	    plot_set_dimensions( work.g_x+xoff, work.g_y, work.g_w, work.g_h);
+        plot_clip(&work_clip);
+        atari_plotters.bitmap(0, 0, work.g_w, work.g_h, gw->icon, 0xffffff, 0);
+	}
+}
+
 
 /* -------------------------------------------------------------------------- */
 /* Event Handlers:                                                            */
@@ -483,35 +536,12 @@ static void __CDECL evnt_window_iconify( WINDOW *win, short buff[8], void * data
 	}
 }
 
-/**
- * Redraw the favicon
-*/
-static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void * data )
-{
-	short x,y,w,h;
-	struct gui_window * gw = (struct gui_window*)data;
 
-	WindClear( win);
-	WindGet( win, WF_WORKXYWH, &x, &y, &w, &h);
-	if( gw->icon == NULL ) {
-		OBJECT * tree;
-		RsrcGaddr( h_gem_rsrc, R_TREE, ICONIFY , &tree );
-		tree->ob_x = x;
-		tree->ob_y = y;
-		tree->ob_width = w;
-		tree->ob_height = h;
-		mt_objc_draw( tree, 0, 8, buff[4], buff[5], buff[6], buff[7], app.aes_global );
-	} else {
-	    struct rect clip = { 0,0,w,h };
-	    int xoff=0;
-	    if (w > h) {
-	    	xoff = ((w-h)/2);
-			w = h;
-		}
-	    plot_set_dimensions( x+xoff,y,w,h );
-        plot_clip(&clip);
-        atari_plotters.bitmap(0, 0, w, h, gw->icon, 0xffffff, 0);
-	}
+static void __CDECL evnt_window_icondraw(WINDOW *win, short buff[8], void * data)
+{
+	struct gui_window *gw = (struct gui_window*) data;
+	GRECT clip = {buff[4], buff[5], buff[6], buff[7]};
+	window_redraw_favicon(gw, &clip);
 }
 
 /* perform the actual resize */

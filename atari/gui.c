@@ -554,7 +554,11 @@ gui_window_remove_caret(struct gui_window *w)
 void
 gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 {
-	g->icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+	struct bitmap *bmp_icon;
+
+	bmp_icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+
+	window_set_icon(g, bmp_icon);
 }
 
 void

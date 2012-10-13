@@ -60,6 +60,7 @@ bool window_url_widget_has_focus( struct gui_window * gw );
 void window_set_url( struct gui_window * gw, const char * text);
 void window_set_stauts( struct gui_window * gw , char * text );
 void window_set_icon(struct gui_window * gw, struct bitmap * bmp );
+void window_redraw_favicon(struct gui_window *gw, GRECT *clip);
 
 
 /* -------------------------------------------------------------------------- */
