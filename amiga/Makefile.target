@@ -15,6 +15,7 @@ NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
 NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
 NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
+NETSURF_FEATURE_AMIGA_CAIRO_CFLAGS := -DNS_AMIGA_CAIRO
 
 ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,ROSPRITE,-DWITH_NSSPRITE,-lrosprite,Sprite (librosprite)))
@@ -27,6 +28,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,VIDEO,-DWITH_VIDEO -I /SDK/local/newlib/include/glib-2.0,-lgstreamer-0.10 -lglib-2.0 -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lintl -lffi,Video (libgstreamer)))
   $(eval $(call feature_enabled,JS,-DXP_UNIX -DWITH_JS -DJS_VERSION=185,-lstdc++ -lmozjs185,JavaScript))
   $(eval $(call feature_enabled,MOZJS,-DXP_AMIGA -DWITH_MOZJS -DJS_VERSION=170 -DJSVERSION_LATEST=170 -DJSOPTION_JIT=0 -DJSCLASS_GLOBAL_FLAGS=0,-ljs -lfdlibm,JavaScript))
+  $(eval $(call pkg_config_find_and_add,AMIGA_CAIRO,cairo,Cairo))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
@@ -34,7 +36,7 @@ ifeq ($(HOST),amiga)
   LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -ltre -lintl -lauto -lpbl
   LDFLAGS += -lssl -lcrypto -ldom -lhubbub -lcss -lparserutils -lwapcaplet
 
-  ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
+  ifeq ($(NETSURF_AMIGA_CAIRO_AVAILABLE),yes)
     CFLAGS += -DNS_AMIGA_CAIRO -I /SDK/local/common/include/cairo
     LDFLAGS += -use-dynld -ldl -lcairo -lpixman-1 -lfreetype -lfontconfig -lpng -lexpat
     EXETARGET := NetSurf
@@ -47,6 +49,7 @@ else
   $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
   $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG))
   $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,NSSVG))
+  $(eval $(call pkg_config_find_and_add,AMIGA_CAIRO,cairo,Cairo))
   $(eval $(call feature_enabled,AMIGA_ICON,-DWITH_AMIGA_ICON,,Amiga icon))
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
@@ -64,11 +67,8 @@ else
     LDFLAGS += -lauto -lpbl
   endif
 
-  ifeq ($(NETSURF_AMIGA_USE_CAIRO),YES)
-    CFLAGS += -DNS_AMIGA_CAIRO
-	CFLAGS += $(shell $(PKG_CONFIG) --cflags cairo)
+  ifeq ($(NETSURF_AMIGA_CAIRO_AVAILABLE),yes)
     LDFLAGS += -use-dynld
-	LDFLAGS += $(shell $(PKG_CONFIG) --libs cairo)
     EXETARGET := NetSurf
   else
     EXETARGET := NetSurf-Static

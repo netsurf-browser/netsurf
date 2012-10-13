@@ -219,7 +219,9 @@ else
       endif
     else
       ifeq ($(findstring amiga,$(TARGET)),amiga)
-        ifneq ($(findstring amiga,$(HOST)),amiga)
+        ifeq ($(findstring amiga,$(HOST)),amiga)
+          PKG_CONFIG := pkg-config
+        else
           ifeq ($(TARGET),amigaos3)
             GCCSDK_INSTALL_ENV ?= /opt/netsurf/m68k-unknown-amigaos/env
             GCCSDK_INSTALL_CROSSBIN ?= /opt/netsurf/m68k-unknown-amigaos/cross/bin

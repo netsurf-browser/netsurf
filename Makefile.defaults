@@ -257,8 +257,8 @@ ifeq ($(TARGET),amiga)
   # Enable NetSurf's use of libcairo for some plotter functions
   # This will also link NetSurf with shared objects, and
   # requires AmigaOS 4.1 or higher to run the resulting executable
-  # Valid options: YES, NO
-  NETSURF_AMIGA_USE_CAIRO := YES
+  # Valid options: YES, NO, AUTO
+  NETSURF_USE_AMIGA_CAIRO := AUTO
 
   # Optimisation levels
   CFLAGS += -O2 -Wuninitialized -gstabs
