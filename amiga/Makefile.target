@@ -68,7 +68,6 @@ else
   endif
 
   ifeq ($(NETSURF_AMIGA_CAIRO_AVAILABLE),yes)
-    LDFLAGS += -use-dynld
     EXETARGET := NetSurf
   else
     EXETARGET := NetSurf-Static
