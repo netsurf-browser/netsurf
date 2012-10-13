@@ -297,9 +297,6 @@ static colour color_popup(int x, int y, colour current)
 		z++;
 	}
 
-	/* hide the mouse */
-	v_hide_c (app.graf.handle);
-
 	plot_set_dimensions(x, y,
 	                    (GRID_COLS*boxwidth)+4, (GRID_ROWS*boxheight)+4);
 	plot_lock();
@@ -340,8 +337,8 @@ static colour color_popup(int x, int y, colour current)
 		}
 	}
 
-	/* restore the mouse */
-	v_show_c ( app.graf.handle, 1);
+	// enable mouse cursor (screen keeps beeing locked):
+	graf_mouse(M_ON, NULL);
 
 	/* fetch mouse event: */
 	mt_EvntDisable(&app, dlgwin, WM_XBUTTON);
