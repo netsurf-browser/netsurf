@@ -2,16 +2,14 @@
 # Atari target setup
 # ----------------------------------------------------------------------------
 
-CROSS_COMPILE = m68k-atari-mint-
-
-ifeq ($(HOST),mint)
-CROSS_COMPILE := 
-endif
-
-STRIP := $(CROSS_COMPILE)strip
-STACK := $(CROSS_COMPILE)stack
-
-$(Q)echo Strip: $(STRIP) 
+# !!!IMPORTANT!!!
+# On regular m68k-atari-mint installation, these must be set
+# manually via env. variables, because the m68k-atari-mint
+# toolchain is located in /usr/bin and the wildcard matching
+# fails then. So this wildcard matches only works for
+# the netsurf environment! 
+STRIP := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*strip)
+STACK := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*stack)
 
 ifeq ($(ATARI_ARCH),68000)
 PRGSUFFIX := 000.app
@@ -126,9 +124,13 @@ package-atari: $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME) $(PKGNAME)
 	$(VQ)echo Creating $(PKGNAME)
 
 $(PKGNAME): $(EXETARGET)
+ifneq ($(strip $(STRIP)),)
 	$(Q)echo Stripping symbols from $(EXETARGET) with $(STRIP)
 	$(Q)$(STRIP) $(EXETARGET)
+endif
+ifneq ($(strip $(STACK)),)
 	$(Q)$(STACK) -S 256k $(EXETARGET)
+endif
 	$(Q)rm -rf $(ATARI_TARGET_DIR)
 	$(Q)rm -rf $(PKGNAME)
 	$(Q)mkdir $(ATARI_TARGET_DIR)
