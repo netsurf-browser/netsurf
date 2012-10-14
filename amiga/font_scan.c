@@ -300,14 +300,16 @@ ULONG ami_font_scan_list(struct MinList *list)
 
 		for(i = 0; i < afh->afh_NumEntries; i++) {
 			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
-				node = (struct nsObject *)FindIName((struct List *)list,
-							af[i].af_Attr.ta_Name);
-				if(node == NULL) {
-					node = AddObject(list, AMINS_UNKNOWN);
-					if(node) {
-						node->dtz_Node.ln_Name = strdup(af[i].af_Attr.ta_Name);
-						found++;
-						LOG(("Added %s\n", af[i].af_Attr.ta_Name));
+				if(af[i].af_Attr.ta_Name != NULL) {
+					node = (struct nsObject *)FindIName((struct List *)list,
+								af[i].af_Attr.ta_Name);
+					if(node == NULL) {
+						node = AddObject(list, AMINS_UNKNOWN);
+						if(node) {
+							node->dtz_Node.ln_Name = strdup(af[i].af_Attr.ta_Name);
+							found++;
+							LOG(("Added %s\n", af[i].af_Attr.ta_Name));
+						}
 					}
 				}
 			}
