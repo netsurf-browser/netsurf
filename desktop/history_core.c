@@ -285,7 +285,7 @@ void history_add(struct history *history, hlcache_handle *content,
 	if (!bitmap) {
 		bitmap = bitmap_create(WIDTH, HEIGHT,
 				BITMAP_NEW | BITMAP_CLEAR_MEMORY |
-				BITMAP_OPAQUE | BITMAP_PERSISTENT);
+				BITMAP_OPAQUE);
 		if (!bitmap) {
 			warn_user("NoMemory", 0);
 			return;
