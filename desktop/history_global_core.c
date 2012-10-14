@@ -28,10 +28,6 @@
 #include "desktop/plotters.h"
 #include "desktop/tree.h"
 #include "desktop/tree_url_node.h"
-
-#ifdef riscos
-#include "riscos/gui.h"
-#endif
 #include "utils/messages.h"
 #include "utils/utils.h"
 #include "utils/log.h"
