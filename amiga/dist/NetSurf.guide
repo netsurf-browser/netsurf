@@ -147,6 +147,9 @@ Returns the active window (or tab if TAB is specified).  Commands automatically 
 @{b}WINDOWS W=WINDOW/K/N@{ub} (2.10656)
 Puts the number of windows into RESULT.  If the WINDOW keyword is specified, will put the number of tabs in that window into RESULT.
 
+@{b}HOTLIST A=ACTION/A@{ub} (3.1 - CI build #471)
+Possible actions for the hotlist window are OPEN and CLOSE.
+
 The W=WINDOW/K/N,T=TAB/K/N parameters were added in 2.10656 and allow targetting a window other than the current one.  Both WINDOW and TAB must be specified (TAB=1 for tabless window) except in the special case of the CLOSE command.
 
 The ARexx menu will be populated with scripts named #?.nsrx in @{"arexx_dir" link options 12}, up to a maximum of 20 entries.  The titles of these entries will be the comments field of the file (or the filename if comments field is empty).
