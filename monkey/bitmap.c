@@ -108,12 +108,6 @@ void bitmap_modified(void *bitmap)
   bmap->state |= BITMAP_MODIFIED;
 }
 
-void bitmap_set_suspendable(void *bitmap, void *private_word,
-                            void (*invalidate)(void *bitmap, void *private_word))
-{
-  
-}
-
 int bitmap_get_width(void *bitmap)
 {
   struct bitmap *bmap = bitmap;

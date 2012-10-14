@@ -81,8 +81,6 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 bool bitmap_save(void *bitmap, const char *path, unsigned flags);
 void bitmap_modified(void *bitmap);
-void bitmap_set_suspendable(void *bitmap, void *private_word,
-		void (*invalidate)(void *bitmap, void *private_word));
 
 int bitmap_get_width(void *bitmap);
 int bitmap_get_height(void *bitmap);

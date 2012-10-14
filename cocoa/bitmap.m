@@ -156,13 +156,6 @@ void bitmap_modified(void *bitmap)
 	}
 }
 
-void bitmap_set_suspendable(void *bitmap, void *private_word,
-							void (*invalidate)(void *bitmap, void *private_word))
-
-{
-	// nothing to do
-}
-
 CGImageRef cocoa_get_cgimage( void *bitmap )
 {
 	NSMapTable *cache = cocoa_get_bitmap_cache();

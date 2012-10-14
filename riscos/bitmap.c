@@ -782,23 +782,6 @@ void bitmap_modified(void *vbitmap) {
 
 
 /**
- * The bitmap image can be suspended.
- *
- * \param  bitmap  	a bitmap, as returned by bitmap_create()
- * \param  private_word	a private word to be returned later
- * \param  invalidate	the function to be called upon suspension
- */
-void bitmap_set_suspendable(void *vbitmap, void *private_word,
-		void (*invalidate)(void *bitmap, void *private_word)) {
-	struct bitmap *bitmap = (struct bitmap *) vbitmap;
-
-	bitmap->private_word = private_word;
-	bitmap->invalidate = invalidate;
-	bitmap_suspendable++;
-}
-
-
-/**
  * Performs routine maintenance.
  */
 void bitmap_maintain(void)

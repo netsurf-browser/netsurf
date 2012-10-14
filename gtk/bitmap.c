@@ -319,18 +319,6 @@ void bitmap_modified(void *vbitmap) {
 	gbitmap->converted = true;
 }
 
-
-/**
- * The bitmap image can be suspended.
- *
- * \param  bitmap  		a bitmap, as returned by bitmap_create()
- * \param  private_word		a private word to be returned later
- * \param  invalidate		the function to be called upon suspension
- */
-void bitmap_set_suspendable(void *vbitmap, void *private_word,
-		void (*invalidate)(void *vbitmap, void *private_word)) {
-}
-
 int bitmap_get_width(void *vbitmap){
 	struct bitmap *gbitmap = (struct bitmap *)vbitmap;
 	assert(gbitmap);

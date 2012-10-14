@@ -120,7 +120,6 @@ static void *nsbmp_bitmap_create(int width, int height, unsigned int bmp_state)
 bmp_bitmap_callback_vt bmp_bitmap_callbacks = {
 	.bitmap_create = nsbmp_bitmap_create,
 	.bitmap_destroy = bitmap_destroy,
-	.bitmap_set_suspendable = bitmap_set_suspendable,
 	.bitmap_get_buffer = bitmap_get_buffer,
 	.bitmap_get_bpp = bitmap_get_bpp
 };

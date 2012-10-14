@@ -235,13 +235,6 @@ static void nsgif_animate(void *p)
 	content_broadcast(&gif->base, CONTENT_MSG_REDRAW, data);
 }
 
-static void nsgif_invalidate(void *bitmap, void *private_word)
-{
-	struct gif_animation *gif = (struct gif_animation *)private_word;
-
-	gif->decoded_frame = -1;
-}
-
 static bool nsgif_convert(struct content *c)
 {
 	nsgif_content *gif = (nsgif_content *) c;
@@ -294,9 +287,6 @@ static bool nsgif_convert(struct content *c)
 	gif->current_frame = 0;
 	if (gif->gif->frame_count_partial > 1)
 		schedule(gif->gif->frames[0].frame_delay, nsgif_animate, c);
-	else
-		bitmap_set_suspendable(gif->gif->frame_image, gif->gif, 
-				nsgif_invalidate);
 
 	/* Exit as a success */
 	content_set_ready(c);

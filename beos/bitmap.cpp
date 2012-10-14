@@ -298,20 +298,6 @@ void bitmap_modified(void *vbitmap) {
 	nsbeos_bitmap_free_pretiles(bitmap);
 }
 
-
-/**
- * The bitmap image can be suspended.
- *
- * \param  vbitmap  	a bitmap, as returned by bitmap_create()
- * \param  private_word	a private word to be returned later
- * \param  suspend	the function to be called upon suspension
- * \param  resume	the function to be called when resuming
- */
-void bitmap_set_suspendable(void *vbitmap, void *private_word,
-		void (*invalidate)(void *vbitmap, void *private_word)) {
-	struct bitmap *bitmap = (struct bitmap *)vbitmap;
-}
-
 int bitmap_get_width(void *vbitmap){
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	return bitmap->primary->Bounds().Width() + 1;

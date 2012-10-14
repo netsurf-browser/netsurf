@@ -177,19 +177,6 @@ bool bitmap_save(void *bitmap, const char *path, unsigned flags)
 void bitmap_modified(void *bitmap) {
 }
 
-
-/**
- * The bitmap image can be suspended.
- *
- * \param  bitmap  	a bitmap, as returned by bitmap_create()
- * \param  private_word	a private word to be returned later
- * \param  suspend	the function to be called upon suspension
- * \param  resume	the function to be called when resuming
- */
-void bitmap_set_suspendable(void *bitmap, void *private_word,
-		void (*invalidate)(void *bitmap, void *private_word)) {
-}
-
 /**
  * Sets whether a bitmap should be plotted opaque
  *
