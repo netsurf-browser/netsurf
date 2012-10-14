@@ -61,8 +61,7 @@
 #define BITMAP_MODIFIED		(1 << 1)	/** buffer has been modified */
 #define BITMAP_PERSISTENT	(1 << 2)	/** retain between sessions */
 #define BITMAP_CLEAR_MEMORY	(1 << 3)	/** memory should be wiped */
-#define BITMAP_SUSPENDED	(1 << 4)	/** currently suspended */
-#define BITMAP_READY		(1 << 5)	/** fully initialised */
+#define BITMAP_READY		(1 << 4)	/** fully initialised */
 
 #define BITMAP_SAVE_FULL_ALPHA	(1 << 0)	/** save with full alpha channel (if not opaque) */
 

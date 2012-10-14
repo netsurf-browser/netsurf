@@ -83,14 +83,6 @@ unsigned int bitmap_compressed_size;
 */
 unsigned int bitmap_compressed_used = 0;
 
-/** Total number of suspendable bitmaps
-*/
-unsigned int bitmap_suspendable = 0;
-
-/** Total number of suspended bitmaps
-*/
-unsigned int bitmap_suspended = 0;
-
 /** Compressed data header
 */
 struct bitmap_compressed_header {
@@ -517,10 +509,6 @@ unsigned char *bitmap_get_buffer(void *vbitmap)
 			return NULL;
 	}
 
-	/* reset our suspended flag */
-	if (bitmap->state & BITMAP_SUSPENDED)
-		bitmap->state &= ~BITMAP_SUSPENDED;
-
 	/* image is already decompressed, no change to image states */
 	if (bitmap->sprite_area)
 		return ((unsigned char *) (bitmap->sprite_area)) + 16 + 44;
@@ -788,7 +776,6 @@ void bitmap_maintain(void)
 {
 	unsigned int memory = 0;
 	unsigned int compressed_memory = 0;
-	unsigned int suspended = 0;
 	struct bitmap *bitmap = bitmap_head;
 	struct bitmap_compressed_header *header;
 	unsigned int maintain_direct_size;
@@ -819,32 +806,12 @@ void bitmap_maintain(void)
 			header = (void *) bitmap->compressed;
 			compressed_memory += header->input_size +
 				sizeof(struct bitmap_compressed_header);
-		} else if (bitmap->state & BITMAP_SUSPENDED)
-			suspended++;
+		}
 	}
 
 	if (!bitmap) {
 		bitmap_maintenance = bitmap_maintenance_priority;
 		bitmap_maintenance_priority = false;
-		return;
-	}
-
-	/* the fastest and easiest way to release memory is by suspending
-	 * images. as such, we try to do this first for as many images as
-	 * possible, potentially freeing up large amounts of memory */
-	if (suspended <= (bitmap_suspendable - bitmap_suspended)) {
-		for (; bitmap; bitmap = bitmap->next) {
-			if (bitmap->invalidate) {
-				bitmap->invalidate(bitmap, bitmap->private_word);
-				free(bitmap->sprite_area);
-				bitmap->sprite_area = NULL;
-				bitmap->state |= BITMAP_SUSPENDED;
-				bitmap->state &= ~BITMAP_READY;
-				bitmap_direct_used -= 16 + 44 +
-					    bitmap->width * bitmap->height * 4;
-			  	bitmap_suspended++;
-			}
-		}
 		return;
 	}
 
