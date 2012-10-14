@@ -102,10 +102,6 @@
 #include "content/urldb.h"
 #include "desktop/cookies.h"
 #include "desktop/options.h"
-#ifdef riscos
-/** \todo lose this */
-#include "riscos/bitmap.h"
-#endif
 #include "utils/log.h"
 #include "utils/corestrings.h"
 #include "utils/filename.h"
@@ -500,23 +496,7 @@ void urldb_load(const char *filename)
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
-#ifdef riscos
-			if (p && strlen(s) == 12) {
-				/* ensure filename is 'XX.XX.XX.XX' */
-				if ((s[2] == '.') && (s[5] == '.') &&
-						(s[8] == '.')) {
-					s[2] = '/';
-					s[5] = '/';
-					s[8] = '/';
-					s[11] = '\0';
-					p->thumb = bitmap_create_file(s);
-				} else if ((s[2] == '/') && (s[5] == '/') &&
-						(s[8] == '/')) {
-					s[11] = '\0';
-					p->thumb = bitmap_create_file(s);
-				}
-			}
-#endif
+
 
 			if (!fgets(s, MAXIMUM_URL_LENGTH, fp))
 				break;
@@ -719,14 +699,7 @@ void urldb_write_paths(const struct path_data *parent, const char *host,
 						(int)p->urld.last_visit,
 						(int)p->urld.type);
 
-#ifdef riscos
-				if (p->thumb)
-					fprintf(fp, "%s\n", p->thumb->filename);
-				else
-					fprintf(fp, "\n");
-#else
 				fprintf(fp, "\n");
-#endif
 
 				if (p->urld.title) {
 					uint8_t *s = (uint8_t *) p->urld.title;
