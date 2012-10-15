@@ -42,6 +42,7 @@ endif
   CFLAGS += -include cocoa/Prefix.pch
 
 #  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
+# TODO: this needs fixing properly everywhere
   VERSION_FULL := "3.0 (Dev)"
   VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
   VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
@@ -226,7 +227,7 @@ NetSurf.tmp.dmg: NetSurf.app
 	sleep 2
 	hdiutil attach $@
 	sleep 2
-	cp $^ /Volumes/NetSurf/
+	cp -pPR $^ /Volumes/NetSurf/
 	hdiutil detach $$(echo $$(hdiutil attach $@ | cut -f 1)  | cut -f 1 -d ' ')
 	sleep 2
 
@@ -236,7 +237,10 @@ NetSurf.dmg: NetSurf.tmp.dmg
 CLEANS += clean-package-cocoa
 
 clean-package-cocoa:
-	$(RM) NetSurf.tmp.dmg
-	$(RM) NetSurf.dmg 
-	$(RM) -r NetSurf.app 
+	$(VQ)echo "   CLEAN: NetSurf.tmp.dmg"
+	$(Q)$(RM) NetSurf.tmp.dmg
+	$(VQ)echo "   CLEAN: NetSurf.dmg"
+	$(Q)$(RM) NetSurf.dmg 
+	$(VQ)echo "   CLEAN: NetSurf.app"
+	$(Q)$(RM) -r NetSurf.app 
 
