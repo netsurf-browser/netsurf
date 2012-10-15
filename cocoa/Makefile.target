@@ -221,7 +221,7 @@ package-cocoa: NetSurf.dmg
 NetSurf.tmp.dmg: NetSurf.app
 	hdiutil create -size 8m -fs HFS+ -volname "NetSurf" $@
 	hdiutil attach $@
-	cp -a $^ /Volumes/NetSurf/
+	cp $^ /Volumes/NetSurf/
 	hdiutil detach $$(echo $$(hdiutil attach $@ | cut -f 1)  | cut -f 1 -d ' ')
 
 NetSurf.dmg: NetSurf.tmp.dmg
