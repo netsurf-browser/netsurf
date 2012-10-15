@@ -41,7 +41,9 @@ endif
   CFLAGS += -I/usr/include/libxml2
   CFLAGS += -include cocoa/Prefix.pch
 
-  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
+#  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)
+# TODO: this needs fixing properly everywhere
+  VERSION_FULL := "3.0 (Dev)"
   VERSION_MAJ := $(shell sed -n '/_major/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
   VERSION_MIN := $(shell sed -n '/_minor/{s/.* = \([0-9]*\).*/\1/;p;}' desktop/version.c)
 
@@ -218,12 +220,27 @@ NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.tar
 
 package-cocoa: NetSurf.dmg
 
+.INTERMEDIATE: NetSurf.tmp.dmg
+
 NetSurf.tmp.dmg: NetSurf.app
 	hdiutil create -size 8m -fs HFS+ -volname "NetSurf" $@
+	sleep 2
 	hdiutil attach $@
-	cp -a $^ /Volumes/NetSurf/
+	sleep 2
+	cp -pPR $^ /Volumes/NetSurf/
 	hdiutil detach $$(echo $$(hdiutil attach $@ | cut -f 1)  | cut -f 1 -d ' ')
+	sleep 2
 
 NetSurf.dmg: NetSurf.tmp.dmg
 	hdiutil convert $^ -format UDZO -o $@
+
+CLEANS += clean-package-cocoa
+
+clean-package-cocoa:
+	$(VQ)echo "   CLEAN: NetSurf.tmp.dmg"
+	$(Q)$(RM) NetSurf.tmp.dmg
+	$(VQ)echo "   CLEAN: NetSurf.dmg"
+	$(Q)$(RM) NetSurf.dmg 
+	$(VQ)echo "   CLEAN: NetSurf.app"
+	$(Q)$(RM) -r NetSurf.app 
 

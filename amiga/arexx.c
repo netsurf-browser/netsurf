@@ -21,8 +21,9 @@
 #include "amiga/arexx.h"
 #include "amiga/download.h"
 #include "amiga/gui.h"
-#include "desktop/options.h"
+#include "amiga/hotlist.h"
 #include "amiga/theme.h"
+#include "desktop/options.h"
 
 #include "desktop/browser_private.h"
 
@@ -58,7 +59,8 @@ enum
 	RX_RELOAD,
 	RX_WINDOWS,
 	RX_ACTIVE,
-	RX_CLOSE
+	RX_CLOSE,
+	RX_HOTLIST
 };
 
 STATIC char result[100];
@@ -78,6 +80,7 @@ STATIC VOID rx_reload(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_windows(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_active(struct ARexxCmd *, struct RexxMsg *);
 STATIC VOID rx_close(struct ARexxCmd *, struct RexxMsg *);
+STATIC VOID rx_hotlist(struct ARexxCmd *, struct RexxMsg *);
 
 STATIC struct ARexxCmd Commands[] =
 {
@@ -96,6 +99,7 @@ STATIC struct ARexxCmd Commands[] =
 	{"WINDOWS",	RX_WINDOWS,	rx_windows,	"W=WINDOW/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"ACTIVE",	RX_ACTIVE,	rx_active,	"T=TAB/S", 		0, 	NULL, 	0, 	0, 	NULL },
 	{"CLOSE",	RX_CLOSE,	rx_close,	"W=WINDOW/K/N,T=TAB/K/N", 		0, 	NULL, 	0, 	0, 	NULL },
+	{"HOTLIST",	RX_HOTLIST,	rx_hotlist,	"A=ACTION/A", 		0, 	NULL, 	0, 	0, 	NULL },
 	{ NULL, 		0, 				NULL, 		NULL, 		0, 	NULL, 	0, 	0, 	NULL }
 };
 
@@ -571,4 +575,15 @@ STATIC VOID rx_close(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((un
 	}
 
 	if(bw) browser_window_destroy(bw);
+}
+
+STATIC VOID rx_hotlist(struct ARexxCmd *cmd, struct RexxMsg *rxm __attribute__((unused)))
+{
+	cmd->ac_RC = 0;
+
+	if(strcasecmp((char *)cmd->ac_ArgList[0], "OPEN") == 0) {
+		ami_tree_open(hotlist_window, AMI_TREE_HOTLIST);
+	} else if(strcasecmp((char *)cmd->ac_ArgList[0], "CLOSE") == 0) {
+		ami_tree_close(hotlist_window);
+	}
 }
