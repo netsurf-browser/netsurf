@@ -218,12 +218,24 @@ NetSurf.app/Contents/Info.plist: cocoa/res/NetSurf-Info.plist cocoa/Makefile.tar
 
 package-cocoa: NetSurf.dmg
 
+.INTERMEDIATE: NetSurf.tmp.dmg
+
 NetSurf.tmp.dmg: NetSurf.app
 	hdiutil create -size 8m -fs HFS+ -volname "NetSurf" $@
+	sleep 2
 	hdiutil attach $@
+	sleep 2
 	cp $^ /Volumes/NetSurf/
 	hdiutil detach $$(echo $$(hdiutil attach $@ | cut -f 1)  | cut -f 1 -d ' ')
+	sleep 2
 
 NetSurf.dmg: NetSurf.tmp.dmg
 	hdiutil convert $^ -format UDZO -o $@
+
+CLEANS += clean-package-cocoa
+
+clean-package-cocoa:
+	$(RM) NetSurf.tmp.dmg
+	$(RM) NetSurf.dmg 
+	$(RM) -r NetSurf.app 
 
