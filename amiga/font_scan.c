@@ -259,10 +259,10 @@ ULONG ami_font_scan_fonts(struct MinList *list,
 	do {
 		nnode = (struct nsObject *)GetSucc((struct Node *)node);
 		ami_font_scan_gui_update(win, node->dtz_Node.ln_Name, font_num, total);
-		LOG(("Scanning %s\n", node->dtz_Node.ln_Name));
+		LOG(("Scanning %s", node->dtz_Node.ln_Name));
 		found = ami_font_scan_font(node->dtz_Node.ln_Name, glypharray);
 		total += found;
-		LOG(("Found %ld new glyphs (total = %ld)\n", found, total));
+		LOG(("Found %ld new glyphs (total = %ld)", found, total));
 		font_num++;
 	} while(node = nnode);
 
@@ -308,7 +308,7 @@ ULONG ami_font_scan_list(struct MinList *list)
 						if(node) {
 							node->dtz_Node.ln_Name = strdup(af[i].af_Attr.ta_Name);
 							found++;
-							LOG(("Added %s\n", af[i].af_Attr.ta_Name));
+							LOG(("Added %s", af[i].af_Attr.ta_Name));
 						}
 					}
 				}
