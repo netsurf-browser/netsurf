@@ -493,31 +493,4 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 	LOG(("Initialised with %ld glyphs", found));
 }
 
-#ifdef AMI_FONT_SCAN_STANDALONE
-/* This can be compiled as standalone using:
-* gcc -o font_scan font_scan.c object.c -lwapcaplet -lauto -I .. -D__USE_INLINE__ -DAMI_FONT_SCAN_STANDALONE
-*/
-int main(int argc, char** argv)
-{
-	lwc_string *glypharray[0xffff + 1];
-	ULONG found = 0;
-	BPTR fh;
-	struct MinList *list;
 
-	if(argc < 2) return 5;
-
-	printf("%s\n",argv[1]);
-
-	list = NewObjList();
-	ami_font_scan_init(argv[1], list, glypharray);
-	FreeObjList(list);
-
-	ami_font_scan_fini(glypharray);
-
-	return 0;
-}
-
-void ami_font_close(APTR discard) { }
-void ami_mime_entry_free(APTR discard) { }
-
-#endif
