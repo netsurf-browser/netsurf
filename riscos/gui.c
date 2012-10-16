@@ -780,6 +780,8 @@ int main(int argc, char** argv)
 
 	setbuf(stderr, NULL);
 
+	/* Pass a NULL pointer for Messages path, because until the Choices
+	 * are loaded in netsurf_init, we don't know the Messages path. */
 	netsurf_init(&argc, &argv, "NetSurf:Choices", NULL);
 
 	artworks_init();
@@ -794,7 +796,9 @@ int main(int argc, char** argv)
 			"NetSurf:Resources.%s.Messages",
 			nsoption_charp(language))) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Messages resource.");
+	/* We disabled core Messages load, so have to load them here */
 	messages_load(path);
+	/* Also load some extra RISC OS specific Messages */
 	messages_load("NetSurf:Resources.LangNames");
 
 	gui_init(argc, argv);
