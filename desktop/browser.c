@@ -1187,6 +1187,121 @@ static void browser_window_update_favicon(hlcache_handle *c,
 	nsurl_unref(nsurl);
 }
 
+/** window callback errorcode handling */
+void 
+browser_window_callback_errorcode(hlcache_handle *c,
+				  struct browser_window *bw, 
+				  nserror code)
+{
+	const char* message;
+
+	switch (code) {
+	case NSERROR_OK:
+		/**< No error */
+		message = messages_get("OK");
+		break;
+
+	case NSERROR_UNKNOWN:
+		/**< Unknown error */
+		message = messages_get("Unknown");
+		break;
+
+	case NSERROR_NOMEM:
+		/**< Memory exhaustion */
+		message = messages_get("NoMemory");
+		break;
+
+	case NSERROR_NO_FETCH_HANDLER:
+		/**< No fetch handler for URL scheme */
+		message = messages_get("NoHandler");
+		break;
+
+	case NSERROR_NOT_FOUND:
+		/**< Requested item not found */
+		message = messages_get("NotFound");
+		break;
+
+	case NSERROR_SAVE_FAILED:
+		/**< Failed to save data */
+		message = messages_get("SaveFailed");
+		break;
+
+	case NSERROR_CLONE_FAILED:
+		/**< Failed to clone handle */
+		message = messages_get("CloneFailed");
+		break;
+
+	case NSERROR_INIT_FAILED:
+		/**< Initialisation failed */
+		message = messages_get("InitFailed");
+		break;
+
+	case NSERROR_MNG_ERROR:
+		/**< An MNG error occurred */
+		message = messages_get("MNGError");
+		break;
+
+	case NSERROR_BAD_ENCODING:
+		/**< The character set is unknown */
+		message = messages_get("BadEncoding");
+		break;
+
+	case NSERROR_NEED_DATA:
+		/**< More data needed */
+		message = messages_get("NeedData");
+		break;
+
+	case NSERROR_BAD_PARAMETER:
+		/**< Bad Parameter */
+		message = messages_get("BadParameter");
+		break;
+
+	case NSERROR_INVALID:
+		/**< Invalid data */
+		message = messages_get("Invalid");
+		break;
+
+	case NSERROR_BOX_CONVERT:
+		/**< Box conversion failed */
+		message = messages_get("BoxConvert");
+		break;
+
+	case NSERROR_STOPPED:
+		/**< Content conversion stopped */
+		message = messages_get("Stopped");
+		break;
+
+	case NSERROR_DOM:
+		/**< DOM call returned error */
+		message = messages_get("ParsingFail");
+		break;
+
+	case NSERROR_BAD_URL:
+		/**< Bad URL */
+		message = messages_get("BadURL");
+		break;
+
+	}
+
+	browser_window_set_status(bw, message);
+
+	/* Only warn the user about errors in top-level windows */
+	if (bw->browser_window_type == BROWSER_WINDOW_NORMAL) {
+		warn_user(message, 0);
+	}
+
+	if (c == bw->loading_content) {
+		bw->loading_content = NULL;
+	} else if (c == bw->current_content) {
+		bw->current_content = NULL;
+		browser_window_remove_caret(bw);
+	}
+
+	hlcache_handle_release(c);
+
+	browser_window_stop_throbber(bw);
+}
+
 /**
  * Callback for fetchcache() for browser window fetches.
  */
@@ -1318,6 +1433,10 @@ nserror browser_window_callback(hlcache_handle *c,
 		if (bw->refresh_interval != -1)
 			schedule(bw->refresh_interval,
 					browser_window_refresh, bw);
+		break;
+
+	case CONTENT_MSG_ERRORCODE:
+		browser_window_callback_errorcode(c, bw, event->data.errorcode);
 		break;
 
 	case CONTENT_MSG_ERROR:

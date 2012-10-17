@@ -29,6 +29,8 @@
 typedef enum {
 	NSERROR_OK,			/**< No error */
 
+	NSERROR_UNKNOWN,		/**< Unknown error - DO *NOT* USE */
+
 	NSERROR_NOMEM,			/**< Memory exhaustion */
 
 	NSERROR_NO_FETCH_HANDLER,	/**< No fetch handler for URL scheme */
@@ -47,7 +49,19 @@ typedef enum {
 
 	NSERROR_NEED_DATA,		/**< More data needed */
 
-	NSERROR_BAD_URL			/**< More data needed */
+	NSERROR_ENCODING_CHANGE,	/**< The character changed */
+
+	NSERROR_BAD_PARAMETER,		/**< Bad Parameter */
+
+	NSERROR_INVALID,		/**< Invalid data */
+
+	NSERROR_BOX_CONVERT,		/**< Box conversion failed */
+
+	NSERROR_STOPPED,		/**< Content conversion stopped */
+
+	NSERROR_DOM,	                /**< DOM call returned error */
+
+	NSERROR_BAD_URL			/**< Bad URL */
 } nserror;
 
 #endif
