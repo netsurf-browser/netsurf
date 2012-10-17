@@ -911,6 +911,17 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+	nsoption_setnull_charp(cookie_file, strdup("cookies"));
+
+	if (nsoption_charp(cookie_file) == NULL) {
+		die("Failed initialising string options");
+	}
+}
+
 static void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
@@ -961,9 +972,6 @@ static void gui_init(int argc, char** argv)
 		urldb_load(nsoption_charp(url_file));
 	}
 
-	if (nsoption_charp(cookie_file) == NULL ){
-		nsoption_set_charp(cookie_file, (char*)"cookies");
-	}
 	LOG(("Loading cookies from: %s", nsoption_charp(cookie_file) ));
 	if( strlen(nsoption_charp(cookie_file)) ){
 		urldb_load_cookies(nsoption_charp(cookie_file));

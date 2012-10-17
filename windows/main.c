@@ -79,6 +79,15 @@ bool nslog_ensure(FILE *fptr)
 	return true;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+
+	/* ensure homepage option has a default */
+	nsoption_setnull_charp(homepage_url, strdup(NETSURF_HOMEPAGE));
+}
+
 /**
  * Entry point from operating system
  **/
@@ -137,9 +146,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hLastInstance, LPSTR lpcli, int ncmd)
 	nsoption_set_bool(target_blank, false);
 
 	nsws_window_init_pointers(hInstance);
-
-	/* ensure homepage option has a default */
-	nsoption_setnull_charp(homepage_url, strdup(NETSURF_HOMEPAGE));
 
 	/* If there is a url specified on the command line use it */
 	if (argc > 1) {

@@ -114,13 +114,16 @@ extern struct ns_options nsoptions;
         }                                       \
     } while (0)
 
-#define nsoption_setnull_charp(OPTION, VALUE) do {	\
-	if (nsoptions.OPTION == NULL) {                 \
+#define nsoption_setnull_charp(OPTION, VALUE)           \
+    do {                                                \
+        if (nsoptions.OPTION == NULL) {                 \
             nsoptions.OPTION = VALUE;                   \
             if (*nsoptions.OPTION == 0) {               \
                 free(nsoptions.OPTION);                 \
                 nsoptions.OPTION = NULL;                \
             }                                           \
+        } else {                                        \
+            free(VALUE);                                \
         }                                               \
     } while (0)
 
@@ -174,6 +177,11 @@ int nsoption_snoptionf(char *string, size_t size, unsigned int option,
  * Process commandline and set options approriately.
  */
 void nsoption_commandline(int *pargc, char **argv);
+
+/**
+ * Set default values for unset front-end specific options
+ */
+void gui_options_init_defaults(void);
 
 #endif
 
