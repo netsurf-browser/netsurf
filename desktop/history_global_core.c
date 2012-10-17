@@ -287,11 +287,14 @@ bool history_global_initialise(struct tree *tree, const char* folder_icon_name)
 	if (!history_global_initialise_nodes())
 		return false;
 
+	LOG(("Building history tree"));
+
 	global_history_initialised = true;
 	urldb_iterate_entries(global_history_add_internal);
 	global_history_initialised = false;
 	tree_set_node_expanded(global_history_tree, global_history_tree_root,
 			       false, true, true);
+	LOG(("History tree built"));
 	return true;
 }
 
