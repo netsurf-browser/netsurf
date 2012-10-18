@@ -24,14 +24,18 @@
 
 struct s_statusbar
 {
+#ifdef WITH_COMPONENT_STATUSBAR
 	COMPONENT * comp;
+#endif
 	char text[STATUSBAR_MAX_SLEN+1];
 	size_t textlen;
 	bool attached;
+	short aes_win;
 };
 
 
 CMP_STATUSBAR sb_create( struct gui_window * gw );
 void sb_destroy( CMP_STATUSBAR s );
 void sb_set_text( CMP_STATUSBAR sb , char * text );
+void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw);
 #endif

@@ -45,6 +45,7 @@
 #include "atari/plot/plot.h"
 #include "atari/osspec.h"
 
+#ifdef WITH_CUSTOM_STATUSBAR
 extern int atari_plot_vdi_handle;
 
 static
@@ -183,6 +184,7 @@ void sb_destroy( CMP_STATUSBAR s )
 
 void sb_set_text( CMP_STATUSBAR sb , char * text )
 {
+
 	LGRECT work;
 	assert( sb != NULL );
 	assert( sb->comp != NULL );
@@ -198,3 +200,41 @@ void sb_set_text( CMP_STATUSBAR sb , char * text )
 		}
 	}
 }
+
+#else
+
+CMP_STATUSBAR sb_create( struct gui_window * gw )
+{
+	CMP_STATUSBAR s = malloc( sizeof(struct s_statusbar) );
+	s->attached = false;
+	sb_set_text( s, (char*)"" );
+	return( s );
+}
+
+void sb_destroy( CMP_STATUSBAR s )
+{
+	LOG(("%s\n", __FUNCTION__ ));
+	if( s ) {
+		free( s );
+	}
+}
+
+void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw)
+{
+	sb->aes_win = gw->root->handle->handle;
+	sb->attached = true;
+}
+
+void sb_set_text(CMP_STATUSBAR sb, char * text )
+{
+	LGRECT work;
+	assert( sb != NULL );
+	strncpy(sb->text, text, STATUSBAR_MAX_SLEN);
+	sb->text[STATUSBAR_MAX_SLEN]=0;
+	sb->textlen = strlen(sb->text);
+	if(sb->attached){
+		wind_set_str(sb->aes_win, WF_INFO, sb->text);
+	}
+}
+
+#endif
