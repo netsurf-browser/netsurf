@@ -1188,7 +1188,7 @@ static void browser_window_update_favicon(hlcache_handle *c,
 }
 
 /** window callback errorcode handling */
-void 
+static void 
 browser_window_callback_errorcode(hlcache_handle *c,
 				  struct browser_window *bw, 
 				  nserror code)
@@ -1199,11 +1199,6 @@ browser_window_callback_errorcode(hlcache_handle *c,
 	case NSERROR_OK:
 		/**< No error */
 		message = messages_get("OK");
-		break;
-
-	case NSERROR_UNKNOWN:
-		/**< Unknown error */
-		message = messages_get("Unknown");
 		break;
 
 	case NSERROR_NOMEM:
@@ -1251,6 +1246,11 @@ browser_window_callback_errorcode(hlcache_handle *c,
 		message = messages_get("NeedData");
 		break;
 
+	case NSERROR_ENCODING_CHANGE:
+		/**< The character set encoding change was unhandled */
+		message = messages_get("EncodingChanged");
+		break;
+
 	case NSERROR_BAD_PARAMETER:
 		/**< Bad Parameter */
 		message = messages_get("BadParameter");
@@ -1279,6 +1279,12 @@ browser_window_callback_errorcode(hlcache_handle *c,
 	case NSERROR_BAD_URL:
 		/**< Bad URL */
 		message = messages_get("BadURL");
+		break;
+
+	default:
+	case NSERROR_UNKNOWN:
+		/**< Unknown error */
+		message = messages_get("Unknown");
 		break;
 
 	}
