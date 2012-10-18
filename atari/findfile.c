@@ -41,7 +41,7 @@ char * local_file_to_url( const char * filename )
 		return( NULL );
 	}
 
-	char * fname_local = alloca( strlen(filename)+1 );
+	char * fname_local = malloc( strlen(filename)+1 );
 	char * start = (char*)fname_local;
 	strcpy( start, filename );
 
@@ -72,6 +72,9 @@ char * local_file_to_url( const char * filename )
 	url = malloc( strlen(start) + FILE_SCHEME_PREFIX_LEN + 1);
 	strcpy( url, FILE_SCHEME_PREFIX );
 	strcat( url, start );
+
+	free(fname_local);
+
 	return( url );
 	#undef BACKSLASH
 }
