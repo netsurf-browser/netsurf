@@ -64,7 +64,7 @@ else
   ifeq ($(SUBTARGET),os3)
     LDFLAGS += -liconv
   else
-    LDFLAGS += -lauto -lpbl -liconv
+    LDFLAGS += -lauto -lpbl
   endif
 
   ifeq ($(NETSURF_AMIGA_CAIRO_AVAILABLE),yes)
