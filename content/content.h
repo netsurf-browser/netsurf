@@ -67,6 +67,7 @@ typedef enum {
 	CONTENT_MSG_READY,     /**< may be displayed */
 	CONTENT_MSG_DONE,      /**< finished */
 	CONTENT_MSG_ERROR,     /**< error occurred */
+	CONTENT_MSG_ERRORCODE, /**< error occurred return nserror */
 	CONTENT_MSG_STATUS,    /**< new status string */
 	CONTENT_MSG_REFORMAT,  /**< content_reformat done */
 	CONTENT_MSG_REDRAW,    /**< needs redraw (eg. new animation frame) */
@@ -96,7 +97,9 @@ struct content_rfc5988_link {
 /** Extra data for some content_msg messages. */
 union content_msg_data {
 	/** CONTENT_MSG_ERROR - Error message */
-	const char *error;	
+	const char *error;
+        /** CONTENT_MSG_ERRORCODE - Error code */
+	nserror errorcode;
 	/** CONTENT_MSG_REDRAW - Area of content which needs redrawing */
 	struct {
 		int x, y, width, height;

@@ -164,15 +164,21 @@ void cocoa_autorelease( void )
 	pool = [[NSAutoreleasePool alloc] init];
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+	const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
+
+	nsoption_setnull_charp(ca_bundle, strdup(ca_bundle));
+}
+
 int main( int argc, char **argv )
 {
 	cocoa_autorelease();
 		
 	const char * const messages = [[[NSBundle mainBundle] pathForResource: @"Messages" ofType: @""] UTF8String];
 	const char * const options = cocoa_get_options_file();
-	const char * const ca_bundle = [[[NSBundle mainBundle] pathForResource: @"ca-bundle" ofType: @""] UTF8String];
-
-	nsoption_setnull_charp(ca_bundle, strdup(ca_bundle));
 
 	netsurf_init(&argc, &argv, options, messages);
 

@@ -31,7 +31,7 @@ bool libdom_treewalk(dom_node *root,
 		void *ctx)
 {
 	dom_node *node;
-	bool result = true;;
+	bool result = true;
 
 	node = dom_node_ref(root); /* tree root */
 

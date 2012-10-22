@@ -475,6 +475,12 @@ int main(int argc, char** argv)
 	return 0;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+}
+
 
 void gui_init(int argc, char** argv)
 {

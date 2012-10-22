@@ -251,23 +251,25 @@ void imagemap_dump(html_content *c)
  * \param map_str A dom_string which is "map"
  * \return false on memory exhaustion, true otherwise
  */
-bool
+nserror
 imagemap_extract(html_content *c)
 {
 	dom_nodelist *nlist;
 	dom_exception exc;
 	unsigned long mapnr;
 	uint32_t maybe_maps;
-	
+	nserror ret = NSERROR_OK;
+
 	exc = dom_document_get_elements_by_tag_name(c->document, 
 						    corestring_dom_map, 
 						    &nlist);
 	if (exc != DOM_NO_ERR) {
-		return false;
+		return NSERROR_DOM;
 	}
 	
 	exc = dom_nodelist_get_length(nlist, &maybe_maps);
 	if (exc != DOM_NO_ERR) {
+		ret = NSERROR_DOM;
 		goto out_nlist;
 	}
 	
@@ -276,6 +278,7 @@ imagemap_extract(html_content *c)
 		dom_string *name;
 		exc = dom_nodelist_item(nlist, mapnr, &node);
 		if (exc != DOM_NO_ERR) {
+			ret = NSERROR_DOM;
 			goto out_nlist;
 		}
 		
@@ -283,6 +286,7 @@ imagemap_extract(html_content *c)
 						&name);
 		if (exc != DOM_NO_ERR) {
 			dom_node_unref(node);
+			ret = NSERROR_DOM;
 			goto out_nlist;
 		}
 		
@@ -292,6 +296,7 @@ imagemap_extract(html_content *c)
 							&name);
 			if (exc != DOM_NO_ERR) {
 				dom_node_unref(node);
+				ret = NSERROR_DOM;
 				goto out_nlist;
 			}
 		}
@@ -301,6 +306,7 @@ imagemap_extract(html_content *c)
 			if (imagemap_extract_map(node, c, &entry) == false) {
 				dom_string_unref(name);
 				dom_node_unref(node);
+				ret = NSERROR_NOMEM; /** @todo check this */
 				goto out_nlist;
 			}
 			
@@ -313,6 +319,7 @@ imagemap_extract(html_content *c)
 			    (imagemap_add(c, name, entry) == false)) {
 				dom_string_unref(name);
 				dom_node_unref(node);
+				ret = NSERROR_NOMEM; /** @todo check this */
 				goto out_nlist;
 			}
 		}
@@ -321,14 +328,12 @@ imagemap_extract(html_content *c)
 		dom_node_unref(node);
 	}
 	
-	dom_nodelist_unref(nlist);
-	
-	return true;
 	
 out_nlist:
 	
 	dom_nodelist_unref(nlist);
-	return false;
+
+	return ret;
 }
 
 /**

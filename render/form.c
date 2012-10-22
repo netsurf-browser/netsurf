@@ -684,7 +684,7 @@ static char *form_url_encode(struct form *form,
 {
 	char *name, *value;
 	char *s, *s2;
-	unsigned int len, len1;
+	unsigned int len, len1, len_init;
 	url_func_result url_err;
 
 	if (query_string)
@@ -698,10 +698,10 @@ static char *form_url_encode(struct form *form,
 	if (query_string) {
 		s[0] = '?';
 		s[1] = '\0';
-		len = 1;
+		len_init = len = 1;
 	} else {
 		s[0] = '\0';
-		len = 0;
+		len_init = len = 0;
 	}
 
 	for (; control; control = control->next) {
@@ -737,7 +737,8 @@ static char *form_url_encode(struct form *form,
 		free(value);
 	}
 
-	if (len)
+	if (len > len_init)
+		/* Replace trailing '&' */
 		s[len - 1] = '\0';
 	return s;
 }

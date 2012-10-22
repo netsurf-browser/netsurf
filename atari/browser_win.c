@@ -104,6 +104,9 @@ int window_create( struct gui_window * gw,
 	if( inflags & WIDGET_RESIZE ){
 		flags |= ( SIZER );
 	}
+	if( inflags & WIDGET_STATUSBAR ){
+		flags |= ( INFO );
+	}
 
 	gw->root = malloc( sizeof(struct s_gui_win_root) );
 	if( gw->root == NULL )
@@ -142,7 +145,9 @@ int window_create( struct gui_window * gw,
 	/* create statusbar component: */
 	if( sb ) {
 		gw->root->statusbar = sb_create( gw );
+#ifdef WITH_COMOPONENT_STATUSBAR
 		mt_CompAttach( &app, gw->root->cmproot, gw->root->statusbar->comp );
+#endif
 	} else {
 		gw->root->statusbar = NULL;
 	}
@@ -231,7 +236,7 @@ void window_open( struct gui_window * gw, GRECT pos )
 	plot_set_dimensions(br.g_x, br.g_y, br.g_w, br.g_h);
 	gw->browser->attached = true;
 	if( gw->root->statusbar != NULL ){
-		gw->root->statusbar->attached = true;
+		sb_attach(gw->root->statusbar, gw);
 	}
 	tb_adjust_size( gw );
 	/*TBD: get already present content and set size? */
@@ -247,7 +252,7 @@ void window_update_back_forward( struct gui_window * gw)
 	tb_update_buttons( gw, -1 );
 }
 
-void window_set_stauts( struct gui_window * gw , char * text )
+void window_set_stauts(struct gui_window * gw , char * text )
 {
 	if( gw->root == NULL )
 		return;
@@ -428,13 +433,11 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 	if( !strncmp( ext, "ARGS", 4) && dd_msg > 0)
 	{
 		ddreply(dd_hdl, DD_OK);
-		buff = (char*)alloca(sizeof(char)*(size+1));
-		if( buff != NULL )
+		buff = (char*)malloc(sizeof(char)*(size+1));
+		if (buff != NULL)
 		{
-			if( Fread(dd_hdl, size, buff ) == size)
-			{
+			if (Fread(dd_hdl, size, buff ) == size)
 				buff[size] = 0;
-			}
 			LOG(("file: %s, ext: %s, size: %d dropped at: %d,%d\n",
 				(char*)buff, (char*)&ext,
 				size, mx, my
@@ -451,8 +454,9 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 				utf8_convert_ret ret;
 				char *utf8_fn;
 
-				ret = utf8_from_local_encoding( buff, 0, &utf8_fn);
+				ret = utf8_from_local_encoding(buff, 0, &utf8_fn);
 				if (ret != UTF8_CONVERT_OK) {
+						free(buff);
 						/* A bad encoding should never happen */
 						LOG(("utf8_from_local_encoding failed"));
 						assert(ret != UTF8_CONVERT_BADENC);
@@ -463,7 +467,8 @@ static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data )
 											mx+gw->browser->scroll.current.x,
 											my+gw->browser->scroll.current.y,
 											utf8_fn );
-				free( utf8_fn );
+				free(utf8_fn);
+				free(buff);
 			}
 		}
 	}

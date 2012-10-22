@@ -91,6 +91,12 @@ static void quit_handler(int argc, char **argv)
   netsurf_quit = true;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+  /* Set defaults for absent option strings */
+}
+
 int
 main(int argc, char **argv)
 {

@@ -166,6 +166,7 @@ nserror netsurf_init(int *pargc,
 
 	LOG(("Using '%s' for Options file", options));
 	nsoption_read(options);
+	gui_options_init_defaults();
 
 	messages_load(messages);
 

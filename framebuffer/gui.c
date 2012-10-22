@@ -476,25 +476,26 @@ process_cmdline(int argc, char** argv)
 	return true;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+	nsoption_setnull_charp(cookie_file, strdup("~/.netsurf/Cookies"));
+	nsoption_setnull_charp(cookie_jar, strdup("~/.netsurf/Cookies"));
+
+	if (nsoption_charp(cookie_file) == NULL ||
+			nsoption_charp(cookie_jar == NULL)) {
+		die("Failed initialising cookie options");
+	}
+}
+
 static void
 gui_init(int argc, char** argv)
 {
 	nsfb_t *nsfb;
 
+	/* Override, since we have no support for non-core SELECT menu */
 	nsoption_set_bool(core_select_menu, true);
-
-	if (nsoption_charp(cookie_file) == NULL) {
-		nsoption_set_charp(cookie_file, strdup("~/.netsurf/Cookies"));
-		LOG(("Using '%s' as Cookies file", nsoption_charp(cookie_file)));
-	}
-
-	if (nsoption_charp(cookie_jar) == NULL) {
-		nsoption_set_charp(cookie_jar, strdup("~/.netsurf/Cookies"));
-		LOG(("Using '%s' as Cookie Jar file", nsoption_charp(cookie_jar)));
-	}
-
-	if (nsoption_charp(cookie_file) == NULL || nsoption_charp(cookie_jar == NULL))
-		die("Failed initialising cookie options");
 
 	if (process_cmdline(argc,argv) != true)
 		die("unable to process command line.\n");

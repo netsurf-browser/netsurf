@@ -241,11 +241,49 @@ nsgtk_init_glade(char **respath)
 	widWarning = GTK_WIDGET(gtk_builder_get_object(gladeWarning, "labelWarning"));
 }
 
-static void check_options(char **respath)
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
 {
 	char *hdir = getenv("HOME");
 	char buf[PATH_MAX];
 
+	/* Set defaults for absent option strings */
+	snprintf(buf, PATH_MAX, "%s/.netsurf/Cookies", hdir);
+	nsoption_setnull_charp(cookie_file, strdup(buf));
+	nsoption_setnull_charp(cookie_jar, strdup(buf));
+	if (nsoption_charp(cookie_file) == NULL ||
+			nsoption_charp(cookie_jar) == NULL)
+		die("Failed initialising cookie options");
+
+	if (nsoption_charp(downloads_directory) == NULL) {
+		snprintf(buf, PATH_MAX, "%s/", hdir);
+		nsoption_set_charp(downloads_directory, strdup(buf));
+	}
+
+	if (nsoption_charp(url_file) == NULL) {
+		snprintf(buf, PATH_MAX, "%s/.netsurf/URLs", hdir);
+		nsoption_set_charp(url_file, strdup(buf));
+	}
+
+	if (nsoption_charp(hotlist_path) == NULL) {
+		snprintf(buf, PATH_MAX, "%s/.netsurf/Hotlist", hdir);
+		nsoption_set_charp(hotlist_path, strdup(buf));
+	}
+
+	nsoption_setnull_charp(ca_path, strdup("/etc/ssl/certs"));
+
+	if (nsoption_charp(url_file) == NULL ||
+			nsoption_charp(ca_path) == NULL ||
+			nsoption_charp(downloads_directory) == NULL ||
+			nsoption_charp(hotlist_path) == NULL) {
+		die("Failed initialising string options");
+	}
+}
+
+static void check_options(char **respath)
+{
+	char *hdir = getenv("HOME");
+	char buf[PATH_MAX];
 	nsoption_set_bool(core_select_menu, true);
 
 	/* Attempt to handle nonsense status bar widths.  These may exist
@@ -259,56 +297,12 @@ static void check_options(char **respath)
 	}
 
 	/* user options should be stored in the users home directory */
-	snprintf(buf, PATH_MAX, "%s/.netsurf/Choices", hdir);      
+	snprintf(buf, PATH_MAX, "%s/.netsurf/Choices", hdir);
 	options_file_location = strdup(buf);
-
-        /* VRS - I do not beleive these setting should search the
-	 * resource path, they should just be set to the default
-	 * values! 
-	 */
-	if (nsoption_charp(cookie_file) == NULL) {
-		filepath_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
-		LOG(("Using '%s' as Cookies file", buf));
-		nsoption_set_charp(cookie_file, strdup(buf));
-	}
-	if (nsoption_charp(cookie_jar) == NULL) {
-		filepath_sfinddef(respath, buf, "Cookies", "~/.netsurf/");
-		LOG(("Using '%s' as Cookie Jar file", buf));
-		nsoption_set_charp(cookie_jar, strdup(buf));
-	}
-	if (nsoption_charp(cookie_file) == NULL || 
-	    nsoption_charp(cookie_jar) == NULL)
-		die("Failed initialising cookie options");
-
-	if (nsoption_charp(url_file) == NULL) {
-		filepath_sfinddef(respath, buf, "URLs", "~/.netsurf/");
-		LOG(("Using '%s' as URL file", buf));
-		nsoption_set_charp(url_file, strdup(buf));
-	}
-
-        if (nsoption_charp(ca_path) == NULL) {
-		filepath_sfinddef(respath, buf, "certs", "/etc/ssl/");
-                LOG(("Using '%s' as certificate path", buf));
-                nsoption_set_charp(ca_path, strdup(buf));
-        }
-
-        if (nsoption_charp(downloads_directory) == NULL) {
-        	LOG(("Using '%s' as download directory", hdir));
-        	nsoption_set_charp(downloads_directory, strdup(hdir));
-	}
 	
 	filepath_sfinddef(respath, buf, "icons/", "~/.netsurf/");
 	LOG(("Using '%s' as Tree icons dir", buf));
 	tree_set_icon_dir(strdup(buf));
-
-	if (nsoption_charp(hotlist_path) == NULL) {
-		filepath_sfinddef(respath, buf, "Hotlist", "~/.netsurf/");
-		LOG(("Using '%s' as Hotlist file", buf));
-		nsoption_set_charp(hotlist_path, strdup(buf));	
-	}
-	if (nsoption_charp(hotlist_path) == NULL)
-		die("Failed initialising hotlist option");	
-	
 
 	filepath_sfinddef(respath, buf, "Print", "~/.netsurf/");
 	LOG(("Using '%s' as Print Settings file", buf));

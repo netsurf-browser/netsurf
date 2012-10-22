@@ -76,6 +76,7 @@ void nsfont_init(void)
 
 	nsfont_check_fonts();
 
+	LOG(("Initialise RUfl"));
 	code = rufl_init();
 	if (code != rufl_OK) {
 		if (code == rufl_FONT_MANAGER_ERROR)
@@ -87,6 +88,7 @@ void nsfont_init(void)
 		die("The Unicode font library could not be initialized. "
 				"Please report this to the developers.");
 	}
+	LOG(("RUfl initialised"));
 
 	if (rufl_family_list_entries == 0)
 		die("No fonts could be found. At least one font must be "

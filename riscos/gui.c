@@ -328,6 +328,47 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+	nsoption_setnull_charp(theme, strdup("Aletheia"));
+	nsoption_setnull_charp(toolbar_browser, strdup("0123|58|9"));
+	nsoption_setnull_charp(toolbar_hotlist, strdup("40|12|3"));
+	nsoption_setnull_charp(toolbar_history, strdup("0|12|3"));
+	nsoption_setnull_charp(toolbar_cookies, strdup("0|12"));
+	nsoption_setnull_charp(ca_bundle, strdup("NetSurf:Resources.ca-bundle"));
+	nsoption_setnull_charp(cookie_file, strdup("NetSurf:Cookies"));
+	nsoption_setnull_charp(cookie_jar, strdup(CHOICES_PREFIX "Cookies"));
+	nsoption_setnull_charp(url_path, strdup("NetSurf:URL"));
+	nsoption_setnull_charp(url_save, strdup(CHOICES_PREFIX "URL"));
+	nsoption_setnull_charp(hotlist_path, strdup("NetSurf:Hotlist"));
+	nsoption_setnull_charp(hotlist_save, strdup(CHOICES_PREFIX "Hotlist"));
+	nsoption_setnull_charp(recent_path, strdup("NetSurf:Recent"));
+	nsoption_setnull_charp(recent_save, strdup(CHOICES_PREFIX "Recent"));
+	nsoption_setnull_charp(theme_path, strdup("NetSurf:Themes"));
+	nsoption_setnull_charp(theme_save, strdup(CHOICES_PREFIX "Themes"));
+
+	if (nsoption_charp(theme) == NULL ||
+			nsoption_charp(toolbar_browser) == NULL ||
+			nsoption_charp(toolbar_hotlist) == NULL ||
+			nsoption_charp(toolbar_history) == NULL ||
+			nsoption_charp(toolbar_cookies) == NULL ||
+			nsoption_charp(ca_bundle) == NULL ||
+			nsoption_charp(cookie_file) == NULL ||
+			nsoption_charp(cookie_jar) == NULL ||
+			nsoption_charp(url_path) == NULL ||
+			nsoption_charp(url_save) == NULL ||
+			nsoption_charp(hotlist_path) == NULL ||
+			nsoption_charp(hotlist_save) == NULL ||
+			nsoption_charp(recent_path) == NULL ||
+			nsoption_charp(recent_save) == NULL ||
+			nsoption_charp(theme_path) == NULL ||
+			nsoption_charp(theme_save) == NULL) {
+		die("Failed initialising string options");
+	}
+}
+
 /**
  * Initialise the gui (RISC OS specific part).
  */
@@ -347,6 +388,7 @@ static void gui_init(int argc, char** argv)
 	int length;
 	char *nsdir_temp;
 	byte *base;
+	char *tree_icons_dir;
 
 	/* re-enable all FPU exceptions/traps except inexact operations,
 	 * which we're not interested in, and underflow which is incorrectly
@@ -375,42 +417,11 @@ static void gui_init(int argc, char** argv)
 			ro_plot_patterned_lines = false;
 	}
 
-	/* Set defaults for absent option strings */
-	nsoption_setnull_charp(theme, strdup("Aletheia"));
-	nsoption_setnull_charp(toolbar_browser, strdup("0123|58|9"));
-	nsoption_setnull_charp(toolbar_hotlist, strdup("40|12|3"));
-	nsoption_setnull_charp(toolbar_history, strdup("0|12|3"));
-	nsoption_setnull_charp(toolbar_cookies, strdup("0|12"));
-	nsoption_setnull_charp(ca_bundle, strdup("NetSurf:Resources.ca-bundle"));
-	nsoption_setnull_charp(cookie_file, strdup("NetSurf:Cookies"));
-	nsoption_setnull_charp(cookie_jar, strdup(CHOICES_PREFIX "Cookies"));
-	nsoption_setnull_charp(url_path, strdup("NetSurf:URL"));
-	nsoption_setnull_charp(url_save, strdup(CHOICES_PREFIX "URL"));
-	nsoption_setnull_charp(hotlist_path, strdup("NetSurf:Hotlist"));
-	nsoption_setnull_charp(hotlist_save, strdup(CHOICES_PREFIX "Hotlist"));
-	nsoption_setnull_charp(recent_path, strdup("NetSurf:Recent"));
-	nsoption_setnull_charp(recent_save, strdup(CHOICES_PREFIX "Recent"));
-	nsoption_setnull_charp(theme_path, strdup("NetSurf:Themes"));
-	nsoption_setnull_charp(theme_save, strdup(CHOICES_PREFIX "Themes"));
-
-	tree_set_icon_dir(strdup("NetSurf:Resources.Icons"));
-
-	if (nsoption_charp(theme) == NULL || 
-	    nsoption_charp(toolbar_browser) == NULL ||
-	    nsoption_charp(toolbar_hotlist) == NULL || 
-	    nsoption_charp(toolbar_history) == NULL ||
-	    nsoption_charp(ca_bundle) == NULL || 
-	    nsoption_charp(cookie_file) == NULL ||
-	    nsoption_charp(cookie_jar) == NULL || 
-	    nsoption_charp(url_path) == NULL ||
-	    nsoption_charp(url_save) == NULL || 
-	    nsoption_charp(hotlist_path) == NULL ||
-	    nsoption_charp(hotlist_save) == NULL || 
-	    nsoption_charp(recent_path) == NULL ||
-	    nsoption_charp(recent_save) == NULL || 
-	    nsoption_charp(theme_path) == NULL ||
-	    nsoption_charp(theme_save) == NULL)
+	tree_icons_dir = strdup("NetSurf:Resources.Icons");
+	if (tree_icons_dir == NULL)
 		die("Failed initialising string options");
+	tree_set_icon_dir(tree_icons_dir);
+
 
 	/* Create our choices directories */
 	ro_gui_create_dirs();
@@ -780,6 +791,8 @@ int main(int argc, char** argv)
 
 	setbuf(stderr, NULL);
 
+	/* Pass a NULL pointer for Messages path, because until the Choices
+	 * are loaded in netsurf_init, we don't know the Messages path. */
 	netsurf_init(&argc, &argv, "NetSurf:Choices", NULL);
 
 	artworks_init();
@@ -794,7 +807,9 @@ int main(int argc, char** argv)
 			"NetSurf:Resources.%s.Messages",
 			nsoption_charp(language))) < 0 || length >= (int)sizeof(path))
 		die("Failed to locate Messages resource.");
+	/* We disabled core Messages load, so have to load them here */
 	messages_load(path);
+	/* Also load some extra RISC OS specific Messages */
 	messages_load("NetSurf:Resources.LangNames");
 
 	gui_init(argc, argv);

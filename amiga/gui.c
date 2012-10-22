@@ -158,6 +158,7 @@ static char *current_user_dir;
 
 const char tree_directory_icon_name[] = "def_drawer.info";
 const char tree_content_icon_name[] = "def_project.info";
+static const __attribute__((used)) char *stack_cookie = "\0$STACK:131072\0";
 
 static struct DrawInfo *dri;
 
@@ -540,6 +541,13 @@ nsurl *gui_get_resource_url(const char *path)
 	return url;
 }
 
+/* Documented in desktop/options.h */
+void gui_options_init_defaults(void)
+{
+	/* Set defaults for absent option strings */
+	ami_set_options(); /* check options and set defaults where required */
+}
+
 void gui_init(int argc, char** argv)
 {
 	BPTR lock = 0;
@@ -548,8 +556,6 @@ void gui_init(int argc, char** argv)
 	ami_print_init();
 	ami_clipboard_init();
 	ami_openurl_open();
-
-	ami_set_options(); /* check options and set defaults where required */
 
 	win_destroyed = false;
 	nsscreentitle = ASPrintf("NetSurf %s",netsurf_version);
