@@ -8,26 +8,30 @@
 # ----------------------------------------------------------------------------
 
 
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libdom libcss)
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libdom libcss)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
 
-  # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
-  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
+# define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
+NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
+NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
+NETSURF_FEATURE_WEBP_CFLAGS := -DWITH_WEBP
+NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
+NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
-  # add a line similar to below for each optional pkg-configed lib here
-  $(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
-  $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
-  $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-  $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-  $(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
+# add a line similar to below for each optional pkg-configed lib here
+$(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
+$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
+$(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
 
-  # no pkg-config for this library
-  $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
+# no pkg-config for this library
+$(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
   MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		-D_BSD_SOURCE \
