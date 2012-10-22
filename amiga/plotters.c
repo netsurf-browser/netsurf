@@ -283,18 +283,6 @@ static void ami_plot_setapen(ULONG colour)
 	}
 }
 
-static void ami_plot_setopen(ULONG colour)
-{
-	if(palette_mapped == false) {
-		SetRPAttrs(glob->rp, RPTAG_OPenColor,
-			p96EncodeColor(RGBFB_A8B8G8R8, colour),
-			TAG_DONE);
-	} else {
-		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
-		if(pen != -1) SetOPen(glob->rp, pen);
-	}
-}
-
 bool ami_rectangle(int x0, int y0, int x1, int y1, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
@@ -473,7 +461,6 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 		ULONG cx,cy;
 
 		ami_plot_setapen(style->fill_colour);
-		ami_plot_setopen(style->fill_colour);
 
 		AreaMove(glob->rp,p[0],p[1]);
 
@@ -483,7 +470,6 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 		}
 
 		AreaEnd(glob->rp);
-		BNDRYOFF(glob->rp);
 	}
 	else
 	{
