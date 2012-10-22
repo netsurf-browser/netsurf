@@ -17,6 +17,8 @@ NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
 NETSURF_FEATURE_HUBBUB_CFLAGS := -DWITH_HUBBUB
 NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
 NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
+NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
 CFLAGS += -Dnsframebuffer 
 
@@ -39,6 +41,8 @@ CFLAGS += '-DNETSURF_FB_FONT_FANTASY="$(NETSURF_FB_FONT_FANTASY)"'
 $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
 $(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
 $(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
 
 CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) 	\
 	  -D_BSD_SOURCE \
