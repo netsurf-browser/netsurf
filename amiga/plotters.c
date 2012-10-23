@@ -79,6 +79,11 @@ bool palette_mapped = false;
 #define PATT_DASH 0xCCCC
 #define PATT_LINE 0xFFFF
 
+/* This defines the size of the list for Area* functions.
+   25000 = 5000 vectors
+  */
+#define AREA_SIZE 25000
+
 /* Define the below to get additional debug */
 #undef AMI_PLOTTER_DEBUG
 
@@ -155,7 +160,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 	if(!height) height = nsoption_int(redraw_tile_size_y);
 
 	gg->layerinfo = NewLayerInfo();
-	gg->areabuf = AllocVec(100, MEMF_PRIVATE | MEMF_CLEAR);
+	gg->areabuf = AllocVec(AREA_SIZE, MEMF_PRIVATE | MEMF_CLEAR);
 	gg->tmprasbuf = AllocVec(width * height, MEMF_PRIVATE | MEMF_CLEAR);
 
 	if(palette_mapped == true) { 
@@ -186,7 +191,7 @@ void ami_init_layers(struct gui_globals *gg, ULONG width, ULONG height)
 
 	if((!gg->areabuf) || (!gg->rp->AreaInfo))	warn_user("NoMemory","");
 
-	InitArea(gg->rp->AreaInfo,gg->areabuf,100/5);
+	InitArea(gg->rp->AreaInfo,gg->areabuf, AREA_SIZE/5);
 	gg->rp->TmpRas = AllocVec(sizeof(struct TmpRas),MEMF_PRIVATE | MEMF_CLEAR);
 
 	if((!gg->tmprasbuf) || (!gg->rp->TmpRas))	warn_user("NoMemory","");
