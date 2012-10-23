@@ -59,6 +59,11 @@ struct ami_plot_pen {
 	ULONG pen;
 };
 
+struct bez_point {
+	float x;
+	float y;
+};
+
 bool palette_mapped = false;
 
 #ifndef M_PI /* For some reason we don't always get this from math.h */
@@ -280,6 +285,18 @@ static void ami_plot_setapen(ULONG colour)
 	} else {
 		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
 		if(pen != -1) SetAPen(glob->rp, pen);
+	}
+}
+
+static void ami_plot_setopen(ULONG colour)
+{
+	if(palette_mapped == false) {
+		SetRPAttrs(glob->rp, RPTAG_OPenColor,
+			p96EncodeColor(RGBFB_A8B8G8R8, colour),
+			TAG_DONE);
+	} else {
+		ULONG pen = ami_plot_obtain_pen(glob->shared_pens, colour);
+		if(pen != -1) SetOPen(glob->rp, pen);
 	}
 }
 
@@ -903,31 +920,35 @@ bool ami_flush(void)
 	return true;
 }
 
+void ami_bezier(struct bez_point *a, struct bez_point *b, struct bez_point *c,
+			struct bez_point *d, double t, struct bez_point *p) {
+    p->x = pow((1 - t), 3) * a->x + 3 * t * pow((1 -t), 2) * b->x + 3 * (1-t) * pow(t, 2)* c->x + pow (t, 3)* d->x;
+    p->y = pow((1 - t), 3) * a->y + 3 * t * pow((1 -t), 2) * b->y + 3 * (1-t) * pow(t, 2)* c->y + pow (t, 3)* d->y;
+}
+
 bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			colour c, const float transform[6])
 {
+	unsigned int i;
+	struct bez_point *old_p;
+	struct bez_point start_p, cur_p, p_a, p_b, p_c, p_r;
+	
 	#ifdef AMI_PLOTTER_DEBUG
 	LOG(("[ami_plotter] Entered ami_path()"));
 	#endif
+	
+	if (n == 0)
+		return true;
 
-/* For SVG only, because it needs Bezier curves we are going to cheat
-   and insist on Cairo */
-#ifdef NS_AMIGA_CAIRO
-/* We should probably check if the off-screen bitmap is 32-bit and render
- * using Cairo regardless if it is.  For now, we respect user preferences.
- */
+	if (p[0] != PLOTTER_PATH_MOVE) {
+		LOG(("Path does not start with move"));
+		return false;
+	}
+
 	if((nsoption_int(cairo_renderer) >= 1) && (palette_mapped == false))
 	{
-		unsigned int i;
+#ifdef NS_AMIGA_CAIRO
 		cairo_matrix_t old_ctm, n_ctm;
-
-		if (n == 0)
-			return true;
-
-		if (p[0] != PLOTTER_PATH_MOVE) {
-			LOG(("Path does not start with move"));
-			return false;
-		}
 
 		/* Save CTM */
 		cairo_get_matrix(glob->cr, &old_ctm);
@@ -991,8 +1012,85 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 			ami_cairo_set_colour(glob->cr,c);
 			cairo_stroke(glob->cr);
 		}
-	}
 #endif
+	} else {
+		if (fill != NS_TRANSPARENT) {
+			ami_plot_setapen(fill);
+			if (c != NS_TRANSPARENT)
+				ami_plot_setopen(c);
+		} else {
+			if (c != NS_TRANSPARENT) {
+				ami_plot_setapen(c);
+			} else {
+				return true; /* wholly transparent */
+			}
+		}
+
+		/* Construct path */
+		for (i = 0; i < n; ) {
+			if (p[i] == PLOTTER_PATH_MOVE) {
+				if (fill != NS_TRANSPARENT) {
+					AreaMove(glob->rp, p[i+1], p[i+2]);
+				} else {
+					Move(glob->rp, p[i+1], p[i+2]);
+				}
+				/* Keep track for future Bezier curves/closes etc */
+				start_p.x = p[i+1];
+				start_p.y = p[i+2];
+				cur_p.x = start_p.x;
+				cur_p.y = start_p.y;
+				i += 3;
+			} else if (p[i] == PLOTTER_PATH_CLOSE) {
+				if (fill != NS_TRANSPARENT) {
+					AreaEnd(glob->rp);
+				} else {
+					Draw(glob->rp, start_p.x, start_p.y);
+				}
+				i++;
+			} else if (p[i] == PLOTTER_PATH_LINE) {
+				if (fill != NS_TRANSPARENT) {
+					AreaDraw(glob->rp, p[i+1], p[i+2]);
+				} else {
+					Draw(glob->rp, p[i+1], p[i+2]);
+				}
+				cur_p.x = p[i+1];
+				cur_p.y = p[i+2];
+				i += 3;
+			} else if (p[i] == PLOTTER_PATH_BEZIER) {
+		        //old_p = &cur_p;
+				
+				p_a.x = p[i+1];
+				p_a.y = p[i+2];
+				p_b.x = p[i+3];
+				p_b.y = p[i+4];
+				p_c.x = p[i+5];
+				p_c.y = p[i+6];
+
+				for(double t = 0.0; t <= 1.0; t += 0.1) {
+					ami_bezier(&cur_p, &p_a, &p_b, &p_c, t, &p_r);
+					if (fill != NS_TRANSPARENT) {
+						AreaDraw(glob->rp, p_r.x, p_r.y);
+					} else {
+						Draw(glob->rp, p_r.x, p_r.y);
+					}
+				}
+				cur_p.x = p_c.x;
+				cur_p.y = p_c.y;
+				i += 7;
+			} else {
+				LOG(("bad path command %f", p[i]));
+				/* End path for safety if using Area commands */
+				if (fill != NS_TRANSPARENT) {
+					AreaEnd(glob->rp);
+					BNDRYOFF(glob->rp);
+				}
+				return false;
+			}
+		}
+		if (fill != NS_TRANSPARENT)
+			BNDRYOFF(glob->rp);
+	}
+
 	return true;
 }
 
