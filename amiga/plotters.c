@@ -479,14 +479,17 @@ bool ami_polygon(const int *p, unsigned int n, const plot_style_t *style)
 
 		ami_plot_setapen(style->fill_colour);
 
-		AreaMove(glob->rp,p[0],p[1]);
-
+		if(AreaMove(glob->rp,p[0],p[1]) == -1)
+			LOG(("AreaMove: vector list full"));
+			
 		for(k=1;k<n;k++)
 		{
-			AreaDraw(glob->rp,p[k*2],p[(k*2)+1]);
+			if(AreaDraw(glob->rp,p[k*2],p[(k*2)+1]) == -1)
+				LOG(("AreaDraw: vector list full"));
 		}
 
-		AreaEnd(glob->rp);
+		if(AreaEnd(glob->rp) == -1)
+			LOG(("AreaEnd: error"));
 	}
 	else
 	{
@@ -1030,7 +1033,8 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 		for (i = 0; i < n; ) {
 			if (p[i] == PLOTTER_PATH_MOVE) {
 				if (fill != NS_TRANSPARENT) {
-					AreaMove(glob->rp, p[i+1], p[i+2]);
+					if(AreaMove(glob->rp, p[i+1], p[i+2]) == -1)
+						LOG(("AreaMove: vector list full"));
 				} else {
 					Move(glob->rp, p[i+1], p[i+2]);
 				}
@@ -1042,14 +1046,16 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 				i += 3;
 			} else if (p[i] == PLOTTER_PATH_CLOSE) {
 				if (fill != NS_TRANSPARENT) {
-					AreaEnd(glob->rp);
+					if(AreaEnd(glob->rp) == -1)
+						LOG(("AreaEnd: error"));
 				} else {
 					Draw(glob->rp, start_p.x, start_p.y);
 				}
 				i++;
 			} else if (p[i] == PLOTTER_PATH_LINE) {
 				if (fill != NS_TRANSPARENT) {
-					AreaDraw(glob->rp, p[i+1], p[i+2]);
+					if(AreaDraw(glob->rp, p[i+1], p[i+2]) == -1)
+						LOG(("AreaDraw: vector list full"));
 				} else {
 					Draw(glob->rp, p[i+1], p[i+2]);
 				}
@@ -1057,8 +1063,6 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 				cur_p.y = p[i+2];
 				i += 3;
 			} else if (p[i] == PLOTTER_PATH_BEZIER) {
-		        //old_p = &cur_p;
-				
 				p_a.x = p[i+1];
 				p_a.y = p[i+2];
 				p_b.x = p[i+3];
@@ -1069,7 +1073,8 @@ bool ami_path(const float *p, unsigned int n, colour fill, float width,
 				for(double t = 0.0; t <= 1.0; t += 0.1) {
 					ami_bezier(&cur_p, &p_a, &p_b, &p_c, t, &p_r);
 					if (fill != NS_TRANSPARENT) {
-						AreaDraw(glob->rp, p_r.x, p_r.y);
+						if(AreaDraw(glob->rp, p_r.x, p_r.y) == -1)
+							LOG(("AreaDraw: vector list full"));
 					} else {
 						Draw(glob->rp, p_r.x, p_r.y);
 					}
