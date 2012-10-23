@@ -2,20 +2,6 @@
 // retrived from http://www.whatwg.org/specs/web-apps/current-work/
 // 23rd October 2012
 
-//interface Example {
-  // this is an IDL definition
-//};
-
-// this block was from the URL parsing mandantory attribute section
-// but fails to define a real interface
-
-//           attribute DOMString protocol;
-//           attribute DOMString host;
-//           attribute DOMString hostname;
-//           attribute DOMString port;
-//           attribute DOMString pathname;
-//           attribute DOMString search;
-//           attribute DOMString hash;
 
 interface HTMLAllCollection : HTMLCollection {
   // inherits length and item()
@@ -1314,23 +1300,6 @@ interface HTMLMeterElement : HTMLElement {
            attribute double high;
            attribute double optimum;
   readonly attribute NodeList labels;
-};
-
-  void select();
-           attribute unsigned long selectionStart;
-           attribute unsigned long selectionEnd;
-           attribute DOMString selectionDirection;
-
-  void setRangeText(DOMString replacement);
-  void setRangeText(DOMString replacement, unsigned long start, unsigned long end, optional SelectionMode selectionMode);
-
-  void setSelectionRange(unsigned long start, unsigned long end, optional DOMString direction = "preserve");
-
-enum SelectionMode {
-  "select",
-  "start",
-  "end",
-  "preserve",
 };
 
 interface ValidityState {
