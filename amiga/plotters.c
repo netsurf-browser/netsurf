@@ -591,6 +591,31 @@ bool ami_disc(int x, int y, int radius, const plot_style_t *style)
 	return true;
 }
 
+bool ami_arc_gfxlib(int x, int y, int radius, int angle1, int angle2)
+{
+	double angle1_r = (double)(angle1) * (M_PI / 180.0);
+	double angle2_r = (double)(angle2) * (M_PI / 180.0);
+	double angle, b, c;
+	double step = 0.1; //(angle2_r - angle1_r) / ((angle2_r - angle1_r) * (double)radius);
+	int x0, y0, x1, y1;
+
+	x0 = x;
+	y0 = y;
+	
+	b = angle1_r;
+	c = angle2_r;
+	
+	x1 = (int)(cos(b) * (double)radius);
+	y1 = (int)(sin(b) * (double)radius);
+	Move(glob->rp, x0 + x1, y0 - y1);
+		
+	for(angle = (b + step); angle <= c; angle += step) {
+		x1 = (int)(cos(angle) * (double)radius);
+		y1 = (int)(sin(angle) * (double)radius);
+		Draw(glob->rp, x0 + x1, y0 - y1);
+	}
+}
+
 bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_t *style)
 {
 	#ifdef AMI_PLOTTER_DEBUG
@@ -598,10 +623,12 @@ bool ami_arc(int x, int y, int radius, int angle1, int angle2, const plot_style_
 	#endif
 
 	if((nsoption_int(cairo_renderer) <= 0) || (palette_mapped == true)) {
-		/* TODO: gfx.lib plotter needs arc support */
-		/* eg. http://www.crbond.com/primitives.htm CommonFuncsPPC.lha */
+
+		if (angle2 < angle1) angle2 += 360;
+		
 		ami_plot_setapen(style->fill_colour);
-		/*	DrawArc(glob->rp,x,y,(float)angle1,(float)angle2,radius); */
+		
+		ami_arc_gfxlib(x, y, radius, angle1, angle2);
 	} else {
 #ifdef NS_AMIGA_CAIRO
 		ami_cairo_set_colour(glob->cr, style->fill_colour);
