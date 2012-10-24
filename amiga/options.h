@@ -138,7 +138,7 @@
 	.cookies_window_ypos = 0,			\
 	.cookies_window_xsize = 0,			\
 	.cookies_window_ysize = 0,			\
-	.cairo_renderer = 1,				\
+	.cairo_renderer = 0,				\
 	.direct_render = false,				\
 	.window_simple_refresh = false,				\
 	.redraw_tile_size_x = 0,			\

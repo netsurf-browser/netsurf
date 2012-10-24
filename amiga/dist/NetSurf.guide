@@ -42,7 +42,7 @@ There are a couple of Amiga-specific options which can only be changed directly 
 @{b}kiosk_mode@{ub} No gadgets
 @{b}printer_unit@{ub} Specifies which printer.device unit to print to
 @{b}drag_save_icons@{ub} Enables displaying Workbench-style transparent icons under the pointer when performing drag saves (ctrl-drag of objects available if NetSurf is running on the Workbench screen) and text selection drags.  If set to 0 the pointer style will change instead.  OS 4.0 users may want to set this to 0 as icons will appear opaque and obscure the drop position.
-@{b}cairo_renderer@{ub} Set rendering engine. -1 = palette-mapped (set automatically when required), 0 = graphics.library, 1 = Cairo/graphics.library mixed (recommended), 2 = Full Cairo.
+@{b}cairo_renderer@{ub} Set rendering engine. -1 = palette-mapped (set automatically when required), 0 = graphics.library (default), 1 = Cairo/graphics.library mixed, 2 = Full Cairo.
 @{b}monitor_aspect_x@{ub}/@{b}monitor_aspect_y@{ub} Correct aspect ratio for displays (default of 0 means "assume square pixels").
 @{b}screen_compositing@{ub} Use compositing on NetSurf's own screen. 0=disable, 1=enable, 2=default
 @{b}redraw_tile_size_x@{ub}/@{b}redraw_tile_size_y@{ub} Specify the size of the off-screen bitmap. Higher will speed up redraws at the expense of memory. 0 disables tiling (will use a bitmap at least the size of the screen NetSurf is running on)
