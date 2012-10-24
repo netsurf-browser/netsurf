@@ -250,7 +250,6 @@ ifeq ($(TARGET),amiga)
   NETSURF_USE_AMIGA_DATATYPES := YES
 
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
-  # (NB: Requires NETSURF_AMIGA_USE_CAIRO)
   # Valid options: YES, NO
   NETSURF_USE_NSSVG := YES
 
