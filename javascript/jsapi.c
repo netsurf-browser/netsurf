@@ -98,6 +98,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	JSObject *document_obj;
 	JSObject *navigator_obj;
 	JSObject *console_obj;
+	struct html_content *htmlc = doc_priv;
 
 	if (cx == NULL)
 		goto js_newcompartment_fail;
@@ -108,7 +109,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 		goto js_newcompartment_fail;
 
 	/* attach the subclasses off the window global */
-	document_obj = jsapi_new_document(cx, window_obj, doc_priv);
+	document_obj = jsapi_new_Document(cx, window_obj, htmlc->document, htmlc);
 	if (document_obj == NULL) 
 		goto js_newcompartment_fail;
 
@@ -125,6 +126,8 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	return (jsobject *)window_obj;
 
 js_newcompartment_fail:
+
+	LOG(("New compartment creation failed"));
 
 	return NULL;
 }
