@@ -29,13 +29,8 @@ S_DESKTOP := cookies.c history_global_core.c hotlist.c knockout.c	\
 	scrollbar.c sslcert.c textarea.c thumbnail.c tree.c		\
 	tree_url_node.c version.c
 
-# Javascript sources
-ifeq ($(NETSURF_USE_JS),YES)
-S_JSAPI = window.c navigator.c console.c htmldocument.c htmlelement.c
-S_JAVASCRIPT += content.c jsapi.c $(addprefix jsapi/,$(S_JSAPI))
-else
-S_JAVASCRIPT += none.c
-endif
+# Javascript source
+include Makefile.sources.javascript
 
 # S_COMMON are sources common to all builds
 S_COMMON := $(addprefix content/,$(S_CONTENT))				\
@@ -45,7 +40,8 @@ S_COMMON := $(addprefix content/,$(S_CONTENT))				\
 	$(addprefix utils/,$(S_UTILS))					\
 	$(addprefix utils/http/,$(S_HTTP))				\
 	$(addprefix desktop/,$(S_DESKTOP))				\
-	$(addprefix javascript/,$(S_JAVASCRIPT))
+	$(addprefix javascript/,$(S_JAVASCRIPT))			\
+	$(S_JSAPI_BINDING)
 
 # S_IMAGE are sources related to image management
 S_IMAGE_YES := image.c image_cache.c
