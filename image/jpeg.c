@@ -289,7 +289,7 @@ static bool nsjpeg_convert(struct content *c)
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
-	char title[100];
+	char title[512];
 
 	/* check image header is valid and get width/height */
 	data = content__get_source_data(c, &size);
@@ -325,8 +325,9 @@ static bool nsjpeg_convert(struct content *c)
 
 	image_cache_add(c, NULL, jpeg_cache_convert);
 
-	snprintf(title, sizeof(title), messages_get("JPEGTitle"), 
-		 c->width, c->height, size);
+	snprintf(title, sizeof(title), messages_get("JPEGTitle"),
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
 	content__set_title(c, title);
 
 	content_set_ready(c);

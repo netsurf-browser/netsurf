@@ -132,7 +132,7 @@ static bool nsbmp_convert(struct content *c)
 	uint32_t swidth;
 	const char *data;
 	unsigned long size;
-	char title[100];
+	char title[512];
 
 	/* set the bmp data */
 	data = content__get_source_data(c, &size);
@@ -158,7 +158,8 @@ static bool nsbmp_convert(struct content *c)
 	c->height = bmp->bmp->height;
 	LOG(("BMP      width %u       height %u", c->width, c->height));
 	snprintf(title, sizeof(title), messages_get("BMPTitle"),
-			c->width, c->height, size);
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
 	content__set_title(c, title);
 	swidth = bmp->bmp->bitmap_callbacks.bitmap_get_bpp(bmp->bmp->bitmap) * 
 			bmp->bmp->width;

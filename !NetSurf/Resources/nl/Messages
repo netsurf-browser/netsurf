@@ -687,17 +687,17 @@ SelectMenu:Select
 
 # Content titles
 #
-DrawTitle:Draw image (%lux%lu, %lu bytes)
-GIFTitle:GIF image (%lux%lu, %lu bytes)
-BMPTitle:BMP image (%lux%lu, %lu bytes)
-ICOTitle:ICO image (%lux%lu, %lu bytes)
-JPEGTitle:JPEG image (%ux%u, %lu bytes)
-PNGTitle:PNG image (%lux%lu, %lu bytes)
-JNGTitle:JNG image (%lux%lu, %lu bytes)
-MNGTitle:MNG image (%lux%lu, %lu bytes)
-WebPTitle:WebP image (%lux%lu, %lu bytes)
-SpriteTitle:Sprite image (%lux%lu, %lu bytes)
-ArtWorksTitle:ArtWorks image (%lux%lu, %lu bytes)
+GIFTitle:%s (GIF image %lux%lu pixels)
+BMPTitle:%s (BMP image %lux%lu pixels)
+ICOTitle:%s (ICO image %lux%lu pixels)
+PNGTitle:%s (PNG image %lux%lu pixels)
+JNGTitle:%s (JNG image %lux%lu pixels)
+MNGTitle:%s (MNG image %lux%lu pixels)
+JPEGTitle:%s (JPEG image %lux%lu pixels)
+WebPTitle:%s (WebP image %lux%lu pixels)
+DrawTitle:%s (Drawfile image %lux%lu pixels)
+SpriteTitle:%s (Sprite image %lux%lu pixels)
+ArtWorksTitle:%s (ArtWorks image %lux%lu pixels)
 
 # HTML page character set
 #

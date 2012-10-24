@@ -510,7 +510,7 @@ png_cache_convert_error:
 static bool nspng_convert(struct content *c)
 {
 	nspng_content *png_c = (nspng_content *) c;
-	char title[100];
+	char title[512];
 
 	assert(png_c->png != NULL);
 	assert(png_c->info != NULL);
@@ -520,7 +520,8 @@ static bool nspng_convert(struct content *c)
 
 	/* set title text */
 	snprintf(title, sizeof(title), messages_get("PNGTitle"),
-		 c->width, c->height, c->size);
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
 
 	content__set_title(c, title);
 

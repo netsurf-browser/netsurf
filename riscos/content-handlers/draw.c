@@ -113,7 +113,7 @@ bool draw_convert(struct content *c)
 	const void *data;
 	os_box bbox;
 	os_error *error;
-	char title[100];
+	char title[512];
 
 	source_data = content__get_source_data(c, &source_size);
 	data = source_data;
@@ -141,8 +141,9 @@ bool draw_convert(struct content *c)
 
 	draw->x0 = bbox.x0;
 	draw->y0 = bbox.y0;
-	snprintf(title, sizeof(title), messages_get("DrawTitle"), c->width,
-			c->height, source_size);
+	snprintf(title, sizeof(title), messages_get("DrawTitle"),
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
 	content__set_title(c, title);
 
 	content_set_ready(c);

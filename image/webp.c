@@ -78,7 +78,7 @@ static bool webp_convert(struct content *c)
 	unsigned char *imagebuf = NULL;
 	unsigned long size;
 	int width = 0, height = 0;
-	char title[100];
+	char title[512];
 	int res = 0;
 	uint8_t *res_p = NULL;
 
@@ -117,7 +117,8 @@ static bool webp_convert(struct content *c)
 	c->width = width;
 	c->height = height;
 	snprintf(title, sizeof(title), messages_get("WebPTitle"),
-		width, height, size);
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
 	content__set_title(c, title);
 
 	bitmap_modified(webp->bitmap);

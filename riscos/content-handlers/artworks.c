@@ -172,7 +172,7 @@ bool artworks_convert(struct content *c)
 	void *init_routine;
 	os_error *error;
 	int used = -1;  /* slightly better with older OSLib versions */
-	char title[100];
+	char title[512];
 
 	/* check whether AWViewer has been seen and we can therefore
 		locate the ArtWorks rendering modules */
@@ -263,8 +263,9 @@ bool artworks_convert(struct content *c)
 	c->width  = (aw->x1 - aw->x0) / 512;
 	c->height = (aw->y1 - aw->y0) / 512;
 
-	snprintf(title, sizeof(title), messages_get("ArtWorksTitle"), 
-			c->width, c->height, source_size);
+	snprintf(title, sizeof(title), messages_get("ArtWorksTitle"),
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
 	content__set_title(c, title);
 	content_set_ready(c);
 	content_set_done(c);
