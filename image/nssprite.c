@@ -98,7 +98,7 @@ static bool nssprite_convert(struct content *c)
 
 	const char *data;
 	unsigned long size;
-	char title[100];
+	char *title;
 
 	data = content__get_source_data(c, &size);
 
@@ -144,9 +144,14 @@ static bool nssprite_convert(struct content *c)
 	c->width = sprite->width;
 	c->height = sprite->height;
 
-	snprintf(title, sizeof(title), messages_get("SpriteTitle"), 
-		 c->width, c->height, size);
-	content__set_title(c, title);
+	/* set title text */
+	title = messages_get_buff("SpriteTitle",
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 
 	bitmap_modified(nssprite->bitmap);
 

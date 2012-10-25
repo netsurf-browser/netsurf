@@ -541,7 +541,7 @@ static bool nsmng_convert(struct content *c)
 	nsmng_content *mng = (nsmng_content *) c;
 	mng_retcode status;
 	unsigned long size;
-	char title[512];
+	char *title;
 
 	assert(c != NULL);
 
@@ -554,12 +554,15 @@ static bool nsmng_convert(struct content *c)
 		return nsmng_broadcast_error(mng, -1) == NSERROR_OK;
 	}
 
-	/*	Set the title
-	*/
-	snprintf(title, sizeof(title), messages_get("MNGTitle"),
+
+	/* set title text */
+	title = messages_get_buff("MNGTitle",
 			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
 			c->width, c->height);
-	content__set_title(c, title);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 
 	c->size += c->width * c->height * 4;
 	content_set_ready(c);
@@ -599,7 +602,7 @@ static bool nsjpng_convert(struct content *c)
 	nsmng_content *mng = (nsmng_content *) c;
 	mng_retcode status;
 	unsigned long size;
-	char title[512];
+	char *title;
 	mng_handle handle;
 
 	assert(c != NULL);
@@ -613,11 +616,14 @@ static bool nsjpng_convert(struct content *c)
 		return nsmng_broadcast_error(mng, -1) == NSERROR_OK;
 	}
 
-	/* Set the title */
-	snprintf(title, sizeof(title), messages_get("PNGTitle"),
+	/* set title text */
+	title = messages_get_buff("PNGTitle",
 			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
 			c->width, c->height);
-	content__set_title(c, title);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 
 	c->size += c->width * c->height * 4;
 	content_set_ready(c);
