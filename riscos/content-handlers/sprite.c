@@ -111,7 +111,7 @@ bool sprite_convert(struct content *c)
 	const char *source_data;
 	unsigned long source_size;
 	const void *sprite_data;
-	char title[512];
+	char *title;
 
 	source_data = content__get_source_data(c, &source_size);
 
@@ -140,10 +140,15 @@ bool sprite_convert(struct content *c)
 
 	c->width = w;
 	c->height = h;
-	snprintf(title, sizeof(title), messages_get("SpriteTitle"),
+
+	/* set title text */
+	title = messages_get_buff("SpriteTitle",
 			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
 			c->width, c->height);
-	content__set_title(c, title);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 	content_set_ready(c);
 	content_set_done(c);
 	/* Done: update status bar */
