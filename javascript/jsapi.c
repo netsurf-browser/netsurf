@@ -116,7 +116,6 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 	window = jsapi_new_Window(cx, window_proto, NULL, win_priv, doc_priv);
 	
 	return (jsobject *)window;
-
 }
 
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
