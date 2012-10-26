@@ -19,131 +19,33 @@
 #include "utils/log.h"
 
 #include "javascript/jsapi.h"
+#include "javascript/jsapi/binding.h"
 
-/* IDL
 
-[NamedPropertiesObject]
-interface Window : EventTarget {
-  // the current browsing context
-  [Unforgeable] readonly attribute WindowProxy window;
-  [Replaceable] readonly attribute WindowProxy self;
-  [Unforgeable] readonly attribute Document document;
-	   attribute DOMString name;
-  [PutForwards=href, Unforgeable] readonly attribute Location location;
-  readonly attribute History history;
-
-  boolean find(optional DOMString aString, optional boolean aCaseSensitive, optional boolean aBackwards, optional boolean aWrapAround, optional boolean aWholeWord, optional boolean aSearchInFrames, optional boolean aShowDialog);
-
-  [Replaceable] readonly attribute BarProp locationbar;
-  [Replaceable] readonly attribute BarProp menubar;
-  [Replaceable] readonly attribute BarProp personalbar;
-  [Replaceable] readonly attribute BarProp scrollbars;
-  [Replaceable] readonly attribute BarProp statusbar;
-  [Replaceable] readonly attribute BarProp toolbar;
-	   attribute DOMString status;
-  void close();
-  void stop();
-  void focus();
-  void blur();
-
-  // other browsing contexts
-  [Replaceable] readonly attribute WindowProxy frames;
-  [Replaceable] readonly attribute unsigned long length;
-  [Unforgeable] readonly attribute WindowProxy top;
-	   attribute WindowProxy? opener;
-  readonly attribute WindowProxy parent;
-  readonly attribute Element? frameElement;
-  WindowProxy open(optional DOMString url, optional DOMString target, optional DOMString features, optional boolean replace);
-  getter WindowProxy (unsigned long index);
-  getter object (DOMString name);
-
-  // the user agent
-  readonly attribute Navigator navigator;
-  readonly attribute External external;
-  readonly attribute ApplicationCache applicationCache;
-
-  // user prompts
-  void alert(DOMString message);
-  boolean confirm(DOMString message);
-  DOMString? prompt(DOMString message, optional DOMString default);
-  void print();
-  any showModalDialog(DOMString url, optional any argument);
-
-  // cross-document messaging
-  void postMessage(any message, DOMString targetOrigin, optional sequence<Transferable> transfer);
-
-  // event handler IDL attributes
-  [TreatNonCallableAsNull] attribute Function? onabort;
-  [TreatNonCallableAsNull] attribute Function? onafterprint;
-  [TreatNonCallableAsNull] attribute Function? onbeforeprint;
-  [TreatNonCallableAsNull] attribute Function? onbeforeunload;
-  [TreatNonCallableAsNull] attribute Function? onblur;
-  [TreatNonCallableAsNull] attribute Function? oncancel;
-  [TreatNonCallableAsNull] attribute Function? oncanplay;
-  [TreatNonCallableAsNull] attribute Function? oncanplaythrough;
-  [TreatNonCallableAsNull] attribute Function? onchange;
-  [TreatNonCallableAsNull] attribute Function? onclick;
-  [TreatNonCallableAsNull] attribute Function? onclose;
-  [TreatNonCallableAsNull] attribute Function? oncontextmenu;
-  [TreatNonCallableAsNull] attribute Function? oncuechange;
-  [TreatNonCallableAsNull] attribute Function? ondblclick;
-  [TreatNonCallableAsNull] attribute Function? ondrag;
-  [TreatNonCallableAsNull] attribute Function? ondragend;
-  [TreatNonCallableAsNull] attribute Function? ondragenter;
-  [TreatNonCallableAsNull] attribute Function? ondragleave;
-  [TreatNonCallableAsNull] attribute Function? ondragover;
-  [TreatNonCallableAsNull] attribute Function? ondragstart;
-  [TreatNonCallableAsNull] attribute Function? ondrop;
-  [TreatNonCallableAsNull] attribute Function? ondurationchange;
-  [TreatNonCallableAsNull] attribute Function? onemptied;
-  [TreatNonCallableAsNull] attribute Function? onended;
-  [TreatNonCallableAsNull] attribute Function? onerror;
-  [TreatNonCallableAsNull] attribute Function? onfocus;
-  [TreatNonCallableAsNull] attribute Function? onhashchange;
-  [TreatNonCallableAsNull] attribute Function? oninput;
-  [TreatNonCallableAsNull] attribute Function? oninvalid;
-  [TreatNonCallableAsNull] attribute Function? onkeydown;
-  [TreatNonCallableAsNull] attribute Function? onkeypress;
-  [TreatNonCallableAsNull] attribute Function? onkeyup;
-  [TreatNonCallableAsNull] attribute Function? onload;
-  [TreatNonCallableAsNull] attribute Function? onloadeddata;
-  [TreatNonCallableAsNull] attribute Function? onloadedmetadata;
-  [TreatNonCallableAsNull] attribute Function? onloadstart;
-  [TreatNonCallableAsNull] attribute Function? onmessage;
-  [TreatNonCallableAsNull] attribute Function? onmousedown;
-  [TreatNonCallableAsNull] attribute Function? onmousemove;
-  [TreatNonCallableAsNull] attribute Function? onmouseout;
-  [TreatNonCallableAsNull] attribute Function? onmouseover;
-  [TreatNonCallableAsNull] attribute Function? onmouseup;
-  [TreatNonCallableAsNull] attribute Function? onmousewheel;
-  [TreatNonCallableAsNull] attribute Function? onoffline;
-  [TreatNonCallableAsNull] attribute Function? ononline;
-  [TreatNonCallableAsNull] attribute Function? onpause;
-  [TreatNonCallableAsNull] attribute Function? onplay;
-  [TreatNonCallableAsNull] attribute Function? onplaying;
-  [TreatNonCallableAsNull] attribute Function? onpagehide;
-  [TreatNonCallableAsNull] attribute Function? onpageshow;
-  [TreatNonCallableAsNull] attribute Function? onpopstate;
-  [TreatNonCallableAsNull] attribute Function? onprogress;
-  [TreatNonCallableAsNull] attribute Function? onratechange;
-  [TreatNonCallableAsNull] attribute Function? onreset;
-  [TreatNonCallableAsNull] attribute Function? onresize;
-  [TreatNonCallableAsNull] attribute Function? onscroll;
-  [TreatNonCallableAsNull] attribute Function? onseeked;
-  [TreatNonCallableAsNull] attribute Function? onseeking;
-  [TreatNonCallableAsNull] attribute Function? onselect;
-  [TreatNonCallableAsNull] attribute Function? onshow;
-  [TreatNonCallableAsNull] attribute Function? onstalled;
-  [TreatNonCallableAsNull] attribute Function? onstorage;
-  [TreatNonCallableAsNull] attribute Function? onsubmit;
-  [TreatNonCallableAsNull] attribute Function? onsuspend;
-  [TreatNonCallableAsNull] attribute Function? ontimeupdate;
-  [TreatNonCallableAsNull] attribute Function? onunload;
-  [TreatNonCallableAsNull] attribute Function? onvolumechange;
-  [TreatNonCallableAsNull] attribute Function? onwaiting;
+struct jsclass_private {
+	struct browser_window *bw;
+	struct html_content *htmlc;
+	JSObject *document_obj;
+	JSObject *navigator_obj;
+	JSObject *console_obj;
 };
 
-*/
+static void jsclass_finalize(JSContext *cx, JSObject *obj);
+static JSBool jsclass_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp);
+
+JSClass JSClass_Window = {
+	"Window",
+	JSCLASS_NEW_RESOLVE | JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub,
+	JS_PropertyStub,
+	JS_PropertyStub,
+	JS_StrictPropertyStub,
+	JS_EnumerateStub,
+	(JSResolveOp)jsclass_resolve,
+	JS_ConvertStub,
+	jsclass_finalize,
+	JSCLASS_NO_OPTIONAL_MEMBERS
+};
 
 
 static JSBool JSAPI_NATIVE(alert, JSContext *cx, uintN argc, jsval *vp)
@@ -254,62 +156,130 @@ static JSBool JSAPI_PROPERTYGET(self, JSContext *cx, JSObject *obj, jsval *vp)
 	return JS_TRUE;
 }
 
+static JSBool JSAPI_PROPERTYGET(document, JSContext *cx, JSObject *obj, jsval *vp)
+{
+	struct jsclass_private *private;
+
+	private = JS_GetInstancePrivate(cx,
+			obj,
+			&JSClass_Window,
+			NULL);
+	if (private == NULL)
+		return JS_FALSE;
+
+	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(private->document_obj));
+	return JS_TRUE;
+}
+
 static JSPropertySpec jsproperties_window[] =
 {
+	JSAPI_PS_RO(document, 0, JSPROP_ENUMERATE | JSPROP_SHARED),
 	JSAPI_PS_RO(window, 0, JSPROP_ENUMERATE | JSPROP_SHARED),
 	JSAPI_PS_RO(self, 0, JSPROP_ENUMERATE | JSPROP_SHARED),
 	JSAPI_PS_END
 };
 
-/* The class of the global object. */
-static JSClass jsclass_window = {
-	"window",
-	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub,
-	JS_PropertyStub,
-	JS_PropertyStub,
-	JS_StrictPropertyStub,
-	JS_EnumerateStub,
-	JS_ResolveStub,
-	JS_ConvertStub,
-	JS_FinalizeStub,
-	JSCLASS_NO_OPTIONAL_MEMBERS
-};
+static JSBool jsclass_resolve(JSContext *cx, JSObject *obj, jsval id, uintN flags, JSObject **objp)
+{
+	*objp = NULL;
+	return JS_TRUE;
+}
 
+static void jsclass_finalize(JSContext *cx, JSObject *obj)
+{	struct jsclass_private *private;
 
-JSObject * jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv)
+	private = JS_GetInstancePrivate(cx, obj, &JSClass_Window, NULL);
+	if (private != NULL) {
+		free(private);
+	}
+}
+
+JSObject *jsapi_InitClass_Window(JSContext *cx, JSObject *parent)
 {
 	JSObject *window = NULL;
+	JSObject *proto;
 
-	if (parent == NULL) {
-		window = JS_NewCompartmentAndGlobalObject(cx, &jsclass_window, NULL);
-		if (window == NULL) {
-			return NULL;
-		}
+	window = JS_NewCompartmentAndGlobalObject(cx, &JSClass_Window, NULL);
+	if (window == NULL) {
+		return NULL;
+	}
 
-		/** @todo reconsider global object handling. future
-		 * editions of spidermonkey appear to be removing the
-		 * idea of a global so we probably need to handle
-		 * global object references internally
-		 */
+	/** @todo reconsider global object handling. future
+	 * editions of spidermonkey appear to be removing the
+	 * idea of a global so we probably need to handle
+	 * global object references internally
+	 */
 
-		/* set the contexts global */
-		JS_SetGlobalObject(cx, window);
+	/* set the contexts global */
+	JS_SetGlobalObject(cx, window);
 
-		/* Populate the global object with the standard globals, like
-		 *  Object and Array.
-		 */
-		if (!JS_InitStandardClasses(cx, window)) {
-			return NULL;
-		}
+	/* Populate the global object with the standard globals, like
+	 *  Object and Array.
+	 */
+	if (!JS_InitStandardClasses(cx, window)) {
+		return NULL;
+	}
 
-	} else {
-		/* @todo sort out windows that are not globals */
-		assert(false);
+	/* Initialises all the user javascript classes to make their
+	 * prototypes available. 
+	 */
+	/** @todo should we be managing these prototype objects ourselves */
+	proto = jsapi_InitClass_Document(cx, window);
+	if (proto == NULL) {
+		return NULL;
+	}
+
+	return window;
+}
+
+JSObject *jsapi_new_Window(JSContext *cx, 
+			    JSObject *window,
+			    JSObject *parent, 
+			    struct browser_window *bw, 
+			    html_content *htmlc)
+{
+	struct jsclass_private *private;
+
+	/* @todo sort out windows that are not globals */
+	assert(parent == NULL);
+
+	/* create private data */
+	private = malloc(sizeof(struct jsclass_private));
+	if (private == NULL) {
+		return NULL;
+	}
+	private->bw = bw;
+	private->htmlc = htmlc;
+
+
+	/* instantiate the subclasses off the window global */
+	private->document_obj = jsapi_new_Document(cx,
+						   NULL,
+						   window, 
+						   htmlc->document, 
+						   htmlc);
+	if (private->document_obj == NULL) { 
+		free(private);
+		return NULL;
+	}
+
+/*
+	private->navigator_obj = jsapi_new_Navigator(cx, window);
+	if (private->navigator_obj == NULL) {
+		free(private);
+		return NULL;
+	}
+*/
+	/** @todo forms, history, location */
+
+	private->console_obj = jsapi_new_Console(cx, window);
+	if (private->console_obj == NULL) {
+		free(private);
+		return NULL;
 	}
 
 	/* private pointer to browsing context */
-	if (!JS_SetPrivate(cx, window, win_priv))
+	if (!JS_SetPrivate(cx, window, private))
 		return NULL;
 
 	/* functions */
@@ -320,6 +290,7 @@ JSObject * jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv)
 	/* properties */
 	if (!JS_DefineProperties(cx, window, jsproperties_window))
 		return NULL;
+
 
 	LOG(("Created new window object %p", window));
 

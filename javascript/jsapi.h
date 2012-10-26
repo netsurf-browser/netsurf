@@ -17,7 +17,7 @@
  */
 
 /** \file
- * spidermonkey jsapi bindings and compatability glue.
+ * spidermonkey jsapi compatability glue.
  */
 
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
@@ -149,47 +149,5 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #endif
 
-/** Create a new javascript window object
- *
- * @param cx The javascript context.
- * @param parent The parent object or NULL for new global
- * @param win_priv The private context to set on the object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv);
-
-/** Create a new javascript document object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @param doc_priv The private context to set on the object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_Document(JSContext *cx, JSObject *parent, dom_document *node, struct html_content *htmlc);
-
-/** Create a new javascript console object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_console(JSContext *cx, JSObject *parent);
-
-/** Create a new javascript navigator object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_navigator(JSContext *cx, JSObject *parent);
-
-/** Create a new javascript element object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @param doc_priv The private context to set on the object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_element(JSContext *cx, JSObject *parent, struct html_content *htmlc, struct dom_element *domelement);
 
 #endif

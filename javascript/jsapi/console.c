@@ -137,7 +137,7 @@ static JSClass jsclass_console =
 };
 
 
-JSObject *jsapi_new_console(JSContext *cx, JSObject *parent)
+JSObject *jsapi_new_Console(JSContext *cx, JSObject *parent)
 {
 	return JS_InitClass(cx, 
 		     parent, 

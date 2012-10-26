@@ -17,6 +17,7 @@
  */
 
 #include "javascript/jsapi.h"
+#include "javascript/jsapi/binding.h"
 
 #include "content/content.h"
 #include "javascript/content.h"
@@ -90,46 +91,32 @@ void js_destroycontext(jscontext *ctx)
 }
 
 
-
+/** Create new compartment to run scripts within
+ *
+ * This performs the following actions
+ * 1. constructs a new global object by initialising a window class
+ * 2. Instantiate the global a window object 
+ */
 jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 {
 	JSContext *cx = (JSContext *)ctx;
-	JSObject *window_obj = NULL;
-	JSObject *document_obj;
-	JSObject *navigator_obj;
-	JSObject *console_obj;
-	struct html_content *htmlc = doc_priv;
+	JSObject *window_proto;
+	JSObject *window;
 
-	if (cx == NULL)
-		goto js_newcompartment_fail;
+	if (cx == NULL) {
+		return NULL;
+	}
 
-	/* create the window object as the global */
-	window_obj = jsapi_new_window(cx, NULL, win_priv);
-	if (window_obj == NULL) 
-		goto js_newcompartment_fail;
+	window_proto = jsapi_InitClass_Window(cx, NULL);
+	if (window_proto == NULL) {
+		LOG(("Unable to initialise window class"));
+		return NULL;
+	}
 
-	/* attach the subclasses off the window global */
-	document_obj = jsapi_new_Document(cx, window_obj, htmlc->document, htmlc);
-	if (document_obj == NULL) 
-		goto js_newcompartment_fail;
+	window = jsapi_new_Window(cx, window_proto, NULL, win_priv, doc_priv);
+	
+	return (jsobject *)window;
 
-	navigator_obj = jsapi_new_navigator(cx, window_obj);
-	if (navigator_obj == NULL) 
-		goto js_newcompartment_fail;
-
-	/* @todo forms, history, location */
-
-	console_obj = jsapi_new_console(cx, window_obj);
-	if (console_obj == NULL) 
-		goto js_newcompartment_fail;
-
-	return (jsobject *)window_obj;
-
-js_newcompartment_fail:
-
-	LOG(("New compartment creation failed"));
-
-	return NULL;
 }
 
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
