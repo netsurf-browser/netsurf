@@ -144,6 +144,28 @@ Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
 	return adt->dto;
 }
 
+char *amiga_dt_picture_datatype(struct content *c)
+{
+	const uint8 *data;
+	ULONG size;
+	struct DataType *dt;
+	char *filetype = NULL;
+	
+	data = (uint8 *)content__get_source_data(c, &size);
+
+	if(dt = ObtainDataType(DTST_MEMORY, NULL,
+					DTA_SourceAddress, data,
+					DTA_SourceSize, size,
+					DTA_GroupID, GID_PICTURE,
+					TAG_DONE)) {
+		filetype = strdup(dt->dtn_Header->dth_Name);
+		ReleaseDataType(dt);
+	}
+	
+	if(filetype == NULL) filetype = strdup("DataTypes");
+	return filetype;
+}
+
 static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 {
 	LOG(("amiga_dt_picture_cache_convert"));
@@ -183,12 +205,13 @@ bool amiga_dt_picture_convert(struct content *c)
 
 	union content_msg_data msg_data;
 	int width, height;
-	char title[100];
+	char *title;
 	UBYTE *bm_buffer;
 	Object *dto;
 	struct BitMapHeader *bmh;
 	unsigned int bm_flags = BITMAP_NEW;
 	int bm_format = PBPAFMT_RGBA;
+	char *filetype;
 
 	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))
 	{
@@ -205,17 +228,22 @@ bool amiga_dt_picture_convert(struct content *c)
 	c->height = height;
 	c->size = width * height * 4;
 
+	/* set title text */
+	if(filetype = amiga_dt_picture_datatype(c)) {
+		title = messages_get_buff("DataTypesTitle",
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			filetype, c->width, c->height);
+		if (title != NULL) {
+			content__set_title(c, title);
+			free(title);
+		}
+		free(filetype);
+	}
+	
 	image_cache_add(c, NULL, amiga_dt_picture_cache_convert);
-
-/*
-	snprintf(title, sizeof(title), "image (%lux%lu, %lu bytes)",
-		width, height, size);
-	content__set_title(c, title);
-*/
 
 	content_set_ready(c);
 	content_set_done(c);
-
 	content_set_status(c, "");
 	return true;
 }

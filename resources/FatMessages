@@ -2378,6 +2378,11 @@ de.all.ArtWorksTitle:%s (ArtWorks Bild %lux%lu pixels)
 fr.all.ArtWorksTitle:%s (Image ArtWorks %lux%lu pixels)
 it.all.ArtWorksTitle:%s (Immagine ArtWorks %lux%lu pixels)
 nl.all.ArtWorksTitle:%s (ArtWorks image %lux%lu pixels)
+en.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
+de.ami.DataTypesTitle:%s (%s Bild %lux%lu pixels)
+fr.ami.DataTypesTitle:%s (Image %s %lux%lu pixels)
+it.ami.DataTypesTitle:%s (Immagine %s %lux%lu pixels)
+nl.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
 
 # HTML page character set
 #
