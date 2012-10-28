@@ -42,11 +42,12 @@ static nserror amiga_dt_picture_create(const content_handler *handler,
 		bool quirks, struct content **c);
 static bool amiga_dt_picture_convert(struct content *c);
 static nserror amiga_dt_picture_clone(const struct content *old, struct content **newc);
+static void amiga_dt_picture_destroy(struct content *c);
 
 static const content_handler amiga_dt_picture_content_handler = {
 	.create = amiga_dt_picture_create,
 	.data_complete = amiga_dt_picture_convert,
-	.destroy = image_cache_destroy,
+	.destroy = amiga_dt_picture_destroy,
 	.redraw = image_cache_redraw,
 	.clone = amiga_dt_picture_clone,
 	.get_internal = image_cache_get_internal,
@@ -54,6 +55,10 @@ static const content_handler amiga_dt_picture_content_handler = {
 	.no_share = false,
 };
 
+struct amiga_dt_picture_content {
+	struct content c;
+	Object *dto;
+};
 
 nserror amiga_dt_picture_init(void)
 {
@@ -100,23 +105,43 @@ nserror amiga_dt_picture_create(const content_handler *handler,
 		llcache_handle *llcache, const char *fallback_charset,
 		bool quirks, struct content **c)
 {
-	struct content *adt;
+	struct amiga_dt_picture_content *adt;
 	nserror error;
 
-	adt = calloc(1, sizeof(struct content));
+	adt = calloc(1, sizeof(struct amiga_dt_picture_content));
 	if (adt == NULL)
 		return NSERROR_NOMEM;
 
-	error = content__init(adt, handler, imime_type, params,
+	error = content__init((struct content *)adt, handler, imime_type, params,
 			llcache, fallback_charset, quirks);
 	if (error != NSERROR_OK) {
 		free(adt);
 		return error;
 	}
 
-	*c = adt;
+	*c = (struct content *)adt;
 
 	return NSERROR_OK;
+}
+
+Object *amiga_dt_picture_newdtobject(struct amiga_dt_picture_content *adt)
+{
+	const uint8 *data;
+	ULONG size;
+
+	if(adt->dto == NULL) {
+		data = (uint8 *)content__get_source_data((struct content *)adt, &size);
+
+		adt->dto = NewDTObject(NULL,
+					DTA_SourceType, DTST_MEMORY,
+					DTA_SourceAddress, data,
+					DTA_SourceSize, size,
+					DTA_GroupID, GID_PICTURE,
+					PDTA_DestMode, PMODE_V43,
+					TAG_DONE);
+	}
+
+	return adt->dto;
 }
 
 static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
@@ -124,25 +149,13 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 	LOG(("amiga_dt_picture_cache_convert"));
 
 	union content_msg_data msg_data;
-	const uint8 *data;
 	UBYTE *bm_buffer;
-	ULONG size;
 	Object *dto;
 	struct bitmap *bitmap;
 	unsigned int bm_flags = BITMAP_NEW;
 	int bm_format = PBPAFMT_RGBA;
 
-	/* This is only relevant for picture datatypes... */
-
-	data = (uint8 *)content__get_source_data(c, &size);
-
-	if(dto = NewDTObject(NULL,
-					DTA_SourceType, DTST_MEMORY,
-					DTA_SourceAddress, data,
-					DTA_SourceSize, size,
-					DTA_GroupID, GID_PICTURE,
-					PDTA_DestMode, PMODE_V43,
-					TAG_DONE))
+	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))
 	{
 		bitmap = bitmap_create(c->width, c->height, bm_flags);
 		if (!bitmap) {
@@ -158,8 +171,6 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 			0, 0, c->width, c->height);
 
 		bitmap_set_opaque(bitmap, bitmap_test_opaque(bitmap));
-	
-		DisposeDTObject(dto);
 	}
 	else return NULL;
 
@@ -173,25 +184,13 @@ bool amiga_dt_picture_convert(struct content *c)
 	union content_msg_data msg_data;
 	int width, height;
 	char title[100];
-	const uint8 *data;
 	UBYTE *bm_buffer;
-	ULONG size;
 	Object *dto;
 	struct BitMapHeader *bmh;
 	unsigned int bm_flags = BITMAP_NEW;
 	int bm_format = PBPAFMT_RGBA;
 
-	/* This is only relevant for picture datatypes... */
-
-	data = (uint8 *)content__get_source_data(c, &size);
-
-	if(dto = NewDTObject(NULL,
-					DTA_SourceType, DTST_MEMORY,
-					DTA_SourceAddress, data,
-					DTA_SourceSize, size,
-					DTA_GroupID, GID_PICTURE,
-					PDTA_DestMode, PMODE_V43,
-					TAG_DONE))
+	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))
 	{
 		if(GetDTAttrs(dto, PDTA_BitMapHeader, &bmh, TAG_DONE))
 		{
@@ -199,8 +198,6 @@ bool amiga_dt_picture_convert(struct content *c)
 			height = (int)bmh->bmh_Height;
 		}
 		else return false;
-
-		DisposeDTObject(dto);
 	}
 	else return false;
 
@@ -252,6 +249,16 @@ nserror amiga_dt_picture_clone(const struct content *old, struct content **newc)
 	*newc = adt;
 
 	return NSERROR_OK;
+}
+
+static void amiga_dt_picture_destroy(struct content *c)
+{
+	struct amiga_dt_picture_content *adt = (struct amiga_dt_picture_content *)c;
+
+	DisposeDTObject(adt->dto);
+	adt->dto = NULL;
+	
+	image_cache_destroy(c);
 }
 
 #endif
