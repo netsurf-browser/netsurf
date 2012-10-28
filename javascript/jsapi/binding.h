@@ -23,6 +23,9 @@
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_BINDING_H_
 #define _NETSURF_JAVASCRIPT_JSAPI_BINDING_H_
 
+
+#include "render/html_internal.h"
+
 JSObject *jsapi_InitClass_Window(JSContext *cx, JSObject *parent);
 
 /** Create a new javascript window object
