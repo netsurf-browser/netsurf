@@ -510,7 +510,7 @@ png_cache_convert_error:
 static bool nspng_convert(struct content *c)
 {
 	nspng_content *png_c = (nspng_content *) c;
-	char title[100];
+	char *title;
 
 	assert(png_c->png != NULL);
 	assert(png_c->info != NULL);
@@ -519,10 +519,13 @@ static bool nspng_convert(struct content *c)
 	png_destroy_read_struct(&png_c->png, &png_c->info, 0);
 
 	/* set title text */
-	snprintf(title, sizeof(title), messages_get("PNGTitle"),
-		 c->width, c->height, c->size);
-
-	content__set_title(c, title);
+	title = messages_get_buff("PNGTitle",
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 
 	if (png_c->bitmap != NULL) {
 		bitmap_set_opaque(png_c->bitmap, bitmap_test_opaque(png_c->bitmap));

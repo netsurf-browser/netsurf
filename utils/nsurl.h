@@ -183,6 +183,20 @@ const char *nsurl_access(const nsurl *url);
 
 
 /**
+ * Access a URL's path leaf as a string
+ *
+ * \param url	  NetSurf URL to retrieve a string pointer for.
+ * \return the required string
+ *
+ * The returned string is owned by the NetSurf URL object.  It will die
+ * with the NetSurf URL object.  Keep a reference to the URL if you need it.
+ *
+ * The returned string has a trailing '\0'.
+ */
+const char *nsurl_access_leaf(const nsurl *url);
+
+
+/**
  * Find the length of a NetSurf URL object's URL, as returned by nsurl_access
  *
  * \param url	  NetSurf URL to find length of.

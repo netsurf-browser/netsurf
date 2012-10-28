@@ -100,7 +100,7 @@ static bool nsico_convert(struct content *c)
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
-	char title[100];
+	char *title;
 
 	/* set the ico data */
 	data = content__get_source_data(c, &size);
@@ -122,13 +122,19 @@ static bool nsico_convert(struct content *c)
 		return false;
 	}
 
-	/* Store our content width and description */
+	/* Store our content width, height and calculate size */
 	c->width = ico->ico->width;
 	c->height = ico->ico->height;
-	snprintf(title, sizeof(title), messages_get("ICOTitle"), 
-			c->width, c->height, size);
-	content__set_title(c, title);
 	c->size += (ico->ico->width * ico->ico->height * 4) + 16 + 44;
+
+	/* set title text */
+	title = messages_get_buff("ICOTitle",
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 
 	/* select largest icon to ensure one can be selected */
 	bmp = ico_find(ico->ico, 255, 255);

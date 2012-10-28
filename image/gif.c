@@ -242,7 +242,7 @@ static bool nsgif_convert(struct content *c)
 	union content_msg_data msg_data;
 	const char *data;
 	unsigned long size;
-	char title[100];
+	char *title;
 
 	/* Get the animation */
 	data = content__get_source_data(c, &size);
@@ -275,13 +275,19 @@ static bool nsgif_convert(struct content *c)
 		return false;
 	}
 
-	/* Store our content width and description */
+	/* Store our content width, height and calculate size */
 	c->width = gif->gif->width;
 	c->height = gif->gif->height;
-	snprintf(title, sizeof(title), messages_get("GIFTitle"),
-			c->width, c->height, size);
-	content__set_title(c, title);
 	c->size += (gif->gif->width * gif->gif->height * 4) + 16 + 44;
+
+	/* set title text */
+	title = messages_get_buff("GIFTitle",
+			nsurl_access_leaf(llcache_handle_get_url(c->llcache)),
+			c->width, c->height);
+	if (title != NULL) {
+		content__set_title(c, title);
+		free(title);
+	}
 
 	/* Schedule the animation if we have one */
 	gif->current_frame = 0;

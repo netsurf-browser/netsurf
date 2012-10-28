@@ -1564,6 +1564,38 @@ const char *nsurl_access(const nsurl *url)
 
 
 /* exported interface, documented in nsurl.h */
+const char *nsurl_access_leaf(const nsurl *url)
+{
+	size_t path_len;
+	const char *path;
+	const char *leaf;
+
+	if (url->components.path == NULL)
+		return "";
+
+	path = lwc_string_data(url->components.path);
+	path_len = lwc_string_length(url->components.path);
+
+	if (path_len == 0)
+		return "";
+
+	if (path_len == 1 && *path == '/')
+		return "/";
+
+	leaf = path + path_len;
+
+	do {
+		leaf--;
+	} while ((leaf != path) && (*leaf != '/'));
+
+	if (*leaf == '/')
+		leaf++;
+
+	return leaf;
+}
+
+
+/* exported interface, documented in nsurl.h */
 size_t nsurl_length(const nsurl *url)
 {
 	assert(url != NULL);
