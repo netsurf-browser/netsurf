@@ -30,6 +30,14 @@ operation prompt %{
 	warn_user(message, NULL);
 %}
 
+getter window %{
+	jsretval = OBJECT_TO_JSVAL(obj);
+%}
+
+getter self %{
+	jsretval = OBJECT_TO_JSVAL(obj);
+%}
+
 api init %{
 	JSObject *user_proto;
 
@@ -119,7 +127,7 @@ binding window {
      * context structure.
      *
      * internal are value stored in private context structure but not
-     * passed to constructor.
+     * passed to constructor but are considered for property getters/setters.
      */
     private "struct browser_window *" bw;
     private "struct html_content *" htmlc;
