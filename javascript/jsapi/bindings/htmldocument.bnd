@@ -1,4 +1,4 @@
-/* test binding to generate htmldocument */
+/* Binding to generate htmldocument */
 
 #include "dom.bnd"
 
