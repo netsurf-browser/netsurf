@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Chris Young <chris@unsatisfactorysoftware.co.uk>
+ * Copyright 2011 - 2012 Chris Young <chris@unsatisfactorysoftware.co.uk>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -176,8 +176,9 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 	struct bitmap *bitmap;
 	unsigned int bm_flags = BITMAP_NEW;
 	int bm_format = PBPAFMT_RGBA;
+	struct amiga_dt_picture_content *adt = (struct amiga_dt_picture_content *)c;
 
-	if(dto = amiga_dt_picture_newdtobject((struct amiga_dt_picture_content *)c))
+	if(dto = amiga_dt_picture_newdtobject(adt))
 	{
 		bitmap = bitmap_create(c->width, c->height, bm_flags);
 		if (!bitmap) {
@@ -193,6 +194,9 @@ static struct bitmap *amiga_dt_picture_cache_convert(struct content *c)
 			0, 0, c->width, c->height);
 
 		bitmap_set_opaque(bitmap, bitmap_test_opaque(bitmap));
+		
+		DisposeDTObject(dto);
+		adt->dto = NULL;
 	}
 	else return NULL;
 
