@@ -21,7 +21,8 @@ define convert_jsapi_binding
 S_JSAPI_BINDING += $(2)
 
 $(2): $(1)
-	$(Q)nsgenbind -I javascript/jsapi/WebIDL/ -o $(2) $(1)
+	$$(VQ)echo " GENBIND: $(1)"
+	$(Q)nsgenbind -I javascript/WebIDL/ -o $(2) $(1)
 
 endef
 
