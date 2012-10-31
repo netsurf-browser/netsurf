@@ -1927,6 +1927,16 @@ void ami_handle_msg(void)
 		ami_update_throbber(gwin, true);
 		refresh_throbber = FALSE;
 	}
+	
+	if(ami_menu_window_close)
+	{
+		if(ami_menu_window_close == AMI_MENU_WINDOW_CLOSE_ALL)
+			ami_quit_netsurf();
+		else
+			ami_close_all_tabs(ami_menu_window_close);
+			
+		ami_menu_window_close = NULL;
+	}
 }
 
 void ami_gui_appicon_remove(struct gui_window_2 *gwin)
@@ -2276,6 +2286,8 @@ void ami_quit_netsurf(void)
 			}
 
 		} while(node = nnode);
+
+		win_destroyed = true;
 	}
 
 	if(IsMinListEmpty(window_list))
