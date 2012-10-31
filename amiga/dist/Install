@@ -448,6 +448,8 @@
 
 (set #netsurf-name (select #cairo-version #static-filename #cairo-filename))
 
+(working "Installing NetSurf")
+
 (if (= #AutoInstall 0)
 	(
 		(copyfiles
