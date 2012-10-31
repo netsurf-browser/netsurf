@@ -39,9 +39,6 @@ ifeq ($(HOST),amiga)
   ifeq ($(NETSURF_USE_AMIGA_CAIRO),YES)
     CFLAGS +=  -I /SDK/local/common/include/cairo
     LDFLAGS += -use-dynld -ldl -lcairo -lpixman-1 -lfreetype -lfontconfig -lpng -lexpat
-    EXETARGET := NetSurf
-  else
-    EXETARGET := NetSurf-Static
   endif
 else
   $(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
@@ -66,17 +63,13 @@ else
   else
     LDFLAGS += -lauto -lpbl -liconv
   endif
-
-  ifeq ($(NETSURF_AMIGA_CAIRO_AVAILABLE),yes)
-    EXETARGET := NetSurf
-  else
-    EXETARGET := NetSurf-Static
-  endif
 endif
 
 ifeq ($(NETSURF_USE_MOZJS),YES)
   NETSURF_USE_JS:=YES
 endif
+
+EXETARGET := NetSurf
 
 # ----------------------------------------------------------------------------
 # Source file setup
