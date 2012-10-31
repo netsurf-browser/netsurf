@@ -84,6 +84,12 @@ api init %{
 	if (user_proto == NULL) {
 		return NULL;
 	}
+
+	user_proto = jsapi_InitClass_Console(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
 %}
 
 api new %{
@@ -112,7 +118,7 @@ api new %{
 
 	/** @todo forms, history, location */
 
-	private->console = jsapi_new_Console(cx, newobject);
+	private->console = jsapi_new_Console(cx, NULL, newobject);
 	if (private->console == NULL) {
 		free(private);
 		return NULL;

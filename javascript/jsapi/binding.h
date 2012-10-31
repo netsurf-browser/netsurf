@@ -57,13 +57,14 @@ JSObject *jsapi_new_Document(JSContext *cx,
 		dom_document *node,
 			     struct html_content *htmlc);
 
+JSObject *jsapi_InitClass_Console(JSContext *cx, JSObject *parent);
 /** Create a new javascript console object
  *
  * @param cx The javascript context.
  * @param parent The parent object, usually a global window object
  * @return new javascript object or NULL on error
  */
-JSObject *jsapi_new_Console(JSContext *cx, JSObject *parent);
+JSObject *jsapi_new_Console(JSContext *cx, JSObject *prototype, JSObject *parent);
 
 
 JSObject *jsapi_InitClass_Navigator(JSContext *cx, JSObject *parent);
