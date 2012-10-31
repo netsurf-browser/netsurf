@@ -65,13 +65,15 @@ JSObject *jsapi_new_Document(JSContext *cx,
  */
 JSObject *jsapi_new_Console(JSContext *cx, JSObject *parent);
 
+
+JSObject *jsapi_InitClass_Navigator(JSContext *cx, JSObject *parent);
 /** Create a new javascript navigator object
  *
  * @param cx The javascript context.
  * @param parent The parent object, usually a global window object
  * @return new javascript object or NULL on error
  */
-JSObject *jsapi_new_Navigator(JSContext *cx, JSObject *parent);
+JSObject *jsapi_new_Navigator(JSContext *cx, JSObject *proto, JSObject *parent);
 
 /** Create a new javascript element object
  *

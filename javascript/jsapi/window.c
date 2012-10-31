@@ -263,13 +263,12 @@ JSObject *jsapi_new_Window(JSContext *cx,
 		return NULL;
 	}
 
-/*
 	private->navigator_obj = jsapi_new_Navigator(cx, window);
 	if (private->navigator_obj == NULL) {
 		free(private);
 		return NULL;
 	}
-*/
+
 	/** @todo forms, history, location */
 
 	private->console_obj = jsapi_new_Console(cx, window);

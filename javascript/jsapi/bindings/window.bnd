@@ -79,6 +79,11 @@ api init %{
 	if (user_proto == NULL) {
 		return NULL;
 	}
+
+	user_proto = jsapi_InitClass_Navigator(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
 %}
 
 api new %{
@@ -99,13 +104,12 @@ api new %{
 		return NULL;
 	}
 
-/*
-	private->navigator_obj = jsapi_new_Navigator(cx, window);
-	if (private->navigator_obj == NULL) {
+	private->navigator = jsapi_new_Navigator(cx, NULL, newobject);
+	if (private->navigator == NULL) {
 		free(private);
 		return NULL;
 	}
-*/
+
 	/** @todo forms, history, location */
 
 	private->console = jsapi_new_Console(cx, newobject);
