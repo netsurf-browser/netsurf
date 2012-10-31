@@ -311,19 +311,8 @@
 (set osver (/ osver 65536))
 (set #versions-available 0)
 
-(set #static-filename "NetSurf-Static")
+(set #static-filename "NetSurf")
 (set #cairo-filename "NetSurf")
-
-(if (exists "NetSurf-Static")
-	(
-		(set #static-name "Static/graphics.library")
-		(set #versions-available (+ #versions-available 1))
-	)
-	; else
-	(
-		(set #static-name "")
-	)
-)
 
 (if (exists "NetSurf")
 	(
@@ -375,8 +364,7 @@
 		(set #cairo-version
 			(askchoice
 				(prompt "Which version of NetSurf would you like to install?")
-				(help "The Cairo/shared objects version has better rendering "
-					"of some graphical elements, and supports SVG.\n\n"
+				(help "The Cairo version has anti-aliasing of graphical elements.\n\n"
 					@askchoice-help)
 				(choices #static-name #cairo-name)
 				(default #cairo-version)
@@ -474,18 +462,7 @@
 	)
 ;else
 	(
-		(copyfiles
-			(prompt "Please check the version of NetSurf you are copying against "
-					"any which might already be installed.")
-			(help @copyfiles-help)
-			(source #netsurf-name)
-			(dest "T:")
-			(newname "NetSurf")
-			(optional "force" "oknodelete")
-		)
-
-		(run "CopyStore T:NetSurf" @default-dest)
-		(delete "T:NetSurf")
+		(run "CopyStore NetSurf" @default-dest)
 	)
 )
 
