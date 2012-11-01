@@ -41,6 +41,12 @@ JSObject *jsapi_new_Window(JSContext *cx,
 			    struct browser_window *bw, 
 			   html_content *htmlc);
 
+JSObject *jsapi_InitClass_Location(JSContext *cx, JSObject *parent);
+JSObject *jsapi_new_Location(JSContext *cx, 
+			    JSObject *window,
+			    JSObject *parent, 
+			    struct browser_window *bw);
+
 
 JSObject *jsapi_InitClass_Document(JSContext *cx, JSObject *parent);
 
