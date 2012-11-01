@@ -33,7 +33,6 @@ endef
 ifeq ($(NETSURF_USE_JS),YES)
 
 S_JSAPI = 
-#  htmlelement.c htmldocument.c window.c navigator.c console.c
 
 S_JAVASCRIPT += content.c jsapi.c $(addprefix jsapi/,$(S_JSAPI))
 
