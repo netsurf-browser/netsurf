@@ -76,22 +76,22 @@ binding navigator {
 }
 
 getter appName %{
-  jsretval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, NAVIGATOR_APPNAME));
+  jsret = JS_NewStringCopyZ(cx, NAVIGATOR_APPNAME);
 %}
 
 getter appCodeName %{
-  jsretval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, NAVIGATOR_APPCODENAME));
+  jsret = JS_NewStringCopyZ(cx, NAVIGATOR_APPCODENAME);
 %}
 
 getter appVersion %{
-   jsretval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, netsurf_version));
+   jsret = JS_NewStringCopyZ(cx, netsurf_version);
 %}
 
 getter language %{
   const char *alang = nsoption_charp(accept_language);
 
   if (alang != NULL) {
-    jsretval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, alang));
+    jsret = JS_NewStringCopyZ(cx, alang);
   }
 
 %}
@@ -109,12 +109,12 @@ getter platform %{
     platstr = malloc(platstrlen);
     if (platstr != NULL) {
       snprintf(platstr, platstrlen, "%s %s", cutsname->sysname, cutsname->machine);
-      jsretval = STRING_TO_JSVAL(JS_NewStringCopyN(cx, platstr, platstrlen - 1));
+      jsret = JS_NewStringCopyN(cx, platstr, platstrlen - 1);
       free(platstr);
     } 
   }
 %}
 
 getter userAgent %{
-  jsretval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, user_agent_string()));
+  jsret = JS_NewStringCopyZ(cx, user_agent_string());
 %}

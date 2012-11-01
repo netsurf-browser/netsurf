@@ -1,14 +1,30 @@
-/* test binding for document - must be included */
+/* DOM bindings entries */
 
 webidlfile "dom.idl";
 
 operation getElementById %{
 	dom_string *elementId_dom;
 	dom_element *element;
+        dom_exception exc;
+
+        LOG(("elementId_len %d elementId %s",elementId_len,elementId));
 
 	dom_string_create((unsigned char*)elementId, elementId_len, &elementId_dom);
+        LOG(("dom string %p", elementId_dom));
 
-	dom_document_get_element_by_id(private->node, elementId_dom, &element);
 
-	jsretval = OBJECT_TO_JSVAL(jsapi_new_element(cx, JS_GetGlobalObject(cx), private->htmlc, element));
+	exc = dom_document_get_element_by_id(private->node, elementId_dom, &element);
+        if ((exc == DOM_NO_ERR) && (element != NULL)) {
+              jsret = jsapi_new_HTMLElement(cx, NULL, JS_GetGlobalObject(cx), element, private->htmlc);
+        }
+%}
+
+getter textContent %{
+        dom_exception exc;
+        dom_string *content;
+
+        exc = dom_node_get_text_content(private->node, &content);
+        if ((exc == DOM_NO_ERR) && (content != NULL)) {
+                jsret = JS_NewStringCopyN(cx, dom_string_data(content), dom_string_length(content));
+        }
 %}

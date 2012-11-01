@@ -76,6 +76,7 @@ JSObject *jsapi_InitClass_Navigator(JSContext *cx, JSObject *parent);
  */
 JSObject *jsapi_new_Navigator(JSContext *cx, JSObject *proto, JSObject *parent);
 
+JSObject *jsapi_InitClass_HTMLElement(JSContext *cx, JSObject *parent);
 /** Create a new javascript element object
  *
  * @param cx The javascript context.
@@ -83,6 +84,10 @@ JSObject *jsapi_new_Navigator(JSContext *cx, JSObject *proto, JSObject *parent);
  * @param doc_priv The private context to set on the object
  * @return new javascript object or NULL on error
  */
-JSObject *jsapi_new_element(JSContext *cx, JSObject *parent, struct html_content *htmlc, struct dom_element *domelement);
+JSObject *jsapi_new_HTMLElement(JSContext *cx,
+				JSObject *prototype,
+				JSObject *parent,
+				dom_element *node,
+				struct html_content *htmlc);
 
 #endif

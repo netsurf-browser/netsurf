@@ -11,6 +11,7 @@
 S_JSAPI_BINDING:=
 
 JSAPI_BINDING_htmldocument := javascript/jsapi/bindings/htmldocument.bnd
+JSAPI_BINDING_htmlelement := javascript/jsapi/bindings/htmlelement.bnd
 JSAPI_BINDING_window := javascript/jsapi/bindings/window.bnd
 JSAPI_BINDING_navigator := javascript/jsapi/bindings/navigator.bnd
 JSAPI_BINDING_console := javascript/jsapi/bindings/console.bnd
@@ -31,8 +32,8 @@ endef
 # Javascript sources
 ifeq ($(NETSURF_USE_JS),YES)
 
-S_JSAPI =   htmlelement.c
-#htmldocument.c window.c navigator.c console.c
+S_JSAPI = 
+#  htmlelement.c htmldocument.c window.c navigator.c console.c
 
 S_JAVASCRIPT += content.c jsapi.c $(addprefix jsapi/,$(S_JSAPI))
 

@@ -31,11 +31,11 @@ operation prompt %{
 %}
 
 getter window %{
-	jsretval = OBJECT_TO_JSVAL(obj);
+	jsret = obj;
 %}
 
 getter self %{
-	jsretval = OBJECT_TO_JSVAL(obj);
+	jsret = obj;
 %}
 
 api init %{
@@ -86,6 +86,11 @@ api init %{
 	}
 
 	user_proto = jsapi_InitClass_Console(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
+	user_proto = jsapi_InitClass_HTMLElement(cx, prototype);
 	if (user_proto == NULL) {
 		return NULL;
 	}
