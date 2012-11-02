@@ -10,12 +10,12 @@
 
 S_JSAPI_BINDING:=
 
-JSAPI_BINDING_htmldocument := javascript/jsapi/bindings/htmldocument.bnd
-JSAPI_BINDING_htmlelement := javascript/jsapi/bindings/htmlelement.bnd
-JSAPI_BINDING_window := javascript/jsapi/bindings/window.bnd
-JSAPI_BINDING_navigator := javascript/jsapi/bindings/navigator.bnd
-JSAPI_BINDING_console := javascript/jsapi/bindings/console.bnd
-JSAPI_BINDING_location := javascript/jsapi/bindings/location.bnd
+JSAPI_BINDING_htmldocument := javascript/jsapi/htmldocument.bnd
+JSAPI_BINDING_htmlelement := javascript/jsapi/htmlelement.bnd
+JSAPI_BINDING_window := javascript/jsapi/window.bnd
+JSAPI_BINDING_navigator := javascript/jsapi/navigator.bnd
+JSAPI_BINDING_console := javascript/jsapi/console.bnd
+JSAPI_BINDING_location := javascript/jsapi/location.bnd
 
 # 1: input file
 # 2: output file
