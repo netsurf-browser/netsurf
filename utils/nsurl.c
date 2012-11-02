@@ -264,6 +264,13 @@ static void nsurl__get_string_markers(const char * const url_s,
 	marker.scheme_end = marker.authority = marker.colon_first = marker.at =
 			marker.colon_last = marker.path = marker.start;
 
+	if (*pos == '\0') {
+		/* Nothing but whitespace, early exit */
+		marker.query = marker.fragment = marker.end = marker.path;
+		*markers = marker;
+		return;
+	}
+
 	/* Get scheme */
 	if (isalpha(*pos)) {
 		pos++;

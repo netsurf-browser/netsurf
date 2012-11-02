@@ -136,6 +136,12 @@ static const struct test_pairs join_tests[] = {
 	{ "http://",		"http:" },
 	{ "http:/",		"http:" },
 	{ "http:",		"http:" },
+	{ " ",			"http://a/b/c/d;p?q" },
+	{ "  ",			"http://a/b/c/d;p?q" },
+	{ "/",			"http://a/" },
+	{ "  /  ",		"http://a/" },
+	{ "  ?  ",		"http://a/b/c/d;p?" },
+	{ "  h  ",		"http://a/b/c/h" },
 	/* [1] Extra slash beyond rfc3986 5.4.1 example, since we're
 	 *     testing normalisation in addition to joining */
 	/* [2] Using the strict parsers option */
