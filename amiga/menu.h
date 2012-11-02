@@ -63,8 +63,13 @@
 #define AMI_MENU_CLEAR FULLMENUNUM(1,5,0)
 #define AMI_MENU_FIND FULLMENUNUM(2,0,0)
 
+/* A special value for ami_menu_window_close */
+#define AMI_MENU_WINDOW_CLOSE_ALL 1
+
 struct gui_window;
 struct gui_window_2;
+
+struct gui_window_2 *ami_menu_window_close;
 
 void ami_free_menulabs(struct gui_window_2 *gwin);
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin);

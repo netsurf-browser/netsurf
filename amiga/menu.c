@@ -676,7 +676,7 @@ static void ami_menu_item_project_closewin(struct Hook *hook, APTR window, struc
 	struct gui_window_2 *gwin;
 	GetAttr(WINDOW_UserData, (Object *)window, (ULONG *)&gwin);
 
-	ami_close_all_tabs(gwin);
+	ami_menu_window_close = gwin;
 }
 
 static void ami_menu_item_project_print(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -736,7 +736,7 @@ static void ami_menu_item_project_about(struct Hook *hook, APTR window, struct I
 
 static void ami_menu_item_project_quit(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	ami_quit_netsurf();
+	ami_menu_window_close = AMI_MENU_WINDOW_CLOSE_ALL;
 }
 
 static void ami_menu_item_edit_cut(struct Hook *hook, APTR window, struct IntuiMessage *msg)
