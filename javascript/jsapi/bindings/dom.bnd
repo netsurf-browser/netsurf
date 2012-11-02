@@ -7,15 +7,11 @@ operation getElementById %{
 	dom_element *element;
         dom_exception exc;
 
-        LOG(("elementId_len %d elementId %s",elementId_len,elementId));
-
 	dom_string_create((unsigned char*)elementId, elementId_len, &elementId_dom);
-        LOG(("dom string %p", elementId_dom));
-
 
 	exc = dom_document_get_element_by_id(private->node, elementId_dom, &element);
         if ((exc == DOM_NO_ERR) && (element != NULL)) {
-              jsret = jsapi_new_HTMLElement(cx, NULL, JS_GetGlobalObject(cx), element, private->htmlc);
+              jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
         }
 %}
 
