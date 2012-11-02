@@ -152,9 +152,9 @@ install-gtk:
 	@cp -RLv gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	@cp -RLv gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@cp -RLv gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@tar cf - -C gtk/res themes | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@tar cf - -h -C gtk/res themes | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install translations
-	@tar cf - -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	@tar cf - -h -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install glade templates
 	@cp -RLv gtk/res/*.gtk*.ui $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
