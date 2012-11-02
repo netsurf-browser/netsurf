@@ -32,6 +32,14 @@ endef
 
 # Javascript sources
 ifeq ($(NETSURF_USE_JS),YES)
+WANT_JS_SOURCE := YES
+endif
+
+ifeq ($(NETSURF_USE_MOZJS),YES)
+WANT_JS_SOURCE := YES
+endif
+
+ifeq ($(WANT_JS_SOURCE),YES)
 
 S_JSAPI = 
 

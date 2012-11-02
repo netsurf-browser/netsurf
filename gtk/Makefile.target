@@ -35,10 +35,6 @@ $(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
 $(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
 $(eval $(call pkg_config_find_and_add,VIDEO,gstreamer-0.10,Video))
 
-ifeq ($(NETSURF_USE_MOZJS),YES)
-NETSURF_USE_JS:=YES
-endif
-
 # GTK and GLIB flags to disable depricated usage
 GTKDEPFLAGS := -DG_DISABLE_SINGLE_INCLUDES \
 		-DG_DISABLE_DEPRECATED \
