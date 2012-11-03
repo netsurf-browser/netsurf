@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "desktop/save_complete.h"
 #include "desktop/tree_url_node.h"
 
 #include "utils/utils.h"
@@ -136,20 +135,6 @@ utf8_from_local_encoding(const char *string, size_t len,
 {
   *result = strndup(string, len);
   return (*result == NULL) ? UTF8_CONVERT_NOMEM : UTF8_CONVERT_OK;
-}
-
-bool
-save_complete_gui_save(const char *path, const char *filename,
-                       size_t len, const char *sourcedata, lwc_string *mime_type)
-{
-  return true;
-}
-
-int
-save_complete_htmlSaveFileFormat(const char *path, const char *filename,
-                                 xmlDocPtr cur, const char *encoding, int format)
-{
-  return 0;
 }
 
 void

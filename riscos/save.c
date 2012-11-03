@@ -975,71 +975,16 @@ void ro_gui_save_done(void)
 		gui_save_content = 0;
 }
 
-/**
-* conducts the filesystem save appropriate to the gui
-* \param path save path
-* \param filename name of file to save
-* \param len data length
-* \param sourcedata pointer to data to save, NULL when all data in c
-* \param type content type
-* \return true for success
-*/
-
-bool save_complete_gui_save(const char *path, const char *filename, size_t len,
-		const char *sourcedata, lwc_string *mime_type)
+static void ro_gui_save_set_file_type(const char *path, lwc_string *mime_type)
 {
-	char *fullpath;
+	int rotype = ro_content_filetype_from_mime_type(mime_type);
 	os_error *error;
-	int namelen = strlen(path) + strlen(filename) + 2;
-	int rotype;
-	fullpath = malloc(namelen);
-	if (fullpath == NULL) {
-		warn_user("NoMemory", 0);
-		return false;
-	}
-	snprintf(fullpath, namelen, "%s.%s", path, filename);
-	rotype = ro_content_filetype_from_mime_type(mime_type);
-	error = xosfile_save_stamped(fullpath, rotype, (byte *) sourcedata,
-			(byte *) sourcedata + len);
-	free(fullpath);
-	if (error) {
-		LOG(("xosfile_save_stamped: 0x%x: %s",
+
+	error = xosfile_set_type(path, rotype);
+	if (error != NULL) {
+		LOG(("xosfile_set_type: 0x%x: %s",
 				error->errnum, error->errmess));
-		warn_user("SaveError", error->errmess);
-		return false;
 	}
-	return true;
-}
-
-/**
-* wrapper for lib function htmlSaveFileFormat; front sets path from
-* path + filename in a filesystem-specific way
-*/
-
-int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
-		xmlDocPtr cur, const char *encoding, int format)
-{
-	os_error *error;
-	int ret;
-	int len = strlen(path) + strlen(filename) + 2;
-	char *fullpath = malloc(len);
-	if (fullpath == NULL){
-		warn_user("NoMemory", 0);
-		return -1;
-	}
-	snprintf(fullpath, len, "%s.%s", path, filename);
-
-	ret = htmlSaveFileFormat(fullpath, cur, encoding, format);
-
-	error = xosfile_set_type(fullpath, 0xFAF);
-	if (error) {
-		LOG(("xosfile_save_stamped: 0x%x: %s",
-				error->errnum, error->errmess));
-		/* Don't warn the user here -- they probably don't care */
-	}
-
-	free(fullpath);
-	return ret;
 }
 
 /**
@@ -1130,7 +1075,7 @@ bool ro_gui_save_complete(hlcache_handle *h, char *path)
 			content_get_title(h), LINK_ANT, buf))
 		return false;
 
-	return save_complete(h, path);
+	return save_complete(h, path, ro_gui_save_set_file_type);
 }
 
 bool ro_gui_save_object_native(hlcache_handle *h, char *path)

@@ -85,8 +85,8 @@
 
 # S_BEOS are sources purely for the BeOS build
 S_BEOS := about.cpp bitmap.cpp fetch_rsrc.cpp		\
-	filetype.cpp font.cpp gui.cpp login.cpp	\
-	gui_options.cpp plotters.cpp save_complete.cpp	\
+	filetype.cpp font.cpp gui.cpp login.cpp		\
+	gui_options.cpp plotters.cpp 			\
 	scaffolding.cpp search.cpp schedule.cpp		\
 	thumbnail.cpp treeview.cpp throbber.cpp		\
 	window.cpp system_colour.cpp

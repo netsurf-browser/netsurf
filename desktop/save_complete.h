@@ -25,19 +25,34 @@
 #define _NETSURF_DESKTOP_SAVE_COMPLETE_H_
 
 #include <stdbool.h>
-#include <libxml/HTMLtree.h>
 
 #include <libwapcaplet/libwapcaplet.h>
 
 struct hlcache_handle;
 
+/**
+ * Callback to set type of a file
+ *
+ * \param path       Native path of file
+ * \param mime_type  MIME type of file content
+ */
+typedef void (*save_complete_set_type_cb)(const char *path,
+		lwc_string *mime_type);
+
+/**
+ * Initialise save complete module.
+ */
 void save_complete_init(void);
-bool save_complete(struct hlcache_handle *c, const char *path);
 
-bool save_complete_gui_save(const char *path, const char *filename,
-		size_t len, const char *sourcedata, lwc_string *mime_type);
-
-int save_complete_htmlSaveFileFormat(const char *path, const char *filename,
-		xmlDocPtr cur, const char *encoding, int format);
+/**
+ * Save an HTML page with all dependencies.
+ *
+ * \param  c         CONTENT_HTML to save
+ * \param  path      Native path to directory to save in to (must exist)
+ * \param  set_type  Callback to set type of a file, or NULL
+ * \return  true on success, false on error and error reported
+ */
+bool save_complete(struct hlcache_handle *c, const char *path,
+		save_complete_set_type_cb set_type);
 
 #endif

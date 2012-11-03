@@ -99,6 +99,36 @@ void ami_file_open(struct gui_window_2 *gwin)
 	}
 }
 
+static void ami_file_set_type(const char *path, lwc_string *mime_type)
+{
+	content_type type = content_factory_type_from_mime_type(mime_type);
+	const char *default_type;
+
+	switch(type)
+	{
+	case CONTENT_HTML:
+		default_type = "html";
+		break;
+	case CONTENT_CSS:
+		default_type = "css";
+		break;
+	default:
+		default_type = NULL;
+		break;
+	}
+
+	if (default_type != NULL) {
+		struct DiskObject *dobj = NULL;
+
+		dobj = GetIconTags(NULL,ICONGETA_GetDefaultName,default_type,
+				    ICONGETA_GetDefaultType,WBPROJECT,
+				    TAG_DONE);		
+			    
+		PutIconTags(path, dobj,
+				 ICONPUTA_NotifyWorkbench, TRUE, TAG_DONE);
+	}
+}
+
 void ami_file_save(int type, char *fname, struct Window *win,
 		struct hlcache_handle *object, struct hlcache_handle *favicon,
 		struct selection *sel)
@@ -134,7 +164,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 				if(lock = CreateDir(fname))
 				{
 					UnLock(lock);
-					save_complete(object, fname);
+					save_complete(object, fname, ami_file_set_type);
 					amiga_icon_superimpose_favicon(fname, favicon, NULL);
 				}
 			break;

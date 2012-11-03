@@ -176,7 +176,7 @@ static void __CDECL menu_save_page(WINDOW *win, int item, int title, void *data)
 	} while( !is_folder && path != NULL );
 
 	if( path != NULL ){
-		save_complete( input_window->browser->bw->current_content, path );
+		save_complete( input_window->browser->bw->current_content, path, NULL );
 	}
 
 }

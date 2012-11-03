@@ -38,7 +38,6 @@
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
 #include "desktop/plotters.h"
-#include "desktop/save_complete.h"
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "render/html.h"
@@ -1690,27 +1689,6 @@ void
 gui_window_set_search_ico(hlcache_handle *ico)
 {
 }
-
-bool
-save_complete_gui_save(const char *path,
-		       const char *filename,
-		       size_t len,
-		       const char *sourcedata,
-		       lwc_string *mime_type)
-{
-	return false;
-}
-
-int
-save_complete_htmlSaveFileFormat(const char *path,
-				 const char *filename,
-				 xmlDocPtr cur,
-				 const char *encoding,
-				 int format)
-{
-	return 0;
-}
-
 
 void gui_window_new_content(struct gui_window *w)
 {

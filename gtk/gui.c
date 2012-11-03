@@ -51,6 +51,7 @@
 #include "desktop/history_global_core.h"
 #include "desktop/netsurf.h"
 #include "desktop/options.h"
+#include "desktop/save_complete.h"
 #include "desktop/save_pdf/pdf_plotters.h"
 #include "desktop/searchweb.h"
 #include "desktop/sslcert.h"
@@ -416,6 +417,8 @@ static void gui_init(int argc, char** argv, char **respath)
 
 	filepath_sfinddef(respath, buf, "mime.types", "/etc/");
 	gtk_fetch_filetype_init(buf);
+
+	save_complete_init();
 
 	urldb_load(nsoption_charp(url_file));
 	urldb_load_cookies(nsoption_charp(cookie_file));

@@ -95,7 +95,6 @@ S_COCOA := \
 	font.m \
 	gui.m \
 	plotter.m \
-	save.m \
 	schedule.m \
 	selection.m \
 	thumbnail.m \

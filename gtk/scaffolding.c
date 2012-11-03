@@ -668,9 +668,8 @@ MULTIHANDLER(savepage)
 		return TRUE;
 	}
 	closedir(d);
-	save_complete_init();
 	save_complete(nsgtk_get_browser_window(
-			g->top_level)->current_content, path);
+			g->top_level)->current_content, path, NULL);
 	g_free(path);
 
 	gtk_widget_destroy(fc);

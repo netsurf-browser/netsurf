@@ -1,5 +1,5 @@
 /*
- * Copyright 2004 John M Bell <jmb202@ecs.soton.ac.uk>
+ * Copyright 2012 John-Mark Bell <jmb@netsurf-browser.org>
  * Copyright 2004-2007 James Bursa <bursa@users.sourceforge.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -30,347 +30,1034 @@
 #include <string.h>
 #include <sys/types.h>
 #include <regex.h>
+
 #include <dom/dom.h>
-#include "utils/config.h"
+
 #include "content/content.h"
 #include "content/hlcache.h"
 #include "css/css.h"
-#include "render/box.h"
 #include "desktop/save_complete.h"
-#include "utils/log.h"
-#include "utils/url.h"
-#include "utils/utils.h"
+#include "render/box.h"
 #include "render/html.h"
+#include "utils/log.h"
+#include "utils/nsurl.h"
+#include "utils/utils.h"
 
 regex_t save_complete_import_re;
 
 /** An entry in save_complete_list. */
-struct save_complete_entry {
+typedef struct save_complete_entry {
 	hlcache_handle *content;
 	struct save_complete_entry *next; /**< Next entry in list */
-};
+} save_complete_entry;
 
-static bool save_complete_html(hlcache_handle *c, const char *path,
-		bool index, struct save_complete_entry **list);
-static bool save_imported_sheets(struct nscss_import *imports, uint32_t count, 
-		const char *path, struct save_complete_entry **list);
-static char * rewrite_stylesheet_urls(const char *source, unsigned int size,
-		int *osize, const char *base,
-		struct save_complete_entry *list);
-static bool rewrite_document_urls(xmlDoc *doc, const char *base,
-		struct save_complete_entry *list);
-static bool rewrite_urls(xmlNode *n, const char *base,
-		struct save_complete_entry *list);
-static bool rewrite_url(xmlNode *n, const char *attr, const char *base,
-		struct save_complete_entry *list);
-static bool save_complete_list_add(hlcache_handle *content,
-		struct save_complete_entry **list);
-static hlcache_handle * save_complete_list_find(const char *url,
-		struct save_complete_entry *list);
-static bool save_complete_list_check(hlcache_handle *content,
-		struct save_complete_entry *list);
-/* static void save_complete_list_dump(void); */
-static bool save_complete_inventory(const char *path,
-		struct save_complete_entry *list);
+typedef struct save_complete_ctx {
+    const char *path;
+    save_complete_entry *list;
+    save_complete_set_type_cb set_type;
 
-/**
- * Save an HTML page with all dependencies.
- *
- * \param  c     CONTENT_HTML to save
- * \param  path  directory to save to (must exist)
- * \return  true on success, false on error and error reported
- */
+    nsurl *base;
+    FILE *fp;
+    enum { STATE_NORMAL, STATE_IN_STYLE } iter_state;
+} save_complete_ctx;
 
-bool save_complete(hlcache_handle *c, const char *path)
+typedef enum {
+	EVENT_ENTER,
+	EVENT_LEAVE
+} save_complete_event_type;
+
+
+static bool save_complete_save_html(save_complete_ctx *ctx, hlcache_handle *c,
+		bool index);
+static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
+		struct nscss_import *imports, uint32_t import_count);
+
+
+static void save_complete_ctx_initialise(save_complete_ctx *ctx,
+		const char *path, save_complete_set_type_cb set_type)
 {
-	bool result;
-	struct save_complete_entry *list = NULL;
-	
-	result = save_complete_html(c, path, true, &list);
+	ctx->path = path;
+	ctx->list = NULL;
+	ctx->set_type = set_type;
+}
 
-	if (result)
-		result = save_complete_inventory(path, list);
+static void save_complete_ctx_finalise(save_complete_ctx *ctx)
+{
+	save_complete_entry *list = ctx->list;
 
-	/* free save_complete_list */
-	while (list) {
-		struct save_complete_entry *next = list->next;
+	while (list != NULL) {
+		save_complete_entry *next = list->next;
 		free(list);
 		list = next;
 	}
+}
+
+static bool save_complete_ctx_add_content(save_complete_ctx *ctx,
+		hlcache_handle *content)
+{
+	save_complete_entry *entry;
+
+	entry = malloc(sizeof (*entry));
+	if (entry == NULL)
+		return false;
+
+	entry->content = content;
+	entry->next = ctx->list;
+	ctx->list = entry;
+
+	return true;
+}
+
+
+static hlcache_handle *save_complete_ctx_find_content(save_complete_ctx *ctx,
+		const nsurl *url)
+{
+	save_complete_entry *entry;
+
+	for (entry = ctx->list; entry != NULL; entry = entry->next)
+		if (nsurl_compare(url,
+				hlcache_handle_get_url(entry->content),
+				NSURL_COMPLETE))
+			return entry->content;
+
+	return NULL;
+}
+
+
+static bool save_complete_ctx_has_content(save_complete_ctx *ctx,
+		hlcache_handle *content)
+{
+	save_complete_entry *entry;
+
+	for (entry = ctx->list; entry != NULL; entry = entry->next)
+		if (entry->content == content)
+			return true;
+
+	return false;
+}
+
+static bool save_complete_save_buffer(save_complete_ctx *ctx,
+		const char *leafname, const char *data, size_t data_len,
+		lwc_string *mime_type)
+{
+	FILE *fp;
+	bool error;
+	char fullpath[PATH_MAX];
+
+	strncpy(fullpath, ctx->path, sizeof fullpath);
+	error = path_add_part(fullpath, sizeof fullpath, leafname);
+	if (error == false) {
+		warn_user("NoMemory", NULL);
+		return false;
+	}
+
+	fp = fopen(fullpath, "wb");
+	if (fp == NULL) {
+		LOG(("fopen(): errno = %i", errno));
+		warn_user("SaveError", strerror(errno));
+		return false;
+	}
+
+	fwrite(data, sizeof(*data), data_len, fp);
+
+	fclose(fp);
+
+	if (ctx->set_type != NULL)
+		ctx->set_type(fullpath, mime_type);
+
+	return true;
+}
+
+/**
+ * Rewrite stylesheet \@import rules for save complete.
+ *
+ * \param  source  stylesheet source
+ * \param  size    size of source
+ * \param  base    url of stylesheet
+ * \param  osize   updated with the size of the result
+ * \return  converted source, or NULL on out of memory
+ */
+
+static char *save_complete_rewrite_stylesheet_urls(save_complete_ctx *ctx,
+		const char *source, unsigned long size, const nsurl *base,
+		unsigned long *osize)
+{
+	char *rewritten;
+	unsigned long offset = 0;
+	unsigned int imports = 0;
+	nserror error;
+
+	/* count number occurrences of @import to (over)estimate result size */
+	/* can't use strstr because source is not 0-terminated string */
+	for (offset = 0; SLEN("@import") < size &&
+			offset <= size - SLEN("@import"); offset++) {
+		if (source[offset] == '@' &&
+				tolower(source[offset + 1]) == 'i' &&
+				tolower(source[offset + 2]) == 'm' &&
+				tolower(source[offset + 3]) == 'p' &&
+				tolower(source[offset + 4]) == 'o' &&
+				tolower(source[offset + 5]) == 'r' &&
+				tolower(source[offset + 6]) == 't')
+			imports++;
+	}
+
+	rewritten = malloc(size + imports * 20);
+	if (rewritten == NULL)
+		return NULL;
+	*osize = 0;
+
+	offset = 0;
+	while (offset < size) {
+		const char *import_url = NULL;
+		char *import_url_copy;
+		int import_url_len = 0;
+		nsurl *url = NULL;
+		regmatch_t match[11];
+		int m = regexec(&save_complete_import_re, source + offset,
+				11, match, 0);
+		if (m)
+			break;
+
+		if (match[2].rm_so != -1) {
+			import_url = source + offset + match[2].rm_so;
+			import_url_len = match[2].rm_eo - match[2].rm_so;
+		} else if (match[4].rm_so != -1) {
+			import_url = source + offset + match[4].rm_so;
+			import_url_len = match[4].rm_eo - match[4].rm_so;
+		} else if (match[6].rm_so != -1) {
+			import_url = source + offset + match[6].rm_so;
+			import_url_len = match[6].rm_eo - match[6].rm_so;
+		} else if (match[8].rm_so != -1) {
+			import_url = source + offset + match[8].rm_so;
+			import_url_len = match[8].rm_eo - match[8].rm_so;
+		} else if (match[10].rm_so != -1) {
+			import_url = source + offset + match[10].rm_so;
+			import_url_len = match[10].rm_eo - match[10].rm_so;
+		}
+		assert(import_url != NULL);
+
+		import_url_copy = strndup(import_url, import_url_len);
+		if (import_url_copy == NULL) {
+			free(rewritten);
+			return NULL;
+		}
+
+		error = nsurl_join(base, import_url_copy, &url);
+		free(import_url_copy);
+		if (error == NSERROR_NOMEM) {
+			free(rewritten);
+			return NULL;
+		}
+
+		/* copy data before match */
+		memcpy(rewritten + *osize, source + offset, match[0].rm_so);
+		*osize += match[0].rm_so;
+
+		if (url != NULL) {
+			hlcache_handle *content;
+			content = save_complete_ctx_find_content(ctx, url);
+			if (content != NULL) {
+				/* replace import */
+				char buf[64];
+				snprintf(buf, sizeof buf, "@import '%p'",
+						content);
+				memcpy(rewritten + *osize, buf, strlen(buf));
+				*osize += strlen(buf);
+			} else {
+				/* copy import */
+				memcpy(rewritten + *osize,
+					source + offset + match[0].rm_so,
+					match[0].rm_eo - match[0].rm_so);
+				*osize += match[0].rm_eo - match[0].rm_so;
+			}
+			nsurl_unref(url);
+		} else {
+			/* copy import */
+			memcpy(rewritten + *osize,
+				source + offset + match[0].rm_so,
+				match[0].rm_eo - match[0].rm_so);
+			*osize += match[0].rm_eo - match[0].rm_so;
+		}
+
+		assert(0 < match[0].rm_eo);
+		offset += match[0].rm_eo;
+	}
+
+	/* copy rest of source */
+	if (offset < size) {
+		memcpy(rewritten + *osize, source + offset, size - offset);
+		*osize += size - offset;
+	}
+
+	return rewritten;
+}
+
+static bool save_complete_save_stylesheet(save_complete_ctx *ctx,
+		hlcache_handle *css)
+{
+	const char *css_data;
+	unsigned long css_size;
+	char *source;
+	unsigned long source_len;
+	struct nscss_import *imports;
+	uint32_t import_count;
+	lwc_string *type;
+	char filename[32];
+	bool result;
+
+	if (save_complete_ctx_has_content(ctx, css))
+		return true;
+
+	if (save_complete_ctx_add_content(ctx, css) == false) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+
+	imports = nscss_get_imports(css, &import_count);
+	if (save_complete_save_imported_sheets(ctx,
+			imports, import_count) == false)
+		return false;
+
+	css_data = content_get_source_data(css, &css_size);
+	source = save_complete_rewrite_stylesheet_urls(ctx, css_data, css_size,
+			hlcache_handle_get_url(css), &source_len);
+	if (source == NULL) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+
+	type = content_get_mime_type(css);
+	if (type == NULL) {
+		free(source);
+		return false;
+	}
+
+	snprintf(filename, sizeof filename, "%p", css);
+
+	result = save_complete_save_buffer(ctx, filename,
+			source, source_len, type);
+
+	lwc_string_unref(type);
+	free(source);
 
 	return result;
 }
 
-
-/**
- * Save an HTML page with all dependencies, recursing through imported pages.
- *
- * \param  c      CONTENT_HTML to save
- * \param  path   directory to save to (must exist)
- * \param  index  true to save as "index"
- * \return  true on success, false on error and error reported
- */
-
-bool save_complete_html(hlcache_handle *c, const char *path, bool index,
-		struct save_complete_entry **list)
+static bool save_complete_save_imported_sheets(save_complete_ctx *ctx,
+		struct nscss_import *imports, uint32_t import_count)
 {
-	struct html_stylesheet *sheets;
-	struct content_html_object *object;
-	char filename[256];
-	unsigned int i, count;
-	xmlDocPtr doc = NULL;
-	bool res;
+	uint32_t i;
 
-	if (content_get_type(c) != CONTENT_HTML)
-		return false;
+	for (i = 0; i < import_count; i++) {
+		if (save_complete_save_stylesheet(ctx, imports[i].c) == false)
+			return false;
+	}
 
-	if (save_complete_list_check(c, *list))
+	return true;
+}
+
+static bool save_complete_save_html_stylesheet(save_complete_ctx *ctx,
+		struct html_stylesheet *sheet)
+{
+	if (sheet->type == HTML_STYLESHEET_INTERNAL) {
+		if (save_complete_save_imported_sheets(ctx,
+				sheet->data.internal->imports, 
+				sheet->data.internal->import_count) == false)
+			return false;
+
+		return true;
+	}
+
+	if (sheet->data.external == NULL)
 		return true;
 
-	/* save stylesheets, ignoring the base and adblocking sheets */
+	return save_complete_save_stylesheet(ctx, sheet->data.external);
+}
+
+static bool save_complete_save_html_stylesheets(save_complete_ctx *ctx,
+		hlcache_handle *c)
+{
+	struct html_stylesheet *sheets;
+	unsigned int i, count;
+
 	sheets = html_get_stylesheets(c, &count);
 
 	for (i = STYLESHEET_START; i != count; i++) {
-		hlcache_handle *css;
-		const char *css_data;
-		unsigned long css_size;
-		char *source;
-		int source_len;
-		struct nscss_import *imports;
-		uint32_t import_count;
-		lwc_string *type;
-
-		if (sheets[i].type == HTML_STYLESHEET_INTERNAL) {
-			if (save_imported_sheets(
-					sheets[i].data.internal->imports, 
-					sheets[i].data.internal->import_count, 
-					path, list) == false)
-				return false;
-
-			continue;
-		}
-
-		css = sheets[i].data.external;
-
-		if (!css)
-			continue;
-		if (save_complete_list_check(css, *list))
-			continue;
-
-		if (!save_complete_list_add(css, list)) {
-			warn_user("NoMemory", 0);
-			return false;
-		}
-
-		imports = nscss_get_imports(css, &import_count);
-		if (!save_imported_sheets(imports, import_count, path, list))
-			return false;
-
-		snprintf(filename, sizeof filename, "%p", css);
-
-		css_data = content_get_source_data(css, &css_size);
-
-		source = rewrite_stylesheet_urls(css_data, css_size, 
-				&source_len, nsurl_access(hlcache_handle_get_url(css)),
-				*list);
-		if (!source) {
-			warn_user("NoMemory", 0);
-			return false;
-		}
-
-		type = content_get_mime_type(css);
-		if (type == NULL) {
-			free(source);
-			return false;
-		}
-
-		res = save_complete_gui_save(path, filename, source_len,
-				source, type);
-
-		lwc_string_unref(type);
-		free(source);
-
-		if (res == false)
+		if (save_complete_save_html_stylesheet(ctx,
+				&sheets[i]) == false)
 			return false;
 	}
-	
-	/* save objects */
+
+	return true;
+}
+
+static bool save_complete_save_html_object(save_complete_ctx *ctx,
+		hlcache_handle *obj)
+{
+	const char *obj_data;
+	unsigned long obj_size;
+	lwc_string *type;
+	bool result;
+	char filename[32];
+
+	if (content_get_type(obj) == CONTENT_NONE)
+		return true;
+
+	obj_data = content_get_source_data(obj, &obj_size);
+	if (obj_data == NULL)
+		return true;
+
+	if (save_complete_ctx_has_content(ctx, obj))
+		return true;
+
+	if (save_complete_ctx_add_content(ctx, obj) == false) {
+		warn_user("NoMemory", 0);
+		return false;
+	}
+
+	if (content_get_type(obj) == CONTENT_HTML) {
+		return save_complete_save_html(ctx, obj, false);
+	}
+
+	snprintf(filename, sizeof filename, "%p", obj);
+
+	type = content_get_mime_type(obj);
+	if (type == NULL)
+		return false;
+
+	result = save_complete_save_buffer(ctx, filename, 
+			obj_data, obj_size, type);
+
+	lwc_string_unref(type);
+
+	return result;
+}
+
+static bool save_complete_save_html_objects(save_complete_ctx *ctx,
+		hlcache_handle *c)
+{
+	struct content_html_object *object;
+	unsigned int count;
+
 	object = html_get_objects(c, &count);
 
 	for (; object != NULL; object = object->next) {
-		hlcache_handle *obj = object->content;
-		const char *obj_data;
-		unsigned long obj_size;
-		lwc_string *type;
-
-		if (obj == NULL || content_get_type(obj) == CONTENT_NONE)
-			continue;
-
-		obj_data = content_get_source_data(obj, &obj_size);
-
-		if (obj_data == NULL)
-			continue;
-
-		if (save_complete_list_check(obj, *list))
-			continue;
-
-		if (!save_complete_list_add(obj, list)) {
-			warn_user("NoMemory", 0);
-			return false;
-		}
-
-		if (content_get_type(obj) == CONTENT_HTML) {
-			if (!save_complete_html(obj, path, false, list))
+		if (object->content != NULL) {
+			if (save_complete_save_html_object(ctx,
+					object->content) == false)
 				return false;
+		}
+	}
+
+	return true;
+}
+
+static bool save_complete_libdom_treewalk(dom_node *root,
+		bool (*callback)(dom_node *node,
+				save_complete_event_type event_type, void *ctx),
+		void *ctx)
+{
+	dom_node *node;
+
+	node = dom_node_ref(root); /* tree root */
+
+	while (node != NULL) {
+		dom_node *next = NULL;
+		dom_exception exc;
+
+		exc = dom_node_get_first_child(node, &next);
+		if (exc != DOM_NO_ERR) {
+			dom_node_unref(node);
+			break;
+		}
+
+		if (next != NULL) {  /* 1. children */
+			dom_node_unref(node);
+			node = next;
+		} else {
+			exc = dom_node_get_next_sibling(node, &next);
+			if (exc != DOM_NO_ERR) {
+				dom_node_unref(node);
+				break;
+			}
+
+			if (next != NULL) {  /* 2. siblings */
+				if (callback(node, EVENT_LEAVE, ctx) == false) {
+					return false;
+				}
+				dom_node_unref(node);
+				node = next;
+			} else {  /* 3. ancestor siblings */
+				while (node != NULL) {
+					exc = dom_node_get_next_sibling(node,
+							&next);
+					if (exc != DOM_NO_ERR) {
+						dom_node_unref(node);
+						node = NULL;
+						break;
+					}
+
+					if (next != NULL) {
+						dom_node_unref(next);
+						break;
+					}
+
+					exc = dom_node_get_parent_node(node,
+							&next);
+					if (exc != DOM_NO_ERR) {
+						dom_node_unref(node);
+						node = NULL;
+						break;
+					}
+
+					if (callback(node, EVENT_LEAVE,
+							ctx) == false) {
+						return false;
+					}
+					dom_node_unref(node);
+					node = next;
+				}
+
+				if (node == NULL)
+					break;
+
+				exc = dom_node_get_next_sibling(node, &next);
+				if (exc != DOM_NO_ERR) {
+					dom_node_unref(node);
+					break;
+				}
+
+				if (callback(node, EVENT_LEAVE, ctx) == false) {
+					return false;
+				}
+				dom_node_unref(node);
+				node = next;
+			}
+		}
+
+		assert(node != NULL);
+
+		if (callback(node, EVENT_ENTER, ctx) == false) {
+			return false; /* callback caused early termination */
+		}
+
+	}
+
+	return true;
+}
+
+static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
+		const char *value, size_t value_len)
+{
+	nsurl *url;
+	hlcache_handle *content;
+	nserror error;
+
+	error = nsurl_join(ctx->base, value, &url);
+	if (error == NSERROR_NOMEM)
+		return false;
+
+	if (url != NULL) {
+		content = save_complete_ctx_find_content(ctx, url);
+		if (content != NULL) {
+			/* found a match */
+			nsurl_unref(url);
+
+			fprintf(ctx->fp, "\"%p\"", content);
+		} else {
+			/* no match found */
+			fprintf(ctx->fp, "\"%s\"", nsurl_access(url));
+			nsurl_unref(url);
+		}
+	} else {
+		fprintf(ctx->fp, "\"%.*s\"", (int) value_len, value);
+	}
+
+	return true;
+}
+
+static bool save_complete_write_value(save_complete_ctx *ctx,
+		const char *value, size_t value_len)
+{
+	fprintf(ctx->fp, "\"%.*s\"", (int) value_len, value);
+
+	return true;
+}
+
+static bool save_complete_handle_attr_value(save_complete_ctx *ctx,
+		dom_string *node_name, dom_string *attr_name,
+		dom_string *attr_value)
+{
+	const char *node_data = dom_string_data(node_name);
+	size_t node_len = dom_string_byte_length(node_name);
+	const char *name_data = dom_string_data(attr_name);
+	size_t name_len = dom_string_byte_length(attr_name);
+	const char *value_data = dom_string_data(attr_value);
+	size_t value_len = dom_string_byte_length(attr_value);
+
+	/**
+	 * We only need to consider the following cases:
+	 *
+	 * Attribute:      Elements:
+	 *
+	 * 1)   data         <object>
+	 * 2)   href         <a> <area> <link>
+	 * 3)   src          <script> <input> <frame> <iframe> <img>
+	 * 4)   background   any (except those above)
+	 */
+	/* 1 */
+	if (name_len == SLEN("data") && 
+			strncasecmp(name_data, "data", name_len) == 0) {
+		if (node_len == SLEN("object") &&
+				strncasecmp(node_data,
+						"object", node_len) == 0) {
+			return save_complete_rewrite_url_value(ctx,
+					value_data, value_len);
+		} else {
+			return save_complete_write_value(ctx,
+					value_data, value_len);
+		}
+	}
+	/* 2 */
+	else if (name_len == SLEN("href") &&
+			strncasecmp(name_data, "href", name_len) == 0) {
+		if ((node_len == SLEN("a") && 
+				strncasecmp(node_data, "a", node_len) == 0) ||
+			(node_len == SLEN("area") &&
+				strncasecmp(node_data, "area", 
+					node_len) == 0) ||
+			(node_len == SLEN("link") && 
+				strncasecmp(node_data, "link", 
+					node_len) == 0)) {
+			return save_complete_rewrite_url_value(ctx,
+					value_data, value_len);
+		} else {
+			return save_complete_write_value(ctx,
+					value_data, value_len);
+		}
+	} 
+	/* 3 */
+	else if (name_len == SLEN("src") &&
+			strncasecmp(name_data, "src", name_len) == 0) {
+		if ((node_len == SLEN("frame") &&
+				strncasecmp(node_data, "frame",
+					node_len) == 0) ||
+			(node_len == SLEN("iframe") &&
+				strncasecmp(node_data, "iframe",
+					node_len) == 0) ||
+			(node_len == SLEN("input") &&
+				strncasecmp(node_data, "input",
+					node_len) == 0) ||
+			(node_len == SLEN("img") &&
+				strncasecmp(node_data, "img",
+					node_len) == 0) ||
+			(node_len == SLEN("script") &&
+				strncasecmp(node_data, "script",
+					node_len) == 0)) {
+			return save_complete_rewrite_url_value(ctx,
+					value_data, value_len);
+		} else {
+			return save_complete_write_value(ctx,
+					value_data, value_len);
+		}
+	}
+	/* 4 */
+	else if (name_len == SLEN("background") &&
+			strncasecmp(name_data, "background", name_len) == 0) {
+		return save_complete_rewrite_url_value(ctx,
+				value_data, value_len);
+	} else {
+		return save_complete_write_value(ctx,
+				value_data, value_len);
+	}
+}
+
+static bool save_complete_handle_attr(save_complete_ctx *ctx,
+		dom_string *node_name, dom_attr *attr)
+{
+	dom_string *name;
+	const char *name_data;
+	size_t name_len;
+	dom_string *value;
+	dom_exception error;
+
+	error = dom_attr_get_name(attr, &name);
+	if (error != DOM_NO_ERR)
+		return false;
+
+	if (name == NULL)
+		return true;
+
+	error = dom_attr_get_value(attr, &value);
+	if (error != DOM_NO_ERR) {
+		dom_string_unref(name);
+		return false;
+	}
+
+	name_data = dom_string_data(name);
+	name_len = dom_string_byte_length(name);
+
+	fputc(' ', ctx->fp);
+	fwrite(name_data, sizeof(*name_data), name_len, ctx->fp);
+
+	if (value != NULL) {
+		fputc('=', ctx->fp);
+		if (save_complete_handle_attr_value(ctx, node_name, 
+				name, value) == false) {
+			dom_string_unref(value);
+			dom_string_unref(name);
+			return false;
+		}
+	}
+
+	dom_string_unref(name);
+
+	return true;
+}
+
+static bool save_complete_handle_attrs(save_complete_ctx *ctx,
+		dom_string *node_name, dom_namednodemap *attrs)
+{
+	uint32_t length, i;
+	dom_exception error;
+
+	error = dom_namednodemap_get_length(attrs, &length);
+	if (error != DOM_NO_ERR)
+		return false;
+
+	for (i = 0; i < length; i++) {
+		dom_attr *attr;
+
+		error = dom_namednodemap_item(attrs, i, &attr);
+		if (error != DOM_NO_ERR)
+			return false;
+
+		if (attr == NULL)
 			continue;
+
+		if (save_complete_handle_attr(ctx, node_name, attr) == false) {
+			dom_node_unref(attr);
+			return false;
 		}
 
-		snprintf(filename, sizeof filename, "%p", obj);
-
-		type = content_get_mime_type(obj);
-		if (type == NULL)
-			return false;
-
-		res = save_complete_gui_save(path, filename, 
-				obj_size, obj_data, type);
-
-		lwc_string_unref(type);
-
-		if(res == false)
-			return false;
+		dom_node_unref(attr);
 	}
 
-	/* create shiny XML document from the content source */
-	
-	{
-		unsigned long html_size;
-		const char *html_source;
-		xmlChar *terminated_html_source;
-		html_source = content_get_source_data(c, &html_size);
-		
-		terminated_html_source = malloc(html_size + 1);
-		if (terminated_html_source != NULL) {
-			memcpy(terminated_html_source, html_source, html_size);
-			terminated_html_source[html_size] = '\0';
-			doc = htmlParseDoc(terminated_html_source, NULL);
-			free(terminated_html_source);
+	return true;
+}
+
+static bool save_complete_handle_element(save_complete_ctx *ctx,
+		dom_node *node, save_complete_event_type event_type)
+{
+	dom_string *name;
+	dom_namednodemap *attrs;
+	const char *name_data;
+	size_t name_len;
+	dom_exception error;
+
+	ctx->iter_state = STATE_NORMAL;
+
+	error = dom_node_get_node_name(node, &name);
+	if (error != DOM_NO_ERR)
+		return false;
+
+	if (name == NULL)
+		return true;
+
+	name_data = dom_string_data(name);
+	name_len = dom_string_byte_length(name);
+
+	/* Elide BASE elements from the output */
+	if (name_len == SLEN("base") &&
+			strncasecmp(name_data, "base", name_len) == 0) {
+		dom_string_unref(name);
+		return true;
+	}
+
+	fputc('<', ctx->fp);
+	if (event_type == EVENT_LEAVE)
+		fputc('/', ctx->fp);
+	fwrite(name_data, sizeof(*name_data), name_len, ctx->fp);
+
+	if (event_type == EVENT_ENTER) {
+		error = dom_node_get_attributes(node, &attrs);
+		if (error != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return false;
 		}
-		
-	}
-	
-	if (doc == NULL) {
-		warn_user("NoMemory", 0);
-		return false;
+
+		if (save_complete_handle_attrs(ctx, name, attrs) == false) {
+			dom_namednodemap_unref(attrs);
+			dom_string_unref(name);
+			return false;
+		}
+
+		dom_namednodemap_unref(attrs);
 	}
 
-	/* rewrite all urls we know about */
-	if (!rewrite_document_urls(doc, nsurl_access(html_get_base_url(c)),
-			*list)) {
-		xmlFreeDoc(doc);
-		warn_user("NoMemory", 0);
-		return false;
+	fputc('>', ctx->fp);
+
+	/* Rewrite contents of style elements */
+	if (event_type == EVENT_ENTER && name_len == SLEN("style") &&
+			strncasecmp(name_data, "style", name_len) == 0) {
+		dom_string *content;
+
+		error = dom_node_get_text_content(node, &content);
+		if (error != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return false;
+		}
+
+		if (content != NULL) {
+			char *rewritten;
+			unsigned long len;
+
+			/* Rewrite @import rules */
+			rewritten = save_complete_rewrite_stylesheet_urls(
+					ctx,
+					dom_string_data(content),
+					dom_string_byte_length(content),
+					ctx->base,
+					&len);
+			if (rewritten == NULL) {
+				dom_string_unref(content);
+				dom_string_unref(name);
+				return false;
+			}
+
+			dom_string_unref(content);
+
+			fwrite(rewritten, sizeof(*rewritten), len, ctx->fp);
+
+			free(rewritten);
+		}
+
+		ctx->iter_state = STATE_IN_STYLE;
 	}
 
-	/* save the html file out last of all */
+	dom_string_unref(name);
+
+	return true;
+}
+
+static bool save_complete_node_handler(dom_node *node,
+		save_complete_event_type event_type, void *ctxin)
+{
+	save_complete_ctx *ctx = ctxin;
+	dom_node_type type;
+	dom_exception error;
+
+	error = dom_node_get_node_type(node, &type);
+	if (error != DOM_NO_ERR)
+		return false;
+
+	if (type == DOM_ELEMENT_NODE) {
+		return save_complete_handle_element(ctx, node, event_type);
+	} else if (type == DOM_TEXT_NODE || type == DOM_COMMENT_NODE) {
+		if (event_type != EVENT_ENTER)
+			return true;
+
+		if (ctx->iter_state != STATE_IN_STYLE) {
+			/* Emit text content */
+			dom_string *text;
+			const char *text_data;
+			size_t text_len;
+
+			error = dom_characterdata_get_data(node, &text);
+			if (error != DOM_NO_ERR) {
+				return false;
+			}
+
+			if (text != NULL) {
+				text_data = dom_string_data(text);
+				text_len = dom_string_byte_length(text);
+
+				fwrite(text_data, sizeof(*text_data), 
+						text_len, ctx->fp);
+
+				dom_string_unref(text);
+			}
+		}
+	} else if (type == DOM_DOCUMENT_TYPE_NODE) {
+		dom_string *name;
+		const char *name_data;
+		size_t name_len;
+
+		if (event_type != EVENT_ENTER)
+			return true;
+
+		error = dom_document_type_get_name(node, &name);
+		if (error != DOM_NO_ERR)
+			return false;
+
+		if (name == NULL)
+			return true;
+
+		name_data = dom_string_data(name);
+		name_len = dom_string_byte_length(name);
+
+		fputs("<!DOCTYPE ", ctx->fp);
+		fwrite(name_data, sizeof(*name_data), name_len, ctx->fp);
+
+		dom_string_unref(name);
+
+		error = dom_document_type_get_public_id(node, &name);
+		if (error != DOM_NO_ERR)
+			return false;
+
+		if (name != NULL) {
+			name_data = dom_string_data(name);
+			name_len = dom_string_byte_length(name);
+
+			fprintf(ctx->fp, " PUBLIC \"%.*s\"",
+					(int) name_len, name_data);
+
+			dom_string_unref(name);
+		}
+
+		error = dom_document_type_get_system_id(node, &name);
+		if (error != DOM_NO_ERR)
+			return false;
+
+		if (name != NULL) {
+			name_data = dom_string_data(name);
+			name_len = dom_string_byte_length(name);
+
+			fprintf(ctx->fp, " \"%.*s\"",
+					(int) name_len, name_data);
+
+			dom_string_unref(name);
+		}
+
+		fputc('>', ctx->fp);
+	} else if (type == DOM_DOCUMENT_NODE) {
+		/* Do nothing */
+	} else {
+		LOG(("Unhandled node type: %d", type));
+	}
+
+	return true;
+}
+
+static bool save_complete_save_html_document(save_complete_ctx *ctx,
+		hlcache_handle *c, bool index)
+{
+	bool error;
+	FILE *fp;
+	dom_document *doc;
+	lwc_string *mime_type;
+	char filename[32];
+	char fullpath[PATH_MAX];
+
+	strncpy(fullpath, ctx->path, sizeof fullpath);
+
 	if (index)
 		snprintf(filename, sizeof filename, "index");
 	else 
 		snprintf(filename, sizeof filename, "%p", c);
 
-	errno = 0;
-	if (save_complete_htmlSaveFileFormat(path, filename, doc, 0, 0) == -1) {
-		if (errno)
-			warn_user("SaveError", strerror(errno));
-		else
-			warn_user("SaveError", "htmlSaveFileFormat failed");
-
-		xmlFreeDoc(doc);
+	error = path_add_part(fullpath, sizeof fullpath, filename);
+	if (error == false) {
+		warn_user("NoMemory", NULL);
 		return false;
-	}	
+	}
 
-	xmlFreeDoc(doc);
+	fp = fopen(fullpath, "wb");
+	if (fp == NULL) {
+		warn_user("NoMemory", NULL);
+		return false;
+	}
 
-	return true;
-}
+	ctx->base = html_get_base_url(c);
+	ctx->fp = fp;
+	ctx->iter_state = STATE_NORMAL;
 
+	doc = html_get_document(c);
 
-/**
- * Save stylesheets imported by a CONTENT_CSS.
- *
- * \param imports  Array of imports
- * \param count    Number of imports in list
- * \param path     Path to save to
- * \return  true on success, false on error and error reported
- */
-bool save_imported_sheets(struct nscss_import *imports, uint32_t count, 
-		const char *path, struct save_complete_entry **list)
-{
-	char filename[256];
-	unsigned int j;
-	char *source;
-	int source_len;
-	bool res;
+	if (save_complete_libdom_treewalk((dom_node *) doc,
+			save_complete_node_handler, ctx) == false) {
+		warn_user("NoMemory", 0);
+		fclose(fp);
+		return false;
+	}
 
-	for (j = 0; j != count; j++) {
-		hlcache_handle *css = imports[j].c;
-		const char *css_data;
-		unsigned long css_size;
-		struct nscss_import *child_imports;
-		uint32_t child_import_count;
-		lwc_string *type;
+	fclose(fp);
 
-		if (css == NULL)
-			continue;
-		if (save_complete_list_check(css, *list))
-			continue;
+	mime_type = content_get_mime_type(c);
+	if (mime_type != NULL) {
+		if (ctx->set_type != NULL)
+			ctx->set_type(fullpath, mime_type);
 
-		if (!save_complete_list_add(css, list)) {
-			warn_user("NoMemory", 0);
-			return false;
-		}
-
-		child_imports = nscss_get_imports(css, &child_import_count);
-		if (!save_imported_sheets(child_imports, child_import_count, 
-				path, list))
-			return false;
-
-		snprintf(filename, sizeof filename, "%p", css);
-
-		css_data = content_get_source_data(css, &css_size);
-
-		source = rewrite_stylesheet_urls(css_data, css_size, 
-				&source_len, nsurl_access(hlcache_handle_get_url(css)), 
-				*list);
-		if (!source) {
-			warn_user("NoMemory", 0);
-			return false;
-		}
-
-		if (lwc_intern_string("text/css", SLEN("text/css"), &type) !=
-				lwc_error_ok) {
-			free(source);
-			warn_user("NoMemory", 0);
-			return false;
-		}
-
-		res = save_complete_gui_save(path, filename, source_len,
-				source, type);
-
-		lwc_string_unref(type);
-		free(source);
-
-		if (res == false)
-			return false;
+		lwc_string_unref(mime_type);
 	}
 
 	return true;
 }
 
+/**
+ * Save an HTML page with all dependencies, recursing through imported pages.
+ *
+ * \param  ctx    Save complete context
+ * \param  c      Content to save
+ * \param  index  true to save as "index"
+ * \return  true on success, false on error and error reported
+ */
+static bool save_complete_save_html(save_complete_ctx *ctx, hlcache_handle *c,
+		bool index)
+{
+	if (content_get_type(c) != CONTENT_HTML)
+		return false;
+
+	if (save_complete_ctx_has_content(ctx, c))
+		return true;
+
+	if (save_complete_save_html_stylesheets(ctx, c) == false)
+		return false;
+
+	if (save_complete_save_html_objects(ctx, c) == false)
+		return false;
+
+	return save_complete_save_html_document(ctx, c, index);
+}
+
 
 /**
- * Initialise the save_complete module.
+ * Create the inventory file listing original URLs.
  */
 
+static bool save_complete_inventory(save_complete_ctx *ctx)
+{
+	FILE *fp;
+	bool error;
+	save_complete_entry *entry;
+	char fullpath[PATH_MAX];
+
+	strncpy(fullpath, ctx->path, sizeof fullpath);
+	error = path_add_part(fullpath, sizeof fullpath, "Inventory");
+	if (error == false) {
+		warn_user("NoMemory", NULL);
+		return false;
+	}
+
+	fp = fopen(fullpath, "w");
+	if (fp == NULL) {
+		LOG(("fopen(): errno = %i", errno));
+		warn_user("SaveError", strerror(errno));
+		return false;
+	}
+
+	for (entry = ctx->list; entry != NULL; entry = entry->next) {
+		fprintf(fp, "%p %s\n", entry->content, 
+				nsurl_access(hlcache_handle_get_url(
+						entry->content)));
+	}
+
+	fclose(fp);
+
+	return true;
+}
+
+/* Documented in save_complete.h */
 void save_complete_init(void)
 {
 	/* Match an @import rule - see CSS 2.1 G.1. */
@@ -403,435 +1090,22 @@ void save_complete_init(void)
 			REG_EXTENDED | REG_ICASE);
 }
 
-
-/**
- * Rewrite stylesheet \@import rules for save complete.
- *
- * @param  source  stylesheet source
- * @param  size    size of source
- * @param  osize   updated with the size of the result
- * @param  base    url of stylesheet
- * @return  converted source, or 0 on out of memory
- */
-
-char * rewrite_stylesheet_urls(const char *source, unsigned int size,
-		int *osize, const char *base,
-		struct save_complete_entry *list)
+/* Documented in save_complete.h */
+bool save_complete(hlcache_handle *c, const char *path,
+		save_complete_set_type_cb set_type)
 {
-	char *res;
-	const char *url;
-	char *url2;
-	char buf[20];
-	unsigned int offset = 0;
-	int url_len = 0;
-	hlcache_handle *content;
-	int m;
-	unsigned int i;
-	unsigned int imports = 0;
-	regmatch_t match[11];
-	url_func_result result;
+	bool result;
+	save_complete_ctx ctx;
 
-	/* count number occurences of @import to (over)estimate result size */
-	/* can't use strstr because source is not 0-terminated string */
-	for (i = 0; 7 < size && i != size - 7; i++) {
-		if (source[i] == '@' &&
-				tolower(source[i + 1]) == 'i' &&
-				tolower(source[i + 2]) == 'm' &&
-				tolower(source[i + 3]) == 'p' &&
-				tolower(source[i + 4]) == 'o' &&
-				tolower(source[i + 5]) == 'r' &&
-				tolower(source[i + 6]) == 't')
-			imports++;
-	}
+	save_complete_ctx_initialise(&ctx, path, set_type);
+	
+	result = save_complete_save_html(&ctx, c, true);
 
-	res = malloc(size + imports * 20);
-	if (!res)
-		return 0;
-	*osize = 0;
+	if (result)
+		result = save_complete_inventory(&ctx);
 
-	while (offset < size) {
-		m = regexec(&save_complete_import_re, source + offset,
-				11, match, 0);
-		if (m)
-			break;
+	save_complete_ctx_finalise(&ctx);
 
-		/*for (unsigned int i = 0; i != 11; i++) {
-			if (match[i].rm_so == -1)
-				continue;
-			fprintf(stderr, "%i: '%.*s'\n", i,
-					match[i].rm_eo - match[i].rm_so,
-					source + offset + match[i].rm_so);
-		}*/
-
-		url = 0;
-		if (match[2].rm_so != -1) {
-			url = source + offset + match[2].rm_so;
-			url_len = match[2].rm_eo - match[2].rm_so;
-		} else if (match[4].rm_so != -1) {
-			url = source + offset + match[4].rm_so;
-			url_len = match[4].rm_eo - match[4].rm_so;
-		} else if (match[6].rm_so != -1) {
-			url = source + offset + match[6].rm_so;
-			url_len = match[6].rm_eo - match[6].rm_so;
-		} else if (match[8].rm_so != -1) {
-			url = source + offset + match[8].rm_so;
-			url_len = match[8].rm_eo - match[8].rm_so;
-		} else if (match[10].rm_so != -1) {
-			url = source + offset + match[10].rm_so;
-			url_len = match[10].rm_eo - match[10].rm_so;
-		}
-		assert(url);
-
-		url2 = strndup(url, url_len);
-		if (!url2) {
-			free(res);
-			return 0;
-		}
-		result = url_join(url2, base, (char**)&url);
-		free(url2);
-		if (result == URL_FUNC_NOMEM) {
-			free(res);
-			return 0;
-		}
-
-		/* copy data before match */
-		memcpy(res + *osize, source + offset, match[0].rm_so);
-		*osize += match[0].rm_so;
-
-		if (result == URL_FUNC_OK) {
-			content = save_complete_list_find(url, list);
-			if (content) {
-				/* replace import */
-				snprintf(buf, sizeof buf, "@import '%p'",
-						content);
-				memcpy(res + *osize, buf, strlen(buf));
-				*osize += strlen(buf);
-			} else {
-				/* copy import */
-				memcpy(res + *osize, source + offset + match[0].rm_so,
-					match[0].rm_eo - match[0].rm_so);
-				*osize += match[0].rm_eo - match[0].rm_so;
-			}
-		}
-		else {
-			/* copy import */
-			memcpy(res + *osize, source + offset + match[0].rm_so,
-				match[0].rm_eo - match[0].rm_so);
-			*osize += match[0].rm_eo - match[0].rm_so;
-		}
-
-		assert(0 < match[0].rm_eo);
-		offset += match[0].rm_eo;
-	}
-
-	/* copy rest of source */
-	if (offset < size) {
-		memcpy(res + *osize, source + offset, size - offset);
-		*osize += size - offset;
-	}
-
-	return res;
-}
-
-
-/**
- * Rewrite URLs in a HTML document to be relative.
- *
- * \param  doc   root of the document tree
- * \param  base  base url of document
- * \return  true on success, false on out of memory
- */
-
-bool rewrite_document_urls(xmlDoc *doc, const char *base,
-		struct save_complete_entry *list)
-{
-	xmlNode *node;
-
-	for (node = doc->children; node; node = node->next)
-		if (node->type == XML_ELEMENT_NODE)
-			if (!rewrite_urls(node, base, list))
-				return false;
-
-	return true;
-}
-
-
-/**
- * Traverse tree, rewriting URLs as we go.
- *
- * \param  n     xmlNode of type XML_ELEMENT_NODE to rewrite
- * \param  base  base url of document
- * \return  true on success, false on out of memory
- *
- * URLs in the tree rooted at element n are rewritten.
- */
-
-bool rewrite_urls(xmlNode *n, const char *base,
-		struct save_complete_entry *list)
-{
-	xmlNode *child;
-
-	assert(n->type == XML_ELEMENT_NODE);
-
-	/**
-	 * We only need to consider the following cases:
-	 *
-	 * Attribute:      Elements:
-	 *
-	 * 1)   data         <object>
-	 * 2)   href         <a> <area> <link>
-	 * 3)   src          <script> <input> <frame> <iframe> <img>
-	 * 4)   n/a          <style>
-	 * 5)   n/a          any <base> tag
-	 * 6)   background   any (except those above)
-	 */
-	if (!n->name) {
-		/* ignore */
-	}
-	/* 1 */
-	else if (strcasecmp((const char *) n->name, "object") == 0) {
-		if (!rewrite_url(n, "data", base, list))
-			return false;
-	}
-	/* 2 */
-	else if (strcasecmp((const char *) n->name, "a") == 0 ||
-			strcasecmp((const char *) n->name, "area") == 0 ||
-			strcasecmp((const char *) n->name, "link") == 0) {
-		if (!rewrite_url(n, "href", base, list))
-			return false;
-	}
-	/* 3 */
-	else if (strcasecmp((const char *) n->name, "frame") == 0 ||
-			strcasecmp((const char *) n->name, "iframe") == 0 ||
-			strcasecmp((const char *) n->name, "input") == 0 ||
-			strcasecmp((const char *) n->name, "img") == 0 ||
-			strcasecmp((const char *) n->name, "script") == 0) {
-		if (!rewrite_url(n, "src", base, list))
-			return false;
-	}
-	/* 4 */
-	else if (strcasecmp((const char *) n->name, "style") == 0) {
-		unsigned int len;
-		xmlChar *content;
-
-		for (child = n->children; child != 0; child = child->next) {
-			char *rewritten;
-			/* Get current content */
-			content = xmlNodeGetContent(child);
-			if (!content)
-				/* unfortunately we don't know if this is
-				 * due to memory exhaustion, or because
-				 * there is no content for this node */
-				continue;
-
-			/* Rewrite @import rules */
-			rewritten = rewrite_stylesheet_urls(
-					(const char *) content,
-					strlen((const char *) content),
-					(int *) &len, base, list);
-			xmlFree(content);
-			if (!rewritten)
-				return false;
-
-			/* set new content */
-			xmlNodeSetContentLen(child,
-					(const xmlChar*)rewritten,
-					len);
-		}
-
-		return true;
-	}
-	/* 5 */
-	else if (strcasecmp((const char *) n->name, "base") == 0) {
-		/* simply remove any <base> tags from the document */
-		xmlUnlinkNode(n);
-		xmlFreeNode(n);
-		/* base tags have no content, so there's no point recursing
-		 * additionally, we've just destroyed this node, so trying
-		 * to recurse would result in bad things happening */
-		return true;
-	}
-	/* 6 */
-	else {
-	        if (!rewrite_url(n, "background", base, list))
-	                return false;
-	}
-
-	/* now recurse */
-	for (child = n->children; child;) {
-		/* we must extract the next child now, as if the current
-		 * child is a <base> element, it will be removed from the
-		 * tree (see 5, above), thus preventing extraction of the
-		 * next child */
-		xmlNode *next = child->next;
-		if (child->type == XML_ELEMENT_NODE) {
-			if (!rewrite_urls(child, base, list))
-				return false;
-		}
-		child = next;
-	}
-
-	return true;
-}
-
-
-/**
- * Rewrite an URL in a HTML document.
- *
- * \param  n     The node to modify
- * \param  attr  The html attribute to modify
- * \param  base  base url of document
- * \return  true on success, false on out of memory
- */
-
-bool rewrite_url(xmlNode *n, const char *attr, const char *base,
-		struct save_complete_entry *list)
-{
-	char *url, *data;
-	char rel[20];
-	hlcache_handle *content;
-	url_func_result res;
-
-	if (!xmlHasProp(n, (const xmlChar *) attr))
-		return true;
-
-	data = (char *) xmlGetProp(n, (const xmlChar *) attr);
-	if (!data)
-		return false;
-
-	res = url_join(data, base, &url);
-	xmlFree(data);
-	if (res == URL_FUNC_NOMEM)
-		return false;
-	else if (res == URL_FUNC_OK) {
-		content = save_complete_list_find(url, list);
-		if (content) {
-			/* found a match */
-			free(url);
-			snprintf(rel, sizeof rel, "%p", content);
-			if (!xmlSetProp(n, (const xmlChar *) attr,
-							(xmlChar *) rel))
-				return false;
-		} else {
-			/* no match found */
-			if (!xmlSetProp(n, (const xmlChar *) attr,
-							(xmlChar *) url)) {
-				free(url);
-				return false;
-			}
-			free(url);
-		}
-	}
-
-	return true;
-}
-
-
-/**
- * Add a content to the save_complete_list.
- *
- * \param  content  content to add
- * \return  true on success, false on out of memory
- */
-
-bool save_complete_list_add(hlcache_handle *content,
-		struct save_complete_entry **list)
-{
-	struct save_complete_entry *entry;
-	entry = malloc(sizeof (*entry));
-	if (!entry)
-		return false;
-	entry->content = content;
-	entry->next = *list;
-	*list = entry;
-	return true;
-}
-
-
-/**
- * Look up a url in the save_complete_list.
- *
- * \param  url  url to find
- * \return  content if found, 0 otherwise
- */
-
-hlcache_handle * save_complete_list_find(const char *url,
-		struct save_complete_entry *list)
-{
-	struct save_complete_entry *entry;
-	for (entry = list; entry; entry = entry->next)
-		if (strcmp(url, nsurl_access(
-				hlcache_handle_get_url(entry->content))) == 0)
-			return entry->content;
-	return 0;
-}
-
-
-/**
- * Look up a content in the save_complete_list.
- *
- * \param  content  pointer to content
- * \return  true if the content is in the save_complete_list
- */
-
-bool save_complete_list_check(hlcache_handle *content,
-		struct save_complete_entry *list)
-{
-	struct save_complete_entry *entry;
-	for (entry = list; entry; entry = entry->next)
-		if (entry->content == content)
-			return true;
-	return false;
-}
-
-
-#if 0
-/**
- * Dump save complete list to stderr
- */
-void save_complete_list_dump(void)
-{
-	struct save_complete_entry *entry;
-	for (entry = save_complete_list; entry; entry = entry->next)
-		fprintf(stderr, "%p : %s\n", entry->content,
-						entry->content->url);
-}
-#endif
-
-
-/**
- * Create the inventory file listing original URLs.
- */
-
-bool save_complete_inventory(const char *path,
-		struct save_complete_entry *list)
-{
-	char fullpath[256];
-	FILE *fp;
-	struct save_complete_entry *entry;
-	bool error;
-
-	strncpy(fullpath, path, sizeof fullpath);
-	error = path_add_part(fullpath, sizeof fullpath, "Inventory");
-
-	if (error == false) {
-		warn_user("NoMemory", 0);
-		return false;
-	}
-	fp = fopen(fullpath, "w");
-	if (!fp) {
-		LOG(("fopen(): errno = %i", errno));
-		warn_user("SaveError", strerror(errno));
-		return false;
-	}
-
-	for (entry = list; entry; entry = entry->next) {
-		fprintf(fp, "%p %s\n", entry->content, 
-				nsurl_access(hlcache_handle_get_url(entry->content)));
-	}
-
-	fclose(fp);
-
-	return true;
+	return result;
 }
 
