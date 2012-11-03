@@ -65,10 +65,6 @@ else
   endif
 endif
 
-ifeq ($(NETSURF_USE_MOZJS),YES)
-  NETSURF_USE_JS:=YES
-endif
-
 EXETARGET := NetSurf
 
 # ----------------------------------------------------------------------------

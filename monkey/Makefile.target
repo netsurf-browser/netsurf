@@ -47,7 +47,7 @@ $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
   MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
 
-  CFLAGS += $(MONKEYCFLAGS) -Werror
+  CFLAGS += $(MONKEYCFLAGS) -Werror -Wno-unused-but-set-variable
   LDFLAGS += $(MONKEYLDFLAGS)
 
   # ---------------------------------------------------------------------------

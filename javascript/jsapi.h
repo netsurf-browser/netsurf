@@ -17,7 +17,7 @@
  */
 
 /** \file
- * spidermonkey jsapi bindings and compatability glue.
+ * spidermonkey jsapi compatability glue.
  */
 
 #ifndef _NETSURF_JAVASCRIPT_JSAPI_H_
@@ -29,19 +29,17 @@
 #include "mozjs/jsapi.h"
 #endif
 
-#include "render/html_internal.h"
-
 #if JS_VERSION <= 180
 
 #include <string.h>
 
-/* *CAUTION* these macros introduce and use jsthis and jsrval
+/* *CAUTION* these macros introduce and use jsapi_this and jsapi_rval
  * parameters, native function code should not conflict with these
  */
 
 /* five parameter jsapi native call */
 #define JSAPI_NATIVE(name, cx, argc, vp) \
-	jsapi_native_##name(cx, JSObject *jsthis, argc, vp, jsval *jsrval)
+	jsapi_native_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
 
 /* five parameter function descriptor */
 #define JSAPI_FS(name, nargs, flags) \
@@ -51,13 +49,16 @@
 #define JSAPI_FS_END JS_FS_END
 
 /* return value */
-#define JSAPI_RVAL(cx, vp) JS_RVAL(cx, jsrval)
+#define JSAPI_RVAL(cx, vp) JS_RVAL(cx, jsapi_rval)
 
 /* return value setter */
-#define JSAPI_SET_RVAL(cx, vp, v) JS_SET_RVAL(cx, jsrval, v)
+#define JSAPI_SET_RVAL(cx, vp, v) JS_SET_RVAL(cx, jsapi_rval, v)
 
 /* arguments */
 #define JSAPI_ARGV(cx, vp) (vp)
+
+/* The object instance in a native call */
+#define JSAPI_THIS_OBJECT(cx,vp) jsapi_this
 
 /* proprty native calls */
 #define JSAPI_PROPERTYGET(name, cx, obj, vp) \
@@ -93,7 +94,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	outchar = JS_GetStringBytes(injsstring);		\
 	outlen = strlen(outchar)
 
+
 #else /* #if JS_VERSION <= 180 */
+
 
 /* three parameter jsapi native call */
 #define JSAPI_NATIVE(name, cx, argc, vp) jsapi_native_##name(cx, argc, vp)
@@ -113,6 +116,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 /* arguments */
 #define JSAPI_ARGV(cx, vp) JS_ARGV(cx,vp)
+
+/* The object instance in a native call */
+#define JSAPI_THIS_OBJECT(cx,vp) JS_THIS_OBJECT(cx,vp)
 
 /* proprty native calls */
 #define JSAPI_PROPERTYGET(name, cx, obj, vp) \
@@ -149,47 +155,5 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #endif
 
-/** Create a new javascript window object
- *
- * @param cx The javascript context.
- * @param parent The parent object or NULL for new global
- * @param win_priv The private context to set on the object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_window(JSContext *cx, JSObject *parent, void *win_priv);
-
-/** Create a new javascript document object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @param doc_priv The private context to set on the object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_document(JSContext *cx, JSObject *parent, struct html_content *htmlc);
-
-/** Create a new javascript console object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_console(JSContext *cx, JSObject *parent);
-
-/** Create a new javascript navigator object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_navigator(JSContext *cx, JSObject *parent);
-
-/** Create a new javascript element object
- *
- * @param cx The javascript context.
- * @param parent The parent object, usually a global window object
- * @param doc_priv The private context to set on the object
- * @return new javascript object or NULL on error
- */
-JSObject *jsapi_new_element(JSContext *cx, JSObject *parent, struct html_content *htmlc, struct dom_element *domelement);
 
 #endif

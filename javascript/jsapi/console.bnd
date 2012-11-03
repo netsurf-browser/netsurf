@@ -1,0 +1,59 @@
+/* Binding to generate Console interface
+ *
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
+
+webidlfile "console.idl";
+
+hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
+hdrcomment "This file is part of NetSurf, http://www.netsurf-browser.org/";
+hdrcomment "Released under the terms of the MIT License,";
+hdrcomment "        http://www.opensource.org/licenses/mit-license";
+
+preamble %{
+
+#include "utils/config.h"
+#include "utils/log.h"
+
+#include "javascript/jsapi.h"
+#include "javascript/jsapi/binding.h"
+
+%}
+
+binding navigator {
+    type js_libdom; /* the binding type */
+
+    interface Console; /* Web IDL interface to generate */
+
+    /* private members:
+     *  - stored in private context structure.
+     *  - passed as parameters to constructor and stored automatically.
+     *  - are *not* considered for property getters/setters.
+     *
+     * internal members:
+     *  - value stored in private context structure
+     *  - not passed to constructor
+     *  - must be instantiated by constructor
+     *  - are considered for property getters/setters.
+     */
+    internal "void *" gui_console;
+}
+
+operation log %{
+	unsigned int argloop;
+	JSString *jsstr;
+	unsigned long jsstrlen;
+	char *txt;
+
+	for (argloop = 0; argloop < argc; argloop++) {
+		jsstr = JS_ValueToString(cx, argv[argloop]);
+
+		JSString_to_char(jsstr, txt, jsstrlen);
+		LOG(("%s", txt));
+	}
+%}
