@@ -155,6 +155,7 @@ install-gtk:
 	@tar cf - -h -C gtk/res themes | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	@# Install translations
 	@tar cf - -h -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(call split_install_messages, gtk, $(DESTDIR)$(NETSURF_GTK_RESOURCES))
 	@# Install glade templates
 	@cp -RLv gtk/res/*.gtk*.ui $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
