@@ -41,6 +41,8 @@
 #include <proto/asl.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
+#include <proto/icon.h>
+#include <workbench/icon.h>
 
 static struct Hook aslhookfunc;
 
