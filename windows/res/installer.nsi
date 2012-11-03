@@ -63,7 +63,7 @@ section "install"
 	file /oname=default.css "windows\res\default.css"
 	file /oname=welcome.html "windows\res\welcome.html"
 	file /oname=netsurf.png "windows\res\netsurf.png"
-	file /oname=messages "windows\res\messages"
+	file /oname=messages "build-Linux-windows\messages"
 	# Add any other files for the install directory (license files, app data, etc) here
  
 	# Uninstaller - See function un.onInit and section "uninstall" for configuration
