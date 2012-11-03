@@ -647,10 +647,11 @@ package: all-program package-$(TARGET)
 FAT_LANGUAGES=de en fr it nl
 # 1 = front end name (gtk, ro, ami, etc)
 # 2 = Destination directory (where resources being installed, creates en/Messages etc)
+# 3 = suffix after language name 
 define split_install_messages
 	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
-		$(Q)mkdir -p $(2)/$(LANG)
-		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages > $(2)/$(LANG)/Messages
+		$(Q)mkdir -p $(2)/$(LANG)$(3)
+		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages > $(2)$(3)/$(LANG)/Messages
 	)
 endef
 
