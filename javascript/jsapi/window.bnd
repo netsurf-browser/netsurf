@@ -38,6 +38,8 @@ binding window {
 	internal "JSObject *" location;
 }
 
+api global %{
+%}
 
 api init %{
 	JSObject *user_proto;
