@@ -94,6 +94,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	outchar = JS_GetStringBytes(injsstring);		\
 	outlen = strlen(outchar)
 
+/* string type cast */
+#define JSAPI_STRING_TO_JSVAL(str) ((str == NULL)?JSVAL_NULL:STRING_TO_JSVAL(str))
 
 #else /* #if JS_VERSION <= 180 */
 
@@ -152,6 +154,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	JS_EncodeStringToBuffer(injsstring, outchar, outlen);	\
 	outchar[outlen] = '\0'
 
+/* string type cast */
+#define JSAPI_STRING_TO_JSVAL(str) ((str == NULL)?JSVAL_NULL:STRING_TO_JSVAL(str))
 
 #endif
 
