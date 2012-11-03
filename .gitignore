@@ -11,6 +11,7 @@ windows/res/preferences
 \!NetSurf/Resources/de/Messages
 \!NetSurf/Resources/nl/Templates,fec
 \!NetSurf/Resources/nl/Messages
+\!NetSurf/Resources/it/Messages
 test/nsurl
 test/urldbtest
 test/llcache
