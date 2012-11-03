@@ -103,6 +103,16 @@ api init %{
 		return NULL;
 	}
 
+	user_proto = jsapi_InitClass_HTMLCollection(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
+	user_proto = jsapi_InitClass_NodeList(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
 %}
 
 api new %{

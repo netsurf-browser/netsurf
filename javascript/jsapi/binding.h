@@ -96,4 +96,32 @@ JSObject *jsapi_new_HTMLElement(JSContext *cx,
 				dom_element *node,
 				struct html_content *htmlc);
 
+JSObject *jsapi_InitClass_HTMLCollection(JSContext *cx, JSObject *parent);
+/** Create a new javascript element object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @param doc_priv The private context to set on the object
+ * @return new javascript object or NULL on error
+ */
+JSObject *jsapi_new_HTMLCollection(JSContext *cx,
+				JSObject *prototype,
+				JSObject *parent,
+				dom_html_collection *collection,
+				struct html_content *htmlc);
+
+JSObject *jsapi_InitClass_NodeList(JSContext *cx, JSObject *parent);
+/** Create a new javascript element object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @param doc_priv The private context to set on the object
+ * @return new javascript object or NULL on error
+ */
+JSObject *jsapi_new_NodeList(JSContext *cx,
+				JSObject *prototype,
+				JSObject *parent,
+				dom_nodelist *nodelist,
+				struct html_content *htmlc);
+
 #endif
