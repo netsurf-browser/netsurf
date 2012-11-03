@@ -103,7 +103,7 @@ install-amiga:
 
 package-amiga: netsurf.lha
 
-AMIGA_LANGUAGES_MESSAGES := de en fr it nl
+AMIGA_LANGUAGES_MESSAGES := de en it
 AMIGA_LANGUAGES := $(AMIGA_LANGUAGES_MESSAGES) ja
 AMIGA_PLATFORM_RESOURCES := Pointers Themes default.css default.css.info favicon.png LangNames mimetypes Resource.map SearchEngines splash.png
 AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle
