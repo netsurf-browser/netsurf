@@ -103,7 +103,7 @@ ATARI_FONT_SOURCE_URL := http://ftp.gnome.org/pub/GNOME/sources/ttf-bitstream-ve
 #ATARI_FONT_SOURCE_URL := http://localhost/$(ATARI_FONT_NAME).tar.gz
 ATARI_FONT_TMP_DIR := $(DEPROOT)/../
 ATARI_FONT_SOURCE_DIR := $(ATARI_FONT_TMP_DIR)$(ATARI_FONT_NAME)/
-ATARI_GENERIC_RESOURCES := de en fr it ja nl
+ATARI_GENERIC_RESOURCES := de en it ja
 ATARI_RESOURCES := $(addprefix \!NetSurf/Resources/,$(ATARI_GENERIC_RESOURCES))
 
 # ----------------------------------------------------------------------------
@@ -163,7 +163,7 @@ endif
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
 #	$(Q)cp resources/FatMessages $(ATARI_TARGET_DIR)res/messages
 	$(Q)cp \!NetSurf/Resources/ca-bundle $(ATARI_TARGET_DIR)res/cabundle
-	$(Q)cp \!NetSurf/Resources/en/Messages $(ATARI_TARGET_DIR)res/messages
+	$(Q)$(PERL) utils/split-messages en all < resources/FatMessages > $(ATARI_TARGET_DIR)res/messages
 	$(Q)cp \!NetSurf/Resources/en/welcome.html,faf $(ATARI_TARGET_DIR)res/welcome.html
 	$(Q)cp \!NetSurf/Resources/en/licence.html,faf $(ATARI_TARGET_DIR)res/licence.html
 	$(Q)cp \!NetSurf/Resources/en/credits.html,faf $(ATARI_TARGET_DIR)res/credits.html
