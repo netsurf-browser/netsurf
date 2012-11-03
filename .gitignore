@@ -4,9 +4,13 @@ windows/res/preferences
 \!NetSurf/!Run,feb
 \!NetSurf/!RunImage,ff8
 \!NetSurf/Resources/en/Templates,fec
+\!NetSurf/Resources/en/Messages
 \!NetSurf/Resources/fr/Templates,fec
+\!NetSurf/Resources/fr/Messages
 \!NetSurf/Resources/de/Templates,fec
+\!NetSurf/Resources/de/Messages
 \!NetSurf/Resources/nl/Templates,fec
+\!NetSurf/Resources/nl/Messages
 test/nsurl
 test/urldbtest
 test/llcache
