@@ -146,7 +146,7 @@ R_RESOURCES := default.css adblock.css internal.css quirks.css NetSurf.icns Home
 R_RESOURCES := $(addprefix cocoa/res/,$(R_RESOURCES))
 
 LANGUAGES := de en fr it nl
-LOCALIZED_RESOURCES := Messages Localizable.strings
+LOCALIZED_RESOURCES := Localizable.strings
 
 TABBAR_RESOURCES := AquaTabClose_Front_Pressed.png \
 	AquaTabClose_Front_Rollover.png \
@@ -163,12 +163,16 @@ TABBAR_RESOURCES := AquaTabClose_Front_Pressed.png \
 
 R_RESOURCES += $(addprefix cocoa/PSMTabBarControl/Images/,$(TABBAR_RESOURCES))
 
+#languiage project macro
+# $1 is language name
+# $2 is list of resources per language 
 define make_lproj 
 R_RESOURCES += $$(OBJROOT)/$(1).lproj
 $$(OBJROOT)/$(1).lproj: $(2)
 	$(VQ)echo Bundling language $(1)
 	$(Q)mkdir -p $$@
 	$(Q)cp -pLR $(2) $$@
+	$(Q)$(PERL) utils/split-messages.pl $(1) cocoa < resources/FatMessages > $$@/Messages
 endef
 
 # compile_xib (xib) (lang)
