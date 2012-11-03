@@ -649,6 +649,7 @@ FAT_LANGUAGES=de en fr it nl
 # 2 = Destination directory (where resources being installed, creates en/Messages etc)
 define split_install_messages
 	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
+		$(Q)mkdir -p $(2)/$(LANG)
 		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages > $(2)/$(LANG)/Messages
 	)
 endef

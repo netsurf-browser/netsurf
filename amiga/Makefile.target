@@ -133,7 +133,7 @@ netsurf.lha: $(EXETARGET)
 	$(Q)cp amiga/pkg/fitr $(AMIGA_INSTALL_TARGET_DIR)/NetSurf
 	$(Q)cp amiga/pkg/drawer.info $(AMIGA_INSTALL_TARGET_DIR)/NetSurf.info
 	$(Q)cp amiga/pkg/AutoInstall $(AMIGA_INSTALL_TARGET_DIR)
-	$(Q)$(foreach AMIGA_LANGUAGE, $(AMIGA_LANGUAGES_MESSAGES), perl utils/split-messages.pl $(AMIGA_LANGUAGE) ami < resources/FatMessages >$(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/$(AMIGA_LANGUAGE)/Messages;)
+	$(call split_install_messages, ami, $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Resources/)
     ifeq ($(HOST),amiga)
 		$(Q)mkdir $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
 		$(Q)cp $(AMIGA_LIBS) $(AMIGA_INSTALL_TARGET_DIR)/NetSurf/Libs
