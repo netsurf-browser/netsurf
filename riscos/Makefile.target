@@ -36,7 +36,7 @@ endif
 TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
 		!NetSurf/Resources/$(TPL)/Templates$(TPLEXT))
 
-RESOURCES = $(TPD_RISCOS)
+RESOURCES = $(TPD_RISCOS) split-messages
 
 CFLAGS += -I. $(WARNFLAGS) -Driscos				\
 		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
@@ -107,6 +107,10 @@ clean-run:
 	$(VQ)echo "   CLEAN: !NetSurf/!Run$(RUNEXT)"
 	$(Q) $(RM) !NetSurf/!Run$(RUNEXT)
 CLEANS += clean-run
+
+split-messages:
+	$(call split_install_messages, ro, !NetSurf/Resources/)
+.PHONY: split-messages
 
 # ----------------------------------------------------------------------------
 # Install target
