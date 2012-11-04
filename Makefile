@@ -651,7 +651,7 @@ FAT_LANGUAGES=de en fr it nl
 define split_install_messages
 	$(foreach LANG, $(FAT_LANGUAGES), @echo MSGSPLIT: $(1)/$(LANG) to $(2)
 		$(Q)mkdir -p $(2)/$(LANG)$(3)
-		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages > $(2)$(3)/$(LANG)/Messages
+		$(Q)$(PERL) utils/split-messages.pl $(LANG) $(1) < resources/FatMessages | gzip -9n > $(2)$(3)/$(LANG)/Messages
 	)
 endef
 
