@@ -82,4 +82,10 @@ operation namedItem %{
                 jsret = jsapi_new_HTMLElement(cx, NULL, NULL, (dom_element *)domnode, private->htmlc);
         }
 
-        %}
+%}
+
+api finalise %{
+        if (private != NULL) {
+                dom_html_collection_unref(private->collection);
+        }
+%}

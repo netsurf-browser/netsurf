@@ -13,6 +13,7 @@ operation getElementById %{
         }
 
 	exc = dom_document_get_element_by_id(private->node, elementId_dom, &element);
+        dom_string_unref(elementId_dom);
         if (exc != DOM_NO_ERR) {
                 return JS_FALSE;
         }
@@ -37,16 +38,14 @@ operation getElementsByTagName %{
                 return JS_FALSE;
         }
 
-        LOG(("here"));
-
         exc = dom_document_get_elements_by_tag_name(private->node, localName_dom, /*&collection*/&nodelist);
+        dom_string_unref(localName_dom);
         if (exc != DOM_NO_ERR) {
                 return JS_FALSE;
         }
-        LOG(("nodelist %p", nodelist));
 
         if (/*collection*/nodelist != NULL) {
-                /*                jsret = jsapi_new_HTMLCollection(cx,
+                /*jsret = jsapi_new_HTMLCollection(cx,
                                                  NULL,
                                                  NULL,
                                                  collection,
@@ -65,8 +64,14 @@ getter textContent %{
         dom_string *content;
 
         exc = dom_node_get_text_content(private->node, &content);
-        if ((exc == DOM_NO_ERR) && (content != NULL)) {
+        if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (content != NULL) {
                 jsret = JS_NewStringCopyN(cx, dom_string_data(content), dom_string_length(content));
+		dom_string_unref(content);
+
         }
 %}
 

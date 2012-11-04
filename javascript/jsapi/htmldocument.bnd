@@ -38,3 +38,9 @@ binding document {
 
     interface Document; /* Web IDL interface to generate */
 }
+
+api finalise %{
+	if (private != NULL) {
+		dom_node_unref(private->node);
+	}
+%}

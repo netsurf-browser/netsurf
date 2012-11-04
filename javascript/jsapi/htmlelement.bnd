@@ -34,18 +34,12 @@ binding htmlelement {
 
     interface HTMLElement; /* Web IDL interface to generate */
 
-    /* private members:
-     *  - stored in private context structure.
-     *  - passed as parameters to constructor and stored automatically.
-     *  - are *not* considered for property getters/setters.
-     *
-     * internal members:
-     *  - value stored in private context structure
-     *  - not passed to constructor
-     *  - must be instantiated by constructor
-     *  - are considered for property getters/setters.
-     */
     private "dom_element *" node;
     private "struct html_content *" htmlc; 
 }
 
+api finalise %{
+        if (private != NULL) {
+                dom_node_unref(private->node);
+        }
+%}

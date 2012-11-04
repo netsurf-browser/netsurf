@@ -63,5 +63,9 @@ operation item %{
         }
 %}
 
-
+api finalise %{
+        if (private != NULL) {
+                dom_nodelist_unref(private->nodelist);
+        }
+%}
        
