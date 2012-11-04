@@ -124,36 +124,28 @@ EXETARGET := nsgtk
 # Install target
 # ----------------------------------------------------------------------------
 
+GTK_RESOURCES_LIST := adblock.css arrow_down_8x32.png ca-bundle.txt default.css \
+			default.ico favicon.png gtkdefault.css internal.css \
+			languages license netsurf.png netsurf.xpm \
+			netsurf-16x16.xpm quirks.css themelist toolbarIndices \
+			SearchEngines
+GTK_RESOURCES_LIST := $(addprefix gtk/res/, $(GTK_RESOURCES_LIST)) \
+			$(wildcard gtk/res/*.gtk*.ui)
+
+# translations with more than just Messages files
+GTK_TRANSLATIONS_HTML := de en it ja
+
 install-gtk:
-	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
-	mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
-	mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
-	@cp -RLv nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	@cp -RLv gtk/res/adblock.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/arrow_down_8x32.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/ca-bundle.txt $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/default.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/default.ico $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/favicon.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/gtkdefault.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/internal.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/languages $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/license $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/netsurf.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/netsurf.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/netsurf-16x16.xpm $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/quirks.css $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/themelist $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
-	@cp -RLv gtk/res/toolbarIndices $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@cp -RLv gtk/res/SearchEngines $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@tar cf - -h -C gtk/res themes | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	@# Install translations
-	@tar cf - -h -C gtk/res C de en fr it nl | tar xf - -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
+	$(Q)install -vC nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
+	$(Q)install -vC -m 0644 -t $(DESTDIR)$(NETSURF_GTK_RESOURCES) $(GTK_RESOURCES_LIST)
+	$(Q)install -vC -m 0644 -t $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons gtk/res/icons/*.png
+	$(Q)install -vC -m 0644 -t $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber gtk/res/throbber/*.png
+	$(Q)tar c -h -C gtk/res themes | tar xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(Q)tar c -h -C gtk/res $(GTK_TRANSLATIONS_HTML) | tar xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 	$(call split_install_messages, gtk, $(DESTDIR)$(NETSURF_GTK_RESOURCES))
-	@# Install glade templates
-	@cp -RLv gtk/res/*.gtk*.ui $(DESTDIR)$(NETSURF_GTK_RESOURCES)
 
 # ----------------------------------------------------------------------------
 # Package target
