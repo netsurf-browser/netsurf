@@ -28,7 +28,7 @@ define convert_jsapi_binding
 S_JSAPI_BINDING += $(2)
 D_JSAPI_BINDING += $(patsubst %.c,%.d,$(2))
 
-$(2): $(1)
+$(2): $(1) $(OBJROOT)/created
 	$$(VQ)echo " GENBIND: $(1)"
 	$(Q)nsgenbind -I javascript/WebIDL/ -d $(patsubst %.c,%.d,$(2)) -o $(2) $(1)
 
