@@ -645,9 +645,6 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		/* do verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 1L);
 		SETOPT(CURLOPT_SSL_VERIFYHOST, 2L);
-#if LIBCURL_VERSION_NUM >= 0x071900
-		SETOPT(CURLOPT_SSL_OPTIONS, CURLSSLOPT_ALLOW_BEAST);
-#endif
 		if (curl_with_openssl) {
 			SETOPT(CURLOPT_SSL_CTX_FUNCTION, fetch_curl_sslctxfun);
 			SETOPT(CURLOPT_SSL_CTX_DATA, f);
