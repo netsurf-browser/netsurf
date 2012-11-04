@@ -633,6 +633,9 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_PROXY, NULL);
 	}
 
+	/* Disable SSL session ID caching, as some servers can't cope. */
+	SETOPT(CURLOPT_SSL_SESSIONID_CACHE, 0);
+
 	if (urldb_get_cert_permissions(f->url)) {
 		/* Disable certificate verification */
 		SETOPT(CURLOPT_SSL_VERIFYPEER, 0L);
