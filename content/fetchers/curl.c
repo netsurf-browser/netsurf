@@ -194,11 +194,8 @@ void fetch_curl_register(void)
 	    SETOPT(CURLOPT_VERBOSE, 0);
 	}
 	SETOPT(CURLOPT_ERRORBUFFER, fetch_error_buffer);
-	if (nsoption_bool(suppress_curl_debug)) {
+	if (nsoption_bool(suppress_curl_debug))
 		SETOPT(CURLOPT_DEBUGFUNCTION, fetch_curl_ignore_debug);
-	} else {
-		SETOPT(CURLOPT_VERBOSE, 1);
-	}
 	SETOPT(CURLOPT_WRITEFUNCTION, fetch_curl_data);
 	SETOPT(CURLOPT_HEADERFUNCTION, fetch_curl_header);
 	SETOPT(CURLOPT_PROGRESSFUNCTION, fetch_curl_progress);
@@ -635,6 +632,9 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 	} else {
 		SETOPT(CURLOPT_PROXY, NULL);
 	}
+
+	/* Disable SSL session ID caching, as some servers can't cope. */
+	SETOPT(CURLOPT_SSL_SESSIONID_CACHE, 0);
 
 	if (urldb_get_cert_permissions(f->url)) {
 		/* Disable certificate verification */
