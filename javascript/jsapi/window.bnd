@@ -126,7 +126,7 @@ api new %{
 	private->document = jsapi_new_Document(cx,
                                                NULL,
                                                newobject, 
-                                               htmlc->document, 
+                                               (dom_document *)dom_node_ref(htmlc->document), 
                                                htmlc);
 	if (private->document == NULL) { 
 		free(private);
