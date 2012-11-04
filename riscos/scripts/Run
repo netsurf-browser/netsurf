@@ -88,6 +88,10 @@ RMEnsure Tinct 0.13 Error NetSurf requires Tinct 0.13 or later. This can be down
 RMEnsure Iconv 0.11 NetSurfRMLoad System:Modules.Iconv
 RMEnsure Iconv 0.11 Error NetSurf requires Iconv 0.11 or later. This can be downloaded from http://www.netsurf-browser.org/iconv/
 
+| Ensure CryptRandom
+RMEnsure CryptRandom 0.12 NetSurfRMLoad System:Modules.CryptRand
+RMEnsure CryptRandom 0.12 Error NetSurf requires CryptRandom 0.12 or later.  This can be downloaded form http://www.riscos.info/index.php/CryptRandom
+
 | Disable SpecialFX, if present
 Set NetSurf$SpecialFX 1
 RMEnsure SpecialFX 1.00 Set NetSurf$SpecialFX 0
