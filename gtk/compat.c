@@ -213,6 +213,12 @@ GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout)
 #endif
 }
 
+static void nsgtk_layout_set_adjustment_step_increment(GtkAdjustment *adj,
+						       int value)
+{
+	gtk_adjustment_set_step_increment(adj, value);
+}
+
 void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj) 
 {
 #if GTK_CHECK_VERSION(3,0,0)
@@ -220,6 +226,7 @@ void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj)
 #else
 	gtk_layout_set_hadjustment(layout, adj);
 #endif
+	nsgtk_layout_set_adjustment_step_increment(adj, 8);
 }
 
 void nsgtk_layout_set_vadjustment(GtkLayout *layout, GtkAdjustment *adj) 
@@ -229,6 +236,7 @@ void nsgtk_layout_set_vadjustment(GtkLayout *layout, GtkAdjustment *adj)
 #else
 	gtk_layout_set_vadjustment(layout, adj);
 #endif
+	nsgtk_layout_set_adjustment_step_increment(adj, 8);
 }
 
 GtkWidget *nsgtk_hbox_new(gboolean homogeneous, gint spacing)
