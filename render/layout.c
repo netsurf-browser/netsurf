@@ -2782,7 +2782,10 @@ bool layout_line(struct box *first, int *width, int *y,
 			if (right && used_height <
 					right->y + right->height - cy + 1)
 				used_height = right->y + right->height - cy + 1;
-			assert(0 < used_height);
+
+			if (used_height < 0)
+				used_height = 0;
+
 			b = split_box;
 #ifdef LAYOUT_DEBUG
 			LOG(("moving below float"));
