@@ -13,34 +13,100 @@ preamble %{
 #include "utils/config.h"
 #include "utils/log.h"
 
+#include "content/urldb.h"
+
 #include "javascript/jsapi.h"
 #include "javascript/jsapi/binding.h"
 
 %}
 
-operation write %{
-	LOG(("content %p parser %p writing %s",
-		private->htmlc, private->htmlc->parser, text));
-
-	if (private->htmlc->parser != NULL) {
-		dom_hubbub_parser_insert_chunk(private->htmlc->parser, (uint8_t *)text, text_len);
-	}
-%}
-
 binding document {
-    type js_libdom; /* the binding type */
+	type js_libdom; /* the binding type */
 
-    /* parameters to constructor value stored in private
-     * context structure.
-     */
-    private "dom_document *" node;
-    private "struct html_content *" htmlc; 
+	/* parameters to constructor value stored in private
+	 * context structure.
+	 */
+	private "dom_document *" node;
+	private "struct html_content *" htmlc; 
 
-    interface Document; /* Web IDL interface to generate */
+	interface Document; /* Web IDL interface to generate */
 }
 
 api finalise %{
 	if (private != NULL) {
 		dom_node_unref(private->node);
+	}
+%}
+
+getter cookie %{
+	char *cookie_str;
+	cookie_str = urldb_get_cookie(llcache_handle_get_url(private->htmlc->base.llcache));
+	if (cookie_str != NULL) {
+		jsret = JS_NewStringCopyN(cx, cookie_str, strlen(cookie_str));
+		free(cookie_str);
+	}
+%}
+
+operation getElementById %{
+	dom_string *elementId_dom;
+	dom_element *element;
+        dom_exception exc;
+
+	exc = dom_string_create((unsigned char*)elementId, elementId_len, &elementId_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+	exc = dom_document_get_element_by_id(private->node, elementId_dom, &element);
+        dom_string_unref(elementId_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+        if (element != NULL) {
+              jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
+        }
+%}
+
+/* 
+ *
+ * Dom 4 says this should return a htmlcollection, libdom currently
+ * returns DOM 3 spec of a nodelist 
+ */
+operation getElementsByTagName %{
+	dom_string *localName_dom;
+        /* dom_html_collection *collection;*/
+        dom_nodelist *nodelist;
+        dom_exception exc;
+
+	exc = dom_string_create((uint8_t *)localName, localName_len, &localName_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+        exc = dom_document_get_elements_by_tag_name(private->node, localName_dom, /*&collection*/&nodelist);
+        dom_string_unref(localName_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+        if (/*collection*/nodelist != NULL) {
+                /*jsret = jsapi_new_HTMLCollection(cx,
+                                                 NULL,
+                                                 NULL,
+                                                 collection,
+                                                 private->htmlc);*/
+                jsret = jsapi_new_NodeList(cx,
+                                                 NULL,
+                                                 NULL,
+                                                 nodelist,
+                                                 private->htmlc);
+        }
+
+%}
+
+operation write %{
+	if (private->htmlc->parser != NULL) {
+		dom_hubbub_parser_insert_chunk(private->htmlc->parser, (uint8_t *)text, text_len);
 	}
 %}

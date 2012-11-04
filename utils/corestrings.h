@@ -91,6 +91,7 @@ extern lwc_string *corestring_lwc_rectangle;
 extern lwc_string *corestring_lwc_refresh;
 extern lwc_string *corestring_lwc_reset;
 extern lwc_string *corestring_lwc_right;
+extern lwc_string *corestring_lwc_search;
 extern lwc_string *corestring_lwc_select;
 extern lwc_string *corestring_lwc_src;
 extern lwc_string *corestring_lwc_style;

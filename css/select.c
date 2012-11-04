@@ -2511,12 +2511,17 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 		if (input) {
 			err = dom_element_get_attribute(node,
 					corestring_dom_type, &width);
-			if ((err != DOM_NO_ERR) || (width == NULL)) {
+			if (err != DOM_NO_ERR) {
 				return CSS_PROPERTY_NOT_SET;
 			}
 
-			if (dom_string_lwc_isequal(width,
+			if ((width == NULL) ||
+			    dom_string_lwc_isequal(width,
 					corestring_lwc_text) ||
+			    dom_string_lwc_isequal(width,
+					corestring_lwc_search) ||
+			    dom_string_lwc_isequal(width,
+					corestring_lwc_file) ||
 			    dom_string_lwc_isequal(width,
 			    		corestring_lwc_password)) {
 				hint->data.length.unit = CSS_UNIT_EX;

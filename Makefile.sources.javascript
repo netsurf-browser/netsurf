@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 
 S_JSAPI_BINDING:=
+D_JSAPI_BINDING:=
 
 JSAPI_BINDING_htmldocument := javascript/jsapi/htmldocument.bnd
 JSAPI_BINDING_htmlelement := javascript/jsapi/htmlelement.bnd
@@ -25,10 +26,11 @@ JSAPI_BINDING_nodelist := javascript/jsapi/nodelist.bnd
 define convert_jsapi_binding
 
 S_JSAPI_BINDING += $(2)
+D_JSAPI_BINDING += $(patsubst %.c,%.d,$(2))
 
-$(2): $(1)
+$(2): $(1) $(OBJROOT)/created
 	$$(VQ)echo " GENBIND: $(1)"
-	$(Q)nsgenbind -I javascript/WebIDL/ -o $(2) $(1)
+	$(Q)nsgenbind -I javascript/WebIDL/ -d $(patsubst %.c,%.d,$(2)) -o $(2) $(1)
 
 endef
 
@@ -43,7 +45,7 @@ endif
 
 ifeq ($(WANT_JS_SOURCE),YES)
 
-S_JSAPI = 
+S_JSAPI :=
 
 S_JAVASCRIPT += content.c jsapi.c $(addprefix jsapi/,$(S_JSAPI))
 
