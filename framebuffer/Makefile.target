@@ -166,14 +166,15 @@ EXETARGET := nsfb
 # ----------------------------------------------------------------------------
 
 NETSURF_FRAMEBUFFER_RESOURCE_LIST := adblock.css credits.html	\
-	default.css internal.css licence.html messages		\
+	default.css internal.css licence.html			\
 	netsurf.png quirks.css welcome.html
 
 install-framebuffer:
-	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_BIN)
-	mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
-	@cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
-	@for F in $(NETSURF_FRAMEBUFFER_RESOURCE_LIST); do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_BIN)
+	$(Q)mkdir -p $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)
+	$(Q)cp -v $(EXETARGET) $(DESTDIR)/$(NETSURF_FRAMEBUFFER_BIN)netsurf$(SUBTARGET)
+	$(Q)for F in $(NETSURF_FRAMEBUFFER_RESOURCE_LIST); do cp -vL framebuffer/res/$$F $(DESTDIR)/$(NETSURF_FRAMEBUFFER_RESOURCES); done
+	$(Q)$(PERL) utils/split-messages.pl en all < resources/FatMessages | gzip -9n > $(DESTDIR)$(NETSURF_FRAMEBUFFER_RESOURCES)messages
 
 # ----------------------------------------------------------------------------
 # Package target
