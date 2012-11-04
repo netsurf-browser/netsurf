@@ -2519,6 +2519,8 @@ node_presentational_hint_width(nscss_select_ctx *ctx,
 			    dom_string_lwc_isequal(width,
 					corestring_lwc_text) ||
 			    dom_string_lwc_isequal(width,
+					corestring_lwc_search) ||
+			    dom_string_lwc_isequal(width,
 			    		corestring_lwc_password)) {
 				hint->data.length.unit = CSS_UNIT_EX;
 
