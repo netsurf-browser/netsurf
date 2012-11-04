@@ -669,6 +669,8 @@ fetch_curl_sslctxfun(CURL *curl_handle, void *_sslctx, void *parm)
 	SSL_CTX_set_verify(sslctx, SSL_VERIFY_PEER, fetch_curl_verify_callback);
 	SSL_CTX_set_cert_verify_callback(sslctx, fetch_curl_cert_verify_callback,
 					 parm);
+	/* Disable TLS1.2, as it causes some servers to stall. */
+	SSL_CTX_set_options(sslctx, SSL_OP_NO_TLSv1_2);
 	return CURLE_OK;
 }
 
