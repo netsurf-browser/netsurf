@@ -788,8 +788,29 @@ int main(int argc, char** argv)
 {
 	char path[40];
 	int length;
+	char logging_env[2];
+	os_var_type type;
+	int used = -1;  /* slightly better with older OSLib versions */
+	os_error *error;
 
 	setbuf(stderr, NULL);
+
+	/* Consult NetSurf$Logging environment variable to decide if logging
+	 * is required. */
+	error = xos_read_var_val_size("NetSurf$Logging", 0, os_VARTYPE_STRING,
+			&used, NULL, &type);
+	if (error != NULL || type != os_VARTYPE_STRING || used != -2) {
+		verbose_log = 1;
+	} else {
+		error = xos_read_var_val("NetSurf$Logging", logging_env,
+				sizeof(logging_env), 0, os_VARTYPE_STRING,
+				&used, NULL, &type);
+		if (error != NULL || logging_env[0] != '0') {
+			verbose_log = 1;
+		} else {
+			verbose_log = 0;
+		}
+	}
 
 	/* Pass a NULL pointer for Messages path, because until the Choices
 	 * are loaded in netsurf_init, we don't know the Messages path. */
