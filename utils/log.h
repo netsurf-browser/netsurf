@@ -64,11 +64,13 @@ extern void nslog_log(const char *format, ...);
 #  endif
 
 #define LOG(x) \
-	do { \
-		nslog_log("%s " __FILE__ " %s %i: ", \
-				nslog_gettime(), LOG_FN, LOG_LN); \
-		nslog_log x; \
-		nslog_log("\n"); \
+	do {								\
+		if (verbose_log) {					\
+			nslog_log("%s " __FILE__ " %s %i: ",		\
+				  nslog_gettime(), LOG_FN, LOG_LN);	\
+			nslog_log x;					\
+			nslog_log("\n");				\
+		}							\
 	} while(0)
 
 #endif
