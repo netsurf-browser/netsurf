@@ -63,7 +63,7 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs gtk+-$(NETSURF_GTK_MAJOR).0 gthread-2.0 gmodule-2.0 lcms)
 
 CFLAGS += $(GTKCFLAGS)
-LDFLAGS += $(GTKLDFLAGS)
+LDFLAGS += -lm $(GTKLDFLAGS)
 
 # ---------------------------------------------------------------------------
 # Windows flag setup
