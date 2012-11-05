@@ -20,9 +20,6 @@ echo $0: using $LOG as logfile
 
 ulimit -c unlimited
 
-NETSURFRES=`dirname $0`/gtk/res/
-export NETSURFRES
-
 if [ "x$1" = "x--gdb" ]; then
   GDB="gdb --args"
   echo
@@ -35,4 +32,4 @@ if [ "x$1" = "x--gdb" ]; then
   shift
 fi
 
-exec $GDB `dirname $0`/nsgtk -v "$@" 2>&1 | tee $LOG
+exec $GDB $PREFIX/bin/netsurf -v "$@" 2>&1 | tee $LOG
