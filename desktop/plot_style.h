@@ -147,6 +147,11 @@ extern plot_style_t const * const plot_style_content_edge;
 extern plot_style_t const * const plot_style_padding_edge;
 extern plot_style_t const * const plot_style_margin_edge;
 
+/* Broken object replacement styles */
+extern plot_style_t const * const plot_style_broken_object;
+extern plot_font_style_t const * const plot_fstyle_broken_object;
+
+
 /* other styles */
 extern plot_style_t *plot_style_caret;
 extern plot_style_t *plot_style_stroke_history;

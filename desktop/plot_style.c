@@ -68,6 +68,28 @@ static const plot_style_t plot_style_margin_edge_static = {
 plot_style_t const * const plot_style_margin_edge =
 		&plot_style_margin_edge_static;
 
+/* Broken object replacement styles */
+static const plot_style_t plot_style_broken_object_static = {
+	.fill_type = PLOT_OP_TYPE_SOLID,
+	.fill_colour = 0x008888ff,
+	.stroke_type = PLOT_OP_TYPE_SOLID,
+	.stroke_colour = 0x000000ff,
+	.stroke_width = 1,
+};
+plot_style_t const * const plot_style_broken_object =
+		&plot_style_broken_object_static;
+
+static const plot_font_style_t plot_fstyle_broken_object_static = {
+	.family = PLOT_FONT_FAMILY_SANS_SERIF,
+	.size = 14 * FONT_SIZE_SCALE,
+	.weight = 400,
+	.flags = FONTF_NONE,
+	.background = 0x8888ff,
+	.foreground = 0x000044,
+};
+plot_font_style_t const * const plot_fstyle_broken_object =
+		&plot_fstyle_broken_object_static;
+
 /* caret style used in html_redraw_caret */
 static plot_style_t plot_style_caret_static = {
 	.stroke_type = PLOT_OP_TYPE_SOLID,

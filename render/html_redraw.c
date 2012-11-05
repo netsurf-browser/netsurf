@@ -672,8 +672,24 @@ bool html_redraw_box(const html_content *html, struct box *box,
 			obj_data.y /= scale;
 		}
 
-		if (!content_redraw(box->object, &obj_data, &r, ctx))
-			return false;
+		if (!content_redraw(box->object, &obj_data, &r, ctx)) {
+			/* Show image fail */
+			if (!plot->rectangle(x + padding_left,
+					y + padding_top,
+					x + padding_left + width - 1,
+					y + padding_top + height - 1,
+					plot_style_broken_object))
+				return false;
+			/* Show Unicode (U+FFFC) 'OBJECT REPLACEMENT CHARACTER'
+			 */
+			if (!plot->text(x + padding_left,
+					y + padding_top + (int)
+						(height * 0.75 * scale),
+					"\xef\xbf\xbc", 3,
+					plot_fstyle_broken_object))
+				return false;
+		}
+			
 
 	} else if (box->iframe) {
 		/* Offset is passed to browser window redraw unscaled */
