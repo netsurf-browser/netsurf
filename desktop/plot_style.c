@@ -81,7 +81,7 @@ plot_style_t const * const plot_style_broken_object =
 
 static const plot_font_style_t plot_fstyle_broken_object_static = {
 	.family = PLOT_FONT_FAMILY_SANS_SERIF,
-	.size = 14 * FONT_SIZE_SCALE,
+	.size = 16 * FONT_SIZE_SCALE,
 	.weight = 400,
 	.flags = FONTF_NONE,
 	.background = 0x8888ff,

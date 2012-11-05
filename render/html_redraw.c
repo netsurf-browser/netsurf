@@ -691,7 +691,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 				obj_x += width / 2 - obj_width / 2;
 
 			if (!plot->text(obj_x, y + padding_top + (int)
-						(height * 0.75 * scale),
+						(height * 0.75),
 					obj, sizeof(obj) - 1,
 					plot_fstyle_broken_object))
 				return false;
