@@ -800,15 +800,15 @@ int main(int argc, char** argv)
 	error = xos_read_var_val_size("NetSurf$Logging", 0, os_VARTYPE_STRING,
 			&used, NULL, &type);
 	if (error != NULL || type != os_VARTYPE_STRING || used != -2) {
-		verbose_log = 1;
+		verbose_log = true;
 	} else {
 		error = xos_read_var_val("NetSurf$Logging", logging_env,
 				sizeof(logging_env), 0, os_VARTYPE_STRING,
 				&used, NULL, &type);
 		if (error != NULL || logging_env[0] != '0') {
-			verbose_log = 1;
+			verbose_log = true;
 		} else {
-			verbose_log = 0;
+			verbose_log = false;
 		}
 	}
 
