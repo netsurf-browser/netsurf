@@ -216,7 +216,11 @@ GtkAdjustment *nsgtk_layout_get_hadjustment(GtkLayout *layout)
 static void nsgtk_layout_set_adjustment_step_increment(GtkAdjustment *adj,
 						       int value)
 {
+#if GTK_CHECK_VERSION(2,14,0)
 	gtk_adjustment_set_step_increment(adj, value);
+#else
+	adj->step_increment = value;
+#endif
 }
 
 void nsgtk_layout_set_hadjustment(GtkLayout *layout, GtkAdjustment *adj) 
