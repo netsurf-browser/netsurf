@@ -109,15 +109,13 @@ const char *nslog_gettime(void)
 
 void nslog_log(const char *format, ...)
 {
-	if (verbose_log) {
-		va_list ap;
+	va_list ap;
 
-		va_start(ap, format);
+	va_start(ap, format);
 
-		vfprintf(stderr, format, ap);
+	vfprintf(stderr, format, ap);
 
-		va_end(ap);
-	}
+	va_end(ap);
 }
 
 #endif
