@@ -674,18 +674,25 @@ bool html_redraw_box(const html_content *html, struct box *box,
 
 		if (!content_redraw(box->object, &obj_data, &r, ctx)) {
 			/* Show image fail */
+			/* Unicode (U+FFFC) 'OBJECT REPLACEMENT CHARACTER' */
+			const char *obj = "\xef\xbf\xbc";
+			int obj_width;
+			int obj_x = x + padding_left;
 			if (!plot->rectangle(x + padding_left,
 					y + padding_top,
 					x + padding_left + width - 1,
 					y + padding_top + height - 1,
 					plot_style_broken_object))
 				return false;
-			/* Show Unicode (U+FFFC) 'OBJECT REPLACEMENT CHARACTER'
-			 */
-			if (!plot->text(x + padding_left,
-					y + padding_top + (int)
+			if (!nsfont.font_width(plot_fstyle_broken_object, obj,
+					sizeof(obj) - 1, &obj_width))
+				obj_x += 1;
+			else
+				obj_x += width / 2 - obj_width / 2;
+
+			if (!plot->text(obj_x, y + padding_top + (int)
 						(height * 0.75 * scale),
-					"\xef\xbf\xbc", 3,
+					obj, sizeof(obj) - 1,
 					plot_fstyle_broken_object))
 				return false;
 		}
