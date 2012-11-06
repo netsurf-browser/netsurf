@@ -269,6 +269,7 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	int x_scrolled, y_scrolled;
 	struct box *bg_box = NULL;
 	bool has_x_scroll, has_y_scroll;
+	css_computed_clip_rect css_rect;
 
 	if (html_redraw_printing && (box->flags & PRINTED))
 		return true;
@@ -397,7 +398,47 @@ bool html_redraw_box(const html_content *html, struct box *box,
 	if ((plot->group_start) && (!plot->group_start("vis box")))
 		return false;
 
-	if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
+
+	if (box->style != NULL &&
+			css_computed_position(box->style) ==
+					CSS_POSITION_ABSOLUTE &&
+			css_computed_clip(box->style, &css_rect) ==
+					CSS_CLIP_RECT) {
+		/* We have an absolutly positioned box with a clip rect */
+		if (css_rect.left_auto == false)
+			r.x0 = x - border_left + FIXTOINT(nscss_len2px(
+					css_rect.left, css_rect.lunit,
+					box->style));
+
+		if (css_rect.top_auto == false)
+			r.y0 = y - border_top + FIXTOINT(nscss_len2px(
+					css_rect.top, css_rect.tunit,
+					box->style));
+
+		if (css_rect.right_auto == false)
+			r.x1 = x - border_left + FIXTOINT(nscss_len2px(
+					css_rect.right, css_rect.runit,
+					box->style));
+
+		if (css_rect.bottom_auto == false)
+			r.y1 = y - border_top + FIXTOINT(nscss_len2px(
+					css_rect.bottom, css_rect.bunit,
+					box->style));
+
+		/* find intersection of clip rectangle and box */
+		if (r.x0 < clip->x0) r.x0 = clip->x0;
+		if (r.y0 < clip->y0) r.y0 = clip->y0;
+		if (clip->x1 < r.x1) r.x1 = clip->x1;
+		if (clip->y1 < r.y1) r.y1 = clip->y1;
+		/* no point trying to draw 0-width/height boxes */
+		if (r.x0 == r.x1 || r.y0 == r.y1)
+			/* not an error */
+			return ((!plot->group_end) || (plot->group_end()));
+		/* clip to it */
+		if (!plot->clip(&r))
+			return false;
+
+	} else if (box->type == BOX_BLOCK || box->type == BOX_INLINE_BLOCK ||
 			box->type == BOX_TABLE_CELL || box->object) {
 		/* find intersection of clip rectangle and box */
 		if (r.x0 < clip->x0) r.x0 = clip->x0;
