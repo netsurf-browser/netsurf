@@ -485,6 +485,7 @@ CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
     define compile_template
 !NetSurf/Resources/$(1)/Templates$$(TPLEXT): $(2)
 	$$(VQ)echo "TEMPLATE: $(2)"
+	$$(Q)mkdir -p !NetSurf/Resources/$(1)
 	$$(Q)$$(CC) -x c -E -P $$(CFLAGS) $(2) | $$(CCRES) - $$@
 CLEAN_TEMPLATES += !NetSurf/Resources/$(1)/Templates$$(TPLEXT)
 
