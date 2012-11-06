@@ -31,6 +31,7 @@
 #include "content/content_protected.h"
 #include "content/hlcache.h"
 #include "css/css.h"
+#include "css/utils.h"
 #include "css/dump.h"
 #include "desktop/scrollbar.h"
 #include "desktop/options.h"
@@ -497,6 +498,64 @@ non_float_children:
 
 bool box_contains_point(struct box *box, int x, int y, bool *physically)
 {
+	css_computed_clip_rect css_rect;
+
+	if (box->style != NULL &&
+			css_computed_position(box->style) ==
+					CSS_POSITION_ABSOLUTE &&
+			css_computed_clip(box->style, &css_rect) ==
+					CSS_CLIP_RECT) {
+		/* We have an absolutly positioned box with a clip rect */
+		struct rect r = {
+			.x0 = box->x - box->border[LEFT].width,
+			.y0 = box->y - box->border[TOP].width,
+			.x1 = box->x + box->padding[LEFT] + box->width +
+					box->border[RIGHT].width +
+					box->padding[RIGHT],
+			.y1 = box->y + box->padding[TOP] + box->height +
+					box->border[BOTTOM].width +
+					box->padding[BOTTOM]
+		};
+		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1)
+			*physically = true;
+		else
+			*physically = false;
+
+		/* Adjust rect to css clip region */
+		if (css_rect.left_auto == false) {
+			r.x0 += FIXTOINT(nscss_len2px(
+					css_rect.left, css_rect.lunit,
+					box->style));
+		}
+		if (css_rect.top_auto == false) {
+			r.y0 += FIXTOINT(nscss_len2px(
+					css_rect.top, css_rect.tunit,
+					box->style));
+		}
+		if (css_rect.right_auto == false) {
+			r.x1 = box->x - box->border[LEFT].width +
+					FIXTOINT(nscss_len2px(
+							css_rect.right,
+							css_rect.runit,
+							box->style));
+		}
+		if (css_rect.bottom_auto == false) {
+			r.y1 = box->y - box->border[TOP].width +
+					FIXTOINT(nscss_len2px(
+							css_rect.bottom,
+							css_rect.bunit,
+							box->style));
+		}
+
+		/* Test if point is in clipped box */
+		if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
+			/* inside clip area */
+			return true;
+		}
+
+		/* Not inside clip area */
+		return false;
+	}
 	if (box->x <= x + box->border[LEFT].width &&
 			x < box->x + box->padding[LEFT] + box->width +
 			box->border[RIGHT].width + box->padding[RIGHT] &&
