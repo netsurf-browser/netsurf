@@ -868,6 +868,9 @@ static bool save_complete_node_handler(dom_node *node,
 				return false;
 			}
 
+			if (type == DOM_COMMENT_NODE)
+				fwrite("<!--", 1, sizeof("<!--") - 1, ctx->fp);
+
 			if (text != NULL) {
 				text_data = dom_string_data(text);
 				text_len = dom_string_byte_length(text);
@@ -877,7 +880,12 @@ static bool save_complete_node_handler(dom_node *node,
 
 				dom_string_unref(text);
 			}
+
+			if (type == DOM_COMMENT_NODE) {
+				fwrite("-->", 1, sizeof("-->") - 1, ctx->fp);
+			}
 		}
+
 	} else if (type == DOM_DOCUMENT_TYPE_NODE) {
 		dom_string *name;
 		const char *name_data;
