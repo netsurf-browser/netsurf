@@ -97,7 +97,14 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /* string type cast */
 #define JSAPI_STRING_TO_JSVAL(str) ((str == NULL)?JSVAL_NULL:STRING_TO_JSVAL(str))
 
-#else /* #if JS_VERSION <= 180 */
+#define JSAPI_CLASS_NO_INTERNAL_MEMBERS JSCLASS_NO_RESERVED_MEMBERS
+
+
+
+
+#else /*************** #if JS_VERSION <= 180 *****************/
+
+
 
 
 /* three parameter jsapi native call */
@@ -156,6 +163,8 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 /* string type cast */
 #define JSAPI_STRING_TO_JSVAL(str) ((str == NULL)?JSVAL_NULL:STRING_TO_JSVAL(str))
+
+#define JSAPI_CLASS_NO_INTERNAL_MEMBERS JSCLASS_NO_INTERNAL_MEMBERS
 
 #endif
 
