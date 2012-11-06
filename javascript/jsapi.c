@@ -36,7 +36,7 @@ void js_initialise(void)
 #endif
 
 	rt = JS_NewRuntime(8L * 1024L * 1024L);
-	LOG(("New runtime handle %p", rt));
+	JSLOG("New runtime handle %p", rt);
 
 	/* register script content handler */
 	javascript_init();
@@ -45,7 +45,7 @@ void js_initialise(void)
 void js_finalise(void)
 {
 	if (rt != NULL) {
-		LOG(("destroying runtime handle %p", rt));
+		JSLOG("destroying runtime handle %p", rt);
 		JS_DestroyRuntime(rt);
 	}
 	JS_ShutDown();
@@ -54,10 +54,10 @@ void js_finalise(void)
 /* The error reporter callback. */
 static void js_reportError(JSContext *cx, const char *message, JSErrorReport *report)
 {
-	LOG(("%s:%u:%s",
-            report->filename ? report->filename : "<no filename>",
-            (unsigned int) report->lineno,
-	     message));
+	JSLOG("%s:%u:%s",
+	      report->filename ? report->filename : "<no filename>",
+	      (unsigned int) report->lineno,
+	      message);
 }
 
 jscontext *js_newcontext(void)
@@ -76,7 +76,9 @@ jscontext *js_newcontext(void)
 	JS_SetVersion(cx, JSVERSION_LATEST);
 	JS_SetErrorReporter(cx, js_reportError);
 
-	LOG(("New Context %p", cx));
+	/*JS_SetGCZeal(cx, 2); */
+
+	JSLOG("New Context %p", cx);
 
 	return (jscontext *)cx;
 }
@@ -85,7 +87,7 @@ void js_destroycontext(jscontext *ctx)
 {
 	JSContext *cx = (JSContext *)ctx;
 	if (cx != NULL) {
-		LOG(("Destroying Context %p", cx));
+		JSLOG("Destroying Context %p", cx);
 		JS_DestroyContext(cx);
 	}
 }
@@ -109,7 +111,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 
 	window_proto = jsapi_InitClass_Window(cx, NULL);
 	if (window_proto == NULL) {
-		LOG(("Unable to initialise window class"));
+		JSLOG("Unable to initialise window class");
 		return NULL;
 	}
 
@@ -122,7 +124,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	JSContext *cx = (JSContext *)ctx;
 
-	/* LOG(("%p \"%s\"",cx ,txt)); */
+	/* JSLOG("%p \"%s\"",cx ,txt); */
 
 	if (ctx == NULL) {
 		return false;
@@ -140,6 +142,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 			      JS_GetGlobalObject(cx), 
 			      txt, txtlen, 
 			      "<head>", 0, NULL) == JS_TRUE) {
+
 		return true;
 	}
 

@@ -159,5 +159,6 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #endif
 
+#define JSLOG(args...) LOG((args))
 
 #endif

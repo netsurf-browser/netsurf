@@ -34,6 +34,8 @@ binding document {
 
 api finalise %{
 	if (private != NULL) {
+		JSLOG("dom_document %p in content %p",
+		     private->node, private->htmlc);
 		dom_node_unref(private->node);
 	}
 %}
