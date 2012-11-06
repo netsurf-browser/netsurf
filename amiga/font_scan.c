@@ -299,11 +299,15 @@ ULONG ami_font_scan_list(struct MinList *list)
 		af = (struct AvailFonts *)&(afh[1]);
 
 		for(i = 0; i < afh->afh_NumEntries; i++) {
+			LOG(("AvailFonts entry %ld", i));
 			if(af[i].af_Attr.ta_Style == FS_NORMAL) {
 				if(af[i].af_Attr.ta_Name != NULL) {
+					LOG(("Checking font %s", af[i].af_Attr.ta_Name));
 					node = (struct nsObject *)FindIName((struct List *)list,
 								af[i].af_Attr.ta_Name);
+					LOG(("Node address %lx", node));	
 					if(node == NULL) {
+						LOG(("Node address (2) %lx", node));
 						node = AddObject(list, AMINS_UNKNOWN);
 						if(node) {
 							node->dtz_Node.ln_Name = strdup(af[i].af_Attr.ta_Name);
