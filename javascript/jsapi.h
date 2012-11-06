@@ -97,7 +97,7 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /* string type cast */
 #define JSAPI_STRING_TO_JSVAL(str) ((str == NULL)?JSVAL_NULL:STRING_TO_JSVAL(str))
 
-#define JSAPI_CLASS_NO_INTERNAL_MEMBERS JSCLASS_NO_RESERVED_MEMBERS
+#define JSAPI_CLASS_NO_INTERNAL_MEMBERS NULL
 
 
 
