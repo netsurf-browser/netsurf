@@ -313,7 +313,6 @@ ULONG ami_font_scan_list(struct MinList *list)
 					}
 				}
 			}
-			af++;
 		}
 		FreeVec(afh);
 	} else {

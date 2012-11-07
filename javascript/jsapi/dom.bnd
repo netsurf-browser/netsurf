@@ -2,6 +2,8 @@
 
 webidlfile "dom.idl";
 
+/* interface Node members */
+
 
 getter textContent %{
         dom_exception exc;
@@ -21,3 +23,6 @@ getter textContent %{
 
 
 
+operation appendChild %{
+/* void * JS_GetInstancePrivate(JSContext *cx, JSObject *obj, JSClass *clasp, jsval *argv); */
+%}
