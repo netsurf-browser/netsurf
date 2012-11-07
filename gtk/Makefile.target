@@ -139,12 +139,12 @@ install-gtk:
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)throbber
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_RESOURCES)icons
 	$(Q)mkdir -p $(DESTDIR)$(NETSURF_GTK_BIN)
-	$(Q)install -v nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
-	$(Q)install -v -m 0644 -t $(DESTDIR)$(NETSURF_GTK_RESOURCES) $(GTK_RESOURCES_LIST)
-	$(Q)install -v -m 0644 -t $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons gtk/res/icons/*.png
-	$(Q)install -v -m 0644 -t $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber gtk/res/throbber/*.png
-	$(Q)tar c -h -C gtk/res themes | tar xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
-	$(Q)tar c -h -C gtk/res $(GTK_TRANSLATIONS_HTML) | tar xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(Q)install nsgtk $(DESTDIR)$(NETSURF_GTK_BIN)netsurf
+	$(Q)install -m 0644 $(GTK_RESOURCES_LIST) $(DESTDIR)$(NETSURF_GTK_RESOURCES)
+	$(Q)install -m 0644 gtk/res/icons/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/icons
+	$(Q)install -m 0644 gtk/res/throbber/*.png $(DESTDIR)$(NETSURF_GTK_RESOURCES)/throbber
+	$(Q)tar -c -h -C gtk/res -f - themes | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
+	$(Q)tar -c -h -C gtk/res -f - $(GTK_TRANSLATIONS_HTML) | tar -xv -C $(DESTDIR)$(NETSURF_GTK_RESOURCES) -f -
 	$(call split_install_messages, gtk, $(DESTDIR)$(NETSURF_GTK_RESOURCES))
 
 # ----------------------------------------------------------------------------
