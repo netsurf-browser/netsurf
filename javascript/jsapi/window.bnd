@@ -130,6 +130,11 @@ api init %{
 		return NULL;
 	}
 
+	user_proto = jsapi_InitClass_Text(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
 %}
 
 api new %{

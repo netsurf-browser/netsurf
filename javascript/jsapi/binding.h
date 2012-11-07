@@ -124,4 +124,18 @@ JSObject *jsapi_new_NodeList(JSContext *cx,
 				dom_nodelist *nodelist,
 				struct html_content *htmlc);
 
+
+JSObject *jsapi_InitClass_Text(JSContext *cx, JSObject *parent);
+/** Create a new javascript text object
+ *
+ * @param cx The javascript context.
+ * @param parent The parent object, usually a global window object
+ * @param node The dom node to use in the object
+ * @return new javascript object or NULL on error
+ */
+JSObject *jsapi_new_Text(JSContext *cx,
+				JSObject *prototype,
+				JSObject *parent,
+				dom_text *node);
+
 #endif
