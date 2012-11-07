@@ -19,7 +19,7 @@ S_RENDER := box.c box_construct.c box_normalise.c			\
 
 S_UTILS := base64.c corestrings.c filename.c filepath.c hashtable.c	\
 	libdom.c locale.c log.c messages.c nsurl.c talloc.c url.c	\
-	utf8.c utils.c useragent.c
+	utf8.c utils.c useragent.c domutils.c
 
 S_HTTP := challenge.c generics.c primitives.c parameter.c		\
 	content-disposition.c content-type.c www-authenticate.c
