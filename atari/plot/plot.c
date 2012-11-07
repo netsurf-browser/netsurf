@@ -1543,8 +1543,8 @@ int plot_init(char * fdrvrname)
 
     atari_plot_vdi_handle = app.graf.handle;
 	read_vdi_sysinfo(atari_plot_vdi_handle, &vdi_sysinfo);
-    if( verbose_log ) {
-        dump_vdi_info( atari_plot_vdi_handle ) ;
+    if(verbose_log) {
+        dump_vdi_info(atari_plot_vdi_handle) ;
         dump_font_drivers();
     }
 
@@ -1895,6 +1895,7 @@ bool plot_clip(const struct rect *clip)
 	view.clipping.y0 = clip->y0;
 	view.clipping.x1 = clip->x1;
 	view.clipping.y1 = clip->y1;
+
     return ( true );
 }
 
