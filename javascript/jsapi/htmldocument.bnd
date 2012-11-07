@@ -169,3 +169,25 @@ operation write %{
 		dom_hubbub_parser_insert_chunk(private->htmlc->parser, (uint8_t *)text, text_len);
 	}
 %}
+
+/* in dom Document */
+operation createTextNode %{
+	dom_string *data_dom;
+	dom_element *element;
+        dom_exception exc;
+	dom_text *text;
+
+	exc = dom_string_create((unsigned char*)data, data_len, &data_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+	exc = dom_document_create_text_node(private->node, data_dom, &text);
+	dom_string_unref(data_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+	jsret = jsapi_new_Text(cx, NULL, NULL, text);
+
+%}

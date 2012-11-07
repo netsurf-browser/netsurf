@@ -24,7 +24,5 @@ getter textContent %{
 
 
 operation appendChild %{
-%}
-
-operation createTextNode %{
+/* void * JS_GetInstancePrivate(JSContext *cx, JSObject *obj, JSClass *clasp, jsval *argv); */
 %}

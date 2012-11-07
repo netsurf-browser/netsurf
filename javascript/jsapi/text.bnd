@@ -34,7 +34,7 @@ binding text {
 
     interface Text; /* Web IDL interface to generate */
 
-    private "dom_node *" node;
+    private "dom_text *" node;
 }
 
 api finalise %{
