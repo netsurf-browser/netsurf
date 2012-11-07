@@ -19,6 +19,7 @@ JSAPI_BINDING_console := javascript/jsapi/console.bnd
 JSAPI_BINDING_location := javascript/jsapi/location.bnd
 JSAPI_BINDING_htmlcollection := javascript/jsapi/htmlcollection.bnd
 JSAPI_BINDING_nodelist := javascript/jsapi/nodelist.bnd
+JSAPI_BINDING_text := javascript/jsapi/text.bnd
 
 # 1: input file
 # 2: output file
