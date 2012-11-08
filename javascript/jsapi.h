@@ -38,29 +38,35 @@
 /* *CAUTION* these macros introduce and use jsapi_this and jsapi_rval
  * parameters, native function code should not conflict with these
  */
+#  ifndef JSVERSION_LATEST
+#   define JSVERSION_LATEST JS_VERSION
+#  endif
 
 /* five parameter jsapi native call */
 #define JSAPI_NATIVE(name, cx, argc, vp) \
 	jsapi_native_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
 
-/* five parameter function descriptor */
+/* five parameter function descriptor with no JS_FS macro */
 #define JSAPI_FS(name, nargs, flags) \
-	JS_FS(#name, jsapi_native_##name, nargs, flags, 0)
+	{ #name, jsapi_native_##name, nargs, flags, 0 }
 
 /* function descriptor end */
-#define JSAPI_FS_END JS_FS_END
+#define JSAPI_FS_END { NULL, NULL, 0, 0, 0 }
 
 /* return value */
-#define JSAPI_RVAL(cx, vp) JS_RVAL(cx, jsapi_rval)
+#define JSAPI_RVAL(cx, vp) (jsapi_rval)
 
 /* return value setter */
-#define JSAPI_SET_RVAL(cx, vp, v) JS_SET_RVAL(cx, jsapi_rval, v)
+#define JSAPI_SET_RVAL(cx, vp, v) (*jsapi_rval = (v))
 
 /* arguments */
 #define JSAPI_ARGV(cx, vp) (vp)
 
 /* The object instance in a native call */
-#define JSAPI_THIS_OBJECT(cx,vp) jsapi_this
+/* "this" JSObject getter */
+JSObject * js_ComputeThis(JSContext *cx, JSObject *thisp, void *argv);
+#define JSAPI_THIS_OBJECT(cx, vp) \
+        js_ComputeThis(cx, JSVAL_TO_OBJECT(vp[-1]), vp)
 
 /* proprty native calls */
 #define JSAPI_PROPERTYGET(name, cx, obj, vp) \
