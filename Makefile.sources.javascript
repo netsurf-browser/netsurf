@@ -31,7 +31,7 @@ D_JSAPI_BINDING += $(patsubst %.c,%.d,$(2))
 
 $(2): $(1) $(OBJROOT)/created
 	$$(VQ)echo " GENBIND: $(1)"
-	$(Q)nsgenbind -I javascript/WebIDL/ -d $(patsubst %.c,%.d,$(2)) -o $(2) $(1)
+	$(Q)nsgenbind -I javascript/WebIDL -d $(patsubst %.c,%.d,$(2)) -o $(2) $(1)
 
 endef
 
