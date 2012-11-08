@@ -41,16 +41,16 @@ binding window {
 api mark %{
 	if (private != NULL) {
 		if (private->document != NULL) {
-			JS_CallTracer(trc, private->document, JSTRACE_OBJECT);
+			JSAPI_GCMARK(private->document);
 		}
 		if (private->navigator != NULL) {
-			JS_CallTracer(trc, private->navigator, JSTRACE_OBJECT);
+			JSAPI_GCMARK(private->navigator);
 		}
 		if (private->console != NULL) {
-			JS_CallTracer(trc, private->console, JSTRACE_OBJECT);
+			JSAPI_GCMARK(private->console);
 		}
 		if (private->location != NULL) {
-			JS_CallTracer(trc, private->location, JSTRACE_OBJECT);
+			JSAPI_GCMARK(private->location);
 		}
 	}
 %}

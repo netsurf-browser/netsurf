@@ -173,7 +173,6 @@ operation write %{
 /* in dom Document */
 operation createTextNode %{
 	dom_string *data_dom;
-	dom_element *element;
         dom_exception exc;
 	dom_text *text;
 
