@@ -49,11 +49,11 @@ operation appendChild %{
 		}
 		switch (node_type) {
 		case DOM_ELEMENT_NODE:
-			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, result, private->htmlc);
+			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, (dom_element *)result, private->htmlc);
 			break;
 
 		case DOM_TEXT_NODE:
-			jsret = jsapi_new_Text(cx, NULL, NULL, result, private->htmlc);
+			jsret = jsapi_new_Text(cx, NULL, NULL, (dom_text *)result, private->htmlc);
 			break;
 
 		default:
