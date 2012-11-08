@@ -106,7 +106,6 @@ enum
 	GID_OPTS_FONT_MONO,
 	GID_OPTS_FONT_CURSIVE,
 	GID_OPTS_FONT_FANTASY,
-	GID_OPTS_FONT_UNICODE,
 	GID_OPTS_FONT_DEFAULT,
 	GID_OPTS_FONT_SIZE,
 	GID_OPTS_FONT_MINSIZE,
@@ -275,7 +274,6 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_MONO] = (char *)ami_utf8_easy((char *)messages_get("FontMono"));
 	gadlab[GID_OPTS_FONT_CURSIVE] = (char *)ami_utf8_easy((char *)messages_get("FontCursive"));
 	gadlab[GID_OPTS_FONT_FANTASY] = (char *)ami_utf8_easy((char *)messages_get("FontFantasy"));
-	gadlab[GID_OPTS_FONT_UNICODE] = (char *)ami_utf8_easy((char *)messages_get("FontFallback"));
 	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
@@ -386,7 +384,7 @@ void ami_gui_opts_open(void)
 	BOOL scaleselected = nsoption_bool(scale_quality), scaledisabled = FALSE;
 	BOOL download_notify_disabled = FALSE;
 	char animspeed[10];
-	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy, fontunicode;
+	struct TextAttr fontsans, fontserif, fontmono, fontcursive, fontfantasy;
 
 	if(gow && gow->win)
 	{
@@ -469,28 +467,24 @@ void ami_gui_opts_open(void)
 	fontmono.ta_Name = ASPrintf("%s.font", nsoption_charp(font_mono));
 	fontcursive.ta_Name = ASPrintf("%s.font", nsoption_charp(font_cursive));
 	fontfantasy.ta_Name = ASPrintf("%s.font", nsoption_charp(font_fantasy));
-	fontunicode.ta_Name = ASPrintf("%s.font", nsoption_charp(font_unicode));
 
 	fontsans.ta_Style = 0;
 	fontserif.ta_Style = 0;
 	fontmono.ta_Style = 0;
 	fontcursive.ta_Style = 0;
 	fontfantasy.ta_Style = 0;
-	fontunicode.ta_Style = 0;
 
 	fontsans.ta_YSize = 0;
 	fontserif.ta_YSize = 0;
 	fontmono.ta_YSize = 0;
 	fontcursive.ta_YSize = 0;
 	fontfantasy.ta_YSize = 0;
-	fontunicode.ta_YSize = 0;
 
 	fontsans.ta_Flags = 0;
 	fontserif.ta_Flags = 0;
 	fontmono.ta_Flags = 0;
 	fontcursive.ta_Flags = 0;
 	fontfantasy.ta_Flags = 0;
-	fontunicode.ta_Flags = 0;
 
 	if(!gow)
 	{
@@ -979,16 +973,6 @@ void ami_gui_opts_open(void)
 									GetFontEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_FONT_FANTASY],
-									LabelEnd,
-									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_UNICODE] = GetFontObject,
-										GA_ID, GID_OPTS_FONT_UNICODE,
-										GA_RelVerify, TRUE,
-										GETFONT_TextAttr, &fontunicode,
-										GETFONT_OTagOnly, TRUE,
-										GETFONT_ScalableOnly, TRUE,
-									GetFontEnd,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_FONT_UNICODE],
 									LabelEnd,
 									LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_DEFAULT] = ChooserObject,
 										GA_ID, GID_OPTS_FONT_DEFAULT,
@@ -1618,17 +1602,6 @@ void ami_gui_opts_use(bool save)
 	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 	nsoption_set_charp(font_fantasy, (char *)strdup((char *)tattr->ta_Name));
 
-	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_UNICODE],(ULONG *)&data);
-	if(tattr = (struct TextAttr *)data) {
-		if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-
-		if(strcmp(tattr->ta_Name, nsoption_charp(font_unicode)) != 0) {
-			rescan_fonts = true;
-		}
-	
-		nsoption_set_charp(font_unicode, (char *)strdup((char *)tattr->ta_Name));
-	}
-	
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
 	nsoption_set_int(font_default, nsoption_int(font_default) + PLOT_FONT_FAMILY_SANS_SERIF);
 
@@ -1958,11 +1931,6 @@ BOOL ami_gui_opts_event(void)
 
 					case GID_OPTS_FONT_FANTASY:
 						IDoMethod(gow->objects[GID_OPTS_FONT_FANTASY],
-						GFONT_REQUEST,gow->win);
-					break;
-
-					case GID_OPTS_FONT_UNICODE:
-						IDoMethod(gow->objects[GID_OPTS_FONT_UNICODE],
 						GFONT_REQUEST,gow->win);
 					break;
 
