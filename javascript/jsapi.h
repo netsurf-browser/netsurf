@@ -58,6 +58,7 @@
 
 /* return value setter */
 #define JSAPI_SET_RVAL(cx, vp, v) (*jsapi_rval = (v))
+#define JS_SET_RVAL(cx, vp, v)    (*(vp) = (v))
 
 /* arguments */
 #define JSAPI_ARGV(cx, vp) (vp)
