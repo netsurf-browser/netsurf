@@ -74,7 +74,7 @@ If the font NetSurf is trying to use does not contain a specific character used 
 
 For most users, installing and selecting @{"Code2000" rxs "address netsurf 'open http://code2000.sf.net'"} or @{"Bitstream Cyberbit" rxs "address netsurf 'open http://ftp.netscape.com/pub/communicator/extras/fonts/windows/'"} is the best option.
 
-Additional fall-back fonts can be provided since NetSurf 3.0. These need to go into Users/user/Choices as a comma-separated list, for the font_unicode_list option.
+Additional fall-back fonts can be provided since NetSurf 3.0. These need to go into Users/user/Choices as a comma-separated list, for the font_unicode option.
 
 NB: Since NetSurf 3.0, NetSurf will scan the provided Unicode fonts, and the rest of the system fonts, on first startup.  Setting font_unicode_only:1 will prevent fonts not in the preferred Unicode fonts list from being scanned or used as fallback fonts.  If the system fonts or NetSurf's fallback fonts list changes, this cache will need to be re-generated.  This can be forced by deleting the font glyph cache (which defaults to Users/user/FontGlyphCache).
 

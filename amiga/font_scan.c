@@ -448,17 +448,9 @@ void ami_font_scan_init(const char *filename, bool force_scan, bool save,
 	if(found == 0) {
 		if(list = NewObjList()) {
 
-			/* add preferred font */
-			asprintf(&unicode_font, "%s.font", nsoption_charp(font_unicode));
-			if(unicode_font != NULL) {
-				node = AddObject(list, AMINS_UNKNOWN);
-				if(node) node->dtz_Node.ln_Name = unicode_font;
-				entries = 1;
-			}
-
 			/* add preferred fonts list */
-			if(nsoption_charp(font_unicode_list) &&
-					(csv = strdup(nsoption_charp(font_unicode_list))))
+			if(nsoption_charp(font_unicode) &&
+					(csv = strdup(nsoption_charp(font_unicode))))
 			{
 				char *p;
 
