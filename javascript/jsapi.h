@@ -116,7 +116,7 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_JSCLASS_MARKOP(x) (x)
 
-#define JSAPI_MARKOP(name) uint32_t name(JSContext cx, JSObject *obj, void *arg)
+#define JSAPI_MARKOP(name) uint32_t name(JSContext *cx, JSObject *obj, void *arg)
 
 #define JSAPI_MARKCX cx
 
