@@ -35,6 +35,7 @@ binding text {
     interface Text; /* Web IDL interface to generate */
 
     private "dom_text *" node;
+    private "struct html_content *" htmlc; 
 }
 
 api finalise %{

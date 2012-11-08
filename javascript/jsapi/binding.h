@@ -125,6 +125,8 @@ JSObject *jsapi_new_NodeList(JSContext *cx,
 				struct html_content *htmlc);
 
 
+extern JSClass JSClass_Text;
+
 JSObject *jsapi_InitClass_Text(JSContext *cx, JSObject *parent);
 /** Create a new javascript text object
  *
@@ -136,6 +138,7 @@ JSObject *jsapi_InitClass_Text(JSContext *cx, JSObject *parent);
 JSObject *jsapi_new_Text(JSContext *cx,
 				JSObject *prototype,
 				JSObject *parent,
-				dom_text *node);
+				dom_text *node,
+				struct html_content *htmlc);
 
 #endif

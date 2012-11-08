@@ -91,6 +91,8 @@ getter body %{
 	dom_node *body;
         dom_exception exc;
 
+	JSLOG("Getting your body");
+
 	/* document (html) element */
 	exc = dom_document_get_document_element(private->node, &element);
         if (exc != DOM_NO_ERR) {
@@ -104,6 +106,9 @@ getter body %{
 		}
 		dom_node_unref(element);
 	}
+
+	JSLOG("returning jsobject %p",jsret);
+
 %}
 
 operation getElementById %{
@@ -176,6 +181,7 @@ operation createTextNode %{
         dom_exception exc;
 	dom_text *text;
 
+	JSLOG("Creating text node for string \"%s\"", data);
 	exc = dom_string_create((unsigned char*)data, data_len, &data_dom);
         if (exc != DOM_NO_ERR) {
                 return JS_FALSE;
@@ -187,6 +193,8 @@ operation createTextNode %{
                 return JS_FALSE;
         }
 
-	jsret = jsapi_new_Text(cx, NULL, NULL, text);
+	jsret = jsapi_new_Text(cx, NULL, NULL, text, private->htmlc);
+
+	JSLOG("returning jsobject %p",jsret);
 
 %}

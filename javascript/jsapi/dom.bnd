@@ -22,7 +22,45 @@ getter textContent %{
 %}
 
 
-
 operation appendChild %{
-/* void * JS_GetInstancePrivate(JSContext *cx, JSObject *obj, JSClass *clasp, jsval *argv); */
+	struct dom_node *result = NULL;
+        dom_exception exc;
+
+	struct jsclass_private *node_private;
+	dom_node_type node_type;
+
+	JSLOG("appending %p", node);
+
+	/* CAUTION this expects all Node objects private pointers to
+	 * have private->node in the same place
+	 */
+	node_private = JS_GetInstancePrivate(cx, node, &JSClass_Text, NULL);
+	if (node_private != NULL) {
+		exc = dom_node_append_child(private->node, node_private->node, &result);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
+	}
+
+	if (result != NULL) {
+		exc = dom_node_get_node_type(result, &node_type);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
+		switch (node_type) {
+		case DOM_ELEMENT_NODE:
+			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, result, private->htmlc);
+			break;
+
+		case DOM_TEXT_NODE:
+			jsret = jsapi_new_Text(cx, NULL, NULL, result, private->htmlc);
+			break;
+
+		default:
+			JSLOG("Unsupported result node type %d", node_type);
+		}
+
+	} else {
+		JSLOG("No result");
+	}
 %}

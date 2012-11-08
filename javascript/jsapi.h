@@ -62,6 +62,9 @@
 /* arguments */
 #define JSAPI_ARGV(cx, vp) (vp)
 
+/* check if a jsval is an object */
+#define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
+
 /* The object instance in a native call */
 /* "this" JSObject getter */
 JSObject * js_ComputeThis(JSContext *cx, JSObject *thisp, void *argv);
@@ -150,6 +153,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /* arguments */
 #define JSAPI_ARGV(cx, vp) (vp)
 
+/* check if a jsval is an object */
+#define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
+
 /* The object instance in a native call */
 #define JSAPI_THIS_OBJECT(cx,vp) jsapi_this
 
@@ -232,6 +238,14 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 /* arguments */
 #define JSAPI_ARGV(cx, vp) JS_ARGV(cx,vp)
+
+/* check if a jsval is an object */
+#define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
+/* The docuemntation says this is obsolete and should be
+ * ((JSVAL_IS_NULL(v)) || (JSVAL_IS_PRIMITIVE(v)))
+ * which doesnt work
+ */
+
 
 /* The object instance in a native call */
 #define JSAPI_THIS_OBJECT(cx,vp) JS_THIS_OBJECT(cx,vp)
