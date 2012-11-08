@@ -1619,16 +1619,16 @@ void ami_gui_opts_use(bool save)
 	nsoption_set_charp(font_fantasy, (char *)strdup((char *)tattr->ta_Name));
 
 	GetAttr(GETFONT_TextAttr,gow->objects[GID_OPTS_FONT_UNICODE],(ULONG *)&data);
-	tattr = (struct TextAttr *)data;
+	if(tattr = (struct TextAttr *)data) {
+		if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
 
-	if(dot = strrchr(tattr->ta_Name,'.')) *dot = '\0';
-
-	if(strcmp(tattr->ta_Name, nsoption_charp(font_unicode)) != 0) {
-		rescan_fonts = true;
+		if(strcmp(tattr->ta_Name, nsoption_charp(font_unicode)) != 0) {
+			rescan_fonts = true;
+		}
+	
+		nsoption_set_charp(font_unicode, (char *)strdup((char *)tattr->ta_Name));
 	}
-
-	nsoption_set_charp(font_unicode, (char *)strdup((char *)tattr->ta_Name));
-
+	
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_FONT_DEFAULT],(ULONG *)&nsoption_int(font_default));
 	nsoption_set_int(font_default, nsoption_int(font_default) + PLOT_FONT_FAMILY_SANS_SERIF);
 
