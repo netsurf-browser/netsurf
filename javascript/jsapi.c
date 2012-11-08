@@ -123,6 +123,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv)
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	JSContext *cx = (JSContext *)ctx;
+	jsval rval;
 
 	/* JSLOG("%p \"%s\"",cx ,txt); */
 
@@ -141,7 +142,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	if (JS_EvaluateScript(cx, 
 			      JS_GetGlobalObject(cx), 
 			      txt, txtlen, 
-			      "<head>", 0, NULL) == JS_TRUE) {
+			      "<head>", 0, &rval) == JS_TRUE) {
 
 		return true;
 	}
