@@ -6,25 +6,25 @@ webidlfile "dom.idl";
 
 
 getter textContent %{
-        dom_exception exc;
-        dom_string *content;
+	dom_exception exc;
+	dom_string *content;
 
-        exc = dom_node_get_text_content(private->node, &content);
-        if (exc != DOM_NO_ERR) {
+	exc = dom_node_get_text_content(private->node, &content);
+	if (exc != DOM_NO_ERR) {
 		return JS_FALSE;
 	}
 
 	if (content != NULL) {
-                jsret = JS_NewStringCopyN(cx, dom_string_data(content), dom_string_length(content));
+		jsret = JS_NewStringCopyN(cx, dom_string_data(content), dom_string_length(content));
 		dom_string_unref(content);
 
-        }
+	}
 %}
 
 
 operation appendChild %{
 	struct dom_node *result = NULL;
-        dom_exception exc;
+	dom_exception exc;
 
 	struct jsclass_private *node_private;
 	dom_node_type node_type;
@@ -34,12 +34,22 @@ operation appendChild %{
 	/* CAUTION this expects all Node objects private pointers to
 	 * have private->node in the same place
 	 */
+	/* text */
 	node_private = JS_GetInstancePrivate(cx, node, &JSClass_Text, NULL);
-	if (node_private != NULL) {
-		exc = dom_node_append_child(private->node, node_private->node, &result);
-		if (exc != DOM_NO_ERR) {
-			return JS_FALSE;
-		}
+	if (node_private == NULL) {
+		/* element */
+		node_private = JS_GetInstancePrivate(cx, node, &JSClass_HTMLElement, NULL);
+	}
+
+	if (node_private == NULL) {
+		/* type error? */
+		return JS_FALSE;
+	}
+
+	/* append the found element */
+	exc = dom_node_append_child(private->node, node_private->node, &result);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
 	}
 
 	if (result != NULL) {

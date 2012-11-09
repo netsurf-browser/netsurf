@@ -82,6 +82,8 @@ JSObject *jsapi_InitClass_Navigator(JSContext *cx, JSObject *parent);
  */
 JSObject *jsapi_new_Navigator(JSContext *cx, JSObject *proto, JSObject *parent);
 
+extern JSClass JSClass_HTMLElement;
+
 JSObject *jsapi_InitClass_HTMLElement(JSContext *cx, JSObject *parent);
 /** Create a new javascript element object
  *

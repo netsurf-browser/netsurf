@@ -198,3 +198,27 @@ operation createTextNode %{
 	JSLOG("returning jsobject %p",jsret);
 
 %}
+
+/* in dom Document */
+operation createElement %{
+	dom_string *localName_dom;
+        dom_exception exc;
+	dom_element *element;
+
+	JSLOG("Creating text node for string \"%s\"", localName);
+	exc = dom_string_create((unsigned char*)localName, localName_len, &localName_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+	exc = dom_document_create_element(private->node, localName_dom, &element);
+	dom_string_unref(localName_dom);
+        if (exc != DOM_NO_ERR) {
+                return JS_FALSE;
+        }
+
+	jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
+
+	JSLOG("returning jsobject %p",jsret);
+
+%}
