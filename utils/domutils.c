@@ -17,6 +17,7 @@
  */
 
 #include <dom/dom.h>
+#include <dom/bindings/hubbub/parser.h>
 
 #include "utils/config.h"
 #include "utils/log.h"
@@ -64,3 +65,96 @@ dom_node *find_first_named_dom_element(dom_node *parent, lwc_string *element_nam
 
 	return element;
 }
+
+void domutils_iterate_child_elements(dom_node *parent, 
+		domutils_iterate_cb cb, void *ctx)
+{
+	dom_nodelist *children;
+	uint32_t index, num_children;
+	dom_exception error;
+
+	error = dom_node_get_child_nodes(parent, &children);
+	if (error != DOM_NO_ERR || children == NULL)
+		return;
+
+	error = dom_nodelist_get_length(children, &num_children);
+	if (error != DOM_NO_ERR) {
+		dom_nodelist_unref(children);
+		return;
+	}
+
+	for (index = 0; index < num_children; index++) {
+		dom_node *child;
+		dom_node_type type;
+
+		error = dom_nodelist_item(children, index, &child);
+		if (error != DOM_NO_ERR) {
+			dom_nodelist_unref(children);
+			return;
+		}
+
+		error = dom_node_get_node_type(child, &type);
+		if (error == DOM_NO_ERR && type == DOM_ELEMENT_NODE) {
+			if (cb(child, ctx) == false) {
+				dom_node_unref(child);
+				dom_nodelist_unref(children);
+				return;
+			}
+		}
+
+		dom_node_unref(child);
+	}
+
+	dom_nodelist_unref(children);
+}
+
+static void ignore_dom_msg(uint32_t severity, void *ctx, const char *msg, ...)
+{
+}
+
+dom_document *domutils_parse_file(const char *filename, const char *encoding)
+{
+	dom_hubbub_error error;
+	dom_hubbub_parser *parser;
+	dom_document *document;
+	FILE *fp = NULL;
+#define BUF_SIZE 512
+	uint8_t buf[BUF_SIZE];
+
+	fp = fopen(filename, "r");
+	if (fp == NULL) {
+		return NULL;
+	}
+
+	parser = dom_hubbub_parser_create(encoding, false, false,
+			ignore_dom_msg, NULL, NULL, &document);
+	if (parser == NULL) {
+		fclose(fp);
+		return NULL;
+	}
+
+	while (feof(fp) == 0) {
+		size_t read = fread(buf, sizeof(buf[0]), BUF_SIZE, fp);
+
+		error = dom_hubbub_parser_parse_chunk(parser, buf, read);
+		if (error != DOM_HUBBUB_OK) {
+			dom_node_unref(document);
+			dom_hubbub_parser_destroy(parser);
+			fclose(fp);
+			return NULL;
+		}
+	}
+
+	error = dom_hubbub_parser_completed(parser);
+	if (error != DOM_HUBBUB_OK) {
+		dom_node_unref(document);
+		dom_hubbub_parser_destroy(parser);
+		fclose(fp);
+		return NULL;
+	}
+
+	dom_hubbub_parser_destroy(parser);
+
+	return document;
+}
+

@@ -19,6 +19,19 @@
 #ifndef _NETSURF_UTILS_DOMUTILS_H_
 #define _NETSURF_UTILS_DOMUTILS_H_
 
-dom_node *find_first_named_dom_element(dom_node *parent, lwc_string *element_name);
+#include <stdbool.h>
+
+#include <dom/dom.h>
+
+typedef bool (*domutils_iterate_cb)(dom_node *node, void *ctx);
+
+dom_node *find_first_named_dom_element(dom_node *parent,
+		lwc_string *element_name);
+
+void domutils_iterate_child_elements(dom_node *parent,
+		domutils_iterate_cb cb, void *ctx);
+
+dom_document *domutils_parse_file(const char *filename,
+		const char *encoding);
 
 #endif

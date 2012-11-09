@@ -24,8 +24,9 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <libxml/HTMLparser.h>
-#include <libxml/HTMLtree.h>
+
+#include <dom/dom.h>
+#include <dom/bindings/hubbub/parser.h>
 
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -33,9 +34,12 @@
 #include "desktop/browser.h"
 #include "desktop/options.h"
 #include "desktop/tree_url_node.h"
+#include "utils/corestrings.h"
+#include "utils/domutils.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 
 /** Flags for each type of url tree node. */
@@ -461,80 +465,97 @@ node_callback_resp tree_url_node_callback(void *user_data,
 	return NODE_CALLBACK_NOT_HANDLED;
 }
 
-/**
- * Search the children of an xmlNode for an element.
- *
- * \param  node  xmlNode to search children of, or 0
- * \param  name  name of element to find
- * \return  first child of node which is an element and matches name, or
- *          0 if not found or parameter node is 0
- */
-static xmlNode *tree_url_find_xml_element(xmlNode *node, const char *name)
-{
-	xmlNode *xmlnode;
-	if (node == NULL)
-		return NULL;
+typedef struct {
+	struct tree *tree;
+	struct node *directory;
+	tree_node_user_callback callback;
+	void *callback_data;
+	bool last_was_h4;
+	dom_string *title;
+} tree_url_load_ctx;
 
-	for (xmlnode = node->children;
-	     xmlnode && !(xmlnode->type == XML_ELEMENT_NODE &&
-		    strcasecmp((const char *) xmlnode->name, name) == 0);
-	     xmlnode = xmlnode->next)
-		;
-
-	return xmlnode;
-}
+static void tree_url_load_directory(dom_node *ul, tree_url_load_ctx *ctx);
 
 /**
  * Parse an entry represented as a li.
  *
- * \param  li         xmlNode for parsed li
+ * \param  li         DOM node for parsed li
  * \param  directory  directory to add this entry to
  */
-static void tree_url_load_entry(xmlNode *li, struct tree *tree,
-		struct node *directory, tree_node_user_callback callback,
-		void *callback_data)
+static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 {
-	char *url1 = NULL;
-	char *title = NULL;
-	struct node *entry;
-	xmlNode *xmlnode;
-	const struct url_data *data;
+	dom_node *a;
+	dom_string *title1;
+	dom_string *url1;
+	char *title, *url2;
 	nsurl *url;
+	const struct url_data *data;
+	struct node *entry;
+	dom_exception derror;
 	nserror error;
 
-	for (xmlnode = li->children; xmlnode; xmlnode = xmlnode->next) {
-		/* The li must contain an "a" element */
-		if (xmlnode->type == XML_ELEMENT_NODE &&
-		    strcasecmp((const char *)xmlnode->name, "a") == 0) {
-			url1 = (char *)xmlGetProp(xmlnode,
-					(const xmlChar *) "href");
-			title = (char *)xmlNodeGetContent(xmlnode);
-		}
-	}
-
-	if ((url1 == NULL) || (title == NULL)) {
-		warn_user("TreeLoadError", "(Missing <a> in <li> or "
-			  "memory exhausted.)");
+	/* The li must contain an "a" element */
+	a = find_first_named_dom_element(li, corestring_lwc_a);
+	if (a == NULL) {
+		warn_user("TreeLoadError", "(Missing <a> in <li>)");
 		return;
 	}
+
+	derror = dom_node_get_text_content(a, &title1);
+	if (derror != DOM_NO_ERR || title1 == NULL) {
+		warn_user("TreeLoadError", "(No title)");
+		dom_node_unref(a);
+		return;
+	}
+
+	derror = dom_element_get_attribute(a, corestring_dom_href, &url1);
+	if (derror != DOM_NO_ERR || url1 == NULL) {
+		warn_user("TreeLoadError", "(No URL)");
+		dom_string_unref(title1);
+		dom_node_unref(a);
+		return;
+	}
+
+	title = strndup(dom_string_data(title1),
+			dom_string_byte_length(title1));
+	if (title == NULL) {
+		warn_user("NoMemory", NULL);
+		dom_string_unref(url1);
+		dom_string_unref(title1);
+		dom_node_unref(a);
+		return;
+	}
+
+	dom_string_unref(title1);
 
 	/* We're loading external input.
 	 * This may be garbage, so attempt to normalise via nsurl
 	 */
-	error = nsurl_create(url1, &url);
-	if (error != NSERROR_OK) {
-		LOG(("Failed normalising '%s'", url1));
-
+	url2 = strndup(dom_string_data(url1), dom_string_byte_length(url1));
+	if (url2 == NULL) {
 		warn_user("NoMemory", NULL);
-
-		xmlFree(url1);
-		xmlFree(title);
-
+		free(title);
+		dom_string_unref(url1);
+		dom_node_unref(a);
 		return;
 	}
 
-	/* No longer need this */
-	xmlFree(url1);
+	dom_string_unref(url1);
+
+	error = nsurl_create(url2, &url);
+
+	free(url2);
+
+	if (error != NSERROR_OK) {
+		LOG(("Failed normalising '%s'", url2));
+
+		warn_user("NoMemory", NULL);
+
+		free(title);
+		dom_node_unref(a);
+
+		return;
+	}
 
 	data = urldb_get_url_data(url);
 	if (data == NULL) {
@@ -544,8 +565,9 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 		data = urldb_get_url_data(url);
 	}
 	if (data == NULL) {
-		xmlFree(title);
 		nsurl_unref(url);
+		free(title);
+		dom_node_unref(a);
 
 		return;
 	}
@@ -556,106 +578,139 @@ static void tree_url_load_entry(xmlNode *li, struct tree *tree,
 	/* Force the title in the hotlist */
 	urldb_set_url_title(url, title);
 
-	entry = tree_create_URL_node(tree, directory, url, title,
-				     callback, callback_data);
+	entry = tree_create_URL_node(ctx->tree, ctx->directory, url, title,
+				     ctx->callback, ctx->callback_data);
 
  	if (entry == NULL) {
  		/** \todo why isn't this fatal? */
  		warn_user("NoMemory", 0);
  	} else {
-		tree_update_URL_node(tree, entry, url, data);
+		tree_update_URL_node(ctx->tree, entry, url, data);
 	}
 
-
-	xmlFree(title);
 	nsurl_unref(url);
+	free(title);
+	dom_node_unref(a);
+}
+
+static bool tree_url_load_directory_cb(dom_node *node, void *ctx)
+{
+	tree_url_load_ctx *tctx = ctx;
+	dom_string *name;
+	dom_exception error;
+
+	/* The ul may contain entries as a li, or directories as
+	 * an h4 followed by a ul. Non-element nodes may be present
+	 * (eg. text, comments), and are ignored. */
+
+	error = dom_node_get_node_name(node, &name);
+	if (error != DOM_NO_ERR || name == NULL)
+		return false;
+
+	if (dom_string_caseless_lwc_isequal(name, corestring_lwc_li)) {
+		/* entry */
+		tree_url_load_entry(node, tctx);
+		tctx->last_was_h4 = false;
+	} else if (dom_string_caseless_lwc_isequal(name, corestring_lwc_h4)) {
+		/* directory (a) */
+		dom_string *title;
+
+		error = dom_node_get_text_content(node, &title);
+		if (error != DOM_NO_ERR || title == NULL) {
+			warn_user("TreeLoadError", "(Empty <h4> "
+					"or memory exhausted.)");
+			dom_string_unref(name);
+			return false;
+		}
+
+		if (tctx->title != NULL)
+			dom_string_unref(tctx->title);
+		tctx->title = title;
+		tctx->last_was_h4 = true;
+	} else if (tctx->last_was_h4 && dom_string_caseless_lwc_isequal(name, 
+			corestring_lwc_ul)) {
+		/* directory (b) */
+		dom_string *id;
+		bool dir_is_default;
+		struct node *dir;
+		char *title;
+		tree_url_load_ctx new_ctx;
+
+		error = dom_element_get_attribute(node, corestring_dom_id, &id);
+		if (error != DOM_NO_ERR) {
+			dom_string_unref(name);
+			return false;
+		}
+
+		if (id != NULL) {
+			dir_is_default = dom_string_caseless_lwc_isequal(id,
+					corestring_lwc_default);
+
+			dom_string_unref(id);
+		} else {
+			dir_is_default = false;
+		}
+
+		title = strndup(dom_string_data(tctx->title),
+				dom_string_byte_length(tctx->title));
+		if (title == NULL) {
+			dom_string_unref(name);
+			return false;
+		}
+
+		dir = tree_create_folder_node(tctx->tree, tctx->directory,
+				title, true, false, false);
+		if (dir == NULL) {
+			dom_string_unref(name);
+			return false;
+		}
+
+		if (dir_is_default)
+			tree_set_default_folder_node(tctx->tree, dir);
+
+		if (tctx->callback != NULL)
+			tree_set_node_user_callback(dir, tctx->callback,
+						    tctx->callback_data);
+
+		if (folder_icon != NULL)
+			tree_set_node_icon(tctx->tree, dir, folder_icon);
+
+		new_ctx.tree = tctx->tree;
+		new_ctx.directory = dir;
+		new_ctx.callback = tctx->callback;
+		new_ctx.callback_data = tctx->callback_data;
+		new_ctx.last_was_h4 = false;
+		new_ctx.title = NULL;
+
+		tree_url_load_directory(node, &new_ctx);
+
+		if (new_ctx.title != NULL) {
+			dom_string_unref(new_ctx.title);
+			new_ctx.title = NULL;
+		}
+		tctx->last_was_h4 = false;
+	} else {
+		tctx->last_was_h4 = false;
+	}
+
+	dom_string_unref(name);
+
+	return true;
 }
 
 /**
  * Parse a directory represented as a ul.
  *
- * \param  ul         xmlNode for parsed ul
+ * \param  ul         DOM node for parsed ul
  * \param  directory  directory to add this directory to
  */
-static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
-		struct node *directory, tree_node_user_callback callback,
-		void *callback_data)
+static void tree_url_load_directory(dom_node *ul, tree_url_load_ctx *ctx)
 {
-	char *title;
-	struct node *dir;
-	xmlNode *xmlnode;
-	xmlChar *id;
-
 	assert(ul != NULL);
-	assert(directory != NULL);
+	assert(ctx != NULL);
+	assert(ctx->directory != NULL);
 
-	for (xmlnode = ul->children; xmlnode; xmlnode = xmlnode->next) {
-		/* The ul may contain entries as a li, or directories as
-		 * an h4 followed by a ul. Non-element nodes may be present
-		 * (eg. text, comments), and are ignored. */
-
-		if (xmlnode->type != XML_ELEMENT_NODE)
-			continue;
-
-		if (strcasecmp((const char *)xmlnode->name, "li") == 0) {
-			/* entry */
-			tree_url_load_entry(xmlnode, tree, directory, callback,
-					    callback_data);
-
-		} else if (strcasecmp((const char *)xmlnode->name, "h4") == 0) {
-			/* directory */
-			bool dir_is_default = false;
-			title = (char *) xmlNodeGetContent(xmlnode );
-			if (!title) {
-				warn_user("TreeLoadError", "(Empty <h4> "
-					  "or memory exhausted.)");
-				return;
-			}
-
-			for (xmlnode = xmlnode->next;
-			     xmlnode && xmlnode->type != XML_ELEMENT_NODE;
-			     xmlnode = xmlnode->next)	
-				;
-			if ((xmlnode == NULL) || 
-			    strcasecmp((const char *)xmlnode->name, "ul") != 0) {
-				/* next element isn't expected ul */
-				free(title);
-				warn_user("TreeLoadError", "(Expected "
-					  "<ul> not present.)");
-				return;
-			} else {
-				id = xmlGetProp(xmlnode,
-						(const xmlChar *) "id");
-				if (id != NULL) {
-					if (strcasecmp((const char *)id,
-							"default") == 0)
-						dir_is_default = true;
-					xmlFree(id);
-				}
-			}
-
-			dir = tree_create_folder_node(tree, directory, title,
-						      true, false, false);
-			if (dir == NULL) {
-				free(title);
-				return;
-			}
-
-			if(dir_is_default == true) {
-				tree_set_default_folder_node(tree, dir);
-			}
-
-			if (callback != NULL)
-				tree_set_node_user_callback(dir, callback,
-							    callback_data);
-
- 			if (folder_icon != NULL)
- 				tree_set_node_icon(tree, dir, folder_icon);
-
-			tree_url_load_directory(xmlnode, tree, dir, callback,
-						callback_data);
-		}
-	}
+	domutils_iterate_child_elements(ul, tree_url_load_directory_cb, ctx);
 }
 
 /**
@@ -668,42 +723,69 @@ static void tree_url_load_directory(xmlNode *ul, struct tree *tree,
 bool tree_urlfile_load(const char *filename, struct tree *tree,
 		       tree_node_user_callback callback, void *callback_data)
 {
-	xmlDoc *doc;
-	xmlNode *html, *body, *ul;
+	dom_document *document;
+	dom_node *html, *body, *ul;
 	struct node *root;
-	FILE *fp = NULL;
+	tree_url_load_ctx ctx;
 
 	if (filename == NULL) {
 		return false;
 	}
 
-	fp = fopen(filename, "r");
-	if (fp == NULL) {
-		return false;
-	}
-	fclose(fp);
-
-	doc = htmlParseFile(filename, "iso-8859-1");
-	if (doc == NULL) {
+	document = domutils_parse_file(filename, "iso-8859-1");
+	if (document == NULL) {
 		warn_user("TreeLoadError", messages_get("ParsingFail"));
 		return false;
 	}
 
-	html = tree_url_find_xml_element((xmlNode *) doc, "html");
-	body = tree_url_find_xml_element(html, "body");
-	ul = tree_url_find_xml_element(body, "ul");
+	html = find_first_named_dom_element((dom_node *) document,
+			corestring_lwc_html);
+	if (html == NULL) {
+		dom_node_unref(document);
+		warn_user("TreeLoadError", "(<html> not found)");
+		return false;
+	}
+
+	body = find_first_named_dom_element(html, corestring_lwc_body);
+	if (body == NULL) {
+		dom_node_unref(html);
+		dom_node_unref(document);
+		warn_user("TreeLoadError", "(<html>...<body> not found)");
+		return false;
+	}
+
+	ul = find_first_named_dom_element(body, corestring_lwc_ul);
 	if (ul == NULL) {
-		xmlFreeDoc(doc);
+		dom_node_unref(body);
+		dom_node_unref(html);
+		dom_node_unref(document);
 		warn_user("TreeLoadError",
 			  "(<html>...<body>...<ul> not found.)");
 		return false;
 	}
 
 	root = tree_get_root(tree);
-	tree_url_load_directory(ul, tree, root, callback, callback_data);
+
+	ctx.tree = tree;
+	ctx.directory = root;
+	ctx.callback = callback;
+	ctx.callback_data = callback_data;
+	ctx.last_was_h4 = false;
+	ctx.title = NULL;
+
+	tree_url_load_directory(ul, &ctx);
 	tree_set_node_expanded(tree, root, true, false, false);
 
-	xmlFreeDoc(doc);
+	if (ctx.title != NULL) {
+		dom_string_unref(ctx.title);
+		ctx.title = NULL;
+	}
+
+	dom_node_unref(ul);
+	dom_node_unref(body);
+	dom_node_unref(html);
+	dom_node_unref(document);
+
 	return true;
 }
 
@@ -713,35 +795,39 @@ bool tree_urlfile_load(const char *filename, struct tree *tree,
  * The node must contain a sequence of node_elements in the following order:
  *
  * \param  entry  hotlist entry to add
- * \param  node   node to add li to
+ * \param  fp     File to write to
  * \return  true on success, false on memory exhaustion
  */
-static bool tree_url_save_entry(struct node *entry, xmlNode *node)
+static bool tree_url_save_entry(struct node *entry, FILE *fp)
 {
-	xmlNode *li, *a;
-	xmlAttr *href;
-	const char *text;
-
-	li = xmlNewChild(node, NULL, (const xmlChar *) "li", NULL);
-	if (li == NULL)
-		return false;
-
+	const char *href, *text;
+	char *latin1_href, *latin1_text;
+	utf8_convert_ret ret;
 
 	text = tree_url_node_get_title(entry);
 	if (text == NULL)
 		return false;
-	a = xmlNewTextChild(li, NULL, (const xmlChar *) "a",
-			    (const xmlChar *) text);
-	if (a == NULL)
-		return false;
 
-	text = tree_url_node_get_url(entry);
-	if (text == NULL)
-		return false;
-
-	href = xmlNewProp(a, (const xmlChar *) "href", (const xmlChar *) text);
+	href = tree_url_node_get_url(entry);
 	if (href == NULL)
 		return false;
+
+	ret = utf8_to_enc(text, "iso-8859-1", strlen(text), &latin1_text);
+	if (ret != UTF8_CONVERT_OK)
+		return false;
+
+	ret = utf8_to_enc(href, "iso-8859-1", strlen(href), &latin1_href);
+	if (ret != UTF8_CONVERT_OK) {
+		free(latin1_text);
+		return false;
+	}
+
+	fprintf(fp, "<li><a href=\"%s\">%s</a></li>",
+			latin1_href, latin1_text);
+
+	free(latin1_href);
+	free(latin1_text);
+
 	return true;
 }
 
@@ -749,45 +835,55 @@ static bool tree_url_save_entry(struct node *entry, xmlNode *node)
  * Add a directory to the HTML tree for saving.
  *
  * \param  directory  hotlist directory to add
- * \param  node       node to add ul to
+ * \param  fp         File to write to
  * \return  true on success, false on memory exhaustion
  */
-static bool tree_url_save_directory(struct node *directory, xmlNode *node)
+static bool tree_url_save_directory(struct node *directory, FILE *fp)
 {
 	struct node *child;
-	xmlNode *ul, *h4;
-	const char *text;
 
-	ul = xmlNewChild(node, NULL, (const xmlChar *)"ul", NULL);
-	if (ul == NULL)
-		return false;
-	if (tree_node_is_default(directory) == true)
-		xmlSetProp(ul, (const xmlChar *) "id",
-				(const xmlChar *) "default");
+	fputs("<ul", fp);
+	if (tree_node_is_default(directory))
+		fputs(" id=\"default\"", fp);
+	fputc('>', fp);
 
-	for (child = tree_node_get_child(directory); child;
+	if (tree_node_get_child(directory) != NULL)
+		fputc('\n', fp);
+
+	for (child = tree_node_get_child(directory); child != NULL;
 	     child = tree_node_get_next(child)) {
-		if (!tree_node_is_folder(child)) {
+		if (tree_node_is_folder(child) == false) {
 			/* entry */
-			if (!tree_url_save_entry(child, ul))
+			if (tree_url_save_entry(child, fp) == false)
 				return false;
 		} else {
 			/* directory */
 			/* invalid HTML */
+			const char *text;
+			char *latin1_text;
+			utf8_convert_ret ret;
 
 			text = tree_url_node_get_title(child);
 			if (text == NULL)
 				return false;
 
-			h4 = xmlNewTextChild(ul, NULL,
-					     (const xmlChar *) "h4",
-					     (const xmlChar *) text);
-			if (h4 == NULL)
+			ret = utf8_to_enc(text, "iso-8859-1",
+					strlen(text), &latin1_text);
+			if (ret != UTF8_CONVERT_OK)
 				return false;
 
-			if (!tree_url_save_directory(child, ul))
+			fprintf(fp, "<h4>%s</h4>\n", latin1_text);
+
+			free(latin1_text);
+
+			if (tree_url_save_directory(child, fp) == false)
 				return false;
-		}	}
+		}
+
+		fputc('\n', fp);
+	}
+
+	fputs("</ul>", fp);
 
 	return true;
 }
@@ -802,65 +898,34 @@ static bool tree_url_save_directory(struct node *directory, xmlNode *node)
 bool tree_urlfile_save(struct tree *tree, const char *filename,
 		       const char *page_title)
 {
-	int res;
-	xmlDoc *doc;
-	xmlNode *html, *head, *title, *body;
+	FILE *fp;
+
+	fp = fopen(filename, "w");
+	if (fp == NULL)
+		return NULL;
 
 	/* Unfortunately the Browse Hotlist format is invalid HTML,
 	 * so this is a lie. 
 	 */
-	doc = htmlNewDoc(
-		(const xmlChar *) "http://www.w3.org/TR/html4/strict.dtd",
-		(const xmlChar *) "-//W3C//DTD HTML 4.01//EN");
-	if (doc == NULL) {
-		warn_user("NoMemory", 0);
-		return false;
-	}
+	fputs("<!DOCTYPE html "
+		"PUBLIC \"//W3C/DTD HTML 4.01//EN\" "
+		"\"http://www.w3.org/TR/html4/strict.dtd\">\n", fp);
+	fputs("<html>\n<head>\n", fp);
+	fputs("<meta http-equiv=\"Content-Type\" "
+		"content=\"text/html; charset=iso-8859-1\">\n", fp);
+	fprintf(fp, "<title>%s</title>\n", page_title);
+	fputs("<body>", fp);
 
-	html = xmlNewNode(NULL, (const xmlChar *) "html");
-	if (html == NULL) {
-		warn_user("NoMemory", 0);
-		xmlFreeDoc(doc);
-		return false;
-	}
-	xmlDocSetRootElement(doc, html);
-
-	head = xmlNewChild(html, NULL, (const xmlChar *) "head", NULL);
-	if (head == NULL) {
-		warn_user("NoMemory", 0);
-		xmlFreeDoc(doc);
-		return false;
-	}
-
-	title  = xmlNewTextChild(head, NULL, (const xmlChar *) "title",
-				 (const xmlChar *) page_title);
-	if (title == NULL) {
-		warn_user("NoMemory", 0);
-		xmlFreeDoc(doc);
-		return false;
-	}
-
-	body = xmlNewChild(html, NULL, (const xmlChar *) "body", NULL);
-	if (body == NULL) {
-		warn_user("NoMemory", 0);
-		xmlFreeDoc(doc);
-		return false;
-	}
-
-	if (!tree_url_save_directory(tree_get_root(tree), body)) {
- 		warn_user("NoMemory", 0);
- 		xmlFreeDoc(doc);
+	if (tree_url_save_directory(tree_get_root(tree), fp) == false) {
+		warn_user("HotlistSaveError", 0);
+		fclose(fp);
  		return false;
  	}
 
-	doc->charset = XML_CHAR_ENCODING_UTF8;
-	res = htmlSaveFileEnc(filename, doc, "iso-8859-1");
-	if (res == -1) {
-		warn_user("HotlistSaveError", 0);
-		xmlFreeDoc(doc);
-		return false;
-	}
+	fputs("</body>\n</html>\n", fp);
 
-	xmlFreeDoc(doc);
+	fclose(fp);
+
 	return true;
 }
+
