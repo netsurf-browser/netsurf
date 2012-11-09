@@ -597,7 +597,7 @@ fetch_curl_set_options(struct curl_fetch_info *f)
 		SETOPT(CURLOPT_HTTPGET, 1L);
 	}
 
-	f->cookie_string = urldb_get_cookie(f->url);
+	f->cookie_string = urldb_get_cookie(f->url, true);
 	if (f->cookie_string) {
 		SETOPT(CURLOPT_COOKIE, f->cookie_string);
 	} else {

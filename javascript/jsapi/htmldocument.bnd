@@ -44,7 +44,7 @@ api finalise %{
 
 getter cookie %{
 	char *cookie_str;
-	cookie_str = urldb_get_cookie(llcache_handle_get_url(private->htmlc->base.llcache));
+	cookie_str = urldb_get_cookie(llcache_handle_get_url(private->htmlc->base.llcache), false);
 	if (cookie_str != NULL) {
 		jsret = JS_NewStringCopyN(cx, cookie_str, strlen(cookie_str));
 		free(cookie_str);

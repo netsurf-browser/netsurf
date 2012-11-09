@@ -54,6 +54,7 @@ struct cookie_data {
 	const time_t expires;		/**< Expiry timestamp, or 1 for session */
 	const time_t last_used;		/**< Last used time */
 	const bool secure;		/**< Only send for HTTPS requests */
+	const bool http_only;		/**< Only expose to HTTP(S) requests */
 	cookie_version version;		/**< Specification compliance */
 	const bool no_destroy;		/**< Never destroy this cookie,
 				 	* unless it's expired */
@@ -115,7 +116,7 @@ void urldb_dump(void);
 
 /* Cookies */
 bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer);
-char *urldb_get_cookie(nsurl *url);
+char *urldb_get_cookie(nsurl *url, bool include_http_only);
 void urldb_delete_cookie(const char *domain, const char *path, const char *name);
 void urldb_load_cookies(const char *filename);
 void urldb_save_cookies(const char *filename);

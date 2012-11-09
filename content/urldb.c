@@ -120,6 +120,7 @@ struct cookie_internal_data {
 	time_t expires;		/**< Expiry timestamp, or -1 for session */
 	time_t last_used;	/**< Last used time */
 	bool secure;		/**< Only send for HTTPS requests */
+	bool http_only;		/**< Only expose to HTTP(S) requests */
 	cookie_version version;	/**< Specification compliance */
 	bool no_destroy;	/**< Never destroy this cookie,
 				 * unless it's expired */
@@ -321,7 +322,7 @@ static struct search_node *search_trees[NUM_SEARCH_TREES] = {
 };
 
 #define MIN_COOKIE_FILE_VERSION 100
-#define COOKIE_FILE_VERSION 101
+#define COOKIE_FILE_VERSION 102
 static int loaded_cookie_file_version;
 #define MIN_URL_FILE_VERSION 106
 #define URL_FILE_VERSION 106
@@ -2393,9 +2394,10 @@ struct search_node *urldb_search_split(struct search_node *root)
  * Retrieve cookies for an URL
  *
  * \param url URL being fetched
+ * \param include_http_only Whether to include HTTP(S) only cookies.
  * \return Cookies string for libcurl (on heap), or NULL on error/no cookies
  */
-char *urldb_get_cookie(nsurl *url)
+char *urldb_get_cookie(nsurl *url, bool include_http_only)
 {
 	const struct path_data *p, *q;
 	const struct host_part *h;
@@ -2489,6 +2491,10 @@ char *urldb_get_cookie(nsurl *url)
 						match == false)
 					/* secure cookie for insecure host.
 					 * ignore */
+					continue;
+
+				if (c->http_only && !include_http_only)
+					/* Ignore HttpOnly */
 					continue;
 
 				matched_cookies[count++] = c;
@@ -3275,6 +3281,8 @@ bool urldb_parse_avpair(struct cookie_internal_data *c, char *n, char *v,
 		c->expires = expires;
 	} else if (strcasecmp(n, "Secure") == 0) {
 		c->secure = true;
+	} else if (strcasecmp(n, "HttpOnly") == 0) {
+		c->http_only = true;
 	} else if (!c->name) {
 		c->name = strdup(n);
 		c->value = strdup(v);
@@ -3615,7 +3623,7 @@ void urldb_load_cookies(const char *filename)
 			*domain, *path, *name, *value, *scheme, *url,
 			*comment;
 		int version, domain_specified, path_specified,
-			secure, no_destroy, value_quoted;
+			secure, http_only, no_destroy, value_quoted;
 		time_t expires, last_used;
 		struct cookie_internal_data *c;
 
@@ -3653,6 +3661,12 @@ void urldb_load_cookies(const char *filename)
 		SKIP_T; path = p; FIND_T;
 		SKIP_T; path_specified = atoi(p); FIND_T;
 		SKIP_T; secure = atoi(p); FIND_T;
+		if (loaded_cookie_file_version > 101) {
+			/* Introduced in version 1.02 */
+			SKIP_T; http_only = atoi(p); FIND_T;
+		} else {
+			http_only = 0;
+		}
 		SKIP_T; expires = (time_t)atoi(p); FIND_T;
 		SKIP_T; last_used = (time_t)atoi(p); FIND_T;
 		SKIP_T; no_destroy = atoi(p); FIND_T;
@@ -3691,6 +3705,7 @@ void urldb_load_cookies(const char *filename)
 		c->expires = expires;
 		c->last_used = last_used;
 		c->secure = secure;
+		c->http_only = http_only;
 		c->version = version;
 		c->no_destroy = no_destroy;
 
@@ -3833,7 +3848,7 @@ void urldb_save_cookies(const char *filename)
 		    "# All lines prior to \"Version:\t%d\" are discarded.\n"
 		    "#\n"
 		    "# Version\tDomain\tDomain from Set-Cookie\tPath\t"
-			"Path from Set-Cookie\tSecure\tExpires\tLast used\t"
+			"Path from Set-Cookie\tSecure\tHTTP-Only\tExpires\tLast used\t"
 			"No destroy\tName\tValue\tValue was quoted\tScheme\t"
 			"URL\tComment\n",
 			cookie_file_version);
@@ -3884,11 +3899,12 @@ void urldb_save_cookie_paths(FILE *fp, struct path_data *parent)
 					continue;
 
 				fprintf(fp, 
-					"%d\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t"
+					"%d\t%s\t%d\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t"
 					"%s\t%s\t%d\t%s\t%s\t%s\n",
 					c->version, c->domain,
 					c->domain_from_set, c->path,
 					c->path_from_set, c->secure,
+					c->http_only,
 					(int)c->expires, (int)c->last_used,
 					c->no_destroy, c->name, c->value,
 					c->value_was_quoted,
