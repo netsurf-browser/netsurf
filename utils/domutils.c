@@ -41,9 +41,9 @@ dom_node *find_first_named_dom_element(dom_node *parent, lwc_string *element_nam
 	do {
 		exc = dom_node_get_node_type(element, &node_type);
 
-		if ((exc != DOM_NO_ERR) || (node_type == DOM_ELEMENT_NODE)) {
+		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
 			exc = dom_node_get_node_name(element, &node_name);
-			if ((exc == DOM_NO_ERR) || (node_name != NULL)) {
+			if ((exc == DOM_NO_ERR) && (node_name != NULL)) {
 				if (dom_string_caseless_lwc_isequal(node_name,
 						     element_name)) {
 					dom_string_unref(node_name);
