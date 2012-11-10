@@ -63,13 +63,12 @@ CFLAGS += -U__STRICT_ANSI__ -std=c99 -I. -Dsmall $(WARNFLAGS) -Dnsatari \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
 		$(shell $(PKG_CONFIG) --cflags libhubbub libcss openssl ) \
-		$(shell $(PKG_CONFIG) --cflags libxml-2.0 ) \
 		$(shell $(PKG_CONFIG) --cflags libcurl )
 
 LDFLAGS += -lcflib -lcurl
 LDFLAGS += -lcss -lparserutils -ldom -lwapcaplet -lhubbub
 LDFLAGS += -lssl -lcrypto
-LDFLAGS += -lxml2 -lz -liconv -lcares -lHermes -lwindom -lgem -lm
+LDFLAGS += -lz -liconv -lcares -lHermes -lwindom -lgem -lm
 LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
 

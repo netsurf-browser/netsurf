@@ -49,21 +49,6 @@ CFLAGS="-DNO_FSEEKO" ./configure --prefix=/usr/local/amiga
 make
 make install
 
-libxml
-download the tarball from the project's homepage, untar in a storage directory /
-download source from your distribution's repository
-download the tarball from the project's homepage, untar in a storage directory /
-download source from your distribution's repository
-cd into the directory containing the configure file
-$ ./configure --prefix=/usr/local/amiga --host=ppc-amigaos
-$ make
-[need glob.h / change logic in runtest.c]
-$ make install
-
-alternative
-http://www.aminet.net/dev/lib/libxml.lha
-
-
 regex [pre-compiled]
 http://aminet.net/dev/lib/libregex-4.4.3.lha
 

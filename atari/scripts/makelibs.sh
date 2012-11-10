@@ -33,7 +33,6 @@ libcurlpkg="curl-7.25.0"
 libfreetypepkg="freetype-2.4.9"
 libhermespkg="Hermes-1.3.3"
 libjpegpkg="jpeg-8b"
-libxmlpkg="libxml2-2.7.8"
 libparserutils_version=0.1.1
 libwapcaplet_version=0.1.1
 hubbub_version=0.1.2
@@ -364,38 +363,6 @@ fi
 
 cd ..
 
-cd $libxmlpkg
-$cleanup
-if [ "$cross" = "1" ]
-then
-./configure --prefix="$prefix" \
-	--host="m68k-atari-mint" \
-	--without-python \
-	--without-threads \
-	--enable-ipv6=no \
-	--without-debug \
-	--without-http \
-	--without-ftp \
-	--without-legacy \
-	--without-docbook \
-	--without-catalog \
-	--without-regexps \
-	--without-schemas \
-	--without-schematron \
-	--without-sax1 \
-	--without-xpath \
-	--without-modules \
-	--without-c14n \
-	--without-pattern \
-	--without-push \
-	--with-iconv="$archlibdir" \
-	--with-zlib="$archlibdir"
-make
-make install DESTDIR="$userfs"
-else
-echo "no cross"
-fi
-cd ..
 
 cd $libopensslpkg
 $cleanup
@@ -620,6 +587,5 @@ else
 	mv $srcpkgdir $archlibdir -v
 fi
 
-echo "please add symlink to libxml2/libxml within /usr/m68k-atari-mint/include"
 echo "please add symlink to freetype2/freetype within /usr/m68k-atari-mint/include"
 exit 0

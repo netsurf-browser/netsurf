@@ -46,8 +46,6 @@
 
       $ ../autobuilder/build c-ares
 
-      $ ../autobuilder/build libxml2
-
       $ ../autobuilder/build libssl0.9.8
 
       $ ../autobuilder/build libcurl3

@@ -62,7 +62,7 @@
 
   Debian-like OS:
 
-      $ apt-get install libcurl3-dev libxml2-dev
+      $ apt-get install libcurl3-dev
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
   note that when it has not been built with OpenSSL, the SSL_CTX is not

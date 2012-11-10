@@ -33,7 +33,7 @@ ifeq ($(HOST),amiga)
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I /SDK/local/common/include/libpng12
-  LDFLAGS += -lxml2 -lcurl -lrtmp -lpthread -ltre -lintl -lauto -lpbl
+  LDFLAGS += -lcurl -lrtmp -lpthread -ltre -lintl -lauto -lpbl
   LDFLAGS += -lssl -lcrypto -ldom -lhubbub -lcss -lparserutils -lwapcaplet
 
   ifeq ($(NETSURF_USE_AMIGA_CAIRO),YES)
@@ -51,10 +51,10 @@ else
   $(eval $(call feature_enabled,AMIGA_DATATYPES,-DWITH_AMIGA_DATATYPES,,DataTypes))
 
   CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include
-  CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libcurl openssl)
+  CFLAGS += $(shell $(PKG_CONFIG) --cflags libcurl openssl)
   CFLAGS += $(shell $(PKG_CONFIG) --cflags tre libdom libcss)
 
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl openssl)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl openssl)
   LDFLAGS += $(shell $(PKG_CONFIG) --libs tre libdom libcss)
   LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
@@ -106,7 +106,7 @@ AMIGA_GENERIC_RESOURCES := $(AMIGA_LANGUAGES) ca-bundle
 AMIGA_RESOURCES := $(addprefix amiga/resources/,$(AMIGA_PLATFORM_RESOURCES)) $(addprefix \!NetSurf/Resources/,$(AMIGA_GENERIC_RESOURCES))
 AMIGA_LIBRARIES := parserutils.library nsgif.library nsbmp.library iconv.library hubbub.library
 AMIGA_LIBS := $(addprefix /Libs/,$(AMIGA_LIBRARIES))
-AMIGA_SHARED_OBJS := libjpeg.so.12 libxml2.so.9 libcurl.so.7 librtmp.so.0 libsvgtiny.so.0	\
+AMIGA_SHARED_OBJS := libjpeg.so.12 libcurl.so.7 librtmp.so.0 libsvgtiny.so.0	\
 	libssl.so.1.0.0 libcrypto.so.1.0.0 libcss.so.0 libwapcaplet.so.0 libpng12.so 	\
 	libdom.so.0 libhubbub.so.0 libtre.so.5 libintl.so
 AMIGA_SOBJS := $(addprefix /SObjs/,$(AMIGA_SHARED_OBJS))

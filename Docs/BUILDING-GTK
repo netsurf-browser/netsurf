@@ -66,7 +66,7 @@
 
   Debian-like OS:
 
-      $ apt-get install libglade2-dev libcurl3-dev libxml2-dev libmng-dev 
+      $ apt-get install libglade2-dev libcurl3-dev libmng-dev 
       $ apt-get install librsvg2-dev liblcms1-dev libjpeg-dev
 
   Recent OS versions might need libcurl4-dev instead of libcurl3-dev but
@@ -82,13 +82,13 @@
 
   Fedora:
 
-      $ yum install libglade2-devel curl-devel libxml2-devel libmng-devel
+      $ yum install libglade2-devel curl-devel libmng-devel
       $ yum install librsvg2-devel lcms-devel
 
   Other:
 
   You'll need to install the development resources for libglade2, libcurl3,
-  libxml2, libmng and librsvg.
+  libmng and librsvg.
 
   Note that if you don't require MNG or JNG image support, NetSurf can be
   configured to use libpng instead of libmng. If you wish to do this, install

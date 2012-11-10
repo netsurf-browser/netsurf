@@ -8,7 +8,7 @@
 # ----------------------------------------------------------------------------
 
 
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libcurl libdom libcss)
+LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl libdom libcss)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
 
 # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here

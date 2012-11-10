@@ -182,12 +182,6 @@ version.</p>
 <span><a href="#png">PNG</a></span>
 </dd>
 
-<dt><a href="http://xmlsoft.org">libxml2</a></dt>
-<dd>
-<span>&copy; 1998&ndash;2009 Daniel Veillard</span>
-<span><a href="#mit">MIT</a></span>
-</dd>
-
 <dt><a href="http://www.riscos.info/websvn/listing.php?repname=gccsdk&path=%2Ftrunk%2Fgcc4%2Frecipe%2Ffiles%2Fgcc%2Flibunixlib%2F&#a9586e56e500c7fdfb58279167b82472d">UnixLib</a></dt>
 <dd>
 <span>&copy; 1995&ndash;1999 Simon Callan, Nick Burrett, Nicholas Clark and

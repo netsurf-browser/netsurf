@@ -19,11 +19,11 @@
 
   ifneq ($(PKG_CONFIG),)
     CFLAGS += $(shell $(PKG_CONFIG) --cflags zlib libcares libcurl libhubbub  \
-		libparserutils libdom libwapcaplet libxml-2.0)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libxml-2.0 libcurl libcares \
+		libparserutils libdom libwapcaplet)
+    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libcurl libcares \
 		libhubbub libparserutils libcss libdom libwapcaplet)
   else
-    LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lxml2 -lcurl -lz
+    LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lcurl -lz
   endif
 
   LDFLAGS += -lssl -lcrypto -lregex -liconv \
@@ -42,7 +42,7 @@
 
   WSCFLAGS := -std=c99 \
 	$(WARNFLAGS) -I.  \
-	-DCURL_STATICLIB -DLIBXML_STATIC -DCARES_STATICLIB -g
+	-DCURL_STATICLIB -DCARES_STATICLIB -g
   CFLAGS += $(WSCFLAGS)
   LDFLAGS += $(WSCFLAGS)
 

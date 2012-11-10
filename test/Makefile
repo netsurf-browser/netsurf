@@ -1,6 +1,6 @@
 CFLAGS := -std=c99 -g -O0 -D_BSD_SOURCE -D_POSIX_C_SOURCE -I.. \
-		$(shell pkg-config --cflags libxml-2.0 libcurl)
-LDFLAGS := $(shell pkg-config --libs libxml-2.0 libcurl) -lz
+		$(shell pkg-config --cflags libcurl)
+LDFLAGS := $(shell pkg-config --libs libcurl) -lz
 
 llcache_CFLAGS := $(shell pkg-config --cflags libparserutils libwapcaplet)
 llcache_LDFLAGS := $(shell pkg-config --libs libparserutils libwapcaplet)

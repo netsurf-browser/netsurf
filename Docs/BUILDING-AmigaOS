@@ -100,21 +100,6 @@
       http://www.aminet.net/package/dev/lib/libmng_so
 
 
-  libxml2
----------
-
-  libxml2 is available from Aminet:
-
-      http://www.aminet.net/package/dev/lib/libxml2
-
-  The shared object version included with OS4.1 does work with NetSurf,
-  however the "ELF QuickFix" must be installed from Hyperion's website.
-
-  The shared object can then be enabled with the following command:
-
-      1> makelink sdk:local/newlib/lib/libxml2.so sobjs:libxml2-2.6.so soft
-
-
   OpenSSL
 ---------
 

@@ -333,7 +333,7 @@ bool ami_save_svg(struct hlcache_handle *c,char *filename)
 /*
  * This code can be compiled as a standalone program for testing etc.
  * Use something like the following line:
- * gcc -o svg2dr2d iff_dr2d.c -lauto -lsvgtiny -lxml2 -lpthread -lz -use-dynld
+ * gcc -o svg2dr2d iff_dr2d.c -lauto -lsvgtiny -lpthread -lz -use-dynld
  * -DWITH_NS_SVG -DAMIGA_DR2D_STANDALONE -D__USE_INLINE__
  */
 const char USED ver[] = "\0$VER: svg2dr2d 1.1 (18.05.2009)\0";

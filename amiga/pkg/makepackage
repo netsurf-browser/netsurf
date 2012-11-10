@@ -24,7 +24,7 @@ makedir ram:NetSurf/Libs
 copy libs:parserutils.library libs:nsgif.library libs:nsbmp.library libs:iconv.library libs:hubbub.library ram:NetSurf/Libs
 ; libs:css.library libs:wapcaplet.library 
 makedir ram:NetSurf/SObjs
-copy sobjs:libjpeg.so.8 sobjs:libxml2.so.9 sobjs:libcurl.so.7 sobjs:librtmp.so.0 sobjs:libsvgtiny.so.0 sobjs:libssl.so.1.0.0 sobjs:libcrypto.so.1.0.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libpng12.so sobjs:libdom.so.0 sobjs:libhubbub.so.0 ram:NetSurf/SObjs clone
+copy sobjs:libjpeg.so.8 sobjs:libcurl.so.7 sobjs:librtmp.so.0 sobjs:libsvgtiny.so.0 sobjs:libssl.so.1.0.0 sobjs:libcrypto.so.1.0.0 sobjs:libcss.so.0 sobjs:libwapcaplet.so.0 sobjs:libpng12.so sobjs:libdom.so.0 sobjs:libhubbub.so.0 ram:NetSurf/SObjs clone
 ;sobjs:libhpdf-2.2.0.so.0.0
 echo "Splitting Messages file"
 perl utils/split-messages.pl de ami < resources/FatMessages >RAM:NetSurf/Resources/de/Messages

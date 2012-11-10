@@ -9,7 +9,7 @@
   # for Haiku
   LDFLAGS += -L/boot/common/lib
   # some people do *not* have libm...
-  LDFLAGS += -lxml2 -lcurl -liconv
+  LDFLAGS += -lcurl -liconv
   LDFLAGS += -lssl -lcrypto -lcss -ldom -lparserutils -lhubbub -lwapcaplet
 
   CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
@@ -31,7 +31,6 @@
   RESOURCES = $(RSRC_BEOS)
   ifeq ($(HOST),beos)
     CFLAGS += -I/boot/home/config/include		\
-		-I/boot/home/config/include/libxml2	\
 		-I/boot/home/config/include/libmng	\
 		-I/boot/home/config/include/hubbub	\
 		-I/boot/home/config/include/libcss	\
@@ -42,7 +41,6 @@
     ifneq ($(wildcard /boot/develop/lib/*/libnetwork.so),)
       # Haiku
       CFLAGS += -I/boot/common/include		\
-		-I/boot/common/include/libxml2	\
 		-I/boot/common/include/libmng	\
 		-I/boot/common/include/hubbub	\
 		-I/boot/common/include/libcss	\

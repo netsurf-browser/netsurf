@@ -5,9 +5,9 @@
   POSTEXES += NetSurf.app
 
   LDFLAGS += -L/usr/lib
-  LDFLAGS += $(shell $(PKG_CONFIG) --libs libxml-2.0 libhubbub libcss libdom)
+  LDFLAGS += $(shell $(PKG_CONFIG) --libs libhubbub libcss libdom)
   LDFLAGS += -L/usr/X11/lib
-  LDFLAGS += -lm -lxml2 -lcurl -liconv
+  LDFLAGS += -lm -lcurl -liconv
   LDFLAGS += -lssl -lcrypto
 
   CFLAGS += -I. -O $(WARNFLAGS) -Dnscocoa		\
@@ -16,7 +16,7 @@
 
   CFLAGS += -g -Os -Wno-uninitialized
 
-  CFLAGS += $(shell $(PKG_CONFIG) --cflags libxml-2.0 libhubbub libcss libdom)
+  CFLAGS += $(shell $(PKG_CONFIG) --cflags libhubbub libcss libdom)
 
   # shut up zconf.h and zlib.h
   #CFLAGS += -D_LARGEFILE64_SOURCE=1
@@ -38,7 +38,6 @@ endif
   CXXFLAGS :=  $(SDK_FLAGS) $(CXXFLAGS)
 
   CFLAGS += -I/usr/X11/include
-  CFLAGS += -I/usr/include/libxml2
   CFLAGS += -include cocoa/Prefix.pch
 
 #  VERSION_FULL := $(shell sed -n '/\"/{s/.*"\(.*\)\".*/\1/;p;}' desktop/version.c)

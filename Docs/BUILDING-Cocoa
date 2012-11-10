@@ -36,7 +36,7 @@
   "pkg-config" tool is required. It can be installed either via fink, macports
   or homebrew or from source.
 
-  OpenSSL, LibXML2, LibPNG, curl, iconv and zlib are provided by Mac OS X.
+  OpenSSL, LibPNG, curl, iconv and zlib are provided by Mac OS X.
 
   The curl library provided by Mac OS X 10.6 causes a crash while fetching
   https resources, so you should install version 7.21.4 (or newer) of libcurl

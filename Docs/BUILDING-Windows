@@ -137,14 +137,6 @@ EOF
       $ PATH=/usr/i586-mingw32msvc/bin/:$PATH make CC=i586-mingw32msvc-gcc RANLIB=i586-mingw32msvc-ranlib
       $ sudo make install
 
-  libxml:
-
-      $ apt-get source libxml2
-      $ cd libxml2-2.7.6.dfsg
-      $ ./configure --prefix=/usr/i586-mingw32msvc/ --disable-shared --without-python --host=i586-mingw32msvc
-      $ make
-      $ sudo make install
-
   libcurl:
 
       $ wget http://curl.haxx.se/download/curl-7.26.0.tar.gz
