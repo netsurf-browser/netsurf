@@ -256,9 +256,7 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space,
 		if(nsoption_bool(utf8_clipboard)) {
 			WriteChunkBytes(iffh,text,length);
 		} else {
-			buffer = ami_utf8_easy(text);
-
-			if(buffer) {
+			if(utf8_to_local_encoding(text, length, &buffer) == UTF8_CONVERT_OK) {
 				char *p;
 
 				p = buffer;
