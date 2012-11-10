@@ -13,7 +13,7 @@ preamble %{
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
-#include "utils/domutils.h"
+#include "utils/libdom.h"
 
 #include "content/urldb.h"
 
@@ -78,7 +78,7 @@ getter head %{
 	}
 
 	if (element != NULL) {
-		head = find_first_named_dom_element(element, corestring_lwc_head) ;
+		head = libdom_find_first_element(element, corestring_lwc_head) ;
 		if (head != NULL) {
 			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, (dom_element *)head, private->htmlc);
 		}
@@ -100,7 +100,7 @@ getter body %{
 	}
 
 	if (element != NULL) {
-		body = find_first_named_dom_element(element, corestring_lwc_body) ;
+		body = libdom_find_first_element(element, corestring_lwc_body) ;
 		if (body != NULL) {
 			jsret = jsapi_new_HTMLElement(cx, NULL, NULL, (dom_element *)body, private->htmlc);
 		}

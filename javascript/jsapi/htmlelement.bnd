@@ -43,3 +43,15 @@ api finalise %{
                 dom_node_unref(private->node);
         }
 %}
+
+getter firstElementChild %{
+	%}
+
+getter lastElementChild %{
+	%}
+
+getter previousElementSibling %{
+	%}
+
+getter nextElementSibling %{
+	%}

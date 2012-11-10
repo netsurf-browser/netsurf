@@ -53,7 +53,6 @@
 #include "utils/url.h"
 #include "utils/utf8.h"
 #include "utils/utils.h"
-#include "utils/domutils.h"
 
 #define CHUNK 4096
 
@@ -2032,7 +2031,7 @@ html_begin_conversion(html_content *htmlc)
 	}
 	dom_string_unref(node_name);
 
-	head = find_first_named_dom_element(html, corestring_lwc_head);
+	head = libdom_find_first_element(html, corestring_lwc_head);
 	if (head != NULL) {
 		if (html_head(htmlc, head) == false) {
 			msg_data.error = messages_get("NoMemory");

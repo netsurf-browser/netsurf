@@ -35,7 +35,7 @@
 #include "desktop/options.h"
 #include "desktop/tree_url_node.h"
 #include "utils/corestrings.h"
-#include "utils/domutils.h"
+#include "utils/libdom.h"
 #include "utils/log.h"
 #include "utils/messages.h"
 #include "utils/url.h"
@@ -495,7 +495,7 @@ static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 	nserror error;
 
 	/* The li must contain an "a" element */
-	a = find_first_named_dom_element(li, corestring_lwc_a);
+	a = libdom_find_first_element(li, corestring_lwc_a);
 	if (a == NULL) {
 		warn_user("TreeLoadError", "(Missing <a> in <li>)");
 		return;
@@ -710,7 +710,7 @@ static void tree_url_load_directory(dom_node *ul, tree_url_load_ctx *ctx)
 	assert(ctx != NULL);
 	assert(ctx->directory != NULL);
 
-	domutils_iterate_child_elements(ul, tree_url_load_directory_cb, ctx);
+	libdom_iterate_child_elements(ul, tree_url_load_directory_cb, ctx);
 }
 
 /**
@@ -732,13 +732,13 @@ bool tree_urlfile_load(const char *filename, struct tree *tree,
 		return false;
 	}
 
-	document = domutils_parse_file(filename, "iso-8859-1");
+	document = libdom_parse_file(filename, "iso-8859-1");
 	if (document == NULL) {
 		warn_user("TreeLoadError", messages_get("ParsingFail"));
 		return false;
 	}
 
-	html = find_first_named_dom_element((dom_node *) document,
+	html = libdom_find_first_element((dom_node *) document,
 			corestring_lwc_html);
 	if (html == NULL) {
 		dom_node_unref(document);
@@ -746,7 +746,7 @@ bool tree_urlfile_load(const char *filename, struct tree *tree,
 		return false;
 	}
 
-	body = find_first_named_dom_element(html, corestring_lwc_body);
+	body = libdom_find_first_element(html, corestring_lwc_body);
 	if (body == NULL) {
 		dom_node_unref(html);
 		dom_node_unref(document);
@@ -754,7 +754,7 @@ bool tree_urlfile_load(const char *filename, struct tree *tree,
 		return false;
 	}
 
-	ul = find_first_named_dom_element(body, corestring_lwc_ul);
+	ul = libdom_find_first_element(body, corestring_lwc_ul);
 	if (ul == NULL) {
 		dom_node_unref(body);
 		dom_node_unref(html);
