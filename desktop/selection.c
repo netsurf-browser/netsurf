@@ -1153,7 +1153,7 @@ bool save_handler(const char *text, size_t length, struct box *box,
 
 	assert(sv);
 
-	if (box->space > 0)
+	if (box && (box->space > 0))
 		space = 1;
 
 	if (whitespace_text)
