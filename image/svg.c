@@ -21,6 +21,7 @@
  */
 
 #include <assert.h>
+#include <limits.h>
 #include <string.h>
 
 #include <svgtiny.h>
@@ -36,7 +37,9 @@ typedef struct svg_content {
 	struct content base;
 
 	struct svgtiny_diagram *diagram;
-	bool done_parse;
+
+	int current_width;
+	int current_height;
 } svg_content;
 
 
@@ -49,7 +52,8 @@ static nserror svg_create_svg_data(svg_content *c)
 	if (c->diagram == NULL)
 		goto no_memory;
 
-	c->done_parse = false;
+	c->current_width = INT_MAX;
+	c->current_height = INT_MAX;
 
 	return NSERROR_OK;
 
@@ -127,14 +131,13 @@ static void svg_reformat(struct content *c, int width, int height)
 
 	assert(svg->diagram);
 
-	if (svg->done_parse == false) {
+	/* Avoid reformats to same width/height as we already reformatted to */
+	if (width != svg->current_width || height != svg->current_height) {
 		source_data = content__get_source_data(c, &source_size);
 
 		svgtiny_parse(svg->diagram, source_data, source_size,
 				nsurl_access(content_get_url(c)),
 				width, height);
-
-		svg->done_parse = true;
 	}
 
 	c->width = svg->diagram->width;
