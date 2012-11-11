@@ -355,19 +355,19 @@ void ami_gui_opts_free(void)
 {
 	int i;
 
-	for(i = 0; i++; i < OPTS_LAST)
+	for(i = 0; i < OPTS_LAST; i++)
 		if(gadlab[i]) FreeVec((APTR)gadlab[i]);
 
-	for(i = 0; i++; i < OPTS_MAX_TABS)
+	for(i = 0; i < OPTS_MAX_TABS; i++)
 		if(tabs[i]) FreeVec((APTR)tabs[i]);
 
-	for(i = 0; i++; i < OPTS_MAX_SCREEN)
+	for(i = 0; i < OPTS_MAX_SCREEN; i++)
 		if(screenopts[i]) FreeVec((APTR)screenopts[i]);
 
-	for(i = 0; i++; i < OPTS_MAX_PROXY)
+	for(i = 0; i < OPTS_MAX_PROXY; i++)
 		if(proxyopts[i]) FreeVec((APTR)proxyopts[i]);
 
-	for(i = 0; i++; i < OPTS_MAX_NATIVEBM)
+	for(i = 0; i < OPTS_MAX_NATIVEBM; i++)
 		if(nativebmopts[i]) FreeVec((APTR)nativebmopts[i]);
 
 	ami_gui_opts_websearch_free(websearch_list);
