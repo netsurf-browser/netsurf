@@ -502,7 +502,7 @@ static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 	}
 
 	derror = dom_node_get_text_content(a, &title1);
-	if (derror != DOM_NO_ERR || title1 == NULL) {
+	if (derror != DOM_NO_ERR) {
 		warn_user("TreeLoadError", "(No title)");
 		dom_node_unref(a);
 		return;
@@ -516,17 +516,19 @@ static void tree_url_load_entry(dom_node *li, tree_url_load_ctx *ctx)
 		return;
 	}
 
-	title = strndup(dom_string_data(title1),
-			dom_string_byte_length(title1));
+	if (title1 != NULL) {
+		title = strndup(dom_string_data(title1),
+				dom_string_byte_length(title1));
+		dom_string_unref(title1);
+	} else {
+		title = strdup("");
+	}
 	if (title == NULL) {
 		warn_user("NoMemory", NULL);
 		dom_string_unref(url1);
-		dom_string_unref(title1);
 		dom_node_unref(a);
 		return;
 	}
-
-	dom_string_unref(title1);
 
 	/* We're loading external input.
 	 * This may be garbage, so attempt to normalise via nsurl
