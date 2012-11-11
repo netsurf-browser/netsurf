@@ -1178,6 +1178,13 @@ html_object_callback(hlcache_handle *object,
 		break;
 
 	case CONTENT_MSG_READY:
+		/* TODO: avoid knowledge of box internals here */
+		content_reformat(object, false,
+				box->max_width != UNKNOWN_MAX_WIDTH ?
+						box->width : 0,
+				box->max_width != UNKNOWN_MAX_WIDTH ?
+						box->height : 0);
+
 		if (content_get_type(object) == CONTENT_HTML) {
 			html_object_done(box, object, o->background);
 			if (c->base.status == CONTENT_STATUS_READY ||
