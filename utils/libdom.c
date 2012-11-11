@@ -301,6 +301,7 @@ nserror libdom_parse_file(const char *filename, const char *encoding, dom_docume
 	}
 
 	dom_hubbub_parser_destroy(parser);
+	fclose(fp);
 
 	*doc = document;
 	return NSERROR_OK;
