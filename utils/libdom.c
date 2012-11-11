@@ -259,7 +259,7 @@ static void ignore_dom_msg(uint32_t severity, void *ctx, const char *msg, ...)
 }
 
 /* exported interface documented in libdom.h */
-dom_document *libdom_parse_file(const char *filename, const char *encoding)
+nserror libdom_parse_file(const char *filename, const char *encoding, dom_document **doc)
 {
 	dom_hubbub_error error;
 	dom_hubbub_parser *parser;
@@ -270,14 +270,14 @@ dom_document *libdom_parse_file(const char *filename, const char *encoding)
 
 	fp = fopen(filename, "r");
 	if (fp == NULL) {
-		return NULL;
+		return NSERROR_NOT_FOUND;
 	}
 
 	parser = dom_hubbub_parser_create(encoding, false, false,
 			ignore_dom_msg, NULL, NULL, &document);
 	if (parser == NULL) {
 		fclose(fp);
-		return NULL;
+		return NSERROR_DOM;
 	}
 
 	while (feof(fp) == 0) {
@@ -288,7 +288,7 @@ dom_document *libdom_parse_file(const char *filename, const char *encoding)
 			dom_node_unref(document);
 			dom_hubbub_parser_destroy(parser);
 			fclose(fp);
-			return NULL;
+			return NSERROR_DOM;
 		}
 	}
 
@@ -297,10 +297,11 @@ dom_document *libdom_parse_file(const char *filename, const char *encoding)
 		dom_node_unref(document);
 		dom_hubbub_parser_destroy(parser);
 		fclose(fp);
-		return NULL;
+		return NSERROR_DOM;
 	}
 
 	dom_hubbub_parser_destroy(parser);
 
-	return document;
+	*doc = document;
+	return NSERROR_OK;
 }

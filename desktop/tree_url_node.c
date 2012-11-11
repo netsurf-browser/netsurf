@@ -728,15 +728,18 @@ bool tree_urlfile_load(const char *filename, struct tree *tree,
 	dom_document *document;
 	dom_node *html, *body, *ul;
 	struct node *root;
+	nserror error;
 	tree_url_load_ctx ctx;
 
 	if (filename == NULL) {
 		return false;
 	}
 
-	document = libdom_parse_file(filename, "iso-8859-1");
-	if (document == NULL) {
-		warn_user("TreeLoadError", messages_get("ParsingFail"));
+	error = libdom_parse_file(filename, "iso-8859-1", &document);
+	if (error != NSERROR_OK) {
+		if (error != NSERROR_NOT_FOUND) {
+			warn_user("TreeLoadError", messages_get("ParsingFail"));
+		}
 		return false;
 	}
 

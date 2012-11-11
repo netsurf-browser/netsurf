@@ -62,6 +62,7 @@ typedef bool (*libdom_iterate_cb)(dom_node *node, void *ctx);
 void libdom_iterate_child_elements(dom_node *parent,
 		libdom_iterate_cb cb, void *ctx);
 
-dom_document *libdom_parse_file(const char *filename, const char *encoding);
+nserror libdom_parse_file(const char *filename, const char *encoding,
+		dom_document **doc);
 
 #endif
