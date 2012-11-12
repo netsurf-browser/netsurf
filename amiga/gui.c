@@ -1365,24 +1365,24 @@ void ami_handle_msg(void)
 					width=bbox->Width;
 					height=bbox->Height;
 
-					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON &&
-						((gwin->bw->drag_type == DRAGGING_SELECTION) ||
-						ami_autoscroll == TRUE))
+					if(gwin->mouse_state & BROWSER_MOUSE_DRAG_ON)
 					{
 						ami_drag_icon_move();
 
-						if((gwin->win->MouseX < bbox->Left) &&
-							((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
-							drag_x_move = gwin->win->MouseX - bbox->Left;
-						if((gwin->win->MouseX > (bbox->Left + bbox->Width)) &&
-							((gwin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
-							drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
-						if((gwin->win->MouseY < bbox->Top) &&
-							((gwin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
-							drag_y_move = gwin->win->MouseY - bbox->Top;
-						if((gwin->win->MouseY > (bbox->Top + bbox->Height)) &&
-							((gwin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
-							drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
+						if(ami_autoscroll == TRUE) {
+							if((gwin->win->MouseX < bbox->Left) &&
+								((gwin->win->MouseX - bbox->Left) > -AMI_DRAG_THRESHOLD))
+								drag_x_move = gwin->win->MouseX - bbox->Left;
+							if((gwin->win->MouseX > (bbox->Left + bbox->Width)) &&
+								((gwin->win->MouseX - (bbox->Left + bbox->Width)) < AMI_DRAG_THRESHOLD))
+								drag_x_move = gwin->win->MouseX - (bbox->Left + bbox->Width);
+							if((gwin->win->MouseY < bbox->Top) &&
+								((gwin->win->MouseY - bbox->Top) > -AMI_DRAG_THRESHOLD))
+								drag_y_move = gwin->win->MouseY - bbox->Top;
+							if((gwin->win->MouseY > (bbox->Top + bbox->Height)) &&
+								((gwin->win->MouseY - (bbox->Top + bbox->Height)) < AMI_DRAG_THRESHOLD))
+								drag_y_move = gwin->win->MouseY - (bbox->Top + bbox->Height);
+						}
 					}
 
 					if((x>=xs) && (y>=ys) && (x<width+xs) && (y<height+ys))

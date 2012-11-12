@@ -138,6 +138,9 @@ static void svg_reformat(struct content *c, int width, int height)
 		svgtiny_parse(svg->diagram, source_data, source_size,
 				nsurl_access(content_get_url(c)),
 				width, height);
+
+		svg->current_width = width;
+		svg->current_height = height;
 	}
 
 	c->width = svg->diagram->width;
@@ -335,7 +338,7 @@ static const content_handler svg_content_handler = {
 	.redraw = svg_redraw,
 	.clone = svg_clone,
 	.type = svg_content_type,
-	.no_share = false,
+	.no_share = true
 };
 
 static const char *svg_types[] = {
