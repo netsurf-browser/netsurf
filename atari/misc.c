@@ -42,6 +42,7 @@
 #include "atari/browser.h"
 #include "atari/misc.h"
 #include "atari/encoding.h"
+#include "atari/msgbox.h"
 #include "cflib.h"
 
 extern void * h_gem_rsrc;
@@ -57,12 +58,15 @@ void warn_user(const char *warning, const char *detail)
 			0) + ((detail != 0) ? strlen(detail) : 0);
 	char message[len];
 	snprintf(message, len, messages_get(warning), detail);
+
 	printf("%s\n", message);
+	msg_box_show(MSG_BOX_ALERT, message);
 }
 
 void die(const char *error)
 {
 	printf("%s\n", error);
+	msg_box_show(MSG_BOX_ALERT, error);
 	exit(1);
 }
 
