@@ -143,4 +143,9 @@ JSObject *jsapi_new_Text(JSContext *cx,
 				dom_text *node,
 				struct html_content *htmlc);
 
+JSObject *jsapi_InitClass_Node(JSContext *cx, JSObject *parent);
+JSObject *jsapi_new_Node(JSContext *cx,
+				JSObject *prototype,
+				JSObject *parent);
+
 #endif
