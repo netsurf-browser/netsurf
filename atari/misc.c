@@ -273,7 +273,8 @@ char *get_rsc_string( int idx) {
 
 OBJECT *get_tree( int idx) {
   OBJECT *tree;
-  RsrcGaddr( h_gem_rsrc, R_TREE, idx, &tree);
+  rsrc_gaddr(R_TREE, idx, &tree);
+  //RsrcGaddr( h_gem_rsrc, R_TREE, idx, &tree);
   return tree;
 }
 

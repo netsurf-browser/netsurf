@@ -74,6 +74,7 @@
 #include "atari/clipboard.h"
 #include "atari/osspec.h"
 #include "atari/search.h"
+#include "atari/deskmenu.h"
 #include "cflib.h"
 
 #define TODO() (0)/*printf("%s Unimplemented!\n", __FUNCTION__)*/
@@ -82,9 +83,8 @@ char *tmp_clipboard;
 struct gui_window *input_window = NULL;
 struct gui_window *window_list = NULL;
 void * h_gem_rsrc;
-OBJECT * h_gem_menu;
-OBJECT **rsc_trindex;
-short rsc_ntree;
+//OBJECT **rsc_trindex;
+//short rsc_ntree;
 long next_poll;
 bool rendering = false;
 
@@ -790,6 +790,8 @@ void gui_quit(void)
 	struct gui_window * gw = window_list;
 	struct gui_window * tmp = window_list;
 
+	unbind_global_events();
+
 	while( gw ) {
 		tmp = gw->next;
 		browser_window_destroy(gw->browser->bw);
@@ -803,9 +805,7 @@ void gui_quit(void)
 	urldb_save_cookies(nsoption_charp(cookie_file));
 	urldb_save(nsoption_charp(url_file));
 
-	RsrcXtype( 0, rsc_trindex, rsc_ntree);
-	unbind_global_events();
-	MenuBar( h_gem_menu , 0 );
+	deskmenu_destroy();
 	if( h_gem_rsrc != NULL ) {
 		RsrcXfree(h_gem_rsrc );
 	}
@@ -885,7 +885,8 @@ process_cmdline(int argc, char** argv)
 	return true;
 }
 
-static inline void create_cursor(int flags, short mode, void * form, MFORM_EX * m)
+static inline void create_cursor(int flags, short mode, void * form,
+								MFORM_EX * m)
 {
 	m->flags = flags;
 	m->number = mode;
@@ -929,15 +930,17 @@ static void gui_init(int argc, char** argv)
 
 	atari_find_resource(buf, "netsurf.rsc", "./res/netsurf.rsc");
 	LOG(("%s ", (char*)&buf));
-	h_gem_rsrc = RsrcXload( (char*) &buf );
-
-	if( !h_gem_rsrc )
+	if (rsrc_load(buf)==0) {
 		die("Uable to open GEM Resource file!");
-	rsc_trindex = RsrcGhdr(h_gem_rsrc)->trindex;
-	rsc_ntree   = RsrcGhdr(h_gem_rsrc)->ntree;
+	}
+	//h_gem_rsrc = RsrcXload( (char*) &buf );
 
-	RsrcGaddr( h_gem_rsrc, R_TREE, MAINMENU , &h_gem_menu );
-	RsrcXtype( RSRC_XTYPE, rsc_trindex, rsc_ntree);
+	//if( !h_gem_rsrc )
+	//	die("Uable to open GEM Resource file!");
+	//rsc_trindex = RsrcGhdr(h_gem_rsrc)->trindex;
+	//rsc_ntree   = RsrcGhdr(h_gem_rsrc)->ntree;
+
+	//RsrcXtype( RSRC_XTYPE, rsc_trindex, rsc_ntree);
 
 	create_cursor(0, POINT_HAND, NULL, &gem_cursors.hand );
 	create_cursor(0, TEXT_CRSR,  NULL, &gem_cursors.ibeam );
@@ -982,18 +985,18 @@ static void gui_init(int argc, char** argv)
 
 	nkc_init();
 	plot_init(nsoption_charp(atari_font_driver));
+	tree_set_icon_dir( nsoption_charp(tree_icons_path) );
 }
 
 static char *theapp = (char*)"NetSurf";
 static void gui_init2(int argc, char** argv)
 {
-	MenuBar( h_gem_menu , 1 );
-	bind_global_events();
+	deskmenu_init();
 	menu_register( -1, theapp);
 	if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
 		menu_register( _AESapid, (char*)"  NetSurf ");
 	}
-	tree_set_icon_dir( nsoption_charp(tree_icons_path) );
+	bind_global_events();
 	global_history_init();
 	hotlist_init();
 	toolbar_init();
