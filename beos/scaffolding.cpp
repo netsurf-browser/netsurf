@@ -22,7 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <BeBuild.h>
+#include <Box.h>
 #include <Button.h>
 #include <Dragger.h>
 #include <Menu.h>
@@ -31,6 +33,8 @@
 #include <Node.h>
 #include <Path.h>
 #include <PopUpMenu.h>
+#include <Resources.h>
+#include <Roster.h>
 #include <Screen.h>
 #include <ScrollView.h>
 #include <String.h>
@@ -38,6 +42,12 @@
 #include <TextControl.h>
 #include <View.h>
 #include <Window.h>
+
+#if defined(__HAIKU__)
+#include <IconUtils.h>
+#include "WindowStack.h"
+#endif
+
 #include <fs_attr.h>
 extern "C" {
 #include "content/content.h"
@@ -320,6 +330,7 @@ void
 NSThrobber::SetBitmap(const BBitmap *bitmap)
 {
 	fBitmap = bitmap;
+	Invalidate();
 }
 
 
@@ -458,7 +469,7 @@ NSBaseView::MessageReceived(BMessage *message)
 			nsbeos_pipe_message_top(message, NULL, fScaffolding);
 			break;
 		default:
-		message->PrintToStream();
+			//message->PrintToStream();
 			BView::MessageReceived(message);
 	}
 }
@@ -539,6 +550,7 @@ void
 NSBaseView::AllAttached()
 {
 	BView::AllAttached();
+
 	struct beos_scaffolding *g = fScaffolding;
 	if (!g)
 		return;
@@ -576,6 +588,8 @@ NSBrowserWindow::NSBrowserWindow(BRect frame, struct beos_scaffolding *scaf)
 
 NSBrowserWindow::~NSBrowserWindow()
 {
+	if(activeWindow == this)
+		activeWindow = NULL;
 }
 
 
@@ -618,6 +632,16 @@ NSBrowserWindow::QuitRequested(void)
 		message = new BMessage(B_QUIT_REQUESTED);
 	nsbeos_pipe_message_top(message, this, fScaffolding);
 	return false; // we will Quit() ourselves from the main thread
+}
+
+
+void
+NSBrowserWindow::WindowActivated(bool active)
+{
+	if(active)
+		activeWindow = this;
+	else if(activeWindow == this)
+		activeWindow = NULL;
 }
 
 
@@ -684,6 +708,10 @@ void nsbeos_scaffolding_update_colors(nsbeos_scaffolding *g)
 #endif
 	g->top_view->UnlockLooper();
 }
+
+
+/*static*/ BWindow*
+NSBrowserWindow::activeWindow = NULL;
 
 
 void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *message)
@@ -907,6 +935,7 @@ void nsbeos_scaffolding_dispatch_event(nsbeos_scaffolding *scaffold, BMessage *m
 			text = scaffold->url_bar->Text();
 			scaffold->url_bar->UnlockLooper();
 
+			NSBrowserWindow::activeWindow = scaffold->window;
 			browser_window_create(text.String(), bw, NULL, false, false);
 			break;
 		}
@@ -1570,7 +1599,19 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 		message->AddPointer("scaffolding", g);
 		g->window->AddShortcut('H', 0, message, view);
 
+
+#if defined(__HAIKU__)
+		// Make sure the window is layouted and answering to events, but do not
+		// show it before it is actually resized
+		g->window->Hide();
 		g->window->Show();
+
+		if(NSBrowserWindow::activeWindow) {
+			BWindowStack(NSBrowserWindow::activeWindow).AddWindow(g->window);
+		}
+#endif
+		g->window->Show();
+
 	} else {
 		if (g->top_view->Looper())
 			g->top_view->UnlockLooper();
@@ -1659,6 +1700,97 @@ static BMenuItem *make_menu_item(const char *name, BMessage *message)
 	return item;
 }
 
+
+class BBitmapButton: public BButton
+{
+	public:
+		BBitmapButton(BRect rect, const char* name, const char* label,
+			BMessage* message);
+		~BBitmapButton();
+
+		void Draw(BRect updateRect);
+		void SetBitmap(const char* attrName);
+	private:
+		BBitmap* fBitmap;
+		BBitmap* fDisabledBitmap;
+};
+
+
+BBitmapButton::BBitmapButton(BRect rect, const char* name, const char* label,
+		BMessage* message)
+	: BButton(rect, name, label, message)
+{
+	SetBitmap(name);
+}
+
+
+BBitmapButton::~BBitmapButton()
+{
+	delete fBitmap;
+	delete fDisabledBitmap;
+}
+
+
+void BBitmapButton::Draw(BRect updateRect)
+{
+	if(fBitmap == NULL) {
+		BButton::Draw(updateRect);
+		return;
+	}
+
+	SetDrawingMode(B_OP_COPY);
+	FillRect(updateRect, B_SOLID_LOW);
+	rgb_color color = LowColor();
+
+	SetDrawingMode(B_OP_ALPHA);
+	if(IsEnabled()) {
+		if(Value() != 0) {
+			// button is clicked
+			DrawBitmap(fBitmap, BPoint(1, 1));
+		} else {
+			// button is released
+			DrawBitmap(fBitmap, BPoint(0, 0));
+		}
+	} else
+		DrawBitmap(fDisabledBitmap, BPoint(0, 0));
+}
+
+
+void BBitmapButton::SetBitmap(const char* attrname)
+{
+#ifdef __HAIKU__
+	size_t size = 0;
+	const void* data = BApplication::AppResources()->LoadResource('VICN', attrname, &size);
+
+	if (!data) {
+		printf("CANT LOAD RESOURCE %s\n", attrname);
+		return;
+	}
+
+	fBitmap = new BBitmap(BRect(0, 0, 32, 32), B_RGB32);
+	status_t status = BIconUtils::GetVectorIcon((const uint8*)data, size, fBitmap);
+	
+	if(status != B_OK) {
+		fprintf(stderr, "%s > oops %s\n", attrname, strerror(status));
+		delete fBitmap;
+		fBitmap = NULL;
+	}
+
+	fDisabledBitmap = new BBitmap(fBitmap);
+	rgb_color* pixel = (rgb_color*)fDisabledBitmap->Bits();
+	for(int i = 0; i < fDisabledBitmap->BitsLength()/4; i++)
+	{
+		*pixel = tint_color(*pixel, B_DISABLED_MARK_TINT);
+		pixel++;
+	}
+#else
+	// No vector icon support on BeOS. We could try to load a bitmap one
+	fBitmap = NULL;
+	fDisabledBitmap = NULL;
+#endif
+}
+
+
 nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 {
 	struct beos_scaffolding *g = (struct beos_scaffolding *)malloc(sizeof(*g));
@@ -1676,7 +1808,6 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 	g->window = NULL;
 	g->menu_bar = NULL;
-	g->window = NULL;
 
 	if (replicated && !replicant_view) {
 		warn_user("Error: No subwindow allowed when replicated.", NULL);
@@ -1685,7 +1816,6 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 
 	if (!replicant_view) {
-
 		BRect frame(0, 0, 600-1, 500-1);
 		if (nsoption_int(window_width) > 0) {
 			frame.Set(0, 0, nsoption_int(window_width) - 1, nsoption_int(window_height) - 1);
@@ -1696,7 +1826,7 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 			NSBrowserWindow *win = nsbeos_find_last_window();
 			if (win) {
 				pos = win->Frame().LeftTop();
-				win->Unlock();
+				win->UnlockLooper();
 			}
 			pos += BPoint(20, 20);
 			BScreen screen;
@@ -2038,14 +2168,13 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	rect = g->top_view->Bounds();
 	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
 	rect.right = rect.right - DRAGGER_WIDTH;
-	g->tool_bar = new BView(rect, "Toolbar", 
+	g->tool_bar = new BBox(rect, "Toolbar", 
 		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW);
 	g->top_view->AddChild(g->tool_bar);
 	g->tool_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	g->tool_bar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
 
 	// buttons
-#warning use BPictureButton
 	rect = g->tool_bar->Bounds();
 	rect.right = TOOLBAR_HEIGHT;
 	rect.InsetBySelf(5, 5);
@@ -2054,35 +2183,35 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 
 	message = new BMessage('back');
 	message->AddPointer("scaffolding", g);
-	g->back_button = new BButton(rect, "back_button", "<", message);
+	g->back_button = new BBitmapButton(rect, "back_button", "<", message);
 	g->tool_bar->AddChild(g->back_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('forw');
 	message->AddPointer("scaffolding", g);
-	g->forward_button = new BButton(rect, "forward_button", ">", message);
+	g->forward_button = new BBitmapButton(rect, "forward_button", ">", message);
 	g->tool_bar->AddChild(g->forward_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('stop');
 	message->AddPointer("scaffolding", g);
-	g->stop_button = new BButton(rect, "stop_button", "S", message);
+	g->stop_button = new BBitmapButton(rect, "stop_button", "S", message);
 	g->tool_bar->AddChild(g->stop_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('relo');
 	message->AddPointer("scaffolding", g);
-	g->reload_button = new BButton(rect, "reload_button", "R", message);
+	g->reload_button = new BBitmapButton(rect, "reload_button", "R", message);
 	g->tool_bar->AddChild(g->reload_button);
 	nButtons++;
 
 	rect.OffsetBySelf(TOOLBAR_HEIGHT, 0);
 	message = new BMessage('home');
 	message->AddPointer("scaffolding", g);
-	g->home_button = new BButton(rect, "home_button", "H", message);
+	g->home_button = new BBitmapButton(rect, "home_button", "H", message);
 	g->tool_bar->AddChild(g->home_button);
 	nButtons++;
 
@@ -2407,3 +2536,4 @@ void nsbeos_scaffolding_popup_menu(nsbeos_scaffolding *g, BPoint where)
 {
 	g->popup_menu->Go(where);
 }
+

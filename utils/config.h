@@ -24,14 +24,14 @@
 
 /* Try to detect which features the target OS supports */
 
-#if (defined(_GNU_SOURCE) && !defined(__APPLE__))
+#if (defined(_GNU_SOURCE) && !defined(__APPLE__) || defined(__HAIKU__))
 #define HAVE_STRNDUP
 #else
 #undef HAVE_STRNDUP
 char *strndup(const char *s, size_t n);
 #endif
 
-#if (defined(_GNU_SOURCE) || defined(__APPLE__))
+#if (defined(_GNU_SOURCE) || defined(__APPLE__) || defined(__HAIKU__))
 #define HAVE_STRCASESTR
 #else
 #undef HAVE_STRCASESTR

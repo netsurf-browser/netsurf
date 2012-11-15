@@ -61,11 +61,15 @@ virtual	~NSBrowserWindow();
 virtual	void	DispatchMessage(BMessage *message, BHandler *handler);
 virtual void	MessageReceived(BMessage *message);
 virtual bool	QuitRequested(void);
+void			WindowActivated(bool active);
 
 struct beos_scaffolding *Scaffolding() const { return fScaffolding; };
 
+static BWindow* activeWindow;
 private:
 	struct beos_scaffolding *fScaffolding;
+
+
 };
 
 

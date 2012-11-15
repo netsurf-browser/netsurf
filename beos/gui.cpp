@@ -450,7 +450,6 @@ static void gui_init2(int argc, char** argv)
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
-	char buf[PATH_MAX];
 	setbuf(stderr, NULL);
 
 	BPath options;
@@ -458,12 +457,10 @@ int main(int argc, char** argv)
 		options.Append("x-vnd.NetSurf");
 	}
 
-	find_resource(buf, "messages", "./beos/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	//messages_load(buf);
+	char* messages = "/boot/apps/netsurf/res/en/Messages";
 
 	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options.Path(), buf);
+	netsurf_init(&argc, &argv, options.Path(), messages);
 
     gui_init(argc, argv);
     gui_init2(argc, argv);
@@ -553,37 +550,38 @@ void gui_init(int argc, char** argv)
 	/* check what the font settings are, setting them to a default font
 	 * if they're not set - stops Pango whinging
 	 */
+#define SETFONTDEFAULT(OPTION,y) if (nsoption_charp(OPTION) == NULL) nsoption_set_charp(OPTION, strdup((y)))
 
 	//XXX: use be_plain_font & friends, when we can check if font is serif or not.
 /*
 	font_family family;
 	font_style style;
 	be_plain_font->GetFamilyAndStyle(&family, &style);
-	nsoption_setnull_charp(font_sans, family);
-	nsoption_setnull_charp(font_serif, family);
-	nsoption_setnull_charp(font_mono, family);
-	nsoption_setnull_charp(font_cursive, family);
-	nsoption_setnull_charp(font_fantasy, family);
+	SETFONTDEFAULT(font_sans, family);
+	SETFONTDEFAULT(font_serif, family);
+	SETFONTDEFAULT(font_mono, family);
+	SETFONTDEFAULT(font_cursive, family);
+	SETFONTDEFAULT(font_fantasy, family);
 */
 #ifdef __HAIKU__
-	nsoption_setnull_charp(font_sans, "DejaVu Sans");
-	nsoption_setnull_charp(font_serif, "DejaVu Serif");
-	nsoption_setnull_charp(font_mono, "DejaVu Mono");
-	nsoption_setnull_charp(font_cursive, "DejaVu Sans");
-	nsoption_setnull_charp(font_fantasy, "DejaVu Sans");
+	SETFONTDEFAULT(font_sans, "DejaVu Sans");
+	SETFONTDEFAULT(font_serif, "DejaVu Serif");
+	SETFONTDEFAULT(font_mono, "DejaVu Mono");
+	SETFONTDEFAULT(font_cursive, "DejaVu Sans");
+	SETFONTDEFAULT(font_fantasy, "DejaVu Sans");
 #else
-	nsoption_setnull_charp(font_sans, "Bitstream Vera Sans");
-	nsoption_setnull_charp(font_serif, "Bitstream Vera Serif");
-	nsoption_setnull_charp(font_mono, "Bitstream Vera Sans Mono");
-	nsoption_setnull_charp(font_cursive, "Bitstream Vera Serif");
-	nsoption_setnull_charp(font_fantasy, "Bitstream Vera Serif");
+	SETFONTDEFAULT(font_sans, "Bitstream Vera Sans");
+	SETFONTDEFAULT(font_serif, "Bitstream Vera Serif");
+	SETFONTDEFAULT(font_mono, "Bitstream Vera Sans Mono");
+	SETFONTDEFAULT(font_cursive, "Bitstream Vera Serif");
+	SETFONTDEFAULT(font_fantasy, "Bitstream Vera Serif");
 #if 0
-	nsoption_setnull_charp(font_sans, "Swis721 BT");
-	nsoption_setnull_charp(font_serif, "Dutch801 Rm BT");
-	//nsoption_setnull_charp(font_mono, "Monospac821 BT");
-	nsoption_setnull_charp(font_mono, "Courier10 BT");
-	nsoption_setnull_charp(font_cursive, "Swis721 BT");
-	nsoption_setnull_charp(font_fantasy, "Swis721 BT");
+	SETFONTDEFAULT(font_sans, "Swis721 BT");
+	SETFONTDEFAULT(font_serif, "Dutch801 Rm BT");
+	//SETFONTDEFAULT(font_mono, "Monospac821 BT");
+	SETFONTDEFAULT(font_mono, "Courier10 BT");
+	SETFONTDEFAULT(font_cursive, "Swis721 BT");
+	SETFONTDEFAULT(font_fantasy, "Swis721 BT");
 #endif
 #endif
 
@@ -681,46 +679,32 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 void gui_poll(bool active)
 {
 	//CALLED();
-	CURLMcode code;
-
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
-	int max_fd = 0;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
-	bool block = true;
+	bigtime_t next_schedule = 0;
 
-	if (browser_reformat_pending)
-		block = false;
+	schedule_run();
 
 	FD_ZERO(&read_fd_set);
 	FD_ZERO(&write_fd_set);
 	FD_ZERO(&exc_fd_set);
 
-	if (active) {
-		code = curl_multi_fdset(fetch_curl_multi,
-				&read_fd_set,
-				&write_fd_set,
-				&exc_fd_set,
-				&max_fd);
-		assert(code == CURLM_OK);
-	}
-
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
-	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
 
-	bigtime_t next_schedule = earliest_callback_timeout - system_time();
-	if (!block)
-		next_schedule = 0LL; // now
-	if (block && earliest_callback_timeout != B_INFINITE_TIMEOUT)
-		block = false;
+	// If there are pending events elsewhere, we should not be blocking
+	if ((!browser_reformat_pending) && (!active)) {
+		next_schedule = earliest_callback_timeout - system_time();
+
+	} // else, we're not allowed to sleep, there is other activity going on.
+
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
-	LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 
-	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
-		block ? NULL : &timeout);
+	fd_count = select(sEventPipe[0] + 1, &read_fd_set, &write_fd_set, &exc_fd_set, 
+		&timeout);
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
 		BMessage *message;
@@ -729,8 +713,6 @@ void gui_poll(bool active)
 		if (len == sizeof(void *))
 			nsbeos_dispatch_event(message);
 	}
-
-	schedule_run();
 
 	if (browser_reformat_pending)
 		nsbeos_window_process_reformats();
@@ -750,31 +732,6 @@ void gui_quit(void)
 	fetch_rsrc_unregister();
 }
 
-
-
-struct gui_download_window *gui_download_window_create(download_context *ctx,
-		struct gui_window *gui)
-{
-	return NULL;
-}
-
-
-nserror gui_download_window_data(struct gui_download_window *dw, 
-		const char *data, unsigned int size)
-{
-	return NSERROR_OK;
-}
-
-
-void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg)
-{
-}
-
-
-void gui_download_window_done(struct gui_download_window *dw)
-{
-}
 
 #if 0 /* GTK */
 static void nsbeos_select_menu_clicked(BCheckMenuItem *checkmenuitem,

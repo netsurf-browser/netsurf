@@ -131,7 +131,7 @@ static GdkCursor *nsbeos_create_menu_cursor(void);
 
 NSBrowserFrameView::NSBrowserFrameView(BRect frame, struct gui_window *gui)
 	: BView(frame, "NSBrowserFrameView", B_FOLLOW_ALL_SIDES, 
-		B_WILL_DRAW | B_NAVIGABLE | B_FRAME_EVENTS /*| B_SUBPIXEL_PRECISE*/),
+		B_WILL_DRAW | B_NAVIGABLE | B_FRAME_EVENTS ),
 	fGuiWindow(gui)
 {
 }
@@ -250,7 +250,7 @@ NSBrowserFrameView::MessageReceived(BMessage *message)
 			nsbeos_pipe_message_top(message, NULL, fGuiWindow->scaffold);
 			break;
 		default:
-		message->PrintToStream();
+			//message->PrintToStream();
 			BView::MessageReceived(message);
 	}
 }
@@ -756,18 +756,25 @@ void nsbeos_dispatch_event(BMessage *message)
 			break;
 		case 'nsLO': // login
 		{
-			BString url;
+			nsurl* url;
 			BString realm;
 			BString auth;
-			if (message->FindString("URL", &url) < B_OK)
+			void* cbpw;
+			nserror (*cb)(bool proceed, void* pw);
+
+			if (message->FindPointer("URL", (void**)&url) < B_OK)
 				break;
 			if (message->FindString("Realm", &realm) < B_OK)
 				break;
 			if (message->FindString("Auth", &auth) < B_OK)
 				break;
+			if (message->FindPointer("callback", (void**)&cb) < B_OK)
+				break;
+			if (message->FindPointer("callback_pw", (void**)&cbpw) < B_OK)
+				break;
 			//printf("login to '%s' with '%s'\n", url.String(), auth.String());
-			urldb_set_auth_details(url.String(), realm.String(), auth.String());
-			browser_window_go(gui->bw, url.String(), 0, true);
+			urldb_set_auth_details(url, realm.String(), auth.String());
+			cb(true, cbpw);
 			break;
 		}
 		default:
@@ -926,11 +933,44 @@ void nsbeos_window_keypress_event(BView *view, gui_window *g, BMessage *event)
 		nskey = utf8_to_ucs4(bytes, numbytes);
 	}
 
-	bool done = browser_window_key_press(g->bw, nskey);
-	LOG(("nskey %d %d", nskey, done));
-	//if (browser_window_key_press(g->bw, nskey))
+	if(browser_window_key_press(g->bw, nskey))
 		return;
-	
+
+	// Remaining events are for scrolling the page around
+	float hdelta = 0.0f, vdelta = 0.0f;
+	g->view->LockLooper();
+	BRect size = g->view->Bounds();
+	switch (byte) {
+		case B_HOME:
+			g->view->ScrollTo(0.0f, 0.0f);
+			break;
+		case B_END:
+		{
+			// TODO
+			break;
+		}
+		case B_PAGE_UP:
+			vdelta = -size.Height();
+			break;
+		case B_PAGE_DOWN:
+			vdelta = size.Height();
+			break;
+		case B_LEFT_ARROW:
+			hdelta = -10;
+			break;
+		case B_RIGHT_ARROW:
+			hdelta = 10;
+			break;
+		case B_UP_ARROW:
+			vdelta = -10;
+			break;
+		case B_DOWN_ARROW:
+			vdelta = 10;
+			break;
+	}
+
+	g->view->ScrollBy(hdelta, vdelta);
+	g->view->UnlockLooper();
 }
 
 #warning WRITEME
@@ -1674,7 +1714,7 @@ bool gui_add_to_clipboard(const char *text, size_t length, bool space,
 	BFont font;
 	text_run *run = new text_run;
 
-	nsbeos_style_to_font(font, &fstyle);
+	nsbeos_style_to_font(font, fstyle);
 	run->offset = current_selection.Length();
 	run->font = font;
 	run->color = nsbeos_rgb_colour(fstyle->foreground);

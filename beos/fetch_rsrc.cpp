@@ -48,6 +48,7 @@ extern "C" {
 
 #include <image.h>
 #include <Resources.h>
+#include <String.h>
 
 struct fetch_rsrc_context {
 	struct fetch *parent_fetch;
@@ -209,8 +210,13 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 	else
 		found = gAppResources->HasResource(type, c->name);
 	if (!found) {
+		BString error("Cannot locate resource: ");
+		if (id)
+			error << id;
+		else
+			error << c->name;
 		msg.type = FETCH_ERROR;
-		msg.data.error = "Cannot locate rsrc: URL";
+		msg.data.error = error.String();
 		fetch_rsrc_send_callback(&msg, c);
 		return false;
 	}

@@ -95,8 +95,9 @@ schedule(int t, void (*callback)(void *p), void *p)
 	cb->context = p;
 	cb->callback_killed = cb->callback_fired = false;
 	cb->timeout = timeout;
-	if (earliest_callback_timeout > timeout)
+	if (earliest_callback_timeout > timeout) {
 		earliest_callback_timeout = timeout;
+	}
 	callbacks->AddItem(cb);
 }
 
@@ -104,11 +105,12 @@ bool
 schedule_run(void)
 {
 	LOG(("schedule_run()"));
+
+	earliest_callback_timeout = B_INFINITE_TIMEOUT;
 	if (callbacks == NULL)
 		return false; /* Nothing to do */
 
 	bigtime_t now = system_time();
-	earliest_callback_timeout = B_INFINITE_TIMEOUT;
 	int32 i;
 
 	LOG(("Checking %ld callbacks to for deadline.", this_run->CountItems()));
