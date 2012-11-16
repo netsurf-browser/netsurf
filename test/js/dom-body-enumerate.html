@@ -1,10 +1,10 @@
 <html>
 <head>
-<title>Node interface enumeration</title>
+<title>Body element interface enumeration</title>
 <link rel="stylesheet" type="text/css" href="tst.css">
 </head>
 <body>
-<h1>Node interface enumeration</h1>
+<h1>Body element interface enumeration</h1>
 
 <script>
 function output(x,y) {
@@ -17,8 +17,10 @@ document.body.appendChild(document.createTextNode(y.length));
     document.body.appendChild(document.createTextNode(y));
     document.body.appendChild(document.createElement('br'));
 }
-for(var key in Node){
-output(key, Node[key]);
+
+
+for(var key in document.body){
+output(key, document.body[key]);
 }
 </script>
 </body>
