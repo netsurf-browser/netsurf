@@ -181,19 +181,22 @@ operation createTextNode %{
         dom_exception exc;
 	dom_text *text;
 
-	JSLOG("Creating text node for string \"%s\"", data);
-	exc = dom_string_create((unsigned char*)data, data_len, &data_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+	if (data != NULL) {
 
-	exc = dom_document_create_text_node(private->node, data_dom, &text);
-	dom_string_unref(data_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+		JSLOG("Creating text node for string \"%s\"", data);
+		exc = dom_string_create((unsigned char*)data, data_len, &data_dom);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
 
-	jsret = jsapi_new_Text(cx, NULL, NULL, text, private->htmlc);
+		exc = dom_document_create_text_node(private->node, data_dom, &text);
+		dom_string_unref(data_dom);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
+
+		jsret = jsapi_new_Text(cx, NULL, NULL, text, private->htmlc);
+	}
 
 	JSLOG("returning jsobject %p",jsret);
 
@@ -205,19 +208,21 @@ operation createElement %{
         dom_exception exc;
 	dom_element *element;
 
-	JSLOG("Creating text node for string \"%s\"", localName);
-	exc = dom_string_create((unsigned char*)localName, localName_len, &localName_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+	if (localName != NULL) {
+		JSLOG("Creating text node for string \"%s\"", localName);
+		exc = dom_string_create((unsigned char*)localName, localName_len, &localName_dom);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
 
-	exc = dom_document_create_element(private->node, localName_dom, &element);
-	dom_string_unref(localName_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+		exc = dom_document_create_element(private->node, localName_dom, &element);
+		dom_string_unref(localName_dom);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
 
-	jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
+		jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
+	}
 
 	JSLOG("returning jsobject %p",jsret);
 
