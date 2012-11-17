@@ -35,30 +35,26 @@
 
 #include <string.h>
 
-/* *CAUTION* these macros introduce and use jsapi_this and jsapi_rval
- * parameters, native function code should not conflict with these
- */
 #  ifndef JSVERSION_LATEST
 #   define JSVERSION_LATEST JS_VERSION
 #  endif
 
-/* five parameter jsapi native call */
+
+
+/* *CAUTION* these native function macros introduce and use jsapi_this
+ * and jsapi_rval variables, native function code should not conflict
+ * with these
+ */
+
+/* native function definition with five parameters */
 #define JSAPI_NATIVE(name, cx, argc, vp) \
 	jsapi_native_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
 
-/* five parameter function descriptor with no JS_FS macro */
-#define JSAPI_FS(name, nargs, flags) \
-	{ #name, jsapi_native_##name, nargs, flags, 0 }
-
-/* function descriptor end */
-#define JSAPI_FS_END { NULL, NULL, 0, 0, 0 }
-
-/* return value */
+/* native function return value */
 #define JSAPI_RVAL(cx, vp) (jsapi_rval)
 
-/* return value setter */
+/* native function return value setter with no JS_SET_RVAL */
 #define JSAPI_SET_RVAL(cx, vp, v) (*jsapi_rval = (v))
-#define JS_SET_RVAL(cx, vp, v)    (*(vp) = (v))
 
 /* arguments */
 #define JSAPI_ARGV(cx, vp) (vp)
@@ -66,26 +62,46 @@
 /* check if a jsval is an object */
 #define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
 
-/* The object instance in a native call */
-/* "this" JSObject getter */
-JSObject * js_ComputeThis(JSContext *cx, JSObject *thisp, void *argv);
-#define JSAPI_THIS_OBJECT(cx, vp) \
-        js_ComputeThis(cx, JSVAL_TO_OBJECT(vp[-1]), vp)
+/* native function specifier with five parameters and no JS_FS macro */
+#define JSAPI_FS(name, nargs, flags) \
+	{ #name, jsapi_native_##name, nargs, flags, 0 }
 
-/* proprty native calls */
+/* native function specifier list end */
+#define JSAPI_FS_END { NULL, NULL, 0, 0, 0 }
+
+
+
+
+/* native proprty definition */
 #define JSAPI_PROPERTYGET(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsval id, vp)
 #define JSAPI_PROPERTYSET(name, cx, obj, vp) \
 	jsapi_property_##name##_set(cx, obj, jsval id, vp)
 
-/* property specifier */
+/* native property getter return value */
+#define JS_SET_RVAL(cx, vp, v) (*(vp) = (v))
+
+/* native property specifier */
 #define JSAPI_PS(name, tinyid, flags) \
 	{ #name , tinyid , flags , jsapi_property_##name##_get , jsapi_property_##name##_set }
 
+/* native property specifier with no setter */
 #define JSAPI_PS_RO(name, tinyid, flags) \
 	{ #name , tinyid , flags | JSPROP_READONLY, jsapi_property_##name##_get , NULL }
 
+/* native property specifier list end */
 #define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
+
+#define JS_StrictPropertyStub JS_PropertyStub
+
+
+
+
+/* The object instance in a native call */
+/* "this" JSObject getter */
+JSObject * js_ComputeThis(JSContext *cx, JSObject *thisp, void *argv);
+#define JSAPI_THIS_OBJECT(cx, vp) \
+        js_ComputeThis(cx, JSVAL_TO_OBJECT(vp[-1]), vp)
 
 static inline JSObject *
 JS_NewCompartmentAndGlobalObject(JSContext *cx,
@@ -100,7 +116,6 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	return global;
 }
 
-#define JS_StrictPropertyStub JS_PropertyStub
 
 #define JSString_to_char(injsstring, outchar, outlen)	\
 	outchar = JS_GetStringBytes(injsstring);		\
@@ -111,7 +126,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_CLASS_NO_INTERNAL_MEMBERS NULL
 
-/* GC marking */
+/* Garbage Collector */
+
+/* macros for GC marking */
 #define JSAPI_JSCLASS_MARK_IS_TRACE 0
 
 #define JSAPI_JSCLASS_MARKOP(x) (x)
@@ -122,7 +139,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_GCMARK(thing) JS_MarkGCThing(cx, thing, "object", arg)
 
+/* Macros for manipulating GC root */
 
+#define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
+#define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
 #elif JS_VERSION == 180
 
@@ -199,13 +219,15 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_CLASS_NO_INTERNAL_MEMBERS NULL
 
+/* Garbage Collector */
+
 /* GC marking */
 #ifdef JSCLASS_MARK_IS_TRACE
-/* mark requires casting */
+/* mark function pointer requires casting */
 #define JSAPI_JSCLASS_MARK_IS_TRACE JSCLASS_MARK_IS_TRACE
 #define JSAPI_JSCLASS_MARKOP(x) ((JSMarkOp)x)
 #else
-/* mark does not require casting */
+/* mark function pointer does not require casting */
 #define JSAPI_JSCLASS_MARK_IS_TRACE 0
 #define JSAPI_JSCLASS_MARKOP(x) (x)
 #endif
@@ -215,6 +237,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_MARKCX trc->context
 
 #define JSAPI_GCMARK(thing) JS_CallTracer(trc, thing, JSTRACE_OBJECT);
+
+/* Macros for manipulating GC root */
+#define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
+#define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
 
 #else /* #if JS_VERSION == 180 */
@@ -304,6 +330,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_MARKCX trc->context
 
 #define JSAPI_GCMARK(thing) JS_CallTracer(trc, thing, JSTRACE_OBJECT);
+
+/* Macros for manipulating GC root */
+#define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddObjectRoot(cx, obj)
+#define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveObjectRoot(cx, obj)
 
 #endif
 
