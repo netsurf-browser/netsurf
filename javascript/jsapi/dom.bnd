@@ -13,7 +13,6 @@ getter nodeType %{
 		return JS_FALSE;
 	}
 	jsret = node_type;
-
 %}
 
 
@@ -27,9 +26,27 @@ getter nodeName %{
 	}
 
 	if (name != NULL) {
-		jsret = JS_NewStringCopyN(cx, dom_string_data(name), dom_string_length(name));
+		jsret = JS_NewStringCopyN(cx,
+					  dom_string_data(name),
+					  dom_string_length(name));
 		dom_string_unref(name);
+	}
+%}
 
+getter nodeValue %{
+	dom_exception exc;
+	dom_string *value;
+
+	exc = dom_node_get_node_value(private->node, &value);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (value != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  dom_string_data(value),
+					  dom_string_length(value));
+		dom_string_unref(value);
 	}
 %}
 
