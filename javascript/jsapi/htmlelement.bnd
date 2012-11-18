@@ -20,7 +20,7 @@ hdrcomment "        http://www.opensource.org/licenses/mit-license";
 preamble %{
 
 #include <dom/dom.h>
-        
+
 #include "utils/config.h"
 #include "utils/log.h"
 
@@ -35,16 +35,57 @@ binding htmlelement {
     interface HTMLElement; /* Web IDL interface to generate */
 
     private "dom_element *" node;
-    private "struct html_content *" htmlc; 
+    private "struct html_content *" htmlc;
 }
 
 api finalise %{
-        if (private != NULL) {
-                dom_node_unref(private->node);
-        }
+	if (private != NULL) {
+		dom_node_unref(private->node);
+	}
 %}
 
+/* interface Element in dom idl */
+
+/*
+ * DOM 3 has these as the element traversal  extension
+ *
+ * http://dev.w3.org/2006/webapi/ElementTraversal/publish/ElementTraversal.html
+ */
+
 getter firstElementChild %{
+	dom_node *element;
+	dom_exception exc;
+	dom_node_type node_type;
+	dom_node *next_node;
+
+	exc = dom_node_get_first_child(private->node, &element);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	while (element != NULL) {
+		exc = dom_node_get_node_type(element, &node_type);
+		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
+			/* found it */
+			jsret = jsapi_new_HTMLElement(cx,
+						      NULL,
+						      NULL,
+						      (dom_element *)element,
+						      private->htmlc);
+			break;
+		}
+
+		exc = dom_node_get_next_sibling(element, &next_node);
+		dom_node_unref(element);
+		if (exc == DOM_NO_ERR) {
+			element = next_node;
+		} else {
+			element = NULL;
+		}
+
+	}
+
+
 	%}
 
 getter lastElementChild %{
