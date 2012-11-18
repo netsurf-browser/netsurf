@@ -31,8 +31,7 @@
 #include "desktop/plot_style.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/settings.h"
-//#include "atari/global_evnt.h"
-#include "atari/deskmenu.h"
+#include "atari/global_evnt.h"
 #include "atari/misc.h"
 #include "atari/plot/plot.h"
 #include "atari/bitmap.h"
@@ -233,7 +232,7 @@ saveform( WINDOW *win, int index, int unused, void *unused2)
 	close_settings();
 	ObjcChange( OC_FORM, win, index, NORMAL, TRUE);
 	form_alert(1, "[1][Some options require an netsurf restart!][OK]");
-	deskmenu_update();
+	main_menu_update();
 }
 
 static void __CDECL clear_history( WINDOW *win, int index, int unused,

@@ -19,8 +19,6 @@
 #ifndef NS_ATARI_GLOBAL_EVNT_H
 #define NS_ATARI_GLOBAL_EVNT_H
 
-#include <stdbool.h>
-
 struct s_keybd_evnt_data
 {
 	char ascii;
@@ -36,12 +34,29 @@ struct s_evnt_data
 
 struct s_evnt_data evnt_data;
 
+struct s_accelerator
+{
+	char ascii;	/* either ascii or */
+	long keycode; /* normalised keycode is valid  */
+	short mod;  /* shift / ctrl etc */
+};
+
+typedef void __CDECL (*menu_evnt_func)(WINDOW * win, int item, int title, void * data);
+struct s_menu_item_evnt {
+	short title; /* to which menu this item belongs */
+	short rid; /* resource ID */
+	menu_evnt_func menu_func; /* click handler */
+	struct s_accelerator accel; /* accelerator info */
+	char * menustr;
+};
+
 /*
-	Global event handlers
+	Global & Menu event handlers
 */
 
 void bind_global_events( void );
 void unbind_global_events( void );
+void main_menu_update( void );
 
 
 #endif
