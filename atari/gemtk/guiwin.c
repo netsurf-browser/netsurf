@@ -68,18 +68,22 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 		break;
 
 	case WM_REDRAW:
+		if ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0) {
 			guiwin_get_grect(gw, GUIWIN_AREA_TOOLBAR, &tb_area_ro);
 			tb_area = tb_area_ro;
 			if(rc_intersect((GRECT*)&msg[4], &tb_area)){
 				wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
 				while (g.g_h > 0 || g.g_w > 0) {
 					gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
+					gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
 					gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
+					gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
 					objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
 								g.g_w, g.g_h);
 					wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
 				}
 			}
+		}
 		break;
 
     default:
@@ -145,13 +149,21 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 			dest = guiwin_find(info[0]);
 			if (dest) {
                 DEBUG_PRINT(("Found MU_BUTTON dest: %p (%d), flags: %d, cb: %p\n", dest, dest->handle, dest->flags, dest->handler_func));
-				if(dest->toolbar != NULL && dest->handler_func != NULL){
+
+				// toolbar handling:
+				if((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0 &&
+					dest->toolbar != NULL && dest->handler_func != NULL){
 					GRECT tb_area;
 					guiwin_get_grect(dest, GUIWIN_AREA_TOOLBAR, &tb_area);
 					if (POINT_WITHIN(ev_out->emo_mouse.p_x,
 							ev_out->emo_mouse.p_y, tb_area)) {
 						// send WM_TOOLBAR message
-						short obj_idx = 0;
+						dest->toolbar[dest->toolbar_idx].ob_x = tb_area.g_x;
+						dest->toolbar[dest->toolbar_idx].ob_y = tb_area.g_y;
+						short obj_idx = objc_find(dest->toolbar,
+														dest->toolbar_idx, 8,
+														ev_out->emo_mouse.p_x,
+														ev_out->emo_mouse.p_y);
 						short msg_out[8] = {WM_TOOLBAR, gl_apid, 0, dest->handle,
 							obj_idx, ev_out->emo_mclicks, ev_out->emo_kmeta, 0};
 						short oldevents = ev_out->emo_events;
@@ -161,14 +173,6 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 						retval = 1;
 					}
 				}
-                /*
-                if (dest->flags&GW_FLAG_PREPROC_WM) {
-                    preproc_wm(dest, ev_in, ev_out, msg);
-                }
-                if (dest->handler_func) {
-                    retval = dest->handler_func(dest, ev_in, ev_out, msg);
-                }
-                */
             }
     	}
     }
@@ -177,7 +181,7 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 
 GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
 {
-    GUIWIN *win = malloc(sizeof(GUIWIN));
+    GUIWIN *win = calloc(sizeof(GUIWIN),1);
 
 	assert(win!=NULL);
     DEBUG_PRINT(("guiwin_add: %d, %p, cb: %p\n", handle, win, cb));
@@ -259,9 +263,8 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 			dest->g_w -= tb_area.g_w;
 		} else {
 			dest->g_y += tb_area.g_h;
-			dest->g_w -= tb_area.g_h;
+			dest->g_h -= tb_area.g_h;
 		}
-		dbg_grect("guiwin_get_grect content", dest);
 	}
 	else if (mode == GUIWIN_AREA_TOOLBAR) {
 		if (win->toolbar != NULL) {
@@ -274,7 +277,6 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 			dest->g_h = 0;
 			dest->g_w = 0;
 		}
-		dbg_grect("guiwin_get_grect toolbar", dest);
 	}
 }
 

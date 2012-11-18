@@ -1,9 +1,9 @@
 ResourceMaster v3.65   
-#C 14@0@0@0@
+#C 16@0@0@0@
 #N 99@32@AZAaza___  _@AZAaza090___  _@@_@
 #FoC-Header@rsm2out@C-Header@rsh@@@[C-Header@0@
 #R 0@0@1@1@1@1@
-#M 20010100@0@7728@603@
+#M 20010100@0@7728@606@
 #T 0@1@MAINMENU@@62@@
 #O 4@32@T_FILE@@
 #O 5@32@T_EDIT@@
@@ -187,4 +187,13 @@ ResourceMaster v3.65
 #O 107@26@CB_BG_IMAGES@@
 #O 108@26@ABORT@@
 #O 109@26@OK@@
-#c 31683@
+#T 14@2@ALERT@@1@@
+#T 15@2@VSCROLLER@@8@@
+#O 1@20@AREA@@
+#O 2@26@SLIDER_AREA@@
+#O 3@26@SLIDER@@
+#O 7@25@BT_DOWN@@
+#O 5@33@BT_DOWN_PIC@@
+#O 6@25@BT_UP@@
+#O 4@33@BT_UP_PIC@@
+#c 9608@

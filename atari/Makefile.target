@@ -7,7 +7,7 @@
 # manually via env. variables, because the m68k-atari-mint
 # toolchain is located in /usr/bin and the wildcard matching
 # fails then. So this wildcard matches only works for
-# the netsurf environment! 
+# the netsurf environment!
 STRIP := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*strip)
 STACK := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*stack)
 
@@ -73,15 +73,42 @@ LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 
 
 # S_ATARI are sources purely for the Atari FreeMiNT build
-S_ATARI := gui.c findfile.c filetype.c misc.c bitmap.c schedule.c \
-	download.c thumbnail.c login.c verify_ssl.c treeview.c hotlist.c history.c\
+S_ATARI := gui.c \
+	findfile.c \
+	filetype.c \
+	misc.c \
+	bitmap.c \
+	schedule.c \
+	download.c \
+	thumbnail.c \
+	login.c \
+	verify_ssl.c \
+	treeview.c \
+	hotlist.c \
+	history.c\
 	search.c font.c \
-	plot/plot.c plot/fontplot.c plot/eddi.s \
-	plot/font_freetype.c plot/font_internal.c \
-	redrawslots.c encoding.c \
-	browser_win.c toolbar.c statusbar.c browser.c  \
-	global_evnt.c osspec.c dragdrop.c system_colour.c \
-	ctxmenu.c settings.c msgbox.c
+	redrawslots.c \
+	encoding.c \
+	rootwin.c \
+	toolbar.c \
+	statusbar.c \
+	browser.c  \
+	global_evnt.c \
+	osspec.c \
+	system_colour.c \
+	ctxmenu.c \
+	settings.c \
+	deskmenu.c \
+	plot/plot.c \
+	plot/fontplot.c \
+	plot/eddi.s \
+	plot/font_freetype.c \
+	plot/font_internal.c \
+	gemtk/utils.c \
+	gemtk/dragdrop.c \
+	gemtk/msgbox.c \
+	gemtk/guiwin.c
+
 S_ATARI := $(addprefix atari/,$(S_ATARI))
 
 # This is the final source build list

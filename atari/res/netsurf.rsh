@@ -197,3 +197,14 @@
 #define CHOICES_CB_BG_IMAGES 107  /* BUTTON in tree CHOICES */
 #define CHOICES_ABORT 108  /* BUTTON in tree CHOICES */
 #define CHOICES_OK 109  /* BUTTON in tree CHOICES */
+
+#define ALERT 14  /* form/dial */
+
+#define VSCROLLER 15  /* form/dial */
+#define VSCROLLER_AREA 1  /* BOX in tree VSCROLLER */
+#define VSCROLLER_SLIDER_AREA 2  /* BUTTON in tree VSCROLLER */
+#define VSCROLLER_SLIDER 3  /* BUTTON in tree VSCROLLER */
+#define VSCROLLER_BT_DOWN 7  /* IBOX in tree VSCROLLER */
+#define VSCROLLER_BT_DOWN_PIC 5  /* CICON in tree VSCROLLER */
+#define VSCROLLER_BT_UP 6  /* IBOX in tree VSCROLLER */
+#define VSCROLLER_BT_UP_PIC 4  /* CICON in tree VSCROLLER */

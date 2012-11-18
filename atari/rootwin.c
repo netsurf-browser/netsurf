@@ -131,8 +131,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			break;
 
 		case WM_TOOLBAR:
-			printf("toolbar click at %d,%d!\n", ev_out->emo_mouse.p_x,
-					ev_out->emo_mouse.p_y);
+			printf("toolbar click at %d,%d (obj: %d)!\n", ev_out->emo_mouse.p_x,
+					ev_out->emo_mouse.p_y, msg[4]);
 			break;
 
         default:
@@ -599,31 +599,6 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
         browser_scroll( gw, WA_LFPAGE, abs(dx), false );
 }
 
-//static void __CDECL evnt_window_uniconify( WINDOW *win, short buff[8], void * data )
-//{
-//    struct gui_window * gw = (struct gui_window *)data;
-//
-//    input_window = gw;
-//    WindTop( gw->root->handle );
-//    window_set_focus( gw, BROWSER, gw->browser );
-//}
-
-//static void __CDECL evnt_window_iconify( WINDOW *win, short buff[8], void * data )
-//{
-//    struct gui_window * gw = (struct gui_window *)data;
-//    if( input_window == gw) {
-//        input_window = NULL;
-//    }
-//}
-
-
-//static void __CDECL evnt_window_icondraw(WINDOW *win, short buff[8], void * data)
-//{
-//    struct gui_window *gw = (struct gui_window*) data;
-//    GRECT clip = {buff[4], buff[5], buff[6], buff[7]};
-//    window_redraw_favicon(gw, &clip);
-//}
-
 static void redraw(GUIWIN *win, short msg[8])
 {
 	short handle;
@@ -638,23 +613,17 @@ static void redraw(GUIWIN *win, short msg[8])
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
         window_redraw_favicon(gw, &clip);
     } else {
-    	GRECT area;
+    	GRECT content_area, tb_area;
     	short pxy[8];
-    	guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &area);
-    	/*
-    	pxy[0] = area.g_x;
-    	pxy[1] = area.g_y;
-    	pxy[2] = pxy[0] + area.g_w;
-    	pxy[3] = pxy[1];
-    	pxy[4] = pxy[2];
-    	pxy[5] = pxy[1] + area.g_h;
-    	pxy[6] = pxy[0];
-    	pxy[7] = pxy[5];
-    	*/
-    	//const plot_style_fill_white
-    	plot_rectangle(area.g_x, area.g_y, area.g_x+area.g_h,
-						area.g_y + area.g_h,
-                     plot_style_fill_white);
+
+    	guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &content_area);
+    	guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &tb_area);
+    	struct rect clip = {0,0,content_area.g_w,content_area.g_h};
+    	plot_set_dimensions(content_area.g_x, content_area.g_y,
+							content_area.g_w,content_area.g_h);
+    	//plot_clip(&clip);
+    	plot_rectangle(0, 0, content_area.g_w,
+						content_area.g_h, plot_style_broken_object);
 
 
 		//WindClear(gw->root->handle);

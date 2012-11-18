@@ -55,9 +55,10 @@ short msg_box_show(short type, const char * msg);
 /*
 	Guiwin
 */
-#define GW_FLAG_PREPROC_WM		0x01	// let guiwin API handle some events
-#define GW_FLAG_RECV_PREPROC_WM	0x02	// get notified even when pre-processed
-#define GW_FLAG_HAS_VTOOLBAR	0x04	// the attached toolbar is vertical
+#define GW_FLAG_PREPROC_WM			0x01	// let guiwin API handle some events
+#define GW_FLAG_RECV_PREPROC_WM		0x02	// get notified even when pre-processed
+#define GW_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
+#define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
 
 #define GW_STATUS_ICONIFIED		0x01
 #define GW_STATUS_SHADED		0x02
