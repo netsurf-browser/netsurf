@@ -43,7 +43,7 @@
 #include "atari/clipboard.h"
 #include "atari/gui.h"
 #include "atari/toolbar.h"
-#include "atari/browser_win.h"
+#include "atari/rootwin.h"
 #include "atari/browser.h"
 #include "atari/clipboard.h"
 #include "atari/misc.h"
@@ -176,8 +176,8 @@ void toolbar_init( void )
 
 	} else {
 		RsrcGaddr( h_gem_rsrc, R_TREE, TOOLBAR, &toolbar_buttons );
-		toolbar_buttons->ob_x = 0;
-		toolbar_buttons->ob_y = 0;
+		//toolbar_buttons->ob_x = 0;
+		//toolbar_buttons->ob_y = 0;
 
 		RsrcGaddr( h_gem_rsrc, R_TREE, THROBBER , &throbber_form );
 		throbber_form->ob_x = 0;
@@ -279,8 +279,8 @@ static void __CDECL button_redraw( COMPONENT *c, long buff[8], void * data )
 		tree = &toolbar_buttons[bt->rsc_id];
 		if( tree == NULL )
 			return;
-		tree->ob_x = work.g_x;
-		tree->ob_y = work.g_y + (work.g_h - tree->ob_height) / 2;
+		//tree->ob_x = work.g_x;
+		//tree->ob_y = work.g_y + (work.g_h - tree->ob_height) / 2;
 		if( drawstate == button_off ) {
 			tree->ob_state |= OS_DISABLED;
 		} else {

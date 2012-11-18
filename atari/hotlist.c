@@ -40,6 +40,7 @@
 #include "atari/treeview.h"
 #include "atari/hotlist.h"
 #include "atari/findfile.h"
+#include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 
 struct atari_hotlist hl;

@@ -39,6 +39,18 @@
 #include "atari/misc.h"
 #include "cflib.h"
 
+/*
+#define TREEVIEW_RECT_WORKAREA	0
+#define TREEVIEW_RECT_TOOLBAR	1
+#define TREEVIEW_RECT_CONTENT	2
+*/
+
+enum treeview_area_e {
+	TREEVIEW_AREA_WORK = 0,
+	TREEVIEW_AREA_TOOLBAR,
+	TREEVIEW_AREA_CONTENT
+};
+
 extern int mouse_hold_start[3];
 extern browser_mouse_state bmstate;
 extern short last_drag_x;
@@ -46,9 +58,11 @@ extern short last_drag_y;
 extern long atari_plot_flags;
 extern int atari_plot_vdi_handle;
 
-static void atari_treeview_resized(struct tree *tree,int w,int h,void *pw);
+static void atari_treeview_resized(struct tree *tree,int w,int h, void *pw);
 static void atari_treeview_scroll_visible(int y, int h, void *pw);
-static void atari_treeview_get_dimensions(int *width, int *height,void *pw);
+static void atari_treeview_get_dimensions(int *width, int *height, void *pw);
+static void atari_treeview_get_grect(NSTREEVIEW tree,
+									enum treeview_area_e mode, GRECT *dest);
 
 static const struct treeview_table atari_tree_callbacks = {
 	atari_treeview_request_redraw,
@@ -405,6 +419,24 @@ void atari_treeview_scroll_visible(int y, int height, void *pw)
 	/* so we don't need to implement this? */
 }
 
+static void atari_treeview_get_grect(NSTREEVIEW tv, enum treeview_area_e mode,
+									GRECT *dest)
+{
+
+	wind_get_grect(tv->window->handle, WF_WORKXYWH, dest);
+	if (mode == TREEVIEW_AREA_CONTENT) {
+		GRECT tb_grect;
+		atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_grect);
+		dest->g_y += tb_grect.g_h;
+		dest->g_h -= tb_grect.g_h;
+	}
+	else if (mode == TREEVIEW_AREA_TOOLBAR) {
+		// TODO: this requires something like:
+		// 	guiwin_get_toolbar();
+		dest->g_h = 16;
+	}
+}
+
 /**
  * Callback to return the tree window dimensions to the treeview system.
  *
@@ -419,7 +451,7 @@ void atari_treeview_get_dimensions(int *width, int *height,
 	if (pw != NULL && (width != NULL || height != NULL)) {
 		NSTREEVIEW tv = (NSTREEVIEW) pw;
 		GRECT work;
-		WindGetGrect( tv->window, WF_WORKXYWH, &work );
+		atari_treeview_get_grect(tv, TREEVIEW_AREA_CONTENT, &work);
 		*width = work.g_w;
 		*height = work.g_h;
 	}

@@ -45,7 +45,7 @@ static inline bool rect_intersect( struct rect * box1, struct rect * box2 )
 	return true;
 }
 /*
-	schedule a slots, coords are relative.
+	schedule redraw coords, coords are relative.
 */
 void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0, short x1, short y1)
 {

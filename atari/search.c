@@ -35,6 +35,7 @@
 #include "atari/misc.h"
 #include "atari/browser.h"
 #include "atari/search.h"
+#include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 
 extern struct gui_window * input_window;
@@ -139,7 +140,7 @@ static void destroy_search_session( SEARCH_FORM_SESSION s )
 	}
 }
 
-static int apply_form( WINDOW * win, struct s_search_form_state * s )
+static int apply_form(WINDOW * win, struct s_search_form_state * s)
 {
 	OBJECT * obj = ObjcTree(OC_FORM, win );
 	if( obj == NULL ){
@@ -290,11 +291,12 @@ SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
 								NULL, title,
 								&pos, true, false);
 
-	ObjcAttachFormFunc( sfs->formwind, SEARCH_BT_SEARCH, evnt_bt_srch_click, NULL);
-	ObjcAttachFormFunc( sfs->formwind, SEARCH_CB_CASESENSE, evnt_cb_click, NULL);
-	ObjcAttachFormFunc( sfs->formwind, SEARCH_CB_SHOWALL, evnt_cb_click, NULL);
-	ObjcAttachFormFunc( sfs->formwind, SEARCH_CB_FWD, evnt_cb_click, NULL);
-	EvntAdd( sfs->formwind, WM_CLOSED, evnt_close, EV_TOP);
+	ObjcAttachFormFunc(sfs->formwind, SEARCH_BT_SEARCH, evnt_bt_srch_click,
+						NULL);
+	ObjcAttachFormFunc(sfs->formwind, SEARCH_CB_CASESENSE, evnt_cb_click, NULL);
+	ObjcAttachFormFunc(sfs->formwind, SEARCH_CB_SHOWALL, evnt_cb_click, NULL);
+	ObjcAttachFormFunc(sfs->formwind, SEARCH_CB_FWD, evnt_cb_click, NULL);
+	EvntAdd(sfs->formwind, WM_CLOSED, evnt_close, EV_TOP);
 	apply_form(sfs->formwind, &sfs->state );
 	strncpy( ObjcString( tree, SEARCH_TB_SRCH, NULL ), "", SEARCH_MAX_SLEN);
 

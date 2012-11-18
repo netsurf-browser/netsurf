@@ -42,7 +42,7 @@
 #include "atari/browser.h"
 #include "atari/misc.h"
 #include "atari/encoding.h"
-#include "atari/msgbox.h"
+#include "atari/gemtk/gemtk.h"
 #include "cflib.h"
 
 extern void * h_gem_rsrc;
@@ -111,10 +111,7 @@ bool path_add_part(char *path, int length, const char *newpart)
 	return true;
 }
 
-/*
-  TBD: make use of this function or remove it...
-*/
-struct gui_window * find_gui_window( unsigned long handle, short mode ){
+struct gui_window * find_guiwin_by_aes_handle(short handle){
 
 	struct gui_window * gw;
 	gw = window_list;
@@ -122,29 +119,17 @@ struct gui_window * find_gui_window( unsigned long handle, short mode ){
 	if( handle == 0 ){
 		return( NULL );
 	}
-	else if( mode == BY_WINDOM_HANDLE ){
-		WINDOW * win = (WINDOW*) handle;
-        while( gw != NULL) {
-                if( gw->root->handle == win ) {
-					return( gw );
-                }
-                else
-					gw = gw->next;
-        }
-	}
-	else if( mode == BY_GEM_HANDLE ){
-		short ghandle = (short)handle;
-        while( gw != NULL) {
-                if( gw->root->handle != NULL
-					&& gw->root->handle->handle == ghandle ) {
-					return( gw );
-                }
-                else
-					gw = gw->next;
-        }
+
+	while(gw != NULL) {
+		if( gw->root->handle != NULL
+			&& gw->root->handle->handle == handle ) {
+				return(gw);
+		}
+		else
+			gw = gw->next;
 	}
 
-        return( NULL );
+	return( NULL );
 }
 
 
@@ -258,25 +243,6 @@ bool is_process_running(const char * name)
 
 	return( (data.found==1) ? true : false );
 }
-
-
-/* -------------------------------------------------------------------------- */
-/* GEM Utillity functions:                                                    */
-/* -------------------------------------------------------------------------- */
-
-/* Return a string from resource file */
-char *get_rsc_string( int idx) {
-	char *txt;
-	RsrcGaddr( h_gem_rsrc, R_STRING, idx,  &txt );
-	return txt;
-}
-
-OBJECT *get_tree( int idx) {
-  OBJECT *tree;
-  RsrcGaddr( h_gem_rsrc, R_TREE, idx, &tree);
-  return tree;
-}
-
 
 
 /**

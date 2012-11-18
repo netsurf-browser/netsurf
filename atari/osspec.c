@@ -29,44 +29,13 @@
 
 #include "utils/log.h"
 #include "atari/osspec.h"
+#include "atari/gemtk/gemtk.h"
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
 #endif
 
 NS_ATARI_SYSINFO atari_sysinfo;
-
-unsigned short _systype_v;
-unsigned short _systype (void)
-{
-	int32_t * cptr = NULL;
-	_systype_v = SYS_TOS;
-
-	cptr = (int32_t *)Setexc(0x0168, -1L);
-	if (cptr == NULL ) {
-		return _systype_v;   /* stone old TOS without any cookie support */
-	}
-	while (*cptr) {
-		if (*cptr == C_MgMc || *cptr == C_MgMx ) {
-			_systype_v = (_systype_v & ~0xF) | SYS_MAGIC;
-		} else if (*cptr == C_MiNT ) {
-			_systype_v = (_systype_v & ~0xF) | SYS_MINT;
-		} else if (*cptr == C_Gnva /* Gnva */ ) {
-			_systype_v |= SYS_GENEVA;
-		} else if (*cptr == C_nAES /* nAES */ ) {
-			_systype_v |= SYS_NAES;
-		}
-		cptr += 2;
-	}
-	if (_systype_v & SYS_MINT) { /* check for XaAES */
-		short out = 0, u;
-		if (wind_get (0, (((short)'X') <<8)|'A', &out, &u,&u,&u) && out) {
-			_systype_v |= SYS_XAAES;
-		}
-	}
-	LOG(("Detected OS: %d\n", _systype_v ));
-	return _systype_v;
-}
 
 void init_os_info(void)
 {

@@ -42,11 +42,9 @@
 
 typedef int (*scan_process_callback)(int pid, void *data);
 
-struct gui_window * find_gui_window( unsigned long, short mode );
+struct gui_window * find_guiwin_by_aes_handle(short handle);
 struct gui_window * find_cmp_window( COMPONENT * c );
 bool is_process_running(const char * name);
-OBJECT *get_tree( int idx );
-char *get_rsc_string( int idx );
 void gem_set_cursor( MFORM_EX * cursor );
 hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
 						void * pw );

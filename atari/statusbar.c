@@ -38,7 +38,7 @@
 
 #include "atari/gui.h"
 #include "atari/statusbar.h"
-#include "atari/browser_win.h"
+#include "atari/rootwin.h"
 #include "atari/misc.h"
 #include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
@@ -227,7 +227,6 @@ void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw)
 
 void sb_set_text(CMP_STATUSBAR sb, char * text )
 {
-	LGRECT work;
 	assert( sb != NULL );
 	strncpy(sb->text, text, STATUSBAR_MAX_SLEN);
 	sb->text[STATUSBAR_MAX_SLEN]=0;

@@ -41,7 +41,7 @@
 
 #include "atari/gui.h"
 #include "atari/browser.h"
-#include "atari/browser_win.h"
+#include "atari/rootwin.h"
 #include "atari/misc.h"
 #include "atari/clipboard.h"
 #include "desktop/options.h"
