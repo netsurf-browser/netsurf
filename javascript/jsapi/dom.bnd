@@ -16,6 +16,23 @@ getter nodeType %{
 
 %}
 
+
+getter nodeName %{
+	dom_exception exc;
+	dom_string *name;
+
+	exc = dom_node_get_node_name(private->node, &name);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	if (name != NULL) {
+		jsret = JS_NewStringCopyN(cx, dom_string_data(name), dom_string_length(name));
+		dom_string_unref(name);
+
+	}
+%}
+
 getter textContent %{
 	dom_exception exc;
 	dom_string *content;
