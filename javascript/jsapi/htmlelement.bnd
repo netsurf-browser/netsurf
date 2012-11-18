@@ -89,6 +89,37 @@ getter firstElementChild %{
 	%}
 
 getter lastElementChild %{
+	dom_node *element;
+	dom_exception exc;
+	dom_node_type node_type;
+	dom_node *sib_node;
+
+	exc = dom_node_get_last_child(private->node, &element);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	while (element != NULL) {
+		exc = dom_node_get_node_type(element, &node_type);
+		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
+			/* found it */
+			jsret = jsapi_new_HTMLElement(cx,
+						      NULL,
+						      NULL,
+						      (dom_element *)element,
+						      private->htmlc);
+			break;
+		}
+
+		exc = dom_node_get_previous_sibling(element, &sib_node);
+		dom_node_unref(element);
+		if (exc == DOM_NO_ERR) {
+			element = sib_node;
+		} else {
+			element = NULL;
+		}
+
+	}
 	%}
 
 getter previousElementSibling %{
