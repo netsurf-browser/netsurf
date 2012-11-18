@@ -187,3 +187,30 @@ getter nextElementSibling %{
 		}
 	}
 %}
+
+getter childElementCount %{
+	dom_node *element;
+	dom_exception exc;
+	dom_node_type node_type;
+	dom_node *next_node;
+
+	exc = dom_node_get_first_child(private->node, &element);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
+
+	while (element != NULL) {
+		exc = dom_node_get_node_type(element, &node_type);
+		if ((exc == DOM_NO_ERR) && (node_type == DOM_ELEMENT_NODE)) {
+			jsret += 1;
+		}
+
+		exc = dom_node_get_next_sibling(element, &next_node);
+		dom_node_unref(element);
+		if (exc == DOM_NO_ERR) {
+			element = next_node;
+		} else {
+			element = NULL;
+		}
+	}
+%}
