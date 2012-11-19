@@ -59,27 +59,36 @@ short msg_box_show(short type, const char * msg);
 #define GW_FLAG_RECV_PREPROC_WM		0x02	// get notified even when pre-processed
 #define GW_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
 #define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
+#define GW_FLAG_CUSTOM_SCROLLING	0x10	// no internal scroller handling
 
 #define GW_STATUS_ICONIFIED		0x01
 #define GW_STATUS_SHADED		0x02
 
 struct gui_window_s;
 typedef struct gui_window_s GUIWIN;
-
 typedef short (*guiwin_event_handler_f)(GUIWIN *gw,
 										EVMULT_OUT *ev_out, short msg[8]);
+struct guiwin_scroll_info_s {
+	int x_unit_px;
+	int y_unit_px;
+	int x_pos;
+	int y_pos;
+	int x_pos_max;
+	int y_pos_max;
+};
+
 enum guwin_area_e {
 	GUIWIN_AREA_WORK = 0,
 	GUIWIN_AREA_TOOLBAR,
 	GUIWIN_AREA_CONTENT
 };
 
+short guiwin_init(void);
 GUIWIN * guiwin_add(short handle, uint32_t flags,
 					guiwin_event_handler_f handler);
 GUIWIN *guiwin_find(short handle);
 short guiwin_remove(GUIWIN *win);
 GUIWIN *guiwin_validate_ptr(GUIWIN *win);
-//short guiwin_set_event_handler(guiwin_event_handler_f);
 short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out,
 									short msg[8]);
 void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest);
@@ -87,6 +96,13 @@ short guiwin_get_handle(GUIWIN *win);
 uint32_t guiwin_get_state(GUIWIN *win);
 void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx,
 						uint32_t flags);
+void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
+void guiwin_set_user_data(GUIWIN *win, void *data);
+void *guiwin_get_user_data(GUIWIN *win);
+struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win);
+void guiwin_update_slider(GUIWIN *win, short mode);
+VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
+
 
 /*
 * 	AES Scroller Object
@@ -97,5 +113,12 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx,
 		&& (_y >= r.g_y) && (_y <= r.g_y + r.g_h))
 #endif
 
+#ifndef MAX
+#define MAX(_a,_b) ((_a>_b) ? _a : _b)
+#endif
+
+#ifndef MIN
+#define MIN(_a,_b) ((_a<_b) ? _a : _b)
+#endif
 
 #endif // GEMTK_H_INCLUDED

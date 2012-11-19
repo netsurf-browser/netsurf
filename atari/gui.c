@@ -86,6 +86,7 @@ struct gui_window *window_list = NULL;
 void * h_gem_rsrc;
 long next_poll;
 bool rendering = false;
+bool gui_poll_repeat = false;
 
 
 /* Comandline / Options: */
@@ -162,44 +163,48 @@ void gui_poll(bool active)
     short mx, my, dummy;
 	unsigned short nkc = 0;
 
+	gui_poll_repeat = false;
+
     evnt.timer = schedule_run();
 
-    if(active || rendering) {
-        if (clock() >= next_poll) {
-            aes_event_in.emi_tlow = 0;
-            evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
-            next_poll = clock() + (CLOCKS_PER_SEC>>4);
-        }
-    } else {
-        evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
-    }
+	if(active || rendering)
+		aes_event_in.emi_tlow = 0;
 
-    if(!guiwin_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
-        //global_dispatch_event(&aes_event_in, &aes_event_out, msg);
-        if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
-            LOG(("WM: %d\n", aes_msg_out[0]));
-            switch(aes_msg_out[0]) {
+	// Handle events until there are no more messages pending or
+	// until the engine indicates activity:
+	do {
+		evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
+		if(!guiwin_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
+			if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
+				LOG(("WM: %d\n", aes_msg_out[0]));
+				switch(aes_msg_out[0]) {
 
-            case MN_SELECTED:
-                LOG(("Menu Item: %d\n",aes_msg_out[4]));
-                deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
-                break;
+				case MN_SELECTED:
+					LOG(("Menu Item: %d\n",aes_msg_out[4]));
+					deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
+					break;
+				default:
+					break;
+				}
+			}
 
-            default:
-                break;
-            }
-        }
-
-        if( (aes_event_out.emo_events & MU_KEYBD) != 0 ) {
-			printf("key: %d, %d\n", aes_event_out.emo_kreturn,
-					aes_event_out.emo_kmeta);
-			nkc= gem_to_norm( (short)aes_event_out.emo_kmeta,
-								(short)aes_event_out.emo_kreturn);
-			deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
-										aes_event_out.emo_kmeta, nkc);
+			if( (aes_event_out.emo_events & MU_KEYBD) != 0 ) {
+				printf("key: %d, %d\n", aes_event_out.emo_kreturn,
+						aes_event_out.emo_kmeta);
+				nkc= gem_to_norm( (short)aes_event_out.emo_kmeta,
+									(short)aes_event_out.emo_kreturn);
+				deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
+											aes_event_out.emo_kmeta, nkc);
+			}
 		}
-    }
+	} while ( gui_poll_repeat && !(active||rendering));
 
+	if( !active ) {
+        /* this suits for stuff with lower priority */
+        /* TBD: really be spare on redraws??? */
+        hotlist_redraw();
+        //global_history_redraw();
+    }
 }
 
 void gui_poll_old(bool active)
@@ -374,7 +379,7 @@ void gui_window_set_status(struct gui_window *w, const char *text)
 {
     if (w == NULL || text == NULL )
         return;
-    window_set_stauts( w , (char*)text );
+    window_set_stauts(w, (char*)text );
 }
 
 void gui_window_redraw_window(struct gui_window *gw)
@@ -905,6 +910,7 @@ void gui_quit(void)
     urldb_save(nsoption_charp(url_file));
 
     deskmenu_destroy();
+    guiwin_exit();
 
     rsrc_free();
 
@@ -1032,14 +1038,6 @@ static void gui_init(int argc, char** argv)
     if (rsrc_load(buf)==0) {
         die("Uable to open GEM Resource file!");
     }
-    //h_gem_rsrc = RsrcXload( (char*) &buf );
-
-    //if( !h_gem_rsrc )
-    //	die("Uable to open GEM Resource file!");
-    //rsc_trindex = RsrcGhdr(h_gem_rsrc)->trindex;
-    //rsc_ntree   = RsrcGhdr(h_gem_rsrc)->ntree;
-
-    //RsrcXtype( RSRC_XTYPE, rsc_trindex, rsc_ntree);
 
     create_cursor(0, POINT_HAND, NULL, &gem_cursors.hand );
     create_cursor(0, TEXT_CRSR,  NULL, &gem_cursors.ibeam );
@@ -1049,7 +1047,7 @@ static void gui_init(int argc, char** argv)
     create_cursor(0, OUTLN_CROSS, NULL, &gem_cursors.sizeall);
     create_cursor(0, OUTLN_CROSS, NULL, &gem_cursors.sizenesw);
     create_cursor(0, OUTLN_CROSS, NULL, &gem_cursors.sizenwse);
-    RsrcGaddr( h_gem_rsrc, R_TREE, CURSOR , &cursors );
+    cursors = get_tree(CURSOR);
     create_cursor(MFORM_EX_FLAG_USERFORM, CURSOR_APPSTART,
                   cursors, &gem_cursors.appstarting);
     gem_set_cursor( &gem_cursors.appstarting );
@@ -1095,6 +1093,7 @@ static void gui_init2(int argc, char** argv)
     if (sys_type() & (SYS_MAGIC|SYS_NAES|SYS_XAAES)) {
         menu_register( _AESapid, (char*)"  NetSurf ");
     }
+    guiwin_init();
     bind_global_events();
     global_history_init();
     hotlist_init();

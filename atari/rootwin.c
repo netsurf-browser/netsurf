@@ -122,7 +122,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 		case WM_CLOSED:
 			gw = FIND_NS_GUI_WINDOW(win);
 			if( gw != NULL ) {
-				browser_window_destroy( gw->browser->bw );
+				browser_window_destroy(gw->browser->bw );
 			}
 			break;
 
@@ -158,9 +158,9 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 }
 
 
-int window_create( struct gui_window * gw,
+int window_create(struct gui_window * gw,
                    struct browser_window * bw,
-                   unsigned long inflags )
+                   unsigned long inflags)
 {
     int err = 0;
     bool tb, sb;
@@ -343,7 +343,7 @@ void window_set_stauts(struct gui_window * gw , char * text )
 }
 
 /* set focus to an arbitary element */
-void window_set_focus( struct gui_window * gw, enum focus_element_type type, void * element )
+void window_set_focus(struct gui_window * gw, enum focus_element_type type, void * element)
 {
     if( gw->root->focus.type != type || gw->root->focus.element != element ) {
         LOG(("Set focus: %p (%d)\n", element, type));

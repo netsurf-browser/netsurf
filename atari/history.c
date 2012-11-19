@@ -86,33 +86,35 @@ static void __CDECL evnt_history_mbutton( WINDOW *win, short buff[8] )
 bool global_history_init( void )
 {
 
-	if( gl_history.init == false ) {
-
-		int flags = ATARI_TREEVIEW_WIDGETS;
-		gl_history.open = false;
-		gl_history.window = WindCreate( flags, 40, 40, app.w, app.h );
-		if( gl_history.window == NULL ) {
-			LOG(("Failed to allocate history window"));
-			return( false );
-		}
-		WindSetStr(gl_history.window, WF_NAME, messages_get("GlobalHistory"));
-		//WindSetPtr( gl_history.window, WF_TOOLBAR, tree, evnt_history_toolbar );
-		EvntAttach( gl_history.window, WM_CLOSED, evnt_history_close );
-		EvntAttach( gl_history.window, WM_XBUTTON,evnt_history_mbutton );
-
-		gl_history.tv = atari_treeview_create(
-			history_global_get_tree_flags(),
-			gl_history.window
-		);
-		if (gl_history.tv == NULL) {
-			/* handle it properly, clean up previous allocs */
-			LOG(("Failed to allocate history treeview"));
-			return( false );
-		}
-
-		history_global_initialise( gl_history.tv->tree, "dir.png" );
-		gl_history.init = true;
-	}
+	return(true);
+//	if( gl_history.init == false ) {
+//
+//		int flags = ATARI_TREEVIEW_WIDGETS;
+//		gl_history.open = false;
+//		gl_history.window = WindCreate( flags, 40, 40, app.w, app.h );
+//		if( gl_history.window == NULL ) {
+//			LOG(("Failed to allocate history window"));
+//			return( false );
+//		}
+//		WindSetStr(gl_history.window, WF_NAME, messages_get("GlobalHistory"));
+//		//WindSetPtr( gl_history.window, WF_TOOLBAR, tree, evnt_history_toolbar );
+//		EvntAttach( gl_history.window, WM_CLOSED, evnt_history_close );
+//		EvntAttach( gl_history.window, WM_XBUTTON,evnt_history_mbutton );
+//
+//		gl_history.tv = atari_treeview_create(
+//			history_global_get_tree_flags(),
+//			gl_history.window,
+//			NULL
+//		);
+//		if (gl_history.tv == NULL) {
+//			/* handle it properly, clean up previous allocs */
+//			LOG(("Failed to allocate history treeview"));
+//			return( false );
+//		}
+//
+//		history_global_initialise( gl_history.tv->tree, "dir.png" );
+//		gl_history.init = true;
+//	}
 	return( true );
 }
 

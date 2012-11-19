@@ -22,6 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include <windom.h>
+
 #include "desktop/browser.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -45,43 +48,46 @@
 
 struct atari_hotlist hl;
 
-static void evnt_hl_toolbar( WINDOW *win, short buff[8]) {
-	/* handle toolbar object (index in buff[4] ) */
-	switch( buff[4] ) {
-	case TOOLBAR_HOTLIST_CREATE_FOLDER:
-		hotlist_add_folder(true);
-		break;
-
-	case TOOLBAR_HOTLIST_ADD:
-		atari_hotlist_add_page("http://www.de", "");
-		break;
-
-	case TOOLBAR_HOTLIST_DELETE:
-		hotlist_delete_selected();
-		break;
-
-	case TOOLBAR_HOTLIST_EDIT:
-		hotlist_edit_selected();
-		break;
-	}
-	ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
-}
-
-
-static void __CDECL evnt_hl_close( WINDOW *win, short buff[8] )
+static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	hotlist_close();
-}
 
+	printf("hotlist handle event...\n");
+	if(ev_out->emo_events & MU_MESAG){
+		switch (msg[0]) {
+			case WM_TOOLBAR:
+				printf("toolbar event...%d\n", msg[4]);
+				switch	(msg[4]) {
 
-static void __CDECL evnt_hl_mbutton( WINDOW *win, short buff[8] )
-{
-	/* todo: implement popup?
-	if(evnt.mbut & 2) {
+					case TOOLBAR_HOTLIST_CREATE_FOLDER:
+						hotlist_add_folder(true);
+						break;
 
+					case TOOLBAR_HOTLIST_ADD:
+						atari_hotlist_add_page("http://www.de", "");
+						break;
+
+					case TOOLBAR_HOTLIST_DELETE:
+						hotlist_delete_selected();
+						break;
+
+					case TOOLBAR_HOTLIST_EDIT:
+						hotlist_edit_selected();
+						break;
+				}
+			break;
+
+			case WM_CLOSED:
+				hotlist_close();
+			break;
+
+			default: break;
+		}
 	}
-	*/
+
+	// TODO: implement selectable objects in toolbar API:
+	// ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
 }
+
 
 
 void hotlist_init(void)
@@ -96,21 +102,24 @@ void hotlist_init(void)
 
 	if( hl.window == NULL ){
 		int flags = ATARI_TREEVIEW_WIDGETS;
+		short handle = -1;
 		OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
 		assert( tree );
 		hl.open = false;
-		hl.window = WindCreate( flags, 40, 40, app.w, app.h );
+		handle = wind_create(flags, 0, 0, app.w, app.h);
+		hl.window = guiwin_add(handle,
+								GW_FLAG_PREPROC_WM|GW_FLAG_RECV_PREPROC_WM,
+								NULL);
 		if( hl.window == NULL ) {
 			LOG(("Failed to allocate Hotlist"));
 			return;
 		}
-		WindSetStr( hl.window, WF_NAME, (char*)messages_get("Hotlist") );
-		WindSetPtr( hl.window, WF_TOOLBAR, tree, evnt_hl_toolbar );
-		EvntAttach( hl.window, WM_CLOSED, evnt_hl_close );
-		EvntAttach( hl.window, WM_XBUTTON,evnt_hl_mbutton );
+		wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
+		guiwin_set_toolbar(hl.window, tree, 0, 0);
 		hl.tv = atari_treeview_create(
 			hotlist_get_tree_flags(),
-			hl.window
+			hl.window,
+			handle_event
 		);
 		if (hl.tv == NULL) {
 			/* handle it properly, clean up previous allocs */
@@ -140,17 +149,17 @@ void hotlist_open(void)
 	}
 
 	if( hl.open == false ) {
-		WindOpen( hl.window, pos.g_x, pos.g_y, pos.g_w, pos.g_h);
+		wind_open_grect(guiwin_get_handle(hl.window), &pos);
 		hl.open = true;
 		atari_treeview_open( hl.tv );
 	} else {
-		WindTop( hl.window );
+		wind_set(guiwin_get_handle(hl.window), WF_TOP, 1, 0, 0, 0);
 	}
 }
 
 void hotlist_close(void)
 {
-	WindClose(hl.window);
+	wind_close(guiwin_get_handle(hl.window));
 	hl.open = false;
 	atari_treeview_close( hl.tv );
 }
@@ -164,7 +173,8 @@ void hotlist_destroy(void)
 		hotlist_cleanup( (char*)&hl.path );
 		if( hl.open )
 			hotlist_close();
-		WindDelete( hl.window );
+		wind_delete(guiwin_get_handle(hl.window));
+		guiwin_remove(hl.window);
 		hl.window = NULL;
 		atari_treeview_destroy( hl.tv  );
 		hl.init = false;

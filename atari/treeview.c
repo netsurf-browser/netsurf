@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <windom.h>
 
 #include "content/urldb.h"
 #include "desktop/browser.h"
@@ -37,13 +36,8 @@
 #include "atari/treeview.h"
 #include "atari/plot/plot.h"
 #include "atari/misc.h"
+#include "atari/gemtk/gemtk.h"
 #include "cflib.h"
-
-/*
-#define TREEVIEW_RECT_WORKAREA	0
-#define TREEVIEW_RECT_TOOLBAR	1
-#define TREEVIEW_RECT_CONTENT	2
-*/
 
 enum treeview_area_e {
 	TREEVIEW_AREA_WORK = 0,
@@ -71,7 +65,56 @@ static const struct treeview_table atari_tree_callbacks = {
 	atari_treeview_get_dimensions
 };
 
-static void __CDECL evnt_tv_keybd( WINDOW *win, short buff[8], void * data )
+static void __CDECL on_mbutton_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
+									short msg[8]);
+static void __CDECL on_keybd_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
+									short msg[8]);
+static void __CDECL on_redraw_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
+									short msg[8]);
+
+static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
+{
+
+	NSTREEVIEW tv = (NSTREEVIEW) guiwin_get_user_data(win);
+
+    if( (ev_out->emo_events & MU_MESAG) != 0 ) {
+        // handle message
+        printf("treeview msg: %d\n", msg[0]);
+        switch (msg[0]) {
+
+        case WM_REDRAW:
+			on_redraw_event(tv, ev_out, msg);
+            break;
+
+        default:
+            break;
+        }
+    }
+    if( (ev_out->emo_events & MU_KEYBD) != 0 ) {
+        printf("Treeview  keybd\n");
+        on_keybd_event(tv, ev_out, msg);
+        // handle key
+    }
+    if( (ev_out->emo_events & MU_TIMER) != 0 ) {
+        // handle_timer();
+    }
+    if( (ev_out->emo_events & MU_BUTTON) != 0 ) {
+        LOG(("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x,
+             ev_out->emo_mouse.p_y));
+        printf("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x,
+               ev_out->emo_mouse.p_y);
+        on_mbutton_event(tv, ev_out, msg);
+    }
+
+    if(tv != NULL && tv->user_func != NULL){
+		tv->user_func(win, ev_out, msg);
+    }
+
+    return(0);
+}
+
+static void __CDECL on_keybd_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
+									short msg[8])
 {
 	bool r=false;
 	long kstate = 0;
@@ -82,9 +125,8 @@ static void __CDECL evnt_tv_keybd( WINDOW *win, short buff[8], void * data )
 	unsigned short nks = 0;
 	unsigned char ascii;
 
-	NSTREEVIEW tv = (NSTREEVIEW) data;
-	kstate = evnt.mkstate;
-	kcode = evnt.keybd;
+	kstate = ev_out->emo_kmeta;
+	kcode = ev_out->emo_kreturn;
 	nkc= gem_to_norm( (short)kstate, (short)kcode );
 	ascii = (nkc & 0xFF);
 	ik = nkc_to_input_key( nkc, &ucs4 );
@@ -99,15 +141,18 @@ static void __CDECL evnt_tv_keybd( WINDOW *win, short buff[8], void * data )
 }
 
 
-static void __CDECL evnt_tv_redraw( WINDOW *win, short buff[8], void * data )
+static void __CDECL on_redraw_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
+									short msg[8])
 {
 	GRECT work, clip;
-	NSTREEVIEW tv = (NSTREEVIEW) data;
+
 	if( tv == NULL )
 		return;
-	WindGetGrect( win, WF_WORKXYWH, &work );
+
+	guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
+
 	clip = work;
-	if ( !rc_intersect( (GRECT*)&buff[4], &clip ) ) return;
+	if ( !rc_intersect( (GRECT*)&msg[4], &clip ) ) return;
 	clip.g_x -= work.g_x;
 	clip.g_y -= work.g_y;
 	if( clip.g_x < 0 ) {
@@ -119,30 +164,36 @@ static void __CDECL evnt_tv_redraw( WINDOW *win, short buff[8], void * data )
 		clip.g_y = 0;
 	}
 	if( clip.g_h > 0 && clip.g_w > 0 ) {
+		// TODO: get slider values
 		atari_treeview_request_redraw(
-										win->xpos*win->w_u + clip.g_x,
-										win->ypos*win->h_u + clip.g_y,
+										/*win->xpos*win->w_u +*/ clip.g_x,
+										/*win->ypos*win->h_u +*/ clip.g_y,
 										clip.g_w, clip.g_h, tv
 		);
 	}
 }
 
-static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
+static void __CDECL on_mbutton_event(NSTREEVIEW tv, EVMULT_OUT *ev_out,
+									short msg[8])
 {
 	GRECT work;
-	NSTREEVIEW tv = (NSTREEVIEW) data;
-	if( tv == NULL )
+	if(tv == NULL)
 		return;
 	if( evnt.mbut & 2 ) {
 		/* do not handle right click */
 		return;
 	}
 
-	WindGetGrect( tv->window, WF_WORKXYWH, &work );
+	guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
 
 	/* mouse click relative origin: */
-	short origin_rel_x = (evnt.mx-work.g_x)+(win->xpos*win->w_u);
-	short origin_rel_y = (evnt.my-work.g_y)+(win->ypos*win->h_u);
+
+	// TODO: get scroll position
+	//short origin_rel_x = (evnt.mx-work.g_x)+(win->xpos*win->w_u);
+	//short origin_rel_y = (evnt.my-work.g_y)+(win->ypos*win->h_u);
+
+	short origin_rel_x = (ev_out->emo_mouse.p_x-work.g_x);
+	short origin_rel_y = (ev_out->emo_mouse.p_y-work.g_y);
 
 	if( origin_rel_x >= 0 && origin_rel_y >= 0
 		&& evnt.mx < work.g_x + work.g_w
@@ -200,8 +251,9 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 					atari_treeview_redraw( tv );
 				/* sample mouse button state: */
 				graf_mkstate(&cur_rel_x, &cur_rel_y, &mbut, &dummy);
-				cur_rel_x = (cur_rel_x-work.g_x)+(win->xpos*win->w_u);
-				cur_rel_y = (cur_rel_y-work.g_y)+(win->ypos*win->h_u);
+				// TODO : get guwin slider values;
+				cur_rel_x = (cur_rel_x-work.g_x)/*+(win->xpos*win->w_u);*/;
+				cur_rel_y = (cur_rel_y-work.g_y)/*+(win->ypos*win->h_u);*/;
 			} while( mbut & 1 );
 
 			tree_drag_end(tv->tree, 0, tv->startdrag.x, tv->startdrag.y,
@@ -211,8 +263,11 @@ static void __CDECL evnt_tv_mbutton( WINDOW *win, short buff[8], void * data )
 	}
 }
 
-NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
+NSTREEVIEW atari_treeview_create(uint32_t flags, GUIWIN *win,
+								guiwin_event_handler_f user_func)
 {
+	struct guiwin_scroll_info_s *slid;
+
 	if( win == NULL )
 		return( NULL );
 	NSTREEVIEW new = malloc(sizeof(struct atari_treeview));
@@ -225,13 +280,14 @@ NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW *win )
 		return NULL;
 	}
 	new->window = win;
+	new->user_func = user_func;
 
-	win->w_u = 16;
-	win->h_u = 16;
+	guiwin_set_event_handler(win, handle_event);
+	guiwin_set_user_data(win, (void*)new);
 
-	EvntDataAdd( new->window, WM_XBUTTON, evnt_tv_mbutton, new, EV_BOT );
-	EvntDataAttach( new->window, WM_REDRAW, evnt_tv_redraw, new );
-	EvntDataAttach( new->window, WM_XKEYBD, evnt_tv_keybd, new );
+	slid = guiwin_get_scroll_info(new->window);
+	slid->y_unit_px = 16;
+	slid->x_unit_px = 16;
 
 	return(new);
 }
@@ -265,15 +321,25 @@ void atari_treeview_destroy( NSTREEVIEW tv )
 
 bool atari_treeview_mevent( NSTREEVIEW tv, browser_mouse_state bms, int x, int y)
 {
+	GRECT work;
+
 	if( tv == NULL )
 		return ( false );
-	GRECT work;
-	WindGetGrect( tv->window, WF_WORKXYWH, &work );
-	int rx = (x-work.g_x)+(tv->window->xpos*tv->window->w_u);
-	int ry = (y-work.g_y)+(tv->window->ypos*tv->window->h_u);
-	tree_mouse_action(tv->tree, bms, rx, ry );
+
+	guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
+
+	//int rx = (x-work.g_x)+(tv->window->xpos*tv->window->w_u);
+	//int ry = (y-work.g_y)+(tv->window->ypos*tv->window->h_u);
+
+	// TODO: get slider values
+	int rx = (x-work.g_x);
+	int ry = (y-work.g_y);
+
+	tree_mouse_action(tv->tree, bms, rx, ry);
+
 	tv->click.x = rx;
 	tv->click.y = ry;
+
 	return( true );
 }
 
@@ -284,9 +350,12 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 	if (tv != NULL) {
 		if( tv->redraw && ((atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0) ) {
+
 			short todo[4];
 			GRECT work;
-			WindGetGrect( tv->window, WF_WORKXYWH, &work );
+			short handle = guiwin_get_handle(tv->window);
+
+			guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
 
 			struct redraw_context ctx = {
 				.interactive = true,
@@ -303,13 +372,14 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 			todo[3] = todo[1] + work.g_h-1;
 			vs_clip(atari_plot_vdi_handle, 1, (short*)&todo );
 
-			if( wind_get(tv->window->handle, WF_FIRSTXYWH,
+			if( wind_get(handle, WF_FIRSTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
 				while (todo[2] && todo[3]) {
 
 					/* convert screen to treeview coords: */
-					todo[0] = todo[0] - work.g_x + tv->window->xpos*tv->window->w_u;
-					todo[1] = todo[1] - work.g_y + tv->window->ypos*tv->window->h_u;
+					// TODO: get slider values:
+					todo[0] = todo[0] - work.g_x;/*+ tv->window->xpos*tv->window->w_u;*/
+					todo[1] = todo[1] - work.g_y;/*+ tv->window->ypos*tv->window->h_u;*/
 					if( todo[0] < 0 ){
 						todo[2] = todo[2] + todo[0];
 						todo[0] = 0;
@@ -319,12 +389,14 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 						todo[1] = 0;
 					}
 
+					// TODO: get slider values
 					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
-						tree_draw(tv->tree, -tv->window->xpos*16, -tv->window->ypos*16,
+						tree_draw(tv->tree, 0/*-tv->window->xpos*16*/,
+										0 /*-tv->window->ypos*16*/,
 							todo[0], todo[1], todo[2], todo[3], &ctx
 						);
 					}
-					if (wind_get(tv->window->handle, WF_NEXTXYWH,
+					if (wind_get(handle, WF_NEXTXYWH,
 							&todo[0], &todo[1], &todo[2], &todo[3])==0) {
 						break;
 					}
@@ -396,11 +468,12 @@ void atari_treeview_resized(struct tree *tree, int width, int height, void *pw)
 		NSTREEVIEW tv = (NSTREEVIEW) pw;
 		if( tv->disposing )
 			return;
-		tv->extent.x = width;
-		tv->extent.y = height;
-		tv->window->ypos_max = (height / tv->window->w_u)+0.5;
-		tv->window->xpos_max = (width / tv->window->h_u)+0.5;
-		WindSlider( tv->window, HSLIDER|VSLIDER );
+		// TODO: update slider size
+		struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(tv->window);
+		slid->x_pos_max = (width / slid->x_unit_px);
+		slid->y_pos_max = (height / slid->y_unit_px);
+		printf("updating slider...\n");
+		guiwin_update_slider(tv->window, 3);
 	}
 }
 
@@ -423,17 +496,11 @@ static void atari_treeview_get_grect(NSTREEVIEW tv, enum treeview_area_e mode,
 									GRECT *dest)
 {
 
-	wind_get_grect(tv->window->handle, WF_WORKXYWH, dest);
 	if (mode == TREEVIEW_AREA_CONTENT) {
-		GRECT tb_grect;
-		atari_treeview_get_grect(tv, TREEVIEW_AREA_TOOLBAR, &tb_grect);
-		dest->g_y += tb_grect.g_h;
-		dest->g_h -= tb_grect.g_h;
+		guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, dest);
 	}
 	else if (mode == TREEVIEW_AREA_TOOLBAR) {
-		// TODO: this requires something like:
-		// 	guiwin_get_toolbar();
-		dest->g_h = 16;
+		guiwin_get_grect(tv->window, GUIWIN_AREA_TOOLBAR, dest);
 	}
 }
 

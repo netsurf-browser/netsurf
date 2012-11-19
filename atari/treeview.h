@@ -23,24 +23,26 @@
 #include <windom.h>
 #include "desktop/tree.h"
 #include "atari/gui.h"
+#include "atari/gemtk/gemtk.h"
 
 #define ATARI_TREEVIEW_WIDGETS (CLOSER | MOVER | SIZER| NAME | FULLER | SMALLER | VSLIDE | HSLIDE | UPARROW | DNARROW | LFARROW | RTARROW)
 
 struct atari_treeview
 {
 	struct tree * tree;
-	WINDOW * window;
+	GUIWIN * window;
 	bool disposing;
 	bool redraw;
 	GRECT rdw_area;
 	POINT click;
-	POINT extent;
 	POINT startdrag;
+	guiwin_event_handler_f user_func;
 };
 
 typedef struct atari_treeview * NSTREEVIEW;
 
-NSTREEVIEW atari_treeview_create( uint32_t flags, WINDOW * win );
+NSTREEVIEW atari_treeview_create( uint32_t flags, GUIWIN *win,
+								guiwin_event_handler_f user_func);
 void atari_treeview_destroy( NSTREEVIEW tv );
 void atari_treeview_open( NSTREEVIEW tv );
 void atari_treeview_close( NSTREEVIEW tv );

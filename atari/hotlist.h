@@ -21,11 +21,12 @@
 #include <stdbool.h>
 #include <windom.h>
 #include "desktop/tree.h"
+#include "atari/gemtk/gemtk.h"
 #include "atari/treeview.h"
 /* The hotlist window, toolbar and treeview data. */
 
 struct atari_hotlist {
-	WINDOW * window;
+	GUIWIN * window;
 	NSTREEVIEW tv;		/*< The hotlist treeview handle.  */
 	bool open;
 	bool init;
