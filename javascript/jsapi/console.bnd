@@ -30,18 +30,6 @@ binding navigator {
 
     interface Console; /* Web IDL interface to generate */
 
-    /* private members:
-     *  - stored in private context structure.
-     *  - passed as parameters to constructor and stored automatically.
-     *  - are *not* considered for property getters/setters.
-     *
-     * internal members:
-     *  - value stored in private context structure
-     *  - not passed to constructor
-     *  - must be instantiated by constructor
-     *  - are considered for property getters/setters.
-     */
-    internal "void *" gui_console;
 }
 
 operation log %{

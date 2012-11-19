@@ -23,15 +23,9 @@ binding window {
 
 	interface Window; /* Web IDL interface to generate */
 
-	/* private are parameters to constructor stored in private
-         *  context structure.
-         *
-         * internal are value stored in private context structure but not
-         *  passed to constructor but are considered for property 
-         *  getters/setters.
-         */
 	private "struct browser_window *" bw;
 	private "struct html_content *" htmlc;
+
 	internal "JSObject *" document;
 	internal "JSObject *" navigator;
 	internal "JSObject *" console;
