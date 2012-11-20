@@ -82,12 +82,12 @@
 #define JS_SET_RVAL(cx, vp, v) (*(vp) = (v))
 
 /* native property specifier */
-#define JSAPI_PS(name, tinyid, flags) \
-	{ #name , tinyid , flags , jsapi_property_##name##_get , jsapi_property_##name##_set }
+#define JSAPI_PS(name, fnname, tinyid, flags)				\
+	{ name , tinyid , flags , jsapi_property_##fnname##_get , jsapi_property_##fnname##_set }
 
 /* native property specifier with no setter */
-#define JSAPI_PS_RO(name, tinyid, flags) \
-	{ #name , tinyid , flags | JSPROP_READONLY, jsapi_property_##name##_get , NULL }
+#define JSAPI_PS_RO(name, fnname, tinyid, flags)				\
+	{ name , tinyid , flags | JSPROP_READONLY, jsapi_property_##fnname##_get , NULL }
 
 /* native property specifier list end */
 #define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
@@ -187,11 +187,11 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	jsapi_property_##name##_set(cx, obj, jsval id, vp)
 
 /* property specifier */
-#define JSAPI_PS(name, tinyid, flags) \
-	{ #name , tinyid , flags , jsapi_property_##name##_get , jsapi_property_##name##_set }
+#define JSAPI_PS(name, fnname, tinyid, flags)				\
+	{ name , tinyid , flags , jsapi_property_##fnname##_get , jsapi_property_##fnname##_set }
 
-#define JSAPI_PS_RO(name, tinyid, flags) \
-	{ #name , tinyid , flags | JSPROP_READONLY, jsapi_property_##name##_get , NULL }
+#define JSAPI_PS_RO(name, fnname, tinyid, flags)				\
+	{ name , tinyid , flags | JSPROP_READONLY, jsapi_property_##fnname##_get , NULL }
 
 #define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
 
@@ -284,19 +284,19 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	jsapi_property_##name##_set(cx, obj, jsid id, JSBool strict, vp)
 
 /* property specifier */
-#define JSAPI_PS(name, tinyid, flags) {				\
-		#name ,						\
-		tinyid ,					\
-		flags ,						\
-		jsapi_property_##name##_get ,			\
-		jsapi_property_##name##_set			\
+#define JSAPI_PS(name, fnname, tinyid, flags) {			\
+		name,						\
+		tinyid,						\
+		flags,						\
+		jsapi_property_##fnname##_get,			\
+		jsapi_property_##fnname##_set			\
 	}
 
-#define JSAPI_PS_RO(name, tinyid, flags) {			\
-		#name ,						\
-		tinyid ,					\
+#define JSAPI_PS_RO(name, fnname, tinyid, flags) {		\
+		name,						\
+		tinyid,						\
 		flags | JSPROP_READONLY,			\
-		jsapi_property_##name##_get ,			\
+		jsapi_property_##fnname##_get,			\
 		NULL						\
 	}
 
