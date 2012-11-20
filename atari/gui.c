@@ -1117,7 +1117,9 @@ int main(int argc, char** argv)
     freopen("stdout.log", "a+", stdout);
     freopen("stderr.log", "a+", stderr);
 #endif
+    // todo: replace with appl_init
     ApplInit();
+    gl_apid = _AESapid;
     graf_mouse(BUSY_BEE, NULL);
     init_os_info();
     atari_find_resource((char*)&messages, "messages", "res/messages");

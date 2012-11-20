@@ -27,64 +27,92 @@ static GUIWIN * winlist;
 static VdiHdl v_vdi_h = -1;
 static short work_out[57];
 
+static void move_screen( int vhandle, GRECT *screen, int dx, int dy) {
+        INT16 xy[ 8];
+        long dum = 0L;
+        GRECT g;
+
+        /* get intersection with screen area */
+        wind_get_grect(0, WF_CURRXYWH, &g);
+        rc_intersect(&g, screen);
+        xy[ 0] = screen -> g_x;
+        xy[ 1] = screen -> g_y;
+        xy[ 2] = xy[ 0] + screen -> g_w - 1;
+        xy[ 3] = xy[ 1] + screen -> g_h - 1;
+        xy[ 4] = xy[ 0] + dx;
+        xy[ 5] = xy[ 1] + dy;
+        xy[ 6] = xy[ 2] + dx;
+        xy[ 7] = xy[ 3] + dy;
+        vro_cpyfm( vhandle, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
+}
+
 static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
-    GRECT g, tb_area, tb_area_ro;
+    GRECT g, g_ro, tb_area, tb_area_ro;
     short retval = 1;
     int val;
     struct guiwin_scroll_info_s *slid;
 
     switch(msg[0]) {
 
-	case WM_ARROWED:
-		if((gw->flag & GW_FLAG_CUSTOM_SCROLLING) == 0){
+    case WM_ARROWED:
+        if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
 
-			slid = guiwin_get_scroll_info(win);
+            slid = guiwin_get_scroll_info(gw);
+            guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+            g_ro = g;
 
-			switch(msg[4]){
-				case WA_DNPAGE:
-					guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &g);
-					val = g.g_h;
-					// complete redraw
-					// increase scroll val by page size...
-					break;
+            switch(msg[4]) {
+            case WA_DNPAGE:
 
-				case WA_UPLINE:
-					slid->g_y = MAX(0, slid->g_y-1);
-					// partial redraw
-					break;
+                val = g.g_h;
+                // complete redraw
+                // increase scroll val by page size...
+                break;
 
-				case WA_DNLINE:
-					slid->g_y = MIN(slid->y_pos_max, slid->g_y+1);
-					// move content up by unit size and sched redraw for the
-					// bottom 16 px
-					// partial redraw
-					break;
+            case WA_UPLINE:
+                slid->y_pos = MAX(0, slid->y_pos-1);
+                // partial redraw
+                break;
 
-				case WA_LFPAGE:
-					// complete redraw
-					// increase scroll val by page size...
-					break;
+            case WA_DNLINE:
+                slid->y_pos = MIN(slid->y_pos_max, slid->y_pos+1);
+                g.g_y += slid->y_unit_px;
+                g.g_h -= slid->y_unit_px;
+                move_screen(v_vdi_h, &g, 0, -slid->y_unit_px);
+                g.g_y = g_ro.g_y + g_ro.g_h - slid->y_unit_px;
+                g.g_h = slid->y_unit_px;
+                guiwin_send_redraw(gw, &g);
+                // move content up by unit size and sched redraw for the
+                // bottom 16 px
+                // partial redraw
+                break;
 
-				case WA_RTPAGE:
-					// complete redraw
-					// increase scroll val by page size...
-					break;
+            case WA_LFPAGE:
+                // complete redraw
+                // increase scroll val by page size...
+                break;
 
-				case WA_LFLINE:
-					slid->g_x = MAX(0, slid->g_x-1);
-					// partial redraw
-					break;
+            case WA_RTPAGE:
+                // complete redraw
+                // increase scroll val by page size...
+                break;
 
-				case WA_RTLINE:
-					slid->g_x = MIN(slid->x_pos_max, slid->g_x+1);
-					// partial redraw
-					break;
+            case WA_LFLINE:
+                slid->x_pos = MAX(0, slid->x_pos-1);
+                // partial redraw
+                break;
 
-				default: break;
-			}
-		}
-		break;
+            case WA_RTLINE:
+                slid->x_pos = MIN(slid->x_pos_max, slid->x_pos+1);
+                // partial redraw
+                break;
+
+            default:
+                break;
+            }
+        }
+        break;
 
     case WM_TOPPED:
         wind_set(gw->handle, WF_TOP, 1, 0, 0, 0);
@@ -248,17 +276,18 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 
 short guiwin_init(void)
 {
-	if(v_vdi_h == -1){
-		short dummy;
-		static short work_in[12] = {1,1,1,1,1,1,1,1,1,1,2,1};
-		v_vdi_h=graf_handle(&dummy, &dummy, &dummy, &dummy);
-		v_opnvwk(work_in, &v_vdi_h, work_out);
-	}
+    if(v_vdi_h == -1) {
+        short dummy;
+        static short work_in[12] = {1,1,1,1,1,1,1,1,1,1,2,1};
+        v_vdi_h=graf_handle(&dummy, &dummy, &dummy, &dummy);
+        v_opnvwk(work_in, &v_vdi_h, work_out);
+    }
+    return(0);
 }
 
 void guiwin_exit(void)
 {
-	v_clsvwk(v_vdi_h);
+    v_clsvwk(v_vdi_h);
 }
 
 GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
@@ -368,9 +397,9 @@ void guiwin_update_slider(GUIWIN *win, short mode)
     struct guiwin_scroll_info_s * slid;
     unsigned long size, pos;
 
-	short handle = guiwin_get_handle(win);
+    short handle = guiwin_get_handle(win);
     guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &viewport);
-	slid = guiwin_get_scroll_info(win);
+    slid = guiwin_get_scroll_info(win);
 
     if((mode & 1) && (slid->y_unit_px > 0)) {
         if ( slid->y_pos_max < (long)viewport.g_h/slid->y_unit_px)
@@ -440,8 +469,35 @@ void *guiwin_get_user_data(GUIWIN *win)
 
 struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win)
 {
-	return(&win->scroll_info);
+    return(&win->scroll_info);
 }
+
+void guiwin_send_redraw(GUIWIN *win, GRECT *area)
+{
+	short msg[8];
+	GRECT work;
+
+	if(area == NULL){
+		guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
+		area = &work;
+	}
+
+	msg[0] = WM_REDRAW;
+	msg[1] = gl_apid;
+	msg[2] = 0;
+	msg[3] = win->handle;
+	msg[4] = area->g_x;
+	msg[5] = area->g_y;
+	msg[6] = area->g_w;
+	msg[7] = area->g_h;
+
+	appl_write(gl_apid, 16, &msg);
+}
+/*
+void guiwin_exec_redraw(){
+
+}
+*/
 
 
 

@@ -84,6 +84,7 @@ enum guwin_area_e {
 };
 
 short guiwin_init(void);
+void guiwin_exit(void);
 GUIWIN * guiwin_add(short handle, uint32_t flags,
 					guiwin_event_handler_f handler);
 GUIWIN *guiwin_find(short handle);
@@ -99,9 +100,11 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx,
 void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
 void guiwin_set_user_data(GUIWIN *win, void *data);
 void *guiwin_get_user_data(GUIWIN *win);
-struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win);
+struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
 void guiwin_update_slider(GUIWIN *win, short mode);
+void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
+
 
 
 /*

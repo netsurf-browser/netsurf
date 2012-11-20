@@ -86,6 +86,11 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			on_redraw_event(tv, ev_out, msg);
             break;
 
+		case WM_SIZED:
+		case WM_FULLED:
+			guiwin_update_slider(win, 3);
+			break;
+
         default:
             break;
         }
@@ -322,18 +327,16 @@ void atari_treeview_destroy( NSTREEVIEW tv )
 bool atari_treeview_mevent( NSTREEVIEW tv, browser_mouse_state bms, int x, int y)
 {
 	GRECT work;
+	struct guiwin_scroll_info_s *slid;
 
 	if( tv == NULL )
 		return ( false );
 
 	guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
+	slid = guiwin_get_scroll_info(tv->window);
 
-	//int rx = (x-work.g_x)+(tv->window->xpos*tv->window->w_u);
-	//int ry = (y-work.g_y)+(tv->window->ypos*tv->window->h_u);
-
-	// TODO: get slider values
-	int rx = (x-work.g_x);
-	int ry = (y-work.g_y);
+	int rx = (x-work.g_x)+(slid->x_pos*slid->x_unit_px);
+	int ry = (y-work.g_y)+(slid->y_pos*slid->y_unit_px);
 
 	tree_mouse_action(tv->tree, bms, rx, ry);
 
@@ -354,8 +357,10 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 			short todo[4];
 			GRECT work;
 			short handle = guiwin_get_handle(tv->window);
+			struct guiwin_scroll_info_s *slid;
 
 			guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &work);
+			slid = guiwin_get_scroll_info(tv->window);
 
 			struct redraw_context ctx = {
 				.interactive = true,
@@ -378,8 +383,8 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 					/* convert screen to treeview coords: */
 					// TODO: get slider values:
-					todo[0] = todo[0] - work.g_x;/*+ tv->window->xpos*tv->window->w_u;*/
-					todo[1] = todo[1] - work.g_y;/*+ tv->window->ypos*tv->window->h_u;*/
+					todo[0] = todo[0] - work.g_x + slid->x_pos*slid->x_unit_px;
+					todo[1] = todo[1] - work.g_y + slid->y_pos*slid->y_unit_px;
 					if( todo[0] < 0 ){
 						todo[2] = todo[2] + todo[0];
 						todo[0] = 0;
@@ -391,8 +396,8 @@ void atari_treeview_redraw( NSTREEVIEW tv)
 
 					// TODO: get slider values
 					if (rc_intersect((GRECT *)&tv->rdw_area,(GRECT *)&todo)) {
-						tree_draw(tv->tree, 0/*-tv->window->xpos*16*/,
-										0 /*-tv->window->ypos*16*/,
+						tree_draw(tv->tree, -(slid->x_pos*slid->x_unit_px),
+										-(slid->y_pos*slid->y_unit_px),
 							todo[0], todo[1], todo[2], todo[3], &ctx
 						);
 					}
@@ -472,7 +477,6 @@ void atari_treeview_resized(struct tree *tree, int width, int height, void *pw)
 		struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(tv->window);
 		slid->x_pos_max = (width / slid->x_unit_px);
 		slid->y_pos_max = (height / slid->y_unit_px);
-		printf("updating slider...\n");
 		guiwin_update_slider(tv->window, 3);
 	}
 }
