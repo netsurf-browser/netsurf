@@ -453,7 +453,7 @@ void atari_treeview_request_redraw(int x, int y, int w, int h, void *pw)
 			tv->rdw_area.g_w = ( oldx1 > newx1 ) ? oldx1 - tv->rdw_area.g_x : newx1 - tv->rdw_area.g_x;
 			tv->rdw_area.g_h = ( oldy1 > newy1 ) ? oldy1 - tv->rdw_area.g_y : newy1 - tv->rdw_area.g_y;
 		}
-		dbg_grect("atari_treeview_request_redraw", &tv->rdw_area);
+		//dbg_grect("atari_treeview_request_redraw", &tv->rdw_area);
 	}
 }
 
@@ -478,10 +478,10 @@ void atari_treeview_resized(struct tree *tree, int width, int height, void *pw)
 		tv->extent.y = height;
 		struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(tv->window);
 		guiwin_get_grect(tv->window, GUIWIN_AREA_CONTENT, &area);
-		slid->x_pos_max = (width/slid->x_unit_px);//-(area.g_w/slid->x_unit_px)+1;
-		slid->y_pos_max = (height/slid->y_unit_px);//-(area.g_h/slid->y_unit_px)+1;
-		printf("units content: %d, units viewport: %d\n", (height/slid->y_unit_px),
-					(area.g_h/slid->y_unit_px));
+		slid->x_units = (width/slid->x_unit_px);
+		slid->y_units = (height/slid->y_unit_px);
+		/*printf("units content: %d, units viewport: %d\n", (height/slid->y_unit_px),
+					(area.g_h/slid->y_unit_px));*/
 		guiwin_update_slider(tv->window, GUIWIN_VH_SLIDER);
 	}
 }

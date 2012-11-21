@@ -34,6 +34,7 @@ struct atari_treeview
 	bool disposing;
 	bool redraw;
 	GRECT rdw_area;
+	POINT extent;
 	POINT click;
 	POINT startdrag;
 	guiwin_event_handler_f user_func;

@@ -50,14 +50,17 @@ struct atari_hotlist hl;
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
+	NSTREEVIEW tv=NULL;
+	GRECT tb_area;
 
-	printf("hotlist handle event...\n");
 	if(ev_out->emo_events & MU_MESAG){
 		switch (msg[0]) {
-			case WM_TOOLBAR:
-				printf("toolbar event...%d\n", msg[4]);
-				switch	(msg[4]) {
 
+			case WM_TOOLBAR:
+
+				tv = (NSTREEVIEW) guiwin_get_user_data(win);
+
+				switch	(msg[4]) {
 					case TOOLBAR_HOTLIST_CREATE_FOLDER:
 						hotlist_add_folder(true);
 						break;
@@ -68,12 +71,18 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 					case TOOLBAR_HOTLIST_DELETE:
 						hotlist_delete_selected();
+						guiwin_send_redraw(tv->window, NULL);
 						break;
 
 					case TOOLBAR_HOTLIST_EDIT:
 						hotlist_edit_selected();
 						break;
 				}
+
+				get_tree(TOOLBAR_HOTLIST)[msg[4]].ob_state &= ~OS_SELECTED;
+				guiwin_get_grect(tv->window, GUIWIN_AREA_TOOLBAR, &tb_area);
+				evnt_timer(150);
+				guiwin_send_redraw(tv->window, &tb_area);
 			break;
 
 			case WM_CLOSED:

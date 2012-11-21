@@ -1816,10 +1816,18 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	uint32_t lt;
 	int sw = pstyle->stroke_width;
 
-	pxy[0] = view.x + x0;
-	pxy[1] = view.y + y0;
-	pxy[2] = view.x + x1;
-	pxy[3] = view.y + y1;
+	if((x0 < 0 && x1 < 0) || (y0 < 0 && y1 < 0)){
+		return(true);
+	}
+
+	pxy[0] = view.x + MAX(0,x0);
+	pxy[1] = view.y + MAX(0,y0);
+	pxy[2] = view.x + MAX(0,x1);
+	pxy[3] = view.y + MAX(0,y1);
+
+
+	//printf("view: %d,%d,%d,%d\n", view.x, view.y, view.w, view.h);
+	//printf("line: %d,%d,%d,%d\n", x0,  y0,  x1,  y1);
 
 	plot_vdi_clip(true);
 	if( sw == 0)
@@ -1834,7 +1842,7 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	vsl_rgbcolor(atari_plot_vdi_handle, pstyle->stroke_colour);
 	v_pline(atari_plot_vdi_handle, 2, (short *)&pxy );
 	plot_vdi_clip(false);
-    return ( true );
+    return (true);
 }
 
 static bool plot_polygon(const int *p, unsigned int n,
