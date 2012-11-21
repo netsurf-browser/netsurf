@@ -58,7 +58,7 @@ getter protocol %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 %}
 
@@ -69,7 +69,7 @@ getter host %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 %}
 
@@ -80,7 +80,7 @@ getter hostname %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 
 %}
@@ -92,7 +92,7 @@ getter port %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 
 %}
@@ -104,7 +104,7 @@ getter pathname %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 
 %}
@@ -116,7 +116,7 @@ getter search %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 
 %}
@@ -128,6 +128,6 @@ getter hash %{
 		jsret = JS_NewStringCopyN(cx,
 					  lwc_string_data(component),
 					  lwc_string_length(component));
-		dom_string_unref(component);
+		lwc_string_unref(component);
 	}
 %}
