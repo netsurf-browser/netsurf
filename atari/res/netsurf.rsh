@@ -198,9 +198,7 @@
 #define CHOICES_ABORT 108  /* BUTTON in tree CHOICES */
 #define CHOICES_OK 109  /* BUTTON in tree CHOICES */
 
-#define ALERT 14  /* form/dial */
-
-#define VSCROLLER 15  /* form/dial */
+#define VSCROLLER 14  /* form/dial */
 #define VSCROLLER_AREA 1  /* BOX in tree VSCROLLER */
 #define VSCROLLER_SLIDER_AREA 2  /* BUTTON in tree VSCROLLER */
 #define VSCROLLER_SLIDER 3  /* BUTTON in tree VSCROLLER */

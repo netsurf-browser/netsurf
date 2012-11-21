@@ -5,6 +5,7 @@
 #include <mint/osbind.h>
 #include <mint/cookie.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 /* System type detection added by [GS]  */
 /* detect the system type, AES + kernel */
@@ -61,8 +62,12 @@ short msg_box_show(short type, const char * msg);
 #define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
 #define GW_FLAG_CUSTOM_SCROLLING	0x10	// no internal scroller handling
 
-#define GW_STATUS_ICONIFIED		0x01
-#define GW_STATUS_SHADED		0x02
+#define GW_STATUS_ICONIFIED			0x01
+#define GW_STATUS_SHADED			0x02
+
+#define GUIWIN_VSLIDER 				0x01
+#define GUIWIN_HSLIDER 				0x02
+#define GUIWIN_VH_SLIDER 			0x03
 
 struct gui_window_s;
 typedef struct gui_window_s GUIWIN;
@@ -101,9 +106,10 @@ void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
 void guiwin_set_user_data(GUIWIN *win, void *data);
 void *guiwin_get_user_data(GUIWIN *win);
 struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
-void guiwin_update_slider(GUIWIN *win, short mode);
+bool guiwin_update_slider(GUIWIN *win, short mode);
 void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
+bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
 
 
 

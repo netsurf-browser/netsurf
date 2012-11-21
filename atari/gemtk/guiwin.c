@@ -8,7 +8,7 @@
 #include <mt_gem.h>
 #include "gemtk.h"
 
-//#define DEBUG_PRINT(x)        printf x
+//#define DEBUG_PRINT(x)		printf x
 #define DEBUG_PRINT(x)
 
 struct gui_window_s {
@@ -27,30 +27,37 @@ static GUIWIN * winlist;
 static VdiHdl v_vdi_h = -1;
 static short work_out[57];
 
-static void move_screen( int vhandle, GRECT *screen, int dx, int dy) {
-        INT16 xy[ 8];
-        long dum = 0L;
-        GRECT g;
+static void move_rect(GRECT *rect, int dx, int dy)
+{
+    INT16 xy[ 8];
+    long dum = 0L;
+    GRECT g;
 
-        /* get intersection with screen area */
-        wind_get_grect(0, WF_CURRXYWH, &g);
-        rc_intersect(&g, screen);
-        xy[ 0] = screen -> g_x;
-        xy[ 1] = screen -> g_y;
-        xy[ 2] = xy[ 0] + screen -> g_w - 1;
-        xy[ 3] = xy[ 1] + screen -> g_h - 1;
-        xy[ 4] = xy[ 0] + dx;
-        xy[ 5] = xy[ 1] + dy;
-        xy[ 6] = xy[ 2] + dx;
-        xy[ 7] = xy[ 3] + dy;
-        vro_cpyfm( vhandle, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
+    while( !wind_update(BEG_UPDATE));
+    graf_mouse(M_OFF, 0L);
+
+    /* get intersection with screen area */
+    wind_get_grect(0, WF_CURRXYWH, &g);
+    rc_intersect(&g, rect);
+    xy[0] = rect->g_x;
+    xy[1] = rect->g_y;
+    xy[2] = xy[0] + rect->g_w-1;
+    xy[3] = xy[1] + rect->g_h-1;
+    xy[4] = xy[0] + dx;
+    xy[5] = xy[1] + dy;
+    xy[6] = xy[2] + dx;
+    xy[7] = xy[3] + dy;
+    vro_cpyfm(v_vdi_h, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
+
+    graf_mouse(M_ON, 0L);
+    wind_update(END_UPDATE);
 }
 
 static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
     GRECT g, g_ro, tb_area, tb_area_ro;
     short retval = 1;
-    int val;
+    int val = 1;
     struct guiwin_scroll_info_s *slid;
 
     switch(msg[0]) {
@@ -63,49 +70,104 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             g_ro = g;
 
             switch(msg[4]) {
-            case WA_DNPAGE:
 
-                val = g.g_h;
-                // complete redraw
-                // increase scroll val by page size...
-                break;
+			case WA_UPPAGE:
+				val = g.g_h/slid->y_unit_px;
+				slid->y_pos = MAX(0, slid->y_pos-val);
+				guiwin_update_slider(gw, GUIWIN_VSLIDER);
+				guiwin_send_redraw(gw, &g_ro);
+				break;
 
             case WA_UPLINE:
                 slid->y_pos = MAX(0, slid->y_pos-1);
-                // partial redraw
+                guiwin_update_slider(gw, GUIWIN_VSLIDER);
+                if(!guiwin_has_intersection(gw, NULL)){
+                	// blit screen area:
+					g.g_h -= slid->y_unit_px;
+					move_rect(&g, 0, +slid->y_unit_px);
+					g.g_y = g_ro.g_y;
+					g.g_h = slid->y_unit_px;
+					// redraw new content:
+					guiwin_send_redraw(gw, &g);
+                } else {
+                	// let the draw implementation handle intersections:
+					guiwin_send_redraw(gw, &g_ro);
+                }
+                break;
+
+            case WA_DNPAGE:
+                val = g.g_h/slid->y_unit_px;
+                slid->y_pos = MIN(slid->y_pos_max, slid->y_pos+val);
+                guiwin_update_slider(gw, GUIWIN_VSLIDER);
+                guiwin_send_redraw(gw, &g_ro);
                 break;
 
             case WA_DNLINE:
-                slid->y_pos = MIN(slid->y_pos_max, slid->y_pos+1);
-                g.g_y += slid->y_unit_px;
-                g.g_h -= slid->y_unit_px;
-                move_screen(v_vdi_h, &g, 0, -slid->y_unit_px);
-                g.g_y = g_ro.g_y + g_ro.g_h - slid->y_unit_px;
-                g.g_h = slid->y_unit_px;
-                guiwin_send_redraw(gw, &g);
-                // move content up by unit size and sched redraw for the
-                // bottom 16 px
-                // partial redraw
+				slid->y_pos = MIN(slid->y_pos_max, slid->y_pos+1);
+				guiwin_update_slider(gw, GUIWIN_VSLIDER);
+                if(!guiwin_has_intersection(gw, NULL)){
+                	// blit screen area:
+					g.g_y += slid->y_unit_px;
+					g.g_h -= slid->y_unit_px;
+					move_rect(&g, 0, -slid->y_unit_px);
+					g.g_y = g_ro.g_y + g_ro.g_h - slid->y_unit_px;
+					g.g_h = slid->y_unit_px;
+					// redraw new content:
+					guiwin_send_redraw(gw, &g);
+                } else {
+                	// let the draw implementation handle intersections:
+					guiwin_send_redraw(gw, &g_ro);
+                }
                 break;
 
             case WA_LFPAGE:
-                // complete redraw
-                // increase scroll val by page size...
-                break;
-
-            case WA_RTPAGE:
-                // complete redraw
-                // increase scroll val by page size...
+				val = g.g_w/slid->x_unit_px;
+				slid->x_pos = MAX(0, slid->x_pos-val);
+				guiwin_update_slider(gw, GUIWIN_HSLIDER);
+                guiwin_send_redraw(gw, &g_ro);
                 break;
 
             case WA_LFLINE:
                 slid->x_pos = MAX(0, slid->x_pos-1);
+                guiwin_update_slider(gw, GUIWIN_HSLIDER);
+                if(!guiwin_has_intersection(gw, NULL)){
+                	// blit screen area:
+					g.g_x -= slid->x_unit_px;
+					move_rect(&g, 0, +slid->x_unit_px);
+					// redraw new content:
+					g.g_x = g_ro.g_x;
+					g.g_w = slid->x_unit_px;
+					guiwin_send_redraw(gw, &g);
+                } else {
+                	// let the draw implementation handle intersections:
+					guiwin_send_redraw(gw, &g_ro);
+                }
                 // partial redraw
                 break;
 
+            case WA_RTPAGE:
+				val = g.g_w/slid->x_unit_px;
+				slid->x_pos = MIN(slid->x_pos_max, slid->x_pos+val);
+				guiwin_update_slider(gw, GUIWIN_HSLIDER);
+				guiwin_send_redraw(gw, &g_ro);
+				break;
+
             case WA_RTLINE:
                 slid->x_pos = MIN(slid->x_pos_max, slid->x_pos+1);
-                // partial redraw
+				guiwin_update_slider(gw, GUIWIN_HSLIDER);
+                if(!guiwin_has_intersection(gw, NULL)){
+                	// blit remaining area:
+					g.g_x += slid->x_unit_px;
+					g.g_w -= slid->y_unit_px;
+					move_rect(&g, 0, -slid->x_unit_px);
+					// redraw new content:
+					g.g_x = g_ro.g_x + g_ro.g_w - slid->x_unit_px;
+					g.g_h = slid->x_unit_px;
+					guiwin_send_redraw(gw, &g);
+                } else {
+                	// let the draw implementation handle intersections:
+					guiwin_send_redraw(gw, &g_ro);
+                }
                 break;
 
             default:
@@ -127,11 +189,21 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     case WM_REPOSED:
         wind_get_grect(gw->handle, WF_CURRXYWH, &g);
         wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, msg[6], msg[7]);
+        if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
+			if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)){
+				guiwin_send_redraw(gw, NULL);
+			}
+        }
         break;
 
     case WM_FULLED:
         wind_get_grect(gw->handle, WF_FULLXYWH, &g);
         wind_set_grect(gw->handle, WF_CURRXYWH, &g);
+        if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
+			if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)){
+				guiwin_send_redraw(gw, NULL);
+			}
+        }
         break;
 
     case WM_ICONIFY:
@@ -157,16 +229,22 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             guiwin_get_grect(gw, GUIWIN_AREA_TOOLBAR, &tb_area_ro);
             tb_area = tb_area_ro;
             if(rc_intersect((GRECT*)&msg[4], &tb_area)) {
+
+                gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
+                gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
+                gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
+                gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
+
                 wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
                 while (g.g_h > 0 || g.g_w > 0) {
-                    gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
-                    gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
-                    gw->toolbar[gw->toolbar_idx].ob_y = tb_area_ro.g_y;
-                    gw->toolbar[gw->toolbar_idx].ob_height = tb_area_ro.g_h;
-                    objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
-                              g.g_w, g.g_h);
+                    if(rc_intersect(&tb_area_ro, &g)) {
+                        objc_draw(gw->toolbar, gw->toolbar_idx, 8, g.g_x, g.g_y,
+                                  g.g_w, g.g_h);
+
+                    }
                     wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
                 }
+
             }
         }
         break;
@@ -174,7 +252,9 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     default:
         retval = 0;
         break;
+
     }
+
     return(retval);
 }
 
@@ -391,46 +471,59 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
     }
 }
 
-void guiwin_update_slider(GUIWIN *win, short mode)
+bool guiwin_update_slider(GUIWIN *win, short mode)
 {
     GRECT viewport;
     struct guiwin_scroll_info_s * slid;
     unsigned long size, pos;
+    int old_x, old_y;
 
     short handle = guiwin_get_handle(win);
     guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &viewport);
     slid = guiwin_get_scroll_info(win);
 
-    if((mode & 1) && (slid->y_unit_px > 0)) {
+    old_x = slid->x_pos;
+    old_y = slid->y_pos;
+
+    if((mode & GUIWIN_VSLIDER) && (slid->y_unit_px > 0)) {
         if ( slid->y_pos_max < (long)viewport.g_h/slid->y_unit_px)
             size = 1000L;
         else
-            size = MAX( 50L, (unsigned long)viewport.g_h*1000L/(unsigned long)(slid->y_unit_px*slid->y_pos_max));
+            size = MAX( 50L, (unsigned long)viewport.g_h*1000L/
+					(unsigned long)(slid->y_unit_px*slid->y_pos_max));
         wind_set(handle, WF_VSLSIZE, (int)size, 0, 0, 0);
 
         if (slid->y_pos_max > (long)viewport.g_h/slid->y_unit_px) {
-            pos = (unsigned long)slid->y_pos *1000L/(unsigned long)(slid->y_pos_max-viewport.g_h/slid->y_unit_px);
+            pos = (unsigned long)slid->y_pos *1000L/
+				(unsigned long)(slid->y_pos_max-viewport.g_h/slid->y_unit_px);
             wind_set(handle, WF_VSLIDE, (int)pos, 0, 0, 0);
         } else if (slid->y_pos) {
             slid->y_pos = 0;
             wind_set(handle, WF_VSLIDE, 0, 0, 0, 0);
         }
     }
-    if((mode & 2) && (slid->x_unit_px > 0)) {
+    if((mode & GUIWIN_HSLIDER) && (slid->x_unit_px > 0)) {
         if ( slid->x_pos_max < (long)viewport.g_w/slid->x_unit_px)
             size = 1000L;
         else
-            size = MAX( 50L, (unsigned long)viewport.g_w*1000L/(unsigned long)(slid->x_unit_px*slid->x_pos_max));
+            size = MAX( 50L, (unsigned long)viewport.g_w*1000L/
+					(unsigned long)(slid->x_unit_px*slid->x_pos_max));
         wind_set(handle, WF_HSLSIZE, (int)size, 0, 0, 0);
 
         if( slid->x_pos_max > (long)viewport.g_w/slid->x_unit_px) {
-            pos = (unsigned long)slid->x_pos*1000L/(unsigned long)(slid->x_pos_max-viewport.g_w/slid->x_unit_px);
+            pos = (unsigned long)slid->x_pos*1000L/
+				(unsigned long)(slid->x_pos_max-viewport.g_w/slid->x_unit_px);
             wind_set(handle, WF_HSLIDE, (int)pos, 0, 0, 0);
         } else if (slid->x_pos) {
             slid->x_pos = 0;
             wind_set(handle, WF_HSLIDE, 0, 0, 0, 0);
         }
     }
+
+    if(old_x != slid->x_pos || old_y != slid->y_pos){
+		return(true);
+    }
+    return(false);
 }
 
 short guiwin_get_handle(GUIWIN *win)
@@ -467,31 +560,50 @@ void *guiwin_get_user_data(GUIWIN *win)
     return(win->user_data);
 }
 
-struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win)
-{
+struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
     return(&win->scroll_info);
 }
 
 void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 {
-	short msg[8];
-	GRECT work;
+    short msg[8];
+    GRECT work;
 
-	if(area == NULL){
-		guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
-		area = &work;
+    if(area == NULL) {
+        guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
+        area = &work;
+    }
+
+    msg[0] = WM_REDRAW;
+    msg[1] = gl_apid;
+    msg[2] = 0;
+    msg[3] = win->handle;
+    msg[4] = area->g_x;
+    msg[5] = area->g_y;
+    msg[6] = area->g_w;
+    msg[7] = area->g_h;
+
+    appl_write(gl_apid, 16, &msg);
+}
+
+bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
+{
+	GRECT area, mywork;
+	bool retval = false;
+
+	if (work == NULL) {
+		guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &mywork);
+		work = &mywork;
 	}
 
-	msg[0] = WM_REDRAW;
-	msg[1] = gl_apid;
-	msg[2] = 0;
-	msg[3] = win->handle;
-	msg[4] = area->g_x;
-	msg[5] = area->g_y;
-	msg[6] = area->g_w;
-	msg[7] = area->g_h;
-
-	appl_write(gl_apid, 16, &msg);
+	wind_get_grect(win->handle, WF_FIRSTXYWH, &area);
+	while (area.g_w && area.g_w) {
+		if (rc_intersect(work, &area)) {
+			retval = true;
+		}
+		wind_get_grect(win->handle, WF_NEXTXYWH, &area);
+	}
+	return(retval);
 }
 /*
 void guiwin_exec_redraw(){
