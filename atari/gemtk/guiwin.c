@@ -151,12 +151,12 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         wind_set(gw->handle, WF_HSLIDE, msg[4], 0, 0, 0);
         slid = guiwin_get_scroll_info(gw);
         val = (float)(slid->x_units-(g.g_w/slid->x_unit_px))/1000*(float)msg[4];
-        if(val != slid->y_pos) {
+        if(val != slid->x_pos) {
             if (val < slid->x_pos) {
-                val = -(slid->x_pos - val);
+                val = -(MAX(0, slid->x_pos-val));
             }
             else {
-                val = val -slid->x_pos;
+                val = val-slid->x_pos;
             }
             preproc_scroll(gw, GUIWIN_HSLIDER, val, false);
         }
