@@ -47,24 +47,24 @@
  */
 
 /* native function definition with five parameters */
-#define JSAPI_NATIVE(name, cx, argc, vp) \
-	jsapi_native_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
+#define JSAPI_FUNC(name, cx, argc, vp) \
+	jsapi_func_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
 
-/* native function return value */
-#define JSAPI_RVAL(cx, vp) (jsapi_rval)
+/* native function return value - No macro available */
+#define JSAPI_FUNC_RVAL(cx, vp) (jsapi_rval)
 
-/* native function return value setter with no JS_SET_RVAL */
-#define JSAPI_SET_RVAL(cx, vp, v) (*jsapi_rval = (v))
+/* native function return value setter - No macro available  */
+#define JSAPI_FUNC_SET_RVAL(cx, vp, v) (*jsapi_rval = (v))
 
 /* arguments */
-#define JSAPI_ARGV(cx, vp) (vp)
+#define JSAPI_FUNC_ARGV(cx, vp) (vp)
 
 /* check if a jsval is an object */
 #define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
 
 /* native function specifier with five parameters and no JS_FS macro */
 #define JSAPI_FS(name, nargs, flags) \
-	{ #name, jsapi_native_##name, nargs, flags, 0 }
+	{ #name, jsapi_func_##name, nargs, flags, 0 }
 
 /* native function specifier list end */
 #define JSAPI_FS_END { NULL, NULL, 0, 0, 0 }
@@ -73,13 +73,16 @@
 
 
 /* native proprty definition */
-#define JSAPI_PROPERTYGET(name, cx, obj, vp) \
+#define JSAPI_PROP_GETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsval id, vp)
-#define JSAPI_PROPERTYSET(name, cx, obj, vp) \
+#define JSAPI_PROP_SETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_set(cx, obj, jsval id, vp)
 
+/* native property return value */
+#define JSAPI_PROP_RVAL(cx, vp) (vp)
+
 /* native property getter return value */
-#define JS_SET_RVAL(cx, vp, v) (*(vp) = (v))
+#define JSAPI_PROP_SET_RVAL(cx, vp, v) (*(vp) = (v))
 
 /* native property specifier */
 #define JSAPI_PS(name, fnname, tinyid, flags)				\
@@ -155,12 +158,12 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
  */
 
 /* five parameter jsapi native call */
-#define JSAPI_NATIVE(name, cx, argc, vp) \
-	jsapi_native_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
+#define JSAPI_FUNC(name, cx, argc, vp) \
+	jsapi_func_##name(cx, JSObject *jsapi_this, argc, vp, jsval *jsapi_rval)
 
 /* five parameter function descriptor */
 #define JSAPI_FS(name, nargs, flags) \
-	JS_FS(#name, jsapi_native_##name, nargs, flags, 0)
+	JS_FS(#name, jsapi_func_##name, nargs, flags, 0)
 
 /* function descriptor end */
 #define JSAPI_FS_END JS_FS_END
@@ -169,10 +172,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_RVAL(cx, vp) JS_RVAL(cx, jsapi_rval)
 
 /* return value setter */
-#define JSAPI_SET_RVAL(cx, vp, v) JS_SET_RVAL(cx, jsapi_rval, v)
+#define JSAPI_FUNC_SET_RVAL(cx, vp, v) JS_SET_RVAL(cx, jsapi_rval, v)
 
 /* arguments */
-#define JSAPI_ARGV(cx, vp) (vp)
+#define JSAPI_FUNC_ARGV(cx, vp) (vp)
 
 /* check if a jsval is an object */
 #define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
@@ -181,10 +184,16 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_THIS_OBJECT(cx,vp) jsapi_this
 
 /* proprty native calls */
-#define JSAPI_PROPERTYGET(name, cx, obj, vp) \
+#define JSAPI_PROP_GETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsval id, vp)
-#define JSAPI_PROPERTYSET(name, cx, obj, vp) \
+#define JSAPI_PROP_SETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_set(cx, obj, jsval id, vp)
+
+/* native property return value */
+#define JSAPI_PROP_RVAL JS_RVAL
+
+/* native property return value setter */
+#define JSAPI_PROP_SET_RVAL JS_SET_RVAL
 
 /* property specifier */
 #define JSAPI_PS(name, fnname, tinyid, flags)				\
@@ -248,11 +257,11 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /************************** Spidermonkey 1.8.5 **************************/
 
 /* three parameter jsapi native call */
-#define JSAPI_NATIVE(name, cx, argc, vp) jsapi_native_##name(cx, argc, vp)
+#define JSAPI_FUNC(name, cx, argc, vp) jsapi_func_##name(cx, argc, vp)
 
 /* three parameter function descriptor */
 #define JSAPI_FS(name, nargs, flags) \
-	JS_FS(#name, jsapi_native_##name, nargs, flags)
+	JS_FS(#name, jsapi_func_##name, nargs, flags)
 
 /* function descriptor end */
 #define JSAPI_FS_END JS_FS_END
@@ -261,10 +270,10 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_RVAL JS_RVAL
 
 /* return value setter */
-#define JSAPI_SET_RVAL JS_SET_RVAL
+#define JSAPI_FUNC_SET_RVAL JS_SET_RVAL
 
 /* arguments */
-#define JSAPI_ARGV(cx, vp) JS_ARGV(cx,vp)
+#define JSAPI_FUNC_ARGV(cx, vp) JS_ARGV(cx,vp)
 
 /* check if a jsval is an object */
 #define JSAPI_JSVAL_IS_OBJECT(v) JSVAL_IS_OBJECT(v)
@@ -278,10 +287,16 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_THIS_OBJECT(cx,vp) JS_THIS_OBJECT(cx,vp)
 
 /* proprty native calls */
-#define JSAPI_PROPERTYGET(name, cx, obj, vp) \
+#define JSAPI_PROP_GETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_get(cx, obj, jsid id, vp)
-#define JSAPI_PROPERTYSET(name, cx, obj, vp) \
+#define JSAPI_PROP_SETTER(name, cx, obj, vp) \
 	jsapi_property_##name##_set(cx, obj, jsid id, JSBool strict, vp)
+
+/* native property return value */
+#define JSAPI_PROP_RVAL JS_RVAL
+
+/* native property getter return value */
+#define JSAPI_PROP_SET_RVAL JS_SET_RVAL
 
 /* property specifier */
 #define JSAPI_PS(name, fnname, tinyid, flags) {			\
