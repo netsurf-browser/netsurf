@@ -45,76 +45,87 @@ struct s_atari_global_history gl_history;
 
 void global_history_open( void )
 {
-	GRECT pos = {app.w - (app.w/3), app.y, app.w/3, app.h/2};
-
 	if (gl_history.init == false ) {
-		printf("history not init");
 		return;
 	}
 	if( gl_history.open == false ) {
-		WindOpen( gl_history.window, pos.g_x, pos.g_y, pos.g_w, pos.g_h);
+
+	    GRECT pos;
+	    wind_get_grect(0, WF_FULLXYWH, &pos);
+	    pos.g_x = pos.g_w - pos.g_w / 4;
+	    pos.g_y = pos.g_y;
+	    pos.g_w = pos.g_w / 4;
+	    pos.g_h = pos.g_h;
+
+		wind_open(guiwin_get_handle(gl_history.window), pos.g_x, pos.g_y,
+            pos.g_w, pos.g_h);
 		gl_history.open = true;
-		atari_treeview_open( gl_history.tv );
+		atari_treeview_open(gl_history.tv);
 	} else {
-		WindTop( gl_history.window );
+		wind_set(guiwin_get_handle(gl_history.window), WF_TOP, 1, 0, 0, 0);
 	}
 }
 
 void global_history_close( void )
 {
-	WindClose(gl_history.window);
+    wind_close(guiwin_get_handle(gl_history.window));
 	gl_history.open = false;
-	atari_treeview_close( gl_history.tv );
+	atari_treeview_close(gl_history.tv);
 }
 
-
-static void __CDECL evnt_history_close( WINDOW *win, short buff[8] )
+static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	global_history_close();
-}
+	NSTREEVIEW tv=NULL;
 
+    printf("Hotlist event %d, open: %d\n", ev_out->emo_events, gl_history.open);
 
-static void __CDECL evnt_history_mbutton( WINDOW *win, short buff[8] )
-{
-	/* todo: implement popup?
-	if(evnt.mbut & 2) {
+	if(ev_out->emo_events & MU_MESAG){
+		switch (msg[0]) {
 
+			case WM_CLOSED:
+				global_history_close();
+			break;
+
+			default: break;
+		}
 	}
-	*/
+
+	// TODO: implement selectable objects in toolbar API:
+	// ObjcChange( OC_TOOLBAR, win, buff[4], ~SELECTED, OC_MSG );
 }
 
 bool global_history_init( void )
 {
 
-	return(true);
-//	if( gl_history.init == false ) {
-//
-//		int flags = ATARI_TREEVIEW_WIDGETS;
-//		gl_history.open = false;
-//		gl_history.window = WindCreate( flags, 40, 40, app.w, app.h );
-//		if( gl_history.window == NULL ) {
-//			LOG(("Failed to allocate history window"));
-//			return( false );
-//		}
-//		WindSetStr(gl_history.window, WF_NAME, messages_get("GlobalHistory"));
-//		//WindSetPtr( gl_history.window, WF_TOOLBAR, tree, evnt_history_toolbar );
-//		EvntAttach( gl_history.window, WM_CLOSED, evnt_history_close );
-//		EvntAttach( gl_history.window, WM_XBUTTON,evnt_history_mbutton );
-//
-//		gl_history.tv = atari_treeview_create(
-//			history_global_get_tree_flags(),
-//			gl_history.window,
-//			NULL
-//		);
-//		if (gl_history.tv == NULL) {
-//			/* handle it properly, clean up previous allocs */
-//			LOG(("Failed to allocate history treeview"));
-//			return( false );
-//		}
-//
-//		history_global_initialise( gl_history.tv->tree, "dir.png" );
-//		gl_history.init = true;
-//	}
+    if( gl_history.init == false ) {
+
+        short handle;
+        GRECT desk;
+        int flags = ATARI_TREEVIEW_WIDGETS;
+
+        wind_get_grect(0, WF_FULLXYWH, &desk);
+
+        gl_history.open = false;
+        handle = wind_create(flags, 40, 40, desk.g_w, desk.g_h);
+        gl_history.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
+        if( gl_history.window == NULL ) {
+			LOG(("Failed to allocate history window"));
+			return( false );
+		}
+		wind_set_str(handle, WF_NAME, (char*)messages_get("GlobalHistory"));
+
+		gl_history.tv = atari_treeview_create(history_global_get_tree_flags(),
+                                        gl_history.window, handle_event);
+
+        if (gl_history.tv == NULL) {
+            /* TODO: handle it properly, clean up previous allocs */
+            LOG(("Failed to allocate history treeview"));
+            return( false );
+        }
+
+        history_global_initialise(gl_history.tv->tree, "dir.png");
+        gl_history.init = true;
+    }
 	return( true );
 }
 
@@ -128,9 +139,10 @@ void global_history_destroy( void )
 		history_global_cleanup();
 		if( gl_history.open )
 			global_history_close();
-		WindDelete( gl_history.window );
+		wind_delete(guiwin_get_handle(gl_history.window));
+		guiwin_remove(gl_history.window);
 		gl_history.window = NULL;
-		atari_treeview_destroy( gl_history.tv  );
+		atari_treeview_destroy(gl_history.tv);
 		gl_history.init = false;
 	}
 	LOG(("done"));

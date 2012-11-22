@@ -165,7 +165,9 @@ void gui_poll(bool active)
 
 	gui_poll_repeat = false;
 
-    evnt.timer = schedule_run();
+    aes_event_in.emi_tlow = schedule_run();
+
+    //printf("time: ");
 
 	if(active || rendering)
 		aes_event_in.emi_tlow = 0;
@@ -203,7 +205,7 @@ void gui_poll(bool active)
         /* this suits for stuff with lower priority */
         /* TBD: really be spare on redraws??? */
         hotlist_redraw();
-        //global_history_redraw();
+        global_history_redraw();
     }
 }
 

@@ -453,7 +453,7 @@ void atari_treeview_request_redraw(int x, int y, int w, int h, void *pw)
 			tv->rdw_area.g_w = ( oldx1 > newx1 ) ? oldx1 - tv->rdw_area.g_x : newx1 - tv->rdw_area.g_x;
 			tv->rdw_area.g_h = ( oldy1 > newy1 ) ? oldy1 - tv->rdw_area.g_y : newy1 - tv->rdw_area.g_y;
 		}
-		//dbg_grect("atari_treeview_request_redraw", &tv->rdw_area);
+		dbg_grect("atari_treeview_request_redraw", &tv->rdw_area);
 	}
 }
 

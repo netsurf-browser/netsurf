@@ -314,6 +314,7 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 {
     GUIWIN *dest;
     short retval = 0;
+    bool handler_called = false;
 
     if( (ev_out->emo_events & MU_MESAG) != 0 ) {
         DEBUG_PRINT(("guiwin_handle_event_multi_fast: %d\n", msg[0]));
@@ -346,10 +347,12 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
                     retval = preproc_wm(dest, ev_out, msg);
                     if(((retval == 0)||(dest->flags&GW_FLAG_RECV_PREPROC_WM))) {
                         retval = dest->handler_func(dest, ev_out, msg);
+                        handler_called = true;
                     }
                 } else {
                     if (dest->handler_func) {
                         retval = dest->handler_func(dest, ev_out, msg);
+                        handler_called = true;
                     }
                 }
 
@@ -396,13 +399,13 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
                         short oldevents = ev_out->emo_events;
                         ev_out->emo_events = MU_MESAG;
                         dest->handler_func(dest, ev_out, msg_out);
+                        handler_called=true;
                         ev_out->emo_events = oldevents;
                         retval = 1;
-                    } else {
-                        dest->handler_func(dest, ev_out, msg);
                     }
                 }
-            } else if(ev_out->emo_events & MU_KEYBD) {
+            }
+            if (handler_called==false) {
                 dest->handler_func(dest, ev_out, msg);
             }
         }
@@ -457,11 +460,10 @@ GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
 GUIWIN *guiwin_find(short handle)
 {
     GUIWIN *g;
-    DEBUG_PRINT(("guiwin_find: handle: %d\n", handle));
+    DEBUG_PRINT(("guiwin search handle: %d\n", handle));
     for( g = winlist; g != NULL; g=g->next ) {
-        DEBUG_PRINT(("guiwin search: %d\n", g->handle));
         if(g->handle == handle) {
-            DEBUG_PRINT(("guiwin_find: %p\n", g));
+            DEBUG_PRINT(("guiwin found handle: %p\n", g));
             return(g);
         }
     }
@@ -496,7 +498,7 @@ short guiwin_remove(GUIWIN *win)
     if (win->next != NULL) {
         win->next->prev = win->prev;
     }
-
+    DEBUG_PRINT(("guiwin free: %p\n", win));
     free(win);
     return(0);
 }

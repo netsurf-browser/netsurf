@@ -23,8 +23,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <windom.h>
-
 #include "desktop/browser.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -112,13 +110,15 @@ void hotlist_init(void)
 	if( hl.window == NULL ){
 		int flags = ATARI_TREEVIEW_WIDGETS;
 		short handle = -1;
+		GRECT desk;
 		OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
 		assert( tree );
 		hl.open = false;
-		handle = wind_create(flags, 0, 0, app.w, app.h);
-		hl.window = guiwin_add(handle,
-								GW_FLAG_PREPROC_WM|GW_FLAG_RECV_PREPROC_WM,
-								NULL);
+
+		wind_get_grect(0, WF_FULLXYWH, &desk);
+
+		handle = wind_create(flags, 0, 0, desk.g_w, desk.g_h);
+		hl.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
 		if( hl.window == NULL ) {
 			LOG(("Failed to allocate Hotlist"));
 			return;
@@ -151,13 +151,19 @@ void hotlist_init(void)
 
 void hotlist_open(void)
 {
-	GRECT pos = {app.w - (app.w/3), app.y, app.w/3, app.h/2};
-
 	if( hl.init == false ) {
 		return;
 	}
 
 	if( hl.open == false ) {
+
+	    GRECT pos;
+	    wind_get_grect(0, WF_FULLXYWH, &pos);
+	    pos.g_x = pos.g_w - pos.g_w / 4;
+	    pos.g_y = pos.g_y;
+	    pos.g_w = pos.g_w / 4;
+	    pos.g_h = pos.g_h;
+
 		wind_open_grect(guiwin_get_handle(hl.window), &pos);
 		hl.open = true;
 		atari_treeview_open( hl.tv );

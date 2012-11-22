@@ -23,9 +23,10 @@
 #include <windom.h>
 #include "desktop/tree.h"
 #include "atari/treeview.h"
+#include "atari/gemtk/gemtk.h"
 
 struct s_atari_global_history {
-	WINDOW * window;
+	GUIWIN *window;     /*< The GEMTK window ref */
 	NSTREEVIEW tv;		/*< The history treeview handle.  */
 	bool open;
 	bool init;

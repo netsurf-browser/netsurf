@@ -62,6 +62,8 @@ short msg_box_show(short type, const char * msg);
 #define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
 #define GW_FLAG_CUSTOM_SCROLLING	0x10	// no internal scroller handling
 
+#define GW_FLAG_DEFAULTS (GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM)
+
 #define GW_STATUS_ICONIFIED			0x01
 #define GW_STATUS_SHADED			0x02
 
@@ -78,8 +80,8 @@ struct guiwin_scroll_info_s {
 	int y_unit_px;
 	int x_pos;
 	int y_pos;
-	int x_pos_max;
-	int y_pos_max;
+	int x_units;
+	int y_units;
 };
 
 enum guwin_area_e {
@@ -110,7 +112,7 @@ bool guiwin_update_slider(GUIWIN *win, short mode);
 void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
-
+void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip);
 
 
 /*
