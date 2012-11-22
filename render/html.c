@@ -2622,9 +2622,12 @@ html_get_contextual_content(struct content *c,
 
 		if (box->usemap) {
 			const char *target = NULL;
-			data->link_url = nsurl_access(imagemap_get(html,
-					box->usemap, box_x, box_y, x, y,
-					&target));
+			nsurl *url = imagemap_get(html, box->usemap, box_x,
+					box_y, x, y, &target);
+			/* Box might have imagemap, but no actual link area
+			 * at point */
+			if (url != NULL)
+				data->link_url = nsurl_access(url);
 		}
 		if (box->gadget) {
 			switch (box->gadget->type) {

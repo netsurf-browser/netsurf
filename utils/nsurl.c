@@ -1564,9 +1564,7 @@ bool nsurl_has_component(const nsurl *url, nsurl_component part)
 /* exported interface, documented in nsurl.h */
 const char *nsurl_access(const nsurl *url)
 {
-	if (url == NULL) {
-		return NULL;
-	}
+	assert(url != NULL);
 
 	return url->string;
 }
