@@ -30,6 +30,8 @@ binding window {
 	internal "JSObject *" navigator;
 	internal "JSObject *" console;
 	internal "JSObject *" location;
+
+	property unshared type EventHandler;
 }
 
 api mark %{
@@ -196,4 +198,12 @@ getter window %{
 
 getter self %{
 	jsret = obj;
+%}
+
+getter EventHandler %{
+	JSLOG("propname:%s %s", propname, JS_GetTypeName(cx, JS_TypeOfValue(cx,  propname_jsval)));
+%}
+
+setter EventHandler %{
+	JSLOG("propname:%s %s", propname, JS_GetTypeName(cx, JS_TypeOfValue(cx,  propname_jsval)));
 %}

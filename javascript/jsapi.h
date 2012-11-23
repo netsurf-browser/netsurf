@@ -74,15 +74,18 @@
 
 /* native proprty definition */
 #define JSAPI_PROP_GETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_get(cx, obj, jsval id, vp)
+	jsapi_property_##name##_get(cx, obj, jsval jsapi_id, vp)
 #define JSAPI_PROP_SETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_set(cx, obj, jsval id, vp)
+	jsapi_property_##name##_set(cx, obj, jsval jsapi_id, vp)
 
 /* native property return value */
 #define JSAPI_PROP_RVAL(cx, vp) (vp)
 
 /* native property getter return value */
 #define JSAPI_PROP_SET_RVAL(cx, vp, v) (*(vp) = (v))
+
+/* native property ID value as a jsval */
+#define JSAPI_PROP_IDVAL(cx, vp) (*(vp) = jsapi_id)
 
 /* native property specifier */
 #define JSAPI_PS(name, fnname, tinyid, flags)				\
@@ -183,17 +186,23 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /* The object instance in a native call */
 #define JSAPI_THIS_OBJECT(cx,vp) jsapi_this
 
+
+
+
 /* proprty native calls */
 #define JSAPI_PROP_GETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_get(cx, obj, jsval id, vp)
+	jsapi_property_##name##_get(cx, obj, jsval jsapi_id, vp)
 #define JSAPI_PROP_SETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_set(cx, obj, jsval id, vp)
+	jsapi_property_##name##_set(cx, obj, jsval jsapi_id, vp)
 
 /* native property return value */
 #define JSAPI_PROP_RVAL JS_RVAL
 
 /* native property return value setter */
 #define JSAPI_PROP_SET_RVAL JS_SET_RVAL
+
+/* native property ID value as a jsval */
+#define JSAPI_PROP_IDVAL(cx, vp) (*(vp) = jsapi_id)
 
 /* property specifier */
 #define JSAPI_PS(name, fnname, tinyid, flags)				\
@@ -203,6 +212,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 	{ name , tinyid , flags | JSPROP_READONLY, jsapi_property_##fnname##_get , NULL }
 
 #define JSAPI_PS_END { NULL, 0, 0, NULL, NULL }
+
+
+
 
 static inline JSObject *
 JS_NewCompartmentAndGlobalObject(JSContext *cx,
@@ -288,15 +300,18 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 /* proprty native calls */
 #define JSAPI_PROP_GETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_get(cx, obj, jsid id, vp)
+	jsapi_property_##name##_get(cx, obj, jsid jsapi_id, vp)
 #define JSAPI_PROP_SETTER(name, cx, obj, vp) \
-	jsapi_property_##name##_set(cx, obj, jsid id, JSBool strict, vp)
+	jsapi_property_##name##_set(cx, obj, jsid jsapi_id, JSBool strict, vp)
 
 /* native property return value */
 #define JSAPI_PROP_RVAL JS_RVAL
 
 /* native property getter return value */
 #define JSAPI_PROP_SET_RVAL JS_SET_RVAL
+
+/* native property ID value as a jsval */
+#define JSAPI_PROP_IDVAL(cx, vp) JS_IdToValue(cx, jsapi_id, vp)
 
 /* property specifier */
 #define JSAPI_PS(name, fnname, tinyid, flags) {			\
