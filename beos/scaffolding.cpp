@@ -1607,7 +1607,8 @@ void nsbeos_attach_toplevel_view(nsbeos_scaffolding *g, BView *view)
 		g->window->Show();
 
 		if(NSBrowserWindow::activeWindow) {
-			BWindowStack(NSBrowserWindow::activeWindow).AddWindow(g->window);
+			BWindowStack stack(NSBrowserWindow::activeWindow);
+			stack.AddWindow(g->window);
 		}
 #endif
 		g->window->Show();
