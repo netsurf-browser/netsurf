@@ -16,7 +16,7 @@
 
   CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
 		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
-		-Drestrict="" -Wno-multichar 
+		-Drestrict="" -Wno-multichar
   # DEBUG
   CFLAGS += -g -O0
   # -DDEBUG=1
@@ -97,7 +97,7 @@ RDEF_IMP_BEOS := $(addprefix $(OBJROOT)/,$(subst /,_,$(RDEF_IMP_BEOS)))
 
 RDEP_BEOS := \
 	adblock.css beosdefault.css default.css internal.css quirks.css	\
-	netsurf.png ca-bundle.txt 
+	netsurf.png ca-bundle.txt
 RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 	$(wildcard beos/res/Icons/*.png)				\
 	$(wildcard beos/res/throbber/throbber*.png)
