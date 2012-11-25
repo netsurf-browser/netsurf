@@ -172,7 +172,6 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 void
 NSBrowserApplication::ArgvReceived(int32 argc, char **argv)
 {
-	//CALLED();
 	NSBrowserWindow *win = nsbeos_find_last_window();
 	if (!win) {
 		return;
@@ -186,7 +185,6 @@ NSBrowserApplication::ArgvReceived(int32 argc, char **argv)
 void
 NSBrowserApplication::RefsReceived(BMessage *message)
 {
-	//CALLED();
 	DetachCurrentMessage();
 	NSBrowserWindow *win = nsbeos_find_last_window();
 	if (!win) {
@@ -325,7 +323,6 @@ image_id nsbeos_find_app_path(char *path)
 
 static char *find_resource(char *buf, const char *filename, const char *def)
 {
-	//CALLED();
 	const char *cdir = NULL;
 	status_t err;
 	BPath path;
@@ -388,7 +385,6 @@ static char *find_resource(char *buf, const char *filename, const char *def)
  */
 static void check_homedir(void)
 {
-	//CALLED();
 	status_t err;
 
 	BPath path;
@@ -430,7 +426,6 @@ nsurl *gui_get_resource_url(const char *path)
 
 static void gui_init2(int argc, char** argv)
 {
-	//CALLED();
 	const char *addr = NETSURF_HOMEPAGE;
 
 	if (nsoption_charp(homepage_url) != NULL)
@@ -509,7 +504,6 @@ void gui_options_init_defaults(void)
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
-	//CALLED();
 
 	if (pipe(sEventPipe) < 0)
 		return;
@@ -704,7 +698,6 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 
 void gui_poll(bool active)
 {
-	//CALLED();
 	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
 	int max_fd = 0;
@@ -780,7 +773,6 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
-	//CALLED();
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
 	//options_save_tree(hotlist,nsoption_charp(hotlist_file),messages_get("TreeHotlist"));
