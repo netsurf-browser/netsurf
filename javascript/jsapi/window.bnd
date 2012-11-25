@@ -201,9 +201,9 @@ getter self %{
 %}
 
 getter EventHandler %{
-	JSLOG("propname:%s %s", propname, JS_GetTypeName(cx, JS_TypeOfValue(cx,  propname_jsval)));
+	JSLOG("propname[%d] %s %s", tinyid , jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx, tinyid_jsval)));
 %}
 
 setter EventHandler %{
-	JSLOG("propname:%s %s", propname, JS_GetTypeName(cx, JS_TypeOfValue(cx,  propname_jsval)));
+	JSLOG("propname[%d] %s %s", tinyid, jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx,  tinyid_jsval)));
 %}
