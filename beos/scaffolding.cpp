@@ -2166,11 +2166,14 @@ nsbeos_scaffolding *nsbeos_new_scaffolding(struct gui_window *toplevel)
 	// the toolbar is also the dragger for now
 	// XXX: try to stuff it in the status bar at the bottom
 	// (BDragger *must* be a parent, sibiling or direct child of NSBaseView!)
+	// XXX: B_FULL_UPDATE_ON_RESIZE avoids leaving bits on resize,
+	// but causes flicker
 	rect = g->top_view->Bounds();
 	rect.bottom = rect.top + TOOLBAR_HEIGHT - 1;
 	rect.right = rect.right - DRAGGER_WIDTH;
 	g->tool_bar = new BBox(rect, "Toolbar", 
-		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW);
+		B_FOLLOW_LEFT_RIGHT | B_FOLLOW_TOP, B_WILL_DRAW | B_FRAME_EVENTS
+		| B_FULL_UPDATE_ON_RESIZE | B_NAVIGABLE_JUMP, B_PLAIN_BORDER);
 	g->top_view->AddChild(g->tool_bar);
 	g->tool_bar->SetViewColor(ui_color(B_PANEL_BACKGROUND_COLOR));
 	g->tool_bar->SetLowColor(ui_color(B_PANEL_BACKGROUND_COLOR)) ;
