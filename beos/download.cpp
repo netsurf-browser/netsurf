@@ -16,6 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define __STDBOOL_H__	1
+#include <stdbool.h>
+
 extern "C" {
 #include "desktop/gui.h"
 }

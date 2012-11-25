@@ -61,7 +61,12 @@
     # cross: Haiku ?
     NETLDFLAGS := -lnetwork
   endif
-  LDFLAGS += -lbe -ltranslation -ltracker $(NETLDFLAGS) -lstdc++ -lsupc++
+  LDFLAGS += -lbe -ltranslation -ltracker $(NETLDFLAGS)
+  ifeq ($(GCCVER),2)
+    LDFLAGS += -lstdc++.r4
+  else
+    LDFLAGS += -lstdc++ -lsupc++
+  endif
 
   ifeq ($(HOST),beos)
     CFLAGS += -I$(PREFIX)/include
