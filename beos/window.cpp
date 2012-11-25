@@ -1078,7 +1078,7 @@ gboolean nsbeos_window_keypress_event(GtkWidget *widget, GdkEventKey *event,
 
 void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 {
-	CALLED();
+	//CALLED();
 	int32 width;
 	int32 height;
 
@@ -1128,7 +1128,7 @@ void nsbeos_window_resize_event(BView *view, gui_window *g, BMessage *event)
 
 void nsbeos_window_moved_event(BView *view, gui_window *g, BMessage *event)
 {
-	CALLED();
+	//CALLED();
 
 #warning XXX: Invalidate ? 
 	if (!view || !view->LockLooper())
@@ -1582,7 +1582,7 @@ void gui_window_hide_pointer(struct gui_window *g)
 
 void gui_window_place_caret(struct gui_window *g, int x, int y, int height)
 {
-	CALLED();
+	//CALLED();
 	if (g->view == NULL)
 		return;
 	if (!g->view->LockLooper())
