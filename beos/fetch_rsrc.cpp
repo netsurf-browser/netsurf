@@ -198,11 +198,11 @@ static bool fetch_rsrc_process(struct fetch_rsrc_context *c)
 		uint8 c1, c2, c3, c4;
 		if (sscanf(params, "%c%c%c%c", &c1, &c2, &c3, &c4) > 3) {
 			type = c1 << 24 | c2 << 16 | c3 << 8 | c4;
-			printf("type:%4.4s\n", &type);
+			LOG(("fetch_rsrc: type:%4.4s\n", &type));
 		}
 	}
 
-	fprintf(stderr, "fetch_rsrc: 0x%08lx, %ld, '%s'\n", type, id, c->name);
+	LOG(("fetch_rsrc: 0x%08lx, %ld, '%s'\n", type, id, c->name));
 
 	bool found;
 	if (id)
@@ -334,7 +334,7 @@ static int find_app_resources()
 	char path[B_PATH_NAME_LENGTH];
 	if (nsbeos_find_app_path(path) < B_OK)
 		return B_ERROR;
-//fprintf(stderr, "loading resources from '%s'\n", path);
+	//fprintf(stderr, "loading resources from '%s'\n", path);
 
 	BFile file(path, B_READ_ONLY);
 	if (file.InitCheck() < 0)

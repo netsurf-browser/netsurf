@@ -106,7 +106,7 @@ static inline void nsbeos_rgba_to_bgra(void *src, void *dst, int width, int heig
 
 void *bitmap_create(int width, int height, unsigned int state)
 {
-	CALLED();
+	//CALLED();
 	struct bitmap *bmp = (struct bitmap *)malloc(sizeof(struct bitmap));
 	if (bmp == NULL)
 		return NULL;
@@ -288,7 +288,7 @@ bool bitmap_save(void *vbitmap, const char *path, unsigned flags)
  * \param  vbitmap  a bitmap, as returned by bitmap_create()
  */
 void bitmap_modified(void *vbitmap) {
-	CALLED();
+	//CALLED();
 	struct bitmap *bitmap = (struct bitmap *)vbitmap;
 	// convert the shadow (ABGR) to into the primary bitmap
 	nsbeos_rgba_to_bgra(bitmap->shadow->Bits(), bitmap->primary->Bits(),

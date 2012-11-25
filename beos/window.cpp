@@ -1312,7 +1312,7 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 
 bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 {
-	CALLED();
+	//CALLED();
 	if (g->view == NULL)
 		return false;
 	if (!g->view->LockLooper())
@@ -1342,7 +1342,7 @@ bool gui_window_get_scroll(struct gui_window *g, int *sx, int *sy)
 
 void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 {
-	CALLED();
+	//CALLED();
 	if (g->view == NULL)
 		return;
 	if (!g->view->LockLooper())
@@ -1384,7 +1384,7 @@ void gui_window_set_scroll(struct gui_window *g, int sx, int sy)
 
 void gui_window_update_extent(struct gui_window *g)
 {
-	CALLED();
+	//CALLED();
 	if (!g->bw->current_content)
 		return;
 
@@ -1399,7 +1399,7 @@ void gui_window_update_extent(struct gui_window *g)
 	float y_prop = g->view->Bounds().Height() / y_max;
 	x_max -= g->view->Bounds().Width() + 1;
 	y_max -= g->view->Bounds().Height() + 1;
-printf("x_max = %f y_max = %f x_prop = %f y_prop = %f\n", x_max, y_max, x_prop, y_prop);
+	LOG(("x_max = %f y_max = %f x_prop = %f y_prop = %f\n", x_max, y_max, x_prop, y_prop));
 	if (g->view->ScrollBar(B_HORIZONTAL)) {
 		g->view->ScrollBar(B_HORIZONTAL)->SetRange(0, x_max);
 		g->view->ScrollBar(B_HORIZONTAL)->SetProportion(x_prop);
