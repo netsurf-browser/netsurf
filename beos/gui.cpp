@@ -679,40 +679,73 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 void gui_poll(bool active)
 {
 	//CALLED();
+	CURLMcode code;
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
+	int max_fd = 0;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
+	bool block = true;
 	bigtime_t next_schedule = 0;
 
+	// handle early deadlines
 	schedule_run();
 
 	FD_ZERO(&read_fd_set);
 	FD_ZERO(&write_fd_set);
 	FD_ZERO(&exc_fd_set);
 
+	if (active) {
+		code = curl_multi_fdset(fetch_curl_multi,
+				&read_fd_set,
+				&write_fd_set,
+				&exc_fd_set,
+				&max_fd);
+		assert(code == CURLM_OK);
+	}
+
 	// our own event pipe
 	FD_SET(sEventPipe[0], &read_fd_set);
-
+	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
 	// If there are pending events elsewhere, we should not be blocking
-	if ((!browser_reformat_pending) && (!active)) {
-		next_schedule = earliest_callback_timeout - system_time();
+	if (!browser_reformat_pending) {
+		if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
+			next_schedule = earliest_callback_timeout - system_time();
+			block = false;
+		}
 
-	} // else, we're not allowed to sleep, there is other activity going on.
+		// we're quite late already...
+		if (next_schedule < 0)
+			next_schedule = 0;
+
+	} else //we're not allowed to sleep, there is other activity going on.
+		block = false;
+
+	/*
+	LOG(("gui_poll: browser_reformat_pending:%d earliest_callback_timeout:%Ld"
+		" next_schedule:%Ld block:%d ", browser_reformat_pending,
+		earliest_callback_timeout, next_schedule, block));
+	*/
 
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
 
-	fd_count = select(sEventPipe[0] + 1, &read_fd_set, &write_fd_set, &exc_fd_set, 
-		&timeout);
+	//LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
+	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
+		block ? NULL : &timeout);
+	//LOG(("select: %d\n", fd_count));
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
 		BMessage *message;
 		int len = read(sEventPipe[0], &message, sizeof(void *));
-		LOG(("gui_poll: BMessage ? %d read", len));
-		if (len == sizeof(void *))
+		//LOG(("gui_poll: BMessage ? %d read", len));
+		if (len == sizeof(void *)) {
+			//LOG(("gui_poll: BMessage.what %-4.4s\n", &(message->what)));
 			nsbeos_dispatch_event(message);
+		}
 	}
+
+	schedule_run();
 
 	if (browser_reformat_pending)
 		nsbeos_window_process_reformats();
