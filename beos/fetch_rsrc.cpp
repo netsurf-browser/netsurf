@@ -66,7 +66,7 @@ struct fetch_rsrc_context {
 
 static struct fetch_rsrc_context *ring = NULL;
 
-static BResources *gAppResources = NULL;
+BResources *gAppResources = NULL;
 
 static bool fetch_rsrc_initialise(lwc_string *scheme)
 {

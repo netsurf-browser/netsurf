@@ -457,6 +457,12 @@ int main(int argc, char** argv)
 		options.Append("x-vnd.NetSurf");
 	}
 
+	if (!replicated) {
+		// create the Application object before trying to use messages
+		// so we can open an alert in case of error.
+		new NSBrowserApplication;
+	}
+
 	char* messages = "/boot/apps/netsurf/res/en/Messages";
 
 	/* initialise netsurf */
@@ -468,6 +474,27 @@ int main(int argc, char** argv)
 	netsurf_main_loop();
 
 	netsurf_exit();
+
+	return 0;
+}
+
+/** called when replicated from NSBaseView::Instantiate() */
+int gui_init_replicant(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+
+	BPath options;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	char* messages = "/boot/apps/netsurf/res/en/Messages";
+
+	/* initialise netsurf */
+	netsurf_init(&argc, &argv, options.Path(), messages);
+
+	gui_init(argc, argv);
+	gui_init2(argc, argv);
 
 	return 0;
 }
@@ -487,7 +514,6 @@ void gui_init(int argc, char** argv)
 	if (pipe(sEventPipe) < 0)
 		return;
 	if (!replicated) {
-		new NSBrowserApplication;
 		sBAppThreadID = spawn_thread(bapp_thread, "BApplication(NetSurf)", B_NORMAL_PRIORITY, (void *)find_thread(NULL));
 		if (sBAppThreadID < B_OK)
 			return; /* #### handle errors */

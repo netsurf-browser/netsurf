@@ -174,6 +174,10 @@ static int32 nsbeos_replicant_main_thread(void *_arg);
 // in beos_gui.cpp
 extern int main(int argc, char** argv);
 
+// in fetch_rsrc.cpp
+extern BResources *gAppResources;
+
+
 #warning XXX
 #if 0 /* GTK */
 static gboolean nsbeos_window_url_activate_event(beosWidget *, gpointer);
@@ -521,6 +525,10 @@ NSBaseView::Instantiate(BMessage *archive)
 	//netsurf_init(2, info->args);
 	//return NULL;
 
+	// do as much as possible in this thread to avoid deadlocks
+	
+	gui_init_replicant(2, info->args);
+
 	replicant_done_sem = create_sem(0, "NS Replicant created");
 	thread_id nsMainThread = spawn_thread(nsbeos_replicant_main_thread,
 		"NetSurf Main Thread", B_NORMAL_PRIORITY, info);
@@ -531,7 +539,8 @@ NSBaseView::Instantiate(BMessage *archive)
 		return NULL;
 	}
 	resume_thread(nsMainThread);
-	while (acquire_sem(replicant_done_sem) == EINTR);
+	//XXX: deadlocks BeHappy
+	//while (acquire_sem(replicant_done_sem) == EINTR);
 
 	return view;
 }
@@ -650,12 +659,11 @@ NSBrowserWindow::WindowActivated(bool active)
 int32 nsbeos_replicant_main_thread(void *_arg)
 {
 	struct replicant_thread_info *info = (struct replicant_thread_info *)_arg;
-	int32 ret;
-	ret = main(2, info->args);
-	//netsurf_main_loop();
-	//netsurf_exit();
+	int32 ret = 0;
+
+	netsurf_main_loop();
+	netsurf_exit();
 	delete info;
-	//release
 	delete_sem(replicant_done_sem);
 	return ret;
 }
@@ -1761,7 +1769,7 @@ void BBitmapButton::SetBitmap(const char* attrname)
 {
 #ifdef __HAIKU__
 	size_t size = 0;
-	const void* data = BApplication::AppResources()->LoadResource('VICN', attrname, &size);
+	const void* data = gAppResources->LoadResource('VICN', attrname, &size);
 
 	if (!data) {
 		printf("CANT LOAD RESOURCE %s\n", attrname);
