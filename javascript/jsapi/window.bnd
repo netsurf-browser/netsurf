@@ -1,10 +1,21 @@
-/* binding to generate window */
+/* Binding to generate window interface
+ *
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
 
 #include "dom.bnd"
 
 webidlfile "html.idl";
 
-hdrcomment "Part of NetSurf Project";
+hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
+hdrcomment "This file is part of NetSurf, http://www.netsurf-browser.org/";
+hdrcomment "Released under the terms of the MIT License,";
+hdrcomment "        http://www.opensource.org/licenses/mit-license";
 
 preamble %{
 
