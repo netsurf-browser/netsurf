@@ -505,12 +505,13 @@ NSBaseView::Instantiate(BMessage *archive)
 	if (!validate_instantiation(archive, "NSBaseView"))
 		return NULL;
 	const char *url;
-	if (archive->FindString("url", &url) < B_OK) {
-		return NULL;
+	if (archive->FindString("url", &url) < B_OK
+		|| url == NULL || strlen(url) == 0) {
+		url = "about:";
 	}
 
 	struct replicant_thread_info *info = new replicant_thread_info;
-	info->url = url;
+	info->url = BString(url);
 	if (nsbeos_find_app_path(info->app) < B_OK)
 		return NULL;
 	info->args[0] = info->app;
