@@ -1049,17 +1049,20 @@ static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
  * \return true on success, false otherwise (error reported)
  */
 
-static bool html_meta_refresh(html_content *c, dom_node *head)
+static nserror html_meta_refresh(html_content *c, dom_node *head)
 {
 	dom_node *n, *next;
 	dom_exception exc;
+	nserror ns_error = NSERROR_OK;
 
-	if (head == NULL)
-		return true;
+	if (head == NULL) {
+		return ns_error;
+	}
 
 	exc = dom_node_get_first_child(head, &n);
-	if (exc != DOM_NO_ERR)
-		return false;
+	if (exc != DOM_NO_ERR) {
+		return NSERROR_DOM;
+	}
 
 	while (n != NULL) {
 		dom_node_type type;
@@ -1067,7 +1070,7 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 		exc = dom_node_get_node_type(n, &type);
 		if (exc != DOM_NO_ERR) {
 			dom_node_unref(n);
-			return false;
+			return NSERROR_DOM;
 		}
 
 		if (type == DOM_ELEMENT_NODE) {
@@ -1076,36 +1079,35 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 			exc = dom_node_get_node_name(n, &name);
 			if (exc != DOM_NO_ERR) {
 				dom_node_unref(n);
-				return false;
+				return NSERROR_DOM;
 			}
 
 			/* Recurse into noscript elements */
-			if (dom_string_caseless_lwc_isequal(name,
-					corestring_lwc_noscript)) {
-				if (html_meta_refresh(c, n) == false) {
+			if (dom_string_caseless_lwc_isequal(name, corestring_lwc_noscript)) {
+				ns_error = html_meta_refresh(c, n);
+				if (ns_error != NSERROR_OK) {
 					/* Some error occurred */
 					dom_string_unref(name);
 					dom_node_unref(n);
-					return false;
-				} else if (c->base.refresh) {
-					/* Meta refresh found - stop */
-					dom_string_unref(name);
-					dom_node_unref(n);
-					return true;
-				}
-			} else if (dom_string_caseless_lwc_isequal(name,
-					corestring_lwc_meta)) {
-				if (html_meta_refresh_process_element(c,
-						n) == false) {
-					/* Some error occurred */
-					dom_string_unref(name);
-					dom_node_unref(n);
-					return false;
+					return ns_error;
 				} else if (c->base.refresh != NULL) {
 					/* Meta refresh found - stop */
 					dom_string_unref(name);
 					dom_node_unref(n);
-					return true;
+					return NSERROR_OK;
+				}
+			} else if (dom_string_caseless_lwc_isequal(name, corestring_lwc_meta)) {
+				ns_error = html_meta_refresh_process_element(c, n);
+				if (ns_error != NSERROR_OK) {
+					/* Some error occurred */
+					dom_string_unref(name);
+					dom_node_unref(n);
+					return ns_error;
+				} else if (c->base.refresh != NULL) {
+					/* Meta refresh found - stop */
+					dom_string_unref(name);
+					dom_node_unref(n);
+					return NSERROR_OK;
 				}
 			}
 			dom_string_unref(name);
@@ -1114,14 +1116,14 @@ static bool html_meta_refresh(html_content *c, dom_node *head)
 		exc = dom_node_get_next_sibling(n, &next);
 		if (exc != DOM_NO_ERR) {
 			dom_node_unref(n);
-			return false;
+			return NSERROR_DOM;
 		}
 
 		dom_node_unref(n);
 		n = next;
 	}
 
-	return true;
+	return ns_error;
 }
 
 /**
