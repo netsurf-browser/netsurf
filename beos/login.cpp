@@ -45,7 +45,7 @@ class LoginAlert : public BAlert {
 public:
 			LoginAlert(nserror (*callback)(bool proceed, void *pw),
 				void *callbaclpw,
-				const char *url,
+				nsurl *url,
 				const char *host,
 				const char *realm,
 				const char *text);
@@ -53,7 +53,7 @@ public:
 	void	MessageReceived(BMessage *message);
 
 private:
-	BString 	fUrl;				/**< URL being fetched */
+	nsurl*	 	fUrl;				/**< URL being fetched */
 	BString		fHost;				/**< Host for user display */
 	BString		fRealm;				/**< Authentication realm */
 	nserror		(*fCallback)(bool proceed, void *pw);
@@ -63,8 +63,8 @@ private:
 	BTextControl	*fPassControl;
 };
 
-static void create_login_window(const char *host,
-                const char *realm, const char *fetchurl,
+static void create_login_window(nsurl *host,
+                lwc_string *realm, const char *fetchurl,
                 nserror (*cb)(bool proceed, void *pw), void *cbpw);
 
 
@@ -73,7 +73,7 @@ static void create_login_window(const char *host,
 
 LoginAlert::LoginAlert(nserror (*callback)(bool proceed, void *pw),
 				void *callbackpw,
-				const char *url, 
+				nsurl *url, 
 				const char *host, 
 				const char *realm, 
 				const char *text)
@@ -140,7 +140,7 @@ LoginAlert::MessageReceived(BMessage *message)
 			break;
 		BMessage *m = new BMessage(*message);
 		m->what = 'nsLO';
-		m->AddString("URL", fUrl.String());
+		m->AddPointer("URL", fUrl);
 		m->AddString("Host", fHost.String());
 		m->AddString("Realm", fRealm.String());
 		m->AddPointer("callback", (void *)fCallback);
@@ -163,14 +163,13 @@ LoginAlert::MessageReceived(BMessage *message)
 }
 
 
-void gui_401login_open(const char *url, const char *realm,
+extern "C" void gui_401login_open(nsurl *url, const char *realm,
 		nserror (*cb)(bool proceed, void *pw), void *cbpw)
 {
-	char *host;
+	lwc_string *host;
 	url_func_result res;
 
-	res = url_host(url, &host);
-	assert(res == URL_FUNC_OK);
+	host = nsurl_get_component(url, NSURL_HOST);
 
 	create_login_window(url, host, realm, cb, cbpw);
 
@@ -179,7 +178,7 @@ void gui_401login_open(const char *url, const char *realm,
 
 //void create_login_window(struct browser_window *bw, const char *host,
 //		const char *realm, const char *fetchurl)
-static void create_login_window(const char *url, const char *host,
+static void create_login_window(nsurl *url, lwc_string *host,
                 const char *realm, nserror (*cb)(bool proceed, void *pw),
                 void *cbpw)
 {
@@ -191,8 +190,8 @@ static void create_login_window(const char *url, const char *host,
 	text << "Host:	" << host << "\n";
 	//text << "\n";
 
-	LoginAlert *a = new LoginAlert(cb, cbpw, url, host, r.String(), 
-		text.String());
+	LoginAlert *a = new LoginAlert(cb, cbpw, url, lwc_string_data(host),
+		r.String(), text.String());
 	// asynchronously
 	a->Go(NULL);
 

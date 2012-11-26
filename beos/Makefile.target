@@ -9,12 +9,14 @@
   # for Haiku
   LDFLAGS += -L/boot/common/lib
   # some people do *not* have libm...
-  LDFLAGS += -lcurl -liconv
-  LDFLAGS += -lssl -lcrypto -lcss -ldom -lparserutils -lhubbub -lwapcaplet
+  LDFLAGS += -lssl -lcrypto -lcss
+  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
+  LDFLAGS += -ldom -lparserutils -lhubbub -lwapcaplet
+  LDFLAGS += -lexpat -lcurl -liconv
 
   CFLAGS += -I. -O $(WARNFLAGS) -Dnsbeos		\
 		-D_BSD_SOURCE -D_POSIX_C_SOURCE		\
-		-Drestrict="" -Wno-multichar 
+		-Drestrict="" -Wno-multichar
   # DEBUG
   CFLAGS += -g -O0
   # -DDEBUG=1
@@ -59,9 +61,13 @@
     # cross: Haiku ?
     NETLDFLAGS := -lnetwork
   endif
-  LDFLAGS += -lbe -ltranslation $(NETLDFLAGS)
+  LDFLAGS += -lbe -ltranslation -ltracker $(NETLDFLAGS)
+  ifeq ($(GCCVER),2)
+    LDFLAGS += -lstdc++.r4
+  else
+    LDFLAGS += -lstdc++ -lsupc++
+  endif
 
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
   ifeq ($(HOST),beos)
     CFLAGS += -I$(PREFIX)/include
     LDFLAGS += -L$(PREFIX)/lib
@@ -82,11 +88,9 @@
 # ----------------------------------------------------------------------------
 
 # S_BEOS are sources purely for the BeOS build
-S_BEOS := about.cpp bitmap.cpp fetch_rsrc.cpp		\
-	filetype.cpp font.cpp gui.cpp login.cpp		\
-	gui_options.cpp plotters.cpp 			\
-	scaffolding.cpp search.cpp schedule.cpp		\
-	thumbnail.cpp treeview.cpp throbber.cpp		\
+S_BEOS := about.cpp bitmap.cpp download.cpp fetch_rsrc.cpp filetype.cpp \
+	font.cpp gui.cpp login.cpp gui_options.cpp plotters.cpp	scaffolding.cpp \
+	search.cpp schedule.cpp	thumbnail.cpp treeview.cpp throbber.cpp		\
 	window.cpp system_colour.cpp
 S_BEOS := $(addprefix beos/,$(S_BEOS))
 
@@ -98,7 +102,7 @@ RDEF_IMP_BEOS := $(addprefix $(OBJROOT)/,$(subst /,_,$(RDEF_IMP_BEOS)))
 
 RDEP_BEOS := \
 	adblock.css beosdefault.css default.css internal.css quirks.css	\
-	netsurf.png ca-bundle.txt messages
+	netsurf.png ca-bundle.txt
 RDEP_BEOS := $(addprefix beos/res/,$(RDEP_BEOS))			\
 	$(wildcard beos/res/Icons/*.png)				\
 	$(wildcard beos/res/throbber/throbber*.png)
@@ -126,7 +130,7 @@ install-beos:
 	@cp -vRL beos/res/beosdefault.css $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 	@cp -vRL gtk/res/license $(DESTDIR)$(NETSURF_BEOS_RESOURCES)
 #	@cp -vRL beos/res/throbber/*.png $(DESTDIR)$(NETSURF_BEOS_RESOURCES)throbber
-	gzip -9v < beos/res/messages > $(DESTDIR)$(NETSURF_BEOS_RESOURCES)messages 
+	$(call split_install_messages, beos, $(DESTDIR)$(NETSURF_BEOS_RESOURCES))
 
 # ----------------------------------------------------------------------------
 # Package target

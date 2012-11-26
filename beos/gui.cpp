@@ -172,7 +172,6 @@ NSBrowserApplication::MessageReceived(BMessage *message)
 void
 NSBrowserApplication::ArgvReceived(int32 argc, char **argv)
 {
-	CALLED();
 	NSBrowserWindow *win = nsbeos_find_last_window();
 	if (!win) {
 		return;
@@ -186,7 +185,6 @@ NSBrowserApplication::ArgvReceived(int32 argc, char **argv)
 void
 NSBrowserApplication::RefsReceived(BMessage *message)
 {
-	CALLED();
 	DetachCurrentMessage();
 	NSBrowserWindow *win = nsbeos_find_last_window();
 	if (!win) {
@@ -325,7 +323,6 @@ image_id nsbeos_find_app_path(char *path)
 
 static char *find_resource(char *buf, const char *filename, const char *def)
 {
-	CALLED();
 	const char *cdir = NULL;
 	status_t err;
 	BPath path;
@@ -388,7 +385,6 @@ static char *find_resource(char *buf, const char *filename, const char *def)
  */
 static void check_homedir(void)
 {
-	CALLED();
 	status_t err;
 
 	BPath path;
@@ -423,14 +419,13 @@ nsurl *gui_get_resource_url(const char *path)
 		u << "beosdefault.css";
 	else
 		u << path;
-	fprintf(stderr, "%s(%s) -> '%s'\n", __FUNCTION__, path, u.String());
+	LOG(("(%s) -> '%s'\n", path, u.String()));
 	nsurl_create(u.String(), &url);
 	return url;
 }
 
 static void gui_init2(int argc, char** argv)
 {
-	CALLED();
 	const char *addr = NETSURF_HOMEPAGE;
 
 	if (nsoption_charp(homepage_url) != NULL)
@@ -450,7 +445,6 @@ static void gui_init2(int argc, char** argv)
 /** Normal entry point from OS */
 int main(int argc, char** argv)
 {
-	char buf[PATH_MAX];
 	setbuf(stderr, NULL);
 
 	BPath options;
@@ -458,12 +452,16 @@ int main(int argc, char** argv)
 		options.Append("x-vnd.NetSurf");
 	}
 
-	find_resource(buf, "messages", "./beos/res/messages");
-	LOG(("Using '%s' as Messages file", buf));
-	//messages_load(buf);
+	if (!replicated) {
+		// create the Application object before trying to use messages
+		// so we can open an alert in case of error.
+		new NSBrowserApplication;
+	}
+
+	char* messages = "/boot/apps/netsurf/res/en/Messages";
 
 	/* initialise netsurf */
-	netsurf_init(&argc, &argv, options.Path(), buf);
+	netsurf_init(&argc, &argv, options.Path(), messages);
 
     gui_init(argc, argv);
     gui_init2(argc, argv);
@@ -471,6 +469,27 @@ int main(int argc, char** argv)
 	netsurf_main_loop();
 
 	netsurf_exit();
+
+	return 0;
+}
+
+/** called when replicated from NSBaseView::Instantiate() */
+int gui_init_replicant(int argc, char** argv)
+{
+	setbuf(stderr, NULL);
+
+	BPath options;
+	if (find_directory(B_USER_SETTINGS_DIRECTORY, &options, true) == B_OK) {
+		options.Append("x-vnd.NetSurf");
+	}
+
+	char* messages = "/boot/apps/netsurf/res/en/Messages";
+
+	/* initialise netsurf */
+	netsurf_init(&argc, &argv, options.Path(), messages);
+
+	gui_init(argc, argv);
+	gui_init2(argc, argv);
 
 	return 0;
 }
@@ -485,12 +504,10 @@ void gui_options_init_defaults(void)
 void gui_init(int argc, char** argv)
 {
 	char buf[PATH_MAX];
-	CALLED();
 
 	if (pipe(sEventPipe) < 0)
 		return;
 	if (!replicated) {
-		new NSBrowserApplication;
 		sBAppThreadID = spawn_thread(bapp_thread, "BApplication(NetSurf)", B_NORMAL_PRIORITY, (void *)find_thread(NULL));
 		if (sBAppThreadID < B_OK)
 			return; /* #### handle errors */
@@ -553,37 +570,38 @@ void gui_init(int argc, char** argv)
 	/* check what the font settings are, setting them to a default font
 	 * if they're not set - stops Pango whinging
 	 */
+#define SETFONTDEFAULT(OPTION,y) if (nsoption_charp(OPTION) == NULL) nsoption_set_charp(OPTION, strdup((y)))
 
 	//XXX: use be_plain_font & friends, when we can check if font is serif or not.
 /*
 	font_family family;
 	font_style style;
 	be_plain_font->GetFamilyAndStyle(&family, &style);
-	nsoption_setnull_charp(font_sans, family);
-	nsoption_setnull_charp(font_serif, family);
-	nsoption_setnull_charp(font_mono, family);
-	nsoption_setnull_charp(font_cursive, family);
-	nsoption_setnull_charp(font_fantasy, family);
+	SETFONTDEFAULT(font_sans, family);
+	SETFONTDEFAULT(font_serif, family);
+	SETFONTDEFAULT(font_mono, family);
+	SETFONTDEFAULT(font_cursive, family);
+	SETFONTDEFAULT(font_fantasy, family);
 */
 #ifdef __HAIKU__
-	nsoption_setnull_charp(font_sans, "DejaVu Sans");
-	nsoption_setnull_charp(font_serif, "DejaVu Serif");
-	nsoption_setnull_charp(font_mono, "DejaVu Mono");
-	nsoption_setnull_charp(font_cursive, "DejaVu Sans");
-	nsoption_setnull_charp(font_fantasy, "DejaVu Sans");
+	SETFONTDEFAULT(font_sans, "DejaVu Sans");
+	SETFONTDEFAULT(font_serif, "DejaVu Serif");
+	SETFONTDEFAULT(font_mono, "DejaVu Mono");
+	SETFONTDEFAULT(font_cursive, "DejaVu Sans");
+	SETFONTDEFAULT(font_fantasy, "DejaVu Sans");
 #else
-	nsoption_setnull_charp(font_sans, "Bitstream Vera Sans");
-	nsoption_setnull_charp(font_serif, "Bitstream Vera Serif");
-	nsoption_setnull_charp(font_mono, "Bitstream Vera Sans Mono");
-	nsoption_setnull_charp(font_cursive, "Bitstream Vera Serif");
-	nsoption_setnull_charp(font_fantasy, "Bitstream Vera Serif");
+	SETFONTDEFAULT(font_sans, "Bitstream Vera Sans");
+	SETFONTDEFAULT(font_serif, "Bitstream Vera Serif");
+	SETFONTDEFAULT(font_mono, "Bitstream Vera Sans Mono");
+	SETFONTDEFAULT(font_cursive, "Bitstream Vera Serif");
+	SETFONTDEFAULT(font_fantasy, "Bitstream Vera Serif");
 #if 0
-	nsoption_setnull_charp(font_sans, "Swis721 BT");
-	nsoption_setnull_charp(font_serif, "Dutch801 Rm BT");
-	//nsoption_setnull_charp(font_mono, "Monospac821 BT");
-	nsoption_setnull_charp(font_mono, "Courier10 BT");
-	nsoption_setnull_charp(font_cursive, "Swis721 BT");
-	nsoption_setnull_charp(font_fantasy, "Swis721 BT");
+	SETFONTDEFAULT(font_sans, "Swis721 BT");
+	SETFONTDEFAULT(font_serif, "Dutch801 Rm BT");
+	//SETFONTDEFAULT(font_mono, "Monospac821 BT");
+	SETFONTDEFAULT(font_mono, "Courier10 BT");
+	SETFONTDEFAULT(font_cursive, "Swis721 BT");
+	SETFONTDEFAULT(font_fantasy, "Swis721 BT");
 #endif
 #endif
 
@@ -680,17 +698,16 @@ void nsbeos_pipe_message_top(BMessage *message, BWindow *_this, struct beos_scaf
 
 void gui_poll(bool active)
 {
-	//CALLED();
 	CURLMcode code;
-
 	fd_set read_fd_set, write_fd_set, exc_fd_set;
 	int max_fd = 0;
 	struct timeval timeout;
 	unsigned int fd_count = 0;
 	bool block = true;
+	bigtime_t next_schedule = 0;
 
-	if (browser_reformat_pending)
-		block = false;
+	// handle early deadlines
+	schedule_run();
 
 	FD_ZERO(&read_fd_set);
 	FD_ZERO(&write_fd_set);
@@ -709,25 +726,42 @@ void gui_poll(bool active)
 	FD_SET(sEventPipe[0], &read_fd_set);
 	max_fd = MAX(max_fd, sEventPipe[0] + 1);
 
+	// If there are pending events elsewhere, we should not be blocking
+	if (!browser_reformat_pending) {
+		if (earliest_callback_timeout != B_INFINITE_TIMEOUT) {
+			next_schedule = earliest_callback_timeout - system_time();
+			block = false;
+		}
 
-	bigtime_t next_schedule = earliest_callback_timeout - system_time();
-	if (!block)
-		next_schedule = 0LL; // now
-	if (block && earliest_callback_timeout != B_INFINITE_TIMEOUT)
+		// we're quite late already...
+		if (next_schedule < 0)
+			next_schedule = 0;
+
+	} else //we're not allowed to sleep, there is other activity going on.
 		block = false;
+
+	/*
+	LOG(("gui_poll: browser_reformat_pending:%d earliest_callback_timeout:%Ld"
+		" next_schedule:%Ld block:%d ", browser_reformat_pending,
+		earliest_callback_timeout, next_schedule, block));
+	*/
+
 	timeout.tv_sec = (long)(next_schedule / 1000000LL);
 	timeout.tv_usec = (long)(next_schedule % 1000000LL);
-	LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 
+	//LOG(("gui_poll: select(%d, ..., %Ldus", max_fd, next_schedule));
 	fd_count = select(max_fd, &read_fd_set, &write_fd_set, &exc_fd_set, 
 		block ? NULL : &timeout);
+	//LOG(("select: %d\n", fd_count));
 
 	if (fd_count > 0 && FD_ISSET(sEventPipe[0], &read_fd_set)) {
 		BMessage *message;
 		int len = read(sEventPipe[0], &message, sizeof(void *));
-		LOG(("gui_poll: BMessage ? %d read", len));
-		if (len == sizeof(void *))
+		//LOG(("gui_poll: BMessage ? %d read", len));
+		if (len == sizeof(void *)) {
+			//LOG(("gui_poll: BMessage.what %-4.4s\n", &(message->what)));
 			nsbeos_dispatch_event(message);
+		}
 	}
 
 	schedule_run();
@@ -739,7 +773,6 @@ void gui_poll(bool active)
 
 void gui_quit(void)
 {
-	CALLED();
 	urldb_save_cookies(nsoption_charp(cookie_jar));
 	urldb_save(nsoption_charp(url_file));
 	//options_save_tree(hotlist,nsoption_charp(hotlist_file),messages_get("TreeHotlist"));
@@ -750,31 +783,6 @@ void gui_quit(void)
 	fetch_rsrc_unregister();
 }
 
-
-
-struct gui_download_window *gui_download_window_create(download_context *ctx,
-		struct gui_window *gui)
-{
-	return NULL;
-}
-
-
-nserror gui_download_window_data(struct gui_download_window *dw, 
-		const char *data, unsigned int size)
-{
-	return NSERROR_OK;
-}
-
-
-void gui_download_window_error(struct gui_download_window *dw,
-		const char *error_msg)
-{
-}
-
-
-void gui_download_window_done(struct gui_download_window *dw)
-{
-}
 
 #if 0 /* GTK */
 static void nsbeos_select_menu_clicked(BCheckMenuItem *checkmenuitem,
