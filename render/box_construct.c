@@ -157,10 +157,10 @@ static const struct element_entry element_table[] = {
  * \param n   xml tree
  * \param c   content of type CONTENT_HTML to construct box tree in
  * \param cb  callback to report conversion completion
- * \return  true on success, false on memory exhaustion
+ * \return    netsurf error code indicating status of call
  */
 
-bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
+nserror dom_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 {
 	struct box_construct_ctx *ctx;
 
@@ -168,13 +168,14 @@ bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 		/* create a context allocation for this box tree */
 		c->bctx = talloc_zero(0, int);
 		if (c->bctx == NULL) {
-			return false;
+			return NSERROR_NOMEM;
 		}
 	}
 
 	ctx = malloc(sizeof(*ctx));
-	if (ctx == NULL)
-		return false;
+	if (ctx == NULL) {
+		return NSERROR_NOMEM;
+	}
 
 	ctx->content = c;
 	ctx->n = dom_node_ref(n);
@@ -184,7 +185,7 @@ bool xml_to_box(dom_node *n, html_content *c, box_construct_complete_cb cb)
 
 	schedule(0, (schedule_callback_fn) convert_xml_to_box, ctx);
 
-	return true;
+	return NSERROR_OK;
 }
 
 /* mapping from CSS display to box type

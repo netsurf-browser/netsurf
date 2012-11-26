@@ -78,348 +78,41 @@ static nsurl *html_adblock_stylesheet_url;
 static nsurl *html_quirks_stylesheet_url;
 static nsurl *html_user_stylesheet_url;
 
-
-static void html_destroy_objects(html_content *html)
+static nserror css_error_to_nserror(css_error error)
 {
-	while (html->object_list != NULL) {
-		struct content_html_object *victim = html->object_list;
+	switch (error) {
+	case CSS_OK:
+		return NSERROR_OK;
 
-		if (victim->content != NULL) {
-			LOG(("object %p", victim->content));
-
-			if (content_get_type(victim->content) == CONTENT_HTML)
-				schedule_remove(html_object_refresh, victim);
-
-			hlcache_handle_release(victim->content);
-		}
-
-		html->object_list = victim->next;
-		free(victim);
-	}
-}
-
-/**
- * Perform post-box-creation conversion of a document
- *
- * \param c        HTML content to complete conversion of
- * \param success  Whether box tree construction was successful
- */
-static void html_box_convert_done(html_content *c, bool success)
-{
-	union content_msg_data msg_data;
-	dom_exception exc; /* returned by libdom functions */
-	dom_node *html;
-
-	LOG(("Done XML to box (%p)", c));
-
-	/* Clean up and report error if unsuccessful or aborted */
-	if ((success == false) || (c->aborted)) {
-		if (success == false) {
-			msg_data.errorcode = NSERROR_BOX_CONVERT;
-		} else {
-			msg_data.errorcode = NSERROR_STOPPED;
-		}
-		html_destroy_objects(c);
-		content_broadcast(&c->base, CONTENT_MSG_ERRORCODE, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-#if ALWAYS_DUMP_BOX
-	box_dump(stderr, c->layout->children, 0);
-#endif
-#if ALWAYS_DUMP_FRAMESET
-	if (c->frameset)
-		html_dump_frameset(c->frameset, 0);
-#endif
-
-	exc = dom_document_get_document_element(c->document, (void *) &html);
-	if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		/** @todo should this call html_destroy_objects(c);
-		 * like the other error paths 
-		 */
-		LOG(("error retrieving html element from dom"));
-		msg_data.errorcode = NSERROR_DOM;
-		content_broadcast(&c->base, CONTENT_MSG_ERRORCODE, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* extract image maps - can't do this sensibly in xml_to_box */
-	msg_data.errorcode = imagemap_extract(c);
-	if (msg_data.errorcode != NSERROR_OK) {
-		LOG(("imagemap extraction failed"));
-		html_destroy_objects(c);
-		content_broadcast(&c->base, CONTENT_MSG_ERRORCODE, msg_data);
-		content_set_error(&c->base);
-		dom_node_unref(html);
-		return;
-	}
-	/*imagemap_dump(c);*/
-
-	/* Destroy the parser binding */
-	dom_hubbub_parser_destroy(c->parser);
-	c->parser = NULL;
-
-	content_set_ready(&c->base);
-
-	if (c->base.active == 0) {
-		content_set_done(&c->base);
-	}
-
-	html_set_status(c, "");
-	dom_node_unref(html);
-}
-
-/**
- * Complete conversion of an HTML document
- *
- * \param c  Content to convert
- */
-void html_finish_conversion(html_content *c)
-{
-	union content_msg_data msg_data;
-	dom_exception exc; /* returned by libdom functions */
-	dom_node *html;
-	uint32_t i;
-	css_error error;
-
-	/* Bail out if we've been aborted */
-	if (c->aborted) {
-		msg_data.error = messages_get("Stopped");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* check that the base stylesheet loaded; layout fails without it */
-	if (c->stylesheets[STYLESHEET_BASE].data.external == NULL) {
-		msg_data.error = "Base stylesheet failed to load";
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* Create selection context */
-	error = css_select_ctx_create(ns_realloc, c, &c->select_ctx);
-	if (error != CSS_OK) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	/* Add sheets to it */
-	for (i = STYLESHEET_BASE; i != c->stylesheet_count; i++) {
-		const struct html_stylesheet *hsheet = &c->stylesheets[i];
-		css_stylesheet *sheet;
-		css_origin origin = CSS_ORIGIN_AUTHOR;
-
-		if (i < STYLESHEET_USER)
-			origin = CSS_ORIGIN_UA;
-		else if (i < STYLESHEET_START)
-			origin = CSS_ORIGIN_USER;
-
-		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
-				hsheet->data.external != NULL) {
-			sheet = nscss_get_stylesheet(hsheet->data.external);
-		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
-			sheet = hsheet->data.internal->sheet;
-		} else {
-			sheet = NULL;
-		}
-
-		if (sheet != NULL) {
-			error = css_select_ctx_append_sheet(
-					c->select_ctx, sheet,
-					origin, CSS_MEDIA_SCREEN);
-			if (error != CSS_OK) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(&c->base, CONTENT_MSG_ERROR,
-						msg_data);
-				content_set_error(&c->base);
-				return;
-			}
-		}
-	}
-
-	/* convert xml tree to box tree */
-	LOG(("XML to box (%p)", c));
-	content_set_status(&c->base, messages_get("Processing"));
-	msg_data.explicit_status_text = NULL;
-	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
-
-	exc = dom_document_get_document_element(c->document, (void *) &html);
-	if ((exc != DOM_NO_ERR) || (html == NULL)) {
-		LOG(("error retrieving html element from dom"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	if (xml_to_box(html, c, html_box_convert_done) == false) {
-		dom_node_unref(html);
-		html_destroy_objects(c);
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-		content_set_error(&c->base);
-		return;
-	}
-
-	dom_node_unref(html);
-}
-
-
-
-static nserror
-html_create_html_data(html_content *c, const http_parameter *params)
-{
-	lwc_string *charset;
-	union content_msg_data msg_data;
-	nserror nerror;
-
-	c->parser = NULL;
-	c->document = NULL;
-	c->quirks = DOM_DOCUMENT_QUIRKS_MODE_NONE;
-	c->encoding = NULL;
-	c->base_url = nsurl_ref(content_get_url(&c->base));
-	c->base_target = NULL;
-	c->aborted = false;
-	c->bctx = NULL;
-	c->layout = NULL;
-	c->background_colour = NS_TRANSPARENT;
-	c->stylesheet_count = 0;
-	c->stylesheets = NULL;
-	c->select_ctx = NULL;
-	c->universal = NULL;
-	c->num_objects = 0;
-	c->object_list = NULL;
-	c->forms = NULL;
-	c->imagemaps = NULL;
-	c->bw = NULL;
-	c->frameset = NULL;
-	c->iframe = NULL;
-	c->page = NULL;
-	c->font_func = &nsfont;
-	c->scrollbar = NULL;
-	c->scripts_count = 0;
-	c->scripts = NULL;
-	c->jscontext = NULL;
-
-	c->base.active = 1; /* The html content itself is active */
-
-	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-
-		return NSERROR_NOMEM;
-	}
-
-	selection_prepare(&c->sel, (struct content *)c, true);
-
-	nerror = http_parameter_list_find_item(params, html_charset, &charset);
-	if (nerror == NSERROR_OK) {
-		c->encoding = strdup(lwc_string_data(charset));
-
-		lwc_string_unref(charset);
-
-		if (c->encoding == NULL) {
-			lwc_string_unref(c->universal);
-			c->universal = NULL;
-
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-
-			return NSERROR_NOMEM;
-
-		}
-		c->encoding_source = DOM_HUBBUB_ENCODING_SOURCE_HEADER;
-	}
-
-	/* Create the parser binding */
-	c->parser = dom_hubbub_parser_create(c->encoding, 
-					     true, 
-					     nsoption_bool(enable_javascript),
-					     NULL, 
-					     html_process_script, 
-					     c,
-					     &c->document);
-	if ((c->parser == NULL) && (c->encoding != NULL)) {
-		/* Ok, we don't support the declared encoding. Bailing out
-		 * isn't exactly user-friendly, so fall back to autodetect */
-		free(c->encoding);
-		c->encoding = NULL;
-
-		c->parser = dom_hubbub_parser_create(c->encoding, 
-						     true, 
-						     nsoption_bool(enable_javascript), 
-						     NULL, 
-						     html_process_script, 
-						     c,
-						     &c->document);
-	}
-
-	if (c->parser == NULL) {
-		nsurl_unref(c->base_url);
-		c->base_url = NULL;
-
-		lwc_string_unref(c->universal);
-		c->universal = NULL;
-
-		msg_data.error = messages_get("NoMemory");
-		content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
-
-		return NSERROR_NOMEM;
-	}
-
-	return NSERROR_OK;
-
-}
-
-/**
- * Create a CONTENT_HTML.
- *
- * The content_html_data structure is initialized and the HTML parser is
- * created.
- */
-
-static nserror
-html_create(const content_handler *handler,
-	    lwc_string *imime_type,
-	    const http_parameter *params,
-	    llcache_handle *llcache,
-	    const char *fallback_charset,
-	    bool quirks,
-	    struct content **c)
-{
-	html_content *html;
-	nserror error;
-
-	html = calloc(1, sizeof(html_content));
-	if (html == NULL)
+	case CSS_NOMEM:
 		return NSERROR_NOMEM;
 
-	error = content__init(&html->base, handler, imime_type, params,
-			llcache, fallback_charset, quirks);
-	if (error != NSERROR_OK) {
-		free(html);
-		return error;
+	case CSS_BADPARM:
+		return NSERROR_BAD_PARAMETER;
+
+	case CSS_INVALID:
+		return NSERROR_INVALID;
+
+	case CSS_FILENOTFOUND:
+		return NSERROR_NOT_FOUND;
+
+	case CSS_NEEDDATA:
+		return NSERROR_NEED_DATA;
+
+	case CSS_BADCHARSET:
+		return NSERROR_BAD_ENCODING;
+
+	case CSS_EOF:
+	case CSS_IMPORTS_PENDING:
+	case CSS_PROPERTY_NOT_SET:
+	default:
+		break;
 	}
-
-	error = html_create_html_data(html, params);
-	if (error != NSERROR_OK) {
-		free(html);
-		return error;
-	}
-
-	*c = (struct content *) html;
-
-	return NSERROR_OK;
+	return NSERROR_CSS;
 }
 
 static nserror
-parse_chunk_to_nserror(dom_hubbub_error error)
+dom_hubbub_error_to_nserror(dom_hubbub_error error)
 {
 	switch (error) {
 
@@ -472,6 +165,336 @@ parse_chunk_to_nserror(dom_hubbub_error error)
 	}
 	return NSERROR_UNKNOWN;
 }
+
+static void html_destroy_objects(html_content *html)
+{
+	while (html->object_list != NULL) {
+		struct content_html_object *victim = html->object_list;
+
+		if (victim->content != NULL) {
+			LOG(("object %p", victim->content));
+
+			if (content_get_type(victim->content) == CONTENT_HTML)
+				schedule_remove(html_object_refresh, victim);
+
+			hlcache_handle_release(victim->content);
+		}
+
+		html->object_list = victim->next;
+		free(victim);
+	}
+}
+
+/**
+ * Perform post-box-creation conversion of a document
+ *
+ * \param c        HTML content to complete conversion of
+ * \param success  Whether box tree construction was successful
+ */
+static void html_box_convert_done(html_content *c, bool success)
+{
+	nserror err;
+	dom_exception exc; /* returned by libdom functions */
+	dom_node *html;
+
+	LOG(("Done XML to box (%p)", c));
+
+	/* Clean up and report error if unsuccessful or aborted */
+	if ((success == false) || (c->aborted)) {
+		html_destroy_objects(c);
+
+		if (success == false) {
+			content_broadcast_errorcode(&c->base, NSERROR_BOX_CONVERT);
+		} else {
+			content_broadcast_errorcode(&c->base, NSERROR_STOPPED);
+		}
+
+		content_set_error(&c->base);
+		return;
+	}
+
+
+#if ALWAYS_DUMP_BOX
+	box_dump(stderr, c->layout->children, 0);
+#endif
+#if ALWAYS_DUMP_FRAMESET
+	if (c->frameset)
+		html_dump_frameset(c->frameset, 0);
+#endif
+
+	exc = dom_document_get_document_element(c->document, (void *) &html);
+	if ((exc != DOM_NO_ERR) || (html == NULL)) {
+		/** @todo should this call html_destroy_objects(c);
+		 * like the other error paths 
+		 */
+		LOG(("error retrieving html element from dom"));
+		content_broadcast_errorcode(&c->base, NSERROR_DOM);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* extract image maps - can't do this sensibly in dom_to_box */
+	err = imagemap_extract(c);
+	if (err != NSERROR_OK) {
+		LOG(("imagemap extraction failed"));
+		html_destroy_objects(c);
+		content_broadcast_errorcode(&c->base, err);
+		content_set_error(&c->base);
+		dom_node_unref(html);
+		return;
+	}
+	/*imagemap_dump(c);*/
+
+	/* Destroy the parser binding */
+	dom_hubbub_parser_destroy(c->parser);
+	c->parser = NULL;
+
+	content_set_ready(&c->base);
+
+	if (c->base.active == 0) {
+		content_set_done(&c->base);
+	}
+
+	html_set_status(c, "");
+	dom_node_unref(html);
+}
+
+
+/**
+ * Complete conversion of an HTML document
+ *
+ * \param c  Content to convert
+ */
+void html_finish_conversion(html_content *c)
+{
+	union content_msg_data msg_data;
+	dom_exception exc; /* returned by libdom functions */
+	dom_node *html;
+	uint32_t i;
+	css_error css_ret;
+	nserror error;
+
+	/* Bail out if we've been aborted */
+	if (c->aborted) {
+		content_broadcast_errorcode(&c->base, NSERROR_STOPPED);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* check that the base stylesheet loaded; layout fails without it */
+	if (c->stylesheets[STYLESHEET_BASE].data.external == NULL) {
+		content_broadcast_errorcode(&c->base, NSERROR_CSS_BASE);
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* Create selection context */
+	css_ret = css_select_ctx_create(ns_realloc, c, &c->select_ctx);
+	if (css_ret != CSS_OK) {
+		content_broadcast_errorcode(&c->base,
+					    css_error_to_nserror(css_ret));
+		content_set_error(&c->base);
+		return;
+	}
+
+	/* Add sheets to it */
+	for (i = STYLESHEET_BASE; i != c->stylesheet_count; i++) {
+		const struct html_stylesheet *hsheet = &c->stylesheets[i];
+		css_stylesheet *sheet;
+		css_origin origin = CSS_ORIGIN_AUTHOR;
+
+		if (i < STYLESHEET_USER)
+			origin = CSS_ORIGIN_UA;
+		else if (i < STYLESHEET_START)
+			origin = CSS_ORIGIN_USER;
+
+		if (hsheet->type == HTML_STYLESHEET_EXTERNAL &&
+				hsheet->data.external != NULL) {
+			sheet = nscss_get_stylesheet(hsheet->data.external);
+		} else if (hsheet->type == HTML_STYLESHEET_INTERNAL) {
+			sheet = hsheet->data.internal->sheet;
+		} else {
+			sheet = NULL;
+		}
+
+		if (sheet != NULL) {
+			css_ret = css_select_ctx_append_sheet(c->select_ctx,
+							      sheet,
+							      origin,
+							      CSS_MEDIA_SCREEN);
+			if (css_ret != CSS_OK) {
+				content_broadcast_errorcode(&c->base,
+						css_error_to_nserror(css_ret));
+				content_set_error(&c->base);
+				return;
+			}
+		}
+	}
+
+	/* convert dom tree to box tree */
+	LOG(("DOM to box (%p)", c));
+	content_set_status(&c->base, messages_get("Processing"));
+	msg_data.explicit_status_text = NULL;
+	content_broadcast(&c->base, CONTENT_MSG_STATUS, msg_data);
+
+	exc = dom_document_get_document_element(c->document, (void *) &html);
+	if ((exc != DOM_NO_ERR) || (html == NULL)) {
+		LOG(("error retrieving html element from dom"));
+		content_broadcast_errorcode(&c->base, NSERROR_DOM);
+		content_set_error(&c->base);
+		return;
+	}
+
+	error = dom_to_box(html, c, html_box_convert_done);
+	if (error != NSERROR_OK) {
+		dom_node_unref(html);
+		html_destroy_objects(c);
+		content_broadcast_errorcode(&c->base, error);
+		content_set_error(&c->base);
+		return;
+	}
+
+	dom_node_unref(html);
+}
+
+
+
+static nserror
+html_create_html_data(html_content *c, const http_parameter *params)
+{
+	lwc_string *charset;
+	nserror nerror;
+
+	c->parser = NULL;
+	c->document = NULL;
+	c->quirks = DOM_DOCUMENT_QUIRKS_MODE_NONE;
+	c->encoding = NULL;
+	c->base_url = nsurl_ref(content_get_url(&c->base));
+	c->base_target = NULL;
+	c->aborted = false;
+	c->bctx = NULL;
+	c->layout = NULL;
+	c->background_colour = NS_TRANSPARENT;
+	c->stylesheet_count = 0;
+	c->stylesheets = NULL;
+	c->select_ctx = NULL;
+	c->universal = NULL;
+	c->num_objects = 0;
+	c->object_list = NULL;
+	c->forms = NULL;
+	c->imagemaps = NULL;
+	c->bw = NULL;
+	c->frameset = NULL;
+	c->iframe = NULL;
+	c->page = NULL;
+	c->font_func = &nsfont;
+	c->scrollbar = NULL;
+	c->scripts_count = 0;
+	c->scripts = NULL;
+	c->jscontext = NULL;
+
+	c->base.active = 1; /* The html content itself is active */
+
+	if (lwc_intern_string("*", SLEN("*"), &c->universal) != lwc_error_ok) {
+		return NSERROR_NOMEM;
+	}
+
+	selection_prepare(&c->sel, (struct content *)c, true);
+
+	nerror = http_parameter_list_find_item(params, html_charset, &charset);
+	if (nerror == NSERROR_OK) {
+		c->encoding = strdup(lwc_string_data(charset));
+
+		lwc_string_unref(charset);
+
+		if (c->encoding == NULL) {
+			lwc_string_unref(c->universal);
+			c->universal = NULL;
+			return NSERROR_NOMEM;
+
+		}
+		c->encoding_source = DOM_HUBBUB_ENCODING_SOURCE_HEADER;
+	}
+
+	/* Create the parser binding */
+	c->parser = dom_hubbub_parser_create(c->encoding, 
+					     true, 
+					     nsoption_bool(enable_javascript),
+					     NULL, 
+					     html_process_script, 
+					     c,
+					     &c->document);
+	if ((c->parser == NULL) && (c->encoding != NULL)) {
+		/* Ok, we don't support the declared encoding. Bailing out
+		 * isn't exactly user-friendly, so fall back to autodetect */
+		free(c->encoding);
+		c->encoding = NULL;
+
+		c->parser = dom_hubbub_parser_create(c->encoding, 
+						     true, 
+						     nsoption_bool(enable_javascript), 
+						     NULL, 
+						     html_process_script, 
+						     c,
+						     &c->document);
+	}
+
+	if (c->parser == NULL) {
+		nsurl_unref(c->base_url);
+		c->base_url = NULL;
+
+		lwc_string_unref(c->universal);
+		c->universal = NULL;
+
+		return NSERROR_NOMEM;
+	}
+
+	return NSERROR_OK;
+
+}
+
+/**
+ * Create a CONTENT_HTML.
+ *
+ * The content_html_data structure is initialized and the HTML parser is
+ * created.
+ */
+
+static nserror
+html_create(const content_handler *handler,
+	    lwc_string *imime_type,
+	    const http_parameter *params,
+	    llcache_handle *llcache,
+	    const char *fallback_charset,
+	    bool quirks,
+	    struct content **c)
+{
+	html_content *html;
+	nserror error;
+
+	html = calloc(1, sizeof(html_content));
+	if (html == NULL)
+		return NSERROR_NOMEM;
+
+	error = content__init(&html->base, handler, imime_type, params,
+			llcache, fallback_charset, quirks);
+	if (error != NSERROR_OK) {
+		free(html);
+		return error;
+	}
+
+	error = html_create_html_data(html, params);
+	if (error != NSERROR_OK) {
+		content_broadcast_errorcode(&html->base, error);
+		free(html);
+		return error;
+	}
+
+	*c = (struct content *) html;
+
+	return NSERROR_OK;
+}
+
 
 
 static nserror
@@ -554,7 +577,7 @@ html_process_encoding_change(struct content *c,
 					      (const uint8_t *)source_data, 
 					      source_size);
 
-	return parse_chunk_to_nserror(error);
+	return dom_hubbub_error_to_nserror(error);
 }
 
 
@@ -566,26 +589,23 @@ static bool
 html_process_data(struct content *c, const char *data, unsigned int size)
 {
 	html_content *html = (html_content *) c;
-	dom_hubbub_error error;
-	union content_msg_data msg_data;
+	dom_hubbub_error dom_ret;
+	nserror err = NSERROR_OK; /* assume its all going to be ok */
 
-	msg_data.errorcode = NSERROR_OK; /* assume its all going to be ok */
-
-	error = dom_hubbub_parser_parse_chunk(html->parser, 
+	dom_ret = dom_hubbub_parser_parse_chunk(html->parser, 
 					      (const uint8_t *) data, 
 					      size);
 
-
-	msg_data.errorcode = parse_chunk_to_nserror(error);
+	err = dom_hubbub_error_to_nserror(dom_ret);
 
 	/* deal with encoding change */
-	if (msg_data.errorcode == NSERROR_ENCODING_CHANGE) {
-		 msg_data.errorcode = html_process_encoding_change(c, data, size);
+	if (err == NSERROR_ENCODING_CHANGE) {
+		 err = html_process_encoding_change(c, data, size);
 	}
 
 	/* broadcast the error if necessary */
-	if (msg_data.errorcode != NSERROR_OK) {
-		content_broadcast(c, CONTENT_MSG_ERRORCODE, msg_data);
+	if (err != NSERROR_OK) {
+		content_broadcast_errorcode(c, err);
 		return false;
 	}
 
@@ -776,7 +796,7 @@ static bool html_process_base(html_content *c, dom_node *node)
  * The title and base href are extracted if present.
  */
 
-static bool html_head(html_content *c, dom_node *head)
+static nserror html_head(html_content *c, dom_node *head)
 {
 	dom_node *node;
 	dom_exception exc; /* returned by libdom functions */
@@ -786,7 +806,7 @@ static bool html_head(html_content *c, dom_node *head)
 
 	exc = dom_node_get_first_child(head, &node);
 	if (exc != DOM_NO_ERR) {
-		return false;
+		return NSERROR_DOM;
 	}
 
 	while (node != NULL) {
@@ -810,8 +830,9 @@ static bool html_head(html_content *c, dom_node *head)
 					html_process_link(c, node);
 				}
 			}
-			if (node_name != NULL)
+			if (node_name != NULL) {
 				dom_string_unref(node_name);
+			}
 		}
 
 		/* move to next node */
@@ -824,10 +845,10 @@ static bool html_head(html_content *c, dom_node *head)
 		}
 	}
 
-	return true;
+	return NSERROR_OK;
 }
 
-static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
+static nserror html_meta_refresh_process_element(html_content *c, dom_node *n)
 {
 	union content_msg_data msg_data;
 	const char *url, *end, *refresh = NULL;
@@ -836,28 +857,32 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 	dom_string *equiv, *content;
 	dom_exception exc;
 	nsurl *nsurl;
-	nserror error;
+	nserror error = NSERROR_OK;
 
 	exc = dom_element_get_attribute(n, corestring_dom_http_equiv, &equiv);
-	if (exc != DOM_NO_ERR)
-		return false;
+	if (exc != DOM_NO_ERR) {
+		return NSERROR_DOM;
+	}
 
-	if (equiv == NULL)
-		return true;
+	if (equiv == NULL) {
+		return NSERROR_OK;
+	}
 
 	if (!dom_string_caseless_lwc_isequal(equiv, corestring_lwc_refresh)) {
 		dom_string_unref(equiv);
-		return true;
+		return NSERROR_OK;
 	}
 
 	dom_string_unref(equiv);
 
 	exc = dom_element_get_attribute(n, corestring_dom_content, &content);
-	if (exc != DOM_NO_ERR)
-		return false;
+	if (exc != DOM_NO_ERR) {
+		return NSERROR_DOM;
+	}
 
-	if (content == NULL)
-		return true;
+	if (content == NULL) {
+		return NSERROR_OK;
+	}
 
 	end = dom_string_data(content) + dom_string_byte_length(content);
 
@@ -883,15 +908,16 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 	if (url == end || (*url < '0' || '9' < *url)) {
 		/* Empty content, or invalid timeval */
 		dom_string_unref(content);
-		return true;
+		return NSERROR_OK;
 	}
 
 	msg_data.delay = (int) strtol(url, &new_url, 10);
 	/* a very small delay and self-referencing URL can cause a loop
 	 * that grinds machines to a halt. To prevent this we set a
 	 * minimum refresh delay of 1s. */
-	if (msg_data.delay < 1)
+	if (msg_data.delay < 1) {
 		msg_data.delay = 1;
+	}
 
 	url = new_url;
 
@@ -922,9 +948,9 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 		c->base.refresh = nsurl_ref(
 				content_get_url(&c->base));
 
-		content_broadcast(&c->base, CONTENT_MSG_REFRESH,
-				msg_data);
-		return true;
+		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
+
+		return NSERROR_OK;
 	}
 
 	/* "url" */
@@ -934,12 +960,12 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 		} else {
 			/* Unexpected input, ignore this header */
 			dom_string_unref(content);
-			return true;
+			return NSERROR_OK;
 		}
 	} else {
 		/* Insufficient input, ignore this header */
 		dom_string_unref(content);
-		return true;
+		return NSERROR_OK;
 	}
 
 	/* *LWS */
@@ -954,12 +980,12 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 		} else {
 			/* Unexpected input, ignore this header */
 			dom_string_unref(content);
-			return true;
+			return NSERROR_OK;
 		}
 	} else {
 		/* Insufficient input, ignore this header */
 		dom_string_unref(content);
-		return true;
+		return NSERROR_OK;
 	}
 
 	/* *LWS */
@@ -992,32 +1018,25 @@ static bool html_meta_refresh_process_element(html_content *c, dom_node *n)
 		new_url = strndup(refresh, url - refresh);
 		if (new_url == NULL) {
 			dom_string_unref(content);
-			return false;
+			return NSERROR_NOMEM;
 		}
 
 		error = nsurl_join(c->base_url, new_url, &nsurl);
-		if (error != NSERROR_OK) {
-			free(new_url);
+		if (error == NSERROR_OK) {
+			/* broadcast valid refresh url */
 
-			dom_string_unref(content);
+			c->base.refresh = nsurl;
 
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&c->base, CONTENT_MSG_ERROR,
-					msg_data);
-
-			return false;
+			content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
 		}
 
 		free(new_url);
 
-		c->base.refresh = nsurl;
-
-		content_broadcast(&c->base, CONTENT_MSG_REFRESH, msg_data);
 	}
 
 	dom_string_unref(content);
 
-	return true;
+	return error;
 }
 
 /**
@@ -1556,7 +1575,6 @@ html_process_style_element(html_content *c,
 	dom_node *child, *next;
 	dom_string *val;
 	dom_exception exc;
-	union content_msg_data msg_data;
 	struct html_stylesheet *stylesheets;
 	struct content_css_data *sheet;
 	nserror error;
@@ -1609,7 +1627,8 @@ html_process_style_element(html_content *c,
 	if (error != NSERROR_OK) {
 		free(sheet);
 		c->stylesheet_count--;
-		goto no_memory;
+		content_broadcast_errorcode(&c->base, error);
+		return false;
 	}
 
 	/* can't just use xmlNodeGetContent(style), because that won't
@@ -1680,8 +1699,7 @@ html_process_style_element(html_content *c,
 	return true;
 
 no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	content_broadcast_errorcode(&c->base, NSERROR_NOMEM);
 	return false;
 }
 
@@ -1701,7 +1719,6 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	dom_string *rel, *type_attr, *media, *href;
 	struct html_stylesheet *stylesheets;
 	nsurl *joined;
-	union content_msg_data msg_data;
 	dom_exception exc;
 	nserror ns_error;
 	hlcache_child_context child;
@@ -1779,6 +1796,7 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 			      sizeof(struct html_stylesheet) * (ctx->count + 1));
 	if (stylesheets == NULL) {
 		nsurl_unref(joined);
+		ns_error = NSERROR_NOMEM;
 		goto no_memory;
 	}
 
@@ -1812,10 +1830,8 @@ html_process_stylesheet(dom_node *node, dom_string *name, void *vctx)
 	return true;
 
 no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&ctx->c->base, CONTENT_MSG_ERROR, msg_data);
+	content_broadcast_errorcode(&ctx->c->base, ns_error);
 	return false;
-
 }
 
 
@@ -1831,7 +1847,6 @@ no_memory:
 
 static bool html_find_stylesheets(html_content *c, dom_node *html)
 {
-	union content_msg_data msg_data;
 	nserror ns_error;
 	bool result;
 	struct find_stylesheet_ctx ctx;
@@ -1847,6 +1862,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	 * stylesheet 3 is the user stylesheet */
 	c->stylesheets = calloc(STYLESHEET_START, sizeof(struct html_stylesheet));
 	if (c->stylesheets == NULL) {
+		ns_error = NSERROR_NOMEM;
 		goto html_find_stylesheets_no_memory;
 	}
 
@@ -1911,7 +1927,6 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	c->base.active++;
 	LOG(("%d fetches active", c->base.active));
 
-
 	result = libdom_treewalk(html, html_process_stylesheet, &ctx);
 
 	assert(c->stylesheet_count == ctx.count);
@@ -1919,8 +1934,7 @@ static bool html_find_stylesheets(html_content *c, dom_node *html)
 	return result;
 
 html_find_stylesheets_no_memory:
-	msg_data.error = messages_get("NoMemory");
-	content_broadcast(&c->base, CONTENT_MSG_ERROR, msg_data);
+	content_broadcast_errorcode(&c->base, ns_error);
 	return false;
 }
 
@@ -1945,7 +1959,6 @@ static bool html_convert(struct content *c)
 	htmlc->base.active--; /* the html fetch is no longer active */
 	LOG(("%d fetches active", htmlc->base.active));
 
-
 	/* if there are no active fetches in progress no scripts are
 	 * being fetched or they completed already.
 	 */ 
@@ -1953,14 +1966,13 @@ static bool html_convert(struct content *c)
 		return html_begin_conversion(htmlc);
 	}
 	return true;
-
 }
 
 bool
 html_begin_conversion(html_content *htmlc)
 {
 	dom_node *html, *head;
-	union content_msg_data msg_data;
+	nserror ns_error;
 	struct form *f;
 	dom_exception exc; /* returned by libdom functions */
 	dom_string *node_name = NULL;
@@ -1969,18 +1981,27 @@ html_begin_conversion(html_content *htmlc)
 	/* complete parsing */
 	error = dom_hubbub_parser_completed(htmlc->parser);
 	if (error != DOM_HUBBUB_OK) {
-		union content_msg_data msg_data;
-
-		/** @todo Improve processing of errors */
 		LOG(("Parsing failed"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+
+		content_broadcast_errorcode(&htmlc->base, 
+					    dom_hubbub_error_to_nserror(error));
 
 		return false;
 	}
 
+	/* Give up processing if we've been aborted */
+	if (htmlc->aborted) {
+		content_broadcast_errorcode(&htmlc->base, NSERROR_STOPPED);
+		return false;
+	}
+
+
 	/* complete script execution */
 	html_scripts_exec(htmlc);
+
+	/* fire a simple event that bubbles named DOMContentLoaded at
+	 * the Document.
+	 */
 
 	/* quirks mode */
 	exc = dom_document_get_quirks_mode(htmlc->document, &htmlc->quirks);
@@ -1997,32 +2018,24 @@ html_begin_conversion(html_content *htmlc)
 		encoding = dom_hubbub_parser_get_encoding(htmlc->parser,
 					&htmlc->encoding_source);
 		if (encoding == NULL) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast_errorcode(&htmlc->base, 
+						    NSERROR_NOMEM);
 			return false;
 		}
 
 		htmlc->encoding = strdup(encoding);
 		if (htmlc->encoding == NULL) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast_errorcode(&htmlc->base, 
+						    NSERROR_NOMEM);
 			return false;
 		}
-	}
-
-	/* Give up processing if we've been aborted */
-	if (htmlc->aborted) {
-		msg_data.error = messages_get("Stopped");
-		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
-		return false;
 	}
 
 	/* locate root element and ensure it is html */
 	exc = dom_document_get_document_element(htmlc->document, (void *) &html);
 	if ((exc != DOM_NO_ERR) || (html == NULL)) {
 		LOG(("error retrieving html element from dom"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
 		return false;
 	}
 
@@ -2032,8 +2045,7 @@ html_begin_conversion(html_content *htmlc)
 	    (!dom_string_caseless_lwc_isequal(node_name,
 	    		corestring_lwc_html))) {
 		LOG(("root element not html"));
-		msg_data.error = messages_get("ParsingFail");
-		content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+		content_broadcast_errorcode(&htmlc->base, NSERROR_DOM);
 		dom_node_unref(html);
 		return false;
 	}
@@ -2041,16 +2053,20 @@ html_begin_conversion(html_content *htmlc)
 
 	head = libdom_find_first_element(html, corestring_lwc_head);
 	if (head != NULL) {
-		if (html_head(htmlc, head) == false) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+		ns_error = html_head(htmlc, head);
+		if (ns_error != NSERROR_OK) {
+			content_broadcast_errorcode(&htmlc->base, ns_error);
+
 			dom_node_unref(html);
 			dom_node_unref(head);
 			return false;
 		}
 
 		/* handle meta refresh */
-		if (html_meta_refresh(htmlc, head) == false) {
+		ns_error = html_meta_refresh(htmlc, head);
+		if (ns_error != NSERROR_OK) {
+			content_broadcast_errorcode(&htmlc->base, ns_error);
+
 			dom_node_unref(html);
 			dom_node_unref(head);
 			return false;
@@ -2062,21 +2078,23 @@ html_begin_conversion(html_content *htmlc)
 			(dom_html_document *) htmlc->document);
 	for (f = htmlc->forms; f != NULL; f = f->prev) {
 		nsurl *action;
-		nserror res;
 
 		/* Make all actions absolute */
 		if (f->action == NULL || f->action[0] == '\0') {
 			/* HTML5 4.10.22.3 step 9 */
 			nsurl *doc_addr = content_get_url(&htmlc->base);
-			res = nsurl_join(htmlc->base_url,
-					nsurl_access(doc_addr), &action);
+			ns_error = nsurl_join(htmlc->base_url,
+					      nsurl_access(doc_addr), 
+					      &action);
 		} else {
-			res = nsurl_join(htmlc->base_url, f->action, &action);
+			ns_error = nsurl_join(htmlc->base_url, 
+					      f->action, 
+					      &action);
 		}
 
-		if (res != NSERROR_OK) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+		if (ns_error != NSERROR_OK) {
+			content_broadcast_errorcode(&htmlc->base, ns_error);
+
 			dom_node_unref(html);
 			dom_node_unref(head);
 			return false;
@@ -2086,8 +2104,9 @@ html_begin_conversion(html_content *htmlc)
 		f->action = strdup(nsurl_access(action));
 		nsurl_unref(action);
 		if (f->action == NULL) {
-			msg_data.error = messages_get("NoMemory");
-			content_broadcast(&htmlc->base, CONTENT_MSG_ERROR, msg_data);
+			content_broadcast_errorcode(&htmlc->base, 
+						    NSERROR_NOMEM);
+
 			dom_node_unref(html);
 			dom_node_unref(head);
 			return false;
@@ -2097,10 +2116,8 @@ html_begin_conversion(html_content *htmlc)
 		if (f->document_charset == NULL) {
 			f->document_charset = strdup(htmlc->encoding);
 			if (f->document_charset == NULL) {
-				msg_data.error = messages_get("NoMemory");
-				content_broadcast(&htmlc->base, 
-						  CONTENT_MSG_ERROR,
-						  msg_data);
+				content_broadcast_errorcode(&htmlc->base, 
+							    NSERROR_NOMEM);
 				dom_node_unref(html);
 				dom_node_unref(head);
 				return false;
