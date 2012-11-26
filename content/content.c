@@ -678,6 +678,23 @@ void content_broadcast(struct content *c, content_msg msg,
 	}
 }
 
+/* exported interface documented in content_protected.h */
+void content_broadcast_errorcode(struct content *c, nserror errorcode)
+{
+	struct content_user *user, *next;
+	union content_msg_data data;
+
+	assert(c);
+
+	data.errorcode = errorcode;
+
+	for (user = c->user_list->next; user != 0; user = next) {
+		next = user->next;  /* user may be destroyed during callback */
+		if (user->callback != 0)
+			user->callback(c, CONTENT_MSG_ERRORCODE, data, user->pw);
+	}
+}
+
 
 /**
  * A window containing the content has been opened.
