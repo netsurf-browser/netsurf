@@ -61,6 +61,10 @@ typedef enum {
 
 	NSERROR_DOM,	                /**< DOM call returned error */
 
+	NSERROR_CSS,	                /**< CSS call returned error */
+
+	NSERROR_CSS_BASE,               /**< CSS base sheet failed */
+
 	NSERROR_BAD_URL			/**< Bad URL */
 } nserror;
 
