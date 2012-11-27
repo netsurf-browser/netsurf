@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <cflib.h>
 
+
+#include <gem.h>
 #include <mt_gem.h>
 #include "gemtk.h"
 
@@ -27,13 +29,15 @@ static GUIWIN * winlist;
 static VdiHdl v_vdi_h = -1;
 static short work_out[57];
 
-static void move_rect(GRECT *rect, int dx, int dy)
+static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
 {
     INT16 xy[ 8];
     long dum = 0L;
     GRECT g;
 
-    while( !wind_update(BEG_UPDATE));
+    VdiHdl vh = guiwin_get_vdi_handle(win);
+
+    while(!wind_update(BEG_UPDATE));
     graf_mouse(M_OFF, 0L);
 
     /* get intersection with screen area */
@@ -47,7 +51,7 @@ static void move_rect(GRECT *rect, int dx, int dy)
     xy[5] = xy[1] + dy;
     xy[6] = xy[2] + dx;
     xy[7] = xy[3] + dy;
-    vro_cpyfm(v_vdi_h, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
+    vro_cpyfm(vh, S_ONLY, xy, (MFDB *)&dum, (MFDB *)&dum);
 
     graf_mouse(M_ON, 0L);
     wind_update(END_UPDATE);
@@ -81,7 +85,7 @@ static void preproc_scroll(GUIWIN *gw, short orientation, int units,
             if(pix < 0 ) {
                 // blit screen area:
                 g.g_h -= abs_pix;
-                move_rect(&g, 0, abs_pix);
+                move_rect(gw, &g, 0, abs_pix);
                 g.g_y = g_ro.g_y;
                 g.g_h = abs_pix;
                 redraw = &g;
@@ -89,7 +93,7 @@ static void preproc_scroll(GUIWIN *gw, short orientation, int units,
                 // blit screen area:
                 g.g_y += abs_pix;
                 g.g_h -= abs_pix;
-                move_rect(&g, 0, -abs_pix);
+                move_rect(gw, &g, 0, -abs_pix);
                 g.g_y = g_ro.g_y + g_ro.g_h - abs_pix;
                 g.g_h = abs_pix;
                 redraw = &g;
@@ -112,7 +116,7 @@ static void preproc_scroll(GUIWIN *gw, short orientation, int units,
             if(pix < 0 ) {
                 // blit screen area:
                 g.g_w -= abs_pix;
-                move_rect(&g, abs_pix, 0);
+                move_rect(gw, &g, abs_pix, 0);
                 g.g_x = g_ro.g_x;
                 g.g_w = abs_pix;
                 redraw = &g;
@@ -120,7 +124,7 @@ static void preproc_scroll(GUIWIN *gw, short orientation, int units,
                 // blit screen area:
                 g.g_x += abs_pix;
                 g.g_w -= abs_pix;
-                move_rect(&g, -abs_pix, 0);
+                move_rect(gw, &g, -abs_pix, 0);
                 g.g_x = g_ro.g_x + g_ro.g_w - abs_pix;
                 g.g_w = abs_pix;
                 redraw = &g;
@@ -292,7 +296,8 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         break;
 
     case WM_REDRAW:
-        if ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0) {
+        if ((gw->flags & GW_FLAG_TOOLBAR_REDRAW)
+                && (gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0) {
             g.g_x = msg[4];
             g.g_y = msg[5];
             g.g_w = msg[6];
@@ -375,8 +380,8 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
                 DEBUG_PRINT(("Found MU_BUTTON dest: %p (%d), flags: %d, cb: %p\n", dest, dest->handle, dest->flags, dest->handler_func));
 
                 // toolbar handling:
-                if((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0 &&
-                        dest->toolbar != NULL) {
+                if((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0
+                        && dest->toolbar != NULL) {
                     GRECT tb_area;
                     guiwin_get_grect(dest, GUIWIN_AREA_TOOLBAR, &tb_area);
                     if (POINT_WITHIN(ev_out->emo_mouse.p_x,
@@ -394,10 +399,12 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
                         if (((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
                                 && obj_idx > 0) {
                             dest->toolbar[obj_idx].ob_state |= OS_SELECTED;
+                            // TODO: optimize redraw by setting the object clip:
                             guiwin_toolbar_redraw(dest, NULL);
                         }
                         short oldevents = ev_out->emo_events;
                         ev_out->emo_events = MU_MESAG;
+                        // notify the window about toolbar click:
                         dest->handler_func(dest, ev_out, msg_out);
                         handler_called=true;
                         ev_out->emo_events = oldevents;
@@ -590,6 +597,11 @@ short guiwin_get_handle(GUIWIN *win)
     return(win->handle);
 }
 
+VdiHdl guiwin_get_vdi_handle(GUIWIN *win)
+{
+    return(v_vdi_h);
+}
+
 uint32_t guiwin_get_state(GUIWIN *win)
 {
     return(win->state);
@@ -649,13 +661,6 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
 {
-
-#define RC_WITHIN(a,b) \
-    (((a)->g_x >= (b)->g_x) \
-        && (((a)->g_x + (a)->g_w) <= ((b)->g_x + (b)->g_w))) \
-            && (((a)->g_y >= (b)->g_y) \
-                && (((a)->g_y + (a)->g_h) <= ((b)->g_y + (b)->g_h)))
-
     GRECT area, mywork;
     bool retval = true;
 
@@ -674,9 +679,6 @@ bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
     }
 
     return(retval);
-
-#undef RC_WITHIN
-
 }
 
 void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
@@ -684,9 +686,6 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
     GRECT tb_area, tb_area_ro, g;
 
     guiwin_get_grect(gw, GUIWIN_AREA_TOOLBAR, &tb_area_ro);
-    if(tb_area_ro.g_h <= 0 || tb_area_ro.g_w <= 0) {
-        return;
-    }
 
     if(clip == NULL) {
         clip = &tb_area_ro;
@@ -695,6 +694,7 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
     tb_area = tb_area_ro;
 
     if(rc_intersect(clip, &tb_area)) {
+
         // Update object position:
         gw->toolbar[gw->toolbar_idx].ob_x = tb_area_ro.g_x;
         gw->toolbar[gw->toolbar_idx].ob_width = tb_area_ro.g_w;
@@ -712,11 +712,37 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
         }
     }
 }
-/*
-void guiwin_exec_redraw(){
 
+void guiwin_clear(GUIWIN *win)
+{
+    GRECT area, g;
+    short pxy[4];
+    VdiHdl vh;
+
+    vh = guiwin_get_vdi_handle(win);
+
+    if(win->state & GW_STATUS_ICONIFIED){
+        // also clear the toolbar area when iconified:
+        guiwin_get_grect(win, GUIWIN_AREA_WORK, &area);
+    } else {
+        guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &area);
+    }
+
+    vsf_interior(vh, FIS_SOLID);
+    vsf_color(vh, 0);
+    vswr_mode(vh, MD_REPLACE);
+    wind_get_grect(win->handle, WF_FIRSTXYWH, &g);
+    while (g.g_h > 0 || g.g_w > 0) {
+        if(rc_intersect(&area, &g)) {
+            pxy[0] = g.g_x;
+            pxy[1] = g.g_y;
+            pxy[2] = g.g_x+g.g_w-1;
+            pxy[3] = g.g_y+g.g_h-1;
+            v_bar(vh, pxy);
+        }
+        wind_get_grect(win->handle, WF_NEXTXYWH, &g);
+    }
 }
-*/
 
 
 

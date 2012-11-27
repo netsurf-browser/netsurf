@@ -62,14 +62,14 @@ extern struct gui_window *input_window;
 extern long atari_plot_flags;
 extern int atari_plot_vdi_handle;
 
-static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect );
+static void browser_process_scroll( struct gui_window * gw, GRECT bwrect );
 static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
 								struct rect * area );
-static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8],
+static void __CDECL browser_evnt_destroy( COMPONENT * c, short buff[8],
 										void * data);
-static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8],
+static void __CDECL browser_evnt_redraw( COMPONENT * c, short buff[8],
 										void * data);
-static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8],
+static void __CDECL browser_evnt_mbutton( COMPONENT * c, short buff[8],
 										void * data);
 
 
@@ -105,6 +105,8 @@ struct s_browser * browser_create
 		}
 
 		/* Attach events to the component: */
+		// TODO: implement event chaining in rootwin
+		/*
 		mt_CompEvntDataAdd( &app, bnew->comp, WM_XBUTTON,
 						browser_evnt_mbutton, (void*)gw, EV_BOT
 		);
@@ -114,6 +116,7 @@ struct s_browser * browser_create
 		mt_CompEvntDataAttach( &app, bnew->comp, WM_DESTROY,
 								browser_evnt_destroy, (void*)bnew
 		);
+		*/
 
 		/* Set the gui_window owner. */
 		/* it is an link to the netsurf window system */
@@ -135,76 +138,69 @@ bool browser_destroy( struct s_browser * b )
 	LOG(("%s\n", b->bw->name ));
 
 	assert( b != NULL );
-	assert( b->comp != NULL );
 	assert( b->bw != NULL );
 
-	if( b->comp != NULL ){
-		mt_CompDelete(&app,  b->comp );
-	}
-	return( true );
-}
-
-/*
-	Query the browser component for widget rectangles.
-*/
-void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out)
-{
-	LGRECT cur;
-
-	/* Query component for it's current size: */
-	mt_CompGetLGrect(&app, gw->browser->comp, WF_WORKXYWH, &cur);
-
-	/* And extract the different widget dimensions: */
-	if( type == BR_CONTENT ){
-		out->g_w = cur.g_w;
-		out->g_h = cur.g_h;
-		out->g_x = cur.g_x;
-		out->g_y = cur.g_y;
-	}
-
-	return;
-}
-
-/* Report an resize to the COMPONENT interface */
-void browser_update_rects(struct gui_window * gw )
-{
-	short buff[8];
-	mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&buff[4]);
-	buff[0] = CM_REFLOW;
-	buff[1] = _AESapid;
-	buff[2] = 0;
-	EvntExec(gw->root->handle, buff);
-}
-
-void browser_set_content_size(struct gui_window * gw, int w, int h)
-{
-	CMP_BROWSER b = gw->browser;
-	LGRECT work;
-	browser_get_rect( gw, BR_CONTENT, &work );
-
-	gw->root->handle->xpos_max = w;
-	gw->root->handle->ypos_max = h;
-
-	if( w < work.g_w + b->scroll.current.x || w < work.g_h + b->scroll.current.y ) {
-		/* let the scroll routine detect invalid scroll values... */
-		browser_scroll(gw, WA_LFLINE, b->scroll.current.x, true );
-		browser_scroll(gw, WA_UPLINE, b->scroll.current.y, true );
-		/* force update of scrollbars: */
-		b->scroll.required = true;
-	}
-}
-
-
-static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * data)
-{
-	struct s_browser * b = (struct s_browser*)data;
-	struct gui_window * gw = b->bw->window;
+    struct gui_window * gw = b->bw->window;
 	LOG(("%s\n",gw->browser->bw->name));
 
 	assert( b != NULL );
 	assert( gw != NULL );
 	free( b );
 	gw->browser = NULL;
+
+	return( true );
+}
+
+/*
+	Query the browser component for widget rectangles.
+*/
+void browser_get_rect( struct gui_window * gw, enum browser_rect type, GRECT * out)
+{
+	GRECT cur;
+
+    // TODO: update browser get grect
+	/* Query component for it's current size: */
+	/* And extract the different widget dimensions: */
+	if (type == BR_CONTENT ) {
+	    guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, out);
+	}
+	else if (type==BR_URL_INPUT) {
+	    // TODO: calculate url input area somehow
+	    guiwin_get_grect(gw->root->win, GUIWIN_AREA_TOOLBAR, out);
+	}
+	else if (type==BR_THROBBER) {
+	    // TODO: calculate throbber area somehow
+	    guiwin_get_grect(gw->root->win, GUIWIN_AREA_TOOLBAR, out);
+	}
+
+
+	return;
+}
+
+void browser_set_content_size(struct gui_window * gw, int w, int h)
+{
+	CMP_BROWSER b = gw->browser;
+	GRECT work;
+	browser_get_rect( gw, BR_CONTENT, &work );
+
+    // TODO: implement new content size setter
+	//gw->root->handle->xpos_max = w;
+	//gw->root->handle->ypos_max = h;
+
+//	if( w < work.g_w + b->scroll.current.x || w < work.g_h + b->scroll.current.y ) {
+//		/* let the scroll routine detect invalid scroll values... */
+//		browser_scroll(gw, WA_LFLINE, b->scroll.current.x, true );
+//		browser_scroll(gw, WA_UPLINE, b->scroll.current.y, true );
+//		/* force update of scrollbars: */
+//		b->scroll.required = true;
+//	}
+}
+
+
+static void __CDECL browser_evnt_destroy( COMPONENT * c, short buff[8], void * data)
+{
+	struct s_browser * b = (struct s_browser*)data;
+
 	LOG(("evnt_destroy done!"));
 }
 
@@ -212,10 +208,10 @@ static void __CDECL browser_evnt_destroy( COMPONENT * c, long buff[8], void * da
 	Mouse Button handler for browser component.
 */
 
-static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * data)
+static void __CDECL browser_evnt_mbutton( COMPONENT * c, short buff[8], void * data)
 {
 	short mx, my, dummy, mbut;
-	LGRECT cwork;
+	GRECT cwork;
 	browser_mouse_state bmstate = 0;
 	struct gui_window * gw = data;
 
@@ -223,8 +219,8 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * da
 		input_window = gw;
 	}
 
-	window_set_focus( gw, BROWSER, (void*)gw->browser );
-	browser_get_rect( gw, BR_CONTENT, &cwork );
+	window_set_focus(gw->root, BROWSER, (void*)gw->browser );
+	browser_get_rect(gw, BR_CONTENT, &cwork );
 
 	/* convert screen coords to component coords: */
 	mx = evnt.mx - cwork.g_x;
@@ -309,7 +305,7 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, long buff[8], void * da
 */
 void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 {
-	LGRECT work;
+	GRECT work;
 	int max_y_scroll;
 	int max_x_scroll;
 	int oldx = gw->browser->scroll.current.x;
@@ -399,7 +395,7 @@ void browser_scroll( struct gui_window * gw, short mode, int value, bool abs )
 	bwrect -> the dimensions of the browser, so that this function
 			  doesn't need to get it.
 */
-static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
+static void browser_process_scroll( struct gui_window * gw, GRECT bwrect )
 {
 	struct s_browser * b = gw->browser;
 	GRECT src;
@@ -487,10 +483,11 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 		b->caret.redraw = true;
 	}
 
-	gw->root->handle->xpos = b->scroll.current.x;
-	gw->root->handle->ypos = b->scroll.current.y;
+    // TODO: implement new sliding
+	//gw->root->handle->xpos = b->scroll.current.x;
+	//gw->root->handle->ypos = b->scroll.current.y;
 
-	mt_WindSlider( &app, gw->root->handle, HSLIDER|VSLIDER );
+	//mt_WindSlider( &app, gw->root->handle, HSLIDER|VSLIDER );
 }
 
 /*
@@ -502,7 +499,7 @@ static void browser_process_scroll( struct gui_window * gw, LGRECT bwrect )
 */
 bool browser_input( struct gui_window * gw, unsigned short nkc )
 {
-	LGRECT work;
+	GRECT work;
 	bool r = false;
 	unsigned char ascii = (nkc & 0xFF);
 	long ucs4;
@@ -604,7 +601,7 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 {
 	assert( gw != NULL );
 	CMP_BROWSER b = gw->browser;
-	LGRECT work;
+	GRECT work;
 
 	if( y1 < 0 || x1 < 0 )
 		return;
@@ -644,10 +641,10 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
 /*
 	area: the browser canvas
 */
-void browser_restore_caret_background( struct gui_window * gw, LGRECT * area)
+void browser_restore_caret_background( struct gui_window * gw, GRECT * area)
 {
 	CMP_BROWSER b = gw->browser;
-	LGRECT rect;
+	GRECT rect;
 	if( area == NULL ){
 		browser_get_rect( gw, BR_CONTENT, &rect );
 		area = &rect;
@@ -668,7 +665,7 @@ void browser_restore_caret_background( struct gui_window * gw, LGRECT * area)
 /*
 	area: the browser canvas
 */
-void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
+void browser_redraw_caret( struct gui_window * gw, GRECT * area )
 {
 
 	if( gw->browser->caret.redraw && gw->browser->caret.requested.g_w > 0 ){
@@ -677,12 +674,12 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 
 		/* Only redraw caret when window is topped. */
 		wind_get( 0, WF_TOP, &wind_info[0], &wind_info[1], &wind_info[2], &wind_info[3]);
-		if (gw->root->handle->handle != wind_info[0]) {
+		if (guiwin_get_handle(gw->root->win) != wind_info[0]) {
 			return;
 		}
 
 
-		LGRECT caret;
+		GRECT caret;
 		struct s_browser * b = gw->browser;
 		struct rect old_clip;
 		struct rect clip;
@@ -695,7 +692,7 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 		caret.g_x -= b->scroll.current.x - area->g_x;
 		caret.g_y -= b->scroll.current.y - area->g_y;
 
-		if( !rc_lintersect( area, &caret ) ) {
+		if( !rc_intersect( area, &caret ) ) {
 			return;
 		}
 
@@ -745,7 +742,7 @@ void browser_redraw_caret( struct gui_window * gw, LGRECT * area )
 
 void browser_redraw( struct gui_window * gw )
 {
-	LGRECT bwrect;
+	GRECT bwrect;
 	struct s_browser * b = gw->browser;
 	short todo[4];
 	struct rect clip;
@@ -788,7 +785,7 @@ void browser_redraw( struct gui_window * gw )
 			wind_get( 0, WF_TOP, &wf_top[0], &wf_top[1],
 						&wf_top[2], &wf_top[3] );
 
-			if( wf_top[0] == gw->root->handle->handle
+			if( wf_top[0] == guiwin_get_handle(gw->root->win)
 				&& wf_top[1] == _AESapid ){
 				/* The window is on top, so there is no need to walk the 	*/
 				/* AES rectangle list. 										*/
@@ -825,7 +822,8 @@ void browser_redraw( struct gui_window * gw )
 				}
 			} else {
 				/* walk the AES rectangle list: */
-				if( wind_get(gw->root->handle->handle, WF_FIRSTXYWH,
+				short aes_handle = guiwin_get_handle(gw->root->win);
+				if( wind_get(aes_handle, WF_FIRSTXYWH,
 								&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
 					while (todo[2] && todo[3]) {
 						/* convert screen to framebuffer coords: */
@@ -862,7 +860,7 @@ void browser_redraw( struct gui_window * gw )
 							}
 
 						}
-						if (wind_get(gw->root->handle->handle, WF_NEXTXYWH,
+						if (wind_get(aes_handle, WF_NEXTXYWH,
 								&todo[0], &todo[1], &todo[2], &todo[3])==0) {
 							break;
 						}
@@ -894,7 +892,7 @@ void browser_redraw( struct gui_window * gw )
 		b->redraw.areas_used = 0;
 	}
 	if( b->caret.redraw == true && 	b->bw->current_content != NULL ) {
-		LGRECT area;
+		GRECT area;
 		todo[0] = bwrect.g_x;
 		todo[1] = bwrect.g_y;
 		todo[2] = todo[0] + bwrect.g_w;
@@ -912,27 +910,18 @@ void browser_redraw( struct gui_window * gw )
 	/* TODO: if we use offscreen bitmap, trigger content redraw here */
 }
 
-static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * data)
+static void __CDECL browser_evnt_redraw( COMPONENT * c, short buff[8], void * data)
 {
 	struct gui_window * gw = (struct gui_window *) data;
 	CMP_BROWSER b = gw->browser;
-	LGRECT work, lclip;
+	GRECT work, lclip;
 
 	browser_get_rect( gw, BR_CONTENT, &work );
 	lclip = work;
-	if ( !rc_lintersect( (LGRECT*)&buff[4], &lclip ) ) return;
+	if ( !rc_intersect( (GRECT*)&buff[4], &lclip ) ) return;
 
 	if( b->bw->current_content == NULL ){
-		short pxy[4];
-		pxy[0] = lclip.g_x;
-		pxy[1] = lclip.g_y;
-		pxy[2] = lclip.g_x + lclip.g_w - 1;
-		pxy[3] = lclip.g_y + lclip.g_h - 1;
-		vsf_color( gw->root->handle->graf->handle, WHITE );
-		vsf_perimeter( gw->root->handle->graf->handle, 0);
-		vsf_interior( gw->root->handle->graf->handle, FIS_SOLID );
-		vsf_style( gw->root->handle->graf->handle, 1);
-		v_bar( gw->root->handle->graf->handle, (short*)&pxy );
+        guiwin_clear(gw->root->win);
 		return;
 	}
 
@@ -953,13 +942,15 @@ static void __CDECL browser_evnt_redraw( COMPONENT * c, long buff[8], void * dat
 	if( lclip.g_h > 0 && lclip.g_w > 0 ) {
 
 		if( gw->browser->reformat_pending == true ){
-			LGRECT newsize;
+			GRECT newsize;
 			gw->browser->reformat_pending = false;
 			browser_get_rect(gw, BR_CONTENT, &newsize);
 			/* this call will also schedule an redraw for the complete */
 			/* area. */
 			/* Resize must be handled here, because otherwise */
 			/* a redraw is scheduled twice (1. by the frontend, 2. by AES) */
+			// TODO: this was introduced because
+			// of bad knowledge about the AES system...
 			browser_window_reformat(b->bw, false, newsize.g_w, newsize.g_h );
 		} else {
 			browser_schedule_redraw( gw, lclip.g_x, lclip.g_y,

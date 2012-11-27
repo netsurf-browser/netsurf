@@ -36,9 +36,8 @@
 enum browser_rect
 {
 	BR_CONTENT = 1,
-	BR_FULL = 2,
-	BR_HSLIDER = 3,
-	BR_VSLIDER = 4
+	BR_URL_INPUT,
+	BR_THROBBER
 };
 
 
@@ -60,8 +59,8 @@ struct s_scroll_info
 */
 struct s_caret
 {
-	LGRECT requested;
-	LGRECT current;
+	GRECT requested;
+	GRECT current;
 	bool redraw;
 	MFDB background;
 };
@@ -89,17 +88,21 @@ struct s_browser
 	bool reformat_pending;
 };
 
-struct s_browser * browser_create( struct gui_window * gw, struct browser_window * clone, struct browser_window *bw, int lt,  int w, int flex );
+struct s_browser * browser_create( struct gui_window * gw,
+                                  struct browser_window * clone,
+                                  struct browser_window *bw, int lt,  int w,
+                                  int flex );
 bool browser_destroy( struct s_browser * b );
-void browser_get_rect( struct gui_window * gw, enum browser_rect type, LGRECT * out);
+void browser_get_rect( struct gui_window * gw, enum browser_rect type,
+                      GRECT * out);
 bool browser_input( struct gui_window * gw, unsigned short nkc ) ;
 void browser_redraw( struct gui_window * gw );
 void browser_set_content_size(struct gui_window * gw, int w, int h);
 void browser_scroll( struct gui_window * gw, short MODE, int value, bool abs );
 struct gui_window * browser_find_root( struct gui_window * gw );
 bool browser_redraw_required( struct gui_window * gw);
-void browser_redraw_caret( struct gui_window * gw, LGRECT * area);
-void browser_restore_caret_background(struct gui_window * gw, LGRECT * area);
+void browser_redraw_caret( struct gui_window * gw, GRECT * area);
+void browser_restore_caret_background(struct gui_window * gw, GRECT * area);
 /* update loc / size of the browser widgets: */
 void browser_update_rects(struct gui_window * gw );
 /*

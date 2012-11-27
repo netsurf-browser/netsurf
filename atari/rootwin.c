@@ -61,23 +61,19 @@
 
 extern struct gui_window *input_window;
 
+struct rootwin_data_s {
+    struct s_gui_win_root *rootwin;
+};
+
 /* -------------------------------------------------------------------------- */
-/* Static module methods follow here:                                         */
+/* Static module methods:                                         */
 /* -------------------------------------------------------------------------- */
-//static void __CDECL evnt_window_icondraw( WINDOW *win, short buff[8], void *data );
-//static void __CDECL evnt_window_newtop( WINDOW *win, short buff[8], void *data );
-//void __CDECL evnt_window_resize( WINDOW *win, short buff[8], void * data );
-//static void __CDECL evnt_window_rt_resize( WINDOW *win, short buff[8], void * date );
 static void redraw(GUIWIN *win, short msg[8]);
 static void resized(GUIWIN *win);
 static void file_dropped(GUIWIN *win, short msg[8]);
-//static void __CDECL evnt_window_close( WINDOW *win, short buff[8], void *data );
-//static void __CDECL evnt_window_dd( WINDOW *win, short wbuff[8], void * data ) ;
-static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data );
+
 static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
 static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
-//static void __CDECL evnt_window_uniconify( WINDOW *win, short buff[8], void * data );
-//static void __CDECL evnt_window_iconify( WINDOW *win, short buff[8], void * data );
 
 #define FIND_NS_GUI_WINDOW(w) \
 			find_guiwin_by_aes_handle(guiwin_get_handle(w));
@@ -89,6 +85,8 @@ static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
 	struct gui_window * gw;
+
+    struct rootwin_data_s * data = guiwin_get_user_data(win);
 
     if( (ev_out->emo_events & MU_MESAG) != 0 ) {
         // handle message
@@ -107,8 +105,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			break;
 
 		case WM_ICONIFY:
-			gw = FIND_NS_GUI_WINDOW(win);
-			if( input_window == gw) {
+		    data = guiwin_get_user_data(win);
+			if( input_window->root == data->rootwin) {
 				input_window = NULL;
 			}
 			break;
@@ -116,13 +114,17 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 		case WM_TOPPED:
 		case WM_NEWTOP:
 		case WM_UNICONIFY:
-			input_window = FIND_NS_GUI_WINDOW(win);
+		    data = guiwin_get_user_data(win);
+			input_window = data->rootwin->active_gui_window;
 			break;
 
 		case WM_CLOSED:
-			gw = FIND_NS_GUI_WINDOW(win);
+		    // TODO: this needs to iterate through all gui windows and
+		    // check if the rootwin is this window...
+		    data = guiwin_get_user_data(win);
+			gw = data->rootwin->active_gui_window;
 			if( gw != NULL ) {
-				browser_window_destroy(gw->browser->bw );
+				browser_window_destroy(gw->browser->bw);
 			}
 			break;
 
@@ -185,176 +187,177 @@ int window_create(struct gui_window * gw,
         return( -1 );
     memset( gw->root, 0, sizeof(struct s_gui_win_root) );
     gw->root->title = malloc(atari_sysinfo.aes_max_win_title_len+1);
-    gw->root->handle = WindCreate(flags, 40, 40, app.w, app.h);
-    if( gw->root->handle == NULL ) {
+    // TODO: use desk size
+    short aes_handle = wind_create(flags, 40, 40, app.w, app.h);
+    if(aes_handle<0) {
         free( gw->root->title );
         free( gw->root );
         return( -1 );
     }
-
-    /* set scroll / content granularity ( 1 unit ) */
-    gw->root->handle->w_u = 1;
-    gw->root->handle->h_u = 1;
-
-    /* Create Root component: */
-    gw->root->cmproot = mt_CompCreate(&app, CLT_VERTICAL, 1, 1);
-    WindSetPtr( gw->root->handle, WF_COMPONENT, gw->root->cmproot, NULL);
+    gw->root->win = guiwin_add(aes_handle,
+               GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM, handle_event);
 
     /* create toolbar component: */
     if( tb ) {
-        gw->root->toolbar = tb_create( gw );
-        assert( gw->root->toolbar );
-        mt_CompAttach( &app, gw->root->cmproot, gw->root->toolbar->comp );
-
+        gw->root->toolbar = toolbar_create(gw->root);
+        assert(gw->root->toolbar);
     } else {
         gw->root->toolbar = NULL;
     }
 
     /* create browser component: */
     gw->browser = browser_create( gw, bw, NULL, CLT_HORIZONTAL, 1, 1 );
-    mt_CompAttach( &app, gw->root->cmproot,  gw->browser->comp );
 
     /* create statusbar component: */
     if( sb ) {
         gw->root->statusbar = sb_create( gw );
-#ifdef WITH_COMOPONENT_STATUSBAR
-        mt_CompAttach( &app, gw->root->cmproot, gw->root->statusbar->comp );
-#endif
     } else {
         gw->root->statusbar = NULL;
     }
 
-    WindSetStr(gw->root->handle, WF_ICONTITLE, (char*)"NetSurf");
+    wind_set_str(aes_handle, WF_ICONTITLE, (char*)"NetSurf");
+    wind_set(aes_handle, WF_OPTS, 1, WO0_FULLREDRAW, 0, 0);
+    wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITW, 0, 0);
+    wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITH, 0, 0);
 
-    /* Event Handlers: */
-//    EvntDataAttach( gw->root->handle, WM_CLOSED, evnt_window_close, gw );
-    /* capture resize/move events so we can handle that manually */
-//	EvntDataAdd( gw->root->handle, WM_SIZED, evnt_window_rt_resize, gw, EV_BOT );
-//	EvntDataAdd( gw->root->handle, WM_MOVED, evnt_window_rt_resize, gw, EV_BOT );
-//	EvntDataAdd( gw->root->handle, WM_FULLED, evnt_window_rt_resize, gw, EV_BOT );
-    EvntDataAdd(gw->root->handle, WM_DESTROY,evnt_window_destroy, gw, EV_TOP );
-    EvntDataAdd(gw->root->handle, WM_ARROWED,evnt_window_arrowed, gw, EV_TOP );
-//    EvntDataAdd( gw->root->handle, WM_NEWTOP, evnt_window_newtop, gw, EV_BOT);
-//    EvntDataAdd( gw->root->handle, WM_TOPPED, evnt_window_newtop, gw, EV_BOT);
-//	EvntDataAdd( gw->root->handle, WM_ICONIFY, evnt_window_iconify, gw, EV_BOT);
-//	EvntDataAdd( gw->root->handle, WM_UNICONIFY, evnt_window_uniconify, gw, EV_BOT);
-//    EvntDataAttach( gw->root->handle, AP_DRAGDROP, evnt_window_dd, gw );
-//	EvntDataAttach( gw->root->handle, WM_ICONDRAW, evnt_window_icondraw, gw);
-    EvntDataAttach( gw->root->handle, WM_SLIDEXY, evnt_window_slider, gw );
+	guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
+	struct rootwin_data_s * data = malloc(sizeof(struct rootwin_data_s));
+	data->rootwin = gw->root;
+	guiwin_set_user_data(gw->root->win, (void*)data);
 
     if (inflags & WIN_TOP) {
-        window_set_focus( gw, BROWSER, gw->browser);
+        window_set_focus(gw->root, BROWSER, gw->browser);
     }
 
-    GUIWIN * guiwin = guiwin_add(gw->root->handle->handle,
-               GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM, handle_event);
-	guiwin_set_toolbar(guiwin, get_tree(TOOLBAR), 0, 0);
     return (err);
 }
 
-int window_destroy(struct gui_window * gw)
+void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
+{
+    struct gui_window *w;
+    input_window = NULL;
+
+    LOG(("window: %p, gui_window: %p", rootwin, gw));
+
+    w = window_list;
+    // find the next active tab:
+    while( w != NULL ) {
+        if(w->root == rootwin && w != gw) {
+            input_window = w;
+            break;
+        }
+        w = w->next;
+    }
+    if(input_window == NULL){
+        // the last gui window for this rootwin was removed:
+        window_destroy(rootwin);
+    }
+}
+
+int window_destroy(ROOTWIN *rootwin)
 {
     int err = 0;
+    struct gui_window *w;
 
-    search_destroy( gw );
-    if( input_window == gw )
-        input_window = NULL;
+    assert(rootwin != NULL);
 
-    if( gw->root ) {
-        if( gw->root->toolbar )
-            tb_destroy( gw->root->toolbar );
+    LOG(("%p", rootwin));
 
-        if( gw->root->statusbar )
-            sb_destroy( gw->root->statusbar );
+    if (guiwin_get_user_data(rootwin->win) != NULL) {
+        free(guiwin_get_user_data(rootwin->win));
     }
 
-    search_destroy( gw );
-
-    guiwin_remove(guiwin_find(gw->root->handle->handle));
-
-    if( gw->browser )
-        browser_destroy( gw->browser );
-
-    /* needed? */ /*listRemove( (LINKABLE*)gw->root->cmproot ); */
-    if( gw->root ) {
-        /* TODO: check if no other browser is bound to this root window! */
-        /* only needed for tabs */
-        if( gw->root->title )
-            free( gw->root->title );
-        if( gw->root->cmproot )
-            mt_CompDelete( &app, gw->root->cmproot );
-        ApplWrite( _AESapid, WM_DESTROY, gw->root->handle->handle, 0, 0, 0, 0);
-        EvntWindom( MU_MESAG );
-        gw->root->handle = NULL;
-        free(gw->root);
-        gw->root = NULL;
+    // make sure we do not destroy windows which have gui_windows attached:
+    w = window_list;
+    while( w != NULL ) {
+        if(w->root == rootwin) {
+            assert(rootwin == NULL);
+        }
+        w = w->next;
     }
+
+	if (rootwin->toolbar)
+        toolbar_destroy(rootwin->toolbar);
+
+    if(rootwin->statusbar)
+        sb_destroy(rootwin->statusbar);
+
+    if(rootwin->title)
+        free(rootwin->title);
+
+    guiwin_remove(rootwin->win);
+    free(rootwin);
     return(err);
 }
 
 
 
-void window_open( struct gui_window * gw, GRECT pos )
+void window_open(ROOTWIN *rootwin, GRECT pos)
 {
-    LGRECT br;
+    GRECT br;
 
-    WindOpen(gw->root->handle, pos.g_x, pos.g_y, pos.g_w, pos.g_h );
-    WindClear( gw->root->handle );
-    WindSetStr( gw->root->handle, WF_NAME, (char *)"" );
+    short aes_handle = guiwin_get_handle(rootwin->win);
+    wind_open(aes_handle, pos.g_x, pos.g_y, pos.g_w, pos.g_h );
+    wind_set_str(aes_handle, WF_NAME, (char *)"");
 
-    /* apply focus to the root frame: */
-    long lfbuff[8] = { CM_GETFOCUS };
-    mt_CompEvntExec( gl_appvar, gw->browser->comp, lfbuff );
-
-    /* recompute the nested component sizes and positions: */
-    browser_update_rects( gw );
-    mt_WindGetGrect( &app, gw->root->handle, WF_CURRXYWH, (GRECT*)&gw->root->loc);
-    browser_get_rect( gw, BR_CONTENT, &br );
-    plot_set_dimensions(br.g_x, br.g_y, br.g_w, br.g_h);
-    gw->browser->attached = true;
-    if( gw->root->statusbar != NULL ) {
-        sb_attach(gw->root->statusbar, gw);
+    rootwin->active_gui_window->browser->attached = true;
+    if(rootwin->statusbar != NULL) {
+        sb_attach(rootwin->statusbar, rootwin->active_gui_window);
     }
-    tb_adjust_size( gw );
     /*TBD: get already present content and set size? */
-    input_window = gw;
-    window_set_focus( gw, BROWSER, gw->browser );
+    input_window = rootwin->active_gui_window;
+    window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
 }
 
 
 
 /* update back forward buttons (see tb_update_buttons (bug) ) */
-void window_update_back_forward( struct gui_window * gw)
+void window_update_back_forward(struct s_gui_win_root *rootwin)
 {
-    tb_update_buttons( gw, -1 );
+    struct gui_window * active_gw = rootwin->active_gui_window;
+    toolbar_update_buttons(rootwin->toolbar, active_gw->browser->bw, -1);
 }
 
-void window_set_stauts(struct gui_window * gw , char * text )
+void window_set_stauts(struct s_gui_win_root *rootwin, char * text)
 {
-    if( gw->root == NULL )
+    assert(rootwin != NULL);
+
+    CMP_STATUSBAR sb = rootwin->statusbar;
+
+    if( sb == NULL)
         return;
 
-    CMP_STATUSBAR sb = gw->root->statusbar;
+    if(text != NULL)
+        sb_set_text(sb, text);
+    else
+        sb_set_text(sb, "");
+}
 
-    if( sb == NULL || gw->browser->attached == false )
-        return;
-
-    sb_set_text( sb, text );
+void window_set_title(struct s_gui_win_root * rootwin, char *title)
+{
+    wind_set_str(guiwin_get_handle(rootwin->win), WF_NAME, title);
 }
 
 /* set focus to an arbitary element */
-void window_set_focus(struct gui_window * gw, enum focus_element_type type, void * element)
+void window_set_focus(struct s_gui_win_root *rootwin,
+                      enum focus_element_type type, void * element)
 {
-    if( gw->root->focus.type != type || gw->root->focus.element != element ) {
+    struct text_area * ta;
+
+    assert(rootwin != NULL);
+
+    if (rootwin->focus.type != type || rootwin->focus.element != element) {
         LOG(("Set focus: %p (%d)\n", element, type));
-        gw->root->focus.type = type;
-        gw->root->focus.element = element;
+        rootwin->focus.type = type;
+        rootwin->focus.element = element;
         if( element != NULL ) {
             switch( type ) {
 
             case URL_WIDGET:
-                textarea_keypress(((struct s_url_widget*)(element))->textarea,
-                                  KEY_SELECT_ALL );
+                // TODO: make something like: toolbar_text_select_all();
+                ta = toolbar_get_textarea(rootwin->toolbar,
+                                          URL_INPUT_TEXT_AREA);
+                textarea_keypress(ta, KEY_SELECT_ALL);
                 break;
 
             default:
@@ -366,63 +369,82 @@ void window_set_focus(struct gui_window * gw, enum focus_element_type type, void
 }
 
 /* check if the url widget has focus */
-bool window_url_widget_has_focus( struct gui_window * gw )
+bool window_url_widget_has_focus(struct s_gui_win_root *rootwin)
 {
-    assert( gw );
-    assert( gw->root );
-    if( gw->root->focus.type == URL_WIDGET && gw->root->focus.element != NULL ) {
-        assert( ( &gw->root->toolbar->url == (struct s_url_widget*)gw->root->focus.element ) );
-        assert( GUIWIN_VISIBLE(gw) );
+    assert(rootwin != NULL);
+    if (rootwin->focus.type == URL_WIDGET) {
         return true;
     }
     return false;
 }
 
 /* check if an arbitary window widget / or frame has the focus */
-bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t, void * element )
+bool window_widget_has_focus(struct s_gui_win_root *rootwin,
+                             enum focus_element_type t, void * element)
 {
-    if( gw == NULL )
-        return( false );
+    assert(rootwin != NULL);
     if( element == NULL  ) {
-        assert( 1 != 0 );
-        return( (gw->root->focus.type == t ) );
+        return((rootwin->focus.type == t));
     }
-    assert( gw->root != NULL );
-    return( ( element == gw->root->focus.element && t == gw->root->focus.type) );
+
+    return((element == rootwin->focus.element && t == rootwin->focus.type));
 }
 
-void window_set_icon(struct gui_window *gw, struct bitmap * bmp )
+void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
 {
-    gw->icon = bmp;
+    rootwin->icon = bmp;
     /* redraw window when it is iconyfied: */
-    if (gw->icon != NULL) {
+    if (rootwin->icon != NULL) {
         short info, dummy;
-        WindGet(gw->root->handle, WF_ICONIFY, &info, &dummy, &dummy, &dummy);
-        if (info == 1) {
-            window_redraw_favicon(gw, NULL);
+        if (guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
+            window_redraw_favicon(rootwin, NULL);
         }
     }
+}
+
+void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
+{
+    if (rootwin->active_gui_window != NULL) {
+        if(rootwin->active_gui_window == gw){
+            return;
+        }
+    }
+    rootwin->active_gui_window = gw;
+    window_set_icon(rootwin, gw->icon);
+    window_set_stauts(rootwin, gw->status);
+    window_set_title(rootwin, gw->title);
+    toolbar_set_url(rootwin->toolbar, gw->url);
+    // TODO: implement window_restore_browser()
+    // window_restore_browser(gw->browser);
+}
+
+struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin)
+{
+    return(rootwin->active_gui_window);
 }
 
 
 /**
  * Redraw the favicon
 */
-void window_redraw_favicon(struct gui_window *gw, GRECT *clip)
+void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
 {
     GRECT work;
 
-    assert(gw->root);
+    assert(rootwin);
 
-    WINDOW * bw = gw->root->handle;
+    guiwin_clear(rootwin->win);
+    guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
 
-    WindClear(bw);
-    WindGet(bw, WF_WORKXYWH, &work.g_x, &work.g_y, &work.g_w, &work.g_h);
     if (clip == NULL) {
         clip = &work;
+    } else {
+        if(!rc_intersect(&work, clip)){
+            return;
+        }
     }
 
-    if (gw->icon == NULL) {
+    if (rootwin->icon == NULL) {
         OBJECT * tree = get_tree(ICONIFY);
         tree->ob_x = work.g_x;
         tree->ob_y = work.g_y;
@@ -439,7 +461,7 @@ void window_redraw_favicon(struct gui_window *gw, GRECT *clip)
         }
         plot_set_dimensions( work.g_x+xoff, work.g_y, work.g_w, work.g_h);
         plot_clip(&work_clip);
-        atari_plotters.bitmap(0, 0, work.g_w, work.g_h, gw->icon, 0xffffff, 0);
+        atari_plotters.bitmap(0, 0, work.g_w, work.g_h, rootwin->icon, 0xffffff, 0);
     }
 }
 
@@ -448,16 +470,16 @@ void window_redraw_favicon(struct gui_window *gw, GRECT *clip)
 /* Event Handlers:                                                            */
 /* -------------------------------------------------------------------------- */
 
-static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data )
+static void __CDECL evnt_window_arrowed(WINDOW *win, short buff[8], void *data)
 {
     bool abs = false;
-    LGRECT cwork;
+    GRECT cwork;
     struct gui_window * gw = data;
     int value = BROWSER_SCROLL_SVAL;
 
     assert( gw != NULL );
 
-    browser_get_rect( gw, BR_CONTENT, &cwork );
+    browser_get_rect(gw, BR_CONTENT, &cwork );
 
     switch( buff[4] ) {
     case WA_UPPAGE:
@@ -602,31 +624,56 @@ static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data
 static void redraw(GUIWIN *win, short msg[8])
 {
 	short handle;
-    struct gui_window *gw;
-
-    handle = guiwin_get_handle(win);
-    gw = (struct gui_window*)find_guiwin_by_aes_handle(handle);
-
-    assert(gw != NULL);
+    struct rootwin_data_s *data = guiwin_get_user_data(win);
+    ROOTWIN *rootwin = data->rootwin;
+    GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
 
     if(guiwin_get_state(win) & GW_STATUS_ICONIFIED) {
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
-        window_redraw_favicon(gw, &clip);
+        window_redraw_favicon(rootwin, &clip);
     } else {
     	GRECT content_area, tb_area;
     	short pxy[8];
 
     	guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &content_area);
     	guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &tb_area);
-    	struct rect clip = {0,0,content_area.g_w,content_area.g_h};
-    	plot_set_dimensions(content_area.g_x, content_area.g_y,
-							content_area.g_w,content_area.g_h);
-    	//plot_clip(&clip);
-    	plot_rectangle(0, 0, content_area.g_w,
-						content_area.g_h, plot_style_broken_object);
 
+    	if (rc_intersect(&tb_area, &clip)) {
+    	    toolbar_set_dimensions(rootwin->toolbar, &tb_area);
+    	    toolbar_redraw(rootwin->toolbar, clip);
+    	}
 
-		//WindClear(gw->root->handle);
+        CMP_BROWSER browser = rootwin->active_gui_window->browser;
+        if (browser->reformat_pending == true) {
+            browser_window_reformat(browser->bw, false, content_area.g_w,
+                                    content_area.g_h );
+        } else {
+            if(rc_intersect(&content_area, &clip)){
+
+                GRECT lclip = content_area;
+
+               	/* convert redraw coords to framebuffer coords: */
+                lclip.g_x -= content_area.g_x;
+                lclip.g_y -= content_area.g_y;
+
+                if( lclip.g_x < 0 ) {
+                    lclip.g_w = content_area.g_w + lclip.g_x;
+                    lclip.g_x = 0;
+                }
+
+                if( lclip.g_y < 0 ) {
+                    lclip.g_h = content_area.g_h + lclip.g_y;
+                    lclip.g_y = 0;
+                }
+
+                browser_schedule_redraw(rootwin->active_gui_window,
+                                        lclip.g_x, lclip.g_y,
+                                        lclip.g_x + lclip.g_w,
+                                        lclip.g_y + lclip.g_h);
+    	    }
+        }
+
+    	//guiwin_clear(win);
     }
 }
 
@@ -635,37 +682,40 @@ static void resized(GUIWIN *win)
     short x,y,w,h;
     short handle;
     struct gui_window *gw;
+    struct rootwin_data_s *data = guiwin_get_user_data(win);
+    ROOTWIN *rootwin = data->rootwin;
+
+    printf("resized win: %p\n", win);
 
     handle = guiwin_get_handle(win);
-    gw = (struct gui_window*)find_guiwin_by_aes_handle(handle);
 
-    assert( gw != NULL );
+    printf("resized handle: %d\n", handle);
+    gw = data->rootwin->active_gui_window;
+
+    assert(gw != NULL);
+
+    printf("resized gw: %p\n", gw);
+
+    if(gw == NULL)
+        return;
+    //assert( gw != NULL );
 
     wind_get(handle, WF_CURRXYWH, &x, &y, &w, &h);
 
-    if (gw->root->loc.g_w != w || gw->root->loc.g_h != h) {
-        // resized
-        tb_adjust_size( gw );
+    if (rootwin->loc.g_w != w || rootwin->loc.g_h != h) {
         if ( gw->browser->bw->current_content != NULL ) {
-            /* Reformat will happen when next redraw message arrives: */
-            gw->browser->reformat_pending = true;
-            /* but on xaaes an resize doesn't trigger an redraw, 	*/
-            /* when the window is shrinked, deal with it: 			*/
-            if( sys_XAAES() ) {
-                if( gw->root->loc.g_w > w || gw->root->loc.g_h > h ) {
-                    ApplWrite(_AESapid, WM_REDRAW, gw->root->handle->handle,
-                              x, y, w, h);
-                }
-            }
+            /* Reformat will happen when redraw is processed: */
+            rootwin->active_gui_window->browser->reformat_pending = true;
         }
     }
-    if (gw->root->loc.g_x != x || gw->root->loc.g_y != y) {
+    if (rootwin->loc.g_x != x || rootwin->loc.g_y != y) {
         // moved
     }
-    gw->root->loc.g_x = x;
-    gw->root->loc.g_y = y;
-    gw->root->loc.g_w = w;
-    gw->root->loc.g_h = h;
+
+    rootwin->loc.g_x = x;
+    rootwin->loc.g_y = y;
+    rootwin->loc.g_w = w;
+    rootwin->loc.g_h = h;
 }
 
 static void __CDECL file_dropped(GUIWIN *win, short msg[8])
@@ -712,7 +762,7 @@ static void __CDECL file_dropped(GUIWIN *win, short msg[8])
                  size, mx, my
                 ));
             {
-                LGRECT bwrect;
+                GRECT bwrect;
                 struct browser_window * bw = gw->browser->bw;
                 browser_get_rect( gw, BR_CONTENT, &bwrect );
                 mx = mx - bwrect.g_x;

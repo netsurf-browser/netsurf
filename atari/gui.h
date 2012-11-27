@@ -19,7 +19,7 @@
 #ifndef NS_ATARI_GUI_H_
 #define NS_ATARI_GUI_H_
 
-#include <windom.h>
+#include "atari/gemtk/gemtk.h"
 
 struct point_s {
 	int x;
@@ -96,17 +96,18 @@ typedef struct s_browser * CMP_BROWSER;
 */
 struct s_gui_win_root
 {
-	WINDOW * handle;
+	GUIWIN *win;
 	CMP_TOOLBAR toolbar;
 	CMP_STATUSBAR statusbar;
-	COMPONENT * cmproot;
-	MFORM_EX cursor;
 	struct s_focus_info focus;
 	float scale;
 	char * title;
+	struct bitmap * icon;
+	struct gui_window *active_gui_window;
 	/* current size of window on screen: */
 	GRECT loc;
 };
+typedef struct s_gui_win_root ROOTWIN;
 
 /*
 	This is the part of the gui which is known by netsurf core.
@@ -117,7 +118,11 @@ struct s_gui_win_root
 struct gui_window {
 	struct s_gui_win_root * root;
 	CMP_BROWSER browser;
+	MFORM_EX *cursor;
     /* icon to be drawn when iconified, or NULL for default resource. */
+    char * status;
+    char * title;
+    char * url;
 	struct bitmap * icon;
 	struct gui_window *next, *prev;
 };

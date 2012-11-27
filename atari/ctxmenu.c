@@ -68,7 +68,7 @@ struct s_context_info ctxinfo;
 static struct s_context_info * get_context_info( struct gui_window * gw, short mx, short my )
 {
 	hlcache_handle *h;
-	LGRECT bwrect;
+	GRECT bwrect;
 	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
 

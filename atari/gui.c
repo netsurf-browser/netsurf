@@ -116,47 +116,6 @@ EVMULT_IN aes_event_in = {
 EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
-
-void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
-{
-	long kstate = 0;
-	long kcode = 0;
-	unsigned short nkc = 0;
-	unsigned short nks = 0;
-
-	int i=0;
-	bool done = false;
-	struct gui_window * gw = input_window;
-	struct gui_window * gw_tmp;
-	if( gw == NULL )
-		return;
-	kstate = evnt.mkstate;
-	kcode = evnt.keybd;
-	nkc= gem_to_norm( (short)kstate, (short)kcode);
-	nks = (nkc & 0xFF00);
-	if( kstate & (K_LSHIFT|K_RSHIFT))
-		kstate |= K_LSHIFT|K_RSHIFT;
-	if( window_url_widget_has_focus( gw ) ) {
-		/* make sure we report for the root window and report...: */
-		done = tb_url_input( gw, nkc );
-	}  else  {
-		gw_tmp = window_list;
-		/* search for active browser component: */
-		while( gw_tmp != NULL && done == false ) {
-			/* todo: only handle when input_window == ontop */
-			if( window_widget_has_focus( (struct gui_window *)input_window,
-										 BROWSER,(void*)gw_tmp->browser)) {
-				done = browser_input( gw_tmp, nkc );
-				break;
-			} else {
-				gw_tmp = gw_tmp->next;
-			}
-		}
-	}
-	if(!done)
-		deskmenu_dispatch_keypress(evnt.keybd, kstate, nkc);
-}
-
 void gui_poll(bool active)
 {
     int flags = MU_MESAG | MU_KEYBD | MU_BUTTON;
@@ -167,10 +126,29 @@ void gui_poll(bool active)
 
     aes_event_in.emi_tlow = schedule_run();
 
-    //printf("time: ");
-
 	if(active || rendering)
 		aes_event_in.emi_tlow = 0;
+
+    struct gui_window * g;
+
+    for( g = window_list; g != NULL; g=g->next ) {
+        if( browser_redraw_required( g ) ) {
+            browser_redraw(g);
+        }
+        if(g->root->toolbar) {
+            //if(g->root->toolbar->url.redraw ) {
+                // TODO: implement toolbar redraw mechanism
+                //tb_url_redraw( g );
+            //}
+        }
+    }
+
+    if( !active ) {
+        /* this suits for stuff with lower priority */
+        /* TBD: really be spare on redraws??? */
+        hotlist_redraw();
+        global_history_redraw();
+    }
 
 	// Handle events until there are no more messages pending or
 	// until the engine indicates activity:
@@ -201,66 +179,8 @@ void gui_poll(bool active)
 		}
 	} while ( gui_poll_repeat && !(active||rendering));
 
-	if( !active ) {
-        /* this suits for stuff with lower priority */
-        /* TBD: really be spare on redraws??? */
-        hotlist_redraw();
-        global_history_redraw();
-    }
 }
 
-void gui_poll_old(bool active)
-{
-    short winloc[4];
-    // int timeout; /* timeout in milliseconds */
-    int flags = MU_MESAG | MU_KEYBD | MU_BUTTON ;
-    short mx, my, dummy;
-
-    evnt.timer = schedule_run();
-
-    if( active || rendering ) {
-        if( clock() >= next_poll ) {
-            evnt.timer = 0;
-            flags |= MU_TIMER;
-            EvntWindom( flags );
-            next_poll = clock() + (CLOCKS_PER_SEC>>3);
-        }
-    } else {
-        if (input_window != NULL) {
-            wind_get( 0, WF_TOP, &winloc[0], &winloc[1], &winloc[2], &winloc[3]);
-            if (winloc[1] == _AESapid) {
-                /* only check for mouse move when netsurf is on top: */
-                // move that into m1 event handler
-                graf_mkstate( &mx, &my, &dummy, &dummy );
-                flags |= MU_M1;
-                evnt.m1_flag = MO_LEAVE;
-                evnt.m1_w = evnt.m1_h = 1;
-                evnt.m1_x = mx;
-                evnt.m1_y = my;
-            }
-        }
-        flags |= MU_TIMER;
-        EvntWindom( flags );
-    }
-
-    struct gui_window * g;
-    for( g = window_list; g != NULL; g=g->next ) {
-        if( browser_redraw_required( g ) ) {
-            browser_redraw( g );
-        }
-        if( g->root->toolbar ) {
-            if(g->root->toolbar->url.redraw ) {
-                tb_url_redraw( g );
-            }
-        }
-    }
-    if( evnt.timer != 0 && !active ) {
-        /* this suits for stuff with lower priority */
-        /* TBD: really be spare on redraws??? */
-        hotlist_redraw();
-        global_history_redraw();
-    }
-}
 
 struct gui_window *
 gui_create_browser_window(struct browser_window *bw,
@@ -271,22 +191,24 @@ gui_create_browser_window(struct browser_window *bw,
           (int)new_tab
         ));
 
-    gw = malloc( sizeof(struct gui_window) );
+    gw = calloc( sizeof(struct gui_window), 1);
     if (gw == NULL)
         return NULL;
-    memset( gw, 0, sizeof(struct gui_window) );
 
     LOG(("new window: %p, bw: %p\n", gw, bw));
-    window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE|WIDGET_SCROLL );
-    if( gw->root->handle ) {
+    window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
+                  |WIDGET_SCROLL);
+    if (gw->root->win) {
         GRECT pos = {
             option_window_x, option_window_y,
             option_window_width, option_window_height
         };
-        window_open( gw , pos );
+        gui_window_set_url(gw, "");
+        gui_window_set_pointer(gw, BROWSER_POINTER_DEFAULT);
+        window_set_active_gui_window(gw->root, gw);
+        window_open(gw->root, pos );
         /* Recalculate windows browser area now */
-        browser_update_rects( gw );
-        tb_update_buttons( gw, -1 );
+        toolbar_update_buttons(gw->root->toolbar, gw->browser->bw, -1);
         input_window = gw;
         /* TODO:... this line: placeholder to create a local history widget ... */
     }
@@ -319,7 +241,11 @@ void gui_window_destroy(struct gui_window *w)
 
     input_window = NULL;
 
-    window_destroy(w);
+    search_destroy(w);
+    browser_destroy(w->browser);
+    free(w->status);
+    free(w->title);
+    free(w->url);
 
     /* unlink the window: */
     if(w->prev != NULL ) {
@@ -330,16 +256,21 @@ void gui_window_destroy(struct gui_window *w)
     if( w->next != NULL ) {
         w->next->prev = w->prev;
     }
+
+    window_unref_gui_window(w->root, w);
+
     free(w);
     w = NULL;
 
-    w = window_list;
-    while( w != NULL ) {
-        if( w->root ) {
-            input_window = w;
-            break;
+    if(input_window == NULL){
+        w = window_list;
+        while( w != NULL ) {
+            if(w->root) {
+                input_window = w;
+                break;
+            }
+            w = w->next;
         }
-        w = w->next;
     }
 }
 
@@ -348,7 +279,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 {
     if (w == NULL)
         return;
-    LGRECT rect;
+    GRECT rect;
     browser_get_rect( w, BR_CONTENT, &rect  );
     *width = rect.g_w;
     *height = rect.g_h;
@@ -356,21 +287,34 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
 
 void gui_window_set_title(struct gui_window *gw, const char *title)
 {
-    int l;
-    char * conv;
 
     if (gw == NULL)
         return;
-    if( gw->root ) {
-        l = strlen(title);
-        if( utf8_to_local_encoding(title, l, &conv) == UTF8_CONVERT_OK ) {
-            strncpy(gw->root->title, conv, atari_sysinfo.aes_max_win_title_len);
+
+    if (gw->root) {
+
+        int l;
+        char * conv;
+        l = strlen(title)+1;
+        if (utf8_to_local_encoding(title, l, &conv) == UTF8_CONVERT_OK ) {
+            l = MIN((uint32_t)atari_sysinfo.aes_max_win_title_len, strlen(conv));
+            if(gw->title == NULL)
+                gw->title = malloc(l);
+            else
+                gw->title = realloc(gw->title, l);
+
+            strncpy(gw->title, conv, l);
             free( conv );
         } else {
-            strncpy(gw->root->title, title, atari_sysinfo.aes_max_win_title_len);
+            l = MIN((size_t)atari_sysinfo.aes_max_win_title_len, strlen(title));
+            if(gw->title == NULL)
+                gw->title = malloc(l);
+            else
+                gw->title = realloc(gw->title, l);
+            strncpy(gw->title, title, l);
         }
-        gw->root->title[atari_sysinfo.aes_max_win_title_len] = 0;
-        WindSetStr( gw->root->handle, WF_NAME, gw->root->title );
+        if(input_window == gw)
+            window_set_title(gw->root, gw->title);
     }
 }
 
@@ -379,20 +323,34 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
  */
 void gui_window_set_status(struct gui_window *w, const char *text)
 {
-    if (w == NULL || text == NULL )
+    int l;
+    if (w == NULL || text == NULL)
         return;
-    window_set_stauts(w, (char*)text );
+
+    assert(w->root);
+
+    l = strlen(text)+1;
+    if(w->status == NULL)
+        w->status = malloc(l);
+    else
+        w->status = realloc(w->status, l);
+
+    strncpy(w->status, text, l);
+    w->status[l-1] = 0;
+
+    if(input_window == w)
+        window_set_stauts(w->root, (char*)text);
 }
 
 void gui_window_redraw_window(struct gui_window *gw)
 {
     CMP_BROWSER b;
-    LGRECT rect;
+    GRECT rect;
     if (gw == NULL)
         return;
     b = gw->browser;
-    browser_get_rect( gw, BR_CONTENT, &rect );
-    browser_schedule_redraw( gw, 0, 0, rect.g_w, rect.g_h );
+    browser_get_rect(gw, BR_CONTENT, &rect);
+    browser_schedule_redraw(gw, 0, 0, rect.g_w, rect.g_h );
 }
 
 void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
@@ -479,74 +437,79 @@ void gui_clear_selection(struct gui_window *g)
 /**
  * set the pointer shape
  */
-void gui_window_set_pointer(struct gui_window *w, gui_pointer_shape shape)
+void gui_window_set_pointer(struct gui_window *gw, gui_pointer_shape shape)
 {
-    if (w == NULL)
+    if (gw == NULL)
         return;
+
     switch (shape) {
     case GUI_POINTER_POINT: /* link */
-        gem_set_cursor(&gem_cursors.hand);
+        gw->cursor = &gem_cursors.hand;
         break;
 
     case GUI_POINTER_MENU:
-        gem_set_cursor(&gem_cursors.menu);
+        gw->cursor = &gem_cursors.menu;
         break;
 
     case GUI_POINTER_CARET: /* input */
-        gem_set_cursor(&gem_cursors.ibeam);
+        gw->cursor = &gem_cursors.ibeam;
         break;
 
     case GUI_POINTER_CROSS:
-        gem_set_cursor(&gem_cursors.cross);
+        gw->cursor = &gem_cursors.cross;
         break;
 
     case GUI_POINTER_MOVE:
-        gem_set_cursor(&gem_cursors.sizeall);
+        gw->cursor = &gem_cursors.sizeall;
         break;
 
     case GUI_POINTER_RIGHT:
     case GUI_POINTER_LEFT:
-        gem_set_cursor(&gem_cursors.sizewe);
+        gw->cursor = &gem_cursors.sizewe;
         break;
 
     case GUI_POINTER_UP:
     case GUI_POINTER_DOWN:
-        gem_set_cursor(&gem_cursors.sizens);
+        gw->cursor = &gem_cursors.sizens;
         break;
 
     case GUI_POINTER_RU:
     case GUI_POINTER_LD:
-        gem_set_cursor(&gem_cursors.sizenesw);
+        gw->cursor = &gem_cursors.sizenesw;
         break;
 
     case GUI_POINTER_RD:
     case GUI_POINTER_LU:
-        gem_set_cursor(&gem_cursors.sizenwse);
+        gw->cursor = &gem_cursors.sizenwse;
         break;
 
     case GUI_POINTER_WAIT:
-        gem_set_cursor(&gem_cursors.wait);
+        gw->cursor = &gem_cursors.wait;
         break;
 
     case GUI_POINTER_PROGRESS:
-        gem_set_cursor(&gem_cursors.appstarting);
+        gw->cursor = &gem_cursors.appstarting;
         break;
 
     case GUI_POINTER_NO_DROP:
-        gem_set_cursor(&gem_cursors.nodrop);
+        gw->cursor = &gem_cursors.nodrop;
         break;
 
     case GUI_POINTER_NOT_ALLOWED:
-        gem_set_cursor(&gem_cursors.deny);
+        gw->cursor = &gem_cursors.deny;
         break;
 
     case GUI_POINTER_HELP:
-        gem_set_cursor(&gem_cursors.help);
+        gw->cursor = &gem_cursors.help;
         break;
 
     default:
-        gem_set_cursor(&gem_cursors.arrow);
+        gw->cursor = &gem_cursors.arrow;
         break;
+    }
+
+    if (input_window == gw) {
+        gem_set_cursor(gw->cursor);
     }
 }
 
@@ -558,9 +521,23 @@ void gui_window_hide_pointer(struct gui_window *w)
 
 void gui_window_set_url(struct gui_window *w, const char *url)
 {
+    int l;
+
     if (w == NULL)
         return;
-    tb_url_set(w, (char*)url );
+
+    l = strlen(url)+1;
+
+    if (w->url == NULL) {
+        w->url = malloc(l);
+    } else {
+        w->url = realloc(w->url, l);
+    }
+    strncpy(w->url, url, l);
+
+    if(input_window == w->root->active_gui_window){
+        toolbar_set_url(w->root->toolbar, url);
+    }
 }
 
 static void throbber_advance( void * data )
@@ -571,32 +548,33 @@ static void throbber_advance( void * data )
         return;
     if( gw->root->toolbar == NULL )
         return;
-    if( gw->root->toolbar->throbber.running == false )
-        return;
-    mt_CompGetLGrect(&app, gw->root->toolbar->throbber.comp,
-                     WF_WORKXYWH, &work);
-    gw->root->toolbar->throbber.index++;
-    if( gw->root->toolbar->throbber.index > gw->root->toolbar->throbber.max_index )
-        gw->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
-    ApplWrite( _AESapid, WM_REDRAW,  gw->root->handle->handle,
-               work.g_x, work.g_y, work.g_w, work.g_h );
+    // TODO: implement access to throbber
+    //if( gw->root->toolbar->throbber.running == false)
+    //    return;
+//    mt_CompGetLGrect(&app, gw->root->toolbar->throbber.comp,
+//                     WF_WORKXYWH, &work);
+//    gw->root->toolbar->throbber.index++;
+//    if( gw->root->toolbar->throbber.index > gw->root->toolbar->throbber.max_index )
+//        gw->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
+//    ApplWrite(_AESapid, WM_REDRAW,  guiwin_get_handle(gw->root->win),
+//               work.g_x, work.g_y, work.g_w, work.g_h);
     schedule(100, throbber_advance, gw );
 }
 
 void gui_window_start_throbber(struct gui_window *w)
 {
-    LGRECT work;
+    GRECT work;
     if (w == NULL)
         return;
-    if( w->root->toolbar->throbber.running == true )
-        return;
-    mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
-                     WF_WORKXYWH, &work);
-    w->root->toolbar->throbber.running = true;
-    w->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
+    // TODO: implement throbber acess
+    //if( w->root->toolbar->throbber.running == true )
+    //    return;
+//    browser_get_rect(w, BR_THROBBER, &work);
+//    w->root->toolbar->throbber.running = true;
+//    w->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
     schedule(100, throbber_advance, w );
-    ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
-               work.g_x, work.g_y, work.g_w, work.g_h );
+//    ApplWrite( _AESapid, WM_REDRAW, guiwin_get_handle(w->root->win),
+//               work.g_x, work.g_y, work.g_w, work.g_h );
 
     rendering = true;
 }
@@ -606,20 +584,22 @@ void gui_window_stop_throbber(struct gui_window *w)
     LGRECT work;
     if (w == NULL)
         return;
-    if( w->root->toolbar->throbber.running == false )
-        return;
+    // TODO: implement something like throbber_is_running();
+    //if( w->root->toolbar->throbber.running == false )
+    //    return;
 
     schedule_remove(throbber_advance, w);
 
     /* refresh toolbar buttons: */
-    tb_update_buttons( w, -1 );
+    toolbar_update_buttons(w->root->toolbar, w->browser->bw, -1);
 
     /* redraw throbber: */
-    mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
-                     WF_WORKXYWH, &work);
-    w->root->toolbar->throbber.running = false;
-    ApplWrite( _AESapid, WM_REDRAW,  w->root->handle->handle,
-               work.g_x, work.g_y, work.g_w, work.g_h );
+//    mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
+//                     WF_WORKXYWH, &work);
+//    w->root->toolbar->throbber.running = false;
+//    ApplWrite( _AESapid, WM_REDRAW, guiwin_get_handle(w->root->win),
+//               work.g_x, work.g_y, work.g_w, work.g_h );
+    // TODO: send throbber redraw
 
     rendering = false;
 }
@@ -663,8 +643,11 @@ gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
     struct bitmap *bmp_icon;
 
     bmp_icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
+    g->icon = bmp_icon;
 
-    window_set_icon(g, bmp_icon);
+    if(input_window == g){
+        window_set_icon(g->root, bmp_icon);
+    }
 }
 
 void

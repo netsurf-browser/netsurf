@@ -19,6 +19,8 @@
 #ifndef NS_ATARI_CLIPBOARD_H
 #define NS_ATARI_CLIPBOARD_H
 
+#include <windom.h>
+
 int scrap_txt_write( APPvar app, char *str);
 char *scrap_txt_read( APPvar app );
 

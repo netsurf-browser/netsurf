@@ -254,16 +254,15 @@ static void __CDECL menu_open_url(short item, short title, void *data)
 	if( gw == NULL ) {
 		bw = browser_window_create("", 0, 0, true, false);
 		gw = bw->window;
-
 	}
 	/* Loose focus: */
-	window_set_focus( gw, WIDGET_NONE, NULL );
+	window_set_focus(gw->root, WIDGET_NONE, NULL );
 
 	/* trigger on-focus event (select all text): */
-	window_set_focus( gw, URL_WIDGET, &gw->root->toolbar->url );
+	window_set_focus(gw->root, URL_WIDGET, NULL);
 
 	/* delete selection: */
-	tb_url_input( gw, NK_DEL );
+	toolbar_key_input(gw->root->toolbar, NK_DEL);
 }
 
 static void __CDECL menu_open_file(short item, short title, void *data)
@@ -273,7 +272,7 @@ static void __CDECL menu_open_file(short item, short title, void *data)
 
 	LOG(("%s", __FUNCTION__));
 
-	const char * filename = file_select( messages_get("OpenFile"), "" );
+	const char * filename = file_select(messages_get("OpenFile"), "");
 	if( filename != NULL ){
 		char * url = local_file_to_url( filename );
 		if( url ){
@@ -366,15 +365,17 @@ static void __CDECL menu_stop(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if( input_window == NULL )
 		return;
-	tb_stop_click( input_window );
+
+    assert(input_window->root);
+	toolbar_stop_click(input_window->root->toolbar);
 
 }
 
 static void __CDECL menu_reload(short item, short title, void *data)
 {
-	if( input_window == NULL)
+	if(input_window == NULL)
 		return;
-	tb_reload_click( input_window );
+	toolbar_reload_click(input_window->root->toolbar);
 	LOG(("%s", __FUNCTION__));
 }
 
@@ -384,7 +385,8 @@ static void __CDECL menu_toolbars(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if( input_window != null && input_window->root->toolbar != null ){
 		state = !state;
-		tb_hide( input_window, state );
+		// TODO: implement toolbar hide
+		//toolbar_hide(input_window->root->toolbar, state );
 	}
 }
 
@@ -393,7 +395,8 @@ static void __CDECL menu_savewin(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if (input_window && input_window->browser) {
 		GRECT rect;
-		wind_get_grect(input_window->root->handle->handle, WF_CURRXYWH, &rect);
+		wind_get_grect(guiwin_get_handle(input_window->root->win), WF_CURRXYWH,
+                 &rect);
 		option_window_width = rect.g_w;
 		option_window_height = rect.g_h;
 		option_window_x = rect.g_x;
@@ -414,7 +417,7 @@ static void __CDECL menu_debug_render(short item, short title, void *data)
 	if( input_window != NULL ) {
 		if ( input_window->browser != NULL
 			&& input_window->browser->bw != NULL) {
-			LGRECT rect;
+			GRECT rect;
 			browser_get_rect( input_window, BR_CONTENT, &rect );
 			browser_window_reformat(input_window->browser->bw, false,
 									rect.g_w, rect.g_h );
@@ -443,7 +446,7 @@ static void __CDECL menu_back(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if( input_window == NULL )
 		return;
-	tb_back_click( input_window );
+	toolbar_back_click(input_window->root->toolbar);
 }
 
 static void __CDECL menu_forward(short item, short title, void *data)
@@ -451,7 +454,7 @@ static void __CDECL menu_forward(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if( input_window == NULL )
 		return;
-	tb_forward_click( input_window );
+	toolbar_forward_click(input_window->root->toolbar);
 }
 
 static void __CDECL menu_home(short item, short title, void *data)
@@ -459,7 +462,7 @@ static void __CDECL menu_home(short item, short title, void *data)
 	LOG(("%s", __FUNCTION__));
 	if( input_window == NULL )
 		return;
-	tb_home_click( input_window );
+	toolbar_home_click(input_window->root->toolbar);
 }
 
 static void __CDECL menu_lhistory(short item, short title, void *data)

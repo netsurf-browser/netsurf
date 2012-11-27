@@ -60,9 +60,11 @@ short msg_box_show(short type, const char * msg);
 #define GW_FLAG_RECV_PREPROC_WM		0x02	// get notified even when pre-processed
 #define GW_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
 #define GW_FLAG_CUSTOM_TOOLBAR		0x08	// no internal toolbar handling
-#define GW_FLAG_CUSTOM_SCROLLING	0x10	// no internal scroller handling
+#define GW_FLAG_TOOLBAR_REDRAW      0x10	// enable internal toolbar redraw
+#define GW_FLAG_CUSTOM_SCROLLING	0x20	// no internal scroller handling
 
-#define GW_FLAG_DEFAULTS (GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM)
+#define GW_FLAG_DEFAULTS (GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM \
+                            | GW_FLAG_TOOLBAR_REDRAW)
 
 #define GW_STATUS_ICONIFIED			0x01
 #define GW_STATUS_SHADED			0x02
@@ -112,7 +114,8 @@ bool guiwin_update_slider(GUIWIN *win, short mode);
 void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
-void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip);
+void guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
+void guiwin_clear(GUIWIN *win);
 
 
 /*
@@ -122,6 +125,14 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip);
 #ifndef POINT_WITHIN
 #define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
 		&& (_y >= r.g_y) && (_y <= r.g_y + r.g_h))
+#endif
+
+#ifndef RC_WITHIN
+#define RC_WITHIN(a,b) \
+    (((a)->g_x >= (b)->g_x) \
+        && (((a)->g_x + (a)->g_w) <= ((b)->g_x + (b)->g_w))) \
+            && (((a)->g_y >= (b)->g_y) \
+                && (((a)->g_y + (a)->g_h) <= ((b)->g_y + (b)->g_h)))
 #endif
 
 #ifndef MAX

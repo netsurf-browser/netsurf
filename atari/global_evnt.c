@@ -65,7 +65,7 @@ static void __CDECL global_evnt_m1(WINDOW * win, short buff[8])
 	static short prev_x=0;
 	static short prev_y=0;
 	bool within = false;
-	LGRECT urlbox, bwbox, sbbox;
+	GRECT urlbox, bwbox, sbbox;
 	int nx, ny;
 
 	if (gw == NULL)
@@ -76,15 +76,13 @@ static void __CDECL global_evnt_m1(WINDOW * win, short buff[8])
 	}
 
 	short ghandle = wind_find( evnt.mx, evnt.my );
-	if (input_window->root->handle->handle == ghandle) {
+	if (guiwin_get_handle(input_window->root->win)==ghandle) {
 
 		// The window found at x,y is an gui_window
 		// and it's the input window.
 
-		browser_get_rect( gw, BR_CONTENT, &bwbox );
-
-		if (evnt.mx > bwbox.g_x && evnt.mx < bwbox.g_x + bwbox.g_w &&
-			evnt.my > bwbox.g_y &&  evnt.my < bwbox.g_y + bwbox.g_h) {
+		browser_get_rect(gw, BR_CONTENT, &bwbox);
+		if (POINT_WITHIN(evnt.mx, evnt.my, bwbox)) {
 			within = true;
 			browser_window_mouse_track(
 							input_window->browser->bw,
@@ -95,9 +93,8 @@ static void __CDECL global_evnt_m1(WINDOW * win, short buff[8])
 		}
 
 		if (gw->root->toolbar && within == false) {
-			mt_CompGetLGrect(&app, gw->root->toolbar->url.comp, WF_WORKXYWH, &urlbox);
-			if( (evnt.mx > urlbox.g_x && evnt.mx < urlbox.g_x + urlbox.g_w ) &&
-				(evnt.my > urlbox.g_y && evnt.my < + urlbox.g_y + urlbox.g_h )) {
+			browser_get_rect(gw, BR_URL_INPUT, &urlbox);
+			if(POINT_WITHIN(evnt.mx, evnt.my, urlbox)) {
 				gem_set_cursor( &gem_cursors.ibeam );
 				prev_url = true;
 			} else {
@@ -116,7 +113,7 @@ static void __CDECL global_evnt_m1(WINDOW * win, short buff[8])
 	prev_y = evnt.my;
 }
 
-void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
+void __CDECL global_evnt_keybd(WINDOW * win, short buff[8], void * data)
 {
 	long kstate = 0;
 	long kcode = 0;
@@ -135,17 +132,18 @@ void __CDECL global_evnt_keybd( WINDOW * win, short buff[8], void * data)
 	nks = (nkc & 0xFF00);
 	if( kstate & (K_LSHIFT|K_RSHIFT))
 		kstate |= K_LSHIFT|K_RSHIFT;
-	if( window_url_widget_has_focus( gw ) ) {
+
+	if(window_url_widget_has_focus((void*)gw->root)) {
 		/* make sure we report for the root window and report...: */
-		done = tb_url_input( gw, nkc );
+		done = toolbar_key_input(gw->root->toolbar, nkc);
 	}  else  {
 		gw_tmp = window_list;
 		/* search for active browser component: */
 		while( gw_tmp != NULL && done == false ) {
 			/* todo: only handle when input_window == ontop */
-			if( window_widget_has_focus( (struct gui_window *)input_window,
-										 BROWSER,(void*)gw_tmp->browser)) {
-				done = browser_input( gw_tmp, nkc );
+			if( window_widget_has_focus(input_window->root, BROWSER,
+                               (void*)gw_tmp->browser)) {
+				done = browser_input(gw_tmp, nkc);
 				break;
 			} else {
 				gw_tmp = gw_tmp->next;

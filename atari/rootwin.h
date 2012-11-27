@@ -19,6 +19,8 @@
 #ifndef NS_ATARI_BROWSER_WIN_H
 #define NS_ATARI_BROWSER_WIN_H
 
+#include <atari/gui.h>
+
 #define GUIWIN_VISIBLE(gw) (gw->root->handle->status & WS_OPEN)
 #define GEMWIN_VISIBLE(win) (win->status & WS_OPEN)
 
@@ -36,31 +38,39 @@
 /* -------------------------------------------------------------------------- */
 
 /*	Creates an normal Browser window with [toolbar], [statusbar] */
-int window_create( struct gui_window * gw,
+int window_create(struct gui_window * gw,
 				struct browser_window * bw, unsigned long flags );
 /* Destroys WinDom part of gui_window */
-int window_destroy( struct gui_window * gw );
+int window_destroy(struct s_gui_win_root * rootwin);
 
 /* show the window */
-void window_open( struct gui_window * gw, GRECT pos);
+void window_open(struct s_gui_win_root * rootwin, GRECT pos);
 
-void window_snd_redraw(struct gui_window * gw, short x, short y, short w, short h );
+void window_snd_redraw(struct s_gui_win_root * rootwin, short x, short y,
+                       short w, short h );
 /* Update Shade / Unshade state of the fwd/back buttons*/
-void window_update_back_forward(struct gui_window * gw);
+void window_update_back_forward(struct s_gui_win_root * rootwin);
 /* set root browser component: */
-void window_attach_browser( struct gui_window * gw, CMP_BROWSER b);
+void window_attach_browser(struct s_gui_win_root * rootwin, CMP_BROWSER b);
 
 /* set focus element */
-void window_set_focus( struct gui_window * gw, enum focus_element_type type, void * element );
+void window_set_focus(struct s_gui_win_root * rootwin,
+                      enum focus_element_type type, void * element );
 /* adjust scroll settings */
-void window_set_scroll_info(struct gui_window *gw, int content_h, int content_w);
+void window_set_scroll_info(struct s_gui_win_root * rootwin, int content_h,
+                            int content_w);
 /* Shade / Unshade the forward/back bt. of toolbar, depending on history.*/
-bool window_widget_has_focus( struct gui_window * gw, enum focus_element_type t, void * element);
-bool window_url_widget_has_focus( struct gui_window * gw );
-void window_set_url( struct gui_window * gw, const char * text);
-void window_set_stauts( struct gui_window * gw , char * text );
-void window_set_icon(struct gui_window * gw, struct bitmap * bmp );
-void window_redraw_favicon(struct gui_window *gw, GRECT *clip);
+bool window_widget_has_focus(struct s_gui_win_root * rootwin,
+                             enum focus_element_type t, void * element);
+bool window_url_widget_has_focus(struct s_gui_win_root * rootwin);
+void window_set_url(struct s_gui_win_root * rootwin, const char * text);
+void window_set_stauts(struct s_gui_win_root * rootwin, char * text);
+void window_set_title(struct s_gui_win_root * rootwin, char * text);
+void window_set_icon(struct s_gui_win_root * rootwin, struct bitmap * bmp );
+void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
+struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin);
+void window_redraw_favicon(struct s_gui_win_root * rootwin, GRECT *clip);
+void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
 
 
 /* -------------------------------------------------------------------------- */

@@ -121,8 +121,8 @@ struct gui_window * find_guiwin_by_aes_handle(short handle){
 	}
 
 	while(gw != NULL) {
-		if( gw->root->handle != NULL
-			&& gw->root->handle->handle == handle ) {
+		if( gw->root->win != NULL
+			&& guiwin_get_handle(gw->root->win) == handle ) {
 				return(gw);
 		}
 		else
@@ -132,21 +132,6 @@ struct gui_window * find_guiwin_by_aes_handle(short handle){
 	return( NULL );
 }
 
-
-struct gui_window * find_cmp_window( COMPONENT * c )
-{
-	struct gui_window * gw;
-	gw = window_list;
-	while( gw != NULL ) {
-		assert( gw->browser != NULL );
-		if( gw->browser->comp == c ) {
-			return( gw );
-		}
-		else
-			gw = gw->next;
-	}
-	return( NULL );
-}
 
 static int scan_process_list(scan_process_callback cb, void *data)
 {

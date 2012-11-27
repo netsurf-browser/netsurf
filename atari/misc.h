@@ -19,6 +19,7 @@
 #ifndef NS_ATARI_MISC_H
 #define NS_ATARI_MISC_H
 
+#include <windom.h>
 #include "cflib.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -43,7 +44,6 @@
 typedef int (*scan_process_callback)(int pid, void *data);
 
 struct gui_window * find_guiwin_by_aes_handle(short handle);
-struct gui_window * find_cmp_window( COMPONENT * c );
 bool is_process_running(const char * name);
 void gem_set_cursor( MFORM_EX * cursor );
 hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
