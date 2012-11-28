@@ -23,6 +23,7 @@ preamble %{
         
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/corestrings.h"
 
 #include "javascript/jsapi.h"
 #include "javascript/jsapi/binding.h"
@@ -147,6 +148,11 @@ api init %{
 		return NULL;
 	}
 
+	user_proto = jsapi_InitClass_Event(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
 %}
 
 api new %{
@@ -211,10 +217,51 @@ getter self %{
 	jsret = obj;
 %}
 
+/* boolean dispatchEvent(Event event); */
+operation dispatchEvent %{
+	/* this implementation is unique to the window object as it is
+	 * not a "real" dom node. 
+	 */
+
+	/* caution, this must match the struct generated from event.bnd */
+	if (event == JSVAL_VOID) {
+		jsret = JS_FALSE;
+	} else {
+		dom_event *domevent;
+		dom_string *type_dom;
+		dom_exception exc;
+		jsval eventval = JSVAL_VOID;
+		jsval event_argv[1];
+		jsval event_rval;
+
+		domevent = JS_GetInstancePrivate(cx, event, &JSClass_Event, NULL);
+		if (domevent == NULL) {
+			/** @todo type error? */
+			jsret = JS_FALSE;
+		} else {
+			exc = dom_event_get_type(domevent, &type_dom);
+			if (dom_string_isequal(type_dom, corestring_dom_load)) {
+				JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
+			}
+
+			if (eventval != JSVAL_VOID) {
+				event_argv[0] = event;
+				jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
+			}
+		}
+	}
+%}
+
 getter EventHandler %{
+	/* this implementation is unique to the window object as it is
+	 * not a dom node. 
+	 */
 	JSLOG("propname[%d] %s %s", tinyid , jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx, tinyid_jsval)));
 %}
 
 setter EventHandler %{
+	/* this implementation is unique to the window object as it is
+	 * not a dom node. 
+	 */
 	JSLOG("propname[%d] %s %s", tinyid, jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx,  tinyid_jsval)));
 %}

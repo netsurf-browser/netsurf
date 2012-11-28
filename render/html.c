@@ -331,6 +331,12 @@ void html_finish_conversion(html_content *c)
 		}
 	}
 
+	/* fire a simple event named load at the Document's Window
+	 * object, but with its target set to the Document object (and
+	 * the currentTarget set to the Window object)
+	 */
+	js_fire_event(c->jscontext, "load", NULL);
+
 	/* convert dom tree to box tree */
 	LOG(("DOM to box (%p)", c));
 	content_set_status(&c->base, messages_get("Processing"));

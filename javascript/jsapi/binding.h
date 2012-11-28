@@ -149,4 +149,11 @@ JSObject *jsapi_new_Node(JSContext *cx,
 				JSObject *prototype,
 				JSObject *parent);
 
+extern JSClass JSClass_Event;
+JSObject *jsapi_InitClass_Event(JSContext *cx, JSObject *parent);
+JSObject *jsapi_new_Event(JSContext *cx,
+			  JSObject *prototype,
+			  JSObject *parent,
+			  dom_event *event);
+
 #endif
