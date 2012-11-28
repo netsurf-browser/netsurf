@@ -2501,6 +2501,14 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_HOTLIST], NULL);
 	}
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+			gwin->win, NULL, TRUE);
+
+	gwin->redraw_required = true;
+	gwin->bw->reformat_pending = true;
 }
 
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
