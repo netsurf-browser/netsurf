@@ -150,6 +150,9 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	return false;
 }
 
+dom_exception _dom_event_create(dom_document *doc, dom_event **evt);
+#define dom_event_create(d, e) _dom_event_create((dom_document *)(d), (dom_event **) (e))
+
 bool js_fire_event(jscontext *ctx, const char *type, void *target)
 {
 	JSContext *cx = (JSContext *)ctx;
@@ -173,8 +176,7 @@ bool js_fire_event(jscontext *ctx, const char *type, void *target)
 			return false;
 		}
 
-/*		exc = dom_event_create(document, &event);*/
-		exc = -1;
+		exc = dom_event_create(-1, &event);
 		if (exc != DOM_NO_ERR) {
 			return false;
 		}

@@ -28,6 +28,7 @@ preamble %{
 #include "javascript/jsapi.h"
 #include "javascript/jsapi/binding.h"
 
+
 %}
 
 binding window {
@@ -227,26 +228,31 @@ operation dispatchEvent %{
 	if (event == JSVAL_VOID) {
 		jsret = JS_FALSE;
 	} else {
-		dom_event *domevent;
-		dom_string *type_dom;
+		struct {
+			dom_event *event;
+		} *event_private;
+		dom_string *type_dom = NULL;
 		dom_exception exc;
 		jsval eventval = JSVAL_VOID;
 		jsval event_argv[1];
 		jsval event_rval;
 
-		domevent = JS_GetInstancePrivate(cx, event, &JSClass_Event, NULL);
-		if (domevent == NULL) {
+		event_private = JS_GetInstancePrivate(cx, event, &JSClass_Event, NULL);
+		if (event_private->event == NULL) {
 			/** @todo type error? */
 			jsret = JS_FALSE;
 		} else {
-			exc = dom_event_get_type(domevent, &type_dom);
-			if (dom_string_isequal(type_dom, corestring_dom_load)) {
-				JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
-			}
+			exc = dom_event_get_type(event_private->event, &type_dom);
+			if (exc == DOM_NO_ERR) {
 
-			if (eventval != JSVAL_VOID) {
-				event_argv[0] = event;
-				jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
+				if (dom_string_isequal(type_dom, corestring_dom_load)) {
+					JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
+				}
+
+				if (eventval != JSVAL_VOID) {
+					event_argv[0] = eventval;
+					jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
+				}
 			}
 		}
 	}
