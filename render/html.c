@@ -43,6 +43,7 @@
 #include "render/imagemap.h"
 #include "render/layout.h"
 #include "render/search.h"
+#include "javascript/js.h"
 #include "utils/corestrings.h"
 #include "utils/http.h"
 #include "utils/libdom.h"

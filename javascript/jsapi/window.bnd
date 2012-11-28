@@ -246,7 +246,7 @@ operation dispatchEvent %{
 				JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
 			}
 
-			if (JSVAL_IS_VOID(eventval)) {
+			if (!JSVAL_IS_VOID(eventval)) {
 				event_argv[0] = eventval;
 				jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
 			}
