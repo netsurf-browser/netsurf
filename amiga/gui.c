@@ -2506,9 +2506,6 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
-
-	gwin->redraw_required = true;
-	gwin->bw->reformat_pending = true;
 }
 
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
