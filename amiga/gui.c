@@ -2495,11 +2495,20 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				SpeedBarObject,
 					GA_ID, GID_HOTLIST,
 					GA_RelVerify, TRUE,
+					SPEEDBAR_BevelStyle, BVS_NONE,
 					SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,
 				SpeedBarEnd;
+				
+		gwin->objects[GID_HOTLISTSEPBAR] =
+				BevelObject,
+					BEVEL_Style, BVS_SBAR_VERT,
+				BevelEnd;
 
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDCHILD,
 				gwin->win, gwin->objects[GID_HOTLIST], NULL);
+
+		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDIMAGE,
+				gwin->win, gwin->objects[GID_HOTLISTSEPBAR], NULL);
 	}
 
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
@@ -2977,7 +2986,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					BEVEL_Style, BVS_SBAR_VERT,
 				BevelEnd,
 				CHILD_WeightedHeight, 0,
-				LAYOUT_AddChild, g->shared->objects[GID_HOTLISTLAYOUT] = HGroupObject,
+				LAYOUT_AddChild, g->shared->objects[GID_HOTLISTLAYOUT] = VGroupObject,
 					LAYOUT_SpaceInner, FALSE,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
