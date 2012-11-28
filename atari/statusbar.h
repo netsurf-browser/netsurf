@@ -36,6 +36,6 @@ struct s_statusbar
 
 CMP_STATUSBAR sb_create( struct gui_window * gw );
 void sb_destroy( CMP_STATUSBAR s );
-void sb_set_text( CMP_STATUSBAR sb , char * text );
+void sb_set_text( CMP_STATUSBAR sb , const char * text );
 void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw);
 #endif

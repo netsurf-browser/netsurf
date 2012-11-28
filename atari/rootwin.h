@@ -68,6 +68,8 @@ void window_set_stauts(struct s_gui_win_root * rootwin, char * text);
 void window_set_title(struct s_gui_win_root * rootwin, char * text);
 void window_set_icon(struct s_gui_win_root * rootwin, struct bitmap * bmp );
 void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
+void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area);
+void window_process_redraws(ROOTWIN * rootwin);
 struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin);
 void window_redraw_favicon(struct s_gui_win_root * rootwin, GRECT *clip);
 void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw);

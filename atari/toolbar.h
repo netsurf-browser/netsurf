@@ -27,6 +27,7 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 void toolbar_get_grect(struct s_toolbar *tb, short which, short opt, GRECT *g);
 struct text_area *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which);
+void toolbar_redraw(struct s_toolbar *tb, GRECT *clip);
 /* public events handlers: */
 void toolbar_back_click(struct s_toolbar *tb);
 void toolbar_reload_click(struct s_toolbar *tb);

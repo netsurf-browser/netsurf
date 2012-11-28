@@ -117,6 +117,7 @@ struct s_toolbar
 	int btcnt;
 	int style;
 	bool redraw;
+    bool reflow;
 };
 
 extern char * option_homepage_url;
@@ -410,6 +411,8 @@ void toolbar_destroy(struct s_toolbar *tb)
 
 static void toolbar_objc_reflow(struct s_toolbar *tb)
 {
+
+    // position toolbar areas:
     aes_toolbar->ob_x = tb->area.g_x;
     aes_toolbar->ob_y = tb->area.g_y;
     aes_toolbar->ob_width = tb->area.g_w;
@@ -421,13 +424,6 @@ static void toolbar_objc_reflow(struct s_toolbar *tb)
     aes_toolbar[TOOLBAR_URL_AREA].ob_width = tb->area.g_w
        - (aes_toolbar[TOOLBAR_NAVIGATION_AREA].ob_width
        + aes_toolbar[TOOLBAR_THROBBER_AREA].ob_width);
-}
-
-void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
-{
-    // position toolbar areas:
-    toolbar_objc_reflow(tb);
-    objc_draw_grect(aes_toolbar,0,8,clip);
 
     // position throbber image:
     throbber_form[tb->throbber.index].ob_x = tb->area.g_x +
@@ -442,10 +438,17 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
         ((aes_toolbar[TOOLBAR_THROBBER_AREA].ob_height
         - throbber_form[tb->throbber.index].ob_height) >> 1);
 
-    printf("x pos: %d, y pos: %d\n", throbber_form[tb->throbber.index].ob_x,
-           throbber_form[tb->throbber.index].ob_y);
-    objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
+    tb->reflow = false;
+}
 
+void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
+{
+    if(tb->reflow == true)
+        toolbar_objc_reflow(tb);
+
+    objc_draw_grect(aes_toolbar,0,8,clip);
+
+    objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
 }
 
 
@@ -459,9 +462,7 @@ void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
 void toolbar_set_dimensions(struct s_toolbar *tb, GRECT *area)
 {
     tb->area = *area;
-    if (img_toolbar != 0) {
-        toolbar_reflow(tb);
-    }
+    tb->reflow = true;
 }
 
 

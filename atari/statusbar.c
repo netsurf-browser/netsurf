@@ -182,7 +182,7 @@ void sb_destroy( CMP_STATUSBAR s )
 	}
 }
 
-void sb_set_text( CMP_STATUSBAR sb , char * text )
+void sb_set_text(CMP_STATUSBAR sb , const char * text)
 {
 
 	LGRECT work;
@@ -221,11 +221,11 @@ void sb_destroy( CMP_STATUSBAR s )
 
 void sb_attach(CMP_STATUSBAR sb, struct gui_window * gw)
 {
-	sb->aes_win = gw->root->handle->handle;
+	sb->aes_win = guiwin_get_handle(gw->root->win);
 	sb->attached = true;
 }
 
-void sb_set_text(CMP_STATUSBAR sb, char * text )
+void sb_set_text(CMP_STATUSBAR sb, const char * text )
 {
 	assert( sb != NULL );
 	strncpy(sb->text, text, STATUSBAR_MAX_SLEN);

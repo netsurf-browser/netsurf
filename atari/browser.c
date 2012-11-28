@@ -858,7 +858,6 @@ void browser_redraw( struct gui_window * gw )
 								/* but because this is onscreen plotter, it doesn't   */
 								/* make much sense anyway...						  */
 							}
-
 						}
 						if (wind_get(aes_handle, WF_NEXTXYWH,
 								&todo[0], &todo[1], &todo[2], &todo[3])==0) {

@@ -131,17 +131,21 @@ void gui_poll(bool active)
 
     struct gui_window * g;
 
-    for( g = window_list; g != NULL; g=g->next ) {
-        if( browser_redraw_required( g ) ) {
-            browser_redraw(g);
-        }
-        if(g->root->toolbar) {
-            //if(g->root->toolbar->url.redraw ) {
-                // TODO: implement toolbar redraw mechanism
-                //tb_url_redraw( g );
-            //}
-        }
+    if(input_window->root->redraw_slots.areas_used > 0){
+        window_process_redraws(input_window->root);
     }
+
+//    for( g = window_list; g != NULL; g=g->next ) {
+//        if( browser_redraw_required( g ) ) {
+//            browser_redraw(g);
+//        }
+//        if(g->root->toolbar) {
+//            //if(g->root->toolbar->url.redraw ) {
+//                // TODO: implement toolbar redraw mechanism
+//                //tb_url_redraw( g );
+//            //}
+//        }
+//    }
 
     if( !active ) {
         /* this suits for stuff with lower priority */
@@ -179,6 +183,9 @@ void gui_poll(bool active)
 		}
 	} while ( gui_poll_repeat && !(active||rendering));
 
+    if(input_window->root->redraw_slots.areas_used > 0){
+        window_process_redraws(input_window->root);
+    }
 }
 
 
@@ -313,6 +320,7 @@ void gui_window_set_title(struct gui_window *gw, const char *title)
                 gw->title = realloc(gw->title, l);
             strncpy(gw->title, title, l);
         }
+        gw->title[l] = 0;
         if(input_window == gw)
             window_set_title(gw->root, gw->title);
     }
@@ -336,7 +344,7 @@ void gui_window_set_status(struct gui_window *w, const char *text)
         w->status = realloc(w->status, l);
 
     strncpy(w->status, text, l);
-    w->status[l-1] = 0;
+    w->status[l] = 0;
 
     if(input_window == w)
         window_set_stauts(w->root, (char*)text);
@@ -534,7 +542,7 @@ void gui_window_set_url(struct gui_window *w, const char *url)
         w->url = realloc(w->url, l);
     }
     strncpy(w->url, url, l);
-
+    w->url[l] = 0;
     if(input_window == w->root->active_gui_window){
         toolbar_set_url(w->root->toolbar, url);
     }

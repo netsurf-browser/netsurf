@@ -20,6 +20,10 @@
 #ifndef ATARI_REDRAW_SLOTS_H
 #define ATARI_REDRAW_SLOTS_H
 
+#include <mt_gem.h>
+#include "utils/types.h"
+
+
 /*
 	MAX_REDRW_SLOTS
 	This is the number of redraw requests that the slotlist can store.
@@ -40,7 +44,10 @@ struct s_redrw_slots
 };
 
 void redraw_slots_init(struct s_redrw_slots * slots, short size);
-void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0, short x1, short y1);
-
+void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
+                          short x1, short y1);
+void redraw_slot_schedule_grect(struct s_redrw_slots * slots, GRECT *area);
+void redraw_slots_remove_area(struct s_redrw_slots * slots, int i);
+void redraw_slots_free(struct s_redrw_slots * slots);
 
 #endif

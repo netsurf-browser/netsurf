@@ -23,8 +23,14 @@
 
 void redraw_slots_init(struct s_redrw_slots * slots, short size)
 {
+    // TODO: allocate slots dynamically!
 	slots->size = MIN( MAX_REDRW_SLOTS , size);
 	slots->areas_used = 0;
+}
+
+void redraw_slots_free(struct s_redrw_slots * slots)
+{
+    // TOOD: free areas...
 }
 
 
@@ -44,10 +50,19 @@ static inline bool rect_intersect( struct rect * box1, struct rect * box2 )
 
 	return true;
 }
+
+
+void redraw_slot_schedule_grect(struct s_redrw_slots * slots, GRECT *area)
+{
+    redraw_slot_schedule(slots, area->g_x, area->g_y,
+                         area->g_x + area->g_w, area->g_y + area->g_h);
+}
+
 /*
-	schedule redraw coords, coords are relative.
+	schedule redraw coords.
 */
-void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0, short x1, short y1)
+void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
+                          short x1, short y1)
 {
 	int i;
 	struct rect area;
@@ -93,4 +108,13 @@ void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0, shor
 	}
 done:
 	return;
+}
+
+void redraw_slots_remove_area(struct s_redrw_slots * slots, int i)
+{
+    int x;
+    for(x = i+1; i<slots->areas_used; x++){
+        slots->areas[x-1] = slots->areas[x];
+    }
+    slots->areas_used--;
 }

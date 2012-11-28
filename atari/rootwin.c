@@ -56,6 +56,7 @@
 #include "atari/search.h"
 #include "atari/osspec.h"
 #include "atari/encoding.h"
+#include "atari/redrawslots.h"
 #include "atari/toolbar.h"
 #include "atari/gemtk/gemtk.h"
 
@@ -167,6 +168,7 @@ int window_create(struct gui_window * gw,
     int err = 0;
     bool tb, sb;
     int flags;
+    short aes_handle;
 
     tb = (inflags & WIDGET_TOOLBAR);
     sb = (inflags & WIDGET_STATUSBAR);
@@ -188,10 +190,11 @@ int window_create(struct gui_window * gw,
     memset( gw->root, 0, sizeof(struct s_gui_win_root) );
     gw->root->title = malloc(atari_sysinfo.aes_max_win_title_len+1);
     // TODO: use desk size
-    short aes_handle = wind_create(flags, 40, 40, app.w, app.h);
+
+    aes_handle = wind_create(flags, 40, 40, app.w, app.h);
     if(aes_handle<0) {
-        free( gw->root->title );
-        free( gw->root );
+        free(gw->root->title);
+        free(gw->root);
         return( -1 );
     }
     gw->root->win = guiwin_add(aes_handle,
@@ -209,16 +212,19 @@ int window_create(struct gui_window * gw,
     gw->browser = browser_create( gw, bw, NULL, CLT_HORIZONTAL, 1, 1 );
 
     /* create statusbar component: */
-    if( sb ) {
+    if(sb) {
         gw->root->statusbar = sb_create( gw );
     } else {
         gw->root->statusbar = NULL;
     }
 
+    // Setup some window defaults:
     wind_set_str(aes_handle, WF_ICONTITLE, (char*)"NetSurf");
     wind_set(aes_handle, WF_OPTS, 1, WO0_FULLREDRAW, 0, 0);
     wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITW, 0, 0);
     wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITH, 0, 0);
+
+    redraw_slots_init(&gw->root->redraw_slots, 8);
 
 	guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
 	struct rootwin_data_s * data = malloc(sizeof(struct rootwin_data_s));
@@ -250,6 +256,7 @@ void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
     }
     if(input_window == NULL){
         // the last gui window for this rootwin was removed:
+        redraw_slots_free(&rootwin->redraw_slots);
         window_destroy(rootwin);
     }
 }
@@ -294,7 +301,7 @@ int window_destroy(ROOTWIN *rootwin)
 
 void window_open(ROOTWIN *rootwin, GRECT pos)
 {
-    GRECT br;
+    GRECT br, g;
 
     short aes_handle = guiwin_get_handle(rootwin->win);
     wind_open(aes_handle, pos.g_x, pos.g_y, pos.g_w, pos.g_h );
@@ -304,6 +311,8 @@ void window_open(ROOTWIN *rootwin, GRECT pos)
     if(rootwin->statusbar != NULL) {
         sb_attach(rootwin->statusbar, rootwin->active_gui_window);
     }
+    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &g);
+    toolbar_set_dimensions(rootwin->toolbar, &g);
     /*TBD: get already present content and set size? */
     input_window = rootwin->active_gui_window;
     window_set_focus(rootwin, BROWSER, rootwin->active_gui_window->browser);
@@ -463,6 +472,67 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
         plot_clip(&work_clip);
         atari_plotters.bitmap(0, 0, work.g_w, work.g_h, rootwin->icon, 0xffffff, 0);
     }
+}
+
+void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area)
+{
+    GRECT work;
+
+    guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
+    rc_intersect(area, &work);
+    redraw_slot_schedule_grect(&rootwin->redraw_slots, &work);
+}
+
+/*
+bool window_requires_redraw(ROOTWIN * rootwin)
+{
+    if (rootwin->redraw_slots.areas_used > 0)
+        return(true);
+
+    return(false);
+}
+*/
+
+void window_process_redraws(ROOTWIN * rootwin)
+{
+    GRECT work, visible_ro, tb_area = {0,0,0,0};
+    short aes_handle, i;
+    bool toolbar_rdrw_required;
+
+    aes_handle = guiwin_get_handle(rootwin->win);
+
+    guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &tb_area);
+
+    while(plot_lock() == false);
+
+    wind_get_grect(aes_handle, WF_FIRSTXYWH, &visible_ro);
+    while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
+
+        // TODO: optimze the rectangle list -
+        // remove rectangles which were completly inside the visible area.
+        // that way we don't have to loop over again...
+        for(i=0; i<rootwin->redraw_slots.areas_used; i++){
+
+            GRECT rdrw_area = {
+                    rootwin->redraw_slots.areas[i].x0,
+                    rootwin->redraw_slots.areas[i].y0,
+                    rootwin->redraw_slots.areas[i].x1 +
+                        rootwin->redraw_slots.areas[i].x0,
+                    rootwin->redraw_slots.areas[i].y1 +
+                        rootwin->redraw_slots.areas[i].y0
+            };
+            GRECT visible = visible_ro;
+
+            rc_intersect(&rdrw_area, &visible);
+            if (rc_intersect(&tb_area, &visible)) {
+                toolbar_redraw(rootwin->toolbar, &visible);
+            }
+        }
+        wind_get_grect(aes_handle, WF_NEXTXYWH, &visible_ro);
+    }
+    rootwin->redraw_slots.areas_used = 0;
+
+    plot_unlock();
 }
 
 
@@ -632,54 +702,16 @@ static void redraw(GUIWIN *win, short msg[8])
         GRECT clip = {msg[4], msg[5], msg[6], msg[7]};
         window_redraw_favicon(rootwin, &clip);
     } else {
-    	GRECT content_area, tb_area;
-    	short pxy[8];
+    	window_schedule_redraw_grect(rootwin, &clip);
 
-    	guiwin_get_grect(win, GUIWIN_AREA_CONTENT, &content_area);
-    	guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &tb_area);
-
-    	if (rc_intersect(&tb_area, &clip)) {
-    	    toolbar_set_dimensions(rootwin->toolbar, &tb_area);
-    	    toolbar_redraw(rootwin->toolbar, clip);
-    	}
-
-        CMP_BROWSER browser = rootwin->active_gui_window->browser;
-        if (browser->reformat_pending == true) {
-            browser_window_reformat(browser->bw, false, content_area.g_w,
-                                    content_area.g_h );
-        } else {
-            if(rc_intersect(&content_area, &clip)){
-
-                GRECT lclip = content_area;
-
-               	/* convert redraw coords to framebuffer coords: */
-                lclip.g_x -= content_area.g_x;
-                lclip.g_y -= content_area.g_y;
-
-                if( lclip.g_x < 0 ) {
-                    lclip.g_w = content_area.g_w + lclip.g_x;
-                    lclip.g_x = 0;
-                }
-
-                if( lclip.g_y < 0 ) {
-                    lclip.g_h = content_area.g_h + lclip.g_y;
-                    lclip.g_y = 0;
-                }
-
-                browser_schedule_redraw(rootwin->active_gui_window,
-                                        lclip.g_x, lclip.g_y,
-                                        lclip.g_x + lclip.g_w,
-                                        lclip.g_y + lclip.g_h);
-    	    }
-        }
-
-    	//guiwin_clear(win);
+    	// TODO: remove this call when browser redraw is implemented:
+    	guiwin_clear(win);
     }
 }
 
 static void resized(GUIWIN *win)
 {
-    short x,y,w,h;
+    GRECT g;
     short handle;
     struct gui_window *gw;
     struct rootwin_data_s *data = guiwin_get_user_data(win);
@@ -700,22 +732,23 @@ static void resized(GUIWIN *win)
         return;
     //assert( gw != NULL );
 
-    wind_get(handle, WF_CURRXYWH, &x, &y, &w, &h);
+    wind_get_grect(handle, WF_CURRXYWH, &g);
 
-    if (rootwin->loc.g_w != w || rootwin->loc.g_h != h) {
+    if (rootwin->loc.g_w != g.g_w || rootwin->loc.g_h != g.g_h) {
         if ( gw->browser->bw->current_content != NULL ) {
             /* Reformat will happen when redraw is processed: */
+            // TODO: call reformat directly, this was introduced because
+            // of bad AES knowledge, it's ok to call it directly here...
             rootwin->active_gui_window->browser->reformat_pending = true;
         }
     }
-    if (rootwin->loc.g_x != x || rootwin->loc.g_y != y) {
-        // moved
-    }
+//    if (rootwin->loc.g_x != g.g_x || rootwin->loc.g_y != g.g_y) {
+//        // moved
+//    }
 
-    rootwin->loc.g_x = x;
-    rootwin->loc.g_y = y;
-    rootwin->loc.g_w = w;
-    rootwin->loc.g_h = h;
+    rootwin->loc = g;
+    guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &g);
+    toolbar_set_dimensions(rootwin->toolbar, &g);
 }
 
 static void __CDECL file_dropped(GUIWIN *win, short msg[8])

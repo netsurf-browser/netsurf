@@ -19,6 +19,7 @@
 #ifndef NS_ATARI_GUI_H_
 #define NS_ATARI_GUI_H_
 
+#include "atari/redrawslots.h"
 #include "atari/gemtk/gemtk.h"
 
 struct point_s {
@@ -104,6 +105,7 @@ struct s_gui_win_root
 	char * title;
 	struct bitmap * icon;
 	struct gui_window *active_gui_window;
+	struct s_redrw_slots redraw_slots;
 	/* current size of window on screen: */
 	GRECT loc;
 };

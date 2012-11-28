@@ -158,8 +158,8 @@ schedule_run(void)
 	prev_nscb = NULL;
 	nexttime = cur_nscb->timeout;
 
-	while ( cur_nscb != NULL ) {
-		if ( now > cur_nscb->timeout ) {
+	while (cur_nscb != NULL) {
+		if (now > cur_nscb->timeout) {
 			/* scheduled time */
 
 			/* remove callback */
@@ -194,7 +194,7 @@ schedule_run(void)
 			/* if the time to the event is sooner than the
 			 * currently recorded soonest event record it
 			 */
-			if( nexttime > cur_nscb->timeout ){
+			if (nexttime > cur_nscb->timeout) {
 				nexttime = cur_nscb->timeout;
 			}
 			/* move to next element */
