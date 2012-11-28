@@ -33,12 +33,21 @@
 #ifndef _NETSURF_UTILS_MESSAGES_H_
 #define _NETSURF_UTILS_MESSAGES_H_
 
+#include "utils/errors.h"
 #include "utils/hashtable.h"
 
 void messages_load(const char *path);
 struct hash_table *messages_load_ctx(const char *path, struct hash_table *ctx);
 const char *messages_get_ctx(const char *key, struct hash_table *ctx);
 const char *messages_get(const char *key);
+
+/**
+ * lookup of a message by errorcode from the standard Messages hash.
+ *
+ * \param code errorcode of message
+ * \return message text
+ */
+const char *messages_get_errorcode(nserror code);
 
 /**
  * Formatted message from a key in the global message hash.

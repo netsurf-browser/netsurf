@@ -149,3 +149,61 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 
 	return false;
 }
+
+dom_exception _dom_event_create(dom_document *doc, dom_event **evt);
+#define dom_event_create(d, e) _dom_event_create((dom_document *)(d), (dom_event **) (e))
+
+bool js_fire_event(jscontext *ctx, const char *type, void *target)
+{
+	JSContext *cx = (JSContext *)ctx;
+	dom_node *node = target;
+	JSObject *jsevent;
+	jsval rval;
+	jsval argv[1];
+	JSBool ret = JS_TRUE;
+	dom_exception exc;
+	dom_event *event;
+	dom_string *type_dom;
+
+	if (node == NULL) {
+		/* deliver to window */
+		if (cx == NULL) {
+			return false;
+		}
+
+		exc = dom_string_create((unsigned char*)type, strlen(type), &type_dom);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		exc = dom_event_create(-1, &event);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		exc = dom_event_init(event, type_dom, false, false);
+		dom_string_unref(type_dom);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		jsevent = jsapi_new_Event(cx, NULL, NULL, event);
+		if (jsevent == NULL) {
+			return false;
+		}
+
+		argv[0] = OBJECT_TO_JSVAL(jsevent);
+
+		ret = JS_CallFunctionName(cx, 
+					  JS_GetGlobalObject(cx), 
+					  "dispatchEvent", 
+					  1, 
+					  argv, 
+					  &rval);
+	} 
+
+	if (ret == JS_TRUE) {
+		return true;
+	}
+	return false;
+}

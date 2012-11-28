@@ -1,10 +1,21 @@
-/* binding to generate window */
+/* Binding to generate window interface
+ *
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * Released under the terms of the MIT License,
+ *         http://www.opensource.org/licenses/mit-license
+ */
 
 #include "dom.bnd"
 
 webidlfile "html.idl";
 
-hdrcomment "Part of NetSurf Project";
+hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
+hdrcomment "This file is part of NetSurf, http://www.netsurf-browser.org/";
+hdrcomment "Released under the terms of the MIT License,";
+hdrcomment "        http://www.opensource.org/licenses/mit-license";
 
 preamble %{
 
@@ -12,9 +23,11 @@ preamble %{
         
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/corestrings.h"
 
 #include "javascript/jsapi.h"
 #include "javascript/jsapi/binding.h"
+
 
 %}
 
@@ -23,19 +36,15 @@ binding window {
 
 	interface Window; /* Web IDL interface to generate */
 
-	/* private are parameters to constructor stored in private
-         *  context structure.
-         *
-         * internal are value stored in private context structure but not
-         *  passed to constructor but are considered for property 
-         *  getters/setters.
-         */
 	private "struct browser_window *" bw;
 	private "struct html_content *" htmlc;
+
 	internal "JSObject *" document;
 	internal "JSObject *" navigator;
 	internal "JSObject *" console;
 	internal "JSObject *" location;
+
+	property unshared type EventHandler;
 }
 
 api mark %{
@@ -140,6 +149,11 @@ api init %{
 		return NULL;
 	}
 
+	user_proto = jsapi_InitClass_Event(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
 %}
 
 api new %{
@@ -166,7 +180,8 @@ api new %{
 		return NULL;
 	}
 
-	private->location = jsapi_new_Location(cx, NULL, newobject, bw);
+	private->location = jsapi_new_Location(cx, NULL, newobject, bw, 
+					       llcache_handle_get_url(private->htmlc->base.llcache));
 	if (private->location == NULL) {
 		free(private);
 		return NULL;
@@ -201,4 +216,58 @@ getter window %{
 
 getter self %{
 	jsret = obj;
+%}
+
+/* boolean dispatchEvent(Event event); */
+operation dispatchEvent %{
+	/* this implementation is unique to the window object as it is
+	 * not a "real" dom node. 
+	 */
+
+	/* caution, this must match the struct generated from event.bnd */
+	if (event == JSVAL_VOID) {
+		jsret = JS_FALSE;
+	} else {
+		struct {
+			dom_event *event;
+		} *event_private;
+		dom_string *type_dom = NULL;
+		dom_exception exc;
+		jsval eventval = JSVAL_VOID;
+		jsval event_argv[1];
+		jsval event_rval;
+
+		event_private = JS_GetInstancePrivate(cx, event, &JSClass_Event, NULL);
+		if (event_private->event == NULL) {
+			/** @todo type error? */
+			jsret = JS_FALSE;
+		} else {
+			exc = dom_event_get_type(event_private->event, &type_dom);
+			if (exc == DOM_NO_ERR) {
+
+				if (dom_string_isequal(type_dom, corestring_dom_load)) {
+					JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
+				}
+
+				if (eventval != JSVAL_VOID) {
+					event_argv[0] = eventval;
+					jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
+				}
+			}
+		}
+	}
+%}
+
+getter EventHandler %{
+	/* this implementation is unique to the window object as it is
+	 * not a dom node. 
+	 */
+	JSLOG("propname[%d] %s %s", tinyid , jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx, tinyid_jsval)));
+%}
+
+setter EventHandler %{
+	/* this implementation is unique to the window object as it is
+	 * not a dom node. 
+	 */
+	JSLOG("propname[%d] %s %s", tinyid, jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx,  tinyid_jsval)));
 %}

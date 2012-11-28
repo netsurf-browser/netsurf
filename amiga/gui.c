@@ -30,6 +30,7 @@
 #include "desktop/selection.h"
 #include "desktop/textinput.h"
 #include "desktop/tree.h"
+#include "desktop/tree_url_node.h"
 #include "image/ico.h"
 #include "utils/log.h"
 #include "utils/messages.h"
@@ -109,6 +110,7 @@
 #include <proto/clicktab.h>
 #include <proto/layout.h>
 #include <proto/space.h>
+#include <proto/speedbar.h>
 #include <proto/string.h>
 #include <proto/window.h>
 
@@ -118,6 +120,7 @@
 #include <gadgets/layout.h>
 #include <gadgets/scroller.h>
 #include <gadgets/space.h>
+#include <gadgets/speedbar.h>
 #include <gadgets/string.h>
 #include <images/bevel.h>
 #include <images/bitmap.h>
@@ -1930,7 +1933,7 @@ void ami_handle_msg(void)
 	
 	if(ami_menu_window_close)
 	{
-		if(ami_menu_window_close == AMI_MENU_WINDOW_CLOSE_ALL)
+		if(ami_menu_window_close == (void *)AMI_MENU_WINDOW_CLOSE_ALL)
 			ami_quit_netsurf();
 		else
 			ami_close_all_tabs(ami_menu_window_close);
@@ -2425,6 +2428,86 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	}
 }
 
+void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, uint16 *item,
+			struct List *speed_button_list, struct gui_window_2 *gwin)
+{
+	struct node *tempnode;
+	struct node_element *element=NULL;
+	struct node *node;
+	struct Node *speed_button_node;
+
+	*gen = *gen + 1;
+
+	for (node = root; node; node = tree_node_get_next(node))
+	{
+		if((*gen == 1) && (*item < AMI_GUI_TOOLBAR_MAX)) /* Don't cascade into sub-dirs */
+		{
+			gwin->hotlist_toolbar_lab[*item] = ami_utf8_easy((char *)tree_url_node_get_title(node));
+
+			speed_button_node = AllocSpeedButtonNode(*item,
+					SBNA_Text, gwin->hotlist_toolbar_lab[*item],
+					SBNA_UserData, (void *)tree_url_node_get_url(node),
+					TAG_DONE);
+			
+			AddTail(speed_button_list, speed_button_node);
+
+			*item = *item + 1;
+		}
+
+		/* Don't need this atm as it cascades into sub-dirs
+		if (tree_node_get_child(node))
+		{
+			ami_gui_hotlist_scan_2(tree, tree_node_get_child(node), gen);
+		}
+		*/
+	}
+
+	*gen = *gen - 1;
+}
+
+int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, struct gui_window_2 *gwin)
+{
+	struct node *root = tree_node_get_child(tree_get_root(tree));
+	struct node *node;
+	struct node_element *element;
+	static WORD gen = 0;
+	static uint16 item = 0;
+
+	for (node = root; node; node = tree_node_get_next(node))
+	{
+		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
+		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
+		if(element && (strcmp(tree_node_element_get_text(element), "Toolbar") == 0))
+		{
+			ami_gui_hotlist_scan_2(tree, tree_node_get_child(node), &gen, &item, speed_button_list, gwin);
+		}
+	}
+
+	return item;
+}
+
+void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
+{
+	NewList(&gwin->hotlist_toolbar_list);
+
+	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
+		gwin->objects[GID_HOTLIST] =
+				SpeedBarObject,
+					GA_ID, GID_HOTLIST,
+					GA_RelVerify, TRUE,
+					SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,
+				SpeedBarEnd;
+
+		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDCHILD,
+				gwin->win, gwin->objects[GID_HOTLIST], NULL);
+	}
+
+	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+			gwin->win, NULL, TRUE);
+}
+
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 {
 	if(ClickTabBase->lib_Version < 53) return;
@@ -2894,6 +2977,10 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					BEVEL_Style, BVS_SBAR_VERT,
 				BevelEnd,
 				CHILD_WeightedHeight, 0,
+				LAYOUT_AddChild, g->shared->objects[GID_HOTLISTLAYOUT] = HGroupObject,
+					LAYOUT_SpaceInner, FALSE,
+				LayoutEnd,
+				CHILD_WeightedHeight,0,
 				LAYOUT_AddChild, g->shared->objects[GID_TABLAYOUT] = HGroupObject,
 					LAYOUT_SpaceInner,FALSE,
 					addtabclosegadget, g->shared->objects[GID_CLOSETAB],
@@ -3039,6 +3126,8 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 
 		RefreshGadgets((APTR)g->shared->objects[GID_STATUS],
 				g->shared->win, NULL);
+				
+		ami_gui_hotlist_toolbar_add(g->shared); /* is this the right place for this? */
 	}
 	else
 	{

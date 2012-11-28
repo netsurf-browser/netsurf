@@ -45,7 +45,8 @@ JSObject *jsapi_InitClass_Location(JSContext *cx, JSObject *parent);
 JSObject *jsapi_new_Location(JSContext *cx, 
 			    JSObject *window,
 			    JSObject *parent, 
-			    struct browser_window *bw);
+			     struct browser_window *bw,
+			     nsurl *url);
 
 
 JSObject *jsapi_InitClass_Document(JSContext *cx, JSObject *parent);
@@ -147,5 +148,12 @@ JSObject *jsapi_InitClass_Node(JSContext *cx, JSObject *parent);
 JSObject *jsapi_new_Node(JSContext *cx,
 				JSObject *prototype,
 				JSObject *parent);
+
+extern JSClass JSClass_Event;
+JSObject *jsapi_InitClass_Event(JSContext *cx, JSObject *parent);
+JSObject *jsapi_new_Event(JSContext *cx,
+			  JSObject *prototype,
+			  JSObject *parent,
+			  dom_event *event);
 
 #endif

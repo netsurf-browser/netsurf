@@ -8,8 +8,6 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-#include "dom.bnd"
-
 webidlfile "html.idl";
 
 hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
@@ -30,24 +28,107 @@ preamble %{
 %}
 
 binding location {
-    type js_libdom; /* the binding type */
+	type js_libdom; /* the binding type */
 
-    interface Location; /* Web IDL interface to generate */
+	interface Location; /* Web IDL interface to generate */
 
-    /* private members:
-     *  - stored in private context structure.
-     *  - passed as parameters to constructor and stored automatically.
-     *  - are *not* considered for property getters/setters.
-     *
-     * internal members:
-     *  - value stored in private context structure
-     *  - not passed to constructor
-     *  - must be instantiated by constructor
-     *  - are considered for property getters/setters.
-     */
 	private "struct browser_window *" bw;
+	private "nsurl *" url;
+
 }
 
 operation reload %{
-  browser_window_reload(private->bw, false);
+	browser_window_reload(private->bw, false);
+%}
+
+
+getter href %{
+	char *url_s = NULL;
+	size_t url_l;
+	nsurl_get(private->url, NSURL_COMPLETE, &url_s, &url_l);
+	if (url_s != NULL) {
+		jsret = JS_NewStringCopyN(cx, url_s, url_l);
+		free(url_s);		
+	}
+%}
+
+getter protocol %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_SCHEME);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
+%}
+
+getter host %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_HOST);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
+%}
+
+getter hostname %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_HOST);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
+
+%}
+
+getter port %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_PORT);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
+
+%}
+
+getter pathname %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_PATH);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
+
+%}
+
+getter search %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_QUERY);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
+
+%}
+
+getter hash %{
+	lwc_string *component;
+	component = nsurl_get_component(private->url, NSURL_FRAGMENT);
+	if (component != NULL) {
+		jsret = JS_NewStringCopyN(cx,
+					  lwc_string_data(component),
+					  lwc_string_length(component));
+		lwc_string_unref(component);
+	}
 %}

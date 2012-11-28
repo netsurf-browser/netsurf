@@ -53,3 +53,8 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 {
 	return true;
 }
+
+bool js_fire_event(jscontext *ctx, const char *type, void *target)
+{
+	return true;
+}

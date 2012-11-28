@@ -415,8 +415,8 @@ void hotlist_add_entry(bool selected)
 {
 	struct node *node;
 	struct node *parent = NULL;
-	creating_node = true;
 	nsurl *url;
+	creating_node = true;
 
 	if (selected == true) {
 		parent = tree_get_selected_node(tree_get_root(hotlist_tree));

@@ -51,4 +51,7 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
 /* execute some javascript in a context */
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen);
 
+/* fire an event at a dom node */
+bool js_fire_event(jscontext *ctx, const char *type, void *target);
+
 #endif /* _NETSURF_JAVASCRIPT_JS_H_ */

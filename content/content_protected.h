@@ -160,6 +160,11 @@ void content_set_error(struct content *c);
 void content_set_status(struct content *c, const char *status_message);
 void content_broadcast(struct content *c, content_msg msg,
 		union content_msg_data data);
+/**
+ * Send an errorcode message to all users.
+ */
+void content_broadcast_errorcode(struct content *c, nserror errorcode);
+
 void content_add_error(struct content *c, const char *token,
 		unsigned int line);
 

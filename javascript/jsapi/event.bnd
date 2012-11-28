@@ -1,4 +1,4 @@
-/* Binding to generate Console interface
+/* Binding to generate event interface
  *
  * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
  *
@@ -8,7 +8,7 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-webidlfile "console.idl";
+webidlfile "dom.idl";
 
 hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
 hdrcomment "This file is part of NetSurf, http://www.netsurf-browser.org/";
@@ -17,6 +17,8 @@ hdrcomment "        http://www.opensource.org/licenses/mit-license";
 
 preamble %{
 
+#include <dom/dom.h>
+        
 #include "utils/config.h"
 #include "utils/log.h"
 
@@ -25,23 +27,10 @@ preamble %{
 
 %}
 
-binding navigator {
+binding node {
     type js_libdom; /* the binding type */
 
-    interface Console; /* Web IDL interface to generate */
+    interface Event; /* Web IDL interface to generate */
 
+    private "dom_event *" event;
 }
-
-operation log %{
-	unsigned int argloop;
-	JSString *jsstr;
-	unsigned long jsstrlen;
-	char *txt;
-
-	for (argloop = 0; argloop < argc; argloop++) {
-		jsstr = JS_ValueToString(cx, argv[argloop]);
-
-		JSString_to_char(jsstr, txt, jsstrlen);
-		LOG(("%s", txt));
-	}
-%}

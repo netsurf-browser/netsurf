@@ -265,7 +265,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 		dw->lastrdw = tnow;
 		tree = ObjcTree(OC_FORM, dw->form );
 		if( dw->size_total > 0 ){
-			p = (dw->size_downloaded *100) / dw->size_total;
+			p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
 		}
 		speed = dw->size_downloaded / sdiff;
 		tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100), DOWNLOAD_BAR_MAX ), 1);

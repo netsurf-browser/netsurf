@@ -2787,6 +2787,8 @@ de.all.ParsingFail:Dokumentparsing ist fehlgeschlagen.
 fr.all.ParsingFail:L'analyse syntaxique du document a échoué.
 it.all.ParsingFail:Analisi del documento fallita.
 nl.all.ParsingFail:fout bij ontleden van dit document.
+en.all.CSSGeneric:Error processing CSS
+en.all.CSSBase:Base stylesheet failed to load
 en.all.BadGIF:Reading GIF failed.
 de.all.BadGIF:Lesen einer GIF Datei fehlgeschlagen.
 fr.all.BadGIF:Erreur de lecture de GIF.

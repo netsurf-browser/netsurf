@@ -30,6 +30,8 @@
 #define CALLED() fprintf(stderr, "%s()\n", __FUNCTION__);
 
 extern bool replicated;
+int gui_init_replicant(int argc, char** argv);
+
 
 #if 0 /* GTK */
 //extern GladeXML *gladeWindows;

@@ -64,12 +64,16 @@ enum
 	GID_SHOWALL,
 	GID_CASE,
 	GID_TOOLBARLAYOUT,
+	GID_HOTLIST,
+	GID_HOTLISTLAYOUT,
 	GID_HSCROLL,
 	GID_LAST
 };
 
 struct find_window;
 struct history_window;
+
+#define AMI_GUI_TOOLBAR_MAX 20
 
 struct gui_window_2 {
 	struct nsObject *node;
@@ -98,6 +102,8 @@ struct gui_window_2 {
 	UBYTE *menutype;
 	struct NewMenu *menu;
 	ULONG hotlist_items;
+	char *hotlist_toolbar_lab[AMI_GUI_TOOLBAR_MAX];
+	struct List hotlist_toolbar_list;
 	char *svbuffer;
 	char *status;
 	char *wintitle;
