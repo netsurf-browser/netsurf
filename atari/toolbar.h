@@ -13,6 +13,40 @@ enum toolbar_textarea {
     URL_INPUT_TEXT_AREA = 1
 };
 
+struct s_url_widget
+{
+    /* widget is only redrawn when this flag is set */
+	bool redraw;
+	struct text_area *textarea;
+	GRECT rdw_area;
+	GRECT area;
+};
+
+struct s_throbber_widget
+{
+	short index;
+	short max_index;
+	bool running;
+	GRECT area;
+};
+
+struct s_toolbar
+{
+	struct s_gui_win_root *owner;
+	struct s_url_widget url;
+	struct s_throbber_widget throbber;
+	GRECT btdim;
+	GRECT area;
+	/* size & location of buttons: */
+	struct s_tb_button * buttons;
+	bool hidden;
+	int btcnt;
+	int style;
+	bool redraw;
+    bool reflow;
+};
+
+
 void toolbar_init(void);
 struct s_toolbar *toolbar_create(struct s_gui_win_root *owner);
 void toolbar_destroy(struct s_toolbar * tb);
@@ -24,10 +58,12 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc);
 void toolbar_mouse_input(struct s_toolbar *tb, short mx, short my);
 void toolbar_update_buttons(struct s_toolbar *tb, struct browser_window *bw,
                             short idx);
-void toolbar_get_grect(struct s_toolbar *tb, short which, short opt, GRECT *g);
+void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *g);
 struct text_area *toolbar_get_textarea(struct s_toolbar *tb,
                                        enum toolbar_textarea which);
+void toolbar_set_throbber_state(struct s_toolbar *tb, bool active);
 void toolbar_redraw(struct s_toolbar *tb, GRECT *clip);
+void toolbar_throbber_progress(struct s_toolbar *tb);
 /* public events handlers: */
 void toolbar_back_click(struct s_toolbar *tb);
 void toolbar_reload_click(struct s_toolbar *tb);

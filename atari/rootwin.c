@@ -189,8 +189,10 @@ int window_create(struct gui_window * gw,
         return( -1 );
     memset( gw->root, 0, sizeof(struct s_gui_win_root) );
     gw->root->title = malloc(atari_sysinfo.aes_max_win_title_len+1);
-    // TODO: use desk size
 
+    redraw_slots_init(&gw->root->redraw_slots, 8);
+
+    // TODO: use desk size
     aes_handle = wind_create(flags, 40, 40, app.w, app.h);
     if(aes_handle<0) {
         free(gw->root->title);
@@ -200,7 +202,12 @@ int window_create(struct gui_window * gw,
     gw->root->win = guiwin_add(aes_handle,
                GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM, handle_event);
 
+	struct rootwin_data_s * data = malloc(sizeof(struct rootwin_data_s));
+    data->rootwin = gw->root;
+	guiwin_set_user_data(gw->root->win, (void*)data);
+
     /* create toolbar component: */
+    guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
     if( tb ) {
         gw->root->toolbar = toolbar_create(gw->root);
         assert(gw->root->toolbar);
@@ -223,13 +230,6 @@ int window_create(struct gui_window * gw,
     wind_set(aes_handle, WF_OPTS, 1, WO0_FULLREDRAW, 0, 0);
     wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITW, 0, 0);
     wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITH, 0, 0);
-
-    redraw_slots_init(&gw->root->redraw_slots, 8);
-
-	guiwin_set_toolbar(gw->root->win, get_tree(TOOLBAR), 0, 0);
-	struct rootwin_data_s * data = malloc(sizeof(struct rootwin_data_s));
-	data->rootwin = gw->root;
-	guiwin_set_user_data(gw->root->win, (void*)data);
 
     if (inflags & WIN_TOP) {
         window_set_focus(gw->root, BROWSER, gw->browser);

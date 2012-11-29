@@ -552,20 +552,15 @@ static void throbber_advance( void * data )
 {
     LGRECT work;
     struct gui_window * gw = (struct gui_window *)data;
-    if( gw->root == NULL )
+    if (gw->root == NULL)
         return;
-    if( gw->root->toolbar == NULL )
+    if (gw->root->toolbar == NULL)
         return;
-    // TODO: implement access to throbber
-    //if( gw->root->toolbar->throbber.running == false)
-    //    return;
-//    mt_CompGetLGrect(&app, gw->root->toolbar->throbber.comp,
-//                     WF_WORKXYWH, &work);
-//    gw->root->toolbar->throbber.index++;
-//    if( gw->root->toolbar->throbber.index > gw->root->toolbar->throbber.max_index )
-//        gw->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
-//    ApplWrite(_AESapid, WM_REDRAW,  guiwin_get_handle(gw->root->win),
-//               work.g_x, work.g_y, work.g_w, work.g_h);
+
+    if (gw->root->toolbar->throbber.running == false)
+        return;
+
+    toolbar_throbber_progress(gw->root->toolbar);
     schedule(100, throbber_advance, gw );
 }
 
@@ -574,40 +569,25 @@ void gui_window_start_throbber(struct gui_window *w)
     GRECT work;
     if (w == NULL)
         return;
-    // TODO: implement throbber acess
-    //if( w->root->toolbar->throbber.running == true )
-    //    return;
-//    browser_get_rect(w, BR_THROBBER, &work);
-//    w->root->toolbar->throbber.running = true;
-//    w->root->toolbar->throbber.index = THROBBER_MIN_INDEX;
-    schedule(100, throbber_advance, w );
-//    ApplWrite( _AESapid, WM_REDRAW, guiwin_get_handle(w->root->win),
-//               work.g_x, work.g_y, work.g_w, work.g_h );
 
+    toolbar_set_throbber_state(w->root->toolbar, true);
+    schedule(100, throbber_advance, w );
     rendering = true;
 }
 
 void gui_window_stop_throbber(struct gui_window *w)
 {
-    LGRECT work;
     if (w == NULL)
         return;
-    // TODO: implement something like throbber_is_running();
-    //if( w->root->toolbar->throbber.running == false )
-    //    return;
+    if (w->root->toolbar->throbber.running == false)
+        return;
 
     schedule_remove(throbber_advance, w);
 
+    toolbar_set_throbber_state(w->root->toolbar, false);
+
     /* refresh toolbar buttons: */
     toolbar_update_buttons(w->root->toolbar, w->browser->bw, -1);
-
-    /* redraw throbber: */
-//    mt_CompGetLGrect(&app, w->root->toolbar->throbber.comp,
-//                     WF_WORKXYWH, &work);
-//    w->root->toolbar->throbber.running = false;
-//    ApplWrite( _AESapid, WM_REDRAW, guiwin_get_handle(w->root->win),
-//               work.g_x, work.g_y, work.g_w, work.g_h );
-    // TODO: send throbber redraw
 
     rendering = false;
 }
