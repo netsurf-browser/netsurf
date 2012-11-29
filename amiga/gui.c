@@ -1206,6 +1206,7 @@ void ami_handle_msg(void)
 	struct browser_window *closedbw;
 	struct timeval curtime;
 	static int drag_x_move = 0, drag_y_move = 0;
+	char *url;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1601,11 +1602,13 @@ void ami_handle_msg(void)
 						break;
 
 						case GID_HOTLIST:
-							GetAttrs(gwin->objects[GID_HOTLIST],
-								SPEEDBAR_SelectedNode, &tabnode, TAG_DONE);
-							GetSpeedButtonNodeAttrs(tabnode, SBNA_UserData, (ULONG *)&storage, TAG_DONE);
-							
-							browser_window_go(gwin->bw, (char *)storage, NULL, true);
+							GetAttr(SPEEDBAR_SelectedNode,
+									(Object *)gwin->objects[GID_HOTLIST],
+									(ULONG *)&tabnode);
+							printf("%lx   %d\n", tabnode, code);
+							GetSpeedButtonNodeAttrs(tabnode, SBNA_UserData, (ULONG *)&url, TAG_DONE);
+							printf("%s\n", url);
+							browser_window_go(gwin->bw, url, NULL, true);
 						break;
 						
 						case GID_HOME:
