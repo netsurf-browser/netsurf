@@ -1207,6 +1207,19 @@ fr.all.HotlistFeatureRequest:Demandes de nouvelles fonctions de Netsurf
 it.all.HotlistFeatureRequest:Suggerimenti per NetSurf
 nl.all.HotlistFeatureRequest:NetSurf feature requests
 
+# Default (Amiga) hotlist folder names
+#
+en.ami.HotlistMenu:Hotlist menu
+de.ami.HotlistMenu:Hotlist menu
+fr.ami.HotlistMenu:Hotlist menu
+it.ami.HotlistMenu:Hotlist menu
+nl.ami.HotlistMenu:Hotlist menu
+en.ami.HotlistToolbar:Hotlist toolbar
+de.ami.HotlistToolbar:Hotlist toolbar
+fr.ami.HotlistToolbar:Hotlist toolbar
+it.ami.HotlistToolbar:Hotlist toolbar
+nl.ami.HotlistToolbar:Hotlist toolbar
+
 
 # Global history user interface tokens
 # ====================================
