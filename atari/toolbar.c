@@ -192,7 +192,6 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
 {
 
     GRECT area;
-    printf("data: %p\n", data);
 	struct s_toolbar * tb = (struct s_toolbar *)data;
 
 	toolbar_get_grect(tb, TOOLBAR_URL_AREA, &area);
@@ -526,7 +525,7 @@ void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *dst)
     dst->g_w = aes_toolbar[which].ob_width;
     dst->g_h = aes_toolbar[which].ob_height;
 
-    printf("Toolbar get grect (%d): ", which);
+    //printf("Toolbar get grect (%d): ", which);
     dbg_grect("", dst);
 }
 
