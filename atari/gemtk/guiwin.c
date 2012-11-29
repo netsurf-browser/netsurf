@@ -397,7 +397,8 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
                                             obj_idx, ev_out->emo_mclicks, ev_out->emo_kmeta, 0
                                            };
                         if (((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
-                                && obj_idx > 0) {
+                            && (obj_idx > 0)
+                            && (dest->toolbar[obj_idx].ob_flags & OF_SELECTABLE) != 0)  {
                             dest->toolbar[obj_idx].ob_state |= OS_SELECTED;
                             // TODO: optimize redraw by setting the object clip:
                             guiwin_toolbar_redraw(dest, NULL);
