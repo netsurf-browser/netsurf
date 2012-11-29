@@ -195,19 +195,11 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
     printf("data: %p\n", data);
 	struct s_toolbar * tb = (struct s_toolbar *)data;
 
-
-    printf("tb gx: %d\n", tb->area.g_x);
-    printf("aes tb: %p\n", aes_toolbar);
-
-
 	toolbar_get_grect(tb, TOOLBAR_URL_AREA, &area);
 	area.g_x += x;
 	area.g_y += y;
 	area.g_w = w;
 	area.g_h = h;
-
-	//guiwin_get_grect(tb->owner->win, GUIWIN_AREA_TOOLBAR, &area);
-
 
 	dbg_grect("toolbar redraw request", &area);
 
@@ -379,7 +371,6 @@ static void toolbar_reflow(struct s_toolbar *tb)
 
 
     // position throbber image:
-    printf("throbber reflow for index: %d\n", tb->throbber.index);
     throbber_form[tb->throbber.index].ob_x = tb->area.g_x +
         aes_toolbar[TOOLBAR_THROBBER_AREA].ob_x;
 
@@ -406,11 +397,6 @@ void toolbar_redraw(struct s_toolbar *tb, GRECT *clip)
 
     objc_draw_grect(aes_toolbar,0,8,clip);
 
-    printf("rdrw throbber (%d) at: %d,%d, %d, %d\n", tb->throbber.index,
-           throbber_form[tb->throbber.index].ob_x,
-           throbber_form[tb->throbber.index].ob_y,
-           throbber_form[tb->throbber.index].ob_width,
-           throbber_form[tb->throbber.index].ob_height );
     objc_draw_grect(&throbber_form[tb->throbber.index], 0, 1, clip);
 
     GRECT url_area;
