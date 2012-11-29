@@ -1600,6 +1600,14 @@ void ami_handle_msg(void)
 							browser_window_go(gwin->bw,(char *)storage, NULL, true);
 						break;
 
+						case GID_HOTLIST:
+							GetAttrs(gwin->objects[GID_HOTLIST],
+								SPEEDBAR_SelectedNode, &tabnode, TAG_DONE);
+							GetSpeedButtonNodeAttrs(tabnode, SBNA_UserData, (ULONG *)&storage, TAG_DONE);
+							
+							browser_window_go(gwin->bw, (char *)storage, NULL, true);
+						break;
+						
 						case GID_HOME:
 							browser_window_go(gwin->bw,nsoption_charp(homepage_url),NULL,true);	
 						break;
@@ -2477,7 +2485,7 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 	{
 		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
 		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(element && (strcmp(tree_node_element_get_text(element), "Toolbar") == 0))
+		if(element && (strcmp(tree_node_element_get_text(element), messages_get("HotlistToolbar")) == 0))
 		{
 			ami_gui_hotlist_scan_2(tree, tree_node_get_child(node), &gen, &item, speed_button_list, gwin);
 		}
@@ -2509,12 +2517,100 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDIMAGE,
 				gwin->win, gwin->objects[GID_HOTLISTSEPBAR], NULL);
+
+		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+				gwin->win, NULL, TRUE);
 	}
+}
+
+void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_button_list)
+{
+	int i;
+	struct Node *node;
+	struct Node *nnode;
+
+	if(IsListEmpty(speed_button_list)) return;
+	node = GetHead(speed_button_list);
+
+	do {
+		nnode = GetSucc(node);
+		Remove(node);
+		FreeSpeedButtonNode(node);
+	} while(node = nnode);
+		
+	for(i = 0; i < AMI_GUI_TOOLBAR_MAX; i++) {
+		if(gwin->hotlist_toolbar_lab[i]) {
+			free(gwin->hotlist_toolbar_lab[i]);
+			gwin->hotlist_toolbar_lab[i] = NULL;
+		}
+	}
+}
+
+void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
+{
+	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_HOTLIST]);
+
+	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_HOTLISTSEPBAR]);
 
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
+
+	gwin->redraw_required = true;
+	gwin->bw->reformat_pending = true;
+	
+	ami_gui_hotlist_toolbar_free(gwin, &gwin->hotlist_toolbar_list);
+}
+
+void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
+{
+	if(IsListEmpty(&gwin->hotlist_toolbar_list)) {
+		ami_gui_hotlist_toolbar_add(gwin);
+		return;
+	}
+
+	/* Below should be SetAttr according to Autodocs */
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLIST],
+						gwin->win, NULL,
+						SPEEDBAR_Buttons, ~0,
+						TAG_DONE);
+
+	ami_gui_hotlist_toolbar_free(gwin, &gwin->hotlist_toolbar_list);
+
+	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLIST],
+						gwin->win, NULL,
+						SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,
+						TAG_DONE);
+	} else {
+		ami_gui_hotlist_toolbar_remove(gwin);
+	}
+}
+
+void ami_gui_hotlist_toolbar_update_all(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			ami_gui_hotlist_toolbar_update(gwin);
+		}
+	} while(node = nnode);
 }
 
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
@@ -3304,6 +3400,8 @@ void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
 	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
+
+	ami_gui_hotlist_toolbar_free(g->shared, &g->shared->hotlist_toolbar_list);
 
 	/* These aren't freed by the above.
 	 * TODO: nav_west etc need freeing too? */

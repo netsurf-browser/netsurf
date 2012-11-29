@@ -506,17 +506,17 @@ ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin)
 	{
 		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
 		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(element && (strcmp(tree_node_element_get_text(element),"Menu")==0))
+		if(element && (strcmp(tree_node_element_get_text(element), messages_get("HotlistMenu")) == 0))
 		{
 			// found menu
-			ami_menu_scan_2(tree,tree_node_get_child(node),&gen,&item,count,gwin);
+			ami_menu_scan_2(tree, tree_node_get_child(node), &gen, &item, count, gwin);
 		}
 	}
 
 	return(item - AMI_MENU_HOTLIST);
 }
 
-void ami_menu_scan_2(struct tree *tree,struct node *root,WORD *gen,
+void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 		ULONG *item, bool count, struct gui_window_2 *gwin)
 {
 	struct node *tempnode;
