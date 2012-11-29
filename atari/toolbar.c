@@ -526,7 +526,7 @@ void toolbar_get_grect(struct s_toolbar *tb, short which, GRECT *dst)
     dst->g_h = aes_toolbar[which].ob_height;
 
     //printf("Toolbar get grect (%d): ", which);
-    dbg_grect("", dst);
+    //dbg_grect("", dst);
 }
 
 
