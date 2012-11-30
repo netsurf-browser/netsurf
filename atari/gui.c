@@ -173,9 +173,7 @@ void gui_poll(bool active)
 			}
 
 			if( (aes_event_out.emo_events & MU_KEYBD) != 0 ) {
-				printf("key: %d, %d\n", aes_event_out.emo_kreturn,
-						aes_event_out.emo_kmeta);
-				nkc= gem_to_norm( (short)aes_event_out.emo_kmeta,
+				uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
 									(short)aes_event_out.emo_kreturn);
 				deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
 											aes_event_out.emo_kmeta, nkc);
@@ -215,7 +213,6 @@ gui_create_browser_window(struct browser_window *bw,
         window_set_active_gui_window(gw->root, gw);
         window_open(gw->root, pos );
         /* Recalculate windows browser area now */
-        toolbar_update_buttons(gw->root->toolbar, gw->browser->bw, -1);
         input_window = gw;
         /* TODO:... this line: placeholder to create a local history widget ... */
     }
@@ -427,10 +424,14 @@ void gui_window_update_extent(struct gui_window *gw)
     oldx = gw->browser->scroll.current.x;
     oldy = gw->browser->scroll.current.y;
     if( gw->browser->bw->current_content != NULL ) {
-        browser_set_content_size( gw,
-                                  content_get_width(gw->browser->bw->current_content),
-                                  content_get_height(gw->browser->bw->current_content)
-                                );
+        // TODO: store content size!
+        if(window_get_active_gui_window(gw->root) == gw){
+            window_set_content_size( gw->root,
+                                      content_get_width(gw->browser->bw->current_content),
+                                      content_get_height(gw->browser->bw->current_content)
+                                    );
+            window_update_back_forward(gw->root);
+        }
     }
 }
 
@@ -585,9 +586,6 @@ void gui_window_stop_throbber(struct gui_window *w)
     schedule_remove(throbber_advance, w);
 
     toolbar_set_throbber_state(w->root->toolbar, false);
-
-    /* refresh toolbar buttons: */
-    toolbar_update_buttons(w->root->toolbar, w->browser->bw, -1);
 
     rendering = false;
 }

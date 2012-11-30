@@ -95,18 +95,11 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         }
     }
     if( (ev_out->emo_events & MU_KEYBD) != 0 ) {
-        printf("Treeview  keybd\n");
         on_keybd_event(tv, ev_out, msg);
-        // handle key
-    }
-    if( (ev_out->emo_events & MU_TIMER) != 0 ) {
-        // handle_timer();
     }
     if( (ev_out->emo_events & MU_BUTTON) != 0 ) {
         LOG(("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x,
              ev_out->emo_mouse.p_y));
-        printf("Treeview click at: %d,%d\n", ev_out->emo_mouse.p_x,
-               ev_out->emo_mouse.p_y);
         on_mbutton_event(tv, ev_out, msg);
     }
 

@@ -581,12 +581,12 @@ bool browser_redraw_required( struct gui_window * gw)
 /* coords are relative to the framebuffer */
 void browser_schedule_redraw_rect(struct gui_window * gw, short x, short y, short w, short h)
 {
-	if( x < 0  ){
+	if(x < 0){
 		w += x;
 		x = 0;
 	}
 
-	if( y < 0 ) {
+	if(y < 0) {
 		h += y;
 		y = 0;
 	}
@@ -612,7 +612,7 @@ void browser_schedule_redraw(struct gui_window * gw, short x0, short y0, short x
 	if( y0 > work.g_h )
 		return;
 
-	redraw_slot_schedule( &b->redraw, x0, y0, x1, y1 );
+	redraw_slot_schedule(&b->redraw, x0, y0, x1, y1, false);
 
 	return;
 }

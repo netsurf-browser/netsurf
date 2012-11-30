@@ -150,8 +150,8 @@ void __CDECL global_evnt_keybd(WINDOW * win, short buff[8], void * data)
 			}
 		}
 	}
-	if(!done)
-		deskmenu_dispatch_keypress(evnt.keybd, kstate, nkc);
+	//if(!done)
+	//	deskmenu_dispatch_keypress(evnt.keybd, kstate, nkc);
 }
 
 

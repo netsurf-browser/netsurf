@@ -40,13 +40,14 @@ struct s_redrw_slots
 {
 	struct rect areas[MAX_REDRW_SLOTS];
 	short size;
-	short areas_used;
+	short volatile areas_used;
 };
 
 void redraw_slots_init(struct s_redrw_slots * slots, short size);
 void redraw_slot_schedule(struct s_redrw_slots * slots, short x0, short y0,
-                          short x1, short y1);
-void redraw_slot_schedule_grect(struct s_redrw_slots * slots, GRECT *area);
+                          short x1, short y1, bool force);
+void redraw_slot_schedule_grect(struct s_redrw_slots * slots, GRECT *area,
+                                bool force);
 void redraw_slots_remove_area(struct s_redrw_slots * slots, int i);
 void redraw_slots_free(struct s_redrw_slots * slots);
 
