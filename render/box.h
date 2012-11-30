@@ -265,6 +265,8 @@ struct box {
 
 	/** Iframe's browser_window, or NULL if none */
 	struct browser_window *iframe;
+
+	struct dom_node *node; /**< DOM node that generated this box or NULL */
 };
 
 /** Table column data. */
