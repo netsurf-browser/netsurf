@@ -57,90 +57,6 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
     wind_update(END_UPDATE);
 }
 
-static void preproc_scroll(GUIWIN *gw, short orientation, int units,
-                           bool refresh)
-{
-    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(gw);
-    int oldpos = 0, newpos = 0, vis_units=0, pix = 0;
-    int abs_pix = 0;
-    GRECT *redraw=NULL, g, g_ro;
-
-    guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
-    g_ro = g;
-
-    if (orientation == GUIWIN_VSLIDER) {
-        pix = units*slid->y_unit_px;
-        abs_pix = abs(pix);
-        oldpos = slid->y_pos;
-        vis_units = g.g_h/slid->y_unit_px;
-        newpos = slid->y_pos = MIN(slid->y_units-vis_units,
-                                   MAX(0, slid->y_pos+units));
-        if(oldpos == newpos)
-            return;
-        if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
-            // send complete redraw
-            redraw = &g_ro;
-        } else {
-            // only adjust ypos when scrolling down:
-            if(pix < 0 ) {
-                // blit screen area:
-                g.g_h -= abs_pix;
-                move_rect(gw, &g, 0, abs_pix);
-                g.g_y = g_ro.g_y;
-                g.g_h = abs_pix;
-                redraw = &g;
-            } else {
-                // blit screen area:
-                g.g_y += abs_pix;
-                g.g_h -= abs_pix;
-                move_rect(gw, &g, 0, -abs_pix);
-                g.g_y = g_ro.g_y + g_ro.g_h - abs_pix;
-                g.g_h = abs_pix;
-                redraw = &g;
-            }
-        }
-    } else {
-        pix = units*slid->x_unit_px;
-        abs_pix = abs(pix);
-        oldpos = slid->x_pos;
-        vis_units = g.g_w/slid->x_unit_px;
-        newpos = slid->x_pos = MIN(slid->x_units-vis_units,
-                                   MAX(0, slid->x_pos+units));
-        if(oldpos == newpos)
-            return;
-        if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
-            // send complete redraw
-            redraw = &g_ro;
-        } else {
-            // only adjust ypos when scrolling down:
-            if(pix < 0 ) {
-                // blit screen area:
-                g.g_w -= abs_pix;
-                move_rect(gw, &g, abs_pix, 0);
-                g.g_x = g_ro.g_x;
-                g.g_w = abs_pix;
-                redraw = &g;
-            } else {
-                // blit screen area:
-                g.g_x += abs_pix;
-                g.g_w -= abs_pix;
-                move_rect(gw, &g, -abs_pix, 0);
-                g.g_x = g_ro.g_x + g_ro.g_w - abs_pix;
-                g.g_w = abs_pix;
-                redraw = &g;
-            }
-        }
-    }
-
-    if (refresh) {
-        guiwin_update_slider(gw, orientation);
-    }
-
-    if ((redraw != NULL) && (redraw->g_h > 0)) {
-        guiwin_send_redraw(gw, redraw);
-    }
-}
-
 static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
     GRECT g, g_ro, g2;
@@ -162,7 +78,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             else {
                 val = val-slid->x_pos;
             }
-            preproc_scroll(gw, GUIWIN_HSLIDER, val, false);
+            guiwin_scroll(gw, GUIWIN_HSLIDER, val, false);
         }
         break;
 
@@ -178,7 +94,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             else {
                 val = val -slid->y_pos;
             }
-            preproc_scroll(gw, GUIWIN_VSLIDER, val, false);
+            guiwin_scroll(gw, GUIWIN_VSLIDER, val, false);
         }
         break;
 
@@ -193,47 +109,47 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
             case WA_UPPAGE:
                 /* scroll page up */
-                preproc_scroll(gw, GUIWIN_VSLIDER, -(g.g_h/slid->y_unit_px),
+                guiwin_scroll(gw, GUIWIN_VSLIDER, -(g.g_h/slid->y_unit_px),
                                true);
                 break;
 
             case WA_UPLINE:
                 /* scroll line up */
-                preproc_scroll(gw, GUIWIN_VSLIDER, -1, true);
+                guiwin_scroll(gw, GUIWIN_VSLIDER, -1, true);
                 break;
 
             case WA_DNPAGE:
                 /* scroll page down */
-                preproc_scroll(gw, GUIWIN_VSLIDER, g.g_h/slid->y_unit_px,
+                guiwin_scroll(gw, GUIWIN_VSLIDER, g.g_h/slid->y_unit_px,
                                true);
                 break;
 
             case WA_DNLINE:
                 /* scroll line down */
-                preproc_scroll(gw, GUIWIN_VSLIDER, +1, true);
+                guiwin_scroll(gw, GUIWIN_VSLIDER, +1, true);
                 break;
 
             case WA_LFPAGE:
                 /* scroll page left */
-                preproc_scroll(gw, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
+                guiwin_scroll(gw, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
                                true);
                 break;
 
             case WA_LFLINE:
                 /* scroll line left */
-                preproc_scroll(gw, GUIWIN_HSLIDER, -1,
+                guiwin_scroll(gw, GUIWIN_HSLIDER, -1,
                                true);
                 break;
 
             case WA_RTPAGE:
                 /* scroll page right */
-                preproc_scroll(gw, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
+                guiwin_scroll(gw, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
                                true);
                 break;
 
             case WA_RTLINE:
                 /* scroll line right */
-                preproc_scroll(gw, GUIWIN_HSLIDER, 1,
+                guiwin_scroll(gw, GUIWIN_HSLIDER, 1,
                                true);
                 break;
 
@@ -535,6 +451,89 @@ void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
             dest->g_h = 0;
             dest->g_w = 0;
         }
+    }
+}
+
+void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
+{
+    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(gw);
+    int oldpos = 0, newpos = 0, vis_units=0, pix = 0;
+    int abs_pix = 0;
+    GRECT *redraw=NULL, g, g_ro;
+
+    guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+    g_ro = g;
+
+    if (orientation == GUIWIN_VSLIDER) {
+        pix = units*slid->y_unit_px;
+        abs_pix = abs(pix);
+        oldpos = slid->y_pos;
+        vis_units = g.g_h/slid->y_unit_px;
+        newpos = slid->y_pos = MIN(slid->y_units-vis_units,
+                                   MAX(0, slid->y_pos+units));
+        if(oldpos == newpos)
+            return;
+        if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
+            // send complete redraw
+            redraw = &g_ro;
+        } else {
+            // only adjust ypos when scrolling down:
+            if(pix < 0 ) {
+                // blit screen area:
+                g.g_h -= abs_pix;
+                move_rect(gw, &g, 0, abs_pix);
+                g.g_y = g_ro.g_y;
+                g.g_h = abs_pix;
+                redraw = &g;
+            } else {
+                // blit screen area:
+                g.g_y += abs_pix;
+                g.g_h -= abs_pix;
+                move_rect(gw, &g, 0, -abs_pix);
+                g.g_y = g_ro.g_y + g_ro.g_h - abs_pix;
+                g.g_h = abs_pix;
+                redraw = &g;
+            }
+        }
+    } else {
+        pix = units*slid->x_unit_px;
+        abs_pix = abs(pix);
+        oldpos = slid->x_pos;
+        vis_units = g.g_w/slid->x_unit_px;
+        newpos = slid->x_pos = MIN(slid->x_units-vis_units,
+                                   MAX(0, slid->x_pos+units));
+        if(oldpos == newpos)
+            return;
+        if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
+            // send complete redraw
+            redraw = &g_ro;
+        } else {
+            // only adjust ypos when scrolling down:
+            if(pix < 0 ) {
+                // blit screen area:
+                g.g_w -= abs_pix;
+                move_rect(gw, &g, abs_pix, 0);
+                g.g_x = g_ro.g_x;
+                g.g_w = abs_pix;
+                redraw = &g;
+            } else {
+                // blit screen area:
+                g.g_x += abs_pix;
+                g.g_w -= abs_pix;
+                move_rect(gw, &g, -abs_pix, 0);
+                g.g_x = g_ro.g_x + g_ro.g_w - abs_pix;
+                g.g_w = abs_pix;
+                redraw = &g;
+            }
+        }
+    }
+
+    if (refresh) {
+        guiwin_update_slider(gw, orientation);
+    }
+
+    if ((redraw != NULL) && (redraw->g_h > 0)) {
+        guiwin_send_redraw(gw, redraw);
     }
 }
 

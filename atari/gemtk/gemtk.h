@@ -111,6 +111,7 @@ void guiwin_set_user_data(GUIWIN *win, void *data);
 void *guiwin_get_user_data(GUIWIN *win);
 struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
 bool guiwin_update_slider(GUIWIN *win, short mode);
+void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
 void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
