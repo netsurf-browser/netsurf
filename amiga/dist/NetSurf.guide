@@ -182,9 +182,8 @@ links clicked within NetSurf.
 Items from the hotlist can be added to the Hotlist menu as follows:
 
 Select Hotlist => Show hotlist...
-Add a folder called Menu.  This must not be placed within any other folder.
 
-Items in this folder node up to a maximum (currently) of 40 items will be added to the Hotlist menu, within the limits of the Intuition menu system.
+Items in the "Hotlist menu" folder node, up to a maximum (currently) of 40 items, will be added to the Hotlist menu, within the limits of the Intuition menu system.
 
 Items in folders within the Menu folder node will be converted to subitems in the menu.
 
