@@ -96,7 +96,6 @@ extern EVMULT_OUT aes_event_out;
 
 static OBJECT * aes_toolbar = NULL;
 static OBJECT * throbber_form = NULL;
-static bool img_toolbar = false;
 static char * toolbar_image_folder = (char *)"default";
 static uint32_t toolbar_bg_color = 0xFFFFFF;
 static hlcache_handle * toolbar_image;
@@ -224,28 +223,6 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
     return;
 }
 
-/**
- * Callback for load_icon(). Should be removed once bitmaps get loaded directly
- * from disc
- */
-static nserror toolbar_icon_callback(hlcache_handle *handle,
-		const hlcache_event *event, void *pw)
-{
-	if( event->type == CONTENT_MSG_READY ){
-		if( handle == toolbar_image ){
-			toolbar_image_ready = true;
-			if(input_window != NULL )
-				toolbar_update_buttons(input_window->root->toolbar,
-                           input_window->browser->bw, 0);
-		}
-		else if(handle == throbber_image ){
-			throbber_image_ready = true;
-		}
-	}
-
-	return NSERROR_OK;
-}
-
 static struct s_tb_button *button_init(struct s_toolbar *tb, OBJECT * tree, int index,
 							struct s_tb_button * instance)
 {
@@ -265,35 +242,8 @@ void toolbar_init( void )
 	short vdicolor[3];
 	uint32_t rgbcolor;
 
-	toolbar_image_folder = nsoption_charp(atari_image_toolbar_folder);
-	toolbar_bg_color = (nsoption_colour(atari_toolbar_bg));
-	img_toolbar = (nsoption_int(atari_image_toolbar) > 0 ) ? true : false;
-	if( img_toolbar ){
-
-        char imgfile[PATH_MAX];
-        const char * imgfiletmpl = "toolbar/%s/%s";
-
-        while( tb_buttons[i].rsc_id != 0){
-			tb_buttons[i].index = i;
-			i++;
-		}
-		snprintf( imgfile, PATH_MAX-1, imgfiletmpl, toolbar_image_folder,
-				"main.png" );
-		toolbar_image = load_icon( imgfile,
-									toolbar_icon_callback, NULL );
-		snprintf( imgfile, PATH_MAX-1, imgfiletmpl, toolbar_image_folder,
-				"throbber.png" );
-		throbber_image = load_icon( imgfile,
-									toolbar_icon_callback, NULL );
-
-	} else {
-	    aes_toolbar = get_tree(TOOLBAR);
-        throbber_form = get_tree(THROBBER);
-	}
-    n = (sizeof( toolbar_styles ) / sizeof( struct s_toolbar_style ));
-    for (i=0; i<n; i++) {
-		toolbar_styles[i].icon_bgcolor = ABGR_TO_RGB(toolbar_bg_color);
-    }
+    aes_toolbar = get_tree(TOOLBAR);
+    throbber_form = get_tree(THROBBER);
 }
 
 
@@ -347,14 +297,8 @@ struct s_toolbar *toolbar_create(struct s_gui_win_root *owner)
 	t->throbber.area.g_h = toolbar_styles[t->style].height;
 	t->throbber.area.g_w = toolbar_styles[t->style].icon_width + \
 		(2*toolbar_styles[t->style].button_vmargin );
-	if( img_toolbar == true ){
-		t->throbber.index = 0;
-		t->throbber.max_index = 8;
-	} else {
-	    t->throbber.running = false;
-		t->throbber.index = THROBBER_INACTIVE_INDEX;
-		t->throbber.max_index = THROBBER_MAX_INDEX;
-	}
+	t->throbber.index = THROBBER_INACTIVE_INDEX;
+	t->throbber.max_index = THROBBER_MAX_INDEX;
 	t->throbber.running = false;
 
 	LOG(("created toolbar: %p, root: %p, textarea: %p, throbber: %p", t,
