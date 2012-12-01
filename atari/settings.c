@@ -392,7 +392,7 @@ static char * toolbar_iconset_popup( int x, int y )
 
 	/* Get current set (for pre-selection): */
 	memset( avail, 0, MAX_SETS );
-	current = nsoption_charp(atari_image_toolbar_folder);
+	current = "";
 
 	/* locate the toolbar folder: */
 	atari_find_resource( toolbar_folder, fullpath, fullpath );
@@ -846,14 +846,6 @@ static void display_settings( void )
 	snprintf( spare, 255, "%3d", nsoption_int(font_size) );
 	set_text( CHOICES_EDIT_DEF_FONT_SIZE, spare , 3 );
 
-	set_text(CHOICES_BT_TOOLBAR_ICONSET,
-	         nsoption_charp(atari_image_toolbar_folder), LABEL_ICONSET_MAX_LEN);
-
-	tmp_option_atari_toolbar_bg = nsoption_int(atari_toolbar_bg);
-	snprintf( spare, 255, "%06x", tmp_option_atari_toolbar_bg);
-	set_text(CHOICES_INPUT_TOOLBAR_BGCOLOR, spare,
-			INPUT_TOOLBAR_COLOR_MAX_LEN );
-
 	/* Only first tab is refreshed: */
 	ObjcDraw( OC_FORM, dlgwin, CHOICES_TAB_BROWSER, 4 );
 
@@ -892,10 +884,6 @@ static void apply_settings( void )
 	/* "Style" tab: */
 	nsoption_set_int(font_min_size, tmp_option_font_min_size);
 	nsoption_set_int(font_size, tmp_option_font_size);
-	nsoption_set_colour(atari_toolbar_bg, tmp_option_atari_toolbar_bg);
-	nsoption_set_charp(atari_image_toolbar_folder,
-						ObjcString( dlgtree, CHOICES_BT_TOOLBAR_ICONSET, NULL)
-					);
 
 	/* "Rendering" tab: */
 	nsoption_set_charp(atari_font_driver,
