@@ -1601,16 +1601,6 @@ void ami_handle_msg(void)
 							browser_window_go(gwin->bw,(char *)storage, NULL, true);
 						break;
 
-						case GID_HOTLIST:
-							GetAttr(SPEEDBAR_SelectedNode,
-									(Object *)gwin->objects[GID_HOTLIST],
-									(ULONG *)&tabnode);
-							printf("%lx   %d\n", tabnode, code);
-							GetSpeedButtonNodeAttrs(tabnode, SBNA_UserData, (ULONG *)&url, TAG_DONE);
-							printf("%s\n", url);
-							browser_window_go(gwin->bw, url, NULL, true);
-						break;
-						
 						case GID_HOME:
 							browser_window_go(gwin->bw,nsoption_charp(homepage_url),NULL,true);	
 						break;
@@ -1644,6 +1634,7 @@ void ami_handle_msg(void)
 							ami_gui_history(gwin, false);
 						break;
 
+						case GID_HOTLIST:
 						default:
 //							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
 						break;
@@ -2506,6 +2497,7 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				SpeedBarObject,
 					GA_ID, GID_HOTLIST,
 					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
 					SPEEDBAR_BevelStyle, BVS_NONE,
 					SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,
 				SpeedBarEnd;
@@ -4283,6 +4275,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	struct gui_window_2 *gwin = hook->h_Data;
 	struct IntuiWheelData *wheel;
 	Object *reqrefresh = NULL;
+	struct Node *node = NULL;
+	char *url;
 
 	switch(msg->Class)
 	{
@@ -4299,6 +4293,13 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 					gwin->redraw_required = true;
  				break;
+				
+				case GID_HOTLIST:
+					if(node = GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
+						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
+						browser_window_go(gwin->bw, url, NULL, true);
+					}
+				break;
 			} 
 		break;
 
