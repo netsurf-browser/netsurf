@@ -2563,8 +2563,6 @@ void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
 
 	gwin->redraw_required = true;
 	gwin->bw->reformat_pending = true;
-	
-	ami_gui_hotlist_toolbar_free(gwin, &gwin->hotlist_toolbar_list);
 }
 
 void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
