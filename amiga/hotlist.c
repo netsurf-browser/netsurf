@@ -45,12 +45,12 @@ void ami_hotlist_add_default_dirs(struct tree *tree)
 {
 	if(ami_hotlist_find_dir(tree, messages_get("HotlistMenu")) == false) {
 		tree_create_folder_node(tree, tree_get_root(tree),
-			messages_get("HotlistMenu"), true, false, false);
+			messages_get("HotlistMenu"), true, true, false);
 	}
 
 	if(ami_hotlist_find_dir(tree, messages_get("HotlistToolbar")) == false) {
 		tree_create_folder_node(tree, tree_get_root(tree),
-			messages_get("HotlistToolbar"), true, false, false);
+			messages_get("HotlistToolbar"), true, true, false);
 	}
 }
 
