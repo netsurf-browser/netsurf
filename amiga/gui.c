@@ -2517,6 +2517,11 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 
 		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 				gwin->win, NULL, TRUE);
+		
+		if(gwin->win) {
+			gwin->redraw_required = true;
+			gwin->bw->reformat_pending = true;
+		}
 	}
 }
 
@@ -4295,7 +4300,7 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
  				break;
 				
 				case GID_HOTLIST:
-					if(node = GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
+					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
 						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
 						browser_window_go(gwin->bw, url, NULL, true);
 					}
