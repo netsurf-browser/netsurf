@@ -152,11 +152,9 @@ struct s_menu_item_evnt menu_evnt_tbl[] =
 */
 static void register_menu_str( struct s_menu_item_evnt * mi )
 {
-	OBJECT *gem_menu = deskmenu_get_obj_tree();
+	assert(h_gem_menu != NULL);
 
-	assert(gem_menu != NULL);
-
-	char * str = ObjcString( gem_menu, mi->rid, NULL );
+	char * str = ObjcString(h_gem_menu, mi->rid, NULL );
 	int l = strlen(str);
 	int i = l;
 	int x = -1;
@@ -421,7 +419,7 @@ static void __CDECL menu_debug_render(short item, short title, void *data)
 			browser_get_rect( input_window, BR_CONTENT, &rect );
 			browser_window_reformat(input_window->browser->bw, false,
 									rect.g_w, rect.g_h );
-			menu_icheck(gem_menu, MAINMENU_M_DEBUG_RENDER,
+			menu_icheck(h_gem_menu, MAINMENU_M_DEBUG_RENDER,
 						(html_redraw_debug) ? 1 : 0);
 		}
 	}
@@ -430,14 +428,14 @@ static void __CDECL menu_debug_render(short item, short title, void *data)
 static void __CDECL menu_fg_images(short item, short title, void *data)
 {
 	nsoption_set_bool(foreground_images, !nsoption_bool(foreground_images));
-	menu_icheck(gem_menu, MAINMENU_M_FG_IMAGES,
+	menu_icheck(h_gem_menu, MAINMENU_M_FG_IMAGES,
 				(nsoption_bool(foreground_images)) ? 1 : 0);
 }
 
 static void __CDECL menu_bg_images(short item, short title, void *data)
 {
 	nsoption_set_bool(background_images, !nsoption_bool(background_images));
-	menu_icheck(gem_menu, MAINMENU_M_BG_IMAGES,
+	menu_icheck(h_gem_menu, MAINMENU_M_BG_IMAGES,
 				(nsoption_bool(background_images)) ? 1 : 0);
 }
 
@@ -501,7 +499,7 @@ static void __CDECL menu_vlog(short item, short title, void *data)
 {
 	LOG(("%s", __FUNCTION__));
 	verbose_log = !verbose_log;
-	menu_icheck(gem_menu, MAINMENU_M_VLOG, (verbose_log) ? 1 : 0);
+	menu_icheck(h_gem_menu, MAINMENU_M_VLOG, (verbose_log) ? 1 : 0);
 }
 
 static void __CDECL menu_help_content(short item, short title, void *data)
@@ -652,12 +650,10 @@ int deskmenu_dispatch_keypress(unsigned short kcode, unsigned short kstate,
 */
 void deskmenu_update(void)
 {
-	OBJECT * gem_menu = deskmenu_get_obj_tree();
-
-	menu_icheck(gem_menu, MAINMENU_M_DEBUG_RENDER, (html_redraw_debug) ? 1 : 0);
-	menu_icheck(gem_menu, MAINMENU_M_FG_IMAGES,
+	menu_icheck(h_gem_menu, MAINMENU_M_DEBUG_RENDER, (html_redraw_debug) ? 1 : 0);
+	menu_icheck(h_gem_menu, MAINMENU_M_FG_IMAGES,
 				(nsoption_bool(foreground_images)) ? 1 : 0);
-	menu_icheck(gem_menu, MAINMENU_M_BG_IMAGES,
+	menu_icheck(h_gem_menu, MAINMENU_M_BG_IMAGES,
 				(nsoption_bool(background_images)) ? 1 : 0);
 }
 
