@@ -47,10 +47,11 @@ struct gui_window * find_guiwin_by_aes_handle(short handle);
 bool is_process_running(const char * name);
 void gem_set_cursor( MFORM_EX * cursor );
 hlcache_handle *load_icon( const char *name, hlcache_handle_callback cb,
-						void * pw );
-void dbg_grect( char * str, GRECT * r );
-void dbg_lgrect( char * str, LGRECT * r );
-void dbg_pxy( char * str, short * pxy );
+                           void * pw );
+void dbg_grect(const char * str, GRECT * r);
+void dbg_lgrect( char * str, LGRECT * r);
+void dbg_pxy(const char * str, short * pxy);
+void dbg_rect(const char * str, int * pxy);
 void * ldg_open( char * name, short * global );
 void * ldg_find( char * name, short * ldg );
 const char * file_select( const char * title, const char * name );

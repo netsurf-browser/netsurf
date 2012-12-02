@@ -502,19 +502,19 @@ void dbg_lgrect( char * str, LGRECT * r )
 		r->g_x, r->g_y, r->g_w, r->g_h );
 }
 
-void dbg_grect( char * str, GRECT * r )
+void dbg_grect(const char * str, GRECT * r)
 {
 	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
 		r->g_x, r->g_y, r->g_w, r->g_h );
 }
 
-void dbg_pxy( char * str, short * pxy )
+void dbg_pxy(const char * str, short * pxy )
 {
 	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
 		pxy[0], pxy[1], pxy[2], pxy[3] );
 }
 
-void dbg_rect( char * str, int * pxy )
+void dbg_rect(const char * str, int * pxy)
 {
 	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
 		pxy[0], pxy[1], pxy[2], pxy[3] );

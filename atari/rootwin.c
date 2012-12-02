@@ -61,6 +61,7 @@
 #include "atari/gemtk/gemtk.h"
 
 extern struct gui_window *input_window;
+extern EVMULT_OUT aes_event_out;
 
 struct rootwin_data_s {
     struct s_gui_win_root *rootwin;
@@ -69,20 +70,13 @@ struct rootwin_data_s {
 /* -------------------------------------------------------------------------- */
 /* Static module methods                                                      */
 /* -------------------------------------------------------------------------- */
-static void redraw(ROOTWIN *rootwin, short msg[8]);
-static void resized(ROOTWIN *rootwin);
-static void file_dropped(ROOTWIN *rootwin, short msg[8]);
-static short key_input(ROOTWIN * rootwin, unsigned short kcode,
-                       unsigned short kstate, unsigned short nkc);
-
-static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data);
-static void __CDECL evnt_window_arrowed( WINDOW *win, short buff[8], void *data );
-
-#define FIND_NS_GUI_WINDOW(w) \
-			find_guiwin_by_aes_handle(guiwin_get_handle(w));
+static void on_redraw(ROOTWIN *rootwin, short msg[8]);
+static void on_resized(ROOTWIN *rootwin);
+static void on_file_dropped(ROOTWIN *rootwin, short msg[8]);
+static short on_window_key_input(ROOTWIN * rootwin, unsigned short nkc);
+static bool on_content_mouse_click(ROOTWIN *rootwin);
 
 static bool redraw_active = false;
-
 
 static const struct redraw_context rootwin_rdrw_ctx = {
     .interactive = true,
@@ -100,24 +94,23 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     short retval = 0;
     struct rootwin_data_s * data = guiwin_get_user_data(win);
 
-    if( (ev_out->emo_events & MU_MESAG) != 0 ) {
+    if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
         printf("root win msg: %d\n", msg[0]);
         switch (msg[0]) {
 
         case WM_REDRAW:
-            redraw(data->rootwin, msg);
+            on_redraw(data->rootwin, msg);
             break;
 
         case WM_REPOSED:
         case WM_SIZED:
         case WM_MOVED:
         case WM_FULLED:
-            resized(data->rootwin);
+            on_resized(data->rootwin);
             break;
 
         case WM_ICONIFY:
-
             if( input_window->root == data->rootwin) {
                 input_window = NULL;
             }
@@ -139,12 +132,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             break;
 
         case AP_DRAGDROP:
-            file_dropped(data->rootwin, msg);
+            on_file_dropped(data->rootwin, msg);
             break;
 
         case WM_TOOLBAR:
-            printf("toolbar click at %d,%d (obj: %d)!\n", ev_out->emo_mouse.p_x,
-                   ev_out->emo_mouse.p_y, msg[4]);
             toolbar_mouse_input(data->rootwin->toolbar, msg[4]);
             break;
 
@@ -152,24 +143,22 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             break;
         }
     }
-    if( (ev_out->emo_events & MU_KEYBD) != 0 ) {
+    if ((ev_out->emo_events & MU_KEYBD) != 0) {
 
         // handle key
         uint16_t nkc = gem_to_norm( (short)ev_out->emo_kmeta,
                                     (short)ev_out->emo_kreturn);
-        retval = key_input(data->rootwin, ev_out->emo_kreturn,
-                           ev_out->emo_kmeta, nkc);
+        retval = on_window_key_input(data->rootwin, nkc);
 
     }
-    if( (ev_out->emo_events & MU_TIMER) != 0 ) {
-        // handle_timer();
-    }
-    if( (ev_out->emo_events & MU_BUTTON) != 0 ) {
+    if ((ev_out->emo_events & MU_BUTTON) != 0) {
         LOG(("Mouse click at: %d,%d\n", ev_out->emo_mouse.p_x,
              ev_out->emo_mouse.p_y));
-        printf("Mouse click at: %d,%d\n", ev_out->emo_mouse.p_x,
-               ev_out->emo_mouse.p_y);
-        //handle_mbutton(gw, ev_out);
+        GRECT carea;
+        guiwin_get_grect(data->rootwin->win, GUIWIN_AREA_CONTENT, &carea);
+        if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y, carea)) {
+            on_content_mouse_click(data->rootwin);
+        }
     }
 
     return(retval);
@@ -267,7 +256,7 @@ void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
     // find the next active tab:
     while( w != NULL ) {
         if(w->root == rootwin && w != gw) {
-            input_window = w;
+            gui_set_input_gui_window(w);
             break;
         }
         w = w->next;
@@ -378,6 +367,7 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
     slid->x_units = (width/slid->x_unit_px);
     slid->y_units = (height/slid->y_unit_px);
     guiwin_update_slider(rootwin->win, GUIWIN_VH_SLIDER);
+    // TODO: reset slider to 0
 }
 
 /* set focus to an arbitary element */
@@ -595,6 +585,14 @@ void window_process_redraws(ROOTWIN * rootwin)
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &tb_area);
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &content_area);
 
+    short pxy_clip[4];
+
+    pxy_clip[0] = tb_area.g_x;
+    pxy_clip[0] = tb_area.g_y;
+    pxy_clip[0] = pxy_clip[0] + tb_area.g_w + content_area.g_w - 1;
+    pxy_clip[0] = pxy_clip[1] + tb_area.g_h + content_area.g_h - 1;
+    vs_clip(guiwin_get_vdi_handle(rootwin->win), 1, pxy_clip);
+
     while(plot_lock() == false);
 
     wind_get_grect(aes_handle, WF_FIRSTXYWH, &visible_ro);
@@ -631,6 +629,7 @@ void window_process_redraws(ROOTWIN * rootwin)
         }
         wind_get_grect(aes_handle, WF_NEXTXYWH, &visible_ro);
     }
+    vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy_clip);
     rootwin->redraw_slots.areas_used = 0;
     redraw_active = false;
 
@@ -642,114 +641,177 @@ void window_process_redraws(ROOTWIN * rootwin)
 /* Event Handlers:                                                            */
 /* -------------------------------------------------------------------------- */
 
-static void __CDECL evnt_window_arrowed(WINDOW *win, short buff[8], void *data)
+static bool on_content_mouse_click(ROOTWIN *rootwin)
 {
-    bool abs = false;
+    short dummy, mbut, mx, my;
     GRECT cwork;
-    struct gui_window * gw = data;
-    int value = BROWSER_SCROLL_SVAL;
+    browser_mouse_state bmstate = 0;
+    struct gui_window *gw;
+    struct guiwin_scroll_info_s *slid;
 
-    assert( gw != NULL );
-
-    browser_get_rect(gw, BR_CONTENT, &cwork );
-
-    switch( buff[4] ) {
-    case WA_UPPAGE:
-    case WA_DNPAGE:
-        value = cwork.g_h;
-        break;
-
-
-    case WA_LFPAGE:
-    case WA_RTPAGE:
-        value = cwork.g_w;
-        break;
-
-    default:
-        break;
+    gw = window_get_active_gui_window(rootwin);
+    if( input_window != gw ) {
+        input_window = gw;
     }
-    browser_scroll( gw, buff[4], value, abs );
-}
 
+    window_set_focus(gw->root, BROWSER, (void*)gw->browser );
+    guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &cwork);
+
+    /* convert screen coords to component coords: */
+    mx = aes_event_out.emo_mouse.p_x - cwork.g_x;
+    my = aes_event_out.emo_mouse.p_y - cwork.g_y;
+
+    /* Translate GEM key state to netsurf mouse modifier */
+    if ( aes_event_out.emo_kmeta & (K_RSHIFT | K_LSHIFT)) {
+        bmstate |= BROWSER_MOUSE_MOD_1;
+    } else {
+        bmstate &= ~(BROWSER_MOUSE_MOD_1);
+    }
+    if ( (aes_event_out.emo_kmeta & K_CTRL) ) {
+        bmstate |= BROWSER_MOUSE_MOD_2;
+    } else {
+        bmstate &= ~(BROWSER_MOUSE_MOD_2);
+    }
+    if ( (aes_event_out.emo_kmeta & K_ALT) ) {
+        bmstate |= BROWSER_MOUSE_MOD_3;
+    } else {
+        bmstate &= ~(BROWSER_MOUSE_MOD_3);
+    }
+
+    /* convert component coords to scrolled content coords: */
+    slid = guiwin_get_scroll_info(rootwin->win);
+    int sx_origin = (mx + slid->x_pos * slid->x_unit_px);
+    int sy_origin = (my + slid->y_pos * slid->y_unit_px);
+
+    short rel_cur_x, rel_cur_y;
+    short prev_x=sx_origin, prev_y=sy_origin;
+    bool dragmode = false;
+
+    /* Detect left mouse button state and compare with event state: */
+    graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
+    if( (mbut & 1) && (evnt.mbut & 1) ) {
+        /* Mouse still pressed, report drag */
+        rel_cur_x = (rel_cur_x - cwork.g_x) + slid->x_pos * slid->x_unit_px;
+        rel_cur_y = (rel_cur_y - cwork.g_y) + slid->y_pos * slid->y_unit_px;
+        browser_window_mouse_click( gw->browser->bw,
+                                    BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_DRAG_1,
+                                    sx_origin, sy_origin);
+        do {
+            // only consider movements of 5px or more as drag...:
+            if( abs(prev_x-rel_cur_x) > 5 || abs(prev_y-rel_cur_y) > 5 ) {
+                browser_window_mouse_track( gw->browser->bw,
+                                            BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_DRAG_1,
+                                            rel_cur_x, rel_cur_y);
+                prev_x = rel_cur_x;
+                prev_y = rel_cur_y;
+                dragmode = true;
+            } else {
+                if( dragmode == false ) {
+                    browser_window_mouse_track( gw->browser->bw,BROWSER_MOUSE_PRESS_1,
+                                                rel_cur_x, rel_cur_y);
+                }
+            }
+            // we may need to process scrolling:
+            if (rootwin->redraw_slots.areas_used > 0) {
+                window_process_redraws(rootwin);
+            }
+            graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
+            rel_cur_x = (rel_cur_x - cwork.g_x) + slid->x_pos * slid->x_unit_px;
+            rel_cur_y = (rel_cur_y - cwork.g_y) + slid->y_pos * slid->y_unit_px;
+        } while( mbut & 1 );
+        browser_window_mouse_track(gw->browser->bw, 0, rel_cur_x,rel_cur_y);
+    } else {
+        /* Right button pressed? */
+        if( (evnt.mbut & 2 ) ) {
+            context_popup( gw, aes_event_out.emo_mouse.p_x,
+                           aes_event_out.emo_mouse.p_x);
+        } else {
+            browser_window_mouse_click(gw->browser->bw,
+                                       bmstate|BROWSER_MOUSE_PRESS_1,
+                                       sx_origin,sy_origin);
+            browser_window_mouse_click(gw->browser->bw,
+                                       bmstate|BROWSER_MOUSE_CLICK_1,
+                                       sx_origin,sy_origin);
+        }
+    }
+}
 
 /*
 	Report keypress to browser component.
-	The browser component doesn't listen for keyinput by itself.
 	parameter:
-		- gui_window ( compocnent owner ).
 		- unsigned short nkc ( CFLIB normalised key code )
 */
-static bool content_input(struct browser_window *bw, unsigned short nkc)
+static bool on_content_keypress(struct browser_window *bw, unsigned short nkc)
 {
-	bool r = false;
-	unsigned char ascii = (nkc & 0xFF);
-	long ucs4;
-	long ik = nkc_to_input_key( nkc, &ucs4 );
+    bool r = false;
+    unsigned char ascii = (nkc & 0xFF);
+    long ucs4;
+    long ik = nkc_to_input_key( nkc, &ucs4 );
 
-	// pass event to specific control?
+    // pass event to specific control?
 
-	if (ik == 0){
-		if (ascii >= 9) {
+    if (ik == 0) {
+        if (ascii >= 9) {
             r = browser_window_key_press(bw, ucs4);
-		}
-	} else {
-		r = browser_window_key_press(bw, ik);
-		if (r == false){
+        }
+    } else {
+        r = browser_window_key_press(bw, ik);
+        if (r == false) {
 
-			GRECT g;
-			GUIWIN * w = bw->window->root->win;
-			guiwin_get_grect(w, GUIWIN_AREA_CONTENT, &g);
+            GRECT g;
+            GUIWIN * w = bw->window->root->win;
+            guiwin_get_grect(w, GUIWIN_AREA_CONTENT, &g);
 
-			struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(w);
+            struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(w);
 
-			switch( ik ){
-				case KEY_LINE_START:
-					guiwin_scroll(w, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
-									false);
-				break;
+            switch( ik ) {
+            case KEY_LINE_START:
+                guiwin_scroll(w, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
+                              false);
+                break;
 
-				case KEY_LINE_END:
-					guiwin_scroll(w, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
-									false);
-				break;
+            case KEY_LINE_END:
+                guiwin_scroll(w, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
+                              false);
+                break;
 
-				case KEY_PAGE_UP:
-					guiwin_scroll(w, GUIWIN_VSLIDER, (g.g_h/slid->y_unit_px),
-									false);
-				break;
+            case KEY_PAGE_UP:
+                guiwin_scroll(w, GUIWIN_VSLIDER, (g.g_h/slid->y_unit_px),
+                              false);
+                break;
 
-				case KEY_PAGE_DOWN:
-					guiwin_scroll(w, GUIWIN_VSLIDER, (g.g_h/slid->y_unit_px),
-									false);
-				break;
+            case KEY_PAGE_DOWN:
+                guiwin_scroll(w, GUIWIN_VSLIDER, (g.g_h/slid->y_unit_px),
+                              false);
+                break;
 
-				case KEY_RIGHT:
-					guiwin_scroll(w, GUIWIN_HSLIDER, -1, false);
-				break;
+            case KEY_RIGHT:
+                guiwin_scroll(w, GUIWIN_HSLIDER, -1, false);
+                break;
 
-				case KEY_LEFT:
-					guiwin_scroll(w, GUIWIN_HSLIDER, 1, false);
-				break;
+            case KEY_LEFT:
+                guiwin_scroll(w, GUIWIN_HSLIDER, 1, false);
+                break;
 
-				case KEY_UP:
-					guiwin_scroll(w, GUIWIN_VSLIDER, -1, false);
-				break;
+            case KEY_UP:
+                guiwin_scroll(w, GUIWIN_VSLIDER, -1, false);
+                break;
 
-				case KEY_DOWN:
-					guiwin_scroll(w, GUIWIN_VSLIDER, 1, false);
-				break;
+            case KEY_DOWN:
+                guiwin_scroll(w, GUIWIN_VSLIDER, 1, false);
+                break;
 
-				default:
-				break;
-			}
-		}
-	}
+            default:
+                break;
+            }
+            guiwin_update_slider(w, GUIWIN_VSLIDER|GUIWIN_HSLIDER);
+        }
+    }
 
-	return( r );
+    return(r);
 }
 
-static short key_input(ROOTWIN *rootwin, unsigned short kcode, unsigned short kstate,
-                       unsigned short nkc)
+static short on_window_key_input(ROOTWIN *rootwin, unsigned short nkc)
 {
     bool done = false;
     struct gui_window * gw = window_get_active_gui_window(rootwin);
@@ -757,9 +819,6 @@ static short key_input(ROOTWIN *rootwin, unsigned short kcode, unsigned short ks
 
     if( gw == NULL )
         return(false);
-
-    if( kstate & (K_LSHIFT|K_RSHIFT))
-        kstate |= K_LSHIFT|K_RSHIFT;
 
     if(window_url_widget_has_focus((void*)gw->root)) {
         /* make sure we report for the root window and report...: */
@@ -771,7 +830,7 @@ static short key_input(ROOTWIN *rootwin, unsigned short kcode, unsigned short ks
             /* todo: only handle when input_window == ontop */
             if( window_widget_has_focus(input_window->root, BROWSER,
                                         (void*)gw_tmp->browser)) {
-                done = content_input(gw_tmp->browser->bw, nkc);
+                done = on_content_keypress(gw_tmp->browser->bw, nkc);
                 break;
             } else {
                 gw_tmp = gw_tmp->next;
@@ -782,39 +841,7 @@ static short key_input(ROOTWIN *rootwin, unsigned short kcode, unsigned short ks
 }
 
 
-static void __CDECL evnt_window_destroy( WINDOW *win, short buff[8], void *data )
-{
-    LOG(("%s\n", __FUNCTION__ ));
-}
-
-
-static void __CDECL evnt_window_slider( WINDOW * win, short buff[8], void * data)
-{
-    int dx = buff[4];
-    int dy = buff[5];
-    struct gui_window * gw = data;
-
-    if (!dx && !dy) return;
-
-    if( input_window == NULL || input_window != gw ) {
-        return;
-    }
-
-    /* 	update the sliders _before_ we call redraw
-    	(which might depend on the slider possitions) */
-    WindSlider( win, (dx?HSLIDER:0) | (dy?VSLIDER:0) );
-
-    if( dy > 0 )
-        browser_scroll( gw, WA_DNPAGE, abs(dy), false );
-    else if ( dy < 0)
-        browser_scroll( gw, WA_UPPAGE, abs(dy), false );
-    if( dx > 0 )
-        browser_scroll( gw, WA_RTPAGE, abs(dx), false );
-    else if( dx < 0 )
-        browser_scroll( gw, WA_LFPAGE, abs(dx), false );
-}
-
-static void redraw(ROOTWIN *rootwin, short msg[8])
+static void on_redraw(ROOTWIN *rootwin, short msg[8])
 {
     short handle;
 
@@ -828,7 +855,7 @@ static void redraw(ROOTWIN *rootwin, short msg[8])
     }
 }
 
-static void resized(ROOTWIN *rootwin)
+static void on_resized(ROOTWIN *rootwin)
 {
     GRECT g;
     short handle;
@@ -864,7 +891,7 @@ static void resized(ROOTWIN *rootwin)
     toolbar_set_dimensions(rootwin->toolbar, &g);
 }
 
-static void __CDECL file_dropped(ROOTWIN *rootwin, short msg[8])
+static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
 {
     char file[DD_NAMEMAX];
     char name[DD_NAMEMAX];

@@ -181,7 +181,7 @@ void gui_poll(bool active)
 		}
 	} while ( gui_poll_repeat && !(active||rendering));
 
-    if(input_window->root->redraw_slots.areas_used > 0){
+    if(input_window && input_window->root->redraw_slots.areas_used > 0){
         window_process_redraws(input_window->root);
     }
 }
@@ -213,7 +213,7 @@ gui_create_browser_window(struct browser_window *bw,
         window_set_active_gui_window(gw->root, gw);
         window_open(gw->root, pos );
         /* Recalculate windows browser area now */
-        input_window = gw;
+        gui_set_input_gui_window(gw);
         /* TODO:... this line: placeholder to create a local history widget ... */
     }
 
@@ -243,7 +243,9 @@ void gui_window_destroy(struct gui_window *w)
 
     LOG(("%s\n", __FUNCTION__ ));
 
-    input_window = NULL;
+	if (input_window == w) {
+		gui_set_input_gui_window(NULL);
+    }
 
     search_destroy(w);
     browser_destroy(w->browser);
@@ -270,7 +272,7 @@ void gui_window_destroy(struct gui_window *w)
         w = window_list;
         while( w != NULL ) {
             if(w->root) {
-                input_window = w;
+            	gui_set_input_gui_window(w);
                 break;
             }
             w = w->next;
@@ -431,6 +433,9 @@ void gui_window_update_extent(struct gui_window *gw)
                                       content_get_height(gw->browser->bw->current_content)
                                     );
             window_update_back_forward(gw->root);
+            GRECT area;
+            guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &area);
+            window_schedule_redraw_grect(gw->root, &area);
         }
     }
 }
@@ -856,6 +861,12 @@ void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
     LOG(("Trust: %d", bres ));
     urldb_set_cert_permissions(url, bres);
     cb(bres, cbpw);
+}
+
+void gui_set_input_gui_window(struct gui_window *gw)
+{
+	LOG(("Setting input window from: %p to %p\n", input_window, gw));
+	input_window = gw;
 }
 
 void gui_quit(void)

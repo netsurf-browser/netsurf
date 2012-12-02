@@ -131,4 +131,9 @@ struct gui_window {
 
 extern struct gui_window *window_list;
 
+/* -------------------------------------------------------------------------- */
+/* Public - non standard gui window functions                                 */
+/* -------------------------------------------------------------------------- */
+void gui_set_input_gui_window(struct gui_window *gw);
+
 #endif
