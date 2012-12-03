@@ -54,7 +54,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 	return true;
 }
 
-bool js_fire_event(jscontext *ctx, const char *type, void *target)
+bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target)
 {
 	return true;
 }
