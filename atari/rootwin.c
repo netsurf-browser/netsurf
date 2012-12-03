@@ -160,6 +160,10 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             on_content_mouse_click(data->rootwin);
         }
     }
+    if ((ev_out->emo_events & (MU_M1 | MU_MX)) != 0) {
+		printf("mx event at %d,%d\n", ev_out->emo_mouse.p_x,
+             ev_out->emo_mouse.p_y);
+    }
 
     return(retval);
 }
@@ -358,6 +362,37 @@ void window_set_title(struct s_gui_win_root * rootwin, char *title)
     wind_set_str(guiwin_get_handle(rootwin->win), WF_NAME, title);
 }
 
+void window_scroll_by(ROOTWIN *root, int sx, int sy)
+{
+	int units;
+	GRECT content_area;
+	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(root->win);
+
+	if (sx != 0) {
+		units = sx / slid->x_unit_px;
+		if (units == 0) {
+			units = 1;
+			if(units < 0)
+				units = -units;
+		}
+		guiwin_scroll(root->win, GUIWIN_HSLIDER, units, true);
+    }
+
+	guiwin_get_grect(root->win, GUIWIN_AREA_CONTENT, &content_area);
+    if (sy != 0) {
+        units = sy / slid->y_unit_px;
+        if( sx < 0 ) {
+        //	units = -units;
+        }
+        if(units == 0){
+			units = 1;
+			if(units < 0)
+				units = -units;
+        }
+		guiwin_scroll(root->win, GUIWIN_VSLIDER, units, true);
+    }
+}
+
 void window_set_content_size(ROOTWIN *rootwin, int width, int height)
 {
     GRECT area;
@@ -454,6 +489,16 @@ void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw)
 
 struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin) {
     return(rootwin->active_gui_window);
+}
+
+void window_get_scroll(ROOTWIN *rootwin, int *x, int *y)
+{
+	struct guiwin_scroll_info_s *slid;
+
+	slid = guiwin_get_scroll_info(rootwin->win);
+
+	*x = slid->x_pos * slid->x_unit_px;
+	*y = slid->y_pos * slid->y_unit_px;
 }
 
 
@@ -689,7 +734,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
 
     /* Detect left mouse button state and compare with event state: */
     graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
-    if( (mbut & 1) && (evnt.mbut & 1) ) {
+    if( (mbut & 1) && (aes_event_out.emo_mbutton & 1) ) {
         /* Mouse still pressed, report drag */
         rel_cur_x = (rel_cur_x - cwork.g_x) + slid->x_pos * slid->x_unit_px;
         rel_cur_y = (rel_cur_y - cwork.g_y) + slid->y_pos * slid->y_unit_px;
@@ -711,10 +756,14 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
                                                 rel_cur_x, rel_cur_y);
                 }
             }
+
             // we may need to process scrolling:
-            if (rootwin->redraw_slots.areas_used > 0) {
-                window_process_redraws(rootwin);
-            }
+            // TODO: this doesn't work, because gemtk schedules redraw via
+            // AES window messages but we do not process them right here...
+			if (rootwin->redraw_slots.areas_used > 0) {
+				window_process_redraws(rootwin);
+			}
+
             graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
             rel_cur_x = (rel_cur_x - cwork.g_x) + slid->x_pos * slid->x_unit_px;
             rel_cur_y = (rel_cur_y - cwork.g_y) + slid->y_pos * slid->y_unit_px;
@@ -722,7 +771,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
         browser_window_mouse_track(gw->browser->bw, 0, rel_cur_x,rel_cur_y);
     } else {
         /* Right button pressed? */
-        if( (evnt.mbut & 2 ) ) {
+        if ((aes_event_out.emo_mbutton & 2 ) ) {
             context_popup( gw, aes_event_out.emo_mouse.p_x,
                            aes_event_out.emo_mouse.p_x);
         } else {
@@ -734,6 +783,9 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
                                        sx_origin,sy_origin);
         }
     }
+    if (rootwin->redraw_slots.areas_used > 0) {
+		window_process_redraws(rootwin);
+	}
 }
 
 /*

@@ -116,9 +116,11 @@ EVMULT_IN aes_event_in = {
 EVMULT_OUT aes_event_out;
 short aes_msg_out[8];
 
+
+
 void gui_poll(bool active)
 {
-    int flags = MU_MESAG | MU_KEYBD | MU_BUTTON;
+    int flags = MU_MESAG | MU_KEYBD | MU_BUTTON | MU_M1 | MU_MX;
     short mx, my, dummy;
 	unsigned short nkc = 0;
 
@@ -172,12 +174,17 @@ void gui_poll(bool active)
 				}
 			}
 
-			if( (aes_event_out.emo_events & MU_KEYBD) != 0 ) {
+			if((aes_event_out.emo_events & MU_KEYBD) != 0) {
 				uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
 									(short)aes_event_out.emo_kreturn);
 				deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
 											aes_event_out.emo_kmeta, nkc);
 			}
+/*
+			if((aes_event_out.emo_events & MU_KEYBD|MU_MX) != 0) {
+				on_m1();
+			}
+*/
 		}
 	} while ( gui_poll_repeat && !(active||rendering));
 
@@ -376,34 +383,24 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
 {
+	int x,y;
     if (w == NULL)
         return false;
-    *sx = w->browser->scroll.current.x;
-    *sy = w->browser->scroll.current.y;
+
+	window_get_scroll(w->root, &x, &y);
     return( true );
 }
 
 void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 {
-    if ((w == NULL) ||
-            (w->browser->bw == NULL) ||
-            (w->browser->bw->current_content == NULL))
-        return;
-    if( sx != 0 ) {
-        if( sx < 0 ) {
-            browser_scroll(w, WA_LFLINE, abs(sx), true );
-        } else {
-            browser_scroll(w, WA_RTLINE, abs(sx), true );
-        }
-    }
+    int units = 0;
+    if ((w == NULL)
+		|| (w->browser->bw == NULL)
+			|| (w->browser->bw->current_content == NULL))
+				return;
 
-    if( sy != 0 ) {
-        if( sy < 0) {
-            browser_scroll(w, WA_UPLINE, abs(sy), true );
-        } else {
-            browser_scroll(w, WA_DNLINE, abs(sy), true );
-        }
-    }
+	printf("scroll %d, %d\n", sx, sy);
+	window_scroll_by(w->root, sx, sy);
     return;
 
 }
@@ -411,8 +408,9 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int y1)
 {
     LOG(("%s:(%p, %d, %d, %d, %d)", __func__, w, x0, y0, x1, y1));
+    printf("scroll visible\n");
     gui_window_set_scroll(w,x0,y0);
-    browser_schedule_redraw_rect( w, 0, 0, x1-x0,y1-y0);
+    //browser_schedule_redraw_rect( w, 0, 0, x1-x0,y1-y0);
 }
 
 

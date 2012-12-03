@@ -41,37 +41,35 @@
 int window_create(struct gui_window * gw,
 				struct browser_window * bw, unsigned long flags );
 /* Destroys WinDom part of gui_window */
-int window_destroy(struct s_gui_win_root * rootwin);
+int window_destroy(ROOTWIN *rootwin);
 
 /* show the window */
-void window_open(struct s_gui_win_root * rootwin, GRECT pos);
+void window_open(ROOTWIN *rootwin, GRECT pos);
 
-void window_snd_redraw(struct s_gui_win_root * rootwin, short x, short y,
-                       short w, short h );
+void window_snd_redraw(ROOTWIN *rootwin, short x, short y, short w, short h );
 /* Update Shade / Unshade state of the fwd/back buttons*/
 void window_update_back_forward(struct s_gui_win_root * rootwin);
 /* set root browser component: */
-void window_attach_browser(struct s_gui_win_root * rootwin, CMP_BROWSER b);
+void window_attach_browser(ROOTWIN *rootwin, CMP_BROWSER b);
 
 /* set focus element */
-void window_set_focus(struct s_gui_win_root * rootwin,
-                      enum focus_element_type type, void * element );
-/* adjust scroll settings */
-void window_set_scroll_info(struct s_gui_win_root * rootwin, int content_h,
-                            int content_w);
+void window_set_focus(ROOTWIN *rootwin, enum focus_element_type type,
+					void * element );
 /* Shade / Unshade the forward/back bt. of toolbar, depending on history.*/
-bool window_widget_has_focus(struct s_gui_win_root * rootwin,
-                             enum focus_element_type t, void * element);
-bool window_url_widget_has_focus(struct s_gui_win_root * rootwin);
-void window_set_url(struct s_gui_win_root * rootwin, const char * text);
-void window_set_stauts(struct s_gui_win_root * rootwin, char * text);
-void window_set_title(struct s_gui_win_root * rootwin, char * text);
-void window_set_content_size(struct s_gui_win_root * rootwin, int w, int h);
-void window_set_icon(struct s_gui_win_root * rootwin, struct bitmap * bmp );
+bool window_widget_has_focus(ROOTWIN *rootwin, enum focus_element_type t,
+							void * element);
+bool window_url_widget_has_focus(ROOTWIN *rootwin);
+void window_set_url(ROOTWIN *rootwin, const char * text);
+void window_set_stauts(ROOTWIN *rootwin, char * text);
+void window_set_title(ROOTWIN *rootwin, char * text);
+void window_set_content_size(ROOTWIN *rootwin, int w, int h);
+void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp );
 void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
+void window_scroll_by(ROOTWIN *rootwin, int x, int y);
 void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area);
 void window_process_redraws(ROOTWIN * rootwin);
 struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin);
+void window_get_scroll(ROOTWIN *rootwin, int *x, int *y);
 void window_redraw_favicon(struct s_gui_win_root * rootwin, GRECT *clip);
 void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
 bool window_key_input(unsigned short kcode, unsigned short kstate,
