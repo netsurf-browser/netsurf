@@ -6,9 +6,7 @@
 
 function addTextNode()
 {
-var newtext = document.createTextNode(" Some text added dynamically. ");
-var para = document.getElementById("p1");
-para.appendChild(newtext);
+para.appendChild(document.createTextNode(" Some text added dynamically. "));
 }
 
 </script>
@@ -19,10 +17,14 @@ para.appendChild(newtext);
 <p id="p1">First line of paragraph.<br /></p>
 </div><br />
 
-<button onclick="addTextNode();">add another textNode.</button>
+<button id="button1" >add another textNode.</button>
 
 <script>
+var button = document.getElementById("button1");
+var para = document.getElementById("p1");
+
 window.onload = addTextNode;
+button.onclick = addTextNode;
 </script>
 
 </body>

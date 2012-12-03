@@ -153,7 +153,7 @@ bool js_exec(jscontext *ctx, const char *txt, size_t txtlen)
 dom_exception _dom_event_create(dom_document *doc, dom_event **evt);
 #define dom_event_create(d, e) _dom_event_create((dom_document *)(d), (dom_event **) (e))
 
-bool js_fire_event(jscontext *ctx, const char *type, void *target)
+bool js_fire_event(jscontext *ctx, const char *type, dom_document *doc, dom_node *target)
 {
 	JSContext *cx = (JSContext *)ctx;
 	dom_node *node = target;
@@ -165,18 +165,23 @@ bool js_fire_event(jscontext *ctx, const char *type, void *target)
 	dom_event *event;
 	dom_string *type_dom;
 
-	if (node == NULL) {
-		/* deliver to window */
-		if (cx == NULL) {
-			return false;
-		}
+	if (cx == NULL) {
+		return false;
+	}
 
-		exc = dom_string_create((unsigned char*)type, strlen(type), &type_dom);
+	if (node == NULL) {
+		/* deliver manufactured event to window */
+		JSLOG("Dispatching event %s at window", type);
+
+		/* create and initialise and event object */
+		exc = dom_string_create((unsigned char*)type, 
+					strlen(type), 
+					&type_dom);
 		if (exc != DOM_NO_ERR) {
 			return false;
 		}
 
-		exc = dom_event_create(-1, &event);
+		exc = dom_event_create(doc, &event);
 		if (exc != DOM_NO_ERR) {
 			return false;
 		}
@@ -192,6 +197,7 @@ bool js_fire_event(jscontext *ctx, const char *type, void *target)
 			return false;
 		}
 
+		/* dispatch event at the window object */
 		argv[0] = OBJECT_TO_JSVAL(jsevent);
 
 		ret = JS_CallFunctionName(cx, 
@@ -200,7 +206,31 @@ bool js_fire_event(jscontext *ctx, const char *type, void *target)
 					  1, 
 					  argv, 
 					  &rval);
-	} 
+	} else {
+		JSLOG("Dispatching event %s at %p", type, node);
+
+		/* create and initialise and event object */
+		exc = dom_string_create((unsigned char*)type, 
+					strlen(type), 
+					&type_dom);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		exc = dom_event_create(doc, &event);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		exc = dom_event_init(event, type_dom, true, true);
+		dom_string_unref(type_dom);
+		if (exc != DOM_NO_ERR) {
+			return false;
+		}
+
+		dom_event_target_dispatch_event(node, event, &ret);
+
+	}
 
 	if (ret == JS_TRUE) {
 		return true;

@@ -42,6 +42,7 @@
 #include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "render/textinput.h"
+#include "javascript/js.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 
@@ -323,6 +324,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	int padding_left, padding_right, padding_top, padding_bottom;
 	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 	union content_msg_data msg_data;
+	struct dom_node *node = NULL;
 
 	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
@@ -389,7 +391,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 	/* search the box tree for a link, imagemap, form control, or
-	 * box with scrollbars */
+	 * box with scrollbars 
+	 */
 
 	box = html->layout;
 
@@ -397,13 +400,16 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	box_x = box->margin[LEFT];
 	box_y = box->margin[TOP];
 
-	while ((next_box = box_at_point(box, x, y, &box_x, &box_y)) !=
-			NULL) {
+	while ((next_box = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
 		box = next_box;
 
 		if (box->style && css_computed_visibility(box->style) == 
 				CSS_VISIBILITY_HIDDEN)
 			continue;
+
+		if (box->node != NULL) {
+			node = box->node;
+		}
 
 		if (box->object) {
 			if (content_get_type(box->object) == CONTENT_HTML) {
@@ -447,11 +453,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 		pointer = get_pointer_shape(box, false);
 
-		if ((box->scroll_x != NULL || box->scroll_y != NULL) &&
-				   drag_candidate == NULL)
-			drag_candidate = box;
-		
 		if (box->scroll_y != NULL || box->scroll_x != NULL) {
+
+			if (drag_candidate == NULL) {
+				drag_candidate = box;
+			}
+
 			padding_left = box_x +
 					scrollbar_get_offset(box->scroll_x);
 			padding_right = padding_left + box->padding[LEFT] +
@@ -840,6 +847,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 		msg_data.pointer = pointer;
 		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+	}
+
+	/* fire dom click event */
+	if ((mouse & BROWSER_MOUSE_CLICK_1) ||
+	    (mouse & BROWSER_MOUSE_CLICK_2)) {
+		js_fire_event(html->jscontext, "click", html->document, node);
 	}
 
 	/* deferred actions that can cause this browser_window to be destroyed

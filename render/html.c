@@ -336,7 +336,7 @@ void html_finish_conversion(html_content *c)
 	 * object, but with its target set to the Document object (and
 	 * the currentTarget set to the Window object)
 	 */
-	js_fire_event(c->jscontext, "load", NULL);
+	js_fire_event(c->jscontext, "load", c->document, NULL);
 
 	/* convert dom tree to box tree */
 	LOG(("DOM to box (%p)", c));
