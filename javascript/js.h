@@ -51,10 +51,10 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
 /* execute some javascript in a context */
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen);
 
-typedef struct dom_document dom_document;
-typedef struct dom_node dom_node;
+struct dom_document;
+struct dom_node;
 
 /* fire an event at a dom node */
-bool js_fire_event(jscontext *ctx, const char *type, dom_document *doc, dom_node *target);
+bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target);
 
 #endif /* _NETSURF_JAVASCRIPT_JS_H_ */

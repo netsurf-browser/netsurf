@@ -36,6 +36,8 @@ binding htmlelement {
 
     private "dom_element *" node;
     private "struct html_content *" htmlc;
+
+    property unshared type EventHandler;
 }
 
 api finalise %{
@@ -213,4 +215,27 @@ getter childElementCount %{
 			element = NULL;
 		}
 	}
+%}
+
+getter EventHandler %{
+	JSLOG("propname[%d]=\"%s\"", 
+	      tinyid,
+	      jsclass_properties[tinyid].name);
+%}
+
+setter EventHandler %{
+	JSLOG("propname[%d]=\"%s\"", 
+	      tinyid, 
+	      jsclass_properties[tinyid].name);
+
+/* 
+1. Create a dom_event_listener From a handle_event function pointer
+   and a private word In a document context
+
+2. Register for your events on a target (dom nodes are targets)
+   dom_event_target_add_event_listener(node, evt_name, listener,
+   capture_or_not)
+
+ */
+
 %}

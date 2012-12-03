@@ -258,12 +258,16 @@ getter EventHandler %{
 	/* this implementation is unique to the window object as it is
 	 * not a dom node. 
 	 */
-	JSLOG("propname[%d] %s %s", tinyid , jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx, tinyid_jsval)));
+	JSLOG("propname[%d]=\"%s\"", 
+	      tinyid,
+	      jsclass_properties[tinyid].name);
 %}
 
 setter EventHandler %{
 	/* this implementation is unique to the window object as it is
 	 * not a dom node. 
 	 */
-	JSLOG("propname[%d] %s %s", tinyid, jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx,  tinyid_jsval)));
+	JSLOG("propname[%d]=\"%s\"", 
+	      tinyid, 
+	      jsclass_properties[tinyid].name);
 %}
