@@ -23,7 +23,9 @@ preamble %{
 
 #include "utils/config.h"
 #include "utils/log.h"
+#include "utils/corestrings.h"
 
+#include "javascript/js.h"
 #include "javascript/jsapi.h"
 #include "javascript/jsapi/binding.h"
 
@@ -218,24 +220,248 @@ getter childElementCount %{
 %}
 
 getter EventHandler %{
-	JSLOG("propname[%d]=\"%s\"", 
+	JSLOG("propname[%d].name=\"%s\"",
 	      tinyid,
 	      jsclass_properties[tinyid].name);
 %}
 
+
 setter EventHandler %{
-	JSLOG("propname[%d]=\"%s\"", 
-	      tinyid, 
+	dom_string *event_type_dom;
+
+	JSLOG("propname[%d].name=\"%s\"",
+	      tinyid,
 	      jsclass_properties[tinyid].name);
 
-/* 
-1. Create a dom_event_listener From a handle_event function pointer
-   and a private word In a document context
+	switch (tinyid) {
+	case JSAPI_PROP_TINYID_onabort:
+		event_type_dom = corestring_dom_abort;
+		break;
 
-2. Register for your events on a target (dom nodes are targets)
-   dom_event_target_add_event_listener(node, evt_name, listener,
-   capture_or_not)
+	case JSAPI_PROP_TINYID_onblur:
+		event_type_dom = corestring_dom_blur;
+		break;
 
- */
+	case JSAPI_PROP_TINYID_oncancel:
+		event_type_dom = corestring_dom_cancel;
+		break;
 
+	case JSAPI_PROP_TINYID_oncanplay:
+		event_type_dom = corestring_dom_canplay;
+		break;
+
+	case JSAPI_PROP_TINYID_oncanplaythrough:
+		event_type_dom = corestring_dom_canplaythrough;
+		break;
+
+	case JSAPI_PROP_TINYID_onchange:
+		event_type_dom = corestring_dom_change;
+		break;
+
+	case JSAPI_PROP_TINYID_onclick:
+		event_type_dom = corestring_dom_click;
+		break;
+
+	case JSAPI_PROP_TINYID_onclose:
+		event_type_dom = corestring_dom_close;
+		break;
+
+	case JSAPI_PROP_TINYID_oncontextmenu:
+		event_type_dom = corestring_dom_contextmenu;
+		break;
+
+	case JSAPI_PROP_TINYID_oncuechange:
+		event_type_dom = corestring_dom_cuechange;
+		break;
+
+	case JSAPI_PROP_TINYID_ondblclick:
+		event_type_dom = corestring_dom_dblclick;
+		break;
+
+	case JSAPI_PROP_TINYID_ondrag:
+		event_type_dom = corestring_dom_drag;
+		break;
+
+	case JSAPI_PROP_TINYID_ondragend:
+		event_type_dom = corestring_dom_dragend;
+		break;
+
+	case JSAPI_PROP_TINYID_ondragenter:
+		event_type_dom = corestring_dom_dragenter;
+		break;
+
+	case JSAPI_PROP_TINYID_ondragleave:
+		event_type_dom = corestring_dom_dragleave;
+		break;
+
+	case JSAPI_PROP_TINYID_ondragover:
+		event_type_dom = corestring_dom_dragover;
+		break;
+
+	case JSAPI_PROP_TINYID_ondragstart:
+		event_type_dom = corestring_dom_dragstart;
+		break;
+
+	case JSAPI_PROP_TINYID_ondrop:
+		event_type_dom = corestring_dom_drop;
+		break;
+
+	case JSAPI_PROP_TINYID_ondurationchange:
+		event_type_dom = corestring_dom_durationchange;
+		break;
+
+	case JSAPI_PROP_TINYID_onemptied:
+		event_type_dom = corestring_dom_emptied;
+		break;
+
+	case JSAPI_PROP_TINYID_onended:
+		event_type_dom = corestring_dom_ended;
+		break;
+
+	case JSAPI_PROP_TINYID_onerror:
+		event_type_dom = corestring_dom_error;
+		break;
+
+	case JSAPI_PROP_TINYID_onfocus:
+		event_type_dom = corestring_dom_focus;
+		break;
+
+	case JSAPI_PROP_TINYID_oninput:
+		event_type_dom = corestring_dom_input;
+		break;
+
+	case JSAPI_PROP_TINYID_oninvalid:
+		event_type_dom = corestring_dom_invalid;
+		break;
+
+	case JSAPI_PROP_TINYID_onkeydown:
+		event_type_dom = corestring_dom_keydown;
+		break;
+
+	case JSAPI_PROP_TINYID_onkeypress:
+		event_type_dom = corestring_dom_keypress;
+		break;
+
+	case JSAPI_PROP_TINYID_onkeyup:
+		event_type_dom = corestring_dom_keyup;
+		break;
+
+	case JSAPI_PROP_TINYID_onload:
+		event_type_dom = corestring_dom_load;
+		break;
+
+	case JSAPI_PROP_TINYID_onloadeddata:
+		event_type_dom = corestring_dom_loadeddata;
+		break;
+
+	case JSAPI_PROP_TINYID_onloadedmetadata:
+		event_type_dom = corestring_dom_loadedmetadata;
+		break;
+
+	case JSAPI_PROP_TINYID_onloadstart:
+		event_type_dom = corestring_dom_loadstart;
+		break;
+
+	case JSAPI_PROP_TINYID_onmousedown:
+		event_type_dom = corestring_dom_mousedown;
+		break;
+
+	case JSAPI_PROP_TINYID_onmousemove:
+		event_type_dom = corestring_dom_mousemove;
+		break;
+
+	case JSAPI_PROP_TINYID_onmouseout:
+		event_type_dom = corestring_dom_mouseout;
+		break;
+
+	case JSAPI_PROP_TINYID_onmouseover:
+		event_type_dom = corestring_dom_mouseover;
+		break;
+
+	case JSAPI_PROP_TINYID_onmouseup:
+		event_type_dom = corestring_dom_mouseup;
+		break;
+
+	case JSAPI_PROP_TINYID_onmousewheel:
+		event_type_dom = corestring_dom_mousewheel;
+		break;
+
+	case JSAPI_PROP_TINYID_onpause:
+		event_type_dom = corestring_dom_pause;
+		break;
+
+	case JSAPI_PROP_TINYID_onplay:
+		event_type_dom = corestring_dom_play;
+		break;
+
+	case JSAPI_PROP_TINYID_onplaying:
+		event_type_dom = corestring_dom_playing;
+		break;
+
+	case JSAPI_PROP_TINYID_onprogress:
+		event_type_dom = corestring_dom_progress;
+		break;
+
+	case JSAPI_PROP_TINYID_onratechange:
+		event_type_dom = corestring_dom_ratechange;
+		break;
+
+	case JSAPI_PROP_TINYID_onreset:
+		event_type_dom = corestring_dom_reset;
+		break;
+
+	case JSAPI_PROP_TINYID_onscroll:
+		event_type_dom = corestring_dom_scroll;
+		break;
+
+	case JSAPI_PROP_TINYID_onseeked:
+		event_type_dom = corestring_dom_seeked;
+		break;
+
+	case JSAPI_PROP_TINYID_onseeking:
+		event_type_dom = corestring_dom_seeking;
+		break;
+
+	case JSAPI_PROP_TINYID_onselect:
+		event_type_dom = corestring_dom_select;
+		break;
+
+	case JSAPI_PROP_TINYID_onshow:
+		event_type_dom = corestring_dom_show;
+		break;
+
+	case JSAPI_PROP_TINYID_onstalled:
+		event_type_dom = corestring_dom_stalled;
+		break;
+
+	case JSAPI_PROP_TINYID_onsubmit:
+		event_type_dom = corestring_dom_submit;
+		break;
+
+	case JSAPI_PROP_TINYID_onsuspend:
+		event_type_dom = corestring_dom_suspend;
+		break;
+
+	case JSAPI_PROP_TINYID_ontimeupdate:
+		event_type_dom = corestring_dom_timeupdate;
+		break;
+
+	case JSAPI_PROP_TINYID_onvolumechange:
+		event_type_dom = corestring_dom_volumechange;
+		break;
+
+	case JSAPI_PROP_TINYID_onwaiting:
+		event_type_dom = corestring_dom_waiting;
+		break;
+
+	default:
+		JSLOG("called with unknown tinyid");
+		return JS_TRUE;
+	}
+
+	js_dom_event_add_listener((struct jscontext *)cx,
+				  private->htmlc->document,
+				  (dom_node *)private->node,
+				  event_type_dom,
+				  vp);
 %}

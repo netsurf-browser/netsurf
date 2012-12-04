@@ -26,6 +26,10 @@
 typedef struct jscontext jscontext;
 typedef struct jsobject jsobject;
 
+struct dom_document;
+struct dom_node;
+struct dom_string;
+
 /** Initialise javascript interpreter */
 void js_initialise(void);
 
@@ -51,10 +55,16 @@ jsobject *js_newcompartment(jscontext *ctx, void *win_priv, void *doc_priv);
 /* execute some javascript in a context */
 bool js_exec(jscontext *ctx, const char *txt, size_t txtlen);
 
-struct dom_document;
-struct dom_node;
 
 /* fire an event at a dom node */
 bool js_fire_event(jscontext *ctx, const char *type, struct dom_document *doc, struct dom_node *target);
+
+bool
+js_dom_event_add_listener(jscontext *ctx,
+			  struct dom_document *document,
+			  struct dom_node *node,
+			  struct dom_string *event_type_dom,
+			  void *js_funcval);
+
 
 #endif /* _NETSURF_JAVASCRIPT_JS_H_ */
