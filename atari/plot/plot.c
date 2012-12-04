@@ -325,7 +325,7 @@ inline static bool fbrect_to_screen(GRECT box, GRECT * ret)
 inline static void plot_vdi_clip(bool set)
 {
 	// TODO : check this
-	return;
+
 	if( set == true ) {
 		struct rect c;
 		short vdiflags[58];
@@ -340,6 +340,7 @@ inline static void plot_vdi_clip(bool set)
 		newclip[1] = view.y + MAX(c.y0, 0);
 		newclip[2] = MIN(view.x+view.w, newclip[0] + (c.x1 - c.x0) )-1;
 		newclip[3] = MIN(view.y+view.h, newclip[1] + (c.y1 - c.y0) )-1;
+		//dbg_pxy("plot_vdi_clip", newclip);
 		vs_clip(atari_plot_vdi_handle, 1, (short*)&newclip );
 	} else {
 		vs_clip(atari_plot_vdi_handle, 1, (short *)&prev_vdi_clip );
@@ -1825,9 +1826,12 @@ bool plot_line(int x0, int y0, int x1, int y1,
 	pxy[2] = view.x + MAX(0,x1);
 	pxy[3] = view.y + MAX(0,y1);
 
+	if((y0 > view.h-1) && (y1 > view.h-1))
+		return(true);
 
 	//printf("view: %d,%d,%d,%d\n", view.x, view.y, view.w, view.h);
 	//printf("line: %d,%d,%d,%d\n", x0,  y0,  x1,  y1);
+
 
 	plot_vdi_clip(true);
 	if( sw == 0)
