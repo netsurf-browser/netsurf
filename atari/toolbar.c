@@ -218,7 +218,7 @@ static void tb_txt_request_redraw(void *data, int x, int y, int w, int h)
 	area.g_y += y;
 	area.g_w = w;
 	area.g_h = h;
-	dbg_grect("tb_txt_request_redraw", &area);
+	//dbg_grect("tb_txt_request_redraw", &area);
 	window_schedule_redraw_grect(tb->owner, &area);
     return;
 }

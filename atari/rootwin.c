@@ -96,7 +96,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
-        printf("root win msg: %d\n", msg[0]);
+        //printf("root win msg: %d\n", msg[0]);
         switch (msg[0]) {
 
         case WM_REDRAW:
@@ -161,8 +161,8 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         }
     }
     if ((ev_out->emo_events & (MU_M1 | MU_MX)) != 0) {
-		printf("mx event at %d,%d\n", ev_out->emo_mouse.p_x,
-             ev_out->emo_mouse.p_y);
+        printf("mx event at %d,%d\n", ev_out->emo_mouse.p_x,
+               ev_out->emo_mouse.p_y);
     }
 
     return(retval);
@@ -364,33 +364,22 @@ void window_set_title(struct s_gui_win_root * rootwin, char *title)
 
 void window_scroll_by(ROOTWIN *root, int sx, int sy)
 {
-	int units;
-	GRECT content_area;
-	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(root->win);
+    int units;
+    GRECT content_area;
+    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(root->win);
 
-	if (sx != 0) {
-		units = sx / slid->x_unit_px;
-		if (units == 0) {
-			units = 1;
-			if(units < 0)
-				units = -units;
-		}
-		guiwin_scroll(root->win, GUIWIN_HSLIDER, units, true);
+    if(sx < 0) {
+        sx = 0;
     }
+    if(sy<0) {
+        sy = 0;
+    }
+    int xunits = sx / slid->x_unit_px;
+    int yunits = sy / slid->y_unit_px;
 
-	guiwin_get_grect(root->win, GUIWIN_AREA_CONTENT, &content_area);
-    if (sy != 0) {
-        units = sy / slid->y_unit_px;
-        if( sx < 0 ) {
-        //	units = -units;
-        }
-        if(units == 0){
-			units = 1;
-			if(units < 0)
-				units = -units;
-        }
-		guiwin_scroll(root->win, GUIWIN_VSLIDER, units, true);
-    }
+    guiwin_scroll(root->win, GUIWIN_VSLIDER, yunits - slid->y_pos, false);
+    guiwin_scroll(root->win, GUIWIN_HSLIDER, xunits - slid->x_pos, false);
+    guiwin_update_slider(root->win, GUIWIN_VH_SLIDER);
 }
 
 void window_set_content_size(ROOTWIN *rootwin, int width, int height)
@@ -401,6 +390,10 @@ void window_set_content_size(ROOTWIN *rootwin, int width, int height)
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &area);
     slid->x_units = (width/slid->x_unit_px);
     slid->y_units = (height/slid->y_unit_px);
+    if(slid->x_units < slid->x_pos)
+        slid->x_pos = 0;
+    if(slid->y_units < slid->y_pos)
+        slid->y_pos = 0;
     guiwin_update_slider(rootwin->win, GUIWIN_VH_SLIDER);
     // TODO: reset slider to 0
 }
@@ -493,12 +486,12 @@ struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin) {
 
 void window_get_scroll(ROOTWIN *rootwin, int *x, int *y)
 {
-	struct guiwin_scroll_info_s *slid;
+    struct guiwin_scroll_info_s *slid;
 
-	slid = guiwin_get_scroll_info(rootwin->win);
+    slid = guiwin_get_scroll_info(rootwin->win);
 
-	*x = slid->x_pos * slid->x_unit_px;
-	*y = slid->y_pos * slid->y_unit_px;
+    *x = slid->x_pos * slid->x_unit_px;
+    *y = slid->y_pos * slid->y_unit_px;
 }
 
 
@@ -559,7 +552,7 @@ void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area)
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
     rc_intersect(area, &work);
 
-    dbg_grect("window_schedule_redraw_grect intersection ", &work);
+    //dbg_grect("window_schedule_redraw_grect intersection ", &work);
 
     redraw_slot_schedule_grect(&rootwin->redraw_slots, &work, redraw_active);
 }
@@ -603,7 +596,7 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
         content_area_rel.g_y = 0;
     }
 
-    dbg_grect("browser redraw, relative plot coords:", &content_area_rel);
+    //dbg_grect("browser redraw, relative plot coords:", &content_area_rel);
 
     redraw_area.x0 = content_area_rel.g_x;
     redraw_area.y0 = content_area_rel.g_y;
@@ -611,6 +604,8 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
     redraw_area.y1 = content_area_rel.g_y + content_area_rel.g_h;
 
     plot_clip(&redraw_area);
+
+    //dbg_rect("rdrw area", &redraw_area);
 
     browser_window_redraw( bw, -(slid->x_pos*slid->x_unit_px),
                            -(slid->y_pos*slid->y_unit_px), &redraw_area, &rootwin_rdrw_ctx );
@@ -629,6 +624,8 @@ void window_process_redraws(ROOTWIN * rootwin)
 
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &tb_area);
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &content_area);
+
+    //dbg_grect("content area", &content_area);
 
     short pxy_clip[4];
 
@@ -696,7 +693,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
 
     gw = window_get_active_gui_window(rootwin);
     if( input_window != gw ) {
-        input_window = gw;
+        gui_set_input_gui_window(gw);
     }
 
     window_set_focus(gw->root, BROWSER, (void*)gw->browser );
@@ -705,6 +702,7 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     /* convert screen coords to component coords: */
     mx = aes_event_out.emo_mouse.p_x - cwork.g_x;
     my = aes_event_out.emo_mouse.p_y - cwork.g_y;
+    //printf("content click at %d,%d\n", mx, my);
 
     /* Translate GEM key state to netsurf mouse modifier */
     if ( aes_event_out.emo_kmeta & (K_RSHIFT | K_LSHIFT)) {
@@ -725,8 +723,8 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
 
     /* convert component coords to scrolled content coords: */
     slid = guiwin_get_scroll_info(rootwin->win);
-    int sx_origin = (mx + slid->x_pos * slid->x_unit_px);
-    int sy_origin = (my + slid->y_pos * slid->y_unit_px);
+    int sx_origin = mx;
+    int sy_origin = my;
 
     short rel_cur_x, rel_cur_y;
     short prev_x=sx_origin, prev_y=sy_origin;
@@ -736,39 +734,48 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
     if( (mbut & 1) && (aes_event_out.emo_mbutton & 1) ) {
         /* Mouse still pressed, report drag */
-        rel_cur_x = (rel_cur_x - cwork.g_x) + slid->x_pos * slid->x_unit_px;
-        rel_cur_y = (rel_cur_y - cwork.g_y) + slid->y_pos * slid->y_unit_px;
+        rel_cur_x = (rel_cur_x - cwork.g_x);
+        rel_cur_y = (rel_cur_y - cwork.g_y);
         browser_window_mouse_click( gw->browser->bw,
                                     BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_DRAG_1,
-                                    sx_origin, sy_origin);
+                                    rel_cur_x + slid->x_pos * slid->x_unit_px,
+                                    rel_cur_y + slid->y_pos * slid->y_unit_px);
         do {
+            printf("rel click coords: %d,%d\n", rel_cur_x, rel_cur_y);
             // only consider movements of 5px or more as drag...:
             if( abs(prev_x-rel_cur_x) > 5 || abs(prev_y-rel_cur_y) > 5 ) {
                 browser_window_mouse_track( gw->browser->bw,
                                             BROWSER_MOUSE_DRAG_ON|BROWSER_MOUSE_DRAG_1,
-                                            rel_cur_x, rel_cur_y);
+                                            rel_cur_x + slid->x_pos * slid->x_unit_px,
+                                            rel_cur_y + slid->y_pos * slid->y_unit_px);
                 prev_x = rel_cur_x;
                 prev_y = rel_cur_y;
                 dragmode = true;
+                printf("now dragmode is true...\n");
             } else {
                 if( dragmode == false ) {
+                    printf("dragmode = false\n");
                     browser_window_mouse_track( gw->browser->bw,BROWSER_MOUSE_PRESS_1,
-                                                rel_cur_x, rel_cur_y);
+                                                rel_cur_x + slid->x_pos * slid->x_unit_px,
+                                                rel_cur_y + slid->y_pos * slid->y_unit_px);
                 }
             }
 
             // we may need to process scrolling:
             // TODO: this doesn't work, because gemtk schedules redraw via
             // AES window messages but we do not process them right here...
-			if (rootwin->redraw_slots.areas_used > 0) {
-				window_process_redraws(rootwin);
-			}
+            if (rootwin->redraw_slots.areas_used > 0) {
+                window_process_redraws(rootwin);
+            }
+            evnt_timer(150);
 
             graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
-            rel_cur_x = (rel_cur_x - cwork.g_x) + slid->x_pos * slid->x_unit_px;
-            rel_cur_y = (rel_cur_y - cwork.g_y) + slid->y_pos * slid->y_unit_px;
+            rel_cur_x = (rel_cur_x - cwork.g_x);
+            rel_cur_y = (rel_cur_y - cwork.g_y);
         } while( mbut & 1 );
-        browser_window_mouse_track(gw->browser->bw, 0, rel_cur_x,rel_cur_y);
+        browser_window_mouse_track(gw->browser->bw, 0,
+                                   rel_cur_x + slid->x_pos * slid->x_unit_px,
+                                   rel_cur_y + slid->y_pos * slid->y_unit_px);
     } else {
         /* Right button pressed? */
         if ((aes_event_out.emo_mbutton & 2 ) ) {
@@ -777,15 +784,17 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
         } else {
             browser_window_mouse_click(gw->browser->bw,
                                        bmstate|BROWSER_MOUSE_PRESS_1,
-                                       sx_origin,sy_origin);
+                                       sx_origin + slid->x_pos * slid->x_unit_px,
+                                       sy_origin + slid->y_pos * slid->y_unit_px);
             browser_window_mouse_click(gw->browser->bw,
                                        bmstate|BROWSER_MOUSE_CLICK_1,
-                                       sx_origin,sy_origin);
+                                       sx_origin + slid->x_pos * slid->x_unit_px,
+                                       sy_origin + slid->y_pos * slid->y_unit_px);
         }
     }
     if (rootwin->redraw_slots.areas_used > 0) {
-		window_process_redraws(rootwin);
-	}
+        window_process_redraws(rootwin);
+    }
 }
 
 /*

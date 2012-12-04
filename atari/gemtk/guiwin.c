@@ -471,8 +471,12 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
         vis_units = g.g_h/slid->y_unit_px;
         newpos = slid->y_pos = MIN(slid->y_units-vis_units,
                                    MAX(0, slid->y_pos+units));
+		if(newpos < 0){
+			newpos = slid->y_pos = 0;
+		}
         if(oldpos == newpos)
             return;
+
         if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
             // send complete redraw
             redraw = &g_ro;
@@ -502,6 +506,11 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
         vis_units = g.g_w/slid->x_unit_px;
         newpos = slid->x_pos = MIN(slid->x_units-vis_units,
                                    MAX(0, slid->x_pos+units));
+
+		if(newpos < 0){
+			newpos = slid->x_pos = 0;
+		}
+
         if(oldpos == newpos)
             return;
         if (units>=vis_units || guiwin_has_intersection(gw, &g_ro)) {
@@ -635,10 +644,29 @@ struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
     return(&win->scroll_info);
 }
 
+void guiwin_request_redraw(GUIWIN *win, GRECT *area)
+{
+
+}
+
 void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 {
     short msg[8];
     GRECT work;
+
+    EVMULT_IN event_in = {
+		.emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON,
+		.emi_bclicks = 258,
+		.emi_bmask = 3,
+		.emi_bstate = 0,
+		.emi_m1leave = MO_ENTER,
+		.emi_m1 = {0,0,0,0},
+		.emi_m2leave = 0,
+		.emi_m2 = {0,0,0,0},
+		.emi_tlow = 0,
+		.emi_thigh = 0
+	};
+	EVMULT_OUT event_out;
 
     if(area == NULL) {
         guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
@@ -654,7 +682,10 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
     msg[6] = area->g_w;
     msg[7] = area->g_h;
 
-    appl_write(gl_apid, 16, &msg);
+	event_out.emo_events = MU_MESAG;
+    win->handler_func(win, &event_out, msg);
+
+    //appl_write(gl_apid, 16, &msg);
 }
 
 

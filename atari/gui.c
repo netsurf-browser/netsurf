@@ -363,22 +363,36 @@ void gui_window_redraw_window(struct gui_window *gw)
     if (gw == NULL)
         return;
     b = gw->browser;
-    browser_get_rect(gw, BR_CONTENT, &rect);
-    browser_schedule_redraw(gw, 0, 0, rect.g_w, rect.g_h );
+    guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &rect);
+    window_schedule_redraw_grect(gw->root, &rect);
 }
 
 void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
 {
-    CMP_BROWSER b;
+	GRECT area;
+	struct guiwin_scroll_info_s *slid;
+
     if (gw == NULL)
         return;
-    b = gw->browser;
+
+    slid = guiwin_get_scroll_info(gw->root->win);
+
+    guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &area);
+
+	area.g_x += rect->x0 - slid->x_pos * slid->x_unit_px;
+	area.g_y += rect->y0 - slid->y_pos * slid->y_unit_px;
+    area.g_w = rect->x1 - rect->x0;
+    area.g_h = rect->y1 - rect->y0;
+    window_schedule_redraw_grect(gw->root, &area);
+/*
     int x0 = rect->x0 - b->scroll.current.x;
     int y0 = rect->y0 - b->scroll.current.y;
     int w,h;
-    w = rect->x1 - rect->x0;
-    h = rect->y1 - rect->y0;
-    browser_schedule_redraw_rect( gw, x0, y0, w, h );
+    */
+    //w = rect->x1 - rect->x0;
+    //h = rect->y1 - rect->y0;
+
+    //browser_schedule_redraw_rect( gw, x0, y0, w, h );
 }
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
@@ -387,7 +401,8 @@ bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
     if (w == NULL)
         return false;
 
-	window_get_scroll(w->root, &x, &y);
+	window_get_scroll(w->root, sx, sy);
+
     return( true );
 }
 
@@ -399,7 +414,7 @@ void gui_window_set_scroll(struct gui_window *w, int sx, int sy)
 			|| (w->browser->bw->current_content == NULL))
 				return;
 
-	printf("scroll %d, %d\n", sx, sy);
+	//printf("scroll %d, %d\n", sx, sy);
 	window_scroll_by(w->root, sx, sy);
     return;
 
@@ -647,12 +662,11 @@ gui_window_set_search_ico(hlcache_handle *ico)
 
 void gui_window_new_content(struct gui_window *w)
 {
-    w->browser->scroll.current.x = 0;
-    w->browser->scroll.current.y = 0;
-    w->browser->scroll.requested.x = 0;
-    w->browser->scroll.requested.y = 0;
-    w->browser->scroll.required = true;
-    gui_window_redraw_window( w );
+	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(w->root->win);
+	slid->x_pos = 0;
+	slid->y_pos = 0;
+	guiwin_update_slider(w->root->win, GUIWIN_VH_SLIDER);
+    gui_window_redraw_window(w);
 }
 
 bool gui_window_scroll_start(struct gui_window *w)

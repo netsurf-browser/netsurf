@@ -504,8 +504,8 @@ void dbg_lgrect( char * str, LGRECT * r )
 
 void dbg_grect(const char * str, GRECT * r)
 {
-	printf("%s: x: %d, y: %d, w: %d, h: %d\n", str,
-		r->g_x, r->g_y, r->g_w, r->g_h );
+	printf("%s: x: %d, y: %d, w: %d, h: %d (x2: %d, y2: %d)\n", str,
+		r->g_x, r->g_y, r->g_w, r->g_h, r->g_x + r->g_w, r->g_y + r->g_h);
 }
 
 void dbg_pxy(const char * str, short * pxy )
