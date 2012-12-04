@@ -741,7 +741,6 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
                                     rel_cur_x + slid->x_pos * slid->x_unit_px,
                                     rel_cur_y + slid->y_pos * slid->y_unit_px);
         do {
-            printf("rel click coords: %d,%d\n", rel_cur_x, rel_cur_y);
             // only consider movements of 5px or more as drag...:
             if( abs(prev_x-rel_cur_x) > 5 || abs(prev_y-rel_cur_y) > 5 ) {
                 browser_window_mouse_track( gw->browser->bw,
@@ -751,10 +750,8 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
                 prev_x = rel_cur_x;
                 prev_y = rel_cur_y;
                 dragmode = true;
-                printf("now dragmode is true...\n");
             } else {
                 if( dragmode == false ) {
-                    printf("dragmode = false\n");
                     browser_window_mouse_track( gw->browser->bw,BROWSER_MOUSE_PRESS_1,
                                                 rel_cur_x + slid->x_pos * slid->x_unit_px,
                                                 rel_cur_y + slid->y_pos * slid->y_unit_px);
