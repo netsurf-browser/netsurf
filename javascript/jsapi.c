@@ -315,14 +315,14 @@ js_dom_event_add_listener(jscontext *ctx,
 
 	JSLOG("adding %p to listener", private);
 
-	JS_AddValueRoot(cx, &private->funcval);
+	JSAPI_ADD_VALUE_ROOT(cx, &private->funcval);
 	exc = dom_event_target_add_event_listener(private->node,
 						  private->type,
 						  private->listener,
 						  true);
 	if (exc != DOM_NO_ERR) {
 		JSLOG("failed to add listener");
-		JS_RemoveValueRoot(cx, &private->funcval);
+		JSAPI_REMOVE_VALUE_ROOT(cx, &private->funcval);
 	}
 
 	return true;

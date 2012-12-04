@@ -150,6 +150,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
+#define JSAPI_ADD_VALUE_ROOT(cx, obj) JS_AddRoot(cx, obj)
+#define JSAPI_REMOVE_VALUE_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
+
 #elif JS_VERSION == 180
 
 /************************** Spidermonkey 1.8.0 **************************/
@@ -263,6 +266,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
+#define JSAPI_ADD_VALUE_ROOT(cx, obj) JS_AddRoot(cx, obj)
+#define JSAPI_REMOVE_VALUE_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
+
 
 #else /* #if JS_VERSION == 180 */
 
@@ -364,6 +370,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /* Macros for manipulating GC root */
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddObjectRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveObjectRoot(cx, obj)
+
+#define JSAPI_ADD_VALUE_ROOT(cx, val) JS_AddValueRoot(cx, val)
+#define JSAPI_REMOVE_VALUE_ROOT(cx, val) JS_RemoveValueRoot(cx, val)
 
 #endif
 
