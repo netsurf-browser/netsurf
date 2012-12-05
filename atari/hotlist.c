@@ -44,6 +44,8 @@
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 
+extern GRECT desk_area;
+
 struct atari_hotlist hl;
 
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
@@ -115,9 +117,7 @@ void hotlist_init(void)
 		assert( tree );
 		hl.open = false;
 
-		wind_get_grect(0, WF_FULLXYWH, &desk);
-
-		handle = wind_create(flags, 0, 0, desk.g_w, desk.g_h);
+		handle = wind_create(flags, 0, 0, desk_area.g_w, desk_area.g_h);
 		hl.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
 		if( hl.window == NULL ) {
 			LOG(("Failed to allocate Hotlist"));
@@ -158,11 +158,10 @@ void hotlist_open(void)
 	if( hl.open == false ) {
 
 	    GRECT pos;
-	    wind_get_grect(0, WF_FULLXYWH, &pos);
-	    pos.g_x = pos.g_w - pos.g_w / 4;
-	    pos.g_y = pos.g_y;
-	    pos.g_w = pos.g_w / 4;
-	    pos.g_h = pos.g_h;
+	    pos.g_x = desk_area.g_w - desk_area.g_w / 4;
+	    pos.g_y = desk_area.g_y;
+	    pos.g_w = desk_area.g_w / 4;
+	    pos.g_h = desk_area.g_h;
 
 		wind_open_grect(guiwin_get_handle(hl.window), &pos);
 		hl.open = true;

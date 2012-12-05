@@ -39,6 +39,7 @@
 #include "atari/history.h"
 
 extern char * tree_directory_icon_name;
+extern GRECT desk_area;
 
 struct s_atari_global_history gl_history;
 
@@ -51,11 +52,11 @@ void global_history_open( void )
 	if( gl_history.open == false ) {
 
 	    GRECT pos;
-	    wind_get_grect(0, WF_FULLXYWH, &pos);
-	    pos.g_x = pos.g_w - pos.g_w / 4;
-	    pos.g_y = pos.g_y;
-	    pos.g_w = pos.g_w / 4;
-	    pos.g_h = pos.g_h;
+	    wind_get_grect(0, WF_WORKXYWH, &pos);
+	    pos.g_x = desk_area.g_w - desk_area.g_w / 4;
+	    pos.g_y = desk_area.g_y;
+	    pos.g_w = desk_area.g_w / 4;
+	    pos.g_h = desk_area.g_h;
 
 		wind_open(guiwin_get_handle(gl_history.window), pos.g_x, pos.g_y,
             pos.g_w, pos.g_h);
@@ -103,10 +104,8 @@ bool global_history_init( void )
         GRECT desk;
         int flags = ATARI_TREEVIEW_WIDGETS;
 
-        wind_get_grect(0, WF_FULLXYWH, &desk);
-
         gl_history.open = false;
-        handle = wind_create(flags, 40, 40, desk.g_w, desk.g_h);
+        handle = wind_create(flags, 40, 40, desk_area.g_w, desk_area.g_h);
         gl_history.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
         if( gl_history.window == NULL ) {
 			LOG(("Failed to allocate history window"));
