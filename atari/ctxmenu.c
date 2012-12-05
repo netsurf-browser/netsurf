@@ -75,7 +75,7 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	h = bw->current_content;
 	ctxinfo.flags = 0;
 
-	browser_get_rect( gw, BR_CONTENT, &bwrect );
+	guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &bwrect);
 	mx -= bwrect.g_x;
 	my -= bwrect.g_y;
 	if( (mx < 0 || mx > bwrect.g_w) || (my < 0 || my > bwrect.g_h) ){
@@ -109,7 +109,7 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	return( &ctxinfo );
 }
 
-void context_popup( struct gui_window * gw, short x, short y )
+void context_popup(struct gui_window * gw, short x, short y)
 {
 
 #define POP_FIRST_ITEM POP_CTX_CUT_SEL
