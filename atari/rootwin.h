@@ -28,10 +28,15 @@
 #define WIDGET_TOOLBAR    	0x2
 #define WIDGET_SCROLL	  	0x4
 #define WIDGET_RESIZE	  	0x8
-
 #define WIN_TOP				0x100
 
-/* WinDom & Custom bindings for gui window */
+enum browser_area_e {
+	BROWSER_AREA_CONTENT = 1,
+	BROWSER_AREA_STATUSBAR,
+	BROWSER_AREA_TOOLBAR,
+	BROWSER_AREA_URL_INPUT
+};
+
 
 /* -------------------------------------------------------------------------- */
 /* Public module functions:                                                   */
@@ -70,6 +75,7 @@ void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area);
 void window_process_redraws(ROOTWIN * rootwin);
 struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin);
 void window_get_scroll(ROOTWIN *rootwin, int *x, int *y);
+void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d);
 void window_redraw_favicon(struct s_gui_win_root * rootwin, GRECT *clip);
 void window_unref_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
 bool window_key_input(unsigned short kcode, unsigned short kstate,

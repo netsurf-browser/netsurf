@@ -87,6 +87,7 @@ void * h_gem_rsrc;
 long next_poll;
 bool rendering = false;
 bool gui_poll_repeat = false;
+GRECT desk_area;
 
 
 /* Comandline / Options: */
@@ -102,7 +103,7 @@ const char * option_homepage_url;
 char options[PATH_MAX];
 
 EVMULT_IN aes_event_in = {
-    .emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON,
+    .emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON | MU_M1,
     .emi_bclicks = 258,
     .emi_bmask = 3,
     .emi_bstate = 0,
@@ -120,7 +121,7 @@ short aes_msg_out[8];
 
 void gui_poll(bool active)
 {
-    int flags = MU_MESAG | MU_KEYBD | MU_BUTTON | MU_M1 | MU_MX;
+
     short mx, my, dummy;
 	unsigned short nkc = 0;
 
@@ -131,25 +132,17 @@ void gui_poll(bool active)
 	if(active || rendering)
 		aes_event_in.emi_tlow = 0;
 
+	if(aes_event_in.emi_tlow < 0){
+		aes_event_in.emi_tlow = 10000;
+		printf("long poll!\n");
+	}
+
     struct gui_window * g;
 
-    if(input_window->root->redraw_slots.areas_used > 0){
-        window_process_redraws(input_window->root);
-    }
-
-//    for( g = window_list; g != NULL; g=g->next ) {
-//        if( browser_redraw_required( g ) ) {
-//            browser_redraw(g);
-//        }
-//        if(g->root->toolbar) {
-//            //if(g->root->toolbar->url.redraw ) {
-//                // TODO: implement toolbar redraw mechanism
-//                //tb_url_redraw( g );
-//            //}
-//        }
-//    }
-
     if( !active ) {
+		if(input_window->root->redraw_slots.areas_used > 0){
+			window_process_redraws(input_window->root);
+		}
         /* this suits for stuff with lower priority */
         /* TBD: really be spare on redraws??? */
         hotlist_redraw();
@@ -158,39 +151,43 @@ void gui_poll(bool active)
 
 	// Handle events until there are no more messages pending or
 	// until the engine indicates activity:
-	do {
-		evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
-		if(!guiwin_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
-			if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
-				LOG(("WM: %d\n", aes_msg_out[0]));
-				switch(aes_msg_out[0]) {
+	if(!(active || rendering) || (clock() >= next_poll)){
+		do {
+			short mx, my, dummy;
 
-				case MN_SELECTED:
-					LOG(("Menu Item: %d\n",aes_msg_out[4]));
-					deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
-					break;
-				default:
-					break;
+			graf_mkstate(&mx, &my, &dummy, &dummy);
+			aes_event_in.emi_m1.g_x = mx;
+			aes_event_in.emi_m1.g_y = my;
+			evnt_multi_fast(&aes_event_in, aes_msg_out, &aes_event_out);
+			if(!guiwin_dispatch_event(&aes_event_in, &aes_event_out, aes_msg_out)) {
+				if( (aes_event_out.emo_events & MU_MESAG) != 0 ) {
+					LOG(("WM: %d\n", aes_msg_out[0]));
+					switch(aes_msg_out[0]) {
+
+					case MN_SELECTED:
+						LOG(("Menu Item: %d\n",aes_msg_out[4]));
+						deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
+						break;
+					default:
+						break;
+					}
+				}
+
+				if((aes_event_out.emo_events & MU_KEYBD) != 0) {
+					uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
+										(short)aes_event_out.emo_kreturn);
+					deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
+												aes_event_out.emo_kmeta, nkc);
 				}
 			}
-
-			if((aes_event_out.emo_events & MU_KEYBD) != 0) {
-				uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
-									(short)aes_event_out.emo_kreturn);
-				deskmenu_dispatch_keypress(aes_event_out.emo_kreturn,
-											aes_event_out.emo_kmeta, nkc);
-			}
-/*
-			if((aes_event_out.emo_events & MU_KEYBD|MU_MX) != 0) {
-				on_m1();
-			}
-*/
+		} while ( gui_poll_repeat && !(active||rendering));
+		if(input_window && input_window->root->redraw_slots.areas_used > 0 && !active){
+			window_process_redraws(input_window->root);
 		}
-	} while ( gui_poll_repeat && !(active||rendering));
+		if(active || rendering)
+			next_poll = clock() + (CLOCKS_PER_SEC>>3);
+	}
 
-    if(input_window && input_window->root->redraw_slots.areas_used > 0){
-        window_process_redraws(input_window->root);
-    }
 }
 
 
@@ -1076,7 +1073,13 @@ static void gui_init(int argc, char** argv)
 
     nkc_init();
     plot_init(nsoption_charp(atari_font_driver));
-    tree_set_icon_dir( nsoption_charp(tree_icons_path) );
+    tree_set_icon_dir(nsoption_charp(tree_icons_path));
+
+	wind_get_grect(0, WF_WORKXYWH, &desk_area);
+	aes_event_in.emi_m1leave = MO_LEAVE;
+	aes_event_in.emi_m1.g_w = 1;
+	aes_event_in.emi_m1.g_h = 1;
+
 }
 
 static char *theapp = (char*)"NetSurf";

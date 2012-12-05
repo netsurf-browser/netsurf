@@ -68,13 +68,14 @@ struct rootwin_data_s {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Static module methods                                                      */
+/* Static module event handlers                                               */
 /* -------------------------------------------------------------------------- */
 static void on_redraw(ROOTWIN *rootwin, short msg[8]);
 static void on_resized(ROOTWIN *rootwin);
 static void on_file_dropped(ROOTWIN *rootwin, short msg[8]);
 static short on_window_key_input(ROOTWIN * rootwin, unsigned short nkc);
 static bool on_content_mouse_click(ROOTWIN *rootwin);
+static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area);
 
 static bool redraw_active = false;
 
@@ -92,7 +93,12 @@ static const struct redraw_context rootwin_rdrw_ctx = {
 static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
+    GRECT content_area;
+    static bool prev_url = false;
+    static short prev_x=0;
+    static short prev_y=0;
     struct rootwin_data_s * data = guiwin_get_user_data(win);
+
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
@@ -152,17 +158,43 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
     }
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
-        LOG(("Mouse click at: %d,%d\n", ev_out->emo_mouse.p_x,
-             ev_out->emo_mouse.p_y));
-        GRECT carea;
-        guiwin_get_grect(data->rootwin->win, GUIWIN_AREA_CONTENT, &carea);
-        if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y, carea)) {
+        guiwin_get_grect(data->rootwin->win, GUIWIN_AREA_CONTENT,
+                         &content_area);
+        if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
+                         content_area)) {
             on_content_mouse_click(data->rootwin);
         }
     }
-    if ((ev_out->emo_events & (MU_M1 | MU_MX)) != 0) {
-        printf("mx event at %d,%d\n", ev_out->emo_mouse.p_x,
-               ev_out->emo_mouse.p_y);
+    if ((ev_out->emo_events & (MU_M1)) != 0) {
+
+        short ghandle = wind_find(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
+
+        if (guiwin_get_handle(data->rootwin->win)==ghandle) {
+            // The window found at x,y is an gui_window
+            // and it's the input window.
+            window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
+                             &content_area);
+            if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
+                             content_area)) {
+                on_content_mouse_move(data->rootwin, &content_area);
+            } else {
+                GRECT tb_area;
+                window_get_grect(data->rootwin, BROWSER_AREA_URL_INPUT, &tb_area);
+                if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
+                                 tb_area)) {
+                    gem_set_cursor(&gem_cursors.ibeam);
+					prev_url = true;
+                }
+                else {
+					if(prev_url) {
+						struct gui_window *gw;
+						gw = window_get_active_gui_window(data->rootwin);
+						gem_set_cursor(gw->cursor);
+						prev_url = false;
+					}
+				}
+            }
+        }
     }
 
     return(retval);
@@ -494,6 +526,20 @@ void window_get_scroll(ROOTWIN *rootwin, int *x, int *y)
     *y = slid->y_pos * slid->y_unit_px;
 }
 
+void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d)
+{
+    if (which == BROWSER_AREA_TOOLBAR) {
+        guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, d);
+    } else if (which == BROWSER_AREA_CONTENT) {
+        guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, d);
+    } else if (which == BROWSER_AREA_URL_INPUT) {
+        toolbar_get_grect(rootwin->toolbar, TOOLBAR_URL_AREA, d);
+    } else {
+
+    }
+
+}
+
 
 /**
  * Redraw the favicon
@@ -682,6 +728,27 @@ void window_process_redraws(ROOTWIN * rootwin)
 /* -------------------------------------------------------------------------- */
 /* Event Handlers:                                                            */
 /* -------------------------------------------------------------------------- */
+static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
+{
+	int mx, my, sx, sy;
+	struct guiwin_scroll_info_s *slid;
+	struct gui_window *gw;
+	struct browser_window *bw;
+
+	// make relative mouse coords:
+	mx = aes_event_out.emo_mouse.p_x - content_area->g_x;
+	my = aes_event_out.emo_mouse.p_y - content_area->g_y;
+
+	slid = guiwin_get_scroll_info(rootwin->win);
+	gw = window_get_active_gui_window(rootwin);
+	bw = gw->browser->bw;
+
+	// calculate scroll pos. in pixel:
+	sx = slid->x_pos * slid->x_unit_px;
+	sy = slid->y_pos * slid->y_unit_px;
+
+    browser_window_mouse_track(bw, 0, mx + sx, my + sy);
+}
 
 static bool on_content_mouse_click(ROOTWIN *rootwin)
 {
@@ -776,8 +843,8 @@ static bool on_content_mouse_click(ROOTWIN *rootwin)
     } else {
         /* Right button pressed? */
         if ((aes_event_out.emo_mbutton & 2 ) ) {
-            context_popup( gw, aes_event_out.emo_mouse.p_x,
-                           aes_event_out.emo_mouse.p_x);
+            context_popup(gw, aes_event_out.emo_mouse.p_x,
+                          aes_event_out.emo_mouse.p_y);
         } else {
             browser_window_mouse_click(gw->browser->bw,
                                        bmstate|BROWSER_MOUSE_PRESS_1,
