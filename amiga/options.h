@@ -74,6 +74,7 @@
 	int cookies_window_ypos;		\
 	int cookies_window_xsize;		\
 	int cookies_window_ysize;		\
+	int web_search_width;		\
 	int cairo_renderer;			\
 	bool direct_render;			\
 	bool window_simple_refresh;			\
@@ -136,6 +137,7 @@
 	.cookies_window_ypos = 0,			\
 	.cookies_window_xsize = 0,			\
 	.cookies_window_ysize = 0,			\
+	.web_search_width = 0,			\
 	.cairo_renderer = 0,				\
 	.direct_render = false,				\
 	.window_simple_refresh = false,				\
@@ -197,6 +199,7 @@
 { "cookies_window_ypos", OPTION_INTEGER, &nsoptions.cookies_window_ypos}, \
 { "cookies_window_xsize", OPTION_INTEGER, &nsoptions.cookies_window_xsize}, \
 { "cookies_window_ysize", OPTION_INTEGER, &nsoptions.cookies_window_ysize}, \
+{ "web_search_width", OPTION_INTEGER, &nsoptions.web_search_width}, \
 { "cairo_renderer",	OPTION_INTEGER,	&nsoptions.cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&nsoptions.direct_render}, \
 { "window_simple_refresh",	OPTION_BOOL,	&nsoptions.window_simple_refresh}, \
