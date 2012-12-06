@@ -375,9 +375,8 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
     slid = guiwin_get_scroll_info(gw->root->win);
 
     guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &area);
-
-	area.g_x += rect->x0 - slid->x_pos * slid->x_unit_px;
-	area.g_y += rect->y0 - slid->y_pos * slid->y_unit_px;
+	area.g_x += rect->x0;
+	area.g_y += rect->y0;
     area.g_w = rect->x1 - rect->x0;
     area.g_h = rect->y1 - rect->y0;
     window_schedule_redraw_grect(gw->root, &area);
@@ -444,6 +443,7 @@ void gui_window_update_extent(struct gui_window *gw)
                                     );
             window_update_back_forward(gw->root);
             GRECT area;
+            printf("update extent\n");
             guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &area);
             window_schedule_redraw_grect(gw->root, &area);
         }

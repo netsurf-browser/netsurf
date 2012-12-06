@@ -596,7 +596,8 @@ void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area)
     //dbg_grect("window_schedule_redraw_grect input ", area);
 
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
-    rc_intersect(area, &work);
+    if(!rc_intersect(area, &work))
+		return;
 
     //dbg_grect("window_schedule_redraw_grect intersection ", &work);
 
