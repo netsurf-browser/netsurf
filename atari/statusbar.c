@@ -40,7 +40,7 @@
 #include "atari/statusbar.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"
-#include "atari/global_evnt.h"
+
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plot.h"
 #include "atari/osspec.h"

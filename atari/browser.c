@@ -47,7 +47,6 @@
 #include "atari/gui.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"
-#include "atari/global_evnt.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/redrawslots.h"
 #include "atari/browser.h"

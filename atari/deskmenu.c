@@ -8,7 +8,6 @@
 #include "desktop/browser_private.h"
 #include "desktop/options.h"
 #include "desktop/save_complete.h"
-
 #include "atari/res/netsurf.rsh"
 #include "atari/gemtk/gemtk.h"
 #include "atari/deskmenu.h"
@@ -19,8 +18,9 @@
 #include "atari/search.h"
 #include "atari/misc.h"
 #include "atari/gui.h"
-#include "atari/findfile.h"
 #include "atari/browser.h"
+#include "atari/findfile.h"
+
 #include "atari/rootwin.h"
 
 typedef void __CDECL (*menu_evnt_func)(short item, short title, void * data);
@@ -364,7 +364,7 @@ static void __CDECL menu_stop(short item, short title, void *data)
 	if( input_window == NULL )
 		return;
 
-    assert(input_window->root);
+    assert(input_window && input_window->root);
 	toolbar_stop_click(input_window->root->toolbar);
 
 }

@@ -43,10 +43,10 @@
 #include "atari/gui.h"
 #include "atari/toolbar.h"
 #include "atari/rootwin.h"
-#include "atari/browser.h"
+
 #include "atari/clipboard.h"
 #include "atari/misc.h"
-#include "atari/global_evnt.h"
+#include "atari/browser.h"
 #include "atari/plot/plot.h"
 #include "cflib.h"
 #include "atari/res/netsurf.rsh"
@@ -54,7 +54,7 @@
 #include "desktop/textarea.h"
 #include "desktop/textinput.h"
 #include "content/hlcache.h"
-#include "atari/browser.h"
+
 
 #define TB_BUTTON_WIDTH 32
 #define THROBBER_WIDTH 32

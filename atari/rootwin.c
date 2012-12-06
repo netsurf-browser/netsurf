@@ -45,12 +45,12 @@
 #include "atari/gemtk/gemtk.h"
 #include "atari/gui.h"
 #include "atari/rootwin.h"
-#include "atari/browser.h"
+
 #include "atari/misc.h"
 #include "atari/plot/plot.h"
-#include "atari/global_evnt.h"
+
 #include "atari/res/netsurf.rsh"
-#include "atari/browser.h"
+
 #include "atari/toolbar.h"
 #include "atari/statusbar.h"
 #include "atari/search.h"
@@ -58,6 +58,7 @@
 #include "atari/encoding.h"
 #include "atari/redrawslots.h"
 #include "atari/toolbar.h"
+#include "atari/browser.h"
 #include "atari/gemtk/gemtk.h"
 
 extern struct gui_window *input_window;
@@ -116,12 +117,6 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             on_resized(data->rootwin);
             break;
 
-        case WM_ICONIFY:
-            if( input_window->root == data->rootwin) {
-                input_window = NULL;
-            }
-            break;
-
         case WM_TOPPED:
         case WM_NEWTOP:
         case WM_UNICONIFY:
@@ -132,6 +127,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
             if (data->rootwin->active_gui_window != NULL) {
+            	printf("destroy...\n");
                 browser_window_destroy(
                     data->rootwin->active_gui_window->browser->bw);
             }
@@ -490,6 +486,7 @@ void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
     if (rootwin->icon != NULL) {
         short info, dummy;
         if (guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
+        	printf("set & redraw\n");
             window_redraw_favicon(rootwin, NULL);
         }
     }
@@ -550,6 +547,8 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
 
     assert(rootwin);
 
+    printf("window_redraw_favicon: root: %p, win: %p\n", rootwin, rootwin->win);
+
     guiwin_clear(rootwin->win);
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
 
@@ -562,6 +561,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
     }
 
     if (rootwin->icon == NULL) {
+    	printf("window_redraw_favicon OBJCTREE\n");
         OBJECT * tree = get_tree(ICONIFY);
         tree->ob_x = work.g_x;
         tree->ob_y = work.g_y;
@@ -570,6 +570,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
         objc_draw(tree, 0, 8, clip->g_x, clip->g_y, clip->g_w, clip->g_h);
     } else {
         // TODO: consider the clipping rectangle
+        printf("window_redraw_favicon image %p\n", rootwin->icon);
         struct rect work_clip = { 0,0,work.g_w,work.g_h };
         int xoff=0;
         if (work.g_w > work.g_h) {

@@ -68,7 +68,6 @@
 #include "atari/hotlist.h"
 #include "atari/history.h"
 #include "atari/login.h"
-#include "atari/global_evnt.h"
 #include "atari/encoding.h"
 #include "atari/res/netsurf.rsh"
 #include "atari/plot/plot.h"
@@ -140,7 +139,7 @@ void gui_poll(bool active)
     struct gui_window * g;
 
     if( !active ) {
-		if(input_window->root->redraw_slots.areas_used > 0){
+		if(input_window && input_window->root->redraw_slots.areas_used > 0){
 			window_process_redraws(input_window->root);
 		}
         /* this suits for stuff with lower priority */
@@ -380,15 +379,6 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
     area.g_w = rect->x1 - rect->x0;
     area.g_h = rect->y1 - rect->y0;
     window_schedule_redraw_grect(gw->root, &area);
-/*
-    int x0 = rect->x0 - b->scroll.current.x;
-    int y0 = rect->y0 - b->scroll.current.y;
-    int w,h;
-    */
-    //w = rect->x1 - rect->x0;
-    //h = rect->y1 - rect->y0;
-
-    //browser_schedule_redraw_rect( gw, x0, y0, w, h );
 }
 
 bool gui_window_get_scroll(struct gui_window *w, int *sx, int *sy)
@@ -443,7 +433,6 @@ void gui_window_update_extent(struct gui_window *gw)
                                     );
             window_update_back_forward(gw->root);
             GRECT area;
-            printf("update extent\n");
             guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &area);
             window_schedule_redraw_grect(gw->root, &area);
         }
@@ -645,7 +634,6 @@ gui_window_set_icon(struct gui_window *g, hlcache_handle *icon)
 
     bmp_icon = (icon != NULL) ? content_get_bitmap(icon) : NULL;
     g->icon = bmp_icon;
-
     if(input_window == g){
         window_set_icon(g->root, bmp_icon);
     }
@@ -885,8 +873,6 @@ void gui_quit(void)
     struct gui_window * gw = window_list;
     struct gui_window * tmp = window_list;
 
-    unbind_global_events();
-
     while( gw ) {
         tmp = gw->next;
         browser_window_destroy(gw->browser->bw);
@@ -1091,7 +1077,6 @@ static void gui_init2(int argc, char** argv)
         menu_register( _AESapid, (char*)"  NetSurf ");
     }
     guiwin_init();
-    bind_global_events();
     global_history_init();
     hotlist_init();
     toolbar_init();

@@ -76,6 +76,7 @@ LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 S_ATARI := gui.c \
 	findfile.c \
 	filetype.c \
+	font.c \
 	misc.c \
 	bitmap.c \
 	schedule.c \
@@ -86,14 +87,13 @@ S_ATARI := gui.c \
 	treeview.c \
 	hotlist.c \
 	history.c\
-	search.c font.c \
+	search.c \
 	redrawslots.c \
 	encoding.c \
 	rootwin.c \
 	toolbar.c \
 	statusbar.c \
 	browser.c  \
-	global_evnt.c \
 	osspec.c \
 	system_colour.c \
 	ctxmenu.c \
