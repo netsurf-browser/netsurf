@@ -378,6 +378,7 @@ html_create_html_data(html_content *c, const http_parameter *params)
 	parse_params.msg = NULL;
 	parse_params.script = html_process_script;
 	parse_params.ctx = c;
+	parse_params.daf = NULL;
 
 	error = dom_hubbub_parser_create(&parse_params,
 					 &c->parser,
@@ -495,6 +496,7 @@ html_process_encoding_change(struct content *c,
 	parse_params.msg = NULL;
 	parse_params.script = html_process_script;
 	parse_params.ctx = html;
+	parse_params.daf = NULL;
 
 	/* Create new binding, using the new encoding */
 	error = dom_hubbub_parser_create(&parse_params,

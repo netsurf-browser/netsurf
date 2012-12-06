@@ -343,6 +343,7 @@ nserror libdom_parse_file(const char *filename, const char *encoding, dom_docume
 	parse_params.msg = ignore_dom_msg;
 	parse_params.script = NULL;
 	parse_params.ctx = NULL;
+	parse_params.daf = NULL;
 
 	error = dom_hubbub_parser_create(&parse_params, &parser, &document);
 	if (error != DOM_HUBBUB_OK) {
