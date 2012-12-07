@@ -2108,11 +2108,12 @@ void ami_get_msg(void)
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
+	ULONG ctrlcsig = SIGBREAKF_CTRL_C;
 	ULONG signal;
 	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 1L << printmsgport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig;
+    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig;
 
     signal = Wait(signalmask);
 /*
@@ -2143,6 +2144,11 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 			ReplyMsg((struct Message *)timermsg);
 			schedule_run(FALSE);
 		}
+	}
+
+	if(signal & ctrlcsig)
+	{
+		ami_quit_netsurf();
 	}
 }
 
