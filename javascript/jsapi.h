@@ -79,7 +79,7 @@
 	jsapi_property_##name##_set(cx, obj, jsval jsapi_id, vp)
 
 /* native property return value */
-#define JSAPI_PROP_RVAL(cx, vp) (vp)
+#define JSAPI_PROP_RVAL(cx, vp) (*(vp))
 
 /* native property getter return value */
 #define JSAPI_PROP_SET_RVAL(cx, vp, v) (*(vp) = (v))

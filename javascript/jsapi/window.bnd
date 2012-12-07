@@ -42,7 +42,6 @@ binding window {
 	internal "JSObject *" document;
 	internal "JSObject *" navigator;
 	internal "JSObject *" console;
-	internal "JSObject *" location;
 
 	property unshared type EventHandler;
 }
@@ -57,9 +56,6 @@ api mark %{
 		}
 		if (private->console != NULL) {
 			JSAPI_GCMARK(private->console);
-		}
-		if (private->location != NULL) {
-			JSAPI_GCMARK(private->location);
 		}
 	}
 %}
@@ -180,13 +176,6 @@ api new %{
 		return NULL;
 	}
 
-	private->location = jsapi_new_Location(cx, NULL, newobject, bw, 
-					       llcache_handle_get_url(private->htmlc->base.llcache));
-	if (private->location == NULL) {
-		free(private);
-		return NULL;
-	}
-
 	private->console = jsapi_new_Console(cx, NULL, newobject);
 	if (private->console == NULL) {
 		free(private);
@@ -208,14 +197,6 @@ operation alert %{
 
 operation prompt %{
 	warn_user(message, NULL);
-%}
-
-getter window %{
-	jsret = obj;
-%}
-
-getter self %{
-	jsret = obj;
 %}
 
 /* boolean dispatchEvent(Event event); */
@@ -252,6 +233,20 @@ operation dispatchEvent %{
 			}
 		}
 	}	
+%}
+
+getter location %{
+	jsval loc;
+	JS_GetProperty(cx, private->document, "location", &loc);
+	jsret = JSVAL_TO_OBJECT(loc);
+%}
+
+getter window %{
+	jsret = obj;
+%}
+
+getter self %{
+	jsret = obj;
 %}
 
 getter EventHandler %{

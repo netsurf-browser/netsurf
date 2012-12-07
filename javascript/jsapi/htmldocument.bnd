@@ -43,6 +43,9 @@ binding document {
 	 */
 	private "dom_document *" node;
 	private "struct html_content *" htmlc; 
+
+	/** location instantiated on first use */
+	property unshared location; 
 }
 
 api finalise %{
@@ -52,6 +55,19 @@ api finalise %{
 		dom_node_unref(private->node);
 	}
 %}
+
+getter location %{
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx,vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+	jsret = jsapi_new_Location(cx, 
+				   NULL, 
+				   NULL, 
+				   private->htmlc->bw, 
+				   llcache_handle_get_url(private->htmlc->base.llcache));
+%}
+
 
 getter cookie %{
 	char *cookie_str;
