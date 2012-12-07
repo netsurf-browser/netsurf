@@ -56,6 +56,7 @@ api finalise %{
 	}
 %}
 
+
 getter location %{
 	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx,vp))) {
 		/* already created - return it */
@@ -64,10 +65,27 @@ getter location %{
 	jsret = jsapi_new_Location(cx, 
 				   NULL, 
 				   NULL, 
-				   private->htmlc->bw, 
-				   llcache_handle_get_url(private->htmlc->base.llcache));
+				   llcache_handle_get_url(private->htmlc->base.llcache),
+				   private->htmlc);
 %}
 
+getter URL %{
+	jsval loc;
+	jsval jsstr = JSVAL_NULL;
+	if (JS_GetProperty(cx, obj, "location", &loc) == JS_TRUE) {
+		JS_GetProperty(cx, JSVAL_TO_OBJECT(loc), "href", &jsstr);
+	}
+	jsret = JSVAL_TO_STRING(jsstr);
+%}
+
+getter documentURI %{
+	jsval loc;
+	jsval jsstr = JSVAL_NULL;
+	if (JS_GetProperty(cx, obj, "location", &loc) == JS_TRUE) {
+		JS_GetProperty(cx, JSVAL_TO_OBJECT(loc), "href", &jsstr);
+	}
+	jsret = JSVAL_TO_STRING(jsstr);
+%}
 
 getter cookie %{
 	char *cookie_str;
