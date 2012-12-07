@@ -154,7 +154,7 @@ static HermesFormat vfmt;
 /* netsurf source bitmap format */
 static HermesFormat nsfmt;
 
-static struct s_vdi_sysinfo vdi_sysinfo;
+struct s_vdi_sysinfo vdi_sysinfo;
 /* bit depth of framebuffers: */
 static int atari_plot_bpp_virt;
 static struct s_view view;
@@ -1898,6 +1898,16 @@ bool plot_set_dimensions(int x, int y, int w, int h)
 
 	plot_clip(&newclip);
     return(true);
+}
+
+bool plot_get_dimensions(GRECT *dst)
+{
+
+	dst->g_x = view.x;
+	dst->g_y = view.y;
+	dst->g_w = view.w;
+	dst->g_h = view.h;
+	return(true);
 }
 
 bool plot_clip(const struct rect *clip)

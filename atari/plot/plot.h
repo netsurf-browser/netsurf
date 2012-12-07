@@ -107,6 +107,7 @@ const char* plot_err_str(int i) ;
 bool plot_lock(void);
 bool plot_unlock(void);
 bool plot_set_dimensions( int x, int y, int w, int h );
+bool plot_get_dimensions(GRECT *dst);
 bool plot_get_clip(struct rect * out);
 /* Get clipping for current framebuffer as GRECT */
 void plot_get_clip_grect(GRECT * out);
