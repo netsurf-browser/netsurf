@@ -71,6 +71,27 @@ void warn_user(const char *warning, const char *detail)
 	if(utf8warning) free(utf8warning);
 }
 
+int ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
+{
+	int res = 0;
+	char *utf8text = ami_utf8_easy(body);
+	char *utf8gadget1 = ami_utf8_easy(messages_get(opt1));
+	char *utf8gadget2 = ami_utf8_easy(messages_get(opt2));
+	char *utf8gadgets = ASPrintf("%s|%s", utf8gadget1, utf8gadget2);
+	free(utf8gadget1);
+	free(utf8gadget2);
+
+	res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_WARNING,
+		TDR_TitleString, messages_get("NetSurf"),
+		TDR_FormatString, utf8text,
+		TDR_GadgetString, utf8gadgets,
+		TDR_Window, win,
+		TAG_DONE);
+
+	if(utf8text) free(utf8text);
+	if(utf8gadgets) FreeVec(utf8gadgets);
+}
+
 void die(const char *error)
 {
 	TimedDosRequesterTags(TDR_ImageType,TDRIMAGE_ERROR,

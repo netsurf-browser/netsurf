@@ -37,9 +37,10 @@
 #include "desktop/options.h"
 #include "amiga/bitmap.h"
 #include "amiga/iff_dr2d.h"
+#include "amiga/file.h"
+#include "amiga/misc.h"
 #include "amiga/theme.h"
 #include "amiga/utf8.h"
-#include "amiga/file.h"
 
 #include "desktop/download.h"
 #include "desktop/selection.h"
@@ -415,24 +416,8 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 			overwritetext = ASPrintf(messages_get("OverwriteFile"));
 		}
 
-		char *utf8text = ami_utf8_easy(overwritetext);
+		res = ami_warn_user_multi(overwritetext, "DontReplace", "Replace", win);
 		FreeVec(overwritetext);
-
-		char *utf8gadget1 = ami_utf8_easy(messages_get("DontReplace"));
-		char *utf8gadget2 = ami_utf8_easy(messages_get("Replace"));
-		char *utf8gadgets = ASPrintf("%s|%s", utf8gadget1, utf8gadget2);
-		free(utf8gadget1);
-		free(utf8gadget2);
-
-		res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_WARNING,
-			TDR_TitleString, messages_get("NetSurf"),
-			TDR_FormatString, utf8text,
-			TDR_GadgetString, utf8gadgets,
-			TDR_Window, win,
-			TAG_DONE);
-
-		if(utf8text) free(utf8text);
-		if(utf8gadgets) FreeVec(utf8gadgets);
 	}
 	else return TRUE;
 
