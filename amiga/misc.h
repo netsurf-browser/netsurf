@@ -19,5 +19,5 @@
 #ifndef AMIGA_MISC_H
 #define AMIGA_MISC_H
 char *translate_escape_chars(const char *s);
-int ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win);
+int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win);
 #endif

@@ -390,7 +390,7 @@ gui_window_save_link(struct gui_window *g, const char *url, const char *title)
 BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG size)
 {
 	/* Return TRUE if file can be (over-)written */
-	int res = 0;
+	int32 res = 0;
 	BPTR lock = 0;
 	BPTR fh = 0;
 	int64 oldsize = 0;

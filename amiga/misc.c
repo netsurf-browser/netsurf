@@ -71,7 +71,7 @@ void warn_user(const char *warning, const char *detail)
 	if(utf8warning) free(utf8warning);
 }
 
-int ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
+int32 ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, struct Window *win)
 {
 	int res = 0;
 	char *utf8text = ami_utf8_easy(body);
@@ -90,6 +90,8 @@ int ami_warn_user_multi(const char *body, const char *opt1, const char *opt2, st
 
 	if(utf8text) free(utf8text);
 	if(utf8gadgets) FreeVec(utf8gadgets);
+	
+	return res;
 }
 
 void die(const char *error)

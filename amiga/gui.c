@@ -3316,7 +3316,15 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 {
 	struct Node *tab;
 	struct Node *ntab;
-
+	
+	if((gwin->tabs > 1) && (nsoption_bool(tab_close_warn) == true)) {
+		char *req_body = ami_utf8_easy(messages_get("MultiTabClose"));
+		int32 res = ami_warn_user_multi(req_body, "No", "Yes", gwin->win);
+		free(req_body);
+		
+		if(res == 1) return;
+	}
+	
 	if(gwin->tabs)
 	{
 		tab = GetHead(&gwin->tab_list);

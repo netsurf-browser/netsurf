@@ -2675,6 +2675,11 @@ de.ami.CompError:Nicht zu öffnen
 fr.ami.CompError:Unable to open
 it.ami.CompError:Impossibile aprire
 nl.ami.CompError:Unable to open
+en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+de.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+it.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+nl.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 
 # Queries
 # =======
