@@ -2680,6 +2680,17 @@ de.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 it.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 nl.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+en.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.\n\nNetSurf will quit in 5 seconds unless this shutdown is aborted.
+de.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.\n\nNetSurf will quit in 5 seconds unless this shutdown is aborted.
+fr.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.\n\nNetSurf will quit in 5 seconds unless this shutdown is aborted.
+it.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.\n\nNetSurf will quit in 5 seconds unless this shutdown is aborted.
+nl.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.\n\nNetSurf will quit in 5 seconds unless this shutdown is aborted.
+en.ami.AbortShutdown:Abort shutdown
+de.ami.AbortShutdown:Abort shutdown
+fr.ami.AbortShutdown:Abort shutdown
+it.ami.AbortShutdown:Abort shutdown
+nl.ami.AbortShutdown:Abort shutdown
+
 
 # Queries
 # =======

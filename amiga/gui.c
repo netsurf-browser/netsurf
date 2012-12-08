@@ -177,6 +177,7 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 void ami_try_quit(void);
+void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
 static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
@@ -2148,7 +2149,7 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 
 	if(signal & ctrlcsig)
 	{
-		ami_quit_netsurf();
+		ami_quit_netsurf_delayed();
 	}
 }
 
@@ -2305,6 +2306,30 @@ void ami_quit_netsurf(void)
 	{
 		/* last window closed, so exit */
 		netsurf_quit = true;
+	}
+}
+
+void ami_quit_netsurf_delayed(void)
+{
+	char *utf8text = ami_utf8_easy(messages_get("TCPIPShutdown"));
+	char *utf8gadgets = ami_utf8_easy(messages_get("AbortShutdown"));
+
+	DisplayBeep(NULL);
+	
+	int32 res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_INFO,
+		TDR_TitleString, messages_get("NetSurf"),
+		TDR_FormatString, utf8text,
+		TDR_GadgetString, utf8gadgets,
+		TDR_Timeout, 5,
+		TDR_Inactive, TRUE,
+		TAG_DONE);
+	
+	free(utf8text);
+	free(utf8gadgets);
+	
+	if(res == -1) { /* Requester timed out */
+		nsoption_set_bool(tab_close_warn, false);
+		ami_quit_netsurf();
 	}
 }
 
