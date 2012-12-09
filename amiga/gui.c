@@ -3428,7 +3428,7 @@ void gui_window_destroy(struct gui_window *g)
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
 
-		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show)))
+		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, false);
 
 		ami_utf8_free(g->tabtitle);
