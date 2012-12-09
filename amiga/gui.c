@@ -2318,7 +2318,7 @@ void ami_quit_netsurf_delayed(void)
 
 	DisplayBeep(NULL);
 	
-	int32 res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_INFO,
+	res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_INFO,
 		TDR_TitleString, messages_get("NetSurf"),
 		TDR_FormatString, utf8text,
 		TDR_GadgetString, utf8gadgets,
@@ -2697,8 +2697,10 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	gwin->redraw_required = true;
-	gwin->bw->reformat_pending = true;
+	if(gwin->bw) {
+		gwin->redraw_required = true;
+		gwin->bw->reformat_pending = true;
+	}
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
@@ -3264,6 +3266,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				g->shared->win, NULL);
 				
 		ami_gui_hotlist_toolbar_add(g->shared); /* is this the right place for this? */
+		if(nsoption_bool(tab_always_show)) ami_toggletabbar(g->shared, true);
 	}
 	else
 	{
@@ -3425,7 +3428,7 @@ void gui_window_destroy(struct gui_window *g)
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
 
-		if(g->shared->tabs == 1)
+		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show)))
 			ami_toggletabbar(g->shared, false);
 
 		ami_utf8_free(g->tabtitle);

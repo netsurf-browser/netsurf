@@ -40,6 +40,7 @@
 	bool new_tab_active;			\
 	bool new_tab_last;			\
 	bool tab_close_warn;			\
+	bool tab_always_show;			\
 	bool kiosk_mode;			\
 	char *search_engines_file;		\
 	char *arexx_dir;			\
@@ -104,6 +105,7 @@
 	.new_tab_active = false,			\
 	.new_tab_last = false,				\
 	.tab_close_warn = true,				\
+	.tab_always_show = false,				\
 	.kiosk_mode = false,				\
 	.search_engines_file = NULL,			\
 	.arexx_dir = NULL,				\
@@ -167,6 +169,7 @@
 { "new_tab_is_active",	OPTION_BOOL,	&nsoptions.new_tab_active}, \
 { "new_tab_last",	OPTION_BOOL,	&nsoptions.new_tab_last}, \
 { "tab_close_warn",	OPTION_BOOL,	&nsoptions.tab_close_warn}, \
+{ "tab_always_show",	OPTION_BOOL,	&nsoptions.tab_always_show}, \
 { "kiosk_mode",		OPTION_BOOL,	&nsoptions.kiosk_mode},		\
 { "search_engines_file",OPTION_STRING,	&nsoptions.search_engines_file }, \
 { "arexx_dir",		OPTION_STRING,	&nsoptions.arexx_dir }, \
