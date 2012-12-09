@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <windom.h>
+#include <cflib.h>
 #include "utils/config.h"
 #include "content/content.h"
 #include "content/hlcache.h"
@@ -36,77 +36,39 @@
 #include "utils/url.h"
 #include "content/urldb.h"
 #include "content/fetch.h"
+#include "atari/misc.h"
 #include "atari/login.h"
 #include "atari/res/netsurf.rsh"
 
 
-extern void * h_gem_rsrc;
-
-bool login_form_do( nsurl * url, char * realm, char ** out )
+bool login_form_do(nsurl * url, char * realm, char ** out)
 {
-	OBJECT *tree, *newtree;
-	WINDOW * form;
 	char user[255];
 	char pass[255];
-	bool bres = false;
-	int res = 0;
-	const char * auth;
-	lwc_string * host = nsurl_get_component(url, NSURL_HOST);
-	assert(host != NULL);	
+	//const char * auth;
+	short exit_obj = 0;
+	OBJECT * tree;
 
-	if( realm == NULL ){
-		realm = (char*)"Secure Area";
-	}
-
-	int len = strlen(realm) + lwc_string_length(host) + 4;
-	char * title = malloc( len );
-	strncpy(title, realm, len );
-	strncpy(title, ": ", len-strlen(realm) );
-	strncat(title, lwc_string_data(host), len-strlen(realm)+2 );
-
-	lwc_string_unref(host);
-
-	auth = urldb_get_auth_details(url, realm);
 	user[0] = 0;
 	pass[0] = 0;
-	/*
-		TODO: use auth details if available:
-	if( auth == NULL ){
 
-	} else {
-		
-	}*/
-	
-	RsrcGaddr (h_gem_rsrc , R_TREE, LOGIN, &tree);
-	ObjcChange( OC_OBJC, tree, LOGIN_BT_LOGIN, 0, 0 );
-	ObjcChange( OC_OBJC, tree, LOGIN_BT_ABORT, 0, 0 );
-	ObjcString( tree, LOGIN_TB_USER, (char*)&user );
-	ObjcString( tree,  LOGIN_TB_PASSWORD, (char*)&pass  );
-	form = FormWindBegin( tree, (char *)title );
-	res = -1;
-	while( res != LOGIN_BT_LOGIN && res != LOGIN_BT_ABORT ){
-		res = FormWindDo( MU_MESAG );
-		switch( res ){
-			case LOGIN_BT_LOGIN:
-				bres = true;
-				break;
+	// TODO: use auth details for predefined login data
+	// auth = urldb_get_auth_details(url, realm);
+	tree = get_tree(LOGIN);
 
-			case LOGIN_BT_ABORT:
-				bres = false;
-				break;
-		}
-	}
-	
-	if( bres ) {
-		*out = malloc(strlen((char*)&user) + strlen((char*)&pass) + 2 );
-		strcpy(*out, (char*)&user);
-		strcat(*out, ":");
-		strcat(*out, (char*)&pass);
+	assert(tree != NULL);
+
+	exit_obj = simple_mdial(tree, 0);
+
+	if(exit_obj == LOGIN_BT_LOGIN) {
+		get_string(tree, LOGIN_TB_USER, user);
+		get_string(tree, LOGIN_TB_PASSWORD, pass);
+		int size = strlen((char*)&user) + strlen((char*)&pass) + 2 ;
+		*out = malloc(size);
+		snprintf(*out, size, "%s:%s", user, pass);
 	} else {
 		*out = NULL;
 	}
-
-	FormWindEnd( );
-	free( title );
-	return( bres );
+	return((exit_obj == LOGIN_BT_LOGIN));
 }
+
