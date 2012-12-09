@@ -2703,6 +2703,33 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 	}
 }
 
+void ami_gui_tabs_toggle_all(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			if(gwin->tabs == 1) {
+				if(nsoption_bool(tab_always_show) == true) {
+					ami_toggletabbar(gwin, true);
+				} else {
+					ami_toggletabbar(gwin, false);
+				}
+			}
+		}
+	} while(node = nnode);
+}
+
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		struct browser_window *clone, bool new_tab)
 {

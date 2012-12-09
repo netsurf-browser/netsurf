@@ -1450,6 +1450,7 @@ void ami_gui_opts_use(bool save)
 	struct TextAttr *tattr;
 	char *dot;
 	bool rescan_fonts = false;
+	bool old_tab_always_show;
 
 	SetWindowPointer(gow->win,
 		WA_BusyPointer, TRUE,
@@ -1689,12 +1690,17 @@ void ami_gui_opts_use(bool save)
 	}
 
 	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ALWAYS],(ULONG *)&data);
+	old_tab_always_show = nsoption_bool(tab_always_show);
+	
 	if (data) {
 		nsoption_set_bool(tab_always_show, true);
 	} else {
 		nsoption_set_bool(tab_always_show, false);
 	}
 
+	if(old_tab_always_show != nsoption_bool(tab_always_show))
+		ami_gui_tabs_toggle_all();
+	
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));
 	search_web_provider_details(nsoption_int(search_provider));
 	search_web_retrieve_ico(false);
