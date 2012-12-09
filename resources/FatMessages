@@ -5475,6 +5475,11 @@ de.all.Pt:pt
 fr.all.Pt:pt
 it.all.Pt:pt
 nl.all.Pt:pt
+en.ami.FontAntialiasing:Use anti-aliasing (when possible)
+de.ami.FontAntialiasing:Use anti-aliasing (when possible)
+fr.ami.FontAntialiasing:Use anti-aliasing (when possible)
+it.ami.FontAntialiasing:Use anti-aliasing (when possible)
+nl.ami.FontAntialiasing:Use anti-aliasing (when possible)
 
 # Font scanning
 en.ami.FontScanning:Scanning fonts...

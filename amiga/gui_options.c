@@ -109,6 +109,7 @@ enum
 	GID_OPTS_FONT_DEFAULT,
 	GID_OPTS_FONT_SIZE,
 	GID_OPTS_FONT_MINSIZE,
+	GID_OPTS_FONT_ANTIALIASING,
 	GID_OPTS_CACHE_MEM,
 	GID_OPTS_CACHE_DISC,
 	GID_OPTS_OVERWRITE,
@@ -280,6 +281,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
+	gadlab[GID_OPTS_FONT_ANTIALIASING] = (char *)ami_utf8_easy((char *)messages_get("FontAntialiasing"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
@@ -991,46 +993,59 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 								LayoutEnd, // font faces
 								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild,VGroupObject,
-									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
-									LAYOUT_AddChild, HGroupObject,
-										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SIZE] = IntegerObject,
-											GA_ID, GID_OPTS_FONT_SIZE,
-											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(font_size) / 10,
-											INTEGER_Minimum, 1,
-											INTEGER_Maximum, 99,
-											INTEGER_Arrows, TRUE,
-										IntegerEnd,
-										CHILD_WeightedWidth, 0,
+								LAYOUT_AddChild, HGroupObject,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
+										LAYOUT_AddChild, HGroupObject,
+											LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+											LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SIZE] = IntegerObject,
+												GA_ID, GID_OPTS_FONT_SIZE,
+												GA_RelVerify, TRUE,
+												INTEGER_Number, nsoption_int(font_size) / 10,
+												INTEGER_Minimum, 1,
+												INTEGER_Maximum, 99,
+												INTEGER_Arrows, TRUE,
+											IntegerEnd,
+											CHILD_WeightedWidth, 0,
+											CHILD_Label, LabelObject,
+												LABEL_Text, gadlab[LAB_OPTS_PT],
+											LabelEnd,
+										LayoutEnd,
 										CHILD_Label, LabelObject,
-											LABEL_Text, gadlab[LAB_OPTS_PT],
+											LABEL_Text, gadlab[GID_OPTS_FONT_SIZE],
+										LabelEnd,
+										LAYOUT_AddChild, HGroupObject,
+											LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+											LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MINSIZE] = IntegerObject,
+												GA_ID, GID_OPTS_FONT_MINSIZE,
+												GA_RelVerify, TRUE,
+												INTEGER_Number, nsoption_int(font_min_size) / 10,
+												INTEGER_Minimum, 1,
+												INTEGER_Maximum, 99,
+												INTEGER_Arrows, TRUE,
+											IntegerEnd,
+											CHILD_WeightedWidth, 0,
+											CHILD_Label, LabelObject,
+												LABEL_Text, gadlab[LAB_OPTS_PT],
+											LabelEnd,
+										LayoutEnd,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
 										LabelEnd,
 									LayoutEnd,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_FONT_SIZE],
-									LabelEnd,
-									LAYOUT_AddChild, HGroupObject,
-										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MINSIZE] = IntegerObject,
-											GA_ID, GID_OPTS_FONT_MINSIZE,
-											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(font_min_size) / 10,
-											INTEGER_Minimum, 1,
-											INTEGER_Maximum, 99,
-											INTEGER_Arrows, TRUE,
-										IntegerEnd,
-										CHILD_WeightedWidth, 0,
-										CHILD_Label, LabelObject,
-											LABEL_Text, gadlab[LAB_OPTS_PT],
-										LabelEnd,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_MISC],
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_ANTIALIASING] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_FONT_ANTIALIASING,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_FONT_ANTIALIASING],
+         	           						GA_Selected, nsoption_bool(font_antialiasing),
+            	    					CheckBoxEnd,
 									LayoutEnd,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
-									LabelEnd,
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
@@ -1639,6 +1654,13 @@ void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_MINSIZE],(ULONG *)&nsoption_int(font_min_size));
 	nsoption_set_int(font_min_size, nsoption_int(font_min_size) * 10);
 
+	GetAttr(GA_Selected, gow->objects[GID_OPTS_FONT_ANTIALIASING], (ULONG *)&data);
+	if(data) { 
+		nsoption_set_bool(font_antialiasing, true);
+	} else { 
+		nsoption_set_bool(font_antialiasing, false);
+	}
+	
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 
