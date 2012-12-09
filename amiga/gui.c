@@ -2311,6 +2311,8 @@ void ami_quit_netsurf(void)
 
 void ami_quit_netsurf_delayed(void)
 {
+	int res = -1;
+#ifdef __amigaos4__
 	char *utf8text = ami_utf8_easy(messages_get("TCPIPShutdown"));
 	char *utf8gadgets = ami_utf8_easy(messages_get("AbortShutdown"));
 
@@ -2326,7 +2328,7 @@ void ami_quit_netsurf_delayed(void)
 	
 	free(utf8text);
 	free(utf8gadgets);
-	
+#endif
 	if(res == -1) { /* Requester timed out */
 		nsoption_set_bool(tab_close_warn, false);
 		ami_quit_netsurf();
