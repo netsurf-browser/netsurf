@@ -416,7 +416,7 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 			overwritetext = ASPrintf(messages_get("OverwriteFile"));
 		}
 
-		res = ami_warn_user_multi(overwritetext, "DontReplace", "Replace", win);
+		res = ami_warn_user_multi(overwritetext, "Replace", "DontReplace", win);
 		FreeVec(overwritetext);
 	}
 	else return TRUE;
