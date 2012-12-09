@@ -117,6 +117,8 @@ enum
 	GID_OPTS_TAB_ACTIVE,
 	GID_OPTS_TAB_2,
 	GID_OPTS_TAB_LAST,
+	GID_OPTS_TAB_ALWAYS,
+	GID_OPTS_TAB_CLOSE,
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CONTEXTMENU,
@@ -286,6 +288,8 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
 	gadlab[GID_OPTS_TAB_LAST] = (char *)ami_utf8_easy((char *)messages_get("TabLast"));
+	gadlab[GID_OPTS_TAB_ALWAYS] = (char *)ami_utf8_easy((char *)messages_get("TabAlways"));
+	gadlab[GID_OPTS_TAB_CLOSE] = (char *)ami_utf8_easy((char *)messages_get("TabClose"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
@@ -1117,6 +1121,18 @@ void ami_gui_opts_open(void)
          	           						GA_Text, gadlab[GID_OPTS_TAB_2],
          	           						GA_Selected, nsoption_bool(button_2_tab),
             	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ALWAYS] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_ALWAYS,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_ALWAYS],
+         	           						GA_Selected, nsoption_bool(tab_always_show),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_CLOSE] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_CLOSE,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_CLOSE],
+         	           						GA_Selected, nsoption_bool(tab_close_warn),
+            	    					CheckBoxEnd,
 									LayoutEnd, // tabbed browsing
 								LayoutEnd,
 							LayoutEnd, // page vgroup
@@ -1663,6 +1679,20 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(button_2_tab, true);
 	} else {
 		nsoption_set_bool(button_2_tab, false);
+	}
+
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_CLOSE],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(tab_close_warn, true);
+	} else {
+		nsoption_set_bool(tab_close_warn, false);
+	}
+
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ALWAYS],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(tab_always_show, true);
+	} else {
+		nsoption_set_bool(tab_always_show, false);
 	}
 
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));

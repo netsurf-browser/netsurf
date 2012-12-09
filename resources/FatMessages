@@ -5512,24 +5512,14 @@ fr.all.Duration:Duration
 it.all.Duration:Durata
 nl.all.Duration:Duration
 
-# Advanced
+# Tabs
 #
 
-en.all.Downloads:Downloads
-de.all.Downloads:Downloads
-fr.all.Downloads:Downloads
-it.all.Downloads:Trasferimenti
-nl.all.Downloads:Downloads
-en.all.ConfirmOverwrite:Request confirmation when overwriting
-de.all.ConfirmOverwrite:vor Überschreiben nachfragen
-fr.all.ConfirmOverwrite:Request confirmation when overwriting
-it.all.ConfirmOverwrite:Richiedi conferma prima di sovrascrivere
-nl.all.ConfirmOverwrite:Request confirmation when overwriting
-en.all.DownloadDir:Initial download location
-de.all.DownloadDir:Downloadverzeichnis
-fr.all.DownloadDir:Initial download location
-it.all.DownloadDir:Percorso predefinito
-nl.all.DownloadDir:Initial download location
+en.ami.Tabs:Tabs
+de.ami.Tabs:Tabs
+fr.ami.Tabs:Tabs
+it.ami.Tabs:Tabs
+nl.ami.Tabs:Tabs
 en.all.TabbedBrowsing:Tabbed browsing
 de.all.TabbedBrowsing:Registernavigation (Tabs)
 fr.all.TabbedBrowsing:Tabbed browsing
@@ -5550,6 +5540,35 @@ de.all.TabLast:Open new tabs after all existing tabs
 fr.all.TabLast:Open new tabs after all existing tabs
 it.all.TabLast:Apri le nuove schede dopo quella corrente
 nl.all.TabLast:Open new tabs after all existing tabs
+en.ami.TabClose:Warn when closing multiple tabs
+de.ami.TabClose:Warn when closing multiple tabs
+fr.ami.TabClose:Warn when closing multiple tabs
+it.ami.TabClose:Warn when closing multiple tabs
+nl.ami.TabClose:Warn when closing multiple tabs
+en.ami.TabAlways:Always show tabs
+de.ami.TabAlways:Always show tabs
+fr.ami.TabAlways:Always show tabs
+it.ami.TabAlways:Always show tabs
+nl.ami.TabAlways:Always show tabs
+
+# Advanced
+#
+
+en.all.Downloads:Downloads
+de.all.Downloads:Downloads
+fr.all.Downloads:Downloads
+it.all.Downloads:Trasferimenti
+nl.all.Downloads:Downloads
+en.all.ConfirmOverwrite:Request confirmation when overwriting
+de.all.ConfirmOverwrite:vor Überschreiben nachfragen
+fr.all.ConfirmOverwrite:Request confirmation when overwriting
+it.all.ConfirmOverwrite:Richiedi conferma prima di sovrascrivere
+nl.all.ConfirmOverwrite:Request confirmation when overwriting
+en.all.DownloadDir:Initial download location
+de.all.DownloadDir:Downloadverzeichnis
+fr.all.DownloadDir:Initial download location
+it.all.DownloadDir:Percorso predefinito
+nl.all.DownloadDir:Initial download location
 en.all.DownloadNotify:Notify on completion
 de.all.DownloadNotify:Downloadende melden
 fr.all.DownloadNotify:Notify on completion
