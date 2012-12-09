@@ -85,6 +85,7 @@ enum
 	GID_OPTS_SCREEN,
 	GID_OPTS_SCREENMODE,
 	GID_OPTS_SCREENNAME,
+	GID_OPTS_WIN_SIMPLE,
 	GID_OPTS_THEME,
 	GID_OPTS_PTRTRUE,
 	GID_OPTS_PTROS,
@@ -152,6 +153,7 @@ enum
 	GRP_OPTS_PRIVACY,
 	GRP_OPTS_MISC,
 	GRP_OPTS_SCREEN,
+	GRP_OPTS_WINDOW,
 	GRP_OPTS_THEME,
 	GRP_OPTS_MOUSE,
 	GRP_OPTS_PROXY,
@@ -259,6 +261,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
+	gadlab[GID_OPTS_WIN_SIMPLE] = (char *)ami_utf8_easy((char *)messages_get("SimpleRefresh"));
 	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColour"));
 	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
 	gadlab[GID_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("ProxyType"));
@@ -328,6 +331,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_SCRIPTING] = (char *)ami_utf8_easy((char *)messages_get("Scripting"));
 	gadlab[GRP_OPTS_MISC] = (char *)ami_utf8_easy((char *)messages_get("Miscellaneous"));
 	gadlab[GRP_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
+	gadlab[GRP_OPTS_WINDOW] = (char *)ami_utf8_easy((char *)messages_get("Window"));
 	gadlab[GRP_OPTS_THEME] = (char *)ami_utf8_easy((char *)messages_get("Theme"));
 	gadlab[GRP_OPTS_MOUSE] = (char *)ami_utf8_easy((char *)messages_get("MousePointers"));
 	gadlab[GRP_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("Proxy"));
@@ -685,6 +689,18 @@ void ami_gui_opts_open(void)
 										CHILD_WeightedHeight,0,
 									LayoutEnd,
 								LayoutEnd, // screen
+								CHILD_WeightedHeight,0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, gadlab[GRP_OPTS_WINDOW],
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_WIN_SIMPLE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_WIN_SIMPLE,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_WIN_SIMPLE],
+         	           					GA_Selected, nsoption_bool(window_simple_refresh),
+            	    				CheckBoxEnd,
+								LayoutEnd, // window
 								CHILD_WeightedHeight,0,
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
@@ -1549,6 +1565,13 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_charp(modeid, modeid);
 	}
 
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(window_simple_refresh, true);
+	} else {
+		nsoption_set_bool(window_simple_refresh, false);
+	}
+	
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
 	nsoption_set_charp(theme, (char *)strdup((char *)data));
 

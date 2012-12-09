@@ -5296,6 +5296,11 @@ de.ami.ScreenPublic:Public Screen
 fr.ami.ScreenPublic:Public screen
 it.ami.ScreenPublic:Schermo pubblico
 nl.ami.ScreenPublic:Public screen
+en.ami.SimpleRefresh:Simple refresh
+de.ami.SimpleRefresh:Simple refresh
+fr.ami.SimpleRefresh:Simple refresh
+it.ami.SimpleRefresh:Simple refresh
+nl.ami.SimpleRefresh:Simple refresh
 en.all.Theme:Theme
 de.all.Theme:Thema
 fr.all.Theme:Theme
