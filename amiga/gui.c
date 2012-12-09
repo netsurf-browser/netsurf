@@ -2751,7 +2751,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared = clone->window->shared;
 		g->tab = g->shared->next_tab;
 
-		if(g->shared->tabs == 1)
+		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, true);
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
