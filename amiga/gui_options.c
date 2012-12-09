@@ -186,7 +186,7 @@ enum
 };
 
 #define OPTS_LAST LAB_OPTS_LAST
-#define OPTS_MAX_TABS 9
+#define OPTS_MAX_TABS 10
 #define OPTS_MAX_SCREEN 4
 #define OPTS_MAX_PROXY 5
 #define OPTS_MAX_NATIVEBM 3
@@ -218,12 +218,13 @@ void ami_gui_opts_setup(void)
 	tabs[3] = (char *)ami_utf8_easy((char *)messages_get("con_rendering"));
 	tabs[4] = (char *)ami_utf8_easy((char *)messages_get("con_fonts"));
 	tabs[5] = (char *)ami_utf8_easy((char *)messages_get("con_cache"));
-	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
+	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("Tabs"));
+	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
 #ifdef WITH_PDF_EXPORT
-	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("Export"));
-	tabs[8] = NULL;
+	tabs[8] = (char *)ami_utf8_easy((char *)messages_get("Export"));
+	tabs[9] = NULL;
 #else
-	tabs[7] = NULL;
+	tabs[8] = NULL;
 #endif
 
 	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
@@ -1089,6 +1090,39 @@ void ami_gui_opts_open(void)
 							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
+						** Tabs
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_TABS],
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_ACTIVE,
+         	        	   					GA_RelVerify, TRUE,
+         	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
+         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_LAST,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
+         	           						GA_Selected, nsoption_bool(new_tab_last),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_2,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_2],
+         	           						GA_Selected, nsoption_bool(button_2_tab),
+            	    					CheckBoxEnd,
+									LayoutEnd, // tabbed browsing
+								LayoutEnd,
+							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
+						PageEnd, // page object
+						/*
 						** Advanced
 						*/
 						PAGE_Add, LayoutObject,
@@ -1127,29 +1161,6 @@ void ami_gui_opts_open(void)
 								LayoutEnd, // downloads
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,HGroupObject,
-									LAYOUT_AddChild,VGroupObject,
-										LAYOUT_SpaceOuter, TRUE,
-										LAYOUT_BevelStyle, BVS_GROUP, 
-										LAYOUT_Label, gadlab[GRP_OPTS_TABS],
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
-      	              						GA_ID, GID_OPTS_TAB_ACTIVE,
-         	        	   					GA_RelVerify, TRUE,
-         	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
-            	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
-      	              						GA_ID, GID_OPTS_TAB_LAST,
-         	           						GA_RelVerify, TRUE,
-         	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
-         	           						GA_Selected, nsoption_bool(new_tab_last),
-            	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
-      	              						GA_ID, GID_OPTS_TAB_2,
-         	           						GA_RelVerify, TRUE,
-         	           						GA_Text, gadlab[GID_OPTS_TAB_2],
-         	           						GA_Selected, nsoption_bool(button_2_tab),
-            	    					CheckBoxEnd,
-									LayoutEnd, // tabbed browsing
 
 									LAYOUT_AddChild, VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
