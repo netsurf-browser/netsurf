@@ -99,6 +99,7 @@ enum
 	GID_OPTS_FETCHCACHE,
 	GID_OPTS_NATIVEBM,
 	GID_OPTS_SCALEQ,
+	GID_OPTS_DITHERQ,
 	GID_OPTS_ANIMSPEED,
 	GID_OPTS_ANIMDISABLE,
 	GID_OPTS_DPI_Y,
@@ -195,6 +196,7 @@ enum
 #define OPTS_MAX_SCREEN 4
 #define OPTS_MAX_PROXY 5
 #define OPTS_MAX_NATIVEBM 3
+#define OPTS_MAX_DITHER 4
 
 struct ami_gui_opts_window {
 	struct nsObject *node;
@@ -208,6 +210,7 @@ CONST_STRPTR tabs[OPTS_MAX_TABS];
 static STRPTR screenopts[OPTS_MAX_SCREEN];
 CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
 CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
+CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
 STRPTR *websearch_list;
@@ -248,6 +251,11 @@ void ami_gui_opts_setup(void)
 	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
 	nativebmopts[3] = NULL;
 
+	ditheropts[0] = (char *)ami_utf8_easy((char *)messages_get("Low"));
+	ditheropts[1] = (char *)ami_utf8_easy((char *)messages_get("Medium"));
+	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
+	ditheropts[3] = NULL;
+	
 	websearch_list = ami_gui_opts_websearch();
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
@@ -273,6 +281,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
 	gadlab[GID_OPTS_NATIVEBM] = (char *)ami_utf8_easy((char *)messages_get("CacheNative"));
 	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
+	gadlab[GID_OPTS_DITHERQ] = (char *)ami_utf8_easy((char *)messages_get("DitherQuality"));
 	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedLimit"));
 	gadlab[GID_OPTS_DPI_Y] = (char *)ami_utf8_easy((char *)messages_get("ResolutionY"));
 	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
@@ -870,6 +879,16 @@ void ami_gui_opts_open(void)
 									ChooserEnd,
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_NATIVEBM],
+									LabelEnd,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_DITHERQ] = ChooserObject,
+										GA_ID, GID_OPTS_DITHERQ,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+										CHOOSER_LabelArray, ditheropts,
+										CHOOSER_Selected, nsoption_int(dither_quality),
+									ChooserEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_DITHERQ],
 									LabelEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCALEQ] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_SCALEQ,
@@ -1623,6 +1642,8 @@ void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(scale_quality, false);
 	}
+
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_DITHERQ],(ULONG *)&nsoption_int(dither_quality));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
 	animspeed = strtof((char *)data, NULL);
