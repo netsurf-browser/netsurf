@@ -474,9 +474,9 @@
 	(rename (tackon @default-dest "Resources/SearchEngines") (tackon @default-dest "Resources/SearchEngines.backup"))
 )
 
-(run "c:filenote Rexx/CloseTabs.nsrx \"Close other tabs\")
-(run "c:filenote Rexx/ViewSource.nsrx \"View source\")
-(run "c:filenote Rexx/GetVideo.nsrx \"Get video\")
+(run "c:filenote Rexx/CloseTabs.nsrx \"Close other tabs\"")
+(run "c:filenote Rexx/ViewSource.nsrx \"View source\"")
+(run "c:filenote Rexx/GetVideo.nsrx \"Get video\"")
 
 (copyfiles
 	(prompt "Copying files")
