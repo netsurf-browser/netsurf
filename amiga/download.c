@@ -421,6 +421,6 @@ BOOL ami_download_check_overwrite(const char *file, struct Window *win, ULONG si
 	}
 	else return TRUE;
 
-	if(res == 0) return TRUE;
+	if(res == 1) return TRUE;
 		else return FALSE;
 }

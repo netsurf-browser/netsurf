@@ -3352,7 +3352,7 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 		int32 res = ami_warn_user_multi(req_body, "Yes", "No", gwin->win);
 		free(req_body);
 		
-		if(res == 1) return;
+		if(res == 0) return;
 	}
 	
 	if(gwin->tabs)
