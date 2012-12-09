@@ -4339,7 +4339,13 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 				case GID_HOTLIST:
 					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
 						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
-						browser_window_go(gwin->bw, url, NULL, true);
+						
+						ami_update_quals(gwin);
+						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
+							browser_window_create(url, gwin->bw, NULL, false, true);
+						} else {
+							browser_window_go(gwin->bw, url, NULL, true);
+						}
 					}
 				break;
 			} 
