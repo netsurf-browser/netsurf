@@ -1643,8 +1643,9 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_RAWKEY:
+					ami_update_quals(gwin);
+				
 					storage = result & WMHI_GADGETMASK;
-
 					if(storage >= IECODE_UP_PREFIX) break;
 
 					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
@@ -4372,7 +4373,6 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
 						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
 						
-						ami_update_quals(gwin);
 						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
 							browser_window_create(url, gwin->bw, NULL, false, true);
 						} else {
