@@ -153,6 +153,7 @@ ifeq ($(TARGET),riscos)
     SQUEEZE := squeeze
     RUNEXT :=
     CC := gcc
+    CXX := g++
     EXEEXT :=
     PKG_CONFIG :=
   else
@@ -188,6 +189,7 @@ ifeq ($(TARGET),riscos)
      SUBTARGET := -aof
      EXEEXT := ,ff8
     endif
+    CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
     PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
   endif
 else
@@ -432,7 +434,7 @@ $(EXETARGET): $(OBJECTS) $(RESOURCES)
 ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
 else
-	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
+	$(Q)$(CXX) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
