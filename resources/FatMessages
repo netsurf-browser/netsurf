@@ -1212,12 +1212,12 @@ nl.all.HotlistFeatureRequest:NetSurf feature requests
 en.ami.HotlistMenu:Hotlist menu
 de.ami.HotlistMenu:Hotlist menu
 fr.ami.HotlistMenu:Hotlist menu
-it.ami.HotlistMenu:Hotlist menu
+it.ami.HotlistMenu:Menu segnalibri
 nl.ami.HotlistMenu:Hotlist menu
 en.ami.HotlistToolbar:Hotlist toolbar
 de.ami.HotlistToolbar:Hotlist toolbar
 fr.ami.HotlistToolbar:Hotlist toolbar
-it.ami.HotlistToolbar:Hotlist toolbar
+it.ami.HotlistToolbar:Barra segnalibri
 nl.ami.HotlistToolbar:Hotlist toolbar
 
 
@@ -2339,62 +2339,62 @@ nl.all.SelectMenu:Select
 en.all.DrawTitle:%s (Draw image %lux%lu pixels)
 de.all.DrawTitle:%s (Draw Bild %lux%lu pixels)
 fr.all.DrawTitle:%s (Image Draw %lux%lu pixels)
-it.all.DrawTitle:%s (Immagine Draw %lux%lu pixels)
+it.all.DrawTitle:%s (Immagine Draw %lux%lu pixel)
 nl.all.DrawTitle:%s (Draw image %lux%lu pixels)
 en.all.GIFTitle:%s (GIF image %lux%lu pixels)
 de.all.GIFTitle:%s (GIF Bild %lux%lu pixels)
 fr.all.GIFTitle:%s (Image GIF %lux%lu pixels)
-it.all.GIFTitle:%s (Immagine GIF %lux%lu pixels)
+it.all.GIFTitle:%s (Immagine GIF %lux%lu pixel)
 nl.all.GIFTitle:%s (GIF image %lux%lu pixels)
 en.all.BMPTitle:%s (BMP image %lux%lu pixels)
 de.all.BMPTitle:%s (BMP Bild %lux%lu pixels)
 fr.all.BMPTitle:%s (Image BMP %lux%lu pixels)
-it.all.BMPTitle:%s (Immagine BMP %lux%lu pixels)
+it.all.BMPTitle:%s (Immagine BMP %lux%lu pixel)
 nl.all.BMPTitle:%s (BMP image %lux%lu pixels)
 en.all.ICOTitle:%s (ICO image %lux%lu pixels)
 de.all.ICOTitle:%s (ICO Bild %lux%lu pixels)
 fr.all.ICOTitle:%s (Image BMP %lux%lu pixels)
-it.all.ICOTitle:%s (Immagine ICO %lux%lu pixels)
+it.all.ICOTitle:%s (Immagine ICO %lux%lu pixel)
 nl.all.ICOTitle:%s (ICO image %lux%lu pixels)
 en.all.JPEGTitle:%s (JPEG image %lux%lu pixels)
 de.all.JPEGTitle:%s (JPEG Bild %lux%lu pixels)
 fr.all.JPEGTitle:%s (Image JPEG %lux%lu pixels)
-it.all.JPEGTitle:%s (Immagine JPEG %lux%lu pixels)
+it.all.JPEGTitle:%s (Immagine JPEG %lux%lu pixel)
 nl.all.JPEGTitle:%s (JPEG image %lux%lu pixels)
 en.all.PNGTitle:%s (PNG image %lux%lu pixels)
 de.all.PNGTitle:%s (PNG Bild %lux%lu pixels)
 fr.all.PNGTitle:%s (Image PNG %lux%lu pixels)
-it.all.PNGTitle:%s (Immagine PNG %lux%lu pixels)
+it.all.PNGTitle:%s (Immagine PNG %lux%lu pixel)
 nl.all.PNGTitle:%s (PNG image %lux%lu pixels)
 en.all.JNGTitle:%s (JNG image %lux%lu pixels)
 de.all.JNGTitle:%s (JNG Bild %lux%lu pixels)
 fr.all.JNGTitle:%s (Image JNG %lux%lu pixels)
-it.all.JNGTitle:%s (Immagine JNG %lux%lu pixels)
+it.all.JNGTitle:%s (Immagine JNG %lux%lu pixel)
 nl.all.JNGTitle:%s (JNG image %lux%lu pixels)
 en.all.MNGTitle:%s (MNG image %lux%lu pixels)
 de.all.MNGTitle:%s (MNG Bild %lux%lu pixels)
 fr.all.MNGTitle:%s (Image MNG %lux%lu pixels)
-it.all.MNGTitle:%s (Immagine MNG %lux%lu pixels)
+it.all.MNGTitle:%s (Immagine MNG %lux%lu pixel)
 nl.all.MNGTitle:%s (MNG image %lux%lu pixels)
 en.all.WebPTitle:%s (WebP image %lux%lu pixels)
 de.all.WebPTitle:%s (WebP Bild %lux%lu pixels)
 fr.all.WebPTitle:%s (Image WebP %lux%lu pixels)
-it.all.WebPTitle:%s (Immagine WebP %lux%lu pixels)
+it.all.WebPTitle:%s (Immagine WebP %lux%lu pixel)
 nl.all.WebPTitle:%s (WebP image %lux%lu pixels)
 en.all.SpriteTitle:%s (Sprite image %lux%lu pixels)
 de.all.SpriteTitle:%s (Sprite Bild %lux%lu pixels)
 fr.all.SpriteTitle:%s (Image Sprite %lux%lu pixels)
-it.all.SpriteTitle:%s (Immagine Sprite %lux%lu pixels)
+it.all.SpriteTitle:%s (Immagine Sprite %lux%lu pixel)
 nl.all.SpriteTitle:%s (Sprite image %lux%lu pixels)
 en.all.ArtWorksTitle:%s (ArtWorks image %lux%lu pixels)
 de.all.ArtWorksTitle:%s (ArtWorks Bild %lux%lu pixels)
 fr.all.ArtWorksTitle:%s (Image ArtWorks %lux%lu pixels)
-it.all.ArtWorksTitle:%s (Immagine ArtWorks %lux%lu pixels)
+it.all.ArtWorksTitle:%s (Immagine ArtWorks %lux%lu pixel)
 nl.all.ArtWorksTitle:%s (ArtWorks image %lux%lu pixels)
 en.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
 de.ami.DataTypesTitle:%s (%s Bild %lux%lu pixels)
 fr.ami.DataTypesTitle:%s (Image %s %lux%lu pixels)
-it.ami.DataTypesTitle:%s (Immagine %s %lux%lu pixels)
+it.ami.DataTypesTitle:%s (Immagine %s %lux%lu pixel)
 nl.ami.DataTypesTitle:%s (%s image %lux%lu pixels)
 
 # HTML page character set
@@ -2678,17 +2678,17 @@ nl.ami.CompError:Unable to open
 en.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 de.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 fr.ami.MultiTabClose:Are you sure you want to close multiple tabs?
-it.ami.MultiTabClose:Are you sure you want to close multiple tabs?
+it.ami.MultiTabClose:Sono rimaste aperte più schede, sei sicuro di voler uscire da NetSurf?
 nl.ami.MultiTabClose:Are you sure you want to close multiple tabs?
 en.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 de.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 fr.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
-it.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
+it.ami.TCPIPShutdown:Lo stack TCP/IP ha dato segnale di essere in procinto di arresto,  NetSurf verrà chiuso.  NetSurf si chiuderà entro 5 secondi a meno che lo shutdown non venga interrotto.
 nl.ami.TCPIPShutdown:The TCP/IP stack has signalled that it is about to shutdown and NetSurf must exit.  NetSurf will quit in 5 seconds unless this shutdown is aborted.
 en.ami.AbortShutdown:Abort shutdown
 de.ami.AbortShutdown:Abort shutdown
 fr.ami.AbortShutdown:Abort shutdown
-it.ami.AbortShutdown:Abort shutdown
+it.ami.AbortShutdown:Interrompi lo shutdown
 nl.ami.AbortShutdown:Abort shutdown
 
 
@@ -5299,7 +5299,7 @@ nl.ami.ScreenPublic:Public screen
 en.ami.SimpleRefresh:Simple refresh
 de.ami.SimpleRefresh:Simple refresh
 fr.ami.SimpleRefresh:Simple refresh
-it.ami.SimpleRefresh:Simple refresh
+it.ami.SimpleRefresh:Refresh semplice
 nl.ami.SimpleRefresh:Simple refresh
 en.all.Theme:Theme
 de.all.Theme:Thema
@@ -5369,7 +5369,7 @@ de.all.ScaleQuality:Skalieren hoher Qualität
 fr.all.ScaleQuality:Higher quality scaling
 it.all.ScaleQuality:Massima qualità di visualizzazione
 nl.all.ScaleQuality:Higher quality scaling
-en.ami.DitherQuality:Dither quality (<= 8-bit modes only)
+en.ami.DitherQuality:Qualità dither (<= solo modi a 8-bit)
 de.ami.DitherQuality:Dither quality (<= 8-bit modes only)
 fr.ami.DitherQuality:Dither quality (<= 8-bit modes only)
 it.ami.DitherQuality:Dither quality (<= 8-bit modes only)
@@ -5377,17 +5377,17 @@ nl.ami.DitherQuality:Dither quality (<= 8-bit modes only)
 en.ami.Low:Low
 de.ami.Low:Low
 fr.ami.Low:Low
-it.ami.Low:Low
+it.ami.Low:Bassa
 nl.ami.Low:Low
 en.ami.Medium:Medium
 de.ami.Medium:Medium
 fr.ami.Medium:Medium
-it.ami.Medium:Medium
+it.ami.Medium:Media
 nl.ami.Medium:Medium
 en.ami.High:High
 de.ami.High:High
 fr.ami.High:High
-it.ami.High:High
+it.ami.High:Alta
 nl.ami.High:High
 en.all.Animations:Animations
 de.all.Animations:Animationen
@@ -5503,7 +5503,7 @@ nl.all.Pt:pt
 en.ami.FontAntialiasing:Use anti-aliasing (when possible)
 de.ami.FontAntialiasing:Use anti-aliasing (when possible)
 fr.ami.FontAntialiasing:Use anti-aliasing (when possible)
-it.ami.FontAntialiasing:Use anti-aliasing (when possible)
+it.ami.FontAntialiasing:Usa anti-aliasing (quando possibile)
 nl.ami.FontAntialiasing:Use anti-aliasing (when possible)
 
 # Font scanning
@@ -5548,7 +5548,7 @@ nl.all.Duration:Duration
 en.ami.Tabs:Tabs
 de.ami.Tabs:Tabs
 fr.ami.Tabs:Tabs
-it.ami.Tabs:Tabs
+it.ami.Tabs:Schede
 nl.ami.Tabs:Tabs
 en.all.TabbedBrowsing:Tabbed browsing
 de.all.TabbedBrowsing:Registernavigation (Tabs)
@@ -5563,7 +5563,7 @@ nl.all.TabActive:Open new tabs in background
 en.all.TabMiddle:Middle mouse button opens tabs
 de.all.TabMiddle:Mittlere Maustaste öffnet Tab
 fr.all.TabMiddle:Middle mouse button opens tabs
-it.all.TabMiddle:Tasto centrale per l'apertura delle schede
+it.all.TabMiddle:Usa tasto centrale del mouse per aprire le schede
 nl.all.TabMiddle:Middle mouse button opens tabs
 en.all.TabLast:Open new tabs after all existing tabs
 de.all.TabLast:Open new tabs after all existing tabs
@@ -5573,12 +5573,12 @@ nl.all.TabLast:Open new tabs after all existing tabs
 en.ami.TabClose:Warn when closing multiple tabs
 de.ami.TabClose:Warn when closing multiple tabs
 fr.ami.TabClose:Warn when closing multiple tabs
-it.ami.TabClose:Warn when closing multiple tabs
+it.ami.TabClose:Avvisa quando si chiudono più schede
 nl.ami.TabClose:Warn when closing multiple tabs
 en.ami.TabAlways:Always show tabs
 de.ami.TabAlways:Always show tabs
 fr.ami.TabAlways:Always show tabs
-it.ami.TabAlways:Always show tabs
+it.ami.TabAlways:Mostra sempre la barra delle schede
 nl.ami.TabAlways:Always show tabs
 
 # Advanced
