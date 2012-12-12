@@ -38,7 +38,9 @@ typedef enum {
 struct gui_download_window {
 	struct download_context *ctx;
 	struct gui_window * parent;
-	WINDOW * form;
+	GUIWIN *guiwin;
+	short aes_handle;
+	OBJECT *tree;
 	nsatari_download_status status;
 	char *destination;
 	FILE * fd;

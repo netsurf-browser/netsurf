@@ -48,75 +48,159 @@
 #include "atari/osspec.h"
 
 extern struct gui_window * input_window;
+extern GRECT desk_area;
+
+struct s_download_window_data {
+	struct gui_download_window *gdw;
+};
 
 static void gui_download_window_destroy( struct gui_download_window * gdw );
+static void on_abort_click(struct gui_download_window *dw);
+static void on_close(struct gui_download_window * dw);
+static void on_redraw(struct gui_download_window *dw, GRECT *clip);
 
-static void __CDECL evnt_bt_abort_click
-(
- 	WINDOW *win,
-	int index,
-	int unused,
-	void * data
-)
+static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
-	struct gui_download_window * dw = (struct gui_download_window *)data;
-	assert( dw != NULL );
-	ObjcChange( OC_FORM, win, index, ~SELECTED, TRUE);
+    short retval = 0;
+    struct s_download_window_data * data = guiwin_get_user_data(win);
+    GRECT clip;
+
+
+    if ((ev_out->emo_events & MU_MESAG) != 0) {
+        // handle message
+        //printf("root win msg: %d\n", msg[0]);
+        switch (msg[0]) {
+
+        case WM_REDRAW:
+			clip.g_x = msg[4];
+			clip.g_y = msg[5];
+			clip.g_w = msg[6];
+			clip.g_h = msg[7];
+			on_redraw(data->gdw, &clip);
+            break;
+
+        case WM_CLOSED:
+            // TODO: this needs to iterate through all gui windows and
+            // check if the rootwin is this window...
+            	printf("destroy...\n");
+            	on_close(data->gdw);
+            break;
+
+        case WM_TOOLBAR:
+			switch(msg[4]){
+
+				case DOWNLOAD_BT_ABORT:
+					on_abort_click(data->gdw);
+				break;
+
+				case DOWNLOAD_CB_CLOSE_RDY:
+				break;
+
+				default: break;
+			}
+            break;
+
+        default:
+            break;
+        }
+    }
+    if ((ev_out->emo_events & MU_KEYBD) != 0) {
+
+
+    }
+    if ((ev_out->emo_events & MU_BUTTON) != 0) {
+
+    }
+
+    return(retval);
+}
+
+static void on_redraw(struct gui_download_window *dw, GRECT *clip)
+{
+	OBJECT *tree = dw->tree;
+	GRECT work, visible;
+	uint32_t p = 0;
+
+	LOG((""));
+	printf("doin redraw...\n");
+
+	guiwin_get_grect(dw->guiwin, GUIWIN_AREA_CONTENT, &work);
+	tree->ob_x = work.g_x;
+	tree->ob_y = work.g_y;
+
+	if(!rc_intersect(clip, &work)){
+		return;
+	}
+
+	/*
+		Update the AES Object to reflect current state of download:
+	*/
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_FILENAME))->te_ptext = &dw->lbl_file;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_BYTES))->te_ptext = &dw->lbl_done;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_PERCENT))->te_ptext = &dw->lbl_percent;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_SPEED))->te_ptext = &dw->lbl_speed;
+
+	if ( dw->size_total > 0 ) {
+		p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
+	}
+	tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100),
+													DOWNLOAD_BAR_MAX ), 1);
+
+	/*Walk the AES rectangle list and redraw the visible areas of the window: */
+	wind_get_grect(dw->aes_handle, WF_FIRSTXYWH, &visible);
+	while (visible.g_x && visible.g_y) {
+		if (rc_intersect(&work, &visible)) {
+			objc_draw_grect(tree, 0, 8, &visible);
+		}
+		wind_get_grect(dw->aes_handle, WF_NEXTXYWH, &visible);
+	}
+}
+
+static void on_abort_click(struct gui_download_window *dw)
+{
 	if( dw->status == NSATARI_DOWNLOAD_COMPLETE
 		|| dw->status == NSATARI_DOWNLOAD_ERROR ) {
-		ApplWrite( _AESapid, WM_CLOSED, win->handle, 0,0,0,0);
+			guiwin_send_msg(dw->guiwin, WM_CLOSED, 0,0,0,0);
 	}
 	else if( dw->status != NSATARI_DOWNLOAD_CANCELED ){
 		dw->abort = true;
 	}
 }
 
-static void __CDECL evnt_cbrdy_click
-(
-	WINDOW *win,
-	int index,
-	int unused,
-	void * data
-)
+static void on_cbrdy_click(struct gui_download_window *dw)
 {
-	struct gui_download_window * dw = (struct gui_download_window *)data;
-	assert( dw != NULL );
 	if( dw->status == NSATARI_DOWNLOAD_COMPLETE ){
-		ApplWrite( _AESapid, WM_CLOSED, win->handle, 0,0,0,0);
+		guiwin_send_msg(dw->guiwin, WM_CLOSED, 0,0,0,0);
 	}
 }
 
-static void __CDECL evnt_close( WINDOW *win, short buff[8], void * data)
+static void on_close(struct gui_download_window * dw)
 {
-	struct gui_download_window * dw = (struct gui_download_window *)data;
-	assert( dw != NULL );
-	gui_download_window_destroy( dw );
-	ApplWrite( _AESapid, WM_DESTROY, win->handle, 0,0,0,0);
+	gui_download_window_destroy(dw);
 }
 
-static void gui_download_window_destroy( struct gui_download_window * gdw )
+static void gui_download_window_destroy( struct gui_download_window * gdw)
 {
 
-	if( gdw->status == NSATARI_DOWNLOAD_WORKING ){
-		download_context_abort( gdw->ctx );
+
+	LOG((""));
+	if (gdw->status == NSATARI_DOWNLOAD_WORKING) {
+		download_context_abort(gdw->ctx);
 	}
-	download_context_destroy( gdw->ctx );
-	if( gdw->form != NULL ){
-		/* first destroy the form, so that it won't acces the gdw members */
-		ApplWrite( _AESapid, WM_DESTROY, gdw->form->handle, 0,0,0,0);
-		EvntWindom( MU_MESAG );
-	}
-	if( gdw->destination ) {
+
+	download_context_destroy(gdw->ctx);
+
+	if (gdw->destination) {
 		free( gdw->destination );
 	}
-	if( gdw->fd != NULL ){
+	if (gdw->fd != NULL) {
 		fclose(gdw->fd);
 		gdw->fd = NULL;
 	}
-	if( gdw->fbuf != NULL ){
+	if (gdw->fbuf != NULL) {
 		free( gdw->fbuf );
 	}
-
+	guiwin_remove(gdw->guiwin);
 	free( gdw );
 }
 
@@ -154,12 +238,14 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	int dlgres = 0;
 	OBJECT * tree = get_tree(DOWNLOAD);
 
+	LOG(("Creating download window for gui window: %p", parent));
+
 	/* TODO: Implement real form and use messages file strings! */
 
 	if( tree == NULL )
 		return( NULL );
 
-	filename = download_context_get_filename( ctx );
+	filename = download_context_get_filename(ctx);
 	dlgres = form_alert(2, "[2][Accept download?][Yes|Save as...|No]");
 	if( dlgres == 3){
 		return( NULL );
@@ -180,6 +266,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 
 	gdw = calloc( 1, sizeof(struct gui_download_window) );
 	if( gdw == NULL ){
+		warn_user(NULL, "Out of memory!");
 		free( destination );
 		return( NULL );
 	}
@@ -198,6 +285,9 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 
 	gdw->fd = fopen(gdw->destination, "wb" );
 	if( gdw->fd == NULL ){
+		char spare[200];
+		snprintf(spare, 200, "Couldn't open %s for writing!", gdw->destination);
+		msg_box_show(MSG_BOX_ALERT, spare);
 		free( filename );
 		gui_download_window_destroy(gdw);
 		return( NULL );
@@ -207,33 +297,38 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	if( gdw->fbuf != NULL ){
 		setvbuf( gdw->fd, gdw->fbuf, _IOFBF, gdw->fbufsize );
 	}
-	gdw->form = mt_FormCreate( &app, tree, WAT_FORM,
-								NULL, (char*)"Download",
-								NULL, true, true );
-	if( gdw->form == NULL || gdw->fd == NULL ){
+
+	gdw->tree = get_tree(DOWNLOAD);
+	gdw->aes_handle = wind_create_grect(CLOSER | MOVER | NAME, &desk_area);
+	wind_set_str(gdw->aes_handle, WF_NAME, "Download");
+	gdw->guiwin = guiwin_add(gdw->aes_handle, GW_FLAG_DEFAULTS, on_aes_event);
+	if( gdw->guiwin == NULL || gdw->fd == NULL ){
+		die("could not create guiwin");
 		free( filename );
 		gui_download_window_destroy(gdw);
 		return( NULL );
 	}
 
-	tree = ObjcTree(OC_FORM, gdw->form );
-	ObjcAttachFormFunc( gdw->form, DOWNLOAD_BT_ABORT,
-		evnt_bt_abort_click, gdw
-	);
-	ObjcAttachFormFunc( gdw->form, DOWNLOAD_CB_CLOSE_RDY,
-		evnt_cbrdy_click, gdw
-	);
-	EvntDataAdd( gdw->form, WM_CLOSED, evnt_close, gdw, EV_TOP);
 	strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
-	ObjcString( tree, DOWNLOAD_FILENAME, (char*)&gdw->lbl_file );
-	ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&gdw->lbl_done );
-	ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&gdw->lbl_percent );
-	ObjcString( tree, DOWNLOAD_LBL_SPEED, (char*)&gdw->lbl_speed );
-
 	free( filename );
 	LOG(("created download: %s (total size: %d)",
 		gdw->destination, gdw->size_total
 	));
+
+	GRECT work, curr;
+	work.g_x = 0;
+	work.g_y = 0;
+	work.g_w = tree->ob_width;
+	work.g_h = tree->ob_height;
+
+	wind_calc_grect(gdw->aes_handle, CLOSER | MOVER | NAME, &work, &curr);
+
+	curr.g_x = (desk_area.g_w / 2) - (curr.g_w / 2);
+	curr.g_y = (desk_area.g_h / 2) - (curr.g_h / 2);
+
+	dbg_grect("download window", &curr);
+
+	wind_open_grect(gdw->aes_handle, &curr);
 
 	return gdw;
 }
@@ -241,35 +336,44 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
 {
-	uint32_t p = 0;
+
 	uint32_t tnow = clock() / CLOCKS_PER_SEC;
 	uint32_t sdiff = tnow - dw->start;
+	uint32_t p = 0;
 	float speed;
 	float pf = 0;
-	OBJECT * tree;
 
-	if( dw->abort == true ){
+	LOG((""));
+
+	OBJECT * tree = dw->tree;
+
+	printf("data...\n");
+
+	if(dw->abort == true){
+		printf("error\n");
 		dw->status = NSATARI_DOWNLOAD_CANCELED;
 		dw->abort = false;
-		download_context_abort( dw->ctx );
-		ObjcChange( OC_FORM, dw->form, DOWNLOAD_BT_ABORT, DISABLED, TRUE);
-		return( NSERROR_OK );
+		download_context_abort(dw->ctx);
+		guiwin_send_redraw(dw->guiwin, NULL);
+		return(NSERROR_OK);
 	}
 
 	/* save data */
 	fwrite( data , size, sizeof(unsigned char),dw->fd );
 	dw->size_downloaded += size;
 
+	return NSERROR_OK;
+
 	/* Update the progress bar... */
 	if( tnow - dw->lastrdw > 1 ) {
+
+		printf("calc\n");
+
 		dw->lastrdw = tnow;
-		tree = ObjcTree(OC_FORM, dw->form );
+		speed = dw->size_downloaded / sdiff;
+
 		if( dw->size_total > 0 ){
 			p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
-		}
-		speed = dw->size_downloaded / sdiff;
-		tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100), DOWNLOAD_BAR_MAX ), 1);
-		if( dw->size_total > 0 ){
 			snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
 				"%lu%s", p, "%"
 			);
@@ -285,10 +389,8 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 			human_friendly_bytesize(dw->size_downloaded),
 			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : "?"
 		);
-		ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
-		ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
-		ObjcString( tree, DOWNLOAD_LBL_SPEED, (char*)&dw->lbl_speed );
-		snd_rdw( dw->form );
+		printf("redraw\n");
+		//guiwin_send_redraw(dw->guiwin, NULL);
 	}
 	return NSERROR_OK;
 }
@@ -299,7 +401,7 @@ void gui_download_window_error(struct gui_download_window *dw,
 	LOG(("%s", error_msg));
 	strncpy((char*)&dw->lbl_file, error_msg, MAX_SLEN_LBL_FILE-1);
 	dw->status = NSATARI_DOWNLOAD_ERROR;
-	snd_rdw( dw->form );
+	guiwin_send_redraw(dw->guiwin, NULL);
 	gui_window_set_status(input_window, messages_get("Done") );
 }
 
@@ -316,12 +418,13 @@ void gui_download_window_done(struct gui_download_window *dw)
 	}
 
 
-	tree = ObjcTree(OC_FORM, dw->form );
+	tree = dw->tree;
+
+	return;
 
 	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
-		ApplWrite( _AESapid, WM_CLOSED, dw->form->handle, 0,0,0,0);
+		guiwin_send_msg(dw->guiwin, WM_CLOSED, 0, 0, 0, 0);
 	} else {
-		tree[DOWNLOAD_PROGRESS_DONE].ob_width = DOWNLOAD_BAR_MAX;
 		snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
 			"%lu%s", 100, "%"
 		);
@@ -329,10 +432,7 @@ void gui_download_window_done(struct gui_download_window *dw)
 			human_friendly_bytesize(dw->size_downloaded),
 			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : human_friendly_bytesize(dw->size_downloaded)
 		);
-		ObjcString( tree, DOWNLOAD_LBL_BYTES, (char*)&dw->lbl_done );
-		ObjcString( tree, DOWNLOAD_LBL_PERCENT, (char*)&dw->lbl_percent );
-		ObjcString( tree, DOWNLOAD_BT_ABORT, (char*)"Close" );
-		snd_rdw( dw->form );
+		guiwin_send_redraw(dw->guiwin, NULL);
 	}
 	gui_window_set_status(input_window, messages_get("Done") );
 }

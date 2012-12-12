@@ -644,9 +644,21 @@ struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
     return(&win->scroll_info);
 }
 
-void guiwin_request_redraw(GUIWIN *win, GRECT *area)
+void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
+					short d)
 {
+	short msg[8];
 
+	msg[0] = msg_type;
+    msg[1] = gl_apid;
+    msg[2] = 0;
+    msg[3] = win->handle;
+    msg[4] = a;
+    msg[5] = b;
+    msg[6] = c;
+    msg[7] = d;
+
+    appl_write(gl_apid, 16, &msg);
 }
 
 void guiwin_send_redraw(GUIWIN *win, GRECT *area)
