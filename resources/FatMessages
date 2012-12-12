@@ -5369,10 +5369,10 @@ de.all.ScaleQuality:Skalieren hoher Qualität
 fr.all.ScaleQuality:Higher quality scaling
 it.all.ScaleQuality:Massima qualità di visualizzazione
 nl.all.ScaleQuality:Higher quality scaling
-en.ami.DitherQuality:Qualità dither (<= solo modi a 8-bit)
+en.ami.DitherQuality:Dither quality (<= 8-bit modes only)
 de.ami.DitherQuality:Dither quality (<= 8-bit modes only)
 fr.ami.DitherQuality:Dither quality (<= 8-bit modes only)
-it.ami.DitherQuality:Dither quality (<= 8-bit modes only)
+it.ami.DitherQuality:Qualità dither (<= solo modi a 8-bit)
 nl.ami.DitherQuality:Dither quality (<= 8-bit modes only)
 en.ami.Low:Low
 de.ami.Low:Low
