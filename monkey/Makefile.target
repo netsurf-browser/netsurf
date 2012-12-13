@@ -33,7 +33,7 @@ $(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
 # no pkg-config for this library
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
-  MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
+MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
@@ -45,10 +45,12 @@ $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
-  MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
+MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
 
-  CFLAGS += $(MONKEYCFLAGS) -Werror -Wno-unused-but-set-variable
-  LDFLAGS += $(MONKEYLDFLAGS)
+MONKEYWARNFLAGS := -Werror -Wno-error=unused-but-set-variable
+
+CFLAGS += $(MONKEYCFLAGS) $(MONKEYWARNFLAGS) 
+LDFLAGS += $(MONKEYLDFLAGS)
 
   # ---------------------------------------------------------------------------
   # Windows flag setup
