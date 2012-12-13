@@ -318,6 +318,31 @@ endef
 
 # Extend flags with appropriate values from pkg-config for enabled features
 #
+# 1: pkg-config required modules for feature
+# 2: Human-readable name for the feature
+define pkg_config_find_and_add
+  ifeq ($$(PKG_CONFIG),)
+    $$(error pkg-config is required to auto-detect feature availability)
+  endif
+
+  PKG_CONFIG_$(1)_EXISTS := $$(shell $$(PKG_CONFIG) --exists $(1) && echo yes)
+
+  ifeq ($$(PKG_CONFIG_$(1)_EXISTS),yes)
+      CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(1))
+      LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(1))
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info PKG.CNFG: $(2) ($(1))	enabled)
+      endif
+  else
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info PKG.CNFG: $(2) ($(1))	failed)
+      $$(error Unable to find library for: $(2) ($(1)))
+    endif
+  endif
+endef
+
+# Extend flags with appropriate values from pkg-config for enabled features
+#
 # 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
 # 2: pkg-config required modules for feature
 # 3: Human-readable name for the feature
