@@ -54,7 +54,6 @@ S_JAVASCRIPT += content.c jsapi.c $(addprefix jsapi/,$(S_JSAPI))
 
 $(eval $(foreach V,$(filter JSAPI_BINDING_%,$(.VARIABLES)),$(call convert_jsapi_binding,$($(V)),$(OBJROOT)/$(patsubst JSAPI_BINDING_%,%,$(V)).c,$(patsubst JSAPI_BINDING_%,%,$(V))_jsapi)))
 
-
 else
 S_JAVASCRIPT += none.c
 endif

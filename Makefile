@@ -71,7 +71,7 @@ else
       TARGET := beos
     endif
     # BeOS still uses gcc2
-    GCCVER := 2
+    CC_MAJOR := 2
   else
     ifeq ($(HOST),AmigaOS)
       HOST := amiga
@@ -282,6 +282,12 @@ else
   endif
 endif
 
+# compiler versioning to adjust warning flags
+CC_MAJOR := $(shell $(CC) -dumpversion | cut -f1 -d.  )
+CC_MINOR := $(shell $(CC) -dumpversion | cut -f2 -d.  )
+define cc_ver_ge
+$(shell expr $(CC_MAJOR) \>= $(1) \& $(CC_MINOR) \>= $(2))
+endef
 
 # CCACHE
 ifeq ($(origin CCACHE),undefined)
@@ -401,8 +407,12 @@ WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
 	-Wnested-externs -Wuninitialized
-ifneq ($(GCCVER),2)
+ifneq ($(CC_MAJOR),2)
   WARNFLAGS += -Wno-unused-parameter 
+endif
+# deal with lots of unwanted warnings from javascript
+ifeq ($(call cc_ver_ge,4,6),1)
+	WARNFLAGS += -Wno-unused-but-set-variable
 endif
 
 # Pull in the configuration

@@ -33,7 +33,6 @@ $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 # no pkg-config for this library
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
-#-Wno-unused-but-set-variable
 WARNFLAGS += -Werror
 
 MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
