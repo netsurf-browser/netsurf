@@ -38,8 +38,10 @@ void js_initialise(void)
 	rt = JS_NewRuntime(8L * 1024L * 1024L);
 	JSLOG("New runtime handle %p", rt);
 
-	/* register script content handler */
-	javascript_init();
+	if (rt != NULL) {
+		/* register script content handler */
+		javascript_init();
+	}
 }
 
 void js_finalise(void)
