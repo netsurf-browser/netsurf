@@ -260,8 +260,21 @@ else
               endif
             endif
           else
-            # Building for GTK, Framebuffer
-            PKG_CONFIG := pkg-config
+	    ifeq ($(TARGET),monkey)
+              ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+                PKG_CONFIG := pkg-config
+              else
+                PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config                
+              endif
+
+              ifneq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+                CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+                CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
+              endif
+	    else
+              # All other targets (GTK, Framebuffer)
+              PKG_CONFIG := pkg-config
+            endif
           endif
         endif
       endif
