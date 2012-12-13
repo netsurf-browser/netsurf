@@ -316,10 +316,12 @@ define feature_enabled
   endif
 endef
 
+# Extend flags with appropriate values from pkg-config for enabled features
+#
 # 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
 # 2: pkg-config required modules for feature
 # 3: Human-readable name for the feature
-define pkg_config_find_and_add
+define pkg_config_find_and_add_enabled
   ifeq ($$(PKG_CONFIG),)
     $$(error pkg-config is required to auto-detect feature availability)
   endif

@@ -24,16 +24,16 @@ NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
 
 # add a line similar to below for each optional lib here
 # note: webp lacks pkg-config file
-$(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-$(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG))
-$(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
-$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,RSVG,librsvg-2.0,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
-$(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
-$(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
-$(eval $(call pkg_config_find_and_add,VIDEO,gstreamer-0.10,Video))
+$(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,VIDEO,gstreamer-0.10,Video))
 
 # GTK and GLIB flags to disable depricated usage
 GTKDEPFLAGS := -DG_DISABLE_SINGLE_INCLUDES \

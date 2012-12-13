@@ -22,16 +22,19 @@ NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
 # add a line similar to below for each optional pkg-configed lib here
-$(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
-$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
-$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-$(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-$(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
-$(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
+$(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 
 # no pkg-config for this library
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
+
+#-Wno-unused-but-set-variable
+WARNFLAGS += -Werror
 
 MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		-D_BSD_SOURCE \
@@ -47,19 +50,17 @@ MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 
 MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
 
-MONKEYWARNFLAGS := -Werror 
-#-Wno-unused-but-set-variable
 
-CFLAGS += $(MONKEYCFLAGS) $(MONKEYWARNFLAGS) 
+CFLAGS += $(MONKEYCFLAGS)
 LDFLAGS += $(MONKEYLDFLAGS)
 
-  # ---------------------------------------------------------------------------
-  # Windows flag setup
-  # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Windows flag setup
+# ---------------------------------------------------------------------------
 
-  ifeq ($(HOST),Windows_NT)
-    CFLAGS += -U__STRICT_ANSI__
-  endif
+ifeq ($(HOST),Windows_NT)
+  CFLAGS += -U__STRICT_ANSI__
+endif
 
 # ----------------------------------------------------------------------------
 # Source file setup
