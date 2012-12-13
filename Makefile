@@ -400,7 +400,7 @@ endef
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs
+	-Wnested-externs -Wuninitialized
 ifneq ($(GCCVER),2)
   WARNFLAGS += -Wno-unused-parameter 
 endif

@@ -128,7 +128,7 @@ ifeq ($(TARGET),riscos)
   NETSURF_USE_DRAW_EXPORT := YES
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2
 
 endif
 
@@ -166,7 +166,7 @@ ifeq ($(TARGET),gtk)
   NETSURF_GTK_MAJOR := 2
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2
 
 endif
 
@@ -182,7 +182,7 @@ ifeq ($(TARGET),monkey)
   NETSURF_USE_ROSPRITE := NO
   NETSURF_USE_HARU_PDF := NO
   NETSURF_USE_LIBICONV_PLUG := NO
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2
 endif
 
 # ----------------------------------------------------------------------------
@@ -216,7 +216,7 @@ ifeq ($(TARGET),beos)
   NETSURF_USE_LIBICONV_PLUG := NO
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2
 
 endif
 
@@ -260,7 +260,7 @@ ifeq ($(TARGET),amiga)
   NETSURF_USE_AMIGA_CAIRO := AUTO
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized -gstabs
+  CFLAGS += -O2 -gstabs
 
 endif
 
@@ -269,7 +269,7 @@ endif
 # ----------------------------------------------------------------------------
 ifeq ($(TARGET),framebuffer)
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2
 
   # Framebuffer default surface provider.
   # Valid values are: x, sdl, linux, vnc, able, 
@@ -338,7 +338,7 @@ ifeq ($(TARGET),windows)
   NETSURF_USE_HARU_PDF := NO
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized
+  CFLAGS += -O2
 
 endif
 
@@ -366,7 +366,7 @@ ifeq ($(TARGET),atari)
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # Valid options: YES, NO, AUTO
   NETSURF_USE_NSSVG := AUTO
-  
+
   NETSURF_USE_MNG := NO
 
   # enable true type fonts via freetype2
@@ -387,12 +387,13 @@ ifeq ($(TARGET),atari)
 
   # enable optimizations
   # -O2 is currently broken with m68000 / m68020-60 builds 
-  CFLAGS += -O1 -Wuninitialized
+  CFLAGS += -O1
 
+  # override warning flags removing -Wall
   WARNFLAGS = -W -Wundef -Wpointer-arith \
 		-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 		-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-		-Wnested-externs -Wl,-t
+		-Wnested-externs -Wuninitialized -Wl,-t
 
 endif
 
@@ -420,7 +421,7 @@ ifeq ($(TARGET),cocoa)
   # Enable NetSurf's use of libsvgtiny for displaying SVGs
   # Valid options: YES, NO, AUTO
   NETSURF_USE_NSSVG := AUTO
-  
+
   NETSURF_USE_MNG := NO
   NETSURF_USE_BMP := NO
   NETSURF_USE_GIF := NO
@@ -433,7 +434,7 @@ ifeq ($(TARGET),cocoa)
   SDK_VERSION := $(MACOSX_VERSION)
 
   # Optimisation levels
-  CFLAGS += -O2 -Wuninitialized 
+  CFLAGS += -O2
 
 endif
 
