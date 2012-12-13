@@ -47,7 +47,8 @@ MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 
 MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
 
-MONKEYWARNFLAGS := -Werror -Wno-error=unused-but-set-variable
+MONKEYWARNFLAGS := -Werror 
+#-Wno-unused-but-set-variable
 
 CFLAGS += $(MONKEYCFLAGS) $(MONKEYWARNFLAGS) 
 LDFLAGS += $(MONKEYLDFLAGS)
