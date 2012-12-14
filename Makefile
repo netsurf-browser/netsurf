@@ -70,8 +70,6 @@ else
     ifeq ($(TARGET),)
       TARGET := beos
     endif
-    # BeOS still uses gcc2
-    CC_MAJOR := 2
   else
     ifeq ($(HOST),AmigaOS)
       HOST := amiga
