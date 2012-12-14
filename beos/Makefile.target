@@ -62,7 +62,7 @@
     NETLDFLAGS := -lnetwork
   endif
   LDFLAGS += -lbe -ltranslation -ltracker $(NETLDFLAGS)
-  ifeq ($(GCCVER),2)
+  ifeq ($(CC_MAJOR),2)
     LDFLAGS += -lstdc++.r4
   else
     LDFLAGS += -lstdc++ -lsupc++

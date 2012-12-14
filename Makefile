@@ -605,7 +605,7 @@ endef
 # 1 = Source file
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
-ifeq ($(GCCVER),2)
+ifeq ($(CC_MAJOR),2)
 # simpler deps tracking for gcc2...
 define compile_target_c
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created
