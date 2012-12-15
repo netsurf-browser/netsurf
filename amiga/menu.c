@@ -601,6 +601,40 @@ void ami_menu_scan_2(struct tree *tree, struct node *root, WORD *gen,
 	*gen = *gen - 1;
 }
 
+void ami_menu_update_checked(struct gui_window_2 *gwin)
+{
+	struct Menu *menustrip;
+
+	GetAttr(WINDOW_MenuStrip, gwin->objects[OID_MAIN], (ULONG *)&menustrip);
+	if(!menustrip) return;
+
+	if(nsoption_bool(enable_javascript) == true) {
+		if((ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED) == 0)
+			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
+	} else {
+		if(ItemAddress(menustrip, AMI_MENU_JS)->Flags & CHECKED)
+			ItemAddress(menustrip, AMI_MENU_JS)->Flags ^= CHECKED;
+	}
+
+	if(nsoption_bool(foreground_images) == true) {
+		if((ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED) == 0)
+			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
+	} else {
+		if(ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags & CHECKED)
+			ItemAddress(menustrip, AMI_MENU_FOREIMG)->Flags ^= CHECKED;
+	}
+
+	if(nsoption_bool(background_images) == true) {
+		if((ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags & CHECKED) == 0)
+			ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags ^= CHECKED;
+	} else {
+		if(ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags & CHECKED)
+			ItemAddress(menustrip, AMI_MENU_BACKIMG)->Flags ^= CHECKED;
+	}
+
+	ResetMenuStrip(gwin->win, menustrip);
+}
+
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 {
 	struct Window *win = g->shared->win;
@@ -659,6 +693,8 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 			OffMenu(win,AMI_MENU_SAVEAS_IFF);
 		}
 	}
+	
+	ami_menu_update_checked(g->shared);
 }
 
 /*
