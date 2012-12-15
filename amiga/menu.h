@@ -30,10 +30,10 @@
 
 /* Maximum number of menu items - first value is number of static items
  * (ie. everything not intially defined as NM_IGNORE) */
-#define AMI_MENU_MAX 52 + AMI_HOTLIST_ITEMS
+#define AMI_MENU_MAX 57 + AMI_HOTLIST_ITEMS
 
 /* Where the hotlist entries start */
-#define AMI_MENU_HOTLIST 43
+#define AMI_MENU_HOTLIST 48
 
 /* Where the hotlist entries end */
 #define AMI_MENU_HOTLIST_MAX AMI_MENU_HOTLIST+AMI_HOTLIST_ITEMS
@@ -64,7 +64,7 @@
 #define AMI_MENU_FIND FULLMENUNUM(2,0,0)
 
 /* A special value for ami_menu_window_close */
-#define AMI_MENU_WINDOW_CLOSE_ALL 1
+#define AMI_MENU_WINDOW_CLOSE_ALL (void *)1
 
 struct gui_window;
 struct gui_window_2;

@@ -103,6 +103,9 @@ static void ami_menu_item_browser_find(struct Hook *hook, APTR window, struct In
 static void ami_menu_item_browser_localhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_cookies(struct Hook *hook, APTR window, struct IntuiMessage *msg);
+static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct IntuiMessage *msg);
+static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct IntuiMessage *msg);
+static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_scale_normal(struct Hook *hook, APTR window, struct IntuiMessage *msg);
 static void ami_menu_item_browser_scale_increase(struct Hook *hook, APTR window, struct IntuiMessage *msg);
@@ -325,24 +328,43 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menu_hook[37].h_Entry = (HOOKFUNC)ami_menu_item_browser_scale_increase;
 
 	gwin->menutype[38] = NM_ITEM;
-	gwin->menulab[38] = ami_utf8_easy((char *)messages_get("Redraw"));
-	gwin->menu_hook[38].h_Entry = (HOOKFUNC)ami_menu_item_browser_redraw;
+	gwin->menulab[38] = ami_utf8_easy((char *)messages_get("Images"));
 
-	gwin->menutype[39] = NM_TITLE;
-	gwin->menulab[39] = ami_utf8_easy((char *)messages_get("Hotlist"));
-
-	gwin->menutype[40] = NM_ITEM;
-	gwin->menulab[40] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
-	gwin->menukey[40] = 'B';
-	gwin->menu_hook[40].h_Entry = (HOOKFUNC)ami_menu_item_hotlist_add;
-
+	gwin->menutype[39] = NM_SUB;
+	gwin->menulab[39] = ami_utf8_easy((char *)messages_get("ForeImg"));
+	gwin->menu_hook[39].h_Entry = (HOOKFUNC)ami_menu_item_browser_foreimg;
+	
+	gwin->menutype[40] = NM_SUB;
+	gwin->menulab[40] = ami_utf8_easy((char *)messages_get("BackImg"));
+	gwin->menu_hook[40].h_Entry = (HOOKFUNC)ami_menu_item_browser_backimg;
+	
 	gwin->menutype[41] = NM_ITEM;
-	gwin->menulab[41] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
-	gwin->menukey[41] = 'H';
-	gwin->menu_hook[41].h_Entry = (HOOKFUNC)ami_menu_item_hotlist_show;
+	gwin->menulab[41] = ami_utf8_easy((char *)messages_get("EnableJS"));
+	gwin->menu_hook[41].h_Entry = (HOOKFUNC)ami_menu_item_browser_enablejs;
+	gwin->menukey[41] = 'J';
 
 	gwin->menutype[42] = NM_ITEM;
 	gwin->menulab[42] = NM_BARLABEL;
+
+	gwin->menutype[43] = NM_ITEM;
+	gwin->menulab[43] = ami_utf8_easy((char *)messages_get("Redraw"));
+	gwin->menu_hook[43].h_Entry = (HOOKFUNC)ami_menu_item_browser_redraw;
+
+	gwin->menutype[44] = NM_TITLE;
+	gwin->menulab[44] = ami_utf8_easy((char *)messages_get("Hotlist"));
+
+	gwin->menutype[45] = NM_ITEM;
+	gwin->menulab[45] = ami_utf8_easy((char *)messages_get("HotlistAdd"));
+	gwin->menukey[45] = 'B';
+	gwin->menu_hook[45].h_Entry = (HOOKFUNC)ami_menu_item_hotlist_add;
+
+	gwin->menutype[46] = NM_ITEM;
+	gwin->menulab[46] = ami_utf8_easy((char *)messages_get("HotlistShowNS"));
+	gwin->menukey[46] = 'H';
+	gwin->menu_hook[46].h_Entry = (HOOKFUNC)ami_menu_item_hotlist_show;
+
+	gwin->menutype[47] = NM_ITEM;
+	gwin->menulab[47] = NM_BARLABEL;
 
 	gwin->menutype[AMI_MENU_HOTLIST_MAX + 1] = NM_TITLE;
 	gwin->menulab[AMI_MENU_HOTLIST_MAX + 1] = ami_utf8_easy((char *)messages_get("Settings"));
@@ -415,8 +437,22 @@ struct NewMenu *ami_create_menu(struct gui_window_2 *gwin)
 #ifndef WITH_PDF_EXPORT
 	gwin->menu[9].nm_Flags = NM_ITEMDISABLED;
 #endif
+#if !defined(WITH_JS) && !defined(WITH_MOZJS)
+	gwin->menu[41].nm_Flags = NM_ITEMDISABLED | CHECKIT | MENUTOGGLE;
+#else
+	gwin->menu[41].nm_Flags = CHECKIT | MENUTOGGLE;
+	if(nsoption_bool(enable_javascript) == true)
+		gwin->menu[41].nm_Flags |= CHECKED;
+#endif
 
 	gwin->menu[15].nm_Flags = NM_ITEMDISABLED;
+
+	gwin->menu[39].nm_Flags = CHECKIT | MENUTOGGLE;
+	if(nsoption_bool(foreground_images) == true)
+		gwin->menu[39].nm_Flags |= CHECKED;
+	gwin->menu[40].nm_Flags = CHECKIT | MENUTOGGLE;
+	if(nsoption_bool(background_images) == true)
+		gwin->menu[40].nm_Flags |= CHECKED;
 
 	ami_menu_scan(ami_tree_get_tree(hotlist_window), false, gwin);
 	ami_menu_arexx_scan(gwin);
@@ -822,6 +858,21 @@ static void ami_menu_item_browser_globalhistory(struct Hook *hook, APTR window, 
 static void ami_menu_item_browser_cookies(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
 	ami_tree_open(cookies_window,AMI_TREE_COOKIES);
+}
+
+static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+{
+	nsoption_set_bool(foreground_images, !nsoption_bool(foreground_images));
+}
+
+static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+{
+	nsoption_set_bool(background_images, !nsoption_bool(background_images));
+}
+
+static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struct IntuiMessage *msg)
+{
+	nsoption_set_bool(enable_javascript, !nsoption_bool(enable_javascript));
 }
 
 static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window, struct IntuiMessage *msg)
