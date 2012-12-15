@@ -862,17 +862,35 @@ static void ami_menu_item_browser_cookies(struct Hook *hook, APTR window, struct
 
 static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	nsoption_set_bool(foreground_images, !nsoption_bool(foreground_images));
+	struct Menu *menustrip;
+	bool checked = false;
+
+	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
+	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	
+	nsoption_set_bool(foreground_images, checked);
 }
 
 static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	nsoption_set_bool(background_images, !nsoption_bool(background_images));
+	struct Menu *menustrip;
+	bool checked = false;
+
+	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
+	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	
+	nsoption_set_bool(background_images, checked);
 }
 
 static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struct IntuiMessage *msg)
 {
-	nsoption_set_bool(enable_javascript, !nsoption_bool(enable_javascript));
+	struct Menu *menustrip;
+	bool checked = false;
+
+	GetAttr(WINDOW_MenuStrip, (Object *)window, (ULONG *)&menustrip);
+	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
+	
+	nsoption_set_bool(enable_javascript, checked);
 }
 
 static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window, struct IntuiMessage *msg)
