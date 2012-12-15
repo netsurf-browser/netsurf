@@ -5242,11 +5242,11 @@ de.all.Scripting:Scripting
 fr.all.Scripting:Scripting
 it.all.Scripting:Scripting
 nl.all.Scripting:Scripting
-en.all.EnableJS:Enable Javascript
-de.all.EnableJS:Enable Javascript
-fr.all.EnableJS:Enable Javascript
-it.all.EnableJS:Attiva Javascript
-nl.all.EnableJS:Enable Javascript
+en.all.EnableJS:Enable JavaScript
+de.all.EnableJS:Enable JavaScript
+fr.all.EnableJS:Enable JavaScript
+it.all.EnableJS:Attiva JavaScript
+nl.all.EnableJS:Enable JavaScript
 en.all.Miscellaneous:Miscellaneous
 de.all.Miscellaneous:Verschiedenes
 fr.all.Miscellaneous:Miscellaneous
