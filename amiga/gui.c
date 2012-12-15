@@ -2464,7 +2464,7 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, uint16 *item,
+void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, int *item,
 			struct List *speed_button_list, struct gui_window_2 *gwin)
 {
 	struct node *tempnode;
@@ -2507,7 +2507,7 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 	struct node *node;
 	struct node_element *element;
 	static WORD gen = 0;
-	static uint16 item = 0;
+	static int item = 0;
 
 	for (node = root; node; node = tree_node_get_next(node))
 	{
@@ -2524,6 +2524,13 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 
 void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 {
+	struct TagItem attrs[2];
+
+	attrs[0].ti_Tag = CHILD_MinWidth;
+	attrs[0].ti_Data = 0;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
 	NewList(&gwin->hotlist_toolbar_list);
 
 	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
@@ -2542,7 +2549,7 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				BevelEnd;
 
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDCHILD,
-				gwin->win, gwin->objects[GID_HOTLIST], NULL);
+				gwin->win, gwin->objects[GID_HOTLIST], attrs);
 
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDIMAGE,
 				gwin->win, gwin->objects[GID_HOTLISTSEPBAR], NULL);
