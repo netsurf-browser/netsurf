@@ -2506,8 +2506,8 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
 	struct node_element *element;
-	static WORD gen = 0;
-	static int item = 0;
+	WORD gen = 0;
+	int item = 0;
 
 	for (node = root; node; node = tree_node_get_next(node))
 	{

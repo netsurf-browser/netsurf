@@ -497,8 +497,8 @@ ULONG ami_menu_scan(struct tree *tree, bool count, struct gui_window_2 *gwin)
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
 	struct node_element *element;
-	static WORD gen = 0;
-	static ULONG item;
+	WORD gen = 0;
+	ULONG item;
 
 	item = AMI_MENU_HOTLIST;
 
