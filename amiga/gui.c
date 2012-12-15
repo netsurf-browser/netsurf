@@ -1191,6 +1191,27 @@ void ami_gui_trap_mouse(struct gui_window_2 *gwin)
 	}
 }
 
+void ami_gui_menu_update_all(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			ami_menu_update_checked(gwin);
+		}
+	} while(node = nnode);
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
@@ -1943,6 +1964,11 @@ void ami_handle_msg(void)
 			ami_close_all_tabs(ami_menu_window_close);
 			
 		ami_menu_window_close = NULL;
+	}
+	
+	if(ami_menu_check_toggled) {
+		ami_gui_menu_update_all();
+		ami_menu_check_toggled = false;
 	}
 }
 

@@ -1861,6 +1861,8 @@ void ami_gui_opts_use(bool save)
 		ami_font_savescanner(); /* just in case it has changed and been used only */
 	}
 
+	ami_menu_check_toggled = true;
+
 	SetWindowPointer(gow->win,
 		WA_Pointer, NULL,
 		TAG_DONE);

@@ -73,9 +73,11 @@ struct gui_window;
 struct gui_window_2;
 
 struct gui_window_2 *ami_menu_window_close;
+bool ami_menu_check_toggled;
 
 void ami_free_menulabs(struct gui_window_2 *gwin);
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin);
 void ami_menu_refresh(struct gui_window_2 *gwin);
+void ami_menu_update_checked(struct gui_window_2 *gwin);
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c);
 #endif

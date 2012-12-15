@@ -693,8 +693,6 @@ void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c)
 			OffMenu(win,AMI_MENU_SAVEAS_IFF);
 		}
 	}
-	
-	ami_menu_update_checked(g->shared);
 }
 
 /*
@@ -905,6 +903,7 @@ static void ami_menu_item_browser_foreimg(struct Hook *hook, APTR window, struct
 	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
 	
 	nsoption_set_bool(foreground_images, checked);
+	ami_menu_check_toggled = true;
 }
 
 static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -916,6 +915,7 @@ static void ami_menu_item_browser_backimg(struct Hook *hook, APTR window, struct
 	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
 	
 	nsoption_set_bool(background_images, checked);
+	ami_menu_check_toggled = true;
 }
 
 static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struct IntuiMessage *msg)
@@ -927,6 +927,7 @@ static void ami_menu_item_browser_enablejs(struct Hook *hook, APTR window, struc
 	if(ItemAddress(menustrip, msg->Code)->Flags & CHECKED) checked = true;
 	
 	nsoption_set_bool(enable_javascript, checked);
+	ami_menu_check_toggled = true;
 }
 
 static void ami_menu_item_browser_scale_decrease(struct Hook *hook, APTR window, struct IntuiMessage *msg)
