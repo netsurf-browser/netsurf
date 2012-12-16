@@ -55,6 +55,7 @@ struct gui_download_window {
 	char * fbuf;
 	size_t fbufsize;
 	bool abort;
+	bool close_on_finish;
 };
 
 #endif

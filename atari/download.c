@@ -50,10 +50,6 @@
 extern struct gui_window * input_window;
 extern GRECT desk_area;
 
-struct s_download_window_data {
-	struct gui_download_window *gdw;
-};
-
 static void gui_download_window_destroy( struct gui_download_window * gdw );
 static void on_abort_click(struct gui_download_window *dw);
 static void on_close(struct gui_download_window * dw);
@@ -62,13 +58,15 @@ static void on_redraw(struct gui_download_window *dw, GRECT *clip);
 static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
-    struct s_download_window_data * data = guiwin_get_user_data(win);
+    struct gui_download_window *data;
+
     GRECT clip;
 
+	data = guiwin_get_user_data(win);
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
-        //printf("root win msg: %d\n", msg[0]);
+        printf("download win msg: %d\n", msg[0]);
         switch (msg[0]) {
 
         case WM_REDRAW:
@@ -76,21 +74,21 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			clip.g_y = msg[5];
 			clip.g_w = msg[6];
 			clip.g_h = msg[7];
-			on_redraw(data->gdw, &clip);
+			on_redraw(data, &clip);
             break;
 
         case WM_CLOSED:
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
             	printf("destroy...\n");
-            	on_close(data->gdw);
+            	on_close(data);
             break;
 
         case WM_TOOLBAR:
 			switch(msg[4]){
 
 				case DOWNLOAD_BT_ABORT:
-					on_abort_click(data->gdw);
+					on_abort_click(data);
 				break;
 
 				case DOWNLOAD_CB_CLOSE_RDY:
@@ -121,9 +119,6 @@ static void on_redraw(struct gui_download_window *dw, GRECT *clip)
 	GRECT work, visible;
 	uint32_t p = 0;
 
-	LOG((""));
-	printf("doin redraw...\n");
-
 	guiwin_get_grect(dw->guiwin, GUIWIN_AREA_CONTENT, &work);
 	tree->ob_x = work.g_x;
 	tree->ob_y = work.g_y;
@@ -140,11 +135,16 @@ static void on_redraw(struct gui_download_window *dw, GRECT *clip)
 	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_PERCENT))->te_ptext = &dw->lbl_percent;
 	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_SPEED))->te_ptext = &dw->lbl_speed;
 
-	if ( dw->size_total > 0 ) {
+	if (dw->size_total > 0 ) {
 		p = ((double)dw->size_downloaded / (double)dw->size_total * 100);
 	}
 	tree[DOWNLOAD_PROGRESS_DONE].ob_width = MAX( MIN( p*(DOWNLOAD_BAR_MAX/100),
 													DOWNLOAD_BAR_MAX ), 1);
+	if (dw->close_on_finish) {
+		tree[DOWNLOAD_CB_CLOSE_RDY].ob_state |= (SELECTED | CROSSED);
+	} else {
+		tree[DOWNLOAD_CB_CLOSE_RDY].ob_state &= ~(SELECTED | CROSSED);
+	}
 
 	/*Walk the AES rectangle list and redraw the visible areas of the window: */
 	wind_get_grect(dw->aes_handle, WF_FIRSTXYWH, &visible);
@@ -169,9 +169,11 @@ static void on_abort_click(struct gui_download_window *dw)
 
 static void on_cbrdy_click(struct gui_download_window *dw)
 {
-	if( dw->status == NSATARI_DOWNLOAD_COMPLETE ){
+	dw->close_on_finish = (dw->tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED);
+	if (dw->close_on_finish && dw->status == NSATARI_DOWNLOAD_COMPLETE) {
 		guiwin_send_msg(dw->guiwin, WM_CLOSED, 0,0,0,0);
 	}
+	guiwin_send_redraw(dw->guiwin, NULL);
 }
 
 static void on_close(struct gui_download_window * dw)
@@ -200,8 +202,9 @@ static void gui_download_window_destroy( struct gui_download_window * gdw)
 	if (gdw->fbuf != NULL) {
 		free( gdw->fbuf );
 	}
+	wind_close(gdw->aes_handle);
 	guiwin_remove(gdw->guiwin);
-	free( gdw );
+	free(gdw);
 }
 
 static char * select_filepath( const char * path, const char * filename )
@@ -226,10 +229,9 @@ static char * select_filepath( const char * path, const char * filename )
 	return( ret );
 }
 
-struct gui_download_window *gui_download_window_create(download_context *ctx,
+struct gui_download_window * gui_download_window_create(download_context *ctx,
 		struct gui_window *parent)
 {
-
 	char *filename;
 	char *destination;
 	char gdos_path[PATH_MAX];
@@ -238,15 +240,19 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	int dlgres = 0;
 	OBJECT * tree = get_tree(DOWNLOAD);
 
+
 	LOG(("Creating download window for gui window: %p", parent));
 
 	/* TODO: Implement real form and use messages file strings! */
 
-	if( tree == NULL )
-		return( NULL );
+	if (tree == NULL){
+		die("Couldn't find AES Object tree for download window!");
+		return(NULL);
+	}
 
 	filename = download_context_get_filename(ctx);
-	dlgres = form_alert(2, "[2][Accept download?][Yes|Save as...|No]");
+	//dlgres = form_alert(2, "[2][Accept download?][Yes|Save as...|No]");
+	dlgres = 1;
 	if( dlgres == 3){
 		return( NULL );
 	}
@@ -281,6 +287,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	gdw->size_downloaded = 0;
 	gdw->size_total = download_context_get_total_length(ctx);
 	gdw->destination = destination;
+	gdw->tree = tree;
 	url = download_context_get_url(ctx);
 
 	gdw->fd = fopen(gdw->destination, "wb" );
@@ -298,7 +305,6 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		setvbuf( gdw->fd, gdw->fbuf, _IOFBF, gdw->fbufsize );
 	}
 
-	gdw->tree = get_tree(DOWNLOAD);
 	gdw->aes_handle = wind_create_grect(CLOSER | MOVER | NAME, &desk_area);
 	wind_set_str(gdw->aes_handle, WF_NAME, "Download");
 	gdw->guiwin = guiwin_add(gdw->aes_handle, GW_FLAG_DEFAULTS, on_aes_event);
@@ -308,8 +314,10 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 		gui_download_window_destroy(gdw);
 		return( NULL );
 	}
+	guiwin_set_user_data(gdw->guiwin, gdw);
+	//guiwin_set_toolbar(gdw->guiwin, tree, 0, 0);
 
-	strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
+	//strncpy((char*)&gdw->lbl_file, filename, MAX_SLEN_LBL_FILE-1);
 	free( filename );
 	LOG(("created download: %s (total size: %d)",
 		gdw->destination, gdw->size_total
@@ -321,7 +329,7 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 	work.g_w = tree->ob_width;
 	work.g_h = tree->ob_height;
 
-	wind_calc_grect(gdw->aes_handle, CLOSER | MOVER | NAME, &work, &curr);
+	wind_calc_grect(WC_BORDER, CLOSER | MOVER | NAME, &work, &curr);
 
 	curr.g_x = (desk_area.g_w / 2) - (curr.g_w / 2);
 	curr.g_y = (desk_area.g_h / 2) - (curr.g_h / 2);
@@ -330,8 +338,9 @@ struct gui_download_window *gui_download_window_create(download_context *ctx,
 
 	wind_open_grect(gdw->aes_handle, &curr);
 
-	return gdw;
+	return(gdw);
 }
+
 
 nserror gui_download_window_data(struct gui_download_window *dw,
 		const char *data, unsigned int size)
@@ -347,10 +356,7 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 
 	OBJECT * tree = dw->tree;
 
-	printf("data...\n");
-
 	if(dw->abort == true){
-		printf("error\n");
 		dw->status = NSATARI_DOWNLOAD_CANCELED;
 		dw->abort = false;
 		download_context_abort(dw->ctx);
@@ -366,8 +372,6 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 
 	/* Update the progress bar... */
 	if( tnow - dw->lastrdw > 1 ) {
-
-		printf("calc\n");
 
 		dw->lastrdw = tnow;
 		speed = dw->size_downloaded / sdiff;
@@ -389,8 +393,8 @@ nserror gui_download_window_data(struct gui_download_window *dw,
 			human_friendly_bytesize(dw->size_downloaded),
 			(dw->size_total>0) ? human_friendly_bytesize(dw->size_total) : "?"
 		);
-		printf("redraw\n");
-		//guiwin_send_redraw(dw->guiwin, NULL);
+
+		guiwin_send_redraw(dw->guiwin, NULL);
 	}
 	return NSERROR_OK;
 }
@@ -417,12 +421,8 @@ void gui_download_window_done(struct gui_download_window *dw)
 		dw->fd = NULL;
 	}
 
-
 	tree = dw->tree;
-
-	return;
-
-	if( (tree[DOWNLOAD_CB_CLOSE_RDY].ob_state & SELECTED) != 0 ) {
+	if (dw->close_on_finish) {
 		guiwin_send_msg(dw->guiwin, WM_CLOSED, 0, 0, 0, 0);
 	} else {
 		snprintf( (char*)&dw->lbl_percent, MAX_SLEN_LBL_PERCENT,
