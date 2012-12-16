@@ -35,11 +35,13 @@
 
 #include <string.h>
 
-#  ifndef JSVERSION_LATEST
-#   define JSVERSION_LATEST JS_VERSION
-#  endif
+#ifndef JSVERSION_LATEST
+#define JSVERSION_LATEST JS_VERSION
+#endif
 
-
+#ifndef JSOPTION_JIT
+#define JSOPTION_JIT 0
+#endif
 
 /* *CAUTION* these native function macros introduce and use jsapi_this
  * and jsapi_rval variables, native function code should not conflict
