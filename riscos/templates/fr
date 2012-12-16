@@ -3160,7 +3160,7 @@ wimp_window {
     icon_esg:0
     icon_fg:wimp_COLOUR_BLACK
     icon_bg:wimp_COLOUR_VERY_LIGHT_GREY
-    text_and_sprite.text:"Disable Javascript"
+    text_and_sprite.text:"Disable JavaScript"
     text_and_sprite.size:19
     text_and_sprite.validation:"Soptoff,opton"
   }
