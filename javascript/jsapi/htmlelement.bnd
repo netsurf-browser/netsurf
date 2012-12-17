@@ -32,14 +32,15 @@ preamble %{
 %}
 
 binding htmlelement {
-    type js_libdom; /* the binding type */
+	type js_libdom; /* the binding type */
 
-    interface HTMLElement; /* Web IDL interface to generate */
+	interface HTMLElement; /* Web IDL interface to generate */
 
-    private "dom_element *" node;
-    private "struct html_content *" htmlc;
+	private "dom_element *" node;
+	private "struct html_content *" htmlc;
 
-    property unshared type EventHandler;
+	/* events through a single interface */
+	property unshared type EventHandler;
 }
 
 api finalise %{

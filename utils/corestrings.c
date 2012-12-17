@@ -193,6 +193,7 @@ dom_string *corestring_dom_playing;
 dom_string *corestring_dom_popstate;
 dom_string *corestring_dom_progress;
 dom_string *corestring_dom_ratechange;
+dom_string *corestring_dom_readystatechange;
 dom_string *corestring_dom_rect;
 dom_string *corestring_dom_rel;
 dom_string *corestring_dom_reset;
@@ -414,6 +415,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(popstate);
 	CSS_DOM_STRING_UNREF(progress);
 	CSS_DOM_STRING_UNREF(ratechange);
+	CSS_DOM_STRING_UNREF(readystatechange);
 	CSS_DOM_STRING_UNREF(rect);
 	CSS_DOM_STRING_UNREF(rel);
 	CSS_DOM_STRING_UNREF(reset);
@@ -666,6 +668,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(popstate);
 	CSS_DOM_STRING_INTERN(progress);
 	CSS_DOM_STRING_INTERN(ratechange);
+	CSS_DOM_STRING_INTERN(readystatechange);
 	CSS_DOM_STRING_INTERN(rect);
 	CSS_DOM_STRING_INTERN(rel);
 	CSS_DOM_STRING_INTERN(reset);
