@@ -35,6 +35,78 @@ binding htmlelement {
 	type js_libdom; /* the binding type */
 
 	interface HTMLElement; /* Web IDL interface to generate */
+	/* superclasses
+
+	   interface HTMLAnchorElement
+	   interface HTMLAppletElement
+	   interface HTMLAreaElement
+	   interface HTMLBaseElement
+	   interface HTMLBaseFontElement
+	   interface HTMLBodyElement
+	   interface HTMLBRElement
+	   interface HTMLButtonElement
+	   interface HTMLCanvasElement
+	   interface HTMLCommandElement
+	   interface HTMLDataElement
+	   interface HTMLDataListElement
+	   interface HTMLDetailsElement
+	   interface HTMLDialogElement
+	   interface HTMLDirectoryElement
+	   interface HTMLDivElement
+	   interface HTMLDListElement
+	   interface HTMLEmbedElement
+	   interface HTMLFieldSetElement
+	   interface HTMLFontElement
+	   interface HTMLFormElement
+	   interface HTMLFrameElement
+	   interface HTMLFrameSetElement
+	   interface HTMLHeadElement
+	   interface HTMLHeadingElement
+	   interface HTMLHRElement
+	   interface HTMLHtmlElement
+	   interface HTMLIFrameElement
+	   interface HTMLImageElement
+	   interface HTMLInputElement
+	   interface HTMLKeygenElement
+	   interface HTMLLabelElement
+	   interface HTMLLegendElement
+	   interface HTMLLIElement
+	   interface HTMLLinkElement
+	   interface HTMLMapElement
+	   interface HTMLMarqueeElement
+	   interface HTMLMediaElement
+	   interface HTMLMenuElement
+	   interface HTMLMetaElement
+	   interface HTMLMeterElement
+	   interface HTMLModElement
+	   interface HTMLObjectElement
+	   interface HTMLOListElement
+	   interface HTMLOptGroupElement
+	   interface HTMLOptionElement
+	   interface HTMLOutputElement
+	   interface HTMLParagraphElement
+	   interface HTMLParamElement
+	   interface HTMLPreElement
+	   interface HTMLProgressElement
+	   interface HTMLQuoteElement
+	   interface HTMLScriptElement
+	   interface HTMLSelectElement
+	   interface HTMLSourceElement
+	   interface HTMLSpanElement
+	   interface HTMLStyleElement
+	   interface HTMLTableCaptionElement
+	   interface HTMLTableCellElement
+	   interface HTMLTableColElement
+	   interface HTMLTableElement
+	   interface HTMLTableRowElement
+	   interface HTMLTableSectionElement
+	   interface HTMLTextAreaElement
+	   interface HTMLTimeElement
+	   interface HTMLTitleElement
+	   interface HTMLTrackElement
+	   interface HTMLUListElement
+	   interface HTMLUnknownElement
+	*/
 
 	private "dom_element *" node;
 	private "struct html_content *" htmlc;
