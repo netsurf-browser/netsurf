@@ -1,12 +1,13 @@
 <html>
 <head>
-<title>createTextNode onload example</title>
+<title>alert onclick example</title>
 
 <script type="text/javascript">
 
-function addTextNode()
+function causealert()
 {
-para.appendChild(document.createTextNode(" Some text added dynamically. "));
+var txt = document.getElementById("p1").textContent;
+alert(txt);
 }
 
 </script>
@@ -21,10 +22,8 @@ para.appendChild(document.createTextNode(" Some text added dynamically. "));
 
 <script>
 var button = document.getElementById("button1");
-var para = document.getElementById("p1");
 
-window.onload = addTextNode;
-button.onclick = addTextNode;
+button.onclick = causealert;
 </script>
 
 </body>

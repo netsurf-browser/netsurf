@@ -28,7 +28,11 @@
 
 #include <dom/dom.h>
 
-/* depth-first walk the dom calling callback for each element
+#include <dom/bindings/hubbub/parser.h>
+#include <dom/bindings/hubbub/errors.h>
+
+/**
+ * depth-first walk the dom calling callback for each element
  *
  * \param root the dom node to use as the root of the tree walk
  * \return true if all nodes were examined, false if the callback terminated
@@ -64,5 +68,13 @@ void libdom_iterate_child_elements(dom_node *parent,
 
 nserror libdom_parse_file(const char *filename, const char *encoding,
 		dom_document **doc);
+
+/**
+ * Convert libdom hubbub binding errors to nserrors.
+ *
+ * \param error The hubbub binding error to convert
+ * \return The appropriate nserror
+ */
+nserror libdom_hubbub_error_to_nserror(dom_hubbub_error error);
 
 #endif

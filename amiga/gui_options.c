@@ -85,6 +85,7 @@ enum
 	GID_OPTS_SCREEN,
 	GID_OPTS_SCREENMODE,
 	GID_OPTS_SCREENNAME,
+	GID_OPTS_WIN_SIMPLE,
 	GID_OPTS_THEME,
 	GID_OPTS_PTRTRUE,
 	GID_OPTS_PTROS,
@@ -98,6 +99,7 @@ enum
 	GID_OPTS_FETCHCACHE,
 	GID_OPTS_NATIVEBM,
 	GID_OPTS_SCALEQ,
+	GID_OPTS_DITHERQ,
 	GID_OPTS_ANIMSPEED,
 	GID_OPTS_ANIMDISABLE,
 	GID_OPTS_DPI_Y,
@@ -109,6 +111,7 @@ enum
 	GID_OPTS_FONT_DEFAULT,
 	GID_OPTS_FONT_SIZE,
 	GID_OPTS_FONT_MINSIZE,
+	GID_OPTS_FONT_ANTIALIASING,
 	GID_OPTS_CACHE_MEM,
 	GID_OPTS_CACHE_DISC,
 	GID_OPTS_OVERWRITE,
@@ -117,6 +120,8 @@ enum
 	GID_OPTS_TAB_ACTIVE,
 	GID_OPTS_TAB_2,
 	GID_OPTS_TAB_LAST,
+	GID_OPTS_TAB_ALWAYS,
+	GID_OPTS_TAB_CLOSE,
 	GID_OPTS_SEARCH_PROV,
 	GID_OPTS_CLIPBOARD,
 	GID_OPTS_CONTEXTMENU,
@@ -149,6 +154,7 @@ enum
 	GRP_OPTS_PRIVACY,
 	GRP_OPTS_MISC,
 	GRP_OPTS_SCREEN,
+	GRP_OPTS_WINDOW,
 	GRP_OPTS_THEME,
 	GRP_OPTS_MOUSE,
 	GRP_OPTS_PROXY,
@@ -186,10 +192,11 @@ enum
 };
 
 #define OPTS_LAST LAB_OPTS_LAST
-#define OPTS_MAX_TABS 9
+#define OPTS_MAX_TABS 10
 #define OPTS_MAX_SCREEN 4
 #define OPTS_MAX_PROXY 5
 #define OPTS_MAX_NATIVEBM 3
+#define OPTS_MAX_DITHER 4
 
 struct ami_gui_opts_window {
 	struct nsObject *node;
@@ -203,6 +210,7 @@ CONST_STRPTR tabs[OPTS_MAX_TABS];
 static STRPTR screenopts[OPTS_MAX_SCREEN];
 CONST_STRPTR proxyopts[OPTS_MAX_PROXY];
 CONST_STRPTR nativebmopts[OPTS_MAX_NATIVEBM];
+CONST_STRPTR ditheropts[OPTS_MAX_DITHER];
 CONST_STRPTR fontopts[6];
 CONST_STRPTR gadlab[OPTS_LAST];
 STRPTR *websearch_list;
@@ -218,12 +226,13 @@ void ami_gui_opts_setup(void)
 	tabs[3] = (char *)ami_utf8_easy((char *)messages_get("con_rendering"));
 	tabs[4] = (char *)ami_utf8_easy((char *)messages_get("con_fonts"));
 	tabs[5] = (char *)ami_utf8_easy((char *)messages_get("con_cache"));
-	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
+	tabs[6] = (char *)ami_utf8_easy((char *)messages_get("Tabs"));
+	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("con_advanced"));
 #ifdef WITH_PDF_EXPORT
-	tabs[7] = (char *)ami_utf8_easy((char *)messages_get("Export"));
-	tabs[8] = NULL;
+	tabs[8] = (char *)ami_utf8_easy((char *)messages_get("Export"));
+	tabs[9] = NULL;
 #else
-	tabs[7] = NULL;
+	tabs[8] = NULL;
 #endif
 
 	screenopts[0] = (char *)ami_utf8_easy((char *)messages_get("ScreenOwn"));
@@ -242,6 +251,11 @@ void ami_gui_opts_setup(void)
 	nativebmopts[2] = (char *)ami_utf8_easy((char *)messages_get("All"));
 	nativebmopts[3] = NULL;
 
+	ditheropts[0] = (char *)ami_utf8_easy((char *)messages_get("Low"));
+	ditheropts[1] = (char *)ami_utf8_easy((char *)messages_get("Medium"));
+	ditheropts[2] = (char *)ami_utf8_easy((char *)messages_get("High"));
+	ditheropts[3] = NULL;
+	
 	websearch_list = ami_gui_opts_websearch();
 
 	gadlab[GID_OPTS_HOMEPAGE] = (char *)ami_utf8_easy((char *)messages_get("HomePageURL"));
@@ -255,6 +269,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_REFERRAL] = (char *)ami_utf8_easy((char *)messages_get("SendReferer"));
 	gadlab[GID_OPTS_DONOTTRACK] = (char *)ami_utf8_easy((char *)messages_get("DoNotTrack"));
 	gadlab[GID_OPTS_FASTSCROLL] = (char *)ami_utf8_easy((char *)messages_get("FastScrolling"));
+	gadlab[GID_OPTS_WIN_SIMPLE] = (char *)ami_utf8_easy((char *)messages_get("SimpleRefresh"));
 	gadlab[GID_OPTS_PTRTRUE] = (char *)ami_utf8_easy((char *)messages_get("TrueColour"));
 	gadlab[GID_OPTS_PTROS] = (char *)ami_utf8_easy((char *)messages_get("OSPointers"));
 	gadlab[GID_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("ProxyType"));
@@ -266,6 +281,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FETCHCACHE] = (char *)ami_utf8_easy((char *)messages_get("FetchesCached"));
 	gadlab[GID_OPTS_NATIVEBM] = (char *)ami_utf8_easy((char *)messages_get("CacheNative"));
 	gadlab[GID_OPTS_SCALEQ] = (char *)ami_utf8_easy((char *)messages_get("ScaleQuality"));
+	gadlab[GID_OPTS_DITHERQ] = (char *)ami_utf8_easy((char *)messages_get("DitherQuality"));
 	gadlab[GID_OPTS_ANIMSPEED] = (char *)ami_utf8_easy((char *)messages_get("AnimSpeedLimit"));
 	gadlab[GID_OPTS_DPI_Y] = (char *)ami_utf8_easy((char *)messages_get("ResolutionY"));
 	gadlab[GID_OPTS_ANIMDISABLE] = (char *)ami_utf8_easy((char *)messages_get("AnimDisable"));
@@ -277,6 +293,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_FONT_DEFAULT] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_SIZE] = (char *)ami_utf8_easy((char *)messages_get("Default"));
 	gadlab[GID_OPTS_FONT_MINSIZE] = (char *)ami_utf8_easy((char *)messages_get("Minimum"));
+	gadlab[GID_OPTS_FONT_ANTIALIASING] = (char *)ami_utf8_easy((char *)messages_get("FontAntialiasing"));
 	gadlab[GID_OPTS_CACHE_MEM] = (char *)ami_utf8_easy((char *)messages_get("Size"));
 	gadlab[GID_OPTS_CACHE_DISC] = (char *)ami_utf8_easy((char *)messages_get("Duration"));
 	gadlab[GID_OPTS_OVERWRITE] = (char *)ami_utf8_easy((char *)messages_get("ConfirmOverwrite"));
@@ -285,6 +302,8 @@ void ami_gui_opts_setup(void)
 	gadlab[GID_OPTS_TAB_ACTIVE] = (char *)ami_utf8_easy((char *)messages_get("TabActive"));
 	gadlab[GID_OPTS_TAB_2] = (char *)ami_utf8_easy((char *)messages_get("TabMiddle"));
 	gadlab[GID_OPTS_TAB_LAST] = (char *)ami_utf8_easy((char *)messages_get("TabLast"));
+	gadlab[GID_OPTS_TAB_ALWAYS] = (char *)ami_utf8_easy((char *)messages_get("TabAlways"));
+	gadlab[GID_OPTS_TAB_CLOSE] = (char *)ami_utf8_easy((char *)messages_get("TabClose"));
 	gadlab[GID_OPTS_SEARCH_PROV] = (char *)ami_utf8_easy((char *)messages_get("SearchProvider"));
 	gadlab[GID_OPTS_CLIPBOARD] = (char *)ami_utf8_easy((char *)messages_get("ClipboardUTF8"));
 	gadlab[GID_OPTS_CONTEXTMENU] = (char *)ami_utf8_easy((char *)messages_get("ContextMenu"));
@@ -321,6 +340,7 @@ void ami_gui_opts_setup(void)
 	gadlab[GRP_OPTS_SCRIPTING] = (char *)ami_utf8_easy((char *)messages_get("Scripting"));
 	gadlab[GRP_OPTS_MISC] = (char *)ami_utf8_easy((char *)messages_get("Miscellaneous"));
 	gadlab[GRP_OPTS_SCREEN] = (char *)ami_utf8_easy((char *)messages_get("Screen"));
+	gadlab[GRP_OPTS_WINDOW] = (char *)ami_utf8_easy((char *)messages_get("Window"));
 	gadlab[GRP_OPTS_THEME] = (char *)ami_utf8_easy((char *)messages_get("Theme"));
 	gadlab[GRP_OPTS_MOUSE] = (char *)ami_utf8_easy((char *)messages_get("MousePointers"));
 	gadlab[GRP_OPTS_PROXY] = (char *)ami_utf8_easy((char *)messages_get("Proxy"));
@@ -682,6 +702,18 @@ void ami_gui_opts_open(void)
 								LAYOUT_AddChild,VGroupObject,
 									LAYOUT_SpaceOuter, TRUE,
 									LAYOUT_BevelStyle, BVS_GROUP, 
+									LAYOUT_Label, gadlab[GRP_OPTS_WINDOW],
+		                			LAYOUT_AddChild, gow->objects[GID_OPTS_WIN_SIMPLE] = CheckBoxObject,
+      	              					GA_ID, GID_OPTS_WIN_SIMPLE,
+         	           					GA_RelVerify, TRUE,
+         	           					GA_Text, gadlab[GID_OPTS_WIN_SIMPLE],
+         	           					GA_Selected, nsoption_bool(window_simple_refresh),
+            	    				CheckBoxEnd,
+								LayoutEnd, // window
+								CHILD_WeightedHeight,0,
+								LAYOUT_AddChild,VGroupObject,
+									LAYOUT_SpaceOuter, TRUE,
+									LAYOUT_BevelStyle, BVS_GROUP, 
 									LAYOUT_Label, gadlab[GRP_OPTS_THEME],
 									LAYOUT_AddChild, gow->objects[GID_OPTS_THEME] = GetFileObject,
 										GA_ID, GID_OPTS_THEME,
@@ -848,6 +880,16 @@ void ami_gui_opts_open(void)
 									CHILD_Label, LabelObject,
 										LABEL_Text, gadlab[GID_OPTS_NATIVEBM],
 									LabelEnd,
+									LAYOUT_AddChild, gow->objects[GID_OPTS_DITHERQ] = ChooserObject,
+										GA_ID, GID_OPTS_DITHERQ,
+										GA_RelVerify, TRUE,
+										CHOOSER_PopUp, TRUE,
+										CHOOSER_LabelArray, ditheropts,
+										CHOOSER_Selected, nsoption_int(dither_quality),
+									ChooserEnd,
+									CHILD_Label, LabelObject,
+										LABEL_Text, gadlab[GID_OPTS_DITHERQ],
+									LabelEnd,
 		                			LAYOUT_AddChild, gow->objects[GID_OPTS_SCALEQ] = CheckBoxObject,
       	              					GA_ID, GID_OPTS_SCALEQ,
 										GA_Disabled, scaledisabled,
@@ -986,46 +1028,59 @@ void ami_gui_opts_open(void)
 									LabelEnd,
 								LayoutEnd, // font faces
 								CHILD_WeightedHeight, 0,
-								LAYOUT_AddChild,VGroupObject,
-									LAYOUT_SpaceOuter, TRUE,
-									LAYOUT_BevelStyle, BVS_GROUP, 
-									LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
-									LAYOUT_AddChild, HGroupObject,
-										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SIZE] = IntegerObject,
-											GA_ID, GID_OPTS_FONT_SIZE,
-											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(font_size) / 10,
-											INTEGER_Minimum, 1,
-											INTEGER_Maximum, 99,
-											INTEGER_Arrows, TRUE,
-										IntegerEnd,
-										CHILD_WeightedWidth, 0,
+								LAYOUT_AddChild, HGroupObject,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_FONTSIZE],
+										LAYOUT_AddChild, HGroupObject,
+											LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+											LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_SIZE] = IntegerObject,
+												GA_ID, GID_OPTS_FONT_SIZE,
+												GA_RelVerify, TRUE,
+												INTEGER_Number, nsoption_int(font_size) / 10,
+												INTEGER_Minimum, 1,
+												INTEGER_Maximum, 99,
+												INTEGER_Arrows, TRUE,
+											IntegerEnd,
+											CHILD_WeightedWidth, 0,
+											CHILD_Label, LabelObject,
+												LABEL_Text, gadlab[LAB_OPTS_PT],
+											LabelEnd,
+										LayoutEnd,
 										CHILD_Label, LabelObject,
-											LABEL_Text, gadlab[LAB_OPTS_PT],
+											LABEL_Text, gadlab[GID_OPTS_FONT_SIZE],
+										LabelEnd,
+										LAYOUT_AddChild, HGroupObject,
+											LAYOUT_LabelColumn, PLACETEXT_RIGHT,
+											LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MINSIZE] = IntegerObject,
+												GA_ID, GID_OPTS_FONT_MINSIZE,
+												GA_RelVerify, TRUE,
+												INTEGER_Number, nsoption_int(font_min_size) / 10,
+												INTEGER_Minimum, 1,
+												INTEGER_Maximum, 99,
+												INTEGER_Arrows, TRUE,
+											IntegerEnd,
+											CHILD_WeightedWidth, 0,
+											CHILD_Label, LabelObject,
+												LABEL_Text, gadlab[LAB_OPTS_PT],
+											LabelEnd,
+										LayoutEnd,
+										CHILD_Label, LabelObject,
+											LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
 										LabelEnd,
 									LayoutEnd,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_FONT_SIZE],
-									LabelEnd,
-									LAYOUT_AddChild, HGroupObject,
-										LAYOUT_LabelColumn, PLACETEXT_RIGHT,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_MINSIZE] = IntegerObject,
-											GA_ID, GID_OPTS_FONT_MINSIZE,
-											GA_RelVerify, TRUE,
-											INTEGER_Number, nsoption_int(font_min_size) / 10,
-											INTEGER_Minimum, 1,
-											INTEGER_Maximum, 99,
-											INTEGER_Arrows, TRUE,
-										IntegerEnd,
-										CHILD_WeightedWidth, 0,
-										CHILD_Label, LabelObject,
-											LABEL_Text, gadlab[LAB_OPTS_PT],
-										LabelEnd,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_MISC],
+										LAYOUT_AddChild, gow->objects[GID_OPTS_FONT_ANTIALIASING] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_FONT_ANTIALIASING,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_FONT_ANTIALIASING],
+         	           						GA_Selected, nsoption_bool(font_antialiasing),
+            	    					CheckBoxEnd,
 									LayoutEnd,
-									CHILD_Label, LabelObject,
-										LABEL_Text, gadlab[GID_OPTS_FONT_MINSIZE],
-									LabelEnd,
 								LayoutEnd,
 								CHILD_WeightedHeight, 0,
 							LayoutEnd, // page vgroup
@@ -1089,6 +1144,51 @@ void ami_gui_opts_open(void)
 							CHILD_WeightedHeight, 0,
 						PageEnd, // page object
 						/*
+						** Tabs
+						*/
+						PAGE_Add, LayoutObject,
+							LAYOUT_AddChild,VGroupObject,
+								LAYOUT_AddChild,HGroupObject,
+									LAYOUT_AddChild,VGroupObject,
+										LAYOUT_SpaceOuter, TRUE,
+										LAYOUT_BevelStyle, BVS_GROUP, 
+										LAYOUT_Label, gadlab[GRP_OPTS_TABS],
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_ACTIVE,
+         	        	   					GA_RelVerify, TRUE,
+         	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
+         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_LAST,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
+         	           						GA_Selected, nsoption_bool(new_tab_last),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_2,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_2],
+         	           						GA_Selected, nsoption_bool(button_2_tab),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ALWAYS] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_ALWAYS,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_ALWAYS],
+         	           						GA_Selected, nsoption_bool(tab_always_show),
+            	    					CheckBoxEnd,
+										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_CLOSE] = CheckBoxObject,
+      	              						GA_ID, GID_OPTS_TAB_CLOSE,
+         	           						GA_RelVerify, TRUE,
+         	           						GA_Text, gadlab[GID_OPTS_TAB_CLOSE],
+         	           						GA_Selected, nsoption_bool(tab_close_warn),
+            	    					CheckBoxEnd,
+									LayoutEnd, // tabbed browsing
+								LayoutEnd,
+							LayoutEnd, // page vgroup
+							CHILD_WeightedHeight, 0,
+						PageEnd, // page object
+						/*
 						** Advanced
 						*/
 						PAGE_Add, LayoutObject,
@@ -1127,29 +1227,6 @@ void ami_gui_opts_open(void)
 								LayoutEnd, // downloads
 								CHILD_WeightedHeight, 0,
 								LAYOUT_AddChild,HGroupObject,
-									LAYOUT_AddChild,VGroupObject,
-										LAYOUT_SpaceOuter, TRUE,
-										LAYOUT_BevelStyle, BVS_GROUP, 
-										LAYOUT_Label, gadlab[GRP_OPTS_TABS],
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_ACTIVE] = CheckBoxObject,
-      	              						GA_ID, GID_OPTS_TAB_ACTIVE,
-         	        	   					GA_RelVerify, TRUE,
-         	     	      					GA_Text, gadlab[GID_OPTS_TAB_ACTIVE],
-         	     	      					GA_Selected, !nsoption_bool(new_tab_active),
-            	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_LAST] = CheckBoxObject,
-      	              						GA_ID, GID_OPTS_TAB_LAST,
-         	           						GA_RelVerify, TRUE,
-         	           						GA_Text, gadlab[GID_OPTS_TAB_LAST],
-         	           						GA_Selected, nsoption_bool(new_tab_last),
-            	    					CheckBoxEnd,
-										LAYOUT_AddChild, gow->objects[GID_OPTS_TAB_2] = CheckBoxObject,
-      	              						GA_ID, GID_OPTS_TAB_2,
-         	           						GA_RelVerify, TRUE,
-         	           						GA_Text, gadlab[GID_OPTS_TAB_2],
-         	           						GA_Selected, nsoption_bool(button_2_tab),
-            	    					CheckBoxEnd,
-									LayoutEnd, // tabbed browsing
 
 									LAYOUT_AddChild, VGroupObject,
 										LAYOUT_SpaceOuter, TRUE,
@@ -1423,6 +1500,7 @@ void ami_gui_opts_use(bool save)
 	struct TextAttr *tattr;
 	char *dot;
 	bool rescan_fonts = false;
+	bool old_tab_always_show;
 
 	SetWindowPointer(gow->win,
 		WA_BusyPointer, TRUE,
@@ -1506,6 +1584,13 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_charp(modeid, modeid);
 	}
 
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_WIN_SIMPLE],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(window_simple_refresh, true);
+	} else {
+		nsoption_set_bool(window_simple_refresh, false);
+	}
+	
 	GetAttr(GETFILE_Drawer,gow->objects[GID_OPTS_THEME],(ULONG *)&data);
 	nsoption_set_charp(theme, (char *)strdup((char *)data));
 
@@ -1557,6 +1642,8 @@ void ami_gui_opts_use(bool save)
 	} else {
 		nsoption_set_bool(scale_quality, false);
 	}
+
+	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_DITHERQ],(ULONG *)&nsoption_int(dither_quality));
 
 	GetAttr(STRINGA_TextVal,gow->objects[GID_OPTS_ANIMSPEED],(ULONG *)&data);
 	animspeed = strtof((char *)data, NULL);
@@ -1611,6 +1698,13 @@ void ami_gui_opts_use(bool save)
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_FONT_MINSIZE],(ULONG *)&nsoption_int(font_min_size));
 	nsoption_set_int(font_min_size, nsoption_int(font_min_size) * 10);
 
+	GetAttr(GA_Selected, gow->objects[GID_OPTS_FONT_ANTIALIASING], (ULONG *)&data);
+	if(data) { 
+		nsoption_set_bool(font_antialiasing, true);
+	} else { 
+		nsoption_set_bool(font_antialiasing, false);
+	}
+	
 	GetAttr(INTEGER_Number,gow->objects[GID_OPTS_CACHE_MEM],(ULONG *)&nsoption_int(memory_cache_size));
 	nsoption_set_int(memory_cache_size, nsoption_int(memory_cache_size) * 1048576);
 
@@ -1654,6 +1748,25 @@ void ami_gui_opts_use(bool save)
 		nsoption_set_bool(button_2_tab, false);
 	}
 
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_CLOSE],(ULONG *)&data);
+	if (data) {
+		nsoption_set_bool(tab_close_warn, true);
+	} else {
+		nsoption_set_bool(tab_close_warn, false);
+	}
+
+	GetAttr(GA_Selected,gow->objects[GID_OPTS_TAB_ALWAYS],(ULONG *)&data);
+	old_tab_always_show = nsoption_bool(tab_always_show);
+	
+	if (data) {
+		nsoption_set_bool(tab_always_show, true);
+	} else {
+		nsoption_set_bool(tab_always_show, false);
+	}
+
+	if(old_tab_always_show != nsoption_bool(tab_always_show))
+		ami_gui_tabs_toggle_all();
+	
 	GetAttr(CHOOSER_Selected,gow->objects[GID_OPTS_SEARCH_PROV],(ULONG *)&nsoption_int(search_provider));
 	search_web_provider_details(nsoption_int(search_provider));
 	search_web_retrieve_ico(false);
@@ -1747,6 +1860,8 @@ void ami_gui_opts_use(bool save)
 		nsoption_write(current_user_options);
 		ami_font_savescanner(); /* just in case it has changed and been used only */
 	}
+
+	ami_menu_check_toggled = true;
 
 	SetWindowPointer(gow->win,
 		WA_Pointer, NULL,

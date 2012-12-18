@@ -35,11 +35,13 @@
 
 #include <string.h>
 
-#  ifndef JSVERSION_LATEST
-#   define JSVERSION_LATEST JS_VERSION
-#  endif
+#ifndef JSVERSION_LATEST
+#define JSVERSION_LATEST JS_VERSION
+#endif
 
-
+#ifndef JSOPTION_JIT
+#define JSOPTION_JIT 0
+#endif
 
 /* *CAUTION* these native function macros introduce and use jsapi_this
  * and jsapi_rval variables, native function code should not conflict
@@ -79,7 +81,7 @@
 	jsapi_property_##name##_set(cx, obj, jsval jsapi_id, vp)
 
 /* native property return value */
-#define JSAPI_PROP_RVAL(cx, vp) (vp)
+#define JSAPI_PROP_RVAL(cx, vp) (*(vp))
 
 /* native property getter return value */
 #define JSAPI_PROP_SET_RVAL(cx, vp, v) (*(vp) = (v))
@@ -149,6 +151,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
+
+#define JSAPI_ADD_VALUE_ROOT(cx, obj) JS_AddRoot(cx, obj)
+#define JSAPI_REMOVE_VALUE_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
 #elif JS_VERSION == 180
 
@@ -263,6 +268,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
 
+#define JSAPI_ADD_VALUE_ROOT(cx, obj) JS_AddRoot(cx, obj)
+#define JSAPI_REMOVE_VALUE_ROOT(cx, obj) JS_RemoveRoot(cx, obj)
+
 
 #else /* #if JS_VERSION == 180 */
 
@@ -364,6 +372,9 @@ JS_NewCompartmentAndGlobalObject(JSContext *cx,
 /* Macros for manipulating GC root */
 #define JSAPI_ADD_OBJECT_ROOT(cx, obj) JS_AddObjectRoot(cx, obj)
 #define JSAPI_REMOVE_OBJECT_ROOT(cx, obj) JS_RemoveObjectRoot(cx, obj)
+
+#define JSAPI_ADD_VALUE_ROOT(cx, val) JS_AddValueRoot(cx, val)
+#define JSAPI_REMOVE_VALUE_ROOT(cx, val) JS_RemoveValueRoot(cx, val)
 
 #endif
 

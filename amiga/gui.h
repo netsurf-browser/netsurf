@@ -66,6 +66,7 @@ enum
 	GID_TOOLBARLAYOUT,
 	GID_HOTLIST,
 	GID_HOTLISTLAYOUT,
+	GID_HOTLISTSEPBAR,
 	GID_HSCROLL,
 	GID_LAST
 };
@@ -152,6 +153,8 @@ int ami_key_to_nskey(ULONG keycode, struct InputEvent *ie);
 bool ami_text_box_at_point(struct gui_window_2 *gwin, ULONG *x, ULONG *y);
 BOOL ami_gadget_hit(Object *obj, int x, int y);
 void ami_gui_history(struct gui_window_2 *gwin, bool back);
+void ami_gui_hotlist_toolbar_update_all(void);
+void ami_gui_tabs_toggle_all(void);
 
 struct TextFont *origrpfont;
 struct MinList *window_list;

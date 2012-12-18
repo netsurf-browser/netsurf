@@ -177,6 +177,7 @@ void ami_get_vscroll_pos(struct gui_window_2 *gwin, ULONG *ys);
 ULONG ami_set_border_gadget_balance(struct gui_window_2 *gwin);
 ULONG ami_get_border_gadget_balance(struct gui_window_2 *gwin, ULONG *size1, ULONG *size2);
 void ami_try_quit(void);
+void ami_quit_netsurf_delayed(void);
 Object *ami_gui_splash_open(void);
 void ami_gui_splash_close(Object *win_obj);
 static uint32 ami_set_search_ico_render_hook(struct Hook *hook, APTR space,
@@ -1190,6 +1191,27 @@ void ami_gui_trap_mouse(struct gui_window_2 *gwin)
 	}
 }
 
+void ami_gui_menu_update_all(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			ami_menu_update_checked(gwin);
+		}
+	} while(node = nnode);
+}
+
 void ami_handle_msg(void)
 {
 	struct IntuiMessage *message = NULL;
@@ -1206,6 +1228,7 @@ void ami_handle_msg(void)
 	struct browser_window *closedbw;
 	struct timeval curtime;
 	static int drag_x_move = 0, drag_y_move = 0;
+	char *url;
 
 	if(IsMinListEmpty(window_list))
 	{
@@ -1633,6 +1656,7 @@ void ami_handle_msg(void)
 							ami_gui_history(gwin, false);
 						break;
 
+						case GID_HOTLIST:
 						default:
 //							printf("GADGET: %ld\n",(result & WMHI_GADGETMASK));
 						break;
@@ -1640,8 +1664,9 @@ void ami_handle_msg(void)
 				break;
 
 				case WMHI_RAWKEY:
+					ami_update_quals(gwin);
+				
 					storage = result & WMHI_GADGETMASK;
-
 					if(storage >= IECODE_UP_PREFIX) break;
 
 					GetAttr(WINDOW_InputEvent,gwin->objects[OID_MAIN],(ULONG *)&ie);
@@ -1940,6 +1965,11 @@ void ami_handle_msg(void)
 			
 		ami_menu_window_close = NULL;
 	}
+	
+	if(ami_menu_check_toggled) {
+		ami_gui_menu_update_all();
+		ami_menu_check_toggled = false;
+	}
 }
 
 void ami_gui_appicon_remove(struct gui_window_2 *gwin)
@@ -2106,11 +2136,12 @@ void ami_get_msg(void)
 	ULONG winsignal = 1L << sport->mp_SigBit;
 	ULONG appsig = 1L << appport->mp_SigBit;
 	ULONG schedulesig = 1L << msgport->mp_SigBit;
+	ULONG ctrlcsig = SIGBREAKF_CTRL_C;
 	ULONG signal;
 	struct TimerRequest *timermsg = NULL;
 	struct MsgPort *printmsgport = ami_print_get_msgport();
 	ULONG printsig = 1L << printmsgport->mp_SigBit;
-    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig;
+    ULONG signalmask = winsignal | appsig | schedulesig | rxsig | printsig | applibsig | ctrlcsig;
 
     signal = Wait(signalmask);
 /*
@@ -2141,6 +2172,11 @@ printf("sig recvd %ld (%ld %ld %ld %ld %ld %ld)\n", signal, winsignal , appsig ,
 			ReplyMsg((struct Message *)timermsg);
 			schedule_run(FALSE);
 		}
+	}
+
+	if(signal & ctrlcsig)
+	{
+		ami_quit_netsurf_delayed();
 	}
 }
 
@@ -2300,6 +2336,32 @@ void ami_quit_netsurf(void)
 	}
 }
 
+void ami_quit_netsurf_delayed(void)
+{
+	int res = -1;
+#ifdef __amigaos4__
+	char *utf8text = ami_utf8_easy(messages_get("TCPIPShutdown"));
+	char *utf8gadgets = ami_utf8_easy(messages_get("AbortShutdown"));
+
+	DisplayBeep(NULL);
+	
+	res = TimedDosRequesterTags(TDR_ImageType, TDRIMAGE_INFO,
+		TDR_TitleString, messages_get("NetSurf"),
+		TDR_FormatString, utf8text,
+		TDR_GadgetString, utf8gadgets,
+		TDR_Timeout, 5,
+		TDR_Inactive, TRUE,
+		TAG_DONE);
+	
+	free(utf8text);
+	free(utf8gadgets);
+#endif
+	if(res == -1) { /* Requester timed out */
+		nsoption_set_bool(tab_close_warn, false);
+		ami_quit_netsurf();
+	}
+}
+
 void ami_gui_close_screen(struct Screen *scrn)
 {
 	if(scrn == NULL) return;
@@ -2428,7 +2490,7 @@ void ami_update_buttons(struct gui_window_2 *gwin)
 	}
 }
 
-void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, uint16 *item,
+void ami_gui_hotlist_scan_2(struct tree *tree, struct node *root, WORD *gen, int *item,
 			struct List *speed_button_list, struct gui_window_2 *gwin)
 {
 	struct node *tempnode;
@@ -2470,14 +2532,14 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 	struct node *root = tree_node_get_child(tree_get_root(tree));
 	struct node *node;
 	struct node_element *element;
-	static WORD gen = 0;
-	static uint16 item = 0;
+	WORD gen = 0;
+	int item = 0;
 
 	for (node = root; node; node = tree_node_get_next(node))
 	{
 		element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
 		if(!element) element = tree_node_find_element(node, TREE_ELEMENT_TITLE, NULL);
-		if(element && (strcmp(tree_node_element_get_text(element), "Toolbar") == 0))
+		if(element && (strcmp(tree_node_element_get_text(element), messages_get("HotlistToolbar")) == 0))
 		{
 			ami_gui_hotlist_scan_2(tree, tree_node_get_child(node), &gen, &item, speed_button_list, gwin);
 		}
@@ -2488,6 +2550,13 @@ int ami_gui_hotlist_scan(struct tree *tree, struct List *speed_button_list, stru
 
 void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 {
+	struct TagItem attrs[2];
+
+	attrs[0].ti_Tag = CHILD_MinWidth;
+	attrs[0].ti_Data = 0;
+	attrs[1].ti_Tag = TAG_DONE;
+	attrs[1].ti_Data = 0;
+
 	NewList(&gwin->hotlist_toolbar_list);
 
 	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
@@ -2495,17 +2564,118 @@ void ami_gui_hotlist_toolbar_add(struct gui_window_2 *gwin)
 				SpeedBarObject,
 					GA_ID, GID_HOTLIST,
 					GA_RelVerify, TRUE,
+					ICA_TARGET, ICTARGET_IDCMP,
+					SPEEDBAR_BevelStyle, BVS_NONE,
 					SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,
 				SpeedBarEnd;
+				
+		gwin->objects[GID_HOTLISTSEPBAR] =
+				BevelObject,
+					BEVEL_Style, BVS_SBAR_VERT,
+				BevelEnd;
 
 		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDCHILD,
-				gwin->win, gwin->objects[GID_HOTLIST], NULL);
+				gwin->win, gwin->objects[GID_HOTLIST], attrs);
+
+		IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_ADDIMAGE,
+				gwin->win, gwin->objects[GID_HOTLISTSEPBAR], NULL);
+
+		FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
+
+		RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
+				gwin->win, NULL, TRUE);
+		
+		if(gwin->bw) {
+			gwin->redraw_required = true;
+			gwin->bw->reformat_pending = true;
+		}
 	}
+}
+
+void ami_gui_hotlist_toolbar_free(struct gui_window_2 *gwin, struct List *speed_button_list)
+{
+	int i;
+	struct Node *node;
+	struct Node *nnode;
+
+	if(IsListEmpty(speed_button_list)) return;
+	node = GetHead(speed_button_list);
+
+	do {
+		nnode = GetSucc(node);
+		Remove(node);
+		FreeSpeedButtonNode(node);
+	} while(node = nnode);
+		
+	for(i = 0; i < AMI_GUI_TOOLBAR_MAX; i++) {
+		if(gwin->hotlist_toolbar_lab[i]) {
+			free(gwin->hotlist_toolbar_lab[i]);
+			gwin->hotlist_toolbar_lab[i] = NULL;
+		}
+	}
+}
+
+void ami_gui_hotlist_toolbar_remove(struct gui_window_2 *gwin)
+{
+	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_HOTLIST]);
+
+	IDoMethod(gwin->objects[GID_HOTLISTLAYOUT], LM_REMOVECHILD,
+			gwin->win, gwin->objects[GID_HOTLISTSEPBAR]);
 
 	FlushLayoutDomainCache((struct Gadget *)gwin->objects[GID_MAIN]);
 
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
+
+	gwin->redraw_required = true;
+	gwin->bw->reformat_pending = true;
+}
+
+void ami_gui_hotlist_toolbar_update(struct gui_window_2 *gwin)
+{
+	if(IsListEmpty(&gwin->hotlist_toolbar_list)) {
+		ami_gui_hotlist_toolbar_add(gwin);
+		return;
+	}
+
+	/* Below should be SetAttr according to Autodocs */
+	SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLIST],
+						gwin->win, NULL,
+						SPEEDBAR_Buttons, ~0,
+						TAG_DONE);
+
+	ami_gui_hotlist_toolbar_free(gwin, &gwin->hotlist_toolbar_list);
+
+	if(ami_gui_hotlist_scan(ami_tree_get_tree(hotlist_window), &gwin->hotlist_toolbar_list, gwin) > 0) {
+		SetGadgetAttrs((struct Gadget *)gwin->objects[GID_HOTLIST],
+						gwin->win, NULL,
+						SPEEDBAR_Buttons, &gwin->hotlist_toolbar_list,
+						TAG_DONE);
+	} else {
+		ami_gui_hotlist_toolbar_remove(gwin);
+	}
+}
+
+void ami_gui_hotlist_toolbar_update_all(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			ami_gui_hotlist_toolbar_update(gwin);
+		}
+	} while(node = nnode);
 }
 
 void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
@@ -2561,8 +2731,37 @@ void ami_toggletabbar(struct gui_window_2 *gwin, bool show)
 	RethinkLayout((struct Gadget *)gwin->objects[GID_MAIN],
 			gwin->win, NULL, TRUE);
 
-	gwin->redraw_required = true;
-	gwin->bw->reformat_pending = true;
+	if(gwin->bw) {
+		gwin->redraw_required = true;
+		gwin->bw->reformat_pending = true;
+	}
+}
+
+void ami_gui_tabs_toggle_all(void)
+{
+	struct nsObject *node;
+	struct nsObject *nnode;
+	struct gui_window_2 *gwin;
+
+	if(IsMinListEmpty(window_list))	return;
+
+	node = (struct nsObject *)GetHead((struct List *)window_list);
+
+	do {
+		nnode=(struct nsObject *)GetSucc((struct Node *)node);
+		gwin = node->objstruct;
+
+		if(node->Type == AMINS_WINDOW)
+		{
+			if(gwin->tabs == 1) {
+				if(nsoption_bool(tab_always_show) == true) {
+					ami_toggletabbar(gwin, true);
+				} else {
+					ami_toggletabbar(gwin, false);
+				}
+			}
+		}
+	} while(node = nnode);
 }
 
 struct gui_window *gui_create_browser_window(struct browser_window *bw,
@@ -2613,7 +2812,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 		g->shared = clone->window->shared;
 		g->tab = g->shared->next_tab;
 
-		if(g->shared->tabs == 1)
+		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, true);
 
 		SetGadgetAttrs((struct Gadget *)g->shared->objects[GID_TABS],
@@ -2961,7 +3160,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 							GA_HintInfo, g->shared->helphints[GID_SEARCHSTRING],
 						StringEnd,
 					LayoutEnd,
-					CHILD_WeightedWidth, 0,
+					CHILD_WeightedWidth, nsoption_int(web_search_width),
 					LAYOUT_AddChild, g->shared->objects[GID_THROBBER] = SpaceObject,
 						GA_ID,GID_THROBBER,
 						SPACE_MinWidth,throbber_width,
@@ -2977,7 +3176,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 					BEVEL_Style, BVS_SBAR_VERT,
 				BevelEnd,
 				CHILD_WeightedHeight, 0,
-				LAYOUT_AddChild, g->shared->objects[GID_HOTLISTLAYOUT] = HGroupObject,
+				LAYOUT_AddChild, g->shared->objects[GID_HOTLISTLAYOUT] = VGroupObject,
 					LAYOUT_SpaceInner, FALSE,
 				LayoutEnd,
 				CHILD_WeightedHeight,0,
@@ -3128,6 +3327,7 @@ struct gui_window *gui_create_browser_window(struct browser_window *bw,
 				g->shared->win, NULL);
 				
 		ami_gui_hotlist_toolbar_add(g->shared); /* is this the right place for this? */
+		if(nsoption_bool(tab_always_show)) ami_toggletabbar(g->shared, true);
 	}
 	else
 	{
@@ -3207,7 +3407,15 @@ void ami_close_all_tabs(struct gui_window_2 *gwin)
 {
 	struct Node *tab;
 	struct Node *ntab;
-
+	
+	if((gwin->tabs > 1) && (nsoption_bool(tab_close_warn) == true)) {
+		char *req_body = ami_utf8_easy(messages_get("MultiTabClose"));
+		int32 res = ami_warn_user_multi(req_body, "Yes", "No", gwin->win);
+		free(req_body);
+		
+		if(res == 0) return;
+	}
+	
 	if(gwin->tabs)
 	{
 		tab = GetHead(&gwin->tab_list);
@@ -3281,7 +3489,7 @@ void gui_window_destroy(struct gui_window *g)
 		g->shared->tabs--;
 		ami_switch_tab(g->shared,true);
 
-		if(g->shared->tabs == 1)
+		if((g->shared->tabs == 1) && (nsoption_bool(tab_always_show) == false))
 			ami_toggletabbar(g->shared, false);
 
 		ami_utf8_free(g->tabtitle);
@@ -3295,6 +3503,8 @@ void gui_window_destroy(struct gui_window *g)
 	DisposeObject(g->shared->objects[OID_MAIN]);
 	ami_gui_appicon_remove(g->shared);
 	if(g->shared->appwin) RemoveAppWindow(g->shared->appwin);
+
+	ami_gui_hotlist_toolbar_free(g->shared, &g->shared->hotlist_toolbar_list);
 
 	/* These aren't freed by the above.
 	 * TODO: nav_west etc need freeing too? */
@@ -4173,6 +4383,8 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 	struct gui_window_2 *gwin = hook->h_Data;
 	struct IntuiWheelData *wheel;
 	Object *reqrefresh = NULL;
+	struct Node *node = NULL;
+	char *url;
 
 	switch(msg->Class)
 	{
@@ -4189,6 +4401,18 @@ void ami_scroller_hook(struct Hook *hook,Object *object,struct IntuiMessage *msg
 
 					gwin->redraw_required = true;
  				break;
+				
+				case GID_HOTLIST:
+					if(node = (struct Node *)GetTagData(SPEEDBAR_SelectedNode, 0, msg->IAddress)) {
+						GetSpeedButtonNodeAttrs(node, SBNA_UserData, (ULONG *)&url, TAG_DONE);
+						
+						if(gwin->key_state & BROWSER_MOUSE_MOD_2) {
+							browser_window_create(url, gwin->bw, NULL, false, true);
+						} else {
+							browser_window_go(gwin->bw, url, NULL, true);
+						}
+					}
+				break;
 			} 
 		break;
 

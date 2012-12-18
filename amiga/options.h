@@ -39,6 +39,8 @@
 	bool use_openurl_lib;			\
 	bool new_tab_active;			\
 	bool new_tab_last;			\
+	bool tab_close_warn;			\
+	bool tab_always_show;			\
 	bool kiosk_mode;			\
 	char *search_engines_file;		\
 	char *arexx_dir;			\
@@ -74,6 +76,7 @@
 	int cookies_window_ypos;		\
 	int cookies_window_xsize;		\
 	int cookies_window_ysize;		\
+	int web_search_width;		\
 	int cairo_renderer;			\
 	bool direct_render;			\
 	bool window_simple_refresh;			\
@@ -101,6 +104,8 @@
 	.use_openurl_lib = false,			\
 	.new_tab_active = false,			\
 	.new_tab_last = false,				\
+	.tab_close_warn = true,				\
+	.tab_always_show = false,				\
 	.kiosk_mode = false,				\
 	.search_engines_file = NULL,			\
 	.arexx_dir = NULL,				\
@@ -136,6 +141,7 @@
 	.cookies_window_ypos = 0,			\
 	.cookies_window_xsize = 0,			\
 	.cookies_window_ysize = 0,			\
+	.web_search_width = 0,			\
 	.cairo_renderer = 0,				\
 	.direct_render = false,				\
 	.window_simple_refresh = false,				\
@@ -162,6 +168,8 @@
 { "use_openurl_lib",	OPTION_BOOL,	&nsoptions.use_openurl_lib}, \
 { "new_tab_is_active",	OPTION_BOOL,	&nsoptions.new_tab_active}, \
 { "new_tab_last",	OPTION_BOOL,	&nsoptions.new_tab_last}, \
+{ "tab_close_warn",	OPTION_BOOL,	&nsoptions.tab_close_warn}, \
+{ "tab_always_show",	OPTION_BOOL,	&nsoptions.tab_always_show}, \
 { "kiosk_mode",		OPTION_BOOL,	&nsoptions.kiosk_mode},		\
 { "search_engines_file",OPTION_STRING,	&nsoptions.search_engines_file }, \
 { "arexx_dir",		OPTION_STRING,	&nsoptions.arexx_dir }, \
@@ -197,6 +205,7 @@
 { "cookies_window_ypos", OPTION_INTEGER, &nsoptions.cookies_window_ypos}, \
 { "cookies_window_xsize", OPTION_INTEGER, &nsoptions.cookies_window_xsize}, \
 { "cookies_window_ysize", OPTION_INTEGER, &nsoptions.cookies_window_ysize}, \
+{ "web_search_width", OPTION_INTEGER, &nsoptions.web_search_width}, \
 { "cairo_renderer",	OPTION_INTEGER,	&nsoptions.cairo_renderer}, \
 { "direct_render",	OPTION_BOOL,	&nsoptions.direct_render}, \
 { "window_simple_refresh",	OPTION_BOOL,	&nsoptions.window_simple_refresh}, \

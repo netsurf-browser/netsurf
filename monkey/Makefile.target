@@ -22,18 +22,20 @@ NETSURF_FEATURE_JS_CFLAGS := -DWITH_JS -DJS_HAS_FILE_OBJECT=0
 NETSURF_FEATURE_MOZJS_CFLAGS := -DWITH_MOZJS -DJS_HAS_FILE_OBJECT=0
 
 # add a line similar to below for each optional pkg-configed lib here
-$(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
-$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
-$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-$(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-$(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
-$(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG  ))
+$(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 
 # no pkg-config for this library
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 
-  MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
+WARNFLAGS += -Werror
+
+MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \
@@ -45,18 +47,19 @@ $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp -lvpx,WebP (libwebp)))
 		$(shell $(PKG_CONFIG) --cflags openssl) \
 		$(shell xml2-config --cflags)
 
-  MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
+MONKEYLDFLAGS := -lm $(shell $(PKG_CONFIG) --cflags --libs glib-2.0 lcms)
 
-  CFLAGS += $(MONKEYCFLAGS) -Werror -Wno-unused-but-set-variable
-  LDFLAGS += $(MONKEYLDFLAGS)
 
-  # ---------------------------------------------------------------------------
-  # Windows flag setup
-  # ---------------------------------------------------------------------------
+CFLAGS += $(MONKEYCFLAGS)
+LDFLAGS += $(MONKEYLDFLAGS)
 
-  ifeq ($(HOST),Windows_NT)
-    CFLAGS += -U__STRICT_ANSI__
-  endif
+# ---------------------------------------------------------------------------
+# Windows flag setup
+# ---------------------------------------------------------------------------
+
+ifeq ($(HOST),Windows_NT)
+  CFLAGS += -U__STRICT_ANSI__
+endif
 
 # ----------------------------------------------------------------------------
 # Source file setup

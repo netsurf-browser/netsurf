@@ -42,7 +42,6 @@ binding window {
 	internal "JSObject *" document;
 	internal "JSObject *" navigator;
 	internal "JSObject *" console;
-	internal "JSObject *" location;
 
 	property unshared type EventHandler;
 }
@@ -57,9 +56,6 @@ api mark %{
 		}
 		if (private->console != NULL) {
 			JSAPI_GCMARK(private->console);
-		}
-		if (private->location != NULL) {
-			JSAPI_GCMARK(private->location);
 		}
 	}
 %}
@@ -180,13 +176,6 @@ api new %{
 		return NULL;
 	}
 
-	private->location = jsapi_new_Location(cx, NULL, newobject, bw, 
-					       llcache_handle_get_url(private->htmlc->base.llcache));
-	if (private->location == NULL) {
-		free(private);
-		return NULL;
-	}
-
 	private->console = jsapi_new_Console(cx, NULL, newobject);
 	if (private->console == NULL) {
 		free(private);
@@ -210,6 +199,48 @@ operation prompt %{
 	warn_user(message, NULL);
 %}
 
+/* boolean dispatchEvent(Event event); */
+operation dispatchEvent %{
+	/* this implementation is unique to the window object as it is
+	 * not a "real" dom node. 
+	 */
+
+	/* caution, this must match the struct generated from event.bnd */
+	struct {
+		dom_event *event;
+	} *event_private;
+	dom_string *type_dom = NULL;
+	dom_exception exc;
+	jsval eventval = JSVAL_VOID;
+	jsval event_argv[1];
+	jsval event_rval;
+
+	event_private = JS_GetInstancePrivate(cx, event, &JSClass_Event, NULL);
+	if (event_private->event == NULL) {
+		/** @todo type error? */
+		jsret = JS_FALSE;
+	} else {
+		exc = dom_event_get_type(event_private->event, &type_dom);
+		if (exc == DOM_NO_ERR) {
+
+			if (dom_string_isequal(type_dom, corestring_dom_load)) {
+				JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
+			}
+
+			if (!JSVAL_IS_VOID(eventval)) {
+				event_argv[0] = eventval;
+				jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
+			}
+		}
+	}	
+%}
+
+getter location %{
+	jsval loc;
+	JS_GetProperty(cx, private->document, "location", &loc);
+	jsret = JSVAL_TO_OBJECT(loc);
+%}
+
 getter window %{
 	jsret = obj;
 %}
@@ -218,56 +249,20 @@ getter self %{
 	jsret = obj;
 %}
 
-/* boolean dispatchEvent(Event event); */
-operation dispatchEvent %{
-	/* this implementation is unique to the window object as it is
-	 * not a "real" dom node. 
-	 */
-
-	/* caution, this must match the struct generated from event.bnd */
-	if (event == JSVAL_VOID) {
-		jsret = JS_FALSE;
-	} else {
-		struct {
-			dom_event *event;
-		} *event_private;
-		dom_string *type_dom = NULL;
-		dom_exception exc;
-		jsval eventval = JSVAL_VOID;
-		jsval event_argv[1];
-		jsval event_rval;
-
-		event_private = JS_GetInstancePrivate(cx, event, &JSClass_Event, NULL);
-		if (event_private->event == NULL) {
-			/** @todo type error? */
-			jsret = JS_FALSE;
-		} else {
-			exc = dom_event_get_type(event_private->event, &type_dom);
-			if (exc == DOM_NO_ERR) {
-
-				if (dom_string_isequal(type_dom, corestring_dom_load)) {
-					JS_GetProperty(cx, JSAPI_THIS_OBJECT(cx, vp), "onload", &eventval);
-				}
-
-				if (eventval != JSVAL_VOID) {
-					event_argv[0] = eventval;
-					jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
-				}
-			}
-		}
-	}
-%}
-
 getter EventHandler %{
 	/* this implementation is unique to the window object as it is
 	 * not a dom node. 
 	 */
-	JSLOG("propname[%d] %s %s", tinyid , jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx, tinyid_jsval)));
+	JSLOG("propname[%d]=\"%s\"", 
+	      tinyid,
+	      jsclass_properties[tinyid].name);
 %}
 
 setter EventHandler %{
 	/* this implementation is unique to the window object as it is
 	 * not a dom node. 
 	 */
-	JSLOG("propname[%d] %s %s", tinyid, jsclass_properties[tinyid].name, JS_GetTypeName(cx, JS_TypeOfValue(cx,  tinyid_jsval)));
+	JSLOG("propname[%d]=\"%s\"", 
+	      tinyid, 
+	      jsclass_properties[tinyid].name);
 %}

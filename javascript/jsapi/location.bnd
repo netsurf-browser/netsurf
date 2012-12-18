@@ -32,19 +32,27 @@ binding location {
 
 	interface Location; /* Web IDL interface to generate */
 
-	private "struct browser_window *" bw;
 	private "nsurl *" url;
+	private "struct html_content *" htmlc; 
+
+	property unshared href;
 
 }
 
 operation reload %{
-	browser_window_reload(private->bw, false);
+	browser_window_reload(private->htmlc->bw, false);
 %}
 
 
 getter href %{
 	char *url_s = NULL;
 	size_t url_l;
+
+	if (!JSVAL_IS_VOID(JSAPI_PROP_RVAL(cx,vp))) {
+		/* already created - return it */
+		return JS_TRUE;
+	}
+
 	nsurl_get(private->url, NSURL_COMPLETE, &url_s, &url_l);
 	if (url_s != NULL) {
 		jsret = JS_NewStringCopyN(cx, url_s, url_l);

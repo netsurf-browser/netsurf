@@ -30,10 +30,10 @@
 
 /* Maximum number of menu items - first value is number of static items
  * (ie. everything not intially defined as NM_IGNORE) */
-#define AMI_MENU_MAX 52 + AMI_HOTLIST_ITEMS
+#define AMI_MENU_MAX 57 + AMI_HOTLIST_ITEMS
 
 /* Where the hotlist entries start */
-#define AMI_MENU_HOTLIST 43
+#define AMI_MENU_HOTLIST 48
 
 /* Where the hotlist entries end */
 #define AMI_MENU_HOTLIST_MAX AMI_MENU_HOTLIST+AMI_HOTLIST_ITEMS
@@ -62,17 +62,22 @@
 #define AMI_MENU_SELECTALL FULLMENUNUM(1,4,0)
 #define AMI_MENU_CLEAR FULLMENUNUM(1,5,0)
 #define AMI_MENU_FIND FULLMENUNUM(2,0,0)
+#define AMI_MENU_FOREIMG FULLMENUNUM(2,8,0)
+#define AMI_MENU_BACKIMG FULLMENUNUM(2,8,1)
+#define AMI_MENU_JS FULLMENUNUM(2,9,0)
 
 /* A special value for ami_menu_window_close */
-#define AMI_MENU_WINDOW_CLOSE_ALL 1
+#define AMI_MENU_WINDOW_CLOSE_ALL (void *)1
 
 struct gui_window;
 struct gui_window_2;
 
 struct gui_window_2 *ami_menu_window_close;
+bool ami_menu_check_toggled;
 
 void ami_free_menulabs(struct gui_window_2 *gwin);
 struct NewMenu *ami_create_menu(struct gui_window_2 *gwin);
 void ami_menu_refresh(struct gui_window_2 *gwin);
+void ami_menu_update_checked(struct gui_window_2 *gwin);
 void ami_menu_update_disabled(struct gui_window *g, hlcache_handle *c);
 #endif

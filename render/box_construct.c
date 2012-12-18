@@ -994,11 +994,14 @@ bool box_construct_element(struct box_construct_ctx *ctx,
 		return true;
 	}
 
-	/* Attach box to DOM node */
+	/* Attach DOM node to box */
 	err = dom_node_set_user_data(ctx->n, kstr_box_key, box, NULL, 
 			(void *) &old_box);
 	if (err != DOM_NO_ERR)
 		return false;
+
+	/* Attach box to DOM node */
+	box->node = dom_node_ref(ctx->n);
 
 	if (props.inline_container == NULL &&
 			(box->type == BOX_INLINE ||

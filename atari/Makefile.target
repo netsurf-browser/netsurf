@@ -55,8 +55,8 @@ NETSURF_USE_JS:=YES
 NETSURF_USE_MOZJS:=YES
 endif
 
-$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 
 CFLAGS += -U__STRICT_ANSI__ -std=c99 -I. -Dsmall $(WARNFLAGS) -Dnsatari \
 		-D_BSD_SOURCE \

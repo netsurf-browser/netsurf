@@ -42,6 +42,7 @@
 #include "render/html_internal.h"
 #include "render/imagemap.h"
 #include "render/textinput.h"
+#include "javascript/js.h"
 #include "utils/messages.h"
 #include "utils/utils.h"
 
@@ -323,6 +324,7 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	int padding_left, padding_right, padding_top, padding_bottom;
 	browser_drag_type drag_type = browser_window_get_drag_type(bw);
 	union content_msg_data msg_data;
+	struct dom_node *node = NULL;
 
 	if (drag_type != DRAGGING_NONE && !mouse &&
 			html->visible_select_menu != NULL) {
@@ -389,7 +391,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	browser_window_set_drag_type(bw, DRAGGING_NONE, NULL);
 
 	/* search the box tree for a link, imagemap, form control, or
-	 * box with scrollbars */
+	 * box with scrollbars 
+	 */
 
 	box = html->layout;
 
@@ -397,13 +400,48 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 	box_x = box->margin[LEFT];
 	box_y = box->margin[TOP];
 
-	while ((next_box = box_at_point(box, x, y, &box_x, &box_y)) !=
-			NULL) {
+	/* descend through visible boxes setting more specific values for:
+	 * box - deepest box at point 
+	 * html_object_box - html object
+	 * html_object_pos_x - html object
+	 * html_object_pos_y - html object
+	 * object - non html object
+	 * iframe - iframe
+	 * url - href or imagemap
+	 * target - href or imagemap or gadget
+	 * url_box - href or imagemap
+	 * imagemap - imagemap
+	 * gadget - gadget
+	 * gadget_box - gadget
+	 * gadget_box_x - gadget
+	 * gadget_box_y - gadget
+	 * title - title
+	 * pointer
+	 *
+	 * drag_candidate - first box with scroll
+	 * padding_left - box with scroll
+	 * padding_right
+	 * padding_top
+	 * padding_bottom
+	 * scrollbar - inside padding box stops decent
+	 * scroll_mouse_x - inside padding box stops decent
+	 * scroll_mouse_y - inside padding box stops decent
+	 * 
+	 * text_box - text box
+	 * text_box_x - text_box
+	 */
+	while ((next_box = box_at_point(box, x, y, &box_x, &box_y)) != NULL) {
 		box = next_box;
 
-		if (box->style && css_computed_visibility(box->style) == 
-				CSS_VISIBILITY_HIDDEN)
+		if ((box->style != NULL) && 
+		    (css_computed_visibility(box->style) == 
+		     CSS_VISIBILITY_HIDDEN)) {
 			continue;
+		}
+
+		if (box->node != NULL) {
+			node = box->node;
+		}
 
 		if (box->object) {
 			if (content_get_type(box->object) == CONTENT_HTML) {
@@ -415,8 +453,9 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			}
 		}
 
-		if (box->iframe)
+		if (box->iframe) {
 			iframe = box->iframe;
+		}
 
 		if (box->href) {
 			url = box->href;
@@ -442,16 +481,19 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 				target = gadget->form->target;
 		}
 
-		if (box->title)
+		if (box->title) {
 			title = box->title;
+		}
 
 		pointer = get_pointer_shape(box, false);
-
-		if ((box->scroll_x != NULL || box->scroll_y != NULL) &&
-				   drag_candidate == NULL)
-			drag_candidate = box;
 		
-		if (box->scroll_y != NULL || box->scroll_x != NULL) {
+		if ((box->scroll_x != NULL) || 
+		    (box->scroll_y != NULL)) {
+
+			if (drag_candidate == NULL) {
+				drag_candidate = box;
+			}
+
 			padding_left = box_x +
 					scrollbar_get_offset(box->scroll_x);
 			padding_right = padding_left + box->padding[LEFT] +
@@ -461,12 +503,14 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 			padding_bottom = padding_top + box->padding[TOP] +
 					box->height + box->padding[BOTTOM];
 			
-			if (x > padding_left && x < padding_right &&
-					y > padding_top && y < padding_bottom) {
+			if ((x > padding_left) && 
+			    (x < padding_right) &&
+			    (y > padding_top) && 
+			    (y < padding_bottom)) {
 				/* mouse inside padding box */
 				
-				if (box->scroll_y != NULL && x > padding_right -
-						SCROLLBAR_WIDTH) {
+				if ((box->scroll_y != NULL) && 
+				    (x > (padding_right - SCROLLBAR_WIDTH))) {
 					/* mouse above vertical box scroll */
 					
 					scrollbar = box->scroll_y;
@@ -475,9 +519,8 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 					scroll_mouse_y = y - padding_top;
 					break;
 				
-				} else if (box->scroll_x != NULL &&
-						y > padding_bottom -
-						SCROLLBAR_WIDTH) {
+				} else if ((box->scroll_x != NULL) &&
+					   (y > (padding_bottom - SCROLLBAR_WIDTH))) {
 					/* mouse above horizontal box scroll */
 							
 					scrollbar = box->scroll_x;
@@ -840,6 +883,12 @@ void html_mouse_action(struct content *c, struct browser_window *bw,
 
 		msg_data.pointer = pointer;
 		content_broadcast(c, CONTENT_MSG_POINTER, msg_data);
+	}
+
+	/* fire dom click event */
+	if ((mouse & BROWSER_MOUSE_CLICK_1) ||
+	    (mouse & BROWSER_MOUSE_CLICK_2)) {
+		js_fire_event(html->jscontext, "click", html->document, node);
 	}
 
 	/* deferred actions that can cause this browser_window to be destroyed

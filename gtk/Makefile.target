@@ -7,9 +7,6 @@
 # GTK flag setup (using pkg-config)
 # ----------------------------------------------------------------------------
 
-LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl libdom libcss)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs openssl)
-
 # define additional CFLAGS and LDFLAGS requirements for pkg-configed libs here
 NETSURF_FEATURE_RSVG_CFLAGS := -DWITH_RSVG
 NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
@@ -24,16 +21,16 @@ NETSURF_FEATURE_VIDEO_CFLAGS := -DWITH_VIDEO
 
 # add a line similar to below for each optional lib here
 # note: webp lacks pkg-config file
-$(eval $(call pkg_config_find_and_add,PNG,libpng,PNG  ))
-$(eval $(call pkg_config_find_and_add,BMP,libnsbmp,BMP))
-$(eval $(call pkg_config_find_and_add,GIF,libnsgif,GIF))
-$(eval $(call pkg_config_find_and_add,RSVG,librsvg-2.0,SVG))
-$(eval $(call pkg_config_find_and_add,NSSVG,libsvgtiny,SVG))
-$(eval $(call pkg_config_find_and_add,ROSPRITE,librosprite,Sprite))
+$(eval $(call pkg_config_find_and_add_enabled,PNG,libpng,PNG))
+$(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
+$(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
+$(eval $(call pkg_config_find_and_add_enabled,RSVG,librsvg-2.0,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,NSSVG,libsvgtiny,SVG))
+$(eval $(call pkg_config_find_and_add_enabled,ROSPRITE,librosprite,Sprite))
 $(eval $(call feature_enabled,WEBP,-DWITH_WEBP,-lwebp,WebP (libwebp)))
-$(eval $(call pkg_config_find_and_add,MOZJS,mozjs185,JavaScript))
-$(eval $(call pkg_config_find_and_add,JS,mozilla-js,JavaScript))
-$(eval $(call pkg_config_find_and_add,VIDEO,gstreamer-0.10,Video))
+$(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
+$(eval $(call pkg_config_find_and_add_enabled,VIDEO,gstreamer-0.10,Video))
 
 # GTK and GLIB flags to disable depricated usage
 GTKDEPFLAGS := -DG_DISABLE_SINGLE_INCLUDES \
@@ -54,16 +51,22 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
-		$(WARNFLAGS) -I. -g \
-		$(shell $(PKG_CONFIG) --cflags gtk+-$(NETSURF_GTK_MAJOR).0) \
-		$(shell $(PKG_CONFIG) --cflags libhubbub libcurl) \
-		$(shell $(PKG_CONFIG) --cflags openssl) \
-		$(shell xml2-config --cflags)
+		$(WARNFLAGS) -I. -g
 
-GTKLDFLAGS := $(shell $(PKG_CONFIG) --cflags --libs gtk+-$(NETSURF_GTK_MAJOR).0 gthread-2.0 gmodule-2.0 lcms)
+# non optional pkg-configed libs
+$(eval $(call pkg_config_find_and_add,libcss,CSS))
+$(eval $(call pkg_config_find_and_add,libdom,DOM))
+$(eval $(call pkg_config_find_and_add,libhubbub,Hubbub))
+$(eval $(call pkg_config_find_and_add,openssl,OpenSSL))
+$(eval $(call pkg_config_find_and_add,libcurl,Curl ))
+$(eval $(call pkg_config_find_and_add,gtk+-$(NETSURF_GTK_MAJOR).0,GTK-$(NETSURF_GTK_MAJOR)))
+$(eval $(call pkg_config_find_and_add,gthread-2.0,GThread2))
+$(eval $(call pkg_config_find_and_add,gmodule-2.0,GModule2))
+$(eval $(call pkg_config_find_and_add,lcms,lcms))
+
 
 CFLAGS += $(GTKCFLAGS)
-LDFLAGS += -lm $(GTKLDFLAGS)
+LDFLAGS += -lm
 
 # ---------------------------------------------------------------------------
 # Windows flag setup

@@ -92,9 +92,14 @@ static int box_talloc_destructor(struct box *b)
 	if (b->href != NULL)
 		nsurl_unref(b->href);
 
-	if (b->id != NULL)
+	if (b->id != NULL) {
 		lwc_string_unref(b->id);
-	
+	}
+
+	if (b->node != NULL) {
+		dom_node_unref(b->node);
+	}
+
 	return 0;
 }
 
@@ -172,6 +177,7 @@ struct box * box_create(css_select_results *styles, css_computed_style *style,
 	box->object = NULL;
 	box->object_params = NULL;
 	box->iframe = NULL;
+	box->node = NULL;
 
 	return box;
 }

@@ -1,4 +1,4 @@
-/* Binding to generate HTMLcolelction interface
+/* Binding to generate HTMLcollection interface
  *
  * The js_libdom (javascript to libdom) binding type is currently the
  * only one implemented and this principly describes that binding.

@@ -1,8 +1,5 @@
 /* Binding to generate NodeList interface
  *
- * The js_libdom (javascript to libdom) binding type is currently the
- * only one implemented and this principly describes that binding.
- *
  * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
@@ -32,12 +29,12 @@ preamble %{
 webidlfile "dom.idl";
 
 binding nodelist {
-    type js_libdom; /* the binding type */
+	type js_libdom; /* the binding type */
 
-    interface NodeList; /* The WebIDL interface to generate a binding for */
+	interface NodeList; /* The WebIDL interface to generate a binding for */
 
-    private "dom_nodelist *" nodelist;
-    private "struct html_content *" htmlc;
+	private "dom_nodelist *" nodelist;
+	private "struct html_content *" htmlc;
 }
 
 getter length %{

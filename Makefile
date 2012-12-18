@@ -70,8 +70,6 @@ else
     ifeq ($(TARGET),)
       TARGET := beos
     endif
-    # BeOS still uses gcc2
-    GCCVER := 2
   else
     ifeq ($(HOST),AmigaOS)
       HOST := amiga
@@ -153,6 +151,7 @@ ifeq ($(TARGET),riscos)
     SQUEEZE := squeeze
     RUNEXT :=
     CC := gcc
+    CXX := g++
     EXEEXT :=
     PKG_CONFIG :=
   else
@@ -188,6 +187,7 @@ ifeq ($(TARGET),riscos)
      SUBTARGET := -aof
      EXEEXT := ,ff8
     endif
+    CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
     PKG_CONFIG := $(GCCSDK_INSTALL_ENV)/ro-pkg-config
   endif
 else
@@ -258,8 +258,21 @@ else
               endif
             endif
           else
-            # Building for GTK, Framebuffer
-            PKG_CONFIG := pkg-config
+	    ifeq ($(TARGET),monkey)
+              ifeq ($(origin GCCSDK_INSTALL_ENV),undefined)
+                PKG_CONFIG := pkg-config
+              else
+                PKG_CONFIG := PKG_CONFIG_LIBDIR="$(GCCSDK_INSTALL_ENV)/lib/pkgconfig" pkg-config                
+              endif
+
+              ifneq ($(origin GCCSDK_INSTALL_CROSSBIN),undefined)
+                CC := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*gcc)
+                CXX := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*g++)
+              endif
+	    else
+              # All other targets (GTK, Framebuffer)
+              PKG_CONFIG := pkg-config
+            endif
           endif
         endif
       endif
@@ -267,6 +280,13 @@ else
   endif
 endif
 
+# compiler versioning to adjust warning flags
+CC_VERSION := $(shell $(CC) -dumpversion)
+CC_MAJOR := $(word 1,$(subst ., ,$(CC_VERSION)))
+CC_MINOR := $(word 2,$(subst ., ,$(CC_VERSION)))
+define cc_ver_ge
+$(shell expr $(CC_MAJOR) \>= $(1) \& $(CC_MINOR) \>= $(2))
+endef
 
 # CCACHE
 ifeq ($(origin CCACHE),undefined)
@@ -301,10 +321,37 @@ define feature_enabled
   endif
 endef
 
+# Extend flags with appropriate values from pkg-config for enabled features
+#
+# 1: pkg-config required modules for feature
+# 2: Human-readable name for the feature
+define pkg_config_find_and_add
+  ifeq ($$(PKG_CONFIG),)
+    $$(error pkg-config is required to auto-detect feature availability)
+  endif
+
+  PKG_CONFIG_$(1)_EXISTS := $$(shell $$(PKG_CONFIG) --exists $(1) && echo yes)
+
+  ifeq ($$(PKG_CONFIG_$(1)_EXISTS),yes)
+      CFLAGS += $$(shell $$(PKG_CONFIG) --cflags $(1))
+      LDFLAGS += $$(shell $$(PKG_CONFIG) --libs $(1))
+      ifneq ($(MAKECMDGOALS),clean)
+        $$(info PKG.CNFG: $(2) ($(1))	enabled)
+      endif
+  else
+    ifneq ($(MAKECMDGOALS),clean)
+      $$(info PKG.CNFG: $(2) ($(1))	failed)
+      $$(error Unable to find library for: $(2) ($(1)))
+    endif
+  endif
+endef
+
+# Extend flags with appropriate values from pkg-config for enabled features
+#
 # 1: Feature name (ie, NETSURF_USE_RSVG -> RSVG)
 # 2: pkg-config required modules for feature
 # 3: Human-readable name for the feature
-define pkg_config_find_and_add
+define pkg_config_find_and_add_enabled
   ifeq ($$(PKG_CONFIG),)
     $$(error pkg-config is required to auto-detect feature availability)
   endif
@@ -358,9 +405,13 @@ endef
 WARNFLAGS = -W -Wall -Wundef -Wpointer-arith \
 	-Wcast-align -Wwrite-strings -Wstrict-prototypes \
 	-Wmissing-prototypes -Wmissing-declarations -Wredundant-decls \
-	-Wnested-externs
-ifneq ($(GCCVER),2)
+	-Wnested-externs -Wuninitialized
+ifneq ($(CC_MAJOR),2)
   WARNFLAGS += -Wno-unused-parameter 
+endif
+# deal with lots of unwanted warnings from javascript
+ifeq ($(call cc_ver_ge,4,6),1)
+	WARNFLAGS += -Wno-unused-but-set-variable
 endif
 
 # Pull in the configuration
@@ -432,7 +483,7 @@ $(EXETARGET): $(OBJECTS) $(RESOURCES)
 ifneq ($(TARGET)$(SUBTARGET),riscos-elf)
 	$(Q)$(CC) -o $(EXETARGET) $(OBJECTS) $(LDFLAGS)
 else
-	$(Q)$(CC) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
+	$(Q)$(CXX) -o $(EXETARGET:,ff8=,e1f) $(OBJECTS) $(LDFLAGS)
 	$(Q)$(ELF2AIF) $(EXETARGET:,ff8=,e1f) $(EXETARGET)
 	$(Q)$(RM) $(EXETARGET:,ff8=,e1f)
 endif
@@ -552,7 +603,7 @@ endef
 # 1 = Source file
 # 2 = obj filename, no prefix
 # 3 = dep filename, no prefix
-ifeq ($(GCCVER),2)
+ifeq ($(CC_MAJOR),2)
 # simpler deps tracking for gcc2...
 define compile_target_c
 $$(DEPROOT)/$(3) $$(OBJROOT)/$(2): $$(OBJROOT)/created

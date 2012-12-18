@@ -199,6 +199,7 @@ extern struct dom_string *corestring_dom_playing;
 extern struct dom_string *corestring_dom_popstate;
 extern struct dom_string *corestring_dom_progress;
 extern struct dom_string *corestring_dom_ratechange;
+extern struct dom_string *corestring_dom_readystatechange;
 extern struct dom_string *corestring_dom_rect;
 extern struct dom_string *corestring_dom_rel;
 extern struct dom_string *corestring_dom_reset;
