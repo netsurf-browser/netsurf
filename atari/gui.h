@@ -20,6 +20,7 @@
 #define NS_ATARI_GUI_H_
 
 #include "atari/redrawslots.h"
+#include "atari/caret.h"
 #include "atari/gemtk/gemtk.h"
 
 struct point_s {
@@ -126,6 +127,7 @@ struct gui_window {
     char * title;
     char * url;
 	struct bitmap * icon;
+	struct s_caret caret;
 	struct gui_window *next, *prev;
 };
 

@@ -113,7 +113,7 @@
 #define DOWNLOAD_LBL_BYTES 6  /* TEXT in tree DOWNLOAD */
 #define DOWNLOAD_LBL_PERCENT 7  /* TEXT in tree DOWNLOAD */
 #define DOWNLOAD_LBL_SPEED 8  /* TEXT in tree DOWNLOAD */
-#define DOWNLOAD_CB_CLOSE_RDY 9  /* BUTTON in tree DOWNLOAD */
+#define DOWNLOAD_CB_CLOSE_RDY 9  /* BOXCHAR in tree DOWNLOAD */
 
 #define ABOUT 11  /* form/dial */
 

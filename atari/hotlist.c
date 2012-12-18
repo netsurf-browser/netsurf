@@ -180,6 +180,12 @@ void hotlist_close(void)
 
 void hotlist_destroy(void)
 {
+
+void hotlist_redraw(void)
+{
+	int i = 01;
+	atari_treeview_redraw(hl.tv);
+}
 	if( hl.init == false ) {
 		return;
 	}

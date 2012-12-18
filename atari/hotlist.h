@@ -41,10 +41,7 @@ void hotlist_close( void );
 void hotlist_destroy( void );
 void atari_hotlist_add_page( const char * url, const char * title );
 
-inline void hotlist_redraw( void );
-inline void hotlist_redraw( void )
-{
-	atari_treeview_redraw( hl.tv );
-}
+void hotlist_redraw( void );
+
 
 #endif

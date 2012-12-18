@@ -43,7 +43,6 @@
 #include "css/css.h"
 #include "utils/log.h"
 #include "utils/messages.h"
-
 #include "atari/gui.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"
@@ -273,9 +272,9 @@ static void __CDECL browser_evnt_mbutton( COMPONENT * c, short buff[8], void * d
 									rel_cur_x, rel_cur_y);
 				}
 			}
-			if( browser_redraw_required( gw ) ){
-				browser_redraw( gw );
-			}
+			//if( browser_redraw_required( gw ) ){
+				//browser_redraw( gw );
+			//}
 			graf_mkstate(&rel_cur_x, &rel_cur_y, &mbut, &dummy);
 			rel_cur_x = (rel_cur_x - cwork.g_x) + gw->browser->scroll.current.x;
 			rel_cur_y = (rel_cur_y - cwork.g_y) + gw->browser->scroll.current.y;
@@ -478,9 +477,9 @@ static void browser_process_scroll( struct gui_window * gw, GRECT bwrect )
 	}
 	b->scroll.requested.y = 0;
 	b->scroll.requested.x = 0;
-	if( b->caret.requested.g_w > 0 ){
-		b->caret.redraw = true;
-	}
+//	if( b->caret.requested.g_w > 0 ){
+//		b->caret.redraw = true;
+//	}
 
     // TODO: implement new sliding
 	//gw->root->handle->xpos = b->scroll.current.x;
@@ -557,23 +556,23 @@ bool browser_input( struct gui_window * gw, unsigned short nkc )
 }
 
 /* determines if a browser window needs redraw */
-bool browser_redraw_required( struct gui_window * gw)
-{
-	bool ret = true;
-	CMP_BROWSER b = gw->browser;
-
-	if( b->bw->current_content == NULL )
-		return ( false );
-
-	/* disable redraws when the browser awaits WM_REDRAW caused by resize */
-	if( b->reformat_pending )
-		return( false );
-
-	ret = ( ((b->redraw.areas_used > 0) )
-			|| b->scroll.required
-			|| b->caret.redraw);
-	return( ret );
-}
+//bool browser_redraw_required( struct gui_window * gw)
+//{
+//	bool ret = true;
+//	CMP_BROWSER b = gw->browser;
+//
+//	if( b->bw->current_content == NULL )
+//		return ( false );
+//
+//	/* disable redraws when the browser awaits WM_REDRAW caused by resize */
+//	if( b->reformat_pending )
+//		return( false );
+//
+//	ret = ( ((b->redraw.areas_used > 0) )
+//			|| b->scroll.required
+//			|| b->caret.redraw);
+//	return( ret );
+//}
 
 
 /* schedule a redraw of content */
@@ -640,273 +639,273 @@ static void browser_redraw_content( struct gui_window * gw, int xoff, int yoff,
 /*
 	area: the browser canvas
 */
-void browser_restore_caret_background( struct gui_window * gw, GRECT * area)
-{
-	CMP_BROWSER b = gw->browser;
-	GRECT rect;
-	if( area == NULL ){
-		browser_get_rect( gw, BR_CONTENT, &rect );
-		area = &rect;
-	}
-	/* This call restores the background and releases the memory: */
-	// TODO: only release memory/clear flag when the caret is not clipped.
-	// TODO: apply clipping.
-	w_put_bkgr( &app,
-			area->g_x-b->scroll.current.x+b->caret.current.g_x,
-			area->g_y-b->scroll.current.y+b->caret.current.g_y,
-			gw->browser->caret.current.g_w,
-			gw->browser->caret.current.g_h+1,
-			&gw->browser->caret.background
-	);
-	gw->browser->caret.background.fd_addr = NULL;
-}
+//void browser_restore_caret_background( struct gui_window * gw, GRECT * area)
+//{
+//	CMP_BROWSER b = gw->browser;
+//	GRECT rect;
+//	if( area == NULL ){
+//		browser_get_rect( gw, BR_CONTENT, &rect );
+//		area = &rect;
+//	}
+//	/* This call restores the background and releases the memory: */
+//	// TODO: only release memory/clear flag when the caret is not clipped.
+//	// TODO: apply clipping.
+//	w_put_bkgr( &app,
+//			area->g_x-b->scroll.current.x+b->caret.current.g_x,
+//			area->g_y-b->scroll.current.y+b->caret.current.g_y,
+//			gw->browser->caret.current.g_w,
+//			gw->browser->caret.current.g_h+1,
+//			&gw->browser->caret.background
+//	);
+//	gw->browser->caret.background.fd_addr = NULL;
+//}
 
 /*
 	area: the browser canvas
 */
-void browser_redraw_caret( struct gui_window * gw, GRECT * area )
-{
-
-	if( gw->browser->caret.redraw && gw->browser->caret.requested.g_w > 0 ){
-
-		short wind_info[4];
-
-		/* Only redraw caret when window is topped. */
-		wind_get( 0, WF_TOP, &wind_info[0], &wind_info[1], &wind_info[2], &wind_info[3]);
-		if (guiwin_get_handle(gw->root->win) != wind_info[0]) {
-			return;
-		}
-
-
-		GRECT caret;
-		struct s_browser * b = gw->browser;
-		struct rect old_clip;
-		struct rect clip;
-
-		if( b->caret.current.g_w > 0 && b->caret.background.fd_addr != NULL ){
-			browser_restore_caret_background( gw, area );
-		}
-
-		caret = b->caret.requested;
-		caret.g_x -= b->scroll.current.x - area->g_x;
-		caret.g_y -= b->scroll.current.y - area->g_y;
-
-		if( !rc_intersect( area, &caret ) ) {
-			return;
-		}
-
-		MFDB screen;
-		short pxy[8];
-
-		/* save background: */
-		//assert( b->caret.background.fd_addr == NULL );
-		init_mfdb(app.nplanes, caret.g_w, caret.g_h, 0,
-					&b->caret.background);
-		init_mfdb(0, caret.g_w, caret.g_h, 0, &screen);
-		pxy[0] = caret.g_x;
-		pxy[1] = caret.g_y;
-		pxy[2] = caret.g_x + caret.g_w;
-		pxy[3] = caret.g_y + caret.g_h;
-		pxy[4] = 0;
-		pxy[5] = 0;
-		pxy[6] = caret.g_w;
-		pxy[7] = caret.g_h;
-		/* hide the mouse */
-		v_hide_c (app.graf.handle);
-		/* copy screen image */
-		vro_cpyfm (app.graf.handle, S_ONLY, pxy, &screen, &b->caret.background);
-		/* draw caret: */
-		caret.g_x -= area->g_x;
-		caret.g_y -= area->g_y;
-		clip.x0 = caret.g_x;
-		clip.y0 = caret.g_y;
-		clip.x1 = caret.g_x + caret.g_w;
-		clip.y1 = caret.g_y + caret.g_h;
-		/* store old clip before adjusting it: */
-		plot_get_clip( &old_clip );
-		/* clip to cursor: */
-		plot_clip( &clip );
-		plot_line( caret.g_x, caret.g_y, caret.g_x, caret.g_y + caret.g_h,
-					plot_style_caret );
-		/* restore old clip area: */
-		plot_clip( &old_clip );
-		/* restore the mouse */
-		v_show_c ( app.graf.handle, 1);
-		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
-		b->caret.current.g_y = caret.g_y + gw->browser->scroll.current.y;
-		b->caret.current.g_w = caret.g_w;
-		b->caret.current.g_h = caret.g_h;
-	}
-}
-
-void browser_redraw( struct gui_window * gw )
-{
-	GRECT bwrect;
-	struct s_browser * b = gw->browser;
-	short todo[4];
-	struct rect clip;
-	/* used for clipping of content redraw: */
-	struct rect redraw_area;
-
-	if( b->attached == false || b->bw->current_content == NULL ) {
-		return;
-	}
-
-	browser_get_rect(gw, BR_CONTENT, &bwrect);
-
-	plot_set_dimensions(bwrect.g_x, bwrect.g_y, bwrect.g_w, bwrect.g_h);
-	clip.x0 = 0;
-	clip.y0 = 0;
-	clip.x1 = bwrect.g_w;
-	clip.y1 = bwrect.g_h;
-	plot_clip(&clip);
-	if (plot_lock() == false)
-		return;
-
-	if( b->scroll.required == true && b->bw->current_content != NULL) {
-		browser_process_scroll( gw, bwrect );
-		b->scroll.required = false;
-	}
-
-	if ((b->redraw.areas_used > 0) && b->bw->current_content != NULL ) {
-		if( (atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0 ) {
-
-			int i;
-			GRECT area;
-			GRECT fbwork;
-			short wf_top[4];
-			todo[0] = bwrect.g_x;
-			todo[1] = bwrect.g_y;
-			todo[2] = todo[0] + bwrect.g_w-1;
-			todo[3] = todo[1] + bwrect.g_h-1;
-			vs_clip(atari_plot_vdi_handle, 1, (short*)&todo[0]);
-
-			wind_get( 0, WF_TOP, &wf_top[0], &wf_top[1],
-						&wf_top[2], &wf_top[3] );
-
-			if( wf_top[0] == guiwin_get_handle(gw->root->win)
-				&& wf_top[1] == _AESapid ){
-				/* The window is on top, so there is no need to walk the 	*/
-				/* AES rectangle list. 										*/
-				for( i=0; i<b->redraw.areas_used; i++ ){
-					fbwork.g_x = todo[0] - bwrect.g_x;
-					fbwork.g_y = todo[1] - bwrect.g_y;
-					if( fbwork.g_x < 0 ){
-						fbwork.g_w = todo[2] + todo[0];
-						fbwork.g_x = 0;
-					} else {
-						fbwork.g_w = todo[2];
-					}
-					if( fbwork.g_y < 0 ){
-						fbwork.g_h = todo[3] + todo[1];
-						fbwork.g_y = 0;
-					} else {
-						fbwork.g_h = todo[3];
-					}
-					area.g_x = b->redraw.areas[i].x0;
-					area.g_y = b->redraw.areas[i].y0;
-					area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
-					area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
-					if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
-						redraw_area.x0 = area.g_x;
-						redraw_area.y0 = area.g_y;
-						redraw_area.x1 = area.g_x + area.g_w;
-						redraw_area.y1 = area.g_y + area.g_h;
-						browser_redraw_content( gw, 0, 0, &redraw_area );
-					} else {
-						/* the area should be kept scheduled for later redraw,*/
-						/* but because this is onscreen plotter, it doesn't   */
-						/* make much sense anyway...						  */
-					}
-				}
-			} else {
-				/* walk the AES rectangle list: */
-				short aes_handle = guiwin_get_handle(gw->root->win);
-				if( wind_get(aes_handle, WF_FIRSTXYWH,
-								&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
-					while (todo[2] && todo[3]) {
-						/* convert screen to framebuffer coords: */
-						fbwork.g_x = todo[0] - bwrect.g_x;
-						fbwork.g_y = todo[1] - bwrect.g_y;
-						if( fbwork.g_x < 0 ){
-							fbwork.g_w = todo[2] + todo[0];
-							fbwork.g_x = 0;
-						} else {
-							fbwork.g_w = todo[2];
-						}
-						if( fbwork.g_y < 0 ){
-							fbwork.g_h = todo[3] + todo[1];
-							fbwork.g_y = 0;
-						} else {
-							fbwork.g_h = todo[3];
-						}
-						/* walk the redraw requests: */
-						for( i=0; i<b->redraw.areas_used; i++ ){
-							area.g_x = b->redraw.areas[i].x0;
-							area.g_y = b->redraw.areas[i].y0;
-							area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
-							area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
-							if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
-								redraw_area.x0 = area.g_x;
-								redraw_area.y0 = area.g_y;
-								redraw_area.x1 = area.g_x + area.g_w;
-								redraw_area.y1 = area.g_y + area.g_h;
-								browser_redraw_content( gw, 0, 0, &redraw_area );
-							} else {
-								/* the area should be kept scheduled for later redraw,*/
-								/* but because this is onscreen plotter, it doesn't   */
-								/* make much sense anyway...						  */
-							}
-						}
-						if (wind_get(aes_handle, WF_NEXTXYWH,
-								&todo[0], &todo[1], &todo[2], &todo[3])==0) {
-							break;
-						}
-					}
-				}
-			}
-			vs_clip(atari_plot_vdi_handle, 0, (short*)&todo);
-		} else {
-
-			/* its save to do a complete redraw without knowledge about GEM windows :) */
-			/* walk the redraw requests: */
-			int i;
-			for( i=0; i<b->redraw.areas_used; i++ ){
-				struct redraw_context ctx = {
-					.interactive = true,
-					.background_images = true,
-					.plot = &atari_plotters
-				};
-				browser_window_redraw( b->bw, -b->scroll.current.x,
-						-b->scroll.current.y, &b->redraw.areas[i], &ctx );
-			}
-			GRECT area;
-			area.g_x = bwrect.g_x;
-			area.g_y = bwrect.g_y;
-			area.g_w = bwrect.g_w;
-			area.g_h = bwrect.g_h;
-			//plot_blit( plotter, &area );
-		}
-		b->redraw.areas_used = 0;
-	}
-	if( b->caret.redraw == true && 	b->bw->current_content != NULL ) {
-		GRECT area;
-		todo[0] = bwrect.g_x;
-		todo[1] = bwrect.g_y;
-		todo[2] = todo[0] + bwrect.g_w;
-		todo[3] = todo[1] + bwrect.g_h;
-		area.g_x = bwrect.g_x;
-		area.g_y = bwrect.g_y;
-		area.g_w = bwrect.g_w;
-		area.g_h = bwrect.g_h;
-		vs_clip(atari_plot_vdi_handle, 1, (short*)&todo[0]);
-		browser_redraw_caret( gw, &area );
-		vs_clip(atari_plot_vdi_handle, 0, (short*)&todo[0]);
-		b->caret.redraw = false;
-	}
-	plot_unlock();
-	/* TODO: if we use offscreen bitmap, trigger content redraw here */
-}
+//void browser_redraw_caret( struct gui_window * gw, GRECT * area )
+//{
+//
+//	if( gw->browser->caret.redraw && gw->browser->caret.requested.g_w > 0 ){
+//
+//		short wind_info[4];
+//
+//		/* Only redraw caret when window is topped. */
+//		wind_get( 0, WF_TOP, &wind_info[0], &wind_info[1], &wind_info[2], &wind_info[3]);
+//		if (guiwin_get_handle(gw->root->win) != wind_info[0]) {
+//			return;
+//		}
+//
+//
+//		GRECT caret;
+//		struct s_browser * b = gw->browser;
+//		struct rect old_clip;
+//		struct rect clip;
+//
+//		if( b->caret.current.g_w > 0 && b->caret.background.fd_addr != NULL ){
+//			browser_restore_caret_background( gw, area );
+//		}
+//
+//		caret = b->caret.requested;
+//		caret.g_x -= b->scroll.current.x - area->g_x;
+//		caret.g_y -= b->scroll.current.y - area->g_y;
+//
+//		if( !rc_intersect( area, &caret ) ) {
+//			return;
+//		}
+//
+//		MFDB screen;
+//		short pxy[8];
+//
+//		/* save background: */
+//		init_mfdb(app.nplanes, caret.g_w, caret.g_h, 0,
+//					&b->caret.background);
+//		init_mfdb(0, caret.g_w, caret.g_h, 0, &screen);
+//		pxy[0] = caret.g_x;
+//		pxy[1] = caret.g_y;
+//		pxy[2] = caret.g_x + caret.g_w;
+//		pxy[3] = caret.g_y + caret.g_h;
+//		pxy[4] = 0;
+//		pxy[5] = 0;
+//		pxy[6] = caret.g_w;
+//		pxy[7] = caret.g_h;
+//
+//		plot_lock();
+//
+//		/* copy screen image behin the caret for later restore: */
+//		vro_cpyfm (app.graf.handle, S_ONLY, pxy, &screen, &b->caret.background);
+//		/* draw caret: */
+//		caret.g_x -= area->g_x;
+//		caret.g_y -= area->g_y;
+//		clip.x0 = caret.g_x;
+//		clip.y0 = caret.g_y;
+//		clip.x1 = caret.g_x + caret.g_w;
+//		clip.y1 = caret.g_y + caret.g_h;
+//		/* store old clip before adjusting it: */
+//		plot_get_clip( &old_clip );
+//		/* clip to cursor: */
+//		plot_clip( &clip );
+//		plot_line( caret.g_x, caret.g_y, caret.g_x, caret.g_y + caret.g_h,
+//					plot_style_caret );
+//		/* restore old clip area: */
+//		plot_clip( &old_clip );
+//		/* restore the mouse */
+//		plot_unlock();
+//		b->caret.current.g_x = caret.g_x + gw->browser->scroll.current.x;
+//		b->caret.current.g_y = caret.g_y + gw->browser->scroll.current.y;
+//		b->caret.current.g_w = caret.g_w;
+//		b->caret.current.g_h = caret.g_h;
+//	}
+//}
+//
+//void browser_redraw( struct gui_window * gw )
+//{
+//	GRECT bwrect;
+//	struct s_browser * b = gw->browser;
+//	short todo[4];
+//	struct rect clip;
+//	/* used for clipping of content redraw: */
+//	struct rect redraw_area;
+//
+//	if( b->attached == false || b->bw->current_content == NULL ) {
+//		return;
+//	}
+//
+//	browser_get_rect(gw, BR_CONTENT, &bwrect);
+//
+//	plot_set_dimensions(bwrect.g_x, bwrect.g_y, bwrect.g_w, bwrect.g_h);
+//	clip.x0 = 0;
+//	clip.y0 = 0;
+//	clip.x1 = bwrect.g_w;
+//	clip.y1 = bwrect.g_h;
+//	plot_clip(&clip);
+//	if (plot_lock() == false)
+//		return;
+//
+//	if( b->scroll.required == true && b->bw->current_content != NULL) {
+//		browser_process_scroll( gw, bwrect );
+//		b->scroll.required = false;
+//	}
+//
+//	if ((b->redraw.areas_used > 0) && b->bw->current_content != NULL ) {
+//		if( (atari_plot_flags & PLOT_FLAG_OFFSCREEN) == 0 ) {
+//
+//			int i;
+//			GRECT area;
+//			GRECT fbwork;
+//			short wf_top[4];
+//			todo[0] = bwrect.g_x;
+//			todo[1] = bwrect.g_y;
+//			todo[2] = todo[0] + bwrect.g_w-1;
+//			todo[3] = todo[1] + bwrect.g_h-1;
+//			vs_clip(atari_plot_vdi_handle, 1, (short*)&todo[0]);
+//
+//			wind_get( 0, WF_TOP, &wf_top[0], &wf_top[1],
+//						&wf_top[2], &wf_top[3] );
+//
+//			if( wf_top[0] == guiwin_get_handle(gw->root->win)
+//				&& wf_top[1] == _AESapid ){
+//				/* The window is on top, so there is no need to walk the 	*/
+//				/* AES rectangle list. 										*/
+//				for( i=0; i<b->redraw.areas_used; i++ ){
+//					fbwork.g_x = todo[0] - bwrect.g_x;
+//					fbwork.g_y = todo[1] - bwrect.g_y;
+//					if( fbwork.g_x < 0 ){
+//						fbwork.g_w = todo[2] + todo[0];
+//						fbwork.g_x = 0;
+//					} else {
+//						fbwork.g_w = todo[2];
+//					}
+//					if( fbwork.g_y < 0 ){
+//						fbwork.g_h = todo[3] + todo[1];
+//						fbwork.g_y = 0;
+//					} else {
+//						fbwork.g_h = todo[3];
+//					}
+//					area.g_x = b->redraw.areas[i].x0;
+//					area.g_y = b->redraw.areas[i].y0;
+//					area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
+//					area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
+//					if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
+//						redraw_area.x0 = area.g_x;
+//						redraw_area.y0 = area.g_y;
+//						redraw_area.x1 = area.g_x + area.g_w;
+//						redraw_area.y1 = area.g_y + area.g_h;
+//						browser_redraw_content( gw, 0, 0, &redraw_area );
+//					} else {
+//						/* the area should be kept scheduled for later redraw,*/
+//						/* but because this is onscreen plotter, it doesn't   */
+//						/* make much sense anyway...						  */
+//					}
+//				}
+//			} else {
+//				/* walk the AES rectangle list: */
+//				short aes_handle = guiwin_get_handle(gw->root->win);
+//				if( wind_get(aes_handle, WF_FIRSTXYWH,
+//								&todo[0], &todo[1], &todo[2], &todo[3] )!=0 ) {
+//					while (todo[2] && todo[3]) {
+//						/* convert screen to framebuffer coords: */
+//						fbwork.g_x = todo[0] - bwrect.g_x;
+//						fbwork.g_y = todo[1] - bwrect.g_y;
+//						if( fbwork.g_x < 0 ){
+//							fbwork.g_w = todo[2] + todo[0];
+//							fbwork.g_x = 0;
+//						} else {
+//							fbwork.g_w = todo[2];
+//						}
+//						if( fbwork.g_y < 0 ){
+//							fbwork.g_h = todo[3] + todo[1];
+//							fbwork.g_y = 0;
+//						} else {
+//							fbwork.g_h = todo[3];
+//						}
+//						/* walk the redraw requests: */
+//						for( i=0; i<b->redraw.areas_used; i++ ){
+//							area.g_x = b->redraw.areas[i].x0;
+//							area.g_y = b->redraw.areas[i].y0;
+//							area.g_w = b->redraw.areas[i].x1 - b->redraw.areas[i].x0;
+//							area.g_h = b->redraw.areas[i].y1 - b->redraw.areas[i].y0;
+//							if (rc_intersect((GRECT *)&fbwork,(GRECT *)&area)) {
+//								redraw_area.x0 = area.g_x;
+//								redraw_area.y0 = area.g_y;
+//								redraw_area.x1 = area.g_x + area.g_w;
+//								redraw_area.y1 = area.g_y + area.g_h;
+//								browser_redraw_content( gw, 0, 0, &redraw_area );
+//							} else {
+//								/* the area should be kept scheduled for later redraw,*/
+//								/* but because this is onscreen plotter, it doesn't   */
+//								/* make much sense anyway...						  */
+//							}
+//						}
+//						if (wind_get(aes_handle, WF_NEXTXYWH,
+//								&todo[0], &todo[1], &todo[2], &todo[3])==0) {
+//							break;
+//						}
+//					}
+//				}
+//			}
+//			vs_clip(atari_plot_vdi_handle, 0, (short*)&todo);
+//		} else {
+//
+//			/* its save to do a complete redraw without knowledge about GEM windows :) */
+//			/* walk the redraw requests: */
+//			int i;
+//			for( i=0; i<b->redraw.areas_used; i++ ){
+//				struct redraw_context ctx = {
+//					.interactive = true,
+//					.background_images = true,
+//					.plot = &atari_plotters
+//				};
+//				browser_window_redraw( b->bw, -b->scroll.current.x,
+//						-b->scroll.current.y, &b->redraw.areas[i], &ctx );
+//			}
+//			GRECT area;
+//			area.g_x = bwrect.g_x;
+//			area.g_y = bwrect.g_y;
+//			area.g_w = bwrect.g_w;
+//			area.g_h = bwrect.g_h;
+//			//plot_blit( plotter, &area );
+//		}
+//		b->redraw.areas_used = 0;
+//	}
+//	if( b->caret.redraw == true && 	b->bw->current_content != NULL ) {
+//		GRECT area;
+//		todo[0] = bwrect.g_x;
+//		todo[1] = bwrect.g_y;
+//		todo[2] = todo[0] + bwrect.g_w;
+//		todo[3] = todo[1] + bwrect.g_h;
+//		area.g_x = bwrect.g_x;
+//		area.g_y = bwrect.g_y;
+//		area.g_w = bwrect.g_w;
+//		area.g_h = bwrect.g_h;
+//		vs_clip(atari_plot_vdi_handle, 1, (short*)&todo[0]);
+//		browser_redraw_caret( gw, &area );
+//		vs_clip(atari_plot_vdi_handle, 0, (short*)&todo[0]);
+//		b->caret.redraw = false;
+//	}
+//	plot_unlock();
+//	/* TODO: if we use offscreen bitmap, trigger content redraw here */
+//}
 
 static void __CDECL browser_evnt_redraw( COMPONENT * c, short buff[8], void * data)
 {

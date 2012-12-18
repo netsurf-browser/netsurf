@@ -112,12 +112,13 @@ void *guiwin_get_user_data(GUIWIN *win);
 struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
 bool guiwin_update_slider(GUIWIN *win, short mode);
 void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
+void guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
+					short d);
 void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
 void guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
 void guiwin_clear(GUIWIN *win);
-
 
 /*
 * 	AES Scroller Object

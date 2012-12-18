@@ -57,7 +57,7 @@ struct s_scroll_info
 	This struct holds information of the cursor within the browser
 	viewport.
 */
-struct s_caret
+struct s_caret_old
 {
 	GRECT requested;
 	GRECT current;
@@ -101,8 +101,8 @@ void browser_set_content_size(struct gui_window * gw, int w, int h);
 void browser_scroll( struct gui_window * gw, short MODE, int value, bool abs );
 struct gui_window * browser_find_root( struct gui_window * gw );
 bool browser_redraw_required( struct gui_window * gw);
-void browser_redraw_caret( struct gui_window * gw, GRECT * area);
-void browser_restore_caret_background(struct gui_window * gw, GRECT * area);
+//void browser_redraw_caret( struct gui_window * gw, GRECT * area);
+//void browser_restore_caret_background(struct gui_window * gw, GRECT * area);
 /* update loc / size of the browser widgets: */
 void browser_update_rects(struct gui_window * gw );
 /*

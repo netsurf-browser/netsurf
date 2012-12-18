@@ -131,6 +131,11 @@ bool global_history_init( void )
 
 void global_history_destroy( void )
 {
+
+void global_history_redraw( void )
+{
+	atari_treeview_redraw( gl_history.tv );
+}
 	if( gl_history.init == false ) {
 		return;
 	}

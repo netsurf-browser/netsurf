@@ -282,12 +282,11 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
         }
     } else {
 
-        short info[4];
-        wind_get( 0, WF_TOP, &info[0], &info[1], &info[2], &info[3]);
+        short h_aes;
+        h_aes = wind_find(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
+        if(h_aes > 0 && (ev_out->emo_events != MU_TIMER))  {
 
-        if(info[0] != 0 && info[1] == gl_apid) {
-
-            dest = guiwin_find(info[0]);
+            dest = guiwin_find(h_aes);
 
             if(dest == NULL || dest->handler_func == NULL)
                 return(0);
@@ -309,16 +308,20 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
                                                   dest->toolbar_idx, 8,
                                                   ev_out->emo_mouse.p_x,
                                                   ev_out->emo_mouse.p_y);
+						DEBUG_PRINT(("Toolbar index: %d\n", obj_idx));
                         short msg_out[8] = {WM_TOOLBAR, gl_apid, 0, dest->handle,
                                             obj_idx, ev_out->emo_mclicks, ev_out->emo_kmeta, 0
                                            };
-                        if (((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
-                            && (obj_idx > 0)
-                            && (dest->toolbar[obj_idx].ob_flags & OF_SELECTABLE) != 0)  {
-                            dest->toolbar[obj_idx].ob_state |= OS_SELECTED;
-                            // TODO: optimize redraw by setting the object clip:
-                            guiwin_toolbar_redraw(dest, NULL);
-                        }
+						if (obj_idx > 0) {
+							if ((dest->toolbar[obj_idx].ob_flags & OF_SELECTABLE)!=0
+								&& ((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
+								&& ((dest->flags & GW_FLAG_TOOLBAR_REDRAW) == 0)) {
+									dest->toolbar[obj_idx].ob_state |= OS_SELECTED;
+									// TODO: optimize redraw by setting the object clip:
+									guiwin_toolbar_redraw(dest, NULL);
+							}
+						}
+
                         short oldevents = ev_out->emo_events;
                         ev_out->emo_events = MU_MESAG;
                         // notify the window about toolbar click:
@@ -378,6 +381,8 @@ GUIWIN * guiwin_add(short handle, uint32_t flags, guiwin_event_handler_f cb)
         win->prev = tmp;
         win->next = NULL;
     }
+
+    DEBUG_PRINT(("Added guiwin: %p, tb: %p\n", win, win->toolbar));
     return(win);
 }
 
@@ -429,6 +434,9 @@ short guiwin_remove(GUIWIN *win)
 
 void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 {
+
+	assert(win != NULL);
+
     wind_get_grect(win->handle, WF_WORKXYWH, dest);
     if (mode == GUIWIN_AREA_CONTENT) {
         GRECT tb_area;
@@ -680,8 +688,16 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 	};
 	EVMULT_OUT event_out;
 
-    if(area == NULL) {
+    if (area == NULL) {
         guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
+        if (work.g_w < 1 || work.g_h < 1) {
+			if (win->toolbar != NULL) {
+				guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &work);
+				if (work.g_w < 1 || work.g_h < 1) {
+					return;
+				}
+			}
+        }
         area = &work;
     }
 
@@ -786,6 +802,3 @@ void guiwin_clear(GUIWIN *win)
         wind_get_grect(win->handle, WF_NEXTXYWH, &g);
     }
 }
-
-
-

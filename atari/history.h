@@ -39,11 +39,8 @@ void global_history_destroy( void );
 void global_history_open( void );
 void global_history_close( void );
 
-inline void global_history_redraw( void );
-inline void global_history_redraw( void )
-{
-	atari_treeview_redraw( gl_history.tv );
-}
+void global_history_redraw( void );
+
 
 
 #endif

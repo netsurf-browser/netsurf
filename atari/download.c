@@ -81,12 +81,10 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
         case WM_CLOSED:
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
-            	printf("destroy...\n");
-            	on_close(data);
+			on_close(data);
             break;
 
         case WM_TOOLBAR:
-        printf("tb idx: %d\n", msg[4]);
 			switch(msg[4]){
 
 				case DOWNLOAD_BT_ABORT:

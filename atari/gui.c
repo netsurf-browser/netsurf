@@ -144,13 +144,23 @@ void gui_poll(bool active)
 		}
         /* this suits for stuff with lower priority */
         /* TBD: really be spare on redraws??? */
-        hotlist_redraw();
-        global_history_redraw();
+        //hotlist_redraw();
+        //global_history_redraw();
     }
 
 	// Handle events until there are no more messages pending or
 	// until the engine indicates activity:
-	if(!(active || rendering) || (clock() >= next_poll)){
+	bool skip = false;
+/*
+	if (active || rendering){
+		if ((clock() < next_poll)){
+			skip = true;
+		} else {
+			next_poll = clock() + (CLOCKS_PER_SEC>>5);
+		}
+	}
+*/
+	//if (skip == false) {
 		do {
 			short mx, my, dummy;
 
@@ -163,15 +173,14 @@ void gui_poll(bool active)
 					LOG(("WM: %d\n", aes_msg_out[0]));
 					switch(aes_msg_out[0]) {
 
-					case MN_SELECTED:
-						LOG(("Menu Item: %d\n",aes_msg_out[4]));
-						deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
-						break;
-					default:
-						break;
-					}
+						case MN_SELECTED:
+							LOG(("Menu Item: %d\n",aes_msg_out[4]));
+							deskmenu_dispatch_item(aes_msg_out[3], aes_msg_out[4]);
+							break;
+						default:
+							break;
+						}
 				}
-
 				if((aes_event_out.emo_events & MU_KEYBD) != 0) {
 					uint16_t nkc = gem_to_norm( (short)aes_event_out.emo_kmeta,
 										(short)aes_event_out.emo_kreturn);
@@ -180,12 +189,12 @@ void gui_poll(bool active)
 				}
 			}
 		} while ( gui_poll_repeat && !(active||rendering));
-		if(input_window && input_window->root->redraw_slots.areas_used > 0 && !active){
+		if(input_window && input_window->root->redraw_slots.areas_used > 0){
 			window_process_redraws(input_window->root);
 		}
-		if(active || rendering)
-			next_poll = clock() + (CLOCKS_PER_SEC>>3);
-	}
+	//} else {
+		//printf("skip poll %d (%d)\n", next_poll, clock());
+	//}
 
 }
 
@@ -374,10 +383,11 @@ void gui_window_update_box(struct gui_window *gw, const struct rect *rect)
     slid = guiwin_get_scroll_info(gw->root->win);
 
     guiwin_get_grect(gw->root->win, GUIWIN_AREA_CONTENT, &area);
-	area.g_x += rect->x0;
-	area.g_y += rect->y0;
+	area.g_x += rect->x0 - (slid->x_pos * slid->x_unit_px);
+	area.g_y += rect->y0 - (slid->y_pos * slid->y_unit_px);
     area.g_w = rect->x1 - rect->x0;
     area.g_h = rect->y1 - rect->y0;
+    //dbg_grect("update box", &area);
     window_schedule_redraw_grect(gw->root, &area);
 }
 
@@ -597,15 +607,26 @@ void gui_window_stop_throbber(struct gui_window *w)
 /* Place caret in window */
 void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 {
+
+	GRECT clip, dim;
+	struct guiwin_scroll_info_s * slid;
     if (w == NULL)
         return;
-    if( w->browser->caret.current.g_w > 0 )
-        gui_window_remove_caret( w );
-    w->browser->caret.requested.g_x = x;
-    w->browser->caret.requested.g_y = y;
-    w->browser->caret.requested.g_w = 1;
-    w->browser->caret.requested.g_h = height;
-    w->browser->caret.redraw = true;
+
+	slid = guiwin_get_scroll_info(w->root->win);
+	window_get_grect(w->root, BROWSER_AREA_CONTENT, &clip);
+	dim.g_x = x - (slid->x_pos * slid->x_unit_px);
+	dim.g_y = y - (slid->y_pos * slid->y_unit_px);
+	dim.g_h = height;
+	dim.g_w = 2;
+	caret_show(&w->caret, guiwin_get_vdi_handle(w->root->win), &dim, &clip);
+//    if( w->browser->caret.current.g_w > 0 )
+//        gui_window_remove_caret( w );
+//    w->browser->caret.requested.g_x = x;
+//    w->browser->caret.requested.g_y = y;
+//    w->browser->caret.requested.g_w = 1;
+//    w->browser->caret.requested.g_h = height;
+//    w->browser->caret.redraw = true;
     return;
 }
 
@@ -619,11 +640,11 @@ gui_window_remove_caret(struct gui_window *w)
     if (w == NULL)
         return;
 
-    if( w->browser->caret.background.fd_addr != NULL ) {
-        browser_restore_caret_background( w, NULL );
-        w->browser->caret.requested.g_w = 0;
-        w->browser->caret.current.g_w = 0;
-    }
+//    if( w->browser->caret.background.fd_addr != NULL ) {
+//        browser_restore_caret_background( w, NULL );
+//        w->browser->caret.requested.g_w = 0;
+//        w->browser->caret.current.g_w = 0;
+//    }
     return;
 }
 
@@ -829,16 +850,18 @@ void gui_401login_open(nsurl *url, const char *realm,
 {
     bool bres;
     char * out = NULL;
-    bres = login_form_do( url, (char*)realm, &out  );
-    if( bres ) {
+    bres = login_form_do( url, (char*)realm, &out);
+    if (bres) {
         LOG(("url: %s, realm: %s, auth: %s\n", url, realm, out ));
-        urldb_set_auth_details(url, realm, out );
+        urldb_set_auth_details(url, realm, out);
     }
-    if( out != NULL ) {
+    if (out != NULL) {
         free( out );
     }
-    if( cb != NULL )
-        cb(bres, cbpw);
+    if (cb != NULL) {
+		cb(bres, cbpw);
+    }
+
 }
 
 void gui_cert_verify(nsurl *url, const struct ssl_cert_info *certs,
@@ -1065,6 +1088,7 @@ static void gui_init(int argc, char** argv)
 	aes_event_in.emi_m1leave = MO_LEAVE;
 	aes_event_in.emi_m1.g_w = 1;
 	aes_event_in.emi_m1.g_h = 1;
+	next_poll = clock() + (CLOCKS_PER_SEC>>3);
 
 }
 
