@@ -20,13 +20,13 @@ $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
 ifneq ($(PKG_CONFIG),)
   $(eval $(call pkg_config_find_and_add,zlib,ZLib))
+  $(eval $(call pkg_config_find_and_add,libcurl,Curl))
   $(eval $(call pkg_config_find_and_add,libcares,Cares))
   $(eval $(call pkg_config_find_and_add,libwapcaplet,Wapcaplet))
   $(eval $(call pkg_config_find_and_add,libparserutils,Parserutils))
   $(eval $(call pkg_config_find_and_add,libhubbub,Hubbub))
   $(eval $(call pkg_config_find_and_add,libdom,DOM))
   $(eval $(call pkg_config_find_and_add,libcss,CSS))
-  $(eval $(call pkg_config_find_and_add,libcurl,Curl))
 else
   LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lcurl -lz
 endif
