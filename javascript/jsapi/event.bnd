@@ -16,6 +16,7 @@ hdrcomment "Released under the terms of the MIT License,";
 hdrcomment "        http://www.opensource.org/licenses/mit-license";
 
 preamble %{
+#include <stdlib.h>
 
 #include <dom/dom.h>
         
