@@ -144,8 +144,8 @@ void gui_poll(bool active)
 		}
         /* this suits for stuff with lower priority */
         /* TBD: really be spare on redraws??? */
-        //hotlist_redraw();
-        //global_history_redraw();
+        hotlist_redraw();
+        global_history_redraw();
     }
 
 	// Handle events until there are no more messages pending or

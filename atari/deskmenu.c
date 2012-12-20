@@ -353,9 +353,8 @@ static void __CDECL menu_find(short item, short title, void *data)
 
 static void __CDECL menu_choices(short item, short title, void *data)
 {
-	static WINDOW * settings_dlg = NULL;
 	LOG(("%s", __FUNCTION__));
-	settings_dlg = open_settings();
+	open_settings();
 }
 
 static void __CDECL menu_stop(short item, short title, void *data)

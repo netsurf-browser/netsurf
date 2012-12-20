@@ -3,7 +3,7 @@
 
 #include <windom.h>
 
-WINDOW * open_settings(void);
+void open_settings(void);
 void close_settings(void);
 
 #endif

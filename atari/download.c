@@ -205,8 +205,9 @@ static void gui_download_window_destroy( struct gui_download_window * gdw)
 	if (gdw->fbuf != NULL) {
 		free( gdw->fbuf );
 	}
-	wind_close(gdw->aes_handle);
 	guiwin_remove(gdw->guiwin);
+	wind_close(gdw->aes_handle);
+	wind_delete(gdw->aes_handle);
 	free(gdw);
 }
 
@@ -269,7 +270,7 @@ struct gui_download_window * gui_download_window_create(download_context *ctx,
 		gemdos_realpath(nsoption_charp(downloads_path), gdos_path);
 		dstsize = strlen(gdos_path) + strlen(filename) + 2;
 		destination = malloc( dstsize );
-		snprintf( destination, dstsize, "%s/%s", gdos_path, filename );
+		snprintf(destination, dstsize, "%s/%s", gdos_path, filename);
 	}
 
 	gdw = calloc(1, sizeof(struct gui_download_window));

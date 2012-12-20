@@ -106,10 +106,11 @@ S_ATARI := \
 	plot/eddi.s \
 	plot/font_freetype.c \
 	plot/font_internal.c \
-	gemtk/utils.c \
+	gemtk/aestabs.c \
 	gemtk/dragdrop.c \
+	gemtk/guiwin.c \
 	gemtk/msgbox.c \
-	gemtk/guiwin.c
+	gemtk/utils.c
 
 S_ATARI := $(addprefix atari/,$(S_ATARI))
 

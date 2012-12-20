@@ -98,6 +98,7 @@ typedef struct s_browser * CMP_BROWSER;
 */
 struct s_gui_win_root
 {
+	short aes_handle;
 	GUIWIN *win;
 	CMP_TOOLBAR toolbar;
 	CMP_STATUSBAR statusbar;

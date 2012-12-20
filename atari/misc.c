@@ -488,8 +488,7 @@ const char * file_select( const char * title, const char * name ) {
 	}
 
 	if( FselInput( path, tmpname, (char*)"",  use_title, NULL, NULL)) {
-		strncpy( fullname, path, PATH_MAX-1 );
-		strncat( fullname, tmpname, PATH_MAX-strlen(fullname)-1 );
+		snprintf(fullname, PATH_MAX, "%s%s", path, tmpname);
 		return( (const char*)&fullname  );
 	}
 	return( NULL );

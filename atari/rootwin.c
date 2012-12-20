@@ -165,7 +165,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
         short ghandle = wind_find(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
 
-        if (guiwin_get_handle(data->rootwin->win)==ghandle) {
+        if (data->rootwin->aes_handle==ghandle) {
             // The window found at x,y is an gui_window
             // and it's the input window.
             window_get_grect(data->rootwin, BROWSER_AREA_CONTENT,
@@ -204,7 +204,6 @@ int window_create(struct gui_window * gw,
     int err = 0;
     bool tb, sb;
     int flags;
-    short aes_handle;
 
     tb = (inflags & WIDGET_TOOLBAR);
     sb = (inflags & WIDGET_STATUSBAR);
@@ -229,13 +228,13 @@ int window_create(struct gui_window * gw,
     redraw_slots_init(&gw->root->redraw_slots, 8);
 
     // TODO: use desk size
-    aes_handle = wind_create(flags, 40, 40, app.w, app.h);
-    if(aes_handle<0) {
+    gw->root->aes_handle = wind_create(flags, 40, 40, app.w, app.h);
+    if(gw->root->aes_handle<0) {
         free(gw->root->title);
         free(gw->root);
         return( -1 );
     }
-    gw->root->win = guiwin_add(aes_handle,
+    gw->root->win = guiwin_add(gw->root->aes_handle,
                                GW_FLAG_PREPROC_WM | GW_FLAG_RECV_PREPROC_WM, handle_event);
 
     struct rootwin_data_s * data = malloc(sizeof(struct rootwin_data_s));
@@ -265,10 +264,10 @@ int window_create(struct gui_window * gw,
     }
 
     // Setup some window defaults:
-    wind_set_str(aes_handle, WF_ICONTITLE, (char*)"NetSurf");
-    wind_set(aes_handle, WF_OPTS, 1, WO0_FULLREDRAW, 0, 0);
-    wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITW, 0, 0);
-    wind_set(aes_handle, WF_OPTS, 1, WO0_NOBLITH, 0, 0);
+    wind_set_str(gw->root->aes_handle, WF_ICONTITLE, (char*)"NetSurf");
+    wind_set(gw->root->aes_handle, WF_OPTS, 1, WO0_FULLREDRAW, 0, 0);
+    wind_set(gw->root->aes_handle, WF_OPTS, 1, WO0_NOBLITW, 0, 0);
+    wind_set(gw->root->aes_handle, WF_OPTS, 1, WO0_NOBLITH, 0, 0);
 
     if (inflags & WIN_TOP) {
         window_set_focus(gw->root, BROWSER, gw->browser);
@@ -332,6 +331,8 @@ int window_destroy(ROOTWIN *rootwin)
         free(rootwin->title);
 
     guiwin_remove(rootwin->win);
+    wind_close(rootwin->aes_handle);
+    wind_delete(rootwin->aes_handle);
     free(rootwin);
     return(err);
 }
@@ -344,9 +345,8 @@ void window_open(ROOTWIN *rootwin, GRECT pos)
 
     assert(rootwin->active_gui_window != NULL);
 
-    short aes_handle = guiwin_get_handle(rootwin->win);
-    wind_open(aes_handle, pos.g_x, pos.g_y, pos.g_w, pos.g_h );
-    wind_set_str(aes_handle, WF_NAME, (char *)"");
+    wind_open(rootwin->aes_handle, pos.g_x, pos.g_y, pos.g_w, pos.g_h );
+    wind_set_str(rootwin->aes_handle, WF_NAME, (char *)"");
 
     rootwin->active_gui_window->browser->attached = true;
     if(rootwin->statusbar != NULL) {
@@ -387,7 +387,7 @@ void window_set_stauts(struct s_gui_win_root *rootwin, char * text)
 
 void window_set_title(struct s_gui_win_root * rootwin, char *title)
 {
-    wind_set_str(guiwin_get_handle(rootwin->win), WF_NAME, title);
+    wind_set_str(rootwin->aes_handle, WF_NAME, title);
 }
 
 void window_scroll_by(ROOTWIN *root, int sx, int sy)
@@ -662,13 +662,12 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
 void window_process_redraws(ROOTWIN * rootwin)
 {
     GRECT work, visible_ro, tb_area, content_area;
-    short aes_handle, i;
+    short i;
     bool toolbar_rdrw_required;
     struct guiwin_scroll_info_s *slid =NULL;
 
     redraw_active = true;
 
-    aes_handle = guiwin_get_handle(rootwin->win);
 
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &tb_area);
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &content_area);
@@ -685,7 +684,7 @@ void window_process_redraws(ROOTWIN * rootwin)
 
     while(plot_lock() == false);
 
-    wind_get_grect(aes_handle, WF_FIRSTXYWH, &visible_ro);
+    wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
 
         // TODO: optimze the rectangle list -
@@ -717,7 +716,7 @@ void window_process_redraws(ROOTWIN * rootwin)
             }
 
         }
-        wind_get_grect(aes_handle, WF_NEXTXYWH, &visible_ro);
+        wind_get_grect(rootwin->aes_handle, WF_NEXTXYWH, &visible_ro);
     }
     vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy_clip);
     rootwin->redraw_slots.areas_used = 0;
@@ -985,10 +984,8 @@ static void on_redraw(ROOTWIN *rootwin, short msg[8])
 static void on_resized(ROOTWIN *rootwin)
 {
     GRECT g;
-    short handle;
     struct gui_window *gw;
 
-    handle = guiwin_get_handle(rootwin->win);
     gw = window_get_active_gui_window(rootwin);
 
     //printf("resized...\n");
@@ -998,7 +995,7 @@ static void on_resized(ROOTWIN *rootwin)
     if(gw == NULL)
         return;
 
-    wind_get_grect(handle, WF_CURRXYWH, &g);
+    wind_get_grect(rootwin->aes_handle, WF_CURRXYWH, &g);
 
     if (rootwin->loc.g_w != g.g_w || rootwin->loc.g_h != g.g_h) {
         if ( gw->browser->bw->current_content != NULL ) {

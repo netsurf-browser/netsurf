@@ -1,4 +1,20 @@
-//#include "global.h"
+/*
+ * Copyright 2012 Ole Loots <ole@monochrom.net>
+ *
+ * This file is part of NetSurf, http://www.netsurf-browser.org/
+ *
+ * NetSurf is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License.
+ *
+ * NetSurf is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -10,8 +26,8 @@
 #include <mt_gem.h>
 #include "gemtk.h"
 
-//#define DEBUG_PRINT(x)		printf x
-#define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x)		printf x
+//#define DEBUG_PRINT(x)
 
 struct gui_window_s {
     short handle;
@@ -170,13 +186,20 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 
     case WM_SIZED:
     case WM_REPOSED:
+		wind_get_grect(gw->handle, WF_FULLXYWH, &g2);
         wind_get_grect(gw->handle, WF_CURRXYWH, &g);
-        wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, msg[6], msg[7]);
-        if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
-            if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)) {
-                guiwin_send_redraw(gw, NULL);
-            }
+        g.g_w = MIN(msg[6], g2.g_w);
+        g.g_h = MIN(msg[7], g2.g_h);
+        if(g2.g_w != g.g_w || g2.g_h != g.g_h){
+			wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, g.g_w, g.g_h);
+			if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
+				if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)) {
+					guiwin_send_redraw(gw, NULL);
+				}
+			}
         }
+
+
         break;
 
     case WM_FULLED:
@@ -315,7 +338,7 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 						if (obj_idx > 0) {
 							if ((dest->toolbar[obj_idx].ob_flags & OF_SELECTABLE)!=0
 								&& ((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
-								&& ((dest->flags & GW_FLAG_TOOLBAR_REDRAW) == 0)) {
+								&& ((dest->flags & GW_FLAG_TOOLBAR_REDRAW) == 1)) {
 									dest->toolbar[obj_idx].ob_state |= OS_SELECTED;
 									// TODO: optimize redraw by setting the object clip:
 									guiwin_toolbar_redraw(dest, NULL);

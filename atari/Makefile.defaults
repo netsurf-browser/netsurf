@@ -42,7 +42,7 @@
 
   # enable optimizations
   # -O2 is currently broken with m68000 / m68020-60 builds 
-  CFLAGS += -O1
+  CFLAGS += -O3
 
   # override warning flags removing -Wall
   WARNFLAGS = -W -Wundef -Wpointer-arith \

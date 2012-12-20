@@ -44,6 +44,9 @@
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
 
+//TODO: remove/add guiwin handle on close / open - so that the list
+// is kept tiny.
+
 extern GRECT desk_area;
 
 struct atari_hotlist hl;
@@ -86,7 +89,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			break;
 
 			case WM_CLOSED:
-				hotlist_close();
+				hotlist_destroy();
 			break;
 
 			default: break;
@@ -101,49 +104,51 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 void hotlist_init(void)
 {
-	if( strcmp(nsoption_charp(hotlist_file), "") == 0 ){
-		atari_find_resource( (char*)&hl.path, "hotlist", "hotlist" );
-	} else {
-		strncpy( (char*)&hl.path, nsoption_charp(hotlist_file), PATH_MAX-1 );
-	}
-
-	LOG(("Hotlist: %s",  (char*)&hl.path ));
-
-	if( hl.window == NULL ){
-		int flags = ATARI_TREEVIEW_WIDGETS;
-		short handle = -1;
-		GRECT desk;
-		OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
-		assert( tree );
-		hl.open = false;
-
-		handle = wind_create(flags, 0, 0, desk_area.g_w, desk_area.g_h);
-		hl.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
-		if( hl.window == NULL ) {
-			LOG(("Failed to allocate Hotlist"));
-			return;
-		}
-		wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
-		guiwin_set_toolbar(hl.window, tree, 0, 0);
-		hl.tv = atari_treeview_create(
-			hotlist_get_tree_flags(),
-			hl.window,
-			handle_event
-		);
-		if (hl.tv == NULL) {
-			/* handle it properly, clean up previous allocs */
-			LOG(("Failed to allocate treeview"));
-			return;
+	if (hl.init == false) {
+		if( strcmp(nsoption_charp(hotlist_file), "") == 0 ){
+			atari_find_resource( (char*)&hl.path, "hotlist", "hotlist" );
+		} else {
+			strncpy( (char*)&hl.path, nsoption_charp(hotlist_file), PATH_MAX-1 );
 		}
 
-		hotlist_initialise(
-			hl.tv->tree,
-			(char*)&hl.path,
-			"dir.png"
-		);
+		LOG(("Hotlist: %s",  (char*)&hl.path ));
 
-	} else {
+		if( hl.window == NULL ){
+			int flags = ATARI_TREEVIEW_WIDGETS;
+			short handle = -1;
+			GRECT desk;
+			OBJECT * tree = get_tree(TOOLBAR_HOTLIST);
+			assert( tree );
+			hl.open = false;
 
+			handle = wind_create(flags, 0, 0, desk_area.g_w, desk_area.g_h);
+			hl.window = guiwin_add(handle, GW_FLAG_DEFAULTS, NULL);
+			if( hl.window == NULL ) {
+				LOG(("Failed to allocate Hotlist"));
+				return;
+			}
+			wind_set_str(handle, WF_NAME, (char*)messages_get("Hotlist"));
+			guiwin_set_toolbar(hl.window, tree, 0, 0);
+			hl.tv = atari_treeview_create(
+				hotlist_get_tree_flags(),
+				hl.window,
+				handle_event
+			);
+			if (hl.tv == NULL) {
+				/* handle it properly, clean up previous allocs */
+				LOG(("Failed to allocate treeview"));
+				return;
+			}
+
+			hotlist_initialise(
+				hl.tv->tree,
+				(char*)&hl.path,
+				"dir.png"
+			);
+
+		} else {
+
+		}
 	}
 	hl.init = true;
 }
@@ -151,6 +156,7 @@ void hotlist_init(void)
 
 void hotlist_open(void)
 {
+	hotlist_init();
 	if( hl.init == false ) {
 		return;
 	}
@@ -181,17 +187,12 @@ void hotlist_close(void)
 void hotlist_destroy(void)
 {
 
-void hotlist_redraw(void)
-{
-	int i = 01;
-	atari_treeview_redraw(hl.tv);
-}
-	if( hl.init == false ) {
+	if( hl.init == false) {
 		return;
 	}
 	if( hl.window != NULL ) {
 		hotlist_cleanup( (char*)&hl.path );
-		if( hl.open )
+		if (hl.open)
 			hotlist_close();
 		wind_delete(guiwin_get_handle(hl.window));
 		guiwin_remove(hl.window);
@@ -200,6 +201,12 @@ void hotlist_redraw(void)
 		hl.init = false;
 	}
 	LOG(("done"));
+}
+
+void hotlist_redraw(void)
+{
+	int i = 01;
+	atari_treeview_redraw(hl.tv);
 }
 
 struct node;
@@ -212,6 +219,8 @@ void atari_hotlist_add_page( const char * url, const char * title )
 	NSTREEVIEW tv = hl.tv;
 	if(hl.tv == NULL )
 		return;
+	// TODO: do no open hotlist, and remove guiwin on close...
+	hotlist_open();
 	if( hl.tv->click.x >= 0 && hl.tv->click.y >= 0 ){
 		hotlist_add_page_xy( url, hl.tv->click.x, hl.tv->click.y );
 	} else {

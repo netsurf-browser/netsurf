@@ -38,6 +38,10 @@
 #include "atari/res/netsurf.rsh"
 #include "atari/history.h"
 
+
+//TODO: remove/add guiwin handle on close / open - so that the list
+// is kept tiny.
+
 extern char * tree_directory_icon_name;
 extern GRECT desk_area;
 
@@ -46,6 +50,7 @@ struct s_atari_global_history gl_history;
 
 void global_history_open( void )
 {
+	global_history_init();
 	if (gl_history.init == false ) {
 		return;
 	}
@@ -132,10 +137,6 @@ bool global_history_init( void )
 void global_history_destroy( void )
 {
 
-void global_history_redraw( void )
-{
-	atari_treeview_redraw( gl_history.tv );
-}
 	if( gl_history.init == false ) {
 		return;
 	}
@@ -150,6 +151,11 @@ void global_history_redraw( void )
 		gl_history.init = false;
 	}
 	LOG(("done"));
+}
+
+void global_history_redraw( void )
+{
+	atari_treeview_redraw( gl_history.tv );
 }
 
 

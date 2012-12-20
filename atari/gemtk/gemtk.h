@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* -------------------------------------------------------------------------- */
+/* Utils                                                                      */
+/* -------------------------------------------------------------------------- */
+
 /* System type detection added by [GS]  */
 /* detect the system type, AES + kernel */
 #define SYS_TOS    0x0001
@@ -23,16 +27,34 @@
 #define TOS4VER 0x03300 /* this is assumed to be the last single tasking OS */
 
 extern unsigned short _systype_v;
-
-/*
-	Utils
-*/
 unsigned short _systype (void);
 OBJECT *get_tree( int idx );
 
-/*
-*	MultiTOS Drag&Drop
-*/
+#ifndef POINT_WITHIN
+# define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
+		&& (_y >= r.g_y) && (_y <= r.g_y + r.g_h))
+#endif
+
+#ifndef RC_WITHIN
+# define RC_WITHIN(a,b) \
+    (((a)->g_x >= (b)->g_x) \
+        && (((a)->g_x + (a)->g_w) <= ((b)->g_x + (b)->g_w))) \
+            && (((a)->g_y >= (b)->g_y) \
+                && (((a)->g_y + (a)->g_h) <= ((b)->g_y + (b)->g_h)))
+#endif
+
+#ifndef MAX
+# define MAX(_a,_b) ((_a>_b) ? _a : _b)
+#endif
+
+#ifndef MIN
+# define MIN(_a,_b) ((_a<_b) ? _a : _b)
+#endif
+
+
+/* -------------------------------------------------------------------------- */
+/* MultiTOS Drag & Drop                                                       */
+/* -------------------------------------------------------------------------- */
 short ddcreate(short *pipe);
 short ddmessage(short apid, short fd, short winid, short mx, short my, short kstate, short pipename);
 short ddrexts(short fd, char *exts);
@@ -45,17 +67,17 @@ short ddsexts(short fd, char *exts);
 short ddrtry(short fd, char *name, char *file, char *whichext, long *size);
 short ddreply(short fd, char ack);
 
-/*
-	Message box
-*/
+/* -------------------------------------------------------------------------- */
+/* Message Box module                                                         */
+/* -------------------------------------------------------------------------- */
 #define MSG_BOX_ALERT	1
 #define MSG_BOX_CONFIRM	2
 
 short msg_box_show(short type, const char * msg);
 
-/*
-	Guiwin
-*/
+/* -------------------------------------------------------------------------- */
+/* GUIWIN Module                                                              */
+/* -------------------------------------------------------------------------- */
 #define GW_FLAG_PREPROC_WM			0x01	// let guiwin API handle some events
 #define GW_FLAG_RECV_PREPROC_WM		0x02	// get notified even when pre-processed
 #define GW_FLAG_HAS_VTOOLBAR		0x04	// the attached toolbar is vertical
@@ -120,29 +142,12 @@ bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
 void guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
 void guiwin_clear(GUIWIN *win);
 
-/*
-* 	AES Scroller Object
-*/
+/* -------------------------------------------------------------------------- */
+/* AES Scroller module                                                        */
+/* -------------------------------------------------------------------------- */
 
-#ifndef POINT_WITHIN
-#define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
-		&& (_y >= r.g_y) && (_y <= r.g_y + r.g_h))
-#endif
-
-#ifndef RC_WITHIN
-#define RC_WITHIN(a,b) \
-    (((a)->g_x >= (b)->g_x) \
-        && (((a)->g_x + (a)->g_w) <= ((b)->g_x + (b)->g_w))) \
-            && (((a)->g_y >= (b)->g_y) \
-                && (((a)->g_y + (a)->g_h) <= ((b)->g_y + (b)->g_h)))
-#endif
-
-#ifndef MAX
-#define MAX(_a,_b) ((_a>_b) ? _a : _b)
-#endif
-
-#ifndef MIN
-#define MIN(_a,_b) ((_a<_b) ? _a : _b)
-#endif
+/* -------------------------------------------------------------------------- */
+/* AES Tabs module                                                            */
+/* -------------------------------------------------------------------------- */
 
 #endif // GEMTK_H_INCLUDED
