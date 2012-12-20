@@ -3,48 +3,51 @@
 #
 # This file is part of NetSurf 
 
-  LDFLAGS += -L${GCCSDK_INSTALL_ENV}/lib 
-  CFLAGS += -I${GCCSDK_INSTALL_ENV}/include/
+LDFLAGS += -L${GCCSDK_INSTALL_ENV}/lib 
+CFLAGS += -I${GCCSDK_INSTALL_ENV}/include/
 
-  NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
-  NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
-  NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
-  NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
-  NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
-  $(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
-  $(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
-  $(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
-  $(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
-  $(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
+NETSURF_FEATURE_NSSVG_CFLAGS := -DWITH_NS_SVG
+NETSURF_FEATURE_ROSPRITE_CFLAGS := -DWITH_NSSPRITE
+NETSURF_FEATURE_BMP_CFLAGS := -DWITH_BMP
+NETSURF_FEATURE_GIF_CFLAGS := -DWITH_GIF
+NETSURF_FEATURE_PNG_CFLAGS := -DWITH_PNG
 
-  ifneq ($(PKG_CONFIG),)
-    CFLAGS += $(shell $(PKG_CONFIG) --cflags zlib libcares libcurl libhubbub  \
-		libparserutils libdom libwapcaplet)
-    LDFLAGS += $(shell $(PKG_CONFIG) --libs zlib libcurl libcares \
-		libhubbub libparserutils libcss libdom libwapcaplet)
-  else
-    LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lcurl -lz
-  endif
+$(eval $(call feature_enabled,BMP,-DWITH_BMP,-lnsbmp,BMP (libnsbmp)))
+$(eval $(call feature_enabled,GIF,-DWITH_GIF,-lnsgif,GIF (libnsgif)))
+$(eval $(call feature_enabled,PNG,-DWITH_PNG,-lpng,PNG (libpng)  ))
+$(eval $(call feature_enabled,NSSVG,-DWITH_NS_SVG,-lsvgtiny,SVG (libsvgtiny)))
+$(eval $(call feature_enabled,MNG,,-llcms -ljpeg,PNG/JNG/MNG (libmng)))
 
-  LDFLAGS += -lssl -lcrypto -lregex -liconv \
+ifneq ($(PKG_CONFIG),)
+  $(eval $(call pkg_config_find_and_add,zlib,ZLib))
+  $(eval $(call pkg_config_find_and_add,libcares,Cares))
+  $(eval $(call pkg_config_find_and_add,libwapcaplet,Wapcaplet))
+  $(eval $(call pkg_config_find_and_add,libparserutils,Parserutils))
+  $(eval $(call pkg_config_find_and_add,libhubbub,Hubbub))
+  $(eval $(call pkg_config_find_and_add,libdom,DOM))
+  $(eval $(call pkg_config_find_and_add,libcss,CSS))
+  $(eval $(call pkg_config_find_and_add,libcurl,Curl))
+else
+  LDFLAGS += -lhubbub -lcss -lparserutils -lwapcaplet -lcurl -lz
+endif
+
+LDFLAGS += -lssl -lcrypto -lregex -liconv \
 	     -lgdi32 -lcomctl32 -lws2_32 -lmsimg32 -mwindows
 
-  CFLAGS += -U__STRICT_ANSI__ -mwin32
-  # only windows versions after XP are supported
-  CFLAGS += '-DWINVER=0x0501'
-  CFLAGS += '-D_WIN32_WINNT=0x0501'
-  CFLAGS += '-D_WIN32_WINDOWS=0x0501'
-  CFLAGS += '-D_WIN32_IE=0x0501'
+CFLAGS += -U__STRICT_ANSI__ -mwin32
+# only windows versions after XP are supported
+CFLAGS += '-DWINVER=0x0501'
+CFLAGS += '-D_WIN32_WINNT=0x0501'
+CFLAGS += '-D_WIN32_WINDOWS=0x0501'
+CFLAGS += '-D_WIN32_IE=0x0501'
 
- #installed resource path
- CFLAGS += '-DNETSURF_WINDOWS_RESPATH="$(NETSURF_WINDOWS_RESPATH)"'
+#installed resource path
+CFLAGS += '-DNETSURF_WINDOWS_RESPATH="$(NETSURF_WINDOWS_RESPATH)"'
 
+WSCFLAGS := -std=c99 $(WARNFLAGS) -DCURL_STATICLIB -DCARES_STATICLIB -g
 
-  WSCFLAGS := -std=c99 \
-	$(WARNFLAGS) -I.  \
-	-DCURL_STATICLIB -DCARES_STATICLIB -g
-  CFLAGS += $(WSCFLAGS)
-  LDFLAGS += $(WSCFLAGS)
+CFLAGS += $(WSCFLAGS)
+LDFLAGS += $(WSCFLAGS)
 
 # ----------------------------------------------------------------------------
 # built-in resource setup

@@ -93,7 +93,7 @@ NETSURF_HOMEPAGE := "about:welcome"
 NETSURF_USE_LIBICONV_PLUG := YES
 
 # Initial CFLAGS. Optimisation level etc. tend to be target specific.
-CFLAGS := 
+CFLAGS :=
 
 # Default installation/execution prefix
 PREFIX ?= /usr/local

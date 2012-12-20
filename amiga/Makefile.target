@@ -2,7 +2,7 @@
 # Amiga target setup
 # ----------------------------------------------------------------------------
 
-CFLAGS += -std=c99 -I . -Dnsamiga
+CFLAGS += -std=c99 -Dnsamiga
 
 ifneq ($(SUBTARGET),os3)
   CFLAGS += -U__STRICT_ANSI__ -D__USE_INLINE__ -D__USE_BASETYPE__

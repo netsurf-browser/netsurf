@@ -426,9 +426,14 @@ $(eval $(call feature_enabled,LIBICONV_PLUG,-DLIBICONV_PLUG,,glibc internal icon
 # common libraries without pkg-config support
 LDFLAGS += -lz
 
-CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
-CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
+# add top level and build directory to include search path
+CFLAGS += -I. -I$(OBJROOT)
 
+# export the user agent format
+CFLAGS += -DNETSURF_UA_FORMAT_STRING=\"$(NETSURF_UA_FORMAT_STRING)\"
+
+# set the default homepage to use
+CFLAGS += -DNETSURF_HOMEPAGE=\"$(NETSURF_HOMEPAGE)\"
 
 # ----------------------------------------------------------------------------
 # General make rules
