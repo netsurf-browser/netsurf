@@ -21,9 +21,9 @@ preamble %{
         
 #include "utils/config.h"
 #include "utils/log.h"
-
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
+
+#include "event.h"
 
 %}
 

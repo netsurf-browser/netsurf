@@ -24,10 +24,20 @@ preamble %{
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
-
+#include "render/html_internal.h"
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
 
+#include "console.h"
+#include "navigator.h"
+#include "event.h"
+#include "node.h"
+#include "htmlcollection.h"
+#include "nodelist.h"
+#include "htmldocument.h"
+#include "text.h"
+#include "htmlelement.h"
+#include "window.h"
+#include "location.h"
 
 %}
 

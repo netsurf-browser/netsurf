@@ -17,13 +17,15 @@
  */
 
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
-
+#include "render/html_internal.h"
 #include "content/content.h"
 #include "javascript/content.h"
 #include "javascript/js.h"
 
 #include "utils/log.h"
+
+#include "window.h"
+#include "event.h"
 
 static JSRuntime *rt; /* global runtime */
 

@@ -23,9 +23,11 @@ preamble %{
         
 #include "utils/config.h"
 #include "utils/log.h"
-
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
+#include "render/html_internal.h"
+
+#include "htmlelement.h"
+#include "htmlcollection.h"
 
 %}
 
