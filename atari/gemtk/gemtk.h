@@ -51,6 +51,9 @@ OBJECT *get_tree( int idx );
 # define MIN(_a,_b) ((_a<_b) ? _a : _b)
 #endif
 
+#ifndef SET_BIT
+# define SET_BIT(field,bit,val) field = (val)?((field)|(bit)):((field) & ~(bit))
+#endif
 
 /* -------------------------------------------------------------------------- */
 /* MultiTOS Drag & Drop                                                       */
@@ -90,6 +93,8 @@ short msg_box_show(short type, const char * msg);
 
 #define GW_STATUS_ICONIFIED			0x01
 #define GW_STATUS_SHADED			0x02
+
+#define GW_XTYPE_CHECKBOX			(101 << 8)
 
 #define GUIWIN_VSLIDER 				0x01
 #define GUIWIN_HSLIDER 				0x02
