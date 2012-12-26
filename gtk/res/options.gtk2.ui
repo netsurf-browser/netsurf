@@ -297,7 +297,6 @@
                                   <object class="GtkSpinButton" id="spinHistoryAge">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                   </object>
                                   <packing>
@@ -467,6 +466,13 @@
                             <child>
                               <object class="GtkComboBox" id="comboProxyType">
                                 <property name="visible">True</property>
+                                <property name="model">liststore_proxytype</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext4"/>
+                                  <attributes>
+                                    <attribute name="text">0</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -623,7 +629,6 @@
                               <object class="GtkSpinButton" id="spinMaxFetchers">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
                               </object>
                               <packing>
@@ -636,7 +641,6 @@
                               <object class="GtkSpinButton" id="spinFetchesPerHost">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
                               </object>
                               <packing>
@@ -651,7 +655,6 @@
                               <object class="GtkSpinButton" id="spinCachedConnections">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
                               </object>
                               <packing>
@@ -815,7 +818,6 @@
                                   <object class="GtkSpinButton" id="spinAnimationSpeed">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                     <property name="digits">1</property>
                                     <property name="numeric">True</property>
@@ -1072,6 +1074,13 @@
                             <child>
                               <object class="GtkComboBox" id="comboDefault">
                                 <property name="visible">True</property>
+                                <property name="model">liststore_defaultfont</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext3"/>
+                                  <attributes>
+                                    <attribute name="text">0</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1160,8 +1169,8 @@
                               <object class="GtkSpinButton" id="spinDefaultSize">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
+                                <property name="numeric">True</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1174,7 +1183,6 @@
                               <object class="GtkSpinButton" id="spinMinimumSize">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
                               </object>
                               <packing>
@@ -1356,7 +1364,6 @@
                               <object class="GtkSpinButton" id="spinMemoryCacheSize">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
                               </object>
                               <packing>
@@ -1428,7 +1435,6 @@
                                   <object class="GtkSpinButton" id="spinDiscCacheAge">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                   </object>
                                   <packing>
@@ -1618,9 +1624,9 @@
                                 <child>
                                   <object class="GtkFileChooserButton" id="fileChooserDownloads">
                                     <property name="visible">True</property>
-                                    <property name="action">select-folder</property>
                                     <property name="show_hidden">True</property>
-                                    <property name="width_chars">25</property>
+                                    <property name="action">select-folder</property>
+                                    <property name="width_chars">23</property>
                                   </object>
                                   <packing>
                                     <property name="position">1</property>
@@ -1722,6 +1728,13 @@
                                 <child>
                                   <object class="GtkComboBox" id="comboTabPosition">
                                     <property name="visible">True</property>
+                                    <property name="model">liststore_tabpositions</property>
+                                    <child>
+                                      <object class="GtkCellRendererText" id="cellrenderertext1"/>
+                                      <attributes>
+                                        <attribute name="text">0</attribute>
+                                      </attributes>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="position">1</property>
@@ -1850,6 +1863,13 @@
                             <child>
                               <object class="GtkComboBox" id="comboSearch">
                                 <property name="visible">True</property>
+                                <property name="model">liststore_searchproviders</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext2"/>
+                                  <attributes>
+                                    <attribute name="text">0</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                               <packing>
                                 <property name="position">2</property>
@@ -1986,7 +2006,6 @@
                                   <object class="GtkSpinButton" id="spinMarginBottom">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                   </object>
                                   <packing>
@@ -2000,7 +2019,6 @@
                                   <object class="GtkSpinButton" id="spinMarginTop">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                   </object>
                                   <packing>
@@ -2066,7 +2084,6 @@
                                   <object class="GtkSpinButton" id="spinMarginRight">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                   </object>
                                   <packing>
@@ -2080,7 +2097,6 @@
                                   <object class="GtkSpinButton" id="spinMarginLeft">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-                                    <property name="adjustment"></property>
                                     <property name="climb_rate">1</property>
                                   </object>
                                   <packing>
@@ -2158,7 +2174,6 @@
                               <object class="GtkSpinButton" id="spinExportScale">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="adjustment"></property>
                                 <property name="climb_rate">1</property>
                               </object>
                               <packing>
@@ -2413,5 +2428,139 @@
       <action-widget response="0">help</action-widget>
       <action-widget response="-7">close</action-widget>
     </action-widgets>
+  </object>
+  <object class="GtkListStore" id="liststore_tabpositions">
+    <columns>
+      <!-- column-name Text -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Top</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Left</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Right</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Bottom</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_searchproviders">
+    <columns>
+      <!-- column-name Text -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Google</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Yahoo!</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Microsoft Live</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Buisness.com</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Omgili</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">BBC News</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Ubuntu Packages</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Creative Commons</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Ask</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Answers</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Dictionary.com</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Youtube</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">AeroMp3</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">AOL</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Baidu</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Amazon</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Ebay</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">IMDB</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">ESPN</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Wikipedia</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">DuckDuckGo</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_defaultfont">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Sans-serif</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Serif</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Monospace</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Cursive</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Fantasy</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore_proxytype">
+    <columns>
+      <!-- column-name Type -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">No proxy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Simple proxy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Basic authentication</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">NTLM authentication</col>
+      </row>
+    </data>
   </object>
 </interface>
