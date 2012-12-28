@@ -55,7 +55,7 @@ static OBJECT * dlgtree;
 						 guiwin_send_redraw(settings_guiwin, \
 											obj_screen_rect(dlgtree, idx));
 
-#define ENABLE_OBJ(idx) (dlgtree[idx].ob_state &= ~(OS_DISABLED)) \
+#define ENABLE_OBJ(idx) (dlgtree[idx].ob_state &= ~(OS_DISABLED)); \
 						 guiwin_send_redraw(settings_guiwin, \
 											obj_screen_rect(dlgtree, idx));
 
@@ -78,6 +78,8 @@ static OBJECT * dlgtree;
 static void on_close(void);
 static void on_redraw(GRECT *clip);
 static void form_event(int index, int external, void *unused2);
+static void apply_settings(void);
+static void save_settings(void);
 
 static bool obj_is_inside(OBJECT * tree, short obj, GRECT *area)
 {
@@ -87,7 +89,8 @@ static bool obj_is_inside(OBJECT * tree, short obj, GRECT *area)
 	objc_offset(tree, obj, &obj_screen.g_x, &obj_screen.g_y);
 	obj_screen.g_w = dlgtree[obj].ob_width;
 	obj_screen.g_h = dlgtree[obj].ob_height;
-	ret = rc_intersect(area, &obj_screen);
+
+	ret = RC_WITHIN(&obj_screen, area);
 
 	return(ret);
 }
@@ -100,6 +103,7 @@ static GRECT * obj_screen_rect(OBJECT * tree, short obj)
 
 	return(&obj_screen);
 }
+
 
 static void set_text( short idx, char * text, int len )
 {
@@ -116,11 +120,40 @@ static void set_text( short idx, char * text, int len )
 	set_string( dlgtree, idx, spare);
 }
 
+
+
+static char *get_text(OBJECT * tree, short idx)
+{
+	static char p[]="";
+	USERBLK *user;
+	char *retval;
+
+	switch (tree[idx].ob_type & 0x00FF) {
+		case G_BUTTON:
+		case G_STRING:
+		case G_TITLE:
+			return( tree[idx].ob_spec.free_string);
+		case G_TEXT:
+		case G_BOXTEXT:
+		case G_FTEXT:
+		case G_FBOXTEXT:
+			return (tree[idx].ob_spec.tedinfo->te_ptext);
+		case G_ICON:
+		case G_CICON:
+			return (tree[idx].ob_spec.iconblk->ib_ptext);
+			break;
+
+		default: break;
+	}
+	return (p);
+}
+
+
 /**
  * Toogle all objects which are directly influenced by other GUI elements
  * ( like checkbox )
  */
-static void toggle_objects( void )
+static void toggle_objects(void)
 {
 	/* enable / disable (refresh) objects depending on radio button values: */
 	FORMEVENT(SETTINGS_CB_USE_PROXY);
@@ -129,11 +162,23 @@ static void toggle_objects( void )
 }
 
 
+static void save_settings(void)
+{
+	apply_settings();
+	// Save settings
+	nsoption_write( (const char*)&options );
+	nsoption_read( (const char*)&options );
+	close_settings();
+	form_alert(1, "[1][Some options require an netsurf restart!][OK]");
+	deskmenu_update();
+}
+
 /* this gets called each time the settings dialog is opened: */
 static void display_settings(void)
 {
 	char spare[255];
 	// read current settings and display them
+
 
 	/* "Browser" tab: */
 	set_text( SETTINGS_EDIT_HOMEPAGE, nsoption_charp(homepage_url),
@@ -169,7 +214,7 @@ static void display_settings(void)
 	set_text( SETTINGS_EDIT_HISTORY_AGE, spare, 2 );
 
 	/* "Cache" tab: */
-	tmp_option_memory_cache_size = nsoption_int(memory_cache_size) / 100000;
+	tmp_option_memory_cache_size = nsoption_int(memory_cache_size) / 1000000;
 	snprintf( spare, 255, "%03.1f", tmp_option_memory_cache_size );
 	set_text( SETTINGS_STR_MAX_MEM_CACHE, spare, 5 );
 
@@ -254,15 +299,16 @@ static void display_settings(void)
 	tmp_option_font_size = nsoption_int(font_size);
 	snprintf( spare, 255, "%3d", nsoption_int(font_size) );
 	set_text( SETTINGS_EDIT_DEF_FONT_SIZE, spare , 3 );
+
+	toggle_objects();
 }
 
 
-static void
-form_event(int index, int external, void *unused2)
+static void form_event(int index, int external, void *unused2)
 {
 	char spare[255];
 	bool is_button = false;
-	bool checked = OBJ_SELECTED( index );
+	bool checked = OBJ_SELECTED(index);
 	char * tmp;
 
 	/* For font driver popup: */
@@ -281,8 +327,190 @@ form_event(int index, int external, void *unused2)
 	short x, y;
 	int choice;
 
+	// TODO: set correct form coords.
+
 	switch( index ){
 
+		case SETTINGS_SAVE:
+			save_settings();
+			//save_settings();
+		break;
+
+
+		case SETTINGS_INC_HISTORY_AGE:
+		case SETTINGS_DEC_HISTORY_AGE:
+			if(index == SETTINGS_INC_HISTORY_AGE)
+				tmp_option_expire_url += 1;
+			else
+				tmp_option_expire_url -= 1;
+
+			if(tmp_option_expire_url > 99)
+				tmp_option_expire_url =  0;
+
+			snprintf( spare, 255, "%02d", tmp_option_expire_url);
+			set_text( SETTINGS_EDIT_HISTORY_AGE, spare, 2 );
+			OBJ_REDRAW(SETTINGS_EDIT_HISTORY_AGE);
+			is_button = true;
+
+			default: break;
+	}
+
+
+	switch(index){
+
+		case SETTINGS_CB_USE_PROXY:
+			if( checked ){
+				ENABLE_OBJ(SETTINGS_EDIT_PROXY_HOST);
+				ENABLE_OBJ(SETTINGS_EDIT_PROXY_PORT);
+				ENABLE_OBJ(SETTINGS_CB_PROXY_AUTH);
+				ENABLE_OBJ(SETTINGS_LBL_PROXY_AUTH);
+			}
+			else {
+				DISABLE_OBJ(SETTINGS_EDIT_PROXY_HOST);
+				DISABLE_OBJ(SETTINGS_EDIT_PROXY_PORT);
+				DISABLE_OBJ(SETTINGS_CB_PROXY_AUTH);
+				DISABLE_OBJ(SETTINGS_LBL_PROXY_AUTH);
+			}
+			FORMEVENT(SETTINGS_CB_PROXY_AUTH);
+			OBJ_REDRAW(SETTINGS_CB_USE_PROXY);
+			break;
+
+		case SETTINGS_CB_PROXY_AUTH:
+			if( checked && OBJ_SELECTED( SETTINGS_CB_USE_PROXY ) ){
+				ENABLE_OBJ(SETTINGS_EDIT_PROXY_USERNAME);
+				ENABLE_OBJ(SETTINGS_EDIT_PROXY_PASSWORD);
+			}
+			else {
+				DISABLE_OBJ(SETTINGS_EDIT_PROXY_USERNAME);
+				DISABLE_OBJ(SETTINGS_EDIT_PROXY_PASSWORD);
+			}
+			break;
+
+		case SETTINGS_CB_ENABLE_ANIMATION:
+			if( checked ){
+				ENABLE_OBJ( SETTINGS_EDIT_MIN_GIF_DELAY );
+			}
+			else {
+				DISABLE_OBJ( SETTINGS_EDIT_MIN_GIF_DELAY );
+			}
+			break;
+
+		case SETTINGS_BT_SEL_FONT_RENDERER:
+			if( external ){
+				objc_offset(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER, &x, &y);
+				choice = MenuPopUp ( font_driver_items, x, y,
+									num_font_drivers,
+									 -1, -1, P_LIST + P_WNDW + P_CHCK );
+				if( choice > 0 &&
+					choice <= num_font_drivers ){
+						set_text(SETTINGS_BT_SEL_FONT_RENDERER,
+									font_driver_items[choice-1],
+									LABEL_FONT_RENDERER_MAX_LEN);
+						OBJ_REDRAW(SETTINGS_BT_SEL_FONT_RENDERER);
+				}
+			}
+			tmp = get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER);
+			if( strcmp(tmp, "freetype") == 0 ){
+				ENABLE_OBJ(SETTINGS_CB_ANTI_ALIASING);
+			} else {
+				DISABLE_OBJ(SETTINGS_CB_ANTI_ALIASING);
+			}
+			break;
+
+		case SETTINGS_BT_SEL_LOCALE:
+			objc_offset(dlgtree, SETTINGS_BT_SEL_LOCALE, &x, &y);
+			choice = MenuPopUp ( locales, x, y,
+								num_locales,
+								 -1, -1, P_LIST + P_WNDW + P_CHCK );
+			if( choice > 0 && choice <= num_locales ){
+				set_text(SETTINGS_BT_SEL_LOCALE, locales[choice-1], 5);
+			}
+			OBJ_REDRAW(SETTINGS_BT_SEL_LOCALE);
+			break;
+
+/*
+		case SETTINGS_INPUT_TOOLBAR_BGCOLOR:
+			objc_offset( FORM(win), SETTINGS_INPUT_TOOLBAR_BGCOLOR, &x, &y );
+			choice = color_popup(x, y, tmp_option_atari_toolbar_bg);
+			snprintf( spare, 255, "%06x", choice );
+			tmp_option_atari_toolbar_bg = choice;
+			ObjcStrCpy( dlgtree, SETTINGS_INPUT_TOOLBAR_BGCOLOR,
+							spare );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_INPUT_TOOLBAR_BGCOLOR);
+			break;
+*/
+/*
+		case SETTINGS_BT_TOOLBAR_ICONSET:
+			objc_offset( FORM(win), SETTINGS_BT_TOOLBAR_ICONSET, &x, &y );
+			tmp = toolbar_iconset_popup(x,y);
+			if( tmp != NULL ){
+				ObjcStrCpy( dlgtree, SETTINGS_BT_TOOLBAR_ICONSET, tmp );
+			}
+			is_button = true;
+			break;
+*/
+		case SETTINGS_INC_MEM_CACHE:
+		case SETTINGS_DEC_MEM_CACHE:
+			if( index == SETTINGS_DEC_MEM_CACHE )
+				tmp_option_memory_cache_size -= 0.1;
+			else
+				tmp_option_memory_cache_size += 0.1;
+
+			if( tmp_option_memory_cache_size < 0.5 )
+				tmp_option_memory_cache_size = 0.5;
+			if( tmp_option_memory_cache_size > 999.9 )
+				tmp_option_memory_cache_size = 999.9;
+			snprintf( spare, 255, "%03.1f", tmp_option_memory_cache_size );
+			set_text( SETTINGS_STR_MAX_MEM_CACHE, spare, 5 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_STR_MAX_MEM_CACHE);
+			break;
+
+		case SETTINGS_INC_CACHED_CONNECTIONS:
+		case SETTINGS_DEC_CACHED_CONNECTIONS:
+			if( index == SETTINGS_INC_CACHED_CONNECTIONS )
+				tmp_option_max_cached_fetch_handles += 1;
+			else
+				tmp_option_max_cached_fetch_handles -= 1;
+			if( tmp_option_max_cached_fetch_handles > 31 )
+				tmp_option_max_cached_fetch_handles = 31;
+
+			snprintf( spare, 255, "%02d", tmp_option_max_cached_fetch_handles );
+			set_text( SETTINGS_EDIT_MAX_CACHED_CONNECTIONS, spare, 2 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_MAX_CACHED_CONNECTIONS);
+			break;
+
+		case SETTINGS_INC_MAX_FETCHERS:
+		case SETTINGS_DEC_MAX_FETCHERS:
+			if( index == SETTINGS_INC_MAX_FETCHERS )
+				tmp_option_max_fetchers += 1;
+			else
+				tmp_option_max_fetchers -= 1;
+			if( tmp_option_max_fetchers > 31 )
+				tmp_option_max_fetchers = 31;
+
+			snprintf( spare, 255, "%02d", tmp_option_max_fetchers );
+			set_text( SETTINGS_EDIT_MAX_FETCHERS, spare, 2 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_MAX_FETCHERS);
+			break;
+
+		case SETTINGS_INC_MAX_FETCHERS_PER_HOST:
+		case SETTINGS_DEC_MAX_FETCHERS_PER_HOST:
+			if( index == SETTINGS_INC_MAX_FETCHERS_PER_HOST )
+				tmp_option_max_fetchers_per_host += 1;
+			else
+				tmp_option_max_fetchers_per_host -= 1;
+			if( tmp_option_max_fetchers_per_host > 31 )
+				tmp_option_max_fetchers_per_host = 31;
+
+			snprintf( spare, 255, "%02d", tmp_option_max_fetchers_per_host );
+			set_text( SETTINGS_EDIT_MAX_FETCHERS_PER_HOST, spare, 2 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_MAX_FETCHERS_PER_HOST);
+			break;
 
 		case SETTINGS_INC_HISTORY_AGE:
 		case SETTINGS_DEC_HISTORY_AGE:
@@ -296,11 +524,82 @@ form_event(int index, int external, void *unused2)
 
 			snprintf( spare, 255, "%02d", tmp_option_expire_url );
 			set_text( SETTINGS_EDIT_HISTORY_AGE, spare, 2 );
-			OBJ_REDRAW(SETTINGS_EDIT_HISTORY_AGE);
 			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_HISTORY_AGE);
+			break;
 
+		case SETTINGS_INC_GIF_DELAY:
+		case SETTINGS_DEC_GIF_DELAY:
+			if( index == SETTINGS_INC_GIF_DELAY )
+				tmp_option_minimum_gif_delay += 0.1;
+			else
+				tmp_option_minimum_gif_delay -= 0.1;
+
+			if( tmp_option_minimum_gif_delay < 0.1 )
+				tmp_option_minimum_gif_delay = 0.1;
+			if( tmp_option_minimum_gif_delay > 9.0 )
+				tmp_option_minimum_gif_delay = 9.0;
+			snprintf( spare, 255, "%01.1f", tmp_option_minimum_gif_delay );
+			set_text( SETTINGS_EDIT_MIN_GIF_DELAY, spare, 3 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_MIN_GIF_DELAY);
+			break;
+
+		case SETTINGS_INC_MIN_FONT_SIZE:
+		case SETTINGS_DEC_MIN_FONT_SIZE:
+			if( index == SETTINGS_INC_MIN_FONT_SIZE )
+				tmp_option_font_min_size += 1;
+			else
+				tmp_option_font_min_size -= 1;
+
+			if( tmp_option_font_min_size > 500 )
+				tmp_option_font_min_size = 500;
+			if( tmp_option_font_min_size < 10 )
+				tmp_option_font_min_size = 10;
+
+			snprintf( spare, 255, "%03d", tmp_option_font_min_size );
+			set_text( SETTINGS_EDIT_MIN_FONT_SIZE, spare, 3 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_MIN_FONT_SIZE);
+			break;
+
+		case SETTINGS_INC_DEF_FONT_SIZE:
+		case SETTINGS_DEC_DEF_FONT_SIZE:
+			if( index == SETTINGS_INC_DEF_FONT_SIZE )
+				tmp_option_font_size += 1;
+			else
+				tmp_option_font_size -= 1;
+
+			if( tmp_option_font_size > 999 )
+				tmp_option_font_size = 999;
+			if( tmp_option_font_size < 50 )
+				tmp_option_font_size = 50;
+
+			snprintf( spare, 255, "%03d", tmp_option_font_size );
+			set_text( SETTINGS_EDIT_DEF_FONT_SIZE, spare, 3 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_DEF_FONT_SIZE);
+			break;
+/*
+		case SETTINGS_INC_INCREMENTAL_REFLOW:
+		case SETTINGS_DEC_INCREMENTAL_REFLOW:
+			if( index == SETTINGS_INC_INCREMENTAL_REFLOW )
+				tmp_option_min_reflow_period += 1;
+			else
+				tmp_option_min_reflow_period -= 1;
+
+			if( tmp_option_min_reflow_period > 9999 )
+				tmp_option_min_reflow_period = 10;
+
+			snprintf( spare, 255, "%04d", tmp_option_min_reflow_period );
+			set_text( SETTINGS_EDIT_MIN_REFLOW_PERIOD, spare, 4 );
+			is_button = true;
+			OBJ_REDRAW(SETTINGS_EDIT_MIN_REFLOW_PERIOD);
+			break;
+*/
 			default: break;
 	}
+
 	if( is_button ){
 		// remove selection indicator from button element:
 		OBJ_UNCHECK(index);
@@ -345,6 +644,89 @@ static void on_redraw(GRECT *clip)
 	}
 }
 
+
+static void apply_settings(void)
+{
+	/* "Network" tab: */
+	nsoption_set_bool(http_proxy, OBJ_SELECTED(SETTINGS_CB_USE_PROXY));
+	if ( OBJ_SELECTED(SETTINGS_CB_PROXY_AUTH) ) {
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_BASIC);
+	} else {
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
+	}
+	nsoption_set_charp(http_proxy_auth_pass,
+		get_text(dlgtree, SETTINGS_EDIT_PROXY_PASSWORD));
+	nsoption_set_charp(http_proxy_auth_user,
+		get_text(dlgtree, SETTINGS_EDIT_PROXY_USERNAME));
+	nsoption_set_charp(http_proxy_host,
+		get_text(dlgtree, SETTINGS_EDIT_PROXY_HOST));
+	nsoption_set_int(http_proxy_port,
+		atoi( get_text(dlgtree, SETTINGS_EDIT_PROXY_PORT) ));
+	nsoption_set_int(max_fetchers_per_host,
+		atoi( get_text(dlgtree, SETTINGS_EDIT_MAX_FETCHERS_PER_HOST)));
+	nsoption_set_int(max_cached_fetch_handles,
+		atoi( get_text(dlgtree, SETTINGS_EDIT_MAX_CACHED_CONNECTIONS)));
+	nsoption_set_int(max_fetchers,
+		atoi( get_text(dlgtree, SETTINGS_EDIT_MAX_FETCHERS) ));
+	nsoption_set_bool(foreground_images,
+			  OBJ_SELECTED( SETTINGS_CB_FG_IMAGES ));
+	nsoption_set_bool(background_images,
+			  OBJ_SELECTED( SETTINGS_CB_BG_IMAGES ));
+
+	/* "Style" tab: */
+	nsoption_set_int(font_min_size, tmp_option_font_min_size);
+	nsoption_set_int(font_size, tmp_option_font_size);
+
+	/* "Rendering" tab: */
+	nsoption_set_charp(atari_font_driver,
+		get_text(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER));
+	nsoption_set_bool(atari_transparency,
+			  OBJ_SELECTED(SETTINGS_CB_TRANSPARENCY));
+	nsoption_set_bool(animate_images,
+			  OBJ_SELECTED(SETTINGS_CB_ENABLE_ANIMATION));
+	nsoption_set_int(minimum_gif_delay,
+			 (int)(tmp_option_minimum_gif_delay*100+0.5));
+/*	nsoption_set_bool(incremental_reflow,
+			  OBJ_SELECTED(SETTINGS_CB_INCREMENTAL_REFLOW));*/
+	nsoption_set_int(min_reflow_period, tmp_option_min_reflow_period);
+	nsoption_set_int(atari_font_monochrom,
+			 !OBJ_SELECTED( SETTINGS_CB_ANTI_ALIASING ));
+
+	/* "Paths" tabs: */
+	nsoption_set_charp(ca_bundle,
+		get_text(dlgtree, SETTINGS_EDIT_CA_BUNDLE));
+	nsoption_set_charp(ca_path,
+		get_text(dlgtree, SETTINGS_EDIT_CA_CERTS_PATH));
+	nsoption_set_charp(homepage_url,
+		get_text(dlgtree, SETTINGS_EDIT_CA_CERTS_PATH));
+	nsoption_set_charp(hotlist_file,
+		get_text(dlgtree, SETTINGS_EDIT_HOTLIST_FILE));
+	nsoption_set_charp(atari_editor,
+		get_text(dlgtree, SETTINGS_EDIT_EDITOR));
+	nsoption_set_charp(downloads_path,
+		get_text(dlgtree, SETTINGS_EDIT_DOWNLOAD_PATH));
+
+	/* "Cache" tab: */
+	nsoption_set_int(memory_cache_size,
+			 tmp_option_memory_cache_size * 1000000);
+
+	/* "Browser" tab: */
+	nsoption_set_bool(target_blank,
+			  !OBJ_SELECTED(SETTINGS_CB_DISABLE_POPUP_WINDOWS));
+	nsoption_set_bool(block_ads,
+			  OBJ_SELECTED(SETTINGS_CB_HIDE_ADVERTISEMENT));
+	nsoption_set_charp(accept_language,
+			   get_text(dlgtree, SETTINGS_BT_SEL_LOCALE));
+	nsoption_set_int(expire_url,
+		atoi(get_text(dlgtree, SETTINGS_EDIT_HISTORY_AGE)));
+	nsoption_set_bool(send_referer,
+			  OBJ_SELECTED(SETTINGS_CB_SEND_HTTP_REFERRER));
+	nsoption_set_bool(do_not_track,
+			  OBJ_SELECTED(SETTINGS_CB_SEND_DO_NOT_TRACK));
+	nsoption_set_charp(homepage_url,
+			   get_text(dlgtree, SETTINGS_EDIT_HOMEPAGE));
+}
+
 static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 {
     short retval = 0;
@@ -353,7 +735,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
-        printf("settings win msg: %d\n", msg[0]);
+        // printf("settings win msg: %d\n", msg[0]);
         switch (msg[0]) {
 
         case WM_REDRAW:
@@ -386,7 +768,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     }
     if ((ev_out->emo_events & MU_KEYBD) != 0) {
 
-    	if((edit_obj > -1) && obj_is_inside(dlgtree, edit_obj, &work)){
+    	if((edit_obj > -1) /* && obj_is_inside(dlgtree, edit_obj, &work) */){
 
     		short next_edit_obj = edit_obj;
     		short next_char = -1;
@@ -425,10 +807,11 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 		any_obj = objc_find(dlgtree, 0, 8, ev_out->emo_mouse.p_x,
 								ev_out->emo_mouse.p_y);
 
-
+		if((dlgtree[any_obj].ob_state & OS_DISABLED) != 0) {
+			return(retval);
+		}
 		uint16_t type = (dlgtree[any_obj].ob_type & 0xFF);
 		if (type == G_FTEXT || type == G_FBOXTEXT)  {
-			printf("text??\n");
 			ret = form_button(dlgtree, any_obj, ev_out->emo_mclicks, &nextobj);
 			if(edit_obj != -1){
 				if (obj_is_inside(dlgtree, edit_obj, &work)) {
@@ -444,7 +827,6 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 				objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx, EDEND);
 			}
 			edit_obj = -1;
-			printf("xtype: %d\n", dlgtree[any_obj].ob_type & 0xff00 );
 			if (((dlgtree[any_obj].ob_type & 0xff00) & GW_XTYPE_CHECKBOX) != 0) {
 				if (OBJ_SELECTED(any_obj)) {
 					dlgtree[any_obj].ob_state &= ~(OS_SELECTED|OS_CROSSED);
@@ -455,7 +837,7 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			}
 			form_event(any_obj, 1, NULL);
 		}
-		printf("clicked: %d / %d\n", any_obj, ret);
+		//printf("clicked: %d / %d\n", any_obj, ret);
 		evnt_timer(150);
 
     }
@@ -482,22 +864,28 @@ void open_settings(void)
 		settings_guiwin = guiwin_add(h_aes_win, GW_FLAG_DEFAULTS,
 									on_aes_event);
 		curr.g_w = MIN(dlgtree->ob_width, desk_area.g_w);
-		curr.g_h = 200;
-		curr.g_x = (desk_area.g_w / 2) - (curr.g_w / 2);
+		curr.g_h = MIN(dlgtree->ob_height, desk_area.g_h-64);
+		curr.g_x = 1;
+		curr.g_y = desk_area.g_y;
+		//curr.g_x = (desk_area.g_w / 2) - (curr.g_w / 2);
 		curr.g_y = (desk_area.g_h / 2) - (curr.g_h / 2);
+
 		wind_calc_grect(WC_BORDER, kind, &curr, &curr);
+
+		dlgtree->ob_x = curr.g_x;
+		dlgtree->ob_y = curr.g_y;
 
 		/* set current config values: */
 		display_settings();
 
 		wind_open_grect(h_aes_win, &curr);
 
-		slid = guiwin_get_scroll_info(settings_guiwin);
-		slid->y_unit_px = 32;
-		slid->x_unit_px = 32;
+		guiwin_set_scroll_grid(settings_guiwin, 32, 32);
 		guiwin_get_grect(settings_guiwin, GUIWIN_AREA_CONTENT, &area);
-		slid->x_units = (dlgtree->ob_width/slid->x_unit_px);
-		slid->y_units = (dlgtree->ob_height/slid->y_unit_px);
+		slid = guiwin_get_scroll_info(settings_guiwin);
+		guiwin_set_content_units(settings_guiwin,
+								(dlgtree->ob_width/slid->x_unit_px),
+								(dlgtree->ob_height/slid->y_unit_px));
 		guiwin_update_slider(settings_guiwin, GUIWIN_VH_SLIDER);
 
 	}
