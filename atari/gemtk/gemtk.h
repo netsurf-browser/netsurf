@@ -137,6 +137,8 @@ void guiwin_set_event_handler(GUIWIN *win,guiwin_event_handler_f cb);
 void guiwin_set_user_data(GUIWIN *win, void *data);
 void *guiwin_get_user_data(GUIWIN *win);
 struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
+void guiwin_set_scroll_grid(GUIWIN * win, short x, short y);
+void guiwin_set_content_units(GUIWIN * win, short x, short y);
 bool guiwin_update_slider(GUIWIN *win, short mode);
 void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
 void guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,

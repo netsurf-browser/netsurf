@@ -675,6 +675,26 @@ struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
     return(&win->scroll_info);
 }
 
+void guiwin_set_scroll_grid(GUIWIN * win, short x, short y)
+{
+	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+
+	assert(slid != NULL);
+
+	slid->y_unit_px = x;
+	slid->x_unit_px = y;
+}
+
+void guiwin_set_content_units(GUIWIN * win, short x, short y)
+{
+	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+
+	assert(slid != NULL);
+
+	slid->x_units = x;
+	slid->y_units = y;
+}
+
 void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
 					short d)
 {
