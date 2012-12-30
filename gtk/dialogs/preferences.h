@@ -1,6 +1,5 @@
 /*
- * Copyright 2006 Rob Kendrick <rjek@rjek.com>
- * Copyright 2009 Mark Benjamin <netsurf-browser.org.MarkBenjamin@dfgh.net>
+ * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -17,18 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NETSURF_GTK_OPTIONS_H
-#define NETSURF_GTK_OPTIONS_H
+#ifndef NETSURF_GTK_PREFERENCES_H
+#define NETSURF_GTK_PREFERENCES_H
 
 #include <gtk/gtk.h>
 
-extern GtkDialog *wndPreferences;
+/** Initialise prefernces window
+ */
+GtkWidget* nsgtk_preferences(struct browser_window *bw, GtkWindow *parent);
 
-GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent);
-		/** Init options and load window */
-void nsgtk_options_load(void);		/** Load current options into window */
-void nsgtk_options_save(void);		/** Save options from window */
-bool nsgtk_options_combo_theme_add(const char *themename);
-		/** add new theme name to combo */
+/** Theme added
+ */
+void nsgtk_preferences_theme_add(const char *themename);
 
 #endif

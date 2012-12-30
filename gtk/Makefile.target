@@ -112,7 +112,7 @@ S_GTK := font_pango.c bitmap.c gui.c schedule.c thumbnail.c plotters.c	\
 	selection.c history.c window.c filetype.c download.c menu.c	\
 	print.c search.c tabs.c theme.c toolbar.c			\
 	compat.c cookies.c hotlist.c system_colour.c			\
-	$(addprefix dialogs/,options.c about.c source.c)
+	$(addprefix dialogs/,preferences.c about.c source.c)
 
 S_GTK := $(addprefix gtk/,$(S_GTK)) $(addprefix utils/,container.c)
 # code in utils/container.ch is non-universal it seems

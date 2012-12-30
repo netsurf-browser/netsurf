@@ -108,7 +108,8 @@ extern struct ns_options nsoptions;
 		free(nsoptions.OPTION);		\
 	}					\
 	nsoptions.OPTION = VALUE;               \
-        if (*nsoptions.OPTION == 0) {           \
+        if ((nsoptions.OPTION != NULL) &&	\
+	    (*nsoptions.OPTION == 0)) {		\
             free(nsoptions.OPTION);             \
             nsoptions.OPTION = NULL;            \
         }                                       \

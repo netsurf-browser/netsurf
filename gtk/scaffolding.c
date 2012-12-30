@@ -53,7 +53,7 @@
 #include "desktop/tree.h"
 #include "gtk/cookies.h"
 #include "gtk/completion.h"
-#include "gtk/dialogs/options.h"
+#include "gtk/dialogs/preferences.h"
 #include "gtk/dialogs/about.h"
 #include "gtk/dialogs/source.h"
 #include "gtk/bitmap.h"
@@ -138,7 +138,6 @@ struct gtk_scaffolding {
 	GtkBuilder			*xml;
 
 	struct gtk_history_window	*history_window;
-	GtkDialog 			*preferences_dialog;
 
 	int				throb_frame;
 	struct gui_window		*top_level;
@@ -1027,10 +1026,12 @@ MULTIHANDLER(find)
 MULTIHANDLER(preferences)
 {
 	struct browser_window *bw = nsgtk_get_browser_window(g->top_level);
-	if (g->preferences_dialog == NULL)
-		g->preferences_dialog = nsgtk_options_init(bw, g->window);
-	else
-		gtk_widget_show(GTK_WIDGET(g->preferences_dialog));
+	GtkWidget* wndpreferences;
+
+	wndpreferences = nsgtk_preferences(bw, g->window);
+	if (wndpreferences != NULL) {
+		gtk_widget_show(GTK_WIDGET(wndpreferences));
+	}
 
 	return TRUE;
 }
@@ -1768,8 +1769,6 @@ nsgtk_scaffolding *nsgtk_new_scaffolding(struct gui_window *toplevel)
 
 	g->menu_bar = nsgtk_menu_bar_create(GTK_MENU_SHELL(gtk_builder_get_object(g->xml, "menubar")), group);
 
-
-	g->preferences_dialog = NULL;
 
 	/* set this window's size and position to what's in the options, or
 	 * or some sensible default if they're not set yet.

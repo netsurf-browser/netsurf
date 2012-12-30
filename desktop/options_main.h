@@ -66,6 +66,8 @@
 	char *accept_charset;					\
 	/** Preferred maximum size of memory cache / bytes. */	\
 	int memory_cache_size;					\
+	/** Preferred expiry size of disc cache / bytes. */	\
+	int disc_cache_size;					\
 	/** Preferred expiry age of disc cache / days. */	\
 	int disc_cache_age;					\
 	/** Whether to block advertisements */			\
@@ -220,6 +222,7 @@
 	.accept_language = NULL,			\
 	.accept_charset = NULL,				\
 	.memory_cache_size = 12 * 1024 * 1024,		\
+	.disc_cache_size = 1024 * 1024 * 1024,		\
 	.disc_cache_age = 28,				\
 	.block_ads = false,				\
 	.do_not_track = false,				\
@@ -315,6 +318,7 @@
 	{ "accept_language",	OPTION_STRING,	&nsoptions.accept_language }, \
 	{ "accept_charset",	OPTION_STRING,	&nsoptions.accept_charset }, \
 	{ "memory_cache_size",	OPTION_INTEGER,	&nsoptions.memory_cache_size },	\
+	{ "disc_cache_size",	OPTION_INTEGER,	&nsoptions.disc_cache_size },	\
 	{ "disc_cache_age",	OPTION_INTEGER,	&nsoptions.disc_cache_age }, \
 	{ "block_advertisements", OPTION_BOOL,	&nsoptions.block_ads },	\
 	{ "do_not_track", OPTION_BOOL,	&nsoptions.do_not_track },	\
