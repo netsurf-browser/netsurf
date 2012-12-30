@@ -139,6 +139,7 @@ extern struct dom_string *corestring_dom_canplaythrough;
 extern struct dom_string *corestring_dom_cellpadding;
 extern struct dom_string *corestring_dom_cellspacing;
 extern struct dom_string *corestring_dom_change;
+extern struct dom_string *corestring_dom_charset;
 extern struct dom_string *corestring_dom_click;
 extern struct dom_string *corestring_dom_close;
 extern struct dom_string *corestring_dom_color;
