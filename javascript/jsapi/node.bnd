@@ -23,7 +23,8 @@ preamble %{
 #include "utils/log.h"
 
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
+
+#include "node.h"
 
 %}
 

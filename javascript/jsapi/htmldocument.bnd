@@ -25,12 +25,16 @@ preamble %{
 #include "utils/log.h"
 #include "utils/corestrings.h"
 #include "utils/libdom.h"
-
 #include "content/urldb.h"
-
 #include "javascript/js.h"
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
+#include "render/html_internal.h"
+
+#include "htmldocument.h"
+#include "htmlelement.h"
+#include "text.h"
+#include "nodelist.h"
+#include "location.h"
 
 %}
 

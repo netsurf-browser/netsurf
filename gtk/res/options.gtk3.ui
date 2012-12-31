@@ -263,7 +263,7 @@
   </object>
   <!-- interface-requires gtk+ 2.6 -->
   <!-- interface-naming-policy toplevel-contextual -->
-  <object class="GtkDialog" id="dlgPreferences">
+  <object class="GtkDialog" id="dialogPreferences">
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Netsurf Preferences</property>
     <property name="window_position">center-on-parent</property>

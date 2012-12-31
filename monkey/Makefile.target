@@ -41,7 +41,7 @@ MONKEYCFLAGS := -std=c99 -Dmonkey -Dnsmonkey \
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
 		-DMONKEY_RESPATH=\"$(NETSURF_MONKEY_RESOURCES)\" \
-		$(WARNFLAGS) -I. -g \
+		$(WARNFLAGS) -g \
 		$(shell $(PKG_CONFIG) --cflags glib-2.0) \
 		$(shell $(PKG_CONFIG) --cflags libdom libcurl) \
 		$(shell $(PKG_CONFIG) --cflags openssl) \

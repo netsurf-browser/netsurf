@@ -42,12 +42,10 @@ TPD_RISCOS = $(foreach TPL,$(notdir $(TPL_RISCOS)), \
 
 RESOURCES = $(TPD_RISCOS) split-messages
 
-CFLAGS += -I. $(WARNFLAGS) -Driscos				\
-		-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE	\
-		-mpoke-function-name -fno-strict-aliasing
+CFLAGS += $(WARNFLAGS) -Driscos	-std=c99 -D_BSD_SOURCE -D_POSIX_C_SOURCE \
+	    -mpoke-function-name -fno-strict-aliasing
 
-CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include			\
-		-I$(GCCSDK_INSTALL_ENV)/include/libmng
+CFLAGS += -I$(GCCSDK_INSTALL_ENV)/include -I$(GCCSDK_INSTALL_ENV)/include/libmng
 ifeq ($(HOST),riscos)
   CFLAGS += -I<OSLib$$Dir> -mthrowback
 endif

@@ -58,7 +58,7 @@ endif
 $(eval $(call pkg_config_find_and_add_enabled,BMP,libnsbmp,BMP))
 $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 
-CFLAGS += -U__STRICT_ANSI__ -std=c99 -I. -Dsmall $(WARNFLAGS) -Dnsatari \
+CFLAGS += -U__STRICT_ANSI__ -std=c99 -Dsmall $(WARNFLAGS) -Dnsatari \
 		-D_BSD_SOURCE \
 		-D_XOPEN_SOURCE=600 \
 		-D_POSIX_C_SOURCE=200112L \

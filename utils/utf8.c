@@ -297,7 +297,7 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 	}
 
 	slen = len ? len : strlen(string);
-	/* Worst case = ACSII -> UCS4, so allocate an output buffer
+	/* Worst case = ASCII -> UCS4, so allocate an output buffer
 	 * 4 times larger than the input buffer, and add 4 bytes at
 	 * the end for the NULL terminator
 	 */
@@ -337,3 +337,140 @@ utf8_convert_ret utf8_convert(const char *string, size_t len,
 
 	return UTF8_CONVERT_OK;
 }
+
+static utf8_convert_ret utf8_convert_html_chunk(iconv_t cd,
+		const char *chunk, size_t inlen,
+		char **out, size_t *outlen)
+{
+	size_t ret, esclen;
+	uint32_t ucs4;
+	char *pescape, escape[11];
+
+	while (inlen > 0) {
+		ret = iconv(cd, (void *) &chunk, &inlen, (void *) out, outlen);
+		if (ret != (size_t) -1)
+			break;
+
+		if (errno != EILSEQ)
+			return UTF8_CONVERT_NOMEM;
+
+		ucs4 = utf8_to_ucs4(chunk, inlen);
+		esclen = snprintf(escape, sizeof(escape), "&#x%06x;", ucs4);
+		pescape = escape;
+		ret = iconv(cd, (void *) &pescape, &esclen,
+				(void *) out, outlen);
+		if (ret == (size_t) -1)
+			return UTF8_CONVERT_NOMEM;
+
+		esclen = utf8_next(chunk, inlen, 0);
+		chunk += esclen;
+		inlen -= esclen;
+	}
+
+	return UTF8_CONVERT_OK;
+}
+
+/**
+ * Convert a UTF-8 encoded string into a string of the given encoding, 
+ * applying HTML escape sequences where necessary.
+ *
+ * \param string   String to convert (NUL-terminated)
+ * \param encname  Name of encoding to convert to
+ * \param len      Length, in bytes, of the input string, or 0
+ * \param result   Pointer to location to receive result
+ * \return Appropriate utf8_convert_ret value
+ */
+utf8_convert_ret utf8_to_html(const char *string, const char *encname,
+		size_t len, char **result)
+{
+	iconv_t cd;
+	const char *in;
+	char *out, *origout;
+	size_t off, prev_off, inlen, outlen, origoutlen, esclen;
+	utf8_convert_ret ret;
+	char *pescape, escape[11];
+
+	if (len == 0)
+		len = strlen(string);
+
+	cd = iconv_open(encname, "UTF-8");
+	if (cd == (iconv_t) -1) {
+		if (errno == EINVAL)
+			return UTF8_CONVERT_BADENC;
+		/* default to no memory */
+		return UTF8_CONVERT_NOMEM;
+	}
+
+	/* Worst case is ASCII -> UCS4, with all characters escaped: 
+	 * "&#xYYYYYY;", thus each input character may become a string 
+	 * of 10 UCS4 characters, each 4 bytes in length */
+	origoutlen = outlen = len * 10 * 4;
+	origout = out = malloc(outlen);
+	if (out == NULL) {
+		iconv_close(cd);
+		return UTF8_CONVERT_NOMEM;
+	}
+
+	/* Process input in chunks between characters we must escape */
+	prev_off = off = 0;
+	while (off < len) {
+		/* Must escape '&', '<', and '>' */
+		if (string[off] == '&' || string[off] == '<' ||
+				string[off] == '>') {
+			if (off - prev_off > 0) {
+				/* Emit chunk */
+				in = string + prev_off;
+				inlen = off - prev_off;
+				ret = utf8_convert_html_chunk(cd, in, inlen,
+						&out, &outlen);
+				if (ret != UTF8_CONVERT_OK) {
+					free(origout);
+					iconv_close(cd);
+					return ret;
+				}
+			}
+
+			/* Emit mandatory escape */
+			esclen = snprintf(escape, sizeof(escape),
+					"&#x%06x;", string[off]);
+			pescape = escape;
+			ret = utf8_convert_html_chunk(cd, pescape, esclen,
+					&out, &outlen);
+			if (ret != UTF8_CONVERT_OK) {
+				free(origout);
+				iconv_close(cd);
+				return ret;
+			}
+
+			prev_off = off = utf8_next(string, len, off);
+		} else {
+			off = utf8_next(string, len, off);
+		}
+	}
+
+	/* Process final chunk */
+	if (prev_off < len) {
+		in = string + prev_off;
+		inlen = len - prev_off;
+		ret = utf8_convert_html_chunk(cd, in, inlen, &out, &outlen);
+		if (ret != UTF8_CONVERT_OK) {
+			free(origout);
+			iconv_close(cd);
+			return ret;
+		}
+	}
+
+	iconv_close(cd);
+
+	/* Shrink-wrap */
+	*result = realloc(origout, origoutlen - outlen + 4);
+	if (*result == NULL) {
+		free(origout);
+		return UTF8_CONVERT_NOMEM;
+	}
+	memset(*result + (origoutlen - outlen), 0, 4);
+
+	return UTF8_CONVERT_OK;
+}
+
+

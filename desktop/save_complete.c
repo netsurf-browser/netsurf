@@ -39,8 +39,10 @@
 #include "desktop/save_complete.h"
 #include "render/box.h"
 #include "render/html.h"
+#include "utils/corestrings.h"
 #include "utils/log.h"
 #include "utils/nsurl.h"
+#include "utils/utf8.h"
 #include "utils/utils.h"
 
 regex_t save_complete_import_re;
@@ -551,7 +553,9 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 {
 	nsurl *url;
 	hlcache_handle *content;
+	char *escaped;
 	nserror error;
+	utf8_convert_ret ret;
 
 	error = nsurl_join(ctx->base, value, &url);
 	if (error == NSERROR_NOMEM)
@@ -566,11 +570,25 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 			fprintf(ctx->fp, "\"%p\"", content);
 		} else {
 			/* no match found */
-			fprintf(ctx->fp, "\"%s\"", nsurl_access(url));
+			ret = utf8_to_html(nsurl_access(url), "UTF-8",
+					nsurl_length(url), &escaped);
 			nsurl_unref(url);
+
+			if (ret != UTF8_CONVERT_OK)
+				return false;
+
+			fprintf(ctx->fp, "\"%s\"", escaped);
+
+			free(escaped);
 		}
 	} else {
-		fprintf(ctx->fp, "\"%.*s\"", (int) value_len, value);
+		ret = utf8_to_html(value, "UTF-8", value_len, &escaped);
+		if (ret != UTF8_CONVERT_OK)
+			return false;
+
+		fprintf(ctx->fp, "\"%s\"", escaped);
+
+		free(escaped);
 	}
 
 	return true;
@@ -579,7 +597,16 @@ static bool save_complete_rewrite_url_value(save_complete_ctx *ctx,
 static bool save_complete_write_value(save_complete_ctx *ctx,
 		const char *value, size_t value_len)
 {
-	fprintf(ctx->fp, "\"%.*s\"", (int) value_len, value);
+	char *escaped;
+	utf8_convert_ret ret;
+
+	ret = utf8_to_html(value, "UTF-8", value_len, &escaped);
+	if (ret != UTF8_CONVERT_OK)
+		return false;
+
+	fprintf(ctx->fp, "\"%s\"", escaped);
+
+	free(escaped);
 
 	return true;
 }
@@ -728,7 +755,7 @@ static bool save_complete_handle_attrs(save_complete_ctx *ctx,
 	for (i = 0; i < length; i++) {
 		dom_attr *attr;
 
-		error = dom_namednodemap_item(attrs, i, &attr);
+		error = dom_namednodemap_item(attrs, i, (void *) &attr);
 		if (error != DOM_NO_ERR)
 			return false;
 
@@ -753,6 +780,7 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 	dom_namednodemap *attrs;
 	const char *name_data;
 	size_t name_len;
+	bool process = true;
 	dom_exception error;
 
 	ctx->iter_state = STATE_NORMAL;
@@ -767,9 +795,56 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 	name_data = dom_string_data(name);
 	name_len = dom_string_byte_length(name);
 
-	/* Elide BASE elements from the output */
 	if (name_len == SLEN("base") &&
 			strncasecmp(name_data, "base", name_len) == 0) {
+		/* Elide BASE elements from the output */
+		process = false;
+	} else if (name_len == SLEN("meta") && 
+			strncasecmp(name_data, "meta", name_len) == 0) {
+		/* Don't emit close tags for META elements */
+		if (event_type == EVENT_LEAVE) {
+			process = false;
+		} else {
+			/* Elide meta charsets */
+			dom_string *value;
+			error = dom_element_get_attribute(node,
+					corestring_dom_http_equiv, &value);
+			if (error != DOM_NO_ERR) {
+				dom_string_unref(name);
+				return false;
+			}
+
+			if (value != NULL) {
+				if (dom_string_length(value) ==
+					SLEN("Content-Type") &&
+					strncasecmp(dom_string_data(value),
+						"Content-Type",
+						SLEN("Content-Type")) == 0)
+					process = false;
+
+				dom_string_unref(value);
+			} else {
+				bool yes;
+
+				error = dom_element_has_attribute(node,
+						corestring_dom_charset, &yes);
+				if (error != DOM_NO_ERR) {
+					dom_string_unref(name);
+					return false;
+				}
+
+				if (yes)
+					process = false;
+			}
+		}
+	} else if (event_type == EVENT_LEAVE && 
+			((name_len == SLEN("link") && 
+			strncasecmp(name_data, "link", name_len) == 0))) {
+		/* Don't emit close tags for void elements */
+		process = false;
+	}
+
+	if (process == false) {
 		dom_string_unref(name);
 		return true;
 	}
@@ -833,6 +908,12 @@ static bool save_complete_handle_element(save_complete_ctx *ctx,
 		}
 
 		ctx->iter_state = STATE_IN_STYLE;
+	} else if (event_type == EVENT_ENTER && name_len == SLEN("head") &&
+			strncasecmp(name_data, "head", name_len) == 0) {
+		/* If this is a HEAD element, insert a meta charset */
+		fputs("<META http-equiv=\"Content-Type\" "
+				"content=\"text/html; charset=utf-8\">",
+				ctx->fp);
 	}
 
 	dom_string_unref(name);
@@ -846,6 +927,7 @@ static bool save_complete_node_handler(dom_node *node,
 	save_complete_ctx *ctx = ctxin;
 	dom_node_type type;
 	dom_exception error;
+	utf8_convert_ret ret;
 
 	error = dom_node_get_node_type(node, &type);
 	if (error != DOM_NO_ERR)
@@ -872,11 +954,20 @@ static bool save_complete_node_handler(dom_node *node,
 				fwrite("<!--", 1, sizeof("<!--") - 1, ctx->fp);
 
 			if (text != NULL) {
+				char *escaped;
+
 				text_data = dom_string_data(text);
 				text_len = dom_string_byte_length(text);
 
-				fwrite(text_data, sizeof(*text_data), 
-						text_len, ctx->fp);
+				ret = utf8_to_html(text_data, "UTF-8",
+						text_len, &escaped);
+				if (ret != UTF8_CONVERT_OK)
+					return false;
+
+				fwrite(escaped, sizeof(*escaped), 
+						strlen(escaped), ctx->fp);
+
+				free(escaped);
 
 				dom_string_unref(text);
 			}
@@ -917,8 +1008,9 @@ static bool save_complete_node_handler(dom_node *node,
 			name_data = dom_string_data(name);
 			name_len = dom_string_byte_length(name);
 
-			fprintf(ctx->fp, " PUBLIC \"%.*s\"",
-					(int) name_len, name_data);
+			if (name_len > 0)
+				fprintf(ctx->fp, " PUBLIC \"%.*s\"",
+						(int) name_len, name_data);
 
 			dom_string_unref(name);
 		}
@@ -931,8 +1023,9 @@ static bool save_complete_node_handler(dom_node *node,
 			name_data = dom_string_data(name);
 			name_len = dom_string_byte_length(name);
 
-			fprintf(ctx->fp, " \"%.*s\"",
-					(int) name_len, name_data);
+			if (name_len > 0)
+				fprintf(ctx->fp, " \"%.*s\"",
+						(int) name_len, name_data);
 
 			dom_string_unref(name);
 		}

@@ -46,8 +46,6 @@ static GtkBuilder *gladeFile;
 
 static struct browser_window *current_browser;
 
-static int proxy_type;
-
 static void dialog_response_handler (GtkDialog *dlg, gint res_id);
 static gboolean on_dialog_close (GtkDialog *dlg, gboolean stay_alive);
 static void nsgtk_options_theme_combo(void);
@@ -66,30 +64,35 @@ DECLARE(checkDisablePlugins);
 DECLARE(spinHistoryAge);
 DECLARE(checkHoverURLs);
 DECLARE(checkDisplayRecentURLs);
-DECLARE(comboLanguage);
+//DECLARE(comboboxLanguage);
+static GtkWidget *comboboxLanguage;
+static gboolean on_comboboxLanguage_changed(GtkComboBox *combo, gpointer data);
 DECLARE(checkSendReferer);
+DECLARE(checkSendDNT);
 
 DECLARE(comboProxyType);
 DECLARE(entryProxyHost);
-DECLARE(entryProxyPort);
+DECLARE(spinProxyPort);
 DECLARE(entryProxyUser);
 DECLARE(entryProxyPassword);
 DECLARE(spinMaxFetchers);
 DECLARE(spinFetchesPerHost);
 DECLARE(spinCachedConnections);
 
+DECLARE(checkEnableJavascript);
+
 DECLARE(checkResampleImages);
 DECLARE(spinAnimationSpeed);
-DECLARE(checkDisableAnimations);
+DECLARE(checkEnableAnimations);
 
-DECLARE(fontSansSerif);
-DECLARE(fontSerif);
-DECLARE(fontMonospace);
-DECLARE(fontCursive);
-DECLARE(fontFantasy);
+//DECLARE(fontSansSerif);
+//DECLARE(fontSerif);
+//DECLARE(fontMonospace);
+//DECLARE(fontCursive);
+//DECLARE(fontFantasy);
 DECLARE(comboDefault);
 DECLARE(spinDefaultSize);
-DECLARE(spinMinimumSize);
+//DECLARE(spinMinimumSize);
 DECLARE(fontPreview);
 
 DECLARE(comboButtonType);
@@ -123,7 +126,7 @@ DECLARE(checkRemoveBackgrounds);
 DECLARE(checkFitPage);
 DECLARE(checkCompressPDF);
 DECLARE(checkPasswordPDF);
-DECLARE(setDefaultExportOptions);
+//DECLARE(setDefaultExportOptions);
 
 /* Used when the feature is not implemented yet */
 #define FIND_WIDGET(wname)                                              \
@@ -135,12 +138,22 @@ DECLARE(setDefaultExportOptions);
 
 /* Assigns widget and connects it to its callback function */
 #define CONNECT(wname, event)                                           \
+        do {                                                            \
+                if ((wname) == NULL)                                    \
+                        LOG(("Unable to find widget '%s'!", #wname));   \
+		else \
         g_signal_connect(G_OBJECT(wname), event,                        \
-                         G_CALLBACK(on_##wname##_changed), NULL)
+                         G_CALLBACK(on_##wname##_changed), NULL);	\
+        } while (0)
 
-GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
+/* exported interface documented in gtk/dialogs/options.h */
+GtkDialog* 
+nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 {
-	GError* error = NULL;
+	GError *error = NULL;
+	GObject *dlgobject;
+	//GSList *group;
+
 	gladeFile = gtk_builder_new();
 	if (!gtk_builder_add_from_file(gladeFile, glade_file_location->options, &error)) {
 		g_warning("Couldn't load builder file: %s", error->message);
@@ -148,18 +161,25 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 		return NULL;
 	}
 	
+	
+	dlgobject = gtk_builder_get_object(gladeFile, "dialogPreferences");
+	if (dlgobject == NULL) {
+		LOG(("Unable to get object for preferences dialog"));
+		return NULL;
+	}
+
 	current_browser = bw;
-	wndPreferences = GTK_DIALOG(gtk_builder_get_object(gladeFile, "dlgPreferences"));
+	wndPreferences = GTK_DIALOG(dlgobject);
 	gtk_window_set_transient_for(GTK_WINDOW(wndPreferences), parent);
+
+	/* set the widgets to reflect the current options */
+	nsgtk_options_load();
 	
 	FIND_WIDGET(sourceButtonTab);
 	FIND_WIDGET(sourceButtonWindow);
-	GSList *group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(
-			sourceButtonWindow));
-	gtk_radio_button_set_group(GTK_RADIO_BUTTON(sourceButtonTab), group);
+	//group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(sourceButtonWindow));
+	//gtk_radio_button_set_group(GTK_RADIO_BUTTON(sourceButtonTab), group);
 	
-	/* set the widgets to reflect the current options */
-	nsgtk_options_load();
 	
 	/* Connect all widgets to their appropriate callbacks */
 	CONNECT(entryHomePageURL, "focus-out-event");
@@ -172,33 +192,37 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 	CONNECT(spinHistoryAge, "focus-out-event");
 	CONNECT(checkHoverURLs, "toggled");
 	
-	CONNECT(comboLanguage, "changed");
+	CONNECT(comboboxLanguage, "changed");
 	
 	CONNECT(checkDisplayRecentURLs, "toggled");
 	CONNECT(checkSendReferer, "toggled");
+	CONNECT(checkSendDNT, "toggled");
 	CONNECT(checkShowSingleTab, "toggled");
 
 	CONNECT(comboProxyType, "changed");
 	CONNECT(entryProxyHost, "focus-out-event");
-	CONNECT(entryProxyPort, "focus-out-event");
+	CONNECT(spinProxyPort, "focus-out-event");
 	CONNECT(entryProxyUser, "focus-out-event");
 	CONNECT(entryProxyPassword, "focus-out-event");
 	CONNECT(spinMaxFetchers, "value-changed");
 	CONNECT(spinFetchesPerHost, "value-changed");
 	CONNECT(spinCachedConnections, "value-changed");
 
+	CONNECT(checkEnableJavascript, "toggled");
+
 	CONNECT(checkResampleImages, "toggled");
 	CONNECT(spinAnimationSpeed, "value-changed");
-	CONNECT(checkDisableAnimations, "toggled");
+	CONNECT(checkEnableAnimations, "toggled");
 
-	CONNECT(fontSansSerif, "font-set");
+/*	CONNECT(fontSansSerif, "font-set");
 	CONNECT(fontSerif, "font-set");
 	CONNECT(fontMonospace, "font-set");
 	CONNECT(fontCursive, "font-set");
 	CONNECT(fontFantasy, "font-set");
+	CONNECT(spinMinimumSize, "value-changed");
+*/
 	CONNECT(comboDefault, "changed");
 	CONNECT(spinDefaultSize, "value-changed");
-	CONNECT(spinMinimumSize, "value-changed");
 	CONNECT(fontPreview, "clicked");
 	
 	CONNECT(comboButtonType, "changed");
@@ -231,7 +255,7 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
 	CONNECT(checkFitPage, "toggled");
 	CONNECT(checkCompressPDF, "toggled");
 	CONNECT(checkPasswordPDF, "toggled");
-	CONNECT(setDefaultExportOptions, "clicked");
+//	CONNECT(setDefaultExportOptions, "clicked");
 		
 	g_signal_connect(G_OBJECT(wndPreferences), "response",
 		G_CALLBACK (dialog_response_handler), NULL);
@@ -291,53 +315,122 @@ GtkDialog* nsgtk_options_init(struct browser_window *bw, GtkWindow *parent)
                 (widget) = GTK_WIDGET(gtk_builder_get_object(gladeFile, #widget)); \
         } while (0)
 
+static void set_proxy_widgets_sensitivity(int proxyval)
+{
+	switch (proxyval) {
+	case 0: /* no proxy */
+		gtk_widget_set_sensitive(entryProxyHost, FALSE);
+		gtk_widget_set_sensitive(spinProxyPort, FALSE);
+		gtk_widget_set_sensitive(entryProxyUser, FALSE);
+		gtk_widget_set_sensitive(entryProxyPassword, FALSE);
+		break;
+
+	case 1: /* proxy with no auth */
+		gtk_widget_set_sensitive(entryProxyHost, TRUE);
+		gtk_widget_set_sensitive(spinProxyPort, TRUE);
+		gtk_widget_set_sensitive(entryProxyUser, FALSE);
+		gtk_widget_set_sensitive(entryProxyPassword, FALSE);
+		break;
+
+	case 2: /* proxy with basic auth */
+		gtk_widget_set_sensitive(entryProxyHost, TRUE);
+		gtk_widget_set_sensitive(spinProxyPort, TRUE);
+		gtk_widget_set_sensitive(entryProxyUser, TRUE);
+		gtk_widget_set_sensitive(entryProxyPassword, TRUE);
+		break;
+
+	case 3: /* proxy with ntlm auth */
+		gtk_widget_set_sensitive(entryProxyHost, TRUE);
+		gtk_widget_set_sensitive(spinProxyPort, TRUE);
+		gtk_widget_set_sensitive(entryProxyUser, TRUE);
+		gtk_widget_set_sensitive(entryProxyPassword, TRUE);
+		break;
+
+	case 4: /* system proxy */
+		gtk_widget_set_sensitive(entryProxyHost, FALSE);
+		gtk_widget_set_sensitive(spinProxyPort, FALSE);
+		gtk_widget_set_sensitive(entryProxyUser, FALSE);
+		gtk_widget_set_sensitive(entryProxyPassword, FALSE);
+		break;
+
+	}
+}
 
 void nsgtk_options_load(void) 
 {
-	GtkBox *box;
 	const char *default_accept_language = "en";
 	const char *default_homepage_url = "";
-	const char *default_http_proxy_host = "";
-	const char *default_http_proxy_auth_user = "";
-	const char *default_http_proxy_auth_pass = "";
-	int combo_row_count = 0;
+	const char *default_http_proxy_host;
+	const char *default_http_proxy_auth_user;
+	const char *default_http_proxy_auth_pass;
+
 	int active_language = 0;
+	GtkListStore *liststore;
+	GtkTreeIter iter;
+
 	int proxytype = 0;
 	FILE *fp;
 	char buf[50];
 
-	/* get widget text */
+	/* Network - HTTP Proxy */
+	default_http_proxy_host = nsoption_charp(http_proxy_host);
+	default_http_proxy_auth_user = nsoption_charp(http_proxy_auth_user);
+	default_http_proxy_auth_pass = nsoption_charp(http_proxy_auth_pass);
+
+	if (nsoption_bool(http_proxy) == true) {
+		/* proxy type combo box starts with disabled, to allow
+		 * for this the http_proxy option needs combining with
+		 * the http_proxy_auth option
+		 */
+		proxytype = nsoption_int(http_proxy_auth) + 1;
+		if (default_http_proxy_host == NULL) {
+			/* set to use a proxy without a host, turn proxy off */
+			proxytype = 0;
+		} else if (((proxytype == 2) || 
+			    (proxytype == 3)) && 
+			   ((default_http_proxy_auth_user == NULL) || 
+			    (default_http_proxy_auth_pass == NULL))) {
+			/* authentication selected with empty credentials, turn proxy off */
+			proxytype = 0;
+		}
+	}
+
+	if (default_http_proxy_host == NULL) {
+		default_http_proxy_host = "";
+	}
+
+	if (default_http_proxy_auth_user == NULL) {
+		default_http_proxy_auth_user = "";
+	}
+
+	if (default_http_proxy_auth_pass == NULL) {
+		default_http_proxy_auth_pass = "";
+	}
+
+	SET_COMBO(comboProxyType, proxytype);
+	SET_ENTRY(entryProxyHost, default_http_proxy_host);
+	SET_SPIN(spinProxyPort, nsoption_int(http_proxy_port));
+	SET_ENTRY(entryProxyUser, default_http_proxy_auth_user);
+	SET_ENTRY(entryProxyPassword, default_http_proxy_auth_pass);
+
+	set_proxy_widgets_sensitivity(proxytype);
+
+
+	/* accept language selection */
 	if (nsoption_charp(accept_language) != NULL) {
 		default_accept_language = nsoption_charp(accept_language);
 	}
 
-	if (nsoption_charp(homepage_url) != NULL) {
-		default_homepage_url = nsoption_charp(homepage_url);
-	}
-
-	if (nsoption_charp(http_proxy_host) != NULL) {
-		default_http_proxy_host = nsoption_charp(http_proxy_host);
-	}
-
-	if (nsoption_charp(http_proxy_auth_user) != NULL) {
-		default_http_proxy_auth_user = nsoption_charp(http_proxy_auth_user);
-	}
-
-	if (nsoption_charp(http_proxy_auth_pass) != NULL) {
-		default_http_proxy_auth_pass = nsoption_charp(http_proxy_auth_pass);
-	}
-
-	if (nsoption_bool(http_proxy) == true) {
-		proxytype = nsoption_int(http_proxy_auth) + 1;
-	}
-
-	/* Create combobox */
-	box = GTK_BOX(gtk_builder_get_object(gladeFile, "combolanguagevbox"));
-	comboLanguage = nsgtk_combo_box_text_new();
-
-	/* Populate combobox from languages file */
-	if ((languages_file_location != NULL) && 
+	/* Fill content language list store */
+	liststore = GTK_LIST_STORE(gtk_builder_get_object(gladeFile, "liststore_content_language"));
+	if ((liststore != NULL) &&
+	    (languages_file_location != NULL) && 
 	    ((fp = fopen(languages_file_location, "r")) != NULL)) {
+		int combo_row_count = 0;
+
+		gtk_list_store_clear(liststore);
+		active_language = -1;
+
 		LOG(("Used %s for languages", languages_file_location));
 		while (fgets(buf, sizeof(buf), fp)) {
 			/* Ignore blank lines */
@@ -347,34 +440,44 @@ void nsgtk_options_load(void)
 			/* Remove trailing \n */
 			buf[strlen(buf) - 1] = '\0';
 
-			nsgtk_combo_box_text_append_text(comboLanguage, buf);
+			gtk_list_store_append(liststore, &iter);
+			gtk_list_store_set(liststore, &iter, 0, buf, -1 );
 
-			if (strcmp(buf, default_accept_language) == 0)
+			if (strcmp(buf, default_accept_language) == 0) {
 				active_language = combo_row_count;
+			}
 
 			combo_row_count++;
 		}
 
-		fclose(fp);
+		if (active_language == -1) {
+			/* configured language was not in list, add it */
+			gtk_list_store_append(liststore, &iter);
+			gtk_list_store_set(liststore, &iter, 0, default_accept_language, -1 );
+			active_language = combo_row_count;
+			
+		}
+
+		fclose(fp);		
 	} else {
 		LOG(("Failed opening languages file"));
-		warn_user("FileError", languages_file_location);
-		nsgtk_combo_box_text_append_text(comboLanguage, "en");
 	}
 
+	SET_COMBO(comboboxLanguage, active_language);
 
-	gtk_combo_box_set_active(GTK_COMBO_BOX(comboLanguage), active_language);
-	/** \todo localisation */
-	gtk_widget_set_tooltip_text(GTK_WIDGET(comboLanguage), 
-			"set preferred language for web pages");
-	gtk_box_pack_start(box, comboLanguage, FALSE, FALSE, 0);
-	gtk_widget_show(comboLanguage);
-	
-	nsgtk_options_theme_combo();
+
+	/* Startup */
+	if (nsoption_charp(homepage_url) != NULL) {
+		default_homepage_url = nsoption_charp(homepage_url);
+	}
 	
 	SET_ENTRY(entryHomePageURL, default_homepage_url);
 	SET_BUTTON(setCurrentPage);
 	SET_BUTTON(setDefaultPage);
+
+	/* Theme */
+	nsgtk_options_theme_combo();
+
 	SET_CHECK(checkHideAdverts, nsoption_bool(block_ads));
 	
 	SET_CHECK(checkDisablePopups, nsoption_bool(disable_popups));
@@ -384,42 +487,28 @@ void nsgtk_options_load(void)
 	
 	SET_CHECK(checkDisplayRecentURLs, nsoption_bool(url_suggestion));
 	SET_CHECK(checkSendReferer, nsoption_bool(send_referer));
+	SET_CHECK(checkSendDNT, nsoption_bool(do_not_track));
         SET_CHECK(checkShowSingleTab, nsoption_bool(show_single_tab));
 	
-	SET_COMBO(comboProxyType, proxytype);
-	SET_ENTRY(entryProxyHost, default_http_proxy_host);
-
-	gtk_widget_set_sensitive(entryProxyHost, proxytype != 0);
-
-	snprintf(buf, sizeof(buf), "%d", nsoption_int(http_proxy_port));	
-
-	SET_ENTRY(entryProxyPort, buf);
-	gtk_widget_set_sensitive(entryProxyPort, proxytype != 0);
-
-	SET_ENTRY(entryProxyUser, default_http_proxy_auth_user);
-
-	gtk_widget_set_sensitive(entryProxyUser, proxytype != 0);
-
-	SET_ENTRY(entryProxyPassword, default_http_proxy_auth_pass);
-
-	gtk_widget_set_sensitive(entryProxyPassword, proxytype != 0);
-
 	SET_SPIN(spinMaxFetchers, nsoption_int(max_fetchers));
 	SET_SPIN(spinFetchesPerHost, nsoption_int(max_fetchers_per_host));
 	SET_SPIN(spinCachedConnections, nsoption_int(max_cached_fetch_handles));
 
+	SET_CHECK(checkEnableJavascript, nsoption_bool(enable_javascript));
+
 	SET_CHECK(checkResampleImages, nsoption_bool(render_resample));
 	SET_SPIN(spinAnimationSpeed, nsoption_int(minimum_gif_delay) / 100.0);
-	SET_CHECK(checkDisableAnimations, !nsoption_bool(animate_images));
+	SET_CHECK(checkEnableAnimations, nsoption_bool(animate_images));
 
-	SET_FONT(fontSansSerif, nsoption_charp(font_sans));
+/*	SET_FONT(fontSansSerif, nsoption_charp(font_sans));
 	SET_FONT(fontSerif, nsoption_charp(font_serif));
 	SET_FONT(fontMonospace, nsoption_charp(font_mono));
 	SET_FONT(fontCursive, nsoption_charp(font_cursive));
 	SET_FONT(fontFantasy, nsoption_charp(font_fantasy));
+	SET_SPIN(spinMinimumSize, nsoption_bool(font_min_size) / 10);
+*/
 	SET_COMBO(comboDefault, nsoption_int(font_default));
 	SET_SPIN(spinDefaultSize, nsoption_int(font_size) / 10);
-	SET_SPIN(spinMinimumSize, nsoption_bool(font_min_size) / 10);
 	SET_BUTTON(fontPreview);
 	
 	SET_COMBO(comboButtonType, nsoption_int(button_type) -1);
@@ -451,16 +540,12 @@ void nsgtk_options_load(void)
 	SET_CHECK(checkFitPage, nsoption_bool(enable_loosening));
 	SET_CHECK(checkCompressPDF, nsoption_bool(enable_PDF_compression));
 	SET_CHECK(checkPasswordPDF, nsoption_bool(enable_PDF_password));
-	SET_BUTTON(setDefaultExportOptions);
+//	SET_BUTTON(setDefaultExportOptions);
 }
 
-static void dialog_response_handler (GtkDialog *dlg, gint res_id)
+static void dialog_response_handler(GtkDialog *dlg, gint res_id)
 {
 	switch (res_id)	{
-	case GTK_RESPONSE_HELP:
-		/* Ready to implement Help */
-		break;
-
 	case GTK_RESPONSE_CLOSE:
 		on_dialog_close(dlg, TRUE);
 	}
@@ -572,18 +657,28 @@ static gboolean on_##widget##_changed(GtkWidget *widget, gpointer data) \
         return FALSE;                           \
         }
 
-static gboolean on_comboLanguage_changed(GtkWidget *widget, gpointer data)
+static gboolean on_comboboxLanguage_changed(GtkComboBox *combo, gpointer data)
 {
-	gchar *lang; 
+	gchar *lang = NULL; 
+	GtkTreeIter iter;
+	GtkTreeModel *model;
 
-	lang = nsgtk_combo_box_text_get_active_text(comboLanguage);
-	if (lang == NULL)
-		return FALSE;
+	/* Obtain currently selected item from combo box.
+	 * If nothing is selected, do nothing. 
+	 */
+	if (gtk_combo_box_get_active_iter(combo, &iter)) {
+		/* Obtain data model from combo box. */
+		model = gtk_combo_box_get_model(combo);
 
-	nsoption_set_charp(accept_language, strdup(lang));
+		/* Obtain string from model. */
+		gtk_tree_model_get(model, &iter, 0, &lang, -1);
+	}
 
-	g_free(lang);
-	
+	if (lang != NULL) {
+		nsoption_set_charp(accept_language, strdup(lang));
+		g_free(lang);
+	}
+
 	return FALSE;
 }
 
@@ -621,6 +716,11 @@ CHECK_CHANGED(checkSendReferer, send_referer)
 {
 }
 END_HANDLER
+
+CHECK_CHANGED(checkSendDNT, do_not_track)
+{
+}
+END_HANDLER
                 
 CHECK_CHANGED(checkShowSingleTab, show_single_tab)
 {
@@ -628,54 +728,48 @@ CHECK_CHANGED(checkShowSingleTab, show_single_tab)
 }
 END_HANDLER
 
+
 COMBO_CHANGED(comboProxyType, http_proxy_auth)
 {
 	LOG(("proxy auth: %d", nsoption_int(http_proxy_auth)));
+
+	set_proxy_widgets_sensitivity(nsoption_int(http_proxy_auth));
 	switch (nsoption_int(http_proxy_auth)) {
-	case 0:
+	case 0: /* no proxy */
 		nsoption_set_bool(http_proxy, false);
 		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
 		break;
-	case 1:
+
+	case 1: /* proxy with no auth */
 		nsoption_set_bool(http_proxy, true);
 		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
 		break;
-	case 2:
+
+	case 2: /* proxy with basic auth */
 		nsoption_set_bool(http_proxy, true);
 		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_BASIC);
 		break;
-	case 3:
+
+	case 3: /* proxy with ntlm auth */
 		nsoption_set_bool(http_proxy, true);
 		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NTLM);
 		break;
+
+	case 4: /* system proxy */
+		nsoption_set_bool(http_proxy, true);
+		nsoption_set_int(http_proxy_auth, OPTION_HTTP_PROXY_AUTH_NONE);
+		break;
+
 	}
-	gboolean sensitive = (!proxy_type == 0);
-	gtk_widget_set_sensitive(entryProxyHost, sensitive);
-	gtk_widget_set_sensitive(entryProxyPort, sensitive);
-	gtk_widget_set_sensitive(entryProxyUser, sensitive);
-	gtk_widget_set_sensitive(entryProxyPassword, sensitive);
 }	
 END_HANDLER
 
 ENTRY_CHANGED(entryProxyHost, http_proxy_host)
 
-gboolean on_entryProxyPort_changed(GtkWidget *widget, gpointer data)
+SPIN_CHANGED(spinProxyPort, http_proxy_port)
 {
-	long port;
-
-	errno = 0;
-	port = strtol((char *)gtk_entry_get_text(GTK_ENTRY(entryProxyPort)),
-			NULL, 10) & 0xffff;
-	if ((port != 0) && (errno == 0)) {
-		nsoption_set_int(http_proxy_port, port);
-	} else {
-		char buf[32];
-		snprintf(buf, sizeof(buf), "%d", nsoption_int(http_proxy_port));
-		SET_ENTRY(entryProxyPort, buf);
-	}
-
-	return FALSE;
 }
+END_HANDLER
 
 ENTRY_CHANGED(entryProxyUser, http_proxy_auth_user)
 
@@ -709,9 +803,13 @@ static gboolean on_spinAnimationSpeed_changed(GtkWidget *widget, gpointer data)
 	return FALSE;
 }
 
-CHECK_CHANGED(checkDisableAnimations, animate_images)
+CHECK_CHANGED(checkEnableAnimations, animate_images)
 {
-	nsoption_set_bool(animate_images, !nsoption_bool(animate_images));
+}
+END_HANDLER
+
+CHECK_CHANGED(checkEnableJavascript, enable_javascript)
+{
 }
 END_HANDLER
 
@@ -734,7 +832,7 @@ CHECK_CHANGED(checkHoverURLs, hover_urls)
 {
 }
 END_HANDLER
-
+/*
 FONT_CHANGED(fontSansSerif, font_sans)
 {
 }
@@ -759,7 +857,7 @@ FONT_CHANGED(fontFantasy, font_fantasy)
 {
 }
 END_HANDLER
-
+*/
 COMBO_CHANGED(comboDefault, font_default)
 {
 }
@@ -771,12 +869,12 @@ SPIN_CHANGED(spinDefaultSize, font_size)
 }
 END_HANDLER
 
-SPIN_CHANGED(spinMinimumSize, font_min_size)
+/*SPIN_CHANGED(spinMinimumSize, font_min_size)
 {
 	nsoption_set_int(font_min_size, nsoption_int(font_min_size) * 10);
 }
 END_HANDLER
-
+*/
 BUTTON_CLICKED(fontPreview)
 {
 	nsgtk_reflow_all_windows();
@@ -1057,6 +1155,7 @@ CHECK_CHANGED(checkPasswordPDF, enable_PDF_password)
 }
 END_HANDLER
 
+/*
 BUTTON_CLICKED(setDefaultExportOptions)
 {
 	nsoption_set_int(margin_top, DEFAULT_MARGIN_TOP_MM);
@@ -1082,3 +1181,4 @@ BUTTON_CLICKED(setDefaultExportOptions)
 	SET_CHECK(checkFitPage, nsoption_bool(enable_loosening));
 }
 END_HANDLER
+*/

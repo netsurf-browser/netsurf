@@ -16,14 +16,15 @@ hdrcomment "Released under the terms of the MIT License,";
 hdrcomment "        http://www.opensource.org/licenses/mit-license";
 
 preamble %{
+#include <stdlib.h>
 
 #include <dom/dom.h>
         
 #include "utils/config.h"
 #include "utils/log.h"
-
 #include "javascript/jsapi.h"
-#include "javascript/jsapi/binding.h"
+
+#include "event.h"
 
 %}
 

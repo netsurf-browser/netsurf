@@ -51,7 +51,7 @@ GTKCFLAGS := -std=c99 -Dgtk -Dnsgtk \
 		-D_POSIX_C_SOURCE=200112L \
 		-D_NETBSD_SOURCE \
 		-DGTK_RESPATH=\"$(NETSURF_GTK_RESOURCES)\" \
-		$(WARNFLAGS) -I. -g
+		$(WARNFLAGS) -g
 
 # non optional pkg-configed libs
 $(eval $(call pkg_config_find_and_add,libcss,CSS))

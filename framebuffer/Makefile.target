@@ -44,7 +44,7 @@ $(eval $(call pkg_config_find_and_add_enabled,GIF,libnsgif,GIF))
 $(eval $(call pkg_config_find_and_add_enabled,MOZJS,mozjs185,JavaScript))
 $(eval $(call pkg_config_find_and_add_enabled,JS,mozilla-js,JavaScript))
 
-CFLAGS += -std=c99 -g -I. -Dsmall $(WARNFLAGS) 	\
+CFLAGS += -std=c99 -g -Dsmall $(WARNFLAGS) 	\
 	  -D_BSD_SOURCE \
 	  -D_XOPEN_SOURCE=600 \
 	  -D_POSIX_C_SOURCE=200112L \

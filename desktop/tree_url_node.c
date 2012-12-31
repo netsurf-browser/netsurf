@@ -817,11 +817,11 @@ static bool tree_url_save_entry(struct node *entry, FILE *fp)
 	if (href == NULL)
 		return false;
 
-	ret = utf8_to_enc(text, "iso-8859-1", strlen(text), &latin1_text);
+	ret = utf8_to_html(text, "iso-8859-1", strlen(text), &latin1_text);
 	if (ret != UTF8_CONVERT_OK)
 		return false;
 
-	ret = utf8_to_enc(href, "iso-8859-1", strlen(href), &latin1_href);
+	ret = utf8_to_html(href, "iso-8859-1", strlen(href), &latin1_href);
 	if (ret != UTF8_CONVERT_OK) {
 		free(latin1_text);
 		return false;
@@ -872,7 +872,7 @@ static bool tree_url_save_directory(struct node *directory, FILE *fp)
 			if (text == NULL)
 				return false;
 
-			ret = utf8_to_enc(text, "iso-8859-1",
+			ret = utf8_to_html(text, "iso-8859-1",
 					strlen(text), &latin1_text);
 			if (ret != UTF8_CONVERT_OK)
 				return false;
@@ -919,7 +919,7 @@ bool tree_urlfile_save(struct tree *tree, const char *filename,
 	fputs("<meta http-equiv=\"Content-Type\" "
 		"content=\"text/html; charset=iso-8859-1\">\n", fp);
 	fprintf(fp, "<title>%s</title>\n", page_title);
-	fputs("<body>", fp);
+	fputs("</head>\n<body>", fp);
 
 	if (tree_url_save_directory(tree_get_root(tree), fp) == false) {
 		warn_user("HotlistSaveError", 0);

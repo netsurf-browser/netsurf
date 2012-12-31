@@ -133,6 +133,7 @@ dom_string *corestring_dom_canplaythrough;
 dom_string *corestring_dom_cellpadding;
 dom_string *corestring_dom_cellspacing;
 dom_string *corestring_dom_change;
+dom_string *corestring_dom_charset;
 dom_string *corestring_dom_click;
 dom_string *corestring_dom_close;
 dom_string *corestring_dom_color;
@@ -355,6 +356,7 @@ void corestrings_fini(void)
 	CSS_DOM_STRING_UNREF(cellpadding);
 	CSS_DOM_STRING_UNREF(cellspacing);
 	CSS_DOM_STRING_UNREF(change);
+	CSS_DOM_STRING_UNREF(charset);
 	CSS_DOM_STRING_UNREF(click);
 	CSS_DOM_STRING_UNREF(close);
 	CSS_DOM_STRING_UNREF(color);
@@ -608,6 +610,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(cellpadding);
 	CSS_DOM_STRING_INTERN(cellspacing);
 	CSS_DOM_STRING_INTERN(change);
+	CSS_DOM_STRING_INTERN(charset);
 	CSS_DOM_STRING_INTERN(click);
 	CSS_DOM_STRING_INTERN(close);
 	CSS_DOM_STRING_INTERN(color);
