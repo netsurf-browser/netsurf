@@ -208,14 +208,15 @@ void context_popup(struct gui_window * gw, short x, short y)
 		case POP_CTX_COPY_URL:
 			if( (ctx->flags & CNT_IMG) && (ctx->ccdata.object != NULL) ){
 				if( hlcache_handle_get_url(ctx->ccdata.object) != NULL ){
-					scrap_txt_write(&app,  (char*)nsurl_access(hlcache_handle_get_url(ctx->ccdata.object)) );
+					scrap_txt_write((char*)nsurl_access(
+							hlcache_handle_get_url(ctx->ccdata.object)));
 				}
 			}
 		break;
 
 		case POP_CTX_COPY_LINK:
 			if( (ctx->flags & CNT_HREF) && ctx->ccdata.link_url != NULL ){
-				scrap_txt_write(&app, (char*)ctx->ccdata.link_url);
+				scrap_txt_write((char*)ctx->ccdata.link_url);
 			}
 		break;
 

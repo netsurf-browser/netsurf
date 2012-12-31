@@ -17,31 +17,42 @@
  *
  * Module Description:
  *
- *
+ * AES Object tree tools.
  *
  */
 
+ #include "gemtk.h"
 
-#ifndef NS_ATARI_SEARCH_H
-#define NS_ATARI_SEARCH_H
 
-#define SEARCH_MAX_SLEN 24
-
-struct s_search_form_state
+OBJECT *get_tree(int idx)
 {
-	char text[32];
-	uint32_t flags;
-};
 
-struct s_search_form_session {
-	struct browser_window * bw;
-	struct s_search_form_state state;
-};
+  OBJECT *tree;
 
+  rsrc_gaddr(R_TREE, idx, &tree);
 
-typedef struct s_search_form_session * SEARCH_FORM_SESSION;
+  return tree;
+}
 
-SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw);
-void search_destroy(struct gui_window * gw);
+bool obj_is_inside(OBJECT * tree, short obj, GRECT *area)
+{
+	GRECT obj_screen;
+	bool ret = false;
 
-#endif
+	objc_offset(tree, obj, &obj_screen.g_x, &obj_screen.g_y);
+	obj_screen.g_w = tree[obj].ob_width;
+	obj_screen.g_h = tree[obj].ob_height;
+
+	ret = RC_WITHIN(&obj_screen, area);
+
+	return(ret);
+}
+
+GRECT * obj_screen_rect(OBJECT * tree, short obj)
+{
+	static GRECT obj_screen;
+
+	get_objframe(tree, obj, &obj_screen);
+
+	return(&obj_screen);
+}

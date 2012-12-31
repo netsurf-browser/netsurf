@@ -1,14 +1,18 @@
 #ifndef GEMTK_H_INCLUDED
 #define GEMTK_H_INCLUDED
 
-#include <gem.h>
-#include <mint/osbind.h>
-#include <mint/cookie.h>
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <mint/osbind.h>
+#include <mint/cookie.h>
+
+#include <gem.h>
+#include <cflib.h>
+
+
 /* -------------------------------------------------------------------------- */
-/* Utils                                                                      */
+/* SYSTEM UTILS                                                               */
 /* -------------------------------------------------------------------------- */
 
 /* System type detection added by [GS]  */
@@ -28,7 +32,6 @@
 
 extern unsigned short _systype_v;
 unsigned short _systype (void);
-OBJECT *get_tree( int idx );
 
 #ifndef POINT_WITHIN
 # define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
@@ -95,10 +98,22 @@ short msg_box_show(short type, const char * msg);
 #define GW_STATUS_SHADED			0x02
 
 #define GW_XTYPE_CHECKBOX			(101 << 8)
+#define GW_CB_SELECTED 				(OS_SELECTED | OS_CROSSED)
 
 #define GUIWIN_VSLIDER 				0x01
 #define GUIWIN_HSLIDER 				0x02
 #define GUIWIN_VH_SLIDER 			0x03
+
+/*
+	Message sent to the client application when an AES object is
+	clicked in an window which contains an form.
+
+	Message Parameters:
+	msg[4] = Clicked Object.
+	msg[5] = Number of clicks.
+	msg[6] = Modifier keys.
+*/
+#define GUIWIN_WM_FORM				1001
 
 struct gui_window_s;
 typedef struct gui_window_s GUIWIN;
@@ -139,6 +154,7 @@ void *guiwin_get_user_data(GUIWIN *win);
 struct guiwin_scroll_info_s * guiwin_get_scroll_info(GUIWIN *win);
 void guiwin_set_scroll_grid(GUIWIN * win, short x, short y);
 void guiwin_set_content_units(GUIWIN * win, short x, short y);
+void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index);
 bool guiwin_update_slider(GUIWIN *win, short mode);
 void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh);
 void guiwin_send_msg(GUIWIN *win, short msgtype, short a, short b, short c,
@@ -147,14 +163,22 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area);
 VdiHdl guiwin_get_vdi_handle(GUIWIN *win);
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work);
 void guiwin_toolbar_redraw(GUIWIN *win, GRECT *clip);
+void guiwin_form_redraw(GUIWIN *gw, GRECT *clip);
 void guiwin_clear(GUIWIN *win);
 
 /* -------------------------------------------------------------------------- */
-/* AES Scroller module                                                        */
+/* AES SCROLLER MODULE                                                        */
 /* -------------------------------------------------------------------------- */
 
 /* -------------------------------------------------------------------------- */
-/* AES Tabs module                                                            */
+/* AES TABS MODULE                                                            */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/* AES OBJECT TREE TOOLS                                                      */
+/* -------------------------------------------------------------------------- */
+
+GRECT * obj_screen_rect(OBJECT * tree, short obj);
+bool obj_is_inside(OBJECT * tree, short obj, GRECT *area);
+OBJECT *get_tree(int idx);
 #endif // GEMTK_H_INCLUDED

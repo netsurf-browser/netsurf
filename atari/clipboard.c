@@ -21,27 +21,59 @@
  *
  */
 
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
+#include <mint/osbind.h>
+#include "atari/clipboard.h"
 
-#ifndef NS_ATARI_SEARCH_H
-#define NS_ATARI_SEARCH_H
 
-#define SEARCH_MAX_SLEN 24
-
-struct s_search_form_state
+static int filesize(char * path)
 {
-	char text[32];
-	uint32_t flags;
-};
+	FILE 	*f;
+	int 	fs;
 
-struct s_search_form_session {
-	struct browser_window * bw;
-	struct s_search_form_state state;
-};
+	f = fopen( path, "r+b");
+	if(!f)
+		return(-1);
 
+	fseek(f, 0L, SEEK_END);
+	fs = ftell(f);
+	fclose(f);
 
-typedef struct s_search_form_session * SEARCH_FORM_SESSION;
+	return(fs);
+}
 
-SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw);
-void search_destroy(struct gui_window * gw);
+int scrap_txt_write(char *str)
+{
+	scrap_wtxt(str);
+}
 
-#endif
+char *scrap_txt_read(void)
+{
+	char * buf = NULL;
+	char path[80];
+	int file;
+	int len;
+
+	if (get_scrapdir (path))
+	{
+		strcat (path, "scrap.txt");
+		len = filesize(path);
+		if(len > 0){
+			if ((file = (int) Fopen (path, 0)) >= 0)
+			{
+				buf = malloc(len);
+				if(buf){
+					len = Fread (file, len, buf);
+					Fclose (file);
+					buf[len] = '\0';
+					return buf;
+				}
+			}
+		}
+	}
+
+}
+

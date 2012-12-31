@@ -20,7 +20,6 @@
 #define NS_ATARI_TREEVIEW_H
 
 #include <stdbool.h>
-#include <windom.h>
 #include "desktop/tree.h"
 #include "atari/gui.h"
 #include "atari/gemtk/gemtk.h"

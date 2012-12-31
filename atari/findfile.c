@@ -24,7 +24,6 @@
 #include <string.h>
 #include <assert.h>
 #include <curl/curl.h>
-#include <windom.h>
 
 #include "utils/log.h"
 #include "utils/url.h"

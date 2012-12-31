@@ -26,16 +26,21 @@
 #include <mt_gem.h>
 #include "gemtk.h"
 
-//#define DEBUG_PRINT(x)		printf x
-#define DEBUG_PRINT(x)
+#define DEBUG_PRINT(x)		printf x
+//#define DEBUG_PRINT(x)
 
 struct gui_window_s {
     short handle;
     guiwin_event_handler_f handler_func;
     uint32_t flags;
     uint32_t state;
-    OBJECT * toolbar;
+    OBJECT *toolbar;
+    short toolbar_edit_obj;
     short toolbar_idx;
+    OBJECT *form;
+    short form_edit_obj;
+    short form_focus_obj;
+    short form_idx;
     struct guiwin_scroll_info_s scroll_info;
     void *user_data;
     struct gui_window_s *next, *prev;
@@ -73,6 +78,10 @@ static void move_rect(GUIWIN * win, GRECT *rect, int dx, int dy)
     wind_update(END_UPDATE);
 }
 
+/**
+* Handles common events.
+* returns 0 when the event was not handled, 1 otherwise.
+*/
 static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
 {
     GRECT g, g_ro, g2;
@@ -90,8 +99,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         if(val != slid->x_pos) {
             if (val < slid->x_pos) {
                 val = -(MAX(0, slid->x_pos-val));
-            }
-            else {
+            } else {
                 val = val-slid->x_pos;
             }
             guiwin_scroll(gw, GUIWIN_HSLIDER, val, false);
@@ -106,8 +114,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
         if(val != slid->y_pos) {
             if (val < slid->y_pos) {
                 val = -(slid->y_pos - val);
-            }
-            else {
+            } else {
                 val = val -slid->y_pos;
             }
             guiwin_scroll(gw, GUIWIN_VSLIDER, val, false);
@@ -126,7 +133,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             case WA_UPPAGE:
                 /* scroll page up */
                 guiwin_scroll(gw, GUIWIN_VSLIDER, -(g.g_h/slid->y_unit_px),
-                               true);
+                              true);
                 break;
 
             case WA_UPLINE:
@@ -137,7 +144,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             case WA_DNPAGE:
                 /* scroll page down */
                 guiwin_scroll(gw, GUIWIN_VSLIDER, g.g_h/slid->y_unit_px,
-                               true);
+                              true);
                 break;
 
             case WA_DNLINE:
@@ -148,25 +155,25 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             case WA_LFPAGE:
                 /* scroll page left */
                 guiwin_scroll(gw, GUIWIN_HSLIDER, -(g.g_w/slid->x_unit_px),
-                               true);
+                              true);
                 break;
 
             case WA_LFLINE:
                 /* scroll line left */
                 guiwin_scroll(gw, GUIWIN_HSLIDER, -1,
-                               true);
+                              true);
                 break;
 
             case WA_RTPAGE:
                 /* scroll page right */
                 guiwin_scroll(gw, GUIWIN_HSLIDER, (g.g_w/slid->x_unit_px),
-                               true);
+                              true);
                 break;
 
             case WA_RTLINE:
                 /* scroll line right */
                 guiwin_scroll(gw, GUIWIN_HSLIDER, 1,
-                               true);
+                              true);
                 break;
 
             default:
@@ -182,21 +189,34 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     case WM_MOVED:
         wind_get_grect(gw->handle, WF_CURRXYWH, &g);
         wind_set(gw->handle, WF_CURRXYWH, msg[4], msg[5], g.g_w, g.g_h);
+
+        if (gw->form) {
+
+			guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &g);
+			slid = guiwin_get_scroll_info(gw);
+
+			gw->form[gw->form_idx].ob_x = g.g_x -
+					(slid->x_pos * slid->x_unit_px);
+
+			gw->form[gw->form_idx].ob_y = g.g_y -
+					(slid->y_pos * slid->y_unit_px);
+        }
+
         break;
 
     case WM_SIZED:
     case WM_REPOSED:
-		wind_get_grect(gw->handle, WF_FULLXYWH, &g2);
+        wind_get_grect(gw->handle, WF_FULLXYWH, &g2);
         wind_get_grect(gw->handle, WF_CURRXYWH, &g);
         g.g_w = MIN(msg[6], g2.g_w);
         g.g_h = MIN(msg[7], g2.g_h);
-        if(g2.g_w != g.g_w || g2.g_h != g.g_h){
-			wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, g.g_w, g.g_h);
-			if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
-				if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)) {
-					guiwin_send_redraw(gw, NULL);
-				}
-			}
+        if(g2.g_w != g.g_w || g2.g_h != g.g_h) {
+            wind_set(gw->handle, WF_CURRXYWH, g.g_x, g.g_y, g.g_w, g.g_h);
+            if((gw->flags & GW_FLAG_CUSTOM_SCROLLING) == 0) {
+                if(guiwin_update_slider(gw, GUIWIN_VH_SLIDER)) {
+                    guiwin_send_redraw(gw, NULL);
+                }
+            }
         }
 
 
@@ -205,7 +225,7 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     case WM_FULLED:
         wind_get_grect(gw->handle, WF_FULLXYWH, &g);
         wind_get_grect(gw->handle, WF_CURRXYWH, &g2);
-        if(g.g_w == g2.g_w && g.g_h == g2.g_h){
+        if(g.g_w == g2.g_w && g.g_h == g2.g_h) {
             wind_get_grect(gw->handle, WF_PREVXYWH, &g);
         }
         wind_set_grect(gw->handle, WF_CURRXYWH, &g);
@@ -243,6 +263,13 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
             g.g_h = msg[7];
             guiwin_toolbar_redraw(gw, &g);
         }
+        if (gw->form != NULL) {
+			g.g_x = msg[4];
+            g.g_y = msg[5];
+            g.g_w = msg[6];
+            g.g_h = msg[7];
+			guiwin_form_redraw(gw, &g);
+        }
         break;
 
     default:
@@ -252,6 +279,182 @@ static short preproc_wm(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
     }
 
     return(retval);
+}
+
+static short preproc_mu_button(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
+{
+    short retval = 0;
+
+    DEBUG_PRINT(("preproc_mu_button\n"));
+
+    // toolbar handling:
+    if ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0
+            && gw->toolbar != NULL) {
+
+        GRECT tb_area;
+
+        guiwin_get_grect(gw, GUIWIN_AREA_TOOLBAR, &tb_area);
+
+        if (POINT_WITHIN(ev_out->emo_mouse.p_x,
+                         ev_out->emo_mouse.p_y, tb_area)) {
+            // send WM_TOOLBAR message
+            gw->toolbar[gw->toolbar_idx].ob_x = tb_area.g_x;
+            gw->toolbar[gw->toolbar_idx].ob_y = tb_area.g_y;
+            short obj_idx = objc_find(gw->toolbar,
+                                      gw->toolbar_idx, 8,
+                                      ev_out->emo_mouse.p_x,
+                                      ev_out->emo_mouse.p_y);
+
+            DEBUG_PRINT(("Toolbar index: %d\n", obj_idx));
+            if (obj_idx > 0) {
+                if ((gw->toolbar[obj_idx].ob_flags & OF_SELECTABLE)!=0
+                        && ((gw->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
+                        && ((gw->flags & GW_FLAG_TOOLBAR_REDRAW) == 1)) {
+                    gw->toolbar[obj_idx].ob_state |= OS_SELECTED;
+                    // TODO: optimize redraw by setting the object clip:
+                    guiwin_toolbar_redraw(gw, NULL);
+                }
+            }
+
+            short oldevents = ev_out->emo_events;
+            short msg_out[8] = {WM_TOOLBAR, gl_apid,
+                                0, gw->handle,
+                                obj_idx, ev_out->emo_mclicks,
+                                ev_out->emo_kmeta, 0
+                               };
+            ev_out->emo_events = MU_MESAG;
+            // notify the window about toolbar click:
+            gw->handler_func(gw, ev_out, msg_out);
+            ev_out->emo_events = oldevents;
+            retval = 1;
+        }
+    }
+
+    if (gw->form != NULL) {
+
+        GRECT content_area;
+        struct guiwin_scroll_info_s *slid;
+
+        DEBUG_PRINT(("preproc_mu_button: handling form click.\n"));
+
+        guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &content_area);
+
+        if (POINT_WITHIN(ev_out->emo_mouse.p_x,
+                         ev_out->emo_mouse.p_y, content_area)) {
+
+            slid = guiwin_get_scroll_info(gw);
+
+            gw->form[gw->form_idx].ob_x = content_area.g_x -
+                                          (slid->x_pos * slid->x_unit_px);
+            gw->form[gw->form_idx].ob_y = content_area.g_y -
+                                          (slid->y_pos * slid->y_unit_px);
+
+            gw->form_focus_obj = objc_find(gw->form, gw->form_idx, 8,
+                                           ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y);
+
+			DEBUG_PRINT(("Window Form click, obj: %d\n", gw->form_focus_obj));
+            if (gw->form_focus_obj > -1
+                    && (gw->form[gw->form_focus_obj].ob_state & OS_DISABLED)== 0) {
+
+                uint16_t type = (gw->form[gw->form_focus_obj].ob_type & 0xFF);
+                uint16_t xtype = (gw->form[gw->form_focus_obj].ob_type & 0xFF00);
+                uint16_t nextobj, edit_idx;
+
+                DEBUG_PRINT(("type: %d, xtype: %d\n", type, xtype));
+
+                if (type == G_FTEXT || type == G_FBOXTEXT)  {
+
+                    // report mouse click to the tree:
+                    retval = form_button(gw->form, gw->form_focus_obj,
+                                      ev_out->emo_mclicks, &nextobj);
+
+                    // end edit mode for active edit object:
+                    if(gw->form_edit_obj != -1) {
+                        objc_edit(gw->form, gw->form_edit_obj,
+                                  ev_out->emo_kreturn, &edit_idx,
+                                  EDEND);
+                    }
+
+                    // activate the new edit object:
+                    gw->form_edit_obj = gw->form_focus_obj;
+                    objc_edit(gw->form, gw->form_edit_obj,
+                              ev_out->emo_kreturn, &edit_idx,
+                              EDINIT);
+
+                } else {
+
+                    // end edit mode for active edit object:
+                    if(gw->form_edit_obj != -1) {
+                        objc_edit(gw->form, gw->form_edit_obj,
+                                  ev_out->emo_kreturn, &edit_idx,
+                                  EDEND);
+                        gw->form_edit_obj = -1;
+                    }
+
+                    if ((xtype & GW_XTYPE_CHECKBOX) != 0) {
+
+                        if ((gw->form[gw->form_focus_obj].ob_state & OS_SELECTED) != 0) {
+                            gw->form[gw->form_focus_obj].ob_state &= ~(OS_SELECTED|OS_CROSSED);
+                        } else {
+                            gw->form[gw->form_focus_obj].ob_state |= (OS_SELECTED|OS_CROSSED);
+                        }
+						guiwin_form_redraw(gw, obj_screen_rect(gw->form,
+                                                           gw->form_focus_obj));
+                    }
+                    short oldevents = ev_out->emo_events;
+                    short msg_out[8] = {GUIWIN_WM_FORM, gl_apid,
+                                        0, gw->handle,
+                                        gw->form_focus_obj, ev_out->emo_mclicks,
+                                        ev_out->emo_kmeta, 0
+                                       };
+                    ev_out->emo_events = MU_MESAG;
+                    // notify the window about form click:
+                    gw->handler_func(gw, ev_out, msg_out);
+                    ev_out->emo_events = oldevents;
+                    retval = 1;
+                    evnt_timer(150);
+                }
+            }
+        }
+    }
+
+    return(retval);
+}
+
+static short preproc_mu_keybd(GUIWIN * gw, EVMULT_OUT *ev_out, short msg[8])
+{
+
+    if((gw->form != NULL) && (gw->form_edit_obj > -1) ) {
+
+        short next_edit_obj = gw->form_edit_obj;
+        short next_char = -1;
+        short edit_idx;
+        short r;
+
+        r = form_keybd(gw->form, gw->form_edit_obj, next_edit_obj,
+                       ev_out->emo_kreturn,
+                       &next_edit_obj, &next_char);
+
+        if (next_edit_obj != gw->form_edit_obj) {
+
+			if(gw->form_edit_obj != -1) {
+				objc_edit(gw->form, gw->form_edit_obj,
+                      ev_out->emo_kreturn, &edit_idx,
+                      EDEND);
+			}
+
+            gw->form_edit_obj = next_edit_obj;
+
+            objc_edit(gw->form, gw->form_edit_obj,
+                      ev_out->emo_kreturn, &edit_idx,
+                      EDINIT);
+        } else {
+            if(next_char > 13)
+                r = objc_edit(gw->form, gw->form_edit_obj,
+                              ev_out->emo_kreturn, &edit_idx,
+                              EDCHAR);
+        }
+    }
 }
 
 short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
@@ -311,50 +514,22 @@ short guiwin_dispatch_event(EVMULT_IN *ev_in, EVMULT_OUT *ev_out, short msg[8])
 
             dest = guiwin_find(h_aes);
 
-            if(dest == NULL || dest->handler_func == NULL)
+            if (dest == NULL || dest->handler_func == NULL)
                 return(0);
 
-            if( (ev_out->emo_events & MU_BUTTON) != 0) {
+            if ((ev_out->emo_events & MU_BUTTON) != 0) {
+
                 DEBUG_PRINT(("Found MU_BUTTON dest: %p (%d), flags: %d, cb: %p\n", dest, dest->handle, dest->flags, dest->handler_func));
-
-                // toolbar handling:
-                if((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0
-                        && dest->toolbar != NULL) {
-                    GRECT tb_area;
-                    guiwin_get_grect(dest, GUIWIN_AREA_TOOLBAR, &tb_area);
-                    if (POINT_WITHIN(ev_out->emo_mouse.p_x,
-                                     ev_out->emo_mouse.p_y, tb_area)) {
-                        // send WM_TOOLBAR message
-                        dest->toolbar[dest->toolbar_idx].ob_x = tb_area.g_x;
-                        dest->toolbar[dest->toolbar_idx].ob_y = tb_area.g_y;
-                        short obj_idx = objc_find(dest->toolbar,
-                                                  dest->toolbar_idx, 8,
-                                                  ev_out->emo_mouse.p_x,
-                                                  ev_out->emo_mouse.p_y);
-						DEBUG_PRINT(("Toolbar index: %d\n", obj_idx));
-                        short msg_out[8] = {WM_TOOLBAR, gl_apid, 0, dest->handle,
-                                            obj_idx, ev_out->emo_mclicks, ev_out->emo_kmeta, 0
-                                           };
-						if (obj_idx > 0) {
-							if ((dest->toolbar[obj_idx].ob_flags & OF_SELECTABLE)!=0
-								&& ((dest->flags & GW_FLAG_CUSTOM_TOOLBAR) == 0)
-								&& ((dest->flags & GW_FLAG_TOOLBAR_REDRAW) == 1)) {
-									dest->toolbar[obj_idx].ob_state |= OS_SELECTED;
-									// TODO: optimize redraw by setting the object clip:
-									guiwin_toolbar_redraw(dest, NULL);
-							}
-						}
-
-                        short oldevents = ev_out->emo_events;
-                        ev_out->emo_events = MU_MESAG;
-                        // notify the window about toolbar click:
-                        dest->handler_func(dest, ev_out, msg_out);
-                        handler_called=true;
-                        ev_out->emo_events = oldevents;
-                        retval = 1;
-                    }
+                retval = preproc_mu_button(dest, ev_out, msg);
+                if(retval != 0) {
+                    handler_called = true;
                 }
             }
+
+            if ((ev_out->emo_events & MU_KEYBD)) {
+                retval = preproc_mu_keybd(dest, ev_out, msg);
+            }
+
             if (handler_called==false) {
                 dest->handler_func(dest, ev_out, msg);
             }
@@ -458,7 +633,7 @@ short guiwin_remove(GUIWIN *win)
 void guiwin_get_grect(GUIWIN *win, enum guwin_area_e mode, GRECT *dest)
 {
 
-	assert(win != NULL);
+    assert(win != NULL);
 
     wind_get_grect(win->handle, WF_WORKXYWH, dest);
     if (mode == GUIWIN_AREA_CONTENT) {
@@ -502,9 +677,9 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
         vis_units = g.g_h/slid->y_unit_px;
         newpos = slid->y_pos = MIN(slid->y_units-vis_units,
                                    MAX(0, slid->y_pos+units));
-		if(newpos < 0){
-			newpos = slid->y_pos = 0;
-		}
+        if(newpos < 0) {
+            newpos = slid->y_pos = 0;
+        }
         if(oldpos == newpos)
             return;
 
@@ -538,9 +713,9 @@ void guiwin_scroll(GUIWIN *gw, short orientation, int units, bool refresh)
         newpos = slid->x_pos = MIN(slid->x_units-vis_units,
                                    MAX(0, slid->x_pos+units));
 
-		if(newpos < 0){
-			newpos = slid->x_pos = 0;
-		}
+        if(newpos < 0) {
+            newpos = slid->x_pos = 0;
+        }
 
         if(oldpos == newpos)
             return;
@@ -656,6 +831,7 @@ void guiwin_set_toolbar(GUIWIN *win, OBJECT *toolbar, short idx, uint32_t flags)
 {
     win->toolbar = toolbar;
     win->toolbar_idx = idx;
+    win->toolbar_edit_obj = -1;
     if(flags & GW_FLAG_HAS_VTOOLBAR) {
         win->flags |= GW_FLAG_HAS_VTOOLBAR;
     }
@@ -677,30 +853,30 @@ struct guiwin_scroll_info_s *guiwin_get_scroll_info(GUIWIN *win) {
 
 void guiwin_set_scroll_grid(GUIWIN * win, short x, short y)
 {
-	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
 
-	assert(slid != NULL);
+    assert(slid != NULL);
 
-	slid->y_unit_px = x;
-	slid->x_unit_px = y;
+    slid->y_unit_px = x;
+    slid->x_unit_px = y;
 }
 
 void guiwin_set_content_units(GUIWIN * win, short x, short y)
 {
-	struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
+    struct guiwin_scroll_info_s *slid = guiwin_get_scroll_info(win);
 
-	assert(slid != NULL);
+    assert(slid != NULL);
 
-	slid->x_units = x;
-	slid->y_units = y;
+    slid->x_units = x;
+    slid->y_units = y;
 }
 
 void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
-					short d)
+                     short d)
 {
-	short msg[8];
+    short msg[8];
 
-	msg[0] = msg_type;
+    msg[0] = msg_type;
     msg[1] = gl_apid;
     msg[2] = 0;
     msg[3] = win->handle;
@@ -714,32 +890,32 @@ void guiwin_send_msg(GUIWIN *win, short msg_type, short a, short b, short c,
 
 void guiwin_send_redraw(GUIWIN *win, GRECT *area)
 {
-    short msg[8];
+    short msg[8], retval;
     GRECT work;
 
     EVMULT_IN event_in = {
-		.emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON,
-		.emi_bclicks = 258,
-		.emi_bmask = 3,
-		.emi_bstate = 0,
-		.emi_m1leave = MO_ENTER,
-		.emi_m1 = {0,0,0,0},
-		.emi_m2leave = 0,
-		.emi_m2 = {0,0,0,0},
-		.emi_tlow = 0,
-		.emi_thigh = 0
-	};
-	EVMULT_OUT event_out;
+        .emi_flags = MU_MESAG | MU_TIMER | MU_KEYBD | MU_BUTTON,
+        .emi_bclicks = 258,
+        .emi_bmask = 3,
+        .emi_bstate = 0,
+        .emi_m1leave = MO_ENTER,
+        .emi_m1 = {0,0,0,0},
+        .emi_m2leave = 0,
+        .emi_m2 = {0,0,0,0},
+        .emi_tlow = 0,
+        .emi_thigh = 0
+    };
+    EVMULT_OUT event_out;
 
     if (area == NULL) {
         guiwin_get_grect(win, GUIWIN_AREA_WORK, &work);
         if (work.g_w < 1 || work.g_h < 1) {
-			if (win->toolbar != NULL) {
-				guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &work);
-				if (work.g_w < 1 || work.g_h < 1) {
-					return;
-				}
-			}
+            if (win->toolbar != NULL) {
+                guiwin_get_grect(win, GUIWIN_AREA_TOOLBAR, &work);
+                if (work.g_w < 1 || work.g_h < 1) {
+                    return;
+                }
+            }
         }
         area = &work;
     }
@@ -753,13 +929,25 @@ void guiwin_send_redraw(GUIWIN *win, GRECT *area)
     msg[6] = area->g_w;
     msg[7] = area->g_h;
 
-	event_out.emo_events = MU_MESAG;
-    win->handler_func(win, &event_out, msg);
+    event_out.emo_events = MU_MESAG;
+    retval = preproc_wm(win, &event_out, msg);
+    if (retval == 0 || (win->flags & GW_FLAG_PREPROC_WM) != 0){
+		win->handler_func(win, &event_out, msg);
+    }
+
+
 
     //appl_write(gl_apid, 16, &msg);
 }
 
-
+void guiwin_set_form(GUIWIN *win, OBJECT *tree, short index)
+{
+	DEBUG_PRINT(("Setting form %p (%d) for window %p\n", tree, index, win));
+    win->form = tree;
+    win->form_edit_obj = -1;
+    win->form_focus_obj = -1;
+    win->form_idx = index;
+}
 
 bool guiwin_has_intersection(GUIWIN *win, GRECT *work)
 {
@@ -815,6 +1003,47 @@ void guiwin_toolbar_redraw(GUIWIN *gw, GRECT *clip)
     }
 }
 
+
+void guiwin_form_redraw(GUIWIN *gw, GRECT *clip)
+{
+    GRECT area, area_ro, g;
+	int scroll_px_x, scroll_px_y;
+	struct guiwin_scroll_info_s *slid;
+	//int new_x, new_y, old_x, old_y;
+	short edit_idx;
+
+	DEBUG_PRINT(("guiwin_form_redraw\n"));
+
+	// calculate form coordinates, include scrolling:
+    guiwin_get_grect(gw, GUIWIN_AREA_CONTENT, &area_ro);
+	slid = guiwin_get_scroll_info(gw);
+
+	// Update form position:
+	gw->form[gw->form_idx].ob_x = area_ro.g_x - (slid->x_pos * slid->x_unit_px);
+	gw->form[gw->form_idx].ob_y = area_ro.g_y - (slid->y_pos * slid->y_unit_px);
+
+    if(clip == NULL) {
+        clip = &area_ro;
+    }
+
+    area = area_ro;
+
+	/* Walk the AES rectangle list and redraw the visible areas of the window:*/
+    if(rc_intersect(clip, &area)) {
+
+        wind_get_grect(gw->handle, WF_FIRSTXYWH, &g);
+        while (g.g_h > 0 || g.g_w > 0) {
+            if(rc_intersect(&area, &g)) {
+                objc_draw(gw->form, gw->form_idx, 8, g.g_x, g.g_y,
+                          g.g_w, g.g_h);
+
+            }
+            wind_get_grect(gw->handle, WF_NEXTXYWH, &g);
+        }
+    }
+}
+
+
 void guiwin_clear(GUIWIN *win)
 {
     GRECT area, g;
@@ -823,7 +1052,7 @@ void guiwin_clear(GUIWIN *win)
 
     vh = guiwin_get_vdi_handle(win);
 
-    if(win->state & GW_STATUS_ICONIFIED){
+    if(win->state & GW_STATUS_ICONIFIED) {
         // also clear the toolbar area when iconified:
         guiwin_get_grect(win, GUIWIN_AREA_WORK, &area);
     } else {

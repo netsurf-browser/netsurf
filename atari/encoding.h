@@ -22,7 +22,6 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <stdbool.h>
-#include <windom.h>
 
 #include "css/css.h"
 #include "render/font.h"

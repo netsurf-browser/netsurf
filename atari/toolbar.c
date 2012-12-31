@@ -585,12 +585,12 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 		text = malloc( len+1 );
 		if (text){
 			textarea_get_text( tb->url.textarea, text, len+1 );
-			scrap_txt_write( &app, text );
+			scrap_txt_write(text);
 			free( text );
 		}
 	}
 	else if ( ik == KEY_PASTE) {
-		char * clip = scrap_txt_read( &app );
+		char * clip = scrap_txt_read();
 		if ( clip != NULL ){
 			int clip_length = strlen( clip );
 			if ( clip_length > 0 ) {
@@ -604,8 +604,8 @@ bool toolbar_key_input(struct s_toolbar *tb, short nkc)
 					free(utf8);
 					ret = true;
 				}
-				free( clip );
 			}
+			free( clip );
 		}
 	}
 	else if (ik == KEY_ESCAPE) {

@@ -19,7 +19,6 @@
 #ifndef NS_ATARI_HOTLIST_H
 #define NS_ATARI_HOTLIST_H
 #include <stdbool.h>
-#include <windom.h>
 #include "desktop/tree.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/treeview.h"

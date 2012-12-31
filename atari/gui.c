@@ -715,7 +715,7 @@ void gui_start_selection(struct gui_window *w)
 
 void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
 {
-    char * clip = scrap_txt_read( &app );
+    char * clip = scrap_txt_read();
     if( clip == NULL )
         return;
     int clip_length = strlen( clip );
@@ -731,8 +731,9 @@ void gui_paste_from_clipboard(struct gui_window *w, int x, int y)
                                       strlen(utf8), true);
             free(utf8);
         }
-        free( clip );
     }
+
+	free( clip );
 }
 
 bool gui_empty_clipboard(void)
@@ -812,7 +813,7 @@ fin:
 
 bool gui_commit_clipboard(void)
 {
-    int r = scrap_txt_write(&app, tmp_clipboard);
+    int r = scrap_txt_write(tmp_clipboard);
     return( (r>0)?true:false );
 }
 

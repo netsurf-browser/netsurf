@@ -131,10 +131,10 @@ static void on_redraw(struct gui_download_window *dw, GRECT *clip)
 	/*
 		Update the AES Object to reflect current state of download:
 	*/
-	((TEDINFO *)get_obspec(tree, DOWNLOAD_FILENAME))->te_ptext = &dw->lbl_file;
-	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_BYTES))->te_ptext = &dw->lbl_done;
-	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_PERCENT))->te_ptext = &dw->lbl_percent;
-	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_SPEED))->te_ptext = &dw->lbl_speed;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_FILENAME))->te_ptext = dw->lbl_file;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_BYTES))->te_ptext = dw->lbl_done;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_PERCENT))->te_ptext = dw->lbl_percent;
+	((TEDINFO *)get_obspec(tree, DOWNLOAD_LBL_SPEED))->te_ptext = dw->lbl_speed;
 
 	if (dw->size_total > 0 ) {
 		p = ((double)dw->size_downloaded / (double)dw->size_total * 100);

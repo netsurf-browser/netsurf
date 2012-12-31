@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 Ole Loots <ole@monochrom.net>
+ * Copyright 2013 Ole Loots <ole@monochrom.net>
  *
  * This file is part of NetSurf, http://www.netsurf-browser.org/
  *
@@ -14,7 +14,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Module Description:
+ *
+ *
+ *
  */
+
 
 #include <limits.h>
 #include <stdlib.h>
@@ -40,9 +46,13 @@
 
 extern struct gui_window * input_window;
 extern void * h_gem_rsrc;
+extern GRECT desk_area;
 
 
 static SEARCH_FORM_SESSION current;
+static OBJECT *dlgtree;
+static GUIWIN *searchwin;
+static short h_aes_win;
 
 static void nsatari_search_set_status(bool found, void *p);
 static void nsatari_search_set_hourglass(bool active, void *p);
@@ -80,7 +90,7 @@ void nsatari_search_set_hourglass(bool active, void *p)
 {
 	SEARCH_FORM_SESSION s = (SEARCH_FORM_SESSION)p;
 	LOG((""));
-	if( active && current != NULL )
+	if (active && current != NULL)
 		gui_window_set_pointer(s->bw->window, GUI_POINTER_PROGRESS);
 	else
 		gui_window_set_pointer(s->bw->window, GUI_POINTER_DEFAULT);
@@ -127,22 +137,22 @@ void nsatari_search_set_back_state(bool active, void *p)
 }
 
 
-static SEARCH_FORM_SESSION get_search_session(WINDOW * win)
+static SEARCH_FORM_SESSION get_search_session(GUIWIN * win)
 {
 	return (current);
 }
 
-static void destroy_search_session( SEARCH_FORM_SESSION s )
+static void destroy_search_session(SEARCH_FORM_SESSION s)
 {
-	if( s != NULL ){
+	if(s != NULL ){
 		LOG((""));
-		free( s );
+		free(s);
 	}
 }
 
-static int apply_form(WINDOW * win, struct s_search_form_state * s)
+static int apply_form(GUIWIN *win, struct s_search_form_state * s)
 {
-	OBJECT * obj = ObjcTree(OC_FORM, win );
+	OBJECT * obj = dlgtree;
 	if( obj == NULL ){
 		goto error;
 	}
@@ -167,15 +177,15 @@ error:
 	return( 1 );
 }
 
-/* checks if search parameters changes */
-static bool form_changed( WINDOW * w )
+/* checks for search parameters changes */
+static bool form_changed(GUIWIN * w)
 {
 	bool check;
 	struct s_search_form_state cur;
 	SEARCH_FORM_SESSION s = get_search_session(w);
 	if( s == NULL )
 		return false;
-	OBJECT * obj = ObjcTree(OC_FORM,  w);
+	OBJECT * obj = (OC_FORM,  w);
 	assert( s != NULL && obj != NULL );
 	uint32_t flags_old = s->state.flags;
 	apply_form(w, &cur);
@@ -188,9 +198,9 @@ static bool form_changed( WINDOW * w )
 	}
 
 	char * cstr = ObjcString( obj, SEARCH_TB_SRCH, NULL );
-	if( cstr != NULL ){
-		if( strcmp(cstr, (char*)&s->state.text) != 0 ) {
-			return ( true );
+	if (cstr != NULL){
+		if (strcmp(cstr, (char*)&s->state.text) != 0) {
+			return (true);
 		}
 	}
 
@@ -202,14 +212,14 @@ static void __CDECL evnt_bt_srch_click( WINDOW *win, int index, int unused, void
 {
 
 	bool fwd;
-	SEARCH_FORM_SESSION s = get_search_session(win);
-	OBJECT * obj = ObjcTree(OC_FORM, s->formwind );
+	SEARCH_FORM_SESSION s = get_search_session(searchwin);
+	OBJECT * obj = dlgtree;
 	search_flags_t flags = 0;
 
 	ObjcChange(OC_FORM, win, index, ~SELECTED , TRUE);
-	if( form_changed(win) ){
+	if( form_changed(searchwin) ){
 		browser_window_search_destroy_context(s->bw);
-		apply_form( win, &s->state );
+		apply_form(searchwin, &s->state );
 	} else {
 		/* get search direction manually: */
 		if( (obj[SEARCH_CB_FWD].ob_state & SELECTED) != 0 )
@@ -227,78 +237,93 @@ static void __CDECL evnt_cb_click( WINDOW *win, int index, int unused, void *unu
 {
 
 	short newstate;
-	OBJECT * obj = ObjcTree(OC_FORM, get_search_session(win)->formwind );
+
 }
 
 static void __CDECL evnt_close( WINDOW *win, short buff[8])
 {
-	/* Free Search Contexts */
-	/* todo: destroy search context, if any? */
-	SEARCH_FORM_SESSION s = get_search_session(win);
-	if( s != NULL ){
-		destroy_search_session( s );
-	}
-	current = NULL;
-	ApplWrite( _AESapid, WM_DESTROY, win->handle, 0,0,0,0 );
+
 }
 
-void search_destroy( struct gui_window * gw )
+void search_destroy(struct gui_window *gw)
 {
-	LOG(("search_destroy %p / %p", gw, current ));
-	if( current != NULL && current->formwind != NULL ){
-		ApplWrite( _AESapid, WM_CLOSED, current->formwind->handle, 0,0,0,0);
-		/* Handle Close event */
-		EvntWindom( MU_MESAG );
-		/* Handle Destroy Event */
-		EvntWindom( MU_MESAG );
+	/* Free Search Contexts */
+	/* todo: destroy search context, if any? */
+	LOG((""));
+
+	if (current != NULL){
+		destroy_search_session(current);
+		current = NULL;
 	}
+
+	guiwin_remove(searchwin);
+	searchwin = NULL;
+
+	wind_close(h_aes_win);
+	wind_delete(h_aes_win);
+	h_aes_win = -1;
+
 	LOG(("done"));
 }
 
-SEARCH_FORM_SESSION open_browser_search( struct gui_window * gw )
+SEARCH_FORM_SESSION open_browser_search(struct gui_window * gw)
 {
 	char * title;
 	SEARCH_FORM_SESSION sfs;
 	GRECT pos, treesize;
-	OBJECT * tree = get_tree(SEARCH);
-	if( tree == NULL ){
-		return( NULL );
+	uint32_t kind = CLOSER | NAME | MOVER;
+
+	if (dlgtree == NULL) {
+		dlgtree = get_tree(SEARCH);
+		if (dlgtree == NULL ) {
+			return( NULL );
+		}
 	}
+
+	if(searchwin){
+		search_destroy(gw);
+	}
+
 
 	sfs = calloc(1, sizeof(struct s_search_form_session));
 	if( sfs == NULL )
 		return( NULL );
 
 	title = (char*)messages_get("FindTextNS");
-	if( title == NULL )
+	if (title == NULL)
 		title = (char*)"Find text ...";
-
-	search_destroy( gw );
 
 	/* setup dipslay position: right corner */
 	treesize.g_x = 0;
 	treesize.g_y = 0;
-	treesize.g_w = tree->ob_width;
-	treesize.g_h = tree->ob_height;
-	wind_calc_grect(WC_BORDER, WAT_FORM, &treesize, &pos);
-	pos.g_x =  app.w - pos.g_w;
-	pos.g_y = app.h - pos.g_h;
+	treesize.g_w = dlgtree->ob_width;
+	treesize.g_h = dlgtree->ob_height;
+	wind_calc_grect(WC_BORDER, kind, &treesize, &pos);
+	pos.g_x =  desk_area.g_w - pos.g_w;
+	pos.g_y = desk_area.g_h - pos.g_h;
+
+	/* create the dialog: */
+	h_aes_win = wind_create_grect(kind, &pos);
+	wind_set_str(h_aes_win, WF_NAME, title);
 
 
 	current = sfs;
 	sfs->bw = gw->browser->bw;
+/*
 	sfs->formwind = mt_FormCreate( &app, tree, WAT_FORM,
 								NULL, title,
 								&pos, true, false);
-
+*/
+/*
 	ObjcAttachFormFunc(sfs->formwind, SEARCH_BT_SEARCH, evnt_bt_srch_click,
 						NULL);
 	ObjcAttachFormFunc(sfs->formwind, SEARCH_CB_CASESENSE, evnt_cb_click, NULL);
 	ObjcAttachFormFunc(sfs->formwind, SEARCH_CB_SHOWALL, evnt_cb_click, NULL);
 	ObjcAttachFormFunc(sfs->formwind, SEARCH_CB_FWD, evnt_cb_click, NULL);
 	EvntAdd(sfs->formwind, WM_CLOSED, evnt_close, EV_TOP);
-	apply_form(sfs->formwind, &sfs->state );
-	strncpy( ObjcString( tree, SEARCH_TB_SRCH, NULL ), "", SEARCH_MAX_SLEN);
+*/
+	apply_form(searchwin, &sfs->state );
+	set_string(dlgtree, SEARCH_TB_SRCH, "");
 
 	return( current );
 

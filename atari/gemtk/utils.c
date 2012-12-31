@@ -38,8 +38,3 @@ unsigned short _systype (void)
 	return _systype_v;
 }
 
-OBJECT *get_tree( int idx) {
-  OBJECT *tree;
-  rsrc_gaddr(R_TREE, idx, &tree);
-  return tree;
-}

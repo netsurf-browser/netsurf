@@ -59,7 +59,7 @@ static OBJECT * dlgtree;
 						 guiwin_send_redraw(settings_guiwin, \
 											obj_screen_rect(dlgtree, idx));
 
-#define FORMEVENT(idx) form_event(idx, 0, NULL);
+#define FORMEVENT(idx) form_event(idx, 0);
 
 #define INPUT_HOMEPAGE_URL_MAX_LEN 44
 #define INPUT_LOCALE_MAX_LEN 6
@@ -73,36 +73,11 @@ static OBJECT * dlgtree;
 #define LABEL_ICONSET_MAX_LEN 8
 #define INPUT_TOOLBAR_COLOR_MAX_LEN 6
 
-#define CB_SELECTED (OS_SELECTED | OS_CROSSED)
-
 static void on_close(void);
 static void on_redraw(GRECT *clip);
-static void form_event(int index, int external, void *unused2);
+static void form_event(int index, int external);
 static void apply_settings(void);
 static void save_settings(void);
-
-static bool obj_is_inside(OBJECT * tree, short obj, GRECT *area)
-{
-	GRECT obj_screen;
-	bool ret = false;
-
-	objc_offset(tree, obj, &obj_screen.g_x, &obj_screen.g_y);
-	obj_screen.g_w = dlgtree[obj].ob_width;
-	obj_screen.g_h = dlgtree[obj].ob_height;
-
-	ret = RC_WITHIN(&obj_screen, area);
-
-	return(ret);
-}
-
-static GRECT * obj_screen_rect(OBJECT * tree, short obj)
-{
-	static GRECT obj_screen;
-
-	get_objframe(tree, obj, &obj_screen);
-
-	return(&obj_screen);
-}
 
 
 static void set_text( short idx, char * text, int len )
@@ -234,21 +209,21 @@ static void display_settings(void)
 	set_text( SETTINGS_BT_SEL_FONT_RENDERER, nsoption_charp(atari_font_driver),
 			LABEL_FONT_RENDERER_MAX_LEN );
 	SET_BIT(dlgtree[SETTINGS_CB_TRANSPARENCY].ob_state,
-			CB_SELECTED, nsoption_int(atari_transparency) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_int(atari_transparency) ? 1 : 0 );
 	SET_BIT(dlgtree[SETTINGS_CB_ENABLE_ANIMATION].ob_state,
-			CB_SELECTED, nsoption_bool(animate_images) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_bool(animate_images) ? 1 : 0 );
 	SET_BIT(dlgtree[SETTINGS_CB_FG_IMAGES].ob_state,
-			CB_SELECTED, nsoption_bool(foreground_images) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_bool(foreground_images) ? 1 : 0 );
 	SET_BIT(dlgtree[SETTINGS_CB_BG_IMAGES].ob_state,
-			CB_SELECTED, nsoption_bool(background_images) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_bool(background_images) ? 1 : 0 );
 
 /*
 	TODO: enable this option?
 	SET_BIT(dlgtree[SETTINGS_CB_INCREMENTAL_REFLOW].ob_state,
-			CB_SELECTED, nsoption_bool(incremental_reflow) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_bool(incremental_reflow) ? 1 : 0 );
 */
 	SET_BIT(dlgtree[SETTINGS_CB_ANTI_ALIASING].ob_state,
-			CB_SELECTED, nsoption_int(atari_font_monochrom) ? 0 : 1 );
+			GW_CB_SELECTED, nsoption_int(atari_font_monochrom) ? 0 : 1 );
 
 /*
 	TODO: activate this option?
@@ -274,9 +249,9 @@ static void display_settings(void)
 	set_text( SETTINGS_EDIT_PROXY_PASSWORD, nsoption_charp(http_proxy_auth_pass),
 			INPUT_PROXY_PASSWORD_MAX_LEN );
 	SET_BIT(dlgtree[SETTINGS_CB_USE_PROXY].ob_state,
-			CB_SELECTED, nsoption_bool(http_proxy) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_bool(http_proxy) ? 1 : 0 );
 	SET_BIT(dlgtree[SETTINGS_CB_PROXY_AUTH].ob_state,
-			CB_SELECTED, nsoption_int(http_proxy_auth) ? 1 : 0 );
+			GW_CB_SELECTED, nsoption_int(http_proxy_auth) ? 1 : 0 );
 
 	tmp_option_max_cached_fetch_handles = nsoption_int(max_cached_fetch_handles);
 	snprintf( spare, 255, "%2d", nsoption_int(max_cached_fetch_handles) );
@@ -304,7 +279,7 @@ static void display_settings(void)
 }
 
 
-static void form_event(int index, int external, void *unused2)
+static void form_event(int index, int external)
 {
 	char spare[255];
 	bool is_button = false;
@@ -327,36 +302,15 @@ static void form_event(int index, int external, void *unused2)
 	short x, y;
 	int choice;
 
-	// TODO: set correct form coords.
-
-	switch( index ){
+	switch(index){
 
 		case SETTINGS_SAVE:
 			save_settings();
-			//save_settings();
 		break;
 
-
-		case SETTINGS_INC_HISTORY_AGE:
-		case SETTINGS_DEC_HISTORY_AGE:
-			if(index == SETTINGS_INC_HISTORY_AGE)
-				tmp_option_expire_url += 1;
-			else
-				tmp_option_expire_url -= 1;
-
-			if(tmp_option_expire_url > 99)
-				tmp_option_expire_url =  0;
-
-			snprintf( spare, 255, "%02d", tmp_option_expire_url);
-			set_text( SETTINGS_EDIT_HISTORY_AGE, spare, 2 );
-			OBJ_REDRAW(SETTINGS_EDIT_HISTORY_AGE);
-			is_button = true;
-
-			default: break;
-	}
-
-
-	switch(index){
+		case SETTINGS_ABORT:
+			close_settings();
+		break;
 
 		case SETTINGS_CB_USE_PROXY:
 			if( checked ){
@@ -398,13 +352,13 @@ static void form_event(int index, int external, void *unused2)
 		case SETTINGS_BT_SEL_FONT_RENDERER:
 			if( external ){
 				objc_offset(dlgtree, SETTINGS_BT_SEL_FONT_RENDERER, &x, &y);
-				choice = MenuPopUp ( font_driver_items, x, y,
+				choice = MenuPopUp (font_driver_items, x, y,
 									num_font_drivers,
 									 -1, -1, P_LIST + P_WNDW + P_CHCK );
 				if( choice > 0 &&
 					choice <= num_font_drivers ){
 						set_text(SETTINGS_BT_SEL_FONT_RENDERER,
-									font_driver_items[choice-1],
+									(char*)font_driver_items[choice-1],
 									LABEL_FONT_RENDERER_MAX_LEN);
 						OBJ_REDRAW(SETTINGS_BT_SEL_FONT_RENDERER);
 				}
@@ -423,7 +377,7 @@ static void form_event(int index, int external, void *unused2)
 								num_locales,
 								 -1, -1, P_LIST + P_WNDW + P_CHCK );
 			if( choice > 0 && choice <= num_locales ){
-				set_text(SETTINGS_BT_SEL_LOCALE, locales[choice-1], 5);
+				set_text(SETTINGS_BT_SEL_LOCALE, (char*)locales[choice-1], 5);
 			}
 			OBJ_REDRAW(SETTINGS_BT_SEL_LOCALE);
 			break;
@@ -607,43 +561,6 @@ static void form_event(int index, int external, void *unused2)
 	}
 }
 
-static void on_redraw(GRECT *clip)
-{
-	GRECT visible, work, clip_ro;
-	int scroll_px_x, scroll_px_y;
-	struct guiwin_scroll_info_s *slid;
-	int new_x, new_y, old_x, old_y;
-	short edit_idx;
-
-	/* Walk the AES rectangle list and redraw the visible areas of the window: */
-	guiwin_get_grect(settings_guiwin, GUIWIN_AREA_CONTENT, &work);
-	slid = guiwin_get_scroll_info(settings_guiwin);
-
-	old_x = dlgtree->ob_x;
-	old_y = dlgtree->ob_y;
-	dlgtree->ob_x = new_x = work.g_x - (slid->x_pos * slid->x_unit_px);
-	dlgtree->ob_y = new_y = work.g_y - (slid->y_pos * slid->y_unit_px);
-
-	if ((edit_obj > -1) && (obj_is_inside(dlgtree, edit_obj, &work) == true)) {
-		dlgtree->ob_x = old_x;
-		dlgtree->ob_y = old_y;
-		objc_edit(dlgtree, edit_obj, 0, &edit_idx,
-			EDEND);
-		edit_obj = -1;
-
-		dlgtree->ob_x = new_x;
-		dlgtree->ob_y = new_y;
-	}
-
-	wind_get_grect(h_aes_win, WF_FIRSTXYWH, &visible);
-	while (visible.g_x && visible.g_y) {
-		if (rc_intersect(clip, &visible)) {
-			objc_draw_grect(dlgtree, 0, 8, &visible);
-		}
-		wind_get_grect(h_aes_win, WF_NEXTXYWH, &visible);
-	}
-}
-
 
 static void apply_settings(void)
 {
@@ -732,21 +649,15 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
     short retval = 0;
     GRECT clip, work;
     static short edit_idx = 0;
+	struct guiwin_scroll_info_s *slid;
 
     if ((ev_out->emo_events & MU_MESAG) != 0) {
         // handle message
         // printf("settings win msg: %d\n", msg[0]);
         switch (msg[0]) {
 
-        case WM_REDRAW:
-			clip.g_x = msg[4];
-			clip.g_y = msg[5];
-			clip.g_w = msg[6];
-			clip.g_h = msg[7];
-			on_redraw(&clip);
-            break;
 
-        case WM_CLOSED:
+		case WM_CLOSED:
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
 			close_settings();
@@ -756,90 +667,28 @@ static short on_aes_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 			guiwin_update_slider(win, GUIWIN_VH_SLIDER);
 			break;
 
+		case WM_MOVED:
+			break;
+
         case WM_TOOLBAR:
 			switch(msg[4]){
 				default: break;
 			}
             break;
 
+		case GUIWIN_WM_FORM:
+			form_event(msg[4], 1);
+			break;
+
         default:
             break;
         }
     }
+
     if ((ev_out->emo_events & MU_KEYBD) != 0) {
-
-    	if((edit_obj > -1) /* && obj_is_inside(dlgtree, edit_obj, &work) */){
-
-    		short next_edit_obj = edit_obj;
-    		short next_char = -1;
-    		short r;
-
-    		guiwin_get_grect(settings_guiwin, GUIWIN_AREA_CONTENT, &work);
-
-			r = form_keybd(dlgtree, edit_obj, next_edit_obj, ev_out->emo_kreturn,
-									&next_edit_obj, &next_char);
-			if (next_edit_obj != edit_obj) {
-				objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx,
-							EDEND);
-				edit_obj = next_edit_obj;
-				objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx,
-							EDINIT);
-			} else {
-				if(next_char > 13)
-					r = objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx,
-								EDCHAR);
-			}
-
-    	}
-
     }
+
     if ((ev_out->emo_events & MU_BUTTON) != 0) {
-
-   		struct guiwin_scroll_info_s *slid;
-   		short nextobj, ret=-1;
-
-		guiwin_get_grect(settings_guiwin, GUIWIN_AREA_CONTENT, &work);
-
-		slid = guiwin_get_scroll_info(settings_guiwin);
-		dlgtree->ob_x = work.g_x - (slid->x_pos * slid->x_unit_px);
-		dlgtree->ob_y = work.g_y - (slid->y_pos * slid->y_unit_px);
-
-		any_obj = objc_find(dlgtree, 0, 8, ev_out->emo_mouse.p_x,
-								ev_out->emo_mouse.p_y);
-
-		if((dlgtree[any_obj].ob_state & OS_DISABLED) != 0) {
-			return(retval);
-		}
-		uint16_t type = (dlgtree[any_obj].ob_type & 0xFF);
-		if (type == G_FTEXT || type == G_FBOXTEXT)  {
-			ret = form_button(dlgtree, any_obj, ev_out->emo_mclicks, &nextobj);
-			if(edit_obj != -1){
-				if (obj_is_inside(dlgtree, edit_obj, &work)) {
-					objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx, EDEND);
-				}
-			}
-			if (obj_is_inside(dlgtree, any_obj, &work)) {
-				edit_obj = any_obj;
-				objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx, EDINIT);
-			}
-		} else {
-			if ((edit_obj != -1) && obj_is_inside(dlgtree, edit_obj, &work)){
-				objc_edit(dlgtree, edit_obj, ev_out->emo_kreturn, &edit_idx, EDEND);
-			}
-			edit_obj = -1;
-			if (((dlgtree[any_obj].ob_type & 0xff00) & GW_XTYPE_CHECKBOX) != 0) {
-				if (OBJ_SELECTED(any_obj)) {
-					dlgtree[any_obj].ob_state &= ~(OS_SELECTED|OS_CROSSED);
-				} else {
-					dlgtree[any_obj].ob_state |= (OS_SELECTED|OS_CROSSED);
-				}
-				guiwin_send_redraw(win, obj_screen_rect(dlgtree, any_obj));
-			}
-			form_event(any_obj, 1, NULL);
-		}
-		//printf("clicked: %d / %d\n", any_obj, ret);
-		evnt_timer(150);
-
     }
 
     return(retval);
@@ -866,8 +715,6 @@ void open_settings(void)
 		curr.g_w = MIN(dlgtree->ob_width, desk_area.g_w);
 		curr.g_h = MIN(dlgtree->ob_height, desk_area.g_h-64);
 		curr.g_x = 1;
-		curr.g_y = desk_area.g_y;
-		//curr.g_x = (desk_area.g_w / 2) - (curr.g_w / 2);
 		curr.g_y = (desk_area.g_h / 2) - (curr.g_h / 2);
 
 		wind_calc_grect(WC_BORDER, kind, &curr, &curr);
@@ -880,26 +727,26 @@ void open_settings(void)
 
 		wind_open_grect(h_aes_win, &curr);
 
+		guiwin_set_form(settings_guiwin, dlgtree, 0);
 		guiwin_set_scroll_grid(settings_guiwin, 32, 32);
 		guiwin_get_grect(settings_guiwin, GUIWIN_AREA_CONTENT, &area);
+
 		slid = guiwin_get_scroll_info(settings_guiwin);
 		guiwin_set_content_units(settings_guiwin,
 								(dlgtree->ob_width/slid->x_unit_px),
 								(dlgtree->ob_height/slid->y_unit_px));
 		guiwin_update_slider(settings_guiwin, GUIWIN_VH_SLIDER);
-
 	}
 }
 
 void close_settings(void)
 {
-
-
-	printf("settings close\n");
+	LOG((""));
 	guiwin_remove(settings_guiwin);
 	settings_guiwin = NULL;
 	wind_close(h_aes_win);
 	wind_delete(h_aes_win);
 	h_aes_win = 0;
+	LOG(("Done"));
 }
 
