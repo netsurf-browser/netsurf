@@ -76,6 +76,7 @@ LDFLAGS += -L$(GCCSDK_INSTALL_ENV)/lib
 S_ATARI := \
 	bitmap.c \
 	caret.c \
+	clipboard.c \
 	findfile.c \
 	filetype.c \
 	font.c \
@@ -110,7 +111,8 @@ S_ATARI := \
 	gemtk/dragdrop.c \
 	gemtk/guiwin.c \
 	gemtk/msgbox.c \
-	gemtk/utils.c
+	gemtk/utils.c \
+	gemtk/objc.c
 
 S_ATARI := $(addprefix atari/,$(S_ATARI))
 
