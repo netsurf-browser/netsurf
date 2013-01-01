@@ -73,6 +73,8 @@ void window_set_active_gui_window(ROOTWIN *rootwin, struct gui_window *gw);
 void window_scroll_by(ROOTWIN *rootwin, int x, int y);
 void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area);
 void window_process_redraws(ROOTWIN * rootwin);
+void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
+						int content_y, int h, GRECT *work);
 struct gui_window * window_get_active_gui_window(ROOTWIN * rootwin);
 void window_get_scroll(ROOTWIN *rootwin, int *x, int *y);
 void window_get_grect(ROOTWIN *rootwin, enum browser_area_e which, GRECT *d);

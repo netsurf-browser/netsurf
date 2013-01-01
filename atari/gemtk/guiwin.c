@@ -26,8 +26,8 @@
 #include <mt_gem.h>
 #include "gemtk.h"
 
-#define DEBUG_PRINT(x)		printf x
-//#define DEBUG_PRINT(x)
+//#define DEBUG_PRINT(x)		printf x
+#define DEBUG_PRINT(x)
 
 struct gui_window_s {
     short handle;

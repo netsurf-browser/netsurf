@@ -19,9 +19,21 @@
 #ifndef NS_ATARI_GUI_H_
 #define NS_ATARI_GUI_H_
 
+#include <stdbool.h>
+#include <mt_gem.h>
+
 #include "atari/redrawslots.h"
-#include "atari/caret.h"
 #include "atari/gemtk/gemtk.h"
+
+#define CARET_STATE_VISIBLE		0x01
+#define CARET_STATE_ENABLED		0x02
+
+struct s_caret {
+	GRECT dimensions;
+	MFDB symbol;
+	int fd_size;
+	unsigned short state;
+};
 
 struct point_s {
 	int x;
@@ -108,6 +120,7 @@ struct s_gui_win_root
 	struct bitmap * icon;
 	struct gui_window *active_gui_window;
 	struct s_redrw_slots redraw_slots;
+	struct s_caret caret;
 	/* current size of window on screen: */
 	GRECT loc;
 };

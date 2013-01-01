@@ -14,6 +14,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Module Description:
+ *
+ * This File implements the NetSurf Browser window, or passed functionality to
+ * the appropriate widget's.
+ *
  */
 
 #include <sys/types.h>
@@ -127,7 +133,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
             // TODO: this needs to iterate through all gui windows and
             // check if the rootwin is this window...
             if (data->rootwin->active_gui_window != NULL) {
-            	printf("destroy...\n");
+                printf("destroy...\n");
                 browser_window_destroy(
                     data->rootwin->active_gui_window->browser->bw);
             }
@@ -179,16 +185,15 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
                 if (POINT_WITHIN(ev_out->emo_mouse.p_x, ev_out->emo_mouse.p_y,
                                  tb_area)) {
                     gem_set_cursor(&gem_cursors.ibeam);
-					prev_url = true;
+                    prev_url = true;
+                } else {
+                    if(prev_url) {
+                        struct gui_window *gw;
+                        gw = window_get_active_gui_window(data->rootwin);
+                        gem_set_cursor(gw->cursor);
+                        prev_url = false;
+                    }
                 }
-                else {
-					if(prev_url) {
-						struct gui_window *gw;
-						gw = window_get_active_gui_window(data->rootwin);
-						gem_set_cursor(gw->cursor);
-						prev_url = false;
-					}
-				}
             }
         }
     }
@@ -486,7 +491,7 @@ void window_set_icon(ROOTWIN *rootwin, struct bitmap * bmp )
     if (rootwin->icon != NULL) {
         short info, dummy;
         if (guiwin_get_state(rootwin->win) & GW_STATUS_ICONIFIED) {
-        	printf("set & redraw\n");
+            printf("set & redraw\n");
             window_redraw_favicon(rootwin, NULL);
         }
     }
@@ -561,7 +566,7 @@ void window_redraw_favicon(ROOTWIN *rootwin, GRECT *clip)
     }
 
     if (rootwin->icon == NULL) {
-    	printf("window_redraw_favicon OBJCTREE\n");
+        printf("window_redraw_favicon OBJCTREE\n");
         OBJECT * tree = get_tree(ICONIFY);
         tree->ob_x = work.g_x;
         tree->ob_y = work.g_y;
@@ -598,7 +603,7 @@ void window_schedule_redraw_grect(ROOTWIN *rootwin, GRECT *area)
 
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_WORK, &work);
     if(!rc_intersect(area, &work))
-		return;
+        return;
 
     //dbg_grect("window_schedule_redraw_grect intersection ", &work);
 
@@ -656,23 +661,174 @@ static void window_redraw_content(ROOTWIN *rootwin, GRECT *content_area,
     //dbg_rect("rdrw area", &redraw_area);
 
     browser_window_redraw( bw, -(slid->x_pos*slid->x_unit_px),
-                           -(slid->y_pos*slid->y_unit_px), &redraw_area, &rootwin_rdrw_ctx );
+                           -(slid->y_pos*slid->y_unit_px), &redraw_area, &rootwin_rdrw_ctx);
+}
+
+
+void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
+                        int content_y, int h, GRECT *work)
+{
+    struct s_caret *caret = &rootwin->caret;
+    VdiHdl vh = guiwin_get_vdi_handle(rootwin->win);
+    short pxy[8];
+    GRECT mywork, caret_pos;
+    MFDB screen;
+    int i, scroll_x, scroll_y;
+    uint16_t *fd_addr;
+    struct guiwin_scroll_info_s *slid;
+    short colors[2] = {BLACK, WHITE};
+    bool render_required = false;
+
+    // avoid duplicate draw of the caret:
+    if (mode == 1 &&(caret->state&CARET_STATE_VISIBLE)!=0) {
+        if (caret->dimensions.g_x == content_x
+                && caret->dimensions.g_y == content_y
+                && caret->dimensions.g_h == h) {
+            return;
+        }
+    }
+
+    if(work == NULL) {
+        window_get_grect(rootwin, BROWSER_AREA_CONTENT, &mywork);
+        work = &mywork;
+    }
+    slid = guiwin_get_scroll_info(rootwin->win);
+
+    scroll_x = slid->x_pos * slid->x_unit_px;
+    scroll_y = slid->y_pos * slid->y_unit_px;
+
+    init_mfdb(0, 1, h, 0, &screen);
+
+    // enable clipping:
+    pxy[0] = work->g_x;
+    pxy[1] = work->g_y;
+    pxy[2] = pxy[0] + work->g_w - 1;
+    pxy[3] = pxy[1] + work->g_h - 1;
+    vs_clip(vh, 1, pxy);
+
+    // when the caret is visible, undraw it:
+    if (caret->symbol.fd_addr != NULL
+            && (caret->state&CARET_STATE_VISIBLE)!=0) {
+
+        caret_pos.g_x = work->g_x + (caret->dimensions.g_x - scroll_x);
+        caret_pos.g_y = work->g_y + (caret->dimensions.g_y - scroll_y);
+        caret_pos.g_w = caret->dimensions.g_w;
+        caret_pos.g_h = caret->dimensions.g_h;
+
+        if (rc_intersect(work, &caret_pos)) {
+
+            pxy[0] = 0;
+            pxy[1] = 0;
+            pxy[2] = caret->dimensions.g_w-1;
+            pxy[3] = caret->dimensions.g_h-1;
+
+            pxy[4] = caret_pos.g_x;
+            pxy[5] = caret_pos.g_y;
+            pxy[6] = pxy[4] + caret_pos.g_w-1;
+            pxy[7] = pxy[5] + caret_pos.g_h-1;
+
+            vrt_cpyfm(vh, MD_XOR, pxy, &caret->symbol, &screen, colors);
+        }
+    }
+    if (mode == 0) {
+        // update state:
+        caret->state &= ~CARET_STATE_VISIBLE;
+        goto exit;
+    }
+
+    // when the caret isn't allocated, create it:
+    if (caret->symbol.fd_addr == NULL) {
+        caret->fd_size = init_mfdb(1, 16, h, MFDB_FLAG_ZEROMEM,
+                                   &caret->symbol);
+        render_required = true;
+    } else {
+        // the caret may need more memory:
+        if (caret->dimensions.g_h < h) {
+            caret->fd_size = init_mfdb(1, 16, h, MFDB_FLAG_NOALLOC,
+                                       &caret->symbol);
+            realloc(caret->symbol.fd_addr, caret->fd_size);
+            render_required = true;
+        }
+    }
+
+    // set new caret position:
+    caret->dimensions.g_x = content_x;
+    caret->dimensions.g_y = content_y;
+    caret->dimensions.g_w = 1;
+    caret->dimensions.g_h = h;
+
+    // draw the caret into the mfdb buffer:
+    if (render_required) {
+
+        assert(caret->symbol.fd_nplanes == 1);
+        assert(caret->symbol.fd_w == 16);
+
+        // draw an vertical line into the mfdb buffer
+        fd_addr = (uint16_t*)caret->symbol.fd_addr;
+        for(i = 0; i<caret->symbol.fd_h; i++) {
+            fd_addr[i] = 0xFFFF;
+        }
+    }
+
+    // convert content coords to screen coords:
+
+    caret_pos.g_x = work->g_x + (content_x - scroll_x);
+    caret_pos.g_y = work->g_y + (content_y - scroll_y);
+    caret_pos.g_w = caret->dimensions.g_w;
+    caret_pos.g_h = caret->dimensions.g_h;
+
+    if (rc_intersect(work, &caret_pos) /*&& redraw_active == false*/) {
+
+        pxy[0] = 0;
+        pxy[1] = 0;
+        pxy[2] = caret->dimensions.g_w-1;
+        pxy[3] = caret->dimensions.g_h-1;
+
+        pxy[4] = caret_pos.g_x;
+        pxy[5] = caret_pos.g_y;
+        pxy[6] = pxy[4] + caret_pos.g_w-1;
+        pxy[7] = pxy[5] + caret_pos.g_h-1;
+
+        //dbg_pxy("caret screen coords (md_repl)", &pxy[4]);
+
+        // draw caret to screen coords:
+        vrt_cpyfm(vh, /*MD_REPLACE*/ MD_XOR, pxy, &caret->symbol, &screen, colors);
+
+    }
+
+    // update state:
+    caret->state |= CARET_STATE_VISIBLE;
+
+exit:
+    // disable clipping:
+    vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy);
 }
 
 void window_process_redraws(ROOTWIN * rootwin)
 {
     GRECT work, visible_ro, tb_area, content_area;
     short i;
+	short scroll_x=0, scroll_y=0;
     bool toolbar_rdrw_required;
+    bool caret_rdrw_required = false;
     struct guiwin_scroll_info_s *slid =NULL;
+    int caret_h = 0;
+    struct s_caret *caret = &rootwin->caret;
 
     redraw_active = true;
-
 
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_TOOLBAR, &tb_area);
     guiwin_get_grect(rootwin->win, GUIWIN_AREA_CONTENT, &content_area);
 
     //dbg_grect("content area", &content_area);
+
+    while(plot_lock() == false);
+
+    if (((rootwin->caret.state & CARET_STATE_ENABLED)!=0)
+            && rootwin->caret.dimensions.g_h > 0) {
+        // hide caret:
+        window_place_caret(rootwin, 0, -1, -1, -1, &content_area);
+    }
 
     short pxy_clip[4];
 
@@ -681,8 +837,6 @@ void window_process_redraws(ROOTWIN * rootwin)
     pxy_clip[0] = pxy_clip[0] + tb_area.g_w + content_area.g_w - 1;
     pxy_clip[0] = pxy_clip[1] + tb_area.g_h + content_area.g_h - 1;
     vs_clip(guiwin_get_vdi_handle(rootwin->win), 1, pxy_clip);
-
-    while(plot_lock() == false);
 
     wind_get_grect(rootwin->aes_handle, WF_FIRSTXYWH, &visible_ro);
     while (visible_ro.g_w > 0 && visible_ro.g_h > 0) {
@@ -709,16 +863,51 @@ void window_process_redraws(ROOTWIN * rootwin)
 
             rdrw_area = rdrw_area_ro;
             if (rc_intersect(&content_area, &rdrw_area)) {
-                if(slid == NULL)
-                    slid = guiwin_get_scroll_info(rootwin->win);
-                window_redraw_content(rootwin, &content_area, &rdrw_area, slid,
-                                      rootwin->active_gui_window->browser->bw);
-            }
 
+                if(slid == NULL) {
+                    slid = guiwin_get_scroll_info(rootwin->win);
+
+                    scroll_x = slid->x_pos * slid->x_unit_px;
+					scroll_y = slid->y_pos * slid->y_unit_px;
+                }
+
+                window_redraw_content(rootwin, &content_area, &rdrw_area,
+                                      slid,
+                                      rootwin->active_gui_window->browser->bw);
+                if (((rootwin->caret.state & CARET_STATE_ENABLED)!=0)) {
+
+                    GRECT caret_pos;
+
+                    caret_pos.g_x = content_area.g_x +
+                                    (caret->dimensions.g_x - scroll_x);
+                    caret_pos.g_y = content_area.g_y +
+                                    (caret->dimensions.g_y - scroll_y);
+                    caret_pos.g_w = caret->dimensions.g_w;
+                    caret_pos.g_h = caret->dimensions.g_h;
+
+                    if(rc_intersect_ro(&caret_pos, &content_area)) {
+                        caret_rdrw_required = true;
+                    }
+                }
+            }
         }
         wind_get_grect(rootwin->aes_handle, WF_NEXTXYWH, &visible_ro);
     }
+
+
+    // disable clipping:
     vs_clip(guiwin_get_vdi_handle(rootwin->win), 0, pxy_clip);
+
+    if (caret_rdrw_required && ((rootwin->caret.state & CARET_STATE_ENABLED)!=0)) {
+
+        // force redraw of caret:
+        caret_h = rootwin->caret.dimensions.g_h;
+        rootwin->caret.dimensions.g_h = 0;
+        window_place_caret(rootwin, 1, rootwin->caret.dimensions.g_x,
+                           rootwin->caret.dimensions.g_y,
+                           caret_h, &content_area);
+    }
+
     rootwin->redraw_slots.areas_used = 0;
     redraw_active = false;
 
@@ -731,22 +920,22 @@ void window_process_redraws(ROOTWIN * rootwin)
 /* -------------------------------------------------------------------------- */
 static bool on_content_mouse_move(ROOTWIN *rootwin, GRECT *content_area)
 {
-	int mx, my, sx, sy;
-	struct guiwin_scroll_info_s *slid;
-	struct gui_window *gw;
-	struct browser_window *bw;
+    int mx, my, sx, sy;
+    struct guiwin_scroll_info_s *slid;
+    struct gui_window *gw;
+    struct browser_window *bw;
 
-	// make relative mouse coords:
-	mx = aes_event_out.emo_mouse.p_x - content_area->g_x;
-	my = aes_event_out.emo_mouse.p_y - content_area->g_y;
+    // make relative mouse coords:
+    mx = aes_event_out.emo_mouse.p_x - content_area->g_x;
+    my = aes_event_out.emo_mouse.p_y - content_area->g_y;
 
-	slid = guiwin_get_scroll_info(rootwin->win);
-	gw = window_get_active_gui_window(rootwin);
-	bw = gw->browser->bw;
+    slid = guiwin_get_scroll_info(rootwin->win);
+    gw = window_get_active_gui_window(rootwin);
+    bw = gw->browser->bw;
 
-	// calculate scroll pos. in pixel:
-	sx = slid->x_pos * slid->x_unit_px;
-	sy = slid->y_pos * slid->y_unit_px;
+    // calculate scroll pos. in pixel:
+    sx = slid->x_pos * slid->x_unit_px;
+    sy = slid->y_pos * slid->y_unit_px;
 
     browser_window_mouse_track(bw, 0, mx + sx, my + sy);
 }

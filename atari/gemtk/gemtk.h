@@ -33,6 +33,12 @@
 extern unsigned short _systype_v;
 unsigned short _systype (void);
 
+/*
+* Chech for GRECT intersection without modifiend the src rectangles
+* return true when the  GRECT's intersect, fals otherwise.
+*/
+bool rc_intersect_ro(GRECT *a, GRECT *b);
+
 #ifndef POINT_WITHIN
 # define POINT_WITHIN(_x,_y, r) ((_x >= r.g_x) && (_x <= r.g_x + r.g_w ) \
 		&& (_y >= r.g_y) && (_y <= r.g_y + r.g_h))

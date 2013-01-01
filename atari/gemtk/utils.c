@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <gem.h>
 #include "gemtk.h"
 
@@ -38,3 +39,12 @@ unsigned short _systype (void)
 	return _systype_v;
 }
 
+bool rc_intersect_ro(GRECT *a, GRECT *b)
+{
+	GRECT r1, r2;
+
+	r1 = *a;
+	r2 = *b;
+
+	return((bool)rc_intersect(&r1, &r2));
+}

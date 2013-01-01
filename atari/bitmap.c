@@ -30,8 +30,11 @@
 
 
 /*
-	bpp: bits per pixel,
-
+ * param bpp bits per pixel,
+ * param w width of the buffer (in pixel)
+ * param h height of the buffer (in pixel)
+ * param flags MFDB_FLAG_NOALLOC | MFDB_FLAG_ZEROMEM | MFDB_FLAG_STAND
+ * returns size of the fd_addr buffer required or allocated
 */
 int init_mfdb(int bpp, int w, int h, uint32_t flags, MFDB * out )
 {
