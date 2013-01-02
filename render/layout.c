@@ -3045,11 +3045,15 @@ struct box *layout_minmax_line(struct box *first,
 					&fixed, &frac);
 			if (0 < fixed)
 				max += fixed;
-			if (b->next && b->space == UNKNOWN_WIDTH) {
-				font_func->font_width(&fstyle, " ", 1,
-						&b->space);
+
+			if (b->next) {
+				if (b->space == UNKNOWN_WIDTH) {
+					font_func->font_width(&fstyle, " ", 1,
+							&b->space);
+				}
 				max += b->space;
 			}
+
 			*line_has_height = true;
 			continue;
 		}
@@ -3095,9 +3099,11 @@ struct box *layout_minmax_line(struct box *first,
 				}
 			}
 			max += b->width;
-			if (b->next && b->space == UNKNOWN_WIDTH) {
-				font_func->font_width(&fstyle, " ", 1,
-						&b->space);
+			if (b->next) {
+				if (b->space == UNKNOWN_WIDTH) {
+					font_func->font_width(&fstyle, " ", 1,
+							&b->space);
+				}
 				max += b->space;
 			}
 
