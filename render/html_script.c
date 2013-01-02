@@ -212,7 +212,7 @@ convert_script_defer_cb(hlcache_handle *script,
 
 	/* Find script */
 	for (i = 0, s = parent->scripts; i != parent->scripts_count; i++, s++) {
-		if (s->type == HTML_SCRIPT_ASYNC && s->data.handle == script)
+		if (s->type == HTML_SCRIPT_DEFER && s->data.handle == script)
 			break;
 	}
 
