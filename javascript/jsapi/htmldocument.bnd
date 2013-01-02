@@ -272,7 +272,7 @@ operation createComment %{
 		}
 
 		JSLOG("Creating comment object for dom string \"%s\"",
-		      dom_string_data(comment));
+		      dom_string_data(data_dom));
 		exc = dom_document_create_comment(private->node,
 						  data_dom,
 						  &comment);
