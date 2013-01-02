@@ -8,8 +8,6 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-#include "dom.bnd"
-
 webidlfile "html.idl";
 
 hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
@@ -20,7 +18,7 @@ hdrcomment "        http://www.opensource.org/licenses/mit-license";
 preamble %{
 
 #include <dom/dom.h>
-        
+
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
@@ -38,6 +36,8 @@ preamble %{
 
 %}
 
+#include "dom.bnd"
+
 binding document {
 	type js_libdom; /* the binding type */
 
@@ -47,10 +47,10 @@ binding document {
 	 * context structure.
 	 */
 	private "dom_document *" node;
-	private "struct html_content *" htmlc; 
+	private "struct html_content *" htmlc;
 
 	/** location instantiated on first use */
-	property unshared location; 
+	property unshared location;
 
 	/* events through a single interface */
 	property unshared type EventHandler;
@@ -70,9 +70,9 @@ getter location %{
 		/* already created - return it */
 		return JS_TRUE;
 	}
-	jsret = jsapi_new_Location(cx, 
-				   NULL, 
-				   NULL, 
+	jsret = jsapi_new_Location(cx,
+				   NULL,
+				   NULL,
 				   llcache_handle_get_url(private->htmlc->base.llcache),
 				   private->htmlc);
 %}
@@ -110,7 +110,7 @@ getter documentElement %{
 
 	/* document (html) element */
 	exc = dom_document_get_document_element(private->node, (void *)&element);
-        if (exc != DOM_NO_ERR) {
+	if (exc != DOM_NO_ERR) {
 		return JS_FALSE;
 	}
 
@@ -122,11 +122,11 @@ getter documentElement %{
 getter head %{
 	dom_node *element;
 	dom_node *head;
-        dom_exception exc;
+	dom_exception exc;
 
 	/* document (html) element */
 	exc = dom_document_get_document_element(private->node, &element);
-        if (exc != DOM_NO_ERR) {
+	if (exc != DOM_NO_ERR) {
 		return JS_FALSE;
 	}
 
@@ -142,13 +142,13 @@ getter head %{
 getter body %{
 	dom_node *element;
 	dom_node *body;
-        dom_exception exc;
+	dom_exception exc;
 
 	JSLOG("Getting your body");
 
 	/* document (html) element */
 	exc = dom_document_get_document_element(private->node, &element);
-        if (exc != DOM_NO_ERR) {
+	if (exc != DOM_NO_ERR) {
 		return JS_FALSE;
 	}
 
@@ -167,58 +167,58 @@ getter body %{
 operation getElementById %{
 	dom_string *elementId_dom;
 	dom_element *element;
-        dom_exception exc;
+	dom_exception exc;
 
 	exc = dom_string_create((unsigned char*)elementId, elementId_len, &elementId_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
 
 	exc = dom_document_get_element_by_id(private->node, elementId_dom, &element);
-        dom_string_unref(elementId_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+	dom_string_unref(elementId_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
 
-        if (element != NULL) {
-              jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
-        }
+	if (element != NULL) {
+	      jsret = jsapi_new_HTMLElement(cx, NULL, NULL, element, private->htmlc);
+	}
 %}
 
-/* 
+/*
  *
  * Dom 4 says this should return a htmlcollection, libdom currently
- * returns DOM 3 spec of a nodelist 
+ * returns DOM 3 spec of a nodelist
  */
 operation getElementsByTagName %{
 	dom_string *localName_dom;
-        /* dom_html_collection *collection;*/
-        dom_nodelist *nodelist;
-        dom_exception exc;
+	/* dom_html_collection *collection;*/
+	dom_nodelist *nodelist;
+	dom_exception exc;
 
 	exc = dom_string_create((uint8_t *)localName, localName_len, &localName_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
 
-        exc = dom_document_get_elements_by_tag_name(private->node, localName_dom, /*&collection*/&nodelist);
-        dom_string_unref(localName_dom);
-        if (exc != DOM_NO_ERR) {
-                return JS_FALSE;
-        }
+	exc = dom_document_get_elements_by_tag_name(private->node, localName_dom, /*&collection*/&nodelist);
+	dom_string_unref(localName_dom);
+	if (exc != DOM_NO_ERR) {
+		return JS_FALSE;
+	}
 
-        if (/*collection*/nodelist != NULL) {
-                /*jsret = jsapi_new_HTMLCollection(cx,
-                                                 NULL,
-                                                 NULL,
-                                                 collection,
-                                                 private->htmlc);*/
-                jsret = jsapi_new_NodeList(cx,
-                                                 NULL,
-                                                 NULL,
-                                                 nodelist,
-                                                 private->htmlc);
-        }
+	if (/*collection*/nodelist != NULL) {
+		/*jsret = jsapi_new_HTMLCollection(cx,
+						 NULL,
+						 NULL,
+						 collection,
+						 private->htmlc);*/
+		jsret = jsapi_new_NodeList(cx,
+						 NULL,
+						 NULL,
+						 nodelist,
+						 private->htmlc);
+	}
 
 %}
 
@@ -228,10 +228,10 @@ operation write %{
 	}
 %}
 
-/* in dom Document */
+/* interface Document (dom) { Text createTextNode(DOMString data);  } */
 operation createTextNode %{
 	dom_string *data_dom;
-        dom_exception exc;
+	dom_exception exc;
 	dom_text *text;
 
 	if (data != NULL) {
@@ -255,10 +255,43 @@ operation createTextNode %{
 
 %}
 
+/* interface Document (dom) { Comment createComment(DOMString data);  } */
+operation createComment %{
+	dom_string *data_dom;
+	dom_exception exc;
+	dom_comment *comment;
+
+	if (data != NULL) {
+
+		JSLOG("Creating string \"%s\"", data);
+		exc = dom_string_create((unsigned char*)data,
+					data_len,
+					&data_dom);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
+
+		JSLOG("Creating comment object for dom string \"%s\"",
+		      dom_string_data(comment));
+		exc = dom_document_create_comment(private->node,
+						  data_dom,
+						  &comment);
+		dom_string_unref(data_dom);
+		if (exc != DOM_NO_ERR) {
+			return JS_FALSE;
+		}
+
+		jsret = jsapi_new_Comment(cx, NULL, NULL, comment, private->htmlc);
+	}
+
+	JSLOG("returning jsobject %p", jsret);
+
+%}
+
 /* in dom Document */
 operation createElement %{
 	dom_string *localName_dom;
-        dom_exception exc;
+	dom_exception exc;
 	dom_element *element;
 
 	if (localName != NULL) {

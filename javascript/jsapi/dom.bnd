@@ -10,6 +10,12 @@
 
 webidlfile "dom.idl";
 
+preamble %{
+#include "comment.h"
+#include "text.h"
+#include "htmlelement.h"
+%}
+
 /* interface Node members */
 
 getter nodeType %{
@@ -74,7 +80,7 @@ getter textContent %{
 	}
 %}
 
-
+/* interface Node { Node appendChild(Node node); } */
 operation appendChild %{
 	struct dom_node *result = NULL;
 	dom_exception exc;
@@ -82,22 +88,31 @@ operation appendChild %{
 	struct jsclass_private *node_private;
 	dom_node_type node_type;
 
-	JSLOG("appending %p", node);
-
+	/* @todo: make this a distinct function jsapiobject_to_domnode() */
 	/* CAUTION this expects all Node objects private pointers to
 	 * have private->node in the same place
 	 */
-	/* text */
-	node_private = JS_GetInstancePrivate(cx, node, &JSClass_Text, NULL);
-	if (node_private == NULL) {
+	if (node == NULL) {
+		node_private = NULL;
+	} else {
 		/* element */
 		node_private = JS_GetInstancePrivate(cx, node, &JSClass_HTMLElement, NULL);
+		if (node_private == NULL) {
+			/* text */
+			node_private = JS_GetInstancePrivate(cx, node, &JSClass_Text, NULL);
+			if (node_private == NULL) {
+				/* comment */
+				node_private = JS_GetInstancePrivate(cx, node, &JSClass_Comment, NULL);
+			}
+		}
 	}
-
 	if (node_private == NULL) {
-		/* type error? */
+		/* should cause Error: NOT_FOUND_ERR: DOM Exception 8 */
+		JSLOG("Error: NOT_FOUND_ERR: DOM Exception 8");
 		return JS_FALSE;
 	}
+
+	JSLOG("appending %p", node);
 
 	/* append the found element */
 	exc = dom_node_append_child(private->node, node_private->node, &result);

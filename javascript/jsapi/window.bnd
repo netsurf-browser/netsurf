@@ -8,7 +8,6 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-#include "dom.bnd"
 
 webidlfile "html.idl";
 
@@ -35,11 +34,14 @@ preamble %{
 #include "nodelist.h"
 #include "htmldocument.h"
 #include "text.h"
+#include "comment.h"
 #include "htmlelement.h"
 #include "window.h"
 #include "location.h"
 
 %}
+
+#include "dom.bnd"
 
 binding window {
 	type js_libdom; /* the binding type */
@@ -146,6 +148,11 @@ api init %{
 	}
 
 	user_proto = jsapi_InitClass_Text(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
+	user_proto = jsapi_InitClass_Comment(cx, prototype);
 	if (user_proto == NULL) {
 		return NULL;
 	}
