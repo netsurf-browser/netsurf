@@ -1893,7 +1893,7 @@ static bool html_redraw_box_children(const html_content *html, struct box *box,
 
 bool html_redraw_box(const html_content *html, struct box *box,
 		int x_parent, int y_parent,
-		const struct rect *clip, float scale,
+		const struct rect *clip, const float scale,
 		colour current_background_color,
 		const struct redraw_context *ctx)
 {
