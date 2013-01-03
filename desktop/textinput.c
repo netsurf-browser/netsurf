@@ -127,6 +127,12 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 
 	assert(bw->window != NULL);
 
+	if (focus->caret_callback) {
+		/* Pass keypress onto anything that has claimed input focus */
+		return focus->caret_callback(focus, key,
+				focus->caret_p1, focus->caret_p2);
+	}
+
 	/* keys that take effect wherever the caret is positioned */
 	switch (key) {
 		case KEY_SELECT_ALL:
@@ -151,12 +157,7 @@ bool browser_window_key_press(struct browser_window *bw, uint32_t key)
 			return false;
 	}
 
-	/* pass on to the appropriate field */
-	if (!focus->caret_callback)
-		return false;
-
-	return focus->caret_callback(focus, key,
-			focus->caret_p1, focus->caret_p2);
+	return false;
 }
 
 
