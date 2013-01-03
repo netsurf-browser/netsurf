@@ -341,7 +341,6 @@ void ami_init_menulabs(struct gui_window_2 *gwin)
 	gwin->menutype[41] = NM_ITEM;
 	gwin->menulab[41] = ami_utf8_easy((char *)messages_get("EnableJS"));
 	gwin->menu_hook[41].h_Entry = (HOOKFUNC)ami_menu_item_browser_enablejs;
-	gwin->menukey[41] = 'J';
 
 	gwin->menutype[42] = NM_ITEM;
 	gwin->menulab[42] = NM_BARLABEL;

@@ -3600,6 +3600,11 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->bw->scale);
 	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->bw->scale);
 
+	SetWindowPointer(gwin->win,
+					WA_BusyPointer, TRUE,
+					WA_PointerDelay, TRUE,
+					TAG_DONE);
+				
 	browserglob.shared_pens = &gwin->shared_pens;
 	
 	if(top < 0) {
@@ -3667,6 +3672,8 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 			}
 		}
 	}
+	
+	SetWindowPointer(gwin->win, TAG_DONE);
 }
 
 
@@ -3846,11 +3853,18 @@ void ami_do_redraw(struct gui_window_2 *g)
 			clip.x1 = bbox->Left + bbox->Width;
 			clip.y1 = bbox->Top + bbox->Height;
 
+			SetWindowPointer(g->win,
+				WA_BusyPointer, TRUE,
+				WA_PointerDelay, TRUE,
+				TAG_DONE);
+			
 			if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
 			{
 				ami_clearclipreg(&browserglob);
 				browserglob.rp = temprp;
 			}
+			
+			SetWindowPointer(g->win, TAG_DONE);
 		}
 	}
 
