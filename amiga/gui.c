@@ -3745,87 +3745,85 @@ void gui_window_update_box(struct gui_window *g, const struct rect *rect)
 			rect->x1, rect->y1);
 }
 
-void ami_do_redraw(struct gui_window_2 *g)
+void ami_do_redraw(struct gui_window_2 *gwin)
 {
 	struct Region *reg = NULL;
 	struct Rectangle rect;
 	hlcache_handle *c;
 	ULONG hcurrent,vcurrent,xoffset,yoffset,width=800,height=600,x0=0,y0=0;
 	struct IBox *bbox;
-	ULONG oldh=g->oldh,oldv=g->oldv;
+	ULONG oldh = gwin->oldh, oldv=gwin->oldv;
 	bool morescroll = false;
 	struct RastPort *temprp;
 
-	if(browser_window_redraw_ready(g->bw) == false) return;
+	if(browser_window_redraw_ready(gwin->bw) == false) return;
 
-	GetAttr(SPACE_AreaBox, (Object *)g->objects[GID_BROWSER], (ULONG *)&bbox);
-	ami_get_hscroll_pos(g, (ULONG *)&hcurrent);
-	ami_get_vscroll_pos(g, (ULONG *)&vcurrent);
+	GetAttr(SPACE_AreaBox, (Object *)gwin->objects[GID_BROWSER], (ULONG *)&bbox);
+	ami_get_hscroll_pos(gwin, (ULONG *)&hcurrent);
+	ami_get_vscroll_pos(gwin, (ULONG *)&vcurrent);
 
-	g->bw->window->scrollx = hcurrent;
-	g->bw->window->scrolly = vcurrent;
+	gwin->bw->window->scrollx = hcurrent;
+	gwin->bw->window->scrolly = vcurrent;
 
-	c = g->bw->current_content;
+	c = gwin->bw->current_content;
 
 	width=bbox->Width;
 	height=bbox->Height;
 	xoffset=bbox->Left;
 	yoffset=bbox->Top;
 
-	if(g->bw->reformat_pending)
+	if(gwin->bw->reformat_pending)
 	{
-		browser_window_reformat(g->bw,false,width,height);
-		g->bw->reformat_pending = false;
-		g->redraw_scroll = false;
+		browser_window_reformat(gwin->bw, false, width, height);
+		gwin->bw->reformat_pending = false;
+		gwin->redraw_scroll = false;
 	}
 
-	if(g->redraw_scroll)
+	if(gwin->redraw_scroll)
 	{
 		if((abs(vcurrent-oldv) > height) ||	(abs(hcurrent-oldh) > width))
-			g->redraw_scroll = false;
+			gwin->redraw_scroll = false;
 
- 		if(g->new_content) g->redraw_scroll = false;
-
-		//if(g->bw->scale != 1.0) g->redraw_scroll = false;
+ 		if(gwin->new_content) gwin->redraw_scroll = false;
 	}
 
-	if(g->redraw_scroll)
+	if(gwin->redraw_scroll)
 	{
-		g->bw->window->c_h_temp = g->bw->window->c_h;
-		gui_window_remove_caret(g->bw->window);
+		gwin->bw->window->c_h_temp = gwin->bw->window->c_h;
+		gui_window_remove_caret(gwin->bw->window);
 
-		ScrollWindowRaster(g->win,hcurrent-oldh,vcurrent-oldv,
-				xoffset,yoffset,xoffset+width-1,yoffset+height-1);
+		ScrollWindowRaster(gwin->win, hcurrent - oldh, vcurrent - oldv,
+				xoffset, yoffset, xoffset + width - 1, yoffset + height - 1);
 
-		g->bw->window->c_h = g->bw->window->c_h_temp;
+		gwin->bw->window->c_h = gwin->bw->window->c_h_temp;
 
 		if(vcurrent>oldv) /* Going down */
 		{
-			ami_do_redraw_limits(g->bw->window, g->bw,
-					hcurrent, (height / g->bw->scale) + oldv - 1,
-					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale) + 1);
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+					hcurrent, (height / gwin->bw->scale) + oldv - 1,
+					hcurrent + (width / gwin->bw->scale),
+					vcurrent + (height / gwin->bw->scale) + 1);
 		}
 		else if(vcurrent<oldv) /* Going up */
 		{
-			ami_do_redraw_limits(g->bw->window, g->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
 					hcurrent, vcurrent,
-					hcurrent + (width / g->bw->scale),
+					hcurrent + (width / gwin->bw->scale),
 					oldv);
 		}
 
 		if(hcurrent>oldh) /* Going right */
 		{
-			ami_do_redraw_limits(g->bw->window, g->bw,
-					(width / g->bw->scale) + oldh , vcurrent,
-					hcurrent + (width / g->bw->scale),
-					vcurrent + (height / g->bw->scale));
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
+					(width / gwin->bw->scale) + oldh , vcurrent,
+					hcurrent + (width / gwin->bw->scale),
+					vcurrent + (height / gwin->bw->scale));
 		}
 		else if(hcurrent<oldh) /* Going left */
 		{
-			ami_do_redraw_limits(g->bw->window, g->bw,
+			ami_do_redraw_limits(gwin->bw->window, gwin->bw,
 					hcurrent, vcurrent,
-					oldh, vcurrent + (height / g->bw->scale));
+					oldh, vcurrent + (height / gwin->bw->scale));
 		}
 	}
 	else
@@ -3841,41 +3839,41 @@ void ami_do_redraw(struct gui_window_2 *g)
 
 		if(nsoption_bool(direct_render) == false)
 		{
-			ami_do_redraw_tiled(g, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
+			ami_do_redraw_tiled(gwin, hcurrent, vcurrent, width, height, hcurrent, vcurrent, bbox, &ctx);
 		}
 		else
 		{
-			browserglob.shared_pens = &g->shared_pens;
+			browserglob.shared_pens = &gwin->shared_pens;
 			temprp = browserglob.rp;
- 			browserglob.rp = g->win->RPort;
+ 			browserglob.rp = gwin->win->RPort;
 			clip.x0 = bbox->Left;
 			clip.y0 = bbox->Top;
 			clip.x1 = bbox->Left + bbox->Width;
 			clip.y1 = bbox->Top + bbox->Height;
 
-			SetWindowPointer(g->win,
+			SetWindowPointer(gwin->win,
 				WA_BusyPointer, TRUE,
 				WA_PointerDelay, TRUE,
 				TAG_DONE);
 			
-			if(browser_window_redraw(g->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
+			if(browser_window_redraw(gwin->bw, clip.x0 - hcurrent, clip.y0 - vcurrent, &clip, &ctx))
 			{
 				ami_clearclipreg(&browserglob);
 				browserglob.rp = temprp;
 			}
 			
-			SetWindowPointer(g->win, TAG_DONE);
+			SetWindowPointer(gwin->win, TAG_DONE);
 		}
 	}
 
-	ami_update_buttons(g);
+	ami_update_buttons(gwin);
 
-	g->oldh = hcurrent;
-	g->oldv = vcurrent;
+	gwin->oldh = hcurrent;
+	gwin->oldv = vcurrent;
 
-	g->redraw_scroll = false;
-	g->redraw_required = false;
-	g->new_content = false;
+	gwin->redraw_scroll = false;
+	gwin->redraw_required = false;
+	gwin->new_content = false;
 }
 
 void ami_refresh_window(struct gui_window_2 *gwin)
