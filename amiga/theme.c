@@ -174,12 +174,18 @@ void ami_get_theme_filename(char *filename, char *themestring, bool protocol)
 
 void gui_window_set_pointer(struct gui_window *g, gui_pointer_shape shape)
 {
-	ami_update_pointer(g->shared->win,shape);
+	ami_update_pointer(g->shared->win, shape, false);
 }
 
-void ami_update_pointer(struct Window *win, gui_pointer_shape shape)
+/* reset the mouse pointer back to what NetSurf last set it as */
+void ami_reset_pointer(struct Window *win)
 {
-	if(mouseptrcurrent == shape) return;
+	ami_update_pointer(win, mouseptrcurrent, true);
+}
+
+void ami_update_pointer(struct Window *win, gui_pointer_shape shape, bool reapply)
+{
+	if((mouseptrcurrent == shape) && (reapply == false)) return;
 	if(drag_save_data) return;
 
 	if(nsoption_bool(use_os_pointers))

@@ -141,7 +141,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 	struct bitmap *bm;
 	BPTR fh=0;
 
-	ami_update_pointer(win, GUI_POINTER_WAIT);
+	ami_update_pointer(win, GUI_POINTER_WAIT, false);
 
 	if(ami_download_check_overwrite(fname, win, 0))
 	{
@@ -200,7 +200,7 @@ void ami_file_save(int type, char *fname, struct Window *win,
 		if(object) SetComment(fname, nsurl_access(hlcache_handle_get_url(object)));
 	}
 
-	ami_update_pointer(win, GUI_POINTER_DEFAULT);
+	ami_update_pointer(win, GUI_POINTER_DEFAULT, false);
 }
 
 void ami_file_save_req(int type, struct gui_window_2 *gwin,

@@ -1435,7 +1435,7 @@ void ami_handle_msg(void)
 					{
 						ami_context_menu_mouse_trap(gwin, FALSE);
 
-						if(!gwin->mouse_state)	ami_update_pointer(gwin->win,GUI_POINTER_DEFAULT);
+						if(!gwin->mouse_state)	ami_update_pointer(gwin->win, GUI_POINTER_DEFAULT, false);
 					}
 				break;
 
@@ -3600,6 +3600,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 	int tile_x_scale = (int)(nsoption_int(redraw_tile_size_x) / gwin->bw->scale);
 	int tile_y_scale = (int)(nsoption_int(redraw_tile_size_y) / gwin->bw->scale);
 
+	/* Set the busy pointer. We intentionally don't use ami_update_pointer here. */
 	SetWindowPointer(gwin->win,
 					WA_BusyPointer, TRUE,
 					WA_PointerDelay, TRUE,
@@ -3673,7 +3674,7 @@ void ami_do_redraw_tiled(struct gui_window_2 *gwin,
 		}
 	}
 	
-	SetWindowPointer(gwin->win, TAG_DONE);
+	ami_reset_pointer(gwin->win);
 }
 
 
@@ -3851,6 +3852,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 			clip.x1 = bbox->Left + bbox->Width;
 			clip.y1 = bbox->Top + bbox->Height;
 
+			/* Set the busy pointer. We intentionally don't use ami_update_pointer here. */
 			SetWindowPointer(gwin->win,
 				WA_BusyPointer, TRUE,
 				WA_PointerDelay, TRUE,
@@ -3862,7 +3864,7 @@ void ami_do_redraw(struct gui_window_2 *gwin)
 				browserglob.rp = temprp;
 			}
 			
-			SetWindowPointer(gwin->win, TAG_DONE);
+			ami_reset_pointer(gwin->win);
 		}
 	}
 

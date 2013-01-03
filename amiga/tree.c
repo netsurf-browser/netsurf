@@ -991,12 +991,15 @@ BOOL ami_tree_event(struct treeview_window *twin)
 									{
 										strlcpy(fname,savereq->fr_Drawer,1024);
 										AddPart(fname,savereq->fr_File,1024);
-										ami_update_pointer(twin->win,GUI_POINTER_WAIT);
+										SetWindowPointer(twin->win,
+											WA_BusyPointer, TRUE,
+											WA_PointerDelay, TRUE,
+											TAG_DONE);
 										if(twin->type == AMI_TREE_HISTORY)
 											history_global_export(fname);
 										else if(twin->type == AMI_TREE_HOTLIST)
 											hotlist_export(fname);
-										ami_update_pointer(twin->win,GUI_POINTER_DEFAULT);
+										SetWindowPointer(twin->win, TAG_DONE);
 									}
 								break;
 
@@ -1237,9 +1240,12 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 	};
 
 	if(!twin->win) return;
-//	if(tree_get_redraw(twin->tree) == false) return;
 
-	ami_update_pointer(twin->win, GUI_POINTER_WAIT);
+	SetWindowPointer(twin->win,
+					WA_BusyPointer, TRUE,
+					WA_PointerDelay, TRUE,
+					TAG_DONE);
+
 	glob = &twin->globals;
 
 	GetAttr(SPACE_AreaBox,twin->objects[GID_BROWSER],(ULONG *)&bbox);
@@ -1286,6 +1292,6 @@ void ami_tree_redraw_request(int x, int y, int width, int height, void *data)
 		}
 	}
 
-	ami_update_pointer(twin->win, GUI_POINTER_DEFAULT);
+	SetWindowPointer(twin->win, TAG_DONE);
 	glob = &browserglob;
 }
