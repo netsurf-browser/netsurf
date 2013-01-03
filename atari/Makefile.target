@@ -95,7 +95,6 @@ S_ATARI := \
 	rootwin.c \
 	toolbar.c \
 	statusbar.c \
-	browser.c  \
 	osspec.c \
 	system_colour.c \
 	ctxmenu.c \

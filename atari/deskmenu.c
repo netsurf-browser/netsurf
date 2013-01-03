@@ -17,7 +17,6 @@
 #include "atari/search.h"
 #include "atari/misc.h"
 #include "atari/gui.h"
-#include "atari/browser.h"
 #include "atari/findfile.h"
 
 #include "atari/rootwin.h"
@@ -414,7 +413,7 @@ static void __CDECL menu_debug_render(short item, short title, void *data)
 		if ( input_window->browser != NULL
 			&& input_window->browser->bw != NULL) {
 			GRECT rect;
-			browser_get_rect( input_window, BR_CONTENT, &rect );
+			window_get_grect(input_window->root, BROWSER_AREA_CONTENT, &rect);
 			browser_window_reformat(input_window->browser->bw, false,
 									rect.g_w, rect.g_h );
 			menu_icheck(h_gem_menu, MAINMENU_M_DEBUG_RENDER,

@@ -40,7 +40,6 @@
 #include "utils/messages.h"
 
 #include "atari/gui.h"
-#include "atari/browser.h"
 #include "atari/rootwin.h"
 #include "atari/misc.h"
 #include "atari/clipboard.h"
@@ -71,6 +70,7 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	GRECT bwrect;
 	struct contextual_content ccdata;
 	struct browser_window * bw = gw->browser->bw;
+	int sx, sy;
 
 	h = bw->current_content;
 	ctxinfo.flags = 0;
@@ -89,13 +89,14 @@ static struct s_context_info * get_context_info( struct gui_window * gw, short m
 	}
 
 	ctxinfo.flags |= CNT_BROWSER;
+
 	memset( &ctxinfo.ccdata, sizeof(struct contextual_content), 0 );
-	browser_window_get_contextual_content(
-		gw->browser->bw,
-		mx+gw->browser->scroll.current.x,
-		my+gw->browser->scroll.current.y,
-		(struct contextual_content*)&ctxinfo.ccdata
-	);
+
+	gui_window_get_scroll(gw, &sx, &sy);
+
+	browser_window_get_contextual_content( gw->browser->bw, mx+sx, my+sy,
+			(struct contextual_content*)&ctxinfo.ccdata);
+
 	if( ctxinfo.ccdata.link_url ){
 		ctxinfo.flags |= CNT_HREF;
 	}

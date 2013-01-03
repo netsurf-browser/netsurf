@@ -48,15 +48,14 @@
 #include "content/hlcache.h"
 #include "content/urldb.h"
 #include "css/css.h"
-#include "atari/gemtk/gemtk.h"
-#include "atari/gui.h"
-#include "atari/rootwin.h"
-
-#include "atari/misc.h"
-#include "atari/plot/plot.h"
 
 #include "atari/res/netsurf.rsh"
-
+#include "atari/gemtk/gemtk.h"
+#include "atari/ctxmenu.h"
+#include "atari/gui.h"
+#include "atari/rootwin.h"
+#include "atari/misc.h"
+#include "atari/plot/plot.h"
 #include "atari/toolbar.h"
 #include "atari/statusbar.h"
 #include "atari/search.h"
@@ -64,7 +63,6 @@
 #include "atari/encoding.h"
 #include "atari/redrawslots.h"
 #include "atari/toolbar.h"
-#include "atari/browser.h"
 #include "atari/gemtk/gemtk.h"
 
 extern struct gui_window *input_window;
@@ -204,6 +202,7 @@ static short handle_event(GUIWIN *win, EVMULT_OUT *ev_out, short msg[8])
 
 int window_create(struct gui_window * gw,
                   struct browser_window * bw,
+                  struct browser_window * clone,
                   unsigned long inflags)
 {
     int err = 0;
@@ -259,7 +258,16 @@ int window_create(struct gui_window * gw,
     }
 
     /* create browser component: */
-    gw->browser = browser_create( gw, bw, NULL, CLT_HORIZONTAL, 1, 1 );
+    gw->browser = (CMP_BROWSER)malloc( sizeof(struct s_browser) );
+
+    assert(gw->browser);
+
+	gw->browser->bw = bw;
+	if(clone)
+		gw->browser->bw->scale = clone->scale;
+	else
+		gw->browser->bw->scale = 1;
+
 
     /* create statusbar component: */
     if(sb) {
@@ -777,7 +785,7 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
     caret_pos.g_w = caret->dimensions.g_w;
     caret_pos.g_h = caret->dimensions.g_h;
 
-    if (rc_intersect(work, &caret_pos) /*&& redraw_active == false*/) {
+    if (rc_intersect(work, &caret_pos) && redraw_active == false) {
 
         pxy[0] = 0;
         pxy[1] = 0;
@@ -794,10 +802,9 @@ void window_place_caret(ROOTWIN *rootwin, short mode, int content_x,
         // draw caret to screen coords:
         vrt_cpyfm(vh, /*MD_REPLACE*/ MD_XOR, pxy, &caret->symbol, &screen, colors);
 
+		// update state:
+		caret->state |= CARET_STATE_VISIBLE;
     }
-
-    // update state:
-    caret->state |= CARET_STATE_VISIBLE;
 
 exit:
     // disable clipping:
@@ -903,6 +910,7 @@ void window_process_redraws(ROOTWIN * rootwin)
         // force redraw of caret:
         caret_h = rootwin->caret.dimensions.g_h;
         rootwin->caret.dimensions.g_h = 0;
+        redraw_active = false;
         window_place_caret(rootwin, 1, rootwin->caret.dimensions.g_x,
                            rootwin->caret.dimensions.g_y,
                            caret_h, &content_area);
@@ -1248,16 +1256,18 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                  size, mx, my
                 ));
             {
-                GRECT bwrect;
+                GRECT content_area;
                 struct browser_window * bw = gw->browser->bw;
-                browser_get_rect(gw, BR_CONTENT, &bwrect);
-                mx = mx - bwrect.g_x;
-                my = my - bwrect.g_y;
-                if( (mx < 0 || mx > bwrect.g_w) || (my < 0 || my > bwrect.g_h) )
+                window_get_grect(rootwin, BROWSER_AREA_CONTENT, &content_area);
+                mx = mx - content_area.g_x;
+                my = my - content_area.g_y;
+                if( (mx < 0 || mx > content_area.g_w)
+					|| (my < 0 || my > content_area.g_h) )
                     return;
 
                 utf8_convert_ret ret;
                 char *utf8_fn;
+                int sx, sy;
 
                 ret = utf8_from_local_encoding(buff, 0, &utf8_fn);
                 if (ret != UTF8_CONVERT_OK) {
@@ -1268,10 +1278,9 @@ static void on_file_dropped(ROOTWIN *rootwin, short msg[8])
                     /* no memory */
                     return;
                 }
-                browser_window_drop_file_at_point( gw->browser->bw,
-                                                   mx+gw->browser->scroll.current.x,
-                                                   my+gw->browser->scroll.current.y,
-                                                   utf8_fn );
+                gui_window_get_scroll(gw, &sx, &sy);
+                browser_window_drop_file_at_point( gw->browser->bw, mx+sx,
+                                                   my+sy, utf8_fn );
                 free(utf8_fn);
                 free(buff);
             }

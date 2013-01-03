@@ -61,7 +61,6 @@
 #include "atari/findfile.h"
 #include "atari/schedule.h"
 #include "atari/rootwin.h"
-#include "atari/browser.h"
 #include "atari/statusbar.h"
 #include "atari/toolbar.h"
 #include "atari/verify_ssl.h"
@@ -213,7 +212,7 @@ gui_create_browser_window(struct browser_window *bw,
         return NULL;
 
     LOG(("new window: %p, bw: %p\n", gw, bw));
-    window_create(gw, bw, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
+    window_create(gw, bw, clone, WIDGET_STATUSBAR|WIDGET_TOOLBAR|WIDGET_RESIZE\
                   |WIDGET_SCROLL);
     if (gw->root->win) {
         GRECT pos = {
@@ -260,7 +259,7 @@ void gui_window_destroy(struct gui_window *w)
     }
 
     search_destroy(w);
-    browser_destroy(w->browser);
+    free(w->browser);
     free(w->status);
     free(w->title);
     free(w->url);
@@ -298,7 +297,7 @@ void gui_window_get_dimensions(struct gui_window *w, int *width, int *height,
     if (w == NULL)
         return;
     GRECT rect;
-    browser_get_rect( w, BR_CONTENT, &rect  );
+    window_get_grect(w->root, BROWSER_AREA_CONTENT, &rect);
     *width = rect.g_w;
     *height = rect.g_h;
 }
@@ -431,9 +430,7 @@ void gui_window_scroll_visible(struct gui_window *w, int x0, int y0, int x1, int
 */
 void gui_window_update_extent(struct gui_window *gw)
 {
-    int oldx, oldy;
-    oldx = gw->browser->scroll.current.x;
-    oldy = gw->browser->scroll.current.y;
+
     if( gw->browser->bw->current_content != NULL ) {
         // TODO: store content size!
         if(window_get_active_gui_window(gw->root) == gw){
@@ -607,30 +604,8 @@ void gui_window_stop_throbber(struct gui_window *w)
 /* Place caret in window */
 void gui_window_place_caret(struct gui_window *w, int x, int y, int height)
 {
-	//printf("gw place caret\n");
-
 	window_place_caret(w->root, 1, x, y, height, NULL);
 	w->root->caret.state |= CARET_STATE_ENABLED;
-//
-//	GRECT clip, dim;
-//	struct guiwin_scroll_info_s * slid;
-//    if (w == NULL)
-//        return;
-//
-//	slid = guiwin_get_scroll_info(w->root->win);
-//	window_get_grect(w->root, BROWSER_AREA_CONTENT, &clip);
-//	dim.g_x = x - (slid->x_pos * slid->x_unit_px);
-//	dim.g_y = y - (slid->y_pos * slid->y_unit_px);
-//	dim.g_h = height;
-//	dim.g_w = 2;
-//	caret_show(&w->caret, guiwin_get_vdi_handle(w->root->win), &dim, &clip);
-////    if( w->browser->caret.current.g_w > 0 )
-////        gui_window_remove_caret( w );
-////    w->browser->caret.requested.g_x = x;
-////    w->browser->caret.requested.g_y = y;
-////    w->browser->caret.requested.g_w = 1;
-////    w->browser->caret.requested.g_h = height;
-////    w->browser->caret.redraw = true;
     return;
 }
 
@@ -644,19 +619,11 @@ gui_window_remove_caret(struct gui_window *w)
     if (w == NULL)
         return;
 
-
-
-	if(w->root->caret.dimensions.g_h > 0 ){
+	if ((w->root->caret.state & CARET_STATE_ENABLED) != 0) {
 		//printf("gw hide caret\n");
 		window_place_caret(w->root, 0, -1, -1, -1, NULL);
 		w->root->caret.state &= ~CARET_STATE_ENABLED;
 	}
-
-//    if( w->browser->caret.background.fd_addr != NULL ) {
-//        browser_restore_caret_background( w, NULL );
-//        w->browser->caret.requested.g_w = 0;
-//        w->browser->caret.current.g_w = 0;
-//    }
     return;
 }
 

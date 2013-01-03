@@ -46,7 +46,6 @@
 
 #include "atari/clipboard.h"
 #include "atari/misc.h"
-#include "atari/browser.h"
 #include "atari/plot/plot.h"
 #include "cflib.h"
 #include "atari/res/netsurf.rsh"

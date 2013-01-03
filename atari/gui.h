@@ -126,6 +126,13 @@ struct s_gui_win_root
 };
 typedef struct s_gui_win_root ROOTWIN;
 
+struct s_browser
+{
+	struct browser_window * bw;
+	bool attached;
+	bool reformat_pending;
+};
+
 /*
 	This is the part of the gui which is known by netsurf core.
 	You must implement it. Altough, you are free how to do it.

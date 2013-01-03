@@ -39,7 +39,6 @@
 #include "utils/messages.h"
 #include "atari/gui.h"
 #include "atari/misc.h"
-#include "atari/browser.h"
 #include "atari/search.h"
 #include "atari/gemtk/gemtk.h"
 #include "atari/res/netsurf.rsh"
