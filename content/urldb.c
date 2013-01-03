@@ -2410,9 +2410,9 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 	const char *path;
 	char *ret;
 	lwc_string *scheme;
+	bool target_is_secure;
 	time_t now;
 	int i;
-	bool match;
 
 	assert(url != NULL);
 
@@ -2425,7 +2425,15 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 	if (!p)
 		return NULL;
 
-	scheme = p->scheme;
+	scheme = nsurl_get_component(url, NSURL_SCHEME);
+	if (scheme == NULL)
+		scheme = lwc_string_ref(corestring_lwc_http);
+
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+			&target_is_secure) != lwc_error_ok)
+		return NULL;
+
+	lwc_string_unref(scheme);
 
 	matched_cookies = malloc(matched_cookies_size * 
 			sizeof(struct cookie_internal_data *));
@@ -2484,11 +2492,7 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 					/* cookie has expired => ignore */
 					continue;
 
-				if (c->secure && lwc_string_isequal(
-							q->scheme,
-							corestring_lwc_https,
-							&match) &&
-						match == false)
+				if (c->secure && target_is_secure == false)
 					/* secure cookie for insecure host.
 					 * ignore */
 					continue;
@@ -2523,11 +2527,7 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 					/* cookie has expired => ignore */
 					continue;
 
-				if (c->secure && lwc_string_isequal(
-							q->scheme,
-							corestring_lwc_https,
-							&match) &&
-						match == false)
+				if (c->secure && target_is_secure == false)
 					/* Secure cookie for insecure server
 					 * => ignore */
 					continue;
@@ -2567,10 +2567,7 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 				/* paths don't match => ignore */
 				continue;
 
-			if (c->secure && lwc_string_isequal(p->scheme,
-						corestring_lwc_https,
-						&match) &&
-					match == false)
+			if (c->secure && target_is_secure == false)
 				/* Secure cookie for insecure server
 				 * => ignore */
 				continue;
@@ -2601,10 +2598,7 @@ char *urldb_get_cookie(nsurl *url, bool include_http_only)
 				/* paths don't match => ignore */
 				continue;
 
-			if (c->secure && lwc_string_isequal(scheme,
-						corestring_lwc_https,
-						&match) &&
-					match == false)
+			if (c->secure && target_is_secure == false)
 				/* secure cookie for insecure host. ignore */
 				continue;
 
@@ -2696,6 +2690,19 @@ bool urldb_set_cookie(const char *header, nsurl *url, nsurl *referer)
 	if (scheme == NULL) {
 		nsurl_unref(urlt);
 		return false;
+	}
+
+	/* If HTTPS, store cookie using HTTP */
+	if (lwc_string_caseless_isequal(scheme, corestring_lwc_https,
+			&match) != lwc_error_ok) {
+		lwc_string_unref(scheme);
+		nsurl_unref(urlt);
+		return false;
+	}
+
+	if (match) {
+		lwc_string_unref(scheme);
+		scheme = lwc_string_ref(corestring_lwc_http);
 	}
 
 	path = nsurl_get_component(url, NSURL_PATH);

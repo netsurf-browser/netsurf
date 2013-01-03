@@ -1,4 +1,4 @@
-/* Binding to generate Text interface
+/* Binding to generate Comment interface
  *
  * Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>
  *
@@ -25,19 +25,19 @@ preamble %{
 #include "render/html_internal.h"
 #include "javascript/jsapi.h"
 
-#include "text.h"
+#include "comment.h"
 
 %}
 
 #include "dom.bnd"
 
-binding text {
+binding comment {
     type js_libdom; /* the binding type */
 
-    interface Text; /* Web IDL interface to generate */
+    interface Comment; /* Web IDL interface to generate */
 
-    private "dom_text *" node;
-    private "struct html_content *" htmlc; 
+    private "dom_comment *" node;
+    private "struct html_content *" htmlc;
 }
 
 api finalise %{

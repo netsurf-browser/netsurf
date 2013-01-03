@@ -58,6 +58,7 @@ lwc_string *corestring_lwc_head;
 lwc_string *corestring_lwc_hidden;
 lwc_string *corestring_lwc_hr;
 lwc_string *corestring_lwc_html;
+lwc_string *corestring_lwc_http;
 lwc_string *corestring_lwc_https;
 lwc_string *corestring_lwc_iframe;
 lwc_string *corestring_lwc_image;
@@ -272,6 +273,7 @@ void corestrings_fini(void)
 	CSS_LWC_STRING_UNREF(hidden);
 	CSS_LWC_STRING_UNREF(hr);
 	CSS_LWC_STRING_UNREF(html);
+	CSS_LWC_STRING_UNREF(http);
 	CSS_LWC_STRING_UNREF(https);
 	CSS_LWC_STRING_UNREF(iframe);
 	CSS_LWC_STRING_UNREF(image);
@@ -506,6 +508,7 @@ nserror corestrings_init(void)
 	CSS_LWC_STRING_INTERN(hidden);
 	CSS_LWC_STRING_INTERN(hr);
 	CSS_LWC_STRING_INTERN(html);
+	CSS_LWC_STRING_INTERN(http);
 	CSS_LWC_STRING_INTERN(https);
 	CSS_LWC_STRING_INTERN(iframe);
 	CSS_LWC_STRING_INTERN(image);
@@ -638,7 +641,7 @@ nserror corestrings_init(void)
 	CSS_DOM_STRING_INTERN(href);
 	CSS_DOM_STRING_INTERN(hreflang);
 	CSS_DOM_STRING_INTERN(hspace);
-	CSS_DOM_STRING_INTERN(http_equiv);
+	/* http-equiv: see below */
 	CSS_DOM_STRING_INTERN(id);
 	CSS_DOM_STRING_INTERN(input);
 	CSS_DOM_STRING_INTERN(invalid);

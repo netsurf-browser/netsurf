@@ -8,9 +8,9 @@
  *         http://www.opensource.org/licenses/mit-license
  */
 
-#include "dom.bnd"
 
 webidlfile "html.idl";
+webidlfile "dom.idl";
 
 hdrcomment "Copyright 2012 Vincent Sanders <vince@netsurf-browser.org>";
 hdrcomment "This file is part of NetSurf, http://www.netsurf-browser.org/";
@@ -20,7 +20,7 @@ hdrcomment "        http://www.opensource.org/licenses/mit-license";
 preamble %{
 
 #include <dom/dom.h>
-        
+
 #include "utils/config.h"
 #include "utils/log.h"
 #include "utils/corestrings.h"
@@ -35,6 +35,7 @@ preamble %{
 #include "nodelist.h"
 #include "htmldocument.h"
 #include "text.h"
+#include "comment.h"
 #include "htmlelement.h"
 #include "window.h"
 #include "location.h"
@@ -107,7 +108,7 @@ api init %{
 		return NULL;
 
 	/* Initialises all the user javascript classes to make their
-	 * prototypes available. 
+	 * prototypes available.
 	 */
 	/** @todo should we be managing these prototype objects ourselves */
 	user_proto = jsapi_InitClass_Document(cx, prototype);
@@ -150,6 +151,11 @@ api init %{
 		return NULL;
 	}
 
+	user_proto = jsapi_InitClass_Comment(cx, prototype);
+	if (user_proto == NULL) {
+		return NULL;
+	}
+
 	user_proto = jsapi_InitClass_Node(cx, prototype);
 	if (user_proto == NULL) {
 		return NULL;
@@ -166,16 +172,16 @@ api new %{
 	/* @todo sort out windows that are not globals */
 	assert(parent == NULL);
 
-        /* the window object is the global so its prototype *is* the instance */
-        newobject = prototype;
+	/* the window object is the global so its prototype *is* the instance */
+	newobject = prototype;
 
 	/* instantiate the subclasses off the window global */
 	private->document = jsapi_new_Document(cx,
-                                               NULL,
-                                               newobject, 
-                                               (dom_document *)dom_node_ref(htmlc->document), 
-                                               htmlc);
-	if (private->document == NULL) { 
+					       NULL,
+					       newobject,
+					       (dom_document *)dom_node_ref(htmlc->document),
+					       htmlc);
+	if (private->document == NULL) {
 		free(private);
 		return NULL;
 	}
@@ -212,7 +218,7 @@ operation prompt %{
 /* boolean dispatchEvent(Event event); */
 operation dispatchEvent %{
 	/* this implementation is unique to the window object as it is
-	 * not a "real" dom node. 
+	 * not a "real" dom node.
 	 */
 
 	/* caution, this must match the struct generated from event.bnd */
@@ -242,7 +248,7 @@ operation dispatchEvent %{
 				jsret = JS_CallFunctionValue(cx, NULL, eventval, 1, event_argv, &event_rval);
 			}
 		}
-	}	
+	}
 %}
 
 getter location %{
@@ -261,18 +267,18 @@ getter self %{
 
 getter EventHandler %{
 	/* this implementation is unique to the window object as it is
-	 * not a dom node. 
+	 * not a dom node.
 	 */
-	JSLOG("propname[%d]=\"%s\"", 
+	JSLOG("propname[%d]=\"%s\"",
 	      tinyid,
 	      jsclass_properties[tinyid].name);
 %}
 
 setter EventHandler %{
 	/* this implementation is unique to the window object as it is
-	 * not a dom node. 
+	 * not a dom node.
 	 */
-	JSLOG("propname[%d]=\"%s\"", 
-	      tinyid, 
+	JSLOG("propname[%d]=\"%s\"",
+	      tinyid,
 	      jsclass_properties[tinyid].name);
 %}
