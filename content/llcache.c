@@ -84,6 +84,8 @@ typedef struct {
 
 	bool tried_with_auth;		/**< Whether we've tried with auth */
 
+	bool tried_with_tls_downgrade;	/**< Whether we've tried TLS <= 1.0 */
+
 	bool outstanding_query;		/**< Waiting for a query response */
 } llcache_fetch_ctx;
 
@@ -711,6 +713,7 @@ static nserror llcache_object_refetch(llcache_object *object)
 			object->fetch.flags & LLCACHE_RETRIEVE_NO_ERROR_PAGES,
 			urlenc, multipart,
 			object->fetch.flags & LLCACHE_RETRIEVE_VERIFIABLE,
+			object->fetch.tried_with_tls_downgrade,
 			(const char **) headers);
 
 	/* Clean up cache-control headers */
@@ -1544,6 +1547,45 @@ static nserror llcache_fetch_cert_error(llcache_object *object,
 }
 
 /**
+ * Handle a TLS connection setup failure
+ *
+ * \param object  Object being fetched
+ * \return NSERROR_OK on success, appropriate error otherwise
+ */
+static nserror llcache_fetch_ssl_error(llcache_object *object)
+{
+	nserror error = NSERROR_OK;
+
+	/* Fetch has been stopped, and destroyed. Invalidate object's pointer */
+	object->fetch.fetch = NULL;
+
+	/* Invalidate cache-control data */
+	llcache_invalidate_cache_control_data(object);
+
+	if (object->fetch.tried_with_tls_downgrade == true) {
+		/* Have already tried to downgrade, so give up */
+		llcache_event event;
+
+		/* Mark object complete */
+		object->fetch.state = LLCACHE_FETCH_COMPLETE;
+
+		/* Inform client(s) that object fetch failed */
+		event.type = LLCACHE_EVENT_ERROR;
+		/** \todo More appropriate error message */
+		event.data.msg = messages_get("FetchFailed");
+	
+		error = llcache_send_event_to_users(object, &event);
+	} else {
+		/* Flag that we've tried to downgrade, so that if the 
+		 * fetch fails again, we give up */
+		object->fetch.tried_with_tls_downgrade = true;
+		error = llcache_object_refetch(object);
+	}
+
+	return error;
+}
+
+/**
  * Handler for fetch events
  *
  * \param msg	     Fetch event
@@ -1704,6 +1746,17 @@ static void llcache_fetch_callback(const fetch_msg *msg, void *p)
 		error = llcache_fetch_cert_error(object, 
 				msg->data.cert_err.certs, 
 				msg->data.cert_err.num_certs);
+		break;
+	case FETCH_SSL_ERR:
+		/* TLS connection setup failed */
+
+		/* Release candidate, if any */
+		if (object->candidate != NULL) {
+			object->candidate->candidate_count--;
+			object->candidate = NULL;
+		}
+
+		error = llcache_fetch_ssl_error(object);
 		break;
 	}
 
