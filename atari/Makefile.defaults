@@ -38,7 +38,7 @@
 
   # Configure the CPU target
   # Valid options: 68000, 68020-60, 5475 (coldfire)
-  ATARI_ARCH = 68020-60
+  ATARIARCH = 68020-60
 
   # enable optimizations
   # -O2 is currently broken with m68000 / m68020-60 builds 

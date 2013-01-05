@@ -11,19 +11,19 @@
 STRIP := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*strip)
 STACK := $(wildcard $(GCCSDK_INSTALL_CROSSBIN)/*stack)
 
-ifeq ($(ATARI_ARCH),68000)
+ifeq ($(ATARIARCH),68000)
 PRGSUFFIX := 000.app
 PKGNAME := ns000.zip
 endif
 
-ifeq ($(ATARI_ARCH),68020-60)
+ifeq ($(ATARIARCH),68020-60)
 CFLAGS += -m68020-60
 LDFLAGS += -m68020-60
 PRGSUFFIX := 020.app
 PKGNAME := ns020.zip
 endif
 
-ifeq ($(ATARI_ARCH),5475)
+ifeq ($(ATARIARCH),v4e)
 CFLAGS += -mcpu=5475
 LDFLAGS += -mcpu=5475
 PRGSUFFIX := v4e.app
