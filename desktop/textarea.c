@@ -65,7 +65,7 @@ struct line_info {
 	unsigned int b_length;		/**< Byte length of line */
 };
 
-struct text_area {
+struct textarea {
 
 	int scroll_x, scroll_y;		/**< scroll offsets of the textarea
 					 * content
@@ -112,17 +112,17 @@ struct text_area {
 };
 
 
-static bool textarea_insert_text(struct text_area *ta, unsigned int index,
+static bool textarea_insert_text(struct textarea *ta, unsigned int index,
 		const char *text);
-static bool textarea_replace_text(struct text_area *ta, unsigned int start,
+static bool textarea_replace_text(struct textarea *ta, unsigned int start,
 		unsigned int end, const char *text);
-static bool textarea_reflow(struct text_area *ta, unsigned int line);
-static unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y);
-static bool textarea_set_caret_xy(struct text_area *ta, int x, int y);
-static bool textarea_scroll_visible(struct text_area *ta);
-static bool textarea_select(struct text_area *ta, int c_start, int c_end);
-static bool textarea_select_fragment(struct text_area *ta);
-static void textarea_normalise_text(struct text_area *ta,
+static bool textarea_reflow(struct textarea *ta, unsigned int line);
+static unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y);
+static bool textarea_set_caret_xy(struct textarea *ta, int x, int y);
+static bool textarea_scroll_visible(struct textarea *ta);
+static bool textarea_select(struct textarea *ta, int c_start, int c_end);
+static bool textarea_select_fragment(struct textarea *ta);
+static void textarea_normalise_text(struct textarea *ta,
 		unsigned int b_start, unsigned int b_len);
 
 /**
@@ -139,18 +139,18 @@ static void textarea_normalise_text(struct text_area *ta,
  * \param data user specified data which will be passed to redraw callbacks
  * \return Opaque handle for textarea or 0 on error
  */
-struct text_area *textarea_create(int width, int height,
-		unsigned int flags, const plot_font_style_t *style,
+struct textarea *textarea_create(int width, int height,
+		textarea_flags flags, const plot_font_style_t *style,
 		textarea_redraw_request_callback redraw_request, void *data)
 {
-	struct text_area *ret;
+	struct textarea *ret;
 
 	if (redraw_request == NULL) {
 		LOG(("no callback provided"));
 		return NULL;
 	}
 
-	ret = malloc(sizeof(struct text_area));
+	ret = malloc(sizeof(struct textarea));
 	if (ret == NULL) {
 		LOG(("malloc failed"));
 		return NULL;
@@ -199,7 +199,7 @@ struct text_area *textarea_create(int width, int height,
  *
  * \param ta Text area to destroy
  */
-void textarea_destroy(struct text_area *ta)
+void textarea_destroy(struct textarea *ta)
 {
 	free(ta->text);
 	free(ta->lines);
@@ -214,7 +214,7 @@ void textarea_destroy(struct text_area *ta)
  * \param text UTF-8 text to set text area's contents to
  * \return true on success, false on memory exhaustion
  */
-bool textarea_set_text(struct text_area *ta, const char *text)
+bool textarea_set_text(struct textarea *ta, const char *text)
 {
 	unsigned int len = strlen(text) + 1;
 
@@ -247,7 +247,7 @@ bool textarea_set_text(struct text_area *ta, const char *text)
  * \param len Length (bytes) of buffer pointed to by buf, or 0 to read length
  * \return Length (bytes) written/required or -1 on error
  */
-int textarea_get_text(struct text_area *ta, char *buf, unsigned int len)
+int textarea_get_text(struct textarea *ta, char *buf, unsigned int len)
 {
 	if (buf == NULL && len == 0) {
 		/* want length */
@@ -276,7 +276,7 @@ int textarea_get_text(struct text_area *ta, char *buf, unsigned int len)
  * \param text UTF-8 text to insert
  * \return false on memory exhaustion, true otherwise
  */
-bool textarea_insert_text(struct text_area *ta, unsigned int index,
+bool textarea_insert_text(struct textarea *ta, unsigned int index,
 		const char *text)
 {
 	unsigned int b_len = strlen(text);
@@ -330,7 +330,7 @@ bool textarea_insert_text(struct text_area *ta, unsigned int index,
  * \param text UTF-8 text to insert
  * \return false on memory exhaustion, true otherwise
  */
-bool textarea_replace_text(struct text_area *ta, unsigned int start,
+bool textarea_replace_text(struct textarea *ta, unsigned int start,
 		unsigned int end, const char *text)
 {
 	unsigned int b_len = strlen(text);
@@ -399,7 +399,7 @@ bool textarea_replace_text(struct text_area *ta, unsigned int start,
  * 			the caret
  * \return true on success false otherwise
  */
-bool textarea_set_caret(struct text_area *ta, int caret)
+bool textarea_set_caret(struct textarea *ta, int caret)
 {
 	unsigned int c_len;
 	unsigned int b_off;
@@ -540,7 +540,7 @@ bool textarea_set_caret(struct text_area *ta, int caret)
  * \param y		Y coordinate
  * \return		character offset
  */
-unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
+unsigned int textarea_get_xy_offset(struct textarea *ta, int x, int y)
 {
 	size_t b_off, temp;
 	unsigned int c_off;
@@ -593,7 +593,7 @@ unsigned int textarea_get_xy_offset(struct text_area *ta, int x, int y)
  * \param y Y position of caret in a window relative to text area top left
  * \return true on success false otherwise
  */
-bool textarea_set_caret_xy(struct text_area *ta, int x, int y)
+bool textarea_set_caret_xy(struct textarea *ta, int x, int y)
 {
 	unsigned int c_off;
 
@@ -611,7 +611,7 @@ bool textarea_set_caret_xy(struct text_area *ta, int x, int y)
  * \param ta Text area
  * \return 0-based character index of caret location, or -1 on error
  */
-int textarea_get_caret(struct text_area *ta)
+int textarea_get_caret(struct textarea *ta)
 {
 	unsigned int c_off = 0, b_off;
 
@@ -635,7 +635,7 @@ int textarea_get_caret(struct text_area *ta)
  * \param line Line number to begin reflow on
  * \return true on success false otherwise
  */
-bool textarea_reflow(struct text_area *ta, unsigned int line)
+bool textarea_reflow(struct textarea *ta, unsigned int line)
 {
 	char *text;
 	unsigned int len;
@@ -740,7 +740,7 @@ bool textarea_reflow(struct text_area *ta, unsigned int line)
  * \param y1	bottom Y coordinate of redraw area
  * \param ctx	current redraw context
  */
-void textarea_redraw(struct text_area *ta, int x, int y,
+void textarea_redraw(struct textarea *ta, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx)
 {
 	const struct plotter_table *plot = ctx->plot;
@@ -934,7 +934,7 @@ void textarea_redraw(struct text_area *ta, int x, int y,
  * \param key	The ucs4 character codepoint
  * \return     	true if the keypress is dealt with, false otherwise.
  */
-bool textarea_keypress(struct text_area *ta, uint32_t key)
+bool textarea_keypress(struct textarea *ta, uint32_t key)
 {
 	char utf8[6];
 	unsigned int caret, caret_init, length, l_len, b_off, b_len;
@@ -1258,7 +1258,7 @@ bool textarea_keypress(struct text_area *ta, uint32_t key)
  * \param ta	The text area to be scrolled
  * \return 	true if textarea was scrolled false otherwise
  */
-bool textarea_scroll_visible(struct text_area *ta)
+bool textarea_scroll_visible(struct textarea *ta)
 {
 	int x0, x1, y0, y1, x, y;
 	int index, b_off;
@@ -1320,7 +1320,7 @@ bool textarea_scroll_visible(struct text_area *ta)
  * \param y	Y coordinate
  * \return true if action was handled false otherwise
  */
-bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
+bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_start, c_end;
@@ -1367,7 +1367,7 @@ bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
  * \param y	Y coordinate
  * \return true if drag end was handled false otherwise
  */
-bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
+bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y)
 {
 	int c_end;
@@ -1384,7 +1384,7 @@ bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
  * \param c_end		Last character (exclusive)
  * \return 		true on success false otherwise
  */
-bool textarea_select(struct text_area *ta, int c_start, int c_end)
+bool textarea_select(struct textarea *ta, int c_start, int c_end)
 {
 	int swap = -1;
 
@@ -1418,7 +1418,7 @@ bool textarea_select(struct text_area *ta, int c_start, int c_end)
  * \param ta  Text area
  * \return True on success, false otherwise
  */
-static bool textarea_select_fragment(struct text_area * ta)
+static bool textarea_select_fragment(struct textarea * ta)
 {
 	int caret_pos, sel_start = 0, sel_end = 0, index;
 	size_t b_start, b_end;
@@ -1472,7 +1472,7 @@ static bool textarea_select_fragment(struct text_area * ta)
  * \param b_start	Byte offset to start at
  * \param b_len		Byte length to check
  */
-void textarea_normalise_text(struct text_area *ta,
+void textarea_normalise_text(struct textarea *ta,
 		unsigned int b_start, unsigned int b_len)
 {
 	bool multi = (ta->flags & TEXTAREA_MULTILINE) ? true:false;
@@ -1510,7 +1510,7 @@ void textarea_normalise_text(struct text_area *ta,
  * \param width		if not NULL, gets updated to the width of the textarea
  * \param height	if not NULL, gets updated to the height of the textarea
  */
-void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
+void textarea_get_dimensions(struct textarea *ta, int *width, int *height)
 {
 	if (width != NULL)
 		*width = ta->vis_width;
@@ -1525,7 +1525,7 @@ void textarea_get_dimensions(struct text_area *ta, int *width, int *height)
  * \param width 	the new width of the textarea
  * \param height	the new height of the textarea
  */
-void textarea_set_dimensions(struct text_area *ta, int width, int height)
+void textarea_set_dimensions(struct textarea *ta, int width, int height)
 {
 	ta->vis_width = width;
 	ta->vis_height = height;

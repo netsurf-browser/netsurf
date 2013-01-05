@@ -30,30 +30,34 @@
 #include "desktop/plot_style.h"
 
 /* Text area flags */
-#define TEXTAREA_MULTILINE	0x01	/**< Text area is multiline */
-#define TEXTAREA_READONLY	0x02	/**< Text area is read only */
+typedef enum textarea_flags {
+	TEXTAREA_DEFAULT		= (1 << 0),
+	TEXTAREA_MULTILINE		= (1 << 1),
+	TEXTAREA_READONLY		= (1 << 2)
+} textarea_flags;
 
-struct text_area;
+
+struct textarea;
 
 typedef void(*textarea_redraw_request_callback)(void *data, int x, int y,
 		int width, int height);
 
-struct text_area *textarea_create(int width, int height, 
-		unsigned int flags, const plot_font_style_t *style,
+struct textarea *textarea_create(int width, int height, 
+		textarea_flags flags, const plot_font_style_t *style,
 		textarea_redraw_request_callback redraw_request, void *data);
-void textarea_destroy(struct text_area *ta);
-bool textarea_set_text(struct text_area *ta, const char *text);
-int textarea_get_text(struct text_area *ta, char *buf, unsigned int len);
-bool textarea_set_caret(struct text_area *ta, int caret);
-int textarea_get_caret(struct text_area *ta);
-void textarea_redraw(struct text_area *ta, int x, int y,
+void textarea_destroy(struct textarea *ta);
+bool textarea_set_text(struct textarea *ta, const char *text);
+int textarea_get_text(struct textarea *ta, char *buf, unsigned int len);
+bool textarea_set_caret(struct textarea *ta, int caret);
+int textarea_get_caret(struct textarea *ta);
+void textarea_redraw(struct textarea *ta, int x, int y,
 		const struct rect *clip, const struct redraw_context *ctx);
-bool textarea_keypress(struct text_area *ta, uint32_t key);
-bool textarea_mouse_action(struct text_area *ta, browser_mouse_state mouse,
+bool textarea_keypress(struct textarea *ta, uint32_t key);
+bool textarea_mouse_action(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
-bool textarea_drag_end(struct text_area *ta, browser_mouse_state mouse,
+bool textarea_drag_end(struct textarea *ta, browser_mouse_state mouse,
 		int x, int y);
-void textarea_get_dimensions(struct text_area *ta, int *width, int *height);
-void textarea_set_dimensions(struct text_area *ta, int width, int height);
+void textarea_get_dimensions(struct textarea *ta, int *width, int *height);
+void textarea_set_dimensions(struct textarea *ta, int width, int height);
 #endif
 

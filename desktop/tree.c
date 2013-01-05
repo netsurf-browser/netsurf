@@ -159,7 +159,7 @@ struct tree {
 	int width;			/* Tree width */
 	int height;			/* Tree height */
 	unsigned int flags;		/* Tree flags */
-	struct text_area *textarea;	/* Handle for UTF-8 textarea */
+	struct textarea *textarea;	/* Handle for UTF-8 textarea */
 	bool textarea_drag_start;	/* whether the start of a mouse drag
 					   was in the textarea */
 	struct node_element *editing;	/* Node element being edited */
@@ -2959,7 +2959,7 @@ void tree_start_edit(struct tree *tree, struct node_element *element)
 	if (element->type == NODE_ELEMENT_TEXT_PLUS_ICON)
 		width -= NODE_INSTEP;
 
-	tree->textarea = textarea_create(width, height, 0,
+	tree->textarea = textarea_create(width, height, TEXTAREA_DEFAULT,
 			&plot_fstyle, tree_textarea_redraw_request, tree);
 	if (tree->textarea == NULL) {
 		tree_stop_edit(tree, false);
